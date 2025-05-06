@@ -9,7 +9,7 @@ data Expression
   | ExGlobal                              -- Q
   | ExTermination                         -- T
   | ExMeta String                         -- !e
-  | ExApplication Expression [TauBinding] -- expr(attr -> expr)
+  | ExApplication Expression [TauBinding] -- expr(attr -> expr), todo: tau binding as meta !T
   | ExDispatch Expression Attribute       -- expr.attr
   | ExMetaTail Expression String          -- expr * !t
   deriving (Eq, Show)
