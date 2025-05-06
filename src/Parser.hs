@@ -1,0 +1,250 @@
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+
+module Parser (parseProgram, parseExpression) where
+
+import Ast
+import Control.Monad (guard)
+import Data.Char (isDigit, isLower)
+import Data.Text.Internal.Fusion.Size (lowerBound)
+import Data.Void
+import Text.Megaparsec
+import Text.Megaparsec.Char (alphaNumChar, char, digitChar, hexDigitChar, letterChar, lowerChar, space1, string, upperChar)
+import qualified Text.Megaparsec.Char.Lexer as L
+
+type Parser = Parsec Void String
+
+-- White space consumer
+whiteSpace :: Parser ()
+whiteSpace = L.space space1 empty empty
+
+-- Lexeme that ignores white spaces after
+lexeme :: Parser a -> Parser a
+lexeme = L.lexeme whiteSpace
+
+-- Strict symbol (or sequence of symbols) with ignored white spaces after
+symbol :: String -> Parser String
+symbol = L.symbol whiteSpace
+
+label' :: Parser String
+label' = lexeme $ do
+  first <- lowerChar
+  rest <- many (satisfy (`notElem` " \r\n\t,.-|':;!?][}{)(⟧⟦") <?> "allowed characted")
+  return (first : rest)
+
+function :: Parser String
+function = lexeme $ do
+  first <- upperChar
+  rest <-
+    many
+      ( satisfy
+          (\ch -> isDigit ch || isLower ch || ch == '_' || ch == 'φ')
+          <?> "allowd character in function name"
+      )
+  return (first : rest)
+
+delta :: Parser String
+delta = symbol "D>"
+
+lambda :: Parser String
+lambda = symbol "L>"
+
+arrow :: Parser String
+arrow = symbol "->"
+
+global :: Parser String
+global = symbol "Q"
+
+meta :: Char -> Parser String
+meta ch = do
+  _ <- char '!'
+  c <- char ch
+  ds <- lexeme (many digitChar)
+  return (c : ds)
+
+biTau :: Parser TauBinding
+biTau = do
+  attr <- attribute
+  _ <- arrow
+  TauBinding attr <$> expression
+
+byte :: Parser String
+byte = do
+  f <- hexDigitChar >>= upperHex
+  s <- hexDigitChar >>= upperHex
+  return [f, s]
+  where
+    upperHex ch
+      | isDigit ch || ('A' <= ch && ch <= 'F') = return ch
+      | otherwise = fail ("expected 0-9 or A-F, got " ++ show ch)
+
+-- bytes
+-- 1. empty: --
+-- 2. one byte: 01-
+-- 3. many bytes: 01-02-...-FF
+bytes :: Parser String
+bytes =
+  choice
+    [ symbol "--",
+      try $ do
+        first <- byte
+        rest <- some $ do
+          dash <- char '-'
+          bte <- byte
+          return (dash : bte)
+        return (first ++ concat rest),
+      do
+        bte <- byte
+        dash <- char '-'
+        return (bte ++ [dash])
+    ]
+    <?> "bytes"
+
+-- binding
+-- 1. tau
+-- 2. void
+-- 3. delta
+-- 4. meta delta
+-- 5. meta
+-- 6. lambda
+-- 7. meta lambda
+binding :: Parser Binding
+binding =
+  choice
+    [ try (BiTau <$> biTau),
+      try $ do
+        attr <- attribute
+        _ <- arrow
+        _ <- symbol "?"
+        return (BiVoid attr),
+      try $ do
+        _ <- delta
+        BiDelta <$> bytes,
+      try $ do
+        _ <- delta
+        BiMetaDelta <$> meta 'b',
+      try (BiMeta <$> meta 'B'),
+      try $ do
+        _ <- lambda
+        BiLambda <$> function,
+      try $ do
+        _ <- lambda
+        BiMetaLambda <$> meta 'F'
+    ]
+    <?> "binding"
+
+-- attribute
+-- 1. label
+-- 2. meta
+-- 3. alpha
+-- 4. rho
+-- 5. phi
+attribute :: Parser Attribute
+attribute =
+  choice
+    [ AtLabel <$> label',
+      AtMeta <$> meta 'a',
+      do
+        _ <- char '~'
+        AtAlpha <$> lexeme L.decimal,
+      do
+        _ <- symbol "^"
+        return AtRho,
+      do
+        _ <- symbol "@"
+        return AtPhi
+    ]
+    <?> "attribute"
+
+-- head part of expression
+-- 1. formation
+-- 2. this
+-- 3. global
+-- 4. termination
+-- 5. meta
+exHead :: Parser Expression
+exHead =
+  choice
+    [ do
+        _ <- symbol "["
+        bs <- binding `sepBy` symbol ","
+        _ <- symbol "]"
+        return (ExFormation bs),
+      do
+        _ <- symbol "$"
+        return ExThis,
+      do
+        _ <- global
+        return ExGlobal,
+      do
+        _ <- symbol "T"
+        return ExTermination,
+      ExMeta <$> meta 'e'
+    ]
+    <?> "primary expression"
+
+-- tail optional part of application
+-- 1. any head + dispatch
+-- 2. any except this and global + application
+-- 3. any except meta tail + meta tail
+exTail :: Expression -> Parser Expression
+exTail expr =
+  choice
+    [ do
+        next <-
+          choice
+            [ do
+                _ <- symbol "."
+                ExDispatch expr <$> attribute,
+              do
+                guard
+                  ( case expr of
+                      ExThis -> False
+                      ExGlobal -> False
+                      _ -> True
+                  )
+                _ <- symbol "("
+                bds <- biTau `sepBy1` symbol ","
+                _ <- symbol ")"
+                return (ExApplication expr bds),
+              do
+                guard
+                  ( case expr of 
+                      ExMetaTail _ _ -> False
+                      _ -> True
+                  )
+                _ <- symbol "*"
+                ExMetaTail expr <$> meta 't'
+            ]
+            <?> "dispatch or application"
+        exTail next,
+      return expr
+    ]
+
+expression :: Parser Expression
+expression = do
+  expr <- exHead
+  exTail expr
+
+program :: Parser Program
+program = do
+  _ <- global
+  _ <- arrow
+  Program <$> expression
+
+-- Entry point
+parse' :: String -> Parser a -> String -> Either (ParseErrorBundle String Void) a
+parse' name parser =
+  runParser
+    ( do
+        _ <- whiteSpace
+        p <- parser
+        _ <- eof
+        return p
+    )
+    name
+
+parseExpression :: String -> Either (ParseErrorBundle String Void) Expression
+parseExpression = parse' "expression" expression
+
+parseProgram :: String -> Either (ParseErrorBundle String Void) Program
+parseProgram = parse' "program" program

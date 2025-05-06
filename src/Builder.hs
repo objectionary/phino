@@ -1,0 +1,76 @@
+module Builder where
+
+import Ast
+import Misc
+import Matcher
+import qualified Data.Map.Strict as Map
+import Data.List (findIndex)
+
+buildAttribute :: Attribute -> Subst -> Maybe Attribute
+buildAttribute (AtMeta meta) (Subst mp) = case Map.lookup meta mp of
+  Just (MvAttribute attr) -> Just attr
+  _ -> Nothing
+buildAttribute attr _ = Just attr
+
+buildTauBinding :: TauBinding -> Subst -> Maybe TauBinding
+buildTauBinding (TauBinding attr expr) subst = do
+  attribute <- buildAttribute attr subst
+  expression <- buildExpression expr subst
+  Just (TauBinding attribute expression)
+
+-- Build binding
+-- The function returns [Binding] because of the BiMeta is always attached
+-- to the list of bindings
+buildBinding :: Binding -> Subst -> Maybe [Binding]
+buildBinding (BiTau tau) subst = do
+  binding <- buildTauBinding tau subst
+  Just [BiTau binding]
+buildBinding (BiVoid attr) subst = do
+  attribute <- buildAttribute attr subst
+  Just [BiVoid attribute]
+buildBinding (BiMeta meta) (Subst mp) = case Map.lookup meta mp of
+  Just (MvBindings bds) -> Just bds
+  _ -> Nothing
+buildBinding (BiMetaDelta meta) (Subst mp) = case Map.lookup meta mp of
+  Just (MvBytes bytes) -> Just [BiDelta bytes]
+  _ -> Nothing
+buildBinding (BiMetaLambda meta) (Subst mp) = case Map.lookup meta mp of
+  Just (MvFunction func) -> Just [BiLambda func]
+  _ -> Nothing
+buildBinding binding _ = Just [binding]
+
+-- Build bindings which don't contain meta binding (BiMeta)
+buildExactBindings :: [Binding] -> Subst -> Maybe [Binding]
+buildExactBindings [] _ = Just []
+buildExactBindings (bd:rest) subst = do
+  first <- buildBinding bd subst
+  bds <- buildExactBindings rest subst
+  Just (head first : bds)
+
+-- Build bindings that may contain meta binding (BiMeta)
+buildBindings :: [Binding] -> Subst -> Maybe [Binding]
+buildBindings [] _ = Just []
+buildBindings bindings subst = case findIndex isMetaBinding bindings of
+  Just idx -> do
+    exact <- buildExactBindings (withoutAt idx bindings) subst
+    meta <- buildBinding (bindings !! idx) subst
+    Just (exact ++ meta)
+  _ -> buildExactBindings bindings subst
+
+buildExpression :: Expression -> Subst -> Maybe Expression
+buildExpression (ExDispatch expr attr) subst = do
+  dispatched <- buildExpression expr subst
+  attr <- buildAttribute attr subst
+  return (ExDispatch dispatched attr)
+buildExpression (ExApplication expr taus) subst = do
+  applied <- buildExpression expr subst
+  bindings <- mapM (`buildTauBinding` subst) taus -- mapM (\tau -> buildTauBinding tau subst) mapM
+  Just (ExApplication applied bindings)
+buildExpression (ExFormation bds) subst = do
+  bindings <- buildBindings bds subst
+  Just (ExFormation bindings)
+buildExpression (ExMeta meta) (Subst mp) = case Map.lookup meta mp of
+  Just (MvExpression expr) -> Just expr
+  _ -> Nothing
+buildExpression (ExMetaTail expr meta) _ = Nothing -- todo
+buildExpression expr _ = Just expr
