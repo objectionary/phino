@@ -57,6 +57,12 @@ buildBindings bindings subst = case findIndex isMetaBinding bindings of
     Just (exact ++ meta)
   _ -> buildExactBindings bindings subst
 
+buildExpressionWithTails :: Expression -> [Tail] -> Subst -> Expression
+buildExpressionWithTails expr [] _ = expr
+buildExpressionWithTails expr (tail:rest) subst = case tail of
+  TaApplication taus -> buildExpressionWithTails (ExApplication expr taus) rest subst
+  TaDispatch attr -> buildExpressionWithTails (ExDispatch expr attr) rest subst
+
 buildExpression :: Expression -> Subst -> Maybe Expression
 buildExpression (ExDispatch expr attr) subst = do
   dispatched <- buildExpression expr subst
@@ -72,5 +78,10 @@ buildExpression (ExFormation bds) subst = do
 buildExpression (ExMeta meta) (Subst mp) = case Map.lookup meta mp of
   Just (MvExpression expr) -> Just expr
   _ -> Nothing
-buildExpression (ExMetaTail expr meta) _ = Nothing -- todo
+buildExpression (ExMetaTail expr meta) subst = do
+  let (Subst mp) = subst
+  expression <- buildExpression expr subst
+  case Map.lookup meta mp of
+    Just (MvTail tails) -> Just (buildExpressionWithTails expression tails subst)
+    _ -> Nothing
 buildExpression expr _ = Just expr
