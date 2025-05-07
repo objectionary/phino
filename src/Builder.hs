@@ -19,7 +19,7 @@ buildTauBinding (TauBinding attr expr) subst = do
   Just (TauBinding attribute expression)
 
 -- Build binding
--- The function returns [Binding] because of the BiMeta is always attached
+-- The function returns [Binding] because the BiMeta is always attached
 -- to the list of bindings
 buildBinding :: Binding -> Subst -> Maybe [Binding]
 buildBinding (BiTau tau) subst = do

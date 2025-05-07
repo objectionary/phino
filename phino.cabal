@@ -41,7 +41,8 @@ test-suite spec
   other-modules:
     Spec,
     ParserSpec,
-    MatcherSpec
+    MatcherSpec,
+    BuilderSpec
   default-extensions:
       ImportQualifiedPost
   ghc-options: -Wall 
