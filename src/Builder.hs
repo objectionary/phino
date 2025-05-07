@@ -85,3 +85,7 @@ buildExpression (ExMetaTail expr meta) subst = do
     Just (MvTail tails) -> Just (buildExpressionWithTails expression tails subst)
     _ -> Nothing
 buildExpression expr _ = Just expr
+
+-- Build a several expression from one expression and several substitutions
+buildExpressions :: Expression -> [Subst] -> [Maybe Expression]
+buildExpressions expr = map (buildExpression expr)
