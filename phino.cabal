@@ -48,7 +48,8 @@ test-suite spec
     Spec,
     ParserSpec,
     MatcherSpec,
-    BuilderSpec
+    BuilderSpec,
+    RewriterSpec
   default-extensions:
     ImportQualifiedPost
   ghc-options: -Wall 
