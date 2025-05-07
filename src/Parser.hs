@@ -1,5 +1,8 @@
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 
+-- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+-- SPDX-License-Identifier: MIT
+
 module Parser (parseProgram, parseExpression) where
 
 import Ast
