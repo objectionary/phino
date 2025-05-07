@@ -27,7 +27,7 @@ data MetaValue
 -- Tail operation after expression
 -- Dispatch or application
 data Tail
-  = TaApplication [TauBinding]
+  = TaApplication [Binding] -- BiTau only
   | TaDispatch Attribute
   deriving (Eq, Show)
 
@@ -48,7 +48,7 @@ substSingle key value = Subst (Map.singleton key value)
 -- !a -> ...
 -- !a -> ?
 isBindingWithMetaAttr :: Binding -> Bool
-isBindingWithMetaAttr (BiTau (TauBinding (AtMeta _) _)) = True
+isBindingWithMetaAttr (BiTau (AtMeta _) _) = True
 isBindingWithMetaAttr (BiVoid (AtMeta _)) = True
 isBindingWithMetaAttr _ = False
 
@@ -81,7 +81,7 @@ matchBinding (BiLambda pFunc) (BiLambda tFunc)
   | pFunc == tFunc = Just substEmpty
   | otherwise = Nothing
 matchBinding (BiMetaLambda meta) (BiLambda tFunc) = Just (substSingle meta (MvFunction tFunc))
-matchBinding (BiTau (TauBinding pattr pexp)) (BiTau (TauBinding tattr texp)) = do
+matchBinding (BiTau pattr pexp) (BiTau tattr texp) = do
   mattr <- matchAttribute pattr tattr
   mexp <- matchExpression pexp texp
   combine mattr mexp
@@ -226,7 +226,7 @@ matchExpression (ExDispatch pexp pattr) (ExDispatch texp tattr) = do
   combine mexp mattr
 matchExpression (ExApplication pexp pbs) (ExApplication texp tbs) = do
   mexp <- matchExpression pexp texp
-  mbs <- matchBindings (map BiTau pbs) (map BiTau tbs)
+  mbs <- matchBindings pbs tbs
   combine mexp mbs
 matchExpression (ExMetaTail exp meta) tgt = do
   (subst, tails) <- tailExpressions exp tgt
@@ -240,12 +240,12 @@ matchExpressionDeep ptn tgt = do
       deep = case tgt of
         ExFormation bds -> concatMap matchBindingExpression bds
         ExDispatch dexp _ -> matchExpressionDeep ptn dexp
-        ExApplication aexp taus -> matchExpressionDeep ptn aexp ++ concatMap (matchBindingExpression . BiTau) taus
+        ExApplication aexp taus -> matchExpressionDeep ptn aexp ++ concatMap matchBindingExpression taus
         _ -> []
         where
           -- Deep match pattern to expression inside binding
           matchBindingExpression :: Binding -> [Subst]
-          matchBindingExpression (BiTau (TauBinding _ texp)) = matchExpressionDeep ptn texp
+          matchBindingExpression (BiTau _ texp) = matchExpressionDeep ptn texp
           matchBindingExpression _ = []
   case here of
     [] -> deep

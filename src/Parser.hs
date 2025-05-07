@@ -63,11 +63,11 @@ meta ch = do
   ds <- lexeme (many digitChar)
   return (c : ds)
 
-biTau :: Parser TauBinding
+biTau :: Parser Binding
 biTau = do
   attr <- attribute
   _ <- arrow
-  TauBinding attr <$> expression
+  BiTau attr <$> expression
 
 byte :: Parser String
 byte = do
@@ -112,7 +112,7 @@ bytes =
 binding :: Parser Binding
 binding =
   choice
-    [ try (BiTau <$> biTau),
+    [ try biTau,
       try $ do
         attr <- attribute
         _ <- arrow

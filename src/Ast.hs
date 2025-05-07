@@ -13,22 +13,19 @@ data Expression
   | ExGlobal                              -- Q
   | ExTermination                         -- T
   | ExMeta String                         -- !e
-  | ExApplication Expression [TauBinding] -- expr(attr -> expr), todo: tau binding as meta !T
+  | ExApplication Expression [Binding]    -- expr(attr -> expr), todo: tau binding as meta !T
   | ExDispatch Expression Attribute       -- expr.attr
   | ExMetaTail Expression String          -- expr * !t
   deriving (Eq, Show)
 
 data Binding
-  = BiTau TauBinding                      -- attr -> expr
+  = BiTau Attribute Expression            -- attr -> expr
   | BiMeta String                         -- !B
   | BiDelta String                        -- D> 1F-2A
   | BiMetaDelta String                    -- D> !b
   | BiVoid Attribute                      -- attr -> ?
   | BiLambda String                       -- L> Function
   | BiMetaLambda String                   -- L> !F
-  deriving (Eq, Show)
-
-data TauBinding = TauBinding Attribute Expression
   deriving (Eq, Show)
 
 data Attribute

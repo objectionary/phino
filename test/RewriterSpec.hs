@@ -30,17 +30,17 @@ spec = do
         ( "Q -> [x -> [y -> $], z -> [w -> $]] => ([[y -> $], [w -> $]], [Q.y, Q.w]) => Q -> [x -> Q.y, z -> Q.w]",
           Program
             ( ExFormation
-                [ BiTau (TauBinding (AtLabel "x") (ExFormation [BiTau (TauBinding (AtLabel "y") ExThis)])),
-                  BiTau (TauBinding (AtLabel "z") (ExFormation [BiTau (TauBinding (AtLabel "w") ExThis)]))
+                [ BiTau (AtLabel "x") (ExFormation [BiTau (AtLabel "y") ExThis]),
+                  BiTau (AtLabel "z") (ExFormation [BiTau (AtLabel "w") ExThis])
                 ]
             ),
-          [ExFormation [BiTau (TauBinding (AtLabel "y") ExThis)], ExFormation [BiTau (TauBinding (AtLabel "w") ExThis)]],
+          [ExFormation [BiTau (AtLabel "y") ExThis], ExFormation [BiTau (AtLabel "w") ExThis]],
           [ExDispatch ExGlobal (AtLabel "y"), ExDispatch ExGlobal (AtLabel "w")],
           Just
             ( Program
                 ( ExFormation
-                    [ BiTau (TauBinding (AtLabel "x") (ExDispatch ExGlobal (AtLabel "y"))),
-                      BiTau (TauBinding (AtLabel "z") (ExDispatch ExGlobal (AtLabel "w")))
+                    [ BiTau (AtLabel "x") (ExDispatch ExGlobal (AtLabel "y")),
+                      BiTau (AtLabel "z") (ExDispatch ExGlobal (AtLabel "w"))
                     ]
                 )
             )

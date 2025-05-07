@@ -18,19 +18,14 @@ buildAttribute (AtMeta meta) (Subst mp) = case Map.lookup meta mp of
   _ -> Nothing
 buildAttribute attr _ = Just attr
 
-buildTauBinding :: TauBinding -> Subst -> Maybe TauBinding
-buildTauBinding (TauBinding attr expr) subst = do
-  attribute <- buildAttribute attr subst
-  expression <- buildExpression expr subst
-  Just (TauBinding attribute expression)
-
 -- Build binding
 -- The function returns [Binding] because the BiMeta is always attached
 -- to the list of bindings
 buildBinding :: Binding -> Subst -> Maybe [Binding]
-buildBinding (BiTau tau) subst = do
-  binding <- buildTauBinding tau subst
-  Just [BiTau binding]
+buildBinding (BiTau attr expr) subst = do
+  attribute <- buildAttribute attr subst
+  expression <- buildExpression expr subst
+  Just [BiTau attribute expression]
 buildBinding (BiVoid attr) subst = do
   attribute <- buildAttribute attr subst
   Just [BiVoid attribute]
@@ -76,8 +71,8 @@ buildExpression (ExDispatch expr attr) subst = do
   return (ExDispatch dispatched attr)
 buildExpression (ExApplication expr taus) subst = do
   applied <- buildExpression expr subst
-  bindings <- mapM (`buildTauBinding` subst) taus -- mapM (\tau -> buildTauBinding tau subst) mapM
-  Just (ExApplication applied bindings)
+  [tau] <- mapM (`buildBinding` subst) taus -- mapM (\tau -> buildBinding tau subst) mapM
+  Just (ExApplication applied tau)
 buildExpression (ExFormation bds) subst = do
   bindings <- buildBindings bds subst
   Just (ExFormation bindings)
