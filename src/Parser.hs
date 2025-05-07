@@ -1,6 +1,7 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
+-- The goal of the module is to parse given phi program to Ast
 module Parser (parseProgram, parseExpression) where
 
 import Ast

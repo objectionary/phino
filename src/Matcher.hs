@@ -1,6 +1,8 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
+-- The goal of the module is to traverse given Ast and build substitutions
+-- from meta variables to appropriate meta values
 module Matcher where
 
 import Ast

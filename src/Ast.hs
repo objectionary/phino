@@ -1,6 +1,7 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
+-- This module represents Ast tree for parsed phi-calculus program
 module Ast where
 
 newtype Program = Program Expression      -- Q -> expr

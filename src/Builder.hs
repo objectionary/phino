@@ -1,6 +1,9 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
+-- The goal of the module is to build phi expression based on 
+-- pattern expression and set of substitutions by replacing
+-- meta variables with appropriate meta values
 module Builder where
 
 import Ast
