@@ -1,5 +1,3 @@
-{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
-
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
@@ -41,7 +39,7 @@ function = lexeme $ do
     many
       ( satisfy
           (\ch -> isDigit ch || isLower ch || ch == '_' || ch == 'φ')
-          <?> "allowd character in function name"
+          <?> "allowed character in function name"
       )
   return (first : rest)
 
