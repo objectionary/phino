@@ -7,7 +7,7 @@ module Ast where
 newtype Program = Program Expression      -- Q -> expr
   deriving (Eq, Show)
 
-data Expression 
+data Expression
   = ExFormation [Binding]                 -- [bindings]
   | ExThis                                -- $
   | ExGlobal                              -- Q

@@ -1,3 +1,6 @@
+-- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+-- SPDX-License-Identifier: MIT
+
 cabal-version:      3.0
 
 name:               phino
@@ -14,7 +17,7 @@ common warnings
 
 -- Library with core modules
 library
-  exposed-modules: 
+  exposed-modules:
     Ast,
     Parser,
     Matcher,
@@ -52,7 +55,7 @@ test-suite spec
     RewriterSpec
   default-extensions:
     ImportQualifiedPost
-  ghc-options: -Wall 
+  ghc-options: -Wall
   build-depends:
     base,
     megaparsec,

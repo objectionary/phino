@@ -210,7 +210,7 @@ exTail expr =
                 return (ExApplication expr bds),
               do
                 guard
-                  ( case expr of 
+                  ( case expr of
                       ExMetaTail _ _ -> False
                       _ -> True
                   )

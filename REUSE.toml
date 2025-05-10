@@ -4,7 +4,8 @@
 version = 1
 [[annotations]]
 path = [
-    "README.md"
+    "README.md",
+    ".gitignore"
 ]
 precedence = "override"
 SPDX-FileCopyrightText = "Copyright (c) 2025 Objectionary.com"
