@@ -262,7 +262,7 @@ spec = do
       Map.lookup "first" joined `shouldBe` Just (MvAttribute AtRho)
     it "returns Nothing if values are different" $ do
       combine (Subst (Map.singleton "x" (MvAttribute AtPhi))) (Subst (Map.singleton "x" (MvAttribute AtRho))) `shouldBe` Nothing
-    it "cleares all the values" $ do
+    it "clears all the values" $ do
       let first =
             Subst
               ( Map.fromList

@@ -30,7 +30,7 @@ symbol = L.symbol whiteSpace
 label' :: Parser String
 label' = lexeme $ do
   first <- lowerChar
-  rest <- many (satisfy (`notElem` " \r\n\t,.-|':;!?][}{)(⟧⟦") <?> "allowed characted")
+  rest <- many (satisfy (`notElem` " \r\n\t,.-|':;!?][}{)(⟧⟦") <?> "allowed character")
   return (first : rest)
 
 function :: Parser String

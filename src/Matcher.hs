@@ -126,9 +126,9 @@ matchBindingsWithFiltering (pb : rest) tbs = case matchAnyBinding pb tbs of
 -- Since all the attributes in phi calculus are unique in the scope of formation or application
 -- we try to match these exact bindings first. While matching them we drop target bindings which
 -- we found a match for. When we're done with exact bindings, we have a list of target
--- unmached bindings (L). Now we're entering a new circle and trying to match rest "not exact"
+-- unmatched bindings (L). Now we're entering a new circle and trying to match rest "not exact"
 -- pattern bindings with left unmatched bindings L. If matching is succeeded - we just merge
--- resut substitutions.
+-- result substitutions.
 matchNonMetaExactBindings :: [Binding] -> [Binding] -> Maybe Subst
 matchNonMetaExactBindings [] [] = Just substEmpty
 matchNonMetaExactBindings pbs tbs
