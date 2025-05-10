@@ -3,7 +3,6 @@
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE.txt)
 [![Hits-of-Code](https://hitsofcode.com/github/objectionary/phino?branch=master&label=Hits-of-Code)](https://hitsofcode.com/github/objectionary/phino/view?branch=master&label=Hits-of-Code)
 [![PDD status](https://www.0pdd.com/svg?name=objectionary/phino)](https://www.0pdd.com/p?name=objectionary/phino)
-![Lines of code](https://sloc.xyz/github/objectionary/phino)
 
 This is a command-line normalizer, rewriter, and dataizer
 of [𝜑-calculus](https://www.eolang.org) expressions.
