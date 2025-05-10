@@ -6,11 +6,8 @@ version = 1
 path = [
     "README.md",
     ".gitignore",
-    "**.json"
-]
-[lint]
-exclude = [
-  "phino.cabal"
+    "**.json",
+    "phino.cabal"
 ]
 precedence = "override"
 SPDX-FileCopyrightText = "Copyright (c) 2025 Objectionary.com"
