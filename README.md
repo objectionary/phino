@@ -44,10 +44,10 @@ Then, rewrite:
 
 ```bash
 $ phino rewrite --rule=my-rule.yml hello.phi
-Φ ↦ ⟦ φ ↦ ⟦ Δ ⤍ 62-79-65 ⟧, t ↦ ξ.k, k ↦ ⟦⟧  ⟧
+Φ ↦ ⟦ φ ↦ ⟦ Δ ⤍ 62-79-65 ⟧, t ↦ ξ.k, k ↦ ⟦⟧ ⟧
 ```
 
-You can also use built-it rules, which are designed to normalize expressions:
+You can also use built-in rules, which are designed to normalize expressions:
 
 ```bash
 $ phino rewrite --normalize hello.phi
