@@ -47,10 +47,10 @@ test function useCases =
 
 spec :: Spec
 spec = do
-  describe "matchExpressionDeep" $
+  describe "matchExpressionDeep: expression => expression => [substitution]" $
     test
       matchExpressionDeep
-      [ ( "[!a -> Q.org.!a] => [f -> [x -> Q.org.x], t -> [y -> Q.org.y] => [[!a -> x], [!a -> y]]",
+      [ ( "[[!a -> Q.org.!a]] => [[f -> [[x -> Q.org.x]], t -> [[y -> Q.org.y]] => [(!a >> x), (!a >> y)]",
           ExFormation [BiTau (AtMeta "a") (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtMeta "a"))],
           ExFormation
             [ BiTau (AtLabel "f") (ExFormation [BiTau (AtLabel "x") (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "x"))]),
@@ -58,12 +58,12 @@ spec = do
             ],
           [[("a", MvAttribute (AtLabel "x"))], [("a", MvAttribute (AtLabel "y"))]]
         ),
-        ( "!e => [x -> Q] => [[!e -> [x -> Q]], [!e -> Q]]",
+        ( "!e => [[x -> Q]] => [(!e >> [[x -> Q]]), (!e >> Q)]",
           ExMeta "e",
           ExFormation [BiTau (AtLabel "x") ExGlobal],
           [[("e", MvExpression (ExFormation [BiTau (AtLabel "x") ExGlobal]))], [("e", MvExpression ExGlobal)]]
         ),
-        ( "!e.!a => Q.org.eolang => [[!e -> Q.org, !a -> eolang], [!e -> Q, !a -> org]]",
+        ( "!e.!a => Q.org.eolang => [(!e >> Q.org, !a >> eolang), (!e >> Q, !a >> org)]",
           ExDispatch (ExMeta "e") (AtMeta "a"),
           ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang"),
           [ [("e", MvExpression (ExDispatch ExGlobal (AtLabel "org"))), ("a", MvAttribute (AtLabel "eolang"))],
@@ -72,106 +72,106 @@ spec = do
         )
       ]
 
-  describe "matchAttribute" $
+  describe "matchAttribute: attribute => attribute => substitution" $
     test
       matchAttribute
-      [ ("~1 => ~1 => []", AtAlpha 1, AtAlpha 1, Just []),
-        ("!a => ^ => [!a -> ^]", AtMeta "a", AtRho, Just [("a", MvAttribute AtRho)]),
-        ("!a => @ => [!a -> @]", AtMeta "a", AtPhi, Just [("a", MvAttribute AtPhi)]),
+      [ ("~1 => ~1 => ()", AtAlpha 1, AtAlpha 1, Just []),
+        ("!a => ^ => (!a >> ^)", AtMeta "a", AtRho, Just [("a", MvAttribute AtRho)]),
+        ("!a => @ => (!a >> @)", AtMeta "a", AtPhi, Just [("a", MvAttribute AtPhi)]),
         ("~0 => x => X", AtAlpha 0, AtLabel "x", Nothing)
       ]
 
   describe "matchNonMetaExactBindings" $
     test
       matchNonMetaExactBindings
-      [ ( "[^ -> ?, !a -> ?] => [^ -> ?, x -> ?] => [!a -> x]",
+      [ ( "[^ -> ?, !a -> ?] => [^ -> ?, x -> ?] => (!a >> x)",
           [BiVoid AtRho, BiVoid (AtMeta "a")],
           [BiVoid AtRho, BiVoid (AtLabel "x")],
           Just [("a", MvAttribute (AtLabel "x"))]
         ),
-        ( "[^ -> ?, !a -> ?] => [!x -> ?, ^ -> ?] => [!a -> x]",
+        ( "[^ -> ?, !a -> ?] => [!x -> ?, ^ -> ?] => (!a >> x)",
           [BiVoid AtRho, BiVoid (AtMeta "a")],
           [BiVoid (AtLabel "x"), BiVoid AtRho],
           Just [("a", MvAttribute (AtLabel "x"))]
         ),
-        ( "[^ -> ?] => [^ -> ?] => []",
+        ( "[^ -> ?] => [^ -> ?] => ()",
           [BiVoid AtRho],
           [BiVoid AtRho],
           Just []
         )
       ]
 
-  describe "matchBindings" $
+  describe "matchBindings: [binding] => [binding] => substitution" $
     test
       matchBindings
-      [ ( "[] -> [] -> []",
+      [ ( "[] => [] => ()",
           [],
           [],
           Just []
         ),
-        ( "[!B] -> T:[x -> ?, D> 01-, L> Func] -> [!B -> T]",
+        ( "[!B] => T:[x -> ?, D> 01-, L> Func] => (!B >> T)",
           [BiMeta "B"],
           [BiVoid (AtLabel "x"), BiDelta "01-", BiLambda "Func"],
           Just [("B", MvBindings [BiVoid (AtLabel "x"), BiDelta "01-", BiLambda "Func"])]
         ),
-        ( "[D> 00-] -> [D> 00-, L> Func] -> X",
+        ( "[D> 00-] => [D> 00-, L> Func] => X",
           [BiDelta "00-"],
           [BiDelta "00-", BiLambda "Func"],
           Nothing
         ),
-        ( "[y -> ?, !a -> ?] -> [x -> ?, y -> ?] -> [!a -> x]",
+        ( "[y -> ?, !a -> ?] => [x -> ?, y -> ?] => (!a >> x)",
           [BiVoid (AtLabel "y"), BiVoid (AtMeta "a")],
           [BiVoid (AtLabel "x"), BiVoid (AtLabel "y")],
           Just [("a", MvAttribute (AtLabel "x"))]
         ),
-        ( "[!B, x -> ?] -> [x -> ?] -> [!B -> []]",
+        ( "[!B, x -> ?] => [x -> ?] => (!B >> [])",
           [BiMeta "B", BiVoid (AtLabel "x")],
           [BiVoid (AtLabel "x")],
           Just [("B", MvBindings [])]
         ),
-        ( "[!B, x -> ?] -> [x -> ?, y -> ?] -> [!B -> [y -> ?]]",
+        ( "[!B, x -> ?] => [x -> ?, y -> ?] => (!B >> [y -> ?])",
           [BiMeta "B", BiVoid (AtLabel "x")],
           [BiVoid (AtLabel "x"), BiVoid (AtLabel "y")],
           Just [("B", MvBindings [BiVoid (AtLabel "y")])]
         ),
-        ( "[!B, !x -> ?] -> [y -> ?, D> -> 00-, L> -> Func] -> [!x -> y, !B -> [D> -> 00-, L> -> Func]]",
+        ( "[!B, !x -> ?] => [y -> ?, D> -> 00-, L> Func] => (!x >> y, !B >> [D> -> 00-, L> Func])",
           [BiMeta "B", BiVoid (AtMeta "x")],
           [BiVoid (AtLabel "y"), BiDelta "00-", BiLambda "Func"],
           Just [("B", MvBindings [BiDelta "00-", BiLambda "Func"]), ("x", MvAttribute (AtLabel "y"))]
         ),
-        ( "[!x -> ?, !y -> ?] -> [a -> ?, b -> ?] -> [!x -> a, !y -> b]",
+        ( "[!x -> ?, !y -> ?] => [a -> ?, b -> ?] => (!x >> a, !y >> b)",
           [BiVoid (AtMeta "x"), BiVoid (AtMeta "y")],
           [BiVoid (AtLabel "a"), BiVoid (AtLabel "b")],
           Just [("x", MvAttribute (AtLabel "a")), ("y", MvAttribute (AtLabel "b"))]
         )
       ]
 
-  describe "matchExpression" $
+  describe "matchExpression: expression => pattern => substitution" $
     test
       matchExpression
-      [ ("$ -> $ -> []", ExThis, ExThis, Just []),
-        ("Q -> Q -> []", ExGlobal, ExGlobal, Just []),
-        ( "!e -> Q -> [!e -> Q]",
+      [ ("$ => $ => ()", ExThis, ExThis, Just []),
+        ("Q => Q => ()", ExGlobal, ExGlobal, Just []),
+        ( "!e => Q => (!e >> Q)",
           ExMeta "e",
           ExGlobal,
           Just [("e", MvExpression ExGlobal)]
         ),
-        ( "!e -> Q.org(x -> $) -> [!e -> Q.org(x -> $)]",
+        ( "!e => Q.org(x -> $) => (!e >> Q.org(x -> $))",
           ExMeta "e",
           ExApplication (ExDispatch ExGlobal (AtLabel "org")) [BiTau (AtLabel "x") ExThis],
           Just [("e", MvExpression (ExApplication (ExDispatch ExGlobal (AtLabel "org")) [BiTau (AtLabel "x") ExThis]))]
         ),
-        ( "!e1.x -> Q.org.x -> [!e1 -> Q.org]",
+        ( "!e1.x => Q.org.x => (!e1 >> Q.org)",
           ExDispatch (ExMeta "e1") (AtLabel "x"),
           ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "x"),
           Just [("e1", MvExpression (ExDispatch ExGlobal (AtLabel "org")))]
         ),
-        ( "!e.org.!a -> $.org.x -> [!e -> $, !a -> x]",
+        ( "!e.org.!a => $.org.x => (!e >> $, !a >> x)",
           ExDispatch (ExDispatch (ExMeta "e") (AtLabel "org")) (AtMeta "a"),
           ExDispatch (ExDispatch ExThis (AtLabel "org")) (AtLabel "x"),
           Just [("e", MvExpression ExThis), ("a", MvAttribute (AtLabel "x"))]
         ),
-        ( "[!a -> !e, !B].!a -> [x -> Q, y -> $].x -> [!a -> x, !e -> Q, !B -> [y -> $]]",
+        ( "[[!a -> !e, !B]].!a => [[x -> Q, y -> $]].x => (!a >> x, !e >> Q, !B >> [y -> $])",
           ExDispatch (ExFormation [BiTau (AtMeta "a") (ExMeta "e"), BiMeta "B"]) (AtMeta "a"),
           ExDispatch
             ( ExFormation
@@ -186,47 +186,47 @@ spec = do
               ("B", MvBindings [BiTau (AtLabel "y") ExThis])
             ]
         ),
-        ( "Q * !t -> Q.org -> [!t -> [.org]]",
+        ( "Q * !t => Q.org => (!t >> [.org])",
           ExMetaTail ExGlobal "t",
           ExDispatch ExGlobal (AtLabel "x"),
           Just [("t", MvTail [TaDispatch (AtLabel "x")])]
         ),
-        ( "Q * !t -> Q.org(x -> []) -> [!t -> [.org, (x -> [])]]",
+        ( "Q * !t => Q.org(x -> [[]]) => (!t >> [.org, (x -> [[]])])",
           ExMetaTail ExGlobal "t",
           ExApplication (ExDispatch ExGlobal (AtLabel "org")) [BiTau (AtLabel "x") (ExFormation [])],
           Just [("t", MvTail [TaDispatch (AtLabel "org"), TaApplication [BiTau (AtLabel "x") (ExFormation [])]])]
         ),
-        ( "Q.!a * !t -> Q.org(x -> []) -> [!a -> org, !t -> [(x -> [])]]",
+        ( "Q.!a * !t => Q.org(x -> [[]]) => (!a >> org, !t >> [(x -> [[]])])",
           ExMetaTail (ExDispatch ExGlobal (AtMeta "a")) "t",
           ExApplication (ExDispatch ExGlobal (AtLabel "org")) [BiTau (AtLabel "x") (ExFormation [])],
           Just [("a", MvAttribute (AtLabel "org")), ("t", MvTail [TaApplication [BiTau (AtLabel "x") (ExFormation [])]])]
         ),
-        ( "Q.x(y -> $ * !t1) * !t2 => Q.x(y -> $.q).p => [!t1 -> [.q], !t2 -> [.p]]",
+        ( "Q.x(y -> $ * !t1) * !t2 => Q.x(y -> $.q).p => (!t1 >> [.q], !t2 >> [.p])",
           ExMetaTail (ExApplication (ExDispatch ExGlobal (AtLabel "x")) [BiTau (AtLabel "y") (ExMetaTail ExThis "t1")]) "t2",
           ExDispatch (ExApplication (ExDispatch ExGlobal (AtLabel "x")) [BiTau (AtLabel "y") (ExDispatch ExThis (AtLabel "q"))]) (AtLabel "p"),
           Just [("t1", MvTail [TaDispatch (AtLabel "q")]), ("t2", MvTail [TaDispatch (AtLabel "p")])]
         )
       ]
 
-  describe "matchBindingsWithFiltering" $
+  describe "matchBindingsWithFiltering: [binding] => [binding] => ([binding], substitution)" $
     test
       matchBindingsWithFiltering
-      [ ( "[^ -> ?] => [^ -> ?] => ([], [])",
+      [ ( "[^ -> ?] => [^ -> ?] => ([], ())",
           [BiVoid AtRho],
           [BiVoid AtRho],
           ([], [])
         ),
-        ( "[x -> ?] => [x -> ?] => ([], [])",
+        ( "[x -> ?] => [x -> ?] => ([], ())",
           [BiVoid (AtLabel "x")],
           [BiVoid (AtLabel "x")],
           ([], [])
         ),
-        ( "[x -> ?] => [x -> ?, ^ -> ?] => ([^ -> ?], [])",
+        ( "[x -> ?] => [x -> ?, ^ -> ?] => ([^ -> ?], ())",
           [BiVoid (AtLabel "x")],
           [BiVoid (AtLabel "x"), BiVoid AtRho],
           ([BiVoid AtRho], [])
         ),
-        ( "[!a -> ?] => [x -> ?] => ([], [!a -> x])",
+        ( "[!a -> ?] => [x -> ?] => ([], (!a -> x))",
           [BiVoid (AtMeta "a")],
           [BiVoid (AtLabel "x")],
           ([], [("a", MvAttribute (AtLabel "x"))])

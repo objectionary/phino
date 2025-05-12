@@ -167,9 +167,9 @@ exHead :: Parser Expression
 exHead =
   choice
     [ do
-        _ <- symbol "["
+        _ <- symbol "[["
         bs <- binding `sepBy` symbol ","
-        _ <- symbol "]"
+        _ <- symbol "]]"
         return (ExFormation bs),
       do
         _ <- symbol "$"

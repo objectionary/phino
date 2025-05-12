@@ -18,7 +18,7 @@ test function useCases =
 
 spec :: Spec
 spec = do
-  describe "replaceProgram" $ do
+  describe "replaceProgram: program => ([expression], [expression]) => program" $ do
     test
       replaceProgram
       [ ( "Q -> Q.y.x() => ([Q.y], [$]) => Q -> $.x()",
@@ -27,7 +27,7 @@ spec = do
           [ExThis],
           Just (Program (ExApplication (ExDispatch ExThis (AtLabel "x")) []))
         ),
-        ( "Q -> [x -> [y -> $], z -> [w -> $]] => ([[y -> $], [w -> $]], [Q.y, Q.w]) => Q -> [x -> Q.y, z -> Q.w]",
+        ( "Q -> [[x -> [[y -> $]], z -> [[w -> $]] ]] => ([[y -> $], [w -> $]], [Q.y, Q.w]) => Q -> [[x -> Q.y, z -> Q.w]]",
           Program
             ( ExFormation
                 [ BiTau (AtLabel "x") (ExFormation [BiTau (AtLabel "y") ExThis]),
@@ -45,5 +45,5 @@ spec = do
                 )
             )
         ),
-        ("Q -> [] => ([], [$]) => X", Program $ ExFormation [], [], [ExThis], Nothing)
+        ("Q -> [[]] => ([], [$]) => X", Program $ ExFormation [], [], [ExThis], Nothing)
       ]

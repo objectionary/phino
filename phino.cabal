@@ -19,6 +19,7 @@ library
     Matcher,
     Builder,
     Replacer,
+    Printer,
     Misc
   hs-source-dirs: src
   build-depends:
@@ -48,7 +49,7 @@ test-suite spec
     ParserSpec,
     MatcherSpec,
     BuilderSpec,
-    ReplacerSpec
+    ReplacerSpec,
   default-extensions:
     ImportQualifiedPost
   ghc-options: -Wall
