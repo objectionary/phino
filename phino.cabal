@@ -18,7 +18,7 @@ library
     Parser,
     Matcher,
     Builder,
-    Rewriter,
+    Replacer,
     Misc
   hs-source-dirs: src
   build-depends:
@@ -48,7 +48,7 @@ test-suite spec
     ParserSpec,
     MatcherSpec,
     BuilderSpec,
-    RewriterSpec
+    ReplacerSpec
   default-extensions:
     ImportQualifiedPost
   ghc-options: -Wall
