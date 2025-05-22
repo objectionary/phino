@@ -20,6 +20,8 @@ library
     Builder,
     Replacer,
     Printer,
+    Rewriter,
+    Yaml,
     Misc
   hs-source-dirs: src
   build-depends:
@@ -27,6 +29,9 @@ library
     containers,
     megaparsec >= 9.0,
     text,
+    aeson,
+    yaml,
+    directory,
     prettyprinter
   default-language: Haskell2010
 
@@ -35,9 +40,13 @@ executable phino
   import:           warnings
   main-is:          Main.hs
   hs-source-dirs:   app
+  other-modules: 
+    Paths_phino
   build-depends:
+    phino,
     base,
-    phino
+    containers,
+    optparse-applicative
   default-language: Haskell2010
 
 -- Test suite for Matcher
@@ -56,6 +65,7 @@ test-suite spec
     ImportQualifiedPost
   ghc-options: -Wall
   build-depends:
+    optparse-applicative,
     base,
     megaparsec,
     phino,

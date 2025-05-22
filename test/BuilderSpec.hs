@@ -61,4 +61,10 @@ spec = do
           [ substSingle "e" (MvExpression (ExDispatch ExGlobal (AtLabel "x"))),
             substSingle "e" (MvExpression (ExDispatch ExThis (AtLabel "y")))
           ]
-        `shouldBe` [Just (ExDispatch ExGlobal (AtLabel "x")), Just (ExDispatch ExThis (AtLabel "y"))]
+        `shouldBe` Just [ExDispatch ExGlobal (AtLabel "x"), ExDispatch ExThis (AtLabel "y")]
+    it "!e => [(!e1 >> Q.x)] => X" $
+      do
+        buildExpressions
+          (ExMeta "e")
+          [ substSingle "e1" (MvExpression (ExDispatch ExGlobal (AtLabel "x")))]
+        `shouldBe` Nothing

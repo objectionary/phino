@@ -7,7 +7,8 @@ path = [
     "README.md",
     ".gitignore",
     "**.json",
-    "phino.cabal"
+    "phino.cabal",
+    "**.lock"
 ]
 precedence = "override"
 SPDX-FileCopyrightText = "Copyright (c) 2025 Objectionary.com"

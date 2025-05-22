@@ -1,11 +1,14 @@
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE InstanceSigs #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Printer (printExpression, printProgram) where
+module Printer (printExpression, printProgram, printSubstitutions) where
 
 import Ast
+import qualified Data.Map.Strict as Map
+import Matcher
 import Prettyprinter
 import Prettyprinter.Render.String (renderString)
 
@@ -46,8 +49,40 @@ instance Pretty Expression where
 instance Pretty Program where
   pretty (Program expr) = pretty "Q ->" <+> pretty expr
 
-prettyPrint :: Pretty a => a -> String
+instance Pretty Tail where
+  pretty (TaApplication []) = pretty "()"
+  pretty (TaApplication taus) = vsep [lparen, indent 2 (pretty taus), rparen]
+  pretty (TaDispatch attr) = pretty "." <> pretty attr
+
+instance Pretty MetaValue where
+  pretty (MvAttribute attr) = pretty attr
+  pretty (MvBytes bytes) = pretty bytes
+  pretty (MvBindings bindings) = pretty bindings
+  pretty (MvFunction func) = pretty func
+  pretty (MvExpression expr) = pretty expr
+  pretty (MvTail tails) = vsep (punctuate comma (map pretty tails))
+
+instance Pretty Subst where
+  pretty (Subst mp) = 
+    vsep
+      ( punctuate
+          comma
+          ( map
+              (\(key, value) -> prettyMeta key <+> pretty ">>" <+> pretty value)
+              (Map.toList mp)
+          )
+      )
+
+instance {-# OVERLAPPING #-} Pretty [Subst] where
+  pretty :: [Subst] -> Doc ann
+  pretty [] = pretty "[]"
+  pretty substs = vsep [pretty "[", indent 2 (vsep (punctuate comma (map pretty substs))), pretty "]"]
+
+prettyPrint :: (Pretty a) => a -> String
 prettyPrint printable = renderString (layoutPretty defaultLayoutOptions (pretty printable))
+
+printSubstitutions :: [Subst] -> String
+printSubstitutions = prettyPrint
 
 printExpression :: Expression -> String
 printExpression = prettyPrint

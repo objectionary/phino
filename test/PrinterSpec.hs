@@ -8,6 +8,7 @@ import Control.Monad (forM_)
 import Prettyprinter
 import Printer
 import Test.Hspec (Example (Arg), Expectation, Spec, SpecWith, describe, it, shouldBe)
+import Matcher (substEmpty, substSingle, MetaValue (MvExpression, MvAttribute))
 
 test :: (Pretty a) => (a -> String) -> [(String, a)] -> SpecWith (Arg Expectation)
 test function useCases =
@@ -16,7 +17,7 @@ test function useCases =
 
 spec :: Spec
 spec = do
-  describe "printProgram" $ do
+  describe "printProgram" $
     test
       printProgram
       [ ("Q -> $", Program ExThis),
@@ -31,4 +32,11 @@ spec = do
                 [ BiDelta "00-", BiLambda "F", BiVoid AtRho, BiMeta "B", BiTau AtPhi (ExFormation [BiVoid (AtLabel "y")])]
             )
         )
+      ]
+  describe "printSubstitution" $
+    test
+      printSubstitutions
+      [ ("[\n  \n]", [substEmpty]),
+        ("[\n  !e >> Q.x\n]", [substSingle "e" (MvExpression (ExDispatch ExGlobal (AtLabel "x")))]),
+        ("[\n  !a >> x\n]", [substSingle "a" (MvAttribute (AtLabel "x"))])
       ]

@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+title: "Normalization Rule Set"
+rules:
+  - name: DUP
+    pattern: |
+      Q.y
+    result: |
+      Q.a.b
