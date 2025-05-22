@@ -5,6 +5,6 @@ title: "Normalization Rule Set"
 rules:
   - name: DUP
     pattern: |
-      Q.y
+      Q.x
     result: |
-      Q.a.b
+      Q.r

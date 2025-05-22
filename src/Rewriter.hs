@@ -32,25 +32,25 @@ data CLI'Exception
 
 instance Show CLI'Exception where
   show :: CLI'Exception -> String
-  show InvalidArguments = "Invalid set of arguments: no --rule and no --normalize are provided"
+  show InvalidArguments = "Invalid set of arguments: no --rules and no --normalize are provided"
   show CouldNotMatch {..} =
     printf
-      "Couldn't find given pattern in provided program\nPattern: %s\nProgram: %s"
+      "Couldn't find given pattern in provided program\n--Pattern: %s\n--Program: %s"
       (printExpression pattern)
       (printProgram program)
   show CouldNotBuild {..} = 
     printf
-      "Couldn't build given expression with provided substitutions\nExpression: %s\nSubstitutions: %s"
+      "Couldn't build given expression with provided substitutions\n--Expression: %s\n--Substitutions: %s"
       (printExpression expr)
       (printSubstitutions substs)
   show CouldNotReplace {..} = 
     printf 
-      "Couldn't replace expression in program by pattern\nProgram: %s\nPattern: %s\nResult: %s"
+      "Couldn't replace expression in program by pattern\nProgram: %s\n--Pattern: %s\n--Result: %s"
       (printProgram prog)
       (printExpression ptn)
       (printExpression res)
   show CouldNotParse {..} = printf "Couldn't parse given phi expression, cause: %s" message
-  show FileDoesNotExist {..} = printf "File %s does not exist" file
+  show FileDoesNotExist {..} = printf "File '%s' does not exist" file
 
 applyRules :: Program -> [Y.Rule] -> IO Program
 applyRules program [] = pure program
