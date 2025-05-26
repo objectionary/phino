@@ -9,6 +9,14 @@ rules:
         !a1 -> !e1.java_util_Stream$map(~0 -> !e2) * !t1,
         !B1
       ]]
+    where:
+      e23: math.multiply(!e1, !e2)
+      e24: str.concat(!e4, !e66) -> bytes
+    when:
+      - and:
+        - or:
+            - contains(!B, phi) -> bytes
+            - normal(!e)
     result: |
       [[
         some -> !e1,
@@ -19,3 +27,4 @@ rules:
         !a1 -> $.body * !t1,
         !B1
       ]]
+

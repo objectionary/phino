@@ -71,8 +71,8 @@ buildExpression (ExDispatch expr attr) subst = do
   return (ExDispatch dispatched attr)
 buildExpression (ExApplication expr taus) subst = do
   applied <- buildExpression expr subst
-  [tau] <- mapM (`buildBinding` subst) taus -- mapM (\tau -> buildBinding tau subst) mapM
-  Just (ExApplication applied tau)
+  bindings <- buildBindings taus subst
+  Just (ExApplication applied bindings)
 buildExpression (ExFormation bds) subst = do
   bindings <- buildBindings bds subst
   Just (ExFormation bindings)

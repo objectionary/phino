@@ -50,6 +50,16 @@ spec = do
           ExDispatch ExGlobal (AtMeta "a"),
           [],
           Nothing
+        ),
+        ( "!e0(!a1 -> !e1, !a2 => !e2) => (!e0 >> [[]], !a1 >> x, !e1 >> Q, !a2 >> y, !e2 >> $) => [[]](x -> Q, y -> $)",
+          ExApplication (ExMeta "e0") [BiTau (AtMeta "a1") (ExMeta "e1"), BiTau (AtMeta "a2") (ExMeta "e2")],
+          [ ("e0", MvExpression (ExFormation [])),
+            ("a1", MvAttribute (AtLabel "x")),
+            ("e1", MvExpression ExGlobal),
+            ("a2", MvAttribute (AtLabel "y")),
+            ("e2", MvExpression ExThis)
+          ],
+          Just (ExApplication (ExFormation []) [BiTau (AtLabel "x") ExGlobal, BiTau (AtLabel "y") ExThis])
         )
       ]
 
