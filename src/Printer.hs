@@ -11,6 +11,7 @@ import qualified Data.Map.Strict as Map
 import Matcher
 import Prettyprinter
 import Prettyprinter.Render.String (renderString)
+import Text.Printf (vFmt)
 
 prettyMeta :: String -> Doc ann
 prettyMeta meta = pretty "!" <> pretty meta
@@ -63,15 +64,22 @@ instance Pretty MetaValue where
   pretty (MvTail tails) = vsep (punctuate comma (map pretty tails))
 
 instance Pretty Subst where
-  pretty (Subst mp) = 
+  pretty (Subst mp) =
     vsep
-      ( punctuate
-          comma
-          ( map
-              (\(key, value) -> prettyMeta key <+> pretty ">>" <+> pretty value)
-              (Map.toList mp)
-          )
-      )
+      [ lparen,
+        indent
+          2
+          ( vsep
+              ( punctuate
+                  comma
+                  ( map
+                      (\(key, value) -> prettyMeta key <+> pretty ">>" <+> pretty value)
+                      (Map.toList mp)
+                  )
+              )
+          ),
+        rparen
+      ]
 
 instance {-# OVERLAPPING #-} Pretty [Subst] where
   pretty :: [Subst] -> Doc ann

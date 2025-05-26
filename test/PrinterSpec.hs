@@ -36,7 +36,7 @@ spec = do
   describe "printSubstitution" $
     test
       printSubstitutions
-      [ ("[\n  \n]", [substEmpty]),
-        ("[\n  !e >> Q.x\n]", [substSingle "e" (MvExpression (ExDispatch ExGlobal (AtLabel "x")))]),
-        ("[\n  !a >> x\n]", [substSingle "a" (MvAttribute (AtLabel "x"))])
+      [ ("[\n  (\n    \n  )\n]", [substEmpty]),
+        ("[\n  (\n    !e >> Q.x\n  )\n]", [substSingle "e" (MvExpression (ExDispatch ExGlobal (AtLabel "x")))]),
+        ("[\n  (\n    !a >> x\n  )\n]", [substSingle "a" (MvAttribute (AtLabel "x"))])
       ]

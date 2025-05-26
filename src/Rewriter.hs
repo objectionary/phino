@@ -13,11 +13,10 @@ import Ast
 import Builder (buildExpressions)
 import Control.Exception
 import Matcher (matchProgram, Subst)
-import Parser (parseProgram)
+import Parser (parseProgram, parseProgramThrows)
 import Printer (printProgram, printExpression, printSubstitutions)
 import Replacer (replaceProgram)
 import System.Directory
-import Text.Megaparsec (errorBundlePretty)
 import Text.Printf
 import qualified Yaml as Y
 
@@ -27,7 +26,6 @@ data CLI'Exception
   | CouldNotBuild {expr :: Expression, substs :: [Subst]}
   | CouldNotReplace {prog :: Program, ptn :: Expression, res :: Expression}
   | FileDoesNotExist {file :: FilePath}
-  | CouldNotParse {message :: String}
   deriving anyclass (Exception)
 
 instance Show CLI'Exception where
@@ -49,7 +47,6 @@ instance Show CLI'Exception where
       (printProgram prog)
       (printExpression ptn)
       (printExpression res)
-  show CouldNotParse {..} = printf "Couldn't parse given phi expression, cause: %s" message
   show FileDoesNotExist {..} = printf "File '%s' does not exist" file
 
 applyRules :: Program -> [Y.Rule] -> IO Program
@@ -78,9 +75,7 @@ rewrite :: Maybe FilePath -> Bool -> FilePath -> IO String
 rewrite rules normalize input = do
   input' <- ensuredFile input
   content <- readFile input'
-  program <- case parseProgram content of
-    Left err -> throwIO (CouldNotParse (errorBundlePretty err))
-    Right prog -> pure prog
+  program <- parseProgramThrows content
   rules' <- case rules of
     Nothing ->
       if normalize

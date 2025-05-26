@@ -12,7 +12,7 @@
 *.hp
 *.log
 *.o
-*.phi
+*.phi 
 *.prof
 .DS_Store
 .HTF/

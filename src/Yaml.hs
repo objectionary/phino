@@ -13,14 +13,13 @@ import Data.Text (unpack)
 import qualified Data.Yaml as Yaml
 import GHC.Generics
 import Parser
-import Text.Megaparsec (errorBundlePretty)
 
 instance FromJSON Expression where
   parseJSON =
     withText
       "Expression"
       ( \txt -> case parseExpression (unpack txt) of
-          Left err -> fail (errorBundlePretty err)
+          Left err -> fail err
           Right expr -> pure expr
       )
 

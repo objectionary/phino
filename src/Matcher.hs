@@ -85,6 +85,7 @@ matchBinding (BiTau pattr pexp) (BiTau tattr texp) = do
   mattr <- matchAttribute pattr tattr
   mexp <- matchExpression pexp texp
   combine mattr mexp
+matchBinding _ _ = Nothing
 
 -- Returns a tuple (X, Y) if given binding B is matched to any of bindings L
 -- X is an index of matched B in L

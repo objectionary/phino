@@ -1,10 +1,14 @@
+{-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE RecordWildCards #-}
+
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
 -- The goal of the module is to parse given phi program to Ast
-module Parser (parseProgram, parseExpression) where
+module Parser (parseProgram, parseProgramThrows, parseExpression, parseExpressionThrows) where
 
 import Ast
+import Control.Exception (Exception, throwIO)
 import Control.Monad (guard)
 import Data.Char (isDigit, isLower)
 import Data.Text.Internal.Fusion.Size (lowerBound)
@@ -12,8 +16,18 @@ import Data.Void
 import Text.Megaparsec
 import Text.Megaparsec.Char (alphaNumChar, char, digitChar, hexDigitChar, letterChar, lowerChar, space1, string, upperChar)
 import qualified Text.Megaparsec.Char.Lexer as L
+import Text.Printf (printf)
 
 type Parser = Parsec Void String
+
+data ParserException
+  = CouldNotParseProgram {message :: String}
+  | CouldNotParseExpression {message :: String}
+  deriving (Exception)
+
+instance Show ParserException where
+  show CouldNotParseProgram{..} = printf "Couldn't parse given phi program, cause: %s" message
+  show CouldNotParseExpression{..} = printf "Couldn't parse given phi program, cause: %s" message
 
 -- White space consumer
 whiteSpace :: Parser ()
@@ -30,7 +44,7 @@ symbol = L.symbol whiteSpace
 label' :: Parser String
 label' = lexeme $ do
   first <- lowerChar
-  rest <- many (satisfy (`notElem` " \r\n\t,.-|':;!?][}{)(⟧⟦") <?> "allowed character")
+  rest <- many (satisfy (`notElem` " \r\n\t,.|':;!?][}{)(⟧⟦") <?> "allowed character")
   return (first : rest)
 
 function :: Parser String
@@ -234,19 +248,34 @@ program = do
   Program <$> expression
 
 -- Entry point
-parse' :: String -> Parser a -> String -> Either (ParseErrorBundle String Void) a
-parse' name parser =
-  runParser
-    ( do
-        _ <- whiteSpace
-        p <- parser
-        _ <- eof
-        return p
-    )
-    name
+parse' :: String -> Parser a -> String -> Either String a
+parse' name parser input = do
+  let parsed =
+        runParser
+          ( do
+              _ <- whiteSpace
+              p <- parser
+              _ <- eof
+              return p
+          )
+          name
+          input
+  case parsed of
+    Right parsed' -> Right parsed'
+    Left err -> Left (errorBundlePretty err)
 
-parseExpression :: String -> Either (ParseErrorBundle String Void) Expression
+parseExpression :: String -> Either String Expression
 parseExpression = parse' "expression" expression
 
-parseProgram :: String -> Either (ParseErrorBundle String Void) Program
+parseExpressionThrows :: String -> IO Expression
+parseExpressionThrows expression = case parseExpression expression of
+  Right expr -> pure expr
+  Left err -> throwIO (CouldNotParseExpression err)
+
+parseProgram :: String -> Either String Program
 parseProgram = parse' "program" program
+
+parseProgramThrows :: String -> IO Program
+parseProgramThrows program = case parseProgram program of
+  Right prog -> pure prog
+  Left err -> throwIO (CouldNotParseProgram err)

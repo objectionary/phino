@@ -8,14 +8,12 @@ module ParserSpec where
 import Ast
 import Control.Monad (forM_)
 import Data.Either (isLeft)
-import Data.Void
 import Parser
 import Test.Hspec (Example (Arg), Expectation, Spec, SpecWith, describe, it, shouldBe, shouldSatisfy)
-import Text.Megaparsec (ParseErrorBundle)
 
 test ::
   (Eq a, Show a) =>
-  (String -> Either (ParseErrorBundle String Void) a) ->
+  (String -> Either String a) ->
   [(String, Maybe a)] ->
   SpecWith (Arg Expectation)
 test function useCases =

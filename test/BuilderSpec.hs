@@ -66,5 +66,5 @@ spec = do
       do
         buildExpressions
           (ExMeta "e")
-          [ substSingle "e1" (MvExpression (ExDispatch ExGlobal (AtLabel "x")))]
+          [substSingle "e1" (MvExpression (ExDispatch ExGlobal (AtLabel "x")))]
         `shouldBe` Nothing
