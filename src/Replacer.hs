@@ -39,8 +39,6 @@ replaceExpression expr ptns repls = do
         (ExFormation bds', ptns', repls')
       _ -> (expr, ptns, repls)
 
--- >>> replaceProgram (Program (ExDispatch ExThis (AtLabel "x"))) [ExThis] [ExGlobal]
--- Just (Program (ExDispatch ExGlobal (AtLabel "x")))
 replaceProgram :: Program -> [Expression] -> [Expression] -> Maybe Program
 replaceProgram (Program expr) ptns repls
   | length ptns == length repls = do

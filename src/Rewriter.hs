@@ -1,8 +1,7 @@
-{-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
-{-# LANGUAGE InstanceSigs #-}
+{-# LANGUAGE DeriveAnyClass #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
@@ -20,16 +19,15 @@ import System.Directory
 import Text.Printf
 import qualified Yaml as Y
 
-data CLI'Exception
+data RewriteException
   = InvalidArguments
   | CouldNotMatch {pattern :: Expression, program :: Program}
   | CouldNotBuild {expr :: Expression, substs :: [Subst]}
   | CouldNotReplace {prog :: Program, ptn :: Expression, res :: Expression}
   | FileDoesNotExist {file :: FilePath}
-  deriving anyclass (Exception)
+  deriving (Exception)
 
-instance Show CLI'Exception where
-  show :: CLI'Exception -> String
+instance Show RewriteException where
   show InvalidArguments = "Invalid set of arguments: no --rules and no --normalize are provided"
   show CouldNotMatch {..} =
     printf
