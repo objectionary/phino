@@ -135,14 +135,6 @@ matchNonMetaExactBindings [] [] = Just substEmpty
 matchNonMetaExactBindings pbs tbs
   | length tbs /= length pbs = Nothing
   | otherwise = case partition isBindingWithMetaAttr pbs of
-      -- todo: for one pattern binding there may be more than one matches
-      -- it's necessary to resolve it somehow
-      -- current approach by finding first any match is not correct
-      -- Example:
-      -- pattern: [!x -> !e1, !a -> [!B]]
-      -- target:  [z -> [a -> $], x -> Q]
-      -- !x -> !e1 matches to both z -> [a -> $] and x -> Q, this z -> [a -> $] will found first
-      -- but !a -> [!B] matches only to z -> [a -> $] which means !x -> !e1 should match to x -> Q
       (with, []) -> case matchBindingsWithFiltering with tbs of
         ([], Just subst) -> Just subst
         (_, _) -> Nothing
@@ -160,14 +152,6 @@ matchNonMetaBindingsWithFiltering pbs [] = ([], Nothing)
 matchNonMetaBindingsWithFiltering pbs tbs
   | length pbs > length tbs = ([], Nothing)
   | otherwise = case partition isBindingWithMetaAttr pbs of
-      -- todo: for one pattern binding there may be more than one matches
-      -- it's necessary to resolve it somehow
-      -- current approach by finding first any match is not correct
-      -- Example:
-      -- pattern: [!x -> !e1, !a -> [!B]]
-      -- target:  [z -> [a -> $], x -> Q]
-      -- !x -> !e1 matches to both z -> [a -> $] and x -> Q, this z -> [a -> $] will found first
-      -- but !a -> [!B] matches only to z -> [a -> $] which means !x -> !e1 should match to x -> Q
       (with, []) -> case matchBindingsWithFiltering with tbs of
         (rest, Just subst) -> (rest, Just subst)
         (_, Nothing) -> ([], Nothing)

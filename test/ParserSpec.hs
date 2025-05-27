@@ -76,7 +76,7 @@ spec = do
             "Q.x(x -> ?)",
             "Q.x(L> Func)",
             "Q.x(D> --)",
-            "Q.x(!B)", -- todo should be possible
+            "Q.x(!B)",
             "Q.x(~1 -> ?)",
             "Q.x(L> !F)",
             "Q.x(D> !b)"

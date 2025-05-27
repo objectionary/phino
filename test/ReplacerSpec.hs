@@ -52,10 +52,4 @@ spec = do
           [ExGlobal],
           Just (Program ExGlobal)
         )
-        -- ( "Q -> [[L> Func, D> 00-]] => ([ [[D> 00-, L> Func]] ], [Q]) => Q -> Q",
-        --   Program (ExFormation [BiLambda "Func", BiDelta "00-"]),
-        --   [ExFormation [BiDelta "00-", BiLambda "Func"]],
-        --   [ExGlobal],
-        --   Just (Program ExGlobal)
-        -- )
       ]
