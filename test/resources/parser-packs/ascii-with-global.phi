@@ -1,0 +1,16 @@
+Q -> [[
+  number -> [[
+    a -> ?,
+    b -> Q.org.^.@,
+    c -> $.xyz(
+      q -> Q.y,
+      ~0 -> $.a.b
+    ),
+    z -> [[
+      L> Func,
+      D> 00-,
+      def -> QQ.txt.sprintf
+    ]],
+    error -> T
+  ]]
+]]
