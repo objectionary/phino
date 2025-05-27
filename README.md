@@ -69,7 +69,7 @@ cabal build all
 cabal test
 ```
 
-You will need [GHC] and [Cabal ≥3.0][Cabal] installed.
+You will need [GHC] and [Cabal ≥3.0][Cabal] or [Stack ≥ 3.0][stack] installed.
 
 [Cabal]: https://www.haskell.org/cabal/
 [stack]: https://docs.haskellstack.org/en/stable/install_and_upgrade/
