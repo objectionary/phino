@@ -3,7 +3,7 @@ cabal-version:      3.0
 name:               phino
 version:            0.0.0.0
 license:            MIT
-license-file:       LICENSE.txt
+license-file:       LICENSES/MIT.txt
 author:             maxonfjvipon
 maintainer:         mtrunnikov@gmail.com
 build-type:         Simple
