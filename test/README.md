@@ -3,15 +3,15 @@
 To run all the tests you can do:
 
 ```bash
-$ cabal test
+cabal test
 # OR
-$ stack test
+stack test
 ```
 
 To run a specific test you can do:
 
 ```bash
-$ cabal v2-run spec -- --match "parse packs"
+cabal v2-run spec -- --match "parse packs"
 ```
 
 Here "parse packs" is the part of description of the test which may go:
