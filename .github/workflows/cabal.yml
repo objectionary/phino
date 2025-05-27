@@ -1,61 +1,36 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 # SPDX-License-Identifier: MIT
 ---
-# yamllint disable rule:line-length
 name: cabal
 'on':
   push:
-    branches:
+    branches: 
       - master
   pull_request:
-    branches:
+    branches: 
       - master
-env:
-  GHC_VERSION: 9.6.7
-  CABAL_VERSION: 3.12.1.0
 jobs:
   build:
     strategy:
       matrix:
-        os: [ubuntu-24.04, windows-2022, macos-15]
+        os: [macos-15]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
-      - name: Cache GHC (GHCup)
-        uses: actions/cache@v4
-        with:
-          path: |
-            ${{ runner.os == 'Windows' && 'C:\\ghcup' || '~/.ghcup' }}
-          key: ${{ runner.os }}-ghcup-${{ env.GHC_VERSION }}
-          restore-keys: |
-            ${{ runner.os }}-ghcup-
-      - name: Cache Cabal artifacts
-        uses: actions/cache@v4
-        with:
-          path: |
-            ${{ runner.os == 'Windows' && 'C:\\cabal\\packages' || '~/.cabal/packages' }}
-            ${{ runner.os == 'Windows' && 'C:\\cabal\\store' || '~/.cabal/store' }}
-            ${{ runner.os == 'Windows' && 'C:\\ghc' || '~/.ghc' }}
-            dist-newstyle
-          key: ${{ runner.os }}-cabal-${{ hashFiles('**/*.cabal') }}-${{ hashFiles('cabal.project', 'cabal.project.freeze') }}
-          restore-keys: |
-            ${{ runner.os }}-cabal-
-      - name: Set up Haskell
-        uses: haskell-actions/setup@v2.8.0
-        with:
-          ghc-version: ${{ env.GHC_VERSION }}
-          cabal-version: ${{ env.CABAL_VERSION }}
       - uses: actions/cache@v4
         with:
           path: |
-            ~/.ghcup
-            ~/.cabal/packages
             ~/.cabal/store
             ~/.ghc
             dist-newstyle
-          key: ${{ runner.os }}-cabal-${{ hashFiles('**/*.cabal') }}-${{ hashFiles('cabal.project', 'cabal.project.freeze') }}
+          key: ${{ runner.os }}-cabal-${{ hashFiles('**/*.cabal') }}-${{ hashFiles('cabal.project') }}
           restore-keys: |
             ${{ runner.os }}-cabal-
+      - name: Set up GHC
+        uses: haskell-actions/setup@v2.8.0
+        with:
+          ghc-version: '9.6.7'
+          cabal-version: '3.12.1.0'
       - name: Update package list
         run: cabal update
       - name: Build project
