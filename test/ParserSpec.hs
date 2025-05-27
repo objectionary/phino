@@ -11,8 +11,8 @@ import Control.Monad (forM_)
 import Data.Either (isLeft, isRight)
 import Misc (allPathsIn)
 import Parser
-import Test.Hspec (Example (Arg), Expectation, Spec, SpecWith, describe, it, shouldBe, shouldSatisfy, runIO)
 import System.FilePath (takeBaseName)
+import Test.Hspec (Example (Arg), Expectation, Spec, SpecWith, describe, it, runIO, shouldBe, shouldSatisfy)
 
 test ::
   (Eq a, Show a) =>
@@ -33,7 +33,7 @@ spec = do
       [ ("Q -> [[]]", Just (Program (ExFormation []))),
         ("Q -> T(x -> Q)", Just (Program (ExApplication ExTermination [BiTau (AtLabel "x") ExGlobal]))),
         ("Q -> Q.org.eolang", Just (Program (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang")))),
-        ("Q -> [[x -> $, ~1 -> ?]]", Just (Program (ExFormation [BiTau (AtLabel "x") ExThis, BiVoid (AtAlpha 1)])))
+        ("Q -> [[x -> $, y -> ?]]", Just (Program (ExFormation [BiTau (AtLabel "x") ExThis, BiVoid (AtLabel "y")])))
       ]
 
   describe "parse expression" $
@@ -65,8 +65,32 @@ spec = do
         ("[[D> 1F-2A-00]]", Just (ExFormation [BiDelta "1F-2A-00"])),
         ("[[D> !b0]]", Just (ExFormation [BiMetaDelta "b0"])),
         ("[[L> Function]]", Just (ExFormation [BiLambda "Function"])),
-        ("[[L> !F3]]", Just (ExFormation [BiMetaLambda "F3"]))
+        ("[[L> !F3]]", Just (ExFormation [BiMetaLambda "F3"])),
+        ("[[x() -> [[]] ]]", Just (ExFormation [BiTau (AtLabel "x") (ExFormation [])])),
+        ( "[[y(^,@,z) -> [[q -> Q.a]] ]]",
+          Just
+            ( ExFormation
+                [ BiTau
+                    (AtLabel "y")
+                    ( ExFormation
+                        [ BiVoid AtRho,
+                          BiVoid AtPhi,
+                          BiVoid (AtLabel "z"),
+                          BiTau (AtLabel "q") (ExDispatch ExGlobal (AtLabel "a"))
+                        ]
+                    )
+                ]
+            )
+        )
       ]
+
+  describe "just parses" $
+    forM_
+      [ "[[x -> $, y -> ?]]",
+        "[[x() -> [[]] ]]",
+        "[[x(^, @, y) -> [[q -> QQ]] ]]"
+      ]
+      (\expr -> it expr (parseExpression expr `shouldSatisfy` isRight))
 
   describe "prohibits" $
     test
@@ -84,7 +108,10 @@ spec = do
             "Q.x(~1 -> ?)",
             "Q.x(L> !F)",
             "Q.x(D> !b)",
-            "[[~0 -> Q.x]]"
+            "[[~0 -> Q.x]]",
+            "[[x(~1) -> [[]] ]]",
+            "[[y(!e) -> [[]] ]]",
+            "[[z(w) -> Q.x]]"
           ]
       )
 

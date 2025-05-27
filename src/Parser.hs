@@ -122,8 +122,19 @@ binding =
   choice
     [ try $ do
         attr <- attribute
-        _ <- arrow
-        BiTau attr <$> expression,
+        choice
+          [ try $ do
+              _ <- arrow
+              BiTau attr <$> expression,
+            do
+              _ <- symbol "("
+              voids <- void' `sepBy` symbol ","
+              _ <- symbol ")"
+              _ <- arrow
+              ExFormation bs <- formation
+              let voids' = map BiVoid voids ++ bs
+              pure (BiTau attr (ExFormation voids'))
+          ],
       try $ do
         attr <- attribute
         _ <- arrow
@@ -139,11 +150,28 @@ binding =
       try $ do
         _ <- lambda
         BiLambda <$> function,
-      try $ do
+      do
         _ <- lambda
         BiMetaLambda <$> meta 'F'
     ]
     <?> "binding"
+
+-- inlined void attribute
+-- 1. label
+-- 2. rho
+-- 3. phi
+void' :: Parser Attribute
+void' =
+  choice
+    [
+      AtLabel <$> label',
+      do
+        _ <- symbol "^"
+        return AtRho,
+      do
+        _ <- symbol "@"
+        return AtPhi
+    ]
 
 -- attribute
 -- 1. label
@@ -153,14 +181,8 @@ binding =
 attribute :: Parser Attribute
 attribute =
   choice
-    [ AtLabel <$> label',
-      AtMeta <$> meta 'a',
-      do
-        _ <- symbol "^"
-        return AtRho,
-      do
-        _ <- symbol "@"
-        return AtPhi
+    [ void',
+      AtMeta <$> meta 'a'
     ]
     <?> "attribute"
 
@@ -180,6 +202,14 @@ fullAttribute =
     ]
     <?> "full attribute"
 
+-- formation
+formation :: Parser Expression
+formation = do
+  _ <- symbol "[["
+  bs <- binding `sepBy` symbol ","
+  _ <- symbol "]]"
+  return (ExFormation bs)
+
 -- head part of expression
 -- 1. formation
 -- 2. this
@@ -189,11 +219,7 @@ fullAttribute =
 exHead :: Parser Expression
 exHead =
   choice
-    [ do
-        _ <- symbol "[["
-        bs <- binding `sepBy` symbol ","
-        _ <- symbol "]]"
-        return (ExFormation bs),
+    [ formation,
       do
         _ <- symbol "$"
         return ExThis,
