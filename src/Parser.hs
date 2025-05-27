@@ -109,6 +109,23 @@ bytes = lexeme $ do
     ]
     <?> "bytes"
 
+tauBinding :: Parser Attribute -> Parser Binding
+tauBinding attr = do
+  attr' <- attr
+  choice
+    [ try $ do
+        _ <- arrow
+        BiTau attr' <$> expression,
+      do
+        _ <- symbol "("
+        voids <- void' `sepBy` symbol ","
+        _ <- symbol ")"
+        _ <- arrow
+        ExFormation bs <- formation
+        let voids' = map BiVoid voids ++ bs
+        pure (BiTau attr' (ExFormation voids'))
+    ]
+
 -- binding
 -- 1. tau
 -- 2. void
@@ -120,21 +137,7 @@ bytes = lexeme $ do
 binding :: Parser Binding
 binding =
   choice
-    [ try $ do
-        attr <- attribute
-        choice
-          [ try $ do
-              _ <- arrow
-              BiTau attr <$> expression,
-            do
-              _ <- symbol "("
-              voids <- void' `sepBy` symbol ","
-              _ <- symbol ")"
-              _ <- arrow
-              ExFormation bs <- formation
-              let voids' = map BiVoid voids ++ bs
-              pure (BiTau attr (ExFormation voids'))
-          ],
+    [ try (tauBinding attribute),
       try $ do
         attr <- attribute
         _ <- arrow
@@ -163,8 +166,7 @@ binding =
 void' :: Parser Attribute
 void' =
   choice
-    [
-      AtLabel <$> label',
+    [ AtLabel <$> label',
       do
         _ <- symbol "^"
         return AtRho,
@@ -257,14 +259,7 @@ exTail expr =
                       _ -> True
                   )
                 _ <- symbol "("
-                bds <-
-                  sepBy1
-                    ( do
-                        attr <- fullAttribute
-                        _ <- arrow
-                        BiTau attr <$> expression
-                    )
-                    (symbol ",")
+                bds <- tauBinding fullAttribute `sepBy1` symbol ","
                 _ <- symbol ")"
                 return (ExApplication expr bds),
               do

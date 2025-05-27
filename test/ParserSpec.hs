@@ -81,6 +81,21 @@ spec = do
                     )
                 ]
             )
+        ),
+        ( "!e(x(^,@) -> [[w -> !e1]])",
+          Just
+            ( ExApplication
+                (ExMeta "e")
+                [ BiTau
+                    (AtLabel "x")
+                    ( ExFormation
+                        [ BiVoid AtRho,
+                          BiVoid AtPhi,
+                          BiTau (AtLabel "w") (ExMeta "e1")
+                        ]
+                    )
+                ]
+            )
         )
       ]
 
@@ -88,7 +103,10 @@ spec = do
     forM_
       [ "[[x -> $, y -> ?]]",
         "[[x() -> [[]] ]]",
-        "[[x(^, @, y) -> [[q -> QQ]] ]]"
+        "[[x(^, @, y) -> [[q -> QQ]] ]]",
+        "Q.x(y() -> [[]])",
+        "Q.x(y(q) -> [[w -> !e]])",
+        "Q.x(~1(^,@) -> [[]])"
       ]
       (\expr -> it expr (parseExpression expr `shouldSatisfy` isRight))
 
@@ -111,7 +129,8 @@ spec = do
             "[[~0 -> Q.x]]",
             "[[x(~1) -> [[]] ]]",
             "[[y(!e) -> [[]] ]]",
-            "[[z(w) -> Q.x]]"
+            "[[z(w) -> Q.x]]",
+            "Q.x(y(~1) -> [[]])"
           ]
       )
 
