@@ -41,14 +41,14 @@ spec = do
       parseExpression
       [ ("Q.!a", Just (ExDispatch ExGlobal (AtMeta "a"))),
         ("[[]](!a1 -> $)", Just (ExApplication (ExFormation []) [BiTau (AtMeta "a1") ExThis])),
-        ( "[[]](~0 -> $)(~1 -> Q)",
+        ( "[[]](~0 -> $)(~11 -> Q)",
           Just
             ( ExApplication
                 ( ExApplication
                     (ExFormation [])
                     [BiTau (AtAlpha 0) ExThis]
                 )
-                [BiTau (AtAlpha 1) ExGlobal]
+                [BiTau (AtAlpha 11) ExGlobal]
             )
         ),
         ("[[]](x -> $, y -> Q)", Just (ExApplication (ExFormation []) [BiTau (AtLabel "x") ExThis, BiTau (AtLabel "y") ExGlobal])),
@@ -83,7 +83,8 @@ spec = do
             "Q.x(!B)",
             "Q.x(~1 -> ?)",
             "Q.x(L> !F)",
-            "Q.x(D> !b)"
+            "Q.x(D> !b)",
+            "[[~0 -> Q.x]]"
           ]
       )
 

@@ -77,12 +77,6 @@ meta ch = do
   ds <- lexeme (many digitChar)
   return (c : ds)
 
-biTau :: Parser Binding
-biTau = do
-  attr <- attribute
-  _ <- arrow
-  BiTau attr <$> expression
-
 byte :: Parser String
 byte = do
   f <- hexDigitChar >>= upperHex
@@ -126,7 +120,10 @@ bytes = lexeme $ do
 binding :: Parser Binding
 binding =
   choice
-    [ try biTau,
+    [ try $ do
+        attr <- attribute
+        _ <- arrow
+        BiTau attr <$> expression,
       try $ do
         attr <- attribute
         _ <- arrow
@@ -151,17 +148,13 @@ binding =
 -- attribute
 -- 1. label
 -- 2. meta
--- 3. alpha
--- 4. rho
--- 5. phi
+-- 3. rho
+-- 4. phi
 attribute :: Parser Attribute
 attribute =
   choice
     [ AtLabel <$> label',
       AtMeta <$> meta 'a',
-      do
-        _ <- char '~'
-        AtAlpha <$> lexeme L.decimal,
       do
         _ <- symbol "^"
         return AtRho,
@@ -170,6 +163,22 @@ attribute =
         return AtPhi
     ]
     <?> "attribute"
+
+-- full attribute
+-- 1. label
+-- 2. meta
+-- 3. rho
+-- 4. phi
+-- 5. alpha
+fullAttribute :: Parser Attribute
+fullAttribute =
+  choice
+    [ attribute,
+      do
+        _ <- char '~'
+        AtAlpha <$> lexeme L.decimal
+    ]
+    <?> "full attribute"
 
 -- head part of expression
 -- 1. formation
@@ -222,7 +231,14 @@ exTail expr =
                       _ -> True
                   )
                 _ <- symbol "("
-                bds <- biTau `sepBy1` symbol ","
+                bds <-
+                  sepBy1
+                    ( do
+                        attr <- fullAttribute
+                        _ <- arrow
+                        BiTau attr <$> expression
+                    )
+                    (symbol ",")
                 _ <- symbol ")"
                 return (ExApplication expr bds),
               do
