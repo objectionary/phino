@@ -1,15 +1,18 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+
 {-# HLINT ignore "Use tuple-section" #-}
 
 module ParserSpec where
 
 import Ast
 import Control.Monad (forM_)
-import Data.Either (isLeft)
+import Data.Either (isLeft, isRight)
+import Misc (allPathsIn)
 import Parser
-import Test.Hspec (Example (Arg), Expectation, Spec, SpecWith, describe, it, shouldBe, shouldSatisfy)
+import Test.Hspec (Example (Arg), Expectation, Spec, SpecWith, describe, it, shouldBe, shouldSatisfy, runIO)
+import System.FilePath (takeBaseName)
 
 test ::
   (Eq a, Show a) =>
@@ -24,7 +27,7 @@ test function useCases =
 
 spec :: Spec
 spec = do
-  describe "parseProgram" $
+  describe "parse program" $
     test
       parseProgram
       [ ("Q -> [[]]", Just (Program (ExFormation []))),
@@ -33,7 +36,7 @@ spec = do
         ("Q -> [[x -> $, ~1 -> ?]]", Just (Program (ExFormation [BiTau (AtLabel "x") ExThis, BiVoid (AtAlpha 1)])))
       ]
 
-  describe "parseExpression" $
+  describe "parse expression" $
     test
       parseExpression
       [ ("Q.!a", Just (ExDispatch ExGlobal (AtMeta "a"))),
@@ -58,6 +61,7 @@ spec = do
         ("[[]](x -> $) * !t1", Just (ExMetaTail (ExApplication (ExFormation []) [BiTau (AtLabel "x") ExThis]) "t1")),
         ("[[D> --]]", Just (ExFormation [BiDelta "--"])),
         ("[[D> 1F-]]", Just (ExFormation [BiDelta "1F-"])),
+        ("[[\n  L> Func,\n  D> 00-\n]]", Just (ExFormation [BiLambda "Func", BiDelta "00-"])),
         ("[[D> 1F-2A-00]]", Just (ExFormation [BiDelta "1F-2A-00"])),
         ("[[D> !b0]]", Just (ExFormation [BiMetaDelta "b0"])),
         ("[[L> Function]]", Just (ExFormation [BiLambda "Function"])),
@@ -81,4 +85,13 @@ spec = do
             "Q.x(L> !F)",
             "Q.x(D> !b)"
           ]
+      )
+
+  describe "parse packs" $ do
+    packs <- runIO (allPathsIn "test/resources/parser-packs")
+    forM_
+      packs
+      ( \pack -> do
+          content <- runIO (readFile pack)
+          it (takeBaseName pack) (parseProgram content `shouldSatisfy` isRight)
       )

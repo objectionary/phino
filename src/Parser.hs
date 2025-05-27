@@ -26,8 +26,8 @@ data ParserException
   deriving (Exception)
 
 instance Show ParserException where
-  show CouldNotParseProgram{..} = printf "Couldn't parse given phi program, cause: %s" message
-  show CouldNotParseExpression{..} = printf "Couldn't parse given phi program, cause: %s" message
+  show CouldNotParseProgram {..} = printf "Couldn't parse given phi program, cause: %s" message
+  show CouldNotParseExpression {..} = printf "Couldn't parse given phi program, cause: %s" message
 
 -- White space consumer
 whiteSpace :: Parser ()
@@ -98,7 +98,7 @@ byte = do
 -- 2. one byte: 01-
 -- 3. many bytes: 01-02-...-FF
 bytes :: Parser String
-bytes =
+bytes = lexeme $ do
   choice
     [ symbol "--",
       try $ do
@@ -188,6 +188,9 @@ exHead =
       do
         _ <- symbol "$"
         return ExThis,
+      try $ do
+        _ <- symbol "QQ"
+        return (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang")),
       do
         _ <- global
         return ExGlobal,
@@ -242,10 +245,19 @@ expression = do
   exTail expr
 
 program :: Parser Program
-program = do
-  _ <- global
-  _ <- arrow
-  Program <$> expression
+program =
+  choice
+    [ do
+        _ <- symbol "{"
+        prog <- Program <$> expression
+        _ <- symbol "}"
+        return prog,
+      do
+        _ <- global
+        _ <- arrow
+        Program <$> expression
+    ]
+    <?> "program"
 
 -- Entry point
 parse' :: String -> Parser a -> String -> Either String a

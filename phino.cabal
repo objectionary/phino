@@ -32,6 +32,7 @@ library
     aeson,
     yaml,
     directory,
+    filepath,
     prettyprinter
   default-language: Haskell2010
 
@@ -72,6 +73,7 @@ test-suite spec
     containers,
     hspec,
     hspec-core,
+    filepath,
     prettyprinter
   build-tool-depends:
     hspec-discover:hspec-discover

@@ -18,6 +18,7 @@ import Replacer (replaceProgram)
 import System.Directory
 import Text.Printf
 import qualified Yaml as Y
+import Misc (ensuredFile)
 
 data RewriteException
   = InvalidArguments
@@ -45,7 +46,6 @@ instance Show RewriteException where
       (printProgram prog)
       (printExpression ptn)
       (printExpression res)
-  show FileDoesNotExist {..} = printf "File '%s' does not exist" file
 
 applyRules :: Program -> [Y.Rule] -> IO Program
 applyRules program [] = pure program
@@ -63,11 +63,6 @@ applyRules program [rule] = do
 applyRules program (rule : rest) = do
   prog <- applyRules program [rule]
   applyRules prog rest
-
-ensuredFile :: FilePath -> IO FilePath
-ensuredFile pth = do
-  exists <- doesFileExist pth
-  if exists then pure pth else throwIO (FileDoesNotExist pth)
 
 rewrite :: Maybe FilePath -> Bool -> FilePath -> IO String
 rewrite rules normalize input = do
