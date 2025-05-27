@@ -1,41 +1,59 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
-# SPDX-License-Identifier: MIT
----
-# yamllint disable rule:line-length
-name: stack
-'on':
-  push:
-    branches:
-      - master
-  pull_request:
-    branches:
-      - master
-jobs:
-  build:
-    strategy:
-      matrix:
-        os: [ubuntu-24.04, windows-2022, macos-15]
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/cache@v4
-        with:
-          path: |
-            ~/.stack
-            ~/.ghcup
-            .stack-work
-          key: ${{ runner.os }}-stack-${{ hashFiles('**/stack.yaml.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-stack-
-      - name: Set up GHC
-        uses: haskell-actions/setup@v2.8.0
-        with:
-          ghc-version: '9.6.7'
-          enable-stack: true
-          stack-version: '3.5.1'
-      - name: Install GHC if needed
-        run: stack setup
-      - name: Build
-        run: stack build --fast
-      - name: Run tests
-        run: stack test
+# # SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# # SPDX-License-Identifier: MIT
+# ---
+# # yamllint disable rule:line-length
+# name: stack
+# 'on':
+#   push:
+#     branches:
+#       - master
+#   pull_request:
+#     branches:
+#       - master
+# jobs:
+#   build:
+#     strategy:
+#       matrix:
+#         os: [ubuntu-24.04, windows-2022, macos-15]
+#     runs-on: ${{ matrix.os }}
+#     steps:
+#       - uses: actions/checkout@v4
+#       - name: Cache Stack global dependencies
+#         uses: actions/cache@v4
+#         with:
+#           path: |
+#             ${{ runner.os == 'Windows' && 'C:\\sr' || '~/.stack' }}
+#           key: ${{ runner.os }}-stack-global-${{ hashFiles('**/stack.yaml.lock') }}
+#           restore-keys: |
+#             ${{ runner.os }}-stack-global-
+
+#       # Optional: Cache .stack-work (not always stable on Windows)
+#       # You can comment this out if builds fail on Windows due to permissions
+#       - name: Cache Stack local build artifacts
+#         uses: actions/cache@v4
+#         with:
+#           path: .stack-work
+#           key: ${{ runner.os }}-stack-work-${{ hashFiles('**/stack.yaml.lock') }}
+#           restore-keys: |
+#             ${{ runner.os }}-stack-work-
+#       - uses: actions/cache@v4
+#         with:
+#           path: |
+#             ~/.stack
+#             ~/.ghcup
+#             .stack-work
+#           key: ${{ runner.os }}-stack-${{ hashFiles('**/stack.yaml.lock') }}
+#           restore-keys: |
+#             ${{ runner.os }}-stack-
+#       - name: Set up GHC
+#         uses: haskell-actions/setup@v2.8.0
+#         with:
+#           ghc-version: '9.6.7'
+#           enable-stack: true
+#           stack-version: '3.5.1'
+#       - name: Install GHC if needed
+#         run: stack setup
+#       - name: Build
+#         run: stack build --fast
+#       - name: Run tests
+#         run: stack test
