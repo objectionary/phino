@@ -123,7 +123,7 @@ tauBinding attr = do
         _ <- arrow
         ExFormation bs <- formation
         let voids' = map BiVoid voids ++ bs
-        pure (BiTau attr' (ExFormation voids'))
+        return (BiTau attr' (ExFormation voids'))
     ]
 
 -- binding
@@ -240,8 +240,8 @@ exHead =
 
 -- tail optional part of application
 -- 1. any head + dispatch
--- 2. any except this and global + application
--- 3. any except meta tail + meta tail
+-- 2. any head except $ and Q + application
+-- 3. any head except meta tail + meta tail
 exTail :: Expression -> Parser Expression
 exTail expr =
   choice
@@ -250,7 +250,7 @@ exTail expr =
           choice
             [ do
                 _ <- symbol "."
-                ExDispatch expr <$> attribute,
+                ExDispatch expr <$> fullAttribute,
               do
                 guard
                   ( case expr of

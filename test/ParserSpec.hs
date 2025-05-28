@@ -106,7 +106,8 @@ spec = do
         "[[x(^, @, y) -> [[q -> QQ]] ]]",
         "Q.x(y() -> [[]])",
         "Q.x(y(q) -> [[w -> !e]])",
-        "Q.x(~1(^,@) -> [[]])"
+        "Q.x(~1(^,@) -> [[]])",
+        "Q.x.~1.^.@.!a0"
       ]
       (\expr -> it expr (parseExpression expr `shouldSatisfy` isRight))
 
