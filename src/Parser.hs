@@ -77,16 +77,27 @@ function = lexeme $ do
   return (first : rest)
 
 delta :: Parser String
-delta = symbol "D>"
+delta =
+  choice
+    [ symbol "D>",
+      symbol "Δ" >> dashedArrow
+    ]
 
 lambda :: Parser String
-lambda = symbol "L>"
+lambda =
+  choice
+    [ symbol "L>",
+      symbol "λ" >> dashedArrow
+    ]
+
+dashedArrow :: Parser String
+dashedArrow = symbol "⤍"
 
 arrow :: Parser String
-arrow = symbol "->"
+arrow = choice [symbol "->", symbol "↦"]
 
 global :: Parser String
-global = symbol "Q"
+global = choice [symbol "Q", symbol "Φ"]
 
 meta :: Char -> Parser String
 meta ch = do
@@ -158,7 +169,7 @@ binding =
       try $ do
         attr <- attribute
         _ <- arrow
-        _ <- symbol "?"
+        _ <- choice [symbol "?", symbol "∅"]
         return (BiVoid attr),
       try $ do
         _ <- delta
@@ -185,10 +196,10 @@ void' =
   choice
     [ AtLabel <$> label',
       do
-        _ <- symbol "^"
+        _ <- choice [symbol "^", symbol "ρ"]
         return AtRho,
       do
-        _ <- symbol "@"
+        _ <- choice [symbol "@", symbol "φ"]
         return AtPhi
     ]
 
@@ -216,7 +227,7 @@ fullAttribute =
   choice
     [ attribute,
       do
-        _ <- char '~'
+        _ <- choice [symbol "~", symbol "α"]
         AtAlpha <$> lexeme L.decimal
     ]
     <?> "full attribute"
@@ -224,9 +235,9 @@ fullAttribute =
 -- formation
 formation :: Parser Expression
 formation = do
-  _ <- symbol "[["
+  _ <- choice [symbol "[[", symbol "⟦"]
   bs <- binding `sepBy` symbol ","
-  _ <- symbol "]]"
+  _ <- choice [symbol "]]", symbol "⟧"]
   return (ExFormation bs)
 
 -- head part of expression
@@ -241,16 +252,16 @@ exHead =
   choice
     [ formation,
       do
-        _ <- symbol "$"
+        _ <- choice [symbol "$", symbol "ξ"]
         return ExThis,
       try $ do
-        _ <- symbol "QQ"
+        _ <- choice [symbol "QQ", symbol "Φ̇"]
         return (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang")),
       do
         _ <- global
         return ExGlobal,
       do
-        _ <- symbol "T"
+        _ <- choice [symbol "T", symbol "⊥"]
         return ExTermination,
       do
         sign <- optional (choice [char '-', char '+'])
@@ -294,7 +305,7 @@ exTail expr =
                 _ <- symbol "("
                 bds <-
                   choice
-                    [ try (tauBinding fullAttribute `sepBy1` symbol ","),
+                    [ try $ tauBinding fullAttribute `sepBy1` symbol ",",
                       do
                         exprs <- expression `sepBy1` symbol ","
                         return (zipWith (BiTau . AtAlpha) [0 ..] exprs) -- \idx expr -> BiTau (AtAlpha idx) expr
