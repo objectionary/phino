@@ -11,8 +11,11 @@ import Ast
 import Control.Exception (Exception, throwIO)
 import Control.Monad (guard)
 import Data.Char (isDigit, isLower)
+import Data.Scientific (toRealFloat)
+import Data.Sequence (mapWithIndex)
 import Data.Text.Internal.Fusion.Size (lowerBound)
 import Data.Void
+import Misc (numToHex, strToHex)
 import Text.Megaparsec
 import Text.Megaparsec.Char (alphaNumChar, char, digitChar, hexDigitChar, letterChar, lowerChar, space1, string, upperChar)
 import qualified Text.Megaparsec.Char.Lexer as L
@@ -26,8 +29,23 @@ data ParserException
   deriving (Exception)
 
 instance Show ParserException where
-  show CouldNotParseProgram{..} = printf "Couldn't parse given phi program, cause: %s" message
-  show CouldNotParseExpression{..} = printf "Couldn't parse given phi program, cause: %s" message
+  show CouldNotParseProgram {..} = printf "Couldn't parse given phi program, cause: %s" message
+  show CouldNotParseExpression {..} = printf "Couldn't parse given phi program, cause: %s" message
+
+dataExpression :: String -> String -> Expression
+dataExpression obj bts =
+  ExApplication
+    (ExDispatch (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang")) (AtLabel obj))
+    [ BiTau
+        (AtAlpha 0)
+        ( ExApplication
+            (ExDispatch (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang")) (AtLabel "bytes"))
+            [ BiTau
+                (AtAlpha 0)
+                (ExFormation [BiDelta bts])
+            ]
+        )
+    ]
 
 -- White space consumer
 whiteSpace :: Parser ()
@@ -77,12 +95,6 @@ meta ch = do
   ds <- lexeme (many digitChar)
   return (c : ds)
 
-biTau :: Parser Binding
-biTau = do
-  attr <- attribute
-  _ <- arrow
-  BiTau attr <$> expression
-
 byte :: Parser String
 byte = do
   f <- hexDigitChar >>= upperHex
@@ -98,7 +110,7 @@ byte = do
 -- 2. one byte: 01-
 -- 3. many bytes: 01-02-...-FF
 bytes :: Parser String
-bytes =
+bytes = lexeme $ do
   choice
     [ symbol "--",
       try $ do
@@ -115,6 +127,22 @@ bytes =
     ]
     <?> "bytes"
 
+tauBinding :: Parser Attribute -> Parser Binding
+tauBinding attr = do
+  attr' <- attr
+  choice
+    [ try $ do
+        _ <- arrow
+        BiTau attr' <$> expression,
+      do
+        _ <- symbol "("
+        voids <- map BiVoid <$> void' `sepBy` symbol ","
+        _ <- symbol ")"
+        _ <- arrow
+        ExFormation bs <- formation
+        return (BiTau attr' (ExFormation (voids ++ bs)))
+    ]
+
 -- binding
 -- 1. tau
 -- 2. void
@@ -126,7 +154,7 @@ bytes =
 binding :: Parser Binding
 binding =
   choice
-    [ try biTau,
+    [ try (tauBinding attribute),
       try $ do
         attr <- attribute
         _ <- arrow
@@ -142,26 +170,20 @@ binding =
       try $ do
         _ <- lambda
         BiLambda <$> function,
-      try $ do
+      do
         _ <- lambda
         BiMetaLambda <$> meta 'F'
     ]
     <?> "binding"
 
--- attribute
+-- inlined void attribute
 -- 1. label
--- 2. meta
--- 3. alpha
--- 4. rho
--- 5. phi
-attribute :: Parser Attribute
-attribute =
+-- 2. rho
+-- 3. phi
+void' :: Parser Attribute
+void' =
   choice
     [ AtLabel <$> label',
-      AtMeta <$> meta 'a',
-      do
-        _ <- char '~'
-        AtAlpha <$> lexeme L.decimal,
       do
         _ <- symbol "^"
         return AtRho,
@@ -169,39 +191,90 @@ attribute =
         _ <- symbol "@"
         return AtPhi
     ]
+
+-- attribute
+-- 1. label
+-- 2. meta
+-- 3. rho
+-- 4. phi
+attribute :: Parser Attribute
+attribute =
+  choice
+    [ void',
+      AtMeta <$> meta 'a'
+    ]
     <?> "attribute"
+
+-- full attribute
+-- 1. label
+-- 2. meta
+-- 3. rho
+-- 4. phi
+-- 5. alpha
+fullAttribute :: Parser Attribute
+fullAttribute =
+  choice
+    [ attribute,
+      do
+        _ <- char '~'
+        AtAlpha <$> lexeme L.decimal
+    ]
+    <?> "full attribute"
+
+-- formation
+formation :: Parser Expression
+formation = do
+  _ <- symbol "[["
+  bs <- binding `sepBy` symbol ","
+  _ <- symbol "]]"
+  return (ExFormation bs)
 
 -- head part of expression
 -- 1. formation
 -- 2. this
 -- 3. global
 -- 4. termination
--- 5. meta
+-- 5. meta expression
+-- 6. full attribute -> sugar for $.attr
 exHead :: Parser Expression
 exHead =
   choice
-    [ do
-        _ <- symbol "[["
-        bs <- binding `sepBy` symbol ","
-        _ <- symbol "]]"
-        return (ExFormation bs),
+    [ formation,
       do
         _ <- symbol "$"
         return ExThis,
+      try $ do
+        _ <- symbol "QQ"
+        return (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang")),
       do
         _ <- global
         return ExGlobal,
       do
         _ <- symbol "T"
         return ExTermination,
-      ExMeta <$> meta 'e'
+      do
+        sign <- optional (choice [char '-', char '+'])
+        unsigned <- lexeme L.scientific
+        let num =
+              toRealFloat
+                ( case sign of
+                    Just '-' -> negate unsigned
+                    _ -> unsigned
+                )
+        return (dataExpression "number" (numToHex num)),
+      lexeme $ do
+        _ <- char '"'
+        str <- manyTill L.charLiteral (char '"')
+        return (dataExpression "string" (strToHex str)),
+      try (ExMeta <$> meta 'e'),
+      ExDispatch ExThis <$> fullAttribute
     ]
-    <?> "primary expression"
+    <?> "expression head"
 
 -- tail optional part of application
 -- 1. any head + dispatch
--- 2. any except this and global + application
--- 3. any except meta tail + meta tail
+-- 2. any head except $ and Q + application
+-- 3. any head except meta tail + meta tail
 exTail :: Expression -> Parser Expression
 exTail expr =
   choice
@@ -210,7 +283,7 @@ exTail expr =
           choice
             [ do
                 _ <- symbol "."
-                ExDispatch expr <$> attribute,
+                ExDispatch expr <$> fullAttribute,
               do
                 guard
                   ( case expr of
@@ -219,7 +292,13 @@ exTail expr =
                       _ -> True
                   )
                 _ <- symbol "("
-                bds <- biTau `sepBy1` symbol ","
+                bds <-
+                  choice
+                    [ try (tauBinding fullAttribute `sepBy1` symbol ","),
+                      do
+                        exprs <- expression `sepBy1` symbol ","
+                        return (zipWith (BiTau . AtAlpha) [0 ..] exprs) -- \idx expr -> BiTau (AtAlpha idx) expr
+                    ]
                 _ <- symbol ")"
                 return (ExApplication expr bds),
               do
@@ -242,10 +321,19 @@ expression = do
   exTail expr
 
 program :: Parser Program
-program = do
-  _ <- global
-  _ <- arrow
-  Program <$> expression
+program =
+  choice
+    [ do
+        _ <- symbol "{"
+        prog <- Program <$> expression
+        _ <- symbol "}"
+        return prog,
+      do
+        _ <- global
+        _ <- arrow
+        Program <$> expression
+    ]
+    <?> "program"
 
 -- Entry point
 parse' :: String -> Parser a -> String -> Either String a

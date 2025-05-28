@@ -4,11 +4,12 @@
 version = 1
 [[annotations]]
 path = [
-    "README.md",
+    "**README.md",
     ".gitignore",
     "**.json",
     "phino.cabal",
-    "**.lock"
+    "**.lock",
+    "**.phi"
 ]
 precedence = "override"
 SPDX-FileCopyrightText = "Copyright (c) 2025 Objectionary.com"
