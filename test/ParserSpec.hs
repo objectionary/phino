@@ -120,6 +120,85 @@ spec = do
                     (ExMeta "e")
                 ]
             )
+        ),
+        ( "Q.x(~1, y, [[]].z, Q.y(^,@))",
+          Just
+            ( ExApplication
+                (ExDispatch ExGlobal (AtLabel "x"))
+                [ BiTau (AtAlpha 0) (ExDispatch ExThis (AtAlpha 1)),
+                  BiTau (AtAlpha 1) (ExDispatch ExThis (AtLabel "y")),
+                  BiTau (AtAlpha 2) (ExDispatch (ExFormation []) (AtLabel "z")),
+                  BiTau
+                    (AtAlpha 3)
+                    ( ExApplication
+                        (ExDispatch ExGlobal (AtLabel "y"))
+                        [ BiTau (AtAlpha 0) (ExDispatch ExThis AtRho),
+                          BiTau (AtAlpha 1) (ExDispatch ExThis AtPhi)
+                        ]
+                    )
+                ]
+            )
+        ),
+        ( "5.plus(5.q(\"hello\".length))",
+          Just
+            ( ExApplication
+                ( ExDispatch
+                    ( ExApplication
+                        (ExDispatch (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang")) (AtLabel "number"))
+                        [ BiTau
+                            (AtAlpha 0)
+                            ( ExApplication
+                                (ExDispatch (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang")) (AtLabel "bytes"))
+                                [ BiTau
+                                    (AtAlpha 0)
+                                    (ExFormation [BiDelta "40-14-00-00-00-00-00-00"])
+                                ]
+                            )
+                        ]
+                    )
+                    (AtLabel "plus")
+                )
+                [ BiTau
+                    (AtAlpha 0)
+                    ( ExApplication
+                        ( ExDispatch
+                            ( ExApplication
+                                (ExDispatch (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang")) (AtLabel "number"))
+                                [ BiTau
+                                    (AtAlpha 0)
+                                    ( ExApplication
+                                        (ExDispatch (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang")) (AtLabel "bytes"))
+                                        [ BiTau
+                                            (AtAlpha 0)
+                                            (ExFormation [BiDelta "40-14-00-00-00-00-00-00"])
+                                        ]
+                                    )
+                                ]
+                            )
+                            (AtLabel "q")
+                        )
+                        [ BiTau
+                            (AtAlpha 0)
+                            ( ExDispatch
+                                ( ExApplication
+                                    (ExDispatch (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang")) (AtLabel "string"))
+                                    [ BiTau
+                                        (AtAlpha 0)
+                                        ( ExApplication
+                                            (ExDispatch (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang")) (AtLabel "bytes"))
+                                            [ BiTau
+                                                (AtAlpha 0)
+                                                (ExFormation [BiDelta "68-65-6C-6C-6F"])
+                                            ]
+                                        )
+                                    ]
+                                )
+                                (AtLabel "length")
+                            )
+                        ]
+                    )
+                ]
+            )
         )
       ]
 
@@ -134,7 +213,10 @@ spec = do
         "Q.x.~1.^.@.!a0",
         "[[x -> y.z]]",
         "[[x -> ~1]]",
-        "[[x -> ^, y -> @, z -> !a]]"
+        "[[x -> ^, y -> @, z -> !a]]",
+        "Q.x(a.b.c, Q.a(b), [[]])",
+        "Q.x(~1, y, [[]].z, Q.y(^,@))",
+        "[[x -> 5.plus(5), y -> \"hello\", z -> 42.5]]"
       ]
       (\expr -> it expr (parseExpression expr `shouldSatisfy` isRight))
 

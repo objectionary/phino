@@ -5,7 +5,7 @@
 -- SPDX-License-Identifier: MIT
 
 -- This module provides commonly used helper functions for other modules
-module Misc (withoutAt, isMetaBinding, ensuredFile, allPathsIn) where
+module Misc where
 
 import Ast
 import Control.Exception
@@ -13,6 +13,12 @@ import Control.Monad
 import System.Directory (doesDirectoryExist, doesFileExist, listDirectory)
 import System.FilePath ((</>))
 import Text.Printf (printf)
+import Data.Binary.IEEE754  
+import Data.ByteString.Builder (word64BE, toLazyByteString)
+import Data.List (intercalate)
+import Data.ByteString.Lazy (unpack)
+import qualified Data.ByteString.Lazy.UTF8 as U
+import Data.Word (Word8)
 
 data FsException
   = FileDoesNotExist {file :: FilePath}
@@ -53,3 +59,24 @@ allPathsIn dir = do
             else return [path]
       )
   return (concat paths)
+
+btsToHex :: [Word8] -> String
+btsToHex bts = intercalate "-" (map (printf "%02X") bts)
+
+-- >>> numToHex 0.0
+-- "00-00-00-00-00-00-00-00"
+-- >>> numToHex 42
+-- "40-45-00-00-00-00-00-00"
+-- >>> numToHex (-0.25)
+-- "BF-D0-00-00-00-00-00-00"
+-- >>> numToHex 5
+-- "40-14-00-00-00-00-00-00"
+numToHex :: Double -> String
+numToHex num = btsToHex (unpack (toLazyByteString (word64BE (doubleToWord num))))
+
+-- >>> strToHex "hello"
+-- "68-65-6C-6C-6F"
+-- >>> strToHex "world"
+-- "77-6F-72-6C-64"
+strToHex :: String -> String
+strToHex str = btsToHex (unpack (U.fromString str))

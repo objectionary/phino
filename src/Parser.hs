@@ -11,8 +11,11 @@ import Ast
 import Control.Exception (Exception, throwIO)
 import Control.Monad (guard)
 import Data.Char (isDigit, isLower)
+import Data.Scientific (toRealFloat)
+import Data.Sequence (mapWithIndex)
 import Data.Text.Internal.Fusion.Size (lowerBound)
 import Data.Void
+import Misc (numToHex, strToHex)
 import Text.Megaparsec
 import Text.Megaparsec.Char (alphaNumChar, char, digitChar, hexDigitChar, letterChar, lowerChar, space1, string, upperChar)
 import qualified Text.Megaparsec.Char.Lexer as L
@@ -28,6 +31,21 @@ data ParserException
 instance Show ParserException where
   show CouldNotParseProgram {..} = printf "Couldn't parse given phi program, cause: %s" message
   show CouldNotParseExpression {..} = printf "Couldn't parse given phi program, cause: %s" message
+
+dataExpression :: String -> String -> Expression
+dataExpression obj bts =
+  ExApplication
+    (ExDispatch (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang")) (AtLabel obj))
+    [ BiTau
+        (AtAlpha 0)
+        ( ExApplication
+            (ExDispatch (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang")) (AtLabel "bytes"))
+            [ BiTau
+                (AtAlpha 0)
+                (ExFormation [BiDelta bts])
+            ]
+        )
+    ]
 
 -- White space consumer
 whiteSpace :: Parser ()
@@ -118,12 +136,11 @@ tauBinding attr = do
         BiTau attr' <$> expression,
       do
         _ <- symbol "("
-        voids <- void' `sepBy` symbol ","
+        voids <- map BiVoid <$> void' `sepBy` symbol ","
         _ <- symbol ")"
         _ <- arrow
         ExFormation bs <- formation
-        let voids' = map BiVoid voids ++ bs
-        return (BiTau attr' (ExFormation voids'))
+        return (BiTau attr' (ExFormation (voids ++ bs)))
     ]
 
 -- binding
@@ -217,7 +234,8 @@ formation = do
 -- 2. this
 -- 3. global
 -- 4. termination
--- 5. meta
+-- 5. meta expression
+-- 6. full attribute -> sugar for $.attr
 exHead :: Parser Expression
 exHead =
   choice
@@ -235,9 +253,16 @@ exHead =
         _ <- symbol "T"
         return ExTermination,
       try (ExMeta <$> meta 'e'),
-      ExDispatch ExThis <$> fullAttribute
+      ExDispatch ExThis <$> fullAttribute,
+      do
+        num <- toRealFloat <$> lexeme (L.signed empty L.scientific)
+        return (dataExpression "number" (numToHex num)),
+      do
+        _ <- char '"'
+        str <- manyTill L.charLiteral (char '"')
+        return (dataExpression "string" (strToHex str))
     ]
-    <?> "primary expression"
+    <?> "expression head"
 
 -- tail optional part of application
 -- 1. any head + dispatch
@@ -260,7 +285,13 @@ exTail expr =
                       _ -> True
                   )
                 _ <- symbol "("
-                bds <- tauBinding fullAttribute `sepBy1` symbol ","
+                bds <-
+                  choice
+                    [ try (tauBinding fullAttribute `sepBy1` symbol ","),
+                      do
+                        exprs <- expression `sepBy1` symbol ","
+                        return (zipWith (BiTau . AtAlpha) [0 ..] exprs) -- \idx expr -> BiTau (AtAlpha idx) expr
+                    ]
                 _ <- symbol ")"
                 return (ExApplication expr bds),
               do
