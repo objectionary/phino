@@ -234,7 +234,8 @@ exHead =
       do
         _ <- symbol "T"
         return ExTermination,
-      ExMeta <$> meta 'e'
+      try (ExMeta <$> meta 'e'),
+      ExDispatch ExThis <$> fullAttribute
     ]
     <?> "primary expression"
 

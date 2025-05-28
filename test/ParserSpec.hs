@@ -96,6 +96,30 @@ spec = do
                     )
                 ]
             )
+        ),
+        ( "[[x -> y.z, a -> ~1, w -> ^, u -> @, p -> !a, q -> !e]]",
+          Just
+            ( ExFormation
+                [ BiTau
+                    (AtLabel "x")
+                    (ExDispatch (ExDispatch ExThis (AtLabel "y")) (AtLabel "z")),
+                  BiTau
+                    (AtLabel "a")
+                    (ExDispatch ExThis (AtAlpha 1)),
+                  BiTau
+                    (AtLabel "w")
+                    (ExDispatch ExThis AtRho),
+                  BiTau
+                    (AtLabel "u")
+                    (ExDispatch ExThis AtPhi),
+                  BiTau
+                    (AtLabel "p")
+                    (ExDispatch ExThis (AtMeta "a")),
+                  BiTau
+                    (AtLabel "q")
+                    (ExMeta "e")
+                ]
+            )
         )
       ]
 
@@ -107,7 +131,10 @@ spec = do
         "Q.x(y() -> [[]])",
         "Q.x(y(q) -> [[w -> !e]])",
         "Q.x(~1(^,@) -> [[]])",
-        "Q.x.~1.^.@.!a0"
+        "Q.x.~1.^.@.!a0",
+        "[[x -> y.z]]",
+        "[[x -> ~1]]",
+        "[[x -> ^, y -> @, z -> !a]]"
       ]
       (\expr -> it expr (parseExpression expr `shouldSatisfy` isRight))
 
