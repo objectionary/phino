@@ -216,7 +216,9 @@ spec = do
         "[[x -> ^, y -> @, z -> !a]]",
         "Q.x(a.b.c, Q.a(b), [[]])",
         "Q.x(~1, y, [[]].z, Q.y(^,@))",
-        "[[x -> 5.plus(5), y -> \"hello\", z -> 42.5]]"
+        "[[x -> 5.plus(5), y -> \"hello\", z -> 42.5]]",
+        "[[w -> x(~1)]]",
+        "[[\n  x -> \"Hi\",\n  y -> 42\n]]"
       ]
       (\expr -> it expr (parseExpression expr `shouldSatisfy` isRight))
 

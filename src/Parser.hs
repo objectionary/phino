@@ -254,10 +254,10 @@ exHead =
         return ExTermination,
       try (ExMeta <$> meta 'e'),
       ExDispatch ExThis <$> fullAttribute,
-      do
+      lexeme $ do
         num <- toRealFloat <$> lexeme (L.signed empty L.scientific)
         return (dataExpression "number" (numToHex num)),
-      do
+      lexeme $ do
         _ <- char '"'
         str <- manyTill L.charLiteral (char '"')
         return (dataExpression "string" (strToHex str))

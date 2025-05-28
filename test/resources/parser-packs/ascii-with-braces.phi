@@ -10,8 +10,11 @@
       z -> [[
         L> Func,
         D> 00-,
-        def -> QQ.txt.sprintf
+        def -> QQ.txt.sprintf,
+        num -> 42,
+        str -> "Hello, world!"
       ]],
+      w -> x(~1, 42, "Hi", y, QQ.io.text),
       error -> T
     ]]
   ]]
