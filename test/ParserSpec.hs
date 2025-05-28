@@ -220,7 +220,8 @@ spec = do
         "[[w -> x(~1)]]",
         "[[\n  x -> \"Hi\",\n  y -> 42\n]]",
         "[[x -> -42, y -> +34]]",
-        "⟦x ↦ Φ.org.eolang(z ↦ ξ.f, x ↦ α0, φ ↦ ρ, t ↦ φ, first ↦ ⟦ λ ⤍ Function_name, Δ ⤍ 42- ⟧)⟧"
+        "⟦x ↦ Φ.org.eolang(z ↦ ξ.f, x ↦ α0, φ ↦ ρ, t ↦ φ, first ↦ ⟦ λ ⤍ Function_name, Δ ⤍ 42- ⟧)⟧",
+        "[[x -> 1.00e+3, y -> 2.32e-4]]"
       ]
       (\expr -> it expr (parseExpression expr `shouldSatisfy` isRight))
 
