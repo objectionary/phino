@@ -254,25 +254,20 @@ exHead =
         return ExTermination,
       do
         sign <- optional (choice [char '-', char '+'])
-        num <- lexeme L.scientific
-        return
-          ( dataExpression
-              "number"
-              ( numToHex
-                  ( toRealFloat
-                      ( case sign of
-                          Just '-' -> negate num
-                          _ -> num
-                      )
-                  )
-              )
-          ),
-        lexeme $ do
-          _ <- char '"'
-          str <- manyTill L.charLiteral (char '"')
-          return (dataExpression "string" (strToHex str)),
-        try (ExMeta <$> meta 'e'),
-        ExDispatch ExThis <$> fullAttribute
+        unsigned <- lexeme L.scientific
+        let num =
+              toRealFloat
+                ( case sign of
+                    Just '-' -> negate unsigned
+                    _ -> unsigned
+                )
+        return (dataExpression "number" (numToHex num)),
+      lexeme $ do
+        _ <- char '"'
+        str <- manyTill L.charLiteral (char '"')
+        return (dataExpression "string" (strToHex str)),
+      try (ExMeta <$> meta 'e'),
+      ExDispatch ExThis <$> fullAttribute
     ]
     <?> "expression head"
 
