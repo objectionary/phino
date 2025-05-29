@@ -1,0 +1,16 @@
+{⟦
+  eo ↦ ⟦
+    example ↦ ⟦
+      fibonacci(n) ↦ ⟦
+        φ ↦ n.lt(2).if(
+          n,
+          Φ.eo.example.fibonacci(n.minus(1)).plus(
+            Φ.eo.example.fibonacci(n.minus(2))
+          )
+        )
+      ⟧,
+      λ ⤍ Package
+    ⟧,
+    λ ⤍ Package
+  ⟧
+⟧}
