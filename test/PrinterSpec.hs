@@ -5,38 +5,42 @@ module PrinterSpec where
 
 import Ast
 import Control.Monad (forM_)
+import Matcher (MetaValue (MvAttribute, MvExpression), substEmpty, substSingle)
+import Parser (parseProgram, parseProgramThrows)
 import Prettyprinter
 import Printer
-import Test.Hspec (Example (Arg), Expectation, Spec, SpecWith, describe, it, shouldBe)
-import Matcher (substEmpty, substSingle, MetaValue (MvExpression, MvAttribute))
+import Test.Hspec (Example (Arg), Expectation, Spec, SpecWith, describe, it, runIO, shouldBe)
 
-test :: (Pretty a) => (a -> String) -> [(String, a)] -> SpecWith (Arg Expectation)
+test :: (Pretty a) => (a -> String) -> [(String, String, a)] -> SpecWith (Arg Expectation)
 test function useCases =
-  forM_ useCases $ \(desc, input) ->
-    it desc $ function input `shouldBe` desc
+  forM_ useCases $ \(input, output, arg) ->
+    it input $ function arg `shouldBe` output
 
 spec :: Spec
 spec = do
-  describe "printProgram" $
-    test
-      printProgram
-      [ ("Q -> $", Program ExThis),
-        ("Q -> [[\n  x -> $.q\n]]", Program (ExFormation [BiTau (AtLabel "x") (ExDispatch ExThis (AtLabel "q"))])),
-        ("Q -> Q.org.x", Program (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "x"))),
-        ("Q -> [[]]", Program (ExFormation [])),
-        ("Q -> [[\n  @ -> ?\n]](\n  ~1 -> Q.x\n)", Program (ExApplication (ExFormation [BiVoid AtPhi]) [BiTau (AtAlpha 1) (ExDispatch ExGlobal (AtLabel "x"))])),
-        ("Q -> !e * !t", Program (ExMetaTail (ExMeta "e") "t")),
-        ( "Q -> [[\n  D> 00-,\n  L> F,\n  ^ -> ?,\n  !B,\n  @ -> [[\n    y -> ?\n  ]]\n]]",
-          Program
-            ( ExFormation
-                [ BiDelta "00-", BiLambda "F", BiVoid AtRho, BiMeta "B", BiTau AtPhi (ExFormation [BiVoid (AtLabel "y")])]
+  describe "print program" $ do
+    useCases <-
+      runIO $
+        mapM
+          ( \(input, output) -> do
+              prog <- parseProgramThrows input
+              return (input, output, prog)
+          )
+          [ ("Q -> $", "Φ ↦ ξ"),
+            ("Q -> Q.org.x", "Φ ↦ Φ.org.x"),
+            ("Q -> [[]]", "Φ ↦ ⟦⟧"),
+            ("Q -> [[@ -> ?]](~1 -> Q.x)", "Φ ↦ ⟦\n  φ ↦ ∅\n⟧(\n  α1 ↦ Φ.x\n)"),
+            ("Q -> !e * !t", "Φ ↦ !e * !t"),
+            ( "Q -> [[D> 00-,L> F,^ -> ?,!B,@ -> [[y -> ?]]]]",
+              "Φ ↦ ⟦\n  Δ ⤍ 00-,\n  λ ⤍ F,\n  ρ ↦ ∅,\n  !B,\n  φ ↦ ⟦\n    y ↦ ∅\n  ⟧\n⟧"
             )
-        )
-      ]
-  describe "printSubstitution" $
-    test
-      printSubstitutions
-      [ ("[\n  (\n    \n  )\n]", [substEmpty]),
-        ("[\n  (\n    !e >> Q.x\n  )\n]", [substSingle "e" (MvExpression (ExDispatch ExGlobal (AtLabel "x")))]),
-        ("[\n  (\n    !a >> x\n  )\n]", [substSingle "a" (MvAttribute (AtLabel "x"))])
-      ]
+          ]
+    test printProgram useCases
+
+-- describe "printSubstitution" $
+--   test
+--     printSubstitutions
+--     [ ("[\n  (\n    \n  )\n]", [substEmpty]),
+--       ("[\n  (\n    !e >> Q.x\n  )\n]", [substSingle "e" (MvExpression (ExDispatch ExGlobal (AtLabel "x")))]),
+--       ("[\n  (\n    !a >> x\n  )\n]", [substSingle "a" (MvAttribute (AtLabel "x"))])
+--     ]

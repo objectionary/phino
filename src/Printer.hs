@@ -16,31 +16,37 @@ import Text.Printf (vFmt)
 prettyMeta :: String -> Doc ann
 prettyMeta meta = pretty "!" <> pretty meta
 
+prettyArrow :: Doc ann
+prettyArrow = pretty "↦"
+
+prettyDashedArrow :: Doc ann
+prettyDashedArrow = pretty "⤍"
+
 instance Pretty Attribute where
   pretty (AtLabel name) = pretty name
-  pretty (AtAlpha index) = pretty "~" <> pretty index
-  pretty AtRho = pretty "^"
-  pretty AtPhi = pretty "@"
+  pretty (AtAlpha index) = pretty "α" <> pretty index
+  pretty AtRho = pretty "ρ"
+  pretty AtPhi = pretty "φ"
   pretty (AtMeta meta) = prettyMeta meta
 
 instance Pretty Binding where
-  pretty (BiTau attr expr) = pretty attr <+> pretty "->" <+> pretty expr
+  pretty (BiTau attr expr) = pretty attr <+> prettyArrow <+> pretty expr
   pretty (BiMeta meta) = prettyMeta meta
-  pretty (BiDelta bytes) = pretty "D>" <+> pretty bytes
-  pretty (BiMetaDelta meta) = pretty "D>" <+> prettyMeta meta
-  pretty (BiVoid attr) = pretty attr <+> pretty "-> ?"
-  pretty (BiLambda func) = pretty "L>" <+> pretty func
-  pretty (BiMetaLambda meta) = pretty "L>" <+> prettyMeta meta
+  pretty (BiDelta bytes) = pretty "Δ" <+> prettyDashedArrow <+> pretty bytes
+  pretty (BiMetaDelta meta) = pretty "Δ" <+> prettyDashedArrow <+> prettyMeta meta
+  pretty (BiVoid attr) = pretty attr <+> prettyArrow <+> pretty "∅"
+  pretty (BiLambda func) = pretty "λ" <+> prettyDashedArrow <+> pretty func
+  pretty (BiMetaLambda meta) = pretty "λ" <+> prettyDashedArrow <+> prettyMeta meta
 
 instance {-# OVERLAPPING #-} Pretty [Binding] where
   pretty bindings = vsep (punctuate comma (map pretty bindings))
 
 instance Pretty Expression where
-  pretty (ExFormation []) = pretty "[[]]"
-  pretty (ExFormation bindings) = vsep [pretty "[[", indent 2 (pretty bindings), pretty "]]"]
-  pretty ExThis = pretty "$"
-  pretty ExGlobal = pretty "Q"
-  pretty ExTermination = pretty "T"
+  pretty (ExFormation []) = pretty "⟦⟧"
+  pretty (ExFormation bindings) = vsep [pretty "⟦", indent 2 (pretty bindings), pretty "⟧"]
+  pretty ExThis = pretty "ξ"
+  pretty ExGlobal = pretty "Φ"
+  pretty ExTermination = pretty "⊥"
   pretty (ExMeta meta) = prettyMeta meta
   pretty (ExApplication expr []) = pretty expr <> pretty "()"
   pretty (ExApplication expr taus) = pretty expr <> vsep [lparen, indent 2 (pretty taus), rparen]
@@ -48,7 +54,7 @@ instance Pretty Expression where
   pretty (ExMetaTail expr meta) = pretty expr <+> pretty "*" <+> prettyMeta meta
 
 instance Pretty Program where
-  pretty (Program expr) = pretty "Q ->" <+> pretty expr
+  pretty (Program expr) = pretty "Φ" <+> prettyArrow <+> pretty expr
 
 instance Pretty Tail where
   pretty (TaApplication []) = pretty "()"

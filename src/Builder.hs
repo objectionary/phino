@@ -73,9 +73,10 @@ buildExpression (ExApplication expr taus) subst = do
   applied <- buildExpression expr subst
   bindings <- buildBindings taus subst
   Just (ExApplication applied bindings)
-buildExpression (ExFormation bds) subst = do
-  bindings <- buildBindings bds subst
-  Just (ExFormation bindings)
+buildExpression (ExFormation bds) subst = buildBindings bds subst >>= (Just . ExFormation)
+-- buildExpression (ExFormation bds) subst = do
+--   bindings <- buildBindings bds subst
+--   Just (ExFormation bindings)
 buildExpression (ExMeta meta) (Subst mp) = case Map.lookup meta mp of
   Just (MvExpression expr) -> Just expr
   _ -> Nothing
