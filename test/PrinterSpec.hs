@@ -6,7 +6,7 @@ module PrinterSpec where
 import Ast
 import Control.Monad (forM_)
 import Matcher (MetaValue (MvAttribute, MvExpression), substEmpty, substSingle)
-import Parser (parseProgram, parseProgramThrows)
+import Parser (parseProgramThrows)
 import Prettyprinter
 import Printer
 import Test.Hspec (Example (Arg), Expectation, Spec, SpecWith, describe, it, runIO, shouldBe)
@@ -37,10 +37,10 @@ spec = do
           ]
     test printProgram useCases
 
--- describe "printSubstitution" $
---   test
---     printSubstitutions
---     [ ("[\n  (\n    \n  )\n]", [substEmpty]),
---       ("[\n  (\n    !e >> Q.x\n  )\n]", [substSingle "e" (MvExpression (ExDispatch ExGlobal (AtLabel "x")))]),
---       ("[\n  (\n    !a >> x\n  )\n]", [substSingle "a" (MvAttribute (AtLabel "x"))])
---     ]
+  describe "print substitution" $
+    test
+      printSubstitutions
+      [ ("[()]", "[\n  (\n    \n  )\n]", [substEmpty]),
+        ("[(!e >> Q.x)]", "[\n  (\n    !e >> Φ.x\n  )\n]", [substSingle "e" (MvExpression (ExDispatch ExGlobal (AtLabel "x")))]),
+        ("[(!a >> x)]", "[\n  (\n    !a >> x\n  )\n]", [substSingle "a" (MvAttribute (AtLabel "x"))])
+      ]
