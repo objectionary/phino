@@ -65,7 +65,8 @@ test-suite spec
     MatcherSpec,
     BuilderSpec,
     ReplacerSpec,
-    PrinterSpec
+    PrinterSpec,
+    RewriterSpec
   default-extensions:
     ImportQualifiedPost
   ghc-options: -Wall
@@ -78,7 +79,11 @@ test-suite spec
     hspec,
     hspec-core,
     filepath,
-    prettyprinter
+    prettyprinter,
+    aeson,
+    yaml,
+    text,
+    temporary
   build-tool-depends:
     hspec-discover:hspec-discover
   default-language: Haskell2010

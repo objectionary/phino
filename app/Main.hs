@@ -6,15 +6,9 @@ module Main where
 import Data.Version (showVersion)
 import Options.Applicative
 import Paths_phino (version)
-import Rewriter (rewrite)
+import Rewriter
 
 newtype Command = CmdRewrite OptsRewrite
-
-data OptsRewrite = OptsRewrite
-  { rules :: Maybe FilePath,
-    normalize :: Bool,
-    phi :: FilePath
-  }
 
 rewriteParser :: Parser Command
 rewriteParser =
@@ -22,6 +16,7 @@ rewriteParser =
     <$> ( OptsRewrite
             <$> optional (strOption (long "rules" <> metavar "FILENAME" <> help "Custom rule"))
             <*> switch (long "normalize" <> help "Use built-in rules")
+            <*> switch (long "nothing" <> help "Just desugar given expression")
             <*> strArgument (metavar "FILENAME" <> help "Path to .phi file to process")
         )
 
@@ -38,6 +33,6 @@ main :: IO ()
 main = do
   cmd <- execParser parserInfo
   case cmd of
-    CmdRewrite (OptsRewrite rules' normalize' phi') -> do
-      rewritten <- rewrite rules' normalize' phi'
+    CmdRewrite opts -> do
+      rewritten <- rewrite opts
       putStrLn rewritten

@@ -43,6 +43,9 @@ instance {-# OVERLAPPING #-} Pretty [Binding] where
 
 instance Pretty Expression where
   pretty (ExFormation []) = pretty "⟦⟧"
+  pretty (ExFormation [binding]) = case binding of
+    BiTau _ _ -> vsep [pretty "⟦", indent 2 (pretty binding), pretty "⟧"]
+    _ -> pretty "⟦" <+> pretty binding <+> pretty "⟧"
   pretty (ExFormation bindings) = vsep [pretty "⟦", indent 2 (pretty bindings), pretty "⟧"]
   pretty ExThis = pretty "ξ"
   pretty ExGlobal = pretty "Φ"
