@@ -7,27 +7,15 @@
 
 module RewriterSpec where
 
-import Ast
 import Control.Monad (forM_)
 import Data.Aeson
-import Data.Text (unpack)
 import Data.Yaml qualified as Yaml
 import GHC.Generics
 import Misc (allPathsIn)
-import Parser (parseProgram)
 import Rewriter (OptsRewrite (..), defaultOptsRewrite, rewrite)
 import System.FilePath (replaceExtension, takeBaseName, takeFileName, (</>))
 import System.IO.Temp (withSystemTempDirectory)
 import Test.Hspec (Spec, describe, it, runIO, shouldBe)
-
-instance FromJSON Program where
-  parseJSON =
-    withText
-      "Program"
-      ( \txt -> case parseProgram (unpack txt) of
-          Left err -> fail err
-          Right expr -> pure expr
-      )
 
 data YamlPack = YamlPack
   { input :: String,

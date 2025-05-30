@@ -16,7 +16,6 @@ import GHC.Generics
 import Parser
 
 instance FromJSON Expression where
-  parseJSON :: Value -> Yaml.Parser Expression
   parseJSON =
     withText
       "Expression"
