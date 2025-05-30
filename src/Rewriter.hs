@@ -6,7 +6,7 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Rewriter (rewrite, defaultOptsRewrite, OptsRewrite (..)) where
+module Rewriter (rewrite) where
 
 import Ast
 import Builder (buildExpressions)
@@ -19,33 +19,15 @@ import Replacer (replaceProgram)
 import System.Directory
 import Text.Printf
 import qualified Yaml as Y
-
-data OptsRewrite = OptsRewrite
-  { rules :: Maybe FilePath,
-    normalize :: Bool,
-    nothing :: Bool,
-    phi :: FilePath
-  }
-
-defaultOptsRewrite :: OptsRewrite
-defaultOptsRewrite =
-  OptsRewrite
-    { rules = Nothing,
-      normalize = False,
-      nothing = False,
-      phi = ""
-    }
+import Yaml (Rule)
 
 data RewriteException
-  = InvalidArguments
-  | CouldNotMatch {pattern :: Expression, program :: Program}
+  = CouldNotMatch {pattern :: Expression, program :: Program}
   | CouldNotBuild {expr :: Expression, substs :: [Subst]}
   | CouldNotReplace {prog :: Program, ptn :: Expression, res :: Expression}
-  | FileDoesNotExist {file :: FilePath}
   deriving (Exception)
 
 instance Show RewriteException where
-  show InvalidArguments = "Invalid set of arguments: no --rules and no --normalize are provided"
   show CouldNotMatch {..} =
     printf
       "Couldn't find given pattern in provided program\n--Pattern: %s\n--Program: %s"
@@ -80,19 +62,10 @@ applyRules program (rule : rest) = do
   prog <- applyRules program [rule]
   applyRules prog rest
 
-rewrite :: OptsRewrite -> IO String
-rewrite OptsRewrite {..} = do
-  program <- parseProgramThrows =<< readFile =<< ensuredFile phi
-  rewritten <-
-    if nothing
-      then pure program
-      else do
-        rules' <- case rules of
-          Nothing ->
-            if normalize
-              then ensuredFile "resources/normalize.yaml"
-              else throwIO InvalidArguments
-          Just pth -> ensuredFile pth
-        ruleSet <- Y.yamlRuleSet rules'
-        applyRules program (Y.rules ruleSet)
+rewrite :: String -> Maybe Y.RuleSet -> IO String
+rewrite prog rulesSet = do
+  program <- parseProgramThrows prog
+  rewritten <- case rulesSet of
+    Just set -> applyRules program (Y.rules set)
+    Nothing -> pure program
   pure (printProgram rewritten)
