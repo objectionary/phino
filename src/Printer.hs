@@ -41,8 +41,14 @@ instance Pretty Binding where
 instance {-# OVERLAPPING #-} Pretty [Binding] where
   pretty bindings = vsep (punctuate comma (map pretty bindings))
 
+inlinedBinding :: Binding -> Doc n
+inlinedBinding binding = pretty "⟦" <+> pretty binding <+> pretty "⟧"
+
 instance Pretty Expression where
   pretty (ExFormation []) = pretty "⟦⟧"
+  pretty (ExFormation [binding]) = case binding of
+    BiTau _ _ -> vsep [pretty "⟦", indent 2 (pretty binding), pretty "⟧"]
+    _ -> pretty "⟦" <+> pretty binding <+> pretty "⟧"
   pretty (ExFormation bindings) = vsep [pretty "⟦", indent 2 (pretty bindings), pretty "⟧"]
   pretty ExThis = pretty "ξ"
   pretty ExGlobal = pretty "Φ"

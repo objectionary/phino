@@ -1,5 +1,6 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE InstanceSigs #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
@@ -15,6 +16,7 @@ import GHC.Generics
 import Parser
 
 instance FromJSON Expression where
+  parseJSON :: Value -> Yaml.Parser Expression
   parseJSON =
     withText
       "Expression"

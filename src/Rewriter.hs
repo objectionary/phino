@@ -1,24 +1,40 @@
+{-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
-{-# LANGUAGE DeriveAnyClass #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Rewriter (rewrite) where
+module Rewriter (rewrite, defaultOptsRewrite, OptsRewrite (..)) where
 
 import Ast
 import Builder (buildExpressions)
 import Control.Exception
-import Matcher (matchProgram, Subst)
+import Matcher (Subst, matchProgram)
+import Misc (ensuredFile)
 import Parser (parseProgram, parseProgramThrows)
-import Printer (printProgram, printExpression, printSubstitutions)
+import Printer (printExpression, printProgram, printSubstitutions)
 import Replacer (replaceProgram)
 import System.Directory
 import Text.Printf
 import qualified Yaml as Y
-import Misc (ensuredFile)
+
+data OptsRewrite = OptsRewrite
+  { rules :: Maybe FilePath,
+    normalize :: Bool,
+    nothing :: Bool,
+    phi :: FilePath
+  }
+
+defaultOptsRewrite :: OptsRewrite
+defaultOptsRewrite =
+  OptsRewrite
+    { rules = Nothing,
+      normalize = False,
+      nothing = False,
+      phi = ""
+    }
 
 data RewriteException
   = InvalidArguments
@@ -35,13 +51,13 @@ instance Show RewriteException where
       "Couldn't find given pattern in provided program\n--Pattern: %s\n--Program: %s"
       (printExpression pattern)
       (printProgram program)
-  show CouldNotBuild {..} = 
+  show CouldNotBuild {..} =
     printf
       "Couldn't build given expression with provided substitutions\n--Expression: %s\n--Substitutions: %s"
       (printExpression expr)
       (printSubstitutions substs)
-  show CouldNotReplace {..} = 
-    printf 
+  show CouldNotReplace {..} =
+    printf
       "Couldn't replace expression in program by pattern\nProgram: %s\n--Pattern: %s\n--Result: %s"
       (printProgram prog)
       (printExpression ptn)
@@ -64,17 +80,19 @@ applyRules program (rule : rest) = do
   prog <- applyRules program [rule]
   applyRules prog rest
 
-rewrite :: Maybe FilePath -> Bool -> FilePath -> IO String
-rewrite rules normalize input = do
-  input' <- ensuredFile input
-  content <- readFile input'
-  program <- parseProgramThrows content
-  rules' <- case rules of
-    Nothing ->
-      if normalize
-        then ensuredFile "resources/normalize.yaml"
-        else throwIO InvalidArguments
-    Just pth -> ensuredFile pth
-  ruleSet <- Y.yamlRuleSet rules'
-  rewritten <- applyRules program (Y.rules ruleSet)
+rewrite :: OptsRewrite -> IO String
+rewrite OptsRewrite {..} = do
+  program <- parseProgramThrows =<< readFile =<< ensuredFile phi
+  rewritten <-
+    if nothing
+      then pure program
+      else do
+        rules' <- case rules of
+          Nothing ->
+            if normalize
+              then ensuredFile "resources/normalize.yaml"
+              else throwIO InvalidArguments
+          Just pth -> ensuredFile pth
+        ruleSet <- Y.yamlRuleSet rules'
+        applyRules program (Y.rules ruleSet)
   pure (printProgram rewritten)
