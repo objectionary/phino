@@ -13,7 +13,6 @@ import Data.Yaml qualified as Yaml
 import GHC.Generics
 import Misc (allPathsIn)
 import Rewriter (rewrite)
-import System.IO.Temp (withSystemTempDirectory)
 import Test.Hspec (Spec, describe, runIO, shouldBe, it)
 import qualified Yaml
 import System.FilePath (takeBaseName)
@@ -27,9 +26,6 @@ data YamlPack = YamlPack
 
 yamlPack :: FilePath -> IO YamlPack
 yamlPack = Yaml.decodeFileThrow
-
-withTempDir :: (FilePath -> IO a) -> IO a
-withTempDir = withSystemTempDirectory "temp"
 
 spec :: Spec
 spec = do
