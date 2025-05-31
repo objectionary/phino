@@ -14,6 +14,7 @@ common warnings
 -- Library with core modules
 library
   exposed-modules:
+    CLI,
     Ast,
     Parser,
     Matcher,
@@ -22,8 +23,10 @@ library
     Printer,
     Rewriter,
     Yaml,
-    Misc
+    Misc,
   hs-source-dirs: src
+  other-modules:
+    Paths_phino
   build-depends:
     base ^>=4.18.3.0,
     containers,
@@ -37,7 +40,8 @@ library
     binary-ieee754,
     bytestring,
     utf8-string,
-    prettyprinter
+    prettyprinter,
+    optparse-applicative,
   default-language: Haskell2010
 
 -- Executable using the library
@@ -45,22 +49,20 @@ executable phino
   import:           warnings
   main-is:          Main.hs
   hs-source-dirs:   app
-  other-modules: 
-    Paths_phino
   build-depends:
     phino,
-    base,
-    containers,
-    optparse-applicative
+    base
   default-language: Haskell2010
 
 -- Test suite for Matcher
 test-suite spec
+  import:           warnings
   type:             exitcode-stdio-1.0
   main-is:          Main.hs
   hs-source-dirs:   test
   other-modules:
     Spec,
+    CLISpec,
     ParserSpec,
     MatcherSpec,
     BuilderSpec,
@@ -83,7 +85,7 @@ test-suite spec
     aeson,
     yaml,
     text,
-    temporary
+    silently
   build-tool-depends:
     hspec-discover:hspec-discover
   default-language: Haskell2010
