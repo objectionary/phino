@@ -33,7 +33,8 @@ spec = do
       [ ("Q -> [[]]", Just (Program (ExFormation []))),
         ("Q -> T(x -> Q)", Just (Program (ExApplication ExTermination [BiTau (AtLabel "x") ExGlobal]))),
         ("Q -> Q.org.eolang", Just (Program (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang")))),
-        ("Q -> [[x -> $, y -> ?]]", Just (Program (ExFormation [BiTau (AtLabel "x") ExThis, BiVoid (AtLabel "y")])))
+        ("Q -> [[x -> $, y -> ?]]", Just (Program (ExFormation [BiTau (AtLabel "x") ExThis, BiVoid (AtLabel "y")]))),
+        ("{[[foo ↦ QQ]]}", Just (Program (ExFormation [BiTau (AtLabel "foo") (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang"))])))
       ]
 
   describe "parse expression" $
