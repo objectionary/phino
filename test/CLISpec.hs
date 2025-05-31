@@ -17,7 +17,6 @@ spec = do
     output <- capture_ (runCLI args)
     output `shouldContain` "Φ ↦ ⟦\n  foo ↦ Φ.org.eolang\n⟧"
 
-  -- @todo:
   it "desugares with --nothing flag from stdin" $ do
     pendingWith "Capturing from stdin is not supported yet"
     let args = ["rewrite", "--nothing", "{[[foo ↦ QQ]]}"]
