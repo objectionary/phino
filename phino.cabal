@@ -3,29 +3,31 @@ cabal-version:      3.0
 name:               phino
 version:            0.0.0.0
 license:            MIT
+synopsis:           Command-Line Manipulator of 𝜑-Calculus Expressions
+description:        Please see the README on GitHub at <https://github.com/objectionary/phino#readme>
+homepage:           https://github.com/objectionary/phino#readme
+bug-reports:        https://github.com/objectionary/phino/issues
 license-file:       LICENSES/MIT.txt
 author:             maxonfjvipon
 maintainer:         mtrunnikov@gmail.com
+copyright:          2025 Objectionary.com
+category:           Language, Code Analysis
 build-type:         Simple
+
+source-repository head
+  type: git
+  location: https://github.com/objectionary/phino
 
 common warnings
   ghc-options: -Wall
 
--- Library with core modules
 library
   exposed-modules:
-    CLI,
-    Ast,
-    Parser,
-    Matcher,
-    Builder,
-    Replacer,
-    Printer,
-    Rewriter,
-    Yaml,
-    Misc
+    CLI, Ast, Parser, Matcher, Builder, Replacer, Printer, Rewriter, Yaml, Misc
   hs-source-dirs: src
   other-modules:
+    Paths_phino
+  autogen-modules:
     Paths_phino
   build-depends:
     base ^>=4.18.3.0,

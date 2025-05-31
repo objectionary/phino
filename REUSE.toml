@@ -9,7 +9,8 @@ path = [
     "**.json",
     "phino.cabal",
     "**.lock",
-    "**.phi"
+    "**.phi",
+    ".pdd"
 ]
 precedence = "override"
 SPDX-FileCopyrightText = "Copyright (c) 2025 Objectionary.com"

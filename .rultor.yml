@@ -1,0 +1,26 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+docker:
+  image: maxonfjvipon/rultor-image-hs:master
+assets:
+  hackage-auth: maxonfjvipon/secrets#.hackage-auth
+install: |
+  pdd -f /dev/null -v
+release:
+  pre: false
+  script: |
+    [[ "${tag}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || exit -1
+    sed -i "s/0\.0\.0\.0/0.${tag}/" phino.cabal
+    chmod 755 ../hackage-auth
+    cabal check
+    cabal build
+    cabal test
+    git commit -am "set version to ${tag}"
+    cabal sdist
+    cabal upload --token=$(cat ../hackage-auth) dist-newstyle/sdist/phino-0.${tag}.tar.gz
+merge:
+  script: |-
+    cabal build
+    cabal test
