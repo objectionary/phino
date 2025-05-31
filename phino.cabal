@@ -85,7 +85,8 @@ test-suite spec
     aeson,
     yaml,
     text,
-    silently
+    silently,
+    directory
   build-tool-depends:
     hspec-discover:hspec-discover
   default-language: Haskell2010

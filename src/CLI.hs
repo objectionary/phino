@@ -1,5 +1,6 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
@@ -12,32 +13,40 @@ import Paths_phino (version)
 import Rewriter (rewrite)
 import Misc (ensuredFile)
 import qualified Yaml as Y
-import System.IO (hPutStrLn, stderr)
+import System.IO (hPutStrLn, stderr, getContents')
 import System.Exit (exitFailure)
 import Control.Exception (handle, SomeException, Exception (displayException), throwIO)
+import Control.Exception.Base
+import Text.Printf (printf)
 
 data CmdException
   = InvalidRewriteArguments
   | NormalizationIsNotSupported
-  deriving (Show, Exception)
+  | CouldNotReadFromStdin { message :: String }
+  deriving (Exception)
+
+instance Show CmdException where
+  show InvalidRewriteArguments = "Invalid set of arguments for 'rewrite' command: no --rules, no --normalize, no --nothing are provided"
+  show NormalizationIsNotSupported = "Normalization is not supported yet..."
+  show CouldNotReadFromStdin{..} = printf "Could not read 𝜑-expression from stdin\nReason: %s" message
 
 newtype Command = CmdRewrite OptsRewrite
 
 data OptsRewrite = OptsRewrite
   { rules :: Maybe FilePath,
+    phiInput :: Maybe FilePath,
     normalize :: Bool,
-    nothing :: Bool,
-    phi :: FilePath
+    nothing :: Bool
   }
 
 rewriteParser :: Parser Command
 rewriteParser =
   CmdRewrite
     <$> ( OptsRewrite
-            <$> optional (strOption (long "rules" <> metavar "FILENAME" <> help "Custom rule"))
-            <*> switch (long "normalize" <> help "Use built-in rules")
-            <*> switch (long "nothing" <> help "Just desugar given expression")
-            <*> strArgument (metavar "FILENAME" <> help "Path to .phi file to process")
+            <$> optional (strOption (long "rules" <> metavar "FILENAME" <> help "Path to custom rules"))
+            <*> optional (strOption (long "phi-input" <> metavar "FILENAME" <> help "Path .phi file with 𝜑-expression"))
+            <*> switch (long "normalize" <> help "Use built-in normalization rules")
+            <*> switch (long "nothing" <> help "Desugar provided 𝜑-expression")
         )
 
 commandParser :: Parser Command
@@ -59,7 +68,9 @@ runCLI args = handle handler $ do
   cmd <- handleParseResult (execParserPure defaultPrefs parserInfo args)
   case cmd of
     CmdRewrite OptsRewrite{..} -> do
-      prog <- readFile =<< ensuredFile phi
+      prog <- case phiInput of
+        Just pth -> readFile =<< ensuredFile pth
+        Nothing -> getContents' `catch` (\(e :: SomeException) -> throwIO (CouldNotReadFromStdin (show e)))
       rules' <- if nothing
         then pure Nothing
         else do
