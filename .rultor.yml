@@ -8,9 +8,6 @@ assets:
   hackage-auth: maxonfjvipon/secrets#.hackage-auth
 install: |
   # pdd -f /dev/null -v
-  cp -r /root/.ghcup /home/r/.ghcup
-  chown -R r:r /home/r/.ghcup
-  echo 'export PATH=$HOME/.ghcup/bin:$HOME/.cabal/bin:$PATH' >> /home/r/.profile
 release:
   pre: false
   script: |
