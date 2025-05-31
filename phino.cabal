@@ -23,7 +23,7 @@ library
     Printer,
     Rewriter,
     Yaml,
-    Misc,
+    Misc
   hs-source-dirs: src
   other-modules:
     Paths_phino
@@ -41,7 +41,7 @@ library
     bytestring,
     utf8-string,
     prettyprinter,
-    optparse-applicative,
+    optparse-applicative
   default-language: Haskell2010
 
 -- Executable using the library
