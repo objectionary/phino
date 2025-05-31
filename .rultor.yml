@@ -7,7 +7,7 @@ docker:
 assets:
   hackage-auth: maxonfjvipon/secrets#.hackage-auth
 install: |
-  pdd -f /dev/null -v
+  # pdd -f /dev/null -v
 release:
   pre: false
   script: |
