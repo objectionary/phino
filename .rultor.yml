@@ -9,6 +9,12 @@ assets:
   hackage-auth: maxonfjvipon/secrets#.hackage-auth
 install: |
   # pdd -f /dev/null -v
+  echo $PATH
+  cabal --version
+  which cabal
+  /opt/ghc/9.6.7/bin/ghc --version
+  ghc --version
+  which ghc
   cabal update
 release:
   pre: false
