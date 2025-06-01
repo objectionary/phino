@@ -4,6 +4,7 @@
 # yamllint disable rule:line-length
 docker:
   image: maxonfjvipon/rultor-image-hs:master
+  as_root: true
 assets:
   hackage-auth: maxonfjvipon/secrets#.hackage-auth
 install: |
