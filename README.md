@@ -13,9 +13,9 @@ of [𝜑-calculus](https://www.eolang.org) expressions.
 Install [Cabal][cabal] first and then:
 
 ```bash
-cabal update
-cabal install phino
-phino --version
+$ cabal update
+$ cabal install phino
+$ phino --version
 ```
 
 Then, you write a simple [𝜑-calculus](https://www.eolang.org) expression
@@ -94,8 +94,8 @@ provided they don't violate our quality standards. To avoid frustration,
 before sending us your pull request please make sure all your tests pass:
 
 ```bash
-cabal build all
-cabal test
+$ cabal build all
+$ cabal test
 ```
 
 You will need [GHC] and [Cabal ≥3.0][cabal] or [Stack ≥ 3.0][stack] installed.
