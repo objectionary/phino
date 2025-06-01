@@ -32,9 +32,9 @@ $ phino dataize hello.phi
 "hello"
 ```
 
-You can rewrite this expression (**under development**) with the help of rules defined in the
-`my-rules.yml` YAML file (here, the `!b` is a capturing group, similar to
-regular expressions):
+You can rewrite this expression (**under development**) with the help of rules
+defined in the `my-rules.yml` YAML file (here, the `!b` is a capturing group, 
+similar to regular expressions):
 
 ```yaml
 title: My custom rule set
@@ -51,22 +51,24 @@ $ phino rewrite --rules=my-rules.yml --phi-input=hello.phi
 Φ ↦ ⟦ φ ↦ ⟦ Δ ⤍ 62-79-65 ⟧, t ↦ ξ.k, k ↦ ⟦⟧ ⟧
 ```
 
-If `--phi-input` is not provided, the 𝜑-expession is taken from `stdin`:
+If `--phi-input` is not provided, the 𝜑-expression is taken from `stdin`:
 
 ```bash
 $ echo 'Φ ↦ ⟦ φ ↦ ⟦ Δ ⤍ 68-65-6C-6C-6F ⟧ ⟧' | phino rewrite --rules=my-rules.yml
 Φ ↦ ⟦ φ ↦ ⟦ Δ ⤍ 62-79-65 ⟧ ⟧
 ```
 
-You can also use [built-in rules](resources/normalize.yaml), which are designed to normalize expressions (**under development**):
+You can also use [built-in rules](resources/normalize.yaml), which are designed
+to normalize expressions (**under development**):
 
 ```bash
 $ phino rewrite --normalize --phi-input=hello.phi
 Φ ↦ ⟦ φ ↦ ⟦ Δ ⤍ 68-65-6C-6C-6F ⟧, t ↦ ⟦⟧, k ↦ ⟦⟧ ⟧
 ```
 
-Also `phino` supports 𝜑-expessions in [ASCII](ascii) format and with syntax sugar. 
-The `rewrite` command also allows you to desugar the expression and print it in canonical syntax:
+Also `phino` supports 𝜑-expressions in [ASCII](https://en.wikipedia.org/wiki/ASCII) format and with
+syntax sugar. The `rewrite` command also allows you to desugar the expression
+and print it in canonical syntax:
 
 ```bash
 $ echo 'Q -> [[ @ -> QQ.io.stdout("hello") ]]' | phino rewrite --nothing
@@ -97,7 +99,6 @@ cabal test
 
 You will need [GHC] and [Cabal ≥3.0][cabal] or [Stack ≥ 3.0][stack] installed.
 
-[ascii]: https://en.wikipedia.org/wiki/ASCII
 [cabal]: https://www.haskell.org/cabal/
 [stack]: https://docs.haskellstack.org/en/stable/install_and_upgrade/
 [GHC]: https://www.haskell.org/ghc/
