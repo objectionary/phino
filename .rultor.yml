@@ -9,8 +9,7 @@ assets:
   hackage-auth: maxonfjvipon/secrets#.hackage-auth
 install: |
   # pdd -f /dev/null -v
-  'export PATH=/usr/local/bin/cabal:/opt/ghc/9.6.7/bin/ghc:$PATH' >> /etc/profile
-  'export PATH=/usr/local/bin/cabal:/opt/ghc/9.6.7/bin/ghc:$PATH' >> ~/.bash_profile
+  cabal update
 release:
   pre: false
   script: |
