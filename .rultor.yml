@@ -15,6 +15,7 @@ install: |
   /opt/ghc/9.6.7/bin/ghc --version
   ghc --version
   which ghc
+  exit 1
   cabal update
 release:
   pre: false
