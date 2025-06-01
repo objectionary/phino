@@ -8,15 +8,10 @@ docker:
 assets:
   hackage-auth: maxonfjvipon/secrets#.hackage-auth
 install: |
-  # pdd -f /dev/null -v
-  echo $PATH
   cabal --version
-  which cabal
-  /opt/ghc/9.6.7/bin/ghc --version
   ghc --version
-  which ghc
-  exit 1
   cabal update
+  pdd -f /dev/null -v
 release:
   pre: false
   script: |
