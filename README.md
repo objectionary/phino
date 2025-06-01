@@ -1,5 +1,6 @@
 # Command-Line Manipulator of 𝜑-Calculus Expressions
 
+[![`phino` on Hackage](https://img.shields.io/hackage/v/phino)](http://hackage.haskell.org/package/phino)
 [![cabal-linux](https://github.com/objectionary/phino/actions/workflows/cabal.yml/badge.svg)](https://github.com/objectionary/phino/actions/workflows/cabal.yml)
 [![stack-linux](https://github.com/objectionary/phino/actions/workflows/stack.yml/badge.svg)](https://github.com/objectionary/phino/actions/workflows/stack.yml)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSES/MIT.txt)
@@ -9,11 +10,11 @@
 This is a command-line normalizer, rewriter, and dataizer
 of [𝜑-calculus](https://www.eolang.org) expressions.
 
-Install [Stack][stack] first and then:
+Install [Cabal][cabal] first and then:
 
 ```bash
-stack update
-stack install phino
+cabal update
+cabal install phino
 phino --version
 ```
 
@@ -24,35 +25,60 @@ in the `hello.phi` file:
 Φ ↦ ⟦ φ ↦ ⟦ Δ ⤍ 68-65-6C-6C-6F ⟧, t ↦ ξ.k, k ↦ ⟦⟧ ⟧
 ```
 
-Then, you dataize it:
+Then, you dataize it (**under development**):
 
 ```bash
 $ phino dataize hello.phi
 "hello"
 ```
 
-You can rewrite this expression with the help of rules defined in the
-`my-rule.yml` YAML file (here, the `!d` is a capturing group, similar to
+You can rewrite this expression (**under development**) with the help of rules defined in the
+`my-rules.yml` YAML file (here, the `!b` is a capturing group, similar to
 regular expressions):
 
 ```yaml
-name: say good bye
-match: Δ ⤍ !d
-replace: Δ ⤍ 62-79-65
+title: My custom rule set
+rules:
+  - name: Change bytes
+    pattern: Δ ⤍ !b
+    result: Δ ⤍ 62-79-65
 ```
 
 Then, rewrite:
 
 ```bash
-$ phino rewrite --rule=my-rule.yml hello.phi
+$ phino rewrite --rules=my-rules.yml --phi-input=hello.phi
 Φ ↦ ⟦ φ ↦ ⟦ Δ ⤍ 62-79-65 ⟧, t ↦ ξ.k, k ↦ ⟦⟧ ⟧
 ```
 
-You can also use built-in rules, which are designed to normalize expressions:
+If `--phi-input` is not provided, the 𝜑-expession is taken from `stdin`:
 
 ```bash
-$ phino rewrite --normalize hello.phi
-Φ ↦ ⟦ φ ↦ ⟦ Δ ⤍ 62-79-65 ⟧, t ↦ ⟦⟧, k ↦ ⟦⟧ ⟧
+$ echo 'Φ ↦ ⟦ φ ↦ ⟦ Δ ⤍ 68-65-6C-6C-6F ⟧ ⟧' | phino rewrite --rules=my-rules.yml
+Φ ↦ ⟦ φ ↦ ⟦ Δ ⤍ 62-79-65 ⟧ ⟧
+```
+
+You can also use [built-in rules](resources/normalize.yaml), which are designed to normalize expressions (**under development**):
+
+```bash
+$ phino rewrite --normalize --phi-input=hello.phi
+Φ ↦ ⟦ φ ↦ ⟦ Δ ⤍ 68-65-6C-6C-6F ⟧, t ↦ ⟦⟧, k ↦ ⟦⟧ ⟧
+```
+
+Also `phino` supports 𝜑-expessions in [ASCII](ascii) format and with syntax sugar. 
+The `rewrite` command also allows you to desugar the expression and print it in canonical syntax:
+
+```bash
+$ echo 'Q -> [[ @ -> QQ.io.stdout("hello") ]]' | phino rewrite --nothing
+Φ ↦ ⟦ 
+  φ ↦ Φ.org.eolang.io.stdout(
+    α0 ↦ Φ.org.eolang.string(
+      α0 ↦ Φ.org.eolang.bytes(
+        α0 ↦ ⟦ Δ ⤍ 68-65-6C-6C-6F ⟧
+      )  
+    )
+  )
+⟧
 ```
 
 That's it.
@@ -69,9 +95,10 @@ cabal build all
 cabal test
 ```
 
-You will need [GHC] and [Cabal ≥3.0][Cabal] or [Stack ≥ 3.0][stack] installed.
+You will need [GHC] and [Cabal ≥3.0][cabal] or [Stack ≥ 3.0][stack] installed.
 
-[Cabal]: https://www.haskell.org/cabal/
+[ascii]: https://en.wikipedia.org/wiki/ASCII
+[cabal]: https://www.haskell.org/cabal/
 [stack]: https://docs.haskellstack.org/en/stable/install_and_upgrade/
 [GHC]: https://www.haskell.org/ghc/
 [guidelines]: https://www.yegor256.com/2014/04/15/github-guidelines.html
