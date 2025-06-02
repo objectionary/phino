@@ -15,7 +15,7 @@ import Misc (allPathsIn)
 import Rewriter (rewrite)
 import Test.Hspec (Spec, describe, runIO, shouldBe, it)
 import qualified Yaml
-import System.FilePath (takeBaseName)
+import System.FilePath (makeRelative)
 
 data YamlPack = YamlPack
   { input :: String,
@@ -30,7 +30,8 @@ yamlPack = Yaml.decodeFileThrow
 spec :: Spec
 spec = do
   describe "rewrite packs" $ do
-    packs <- runIO (allPathsIn "test/resources/rewriter-packs")
+    let resources = "test/resources/rewriter-packs"
+    packs <- runIO (allPathsIn resources)
     forM_
       packs
       ( \pth -> do
@@ -39,5 +40,5 @@ spec = do
               input' = input pack
               ruleSet' = ruleSet pack
           rewritten <- runIO $ rewrite input' ruleSet'
-          it (takeBaseName pth) (rewritten `shouldBe` output')
+          it (makeRelative resources pth) (rewritten `shouldBe` output')
       )

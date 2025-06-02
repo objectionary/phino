@@ -3,19 +3,6 @@
 ---
 title: "Normalization Rule Set"
 rules:
-  - name: DUP
-    pattern: |
-      [[
-        !a1 -> !e1.java_util_Stream$map(~0 -> !e2) * !t1,
-        !B1
-      ]]
-    result: |
-      [[
-        some -> !e1,
-        body -> Q.opeo.map-for-each(
-          ~0 -> $.some,
-          ~1 -> !e2
-        ),
-        !a1 -> $.body * !t1,
-        !B1
-      ]]
+  - name: DC
+    pattern: ⊥(!B)
+    result: ⊥

@@ -1,0 +1,18 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+ruleSet:
+  title: "DC in subformation"
+  rules:
+    - pattern: |
+        T(!B)
+      result: |
+        T
+input: |
+  Φ ↦ ⟦ a ↦ ⟦ b ↦ ⊥(t ↦ ⟦⟧, u ↦ ⟦⟧) ⟧ ⟧
+output: |-
+  Φ ↦ ⟦
+    a ↦ ⟦
+      b ↦ ⊥
+    ⟧
+  ⟧

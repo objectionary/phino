@@ -7,7 +7,7 @@ ruleSet:
     - pattern: |
         [[ foo -> [[!B]] ]]
       result: |
-       [[ foo -> Q.x(!B) ]]
+        [[ foo -> Q.x(!B) ]]
 input: |
   {[[
     foo ↦ ⟦
