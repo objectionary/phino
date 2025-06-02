@@ -200,7 +200,8 @@ spec = do
                     )
                 ]
             )
-        )
+        ),
+        ("Q.x(!B)", Just (ExApplication (ExDispatch ExGlobal (AtLabel "x")) [BiMeta "B"]))
       ]
 
   describe "just parses" $
@@ -222,7 +223,9 @@ spec = do
         "[[\n  x -> \"Hi\",\n  y -> 42\n]]",
         "[[x -> -42, y -> +34]]",
         "⟦x ↦ Φ.org.eolang(z ↦ ξ.f, x ↦ α0, φ ↦ ρ, t ↦ φ, first ↦ ⟦ λ ⤍ Function_name, Δ ⤍ 42- ⟧)⟧",
-        "[[x -> 1.00e+3, y -> 2.32e-4]]"
+        "[[x -> 1.00e+3, y -> 2.32e-4]]",
+        "Q.x(!B)",
+        "Q.x(~1 -> Q.y, x -> 5, !B1)"
       ]
       (\expr -> it expr (parseExpression expr `shouldSatisfy` isRight))
 
@@ -238,7 +241,6 @@ spec = do
             "Q.x(x -> ?)",
             "Q.x(L> Func)",
             "Q.x(D> --)",
-            "Q.x(!B)",
             "Q.x(~1 -> ?)",
             "Q.x(L> !F)",
             "Q.x(D> !b)",
@@ -246,7 +248,8 @@ spec = do
             "[[x(~1) -> [[]] ]]",
             "[[y(!e) -> [[]] ]]",
             "[[z(w) -> Q.x]]",
-            "Q.x(y(~1) -> [[]])"
+            "Q.x(y(~1) -> [[]])",
+            "Q.x(1, 2, !B)"
           ]
       )
 

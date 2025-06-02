@@ -154,6 +154,9 @@ tauBinding attr = do
         return (BiTau attr' (ExFormation (voids ++ bs)))
     ]
 
+metaBinding :: Parser Binding
+metaBinding = BiMeta <$> meta 'B'
+
 -- binding
 -- 1. tau
 -- 2. void
@@ -177,7 +180,7 @@ binding =
       try $ do
         _ <- delta
         BiMetaDelta <$> meta 'b',
-      try (BiMeta <$> meta 'B'),
+      try metaBinding,
       try $ do
         _ <- lambda
         BiLambda <$> function,
@@ -305,7 +308,12 @@ exTail expr =
                 _ <- symbol "("
                 bds <-
                   choice
-                    [ try $ tauBinding fullAttribute `sepBy1` symbol ",",
+                    [ try $
+                        choice
+                          [ try (tauBinding fullAttribute),
+                            metaBinding
+                          ]
+                          `sepBy1` symbol ",",
                       do
                         exprs <- expression `sepBy1` symbol ","
                         return (zipWith (BiTau . AtAlpha) [0 ..] exprs) -- \idx expr -> BiTau (AtAlpha idx) expr
