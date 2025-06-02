@@ -1,0 +1,22 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+ruleSet:
+  title: "from formation to application"
+  rules:
+    - pattern: |
+        [[ foo -> [[!B]] ]]
+      result: |
+       [[ foo -> Q.x(!B) ]]
+input: |
+  {[[
+    foo ↦ ⟦
+      a -> $.b
+    ⟧
+  ]]}
+output: |-
+  Φ ↦ ⟦
+    foo ↦ Φ.x(
+      a ↦ ξ.b
+    )
+  ⟧
