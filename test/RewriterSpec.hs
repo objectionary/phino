@@ -30,7 +30,7 @@ yamlPack = Yaml.decodeFileThrow
 spec :: Spec
 spec = do
   describe "rewrite packs" $ do
-    let resources = "test/resources/rewriter-packs"
+    let resources = "test-resources/rewriter-packs"
     packs <- runIO (allPathsIn resources)
     forM_
       packs
