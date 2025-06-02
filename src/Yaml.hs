@@ -30,7 +30,7 @@ data RuleSet = RuleSet
   deriving (Generic, FromJSON, Show)
 
 data Rule = Rule
-  { name :: String,
+  { name :: Maybe String,
     pattern :: Expression,
     result :: Expression
   }
