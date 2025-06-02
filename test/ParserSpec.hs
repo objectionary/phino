@@ -254,7 +254,7 @@ spec = do
       )
 
   describe "parse packs" $ do
-    packs <- runIO (allPathsIn "test/resources/parser-packs")
+    packs <- runIO (allPathsIn "test-resources/parser-packs")
     forM_
       packs
       ( \pack -> do

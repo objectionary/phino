@@ -35,7 +35,7 @@ withRedirectedStdin input action = do
 spec :: Spec
 spec = do
   it "desugares with --nothing flag from file" $ do
-    let args = ["rewrite", "--nothing", "--phi-input=test/resources/cli/desugar.phi"]
+    let args = ["rewrite", "--nothing", "--phi-input=test-resources/cli/desugar.phi"]
     output <- capture_ (runCLI args)
     output `shouldContain` "Φ ↦ ⟦\n  foo ↦ Φ.org.eolang\n⟧"
 
