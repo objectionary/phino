@@ -5,7 +5,15 @@
 -- SPDX-License-Identifier: MIT
 
 -- The goal of the module is to parse given phi program to Ast
-module Parser (parseProgram, parseProgramThrows, parseExpression, parseExpressionThrows) where
+module Parser
+  ( parseProgram,
+    parseProgramThrows,
+    parseExpression,
+    parseExpressionThrows,
+    parseAttribute,
+    parseBinding
+  )
+where
 
 import Ast
 import Control.Exception (Exception, throwIO)
@@ -370,6 +378,12 @@ parse' name parser input = do
   case parsed of
     Right parsed' -> Right parsed'
     Left err -> Left (errorBundlePretty err)
+
+parseBinding :: String -> Either String Binding
+parseBinding = parse' "binding" binding
+
+parseAttribute :: String -> Either String Attribute
+parseAttribute = parse' "attribute" fullAttribute
 
 parseExpression :: String -> Either String Expression
 parseExpression = parse' "expression" expression

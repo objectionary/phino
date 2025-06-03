@@ -70,7 +70,8 @@ test-suite spec
     BuilderSpec,
     ReplacerSpec,
     PrinterSpec,
-    RewriterSpec
+    RewriterSpec,
+    YamlSpec
   default-extensions:
     ImportQualifiedPost
   ghc-options: -Wall
