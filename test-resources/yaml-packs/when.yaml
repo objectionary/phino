@@ -4,14 +4,15 @@
 pattern: 'Q'
 result: 'Q'
 when:
-  and:
-    - or:
-        - and:
-            - in:
-                - ['!a1', '!a2']
-                - ['!B']
-    - or:
-        - and:
-            - in:
-                - ['x', '^']
-                - ['!B1']
+  not:
+    and:
+      - or:
+          - and:
+              - in:
+                  - ['!a1', '!a2']
+                  - ['!B']
+      - or:
+          - and:
+              - in:
+                  - ['x', '^']
+                  - ['!B1']
