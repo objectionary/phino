@@ -33,8 +33,16 @@ instance FromJSON Expression where
   parseJSON = parseJSON' "Expression" parseExpression
 
 instance FromJSON Attribute where
-  parseJSON = parseJSON' "Attribute" parseAttribute
-
+  parseJSON =
+    withText
+      "Attribute"
+      ( \txt -> case unpack txt of
+          "λ" -> pure AtLambda
+          "Δ" -> pure AtDelta
+          other -> case parseAttribute other of
+            Left err -> fail err
+            Right attr -> pure attr
+      )
 instance FromJSON Binding where
   parseJSON = parseJSON' "Binding" parseBinding
 
@@ -58,9 +66,9 @@ instance FromJSON Condition where
       )
 
 data Condition
-  = And {and_ :: [Condition]}
-  | Or {or_ :: [Condition]}
-  | In {attrs :: [Attribute], bindings :: [Binding]}
+  = And [Condition]
+  | Or [Condition]
+  | In [Attribute] [Binding]
   deriving (Generic, Show)
 
 data Rule = Rule

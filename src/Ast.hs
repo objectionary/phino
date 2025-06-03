@@ -36,5 +36,7 @@ data Attribute
   | AtAlpha Integer                       -- ~1
   | AtPhi                                 -- @
   | AtRho                                 -- ^
+  | AtLambda                              -- λ, used only in yaml conditions
+  | AtDelta                               -- Δ, used only in yaml conditions
   | AtMeta String                         -- !a
   deriving (Eq, Show, Generic)

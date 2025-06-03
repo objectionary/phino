@@ -4,13 +4,19 @@
 -- The goal of the module is to build phi expression based on
 -- pattern expression and set of substitutions by replacing
 -- meta variables with appropriate meta values
-module Builder where
+module Builder
+  ( buildExpressions,
+    buildExpression,
+    buildAttribute,
+    buildBindings,
+  )
+where
 
 import Ast
-import Misc
-import Matcher
-import qualified Data.Map.Strict as Map
 import Data.List (findIndex)
+import qualified Data.Map.Strict as Map
+import Matcher
+import Misc
 
 buildAttribute :: Attribute -> Subst -> Maybe Attribute
 buildAttribute (AtMeta meta) (Subst mp) = case Map.lookup meta mp of
@@ -40,27 +46,17 @@ buildBinding (BiMetaLambda meta) (Subst mp) = case Map.lookup meta mp of
   _ -> Nothing
 buildBinding binding _ = Just [binding]
 
--- Build bindings which don't contain meta binding (BiMeta)
-buildExactBindings :: [Binding] -> Subst -> Maybe [Binding]
-buildExactBindings [] _ = Just []
-buildExactBindings (bd:rest) subst = do
-  first <- buildBinding bd subst
-  bds <- buildExactBindings rest subst
-  Just (head first : bds)
-
 -- Build bindings that may contain meta binding (BiMeta)
 buildBindings :: [Binding] -> Subst -> Maybe [Binding]
 buildBindings [] _ = Just []
-buildBindings bindings subst = case findIndex isMetaBinding bindings of
-  Just idx -> do
-    exact <- buildExactBindings (withoutAt idx bindings) subst
-    meta <- buildBinding (bindings !! idx) subst
-    Just (exact ++ meta)
-  _ -> buildExactBindings bindings subst
+buildBindings (bd : rest) subst = do
+  first <- buildBinding bd subst
+  bds <- buildBindings rest subst
+  Just (first ++ bds)
 
 buildExpressionWithTails :: Expression -> [Tail] -> Subst -> Expression
 buildExpressionWithTails expr [] _ = expr
-buildExpressionWithTails expr (tail:rest) subst = case tail of
+buildExpressionWithTails expr (tail : rest) subst = case tail of
   TaApplication taus -> buildExpressionWithTails (ExApplication expr taus) rest subst
   TaDispatch attr -> buildExpressionWithTails (ExDispatch expr attr) rest subst
 
@@ -74,9 +70,6 @@ buildExpression (ExApplication expr taus) subst = do
   bindings <- buildBindings taus subst
   Just (ExApplication applied bindings)
 buildExpression (ExFormation bds) subst = buildBindings bds subst >>= (Just . ExFormation)
--- buildExpression (ExFormation bds) subst = do
---   bindings <- buildBindings bds subst
---   Just (ExFormation bindings)
 buildExpression (ExMeta meta) (Subst mp) = case Map.lookup meta mp of
   Just (MvExpression expr) -> Just expr
   _ -> Nothing

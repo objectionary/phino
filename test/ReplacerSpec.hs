@@ -51,5 +51,11 @@ spec = do
           [ExFormation [BiLambda "Func", BiDelta "00-"]],
           [ExGlobal],
           Just (Program ExGlobal)
+        ),
+        ("Q -> Q.org.eolang => ([Q.org.eolang, Q.org], [$, $]) => $",
+          Program (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang")),
+          [ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang"), ExDispatch ExGlobal (AtLabel "org")],
+          [ExThis, ExThis],
+          Just (Program ExThis)
         )
       ]

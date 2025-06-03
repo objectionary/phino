@@ -6,10 +6,10 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Rewriter (rewrite) where
+module Rewriter (rewrite,) where
 
 import Ast
-import Builder (buildExpressions)
+import Builder
 import Control.Exception
 import Matcher (Subst, matchProgram)
 import Misc (ensuredFile)
@@ -18,7 +18,7 @@ import Printer (printExpression, printProgram, printSubstitutions)
 import Replacer (replaceProgram)
 import System.Directory
 import Text.Printf
-import Yaml (Rule, Condition)
+import Yaml
 import qualified Yaml as Y
 
 data RewriteException
@@ -45,8 +45,52 @@ instance Show RewriteException where
       (printExpression ptn)
       (printExpression res)
 
-meets :: Condition -> Bool
-meets cond = True
+-- Check if given attribute is present in given binding
+attrInBinding :: Attribute -> Binding -> Bool
+attrInBinding attr (BiTau battr _) = attr == battr
+attrInBinding attr (BiVoid battr) = attr == battr
+attrInBinding AtLambda (BiLambda _) = True
+attrInBinding AtDelta (BiDelta _) = True
+attrInBinding _ _ = False
+
+-- Check if all given attributes are present in given bindings
+attrsInBindings :: [Attribute] -> [Binding] -> Bool
+attrsInBindings [] _ = True
+attrsInBindings attrs [] = False
+attrsInBindings [attr] (bd : rest) = attrInBinding attr bd || attrsInBindings [attr] rest
+attrsInBindings (attr : rest) bds = attrsInBindings [attr] bds && attrsInBindings rest bds
+
+-- For each substitution check if it meets to given condition
+-- If substitution does not meet the condition - it's thrown out
+-- and is not used in replacement
+meets :: Condition -> [Subst] -> [Subst]
+meets _ [] = []
+meets (Or []) substs = substs
+meets (Or (cond:rest)) [subst] = case meets cond [subst] of
+  [] -> meets (Or rest) [subst]
+  substs -> substs
+meets (And []) substs = substs
+meets (And (cond : rest)) [subst] = case meets cond [subst] of
+  [] -> []
+  _ -> meets (And rest) [subst]
+meets (In attrs bindings) [subst] =
+  case (traverse (`buildAttribute` subst) attrs, buildBindings bindings subst) of
+    (Just attrs', Just bds) -> [subst | attrsInBindings attrs' bds] -- if attrsInBindings attrs' bds then [subst] else []
+    (_, _) -> []
+meets (In attrs bindings) (subst : rest) = do
+  let cond = In attrs bindings
+      substs = meets cond [subst]
+  head substs : meets cond rest
+
+-- Build pattern and result expression and replace patterns to results in given program
+buildAndReplace :: Program -> Expression -> Expression -> [Subst] -> IO Program
+buildAndReplace prog ptn res substs = 
+  case (buildExpressions ptn substs, buildExpressions res substs) of
+    (Just ptns, Just repls) -> case replaceProgram prog ptns repls of
+      Just prog -> pure prog
+      _ -> throwIO (CouldNotReplace prog ptn res)
+    (Nothing, _) -> throwIO (CouldNotBuild ptn substs)
+    (_, Nothing) -> throwIO (CouldNotBuild res substs)
 
 applyRules :: Program -> [Y.Rule] -> IO Program
 applyRules program [] = pure program
@@ -56,18 +100,13 @@ applyRules program [rule] = do
   case matchProgram ptn program of
     [] -> throwIO (CouldNotMatch ptn program)
     substs -> do
-      let replaced = case (buildExpressions ptn substs, buildExpressions res substs) of
-            (Just ptns, Just repls) -> case replaceProgram program ptns repls of
-              Just prog -> pure prog
-              _ -> throwIO (CouldNotReplace program ptn res)
-            (Nothing, _) -> throwIO (CouldNotBuild ptn substs)
-            (_, Nothing) -> throwIO (CouldNotBuild res substs)
+      let replaced = buildAndReplace program ptn res
       case Y.when rule of
-        Just condition ->
-          if meets condition
-            then replaced
-            else pure program
-        Nothing -> replaced
+        Just cond -> case meets cond substs of
+          [] -> pure program
+          substs' -> replaced substs'
+        Nothing -> replaced substs
+
 applyRules program (rule : rest) = do
   prog <- applyRules program [rule]
   applyRules prog rest
