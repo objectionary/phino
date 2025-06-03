@@ -4,5 +4,3 @@
 name: DC
 pattern: ⊥(!B)
 result: ⊥
-when:
-  

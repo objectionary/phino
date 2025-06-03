@@ -18,8 +18,8 @@ import Printer (printExpression, printProgram, printSubstitutions)
 import Replacer (replaceProgram)
 import System.Directory
 import Text.Printf
+import Yaml (Rule, Condition)
 import qualified Yaml as Y
-import Yaml (Rule)
 
 data RewriteException
   = CouldNotMatch {pattern :: Expression, program :: Program}
@@ -45,19 +45,29 @@ instance Show RewriteException where
       (printExpression ptn)
       (printExpression res)
 
+meets :: Condition -> Bool
+meets cond = True
+
 applyRules :: Program -> [Y.Rule] -> IO Program
 applyRules program [] = pure program
 applyRules program [rule] = do
   let ptn = Y.pattern rule
-  let res = Y.result rule
+      res = Y.result rule
   case matchProgram ptn program of
     [] -> throwIO (CouldNotMatch ptn program)
-    substs -> case (buildExpressions ptn substs, buildExpressions res substs) of
-      (Just ptns, Just repls) -> case replaceProgram program ptns repls of
-        Just prog -> pure prog
-        _ -> throwIO (CouldNotReplace program ptn res)
-      (Nothing, _) -> throwIO (CouldNotBuild ptn substs)
-      (_, Nothing) -> throwIO (CouldNotBuild res substs)
+    substs -> do
+      let replaced = case (buildExpressions ptn substs, buildExpressions res substs) of
+            (Just ptns, Just repls) -> case replaceProgram program ptns repls of
+              Just prog -> pure prog
+              _ -> throwIO (CouldNotReplace program ptn res)
+            (Nothing, _) -> throwIO (CouldNotBuild ptn substs)
+            (_, Nothing) -> throwIO (CouldNotBuild res substs)
+      case Y.when rule of
+        Just condition ->
+          if meets condition
+            then replaced
+            else pure program
+        Nothing -> replaced
 applyRules program (rule : rest) = do
   prog <- applyRules program [rule]
   applyRules prog rest
