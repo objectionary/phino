@@ -11,16 +11,22 @@ import Control.Monad (forM_)
 import Data.Aeson
 import Data.Yaml qualified as Yaml
 import GHC.Generics
-import Misc (allPathsIn)
+import Misc (allPathsIn, ensuredFile)
 import Rewriter (rewrite)
-import Test.Hspec (Spec, describe, runIO, shouldBe, it)
-import qualified Yaml
-import System.FilePath (makeRelative)
+import System.FilePath (makeRelative, replaceExtension, (</>))
+import Test.Hspec (Spec, describe, it, runIO, shouldBe)
+import Yaml qualified as Y
+
+data Rules = Rules
+  { basic :: Maybe [String],
+    custom :: Maybe [Y.Rule]
+  }
+  deriving (Generic, FromJSON, Show)
 
 data YamlPack = YamlPack
   { input :: String,
     output :: String,
-    ruleSet :: Maybe Yaml.RuleSet
+    rules :: Maybe Rules
   }
   deriving (Generic, FromJSON, Show)
 
@@ -38,7 +44,20 @@ spec = do
           pack <- runIO $ yamlPack pth
           let output' = output pack
               input' = input pack
-              ruleSet' = ruleSet pack
-          rewritten <- runIO $ rewrite input' ruleSet'
+          rules' <- case rules pack of
+            Just _rules -> case custom _rules of
+              Just custom' -> pure custom'
+              _ -> case basic _rules of
+                Just basic' ->
+                  runIO $
+                    mapM
+                      ( \name -> do
+                          yaml <- ensuredFile ("resources" </> replaceExtension name ".yaml")
+                          Y.yamlRule yaml
+                      )
+                      basic'
+                _ -> pure []
+            Nothing -> pure []
+          rewritten <- runIO $ rewrite input' rules'
           it (makeRelative resources pth) (rewritten `shouldBe` output')
       )

@@ -1,8 +1,0 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
-# SPDX-License-Identifier: MIT
----
-title: "Normalization Rule Set"
-rules:
-  - name: DC
-    pattern: ⊥(!B)
-    result: ⊥

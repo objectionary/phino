@@ -62,10 +62,8 @@ applyRules program (rule : rest) = do
   prog <- applyRules program [rule]
   applyRules prog rest
 
-rewrite :: String -> Maybe Y.RuleSet -> IO String
-rewrite prog rulesSet = do
+rewrite :: String -> [Y.Rule] -> IO String
+rewrite prog rules = do
   program <- parseProgramThrows prog
-  rewritten <- case rulesSet of
-    Just set -> applyRules program (Y.rules set)
-    Nothing -> pure program
+  rewritten <- applyRules program rules
   pure (printProgram rewritten)

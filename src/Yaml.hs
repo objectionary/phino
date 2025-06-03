@@ -23,12 +23,6 @@ instance FromJSON Expression where
           Right expr -> pure expr
       )
 
-data RuleSet = RuleSet
-  { title :: String,
-    rules :: [Rule]
-  }
-  deriving (Generic, FromJSON, Show)
-
 data Rule = Rule
   { name :: Maybe String,
     pattern :: Expression,
@@ -36,5 +30,5 @@ data Rule = Rule
   }
   deriving (Generic, FromJSON, Show)
 
-yamlRuleSet :: FilePath -> IO RuleSet
-yamlRuleSet = Yaml.decodeFileThrow
+yamlRule :: FilePath -> IO Rule
+yamlRule = Yaml.decodeFileThrow

@@ -34,13 +34,20 @@ withRedirectedStdin input action = do
 
 spec :: Spec
 spec = do
-  it "desugares with --nothing flag from file" $ do
-    let args = ["rewrite", "--nothing", "--phi-input=test-resources/cli/desugar.phi"]
-    output <- capture_ (runCLI args)
-    output `shouldContain` "Φ ↦ ⟦\n  foo ↦ Φ.org.eolang\n⟧"
-
-  it "desugares with --nothing flag from stdin" $ do
-    withRedirectedStdin "{[[foo ↦ QQ]]}" $ do
-      let args = ["rewrite", "--nothing"]
+  describe "rewrites" $ do
+    it "desugares with --nothing flag from file" $ do
+      let args = ["rewrite", "--nothing", "--phi-input=test-resources/cli/desugar.phi"]
       output <- capture_ (runCLI args)
       output `shouldContain` "Φ ↦ ⟦\n  foo ↦ Φ.org.eolang\n⟧"
+
+    it "desugares with --nothing flag from stdin" $ do
+      withRedirectedStdin "{[[foo ↦ QQ]]}" $ do
+        let args = ["rewrite", "--nothing"]
+        output <- capture_ (runCLI args)
+        output `shouldContain` "Φ ↦ ⟦\n  foo ↦ Φ.org.eolang\n⟧"
+    
+    it "rewrites with single rule" $ do
+      withRedirectedStdin "{T(x -> Q.y)}" $ do
+        let args = ["rewrite", "--rule=resources/dc.yaml"]
+        output <- capture_ (runCLI args)
+        output `shouldContain` "Φ ↦ ⊥"

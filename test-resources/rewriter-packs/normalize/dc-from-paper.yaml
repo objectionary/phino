@@ -1,13 +1,8 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 # SPDX-License-Identifier: MIT
 ---
-ruleSet:
-  title: "DC from paper"
-  rules:
-    - pattern: |
-        T(!B)
-      result: |
-        T
+rules:
+  basic: ['dc']
 input: |
   Φ ↦ ⊥(ρ ↦ ⟦ x ↦ ξ.t, t ↦ ∅ ⟧)
 output: |-
