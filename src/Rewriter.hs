@@ -6,7 +6,7 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Rewriter (rewrite,) where
+module Rewriter (rewrite) where
 
 import Ast
 import Builder
@@ -65,14 +65,21 @@ attrsInBindings (attr : rest) bds = attrsInBindings [attr] bds && attrsInBinding
 -- and is not used in replacement
 meets :: Condition -> [Subst] -> [Subst]
 meets _ [] = []
+-- OR
 meets (Or []) substs = substs
-meets (Or (cond:rest)) [subst] = case meets cond [subst] of
+meets (Or (cond : rest)) [subst] = case meets cond [subst] of
   [] -> meets (Or rest) [subst]
   substs -> substs
+-- AND
 meets (And []) substs = substs
 meets (And (cond : rest)) [subst] = case meets cond [subst] of
   [] -> []
   _ -> meets (And rest) [subst]
+-- NOT
+meets (Not cond) [subst] = case meets cond [subst] of
+  [] -> [subst]
+  _ -> []
+-- IN
 meets (In attrs bindings) [subst] =
   case (traverse (`buildAttribute` subst) attrs, buildBindings bindings subst) of
     (Just attrs', Just bds) -> [subst | attrsInBindings attrs' bds] -- if attrsInBindings attrs' bds then [subst] else []
@@ -81,10 +88,17 @@ meets (In attrs bindings) (subst : rest) = do
   let cond = In attrs bindings
       substs = meets cond [subst]
   head substs : meets cond rest
+-- Any condition with many substitutions
+meets cond (subst : rest) = do
+  let first = meets cond [subst]
+      next = meets cond rest
+  if null first
+    then next
+    else head first : next
 
 -- Build pattern and result expression and replace patterns to results in given program
 buildAndReplace :: Program -> Expression -> Expression -> [Subst] -> IO Program
-buildAndReplace prog ptn res substs = 
+buildAndReplace prog ptn res substs =
   case (buildExpressions ptn substs, buildExpressions res substs) of
     (Just ptns, Just repls) -> case replaceProgram prog ptns repls of
       Just prog -> pure prog
@@ -106,7 +120,6 @@ applyRules program [rule] = do
           [] -> pure program
           substs' -> replaced substs'
         Nothing -> replaced substs
-
 applyRules program (rule : rest) = do
   prog <- applyRules program [rule]
   applyRules prog rest

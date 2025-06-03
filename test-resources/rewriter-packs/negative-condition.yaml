@@ -1,0 +1,15 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+input: '{[[x -> Q.y]].z}'
+output: |-
+  Φ ↦ Φ.z
+rules:
+  custom:
+    - pattern: '[[!B]].!a'
+      result: 'Q.!a'
+      when:
+        not:
+          in:
+            - ['!a']
+            - ['!B']
