@@ -1,0 +1,28 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+input: Q -> [[x -> [[a -> Q.z]], y -> [[b -> $.w]], L> Func ]].x
+output: |-
+  Φ ↦ ⟦
+    a ↦ Φ.z,
+    y ↦ ⟦
+      b ↦ ξ.w
+    ⟧,
+    λ ⤍ Func
+  ⟧
+rules:
+  custom:
+    - pattern: '[[ !a -> [[!B1]], !B2 ]].!a'
+      result: '[[ !B1, !B2 ]]'
+      when:
+        and:
+          - in:
+            - ['a']
+            - ['!B1']
+          - or:
+            - in:
+              - ['Δ']
+              - ['!B2']
+            - in:
+              - ['λ']
+              - ['!B2']
