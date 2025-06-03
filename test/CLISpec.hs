@@ -34,6 +34,15 @@ withRedirectedStdin input action = do
 
 spec :: Spec
 spec = do
+  it "prints version" $ do
+    output <- capture_ (runCLI ["--version"])
+    output `shouldContain` "0.0.0.0"
+
+  it "prints help" $ do
+    output <- capture_ (runCLI ["--help"])
+    output `shouldContain` "Phino - CLI Manipulator of 𝜑-Calculus Expressions"
+    output `shouldContain` "Usage:"
+
   describe "rewrites" $ do
     it "desugares with --nothing flag from file" $ do
       let args = ["rewrite", "--nothing", "--phi-input=test-resources/cli/desugar.phi"]

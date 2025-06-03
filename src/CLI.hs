@@ -14,7 +14,7 @@ import Misc (ensuredFile)
 import Options.Applicative
 import Paths_phino (version)
 import Rewriter (rewrite)
-import System.Exit (exitFailure)
+import System.Exit (exitFailure, ExitCode (..))
 import System.IO (getContents', hPutStrLn, stderr)
 import Text.Printf (printf)
 import qualified Yaml as Y
@@ -59,9 +59,11 @@ parserInfo =
     (fullDesc <> header "Phino - CLI Manipulator of 𝜑-Calculus Expressions")
 
 handler :: SomeException -> IO ()
-handler e = do
-  hPutStrLn stderr ("[error] " ++ displayException e)
-  exitFailure
+handler e = case fromException e of
+  Just ExitSuccess -> pure ()  -- prevent printing error on --version etc.
+  _ -> do
+    hPutStrLn stderr ("[error] " ++ displayException e)
+    exitFailure
 
 runCLI :: [String] -> IO ()
 runCLI args = handle handler $ do
