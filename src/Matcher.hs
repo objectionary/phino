@@ -6,12 +6,12 @@
 module Matcher where
 
 import Ast
-import Misc
 import Data.List (findIndex, partition)
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
 import Data.Maybe (fromMaybe, isJust, maybeToList)
 import Data.Sequence (foldlWithIndex)
+import Misc
 
 -- Meta value
 -- The right part of substitution
@@ -43,14 +43,6 @@ substEmpty = Subst Map.empty
 -- Singleton substitution with one (key -> value) pair
 substSingle :: String -> MetaValue -> Subst
 substSingle key value = Subst (Map.singleton key value)
-
--- Returns True if given binding contains meta attribute on the left:
--- !a -> ...
--- !a -> ?
-isBindingWithMetaAttr :: Binding -> Bool
-isBindingWithMetaAttr (BiTau (AtMeta _) _) = True
-isBindingWithMetaAttr (BiVoid (AtMeta _)) = True
-isBindingWithMetaAttr _ = False
 
 -- Combine two substitutions into a single one
 -- Fails if values by the same keys are not equal
@@ -87,79 +79,43 @@ matchBinding (BiTau pattr pexp) (BiTau tattr texp) = do
   combine mattr mexp
 matchBinding _ _ = Nothing
 
--- Returns a tuple (X, Y) if given binding B is matched to any of bindings L
--- X is an index of matched B in L
--- Y is substiturion for matched B
--- (-1, Nothing) is returned in case of no binding is matched in L
-matchAnyBinding :: Binding -> [Binding] -> (Int, Maybe Subst)
-matchAnyBinding pb [] = (-1, Nothing)
-matchAnyBinding pb tbs = matchAnyBindingWithIndex 0 tbs
-  where
-    matchAnyBindingWithIndex :: Integer -> [Binding] -> (Int, Maybe Subst)
-    matchAnyBindingWithIndex idx [] = (-1, Nothing)
-    matchAnyBindingWithIndex idx (tb : rest) = case matchBinding pb tb of
-      Nothing -> matchAnyBindingWithIndex (idx + 1) rest
-      subst -> (fromInteger idx, subst)
-
--- Match bindings with filtering target bindings
--- !! Bindings may be placed in random order
---
--- Returns a tuple (B, S) where:
--- B is a list of rest target bindings excluding matched ones
--- S is a substitution for matched bindings
--- In case of not matching - S as Nothing is returned
-matchBindingsWithFiltering :: [Binding] -> [Binding] -> ([Binding], Maybe Subst)
-matchBindingsWithFiltering [] [] = ([], Just substEmpty)
-matchBindingsWithFiltering [] tbs = (tbs, Just substEmpty)
-matchBindingsWithFiltering (pb : rest) tbs = case matchAnyBinding pb tbs of
-  (-1, Nothing) -> (tbs, Nothing)
-  (idx, Just subst) -> case matchBindingsWithFiltering rest (withoutAt idx tbs) of
-    (bs, Just next) -> (bs, combine subst next)
-    _ -> (tbs, Nothing)
-
--- Match non meta bindings
--- !! Pattern bindings don't contain BiMeta
--- !! Target and pattern bindings may be placed in random order
--- !! Lengths of pattern and target bindings must be the same
---
--- First it filters pattern bindings, only bindings without meta attributes are left (B)
--- If B are not empty, it means we have bindings B with exact attributes, like "attr", "foo", etc.
--- Since all the attributes in phi calculus are unique in the scope of formation or application
--- we try to match these exact bindings first. While matching them we drop target bindings which
--- we found a match for. When we're done with exact bindings, we have a list of target
--- unmatched bindings (L). Now we're entering a new circle and trying to match rest "not exact"
--- pattern bindings with left unmatched bindings L. If matching is succeeded - we just merge
--- result substitutions.
-matchNonMetaExactBindings :: [Binding] -> [Binding] -> Maybe Subst
-matchNonMetaExactBindings [] [] = Just substEmpty
-matchNonMetaExactBindings pbs tbs
-  | length tbs /= length pbs = Nothing
-  | otherwise = case partition isBindingWithMetaAttr pbs of
-      (with, []) -> case matchBindingsWithFiltering with tbs of
-        ([], Just subst) -> Just subst
-        (_, _) -> Nothing
-      (with, without) -> case matchBindingsWithFiltering without tbs of
-        (rest, Just subst) -> case matchNonMetaExactBindings with rest of
-          Just next -> combine subst next
-          Nothing -> Nothing
-        (_, Nothing) -> Nothing
-
--- The same as `matchNonMetaExactBindings` but without the "same length" requirement
-matchNonMetaBindingsWithFiltering :: [Binding] -> [Binding] -> ([Binding], Maybe Subst)
-matchNonMetaBindingsWithFiltering [] [] = ([], Just substEmpty)
-matchNonMetaBindingsWithFiltering [] tbs = (tbs, Just substEmpty)
-matchNonMetaBindingsWithFiltering pbs [] = ([], Nothing)
-matchNonMetaBindingsWithFiltering pbs tbs
-  | length pbs > length tbs = ([], Nothing)
-  | otherwise = case partition isBindingWithMetaAttr pbs of
-      (with, []) -> case matchBindingsWithFiltering with tbs of
-        (rest, Just subst) -> (rest, Just subst)
-        (_, Nothing) -> ([], Nothing)
-      (with, without) -> case matchBindingsWithFiltering without tbs of
-        (rest, Just subst) -> case matchNonMetaBindingsWithFiltering with rest of
-          (rest', Just next) -> (rest', combine subst next)
-          (_, Nothing) -> ([], Nothing)
-        (_, Nothing) -> ([], Nothing)
+-- Match bindings with ordering
+-- Function returns tuple (X, Y), where
+-- - X - "before bindings" - list of bindings before each exact binding. It's used to join with
+--   meta binding which goes before exact binding, if such is exist. If there's no one,
+--   it'll be []
+-- - Y - Substitution for bindings
+-- 
+-- How it works:
+-- We start process pattern bindings. 
+-- 1. If we meet meta binding (!B), we skip for now
+--    and go the next recursive cycle with next pattern and wait for the result.
+--    Result will contain list of "before bindings". This list will be
+--    matched to current meta binding
+-- 2. If we meet exact binding in pattern, like void, tau, delta, lambda, etc... we try to match it
+--    with current target binding. If it matches, we go futher and try to match next patterns with next targets.
+--    If it does not match, there may be two options:
+--    a) we came here from step 1. It means that we should skip this target binding and go the next
+--       cycle. When we get the result, we join skipped target binding with returned list of "before" bindings
+--       and return to the step one
+--    b) we came from somewhere else. Then we just returns Nothing as substitution and don't go futher
+matchBindingsInOrder :: [Binding] -> [Binding] -> Bool -> ([Binding], Maybe Subst)
+matchBindingsInOrder [] [] _ = ([], Just substEmpty)
+matchBindingsInOrder [] tbs True = (tbs, Just substEmpty)
+matchBindingsInOrder [] tbs False = ([], Nothing)
+matchBindingsInOrder [BiMeta name] tbs _ = ([], Just (substSingle name (MvBindings tbs)))
+matchBindingsInOrder ((BiMeta name) : pbs) tbs meta = case matchBindingsInOrder pbs tbs True of
+  (_, Nothing) -> ([], Nothing)
+  (before, Just subst) -> ([], combine (substSingle name  (MvBindings before)) subst)
+matchBindingsInOrder (pb : pbs) (tb : tbs) meta = case matchBinding pb tb of
+  Nothing -> if meta 
+    then case matchBindingsInOrder (pb : pbs) tbs meta of
+      (_, Nothing) -> ([], Nothing)
+      (before, Just subst) -> (tb : before, Just subst)
+    else ([], Nothing)
+  Just subst -> case matchBindingsInOrder pbs tbs False of
+    (_, Nothing) -> ([], Nothing)
+    (before, Just subst') -> (before, combine subst subst')
 
 -- Match pattern bindings to target bindings
 -- !! Pattern bindings list may contain only one BiMeta binding
@@ -168,15 +124,9 @@ matchNonMetaBindingsWithFiltering pbs tbs
 -- If pattern bindings contains only BiMeta binding - all the target bindings are matched
 matchBindings :: [Binding] -> [Binding] -> Maybe Subst
 matchBindings [] [] = Just substEmpty
-matchBindings pbs tbs = case findIndex isMetaBinding pbs of
-  Just idx -> do
-    let (BiMeta name) = pbs !! idx
-    if length pbs == 1
-      then Just (substSingle name (MvBindings tbs))
-      else case matchNonMetaBindingsWithFiltering (withoutAt idx pbs) tbs of
-        (rest, Just subst) -> combine subst (substSingle name (MvBindings rest))
-        (_, Nothing) -> Nothing
-  _ -> matchNonMetaExactBindings pbs tbs
+matchBindings pbs tbs = do
+  let (_, subst) = matchBindingsInOrder pbs tbs False
+  subst
 
 -- Recursively go through given target expression and try to find
 -- the head expression which matches to given pattern.
