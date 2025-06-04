@@ -102,68 +102,68 @@ spec = do
         ("~0 => x => X", AtAlpha 0, AtLabel "x", Nothing)
       ]
 
-  describe "matchNonMetaExactBindings" $
-    test
-      matchNonMetaExactBindings
-      [ ( "[^ -> ?, !a -> ?] => [^ -> ?, x -> ?] => (!a >> x)",
-          [BiVoid AtRho, BiVoid (AtMeta "a")],
-          [BiVoid AtRho, BiVoid (AtLabel "x")],
-          Just [("a", MvAttribute (AtLabel "x"))]
-        ),
-        ( "[^ -> ?, !a -> ?] => [!x -> ?, ^ -> ?] => (!a >> x)",
-          [BiVoid AtRho, BiVoid (AtMeta "a")],
-          [BiVoid (AtLabel "x"), BiVoid AtRho],
-          Just [("a", MvAttribute (AtLabel "x"))]
-        ),
-        ( "[^ -> ?] => [^ -> ?] => ()",
-          [BiVoid AtRho],
-          [BiVoid AtRho],
-          Just []
-        )
-      ]
-
   describe "matchBindings: [binding] => [binding] => substitution" $
     test
       matchBindings
-      [ ( "[] => [] => ()",
+      [ ( "[[]] => [[]] => ()",
           [],
           [],
           Just []
         ),
-        ( "[!B] => T:[x -> ?, D> 01-, L> Func] => (!B >> T)",
+        ( "[[!B]] => T:[[x -> ?, D> 01-, L> Func]] => (!B >> T)",
           [BiMeta "B"],
           [BiVoid (AtLabel "x"), BiDelta "01-", BiLambda "Func"],
           Just [("B", MvBindings [BiVoid (AtLabel "x"), BiDelta "01-", BiLambda "Func"])]
         ),
-        ( "[D> 00-] => [D> 00-, L> Func] => X",
+        ( "[[D> 00-]] => [[D> 00-, L> Func]] => X",
           [BiDelta "00-"],
           [BiDelta "00-", BiLambda "Func"],
           Nothing
         ),
-        ( "[y -> ?, !a -> ?] => [x -> ?, y -> ?] => (!a >> x)",
+        ( "[[y -> ?, !a -> ?]] => [[y -> ?, x -> ?]] => (!a >> x)",
           [BiVoid (AtLabel "y"), BiVoid (AtMeta "a")],
-          [BiVoid (AtLabel "x"), BiVoid (AtLabel "y")],
+          [BiVoid (AtLabel "y"), BiVoid (AtLabel "x")],
           Just [("a", MvAttribute (AtLabel "x"))]
         ),
-        ( "[!B, x -> ?] => [x -> ?] => (!B >> [])",
+        ( "[[!B, x -> ?]] => [[x -> ?]] => (!B >> [[]])",
           [BiMeta "B", BiVoid (AtLabel "x")],
           [BiVoid (AtLabel "x")],
           Just [("B", MvBindings [])]
         ),
-        ( "[!B, x -> ?] => [x -> ?, y -> ?] => (!B >> [y -> ?])",
-          [BiMeta "B", BiVoid (AtLabel "x")],
+        ( "[[!B1, x -> ?, !B2]] => [[x -> ?, y -> ?]] => (!B1 >> [[]], !B2 >> [[y -> ?]])",
+          [BiMeta "B1", BiVoid (AtLabel "x"), BiMeta "B2"],
           [BiVoid (AtLabel "x"), BiVoid (AtLabel "y")],
-          Just [("B", MvBindings [BiVoid (AtLabel "y")])]
+          Just [("B1", MvBindings []), ("B2", MvBindings [BiVoid (AtLabel "y")])]
         ),
-        ( "[!B, !x -> ?] => [y -> ?, D> -> 00-, L> Func] => (!x >> y, !B >> [D> -> 00-, L> Func])",
-          [BiMeta "B", BiVoid (AtMeta "x")],
+        ( "[[!B1, !x -> ?, !B2]] => [[y -> ?, D> -> 00-, L> Func]] => (!x >> y, !B1 >> [[]], !B2 >> [[D> -> 00-, L> Func]])",
+          [BiMeta "B1", BiVoid (AtMeta "x"), BiMeta "B2"],
           [BiVoid (AtLabel "y"), BiDelta "00-", BiLambda "Func"],
-          Just [("B", MvBindings [BiDelta "00-", BiLambda "Func"]), ("x", MvAttribute (AtLabel "y"))]
+          Just [("B1", MvBindings []), ("B2", MvBindings [BiDelta "00-", BiLambda "Func"]), ("x", MvAttribute (AtLabel "y"))]
         ),
-        ( "[!x -> ?, !y -> ?] => [a -> ?, b -> ?] => (!x >> a, !y >> b)",
+        ( "[[!x -> ?, !y -> ?]] => [[a -> ?, b -> ?]] => (!x >> a, !y >> b)",
           [BiVoid (AtMeta "x"), BiVoid (AtMeta "y")],
           [BiVoid (AtLabel "a"), BiVoid (AtLabel "b")],
           Just [("x", MvAttribute (AtLabel "a")), ("y", MvAttribute (AtLabel "b"))]
+        ),
+        ( "[[t -> ?, !B]] => [[t -> ?, x -> Q, y -> $]] => (!B >> [[x -> Q, y -> $]])",
+          [BiVoid (AtLabel "t"), BiMeta "B"],
+          [BiVoid (AtLabel "t"), BiTau (AtLabel "x") ExGlobal, BiTau (AtLabel "y") ExThis],
+          Just [("B", MvBindings [BiTau (AtLabel "x") ExGlobal, BiTau (AtLabel "y") ExThis])]
+        ),
+        ( "[[!B, z -> Q]] => [[x -> Q, y -> $, z -> Q]] => (!B >> [[x -> Q, y -> $]])",
+          [BiMeta "B", BiTau (AtLabel "z") ExGlobal],
+          [BiTau (AtLabel "x") ExGlobal, BiTau (AtLabel "y") ExThis, BiTau (AtLabel "z") ExGlobal],
+          Just [("B", MvBindings [BiTau (AtLabel "x") ExGlobal, BiTau (AtLabel "y") ExThis])]
+        ),
+        ( "[[L> Func, D> 00-]] => [[D> 00-, L> Func]] => X",
+          [BiLambda "Func", BiDelta "00-"],
+          [BiDelta "00-", BiLambda "Func"],
+          Nothing
+        ),
+        ("[[t -> ?, !B]] => [[x -> ?, t -> ?]] => X",
+          [BiVoid (AtLabel "t"), BiMeta "B"],
+          [BiVoid (AtLabel "x"), BiVoid (AtLabel "t")],
+          Nothing
         )
       ]
 
@@ -229,31 +229,6 @@ spec = do
         )
       ]
 
-  describe "matchBindingsWithFiltering: [binding] => [binding] => ([binding], substitution)" $
-    test
-      matchBindingsWithFiltering
-      [ ( "[^ -> ?] => [^ -> ?] => ([], ())",
-          [BiVoid AtRho],
-          [BiVoid AtRho],
-          ([], [])
-        ),
-        ( "[x -> ?] => [x -> ?] => ([], ())",
-          [BiVoid (AtLabel "x")],
-          [BiVoid (AtLabel "x")],
-          ([], [])
-        ),
-        ( "[x -> ?] => [x -> ?, ^ -> ?] => ([^ -> ?], ())",
-          [BiVoid (AtLabel "x")],
-          [BiVoid (AtLabel "x"), BiVoid AtRho],
-          ([BiVoid AtRho], [])
-        ),
-        ( "[!a -> ?] => [x -> ?] => ([], (!a -> x))",
-          [BiVoid (AtMeta "a")],
-          [BiVoid (AtLabel "x")],
-          ([], [("a", MvAttribute (AtLabel "x"))])
-        )
-      ]
-
   describe "combine" $ do
     it "combines empty substitutions" $ do
       combine substEmpty substEmpty `shouldBe` Just substEmpty
@@ -293,9 +268,3 @@ spec = do
               )
           second = Subst (Map.singleton "x" (MvAttribute AtPhi))
       combine first second `shouldBe` Nothing
-
-  describe "isBindingWithMetaAttr" $ do
-    it "does not touch simple attr" $ do
-      isBindingWithMetaAttr (BiVoid (AtLabel "x")) `shouldBe` False
-    it "recognizes void meta attr" $ do
-      isBindingWithMetaAttr (BiVoid (AtMeta "x")) `shouldBe` True
