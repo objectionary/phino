@@ -70,8 +70,8 @@ spec = do
             [("e", MvExpression ExGlobal), ("a", MvAttribute (AtLabel "org"))]
           ]
         ),
-        ( "⟦!a ↦ ∅, !B⟧.!a => ⟦ x ↦ ξ.t, t ↦ ∅ ⟧.t(ρ ↦ ⟦ x ↦ ξ.t, t ↦ ∅ ⟧) => [(!a >> t, !B >> ⟦ x ↦ ξ.t ⟧ )]",
-          ExDispatch (ExFormation [BiVoid (AtMeta "a"), BiMeta "B"]) (AtMeta "a"),
+        ( "⟦!B1, !a ↦ ∅, !B2⟧.!a => ⟦ x ↦ ξ.t, t ↦ ∅ ⟧.t(ρ ↦ ⟦ x ↦ ξ.t, t ↦ ∅ ⟧) => [(!B1 >> ⟦x ↦ ξ.t⟧, !a >> t, !B2 >> ⟦⟧ )]",
+          ExDispatch (ExFormation [BiMeta "B1", BiVoid (AtMeta "a"), BiMeta "B2"]) (AtMeta "a"),
           ExApplication
             ( ExDispatch
                 ( ExFormation
@@ -89,7 +89,11 @@ spec = do
                     ]
                 )
             ],
-          [[("a", MvAttribute (AtLabel "t")), ("B", MvBindings [BiTau (AtLabel "x") (ExDispatch ExThis (AtLabel "t"))])]]
+          [ [ ("B1", MvBindings [BiTau (AtLabel "x") (ExDispatch ExThis (AtLabel "t"))]),
+              ("a", MvAttribute (AtLabel "t")),
+              ("B2", MvBindings [])
+            ]
+          ]
         )
       ]
 
@@ -160,7 +164,7 @@ spec = do
           [BiDelta "00-", BiLambda "Func"],
           Nothing
         ),
-        ("[[t -> ?, !B]] => [[x -> ?, t -> ?]] => X",
+        ( "[[t -> ?, !B]] => [[x -> ?, t -> ?]] => X",
           [BiVoid (AtLabel "t"), BiMeta "B"],
           [BiVoid (AtLabel "x"), BiVoid (AtLabel "t")],
           Nothing

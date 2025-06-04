@@ -2,5 +2,5 @@
 # SPDX-License-Identifier: MIT
 ---
 name: 'NULL'
-pattern: '⟦!a2 ↦ ∅, !B2⟧.!a2'
+pattern: '⟦!B1, !a ↦ ∅, !B2⟧.!a'
 result: ⊥
