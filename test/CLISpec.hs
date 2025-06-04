@@ -13,6 +13,8 @@ import Test.Hspec
 import System.IO
 import Control.Exception
 import GHC.IO.Handle
+import Paths_phino (version)
+import Data.Version (showVersion)
 
 withRedirectedStdin :: String -> IO a -> IO a
 withRedirectedStdin input action = do
@@ -36,7 +38,7 @@ spec :: Spec
 spec = do
   it "prints version" $ do
     output <- capture_ (runCLI ["--version"])
-    output `shouldContain` "0.0.0.0"
+    output `shouldContain` showVersion version
 
   it "prints help" $ do
     output <- capture_ (runCLI ["--help"])
