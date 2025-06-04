@@ -93,12 +93,12 @@ matchBinding _ _ = Nothing
 --    Result will contain list of "before bindings". This list will be
 --    matched to current meta binding
 -- 2. If we meet exact binding in pattern, like void, tau, delta, lambda, etc... we try to match it
---    with current target binding. If it matches, we go futher and try to match next patterns with next targets.
+--    with current target binding. If it matches, we go further and try to match next patterns with next targets.
 --    If it does not match, there may be two options:
 --    a) we came here from step 1. It means that we should skip this target binding and go the next
 --       cycle. When we get the result, we join skipped target binding with returned list of "before" bindings
 --       and return to the step one
---    b) we came from somewhere else. Then we just returns Nothing as substitution and don't go futher
+--    b) we came from somewhere else. Then we just returns Nothing as substitution and don't go further
 matchBindingsInOrder :: [Binding] -> [Binding] -> Bool -> ([Binding], Maybe Subst)
 matchBindingsInOrder [] [] _ = ([], Just substEmpty)
 matchBindingsInOrder [] tbs True = (tbs, Just substEmpty)
