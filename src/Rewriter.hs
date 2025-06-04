@@ -11,6 +11,7 @@ module Rewriter (rewrite) where
 import Ast
 import Builder
 import Control.Exception
+import Data.Text (intercalate)
 import Matcher (Subst, matchProgram)
 import Misc (ensuredFile)
 import Parser (parseProgram, parseProgramThrows)
@@ -20,7 +21,6 @@ import System.Directory
 import Text.Printf
 import Yaml
 import qualified Yaml as Y
-import Data.Text (intercalate)
 
 data RewriteException
   = CouldNotMatch {pattern :: Expression, program :: Program}
@@ -101,16 +101,9 @@ meets cond (subst : rest) = do
 buildAndReplace :: Program -> Expression -> Expression -> [Subst] -> IO Program
 buildAndReplace program ptn res substs = do
   case (buildExpressions ptn substs, buildExpressions res substs) of
-    (Just ptns, Just repls) -> do
-      putStrLn "---"
-      putStrLn (printSubstitutions substs)
-      putStrLn (printProgram program)
-      putStrLn (printExpression (head ptns))
-      putStrLn (printExpression (head repls))
-      putStrLn "---"
-      case replaceProgram program ptns repls of
-        Just prog -> pure prog
-        _ -> throwIO (CouldNotReplace program ptn res)
+    (Just ptns, Just repls) -> case replaceProgram program ptns repls of
+      Just prog -> pure prog
+      _ -> throwIO (CouldNotReplace program ptn res)
     (Nothing, _) -> throwIO (CouldNotBuild ptn substs)
     (_, Nothing) -> throwIO (CouldNotBuild res substs)
 
