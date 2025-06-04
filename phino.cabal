@@ -71,7 +71,10 @@ test-suite spec
     ReplacerSpec,
     PrinterSpec,
     RewriterSpec,
-    YamlSpec
+    YamlSpec,
+    Paths_phino
+  autogen-modules:
+    Paths_phino
   default-extensions:
     ImportQualifiedPost
   ghc-options: -Wall
