@@ -99,7 +99,7 @@ meets cond (subst : rest) = do
 
 -- Build pattern and result expression and replace patterns to results in given program
 buildAndReplace :: Program -> Expression -> Expression -> [Subst] -> IO Program
-buildAndReplace program ptn res substs = do
+buildAndReplace program ptn res substs = 
   case (buildExpressions ptn substs, buildExpressions res substs) of
     (Just ptns, Just repls) -> case replaceProgram program ptns repls of
       Just prog -> pure prog
