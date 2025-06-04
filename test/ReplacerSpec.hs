@@ -52,10 +52,54 @@ spec = do
           [ExGlobal],
           Just (Program ExGlobal)
         ),
-        ("Q -> Q.org.eolang => ([Q.org.eolang, Q.org], [$, $]) => $",
+        ( "Q -> Q.org.eolang => ([Q.org.eolang, Q.org], [$, $]) => $",
           Program (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang")),
           [ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang"), ExDispatch ExGlobal (AtLabel "org")],
           [ExThis, ExThis],
           Just (Program ExThis)
+        ),
+        ( "",
+          Program
+            ( ExApplication
+                ( ExDispatch
+                    ( ExFormation
+                        [ BiTau (AtLabel "x") (ExDispatch ExThis (AtLabel "t")),
+                          BiVoid (AtLabel "t")
+                        ]
+                    )
+                    (AtLabel "t")
+                )
+                [ BiTau
+                    AtRho
+                    ( ExFormation
+                        [ BiTau (AtLabel "x") (ExDispatch ExThis (AtLabel "t")),
+                          BiVoid (AtLabel "t")
+                        ]
+                    )
+                ]
+            ),
+          [ ExDispatch
+              ( ExFormation
+                  [ BiTau (AtLabel "x") (ExDispatch ExThis (AtLabel "t")),
+                    BiVoid (AtLabel "t")
+                  ]
+              )
+              (AtLabel "t")
+          ],
+          [ExTermination],
+          Just
+            ( Program
+                ( ExApplication
+                    ExTermination
+                    [ BiTau
+                        AtRho
+                        ( ExFormation
+                            [ BiTau (AtLabel "x") (ExDispatch ExThis (AtLabel "t")),
+                              BiVoid (AtLabel "t")
+                            ]
+                        )
+                    ]
+                )
+            )
         )
       ]

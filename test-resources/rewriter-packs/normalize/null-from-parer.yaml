@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+rules:
+  basic: ['null']
+input: |
+  Φ ↦ ⟦ x ↦ ξ.t, t ↦ ∅ ⟧.t(ρ ↦ ⟦ x ↦ ξ.t, t ↦ ∅ ⟧)
+output: |-
+  Φ ↦ ⊥(
+    ρ ↦ ⟦
+      x ↦ ξ.t,
+      t ↦ ∅
+    ⟧
+  )

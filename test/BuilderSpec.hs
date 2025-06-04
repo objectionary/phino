@@ -60,6 +60,21 @@ spec = do
             ("e2", MvExpression ExThis)
           ],
           Just (ExApplication (ExFormation []) [BiTau (AtLabel "x") ExGlobal, BiTau (AtLabel "y") ExThis])
+        ),
+        ( "⟦!a ↦ ∅, !B⟧.!a => (!a >> t, !B >> ⟦ x ↦ ξ.t ⟧ ) => ⟦ t ↦ ∅, x ↦ ξ.t ⟧.t",
+          ExDispatch (ExFormation [BiVoid (AtMeta "a"), BiMeta "B"]) (AtMeta "a"),
+          [ ("a", MvAttribute (AtLabel "t")),
+            ("B", MvBindings [BiTau (AtLabel "x") (ExDispatch ExThis (AtLabel "t"))])
+          ],
+          Just
+            ( ExDispatch
+                ( ExFormation
+                    [ BiVoid (AtLabel "t"),
+                      BiTau (AtLabel "x") (ExDispatch ExThis (AtLabel "t"))
+                    ]
+                )
+                (AtLabel "t")
+            )
         )
       ]
 

@@ -1,5 +1,5 @@
-{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
@@ -69,6 +69,27 @@ spec = do
           [ [("e", MvExpression (ExDispatch ExGlobal (AtLabel "org"))), ("a", MvAttribute (AtLabel "eolang"))],
             [("e", MvExpression ExGlobal), ("a", MvAttribute (AtLabel "org"))]
           ]
+        ),
+        ( "⟦!a ↦ ∅, !B⟧.!a => ⟦ x ↦ ξ.t, t ↦ ∅ ⟧.t(ρ ↦ ⟦ x ↦ ξ.t, t ↦ ∅ ⟧) => [(!a >> t, !B >> ⟦ x ↦ ξ.t ⟧ )]",
+          ExDispatch (ExFormation [BiVoid (AtMeta "a"), BiMeta "B"]) (AtMeta "a"),
+          ExApplication
+            ( ExDispatch
+                ( ExFormation
+                    [ BiTau (AtLabel "x") (ExDispatch ExThis (AtLabel "t")),
+                      BiVoid (AtLabel "t")
+                    ]
+                )
+                (AtLabel "t")
+            )
+            [ BiTau
+                AtRho
+                ( ExFormation
+                    [ BiTau (AtLabel "x") (ExDispatch ExThis (AtLabel "t")),
+                      BiVoid (AtLabel "t")
+                    ]
+                )
+            ],
+          [[("a", MvAttribute (AtLabel "t")), ("B", MvBindings [BiTau (AtLabel "x") (ExDispatch ExThis (AtLabel "t"))])]]
         )
       ]
 
