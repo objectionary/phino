@@ -92,7 +92,7 @@ $ echo 'Q -> [[ @ -> QQ.io.stdout("hello") ]]' | phino rewrite --nothing
 
 ## Rule structure
 
-This is BNF-like yaml rule stucture:
+This is BNF-like yaml rule structure:
 
 ```
 Rule:
@@ -125,7 +125,7 @@ This is the list of supported meta variables:
 - `!B` - list of bindings
 - `!F` - function name in meta lambda binding
 
-Incorect usage of meta variables in 𝜑-expression patterns leads to
+Incorrect usage of meta variables in 𝜑-expression patterns leads to
 parsing errors.
 
 ## How to Contribute
