@@ -94,7 +94,7 @@ $ echo 'Q -> [[ @ -> QQ.io.stdout("hello") ]]' | phino rewrite --nothing
 
 This is BNF-like yaml rule structure:
 
-```
+```bnfc
 Rule:
   name: String?
   pattern: String
@@ -118,12 +118,13 @@ The `phino` supports meta variables to write 𝜑-expression patterns for
 capturing attributes, bindings, etc.
 
 This is the list of supported meta variables:
-- `!a` - attribute
-- `!e` - any expression
-- `!t` - tail after expression, sequence of applications and/or dispatches
-- `!b` - bytes in meta delta binding
-- `!B` - list of bindings
-- `!F` - function name in meta lambda binding
+
+* `!a` - attribute
+* `!e` - any expression
+* `!t` - tail after expression, sequence of applications and/or dispatches
+* `!b` - bytes in meta delta binding
+* `!B` - list of bindings
+* `!F` - function name in meta lambda binding
 
 Incorrect usage of meta variables in 𝜑-expression patterns leads to
 parsing errors.
