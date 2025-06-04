@@ -1,5 +1,7 @@
 # Command-Line Manipulator of 𝜑-Calculus Expressions
 
+[![DevOps By Rultor.com](https://www.rultor.com/b/objectionary/phino)](https://www.rultor.com/p/objectionary/phino)
+
 [![`phino` on Hackage](https://img.shields.io/hackage/v/phino)](http://hackage.haskell.org/package/phino)
 [![cabal-linux](https://github.com/objectionary/phino/actions/workflows/cabal.yml/badge.svg)](https://github.com/objectionary/phino/actions/workflows/cabal.yml)
 [![stack-linux](https://github.com/objectionary/phino/actions/workflows/stack.yml/badge.svg)](https://github.com/objectionary/phino/actions/workflows/stack.yml)
@@ -33,28 +35,32 @@ $ phino dataize hello.phi
 ```
 
 You can rewrite this expression (**under development**) with the help of rules
-defined in the `my-rules.yml` YAML file (here, the `!b` is a capturing group,
+defined in the `my-rule.yml` YAML file (here, the `!b` is a capturing group,
 similar to regular expressions):
 
 ```yaml
-title: My custom rule set
-rules:
-  - name: Change bytes
-    pattern: Δ ⤍ !b
-    result: Δ ⤍ 62-79-65
+name: My custom rule
+pattern: Δ ⤍ !b
+result: Δ ⤍ 62-79-65
 ```
 
 Then, rewrite:
 
 ```bash
-$ phino rewrite --rules=my-rules.yml --phi-input=hello.phi
+$ phino rewrite --rule=my-rule.yml --phi-input=hello.phi
 Φ ↦ ⟦ φ ↦ ⟦ Δ ⤍ 62-79-65 ⟧, t ↦ ξ.k, k ↦ ⟦⟧ ⟧
+```
+
+If you want to use many rules, just use `--rule` as many times as you need:
+
+```bash
+phino rewrite --rule=rule1.yaml --rule=rule2.yaml ...
 ```
 
 If `--phi-input` is not provided, the 𝜑-expression is taken from `stdin`:
 
 ```bash
-$ echo 'Φ ↦ ⟦ φ ↦ ⟦ Δ ⤍ 68-65-6C-6C-6F ⟧ ⟧' | phino rewrite --rules=my-rules.yml
+$ echo 'Φ ↦ ⟦ φ ↦ ⟦ Δ ⤍ 68-65-6C-6C-6F ⟧ ⟧' | phino rewrite --rule=my-rule.yml
 Φ ↦ ⟦ φ ↦ ⟦ Δ ⤍ 62-79-65 ⟧ ⟧
 ```
 
@@ -84,7 +90,44 @@ $ echo 'Q -> [[ @ -> QQ.io.stdout("hello") ]]' | phino rewrite --nothing
 ⟧
 ```
 
-That's it.
+## Rule structure
+
+This is BNF-like yaml rule structure:
+
+```bnfc
+Rule:
+  name: String?
+  pattern: String
+  result: String
+  when: Condition?
+
+Condition:
+  - and: [Condition]  # logical AND
+  - or:  [Condition]  # logical OR
+  - not: Condition    # logical NOT
+  - in:               # check if attributes exist in bindings
+      - [String]      # list of attributes
+      - [String]      # list of bindings
+```
+
+Check [this](resources) to find pre defined normalization rules.
+
+## Meta variables
+
+The `phino` supports meta variables to write 𝜑-expression patterns for
+capturing attributes, bindings, etc.
+
+This is the list of supported meta variables:
+
+* `!a` - attribute
+* `!e` - any expression
+* `!t` - tail after expression, sequence of applications and/or dispatches
+* `!b` - bytes in meta delta binding
+* `!B` - list of bindings
+* `!F` - function name in meta lambda binding
+
+Incorrect usage of meta variables in 𝜑-expression patterns leads to
+parsing errors.
 
 ## How to Contribute
 
