@@ -23,7 +23,6 @@ release:
     cabal test
     git commit -am "set version to ${tag}"
     cabal sdist
-    cabal upload --token=$(cat ../hackage-auth) dist-newstyle/sdist/phino-0.${tag}.tar.gz
     cabal upload --token=$(cat ../hackage-auth) --publish dist-newstyle/sdist/phino-0.${tag}.tar.gz
 merge:
   script: |-
