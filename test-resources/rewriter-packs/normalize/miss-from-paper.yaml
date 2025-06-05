@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+rules:
+  basic: ['miss']
+input: |
+  Φ ↦ ⟦ x ↦ ξ.t ⟧(t ↦ ξ)
+output: |-
+  Φ ↦ ⊥

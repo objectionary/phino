@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+name: MISS
+pattern: '⟦!B⟧(!a ↦ !e)'
+result: ⊥
+where:
+  and:
+    - not:
+      - in:
+        - ['!a']
+        - ['!B']
+    - not:
+      - alpha: '!a'
