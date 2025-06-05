@@ -11,14 +11,14 @@ module Parser
     parseExpression,
     parseExpressionThrows,
     parseAttribute,
-    parseBinding
+    parseBinding,
   )
 where
 
 import Ast
 import Control.Exception (Exception, throwIO)
 import Control.Monad (guard)
-import Data.Char (isDigit, isLower)
+import Data.Char (isAsciiLower, isDigit, isLower)
 import Data.Scientific (toRealFloat)
 import Data.Sequence (mapWithIndex)
 import Data.Text.Internal.Fusion.Size (lowerBound)
@@ -69,17 +69,17 @@ symbol = L.symbol whiteSpace
 
 label' :: Parser String
 label' = lexeme $ do
-  first <- lowerChar
+  first <- oneOf ['a' .. 'z']
   rest <- many (satisfy (`notElem` " \r\n\t,.|':;!?][}{)(⟧⟦") <?> "allowed character")
   return (first : rest)
 
 function :: Parser String
 function = lexeme $ do
-  first <- upperChar
+  first <- oneOf ['A' .. 'Z']
   rest <-
     many
       ( satisfy
-          (\ch -> isDigit ch || isLower ch || ch == '_' || ch == 'φ')
+          (\ch -> isDigit ch || isAsciiLower ch || ch == '_' || ch == 'φ')
           <?> "allowed character in function name"
       )
   return (first : rest)
@@ -113,6 +113,16 @@ meta ch = do
   c <- char ch
   ds <- lexeme (many digitChar)
   return (c : ds)
+
+meta' :: Char -> String -> Parser String
+meta' ch uni =
+  choice
+    [ meta ch,
+      do
+        _ <- symbol uni
+        ds <- lexeme (many digitChar)
+        return (ch : ds)
+    ]
 
 byte :: Parser String
 byte = do
@@ -163,7 +173,7 @@ tauBinding attr = do
     ]
 
 metaBinding :: Parser Binding
-metaBinding = BiMeta <$> meta 'B'
+metaBinding = BiMeta <$> meta' 'B' "𝐵"
 
 -- binding
 -- 1. tau
@@ -223,7 +233,7 @@ attribute :: Parser Attribute
 attribute =
   choice
     [ void',
-      AtMeta <$> meta 'a'
+      AtMeta <$> meta' 'a' "𝜏"
     ]
     <?> "attribute"
 
@@ -288,7 +298,7 @@ exHead =
         _ <- char '"'
         str <- manyTill L.charLiteral (char '"')
         return (dataExpression "string" (strToHex str)),
-      try (ExMeta <$> meta 'e'),
+      try (ExMeta <$> meta' 'e' "𝑒"),
       ExDispatch ExThis <$> fullAttribute
     ]
     <?> "expression head"
