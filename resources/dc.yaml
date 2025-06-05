@@ -2,5 +2,5 @@
 # SPDX-License-Identifier: MIT
 ---
 name: DC
-pattern: ⊥(!B)
+pattern: ⊥(𝐵)
 result: ⊥

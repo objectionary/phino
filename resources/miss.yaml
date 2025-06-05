@@ -2,13 +2,13 @@
 # SPDX-License-Identifier: MIT
 ---
 name: MISS
-pattern: '⟦!B⟧(!a ↦ !e)'
+pattern: '⟦𝐵⟧(𝜏 ↦ 𝑒)'
 result: ⊥
 where:
   and:
     - not:
         - in:
-            - ['!a']
-            - ['!B']
+            - ['𝜏']
+            - ['𝐵']
     - not:
-        - alpha: '!a'
+        - alpha: '𝜏'
