@@ -18,7 +18,7 @@ where
 import Ast
 import Control.Exception (Exception, throwIO)
 import Control.Monad (guard)
-import Data.Char (isDigit, isLower, isAsciiLower)
+import Data.Char (isAsciiLower, isDigit, isLower)
 import Data.Scientific (toRealFloat)
 import Data.Sequence (mapWithIndex)
 import Data.Text.Internal.Fusion.Size (lowerBound)
@@ -69,13 +69,13 @@ symbol = L.symbol whiteSpace
 
 label' :: Parser String
 label' = lexeme $ do
-  first <- oneOf ['a'..'z']
+  first <- oneOf ['a' .. 'z']
   rest <- many (satisfy (`notElem` " \r\n\t,.|':;!?][}{)(⟧⟦") <?> "allowed character")
   return (first : rest)
 
 function :: Parser String
 function = lexeme $ do
-  first <- oneOf ['A'..'Z']
+  first <- oneOf ['A' .. 'Z']
   rest <-
     many
       ( satisfy
