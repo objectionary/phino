@@ -55,6 +55,7 @@ instance FromJSON Condition where
             [ And <$> v .: "and",
               Or <$> v .: "or",
               Not <$> v .: "not",
+              Alpha <$> v .: "alpha",
               do
                 vals <- v .: "in"
                 case vals of
@@ -71,6 +72,7 @@ data Condition
   | Or [Condition]
   | In [Attribute] [Binding]
   | Not Condition
+  | Alpha Attribute
   deriving (Generic, Show)
 
 data Rule = Rule

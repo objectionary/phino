@@ -105,9 +105,10 @@ Condition:
   - and: [Condition]  # logical AND
   - or:  [Condition]  # logical OR
   - not: Condition    # logical NOT
+  - alpha: Attribute  # check if given attribute is alpha
   - in:               # check if attributes exist in bindings
-      - [String]      # list of attributes
-      - [String]      # list of bindings
+      - [Attribute]   # list of attributes
+      - [Binding]     # list of bindings
 ```
 
 Check [this](resources) to find pre defined normalization rules.
