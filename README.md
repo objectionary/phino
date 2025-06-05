@@ -79,12 +79,12 @@ and print it in canonical syntax:
 
 ```bash
 $ echo 'Q -> [[ @ -> QQ.io.stdout("hello") ]]' | phino rewrite --nothing
-Φ ↦ ⟦ 
+Φ ↦ ⟦
   φ ↦ Φ.org.eolang.io.stdout(
     α0 ↦ Φ.org.eolang.string(
       α0 ↦ Φ.org.eolang.bytes(
         α0 ↦ ⟦ Δ ⤍ 68-65-6C-6C-6F ⟧
-      )  
+      )
     )
   )
 ⟧
