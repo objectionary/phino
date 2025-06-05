@@ -1,0 +1,23 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+input: |
+  {[[
+    foo ↦ ⟦
+      x -> 4294967295
+    ⟧
+  ]]}
+output: |-
+  Φ ↦ ⟦
+    foo ↦ ⟦
+      x ↦ Φ.org.eolang.number(
+        α0 ↦ Φ.org.eolang.bytes(
+          α0 ↦ ⟦ Δ ⤍ 41-EF-FF-FF-FF-E0-00-00 ⟧
+        )
+      )
+    ⟧
+  ⟧
+rules:
+  custom:
+    - pattern: Φ.x.y.z
+      result: Φ.a.b.c
