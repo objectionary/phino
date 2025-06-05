@@ -57,6 +57,14 @@ instance FromJSON Condition where
               Not <$> v .: "not",
               Alpha <$> v .: "alpha",
               do
+                vals <- v .: "eq"
+                case vals of
+                  [left_, right_] -> do
+                    left <- parseJSON left_
+                    right <- parseJSON right_
+                    pure (Eq left right)
+                  _ -> fail "'eq' must contain exactly two elements",
+              do
                 vals <- v .: "in"
                 case vals of
                   [attrs_, bindings_] -> do
@@ -73,6 +81,7 @@ data Condition
   | In [Attribute] [Binding]
   | Not Condition
   | Alpha Attribute
+  | Eq Attribute Attribute
   deriving (Generic, Show)
 
 data Rule = Rule

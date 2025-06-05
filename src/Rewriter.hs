@@ -19,7 +19,6 @@ import Printer (printExpression, printProgram, printSubstitutions)
 import Replacer (replaceProgram)
 import System.Directory
 import Text.Printf
-import Yaml
 import qualified Yaml as Y
 import qualified Data.Map.Strict as M
 
@@ -65,37 +64,46 @@ attrsInBindings (attr : rest) bds = attrsInBindings [attr] bds && attrsInBinding
 -- For each substitution check if it meets to given condition
 -- If substitution does not meet the condition - it's thrown out
 -- and is not used in replacement
-meets :: Condition -> [Subst] -> [Subst]
+meets :: Y.Condition -> [Subst] -> [Subst]
 meets _ [] = []
 -- OR
-meets (Or []) substs = substs
-meets (Or (cond : rest)) [subst] = case meets cond [subst] of
-  [] -> meets (Or rest) [subst]
+meets (Y.Or []) substs = substs
+meets (Y.Or (cond : rest)) [subst] = case meets cond [subst] of
+  [] -> meets (Y.Or rest) [subst]
   substs -> substs
 -- AND
-meets (And []) substs = substs
-meets (And (cond : rest)) [subst] = case meets cond [subst] of
+meets (Y.And []) substs = substs
+meets (Y.And (cond : rest)) [subst] = case meets cond [subst] of
   [] -> []
-  _ -> meets (And rest) [subst]
+  _ -> meets (Y.And rest) [subst]
 -- NOT
-meets (Not cond) [subst] = case meets cond [subst] of
+meets (Y.Not cond) [subst] = case meets cond [subst] of
   [] -> [subst]
   _ -> []
 -- IN
-meets (In attrs bindings) [subst] =
+meets (Y.In attrs bindings) [subst] =
   case (traverse (`buildAttribute` subst) attrs, buildBindings bindings subst) of
     (Just attrs', Just bds) -> [subst | attrsInBindings attrs' bds] -- if attrsInBindings attrs' bds then [subst] else []
     (_, _) -> []
-meets (In attrs bindings) (subst : rest) = do
-  let cond = In attrs bindings
+meets (Y.In attrs bindings) (subst : rest) = do
+  let cond = Y.In attrs bindings
       substs = meets cond [subst]
   head substs : meets cond rest
 -- ALPHA
-meets (Alpha (AtAlpha _)) substs = substs
-meets (Alpha (AtMeta name)) [Subst mp] = case M.lookup name mp of
+meets (Y.Alpha (AtAlpha _)) substs = substs
+meets (Y.Alpha (AtMeta name)) [Subst mp] = case M.lookup name mp of
   Just (MvAttribute (AtAlpha _)) -> [Subst mp]
   _ -> []
-meets (Alpha _) _ = []
+meets (Y.Alpha _) _ = []
+-- EQ
+meets (Y.Eq (AtMeta left) (AtMeta right)) [subst] = [subst | left == right]
+meets (Y.Eq attr (AtMeta meta)) [Subst mp] = case M.lookup meta mp of
+  Just (MvAttribute found) -> [Subst mp | attr == found]
+  _ -> []
+meets (Y.Eq (AtMeta meta) attr) [Subst mp] = case M.lookup meta mp of
+  Just (MvAttribute found) -> [Subst mp | attr == found]
+  _ -> []
+meets (Y.Eq left right) [subst] = [subst | right == left]
 -- Any condition with many substitutions
 meets cond (subst : rest) = do
   let first = meets cond [subst]
