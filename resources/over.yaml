@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+name: OVER
+pattern: '⟦!B1, !a ↦ !e1, !B2⟧(!a ↦ !e2)'
+result: ⊥
+where:
+  and:
+    - not:
+        - eq:
+            - '!a'
+            - 'ρ'
