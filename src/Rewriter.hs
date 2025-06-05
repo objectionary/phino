@@ -12,7 +12,7 @@ import Ast
 import Builder
 import Control.Exception
 import Data.Text (intercalate)
-import Matcher (Subst, matchProgram)
+import Matcher (Subst (Subst), matchProgram, MetaValue (MvAttribute))
 import Misc (ensuredFile)
 import Parser (parseProgram, parseProgramThrows)
 import Printer (printExpression, printProgram, printSubstitutions)
@@ -21,6 +21,7 @@ import System.Directory
 import Text.Printf
 import Yaml
 import qualified Yaml as Y
+import qualified Data.Map.Strict as M
 
 data RewriteException
   = CouldNotMatch {pattern :: Expression, program :: Program}
@@ -89,6 +90,12 @@ meets (In attrs bindings) (subst : rest) = do
   let cond = In attrs bindings
       substs = meets cond [subst]
   head substs : meets cond rest
+-- ALPHA
+meets (Alpha (AtAlpha _)) substs = substs
+meets (Alpha (AtMeta name)) [Subst mp] = case M.lookup name mp of
+  Just (MvAttribute (AtAlpha _)) -> [Subst mp]
+  _ -> []
+meets (Alpha _) _ = []
 -- Any condition with many substitutions
 meets cond (subst : rest) = do
   let first = meets cond [subst]
@@ -99,7 +106,7 @@ meets cond (subst : rest) = do
 
 -- Build pattern and result expression and replace patterns to results in given program
 buildAndReplace :: Program -> Expression -> Expression -> [Subst] -> IO Program
-buildAndReplace program ptn res substs = 
+buildAndReplace program ptn res substs =
   case (buildExpressions ptn substs, buildExpressions res substs) of
     (Just ptns, Just repls) -> case replaceProgram program ptns repls of
       Just prog -> pure prog

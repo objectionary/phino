@@ -11,6 +11,7 @@ when:
               - in:
                   - ['!a1', '!a2']
                   - ['!B']
+              - alpha: '!a'
       - or:
           - and:
               - in:
