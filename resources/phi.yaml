@@ -2,14 +2,14 @@
 # SPDX-License-Identifier: MIT
 ---
 name: 'PHI'
-pattern: '⟦!B⟧.!a'
-result: '⟦!B⟧.φ.!a'
+pattern: '⟦𝐵⟧.𝜏'
+result: '⟦𝐵⟧.φ.𝜏'
 when:
   and:
     - in:
         - ['φ']
-        - ['!B']
+        - ['𝐵']
     - not:
         in:
-          - ['!a']
-          - ['!B']
+          - ['𝜏']
+          - ['𝐵']
