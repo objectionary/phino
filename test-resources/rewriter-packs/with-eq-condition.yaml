@@ -15,7 +15,7 @@ rules:
           - eq:
               - '!a1'
               - 'x'
-            not:
+          - not:
               eq:
                 - '!a2'
                 - 'y'
