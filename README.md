@@ -126,7 +126,7 @@ This is the list of supported meta variables:
 * `!b` - bytes in meta delta binding
 * `!F` - function name in meta lambda binding
 
-Every meta variable may also used with integer index, like `!B1` or `𝜏0`.
+Every meta variable may also be used with an integer index, like `!B1` or `𝜏0`.
 
 Incorrect usage of meta variables in 𝜑-expression patterns leads to
 parsing errors.
