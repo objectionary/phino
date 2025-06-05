@@ -13,7 +13,7 @@ import Control.Monad
 import System.Directory (doesDirectoryExist, doesFileExist, listDirectory)
 import System.FilePath ((</>))
 import Text.Printf (printf)
-import Data.Binary.IEEE754  
+import Data.Binary.IEEE754
 import Data.ByteString.Builder (word64BE, toLazyByteString)
 import Data.List (intercalate)
 import Data.ByteString.Lazy (unpack)

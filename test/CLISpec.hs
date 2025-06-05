@@ -56,7 +56,7 @@ spec = do
         let args = ["rewrite", "--nothing"]
         output <- capture_ (runCLI args)
         output `shouldContain` "Φ ↦ ⟦\n  foo ↦ Φ.org.eolang\n⟧"
-    
+
     it "rewrites with single rule" $ do
       withRedirectedStdin "{T(x -> Q.y)}" $ do
         let args = ["rewrite", "--rule=resources/dc.yaml"]

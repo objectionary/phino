@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+rules:
+  basic: ['stay']
+input: |
+  Φ ↦ ⟦ x ↦ ⟦⟧, ρ ↦ ⟦ t ↦ Φ.number ⟧ ⟧ (ρ ↦ ⟦ w ↦ Φ.string ⟧)
+output: |-
+  Φ ↦ ⟦
+    x ↦ ⟦⟧,
+    ρ ↦ ⟦
+      t ↦ Φ.number
+    ⟧
+  ⟧

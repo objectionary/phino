@@ -1,6 +1,9 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 # SPDX-License-Identifier: MIT
 ---
-name: 'NULL'
-pattern: '⟦𝐵1, 𝜏 ↦ ∅, 𝐵2⟧.𝜏'
-result: ⊥
+rules:
+  basic: ['miss']
+input: |
+  Φ ↦ ⟦ ⟧ (t ↦ ξ)
+output: |-
+  Φ ↦ ⊥

@@ -201,7 +201,16 @@ spec = do
                 ]
             )
         ),
-        ("Q.x(!B)", Just (ExApplication (ExDispatch ExGlobal (AtLabel "x")) [BiMeta "B"]))
+        ("Q.x(!B)", Just (ExApplication (ExDispatch ExGlobal (AtLabel "x")) [BiMeta "B"])),
+        ( "[[𝐵1, 𝜏0 -> $, x -> 𝑒]]",
+          Just
+            ( ExFormation
+                [ BiMeta "B1",
+                  BiTau (AtMeta "a0") ExThis,
+                  BiTau (AtLabel "x") (ExMeta "e")
+                ]
+            )
+        )
       ]
 
   describe "just parses" $
@@ -225,7 +234,8 @@ spec = do
         "⟦x ↦ Φ.org.eolang(z ↦ ξ.f, x ↦ α0, φ ↦ ρ, t ↦ φ, first ↦ ⟦ λ ⤍ Function_name, Δ ⤍ 42- ⟧)⟧",
         "[[x -> 1.00e+3, y -> 2.32e-4]]",
         "Q.x(!B)",
-        "Q.x(~1 -> Q.y, x -> 5, !B1)"
+        "Q.x(~1 -> Q.y, x -> 5, !B1)",
+        "Q.x(𝐵1, 𝜏0 -> $, x -> 𝑒)"
       ]
       (\expr -> it expr (parseExpression expr `shouldSatisfy` isRight))
 

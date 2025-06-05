@@ -85,9 +85,9 @@ matchBinding _ _ = Nothing
 --   meta binding which goes before exact binding, if such is exist. If there's no one,
 --   it'll be []
 -- - Y - Substitution for bindings
--- 
+--
 -- How it works:
--- We start process pattern bindings. 
+-- We start process pattern bindings.
 -- 1. If we meet meta binding (!B), we skip for now
 --    and go the next recursive cycle with next pattern and wait for the result.
 --    Result will contain list of "before bindings". This list will be
@@ -108,7 +108,7 @@ matchBindingsInOrder ((BiMeta name) : pbs) tbs meta = case matchBindingsInOrder 
   (_, Nothing) -> ([], Nothing)
   (before, Just subst) -> ([], combine (substSingle name  (MvBindings before)) subst)
 matchBindingsInOrder (pb : pbs) (tb : tbs) meta = case matchBinding pb tb of
-  Nothing -> if meta 
+  Nothing -> if meta
     then case matchBindingsInOrder (pb : pbs) tbs meta of
       (_, Nothing) -> ([], Nothing)
       (before, Just subst) -> (tb : before, Just subst)
