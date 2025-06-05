@@ -1,0 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+name: 'STAY'
+pattern: '⟦!B1, ρ ↦ !e1, !B2⟧(ρ ↦ !e2)'
+result: '⟦!B1, ρ ↦ !e1, !B2⟧'
