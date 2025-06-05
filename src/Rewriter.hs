@@ -23,17 +23,11 @@ import qualified Yaml as Y
 import qualified Data.Map.Strict as M
 
 data RewriteException
-  = CouldNotMatch {pattern :: Expression, program :: Program}
-  | CouldNotBuild {expr :: Expression, substs :: [Subst]}
+  = CouldNotBuild {expr :: Expression, substs :: [Subst]}
   | CouldNotReplace {prog :: Program, ptn :: Expression, res :: Expression}
   deriving (Exception)
 
 instance Show RewriteException where
-  show CouldNotMatch {..} =
-    printf
-      "Couldn't find given pattern in provided program\n--Pattern: %s\n--Program: %s"
-      (printExpression pattern)
-      (printProgram program)
   show CouldNotBuild {..} =
     printf
       "Couldn't build given expression with provided substitutions\n--Expression: %s\n--Substitutions: %s"
@@ -128,7 +122,7 @@ applyRules program [rule] = do
   let ptn = Y.pattern rule
       res = Y.result rule
   case matchProgram ptn program of
-    [] -> throwIO (CouldNotMatch ptn program)
+    [] -> pure program
     substs -> do
       let replaced = buildAndReplace program ptn res
       case Y.when rule of
