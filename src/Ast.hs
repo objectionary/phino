@@ -16,7 +16,7 @@ data Expression
   | ExGlobal                              -- Q
   | ExTermination                         -- T
   | ExMeta String                         -- !e
-  | ExApplication Expression [Binding]    -- expr(attr -> expr)
+  | ExApplication Expression Binding      -- expr(attr -> expr)
   | ExDispatch Expression Attribute       -- expr.attr
   | ExMetaTail Expression String          -- expr * !t
   deriving (Eq, Show, Generic)

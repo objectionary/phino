@@ -27,7 +27,7 @@ data MetaValue
 -- Tail operation after expression
 -- Dispatch or application
 data Tail
-  = TaApplication [Binding] -- BiTau only
+  = TaApplication Binding -- BiTau only
   | TaDispatch Attribute
   deriving (Eq, Show)
 
@@ -106,13 +106,14 @@ matchBindingsInOrder [] tbs False = ([], Nothing)
 matchBindingsInOrder [BiMeta name] tbs _ = ([], Just (substSingle name (MvBindings tbs)))
 matchBindingsInOrder ((BiMeta name) : pbs) tbs meta = case matchBindingsInOrder pbs tbs True of
   (_, Nothing) -> ([], Nothing)
-  (before, Just subst) -> ([], combine (substSingle name  (MvBindings before)) subst)
+  (before, Just subst) -> ([], combine (substSingle name (MvBindings before)) subst)
 matchBindingsInOrder (pb : pbs) (tb : tbs) meta = case matchBinding pb tb of
-  Nothing -> if meta
-    then case matchBindingsInOrder (pb : pbs) tbs meta of
-      (_, Nothing) -> ([], Nothing)
-      (before, Just subst) -> (tb : before, Just subst)
-    else ([], Nothing)
+  Nothing ->
+    if meta
+      then case matchBindingsInOrder (pb : pbs) tbs meta of
+        (_, Nothing) -> ([], Nothing)
+        (before, Just subst) -> (tb : before, Just subst)
+      else ([], Nothing)
   Just subst -> case matchBindingsInOrder pbs tbs False of
     (_, Nothing) -> ([], Nothing)
     (before, Just subst') -> (before, combine subst subst')
@@ -144,9 +145,9 @@ tailExpressions ptn tgt = do
         ExDispatch expr attr -> do
           (subst, tails) <- tailExpressionsReversed ptn' expr
           return (subst, TaDispatch attr : tails)
-        ExApplication expr bds -> do
+        ExApplication expr tau -> do
           (subst, tails) <- tailExpressionsReversed ptn' expr
-          return (subst, TaApplication bds : tails)
+          return (subst, TaApplication tau : tails)
         _ -> Nothing
 
 matchExpression :: Expression -> Expression -> Maybe Subst
@@ -159,9 +160,9 @@ matchExpression (ExDispatch pexp pattr) (ExDispatch texp tattr) = do
   mexp <- matchExpression pexp texp
   mattr <- matchAttribute pattr tattr
   combine mexp mattr
-matchExpression (ExApplication pexp pbs) (ExApplication texp tbs) = do
+matchExpression (ExApplication pexp pbd) (ExApplication texp tbd) = do
   mexp <- matchExpression pexp texp
-  mbs <- matchBindings pbs tbs
+  mbs <- matchBinding pbd tbd
   combine mexp mbs
 matchExpression (ExMetaTail exp meta) tgt = do
   (subst, tails) <- tailExpressions exp tgt
@@ -175,7 +176,7 @@ matchExpressionDeep ptn tgt = do
       deep = case tgt of
         ExFormation bds -> concatMap matchBindingExpression bds
         ExDispatch dexp _ -> matchExpressionDeep ptn dexp
-        ExApplication aexp taus -> matchExpressionDeep ptn aexp ++ concatMap matchBindingExpression taus
+        ExApplication aexp tau -> matchExpressionDeep ptn aexp ++ matchBindingExpression tau
         _ -> []
         where
           -- Deep match pattern to expression inside binding

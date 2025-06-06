@@ -51,8 +51,7 @@ instance Pretty Expression where
   pretty ExGlobal = pretty "Φ"
   pretty ExTermination = pretty "⊥"
   pretty (ExMeta meta) = prettyMeta meta
-  pretty (ExApplication expr []) = pretty expr <> pretty "()"
-  pretty (ExApplication expr taus) = pretty expr <> vsep [lparen, indent 2 (pretty taus), rparen]
+  pretty (ExApplication expr tau) = pretty expr <> vsep [lparen, indent 2 (pretty tau), rparen]
   pretty (ExDispatch expr attr) = pretty expr <> pretty "." <> pretty attr
   pretty (ExMetaTail expr meta) = pretty expr <+> pretty "*" <+> prettyMeta meta
 
@@ -60,8 +59,7 @@ instance Pretty Program where
   pretty (Program expr) = pretty "Φ" <+> prettyArrow <+> pretty expr
 
 instance Pretty Tail where
-  pretty (TaApplication []) = pretty "()"
-  pretty (TaApplication taus) = vsep [lparen, indent 2 (pretty taus), rparen]
+  pretty (TaApplication tau) = vsep [lparen, indent 2 (pretty tau), rparen]
   pretty (TaDispatch attr) = pretty "." <> pretty attr
 
 instance Pretty MetaValue where

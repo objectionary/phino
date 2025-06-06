@@ -21,11 +21,11 @@ spec = do
   describe "replaceProgram: program => ([expression], [expression]) => program" $ do
     test
       replaceProgram
-      [ ( "Q -> Q.y.x() => ([Q.y], [$]) => Q -> $.x()",
-          Program (ExApplication (ExDispatch (ExDispatch ExGlobal (AtLabel "y")) (AtLabel "x")) []),
+      [ ( "Q -> Q.y.x => ([Q.y], [$]) => Q -> $.x",
+          Program (ExDispatch (ExDispatch ExGlobal (AtLabel "y")) (AtLabel "x")),
           [ExDispatch ExGlobal (AtLabel "y")],
           [ExThis],
-          Just (Program (ExApplication (ExDispatch ExThis (AtLabel "x")) []))
+          Just (Program (ExDispatch ExThis (AtLabel "x")))
         ),
         ( "Q -> [[x -> [[y -> $]], z -> [[w -> $]] ]] => ([[y -> $], [w -> $]], [Q.y, Q.w]) => Q -> [[x -> Q.y, z -> Q.w]]",
           Program
@@ -58,7 +58,7 @@ spec = do
           [ExThis, ExThis],
           Just (Program ExThis)
         ),
-        ( "",
+        ( "Q -> [[ x -> $.t, t -> ? ]].t(^ -> [[ x -> $.t, t -> ? ]]) => ([ [[ x -> $.t, t -> ? ]].t ], [T]) => T(^ -> [[ x -> $.t, t -> ? ]])",
           Program
             ( ExApplication
                 ( ExDispatch
@@ -69,14 +69,14 @@ spec = do
                     )
                     (AtLabel "t")
                 )
-                [ BiTau
+                ( BiTau
                     AtRho
                     ( ExFormation
                         [ BiTau (AtLabel "x") (ExDispatch ExThis (AtLabel "t")),
                           BiVoid (AtLabel "t")
                         ]
                     )
-                ]
+                )
             ),
           [ ExDispatch
               ( ExFormation
@@ -91,14 +91,14 @@ spec = do
             ( Program
                 ( ExApplication
                     ExTermination
-                    [ BiTau
+                    ( BiTau
                         AtRho
                         ( ExFormation
                             [ BiTau (AtLabel "x") (ExDispatch ExThis (AtLabel "t")),
                               BiVoid (AtLabel "t")
                             ]
                         )
-                    ]
+                    )
                 )
             )
         )

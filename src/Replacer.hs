@@ -30,10 +30,10 @@ replaceExpression expr ptns repls = do
       ExDispatch inner attr -> do
         let (expr', ptns', repls') = replaceExpression inner ptns repls
         (ExDispatch expr' attr, ptns', repls')
-      ExApplication inner taus -> do
+      ExApplication inner tau -> do
         let (expr', ptns', repls') = replaceExpression inner ptns repls
-        let (taus', ptns'', repls'') = replaceBindings taus ptns' repls'
-        (ExApplication expr' taus', ptns'', repls'')
+        let ([tau'], ptns'', repls'') = replaceBindings [tau] ptns' repls'
+        (ExApplication expr' tau', ptns'', repls'')
       ExFormation bds -> do
         let (bds', ptns', repls') = replaceBindings bds ptns repls
         (ExFormation bds', ptns', repls')

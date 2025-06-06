@@ -26,9 +26,9 @@ spec = do
           Just (ExDispatch ExGlobal (AtLabel "x"))
         ),
         ( "Q.c(!a -> !e) => (!a >> x, !e >> $.y.z) => Q.c(x -> $.y.z)",
-          ExApplication (ExDispatch ExGlobal (AtLabel "c")) [BiTau (AtMeta "a") (ExMeta "e")],
+          ExApplication (ExDispatch ExGlobal (AtLabel "c")) (BiTau (AtMeta "a") (ExMeta "e")),
           [("a", MvAttribute (AtLabel "x")), ("e", MvExpression (ExDispatch (ExDispatch ExThis (AtLabel "y")) (AtLabel "z")))],
-          Just (ExApplication (ExDispatch ExGlobal (AtLabel "c")) [BiTau (AtLabel "x") (ExDispatch (ExDispatch ExThis (AtLabel "y")) (AtLabel "z"))])
+          Just (ExApplication (ExDispatch ExGlobal (AtLabel "c")) (BiTau (AtLabel "x") (ExDispatch (ExDispatch ExThis (AtLabel "y")) (AtLabel "z"))))
         ),
         ( "[[!a -> $.x, !B]] => (!a >> y, !B >> [[b -> ?, L> Func]]) => [[y -> $.x, b -> ?, L> Func]]",
           ExFormation [BiTau (AtMeta "a") (ExDispatch ExThis (AtLabel "x")), BiMeta "B"],
@@ -43,8 +43,8 @@ spec = do
         ),
         ( "Q * !t => (!t >> [.a, .b, (~1 -> $.x)]) => Q.a.b(~1 -> $.x)",
           ExMetaTail ExGlobal "t",
-          [("t", MvTail [TaDispatch (AtLabel "a"), TaDispatch (AtLabel "b"), TaApplication [BiTau (AtAlpha 1) (ExDispatch ExThis (AtLabel "x"))]])],
-          Just (ExApplication (ExDispatch (ExDispatch ExGlobal (AtLabel "a")) (AtLabel "b")) [BiTau (AtAlpha 1) (ExDispatch ExThis (AtLabel "x"))])
+          [("t", MvTail [TaDispatch (AtLabel "a"), TaDispatch (AtLabel "b"), TaApplication (BiTau (AtAlpha 1) (ExDispatch ExThis (AtLabel "x")))])],
+          Just (ExApplication (ExDispatch (ExDispatch ExGlobal (AtLabel "a")) (AtLabel "b")) (BiTau (AtAlpha 1) (ExDispatch ExThis (AtLabel "x"))))
         ),
         ( "Q.!a => () => X",
           ExDispatch ExGlobal (AtMeta "a"),
@@ -52,14 +52,14 @@ spec = do
           Nothing
         ),
         ( "!e0(!a1 -> !e1, !a2 => !e2) => (!e0 >> [[]], !a1 >> x, !e1 >> Q, !a2 >> y, !e2 >> $) => [[]](x -> Q, y -> $)",
-          ExApplication (ExMeta "e0") [BiTau (AtMeta "a1") (ExMeta "e1"), BiTau (AtMeta "a2") (ExMeta "e2")],
+          ExApplication (ExApplication (ExMeta "e0") (BiTau (AtMeta "a1") (ExMeta "e1"))) (BiTau (AtMeta "a2") (ExMeta "e2")),
           [ ("e0", MvExpression (ExFormation [])),
             ("a1", MvAttribute (AtLabel "x")),
             ("e1", MvExpression ExGlobal),
             ("a2", MvAttribute (AtLabel "y")),
             ("e2", MvExpression ExThis)
           ],
-          Just (ExApplication (ExFormation []) [BiTau (AtLabel "x") ExGlobal, BiTau (AtLabel "y") ExThis])
+          Just (ExApplication (ExApplication (ExFormation []) (BiTau (AtLabel "x") ExGlobal)) (BiTau (AtLabel "y") ExThis))
         ),
         ( "⟦!a ↦ ∅, !B⟧.!a => (!a >> t, !B >> ⟦ x ↦ ξ.t ⟧ ) => ⟦ t ↦ ∅, x ↦ ξ.t ⟧.t",
           ExDispatch (ExFormation [BiVoid (AtMeta "a"), BiMeta "B"]) (AtMeta "a"),

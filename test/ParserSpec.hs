@@ -31,7 +31,7 @@ spec = do
     test
       parseProgram
       [ ("Q -> [[]]", Just (Program (ExFormation []))),
-        ("Q -> T(x -> Q)", Just (Program (ExApplication ExTermination [BiTau (AtLabel "x") ExGlobal]))),
+        ("Q -> T(x -> Q)", Just (Program (ExApplication ExTermination (BiTau (AtLabel "x") ExGlobal)))),
         ("Q -> Q.org.eolang", Just (Program (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang")))),
         ("Q -> [[x -> $, y -> ?]]", Just (Program (ExFormation [BiTau (AtLabel "x") ExThis, BiVoid (AtLabel "y")]))),
         ("{[[foo ↦ QQ]]}", Just (Program (ExFormation [BiTau (AtLabel "foo") (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang"))])))
@@ -41,25 +41,25 @@ spec = do
     test
       parseExpression
       [ ("Q.!a", Just (ExDispatch ExGlobal (AtMeta "a"))),
-        ("[[]](!a1 -> $)", Just (ExApplication (ExFormation []) [BiTau (AtMeta "a1") ExThis])),
+        ("[[]](!a1 -> $)", Just (ExApplication (ExFormation []) (BiTau (AtMeta "a1") ExThis))),
         ( "[[]](~0 -> $)(~11 -> Q)",
           Just
             ( ExApplication
                 ( ExApplication
                     (ExFormation [])
-                    [BiTau (AtAlpha 0) ExThis]
+                    (BiTau (AtAlpha 0) ExThis)
                 )
-                [BiTau (AtAlpha 11) ExGlobal]
+                (BiTau (AtAlpha 11) ExGlobal)
             )
         ),
-        ("[[]](x -> $, y -> Q)", Just (ExApplication (ExFormation []) [BiTau (AtLabel "x") ExThis, BiTau (AtLabel "y") ExGlobal])),
+        ("[[]](x -> $, y -> Q)", Just (ExApplication (ExApplication (ExFormation []) (BiTau (AtLabel "x") ExThis)) (BiTau (AtLabel "y") ExGlobal))),
         ("[[!B, !B1]]", Just (ExFormation [BiMeta "B", BiMeta "B1"])),
         ("[[!B2, !a2 -> $]]", Just (ExFormation [BiMeta "B2", BiTau (AtMeta "a2") ExThis])),
         ("!e0", Just (ExMeta "e0")),
         ("[[x -> !e]]", Just (ExFormation [BiTau (AtLabel "x") (ExMeta "e")])),
         ("[[!a -> !e1]]", Just (ExFormation [BiTau (AtMeta "a") (ExMeta "e1")])),
         ("Q * !t", Just (ExMetaTail ExGlobal "t")),
-        ("[[]](x -> $) * !t1", Just (ExMetaTail (ExApplication (ExFormation []) [BiTau (AtLabel "x") ExThis]) "t1")),
+        ("[[]](x -> $) * !t1", Just (ExMetaTail (ExApplication (ExFormation []) (BiTau (AtLabel "x") ExThis)) "t1")),
         ("[[D> --]]", Just (ExFormation [BiDelta "--"])),
         ("[[D> 1F-]]", Just (ExFormation [BiDelta "1F-"])),
         ("[[\n  L> Func,\n  D> 00-\n]]", Just (ExFormation [BiLambda "Func", BiDelta "00-"])),
@@ -87,7 +87,7 @@ spec = do
           Just
             ( ExApplication
                 (ExMeta "e")
-                [ BiTau
+                ( BiTau
                     (AtLabel "x")
                     ( ExFormation
                         [ BiVoid AtRho,
@@ -95,7 +95,7 @@ spec = do
                           BiTau (AtLabel "w") (ExMeta "e1")
                         ]
                     )
-                ]
+                )
             )
         ),
         ( "[[x -> y.z, a -> ~1, w -> ^, u -> @, p -> !a, q -> !e]]",
@@ -125,19 +125,26 @@ spec = do
         ( "Q.x(~1, y, [[]].z, Q.y(^,@))",
           Just
             ( ExApplication
-                (ExDispatch ExGlobal (AtLabel "x"))
-                [ BiTau (AtAlpha 0) (ExDispatch ExThis (AtAlpha 1)),
-                  BiTau (AtAlpha 1) (ExDispatch ExThis (AtLabel "y")),
-                  BiTau (AtAlpha 2) (ExDispatch (ExFormation []) (AtLabel "z")),
-                  BiTau
+                ( ExApplication
+                    ( ExApplication
+                        ( ExApplication
+                            (ExDispatch ExGlobal (AtLabel "x"))
+                            (BiTau (AtAlpha 0) (ExDispatch ExThis (AtAlpha 1)))
+                        )
+                        (BiTau (AtAlpha 1) (ExDispatch ExThis (AtLabel "y")))
+                    )
+                    (BiTau (AtAlpha 2) (ExDispatch (ExFormation []) (AtLabel "z")))
+                )
+                ( BiTau
                     (AtAlpha 3)
                     ( ExApplication
-                        (ExDispatch ExGlobal (AtLabel "y"))
-                        [ BiTau (AtAlpha 0) (ExDispatch ExThis AtRho),
-                          BiTau (AtAlpha 1) (ExDispatch ExThis AtPhi)
-                        ]
+                        ( ExApplication
+                            (ExDispatch ExGlobal (AtLabel "y"))
+                            (BiTau (AtAlpha 0) (ExDispatch ExThis AtRho))
+                        )
+                        (BiTau (AtAlpha 1) (ExDispatch ExThis AtPhi))
                     )
-                ]
+                )
             )
         ),
         ( "5.plus(5.q(\"hello\".length))",
@@ -146,62 +153,61 @@ spec = do
                 ( ExDispatch
                     ( ExApplication
                         (ExDispatch (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang")) (AtLabel "number"))
-                        [ BiTau
+                        ( BiTau
                             (AtAlpha 0)
                             ( ExApplication
                                 (ExDispatch (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang")) (AtLabel "bytes"))
-                                [ BiTau
+                                ( BiTau
                                     (AtAlpha 0)
                                     (ExFormation [BiDelta "40-14-00-00-00-00-00-00"])
-                                ]
+                                )
                             )
-                        ]
+                        )
                     )
                     (AtLabel "plus")
                 )
-                [ BiTau
+                ( BiTau
                     (AtAlpha 0)
                     ( ExApplication
                         ( ExDispatch
                             ( ExApplication
                                 (ExDispatch (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang")) (AtLabel "number"))
-                                [ BiTau
+                                ( BiTau
                                     (AtAlpha 0)
                                     ( ExApplication
                                         (ExDispatch (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang")) (AtLabel "bytes"))
-                                        [ BiTau
+                                        ( BiTau
                                             (AtAlpha 0)
                                             (ExFormation [BiDelta "40-14-00-00-00-00-00-00"])
-                                        ]
+                                        )
                                     )
-                                ]
+                                )
                             )
                             (AtLabel "q")
                         )
-                        [ BiTau
+                        ( BiTau
                             (AtAlpha 0)
                             ( ExDispatch
                                 ( ExApplication
                                     (ExDispatch (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang")) (AtLabel "string"))
-                                    [ BiTau
+                                    ( BiTau
                                         (AtAlpha 0)
                                         ( ExApplication
                                             (ExDispatch (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang")) (AtLabel "bytes"))
-                                            [ BiTau
+                                            ( BiTau
                                                 (AtAlpha 0)
                                                 (ExFormation [BiDelta "68-65-6C-6C-6F"])
-                                            ]
+                                            )
                                         )
-                                    ]
+                                    )
                                 )
                                 (AtLabel "length")
                             )
-                        ]
+                        )
                     )
-                ]
+                )
             )
         ),
-        ("Q.x(!B)", Just (ExApplication (ExDispatch ExGlobal (AtLabel "x")) [BiMeta "B"])),
         ( "[[𝐵1, 𝜏0 -> $, x -> 𝑒]]",
           Just
             ( ExFormation
@@ -232,10 +238,7 @@ spec = do
         "[[\n  x -> \"Hi\",\n  y -> 42\n]]",
         "[[x -> -42, y -> +34]]",
         "⟦x ↦ Φ.org.eolang(z ↦ ξ.f, x ↦ α0, φ ↦ ρ, t ↦ φ, first ↦ ⟦ λ ⤍ Function_name, Δ ⤍ 42- ⟧)⟧",
-        "[[x -> 1.00e+3, y -> 2.32e-4]]",
-        "Q.x(!B)",
-        "Q.x(~1 -> Q.y, x -> 5, !B1)",
-        "Q.x(𝐵1, 𝜏0 -> $, x -> 𝑒)"
+        "[[x -> 1.00e+3, y -> 2.32e-4]]"
       ]
       (\expr -> it expr (parseExpression expr `shouldSatisfy` isRight))
 
@@ -259,7 +262,9 @@ spec = do
             "[[y(!e) -> [[]] ]]",
             "[[z(w) -> Q.x]]",
             "Q.x(y(~1) -> [[]])",
-            "Q.x(1, 2, !B)"
+            "Q.x(1, 2, !B)",
+            "Q.x(~1 -> Q.y, x -> 5, !B1)",
+            "Q.x(𝐵1, 𝜏0 -> $, x -> 𝑒)"
           ]
       )
 

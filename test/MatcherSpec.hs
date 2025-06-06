@@ -81,14 +81,14 @@ spec = do
                 )
                 (AtLabel "t")
             )
-            [ BiTau
+            ( BiTau
                 AtRho
                 ( ExFormation
                     [ BiTau (AtLabel "x") (ExDispatch ExThis (AtLabel "t")),
                       BiVoid (AtLabel "t")
                     ]
                 )
-            ],
+            ),
           [ [ ("B1", MvBindings [BiTau (AtLabel "x") (ExDispatch ExThis (AtLabel "t"))]),
               ("a", MvAttribute (AtLabel "t")),
               ("B2", MvBindings [])
@@ -183,8 +183,8 @@ spec = do
         ),
         ( "!e => Q.org(x -> $) => (!e >> Q.org(x -> $))",
           ExMeta "e",
-          ExApplication (ExDispatch ExGlobal (AtLabel "org")) [BiTau (AtLabel "x") ExThis],
-          Just [("e", MvExpression (ExApplication (ExDispatch ExGlobal (AtLabel "org")) [BiTau (AtLabel "x") ExThis]))]
+          ExApplication (ExDispatch ExGlobal (AtLabel "org")) (BiTau (AtLabel "x") ExThis),
+          Just [("e", MvExpression (ExApplication (ExDispatch ExGlobal (AtLabel "org")) (BiTau (AtLabel "x") ExThis)))]
         ),
         ( "!e1.x => Q.org.x => (!e1 >> Q.org)",
           ExDispatch (ExMeta "e1") (AtLabel "x"),
@@ -218,17 +218,17 @@ spec = do
         ),
         ( "Q * !t => Q.org(x -> [[]]) => (!t >> [.org, (x -> [[]])])",
           ExMetaTail ExGlobal "t",
-          ExApplication (ExDispatch ExGlobal (AtLabel "org")) [BiTau (AtLabel "x") (ExFormation [])],
-          Just [("t", MvTail [TaDispatch (AtLabel "org"), TaApplication [BiTau (AtLabel "x") (ExFormation [])]])]
+          ExApplication (ExDispatch ExGlobal (AtLabel "org")) (BiTau (AtLabel "x") (ExFormation [])),
+          Just [("t", MvTail [TaDispatch (AtLabel "org"), TaApplication (BiTau (AtLabel "x") (ExFormation []))])]
         ),
         ( "Q.!a * !t => Q.org(x -> [[]]) => (!a >> org, !t >> [(x -> [[]])])",
           ExMetaTail (ExDispatch ExGlobal (AtMeta "a")) "t",
-          ExApplication (ExDispatch ExGlobal (AtLabel "org")) [BiTau (AtLabel "x") (ExFormation [])],
-          Just [("a", MvAttribute (AtLabel "org")), ("t", MvTail [TaApplication [BiTau (AtLabel "x") (ExFormation [])]])]
+          ExApplication (ExDispatch ExGlobal (AtLabel "org")) (BiTau (AtLabel "x") (ExFormation [])),
+          Just [("a", MvAttribute (AtLabel "org")), ("t", MvTail [TaApplication (BiTau (AtLabel "x") (ExFormation []))])]
         ),
         ( "Q.x(y -> $ * !t1) * !t2 => Q.x(y -> $.q).p => (!t1 >> [.q], !t2 >> [.p])",
-          ExMetaTail (ExApplication (ExDispatch ExGlobal (AtLabel "x")) [BiTau (AtLabel "y") (ExMetaTail ExThis "t1")]) "t2",
-          ExDispatch (ExApplication (ExDispatch ExGlobal (AtLabel "x")) [BiTau (AtLabel "y") (ExDispatch ExThis (AtLabel "q"))]) (AtLabel "p"),
+          ExMetaTail (ExApplication (ExDispatch ExGlobal (AtLabel "x")) (BiTau (AtLabel "y") (ExMetaTail ExThis "t1"))) "t2",
+          ExDispatch (ExApplication (ExDispatch ExGlobal (AtLabel "x")) (BiTau (AtLabel "y") (ExDispatch ExThis (AtLabel "q")))) (AtLabel "p"),
           Just [("t1", MvTail [TaDispatch (AtLabel "q")]), ("t2", MvTail [TaDispatch (AtLabel "p")])]
         )
       ]

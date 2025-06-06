@@ -2,5 +2,5 @@
 # SPDX-License-Identifier: MIT
 ---
 name: DC
-pattern: ⊥(𝐵)
+pattern: ⊥(𝜏 ↦ 𝑒)
 result: ⊥

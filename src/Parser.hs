@@ -44,16 +44,16 @@ dataExpression :: String -> String -> Expression
 dataExpression obj bts =
   ExApplication
     (ExDispatch (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang")) (AtLabel obj))
-    [ BiTau
+    ( BiTau
         (AtAlpha 0)
         ( ExApplication
             (ExDispatch (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang")) (AtLabel "bytes"))
-            [ BiTau
+            ( BiTau
                 (AtAlpha 0)
                 (ExFormation [BiDelta bts])
-            ]
+            )
         )
-    ]
+    )
 
 -- White space consumer
 whiteSpace :: Parser ()
@@ -303,6 +303,10 @@ exHead =
     ]
     <?> "expression head"
 
+application :: Expression -> [Binding] -> Expression
+application expr [binding] = ExApplication expr binding
+application expr (bd : bds) = application (application expr [bd]) bds
+
 -- tail optional part of application
 -- 1. any head + dispatch
 -- 2. any head except $ and Q + application
@@ -326,18 +330,13 @@ exTail expr =
                 _ <- symbol "("
                 bds <-
                   choice
-                    [ try $
-                        choice
-                          [ try (tauBinding fullAttribute),
-                            metaBinding
-                          ]
-                          `sepBy1` symbol ",",
+                    [ try $ tauBinding fullAttribute `sepBy1` symbol ",",
                       do
                         exprs <- expression `sepBy1` symbol ","
                         return (zipWith (BiTau . AtAlpha) [0 ..] exprs) -- \idx expr -> BiTau (AtAlpha idx) expr
                     ]
                 _ <- symbol ")"
-                return (ExApplication expr bds),
+                return (application expr bds),
               do
                 guard
                   ( case expr of

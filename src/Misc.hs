@@ -33,11 +33,6 @@ instance Show FsException where
 withoutAt :: Int -> [a] -> [a]
 withoutAt i xs = take i xs ++ drop (i + 1) xs
 
--- Returns True if given binding is BiMeta (!B)
-isMetaBinding :: Binding -> Bool
-isMetaBinding (BiMeta _) = True
-isMetaBinding _ = False
-
 ensuredFile :: FilePath -> IO FilePath
 ensuredFile pth = do
   exists <- doesFileExist pth
