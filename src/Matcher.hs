@@ -9,7 +9,7 @@ import Ast
 import Data.List (findIndex, partition)
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
-import Data.Maybe (fromMaybe, isJust, maybeToList)
+import Data.Maybe (catMaybes, fromMaybe, isJust, mapMaybe, maybeToList)
 import Data.Sequence (foldlWithIndex)
 import Misc
 
@@ -57,135 +57,99 @@ combine (Subst a) (Subst b) = combine' (Map.toList b) a
         | otherwise -> Nothing
       Nothing -> combine' rest (Map.insert key value acc)
 
+combineMany :: [Subst] -> [Subst] -> [Subst]
+combineMany xs xy = catMaybes [combine x y | x <- xs, y <- xy]
+
 matchAttribute :: Attribute -> Attribute -> Maybe Subst
 matchAttribute (AtMeta meta) tgt = Just (substSingle meta (MvAttribute tgt))
 matchAttribute ptn tgt
   | ptn == tgt = Just substEmpty
   | otherwise = Nothing
 
-matchBinding :: Binding -> Binding -> Maybe Subst
-matchBinding (BiVoid pattr) (BiVoid tattr) = matchAttribute pattr tattr
+matchBinding :: Binding -> Binding -> [Subst]
+matchBinding (BiVoid pattr) (BiVoid tattr) = case matchAttribute pattr tattr of
+  Just subst -> [subst]
+  Nothing -> []
 matchBinding (BiDelta pbts) (BiDelta tbts)
-  | pbts == tbts = Just substEmpty
-  | otherwise = Nothing
-matchBinding (BiMetaDelta meta) (BiDelta tBts) = Just (substSingle meta (MvBytes tBts))
+  | pbts == tbts = [substEmpty]
+  | otherwise = []
+matchBinding (BiMetaDelta meta) (BiDelta tBts) = [substSingle meta (MvBytes tBts)]
 matchBinding (BiLambda pFunc) (BiLambda tFunc)
-  | pFunc == tFunc = Just substEmpty
-  | otherwise = Nothing
-matchBinding (BiMetaLambda meta) (BiLambda tFunc) = Just (substSingle meta (MvFunction tFunc))
-matchBinding (BiTau pattr pexp) (BiTau tattr texp) = do
-  mattr <- matchAttribute pattr tattr
-  mexp <- matchExpression pexp texp
-  combine mattr mexp
-matchBinding _ _ = Nothing
+  | pFunc == tFunc = [substEmpty]
+  | otherwise = []
+matchBinding (BiMetaLambda meta) (BiLambda tFunc) = [substSingle meta (MvFunction tFunc)]
+matchBinding (BiTau pattr pexp) (BiTau tattr texp) = case matchAttribute pattr tattr of
+  Just subst -> combineMany [subst] (matchExpression pexp texp)
+  Nothing -> []
+matchBinding _ _ = []
 
 -- Match bindings with ordering
--- Function returns tuple (X, Y), where
--- - X - "before bindings" - list of bindings before each exact binding. It's used to join with
---   meta binding which goes before exact binding, if such is exist. If there's no one,
---   it'll be []
--- - Y - Substitution for bindings
---
--- How it works:
--- We start process pattern bindings.
--- 1. If we meet meta binding (!B), we skip for now
---    and go the next recursive cycle with next pattern and wait for the result.
---    Result will contain list of "before bindings". This list will be
---    matched to current meta binding
--- 2. If we meet exact binding in pattern, like void, tau, delta, lambda, etc... we try to match it
---    with current target binding. If it matches, we go further and try to match next patterns with next targets.
---    If it does not match, there may be two options:
---    a) we came here from step 1. It means that we should skip this target binding and go the next
---       cycle. When we get the result, we join skipped target binding with returned list of "before" bindings
---       and return to the step one
---    b) we came from somewhere else. Then we just returns Nothing as substitution and don't go further
-matchBindingsInOrder :: [Binding] -> [Binding] -> Bool -> ([Binding], Maybe Subst)
-matchBindingsInOrder [] [] _ = ([], Just substEmpty)
-matchBindingsInOrder [] tbs True = (tbs, Just substEmpty)
-matchBindingsInOrder [] tbs False = ([], Nothing)
-matchBindingsInOrder [BiMeta name] tbs _ = ([], Just (substSingle name (MvBindings tbs)))
-matchBindingsInOrder ((BiMeta name) : pbs) tbs meta = case matchBindingsInOrder pbs tbs True of
-  (_, Nothing) -> ([], Nothing)
-  (before, Just subst) -> ([], combine (substSingle name (MvBindings before)) subst)
-matchBindingsInOrder (pb : pbs) (tb : tbs) meta = case matchBinding pb tb of
-  Nothing ->
-    if meta
-      then case matchBindingsInOrder (pb : pbs) tbs meta of
-        (_, Nothing) -> ([], Nothing)
-        (before, Just subst) -> (tb : before, Just subst)
-      else ([], Nothing)
-  Just subst -> case matchBindingsInOrder pbs tbs False of
-    (_, Nothing) -> ([], Nothing)
-    (before, Just subst') -> (before, combine subst subst')
-
--- Match pattern bindings to target bindings
--- !! Pattern bindings list may contain only one BiMeta binding
--- !! Pattern and target bindings may be placed in random order
---
--- If pattern bindings contains only BiMeta binding - all the target bindings are matched
-matchBindings :: [Binding] -> [Binding] -> Maybe Subst
-matchBindings [] [] = Just substEmpty
-matchBindings pbs tbs = do
-  let (_, subst) = matchBindingsInOrder pbs tbs False
-  subst
+matchBindings :: [Binding] -> [Binding] -> [Subst]
+matchBindings [] [] = [substEmpty]
+matchBindings [] _ = []
+matchBindings ((BiMeta name) : pbs) tbs = do
+  let splits = [splitAt idx tbs | idx <- [0 .. length tbs]]
+  catMaybes
+    [ combine (substSingle name (MvBindings before)) subst
+      | (before, after) <- splits,
+        subst <- matchBindings pbs after
+    ]
+matchBindings (pb : pbs) (tb : tbs) = combineMany (matchBinding pb tb) (matchBindings pbs tbs)
+matchBindings _ _ = []
 
 -- Recursively go through given target expression and try to find
 -- the head expression which matches to given pattern.
 -- If there's one - build the list of all the tail operations after head expression.
 -- The tail operations may be only dispatches or applications
-tailExpressions :: Expression -> Expression -> Maybe (Subst, [Tail])
+tailExpressions :: Expression -> Expression -> ([Subst], [Tail])
 tailExpressions ptn tgt = do
-  (subst, tails) <- tailExpressionsReversed ptn tgt
-  return (subst, reverse tails)
+  let (substs, tails) = tailExpressionsReversed ptn tgt
+  (substs, reverse tails)
   where
-    tailExpressionsReversed :: Expression -> Expression -> Maybe (Subst, [Tail])
+    tailExpressionsReversed :: Expression -> Expression -> ([Subst], [Tail])
     tailExpressionsReversed ptn' tgt' = case matchExpression ptn' tgt' of
-      Just subst -> Just (subst, [])
-      Nothing -> case tgt' of
+      [] -> case tgt' of
         ExDispatch expr attr -> do
-          (subst, tails) <- tailExpressionsReversed ptn' expr
-          return (subst, TaDispatch attr : tails)
+          let (substs, tails) = tailExpressionsReversed ptn' expr
+          (substs, TaDispatch attr : tails)
         ExApplication expr tau -> do
-          (subst, tails) <- tailExpressionsReversed ptn' expr
-          return (subst, TaApplication tau : tails)
-        _ -> Nothing
+          let (substs, tails) = tailExpressionsReversed ptn' expr
+          (substs, TaApplication tau : tails)
+        _ -> ([], [])
+      substs -> (substs, [])
 
-matchExpression :: Expression -> Expression -> Maybe Subst
-matchExpression (ExMeta meta) tgt = Just (substSingle meta (MvExpression tgt))
-matchExpression ExThis ExThis = Just substEmpty
-matchExpression ExGlobal ExGlobal = Just substEmpty
-matchExpression ExTermination ExTermination = Just substEmpty
+matchExpression :: Expression -> Expression -> [Subst]
+matchExpression (ExMeta meta) tgt = [substSingle meta (MvExpression tgt)]
+matchExpression ExThis ExThis = [substEmpty]
+matchExpression ExGlobal ExGlobal = [substEmpty]
+matchExpression ExTermination ExTermination = [substEmpty]
 matchExpression (ExFormation pbs) (ExFormation tbs) = matchBindings pbs tbs
-matchExpression (ExDispatch pexp pattr) (ExDispatch texp tattr) = do
-  mexp <- matchExpression pexp texp
-  mattr <- matchAttribute pattr tattr
-  combine mexp mattr
-matchExpression (ExApplication pexp pbd) (ExApplication texp tbd) = do
-  mexp <- matchExpression pexp texp
-  mbs <- matchBinding pbd tbd
-  combine mexp mbs
-matchExpression (ExMetaTail exp meta) tgt = do
-  (subst, tails) <- tailExpressions exp tgt
-  combine subst (substSingle meta (MvTail tails))
-matchExpression _ _ = Nothing
+matchExpression (ExDispatch pexp pattr) (ExDispatch texp tattr) = case matchAttribute pattr tattr of
+  Just subst -> combineMany [subst] (matchExpression pexp texp)
+  Nothing -> []
+matchExpression (ExApplication pexp pbd) (ExApplication texp tbd) =
+  combineMany (matchExpression pexp texp) (matchBinding pbd tbd)
+matchExpression (ExMetaTail exp meta) tgt = case tailExpressions exp tgt of
+  ([], _) -> []
+  (substs, tails) -> combineMany substs [substSingle meta (MvTail tails)]
+matchExpression _ _ = []
+
+-- Deep match pattern to expression inside binding
+matchBindingExpression :: Binding -> Expression -> [Subst]
+matchBindingExpression (BiTau _ texp) ptn = matchExpressionDeep ptn texp
+matchBindingExpression _ _ = []
 
 -- Match expression with deep nested expression(s) matching
 matchExpressionDeep :: Expression -> Expression -> [Subst]
 matchExpressionDeep ptn tgt = do
-  let here = maybeToList (matchExpression ptn tgt)
-      deep = case tgt of
-        ExFormation bds -> concatMap matchBindingExpression bds
-        ExDispatch dexp _ -> matchExpressionDeep ptn dexp
-        ExApplication aexp tau -> matchExpressionDeep ptn aexp ++ matchBindingExpression tau
-        _ -> []
-        where
-          -- Deep match pattern to expression inside binding
-          matchBindingExpression :: Binding -> [Subst]
-          matchBindingExpression (BiTau _ texp) = matchExpressionDeep ptn texp
-          matchBindingExpression _ = []
-  case here of
-    [] -> deep
-    found : _ -> found : deep
+  let matched = matchExpression ptn tgt
+  if null matched
+    then case tgt of
+      ExFormation bds -> concatMap (`matchBindingExpression` ptn) bds
+      ExDispatch exp _ -> matchExpressionDeep ptn exp
+      ExApplication exp tau -> matchExpressionDeep ptn exp ++ matchBindingExpression tau ptn
+      _ -> []
+    else matched
 
 matchProgram :: Expression -> Program -> [Subst]
 matchProgram ptn (Program exp) = matchExpressionDeep ptn exp
