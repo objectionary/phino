@@ -29,10 +29,6 @@ instance Show FsException where
   show FileDoesNotExist {..} = printf "File '%s' does not exist" file
   show DirectoryDoesNotExist {..} = printf "Directory '%s' does not exist" dir
 
--- List without element by given index
-withoutAt :: Int -> [a] -> [a]
-withoutAt i xs = take i xs ++ drop (i + 1) xs
-
 ensuredFile :: FilePath -> IO FilePath
 ensuredFile pth = do
   exists <- doesFileExist pth

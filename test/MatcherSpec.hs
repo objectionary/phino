@@ -18,10 +18,6 @@ class Expected e where
   type ExpectedResult e
   toExpected :: e -> ExpectedResult e
 
-instance Expected (Maybe [(String, MetaValue)]) where
-  type ExpectedResult (Maybe [(String, MetaValue)]) = Maybe Subst
-  toExpected = fmap (Subst . Map.fromList)
-
 instance Expected [[(String, MetaValue)]] where
   type ExpectedResult [[(String, MetaValue)]] = [Subst]
   toExpected = map (Subst . Map.fromList)
@@ -94,10 +90,10 @@ spec = do
   describe "matchAttribute: attribute => attribute => substitution" $
     test
       matchAttribute
-      [ ("~1 => ~1 => ()", AtAlpha 1, AtAlpha 1, Just []),
-        ("!a => ^ => (!a >> ^)", AtMeta "a", AtRho, Just [("a", MvAttribute AtRho)]),
-        ("!a => @ => (!a >> @)", AtMeta "a", AtPhi, Just [("a", MvAttribute AtPhi)]),
-        ("~0 => [] => []", AtAlpha 0, AtLabel "x", Nothing)
+      [ ("~1 => ~1 => [()]", AtAlpha 1, AtAlpha 1, [[]]),
+        ("!a => ^ => [(!a >> ^)]", AtMeta "a", AtRho, [[("a", MvAttribute AtRho)]]),
+        ("!a => @ => [(!a >> @)]", AtMeta "a", AtPhi, [[("a", MvAttribute AtPhi)]]),
+        ("~0 => [] => [()]", AtAlpha 0, AtLabel "x", [])
       ]
 
   describe "matchBindings: [binding] => [binding] => substitution" $

@@ -6,12 +6,9 @@
 module Matcher where
 
 import Ast
-import Data.List (findIndex, partition)
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
-import Data.Maybe (catMaybes, fromMaybe, isJust, mapMaybe, maybeToList)
-import Data.Sequence (foldlWithIndex)
-import Misc
+import Data.Maybe (catMaybes)
 
 -- Meta value
 -- The right part of substitution
@@ -60,16 +57,14 @@ combine (Subst a) (Subst b) = combine' (Map.toList b) a
 combineMany :: [Subst] -> [Subst] -> [Subst]
 combineMany xs xy = catMaybes [combine x y | x <- xs, y <- xy]
 
-matchAttribute :: Attribute -> Attribute -> Maybe Subst
-matchAttribute (AtMeta meta) tgt = Just (substSingle meta (MvAttribute tgt))
+matchAttribute :: Attribute -> Attribute -> [Subst]
+matchAttribute (AtMeta meta) tgt = [substSingle meta (MvAttribute tgt)]
 matchAttribute ptn tgt
-  | ptn == tgt = Just substEmpty
-  | otherwise = Nothing
+  | ptn == tgt = [substEmpty]
+  | otherwise = []
 
 matchBinding :: Binding -> Binding -> [Subst]
-matchBinding (BiVoid pattr) (BiVoid tattr) = case matchAttribute pattr tattr of
-  Just subst -> [subst]
-  Nothing -> []
+matchBinding (BiVoid pattr) (BiVoid tattr) = matchAttribute pattr tattr
 matchBinding (BiDelta pbts) (BiDelta tbts)
   | pbts == tbts = [substEmpty]
   | otherwise = []
@@ -78,9 +73,7 @@ matchBinding (BiLambda pFunc) (BiLambda tFunc)
   | pFunc == tFunc = [substEmpty]
   | otherwise = []
 matchBinding (BiMetaLambda meta) (BiLambda tFunc) = [substSingle meta (MvFunction tFunc)]
-matchBinding (BiTau pattr pexp) (BiTau tattr texp) = case matchAttribute pattr tattr of
-  Just subst -> combineMany [subst] (matchExpression pexp texp)
-  Nothing -> []
+matchBinding (BiTau pattr pexp) (BiTau tattr texp) = combineMany (matchAttribute pattr tattr) (matchExpression pexp texp)
 matchBinding _ _ = []
 
 -- Match bindings with ordering
@@ -124,11 +117,8 @@ matchExpression ExThis ExThis = [substEmpty]
 matchExpression ExGlobal ExGlobal = [substEmpty]
 matchExpression ExTermination ExTermination = [substEmpty]
 matchExpression (ExFormation pbs) (ExFormation tbs) = matchBindings pbs tbs
-matchExpression (ExDispatch pexp pattr) (ExDispatch texp tattr) = case matchAttribute pattr tattr of
-  Just subst -> combineMany [subst] (matchExpression pexp texp)
-  Nothing -> []
-matchExpression (ExApplication pexp pbd) (ExApplication texp tbd) =
-  combineMany (matchExpression pexp texp) (matchBinding pbd tbd)
+matchExpression (ExDispatch pexp pattr) (ExDispatch texp tattr) = combineMany (matchAttribute pattr tattr) (matchExpression pexp texp)
+matchExpression (ExApplication pexp pbd) (ExApplication texp tbd) = combineMany (matchExpression pexp texp) (matchBinding pbd tbd)
 matchExpression (ExMetaTail exp meta) tgt = case tailExpressions exp tgt of
   ([], _) -> []
   (substs, tails) -> combineMany substs [substSingle meta (MvTail tails)]
