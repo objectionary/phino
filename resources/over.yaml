@@ -4,7 +4,7 @@
 name: OVER
 pattern: '⟦!B1, !a ↦ !e1, !B2⟧(!a ↦ !e2)'
 result: ⊥
-where:
+when:
   not:
     eq:
       - '!a'
