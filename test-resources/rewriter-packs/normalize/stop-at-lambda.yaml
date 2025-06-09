@@ -6,4 +6,7 @@ rules:
 input: |
   Φ ↦ ⟦ x ↦ ξ.t, λ ⤍ Hello ⟧.z
 output: |-
-  Φ ↦ ⟦ x ↦ ξ.t, λ ⤍ Hello ⟧.z
+  Φ ↦ ⟦
+    x ↦ ξ.t,
+    λ ⤍ Hello
+  ⟧.z
