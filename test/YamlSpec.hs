@@ -6,28 +6,25 @@
 
 module YamlSpec where
 
-import Control.Monad
-import Misc
-import System.FilePath
-import Test.Hspec (Spec, describe, it, runIO, shouldReturn, shouldNotBe, shouldBe)
-import Yaml (yamlRule, Condition)
 import Ast (Expression, Program (Program))
-import qualified Data.Yaml as Y
-import Matcher (matchProgram)
-import Rewriter (meets)
+import Control.Monad
 import Data.Aeson
+import Data.Yaml qualified as Y
 import GHC.Generics
+import Matcher (matchProgram)
+import Misc
+import Printer (printSubstitutions)
+import Rewriter (meets)
+import System.FilePath
+import Test.Hspec (Spec, describe, expectationFailure, it, runIO, shouldReturn)
+import Yaml (Condition, yamlRule)
 
 data ConditionPack = ConditionPack
-  {
-    expression :: Expression,
+  { expression :: Expression,
     pattern :: Expression,
     condition :: Condition
   }
   deriving (Generic, FromJSON, Show)
-
-conditionPack :: FilePath -> IO ConditionPack
-conditionPack = Y.decodeFileThrow
 
 spec :: Spec
 spec = do
@@ -40,16 +37,23 @@ spec = do
           _ <- yamlRule pth
           pure () `shouldReturn` ()
       )
-  
+
   describe "check conditions" $ do
     let resources = "test-resources/condition-packs"
     packs <- runIO (allPathsIn resources)
     forM_
       packs
       ( \pth -> it (makeRelative resources pth) $ do
-          pack <- conditionPack pth
+          pack <- Y.decodeFileThrow pth :: IO ConditionPack
           let matched = matchProgram (pattern pack) (Program (expression pack))
-          matched `shouldNotBe` []
-          meets (condition pack) matched `shouldBe` matched
+          unless (matched /= []) (expectationFailure "List of matched substitutions is empty which is not expected")
+          let met = meets (condition pack) matched
+          unless
+            (met == matched)
+            ( expectationFailure $
+                "Condition must no decrease the list of substitutions\nExpected:\n"
+                  ++ printSubstitutions matched
+                  ++ "\nGot:\n" 
+                  ++ printSubstitutions met
+            )
       )
-
