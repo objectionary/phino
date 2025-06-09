@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+rules:
+  basic: ['over']
+input: |
+  Φ ↦ ⟦ f ↦ ⟦ x ↦ ξ.t ⟧(x ↦ ξ.t.t.t), k ↦ ∅ ⟧
+output: |-
+  Φ ↦ ⟦
+    f ↦ ⊥,
+    k ↦ ∅
+  ⟧
