@@ -8,7 +8,7 @@ module Builder
   ( buildExpressions,
     buildExpression,
     buildAttribute,
-    buildBindings,
+    buildBinding
   )
 where
 

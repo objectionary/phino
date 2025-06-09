@@ -40,7 +40,6 @@ instance Show RewriteException where
       (printExpression ptn)
       (printExpression res)
 
--- Check if given attribute is present in given binding
 attrInBinding :: Attribute -> Binding -> Bool
 attrInBinding attr (BiTau battr _) = attr == battr
 attrInBinding attr (BiVoid battr) = attr == battr
@@ -48,12 +47,10 @@ attrInBinding AtLambda (BiLambda _) = True
 attrInBinding AtDelta (BiDelta _) = True
 attrInBinding _ _ = False
 
--- Check if all given attributes are present in given bindings
-attrsInBindings :: [Attribute] -> [Binding] -> Bool
-attrsInBindings [] _ = True
-attrsInBindings attrs [] = False
-attrsInBindings [attr] (bd : rest) = attrInBinding attr bd || attrsInBindings [attr] rest
-attrsInBindings (attr : rest) bds = attrsInBindings [attr] bds && attrsInBindings rest bds
+-- Check if given attribute is present in given binding
+attrInBindings :: Attribute -> [Binding] -> Bool
+attrInBindings attr (bd : bds) = attrInBinding attr bd || attrInBindings attr bds
+attrInBindings _ _ = False
 
 -- For each substitution check if it meets to given condition
 -- If substitution does not meet the condition - it's thrown out
@@ -75,14 +72,10 @@ meets (Y.Not cond) [subst] = case meets cond [subst] of
   [] -> [subst]
   _ -> []
 -- IN
-meets (Y.In attrs bindings) [subst] =
-  case (traverse (`buildAttribute` subst) attrs, buildBindings bindings subst) of
-    (Just attrs', Just bds) -> [subst | attrsInBindings attrs' bds] -- if attrsInBindings attrs' bds then [subst] else []
+meets (Y.In attr binding) [subst] =
+  case (buildAttribute attr subst, buildBinding binding subst) of
+    (Just attr, Just bds) -> [subst | attrInBindings attr bds] -- if attrInBindings attr bd then [subst] else []
     (_, _) -> []
-meets (Y.In attrs bindings) (subst : rest) = do
-  let cond = Y.In attrs bindings
-      substs = meets cond [subst]
-  head substs : meets cond rest
 -- ALPHA
 meets (Y.Alpha (AtAlpha _)) substs = substs
 meets (Y.Alpha (AtMeta name)) [Subst mp] = case M.lookup name mp of

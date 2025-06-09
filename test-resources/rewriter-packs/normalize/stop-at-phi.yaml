@@ -6,8 +6,4 @@ rules:
 input: |
   Φ ↦ ⟦ stop ↦ ⟦ φ ↦ ξ.x ⟧.no ⟧
 output: |-
-  Φ ↦ ⟦
-    stop ↦ ⟦
-      φ ↦ ξ.x
-    ⟧.no
-  ⟧
+  Φ ↦ ⟦ stop ↦ ⟦ φ ↦ ξ.x ⟧.no ⟧

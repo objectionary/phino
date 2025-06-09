@@ -51,7 +51,7 @@ spec = do
           unless
             (met == matched)
             ( expectationFailure $
-                "Condition must no decrease the list of substitutions\nExpected:\n"
+                "Condition must not decrease the list of substitutions\nExpected:\n"
                   ++ printSubstitutions matched
                   ++ "\nGot:\n" 
                   ++ printSubstitutions met

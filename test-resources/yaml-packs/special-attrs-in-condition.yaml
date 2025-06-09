@@ -4,6 +4,10 @@
 pattern: 'Q'
 result: 'Q'
 when:
-  in:
-    - ['λ', 'Δ']
-    - ['!B']
+  or:
+    - in:
+        - 'λ'
+        - '!B'
+    - in:
+        - 'Δ'
+        - '!B'

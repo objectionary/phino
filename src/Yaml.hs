@@ -67,10 +67,10 @@ instance FromJSON Condition where
               do
                 vals <- v .: "in"
                 case vals of
-                  [attrs_, bindings_] -> do
-                    attrs' <- parseJSON attrs_
-                    bds <- parseJSON bindings_
-                    pure (In attrs' bds)
+                  [attr_, binding_] -> do
+                    attr <- parseJSON attr_
+                    bd <- parseJSON binding_
+                    pure (In attr bd)
                   _ -> fail "'in' must contain exactly two elements"
             ]
       )
@@ -78,7 +78,7 @@ instance FromJSON Condition where
 data Condition
   = And [Condition]
   | Or [Condition]
-  | In [Attribute] [Binding]
+  | In Attribute Binding
   | Not Condition
   | Alpha Attribute
   | Eq Attribute Attribute

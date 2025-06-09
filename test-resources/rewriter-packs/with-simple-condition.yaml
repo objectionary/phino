@@ -12,6 +12,10 @@ rules:
     - pattern: '[[!B]].!a'
       result: '[[!B]].@.!a'
       when:
-        in:
-          - ['!a', 'y']
-          - ['!B']
+        and:
+          - in:
+              - '!a'
+              - '!B'
+          - in:
+              - 'y'
+              - '!B'

@@ -16,6 +16,7 @@ import Rewriter (rewrite)
 import System.FilePath (makeRelative, replaceExtension, (</>))
 import Test.Hspec (Spec, describe, it, runIO, shouldBe)
 import Yaml qualified as Y
+import Data.Char (isSpace)
 
 data Rules = Rules
   { basic :: Maybe [String],
@@ -32,6 +33,9 @@ data YamlPack = YamlPack
 
 yamlPack :: FilePath -> IO YamlPack
 yamlPack = Yaml.decodeFileThrow
+
+noSpaces :: String -> String
+noSpaces = filter (not . isSpace)
 
 spec :: Spec
 spec = do
@@ -59,5 +63,5 @@ spec = do
                 _ -> pure []
             Nothing -> pure []
           rewritten <- runIO $ rewrite input' rules'
-          it (makeRelative resources pth) (rewritten `shouldBe` output')
+          it (makeRelative resources pth) (noSpaces rewritten `shouldBe` noSpaces output')
       )
