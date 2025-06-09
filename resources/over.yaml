@@ -5,8 +5,7 @@ name: OVER
 pattern: '⟦!B1, !a ↦ !e1, !B2⟧(!a ↦ !e2)'
 result: ⊥
 where:
-  and:
-    - not:
-        - eq:
-            - '!a'
-            - 'ρ'
+  not:
+    - eq:
+        - '!a'
+        - 'ρ'
