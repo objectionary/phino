@@ -65,10 +65,11 @@ buildExpression (ExDispatch expr attr) subst = do
   dispatched <- buildExpression expr subst
   attr <- buildAttribute attr subst
   return (ExDispatch dispatched attr)
-buildExpression (ExApplication expr taus) subst = do
+buildExpression (ExApplication expr (BiTau battr bexpr)) subst = do
   applied <- buildExpression expr subst
-  bindings <- buildBindings taus subst
-  Just (ExApplication applied bindings)
+  [binding] <- buildBinding (BiTau battr bexpr) subst
+  Just (ExApplication applied binding)
+buildExpression (ExApplication _ _) _ = Nothing
 buildExpression (ExFormation bds) subst = buildBindings bds subst >>= (Just . ExFormation)
 buildExpression (ExMeta meta) (Subst mp) = case Map.lookup meta mp of
   Just (MvExpression expr) -> Just expr
