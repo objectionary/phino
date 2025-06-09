@@ -1,0 +1,16 @@
+expression: '[[ x -> Q.y ]].y'
+pattern: '[[ !B ]].!a'
+condition:
+  and:
+    - not:
+        in:
+          - ['!a']
+          - ['𝐵']
+    - not:
+        in:
+          - ['φ']
+          - ['𝐵']
+    - not:
+        in:
+          - ['λ']
+          - ['𝐵']
