@@ -107,8 +107,8 @@ Condition:
   - not: Condition    # logical NOT
   - alpha: Attribute  # check if given attribute is alpha
   - in:               # check if attributes exist in bindings
-      - [Attribute]   # list of attributes
-      - [Binding]     # list of bindings
+      - Attribute     # attribute
+      - Binding       # binding
 ```
 
 Check [this](resources) to find pre defined normalization rules.
