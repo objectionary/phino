@@ -4,6 +4,6 @@
 rules:
   basic: ['over']
 input: |
-  Φ ↦ ⟦ k ↦ ∅, t ↦ ξ.k, x ↦ ξ.t ⟧(x ↦ ξ)
+  Φ ↦ ⟦ k ↦ ∅, t ↦ ξ.k, x ↦ ξ.t ⟧(x ↦ ξ.e3.t55)
 output: |-
   Φ ↦ ⊥
