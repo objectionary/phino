@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+rules:
+  basic: ['stop']
+input: |
+  Φ ↦ ⟦ x ↦ ξ.t, λ ⤍ Hello ⟧.z
+output: |-
+  Φ ↦ ⟦
+    x ↦ ξ.t,
+    λ ⤍ Hello
+  ⟧.z
