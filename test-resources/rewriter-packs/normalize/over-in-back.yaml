@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+rules:
+  basic: ['over']
+input: |
+  Φ ↦ ⟦ k ↦ ∅, t ↦ ξ.k, x ↦ ξ.t ⟧(x ↦ ξ)
+output: |-
+  Φ ↦ ⊥
