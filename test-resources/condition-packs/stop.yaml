@@ -1,0 +1,19 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+expression: '[[ x -> Q.y ]].y'
+pattern: '[[ !B ]].!a'
+condition:
+  and:
+    - not:
+        in:
+          - ['!a']
+          - ['𝐵']
+    - not:
+        in:
+          - ['φ']
+          - ['𝐵']
+    - not:
+        in:
+          - ['λ']
+          - ['𝐵']
