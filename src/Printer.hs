@@ -65,6 +65,7 @@ instance Pretty Tail where
 instance Pretty MetaValue where
   pretty (MvAttribute attr) = pretty attr
   pretty (MvBytes bytes) = pretty bytes
+  pretty (MvBindings []) = pretty "[]"
   pretty (MvBindings bindings) = vsep [pretty "[", indent 2 (pretty bindings), pretty "]"]
   pretty (MvFunction func) = pretty func
   pretty (MvExpression expr) = pretty expr
