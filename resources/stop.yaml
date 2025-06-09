@@ -1,0 +1,20 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+name: 'STOP'
+pattern: '⟦𝐵⟧.𝜏'
+result: ⊥
+where:
+  and:
+    - not:
+        - in:
+            - ['𝜏']
+            - ['𝐵']
+    - not:
+        - in:
+            - ['φ']
+            - ['𝐵']
+    - not:
+        - in:
+            - ['λ']
+            - ['𝐵']
