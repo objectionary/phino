@@ -7,5 +7,5 @@ result: ⊥
 where:
   not:
     eq:
-        - '!a'
-        - 'ρ'
+      - '!a'
+      - 'ρ'
