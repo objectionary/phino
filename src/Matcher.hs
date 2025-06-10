@@ -133,13 +133,12 @@ matchBindingExpression _ _ = []
 matchExpressionDeep :: Expression -> Expression -> [Subst]
 matchExpressionDeep ptn tgt = do
   let matched = matchExpression ptn tgt
-  if null matched
-    then case tgt of
-      ExFormation bds -> concatMap (`matchBindingExpression` ptn) bds
-      ExDispatch exp _ -> matchExpressionDeep ptn exp
-      ExApplication exp tau -> matchExpressionDeep ptn exp ++ matchBindingExpression tau ptn
-      _ -> []
-    else matched
+      deep = case tgt of
+        ExFormation bds -> concatMap (`matchBindingExpression` ptn) bds
+        ExDispatch exp _ -> matchExpressionDeep ptn exp
+        ExApplication exp tau -> matchExpressionDeep ptn exp ++ matchBindingExpression tau ptn
+        _ -> []
+  matched ++ deep
 
 matchProgram :: Expression -> Program -> [Subst]
 matchProgram ptn (Program exp) = matchExpressionDeep ptn exp

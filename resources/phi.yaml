@@ -1,15 +1,15 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 # SPDX-License-Identifier: MIT
 ---
-name: 'PHI'
-pattern: '⟦𝐵⟧.𝜏'
-result: '⟦𝐵⟧.φ.𝜏'
+name: PHI
+pattern: ⟦𝐵⟧.𝜏
+result: ⟦𝐵⟧.φ.𝜏
 when:
   and:
     - in:
-        - 'φ'
-        - '𝐵'
+        - φ
+        - 𝐵
     - not:
         in:
-          - '𝜏'
-          - '𝐵'
+          - 𝜏
+          - 𝐵

@@ -1,6 +1,7 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE LambdaCase #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
@@ -120,13 +121,29 @@ data Condition
   | Eq Comparable Comparable
   deriving (Generic, Show)
 
+data Extra = Extra
+  {
+    meta :: Expression,
+    function :: String,
+    args :: [Expression]
+  }
+  deriving (Generic, FromJSON, Show)
+
+instance FromJSON Rule where
+  parseJSON = genericParseJSON defaultOptions
+    { fieldLabelModifier = \case
+        "where_" -> "where"
+        other -> other
+    }
+
 data Rule = Rule
   { name :: Maybe String,
     pattern :: Expression,
     result :: Expression,
-    when :: Maybe Condition
+    when :: Maybe Condition,
+    where_ :: Maybe [Extra]
   }
-  deriving (Generic, FromJSON, Show)
+  deriving (Generic, Show)
 
 yamlRule :: FilePath -> IO Rule
 yamlRule = Yaml.decodeFileThrow

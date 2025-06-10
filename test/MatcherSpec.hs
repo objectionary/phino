@@ -50,15 +50,19 @@ spec = do
             ],
           [[("a", MvAttribute (AtLabel "x"))], [("a", MvAttribute (AtLabel "y"))]]
         ),
-        ( "!e => [[x -> Q]] => [(!e >> [[x -> Q]])]",
+        ( "!e => [[x -> Q]] => [(!e >> [[x -> Q]] ), (!e >> Q)]",
           ExMeta "e",
           ExFormation [BiTau (AtLabel "x") ExGlobal],
-          [[("e", MvExpression (ExFormation [BiTau (AtLabel "x") ExGlobal]))]]
+          [ [("e", MvExpression (ExFormation [BiTau (AtLabel "x") ExGlobal]))],
+            [("e", MvExpression ExGlobal)]
+          ]
         ),
-        ( "!e.!a => Q.org.eolang => [(!e >> Q.org, !a >> eolang)]",
+        ( "!e.!a => Q.org.eolang => [(!e >> Q.org, !a >> eolang), (!e >> Q, !a >> org)]",
           ExDispatch (ExMeta "e") (AtMeta "a"),
           ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang"),
-          [[("e", MvExpression (ExDispatch ExGlobal (AtLabel "org"))), ("a", MvAttribute (AtLabel "eolang"))]]
+          [ [("e", MvExpression (ExDispatch ExGlobal (AtLabel "org"))), ("a", MvAttribute (AtLabel "eolang"))],
+            [("e", MvExpression ExGlobal), ("a", MvAttribute (AtLabel "org"))]
+          ]
         ),
         ( "⟦!B1, !a ↦ ∅, !B2⟧.!a => ⟦ x ↦ ξ.t, t ↦ ∅ ⟧.t(ρ ↦ ⟦ x ↦ ξ.t, t ↦ ∅ ⟧) => [(!B1 >> ⟦x ↦ ξ.t⟧, !a >> t, !B2 >> ⟦⟧ )]",
           ExDispatch (ExFormation [BiMeta "B1", BiVoid (AtMeta "a"), BiMeta "B2"]) (AtMeta "a"),
