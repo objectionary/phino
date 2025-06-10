@@ -2,9 +2,9 @@
 # SPDX-License-Identifier: MIT
 ---
 name: ALPHA
-pattern: ⟦𝐵1, 𝜏1 ↦ ∅, 𝐵2⟧(𝜏20 ↦ 𝑒)
+pattern: ⟦𝐵1, 𝜏1 ↦ ∅, 𝐵2⟧(𝜏2 ↦ 𝑒)
 result: ⟦𝐵1, 𝜏1 ↦ ∅, 𝐵2⟧(𝜏1 ↦ 𝑒)
 when:
   eq:
-    - ordinal: 𝜏20
+    - ordinal: 𝜏2
     - length: 𝐵1
