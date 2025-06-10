@@ -150,8 +150,7 @@ applyRules program (rule : rest) = do
   prog <- applyRules program [rule]
   applyRules prog rest
 
-rewrite :: String -> [Y.Rule] -> IO String
+rewrite :: String -> [Y.Rule] -> IO Program
 rewrite prog rules = do
   program <- parseProgramThrows prog
-  rewritten <- applyRules program rules
-  pure (printProgram rewritten)
+  applyRules program rules

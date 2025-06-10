@@ -7,16 +7,18 @@
 
 module RewriterSpec where
 
-import Control.Monad (forM_)
+import Control.Monad (forM_, unless)
 import Data.Aeson
+import Data.Char (isSpace)
 import Data.Yaml qualified as Yaml
 import GHC.Generics
 import Misc (allPathsIn, ensuredFile)
+import Parser (parseProgramThrows)
+import Printer (printProgram)
 import Rewriter (rewrite)
 import System.FilePath (makeRelative, replaceExtension, (</>))
-import Test.Hspec (Spec, describe, it, runIO, shouldBe)
+import Test.Hspec (Spec, describe, expectationFailure, it, runIO)
 import Yaml qualified as Y
-import Data.Char (isSpace)
 
 data Rules = Rules
   { basic :: Maybe [String],
@@ -44,8 +46,8 @@ spec = do
     packs <- runIO (allPathsIn resources)
     forM_
       packs
-      ( \pth -> do
-          pack <- runIO $ yamlPack pth
+      ( \pth -> it (makeRelative resources pth) $ do
+          pack <- yamlPack pth
           let output' = output pack
               input' = input pack
           rules' <- case rules pack of
@@ -53,15 +55,21 @@ spec = do
               Just custom' -> pure custom'
               _ -> case basic _rules of
                 Just basic' ->
-                  runIO $
-                    mapM
-                      ( \name -> do
-                          yaml <- ensuredFile ("resources" </> replaceExtension name ".yaml")
-                          Y.yamlRule yaml
-                      )
-                      basic'
+                  mapM
+                    ( \name -> do
+                        yaml <- ensuredFile ("resources" </> replaceExtension name ".yaml")
+                        Y.yamlRule yaml
+                    )
+                    basic'
                 _ -> pure []
             Nothing -> pure []
-          rewritten <- runIO $ rewrite input' rules'
-          it (makeRelative resources pth) (noSpaces rewritten `shouldBe` noSpaces output')
+          rewritten <- rewrite input' rules'
+          result' <- parseProgramThrows output'
+          unless (rewritten == result') $
+            expectationFailure
+              ( "Wrong rewritten program. Expected:\n"
+                  ++ printProgram result'
+                  ++ "\nGot:\n"
+                  ++ printProgram rewritten
+              )
       )

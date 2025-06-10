@@ -20,6 +20,11 @@ when:
                       - ordinal: '!a'
                       - length: '!B'
                   - 1
+              - eq:
+                  - ordinal: '𝜏2'
+                  - add:
+                      - length: '𝐵1'
+                      - 1
       - or:
           - and:
               - in:

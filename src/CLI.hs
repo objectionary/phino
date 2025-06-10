@@ -18,6 +18,7 @@ import System.Exit (exitFailure, ExitCode (..))
 import System.IO (getContents', hPutStrLn, stderr)
 import Text.Printf (printf)
 import qualified Yaml as Y
+import Printer (printProgram)
 
 data CmdException
   = InvalidRewriteArguments
@@ -86,4 +87,4 @@ runCLI args = handle handler $ do
                 else mapM ensuredFile rules
             mapM Y.yamlRule paths
       rewritten <- rewrite prog rules'
-      putStrLn rewritten
+      putStrLn (printProgram rewritten)
