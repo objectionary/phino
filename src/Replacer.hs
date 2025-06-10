@@ -25,7 +25,7 @@ replaceExpression expr ptns repls = do
   let (ptn : ptnsRest) = ptns
   let (repl : replsRest) = repls
   if expr == ptn
-    then (repl, ptnsRest, replsRest)
+    then replaceExpression repl ptnsRest replsRest
     else case expr of
       ExDispatch inner attr -> do
         let (expr', ptns', repls') = replaceExpression inner ptns repls

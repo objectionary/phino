@@ -5,8 +5,6 @@ name: ALPHA
 pattern: ⟦𝐵1, 𝜏1 ↦ ∅, 𝐵2⟧(𝜏2 ↦ 𝑒)
 result: ⟦𝐵1, 𝜏1 ↦ ∅, 𝐵2⟧(𝜏1 ↦ 𝑒)
 when:
-  and:
-    - alpha: '𝜏2'
-    - eq:
-        - ordinal: '𝜏2'
-        - length: '𝐵1'
+  eq:
+    - ordinal: 𝜏2
+    - length: 𝐵1

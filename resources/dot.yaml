@@ -1,0 +1,15 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+# @todo #86:30min Add normal form checking for e1 expression.
+#  In Rdot rule we assume that e1 expression is in normal form.
+#  To check that we need to introduce new condition and use it here.
+---
+name: DOT
+pattern: ⟦𝐵1, 𝜏 ↦ 𝑒1, 𝐵2⟧.𝜏
+result: 𝑒2(ρ ↦ ⟦𝐵1, 𝜏 ↦ 𝑒1, 𝐵2⟧)
+where:
+  - meta: 𝑒2
+    function: contextualize
+    args:
+      - 𝑒1
+      - ⟦𝐵1, 𝜏 ↦ 𝑒1, 𝐵2⟧

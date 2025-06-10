@@ -12,8 +12,9 @@ import Ast
 import Builder
 import Control.Exception
 import qualified Data.Map.Strict as M
+import Data.Maybe (catMaybes, isJust)
 import Data.Text (intercalate)
-import Matcher (MetaValue (MvAttribute, MvBindings), Subst (Subst), matchProgram)
+import Matcher (MetaValue (MvAttribute, MvBindings, MvExpression), Subst (Subst), combine, combineMany, matchProgram, substEmpty, substSingle)
 import Misc (ensuredFile)
 import Parser (parseProgram, parseProgramThrows)
 import Printer (printExpression, printProgram, printSubstitutions)
@@ -54,15 +55,15 @@ attrInBindings attr (bd : bds) = attrInBinding attr bd || attrInBindings attr bd
 attrInBindings _ _ = False
 
 -- Apply 'eq' yaml condition to attributes
-compareAttrs :: Attribute -> Attribute -> Subst -> [Subst]
-compareAttrs (AtMeta left) (AtMeta right) subst = [subst | left == right]
+compareAttrs :: Attribute -> Attribute -> Subst -> Bool
+compareAttrs (AtMeta left) (AtMeta right) _ = left == right
 compareAttrs attr (AtMeta meta) (Subst mp) = case M.lookup meta mp of
-  Just (MvAttribute found) -> [Subst mp | attr == found]
-  _ -> []
+  Just (MvAttribute found) -> attr == found
+  _ -> False
 compareAttrs (AtMeta meta) attr (Subst mp) = case M.lookup meta mp of
-  Just (MvAttribute found) -> [Subst mp | attr == found]
-  _ -> []
-compareAttrs left right subst = [subst | right == left]
+  Just (MvAttribute found) -> attr == found
+  _ -> False
+compareAttrs left right subst = right == left
 
 -- Convert Y.Number to Integer
 numToInt :: Y.Number -> Subst -> Maybe Integer
@@ -84,37 +85,34 @@ numToInt _ _ = Nothing
 -- and is not used in replacement
 meets :: Y.Condition -> [Subst] -> [Subst]
 meets _ [] = []
--- OR
 meets (Y.Or []) substs = substs
-meets (Y.Or (cond : rest)) [subst] = case meets cond [subst] of
-  [] -> meets (Y.Or rest) [subst]
-  substs -> substs
--- AND
+meets (Y.Or (cond : rest)) [subst] = do
+  let met = meets cond [subst]
+  if null met
+    then meets (Y.Or rest) [subst]
+    else met
 meets (Y.And []) substs = substs
-meets (Y.And (cond : rest)) [subst] = case meets cond [subst] of
-  [] -> []
-  _ -> meets (Y.And rest) [subst]
--- NOT
-meets (Y.Not cond) [subst] = case meets cond [subst] of
-  [] -> [subst]
-  _ -> []
--- IN
+meets (Y.And (cond : rest)) [subst] = do
+  let met = meets cond [subst]
+  if null met
+    then []
+    else meets (Y.And rest) [subst]
+meets (Y.Not cond) [subst] = do
+  let met = meets cond [subst]
+  [subst | null met]
 meets (Y.In attr binding) [subst] =
   case (buildAttribute attr subst, buildBinding binding subst) of
     (Just attr, Just bds) -> [subst | attrInBindings attr bds] -- if attrInBindings attr bd then [subst] else []
     (_, _) -> []
--- ALPHA
 meets (Y.Alpha (AtAlpha _)) substs = substs
 meets (Y.Alpha (AtMeta name)) [Subst mp] = case M.lookup name mp of
   Just (MvAttribute (AtAlpha _)) -> [Subst mp]
   _ -> []
 meets (Y.Alpha _) _ = []
--- EQ
 meets (Y.Eq (Y.CmpNum left) (Y.CmpNum right)) [subst] = case (numToInt left subst, numToInt right subst) of
   (Just left_, Just right_) -> [subst | left_ == right_]
   (_, _) -> []
-meets (Y.Eq (Y.CmpAttr left) (Y.CmpAttr right)) [subst] = compareAttrs left right subst
-meets (Y.Eq _ _) _ = []
+meets (Y.Eq (Y.CmpAttr left) (Y.CmpAttr right)) [subst] = [subst | compareAttrs left right subst]
 meets cond (subst : rest) = do
   let first = meets cond [subst]
       next = meets cond rest
@@ -132,22 +130,42 @@ buildAndReplace program ptn res substs =
     (Nothing, _) -> throwIO (CouldNotBuild ptn substs)
     (_, Nothing) -> throwIO (CouldNotBuild res substs)
 
+-- Extend list of given substitutions with extra substitutions from 'where' yaml rule section
+extraSubstitutions :: Program -> Maybe [Y.Extra] -> [Subst] -> [Subst]
+extraSubstitutions prog extras substs = case extras of
+  Nothing -> substs
+  Just extras' -> do
+    catMaybes
+      [ case Y.meta extra of
+          ExMeta name -> do
+            let func = Y.function extra
+                args = Y.args extra
+            expr <- buildExpressionFromFunction func args subst prog
+            combine (substSingle name (MvExpression expr)) subst
+          _ -> Just subst
+        | subst <- substs,
+          extra <- extras'
+      ]
+
 applyRules :: Program -> [Y.Rule] -> IO Program
 applyRules program [] = pure program
-applyRules program [rule] = do
+applyRules program (rule : rest) = do
   let ptn = Y.pattern rule
       res = Y.result rule
-  case matchProgram ptn program of
-    [] -> pure program
-    substs -> do
-      let replaced = buildAndReplace program ptn res
-      case Y.when rule of
-        Just cond -> case meets cond substs of
-          [] -> pure program
-          substs' -> replaced substs'
-        Nothing -> replaced substs
-applyRules program (rule : rest) = do
-  prog <- applyRules program [rule]
+      matched = matchProgram ptn program
+      condition = Y.when rule
+      replaced = buildAndReplace program ptn res
+      extended = extraSubstitutions program (Y.where_ rule)
+  prog <-
+    if null matched
+      then pure program
+      else case condition of
+        Nothing -> replaced (extended matched)
+        Just cond -> do
+          let met = meets cond matched
+          if null met
+            then pure program
+            else replaced (extended met)
   applyRules prog rest
 
 rewrite :: String -> [Y.Rule] -> IO Program
