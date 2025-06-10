@@ -102,13 +102,28 @@ Rule:
   when: Condition?
 
 Condition:
-  - and: [Condition]  # logical AND
-  - or:  [Condition]  # logical OR
-  - not: Condition    # logical NOT
-  - alpha: Attribute  # check if given attribute is alpha
-  - in:               # check if attributes exist in bindings
-      - Attribute     # attribute
-      - Binding       # binding
+  = and: [Condition]     # logical AND
+  | or:  [Condition]     # logical OR
+  | not: Condition       # logical NOT
+  | alpha: Attribute     # check if given attribute is alpha
+  | eq:                  # compare two comparable objects
+      - Comparable
+      - Comparable
+  | in:                  # check if attributes exist in bindings
+      - Attribute
+      - Binding
+
+Comparable:              # comparable object that may be used in 'eq' condition
+  = Attribute
+  | Number
+
+Number:                  # comparable number
+  = Integer              # just regular integer
+  | ordinal: Attribute   # calculate index of alpha attribute
+  | length: Meta Binding # calculate length of bindings by given meta binding
+  | plus:                # calculate sum of 2 given comparable numbers
+      - Number
+      - Number
 ```
 
 Check [this](resources) to find pre defined normalization rules.
