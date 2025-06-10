@@ -43,8 +43,35 @@ instance FromJSON Attribute where
             Left err -> fail err
             Right attr -> pure attr
       )
+
 instance FromJSON Binding where
   parseJSON = parseJSON' "Binding" parseBinding
+
+instance FromJSON Number where
+  parseJSON v = case v of
+    Object o ->
+      asum
+        [ Ordinal <$> o .: "ordinal",
+          Length <$> o .: "length",
+          do
+            vals <- o .: "add"
+            case vals of
+              [first_, second_] -> do
+                first <- parseJSON first_
+                second <- parseJSON second_
+                pure (Add first second)
+              _ -> fail "'add' requires exactly two elements"
+        ]
+    Number num -> pure (Literal (round num))
+    _ ->
+      fail "Expected a numerable expression (object or number)"
+
+instance FromJSON Comparable where
+  parseJSON v =
+    asum
+      [ CmpAttr <$> parseJSON v,
+        CmpNum <$> parseJSON v
+      ]
 
 instance FromJSON Condition where
   parseJSON =
@@ -59,10 +86,7 @@ instance FromJSON Condition where
               do
                 vals <- v .: "eq"
                 case vals of
-                  [left_, right_] -> do
-                    left <- parseJSON left_
-                    right <- parseJSON right_
-                    pure (Eq left right)
+                  [left_, right_] -> Eq <$> parseJSON left_ <*> parseJSON right_
                   _ -> fail "'eq' must contain exactly two elements",
               do
                 vals <- v .: "in"
@@ -75,13 +99,25 @@ instance FromJSON Condition where
             ]
       )
 
+data Number
+  = Ordinal Attribute
+  | Length Binding
+  | Add Number Number
+  | Literal Integer
+  deriving (Generic, Show)
+
+data Comparable
+  = CmpAttr Attribute
+  | CmpNum Number
+  deriving (Generic, Show)
+
 data Condition
   = And [Condition]
   | Or [Condition]
   | In Attribute Binding
   | Not Condition
   | Alpha Attribute
-  | Eq Attribute Attribute
+  | Eq Comparable Comparable
   deriving (Generic, Show)
 
 data Rule = Rule

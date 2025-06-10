@@ -11,16 +11,18 @@ module Rewriter (rewrite, meets) where
 import Ast
 import Builder
 import Control.Exception
+import qualified Data.Map.Strict as M
 import Data.Text (intercalate)
-import Matcher (Subst (Subst), matchProgram, MetaValue (MvAttribute))
+import Matcher (MetaValue (MvAttribute, MvBindings), Subst (Subst), matchProgram)
 import Misc (ensuredFile)
 import Parser (parseProgram, parseProgramThrows)
 import Printer (printExpression, printProgram, printSubstitutions)
 import Replacer (replaceProgram)
 import System.Directory
 import Text.Printf
+import Yaml (Comparable (CmpAttr))
 import qualified Yaml as Y
-import qualified Data.Map.Strict as M
+import Control.Arrow (ArrowChoice(right))
 
 data RewriteException
   = CouldNotBuild {expr :: Expression, substs :: [Subst]}
@@ -40,17 +42,42 @@ instance Show RewriteException where
       (printExpression ptn)
       (printExpression res)
 
-attrInBinding :: Attribute -> Binding -> Bool
-attrInBinding attr (BiTau battr _) = attr == battr
-attrInBinding attr (BiVoid battr) = attr == battr
-attrInBinding AtLambda (BiLambda _) = True
-attrInBinding AtDelta (BiDelta _) = True
-attrInBinding _ _ = False
-
 -- Check if given attribute is present in given binding
 attrInBindings :: Attribute -> [Binding] -> Bool
 attrInBindings attr (bd : bds) = attrInBinding attr bd || attrInBindings attr bds
+  where
+    attrInBinding :: Attribute -> Binding -> Bool
+    attrInBinding attr (BiTau battr _) = attr == battr
+    attrInBinding attr (BiVoid battr) = attr == battr
+    attrInBinding AtLambda (BiLambda _) = True
+    attrInBinding AtDelta (BiDelta _) = True
+    attrInBinding _ _ = False
 attrInBindings _ _ = False
+
+-- Apply 'eq' yaml condition to attributes
+compareAttrs :: Attribute -> Attribute -> Subst -> [Subst]
+compareAttrs (AtMeta left) (AtMeta right) subst = [subst | left == right]
+compareAttrs attr (AtMeta meta) (Subst mp) = case M.lookup meta mp of
+  Just (MvAttribute found) -> [Subst mp | attr == found]
+  _ -> []
+compareAttrs (AtMeta meta) attr (Subst mp) = case M.lookup meta mp of
+  Just (MvAttribute found) -> [Subst mp | attr == found]
+  _ -> []
+compareAttrs left right subst = [subst | right == left]
+
+numToInt :: Y.Number -> Subst -> Maybe Integer
+numToInt (Y.Ordinal (AtMeta meta)) (Subst mp) = case M.lookup meta mp of
+  Just (MvAttribute (AtAlpha idx)) -> Just idx
+  _ -> Nothing
+numToInt (Y.Ordinal (AtAlpha idx)) subst = Just idx
+numToInt (Y.Length (BiMeta meta)) (Subst mp) = case M.lookup meta mp of
+  Just (MvBindings bds) -> Just (toInteger (length bds))
+  _ -> Nothing
+numToInt (Y.Add left right) subst = case (numToInt left subst, numToInt right subst) of
+  (Just left_, Just right_) -> Just (left_ + right_)
+  _ -> Nothing
+numToInt (Y.Literal num) subst = Just num
+numToInt _ _ = Nothing
 
 -- For each substitution check if it meets to given condition
 -- If substitution does not meet the condition - it's thrown out
@@ -83,15 +110,11 @@ meets (Y.Alpha (AtMeta name)) [Subst mp] = case M.lookup name mp of
   _ -> []
 meets (Y.Alpha _) _ = []
 -- EQ
-meets (Y.Eq (AtMeta left) (AtMeta right)) [subst] = [subst | left == right]
-meets (Y.Eq attr (AtMeta meta)) [Subst mp] = case M.lookup meta mp of
-  Just (MvAttribute found) -> [Subst mp | attr == found]
-  _ -> []
-meets (Y.Eq (AtMeta meta) attr) [Subst mp] = case M.lookup meta mp of
-  Just (MvAttribute found) -> [Subst mp | attr == found]
-  _ -> []
-meets (Y.Eq left right) [subst] = [subst | right == left]
--- Any condition with many substitutions
+meets (Y.Eq (Y.CmpNum left) (Y.CmpNum right)) [subst] = case (numToInt left subst, numToInt right subst) of
+  (Just left_, Just right_) -> [subst | left_ == right_]
+  (_, _) -> []
+meets (Y.Eq (Y.CmpAttr left) (Y.CmpAttr right)) [subst] = compareAttrs left right subst
+meets (Y.Eq _ _) _ = []
 meets cond (subst : rest) = do
   let first = meets cond [subst]
       next = meets cond rest
