@@ -22,7 +22,6 @@ import System.Directory
 import Text.Printf
 import Yaml (Comparable (CmpAttr))
 import qualified Yaml as Y
-import Control.Arrow (ArrowChoice(right))
 
 data RewriteException
   = CouldNotBuild {expr :: Expression, substs :: [Subst]}
@@ -65,6 +64,7 @@ compareAttrs (AtMeta meta) attr (Subst mp) = case M.lookup meta mp of
   _ -> []
 compareAttrs left right subst = [subst | right == left]
 
+-- Convert Y.Number to Integer
 numToInt :: Y.Number -> Subst -> Maybe Integer
 numToInt (Y.Ordinal (AtMeta meta)) (Subst mp) = case M.lookup meta mp of
   Just (MvAttribute (AtAlpha idx)) -> Just idx
