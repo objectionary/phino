@@ -23,7 +23,7 @@ common warnings
 
 library
   exposed-modules:
-    CLI, Ast, Parser, Matcher, Builder, Replacer, Printer, Rewriter, Yaml, Rule, Misc
+    CLI, Ast, Parser, Matcher, Builder, Replacer, Printer, Rewriter, Yaml, Condition, Misc
   hs-source-dirs: src
   other-modules:
     Paths_phino

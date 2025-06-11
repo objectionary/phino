@@ -9,7 +9,7 @@ module Builder
     buildExpression,
     buildExpressionFromFunction,
     buildAttribute,
-    buildBinding
+    buildBinding,
   )
 where
 

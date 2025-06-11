@@ -3,7 +3,7 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 
--- SPDX-FileCopyrightText: Copyright (c) 2025 ObjectionarR.com
+-- SPDX-FileCopyrightText: Copyright (c) 2025 ObjectionarY.com
 -- SPDX-License-Identifier: MIT
 
 module Rewriter (rewrite) where
@@ -19,8 +19,9 @@ import Misc (ensuredFile)
 import Parser (parseProgram, parseProgramThrows)
 import Printer (printExpression, printProgram, printSubstitutions)
 import Replacer (replaceProgram)
-import qualified Rule as R
 import Text.Printf
+import qualified Yaml as Y
+import qualified Condition as C
 
 data RewriteException
   = CouldNotBuild {expr :: Expression, substs :: [Subst]}
@@ -51,15 +52,15 @@ buildAndReplace program ptn res substs =
     (_, Nothing) -> throwIO (CouldNotBuild res substs)
 
 -- Extend list of given substitutions with extra substitutions from 'where' yaml rule section
-extraSubstitutions :: Program -> Maybe [R.Extra] -> [Subst] -> [Subst]
+extraSubstitutions :: Program -> Maybe [Y.Extra] -> [Subst] -> [Subst]
 extraSubstitutions prog extras substs = case extras of
   Nothing -> substs
   Just extras' -> do
     catMaybes
-      [ case R.meta extra of
+      [ case Y.meta extra of
           ExMeta name -> do
-            let func = R.function extra
-                args = R.args extra
+            let func = Y.function extra
+                args = Y.args extra
             expr <- buildExpressionFromFunction func args subst prog
             combine (substSingle name (MvExpression expr)) subst
           _ -> Just subst
@@ -67,20 +68,21 @@ extraSubstitutions prog extras substs = case extras of
           extra <- extras'
       ]
 
-applyRules :: Program -> [R.Rule] -> IO Program
+applyRules :: Program -> [Y.Rule] -> IO Program
 applyRules program [] = pure program
 applyRules program (rule : rest) = do
-  let ptn = R.pattern rule
-      res = R.result rule
-      condition = R.when rule
+  let ptn = Y.pattern rule
+      res = Y.result rule
+      condition = Y.when rule
       replaced = buildAndReplace program ptn res
-      extended = extraSubstitutions program (R.where_ rule)
-  prog <- case R.matchProgramWithCondition ptn condition program of
+      extended = extraSubstitutions program (Y.where_ rule)
+  matched <- C.matchProgramWithCondition ptn condition program
+  prog <- case matched of
     Nothing -> pure program
     Just matched -> replaced (extended matched)
   applyRules prog rest
 
-rewrite :: String -> [R.Rule] -> IO Program
+rewrite :: String -> [Y.Rule] -> IO Program
 rewrite prog rules = do
   program <- parseProgramThrows prog
   applyRules program rules

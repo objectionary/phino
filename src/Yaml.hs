@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE DeriveGeneric #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
@@ -9,13 +10,11 @@ module Yaml where
 import Ast
 import Control.Applicative (asum)
 import Data.Aeson
-import Data.Aeson.KeyMap (keys)
-import Data.String (IsString (..))
 import Data.Text (unpack)
 import Data.Yaml (Parser)
 import qualified Data.Yaml as Yaml
 import Parser
-import qualified Rule as R
+import GHC.Generics
 
 parseJSON' :: String -> (String -> Either String a) -> Value -> Parser a
 parseJSON' name func =
@@ -44,46 +43,46 @@ instance FromJSON Attribute where
 instance FromJSON Binding where
   parseJSON = parseJSON' "Binding" parseBinding
 
-instance FromJSON R.Number where
+instance FromJSON Number where
   parseJSON v = case v of
     Object o ->
       asum
-        [ R.Ordinal <$> o .: "ordinal",
-          R.Length <$> o .: "length",
+        [ Ordinal <$> o .: "ordinal",
+          Length <$> o .: "length",
           do
             vals <- o .: "add"
             case vals of
               [first_, second_] -> do
                 first <- parseJSON first_
                 second <- parseJSON second_
-                pure (R.Add first second)
+                pure (Add first second)
               _ -> fail "'add' requires exactly two elements"
         ]
-    Number num -> pure (R.Literal (round num))
+    Number num -> pure (Literal (round num))
     _ ->
       fail "Expected a numerable expression (object or number)"
 
-instance FromJSON R.Comparable where
+instance FromJSON Comparable where
   parseJSON v =
     asum
-      [ R.CmpAttr <$> parseJSON v,
-        R.CmpNum <$> parseJSON v
+      [ CmpAttr <$> parseJSON v,
+        CmpNum <$> parseJSON v
       ]
 
-instance FromJSON R.Condition where
+instance FromJSON Condition where
   parseJSON =
     withObject
       "Condition"
       ( \v ->
           asum
-            [ R.And <$> v .: "and",
-              R.Or <$> v .: "or",
-              R.Not <$> v .: "not",
-              R.Alpha <$> v .: "alpha",
+            [ And <$> v .: "and",
+              Or <$> v .: "or",
+              Not <$> v .: "not",
+              Alpha <$> v .: "alpha",
               do
                 vals <- v .: "eq"
                 case vals of
-                  [left_, right_] -> R.Eq <$> parseJSON left_ <*> parseJSON right_
+                  [left_, right_] -> Eq <$> parseJSON left_ <*> parseJSON right_
                   _ -> fail "'eq' must contain exactly two elements",
               do
                 vals <- v .: "in"
@@ -91,20 +90,59 @@ instance FromJSON R.Condition where
                   [attr_, binding_] -> do
                     attr <- parseJSON attr_
                     bd <- parseJSON binding_
-                    pure (R.In attr bd)
+                    pure (In attr bd)
                   _ -> fail "'in' must contain exactly two elements"
             ]
       )
 
-instance FromJSON R.Extra where
+instance FromJSON Extra where
   parseJSON = genericParseJSON defaultOptions
 
-instance FromJSON R.Rule where
+instance FromJSON Rule where
   parseJSON = genericParseJSON defaultOptions
     { fieldLabelModifier = \case
         "where_" -> "where"
         other -> other
     }
 
-yamlRule :: FilePath -> IO R.Rule
+data Number
+  = Ordinal Attribute
+  | Length Binding
+  | Add Number Number
+  | Literal Integer
+  deriving (Generic, Show)
+
+data Comparable
+  = CmpAttr Attribute
+  | CmpNum Number
+  deriving (Generic, Show)
+
+data Condition
+  = And [Condition]
+  | Or [Condition]
+  | In Attribute Binding
+  | Not Condition
+  | Alpha Attribute
+  | Eq Comparable Comparable
+  | NF Expression
+  deriving (Generic, Show)
+
+data Extra = Extra
+  {
+    meta :: Expression,
+    function :: String,
+    args :: [Expression]
+  }
+  deriving (Generic, Show)
+
+data Rule = Rule
+  { name :: Maybe String,
+    pattern :: Expression,
+    result :: Expression,
+    when :: Maybe Condition,
+    where_ :: Maybe [Extra]
+  }
+  deriving (Generic, Show)
+
+yamlRule :: FilePath -> IO Rule
 yamlRule = Yaml.decodeFileThrow

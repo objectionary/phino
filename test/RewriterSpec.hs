@@ -18,12 +18,11 @@ import Printer (printProgram)
 import Rewriter (rewrite)
 import System.FilePath (makeRelative, replaceExtension, (</>))
 import Test.Hspec (Spec, describe, expectationFailure, it, runIO)
-import Rule qualified as R
 import Yaml qualified as Y
 
 data Rules = Rules
   { basic :: Maybe [String],
-    custom :: Maybe [R.Rule]
+    custom :: Maybe [Y.Rule]
   }
   deriving (Generic, FromJSON, Show)
 
