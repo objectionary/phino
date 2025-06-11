@@ -1,6 +1,7 @@
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
@@ -10,11 +11,14 @@ module Yaml where
 import Ast
 import Control.Applicative (asum)
 import Data.Aeson
+import qualified Data.ByteString as BS
+import Data.FileEmbed (embedDir)
 import Data.Text (unpack)
 import Data.Yaml (Parser)
 import qualified Data.Yaml as Yaml
-import Parser
 import GHC.Generics
+import Misc (allPathsIn)
+import Parser
 
 parseJSON' :: String -> (String -> Either String a) -> Value -> Parser a
 parseJSON' name func =
@@ -79,6 +83,7 @@ instance FromJSON Condition where
               Or <$> v .: "or",
               Not <$> v .: "not",
               Alpha <$> v .: "alpha",
+              NF <$> v .: "nf",
               do
                 vals <- v .: "eq"
                 case vals of
@@ -99,11 +104,13 @@ instance FromJSON Extra where
   parseJSON = genericParseJSON defaultOptions
 
 instance FromJSON Rule where
-  parseJSON = genericParseJSON defaultOptions
-    { fieldLabelModifier = \case
-        "where_" -> "where"
-        other -> other
-    }
+  parseJSON =
+    genericParseJSON
+      defaultOptions
+        { fieldLabelModifier = \case
+            "where_" -> "where"
+            other -> other
+        }
 
 data Number
   = Ordinal Attribute
@@ -128,8 +135,7 @@ data Condition
   deriving (Generic, Show)
 
 data Extra = Extra
-  {
-    meta :: Expression,
+  { meta :: Expression,
     function :: String,
     args :: [Expression]
   }
@@ -143,6 +149,16 @@ data Rule = Rule
     where_ :: Maybe [Extra]
   }
   deriving (Generic, Show)
+
+normalizationRules :: [Rule]
+{-# NOINLINE normalizationRules #-}
+normalizationRules = map decodeRule $(embedDir "resources")
+  where
+    decodeRule :: (FilePath, BS.ByteString) -> Rule
+    decodeRule (path, bs) =
+      case Yaml.decodeEither' bs of
+        Right r -> r
+        Left err -> error $ "YAML parse error in " ++ path ++ ": " ++ show err
 
 yamlRule :: FilePath -> IO Rule
 yamlRule = Yaml.decodeFileThrow

@@ -4,12 +4,15 @@
 module Condition where
 
 import Ast
-import GHC.Generics
-import Data.Aeson (FromJSON)
-import Matcher
-import qualified Data.Map.Strict as M
 import Builder (buildAttribute, buildBinding)
+import Data.Aeson (FromJSON)
+import qualified Data.Map.Strict as M
+import GHC.Generics
+import GHC.IO (unsafePerformIO)
+import Matcher
 import Misc (allPathsIn)
+import Printer (printCondition, printExpression, printSubstitutions)
+import Yaml (normalizationRules)
 import qualified Yaml as Y
 
 -- Check if given attribute is present in given binding
@@ -50,66 +53,83 @@ numToInt (Y.Add left right) subst = case (numToInt left subst, numToInt right su
 numToInt (Y.Literal num) subst = Just num
 numToInt _ _ = Nothing
 
+meetCondition' :: Y.Condition -> Subst -> [Subst]
+meetCondition' (Y.Or []) subst = [subst]
+meetCondition' (Y.Or (cond : rest)) subst = do
+  let met = meetCondition' cond subst
+  if null met
+    then meetCondition' (Y.Or rest) subst
+    else met
+meetCondition' (Y.And []) subst = [subst]
+meetCondition' (Y.And (cond : rest)) subst = do
+  let met = meetCondition' cond subst
+  if null met
+    then []
+    else meetCondition' (Y.And rest) subst
+meetCondition' (Y.Not cond) subst = do
+  let met = meetCondition' cond subst
+  [subst | null met]
+meetCondition' (Y.In attr binding) subst =
+  case (buildAttribute attr subst, buildBinding binding subst) of
+    (Just attr, Just bds) -> [subst | attrInBindings attr bds] -- if attrInBindings attr bd then [subst] else []
+    (_, _) -> []
+meetCondition' (Y.Alpha (AtAlpha _)) subst = [subst]
+meetCondition' (Y.Alpha (AtMeta name)) (Subst mp) = case M.lookup name mp of
+  Just (MvAttribute (AtAlpha _)) -> [Subst mp]
+  _ -> []
+meetCondition' (Y.Alpha _) _ = []
+meetCondition' (Y.Eq (Y.CmpNum left) (Y.CmpNum right)) subst = case (numToInt left subst, numToInt right subst) of
+  (Just left_, Just right_) -> [subst | left_ == right_]
+  (_, _) -> []
+meetCondition' (Y.Eq (Y.CmpAttr left) (Y.CmpAttr right)) subst = [subst | compareAttrs left right subst]
+meetCondition' (Y.Eq _ _) _ = []
+meetCondition' (Y.NF (ExMeta meta)) (Subst mp) = case M.lookup meta mp of
+  Just (MvExpression expr) -> case expr of
+    ExThis -> [Subst mp]
+    ExGlobal -> [Subst mp]
+    ExTermination -> [Subst mp]
+    ExDispatch ExThis _ -> [Subst mp]
+    ExDispatch ExGlobal _ -> [Subst mp]
+    ExDispatch ExTermination _ -> [] -- dd rule
+    ExApplication ExTermination _ -> [] -- dc rule
+    _ -> [Subst mp | not (matchesAnyNormalizationRule expr normalizationRules)]
+  _ -> []
+  where
+    -- Returns True if given expression matches with any of given normalization rules
+    matchesAnyNormalizationRule :: Expression -> [Y.Rule] -> Bool
+    matchesAnyNormalizationRule _ [] = False
+    matchesAnyNormalizationRule expr (rule : rules) =
+      case matchProgramWithCondition (Y.pattern rule) (Y.when rule) (Program expr) of
+        Just matched -> not (null matched) || matchesAnyNormalizationRule expr rules
+        Nothing -> matchesAnyNormalizationRule expr rules
+meetCondition' (Y.NF _) _ = []
+
 -- For each substitution check if it meetCondition to given condition
 -- If substitution does not meet the condition - it's thrown out
 -- and is not used in replacement
-meetCondition :: Y.Condition -> [Subst] -> IO [Subst]
-meetCondition _ [] = pure []
-meetCondition (Y.Or []) substs = pure substs
-meetCondition (Y.Or (cond : rest)) [subst] = do
-  met <- meetCondition cond [subst]
-  if null met
-    then meetCondition (Y.Or rest) [subst]
-    else pure met
-meetCondition (Y.And []) substs = pure substs
-meetCondition (Y.And (cond : rest)) [subst] = do
-  met <- meetCondition cond [subst]
-  if null met
-    then pure []
-    else meetCondition (Y.And rest) [subst]
-meetCondition (Y.Not cond) [subst] = do
-  met <- meetCondition cond [subst]
-  pure [subst | null met]
-meetCondition (Y.In attr binding) [subst] =
-  case (buildAttribute attr subst, buildBinding binding subst) of
-    (Just attr, Just bds) -> pure [subst | attrInBindings attr bds] -- if attrInBindings attr bd then [subst] else []
-    (_, _) -> pure []
-meetCondition (Y.Alpha (AtAlpha _)) substs = pure substs
-meetCondition (Y.Alpha (AtMeta name)) [Subst mp] = case M.lookup name mp of
-  Just (MvAttribute (AtAlpha _)) -> pure [Subst mp]
-  _ -> pure []
-meetCondition (Y.Alpha _) _ = pure []
-meetCondition (Y.Eq (Y.CmpNum left) (Y.CmpNum right)) [subst] = case (numToInt left subst, numToInt right subst) of
-  (Just left_, Just right_) -> pure [subst | left_ == right_]
-  (_, _) -> pure []
-meetCondition (Y.Eq (Y.CmpAttr left) (Y.CmpAttr right)) [subst] = pure [subst | compareAttrs left right subst]
-meetCondition (Y.NF (ExMeta meta)) [Subst mp] = case M.lookup meta mp of
-  Just expr -> do
-    rules <- allPathsIn "resources"
-    pure []
-  _ -> pure []
-meetCondition (Y.NF _) _ = pure[]
+meetCondition :: Y.Condition -> [Subst] -> [Subst]
+meetCondition _ [] = []
 meetCondition cond (subst : rest) = do
-  first <- meetCondition cond [subst]
-  next <- meetCondition cond rest
+  let first = meetCondition' cond subst
+  let next = meetCondition cond rest
   if null first
-    then pure next
-    else pure (head first : next)
+    then next
+    else head first : next
 
 -- Returns Just [...] if
 -- 1. program matches pattern and
 -- 2.1. condition is not present, or
 -- 2.2. condition is present and met
 -- Otherwise returns Nothing
-matchProgramWithCondition :: Expression -> Maybe Y.Condition -> Program -> IO (Maybe [Subst])
+matchProgramWithCondition :: Expression -> Maybe Y.Condition -> Program -> Maybe [Subst]
 matchProgramWithCondition ptn condition program = do
   let matched = matchProgram ptn program
   if null matched
-    then pure Nothing
+    then Nothing
     else case condition of
-      Nothing -> pure (Just matched)
+      Nothing -> Just matched
       Just cond -> do
-        met <- meetCondition cond matched
+        let met = meetCondition cond matched
         if null met
-          then pure Nothing
-          else pure (Just met)
+          then Nothing
+          else Just met

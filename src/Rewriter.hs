@@ -76,8 +76,7 @@ applyRules program (rule : rest) = do
       condition = Y.when rule
       replaced = buildAndReplace program ptn res
       extended = extraSubstitutions program (Y.where_ rule)
-  matched <- C.matchProgramWithCondition ptn condition program
-  prog <- case matched of
+  prog <- case C.matchProgramWithCondition ptn condition program of
     Nothing -> pure program
     Just matched -> replaced (extended matched)
   applyRules prog rest

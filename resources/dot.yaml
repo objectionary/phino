@@ -7,6 +7,8 @@
 name: DOT
 pattern: ⟦𝐵1, 𝜏 ↦ 𝑒1, 𝐵2⟧.𝜏
 result: 𝑒2(ρ ↦ ⟦𝐵1, 𝜏 ↦ 𝑒1, 𝐵2⟧)
+when:
+  nf: 𝑒1
 where:
   - meta: 𝑒2
     function: contextualize

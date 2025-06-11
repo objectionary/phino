@@ -4,7 +4,7 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Printer (printExpression, printProgram, printSubstitutions) where
+module Printer (printExpression, printProgram, printSubstitutions, printCondition) where
 
 import Ast
 import qualified Data.Map.Strict as Map
@@ -12,6 +12,8 @@ import Matcher
 import Prettyprinter
 import Prettyprinter.Render.String (renderString)
 import Text.Printf (vFmt)
+import Yaml (Condition)
+import qualified Yaml as Y
 
 prettyMeta :: String -> Doc ann
 prettyMeta meta = pretty "!" <> pretty meta
@@ -89,6 +91,9 @@ instance Pretty Subst where
         rparen
       ]
 
+instance Pretty Condition where
+  pretty (Y.NF expr) = pretty "NF(" <+> pretty expr <+> rparen
+
 instance {-# OVERLAPPING #-} Pretty [Subst] where
   pretty :: [Subst] -> Doc ann
   pretty [] = pretty "[]"
@@ -96,6 +101,9 @@ instance {-# OVERLAPPING #-} Pretty [Subst] where
 
 prettyPrint :: (Pretty a) => a -> String
 prettyPrint printable = renderString (layoutPretty defaultLayoutOptions (pretty printable))
+
+printCondition :: Condition -> String
+printCondition = prettyPrint
 
 printSubstitutions :: [Subst] -> String
 printSubstitutions = prettyPrint

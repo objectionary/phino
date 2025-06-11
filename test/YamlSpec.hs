@@ -48,7 +48,7 @@ spec = do
           pack <- Y.decodeFileThrow pth :: IO ConditionPack
           let matched = matchProgram (pattern pack) (Program (expression pack))
           unless (matched /= []) (expectationFailure "List of matched substitutions is empty which is not expected")
-          met <- meetCondition (condition pack) matched
+          let met = meetCondition (condition pack) matched
           unless
             (met == matched)
             ( expectationFailure $
