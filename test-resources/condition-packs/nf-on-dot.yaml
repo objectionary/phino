@@ -1,0 +1,7 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+expression: '⟦ x ↦ ξ.t, t ↦ ∅ ⟧.x'
+pattern: '[[ x -> !e, !B ]].x'
+condition:
+  nf: '!e'
