@@ -83,7 +83,7 @@ meetCondition' (Y.Eq (Y.CmpNum left) (Y.CmpNum right)) subst = case (numToInt le
   (_, _) -> []
 meetCondition' (Y.Eq (Y.CmpAttr left) (Y.CmpAttr right)) subst = [subst | compareAttrs left right subst]
 meetCondition' (Y.Eq _ _) _ = []
--- @todo 89:30min Extend list of expressions. There are expressions where we can definitely say
+-- @todo #89:30min Extend list of expressions. There are expressions where we can definitely say
 --  if this expression in normal form or not. In common case the expression in normal form if
 --  it does not match with any of normalization rules. But it's quite expensive operation comparing to 
 --  simple list filtering and pattern matching. For example if expression is formation where all bindings are
