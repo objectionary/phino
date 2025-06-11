@@ -83,6 +83,12 @@ meetCondition' (Y.Eq (Y.CmpNum left) (Y.CmpNum right)) subst = case (numToInt le
   (_, _) -> []
 meetCondition' (Y.Eq (Y.CmpAttr left) (Y.CmpAttr right)) subst = [subst | compareAttrs left right subst]
 meetCondition' (Y.Eq _ _) _ = []
+-- @todo 89:30min Extend list of expressions. There are expressions where we can definitely say
+--  if this expression in normal form or not. In common case the expression in normal form if
+--  it does not match with any of normalization rules. But it's quite expensive operation comparing to 
+--  simple list filtering and pattern matching. For example if expression is formation where all bindings are
+--  void, lambda, or delta - this expression in normal form and there's no need to try to match it with normalization
+--  rules. So we need find more such cases and introduce them.
 meetCondition' (Y.NF (ExMeta meta)) (Subst mp) = case M.lookup meta mp of
   Just (MvExpression expr) -> case expr of
     ExThis -> [Subst mp]
@@ -91,8 +97,8 @@ meetCondition' (Y.NF (ExMeta meta)) (Subst mp) = case M.lookup meta mp of
     ExDispatch ExThis _ -> [Subst mp]
     ExDispatch ExGlobal _ -> [Subst mp]
     ExDispatch ExTermination _ -> [] -- dd rule
-    ExFormation [] -> [Subst mp]
     ExApplication ExTermination _ -> [] -- dc rule
+    ExFormation [] -> [Subst mp]
     _ -> [Subst mp | not (matchesAnyNormalizationRule expr normalizationRules)]
   _ -> []
   where
