@@ -1,4 +1,4 @@
--- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionarcom
+-- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
 module Condition where
@@ -91,6 +91,7 @@ meetCondition' (Y.NF (ExMeta meta)) (Subst mp) = case M.lookup meta mp of
     ExDispatch ExThis _ -> [Subst mp]
     ExDispatch ExGlobal _ -> [Subst mp]
     ExDispatch ExTermination _ -> [] -- dd rule
+    ExFormation [] -> [Subst mp]
     ExApplication ExTermination _ -> [] -- dc rule
     _ -> [Subst mp | not (matchesAnyNormalizationRule expr normalizationRules)]
   _ -> []
