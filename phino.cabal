@@ -72,6 +72,7 @@ test-suite spec
     ReplacerSpec,
     PrinterSpec,
     RewriterSpec,
+    ConditionSpec,
     YamlSpec,
     Paths_phino
   autogen-modules:
