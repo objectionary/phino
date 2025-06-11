@@ -14,15 +14,16 @@ import GHC.Generics
 import Matcher (matchProgram)
 import Misc
 import Printer (printSubstitutions)
-import Rewriter (meets)
+import Rule (meetCondition)
+import Rule qualified as R
 import System.FilePath
 import Test.Hspec (Spec, describe, expectationFailure, it, runIO, shouldReturn)
-import Yaml (Condition, yamlRule)
+import Yaml (yamlRule)
 
 data ConditionPack = ConditionPack
   { expression :: Expression,
     pattern :: Expression,
-    condition :: Condition
+    condition :: R.Condition
   }
   deriving (Generic, FromJSON, Show)
 
@@ -47,13 +48,13 @@ spec = do
           pack <- Y.decodeFileThrow pth :: IO ConditionPack
           let matched = matchProgram (pattern pack) (Program (expression pack))
           unless (matched /= []) (expectationFailure "List of matched substitutions is empty which is not expected")
-          let met = meets (condition pack) matched
+          let met = meetCondition (condition pack) matched
           unless
             (met == matched)
             ( expectationFailure $
                 "Condition must not decrease the list of substitutions\nExpected:\n"
                   ++ printSubstitutions matched
-                  ++ "\nGot:\n" 
+                  ++ "\nGot:\n"
                   ++ printSubstitutions met
             )
       )

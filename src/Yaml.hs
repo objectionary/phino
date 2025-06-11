@@ -1,5 +1,3 @@
-{-# LANGUAGE DeriveAnyClass #-}
-{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE LambdaCase #-}
 
@@ -16,10 +14,8 @@ import Data.String (IsString (..))
 import Data.Text (unpack)
 import Data.Yaml (Parser)
 import qualified Data.Yaml as Yaml
-import Debug.Trace
-import GHC.Base
-import GHC.Generics
 import Parser
+import qualified Rule as R
 
 parseJSON' :: String -> (String -> Either String a) -> Value -> Parser a
 parseJSON' name func =
@@ -48,46 +44,46 @@ instance FromJSON Attribute where
 instance FromJSON Binding where
   parseJSON = parseJSON' "Binding" parseBinding
 
-instance FromJSON Number where
+instance FromJSON R.Number where
   parseJSON v = case v of
     Object o ->
       asum
-        [ Ordinal <$> o .: "ordinal",
-          Length <$> o .: "length",
+        [ R.Ordinal <$> o .: "ordinal",
+          R.Length <$> o .: "length",
           do
             vals <- o .: "add"
             case vals of
               [first_, second_] -> do
                 first <- parseJSON first_
                 second <- parseJSON second_
-                pure (Add first second)
+                pure (R.Add first second)
               _ -> fail "'add' requires exactly two elements"
         ]
-    Number num -> pure (Literal (round num))
+    Number num -> pure (R.Literal (round num))
     _ ->
       fail "Expected a numerable expression (object or number)"
 
-instance FromJSON Comparable where
+instance FromJSON R.Comparable where
   parseJSON v =
     asum
-      [ CmpAttr <$> parseJSON v,
-        CmpNum <$> parseJSON v
+      [ R.CmpAttr <$> parseJSON v,
+        R.CmpNum <$> parseJSON v
       ]
 
-instance FromJSON Condition where
+instance FromJSON R.Condition where
   parseJSON =
     withObject
       "Condition"
       ( \v ->
           asum
-            [ And <$> v .: "and",
-              Or <$> v .: "or",
-              Not <$> v .: "not",
-              Alpha <$> v .: "alpha",
+            [ R.And <$> v .: "and",
+              R.Or <$> v .: "or",
+              R.Not <$> v .: "not",
+              R.Alpha <$> v .: "alpha",
               do
                 vals <- v .: "eq"
                 case vals of
-                  [left_, right_] -> Eq <$> parseJSON left_ <*> parseJSON right_
+                  [left_, right_] -> R.Eq <$> parseJSON left_ <*> parseJSON right_
                   _ -> fail "'eq' must contain exactly two elements",
               do
                 vals <- v .: "in"
@@ -95,55 +91,20 @@ instance FromJSON Condition where
                   [attr_, binding_] -> do
                     attr <- parseJSON attr_
                     bd <- parseJSON binding_
-                    pure (In attr bd)
+                    pure (R.In attr bd)
                   _ -> fail "'in' must contain exactly two elements"
             ]
       )
 
-data Number
-  = Ordinal Attribute
-  | Length Binding
-  | Add Number Number
-  | Literal Integer
-  deriving (Generic, Show)
+instance FromJSON R.Extra where
+  parseJSON = genericParseJSON defaultOptions
 
-data Comparable
-  = CmpAttr Attribute
-  | CmpNum Number
-  deriving (Generic, Show)
-
-data Condition
-  = And [Condition]
-  | Or [Condition]
-  | In Attribute Binding
-  | Not Condition
-  | Alpha Attribute
-  | Eq Comparable Comparable
-  deriving (Generic, Show)
-
-data Extra = Extra
-  {
-    meta :: Expression,
-    function :: String,
-    args :: [Expression]
-  }
-  deriving (Generic, FromJSON, Show)
-
-instance FromJSON Rule where
+instance FromJSON R.Rule where
   parseJSON = genericParseJSON defaultOptions
     { fieldLabelModifier = \case
         "where_" -> "where"
         other -> other
     }
 
-data Rule = Rule
-  { name :: Maybe String,
-    pattern :: Expression,
-    result :: Expression,
-    when :: Maybe Condition,
-    where_ :: Maybe [Extra]
-  }
-  deriving (Generic, Show)
-
-yamlRule :: FilePath -> IO Rule
+yamlRule :: FilePath -> IO R.Rule
 yamlRule = Yaml.decodeFileThrow

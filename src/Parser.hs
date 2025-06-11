@@ -304,8 +304,7 @@ exHead =
     <?> "expression head"
 
 application :: Expression -> [Binding] -> Expression
-application expr [binding] = ExApplication expr binding
-application expr (bd : bds) = application (application expr [bd]) bds
+application = foldl ExApplication
 
 -- tail optional part of application
 -- 1. any head + dispatch
