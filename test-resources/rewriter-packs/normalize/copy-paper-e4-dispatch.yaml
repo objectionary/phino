@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+rules:
+  basic: ['copy']
+input: |
+  Φ ↦ ⟦ k ↦ ⟦ x ↦ ∅, y ↦ ξ.x ⟧(x ↦ ⟦ρ ↦ ⟦⟧⟧).y ⟧
+output: |-
+  Φ ↦ ⟦ k ↦ ⟦ x ↦ ⟦ρ ↦ ⟦⟧⟧, y ↦ ξ.x ⟧.y ⟧

@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+name: DOT
+pattern: ⟦ 𝐵1, 𝜏1 ↦ ⟦ 𝐵2, 𝜏2 ↦ ∅, 𝐵3 ⟧(𝜏2 ↦ 𝑒1) * !t, 𝐵4 ⟧
+result: ⟦ 𝐵1, 𝜏1 ↦ ⟦ 𝐵2, 𝜏2 ↦ 𝑒2, 𝐵3 ⟧ * !t, 𝐵4 ⟧ 
+where:
+  - meta: 𝑒2
+    function: contextualize
+    args:
+      - 𝑒1
+      - ⟦ 𝐵1, 𝜏1 ↦ ⟦ 𝐵2, 𝜏2 ↦ ∅, 𝐵3 ⟧(𝜏2 ↦ 𝑒1) * !t, 𝐵4 ⟧
