@@ -1,7 +1,17 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 # SPDX-License-Identifier: MIT
 ---
-name: DOT
+# @todo #85:60min Simplify Rcopy rule. Right now this rule is quite verbose.
+#  It captures a lot objects around its targets. It's done in order to have
+#  scope for contextualization of 𝑒2 right here right away. So it's a hack.
+#  The origin Rcopy rule looks like this
+#  pattern: ⟦ 𝐵1, 𝜏1 ↦ ∅, 𝐵3 ⟧(𝜏1 ↦ 𝑒1)
+#  result: ⟦ 𝐵1, 𝜏1 ↦ 𝑒2, 𝐵3 ⟧
+#  where 𝑒2 is an expression contextualized with 𝑒1 and some scope S. But with such 
+#  pattern we don't have this scope, we don't see it. It should be calculated 
+#  somehow. In general this scope is nearest outer formation. So we need to create
+#  a way to calculate it and rewrite this rule.
+name: COPY
 pattern: ⟦ 𝐵1, 𝜏1 ↦ ⟦ 𝐵2, 𝜏2 ↦ ∅, 𝐵3 ⟧(𝜏2 ↦ 𝑒1) * !t, 𝐵4 ⟧
 result: ⟦ 𝐵1, 𝜏1 ↦ ⟦ 𝐵2, 𝜏2 ↦ 𝑒2, 𝐵3 ⟧ * !t, 𝐵4 ⟧ 
 where:
