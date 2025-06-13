@@ -19,15 +19,16 @@ import System.Directory (removeFile)
 import System.IO
 import System.IO.Silently (capture_)
 import Test.Hspec
+import Control.Concurrent (threadDelay)
 
-withRedirectedStdin :: String -> IO a -> IO a
-withRedirectedStdin input action = do
+withStdin :: String -> IO a -> IO a
+withStdin input action = do
   bracket (openTempFile "." "stdin.tmp") cleanup $ \(filePath, h) -> do
     hSetEncoding h utf8
     hPutStr h input
     hFlush h
-    hSeek h AbsoluteSeek 0
     hClose h
+    threadDelay 100000
     withFile filePath ReadMode $ \hIn -> do
       hSetEncoding hIn utf8
       bracket (hDuplicate stdin) restoreStdin $ \_ -> do
@@ -38,8 +39,8 @@ withRedirectedStdin input action = do
     restoreStdin orig = hDuplicateTo orig stdin >> hClose orig
     cleanup (fp, _) = removeFile fp
 
-withCapturedOutput :: IO a -> IO (String, a)
-withCapturedOutput action =
+withStdout :: IO a -> IO (String, a)
+withStdout action =
   bracket
     (openTempFile "." "stdout-stderr.tmp")
     cleanup
@@ -72,8 +73,8 @@ testCLI args output = do
       ("Expected that output contains:\n" ++ output ++ "\nbut got:\n" ++ out)
 
 testCLIFailed :: [String] -> String -> Expectation
-testCLIFailed args output = withRedirectedStdin "" $ do
-  (out, result) <- withCapturedOutput (try (runCLI args) :: IO (Either ExitCode ()))
+testCLIFailed args output = withStdin "" $ do
+  (out, result) <- withStdout (try (runCLI args) :: IO (Either ExitCode ()))
   out `shouldContain` output
   result `shouldSatisfy` isLeft
 
@@ -94,11 +95,11 @@ spec = do
         "Φ ↦ ⟦\n  foo ↦ Φ.org.eolang\n⟧"
 
     it "desugares with --nothing flag from stdin" $
-      withRedirectedStdin "{[[foo ↦ QQ]]}" $
+      withStdin "{[[foo ↦ QQ]]}" $
         testCLI ["rewrite", "--nothing"] "Φ ↦ ⟦\n  foo ↦ Φ.org.eolang\n⟧"
 
     it "rewrites with single rule" $
-      withRedirectedStdin "{T(x -> Q.y)}" $
+      withStdin "{T(x -> Q.y)}" $
         testCLI ["rewrite", "--rule=resources/dc.yaml"] "Φ ↦ ⊥"
 
     it "normalizes with --normalize flag" $
@@ -117,7 +118,7 @@ spec = do
         "no --rule, no --normalize, no --nothing are provided"
 
     it "normalizes until it's possible with depth" $
-      withRedirectedStdin "Φ ↦ ⟦ a ↦ ⟦ b ↦ ∅ ⟧ (b ↦ ξ) ⟧" $
+      withStdin "Φ ↦ ⟦ a ↦ ⟦ b ↦ ∅ ⟧ (b ↦ ξ) ⟧" $
         testCLI
           ["rewrite", "--normalize", "--max-depth=2"]
           ( unlines
