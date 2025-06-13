@@ -19,18 +19,16 @@ import qualified Data.Map.Strict as Map
 import Matcher
 import Misc
 
-contextualize :: Expression -> Expression -> Program -> Maybe Expression
-contextualize ExGlobal _ (Program expr) = Just expr
-contextualize ExThis expr _ = Just expr
-contextualize ExTermination _ _ = Just ExTermination
-contextualize (ExFormation bds) _ _ = Just (ExFormation bds)
-contextualize (ExDispatch expr attr) context prog = do
-  inner <- contextualize expr context prog
-  Just (ExDispatch inner attr)
+contextualize :: Expression -> Expression -> Program -> Expression
+contextualize ExGlobal _ (Program expr) = expr
+contextualize ExThis expr _ = expr
+contextualize ExTermination _ _ = ExTermination
+contextualize (ExFormation bds) _ _ = ExFormation bds
+contextualize (ExDispatch expr attr) context prog = ExDispatch (contextualize expr context prog) attr
 contextualize (ExApplication expr (BiTau attr bexpr)) context prog = do
-  expr' <- contextualize expr context prog
-  bexpr' <- contextualize bexpr context prog
-  Just (ExApplication expr' (BiTau attr bexpr'))
+  let expr' = contextualize expr context prog
+      bexpr' = contextualize bexpr context prog
+  ExApplication expr' (BiTau attr bexpr')
 
 buildAttribute :: Attribute -> Subst -> Maybe Attribute
 buildAttribute (AtMeta meta) (Subst mp) = case Map.lookup meta mp of
@@ -100,7 +98,7 @@ buildExpressionFromFunction :: String -> [Expression] -> Subst -> Program -> May
 buildExpressionFromFunction "contextualize" [expr, context] subst prog = do
   expr' <- buildExpression expr subst
   context' <- buildExpression context subst
-  contextualize expr' context' prog
+  return (contextualize expr' context' prog)
 buildExpressionFromFunction _ _ _ _ = Nothing
 
 -- Build a several expression from one expression and several substitutions
