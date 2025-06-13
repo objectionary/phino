@@ -56,10 +56,8 @@ withStdout action =
             hDuplicateTo oldErr stderr >> hClose oldErr
             hClose hTmp
 
-        captured <- do
-          contents <- readFile path
-          _ <- evaluate (length contents)
-          return contents
+        captured <- readFile path
+        _ <- evaluate (length captured)
         return (captured, result)
     )
   where
