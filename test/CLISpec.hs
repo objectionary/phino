@@ -15,7 +15,7 @@ import Data.Version (showVersion)
 import GHC.IO.Handle
 import Paths_phino (version)
 import System.Directory (removeFile)
-import System.Exit (ExitCode)
+import System.Exit (ExitCode (ExitFailure))
 import System.IO
 import System.IO.Silently (capture_)
 import Test.Hspec
@@ -74,7 +74,7 @@ testCLIFailed :: [String] -> String -> Expectation
 testCLIFailed args output = withStdin "" $ do
   (out, result) <- withStdout (try (runCLI args) :: IO (Either ExitCode ()))
   out `shouldContain` output
-  result `shouldSatisfy` isLeft
+  result `shouldBe` Left (ExitFailure 1)
 
 spec :: Spec
 spec = do
