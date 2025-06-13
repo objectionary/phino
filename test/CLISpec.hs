@@ -16,7 +16,7 @@ import GHC.IO.Handle
 import Paths_phino (version)
 import Data.Version (showVersion)
 import Control.Monad (unless)
-import Data.List (isInfixOf)
+import Data.List (isInfixOf, intercalate)
 
 withRedirectedStdin :: String -> IO a -> IO a
 withRedirectedStdin input action = do
@@ -72,6 +72,25 @@ spec = do
         ["rewrite", "--normalize", "--phi-input=test-resources/cli/normalize.phi"]
         "Φ ↦ ⟦\n  x ↦ ⊥\n⟧"
     
-    it "normalizes untill it's possible" $ do
+    it "normalizes untill it's possible with depth" $ do
       withRedirectedStdin "Φ ↦ ⟦ a ↦ ⟦ b ↦ ∅ ⟧ (b ↦ ξ) ⟧" $ 
-        testCLI ["rewrite", "--normalize", "--max-depth=5"] "abc"
+        testCLI
+          ["rewrite", "--normalize", "--max-depth=2"]
+          (intercalate
+            "\n"
+            [ "Φ ↦ ⟦",
+              "  a ↦ ⟦",
+              "    b ↦ ⟦",
+              "      a ↦ ⟦",
+              "        b ↦ ⟦",
+              "          a ↦ ⟦ b ↦ ∅ ⟧(",
+              "            b ↦ ξ",
+              "          )",
+              "        ⟧",
+              "      ⟧",
+              "    ⟧",
+              "  ⟧",
+              "⟧"
+            ]
+          )
+
