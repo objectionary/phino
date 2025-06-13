@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# {⟦ k ↦ ⟦ x ↦ ∅ ⟧ ( α1 ↦ ⟦ Δ ⤍ 42- ⟧ ).x ⟧} - Nothing to rewrite
+skip: true
+normalize: true
+input: |
+  {⟦ k ↦ ⟦ x ↦ ∅ ⟧ ( α1 ↦ ⟦ Δ ⤍ 42- ⟧ ).x ⟧}
+output: |-
+  {⟦ k ↦ ⊥ ⟧}

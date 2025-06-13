@@ -18,10 +18,12 @@ import Data.List (findIndex)
 import qualified Data.Map.Strict as Map
 import Matcher
 import Misc
+import Printer (printExpression)
 
 contextualize :: Expression -> Expression -> Program -> Maybe Expression
 contextualize ExGlobal _ (Program expr) = Just expr
 contextualize ExThis expr _ = Just expr
+contextualize ExTermination _ _ = Just ExTermination
 contextualize (ExFormation bds) _ _ = Just (ExFormation bds)
 contextualize (ExDispatch expr attr) context prog = do
   inner <- contextualize expr context prog

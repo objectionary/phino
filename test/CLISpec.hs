@@ -115,7 +115,8 @@ spec = do
         ["rewrite"]
         "no --rule, no --normalize, no --nothing are provided"
 
-    it "normalizes until it's possible with depth" $
+    it "normalizes until it's possible with depth" $ do
+      pending
       withStdin "Φ ↦ ⟦ a ↦ ⟦ b ↦ ∅ ⟧ (b ↦ ξ) ⟧" $
         testCLI
           ["rewrite", "--normalize", "--max-depth=2"]

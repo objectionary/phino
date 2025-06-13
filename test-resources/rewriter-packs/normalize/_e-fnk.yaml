@@ -1,0 +1,16 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# {⟦ m ↦ ⟦ x ↦ ⟦ t ↦ ∅ ⟧ (t ↦ ξ.k), k ↦ ⟦ λ ⤍ Fn ⟧ ⟧.x.t.p ⟧}
+# Rdot {⟦ m ↦ ⟦ t ↦ ∅ ⟧ (t ↦ ⟦ x ↦ ⟦ t ↦ ∅ ⟧ (t ↦ ξ.k), k ↦ ⟦ λ ⤍ Fn ⟧ ⟧.k).t.p ⟧}
+# Rcopy {⟦ m ↦ ⟦ t ↦ ⟦ x ↦ ⟦ t ↦ ∅ ⟧ (t ↦ ξ.k), k ↦ ⟦ λ ⤍ Fn ⟧ ⟧.k ⟧.t.p ⟧}
+# Rdot {⟦ m ↦ ⟦ t ↦ ⟦ λ ⤍ Fn ⟧(ρ ↦ ⟦ x ↦ ⟦ t ↦ ∅ ⟧ (t ↦ ξ.k), k ↦ ⟦ λ ⤍ Fn ⟧ ⟧) ⟧.t.p ⟧}
+# Rmiss {⟦ m ↦ ⟦ t ↦ ⊥ ⟧.t.p ⟧}
+# Rdot {⟦ m ↦ ⊥.p ⟧}
+# Rdd {⟦ m ↦ ⊥ ⟧}
+skip: true
+normalize: true
+input: |
+  {⟦ m ↦ ⟦ x ↦ ⟦ t ↦ ∅ ⟧ (t ↦ ξ.k), k ↦ ⟦ λ ⤍ Fn ⟧ ⟧.x.t.p ⟧}
+output: |-
+  {⟦ m ↦ ⟦ λ ⤍ Fn, ρ ↦ ⟦ x ↦ ⟦ t ↦ ∅ ⟧ (t ↦ ξ.k), k ↦ ⟦ λ ⤍ Fn ⟧ ⟧ ⟧.p ⟧}

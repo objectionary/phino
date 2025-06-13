@@ -1,7 +1,7 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveGeneric #-}
-{-# OPTIONS_GHC -Wno-orphans #-}
 {-# LANGUAGE LambdaCase #-}
+{-# OPTIONS_GHC -Wno-orphans #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
@@ -11,16 +11,17 @@ module RewriterSpec where
 import Control.Monad (forM_, unless)
 import Data.Aeson
 import Data.Char (isSpace)
+import Data.Foldable (foldlM)
 import Data.Yaml qualified as Yaml
 import GHC.Generics
 import Misc (allPathsIn, ensuredFile)
 import Parser (parseProgramThrows)
 import Printer (printProgram)
+import Rewriter (rewrite)
 import System.FilePath (makeRelative, replaceExtension, (</>))
 import Test.Hspec (Spec, describe, expectationFailure, it, pending, runIO)
+import Yaml (normalizationRules)
 import Yaml qualified as Y
-import Rewriter (rewrite)
-import Data.Foldable (foldlM)
 
 data Rules = Rules
   { basic :: Maybe [String],
@@ -33,7 +34,8 @@ data YamlPack = YamlPack
     output :: String,
     rules :: Maybe Rules,
     skip :: Maybe Bool,
-    repeat_ :: Maybe Integer
+    repeat_ :: Maybe Integer,
+    normalize :: Maybe Bool
   }
   deriving (Generic, Show)
 
@@ -61,6 +63,15 @@ spec = do
       packs
       ( \pth -> it (makeRelative resources pth) $ do
           pack <- yamlPack pth
+          let normalize' = case normalize pack of
+                Just _ -> True
+                _ -> False
+              repeat' =
+                if normalize'
+                  then 50
+                  else case repeat_ pack of
+                    Just num -> num
+                    _ -> 1
           case skip pack of
             Just True -> pending
             _ -> do
@@ -77,10 +88,11 @@ spec = do
                         )
                         basic'
                     _ -> pure []
-                Nothing -> pure []
-              rewritten <- case repeat_ pack of
-                Just num -> foldlM (\prog _ -> rewrite prog rules') program [1..num]
-                _ -> rewrite program rules'
+                Nothing ->
+                  if normalize'
+                    then pure normalizationRules
+                    else pure []
+              rewritten <- foldlM (\prog _ -> rewrite prog rules') program [1 .. repeat']
               result' <- parseProgramThrows (output pack)
               unless (rewritten == result') $
                 expectationFailure

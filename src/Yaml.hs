@@ -84,6 +84,7 @@ instance FromJSON Condition where
               Not <$> v .: "not",
               Alpha <$> v .: "alpha",
               NF <$> v .: "nf",
+              FN <$> v .: "fn",
               do
                 vals <- v .: "eq"
                 case vals of
@@ -132,6 +133,7 @@ data Condition
   | Alpha Attribute
   | Eq Comparable Comparable
   | NF Expression
+  | FN Expression
   deriving (Generic, Show)
 
 data Extra = Extra

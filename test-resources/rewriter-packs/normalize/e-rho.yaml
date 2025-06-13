@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+normalize: true
+input: |
+  {⟦ m ↦ ⟦ x ↦ ξ.ρ.ρ.t ⟧.x ⟧}
+output: |-
+  {⟦ m ↦ ⊥ ⟧}

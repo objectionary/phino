@@ -85,7 +85,7 @@ meetCondition' (Y.Eq (Y.CmpAttr left) (Y.CmpAttr right)) subst = [subst | compar
 meetCondition' (Y.Eq _ _) _ = []
 -- @todo #89:30min Extend list of expressions. There are expressions where we can definitely say
 --  if this expression in normal form or not. In common case the expression in normal form if
---  it does not match with any of normalization rules. But it's quite expensive operation comparing to 
+--  it does not match with any of normalization rules. But it's quite expensive operation comparing to
 --  simple list filtering and pattern matching. For example if expression is formation where all bindings are
 --  void, lambda, or delta - this expression in normal form and there's no need to try to match it with normalization
 --  rules. So we need find more such cases and introduce them.
@@ -110,6 +110,17 @@ meetCondition' (Y.NF (ExMeta meta)) (Subst mp) = case M.lookup meta mp of
         Just matched -> not (null matched) || matchesAnyNormalizationRule expr rules
         Nothing -> matchesAnyNormalizationRule expr rules
 meetCondition' (Y.NF _) _ = []
+meetCondition' (Y.FN (ExMeta meta)) (Subst mp) = case M.lookup meta mp of
+  Just (MvExpression expr) -> meetCondition' (Y.FN expr) (Subst mp)
+  _ -> []
+meetCondition' (Y.FN (ExFormation _)) subst = [subst]
+meetCondition' (Y.FN ExThis) subst = []
+meetCondition' (Y.FN ExGlobal) subst = [subst]
+meetCondition' (Y.FN (ExApplication expr (BiTau attr texpr))) subst = do
+  let onExpr = meetCondition' (Y.FN expr) subst
+      onTau = meetCondition' (Y.FN texpr) subst
+  [subst | not (null onExpr) && not (null onTau)]
+meetCondition' (Y.FN (ExDispatch expr _)) subst = meetCondition' (Y.FN expr) subst
 
 -- For each substitution check if it meetCondition to given condition
 -- If substitution does not meet the condition - it's thrown out
