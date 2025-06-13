@@ -9,7 +9,6 @@ module CLISpec (spec) where
 import CLI (runCLI)
 import Control.Exception
 import Control.Monad (unless)
-import Data.Either (isLeft)
 import Data.List (isInfixOf)
 import Data.Version (showVersion)
 import GHC.IO.Handle
