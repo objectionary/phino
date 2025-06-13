@@ -10,7 +10,7 @@ import CLI (runCLI)
 import Control.Exception
 import Control.Monad (unless)
 import Data.Either (isLeft)
-import Data.List (intercalate, isInfixOf)
+import Data.List (isInfixOf)
 import Data.Version (showVersion)
 import GHC.IO.Exception (ExitCode)
 import GHC.IO.Handle
