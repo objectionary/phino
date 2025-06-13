@@ -12,10 +12,10 @@ import Control.Monad (unless)
 import Data.Either (isLeft)
 import Data.List (isInfixOf)
 import Data.Version (showVersion)
-import GHC.IO.Exception (ExitCode)
 import GHC.IO.Handle
 import Paths_phino (version)
 import System.Directory (removeFile)
+import System.Exit (ExitCode)
 import System.IO
 import System.IO.Silently (capture_)
 import Test.Hspec
