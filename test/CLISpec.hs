@@ -115,23 +115,14 @@ spec = do
         ["rewrite"]
         "no --rule, no --normalize, no --nothing are provided"
 
-    it "normalizes until it's possible with depth" $ do
-      pending
-      withStdin "Φ ↦ ⟦ a ↦ ⟦ b ↦ ∅ ⟧ (b ↦ ξ) ⟧" $
+    it "normalizes from stdin" $ do
+      withStdin "Φ ↦ ⟦ a ↦ ⟦ b ↦ ∅ ⟧ (b ↦ [[ ]]) ⟧" $
         testCLI
-          ["rewrite", "--normalize", "--max-depth=2"]
+          ["rewrite", "--normalize"]
           ( unlines
               [ "Φ ↦ ⟦",
                 "  a ↦ ⟦",
-                "    b ↦ ⟦",
-                "      a ↦ ⟦",
-                "        b ↦ ⟦",
-                "          a ↦ ⟦ b ↦ ∅ ⟧(",
-                "            b ↦ ξ",
-                "          )",
-                "        ⟧",
-                "      ⟧",
-                "    ⟧",
+                "    b ↦ ⟦⟧",
                 "  ⟧",
                 "⟧"
               ]
