@@ -71,3 +71,7 @@ spec = do
       testCLI
         ["rewrite", "--normalize", "--phi-input=test-resources/cli/normalize.phi"]
         "Φ ↦ ⟦\n  x ↦ ⊥\n⟧"
+    
+    it "normalizes untill it's possible" $ do
+      withRedirectedStdin "Φ ↦ ⟦ a ↦ ⟦ b ↦ ∅ ⟧ (b ↦ ξ) ⟧" $ 
+        testCLI ["rewrite", "--normalize", "--max-depth=5"] "abc"

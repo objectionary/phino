@@ -6,10 +6,11 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Rewriter (rewrite) where
+module Rewriter (rewrite, rewrite') where
 
 import Ast
 import Builder
+import qualified Condition as C
 import Control.Exception
 import qualified Data.Map.Strict as M
 import Data.Maybe (catMaybes, isJust)
@@ -21,7 +22,6 @@ import Printer (printExpression, printProgram, printSubstitutions)
 import Replacer (replaceProgram)
 import Text.Printf
 import qualified Yaml as Y
-import qualified Condition as C
 
 data RewriteException
   = CouldNotBuild {expr :: Expression, substs :: [Subst]}
@@ -68,9 +68,9 @@ extraSubstitutions prog extras substs = case extras of
           extra <- extras'
       ]
 
-applyRules :: Program -> [Y.Rule] -> IO Program
-applyRules program [] = pure program
-applyRules program (rule : rest) = do
+rewrite :: Program -> [Y.Rule] -> IO Program
+rewrite program [] = pure program
+rewrite program (rule : rest) = do
   let ptn = Y.pattern rule
       res = Y.result rule
       condition = Y.when rule
@@ -79,9 +79,9 @@ applyRules program (rule : rest) = do
   prog <- case C.matchProgramWithCondition ptn condition program of
     Nothing -> pure program
     Just matched -> replaced (extended matched)
-  applyRules prog rest
+  rewrite prog rest
 
-rewrite :: String -> [Y.Rule] -> IO Program
-rewrite prog rules = do
+rewrite' :: String -> [Y.Rule] -> IO Program
+rewrite' prog rules = do
   program <- parseProgramThrows prog
-  applyRules program rules
+  rewrite program rules

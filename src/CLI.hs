@@ -11,6 +11,7 @@ import Control.Exception (Exception (displayException), SomeException, handle, t
 import Control.Exception.Base
 import Data.Version (showVersion)
 import Misc (ensuredFile)
+import qualified Misc
 import Options.Applicative
 import Paths_phino (version)
 import Rewriter (rewrite)
@@ -20,6 +21,8 @@ import Text.Printf (printf)
 import qualified Yaml as Y
 import Printer (printProgram)
 import Yaml (normalizationRules)
+import Ast (Program(Program))
+import Parser (parseProgramThrows)
 
 data CmdException
   = InvalidRewriteArguments
@@ -36,7 +39,9 @@ data OptsRewrite = OptsRewrite
   { rules :: [FilePath],
     phiInput :: Maybe FilePath,
     normalize :: Bool,
-    nothing :: Bool
+    nothing :: Bool,
+    shuffle :: Bool,
+    maxDepth :: Integer
   }
 
 rewriteParser :: Parser Command
@@ -47,6 +52,8 @@ rewriteParser =
             <*> optional (strOption (long "phi-input" <> metavar "FILE" <> help "Path .phi file with 𝜑-expression"))
             <*> switch (long "normalize" <> help "Use built-in normalization rules")
             <*> switch (long "nothing" <> help "Desugar provided 𝜑-expression")
+            <*> switch (long "shuffle" <> help "Shuffle rules before applying")
+            <*> option auto (long "max-depth" <> metavar "DEPTH" <> help "Max amount of rewritng cycles" <> value 25 <> showDefault)
         )
 
 commandParser :: Parser Command
@@ -73,8 +80,8 @@ runCLI args = handle handler $ do
       prog <- case phiInput of
         Just pth -> readFile =<< ensuredFile pth
         Nothing -> getContents' `catch` (\(e :: SomeException) -> throwIO (CouldNotReadFromStdin (show e)))
-      rules' <-
-        if nothing
+      rules' <- do
+        ordered <- if nothing
           then pure []
           else
             if normalize
@@ -85,5 +92,19 @@ runCLI args = handle handler $ do
                   else do
                     yamls <- mapM ensuredFile rules
                     mapM Y.yamlRule yamls
-      rewritten <- rewrite prog rules'
+        if shuffle
+          then Misc.shuffle ordered
+          else pure ordered
+      program <- parseProgramThrows prog
+      rewritten <- rewriteAgain program rules' 0
       putStrLn (printProgram rewritten)
+      where
+        rewriteAgain :: Program -> [Y.Rule] -> Integer -> IO Program
+        rewriteAgain prog rules count = do
+          if count == maxDepth
+            then pure prog
+            else do
+              rewritten <- rewrite prog rules
+              if rewritten == prog
+                then pure rewritten
+                else rewriteAgain rewritten rules (count + 1)
