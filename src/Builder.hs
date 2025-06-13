@@ -18,7 +18,6 @@ import Data.List (findIndex)
 import qualified Data.Map.Strict as Map
 import Matcher
 import Misc
-import Printer (printExpression)
 
 contextualize :: Expression -> Expression -> Program -> Maybe Expression
 contextualize ExGlobal _ (Program expr) = Just expr
