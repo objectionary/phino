@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 # SPDX-License-Identifier: MIT
 ---
+# yamllint disable rule:line-length
 # {⟦ m ↦ ⟦ x ↦ ξ.t (k ↦ ξ.f).k, t ↦ ⟦ k ↦ ∅ ⟧, f ↦ ⟦⟧ ⟧.x ⟧}
 # Rdot: {⟦ m ↦ ⟦ x ↦ ξ.t (k ↦ ξ.f).k, t ↦ ⟦ k ↦ ∅ ⟧, f ↦ ⟦⟧ ⟧.t (k ↦ ξ.f).k(ρ ↦ ⟦ x ↦ ξ.t (k ↦ ξ.f).k, t ↦ ⟦ k ↦ ∅ ⟧, f ↦ ⟦⟧ ⟧) ⟧}
 # Rdot: {⟦ m ↦ ⟦ k ↦ ∅ ⟧(ρ ↦ ⟦ x ↦ ξ.t (k ↦ ξ.f).k, t ↦ ⟦ k ↦ ∅ ⟧, f ↦ ⟦⟧ ⟧)(k ↦ ξ.f).k(ρ ↦ ⟦ x ↦ ξ.t (k ↦ ξ.f).k, t ↦ ⟦ k ↦ ∅ ⟧, f ↦ ⟦⟧ ⟧) ⟧}
