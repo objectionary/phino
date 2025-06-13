@@ -116,12 +116,11 @@ spec = do
         ["rewrite"]
         "no --rule, no --normalize, no --nothing are provided"
 
-    it "normalizes untill it's possible with depth" $
+    it "normalizes until it's possible with depth" $
       withRedirectedStdin "Φ ↦ ⟦ a ↦ ⟦ b ↦ ∅ ⟧ (b ↦ ξ) ⟧" $
         testCLI
           ["rewrite", "--normalize", "--max-depth=2"]
-          ( intercalate
-              "\n"
+          ( unlines
               [ "Φ ↦ ⟦",
                 "  a ↦ ⟦",
                 "    b ↦ ⟦",
