@@ -34,7 +34,7 @@ $ phino dataize hello.phi
 "hello"
 ```
 
-You can rewrite this expression (**under development**) with the help of rules
+You can rewrite this expression with the help of rules
 defined in the `my-rule.yml` YAML file (here, the `!b` is a capturing group,
 similar to regular expressions):
 
@@ -65,7 +65,7 @@ $ echo 'Φ ↦ ⟦ φ ↦ ⟦ Δ ⤍ 68-65-6C-6C-6F ⟧ ⟧' | phino rewrite --r
 ```
 
 You can also use [built-in rules](resources/normalize.yaml), which are designed
-to normalize expressions (**under development**):
+to normalize expressions:
 
 ```bash
 $ phino rewrite --normalize --phi-input=hello.phi
