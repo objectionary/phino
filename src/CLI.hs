@@ -19,16 +19,15 @@ import System.IO (getContents', hPutStrLn, stderr)
 import Text.Printf (printf)
 import qualified Yaml as Y
 import Printer (printProgram)
+import Yaml (normalizationRules)
 
 data CmdException
   = InvalidRewriteArguments
-  | NormalizationIsNotSupported
   | CouldNotReadFromStdin {message :: String}
   deriving (Exception)
 
 instance Show CmdException where
   show InvalidRewriteArguments = "Invalid set of arguments for 'rewrite' command: no --rule, no --normalize, no --nothing are provided"
-  show NormalizationIsNotSupported = "Normalization is not supported yet..."
   show CouldNotReadFromStdin {..} = printf "Could not read 𝜑-expression from stdin\nReason: %s" message
 
 newtype Command = CmdRewrite OptsRewrite
@@ -77,14 +76,14 @@ runCLI args = handle handler $ do
       rules' <-
         if nothing
           then pure []
-          else do
-            paths <-
-              if null rules
-                then
-                  if normalize
-                    then throwIO NormalizationIsNotSupported
-                    else throwIO InvalidRewriteArguments
-                else mapM ensuredFile rules
-            mapM Y.yamlRule paths
+          else
+            if normalize
+              then pure normalizationRules
+              else
+                if null rules
+                  then throwIO InvalidRewriteArguments
+                  else do
+                    yamls <- mapM ensuredFile rules
+                    mapM Y.yamlRule yamls
       rewritten <- rewrite prog rules'
       putStrLn (printProgram rewritten)

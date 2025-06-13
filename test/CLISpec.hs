@@ -15,6 +15,8 @@ import Control.Exception
 import GHC.IO.Handle
 import Paths_phino (version)
 import Data.Version (showVersion)
+import Control.Monad (unless)
+import Data.List (isInfixOf)
 
 withRedirectedStdin :: String -> IO a -> IO a
 withRedirectedStdin input action = do
@@ -34,11 +36,17 @@ withRedirectedStdin input action = do
     restoreStdin orig = hDuplicateTo orig stdin >> hClose orig
     cleanup (fp, _) = removeFile fp
 
+testCLI :: [String] -> String -> Expectation
+testCLI args output = do
+  out <- capture_ (runCLI args)
+  unless (output `isInfixOf` out) $
+    expectationFailure
+      ( "Expected that output contains:\n" ++ output ++ "\nbut got:\n" ++ out)
+
 spec :: Spec
 spec = do
   it "prints version" $ do
-    output <- capture_ (runCLI ["--version"])
-    output `shouldContain` showVersion version
+    testCLI ["--version"] (showVersion version)
 
   it "prints help" $ do
     output <- capture_ (runCLI ["--help"])
@@ -47,18 +55,19 @@ spec = do
 
   describe "rewrites" $ do
     it "desugares with --nothing flag from file" $ do
-      let args = ["rewrite", "--nothing", "--phi-input=test-resources/cli/desugar.phi"]
-      output <- capture_ (runCLI args)
-      output `shouldContain` "Φ ↦ ⟦\n  foo ↦ Φ.org.eolang\n⟧"
+      testCLI
+        ["rewrite", "--nothing", "--phi-input=test-resources/cli/desugar.phi"]
+        "Φ ↦ ⟦\n  foo ↦ Φ.org.eolang\n⟧"
 
     it "desugares with --nothing flag from stdin" $ do
       withRedirectedStdin "{[[foo ↦ QQ]]}" $ do
-        let args = ["rewrite", "--nothing"]
-        output <- capture_ (runCLI args)
-        output `shouldContain` "Φ ↦ ⟦\n  foo ↦ Φ.org.eolang\n⟧"
+        testCLI ["rewrite", "--nothing"] "Φ ↦ ⟦\n  foo ↦ Φ.org.eolang\n⟧"
 
     it "rewrites with single rule" $ do
       withRedirectedStdin "{T(x -> Q.y)}" $ do
-        let args = ["rewrite", "--rule=resources/dc.yaml"]
-        output <- capture_ (runCLI args)
-        output `shouldContain` "Φ ↦ ⊥"
+        testCLI ["rewrite", "--rule=resources/dc.yaml"] "Φ ↦ ⊥"
+
+    it "normalizes with --normalize flag" $ do
+      testCLI
+        ["rewrite", "--normalize", "--phi-input=test-resources/cli/normalize.phi"]
+        "Φ ↦ ⟦\n  x ↦ ⊥\n⟧"
