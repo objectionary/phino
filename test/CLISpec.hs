@@ -19,16 +19,14 @@ import System.Directory (removeFile)
 import System.IO
 import System.IO.Silently (capture_)
 import Test.Hspec
-import Control.Concurrent (threadDelay)
 
 withStdin :: String -> IO a -> IO a
 withStdin input action = do
-  bracket (openTempFile "." "stdin.tmp") cleanup $ \(filePath, h) -> do
+  bracket (openTempFile "." "stdinXXXXXX.tmp") cleanup $ \(filePath, h) -> do
     hSetEncoding h utf8
     hPutStr h input
     hFlush h
     hClose h
-    threadDelay 100000
     withFile filePath ReadMode $ \hIn -> do
       hSetEncoding hIn utf8
       bracket (hDuplicate stdin) restoreStdin $ \_ -> do
@@ -42,7 +40,7 @@ withStdin input action = do
 withStdout :: IO a -> IO (String, a)
 withStdout action =
   bracket
-    (openTempFile "." "stdout-stderr.tmp")
+    (openTempFile "." "stdoutXXXXXX.tmp")
     cleanup
     ( \(path, hTmp) -> do
         hSetEncoding hTmp utf8
