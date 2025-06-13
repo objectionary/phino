@@ -7,16 +7,18 @@
 module CLISpec (spec) where
 
 import CLI (runCLI)
-import System.IO.Silently (capture_)
-import System.Directory (removeFile)
-import Test.Hspec
-import System.IO
 import Control.Exception
+import Control.Monad (unless)
+import Data.Either (isLeft)
+import Data.List (intercalate, isInfixOf)
+import Data.Version (showVersion)
+import GHC.IO.Exception (ExitCode)
 import GHC.IO.Handle
 import Paths_phino (version)
-import Data.Version (showVersion)
-import Control.Monad (unless)
-import Data.List (isInfixOf, intercalate)
+import System.Directory (removeFile)
+import System.IO
+import System.IO.Silently (capture_)
+import Test.Hspec
 
 withRedirectedStdin :: String -> IO a -> IO a
 withRedirectedStdin input action = do
@@ -36,12 +38,44 @@ withRedirectedStdin input action = do
     restoreStdin orig = hDuplicateTo orig stdin >> hClose orig
     cleanup (fp, _) = removeFile fp
 
+withCapturedOutput :: IO a -> IO (String, a)
+withCapturedOutput action =
+  bracket
+    (openTempFile "." "stdout-stderr.tmp")
+    cleanup
+    ( \(path, hTmp) -> do
+        hSetEncoding hTmp utf8
+        oldOut <- hDuplicate stdout
+        oldErr <- hDuplicate stderr
+        hDuplicateTo hTmp stdout
+        hDuplicateTo hTmp stderr
+
+        result <-
+          action `finally` do
+            hFlush stdout
+            hFlush stderr
+            hDuplicateTo oldOut stdout >> hClose oldOut
+            hDuplicateTo oldErr stderr >> hClose oldErr
+            hClose hTmp
+
+        captured <- readFile path
+        return (captured, result)
+    )
+  where
+    cleanup (fp, _) = removeFile fp
+
 testCLI :: [String] -> String -> Expectation
 testCLI args output = do
   out <- capture_ (runCLI args)
   unless (output `isInfixOf` out) $
     expectationFailure
-      ( "Expected that output contains:\n" ++ output ++ "\nbut got:\n" ++ out)
+      ("Expected that output contains:\n" ++ output ++ "\nbut got:\n" ++ out)
+
+testCLIFailed :: [String] -> String -> Expectation
+testCLIFailed args output = withRedirectedStdin "" $ do
+  (out, result) <- withCapturedOutput (try (runCLI args) :: IO (Either ExitCode ()))
+  out `shouldContain` output
+  result `shouldSatisfy` isLeft
 
 spec :: Spec
 spec = do
@@ -54,43 +88,52 @@ spec = do
     output `shouldContain` "Usage:"
 
   describe "rewrites" $ do
-    it "desugares with --nothing flag from file" $ do
+    it "desugares with --nothing flag from file" $
       testCLI
         ["rewrite", "--nothing", "--phi-input=test-resources/cli/desugar.phi"]
         "Φ ↦ ⟦\n  foo ↦ Φ.org.eolang\n⟧"
 
-    it "desugares with --nothing flag from stdin" $ do
-      withRedirectedStdin "{[[foo ↦ QQ]]}" $ do
+    it "desugares with --nothing flag from stdin" $
+      withRedirectedStdin "{[[foo ↦ QQ]]}" $
         testCLI ["rewrite", "--nothing"] "Φ ↦ ⟦\n  foo ↦ Φ.org.eolang\n⟧"
 
-    it "rewrites with single rule" $ do
-      withRedirectedStdin "{T(x -> Q.y)}" $ do
+    it "rewrites with single rule" $
+      withRedirectedStdin "{T(x -> Q.y)}" $
         testCLI ["rewrite", "--rule=resources/dc.yaml"] "Φ ↦ ⊥"
 
-    it "normalizes with --normalize flag" $ do
+    it "normalizes with --normalize flag" $
       testCLI
         ["rewrite", "--normalize", "--phi-input=test-resources/cli/normalize.phi"]
         "Φ ↦ ⟦\n  x ↦ ⊥\n⟧"
-    
-    it "normalizes untill it's possible with depth" $ do
-      withRedirectedStdin "Φ ↦ ⟦ a ↦ ⟦ b ↦ ∅ ⟧ (b ↦ ξ) ⟧" $ 
+
+    it "fails with negative --max-depth" $
+      testCLIFailed
+        ["rewrite", "--max-depth=-1"]
+        "--max-depth must be non-negative"
+
+    it "fails with no rewriting options provided" $
+      testCLIFailed
+        ["rewrite"]
+        "no --rule, no --normalize, no --nothing are provided"
+
+    it "normalizes untill it's possible with depth" $
+      withRedirectedStdin "Φ ↦ ⟦ a ↦ ⟦ b ↦ ∅ ⟧ (b ↦ ξ) ⟧" $
         testCLI
           ["rewrite", "--normalize", "--max-depth=2"]
-          (intercalate
-            "\n"
-            [ "Φ ↦ ⟦",
-              "  a ↦ ⟦",
-              "    b ↦ ⟦",
-              "      a ↦ ⟦",
-              "        b ↦ ⟦",
-              "          a ↦ ⟦ b ↦ ∅ ⟧(",
-              "            b ↦ ξ",
-              "          )",
-              "        ⟧",
-              "      ⟧",
-              "    ⟧",
-              "  ⟧",
-              "⟧"
-            ]
+          ( intercalate
+              "\n"
+              [ "Φ ↦ ⟦",
+                "  a ↦ ⟦",
+                "    b ↦ ⟦",
+                "      a ↦ ⟦",
+                "        b ↦ ⟦",
+                "          a ↦ ⟦ b ↦ ∅ ⟧(",
+                "            b ↦ ξ",
+                "          )",
+                "        ⟧",
+                "      ⟧",
+                "    ⟧",
+                "  ⟧",
+                "⟧"
+              ]
           )
-

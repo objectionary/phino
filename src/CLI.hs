@@ -7,30 +7,31 @@
 
 module CLI (runCLI) where
 
+import Ast (Program (Program))
 import Control.Exception (Exception (displayException), SomeException, handle, throw, throwIO)
 import Control.Exception.Base
+import Control.Monad (when)
 import Data.Version (showVersion)
 import Misc (ensuredFile)
 import qualified Misc
 import Options.Applicative
+import Parser (parseProgramThrows)
 import Paths_phino (version)
+import Printer (printProgram)
 import Rewriter (rewrite)
-import System.Exit (exitFailure, ExitCode (..))
+import System.Exit (ExitCode (..), exitFailure)
 import System.IO (getContents', hPutStrLn, stderr)
 import Text.Printf (printf)
-import qualified Yaml as Y
-import Printer (printProgram)
 import Yaml (normalizationRules)
-import Ast (Program(Program))
-import Parser (parseProgramThrows)
+import qualified Yaml as Y
 
 data CmdException
-  = InvalidRewriteArguments
+  = InvalidRewriteArguments {message :: String}
   | CouldNotReadFromStdin {message :: String}
   deriving (Exception)
 
 instance Show CmdException where
-  show InvalidRewriteArguments = "Invalid set of arguments for 'rewrite' command: no --rule, no --normalize, no --nothing are provided"
+  show InvalidRewriteArguments {..} = printf "Invalid set of arguments for 'rewrite' command: %s" message
   show CouldNotReadFromStdin {..} = printf "Could not read 𝜑-expression from stdin\nReason: %s" message
 
 newtype Command = CmdRewrite OptsRewrite
@@ -67,7 +68,7 @@ parserInfo =
 
 handler :: SomeException -> IO ()
 handler e = case fromException e of
-  Just ExitSuccess -> pure ()  -- prevent printing error on --version etc.
+  Just ExitSuccess -> pure () -- prevent printing error on --version etc.
   _ -> do
     hPutStrLn stderr ("[error] " ++ displayException e)
     exitFailure
@@ -77,21 +78,23 @@ runCLI args = handle handler $ do
   cmd <- handleParseResult (execParserPure defaultPrefs parserInfo args)
   case cmd of
     CmdRewrite OptsRewrite {..} -> do
+      when (maxDepth < 0) $ throwIO (InvalidRewriteArguments "--max-depth must be non-negative")
       prog <- case phiInput of
         Just pth -> readFile =<< ensuredFile pth
         Nothing -> getContents' `catch` (\(e :: SomeException) -> throwIO (CouldNotReadFromStdin (show e)))
       rules' <- do
-        ordered <- if nothing
-          then pure []
-          else
-            if normalize
-              then pure normalizationRules
-              else
-                if null rules
-                  then throwIO InvalidRewriteArguments
-                  else do
-                    yamls <- mapM ensuredFile rules
-                    mapM Y.yamlRule yamls
+        ordered <-
+          if nothing
+            then pure []
+            else
+              if normalize
+                then pure normalizationRules
+                else
+                  if null rules
+                    then throwIO (InvalidRewriteArguments "no --rule, no --normalize, no --nothing are provided")
+                    else do
+                      yamls <- mapM ensuredFile rules
+                      mapM Y.yamlRule yamls
         if shuffle
           then Misc.shuffle ordered
           else pure ordered
