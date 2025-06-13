@@ -6,7 +6,7 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Rewriter (rewrite, rewrite') where
+module Rewriter (rewrite) where
 
 import Ast
 import Builder
@@ -80,8 +80,3 @@ rewrite program (rule : rest) = do
     Nothing -> pure program
     Just matched -> replaced (extended matched)
   rewrite prog rest
-
-rewrite' :: String -> [Y.Rule] -> IO Program
-rewrite' prog rules = do
-  program <- parseProgramThrows prog
-  rewrite program rules

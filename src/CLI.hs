@@ -99,15 +99,15 @@ runCLI args = handle handler $ do
           then Misc.shuffle ordered
           else pure ordered
       program <- parseProgramThrows prog
-      rewritten <- rewriteAgain program rules' 0
+      rewritten <- rewrite' program rules' 0
       putStrLn (printProgram rewritten)
       where
-        rewriteAgain :: Program -> [Y.Rule] -> Integer -> IO Program
-        rewriteAgain prog rules count = do
+        rewrite' :: Program -> [Y.Rule] -> Integer -> IO Program
+        rewrite' prog rules count = do
           if count == maxDepth
             then pure prog
             else do
               rewritten <- rewrite prog rules
               if rewritten == prog
                 then pure rewritten
-                else rewriteAgain rewritten rules (count + 1)
+                else rewrite' rewritten rules (count + 1)
