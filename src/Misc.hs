@@ -11,6 +11,7 @@ import Ast
 import Control.Exception
 import Control.Monad
 import Data.Binary.IEEE754
+import qualified Data.Bits as IOArray
 import Data.ByteString.Builder (toLazyByteString, word64BE)
 import Data.ByteString.Lazy (unpack)
 import qualified Data.ByteString.Lazy.UTF8 as U
@@ -22,7 +23,6 @@ import System.Directory (doesDirectoryExist, doesFileExist, listDirectory)
 import System.FilePath ((</>))
 import System.Random.Stateful
 import Text.Printf (printf)
-import qualified Data.Bits as IOArray
 
 data FsException
   = FileDoesNotExist {file :: FilePath}
@@ -32,6 +32,22 @@ data FsException
 instance Show FsException where
   show FileDoesNotExist {..} = printf "File '%s' does not exist" file
   show DirectoryDoesNotExist {..} = printf "Directory '%s' does not exist" dir
+
+-- Add void rho binding to the end of the list of any rho binding is not present
+withVoidRho :: [Binding] -> [Binding]
+withVoidRho bds = withVoidRho' bds False
+  where
+    withVoidRho' :: [Binding] -> Bool -> [Binding]
+    withVoidRho' [] True = []
+    withVoidRho' [] False = [BiVoid AtRho]
+    withVoidRho' (bd : bds) hasRho = 
+      case bd of
+        BiMeta _ -> bd : bds
+        BiVoid (AtMeta _) -> bd : bds
+        BiTau (AtMeta _) _ -> bd : bds
+        BiVoid AtRho -> bd : withVoidRho' bds True
+        BiTau AtRho _ -> bd : withVoidRho' bds True
+        _ -> bd : withVoidRho' bds hasRho
 
 ensuredFile :: FilePath -> IO FilePath
 ensuredFile pth = do

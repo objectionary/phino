@@ -1,0 +1,15 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# {⟦ m ↦ ⟦ x ↦ ⟦ λ ⤍ Fn ⟧.ρ.k, k ↦ ⟦ Δ ⤍ 42- ⟧ ⟧.x ⟧}
+# Desugar: {⟦ m ↦ ⟦ x ↦ ⟦ λ ⤍ Fn, ρ ↦ ∅ ⟧.ρ.k, k ↦ ⟦ Δ ⤍ 42-, ρ ↦ ∅ ⟧, ρ ↦ ∅ ⟧.x, ρ ↦ ∅ ⟧}
+# Rdot: {⟦ m ↦ ⟦ λ ⤍ Fn, ρ ↦ ∅ ⟧.ρ.k(ρ ↦ ⟦ x ↦ ⟦ λ ⤍ Fn, ρ ↦ ∅ ⟧.ρ.k, k ↦ ⟦ Δ ⤍ 42-, ρ ↦ ∅ ⟧, ρ ↦ ∅ ⟧), ρ ↦ ∅ ⟧}
+# Rnull: {⟦ m ↦ ⊥.k(ρ ↦ ⟦ x ↦ ⟦ λ ⤍ Fn, ρ ↦ ∅ ⟧.ρ.k, k ↦ ⟦ Δ ⤍ 42-, ρ ↦ ∅ ⟧, ρ ↦ ∅ ⟧), ρ ↦ ∅ ⟧}
+# Rdd: {⟦ m ↦ ⊥(ρ ↦ ⟦ x ↦ ⟦ λ ⤍ Fn, ρ ↦ ∅ ⟧.ρ.k, k ↦ ⟦ Δ ⤍ 42-, ρ ↦ ∅ ⟧, ρ ↦ ∅ ⟧), ρ ↦ ∅ ⟧}
+# Rdc: {⟦ m ↦ ⊥, ρ ↦ ∅ ⟧}
+skip: true
+normalize: true
+input: |
+  {⟦ m ↦ ⟦ x ↦ ⟦ λ ⤍ Fn ⟧.ρ.k, k ↦ ⟦ Δ ⤍ 42- ⟧ ⟧.x ⟧}
+output: |-
+  {⟦ m ↦ ⟦ λ ⤍ Fn ⟧.ρ.k(ρ ↦ ⟦ x ↦ ⟦ λ ⤍ Fn ⟧.ρ.k, k ↦ ⟦ Δ ⤍ 42- ⟧ ⟧ ) ⟧}

@@ -30,44 +30,44 @@ spec = do
   describe "parse program" $
     test
       parseProgram
-      [ ("Q -> [[]]", Just (Program (ExFormation []))),
+      [ ("Q -> [[]]", Just (Program (ExFormation [BiVoid AtRho]))),
         ("Q -> T(x -> Q)", Just (Program (ExApplication ExTermination (BiTau (AtLabel "x") ExGlobal)))),
         ("Q -> Q.org.eolang", Just (Program (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang")))),
-        ("Q -> [[x -> $, y -> ?]]", Just (Program (ExFormation [BiTau (AtLabel "x") ExThis, BiVoid (AtLabel "y")]))),
-        ("{[[foo ↦ QQ]]}", Just (Program (ExFormation [BiTau (AtLabel "foo") (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang"))])))
+        ("Q -> [[x -> $, y -> ?]]", Just (Program (ExFormation [BiTau (AtLabel "x") ExThis, BiVoid (AtLabel "y"), BiVoid AtRho]))),
+        ("{[[foo ↦ QQ]]}", Just (Program (ExFormation [BiTau (AtLabel "foo") (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang")), BiVoid AtRho])))
       ]
 
   describe "parse expression" $
     test
       parseExpression
       [ ("Q.!a", Just (ExDispatch ExGlobal (AtMeta "a"))),
-        ("[[]](!a1 -> $)", Just (ExApplication (ExFormation []) (BiTau (AtMeta "a1") ExThis))),
+        ("[[]](!a1 -> $)", Just (ExApplication (ExFormation [BiVoid AtRho]) (BiTau (AtMeta "a1") ExThis))),
         ( "[[]](~0 -> $)(~11 -> Q)",
           Just
             ( ExApplication
                 ( ExApplication
-                    (ExFormation [])
+                    (ExFormation [BiVoid AtRho])
                     (BiTau (AtAlpha 0) ExThis)
                 )
                 (BiTau (AtAlpha 11) ExGlobal)
             )
         ),
-        ("[[]](x -> $, y -> Q)", Just (ExApplication (ExApplication (ExFormation []) (BiTau (AtLabel "x") ExThis)) (BiTau (AtLabel "y") ExGlobal))),
+        ("[[]](x -> $, y -> Q)", Just (ExApplication (ExApplication (ExFormation [BiVoid AtRho]) (BiTau (AtLabel "x") ExThis)) (BiTau (AtLabel "y") ExGlobal))),
         ("[[!B, !B1]]", Just (ExFormation [BiMeta "B", BiMeta "B1"])),
         ("[[!B2, !a2 -> $]]", Just (ExFormation [BiMeta "B2", BiTau (AtMeta "a2") ExThis])),
         ("!e0", Just (ExMeta "e0")),
-        ("[[x -> !e]]", Just (ExFormation [BiTau (AtLabel "x") (ExMeta "e")])),
+        ("[[x -> !e]]", Just (ExFormation [BiTau (AtLabel "x") (ExMeta "e"), BiVoid AtRho])),
         ("[[!a -> !e1]]", Just (ExFormation [BiTau (AtMeta "a") (ExMeta "e1")])),
         ("Q * !t", Just (ExMetaTail ExGlobal "t")),
-        ("[[]](x -> $) * !t1", Just (ExMetaTail (ExApplication (ExFormation []) (BiTau (AtLabel "x") ExThis)) "t1")),
-        ("[[D> --]]", Just (ExFormation [BiDelta "--"])),
-        ("[[D> 1F-]]", Just (ExFormation [BiDelta "1F-"])),
-        ("[[\n  L> Func,\n  D> 00-\n]]", Just (ExFormation [BiLambda "Func", BiDelta "00-"])),
-        ("[[D> 1F-2A-00]]", Just (ExFormation [BiDelta "1F-2A-00"])),
-        ("[[D> !b0]]", Just (ExFormation [BiMetaDelta "b0"])),
-        ("[[L> Function]]", Just (ExFormation [BiLambda "Function"])),
-        ("[[L> !F3]]", Just (ExFormation [BiMetaLambda "F3"])),
-        ("[[x() -> [[]] ]]", Just (ExFormation [BiTau (AtLabel "x") (ExFormation [])])),
+        ("[[]](x -> $) * !t1", Just (ExMetaTail (ExApplication (ExFormation [BiVoid AtRho]) (BiTau (AtLabel "x") ExThis)) "t1")),
+        ("[[D> --]]", Just (ExFormation [BiDelta "--", BiVoid AtRho])),
+        ("[[D> 1F-]]", Just (ExFormation [BiDelta "1F-", BiVoid AtRho])),
+        ("[[\n  L> Func,\n  D> 00-\n]]", Just (ExFormation [BiLambda "Func", BiDelta "00-", BiVoid AtRho])),
+        ("[[D> 1F-2A-00]]", Just (ExFormation [BiDelta "1F-2A-00", BiVoid AtRho])),
+        ("[[D> !b0]]", Just (ExFormation [BiMetaDelta "b0", BiVoid AtRho])),
+        ("[[L> Function]]", Just (ExFormation [BiLambda "Function", BiVoid AtRho])),
+        ("[[L> !F3]]", Just (ExFormation [BiMetaLambda "F3", BiVoid AtRho])),
+        ("[[x() -> [[]] ]]", Just (ExFormation [BiTau (AtLabel "x") (ExFormation [BiVoid AtRho]), BiVoid AtRho])),
         ( "[[y(^,@,z) -> [[q -> Q.a]] ]]",
           Just
             ( ExFormation
@@ -79,7 +79,8 @@ spec = do
                           BiVoid (AtLabel "z"),
                           BiTau (AtLabel "q") (ExDispatch ExGlobal (AtLabel "a"))
                         ]
-                    )
+                    ),
+                  BiVoid AtRho
                 ]
             )
         ),
@@ -118,7 +119,8 @@ spec = do
                     (ExDispatch ExThis (AtMeta "a")),
                   BiTau
                     (AtLabel "q")
-                    (ExMeta "e")
+                    (ExMeta "e"),
+                  BiVoid AtRho
                 ]
             )
         ),
@@ -133,7 +135,7 @@ spec = do
                         )
                         (BiTau (AtAlpha 1) (ExDispatch ExThis (AtLabel "y")))
                     )
-                    (BiTau (AtAlpha 2) (ExDispatch (ExFormation []) (AtLabel "z")))
+                    (BiTau (AtAlpha 2) (ExDispatch (ExFormation [BiVoid AtRho]) (AtLabel "z")))
                 )
                 ( BiTau
                     (AtAlpha 3)
@@ -159,7 +161,7 @@ spec = do
                                 (ExDispatch (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang")) (AtLabel "bytes"))
                                 ( BiTau
                                     (AtAlpha 0)
-                                    (ExFormation [BiDelta "40-14-00-00-00-00-00-00"])
+                                    (ExFormation [BiDelta "40-14-00-00-00-00-00-00", BiVoid AtRho])
                                 )
                             )
                         )
@@ -178,7 +180,7 @@ spec = do
                                         (ExDispatch (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang")) (AtLabel "bytes"))
                                         ( BiTau
                                             (AtAlpha 0)
-                                            (ExFormation [BiDelta "40-14-00-00-00-00-00-00"])
+                                            (ExFormation [BiDelta "40-14-00-00-00-00-00-00", BiVoid AtRho])
                                         )
                                     )
                                 )
@@ -196,7 +198,7 @@ spec = do
                                             (ExDispatch (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang")) (AtLabel "bytes"))
                                             ( BiTau
                                                 (AtAlpha 0)
-                                                (ExFormation [BiDelta "68-65-6C-6C-6F"])
+                                                (ExFormation [BiDelta "68-65-6C-6C-6F", BiVoid AtRho])
                                             )
                                         )
                                     )

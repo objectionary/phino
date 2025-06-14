@@ -14,10 +14,8 @@ module Builder
 where
 
 import Ast
-import Data.List (findIndex)
 import qualified Data.Map.Strict as Map
 import Matcher
-import Misc
 
 contextualize :: Expression -> Expression -> Program -> Expression
 contextualize ExGlobal _ (Program expr) = expr

@@ -23,7 +23,7 @@ import Data.Scientific (toRealFloat)
 import Data.Sequence (mapWithIndex)
 import Data.Text.Internal.Fusion.Size (lowerBound)
 import Data.Void
-import Misc (numToHex, strToHex)
+import Misc (numToHex, strToHex, withVoidRho)
 import Text.Megaparsec
 import Text.Megaparsec.Char (alphaNumChar, char, digitChar, hexDigitChar, letterChar, lowerChar, space1, string, upperChar)
 import qualified Text.Megaparsec.Char.Lexer as L
@@ -50,7 +50,7 @@ dataExpression obj bts =
             (ExDispatch (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang")) (AtLabel "bytes"))
             ( BiTau
                 (AtAlpha 0)
-                (ExFormation [BiDelta bts])
+                (ExFormation [BiDelta bts, BiVoid AtRho])
             )
         )
     )
@@ -169,7 +169,7 @@ tauBinding attr = do
         _ <- symbol ")"
         _ <- arrow
         ExFormation bs <- formation
-        return (BiTau attr' (ExFormation (voids ++ bs)))
+        return (BiTau attr' (ExFormation (withVoidRho (voids ++ bs))))
     ]
 
 metaBinding :: Parser Binding
@@ -271,7 +271,9 @@ formation = do
 exHead :: Parser Expression
 exHead =
   choice
-    [ formation,
+    [ do
+        ExFormation bs <- formation
+        return (ExFormation (withVoidRho bs)),
       do
         _ <- choice [symbol "$", symbol "ξ"]
         return ExThis,

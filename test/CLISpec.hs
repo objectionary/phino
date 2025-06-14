@@ -90,11 +90,11 @@ spec = do
     it "desugares with --nothing flag from file" $
       testCLI
         ["rewrite", "--nothing", "--phi-input=test-resources/cli/desugar.phi"]
-        "Φ ↦ ⟦\n  foo ↦ Φ.org.eolang\n⟧"
+        "Φ ↦ ⟦\n  foo ↦ Φ.org.eolang,\n  ρ ↦ ∅\n⟧"
 
     it "desugares with --nothing flag from stdin" $
       withStdin "{[[foo ↦ QQ]]}" $
-        testCLI ["rewrite", "--nothing"] "Φ ↦ ⟦\n  foo ↦ Φ.org.eolang\n⟧"
+        testCLI ["rewrite", "--nothing"] "Φ ↦ ⟦\n  foo ↦ Φ.org.eolang,\n  ρ ↦ ∅\n⟧"
 
     it "rewrites with single rule" $
       withStdin "{T(x -> Q.y)}" $
@@ -103,7 +103,18 @@ spec = do
     it "normalizes with --normalize flag" $
       testCLI
         ["rewrite", "--normalize", "--phi-input=test-resources/cli/normalize.phi"]
-        "Φ ↦ ⟦\n  x ↦ ⊥\n⟧"
+        ( unlines
+            [ "Φ ↦ ⟦",
+              "  x ↦ ⟦",
+              "    ρ ↦ ⟦",
+              "      y ↦ ⟦ ρ ↦ ∅ ⟧,",
+              "      ρ ↦ ∅",
+              "    ⟧",
+              "  ⟧,",
+              "  ρ ↦ ∅",
+              "⟧"
+            ]
+        )
 
     it "fails with negative --max-depth" $
       testCLIFailed
@@ -122,8 +133,10 @@ spec = do
           ( unlines
               [ "Φ ↦ ⟦",
                 "  a ↦ ⟦",
-                "    b ↦ ⟦⟧",
-                "  ⟧",
+                "    b ↦ ⟦ ρ ↦ ∅ ⟧,",
+                "    ρ ↦ ∅",
+                "  ⟧,",
+                "  ρ ↦ ∅",
                 "⟧"
               ]
           )

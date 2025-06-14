@@ -76,6 +76,7 @@ test-suite spec
     RewriterSpec,
     ConditionSpec,
     YamlSpec,
+    MiscSpec,
     Paths_phino
   autogen-modules:
     Paths_phino

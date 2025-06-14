@@ -6,4 +6,4 @@ pattern: '[[ !B ]].!a'
 condition:
   eq:
     - length: '!B'
-    - 2
+    - 3

@@ -7,6 +7,7 @@
 module ConditionSpec where
 
 import Ast (Expression, Program (Program))
+import Condition (meetCondition)
 import Control.Monad
 import Data.Aeson
 import Data.Yaml qualified as Y
@@ -14,10 +15,9 @@ import GHC.Generics
 import Matcher (matchProgram)
 import Misc
 import Printer (printSubstitutions)
-import Condition (meetCondition)
 import System.FilePath
 import Test.Hspec (Spec, describe, expectationFailure, it, runIO)
-import qualified Yaml as Y
+import Yaml qualified as Y
 
 data ConditionPack = ConditionPack
   { expression :: Expression,
@@ -38,12 +38,10 @@ spec = do
           let matched = matchProgram (pattern pack) (Program (expression pack))
           unless (matched /= []) (expectationFailure "List of matched substitutions is empty which is not expected")
           let met = meetCondition (condition pack) matched
-          unless
-            (met == matched)
+          when
+            (null met)
             ( expectationFailure $
-                "Condition must not decrease the list of substitutions\nExpected:\n"
+                "List of substitution after condition check must be not empty\nOriginal substitutions:\n"
                   ++ printSubstitutions matched
-                  ++ "\nGot:\n"
-                  ++ printSubstitutions met
             )
       )

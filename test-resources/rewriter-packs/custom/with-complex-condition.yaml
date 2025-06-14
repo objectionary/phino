@@ -5,6 +5,7 @@ input: Q -> [[x -> [[a -> Q.z]], y -> [[b -> $.w]], L> Func ]].x
 output: |-
   Φ ↦ ⟦
     a ↦ Φ.z,
+    ρ ↦ ∅,
     y ↦ ⟦
       b ↦ ξ.w
     ⟧,
@@ -12,7 +13,7 @@ output: |-
   ⟧
 rules:
   custom:
-    - pattern: '[[ !a -> [[!B1]], !B2 ]].!a'
+    - pattern: '[[ !a -> [[!B1]], !B2, ρ ↦ ∅ ]].!a'
       result: '[[ !B1, !B2 ]]'
       when:
         and:
