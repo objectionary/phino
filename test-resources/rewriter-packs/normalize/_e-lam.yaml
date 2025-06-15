@@ -11,6 +11,6 @@
 skip: true
 normalize: true
 input: |
-  {⟦ m ↦ ⟦ x ↦ ⟦ λ ⤍ Fn ⟧.ρ.k, k ↦ ⟦ Δ ⤍ 42- ⟧ ⟧.x ⟧}
+  {⟦ m ↦ ⟦ x ↦ ⟦ λ ⤍ Fn ⟧.k ⟧.x ⟧}
 output: |-
   {⟦ m ↦ ⟦ λ ⤍ Fn ⟧.ρ.k(ρ ↦ ⟦ x ↦ ⟦ λ ⤍ Fn ⟧.ρ.k, k ↦ ⟦ Δ ⤍ 42- ⟧ ⟧ ) ⟧}
