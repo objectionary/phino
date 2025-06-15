@@ -34,8 +34,7 @@ jobs:
           fi
 
           # Check if resources directory is inside the tarball
-          echo "Checking if 'resources/' directory is included in $TARBALL"
-          if ! tar -tzf "$TARBALL" | grep -q "^${PKG_NAME}-${PKG_VERSION}/resources/"; then
+          if ! tar -tzf "$TARBALL" 2>/dev/null | grep -q "^${PKG_NAME}-${PKG_VERSION}/resources/"; then
             echo "ERROR: 'resources/' directory not found in the tarball!"
             echo "Make sure 'extra-source-files: resources/*' is present in your .cabal file."
             exit 1
