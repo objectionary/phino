@@ -13,8 +13,9 @@ import Builder
 import qualified Condition as C
 import Control.Exception
 import qualified Data.Map.Strict as M
-import Data.Maybe (catMaybes, isJust)
+import Data.Maybe (catMaybes, fromMaybe, isJust)
 import Data.Text (intercalate)
+import Logger (logDebug)
 import Matcher (MetaValue (MvAttribute, MvBindings, MvExpression), Subst (Subst), combine, combineMany, matchProgram, substEmpty, substSingle)
 import Misc (ensuredFile)
 import Parser (parseProgram, parseProgramThrows)
@@ -71,12 +72,18 @@ extraSubstitutions prog extras substs = case extras of
 rewrite :: Program -> [Y.Rule] -> IO Program
 rewrite program [] = pure program
 rewrite program (rule : rest) = do
+  logDebug (printf "Trying to apply rule: %s" (fromMaybe "unknown" (Y.name rule)))
   let ptn = Y.pattern rule
       res = Y.result rule
       condition = Y.when rule
       replaced = buildAndReplace program ptn res
       extended = extraSubstitutions program (Y.where_ rule)
   prog <- case C.matchProgramWithCondition ptn condition program of
-    Nothing -> pure program
-    Just matched -> replaced (extended matched)
+    Nothing -> do
+      logDebug "Rule didn't match"
+      pure program
+    Just matched -> do
+      let substs = extended matched
+      logDebug (printf "Rule has been matched, substitutions are:\n%s" (printSubstitutions substs))
+      replaced substs
   rewrite prog rest

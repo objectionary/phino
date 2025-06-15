@@ -86,6 +86,9 @@ spec = do
     output `shouldContain` "Phino - CLI Manipulator of 𝜑-Calculus Expressions"
     output `shouldContain` "Usage:"
 
+  it "prints debug info with --log-level=DEBUG" $ do
+    withStdin "Q -> [[]]" $ testCLI ["rewrite", "--nothing", "--log-level=DEBUG"] "[DEBUG]:"
+
   describe "rewrites" $ do
     it "desugares with --nothing flag from file" $
       testCLI
