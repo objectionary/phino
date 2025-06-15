@@ -13,6 +13,7 @@ maintainer:         mtrunnikov@gmail.com
 copyright:          2025 Objectionary.com
 category:           Language, Code Analysis
 build-type:         Simple
+extra-source-files: resources/*.yaml
 
 source-repository head
   type: git

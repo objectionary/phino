@@ -1,0 +1,44 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+name: resources
+'on':
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+jobs:
+  check-resources:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - run: |-
+          # Create source distribution
+          echo "Running: cabal sdist"
+          cabal sdist
+
+          # Get package name and version from .cabal file
+          PKG_NAME=$(awk '/^name:/ { print $2 }' *.cabal)
+          PKG_VERSION=$(awk '/^version:/ { print $2 }' *.cabal)
+
+          # Build expected tarball path
+          TARBALL="dist-newstyle/sdist/${PKG_NAME}-${PKG_VERSION}.tar.gz"
+
+          # Check if tarball was created
+          if [ ! -f "$TARBALL" ]; then
+            echo "ERROR: Tarball $TARBALL not found."
+            exit 1
+          fi
+
+          # Check if resources directory is inside the tarball
+          echo "Checking if 'resources/' directory is included in $TARBALL"
+          if ! tar -tzf "$TARBALL" | grep -q "^${PKG_NAME}-${PKG_VERSION}/resources/"; then
+            echo "ERROR: 'resources/' directory not found in the tarball!"
+            echo "Make sure 'extra-source-files: resources/*' is present in your .cabal file."
+            exit 1
+          fi
+
+          echo "Success: 'resources/' directory is present in the tarball."

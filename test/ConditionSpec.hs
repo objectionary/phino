@@ -17,12 +17,12 @@ import Misc
 import Printer (printSubstitutions)
 import System.FilePath
 import Test.Hspec (Spec, describe, expectationFailure, it, runIO)
-import Yaml qualified as Y
+import Yaml qualified
 
 data ConditionPack = ConditionPack
   { expression :: Expression,
     pattern :: Expression,
-    condition :: Y.Condition
+    condition :: Yaml.Condition
   }
   deriving (Generic, FromJSON, Show)
 
