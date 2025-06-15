@@ -86,6 +86,9 @@ spec = do
     output `shouldContain` "Phino - CLI Manipulator of 𝜑-Calculus Expressions"
     output `shouldContain` "Usage:"
 
+  it "prints debug info with --log-level=DEBUG" $ do
+    withStdin "Q -> [[]]" $ testCLI ["rewrite", "--nothing", "--log-level=DEBUG"] "[DEBUG]:"
+
   describe "rewrites" $ do
     it "desugares with --nothing flag from file" $
       testCLI
@@ -119,7 +122,7 @@ spec = do
     it "fails with negative --max-depth" $
       testCLIFailed
         ["rewrite", "--max-depth=-1"]
-        "--max-depth must be non-negative"
+        "--max-depth must be positive"
 
     it "fails with no rewriting options provided" $
       testCLIFailed

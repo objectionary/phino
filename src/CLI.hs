@@ -11,7 +11,10 @@ import Ast (Program (Program))
 import Control.Exception (Exception (displayException), SomeException, handle, throw, throwIO)
 import Control.Exception.Base
 import Control.Monad (when)
+import Data.Char (toUpper)
+import Data.List (intercalate)
 import Data.Version (showVersion)
+import Logger
 import Misc (ensuredFile)
 import qualified Misc
 import Options.Applicative
@@ -20,7 +23,7 @@ import Paths_phino (version)
 import Printer (printProgram)
 import Rewriter (rewrite)
 import System.Exit (ExitCode (..), exitFailure)
-import System.IO (getContents', hPutStrLn, stderr)
+import System.IO (getContents')
 import Text.Printf (printf)
 import Yaml (normalizationRules)
 import qualified Yaml as Y
@@ -33,6 +36,11 @@ data CmdException
 instance Show CmdException where
   show InvalidRewriteArguments {..} = printf "Invalid set of arguments for 'rewrite' command: %s" message
   show CouldNotReadFromStdin {..} = printf "Could not read 𝜑-expression from stdin\nReason: %s" message
+
+data App = App
+  { logLevel :: LogLevel,
+    cmd :: Command
+  }
 
 newtype Command = CmdRewrite OptsRewrite
 
@@ -60,54 +68,96 @@ rewriteParser =
 commandParser :: Parser Command
 commandParser = hsubparser (command "rewrite" (info rewriteParser (progDesc "Rewrite the expression")))
 
-parserInfo :: ParserInfo Command
+readLogLevel :: String -> Either String LogLevel
+readLogLevel lvl = case map toUpper lvl of
+  "DEBUG" -> Right DEBUG
+  "INFO" -> Right INFO
+  "WARNING" -> Right WARNING
+  "WARN" -> Right WARNING
+  "ERROR" -> Right ERROR
+  "ERR" -> Right ERROR
+  "NONE" -> Right NONE
+  _ -> Left $ "unknown log-level: " <> lvl
+
+appParser :: Parser App
+appParser =
+  App
+    <$> option
+      (eitherReader readLogLevel)
+      ( long "log-level"
+          <> metavar "LEVEL"
+          <> help ("Log level (" <> intercalate ", " (map show [DEBUG, INFO, WARNING, ERROR, NONE]) <> ")")
+          <> value INFO
+          <> showDefault
+      )
+    <*> commandParser
+
+parserInfo :: ParserInfo App
 parserInfo =
   info
-    (commandParser <**> helper <**> simpleVersioner (showVersion version))
+    (appParser <**> helper <**> simpleVersioner (showVersion version))
     (fullDesc <> header "Phino - CLI Manipulator of 𝜑-Calculus Expressions")
 
 handler :: SomeException -> IO ()
 handler e = case fromException e of
   Just ExitSuccess -> pure () -- prevent printing error on --version etc.
   _ -> do
-    hPutStrLn stderr ("[error] " ++ displayException e)
+    logError (displayException e)
     exitFailure
 
 runCLI :: [String] -> IO ()
 runCLI args = handle handler $ do
-  cmd <- handleParseResult (execParserPure defaultPrefs parserInfo args)
+  App {..} <- handleParseResult (execParserPure defaultPrefs parserInfo args)
+  setLogLevel logLevel
   case cmd of
     CmdRewrite OptsRewrite {..} -> do
-      when (maxDepth < 0) $ throwIO (InvalidRewriteArguments "--max-depth must be non-negative")
+      when (maxDepth <= 0) $ throwIO (InvalidRewriteArguments "--max-depth must be positive")
+      logDebug (printf "Amount of rewriting cycles: %d" maxDepth)
       prog <- case phiInput of
-        Just pth -> readFile =<< ensuredFile pth
-        Nothing -> getContents' `catch` (\(e :: SomeException) -> throwIO (CouldNotReadFromStdin (show e)))
+        Just pth -> do
+          logDebug (printf "Reading 𝜑-program from file: '%s'" pth)
+          readFile =<< ensuredFile pth
+        Nothing -> do
+          logDebug "Reading 𝜑-program from stdin"
+          getContents' `catch` (\(e :: SomeException) -> throwIO (CouldNotReadFromStdin (show e)))
       rules' <- do
         ordered <-
           if nothing
-            then pure []
+            then do
+              logDebug "The --nothing option is provided, no rules are used"
+              pure []
             else
               if normalize
-                then pure normalizationRules
+                then do
+                  logDebug "The --normalize option is provided, built-it normalization rules are used"
+                  pure normalizationRules
                 else
                   if null rules
                     then throwIO (InvalidRewriteArguments "no --rule, no --normalize, no --nothing are provided")
                     else do
+                      logDebug (printf "Using rules from files: [%s]" (intercalate ", " rules))
                       yamls <- mapM ensuredFile rules
                       mapM Y.yamlRule yamls
         if shuffle
-          then Misc.shuffle ordered
+          then do
+            logDebug "The --shuffle option is provided, rules are used in random order"
+            Misc.shuffle ordered
           else pure ordered
       program <- parseProgramThrows prog
-      rewritten <- rewrite' program rules' 0
+      rewritten <- rewrite' program rules' 1
       putStrLn (printProgram rewritten)
       where
         rewrite' :: Program -> [Y.Rule] -> Integer -> IO Program
         rewrite' prog rules count = do
+          logDebug (printf "Starting rewriting cycle %d out of %d" count maxDepth)
           if count == maxDepth
-            then pure prog
+            then do
+              logDebug (printf "Max amount of rewriting cycles is reached, rewriting is stopped")
+              pure prog
             else do
               rewritten <- rewrite prog rules
               if rewritten == prog
-                then pure rewritten
+                then do
+                  logDebug "Rewriting is stopped since it does not affect program anymore"
+                  pure rewritten
                 else rewrite' rewritten rules (count + 1)
