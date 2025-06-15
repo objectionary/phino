@@ -21,8 +21,8 @@ jobs:
           cabal sdist
 
           # Get package name and version from .cabal file
-          PKG_NAME=$(awk '/^name:/ { print $2 }' *.cabal)
-          PKG_VERSION=$(awk '/^version:/ { print $2 }' *.cabal)
+          PKG_NAME=$(awk '/^name:/ { print $2 }' ./*.cabal)
+          PKG_VERSION=$(awk '/^version:/ { print $2 }' ./*.cabal)
 
           # Build expected tarball path
           TARBALL="dist-newstyle/sdist/${PKG_NAME}-${PKG_VERSION}.tar.gz"
