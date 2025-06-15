@@ -111,7 +111,7 @@ runCLI args = handle handler $ do
   setLogLevel logLevel
   case cmd of
     CmdRewrite OptsRewrite {..} -> do
-      when (maxDepth < 0) $ throwIO (InvalidRewriteArguments "--max-depth must be non-negative")
+      when (maxDepth <= 0) $ throwIO (InvalidRewriteArguments "--max-depth must be positive")
       logDebug (printf "Amount of rewriting cycles: %d" maxDepth)
       prog <- case phiInput of
         Just pth -> do
