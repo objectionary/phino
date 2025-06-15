@@ -9,7 +9,7 @@
 # Rmiss {⟦ m ↦ ⟦ t ↦ ⊥ ⟧.t.p ⟧}
 # Rdot {⟦ m ↦ ⊥.p ⟧}
 # Rdd {⟦ m ↦ ⊥ ⟧}
-skip: true
+# skip: true
 normalize: true
 input: |
   {⟦ m ↦ ⟦ x ↦ ⟦ t ↦ ∅ ⟧ (t ↦ ξ.k), k ↦ ⟦ λ ⤍ Fn ⟧ ⟧.x.t.p ⟧}
