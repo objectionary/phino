@@ -38,8 +38,7 @@ withVoidRho :: [Binding] -> [Binding]
 withVoidRho bds = withVoidRho' bds False
   where
     withVoidRho' :: [Binding] -> Bool -> [Binding]
-    withVoidRho' [] True = []
-    withVoidRho' [] False = [BiVoid AtRho]
+    withVoidRho' [] hasRho = [BiVoid AtRho | not hasRho]
     withVoidRho' (bd : bds) hasRho = 
       case bd of
         BiMeta _ -> bd : bds
