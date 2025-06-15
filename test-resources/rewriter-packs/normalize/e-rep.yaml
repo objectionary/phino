@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+normalize: true
+input: |
+  {⟦ m ↦ ⟦ x ↦ ξ.t (k ↦ ξ.f).k, t ↦ ⟦ k ↦ ∅ ⟧, f ↦ ⟦⟧ ⟧.x ⟧}
+output: |-
+  Φ ↦ ⟦
+    m ↦ ⟦
+      ρ ↦ ⟦x ↦ ξ.t(k ↦ ξ.f).k,
+      t ↦ ⟦ k ↦ ∅, ρ ↦ ∅ ⟧, f ↦ ⟦ ρ ↦ ∅ ⟧, ρ ↦ ∅ ⟧
+    ⟧,
+    ρ ↦ ∅
+  ⟧
