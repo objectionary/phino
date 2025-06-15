@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 ---
 # {⟦ k ↦ ⟦ x ↦ ∅ ⟧ ( α1 ↦ ⟦ Δ ⤍ 42- ⟧ ).x ⟧} - Nothing to rewrite
-skip: true
+# skip: true
 normalize: true
 input: |
   {⟦ k ↦ ⟦ x ↦ ∅ ⟧ ( α1 ↦ ⟦ Δ ⤍ 42- ⟧ ).x ⟧}
