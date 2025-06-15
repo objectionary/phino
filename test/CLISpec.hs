@@ -122,7 +122,7 @@ spec = do
     it "fails with negative --max-depth" $
       testCLIFailed
         ["rewrite", "--max-depth=-1"]
-        "--max-depth must be non-negative"
+        "--max-depth must be positive"
 
     it "fails with no rewriting options provided" $
       testCLIFailed
