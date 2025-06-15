@@ -26,7 +26,6 @@ import System.IO (getContents', hPutStrLn, stderr)
 import Text.Printf (printf)
 import Yaml (normalizationRules)
 import qualified Yaml as Y
-import Data.Char (toLower)
 
 data CmdException
   = InvalidRewriteArguments {message :: String}
