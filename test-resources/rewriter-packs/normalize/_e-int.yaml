@@ -1,13 +1,8 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 # SPDX-License-Identifier: MIT
 ---
-# {⟦ m ↦ ⟦ x ↦ ⟦ t ↦ ⟦ Δ ⤍ 42- ⟧ ⟧.t ⟧.x ⟧}
-# Rdot: {⟦ m ↦ ⟦ x ↦ ⟦ Δ ⤍ 42- ⟧(ρ ↦ ⟦ t ↦ ⟦ Δ ⤍ 42- ⟧ ⟧) ⟧.x ⟧}
-# Rmiss: {⟦ m ↦ ⟦ x ↦ ⊥ ⟧.x ⟧}
-# Rdot: {⟦ m ↦ ⊥ ⟧}
-skip: true
 normalize: true
 input: |
   {⟦ m ↦ ⟦ x ↦ ⟦ t ↦ ⟦ Δ ⤍ 42- ⟧ ⟧.t ⟧.x ⟧}
 output: |-
-  {⟦ m ↦ ⟦ ρ ↦ ⟦ t ↦ ⟦ Δ ⤍ 42- ⟧ ⟧, Δ ⤍ 42- ⟧ ⟧}
+  Φ ↦ ⟦m ↦ ⟦Δ ⤍ 42-, ρ ↦ ⟦ t ↦ ⟦ Δ ⤍ 42-, ρ ↦ ∅ ⟧, ρ ↦ ∅ ⟧ ⟧, ρ ↦ ∅ ⟧
