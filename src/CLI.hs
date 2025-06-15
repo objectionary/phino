@@ -11,6 +11,7 @@ import Ast (Program (Program))
 import Control.Exception (Exception (displayException), SomeException, handle, throw, throwIO)
 import Control.Exception.Base
 import Control.Monad (when)
+import Data.Char (toUpper)
 import Data.List (intercalate)
 import Data.Version (showVersion)
 import Logger
@@ -22,7 +23,7 @@ import Paths_phino (version)
 import Printer (printProgram)
 import Rewriter (rewrite)
 import System.Exit (ExitCode (..), exitFailure)
-import System.IO (getContents', hPutStrLn, stderr)
+import System.IO (getContents')
 import Text.Printf (printf)
 import Yaml (normalizationRules)
 import qualified Yaml as Y
@@ -67,20 +68,28 @@ rewriteParser =
 commandParser :: Parser Command
 commandParser = hsubparser (command "rewrite" (info rewriteParser (progDesc "Rewrite the expression")))
 
+readLogLevel :: String -> Either String LogLevel
+readLogLevel lvl = case map toUpper lvl of
+  "DEBUG" -> Right DEBUG
+  "INFO" -> Right INFO
+  "WARNING" -> Right WARNING
+  "WARN" -> Right WARNING
+  "ERROR" -> Right ERROR
+  "ERR" -> Right ERROR
+  "NONE" -> Right NONE
+  _ -> Left $ "unknown log-level: " <> lvl
+
 appParser :: Parser App
 appParser =
   App
-    <$> do
-      let all = map show [DEBUG, INFO, WARNING, ERROR, NONE]
-      option
-        auto
-        ( long "log-level"
-            <> metavar "LEVEL"
-            <> completeWith all
-            <> help ("Log level (" <> intercalate ", " all <> ")")
-            <> value INFO
-            <> showDefault
-        )
+    <$> option
+      (eitherReader readLogLevel)
+      ( long "log-level"
+          <> metavar "LEVEL"
+          <> help ("Log level (" <> intercalate ", " (map show [DEBUG, INFO, WARNING, ERROR, NONE]) <> ")")
+          <> value INFO
+          <> showDefault
+      )
     <*> commandParser
 
 parserInfo :: ParserInfo App
@@ -98,12 +107,12 @@ handler e = case fromException e of
 
 runCLI :: [String] -> IO ()
 runCLI args = handle handler $ do
-  App{..} <- handleParseResult (execParserPure defaultPrefs parserInfo args)
+  App {..} <- handleParseResult (execParserPure defaultPrefs parserInfo args)
   setLogLevel logLevel
   case cmd of
     CmdRewrite OptsRewrite {..} -> do
       when (maxDepth < 0) $ throwIO (InvalidRewriteArguments "--max-depth must be non-negative")
-      logDebug (printf "Amount of rewrigin cycles: %d" maxDepth)
+      logDebug (printf "Amount of rewriting cycles: %d" maxDepth)
       prog <- case phiInput of
         Just pth -> do
           logDebug (printf "Reading 𝜑-program from file: '%s'" pth)

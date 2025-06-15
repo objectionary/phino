@@ -14,7 +14,6 @@ import qualified Condition as C
 import Control.Exception
 import qualified Data.Map.Strict as M
 import Data.Maybe (catMaybes, fromMaybe, isJust)
-import Data.Text (intercalate)
 import Logger (logDebug)
 import Matcher (MetaValue (MvAttribute, MvBindings, MvExpression), Subst (Subst), combine, combineMany, matchProgram, substEmpty, substSingle)
 import Misc (ensuredFile)
