@@ -322,7 +322,7 @@ exHead =
         return (dataExpression "number" (numToHex num)),
       lexeme $ do
         _ <- char '"'
-        str <- manyTill (escapedChar <|> noneOf ['\\', '"']) (char '"')
+        str <- manyTill (choice [escapedChar, noneOf ['\\', '"']]) (char '"')
         return (dataExpression "string" (strToHex str)),
       try (ExMeta <$> meta' 'e' "𝑒"),
       ExDispatch ExThis <$> fullAttribute
