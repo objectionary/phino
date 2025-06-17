@@ -94,8 +94,10 @@ unicodeEscape :: Parser Char
 unicodeEscape = do
   hexDigits <- count 4 hexDigitChar
   case readHex hexDigits of
-    [(n, "")] -> return (chr n)
-    _ -> fail $ "Invalid unicode escape: \\u" ++ hexDigits
+    [(n, "")] ->
+      if (n >= 0 && n <= 0x10FFFF) && not (n >= 0xD800 && n <= 0xDFFF)
+        then return (chr n)
+        else fail ("Invalid Unicode code point: \\u" ++ hexDigits)
 
 function :: Parser String
 function = lexeme $ do
