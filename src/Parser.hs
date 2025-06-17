@@ -23,7 +23,9 @@ import Data.Scientific (toRealFloat)
 import Data.Sequence (mapWithIndex)
 import Data.Text.Internal.Fusion.Size (lowerBound)
 import Data.Void
+import GHC.Char (chr)
 import Misc (numToHex, strToHex, withVoidRho)
+import Numeric (readHex)
 import Text.Megaparsec
 import Text.Megaparsec.Char (alphaNumChar, char, digitChar, hexDigitChar, letterChar, lowerChar, space1, string, upperChar)
 import qualified Text.Megaparsec.Char.Lexer as L
@@ -72,6 +74,28 @@ label' = lexeme $ do
   first <- oneOf ['a' .. 'z']
   rest <- many (satisfy (`notElem` " \r\n\t,.|':;!?][}{)(⟧⟦") <?> "allowed character")
   return (first : rest)
+
+escapedChar :: Parser Char
+escapedChar = do
+  _ <- char '\\'
+  c <- oneOf ['\\', '"', 'n', 'r', 't', 'b', 'f', 'u']
+  case c of
+    '\\' -> return '\\'
+    '"' -> return '"'
+    'n' -> return '\n'
+    'r' -> return '\r'
+    't' -> return '\t'
+    'b' -> return '\b'
+    'f' -> return '\f'
+    'u' -> unicodeEscape
+    _ -> fail $ "Unknown escape: \\" ++ [c]
+
+unicodeEscape :: Parser Char
+unicodeEscape = do
+  hexDigits <- count 4 hexDigitChar
+  case readHex hexDigits of
+    [(n, "")] -> return (chr n)
+    _ -> fail $ "Invalid unicode escape: \\u" ++ hexDigits
 
 function :: Parser String
 function = lexeme $ do
@@ -298,7 +322,7 @@ exHead =
         return (dataExpression "number" (numToHex num)),
       lexeme $ do
         _ <- char '"'
-        str <- manyTill L.charLiteral (char '"')
+        str <- manyTill (escapedChar <|> noneOf ['\\', '"']) (char '"')
         return (dataExpression "string" (strToHex str)),
       try (ExMeta <$> meta' 'e' "𝑒"),
       ExDispatch ExThis <$> fullAttribute

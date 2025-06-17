@@ -1,0 +1,33 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+input: |
+  {⟦
+    str -> "hello",
+    ch -> "h",
+    uni -> "\u0001\u0002",
+    empty -> ""
+  ⟧}
+output: |-
+  Φ ↦ ⟦
+    str ↦ Φ.org.eolang.string(
+      α0 ↦ Φ.org.eolang.bytes(
+        α0 ↦ ⟦ Δ ⤍ 68-65-6C-6C-6F ⟧
+      )
+    ),
+    ch -> Φ.org.eolang.string(
+      α0 ↦ Φ.org.eolang.bytes(
+        α0 ↦ ⟦ Δ ⤍ 68- ⟧
+      )
+    ),
+    uni -> Φ.org.eolang.string(
+      α0 ↦ Φ.org.eolang.bytes(
+        α0 ↦ ⟦ Δ ⤍ 01-02 ⟧
+      )
+    ),
+    empty -> Φ.org.eolang.string(
+      α0 ↦ Φ.org.eolang.bytes(
+        α0 ↦ ⟦ Δ ⤍ -- ⟧
+      )
+    )
+  ⟧
