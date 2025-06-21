@@ -8,7 +8,7 @@ module CLISpec (spec) where
 
 import CLI (runCLI)
 import Control.Exception
-import Control.Monad (unless)
+import Control.Monad (forM_, unless)
 import Data.List (isInfixOf)
 import Data.Version (showVersion)
 import GHC.IO.Handle
@@ -63,12 +63,16 @@ withStdout action =
   where
     cleanup (fp, _) = removeFile fp
 
-testCLI :: [String] -> String -> Expectation
-testCLI args output = do
+testCLI :: [String] -> [String] -> Expectation
+testCLI args outputs = do
   out <- capture_ (runCLI args)
-  unless (output `isInfixOf` out) $
-    expectationFailure
-      ("Expected that output contains:\n" ++ output ++ "\nbut got:\n" ++ out)
+  forM_
+    outputs
+    ( \output ->
+        unless (output `isInfixOf` out) $
+          expectationFailure
+            ("Expected that output contains:\n" ++ output ++ "\nbut got:\n" ++ out)
+    )
 
 testCLIFailed :: [String] -> String -> Expectation
 testCLIFailed args output = withStdin "" $ do
@@ -79,7 +83,7 @@ testCLIFailed args output = withStdin "" $ do
 spec :: Spec
 spec = do
   it "prints version" $ do
-    testCLI ["--version"] (showVersion version)
+    testCLI ["--version"] [showVersion version]
 
   it "prints help" $ do
     output <- capture_ (runCLI ["--help"])
@@ -87,26 +91,26 @@ spec = do
     output `shouldContain` "Usage:"
 
   it "prints debug info with --log-level=DEBUG" $ do
-    withStdin "Q -> [[]]" $ testCLI ["rewrite", "--nothing", "--log-level=DEBUG"] "[DEBUG]:"
+    withStdin "Q -> [[]]" $ testCLI ["rewrite", "--nothing", "--log-level=DEBUG"] ["[DEBUG]:"]
 
   describe "rewrites" $ do
     it "desugares with --nothing flag from file" $
       testCLI
         ["rewrite", "--nothing", "--phi-input=test-resources/cli/desugar.phi"]
-        "Φ ↦ ⟦\n  foo ↦ Φ.org.eolang,\n  ρ ↦ ∅\n⟧"
+        ["Φ ↦ ⟦\n  foo ↦ Φ.org.eolang,\n  ρ ↦ ∅\n⟧"]
 
     it "desugares with --nothing flag from stdin" $
       withStdin "{[[foo ↦ QQ]]}" $
-        testCLI ["rewrite", "--nothing"] "Φ ↦ ⟦\n  foo ↦ Φ.org.eolang,\n  ρ ↦ ∅\n⟧"
+        testCLI ["rewrite", "--nothing"] ["Φ ↦ ⟦\n  foo ↦ Φ.org.eolang,\n  ρ ↦ ∅\n⟧"]
 
     it "rewrites with single rule" $
       withStdin "{T(x -> Q.y)}" $
-        testCLI ["rewrite", "--rule=resources/dc.yaml"] "Φ ↦ ⊥"
+        testCLI ["rewrite", "--rule=resources/dc.yaml"] ["Φ ↦ ⊥"]
 
     it "normalizes with --normalize flag" $
       testCLI
         ["rewrite", "--normalize", "--phi-input=test-resources/cli/normalize.phi"]
-        ( unlines
+        [ unlines
             [ "Φ ↦ ⟦",
               "  x ↦ ⟦",
               "    ρ ↦ ⟦",
@@ -117,7 +121,7 @@ spec = do
               "  ρ ↦ ∅",
               "⟧"
             ]
-        )
+        ]
 
     it "fails with negative --max-depth" $
       testCLIFailed
@@ -129,11 +133,11 @@ spec = do
         ["rewrite"]
         "no --rule, no --normalize, no --nothing are provided"
 
-    it "normalizes from stdin" $ do
+    it "normalizes from stdin" $
       withStdin "Φ ↦ ⟦ a ↦ ⟦ b ↦ ∅ ⟧ (b ↦ [[ ]]) ⟧" $
         testCLI
           ["rewrite", "--normalize"]
-          ( unlines
+          [ unlines
               [ "Φ ↦ ⟦",
                 "  a ↦ ⟦",
                 "    b ↦ ⟦ ρ ↦ ∅ ⟧,",
@@ -142,4 +146,10 @@ spec = do
                 "  ρ ↦ ∅",
                 "⟧"
               ]
-          )
+          ]
+
+    it "rewrites as XMIR" $
+      withStdin "Q -> [[ x -> Q.y ]]" $
+        testCLI
+          ["rewrite", "--nothing", "--output=xmir"]
+          ["<?xml version=\"1.0\" encoding=\"UTF-8\"?>", "<object", "  <o base=\"Q.y\" name=\"x\"/>"]

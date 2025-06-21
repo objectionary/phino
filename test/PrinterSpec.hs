@@ -8,7 +8,7 @@ import Control.Monad (forM_)
 import Matcher (MetaValue (MvAttribute, MvExpression), substEmpty, substSingle)
 import Parser (parseProgramThrows)
 import Prettyprinter
-import Printer
+import Pretty
 import Test.Hspec (Example (Arg), Expectation, Spec, SpecWith, describe, it, runIO, shouldBe)
 
 test :: (Pretty a) => (a -> String) -> [(String, String, a)] -> SpecWith (Arg Expectation)
@@ -35,11 +35,11 @@ spec = do
               "Φ ↦ ⟦\n  Δ ⤍ 00-,\n  λ ⤍ F,\n  ρ ↦ ∅,\n  !B,\n  φ ↦ ⟦\n    y ↦ ∅,\n    ρ ↦ ∅\n  ⟧\n⟧"
             )
           ]
-    test printProgram useCases
+    test prettyProgram useCases
 
   describe "print substitution" $
     test
-      printSubstitutions
+      prettySubsts
       [ ("[()]", "[\n  (\n    \n  )\n]", [substEmpty]),
         ("[(!e >> Q.x)]", "[\n  (\n    !e >> Φ.x\n  )\n]", [substSingle "e" (MvExpression (ExDispatch ExGlobal (AtLabel "x")))]),
         ("[(!a >> x)]", "[\n  (\n    !a >> x\n  )\n]", [substSingle "a" (MvAttribute (AtLabel "x"))])

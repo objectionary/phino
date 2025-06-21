@@ -7,11 +7,10 @@ import Ast
 import Builder (buildAttribute, buildBinding)
 import Data.Aeson (FromJSON)
 import qualified Data.Map.Strict as M
-import GHC.Generics
 import GHC.IO (unsafePerformIO)
 import Matcher
 import Misc (allPathsIn)
-import Printer (printCondition, printExpression, printSubstitutions)
+import Pretty (prettyExpression, prettySubsts)
 import Yaml (normalizationRules)
 import qualified Yaml as Y
 
