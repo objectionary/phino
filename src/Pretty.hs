@@ -17,7 +17,6 @@ import qualified Data.Map.Strict as Map
 import Matcher
 import Prettyprinter
 import Prettyprinter.Render.String (renderString)
-import Text.Printf (vFmt)
 
 prettyMeta :: String -> Doc ann
 prettyMeta meta = pretty "!" <> pretty meta
