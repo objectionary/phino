@@ -18,7 +18,7 @@ import Logger (logDebug)
 import Matcher (MetaValue (MvAttribute, MvBindings, MvExpression), Subst (Subst), combine, combineMany, matchProgram, substEmpty, substSingle)
 import Misc (ensuredFile)
 import Parser (parseProgram, parseProgramThrows)
-import Printer (printExpression, printProgram, printSubstitutions)
+import Pretty (prettyExpression, prettyProgram, prettySubsts)
 import Replacer (replaceProgram)
 import Text.Printf
 import qualified Yaml as Y
@@ -32,14 +32,14 @@ instance Show RewriteException where
   show CouldNotBuild {..} =
     printf
       "Couldn't build given expression with provided substitutions\n--Expression: %s\n--Substitutions: %s"
-      (printExpression expr)
-      (printSubstitutions substs)
+      (prettyExpression expr)
+      (prettySubsts substs)
   show CouldNotReplace {..} =
     printf
       "Couldn't replace expression in program by pattern\nProgram: %s\n--Pattern: %s\n--Result: %s"
-      (printProgram prog)
-      (printExpression ptn)
-      (printExpression res)
+      (prettyProgram prog)
+      (prettyExpression ptn)
+      (prettyExpression res)
 
 -- Build pattern and result expression and replace patterns to results in given program
 buildAndReplace :: Program -> Expression -> Expression -> [Subst] -> IO Program
@@ -83,6 +83,6 @@ rewrite program (rule : rest) = do
       pure program
     Just matched -> do
       let substs = extended matched
-      logDebug (printf "Rule has been matched, substitutions are:\n%s" (printSubstitutions substs))
+      logDebug (printf "Rule has been matched, substitutions are:\n%s" (prettySubsts substs))
       replaced substs
   rewrite prog rest

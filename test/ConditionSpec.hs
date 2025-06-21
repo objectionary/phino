@@ -14,7 +14,7 @@ import Data.Yaml qualified as Y
 import GHC.Generics
 import Matcher (matchProgram)
 import Misc
-import Printer (printSubstitutions)
+import Pretty (prettySubsts)
 import System.FilePath
 import Test.Hspec (Spec, describe, expectationFailure, it, runIO)
 import Yaml qualified
@@ -42,6 +42,6 @@ spec = do
             (null met)
             ( expectationFailure $
                 "List of substitution after condition check must be not empty\nOriginal substitutions:\n"
-                  ++ printSubstitutions matched
+                  ++ prettySubsts matched
             )
       )

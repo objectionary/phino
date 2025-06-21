@@ -11,7 +11,7 @@ import Ast (Program (Program))
 import Control.Exception (Exception (displayException), SomeException, handle, throw, throwIO)
 import Control.Exception.Base
 import Control.Monad (when)
-import Data.Char (toUpper)
+import Data.Char (toLower, toUpper)
 import Data.List (intercalate)
 import Data.Version (showVersion)
 import Logger
@@ -20,7 +20,7 @@ import qualified Misc
 import Options.Applicative
 import Parser (parseProgramThrows)
 import Paths_phino (version)
-import Printer (printProgram)
+import Printer (PrintFormat (PHI, XMIR), printProgram)
 import Rewriter (rewrite)
 import System.Exit (ExitCode (..), exitFailure)
 import System.IO (getContents')
@@ -47,11 +47,18 @@ newtype Command = CmdRewrite OptsRewrite
 data OptsRewrite = OptsRewrite
   { rules :: [FilePath],
     phiInput :: Maybe FilePath,
+    printFormat :: PrintFormat,
     normalize :: Bool,
     nothing :: Bool,
     shuffle :: Bool,
     maxDepth :: Integer
   }
+
+parsePrintFormat :: ReadM PrintFormat
+parsePrintFormat = eitherReader $ \format -> case map toLower format of
+  "xmir" -> Right XMIR
+  "phi" -> Right PHI
+  _ -> Left "invalid output format: expected 'xmir' or 'phi'"
 
 rewriteParser :: Parser Command
 rewriteParser =
@@ -59,6 +66,7 @@ rewriteParser =
     <$> ( OptsRewrite
             <$> many (strOption (long "rule" <> metavar "FILE" <> help "Path to custom rule"))
             <*> optional (strOption (long "phi-input" <> metavar "FILE" <> help "Path .phi file with 𝜑-expression"))
+            <*> option parsePrintFormat (long "output" <> metavar "FORMAT" <> help "Program output format" <> value PHI <> showDefault)
             <*> switch (long "normalize" <> help "Use built-in normalization rules")
             <*> switch (long "nothing" <> help "Desugar provided 𝜑-expression")
             <*> switch (long "shuffle" <> help "Shuffle rules before applying")
@@ -68,8 +76,8 @@ rewriteParser =
 commandParser :: Parser Command
 commandParser = hsubparser (command "rewrite" (info rewriteParser (progDesc "Rewrite the expression")))
 
-readLogLevel :: String -> Either String LogLevel
-readLogLevel lvl = case map toUpper lvl of
+parseLogLevel :: ReadM LogLevel
+parseLogLevel = eitherReader $ \lvl -> case map toUpper lvl of
   "DEBUG" -> Right DEBUG
   "INFO" -> Right INFO
   "WARNING" -> Right WARNING
@@ -83,7 +91,7 @@ appParser :: Parser App
 appParser =
   App
     <$> option
-      (eitherReader readLogLevel)
+      parseLogLevel
       ( long "log-level"
           <> metavar "LEVEL"
           <> help ("Log level (" <> intercalate ", " (map show [DEBUG, INFO, WARNING, ERROR, NONE]) <> ")")
@@ -145,7 +153,9 @@ runCLI args = handle handler $ do
           else pure ordered
       program <- parseProgramThrows prog
       rewritten <- rewrite' program rules' 1
-      putStrLn (printProgram rewritten)
+      logDebug (printf "Printing rewritten 𝜑-program as %s" (show printFormat))
+      out <- printProgram rewritten printFormat
+      putStrLn out
       where
         rewrite' :: Program -> [Y.Rule] -> Integer -> IO Program
         rewrite' prog rules count = do
