@@ -4,12 +4,14 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module XMIR where
+module XMIR (programToXMIR, printXMIR) where
 
 import Ast
 import Control.Exception (throwIO)
 import Control.Exception.Base (Exception)
 import qualified Data.Bifunctor
+import Data.List (intercalate)
+import qualified Data.List
 import Data.Map (Map)
 import qualified Data.Map as M
 import Data.Maybe (catMaybes, mapMaybe)
@@ -17,6 +19,7 @@ import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.Lazy as TL
 import qualified Data.Text.Lazy.Builder as TB
+import Debug.Trace (trace)
 import Pretty (prettyAttribute, prettyBinding, prettyExpression, prettyProgram)
 import Text.Printf (printf)
 import Text.XML
@@ -86,14 +89,51 @@ formationBinding (BiVoid AtPhi) = pure (Just (object [("name", "φ"), ("base", "
 formationBinding (BiVoid (AtLabel label)) = pure (Just (object [("name", label), ("base", "∅")] []))
 formationBinding binding = throwIO (UnsupportedBinding binding)
 
-rootExpression :: Expression -> IO [Node]
-rootExpression (ExFormation []) = pure []
-rootExpression (ExFormation [bd, BiVoid AtRho]) = nestedBindings [bd]
+rootExpression :: Expression -> IO Node
+rootExpression (ExFormation [bd, BiVoid AtRho]) = do
+  [bd'] <- nestedBindings [bd]
+  pure bd'
 rootExpression expr = throwIO (UnsupportedExpression expr)
+
+-- Extract package from given expression
+-- The function returns tuple (X, Y), where
+-- - X: list of package parts
+-- - Y: root object expression
+getPackage :: Expression -> IO ([String], Expression)
+getPackage (ExFormation [BiTau (AtLabel label) (ExFormation [bd, BiLambda "Package", BiVoid AtRho]), BiVoid AtRho]) = do
+  (pckg, expr') <- getPackage (ExFormation [bd, BiLambda "Package", BiVoid AtRho])
+  pure (label : pckg, expr')
+getPackage (ExFormation [BiTau (AtLabel label) (ExFormation [bd, BiLambda "Package", BiVoid AtRho]), BiLambda "Package", BiVoid AtRho]) = do
+  (pckg, expr') <- getPackage (ExFormation [bd, BiLambda "Package", BiVoid AtRho])
+  pure (label : pckg, expr')
+getPackage (ExFormation [BiTau attr expr, BiLambda "Package", BiVoid AtRho]) = pure ([], ExFormation [BiTau attr expr, BiVoid AtRho])
+getPackage (ExFormation [bd, BiVoid AtRho]) = pure ([], ExFormation [bd, BiVoid AtRho])
+getPackage expr = throwIO (userError (printf "Can't extract package from given expression:\n %s" (prettyExpression expr)))
+
+metasWithPackage :: String -> [Node]
+metasWithPackage pckg =
+  [ NodeElement
+      ( element
+          "metas"
+          []
+          [ NodeElement
+              ( element
+                  "meta"
+                  []
+                  [ NodeElement (element "head" [] [NodeContent (T.pack "package")]),
+                    NodeElement (element "tail" [] [NodeContent (T.pack pckg)]),
+                    NodeElement (element "part" [] [NodeContent (T.pack pckg)])
+                  ]
+              )
+          ]
+      )
+    | not (null pckg)
+  ]
 
 programToXMIR :: Program -> IO Document
 programToXMIR (Program expr) = do
-  root <- rootExpression expr
+  (pckg, expr') <- getPackage expr
+  root <- rootExpression expr'
   pure
     ( Document
         (Prologue [] Nothing [])
@@ -102,6 +142,7 @@ programToXMIR (Program expr) = do
             [("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance")]
             ( NodeElement (element "listing" [] [NodeContent (T.pack (prettyProgram (Program expr)))])
                 : root
+                : metasWithPackage (intercalate "." pckg)
             )
         )
         []

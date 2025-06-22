@@ -1,44 +1,52 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <object xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <listing>Φ ↦ ⟦
-  x ↦ ⟦
-    y ↦ ⟦
-      Δ ⤍ 00-01,
+  org ↦ ⟦
+    eolang ↦ ⟦
+      x ↦ ⟦
+        y ↦ ⟦
+          Δ ⤍ 00-01,
+          ρ ↦ ∅
+        ⟧,
+        right ↦ ⟦
+          λ ⤍ Func,
+          x ↦ ∅,
+          ρ ↦ ∅
+        ⟧,
+        ρ ↦ ∅,
+        φ ↦ ∅,
+        void ↦ ∅,
+        global ↦ Φ,
+        this ↦ ξ,
+        this-disp-label ↦ ξ.org,
+        this-disp-idx ↦ ξ.α1,
+        global-disp-label ↦ Φ.org,
+        global-disp-idx ↦ Φ.α1,
+        formation-disp ↦ ⟦
+          attr ↦ ∅,
+          ρ ↦ ∅
+        ⟧.attr,
+        org-eolang ↦ Φ.org.eolang,
+        nested ↦ ⟦
+          attr ↦ ∅,
+          ρ ↦ ∅
+        ⟧.attr.other,
+        appl1 ↦ Φ.org(
+          as ↦ Φ.eolang
+        ),
+        appl2 ↦ ⟦ ρ ↦ ∅ ⟧.attr(
+          xyz ↦ ξ
+        )(
+          abc ↦ Φ
+        )(
+          α1 ↦ ⟦ ρ ↦ ∅ ⟧
+        )
+      ⟧,
+      λ ⤍ Package,
       ρ ↦ ∅
     ⟧,
-    right ↦ ⟦
-      λ ⤍ Func,
-      x ↦ ∅,
-      ρ ↦ ∅
-    ⟧,
-    ρ ↦ ∅,
-    φ ↦ ∅,
-    void ↦ ∅,
-    global ↦ Φ,
-    this ↦ ξ,
-    this-disp-label ↦ ξ.org,
-    this-disp-idx ↦ ξ.α1,
-    global-disp-label ↦ Φ.org,
-    global-disp-idx ↦ Φ.α1,
-    formation-disp ↦ ⟦
-      attr ↦ ∅,
-      ρ ↦ ∅
-    ⟧.attr,
-    org-eolang ↦ Φ.org.eolang,
-    nested ↦ ⟦
-      attr ↦ ∅,
-      ρ ↦ ∅
-    ⟧.attr.other,
-    appl1 ↦ Φ.org(
-      as ↦ Φ.eolang
-    ),
-    appl2 ↦ ⟦ ρ ↦ ∅ ⟧.attr(
-      xyz ↦ ξ
-    )(
-      abc ↦ Φ
-    )(
-      α1 ↦ ⟦ ρ ↦ ∅ ⟧
-    )
+    λ ⤍ Package,
+    ρ ↦ ∅
   ⟧,
   ρ ↦ ∅
 ⟧</listing>
@@ -79,4 +87,11 @@
       <o as="α1"/>
     </o>
   </o>
+  <metas>
+    <meta>
+      <head>package</head>
+      <tail>org.eolang</tail>
+      <part>org.eolang</part>
+    </meta>
+  </metas>
 </object>

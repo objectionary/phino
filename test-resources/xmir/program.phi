@@ -1,27 +1,33 @@
 Φ ↦ ⟦
-  x ↦ ⟦
-    y ↦ ⟦ Δ ⤍ 00-01 ⟧,
-    right ↦ ⟦
-      λ ⤍ Func,
-      x ↦ ∅
+  org -> ⟦
+    eolang -> ⟦
+      x ↦ ⟦
+        y ↦ ⟦ Δ ⤍ 00-01 ⟧,
+        right ↦ ⟦
+          λ ⤍ Func,
+          x ↦ ∅
+        ⟧,
+        ρ ↦ ∅,
+        φ ↦ ∅,
+        void ↦ ∅,
+        global ↦ Φ,
+        this ↦ ξ,
+        this-disp-label ↦ ξ.org,
+        this-disp-idx ↦ ξ.α1,
+        global-disp-label ↦ Φ.org,
+        global-disp-idx ↦ Φ.α1,
+        formation-disp ↦ ⟦ attr ↦ ∅ ⟧.attr,
+        org-eolang ↦ Φ.org.eolang,
+        nested ↦ ⟦ attr ↦ ∅ ⟧.attr.other,
+        appl1 ↦ Φ.org(
+          as ↦ Φ.eolang
+        ),
+        appl2 ↦ ⟦⟧.attr(
+          xyz ↦ ξ, abc ↦ Φ, α1 ↦ ⟦⟧
+        )
+      ⟧,
+      λ ⤍ Package
     ⟧,
-    ρ ↦ ∅,
-    φ ↦ ∅,
-    void ↦ ∅,
-    global ↦ Φ,
-    this ↦ ξ,
-    this-disp-label ↦ ξ.org,
-    this-disp-idx ↦ ξ.α1,
-    global-disp-label ↦ Φ.org,
-    global-disp-idx ↦ Φ.α1,
-    formation-disp ↦ ⟦ attr ↦ ∅ ⟧.attr,
-    org-eolang ↦ Φ.org.eolang,
-    nested ↦ ⟦ attr ↦ ∅ ⟧.attr.other,
-    appl1 ↦ Φ.org(
-      as ↦ Φ.eolang
-    ),
-    appl2 ↦ ⟦⟧.attr(
-      xyz ↦ ξ, abc ↦ Φ, α1 ↦ ⟦⟧
-    )
+    λ ⤍ Package
   ⟧
 ⟧
