@@ -1,10 +1,11 @@
 {-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE NumericUnderscores #-}
 {-# LANGUAGE RecordWildCards #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module XMIR (programToXMIR, printXMIR) where
+module XMIR (programToXMIR, printXMIR, toName, element) where
 
 import Ast
 import Control.Exception (throwIO)
@@ -19,7 +20,12 @@ import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.Lazy as TL
 import qualified Data.Text.Lazy.Builder as TB
+import Data.Time
+import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds)
+import Data.Time.Format (defaultTimeLocale, formatTime)
+import Data.Version (showVersion)
 import Debug.Trace (trace)
+import Paths_phino (version)
 import Pretty (prettyAttribute, prettyBinding, prettyExpression, prettyProgram)
 import Text.Printf (printf)
 import Text.XML
@@ -68,7 +74,7 @@ expression (ExApplication expr (BiTau attr texpr)) = do
         if null base'
           then [("as", as)]
           else [("as", as), ("base", base')]
-  pure (base, object attrs children' : children)
+  pure (base, children ++ [object attrs children'])
 expression (ExApplication (ExFormation bds) tau) = throwIO (UnsupportedExpression (ExApplication (ExFormation bds) tau))
 expression expr = throwIO (UnsupportedExpression expr)
 
@@ -81,7 +87,7 @@ formationBinding (BiTau (AtLabel label) (ExFormation bds)) = do
   pure (Just (object [("name", label)] inners))
 formationBinding (BiTau (AtLabel label) expr) = do
   (base, children) <- expression expr
-  pure (Just (object [("name", label), ("base", base)] (reverse children)))
+  pure (Just (object [("name", label), ("base", base)] children))
 formationBinding (BiTau AtRho _) = pure Nothing
 formationBinding (BiDelta bytes) = pure (Just (NodeContent (T.pack bytes)))
 formationBinding (BiLambda func) = pure (Just (object [("name", "λ")] []))
@@ -131,16 +137,33 @@ metasWithPackage pckg =
     | not (null pckg)
   ]
 
+time :: UTCTime -> String
+time now = do
+  let base = formatTime defaultTimeLocale "%Y-%m-%dT%H:%M:%S" now
+      posix = utcTimeToPOSIXSeconds now
+      fractional :: Double
+      fractional = realToFrac posix - fromInteger (floor posix)
+      nanos = floor (fractional * 1_000_000_000) :: Int
+  base ++ "." ++ printf "%09d" nanos ++ "Z"
+
 programToXMIR :: Program -> IO Document
 programToXMIR (Program expr) = do
   (pckg, expr') <- getPackage expr
   root <- rootExpression expr'
+  now <- getCurrentTime
   pure
     ( Document
         (Prologue [] Nothing [])
         ( element
             "object"
-            [("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance")]
+            [ ("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance"),
+              ("dob", formatTime defaultTimeLocale "%Y-%m-%dT%H:%M:%S" now),
+              ("ms", "0"),
+              ("revision", "1234567"),
+              ("time", time now),
+              ("version", showVersion version),
+              ("xsi:noNamespaceSchemaLocation", "https://raw.githubusercontent.com/objectionary/eo/refs/heads/gh-pages/XMIR.xsd")
+            ]
             ( NodeElement (element "listing" [] [NodeContent (T.pack (prettyProgram (Program expr)))])
                 : root
                 : metasWithPackage (intercalate "." pckg)
@@ -190,10 +213,12 @@ printElement indentLevel (Element name attrs nodes)
         <> TB.fromString ">"
         <> newline
   where
-    attrsText =
+    attrsText = do
+      let attrs' = M.toList attrs
+          first = if length attrs' > 4 then newline <> indent (indentLevel + 1) else TB.fromString " "
       mconcat
-        [ TB.fromString " " <> TB.fromText (nameLocalName k) <> TB.fromString "=\"" <> TB.fromText v <> TB.fromString "\""
-          | (k, v) <- M.toList attrs
+        [ first <> TB.fromText (nameLocalName k) <> TB.fromString "=\"" <> TB.fromText v <> TB.fromString "\""
+          | (k, v) <- attrs'
         ]
 
     isTextNode (NodeContent _) = True

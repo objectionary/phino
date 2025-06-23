@@ -1,5 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<object xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<object
+  dob=""
+  ms="0"
+  revision="1234567"
+  time=""
+  version=""
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/objectionary/eo/refs/heads/gh-pages/XMIR.xsd">
   <listing>Φ ↦ ⟦
   org ↦ ⟦
     eolang ↦ ⟦
@@ -30,16 +37,20 @@
         nested ↦ ⟦
           attr ↦ ∅,
           ρ ↦ ∅
-        ⟧.attr.other,
+        ⟧.attr.other(
+          α0 ↦ ξ
+        )(
+          α1 ↦ Φ
+        ),
         appl1 ↦ Φ.org(
           as ↦ Φ.eolang
         ),
-        appl2 ↦ ⟦ ρ ↦ ∅ ⟧.attr(
-          xyz ↦ ξ
+        appl2 ↦ Φ.eolang.attr(
+          α0 ↦ ξ
         )(
-          abc ↦ Φ
+          α1 ↦ Φ
         )(
-          α1 ↦ ⟦ ρ ↦ ∅ ⟧
+          α2 ↦ ⟦ ρ ↦ ∅ ⟧
         )
       ⟧,
       λ ⤍ Package,
@@ -76,15 +87,16 @@
           <o base="∅" name="attr"/>
         </o>
       </o>
+      <o as="α0" base="$"/>
+      <o as="α1" base="Q"/>
     </o>
     <o base="Q.org" name="appl1">
       <o as="as" base="Q.eolang"/>
     </o>
-    <o base=".attr" name="appl2">
-      <o/>
-      <o as="xyz" base="$"/>
-      <o as="abc" base="Q"/>
-      <o as="α1"/>
+    <o base="Q.eolang.attr" name="appl2">
+      <o as="α0" base="$"/>
+      <o as="α1" base="Q"/>
+      <o as="α2"/>
     </o>
   </o>
   <metas>

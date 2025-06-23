@@ -61,7 +61,8 @@ library
     optparse-applicative,
     vector,
     random,
-    xml-conduit ^>=1.10
+    xml-conduit ^>=1.10,
+    time ^>=1.14
   default-language: Haskell2010
 
 -- Executable using the library

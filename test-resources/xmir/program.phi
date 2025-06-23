@@ -19,13 +19,11 @@
         global-disp-idx ↦ Φ.α1,
         formation-disp ↦ ⟦ attr ↦ ∅ ⟧.attr,
         org-eolang ↦ Φ.org.eolang,
-        nested ↦ ⟦ attr ↦ ∅ ⟧.attr.other,
+        nested ↦ ⟦ attr ↦ ∅ ⟧.attr.other(ξ, Φ),
         appl1 ↦ Φ.org(
           as ↦ Φ.eolang
         ),
-        appl2 ↦ ⟦⟧.attr(
-          xyz ↦ ξ, abc ↦ Φ, α1 ↦ ⟦⟧
-        )
+        appl2 ↦ Φ.eolang.attr(ξ, Φ, ⟦⟧)
       ⟧,
       λ ⤍ Package
     ⟧,
