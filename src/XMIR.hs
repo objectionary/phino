@@ -26,7 +26,7 @@ import Data.Time.Format (defaultTimeLocale, formatTime)
 import Data.Version (showVersion)
 import Debug.Trace (trace)
 import Paths_phino (version)
-import Pretty (prettyAttribute, prettyBinding, prettyExpression, prettyProgram)
+import Pretty (prettyAttribute, prettyBinding, prettyExpression, prettyProgram', PrintMode)
 import Text.Printf (printf)
 import Text.XML
 
@@ -146,8 +146,8 @@ time now = do
       nanos = floor (fractional * 1_000_000_000) :: Int
   base ++ "." ++ printf "%09d" nanos ++ "Z"
 
-programToXMIR :: Program -> IO Document
-programToXMIR (Program expr) = do
+programToXMIR :: Program -> PrintMode -> IO Document
+programToXMIR (Program expr) mode = do
   (pckg, expr') <- getPackage expr
   root <- rootExpression expr'
   now <- getCurrentTime
@@ -164,7 +164,7 @@ programToXMIR (Program expr) = do
               ("version", showVersion version),
               ("xsi:noNamespaceSchemaLocation", "https://raw.githubusercontent.com/objectionary/eo/refs/heads/gh-pages/XMIR.xsd")
             ]
-            ( NodeElement (element "listing" [] [NodeContent (T.pack (prettyProgram (Program expr)))])
+            ( NodeElement (element "listing" [] [NodeContent (T.pack (prettyProgram' (Program expr) mode))])
                 : root
                 : metasWithPackage (intercalate "." pckg)
             )

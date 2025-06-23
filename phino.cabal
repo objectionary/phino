@@ -88,7 +88,7 @@ test-suite spec
     MatcherSpec,
     BuilderSpec,
     ReplacerSpec,
-    PrinterSpec,
+    PrettySpec,
     RewriterSpec,
     ConditionSpec,
     YamlSpec,

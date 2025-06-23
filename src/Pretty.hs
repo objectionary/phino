@@ -1,4 +1,6 @@
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE PatternSynonyms #-}
+{-# LANGUAGE ViewPatterns #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
@@ -6,9 +8,11 @@
 module Pretty
   ( prettyExpression,
     prettyProgram,
+    prettyProgram',
     prettyAttribute,
     prettySubsts,
     prettyBinding,
+    PrintMode (SWEET, SALTY),
   )
 where
 
@@ -18,11 +22,61 @@ import Matcher
 import Prettyprinter
 import Prettyprinter.Render.String (renderString)
 
+data PrintMode = SWEET | SALTY
+  deriving (Eq)
+
+instance Show PrintMode where
+  show SWEET = "sweet"
+  show SALTY = "salty"
+
+newtype Formatted a = Formatted {unFormatted :: (PrintMode, a)}
+
+-- Minimal matcher function (required for view pattern)
+matchDataoObject :: Expression -> Maybe (String, String)
+matchDataoObject
+  ( ExApplication
+      (ExDispatch (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang")) (AtLabel label))
+      ( BiTau
+          (AtAlpha 0)
+          ( ExApplication
+              (ExDispatch (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang")) (AtLabel "bytes"))
+              ( BiTau
+                  (AtAlpha 0)
+                  (ExFormation [BiDelta bts, BiVoid AtRho])
+                )
+            )
+        )
+    ) = Just (label, bts)
+matchDataoObject _ = Nothing
+
+pattern DataObject :: String -> String -> Expression
+pattern DataObject label bts <- (matchDataoObject -> Just (label, bts))
+  where
+    DataObject label bts =
+      ExApplication
+        (ExDispatch (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang")) (AtLabel label))
+        ( BiTau
+            (AtAlpha 0)
+            ( ExApplication
+                (ExDispatch (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang")) (AtLabel "bytes"))
+                ( BiTau
+                    (AtAlpha 0)
+                    (ExFormation [BiDelta bts, BiVoid AtRho])
+                )
+            )
+        )
+
 prettyMeta :: String -> Doc ann
 prettyMeta meta = pretty "!" <> pretty meta
 
 prettyArrow :: Doc ann
 prettyArrow = pretty "↦"
+
+prettyLsb :: Doc ann
+prettyLsb = pretty "⟦"
+
+prettyRsb :: Doc ann
+prettyRsb = pretty "⟧"
 
 prettyDashedArrow :: Doc ann
 prettyDashedArrow = pretty "⤍"
@@ -33,6 +87,9 @@ instance Pretty Attribute where
   pretty AtRho = pretty "ρ"
   pretty AtPhi = pretty "φ"
   pretty (AtMeta meta) = prettyMeta meta
+
+instance Pretty (Formatted Binding) where
+  pretty (Formatted (SWEET, BiTau attr expr)) = pretty ""
 
 instance Pretty Binding where
   pretty (BiTau attr expr) = pretty attr <+> prettyArrow <+> pretty expr
@@ -45,6 +102,17 @@ instance Pretty Binding where
 
 instance {-# OVERLAPPING #-} Pretty [Binding] where
   pretty bindings = vsep (punctuate comma (map pretty bindings))
+
+instance Pretty (Formatted Expression) where
+  pretty (Formatted (SWEET, ExFormation [])) = pretty "⟦⟧"
+  pretty (Formatted (SWEET, ExFormation [binding])) = case binding of
+    BiTau _ _ -> vsep [pretty "⟦", indent 2 (pretty binding), pretty "⟧"]
+    _ -> pretty "⟦" <+> pretty binding <+> pretty "⟧"
+  pretty (Formatted (SWEET, ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang"))) = pretty "Φ̇"
+  pretty (Formatted (SWEET, DataObject "string" bytes)) = pretty "\"" <> pretty "\""
+  pretty (Formatted (SWEET, DataObject "number" bytes)) = pretty ""
+  pretty (Formatted (SWEET, DataObject other bytes)) = pretty (DataObject other bytes)
+  pretty (Formatted (_, expr)) = pretty expr
 
 instance Pretty Expression where
   pretty (ExFormation []) = pretty "⟦⟧"
@@ -60,8 +128,9 @@ instance Pretty Expression where
   pretty (ExDispatch expr attr) = pretty expr <> pretty "." <> pretty attr
   pretty (ExMetaTail expr meta) = pretty expr <+> pretty "*" <+> prettyMeta meta
 
-instance Pretty Program where
-  pretty (Program expr) = pretty "Φ" <+> prettyArrow <+> pretty expr
+instance Pretty (Formatted Program) where
+  pretty (Formatted (SALTY, Program expr)) = pretty "Φ" <+> prettyArrow <+> pretty expr
+  pretty (Formatted (SWEET, Program expr)) = vsep [pretty "{", indent 2 (pretty (Formatted (SWEET, expr))), pretty "}"]
 
 instance Pretty Tail where
   pretty (TaApplication tau) = vsep [lparen, indent 2 (pretty tau), rparen]
@@ -114,4 +183,7 @@ prettyExpression :: Expression -> String
 prettyExpression = render
 
 prettyProgram :: Program -> String
-prettyProgram = render
+prettyProgram prog = render (Formatted (SALTY, prog))
+
+prettyProgram' :: Program -> PrintMode -> String
+prettyProgram' prog mode = render (Formatted (mode, prog))

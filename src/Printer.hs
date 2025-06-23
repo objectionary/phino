@@ -4,7 +4,7 @@
 module Printer where
 
 import Ast
-import Pretty (prettyProgram)
+import Pretty (prettyProgram', PrintMode)
 import XMIR (programToXMIR, printXMIR)
 
 data PrintFormat = XMIR | PHI
@@ -14,8 +14,8 @@ instance Show PrintFormat where
   show XMIR = "xmir"
   show PHI = "phi"
 
-printProgram :: Program -> PrintFormat -> IO String
-printProgram prog PHI = pure (prettyProgram prog)
-printProgram prog XMIR = do
-  xmir <- programToXMIR prog
+printProgram :: Program -> PrintFormat -> PrintMode -> IO String
+printProgram prog PHI mode = pure (prettyProgram' prog mode)
+printProgram prog XMIR mode = do
+  xmir <- programToXMIR prog mode
   pure (printXMIR xmir)

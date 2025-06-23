@@ -20,6 +20,7 @@ import qualified Misc
 import Options.Applicative
 import Parser (parseProgramThrows)
 import Paths_phino (version)
+import Pretty (PrintMode (SALTY, SWEET))
 import Printer (PrintFormat (PHI, XMIR), printProgram)
 import Rewriter (rewrite)
 import System.Exit (ExitCode (..), exitFailure)
@@ -48,6 +49,7 @@ data OptsRewrite = OptsRewrite
   { rules :: [FilePath],
     phiInput :: Maybe FilePath,
     printFormat :: PrintFormat,
+    printMode :: PrintMode,
     normalize :: Bool,
     nothing :: Bool,
     shuffle :: Bool,
@@ -67,6 +69,7 @@ rewriteParser =
             <$> many (strOption (long "rule" <> metavar "FILE" <> help "Path to custom rule"))
             <*> optional (strOption (long "phi-input" <> metavar "FILE" <> help "Path .phi file with 𝜑-expression"))
             <*> option parsePrintFormat (long "output" <> metavar "FORMAT" <> help "Program output format" <> value PHI <> showDefault)
+            <*> flag SALTY SWEET (long "sweet" <> help "Print 𝜑-program using syntax sugar")
             <*> switch (long "normalize" <> help "Use built-in normalization rules")
             <*> switch (long "nothing" <> help "Desugar provided 𝜑-expression")
             <*> switch (long "shuffle" <> help "Shuffle rules before applying")
@@ -154,7 +157,7 @@ runCLI args = handle handler $ do
       program <- parseProgramThrows prog
       rewritten <- rewrite' program rules' 1
       logDebug (printf "Printing rewritten 𝜑-program as %s" (show printFormat))
-      out <- printProgram rewritten printFormat
+      out <- printProgram rewritten printFormat printMode
       putStrLn out
       where
         rewrite' :: Program -> [Y.Rule] -> Integer -> IO Program
