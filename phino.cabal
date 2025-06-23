@@ -45,7 +45,7 @@ library
     Paths_phino
   build-depends:
     file-embed ^>=0.0.16.0,
-    base ^>=4.18.3.0,
+    base >= 4.18.3.0,
     containers,
     megaparsec >= 9.0,
     text,
