@@ -35,13 +35,13 @@ runHLintCheck dir = do
           exitCode `shouldBe` ExitSuccess
 
 spec :: Spec
-spec = do
+spec =
   describe "HLint" $ do
-    it "should pass hlint check for src/" $ do
+    it "should pass hlint check for src/" $
       runHLintCheck "src/"
 
-    it "should pass hlint check for app/" $ do
+    it "should pass hlint check for app/" $
       runHLintCheck "app/"
           
-    it "should pass hlint check for test/" $ do
+    it "should pass hlint check for test/" $
       runHLintCheck "test/"

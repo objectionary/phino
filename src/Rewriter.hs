@@ -55,7 +55,7 @@ buildAndReplace program ptn res substs =
 extraSubstitutions :: Program -> Maybe [Y.Extra] -> [Subst] -> [Subst]
 extraSubstitutions prog extras substs = case extras of
   Nothing -> substs
-  Just extras' -> do
+  Just extras' ->
     catMaybes
       [ case Y.meta extra of
           ExMeta name -> do

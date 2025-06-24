@@ -17,7 +17,7 @@ test function useCases =
 
 spec :: Spec
 spec = do
-  describe "buildExpression" $ do
+  describe "buildExpression" $
     test
       buildExpression
       [ ( "Q.!a => (!a >> x) => Q.x",
@@ -80,16 +80,14 @@ spec = do
 
   describe "buildExpressions" $ do
     it "!e => [(!e >> Q.x), (!e >> $.y)] => [Q.x, $.y]" $
-      do
-        buildExpressions
+      buildExpressions
           (ExMeta "e")
           [ substSingle "e" (MvExpression (ExDispatch ExGlobal (AtLabel "x"))),
             substSingle "e" (MvExpression (ExDispatch ExThis (AtLabel "y")))
           ]
         `shouldBe` Just [ExDispatch ExGlobal (AtLabel "x"), ExDispatch ExThis (AtLabel "y")]
     it "!e => [(!e1 >> Q.x)] => X" $
-      do
-        buildExpressions
+      buildExpressions
           (ExMeta "e")
           [substSingle "e1" (MvExpression (ExDispatch ExGlobal (AtLabel "x")))]
         `shouldBe` Nothing

@@ -20,7 +20,7 @@ import System.IO.Silently (capture_)
 import Test.Hspec
 
 withStdin :: String -> IO a -> IO a
-withStdin input action = do
+withStdin input action =
   bracket (openTempFile "." "stdinXXXXXX.tmp") cleanup $ \(filePath, h) -> do
     hSetEncoding h utf8
     hPutStr h input
@@ -82,7 +82,7 @@ testCLIFailed args output = withStdin "" $ do
 
 spec :: Spec
 spec = do
-  it "prints version" $ do
+  it "prints version" $
     testCLI ["--version"] [showVersion version]
 
   it "prints help" $ do
@@ -90,7 +90,7 @@ spec = do
     output `shouldContain` "Phino - CLI Manipulator of 𝜑-Calculus Expressions"
     output `shouldContain` "Usage:"
 
-  it "prints debug info with --log-level=DEBUG" $ do
+  it "prints debug info with --log-level=DEBUG" $
     withStdin "Q -> [[]]" $ testCLI ["rewrite", "--nothing", "--log-level=DEBUG"] ["[DEBUG]:"]
 
   describe "rewrites" $ do

@@ -165,7 +165,7 @@ byte = do
 -- 2. one byte: 01-
 -- 3. many bytes: 01-02-...-FF
 bytes :: Parser String
-bytes = lexeme $ do
+bytes = lexeme $
   choice
     [ symbol "--",
       try $ do

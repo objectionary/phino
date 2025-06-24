@@ -338,9 +338,9 @@ spec = do
       ]
 
   describe "combine" $ do
-    it "combines empty substitutions" $ do
+    it "combines empty substitutions" $
       combine substEmpty substEmpty `shouldBe` Just substEmpty
-    it "combines two empty substs from list" $ do
+    it "combines two empty substs from list" $
       combine (Subst Map.empty) (Subst Map.empty) `shouldBe` Just substEmpty
     it "combines empty subst with single one" $ do
       let Subst joined = maybeCombined substEmpty (Subst (Map.singleton "at" (MvAttribute AtPhi)))
@@ -364,7 +364,7 @@ spec = do
           second = Subst (Map.singleton "first" rho)
           Subst joined = maybeCombined first second
       Map.lookup "first" joined `shouldBe` Just (MvAttribute AtRho)
-    it "returns Nothing if values are different" $ do
+    it "returns Nothing if values are different" $
       combine (Subst (Map.singleton "x" (MvAttribute AtPhi))) (Subst (Map.singleton "x" (MvAttribute AtRho))) `shouldBe` Nothing
     it "clears all the values" $ do
       let first =
