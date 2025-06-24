@@ -89,60 +89,67 @@ instance Pretty Attribute where
   pretty (AtMeta meta) = prettyMeta meta
 
 instance Pretty (Formatted Binding) where
-  pretty (Formatted (SWEET, BiTau attr expr)) = pretty ""
+  pretty (Formatted (SWEET, BiTau attr (ExFormation bindings))) = do
+    let voids' = voids bindings
+    if null voids'
+      then pretty attr <+> prettyArrow <+> pretty (Formatted (SWEET, ExFormation bindings))
+      else
+        pretty attr
+          <> lparen
+          <> hsep (punctuate comma (map pretty voids'))
+          <> rparen
+          <+> prettyArrow
+          <+> pretty (Formatted (SWEET, ExFormation (drop (length voids') bindings)))
+    where
+      voids :: [Binding] -> [Attribute]
+      voids (bd : bds) = case bd of
+        BiVoid attr -> attr : voids bds
+        _ -> []
+  pretty (Formatted (mode, BiTau attr expr)) = pretty attr <+> prettyArrow <+> pretty (Formatted (mode, expr))
+  pretty (Formatted (_, BiMeta meta)) = prettyMeta meta
+  pretty (Formatted (_, BiDelta bytes)) = pretty "Δ" <+> prettyDashedArrow <+> pretty bytes
+  pretty (Formatted (_, BiMetaLambda meta)) = pretty "λ" <+> prettyDashedArrow <+> prettyMeta meta
+  pretty (Formatted (_, BiMetaDelta meta)) = pretty "Δ" <+> prettyDashedArrow <+> prettyMeta meta
+  pretty (Formatted (_, BiVoid attr)) = pretty attr <+> prettyArrow <+> pretty "∅"
+  pretty (Formatted (_, BiLambda func)) = pretty "λ" <+> prettyDashedArrow <+> pretty func
 
-instance Pretty Binding where
-  pretty (BiTau attr expr) = pretty attr <+> prettyArrow <+> pretty expr
-  pretty (BiMeta meta) = prettyMeta meta
-  pretty (BiDelta bytes) = pretty "Δ" <+> prettyDashedArrow <+> pretty bytes
-  pretty (BiMetaDelta meta) = pretty "Δ" <+> prettyDashedArrow <+> prettyMeta meta
-  pretty (BiVoid attr) = pretty attr <+> prettyArrow <+> pretty "∅"
-  pretty (BiLambda func) = pretty "λ" <+> prettyDashedArrow <+> pretty func
-  pretty (BiMetaLambda meta) = pretty "λ" <+> prettyDashedArrow <+> prettyMeta meta
-
-instance {-# OVERLAPPING #-} Pretty [Binding] where
-  pretty bindings = vsep (punctuate comma (map pretty bindings))
+instance {-# OVERLAPPING #-} Pretty (Formatted [Binding]) where
+  pretty (Formatted (mode, bds)) = vsep (punctuate comma (map (\bd -> pretty (Formatted (mode, bd))) bds))
 
 instance Pretty (Formatted Expression) where
-  pretty (Formatted (SWEET, ExFormation [])) = pretty "⟦⟧"
-  pretty (Formatted (SWEET, ExFormation [binding])) = case binding of
-    BiTau _ _ -> vsep [pretty "⟦", indent 2 (pretty binding), pretty "⟧"]
-    _ -> pretty "⟦" <+> pretty binding <+> pretty "⟧"
   pretty (Formatted (SWEET, ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang"))) = pretty "Φ̇"
   pretty (Formatted (SWEET, DataObject "string" bytes)) = pretty "\"" <> pretty "\""
   pretty (Formatted (SWEET, DataObject "number" bytes)) = pretty ""
-  pretty (Formatted (SWEET, DataObject other bytes)) = pretty (DataObject other bytes)
-  pretty (Formatted (_, expr)) = pretty expr
-
-instance Pretty Expression where
-  pretty (ExFormation []) = pretty "⟦⟧"
-  pretty (ExFormation [binding]) = case binding of
-    BiTau _ _ -> vsep [pretty "⟦", indent 2 (pretty binding), pretty "⟧"]
-    _ -> pretty "⟦" <+> pretty binding <+> pretty "⟧"
-  pretty (ExFormation bindings) = vsep [pretty "⟦", indent 2 (pretty bindings), pretty "⟧"]
-  pretty ExThis = pretty "ξ"
-  pretty ExGlobal = pretty "Φ"
-  pretty ExTermination = pretty "⊥"
-  pretty (ExMeta meta) = prettyMeta meta
-  pretty (ExApplication expr tau) = pretty expr <> vsep [lparen, indent 2 (pretty tau), rparen]
-  pretty (ExDispatch expr attr) = pretty expr <> pretty "." <> pretty attr
-  pretty (ExMetaTail expr meta) = pretty expr <+> pretty "*" <+> prettyMeta meta
+  pretty (Formatted (SWEET, DataObject other bytes)) = pretty (Formatted (SALTY, DataObject other bytes))
+  pretty (Formatted (mode, ExFormation [binding])) = case binding of
+    BiTau _ _ -> vsep [pretty "⟦", indent 2 (pretty (Formatted (mode, binding))), pretty "⟧"]
+    _ -> pretty "⟦" <+> pretty (Formatted (mode, binding)) <+> pretty "⟧"
+  pretty (Formatted (_, ExFormation [])) = pretty "⟦⟧"
+  pretty (Formatted (mode, ExFormation bindings)) = vsep [pretty "⟦", indent 2 (pretty (Formatted (mode, bindings))), pretty "⟧"]
+  pretty (Formatted (_, ExThis)) = pretty "ξ"
+  pretty (Formatted (_, ExGlobal)) = pretty "Φ"
+  pretty (Formatted (_, ExTermination)) = pretty "⊥"
+  pretty (Formatted (_, ExMeta meta)) = prettyMeta meta
+  pretty (Formatted (SWEET, ExApplication (ExApplication expr tau) tau')) = do
+  -- pretty (Formatted (_, ExApplication expr tau)) = pretty expr <> vsep [lparen, indent 2 (pretty tau), rparen]
+  pretty (Formatted (mode, ExDispatch expr attr)) = pretty (Formatted (mode, expr)) <> pretty "." <> pretty attr
+  pretty (Formatted (mode, ExMetaTail expr meta)) = pretty (Formatted (mode, expr)) <+> pretty "*" <+> prettyMeta meta
 
 instance Pretty (Formatted Program) where
-  pretty (Formatted (SALTY, Program expr)) = pretty "Φ" <+> prettyArrow <+> pretty expr
+  pretty (Formatted (SALTY, Program expr)) = pretty "Φ" <+> prettyArrow <+> pretty (Formatted (SALTY, expr))
   pretty (Formatted (SWEET, Program expr)) = vsep [pretty "{", indent 2 (pretty (Formatted (SWEET, expr))), pretty "}"]
 
 instance Pretty Tail where
-  pretty (TaApplication tau) = vsep [lparen, indent 2 (pretty tau), rparen]
+  pretty (TaApplication tau) = vsep [lparen, indent 2 (pretty (Formatted (SALTY, tau))), rparen]
   pretty (TaDispatch attr) = pretty "." <> pretty attr
 
 instance Pretty MetaValue where
   pretty (MvAttribute attr) = pretty attr
   pretty (MvBytes bytes) = pretty bytes
   pretty (MvBindings []) = pretty "[]"
-  pretty (MvBindings bindings) = vsep [pretty "[", indent 2 (pretty bindings), pretty "]"]
+  pretty (MvBindings bindings) = vsep [pretty "[", indent 2 (pretty (Formatted (SALTY, bindings))), pretty "]"]
   pretty (MvFunction func) = pretty func
-  pretty (MvExpression expr) = pretty expr
+  pretty (MvExpression expr) = pretty (Formatted (SALTY, expr))
   pretty (MvTail tails) = vsep (punctuate comma (map pretty tails))
 
 instance Pretty Subst where
@@ -171,7 +178,7 @@ render :: (Pretty a) => a -> String
 render printable = renderString (layoutPretty defaultLayoutOptions (pretty printable))
 
 prettyBinding :: Binding -> String
-prettyBinding = render
+prettyBinding binding = render (Formatted (SALTY, binding))
 
 prettyAttribute :: Attribute -> String
 prettyAttribute = render
@@ -180,7 +187,7 @@ prettySubsts :: [Subst] -> String
 prettySubsts = render
 
 prettyExpression :: Expression -> String
-prettyExpression = render
+prettyExpression expr = render (Formatted (SALTY, expr))
 
 prettyProgram :: Program -> String
 prettyProgram prog = render (Formatted (SALTY, prog))
