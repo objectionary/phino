@@ -1,0 +1,30 @@
+---
+# HLint configuration file for phino
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+
+# Configuration for the phino Haskell project
+# See https://github.com/ndmitchell/hlint for documentation
+
+# Enable some additional checks
+- group: {name: default, enabled: true}
+
+# Disable some suggestions that might be too pedantic for this project
+- ignore: {name: "Use newtype instead of data"}
+- ignore: {name: "Use camelCase"}
+# Ignore parse errors for field names like 'pattern'
+- ignore: {name: "Parse error"}
+
+# Enable warnings for redundant imports, spacing, etc.
+- warn: {name: "Redundant do"}
+- warn: {name: "Redundant bracket"}
+- warn: {name: "Redundant $"}
+- warn: {name: "Use concatMap"}
+- warn: {name: "Use map"}
+- warn: {name: "Use fmap"}
+
+# Specify modules to check
+- modules:
+    - {name: [Prelude], within: []}
+
+# Custom rules for this project can be added here

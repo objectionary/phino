@@ -165,8 +165,8 @@ byte = do
 -- 2. one byte: 01-
 -- 3. many bytes: 01-02-...-FF
 bytes :: Parser String
-bytes = lexeme $ do
-  choice
+bytes = lexeme
+  (choice
     [ symbol "--",
       try $ do
         first <- byte
@@ -175,12 +175,9 @@ bytes = lexeme $ do
           bte <- byte
           return (dash : bte)
         return (first ++ concat rest),
-      do
-        bte <- byte
-        dash <- char '-'
-        return (bte ++ [dash])
+      byte >>= \bte -> char '-' >>= \dash -> return (bte ++ [dash])
     ]
-    <?> "bytes"
+    <?> "bytes")
 
 tauBinding :: Parser Attribute -> Parser Binding
 tauBinding attr = do

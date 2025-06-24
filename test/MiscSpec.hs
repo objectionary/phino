@@ -14,8 +14,8 @@ testWithVoidRho useCases =
     it desc $ withVoidRho before `shouldBe` after
 
 spec :: Spec
-spec = do
-  describe "with void rho binding" $ do
+spec =
+  describe "with void rho binding" $
     testWithVoidRho
       [ ( "[[x -> ?]] => [[x -> ?, ^ -> ?]]",
           [BiVoid (AtLabel "x")],

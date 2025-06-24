@@ -55,7 +55,7 @@ noSpaces :: String -> String
 noSpaces = filter (not . isSpace)
 
 spec :: Spec
-spec = do
+spec =
   describe "rewrite packs" $ do
     let resources = "test-resources/rewriter-packs"
     packs <- runIO (allPathsIn resources)
