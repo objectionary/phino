@@ -17,8 +17,8 @@ test function useCases =
     it desc $ function prog ptns repls `shouldBe` res
 
 spec :: Spec
-spec = do
-  describe "replaceProgram: program => ([expression], [expression]) => program" $ do
+spec =
+  describe "replaceProgram: program => ([expression], [expression]) => program" $
     test
       replaceProgram
       [ ( "Q -> Q.y.x => ([Q.y], [$]) => Q -> $.x",

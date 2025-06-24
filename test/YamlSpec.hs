@@ -10,7 +10,7 @@ import Test.Hspec (Spec, describe, it, runIO, shouldReturn)
 import Yaml (yamlRule)
 
 spec :: Spec
-spec = do
+spec =
   describe "parses yaml rule" $ do
     let resources = "test-resources/yaml-packs"
     packs <- runIO (allPathsIn resources)
