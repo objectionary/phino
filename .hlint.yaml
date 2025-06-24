@@ -1,3 +1,4 @@
+---
 # HLint configuration file for phino
 # SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 # SPDX-License-Identifier: MIT
@@ -11,7 +12,8 @@
 # Disable some suggestions that might be too pedantic for this project
 - ignore: {name: "Use newtype instead of data"}
 - ignore: {name: "Use camelCase"}
-- ignore: {name: "Parse error"}  # Ignore parse errors for field names like 'pattern'
+# Ignore parse errors for field names like 'pattern'
+- ignore: {name: "Parse error"}
 
 # Enable warnings for redundant imports, spacing, etc.
 - warn: {name: "Redundant do"}
@@ -23,6 +25,6 @@
 
 # Specify modules to check
 - modules:
-  - {name: [Prelude], within: []}
+    - {name: [Prelude], within: []}
 
 # Custom rules for this project can be added here
