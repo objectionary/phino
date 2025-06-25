@@ -147,6 +147,12 @@ spec = do
                 "⟧"
               ]
           ]
+    
+    it "rewrites with --sweet flag" $
+      withStdin "Q -> [[ x -> 5]]" $
+        testCLI
+          ["rewrite", "--nothing", "--sweet"]
+          ["{⟦\n  x ↦ 5,\n  ρ ↦ ∅\n⟧}"]
 
     it "rewrites as XMIR" $
       withStdin "Q -> [[ x -> Q.y ]]" $
