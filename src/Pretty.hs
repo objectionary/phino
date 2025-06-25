@@ -11,6 +11,7 @@ module Pretty
     prettyProgram',
     prettyAttribute,
     prettySubsts,
+    prettySubsts',
     prettyBinding,
     PrintMode (SWEET, SALTY),
   )
@@ -21,6 +22,8 @@ import qualified Data.Map.Strict as Map
 import Matcher
 import Prettyprinter
 import Prettyprinter.Render.String (renderString)
+import Misc (hexToStr, hexToNum)
+import Debug.Trace (trace)
 
 data PrintMode = SWEET | SALTY
   deriving (Eq)
@@ -102,6 +105,7 @@ instance Pretty (Formatted Binding) where
           <+> pretty (Formatted (SWEET, ExFormation (drop (length voids') bindings)))
     where
       voids :: [Binding] -> [Attribute]
+      voids [] = []
       voids (bd : bds) = case bd of
         BiVoid attr -> attr : voids bds
         _ -> []
@@ -116,10 +120,24 @@ instance Pretty (Formatted Binding) where
 instance {-# OVERLAPPING #-} Pretty (Formatted [Binding]) where
   pretty (Formatted (mode, bds)) = vsep (punctuate comma (map (\bd -> pretty (Formatted (mode, bd))) bds))
 
+complexApplication :: Expression -> (Expression, [Binding], [Expression])
+complexApplication (ExApplication (ExApplication expr tau) tau') = do
+  let (before, taus, exprs) = complexApplication (ExApplication expr tau)
+      taus' = tau' : taus
+  if null exprs
+    then (before, taus', [])
+    else case tau' of
+      BiTau (AtAlpha idx) expr' -> if idx == fromIntegral (length exprs)
+        then (before, taus', expr' : exprs)
+        else (before, taus', [])
+      _ -> (before, taus', [])
+complexApplication (ExApplication expr (BiTau (AtAlpha 0) expr')) = (expr, [BiTau (AtAlpha 0) expr'], [expr'])
+complexApplication (ExApplication expr tau) = (expr, [tau], [])
+
 instance Pretty (Formatted Expression) where
   pretty (Formatted (SWEET, ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang"))) = pretty "Φ̇"
-  pretty (Formatted (SWEET, DataObject "string" bytes)) = pretty "\"" <> pretty "\""
-  pretty (Formatted (SWEET, DataObject "number" bytes)) = pretty ""
+  pretty (Formatted (SWEET, DataObject "string" bytes)) = pretty "\"" <> pretty (hexToStr bytes) <> pretty "\""
+  pretty (Formatted (SWEET, DataObject "number" bytes)) = either pretty pretty (hexToNum bytes)
   pretty (Formatted (SWEET, DataObject other bytes)) = pretty (Formatted (SALTY, DataObject other bytes))
   pretty (Formatted (mode, ExFormation [binding])) = case binding of
     BiTau _ _ -> vsep [pretty "⟦", indent 2 (pretty (Formatted (mode, binding))), pretty "⟧"]
@@ -131,13 +149,23 @@ instance Pretty (Formatted Expression) where
   pretty (Formatted (_, ExTermination)) = pretty "⊥"
   pretty (Formatted (_, ExMeta meta)) = prettyMeta meta
   pretty (Formatted (SWEET, ExApplication (ExApplication expr tau) tau')) = do
-  -- pretty (Formatted (_, ExApplication expr tau)) = pretty expr <> vsep [lparen, indent 2 (pretty tau), rparen]
+    let (expr', taus, exprs) = complexApplication (ExApplication (ExApplication expr tau) tau')
+        args = if null exprs
+          then pretty (Formatted (SWEET, reverse taus))
+          else vsep (punctuate comma (map (\exp -> pretty (Formatted (SWEET, exp))) (reverse exprs)))
+    pretty (Formatted (SWEET, expr')) <> vsep [lparen, indent 2 args, rparen]
+  pretty (Formatted (SWEET, ExApplication expr tau)) = do
+    let arg = case tau of
+          BiTau (AtAlpha 0) expr' -> pretty (Formatted (SWEET, expr'))
+          _ -> pretty (Formatted (SWEET, tau))
+    pretty (Formatted (SWEET, expr)) <> vsep [lparen, indent 2 arg, rparen]
+  pretty (Formatted (mode, ExApplication expr tau)) = pretty (Formatted (mode, expr)) <> vsep [lparen, indent 2 (pretty (Formatted (mode, tau))), rparen]
   pretty (Formatted (mode, ExDispatch expr attr)) = pretty (Formatted (mode, expr)) <> pretty "." <> pretty attr
   pretty (Formatted (mode, ExMetaTail expr meta)) = pretty (Formatted (mode, expr)) <+> pretty "*" <+> prettyMeta meta
 
 instance Pretty (Formatted Program) where
   pretty (Formatted (SALTY, Program expr)) = pretty "Φ" <+> prettyArrow <+> pretty (Formatted (SALTY, expr))
-  pretty (Formatted (SWEET, Program expr)) = vsep [pretty "{", indent 2 (pretty (Formatted (SWEET, expr))), pretty "}"]
+  pretty (Formatted (SWEET, Program expr)) = pretty "{" <> pretty (Formatted (SWEET, expr)) <> pretty "}"
 
 instance Pretty Tail where
   pretty (TaApplication tau) = vsep [lparen, indent 2 (pretty (Formatted (SALTY, tau))), rparen]
@@ -170,9 +198,9 @@ instance Pretty Subst where
         rparen
       ]
 
-instance {-# OVERLAPPING #-} Pretty [Subst] where
-  pretty [] = pretty "[]"
-  pretty substs = vsep [pretty "[", indent 2 (vsep (punctuate comma (map pretty substs))), pretty "]"]
+instance {-# OVERLAPPING #-} Pretty (Formatted [Subst]) where
+  pretty (Formatted (_, [])) = pretty "[]"
+  pretty (Formatted (mode, substs)) = vsep [pretty "[", indent 2 (vsep (punctuate comma (map pretty substs))), pretty "]"]
 
 render :: (Pretty a) => a -> String
 render printable = renderString (layoutPretty defaultLayoutOptions (pretty printable))
@@ -185,6 +213,9 @@ prettyAttribute = render
 
 prettySubsts :: [Subst] -> String
 prettySubsts = render
+
+prettySubsts' :: [Subst] -> PrintMode -> String
+prettySubsts' substs mode = render (Formatted (mode, substs))
 
 prettyExpression :: Expression -> String
 prettyExpression expr = render (Formatted (SALTY, expr))
