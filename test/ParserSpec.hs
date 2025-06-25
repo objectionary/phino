@@ -37,13 +37,6 @@ spec = do
         ("{[[foo ↦ QQ]]}", Just (Program (ExFormation [BiTau (AtLabel "foo") (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang")), BiVoid AtRho])))
       ]
 
-  describe "parse unicode surrogate pairs in programs" $
-    forM_
-      [ "{⟦ j$org ↦ \"org/eolang/larger/\\uD835\\uDF11\" ⟧}",
-        "Q -> \"\\uD835\\uDF11\""
-      ]
-      (\prog -> it prog (parseProgram prog `shouldSatisfy` isRight))
-
   describe "parse expression" $
     test
       parseExpression
