@@ -37,6 +37,13 @@ spec = do
         ("{[[foo ↦ QQ]]}", Just (Program (ExFormation [BiTau (AtLabel "foo") (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang")), BiVoid AtRho])))
       ]
 
+  describe "parse unicode surrogate pairs" $
+    forM_
+      [ "{⟦ j$org ↦ \"org/eolang/larger/\\uD835\\uDF11\" ⟧}",
+        "Q -> \"\\uD835\\uDF11\""
+      ]
+      (\prog -> it prog (parseProgram prog `shouldSatisfy` isRight))
+
   describe "parse expression" $
     test
       parseExpression
@@ -241,7 +248,8 @@ spec = do
         "[[x -> -42, y -> +34]]",
         "⟦x ↦ Φ.org.eolang(z ↦ ξ.f, x ↦ α0, φ ↦ ρ, t ↦ φ, first ↦ ⟦ λ ⤍ Function_name, Δ ⤍ 42- ⟧)⟧",
         "[[x -> 1.00e+3, y -> 2.32e-4]]",
-        "[[ x -> \"\\u0001\\u0001\"]]"
+        "[[ x -> \"\\u0001\\u0001\"]]",
+        "[[ x -> \"\\uD835\\uDF11\"]]"
       ]
       (\expr -> it expr (parseExpression expr `shouldSatisfy` isRight))
 
@@ -267,7 +275,10 @@ spec = do
             "Q.x(y(~1) -> [[]])",
             "Q.x(1, 2, !B)",
             "Q.x(~1 -> Q.y, x -> 5, !B1)",
-            "Q.x(𝐵1, 𝜏0 -> $, x -> 𝑒)"
+            "Q.x(𝐵1, 𝜏0 -> $, x -> 𝑒)",
+            "[[ x -> \"\\uD800\"]]",
+            "[[ x -> \"\\uDFFF\"]]",
+            "[[ x -> \"\\uD835\\u0041\"]]"
           ]
       )
 
