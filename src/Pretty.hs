@@ -23,7 +23,6 @@ import Matcher
 import Prettyprinter
 import Prettyprinter.Render.String (renderString)
 import Misc (hexToStr, hexToNum)
-import Debug.Trace (trace)
 
 data PrintMode = SWEET | SALTY
   deriving (Eq)
