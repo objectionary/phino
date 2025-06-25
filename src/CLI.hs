@@ -46,9 +46,9 @@ data App = App
 newtype Command = CmdRewrite OptsRewrite
 
 data OptsRewrite = OptsRewrite
-  { rules :: [FilePath],
-    phiInput :: Maybe FilePath,
-    printFormat :: PrintFormat,
+  { inputFile :: Maybe FilePath,
+    rules :: [FilePath],
+    outputFormat :: PrintFormat,
     printMode :: PrintMode,
     normalize :: Bool,
     nothing :: Bool,
@@ -66,8 +66,8 @@ rewriteParser :: Parser Command
 rewriteParser =
   CmdRewrite
     <$> ( OptsRewrite
-            <$> many (strOption (long "rule" <> metavar "FILE" <> help "Path to custom rule"))
-            <*> optional (strOption (long "phi-input" <> metavar "FILE" <> help "Path .phi file with 𝜑-expression"))
+            <$> optional (argument str (metavar "FILE" <> help "Path to input file"))
+            <*> many (strOption (long "rule" <> metavar "FILE" <> help "Path to custom rule"))
             <*> option parsePrintFormat (long "output" <> metavar "FORMAT" <> help "Program output format" <> value PHI <> showDefault)
             <*> flag SALTY SWEET (long "sweet" <> help "Print 𝜑-program using syntax sugar")
             <*> switch (long "normalize" <> help "Use built-in normalization rules")
@@ -124,12 +124,12 @@ runCLI args = handle handler $ do
     CmdRewrite OptsRewrite {..} -> do
       when (maxDepth <= 0) $ throwIO (InvalidRewriteArguments "--max-depth must be positive")
       logDebug (printf "Amount of rewriting cycles: %d" maxDepth)
-      prog <- case phiInput of
+      prog <- case inputFile of
         Just pth -> do
-          logDebug (printf "Reading 𝜑-program from file: '%s'" pth)
+          logDebug (printf "Reading from file: '%s'" pth)
           readFile =<< ensuredFile pth
         Nothing -> do
-          logDebug "Reading 𝜑-program from stdin"
+          logDebug "Reading from stdin"
           getContents' `catch` (\(e :: SomeException) -> throwIO (CouldNotReadFromStdin (show e)))
       rules' <- do
         ordered <-
@@ -156,8 +156,8 @@ runCLI args = handle handler $ do
           else pure ordered
       program <- parseProgramThrows prog
       rewritten <- rewrite' program rules' 1
-      logDebug (printf "Printing rewritten 𝜑-program as %s" (show printFormat))
-      out <- printProgram rewritten printFormat printMode
+      logDebug (printf "Printing rewritten 𝜑-program as %s" (show outputFormat))
+      out <- printProgram rewritten outputFormat printMode
       putStrLn out
       where
         rewrite' :: Program -> [Y.Rule] -> Integer -> IO Program

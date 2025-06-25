@@ -96,7 +96,7 @@ spec = do
   describe "rewrites" $ do
     it "desugares with --nothing flag from file" $
       testCLI
-        ["rewrite", "--nothing", "--phi-input=test-resources/cli/desugar.phi"]
+        ["rewrite", "--nothing", "test-resources/cli/desugar.phi"]
         ["Φ ↦ ⟦\n  foo ↦ Φ.org.eolang,\n  ρ ↦ ∅\n⟧"]
 
     it "desugares with --nothing flag from stdin" $
@@ -109,7 +109,7 @@ spec = do
 
     it "normalizes with --normalize flag" $
       testCLI
-        ["rewrite", "--normalize", "--phi-input=test-resources/cli/normalize.phi"]
+        ["rewrite", "--normalize", "test-resources/cli/normalize.phi"]
         [ unlines
             [ "Φ ↦ ⟦",
               "  x ↦ ⟦",
