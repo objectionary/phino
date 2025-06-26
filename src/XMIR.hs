@@ -151,11 +151,11 @@ programToXMIR (Program expr) mode omitListing = do
   (pckg, expr') <- getPackage expr
   root <- rootExpression expr'
   now <- getCurrentTime
-  let listing = if omitListing
-                  then let phiCode = prettyProgram' (Program expr) mode
-                           lineCount = length (lines phiCode)
+  let phiCode = prettyProgram' (Program expr) mode
+      listing = if omitListing
+                  then let lineCount = length (lines phiCode)
                        in NodeElement (element "listing" [] [NodeContent (T.pack (show lineCount ++ " lines of phi"))])
-                  else NodeElement (element "listing" [] [NodeContent (T.pack (prettyProgram' (Program expr) mode))])
+                  else NodeElement (element "listing" [] [NodeContent (T.pack phiCode)])
   pure
     ( Document
         (Prologue [] Nothing [])
