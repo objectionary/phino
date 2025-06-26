@@ -9,6 +9,7 @@ import Misc (ensuredFile)
 import Parser (parseProgramThrows)
 import qualified Data.Text as T
 import Pretty (PrintMode(SALTY))
+import Control.Monad (when)
 
 -- @todo #126:30min Enable XMIR test. It's not possible anymore to compare XMIRs like strings
 --  because they contain random data, e.g. system time. We need to introduce some convenient
@@ -37,9 +38,8 @@ spec = do
 
 shouldNotContain :: String -> String -> IO ()
 shouldNotContain haystack needle = 
-  if T.pack needle `T.isInfixOf` T.pack haystack
-    then fail $ "Expected not to contain: " ++ needle
-    else return ()
+  when (T.pack needle `T.isInfixOf` T.pack haystack) $
+    fail $ "Expected not to contain: " ++ needle
 
 shouldContain :: String -> String -> IO ()  
 shouldContain haystack needle =

@@ -71,9 +71,7 @@ expression (ExApplication expr (BiTau attr texpr)) = do
   (base', children') <- expression texpr
   let attrs = case attr of
         AtAlpha _ -> -- For alpha attributes, omit the "as" attribute since position implies the index
-          if null base'
-            then []
-            else [("base", base')]
+          [("base", base') | not (null base')]
         _ -> -- For non-alpha attributes, include the "as" attribute as before
           let as = prettyAttribute attr
           in if null base'
