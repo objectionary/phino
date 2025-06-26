@@ -14,8 +14,8 @@ instance Show PrintFormat where
   show XMIR = "xmir"
   show PHI = "phi"
 
-printProgram :: Program -> PrintFormat -> PrintMode -> IO String
-printProgram prog PHI mode = pure (prettyProgram' prog mode)
-printProgram prog XMIR mode = do
-  xmir <- programToXMIR prog mode
+printProgram :: Program -> PrintFormat -> PrintMode -> Bool -> IO String
+printProgram prog PHI mode _ = pure (prettyProgram' prog mode)
+printProgram prog XMIR mode omitListing = do
+  xmir <- programToXMIR prog mode omitListing
   pure (printXMIR xmir)

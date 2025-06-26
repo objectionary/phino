@@ -146,11 +146,16 @@ time now = do
       nanos = floor (fractional * 1_000_000_000) :: Int
   base ++ "." ++ printf "%09d" nanos ++ "Z"
 
-programToXMIR :: Program -> PrintMode -> IO Document
-programToXMIR (Program expr) mode = do
+programToXMIR :: Program -> PrintMode -> Bool -> IO Document
+programToXMIR (Program expr) mode omitListing = do
   (pckg, expr') <- getPackage expr
   root <- rootExpression expr'
   now <- getCurrentTime
+  let listing = if omitListing
+                  then let phiCode = prettyProgram' (Program expr) mode
+                           lineCount = length (lines phiCode)
+                       in NodeElement (element "listing" [] [NodeContent (T.pack (show lineCount ++ " lines of phi"))])
+                  else NodeElement (element "listing" [] [NodeContent (T.pack (prettyProgram' (Program expr) mode))])
   pure
     ( Document
         (Prologue [] Nothing [])
@@ -164,7 +169,7 @@ programToXMIR (Program expr) mode = do
               ("version", showVersion version),
               ("xsi:noNamespaceSchemaLocation", "https://raw.githubusercontent.com/objectionary/eo/refs/heads/gh-pages/XMIR.xsd")
             ]
-            ( NodeElement (element "listing" [] [NodeContent (T.pack (prettyProgram' (Program expr) mode))])
+            ( listing
                 : root
                 : metasWithPackage (intercalate "." pckg)
             )

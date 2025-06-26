@@ -159,3 +159,9 @@ spec = do
         testCLI
           ["rewrite", "--nothing", "--output=xmir"]
           ["<?xml version=\"1.0\" encoding=\"UTF-8\"?>", "<object", "  <o base=\"Q.y\" name=\"x\"/>"]
+
+    it "rewrites as XMIR with omit-listing flag" $
+      withStdin "Q -> [[ x -> Q.y ]]" $
+        testCLI
+          ["rewrite", "--nothing", "--output=xmir", "--omit-listing"]
+          ["<?xml version=\"1.0\" encoding=\"UTF-8\"?>", "<object", "<listing>4 lines of phi</listing>", "  <o base=\"Q.y\" name=\"x\"/>"]

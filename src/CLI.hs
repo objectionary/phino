@@ -53,7 +53,8 @@ data OptsRewrite = OptsRewrite
     normalize :: Bool,
     nothing :: Bool,
     shuffle :: Bool,
-    maxDepth :: Integer
+    maxDepth :: Integer,
+    omitListing :: Bool
   }
 
 parsePrintFormat :: ReadM PrintFormat
@@ -74,6 +75,7 @@ rewriteParser =
             <*> switch (long "nothing" <> help "Desugar provided 𝜑-expression")
             <*> switch (long "shuffle" <> help "Shuffle rules before applying")
             <*> option auto (long "max-depth" <> metavar "DEPTH" <> help "Max amount of rewritng cycles" <> value 25 <> showDefault)
+            <*> switch (long "omit-listing" <> help "Omit full program listing in XMIR output")
         )
 
 commandParser :: Parser Command
@@ -157,7 +159,7 @@ runCLI args = handle handler $ do
       program <- parseProgramThrows prog
       rewritten <- rewrite' program rules' 1
       logDebug (printf "Printing rewritten 𝜑-program as %s" (show outputFormat))
-      out <- printProgram rewritten outputFormat printMode
+      out <- printProgram rewritten outputFormat printMode omitListing
       putStrLn out
       where
         rewrite' :: Program -> [Y.Rule] -> Integer -> IO Program

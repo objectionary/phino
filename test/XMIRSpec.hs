@@ -18,7 +18,7 @@ spec = do
   phi <- runIO $ readFile =<< ensuredFile "test-resources/xmir/program.phi"
   xmir <- runIO $ readFile =<< ensuredFile "test-resources/xmir/program.xmir"
   prog <- runIO (parseProgramThrows phi)
-  doc <- runIO $ programToXMIR prog SALTY
+  doc <- runIO $ programToXMIR prog SALTY False
   let xmir' = printXMIR doc
   it "prints valid xmir" $ do
     pending
