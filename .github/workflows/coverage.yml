@@ -49,15 +49,17 @@ jobs:
 
           # Extract overall coverage summary
           if [ -f "$COVERAGE_FILE" ]; then
-            echo "## Code Coverage Report" >> $GITHUB_STEP_SUMMARY
-            echo "✅ Coverage report has been generated successfully!" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "The report includes detailed per-module breakdowns for:" >> $GITHUB_STEP_SUMMARY
-            echo "- Top Level Definitions coverage" >> $GITHUB_STEP_SUMMARY
-            echo "- Alternatives coverage" >> $GITHUB_STEP_SUMMARY
-            echo "- Expressions coverage" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "📊 View the full HTML report in the artifacts section below." >> $GITHUB_STEP_SUMMARY
+            {
+              echo "## Code Coverage Report"
+              echo "✅ Coverage report has been generated successfully!"
+              echo ""
+              echo "The report includes detailed per-module breakdowns for:"
+              echo "- Top Level Definitions coverage"
+              echo "- Alternatives coverage"
+              echo "- Expressions coverage"
+              echo ""
+              echo "📊 View the full HTML report in the artifacts section below."
+            } >> "$GITHUB_STEP_SUMMARY"
           fi
       - name: Install hpc-lcov for Codecov
         if: github.ref == 'refs/heads/master' && github.event_name == 'push'
