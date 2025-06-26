@@ -16,6 +16,7 @@
 .DS_Store
 .HTF/
 .cabal-sandbox/
+coverage-report/
 .cache/
 .direnv
 .eoc

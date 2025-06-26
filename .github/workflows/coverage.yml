@@ -1,0 +1,67 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+name: coverage
+'on':
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+jobs:
+  coverage:
+    strategy:
+      matrix:
+        os: [macos-15]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.ghcup
+            ~/.cabal/packages
+            ~/.cabal/store
+            ~/.ghc
+            dist-newstyle
+          key: ${{ runner.os }}-cabal-coverage-${{ hashFiles('**/*.cabal') }}-${{ hashFiles('cabal.project', 'cabal.project.freeze') }}
+          restore-keys: |
+            ${{ runner.os }}-cabal-coverage-
+            ${{ runner.os }}-cabal-
+      - name: Set up GHC
+        uses: haskell-actions/setup@v2.8.0
+        with:
+          ghc-version: '9.6.7'
+          cabal-version: '3.12.1.0'
+      - name: Update package list
+        run: cabal update
+      - name: Build project
+        run: cabal build all
+      - name: Run tests with coverage
+        run: cabal test all --enable-coverage
+      - name: Generate coverage report
+        run: |
+          find . -name "hpc_index.html" -type f | head -1 | xargs dirname | xargs -I {} cp -r {} coverage-report
+          COVERAGE_FILE=$(find . -name "hpc_index.html" -type f | head -1)
+          echo "Coverage report generated at: $COVERAGE_FILE"
+
+          # Extract overall coverage summary
+          if [ -f "$COVERAGE_FILE" ]; then
+            echo "## Code Coverage Report" >> $GITHUB_STEP_SUMMARY
+            echo "✅ Coverage report has been generated successfully!" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "The report includes detailed per-module breakdowns for:" >> $GITHUB_STEP_SUMMARY
+            echo "- Top Level Definitions coverage" >> $GITHUB_STEP_SUMMARY
+            echo "- Alternatives coverage" >> $GITHUB_STEP_SUMMARY
+            echo "- Expressions coverage" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "📊 View the full HTML report in the artifacts section below." >> $GITHUB_STEP_SUMMARY
+          fi
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: hpc-coverage-report
+          path: coverage-report/
+          retention-days: 30
