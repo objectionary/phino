@@ -167,7 +167,9 @@ cabal test --enable-coverage
 ```
 
 The coverage report will be generated as HTML files that you can open in your browser.
-Additionally, code coverage is automatically uploaded to [Codecov](https://codecov.io/gh/objectionary/phino) when changes are pushed to the master branch.
+Additionally, code coverage is automatically uploaded to
+[Codecov](https://codecov.io/gh/objectionary/phino) when changes are pushed to
+the master branch.
 
 You will need [GHC] and [Cabal ≥3.0][cabal] or [Stack ≥ 3.0][stack] installed.
 
