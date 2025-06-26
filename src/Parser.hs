@@ -103,16 +103,19 @@ unicodeEscape = do
             case readHex lowHexDigits of
               [(low, "")] ->
                 if low >= 0xDC00 && low <= 0xDFFF
-                  then -- Valid surrogate pair, combine them
+                  then do
+                    -- Valid surrogate pair, combine them
                     let codePoint = 0x10000 + ((n - 0xD800) * 0x400) + (low - 0xDC00)
-                     in return (chr codePoint)
+                    return (chr codePoint)
                   else fail ("Invalid low surrogate: \\u" ++ lowHexDigits)
               _ -> fail ("Invalid low surrogate hex: \\u" ++ lowHexDigits)
-        else if n >= 0xDC00 && n <= 0xDFFF
-          then fail ("Unexpected low surrogate: \\u" ++ hexDigits)
-          else if n >= 0 && n <= 0x10FFFF
-            then return (chr n)
-            else fail ("Invalid Unicode code point: \\u" ++ hexDigits)
+        else
+          if n >= 0xDC00 && n <= 0xDFFF
+            then fail ("Unexpected low surrogate: \\u" ++ hexDigits)
+            else
+              if n >= 0 && n <= 0x10FFFF
+                then return (chr n)
+                else fail ("Invalid Unicode code point: \\u" ++ hexDigits)
 
 function :: Parser String
 function = lexeme $ do
@@ -180,19 +183,21 @@ byte = do
 -- 2. one byte: 01-
 -- 3. many bytes: 01-02-...-FF
 bytes :: Parser String
-bytes = lexeme
-  (choice
-    [ symbol "--",
-      try $ do
-        first <- byte
-        rest <- some $ do
-          dash <- char '-'
-          bte <- byte
-          return (dash : bte)
-        return (first ++ concat rest),
-      byte >>= \bte -> char '-' >>= \dash -> return (bte ++ [dash])
-    ]
-    <?> "bytes")
+bytes =
+  lexeme
+    ( choice
+        [ symbol "--",
+          try $ do
+            first <- byte
+            rest <- some $ do
+              dash <- char '-'
+              bte <- byte
+              return (dash : bte)
+            return (first ++ concat rest),
+          byte >>= \bte -> char '-' >>= \dash -> return (bte ++ [dash])
+        ]
+        <?> "bytes"
+    )
 
 tauBinding :: Parser Attribute -> Parser Binding
 tauBinding attr = do

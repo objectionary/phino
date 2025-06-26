@@ -69,7 +69,7 @@ jobs:
         run: |
           TIX_FILE=$(find . -name "*.tix" -type f | head -1)
           if [ -f "$TIX_FILE" ]; then
-            hpc-lcov "$TIX_FILE" > coverage.lcov
+            hpc-lcov --file "$TIX_FILE" --output coverage.lcov
             echo "Generated lcov coverage data at coverage.lcov"
           else
             echo "No .tix file found for coverage conversion"

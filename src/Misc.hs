@@ -39,6 +39,12 @@ instance Show FsException where
   show FileDoesNotExist {..} = printf "File '%s' does not exist" file
   show DirectoryDoesNotExist {..} = printf "Directory '%s' does not exist" dir
 
+foldlMi :: (Monad m) => (Integer -> a -> b -> m a) -> a -> [b] -> m a
+foldlMi f = go 0
+  where
+    go _ acc [] = return acc
+    go i acc (y : ys) = f i acc y >>= \acc' -> go (i + 1) acc' ys
+
 -- Add void rho binding to the end of the list of any rho binding is not present
 withVoidRho :: [Binding] -> [Binding]
 withVoidRho bds = withVoidRho' bds False
@@ -101,16 +107,16 @@ btsToHex bts = intercalate "-" (map (printf "%02X") bts)
 -- >>> hexToNum "40-45"
 -- Expected 8 bytes for conversion, got 2
 hexToNum :: String -> Either Integer Double
-hexToNum hx =
+hexToNum hx = do
   let bytes = hexToBts hx
-   in if length bytes /= 8
-        then error $ "Expected 8 bytes for conversion, got " ++ show (length bytes)
-        else
-          let word = toWord64BE bytes
-              val = wordToDouble word
-           in case properFraction val of
-                (n, 0.0) -> Left n
-                _ -> Right val
+  if length bytes /= 8
+    then error $ "Expected 8 bytes for conversion, got " ++ show (length bytes)
+    else do
+      let word = toWord64BE bytes
+          val = wordToDouble word
+      case properFraction val of
+        (n, 0.0) -> Left n
+        _ -> Right val
   where
     toWord64BE :: [Word8] -> Word64
     toWord64BE [a, b, c, d, e, f, g, h] =

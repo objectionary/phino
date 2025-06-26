@@ -5,12 +5,13 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module XMIR (programToXMIR, printXMIR, toName, element) where
+module XMIR (programToXMIR, printXMIR, toName, parseXMIR, parseXMIRThrows, xmirToPhi) where
 
 import Ast
-import Control.Exception (throwIO)
+import Control.Exception (Exception (displayException), SomeException, throwIO)
 import Control.Exception.Base (Exception)
 import qualified Data.Bifunctor
+import Data.Foldable (foldlM)
 import Data.List (intercalate)
 import qualified Data.List
 import Data.Map (Map)
@@ -25,19 +26,27 @@ import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds)
 import Data.Time.Format (defaultTimeLocale, formatTime)
 import Data.Version (showVersion)
 import Debug.Trace (trace)
+import Misc (foldlMi)
 import Paths_phino (version)
-import Pretty (prettyAttribute, prettyBinding, prettyExpression, prettyProgram', PrintMode)
+import Pretty (PrintMode, prettyAttribute, prettyBinding, prettyExpression, prettyProgram')
 import Text.Printf (printf)
+import Text.Read (readMaybe)
+import qualified Text.Read as TR
 import Text.XML
+import qualified Text.XML.Cursor as C
 
 data XMIRException
   = UnsupportedExpression {expr :: Expression}
   | UnsupportedBinding {binding :: Binding}
+  | CouldNotParseXMIR {message :: String}
+  | InvalidXMIRFormat {message :: String, cursor :: C.Cursor}
   deriving (Exception)
 
 instance Show XMIRException where
   show UnsupportedExpression {..} = printf "XMIR does not support such expression: %s" (prettyExpression expr)
   show UnsupportedBinding {..} = printf "XMIR does not support such bindings: %s" (prettyBinding binding)
+  show CouldNotParseXMIR {..} = printf "Couldn't parse given XMIR, cause: %s" message
+  show InvalidXMIRFormat {..} = printf "Couldn't traverse though given XMIR, cause: %s" message
 
 toName :: String -> Name
 toName str = Name (T.pack str) Nothing Nothing
@@ -242,3 +251,117 @@ printXMIR (Document _ root _) =
             <> printElement 0 root
         )
     )
+
+parseXMIR :: String -> Either String Document
+parseXMIR xmir = case parseText def (TL.pack xmir) of
+  Right doc -> Right doc
+  Left err -> Left (displayException err)
+
+parseXMIRThrows :: String -> IO Document
+parseXMIRThrows xmir = case parseXMIR xmir of
+  Right doc -> pure doc
+  Left err -> throwIO (CouldNotParseXMIR err)
+
+xmirToPhi :: Document -> IO Program
+xmirToPhi xmir = do
+  let doc = C.fromDocument xmir
+  case doc C.$/ C.element (toName "object") of
+    [obj] -> do
+      expr <- do
+        case obj C.$/ C.element (toName "o") of
+          [o] -> do
+            bd <- xmirToFormationBinding o []
+            pure (ExFormation [bd])
+          _ -> throwIO (InvalidXMIRFormat "Expected single <o> element in <objet>" obj)
+      pure (Program expr)
+    _ -> throwIO (InvalidXMIRFormat "Expected single <object> element" doc)
+
+-- xmirToExpression :: C.Cursor -> IO Expression
+-- xmirToExpression cur
+--   | hasAttr "name" cur && not (hasAttr "base" cur) = do
+--       bds <- mapM xmirToBinding (cur C.$/ C.element (toName "o"))
+--       pure (ExFormation bds)
+--   | hasAttr "name" cur && hasAttr "base" cur = pure (ExFormation [])
+
+xmirToFormationBinding :: C.Cursor -> [String] -> IO Binding
+xmirToFormationBinding cur fqn
+  | not (hasAttr "name" cur) = throwIO (InvalidXMIRFormat "Formation children must have @name attribute" cur)
+  | not (hasAttr "base" cur) = do
+      name <- getAttr "name" cur
+      bds <- mapM (`xmirToFormationBinding` (name : fqn)) (cur C.$/ C.element (toName "o"))
+      case name of
+        "λ" -> pure (BiLambda (intercalate "_" ("L" : reverse fqn)))
+        ('α' : _) -> throwIO (InvalidXMIRFormat "Formation child @name can't start with α" cur)
+        "@" -> pure (BiTau AtPhi (ExFormation bds))
+        _ -> pure (BiTau (AtLabel name) (ExFormation bds))
+  | otherwise = do
+      name <- getAttr "name" cur
+      base <- getAttr "base" cur
+      attr <- case name of
+        "@" -> pure AtPhi
+        ('α' : _) -> throwIO (InvalidXMIRFormat "Formation child @name can't start with α" cur)
+        _ -> pure (AtLabel name)
+      case base of
+        "∅" -> pure (BiVoid attr)
+        _ -> do
+          expr <- xmirToExpression cur fqn
+          pure (BiTau attr expr)
+
+xmirToExpression :: C.Cursor -> [String] -> IO Expression
+xmirToExpression cur fqn = do
+  base <- getAttr "base" cur
+  case base of
+    '.' : rest ->
+      if null rest
+        then throwIO (InvalidXMIRFormat "The @base attribute can't be just '.'" cur)
+        else do
+          let args = cur C.$/ C.element (toName "o")
+          if null args
+            then throwIO (InvalidXMIRFormat (printf "Element with @base='%s' must have at least one child" base) cur)
+            else do
+              expr <- xmirToExpression (head args) fqn
+              attr <- case rest of
+                'α' : rest' -> do
+                  case TR.readMaybe rest' :: Maybe Integer of
+                    Just idx -> pure (AtAlpha idx)
+                    Nothing -> throwIO (InvalidXMIRFormat "The @base started with '.α' must be followed by integer" cur)
+                "@" -> pure AtPhi
+                "^" -> pure AtRho
+                _ -> if head rest `elem` ['a'..'z']
+                  then throwIO (InvalidXMIRFormat "The @base attribute must start with ['a'..'z'] after dot" cur)
+                  else pure (AtLabel rest)
+              let disp = ExDispatch expr attr
+              xmirToApplication disp (tail args) fqn
+    "$" -> do
+      if null (cur C.$/ C.element (toName "o"))
+        then pure ExThis
+        else throwIO (InvalidXMIRFormat "Application of '$' is illegal in XMIR" cur)
+    "Q" -> do
+      if null (cur C.$/ C.element (toName "o"))
+        then pure ExGlobal
+        else throwIO (InvalidXMIRFormat "Application of 'Q' is illegal in XMIR" cur)
+    'Q' : '.' : rest -> if null rest
+      then throwIO (InvalidXMIRFormat "The @base='Q.' is illegal in XMIR" cur)
+      else pure ExGlobal -- todo
+    '$' : '.' : rest -> if null rest
+      then throwIO (InvalidXMIRFormat "The @base='$.' is illegal in XMIR" cur)
+      else pure ExThis -- todo
+    _ -> throwIO (InvalidXMIRFormat "The @base attribute must be either ['∅'|'Q'] or start with ['Q.'|'$.'|'.']" cur)
+
+xmirToApplication :: Expression -> [C.Cursor] -> [String] -> IO Expression
+xmirToApplication expr [] _ = pure expr
+xmirToApplication expr args fqn = pure ExGlobal -- todo
+
+getAttr :: String -> C.Cursor -> IO String
+getAttr key cur = do
+  let attrs = C.attribute (toName key) cur
+  if null attrs
+    then throwIO (InvalidXMIRFormat (printf "Couldn't find attribute '%s'" key) cur)
+    else do
+      let attr = (T.unpack . head) attrs
+      if null attr
+        then throwIO (InvalidXMIRFormat (printf "The attribute '%s' is not expected to be empty" attr) cur)
+        else pure attr
+
+hasAttr :: String -> C.Cursor -> Bool
+hasAttr key cur = not (null (C.attribute (toName key) cur))
