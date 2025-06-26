@@ -69,11 +69,16 @@ expression (ExDispatch expr attr) = do
 expression (ExApplication expr (BiTau attr texpr)) = do
   (base, children) <- expression expr
   (base', children') <- expression texpr
-  let as = prettyAttribute attr
-      attrs =
-        if null base'
-          then [("as", as)]
-          else [("as", as), ("base", base')]
+  let attrs = case attr of
+        AtAlpha _ -> -- For alpha attributes, omit the "as" attribute since position implies the index
+          if null base'
+            then []
+            else [("base", base')]
+        _ -> -- For non-alpha attributes, include the "as" attribute as before
+          let as = prettyAttribute attr
+          in if null base'
+               then [("as", as)]
+               else [("as", as), ("base", base')]
   pure (base, children ++ [object attrs children'])
 expression (ExApplication (ExFormation bds) tau) = throwIO (UnsupportedExpression (ExApplication (ExFormation bds) tau))
 expression expr = throwIO (UnsupportedExpression expr)

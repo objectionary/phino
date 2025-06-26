@@ -23,3 +23,26 @@ spec = do
   it "prints valid xmir" $ do
     pending
     T.stripEnd (T.pack xmir) `shouldBe` T.stripEnd (T.pack xmir')
+  
+  it "omits redundant alpha attributes in XMIR" $ do
+    let phiCode = "Q -> [[org -> [[eolang -> [[version -> Q.org.eolang.number(α0 -> Q.org.eolang.bytes(α0 -> \"test\")), λ ⤍ Package]], λ ⤍ Package]]]]"
+    program <- parseProgramThrows phiCode
+    document <- programToXMIR program SALTY
+    let xmlOutput = printXMIR document
+    -- Check that alpha attributes are omitted - there should be no 'as="α0"' in the output
+    xmlOutput `shouldNotContain` "as=\"α0\""
+    -- Check that the structure is preserved with proper base attributes
+    xmlOutput `shouldContain` "base=\"Q.org.eolang.number\""
+    xmlOutput `shouldContain` "base=\"Q.org.eolang.bytes\""
+
+shouldNotContain :: String -> String -> IO ()
+shouldNotContain haystack needle = 
+  if T.pack needle `T.isInfixOf` T.pack haystack
+    then fail $ "Expected not to contain: " ++ needle
+    else return ()
+
+shouldContain :: String -> String -> IO ()  
+shouldContain haystack needle =
+  if T.pack needle `T.isInfixOf` T.pack haystack
+    then return ()
+    else fail $ "Expected to contain: " ++ needle
