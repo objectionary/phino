@@ -59,6 +59,27 @@ jobs:
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "📊 View the full HTML report in the artifacts section below." >> $GITHUB_STEP_SUMMARY
           fi
+      - name: Install hpc-lcov for Codecov
+        if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+        run: cabal install hpc-lcov
+      - name: Generate lcov coverage data
+        if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+        run: |
+          TIX_FILE=$(find . -name "*.tix" -type f | head -1)
+          if [ -f "$TIX_FILE" ]; then
+            hpc-lcov "$TIX_FILE" > coverage.lcov
+            echo "Generated lcov coverage data at coverage.lcov"
+          else
+            echo "No .tix file found for coverage conversion"
+            exit 1
+          fi
+      - name: Upload coverage to Codecov
+        if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./coverage.lcov
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: true
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
         with:
