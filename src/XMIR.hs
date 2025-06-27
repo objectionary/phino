@@ -35,6 +35,10 @@ import qualified Text.Read as TR
 import Text.XML
 import qualified Text.XML.Cursor as C
 
+-- @todo #116:30min Refactor XMIR module. This module became so big and hard to read.
+--  Now it's responsible for 3 differnt operations: 1) converting Phi AST to XML Document Ast,
+--  2) printing XML Document, 3) parsing XMIR to Phi AST. I think we should separate the logic
+--  in order to keep modules as little as possible.
 data XMIRException
   = UnsupportedExpression {expr :: Expression}
   | UnsupportedBinding {binding :: Binding}
@@ -265,6 +269,8 @@ parseXMIRThrows xmir = case parseXMIR xmir of
   Right doc -> pure doc
   Left err -> throwIO (CouldNotParseXMIR err)
 
+-- @todo #116:30min Build Phi with package. Right now we don't process /object/metas element
+--  We should check if it contains package. If it does - we should add to Phi AST.
 xmirToPhi :: Document -> IO Program
 xmirToPhi xmir = do
   let doc = C.fromDocument xmir
