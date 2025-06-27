@@ -6,17 +6,14 @@
 
 module XMIRSpec where
 
-import Ast (Program)
 import Control.Monad (forM_)
 import Data.Aeson
-import Data.Text qualified as T
 import Data.Yaml qualified as Yaml
 import GHC.Generics (Generic)
-import Misc (allPathsIn, ensuredFile)
+import Misc (allPathsIn)
 import Parser (parseProgramThrows)
-import Pretty (PrintMode (SALTY))
-import System.FilePath (makeRelative, takeBaseName)
-import Test.Hspec (Spec, describe, it, pending, runIO, shouldBe)
+import System.FilePath (makeRelative)
+import Test.Hspec (Spec, describe, it, runIO, shouldBe)
 import XMIR (parseXMIRThrows, xmirToPhi)
 
 data XMIRPack = XMIRPack

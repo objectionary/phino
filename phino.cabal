@@ -20,7 +20,7 @@ source-repository head
   location: https://github.com/objectionary/phino
 
 common warnings
-  ghc-options: -Wall
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -Wno-missing-export-lists
 
 library
   exposed-modules:
@@ -99,7 +99,6 @@ test-suite spec
     Paths_phino
   default-extensions:
     ImportQualifiedPost
-  ghc-options: -Wall
   build-depends:
     optparse-applicative,
     base,

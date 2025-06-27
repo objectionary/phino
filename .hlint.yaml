@@ -10,7 +10,6 @@
 - group: {name: default, enabled: true}
 
 # Disable some suggestions that might be too pedantic for this project
-- ignore: {name: "Use newtype instead of data"}
 - ignore: {name: "Use camelCase"}
 # Ignore parse errors for field names like 'pattern'
 - ignore: {name: "Parse error"}
