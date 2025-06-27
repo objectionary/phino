@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+xmir: |
+  <object>
+    <o name="app">
+      <o name="x">
+        <o name="void" base="∅"/>
+        <o name="λ"/>
+      </o>
+    </o>
+  </object>
+phi: '{[[ app -> [[ x -> [[ void -> ?, L> L_app_x ]] ]] ]]}'

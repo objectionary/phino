@@ -1,5 +1,6 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE NumericUnderscores #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
@@ -25,8 +26,7 @@ import Data.Time
 import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds)
 import Data.Time.Format (defaultTimeLocale, formatTime)
 import Data.Version (showVersion)
-import Debug.Trace (trace)
-import Misc (foldlMi)
+import Misc (withVoidRho)
 import Paths_phino (version)
 import Pretty (PrintMode, prettyAttribute, prettyBinding, prettyExpression, prettyProgram')
 import Text.Printf (printf)
@@ -46,7 +46,14 @@ instance Show XMIRException where
   show UnsupportedExpression {..} = printf "XMIR does not support such expression: %s" (prettyExpression expr)
   show UnsupportedBinding {..} = printf "XMIR does not support such bindings: %s" (prettyBinding binding)
   show CouldNotParseXMIR {..} = printf "Couldn't parse given XMIR, cause: %s" message
-  show InvalidXMIRFormat {..} = printf "Couldn't traverse though given XMIR, cause: %s" message
+  show InvalidXMIRFormat {..} =
+    printf
+      "Couldn't traverse though given XMIR, cause: %s\nXMIR:\n%s"
+      message
+      ( case C.node cursor of
+          NodeElement el -> printXMIR (Document (Prologue [] Nothing []) el [])
+          _ -> "Unknown"
+      )
 
 toName :: String -> Name
 toName str = Name (T.pack str) Nothing Nothing
@@ -196,7 +203,6 @@ printElement indentLevel (Element name attrs nodes)
         <> TB.fromText (nameLocalName name)
         <> attrsText
         <> TB.fromString "/>"
-        <> newline
   | all isTextNode nodes =
       indent indentLevel
         <> TB.fromString "<"
@@ -207,20 +213,17 @@ printElement indentLevel (Element name attrs nodes)
         <> TB.fromString "</"
         <> TB.fromText (nameLocalName name)
         <> TB.fromString ">"
-        <> newline
   | otherwise =
       indent indentLevel
         <> TB.fromString "<"
         <> TB.fromText (nameLocalName name)
         <> attrsText
         <> TB.fromString ">"
-        <> newline
         <> mconcat (map (printNode (indentLevel + 1)) nodes)
         <> indent indentLevel
         <> TB.fromString "</"
         <> TB.fromText (nameLocalName name)
         <> TB.fromString ">"
-        <> newline
   where
     attrsText = do
       let attrs' = M.toList attrs
@@ -265,23 +268,18 @@ parseXMIRThrows xmir = case parseXMIR xmir of
 xmirToPhi :: Document -> IO Program
 xmirToPhi xmir = do
   let doc = C.fromDocument xmir
-  case doc C.$/ C.element (toName "object") of
-    [obj] -> do
-      expr <- do
-        case obj C.$/ C.element (toName "o") of
-          [o] -> do
-            bd <- xmirToFormationBinding o []
-            pure (ExFormation [bd])
-          _ -> throwIO (InvalidXMIRFormat "Expected single <o> element in <objet>" obj)
-      pure (Program expr)
-    _ -> throwIO (InvalidXMIRFormat "Expected single <object> element" doc)
-
--- xmirToExpression :: C.Cursor -> IO Expression
--- xmirToExpression cur
---   | hasAttr "name" cur && not (hasAttr "base" cur) = do
---       bds <- mapM xmirToBinding (cur C.$/ C.element (toName "o"))
---       pure (ExFormation bds)
---   | hasAttr "name" cur && hasAttr "base" cur = pure (ExFormation [])
+  case C.node doc of
+    NodeElement el
+      | nameLocalName (elementName el) == "object" -> do
+          expr <- do
+            case doc C.$/ C.element (toName "o") of
+              [o] -> do
+                bd <- xmirToFormationBinding o []
+                pure (ExFormation [bd, BiVoid AtRho])
+              _ -> throwIO (InvalidXMIRFormat "Expected single <o> element in <objet>" doc)
+          pure (Program expr)
+      | otherwise -> throwIO (InvalidXMIRFormat "Expected single <object> element" doc)
+    _ -> throwIO (InvalidXMIRFormat "NodeElement is expected as root element" doc)
 
 xmirToFormationBinding :: C.Cursor -> [String] -> IO Binding
 xmirToFormationBinding cur fqn
@@ -292,8 +290,8 @@ xmirToFormationBinding cur fqn
       case name of
         "λ" -> pure (BiLambda (intercalate "_" ("L" : reverse fqn)))
         ('α' : _) -> throwIO (InvalidXMIRFormat "Formation child @name can't start with α" cur)
-        "@" -> pure (BiTau AtPhi (ExFormation bds))
-        _ -> pure (BiTau (AtLabel name) (ExFormation bds))
+        "@" -> pure (BiTau AtPhi (ExFormation (withVoidRho bds)))
+        _ -> pure (BiTau (AtLabel name) (ExFormation (withVoidRho bds)))
   | otherwise = do
       name <- getAttr "name" cur
       base <- getAttr "base" cur
@@ -308,49 +306,99 @@ xmirToFormationBinding cur fqn
           pure (BiTau attr expr)
 
 xmirToExpression :: C.Cursor -> [String] -> IO Expression
-xmirToExpression cur fqn = do
-  base <- getAttr "base" cur
-  case base of
-    '.' : rest ->
-      if null rest
-        then throwIO (InvalidXMIRFormat "The @base attribute can't be just '.'" cur)
-        else do
-          let args = cur C.$/ C.element (toName "o")
-          if null args
-            then throwIO (InvalidXMIRFormat (printf "Element with @base='%s' must have at least one child" base) cur)
+xmirToExpression cur fqn
+  | hasAttr "base" cur = do
+      base <- getAttr "base" cur
+      case base of
+        '.' : rest ->
+          if null rest
+            then throwIO (InvalidXMIRFormat "The @base attribute can't be just '.'" cur)
             else do
-              expr <- xmirToExpression (head args) fqn
-              attr <- case rest of
-                'α' : rest' -> do
-                  case TR.readMaybe rest' :: Maybe Integer of
-                    Just idx -> pure (AtAlpha idx)
-                    Nothing -> throwIO (InvalidXMIRFormat "The @base started with '.α' must be followed by integer" cur)
-                "@" -> pure AtPhi
-                "^" -> pure AtRho
-                _ -> if head rest `elem` ['a'..'z']
-                  then throwIO (InvalidXMIRFormat "The @base attribute must start with ['a'..'z'] after dot" cur)
-                  else pure (AtLabel rest)
-              let disp = ExDispatch expr attr
-              xmirToApplication disp (tail args) fqn
-    "$" -> do
-      if null (cur C.$/ C.element (toName "o"))
-        then pure ExThis
-        else throwIO (InvalidXMIRFormat "Application of '$' is illegal in XMIR" cur)
-    "Q" -> do
-      if null (cur C.$/ C.element (toName "o"))
-        then pure ExGlobal
-        else throwIO (InvalidXMIRFormat "Application of 'Q' is illegal in XMIR" cur)
-    'Q' : '.' : rest -> if null rest
-      then throwIO (InvalidXMIRFormat "The @base='Q.' is illegal in XMIR" cur)
-      else pure ExGlobal -- todo
-    '$' : '.' : rest -> if null rest
-      then throwIO (InvalidXMIRFormat "The @base='$.' is illegal in XMIR" cur)
-      else pure ExThis -- todo
-    _ -> throwIO (InvalidXMIRFormat "The @base attribute must be either ['∅'|'Q'] or start with ['Q.'|'$.'|'.']" cur)
+              let args = cur C.$/ C.element (toName "o")
+              if null args
+                then throwIO (InvalidXMIRFormat (printf "Element with @base='%s' must have at least one child" base) cur)
+                else do
+                  expr <- xmirToExpression (head args) fqn
+                  attr <- toAttr rest cur
+                  let disp = ExDispatch expr attr
+                  xmirToApplication disp (tail args) fqn
+        "$" -> do
+          if null (cur C.$/ C.element (toName "o"))
+            then pure ExThis
+            else throwIO (InvalidXMIRFormat "Application of '$' is illegal in XMIR" cur)
+        "Q" -> do
+          if null (cur C.$/ C.element (toName "o"))
+            then pure ExGlobal
+            else throwIO (InvalidXMIRFormat "Application of 'Q' is illegal in XMIR" cur)
+        'Q' : '.' : rest -> xmirToExpression' ExGlobal "Q" rest cur fqn
+        '$' : '.' : rest -> xmirToExpression' ExThis "$" rest cur fqn
+        _ -> throwIO (InvalidXMIRFormat "The @base attribute must be either ['∅'|'Q'] or start with ['Q.'|'$.'|'.']" cur)
+  | otherwise = do
+      bds <- mapM (`xmirToFormationBinding` fqn) (cur C.$/ C.element (toName "o"))
+      pure (ExFormation (withVoidRho bds))
+  where
+    xmirToExpression' :: Expression -> String -> String -> C.Cursor -> [String] -> IO Expression
+    xmirToExpression' start symbol rest cur fqn =
+      if null rest
+        then throwIO (InvalidXMIRFormat (printf "The @base='%s.' is illegal in XMIR" symbol) cur)
+        else do
+          head' <-
+            foldlM
+              (\acc part -> ExDispatch acc <$> toAttr (T.unpack part) cur)
+              start
+              (T.splitOn (T.pack ".") (T.pack rest))
+          let args = cur C.$/ C.element (toName "o")
+          xmirToApplication head' args fqn
 
 xmirToApplication :: Expression -> [C.Cursor] -> [String] -> IO Expression
-xmirToApplication expr [] _ = pure expr
-xmirToApplication expr args fqn = pure ExGlobal -- todo
+xmirToApplication = xmirToApplication' 0
+  where
+    xmirToApplication' :: Integer -> Expression -> [C.Cursor] -> [String] -> IO Expression
+    xmirToApplication' _ expr [] _ = pure expr
+    xmirToApplication' idx expr (arg : args) fqn = do
+      let app
+            | hasAttr "name" arg = throwIO (InvalidXMIRFormat "Application argument can't have @name attribute" arg)
+            | hasAttr "base" arg && hasText arg = throwIO (InvalidXMIRFormat "It's illegal in XMIR to have @base and text() at the same time" arg)
+            | not (hasAttr "base" arg) && not (hasText arg) = do
+                bds <- mapM (`xmirToFormationBinding` fqn) (arg C.$/ C.element (toName "o"))
+                as <- asToAttr arg idx
+                pure (ExApplication expr (BiTau as (ExFormation (withVoidRho bds))))
+            | not (hasAttr "base" arg) && hasText arg = do
+                as <- asToAttr arg idx
+                text <- getText arg
+                pure (ExApplication expr (BiTau as (ExFormation [BiDelta text, BiVoid AtRho])))
+            | otherwise = do
+                as <- asToAttr arg idx
+                arg' <- xmirToExpression arg fqn
+                pure (ExApplication expr (BiTau as arg'))
+      app' <- app
+      xmirToApplication' (idx + 1) app' args fqn
+
+    asToAttr :: C.Cursor -> Integer -> IO Attribute
+    asToAttr cur idx
+      | hasAttr "as" cur = do
+          as <- getAttr "as" cur
+          attr <- toAttr as cur
+          case attr of
+            AtRho -> throwIO (InvalidXMIRFormat "The '^' in @as attribute is illegal in XMIR" cur)
+            other -> pure other
+      | otherwise = pure (AtAlpha idx)
+
+toAttr :: String -> C.Cursor -> IO Attribute
+toAttr attr cur = case attr of
+  'α' : rest' -> do
+    case TR.readMaybe rest' :: Maybe Integer of
+      Just idx -> pure (AtAlpha idx)
+      Nothing -> throwIO (InvalidXMIRFormat "The attribute started with 'α' must be followed by integer" cur)
+  "@" -> pure AtPhi
+  "^" -> pure AtRho
+  _
+    | head attr `notElem` ['a' .. 'z'] -> throwIO (InvalidXMIRFormat (printf "The attribute '%s' must start with ['a'..'z']" attr) cur)
+    | '.' `elem` attr -> throwIO (InvalidXMIRFormat "Attribute can't contain dots" cur)
+    | otherwise -> pure (AtLabel attr)
+
+hasAttr :: String -> C.Cursor -> Bool
+hasAttr key cur = not (null (C.attribute (toName key) cur))
 
 getAttr :: String -> C.Cursor -> IO String
 getAttr key cur = do
@@ -363,5 +411,15 @@ getAttr key cur = do
         then throwIO (InvalidXMIRFormat (printf "The attribute '%s' is not expected to be empty" attr) cur)
         else pure attr
 
-hasAttr :: String -> C.Cursor -> Bool
-hasAttr key cur = not (null (C.attribute (toName key) cur))
+hasText :: C.Cursor -> Bool
+hasText cur = any isNonEmptyTextNode (C.child cur)
+  where
+    isNonEmptyTextNode cur' = case C.node cur' of
+      NodeContent t -> not (T.null (T.strip t)) -- strip to ignore whitespace-only
+      _ -> False
+
+getText :: C.Cursor -> IO String
+getText cur =
+  case [t | c <- C.child cur, NodeContent t <- [C.node c]] of
+    (t : _) -> pure (T.unpack t)
+    [] -> throwIO (InvalidXMIRFormat "Text content inside <o> element can't be empty" cur)

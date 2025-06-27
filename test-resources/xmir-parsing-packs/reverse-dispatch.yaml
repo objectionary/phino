@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+xmir: |
+  <object>
+    <o name="app">
+      <o name="x" base=".eolang">
+        <o base="Q.org"/>
+      </o>
+    </o>
+  </object>
+phi: '{[[ app -> [[ x -> Q.org.eolang ]] ]]}'

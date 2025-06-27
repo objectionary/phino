@@ -1,0 +1,18 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+xmir: |
+  <object>
+    <o name="app">
+      <o name="x" base="Q.org.eolang">
+        <o base="Q.x"/>
+        <o as="α1" base=".plus">
+          <o base="Q.y"/>
+        </o>
+        <o as="arg">
+          <o name="y" base="$"/>
+        </o>
+      </o>
+    </o>
+  </object>
+phi: '{[[ app -> [[ x -> Q.org.eolang(α0 -> Q.x)(α1 -> Q.y.plus)(arg -> [[ y -> $ ]]) ]] ]]}'

@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+xmir: |
+  <object>
+    <o name="app">
+      <o name="x" base=".plus">
+        <o>
+          <o name="plus" base="Q.number"/>
+        </o>
+      </o>
+    </o>
+  </object>
+phi: '{[[ app -> [[ x -> [[ plus -> Q.number ]].plus ]] ]]}'

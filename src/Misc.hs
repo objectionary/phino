@@ -39,12 +39,6 @@ instance Show FsException where
   show FileDoesNotExist {..} = printf "File '%s' does not exist" file
   show DirectoryDoesNotExist {..} = printf "Directory '%s' does not exist" dir
 
-foldlMi :: (Monad m) => (Integer -> a -> b -> m a) -> a -> [b] -> m a
-foldlMi f = go 0
-  where
-    go _ acc [] = return acc
-    go i acc (y : ys) = f i acc y >>= \acc' -> go (i + 1) acc' ys
-
 -- Add void rho binding to the end of the list of any rho binding is not present
 withVoidRho :: [Binding] -> [Binding]
 withVoidRho bds = withVoidRho' bds False

@@ -91,7 +91,8 @@ spec = do
     output `shouldContain` "Usage:"
 
   it "prints debug info with --log-level=DEBUG" $
-    withStdin "Q -> [[]]" $ testCLI ["rewrite", "--nothing", "--log-level=DEBUG"] ["[DEBUG]:"]
+    withStdin "Q -> [[]]" $
+      testCLI ["rewrite", "--nothing", "--log-level=DEBUG"] ["[DEBUG]:"]
 
   describe "rewrites" $ do
     it "desugares with --nothing flag from file" $
@@ -147,7 +148,7 @@ spec = do
                 "⟧"
               ]
           ]
-    
+
     it "rewrites with --sweet flag" $
       withStdin "Q -> [[ x -> 5]]" $
         testCLI
@@ -159,3 +160,18 @@ spec = do
         testCLI
           ["rewrite", "--nothing", "--output=xmir"]
           ["<?xml version=\"1.0\" encoding=\"UTF-8\"?>", "<object", "  <o base=\"Q.y\" name=\"x\"/>"]
+
+    it "rewrites with XMIR as input" $
+      withStdin "<object><o name=\"app\"><o name=\"x\" base=\"Q.number\"/></o></object>" $
+        testCLI
+          ["rewrite", "--nothing", "--input=xmir", "--sweet"]
+          [ unlines
+              [ "{⟦",
+                "  app ↦ ⟦",
+                "    x ↦ Φ.number,",
+                "    ρ ↦ ∅",
+                "  ⟧,",
+                "  ρ ↦ ∅",
+                "⟧}"
+              ]
+          ]
