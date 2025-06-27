@@ -282,7 +282,7 @@ xmirToPhi xmir = do
               [o] -> do
                 bd <- xmirToFormationBinding o []
                 pure (ExFormation [bd, BiVoid AtRho])
-              _ -> throwIO (InvalidXMIRFormat "Expected single <o> element in <objet>" doc)
+              _ -> throwIO (InvalidXMIRFormat "Expected single <o> element in <object>" doc)
           pure (Program expr)
       | otherwise -> throwIO (InvalidXMIRFormat "Expected single <object> element" doc)
     _ -> throwIO (InvalidXMIRFormat "NodeElement is expected as root element" doc)
