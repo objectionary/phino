@@ -61,6 +61,7 @@ data OptsRewrite = OptsRewrite
     normalize :: Bool,
     nothing :: Bool,
     shuffle :: Bool,
+    omitListing :: Bool,
     maxDepth :: Integer
   }
 
@@ -82,6 +83,7 @@ rewriteParser =
             <*> switch (long "normalize" <> help "Use built-in normalization rules")
             <*> switch (long "nothing" <> help "Just desugar provided 𝜑-program")
             <*> switch (long "shuffle" <> help "Shuffle rules before applying")
+            <*> switch (long "omit-listing" <> help "Omit full program listing in XMIR output")
             <*> option auto (long "max-depth" <> metavar "DEPTH" <> help "Max amount of rewritng cycles" <> value 25 <> showDefault)
         )
 
@@ -199,5 +201,5 @@ runCLI args = handle handler $ do
         printProgram :: Program -> IOFormat -> PrintMode -> IO String
         printProgram prog PHI mode = pure (prettyProgram' prog mode)
         printProgram prog XMIR mode = do
-          xmir <- programToXMIR prog mode
+          xmir <- programToXMIR prog mode omitListing
           pure (printXMIR xmir)
