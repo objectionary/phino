@@ -269,21 +269,28 @@ parseXMIRThrows xmir = case parseXMIR xmir of
   Right doc -> pure doc
   Left err -> throwIO (CouldNotParseXMIR err)
 
--- @todo #116:30min Build Phi with package. Right now we don't process /object/metas element
---  We should check if it contains package. If it does - we should add to Phi AST.
 xmirToPhi :: Document -> IO Program
 xmirToPhi xmir = do
   let doc = C.fromDocument xmir
   case C.node doc of
     NodeElement el
       | nameLocalName (elementName el) == "object" -> do
-          expr <- do
-            case doc C.$/ C.element (toName "o") of
-              [o] -> do
-                bd <- xmirToFormationBinding o []
-                pure (ExFormation [bd, BiVoid AtRho])
-              _ -> throwIO (InvalidXMIRFormat "Expected single <o> element in <object>" doc)
-          pure (Program expr)
+          obj <- case doc C.$/ C.element (toName "o") of
+            [o] -> xmirToFormationBinding o []
+            _ -> throwIO (InvalidXMIRFormat "Expected single <o> element in <object>" doc)
+          let pckg =
+                [ T.unpack t
+                  | meta <- doc C.$/ C.element (toName "metas") C.&/ C.element (toName "meta"),
+                    let heads = meta C.$/ C.element (toName "head") C.&/ C.content,
+                    heads == ["package"],
+                    tail' <- meta C.$/ C.element (toName "tail") C.&/ C.content,
+                    t <- T.splitOn "." tail'
+                ]
+          if null pckg
+            then pure (Program (ExFormation [obj, BiVoid AtRho]))
+            else do
+              let bd = foldr (\part acc -> BiTau (AtLabel part) (ExFormation [acc, BiLambda "Package", BiVoid AtRho])) obj pckg
+              pure (Program (ExFormation [bd, BiVoid AtRho]))
       | otherwise -> throwIO (InvalidXMIRFormat "Expected single <object> element" doc)
     _ -> throwIO (InvalidXMIRFormat "NodeElement is expected as root element" doc)
 
@@ -352,7 +359,7 @@ xmirToExpression cur fqn
             foldlM
               (\acc part -> ExDispatch acc <$> toAttr (T.unpack part) cur)
               start
-              (T.splitOn (T.pack ".") (T.pack rest))
+              (T.splitOn "." (T.pack rest))
           let args = cur C.$/ C.element (toName "o")
           xmirToApplication head' args fqn
 
