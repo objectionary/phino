@@ -144,6 +144,7 @@ Extension:                # substitutions extension used to introduce new meta v
 ```
 
 Here's list of functions that are supported for extensions:
+
 * contextualize - function of two arguments, that rewrites given expression
   depending on provided context according to the contextualization
   [rules](assets/contextualize.jpg)
