@@ -117,14 +117,14 @@ instance Pretty (Formatted Binding) where
   pretty (Formatted (_, BiLambda func)) = pretty "λ" <+> prettyDashedArrow <+> pretty func
 
 instance {-# OVERLAPPING #-} Pretty (Formatted [Binding]) where
-  pretty (Formatted (SWEET, bds)) = vsep (punctuate comma (exludeVoidRho (\bd -> pretty (Formatted (SWEET, bd))) [] bds))
+  pretty (Formatted (SWEET, bds)) = vsep (punctuate comma (excludeVoidRho (\bd -> pretty (Formatted (SWEET, bd))) [] bds))
     where
-      exludeVoidRho :: (Binding -> Doc ann) -> [Doc ann] -> [Binding] -> [Doc ann]
-      exludeVoidRho func acc [bd] = case bd of
+      excludeVoidRho :: (Binding -> Doc ann) -> [Doc ann] -> [Binding] -> [Doc ann]
+      excludeVoidRho func acc [bd] = case bd of
         BiVoid AtRho -> reverse acc
         _ -> reverse (func bd : acc)
-      exludeVoidRho func acc (x : xs) = exludeVoidRho func (func x : acc) xs
-      exludeVoidRho func acc [] = reverse acc
+      excludeVoidRho func acc (x : xs) = excludeVoidRho func (func x : acc) xs
+      excludeVoidRho func acc [] = reverse acc
   pretty (Formatted (SALTY, bds)) = vsep (punctuate comma (map (\bd -> pretty (Formatted (SALTY, bd))) bds))
 
 complexApplication :: Expression -> (Expression, [Binding], [Expression])

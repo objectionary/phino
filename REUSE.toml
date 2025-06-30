@@ -11,7 +11,8 @@ path = [
     "**.lock",
     "**.phi",
     "**.xmir",
-    ".pdd"
+    ".pdd",
+    "assets/**"
 ]
 precedence = "override"
 SPDX-FileCopyrightText = "Copyright (c) 2025 Objectionary.com"

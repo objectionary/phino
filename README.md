@@ -98,7 +98,7 @@ For more details, use `--help` option.
 
 ## Rule structure
 
-This is BNF-like yaml rule structure. Here types ended with 
+This is BNF-like yaml rule structure. Here types ended with
 apostrophe, like `Attribute'` are built types from 𝜑-program [AST](src/Ast.hs)
 
 ```bnfc
@@ -144,8 +144,8 @@ Extension:                # substitutions extension used to introduce new meta v
 ```
 
 Here's list of functions that are supported for extensions:
-- contextualize - function of two arguments, that rewrites given expression
-  depending on provided context according to the contextualization 
+* contextualize - function of two arguments, that rewrites given expression
+  depending on provided context according to the contextualization
   [rules](assets/contextualize.jpg)
 
 ## Meta variables
@@ -196,4 +196,3 @@ You will need [GHC] and [Cabal ≥3.0][cabal] or [Stack ≥ 3.0][stack] installe
 [stack]: https://docs.haskellstack.org/en/stable/install_and_upgrade/
 [GHC]: https://www.haskell.org/ghc/
 [guidelines]: https://www.yegor256.com/2014/04/15/github-guidelines.html
-[xmir]: https://news.eolang.org/2022-11-25-xmir-guide.html
