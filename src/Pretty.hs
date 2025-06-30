@@ -20,9 +20,9 @@ where
 import Ast
 import qualified Data.Map.Strict as Map
 import Matcher
+import Misc (hexToNum, hexToStr)
 import Prettyprinter
 import Prettyprinter.Render.String (renderString)
-import Misc (hexToStr, hexToNum)
 
 data PrintMode = SWEET | SALTY
   deriving (Eq)
@@ -117,7 +117,15 @@ instance Pretty (Formatted Binding) where
   pretty (Formatted (_, BiLambda func)) = pretty "λ" <+> prettyDashedArrow <+> pretty func
 
 instance {-# OVERLAPPING #-} Pretty (Formatted [Binding]) where
-  pretty (Formatted (mode, bds)) = vsep (punctuate comma (map (\bd -> pretty (Formatted (mode, bd))) bds))
+  pretty (Formatted (SWEET, bds)) = vsep (punctuate comma (exludeVoidRho (\bd -> pretty (Formatted (SWEET, bd))) [] bds))
+    where
+      exludeVoidRho :: (Binding -> Doc ann) -> [Doc ann] -> [Binding] -> [Doc ann]
+      exludeVoidRho func acc [bd] = case bd of
+        BiVoid AtRho -> reverse acc
+        _ -> reverse (func bd : acc)
+      exludeVoidRho func acc (x : xs) = exludeVoidRho func (func x : acc) xs
+      exludeVoidRho func acc [] = reverse acc
+  pretty (Formatted (SALTY, bds)) = vsep (punctuate comma (map (\bd -> pretty (Formatted (SALTY, bd))) bds))
 
 complexApplication :: Expression -> (Expression, [Binding], [Expression])
 complexApplication (ExApplication (ExApplication expr tau) tau') = do
@@ -126,9 +134,10 @@ complexApplication (ExApplication (ExApplication expr tau) tau') = do
   if null exprs
     then (before, taus', [])
     else case tau' of
-      BiTau (AtAlpha idx) expr' -> if idx == fromIntegral (length exprs)
-        then (before, taus', expr' : exprs)
-        else (before, taus', [])
+      BiTau (AtAlpha idx) expr' ->
+        if idx == fromIntegral (length exprs)
+          then (before, taus', expr' : exprs)
+          else (before, taus', [])
       _ -> (before, taus', [])
 complexApplication (ExApplication expr (BiTau (AtAlpha 0) expr')) = (expr, [BiTau (AtAlpha 0) expr'], [expr'])
 complexApplication (ExApplication expr tau) = (expr, [tau], [])
@@ -149,9 +158,10 @@ instance Pretty (Formatted Expression) where
   pretty (Formatted (_, ExMeta meta)) = prettyMeta meta
   pretty (Formatted (SWEET, ExApplication (ExApplication expr tau) tau')) = do
     let (expr', taus, exprs) = complexApplication (ExApplication (ExApplication expr tau) tau')
-        args = if null exprs
-          then pretty (Formatted (SWEET, reverse taus))
-          else vsep (punctuate comma (map (\exp -> pretty (Formatted (SWEET, exp))) (reverse exprs)))
+        args =
+          if null exprs
+            then pretty (Formatted (SWEET, reverse taus))
+            else vsep (punctuate comma (map (\exp -> pretty (Formatted (SWEET, exp))) (reverse exprs)))
     pretty (Formatted (SWEET, expr')) <> vsep [lparen, indent 2 args, rparen]
   pretty (Formatted (SWEET, ExApplication expr tau)) = do
     let arg = case tau of

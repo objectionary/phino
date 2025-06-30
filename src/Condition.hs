@@ -46,9 +46,6 @@ numToInt (Y.Ordinal (AtAlpha idx)) subst = Just idx
 numToInt (Y.Length (BiMeta meta)) (Subst mp) = case M.lookup meta mp of
   Just (MvBindings bds) -> Just (toInteger (length bds))
   _ -> Nothing
-numToInt (Y.Add left right) subst = case (numToInt left subst, numToInt right subst) of
-  (Just left_, Just right_) -> Just (left_ + right_)
-  _ -> Nothing
 numToInt (Y.Literal num) subst = Just num
 numToInt _ _ = Nothing
 
@@ -109,17 +106,17 @@ meetCondition' (Y.NF (ExMeta meta)) (Subst mp) = case M.lookup meta mp of
         Just matched -> not (null matched) || matchesAnyNormalizationRule expr rules
         Nothing -> matchesAnyNormalizationRule expr rules
 meetCondition' (Y.NF _) _ = []
-meetCondition' (Y.FN (ExMeta meta)) (Subst mp) = case M.lookup meta mp of
-  Just (MvExpression expr) -> meetCondition' (Y.FN expr) (Subst mp)
+meetCondition' (Y.XI (ExMeta meta)) (Subst mp) = case M.lookup meta mp of
+  Just (MvExpression expr) -> meetCondition' (Y.XI expr) (Subst mp)
   _ -> []
-meetCondition' (Y.FN (ExFormation _)) subst = [subst]
-meetCondition' (Y.FN ExThis) subst = []
-meetCondition' (Y.FN ExGlobal) subst = [subst]
-meetCondition' (Y.FN (ExApplication expr (BiTau attr texpr))) subst = do
-  let onExpr = meetCondition' (Y.FN expr) subst
-      onTau = meetCondition' (Y.FN texpr) subst
+meetCondition' (Y.XI (ExFormation _)) subst = [subst]
+meetCondition' (Y.XI ExThis) subst = []
+meetCondition' (Y.XI ExGlobal) subst = [subst]
+meetCondition' (Y.XI (ExApplication expr (BiTau attr texpr))) subst = do
+  let onExpr = meetCondition' (Y.XI expr) subst
+      onTau = meetCondition' (Y.XI texpr) subst
   [subst | not (null onExpr) && not (null onTau)]
-meetCondition' (Y.FN (ExDispatch expr _)) subst = meetCondition' (Y.FN expr) subst
+meetCondition' (Y.XI (ExDispatch expr _)) subst = meetCondition' (Y.XI expr) subst
 
 -- For each substitution check if it meetCondition to given condition
 -- If substitution does not meet the condition - it's thrown out

@@ -16,7 +16,7 @@ name: COPY
 pattern: ⟦ 𝐵1, 𝜏1 ↦ ⟦ 𝐵2, 𝜏2 ↦ ∅, 𝐵3 ⟧(𝜏2 ↦ 𝑒1) * !t, 𝐵4 ⟧
 result: ⟦ 𝐵1, 𝜏1 ↦ ⟦ 𝐵2, 𝜏2 ↦ 𝑒2, 𝐵3 ⟧ * !t, 𝐵4 ⟧
 when:
-  fn: 𝑒1
+  xi: 𝑒1
 where:
   - meta: 𝑒2
     function: contextualize

@@ -21,12 +21,14 @@ cabal install --overwrite-policy=always phino-0.0.0.12
 phino --version
 ```
 
-Then, you write a simple [𝜑-calculus](https://www.eolang.org) expression
+Then, you write a simple [𝜑-calculus](https://www.eolang.org) program
 in the `hello.phi` file:
 
 ```text
 Φ ↦ ⟦ φ ↦ ⟦ Δ ⤍ 68-65-6C-6C-6F ⟧, t ↦ ξ.k, k ↦ ⟦⟧ ⟧
 ```
+
+## Dataize
 
 Then, you dataize it (**under development**):
 
@@ -34,6 +36,8 @@ Then, you dataize it (**under development**):
 $ phino dataize hello.phi
 "hello"
 ```
+
+## Rewrite
 
 You can rewrite this expression with the help of rules
 defined in the `my-rule.yml` YAML file (here, the `!b` is a capturing group,
@@ -48,7 +52,7 @@ result: Δ ⤍ 62-79-65
 Then, rewrite:
 
 ```bash
-$ phino rewrite --rule=my-rule.yml --phi-input=hello.phi
+$ phino rewrite --rule=my-rule.yml --input-file=hello.phi
 Φ ↦ ⟦ φ ↦ ⟦ Δ ⤍ 62-79-65 ⟧, t ↦ ξ.k, k ↦ ⟦⟧ ⟧
 ```
 
@@ -58,19 +62,18 @@ If you want to use many rules, just use `--rule` as many times as you need:
 phino rewrite --rule=rule1.yaml --rule=rule2.yaml ...
 ```
 
-If `--phi-input` is not provided, the 𝜑-expression is taken from `stdin`:
+If `--input-file` is not provided, the 𝜑-expression is taken from `stdin`:
 
 ```bash
 $ echo 'Φ ↦ ⟦ φ ↦ ⟦ Δ ⤍ 68-65-6C-6C-6F ⟧ ⟧' | phino rewrite --rule=my-rule.yml
 Φ ↦ ⟦ φ ↦ ⟦ Δ ⤍ 62-79-65 ⟧ ⟧
 ```
 
-You can also use [built-in rules](resources/normalize.yaml), which are designed
+You can also use [built-in rules](resources), which are designed
 to normalize expressions:
 
 ```bash
-$ phino rewrite --normalize --phi-input=hello.phi
-Φ ↦ ⟦ φ ↦ ⟦ Δ ⤍ 68-65-6C-6C-6F ⟧, t ↦ ⟦⟧, k ↦ ⟦⟧ ⟧
+phino rewrite --normalize --input-file=hello.phi
 ```
 
 Also `phino` supports 𝜑-expressions in
@@ -91,9 +94,12 @@ $ echo 'Q -> [[ @ -> QQ.io.stdout("hello") ]]' | phino rewrite --nothing
 ⟧
 ```
 
+For more details, use `--help` option.
+
 ## Rule structure
 
-This is BNF-like yaml rule structure:
+This is BNF-like yaml rule structure. Here types ended with 
+apostrophe, like `Attribute'` are built types from 𝜑-program [AST](src/Ast.hs)
 
 ```bnfc
 Rule:
@@ -101,33 +107,46 @@ Rule:
   pattern: String
   result: String
   when: Condition?
+  where: [Extension]
 
 Condition:
-  = and: [Condition]     # logical AND
-  | or:  [Condition]     # logical OR
-  | not: Condition       # logical NOT
-  | alpha: Attribute     # check if given attribute is alpha
-  | eq:                  # compare two comparable objects
+  = and: [Condition]      # logical AND
+  | or:  [Condition]      # logical OR
+  | not: Condition        # logical NOT
+  | alpha: Attribute'     # check if given attribute is alpha
+  | eq:                   # compare two comparable objects
       - Comparable
       - Comparable
-  | in:                  # check if attributes exist in bindings
-      - Attribute
-      - Binding
+  | in:                   # check if attributes exist in bindings
+      - Attribute'
+      - Binding'
+  | nf: Expression'       # returns True if given expression in normal form
+                          # which means that no more other normalization rules
+                          # can be applied
+  | xi: Expression'       # special condition for Rcopy normalization rule to 
+                          # avoid infinite recursion while the condition checking
+                          # returns True if there's no ξ outside of the formation
+                          # in given expression.
 
-Comparable:              # comparable object that may be used in 'eq' condition
-  = Attribute
+Comparable:               # comparable object that may be used in 'eq' condition
+  = Attribute'
   | Number
 
-Number:                  # comparable number
-  = Integer              # just regular integer
-  | ordinal: Attribute   # calculate index of alpha attribute
-  | length: Meta Binding # calculate length of bindings by given meta binding
-  | plus:                # calculate sum of 2 given comparable numbers
-      - Number
-      - Number
+Number:                   # comparable number
+  = Integer               # just regular integer
+  | ordinal: Attribute'   # calculate index of alpha attribute
+  | length: BiMeta'       # calculate length of bindings by given meta binding
+
+Extension:                # substitutions extension used to introduce new meta variables
+  meta: ExMeta'           # new introduced meta variable
+  function: String        # name of the function
+  args: [Expression']     # arguments of the function
 ```
 
-Check [this](resources) to find pre defined normalization rules.
+Here's list of functions that are supported for extensions:
+- contextualize - function of two arguments, that rewrites given expression
+  depending on provided context according to the contextualization 
+  [rules](assets/contextualize.jpg)
 
 ## Meta variables
 
@@ -177,3 +196,4 @@ You will need [GHC] and [Cabal ≥3.0][cabal] or [Stack ≥ 3.0][stack] installe
 [stack]: https://docs.haskellstack.org/en/stable/install_and_upgrade/
 [GHC]: https://www.haskell.org/ghc/
 [guidelines]: https://www.yegor256.com/2014/04/15/github-guidelines.html
+[xmir]: https://news.eolang.org/2022-11-25-xmir-guide.html

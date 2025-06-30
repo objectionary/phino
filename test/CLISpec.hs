@@ -153,7 +153,7 @@ spec = do
       withStdin "Q -> [[ x -> 5]]" $
         testCLI
           ["rewrite", "--nothing", "--sweet"]
-          ["{⟦\n  x ↦ 5,\n  ρ ↦ ∅\n⟧}"]
+          ["{⟦\n  x ↦ 5\n⟧}"]
 
     it "rewrites as XMIR" $
       withStdin "Q -> [[ x -> Q.y ]]" $
@@ -168,10 +168,8 @@ spec = do
           [ unlines
               [ "{⟦",
                 "  app ↦ ⟦",
-                "    x ↦ Φ.number,",
-                "    ρ ↦ ∅",
-                "  ⟧,",
-                "  ρ ↦ ∅",
+                "    x ↦ Φ.number",
+                "  ⟧",
                 "⟧}"
               ]
           ]

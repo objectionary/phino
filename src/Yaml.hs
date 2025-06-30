@@ -52,15 +52,7 @@ instance FromJSON Number where
     Object o ->
       asum
         [ Ordinal <$> o .: "ordinal",
-          Length <$> o .: "length",
-          do
-            vals <- o .: "add"
-            case vals of
-              [first_, second_] -> do
-                first <- parseJSON first_
-                second <- parseJSON second_
-                pure (Add first second)
-              _ -> fail "'add' requires exactly two elements"
+          Length <$> o .: "length"
         ]
     Number num -> pure (Literal (round num))
     _ ->
@@ -84,7 +76,7 @@ instance FromJSON Condition where
               Not <$> v .: "not",
               Alpha <$> v .: "alpha",
               NF <$> v .: "nf",
-              FN <$> v .: "fn",
+              XI <$> v .: "xi",
               do
                 vals <- v .: "eq"
                 case vals of
@@ -116,7 +108,6 @@ instance FromJSON Rule where
 data Number
   = Ordinal Attribute
   | Length Binding
-  | Add Number Number
   | Literal Integer
   deriving (Generic, Show)
 
@@ -133,7 +124,7 @@ data Condition
   | Alpha Attribute
   | Eq Comparable Comparable
   | NF Expression
-  | FN Expression
+  | XI Expression
   deriving (Generic, Show)
 
 data Extra = Extra
