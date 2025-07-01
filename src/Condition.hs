@@ -51,20 +51,20 @@ numToInt _ _ = Nothing
 
 meetCondition' :: Y.Condition -> Subst -> [Subst]
 meetCondition' (Y.Or []) subst = [subst]
-meetCondition' (Y.Or (cond : rest)) subst = do
+meetCondition' (Y.Or (cond : rest)) subst =
   let met = meetCondition' cond subst
-  if null met
-    then meetCondition' (Y.Or rest) subst
-    else met
+   in if null met
+        then meetCondition' (Y.Or rest) subst
+        else met
 meetCondition' (Y.And []) subst = [subst]
-meetCondition' (Y.And (cond : rest)) subst = do
+meetCondition' (Y.And (cond : rest)) subst =
   let met = meetCondition' cond subst
-  if null met
-    then []
-    else meetCondition' (Y.And rest) subst
-meetCondition' (Y.Not cond) subst = do
+   in if null met
+        then []
+        else meetCondition' (Y.And rest) subst
+meetCondition' (Y.Not cond) subst =
   let met = meetCondition' cond subst
-  [subst | null met]
+   in [subst | null met]
 meetCondition' (Y.In attr binding) subst =
   case (buildAttribute attr subst, buildBinding binding subst) of
     (Just attr, Just bds) -> [subst | attrInBindings attr bds] -- if attrInBindings attr bd then [subst] else []
@@ -79,23 +79,20 @@ meetCondition' (Y.Eq (Y.CmpNum left) (Y.CmpNum right)) subst = case (numToInt le
   (_, _) -> []
 meetCondition' (Y.Eq (Y.CmpAttr left) (Y.CmpAttr right)) subst = [subst | compareAttrs left right subst]
 meetCondition' (Y.Eq _ _) _ = []
--- @todo #89:30min Extend list of expressions. There are expressions where we can definitely say
---  if this expression in normal form or not. In common case the expression in normal form if
---  it does not match with any of normalization rules. But it's quite expensive operation comparing to
---  simple list filtering and pattern matching. For example if expression is formation where all bindings are
---  void, lambda, or delta - this expression in normal form and there's no need to try to match it with normalization
---  rules. So we need find more such cases and introduce them.
 meetCondition' (Y.NF (ExMeta meta)) (Subst mp) = case M.lookup meta mp of
-  Just (MvExpression expr) -> case expr of
-    ExThis -> [Subst mp]
-    ExGlobal -> [Subst mp]
-    ExTermination -> [Subst mp]
-    ExDispatch ExThis _ -> [Subst mp]
-    ExDispatch ExGlobal _ -> [Subst mp]
-    ExDispatch ExTermination _ -> [] -- dd rule
-    ExApplication ExTermination _ -> [] -- dc rule
-    ExFormation [] -> [Subst mp]
-    _ -> [Subst mp | not (matchesAnyNormalizationRule expr normalizationRules)]
+  Just (MvExpression expr) ->
+    let isNf = not (matchesAnyNormalizationRule expr normalizationRules)
+     in case expr of
+          ExThis -> [Subst mp]
+          ExGlobal -> [Subst mp]
+          ExTermination -> [Subst mp]
+          ExDispatch ExThis _ -> [Subst mp]
+          ExDispatch ExGlobal _ -> [Subst mp]
+          ExDispatch ExTermination _ -> [] -- dd rule
+          ExApplication ExTermination _ -> [] -- dc rule
+          ExFormation [] -> [Subst mp]
+          ExFormation bds -> [Subst mp | normalBindings bds || isNf]
+          _ -> [Subst mp | isNf]
   _ -> []
   where
     -- Returns True if given expression matches with any of given normalization rules
@@ -105,6 +102,15 @@ meetCondition' (Y.NF (ExMeta meta)) (Subst mp) = case M.lookup meta mp of
       case matchProgramWithCondition (Y.pattern rule) (Y.when rule) (Program expr) of
         Just matched -> not (null matched) || matchesAnyNormalizationRule expr rules
         Nothing -> matchesAnyNormalizationRule expr rules
+    normalBindings :: [Binding] -> Bool
+    normalBindings [] = True
+    normalBindings (bd : bds) =
+      let next = normalBindings bds
+       in case bd of
+            BiDelta _ -> next
+            BiVoid _ -> next
+            BiLambda _ -> next
+            _ -> False
 meetCondition' (Y.NF _) _ = []
 meetCondition' (Y.XI (ExMeta meta)) (Subst mp) = case M.lookup meta mp of
   Just (MvExpression expr) -> meetCondition' (Y.XI expr) (Subst mp)
@@ -112,10 +118,10 @@ meetCondition' (Y.XI (ExMeta meta)) (Subst mp) = case M.lookup meta mp of
 meetCondition' (Y.XI (ExFormation _)) subst = [subst]
 meetCondition' (Y.XI ExThis) subst = []
 meetCondition' (Y.XI ExGlobal) subst = [subst]
-meetCondition' (Y.XI (ExApplication expr (BiTau attr texpr))) subst = do
+meetCondition' (Y.XI (ExApplication expr (BiTau attr texpr))) subst =
   let onExpr = meetCondition' (Y.XI expr) subst
       onTau = meetCondition' (Y.XI texpr) subst
-  [subst | not (null onExpr) && not (null onTau)]
+   in [subst | not (null onExpr) && not (null onTau)]
 meetCondition' (Y.XI (ExDispatch expr _)) subst = meetCondition' (Y.XI expr) subst
 
 -- For each substitution check if it meetCondition to given condition
@@ -123,12 +129,12 @@ meetCondition' (Y.XI (ExDispatch expr _)) subst = meetCondition' (Y.XI expr) sub
 -- and is not used in replacement
 meetCondition :: Y.Condition -> [Subst] -> [Subst]
 meetCondition _ [] = []
-meetCondition cond (subst : rest) = do
+meetCondition cond (subst : rest) =
   let first = meetCondition' cond subst
-  let next = meetCondition cond rest
-  if null first
-    then next
-    else head first : next
+      next = meetCondition cond rest
+   in if null first
+        then next
+        else head first : next
 
 -- Returns Just [...] if
 -- 1. program matches pattern and
@@ -136,14 +142,14 @@ meetCondition cond (subst : rest) = do
 -- 2.2. condition is present and met
 -- Otherwise returns Nothing
 matchProgramWithCondition :: Expression -> Maybe Y.Condition -> Program -> Maybe [Subst]
-matchProgramWithCondition ptn condition program = do
+matchProgramWithCondition ptn condition program =
   let matched = matchProgram ptn program
-  if null matched
-    then Nothing
-    else case condition of
-      Nothing -> Just matched
-      Just cond -> do
-        let met = meetCondition cond matched
-        if null met
-          then Nothing
-          else Just met
+   in if null matched
+        then Nothing
+        else case condition of
+          Nothing -> Just matched
+          Just cond ->
+            let met = meetCondition cond matched
+             in if null met
+                  then Nothing
+                  else Just met

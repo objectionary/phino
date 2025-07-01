@@ -172,9 +172,10 @@ programToXMIR (Program expr) mode omitListing = do
   root <- rootExpression expr'
   now <- getCurrentTime
   let phi = prettyProgram' (Program expr) mode
-      listing = if omitListing
-        then show (length (lines phi)) ++ " lines of phi"
-        else phi
+      listing =
+        if omitListing
+          then show (length (lines phi)) ++ " lines of phi"
+          else phi
   pure
     ( Document
         (Prologue [] Nothing [])
@@ -233,13 +234,13 @@ printElement indentLevel (Element name attrs nodes)
         <> TB.fromText (nameLocalName name)
         <> TB.fromString ">"
   where
-    attrsText = do
+    attrsText =
       let attrs' = M.toList attrs
           first = if length attrs' > 4 then newline <> indent (indentLevel + 1) else TB.fromString " "
-      mconcat
-        [ first <> TB.fromText (nameLocalName k) <> TB.fromString "=\"" <> TB.fromText v <> TB.fromString "\""
-          | (k, v) <- attrs'
-        ]
+       in mconcat
+            [ first <> TB.fromText (nameLocalName k) <> TB.fromString "=\"" <> TB.fromText v <> TB.fromString "\""
+              | (k, v) <- attrs'
+            ]
 
     isTextNode (NodeContent _) = True
     isTextNode _ = False
@@ -274,29 +275,29 @@ parseXMIRThrows xmir = case parseXMIR xmir of
   Left err -> throwIO (CouldNotParseXMIR err)
 
 xmirToPhi :: Document -> IO Program
-xmirToPhi xmir = do
+xmirToPhi xmir =
   let doc = C.fromDocument xmir
-  case C.node doc of
-    NodeElement el
-      | nameLocalName (elementName el) == "object" -> do
-          obj <- case doc C.$/ C.element (toName "o") of
-            [o] -> xmirToFormationBinding o []
-            _ -> throwIO (InvalidXMIRFormat "Expected single <o> element in <object>" doc)
-          let pckg =
-                [ T.unpack t
-                  | meta <- doc C.$/ C.element (toName "metas") C.&/ C.element (toName "meta"),
-                    let heads = meta C.$/ C.element (toName "head") C.&/ C.content,
-                    heads == ["package"],
-                    tail' <- meta C.$/ C.element (toName "tail") C.&/ C.content,
-                    t <- T.splitOn "." tail'
-                ]
-          if null pckg
-            then pure (Program (ExFormation [obj, BiVoid AtRho]))
-            else do
-              let bd = foldr (\part acc -> BiTau (AtLabel part) (ExFormation [acc, BiLambda "Package", BiVoid AtRho])) obj pckg
-              pure (Program (ExFormation [bd, BiVoid AtRho]))
-      | otherwise -> throwIO (InvalidXMIRFormat "Expected single <object> element" doc)
-    _ -> throwIO (InvalidXMIRFormat "NodeElement is expected as root element" doc)
+   in case C.node doc of
+        NodeElement el
+          | nameLocalName (elementName el) == "object" -> do
+              obj <- case doc C.$/ C.element (toName "o") of
+                [o] -> xmirToFormationBinding o []
+                _ -> throwIO (InvalidXMIRFormat "Expected single <o> element in <object>" doc)
+              let pckg =
+                    [ T.unpack t
+                      | meta <- doc C.$/ C.element (toName "metas") C.&/ C.element (toName "meta"),
+                        let heads = meta C.$/ C.element (toName "head") C.&/ C.content,
+                        heads == ["package"],
+                        tail' <- meta C.$/ C.element (toName "tail") C.&/ C.content,
+                        t <- T.splitOn "." tail'
+                    ]
+              if null pckg
+                then pure (Program (ExFormation [obj, BiVoid AtRho]))
+                else
+                  let bd = foldr (\part acc -> BiTau (AtLabel part) (ExFormation [acc, BiLambda "Package", BiVoid AtRho])) obj pckg
+                   in pure (Program (ExFormation [bd, BiVoid AtRho]))
+          | otherwise -> throwIO (InvalidXMIRFormat "Expected single <object> element" doc)
+        _ -> throwIO (InvalidXMIRFormat "NodeElement is expected as root element" doc)
 
 xmirToFormationBinding :: C.Cursor -> [String] -> IO Binding
 xmirToFormationBinding cur fqn
@@ -330,20 +331,20 @@ xmirToExpression cur fqn
         '.' : rest ->
           if null rest
             then throwIO (InvalidXMIRFormat "The @base attribute can't be just '.'" cur)
-            else do
+            else
               let args = cur C.$/ C.element (toName "o")
-              if null args
-                then throwIO (InvalidXMIRFormat (printf "Element with @base='%s' must have at least one child" base) cur)
-                else do
-                  expr <- xmirToExpression (head args) fqn
-                  attr <- toAttr rest cur
-                  let disp = ExDispatch expr attr
-                  xmirToApplication disp (tail args) fqn
-        "$" -> do
+               in if null args
+                    then throwIO (InvalidXMIRFormat (printf "Element with @base='%s' must have at least one child" base) cur)
+                    else do
+                      expr <- xmirToExpression (head args) fqn
+                      attr <- toAttr rest cur
+                      let disp = ExDispatch expr attr
+                      xmirToApplication disp (tail args) fqn
+        "$" ->
           if null (cur C.$/ C.element (toName "o"))
             then pure ExThis
             else throwIO (InvalidXMIRFormat "Application of '$' is illegal in XMIR" cur)
-        "Q" -> do
+        "Q" ->
           if null (cur C.$/ C.element (toName "o"))
             then pure ExGlobal
             else throwIO (InvalidXMIRFormat "Application of 'Q' is illegal in XMIR" cur)
@@ -403,7 +404,7 @@ xmirToApplication = xmirToApplication' 0
 
 toAttr :: String -> C.Cursor -> IO Attribute
 toAttr attr cur = case attr of
-  'α' : rest' -> do
+  'α' : rest' ->
     case TR.readMaybe rest' :: Maybe Integer of
       Just idx -> pure (AtAlpha idx)
       Nothing -> throwIO (InvalidXMIRFormat "The attribute started with 'α' must be followed by integer" cur)
@@ -418,15 +419,15 @@ hasAttr :: String -> C.Cursor -> Bool
 hasAttr key cur = not (null (C.attribute (toName key) cur))
 
 getAttr :: String -> C.Cursor -> IO String
-getAttr key cur = do
+getAttr key cur =
   let attrs = C.attribute (toName key) cur
-  if null attrs
-    then throwIO (InvalidXMIRFormat (printf "Couldn't find attribute '%s'" key) cur)
-    else do
-      let attr = (T.unpack . head) attrs
-      if null attr
-        then throwIO (InvalidXMIRFormat (printf "The attribute '%s' is not expected to be empty" attr) cur)
-        else pure attr
+   in if null attrs
+        then throwIO (InvalidXMIRFormat (printf "Couldn't find attribute '%s'" key) cur)
+        else
+          let attr = (T.unpack . head) attrs
+           in if null attr
+                then throwIO (InvalidXMIRFormat (printf "The attribute '%s' is not expected to be empty" attr) cur)
+                else pure attr
 
 hasText :: C.Cursor -> Bool
 hasText cur = any isNonEmptyTextNode (C.child cur)

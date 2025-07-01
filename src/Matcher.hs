@@ -80,13 +80,13 @@ matchBinding _ _ = []
 matchBindings :: [Binding] -> [Binding] -> [Subst]
 matchBindings [] [] = [substEmpty]
 matchBindings [] _ = []
-matchBindings ((BiMeta name) : pbs) tbs = do
+matchBindings ((BiMeta name) : pbs) tbs =
   let splits = [splitAt idx tbs | idx <- [0 .. length tbs]]
-  catMaybes
-    [ combine (substSingle name (MvBindings before)) subst
-      | (before, after) <- splits,
-        subst <- matchBindings pbs after
-    ]
+   in catMaybes
+        [ combine (substSingle name (MvBindings before)) subst
+          | (before, after) <- splits,
+            subst <- matchBindings pbs after
+        ]
 matchBindings (pb : pbs) (tb : tbs) = combineMany (matchBinding pb tb) (matchBindings pbs tbs)
 matchBindings _ _ = []
 
@@ -95,19 +95,19 @@ matchBindings _ _ = []
 -- If there's one - build the list of all the tail operations after head expression.
 -- The tail operations may be only dispatches or applications
 tailExpressions :: Expression -> Expression -> ([Subst], [Tail])
-tailExpressions ptn tgt = do
+tailExpressions ptn tgt =
   let (substs, tails) = tailExpressionsReversed ptn tgt
-  (substs, reverse tails)
+   in (substs, reverse tails)
   where
     tailExpressionsReversed :: Expression -> Expression -> ([Subst], [Tail])
     tailExpressionsReversed ptn' tgt' = case matchExpression ptn' tgt' of
       [] -> case tgt' of
-        ExDispatch expr attr -> do
+        ExDispatch expr attr ->
           let (substs, tails) = tailExpressionsReversed ptn' expr
-          (substs, TaDispatch attr : tails)
-        ExApplication expr tau -> do
+           in (substs, TaDispatch attr : tails)
+        ExApplication expr tau ->
           let (substs, tails) = tailExpressionsReversed ptn' expr
-          (substs, TaApplication tau : tails)
+           in (substs, TaApplication tau : tails)
         _ -> ([], [])
       substs -> (substs, [])
 
@@ -131,14 +131,14 @@ matchBindingExpression _ _ = []
 
 -- Match expression with deep nested expression(s) matching
 matchExpressionDeep :: Expression -> Expression -> [Subst]
-matchExpressionDeep ptn tgt = do
+matchExpressionDeep ptn tgt =
   let matched = matchExpression ptn tgt
       deep = case tgt of
         ExFormation bds -> concatMap (`matchBindingExpression` ptn) bds
         ExDispatch exp _ -> matchExpressionDeep ptn exp
         ExApplication exp tau -> matchExpressionDeep ptn exp ++ matchBindingExpression tau ptn
         _ -> []
-  matched ++ deep
+   in matched ++ deep
 
 matchProgram :: Expression -> Program -> [Subst]
 matchProgram ptn (Program exp) = matchExpressionDeep ptn exp
