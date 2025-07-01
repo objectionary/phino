@@ -23,10 +23,10 @@ contextualize ExThis expr _ = expr
 contextualize ExTermination _ _ = ExTermination
 contextualize (ExFormation bds) _ _ = ExFormation bds
 contextualize (ExDispatch expr attr) context prog = ExDispatch (contextualize expr context prog) attr
-contextualize (ExApplication expr (BiTau attr bexpr)) context prog = do
+contextualize (ExApplication expr (BiTau attr bexpr)) context prog =
   let expr' = contextualize expr context prog
       bexpr' = contextualize bexpr context prog
-  ExApplication expr' (BiTau attr bexpr')
+   in ExApplication expr' (BiTau attr bexpr')
 
 buildAttribute :: Attribute -> Subst -> Maybe Attribute
 buildAttribute (AtMeta meta) (Subst mp) = case Map.lookup meta mp of

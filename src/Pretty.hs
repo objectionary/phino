@@ -91,23 +91,22 @@ instance Pretty Attribute where
   pretty (AtMeta meta) = prettyMeta meta
 
 instance Pretty (Formatted Binding) where
-  pretty (Formatted (SWEET, BiTau attr (ExFormation bindings))) = do
+  pretty (Formatted (SWEET, BiTau attr (ExFormation bindings))) =
     let voids' = voids bindings
-    if null voids'
-      then pretty attr <+> prettyArrow <+> pretty (Formatted (SWEET, ExFormation bindings))
-      else
-        pretty attr
-          <> lparen
-          <> hsep (punctuate comma (map pretty voids'))
-          <> rparen
-          <+> prettyArrow
-          <+> pretty (Formatted (SWEET, ExFormation (drop (length voids') bindings)))
+     in if null voids'
+          then pretty attr <+> prettyArrow <+> pretty (Formatted (SWEET, ExFormation bindings))
+          else
+            if length voids' == length bindings && last voids' == AtRho
+              then inlineVoids (init voids') <+> prettyLsb <> prettyRsb
+              else inlineVoids voids' <+> pretty (Formatted (SWEET, ExFormation (drop (length voids') bindings)))
     where
       voids :: [Binding] -> [Attribute]
       voids [] = []
       voids (bd : bds) = case bd of
         BiVoid attr -> attr : voids bds
         _ -> []
+      inlineVoids :: [Attribute] -> Doc ann
+      inlineVoids voids' = pretty attr <> lparen <> hsep (punctuate comma (map pretty voids')) <> rparen <+> prettyArrow
   pretty (Formatted (mode, BiTau attr expr)) = pretty attr <+> prettyArrow <+> pretty (Formatted (mode, expr))
   pretty (Formatted (_, BiMeta meta)) = prettyMeta meta
   pretty (Formatted (_, BiDelta bytes)) = pretty "Δ" <+> prettyDashedArrow <+> pretty bytes
@@ -128,17 +127,17 @@ instance {-# OVERLAPPING #-} Pretty (Formatted [Binding]) where
   pretty (Formatted (SALTY, bds)) = vsep (punctuate comma (map (\bd -> pretty (Formatted (SALTY, bd))) bds))
 
 complexApplication :: Expression -> (Expression, [Binding], [Expression])
-complexApplication (ExApplication (ExApplication expr tau) tau') = do
+complexApplication (ExApplication (ExApplication expr tau) tau') =
   let (before, taus, exprs) = complexApplication (ExApplication expr tau)
       taus' = tau' : taus
-  if null exprs
-    then (before, taus', [])
-    else case tau' of
-      BiTau (AtAlpha idx) expr' ->
-        if idx == fromIntegral (length exprs)
-          then (before, taus', expr' : exprs)
-          else (before, taus', [])
-      _ -> (before, taus', [])
+   in if null exprs
+        then (before, taus', [])
+        else case tau' of
+          BiTau (AtAlpha idx) expr' ->
+            if idx == fromIntegral (length exprs)
+              then (before, taus', expr' : exprs)
+              else (before, taus', [])
+          _ -> (before, taus', [])
 complexApplication (ExApplication expr (BiTau (AtAlpha 0) expr')) = (expr, [BiTau (AtAlpha 0) expr'], [expr'])
 complexApplication (ExApplication expr tau) = (expr, [tau], [])
 
@@ -156,18 +155,18 @@ instance Pretty (Formatted Expression) where
   pretty (Formatted (_, ExGlobal)) = pretty "Φ"
   pretty (Formatted (_, ExTermination)) = pretty "⊥"
   pretty (Formatted (_, ExMeta meta)) = prettyMeta meta
-  pretty (Formatted (SWEET, ExApplication (ExApplication expr tau) tau')) = do
+  pretty (Formatted (SWEET, ExApplication (ExApplication expr tau) tau')) =
     let (expr', taus, exprs) = complexApplication (ExApplication (ExApplication expr tau) tau')
         args =
           if null exprs
             then pretty (Formatted (SWEET, reverse taus))
             else vsep (punctuate comma (map (\exp -> pretty (Formatted (SWEET, exp))) (reverse exprs)))
-    pretty (Formatted (SWEET, expr')) <> vsep [lparen, indent 2 args, rparen]
-  pretty (Formatted (SWEET, ExApplication expr tau)) = do
+     in pretty (Formatted (SWEET, expr')) <> vsep [lparen, indent 2 args, rparen]
+  pretty (Formatted (SWEET, ExApplication expr tau)) =
     let arg = case tau of
           BiTau (AtAlpha 0) expr' -> pretty (Formatted (SWEET, expr'))
           _ -> pretty (Formatted (SWEET, tau))
-    pretty (Formatted (SWEET, expr)) <> vsep [lparen, indent 2 arg, rparen]
+     in pretty (Formatted (SWEET, expr)) <> vsep [lparen, indent 2 arg, rparen]
   pretty (Formatted (mode, ExApplication expr tau)) = pretty (Formatted (mode, expr)) <> vsep [lparen, indent 2 (pretty (Formatted (mode, tau))), rparen]
   pretty (Formatted (mode, ExDispatch expr attr)) = pretty (Formatted (mode, expr)) <> pretty "." <> pretty attr
   pretty (Formatted (mode, ExMetaTail expr meta)) = pretty (Formatted (mode, expr)) <+> pretty "*" <+> prettyMeta meta

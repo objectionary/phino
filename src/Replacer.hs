@@ -11,37 +11,37 @@ import Matcher (Tail (TaApplication, TaDispatch))
 replaceBindings :: [Binding] -> [Expression] -> [Expression] -> ([Binding], [Expression], [Expression])
 replaceBindings bds [] [] = (bds, [], [])
 replaceBindings [] ptns repls = ([], ptns, repls)
-replaceBindings (BiTau attr expr : bds) ptns repls = do
+replaceBindings (BiTau attr expr : bds) ptns repls =
   let (expr', ptns', repls') = replaceExpression expr ptns repls
-  let (bds', ptns'', repls'') = replaceBindings bds ptns' repls'
-  (BiTau attr expr' : bds', ptns'', repls'')
-replaceBindings (bd : bds) ptns repls = do
+      (bds', ptns'', repls'') = replaceBindings bds ptns' repls'
+   in (BiTau attr expr' : bds', ptns'', repls'')
+replaceBindings (bd : bds) ptns repls =
   let (bds', ptns', repls') = replaceBindings bds ptns repls
-  (bd : bds', ptns', repls')
+   in (bd : bds', ptns', repls')
 
 replaceExpression :: Expression -> [Expression] -> [Expression] -> (Expression, [Expression], [Expression])
 replaceExpression expr [] [] = (expr, [], [])
-replaceExpression expr ptns repls = do
+replaceExpression expr ptns repls =
   let (ptn : ptnsRest) = ptns
-  let (repl : replsRest) = repls
-  if expr == ptn
-    then replaceExpression repl ptnsRest replsRest
-    else case expr of
-      ExDispatch inner attr -> do
-        let (expr', ptns', repls') = replaceExpression inner ptns repls
-        (ExDispatch expr' attr, ptns', repls')
-      ExApplication inner tau -> do
-        let (expr', ptns', repls') = replaceExpression inner ptns repls
-        let ([tau'], ptns'', repls'') = replaceBindings [tau] ptns' repls'
-        (ExApplication expr' tau', ptns'', repls'')
-      ExFormation bds -> do
-        let (bds', ptns', repls') = replaceBindings bds ptns repls
-        (ExFormation bds', ptns', repls')
-      _ -> (expr, ptns, repls)
+      (repl : replsRest) = repls
+   in if expr == ptn
+        then replaceExpression repl ptnsRest replsRest
+        else case expr of
+          ExDispatch inner attr ->
+            let (expr', ptns', repls') = replaceExpression inner ptns repls
+             in (ExDispatch expr' attr, ptns', repls')
+          ExApplication inner tau ->
+            let (expr', ptns', repls') = replaceExpression inner ptns repls
+                ([tau'], ptns'', repls'') = replaceBindings [tau] ptns' repls'
+             in (ExApplication expr' tau', ptns'', repls'')
+          ExFormation bds ->
+            let (bds', ptns', repls') = replaceBindings bds ptns repls
+             in (ExFormation bds', ptns', repls')
+          _ -> (expr, ptns, repls)
 
 replaceProgram :: Program -> [Expression] -> [Expression] -> Maybe Program
 replaceProgram (Program expr) ptns repls
-  | length ptns == length repls = do
+  | length ptns == length repls =
       let (expr', _, _) = replaceExpression expr ptns repls
-      Just (Program expr')
+       in Just (Program expr')
   | otherwise = Nothing

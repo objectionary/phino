@@ -101,16 +101,16 @@ btsToHex bts = intercalate "-" (map (printf "%02X") bts)
 -- >>> hexToNum "40-45"
 -- Expected 8 bytes for conversion, got 2
 hexToNum :: String -> Either Integer Double
-hexToNum hx = do
+hexToNum hx =
   let bytes = hexToBts hx
-  if length bytes /= 8
-    then error $ "Expected 8 bytes for conversion, got " ++ show (length bytes)
-    else do
-      let word = toWord64BE bytes
-          val = wordToDouble word
-      case properFraction val of
-        (n, 0.0) -> Left n
-        _ -> Right val
+   in if length bytes /= 8
+        then error $ "Expected 8 bytes for conversion, got " ++ show (length bytes)
+        else
+          let word = toWord64BE bytes
+              val = wordToDouble word
+           in case properFraction val of
+                (n, 0.0) -> Left n
+                _ -> Right val
   where
     toWord64BE :: [Word8] -> Word64
     toWord64BE [a, b, c, d, e, f, g, h] =
@@ -175,7 +175,7 @@ hexToStr hx = escapeStr (T.unpack $ T.decodeUtf8 $ B.pack (hexToBts cleaned))
     escapeStr :: String -> String
     escapeStr = concatMap escapeChar
       where
-        escapeChar '"'  = "\\\""
+        escapeChar '"' = "\\\""
         escapeChar '\\' = "\\\\"
         escapeChar '\n' = "\\n"
         escapeChar '\t' = "\\t"
