@@ -26,7 +26,7 @@ import Data.Time
 import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds)
 import Data.Time.Format (defaultTimeLocale, formatTime)
 import Data.Version (showVersion)
-import Misc (withVoidRho)
+import Misc
 import Paths_phino (version)
 import Pretty (PrintMode, prettyAttribute, prettyBinding, prettyExpression, prettyProgram')
 import Text.Printf (printf)
@@ -86,6 +86,24 @@ expression (ExDispatch expr attr) = do
       if head base == '.' || not (null children)
         then pure ('.' : attr', [object [("base", base)] children])
         else pure (base ++ ('.' : attr'), children)
+expression (DataObject "number" bytes) =
+  pure
+    ( "Q.org.eolang.number",
+      [ NodeComment (T.pack (either show show (hexToNum bytes))),
+        object
+          [("base", "Q.org.eolang.bytes")]
+          [object [] [NodeContent (T.pack bytes)]]
+      ]
+    )
+expression (DataObject "string" bytes) =
+  pure
+    ( "Q.org.eolang.string",
+      [ NodeComment (T.pack ('"' : hexToStr bytes ++ "\"")),
+        object
+          [("base", "Q.org.eolang.bytes")]
+          [object [] [NodeContent (T.pack bytes)]]
+      ]
+    )
 expression (ExApplication expr (BiTau attr texpr)) = do
   (base, children) <- expression expr
   (base', children') <- expression texpr
@@ -212,6 +230,7 @@ printElement indentLevel (Element name attrs nodes)
         <> TB.fromText (nameLocalName name)
         <> attrsText
         <> TB.fromString "/>"
+        <> newline
   | all isTextNode nodes =
       indent indentLevel
         <> TB.fromString "<"
@@ -222,17 +241,20 @@ printElement indentLevel (Element name attrs nodes)
         <> TB.fromString "</"
         <> TB.fromText (nameLocalName name)
         <> TB.fromString ">"
+        <> newline
   | otherwise =
       indent indentLevel
         <> TB.fromString "<"
         <> TB.fromText (nameLocalName name)
         <> attrsText
         <> TB.fromString ">"
+        <> newline
         <> mconcat (map (printNode (indentLevel + 1)) nodes)
         <> indent indentLevel
         <> TB.fromString "</"
         <> TB.fromText (nameLocalName name)
         <> TB.fromString ">"
+        <> newline
   where
     attrsText =
       let attrs' = M.toList attrs
