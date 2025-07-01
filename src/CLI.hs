@@ -1,4 +1,6 @@
 {-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
@@ -25,7 +27,7 @@ import Rewriter (rewrite)
 import System.Exit (ExitCode (..), exitFailure)
 import System.IO (getContents')
 import Text.Printf (printf)
-import XMIR (printXMIR, programToXMIR, parseXMIRThrows, xmirToPhi)
+import XMIR (parseXMIRThrows, printXMIR, programToXMIR, xmirToPhi)
 import Yaml (normalizationRules)
 import qualified Yaml as Y
 
@@ -38,12 +40,9 @@ instance Show CmdException where
   show InvalidRewriteArguments {..} = printf "Invalid set of arguments for 'rewrite' command: %s" message
   show CouldNotReadFromStdin {..} = printf "Could not read input from stdin\nReason: %s" message
 
-data App = App
-  { logLevel :: LogLevel,
-    cmd :: Command
-  }
-
-newtype Command = CmdRewrite OptsRewrite
+data Command
+  = CmdRewrite OptsRewrite
+  | CmdDataize OptsDataize
 
 data IOFormat = XMIR | PHI
   deriving (Eq)
@@ -52,8 +51,14 @@ instance Show IOFormat where
   show XMIR = "xmir"
   show PHI = "phi"
 
+data OptsDataize = OptsDataize
+  { logLevel :: LogLevel,
+    inputFormat :: IOFormat,
+    inputFile :: Maybe FilePath
+  }
+
 data OptsRewrite = OptsRewrite
-  { inputFile :: Maybe FilePath,
+  { logLevel :: LogLevel,
     rules :: [FilePath],
     inputFormat :: IOFormat,
     outputFormat :: IOFormat,
@@ -62,7 +67,8 @@ data OptsRewrite = OptsRewrite
     nothing :: Bool,
     shuffle :: Bool,
     omitListing :: Bool,
-    maxDepth :: Integer
+    maxDepth :: Integer,
+    inputFile :: Maybe FilePath
   }
 
 parseIOFormat :: String -> ReadM IOFormat
@@ -71,13 +77,50 @@ parseIOFormat type' = eitherReader $ \format -> case map toLower format of
   "phi" -> Right PHI
   _ -> Left (printf "invalid %s format: expected 'xmir' or 'phi'" type')
 
+argInputFile :: Parser (Maybe FilePath)
+argInputFile = optional (argument str (metavar "FILE" <> help "Path to input file"))
+
+optInputFormat :: Parser IOFormat
+optInputFormat = option (parseIOFormat "input") (long "input" <> metavar "FORMAT" <> help "Program input format" <> value PHI <> showDefault)
+
+optLogLevel :: Parser LogLevel
+optLogLevel =
+  option
+    parseLogLevel
+    ( long "log-level"
+        <> metavar "LEVEL"
+        <> help ("Log level (" <> intercalate ", " (map show [DEBUG, INFO, WARNING, ERROR, NONE]) <> ")")
+        <> value INFO
+        <> showDefault
+    )
+  where
+    parseLogLevel :: ReadM LogLevel
+    parseLogLevel = eitherReader $ \lvl -> case map toUpper lvl of
+      "DEBUG" -> Right DEBUG
+      "INFO" -> Right INFO
+      "WARNING" -> Right WARNING
+      "WARN" -> Right WARNING
+      "ERROR" -> Right ERROR
+      "ERR" -> Right ERROR
+      "NONE" -> Right NONE
+      _ -> Left $ "unknown log-level: " <> lvl
+
+dataizeParser :: Parser Command
+dataizeParser =
+  CmdDataize
+    <$> ( OptsDataize
+            <$> optLogLevel
+            <*> optInputFormat
+            <*> argInputFile
+        )
+
 rewriteParser :: Parser Command
 rewriteParser =
   CmdRewrite
     <$> ( OptsRewrite
-            <$> optional (argument str (metavar "FILE" <> help "Path to input file"))
+            <$> optLogLevel
             <*> many (strOption (long "rule" <> metavar "FILE" <> help "Path to custom rule"))
-            <*> option (parseIOFormat "input") (long "input" <> metavar "FORMAT" <> help "Program input format" <> value PHI <> showDefault)
+            <*> optInputFormat
             <*> option (parseIOFormat "output") (long "output" <> metavar "FORMAT" <> help "Program output format" <> value PHI <> showDefault)
             <*> flag SALTY SWEET (long "sweet" <> help "Print 𝜑-program using syntax sugar")
             <*> switch (long "normalize" <> help "Use built-in normalization rules")
@@ -85,39 +128,20 @@ rewriteParser =
             <*> switch (long "shuffle" <> help "Shuffle rules before applying")
             <*> switch (long "omit-listing" <> help "Omit full program listing in XMIR output")
             <*> option auto (long "max-depth" <> metavar "DEPTH" <> help "Max amount of rewritng cycles" <> value 25 <> showDefault)
+            <*> argInputFile
         )
 
 commandParser :: Parser Command
-commandParser = hsubparser (command "rewrite" (info rewriteParser (progDesc "Rewrite the expression")))
+commandParser =
+  hsubparser
+    ( command "rewrite" (info (rewriteParser <**> helper) (progDesc "Rewrite the program"))
+        <> command "dataize" (info (dataizeParser <**> helper) (progDesc "Dataize the program"))
+    )
 
-parseLogLevel :: ReadM LogLevel
-parseLogLevel = eitherReader $ \lvl -> case map toUpper lvl of
-  "DEBUG" -> Right DEBUG
-  "INFO" -> Right INFO
-  "WARNING" -> Right WARNING
-  "WARN" -> Right WARNING
-  "ERROR" -> Right ERROR
-  "ERR" -> Right ERROR
-  "NONE" -> Right NONE
-  _ -> Left $ "unknown log-level: " <> lvl
-
-appParser :: Parser App
-appParser =
-  App
-    <$> option
-      parseLogLevel
-      ( long "log-level"
-          <> metavar "LEVEL"
-          <> help ("Log level (" <> intercalate ", " (map show [DEBUG, INFO, WARNING, ERROR, NONE]) <> ")")
-          <> value INFO
-          <> showDefault
-      )
-    <*> commandParser
-
-parserInfo :: ParserInfo App
+parserInfo :: ParserInfo Command
 parserInfo =
   info
-    (appParser <**> helper <**> simpleVersioner (showVersion version))
+    (commandParser <**> helper <**> simpleVersioner (showVersion version))
     (fullDesc <> header "Phino - CLI Manipulator of 𝜑-Calculus Expressions")
 
 handler :: SomeException -> IO ()
@@ -127,15 +151,22 @@ handler e = case fromException e of
     logError (displayException e)
     exitFailure
 
+setLogLevel' :: Command -> IO ()
+setLogLevel' cmd =
+  let level = case cmd of
+        CmdRewrite OptsRewrite {logLevel} -> logLevel
+        CmdDataize OptsDataize {logLevel} -> logLevel
+   in setLogLevel level
+
 runCLI :: [String] -> IO ()
 runCLI args = handle handler $ do
-  App {..} <- handleParseResult (execParserPure defaultPrefs parserInfo args)
-  setLogLevel logLevel
+  cmd <- handleParseResult (execParserPure defaultPrefs parserInfo args)
+  setLogLevel' cmd
   case cmd of
     CmdRewrite OptsRewrite {..} -> do
       when (maxDepth <= 0) $ throwIO (InvalidRewriteArguments "--max-depth must be positive")
       logDebug (printf "Amount of rewriting cycles: %d" maxDepth)
-      input <- readInput
+      input <- readInput inputFile
       rules' <- getRules
       program <- parseProgram input inputFormat
       rewritten <- rewrite' program rules' 1
@@ -143,15 +174,6 @@ runCLI args = handle handler $ do
       out <- printProgram rewritten outputFormat printMode
       putStrLn out
       where
-        readInput :: IO String
-        readInput = case inputFile of
-          Just pth -> do
-            logDebug (printf "Reading from file: '%s'" pth)
-            readFile =<< ensuredFile pth
-          Nothing -> do
-            logDebug "Reading from stdin"
-            getContents' `catch` (\(e :: SomeException) -> throwIO (CouldNotReadFromStdin (show e)))
-
         getRules :: IO [Y.Rule]
         getRules = do
           ordered <-
@@ -176,13 +198,6 @@ runCLI args = handle handler $ do
               logDebug "The --shuffle option is provided, rules are used in random order"
               Misc.shuffle ordered
             else pure ordered
-
-        parseProgram :: String -> IOFormat -> IO Program
-        parseProgram phi PHI = parseProgramThrows phi
-        parseProgram xmir XMIR = do
-          doc <- parseXMIRThrows xmir
-          xmirToPhi doc
-
         rewrite' :: Program -> [Y.Rule] -> Integer -> IO Program
         rewrite' prog rules count = do
           logDebug (printf "Starting rewriting cycle %d out of %d" count maxDepth)
@@ -197,9 +212,26 @@ runCLI args = handle handler $ do
                   logDebug "Rewriting is stopped since it does not affect program anymore"
                   pure rewritten
                 else rewrite' rewritten rules (count + 1)
-
         printProgram :: Program -> IOFormat -> PrintMode -> IO String
         printProgram prog PHI mode = pure (prettyProgram' prog mode)
         printProgram prog XMIR mode = do
           xmir <- programToXMIR prog mode omitListing
           pure (printXMIR xmir)
+    CmdDataize OptsDataize {..} -> do
+      input <- readInput inputFile
+      prog <- parseProgram input inputFormat
+      putStrLn "Dataization is not implemented yet"
+  where
+    readInput :: Maybe FilePath -> IO String
+    readInput inputFile' = case inputFile' of
+      Just pth -> do
+        logDebug (printf "Reading from file: '%s'" pth)
+        readFile =<< ensuredFile pth
+      Nothing -> do
+        logDebug "Reading from stdin"
+        getContents' `catch` (\(e :: SomeException) -> throwIO (CouldNotReadFromStdin (show e)))
+    parseProgram :: String -> IOFormat -> IO Program
+    parseProgram phi PHI = parseProgramThrows phi
+    parseProgram xmir XMIR = do
+      doc <- parseXMIRThrows xmir
+      xmirToPhi doc
