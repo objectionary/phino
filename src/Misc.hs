@@ -1,11 +1,24 @@
 {-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE ViewPatterns #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
 -- This module provides commonly used helper functions for other modules
-module Misc where
+module Misc
+  ( numToHex,
+    strToHex,
+    hexToStr,
+    hexToNum,
+    withVoidRho,
+    allPathsIn,
+    ensuredFile,
+    shuffle,
+    pattern DataObject,
+  )
+where
 
 import Ast
 import Control.Exception
@@ -38,6 +51,41 @@ data FsException
 instance Show FsException where
   show FileDoesNotExist {..} = printf "File '%s' does not exist" file
   show DirectoryDoesNotExist {..} = printf "Directory '%s' does not exist" dir
+
+-- Minimal matcher function (required for view pattern)
+matchDataoObject :: Expression -> Maybe (String, String)
+matchDataoObject
+  ( ExApplication
+      (ExDispatch (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang")) (AtLabel label))
+      ( BiTau
+          (AtAlpha 0)
+          ( ExApplication
+              (ExDispatch (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang")) (AtLabel "bytes"))
+              ( BiTau
+                  (AtAlpha 0)
+                  (ExFormation [BiDelta bts, BiVoid AtRho])
+                )
+            )
+        )
+    ) = Just (label, bts)
+matchDataoObject _ = Nothing
+
+pattern DataObject :: String -> String -> Expression
+pattern DataObject label bts <- (matchDataoObject -> Just (label, bts))
+  where
+    DataObject label bts =
+      ExApplication
+        (ExDispatch (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang")) (AtLabel label))
+        ( BiTau
+            (AtAlpha 0)
+            ( ExApplication
+                (ExDispatch (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang")) (AtLabel "bytes"))
+                ( BiTau
+                    (AtAlpha 0)
+                    (ExFormation [BiDelta bts, BiVoid AtRho])
+                )
+            )
+        )
 
 -- Add void rho binding to the end of the list of any rho binding is not present
 withVoidRho :: [Binding] -> [Binding]

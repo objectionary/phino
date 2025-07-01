@@ -1,6 +1,4 @@
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE PatternSynonyms #-}
-{-# LANGUAGE ViewPatterns #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
@@ -20,9 +18,9 @@ where
 import Ast
 import qualified Data.Map.Strict as Map
 import Matcher
-import Misc (hexToNum, hexToStr)
 import Prettyprinter
 import Prettyprinter.Render.String (renderString)
+import Misc
 
 data PrintMode = SWEET | SALTY
   deriving (Eq)
@@ -32,41 +30,6 @@ instance Show PrintMode where
   show SALTY = "salty"
 
 newtype Formatted a = Formatted {unFormatted :: (PrintMode, a)}
-
--- Minimal matcher function (required for view pattern)
-matchDataoObject :: Expression -> Maybe (String, String)
-matchDataoObject
-  ( ExApplication
-      (ExDispatch (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang")) (AtLabel label))
-      ( BiTau
-          (AtAlpha 0)
-          ( ExApplication
-              (ExDispatch (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang")) (AtLabel "bytes"))
-              ( BiTau
-                  (AtAlpha 0)
-                  (ExFormation [BiDelta bts, BiVoid AtRho])
-                )
-            )
-        )
-    ) = Just (label, bts)
-matchDataoObject _ = Nothing
-
-pattern DataObject :: String -> String -> Expression
-pattern DataObject label bts <- (matchDataoObject -> Just (label, bts))
-  where
-    DataObject label bts =
-      ExApplication
-        (ExDispatch (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang")) (AtLabel label))
-        ( BiTau
-            (AtAlpha 0)
-            ( ExApplication
-                (ExDispatch (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang")) (AtLabel "bytes"))
-                ( BiTau
-                    (AtAlpha 0)
-                    (ExFormation [BiDelta bts, BiVoid AtRho])
-                )
-            )
-        )
 
 prettyMeta :: String -> Doc ann
 prettyMeta meta = pretty "!" <> pretty meta
