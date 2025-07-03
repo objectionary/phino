@@ -33,6 +33,7 @@ library
     Rewriter,
     Yaml,
     Condition,
+    Dataize,
     Misc,
     Logger,
     Pretty,
@@ -94,6 +95,7 @@ test-suite spec
     MiscSpec,
     XMIRSpec,
     HLintSpec,
+    DataizeSpec,
     Paths_phino
   autogen-modules:
     Paths_phino

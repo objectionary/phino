@@ -23,7 +23,7 @@ import Options.Applicative
 import Parser (parseProgramThrows)
 import Paths_phino (version)
 import Pretty (PrintMode (SALTY, SWEET), prettyProgram')
-import Rewriter (rewrite)
+import Rewriter (rewrite')
 import System.Exit (ExitCode (..), exitFailure)
 import System.IO (getContents')
 import Text.Printf (printf)
@@ -75,13 +75,13 @@ parseIOFormat :: String -> ReadM IOFormat
 parseIOFormat type' = eitherReader $ \format -> case map toLower format of
   "xmir" -> Right XMIR
   "phi" -> Right PHI
-  _ -> Left (printf "invalid %s format: expected 'xmir' or 'phi'" type')
+  _ -> Left (printf "invalid %s format: expected '%s' or '%s'" type' (show PHI) (show XMIR))
 
 argInputFile :: Parser (Maybe FilePath)
 argInputFile = optional (argument str (metavar "FILE" <> help "Path to input file"))
 
 optInputFormat :: Parser IOFormat
-optInputFormat = option (parseIOFormat "input") (long "input" <> metavar "FORMAT" <> help "Program input format" <> value PHI <> showDefault)
+optInputFormat = option (parseIOFormat "input") (long "input" <> metavar "FORMAT" <> help "Program input format (phi, xmir)" <> value PHI <> showDefault)
 
 optLogLevel :: Parser LogLevel
 optLogLevel =
@@ -121,7 +121,7 @@ rewriteParser =
             <$> optLogLevel
             <*> many (strOption (long "rule" <> metavar "FILE" <> help "Path to custom rule"))
             <*> optInputFormat
-            <*> option (parseIOFormat "output") (long "output" <> metavar "FORMAT" <> help "Program output format" <> value PHI <> showDefault)
+            <*> option (parseIOFormat "output") (long "output" <> metavar "FORMAT" <> help "Program output format (phi, xmir)" <> value PHI <> showDefault)
             <*> flag SALTY SWEET (long "sweet" <> help "Print 𝜑-program using syntax sugar")
             <*> switch (long "normalize" <> help "Use built-in normalization rules")
             <*> switch (long "nothing" <> help "Just desugar provided 𝜑-program")
@@ -198,20 +198,6 @@ runCLI args = handle handler $ do
               logDebug "The --shuffle option is provided, rules are used in random order"
               Misc.shuffle ordered
             else pure ordered
-        rewrite' :: Program -> [Y.Rule] -> Integer -> IO Program
-        rewrite' prog rules count = do
-          logDebug (printf "Starting rewriting cycle %d out of %d" count maxDepth)
-          if count == maxDepth
-            then do
-              logDebug (printf "Max amount of rewriting cycles is reached, rewriting is stopped")
-              pure prog
-            else do
-              rewritten <- rewrite prog rules
-              if rewritten == prog
-                then do
-                  logDebug "Rewriting is stopped since it does not affect program anymore"
-                  pure rewritten
-                else rewrite' rewritten rules (count + 1)
         printProgram :: Program -> IOFormat -> PrintMode -> IO String
         printProgram prog PHI mode = pure (prettyProgram' prog mode)
         printProgram prog XMIR mode = do

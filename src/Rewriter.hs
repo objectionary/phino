@@ -6,7 +6,7 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Rewriter (rewrite) where
+module Rewriter (rewrite, rewrite') where
 
 import Ast
 import Builder
@@ -86,3 +86,21 @@ rewrite program (rule : rest) = do
       logDebug (printf "Rule has been matched, substitutions are:\n%s" (prettySubsts substs))
       replaced substs
   rewrite prog rest
+
+rewrite' :: Program -> [Y.Rule] -> Integer -> IO Program
+rewrite' prog rules maxDepth = _rewrite 0
+  where
+    _rewrite :: Integer -> IO Program
+    _rewrite count = do
+      logDebug (printf "Starting rewriting cycle %d out of %d" count maxDepth)
+      if count == maxDepth
+        then do
+          logDebug (printf "Max amount of rewriting cycles is reached, rewriting is stopped")
+          pure prog
+        else do
+          rewritten <- rewrite prog rules
+          if rewritten == prog
+            then do
+              logDebug "Rewriting is stopped since it does not affect program anymore"
+              pure rewritten
+            else rewrite' rewritten rules (count + 1)
