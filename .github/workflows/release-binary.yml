@@ -23,9 +23,12 @@ jobs:
         uses: actions/cache@v4
         with:
           path: |
+            ~/.ghcup
+            ~/.cabal/packages
             ~/.cabal/store
+            ~/.ghc
             dist-newstyle
-          key: ${{ runner.os }}-cabal-${{ hashFiles('**/*.cabal') }}
+          key: ${{ runner.os }}-cabal-${{ hashFiles('**/*.cabal') }}-${{ hashFiles('cabal.project', 'cabal.project.freeze') }}
           restore-keys: |
             ${{ runner.os }}-cabal-
       - name: Build
@@ -45,7 +48,7 @@ jobs:
           aws-region: ${{ secrets.S3_REGION }}
       - name: Upload phino binary to S3
         run: |
-          aws s3 cp dist-release/phino s3://${{ secrets.S3_BUCKET }}/releases/phino-${{ github.ref_name }} --acl public-read
+          aws s3 cp dist-release/phino s3://${{ secrets.S3_BUCKET }}/releases/phino-0.${{ github.ref_name }} --acl public-read
       - name: Upload as phino-latest
         run: |
           aws s3 cp dist-release/phino s3://${{ secrets.S3_BUCKET }}/releases/phino-latest --acl public-read
