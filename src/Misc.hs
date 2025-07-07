@@ -128,6 +128,8 @@ allPathsIn dir = do
 -- [64,20,0,0,0,0,0,0]
 -- >>> hexToBts "68-65-6C-6C-6F"
 -- [104,101,108,108,111]
+-- >>> hexToBts "01-01"
+-- [1,1]
 hexToBts :: String -> [Word8]
 hexToBts = map readHexByte . splitOnDash
   where
@@ -193,6 +195,8 @@ numToHex num = btsToHex (unpack (toLazyByteString (word64BE (doubleToWord num)))
 -- "68-"
 -- >>> strToHex "h\""
 -- "68-22"
+-- >>> strToHex "\x01\x01"
+-- "01-01"
 strToHex :: String -> String
 strToHex "" = "--"
 strToHex [ch] = btsToHex (unpack (U.fromString [ch])) ++ "-"
@@ -211,6 +215,8 @@ strToHex str = btsToHex (unpack (U.fromString str))
 -- ""
 -- >>> hexToStr "68-22"
 -- "h\\\""
+-- >>> hexToStr "01-01"
+-- "\\x01\\x01"
 hexToStr :: String -> String
 hexToStr "--" = ""
 hexToStr [] = ""
