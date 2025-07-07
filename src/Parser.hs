@@ -78,7 +78,7 @@ label' = lexeme $ do
 escapedChar :: Parser Char
 escapedChar = do
   _ <- char '\\'
-  c <- oneOf ['\\', '"', 'n', 'r', 't', 'b', 'f', 'u']
+  c <- oneOf ['\\', '"', 'n', 'r', 't', 'b', 'f', 'u', 'x']
   case c of
     '\\' -> return '\\'
     '"' -> return '"'
@@ -88,34 +88,41 @@ escapedChar = do
     'b' -> return '\b'
     'f' -> return '\f'
     'u' -> unicodeEscape
+    'x' -> hexEscape
     _ -> fail $ "Unknown escape: \\" ++ [c]
-
-unicodeEscape :: Parser Char
-unicodeEscape = do
-  hexDigits <- count 4 hexDigitChar
-  case readHex hexDigits of
-    [(n, "")] ->
-      if n >= 0xD800 && n <= 0xDBFF
-        then -- High surrogate, look for low surrogate
-          do
-            _ <- string "\\u"
-            lowHexDigits <- count 4 hexDigitChar
-            case readHex lowHexDigits of
-              [(low, "")] ->
-                if low >= 0xDC00 && low <= 0xDFFF
-                  then do
-                    -- Valid surrogate pair, combine them
-                    let codePoint = 0x10000 + ((n - 0xD800) * 0x400) + (low - 0xDC00)
-                    return (chr codePoint)
-                  else fail ("Invalid low surrogate: \\u" ++ lowHexDigits)
-              _ -> fail ("Invalid low surrogate hex: \\u" ++ lowHexDigits)
-        else
-          if n >= 0xDC00 && n <= 0xDFFF
-            then fail ("Unexpected low surrogate: \\u" ++ hexDigits)
+  where
+    unicodeEscape :: Parser Char
+    unicodeEscape = do
+      hexDigits <- count 4 hexDigitChar
+      case readHex hexDigits of
+        [(n, "")] ->
+          if n >= 0xD800 && n <= 0xDBFF
+            then -- High surrogate, look for low surrogate
+              do
+                _ <- string "\\u"
+                lowHexDigits <- count 4 hexDigitChar
+                case readHex lowHexDigits of
+                  [(low, "")] ->
+                    if low >= 0xDC00 && low <= 0xDFFF
+                      then do
+                        -- Valid surrogate pair, combine them
+                        let codePoint = 0x10000 + ((n - 0xD800) * 0x400) + (low - 0xDC00)
+                        return (chr codePoint)
+                      else fail ("Invalid low surrogate: \\u" ++ lowHexDigits)
+                  _ -> fail ("Invalid low surrogate hex: \\u" ++ lowHexDigits)
             else
-              if n >= 0 && n <= 0x10FFFF
-                then return (chr n)
-                else fail ("Invalid Unicode code point: \\u" ++ hexDigits)
+              if n >= 0xDC00 && n <= 0xDFFF
+                then fail ("Unexpected low surrogate: \\u" ++ hexDigits)
+                else
+                  if n >= 0 && n <= 0x10FFFF
+                    then return (chr n)
+                    else fail ("Invalid Unicode code point: \\u" ++ hexDigits)
+    hexEscape :: Parser Char
+    hexEscape = do
+      digits <- count 2 hexDigitChar
+      case readHex digits of
+        [(n, "")] -> return (chr n)
+        _ -> fail $ "Invalid hex escape: \\x" ++ digits
 
 function :: Parser String
 function = lexeme $ do
