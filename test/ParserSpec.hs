@@ -242,7 +242,8 @@ spec = do
         "⟦x ↦ Φ.org.eolang(z ↦ ξ.f, x ↦ α0, φ ↦ ρ, t ↦ φ, first ↦ ⟦ λ ⤍ Function_name, Δ ⤍ 42- ⟧)⟧",
         "[[x -> 1.00e+3, y -> 2.32e-4]]",
         "[[ x -> \"\\u0001\\u0001\"]]",
-        "[[ x -> \"\\uD835\\uDF11\"]]"
+        "[[ x -> \"\\uD835\\uDF11\"]]",
+        "[[ x ↦ \"This plugin has \\x01\\x01\" ]]"
       ]
       (\expr -> it expr (parseExpression expr `shouldSatisfy` isRight))
 

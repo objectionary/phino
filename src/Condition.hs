@@ -115,11 +115,11 @@ meetCondition' (Y.Eq (Y.CmpNum left) (Y.CmpNum right)) subst = case (numToInt le
 meetCondition' (Y.Eq (Y.CmpAttr left) (Y.CmpAttr right)) subst = [subst | compareAttrs left right subst]
 meetCondition' (Y.Eq _ _) _ = []
 meetCondition' (Y.NF (ExMeta meta)) (Subst mp) = case M.lookup meta mp of
-  Just (MvExpression expr) -> [Subst mp | isNF expr]
+  Just (MvExpression expr _) -> [Subst mp | isNF expr]
   _ -> []
 meetCondition' (Y.NF expr) (Subst mp) = [Subst mp | isNF expr]
 meetCondition' (Y.XI (ExMeta meta)) (Subst mp) = case M.lookup meta mp of
-  Just (MvExpression expr) -> meetCondition' (Y.XI expr) (Subst mp)
+  Just (MvExpression expr _) -> meetCondition' (Y.XI expr) (Subst mp)
   _ -> []
 meetCondition' (Y.XI (ExFormation _)) subst = [subst]
 meetCondition' (Y.XI ExThis) subst = []
