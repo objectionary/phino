@@ -95,14 +95,16 @@ spec = do
         )
       ]
 
-  -- describe "matchAttribute: attribute => attribute => substitution" $
-  --   test
-  --     matchAttribute
-  --     [ ("~1 => ~1 => [()]", AtAlpha 1, AtAlpha 1, [[]]),
-  --       ("!a => ^ => [(!a >> ^)]", AtMeta "a", AtRho, [[("a", MvAttribute AtRho)]]),
-  --       ("!a => @ => [(!a >> @)]", AtMeta "a", AtPhi, [[("a", MvAttribute AtPhi)]]),
-  --       ("~0 => [] => [()]", AtAlpha 0, AtLabel "x", [])
-  --     ]
+  describe "matchAttribute: attribute => attribute => substitution" $
+    forM_
+      [ ("~1 => ~1 => [()]", AtAlpha 1, AtAlpha 1, [[]]),
+        ("!a => ^ => [(!a >> ^)]", AtMeta "a", AtRho, [[("a", MvAttribute AtRho)]]),
+        ("!a => @ => [(!a >> @)]", AtMeta "a", AtPhi, [[("a", MvAttribute AtPhi)]]),
+        ("~0 => [] => [()]", AtAlpha 0, AtLabel "x", [])
+      ]
+      ( \(desc, ptn, tgt, mp) ->
+          it desc $ matchAttribute ptn tgt `shouldBe` toExpected mp
+      )
 
   describe "matchBindings: [binding] => [binding] => substitution" $
     test
