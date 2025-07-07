@@ -1,0 +1,56 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+name: Release binary to S3
+'on':
+  push:
+    tags:
+      - '*'
+jobs:
+  build-and-release:
+    strategy:
+      matrix:
+        os: [macos-15, ubuntu-24.04]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up GHC and Cabal
+        uses: haskell-actions/setup@v2.8.0
+        with:
+          ghc-version: '9.6.7'
+          cabal-version: '3.12.1.0'
+      - name: Cache Cabal build artifacts
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.ghcup
+            ~/.cabal/packages
+            ~/.cabal/store
+            ~/.ghc
+            dist-newstyle
+          key: ${{ runner.os }}-cabal-${{ hashFiles('**/*.cabal') }}-${{ hashFiles('cabal.project', 'cabal.project.freeze') }}
+          restore-keys: |
+            ${{ runner.os }}-cabal-
+      - name: Build
+        run: |
+          cabal update
+          cabal build
+      - name: Copy binary
+        run: |
+          mkdir -p dist-release
+          cp "$(cabal list-bin phino)" dist-release/phino
+          chmod +x dist-release/phino
+      - name: Upload phino binary to Amazon S3
+        uses: aws-actions/configure-aws-credentials@v4.2.1
+        with:
+          aws-access-key-id: ${{ secrets.S3_KEY }}
+          aws-secret-access-key: ${{ secrets.S3_SECRET }}
+          aws-region: ${{ secrets.S3_REGION }}
+      - name: Upload phino binary to S3
+        run: |
+          aws s3 cp dist-release/phino s3://${{ secrets.S3_BUCKET }}/releases/${{ matrix.os }}/phino-0.${{ github.ref_name }} --acl public-read
+      - name: Upload as phino-latest
+        run: |
+          aws s3 cp dist-release/phino s3://${{ secrets.S3_BUCKET }}/releases/${{ matrix.os }}/phino-latest --acl public-read
