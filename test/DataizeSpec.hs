@@ -3,22 +3,23 @@
 
 module DataizeSpec (spec) where
 
-import Ast (Attribute (AtLabel), Binding (BiDelta, BiTau), Expression (ExDispatch, ExFormation, ExGlobal, ExTermination, ExThis), Program (Program))
+import Ast (Attribute (AtLabel, AtPhi, AtRho), Binding (BiDelta, BiTau, BiVoid), Expression (ExDispatch, ExFormation, ExGlobal, ExTermination, ExThis), Program (Program))
 import Control.Monad
-import Dataize (morph)
+import Dataize (dataize, morph)
 import Test.Hspec
 
-testMorph :: [(String, Expression, Expression, Maybe Expression)] -> SpecWith (Arg Expectation)
-testMorph useCases =
+test :: (Eq a, Show a) => (Expression -> Program -> IO (Maybe a)) -> [(String, Expression, Expression, Maybe a)] -> Spec
+test func useCases =
   forM_ useCases $ \(desc, input, prog, output) ->
     it desc $ do
-      res <- morph input (Program prog)
+      res <- func input (Program prog)
       res `shouldBe` output
 
 spec :: Spec
-spec =
+spec = do
   describe "morph" $
-    testMorph
+    test
+      morph
       [ ("[[ D> 00- ]] => [[ D> 00- ]]", ExFormation [BiDelta "00-"], ExGlobal, Just (ExFormation [BiDelta "00-"])),
         ("T => T", ExTermination, ExGlobal, Just ExTermination),
         ("$ => X", ExThis, ExGlobal, Nothing),
@@ -27,5 +28,22 @@ spec =
           ExDispatch ExGlobal (AtLabel "x"),
           ExFormation [BiTau (AtLabel "x") (ExFormation [])],
           Just (ExFormation [])
+        )
+      ]
+
+  describe "dataize" $
+    test
+      dataize
+      [ ("[[ D> 00- ]] => 00-", ExFormation [BiDelta "00-"], ExGlobal, Just "00-"),
+        ("T => X", ExTermination, ExGlobal, Nothing),
+        ( "[[ @ -> [[ D> 00-]] ]] => 00-",
+          ExFormation [BiTau AtPhi (ExFormation [BiDelta "00-", BiVoid AtRho]), BiVoid AtRho],
+          ExGlobal,
+          Just "00-"
+        ),
+        ( "[[ x -> [[ D> 01- ]] ]].x => 01-",
+          ExDispatch (ExFormation [BiTau (AtLabel "x") (ExFormation [BiDelta "01-", BiVoid AtRho]), BiVoid AtRho]) (AtLabel "x"),
+          ExGlobal,
+          Just "01-"
         )
       ]
