@@ -21,4 +21,4 @@ rules:
       where:
         - meta: '!e1'
           function: scope
-          args: ['!e']          
+          args: ['!e']
