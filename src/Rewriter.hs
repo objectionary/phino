@@ -45,9 +45,12 @@ instance Show RewriteException where
 buildAndReplace :: Program -> Expression -> Expression -> [Subst] -> IO Program
 buildAndReplace program ptn res substs =
   case (buildExpressions ptn substs, buildExpressions res substs) of
-    (Just ptns, Just repls) -> case replaceProgram program ptns repls of
-      Just prog -> pure prog
-      _ -> throwIO (CouldNotReplace program ptn res)
+    (Just ptns, Just repls) ->
+      let repls' = map fst repls
+          ptns' = map fst ptns
+       in case replaceProgram program ptns' repls' of
+            Just prog -> pure prog
+            _ -> throwIO (CouldNotReplace program ptn res)
     (Nothing, _) -> throwIO (CouldNotBuild ptn substs)
     (_, Nothing) -> throwIO (CouldNotBuild res substs)
 
@@ -57,15 +60,18 @@ extraSubstitutions prog extras substs = case extras of
   Nothing -> substs
   Just extras' ->
     catMaybes
-      [ case Y.meta extra of
-          ExMeta name -> do
-            let func = Y.function extra
-                args = Y.args extra
-            expr <- buildExpressionFromFunction func args subst prog
-            combine (substSingle name (MvExpression expr)) subst
-          _ -> Just subst
-        | subst <- substs,
-          extra <- extras'
+      [ foldl
+          ( \(Just subst') extra -> case Y.meta extra of
+              ExMeta name -> do
+                let func = Y.function extra
+                    args = Y.args extra
+                expr <- buildExpressionFromFunction func args subst' prog
+                combine (substSingle name (MvExpression expr (ExFormation []))) subst'
+              _ -> Just subst'
+          )
+          (Just subst)
+          extras'
+        | subst <- substs
       ]
 
 rewrite :: Program -> [Y.Rule] -> IO Program
@@ -75,14 +81,12 @@ rewrite program (rule : rest) = do
   let ptn = Y.pattern rule
       res = Y.result rule
       condition = Y.when rule
-      replaced = buildAndReplace program ptn res
-      extended = extraSubstitutions program (Y.where_ rule)
   prog <- case C.matchProgramWithCondition ptn condition program of
     Nothing -> do
       logDebug "Rule didn't match"
       pure program
     Just matched -> do
-      let substs = extended matched
+      let substs = extraSubstitutions program (Y.where_ rule) matched
       logDebug (printf "Rule has been matched, substitutions are:\n%s" (prettySubsts substs))
-      replaced substs
+      buildAndReplace program ptn res substs
   rewrite prog rest

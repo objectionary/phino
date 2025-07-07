@@ -40,7 +40,7 @@ buildAttribute attr _ = Just attr
 buildBinding :: Binding -> Subst -> Maybe [Binding]
 buildBinding (BiTau attr expr) subst = do
   attribute <- buildAttribute attr subst
-  expression <- buildExpression expr subst
+  (expression, _) <- buildExpression expr subst
   Just [BiTau attribute expression]
 buildBinding (BiVoid attr) subst = do
   attribute <- buildAttribute attr subst
@@ -70,35 +70,40 @@ buildExpressionWithTails expr (tail : rest) subst = case tail of
   TaApplication taus -> buildExpressionWithTails (ExApplication expr taus) rest subst
   TaDispatch attr -> buildExpressionWithTails (ExDispatch expr attr) rest subst
 
-buildExpression :: Expression -> Subst -> Maybe Expression
+buildExpression :: Expression -> Subst -> Maybe (Expression, Expression)
 buildExpression (ExDispatch expr attr) subst = do
-  dispatched <- buildExpression expr subst
+  (dispatched, scope) <- buildExpression expr subst
   attr <- buildAttribute attr subst
-  return (ExDispatch dispatched attr)
+  return (ExDispatch dispatched attr, scope)
 buildExpression (ExApplication expr (BiTau battr bexpr)) subst = do
-  applied <- buildExpression expr subst
+  (applied, scope) <- buildExpression expr subst
   [binding] <- buildBinding (BiTau battr bexpr) subst
-  Just (ExApplication applied binding)
+  Just (ExApplication applied binding, scope)
 buildExpression (ExApplication _ _) _ = Nothing
-buildExpression (ExFormation bds) subst = buildBindings bds subst >>= (Just . ExFormation)
+buildExpression (ExFormation bds) subst = do
+  bds' <- buildBindings bds subst
+  Just (ExFormation bds', ExFormation [])
 buildExpression (ExMeta meta) (Subst mp) = case Map.lookup meta mp of
-  Just (MvExpression expr) -> Just expr
+  Just (MvExpression expr scope) -> Just (expr, scope)
   _ -> Nothing
 buildExpression (ExMetaTail expr meta) subst = do
   let (Subst mp) = subst
-  expression <- buildExpression expr subst
+  (expression, scope) <- buildExpression expr subst
   case Map.lookup meta mp of
-    Just (MvTail tails) -> Just (buildExpressionWithTails expression tails subst)
+    Just (MvTail tails) -> Just (buildExpressionWithTails expression tails subst, scope)
     _ -> Nothing
-buildExpression expr _ = Just expr
+buildExpression expr _ = Just (expr, ExFormation [])
 
 buildExpressionFromFunction :: String -> [Expression] -> Subst -> Program -> Maybe Expression
 buildExpressionFromFunction "contextualize" [expr, context] subst prog = do
-  expr' <- buildExpression expr subst
-  context' <- buildExpression context subst
+  (expr', _) <- buildExpression expr subst
+  (context', _) <- buildExpression context subst
   return (contextualize expr' context' prog)
+buildExpressionFromFunction "scope" [expr] subst prog = do
+  (expr', scope) <- buildExpression expr subst
+  return scope
 buildExpressionFromFunction _ _ _ _ = Nothing
 
 -- Build a several expression from one expression and several substitutions
-buildExpressions :: Expression -> [Subst] -> Maybe [Expression]
+buildExpressions :: Expression -> [Subst] -> Maybe [(Expression, Expression)]
 buildExpressions expr = traverse (buildExpression expr)

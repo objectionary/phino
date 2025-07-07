@@ -62,7 +62,7 @@ spec = do
           map
             (\(desc, output, substs) -> (desc, output, substs, SALTY))
             [ ("[()]", "[\n  (\n    \n  )\n]", [substEmpty]),
-              ("[(!e >> Q.x)]", "[\n  (\n    !e >> Φ.x\n  )\n]", [substSingle "e" (MvExpression (ExDispatch ExGlobal (AtLabel "x")))]),
+              ("[(!e >> Q.x)]", "[\n  (\n    !e >> Φ.x\n  )\n]", [substSingle "e" (MvExpression (ExDispatch ExGlobal (AtLabel "x")) (ExFormation []))]),
               ("[(!a >> x)]", "[\n  (\n    !a >> x\n  )\n]", [substSingle "a" (MvAttribute (AtLabel "x"))])
             ]
     test prettySubsts' useCases
