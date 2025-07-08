@@ -10,6 +10,7 @@ module Builder
     buildExpressionFromFunction,
     buildAttribute,
     buildBinding,
+    contextualize
   )
 where
 
@@ -70,6 +71,11 @@ buildExpressionWithTails expr (tail : rest) subst = case tail of
   TaApplication taus -> buildExpressionWithTails (ExApplication expr taus) rest subst
   TaDispatch attr -> buildExpressionWithTails (ExDispatch expr attr) rest subst
 
+-- Build meta expression with given substitution
+-- It returns tuple (X, Y)
+-- where X is built expression and Y is context of X
+-- If meta expression is built from MvExpression, is has
+-- context from original Program. It have default context otherwise
 buildExpression :: Expression -> Subst -> Maybe (Expression, Expression)
 buildExpression (ExDispatch expr attr) subst = do
   (dispatched, scope) <- buildExpression expr subst
@@ -82,7 +88,7 @@ buildExpression (ExApplication expr (BiTau battr bexpr)) subst = do
 buildExpression (ExApplication _ _) _ = Nothing
 buildExpression (ExFormation bds) subst = do
   bds' <- buildBindings bds subst
-  Just (ExFormation bds', ExFormation [])
+  Just (ExFormation bds', defaultScope)
 buildExpression (ExMeta meta) (Subst mp) = case Map.lookup meta mp of
   Just (MvExpression expr scope) -> Just (expr, scope)
   _ -> Nothing
@@ -92,7 +98,7 @@ buildExpression (ExMetaTail expr meta) subst = do
   case Map.lookup meta mp of
     Just (MvTail tails) -> Just (buildExpressionWithTails expression tails subst, scope)
     _ -> Nothing
-buildExpression expr _ = Just (expr, ExFormation [])
+buildExpression expr _ = Just (expr, defaultScope)
 
 buildExpressionFromFunction :: String -> [Expression] -> Subst -> Program -> Maybe Expression
 buildExpressionFromFunction "contextualize" [expr, context] subst prog = do

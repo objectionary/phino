@@ -3,12 +3,14 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Dataize (morph, dataize) where
+module Dataize (morph, dataize, dataize') where
 
 import Ast
+import Builder (buildExpressionFromFunction, contextualize)
 import Condition (isNF)
 import Control.Exception (throwIO)
 import Data.List (partition)
+import Misc
 import Rewriter (rewrite')
 import Text.Printf (printf)
 import Yaml (normalizationRules)
@@ -30,13 +32,15 @@ maybeDelta = maybeBinding (\case BiDelta _ -> True; _ -> False)
 maybePhi :: [Binding] -> (Maybe Binding, [Binding])
 maybePhi = maybeBinding (\case (BiTau AtPhi _) -> True; _ -> False)
 
-formation :: [Binding] -> IO (Maybe Expression)
-formation bds = do
+formation :: [Binding] -> Program -> IO (Maybe Expression)
+formation bds prog = do
   let (lambda, bds') = maybeLambda bds
   case lambda of
     Just (BiLambda func) -> do
-      obj' <- atom func (ExFormation bds')
-      pure (Just obj')
+      obj' <- atom func (ExFormation bds') prog
+      case obj' of
+        Just obj -> pure (Just obj)
+        _ -> pure Nothing
     _ -> pure Nothing
 
 phiDispatch :: String -> Expression -> Maybe Expression
@@ -57,12 +61,13 @@ withTail (ExApplication expr tau) prog = do
   exp' <- withTail expr prog
   case exp' of
     Just exp -> pure (Just (ExApplication exp tau))
-withTail (ExDispatch (ExFormation bds) attr) _ = do
-  obj' <- formation bds
+    _ -> pure Nothing
+withTail (ExDispatch (ExFormation bds) attr) prog = do
+  obj' <- formation bds prog
   case obj' of
     Just obj -> pure (Just (ExDispatch obj attr))
     _ -> pure Nothing
-withTail (ExFormation bds) _ = formation bds
+withTail (ExFormation bds) prog = formation bds prog
 withTail (ExDispatch (ExDispatch ExGlobal (AtLabel label)) attr) (Program expr) = case phiDispatch label expr of
   Just obj -> pure (Just (ExDispatch obj attr))
   _ -> pure Nothing
@@ -101,36 +106,53 @@ morph expr prog = do
       if isNF expr
         then pure Nothing
         else do
-          (Program expr') <- rewrite' (Program expr) normalizationRules 25 -- NMZ
+          (Program expr') <- rewrite' (Program expr) prog normalizationRules 25 -- NMZ
           morph expr' prog
 
 -- The goal of 'dataize' function is retrieve bytes from given expression.
--- 
+--
 -- DELTA: D(e) -> data                          if e = [B1, Δ -> data, B2]
--- BOX:   D([B1, 𝜑 -> e, B2]) -> D(e)           if [B1,B2] has no delta/lambda
+-- BOX:   D([B1, 𝜑 -> e, B2]) -> D(С(e))        if [B1,B2] has no delta/lambda, where С(e) - contextualization
 -- NORM:  D(e1) -> D(e2)                        if e2 := M(e1) and e1 is not primitive
 --        nothing                               otherwise
-dataize :: Expression -> Program -> IO (Maybe String)
-dataize ExTermination _ = pure Nothing
-dataize (ExFormation bds) prog = case maybeDelta bds of
+dataize :: Program -> IO (Maybe String)
+dataize (Program expr) = dataize' expr (Program expr)
+
+dataize' :: Expression -> Program -> IO (Maybe String)
+dataize' ExTermination _ = pure Nothing
+dataize' (ExFormation bds) prog = case maybeDelta bds of
   (Just (BiDelta bytes), _) -> pure (Just bytes)
   (Nothing, _) -> case maybePhi bds of
     (Just (BiTau AtPhi expr), bds') -> case maybeLambda bds' of
       (Just (BiLambda _), _) -> throwIO (userError "The 𝜑 and λ can't be present in formation at the same time")
-      (_, _) -> dataize expr prog
+      (_, _) ->
+        let expr' = contextualize expr (ExFormation bds) prog
+         in dataize' expr' prog
     (Nothing, _) -> case maybeLambda bds of
       (Just (BiLambda _), _) -> do
         morphed' <- morph (ExFormation bds) prog
         case morphed' of
-          Just morphed -> dataize morphed prog
+          Just morphed -> dataize' morphed prog
           _ -> pure Nothing
       (Nothing, _) -> pure Nothing
-dataize expr prog = do
+dataize' expr prog = do
   morphed' <- morph expr prog
   case morphed' of
-    Just morphed -> dataize morphed prog
+    Just morphed -> dataize' morphed prog
     _ -> pure Nothing
 
-atom :: String -> Expression -> IO Expression
-atom "L_org_eolang_number_plus" self = pure (ExFormation [])
-atom func _ = throwIO (userError (printf "Atom '%s' does not exist" func))
+atom :: String -> Expression -> Program -> IO (Maybe Expression)
+atom "L_org_eolang_number_plus" self prog = do
+  left <- dataize' (ExDispatch self (AtLabel "x")) prog
+  right <- dataize' (ExDispatch self AtRho) prog
+  case (left, right) of
+    (Just left', Just right') -> do
+      let first = either toDouble id (hexToNum left')
+          second = either toDouble id (hexToNum right')
+          sum = first + second
+      pure (Just (DataObject "number" (numToHex sum)))
+    _ -> pure Nothing
+  where
+    toDouble :: Integer -> Double
+    toDouble = fromIntegral
+atom func _ _ = throwIO (userError (printf "Atom '%s' does not exist" func))

@@ -179,3 +179,7 @@ spec = do
         testCLI
           ["rewrite", "--nothing", "--output=xmir", "--omit-listing"]
           ["<?xml version=\"1.0\" encoding=\"UTF-8\"?>", "<object", "<listing>4 lines of phi</listing>", "  <o base=\"Q.y\" name=\"x\"/>"]
+
+  -- describe "dataize" $ do
+    
+  

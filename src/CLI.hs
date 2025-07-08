@@ -30,6 +30,7 @@ import Text.Printf (printf)
 import XMIR (parseXMIRThrows, printXMIR, programToXMIR, xmirToPhi)
 import Yaml (normalizationRules)
 import qualified Yaml as Y
+import Dataize (dataize)
 
 data CmdException
   = InvalidRewriteArguments {message :: String}
@@ -169,7 +170,7 @@ runCLI args = handle handler $ do
       input <- readInput inputFile
       rules' <- getRules
       program <- parseProgram input inputFormat
-      rewritten <- rewrite' program rules' 1
+      rewritten <- rewrite' program program rules' maxDepth
       logDebug (printf "Printing rewritten 𝜑-program as %s" (show outputFormat))
       out <- printProgram rewritten outputFormat printMode
       putStrLn out
@@ -206,7 +207,8 @@ runCLI args = handle handler $ do
     CmdDataize OptsDataize {..} -> do
       input <- readInput inputFile
       prog <- parseProgram input inputFormat
-      putStrLn "Dataization is not implemented yet"
+      dataized <- dataize prog
+      maybe (return ()) putStrLn dataized
   where
     readInput :: Maybe FilePath -> IO String
     readInput inputFile' = case inputFile' of

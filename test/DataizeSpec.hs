@@ -3,9 +3,10 @@
 
 module DataizeSpec (spec) where
 
-import Ast (Attribute (AtLabel, AtPhi, AtRho), Binding (BiDelta, BiTau, BiVoid), Expression (ExDispatch, ExFormation, ExGlobal, ExTermination, ExThis), Program (Program))
+import Ast (Attribute (AtLabel, AtPhi, AtRho), Binding (BiDelta, BiTau, BiVoid), Expression (ExApplication, ExDispatch, ExFormation, ExGlobal, ExTermination, ExThis), Program (Program))
 import Control.Monad
-import Dataize (dataize, morph)
+import Dataize (dataize, dataize', morph)
+import Parser (parseProgramThrows)
 import Test.Hspec
 
 test :: (Eq a, Show a) => (Expression -> Program -> IO (Maybe a)) -> [(String, Expression, Expression, Maybe a)] -> Spec
@@ -33,7 +34,7 @@ spec = do
 
   describe "dataize" $
     test
-      dataize
+      dataize'
       [ ("[[ D> 00- ]] => 00-", ExFormation [BiDelta "00-"], ExGlobal, Just "00-"),
         ("T => X", ExTermination, ExGlobal, Nothing),
         ( "[[ @ -> [[ D> 00-]] ]] => 00-",
@@ -45,5 +46,55 @@ spec = do
           ExDispatch (ExFormation [BiTau (AtLabel "x") (ExFormation [BiDelta "01-", BiVoid AtRho]), BiVoid AtRho]) (AtLabel "x"),
           ExGlobal,
           Just "01-"
+        ),
+        ( "[[ @ -> [[ x -> [[ D> 01-, y -> ? ]](y -> [[ ]]) ]].x ]] => 01-",
+          ExFormation
+            [ BiTau
+                AtPhi
+                ( ExDispatch
+                    ( ExFormation
+                        [ BiTau
+                            (AtLabel "x")
+                            ( ExApplication
+                                ( ExFormation
+                                    [ BiDelta "01-",
+                                      BiVoid (AtLabel "y"),
+                                      BiVoid AtRho
+                                    ]
+                                )
+                                (BiTau (AtLabel "y") (ExFormation []))
+                            )
+                        ]
+                    )
+                    (AtLabel "x")
+                )
+            ],
+          ExGlobal,
+          Just "01-"
         )
       ]
+
+  it "dataizes 5.plus(5)" $ do
+    prog <-
+      parseProgramThrows
+        ( unlines
+            [ "Q -> [[",
+              "  org -> [[",
+              "    eolang -> [[",
+              "      bytes -> [[",
+              "        data -> ?,",
+              "        @ -> $.data",
+              "      ]],",
+              "      number -> [[",
+              "        as-bytes -> ?,",
+              "        @ -> $.as-bytes,",
+              "        plus -> [[ x -> ?, L> L_org_eolang_number_plus ]]",
+              "      ]]",
+              "    ]]",
+              "  ]],",
+              "  @ -> 5.plus(5)",
+              "]]"
+            ]
+        )
+    value <- dataize prog
+    value `shouldBe` Just "40-24-00-00-00-00-00-00"
