@@ -14,6 +14,7 @@ import Misc
 import Rewriter (rewrite')
 import Text.Printf (printf)
 import Yaml (normalizationRules)
+import qualified Data.Bits as coded
 
 maybeBinding :: (Binding -> Bool) -> [Binding] -> (Maybe Binding, [Binding])
 maybeBinding _ [] = (Nothing, [])
@@ -91,6 +92,8 @@ withTail _ _ = pure Nothing
 -- LAMBDA: M([B1, λ -> F, B2] * t) -> M(e2 * t)   if e3 := [B1,B2] and e2 := F(e3)
 -- PHI:    M(Q.tau * t) -> M(e * t)               if Q -> [B1, tau -> e, B2], t is tail started with dispatch
 --         M(e) -> nothing                        otherwise
+-- @todo #169:30min Get rid of hard coded amount of normalization cycles. Right now the value 25 is hard coded.
+--  We need to pass it though function argument or global environment.
 morph :: Expression -> Program -> IO (Maybe Expression)
 morph ExTermination _ = pure (Just ExTermination) -- PRIM
 morph (ExFormation bds) prog = do
