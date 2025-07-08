@@ -75,7 +75,7 @@ testCLI args outputs = do
     )
 
 testCLIFailed :: [String] -> String -> Expectation
-testCLIFailed args output = withStdin "" $ do
+testCLIFailed args output = do
   (out, result) <- withStdout (try (runCLI args) :: IO (Either ExitCode ()))
   out `shouldContain` output
   result `shouldBe` Left (ExitFailure 1)
@@ -125,14 +125,12 @@ spec = do
         ]
 
     it "fails with negative --max-depth" $
-      testCLIFailed
-        ["rewrite", "--max-depth=-1"]
-        "--max-depth must be positive"
+      withStdin "" $
+        testCLIFailed ["rewrite", "--max-depth=-1"] "--max-depth must be positive"
 
     it "fails with no rewriting options provided" $
-      testCLIFailed
-        ["rewrite"]
-        "no --rule, no --normalize, no --nothing are provided"
+      withStdin "" $
+        testCLIFailed ["rewrite"] "no --rule, no --normalize, no --nothing are provided"
 
     it "normalizes from stdin" $
       withStdin "Φ ↦ ⟦ a ↦ ⟦ b ↦ ∅ ⟧ (b ↦ [[ ]]) ⟧" $
@@ -180,6 +178,11 @@ spec = do
           ["rewrite", "--nothing", "--output=xmir", "--omit-listing"]
           ["<?xml version=\"1.0\" encoding=\"UTF-8\"?>", "<object", "<listing>4 lines of phi</listing>", "  <o base=\"Q.y\" name=\"x\"/>"]
 
-  -- describe "dataize" $ do
-    
-  
+  describe "dataize" $ do
+    it "dataizes simple program" $
+      withStdin "Q -> [[ D> 01- ]]" $
+        testCLI ["dataize"] ["01-"]
+
+    it "fails to dataize" $
+      withStdin "Q -> [[ ]]" $
+        testCLIFailed ["dataize"] "[ERROR]: Could not dataize given program"

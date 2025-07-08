@@ -16,6 +16,7 @@ import Control.Monad (when)
 import Data.Char (toLower, toUpper)
 import Data.List (intercalate)
 import Data.Version (showVersion)
+import Dataize (dataize)
 import Logger
 import Misc (ensuredFile)
 import qualified Misc
@@ -30,16 +31,17 @@ import Text.Printf (printf)
 import XMIR (parseXMIRThrows, printXMIR, programToXMIR, xmirToPhi)
 import Yaml (normalizationRules)
 import qualified Yaml as Y
-import Dataize (dataize)
 
 data CmdException
   = InvalidRewriteArguments {message :: String}
   | CouldNotReadFromStdin {message :: String}
+  | CouldNotDataize
   deriving (Exception)
 
 instance Show CmdException where
   show InvalidRewriteArguments {..} = printf "Invalid set of arguments for 'rewrite' command: %s" message
   show CouldNotReadFromStdin {..} = printf "Could not read input from stdin\nReason: %s" message
+  show CouldNotDataize = "Could not dataize given program"
 
 data Command
   = CmdRewrite OptsRewrite
@@ -208,7 +210,7 @@ runCLI args = handle handler $ do
       input <- readInput inputFile
       prog <- parseProgram input inputFormat
       dataized <- dataize prog
-      maybe (return ()) putStrLn dataized
+      maybe (throwIO CouldNotDataize) putStrLn dataized
   where
     readInput :: Maybe FilePath -> IO String
     readInput inputFile' = case inputFile' of
