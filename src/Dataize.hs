@@ -14,7 +14,6 @@ import Misc
 import Rewriter (rewrite')
 import Text.Printf (printf)
 import Yaml (normalizationRules)
-import qualified Data.Bits as coded
 
 maybeBinding :: (Binding -> Bool) -> [Binding] -> (Maybe Binding, [Binding])
 maybeBinding _ [] = (Nothing, [])
