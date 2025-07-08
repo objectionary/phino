@@ -143,6 +143,9 @@ dataize' expr prog = do
     Just morphed -> dataize' morphed prog
     _ -> pure Nothing
 
+toDouble :: Integer -> Double
+toDouble = fromIntegral
+
 atom :: String -> Expression -> Program -> IO (Maybe Expression)
 atom "L_org_eolang_number_plus" self prog = do
   left <- dataize' (ExDispatch self (AtLabel "x")) prog
@@ -154,7 +157,14 @@ atom "L_org_eolang_number_plus" self prog = do
           sum = first + second
       pure (Just (DataObject "number" (numToHex sum)))
     _ -> pure Nothing
-  where
-    toDouble :: Integer -> Double
-    toDouble = fromIntegral
+atom "L_org_eolang_number_times" self prog = do
+  left <- dataize' (ExDispatch self (AtLabel "x")) prog
+  right <- dataize' (ExDispatch self AtRho) prog
+  case (left, right) of
+    (Just left', Just right') -> do
+      let first = either toDouble id (hexToNum left')
+          second = either toDouble id (hexToNum right')
+          sum = first * second
+      pure (Just (DataObject "number" (numToHex sum)))
+    _ -> pure Nothing
 atom func _ _ = throwIO (userError (printf "Atom '%s' does not exist" func))

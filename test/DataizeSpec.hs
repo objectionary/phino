@@ -98,3 +98,30 @@ spec = do
         )
     value <- dataize prog
     value `shouldBe` Just "40-24-00-00-00-00-00-00"
+  
+  it "dataizes Fahrenheit test" $ do
+    prog <-
+      parseProgramThrows
+        ( unlines 
+            [ "Q -> [[",
+              "  org -> [[",
+              "    eolang -> [[",
+              "      bytes -> [[",
+              "        data -> ?,",
+              "        @ -> $.data",
+              "      ]],",
+              "      number -> [[",
+              "        as-bytes -> ?,",
+              "        @ -> $.as-bytes,",
+              "        plus -> [[ x -> ?, L> L_org_eolang_number_plus ]],",
+              "        times -> [[ x -> ?, L> L_org_eolang_number_times ]]",
+              "      ]]",
+              "    ]]",
+              "  ]],",
+              "  @ -> $.c.times(1.8).plus(32),",
+              "  c -> 25",
+              "]]"
+            ]
+        )
+    value <- dataize prog
+    value `shouldBe` Just "40-53-40-00-00-00-00-00"
