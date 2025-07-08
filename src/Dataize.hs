@@ -167,4 +167,15 @@ atom "L_org_eolang_number_times" self prog = do
           sum = first * second
       pure (Just (DataObject "number" (numToHex sum)))
     _ -> pure Nothing
+atom "L_org_eolang_number_eq" self prog = do
+  x <- dataize' (ExDispatch self (AtLabel "x")) prog
+  rho <- dataize' (ExDispatch self AtRho) prog
+  case (x, rho) of
+    (Just x', Just rho') -> do
+      let self' = either toDouble id (hexToNum rho')
+          first = either toDouble id (hexToNum x')
+      if self' == first
+        then pure (Just (DataObject "number" (numToHex first)))
+        else pure (Just (ExDispatch self (AtLabel "y")))
+    _ -> pure Nothing
 atom func _ _ = throwIO (userError (printf "Atom '%s' does not exist" func))

@@ -16,6 +16,14 @@ test func useCases =
       res <- func input (Program prog)
       res `shouldBe` output
 
+testDataize :: [(String, String, String)] -> Spec
+testDataize useCases =
+  forM_ useCases $ \(name, prog, res) ->
+    it name $ do
+      program <- parseProgramThrows prog
+      value <- dataize program
+      value `shouldBe` Just res
+
 spec :: Spec
 spec = do
   describe "morph" $
@@ -74,54 +82,79 @@ spec = do
         )
       ]
 
-  it "dataizes 5.plus(5)" $ do
-    prog <-
-      parseProgramThrows
-        ( unlines
-            [ "Q -> [[",
-              "  org -> [[",
-              "    eolang -> [[",
-              "      bytes -> [[",
-              "        data -> ?,",
-              "        @ -> $.data",
-              "      ]],",
-              "      number -> [[",
-              "        as-bytes -> ?,",
-              "        @ -> $.as-bytes,",
-              "        plus -> [[ x -> ?, L> L_org_eolang_number_plus ]]",
-              "      ]]",
-              "    ]]",
-              "  ]],",
-              "  @ -> 5.plus(5)",
-              "]]"
-            ]
-        )
-    value <- dataize prog
-    value `shouldBe` Just "40-24-00-00-00-00-00-00"
-  
-  it "dataizes Fahrenheit test" $ do
-    prog <-
-      parseProgramThrows
-        ( unlines 
-            [ "Q -> [[",
-              "  org -> [[",
-              "    eolang -> [[",
-              "      bytes -> [[",
-              "        data -> ?,",
-              "        @ -> $.data",
-              "      ]],",
-              "      number -> [[",
-              "        as-bytes -> ?,",
-              "        @ -> $.as-bytes,",
-              "        plus -> [[ x -> ?, L> L_org_eolang_number_plus ]],",
-              "        times -> [[ x -> ?, L> L_org_eolang_number_times ]]",
-              "      ]]",
-              "    ]]",
-              "  ]],",
-              "  @ -> $.c.times(1.8).plus(32),",
-              "  c -> 25",
-              "]]"
-            ]
-        )
-    value <- dataize prog
-    value `shouldBe` Just "40-53-40-00-00-00-00-00"
+  testDataize
+    [ ( "5.plus(5)",
+        unlines
+          [ "Q -> [[",
+            "  org -> [[",
+            "    eolang -> [[",
+            "      bytes -> [[",
+            "        data -> ?,",
+            "        @ -> $.data",
+            "      ]],",
+            "      number -> [[",
+            "        as-bytes -> ?,",
+            "        @ -> $.as-bytes,",
+            "        plus -> [[ x -> ?, L> L_org_eolang_number_plus ]]",
+            "      ]]",
+            "    ]]",
+            "  ]],",
+            "  @ -> 5.plus(5)",
+            "]]"
+          ],
+        "40-24-00-00-00-00-00-00"
+      ),
+      ( "Fahrenheit",
+        unlines
+          [ "Q -> [[",
+            "  org -> [[",
+            "    eolang -> [[",
+            "      bytes -> [[",
+            "        data -> ?,",
+            "        @ -> $.data",
+            "      ]],",
+            "      number -> [[",
+            "        as-bytes -> ?,",
+            "        @ -> $.as-bytes,",
+            "        plus -> [[ x -> ?, L> L_org_eolang_number_plus ]],",
+            "        times -> [[ x -> ?, L> L_org_eolang_number_times ]]",
+            "      ]]",
+            "    ]]",
+            "  ]],",
+            "  @ -> $.c.times(1.8).plus(32),",
+            "  c -> 25",
+            "]]"
+          ],
+        "40-53-40-00-00-00-00-00"
+      ),
+      ( "Factorial",
+        unlines
+          [ "Q -> [[",
+            "  org -> [[",
+            "    eolang -> [[",
+            "      bytes -> [[",
+            "        data -> ?,",
+            "        @ -> $.data",
+            "      ]],",
+            "      number -> [[",
+            "        as-bytes -> ?,",
+            "        @ -> $.as-bytes,",
+            "        times -> [[ x -> ?, L> L_org_eolang_number_times ]],",
+            "        plus -> [[ x -> ?, L> L_org_eolang_number_plus ]],",
+            "        eq -> [[ x -> ?, y -> ?, L> L_org_eolang_number_eq ]]",
+            "      ]]",
+            "    ]]",
+            "  ]],",
+            "  fac -> [[",
+            "    x -> ?,",
+            "    @ -> $.x.eq(",
+            "      1,",
+            "      $.x.times($.^.fac($.x.plus(-1)))",
+            "    )",
+            "  ]],",
+            "  @ -> $.fac(3)",
+            "]]"
+          ],
+        "40-18-00-00-00-00-00-00"
+      )
+    ]
