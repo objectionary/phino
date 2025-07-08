@@ -41,6 +41,9 @@ substEmpty = Subst Map.empty
 substSingle :: String -> MetaValue -> Subst
 substSingle key value = Subst (Map.singleton key value)
 
+defaultScope :: Expression
+defaultScope = ExFormation [BiVoid AtRho]
+
 -- Combine two substitutions into a single one
 -- Fails if values by the same keys are not equal
 combine :: Subst -> Subst -> Maybe Subst
@@ -141,4 +144,4 @@ matchExpressionDeep ptn tgt scope =
    in matched ++ deep
 
 matchProgram :: Expression -> Program -> [Subst]
-matchProgram ptn (Program exp) = matchExpressionDeep ptn exp (ExFormation [BiVoid AtRho])
+matchProgram ptn (Program exp) = matchExpressionDeep ptn exp defaultScope

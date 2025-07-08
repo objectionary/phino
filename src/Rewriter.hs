@@ -6,7 +6,7 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Rewriter (rewrite) where
+module Rewriter (rewrite, rewrite') where
 
 import Ast
 import Builder
@@ -15,10 +15,10 @@ import Control.Exception
 import qualified Data.Map.Strict as M
 import Data.Maybe (catMaybes, fromMaybe, isJust)
 import Logger (logDebug)
-import Matcher (MetaValue (MvAttribute, MvBindings, MvExpression), Subst (Subst), combine, combineMany, matchProgram, substEmpty, substSingle)
+import Matcher (MetaValue (MvAttribute, MvBindings, MvExpression), Subst (Subst), combine, combineMany, defaultScope, matchProgram, substEmpty, substSingle)
 import Misc (ensuredFile)
 import Parser (parseProgram, parseProgramThrows)
-import Pretty (prettyExpression, prettyProgram, prettySubsts)
+import Pretty (PrintMode (SWEET), prettyExpression, prettyProgram, prettyProgram', prettySubsts)
 import Replacer (replaceProgram)
 import Text.Printf
 import qualified Yaml as Y
@@ -66,7 +66,7 @@ extraSubstitutions prog extras substs = case extras of
                 let func = Y.function extra
                     args = Y.args extra
                 expr <- buildExpressionFromFunction func args subst' prog
-                combine (substSingle name (MvExpression expr (ExFormation []))) subst'
+                combine (substSingle name (MvExpression expr defaultScope)) subst'
               _ -> Just subst'
           )
           (Just subst)
@@ -74,19 +74,45 @@ extraSubstitutions prog extras substs = case extras of
         | subst <- substs
       ]
 
-rewrite :: Program -> [Y.Rule] -> IO Program
-rewrite program [] = pure program
-rewrite program (rule : rest) = do
-  logDebug (printf "Trying to apply rule: %s" (fromMaybe "unknown" (Y.name rule)))
+-- @todo #169:30min Make original program global. There are some many places where we
+--  need access to original program like here, in Rewriter. Also it's needed in Builder and Dataize modules.
+--  Right now we pass this original program as argument. Maybe it would be better to move it to some global state
+--  since it's not changed during whole program processing.
+rewrite :: Program -> Program -> [Y.Rule] -> IO Program
+rewrite program _ [] = pure program
+rewrite program program' (rule : rest) = do
   let ptn = Y.pattern rule
       res = Y.result rule
       condition = Y.when rule
   prog <- case C.matchProgramWithCondition ptn condition program of
-    Nothing -> do
-      logDebug "Rule didn't match"
-      pure program
+    Nothing -> pure program
     Just matched -> do
-      let substs = extraSubstitutions program (Y.where_ rule) matched
-      logDebug (printf "Rule has been matched, substitutions are:\n%s" (prettySubsts substs))
-      buildAndReplace program ptn res substs
-  rewrite prog rest
+      let substs = extraSubstitutions program' (Y.where_ rule) matched
+      prog' <- buildAndReplace program ptn res substs
+      logDebug (printf "%s\n%s" (fromMaybe "unknown" (Y.name rule)) (prettyProgram' prog' SWEET))
+      pure prog'
+  rewrite prog program' rest
+
+-- @todo #169:30min Stop counting amount of rewriting cycles. Right now in order not to
+--  get an infinite recursion during rewriting we just count have many times we apply
+--  rewriting rules. If we reach given amount - we just stop. It's not idiomatic and may
+--  not work on big programs. We need to introduce some mechanism which would memorize
+--  all rewritten program on each step and if on some step we get the program that have already
+--  been memorized - we fail because we got into infinite recursion.
+rewrite' :: Program -> Program -> [Y.Rule] -> Integer -> IO Program
+rewrite' prog prog' rules maxDepth = _rewrite prog 0
+  where
+    _rewrite :: Program -> Integer -> IO Program
+    _rewrite prog count = do
+      logDebug (printf "Starting rewriting cycle %d out of %d" count maxDepth)
+      if count == maxDepth
+        then do
+          logDebug (printf "Max amount of rewriting cycles is reached, rewriting is stopped")
+          pure prog
+        else do
+          rewritten <- rewrite prog prog' rules
+          if rewritten == prog
+            then do
+              logDebug "Rewriting is stopped since it does not affect program anymore"
+              pure rewritten
+            else _rewrite rewritten (count + 1)
