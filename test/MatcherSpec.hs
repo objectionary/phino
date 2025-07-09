@@ -30,12 +30,12 @@ maybeCombined first second =
 
 test ::
   (Expected e, ExpectedResult e ~ r, Eq r, Show r) =>
-  (a -> a -> r) ->
-  [(String, a, a, e)] ->
+  (a -> a -> b -> r) ->
+  [(String, a, a, b, e)] ->
   SpecWith (Arg Expectation)
 test function useCases =
-  forM_ useCases $ \(desc, ptn, tgt, mp) ->
-    it desc $ function ptn tgt `shouldBe` toExpected mp
+  forM_ useCases $ \(desc, ptn, tgt, scope, mp) ->
+    it desc $ function ptn tgt scope `shouldBe` toExpected mp
 
 spec :: Spec
 spec = do
@@ -48,20 +48,23 @@ spec = do
             [ BiTau (AtLabel "f") (ExFormation [BiTau (AtLabel "x") (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "x"))]),
               BiTau (AtLabel "t") (ExFormation [BiTau (AtLabel "y") (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "y"))])
             ],
+          defaultScope,
           [[("a", MvAttribute (AtLabel "x"))], [("a", MvAttribute (AtLabel "y"))]]
         ),
         ( "!e => [[x -> Q]] => [(!e >> [[x -> Q]] ), (!e >> Q)]",
           ExMeta "e",
           ExFormation [BiTau (AtLabel "x") ExGlobal],
-          [ [("e", MvExpression (ExFormation [BiTau (AtLabel "x") ExGlobal]))],
-            [("e", MvExpression ExGlobal)]
+          defaultScope,
+          [ [("e", MvExpression (ExFormation [BiTau (AtLabel "x") ExGlobal]) defaultScope)],
+            [("e", MvExpression ExGlobal (ExFormation [BiTau (AtLabel "x") ExGlobal]))]
           ]
         ),
         ( "!e.!a => Q.org.eolang => [(!e >> Q.org, !a >> eolang), (!e >> Q, !a >> org)]",
           ExDispatch (ExMeta "e") (AtMeta "a"),
           ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang"),
-          [ [("e", MvExpression (ExDispatch ExGlobal (AtLabel "org"))), ("a", MvAttribute (AtLabel "eolang"))],
-            [("e", MvExpression ExGlobal), ("a", MvAttribute (AtLabel "org"))]
+          defaultScope,
+          [ [("e", MvExpression (ExDispatch ExGlobal (AtLabel "org")) defaultScope), ("a", MvAttribute (AtLabel "eolang"))],
+            [("e", MvExpression ExGlobal defaultScope), ("a", MvAttribute (AtLabel "org"))]
           ]
         ),
         ( "⟦!B1, !a ↦ ∅, !B2⟧.!a => ⟦ x ↦ ξ.t, t ↦ ∅ ⟧.t(ρ ↦ ⟦ x ↦ ξ.t, t ↦ ∅ ⟧) => [(!B1 >> ⟦x ↦ ξ.t⟧, !a >> t, !B2 >> ⟦⟧ )]",
@@ -83,6 +86,7 @@ spec = do
                     ]
                 )
             ),
+          defaultScope,
           [ [ ("B1", MvBindings [BiTau (AtLabel "x") (ExDispatch ExThis (AtLabel "t"))]),
               ("a", MvAttribute (AtLabel "t")),
               ("B2", MvBindings [])
@@ -92,13 +96,15 @@ spec = do
       ]
 
   describe "matchAttribute: attribute => attribute => substitution" $
-    test
-      matchAttribute
+    forM_
       [ ("~1 => ~1 => [()]", AtAlpha 1, AtAlpha 1, [[]]),
         ("!a => ^ => [(!a >> ^)]", AtMeta "a", AtRho, [[("a", MvAttribute AtRho)]]),
         ("!a => @ => [(!a >> @)]", AtMeta "a", AtPhi, [[("a", MvAttribute AtPhi)]]),
         ("~0 => [] => [()]", AtAlpha 0, AtLabel "x", [])
       ]
+      ( \(desc, ptn, tgt, mp) ->
+          it desc $ matchAttribute ptn tgt `shouldBe` toExpected mp
+      )
 
   describe "matchBindings: [binding] => [binding] => substitution" $
     test
@@ -106,71 +112,85 @@ spec = do
       [ ( "[[]] => [[]] => ()",
           [],
           [],
+          defaultScope,
           [[]]
         ),
         ( "[[!B]] => T:[[x -> ?, D> 01-, L> Func]] => (!B >> T)",
           [BiMeta "B"],
           [BiVoid (AtLabel "x"), BiDelta "01-", BiLambda "Func"],
+          defaultScope,
           [[("B", MvBindings [BiVoid (AtLabel "x"), BiDelta "01-", BiLambda "Func"])]]
         ),
         ( "[[D> 00-]] => [[D> 00-, L> Func]] => []",
           [BiDelta "00-"],
           [BiDelta "00-", BiLambda "Func"],
+          defaultScope,
           []
         ),
         ( "[[y -> ?, !a -> ?]] => [[y -> ?, x -> ?]] => (!a >> x)",
           [BiVoid (AtLabel "y"), BiVoid (AtMeta "a")],
           [BiVoid (AtLabel "y"), BiVoid (AtLabel "x")],
+          defaultScope,
           [[("a", MvAttribute (AtLabel "x"))]]
         ),
         ( "[[!B, x -> ?]] => [[x -> ?]] => (!B >> [[]])",
           [BiMeta "B", BiVoid (AtLabel "x")],
           [BiVoid (AtLabel "x")],
+          defaultScope,
           [[("B", MvBindings [])]]
         ),
         ( "[[!B1, x -> ?, !B2]] => [[x -> ?, y -> ?]] => (!B1 >> [[]], !B2 >> [[y -> ?]])",
           [BiMeta "B1", BiVoid (AtLabel "x"), BiMeta "B2"],
           [BiVoid (AtLabel "x"), BiVoid (AtLabel "y")],
+          defaultScope,
           [[("B1", MvBindings []), ("B2", MvBindings [BiVoid (AtLabel "y")])]]
         ),
         ( "[[!B1, !x -> ?, !B2]] => [[y -> ?, D> -> 00-, L> Func]] => (!x >> y, !B1 >> [[]], !B2 >> [[D> -> 00-, L> Func]])",
           [BiMeta "B1", BiVoid (AtMeta "x"), BiMeta "B2"],
           [BiVoid (AtLabel "y"), BiDelta "00-", BiLambda "Func"],
+          defaultScope,
           [[("B1", MvBindings []), ("B2", MvBindings [BiDelta "00-", BiLambda "Func"]), ("x", MvAttribute (AtLabel "y"))]]
         ),
         ( "[[!x -> ?, !y -> ?]] => [[a -> ?, b -> ?]] => (!x >> a, !y >> b)",
           [BiVoid (AtMeta "x"), BiVoid (AtMeta "y")],
           [BiVoid (AtLabel "a"), BiVoid (AtLabel "b")],
+          defaultScope,
           [[("x", MvAttribute (AtLabel "a")), ("y", MvAttribute (AtLabel "b"))]]
         ),
         ( "[[t -> ?, !B]] => [[t -> ?, x -> Q, y -> $]] => (!B >> [[x -> Q, y -> $]])",
           [BiVoid (AtLabel "t"), BiMeta "B"],
           [BiVoid (AtLabel "t"), BiTau (AtLabel "x") ExGlobal, BiTau (AtLabel "y") ExThis],
+          defaultScope,
           [[("B", MvBindings [BiTau (AtLabel "x") ExGlobal, BiTau (AtLabel "y") ExThis])]]
         ),
         ( "[[!B, z -> Q]] => [[x -> Q, y -> $, z -> Q]] => (!B >> [[x -> Q, y -> $]])",
           [BiMeta "B", BiTau (AtLabel "z") ExGlobal],
           [BiTau (AtLabel "x") ExGlobal, BiTau (AtLabel "y") ExThis, BiTau (AtLabel "z") ExGlobal],
+          defaultScope,
           [[("B", MvBindings [BiTau (AtLabel "x") ExGlobal, BiTau (AtLabel "y") ExThis])]]
         ),
         ( "[[L> Func, D> 00-]] => [[D> 00-, L> Func]] => []",
           [BiLambda "Func", BiDelta "00-"],
           [BiDelta "00-", BiLambda "Func"],
+          defaultScope,
           []
         ),
         ( "[[t -> ?, !B]] => [[x -> ?, t -> ?]] => []",
           [BiVoid (AtLabel "t"), BiMeta "B"],
           [BiVoid (AtLabel "x"), BiVoid (AtLabel "t")],
+          defaultScope,
           []
         ),
         ( "[[!B, !a -> ?]] => [[x -> ?, y -> ?]] => (!a >> y, !B >> [[ x -> ? ]] )",
           [BiMeta "B", BiVoid (AtMeta "a")],
           [BiVoid (AtLabel "x"), BiVoid (AtLabel "y")],
+          defaultScope,
           [[("a", MvAttribute (AtLabel "y")), ("B", MvBindings [BiVoid (AtLabel "x")])]]
         ),
         ( "[[!B1, !a -> ?, !B2]] => [[ x -> ?, y -> ?, z -> ? ]] => [(), (), ()]",
           [BiMeta "B1", BiVoid (AtMeta "a"), BiMeta "B2"],
           [BiVoid (AtLabel "x"), BiVoid (AtLabel "y"), BiVoid (AtLabel "z")],
+          defaultScope,
           [ [ ("B1", MvBindings []),
               ("a", MvAttribute (AtLabel "x")),
               ("B2", MvBindings [BiVoid (AtLabel "y"), BiVoid (AtLabel "z")])
@@ -193,6 +213,7 @@ spec = do
             BiVoid (AtLabel "y"),
             BiVoid (AtLabel "z")
           ],
+          defaultScope,
           [ [ ("B1", MvBindings []),
               ("a1", MvAttribute (AtLabel "a")),
               ("B2", MvBindings []),
@@ -260,27 +281,31 @@ spec = do
   describe "matchExpression: expression => pattern => substitution" $
     test
       matchExpression
-      [ ("$ => $ => [()]", ExThis, ExThis, [[]]),
-        ("Q => Q => [()]", ExGlobal, ExGlobal, [[]]),
+      [ ("$ => $ => [()]", ExThis, ExThis, defaultScope, [[]]),
+        ("Q => Q => [()]", ExGlobal, ExGlobal, defaultScope, [[]]),
         ( "!e => Q => [(!e >> Q)]",
           ExMeta "e",
           ExGlobal,
-          [[("e", MvExpression ExGlobal)]]
+          defaultScope,
+          [[("e", MvExpression ExGlobal defaultScope)]]
         ),
         ( "!e => Q.org(x -> $) => [(!e >> Q.org(x -> $))]",
           ExMeta "e",
           ExApplication (ExDispatch ExGlobal (AtLabel "org")) (BiTau (AtLabel "x") ExThis),
-          [[("e", MvExpression (ExApplication (ExDispatch ExGlobal (AtLabel "org")) (BiTau (AtLabel "x") ExThis)))]]
+          defaultScope,
+          [[("e", MvExpression (ExApplication (ExDispatch ExGlobal (AtLabel "org")) (BiTau (AtLabel "x") ExThis)) defaultScope)]]
         ),
         ( "!e1.x => Q.org.x => [(!e1 >> Q.org)]",
           ExDispatch (ExMeta "e1") (AtLabel "x"),
           ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "x"),
-          [[("e1", MvExpression (ExDispatch ExGlobal (AtLabel "org")))]]
+          defaultScope,
+          [[("e1", MvExpression (ExDispatch ExGlobal (AtLabel "org")) defaultScope)]]
         ),
         ( "!e.org.!a => $.org.x => [(!e >> $, !a >> x)]",
           ExDispatch (ExDispatch (ExMeta "e") (AtLabel "org")) (AtMeta "a"),
           ExDispatch (ExDispatch ExThis (AtLabel "org")) (AtLabel "x"),
-          [[("e", MvExpression ExThis), ("a", MvAttribute (AtLabel "x"))]]
+          defaultScope,
+          [[("e", MvExpression ExThis defaultScope), ("a", MvAttribute (AtLabel "x"))]]
         ),
         ( "[[!a -> !e, !B]].!a => [[x -> Q, y -> $]].x => [(!a >> x, !e >> Q, !B >> [y -> $])]",
           ExDispatch (ExFormation [BiTau (AtMeta "a") (ExMeta "e"), BiMeta "B"]) (AtMeta "a"),
@@ -291,8 +316,17 @@ spec = do
                 ]
             )
             (AtLabel "x"),
+          defaultScope,
           [ [ ("a", MvAttribute (AtLabel "x")),
-              ("e", MvExpression ExGlobal),
+              ( "e",
+                MvExpression
+                  ExGlobal
+                  ( ExFormation
+                      [ BiTau (AtLabel "x") ExGlobal,
+                        BiTau (AtLabel "y") ExThis
+                      ]
+                  )
+              ),
               ("B", MvBindings [BiTau (AtLabel "y") ExThis])
             ]
           ]
@@ -300,24 +334,28 @@ spec = do
         ( "Q * !t => Q.org => [(!t >> [.org])]",
           ExMetaTail ExGlobal "t",
           ExDispatch ExGlobal (AtLabel "x"),
+          defaultScope,
           [[("t", MvTail [TaDispatch (AtLabel "x")])]]
         ),
         ( "Q * !t => Q.org(x -> [[]]) => [(!t >> [.org, (x -> [[]])])]",
           ExMetaTail ExGlobal "t",
-          ExApplication (ExDispatch ExGlobal (AtLabel "org")) (BiTau (AtLabel "x") (ExFormation [])),
-          [[("t", MvTail [TaDispatch (AtLabel "org"), TaApplication (BiTau (AtLabel "x") (ExFormation []))])]]
+          ExApplication (ExDispatch ExGlobal (AtLabel "org")) (BiTau (AtLabel "x") defaultScope),
+          defaultScope,
+          [[("t", MvTail [TaDispatch (AtLabel "org"), TaApplication (BiTau (AtLabel "x") defaultScope)])]]
         ),
         ( "Q.!a * !t => Q.org(x -> [[]]) => [(!a >> org, !t >> [(x -> [[]])])]",
           ExMetaTail (ExDispatch ExGlobal (AtMeta "a")) "t",
-          ExApplication (ExDispatch ExGlobal (AtLabel "org")) (BiTau (AtLabel "x") (ExFormation [])),
-          [[("a", MvAttribute (AtLabel "org")), ("t", MvTail [TaApplication (BiTau (AtLabel "x") (ExFormation []))])]]
+          ExApplication (ExDispatch ExGlobal (AtLabel "org")) (BiTau (AtLabel "x") defaultScope),
+          defaultScope,
+          [[("a", MvAttribute (AtLabel "org")), ("t", MvTail [TaApplication (BiTau (AtLabel "x") defaultScope)])]]
         ),
         ( "Q.x(y -> $ * !t1) * !t2 => Q.x(y -> $.q).p => [(!t1 >> [.q], !t2 >> [.p])]",
           ExMetaTail (ExApplication (ExDispatch ExGlobal (AtLabel "x")) (BiTau (AtLabel "y") (ExMetaTail ExThis "t1"))) "t2",
           ExDispatch (ExApplication (ExDispatch ExGlobal (AtLabel "x")) (BiTau (AtLabel "y") (ExDispatch ExThis (AtLabel "q")))) (AtLabel "p"),
+          defaultScope,
           [[("t1", MvTail [TaDispatch (AtLabel "q")]), ("t2", MvTail [TaDispatch (AtLabel "p")])]]
         ),
-        ( "[[!B1, !a ↦ !e1, !B2]](!a ↦ !e2) => ⟦ t ↦ ξ.k, x ↦ ξ.t, k ↦ ∅ ⟧(x ↦ ξ) => []",
+        ( "[[!B1, !a ↦ !e1, !B2]](!a ↦ !e2) => ⟦ t ↦ ξ.k, x ↦ ξ.t, k ↦ ∅ ⟧(x ↦ ξ) => [(!B1 >> [[ t -> $.k ]], !a >> x, !B2 >> [[ k -> ? ]], !e1 >> $.t, !e2 >> $)]",
           ExApplication (ExFormation [BiMeta "B1", BiTau (AtMeta "a") (ExMeta "e1"), BiMeta "B2"]) (BiTau (AtMeta "a") (ExMeta "e2")),
           ExApplication
             ( ExFormation
@@ -327,11 +365,21 @@ spec = do
                 ]
             )
             (BiTau (AtLabel "x") ExThis),
+          defaultScope,
           [ [ ("B1", MvBindings [BiTau (AtLabel "t") (ExDispatch ExThis (AtLabel "k"))]),
               ("a", MvAttribute (AtLabel "x")),
               ("B2", MvBindings [BiVoid (AtLabel "k")]),
-              ("e1", MvExpression (ExDispatch ExThis (AtLabel "t"))),
-              ("e2", MvExpression ExThis)
+              ( "e1",
+                MvExpression
+                  (ExDispatch ExThis (AtLabel "t"))
+                  ( ExFormation
+                      [ BiTau (AtLabel "t") (ExDispatch ExThis (AtLabel "k")),
+                        BiTau (AtLabel "x") (ExDispatch ExThis (AtLabel "t")),
+                        BiVoid (AtLabel "k")
+                      ]
+                  )
+              ),
+              ("e2", MvExpression ExThis defaultScope)
             ]
           ]
         )

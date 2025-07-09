@@ -49,6 +49,41 @@ numToInt (Y.Length (BiMeta meta)) (Subst mp) = case M.lookup meta mp of
 numToInt (Y.Literal num) subst = Just num
 numToInt _ _ = Nothing
 
+-- Returns True if given expression matches with any of given normalization rules
+matchesAnyNormalizationRule :: Expression -> Bool
+matchesAnyNormalizationRule expr = matchesAnyNormalizationRule' expr normalizationRules
+  where
+    matchesAnyNormalizationRule' :: Expression -> [Y.Rule] -> Bool
+    matchesAnyNormalizationRule' _ [] = False
+    matchesAnyNormalizationRule' expr (rule : rules) =
+      case matchProgramWithCondition (Y.pattern rule) (Y.when rule) (Program expr) of
+        Just matched -> not (null matched) || matchesAnyNormalizationRule' expr rules
+        Nothing -> matchesAnyNormalizationRule' expr rules
+
+-- Returns True if given expression is in the normal form
+isNF :: Expression -> Bool
+isNF ExThis = True
+isNF ExGlobal = True
+isNF ExTermination = True
+isNF (ExDispatch ExThis _) = True
+isNF (ExDispatch ExGlobal _) = True
+isNF (ExDispatch ExTermination _) = False -- dd rule
+isNF (ExApplication ExTermination _) = False -- dc rule
+isNF (ExFormation []) = True
+isNF (ExFormation bds) = normalBindings bds || not (matchesAnyNormalizationRule (ExFormation bds))
+  where
+    -- Returns True if all given bindings are 100% in normal form
+    normalBindings :: [Binding] -> Bool
+    normalBindings [] = True
+    normalBindings (bd : bds) =
+      let next = normalBindings bds
+       in case bd of
+            BiDelta _ -> next
+            BiVoid _ -> next
+            BiLambda _ -> next
+            _ -> False
+isNF expr = not (matchesAnyNormalizationRule expr)
+
 meetCondition' :: Y.Condition -> Subst -> [Subst]
 meetCondition' (Y.Or []) subst = [subst]
 meetCondition' (Y.Or (cond : rest)) subst =
@@ -80,40 +115,11 @@ meetCondition' (Y.Eq (Y.CmpNum left) (Y.CmpNum right)) subst = case (numToInt le
 meetCondition' (Y.Eq (Y.CmpAttr left) (Y.CmpAttr right)) subst = [subst | compareAttrs left right subst]
 meetCondition' (Y.Eq _ _) _ = []
 meetCondition' (Y.NF (ExMeta meta)) (Subst mp) = case M.lookup meta mp of
-  Just (MvExpression expr) ->
-    let isNf = not (matchesAnyNormalizationRule expr normalizationRules)
-     in case expr of
-          ExThis -> [Subst mp]
-          ExGlobal -> [Subst mp]
-          ExTermination -> [Subst mp]
-          ExDispatch ExThis _ -> [Subst mp]
-          ExDispatch ExGlobal _ -> [Subst mp]
-          ExDispatch ExTermination _ -> [] -- dd rule
-          ExApplication ExTermination _ -> [] -- dc rule
-          ExFormation [] -> [Subst mp]
-          ExFormation bds -> [Subst mp | normalBindings bds || isNf]
-          _ -> [Subst mp | isNf]
+  Just (MvExpression expr _) -> [Subst mp | isNF expr]
   _ -> []
-  where
-    -- Returns True if given expression matches with any of given normalization rules
-    matchesAnyNormalizationRule :: Expression -> [Y.Rule] -> Bool
-    matchesAnyNormalizationRule _ [] = False
-    matchesAnyNormalizationRule expr (rule : rules) =
-      case matchProgramWithCondition (Y.pattern rule) (Y.when rule) (Program expr) of
-        Just matched -> not (null matched) || matchesAnyNormalizationRule expr rules
-        Nothing -> matchesAnyNormalizationRule expr rules
-    normalBindings :: [Binding] -> Bool
-    normalBindings [] = True
-    normalBindings (bd : bds) =
-      let next = normalBindings bds
-       in case bd of
-            BiDelta _ -> next
-            BiVoid _ -> next
-            BiLambda _ -> next
-            _ -> False
-meetCondition' (Y.NF _) _ = []
+meetCondition' (Y.NF expr) (Subst mp) = [Subst mp | isNF expr]
 meetCondition' (Y.XI (ExMeta meta)) (Subst mp) = case M.lookup meta mp of
-  Just (MvExpression expr) -> meetCondition' (Y.XI expr) (Subst mp)
+  Just (MvExpression expr _) -> meetCondition' (Y.XI expr) (Subst mp)
   _ -> []
 meetCondition' (Y.XI (ExFormation _)) subst = [subst]
 meetCondition' (Y.XI ExThis) subst = []

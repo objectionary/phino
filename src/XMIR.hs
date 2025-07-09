@@ -270,10 +270,17 @@ printElement indentLevel (Element name attrs nodes)
     printRawText (NodeContent t) = TB.fromText t
     printRawText _ = mempty
 
+-- >>> printNode 0 (NodeComment (T.pack "--hello--"))
+-- "<!-- &#45;&#45;hello&#45;&#45; -->\n"
 printNode :: Int -> Node -> TB.Builder
 printNode _ (NodeContent t) = TB.fromText t -- print text exactly as-is
 printNode i (NodeElement e) = printElement i e -- pretty-print elements
-printNode i (NodeComment t) = indent i <> TB.fromString "<!-- " <> TB.fromText t <> TB.fromString " -->" <> newline
+printNode i (NodeComment t) =
+  indent i
+    <> TB.fromString "<!-- "
+    <> TB.fromText (T.replace "--" "&#45;&#45;" t)
+    <> TB.fromString " -->"
+    <> newline
 printNode _ _ = mempty
 
 printXMIR :: Document -> String

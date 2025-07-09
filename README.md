@@ -17,7 +17,7 @@ Install [Cabal][cabal] first and then:
 
 ```bash
 cabal update
-cabal install --overwrite-policy=always phino-0.0.0.12
+cabal install --overwrite-policy=always phino-0.0.0.15
 phino --version
 ```
 
@@ -148,6 +148,10 @@ Here's list of functions that are supported for extensions:
 * contextualize - function of two arguments, that rewrites given expression
   depending on provided context according to the contextualization
   [rules](assets/contextualize.jpg)
+* scope - resolve the scope for given expression. Works only with meta
+  expressions denotes as `𝑒` or `!e`. The scope is nearest outer formation,
+  if it's present. In all other cases the default scope is used, which is
+  anonymous formation `⟦ ρ ↦ ∅ ⟧`.
 
 ## Meta variables
 

@@ -5,7 +5,7 @@ module PrettySpec where
 
 import Ast
 import Control.Monad (forM_)
-import Matcher (MetaValue (MvAttribute, MvExpression), substEmpty, substSingle)
+import Matcher (MetaValue (MvAttribute, MvExpression), substEmpty, substSingle, defaultScope)
 import Parser (parseProgramThrows)
 import Pretty
 import Test.Hspec (Example (Arg), Expectation, Spec, SpecWith, describe, it, runIO, shouldBe)
@@ -62,7 +62,7 @@ spec = do
           map
             (\(desc, output, substs) -> (desc, output, substs, SALTY))
             [ ("[()]", "[\n  (\n    \n  )\n]", [substEmpty]),
-              ("[(!e >> Q.x)]", "[\n  (\n    !e >> Φ.x\n  )\n]", [substSingle "e" (MvExpression (ExDispatch ExGlobal (AtLabel "x")))]),
+              ("[(!e >> Q.x)]", "[\n  (\n    !e >> Φ.x\n  )\n]", [substSingle "e" (MvExpression (ExDispatch ExGlobal (AtLabel "x")) defaultScope)]),
               ("[(!a >> x)]", "[\n  (\n    !a >> x\n  )\n]", [substSingle "a" (MvAttribute (AtLabel "x"))])
             ]
     test prettySubsts' useCases

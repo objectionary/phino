@@ -1,0 +1,20 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+input: Q -> [[ y -> Q.x, x -> ? ]](x -> $)
+output: |-
+  Φ ↦ ⟦
+    y ↦ Φ.x,
+    x ↦ ⟦⟧
+  ⟧
+rules:
+  custom:
+    - pattern: '[[ !B, !a -> ?, !B1 ]](!a -> !e)'
+      result: '[[ !B, !a -> !e2, !B1 ]]'
+      where:
+        - meta: '!e1'
+          function: scope
+          args: ['!e']
+        - meta: '!e2'
+          function: contextualize
+          args: ['!e', '!e1']

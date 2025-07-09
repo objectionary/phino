@@ -148,7 +148,7 @@ instance Pretty MetaValue where
   pretty (MvBindings []) = pretty "[]"
   pretty (MvBindings bindings) = vsep [pretty "[", indent 2 (pretty (Formatted (SALTY, bindings))), pretty "]"]
   pretty (MvFunction func) = pretty func
-  pretty (MvExpression expr) = pretty (Formatted (SALTY, expr))
+  pretty (MvExpression expr _) = pretty (Formatted (SALTY, expr))
   pretty (MvTail tails) = vsep (punctuate comma (map pretty tails))
 
 instance Pretty Subst where
