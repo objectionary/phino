@@ -69,6 +69,7 @@ instance Pretty (Formatted Binding) where
         BiVoid attr -> attr : voids bds
         _ -> []
       inlineVoids :: [Attribute] -> Doc ann
+      inlineVoids [] = pretty attr <+> prettyArrow
       inlineVoids voids' = pretty attr <> lparen <> hsep (punctuate comma (map pretty voids')) <> rparen <+> prettyArrow
   pretty (Formatted (mode, BiTau attr expr)) = pretty attr <+> prettyArrow <+> pretty (Formatted (mode, expr))
   pretty (Formatted (_, BiMeta meta)) = prettyMeta meta
