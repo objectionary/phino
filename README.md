@@ -145,10 +145,10 @@ Extension:                # substitutions extension used to introduce new meta v
 
 Here's list of functions that are supported for extensions:
 
-* contextualize - function of two arguments, that rewrites given expression
+* `contextualize` - function of two arguments, that rewrites given expression
   depending on provided context according to the contextualization
   [rules](assets/contextualize.jpg)
-* scope - resolve the scope for given expression. Works only with meta
+* `scope` - resolve the scope for given expression. Works only with meta
   expressions denotes as `𝑒` or `!e`. The scope is nearest outer formation,
   if it's present. In all other cases the default scope is used, which is
   anonymous formation `⟦ ρ ↦ ∅ ⟧`.
@@ -163,7 +163,8 @@ This is the list of supported meta variables:
 * `!a` || `𝜏` - attribute
 * `!e` || `𝑒` - any expression
 * `!B` || `𝐵` - list of bindings
-* `!t` - tail after expression, sequence of applications and/or dispatches
+* `!t` - tail after expression, sequence of applications and/or dispatches,
+         must start only with dispatch
 * `!b` - bytes in meta delta binding
 * `!F` - function name in meta lambda binding
 
@@ -190,10 +191,10 @@ To generate a local coverage report for development, run:
 cabal test --enable-coverage
 ```
 
-The coverage report will be generated as HTML files that you can open in your browser.
+<!-- The coverage report will be generated as HTML files that you can open in your browser.
 Additionally, code coverage is automatically uploaded to
 [Codecov](https://codecov.io/gh/objectionary/phino) when changes are pushed to
-the master branch.
+the master branch. -->
 
 You will need [GHC] and [Cabal ≥3.0][cabal] or [Stack ≥ 3.0][stack] installed.
 
