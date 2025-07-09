@@ -20,7 +20,7 @@ import System.FilePath (makeRelative, replaceExtension, (</>))
 import Test.Hspec (Spec, describe, expectationFailure, it, pending, runIO)
 import Yaml (normalizationRules)
 import Yaml qualified as Y
-import Rewriter (rewrite')
+import Rewriter (rewrite', RewriteContext (RewriteContext))
 
 data Rules = Rules
   { basic :: Maybe [String],
@@ -91,7 +91,7 @@ spec =
                   if normalize'
                     then pure normalizationRules
                     else pure []
-              rewritten <- rewrite' program program rules' repeat'
+              rewritten <- rewrite' program rules' (RewriteContext program repeat')
               result' <- parseProgramThrows (output pack)
               unless (rewritten == result') $
                 expectationFailure

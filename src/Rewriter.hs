@@ -6,7 +6,7 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Rewriter (rewrite, rewrite') where
+module Rewriter (rewrite, rewrite', RewriteContext(..), defaultRewriteContext) where
 
 import Ast
 import Builder
@@ -22,6 +22,14 @@ import Pretty (PrintMode (SWEET), prettyExpression, prettyProgram, prettyProgram
 import Replacer (replaceProgram)
 import Text.Printf
 import qualified Yaml as Y
+
+data RewriteContext = RewriteContext
+  { program :: Program,
+    maxDepth :: Integer
+  }
+
+defaultRewriteContext :: Program -> RewriteContext
+defaultRewriteContext prog = RewriteContext prog 25
 
 data RewriteException
   = CouldNotBuild {expr :: Expression, substs :: [Subst]}
@@ -74,10 +82,6 @@ extraSubstitutions prog extras substs = case extras of
         | subst <- substs
       ]
 
--- @todo #169:30min Make original program global. There are some many places where we
---  need access to original program like here, in Rewriter. Also it's needed in Builder and Dataize modules.
---  Right now we pass this original program as argument. Maybe it would be better to move it to some global state
---  since it's not changed during whole program processing.
 rewrite :: Program -> Program -> [Y.Rule] -> IO Program
 rewrite program _ [] = pure program
 rewrite program program' (rule : rest) = do
@@ -93,14 +97,15 @@ rewrite program program' (rule : rest) = do
       pure prog'
   rewrite prog program' rest
 
--- @todo #169:30min Stop counting amount of rewriting cycles. Right now in order not to
+-- @todo #169:30min Memorize previous rewritten programs. Right now in order not to
 --  get an infinite recursion during rewriting we just count have many times we apply
 --  rewriting rules. If we reach given amount - we just stop. It's not idiomatic and may
 --  not work on big programs. We need to introduce some mechanism which would memorize
 --  all rewritten program on each step and if on some step we get the program that have already
---  been memorized - we fail because we got into infinite recursion.
-rewrite' :: Program -> Program -> [Y.Rule] -> Integer -> IO Program
-rewrite' prog prog' rules maxDepth = _rewrite prog 0
+--  been memorized - we fail because we got into infinite recursion. Ofc we should keep counting
+--  rewriting cycles if program just only grows on each rewriting.
+rewrite' :: Program -> [Y.Rule] -> RewriteContext -> IO Program
+rewrite' prog rules RewriteContext{..} = _rewrite prog 0
   where
     _rewrite :: Program -> Integer -> IO Program
     _rewrite prog count = do
@@ -110,7 +115,7 @@ rewrite' prog prog' rules maxDepth = _rewrite prog 0
           logDebug (printf "Max amount of rewriting cycles is reached, rewriting is stopped")
           pure prog
         else do
-          rewritten <- rewrite prog prog' rules
+          rewritten <- rewrite prog program rules
           if rewritten == prog
             then do
               logDebug "Rewriting is stopped since it does not affect program anymore"

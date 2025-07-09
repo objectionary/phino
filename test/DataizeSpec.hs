@@ -8,20 +8,21 @@ import Control.Monad
 import Dataize (dataize, dataize', morph)
 import Parser (parseProgramThrows)
 import Test.Hspec
+import Rewriter (defaultRewriteContext, RewriteContext)
 
-test :: (Eq a, Show a) => (Expression -> Program -> IO (Maybe a)) -> [(String, Expression, Expression, Maybe a)] -> Spec
+test :: (Eq a, Show a) => (Expression -> RewriteContext -> IO (Maybe a)) -> [(String, Expression, Expression, Maybe a)] -> Spec
 test func useCases =
   forM_ useCases $ \(desc, input, prog, output) ->
     it desc $ do
-      res <- func input (Program prog)
+      res <- func input (defaultRewriteContext (Program prog))
       res `shouldBe` output
 
 testDataize :: [(String, String, String)] -> Spec
 testDataize useCases =
   forM_ useCases $ \(name, prog, res) ->
     it name $ do
-      program <- parseProgramThrows prog
-      value <- dataize program
+      prog' <- parseProgramThrows prog
+      value <- dataize prog' (defaultRewriteContext prog')
       value `shouldBe` Just res
 
 spec :: Spec

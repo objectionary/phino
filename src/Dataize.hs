@@ -11,8 +11,9 @@ import Condition (isNF)
 import Control.Exception (throwIO)
 import Data.List (partition)
 import Misc
-import Rewriter (rewrite')
+import Rewriter
 import Text.Printf (printf)
+import XMIR (XmirContext (XmirContext))
 import Yaml (normalizationRules)
 
 maybeBinding :: (Binding -> Bool) -> [Binding] -> (Maybe Binding, [Binding])
@@ -32,12 +33,12 @@ maybeDelta = maybeBinding (\case BiDelta _ -> True; _ -> False)
 maybePhi :: [Binding] -> (Maybe Binding, [Binding])
 maybePhi = maybeBinding (\case (BiTau AtPhi _) -> True; _ -> False)
 
-formation :: [Binding] -> Program -> IO (Maybe Expression)
-formation bds prog = do
+formation :: [Binding] -> RewriteContext -> IO (Maybe Expression)
+formation bds ctx = do
   let (lambda, bds') = maybeLambda bds
   case lambda of
     Just (BiLambda func) -> do
-      obj' <- atom func (ExFormation bds') prog
+      obj' <- atom func (ExFormation bds') ctx
       case obj' of
         Just obj -> pure (Just obj)
         _ -> pure Nothing
@@ -54,26 +55,26 @@ phiDispatch attr expr = case expr of
       BiTau (AtLabel attr') expr' -> if attr' == attr then Just expr' else boundExpr bds
       _ -> boundExpr bds
 
-withTail :: Expression -> Program -> IO (Maybe Expression)
+withTail :: Expression -> RewriteContext -> IO (Maybe Expression)
 withTail (ExApplication (ExFormation _) _) _ = pure Nothing
 withTail (ExApplication (ExDispatch ExGlobal _) _) _ = pure Nothing
-withTail (ExApplication expr tau) prog = do
-  exp' <- withTail expr prog
+withTail (ExApplication expr tau) ctx = do
+  exp' <- withTail expr ctx
   case exp' of
     Just exp -> pure (Just (ExApplication exp tau))
     _ -> pure Nothing
-withTail (ExDispatch (ExFormation bds) attr) prog = do
-  obj' <- formation bds prog
+withTail (ExDispatch (ExFormation bds) attr) ctx = do
+  obj' <- formation bds ctx
   case obj' of
     Just obj -> pure (Just (ExDispatch obj attr))
     _ -> pure Nothing
-withTail (ExFormation bds) prog = formation bds prog
-withTail (ExDispatch (ExDispatch ExGlobal (AtLabel label)) attr) (Program expr) = case phiDispatch label expr of
+withTail (ExFormation bds) ctx = formation bds ctx
+withTail (ExDispatch (ExDispatch ExGlobal (AtLabel label)) attr) (RewriteContext {program = Program expr})   = case phiDispatch label expr of
   Just obj -> pure (Just (ExDispatch obj attr))
   _ -> pure Nothing
-withTail (ExDispatch ExGlobal (AtLabel label)) (Program expr) = pure (phiDispatch label expr)
-withTail (ExDispatch expr attr) prog = do
-  exp' <- withTail expr prog
+withTail (ExDispatch ExGlobal (AtLabel label)) (RewriteContext {program = Program expr}) = pure (phiDispatch label expr)
+withTail (ExDispatch expr attr) ctx = do
+  exp' <- withTail expr ctx
   case exp' of
     Just exp -> pure (Just (ExDispatch exp attr))
     _ -> pure Nothing
@@ -93,23 +94,23 @@ withTail _ _ = pure Nothing
 --         M(e) -> nothing                        otherwise
 -- @todo #169:30min Get rid of hard coded amount of normalization cycles. Right now the value 25 is hard coded.
 --  We need to pass it though function argument or global environment.
-morph :: Expression -> Program -> IO (Maybe Expression)
+morph :: Expression -> RewriteContext -> IO (Maybe Expression)
 morph ExTermination _ = pure (Just ExTermination) -- PRIM
-morph (ExFormation bds) prog = do
-  resolved <- withTail (ExFormation bds) prog
+morph (ExFormation bds) ctx = do
+  resolved <- withTail (ExFormation bds) ctx
   case resolved of
-    Just obj -> morph obj prog -- LAMBDA or PHI
+    Just obj -> morph obj ctx -- LAMBDA or PHI
     _ -> pure (Just (ExFormation bds)) -- PRIM
-morph expr prog = do
-  resolved <- withTail expr prog
+morph expr ctx = do
+  resolved <- withTail expr ctx
   case resolved of
-    Just obj -> morph obj prog
+    Just obj -> morph obj ctx
     _ ->
       if isNF expr
         then pure Nothing
         else do
-          (Program expr') <- rewrite' (Program expr) prog normalizationRules 25 -- NMZ
-          morph expr' prog
+          (Program expr') <- rewrite' (Program expr) normalizationRules ctx -- NMZ
+          morph expr' ctx
 
 -- The goal of 'dataize' function is retrieve bytes from given expression.
 --
@@ -117,24 +118,24 @@ morph expr prog = do
 -- BOX:   D([B1, 𝜑 -> e, B2]) -> D(С(e))        if [B1,B2] has no delta/lambda, where С(e) - contextualization
 -- NORM:  D(e1) -> D(e2)                        if e2 := M(e1) and e1 is not primitive
 --        nothing                               otherwise
-dataize :: Program -> IO (Maybe String)
-dataize (Program expr) = dataize' expr (Program expr)
+dataize :: Program -> RewriteContext -> IO (Maybe String)
+dataize (Program expr) = dataize' expr
 
-dataize' :: Expression -> Program -> IO (Maybe String)
+dataize' :: Expression -> RewriteContext -> IO (Maybe String)
 dataize' ExTermination _ = pure Nothing
-dataize' (ExFormation bds) prog = case maybeDelta bds of
+dataize' (ExFormation bds) ctx = case maybeDelta bds of
   (Just (BiDelta bytes), _) -> pure (Just bytes)
   (Nothing, _) -> case maybePhi bds of
     (Just (BiTau AtPhi expr), bds') -> case maybeLambda bds' of
       (Just (BiLambda _), _) -> throwIO (userError "The 𝜑 and λ can't be present in formation at the same time")
       (_, _) ->
-        let expr' = contextualize expr (ExFormation bds) prog
-         in dataize' expr' prog
+        let expr' = contextualize expr (ExFormation bds) (program ctx)
+         in dataize' expr' ctx
     (Nothing, _) -> case maybeLambda bds of
       (Just (BiLambda _), _) -> do
-        morphed' <- morph (ExFormation bds) prog
+        morphed' <- morph (ExFormation bds) ctx
         case morphed' of
-          Just morphed -> dataize' morphed prog
+          Just morphed -> dataize' morphed ctx
           _ -> pure Nothing
       (Nothing, _) -> pure Nothing
 dataize' expr prog = do
@@ -146,10 +147,10 @@ dataize' expr prog = do
 toDouble :: Integer -> Double
 toDouble = fromIntegral
 
-atom :: String -> Expression -> Program -> IO (Maybe Expression)
-atom "L_org_eolang_number_plus" self prog = do
-  left <- dataize' (ExDispatch self (AtLabel "x")) prog
-  right <- dataize' (ExDispatch self AtRho) prog
+atom :: String -> Expression -> RewriteContext -> IO (Maybe Expression)
+atom "L_org_eolang_number_plus" self ctx = do
+  left <- dataize' (ExDispatch self (AtLabel "x")) ctx
+  right <- dataize' (ExDispatch self AtRho) ctx
   case (left, right) of
     (Just left', Just right') -> do
       let first = either toDouble id (hexToNum left')
@@ -157,9 +158,9 @@ atom "L_org_eolang_number_plus" self prog = do
           sum = first + second
       pure (Just (DataObject "number" (numToHex sum)))
     _ -> pure Nothing
-atom "L_org_eolang_number_times" self prog = do
-  left <- dataize' (ExDispatch self (AtLabel "x")) prog
-  right <- dataize' (ExDispatch self AtRho) prog
+atom "L_org_eolang_number_times" self ctx = do
+  left <- dataize' (ExDispatch self (AtLabel "x")) ctx
+  right <- dataize' (ExDispatch self AtRho) ctx
   case (left, right) of
     (Just left', Just right') -> do
       let first = either toDouble id (hexToNum left')
@@ -167,9 +168,9 @@ atom "L_org_eolang_number_times" self prog = do
           sum = first * second
       pure (Just (DataObject "number" (numToHex sum)))
     _ -> pure Nothing
-atom "L_org_eolang_number_eq" self prog = do
-  x <- dataize' (ExDispatch self (AtLabel "x")) prog
-  rho <- dataize' (ExDispatch self AtRho) prog
+atom "L_org_eolang_number_eq" self ctx = do
+  x <- dataize' (ExDispatch self (AtLabel "x")) ctx
+  rho <- dataize' (ExDispatch self AtRho) ctx
   case (x, rho) of
     (Just x', Just rho') -> do
       let self' = either toDouble id (hexToNum rho')
