@@ -6,7 +6,7 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module XMIR (programToXMIR, printXMIR, toName, parseXMIR, parseXMIRThrows, xmirToPhi) where
+module XMIR (programToXMIR, printXMIR, toName, parseXMIR, parseXMIRThrows, xmirToPhi, XmirContext (XmirContext)) where
 
 import Ast
 import Control.Exception (Exception (displayException), SomeException, throwIO)
@@ -34,6 +34,12 @@ import Text.Read (readMaybe)
 import qualified Text.Read as TR
 import Text.XML
 import qualified Text.XML.Cursor as C
+
+data XmirContext = XmirContext
+  { omitListing :: Bool,
+    omitComments :: Bool,
+    printMode :: PrintMode
+  }
 
 -- @todo #116:30min Refactor XMIR module. This module became so big and hard to read.
 --  Now it's responsible for 3 different operations: 1) converting Phi AST to XML Document Ast,
@@ -71,14 +77,14 @@ element name attrs children = do
 object :: [(String, String)] -> [Node] -> Node
 object attrs children = NodeElement (element "o" attrs children)
 
-expression :: Expression -> IO (String, [Node])
-expression ExThis = pure ("$", [])
-expression ExGlobal = pure ("Q", [])
-expression (ExFormation bds) = do
-  nested <- nestedBindings bds
+expression :: Expression -> XmirContext -> IO (String, [Node])
+expression ExThis _ = pure ("$", [])
+expression ExGlobal _ = pure ("Q", [])
+expression (ExFormation bds) ctx = do
+  nested <- nestedBindings bds ctx
   pure ("", nested)
-expression (ExDispatch expr attr) = do
-  (base, children) <- expression expr
+expression (ExDispatch expr attr) ctx = do
+  (base, children) <- expression expr ctx
   let attr' = prettyAttribute attr
   if null base
     then pure ('.' : attr', [object [] children])
@@ -86,59 +92,69 @@ expression (ExDispatch expr attr) = do
       if head base == '.' || not (null children)
         then pure ('.' : attr', [object [("base", base)] children])
         else pure (base ++ ('.' : attr'), children)
-expression (DataObject "number" bytes) =
-  pure
-    ( "Q.org.eolang.number",
-      [ NodeComment (T.pack (either show show (hexToNum bytes))),
+expression (DataObject "number" bytes) XmirContext {..} =
+  let bts =
         object
-          [("base", "Q.org.eolang.bytes")]
+          [("as", prettyAttribute (AtAlpha 0)), ("base", "Q.org.eolang.bytes")]
           [object [] [NodeContent (T.pack bytes)]]
-      ]
-    )
-expression (DataObject "string" bytes) =
-  pure
-    ( "Q.org.eolang.string",
-      [ NodeComment (T.pack ('"' : hexToStr bytes ++ "\"")),
+   in pure
+        ( "Q.org.eolang.number",
+          if omitComments
+            then [bts]
+            else
+              [ NodeComment (T.pack (either show show (hexToNum bytes))),
+                bts
+              ]
+        )
+expression (DataObject "string" bytes) XmirContext {..} =
+  let bts =
         object
-          [("base", "Q.org.eolang.bytes")]
+          [("as", prettyAttribute (AtAlpha 0)), ("base", "Q.org.eolang.bytes")]
           [object [] [NodeContent (T.pack bytes)]]
-      ]
-    )
-expression (ExApplication expr (BiTau attr texpr)) = do
-  (base, children) <- expression expr
-  (base', children') <- expression texpr
+   in pure
+        ( "Q.org.eolang.string",
+          if omitComments
+            then [bts]
+            else
+              [ NodeComment (T.pack ('"' : hexToStr bytes ++ "\"")),
+                bts
+              ]
+        )
+expression (ExApplication expr (BiTau attr texpr)) ctx = do
+  (base, children) <- expression expr ctx
+  (base', children') <- expression texpr ctx
   let as = prettyAttribute attr
       attrs =
         if null base'
           then [("as", as)]
           else [("as", as), ("base", base')]
   pure (base, children ++ [object attrs children'])
-expression (ExApplication (ExFormation bds) tau) = throwIO (UnsupportedExpression (ExApplication (ExFormation bds) tau))
-expression expr = throwIO (UnsupportedExpression expr)
+expression (ExApplication (ExFormation bds) tau) _ = throwIO (UnsupportedExpression (ExApplication (ExFormation bds) tau))
+expression expr _ = throwIO (UnsupportedExpression expr)
 
-nestedBindings :: [Binding] -> IO [Node]
-nestedBindings bds = catMaybes <$> mapM formationBinding bds
+nestedBindings :: [Binding] -> XmirContext -> IO [Node]
+nestedBindings bds ctx = catMaybes <$> mapM (`formationBinding` ctx) bds
 
-formationBinding :: Binding -> IO (Maybe Node)
-formationBinding (BiTau (AtLabel label) (ExFormation bds)) = do
-  inners <- nestedBindings bds
+formationBinding :: Binding -> XmirContext -> IO (Maybe Node)
+formationBinding (BiTau (AtLabel label) (ExFormation bds)) ctx = do
+  inners <- nestedBindings bds ctx
   pure (Just (object [("name", label)] inners))
-formationBinding (BiTau (AtLabel label) expr) = do
-  (base, children) <- expression expr
+formationBinding (BiTau (AtLabel label) expr) ctx = do
+  (base, children) <- expression expr ctx
   pure (Just (object [("name", label), ("base", base)] children))
-formationBinding (BiTau AtRho _) = pure Nothing
-formationBinding (BiDelta bytes) = pure (Just (NodeContent (T.pack bytes)))
-formationBinding (BiLambda func) = pure (Just (object [("name", "λ")] []))
-formationBinding (BiVoid AtRho) = pure Nothing
-formationBinding (BiVoid AtPhi) = pure (Just (object [("name", "φ"), ("base", "∅")] []))
-formationBinding (BiVoid (AtLabel label)) = pure (Just (object [("name", label), ("base", "∅")] []))
-formationBinding binding = throwIO (UnsupportedBinding binding)
+formationBinding (BiTau AtRho _) _ = pure Nothing
+formationBinding (BiDelta bytes) _ = pure (Just (NodeContent (T.pack bytes)))
+formationBinding (BiLambda func) _ = pure (Just (object [("name", "λ")] []))
+formationBinding (BiVoid AtRho) _ = pure Nothing
+formationBinding (BiVoid AtPhi) _ = pure (Just (object [("name", "φ"), ("base", "∅")] []))
+formationBinding (BiVoid (AtLabel label)) _ = pure (Just (object [("name", label), ("base", "∅")] []))
+formationBinding binding _ = throwIO (UnsupportedBinding binding)
 
-rootExpression :: Expression -> IO Node
-rootExpression (ExFormation [bd, BiVoid AtRho]) = do
-  [bd'] <- nestedBindings [bd]
+rootExpression :: Expression -> XmirContext -> IO Node
+rootExpression (ExFormation [bd, BiVoid AtRho]) ctx = do
+  [bd'] <- nestedBindings [bd] ctx
   pure bd'
-rootExpression expr = throwIO (UnsupportedExpression expr)
+rootExpression expr _ = throwIO (UnsupportedExpression expr)
 
 -- Extract package from given expression
 -- The function returns tuple (X, Y), where
@@ -184,14 +200,14 @@ time now = do
       nanos = floor (fractional * 1_000_000_000) :: Int
   base ++ "." ++ printf "%09d" nanos ++ "Z"
 
-programToXMIR :: Program -> PrintMode -> Bool -> IO Document
-programToXMIR (Program expr) mode omitListing = do
+programToXMIR :: Program -> XmirContext -> IO Document
+programToXMIR (Program expr) ctx = do
   (pckg, expr') <- getPackage expr
-  root <- rootExpression expr'
+  root <- rootExpression expr' ctx
   now <- getCurrentTime
-  let phi = prettyProgram' (Program expr) mode
+  let phi = prettyProgram' (Program expr) (printMode ctx)
       listing =
-        if omitListing
+        if omitListing ctx
           then show (length (lines phi)) ++ " lines of phi"
           else phi
       listing' = NodeElement (element "listing" [] [NodeContent (T.pack listing)])
@@ -210,8 +226,8 @@ programToXMIR (Program expr) mode omitListing = do
               ("xsi:noNamespaceSchemaLocation", "https://raw.githubusercontent.com/objectionary/eo/refs/heads/gh-pages/XMIR.xsd")
             ]
             ( if null pckg
-                then listing' : [root]
-                else listing' : metas : [root]  
+                then [listing', root]
+                else [listing', metas, root]
             )
         )
         []

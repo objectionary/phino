@@ -1,5 +1,3 @@
-{-# LANGUAGE LambdaCase #-}
-
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
@@ -32,15 +30,10 @@ logger = unsafePerformIO (newIORef (Logger INFO))
 setLogLevel :: LogLevel -> IO ()
 setLogLevel lvl = writeIORef logger (Logger lvl)
 
-handle :: LogLevel -> Handle
-handle = \case
-  ERROR -> stderr
-  _ -> stdout
-
 logMessage :: LogLevel -> String -> IO ()
 logMessage lvl message = do
   log <- readIORef logger
-  when (lvl >= level log) $ hPutStrLn (handle lvl) ("[" ++ show lvl ++ "]: " ++ message)
+  when (lvl >= level log) $ hPutStrLn stderr ("[" ++ show lvl ++ "]: " ++ message)
 
 logDebug, logInfo, logWarning, logError :: String -> IO ()
 logDebug = logMessage DEBUG

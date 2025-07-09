@@ -65,7 +65,7 @@ withStdout action =
 
 testCLI :: [String] -> [String] -> Expectation
 testCLI args outputs = do
-  out <- capture_ (runCLI args)
+  (out, _) <- withStdout (try (runCLI args) :: IO (Either ExitCode ()))
   forM_
     outputs
     ( \output ->

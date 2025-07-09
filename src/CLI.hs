@@ -28,7 +28,7 @@ import Rewriter (rewrite')
 import System.Exit (ExitCode (..), exitFailure)
 import System.IO (getContents')
 import Text.Printf (printf)
-import XMIR (parseXMIRThrows, printXMIR, programToXMIR, xmirToPhi)
+import XMIR (parseXMIRThrows, printXMIR, programToXMIR, xmirToPhi, XmirContext (XmirContext))
 import Yaml (normalizationRules)
 import qualified Yaml as Y
 
@@ -70,6 +70,7 @@ data OptsRewrite = OptsRewrite
     nothing :: Bool,
     shuffle :: Bool,
     omitListing :: Bool,
+    omitComments :: Bool,
     maxDepth :: Integer,
     inputFile :: Maybe FilePath
   }
@@ -130,6 +131,7 @@ rewriteParser =
             <*> switch (long "nothing" <> help "Just desugar provided 𝜑-program")
             <*> switch (long "shuffle" <> help "Shuffle rules before applying")
             <*> switch (long "omit-listing" <> help "Omit full program listing in XMIR output")
+            <*> switch (long "omit-comments" <> help "Omit comments in XMIR output")
             <*> option auto (long "max-depth" <> metavar "DEPTH" <> help "Max amount of rewritng cycles" <> value 25 <> showDefault)
             <*> argInputFile
         )
@@ -204,7 +206,7 @@ runCLI args = handle handler $ do
         printProgram :: Program -> IOFormat -> PrintMode -> IO String
         printProgram prog PHI mode = pure (prettyProgram' prog mode)
         printProgram prog XMIR mode = do
-          xmir <- programToXMIR prog mode omitListing
+          xmir <- programToXMIR prog (XmirContext omitListing omitComments printMode)
           pure (printXMIR xmir)
     CmdDataize OptsDataize {..} -> do
       input <- readInput inputFile
