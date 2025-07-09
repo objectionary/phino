@@ -30,11 +30,11 @@ in the `hello.phi` file:
 
 ## Dataize
 
-Then, you dataize it (**under development**):
+Then, you dataize it:
 
 ```bash
 $ phino dataize hello.phi
-"hello"
+68-65-6C-6C-6F
 ```
 
 ## Rewrite
