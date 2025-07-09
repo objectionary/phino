@@ -16,7 +16,7 @@ import Control.Monad (when)
 import Data.Char (toLower, toUpper)
 import Data.List (intercalate)
 import Data.Version (showVersion)
-import Dataize (dataize)
+import Dataize (dataize, DataizeContext (DataizeContext))
 import Logger
 import Misc (ensuredFile)
 import qualified Misc
@@ -217,7 +217,7 @@ runCLI args = handle handler $ do
       validateMaxDepth maxDepth
       input <- readInput inputFile
       prog <- parseProgram input inputFormat
-      dataized <- dataize prog (RewriteContext prog maxDepth)
+      dataized <- dataize prog (DataizeContext prog maxDepth)
       maybe (throwIO CouldNotDataize) putStrLn dataized
   where
     validateMaxDepth :: Integer -> IO ()

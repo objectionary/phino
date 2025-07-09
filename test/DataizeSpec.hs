@@ -5,16 +5,15 @@ module DataizeSpec (spec) where
 
 import Ast (Attribute (AtLabel, AtPhi, AtRho), Binding (BiDelta, BiTau, BiVoid), Expression (ExApplication, ExDispatch, ExFormation, ExGlobal, ExTermination, ExThis), Program (Program))
 import Control.Monad
-import Dataize (dataize, dataize', morph)
+import Dataize (dataize, dataize', morph, defaultDataizeContext, DataizeContext)
 import Parser (parseProgramThrows)
 import Test.Hspec
-import Rewriter (defaultRewriteContext, RewriteContext)
 
-test :: (Eq a, Show a) => (Expression -> RewriteContext -> IO (Maybe a)) -> [(String, Expression, Expression, Maybe a)] -> Spec
+test :: (Eq a, Show a) => (Expression -> DataizeContext -> IO (Maybe a)) -> [(String, Expression, Expression, Maybe a)] -> Spec
 test func useCases =
   forM_ useCases $ \(desc, input, prog, output) ->
     it desc $ do
-      res <- func input (defaultRewriteContext (Program prog))
+      res <- func input (defaultDataizeContext (Program prog))
       res `shouldBe` output
 
 testDataize :: [(String, String, String)] -> Spec
@@ -22,7 +21,7 @@ testDataize useCases =
   forM_ useCases $ \(name, prog, res) ->
     it name $ do
       prog' <- parseProgramThrows prog
-      value <- dataize prog' (defaultRewriteContext prog')
+      value <- dataize prog' (defaultDataizeContext prog')
       value `shouldBe` Just res
 
 spec :: Spec

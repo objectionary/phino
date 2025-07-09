@@ -1,9 +1,10 @@
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE RecordWildCards #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Dataize (morph, dataize, dataize') where
+module Dataize (morph, dataize, dataize', DataizeContext(..), defaultDataizeContext) where
 
 import Ast
 import Builder (buildExpressionFromFunction, contextualize)
@@ -11,10 +12,21 @@ import Condition (isNF)
 import Control.Exception (throwIO)
 import Data.List (partition)
 import Misc
-import Rewriter
+import Rewriter (rewrite', RewriteContext(RewriteContext))
 import Text.Printf (printf)
 import XMIR (XmirContext (XmirContext))
 import Yaml (normalizationRules)
+
+data DataizeContext = DataizeContext
+  { program :: Program,
+    maxDepth :: Integer
+  }
+
+defaultDataizeContext :: Program -> DataizeContext
+defaultDataizeContext prog = DataizeContext prog 25
+
+switchContext :: DataizeContext -> RewriteContext
+switchContext DataizeContext{..} = RewriteContext program maxDepth
 
 maybeBinding :: (Binding -> Bool) -> [Binding] -> (Maybe Binding, [Binding])
 maybeBinding _ [] = (Nothing, [])
@@ -33,7 +45,7 @@ maybeDelta = maybeBinding (\case BiDelta _ -> True; _ -> False)
 maybePhi :: [Binding] -> (Maybe Binding, [Binding])
 maybePhi = maybeBinding (\case (BiTau AtPhi _) -> True; _ -> False)
 
-formation :: [Binding] -> RewriteContext -> IO (Maybe Expression)
+formation :: [Binding] -> DataizeContext -> IO (Maybe Expression)
 formation bds ctx = do
   let (lambda, bds') = maybeLambda bds
   case lambda of
@@ -55,7 +67,7 @@ phiDispatch attr expr = case expr of
       BiTau (AtLabel attr') expr' -> if attr' == attr then Just expr' else boundExpr bds
       _ -> boundExpr bds
 
-withTail :: Expression -> RewriteContext -> IO (Maybe Expression)
+withTail :: Expression -> DataizeContext -> IO (Maybe Expression)
 withTail (ExApplication (ExFormation _) _) _ = pure Nothing
 withTail (ExApplication (ExDispatch ExGlobal _) _) _ = pure Nothing
 withTail (ExApplication expr tau) ctx = do
@@ -69,10 +81,10 @@ withTail (ExDispatch (ExFormation bds) attr) ctx = do
     Just obj -> pure (Just (ExDispatch obj attr))
     _ -> pure Nothing
 withTail (ExFormation bds) ctx = formation bds ctx
-withTail (ExDispatch (ExDispatch ExGlobal (AtLabel label)) attr) (RewriteContext {program = Program expr})   = case phiDispatch label expr of
+withTail (ExDispatch (ExDispatch ExGlobal (AtLabel label)) attr) (DataizeContext {program = Program expr})   = case phiDispatch label expr of
   Just obj -> pure (Just (ExDispatch obj attr))
   _ -> pure Nothing
-withTail (ExDispatch ExGlobal (AtLabel label)) (RewriteContext {program = Program expr}) = pure (phiDispatch label expr)
+withTail (ExDispatch ExGlobal (AtLabel label)) (DataizeContext {program = Program expr}) = pure (phiDispatch label expr)
 withTail (ExDispatch expr attr) ctx = do
   exp' <- withTail expr ctx
   case exp' of
@@ -94,7 +106,7 @@ withTail _ _ = pure Nothing
 --         M(e) -> nothing                        otherwise
 -- @todo #169:30min Get rid of hard coded amount of normalization cycles. Right now the value 25 is hard coded.
 --  We need to pass it though function argument or global environment.
-morph :: Expression -> RewriteContext -> IO (Maybe Expression)
+morph :: Expression -> DataizeContext -> IO (Maybe Expression)
 morph ExTermination _ = pure (Just ExTermination) -- PRIM
 morph (ExFormation bds) ctx = do
   resolved <- withTail (ExFormation bds) ctx
@@ -109,7 +121,7 @@ morph expr ctx = do
       if isNF expr
         then pure Nothing
         else do
-          (Program expr') <- rewrite' (Program expr) normalizationRules ctx -- NMZ
+          (Program expr') <- rewrite' (Program expr) normalizationRules (switchContext ctx) -- NMZ
           morph expr' ctx
 
 -- The goal of 'dataize' function is retrieve bytes from given expression.
@@ -118,10 +130,10 @@ morph expr ctx = do
 -- BOX:   D([B1, 𝜑 -> e, B2]) -> D(С(e))        if [B1,B2] has no delta/lambda, where С(e) - contextualization
 -- NORM:  D(e1) -> D(e2)                        if e2 := M(e1) and e1 is not primitive
 --        nothing                               otherwise
-dataize :: Program -> RewriteContext -> IO (Maybe String)
+dataize :: Program -> DataizeContext -> IO (Maybe String)
 dataize (Program expr) = dataize' expr
 
-dataize' :: Expression -> RewriteContext -> IO (Maybe String)
+dataize' :: Expression -> DataizeContext -> IO (Maybe String)
 dataize' ExTermination _ = pure Nothing
 dataize' (ExFormation bds) ctx = case maybeDelta bds of
   (Just (BiDelta bytes), _) -> pure (Just bytes)
@@ -147,7 +159,7 @@ dataize' expr prog = do
 toDouble :: Integer -> Double
 toDouble = fromIntegral
 
-atom :: String -> Expression -> RewriteContext -> IO (Maybe Expression)
+atom :: String -> Expression -> DataizeContext -> IO (Maybe Expression)
 atom "L_org_eolang_number_plus" self ctx = do
   left <- dataize' (ExDispatch self (AtLabel "x")) ctx
   right <- dataize' (ExDispatch self AtRho) ctx
