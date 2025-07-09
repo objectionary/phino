@@ -95,7 +95,7 @@ expression (ExDispatch expr attr) ctx = do
 expression (DataObject "number" bytes) XmirContext {..} =
   let bts =
         object
-          [("base", "Q.org.eolang.bytes")]
+          [("as", prettyAttribute (AtAlpha 0)), ("base", "Q.org.eolang.bytes")]
           [object [] [NodeContent (T.pack bytes)]]
    in pure
         ( "Q.org.eolang.number",
@@ -109,7 +109,7 @@ expression (DataObject "number" bytes) XmirContext {..} =
 expression (DataObject "string" bytes) XmirContext {..} =
   let bts =
         object
-          [("base", "Q.org.eolang.bytes")]
+          [("as", prettyAttribute (AtAlpha 0)), ("base", "Q.org.eolang.bytes")]
           [object [] [NodeContent (T.pack bytes)]]
    in pure
         ( "Q.org.eolang.string",
