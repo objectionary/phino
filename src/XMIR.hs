@@ -144,6 +144,8 @@ rootExpression expr = throwIO (UnsupportedExpression expr)
 -- The function returns tuple (X, Y), where
 -- - X: list of package parts
 -- - Y: root object expression
+-- @todo #197:30min Make patterns with L> Package softer. Right now we expect L> Package only in the end
+--  of the formation bindings list. That's not really correct since this binding may be anywhere. Let's fix it
 getPackage :: Expression -> IO ([String], Expression)
 getPackage (ExFormation [BiTau (AtLabel label) (ExFormation [bd, BiLambda "Package", BiVoid AtRho]), BiVoid AtRho]) = do
   (pckg, expr') <- getPackage (ExFormation [bd, BiLambda "Package", BiVoid AtRho])
@@ -155,25 +157,23 @@ getPackage (ExFormation [BiTau attr expr, BiLambda "Package", BiVoid AtRho]) = p
 getPackage (ExFormation [bd, BiVoid AtRho]) = pure ([], ExFormation [bd, BiVoid AtRho])
 getPackage expr = throwIO (userError (printf "Can't extract package from given expression:\n %s" (prettyExpression expr)))
 
-metasWithPackage :: String -> [Node]
+metasWithPackage :: String -> Node
 metasWithPackage pckg =
-  [ NodeElement
-      ( element
-          "metas"
-          []
-          [ NodeElement
-              ( element
-                  "meta"
-                  []
-                  [ NodeElement (element "head" [] [NodeContent (T.pack "package")]),
-                    NodeElement (element "tail" [] [NodeContent (T.pack pckg)]),
-                    NodeElement (element "part" [] [NodeContent (T.pack pckg)])
-                  ]
-              )
-          ]
-      )
-    | not (null pckg)
-  ]
+  NodeElement
+    ( element
+        "metas"
+        []
+        [ NodeElement
+            ( element
+                "meta"
+                []
+                [ NodeElement (element "head" [] [NodeContent (T.pack "package")]),
+                  NodeElement (element "tail" [] [NodeContent (T.pack pckg)]),
+                  NodeElement (element "part" [] [NodeContent (T.pack pckg)])
+                ]
+            )
+        ]
+    )
 
 time :: UTCTime -> String
 time now = do
@@ -194,6 +194,8 @@ programToXMIR (Program expr) mode omitListing = do
         if omitListing
           then show (length (lines phi)) ++ " lines of phi"
           else phi
+      listing' = NodeElement (element "listing" [] [NodeContent (T.pack listing)])
+      metas = metasWithPackage (intercalate "." pckg)
   pure
     ( Document
         (Prologue [] Nothing [])
@@ -207,9 +209,9 @@ programToXMIR (Program expr) mode omitListing = do
               ("version", showVersion version),
               ("xsi:noNamespaceSchemaLocation", "https://raw.githubusercontent.com/objectionary/eo/refs/heads/gh-pages/XMIR.xsd")
             ]
-            ( NodeElement (element "listing" [] [NodeContent (T.pack listing)])
-                : root
-                : metasWithPackage (intercalate "." pckg)
+            ( if null pckg
+                then listing' : [root]
+                else listing' : metas : [root]  
             )
         )
         []
@@ -222,6 +224,8 @@ indent n = TB.fromText (T.replicate n (T.pack "  "))
 newline :: TB.Builder
 newline = TB.fromString "\n"
 
+-- >>> printElement 0 (element "doc" [("a", ""), ("b", ""), ("c", ""), ("d", ""), ("e", "")] [])
+-- "<doc a=\"\" b=\"\" c=\"\" d=\"\" e=\"\"/>\n"
 printElement :: Int -> Element -> TB.Builder
 printElement indentLevel (Element name attrs nodes)
   | null nodes =
@@ -257,12 +261,10 @@ printElement indentLevel (Element name attrs nodes)
         <> newline
   where
     attrsText =
-      let attrs' = M.toList attrs
-          first = if length attrs' > 4 then newline <> indent (indentLevel + 1) else TB.fromString " "
-       in mconcat
-            [ first <> TB.fromText (nameLocalName k) <> TB.fromString "=\"" <> TB.fromText v <> TB.fromString "\""
-              | (k, v) <- attrs'
-            ]
+      mconcat
+        [ TB.fromString " " <> TB.fromText (nameLocalName k) <> TB.fromString "=\"" <> TB.fromText v <> TB.fromString "\""
+          | (k, v) <- M.toList attrs
+        ]
 
     isTextNode (NodeContent _) = True
     isTextNode _ = False
