@@ -1,3 +1,5 @@
+{-# LANGUAGE LambdaCase #-}
+
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
@@ -98,21 +100,28 @@ matchBindings _ _ _ = []
 -- If there's one - build the list of all the tail operations after head expression.
 -- The tail operations may be only dispatches or applications
 tailExpressions :: Expression -> Expression -> Expression -> ([Subst], [Tail])
-tailExpressions ptn tgt scope =
-  let (substs, tails) = tailExpressionsReversed ptn tgt
-   in (substs, reverse tails)
+tailExpressions ptn tgt scope = case tailExpressionsReversed ptn tgt of
+  Just (substs, tails) -> (substs, reverse tails)
+  _ -> ([], [])
   where
-    tailExpressionsReversed :: Expression -> Expression -> ([Subst], [Tail])
+    tailExpressionsReversed :: Expression -> Expression -> Maybe ([Subst], [Tail])
     tailExpressionsReversed ptn' tgt' = case matchExpression ptn' tgt' scope of
       [] -> case tgt' of
-        ExDispatch expr attr ->
-          let (substs, tails) = tailExpressionsReversed ptn' expr
-           in (substs, TaDispatch attr : tails)
-        ExApplication expr tau ->
-          let (substs, tails) = tailExpressionsReversed ptn' expr
-           in (substs, TaApplication tau : tails)
-        _ -> ([], [])
-      substs -> (substs, [])
+        ExDispatch expr attr -> do
+          (substs, tails) <- tailExpressionsReversed ptn' expr
+          Just (substs, TaDispatch attr : tails)
+        ExApplication expr tau -> do
+          (substs, tails) <- tailExpressionsReversed ptn' expr
+          if not (null tails) && isDispatch (head tails)
+            then Just (substs, TaApplication tau : tails)
+            else Nothing
+          where
+            isDispatch :: Tail -> Bool
+            isDispatch = \case
+              TaDispatch _ -> True
+              TaApplication _ -> False
+        _ -> Just ([], [])
+      substs -> Just (substs, [])
 
 matchExpression :: Expression -> Expression -> Expression -> [Subst]
 matchExpression (ExMeta meta) tgt scope = [substSingle meta (MvExpression tgt scope)]

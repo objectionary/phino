@@ -343,11 +343,11 @@ spec = do
           defaultScope,
           [[("t", MvTail [TaDispatch (AtLabel "org"), TaApplication (BiTau (AtLabel "x") defaultScope)])]]
         ),
-        ( "Q.!a * !t => Q.org(x -> [[]]) => [(!a >> org, !t >> [(x -> [[]])])]",
+        ( "Q.!a * !t => Q.org.eolang(x -> [[]]) => [(!a >> org, !t >> [ .eolang, ( x -> [[ ]] ) ])]",
           ExMetaTail (ExDispatch ExGlobal (AtMeta "a")) "t",
-          ExApplication (ExDispatch ExGlobal (AtLabel "org")) (BiTau (AtLabel "x") defaultScope),
+          ExApplication (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang")) (BiTau (AtLabel "x") defaultScope),
           defaultScope,
-          [[("a", MvAttribute (AtLabel "org")), ("t", MvTail [TaApplication (BiTau (AtLabel "x") defaultScope)])]]
+          [[("a", MvAttribute (AtLabel "org")), ("t", MvTail [TaDispatch (AtLabel "eolang"), TaApplication (BiTau (AtLabel "x") defaultScope)])]]
         ),
         ( "Q.x(y -> $ * !t1) * !t2 => Q.x(y -> $.q).p => [(!t1 >> [.q], !t2 >> [.p])]",
           ExMetaTail (ExApplication (ExDispatch ExGlobal (AtLabel "x")) (BiTau (AtLabel "y") (ExMetaTail ExThis "t1"))) "t2",
