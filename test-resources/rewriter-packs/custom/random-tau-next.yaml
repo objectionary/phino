@@ -12,7 +12,7 @@ output: |-
   ⟧
 rules:
   custom:
-    - pattern: '[[ !B1, !a -> Q.x, !B2  ]]'
+    - pattern: '[[ !B1, !a -> Q.x, !B2 ]]'
       result: '[[ !B1, !a -> Q.x, !a1 -> Q.z, !B2 ]]'
       where:
         - meta: '!a1'
