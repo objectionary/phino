@@ -6,7 +6,7 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Rewriter (rewrite, rewrite', RewriteContext(..), defaultRewriteContext) where
+module Rewriter (rewrite, rewrite', RewriteContext (..), defaultRewriteContext) where
 
 import Ast
 import Builder
@@ -14,13 +14,15 @@ import qualified Condition as C
 import Control.Exception
 import qualified Data.Map.Strict as M
 import Data.Maybe (catMaybes, fromMaybe, isJust)
+import Debug.Trace (trace)
 import Logger (logDebug)
 import Matcher (MetaValue (MvAttribute, MvBindings, MvExpression), Subst (Subst), combine, combineMany, defaultScope, matchProgram, substEmpty, substSingle)
 import Misc (ensuredFile)
 import Parser (parseProgram, parseProgramThrows)
-import Pretty (PrintMode (SWEET), prettyExpression, prettyProgram, prettyProgram', prettySubsts)
+import Pretty (PrintMode (SWEET), prettyAttribute, prettyExpression, prettyProgram, prettyProgram', prettySubsts)
 import Replacer (replaceProgram)
 import Text.Printf
+import Yaml (ExtraArgument (..))
 import qualified Yaml as Y
 
 data RewriteContext = RewriteContext
@@ -69,13 +71,19 @@ extraSubstitutions prog extras substs = case extras of
   Just extras' ->
     catMaybes
       [ foldl
-          ( \(Just subst') extra -> case Y.meta extra of
-              ExMeta name -> do
-                let func = Y.function extra
-                    args = Y.args extra
-                expr <- buildExpressionFromFunction func args subst' prog
-                combine (substSingle name (MvExpression expr defaultScope)) subst'
-              _ -> Just subst'
+          ( \(Just subst') extra -> do
+              name <- case Y.meta extra of
+                ArgExpression (ExMeta name) -> Just name
+                ArgAttribute (AtMeta name) -> Just name
+                ArgBinding (BiMeta name) -> Just name
+                _ -> Nothing
+              let func = Y.function extra
+                  args = Y.args extra
+              term <- buildTermFromFunction func args subst' prog
+              let meta = case term of
+                    TeExpression expr -> MvExpression expr defaultScope
+                    TeAttribute attr -> MvAttribute attr
+              combine (substSingle name meta) subst'
           )
           (Just subst)
           extras'
@@ -105,7 +113,7 @@ rewrite program program' (rule : rest) = do
 --  been memorized - we fail because we got into infinite recursion. Ofc we should keep counting
 --  rewriting cycles if program just only grows on each rewriting.
 rewrite' :: Program -> [Y.Rule] -> RewriteContext -> IO Program
-rewrite' prog rules RewriteContext{..} = _rewrite prog 0
+rewrite' prog rules RewriteContext {..} = _rewrite prog 0
   where
     _rewrite :: Program -> Integer -> IO Program
     _rewrite prog count = do

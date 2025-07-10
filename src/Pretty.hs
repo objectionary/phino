@@ -51,6 +51,8 @@ instance Pretty Attribute where
   pretty (AtAlpha index) = pretty "α" <> pretty index
   pretty AtRho = pretty "ρ"
   pretty AtPhi = pretty "φ"
+  pretty AtDelta = pretty "Δ"
+  pretty AtLambda = pretty "λ"
   pretty (AtMeta meta) = prettyMeta meta
 
 instance Pretty (Formatted Binding) where

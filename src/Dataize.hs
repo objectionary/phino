@@ -4,15 +4,15 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Dataize (morph, dataize, dataize', DataizeContext(..), defaultDataizeContext) where
+module Dataize (morph, dataize, dataize', DataizeContext (..), defaultDataizeContext) where
 
 import Ast
-import Builder (buildExpressionFromFunction, contextualize)
+import Builder (contextualize)
 import Condition (isNF)
 import Control.Exception (throwIO)
 import Data.List (partition)
 import Misc
-import Rewriter (rewrite', RewriteContext(RewriteContext))
+import Rewriter (RewriteContext (RewriteContext), rewrite')
 import Text.Printf (printf)
 import XMIR (XmirContext (XmirContext))
 import Yaml (normalizationRules)
@@ -26,7 +26,7 @@ defaultDataizeContext :: Program -> DataizeContext
 defaultDataizeContext prog = DataizeContext prog 25
 
 switchContext :: DataizeContext -> RewriteContext
-switchContext DataizeContext{..} = RewriteContext program maxDepth
+switchContext DataizeContext {..} = RewriteContext program maxDepth
 
 maybeBinding :: (Binding -> Bool) -> [Binding] -> (Maybe Binding, [Binding])
 maybeBinding _ [] = (Nothing, [])
@@ -81,7 +81,7 @@ withTail (ExDispatch (ExFormation bds) attr) ctx = do
     Just obj -> pure (Just (ExDispatch obj attr))
     _ -> pure Nothing
 withTail (ExFormation bds) ctx = formation bds ctx
-withTail (ExDispatch (ExDispatch ExGlobal (AtLabel label)) attr) (DataizeContext {program = Program expr})   = case phiDispatch label expr of
+withTail (ExDispatch (ExDispatch ExGlobal (AtLabel label)) attr) (DataizeContext {program = Program expr}) = case phiDispatch label expr of
   Just obj -> pure (Just (ExDispatch obj attr))
   _ -> pure Nothing
 withTail (ExDispatch ExGlobal (AtLabel label)) (DataizeContext {program = Program expr}) = pure (phiDispatch label expr)
