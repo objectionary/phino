@@ -29,9 +29,6 @@ parseJSON' name func =
         Right parsed -> pure parsed
     )
 
-instance FromJSON Expression where
-  parseJSON = parseJSON' "Expression" parseExpression
-
 instance FromJSON Attribute where
   parseJSON =
     withText
@@ -43,6 +40,9 @@ instance FromJSON Attribute where
             Left err -> fail err
             Right attr -> pure attr
       )
+
+instance FromJSON Expression where
+  parseJSON = parseJSON' "Expression" parseExpression
 
 instance FromJSON Binding where
   parseJSON = parseJSON' "Binding" parseBinding
@@ -93,6 +93,14 @@ instance FromJSON Condition where
             ]
       )
 
+instance FromJSON ExtraArgument where
+  parseJSON v =
+    asum
+      [ ArgAttribute <$> parseJSON v,
+        ArgBinding <$> parseJSON v,
+        ArgExpression <$> parseJSON v
+      ]
+
 instance FromJSON Extra where
   parseJSON = genericParseJSON defaultOptions
 
@@ -127,10 +135,16 @@ data Condition
   | XI Expression
   deriving (Generic, Show)
 
+data ExtraArgument
+  = ArgAttribute Attribute
+  | ArgExpression Expression
+  | ArgBinding Binding
+  deriving (Generic, Show)
+
 data Extra = Extra
-  { meta :: Expression,
+  { meta :: ExtraArgument,
     function :: String,
-    args :: [Expression]
+    args :: [ExtraArgument]
   }
   deriving (Generic, Show)
 
