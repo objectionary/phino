@@ -217,12 +217,12 @@ programToXMIR (Program expr) ctx = do
         (Prologue [] Nothing [])
         ( element
             "object"
-            [ ("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance"),
-              ("dob", formatTime defaultTimeLocale "%Y-%m-%dT%H:%M:%S" now),
+            [ ("dob", formatTime defaultTimeLocale "%Y-%m-%dT%H:%M:%S" now),
               ("ms", "0"),
               ("revision", "1234567"),
               ("time", time now),
               ("version", showVersion version),
+              ("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance"),
               ("xsi:noNamespaceSchemaLocation", "https://raw.githubusercontent.com/objectionary/eo/refs/heads/gh-pages/XMIR.xsd")
             ]
             ( if null pckg
