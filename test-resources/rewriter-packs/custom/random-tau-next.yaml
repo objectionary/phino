@@ -17,4 +17,4 @@ rules:
       where:
         - meta: '!a1'
           function: random-tau
-          args: ['!B1', '!B2', '!a' ]
+          args: ['!B1', '!B2', '!a']
