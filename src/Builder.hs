@@ -17,7 +17,6 @@ where
 
 import Ast
 import qualified Data.Map.Strict as Map
-import Debug.Trace
 import Matcher
 import Pretty (prettyAttribute)
 import Yaml (ExtraArgument (..))
