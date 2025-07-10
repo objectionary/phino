@@ -142,7 +142,7 @@ buildTermFromFunction "random-tau" args subst _ = do
     randomTau :: Integer -> [String] -> String
     randomTau _ [] = cactoos
     randomTau idx attrs =
-      let tau = cactoos ++ show idx
+      let tau = if idx == 0 then cactoos else cactoos ++ show idx
        in if tau `elem` attrs then randomTau (idx + 1) attrs else tau
     cactoos = "a🌵"
 buildTermFromFunction _ _ _ _ = Nothing

@@ -2,19 +2,19 @@
 # SPDX-License-Identifier: MIT
 ---
 input: |
-  {[[ x -> Q.y, a🌵0 -> Q.x, z -> Q.a ]]}
+  {[[ x -> Q.y, y -> Q.x, z -> Q.a ]]}
 output: |-
   Φ ↦ ⟦
     x ↦ Φ.y,
-    a🌵0 ↦ Φ.x,
-    a🌵1 ↦ Φ.z,
-    z ↦ Φ.a
+    y ↦ Φ.x,
+    z ↦ Φ.a,
+    a🌵 ↦ Φ.z
   ⟧
 rules:
   custom:
-    - pattern: '[[ !B1, !a -> Q.x, !B2  ]]'
-      result: '[[ !B1, !a -> Q.x, !a1 -> Q.z, !B2 ]]'
+    - pattern: '[[ !B, ^ -> ? ]]'
+      result: '[[ !B, !a -> Q.z, ^ -> ? ]]'
       where:
-        - meta: '!a1'
+        - meta: '!a'
           function: random-tau
-          args: ['!B1', '!B2', '!a' ]
+          args: [ '!B' ]
