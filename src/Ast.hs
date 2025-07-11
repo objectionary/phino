@@ -26,18 +26,18 @@ data Expression
 data Binding
   = BiTau Attribute Expression -- attr -> expr
   | BiMeta String -- !B
-  | BiDelta String -- D> 1F-2A
-  | BiMetaDelta String -- D> !b
-  | BiVoid Attribute -- attr -> ?
-  | BiLambda String -- L> Function
-  | BiMetaLambda String -- L> !F
+  | BiDelta String -- Δ ⤍ 1F-2A
+  | BiMetaDelta String -- Δ ⤍ !b
+  | BiVoid Attribute -- attr ↦ ?
+  | BiLambda String -- λ ⤍ Function
+  | BiMetaLambda String -- λ ⤍ !F
   deriving (Eq, Show, Generic)
 
 data Attribute
   = AtLabel String -- attr
-  | AtAlpha Integer -- ~1
-  | AtPhi -- @
-  | AtRho
+  | AtAlpha Integer -- α1
+  | AtPhi -- φ
+  | AtRho -- ρ
   | AtLambda -- λ, used only in yaml conditions
   | AtDelta -- Δ, used only in yaml conditions
   | AtMeta String -- !a
