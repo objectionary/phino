@@ -64,7 +64,8 @@ library
     vector,
     random,
     xml-conduit ^>=1.10,
-    time ^>=1.12
+    time ^>=1.12,
+    transformers
   default-language: Haskell2010
 
 -- Executable using the library
