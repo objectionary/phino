@@ -16,7 +16,9 @@ import Control.Monad (when)
 import Data.Char (toLower, toUpper)
 import Data.List (intercalate)
 import Data.Version (showVersion)
-import Dataize (dataize, DataizeContext (DataizeContext))
+import Dataize (DataizeContext (DataizeContext), dataize)
+import Functions (buildTermFromFunction)
+import qualified Functions
 import Logger
 import Misc (ensuredFile)
 import qualified Misc
@@ -24,7 +26,7 @@ import Options.Applicative
 import Parser (parseProgramThrows)
 import Paths_phino (version)
 import Pretty (PrintMode (SALTY, SWEET), prettyProgram')
-import Rewriter (rewrite', RewriteContext (RewriteContext))
+import Rewriter (RewriteContext (RewriteContext), rewrite')
 import System.Exit (ExitCode (..), exitFailure)
 import System.IO (getContents')
 import Text.Printf (printf)
@@ -179,7 +181,7 @@ runCLI args = handle handler $ do
       input <- readInput inputFile
       rules' <- getRules
       program <- parseProgram input inputFormat
-      rewritten <- rewrite' program rules' (RewriteContext program maxDepth)
+      rewritten <- rewrite' program rules' (RewriteContext program maxDepth buildTermFromFunction)
       logDebug (printf "Printing rewritten 𝜑-program as %s" (show outputFormat))
       out <- printProgram rewritten outputFormat printMode
       putStrLn out
@@ -194,8 +196,9 @@ runCLI args = handle handler $ do
               else
                 if normalize
                   then do
-                    logDebug "The --normalize option is provided, built-it normalization rules are used"
-                    pure normalizationRules
+                    let rules' = normalizationRules
+                    logDebug (printf "The --normalize option is provided, %d built-it normalization rules are used" (length rules'))
+                    pure rules'
                   else
                     if null rules
                       then throwIO (InvalidRewriteArguments "no --rule, no --normalize, no --nothing are provided")
@@ -217,7 +220,7 @@ runCLI args = handle handler $ do
       validateMaxDepth maxDepth
       input <- readInput inputFile
       prog <- parseProgram input inputFormat
-      dataized <- dataize prog (DataizeContext prog maxDepth)
+      dataized <- dataize prog (DataizeContext prog maxDepth buildTermFromFunction)
       maybe (throwIO CouldNotDataize) putStrLn dataized
   where
     validateMaxDepth :: Integer -> IO ()

@@ -5,6 +5,7 @@
 
 module Pretty
   ( prettyExpression,
+    prettyExpression',
     prettyProgram,
     prettyProgram',
     prettyAttribute,
@@ -193,6 +194,9 @@ prettySubsts' substs mode = render (Formatted (mode, substs))
 
 prettyExpression :: Expression -> String
 prettyExpression expr = render (Formatted (SALTY, expr))
+
+prettyExpression' :: Expression -> String
+prettyExpression' expr = render (Formatted (SWEET, expr))
 
 prettyProgram :: Program -> String
 prettyProgram prog = render (Formatted (SALTY, prog))
