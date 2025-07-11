@@ -21,6 +21,7 @@ import Test.Hspec (Spec, describe, expectationFailure, it, pending, runIO)
 import Yaml (normalizationRules)
 import Yaml qualified as Y
 import Rewriter (rewrite', RewriteContext (RewriteContext))
+import Functions (buildTermFromFunction)
 
 data Rules = Rules
   { basic :: Maybe [String],
@@ -91,7 +92,7 @@ spec =
                   if normalize'
                     then pure normalizationRules
                     else pure []
-              rewritten <- rewrite' program rules' (RewriteContext program repeat')
+              rewritten <- rewrite' program rules' (RewriteContext program repeat' buildTermFromFunction)
               result' <- parseProgramThrows (output pack)
               unless (rewritten == result') $
                 expectationFailure

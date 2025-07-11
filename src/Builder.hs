@@ -7,11 +7,9 @@
 module Builder
   ( buildExpressions,
     buildExpression,
-    buildTermFromFunction,
     buildAttribute,
     buildBinding,
     contextualize,
-    Term (..),
   )
 where
 
@@ -20,8 +18,6 @@ import qualified Data.Map.Strict as Map
 import Matcher
 import Pretty (prettyAttribute)
 import Yaml (ExtraArgument (..))
-
-data Term = TeExpression Expression | TeAttribute Attribute
 
 contextualize :: Expression -> Expression -> Program -> Expression
 contextualize ExGlobal _ (Program expr) = expr
@@ -104,47 +100,6 @@ buildExpression (ExMetaTail expr meta) subst = do
     Just (MvTail tails) -> Just (buildExpressionWithTails expression tails subst, scope)
     _ -> Nothing
 buildExpression expr _ = Just (expr, defaultScope)
-
-buildTermFromFunction :: String -> [ExtraArgument] -> Subst -> Program -> Maybe Term
-buildTermFromFunction "contextualize" [ArgExpression expr, ArgExpression context] subst prog = do
-  (expr', _) <- buildExpression expr subst
-  (context', _) <- buildExpression context subst
-  return (TeExpression (contextualize expr' context' prog))
-buildTermFromFunction "scope" [ArgExpression expr] subst prog = do
-  (expr', scope) <- buildExpression expr subst
-  return (TeExpression scope)
-buildTermFromFunction "random-tau" args subst _ = do
-  attrs <- argsToAttrs args
-  return (TeAttribute (AtLabel (randomTau 0 attrs)))
-  where
-    argsToAttrs :: [ExtraArgument] -> Maybe [String]
-    argsToAttrs [] = Just []
-    argsToAttrs (arg : rest) = case arg of
-      ArgExpression _ -> argsToAttrs rest
-      ArgAttribute attr -> do
-        attr' <- buildAttribute attr subst
-        rest' <- argsToAttrs rest
-        Just (prettyAttribute attr' : rest')
-      ArgBinding bd -> do
-        bds <- buildBinding bd subst
-        rest' <- argsToAttrs rest
-        Just (attrsFromBindings bds ++ rest')
-    attrsFromBindings :: [Binding] -> [String]
-    attrsFromBindings [] = []
-    attrsFromBindings (bd : bds) =
-      let attr = case bd of
-            BiTau attr _ -> attr
-            BiDelta _ -> AtDelta
-            BiLambda _ -> AtLambda
-            BiVoid attr -> attr
-       in prettyAttribute attr : attrsFromBindings bds
-    randomTau :: Integer -> [String] -> String
-    randomTau _ [] = cactoos
-    randomTau idx attrs =
-      let tau = if idx == 0 then cactoos else cactoos ++ show idx
-       in if tau `elem` attrs then randomTau (idx + 1) attrs else tau
-    cactoos = "a🌵"
-buildTermFromFunction _ _ _ _ = Nothing
 
 -- Build a several expression from one expression and several substitutions
 buildExpressions :: Expression -> [Subst] -> Maybe [(Expression, Expression)]

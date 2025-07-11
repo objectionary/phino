@@ -1,17 +1,18 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Rewriter (rewrite, rewrite', RewriteContext (..), defaultRewriteContext) where
+module Rewriter (rewrite, rewrite', RewriteContext (..)) where
 
 import Ast
 import Builder
 import qualified Condition as C
 import Control.Exception
+import Control.Monad.Trans.Maybe
+import Data.Foldable (foldlM)
 import qualified Data.Map.Strict as M
 import Data.Maybe (catMaybes, fromMaybe, isJust)
 import Debug.Trace (trace)
@@ -19,19 +20,18 @@ import Logger (logDebug)
 import Matcher (MetaValue (MvAttribute, MvBindings, MvExpression), Subst (Subst), combine, combineMany, defaultScope, matchProgram, substEmpty, substSingle)
 import Misc (ensuredFile)
 import Parser (parseProgram, parseProgramThrows)
-import Pretty (PrintMode (SWEET), prettyAttribute, prettyExpression, prettyProgram, prettyProgram', prettySubsts)
+import Pretty (PrintMode (SWEET), prettyAttribute, prettyExpression, prettyExpression', prettyProgram, prettyProgram', prettySubsts)
 import Replacer (replaceProgram)
+import Term
 import Text.Printf
 import Yaml (ExtraArgument (..))
 import qualified Yaml as Y
 
 data RewriteContext = RewriteContext
-  { program :: Program,
-    maxDepth :: Integer
+  { _program :: Program,
+    _maxDepth :: Integer,
+    _buildTerm :: BuildTermFunc
   }
-
-defaultRewriteContext :: Program -> RewriteContext
-defaultRewriteContext prog = RewriteContext prog 25
 
 data RewriteException
   = CouldNotBuild {expr :: Expression, substs :: [Subst]}
@@ -65,45 +65,65 @@ buildAndReplace program ptn res substs =
     (_, Nothing) -> throwIO (CouldNotBuild res substs)
 
 -- Extend list of given substitutions with extra substitutions from 'where' yaml rule section
-extraSubstitutions :: Program -> Maybe [Y.Extra] -> [Subst] -> [Subst]
-extraSubstitutions prog extras substs = case extras of
-  Nothing -> substs
-  Just extras' ->
-    catMaybes
-      [ foldl
-          ( \(Just subst') extra -> do
-              name <- case Y.meta extra of
-                ArgExpression (ExMeta name) -> Just name
-                ArgAttribute (AtMeta name) -> Just name
-                ArgBinding (BiMeta name) -> Just name
-                _ -> Nothing
-              let func = Y.function extra
-                  args = Y.args extra
-              term <- buildTermFromFunction func args subst' prog
-              let meta = case term of
-                    TeExpression expr -> MvExpression expr defaultScope
-                    TeAttribute attr -> MvAttribute attr
-              combine (substSingle name meta) subst'
-          )
-          (Just subst)
-          extras'
-        | subst <- substs
-      ]
+extraSubstitutions :: Maybe [Y.Extra] -> [Subst] -> RewriteContext -> IO [Subst]
+extraSubstitutions extras substs RewriteContext {..} = case extras of
+  Nothing -> pure substs
+  Just extras' -> do
+    res <-
+      sequence
+        [ foldlM
+            ( \(Just subst') extra -> do
+                let maybeName = case Y.meta extra of
+                      ArgExpression (ExMeta name) -> Just name
+                      ArgAttribute (AtMeta name) -> Just name
+                      ArgBinding (BiMeta name) -> Just name
+                      _ -> Nothing
+                    func = Y.function extra
+                    args = Y.args extra
+                    term = _buildTerm func args subst' _program
+                meta <- case term of
+                  Just (TeExpression expr) -> do
+                    logDebug (printf "Function %s() returned expression:\n%s" func (prettyExpression' expr))
+                    pure (MvExpression expr defaultScope)
+                  Just (TeAttribute attr) -> do
+                    logDebug (printf "Function %s() returned attribute:\n%s" func (prettyAttribute attr))
+                    pure (MvAttribute attr)
+                case maybeName of
+                  Just name -> pure (combine (substSingle name meta) subst')
+                  _ -> pure Nothing
+            )
+            (Just subst)
+            extras'
+          | subst <- substs
+        ]
+    pure (catMaybes res)
 
-rewrite :: Program -> Program -> [Y.Rule] -> IO Program
-rewrite program _ [] = pure program
-rewrite program program' (rule : rest) = do
+rewrite :: Program -> [Y.Rule] -> RewriteContext -> IO Program
+rewrite program [] _ = pure program
+rewrite program (rule : rest) ctx = do
   let ptn = Y.pattern rule
       res = Y.result rule
       condition = Y.when rule
   prog <- case C.matchProgramWithCondition ptn condition program of
     Nothing -> pure program
     Just matched -> do
-      let substs = extraSubstitutions program' (Y.where_ rule) matched
+      let ruleName = fromMaybe "unknown" (Y.name rule)
+      logDebug (printf "Rule %s has been matched, applying..." ruleName)
+      substs <- extraSubstitutions (Y.where_ rule) matched ctx
       prog' <- buildAndReplace program ptn res substs
-      logDebug (printf "%s\n%s" (fromMaybe "unknown" (Y.name rule)) (prettyProgram' prog' SWEET))
+      if program == prog'
+        then logDebug (printf "Applied %s, no changes made" ruleName)
+        else
+          logDebug
+            ( printf
+                "Applied %s (%d nodes -> %d nodes):\n%s"
+                ruleName
+                (countNodes program)
+                (countNodes prog')
+                (prettyProgram' prog' SWEET)
+            )
       pure prog'
-  rewrite prog program' rest
+  rewrite prog rest ctx
 
 -- @todo #169:30min Memorize previous rewritten programs. Right now in order not to
 --  get an infinite recursion during rewriting we just count have many times we apply
@@ -113,19 +133,20 @@ rewrite program program' (rule : rest) = do
 --  been memorized - we fail because we got into infinite recursion. Ofc we should keep counting
 --  rewriting cycles if program just only grows on each rewriting.
 rewrite' :: Program -> [Y.Rule] -> RewriteContext -> IO Program
-rewrite' prog rules RewriteContext {..} = _rewrite prog 0
+rewrite' prog rules ctx = _rewrite prog 0
   where
     _rewrite :: Program -> Integer -> IO Program
     _rewrite prog count = do
-      logDebug (printf "Starting rewriting cycle %d out of %d" count maxDepth)
-      if count == maxDepth
+      let depth = _maxDepth ctx
+      logDebug (printf "Starting rewriting cycle %d out of %d" count depth)
+      if count == depth
         then do
-          logDebug (printf "Max amount of rewriting cycles is reached, rewriting is stopped")
+          logDebug (printf "Max amount of rewriting cycles has been reached, rewriting is stopped")
           pure prog
         else do
-          rewritten <- rewrite prog program rules
+          rewritten <- rewrite prog rules ctx
           if rewritten == prog
             then do
-              logDebug "Rewriting is stopped since it does not affect program anymore"
+              logDebug "No rule matched, rewriting is stopped"
               pure rewritten
             else _rewrite rewritten (count + 1)

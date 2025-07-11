@@ -5,9 +5,13 @@ module DataizeSpec (spec) where
 
 import Ast (Attribute (AtLabel, AtPhi, AtRho), Binding (BiDelta, BiTau, BiVoid), Expression (ExApplication, ExDispatch, ExFormation, ExGlobal, ExTermination, ExThis), Program (Program))
 import Control.Monad
-import Dataize (dataize, dataize', morph, defaultDataizeContext, DataizeContext)
+import Dataize (dataize, dataize', morph, DataizeContext (DataizeContext))
 import Parser (parseProgramThrows)
 import Test.Hspec
+import Functions (buildTermFromFunction)
+
+defaultDataizeContext :: Program -> DataizeContext
+defaultDataizeContext prog = DataizeContext prog 25 buildTermFromFunction
 
 test :: (Eq a, Show a) => (Expression -> DataizeContext -> IO (Maybe a)) -> [(String, Expression, Expression, Maybe a)] -> Spec
 test func useCases =

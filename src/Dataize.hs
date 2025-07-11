@@ -4,10 +4,9 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Dataize (morph, dataize, dataize', DataizeContext (..), defaultDataizeContext) where
+module Dataize (morph, dataize, dataize', DataizeContext (..)) where
 
 import Ast
-import Builder (contextualize)
 import Condition (isNF)
 import Control.Exception (throwIO)
 import Data.List (partition)
@@ -16,17 +15,17 @@ import Rewriter (RewriteContext (RewriteContext), rewrite')
 import Text.Printf (printf)
 import XMIR (XmirContext (XmirContext))
 import Yaml (normalizationRules)
+import Builder (contextualize)
+import Term (BuildTermFunc)
 
 data DataizeContext = DataizeContext
-  { program :: Program,
-    maxDepth :: Integer
+  { _program :: Program,
+    _maxDepth :: Integer,
+    _buildTerm :: BuildTermFunc
   }
 
-defaultDataizeContext :: Program -> DataizeContext
-defaultDataizeContext prog = DataizeContext prog 25
-
 switchContext :: DataizeContext -> RewriteContext
-switchContext DataizeContext {..} = RewriteContext program maxDepth
+switchContext DataizeContext {..} = RewriteContext _program _maxDepth _buildTerm
 
 maybeBinding :: (Binding -> Bool) -> [Binding] -> (Maybe Binding, [Binding])
 maybeBinding _ [] = (Nothing, [])
@@ -81,10 +80,10 @@ withTail (ExDispatch (ExFormation bds) attr) ctx = do
     Just obj -> pure (Just (ExDispatch obj attr))
     _ -> pure Nothing
 withTail (ExFormation bds) ctx = formation bds ctx
-withTail (ExDispatch (ExDispatch ExGlobal (AtLabel label)) attr) (DataizeContext {program = Program expr}) = case phiDispatch label expr of
+withTail (ExDispatch (ExDispatch ExGlobal (AtLabel label)) attr) (DataizeContext {_program = Program expr}) = case phiDispatch label expr of
   Just obj -> pure (Just (ExDispatch obj attr))
   _ -> pure Nothing
-withTail (ExDispatch ExGlobal (AtLabel label)) (DataizeContext {program = Program expr}) = pure (phiDispatch label expr)
+withTail (ExDispatch ExGlobal (AtLabel label)) (DataizeContext {_program = Program expr}) = pure (phiDispatch label expr)
 withTail (ExDispatch expr attr) ctx = do
   exp' <- withTail expr ctx
   case exp' of
@@ -139,7 +138,7 @@ dataize' (ExFormation bds) ctx = case maybeDelta bds of
     (Just (BiTau AtPhi expr), bds') -> case maybeLambda bds' of
       (Just (BiLambda _), _) -> throwIO (userError "The 𝜑 and λ can't be present in formation at the same time")
       (_, _) ->
-        let expr' = contextualize expr (ExFormation bds) (program ctx)
+        let expr' = contextualize expr (ExFormation bds) (_program ctx)
          in dataize' expr' ctx
     (Nothing, _) -> case maybeLambda bds of
       (Just (BiLambda _), _) -> do
