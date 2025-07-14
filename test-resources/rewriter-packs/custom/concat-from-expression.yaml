@@ -1,0 +1,20 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+input: Q -> [[ x -> "hello", y -> "world" ]]
+output: |-
+  Φ ↦ ⟦
+    z ↦ "hello world"
+  ⟧
+rules:
+  custom:
+    - name: concat from expression
+      pattern: '[[ x -> !e1, y -> !e2 ]]'
+      result: '[[ z -> !e3 ]]'
+      where:
+        - meta: '!e3'
+          function: concat
+          args:
+            - '!e1'
+            - '" "'
+            - '!e2'
