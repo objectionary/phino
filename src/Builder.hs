@@ -50,7 +50,7 @@ buildBinding (BiVoid attr) subst = do
 buildBinding (BiMeta meta) (Subst mp) = case Map.lookup meta mp of
   Just (MvBindings bds) -> Just bds
   _ -> Nothing
-buildBinding (BiMetaDelta meta) (Subst mp) = case Map.lookup meta mp of
+buildBinding (BiDelta (BtMeta meta)) (Subst mp) = case Map.lookup meta mp of
   Just (MvBytes bytes) -> Just [BiDelta bytes]
   _ -> Nothing
 buildBinding (BiMetaLambda meta) (Subst mp) = case Map.lookup meta mp of

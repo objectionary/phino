@@ -53,6 +53,7 @@ instance Pretty Bytes where
   pretty BtEmpty = pretty "--"
   pretty (BtOne bt) = pretty bt <> pretty "-"
   pretty (BtMany bts) = pretty (intercalate "-" bts)
+  pretty (BtMeta meta) = prettyMeta meta
 
 instance Pretty Attribute where
   pretty (AtLabel name) = pretty name
@@ -85,7 +86,6 @@ instance Pretty (Formatted Binding) where
   pretty (Formatted (_, BiMeta meta)) = prettyMeta meta
   pretty (Formatted (_, BiDelta bytes)) = pretty "Δ" <+> prettyDashedArrow <+> pretty bytes
   pretty (Formatted (_, BiMetaLambda meta)) = pretty "λ" <+> prettyDashedArrow <+> prettyMeta meta
-  pretty (Formatted (_, BiMetaDelta meta)) = pretty "Δ" <+> prettyDashedArrow <+> prettyMeta meta
   pretty (Formatted (_, BiVoid attr)) = pretty attr <+> prettyArrow <+> pretty "∅"
   pretty (Formatted (_, BiLambda func)) = pretty "λ" <+> prettyDashedArrow <+> pretty func
 

@@ -17,10 +17,10 @@ import qualified Data.Map.Strict as M
 import Data.Maybe (catMaybes, fromMaybe, isJust)
 import Debug.Trace (trace)
 import Logger (logDebug)
-import Matcher (MetaValue (MvAttribute, MvBindings, MvExpression), Subst (Subst), combine, combineMany, defaultScope, matchProgram, substEmpty, substSingle)
+import Matcher (MetaValue (MvAttribute, MvBindings, MvExpression, MvBytes), Subst (Subst), combine, combineMany, defaultScope, matchProgram, substEmpty, substSingle)
 import Misc (ensuredFile)
 import Parser (parseProgram, parseProgramThrows)
-import Pretty (PrintMode (SWEET), prettyAttribute, prettyExpression, prettyExpression', prettyProgram, prettyProgram', prettySubsts)
+import Pretty (PrintMode (SWEET), prettyAttribute, prettyExpression, prettyExpression', prettyProgram, prettyProgram', prettySubsts, prettyBytes)
 import Replacer (replaceProgram)
 import Term
 import Text.Printf
@@ -77,6 +77,7 @@ extraSubstitutions extras substs RewriteContext {..} = case extras of
                       ArgExpression (ExMeta name) -> Just name
                       ArgAttribute (AtMeta name) -> Just name
                       ArgBinding (BiMeta name) -> Just name
+                      ArgBytes (BtMeta name) -> Just name
                       _ -> Nothing
                     func = Y.function extra
                     args = Y.args extra
@@ -88,6 +89,9 @@ extraSubstitutions extras substs RewriteContext {..} = case extras of
                   Just (TeAttribute attr) -> do
                     logDebug (printf "Function %s() returned attribute:\n%s" func (prettyAttribute attr))
                     pure (MvAttribute attr)
+                  Just (TeBytes bytes) -> do
+                    logDebug (printf "Function %s() returned bytes: %s" func (prettyBytes bytes))
+                    pure (MvBytes bytes)
                 case maybeName of
                   Just name -> pure (combine (substSingle name meta) subst')
                   _ -> pure Nothing

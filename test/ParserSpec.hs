@@ -64,7 +64,7 @@ spec = do
         ("[[D> 1F-]]", Just (ExFormation [BiDelta (BtOne "1F"), BiVoid AtRho])),
         ("[[\n  L> Func,\n  D> 00-\n]]", Just (ExFormation [BiLambda "Func", BiDelta (BtOne "00"), BiVoid AtRho])),
         ("[[D> 1F-2A-00]]", Just (ExFormation [BiDelta (BtMany ["1F", "2A", "00"]), BiVoid AtRho])),
-        ("[[D> !b0]]", Just (ExFormation [BiMetaDelta "b0", BiVoid AtRho])),
+        ("[[D> !b0]]", Just (ExFormation [BiDelta (BtMeta "b0"), BiVoid AtRho])),
         ("[[L> Function]]", Just (ExFormation [BiLambda "Function", BiVoid AtRho])),
         ("[[L> !F3]]", Just (ExFormation [BiMetaLambda "F3", BiVoid AtRho])),
         ("[[x() -> [[]] ]]", Just (ExFormation [BiTau (AtLabel "x") (ExFormation [BiVoid AtRho]), BiVoid AtRho])),

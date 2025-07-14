@@ -234,7 +234,7 @@ binding =
         BiDelta <$> bytes,
       try $ do
         _ <- delta
-        BiMetaDelta <$> meta 'b',
+        BiDelta . BtMeta <$> meta 'b',
       try metaBinding,
       try $ do
         _ <- lambda

@@ -70,10 +70,10 @@ matchAttribute ptn tgt
 
 matchBinding :: Binding -> Binding -> Expression -> [Subst]
 matchBinding (BiVoid pattr) (BiVoid tattr) _ = matchAttribute pattr tattr
+matchBinding (BiDelta (BtMeta meta)) (BiDelta tdata) _ = [substSingle meta (MvBytes tdata)]  
 matchBinding (BiDelta pdata) (BiDelta tdata) _
   | pdata == tdata = [substEmpty]
   | otherwise = []
-matchBinding (BiMetaDelta meta) (BiDelta tdata) _ = [substSingle meta (MvBytes tdata)]
 matchBinding (BiLambda pFunc) (BiLambda tFunc) _
   | pFunc == tFunc = [substEmpty]
   | otherwise = []

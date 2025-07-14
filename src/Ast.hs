@@ -27,16 +27,16 @@ data Binding
   = BiTau Attribute Expression -- attr -> expr
   | BiMeta String -- !B
   | BiDelta Bytes -- Δ ⤍ 1F-2A
-  | BiMetaDelta String -- Δ ⤍ !b
   | BiVoid Attribute -- attr ↦ ?
   | BiLambda String -- λ ⤍ Function
   | BiMetaLambda String -- λ ⤍ !F
   deriving (Eq, Show, Generic)
 
 data Bytes
-  = BtEmpty
-  | BtOne String
-  | BtMany [String]
+  = BtEmpty -- --
+  | BtOne String -- 1F-
+  | BtMany [String] -- 00-01-02-...04
+  | BtMeta String -- !b
   deriving (Eq, Show, Generic)
 
 data Attribute

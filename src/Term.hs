@@ -13,6 +13,6 @@ import Yaml
 import Matcher
 import Ast
 
-data Term = TeExpression Expression | TeAttribute Attribute
+data Term = TeExpression Expression | TeAttribute Attribute | TeBytes Bytes
 
 type BuildTermFunc = String -> [ExtraArgument] -> Subst -> Program -> Maybe Term

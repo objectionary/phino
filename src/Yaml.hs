@@ -139,6 +139,7 @@ data ExtraArgument
   = ArgAttribute Attribute
   | ArgExpression Expression
   | ArgBinding Binding
+  | ArgBytes Bytes
   deriving (Generic, Show)
 
 data Extra = Extra
