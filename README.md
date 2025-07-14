@@ -163,11 +163,11 @@ Here's list of functions that are supported for extensions:
   concatenates them into single sequence and convert it to expression
   that can be pretty printed as human readable string:
   `Φ.org.eolang.string(Φ.org.eolang.bytes⟦ Δ ⤍ !d ⟧)`.
-* `sed` - pattern replacer, works like unix `sed` function. 
-  Accepts two arguments: target expression and pattern. 
-  Pattern must start with `s/`, consists of three parts 
+* `sed` - pattern replacer, works like unix `sed` function.
+  Accepts two arguments: target expression and pattern.
+  Pattern must start with `s/`, consists of three parts
   separated by `/`, for example, this pattern `s/\\s+//g`
-  replaces all the spaces with empty string. 
+  replaces all the spaces with empty string.
 
 ## Meta variables
 

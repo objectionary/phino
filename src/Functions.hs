@@ -29,7 +29,7 @@ argToStrBytes (ArgExpression expr) subst prog = do
   pure (btsToUnescapedStr bts)
 argToStrBytes arg _ _ = throwIO (userError (printf "Can't extract bytes from given argument: %s" (prettyExtraArg arg)))
 
--- Translate perl-like shorthand characters to posix equvalent
+-- Translate perl-like shorthand characters to posix equivalent.
 -- >>> perlToPosix "\\s+\\W"
 -- "[[:space:]]+[^[:alnum:]_]"
 perlToPosix :: B.ByteString -> B.ByteString
