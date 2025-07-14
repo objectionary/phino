@@ -12,6 +12,7 @@ module Parser
     parseExpressionThrows,
     parseAttribute,
     parseBinding,
+    parseBytes,
   )
 where
 
@@ -171,6 +172,7 @@ byte = do
       | otherwise = fail ("expected 0-9 or A-F, got " ++ show ch)
 
 -- bytes
+-- 0. meta: !b
 -- 1. empty: --
 -- 2. one byte: 01-
 -- 3. many bytes: 01-02-...-FF
@@ -178,7 +180,8 @@ bytes :: Parser Bytes
 bytes =
   lexeme
     ( choice
-        [ symbol "--" >> return BtEmpty,
+        [ BtMeta <$> meta 'b',
+          symbol "--" >> return BtEmpty,
           try $ do
             first <- byte
             rest <- some $ do
@@ -232,9 +235,6 @@ binding =
       try $ do
         _ <- delta
         BiDelta <$> bytes,
-      try $ do
-        _ <- delta
-        BiDelta . BtMeta <$> meta 'b',
       try metaBinding,
       try $ do
         _ <- lambda
@@ -425,6 +425,9 @@ parse' name parser input = do
   case parsed of
     Right parsed' -> Right parsed'
     Left err -> Left (errorBundlePretty err)
+
+parseBytes :: String -> Either String Bytes
+parseBytes = parse' "bytes" bytes
 
 parseBinding :: String -> Either String Binding
 parseBinding = parse' "binding" binding

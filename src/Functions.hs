@@ -1,22 +1,25 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
+{-# LANGUAGE LambdaCase #-}
 
 module Functions where
 
 import Ast
-import Yaml
-import Matcher
 import Builder
-import Pretty
+import Data.Maybe (catMaybes, mapMaybe)
 import Dataize
+import Matcher
+import Misc
+import Pretty
 import Term
+import Yaml
 
 buildTermFromFunction :: String -> [ExtraArgument] -> Subst -> Program -> Maybe Term
 buildTermFromFunction "contextualize" [ArgExpression expr, ArgExpression context] subst prog = do
   (expr', _) <- buildExpression expr subst
   (context', _) <- buildExpression context subst
   return (TeExpression (contextualize expr' context' prog))
-buildTermFromFunction "scope" [ArgExpression expr] subst prog = do
+buildTermFromFunction "scope" [ArgExpression expr] subst _ = do
   (expr', scope) <- buildExpression expr subst
   return (TeExpression scope)
 buildTermFromFunction "random-tau" args subst _ = do
@@ -49,4 +52,18 @@ buildTermFromFunction "random-tau" args subst _ = do
       let cactoos = "a🌵"
           tau = if idx == 0 then cactoos else cactoos ++ show idx
        in if tau `elem` attrs then randomTau (idx + 1) attrs else tau
+buildTermFromFunction "dataize" [ArgExpression expr] subst _ = case buildExpression expr subst of
+  Just (DataObject _ bytes, _) -> Just (TeBytes bytes)
+  _ -> Nothing
+buildTermFromFunction "concat" args subst _ =
+  let args' =
+        mapMaybe
+          ( \case
+              ArgBytes bts -> do
+                bytes <- buildBytes bts subst
+                return (btsToStr bytes)
+              _ -> Nothing
+          )
+          args
+   in Just (TeExpression (DataObject "string" (strToBts (concat args'))))
 buildTermFromFunction _ _ _ _ = Nothing

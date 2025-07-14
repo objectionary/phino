@@ -41,6 +41,9 @@ instance FromJSON Attribute where
             Right attr -> pure attr
       )
 
+instance FromJSON Bytes where
+  parseJSON = parseJSON' "Bytes" parseBytes
+
 instance FromJSON Expression where
   parseJSON = parseJSON' "Expression" parseExpression
 
@@ -98,7 +101,8 @@ instance FromJSON ExtraArgument where
     asum
       [ ArgAttribute <$> parseJSON v,
         ArgBinding <$> parseJSON v,
-        ArgExpression <$> parseJSON v
+        ArgExpression <$> parseJSON v,
+        ArgBytes <$> parseJSON v
       ]
 
 instance FromJSON Extra where

@@ -9,6 +9,7 @@ module Builder
     buildExpression,
     buildAttribute,
     buildBinding,
+    buildBytes,
     contextualize,
   )
 where
@@ -36,6 +37,12 @@ buildAttribute (AtMeta meta) (Subst mp) = case Map.lookup meta mp of
   _ -> Nothing
 buildAttribute attr _ = Just attr
 
+buildBytes :: Bytes -> Subst -> Maybe Bytes
+buildBytes (BtMeta meta) (Subst mp) = case Map.lookup meta mp of
+  Just (MvBytes bytes) -> Just bytes
+  _ -> Nothing
+buildBytes bts _ = Just bts
+
 -- Build binding
 -- The function returns [Binding] because the BiMeta is always attached
 -- to the list of bindings
@@ -50,9 +57,9 @@ buildBinding (BiVoid attr) subst = do
 buildBinding (BiMeta meta) (Subst mp) = case Map.lookup meta mp of
   Just (MvBindings bds) -> Just bds
   _ -> Nothing
-buildBinding (BiDelta (BtMeta meta)) (Subst mp) = case Map.lookup meta mp of
-  Just (MvBytes bytes) -> Just [BiDelta bytes]
-  _ -> Nothing
+buildBinding (BiDelta bytes) subst = do
+  bts <- buildBytes bytes subst
+  Just [BiDelta bts]
 buildBinding (BiMetaLambda meta) (Subst mp) = case Map.lookup meta mp of
   Just (MvFunction func) -> Just [BiLambda func]
   _ -> Nothing
