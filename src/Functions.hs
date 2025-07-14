@@ -101,10 +101,11 @@ buildTermFromFunction "concat" args subst prog = do
 buildTermFromFunction "sed" [tgt, ptn] subst prog = do
   [tgt', ptn'] <- traverse (\arg -> argToStrBytes arg subst prog) [tgt, ptn]
   (pat, rep, global) <- parse (B.pack ptn')
-  let res =
+  let pat' = perlToPosix pat
+      res =
         if global
-          then replaceAll pat rep (B.pack tgt')
-          else replaceFirst pat rep (B.pack tgt')
+          then replaceAll pat' rep (B.pack tgt')
+          else replaceFirst pat' rep (B.pack tgt')
   pure (TeExpression (DataObject "string" (strToBts (B.unpack res))))
   where
     parse :: B.ByteString -> IO (B.ByteString, B.ByteString, Bool)
@@ -121,16 +122,15 @@ buildTermFromFunction "sed" [tgt, ptn] subst prog = do
                     (userError "The 'sed' 2nd argument must consist of three parts separated by '/', the last part must be either empty or 'g'")
         _ -> throwIO (userError "The 'sed' 2nd argument must start with 's/'")
     replaceFirst :: B.ByteString -> B.ByteString -> B.ByteString -> B.ByteString
-    replaceFirst pattern rep input =
+    replaceFirst pat rep input =
       let result :: MatchResult B.ByteString
-          result = input =~ pattern
+          result = input =~ pat
        in if mrMatch result == ""
             then input
             else BS.concat [mrBefore result, rep, mrAfter result]
     replaceAll :: B.ByteString -> B.ByteString -> B.ByteString -> B.ByteString
-    replaceAll pattern rep input =
-      let translatedPattern = perlToPosix pattern
-          matches = getAllMatches (input =~ translatedPattern :: AllMatches [] (Int, Int))
+    replaceAll pat rep input =
+      let matches = getAllMatches (input =~ pat :: AllMatches [] (Int, Int))
        in go 0 matches
       where
         go offset [] = BS.drop offset input
