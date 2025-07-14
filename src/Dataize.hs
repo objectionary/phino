@@ -7,16 +7,16 @@
 module Dataize (morph, dataize, dataize', DataizeContext (..)) where
 
 import Ast
+import Builder (contextualize)
 import Condition (isNF)
 import Control.Exception (throwIO)
 import Data.List (partition)
 import Misc
 import Rewriter (RewriteContext (RewriteContext), rewrite')
+import Term (BuildTermFunc)
 import Text.Printf (printf)
 import XMIR (XmirContext (XmirContext))
 import Yaml (normalizationRules)
-import Builder (contextualize)
-import Term (BuildTermFunc)
 
 data DataizeContext = DataizeContext
   { _program :: Program,
@@ -127,10 +127,10 @@ morph expr ctx = do
 -- BOX:   D([B1, 𝜑 -> e, B2]) -> D(С(e))        if [B1,B2] has no delta/lambda, where С(e) - contextualization
 -- NORM:  D(e1) -> D(e2)                        if e2 := M(e1) and e1 is not primitive
 --        nothing                               otherwise
-dataize :: Program -> DataizeContext -> IO (Maybe String)
+dataize :: Program -> DataizeContext -> IO (Maybe Bytes)
 dataize (Program expr) = dataize' expr
 
-dataize' :: Expression -> DataizeContext -> IO (Maybe String)
+dataize' :: Expression -> DataizeContext -> IO (Maybe Bytes)
 dataize' ExTermination _ = pure Nothing
 dataize' (ExFormation bds) ctx = case maybeDelta bds of
   (Just (BiDelta bytes), _) -> pure (Just bytes)
@@ -162,30 +162,30 @@ atom "L_org_eolang_number_plus" self ctx = do
   right <- dataize' (ExDispatch self AtRho) ctx
   case (left, right) of
     (Just left', Just right') -> do
-      let first = either toDouble id (hexToNum left')
-          second = either toDouble id (hexToNum right')
+      let first = either toDouble id (btsToNum left')
+          second = either toDouble id (btsToNum right')
           sum = first + second
-      pure (Just (DataObject "number" (numToHex sum)))
+      pure (Just (DataObject "number" (numToBts sum)))
     _ -> pure Nothing
 atom "L_org_eolang_number_times" self ctx = do
   left <- dataize' (ExDispatch self (AtLabel "x")) ctx
   right <- dataize' (ExDispatch self AtRho) ctx
   case (left, right) of
     (Just left', Just right') -> do
-      let first = either toDouble id (hexToNum left')
-          second = either toDouble id (hexToNum right')
+      let first = either toDouble id (btsToNum left')
+          second = either toDouble id (btsToNum right')
           sum = first * second
-      pure (Just (DataObject "number" (numToHex sum)))
+      pure (Just (DataObject "number" (numToBts sum)))
     _ -> pure Nothing
 atom "L_org_eolang_number_eq" self ctx = do
   x <- dataize' (ExDispatch self (AtLabel "x")) ctx
   rho <- dataize' (ExDispatch self AtRho) ctx
   case (x, rho) of
     (Just x', Just rho') -> do
-      let self' = either toDouble id (hexToNum rho')
-          first = either toDouble id (hexToNum x')
+      let self' = either toDouble id (btsToNum rho')
+          first = either toDouble id (btsToNum x')
       if self' == first
-        then pure (Just (DataObject "number" (numToHex first)))
+        then pure (Just (DataObject "number" (numToBts first)))
         else pure (Just (ExDispatch self (AtLabel "y")))
     _ -> pure Nothing
 atom func _ _ = throwIO (userError (printf "Atom '%s' does not exist" func))

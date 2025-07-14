@@ -28,7 +28,7 @@ import Data.Time.Format (defaultTimeLocale, formatTime)
 import Data.Version (showVersion)
 import Misc
 import Paths_phino (version)
-import Pretty (PrintMode, prettyAttribute, prettyBinding, prettyExpression, prettyProgram')
+import Pretty (PrintMode, prettyAttribute, prettyBinding, prettyBytes, prettyExpression, prettyProgram')
 import Text.Printf (printf)
 import Text.Read (readMaybe)
 import qualified Text.Read as TR
@@ -96,13 +96,13 @@ expression (DataObject "number" bytes) XmirContext {..} =
   let bts =
         object
           [("as", prettyAttribute (AtAlpha 0)), ("base", "Q.org.eolang.bytes")]
-          [object [] [NodeContent (T.pack bytes)]]
+          [object [] [NodeContent (T.pack (prettyBytes bytes))]]
    in pure
         ( "Q.org.eolang.number",
           if omitComments
             then [bts]
             else
-              [ NodeComment (T.pack (either show show (hexToNum bytes))),
+              [ NodeComment (T.pack (either show show (btsToNum bytes))),
                 bts
               ]
         )
@@ -110,13 +110,13 @@ expression (DataObject "string" bytes) XmirContext {..} =
   let bts =
         object
           [("as", prettyAttribute (AtAlpha 0)), ("base", "Q.org.eolang.bytes")]
-          [object [] [NodeContent (T.pack bytes)]]
+          [object [] [NodeContent (T.pack (prettyBytes bytes))]]
    in pure
         ( "Q.org.eolang.string",
           if omitComments
             then [bts]
             else
-              [ NodeComment (T.pack ('"' : hexToStr bytes ++ "\"")),
+              [ NodeComment (T.pack ('"' : btsToStr bytes ++ "\"")),
                 bts
               ]
         )
@@ -143,7 +143,7 @@ formationBinding (BiTau (AtLabel label) expr) ctx = do
   (base, children) <- expression expr ctx
   pure (Just (object [("name", label), ("base", base)] children))
 formationBinding (BiTau AtRho _) _ = pure Nothing
-formationBinding (BiDelta bytes) _ = pure (Just (NodeContent (T.pack bytes)))
+formationBinding (BiDelta bytes) _ = pure (Just (NodeContent (T.pack (prettyBytes bytes))))
 formationBinding (BiLambda func) _ = pure (Just (object [("name", "λ")] []))
 formationBinding (BiVoid AtRho) _ = pure Nothing
 formationBinding (BiVoid AtPhi) _ = pure (Just (object [("name", "φ"), ("base", "∅")] []))
@@ -430,8 +430,8 @@ xmirToApplication = xmirToApplication' 0
                 pure (ExApplication expr (BiTau as (ExFormation (withVoidRho bds))))
             | not (hasAttr "base" arg) && hasText arg = do
                 as <- asToAttr arg idx
-                text <- getText arg
-                pure (ExApplication expr (BiTau as (ExFormation [BiDelta text, BiVoid AtRho])))
+                bytes <- getText arg
+                pure (ExApplication expr (BiTau as (ExFormation [BiDelta (bytesToBts bytes), BiVoid AtRho])))
             | otherwise = do
                 as <- asToAttr arg idx
                 arg' <- xmirToExpression arg fqn

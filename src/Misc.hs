@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ViewPatterns #-}
@@ -8,10 +9,11 @@
 
 -- This module provides commonly used helper functions for other modules
 module Misc
-  ( numToHex,
-    strToHex,
-    hexToStr,
-    hexToNum,
+  ( numToBts,
+    strToBts,
+    bytesToBts,
+    btsToStr,
+    btsToNum,
     withVoidRho,
     allPathsIn,
     ensuredFile,
@@ -27,7 +29,7 @@ import Data.Binary.IEEE754
 import Data.Bits (Bits (shiftL), (.|.))
 import qualified Data.Bits as IOArray
 import qualified Data.ByteString as B
-import Data.ByteString.Builder (toLazyByteString, word64BE)
+import Data.ByteString.Builder (toLazyByteString, word64BE, word8)
 import Data.ByteString.Lazy (unpack)
 import qualified Data.ByteString.Lazy.UTF8 as U
 import Data.Char (chr, isPrint, ord)
@@ -53,7 +55,7 @@ instance Show FsException where
   show DirectoryDoesNotExist {..} = printf "Directory '%s' does not exist" dir
 
 -- Minimal matcher function (required for view pattern)
-matchDataoObject :: Expression -> Maybe (String, String)
+matchDataoObject :: Expression -> Maybe (String, Bytes)
 matchDataoObject
   ( ExApplication
       (ExDispatch (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang")) (AtLabel label))
@@ -70,7 +72,7 @@ matchDataoObject
     ) = Just (label, bts)
 matchDataoObject _ = Nothing
 
-pattern DataObject :: String -> String -> Expression
+pattern DataObject :: String -> Bytes -> Expression
 pattern DataObject label bts <- (matchDataoObject -> Just (label, bts))
   where
     DataObject label bts =
@@ -124,35 +126,43 @@ allPathsIn dir = do
       )
   return (concat paths)
 
--- >>> hexToBts "40-14-00-00-00-00-00-00"
+-- >>> btsToWord8 BtEmpty
+-- []
+-- >>> btsToWord8 (BtOne "01")
+-- [1]
+-- >>> btsToWord8 (BtMany [])
+-- []
+-- >>> btsToWord8 (BtMany ["40", "14", "00", "00", "00", "00", "00", "00"])
 -- [64,20,0,0,0,0,0,0]
--- >>> hexToBts "68-65-6C-6C-6F"
--- [104,101,108,108,111]
--- >>> hexToBts "01-01"
--- [1,1]
-hexToBts :: String -> [Word8]
-hexToBts = map readHexByte . splitOnDash
-  where
-    splitOnDash = words . map (\c -> if c == '-' then ' ' else c)
-    readHexByte hx = case readHex hx of
-      [(v, "")] -> fromIntegral v
-      _ -> error $ "Invalid hex byte: " ++ hx
+btsToWord8 :: Bytes -> [Word8]
+btsToWord8 BtEmpty = []
+btsToWord8 (BtOne bt) = case readHex bt of
+  [(hex, "")] -> [fromIntegral hex]
+  _ -> error $ "Invalid hex byte; " ++ bt
+btsToWord8 (BtMany []) = []
+btsToWord8 (BtMany (bt : bts)) =
+  let [next] = btsToWord8 (BtOne bt)
+   in next : btsToWord8 (BtMany bts)
 
-btsToHex :: [Word8] -> String
-btsToHex bts = intercalate "-" (map (printf "%02X") bts)
+-- >>> word8ToBytes [64, 20, 0]
+-- BtMany ["40","14","00"]
+word8ToBytes :: [Word8] -> Bytes
+word8ToBytes [] = BtEmpty
+word8ToBytes [w8] = BtOne (printf "%02X" w8)
+word8ToBytes bts = BtMany (map (printf "%02X") bts)
 
--- Convert hex string back to Double
--- >>> hexToNum "40-14-00-00-00-00-00-00"
+-- Convert Bytes back to Double
+-- >>> btsToNum (BtMany ["40", "14", "00", "00", "00", "00", "00", "00"])
 -- Left 5
--- >>> hexToNum "BF-D0-00-00-00-00-00-00"
+-- >>> btsToNum (BtMany ["BF", "D0", "00", "00", "00", "00", "00", "00"])
 -- Right (-0.25)
--- >>> hexToNum "40-45-00-00-00-00-00-00"
+-- >>> btsToNum (BtMany ["40", "45", "00", "00", "00", "00", "00", "00"])
 -- Left 42
--- >>> hexToNum "40-45"
+-- >>> btsToNum (BtMany ["40", "45"])
 -- Expected 8 bytes for conversion, got 2
-hexToNum :: String -> Either Integer Double
-hexToNum hx =
-  let bytes = hexToBts hx
+btsToNum :: Bytes -> Either Integer Double
+btsToNum hx =
+  let bytes = btsToWord8 hx
    in if length bytes /= 8
         then error $ "Expected 8 bytes for conversion, got " ++ show (length bytes)
         else
@@ -174,58 +184,64 @@ hexToNum hx =
         .|. fromIntegral h
     toWord64BE _ = error "Expected 8 bytes for Double"
 
--- >>> numToHex 0.0
--- "00-00-00-00-00-00-00-00"
--- >>> numToHex 42
--- "40-45-00-00-00-00-00-00"
--- >>> numToHex (-0.25)
--- "BF-D0-00-00-00-00-00-00"
--- >>> numToHex 5
--- "40-14-00-00-00-00-00-00"
-numToHex :: Double -> String
-numToHex num = btsToHex (unpack (toLazyByteString (word64BE (doubleToWord num))))
+-- >>> numToBts 0.0
+-- BtMany ["00","00","00","00","00","00","00","00"]
+-- >>> numToBts 42
+-- BtMany ["40","45","00","00","00","00","00","00"]
+-- >>> numToBts (-0.25)
+-- BtMany ["BF","D0","00","00","00","00","00","00"]
+-- >>> numToBts 5
+-- BtMany ["40","14","00","00","00","00","00","00"]
+numToBts :: Double -> Bytes
+numToBts num = word8ToBytes (unpack (toLazyByteString (word64BE (doubleToWord num))))
 
--- >>> strToHex "hello"
--- "68-65-6C-6C-6F"
--- >>> strToHex "world"
--- "77-6F-72-6C-64"
--- >>> strToHex ""
--- "--"
--- >>> strToHex "h"
--- "68-"
--- >>> strToHex "h\""
--- "68-22"
--- >>> strToHex "\x01\x01"
--- "01-01"
-strToHex :: String -> String
-strToHex "" = "--"
-strToHex [ch] = btsToHex (unpack (U.fromString [ch])) ++ "-"
-strToHex str = btsToHex (unpack (U.fromString str))
+-- >>> strToBts "hello"
+-- BtMany ["68","65","6C","6C","6F"]
+-- >>> strToBts "world"
+-- BtMany ["77","6F","72","6C","64"]
+-- >>> strToBts ""
+-- BtEmpty
+-- >>> strToBts "h"
+-- BtOne "68"
+-- >>> strToBts "h\""
+-- BtMany ["68","22"]
+-- >>> strToBts "\x01\x01"
+-- BtMany ["01","01"]
+strToBts :: String -> Bytes
+strToBts "" = BtEmpty
+strToBts [ch] = word8ToBytes (unpack (U.fromString [ch]))
+strToBts str = word8ToBytes (unpack (U.fromString str))
+
+-- >>> bytesToBts "--"
+-- BtEmpty
+-- >>> bytesToBts "77-6F"
+-- BtMany ["77","6F"]
+-- >>> bytesToBts "01-"
+-- BtOne "01"
+bytesToBts :: String -> Bytes
+bytesToBts "--" = BtEmpty
+bytesToBts str =
+  if length str == 3 && last str == '-'
+    then BtOne (init str)
+    else BtMany (map T.unpack (T.splitOn "-" (T.pack str)))
 
 -- Convert hex string like "68-65-6C-6C-6F" to "hello"
--- >>> hexToStr "68-65-6C-6C-6F"
+-- >>> btsToStr (BtMany ["68", "65", "6C", "6C", "6F"])
 -- "hello"
--- >>> hexToStr "--"
--- ""
--- >>> hexToStr "68-"
+-- >>> btsToStr (BtOne "68")
 -- "h"
--- >>> hexToStr "77-6F-72-6C-64"
+-- >>> btsToStr (BtMany ["77", "6F", "72", "6C", "64"])
 -- "world"
--- >>> hexToStr ""
+-- >>> btsToStr BtEmpty
 -- ""
--- >>> hexToStr "68-22"
+-- >>> btsToStr (BtMany ["68", "22"])
 -- "h\\\""
--- >>> hexToStr "01-02"
+-- >>> btsToStr (BtMany ["01", "02"])
 -- "\\x01\\x02"
-hexToStr :: String -> String
-hexToStr "--" = ""
-hexToStr [] = ""
-hexToStr hx = escapeStr (T.unpack $ T.decodeUtf8 $ B.pack (hexToBts cleaned))
+btsToStr :: Bytes -> String
+btsToStr BtEmpty = ""
+btsToStr bytes = escapeStr (T.unpack (T.decodeUtf8 (B.pack (btsToWord8 bytes))))
   where
-    -- Remove trailing dash if present (from single-char case)
-    cleaned :: String
-    cleaned = if not (null hx) && last hx == '-' then init hx else hx
-
     escapeStr :: String -> String
     escapeStr = concatMap escapeChar
       where
@@ -241,7 +257,7 @@ hexToStr hx = escapeStr (T.unpack $ T.decodeUtf8 $ B.pack (hexToBts cleaned))
 -- The function is generated by ChatGPT and claimed as
 -- fastest approach comparing to usage IOArray.
 -- >>> shuffle [1..20]
--- [12,15,5,14,1,7,17,10,9,16,13,11,6,4,18,2,19,20,3,8]
+-- [7,15,5,18,13,19,3,11,20,2,1,8,14,16,17,12,9,10,6,4]
 shuffle :: [a] -> IO [a]
 shuffle xs = do
   gen <- newIOGenM =<< newStdGen

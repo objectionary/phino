@@ -16,7 +16,7 @@ import Data.Maybe (catMaybes)
 -- The right part of substitution
 data MetaValue
   = MvAttribute Attribute -- !a
-  | MvBytes String -- !b
+  | MvBytes Bytes -- !b
   | MvBindings [Binding] -- !B
   | MvFunction String -- !F
   | MvExpression Expression Expression -- !e, the second expression is scope, which is closest formation
@@ -70,10 +70,10 @@ matchAttribute ptn tgt
 
 matchBinding :: Binding -> Binding -> Expression -> [Subst]
 matchBinding (BiVoid pattr) (BiVoid tattr) _ = matchAttribute pattr tattr
-matchBinding (BiDelta pbts) (BiDelta tbts) _
-  | pbts == tbts = [substEmpty]
+matchBinding (BiDelta pdata) (BiDelta tdata) _
+  | pdata == tdata = [substEmpty]
   | otherwise = []
-matchBinding (BiMetaDelta meta) (BiDelta tBts) _ = [substSingle meta (MvBytes tBts)]
+matchBinding (BiMetaDelta meta) (BiDelta tdata) _ = [substSingle meta (MvBytes tdata)]
 matchBinding (BiLambda pFunc) (BiLambda tFunc) _
   | pFunc == tFunc = [substEmpty]
   | otherwise = []

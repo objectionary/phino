@@ -3,7 +3,7 @@
 
 module DataizeSpec (spec) where
 
-import Ast (Attribute (AtLabel, AtPhi, AtRho), Binding (BiDelta, BiTau, BiVoid), Expression (ExApplication, ExDispatch, ExFormation, ExGlobal, ExTermination, ExThis), Program (Program))
+import Ast
 import Control.Monad
 import Dataize (dataize, dataize', morph, DataizeContext (DataizeContext))
 import Parser (parseProgramThrows)
@@ -20,7 +20,7 @@ test func useCases =
       res <- func input (defaultDataizeContext (Program prog))
       res `shouldBe` output
 
-testDataize :: [(String, String, String)] -> Spec
+testDataize :: [(String, String, Bytes)] -> Spec
 testDataize useCases =
   forM_ useCases $ \(name, prog, res) ->
     it name $ do
@@ -33,7 +33,7 @@ spec = do
   describe "morph" $
     test
       morph
-      [ ("[[ D> 00- ]] => [[ D> 00- ]]", ExFormation [BiDelta "00-"], ExGlobal, Just (ExFormation [BiDelta "00-"])),
+      [ ("[[ D> 00- ]] => [[ D> 00- ]]", ExFormation [BiDelta (BtOne "00")], ExGlobal, Just (ExFormation [BiDelta (BtOne "00")])),
         ("T => T", ExTermination, ExGlobal, Just ExTermination),
         ("$ => X", ExThis, ExGlobal, Nothing),
         ("Q => X", ExGlobal, ExGlobal, Nothing),
@@ -47,17 +47,17 @@ spec = do
   describe "dataize" $
     test
       dataize'
-      [ ("[[ D> 00- ]] => 00-", ExFormation [BiDelta "00-"], ExGlobal, Just "00-"),
+      [ ("[[ D> 00- ]] => 00-", ExFormation [BiDelta (BtOne "00")], ExGlobal, Just (BtOne "00")),
         ("T => X", ExTermination, ExGlobal, Nothing),
         ( "[[ @ -> [[ D> 00-]] ]] => 00-",
-          ExFormation [BiTau AtPhi (ExFormation [BiDelta "00-", BiVoid AtRho]), BiVoid AtRho],
+          ExFormation [BiTau AtPhi (ExFormation [BiDelta (BtOne "00"), BiVoid AtRho]), BiVoid AtRho],
           ExGlobal,
-          Just "00-"
+          Just (BtOne "00")
         ),
         ( "[[ x -> [[ D> 01- ]] ]].x => 01-",
-          ExDispatch (ExFormation [BiTau (AtLabel "x") (ExFormation [BiDelta "01-", BiVoid AtRho]), BiVoid AtRho]) (AtLabel "x"),
+          ExDispatch (ExFormation [BiTau (AtLabel "x") (ExFormation [BiDelta (BtOne "01"), BiVoid AtRho]), BiVoid AtRho]) (AtLabel "x"),
           ExGlobal,
-          Just "01-"
+          Just (BtOne "01")
         ),
         ( "[[ @ -> [[ x -> [[ D> 01-, y -> ? ]](y -> [[ ]]) ]].x ]] => 01-",
           ExFormation
@@ -69,7 +69,7 @@ spec = do
                             (AtLabel "x")
                             ( ExApplication
                                 ( ExFormation
-                                    [ BiDelta "01-",
+                                    [ BiDelta (BtOne "01"),
                                       BiVoid (AtLabel "y"),
                                       BiVoid AtRho
                                     ]
@@ -82,7 +82,7 @@ spec = do
                 )
             ],
           ExGlobal,
-          Just "01-"
+          Just (BtOne "01")
         )
       ]
 
@@ -106,7 +106,7 @@ spec = do
             "  @ -> 5.plus(5)",
             "]]"
           ],
-        "40-24-00-00-00-00-00-00"
+        BtMany ["40", "24", "00", "00", "00", "00", "00", "00"]
       ),
       ( "Fahrenheit",
         unlines
@@ -129,7 +129,7 @@ spec = do
             "  c -> 25",
             "]]"
           ],
-        "40-53-40-00-00-00-00-00"
+        BtMany ["40", "53", "40", "00", "00", "00", "00", "00"]
       ),
       ( "Factorial",
         unlines
@@ -159,6 +159,6 @@ spec = do
             "  @ -> $.fac(3)",
             "]]"
           ],
-        "40-18-00-00-00-00-00-00"
+        BtMany ["40", "18", "00", "00", "00", "00", "00", "00"]
       )
     ]

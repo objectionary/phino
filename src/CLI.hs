@@ -25,7 +25,7 @@ import qualified Misc
 import Options.Applicative
 import Parser (parseProgramThrows)
 import Paths_phino (version)
-import Pretty (PrintMode (SALTY, SWEET), prettyProgram')
+import Pretty (PrintMode (SALTY, SWEET), prettyProgram', prettyBytes)
 import Rewriter (RewriteContext (RewriteContext), rewrite')
 import System.Exit (ExitCode (..), exitFailure)
 import System.IO (getContents')
@@ -221,7 +221,7 @@ runCLI args = handle handler $ do
       input <- readInput inputFile
       prog <- parseProgram input inputFormat
       dataized <- dataize prog (DataizeContext prog maxDepth buildTermFromFunction)
-      maybe (throwIO CouldNotDataize) putStrLn dataized
+      maybe (throwIO CouldNotDataize) (putStrLn . prettyBytes) dataized
   where
     validateMaxDepth :: Integer -> IO ()
     validateMaxDepth depth =

@@ -117,13 +117,13 @@ spec = do
         ),
         ( "[[!B]] => T:[[x -> ?, D> 01-, L> Func]] => (!B >> T)",
           [BiMeta "B"],
-          [BiVoid (AtLabel "x"), BiDelta "01-", BiLambda "Func"],
+          [BiVoid (AtLabel "x"), BiDelta (BtOne "01"), BiLambda "Func"],
           defaultScope,
-          [[("B", MvBindings [BiVoid (AtLabel "x"), BiDelta "01-", BiLambda "Func"])]]
+          [[("B", MvBindings [BiVoid (AtLabel "x"), BiDelta (BtOne "01"), BiLambda "Func"])]]
         ),
         ( "[[D> 00-]] => [[D> 00-, L> Func]] => []",
-          [BiDelta "00-"],
-          [BiDelta "00-", BiLambda "Func"],
+          [BiDelta (BtOne "00")],
+          [BiDelta (BtOne "00"), BiLambda "Func"],
           defaultScope,
           []
         ),
@@ -147,9 +147,9 @@ spec = do
         ),
         ( "[[!B1, !x -> ?, !B2]] => [[y -> ?, D> -> 00-, L> Func]] => (!x >> y, !B1 >> [[]], !B2 >> [[D> -> 00-, L> Func]])",
           [BiMeta "B1", BiVoid (AtMeta "x"), BiMeta "B2"],
-          [BiVoid (AtLabel "y"), BiDelta "00-", BiLambda "Func"],
+          [BiVoid (AtLabel "y"), BiDelta (BtOne "00"), BiLambda "Func"],
           defaultScope,
-          [[("B1", MvBindings []), ("B2", MvBindings [BiDelta "00-", BiLambda "Func"]), ("x", MvAttribute (AtLabel "y"))]]
+          [[("B1", MvBindings []), ("B2", MvBindings [BiDelta (BtOne "00"), BiLambda "Func"]), ("x", MvAttribute (AtLabel "y"))]]
         ),
         ( "[[!x -> ?, !y -> ?]] => [[a -> ?, b -> ?]] => (!x >> a, !y >> b)",
           [BiVoid (AtMeta "x"), BiVoid (AtMeta "y")],
@@ -170,8 +170,8 @@ spec = do
           [[("B", MvBindings [BiTau (AtLabel "x") ExGlobal, BiTau (AtLabel "y") ExThis])]]
         ),
         ( "[[L> Func, D> 00-]] => [[D> 00-, L> Func]] => []",
-          [BiLambda "Func", BiDelta "00-"],
-          [BiDelta "00-", BiLambda "Func"],
+          [BiLambda "Func", BiDelta (BtOne "00")],
+          [BiDelta (BtOne "00"), BiLambda "Func"],
           defaultScope,
           []
         ),
@@ -397,9 +397,9 @@ spec = do
       let Subst joined =
             maybeCombined
               (Subst (Map.singleton "first" (MvAttribute AtPhi)))
-              (Subst (Map.singleton "second" (MvBytes "00-")))
+              (Subst (Map.singleton "second" (MvBytes (BtOne "00"))))
       Map.lookup "first" joined `shouldBe` Just (MvAttribute AtPhi)
-      Map.lookup "second" joined `shouldBe` Just (MvBytes "00-")
+      Map.lookup "second" joined `shouldBe` Just (MvBytes (BtOne "00"))
     it "leave values in the same substs" $ do
       let rho = MvAttribute AtRho
           first =
@@ -419,7 +419,7 @@ spec = do
             Subst
               ( Map.fromList
                   [ ("x", MvAttribute AtRho),
-                    ("y", MvBytes "1F-")
+                    ("y", MvBytes (BtOne "1F"))
                   ]
               )
           second = Subst (Map.singleton "x" (MvAttribute AtPhi))

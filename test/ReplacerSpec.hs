@@ -47,8 +47,8 @@ spec =
         ),
         ("Q -> [[]] => ([], [$]) => X", Program (ExFormation []), [], [ExThis], Nothing),
         ( "Q -> [[L> Func, D> 00-]] => ([ [[L> Func, D> 00-]] ], [Q]) => Q -> Q",
-          Program (ExFormation [BiLambda "Func", BiDelta "00-"]),
-          [ExFormation [BiLambda "Func", BiDelta "00-"]],
+          Program (ExFormation [BiLambda "Func", BiDelta (BtOne "00")]),
+          [ExFormation [BiLambda "Func", BiDelta (BtOne "00")]],
           [ExGlobal],
           Just (Program ExGlobal)
         ),

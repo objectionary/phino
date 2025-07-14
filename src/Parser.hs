@@ -24,7 +24,7 @@ import Data.Sequence (mapWithIndex)
 import Data.Text.Internal.Fusion.Size (lowerBound)
 import Data.Void
 import GHC.Char (chr)
-import Misc (numToHex, strToHex, withVoidRho)
+import Misc
 import Numeric (readHex)
 import Text.Megaparsec
 import Text.Megaparsec.Char (alphaNumChar, char, digitChar, hexDigitChar, letterChar, lowerChar, space1, string, upperChar)
@@ -41,21 +41,6 @@ data ParserException
 instance Show ParserException where
   show CouldNotParseProgram {..} = printf "Couldn't parse given phi program, cause: %s" message
   show CouldNotParseExpression {..} = printf "Couldn't parse given phi program, cause: %s" message
-
-dataExpression :: String -> String -> Expression
-dataExpression obj bts =
-  ExApplication
-    (ExDispatch (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang")) (AtLabel obj))
-    ( BiTau
-        (AtAlpha 0)
-        ( ExApplication
-            (ExDispatch (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang")) (AtLabel "bytes"))
-            ( BiTau
-                (AtAlpha 0)
-                (ExFormation [BiDelta bts, BiVoid AtRho])
-            )
-        )
-    )
 
 -- White space consumer
 whiteSpace :: Parser ()
@@ -189,19 +174,21 @@ byte = do
 -- 1. empty: --
 -- 2. one byte: 01-
 -- 3. many bytes: 01-02-...-FF
-bytes :: Parser String
+bytes :: Parser Bytes
 bytes =
   lexeme
     ( choice
-        [ symbol "--",
+        [ symbol "--" >> return BtEmpty,
           try $ do
             first <- byte
             rest <- some $ do
-              dash <- char '-'
-              bte <- byte
-              return (dash : bte)
-            return (first ++ concat rest),
-          byte >>= \bte -> char '-' >>= \dash -> return (bte ++ [dash])
+              _ <- char '-'
+              byte
+            return (BtMany (first : rest)),
+          do
+            bte <- byte
+            _ <- char '-'
+            return (BtOne bte)
         ]
         <?> "bytes"
     )
@@ -345,11 +332,11 @@ exHead =
                     Just '-' -> negate unsigned
                     _ -> unsigned
                 )
-        return (dataExpression "number" (numToHex num)),
+        return (DataObject "number" (numToBts num)),
       lexeme $ do
         _ <- char '"'
         str <- manyTill (choice [escapedChar, noneOf ['\\', '"']]) (char '"')
-        return (dataExpression "string" (strToHex str)),
+        return (DataObject "string" (strToBts str)),
       try (ExMeta <$> meta' 'e' "𝑒"),
       ExDispatch ExThis <$> fullAttribute
     ]

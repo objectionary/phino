@@ -12,6 +12,7 @@ module Pretty
     prettySubsts,
     prettySubsts',
     prettyBinding,
+    prettyBytes,
     PrintMode (SWEET, SALTY),
   )
 where
@@ -22,6 +23,7 @@ import Matcher
 import Prettyprinter
 import Prettyprinter.Render.String (renderString)
 import Misc
+import Data.List (intercalate)
 
 data PrintMode = SWEET | SALTY
   deriving (Eq)
@@ -46,6 +48,11 @@ prettyRsb = pretty "⟧"
 
 prettyDashedArrow :: Doc ann
 prettyDashedArrow = pretty "⤍"
+
+instance Pretty Bytes where
+  pretty BtEmpty = pretty "--"
+  pretty (BtOne bt) = pretty bt <> pretty "-"
+  pretty (BtMany bts) = pretty (intercalate "-" bts)
 
 instance Pretty Attribute where
   pretty (AtLabel name) = pretty name
@@ -110,8 +117,8 @@ complexApplication (ExApplication expr tau) = (expr, [tau], [])
 
 instance Pretty (Formatted Expression) where
   pretty (Formatted (SWEET, ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang"))) = pretty "Φ̇"
-  pretty (Formatted (SWEET, DataObject "string" bytes)) = pretty "\"" <> pretty (hexToStr bytes) <> pretty "\""
-  pretty (Formatted (SWEET, DataObject "number" bytes)) = either pretty pretty (hexToNum bytes)
+  pretty (Formatted (SWEET, DataObject "string" bytes)) = pretty "\"" <> pretty (btsToStr bytes) <> pretty "\""
+  pretty (Formatted (SWEET, DataObject "number" bytes)) = either pretty pretty (btsToNum bytes)
   pretty (Formatted (SWEET, DataObject other bytes)) = pretty (Formatted (SALTY, DataObject other bytes))
   pretty (Formatted (mode, ExFormation [binding])) = case binding of
     BiTau _ _ -> vsep [pretty "⟦", indent 2 (pretty (Formatted (mode, binding))), pretty "⟧"]
@@ -182,6 +189,9 @@ render printable = renderString (layoutPretty defaultLayoutOptions (pretty print
 
 prettyBinding :: Binding -> String
 prettyBinding binding = render (Formatted (SALTY, binding))
+
+prettyBytes :: Bytes -> String
+prettyBytes = render
 
 prettyAttribute :: Attribute -> String
 prettyAttribute = render
