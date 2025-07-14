@@ -87,7 +87,7 @@ rewrite program (rule : rest) ctx = do
     Nothing -> pure program
     Just matched -> do
       let ruleName = fromMaybe "unknown" (Y.name rule)
-      logDebug (printf "Rule %s has been matched, applying..." ruleName)
+      logDebug (printf "Rule '%s' has been matched, applying..." ruleName)
       substs <- extraSubstitutions (Y.where_ rule) matched ctx
       prog' <- buildAndReplace program ptn res substs
       if program == prog'

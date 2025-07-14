@@ -1,0 +1,21 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+input: Q -> [[ x -> "  he llo  ", y -> "abcdefabc" ]]
+output: |-
+  Φ ↦ ⟦
+    x ↦ "hello",
+    y ↦ "qwedefabc"
+  ⟧
+rules:
+  custom:
+    - name: concat from expression
+      pattern: '[[ x -> !e1, y -> !e2 ]]'
+      result: '[[ x -> !e3, y -> !e4 ]]'
+      where:
+        - meta: '!e3'
+          function: sed
+          args: ['!e1', '"s/\\s+//g"']
+        - meta: '!e4'
+          function: sed
+          args: ['!e2', '"s/abc/qwe/"']
