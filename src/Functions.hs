@@ -8,10 +8,7 @@ module Functions where
 import Ast
 import Builder
 import Control.Exception (throwIO)
-import qualified Data.ByteString as BS
-import qualified Data.ByteString.Char8 as B
 import Data.Maybe (catMaybes, mapMaybe)
-import Dataize
 import Matcher
 import Misc
 import Pretty

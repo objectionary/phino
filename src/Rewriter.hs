@@ -9,8 +9,6 @@ module Rewriter (rewrite, rewrite', RewriteContext (..)) where
 import Ast
 import Builder
 import qualified Condition as C
-import Control.Exception
-import Control.Monad.Trans.Maybe
 import Data.Foldable (foldlM)
 import qualified Data.Map.Strict as M
 import Data.Maybe (catMaybes, fromMaybe, isJust)
