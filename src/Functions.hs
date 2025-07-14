@@ -13,8 +13,17 @@ import Matcher
 import Misc
 import Pretty
 import Term
-import Yaml
 import Text.Printf (printf)
+import Yaml
+
+argToStrBytes :: ExtraArgument -> Subst -> Program -> IO String
+argToStrBytes (ArgBytes bytes) subst _ = do
+  bts <- buildBytesThrows bytes subst
+  pure (btsToStr bts)
+argToStrBytes (ArgExpression expr) subst prog = do
+  (TeBytes bts) <- buildTermFromFunction "dataize" [ArgExpression expr] subst prog
+  pure (btsToStr bts)
+argToStrBytes arg _ _ = throwIO (userError (printf "Can't extract bytes from given argument: %s" (prettyExtraArg arg)))
 
 buildTermFromFunction :: String -> [ExtraArgument] -> Subst -> Program -> IO Term
 buildTermFromFunction "contextualize" [ArgExpression expr, ArgExpression context] subst prog = do
@@ -59,13 +68,7 @@ buildTermFromFunction "dataize" [ArgExpression expr] subst _ = do
   case expr' of
     DataObject _ bytes -> pure (TeBytes bytes)
     _ -> throwIO (userError "Only data objects are supported by 'dataize' function now")
-buildTermFromFunction "concat" args subst _ = do
-  args' <- traverse argToString args
+buildTermFromFunction "concat" args subst prog = do
+  args' <- traverse (\arg -> argToStrBytes arg subst prog) args
   pure (TeExpression (DataObject "string" (strToBts (concat args'))))
-  where
-    argToString :: ExtraArgument -> IO String
-    argToString (ArgBytes bytes) = do
-      bts <- buildBytesThrows bytes subst
-      pure (btsToStr bts)
-    argToString _ = throwIO (userError "Only bytes is allowed as arguments of 'concat' function")
 buildTermFromFunction func _ _ _ = throwIO (userError (printf "Function %s() is not supported or does not exist" func))

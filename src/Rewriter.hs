@@ -91,11 +91,11 @@ rewrite program (rule : rest) ctx = do
       substs <- extraSubstitutions (Y.where_ rule) matched ctx
       prog' <- buildAndReplace program ptn res substs
       if program == prog'
-        then logDebug (printf "Applied %s, no changes made" ruleName)
+        then logDebug (printf "Applied '%s', no changes made" ruleName)
         else
           logDebug
             ( printf
-                "Applied %s (%d nodes -> %d nodes):\n%s"
+                "Applied '%s' (%d nodes -> %d nodes):\n%s"
                 ruleName
                 (countNodes program)
                 (countNodes prog')
