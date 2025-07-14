@@ -152,6 +152,10 @@ Here's list of functions that are supported for extensions:
   expressions denotes as `𝑒` or `!e`. The scope is nearest outer formation,
   if it's present. In all other cases the default scope is used, which is
   anonymous formation `⟦ ρ ↦ ∅ ⟧`.
+* `dataize` - dataizes given expression and returns bytes
+* `concat` - accepts bytes as arguments, concatenates them into single
+  sequnce and convert it to expression that can be pretty printed as
+  human readable string: `Φ.org.eolang.string(Φ.org.eolang.bytes⟦ Δ ⤍ !d ⟧)`.
 
 ## Meta variables
 
