@@ -73,4 +73,4 @@ buildTermFromFunction "concat" args subst _ = do
       bts <- buildBytesThrows bytes subst
       pure (btsToStr bts)
     argToString _ = throwIO (userError "")
-buildTermFromFunction func _ _ _ = throwIO (userError (printf "Function %s() is not supported or does not exist"))
+buildTermFromFunction func _ _ _ = throwIO (userError (printf "Function %s() is not supported or does not exist" func))

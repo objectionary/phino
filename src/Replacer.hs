@@ -14,13 +14,13 @@ import Matcher (Tail (TaApplication, TaDispatch))
 import Pretty (prettyExpression, prettyProgram)
 import Text.Printf (printf)
 
-newtype ReplacdException = CouldNotReplace {prog :: Program}
+newtype ReplaceException = CouldNotReplace {prog :: Program}
   deriving (Exception)
 
-instance Show ReplacdException where
+instance Show ReplaceException where
   show CouldNotReplace {..} =
     printf
-      "Couldn't replace expression in program, lists of patterns and targets has different lenghts\nProgram: %s"
+      "Couldn't replace expression in program, lists of patterns and targets has different lengths\nProgram: %s"
       (prettyProgram prog)
 
 replaceBindings :: [Binding] -> [Expression] -> [Expression] -> ([Binding], [Expression], [Expression])
