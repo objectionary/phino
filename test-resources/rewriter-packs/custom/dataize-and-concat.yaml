@@ -12,18 +12,18 @@ rules:
       pattern: '[[ x -> !e1, y -> !e2 ]]'
       result: '[[ z -> !e3 ]]'
       where:
-        - meta: '!b0'
+        - meta: '!d0'
           function: dataize
           args: ['" "']
-        - meta: '!b1'
+        - meta: '!d1'
           function: dataize
           args: ['!e1']
-        - meta: '!b2'
+        - meta: '!d2'
           function: dataize
           args: ['!e2']
         - meta: '!e3'
           function: concat
           args:
-            - '!b1'
-            - '!b0'
-            - '!b2'
+            - '!d1'
+            - '!d0'
+            - '!d2'

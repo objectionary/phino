@@ -1,12 +1,27 @@
+{-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE RecordWildCards #-}
+
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
 -- The goal of the module is to traverse though the Program with replacing
 -- pattern sub expression with target expressions
-module Replacer (replaceProgram) where
+module Replacer (replaceProgram, replaceProgramThrows) where
 
 import Ast
+import Control.Exception (Exception, throwIO)
 import Matcher (Tail (TaApplication, TaDispatch))
+import Pretty (prettyExpression, prettyProgram)
+import Text.Printf (printf)
+
+newtype ReplacdException = CouldNotReplace {prog :: Program}
+  deriving (Exception)
+
+instance Show ReplacdException where
+  show CouldNotReplace {..} =
+    printf
+      "Couldn't replace expression in program, lists of patterns and targets has different lenghts\nProgram: %s"
+      (prettyProgram prog)
 
 replaceBindings :: [Binding] -> [Expression] -> [Expression] -> ([Binding], [Expression], [Expression])
 replaceBindings bds [] [] = (bds, [], [])
@@ -45,3 +60,8 @@ replaceProgram (Program expr) ptns repls
       let (expr', _, _) = replaceExpression expr ptns repls
        in Just (Program expr')
   | otherwise = Nothing
+
+replaceProgramThrows :: Program -> [Expression] -> [Expression] -> IO Program
+replaceProgramThrows prog ptns repls = case replaceProgram prog ptns repls of
+  Just prog' -> pure prog'
+  _ -> throwIO (CouldNotReplace prog)

@@ -1,3 +1,6 @@
+{-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE RecordWildCards #-}
+
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
@@ -7,18 +10,54 @@
 module Builder
   ( buildExpressions,
     buildExpression,
+    buildExpressionThrows,
     buildAttribute,
+    buildAttributeThrows,
     buildBinding,
+    buildBindingThrows,
     buildBytes,
+    buildBytesThrows,
     contextualize,
+    BuildException (..),
   )
 where
 
 import Ast
+import Control.Exception (Exception, throwIO)
 import qualified Data.Map.Strict as Map
 import Matcher
-import Pretty (prettyAttribute)
+import Pretty (prettyAttribute, prettyBinding, prettyExpression, prettySubst, prettyBytes)
+import Text.Printf (printf)
 import Yaml (ExtraArgument (..))
+
+data BuildException
+  = CouldNotBuildExpression {_expr :: Expression, _subst :: Subst}
+  | CouldNotBuildAttribute {_attr :: Attribute, _subst :: Subst}
+  | CouldNotBuildBinding {_bd :: Binding, _subst :: Subst}
+  | CouldNotBuildBytes {_bts :: Bytes, _subst :: Subst}
+  deriving (Exception)
+
+instance Show BuildException where
+  show CouldNotBuildExpression {..} =
+    printf
+      "Couldn't build given expression with provided substitutions\n--Expression: %s\n--Substitutions: %s"
+      (prettyExpression _expr)
+      (prettySubst _subst)
+  show CouldNotBuildAttribute {..} =
+    printf
+      "Couldn't build given attribute with provided substitutions\n--Attribute: %s\n--Substitutions: %s"
+      (prettyAttribute _attr)
+      (prettySubst _subst)
+  show CouldNotBuildBinding {..} =
+    printf
+      "Couldn't build given binding with provided substitutions\n--Binding: %s\n--Substitutions: %s"
+      (prettyBinding _bd)
+      (prettySubst _subst)
+  show CouldNotBuildBytes {..} =
+    printf
+      "Couldn't build given bytes with provided substitutions\n--Bytes: %s\n--Substitutions: %s"
+      (prettyBytes _bts)
+      (prettySubst _subst)
 
 contextualize :: Expression -> Expression -> Program -> Expression
 contextualize ExGlobal _ (Program expr) = expr
@@ -108,6 +147,26 @@ buildExpression (ExMetaTail expr meta) subst = do
     _ -> Nothing
 buildExpression expr _ = Just (expr, defaultScope)
 
+buildBytesThrows :: Bytes -> Subst -> IO Bytes
+buildBytesThrows bytes subst = case buildBytes bytes subst of
+  Just bts -> pure bts
+  _ -> throwIO (CouldNotBuildBytes bytes subst)
+
+buildBindingThrows :: Binding -> Subst -> IO [Binding]
+buildBindingThrows bd subst = case buildBinding bd subst of
+  Just bds -> pure bds
+  _ -> throwIO (CouldNotBuildBinding bd subst)
+
+buildAttributeThrows :: Attribute -> Subst -> IO Attribute
+buildAttributeThrows attr subst = case buildAttribute attr subst of
+  Just attr' -> pure attr'
+  _ -> throwIO (CouldNotBuildAttribute attr subst)
+
+buildExpressionThrows :: Expression -> Subst -> IO (Expression, Expression)
+buildExpressionThrows expr subst = case buildExpression expr subst of
+  Just built -> pure built
+  _ -> throwIO (CouldNotBuildExpression expr subst)
+
 -- Build a several expression from one expression and several substitutions
-buildExpressions :: Expression -> [Subst] -> Maybe [(Expression, Expression)]
-buildExpressions expr = traverse (buildExpression expr)
+buildExpressions :: Expression -> [Subst] -> IO [(Expression, Expression)]
+buildExpressions expr = traverse (buildExpressionThrows expr)

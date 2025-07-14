@@ -8,7 +8,7 @@ import Builder
 import Control.Monad
 import Data.Map.Strict qualified as Map
 import Matcher
-import Test.Hspec (Example (Arg), Expectation, Spec, SpecWith, describe, it, shouldBe)
+import Test.Hspec (Example (Arg), Expectation, Spec, SpecWith, anyException, describe, it, shouldBe, shouldThrow)
 
 test :: (Show a, Eq a) => (a -> Subst -> Maybe (a, a)) -> [(String, a, [(String, MetaValue)], Maybe (a, a))] -> SpecWith (Arg Expectation)
 test function useCases =
@@ -81,15 +81,16 @@ spec = do
       ]
 
   describe "buildExpressions" $ do
-    it "!e => [(!e >> Q.x), (!e >> $.y)] => [Q.x, $.y]" $
-      buildExpressions
-        (ExMeta "e")
-        [ substSingle "e" (MvExpression (ExDispatch ExGlobal (AtLabel "x")) defaultScope),
-          substSingle "e" (MvExpression (ExDispatch ExThis (AtLabel "y")) defaultScope)
-        ]
-        `shouldBe` Just [(ExDispatch ExGlobal (AtLabel "x"), defaultScope), (ExDispatch ExThis (AtLabel "y"), defaultScope)]
+    it "!e => [(!e >> Q.x), (!e >> $.y)] => [Q.x, $.y]" $ do
+      built <-
+        buildExpressions
+          (ExMeta "e")
+          [ substSingle "e" (MvExpression (ExDispatch ExGlobal (AtLabel "x")) defaultScope),
+            substSingle "e" (MvExpression (ExDispatch ExThis (AtLabel "y")) defaultScope)
+          ]
+      built `shouldBe` [(ExDispatch ExGlobal (AtLabel "x"), defaultScope), (ExDispatch ExThis (AtLabel "y"), defaultScope)]
     it "!e => [(!e1 >> Q.x)] => X" $
       buildExpressions
         (ExMeta "e")
         [substSingle "e1" (MvExpression (ExDispatch ExGlobal (AtLabel "x")) defaultScope)]
-        `shouldBe` Nothing
+        `shouldThrow` anyException

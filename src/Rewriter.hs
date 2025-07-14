@@ -1,4 +1,3 @@
-{-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE RecordWildCards #-}
 
@@ -21,7 +20,7 @@ import Matcher (MetaValue (MvAttribute, MvBindings, MvExpression, MvBytes), Subs
 import Misc (ensuredFile)
 import Parser (parseProgram, parseProgramThrows)
 import Pretty (PrintMode (SWEET), prettyAttribute, prettyExpression, prettyExpression', prettyProgram, prettyProgram', prettySubsts, prettyBytes)
-import Replacer (replaceProgram)
+import Replacer (replaceProgram, replaceProgramThrows)
 import Term
 import Text.Printf
 import Yaml (ExtraArgument (..))
@@ -33,36 +32,14 @@ data RewriteContext = RewriteContext
     _buildTerm :: BuildTermFunc
   }
 
-data RewriteException
-  = CouldNotBuild {expr :: Expression, substs :: [Subst]}
-  | CouldNotReplace {prog :: Program, ptn :: Expression, res :: Expression}
-  deriving (Exception)
-
-instance Show RewriteException where
-  show CouldNotBuild {..} =
-    printf
-      "Couldn't build given expression with provided substitutions\n--Expression: %s\n--Substitutions: %s"
-      (prettyExpression expr)
-      (prettySubsts substs)
-  show CouldNotReplace {..} =
-    printf
-      "Couldn't replace expression in program by pattern\nProgram: %s\n--Pattern: %s\n--Result: %s"
-      (prettyProgram prog)
-      (prettyExpression ptn)
-      (prettyExpression res)
-
 -- Build pattern and result expression and replace patterns to results in given program
 buildAndReplace :: Program -> Expression -> Expression -> [Subst] -> IO Program
-buildAndReplace program ptn res substs =
-  case (buildExpressions ptn substs, buildExpressions res substs) of
-    (Just ptns, Just repls) ->
-      let repls' = map fst repls
-          ptns' = map fst ptns
-       in case replaceProgram program ptns' repls' of
-            Just prog -> pure prog
-            _ -> throwIO (CouldNotReplace program ptn res)
-    (Nothing, _) -> throwIO (CouldNotBuild ptn substs)
-    (_, Nothing) -> throwIO (CouldNotBuild res substs)
+buildAndReplace program ptn res substs = do
+  ptns <- buildExpressions ptn substs
+  repls <- buildExpressions res substs
+  let repls' = map fst repls
+      ptns' = map fst ptns
+  replaceProgramThrows program ptns' repls'
 
 -- Extend list of given substitutions with extra substitutions from 'where' yaml rule section
 extraSubstitutions :: Maybe [Y.Extra] -> [Subst] -> RewriteContext -> IO [Subst]
@@ -81,15 +58,15 @@ extraSubstitutions extras substs RewriteContext {..} = case extras of
                       _ -> Nothing
                     func = Y.function extra
                     args = Y.args extra
-                    term = _buildTerm func args subst' _program
+                term <- _buildTerm func args subst' _program
                 meta <- case term of
-                  Just (TeExpression expr) -> do
+                  TeExpression expr -> do
                     logDebug (printf "Function %s() returned expression:\n%s" func (prettyExpression' expr))
                     pure (MvExpression expr defaultScope)
-                  Just (TeAttribute attr) -> do
+                  TeAttribute attr -> do
                     logDebug (printf "Function %s() returned attribute:\n%s" func (prettyAttribute attr))
                     pure (MvAttribute attr)
-                  Just (TeBytes bytes) -> do
+                  TeBytes bytes -> do
                     logDebug (printf "Function %s() returned bytes: %s" func (prettyBytes bytes))
                     pure (MvBytes bytes)
                 case maybeName of

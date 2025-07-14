@@ -65,7 +65,9 @@ library
     random,
     xml-conduit ^>=1.10,
     time ^>=1.12,
-    transformers
+    transformers,
+    bytestring,
+    regex-tdfa
   default-language: Haskell2010
 
 -- Executable using the library

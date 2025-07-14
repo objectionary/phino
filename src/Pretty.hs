@@ -11,6 +11,7 @@ module Pretty
     prettyAttribute,
     prettySubsts,
     prettySubsts',
+    prettySubst,
     prettyBinding,
     prettyBytes,
     PrintMode (SWEET, SALTY),
@@ -195,6 +196,9 @@ prettyBytes = render
 
 prettyAttribute :: Attribute -> String
 prettyAttribute = render
+
+prettySubst :: Subst -> String
+prettySubst = render
 
 prettySubsts :: [Subst] -> String
 prettySubsts = render

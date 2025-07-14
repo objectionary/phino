@@ -15,4 +15,4 @@ import Ast
 
 data Term = TeExpression Expression | TeAttribute Attribute | TeBytes Bytes
 
-type BuildTermFunc = String -> [ExtraArgument] -> Subst -> Program -> Maybe Term
+type BuildTermFunc = String -> [ExtraArgument] -> Subst -> Program -> IO Term

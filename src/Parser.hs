@@ -180,7 +180,7 @@ bytes :: Parser Bytes
 bytes =
   lexeme
     ( choice
-        [ BtMeta <$> meta 'b',
+        [ BtMeta <$> meta' 'd' "δ",
           symbol "--" >> return BtEmpty,
           try $ do
             first <- byte
