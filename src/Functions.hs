@@ -16,8 +16,6 @@ import Matcher
 import Misc
 import Pretty
 import Term
-import Text.Regex.TDFA
-import Text.Regex.TDFA.ByteString ()
 import Yaml
 import Text.Printf (printf)
 
@@ -72,5 +70,5 @@ buildTermFromFunction "concat" args subst _ = do
     argToString (ArgBytes bytes) = do
       bts <- buildBytesThrows bytes subst
       pure (btsToStr bts)
-    argToString _ = throwIO (userError "")
+    argToString _ = throwIO (userError "Only bytes is allowed as arguments of 'concat' function")
 buildTermFromFunction func _ _ _ = throwIO (userError (printf "Function %s() is not supported or does not exist" func))
