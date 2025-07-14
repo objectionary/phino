@@ -63,7 +63,7 @@ buildTermFromFunction "dataize" [ArgExpression expr] subst _ = do
   (expr', _) <- buildExpressionThrows expr subst
   case expr' of
     DataObject _ bytes -> pure (TeBytes bytes)
-    _ -> throwIO (userError "Only data objects are supported by 'dataize' funciton now")
+    _ -> throwIO (userError "Only data objects are supported by 'dataize' function now")
 buildTermFromFunction "concat" args subst _ = do
   args' <- traverse argToString args
   pure (TeExpression (DataObject "string" (strToBts (concat args'))))
