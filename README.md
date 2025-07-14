@@ -40,12 +40,12 @@ $ phino dataize hello.phi
 ## Rewrite
 
 You can rewrite this expression with the help of rules
-defined in the `my-rule.yml` YAML file (here, the `!b` is a capturing group,
+defined in the `my-rule.yml` YAML file (here, the `!d` is a capturing group,
 similar to regular expressions):
 
 ```yaml
 name: My custom rule
-pattern: Δ ⤍ !b
+pattern: Δ ⤍ !d
 result: Δ ⤍ 62-79-65
 ```
 
@@ -138,9 +138,15 @@ Number:                   # comparable number
   | length: BiMeta'       # calculate length of bindings by given meta binding
 
 Extension:                # substitutions extension used to introduce new meta variables
-  meta: ExMeta'           # new introduced meta variable
+  meta: [ExtArgument]     # new introduced meta variable
   function: String        # name of the function
-  args: [Expression']     # arguments of the function
+  args: [ExtArgument]     # arguments of the function
+
+ExtArgument
+  = Bytes'                # !d
+  | Binding'              # !B
+  | Expression'           # !e
+  | Attribute'            # !a
 ```
 
 Here's list of functions that are supported for extensions:
@@ -152,10 +158,16 @@ Here's list of functions that are supported for extensions:
   expressions denotes as `𝑒` or `!e`. The scope is nearest outer formation,
   if it's present. In all other cases the default scope is used, which is
   anonymous formation `⟦ ρ ↦ ∅ ⟧`.
-* `dataize` - dataizes given expression and returns bytes
-* `concat` - accepts bytes as arguments, concatenates them into single
-  sequence and convert it to expression that can be pretty printed as
-  human readable string: `Φ.org.eolang.string(Φ.org.eolang.bytes⟦ Δ ⤍ !d ⟧)`.
+* `dataize` - dataizes given expression and returns bytes.
+* `concat` - accepts bytes or dataizable expressions as arguments,
+  concatenates them into single sequence and convert it to expression
+  that can be pretty printed as human readable string:
+  `Φ.org.eolang.string(Φ.org.eolang.bytes⟦ Δ ⤍ !d ⟧)`.
+* `sed` - pattern replacer, works like unix `sed` function.
+  Accepts two arguments: target expression and pattern.
+  Pattern must start with `s/`, consists of three parts
+  separated by `/`, for example, this pattern `s/\\s+//g`
+  replaces all the spaces with empty string.
 
 ## Meta variables
 

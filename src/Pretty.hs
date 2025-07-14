@@ -14,6 +14,7 @@ module Pretty
     prettySubst,
     prettyBinding,
     prettyBytes,
+    prettyExtraArg,
     PrintMode (SWEET, SALTY),
   )
 where
@@ -25,6 +26,7 @@ import Prettyprinter
 import Prettyprinter.Render.String (renderString)
 import Misc
 import Data.List (intercalate)
+import Yaml (ExtraArgument (..))
 
 data PrintMode = SWEET | SALTY
   deriving (Eq)
@@ -49,6 +51,12 @@ prettyRsb = pretty "⟧"
 
 prettyDashedArrow :: Doc ann
 prettyDashedArrow = pretty "⤍"
+
+instance Pretty ExtraArgument where
+  pretty (ArgExpression expr) = pretty (Formatted (SWEET, expr))
+  pretty (ArgBinding bd) = pretty (Formatted (SWEET, bd))
+  pretty (ArgAttribute attr) = pretty attr
+  pretty (ArgBytes bytes) = pretty bytes
 
 instance Pretty Bytes where
   pretty BtEmpty = pretty "--"
@@ -190,6 +198,9 @@ render printable = renderString (layoutPretty defaultLayoutOptions (pretty print
 
 prettyBinding :: Binding -> String
 prettyBinding binding = render (Formatted (SALTY, binding))
+
+prettyExtraArg :: ExtraArgument -> String
+prettyExtraArg = render
 
 prettyBytes :: Bytes -> String
 prettyBytes = render
