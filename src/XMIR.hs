@@ -92,7 +92,7 @@ expression (ExDispatch expr attr) ctx = do
       if head base == '.' || not (null children)
         then pure ('.' : attr', [object [("base", base)] children])
         else pure (base ++ ('.' : attr'), children)
-expression (DataObject "number" bytes) XmirContext {..} =
+expression (DataNumber bytes) XmirContext {..} =
   let bts =
         object
           [("as", prettyAttribute (AtAlpha 0)), ("base", "Q.org.eolang.bytes")]
@@ -106,7 +106,7 @@ expression (DataObject "number" bytes) XmirContext {..} =
                 bts
               ]
         )
-expression (DataObject "string" bytes) XmirContext {..} =
+expression (DataString bytes) XmirContext {..} =
   let bts =
         object
           [("as", prettyAttribute (AtAlpha 0)), ("base", "Q.org.eolang.bytes")]

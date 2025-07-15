@@ -20,6 +20,8 @@ module Misc
     shuffle,
     btsToUnescapedStr,
     pattern DataObject,
+    pattern DataString,
+    pattern DataNumber,
   )
 where
 
@@ -72,6 +74,12 @@ matchDataoObject
         )
     ) = Just (label, bts)
 matchDataoObject _ = Nothing
+
+pattern DataString :: Bytes -> Expression
+pattern DataString bts = DataObject "string" bts
+
+pattern DataNumber :: Bytes -> Expression
+pattern DataNumber bts = DataObject "number" bts
 
 pattern DataObject :: String -> Bytes -> Expression
 pattern DataObject label bts <- (matchDataoObject -> Just (label, bts))

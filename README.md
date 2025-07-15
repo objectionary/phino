@@ -171,6 +171,10 @@ Here's list of functions that are supported for extensions:
   Pattern must start with `s/`, consists of three parts
   separated by `/`, for example, this pattern `s/\\s+//g`
   replaces all the spaces with empty string.
+* `random-string` - accepts dataizable expression or bytes as pattern.
+  Replaces `%x` and `%d` formatters with random hex numbers and
+  decimals accordingly. Uniqueness is guaranteed during one
+  execution of `phino`.
 
 ## Meta variables
 
