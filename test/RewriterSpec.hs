@@ -15,7 +15,7 @@ import Data.Yaml qualified as Yaml
 import GHC.Generics
 import Misc (allPathsIn, ensuredFile)
 import Parser (parseProgramThrows)
-import Pretty (prettyProgram)
+import Pretty (prettyProgram', PrintMode (SWEET))
 import System.FilePath (makeRelative, replaceExtension, (</>))
 import Test.Hspec (Spec, describe, expectationFailure, it, pending, runIO)
 import Yaml (normalizationRules)
@@ -97,8 +97,8 @@ spec =
               unless (rewritten == result') $
                 expectationFailure
                   ( "Wrong rewritten program. Expected:\n"
-                      ++ prettyProgram result'
+                      ++ prettyProgram' result' SWEET
                       ++ "\nGot:\n"
-                      ++ prettyProgram rewritten
+                      ++ prettyProgram' rewritten SWEET
                   )
       )
