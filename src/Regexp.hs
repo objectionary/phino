@@ -5,23 +5,30 @@ module Regexp where
 
 import Control.Exception
 import Data.Array (bounds, (!))
-import qualified Data.ByteString as BS
 import qualified Data.ByteString.Char8 as B
 import Data.Char (isDigit)
-import Data.Maybe (catMaybes, fromMaybe, mapMaybe)
-import Text.Regex.PCRE.ByteString
+import Data.Maybe (fromMaybe)
 import qualified Text.Regex.PCRE.ByteString as R
 
-compile :: B.ByteString -> IO Regex
+compile :: B.ByteString -> IO R.Regex
 compile pat = do
-  compiled <- R.compile compBlank execBlank pat
+  compiled <- R.compile R.compBlank R.execBlank pat
   case compiled of
     Left (_, err) -> throwIO (userError ("Regex compilation failed: " ++ err))
     Right regex -> pure regex
 
-extractGroups :: Regex -> B.ByteString -> IO [B.ByteString]
+match :: B.ByteString -> B.ByteString -> IO Bool
+match pattern input = do
+  regex <- compile pattern
+  res <- R.execute regex input
+  case res of
+    Left _ -> pure False
+    Right Nothing -> pure False
+    Right (Just _) -> pure True
+
+extractGroups :: R.Regex -> B.ByteString -> IO [B.ByteString]
 extractGroups regex input = do
-  result <- execute regex input
+  result <- R.execute regex input
   case result of
     Left _ -> pure []
     Right Nothing -> pure []
@@ -51,9 +58,9 @@ substituteGroups rep groups = B.concat (go (B.unpack rep))
       | i >= 0 && i < length xs = Just (xs !! i)
       | otherwise = Nothing
 
-replaceFirst :: Regex -> B.ByteString -> B.ByteString -> IO B.ByteString
+replaceFirst :: R.Regex -> B.ByteString -> B.ByteString -> IO B.ByteString
 replaceFirst regex rep input = do
-  result <- execute regex input
+  result <- R.execute regex input
   case result of
     Left _ -> return input
     Right Nothing -> return input
@@ -65,11 +72,11 @@ replaceFirst regex rep input = do
           replacement = substituteGroups rep groups
       return $ B.concat [before, replacement, after]
 
-replaceAll :: Regex -> B.ByteString -> B.ByteString -> IO B.ByteString
+replaceAll :: R.Regex -> B.ByteString -> B.ByteString -> IO B.ByteString
 replaceAll regex rep input = go input B.empty
   where
     go bs acc = do
-      result <- execute regex bs
+      result <- R.execute regex bs
       case result of
         Left _ -> return $ B.append acc bs
         Right Nothing -> return $ B.append acc bs

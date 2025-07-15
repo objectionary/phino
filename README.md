@@ -127,6 +127,9 @@ Condition:
                           # avoid infinite recursion while the condition checking
                           # returns True if there's no ξ outside of the formation
                           # in given expression.
+  | match:                # returns True if given expression after dataization
+      - String            # matches to given regex
+      - Expression
 
 Comparable:               # comparable object that may be used in 'eq' condition
   = Attribute'

@@ -83,7 +83,8 @@ rewrite program (rule : rest) ctx = do
   let ptn = Y.pattern rule
       res = Y.result rule
       condition = Y.when rule
-  prog <- case C.matchProgramWithCondition ptn condition program of
+  maybeMatched <- C.matchProgramWithCondition ptn condition program
+  prog <- case maybeMatched of
     Nothing -> pure program
     Just matched -> do
       let ruleName = fromMaybe "unknown" (Y.name rule)
