@@ -173,7 +173,7 @@ Here's list of functions that are supported for extensions:
   replaces all the spaces with empty string.
 * `random-string` - accepts dataizable expression or bytes as pattern.
   Replaces `%x` and `%d` formatters with random hex numbers and
-  decimals accordinally. Uniquness is guaranteed during one
+  decimals accordingly. Uniqueness is guaranteed during one
   execution of `phino`.
 
 ## Meta variables
