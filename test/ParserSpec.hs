@@ -243,7 +243,8 @@ spec = do
         "[[x -> 1.00e+3, y -> 2.32e-4]]",
         "[[ x -> \"\\u0001\\u0001\"]]",
         "[[ x -> \"\\uD835\\uDF11\"]]",
-        "[[ x ↦ \"This plugin has \\x01\\x01\" ]]"
+        "[[ x ↦ \"This plugin has \\x01\\x01\" ]]",
+        "[[ !afoo -> !e1Some, !a-BAR -> !e_123someW, !Bhi123 ]]"
       ]
       (\expr -> it expr (parseExpression expr `shouldSatisfy` isRight))
 

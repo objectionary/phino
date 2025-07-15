@@ -144,12 +144,15 @@ arrow = choice [symbol "->", symbol "↦"]
 global :: Parser String
 global = choice [symbol "Q", symbol "Φ"]
 
+metaSuffix :: Parser String
+metaSuffix = lexeme (many (oneOf ('_' : '-' : ['0' .. '9'] ++ ['a' .. 'z'] ++ ['A' .. 'Z']) <?> "meta suffix"))
+
 meta :: Char -> Parser String
 meta ch = do
   _ <- char '!'
   c <- char ch
-  ds <- lexeme (many digitChar)
-  return (c : ds)
+  suf <- metaSuffix
+  return (c : suf)
 
 meta' :: Char -> String -> Parser String
 meta' ch uni =
@@ -157,8 +160,8 @@ meta' ch uni =
     [ meta ch,
       do
         _ <- symbol uni
-        ds <- lexeme (many digitChar)
-        return (ch : ds)
+        suf <- metaSuffix
+        return (ch : suf)
     ]
 
 byte :: Parser String
@@ -332,11 +335,11 @@ exHead =
                     Just '-' -> negate unsigned
                     _ -> unsigned
                 )
-        return (DataNumber (numToBts num)),
+        return (DataObject "number" (numToBts num)),
       lexeme $ do
         _ <- char '"'
         str <- manyTill (choice [escapedChar, noneOf ['\\', '"']]) (char '"')
-        return (DataString (strToBts str)),
+        return (DataObject "string" (strToBts str)),
       try (ExMeta <$> meta' 'e' "𝑒"),
       ExDispatch ExThis <$> fullAttribute
     ]
