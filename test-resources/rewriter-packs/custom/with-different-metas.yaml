@@ -1,0 +1,29 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+input: Q -> [[ x -> "hello", y -> "world" ]]
+output: |-
+  Φ ↦ ⟦
+    z ↦ "hello world"
+  ⟧
+rules:
+  custom:
+    - name: concat with metas
+      pattern: '[[ x -> !e_hello, y -> 𝑒-world, 𝐵-x ]]'
+      result: '[[ z -> !e_hello_world, 𝐵-x ]]'
+      where:
+        - meta: '!d-space'
+          function: dataize
+          args: ['" "']
+        - meta: 'δ_HELLO'
+          function: dataize
+          args: ['!e_hello']
+        - meta: '!d-WORLD1'
+          function: dataize
+          args: ['𝑒-world']
+        - meta: '!e_hello_world'
+          function: concat
+          args:
+            - 'δ_HELLO'
+            - '!d-space'
+            - '!d-WORLD1'
