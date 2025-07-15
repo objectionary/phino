@@ -97,7 +97,7 @@ instance FromJSON Condition where
                 vals <- v .: "matches"
                 case vals of
                   [pat, exp] -> Matches <$> parseJSON pat <*> parseJSON exp
-                  _ -> fail "'match' expects exactly two arguments"
+                  _ -> fail "'matches' expects exactly two arguments"
             ]
       )
 
