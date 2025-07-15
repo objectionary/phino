@@ -126,8 +126,8 @@ complexApplication (ExApplication expr tau) = (expr, [tau], [])
 
 instance Pretty (Formatted Expression) where
   pretty (Formatted (SWEET, ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang"))) = pretty "Φ̇"
-  pretty (Formatted (SWEET, DataObject "string" bytes)) = pretty "\"" <> pretty (btsToStr bytes) <> pretty "\""
-  pretty (Formatted (SWEET, DataObject "number" bytes)) = either pretty pretty (btsToNum bytes)
+  pretty (Formatted (SWEET, DataString bytes)) = pretty "\"" <> pretty (btsToStr bytes) <> pretty "\""
+  pretty (Formatted (SWEET, DataNumber bytes)) = either pretty pretty (btsToNum bytes)
   pretty (Formatted (SWEET, DataObject other bytes)) = pretty (Formatted (SALTY, DataObject other bytes))
   pretty (Formatted (mode, ExFormation [binding])) = case binding of
     BiTau _ _ -> vsep [pretty "⟦", indent 2 (pretty (Formatted (mode, binding))), pretty "⟧"]

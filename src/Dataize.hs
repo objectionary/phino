@@ -165,7 +165,7 @@ atom "L_org_eolang_number_plus" self ctx = do
       let first = either toDouble id (btsToNum left')
           second = either toDouble id (btsToNum right')
           sum = first + second
-      pure (Just (DataObject "number" (numToBts sum)))
+      pure (Just (DataNumber (numToBts sum)))
     _ -> pure Nothing
 atom "L_org_eolang_number_times" self ctx = do
   left <- dataize' (ExDispatch self (AtLabel "x")) ctx
@@ -175,7 +175,7 @@ atom "L_org_eolang_number_times" self ctx = do
       let first = either toDouble id (btsToNum left')
           second = either toDouble id (btsToNum right')
           sum = first * second
-      pure (Just (DataObject "number" (numToBts sum)))
+      pure (Just (DataNumber (numToBts sum)))
     _ -> pure Nothing
 atom "L_org_eolang_number_eq" self ctx = do
   x <- dataize' (ExDispatch self (AtLabel "x")) ctx
@@ -185,7 +185,7 @@ atom "L_org_eolang_number_eq" self ctx = do
       let self' = either toDouble id (btsToNum rho')
           first = either toDouble id (btsToNum x')
       if self' == first
-        then pure (Just (DataObject "number" (numToBts first)))
+        then pure (Just (DataNumber (numToBts first)))
         else pure (Just (ExDispatch self (AtLabel "y")))
     _ -> pure Nothing
 atom func _ _ = throwIO (userError (printf "Atom '%s' does not exist" func))

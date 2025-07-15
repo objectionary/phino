@@ -332,11 +332,11 @@ exHead =
                     Just '-' -> negate unsigned
                     _ -> unsigned
                 )
-        return (DataObject "number" (numToBts num)),
+        return (DataNumber (numToBts num)),
       lexeme $ do
         _ <- char '"'
         str <- manyTill (choice [escapedChar, noneOf ['\\', '"']]) (char '"')
-        return (DataObject "string" (strToBts str)),
+        return (DataString (strToBts str)),
       try (ExMeta <$> meta' 'e' "𝑒"),
       ExDispatch ExThis <$> fullAttribute
     ]
