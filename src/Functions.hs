@@ -8,16 +8,17 @@ module Functions where
 import Ast
 import Builder
 import Control.Exception (throwIO)
-import Data.Array ((!))
+import Data.Array (bounds, (!))
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Char8 as B
-import Data.Maybe (catMaybes, mapMaybe)
+import Data.Char (isDigit)
+import Data.Maybe (catMaybes, fromMaybe, mapMaybe)
 import Matcher
 import Misc
 import Pretty
 import Term
 import Text.Printf (printf)
-import Text.Regex.TDFA
+import Text.Regex.PCRE.ByteString
 import Yaml
 
 argToStrBytes :: ExtraArgument -> Subst -> Program -> IO String
@@ -28,25 +29,6 @@ argToStrBytes (ArgExpression expr) subst prog = do
   (TeBytes bts) <- buildTermFromFunction "dataize" [ArgExpression expr] subst prog
   pure (btsToUnescapedStr bts)
 argToStrBytes arg _ _ = throwIO (userError (printf "Can't extract bytes from given argument: %s" (prettyExtraArg arg)))
-
--- Translate perl-like shorthand characters to posix equivalent.
--- >>> perlToPosix "\\s+\\W"
--- "[[:space:]]+[^[:alnum:]_]"
-perlToPosix :: B.ByteString -> B.ByteString
-perlToPosix bs = go bs B.empty
-  where
-    go input acc
-      | B.null input = acc
-      | B.isPrefixOf "\\s" input = go (B.drop 2 input) (acc `B.append` "[[:space:]]")
-      | B.isPrefixOf "\\S" input = go (B.drop 2 input) (acc `B.append` "[^[:space:]]")
-      | B.isPrefixOf "\\d" input = go (B.drop 2 input) (acc `B.append` "[[:digit:]]")
-      | B.isPrefixOf "\\D" input = go (B.drop 2 input) (acc `B.append` "[^[:digit:]]")
-      | B.isPrefixOf "\\w" input = go (B.drop 2 input) (acc `B.append` "[[:alnum:]_]")
-      | B.isPrefixOf "\\W" input = go (B.drop 2 input) (acc `B.append` "[^[:alnum:]_]")
-      | B.head input == '\\' && B.length input >= 2 =
-          let escapedChar = B.take 2 input
-           in go (B.drop 2 input) (acc `B.append` escapedChar)
-      | otherwise = go (B.tail input) (acc `B.snoc` B.head input)
 
 buildTermFromFunction :: String -> [ExtraArgument] -> Subst -> Program -> IO Term
 buildTermFromFunction "contextualize" [ArgExpression expr, ArgExpression context] subst prog = do
@@ -101,12 +83,15 @@ buildTermFromFunction "concat" args subst prog = do
 buildTermFromFunction "sed" [tgt, ptn] subst prog = do
   [tgt', ptn'] <- traverse (\arg -> argToStrBytes arg subst prog) [tgt, ptn]
   (pat, rep, global) <- parse (B.pack ptn')
-  let pat' = perlToPosix pat
-      res =
+  compiled <- compile compBlank execBlank pat
+  case compiled of
+    Left (_, err) -> throwIO (userError ("Regex compilation failed: " ++ err))
+    Right regex -> do
+      res <-
         if global
-          then replaceAll pat' rep (B.pack tgt')
-          else replaceFirst pat' rep (B.pack tgt')
-  pure (TeExpression (DataObject "string" (strToBts (B.unpack res))))
+          then replaceAll regex rep (B.pack tgt')
+          else replaceFirst regex rep (B.pack tgt')
+      pure (TeExpression (DataObject "string" (strToBts (B.unpack res))))
   where
     parse :: B.ByteString -> IO (B.ByteString, B.ByteString, Bool)
     parse input =
@@ -117,26 +102,65 @@ buildTermFromFunction "sed" [tgt, ptn] subst prog = do
                 [pat, rep, "g"] -> pure (pat, rep, True)
                 [pat, rep, ""] -> pure (pat, rep, False)
                 [pat, rep] -> pure (pat, rep, False)
-                _ ->
-                  throwIO
-                    (userError "The 'sed' 2nd argument must consist of three parts separated by '/', the last part must be either empty or 'g'")
-        _ -> throwIO (userError "The 'sed' 2nd argument must start with 's/'")
-    replaceFirst :: B.ByteString -> B.ByteString -> B.ByteString -> B.ByteString
-    replaceFirst pat rep input =
-      let result :: MatchResult B.ByteString
-          result = input =~ pat
-       in if mrMatch result == ""
-            then input
-            else BS.concat [mrBefore result, rep, mrAfter result]
-    replaceAll :: B.ByteString -> B.ByteString -> B.ByteString -> B.ByteString
-    replaceAll pat rep input =
-      let matches = getAllMatches (input =~ pat :: AllMatches [] (Int, Int))
-       in go 0 matches
+                _ -> throwIO (userError "sed pattern must be in format s/pat/rep/[g]")
+        _ -> throwIO (userError "sed pattern must start with s/")
+    extractGroups :: Regex -> B.ByteString -> IO [B.ByteString]
+    extractGroups regex input = do
+      result <- execute regex input
+      case result of
+        Left _ -> pure []
+        Right Nothing -> pure []
+        Right (Just arr) ->
+          let (start, end) = bounds arr
+              groups =
+                [ let (off, len) = arr ! i
+                   in if off == -1 then B.empty else B.take len (B.drop off input)
+                  | i <- [start .. end]
+                ]
+           in pure groups
+    substituteGroups :: B.ByteString -> [B.ByteString] -> B.ByteString
+    substituteGroups rep groups = B.concat (go (B.unpack rep))
       where
-        go offset [] = BS.drop offset input
-        go offset ((start, len) : rest) =
-          let prefix = BS.take (start - offset) (BS.drop offset input)
-              newOffset = start + len
-           in BS.concat [prefix, rep, go newOffset rest]
+        go [] = []
+        go ('$' : rest) =
+          let (digits, afterDigits) = span isDigit rest
+           in if null digits
+                then B.singleton '$' : go rest
+                else
+                  let idx = read digits
+                      val = fromMaybe (B.pack ('$' : digits)) (safeIndex idx groups)
+                   in val : go afterDigits
+        go (c : rest) = B.singleton c : go rest
+        safeIndex i xs
+          | i >= 0 && i < length xs = Just (xs !! i)
+          | otherwise = Nothing
+    replaceFirst :: Regex -> B.ByteString -> B.ByteString -> IO B.ByteString
+    replaceFirst regex rep input = do
+      result <- execute regex input
+      case result of
+        Left _ -> return input
+        Right Nothing -> return input
+        Right (Just arr) -> do
+          groups <- extractGroups regex input
+          let (off, len) = arr ! 0
+              (before, rest) = B.splitAt off input
+              (_, after) = B.splitAt len rest
+              replacement = substituteGroups rep groups
+          return $ B.concat [before, replacement, after]
+    replaceAll :: Regex -> B.ByteString -> B.ByteString -> IO B.ByteString
+    replaceAll regex rep input = go input B.empty
+      where
+        go bs acc = do
+          result <- execute regex bs
+          case result of
+            Left _ -> return $ B.append acc bs
+            Right Nothing -> return $ B.append acc bs
+            Right (Just arr) -> do
+              let (off, len) = arr ! 0
+                  (before, rest1) = B.splitAt off bs
+                  (_, rest2) = B.splitAt len rest1
+              groups <- extractGroups regex bs
+              let replacement = substituteGroups rep groups
+              go rest2 (B.concat [acc, before, replacement])
 buildTermFromFunction "sed" _ _ _ = throwIO (userError "Function sed() requires exactly 2 dataizable arguments")
 buildTermFromFunction func _ _ _ = throwIO (userError (printf "Function %s() is not supported or does not exist" func))

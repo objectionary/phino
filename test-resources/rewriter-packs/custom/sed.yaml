@@ -1,21 +1,35 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 # SPDX-License-Identifier: MIT
 ---
-input: Q -> [[ x -> "  he llo  ", y -> "abcdefabc" ]]
+input: |
+  Q -> [[
+    x -> "  he llo  ",
+    y -> "1234567891011",
+    z -> "Hello, 2025, 2026",
+    w -> "hi jeff"
+  ]]
 output: |-
   Φ ↦ ⟦
     x ↦ "hello",
-    y ↦ "qwedefabc"
+    y ↦ "11!",
+    z ↦ "Hello, 2025!, 2026!",
+    w ↦ "jeff hi"
   ⟧
 rules:
   custom:
     - name: concat from expression
-      pattern: '[[ x -> !e1, y -> !e2 ]]'
-      result: '[[ x -> !e3, y -> !e4 ]]'
+      pattern: '[[ x -> !e1, y -> !e2, z -> !e10, w -> !e11 ]]'
+      result: '[[ x -> !e3, y -> !e4, z -> !e20, w -> !e21 ]]'
       where:
         - meta: '!e3'
           function: sed
           args: ['!e1', '"s/\\s+//g"']
         - meta: '!e4'
           function: sed
-          args: ['!e2', '"s/abc/qwe/"']
+          args: ['!e2', '"s/(1)(2)(3)(4)(5)(6)(7)(8)(9)(10)(11)/$11!/g"']
+        - meta: '!e20'
+          function: sed
+          args: ['!e10', '"s/([0-9]+)/$1!/g"']
+        - meta: '!e21'
+          function: sed
+          args: ['!e11', '"s/(hi) (jeff)/$2 $1"']
