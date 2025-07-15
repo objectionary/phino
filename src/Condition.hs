@@ -7,11 +7,14 @@ module Condition where
 
 import Ast
 import Builder (buildAttribute, buildBinding)
+import Control.Exception (SomeException (SomeException), evaluate)
+import Control.Exception.Base (try)
 import Data.Aeson (FromJSON)
 import qualified Data.ByteString.Char8 as B
 import qualified Data.Map.Strict as M
 import Functions (buildTermFromFunction)
 import GHC.IO (unsafePerformIO)
+import Logger (logDebug)
 import Matcher
 import Misc (allPathsIn, btsToUnescapedStr)
 import Pretty (prettyExpression, prettySubsts)
@@ -137,10 +140,10 @@ meetCondition' (Y.XI (ExApplication expr (BiTau attr texpr))) subst = do
   onTau <- meetCondition' (Y.XI texpr) subst
   pure [subst | not (null onExpr) && not (null onTau)]
 meetCondition' (Y.XI (ExDispatch expr _)) subst = meetCondition' (Y.XI expr) subst
-meetCondition' (Y.Match pat (ExMeta meta)) (Subst mp) = case M.lookup meta mp of
-  Just (MvExpression expr _) -> meetCondition' (Y.Match pat expr) (Subst mp)
+meetCondition' (Y.Matches pat (ExMeta meta)) (Subst mp) = case M.lookup meta mp of
+  Just (MvExpression expr _) -> meetCondition' (Y.Matches pat expr) (Subst mp)
   _ -> pure []
-meetCondition' (Y.Match pat expr) subst = do
+meetCondition' (Y.Matches pat expr) subst = do
   (TeBytes tgt) <- buildTermFromFunction "dataize" [Y.ArgExpression expr] subst (Program expr)
   matched <- match (B.pack pat) (B.pack (btsToUnescapedStr tgt))
   pure [subst | matched]
@@ -151,11 +154,14 @@ meetCondition' (Y.Match pat expr) subst = do
 meetCondition :: Y.Condition -> [Subst] -> IO [Subst]
 meetCondition _ [] = pure []
 meetCondition cond (subst : rest) = do
-  first <- meetCondition' cond subst
-  next <- meetCondition cond rest
-  if null first
-    then pure next
-    else pure (head first : next)
+  met <- try (meetCondition' cond subst) :: IO (Either SomeException [Subst])
+  case met of
+    Right first -> do
+      next <- meetCondition cond rest
+      if null first
+        then pure next
+        else pure (head first : next)
+    Left _ -> meetCondition cond rest
 
 -- Returns Just [...] if
 -- 1. program matches pattern and

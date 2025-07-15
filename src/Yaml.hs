@@ -94,10 +94,10 @@ instance FromJSON Condition where
                     pure (In attr bd)
                   _ -> fail "'in' expects exactly two arguments",
               do
-                vals <- v .: "match"
+                vals <- v .: "matches"
                 case vals of
-                  [pat, exp] -> Match <$> parseJSON pat <*> parseJSON exp
-                  _ -> fail "'match' expects exactly two arguments"
+                  [pat, exp] -> Matches <$> parseJSON pat <*> parseJSON exp
+                  _ -> fail "'matches' expects exactly two arguments"
             ]
       )
 
@@ -142,7 +142,7 @@ data Condition
   | Eq Comparable Comparable
   | NF Expression
   | XI Expression
-  | Match String Expression
+  | Matches String Expression
   deriving (Generic, Show)
 
 data ExtraArgument

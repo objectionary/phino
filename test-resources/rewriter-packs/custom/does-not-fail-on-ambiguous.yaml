@@ -1,0 +1,15 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+input: Q -> [[ k -> [[ x -> "hello" ]] ]]
+output: |-
+  Φ ↦ ⟦
+    k -> [[ x -> "hi" ]]
+  ⟧
+rules:
+  custom:
+    - name: custom
+      pattern: '[[ x -> !e ]]'
+      result: '[[ x -> "hi" ]]'
+      when:
+        matches: ['hello', '!e']
