@@ -38,6 +38,7 @@ library
     Term,
     Misc,
     Logger,
+    Regexp,
     Pretty,
     XMIR
   hs-source-dirs: src
