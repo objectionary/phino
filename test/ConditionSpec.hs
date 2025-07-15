@@ -7,17 +7,17 @@
 module ConditionSpec where
 
 import Ast (Expression, Program (Program))
-import Condition (meetCondition)
 import Control.Monad
 import Data.Aeson
 import Data.Yaml qualified as Y
 import GHC.Generics
-import Matcher (matchProgram)
 import Misc
-import Pretty (prettySubsts)
 import System.FilePath
 import Test.Hspec (Spec, describe, expectationFailure, it, runIO)
 import Yaml qualified
+import Matcher
+import Condition
+import Pretty
 
 data ConditionPack = ConditionPack
   { expression :: Expression,

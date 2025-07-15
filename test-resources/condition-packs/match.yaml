@@ -1,7 +1,0 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
-# SPDX-License-Identifier: MIT
----
-expression: '[[ x -> "Hello world" ]]'
-pattern: '[[ x -> !e ]]'
-condition:
-  match: ['Hello [a-z]+', '!e']
