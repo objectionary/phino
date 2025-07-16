@@ -14,10 +14,10 @@ import qualified Data.Map.Strict as M
 import Data.Maybe (catMaybes, fromMaybe, isJust)
 import Debug.Trace (trace)
 import Logger (logDebug)
-import Matcher (MetaValue (MvAttribute, MvBindings, MvExpression, MvBytes), Subst (Subst), combine, combineMany, defaultScope, matchProgram, substEmpty, substSingle)
+import Matcher (MetaValue (MvAttribute, MvBindings, MvBytes, MvExpression), Subst (Subst), combine, combineMany, defaultScope, matchProgram, substEmpty, substSingle)
 import Misc (ensuredFile)
 import Parser (parseProgram, parseProgramThrows)
-import Pretty (PrintMode (SWEET), prettyAttribute, prettyExpression, prettyExpression', prettyProgram, prettyProgram', prettySubsts, prettyBytes, prettySubsts')
+import Pretty
 import Replacer (replaceProgram, replaceProgramThrows)
 import Term
 import Text.Printf
