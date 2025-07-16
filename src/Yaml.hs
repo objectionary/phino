@@ -97,7 +97,12 @@ instance FromJSON Condition where
                 vals <- v .: "matches"
                 case vals of
                   [pat, exp] -> Matches <$> parseJSON pat <*> parseJSON exp
-                  _ -> fail "'matches' expects exactly two arguments"
+                  _ -> fail "'matches' expects exactly two arguments",
+              do
+                vals <- v .: "part-of"
+                case vals of
+                  [exp, bd] -> PartOf <$> parseJSON exp <*> parseJSON bd
+                  _ -> fail "'part-of' expects exactly two arguments"
             ]
       )
 
@@ -143,6 +148,7 @@ data Condition
   | NF Expression
   | XI Expression
   | Matches String Expression
+  | PartOf Expression Binding
   deriving (Generic, Show)
 
 data ExtraArgument
