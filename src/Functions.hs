@@ -19,15 +19,12 @@ import Matcher
 import Misc
 import Numeric (showHex)
 import Pretty
+import Random (randomString)
 import Regexp
 import System.Random (randomRIO)
 import Term
 import Text.Printf (printf)
 import Yaml
-
-randomStrings :: IORef (Set String)
-{-# NOINLINE randomStrings #-}
-randomStrings = unsafePerformIO (newIORef Data.Set.empty)
 
 argToStrBytes :: ExtraArgument -> Subst -> Program -> IO String
 argToStrBytes (ArgBytes bytes) subst _ = do
@@ -50,7 +47,8 @@ buildTermFromFunction "scope" [ArgExpression expr] subst _ = do
 buildTermFromFunction "scope" _ _ _ = throwIO (userError "Function scope() requires exactly 1 argument as expression")
 buildTermFromFunction "random-tau" args subst _ = do
   attrs <- argsToAttrs args
-  pure (TeAttribute (AtLabel (randomTau 0 attrs)))
+  tau <- randomTau attrs
+  pure (TeAttribute (AtLabel tau))
   where
     argsToAttrs :: [ExtraArgument] -> IO [String]
     argsToAttrs [] = pure []
@@ -74,11 +72,10 @@ buildTermFromFunction "random-tau" args subst _ = do
             BiLambda _ -> AtLambda
             BiVoid attr -> attr
        in prettyAttribute attr : attrsFromBindings bds
-    randomTau :: Integer -> [String] -> String
-    randomTau idx attrs =
-      let cactoos = "a🌵"
-          tau = if idx == 0 then cactoos else cactoos ++ show idx
-       in if tau `elem` attrs then randomTau (idx + 1) attrs else tau
+    randomTau :: [String] -> IO String
+    randomTau attrs = do
+      tau <- randomString "a🌵%d"
+      if tau `elem` attrs then randomTau attrs else pure tau
 buildTermFromFunction "dataize" [ArgBytes bytes] subst _ = do
   bts <- buildBytesThrows bytes subst
   pure (TeBytes bts)
@@ -115,31 +112,7 @@ buildTermFromFunction "sed" [tgt, ptn] subst prog = do
 buildTermFromFunction "sed" _ _ _ = throwIO (userError "Function sed() requires exactly 2 dataizable arguments")
 buildTermFromFunction "random-string" [arg] subst prog = do
   pat <- argToStrBytes arg subst prog
-  set <- readIORef randomStrings
-  str <- regenerate pat set
+  str <- randomString pat
   pure (TeExpression (DataString (strToBts str)))
-  where
-    regenerate :: String -> Set String -> IO String
-    regenerate pat set = do
-      next <- randomString pat
-      if next `Data.Set.member` set
-        then regenerate pat set
-        else do
-          modifyIORef' randomStrings (Data.Set.insert next)
-          pure next
-    randomString :: String -> IO String
-    randomString [] = pure []
-    randomString ('%' : ch : rest) = do
-      rep <- case ch of
-        'x' -> replicateM 8 $ do
-          v <- randomRIO (0, 15)
-          pure (intToDigit v)
-        'd' -> show <$> randomRIO (0 :: Int, 9999)
-        _ -> pure ['%', ch]
-      next <- randomString rest
-      pure (rep ++ next)
-    randomString (ch : rest) = do
-      rest' <- randomString rest
-      pure (ch : rest')
 buildTermFromFunction "random-string" _ _ _ = throwIO (userError "Function random-string() requires exactly 1 dataizable argument")
 buildTermFromFunction func _ _ _ = throwIO (userError (printf "Function %s() is not supported or does not exist" func))

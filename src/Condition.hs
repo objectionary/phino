@@ -6,7 +6,7 @@
 module Condition where
 
 import Ast
-import Builder (buildAttribute, buildBinding)
+import Builder (buildAttribute, buildBinding, buildExpression, buildExpressionThrows, buildBindingThrows)
 import Control.Exception (SomeException (SomeException), evaluate)
 import Control.Exception.Base (try)
 import Data.Aeson (FromJSON)
@@ -147,6 +147,16 @@ meetCondition' (Y.Matches pat expr) subst = do
   (TeBytes tgt) <- buildTermFromFunction "dataize" [Y.ArgExpression expr] subst (Program expr)
   matched <- match (B.pack pat) (B.pack (btsToUnescapedStr tgt))
   pure [subst | matched]
+meetCondition' (Y.PartOf exp bd) subst = do
+  (exp', _) <- buildExpressionThrows exp subst
+  bds <- buildBindingThrows bd subst
+  pure [subst | partOf exp' bds]
+  where
+    partOf :: Expression -> [Binding] -> Bool
+    partOf expr [] = False
+    partOf expr (BiTau _ (ExFormation bds) : rest) = partOf expr rest || partOf expr bds
+    partOf expr (BiTau _ expr' : rest) = expr == expr' || partOf expr rest
+    partOf expr (bd : rest) = partOf expr rest
 
 -- For each substitution check if it meetCondition to given condition
 -- If substitution does not meet the condition - it's thrown out
