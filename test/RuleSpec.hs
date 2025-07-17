@@ -4,20 +4,21 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module ConditionSpec where
+module RuleSpec where
 
 import Ast (Expression, Program (Program))
 import Control.Monad
 import Data.Aeson
 import Data.Yaml qualified as Y
+import Functions (buildTermFromFunction)
 import GHC.Generics
+import Matcher
 import Misc
+import Pretty
+import Rule (RuleContext (RuleContext), meetCondition)
 import System.FilePath
 import Test.Hspec (Spec, describe, expectationFailure, it, runIO)
 import Yaml qualified
-import Matcher
-import Condition
-import Pretty
 
 data ConditionPack = ConditionPack
   { expression :: Expression,
@@ -34,9 +35,10 @@ spec = describe "check conditions" $ do
     packs
     ( \pth -> it (makeRelative resources pth) $ do
         pack <- Y.decodeFileThrow pth :: IO ConditionPack
-        let matched = matchProgram (pattern pack) (Program (expression pack))
+        let prog = Program (expression pack)
+        let matched = matchProgram (pattern pack) prog
         unless (matched /= []) (expectationFailure "List of matched substitutions is empty which is not expected")
-        met <- meetCondition (condition pack) matched
+        met <- meetCondition (condition pack) matched (RuleContext prog buildTermFromFunction)
         when
           (null met)
           ( expectationFailure $
