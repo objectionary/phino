@@ -1,5 +1,4 @@
 {-# LANGUAGE DerivingStrategies #-}
-{-# LANGUAGE RecordWildCards #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
@@ -8,7 +7,6 @@ module Rewriter (rewrite, rewrite', RewriteContext (..)) where
 
 import Ast
 import Builder
-import qualified Condition as C
 import Data.Foldable (foldlM)
 import qualified Data.Map.Strict as M
 import Data.Maybe (catMaybes, fromMaybe, isJust)
@@ -17,8 +15,10 @@ import Logger (logDebug)
 import Matcher (MetaValue (MvAttribute, MvBindings, MvBytes, MvExpression), Subst (Subst), combine, combineMany, defaultScope, matchProgram, substEmpty, substSingle)
 import Misc (ensuredFile)
 import Parser (parseProgram, parseProgramThrows)
-import Pretty
+import Pretty (PrintMode (SWEET), prettyAttribute, prettyBytes, prettyExpression, prettyExpression', prettyProgram, prettyProgram', prettySubsts)
 import Replacer (replaceProgram, replaceProgramThrows)
+import Rule (RuleContext (RuleContext), meetMaybeCondition)
+import qualified Rule as R
 import Term
 import Text.Printf
 import Yaml (ExtraArgument (..))
@@ -39,70 +39,31 @@ buildAndReplace program ptn res substs = do
       ptns' = map fst ptns
   replaceProgramThrows program ptns' repls'
 
--- Extend list of given substitutions with extra substitutions from 'where' yaml rule section
-extraSubstitutions :: Maybe [Y.Extra] -> [Subst] -> RewriteContext -> IO [Subst]
-extraSubstitutions extras substs RewriteContext {..} = case extras of
-  Nothing -> pure substs
-  Just extras' -> do
-    res <-
-      sequence
-        [ foldlM
-            ( \(Just subst') extra -> do
-                let maybeName = case Y.meta extra of
-                      ArgExpression (ExMeta name) -> Just name
-                      ArgAttribute (AtMeta name) -> Just name
-                      ArgBinding (BiMeta name) -> Just name
-                      ArgBytes (BtMeta name) -> Just name
-                      _ -> Nothing
-                    func = Y.function extra
-                    args = Y.args extra
-                term <- _buildTerm func args subst' _program
-                meta <- case term of
-                  TeExpression expr -> do
-                    logDebug (printf "Function %s() returned expression:\n%s" func (prettyExpression' expr))
-                    pure (MvExpression expr defaultScope)
-                  TeAttribute attr -> do
-                    logDebug (printf "Function %s() returned attribute:\n%s" func (prettyAttribute attr))
-                    pure (MvAttribute attr)
-                  TeBytes bytes -> do
-                    logDebug (printf "Function %s() returned bytes: %s" func (prettyBytes bytes))
-                    pure (MvBytes bytes)
-                case maybeName of
-                  Just name -> pure (combine (substSingle name meta) subst')
-                  _ -> pure Nothing
-            )
-            (Just subst)
-            extras'
-          | subst <- substs
-        ]
-    pure (catMaybes res)
-
 rewrite :: Program -> [Y.Rule] -> RewriteContext -> IO Program
 rewrite program [] _ = pure program
 rewrite program (rule : rest) ctx = do
-  let ptn = Y.pattern rule
+  let ruleName = fromMaybe "unknown" (Y.name rule)
+      ptn = Y.pattern rule
       res = Y.result rule
-      condition = Y.when rule
-  maybeMatched <- C.matchProgramWithCondition ptn condition program
-  prog <- case maybeMatched of
-    Nothing -> pure program
-    Just matched -> do
-      let ruleName = fromMaybe "unknown" (Y.name rule)
-      logDebug (printf "Rule '%s' has been matched, applying..." ruleName)
-      substs <- extraSubstitutions (Y.where_ rule) matched ctx
-      prog' <- buildAndReplace program ptn res substs
-      if program == prog'
-        then logDebug (printf "Applied '%s', no changes made" ruleName)
-        else
-          logDebug
-            ( printf
-                "Applied '%s' (%d nodes -> %d nodes):\n%s"
-                ruleName
-                (countNodes program)
-                (countNodes prog')
-                (prettyProgram' prog' SWEET)
-            )
-      pure prog'
+  matched <- R.matchProgramWithRule program rule (RuleContext (_program ctx) (_buildTerm ctx))
+  prog <-
+    if null matched
+      then pure program
+      else do
+        logDebug (printf "Rule '%s' has been matched, applying..." ruleName)
+        prog' <- buildAndReplace program ptn res matched
+        if program == prog'
+          then logDebug (printf "Applied '%s', no changes made" ruleName)
+          else
+            logDebug
+              ( printf
+                  "Applied '%s' (%d nodes -> %d nodes):\n%s"
+                  ruleName
+                  (countNodes program)
+                  (countNodes prog')
+                  (prettyProgram' prog' SWEET)
+              )
+        pure prog'
   rewrite prog rest ctx
 
 -- @todo #169:30min Memorize previous rewritten programs. Right now in order not to

@@ -8,11 +8,11 @@ module Dataize (morph, dataize, dataize', DataizeContext (..)) where
 
 import Ast
 import Builder (contextualize)
-import Condition (isNF)
 import Control.Exception (throwIO)
 import Data.List (partition)
 import Misc
 import Rewriter (RewriteContext (RewriteContext), rewrite')
+import Rule (RuleContext (RuleContext), isNF)
 import Term (BuildTermFunc)
 import Text.Printf (printf)
 import XMIR (XmirContext (XmirContext))
@@ -115,7 +115,7 @@ morph expr ctx = do
   case resolved of
     Just obj -> morph obj ctx
     _ ->
-      if isNF expr
+      if isNF expr (RuleContext (_program ctx) (_buildTerm ctx))
         then pure Nothing
         else do
           (Program expr') <- rewrite' (Program expr) normalizationRules (switchContext ctx) -- NMZ

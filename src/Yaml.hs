@@ -170,7 +170,8 @@ data Rule = Rule
     pattern :: Expression,
     result :: Expression,
     when :: Maybe Condition,
-    where_ :: Maybe [Extra]
+    where_ :: Maybe [Extra],
+    having :: Maybe Condition
   }
   deriving (Generic, Show)
 
