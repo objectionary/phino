@@ -25,7 +25,7 @@ import qualified Misc
 import Options.Applicative
 import Parser (parseProgramThrows)
 import Paths_phino (version)
-import Pretty (PrintMode (SALTY, SWEET), prettyProgram', prettyBytes)
+import Pretty (PrintMode (SALTY, SWEET), prettyBytes, prettyProgram')
 import Rewriter (RewriteContext (RewriteContext), rewrite')
 import System.Exit (ExitCode (..), exitFailure)
 import System.IO (getContents')
@@ -74,6 +74,7 @@ data OptsRewrite = OptsRewrite
     shuffle :: Bool,
     omitListing :: Bool,
     omitComments :: Bool,
+    must :: Integer,
     maxDepth :: Integer,
     inputFile :: Maybe FilePath
   }
@@ -139,6 +140,9 @@ rewriteParser =
             <*> switch (long "shuffle" <> help "Shuffle rules before applying")
             <*> switch (long "omit-listing" <> help "Omit full program listing in XMIR output")
             <*> switch (long "omit-comments" <> help "Omit comments in XMIR output")
+            <*> ( flag' 1 (long "must" <> help "Enable must-rewrite with default value 1")
+                    <|> option auto (long "must" <> metavar "N" <> help "Must-rewrite, stops execution if not exactly N rules applied (default 1 when specified without value, if 0 - flag is disabled)" <> value 0)
+                )
             <*> optMaxDepth
             <*> argInputFile
         )
@@ -177,11 +181,12 @@ runCLI args = handle handler $ do
   case cmd of
     CmdRewrite OptsRewrite {..} -> do
       validateMaxDepth maxDepth
+      validateMust must
       logDebug (printf "Amount of rewriting cycles: %d" maxDepth)
       input <- readInput inputFile
       rules' <- getRules
       program <- parseProgram input inputFormat
-      rewritten <- rewrite' program rules' (RewriteContext program maxDepth buildTermFromFunction)
+      rewritten <- rewrite' program rules' (RewriteContext program maxDepth buildTermFromFunction must)
       logDebug (printf "Printing rewritten 𝜑-program as %s" (show outputFormat))
       out <- printProgram rewritten outputFormat printMode
       putStrLn out
@@ -228,6 +233,11 @@ runCLI args = handle handler $ do
       when
         (depth <= 0)
         (throwIO (InvalidRewriteArguments "--max-depth must be positive"))
+    validateMust :: Integer -> IO ()
+    validateMust must =
+      when
+        (must < 0)
+        (throwIO (InvalidRewriteArguments "--must must be positive"))
     readInput :: Maybe FilePath -> IO String
     readInput inputFile' = case inputFile' of
       Just pth -> do

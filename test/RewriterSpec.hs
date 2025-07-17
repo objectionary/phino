@@ -92,7 +92,7 @@ spec =
                   if normalize'
                     then pure normalizationRules
                     else pure []
-              rewritten <- rewrite' program rules' (RewriteContext program repeat' buildTermFromFunction)
+              rewritten <- rewrite' program rules' (RewriteContext program repeat' buildTermFromFunction 0)
               result' <- parseProgramThrows (output pack)
               unless (rewritten == result') $
                 expectationFailure
