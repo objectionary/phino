@@ -107,7 +107,7 @@ Rule:
   pattern: String
   result: String
   when: Condition?       # predicate, works with substitutions before extension
-  where: [Extension]?    # substitution extenstions
+  where: [Extension]?    # substitution extensions
   having: Condition?     # predicate, works with substitutions after extension
 
 Condition:
