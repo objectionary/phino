@@ -106,50 +106,54 @@ Rule:
   name: String?
   pattern: String
   result: String
-  when: Condition?
-  where: [Extension]
+  when: Condition?       # predicate, works with substitutions before extension
+  where: [Extension]?    # substitution extenstions
+  having: Condition?     # predicate, works with substitutions after extension
 
 Condition:
-  = and: [Condition]      # logical AND
-  | or:  [Condition]      # logical OR
-  | not: Condition        # logical NOT
-  | alpha: Attribute'     # check if given attribute is alpha
-  | eq:                   # compare two comparable objects
+  = and: [Condition]     # logical AND
+  | or:  [Condition]     # logical OR
+  | not: Condition       # logical NOT
+  | alpha: Attribute'    # check if given attribute is alpha
+  | eq:                  # compare two comparable objects
       - Comparable
       - Comparable
-  | in:                   # check if attributes exist in bindings
+  | in:                  # check if attributes exist in bindings
       - Attribute'
       - Binding'
-  | nf: Expression'       # returns True if given expression in normal form
-                          # which means that no more other normalization rules
-                          # can be applied
-  | xi: Expression'       # special condition for Rcopy normalization rule to 
-                          # avoid infinite recursion while the condition checking
-                          # returns True if there's no ξ outside of the formation
-                          # in given expression.
-  | match:                # returns True if given expression after dataization
-      - String            # matches to given regex
+  | nf: Expression'      # returns True if given expression in normal form
+                         # which means that no more other normalization rules
+                         # can be applied
+  | xi: Expression'      # special condition for Rcopy normalization rule to 
+                         # avoid infinite recursion while the condition checking
+                         # returns True if there's no ξ outside of the formation
+                         # in given expression.
+  | matches:             # returns True if given expression after dataization
+      - String           # matches to given regex
       - Expression
+  | part-of:             # returns True if given expression is attached to any
+      - Expression'      # attribute in ginve bindings
+      - BiMeta'
 
-Comparable:               # comparable object that may be used in 'eq' condition
+Comparable:              # comparable object that may be used in 'eq' condition
   = Attribute'
   | Number
 
-Number:                   # comparable number
-  = Integer               # just regular integer
-  | ordinal: Attribute'   # calculate index of alpha attribute
-  | length: BiMeta'       # calculate length of bindings by given meta binding
+Number:                  # comparable number
+  = Integer              # just regular integer
+  | ordinal: Attribute'  # calculate index of alpha attribute
+  | length: BiMeta'      # calculate length of bindings by given meta binding
 
-Extension:                # substitutions extension used to introduce new meta variables
-  meta: [ExtArgument]     # new introduced meta variable
-  function: String        # name of the function
-  args: [ExtArgument]     # arguments of the function
+Extension:               # substitutions extension used to introduce new meta variables
+  meta: [ExtArgument]    # new introduced meta variable
+  function: String       # name of the function
+  args: [ExtArgument]    # arguments of the function
 
 ExtArgument
-  = Bytes'                # !d
-  | Binding'              # !B
-  | Expression'           # !e
-  | Attribute'            # !a
+  = Bytes'               # !d
+  | Binding'             # !B
+  | Expression'          # !e
+  | Attribute'           # !a
 ```
 
 Here's list of functions that are supported for extensions:
