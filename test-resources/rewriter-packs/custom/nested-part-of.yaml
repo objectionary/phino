@@ -1,0 +1,17 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+repeat: 10
+input: Q -> [[ x -> Q.y ]]
+output: |-
+  Φ ↦ ⟦
+    x ↦ Φ.y,
+    z -> [[ w -> [[ q -> "foo" ]] ]]
+  ⟧
+rules:
+  custom:
+    - pattern: '[[ x -> Q.y, !B ]]'
+      result: '[[ x -> Q.y, z -> [[ w -> [[ q -> "foo" ]] ]], !B]]'
+      when:
+        not:
+          part-of: ['"foo"', '!B']

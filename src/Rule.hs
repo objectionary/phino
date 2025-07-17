@@ -161,6 +161,7 @@ meetCondition' (Y.PartOf exp bd) subst _ = do
   where
     partOf :: Expression -> [Binding] -> Bool
     partOf expr [] = False
+    partOf expr (BiTau _ (ExFormation bds) : rest) = expr == ExFormation bds || partOf expr bds || partOf expr rest
     partOf expr (BiTau _ expr' : rest) = expr == expr' || partOf expr rest
     partOf expr (bd : rest) = partOf expr rest
 

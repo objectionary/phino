@@ -102,7 +102,7 @@ rewrite' prog rules ctx = _rewrite prog 1
     _rewrite prog count = do
       let depth = _maxDepth ctx
           must = _must ctx
-      if must /= 0 && count > must
+      if must /= 0 && count - 1 > must
         then throwIO (ContinueAfter must)
         else
           if count - 1 == depth
@@ -115,7 +115,7 @@ rewrite' prog rules ctx = _rewrite prog 1
               if rewritten == prog
                 then do
                   logDebug "No rule matched, rewriting is stopped"
-                  if must /= 0 && count /= must
-                    then throwIO (StoppedBefore must count)
+                  if must /= 0 && count - 1 /= must
+                    then throwIO (StoppedBefore must (count - 1))
                     else pure rewritten
                 else _rewrite rewritten (count + 1)
