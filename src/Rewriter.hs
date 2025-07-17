@@ -1,4 +1,6 @@
+{-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE RecordWildCards #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
@@ -7,6 +9,7 @@ module Rewriter (rewrite, rewrite', RewriteContext (..)) where
 
 import Ast
 import Builder
+import Control.Exception (Exception, throwIO)
 import Data.Foldable (foldlM)
 import qualified Data.Map.Strict as M
 import Data.Maybe (catMaybes, fromMaybe, isJust)
@@ -27,8 +30,27 @@ import qualified Yaml as Y
 data RewriteContext = RewriteContext
   { _program :: Program,
     _maxDepth :: Integer,
-    _buildTerm :: BuildTermFunc
+    _buildTerm :: BuildTermFunc,
+    _must :: Integer
   }
+
+data MustException
+  = StoppedBefore {must :: Integer, count :: Integer}
+  | ContinueAfter {must :: Integer}
+  deriving (Exception)
+
+instance Show MustException where
+  show StoppedBefore {..} =
+    printf
+      "With option --must=%d it's expected exactly %d rewriting cycles happened, but rewriting stopped after %d"
+      must
+      must
+      count
+  show ContinueAfter {..} =
+    printf
+      "With option --must=%d it's expected exactly %d rewriting cycles happened, but rewriting is still going"
+      must
+      must
 
 -- Build pattern and result expression and replace patterns to results in given program
 buildAndReplace :: Program -> Expression -> Expression -> [Subst] -> IO Program
@@ -74,20 +96,26 @@ rewrite program (rule : rest) ctx = do
 --  been memorized - we fail because we got into infinite recursion. Ofc we should keep counting
 --  rewriting cycles if program just only grows on each rewriting.
 rewrite' :: Program -> [Y.Rule] -> RewriteContext -> IO Program
-rewrite' prog rules ctx = _rewrite prog 0
+rewrite' prog rules ctx = _rewrite prog 1
   where
     _rewrite :: Program -> Integer -> IO Program
     _rewrite prog count = do
       let depth = _maxDepth ctx
-      logDebug (printf "Starting rewriting cycle %d out of %d" count depth)
-      if count == depth
-        then do
-          logDebug (printf "Max amount of rewriting cycles has been reached, rewriting is stopped")
-          pure prog
-        else do
-          rewritten <- rewrite prog rules ctx
-          if rewritten == prog
+          must = _must ctx
+      if must /= 0 && count > must
+        then throwIO (ContinueAfter must)
+        else
+          if count - 1 == depth
             then do
-              logDebug "No rule matched, rewriting is stopped"
-              pure rewritten
-            else _rewrite rewritten (count + 1)
+              logDebug (printf "Max amount of rewriting cycles (%d) has been reached, rewriting is stopped" depth)
+              pure prog
+            else do
+              logDebug (printf "Starting rewriting cycle %d out of %d" count depth)
+              rewritten <- rewrite prog rules ctx
+              if rewritten == prog
+                then do
+                  logDebug "No rule matched, rewriting is stopped"
+                  if must /= 0 && count /= must
+                    then throwIO (StoppedBefore must count)
+                    else pure rewritten
+                else _rewrite rewritten (count + 1)

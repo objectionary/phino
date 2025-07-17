@@ -25,7 +25,7 @@ data DataizeContext = DataizeContext
   }
 
 switchContext :: DataizeContext -> RewriteContext
-switchContext DataizeContext {..} = RewriteContext _program _maxDepth _buildTerm
+switchContext DataizeContext {..} = RewriteContext _program _maxDepth _buildTerm 0
 
 maybeBinding :: (Binding -> Bool) -> [Binding] -> (Maybe Binding, [Binding])
 maybeBinding _ [] = (Nothing, [])
