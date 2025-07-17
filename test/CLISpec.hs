@@ -178,13 +178,15 @@ spec = do
           ["rewrite", "--nothing", "--output=xmir", "--omit-listing"]
           ["<?xml version=\"1.0\" encoding=\"UTF-8\"?>", "<object", "<listing>4 lines of phi</listing>", "  <o base=\"Q.y\" name=\"x\"/>"]
 
-    it "fails with --nothing and --must=2" $
-      withStdin "Q -> [[ ]]" $
-        testCLIFailed ["rewrite", "--nothing", "--must=2"] "it's expected exactly 2 rewriting cycles happened, but rewriting stopped after 1"
+    it "does not fail on exactly 1 rewrtingin" $
+      withStdin "{⟦ t ↦ ⟦ x ↦ \"foo\" ⟧ ⟧}" $
+        testCLI
+          ["rewrite", "--rule=test-resources/cli/simple.yaml", "--must=1", "--sweet"]
+          ["x ↦ \"bar\""]
 
-    it "does not fail with --nothing and --must" $
+    it "fails with --nothing and --must" $
       withStdin "Q -> [[ ]]" $
-        testCLI ["rewrite", "--nothing", "--must"] ["Φ ↦ ⟦ ρ ↦ ∅ ⟧"]
+        testCLIFailed ["rewrite", "--nothing", "--must"] "it's expected exactly 1 rewriting cycles happened, but rewriting stopped after 0"
 
     it "fails with --normalize and --must" $
       withStdin "Q -> [[ x -> [[ y -> 5 ]].y ]].x" $
