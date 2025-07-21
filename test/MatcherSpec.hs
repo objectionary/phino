@@ -92,6 +92,70 @@ spec = do
               ("B2", MvBindings [])
             ]
           ]
+        ),
+        ( "somebody",
+          ExFormation
+            [ BiTau
+                (AtLabel "i1")
+                ( ExFormation
+                    [ BiTau (AtLabel "a") (ExMeta "e0"),
+                      BiTau (AtLabel "b") (ExMeta "e-first")
+                    ]
+                ),
+              BiTau
+                (AtLabel "i2")
+                ( ExFormation
+                    [ BiTau (AtLabel "a") (ExMeta "e0"),
+                      BiTau (AtLabel "b") (ExMeta "e-second")
+                    ]
+                )
+            ],
+          ExFormation
+            [ BiTau
+                (AtLabel "i1")
+                ( ExFormation
+                    [ BiTau (AtLabel "a") ExGlobal,
+                      BiTau (AtLabel "b") ExThis
+                    ]
+                ),
+              BiTau
+                (AtLabel "i2")
+                ( ExFormation
+                    [ BiTau (AtLabel "a") ExGlobal,
+                      BiTau (AtLabel "b") (ExFormation [BiVoid AtPhi])
+                    ]
+                )
+            ],
+          defaultScope,
+          [ [ ( "e0",
+                MvExpression
+                  ExGlobal
+                  ( ExFormation
+                      [ BiTau (AtLabel "a") ExGlobal,
+                        BiTau (AtLabel "b") ExThis
+                      ]
+                  )
+              ),
+              ( "e-first",
+                MvExpression
+                  ExThis
+                  ( ExFormation
+                      [ BiTau (AtLabel "a") ExGlobal,
+                        BiTau (AtLabel "b") ExThis
+                      ]
+                  )
+              ),
+              ( "e-second",
+                MvExpression
+                  (ExFormation [BiVoid AtPhi])
+                  ( ExFormation
+                      [ BiTau (AtLabel "a") ExGlobal,
+                        BiTau (AtLabel "b") (ExFormation [BiVoid AtPhi])
+                      ]
+                  )
+              )
+            ]
+          ]
         )
       ]
 
