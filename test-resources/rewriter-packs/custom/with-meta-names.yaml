@@ -1,0 +1,31 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+input: |-
+  {⟦
+    i1 ↦ ⟦
+      a ↦ "foo",
+      b ↦ "bar-1"
+    ⟧,
+    i2 ↦ ⟦
+      a ↦ "foo",
+      b ↦ "bar-2"
+    ⟧
+  ⟧}
+output: '{⟦⟧}'
+rules:
+  custom:
+    - name: custom
+      pattern: |
+        ⟦
+          𝜏1 ↦ ⟦
+            a ↦ 𝑒-x,
+            b ↦ 𝑒-first
+          ⟧,
+          𝜏2 ↦ ⟦
+            a ↦ 𝑒-x,
+            b ↦ 𝑒-second
+          ⟧,
+          𝐵6
+        ⟧
+      result: ⟦⟧

@@ -53,6 +53,11 @@ combine (Subst a) (Subst b) = combine' (Map.toList b) a
   where
     combine' :: [(String, MetaValue)] -> Map String MetaValue -> Maybe Subst
     combine' [] acc = Just (Subst acc)
+    combine' ((key, MvExpression tgt scope) : rest) acc = case Map.lookup key acc of
+      Just (MvExpression expr _)
+        | expr == tgt -> combine' rest acc
+        | otherwise -> Nothing
+      Nothing -> combine' rest (Map.insert key (MvExpression tgt scope) acc)
     combine' ((key, value) : rest) acc = case Map.lookup key acc of
       Just found
         | found == value -> combine' rest acc
@@ -70,7 +75,7 @@ matchAttribute ptn tgt
 
 matchBinding :: Binding -> Binding -> Expression -> [Subst]
 matchBinding (BiVoid pattr) (BiVoid tattr) _ = matchAttribute pattr tattr
-matchBinding (BiDelta (BtMeta meta)) (BiDelta tdata) _ = [substSingle meta (MvBytes tdata)]  
+matchBinding (BiDelta (BtMeta meta)) (BiDelta tdata) _ = [substSingle meta (MvBytes tdata)]
 matchBinding (BiDelta pdata) (BiDelta tdata) _
   | pdata == tdata = [substEmpty]
   | otherwise = []
