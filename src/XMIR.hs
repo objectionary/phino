@@ -77,6 +77,15 @@ element name attrs children = do
 object :: [(String, String)] -> [Node] -> Node
 object attrs children = NodeElement (element "o" attrs children)
 
+-- @todo #278:30min Remove xmirAttributure and replace to prettyAttribute. Right now XMIR does not
+--  support "ρ" and "φ" in @base and @name attributes. When it's done, we should also generate 
+--  such valid XMIR. To achieve that we should get rid of xmirAttribute function and use prettyAttribute
+--  instead. Don't forget to remove the puzzle
+xmirAttribute :: Attribute -> String
+xmirAttribute AtPhi = "@"
+xmirAttribute AtRho = "^"
+xmirAttribute other = prettyAttribute other
+
 expression :: Expression -> XmirContext -> IO (String, [Node])
 expression ExThis _ = pure ("$", [])
 expression ExGlobal _ = pure ("Q", [])
@@ -85,7 +94,7 @@ expression (ExFormation bds) ctx = do
   pure ("", nested)
 expression (ExDispatch expr attr) ctx = do
   (base, children) <- expression expr ctx
-  let attr' = prettyAttribute attr
+  let attr' = xmirAttribute attr
   if null base
     then pure ('.' : attr', [object [] children])
     else
@@ -123,7 +132,7 @@ expression (DataString bytes) XmirContext {..} =
 expression (ExApplication expr (BiTau attr texpr)) ctx = do
   (base, children) <- expression expr ctx
   (base', children') <- expression texpr ctx
-  let as = prettyAttribute attr
+  let as = xmirAttribute attr
       attrs =
         if null base'
           then [("as", as)]
@@ -144,12 +153,12 @@ formationBinding (BiTau (AtLabel label) expr) ctx = do
   pure (Just (object [("name", label), ("base", base)] children))
 formationBinding (BiTau AtPhi expr) ctx = do
   (base, children) <- expression expr ctx
-  pure (Just (object [("name", "φ"), ("base", base)] children))
+  pure (Just (object [("name", "@"), ("base", base)] children))
 formationBinding (BiTau AtRho _) _ = pure Nothing
 formationBinding (BiDelta bytes) _ = pure (Just (NodeContent (T.pack (prettyBytes bytes))))
 formationBinding (BiLambda func) _ = pure (Just (object [("name", "λ")] []))
 formationBinding (BiVoid AtRho) _ = pure Nothing
-formationBinding (BiVoid AtPhi) _ = pure (Just (object [("name", "φ"), ("base", "∅")] []))
+formationBinding (BiVoid AtPhi) _ = pure (Just (object [("name", "@"), ("base", "∅")] []))
 formationBinding (BiVoid (AtLabel label)) _ = pure (Just (object [("name", label), ("base", "∅")] []))
 formationBinding binding _ = throwIO (UnsupportedBinding binding)
 
