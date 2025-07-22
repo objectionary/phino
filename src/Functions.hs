@@ -11,7 +11,6 @@ import Control.Exception (throwIO)
 import Control.Monad (replicateM)
 import qualified Data.ByteString.Char8 as B
 import Data.Char (intToDigit)
-import Data.IORef
 import Data.Set (Set)
 import qualified Data.Set
 import GHC.IO (unsafePerformIO)
