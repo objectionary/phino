@@ -142,6 +142,9 @@ formationBinding (BiTau (AtLabel label) (ExFormation bds)) ctx = do
 formationBinding (BiTau (AtLabel label) expr) ctx = do
   (base, children) <- expression expr ctx
   pure (Just (object [("name", label), ("base", base)] children))
+formationBinding (BiTau AtPhi expr) ctx = do
+  (base, children) <- expression expr ctx
+  pure (Just (object [("name", "φ"), ("base", base)] children))
 formationBinding (BiTau AtRho _) _ = pure Nothing
 formationBinding (BiDelta bytes) _ = pure (Just (NodeContent (T.pack (prettyBytes bytes))))
 formationBinding (BiLambda func) _ = pure (Just (object [("name", "λ")] []))
