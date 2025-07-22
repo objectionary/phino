@@ -80,7 +80,7 @@ object attrs children = NodeElement (element "o" attrs children)
 -- @todo #278:30min Remove xmirAttributure and replace to prettyAttribute. Right now XMIR does not
 --  support "ρ" and "φ" in @base and @name attributes. When it's done, we should also generate 
 --  such valid XMIR. To achieve that we should get rid of xmirAttribute function and use prettyAttribute
---  instead. Don't forget to remove the puzzle
+--  instead. Also we should use "@" in formationBinding. Don't forget to remove the puzzle. 
 xmirAttribute :: Attribute -> String
 xmirAttribute AtPhi = "@"
 xmirAttribute AtRho = "^"
