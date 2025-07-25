@@ -15,7 +15,7 @@ output: |-
   ⟧
 rules:
   custom:
-    - name: size of bindingds
+    - name: size of bindings
       pattern: '[[ x -> [[ !B ]] ]]'
       result: '[[ x -> !e ]]'
       where:
