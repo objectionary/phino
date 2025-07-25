@@ -1,0 +1,24 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+input: |
+  Q -> [[
+    x -> [[
+      y -> 1,
+      z -> 2,
+      w -> 3
+    ]]
+  ]]
+output: |-
+  Φ ↦ ⟦
+    x ↦ 4
+  ⟧
+rules:
+  custom:
+    - name: size of bindingds
+      pattern: '[[ x -> [[ !B ]] ]]'
+      result: '[[ x -> !e ]]'
+      where:
+        - meta: '!e'
+          function: size
+          args: ['!B']
