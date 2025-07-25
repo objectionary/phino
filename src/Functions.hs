@@ -114,4 +114,8 @@ buildTermFromFunction "random-string" [arg] subst prog = do
   str <- randomString pat
   pure (TeExpression (DataString (strToBts str)))
 buildTermFromFunction "random-string" _ _ _ = throwIO (userError "Function random-string() requires exactly 1 dataizable argument")
+buildTermFromFunction "size" [ArgBinding (BiMeta meta)] subst _ = do
+  bds <- buildBindingThrows (BiMeta meta) subst
+  pure (TeExpression (DataNumber (numToBts (fromIntegral (length bds)))))
+buildTermFromFunction "size" _ _ _ = throwIO (userError "Function size() requires exactly 1 meta binding")
 buildTermFromFunction func _ _ _ = throwIO (userError (printf "Function %s() is not supported or does not exist" func))
