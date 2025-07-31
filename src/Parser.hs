@@ -11,6 +11,7 @@ module Parser
     parseExpression,
     parseExpressionThrows,
     parseAttribute,
+    parseAttributeThrows,
     parseBinding,
     parseBytes,
   )
@@ -37,11 +38,13 @@ type Parser = Parsec Void String
 data ParserException
   = CouldNotParseProgram {message :: String}
   | CouldNotParseExpression {message :: String}
+  | CouldNotParseAttribute {message :: String}
   deriving (Exception)
 
 instance Show ParserException where
   show CouldNotParseProgram {..} = printf "Couldn't parse given phi program, cause: %s" message
   show CouldNotParseExpression {..} = printf "Couldn't parse given phi program, cause: %s" message
+  show CouldNotParseAttribute {..} = printf "Couldn't parse given attribute, cause: %s" message
 
 -- White space consumer
 whiteSpace :: Parser ()
@@ -437,6 +440,11 @@ parseBinding = parse' "binding" binding
 
 parseAttribute :: String -> Either String Attribute
 parseAttribute = parse' "attribute" fullAttribute
+
+parseAttributeThrows :: String -> IO Attribute
+parseAttributeThrows attr = case parseAttribute attr of
+  Right attr' -> pure attr'
+  Left err -> throwIO (CouldNotParseAttribute err)
 
 parseExpression :: String -> Either String Expression
 parseExpression = parse' "expression" expression

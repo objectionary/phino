@@ -1,0 +1,18 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+input: |
+  {⟦ x -> "foo" ⟧}
+output: |-
+  {⟦ x -> "foo", foo -> ⟦⟧ ⟧}
+rules:
+  custom:
+    - name: attribute from string
+      pattern: |
+        [[ x -> !e ]]
+      result: |
+        [[ x -> !e, !a -> [[ ]], ^ -> ? ]]
+      where:
+        - meta: '!a'
+          function: tau
+          args: ['!e']

@@ -1,0 +1,59 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+repeat: 10
+input: |
+  {⟦
+    φ ↦ Φ.jeo.method,
+    body ↦ ⟦
+      φ ↦ Φ.jeo.seq.of2,
+      i95 ↦ ⟦
+        φ ↦ Φ.jeo.opcode.invokeinterface,
+        v96 ↦ "java/util/stream/IntStream",
+        v97 ↦ "boxed",
+        v98 ↦ "()Ljava/util/stream/Stream;",
+        v99 ↦ Φ̇.true
+      ⟧,
+      i96 ↦ ⟦
+        φ ↦ Φ.jeo.opcode.invokeinterface,
+        v96 ↦ "java/util/stream/LongStream",
+        v97 ↦ "boxed",
+        v98 ↦ "()Ljava/util/stream/Stream;",
+        v99 ↦ Φ̇.true
+      ⟧
+    ⟧,
+    name ↦ "main"
+  ⟧}
+output: |-
+  {⟦
+    φ ↦ Φ.jeo.method,
+    body ↦ ⟦
+      φ ↦ Φ.jeo.seq.of2,
+      i95 ↦ ⟦
+        φ ↦ Φ.hone.box,
+        stream-class ↦ "java/util/stream/IntStream"
+      ⟧,
+      i96 ↦ ⟦
+        φ ↦ Φ.hone.box,
+        stream-class ↦ "java/util/stream/LongStream"
+      ⟧
+    ⟧,
+    name ↦ "main"
+  ⟧}
+rules:
+  custom:
+    - name: java boxed method
+      pattern: |
+        ⟦
+          φ ↦ Φ.jeo.opcode.invokeinterface,
+          𝜏-stream-class ↦ 𝑒-stream-class,
+          𝜏-method ↦ "boxed",
+          𝜏-signature ↦ "()Ljava/util/stream/Stream;",
+          𝜏-flag ↦ Φ̇.true,
+          ρ ↦ ∅
+        ⟧
+      result: |
+        ⟦
+          φ ↦ Φ.hone.box,
+          stream-class ↦ 𝑒-stream-class
+        ⟧
