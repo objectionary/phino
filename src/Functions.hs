@@ -17,6 +17,7 @@ import GHC.IO (unsafePerformIO)
 import Matcher
 import Misc
 import Numeric (showHex)
+import Parser (parseAttributeThrows)
 import Pretty
 import Random (randomString)
 import Regexp
@@ -118,4 +119,9 @@ buildTermFromFunction "size" [ArgBinding (BiMeta meta)] subst _ = do
   bds <- buildBindingThrows (BiMeta meta) subst
   pure (TeExpression (DataNumber (numToBts (fromIntegral (length bds)))))
 buildTermFromFunction "size" _ _ _ = throwIO (userError "Function size() requires exactly 1 meta binding")
+buildTermFromFunction "tau" [ArgExpression expr] subst prog = do
+  TeBytes bts <- buildTermFromFunction "dataize" [ArgExpression expr] subst prog
+  attr <- parseAttributeThrows (btsToUnescapedStr bts)
+  pure (TeAttribute attr)
+buildTermFromFunction "tau" _ _ _ = throwIO (userError "Function tau() requires exactly 1 argument as expression")
 buildTermFromFunction func _ _ _ = throwIO (userError (printf "Function %s() is not supported or does not exist" func))
