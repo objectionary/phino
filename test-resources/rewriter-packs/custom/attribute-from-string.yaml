@@ -15,4 +15,4 @@ rules:
       where:
         - meta: '!a'
           function: tau
-          args: [ '!e' ]
+          args: ['!e']
