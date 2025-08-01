@@ -8,7 +8,7 @@ module Functions where
 import Ast
 import Builder
 import Control.Exception (throwIO)
-import Control.Monad (replicateM)
+import Control.Monad (replicateM, when)
 import qualified Data.ByteString.Char8 as B
 import Data.Char (intToDigit)
 import Data.Set (Set)
@@ -24,24 +24,24 @@ import Regexp
 import System.Random (randomRIO)
 import Term
 import Text.Printf (printf)
-import Yaml
+import qualified Yaml as Y
 
-argToStrBytes :: ExtraArgument -> Subst -> Program -> IO String
-argToStrBytes (ArgBytes bytes) subst _ = do
+argToStrBytes :: Y.ExtraArgument -> Subst -> Program -> IO String
+argToStrBytes (Y.ArgBytes bytes) subst _ = do
   bts <- buildBytesThrows bytes subst
   pure (btsToUnescapedStr bts)
-argToStrBytes (ArgExpression expr) subst prog = do
-  (TeBytes bts) <- buildTermFromFunction "dataize" [ArgExpression expr] subst prog
+argToStrBytes (Y.ArgExpression expr) subst prog = do
+  (TeBytes bts) <- buildTermFromFunction "dataize" [Y.ArgExpression expr] subst prog
   pure (btsToUnescapedStr bts)
 argToStrBytes arg _ _ = throwIO (userError (printf "Can't extract bytes from given argument: %s" (prettyExtraArg arg)))
 
-buildTermFromFunction :: String -> [ExtraArgument] -> Subst -> Program -> IO Term
-buildTermFromFunction "contextualize" [ArgExpression expr, ArgExpression context] subst prog = do
+buildTermFromFunction :: String -> [Y.ExtraArgument] -> Subst -> Program -> IO Term
+buildTermFromFunction "contextualize" [Y.ArgExpression expr, Y.ArgExpression context] subst prog = do
   (expr', _) <- buildExpressionThrows expr subst
   (context', _) <- buildExpressionThrows context subst
   pure (TeExpression (contextualize expr' context' prog))
 buildTermFromFunction "contextualize" _ _ _ = throwIO (userError "Function contextualize() requires exactly 2 arguments as expression")
-buildTermFromFunction "scope" [ArgExpression expr] subst _ = do
+buildTermFromFunction "scope" [Y.ArgExpression expr] subst _ = do
   (expr', scope) <- buildExpressionThrows expr subst
   pure (TeExpression scope)
 buildTermFromFunction "scope" _ _ _ = throwIO (userError "Function scope() requires exactly 1 argument as expression")
@@ -50,19 +50,19 @@ buildTermFromFunction "random-tau" args subst _ = do
   tau <- randomTau attrs
   pure (TeAttribute (AtLabel tau))
   where
-    argsToAttrs :: [ExtraArgument] -> IO [String]
+    argsToAttrs :: [Y.ExtraArgument] -> IO [String]
     argsToAttrs [] = pure []
     argsToAttrs (arg : rest) = case arg of
-      ArgExpression _ -> argsToAttrs rest
-      ArgAttribute attr -> do
+      Y.ArgExpression _ -> argsToAttrs rest
+      Y.ArgAttribute attr -> do
         attr' <- buildAttributeThrows attr subst
         rest' <- argsToAttrs rest
         pure (prettyAttribute attr' : rest')
-      ArgBinding bd -> do
+      Y.ArgBinding bd -> do
         bds <- buildBindingThrows bd subst
         rest' <- argsToAttrs rest
         pure (attrsFromBindings bds ++ rest')
-      ArgBytes _ -> throwIO (userError "Bytes can't be argument of random-tau() function")
+      Y.ArgBytes _ -> throwIO (userError "Bytes can't be argument of random-tau() function")
     attrsFromBindings :: [Binding] -> [String]
     attrsFromBindings [] = []
     attrsFromBindings (bd : bds) =
@@ -76,10 +76,10 @@ buildTermFromFunction "random-tau" args subst _ = do
     randomTau attrs = do
       tau <- randomString "a🌵%d"
       if tau `elem` attrs then randomTau attrs else pure tau
-buildTermFromFunction "dataize" [ArgBytes bytes] subst _ = do
+buildTermFromFunction "dataize" [Y.ArgBytes bytes] subst _ = do
   bts <- buildBytesThrows bytes subst
   pure (TeBytes bts)
-buildTermFromFunction "dataize" [ArgExpression expr] subst _ = do
+buildTermFromFunction "dataize" [Y.ArgExpression expr] subst _ = do
   (expr', _) <- buildExpressionThrows expr subst
   case expr' of
     DataObject _ bytes -> pure (TeBytes bytes)
@@ -88,16 +88,29 @@ buildTermFromFunction "dataize" _ _ _ = throwIO (userError "Function dataize() r
 buildTermFromFunction "concat" args subst prog = do
   args' <- traverse (\arg -> argToStrBytes arg subst prog) args
   pure (TeExpression (DataString (strToBts (concat args'))))
-buildTermFromFunction "sed" [tgt, ptn] subst prog = do
-  [tgt', ptn'] <- traverse (\arg -> argToStrBytes arg subst prog) [tgt, ptn]
-  (pat, rep, global) <- parse (B.pack ptn')
-  regex <- compile pat
-  res <-
-    if global
-      then replaceAll regex rep (B.pack tgt')
-      else replaceFirst regex rep (B.pack tgt')
+buildTermFromFunction "sed" args subst prog = do
+  when (length args < 2) (throwIO (userError "Function sed() requres at least two arguments"))
+  args' <-
+    traverse
+      ( \arg -> do
+          bts <- argToStrBytes arg subst prog
+          pure (B.pack bts)
+      )
+      args
+  res <- sed (head args') (tail args')
   pure (TeExpression (DataString (strToBts (B.unpack res))))
   where
+    sed :: B.ByteString -> [B.ByteString] -> IO B.ByteString
+    sed tgt [] = pure tgt
+    sed tgt (ptn : ptns) = do
+      (pat, rep, global) <- parse ptn
+      regex <- compile pat
+      next <-
+        if global
+          then replaceAll regex rep tgt
+          else replaceFirst regex rep tgt
+      sed next ptns
+
     parse :: B.ByteString -> IO (B.ByteString, B.ByteString, Bool)
     parse input =
       case B.stripPrefix "s/" input of
@@ -109,18 +122,17 @@ buildTermFromFunction "sed" [tgt, ptn] subst prog = do
                 [pat, rep] -> pure (pat, rep, False)
                 _ -> throwIO (userError "sed pattern must be in format s/pat/rep/[g]")
         _ -> throwIO (userError "sed pattern must start with s/")
-buildTermFromFunction "sed" _ _ _ = throwIO (userError "Function sed() requires exactly 2 dataizable arguments")
 buildTermFromFunction "random-string" [arg] subst prog = do
   pat <- argToStrBytes arg subst prog
   str <- randomString pat
   pure (TeExpression (DataString (strToBts str)))
 buildTermFromFunction "random-string" _ _ _ = throwIO (userError "Function random-string() requires exactly 1 dataizable argument")
-buildTermFromFunction "size" [ArgBinding (BiMeta meta)] subst _ = do
+buildTermFromFunction "size" [Y.ArgBinding (BiMeta meta)] subst _ = do
   bds <- buildBindingThrows (BiMeta meta) subst
   pure (TeExpression (DataNumber (numToBts (fromIntegral (length bds)))))
 buildTermFromFunction "size" _ _ _ = throwIO (userError "Function size() requires exactly 1 meta binding")
-buildTermFromFunction "tau" [ArgExpression expr] subst prog = do
-  TeBytes bts <- buildTermFromFunction "dataize" [ArgExpression expr] subst prog
+buildTermFromFunction "tau" [Y.ArgExpression expr] subst prog = do
+  TeBytes bts <- buildTermFromFunction "dataize" [Y.ArgExpression expr] subst prog
   attr <- parseAttributeThrows (btsToUnescapedStr bts)
   pure (TeAttribute attr)
 buildTermFromFunction "tau" _ _ _ = throwIO (userError "Function tau() requires exactly 1 argument as expression")

@@ -1,0 +1,26 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+input: |
+  Q -> [[
+    x -> "1"
+  ]]
+output: |-
+  Φ ↦ ⟦
+    x ↦ "6"
+  ⟧
+rules:
+  custom:
+    - name: sed with many arguments
+      pattern: '[[ x -> !e ]]'
+      result: '[[ x -> !e1 ]]'
+      where:
+        - meta: '!e1'
+          function: sed
+          args: 
+            - '!e'
+            - '"s/1/2/g"'
+            - '"s/2/3/g"'
+            - '"s/3/4/g"'
+            - '"s/3/5/g"'
+            - '"s/4/6/g"'
