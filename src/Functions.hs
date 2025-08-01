@@ -13,7 +13,6 @@ import qualified Data.ByteString.Char8 as B
 import Data.Char (intToDigit)
 import Data.Set (Set)
 import qualified Data.Set
-import Debug.Trace
 import GHC.IO (unsafePerformIO)
 import Matcher
 import Misc
