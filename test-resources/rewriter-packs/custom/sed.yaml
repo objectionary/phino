@@ -6,7 +6,7 @@ input: |
     x -> "  he llo  ",
     y -> "1234567891011",
     z -> "Hello, 2025, 2026",
-    w -> "hi jeff"
+    w -> "hi (jeff)"
   ]]
 output: |-
   Φ ↦ ⟦
@@ -32,4 +32,4 @@ rules:
           args: ['!e10', '"s/([0-9]+)/$1!/g"']
         - meta: '!e21'
           function: sed
-          args: ['!e11', '"s/(hi) (jeff)/$2 $1"']
+          args: ['!e11', '"s/(hi) \\((jeff)\\)/$2 $1"']

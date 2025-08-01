@@ -110,18 +110,27 @@ buildTermFromFunction "sed" args subst prog = do
           then replaceAll regex rep tgt
           else replaceFirst regex rep tgt
       sed next ptns
-
     parse :: B.ByteString -> IO (B.ByteString, B.ByteString, Bool)
     parse input =
       case B.stripPrefix "s/" input of
-        Just rest ->
-          let parts = B.split '/' rest
-           in case parts of
+        Just body ->
+          let (pat, rest) = nextUntilSlash body B.empty False
+              (rep, flag) = nextUntilSlash rest B.empty True
+           in case [pat, rep, flag] of
                 [pat, rep, "g"] -> pure (pat, rep, True)
                 [pat, rep, ""] -> pure (pat, rep, False)
-                [pat, rep] -> pure (pat, rep, False)
                 _ -> throwIO (userError "sed pattern must be in format s/pat/rep/[g]")
         _ -> throwIO (userError "sed pattern must start with s/")
+    -- Cut part from given string until regular slash.
+    nextUntilSlash :: B.ByteString -> B.ByteString -> Bool -> (B.ByteString, B.ByteString)
+    nextUntilSlash input acc escape = case B.uncons input of
+      Nothing -> (acc, B.empty)
+      Just (h, rest)
+        | h == '\\' -> case B.uncons rest of
+            Just (h', rest') -> nextUntilSlash rest' ((if escape then acc else B.snoc acc '\\') `B.append` B.singleton h') escape
+            Nothing -> (if escape then acc else B.snoc acc '\\', B.empty)
+        | h == '/' -> (acc, rest)
+        | otherwise -> nextUntilSlash rest (B.snoc acc h) escape
 buildTermFromFunction "random-string" [arg] subst prog = do
   pat <- argToStrBytes arg subst prog
   str <- randomString pat
