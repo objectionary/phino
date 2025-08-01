@@ -1,0 +1,22 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+input: |
+  Q -> [[
+    x -> "java/lang/Boolean"
+  ]]
+output: |-
+  Φ ↦ ⟦
+    x ↦ "java/lang/Integer"
+  ⟧
+rules:
+  custom:
+    - name: sed with slashes
+      pattern: '[[ x -> !e ]]'
+      result: '[[ x -> !e1 ]]'
+      where:
+        - meta: '!e1'
+          function: sed
+          args:
+            - '!e'
+            - '"s/java\\/lang\\/Boolean/java\\/lang\\/Integer/g"'
