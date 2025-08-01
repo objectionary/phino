@@ -89,7 +89,7 @@ buildTermFromFunction "concat" args subst prog = do
   args' <- traverse (\arg -> argToStrBytes arg subst prog) args
   pure (TeExpression (DataString (strToBts (concat args'))))
 buildTermFromFunction "sed" args subst prog = do
-  when (length args < 2) (throwIO (userError "Function sed() requres at least two arguments"))
+  when (length args < 2) (throwIO (userError "Function sed() requires at least two arguments"))
   args' <-
     traverse
       ( \arg -> do

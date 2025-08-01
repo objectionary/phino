@@ -17,7 +17,7 @@ rules:
       where:
         - meta: '!e1'
           function: sed
-          args: 
+          args:
             - '!e'
             - '"s/1/2/g"'
             - '"s/2/3/g"'
