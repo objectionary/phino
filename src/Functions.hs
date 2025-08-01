@@ -121,7 +121,7 @@ buildTermFromFunction "sed" args subst prog = do
                 [pat, rep, ""] -> pure (pat, rep, False)
                 _ -> throwIO (userError "sed pattern must be in format s/pat/rep/[g]")
         _ -> throwIO (userError "sed pattern must start with s/")
-    -- Cut part from given string untill regular slash.
+    -- Cut part from given string until regular slash.
     nextUntilSlash :: B.ByteString -> B.ByteString -> Bool -> (B.ByteString, B.ByteString)
     nextUntilSlash input acc escape = case B.uncons input of
       Nothing -> (acc, B.empty)
