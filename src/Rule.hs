@@ -122,7 +122,9 @@ meetCondition' (Y.Eq (Y.CmpNum left) (Y.CmpNum right)) subst _ = case (numToInt 
 meetCondition' (Y.Eq (Y.CmpAttr left) (Y.CmpAttr right)) subst _ = pure [subst | compareAttrs left right subst]
   where
     compareAttrs :: Attribute -> Attribute -> Subst -> Bool
-    compareAttrs (AtMeta left) (AtMeta right) _ = left == right
+    compareAttrs (AtMeta left) (AtMeta right) (Subst mp) = case (M.lookup left mp, M.lookup right mp) of
+      (Just (MvAttribute left'), Just (MvAttribute right')) -> compareAttrs left' right' (Subst mp)
+      _ -> False
     compareAttrs attr (AtMeta meta) (Subst mp) = case M.lookup meta mp of
       Just (MvAttribute found) -> attr == found
       _ -> False
@@ -133,7 +135,9 @@ meetCondition' (Y.Eq (Y.CmpAttr left) (Y.CmpAttr right)) subst _ = pure [subst |
 meetCondition' (Y.Eq (Y.CmpExpr left) (Y.CmpExpr right)) subst _ = pure [subst | compareExprs left right subst]
   where
     compareExprs :: Expression -> Expression -> Subst -> Bool
-    compareExprs (ExMeta left) (ExMeta right) _ = left == right
+    compareExprs (ExMeta left) (ExMeta right) (Subst mp) = case (M.lookup left mp, M.lookup right mp) of
+      (Just (MvExpression left' _), Just (MvExpression right' _)) -> compareExprs left' right' (Subst mp)
+      _ -> False
     compareExprs expr (ExMeta meta) (Subst mp) = case M.lookup meta mp of
       Just (MvExpression found _) -> expr == found
       _ -> False
