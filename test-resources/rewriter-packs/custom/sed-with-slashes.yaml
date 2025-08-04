@@ -3,20 +3,36 @@
 ---
 input: |
   Q -> [[
-    x -> "java/lang/Boolean"
+    x -> "java/lang/Boolean",
+    y -> "()Ljava/lang/String;",
+    z -> "(Ljava/lang/String)Ljava/lang/Boolean"
   ]]
 output: |-
   Φ ↦ ⟦
-    x ↦ "java/lang/Integer"
+    x ↦ "java/lang/Integer",
+    y ↦ "invokevirtual",
+    z ↦ "invokestatic"
   ⟧
 rules:
   custom:
     - name: sed with slashes
-      pattern: '[[ x -> !e ]]'
-      result: '[[ x -> !e1 ]]'
+      pattern: '[[ x -> !e1, y -> !e2, z -> !e3 ]]'
+      result: '[[ x -> !e11, y -> !e22, z -> !e33 ]]'
       where:
-        - meta: '!e1'
+        - meta: '!e11'
           function: sed
           args:
-            - '!e'
+            - '!e1'
             - '"s/java\\/lang\\/Boolean/java\\/lang\\/Integer/g"'
+        - meta: '!e22'
+          function: sed
+          args:
+            - 𝑒2
+            - '"s/\\(\\).+/invokevirtual/g"'
+            - '"s/\\(.+\\).+/invokestatic/g"'
+        - meta: '!e33'
+          function: sed
+          args:
+            - '!e3'
+            - '"s/\\(.+\\).+/invokestatic/g"'
+            - '"s/\\(\\).+/invokevirtual/g"'

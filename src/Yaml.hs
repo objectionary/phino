@@ -65,7 +65,8 @@ instance FromJSON Comparable where
   parseJSON v =
     asum
       [ CmpAttr <$> parseJSON v,
-        CmpNum <$> parseJSON v
+        CmpNum <$> parseJSON v,
+        CmpExpr <$> parseJSON v
       ]
 
 instance FromJSON Condition where
@@ -136,6 +137,7 @@ data Number
 data Comparable
   = CmpAttr Attribute
   | CmpNum Number
+  | CmpExpr Expression
   deriving (Generic, Show)
 
 data Condition
