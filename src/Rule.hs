@@ -43,17 +43,6 @@ attrInBindings attr (bd : bds) = attrInBinding attr bd || attrInBindings attr bd
     attrInBinding _ _ = False
 attrInBindings _ _ = False
 
--- Apply 'eq' yaml condition to attributes
-compareAttrs :: Attribute -> Attribute -> Subst -> Bool
-compareAttrs (AtMeta left) (AtMeta right) _ = left == right
-compareAttrs attr (AtMeta meta) (Subst mp) = case M.lookup meta mp of
-  Just (MvAttribute found) -> attr == found
-  _ -> False
-compareAttrs (AtMeta meta) attr (Subst mp) = case M.lookup meta mp of
-  Just (MvAttribute found) -> attr == found
-  _ -> False
-compareAttrs left right subst = right == left
-
 -- Convert Number to Integer
 numToInt :: Y.Number -> Subst -> Maybe Integer
 numToInt (Y.Ordinal (AtMeta meta)) (Subst mp) = case M.lookup meta mp of
@@ -131,6 +120,27 @@ meetCondition' (Y.Eq (Y.CmpNum left) (Y.CmpNum right)) subst _ = case (numToInt 
   (Just left_, Just right_) -> pure [subst | left_ == right_]
   (_, _) -> pure []
 meetCondition' (Y.Eq (Y.CmpAttr left) (Y.CmpAttr right)) subst _ = pure [subst | compareAttrs left right subst]
+  where
+    compareAttrs :: Attribute -> Attribute -> Subst -> Bool
+    compareAttrs (AtMeta left) (AtMeta right) _ = left == right
+    compareAttrs attr (AtMeta meta) (Subst mp) = case M.lookup meta mp of
+      Just (MvAttribute found) -> attr == found
+      _ -> False
+    compareAttrs (AtMeta meta) attr (Subst mp) = case M.lookup meta mp of
+      Just (MvAttribute found) -> attr == found
+      _ -> False
+    compareAttrs left right _ = right == left
+meetCondition' (Y.Eq (Y.CmpExpr left) (Y.CmpExpr right)) subst _ = pure [subst | compareExprs left right subst]
+  where
+    compareExprs :: Expression -> Expression -> Subst -> Bool
+    compareExprs (ExMeta left) (ExMeta right) _ = left == right
+    compareExprs expr (ExMeta meta) (Subst mp) = case M.lookup meta mp of
+      Just (MvExpression found _) -> expr == found
+      _ -> False
+    compareExprs (ExMeta meta) expr (Subst mp) = case M.lookup meta mp of
+      Just (MvExpression found _) -> expr == found
+      _ -> False
+    compareExprs left right _ = left == right
 meetCondition' (Y.Eq _ _) _ _ = pure []
 meetCondition' (Y.NF (ExMeta meta)) (Subst mp) ctx = case M.lookup meta mp of
   Just (MvExpression expr _) -> pure [Subst mp | isNF expr ctx]
