@@ -138,6 +138,7 @@ Condition:
 Comparable:              # comparable object that may be used in 'eq' condition
   = Attribute'
   | Number
+  | Expression'
 
 Number:                  # comparable number
   = Integer              # just regular integer
