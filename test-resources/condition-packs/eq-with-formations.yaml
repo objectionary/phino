@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+expression: '[[ x -> [[ a -> "hey", b -> "jeff" ]] ]]'
+pattern: '[[ x -> !e ]]'
+condition:
+  eq:
+    - '!e'
+    - '[[ a -> "hey", b -> "jeff" ]]'
