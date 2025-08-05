@@ -179,7 +179,7 @@ Here's list of functions that are supported for extensions:
   Pattern must start with `s/`, consists of three parts
   separated by `/`, for example, this pattern `s/\\s+//g`
   replaces all the spaces with empty string. To escape braces and slashes
-  in pattern and replacement parts - use them with `\\`, 
+  in pattern and replacement parts - use them with `\\`,
   e.g. `s/\\(.+\\)//g`.
 * `random-string` - accepts dataizable expression or bytes as pattern.
   Replaces `%x` and `%d` formatters with random hex numbers and
