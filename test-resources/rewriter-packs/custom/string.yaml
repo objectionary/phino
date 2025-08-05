@@ -1,0 +1,19 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+input: |
+  Q -> [[ attr -> "hey" ]]
+output: |-
+  Φ ↦ ⟦ attr ↦ "hey", hey ↦ "attr" ⟧
+rules:
+  custom:
+    - name: string function
+      pattern: '[[ !a -> !e, !B ]]'
+      result: '[[ !a -> !e, !a1 -> !e1, !B ]]'
+      where:
+        - meta: '!a1'
+          function: tau
+          args: ['!e']
+        - meta: '!e1'
+          function: string
+          args: ['!a']

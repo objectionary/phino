@@ -145,4 +145,8 @@ buildTermFromFunction "tau" [Y.ArgExpression expr] subst prog = do
   attr <- parseAttributeThrows (btsToUnescapedStr bts)
   pure (TeAttribute attr)
 buildTermFromFunction "tau" _ _ _ = throwIO (userError "Function tau() requires exactly 1 argument as expression")
+buildTermFromFunction "string" [Y.ArgAttribute attr] subst prog = do
+  attr' <- buildAttributeThrows attr subst
+  pure (TeExpression (DataString (strToBts (prettyAttribute attr'))))
+buildTermFromFunction "string" _ _ _ = throwIO (userError "Function string() requires exactly 1 argument as attribute")
 buildTermFromFunction func _ _ _ = throwIO (userError (printf "Function %s() is not supported or does not exist" func))
