@@ -162,10 +162,13 @@ Here's list of functions that are supported for extensions:
 * `contextualize` - function of two arguments, that rewrites given expression
   depending on provided context according to the contextualization
   [rules](assets/contextualize.jpg)
-* `scope` - resolve the scope for given expression. Works only with meta
+* `scope` - resolves the scope for given expression. Works only with meta
   expressions denotes as `𝑒` or `!e`. The scope is nearest outer formation,
   if it's present. In all other cases the default scope is used, which is
   anonymous formation `⟦ ρ ↦ ∅ ⟧`.
+* `random-tau` - creates attribute with random unique name. Accepts bindings,
+  and attributes. Ensures that created attribute is not present in list of
+  provided attributes and does not exist as attribute in provided bindings.
 * `dataize` - dataizes given expression and returns bytes.
 * `concat` - accepts bytes or dataizable expressions as arguments,
   concatenates them into single sequence and convert it to expression
@@ -175,11 +178,19 @@ Here's list of functions that are supported for extensions:
   Accepts two arguments: target expression and pattern.
   Pattern must start with `s/`, consists of three parts
   separated by `/`, for example, this pattern `s/\\s+//g`
-  replaces all the spaces with empty string.
+  replaces all the spaces with empty string. To escape braces and slashes
+  in pattern and replacement parts - use them with `\\`,
+  e.g. `s/\\(.+\\)//g`.
 * `random-string` - accepts dataizable expression or bytes as pattern.
   Replaces `%x` and `%d` formatters with random hex numbers and
   decimals accordingly. Uniqueness is guaranteed during one
   execution of `phino`.
+* `size` - accepts exactly one meta binding and returns size of it and
+  `Φ̇.number`.
+* `tau` - accepts `Φ̇.string`, dataizes it and converts it to attribute.
+  If dataized string can't be converted to attribute - an error is thrown.
+* `string` - accepts `Φ̇.string` or `Φ̇.number` or attribute and converts it
+  to `Φ̇.string`.
 
 ## Meta variables
 

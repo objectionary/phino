@@ -145,4 +145,22 @@ buildTermFromFunction "tau" [Y.ArgExpression expr] subst prog = do
   attr <- parseAttributeThrows (btsToUnescapedStr bts)
   pure (TeAttribute attr)
 buildTermFromFunction "tau" _ _ _ = throwIO (userError "Function tau() requires exactly 1 argument as expression")
+buildTermFromFunction "string" [Y.ArgExpression expr] subst _ = do
+  (expr', _) <- buildExpressionThrows expr subst
+  str <- case expr' of
+    DataNumber bts -> pure (DataString (strToBts (either show show (btsToNum bts))))
+    DataString bts -> pure (DataString bts)
+    exp ->
+      throwIO
+        ( userError
+            ( printf
+                "Couldn't convert given expression to 'Φ̇.string' object, only 'Φ̇.number' or 'Φ̇.string' are allowed\n%s"
+                (prettyExpression' exp)
+            )
+        )
+  pure (TeExpression str)
+buildTermFromFunction "string" [Y.ArgAttribute attr] subst _ = do
+  attr' <- buildAttributeThrows attr subst
+  pure (TeExpression (DataString (strToBts (prettyAttribute attr'))))
+buildTermFromFunction "string" _ _ _ = throwIO (userError "Function string() requires exactly 1 argument as attribute or data expression (Φ̇.number or Φ̇.string)")
 buildTermFromFunction func _ _ _ = throwIO (userError (printf "Function %s() is not supported or does not exist" func))
