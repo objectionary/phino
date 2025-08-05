@@ -21,7 +21,8 @@ import Test.Hspec (Spec, describe, expectationFailure, it, runIO)
 import Yaml qualified
 
 data ConditionPack = ConditionPack
-  { expression :: Expression,
+  { failure :: Maybe Bool,
+    expression :: Expression,
     pattern :: Expression,
     condition :: Yaml.Condition
   }
@@ -39,10 +40,19 @@ spec = describe "check conditions" $ do
         let matched = matchProgram (pattern pack) prog
         unless (matched /= []) (expectationFailure "List of matched substitutions is empty which is not expected")
         met <- meetCondition (condition pack) matched (RuleContext prog buildTermFromFunction)
-        when
-          (null met)
-          ( expectationFailure $
-              "List of substitution after condition check must be not empty\nOriginal substitutions:\n"
-                ++ prettySubsts matched
-          )
+        case failure pack of
+          Just True ->
+            unless
+              (null met)
+              ( expectationFailure $
+                  "List of substitutions after condition check must be empty, but got:\n"
+                    ++ prettySubsts matched
+              )
+          _ ->
+            when
+              (null met)
+              ( expectationFailure $
+                  "List of substitution after condition check must be not empty\nOriginal substitutions:\n"
+                    ++ prettySubsts matched
+              )
     )
