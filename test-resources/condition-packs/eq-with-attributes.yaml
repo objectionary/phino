@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+expression: '[[ x -> Φ.hone.o-filter ]]'
+pattern: '[[ x -> Q.hone.𝜏-filter ]]'
+condition:
+  or:
+    - eq: [𝜏-filter, 'x-filter']
+    - eq: [𝜏-filter, 'y-filter']
+    - eq: [𝜏-filter, 'o-filter']

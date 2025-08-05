@@ -92,7 +92,7 @@ isNF (ExFormation bds) ctx = normalBindings bds || not (matchesAnyNormalizationR
 isNF expr ctx = not (matchesAnyNormalizationRule expr ctx)
 
 meetCondition' :: Y.Condition -> Subst -> RuleContext -> IO [Subst]
-meetCondition' (Y.Or []) subst _ = pure [subst]
+meetCondition' (Y.Or []) _ _ = pure []
 meetCondition' (Y.Or (cond : rest)) subst ctx = do
   met <- meetCondition' cond subst ctx
   if null met
