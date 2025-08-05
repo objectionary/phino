@@ -2,18 +2,18 @@
 # SPDX-License-Identifier: MIT
 ---
 input: |
-  Q -> [[ attr -> "hey" ]]
+  Q -> [[ attr -> 55 ]]
 output: |-
-  Φ ↦ ⟦ attr ↦ "hey", hey ↦ "attr" ⟧
+  Φ ↦ ⟦ str ↦ "attr", num -> "55" ⟧
 rules:
   custom:
     - name: string function
       pattern: '[[ !a -> !e, !B ]]'
-      result: '[[ !a -> !e, !a1 -> !e1, !B ]]'
+      result: '[[ str -> !e-str, num -> !e-num, !B ]]'
       where:
-        - meta: '!a1'
-          function: tau
-          args: ['!e']
-        - meta: '!e1'
+        - meta: '!e-str'
           function: string
           args: ['!a']
+        - meta: '!e-num'
+          function: string
+          args: ['!e']
