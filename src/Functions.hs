@@ -17,7 +17,7 @@ import GHC.IO (unsafePerformIO)
 import Matcher
 import Misc
 import Numeric (showHex)
-import Parser (parseAttributeThrows)
+import Parser (parseAttributeThrows, parseNumberThrows)
 import Pretty
 import Random (randomString)
 import Regexp
@@ -163,4 +163,12 @@ buildTermFromFunction "string" [Y.ArgAttribute attr] subst _ = do
   attr' <- buildAttributeThrows attr subst
   pure (TeExpression (DataString (strToBts (prettyAttribute attr'))))
 buildTermFromFunction "string" _ _ _ = throwIO (userError "Function string() requires exactly 1 argument as attribute or data expression (Φ̇.number or Φ̇.string)")
+buildTermFromFunction "number" [Y.ArgExpression expr] subst _ = do
+  (expr', _) <- buildExpressionThrows expr subst
+  case expr' of
+    DataString bts -> do
+      num <- parseNumberThrows (btsToUnescapedStr bts)
+      pure (TeExpression num)
+    _ -> throwIO (userError (printf "Function number() expects expression to be 'Φ̇.string', but got:\n%s" (prettyExpression' expr')))
+buildTermFromFunction "number" _ _ _ = throwIO (userError "Function number() requires exactly 1 argument as 'Φ̇.string'")
 buildTermFromFunction func _ _ _ = throwIO (userError (printf "Function %s() is not supported or does not exist" func))

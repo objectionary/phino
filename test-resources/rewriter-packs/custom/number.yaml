@@ -1,0 +1,20 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+input: Q -> [[ x -> "5", y -> "42.1" ]]
+output: |-
+  Φ ↦ ⟦
+    x ↦ 5,
+    y -> 42.1
+  ⟧
+rules:
+  custom:
+    - pattern: '[[ x -> !e1, y -> !e2 ]]'
+      result: '[[ x -> !e11, y -> !e22 ]]'
+      where:
+        - meta: '!e11'
+          function: number
+          args: ['!e1']
+        - meta: '!e22'
+          function: number
+          args: ['!e2']

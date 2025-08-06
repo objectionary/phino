@@ -239,6 +239,8 @@ bytesToBts str =
 -- "hello"
 -- >>> btsToStr (BtOne "68")
 -- "h"
+-- >>> btsToStr (BtOne "35")
+-- "5"
 -- >>> btsToStr (BtMany ["77", "6F", "72", "6C", "64"])
 -- "world"
 -- >>> btsToStr BtEmpty
@@ -268,6 +270,8 @@ btsToStr bytes = escapeStr (btsToUnescapedStr bytes)
 -- "world"
 -- >>> btsToUnescapedStr (BtMany ["68", "22"])
 -- "h\""
+-- >>> btsToUnescapedStr (BtOne "35")
+-- "5"
 btsToUnescapedStr :: Bytes -> String
 btsToUnescapedStr bytes = T.unpack (T.decodeUtf8 (B.pack (btsToWord8 bytes)))
 
