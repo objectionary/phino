@@ -12,6 +12,8 @@ module Parser
     parseExpressionThrows,
     parseAttribute,
     parseAttributeThrows,
+    parseNumber,
+    parseNumberThrows,
     parseBinding,
     parseBytes,
   )
@@ -39,12 +41,14 @@ data ParserException
   = CouldNotParseProgram {message :: String}
   | CouldNotParseExpression {message :: String}
   | CouldNotParseAttribute {message :: String}
+  | CouldNotParseNumber {message :: String}
   deriving (Exception)
 
 instance Show ParserException where
   show CouldNotParseProgram {..} = printf "Couldn't parse given phi program, cause: %s" message
-  show CouldNotParseExpression {..} = printf "Couldn't parse given phi program, cause: %s" message
+  show CouldNotParseExpression {..} = printf "Couldn't parse given phi expression, cause: %s" message
   show CouldNotParseAttribute {..} = printf "Couldn't parse given attribute, cause: %s" message
+  show CouldNotParseNumber {..} = printf "Couldn't parse given number to 'Φ̇.number', cause: %s" message
 
 -- White space consumer
 whiteSpace :: Parser ()
@@ -202,6 +206,18 @@ bytes =
         <?> "bytes"
     )
 
+number :: Parser Expression
+number = do
+  sign <- optional (choice [char '-', char '+'])
+  unsigned <- lexeme L.scientific
+  let num =
+        toRealFloat
+          ( case sign of
+              Just '-' -> negate unsigned
+              _ -> unsigned
+          )
+  return (DataNumber (numToBts num))
+
 tauBinding :: Parser Attribute -> Parser Binding
 tauBinding attr = do
   attr' <- attr
@@ -329,16 +345,7 @@ exHead =
       do
         _ <- choice [symbol "T", symbol "⊥"]
         return ExTermination,
-      do
-        sign <- optional (choice [char '-', char '+'])
-        unsigned <- lexeme L.scientific
-        let num =
-              toRealFloat
-                ( case sign of
-                    Just '-' -> negate unsigned
-                    _ -> unsigned
-                )
-        return (DataNumber (numToBts num)),
+      number,
       lexeme $ do
         _ <- char '"'
         str <- manyTill (choice [escapedChar, noneOf ['\\', '"']]) (char '"')
@@ -437,6 +444,14 @@ parseBytes = parse' "bytes" bytes
 
 parseBinding :: String -> Either String Binding
 parseBinding = parse' "binding" binding
+
+parseNumber :: String -> Either String Expression
+parseNumber = parse' "number" number
+
+parseNumberThrows :: String -> IO Expression
+parseNumberThrows num = case parseNumber num of
+  Right num' -> pure num'
+  Left err -> throwIO (CouldNotParseNumber err)
 
 parseAttribute :: String -> Either String Attribute
 parseAttribute = parse' "attribute" fullAttribute
