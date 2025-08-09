@@ -38,7 +38,7 @@ data BuildException
   deriving (Exception)
 
 metaMsg :: String -> String
-metaMsg = printf "meta '%s' is either does not exist or refers to an inapropriate term"
+metaMsg = printf "meta '%s' is either does not exist or refers to an inappropriate term"
 
 -- @todo #277:30min Error messages are too verbose. Now, if we can't build expression or binding, we
 --  throw an exception and just print whole expression or binding to console.

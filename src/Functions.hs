@@ -38,7 +38,7 @@ buildTerm "size" = _size
 buildTerm "tau" = _tau
 buildTerm "string" = _string
 buildTerm "number" = _number
-buildTerm func  = _unsopported func
+buildTerm func  = _unsupported func
 
 argToStrBytes :: Y.ExtraArgument -> Subst -> Program -> IO String
 argToStrBytes (Y.ArgBytes bytes) subst _ = do
@@ -207,5 +207,5 @@ _number [Y.ArgExpression expr] subst _ = do
     _ -> throwIO (userError (printf "Function number() expects expression to be 'Φ̇.string', but got:\n%s" (prettyExpression' expr')))
 _number _ _ _ = throwIO (userError "Function number() requires exactly 1 argument as 'Φ̇.string'")
 
-_unsopported :: String -> [Y.ExtraArgument] -> Subst -> Program -> IO Term
-_unsopported func _ _ _ = throwIO (userError (printf "Function %s() is not supported or does not exist" func))
+_unsupported :: String -> [Y.ExtraArgument] -> Subst -> Program -> IO Term
+_unsupported func _ _ _ = throwIO (userError (printf "Function %s() is not supported or does not exist" func))
