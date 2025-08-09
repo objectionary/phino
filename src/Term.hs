@@ -1,7 +1,7 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
--- The main goal of this module is breking cyclic dependency:
+-- The main goal of this module is breaking cyclic dependency:
 -- Dataize -> Functions -> Rewriter -> Dataize
 -- Here we provide custom type BuildTermFunc and add it to
 -- RewriteContext and DataizeContext. Now Dataize and Rewrite depends

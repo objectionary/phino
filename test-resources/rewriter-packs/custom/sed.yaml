@@ -13,13 +13,14 @@ output: |-
     x ↦ "hello",
     y ↦ "11!",
     z ↦ "Hello, 2025!, 2026!",
-    w ↦ "jeff hi"
+    w ↦ "jeff hi",
+    o ↦ "((he(llo(("
   ⟧
 rules:
   custom:
     - name: concat from expression
       pattern: '[[ x -> !e1, y -> !e2, z -> !e10, w -> !e11 ]]'
-      result: '[[ x -> !e3, y -> !e4, z -> !e20, w -> !e21 ]]'
+      result: '[[ x -> !e3, y -> !e4, z -> !e20, w -> !e21, o -> !e5 ]]'
       where:
         - meta: '!e3'
           function: sed
@@ -33,3 +34,6 @@ rules:
         - meta: '!e21'
           function: sed
           args: ['!e11', '"s/(hi) \\((jeff)\\)/$2 $1"']
+        - meta: '!e5'
+          function: sed
+          args: ['!e1', '"s/\\s/(/g"']
