@@ -6,6 +6,14 @@ To run all the tests you can do:
 cabal test
 # OR
 stack test
+# OR
+make test
+```
+
+To run `hlint` you can do:
+
+```bash
+make hlint
 ```
 
 To run a specific test you can do:

@@ -91,7 +91,7 @@ _not cond subst ctx = do
 _in :: Attribute -> Binding -> Subst -> RuleContext -> IO [Subst]
 _in attr binding subst _ =
   case (buildAttribute attr subst, buildBinding binding subst) of
-    (Just attr, Just bds) -> pure [subst | attrInBindings attr bds] -- if attrInBindings attr bd then [subst] else []
+    (Right attr, Right bds) -> pure [subst | attrInBindings attr bds] -- if attrInBindings attr bd then [subst] else []
     (_, _) -> pure []
   where
     -- Check if given attribute is present in given binding

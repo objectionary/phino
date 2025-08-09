@@ -31,33 +31,40 @@ import Text.Printf (printf)
 import Yaml (ExtraArgument (..))
 
 data BuildException
-  = CouldNotBuildExpression {_expr :: Expression, _subst :: Subst}
-  | CouldNotBuildAttribute {_attr :: Attribute, _subst :: Subst}
-  | CouldNotBuildBinding {_bd :: Binding, _subst :: Subst}
-  | CouldNotBuildBytes {_bts :: Bytes, _subst :: Subst}
+  = CouldNotBuildExpression {_expr :: Expression, _meta :: String}
+  | CouldNotBuildAttribute {_attr :: Attribute, _meta :: String}
+  | CouldNotBuildBinding {_bd :: Binding, _meta :: String}
+  | CouldNotBuildBytes {_bts :: Bytes, _meta :: String}
   deriving (Exception)
 
+metaMsg :: String -> String
+metaMsg = printf "meta '%s' is either does not exist or refers to an inapropriate term"
+
+-- @todo #277:30min Error messages are too verbose. Now, if we can't build expression or binding, we
+--  throw an exception and just print whole expression or binding to console.
+--  If this elements are big, it's just a mess and error message became unreadable. It would be nice to
+--  print expression or binding in some reduce way, removing some parts or printing only first N lines
 instance Show BuildException where
   show CouldNotBuildExpression {..} =
     printf
-      "Couldn't build given expression with provided substitutions\n--Expression: %s\n--Substitutions: %s"
+      "Couldn't build expression, %s\n--Expression: %s"
+      (metaMsg _meta)
       (prettyExpression _expr)
-      (prettySubst _subst)
   show CouldNotBuildAttribute {..} =
     printf
-      "Couldn't build given attribute with provided substitutions\n--Attribute: %s\n--Substitutions: %s"
+      "Couldn't build attribute '%s', %s"
       (prettyAttribute _attr)
-      (prettySubst _subst)
+      (metaMsg _meta)
   show CouldNotBuildBinding {..} =
     printf
-      "Couldn't build given binding with provided substitutions\n--Binding: %s\n--Substitutions: %s"
+      "Couldn't build binding, %s\n--Binding: %s"
+      (metaMsg _meta)
       (prettyBinding _bd)
-      (prettySubst _subst)
   show CouldNotBuildBytes {..} =
     printf
-      "Couldn't build given bytes with provided substitutions\n--Bytes: %s\n--Substitutions: %s"
+      "Couldn't build bytes '%s', %s"
       (prettyBytes _bts)
-      (prettySubst _subst)
+      (metaMsg _meta)
 
 contextualize :: Expression -> Expression -> Program -> Expression
 contextualize ExGlobal _ (Program expr) = expr
@@ -70,47 +77,47 @@ contextualize (ExApplication expr (BiTau attr bexpr)) context prog =
       bexpr' = contextualize bexpr context prog
    in ExApplication expr' (BiTau attr bexpr')
 
-buildAttribute :: Attribute -> Subst -> Maybe Attribute
+buildAttribute :: Attribute -> Subst -> Either String Attribute
 buildAttribute (AtMeta meta) (Subst mp) = case Map.lookup meta mp of
-  Just (MvAttribute attr) -> Just attr
-  _ -> Nothing
-buildAttribute attr _ = Just attr
+  Just (MvAttribute attr) -> Right attr
+  _ -> Left meta
+buildAttribute attr _ = Right attr
 
-buildBytes :: Bytes -> Subst -> Maybe Bytes
+buildBytes :: Bytes -> Subst -> Either String Bytes
 buildBytes (BtMeta meta) (Subst mp) = case Map.lookup meta mp of
-  Just (MvBytes bytes) -> Just bytes
-  _ -> Nothing
-buildBytes bts _ = Just bts
+  Just (MvBytes bytes) -> Right bytes
+  _ -> Left meta
+buildBytes bts _ = Right bts
 
 -- Build binding
 -- The function returns [Binding] because the BiMeta is always attached
 -- to the list of bindings
-buildBinding :: Binding -> Subst -> Maybe [Binding]
+buildBinding :: Binding -> Subst -> Either String [Binding]
 buildBinding (BiTau attr expr) subst = do
   attribute <- buildAttribute attr subst
   (expression, _) <- buildExpression expr subst
-  Just [BiTau attribute expression]
+  Right [BiTau attribute expression]
 buildBinding (BiVoid attr) subst = do
   attribute <- buildAttribute attr subst
-  Just [BiVoid attribute]
+  Right [BiVoid attribute]
 buildBinding (BiMeta meta) (Subst mp) = case Map.lookup meta mp of
-  Just (MvBindings bds) -> Just bds
-  _ -> Nothing
+  Just (MvBindings bds) -> Right bds
+  _ -> Left meta
 buildBinding (BiDelta bytes) subst = do
   bts <- buildBytes bytes subst
-  Just [BiDelta bts]
+  Right [BiDelta bts]
 buildBinding (BiMetaLambda meta) (Subst mp) = case Map.lookup meta mp of
-  Just (MvFunction func) -> Just [BiLambda func]
-  _ -> Nothing
-buildBinding binding _ = Just [binding]
+  Just (MvFunction func) -> Right [BiLambda func]
+  _ -> Left meta
+buildBinding binding _ = Right [binding]
 
 -- Build bindings that may contain meta binding (BiMeta)
-buildBindings :: [Binding] -> Subst -> Maybe [Binding]
-buildBindings [] _ = Just []
+buildBindings :: [Binding] -> Subst -> Either String [Binding]
+buildBindings [] _ = Right []
 buildBindings (bd : rest) subst = do
   first <- buildBinding bd subst
   bds <- buildBindings rest subst
-  Just (first ++ bds)
+  Right (first ++ bds)
 
 buildExpressionWithTails :: Expression -> [Tail] -> Subst -> Expression
 buildExpressionWithTails expr [] _ = expr
@@ -123,49 +130,48 @@ buildExpressionWithTails expr (tail : rest) subst = case tail of
 -- where X is built expression and Y is context of X
 -- If meta expression is built from MvExpression, is has
 -- context from original Program. It have default context otherwise
-buildExpression :: Expression -> Subst -> Maybe (Expression, Expression)
+buildExpression :: Expression -> Subst -> Either String (Expression, Expression)
 buildExpression (ExDispatch expr attr) subst = do
   (dispatched, scope) <- buildExpression expr subst
   attr <- buildAttribute attr subst
-  return (ExDispatch dispatched attr, scope)
+  Right (ExDispatch dispatched attr, scope)
 buildExpression (ExApplication expr (BiTau battr bexpr)) subst = do
   (applied, scope) <- buildExpression expr subst
-  [binding] <- buildBinding (BiTau battr bexpr) subst
-  Just (ExApplication applied binding, scope)
-buildExpression (ExApplication _ _) _ = Nothing
+  bds <- buildBinding (BiTau battr bexpr) subst
+  Right (ExApplication applied (head bds), scope)
 buildExpression (ExFormation bds) subst = do
   bds' <- buildBindings bds subst
-  Just (ExFormation bds', defaultScope)
+  Right (ExFormation bds', defaultScope)
 buildExpression (ExMeta meta) (Subst mp) = case Map.lookup meta mp of
-  Just (MvExpression expr scope) -> Just (expr, scope)
-  _ -> Nothing
+  Just (MvExpression expr scope) -> Right (expr, scope)
+  _ -> Left meta
 buildExpression (ExMetaTail expr meta) subst = do
   let (Subst mp) = subst
   (expression, scope) <- buildExpression expr subst
   case Map.lookup meta mp of
-    Just (MvTail tails) -> Just (buildExpressionWithTails expression tails subst, scope)
-    _ -> Nothing
-buildExpression expr _ = Just (expr, defaultScope)
+    Just (MvTail tails) -> Right (buildExpressionWithTails expression tails subst, scope)
+    _ -> Left meta
+buildExpression expr _ = Right (expr, defaultScope)
 
 buildBytesThrows :: Bytes -> Subst -> IO Bytes
 buildBytesThrows bytes subst = case buildBytes bytes subst of
-  Just bts -> pure bts
-  _ -> throwIO (CouldNotBuildBytes bytes subst)
+  Right bts -> pure bts
+  Left meta -> throwIO (CouldNotBuildBytes bytes meta)
 
 buildBindingThrows :: Binding -> Subst -> IO [Binding]
 buildBindingThrows bd subst = case buildBinding bd subst of
-  Just bds -> pure bds
-  _ -> throwIO (CouldNotBuildBinding bd subst)
+  Right bds -> pure bds
+  Left meta -> throwIO (CouldNotBuildBinding bd meta)
 
 buildAttributeThrows :: Attribute -> Subst -> IO Attribute
 buildAttributeThrows attr subst = case buildAttribute attr subst of
-  Just attr' -> pure attr'
-  _ -> throwIO (CouldNotBuildAttribute attr subst)
+  Right attr' -> pure attr'
+  Left meta -> throwIO (CouldNotBuildAttribute attr meta)
 
 buildExpressionThrows :: Expression -> Subst -> IO (Expression, Expression)
 buildExpressionThrows expr subst = case buildExpression expr subst of
-  Just built -> pure built
-  _ -> throwIO (CouldNotBuildExpression expr subst)
+  Right built -> pure built
+  Left meta -> throwIO (CouldNotBuildExpression expr meta)
 
 -- Build a several expression from one expression and several substitutions
 buildExpressions :: Expression -> [Subst] -> IO [(Expression, Expression)]

@@ -27,4 +27,4 @@ release:
 merge:
   script: |-
     cabal build
-    cabal test
+    make

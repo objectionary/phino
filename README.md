@@ -221,7 +221,7 @@ before sending us your pull request please make sure all your tests pass:
 
 ```bash
 cabal build all
-cabal test
+make
 ```
 
 To generate a local coverage report for development, run:
