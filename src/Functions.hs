@@ -54,8 +54,7 @@ _contextualize [Y.ArgExpression expr, Y.ArgExpression context] subst prog = do
   (expr', _) <- buildExpressionThrows expr subst
   (context', _) <- buildExpressionThrows context subst
   pure (TeExpression (contextualize expr' context' prog))
-
-_contextualize' _ _ _ = throwIO (userError "Function contextualize() requires exactly 2 arguments as expression")
+_contextualize _ _ _ = throwIO (userError "Function contextualize() requires exactly 2 arguments as expression")
 
 _scope :: [Y.ExtraArgument] -> Subst -> Program -> IO Term
 _scope [Y.ArgExpression expr] subst _ = do
