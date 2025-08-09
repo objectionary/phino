@@ -19,7 +19,7 @@ import Misc (ensuredFile)
 import Parser (parseProgram, parseProgramThrows)
 import Pretty (PrintMode (SWEET), prettyAttribute, prettyBytes, prettyExpression, prettyExpression', prettyProgram, prettyProgram', prettySubsts)
 import Replacer (replaceProgram, replaceProgramThrows)
-import Rule (RuleContext (RuleContext), meetMaybeCondition)
+import Rule (RuleContext (RuleContext), matchProgramWithRule)
 import qualified Rule as R
 import Term
 import Text.Printf

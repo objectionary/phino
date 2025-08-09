@@ -10,7 +10,7 @@ import Ast (Expression, Program (Program))
 import Control.Monad
 import Data.Aeson
 import Data.Yaml qualified as Y
-import Functions (buildTermFromFunction)
+import Functions (buildTerm)
 import GHC.Generics
 import Matcher
 import Misc
@@ -39,7 +39,7 @@ spec = describe "check conditions" $ do
         let prog = Program (expression pack)
         let matched = matchProgram (pattern pack) prog
         unless (matched /= []) (expectationFailure "List of matched substitutions is empty which is not expected")
-        met <- meetCondition (condition pack) matched (RuleContext prog buildTermFromFunction)
+        met <- meetCondition (condition pack) matched (RuleContext prog buildTerm)
         case failure pack of
           Just True ->
             unless

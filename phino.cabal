@@ -101,7 +101,6 @@ test-suite spec
     YamlSpec,
     MiscSpec,
     XMIRSpec,
-    HLintSpec,
     DataizeSpec,
     Paths_phino
   autogen-modules:

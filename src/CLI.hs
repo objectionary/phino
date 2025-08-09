@@ -17,7 +17,7 @@ import Data.Char (toLower, toUpper)
 import Data.List (intercalate)
 import Data.Version (showVersion)
 import Dataize (DataizeContext (DataizeContext), dataize)
-import Functions (buildTermFromFunction)
+import Functions (buildTerm)
 import qualified Functions
 import Logger
 import Misc (ensuredFile)
@@ -186,7 +186,7 @@ runCLI args = handle handler $ do
       input <- readInput inputFile
       rules' <- getRules
       program <- parseProgram input inputFormat
-      rewritten <- rewrite' program rules' (RewriteContext program maxDepth buildTermFromFunction must)
+      rewritten <- rewrite' program rules' (RewriteContext program maxDepth buildTerm must)
       logDebug (printf "Printing rewritten 𝜑-program as %s" (show outputFormat))
       out <- printProgram rewritten outputFormat printMode
       putStrLn out
@@ -225,7 +225,7 @@ runCLI args = handle handler $ do
       validateMaxDepth maxDepth
       input <- readInput inputFile
       prog <- parseProgram input inputFormat
-      dataized <- dataize prog (DataizeContext prog maxDepth buildTermFromFunction)
+      dataized <- dataize prog (DataizeContext prog maxDepth buildTerm)
       maybe (throwIO CouldNotDataize) (putStrLn . prettyBytes) dataized
   where
     validateMaxDepth :: Integer -> IO ()

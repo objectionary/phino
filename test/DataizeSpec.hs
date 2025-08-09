@@ -8,10 +8,10 @@ import Control.Monad
 import Dataize (dataize, dataize', morph, DataizeContext (DataizeContext))
 import Parser (parseProgramThrows)
 import Test.Hspec
-import Functions (buildTermFromFunction)
+import Functions (buildTerm)
 
 defaultDataizeContext :: Program -> DataizeContext
-defaultDataizeContext prog = DataizeContext prog 25 buildTermFromFunction
+defaultDataizeContext prog = DataizeContext prog 25 buildTerm
 
 test :: (Eq a, Show a) => (Expression -> DataizeContext -> IO (Maybe a)) -> [(String, Expression, Expression, Maybe a)] -> Spec
 test func useCases =
