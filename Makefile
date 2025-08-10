@@ -14,4 +14,8 @@ test:
 
 .SILENT:
 hlint:
-	hlint src app test
+	if command -v hlint &> /dev/null; then
+		hlint src app test
+	else
+			echo "hlint not found, skipping." >&2  # Optional: Print a message
+	fi
