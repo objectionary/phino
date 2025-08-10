@@ -178,7 +178,7 @@ spec = do
           ["rewrite", "--nothing", "--output=xmir", "--omit-listing"]
           ["<?xml version=\"1.0\" encoding=\"UTF-8\"?>", "<object", "<listing>4 lines of phi</listing>", "  <o base=\"Q.y\" name=\"x\"/>"]
 
-    it "does not fail on exactly 1 rewrting" $
+    it "does not fail on exactly 1 rewriting" $
       withStdin "{⟦ t ↦ ⟦ x ↦ \"foo\" ⟧ ⟧}" $
         testCLI
           ["rewrite", "--rule=test-resources/cli/simple.yaml", "--must=1", "--sweet"]
