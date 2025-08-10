@@ -81,7 +81,7 @@ rewrite program (rule : rest) ctx = do
               matched <- R.matchProgramWithRule prog rule (RuleContext (_program ctx) (_buildTerm ctx))
               if null matched
                 then do
-                  logDebug (printf "Rule '%s' does not match, rewriting is stoped" ruleName)
+                  logDebug (printf "Rule '%s' does not match, rewriting is stopped" ruleName)
                   pure prog
                 else do
                   logDebug (printf "Rule '%s' has been matched, applying..." ruleName)
