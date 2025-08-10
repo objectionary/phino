@@ -178,7 +178,7 @@ spec = do
           ["rewrite", "--nothing", "--output=xmir", "--omit-listing"]
           ["<?xml version=\"1.0\" encoding=\"UTF-8\"?>", "<object", "<listing>4 lines of phi</listing>", "  <o base=\"Q.y\" name=\"x\"/>"]
 
-    it "does not fail on exactly 1 rewrtingin" $
+    it "does not fail on exactly 1 rewrting" $
       withStdin "{⟦ t ↦ ⟦ x ↦ \"foo\" ⟧ ⟧}" $
         testCLI
           ["rewrite", "--rule=test-resources/cli/simple.yaml", "--must=1", "--sweet"]
@@ -190,7 +190,7 @@ spec = do
 
     it "fails with --normalize and --must" $
       withStdin "Q -> [[ x -> [[ y -> 5 ]].y ]].x" $
-        testCLIFailed ["rewrite", "--normalize", "--must"] "it's expected exactly 1 rewriting cycles happened, but rewriting is still going"
+        testCLIFailed ["rewrite", "--max-depth=2", "--normalize", "--must"] "it's expected exactly 1 rewriting cycles happened, but rewriting is still going"
 
   describe "dataize" $ do
     it "dataizes simple program" $

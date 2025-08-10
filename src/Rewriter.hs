@@ -63,29 +63,42 @@ buildAndReplace program ptn res substs = do
 rewrite :: Program -> [Y.Rule] -> RewriteContext -> IO Program
 rewrite program [] _ = pure program
 rewrite program (rule : rest) ctx = do
-  let ruleName = fromMaybe "unknown" (Y.name rule)
-      ptn = Y.pattern rule
-      res = Y.result rule
-  matched <- R.matchProgramWithRule program rule (RuleContext (_program ctx) (_buildTerm ctx))
-  prog <-
-    if null matched
-      then pure program
-      else do
-        logDebug (printf "Rule '%s' has been matched, applying..." ruleName)
-        prog' <- buildAndReplace program ptn res matched
-        if program == prog'
-          then logDebug (printf "Applied '%s', no changes made" ruleName)
-          else
-            logDebug
-              ( printf
-                  "Applied '%s' (%d nodes -> %d nodes):\n%s"
-                  ruleName
-                  (countNodes program)
-                  (countNodes prog')
-                  (prettyProgram' prog' SWEET)
-              )
-        pure prog'
+  prog <- _rewrite program 1
   rewrite prog rest ctx
+  where
+    _rewrite :: Program -> Integer -> IO Program
+    _rewrite prog count =
+      let ruleName = fromMaybe "unknown" (Y.name rule)
+          ptn = Y.pattern rule
+          res = Y.result rule
+          depth = _maxDepth ctx
+       in if count - 1 == depth
+            then do
+              logDebug (printf "Max amount of rewriting cycles (%d) for rule '%s' has been reached, rewriting is stopped" depth ruleName)
+              pure prog
+            else do
+              logDebug (printf "Starting rewriting cycle for rule '%s': %d out of %d" ruleName count depth)
+              matched <- R.matchProgramWithRule prog rule (RuleContext (_program ctx) (_buildTerm ctx))
+              if null matched
+                then do
+                  logDebug (printf "Rule '%s' does not match, rewriting is stoped" ruleName)
+                  pure prog
+                else do
+                  logDebug (printf "Rule '%s' has been matched, applying..." ruleName)
+                  prog' <- buildAndReplace prog ptn res matched
+                  if prog == prog'
+                    then do
+                      logDebug (printf "Applied '%s', no changes made" ruleName)
+                      pure prog
+                    else do
+                      logDebug
+                        ( printf
+                            "Applied '%s' (%d nodes -> %d nodes)"
+                            ruleName
+                            (countNodes prog)
+                            (countNodes prog')
+                        )
+                      _rewrite prog' (count + 1)
 
 -- @todo #169:30min Memorize previous rewritten programs. Right now in order not to
 --  get an infinite recursion during rewriting we just count have many times we apply
@@ -106,10 +119,10 @@ rewrite' prog rules ctx = _rewrite prog 1
         else
           if count - 1 == depth
             then do
-              logDebug (printf "Max amount of rewriting cycles (%d) has been reached, rewriting is stopped" depth)
+              logDebug (printf "Max amount of rewriting cycles for all rules (%d) has been reached, rewriting is stopped" depth)
               pure prog
             else do
-              logDebug (printf "Starting rewriting cycle %d out of %d" count depth)
+              logDebug (printf "Starting rewriting cycle for all rules: %d out of %d" count depth)
               rewritten <- rewrite prog rules ctx
               if rewritten == prog
                 then do

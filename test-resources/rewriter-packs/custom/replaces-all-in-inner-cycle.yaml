@@ -1,0 +1,25 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+repeat: 3
+must: 1
+input: |
+  {[[
+    x -> "hello",
+    y -> "world",
+    z -> "!"
+  ]]}
+output: |
+  {[[ ]]}
+rules:
+  custom:
+    - name: tau to void
+      pattern: |
+        [[ !B1, !a -> !e, !B2 ]]
+      result: |
+        [[ !B1, !a -> ?, !B2 ]]
+    - name: voids to empty
+      pattern: |
+        [[ !a1 -> ?, !a2 -> ?, !a3 -> ?, ^ -> ? ]]
+      result: |
+        [[ ]]

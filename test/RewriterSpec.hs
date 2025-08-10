@@ -12,16 +12,16 @@ import Control.Monad (forM_, unless)
 import Data.Aeson
 import Data.Char (isSpace)
 import Data.Yaml qualified as Yaml
+import Functions (buildTerm)
 import GHC.Generics
 import Misc (allPathsIn, ensuredFile)
 import Parser (parseProgramThrows)
-import Pretty (prettyProgram', PrintMode (SWEET))
+import Pretty (PrintMode (SWEET), prettyProgram')
+import Rewriter (RewriteContext (RewriteContext), rewrite')
 import System.FilePath (makeRelative, replaceExtension, (</>))
 import Test.Hspec (Spec, describe, expectationFailure, it, pending, runIO)
 import Yaml (normalizationRules)
 import Yaml qualified as Y
-import Rewriter (rewrite', RewriteContext (RewriteContext))
-import Functions (buildTerm)
 
 data Rules = Rules
   { basic :: Maybe [String],
@@ -35,6 +35,7 @@ data YamlPack = YamlPack
     rules :: Maybe Rules,
     skip :: Maybe Bool,
     repeat_ :: Maybe Integer,
+    must :: Maybe Integer,
     normalize :: Maybe Bool
   }
   deriving (Generic, Show)
@@ -72,6 +73,9 @@ spec =
                   else case repeat_ pack of
                     Just num -> num
                     _ -> 1
+              must' = case must pack of
+                Just num -> num
+                _ -> 0
           case skip pack of
             Just True -> pending
             _ -> do
@@ -92,7 +96,7 @@ spec =
                   if normalize'
                     then pure normalizationRules
                     else pure []
-              rewritten <- rewrite' program rules' (RewriteContext program repeat' buildTerm 0)
+              rewritten <- rewrite' program rules' (RewriteContext program repeat' buildTerm must')
               result' <- parseProgramThrows (output pack)
               unless (rewritten == result') $
                 expectationFailure
