@@ -13,7 +13,18 @@
 This is a command-line normalizer, rewriter, and dataizer
 of [𝜑-calculus](https://www.eolang.org) expressions.
 
-Install [Cabal][cabal] first and then:
+First, you write a simple [𝜑-calculus](https://www.eolang.org) program
+in the `hello.phi` file:
+
+```text
+Φ ↦ ⟦ φ ↦ ⟦ Δ ⤍ 68-65-6C-6C-6F ⟧, t ↦ ξ.k, k ↦ ⟦⟧ ⟧
+```
+
+## Installation
+
+Then you can install `phino` in two ways:
+
+1. Install [Cabal][cabal] first and then:
 
 ```bash
 cabal update
@@ -21,16 +32,22 @@ cabal install --overwrite-policy=always phino-0.0.0.37
 phino --version
 ```
 
-Then, you write a simple [𝜑-calculus](https://www.eolang.org) program
-in the `hello.phi` file:
+2. Download binary from the internet using [curl](https://curl.se/) or
+[wget](https://en.wikipedia.org/wiki/Wget):
 
-```text
-Φ ↦ ⟦ φ ↦ ⟦ Δ ⤍ 68-65-6C-6C-6F ⟧, t ↦ ξ.k, k ↦ ⟦⟧ ⟧
+```bash
+sudo curl -o /usr/local/bin/phino http://phino.objectionary.com/releases/macos-15/phino-latest
+sudo chmod +x /usr/local/bin/phino
+phino --version
 ```
+Download paths are:
+
+* Ubuntu: http://phino.objectionary.com/releases/ubuntu-24.04/phino-latest
+* MacOS: http://phino.objectionary.com/releases/macos-15/phino-latest
 
 ## Dataize
 
-Then, you dataize it:
+Then, you dataize the program:
 
 ```bash
 $ phino dataize hello.phi
