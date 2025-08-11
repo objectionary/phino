@@ -24,7 +24,7 @@ in the `hello.phi` file:
 
 Then you can install `phino` in two ways:
 
-1. Install [Cabal][cabal] first and then:
+Install [Cabal][cabal] first and then:
 
 ```bash
 cabal update
@@ -32,7 +32,7 @@ cabal install --overwrite-policy=always phino-0.0.0.37
 phino --version
 ```
 
-2. Download binary from the internet using [curl](https://curl.se/) or
+Or download binary from the internet using [curl](https://curl.se/) or
 [wget](https://en.wikipedia.org/wiki/Wget):
 
 ```bash
@@ -40,10 +40,11 @@ sudo curl -o /usr/local/bin/phino http://phino.objectionary.com/releases/macos-1
 sudo chmod +x /usr/local/bin/phino
 phino --version
 ```
+
 Download paths are:
 
-* Ubuntu: http://phino.objectionary.com/releases/ubuntu-24.04/phino-latest
-* MacOS: http://phino.objectionary.com/releases/macos-15/phino-latest
+* Ubuntu: <http://phino.objectionary.com/releases/ubuntu-24.04/phino-latest>
+* MacOS: <http://phino.objectionary.com/releases/macos-15/phino-latest>
 
 ## Dataize
 
