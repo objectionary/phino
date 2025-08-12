@@ -172,8 +172,6 @@ rootExpression expr _ = throwIO (UnsupportedExpression expr)
 -- The function returns tuple (X, Y), where
 -- - X: list of package parts
 -- - Y: root object expression
--- @todo #197:30min Make patterns with L> Package softer. Right now we expect L> Package only in the end
---  of the formation bindings list. That's not really correct since this binding may be anywhere. Let's fix it
 getPackage :: Expression -> IO ([String], Expression)
 getPackage (ExFormation [BiTau (AtLabel label) (ExFormation [bd, BiLambda "Package", BiVoid AtRho]), BiVoid AtRho]) = do
   (pckg, expr') <- getPackage (ExFormation [bd, BiLambda "Package", BiVoid AtRho])
