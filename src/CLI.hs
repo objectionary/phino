@@ -146,7 +146,7 @@ rewriteParser =
                     <|> option auto (long "must" <> metavar "N" <> help "Must-rewrite, stops execution if not exactly N rules applied (default 1 when specified without value, if 0 - flag is disabled)" <> value 0)
                 )
             <*> optMaxDepth
-            <*> optional (strOption (long "target" <> short 't' <> metavar "FILE" <> help "File to save ouput to"))
+            <*> optional (strOption (long "target" <> short 't' <> metavar "FILE" <> help "File to save output to"))
             <*> argInputFile
         )
 
