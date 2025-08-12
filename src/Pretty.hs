@@ -20,12 +20,12 @@ module Pretty
 where
 
 import Ast
+import Data.List (intercalate)
 import qualified Data.Map.Strict as Map
 import Matcher
+import Misc
 import Prettyprinter
 import Prettyprinter.Render.String (renderString)
-import Misc
-import Data.List (intercalate)
 import Yaml (ExtraArgument (..))
 
 data PrintMode = SWEET | SALTY
@@ -98,6 +98,8 @@ instance Pretty (Formatted Binding) where
   pretty (Formatted (_, BiVoid attr)) = pretty attr <+> prettyArrow <+> pretty "∅"
   pretty (Formatted (_, BiLambda func)) = pretty "λ" <+> prettyDashedArrow <+> pretty func
 
+-- >>> render (Formatted (SWEET, [BiVoid AtRho]))
+-- ""
 instance {-# OVERLAPPING #-} Pretty (Formatted [Binding]) where
   pretty (Formatted (SWEET, bds)) = vsep (punctuate comma (excludeVoidRho (\bd -> pretty (Formatted (SWEET, bd))) [] bds))
     where
@@ -124,11 +126,14 @@ complexApplication (ExApplication (ExApplication expr tau) tau') =
 complexApplication (ExApplication expr (BiTau (AtAlpha 0) expr')) = (expr, [BiTau (AtAlpha 0) expr'], [expr'])
 complexApplication (ExApplication expr tau) = (expr, [tau], [])
 
+-- >>> render (Formatted (SWEET, ExFormation [BiVoid AtRho]))
+-- "\10214\10215"
 instance Pretty (Formatted Expression) where
   pretty (Formatted (SWEET, ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang"))) = pretty "Φ̇"
   pretty (Formatted (SWEET, DataString bytes)) = pretty "\"" <> pretty (btsToStr bytes) <> pretty "\""
   pretty (Formatted (SWEET, DataNumber bytes)) = either pretty pretty (btsToNum bytes)
   pretty (Formatted (SWEET, DataObject other bytes)) = pretty (Formatted (SALTY, DataObject other bytes))
+  pretty (Formatted (SWEET, ExFormation [BiVoid AtRho])) = pretty "⟦⟧"
   pretty (Formatted (mode, ExFormation [binding])) = case binding of
     BiTau _ _ -> vsep [pretty "⟦", indent 2 (pretty (Formatted (mode, binding))), pretty "⟧"]
     _ -> pretty "⟦" <+> pretty (Formatted (mode, binding)) <+> pretty "⟧"

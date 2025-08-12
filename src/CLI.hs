@@ -64,7 +64,8 @@ data OptsDataize = OptsDataize
   }
 
 data OptsRewrite = OptsRewrite
-  { logLevel :: LogLevel,
+  {
+   logLevel :: LogLevel,
     rules :: [FilePath],
     inputFormat :: IOFormat,
     outputFormat :: IOFormat,
@@ -76,6 +77,7 @@ data OptsRewrite = OptsRewrite
     omitComments :: Bool,
     must :: Integer,
     maxDepth :: Integer,
+    targetFile :: Maybe FilePath,
     inputFile :: Maybe FilePath
   }
 
@@ -144,6 +146,7 @@ rewriteParser =
                     <|> option auto (long "must" <> metavar "N" <> help "Must-rewrite, stops execution if not exactly N rules applied (default 1 when specified without value, if 0 - flag is disabled)" <> value 0)
                 )
             <*> optMaxDepth
+            <*> optional (strOption (long "target" <> short 't' <> metavar "FILE" <> help "File to save ouput to"))
             <*> argInputFile
         )
 
@@ -188,8 +191,8 @@ runCLI args = handle handler $ do
       program <- parseProgram input inputFormat
       rewritten <- rewrite' program rules' (RewriteContext program maxDepth buildTerm must)
       logDebug (printf "Printing rewritten 𝜑-program as %s" (show outputFormat))
-      out <- printProgram rewritten outputFormat printMode
-      putStrLn out
+      prog <- printProgram rewritten outputFormat printMode
+      output prog
       where
         getRules :: IO [Y.Rule]
         getRules = do
@@ -221,6 +224,15 @@ runCLI args = handle handler $ do
         printProgram prog XMIR mode = do
           xmir <- programToXMIR prog (XmirContext omitListing omitComments printMode)
           pure (printXMIR xmir)
+        output :: String -> IO ()
+        output prog = case targetFile of
+          Nothing -> do
+            logDebug "The option '--target' is not specified, printing to console..."
+            putStrLn prog
+          Just file -> do
+            logDebug (printf "The option '--target' is specified, printing to '%s'..." file)
+            writeFile file prog
+            logInfo (printf "The result program was saved in '%s'" file)
     CmdDataize OptsDataize {..} -> do
       validateMaxDepth maxDepth
       input <- readInput inputFile

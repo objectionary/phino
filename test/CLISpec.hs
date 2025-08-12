@@ -18,6 +18,7 @@ import System.Exit (ExitCode (ExitFailure))
 import System.IO
 import System.IO.Silently (capture_)
 import Test.Hspec
+import Text.Printf (printf)
 
 withStdin :: String -> IO a -> IO a
 withStdin input action =
@@ -191,6 +192,20 @@ spec = do
     it "fails with --normalize and --must" $
       withStdin "Q -> [[ x -> [[ y -> 5 ]].y ]].x" $
         testCLIFailed ["rewrite", "--max-depth=2", "--normalize", "--must"] "it's expected exactly 1 rewriting cycles happened, but rewriting is still going"
+
+    it "prints to target file" $
+      withStdin "Q -> [[ ]]" $
+        bracket
+          (openTempFile "." "targetXXXXXX.tmp")
+          (\(path, h) -> hClose h >> removeFile path)
+          ( \(path, h) -> do
+              hClose h
+              testCLI
+                ["rewrite", "--nothing", "--sweet", printf "--target=%s" path]
+                [printf "The result program was saved in '%s'" path]
+              content <- readFile path
+              content `shouldBe` "{⟦⟧}"
+          )
 
   describe "dataize" $ do
     it "dataizes simple program" $
