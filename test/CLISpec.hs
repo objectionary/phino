@@ -197,7 +197,7 @@ spec = do
       withStdin "Q -> [[ ]]" $
         bracket
           (openTempFile "." "targetXXXXXX.tmp")
-          (\(path, h) -> hClose h >> removeFile path)
+          (\(path, _) -> removeFile path)
           ( \(path, h) -> do
               hClose h
               testCLI
