@@ -34,6 +34,7 @@ import Text.Megaparsec
 import Text.Megaparsec.Char (alphaNumChar, char, digitChar, hexDigitChar, letterChar, lowerChar, space1, string, upperChar)
 import qualified Text.Megaparsec.Char.Lexer as L
 import Text.Printf (printf)
+import Control.Monad.IO.Class (MonadIO(liftIO))
 
 type Parser = Parsec Void String
 

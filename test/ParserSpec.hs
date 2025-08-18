@@ -285,3 +285,7 @@ spec = do
           content <- runIO (readFile pack)
           it (takeBaseName pack) (parseProgram content `shouldSatisfy` isRight)
       )
+
+  it "xxx" $ do
+    print (AtPhi)
+    True `shouldBe` True

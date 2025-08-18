@@ -79,17 +79,8 @@ _randomTau args subst _ = do
       Y.ArgBinding bd -> do
         bds <- buildBindingThrows bd subst
         rest' <- argsToAttrs rest
-        pure (attrsFromBindings bds ++ rest')
+        pure (map show (attributesFromBindings bds) ++ rest')
       Y.ArgBytes _ -> throwIO (userError "Bytes can't be argument of random-tau() function")
-    attrsFromBindings :: [Binding] -> [String]
-    attrsFromBindings [] = []
-    attrsFromBindings (bd : bds) =
-      let attr = case bd of
-            BiTau attr _ -> attr
-            BiDelta _ -> AtDelta
-            BiLambda _ -> AtLambda
-            BiVoid attr -> attr
-       in prettyAttribute attr : attrsFromBindings bds
     randomTau :: [String] -> IO String
     randomTau attrs = do
       tau <- randomString "a🌵%d"

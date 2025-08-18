@@ -47,7 +47,16 @@ data Attribute
   | AtLambda -- λ, used only in yaml conditions
   | AtDelta -- Δ, used only in yaml conditions
   | AtMeta String -- !a
-  deriving (Eq, Show, Generic)
+  deriving (Eq, Generic, Ord)
+
+instance Show Attribute where
+  show (AtLabel label) = label
+  show (AtAlpha idx) = 'α' : show idx
+  show AtRho = "ρ"
+  show AtPhi = "φ"
+  show AtDelta = "Δ"
+  show AtLambda = "λ"
+  show (AtMeta meta) = '!' : meta
 
 countNodes :: Program -> Integer
 countNodes (Program expr) = countNodes' expr

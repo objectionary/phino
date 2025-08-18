@@ -19,6 +19,8 @@ module Misc
     ensuredFile,
     shuffle,
     btsToUnescapedStr,
+    attributesFromBindings,
+    uniqueBindings,
     pattern DataObject,
     pattern DataString,
     pattern DataNumber,
@@ -37,6 +39,7 @@ import Data.ByteString.Lazy (unpack)
 import qualified Data.ByteString.Lazy.UTF8 as U
 import Data.Char (chr, isPrint, ord)
 import Data.List (intercalate)
+import qualified Data.Set as Set
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
 import qualified Data.Vector as V
@@ -97,6 +100,49 @@ pattern DataObject label bts <- (matchDataoObject -> Just (label, bts))
                 )
             )
         )
+
+-- Extract attributes from bindings
+attributesFromBindings :: [Binding] -> [Attribute]
+attributesFromBindings [] = []
+attributesFromBindings (bd : bds) =
+  let attr = case bd of
+        BiTau attr _ -> Just attr
+        BiDelta _ -> Just AtDelta
+        BiLambda _ -> Just AtLambda
+        BiVoid attr -> Just attr
+        BiMeta _ -> Nothing
+        BiMetaLambda _ -> Just AtLambda
+   in case attr of
+        Just attr' -> attr' : attributesFromBindings bds
+        _ -> attributesFromBindings bds
+
+-- Check if given binding list consists of unique attributes
+uniqueBindings :: [Binding] -> IO [Binding]
+uniqueBindings bds = case maybeDuplicatedAttribute bds Set.empty of
+  Just attr ->
+    throwIO
+      ( userError
+          ( printf
+              "Duplicated attribute '%s' found in %s"
+              (show attr)
+              (intercalate ", " (map show (attributesFromBindings bds)))
+          )
+      )
+  _ -> pure bds
+  where
+    maybeDuplicatedAttribute :: [Binding] -> Set.Set Attribute -> Maybe Attribute
+    maybeDuplicatedAttribute [] = const Nothing
+    maybeDuplicatedAttribute ((BiTau attr _) : rest) = checkAttr attr rest
+    maybeDuplicatedAttribute (BiVoid attr : rest) = checkAttr attr rest
+    maybeDuplicatedAttribute (BiLambda _ : rest) = checkAttr AtLambda rest
+    maybeDuplicatedAttribute (BiMetaLambda _ : rest) = checkAttr AtLambda rest
+    maybeDuplicatedAttribute (BiDelta _ : rest) = checkAttr AtDelta rest
+    maybeDuplicatedAttribute (BiMeta _ : rest) = maybeDuplicatedAttribute rest
+
+    checkAttr :: Attribute -> [Binding] -> Set.Set Attribute -> Maybe Attribute
+    checkAttr attr rest acc
+      | attr `Set.member` acc = Just attr
+      | otherwise = maybeDuplicatedAttribute rest acc
 
 -- Add void rho binding to the end of the list of any rho binding is not present
 withVoidRho :: [Binding] -> [Binding]

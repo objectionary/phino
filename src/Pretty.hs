@@ -65,13 +65,8 @@ instance Pretty Bytes where
   pretty (BtMeta meta) = prettyMeta meta
 
 instance Pretty Attribute where
-  pretty (AtLabel name) = pretty name
-  pretty (AtAlpha index) = pretty "α" <> pretty index
-  pretty AtRho = pretty "ρ"
-  pretty AtPhi = pretty "φ"
-  pretty AtDelta = pretty "Δ"
-  pretty AtLambda = pretty "λ"
   pretty (AtMeta meta) = prettyMeta meta
+  pretty attr = pretty (show attr)
 
 instance Pretty (Formatted Binding) where
   pretty (Formatted (SWEET, BiTau attr (ExFormation bindings))) =
