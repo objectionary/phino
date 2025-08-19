@@ -8,17 +8,14 @@ import Control.Monad (forM_)
 import Replacer
 import Test.Hspec (Example (Arg), Expectation, Spec, SpecWith, describe, it, shouldBe)
 
-test ::
-  (Program -> [Expression] -> [Expression] -> Maybe Program) ->
-  [(String, Program, [Expression], [Expression], Maybe Program)] ->
-  SpecWith (Arg Expectation)
+test :: ReplaceProgramFunc -> [(String, Program, [Expression], [Expression], Maybe Program)] -> SpecWith (Arg Expectation)
 test function useCases =
   forM_ useCases $ \(desc, prog, ptns, repls, res) ->
-    it desc $ function prog ptns repls `shouldBe` res
+    it desc $ function ptns repls (ReplaceProgramContext prog 3) `shouldBe` res
 
 spec :: Spec
-spec =
-  describe "replaceProgram: program => ([expression], [expression]) => program" $
+spec = do
+  describe "replace program: Program => ([Expression], [Expression]) => Program" $
     test
       replaceProgram
       [ ( "Q -> Q.y.x => ([Q.y], [$]) => Q -> $.x",
@@ -101,5 +98,22 @@ spec =
                     )
                 )
             )
+        )
+      ]
+
+  describe "replace program fast: Program => ([Expression], [Expression]) => Program" $
+    test
+      replaceProgramFast
+      [ ( "Q -> [[^ -> ?, @ -> ?, D> -> ?]] => [[ !B1, !a -> ?, !B2 ]] => [[ !B1, !a -> $, !B2 ]] => Q -> [[ ^ -> $, @ -> $, D> -> $ ]]",
+          Program (ExFormation [BiVoid AtRho, BiVoid AtPhi, BiVoid AtDelta]),
+          [ExFormation [BiVoid AtRho], ExFormation [BiVoid AtPhi], ExFormation [BiVoid AtDelta]],
+          [ExFormation [BiTau AtRho ExThis], ExFormation [BiTau AtPhi ExThis], ExFormation [BiTau AtDelta ExThis]],
+          Just (Program (ExFormation [BiTau AtRho ExThis, BiTau AtPhi ExThis, BiTau AtDelta ExThis]))
+        ),
+        ( "Q -> [[ ^ -> ? ]] => [[ !B1, !a -> ?, !B2 ]] => [[ !B1, !a -> [[ !a -> ? ]], !B2 ]] => [[ ^ -> [[ ^ -> [[ ^ -> [[ ^ -> ? ]] ]] ]] ]]",
+          Program (ExFormation [BiVoid AtRho]),
+          [ExFormation [BiVoid AtRho]],
+          [ExFormation [BiTau AtRho (ExFormation [BiVoid AtRho])]],
+          Just (Program (ExFormation [BiTau AtRho (ExFormation [BiTau AtRho (ExFormation [BiTau AtRho (ExFormation [BiVoid AtRho])])])]))
         )
       ]

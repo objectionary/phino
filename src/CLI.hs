@@ -64,8 +64,7 @@ data OptsDataize = OptsDataize
   }
 
 data OptsRewrite = OptsRewrite
-  {
-   logLevel :: LogLevel,
+  { logLevel :: LogLevel,
     rules :: [FilePath],
     inputFormat :: IOFormat,
     outputFormat :: IOFormat,

@@ -251,7 +251,7 @@ spec = do
           defaultScope,
           [[("a", MvAttribute (AtLabel "y")), ("B", MvBindings [BiVoid (AtLabel "x")])]]
         ),
-        ( "[[!B1, !a -> ?, !B2]] => [[ x -> ?, y -> ?, z -> ? ]] => [(), (), ()]",
+        ( "[[!B1, !a -> ?, !B2]] => [[ x -> ?, y -> ?, z -> ? ]] => [(!B1 >> [[]], !a >> x, !B2 >> [[ y -> ?, z -> ? ]]), (...), (...)]",
           [BiMeta "B1", BiVoid (AtMeta "a"), BiMeta "B2"],
           [BiVoid (AtLabel "x"), BiVoid (AtLabel "y"), BiVoid (AtLabel "z")],
           defaultScope,
