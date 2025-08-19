@@ -119,7 +119,7 @@ replaceExpressionFast = replaceExpressionFast' 0
                 (expr'', ptns'', repls'') = replaceExpressionFast ptns' repls' (updateExpressionContext ctx texpr)
              in (ExApplication expr' (BiTau attr expr''), ptns'', repls'')
           _ -> (_expression, ptns, repls)
-    replaceExpressionFast' _ _ _ ctx@ReplaceExpressionContext{..} = (_expression, [], [])
+    replaceExpressionFast' _ ptns repls ctx@ReplaceExpressionContext{..} = (_expression, ptns, repls)
 
 replaceProgram' :: ReplaceExpressionFunc -> ReplaceProgramFunc
 replaceProgram' func ptns repls ReplaceProgramContext {_program = Program expr, ..}
