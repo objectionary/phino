@@ -20,7 +20,6 @@ where
 
 import Ast
 import Control.Exception (Exception, throwIO)
-import Debug.Trace
 import Matcher (Tail (TaApplication, TaDispatch))
 import Pretty (prettyExpression, prettyProgram)
 import Text.Printf (printf)
