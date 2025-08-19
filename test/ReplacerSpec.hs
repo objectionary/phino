@@ -110,10 +110,16 @@ spec = do
           [ExFormation [BiTau AtRho ExThis], ExFormation [BiTau AtPhi ExThis], ExFormation [BiTau AtDelta ExThis]],
           Just (Program (ExFormation [BiTau AtRho ExThis, BiTau AtPhi ExThis, BiTau AtDelta ExThis]))
         ),
-        ( "Q -> [[ ^ -> ? ]] => [[ !B1, !a -> ?, !B2 ]] => [[ !B1, !a -> [[ !a -> ? ]], !B2 ]] => [[ ^ -> [[ ^ -> [[ ^ -> [[ ^ -> ? ]] ]] ]] ]]",
+        ( "Q -> [[ ^ -> ? ]] => [[ !B1, !a -> ?, !B2 ]] => [[ !B1, !a -> [[ !a -> ? ]], !B2 ]] => Q -> [[ ^ -> [[ ^ -> [[ ^ -> [[ ^ -> ? ]] ]] ]] ]]",
           Program (ExFormation [BiVoid AtRho]),
           [ExFormation [BiVoid AtRho]],
           [ExFormation [BiTau AtRho (ExFormation [BiVoid AtRho])]],
           Just (Program (ExFormation [BiTau AtRho (ExFormation [BiTau AtRho (ExFormation [BiTau AtRho (ExFormation [BiVoid AtRho])])])]))
+        ),
+        ( "Q -> [[ ^ -> T ]](^ -> [[ ^ -> $]]).@ => [[ !B1, !a -> ?, !B2 ]] => [[ !B1, !a -> $, !B2 ]] => Q -> [[ ^ -> $ ]].@",
+          Program (ExDispatch (ExApplication (ExFormation [BiTau AtRho ExTermination]) (BiTau AtRho (ExFormation [BiTau AtRho ExThis]))) AtPhi),
+          [ExFormation [BiTau AtRho ExTermination], ExFormation [BiTau AtRho ExThis]],
+          [ExFormation [BiTau AtRho ExGlobal], ExFormation [BiVoid AtPhi]],
+          Just (Program (ExDispatch (ExApplication (ExFormation [BiTau AtRho ExGlobal]) (BiTau AtRho (ExFormation [BiVoid AtPhi]))) AtPhi))
         )
       ]
