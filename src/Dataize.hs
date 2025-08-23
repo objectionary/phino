@@ -153,9 +153,6 @@ dataize' expr prog = do
     Just morphed -> dataize' morphed prog
     _ -> pure Nothing
 
-toDouble :: Integer -> Double
-toDouble = fromIntegral
-
 atom :: String -> Expression -> DataizeContext -> IO (Maybe Expression)
 atom "L_org_eolang_number_plus" self ctx = do
   left <- dataize' (ExDispatch self (AtLabel "x")) ctx
