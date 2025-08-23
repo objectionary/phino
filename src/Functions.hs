@@ -14,7 +14,6 @@ import Data.Char (intToDigit)
 import Data.Functor
 import Data.Set (Set)
 import qualified Data.Set
-import Debug.Trace (trace)
 import GHC.IO (unsafePerformIO)
 import Matcher
 import Misc
