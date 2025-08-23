@@ -169,6 +169,7 @@ data Extra = Extra
 
 data Rule = Rule
   { name :: Maybe String,
+    description :: Maybe String,
     pattern :: Expression,
     result :: Expression,
     when :: Maybe Condition,
