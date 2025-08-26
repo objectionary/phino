@@ -92,10 +92,10 @@ argInputFile :: Parser (Maybe FilePath)
 argInputFile = optional (argument str (metavar "FILE" <> help "Path to input file"))
 
 optMaxDepth :: Parser Integer
-optMaxDepth = option auto (long "max-depth" <> metavar "DEPTH" <> help "Max amount of rewritng iterations with each rule" <> value 25 <> showDefault)
+optMaxDepth = option auto (long "max-depth" <> metavar "DEPTH" <> help "Maximum number of rewriting iterations per rule" <> value 25 <> showDefault)
 
 optMaxCycles :: Parser Integer
-optMaxCycles = option auto (long "max-cycles" <> metavar "CYCLES" <> help "Max amount of rewritng cycles with all rules" <> value 25 <> showDefault)
+optMaxCycles = option auto (long "max-cycles" <> metavar "CYCLES" <> help "Maximum number of rewriting cycles across all rules" <> value 25 <> showDefault)
 
 optInputFormat :: Parser IOFormat
 optInputFormat = option (parseIOFormat "input") (long "input" <> metavar "FORMAT" <> help "Program input format (phi, xmir)" <> value PHI <> showDefault)
