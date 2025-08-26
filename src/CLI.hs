@@ -60,6 +60,7 @@ data OptsDataize = OptsDataize
   { logLevel :: LogLevel,
     inputFormat :: IOFormat,
     maxDepth :: Integer,
+    maxCycles :: Integer,
     inputFile :: Maybe FilePath
   }
 
@@ -76,6 +77,7 @@ data OptsRewrite = OptsRewrite
     omitComments :: Bool,
     must :: Integer,
     maxDepth :: Integer,
+    maxCycles :: Integer,
     targetFile :: Maybe FilePath,
     inputFile :: Maybe FilePath
   }
@@ -90,7 +92,10 @@ argInputFile :: Parser (Maybe FilePath)
 argInputFile = optional (argument str (metavar "FILE" <> help "Path to input file"))
 
 optMaxDepth :: Parser Integer
-optMaxDepth = option auto (long "max-depth" <> metavar "DEPTH" <> help "Max amount of rewritng cycles" <> value 25 <> showDefault)
+optMaxDepth = option auto (long "max-depth" <> metavar "DEPTH" <> help "Maximum number of rewriting iterations per rule" <> value 25 <> showDefault)
+
+optMaxCycles :: Parser Integer
+optMaxCycles = option auto (long "max-cycles" <> metavar "CYCLES" <> help "Maximum number of rewriting cycles across all rules" <> value 25 <> showDefault)
 
 optInputFormat :: Parser IOFormat
 optInputFormat = option (parseIOFormat "input") (long "input" <> metavar "FORMAT" <> help "Program input format (phi, xmir)" <> value PHI <> showDefault)
@@ -124,6 +129,7 @@ dataizeParser =
             <$> optLogLevel
             <*> optInputFormat
             <*> optMaxDepth
+            <*> optMaxCycles
             <*> argInputFile
         )
 
@@ -145,6 +151,7 @@ rewriteParser =
                     <|> option auto (long "must" <> metavar "N" <> help "Must-rewrite, stops execution if not exactly N rules applied (default 1 when specified without value, if 0 - flag is disabled)" <> value 0)
                 )
             <*> optMaxDepth
+            <*> optMaxCycles
             <*> optional (strOption (long "target" <> short 't' <> metavar "FILE" <> help "File to save output to"))
             <*> argInputFile
         )
@@ -183,12 +190,13 @@ runCLI args = handle handler $ do
   case cmd of
     CmdRewrite OptsRewrite {..} -> do
       validateMaxDepth maxDepth
+      validateMaxCycles maxCycles
       validateMust must
       logDebug (printf "Amount of rewriting cycles: %d" maxDepth)
       input <- readInput inputFile
       rules' <- getRules
       program <- parseProgram input inputFormat
-      rewritten <- rewrite' program rules' (RewriteContext program maxDepth buildTerm must)
+      rewritten <- rewrite' program rules' (RewriteContext program maxDepth maxCycles buildTerm must)
       logDebug (printf "Printing rewritten 𝜑-program as %s" (show outputFormat))
       prog <- printProgram rewritten outputFormat printMode
       output prog
@@ -234,21 +242,23 @@ runCLI args = handle handler $ do
             logInfo (printf "The result program was saved in '%s'" file)
     CmdDataize OptsDataize {..} -> do
       validateMaxDepth maxDepth
+      validateMaxCycles maxCycles
       input <- readInput inputFile
       prog <- parseProgram input inputFormat
-      dataized <- dataize prog (DataizeContext prog maxDepth buildTerm)
+      dataized <- dataize prog (DataizeContext prog maxDepth maxCycles buildTerm)
       maybe (throwIO CouldNotDataize) (putStrLn . prettyBytes) dataized
   where
+    validateIntArgument :: Integer -> (Integer -> Bool) -> String -> IO ()
+    validateIntArgument num cmp msg =
+      when
+        (cmp num)
+        (throwIO (InvalidRewriteArguments msg))
     validateMaxDepth :: Integer -> IO ()
-    validateMaxDepth depth =
-      when
-        (depth <= 0)
-        (throwIO (InvalidRewriteArguments "--max-depth must be positive"))
+    validateMaxDepth depth = validateIntArgument depth (<= 0) "--max-depth must be positive"
+    validateMaxCycles :: Integer -> IO ()
+    validateMaxCycles cycles = validateIntArgument cycles (<= 0) "--max-cycles must be positive"
     validateMust :: Integer -> IO ()
-    validateMust must =
-      when
-        (must < 0)
-        (throwIO (InvalidRewriteArguments "--must must be positive"))
+    validateMust must = validateIntArgument must (< 0) "--must must be positive"
     readInput :: Maybe FilePath -> IO String
     readInput inputFile' = case inputFile' of
       Just pth -> do

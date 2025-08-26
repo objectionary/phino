@@ -25,6 +25,7 @@ import Term (BuildTermFunc, Term (..))
 import Text.Printf (printf)
 import Yaml (normalizationRules)
 import qualified Yaml as Y
+import Control.Monad (when)
 
 data RuleContext = RuleContext
   { _program :: Program,
@@ -233,6 +234,7 @@ extraSubstitutions :: [Subst] -> Maybe [Y.Extra] -> RuleContext -> IO [Subst]
 extraSubstitutions substs extras RuleContext {..} = case extras of
   Nothing -> pure substs
   Just extras' -> do
+    logDebug "Building extra substitutions..."
     res <-
       sequence
         [ foldlM
@@ -251,7 +253,7 @@ extraSubstitutions substs extras RuleContext {..} = case extras of
                     logDebug (printf "Function %s() returned expression:\n%s" func (prettyExpression' expr))
                     pure (MvExpression expr defaultScope)
                   TeAttribute attr -> do
-                    logDebug (printf "Function %s() returned attribute:\n%s" func (prettyAttribute attr))
+                    logDebug (printf "Function %s() returned attribute: %s" func (prettyAttribute attr))
                     pure (MvAttribute attr)
                   TeBytes bytes -> do
                     logDebug (printf "Function %s() returned bytes: %s" func (prettyBytes bytes))
@@ -271,11 +273,22 @@ matchProgramWithRule program rule ctx =
   let ptn = Y.pattern rule
       matched = matchProgram ptn program
    in if null matched
-        then pure []
+        then do
+          logDebug "Pattern was not matched"
+          pure []
         else do
-          when <- meetMaybeCondition (Y.when rule) matched ctx
-          if null when
-            then pure []
+          when' <- meetMaybeCondition (Y.when rule) matched ctx
+          if null when'
+            then do
+              logDebug "The 'when' condition wasn't met"
+              pure []
             else do
-              extended <- extraSubstitutions when (Y.where_ rule) ctx
-              meetMaybeCondition (Y.having rule) extended ctx
+              extended <- extraSubstitutions when' (Y.where_ rule) ctx
+              if null extended
+                then do
+                  logDebug "Substitution is empty after enxtending, maybe some metas are duplicated"
+                  pure []
+                else do
+                  met <- meetMaybeCondition (Y.having rule) extended ctx
+                  when (null met) (logDebug "The 'having' condition wan't met")
+                  pure met

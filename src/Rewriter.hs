@@ -30,6 +30,7 @@ import qualified Yaml as Y
 data RewriteContext = RewriteContext
   { _program :: Program,
     _maxDepth :: Integer,
+    _maxCycles :: Integer,
     _buildTerm :: BuildTermFunc,
     _must :: Integer
   }
@@ -151,17 +152,17 @@ rewrite' prog rules ctx = _rewrite prog 1
   where
     _rewrite :: Program -> Integer -> IO Program
     _rewrite prog count = do
-      let depth = _maxDepth ctx
+      let cycles = _maxCycles ctx
           must = _must ctx
       if must /= 0 && count - 1 > must
         then throwIO (ContinueAfter must)
         else
-          if count - 1 == depth
+          if count - 1 == cycles
             then do
-              logDebug (printf "Max amount of rewriting cycles for all rules (%d) has been reached, rewriting is stopped" depth)
+              logDebug (printf "Max amount of rewriting cycles for all rules (%d) has been reached, rewriting is stopped" cycles)
               pure prog
             else do
-              logDebug (printf "Starting rewriting cycle for all rules: %d out of %d" count depth)
+              logDebug (printf "Starting rewriting cycle for all rules: %d out of %d" count cycles)
               rewritten <- rewrite prog rules ctx
               if rewritten == prog
                 then do

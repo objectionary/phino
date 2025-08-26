@@ -21,11 +21,12 @@ import Yaml (normalizationRules)
 data DataizeContext = DataizeContext
   { _program :: Program,
     _maxDepth :: Integer,
+    _maxCycles :: Integer,
     _buildTerm :: BuildTermFunc
   }
 
 switchContext :: DataizeContext -> RewriteContext
-switchContext DataizeContext {..} = RewriteContext _program _maxDepth _buildTerm 0
+switchContext DataizeContext {..} = RewriteContext _program _maxDepth _maxCycles _buildTerm 0
 
 maybeBinding :: (Binding -> Bool) -> [Binding] -> (Maybe Binding, [Binding])
 maybeBinding _ [] = (Nothing, [])
