@@ -207,6 +207,19 @@ spec = do
               content `shouldBe` "{⟦⟧}"
           )
 
+    it "rewrites with cycles" $
+      withStdin "Q -> [[ x -> 1 ]]" $
+        testCLI
+          ["rewrite", "--sweet", "--rule=test-resources/cli/infinite.yaml", "--max-depth=1", "--max-cycles=2"]
+          [ unlines
+              [ "{⟦",
+                "  x ↦ 1,",
+                "  x ↦ 1,",
+                "  x ↦ 1",
+                "⟧}"
+              ]
+          ]
+
   describe "dataize" $ do
     it "dataizes simple program" $
       withStdin "Q -> [[ D> 01- ]]" $

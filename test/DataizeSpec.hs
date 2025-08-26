@@ -11,7 +11,7 @@ import Test.Hspec
 import Functions (buildTerm)
 
 defaultDataizeContext :: Program -> DataizeContext
-defaultDataizeContext prog = DataizeContext prog 25 buildTerm
+defaultDataizeContext prog = DataizeContext prog 25 1 buildTerm
 
 test :: (Eq a, Show a) => (Expression -> DataizeContext -> IO (Maybe a)) -> [(String, Expression, Expression, Maybe a)] -> Spec
 test func useCases =
