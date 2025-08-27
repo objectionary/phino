@@ -208,14 +208,12 @@ spec = do
           )
 
     it "rewrites with cycles" $
-      withStdin "Q -> [[ x -> 1 ]]" $
+      withStdin "Q -> [[ x -> \"x\" ]]" $
         testCLI
           ["rewrite", "--sweet", "--rule=test-resources/cli/infinite.yaml", "--max-depth=1", "--max-cycles=2"]
           [ unlines
               [ "{⟦",
-                "  x ↦ 1,",
-                "  x ↦ 1,",
-                "  x ↦ 1",
+                "  x ↦ \"x_hi_hi\"",
                 "⟧}"
               ]
           ]
