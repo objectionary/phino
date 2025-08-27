@@ -22,7 +22,9 @@ where
 import Ast
 import Control.Exception (Exception, throwIO)
 import Control.Monad (guard)
+import Control.Monad.IO.Class (MonadIO (liftIO))
 import Data.Char (isAsciiLower, isDigit, isLower)
+import Data.List (intercalate)
 import Data.Scientific (toRealFloat)
 import Data.Sequence (mapWithIndex)
 import Data.Text.Internal.Fusion.Size (lowerBound)
@@ -34,7 +36,6 @@ import Text.Megaparsec
 import Text.Megaparsec.Char (alphaNumChar, char, digitChar, hexDigitChar, letterChar, lowerChar, space1, string, upperChar)
 import qualified Text.Megaparsec.Char.Lexer as L
 import Text.Printf (printf)
-import Control.Monad.IO.Class (MonadIO(liftIO))
 
 type Parser = Parsec Void String
 
@@ -83,7 +84,7 @@ escapedChar = do
     'f' -> return '\f'
     'u' -> unicodeEscape
     'x' -> hexEscape
-    _ -> fail $ "Unknown escape: \\" ++ [c]
+    _ -> fail ("Unknown escape: \\" ++ [c])
   where
     unicodeEscape :: Parser Char
     unicodeEscape = do
@@ -116,7 +117,7 @@ escapedChar = do
       digits <- count 2 hexDigitChar
       case readHex digits of
         [(n, "")] -> return (chr n)
-        _ -> fail $ "Invalid hex escape: \\x" ++ digits
+        _ -> fail ("Invalid hex escape: \\x" ++ digits)
 
 function :: Parser String
 function = lexeme $ do
@@ -231,8 +232,10 @@ tauBinding attr = do
         voids <- map BiVoid <$> void' `sepBy` symbol ","
         _ <- symbol ")"
         _ <- arrow
-        ExFormation bs <- formation
-        return (BiTau attr' (ExFormation (withVoidRho (voids ++ bs))))
+        bs <- formationBindings
+        case uniqueBindings (voids ++ bs) of
+          Left msg -> fail msg
+          Right bds -> return (BiTau attr' (ExFormation (withVoidRho bds)))
     ]
 
 metaBinding :: Parser Binding
@@ -314,12 +317,12 @@ fullAttribute =
     <?> "full attribute"
 
 -- formation
-formation :: Parser Expression
-formation = do
+formationBindings :: Parser [Binding]
+formationBindings = do
   _ <- choice [symbol "[[", symbol "⟦"]
   bs <- binding `sepBy` symbol ","
   _ <- choice [symbol "]]", symbol "⟧"]
-  return (ExFormation bs)
+  return bs
 
 -- head part of expression
 -- 1. formation
@@ -332,8 +335,10 @@ exHead :: Parser Expression
 exHead =
   choice
     [ do
-        ExFormation bs <- formation
-        return (ExFormation (withVoidRho bs)),
+        bs <- formationBindings
+        case uniqueBindings bs of
+          Left msg -> fail msg
+          Right _ -> return (ExFormation (withVoidRho bs)),
       do
         _ <- choice [symbol "$", symbol "ξ"]
         return ExThis,

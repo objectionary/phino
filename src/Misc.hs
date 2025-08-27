@@ -117,18 +117,16 @@ attributesFromBindings (bd : bds) =
         _ -> attributesFromBindings bds
 
 -- Check if given binding list consists of unique attributes
-uniqueBindings :: [Binding] -> IO [Binding]
+uniqueBindings :: [Binding] -> Either String [Binding]
 uniqueBindings bds = case maybeDuplicatedAttribute bds Set.empty of
   Just attr ->
-    throwIO
-      ( userError
-          ( printf
-              "Duplicated attribute '%s' found in %s"
-              (show attr)
-              (intercalate ", " (map show (attributesFromBindings bds)))
-          )
+    Left
+      ( printf
+          "Duplicated attribute '%s' found in %s"
+          (show attr)
+          (intercalate ", " (map show (attributesFromBindings bds)))
       )
-  _ -> pure bds
+  _ -> Right bds
   where
     maybeDuplicatedAttribute :: [Binding] -> Set.Set Attribute -> Maybe Attribute
     maybeDuplicatedAttribute [] = const Nothing
