@@ -8,7 +8,8 @@ import Builder
 import Control.Monad
 import Data.Map.Strict qualified as Map
 import Matcher
-import Test.Hspec (Example (Arg), Expectation, Spec, SpecWith, anyException, describe, it, shouldBe, shouldThrow)
+import Test.Hspec (Example (Arg), Expectation, Spec, SpecWith, anyException, describe, it, shouldBe, shouldThrow, shouldSatisfy)
+import Data.Either (isLeft)
 
 test :: (Show a, Eq a) => (a -> Subst -> Either String (a, a)) -> [(String, a, [(String, MetaValue)], Either String (a, a))] -> SpecWith (Arg Expectation)
 test function useCases =
@@ -50,7 +51,7 @@ spec = do
         ( "Q.!a => () => X",
           ExDispatch ExGlobal (AtMeta "a"),
           [],
-          Left "a"
+          Left "meta 'a' is either does not exist or refers to an inappropriate term"
         ),
         ( "!e0(!a1 -> !e1, !a2 => !e2) => (!e0 >> [[]], !a1 >> x, !e1 >> Q, !a2 >> y, !e2 >> $) => [[]](x -> Q, y -> $)",
           ExApplication (ExApplication (ExMeta "e0") (BiTau (AtMeta "a1") (ExMeta "e1"))) (BiTau (AtMeta "a2") (ExMeta "e2")),
@@ -94,3 +95,9 @@ spec = do
         (ExMeta "e")
         [substSingle "e1" (MvExpression (ExDispatch ExGlobal (AtLabel "x")) defaultScope)]
         `shouldThrow` anyException
+  
+  describe "build with duplicate attributes in bindings" $ do
+    it "build binding with duplicates" $
+      buildBinding (BiMeta "B") (substSingle "B" (MvBindings [BiVoid AtRho, BiVoid AtRho])) `shouldSatisfy` isLeft
+    it "build formation with duplicates" $
+      buildExpression (ExMeta "e") (substSingle "e" (MvExpression (ExFormation [BiVoid AtRho, BiVoid AtRho]) ExThis)) `shouldSatisfy` isLeft

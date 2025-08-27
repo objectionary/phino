@@ -233,9 +233,8 @@ tauBinding attr = do
         _ <- symbol ")"
         _ <- arrow
         bs <- formationBindings
-        case uniqueBindings (voids ++ bs) of
-          Left msg -> fail msg
-          Right bds -> return (BiTau attr' (ExFormation (withVoidRho bds)))
+        bds <- validatedBindings (voids ++ bs)
+        return (BiTau attr' (ExFormation (withVoidRho bds)))
     ]
 
 metaBinding :: Parser Binding
@@ -316,6 +315,11 @@ fullAttribute =
     ]
     <?> "full attribute"
 
+validatedBindings :: [Binding] -> Parser [Binding]
+validatedBindings bds = case uniqueBindings bds of
+  Left msg -> fail msg
+  Right bds' -> return bds'
+
 -- formation
 formationBindings :: Parser [Binding]
 formationBindings = do
@@ -335,10 +339,8 @@ exHead :: Parser Expression
 exHead =
   choice
     [ do
-        bs <- formationBindings
-        case uniqueBindings bs of
-          Left msg -> fail msg
-          Right _ -> return (ExFormation (withVoidRho bs)),
+        bs <- formationBindings >>= validatedBindings
+        return (ExFormation (withVoidRho bs)),
       do
         _ <- choice [symbol "$", symbol "ξ"]
         return ExThis,

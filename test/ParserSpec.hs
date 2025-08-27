@@ -273,7 +273,10 @@ spec = do
             "Q.x(𝐵1, 𝜏0 -> $, x -> 𝑒)",
             "[[ x -> \"\\uD800\"]]",
             "[[ x -> \"\\uDFFF\"]]",
-            "[[ x -> \"\\uD835\\u0041\"]]"
+            "[[ x -> \"\\uD835\\u0041\"]]",
+            "[[ x -> 1, x -> 2 ]]",
+            "⟦ k ↦ ⟦ λ ⤍ Foo, λ ⤍ Bar ⟧ ⟧",
+            "⟦ k ↦ ⟦ Δ ⤍ 42-, Δ ⤍ 55- ⟧ ⟧"
           ]
       )
 
@@ -285,7 +288,3 @@ spec = do
           content <- runIO (readFile pack)
           it (takeBaseName pack) (parseProgram content `shouldSatisfy` isRight)
       )
-
-  it "xxx" $ do
-    print (AtPhi)
-    True `shouldBe` True

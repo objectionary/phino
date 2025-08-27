@@ -4,9 +4,10 @@
 module MiscSpec where
 
 import Control.Monad (forM_)
-import Misc (withVoidRho)
-import Test.Hspec (Example (Arg), Expectation, Spec, SpecWith, describe, it, shouldBe)
+import Misc (withVoidRho, uniqueBindings)
+import Test.Hspec (Example (Arg), Expectation, Spec, SpecWith, describe, it, shouldBe, shouldSatisfy)
 import Ast
+import Data.Either (isLeft, isRight)
 
 testWithVoidRho :: [(String, [Binding], [Binding])] -> SpecWith (Arg Expectation)
 testWithVoidRho useCases =
@@ -14,7 +15,7 @@ testWithVoidRho useCases =
     it desc $ withVoidRho before `shouldBe` after
 
 spec :: Spec
-spec =
+spec = do
   describe "with void rho binding" $
     testWithVoidRho
       [ ( "[[x -> ?]] => [[x -> ?, ^ -> ?]]",
@@ -48,3 +49,9 @@ spec =
           [BiTau (AtMeta "a") (ExDispatch ExGlobal (AtLabel "x")), BiTau AtRho (ExDispatch ExTermination (AtLabel "y"))]
         )
       ]
+
+  describe "unique bindings" $ do
+    it "fails with duplicate attribute" $
+      uniqueBindings [BiVoid AtRho, BiVoid AtRho] `shouldSatisfy` isLeft
+    it "does not fail on different attributes" $
+      uniqueBindings [BiVoid AtPhi, BiVoid AtRho] `shouldSatisfy` isRight

@@ -34,6 +34,7 @@ import Text.Read (readMaybe)
 import qualified Text.Read as TR
 import Text.XML
 import qualified Text.XML.Cursor as C
+import Debug.Trace
 
 data XmirContext = XmirContext
   { omitListing :: Bool,
@@ -361,7 +362,7 @@ xmirToFormationBinding cur fqn
   | not (hasAttr "name" cur) = throwIO (InvalidXMIRFormat "Formation children must have @name attribute" cur)
   | not (hasAttr "base" cur) = do
       name <- getAttr "name" cur
-      bds <- mapM (`xmirToFormationBinding` (name : fqn)) (cur C.$/ C.element (toName "o"))
+      bds <- mapM (`xmirToFormationBinding` (name : fqn)) (cur C.$/ C.element (toName "o")) >>= uniqueBindings'
       case name of
         "λ" -> pure (BiLambda (intercalate "_" ("L" : reverse fqn)))
         ('α' : _) -> throwIO (InvalidXMIRFormat "Formation child @name can't start with α" cur)
@@ -409,7 +410,7 @@ xmirToExpression cur fqn
         '$' : '.' : rest -> xmirToExpression' ExThis "$" rest cur fqn
         _ -> throwIO (InvalidXMIRFormat "The @base attribute must be either ['∅'|'Q'] or start with ['Q.'|'$.'|'.']" cur)
   | otherwise = do
-      bds <- mapM (`xmirToFormationBinding` fqn) (cur C.$/ C.element (toName "o"))
+      bds <- mapM (`xmirToFormationBinding` fqn) (cur C.$/ C.element (toName "o")) >>= uniqueBindings'
       pure (ExFormation (withVoidRho bds))
   where
     xmirToExpression' :: Expression -> String -> String -> C.Cursor -> [String] -> IO Expression
@@ -422,8 +423,7 @@ xmirToExpression cur fqn
               (\acc part -> ExDispatch acc <$> toAttr (T.unpack part) cur)
               start
               (T.splitOn "." (T.pack rest))
-          let args = cur C.$/ C.element (toName "o")
-          xmirToApplication head' args fqn
+          xmirToApplication head' (cur C.$/ C.element (toName "o")) fqn
 
 xmirToApplication :: Expression -> [C.Cursor] -> [String] -> IO Expression
 xmirToApplication = xmirToApplication' 0

@@ -13,11 +13,12 @@ import GHC.Generics (Generic)
 import Misc (allPathsIn)
 import Parser (parseProgramThrows)
 import System.FilePath (makeRelative)
-import Test.Hspec (Spec, describe, it, runIO, shouldBe)
+import Test.Hspec (Spec, describe, it, runIO, shouldBe, shouldThrow, anyException)
 import XMIR (parseXMIRThrows, xmirToPhi)
 
 data XMIRPack = XMIRPack
-  { xmir :: String,
+  { failure :: Maybe Bool,
+    xmir :: String,
     phi :: String
   }
   deriving (Generic, Show, FromJSON)
@@ -37,9 +38,13 @@ spec =
       packs
       ( \pth -> it (makeRelative resources pth) $ do
           pack <- xmirPack pth
-          xmir' <- do
-            doc <- parseXMIRThrows (xmir pack)
-            xmirToPhi doc
-          phi' <- parseProgramThrows (phi pack)
-          xmir' `shouldBe` phi'
+          let xmir' = do
+                doc <- parseXMIRThrows (xmir pack)
+                xmirToPhi doc
+          case failure pack of
+            Just True -> xmir' `shouldThrow` anyException
+            _ -> do
+              xmir'' <- xmir'
+              phi' <- parseProgramThrows (phi pack)
+              xmir'' `shouldBe` phi'
       )

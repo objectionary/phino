@@ -21,6 +21,7 @@ module Misc
     btsToUnescapedStr,
     attributesFromBindings,
     uniqueBindings,
+    uniqueBindings',
     pattern DataObject,
     pattern DataString,
     pattern DataNumber,
@@ -116,6 +117,11 @@ attributesFromBindings (bd : bds) =
         Just attr' -> attr' : attributesFromBindings bds
         _ -> attributesFromBindings bds
 
+uniqueBindings' :: [Binding] -> IO [Binding]
+uniqueBindings' bds = case uniqueBindings bds of
+  Left msg -> throwIO (userError msg)
+  Right _ -> pure bds
+
 -- Check if given binding list consists of unique attributes
 uniqueBindings :: [Binding] -> Either String [Binding]
 uniqueBindings bds = case maybeDuplicatedAttribute bds Set.empty of
@@ -140,7 +146,7 @@ uniqueBindings bds = case maybeDuplicatedAttribute bds Set.empty of
     checkAttr :: Attribute -> [Binding] -> Set.Set Attribute -> Maybe Attribute
     checkAttr attr rest acc
       | attr `Set.member` acc = Just attr
-      | otherwise = maybeDuplicatedAttribute rest acc
+      | otherwise = maybeDuplicatedAttribute rest (Set.insert attr acc)
 
 -- Add void rho binding to the end of the list of any rho binding is not present
 withVoidRho :: [Binding] -> [Binding]

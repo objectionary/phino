@@ -17,7 +17,7 @@
     hi-大家 ↦ ⟦ ⟧,
     sss ↦ Φ.r,
     alpha-dispatch ↦ ξ.x.α0.α1.y,
-    k ↦ ⟦ λ ⤍ Function_name_i64, first ↦ ⟦ λ ⤍ Function_name, Δ ⤍ 42- ⟧ ⟧,
+    k1 ↦ ⟦ λ ⤍ Function_name_i64, first ↦ ⟦ λ ⤍ Function_name, Δ ⤍ 42- ⟧ ⟧,
     terminator-application ↦ ⊥ (t ↦ ξ.t),
     terminator-dispatch ↦ ⊥.t,
     string ↦ "Hello",
