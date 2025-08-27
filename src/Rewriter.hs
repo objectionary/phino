@@ -1,5 +1,6 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE RecordWildCards #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
@@ -18,7 +19,7 @@ import Matcher (MetaValue (MvAttribute, MvBindings, MvBytes, MvExpression), Subs
 import Misc (ensuredFile)
 import Parser (parseProgram, parseProgramThrows)
 import Pretty (PrintMode (SWEET), prettyAttribute, prettyBytes, prettyExpression, prettyExpression', prettyProgram, prettyProgram', prettySubsts)
-import Replacer (replaceProgram, replaceProgramThrows)
+import Replacer (ReplaceProgramContext (ReplaceProgramContext), ReplaceProgramThrowsFunc, replaceProgramFastThrows, replaceProgramThrows)
 import Rule (RuleContext (RuleContext), matchProgramWithRule)
 import qualified Rule as R
 import Term
@@ -29,6 +30,7 @@ import qualified Yaml as Y
 data RewriteContext = RewriteContext
   { _program :: Program,
     _maxDepth :: Integer,
+    _maxCycles :: Integer,
     _buildTerm :: BuildTermFunc,
     _must :: Integer
   }
@@ -52,13 +54,51 @@ instance Show MustException where
       must
 
 -- Build pattern and result expression and replace patterns to results in given program
-buildAndReplace :: Program -> Expression -> Expression -> [Subst] -> IO Program
-buildAndReplace program ptn res substs = do
+buildAndReplace' :: Expression -> Expression -> [Subst] -> ReplaceProgramThrowsFunc -> ReplaceProgramContext -> IO Program
+buildAndReplace' ptn res substs func ctx = do
   ptns <- buildExpressions ptn substs
   repls <- buildExpressions res substs
   let repls' = map fst repls
       ptns' = map fst ptns
-  replaceProgramThrows program ptns' repls'
+  func ptns' repls' ctx
+
+-- If pattern and replacement are appropriate for fast replacing - does it.
+-- Pattern and replacement expressions can be used in fast replacing only if
+-- 1. they are both formations
+-- 2. they start and end with the same meta bindings, e.g. [!B1, ..., !B2]
+-- 3. the does not have meta bindings between first and last meta bindings
+-- In such case we can just replace bindings one by one without building whole expression.
+-- You can find more details in this ticket: https://github.com/objectionary/phino/issues/321
+-- If we don't meet the conditions above - just do a regular replacing
+tryBuildAndReplaceFast :: Expression -> Expression -> [Subst] -> ReplaceProgramContext -> IO Program
+tryBuildAndReplaceFast (ExFormation pbds) (ExFormation rbds) substs ctx =
+  let pbds' = init (tail pbds)
+      rbds' = init (tail rbds)
+   in if startsAndEndsWithMeta pbds
+        && startsAndEndsWithMeta rbds
+        && head pbds == head rbds
+        && last pbds == last rbds
+        && not (hasMetaBindings pbds')
+        && not (hasMetaBindings rbds')
+        then do
+          logDebug "Applying fast replacing since 'pattern' and 'result' are suitable for this..."
+          buildAndReplace' (ExFormation pbds') (ExFormation rbds') substs replaceProgramFastThrows ctx
+        else do
+          logDebug "Applying regular replacing..."
+          buildAndReplace' (ExFormation pbds) (ExFormation rbds) substs replaceProgramThrows ctx
+  where
+    startsAndEndsWithMeta :: [Binding] -> Bool
+    startsAndEndsWithMeta bds =
+      length bds > 1
+        && isMetaBinding (head bds)
+        && isMetaBinding (last bds)
+    hasMetaBindings :: [Binding] -> Bool
+    isMetaBinding :: Binding -> Bool
+    isMetaBinding = \case
+      BiMeta _ -> True
+      _ -> False
+    hasMetaBindings = foldl (\acc bd -> acc || isMetaBinding bd) False
+tryBuildAndReplaceFast ptn res substs ctx = buildAndReplace' ptn res substs replaceProgramThrows ctx
 
 rewrite :: Program -> [Y.Rule] -> RewriteContext -> IO Program
 rewrite program [] _ = pure program
@@ -85,7 +125,7 @@ rewrite program (rule : rest) ctx = do
                   pure prog
                 else do
                   logDebug (printf "Rule '%s' has been matched, applying..." ruleName)
-                  prog' <- buildAndReplace prog ptn res matched
+                  prog' <- tryBuildAndReplaceFast ptn res matched (ReplaceProgramContext prog depth)
                   if prog == prog'
                     then do
                       logDebug (printf "Applied '%s', no changes made" ruleName)
@@ -112,17 +152,17 @@ rewrite' prog rules ctx = _rewrite prog 1
   where
     _rewrite :: Program -> Integer -> IO Program
     _rewrite prog count = do
-      let depth = _maxDepth ctx
+      let cycles = _maxCycles ctx
           must = _must ctx
       if must /= 0 && count - 1 > must
         then throwIO (ContinueAfter must)
         else
-          if count - 1 == depth
+          if count - 1 == cycles
             then do
-              logDebug (printf "Max amount of rewriting cycles for all rules (%d) has been reached, rewriting is stopped" depth)
+              logDebug (printf "Max amount of rewriting cycles for all rules (%d) has been reached, rewriting is stopped" cycles)
               pure prog
             else do
-              logDebug (printf "Starting rewriting cycle for all rules: %d out of %d" count depth)
+              logDebug (printf "Starting rewriting cycle for all rules: %d out of %d" count cycles)
               rewritten <- rewrite prog rules ctx
               if rewritten == prog
                 then do

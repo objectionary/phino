@@ -1,0 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+name: infinite
+pattern: ⟦ x -> !e, !B ⟧
+result: ⟦ x -> 1, x -> !e, !B ⟧

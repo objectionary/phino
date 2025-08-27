@@ -1,0 +1,19 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+input: Q -> [[ x -> 5, y -> 6 ]]
+output: |-
+  Φ ↦ ⟦
+    z -> 12
+  ⟧
+rules:
+  custom:
+    - pattern: '[[ x -> !e1, y -> !e2 ]]'
+      result: '[[ z -> !e3 ]]'
+      where:
+        - meta: '!e3'
+          function: sum
+          args:
+            - '!e1'
+            - '!e2'
+            - '1'

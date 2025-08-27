@@ -18,6 +18,7 @@ module Misc
     allPathsIn,
     ensuredFile,
     shuffle,
+    toDouble,
     btsToUnescapedStr,
     attributesFromBindings,
     uniqueBindings,
@@ -184,6 +185,11 @@ allPathsIn dir = do
             else return [path]
       )
   return (concat paths)
+
+-- >>> toDouble 5
+-- 5.0
+toDouble :: Integer -> Double
+toDouble = fromIntegral
 
 -- >>> btsToWord8 BtEmpty
 -- []
