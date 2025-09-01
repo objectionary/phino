@@ -86,10 +86,10 @@ spec = do
   it "prints version" $
     testCLI ["--version"] [showVersion version]
 
-  it "prints help" $ do
-    output <- capture_ (runCLI ["--help"])
-    output `shouldContain` "Phino - CLI Manipulator of 𝜑-Calculus Expressions"
-    output `shouldContain` "Usage:"
+  it "prints help" $
+    testCLI
+      ["--help"]
+      ["Phino - CLI Manipulator of 𝜑-Calculus Expressions", "Usage:"]
 
   it "prints debug info with --log-level=DEBUG" $
     withStdin "Q -> [[]]" $

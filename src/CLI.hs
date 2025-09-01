@@ -166,8 +166,8 @@ rewriteParser =
 commandParser :: Parser Command
 commandParser =
   hsubparser
-    ( command "rewrite" (info (rewriteParser <**> helper) (progDesc "Rewrite the program"))
-        <> command "dataize" (info (dataizeParser <**> helper) (progDesc "Dataize the program"))
+    ( command "rewrite" (info rewriteParser (progDesc "Rewrite the program"))
+        <> command "dataize" (info dataizeParser (progDesc "Dataize the program"))
     )
 
 parserInfo :: ParserInfo Command
