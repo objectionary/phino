@@ -31,27 +31,34 @@ data RewriteContext = RewriteContext
   { _program :: Program,
     _maxDepth :: Integer,
     _maxCycles :: Integer,
+    _depthSensitive :: Bool,
     _buildTerm :: BuildTermFunc,
     _must :: Integer
   }
 
-data MustException
-  = StoppedBefore {must :: Integer, count :: Integer}
-  | ContinueAfter {must :: Integer}
+data RewriteException
+  = MustBeGoing {must :: Integer, count :: Integer}
+  | MustStopBefore {must :: Integer}
+  | StoppedOnLimit {flag :: String, limit :: Integer}
   deriving (Exception)
 
-instance Show MustException where
-  show StoppedBefore {..} =
+instance Show RewriteException where
+  show MustBeGoing {..} =
     printf
       "With option --must=%d it's expected exactly %d rewriting cycles happened, but rewriting stopped after %d"
       must
       must
       count
-  show ContinueAfter {..} =
+  show MustStopBefore {..} =
     printf
       "With option --must=%d it's expected exactly %d rewriting cycles happened, but rewriting is still going"
       must
       must
+  show StoppedOnLimit {..} =
+    printf
+      "With option --depth-sensitive it's expected rewriting iterations amount does not reach the limit: --%s=%d"
+      flag
+      limit
 
 -- Build pattern and result expression and replace patterns to results in given program
 buildAndReplace' :: Expression -> Expression -> [Subst] -> ReplaceProgramThrowsFunc -> ReplaceProgramContext -> IO Program
@@ -115,7 +122,9 @@ rewrite program (rule : rest) ctx = do
        in if count - 1 == depth
             then do
               logDebug (printf "Max amount of rewriting cycles (%d) for rule '%s' has been reached, rewriting is stopped" depth ruleName)
-              pure prog
+              if _depthSensitive ctx
+                then throwIO (StoppedOnLimit "max-depth" depth)
+                else pure prog
             else do
               logDebug (printf "Starting rewriting cycle for rule '%s': %d out of %d" ruleName count depth)
               matched <- R.matchProgramWithRule prog rule (RuleContext (_program ctx) (_buildTerm ctx))
@@ -155,12 +164,14 @@ rewrite' prog rules ctx = _rewrite prog 1
       let cycles = _maxCycles ctx
           must = _must ctx
       if must /= 0 && count - 1 > must
-        then throwIO (ContinueAfter must)
+        then throwIO (MustStopBefore must)
         else
           if count - 1 == cycles
             then do
               logDebug (printf "Max amount of rewriting cycles for all rules (%d) has been reached, rewriting is stopped" cycles)
-              pure prog
+              if _depthSensitive ctx
+                then throwIO (StoppedOnLimit "max-cycles" cycles)
+                else pure prog
             else do
               logDebug (printf "Starting rewriting cycle for all rules: %d out of %d" count cycles)
               rewritten <- rewrite prog rules ctx
@@ -168,6 +179,6 @@ rewrite' prog rules ctx = _rewrite prog 1
                 then do
                   logDebug "No rule matched, rewriting is stopped"
                   if must /= 0 && count - 1 /= must
-                    then throwIO (StoppedBefore must (count - 1))
+                    then throwIO (MustBeGoing must (count - 1))
                     else pure rewritten
                 else _rewrite rewritten (count + 1)
