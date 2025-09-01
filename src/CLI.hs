@@ -61,6 +61,7 @@ data OptsDataize = OptsDataize
     inputFormat :: IOFormat,
     maxDepth :: Integer,
     maxCycles :: Integer,
+    depthSensitive :: Bool,
     inputFile :: Maybe FilePath
   }
 
@@ -75,6 +76,7 @@ data OptsRewrite = OptsRewrite
     shuffle :: Bool,
     omitListing :: Bool,
     omitComments :: Bool,
+    depthSensitive :: Bool,
     must :: Integer,
     maxDepth :: Integer,
     maxCycles :: Integer,
@@ -99,6 +101,9 @@ optMaxCycles = option auto (long "max-cycles" <> metavar "CYCLES" <> help "Maxim
 
 optInputFormat :: Parser IOFormat
 optInputFormat = option (parseIOFormat "input") (long "input" <> metavar "FORMAT" <> help "Program input format (phi, xmir)" <> value PHI <> showDefault)
+
+optDepthSensitive :: Parser Bool
+optDepthSensitive = switch (long "depth-sensitive" <> help "Fail if rewriting is not finished after reaching max attempts (see --max-cycles or --max-depth)")
 
 optLogLevel :: Parser LogLevel
 optLogLevel =
@@ -130,6 +135,7 @@ dataizeParser =
             <*> optInputFormat
             <*> optMaxDepth
             <*> optMaxCycles
+            <*> optDepthSensitive
             <*> argInputFile
         )
 
@@ -147,6 +153,7 @@ rewriteParser =
             <*> switch (long "shuffle" <> help "Shuffle rules before applying")
             <*> switch (long "omit-listing" <> help "Omit full program listing in XMIR output")
             <*> switch (long "omit-comments" <> help "Omit comments in XMIR output")
+            <*> optDepthSensitive
             <*> ( flag' 1 (long "must" <> help "Enable must-rewrite with default value 1")
                     <|> option auto (long "must" <> metavar "N" <> help "Must-rewrite, stops execution if not exactly N rules applied (default 1 when specified without value, if 0 - flag is disabled)" <> value 0)
                 )
@@ -192,11 +199,11 @@ runCLI args = handle handler $ do
       validateMaxDepth maxDepth
       validateMaxCycles maxCycles
       validateMust must
-      logDebug (printf "Amount of rewriting cycles: %d" maxDepth)
+      logDebug (printf "Amount of rewriting cycles across all the rules: %d, per rule: %d" maxCycles maxDepth)
       input <- readInput inputFile
       rules' <- getRules
       program <- parseProgram input inputFormat
-      rewritten <- rewrite' program rules' (RewriteContext program maxDepth maxCycles buildTerm must)
+      rewritten <- rewrite' program rules' (RewriteContext program maxDepth maxCycles depthSensitive buildTerm must)
       logDebug (printf "Printing rewritten 𝜑-program as %s" (show outputFormat))
       prog <- printProgram rewritten outputFormat printMode
       output prog
@@ -245,7 +252,7 @@ runCLI args = handle handler $ do
       validateMaxCycles maxCycles
       input <- readInput inputFile
       prog <- parseProgram input inputFormat
-      dataized <- dataize prog (DataizeContext prog maxDepth maxCycles buildTerm)
+      dataized <- dataize prog (DataizeContext prog maxDepth maxCycles depthSensitive buildTerm)
       maybe (throwIO CouldNotDataize) (putStrLn . prettyBytes) dataized
   where
     validateIntArgument :: Integer -> (Integer -> Bool) -> String -> IO ()

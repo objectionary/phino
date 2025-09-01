@@ -217,6 +217,12 @@ spec = do
                 "⟧}"
               ]
           ]
+    
+    it "fails with --depth-sensitive" $
+      withStdin "Q -> [[ x -> \"x\"]]" $
+        testCLIFailed
+          ["rewrite", "--depth-sensitive", "--max-depth=1", "--max-cycles=1", "--rule=test-resources/cli/infinite.yaml"]
+          "[ERROR]: With option --depth-sensitive it's expected rewriting iterations amount does not reach the limit: --max-depth=1"
 
   describe "dataize" $ do
     it "dataizes simple program" $
