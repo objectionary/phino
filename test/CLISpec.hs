@@ -16,7 +16,6 @@ import Paths_phino (version)
 import System.Directory (removeFile)
 import System.Exit (ExitCode (ExitFailure))
 import System.IO
-import System.IO.Silently (capture_)
 import Test.Hspec
 import Text.Printf (printf)
 
