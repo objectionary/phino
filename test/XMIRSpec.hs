@@ -7,12 +7,13 @@
 
 module XMIRSpec where
 
+import Control.Exception (bracket)
 import Control.Monad (filterM, forM_, unless)
 import Data.Aeson
 import Data.List (intercalate)
 import Data.Yaml qualified as Yaml
 import GHC.Generics (Generic)
-import GHC.IO (bracket, unsafePerformIO)
+import GHC.IO (unsafePerformIO)
 import Misc (allPathsIn)
 import Parser (parseProgramThrows)
 import Pretty (PrintMode (SWEET))
