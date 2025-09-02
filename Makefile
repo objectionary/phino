@@ -17,5 +17,5 @@ hlint:
 	if command -v hlint &> /dev/null; then
 		hlint src app test
 	else
-			echo "hlint not found, skipping." >&2  # Optional: Print a message
+			echo "hlint not found, skipping." >&2
 	fi

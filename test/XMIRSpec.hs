@@ -1,50 +1,106 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DuplicateRecordFields #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
 module XMIRSpec where
 
-import Control.Monad (forM_)
+import Control.Monad (filterM, forM_, unless)
 import Data.Aeson
+import Data.List (intercalate)
 import Data.Yaml qualified as Yaml
 import GHC.Generics (Generic)
+import GHC.IO (bracket, unsafePerformIO)
 import Misc (allPathsIn)
 import Parser (parseProgramThrows)
+import Pretty (PrintMode (SWEET))
+import System.Directory (removeFile)
+import System.Exit (ExitCode (ExitSuccess))
 import System.FilePath (makeRelative)
-import Test.Hspec (Spec, describe, it, runIO, shouldBe, shouldThrow, anyException)
-import XMIR (parseXMIRThrows, xmirToPhi)
+import System.IO (hClose, hPutStr, openTempFile)
+import System.Process (readProcessWithExitCode)
+import Test.Hspec (Spec, anyException, describe, expectationFailure, it, pendingWith, runIO, shouldBe, shouldThrow)
+import XMIR (XmirContext (XmirContext), parseXMIRThrows, printXMIR, programToXMIR, xmirToPhi)
 
-data XMIRPack = XMIRPack
+data ParsePack = ParsePack
   { failure :: Maybe Bool,
     xmir :: String,
     phi :: String
   }
   deriving (Generic, Show, FromJSON)
 
-xmirPack :: FilePath -> IO XMIRPack
-xmirPack = Yaml.decodeFileThrow
+data PrintPack = PrintPack
+  { phi :: String,
+    xpaths :: [String]
+  }
+  deriving (Generic, Show, FromJSON)
 
--- @todo #126:30min Introduce XMIR printing test. It's not possible anymore to compare XMIRs like strings
---  because they contain random data, e.g. system time. We need to introduce some convenient
---  test system for testing XML and use it here here.
+parsePack :: FilePath -> IO ParsePack
+parsePack = Yaml.decodeFileThrow
+
+printPack :: FilePath -> IO PrintPack
+printPack = Yaml.decodeFileThrow
+
+-- Check if xmllint is available on the system
+isXmllintAvailable :: Bool
+isXmllintAvailable =
+  let (exitCode, _, _) = unsafePerformIO (readProcessWithExitCode "xmllint" ["--version"] "")
+   in (exitCode == ExitSuccess)
+
 spec :: Spec
-spec =
+spec = do
   describe "XMIR parsing packs" $ do
     let resources = "test-resources/xmir-parsing-packs"
     packs <- runIO (allPathsIn resources)
     forM_
       packs
       ( \pth -> it (makeRelative resources pth) $ do
-          pack <- xmirPack pth
-          let xmir' = do
+          pack <- parsePack pth
+          let ParsePack {phi = phi'} = pack
+              xmir' = do
                 doc <- parseXMIRThrows (xmir pack)
                 xmirToPhi doc
           case failure pack of
             Just True -> xmir' `shouldThrow` anyException
             _ -> do
               xmir'' <- xmir'
-              phi' <- parseProgramThrows (phi pack)
-              xmir'' `shouldBe` phi'
+              phi'' <- parseProgramThrows phi'
+              xmir'' `shouldBe` phi''
+      )
+
+  describe "XMIR printing packs" $ do
+    let resources = "test-resources/xmir-printing-packs"
+        available = isXmllintAvailable
+    packs <- runIO (allPathsIn resources)
+    forM_
+      packs
+      ( \pth ->
+          it (makeRelative resources pth) $
+            if not available
+              then pendingWith "The 'xmllint' is not available"
+              else do
+                pack <- printPack pth
+                let PrintPack {phi = phi', xpaths = xpaths'} = pack
+                prog <- parseProgramThrows phi'
+                xmir' <- programToXMIR prog (XmirContext True True SWEET)
+                let xml = printXMIR xmir'
+                bracket
+                  (openTempFile "." "xmirXXXXXX.tmp")
+                  (\(fp, _) -> removeFile fp)
+                  ( \(path, hTmp) -> do
+                      hPutStr hTmp xml
+                      hClose hTmp
+                      failed <-
+                        filterM
+                          ( \xpath -> do
+                              (code, _, _) <- readProcessWithExitCode "xmllint" ["--xpath", xpath, path] ""
+                              pure (code /= ExitSuccess)
+                          )
+                          xpaths'
+                      unless
+                        (null failed)
+                        (expectationFailure ("Failed xpaths:\n - " ++ intercalate "\n - " failed ++ "\nXMIR is:\n" ++ xml))
+                  )
       )
