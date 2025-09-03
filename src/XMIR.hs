@@ -26,6 +26,7 @@ import Data.Time
 import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds)
 import Data.Time.Format (defaultTimeLocale, formatTime)
 import Data.Version (showVersion)
+import Debug.Trace
 import Misc
 import Paths_phino (version)
 import Pretty (PrintMode, prettyAttribute, prettyBinding, prettyBytes, prettyExpression, prettyProgram')
@@ -34,7 +35,6 @@ import Text.Read (readMaybe)
 import qualified Text.Read as TR
 import Text.XML
 import qualified Text.XML.Cursor as C
-import Debug.Trace
 
 data XmirContext = XmirContext
   { omitListing :: Bool,
@@ -79,9 +79,9 @@ object :: [(String, String)] -> [Node] -> Node
 object attrs children = NodeElement (element "o" attrs children)
 
 -- @todo #278:30min Remove xmirAttributure and replace to prettyAttribute. Right now XMIR does not
---  support "ρ" and "φ" in @base and @name attributes. When it's done, we should also generate 
+--  support "ρ" and "φ" in @base and @name attributes. When it's done, we should also generate
 --  such valid XMIR. To achieve that we should get rid of xmirAttribute function and use prettyAttribute
---  instead. Also we should use "@" in formationBinding. Don't forget to remove the puzzle. 
+--  instead. Also we should use "@" in formationBinding. Don't forget to remove the puzzle.
 xmirAttribute :: Attribute -> String
 xmirAttribute AtPhi = "@"
 xmirAttribute AtRho = "^"
