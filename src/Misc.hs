@@ -356,7 +356,7 @@ validateYamlObject v keys = do
       current = KeyMap.keys v
   when
     (length current > 1)
-    (fail ("Exacly one condition type is expected, when multiple condition types specified: " ++ show current))
+    (fail ("Exactly one condition type is expected, when multiple condition types specified: " ++ show current))
   when
     (null present)
     (fail (printf "Unknown condition type '%s', expected one of: %s" (show current) (show keys)))
