@@ -6,7 +6,17 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module XMIR (programToXMIR, printXMIR, toName, parseXMIR, parseXMIRThrows, xmirToPhi, XmirContext (XmirContext)) where
+module XMIR
+  ( programToXMIR,
+    printXMIR,
+    toName,
+    parseXMIR,
+    parseXMIRThrows,
+    xmirToPhi,
+    defaultXmirContext,
+    XmirContext (XmirContext),
+  )
+where
 
 import Ast
 import Control.Exception (Exception (displayException), SomeException, throwIO)
@@ -29,9 +39,8 @@ import Data.Version (showVersion)
 import Debug.Trace
 import Misc
 import Paths_phino (version)
-import Pretty (PrintMode, prettyAttribute, prettyBinding, prettyBytes, prettyExpression, prettyProgram')
+import Pretty (PrintMode (SWEET), prettyAttribute, prettyBinding, prettyBytes, prettyExpression, prettyProgram', prettyProgram)
 import Text.Printf (printf)
-import Text.Read (readMaybe)
 import qualified Text.Read as TR
 import Text.XML
 import qualified Text.XML.Cursor as C
@@ -42,19 +51,24 @@ data XmirContext = XmirContext
     printMode :: PrintMode
   }
 
+defaultXmirContext :: XmirContext
+defaultXmirContext = XmirContext True True SWEET
+
 -- @todo #116:30min Refactor XMIR module. This module became so big and hard to read.
 --  Now it's responsible for 3 different operations: 1) converting Phi AST to XML Document Ast,
 --  2) printing XML Document, 3) parsing XMIR to Phi AST. I think we should separate the logic
 --  in order to keep modules as little as possible.
 data XMIRException
-  = UnsupportedExpression {expr :: Expression}
+  = UnsupportedProgram {prog :: Program}
+  | UnsupportedExpression {expr :: Expression}
   | UnsupportedBinding {binding :: Binding}
   | CouldNotParseXMIR {message :: String}
   | InvalidXMIRFormat {message :: String, cursor :: C.Cursor}
   deriving (Exception)
 
 instance Show XMIRException where
-  show UnsupportedExpression {..} = printf "XMIR does not support such expression: %s" (prettyExpression expr)
+  show UnsupportedProgram {..} = printf "XMIR does not support such program:\n%s" (prettyProgram prog)
+  show UnsupportedExpression {..} = printf "XMIR does not support such expression:\n%s" (prettyExpression expr)
   show UnsupportedBinding {..} = printf "XMIR does not support such bindings: %s" (prettyBinding binding)
   show CouldNotParseXMIR {..} = printf "Couldn't parse given XMIR, cause: %s" message
   show InvalidXMIRFormat {..} =
@@ -142,9 +156,6 @@ expression (ExApplication expr (BiTau attr texpr)) ctx = do
 expression (ExApplication (ExFormation bds) tau) _ = throwIO (UnsupportedExpression (ExApplication (ExFormation bds) tau))
 expression expr _ = throwIO (UnsupportedExpression expr)
 
-nestedBindings :: [Binding] -> XmirContext -> IO [Node]
-nestedBindings bds ctx = catMaybes <$> mapM (`formationBinding` ctx) bds
-
 formationBinding :: Binding -> XmirContext -> IO (Maybe Node)
 formationBinding (BiTau (AtLabel label) (ExFormation bds)) ctx = do
   inners <- nestedBindings bds ctx
@@ -163,86 +174,103 @@ formationBinding (BiVoid AtPhi) _ = pure (Just (object [("name", "@"), ("base", 
 formationBinding (BiVoid (AtLabel label)) _ = pure (Just (object [("name", label), ("base", "∅")] []))
 formationBinding binding _ = throwIO (UnsupportedBinding binding)
 
-rootExpression :: Expression -> XmirContext -> IO Node
-rootExpression (ExFormation [bd, BiVoid AtRho]) ctx = do
-  [bd'] <- nestedBindings [bd] ctx
-  pure bd'
-rootExpression expr _ = throwIO (UnsupportedExpression expr)
-
--- Extract package from given expression
--- The function returns tuple (X, Y), where
--- - X: list of package parts
--- - Y: root object expression
-getPackage :: Expression -> IO ([String], Expression)
-getPackage (ExFormation [BiTau (AtLabel label) (ExFormation [bd, BiLambda "Package", BiVoid AtRho]), BiVoid AtRho]) = do
-  (pckg, expr') <- getPackage (ExFormation [bd, BiLambda "Package", BiVoid AtRho])
-  pure (label : pckg, expr')
-getPackage (ExFormation [BiTau (AtLabel label) (ExFormation [bd, BiLambda "Package", BiVoid AtRho]), BiLambda "Package", BiVoid AtRho]) = do
-  (pckg, expr') <- getPackage (ExFormation [bd, BiLambda "Package", BiVoid AtRho])
-  pure (label : pckg, expr')
-getPackage (ExFormation [BiTau attr expr, BiLambda "Package", BiVoid AtRho]) = pure ([], ExFormation [BiTau attr expr, BiVoid AtRho])
-getPackage (ExFormation [bd, BiVoid AtRho]) = pure ([], ExFormation [bd, BiVoid AtRho])
-getPackage expr = throwIO (userError (printf "Can't extract package from given expression:\n %s" (prettyExpression expr)))
-
-metasWithPackage :: String -> Node
-metasWithPackage pckg =
-  NodeElement
-    ( element
-        "metas"
-        []
-        [ NodeElement
-            ( element
-                "meta"
-                []
-                [ NodeElement (element "head" [] [NodeContent (T.pack "package")]),
-                  NodeElement (element "tail" [] [NodeContent (T.pack pckg)]),
-                  NodeElement (element "part" [] [NodeContent (T.pack pckg)])
-                ]
-            )
-        ]
-    )
-
-time :: UTCTime -> String
-time now = do
-  let base = formatTime defaultTimeLocale "%Y-%m-%dT%H:%M:%S" now
-      posix = utcTimeToPOSIXSeconds now
-      fractional :: Double
-      fractional = realToFrac posix - fromInteger (floor posix)
-      nanos = floor (fractional * 1_000_000_000) :: Int
-  base ++ "." ++ printf "%09d" nanos ++ "Z"
+nestedBindings :: [Binding] -> XmirContext -> IO [Node]
+nestedBindings bds ctx = catMaybes <$> mapM (`formationBinding` ctx) bds
 
 programToXMIR :: Program -> XmirContext -> IO Document
-programToXMIR (Program expr) ctx = do
-  (pckg, expr') <- getPackage expr
-  root <- rootExpression expr' ctx
-  now <- getCurrentTime
-  let phi = prettyProgram' (Program expr) (printMode ctx)
-      listing =
-        if omitListing ctx
-          then show (length (lines phi)) ++ " lines of phi"
-          else phi
-      listing' = NodeElement (element "listing" [] [NodeContent (T.pack listing)])
-      metas = metasWithPackage (intercalate "." pckg)
-  pure
-    ( Document
-        (Prologue [] Nothing [])
-        ( element
-            "object"
-            [ ("dob", formatTime defaultTimeLocale "%Y-%m-%dT%H:%M:%S" now),
-              ("ms", "0"),
-              ("revision", "1234567"),
-              ("time", time now),
-              ("version", showVersion version),
-              ("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance"),
-              ("xsi:noNamespaceSchemaLocation", "https://raw.githubusercontent.com/objectionary/eo/refs/heads/gh-pages/XMIR.xsd")
-            ]
-            ( if null pckg
-                then [listing', root]
-                else [listing', metas, root]
+programToXMIR prog@(Program expr@(ExFormation [BiTau (AtLabel _) arg, BiVoid AtRho])) ctx = case arg of
+  ExFormation _ -> programToXMIR'
+  ExApplication _ _ -> programToXMIR'
+  ExDispatch _ _ -> programToXMIR'
+  ExGlobal -> programToXMIR'
+  _ -> throwIO (UnsupportedProgram prog)
+  where
+    programToXMIR' :: IO Document
+    programToXMIR' = do
+      (pckg, expr') <- getPackage expr
+      root <- rootExpression expr' ctx
+      now <- getCurrentTime
+      let phi = prettyProgram' prog (printMode ctx)
+          listing =
+            if omitListing ctx
+              then show (length (lines phi)) ++ " lines of phi"
+              else phi
+          listing' = NodeElement (element "listing" [] [NodeContent (T.pack listing)])
+          metas = metasWithPackage (intercalate "." pckg)
+      pure
+        ( Document
+            (Prologue [] Nothing [])
+            ( element
+                "object"
+                [ ("dob", formatTime defaultTimeLocale "%Y-%m-%dT%H:%M:%S" now),
+                  ("ms", "0"),
+                  ("revision", "1234567"),
+                  ("time", time now),
+                  ("version", showVersion version),
+                  ("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance"),
+                  ("xsi:noNamespaceSchemaLocation", "https://raw.githubusercontent.com/objectionary/eo/refs/heads/gh-pages/XMIR.xsd")
+                ]
+                ( if null pckg
+                    then [listing', root]
+                    else [listing', metas, root]
+                )
             )
+            []
         )
-        []
-    )
+    -- Extract package from given expression
+    -- The function returns tuple (X, Y), where
+    -- - X: list of package parts
+    -- - Y: root object expression
+    getPackage :: Expression -> IO ([String], Expression)
+    getPackage (ExFormation [BiTau (AtLabel label) (ExFormation [bd, BiLambda "Package", BiVoid AtRho]), BiVoid AtRho]) = do
+      (pckg, expr') <- getPackage (ExFormation [bd, BiLambda "Package", BiVoid AtRho])
+      pure (label : pckg, expr')
+    getPackage (ExFormation [BiTau (AtLabel label) (ExFormation [bd, BiLambda "Package", BiVoid AtRho]), BiLambda "Package", BiVoid AtRho]) = do
+      (pckg, expr') <- getPackage (ExFormation [bd, BiLambda "Package", BiVoid AtRho])
+      pure (label : pckg, expr')
+    getPackage (ExFormation [BiTau attr expr, BiLambda "Package", BiVoid AtRho]) = pure ([], ExFormation [BiTau attr expr, BiVoid AtRho])
+    getPackage (ExFormation [bd, BiVoid AtRho]) = pure ([], ExFormation [bd, BiVoid AtRho])
+    getPackage expr = throwIO (userError (printf "Can't extract package from given expression:\n %s" (prettyExpression expr)))
+    -- Convert root Expression to Node
+    rootExpression :: Expression -> XmirContext -> IO Node
+    rootExpression (ExFormation [bd, BiVoid AtRho]) ctx = do
+      [bd'] <- nestedBindings [bd] ctx
+      pure bd'
+    rootExpression expr _ = throwIO (UnsupportedExpression expr)
+    -- Returns metas Node with package:
+    -- <metas>
+    --   <meta>
+    --     <head>package</head>
+    --     <tail><!-- package here --></tail>
+    --     <part><!-- package here --></part>
+    --   </meta>
+    -- </metas>
+    metasWithPackage :: String -> Node
+    metasWithPackage pckg =
+      NodeElement
+        ( element
+            "metas"
+            []
+            [ NodeElement
+                ( element
+                    "meta"
+                    []
+                    [ NodeElement (element "head" [] [NodeContent (T.pack "package")]),
+                      NodeElement (element "tail" [] [NodeContent (T.pack pckg)]),
+                      NodeElement (element "part" [] [NodeContent (T.pack pckg)])
+                    ]
+                )
+            ]
+        )
+    time :: UTCTime -> String
+    time now = do
+      let base = formatTime defaultTimeLocale "%Y-%m-%dT%H:%M:%S" now
+          posix = utcTimeToPOSIXSeconds now
+          fractional :: Double
+          fractional = realToFrac posix - fromInteger (floor posix)
+          nanos = floor (fractional * 1_000_000_000) :: Int
+      base ++ "." ++ printf "%09d" nanos ++ "Z"
+programToXMIR prog _ = throwIO (UnsupportedProgram prog)
 
 -- Add indentation (2 spaces per level).
 indent :: Int -> TB.Builder
