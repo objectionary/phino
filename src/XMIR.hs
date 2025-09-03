@@ -236,7 +236,7 @@ programToXMIR prog@(Program expr@(ExFormation [BiTau (AtLabel _) arg, BiVoid AtR
       [bd'] <- nestedBindings [bd] ctx
       pure bd'
     rootExpression expr _ = throwIO (UnsupportedExpression expr)
-    -- Return metas Node:
+    -- Returns metas Node with package:
     -- <metas>
     --   <meta>
     --     <head>package</head>
