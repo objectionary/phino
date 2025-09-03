@@ -10,11 +10,7 @@ module Yaml where
 
 import Ast
 import Control.Applicative (asum)
-import qualified Control.Monad as CM
 import Data.Aeson
-import qualified Data.Aeson.Key as Key
-import Data.Aeson.KeyMap (KeyMap)
-import qualified Data.Aeson.KeyMap as KeyMap
 import qualified Data.ByteString as BS
 import Data.FileEmbed (embedDir)
 import Data.Text (unpack)
@@ -23,9 +19,6 @@ import qualified Data.Yaml as Yaml
 import GHC.Generics
 import Misc (allPathsIn, validateYamlObject)
 import Parser
-import Text.Printf (printf)
-import Control.Exception (catch)
-import Debug.Trace (trace)
 
 parseJSON' :: String -> (String -> Either String a) -> Value -> Parser a
 parseJSON' name func =
