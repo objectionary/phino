@@ -7,6 +7,7 @@
 
 module XMIRSpec where
 
+import Ast
 import Control.Exception (bracket)
 import Control.Monad (filterM, forM_, unless)
 import Data.Aeson
@@ -15,15 +16,14 @@ import Data.Yaml qualified as Yaml
 import GHC.Generics (Generic)
 import GHC.IO (unsafePerformIO)
 import Misc (allPathsIn)
-import Parser (parseProgramThrows)
-import Pretty (PrintMode (SWEET))
+import Parser (parseExpressionThrows, parseProgramThrows)
 import System.Directory (removeFile)
 import System.Exit (ExitCode (ExitSuccess))
 import System.FilePath (makeRelative)
 import System.IO (hClose, hPutStr, openTempFile)
 import System.Process (readProcessWithExitCode)
 import Test.Hspec (Spec, anyException, describe, expectationFailure, it, pendingWith, runIO, shouldBe, shouldThrow)
-import XMIR (XmirContext (XmirContext), parseXMIRThrows, printXMIR, programToXMIR, xmirToPhi)
+import XMIR (defaultXmirContext, parseXMIRThrows, printXMIR, programToXMIR, xmirToPhi)
 
 data ParsePack = ParsePack
   { failure :: Maybe Bool,
@@ -71,6 +71,22 @@ spec = do
               xmir'' `shouldBe` phi''
       )
 
+  describe "prohibit to convert to XMIR" $
+    forM_
+      [ "[[ ]]",
+        "T",
+        "[[ x -> ? ]]",
+        "[[ ^ -> 5 ]]",
+        "Q.x.y.z",
+        "\"Hello\"",
+        "Q",
+        "$"
+      ]
+      ( \phi' -> it phi' $ do
+          expr <- parseExpressionThrows phi'
+          programToXMIR (Program expr) defaultXmirContext `shouldThrow` anyException
+      )
+
   describe "XMIR printing packs" $ do
     let resources = "test-resources/xmir-printing-packs"
         available = isXmllintAvailable
@@ -85,7 +101,7 @@ spec = do
                 pack <- printPack pth
                 let PrintPack {phi = phi', xpaths = xpaths'} = pack
                 prog <- parseProgramThrows phi'
-                xmir' <- programToXMIR prog (XmirContext True True SWEET)
+                xmir' <- programToXMIR prog defaultXmirContext
                 let xml = printXMIR xmir'
                 bracket
                   (openTempFile "." "xmirXXXXXX.tmp")
