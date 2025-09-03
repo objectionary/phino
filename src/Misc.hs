@@ -23,6 +23,7 @@ module Misc
     attributesFromBindings,
     uniqueBindings,
     uniqueBindings',
+    validateYamlObject,
     pattern DataObject,
     pattern DataString,
     pattern DataNumber,
@@ -52,6 +53,9 @@ import System.Directory (doesDirectoryExist, doesFileExist, listDirectory)
 import System.FilePath ((</>))
 import System.Random.Stateful
 import Text.Printf (printf)
+import Data.Aeson (Object)
+import qualified Data.Aeson.KeyMap as KeyMap
+import qualified Data.Aeson.Key as Key
 
 data FsException
   = FileDoesNotExist {file :: FilePath}
@@ -345,3 +349,14 @@ shuffle xs = do
     j <- uniformRM (0, i) gen
     M.swap v i j
   V.toList <$> V.freeze v
+
+validateYamlObject :: (Applicative a, MonadFail a) => Object -> [String] -> a ()
+validateYamlObject v keys = do
+  let present = filter (`KeyMap.member` v) (map Key.fromString keys)
+      current = KeyMap.keys v
+  when
+    (length current > 1)
+    (fail ("Exacly one condition type is expected, when multiple condition types specified: " ++ show current))
+  when
+    (null present)
+    (fail (printf "Unknown condition type '%s', expected one of: %s" (show current) (show keys)))

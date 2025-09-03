@@ -10,15 +10,22 @@ module Yaml where
 
 import Ast
 import Control.Applicative (asum)
+import qualified Control.Monad as CM
 import Data.Aeson
+import qualified Data.Aeson.Key as Key
+import Data.Aeson.KeyMap (KeyMap)
+import qualified Data.Aeson.KeyMap as KeyMap
 import qualified Data.ByteString as BS
 import Data.FileEmbed (embedDir)
 import Data.Text (unpack)
 import Data.Yaml (Parser)
 import qualified Data.Yaml as Yaml
 import GHC.Generics
-import Misc (allPathsIn)
+import Misc (allPathsIn, validateYamlObject)
 import Parser
+import Text.Printf (printf)
+import Control.Exception (catch)
+import Debug.Trace (trace)
 
 parseJSON' :: String -> (String -> Either String a) -> Value -> Parser a
 parseJSON' name func =
@@ -52,7 +59,8 @@ instance FromJSON Binding where
 
 instance FromJSON Number where
   parseJSON v = case v of
-    Object o ->
+    Object o -> do
+      validateYamlObject o ["ordinal", "length"]
       asum
         [ Ordinal <$> o .: "ordinal",
           Length <$> o .: "length"
@@ -73,7 +81,8 @@ instance FromJSON Condition where
   parseJSON =
     withObject
       "Condition"
-      ( \v ->
+      ( \v -> do
+          validateYamlObject v ["and", "or", "not", "alpha", "nf", "xi", "eq", "in", "matches", "part-of"]
           asum
             [ And <$> v .: "and",
               Or <$> v .: "or",

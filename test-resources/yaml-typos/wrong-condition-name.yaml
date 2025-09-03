@@ -1,0 +1,7 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+pattern: 'Q'
+result: 'Q'
+when:
+  eqx: [1]
