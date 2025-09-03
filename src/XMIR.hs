@@ -36,12 +36,10 @@ import Data.Time
 import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds)
 import Data.Time.Format (defaultTimeLocale, formatTime)
 import Data.Version (showVersion)
-import Debug.Trace
 import Misc
 import Paths_phino (version)
 import Pretty (PrintMode (SWEET), prettyAttribute, prettyBinding, prettyBytes, prettyExpression, prettyProgram', prettyProgram)
 import Text.Printf (printf)
-import Text.Read (readMaybe)
 import qualified Text.Read as TR
 import Text.XML
 import qualified Text.XML.Cursor as C
