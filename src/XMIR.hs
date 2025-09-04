@@ -39,7 +39,7 @@ import Data.Version (showVersion)
 import Debug.Trace
 import Misc
 import Paths_phino (version)
-import Pretty (PrintMode (SWEET), prettyAttribute, prettyBinding, prettyBytes, prettyExpression, prettyProgram, prettyProgram')
+import Pretty (PrintMode (SWEET), prettyAttribute, prettyBinding, prettyBytes, prettyExpression, prettyProgram)
 import Text.Printf (printf)
 import qualified Text.Read as TR
 import Text.XML
