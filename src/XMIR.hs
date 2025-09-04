@@ -39,7 +39,7 @@ import Data.Version (showVersion)
 import Debug.Trace
 import Misc
 import Paths_phino (version)
-import Pretty (PrintMode (SWEET), prettyAttribute, prettyBinding, prettyBytes, prettyExpression, prettyProgram', prettyProgram)
+import Pretty (PrintMode (SWEET), prettyAttribute, prettyBinding, prettyBytes, prettyExpression, prettyProgram, prettyProgram')
 import Text.Printf (printf)
 import qualified Text.Read as TR
 import Text.XML
@@ -48,11 +48,11 @@ import qualified Text.XML.Cursor as C
 data XmirContext = XmirContext
   { omitListing :: Bool,
     omitComments :: Bool,
-    printMode :: PrintMode
+    listing :: String
   }
 
 defaultXmirContext :: XmirContext
-defaultXmirContext = XmirContext True True SWEET
+defaultXmirContext = XmirContext True True ""
 
 -- @todo #116:30min Refactor XMIR module. This module became so big and hard to read.
 --  Now it's responsible for 3 different operations: 1) converting Phi AST to XML Document Ast,
@@ -178,7 +178,7 @@ nestedBindings :: [Binding] -> XmirContext -> IO [Node]
 nestedBindings bds ctx = catMaybes <$> mapM (`formationBinding` ctx) bds
 
 programToXMIR :: Program -> XmirContext -> IO Document
-programToXMIR prog@(Program expr@(ExFormation [BiTau (AtLabel _) arg, BiVoid AtRho])) ctx = case arg of
+programToXMIR prog@(Program expr@(ExFormation [BiTau (AtLabel _) arg, BiVoid AtRho])) ctx@XmirContext {..} = case arg of
   ExFormation _ -> programToXMIR'
   ExApplication _ _ -> programToXMIR'
   ExDispatch _ _ -> programToXMIR'
@@ -190,12 +190,11 @@ programToXMIR prog@(Program expr@(ExFormation [BiTau (AtLabel _) arg, BiVoid AtR
       (pckg, expr') <- getPackage expr
       root <- rootExpression expr' ctx
       now <- getCurrentTime
-      let phi = prettyProgram' prog (printMode ctx)
-          listing =
-            if omitListing ctx
-              then show (length (lines phi)) ++ " lines of phi"
-              else phi
-          listing' = NodeElement (element "listing" [] [NodeContent (T.pack listing)])
+      let listingContent =
+            if omitListing
+              then show (length (lines listing)) ++ " line(s)"
+              else listing
+          listing' = NodeElement (element "listing" [] [NodeContent (T.pack listingContent)])
           metas = metasWithPackage (intercalate "." pckg)
       pure
         ( Document

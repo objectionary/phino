@@ -195,7 +195,8 @@ runCLI args = handle handler $ do
   cmd <- handleParseResult (execParserPure defaultPrefs parserInfo args)
   setLogLevel' cmd
   case cmd of
-    CmdRewrite OptsRewrite {..} -> do
+    CmdRewrite opts@OptsRewrite {..} -> do
+      validateRewriteArguments opts
       validateMaxDepth maxDepth
       validateMaxCycles maxCycles
       validateMust must
@@ -205,7 +206,7 @@ runCLI args = handle handler $ do
       program <- parseProgram input inputFormat
       rewritten <- rewrite' program rules' (RewriteContext program maxDepth maxCycles depthSensitive buildTerm must)
       logDebug (printf "Printing rewritten 𝜑-program as %s" (show outputFormat))
-      prog <- printProgram rewritten outputFormat printMode
+      prog <- printProgram rewritten outputFormat printMode input
       output prog
       where
         getRules :: IO [Y.Rule]
@@ -233,10 +234,10 @@ runCLI args = handle handler $ do
               logDebug "The --shuffle option is provided, rules are used in random order"
               Misc.shuffle ordered
             else pure ordered
-        printProgram :: Program -> IOFormat -> PrintMode -> IO String
-        printProgram prog PHI mode = pure (prettyProgram' prog mode)
-        printProgram prog XMIR mode = do
-          xmir <- programToXMIR prog (XmirContext omitListing omitComments printMode)
+        printProgram :: Program -> IOFormat -> PrintMode -> String -> IO String
+        printProgram prog PHI mode _ = pure (prettyProgram' prog mode)
+        printProgram prog XMIR _ listing = do
+          xmir <- programToXMIR prog (XmirContext omitListing omitComments listing)
           pure (printXMIR xmir)
         output :: String -> IO ()
         output prog = case targetFile of
@@ -255,6 +256,11 @@ runCLI args = handle handler $ do
       dataized <- dataize prog (DataizeContext prog maxDepth maxCycles depthSensitive buildTerm)
       maybe (throwIO CouldNotDataize) (putStrLn . prettyBytes) dataized
   where
+    validateRewriteArguments :: OptsRewrite -> IO ()
+    validateRewriteArguments OptsRewrite{..} =
+      when
+        (printMode == SWEET && outputFormat == XMIR)
+        (throwIO (InvalidRewriteArguments "The --sweet and --output=xmir can't stay together"))
     validateIntArgument :: Integer -> (Integer -> Bool) -> String -> IO ()
     validateIntArgument num cmp msg =
       when
