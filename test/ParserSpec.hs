@@ -288,3 +288,12 @@ spec = do
           content <- runIO (readFile pack)
           it (takeBaseName pack) (parseProgram content `shouldSatisfy` isRight)
       )
+  
+  describe "process typo packs" $ do
+    packs <- runIO (allPathsIn "test-resources/phi-typos-packs")
+    forM_
+      packs
+      ( \pack -> do
+          content <- runIO (readFile pack)
+          it (takeBaseName pack) (parseProgram content `shouldSatisfy` isLeft)
+      )
