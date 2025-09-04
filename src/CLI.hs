@@ -195,17 +195,15 @@ runCLI args = handle handler $ do
   cmd <- handleParseResult (execParserPure defaultPrefs parserInfo args)
   setLogLevel' cmd
   case cmd of
-    CmdRewrite OptsRewrite {..} -> do
-      validateMaxDepth maxDepth
-      validateMaxCycles maxCycles
-      validateMust must
+    CmdRewrite opts@OptsRewrite {..} -> do
+      validateRewriteArguments opts
       logDebug (printf "Amount of rewriting cycles across all the rules: %d, per rule: %d" maxCycles maxDepth)
       input <- readInput inputFile
       rules' <- getRules
       program <- parseProgram input inputFormat
       rewritten <- rewrite' program rules' (RewriteContext program maxDepth maxCycles depthSensitive buildTerm must)
       logDebug (printf "Printing rewritten 𝜑-program as %s" (show outputFormat))
-      prog <- printProgram rewritten outputFormat printMode
+      prog <- printProgram rewritten outputFormat printMode input
       output prog
       where
         getRules :: IO [Y.Rule]
@@ -233,10 +231,10 @@ runCLI args = handle handler $ do
               logDebug "The --shuffle option is provided, rules are used in random order"
               Misc.shuffle ordered
             else pure ordered
-        printProgram :: Program -> IOFormat -> PrintMode -> IO String
-        printProgram prog PHI mode = pure (prettyProgram' prog mode)
-        printProgram prog XMIR mode = do
-          xmir <- programToXMIR prog (XmirContext omitListing omitComments printMode)
+        printProgram :: Program -> IOFormat -> PrintMode -> String -> IO String
+        printProgram prog PHI mode _ = pure (prettyProgram' prog mode)
+        printProgram prog XMIR _ listing = do
+          xmir <- programToXMIR prog (XmirContext omitListing omitComments listing)
           pure (printXMIR xmir)
         output :: String -> IO ()
         output prog = case targetFile of
@@ -247,14 +245,25 @@ runCLI args = handle handler $ do
             logDebug (printf "The option '--target' is specified, printing to '%s'..." file)
             writeFile file prog
             logInfo (printf "The result program was saved in '%s'" file)
-    CmdDataize OptsDataize {..} -> do
-      validateMaxDepth maxDepth
-      validateMaxCycles maxCycles
+    CmdDataize opts@OptsDataize {..} -> do
+      validateDataizeArguments opts
       input <- readInput inputFile
       prog <- parseProgram input inputFormat
       dataized <- dataize prog (DataizeContext prog maxDepth maxCycles depthSensitive buildTerm)
       maybe (throwIO CouldNotDataize) (putStrLn . prettyBytes) dataized
   where
+    validateRewriteArguments :: OptsRewrite -> IO ()
+    validateRewriteArguments OptsRewrite{..} = do
+      when
+        (printMode == SWEET && outputFormat == XMIR)
+        (throwIO (InvalidRewriteArguments "The --sweet and --output=xmir can't stay together"))
+      validateMaxDepth maxDepth
+      validateMaxCycles maxCycles
+      validateIntArgument must (< 0) "--must must be positive"
+    validateDataizeArguments :: OptsDataize -> IO ()
+    validateDataizeArguments OptsDataize{..} = do
+      validateMaxDepth maxDepth
+      validateMaxCycles maxCycles
     validateIntArgument :: Integer -> (Integer -> Bool) -> String -> IO ()
     validateIntArgument num cmp msg =
       when
@@ -264,8 +273,6 @@ runCLI args = handle handler $ do
     validateMaxDepth depth = validateIntArgument depth (<= 0) "--max-depth must be positive"
     validateMaxCycles :: Integer -> IO ()
     validateMaxCycles cycles = validateIntArgument cycles (<= 0) "--max-cycles must be positive"
-    validateMust :: Integer -> IO ()
-    validateMust must = validateIntArgument must (< 0) "--must must be positive"
     readInput :: Maybe FilePath -> IO String
     readInput inputFile' = case inputFile' of
       Just pth -> do

@@ -176,7 +176,7 @@ spec = do
       withStdin "Q -> [[ x -> Q.y ]]" $
         testCLI
           ["rewrite", "--nothing", "--output=xmir", "--omit-listing"]
-          ["<?xml version=\"1.0\" encoding=\"UTF-8\"?>", "<object", "<listing>4 lines of phi</listing>", "  <o base=\"Q.y\" name=\"x\"/>"]
+          ["<?xml version=\"1.0\" encoding=\"UTF-8\"?>", "<object", "<listing>1 line(s)</listing>", "  <o base=\"Q.y\" name=\"x\"/>"]
 
     it "does not fail on exactly 1 rewriting" $
       withStdin "{⟦ t ↦ ⟦ x ↦ \"foo\" ⟧ ⟧}" $
@@ -222,6 +222,12 @@ spec = do
         testCLIFailed
           ["rewrite", "--depth-sensitive", "--max-depth=1", "--max-cycles=1", "--rule=test-resources/cli/infinite.yaml"]
           "[ERROR]: With option --depth-sensitive it's expected rewriting iterations amount does not reach the limit: --max-depth=1"
+
+    it "fails on --sweet and --output=xmir together" $
+      withStdin "Q -> [[ ]]" $
+        testCLIFailed
+          ["rewrite", "--sweet", "--output=xmir", "--nothing"]
+          "The --sweet and --output=xmir can't stay together"
 
   describe "dataize" $ do
     it "dataizes simple program" $
