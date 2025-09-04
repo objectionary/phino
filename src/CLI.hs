@@ -197,9 +197,6 @@ runCLI args = handle handler $ do
   case cmd of
     CmdRewrite opts@OptsRewrite {..} -> do
       validateRewriteArguments opts
-      validateMaxDepth maxDepth
-      validateMaxCycles maxCycles
-      validateMust must
       logDebug (printf "Amount of rewriting cycles across all the rules: %d, per rule: %d" maxCycles maxDepth)
       input <- readInput inputFile
       rules' <- getRules
@@ -248,19 +245,25 @@ runCLI args = handle handler $ do
             logDebug (printf "The option '--target' is specified, printing to '%s'..." file)
             writeFile file prog
             logInfo (printf "The result program was saved in '%s'" file)
-    CmdDataize OptsDataize {..} -> do
-      validateMaxDepth maxDepth
-      validateMaxCycles maxCycles
+    CmdDataize opts@OptsDataize {..} -> do
+      validateDataizeArguments opts
       input <- readInput inputFile
       prog <- parseProgram input inputFormat
       dataized <- dataize prog (DataizeContext prog maxDepth maxCycles depthSensitive buildTerm)
       maybe (throwIO CouldNotDataize) (putStrLn . prettyBytes) dataized
   where
     validateRewriteArguments :: OptsRewrite -> IO ()
-    validateRewriteArguments OptsRewrite{..} =
+    validateRewriteArguments OptsRewrite{..} = do
       when
         (printMode == SWEET && outputFormat == XMIR)
         (throwIO (InvalidRewriteArguments "The --sweet and --output=xmir can't stay together"))
+      validateMaxDepth maxDepth
+      validateMaxCycles maxCycles
+      validateIntArgument must (< 0) "--must must be positive"
+    validateDataizeArguments :: OptsDataize -> IO ()
+    validateDataizeArguments OptsDataize{..} = do
+      validateMaxDepth maxDepth
+      validateMaxCycles maxCycles
     validateIntArgument :: Integer -> (Integer -> Bool) -> String -> IO ()
     validateIntArgument num cmp msg =
       when
@@ -270,8 +273,6 @@ runCLI args = handle handler $ do
     validateMaxDepth depth = validateIntArgument depth (<= 0) "--max-depth must be positive"
     validateMaxCycles :: Integer -> IO ()
     validateMaxCycles cycles = validateIntArgument cycles (<= 0) "--max-cycles must be positive"
-    validateMust :: Integer -> IO ()
-    validateMust must = validateIntArgument must (< 0) "--must must be positive"
     readInput :: Maybe FilePath -> IO String
     readInput inputFile' = case inputFile' of
       Just pth -> do
