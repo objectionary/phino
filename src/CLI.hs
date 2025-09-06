@@ -15,6 +15,7 @@ import Control.Exception.Base
 import Control.Monad (when)
 import Data.Char (toLower, toUpper)
 import Data.List (intercalate)
+import Data.Maybe (isJust, isNothing)
 import Data.Version (showVersion)
 import Dataize (DataizeContext (DataizeContext), dataize)
 import Functions (buildTerm)
@@ -80,6 +81,7 @@ data OptsRewrite = OptsRewrite
     must :: Integer,
     maxDepth :: Integer,
     maxCycles :: Integer,
+    inPlace :: Bool,
     targetFile :: Maybe FilePath,
     inputFile :: Maybe FilePath
   }
@@ -159,6 +161,7 @@ rewriteParser =
                 )
             <*> optMaxDepth
             <*> optMaxCycles
+            <*> switch (long "in-place" <> help "Edit file in-place instead of printing to console")
             <*> optional (strOption (long "target" <> short 't' <> metavar "FILE" <> help "File to save output to"))
             <*> argInputFile
         )
@@ -237,14 +240,18 @@ runCLI args = handle handler $ do
           xmir <- programToXMIR prog (XmirContext omitListing omitComments listing)
           pure (printXMIR xmir)
         output :: String -> IO ()
-        output prog = case targetFile of
-          Nothing -> do
-            logDebug "The option '--target' is not specified, printing to console..."
-            putStrLn prog
-          Just file -> do
+        output prog = case (inPlace, targetFile, inputFile) of
+          (True, _, Just file) -> do
+            logDebug (printf "The option '--in-place' is specified, writing back to '%s'..." file)
+            writeFile file prog
+            logInfo (printf "The file '%s' was modified in-place" file)
+          (False, Just file, _) -> do
             logDebug (printf "The option '--target' is specified, printing to '%s'..." file)
             writeFile file prog
             logInfo (printf "The result program was saved in '%s'" file)
+          (False, Nothing, _) -> do
+            logDebug "The option '--target' is not specified, printing to console..."
+            putStrLn prog
     CmdDataize opts@OptsDataize {..} -> do
       validateDataizeArguments opts
       input <- readInput inputFile
@@ -257,6 +264,12 @@ runCLI args = handle handler $ do
       when
         (printMode == SWEET && outputFormat == XMIR)
         (throwIO (InvalidRewriteArguments "The --sweet and --output=xmir can't stay together"))
+      when
+        (inPlace && isNothing inputFile)
+        (throwIO (InvalidRewriteArguments "--in-place requires an input file"))
+      when
+        (inPlace && isJust targetFile)
+        (throwIO (InvalidRewriteArguments "--in-place and --target cannot be used together"))
       validateMaxDepth maxDepth
       validateMaxCycles maxCycles
       validateIntArgument must (< 0) "--must must be positive"
