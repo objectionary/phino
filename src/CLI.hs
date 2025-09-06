@@ -18,6 +18,7 @@ import Data.List (intercalate)
 import Data.Version (showVersion)
 import Dataize (DataizeContext (DataizeContext), dataize)
 import Functions (buildTerm)
+import LaTeX (ruleToLaTeX, rulesToLaTeXDocument)
 import qualified Functions
 import Logger
 import Misc (ensuredFile)
@@ -48,6 +49,7 @@ instance Show CmdException where
 data Command
   = CmdRewrite OptsRewrite
   | CmdDataize OptsDataize
+  | CmdExplain OptsExplain
 
 data IOFormat = XMIR | PHI
   deriving (Eq)
@@ -63,6 +65,13 @@ data OptsDataize = OptsDataize
     maxCycles :: Integer,
     depthSensitive :: Bool,
     inputFile :: Maybe FilePath
+  }
+
+data OptsExplain = OptsExplain
+  { logLevel :: LogLevel,
+    rules :: [FilePath],
+    normalize :: Bool,
+    targetFile :: Maybe FilePath
   }
 
 data OptsRewrite = OptsRewrite
@@ -127,6 +136,16 @@ optLogLevel =
       "NONE" -> Right NONE
       _ -> Left $ "unknown log-level: " <> lvl
 
+explainParser :: Parser Command
+explainParser =
+  CmdExplain
+    <$> ( OptsExplain
+            <$> optLogLevel
+            <*> many (strOption (long "rule" <> metavar "FILE" <> help "Path to rule file"))
+            <*> switch (long "normalize" <> help "Use built-in normalization rules")
+            <*> optional (strOption (long "target" <> short 't' <> metavar "FILE" <> help "File to save output to"))
+        )
+
 dataizeParser :: Parser Command
 dataizeParser =
   CmdDataize
@@ -168,6 +187,7 @@ commandParser =
   hsubparser
     ( command "rewrite" (info rewriteParser (progDesc "Rewrite the program"))
         <> command "dataize" (info dataizeParser (progDesc "Dataize the program"))
+        <> command "explain" (info explainParser (progDesc "Explain rules in LaTeX format"))
     )
 
 parserInfo :: ParserInfo Command
@@ -188,6 +208,7 @@ setLogLevel' cmd =
   let level = case cmd of
         CmdRewrite OptsRewrite {logLevel} -> logLevel
         CmdDataize OptsDataize {logLevel} -> logLevel
+        CmdExplain OptsExplain {logLevel} -> logLevel
    in setLogLevel level
 
 runCLI :: [String] -> IO ()
@@ -251,6 +272,16 @@ runCLI args = handle handler $ do
       prog <- parseProgram input inputFormat
       dataized <- dataize prog (DataizeContext prog maxDepth maxCycles depthSensitive buildTerm)
       maybe (throwIO CouldNotDataize) (putStrLn . prettyBytes) dataized
+    CmdExplain opts@OptsExplain {..} -> do
+      validateExplainArguments opts
+      rules' <- getExplainRules opts
+      let latexOutput = rulesToLaTeXDocument rules'
+      case targetFile of
+        Nothing -> putStrLn latexOutput
+        Just file -> do
+          logDebug (printf "Writing LaTeX output to '%s'..." file)
+          writeFile file latexOutput
+          logInfo (printf "LaTeX document was saved in '%s'" file)
   where
     validateRewriteArguments :: OptsRewrite -> IO ()
     validateRewriteArguments OptsRewrite{..} = do
@@ -264,6 +295,11 @@ runCLI args = handle handler $ do
     validateDataizeArguments OptsDataize{..} = do
       validateMaxDepth maxDepth
       validateMaxCycles maxCycles
+    validateExplainArguments :: OptsExplain -> IO ()
+    validateExplainArguments OptsExplain{..} =
+      when
+        (null rules && not normalize)
+        (throwIO (InvalidRewriteArguments "Either --rule or --normalize must be specified"))
     validateIntArgument :: Integer -> (Integer -> Bool) -> String -> IO ()
     validateIntArgument num cmp msg =
       when
@@ -286,3 +322,14 @@ runCLI args = handle handler $ do
     parseProgram xmir XMIR = do
       doc <- parseXMIRThrows xmir
       xmirToPhi doc
+    getExplainRules :: OptsExplain -> IO [Y.Rule]
+    getExplainRules OptsExplain{..} =
+      if normalize
+        then do
+          let rules' = normalizationRules
+          logDebug (printf "Using %d built-in normalization rules" (length rules'))
+          pure rules'
+        else do
+          logDebug (printf "Loading rules from files: [%s]" (intercalate ", " rules))
+          yamls <- mapM ensuredFile rules
+          mapM Y.yamlRule yamls
