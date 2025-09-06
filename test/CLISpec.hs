@@ -206,6 +206,38 @@ spec = do
               content `shouldBe` "{⟦⟧}"
           )
 
+    it "modifies file in-place" $
+      bracket
+        (openTempFile "." "inplaceXXXXXX.phi")
+        (\(path, _) -> removeFile path)
+        ( \(path, h) -> do
+            hPutStr h "Q -> [[ x -> \"foo\" ]]"
+            hClose h
+            testCLI
+              ["rewrite", "--rule=test-resources/cli/simple.yaml", "--in-place", "--sweet", path]
+              [printf "The file '%s' was modified in-place" path]
+            content <- readFile path
+            content `shouldBe` "{⟦\n  x ↦ \"bar\"\n⟧}"
+        )
+
+    it "fails when --in-place is used without input file" $
+      withStdin "Q -> [[ ]]" $
+        testCLIFailed
+          ["rewrite", "--in-place", "--nothing"]
+          "--in-place requires an input file"
+
+    it "fails when --in-place is used with --target" $
+      bracket
+        (openTempFile "." "inplaceXXXXXX.phi")
+        (\(path, _) -> removeFile path)
+        ( \(path, h) -> do
+            hPutStr h "Q -> [[ ]]"
+            hClose h
+            testCLIFailed
+              ["rewrite", "--in-place", "--target=output.phi", "--nothing", path]
+              "--in-place and --target cannot be used together"
+        )
+
     it "rewrites with cycles" $
       withStdin "Q -> [[ x -> \"x\" ]]" $
         testCLI
