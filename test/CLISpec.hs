@@ -237,3 +237,38 @@ spec = do
     it "fails to dataize" $
       withStdin "Q -> [[ ]]" $
         testCLIFailed ["dataize"] "[ERROR]: Could not dataize given program"
+
+  describe "explain" $ do
+    it "explains single rule" $
+      testCLI
+        ["explain", "--rule=resources/copy.yaml"]
+        ["\\documentclass{article}", "\\usepackage{amsmath}", "\\begin{document}", "\\rule{COPY}", "\\end{document}"]
+
+    it "explains multiple rules" $
+      testCLI
+        ["explain", "--rule=resources/copy.yaml", "--rule=resources/alpha.yaml"]
+        ["\\documentclass{article}", "\\rule{COPY}", "\\rule{ALPHA}"]
+
+    it "explains normalization rules" $
+      testCLI
+        ["explain", "--normalize"]
+        ["\\documentclass{article}", "\\begin{document}", "\\end{document}"]
+
+    it "fails with no rules specified" $
+      testCLIFailed
+        ["explain"]
+        "Either --rule or --normalize must be specified"
+
+    it "writes to target file" $
+      bracket
+        (openTempFile "." "explainXXXXXX.tex")
+        (\(path, _) -> removeFile path)
+        ( \(path, h) -> do
+            hClose h
+            testCLI
+              ["explain", "--normalize", printf "--target=%s" path]
+              [printf "LaTeX document was saved in '%s'" path]
+            content <- readFile path
+            content `shouldContain` "\\documentclass{article}"
+            content `shouldContain` "\\begin{document}"
+        )
