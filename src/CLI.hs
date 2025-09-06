@@ -22,6 +22,7 @@ import qualified Functions
 import Logger
 import Misc (ensuredFile)
 import qualified Misc
+import MustRange (MustRange(..))
 import Options.Applicative
 import Parser (parseProgramThrows)
 import Paths_phino (version)
@@ -77,7 +78,7 @@ data OptsRewrite = OptsRewrite
     omitListing :: Bool,
     omitComments :: Bool,
     depthSensitive :: Bool,
-    must :: Integer,
+    must :: MustRange,
     maxDepth :: Integer,
     maxCycles :: Integer,
     targetFile :: Maybe FilePath,
@@ -154,9 +155,14 @@ rewriteParser =
             <*> switch (long "omit-listing" <> help "Omit full program listing in XMIR output")
             <*> switch (long "omit-comments" <> help "Omit comments in XMIR output")
             <*> optDepthSensitive
-            <*> ( flag' 1 (long "must" <> help "Enable must-rewrite with default value 1")
-                    <|> option auto (long "must" <> metavar "N" <> help "Must-rewrite, stops execution if not exactly N rules applied (default 1 when specified without value, if 0 - flag is disabled)" <> value 0)
-                )
+            <*> option
+                  auto
+                  ( long "must"
+                      <> metavar "RANGE"
+                      <> help "Must-rewrite range (e.g., '3', '..5', '3..', '3..5'). Stops execution if number of rules applied is not in range. Use 0 to disable."
+                      <> value MustDisabled
+                      <> showDefaultWith show
+                  )
             <*> optMaxDepth
             <*> optMaxCycles
             <*> optional (strOption (long "target" <> short 't' <> metavar "FILE" <> help "File to save output to"))
@@ -259,7 +265,7 @@ runCLI args = handle handler $ do
         (throwIO (InvalidRewriteArguments "The --sweet and --output=xmir can't stay together"))
       validateMaxDepth maxDepth
       validateMaxCycles maxCycles
-      validateIntArgument must (< 0) "--must must be positive"
+      validateMustRange must
     validateDataizeArguments :: OptsDataize -> IO ()
     validateDataizeArguments OptsDataize{..} = do
       validateMaxDepth maxDepth
@@ -273,6 +279,15 @@ runCLI args = handle handler $ do
     validateMaxDepth depth = validateIntArgument depth (<= 0) "--max-depth must be positive"
     validateMaxCycles :: Integer -> IO ()
     validateMaxCycles cycles = validateIntArgument cycles (<= 0) "--max-cycles must be positive"
+    validateMustRange :: MustRange -> IO ()
+    validateMustRange MustDisabled = pure ()
+    validateMustRange (MustExact n) = validateIntArgument n (<= 0) "--must exact value must be positive"
+    validateMustRange (MustRange minVal maxVal) = do
+      maybe (pure ()) (\n -> validateIntArgument n (< 0) "--must minimum must be non-negative") minVal
+      maybe (pure ()) (\n -> validateIntArgument n (< 0) "--must maximum must be non-negative") maxVal
+      case (minVal, maxVal) of
+        (Just min, Just max) | min > max -> throwIO (InvalidRewriteArguments (printf "--must range invalid: minimum (%d) is greater than maximum (%d)" min max))
+        _ -> pure ()
     readInput :: Maybe FilePath -> IO String
     readInput inputFile' = case inputFile' of
       Just pth -> do
