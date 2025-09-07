@@ -19,6 +19,7 @@ import Data.Version (showVersion)
 import Dataize (DataizeContext (DataizeContext), dataize)
 import Functions (buildTerm)
 import qualified Functions
+import IOFormat (IOFormat(..))
 import Logger
 import Misc (ensuredFile)
 import qualified Misc
@@ -49,13 +50,6 @@ data Command
   = CmdRewrite OptsRewrite
   | CmdDataize OptsDataize
 
-data IOFormat = XMIR | PHI
-  deriving (Eq)
-
-instance Show IOFormat where
-  show XMIR = "xmir"
-  show PHI = "phi"
-
 data OptsDataize = OptsDataize
   { logLevel :: LogLevel,
     inputFormat :: IOFormat,
@@ -81,7 +75,8 @@ data OptsRewrite = OptsRewrite
     maxDepth :: Integer,
     maxCycles :: Integer,
     targetFile :: Maybe FilePath,
-    inputFile :: Maybe FilePath
+    inputFile :: Maybe FilePath,
+    stepsDir :: Maybe FilePath
   }
 
 parseIOFormat :: String -> ReadM IOFormat
@@ -161,6 +156,7 @@ rewriteParser =
             <*> optMaxCycles
             <*> optional (strOption (long "target" <> short 't' <> metavar "FILE" <> help "File to save output to"))
             <*> argInputFile
+            <*> optional (strOption (long "steps-dir" <> metavar "DIR" <> help "Directory to save intermediate steps"))
         )
 
 commandParser :: Parser Command
@@ -201,7 +197,7 @@ runCLI args = handle handler $ do
       input <- readInput inputFile
       rules' <- getRules
       program <- parseProgram input inputFormat
-      rewritten <- rewrite' program rules' (RewriteContext program maxDepth maxCycles depthSensitive buildTerm must)
+      rewritten <- rewrite' program rules' (RewriteContext program maxDepth maxCycles depthSensitive buildTerm must stepsDir outputFormat printMode (XmirContext omitListing omitComments input))
       logDebug (printf "Printing rewritten 𝜑-program as %s" (show outputFormat))
       prog <- printProgram rewritten outputFormat printMode input
       output prog

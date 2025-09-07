@@ -10,7 +10,9 @@ import Ast
 import Builder (contextualize)
 import Control.Exception (throwIO)
 import Data.List (partition)
+import IOFormat (IOFormat(..))
 import Misc
+import Pretty (PrintMode(..))
 import Rewriter (RewriteContext (RewriteContext), rewrite')
 import Rule (RuleContext (RuleContext), isNF)
 import Term (BuildTermFunc)
@@ -27,7 +29,7 @@ data DataizeContext = DataizeContext
   }
 
 switchContext :: DataizeContext -> RewriteContext
-switchContext DataizeContext {..} = RewriteContext _program _maxDepth _maxCycles _depthSensitive _buildTerm 0
+switchContext DataizeContext {..} = RewriteContext _program _maxDepth _maxCycles _depthSensitive _buildTerm 0 Nothing PHI SALTY (XmirContext False False "")
 
 maybeBinding :: (Binding -> Bool) -> [Binding] -> (Maybe Binding, [Binding])
 maybeBinding _ [] = (Nothing, [])
