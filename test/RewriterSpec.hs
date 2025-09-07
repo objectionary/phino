@@ -15,7 +15,7 @@ import Data.Yaml qualified as Yaml
 import Functions (buildTerm)
 import GHC.Generics
 import Misc (allPathsIn, ensuredFile)
-import MustRange (MustRange(..))
+import Must (Must(..))
 import Parser (parseProgramThrows)
 import Pretty (PrintMode (SWEET), prettyProgram')
 import Rewriter (RewriteContext (RewriteContext), rewrite')

@@ -11,7 +11,7 @@ import Builder (contextualize)
 import Control.Exception (throwIO)
 import Data.List (partition)
 import Misc
-import MustRange (MustRange(..))
+import Must (Must(..))
 import Rewriter (RewriteContext (RewriteContext), rewrite')
 import Rule (RuleContext (RuleContext), isNF)
 import Term (BuildTermFunc)

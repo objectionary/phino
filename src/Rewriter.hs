@@ -17,7 +17,7 @@ import Data.Maybe (catMaybes, fromMaybe, isJust)
 import Logger (logDebug)
 import Matcher (MetaValue (MvAttribute, MvBindings, MvBytes, MvExpression), Subst (Subst), combine, combineMany, defaultScope, matchProgram, substEmpty, substSingle)
 import Misc (ensuredFile)
-import MustRange (MustRange(..), inRange, exceedsUpperBound)
+import Must (Must(..), inRange, exceedsUpperBound)
 import Parser (parseProgram, parseProgramThrows)
 import Pretty (PrintMode (SWEET), prettyAttribute, prettyBytes, prettyExpression, prettyExpression', prettyProgram, prettyProgram', prettySubsts)
 import Replacer (ReplaceProgramContext (ReplaceProgramContext), ReplaceProgramThrowsFunc, replaceProgramFastThrows, replaceProgramThrows)
@@ -34,12 +34,12 @@ data RewriteContext = RewriteContext
     _maxCycles :: Integer,
     _depthSensitive :: Bool,
     _buildTerm :: BuildTermFunc,
-    _must :: MustRange
+    _must :: Must
   }
 
 data RewriteException
-  = MustBeGoing {must :: MustRange, count :: Integer}
-  | MustStopBefore {must :: MustRange, count :: Integer}
+  = MustBeGoing {must :: Must, count :: Integer}
+  | MustStopBefore {must :: Must, count :: Integer}
   | StoppedOnLimit {flag :: String, limit :: Integer}
   deriving (Exception)
 
@@ -165,11 +165,11 @@ rewrite' prog rules ctx = _rewrite prog 1
     _rewrite prog count = do
       let cycles = _maxCycles ctx
           must = _must ctx
-          currentCount = count - 1
-      if not (inRange must currentCount) && currentCount > 0 && exceedsUpperBound must currentCount
-        then throwIO (MustStopBefore must currentCount)
+          current = count - 1
+      if not (inRange must current) && current > 0 && exceedsUpperBound must current
+        then throwIO (MustStopBefore must current)
         else
-          if currentCount == cycles
+          if current == cycles
             then do
               logDebug (printf "Max amount of rewriting cycles for all rules (%d) has been reached, rewriting is stopped" cycles)
               if _depthSensitive ctx
@@ -181,7 +181,7 @@ rewrite' prog rules ctx = _rewrite prog 1
               if rewritten == prog
                 then do
                   logDebug "No rule matched, rewriting is stopped"
-                  if not (inRange must currentCount)
-                    then throwIO (MustBeGoing must currentCount)
+                  if not (inRange must current)
+                    then throwIO (MustBeGoing must current)
                     else pure rewritten
                 else _rewrite rewritten (count + 1)

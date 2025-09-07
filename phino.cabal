@@ -37,7 +37,7 @@ library
     Functions,
     Term,
     Misc,
-    MustRange,
+    Must,
     Logger,
     Regexp,
     Pretty,

@@ -22,7 +22,7 @@ import qualified Functions
 import Logger
 import Misc (ensuredFile)
 import qualified Misc
-import MustRange (MustRange(..))
+import Must (Must(..))
 import Options.Applicative
 import Parser (parseProgramThrows)
 import Paths_phino (version)
@@ -78,7 +78,7 @@ data OptsRewrite = OptsRewrite
     omitListing :: Bool,
     omitComments :: Bool,
     depthSensitive :: Bool,
-    must :: MustRange,
+    must :: Must,
     maxDepth :: Integer,
     maxCycles :: Integer,
     targetFile :: Maybe FilePath,
@@ -265,7 +265,7 @@ runCLI args = handle handler $ do
         (throwIO (InvalidRewriteArguments "The --sweet and --output=xmir can't stay together"))
       validateMaxDepth maxDepth
       validateMaxCycles maxCycles
-      validateMustRange must
+      validateMust must
     validateDataizeArguments :: OptsDataize -> IO ()
     validateDataizeArguments OptsDataize{..} = do
       validateMaxDepth maxDepth
@@ -279,10 +279,10 @@ runCLI args = handle handler $ do
     validateMaxDepth depth = validateIntArgument depth (<= 0) "--max-depth must be positive"
     validateMaxCycles :: Integer -> IO ()
     validateMaxCycles cycles = validateIntArgument cycles (<= 0) "--max-cycles must be positive"
-    validateMustRange :: MustRange -> IO ()
-    validateMustRange MustDisabled = pure ()
-    validateMustRange (MustExact n) = validateIntArgument n (<= 0) "--must exact value must be positive"
-    validateMustRange (MustRange minVal maxVal) = do
+    validateMust :: Must -> IO ()
+    validateMust MustDisabled = pure ()
+    validateMust (MustExact n) = validateIntArgument n (<= 0) "--must exact value must be positive"
+    validateMust (MustRange minVal maxVal) = do
       maybe (pure ()) (\n -> validateIntArgument n (< 0) "--must minimum must be non-negative") minVal
       maybe (pure ()) (\n -> validateIntArgument n (< 0) "--must maximum must be non-negative") maxVal
       case (minVal, maxVal) of
