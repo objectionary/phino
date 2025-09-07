@@ -17,7 +17,7 @@ import Data.Maybe (catMaybes, fromMaybe, isJust)
 import Logger (logDebug)
 import Matcher (MetaValue (MvAttribute, MvBindings, MvBytes, MvExpression), Subst (Subst), combine, combineMany, defaultScope, matchProgram, substEmpty, substSingle)
 import Misc (ensuredFile)
-import MustRange (MustRange(..), isInRange, exceedsUpperBound)
+import MustRange (MustRange(..), inRange, exceedsUpperBound)
 import Parser (parseProgram, parseProgramThrows)
 import Pretty (PrintMode (SWEET), prettyAttribute, prettyBytes, prettyExpression, prettyExpression', prettyProgram, prettyProgram', prettySubsts)
 import Replacer (ReplaceProgramContext (ReplaceProgramContext), ReplaceProgramThrowsFunc, replaceProgramFastThrows, replaceProgramThrows)
@@ -166,7 +166,7 @@ rewrite' prog rules ctx = _rewrite prog 1
       let cycles = _maxCycles ctx
           must = _must ctx
           currentCount = count - 1
-      if not (isInRange must currentCount) && currentCount > 0 && exceedsUpperBound must currentCount
+      if not (inRange must currentCount) && currentCount > 0 && exceedsUpperBound must currentCount
         then throwIO (MustStopBefore must currentCount)
         else
           if currentCount == cycles
@@ -181,7 +181,7 @@ rewrite' prog rules ctx = _rewrite prog 1
               if rewritten == prog
                 then do
                   logDebug "No rule matched, rewriting is stopped"
-                  if not (isInRange must currentCount)
+                  if not (inRange must currentCount)
                     then throwIO (MustBeGoing must currentCount)
                     else pure rewritten
                 else _rewrite rewritten (count + 1)

@@ -1,7 +1,7 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module MustRange (MustRange(..), isInRange, exceedsUpperBound) where
+module MustRange (MustRange(..), inRange, exceedsUpperBound) where
 
 import Text.Read (readMaybe)
 
@@ -54,10 +54,10 @@ instance Read MustRange where
         Just _ -> [] -- Invalid value: must be non-negative
         Nothing -> [] -- Invalid value: expected integer
 
-isInRange :: MustRange -> Integer -> Bool
-isInRange MustDisabled _ = True
-isInRange (MustExact expected) actual = actual == expected
-isInRange (MustRange minVal maxVal) actual =
+inRange :: MustRange -> Integer -> Bool
+inRange MustDisabled _ = True
+inRange (MustExact expected) actual = actual == expected
+inRange (MustRange minVal maxVal) actual =
   checkMin && checkMax
   where
     checkMin = maybe True (<= actual) minVal
