@@ -5,7 +5,31 @@
 
 -- The goal of the module is to traverse given Ast and build substitutions
 -- from meta variables to appropriate meta values
-module Matcher where
+module Matcher (
+  -- * Core types
+  MetaValue(..),
+  Tail(..),
+  Subst(..),
+  MatchLocation(..),
+  
+  -- * Matching functions
+  matchProgram,
+  matchExpression,
+  matchExpressionDeep,
+  matchBinding,
+  matchBindings,
+  matchAttribute,
+  
+  -- * Location-aware matching
+  findAllMatches,
+  
+  -- * Utilities
+  substEmpty,
+  substSingle,
+  defaultScope,
+  combine,
+  combineMany
+) where
 
 import Ast
 import Data.Map.Strict (Map)
@@ -159,3 +183,62 @@ matchExpressionDeep ptn tgt scope =
 
 matchProgram :: Expression -> Program -> [Subst]
 matchProgram ptn (Program exp) = matchExpressionDeep ptn exp defaultScope
+
+-- | Result of a match with location information
+data MatchLocation = MatchLocation
+  { mlExpression :: Expression,    -- The matched expression
+    mlScope :: Expression,         -- The scope where match occurred
+    mlSubstitution :: Subst        -- The substitution from the match
+  }
+  deriving (Show, Eq)
+
+-- | Find all locations where a pattern matches in a program
+findAllMatches :: Either Binding Expression -> Program -> [MatchLocation]
+findAllMatches (Left bindingPattern) (Program rootExpr) =
+  findBindingMatches bindingPattern rootExpr
+  where
+    findBindingMatches :: Binding -> Expression -> [MatchLocation]
+    findBindingMatches pattern expr = case expr of
+      ExFormation bds ->
+        let directMatches = concatMap (tryMatchBinding pattern) bds
+            deepMatches = concatMap (searchInBinding pattern) bds
+        in directMatches ++ deepMatches
+      ExDispatch e _ -> findBindingMatches pattern e
+      ExApplication e bd ->
+        findBindingMatches pattern e ++ searchInBinding pattern bd
+      _ -> []
+    
+    tryMatchBinding :: Binding -> Binding -> [MatchLocation]
+    tryMatchBinding pattern target =
+      case matchBinding pattern target defaultScope of
+        [] -> []
+        substs -> map (\s -> MatchLocation (wrapBinding target) defaultScope s) substs
+    
+    searchInBinding :: Binding -> Binding -> [MatchLocation]
+    searchInBinding pattern (BiTau _ e) = findBindingMatches pattern e
+    searchInBinding _ _ = []
+    
+    wrapBinding :: Binding -> Expression
+    wrapBinding bd = ExFormation [bd]
+
+findAllMatches (Right exprPattern) (Program rootExpr) =
+  collectMatchLocations exprPattern rootExpr
+  where
+    collectMatchLocations :: Expression -> Expression -> [MatchLocation]
+    collectMatchLocations pattern expr =
+      let localMatches = case matchExpression pattern expr defaultScope of
+            [] -> []
+            substs -> map (MatchLocation expr defaultScope) substs
+          deeperMatches = case expr of
+            ExFormation bds ->
+              concatMap (\bd -> searchInBinding pattern bd (ExFormation bds)) bds
+            ExDispatch e _ ->
+              collectMatchLocations pattern e
+            ExApplication e bd ->
+              collectMatchLocations pattern e ++ searchInBinding pattern bd defaultScope
+            _ -> []
+      in localMatches ++ deeperMatches
+    
+    searchInBinding :: Expression -> Binding -> Expression -> [MatchLocation]
+    searchInBinding pattern (BiTau _ e) _ = collectMatchLocations pattern e
+    searchInBinding _ _ _ = []
