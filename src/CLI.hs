@@ -10,6 +10,7 @@
 module CLI (runCLI) where
 
 import Ast (Program (Program))
+import CLIOptions (optNormalize, optRule, optTarget)
 import Control.Exception (Exception (displayException), SomeException, handle, throw, throwIO)
 import Control.Exception.Base
 import Control.Monad (when)
@@ -18,7 +19,7 @@ import Data.List (intercalate)
 import Data.Version (showVersion)
 import Dataize (DataizeContext (DataizeContext), dataize)
 import Functions (buildTerm)
-import LaTeX (ruleToLaTeX, rulesToLaTeXDocument)
+import LaTeX (rulesToLaTeXDocument)
 import qualified Functions
 import Logger
 import Misc (ensuredFile)
@@ -141,9 +142,9 @@ explainParser =
   CmdExplain
     <$> ( OptsExplain
             <$> optLogLevel
-            <*> many (strOption (long "rule" <> metavar "FILE" <> help "Path to rule file"))
-            <*> switch (long "normalize" <> help "Use built-in normalization rules")
-            <*> optional (strOption (long "target" <> short 't' <> metavar "FILE" <> help "File to save output to"))
+            <*> optRule
+            <*> optNormalize
+            <*> optTarget
         )
 
 dataizeParser :: Parser Command
@@ -163,11 +164,11 @@ rewriteParser =
   CmdRewrite
     <$> ( OptsRewrite
             <$> optLogLevel
-            <*> many (strOption (long "rule" <> metavar "FILE" <> help "Path to custom rule"))
+            <*> optRule
             <*> optInputFormat
             <*> option (parseIOFormat "output") (long "output" <> metavar "FORMAT" <> help "Program output format (phi, xmir)" <> value PHI <> showDefault)
             <*> flag SALTY SWEET (long "sweet" <> help "Print 𝜑-program using syntax sugar")
-            <*> switch (long "normalize" <> help "Use built-in normalization rules")
+            <*> optNormalize
             <*> switch (long "nothing" <> help "Just desugar provided 𝜑-program")
             <*> switch (long "shuffle" <> help "Shuffle rules before applying")
             <*> switch (long "omit-listing" <> help "Omit full program listing in XMIR output")
@@ -178,7 +179,7 @@ rewriteParser =
                 )
             <*> optMaxDepth
             <*> optMaxCycles
-            <*> optional (strOption (long "target" <> short 't' <> metavar "FILE" <> help "File to save output to"))
+            <*> optTarget
             <*> argInputFile
         )
 
@@ -277,7 +278,9 @@ runCLI args = handle handler $ do
       rules' <- getExplainRules opts
       let latexOutput = rulesToLaTeXDocument rules'
       case targetFile of
-        Nothing -> putStrLn latexOutput
+        Nothing -> do
+          logDebug "Writing LaTeX output to stdout..."
+          putStrLn latexOutput
         Just file -> do
           logDebug (printf "Writing LaTeX output to '%s'..." file)
           writeFile file latexOutput
