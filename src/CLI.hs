@@ -20,6 +20,7 @@ import Dataize (DataizeContext (DataizeContext), dataize)
 import Functions (buildTerm)
 import qualified Functions
 import Logger
+import Match (performMatch)
 import Misc (ensuredFile)
 import qualified Misc
 import Options.Applicative
@@ -31,7 +32,7 @@ import System.Exit (ExitCode (..), exitFailure)
 import System.IO (getContents')
 import Text.Printf (printf)
 import XMIR (XmirContext (XmirContext), parseXMIRThrows, printXMIR, programToXMIR, xmirToPhi)
-import Yaml (normalizationRules)
+import Yaml (normalizationRules, parseConditionString)
 import qualified Yaml as Y
 
 data CmdException
@@ -48,6 +49,7 @@ instance Show CmdException where
 data Command
   = CmdRewrite OptsRewrite
   | CmdDataize OptsDataize
+  | CmdMatch OptsMatch
 
 data IOFormat = XMIR | PHI
   deriving (Eq)
@@ -62,6 +64,14 @@ data OptsDataize = OptsDataize
     maxDepth :: Integer,
     maxCycles :: Integer,
     depthSensitive :: Bool,
+    inputFile :: Maybe FilePath
+  }
+
+data OptsMatch = OptsMatch
+  { logLevel :: LogLevel,
+    pattern :: String,
+    whenCondition :: Maybe String,
+    inputFormat :: IOFormat,
     inputFile :: Maybe FilePath
   }
 
@@ -139,6 +149,17 @@ dataizeParser =
             <*> argInputFile
         )
 
+matchParser :: Parser Command
+matchParser =
+  CmdMatch
+    <$> ( OptsMatch
+            <$> optLogLevel
+            <*> strOption (long "pattern" <> metavar "PATTERN" <> help "Pattern to match (supports meta-variables like !a, !e)")
+            <*> optional (strOption (long "when" <> metavar "CONDITION" <> help "Optional condition to filter matches"))
+            <*> optInputFormat
+            <*> argInputFile
+        )
+
 rewriteParser :: Parser Command
 rewriteParser =
   CmdRewrite
@@ -168,6 +189,7 @@ commandParser =
   hsubparser
     ( command "rewrite" (info rewriteParser (progDesc "Rewrite the program"))
         <> command "dataize" (info dataizeParser (progDesc "Dataize the program"))
+        <> command "match" (info matchParser (progDesc "Find patterns in the program"))
     )
 
 parserInfo :: ParserInfo Command
@@ -188,6 +210,7 @@ setLogLevel' cmd =
   let level = case cmd of
         CmdRewrite OptsRewrite {logLevel} -> logLevel
         CmdDataize OptsDataize {logLevel} -> logLevel
+        CmdMatch OptsMatch {logLevel} -> logLevel
    in setLogLevel level
 
 runCLI :: [String] -> IO ()
@@ -251,6 +274,16 @@ runCLI args = handle handler $ do
       prog <- parseProgram input inputFormat
       dataized <- dataize prog (DataizeContext prog maxDepth maxCycles depthSensitive buildTerm)
       maybe (throwIO CouldNotDataize) (putStrLn . prettyBytes) dataized
+    CmdMatch OptsMatch {..} -> do
+      input <- readInput inputFile
+      prog <- parseProgram input inputFormat
+      -- Parse the when condition if provided
+      cond <- case whenCondition of
+        Nothing -> pure Nothing
+        Just condStr -> Just <$> parseConditionString condStr
+      -- Perform the match
+      result <- performMatch pattern cond prog SALTY
+      putStr result
   where
     validateRewriteArguments :: OptsRewrite -> IO ()
     validateRewriteArguments OptsRewrite{..} = do
