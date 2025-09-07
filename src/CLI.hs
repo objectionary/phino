@@ -10,7 +10,6 @@
 module CLI (runCLI) where
 
 import Ast (Program (Program))
-import CLIOptions (optNormalize, optRule, optTarget)
 import Control.Exception (Exception (displayException), SomeException, handle, throw, throwIO)
 import Control.Exception.Base
 import Control.Monad (when)
@@ -136,6 +135,15 @@ optLogLevel =
       "ERR" -> Right ERROR
       "NONE" -> Right NONE
       _ -> Left $ "unknown log-level: " <> lvl
+
+optRule :: Parser [FilePath]
+optRule = many (strOption (long "rule" <> metavar "FILE" <> help "Path to custom rule"))
+
+optNormalize :: Parser Bool
+optNormalize = switch (long "normalize" <> help "Use built-in normalization rules")
+
+optTarget :: Parser (Maybe FilePath)
+optTarget = optional (strOption (long "target" <> short 't' <> metavar "FILE" <> help "File to save output to"))
 
 explainParser :: Parser Command
 explainParser =

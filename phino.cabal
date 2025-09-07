@@ -25,7 +25,6 @@ common warnings
 library
   exposed-modules:
     CLI,
-    CLIOptions,
     Ast,
     Parser,
     Matcher,
