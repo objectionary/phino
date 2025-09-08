@@ -186,11 +186,11 @@ spec = do
 
     it "fails with --nothing and --must=1" $
       withStdin "Q -> [[ ]]" $
-        testCLIFailed ["rewrite", "--nothing", "--must=1"] "it's expected rewriting cycles to be in range 1, but rewriting stopped after 0"
+        testCLIFailed ["rewrite", "--nothing", "--must=1"] "it's expected rewriting cycles to be in range [1], but rewriting stopped after 0"
 
     it "fails with --normalize and --must=1" $
       withStdin "Q -> [[ x -> [[ y -> 5 ]].y ]].x" $
-        testCLIFailed ["rewrite", "--max-depth=2", "--normalize", "--must=1"] "it's expected rewriting cycles to be in range 1, but rewriting has already reached 2"
+        testCLIFailed ["rewrite", "--max-depth=2", "--normalize", "--must=1"] "it's expected rewriting cycles to be in range [1], but rewriting has already reached 2"
 
     describe "must range tests" $ do
       it "accepts range ..5 (0 to 5 cycles)" $
@@ -221,13 +221,13 @@ spec = do
         withStdin "Q -> [[ x -> [[ y -> 5 ]].y ]].x" $
           testCLIFailed 
             ["rewrite", "--max-depth=2", "--normalize", "--must=..1"] 
-            "it's expected rewriting cycles to be in range ..1, but rewriting has already reached 2"
+            "it's expected rewriting cycles to be in range [..1], but rewriting has already reached 2"
 
       it "fails when cycles below range 2.." $
         withStdin "{⟦ t ↦ ⟦ x ↦ \"foo\" ⟧ ⟧}" $
           testCLIFailed
             ["rewrite", "--rule=test-resources/cli/simple.yaml", "--must=2.."]
-            "it's expected rewriting cycles to be in range 2.., but rewriting stopped after 1"
+            "it's expected rewriting cycles to be in range [2..], but rewriting stopped after 1"
 
       it "fails with invalid range 5..3" $
         withStdin "Q -> [[ ]]" $

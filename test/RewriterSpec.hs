@@ -75,8 +75,8 @@ spec =
                     Just num -> num
                     _ -> 1
               must' = case must pack of
-                Just num -> MustExact num
-                _ -> MustDisabled
+                Just num -> MtExact num
+                _ -> MtDisabled
           case skip pack of
             Just True -> pending
             _ -> do

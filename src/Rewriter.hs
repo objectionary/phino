@@ -17,7 +17,7 @@ import Data.Maybe (catMaybes, fromMaybe, isJust)
 import Logger (logDebug)
 import Matcher (MetaValue (MvAttribute, MvBindings, MvBytes, MvExpression), Subst (Subst), combine, combineMany, defaultScope, matchProgram, substEmpty, substSingle)
 import Misc (ensuredFile)
-import Must (Must(..), inRange, exceedsUpperBound)
+import Must (Must (..), exceedsUpperBound, inRange)
 import Parser (parseProgram, parseProgramThrows)
 import Pretty (PrintMode (SWEET), prettyAttribute, prettyBytes, prettyExpression, prettyExpression', prettyProgram, prettyProgram', prettySubsts)
 import Replacer (ReplaceProgramContext (ReplaceProgramContext), ReplaceProgramThrowsFunc, replaceProgramFastThrows, replaceProgramThrows)
@@ -46,13 +46,13 @@ data RewriteException
 instance Show RewriteException where
   show MustBeGoing {..} =
     printf
-      "With option --must=%s it's expected rewriting cycles to be in range %s, but rewriting stopped after %d cycles"
+      "With option --must=%s it's expected rewriting cycles to be in range [%s], but rewriting stopped after %d cycles"
       (show must)
       (show must)
       count
   show MustStopBefore {..} =
     printf
-      "With option --must=%s it's expected rewriting cycles to be in range %s, but rewriting has already reached %d cycles and is still going"
+      "With option --must=%s it's expected rewriting cycles to be in range [%s], but rewriting has already reached %d cycles and is still going"
       (show must)
       (show must)
       count

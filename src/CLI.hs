@@ -18,12 +18,12 @@ import Data.List (intercalate)
 import Data.Version (showVersion)
 import Dataize (DataizeContext (DataizeContext), dataize)
 import Functions (buildTerm)
-import LaTeX (explainRules)
 import qualified Functions
+import LaTeX (explainRules)
 import Logger
 import Misc (ensuredFile)
 import qualified Misc
-import Must (Must(..))
+import Must (Must (..))
 import Options.Applicative
 import Parser (parseProgramThrows)
 import Paths_phino (version)
@@ -194,13 +194,13 @@ rewriteParser =
             <*> switch (long "omit-comments" <> help "Omit comments in XMIR output")
             <*> optDepthSensitive
             <*> option
-                  auto
-                  ( long "must"
-                      <> metavar "RANGE"
-                      <> help "Must-rewrite range (e.g., '3', '..5', '3..', '3..5'). Stops execution if number of rules applied is not in range. Use 0 to disable."
-                      <> value MustDisabled
-                      <> showDefaultWith show
-                  )
+              auto
+              ( long "must"
+                  <> metavar "RANGE"
+                  <> help "Must-rewrite range (e.g., '3', '..5', '3..', '3..5'). Stops execution if number of rules applied is not in range. Use 0 to disable."
+                  <> value MtDisabled
+                  <> showDefaultWith show
+              )
             <*> optMaxDepth
             <*> optMaxCycles
             <*> optTarget
@@ -242,7 +242,7 @@ runCLI args = handle handler $ do
   setLogLevel' cmd
   case cmd of
     CmdRewrite opts@OptsRewrite {..} -> do
-      validateRewriteArguments opts
+      validateOpts
       logDebug (printf "Amount of rewriting cycles across all the rules: %d, per rule: %d" maxCycles maxDepth)
       input <- readInput inputFile
       rules' <- getRules nothing normalize shuffle rules
@@ -252,40 +252,42 @@ runCLI args = handle handler $ do
       prog <- printProgram rewritten outputFormat printMode input
       output targetFile prog
       where
+        validateOpts :: IO ()
+        validateOpts = do
+          when
+            (printMode == SWEET && outputFormat == XMIR)
+            (throwIO (InvalidRewriteArguments "The --sweet and --output=xmir can't stay together"))
+          validateMaxDepth maxDepth
+          validateMaxCycles maxCycles
+          validateMust must
         printProgram :: Program -> IOFormat -> PrintMode -> String -> IO String
         printProgram prog PHI mode _ = pure (prettyProgram' prog mode)
         printProgram prog XMIR _ listing = do
           xmir <- programToXMIR prog (XmirContext omitListing omitComments listing)
           pure (printXMIR xmir)
     CmdDataize opts@OptsDataize {..} -> do
-      validateDataizeArguments opts
+      validateOpts
       input <- readInput inputFile
       prog <- parseProgram input inputFormat
       dataized <- dataize prog (DataizeContext prog maxDepth maxCycles depthSensitive buildTerm)
       maybe (throwIO CouldNotDataize) (putStrLn . prettyBytes) dataized
+      where
+        validateOpts :: IO ()
+        validateOpts = do
+          validateMaxDepth maxDepth
+          validateMaxCycles maxCycles
     CmdExplain opts@OptsExplain {..} -> do
-      validateExplainArguments opts
+      validateOpts
       rules' <- getRules nothing normalize shuffle rules
       let latex = explainRules rules'
       output targetFile (explainRules rules')
+      where
+        validateOpts :: IO ()
+        validateOpts =
+          when
+            (null rules && not normalize)
+            (throwIO (InvalidRewriteArguments "Either --rule or --normalize must be specified"))
   where
-    validateRewriteArguments :: OptsRewrite -> IO ()
-    validateRewriteArguments OptsRewrite{..} = do
-      when
-        (printMode == SWEET && outputFormat == XMIR)
-        (throwIO (InvalidRewriteArguments "The --sweet and --output=xmir can't stay together"))
-      validateMaxDepth maxDepth
-      validateMaxCycles maxCycles
-      validateMust must
-    validateDataizeArguments :: OptsDataize -> IO ()
-    validateDataizeArguments OptsDataize{..} = do
-      validateMaxDepth maxDepth
-      validateMaxCycles maxCycles
-    validateExplainArguments :: OptsExplain -> IO ()
-    validateExplainArguments OptsExplain{..} =
-      when
-        (null rules && not normalize)
-        (throwIO (InvalidRewriteArguments "Either --rule or --normalize must be specified"))
     validateIntArgument :: Integer -> (Integer -> Bool) -> String -> IO ()
     validateIntArgument num cmp msg =
       when
@@ -296,13 +298,18 @@ runCLI args = handle handler $ do
     validateMaxCycles :: Integer -> IO ()
     validateMaxCycles cycles = validateIntArgument cycles (<= 0) "--max-cycles must be positive"
     validateMust :: Must -> IO ()
-    validateMust MustDisabled = pure ()
-    validateMust (MustExact n) = validateIntArgument n (<= 0) "--must exact value must be positive"
-    validateMust (MustRange minVal maxVal) = do
+    validateMust MtDisabled = pure ()
+    validateMust (MtExact n) = validateIntArgument n (<= 0) "--must exact value must be positive"
+    validateMust (MtRange minVal maxVal) = do
       maybe (pure ()) (\n -> validateIntArgument n (< 0) "--must minimum must be non-negative") minVal
       maybe (pure ()) (\n -> validateIntArgument n (< 0) "--must maximum must be non-negative") maxVal
       case (minVal, maxVal) of
-        (Just min, Just max) | min > max -> throwIO (InvalidRewriteArguments (printf "--must range invalid: minimum (%d) is greater than maximum (%d)" min max))
+        (Just min, Just max)
+          | min > max ->
+              throwIO
+                ( InvalidRewriteArguments
+                    (printf "--must range invalid: minimum (%d) is greater than maximum (%d)" min max)
+                )
         _ -> pure ()
     readInput :: Maybe FilePath -> IO String
     readInput inputFile' = case inputFile' of
