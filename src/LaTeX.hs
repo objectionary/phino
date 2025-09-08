@@ -1,7 +1,7 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module LaTeX (ruleToLaTeX, rulesToLaTeXDocument) where
+module LaTeX (explainRules) where
 
 import Data.Maybe (fromMaybe)
 import qualified Yaml as Y
@@ -11,18 +11,18 @@ import qualified Yaml as Y
 --  Each rule should be formatted as a LaTeX inference rule with
 --  pattern, result, and optional conditions.
 --  Tests must be added for LaTeX conversion logic.
-ruleToLaTeX :: Y.Rule -> String
-ruleToLaTeX rule = "\\rule{" ++ fromMaybe "unnamed" (Y.name rule) ++ "}\n"
+explainRule :: Y.Rule -> String
+explainRule rule = "\\rule{" ++ fromMaybe "unnamed" (Y.name rule) ++ "}\n"
 
 -- @todo #114:30min Create LaTeX document wrapper.
 --  Generate proper LaTeX document with tabular format for rules.
 --  Each rule should be in its own tabular environment.
 --  Include tests for document structure generation.
-rulesToLaTeXDocument :: [Y.Rule] -> String
-rulesToLaTeXDocument rules' = unlines
+explainRules :: [Y.Rule] -> String
+explainRules rules' = unlines
   [ "\\documentclass{article}",
     "\\usepackage{amsmath}",
     "\\begin{document}",
-    unlines (map ruleToLaTeX rules'),
+    unlines (map explainRule rules'),
     "\\end{document}"
   ]

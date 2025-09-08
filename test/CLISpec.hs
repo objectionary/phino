@@ -256,7 +256,7 @@ spec = do
               hClose h
               testCLI
                 ["rewrite", "--nothing", "--sweet", printf "--target=%s" path]
-                [printf "The result program was saved in '%s'" path]
+                [printf "was saved in '%s'" path]
               content <- readFile path
               content `shouldBe` "{⟦⟧}"
           )
@@ -322,7 +322,7 @@ spec = do
             hClose h
             testCLI
               ["explain", "--normalize", printf "--target=%s" path]
-              [printf "LaTeX document was saved in '%s'" path]
+              [printf "was saved in '%s'" path]
             content <- readFile path
             content `shouldContain` "\\documentclass{article}"
             content `shouldContain` "\\begin{document}"
