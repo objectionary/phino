@@ -19,7 +19,6 @@ import Data.Version (showVersion)
 import Dataize (DataizeContext (DataizeContext), dataize)
 import Functions (buildTerm)
 import qualified Functions
-import IOFormat (IOFormat(..))
 import Logger
 import Misc (ensuredFile)
 import qualified Misc
@@ -27,7 +26,9 @@ import Options.Applicative
 import Parser (parseProgramThrows)
 import Paths_phino (version)
 import Pretty (PrintMode (SALTY, SWEET), prettyBytes, prettyProgram')
-import Rewriter (RewriteContext (RewriteContext), rewrite')
+import Rewriter (RewriteContext (RewriteContext), rewrite', SaveStepFunc)
+import System.Directory (createDirectoryIfMissing)
+import System.FilePath ((</>))
 import System.Exit (ExitCode (..), exitFailure)
 import System.IO (getContents')
 import Text.Printf (printf)
@@ -49,6 +50,13 @@ instance Show CmdException where
 data Command
   = CmdRewrite OptsRewrite
   | CmdDataize OptsDataize
+
+data IOFormat = XMIR | PHI
+  deriving (Eq)
+
+instance Show IOFormat where
+  show XMIR = "xmir"
+  show PHI = "phi"
 
 data OptsDataize = OptsDataize
   { logLevel :: LogLevel,
@@ -197,11 +205,28 @@ runCLI args = handle handler $ do
       input <- readInput inputFile
       rules' <- getRules
       program <- parseProgram input inputFormat
-      rewritten <- rewrite' program rules' (RewriteContext program maxDepth maxCycles depthSensitive buildTerm must stepsDir outputFormat printMode (XmirContext omitListing omitComments input))
+      let saveFunc = createSaveStepFunc stepsDir outputFormat printMode omitListing omitComments input
+      rewritten <- rewrite' program rules' (RewriteContext program maxDepth maxCycles depthSensitive buildTerm must saveFunc)
       logDebug (printf "Printing rewritten 𝜑-program as %s" (show outputFormat))
       prog <- printProgram rewritten outputFormat printMode input
       output prog
       where
+        createSaveStepFunc :: Maybe FilePath -> IOFormat -> PrintMode -> Bool -> Bool -> String -> SaveStepFunc
+        createSaveStepFunc Nothing _ _ _ _ _ = \_ _ -> pure ()
+        createSaveStepFunc (Just dir) format mode omitList omitComm listing = \prog stepNum -> do
+          createDirectoryIfMissing True dir
+          let fileName = printf "%05d.%s" stepNum ext
+              filePath = dir </> fileName
+              ext = case format of
+                PHI -> "phi"
+                XMIR -> "xmir"
+          content <- case format of
+            PHI -> pure $ prettyProgram' prog mode
+            XMIR -> do
+              xmir <- programToXMIR prog (XmirContext omitList omitComm listing)
+              pure $ printXMIR xmir
+          writeFile filePath content
+          logDebug (printf "Saved step %d to %s" stepNum filePath)
         getRules :: IO [Y.Rule]
         getRules = do
           ordered <-

@@ -41,8 +41,7 @@ library
     Regexp,
     Pretty,
     Random,
-    XMIR,
-    IOFormat
+    XMIR
   hs-source-dirs: src
   other-modules:
     Paths_phino

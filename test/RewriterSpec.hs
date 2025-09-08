@@ -14,14 +14,12 @@ import Data.Char (isSpace)
 import Data.Yaml qualified as Yaml
 import Functions (buildTerm)
 import GHC.Generics
-import IOFormat (IOFormat(..))
 import Misc (allPathsIn, ensuredFile)
 import Parser (parseProgramThrows)
 import Pretty (PrintMode (SWEET, SALTY), prettyProgram')
-import Rewriter (RewriteContext (RewriteContext), rewrite')
+import Rewriter (RewriteContext (RewriteContext), rewrite', SaveStepFunc)
 import System.FilePath (makeRelative, replaceExtension, (</>))
 import Test.Hspec (Spec, describe, expectationFailure, it, pending, runIO)
-import XMIR (XmirContext(..))
 import Yaml (normalizationRules)
 import Yaml qualified as Y
 
@@ -98,7 +96,9 @@ spec =
                   if normalize'
                     then pure normalizationRules
                     else pure []
-              rewritten <- rewrite' program rules' (RewriteContext program repeat' repeat' False buildTerm must' Nothing PHI SALTY (XmirContext False False ""))
+              let noSaveStep :: SaveStepFunc
+                  noSaveStep _ _ = pure ()
+              rewritten <- rewrite' program rules' (RewriteContext program repeat' repeat' False buildTerm must' noSaveStep)
               result' <- parseProgramThrows (output pack)
               unless (rewritten == result') $
                 expectationFailure
