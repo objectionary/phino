@@ -11,11 +11,11 @@ import Builder (contextualize)
 import Control.Exception (throwIO)
 import Data.List (partition)
 import Misc
-import Rewriter (RewriteContext (RewriteContext), rewrite')
+import Pretty (PrintMode(..))
+import Rewriter (RewriteContext (RewriteContext), rewrite', SaveStepFunc)
 import Rule (RuleContext (RuleContext), isNF)
 import Term (BuildTermFunc)
 import Text.Printf (printf)
-import XMIR (XmirContext (XmirContext))
 import Yaml (normalizationRules)
 
 data DataizeContext = DataizeContext
@@ -26,8 +26,11 @@ data DataizeContext = DataizeContext
     _buildTerm :: BuildTermFunc
   }
 
+noSaveStep :: SaveStepFunc
+noSaveStep _ _ = pure ()
+
 switchContext :: DataizeContext -> RewriteContext
-switchContext DataizeContext {..} = RewriteContext _program _maxDepth _maxCycles _depthSensitive _buildTerm 0
+switchContext DataizeContext {..} = RewriteContext _program _maxDepth _maxCycles _depthSensitive _buildTerm 0 noSaveStep
 
 maybeBinding :: (Binding -> Bool) -> [Binding] -> (Maybe Binding, [Binding])
 maybeBinding _ [] = (Nothing, [])

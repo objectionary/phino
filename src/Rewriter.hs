@@ -6,7 +6,7 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Rewriter (rewrite, rewrite', RewriteContext (..)) where
+module Rewriter (rewrite, rewrite', RewriteContext (..), SaveStepFunc) where
 
 import Ast
 import Builder
@@ -22,18 +22,34 @@ import Pretty (PrintMode (SWEET), prettyAttribute, prettyBytes, prettyExpression
 import Replacer (ReplaceProgramContext (ReplaceProgramContext), ReplaceProgramThrowsFunc, replaceProgramFastThrows, replaceProgramThrows)
 import Rule (RuleContext (RuleContext), matchProgramWithRule)
 import qualified Rule as R
+import System.Directory (createDirectoryIfMissing)
+import System.FilePath ((</>))
 import Term
 import Text.Printf
+import XMIR (programToXMIR, printXMIR)
 import Yaml (ExtraArgument (..))
 import qualified Yaml as Y
 
+-- | Function type for saving intermediate rewriting steps.
+type SaveStepFunc = Program -> Integer -> IO ()
+
+-- | Context for controlling the rewriting process.
+-- Contains all configuration and state needed to perform program rewriting.
 data RewriteContext = RewriteContext
-  { _program :: Program,
+  { -- | The initial program before any rewriting
+    _program :: Program,
+    -- | Maximum number of rewriting iterations per rule
     _maxDepth :: Integer,
+    -- | Maximum number of rewriting cycles across all rules
     _maxCycles :: Integer,
+    -- | If True, fail when reaching max depth/cycles limits; if False, just stop
     _depthSensitive :: Bool,
+    -- | Function to build terms during rewriting
     _buildTerm :: BuildTermFunc,
-    _must :: Integer
+    -- | Expected exact number of rewrites (0 means no requirement)
+    _must :: Integer,
+    -- | Function to save intermediate steps (if needed)
+    _saveStep :: SaveStepFunc
   }
 
 data RewriteException
@@ -59,6 +75,10 @@ instance Show RewriteException where
       "With option --depth-sensitive it's expected rewriting iterations amount does not reach the limit: --%s=%d"
       flag
       limit
+
+-- Create a no-op save function when no saving is needed
+noSaveStep :: SaveStepFunc
+noSaveStep _ _ = pure ()
 
 -- Build pattern and result expression and replace patterns to results in given program
 buildAndReplace' :: Expression -> Expression -> [Subst] -> ReplaceProgramThrowsFunc -> ReplaceProgramContext -> IO Program
@@ -107,6 +127,7 @@ tryBuildAndReplaceFast (ExFormation pbds) (ExFormation rbds) substs ctx =
     hasMetaBindings = foldl (\acc bd -> acc || isMetaBinding bd) False
 tryBuildAndReplaceFast ptn res substs ctx = buildAndReplace' ptn res substs replaceProgramThrows ctx
 
+-- Unified rewrite function that handles both normal and step-tracking modes
 rewrite :: Program -> [Y.Rule] -> RewriteContext -> IO Program
 rewrite program [] _ = pure program
 rewrite program (rule : rest) ctx = do
@@ -157,10 +178,12 @@ rewrite program (rule : rest) ctx = do
 --  been memorized - we fail because we got into infinite recursion. Ofc we should keep counting
 --  rewriting cycles if program just only grows on each rewriting.
 rewrite' :: Program -> [Y.Rule] -> RewriteContext -> IO Program
-rewrite' prog rules ctx = _rewrite prog 1
+rewrite' prog rules ctx = do
+  _saveStep ctx prog 1
+  _rewriteWithSteps prog 1
   where
-    _rewrite :: Program -> Integer -> IO Program
-    _rewrite prog count = do
+    _rewriteWithSteps :: Program -> Integer -> IO Program
+    _rewriteWithSteps prog count = do
       let cycles = _maxCycles ctx
           must = _must ctx
       if must /= 0 && count - 1 > must
@@ -181,4 +204,6 @@ rewrite' prog rules ctx = _rewrite prog 1
                   if must /= 0 && count - 1 /= must
                     then throwIO (MustBeGoing must (count - 1))
                     else pure rewritten
-                else _rewrite rewritten (count + 1)
+                else do
+                  _saveStep ctx rewritten (count + 1)
+                  _rewriteWithSteps rewritten (count + 1)
