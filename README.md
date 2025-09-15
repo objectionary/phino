@@ -70,7 +70,7 @@ result: Δ ⤍ 62-79-65
 Then, rewrite:
 
 ```bash
-$ phino rewrite --rule=my-rule.yml --input-file=hello.phi
+$ phino rewrite --rule=my-rule.yml hello.phi
 Φ ↦ ⟦ φ ↦ ⟦ Δ ⤍ 62-79-65 ⟧, t ↦ ξ.k, k ↦ ⟦⟧ ⟧
 ```
 
@@ -80,7 +80,7 @@ If you want to use many rules, just use `--rule` as many times as you need:
 phino rewrite --rule=rule1.yaml --rule=rule2.yaml ...
 ```
 
-If `--input-file` is not provided, the 𝜑-expression is taken from `stdin`:
+If no input file is provided, the 𝜑-expression is taken from `stdin`:
 
 ```bash
 $ echo 'Φ ↦ ⟦ φ ↦ ⟦ Δ ⤍ 68-65-6C-6C-6F ⟧ ⟧' | phino rewrite --rule=my-rule.yml
@@ -91,7 +91,7 @@ You can also use [built-in rules](resources), which are designed
 to normalize expressions:
 
 ```bash
-phino rewrite --normalize --input-file=hello.phi
+phino rewrite --normalize hello.phi
 ```
 
 Also `phino` supports 𝜑-expressions in
