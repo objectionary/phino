@@ -9,7 +9,7 @@
 
 module CLI (runCLI) where
 
-import Ast (Program (Program))
+import Ast (Program (Program), Expression(..), Binding(..))
 import Control.Exception (Exception (displayException), SomeException, handle, throw, throwIO)
 import Control.Exception.Base
 import Control.Monad (when)
@@ -20,6 +20,7 @@ import Dataize (DataizeContext (DataizeContext), dataize)
 import Functions (buildTerm)
 import qualified Functions
 import Logger
+import Matcher (matchProgram, matchExpressionDeep, matchBinding, defaultScope, Subst(..), MetaValue(..))
 import Misc (ensuredFile)
 import qualified Misc
 import Options.Applicative
@@ -31,8 +32,13 @@ import System.Exit (ExitCode (..), exitFailure)
 import System.IO (getContents')
 import Text.Printf (printf)
 import XMIR (XmirContext (XmirContext), parseXMIRThrows, printXMIR, programToXMIR, xmirToPhi)
-import Yaml (normalizationRules)
+import Yaml (normalizationRules, parseConditionString, Condition)
 import qualified Yaml as Y
+import Parser (parseExpression, parseBinding)
+import Pretty (prettyExpression, prettyExpression', prettyBinding)
+import Rule (RuleContext(..), meetCondition)
+import Builder (buildExpression, buildBinding)
+import qualified Data.Map.Strict as Map
 
 data CmdException
   = InvalidRewriteArguments {message :: String}
@@ -48,6 +54,7 @@ instance Show CmdException where
 data Command
   = CmdRewrite OptsRewrite
   | CmdDataize OptsDataize
+  | CmdMatch OptsMatch
 
 data IOFormat = XMIR | PHI
   deriving (Eq)
@@ -62,6 +69,14 @@ data OptsDataize = OptsDataize
     maxDepth :: Integer,
     maxCycles :: Integer,
     depthSensitive :: Bool,
+    inputFile :: Maybe FilePath
+  }
+
+data OptsMatch = OptsMatch
+  { logLevel :: LogLevel,
+    pattern :: String,
+    whenCondition :: Maybe String,
+    inputFormat :: IOFormat,
     inputFile :: Maybe FilePath
   }
 
@@ -139,6 +154,17 @@ dataizeParser =
             <*> argInputFile
         )
 
+matchParser :: Parser Command
+matchParser =
+  CmdMatch
+    <$> ( OptsMatch
+            <$> optLogLevel
+            <*> strOption (long "pattern" <> metavar "PATTERN" <> help "Pattern to match (supports meta-variables like !a, !e)")
+            <*> optional (strOption (long "when" <> metavar "CONDITION" <> help "Optional condition to filter matches"))
+            <*> optInputFormat
+            <*> argInputFile
+        )
+
 rewriteParser :: Parser Command
 rewriteParser =
   CmdRewrite
@@ -168,6 +194,7 @@ commandParser =
   hsubparser
     ( command "rewrite" (info rewriteParser (progDesc "Rewrite the program"))
         <> command "dataize" (info dataizeParser (progDesc "Dataize the program"))
+        <> command "match" (info matchParser (progDesc "Find patterns in the program"))
     )
 
 parserInfo :: ParserInfo Command
@@ -188,6 +215,7 @@ setLogLevel' cmd =
   let level = case cmd of
         CmdRewrite OptsRewrite {logLevel} -> logLevel
         CmdDataize OptsDataize {logLevel} -> logLevel
+        CmdMatch OptsMatch {logLevel} -> logLevel
    in setLogLevel level
 
 runCLI :: [String] -> IO ()
@@ -251,6 +279,14 @@ runCLI args = handle handler $ do
       prog <- parseProgram input inputFormat
       dataized <- dataize prog (DataizeContext prog maxDepth maxCycles depthSensitive buildTerm)
       maybe (throwIO CouldNotDataize) (putStrLn . prettyBytes) dataized
+    CmdMatch OptsMatch {..} -> do
+      input <- readInput inputFile
+      prog <- parseProgram input inputFormat
+      cond <- case whenCondition of
+        Nothing -> pure Nothing
+        Just condStr -> Just <$> parseConditionString condStr
+      result <- performMatch' pattern cond prog SALTY
+      putStr result
   where
     validateRewriteArguments :: OptsRewrite -> IO ()
     validateRewriteArguments OptsRewrite{..} = do
@@ -281,6 +317,62 @@ runCLI args = handle handler $ do
       Nothing -> do
         logDebug "Reading from stdin"
         getContents' `catch` (\(e :: SomeException) -> throwIO (CouldNotReadFromStdin (show e)))
+    performMatch' :: String -> Maybe Condition -> Program -> PrintMode -> IO String
+    performMatch' patternStr maybeCond prog@(Program rootExpr) mode = do
+      logDebug (printf "Searching for pattern: %s" patternStr)
+      case parseExpression patternStr of
+        Right expr -> do
+          let substs = matchProgram expr prog
+          logDebug (printf "Found %d matches for expression pattern" (length substs))
+          filtered <- filterByCondition' maybeCond substs prog
+          logDebug (printf "After filtering: %d matches" (length filtered))
+          let exprs = extractMatchedExpressions expr filtered
+          formatMatches exprs mode
+        Left _ -> case parseBinding patternStr of
+          Right binding -> do
+            let substs = findBindingMatches binding rootExpr
+            logDebug (printf "Found %d matches for binding pattern" (length substs))
+            filtered <- filterByCondition' maybeCond (map snd substs) prog
+            logDebug (printf "After filtering: %d matches" (length filtered))
+            let matchedBindings = [bd | (bd, s) <- substs, s `elem` filtered]
+            formatBindingMatches matchedBindings mode
+          Left err -> throwIO $ userError $ "Invalid pattern: " ++ err
+    findBindingMatches :: Binding -> Expression -> [(Binding, Subst)]
+    findBindingMatches pattern expr = case expr of
+      ExFormation bds ->
+        let direct = [(bd, s) | bd <- bds, s <- matchBinding pattern bd defaultScope]
+            nested = concatMap (searchInBinding pattern) bds
+        in direct ++ nested
+      ExDispatch e _ -> findBindingMatches pattern e
+      ExApplication e bd -> 
+        findBindingMatches pattern e ++ searchInBinding pattern bd
+      _ -> []
+      where
+        searchInBinding :: Binding -> Binding -> [(Binding, Subst)]
+        searchInBinding ptn (BiTau _ e) = findBindingMatches ptn e
+        searchInBinding _ _ = []
+    extractMatchedExpressions :: Expression -> [Subst] -> [Expression]
+    extractMatchedExpressions pattern substs = 
+      [expr | Subst m <- substs,
+              MvExpression expr _ <- Map.elems m]
+    filterByCondition' :: Maybe Condition -> [Subst] -> Program -> IO [Subst]
+    filterByCondition' Nothing substs _ = pure substs
+    filterByCondition' (Just cond) substs prog = do
+      logDebug (printf "Filtering %d matches with condition" (length substs))
+      let ctx = RuleContext prog buildTerm
+      meetCondition cond substs ctx
+    formatMatches :: [Expression] -> PrintMode -> IO String
+    formatMatches [] _ = pure ""
+    formatMatches exprs mode = do
+      let formatted = map (\e -> case mode of
+                                  SWEET -> prettyExpression' e
+                                  SALTY -> prettyExpression e) exprs
+      pure $ unlines formatted
+    formatBindingMatches :: [Binding] -> PrintMode -> IO String
+    formatBindingMatches [] _ = pure ""
+    formatBindingMatches bds mode = do
+      let formatted = map prettyBinding bds
+      pure $ unlines formatted
     parseProgram :: String -> IOFormat -> IO Program
     parseProgram phi PHI = parseProgramThrows phi
     parseProgram xmir XMIR = do

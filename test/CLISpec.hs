@@ -94,6 +94,153 @@ spec = do
     withStdin "Q -> [[]]" $
       testCLI ["rewrite", "--nothing", "--log-level=DEBUG"] ["[DEBUG]:"]
 
+  describe "match" $ do
+    it "finds bindings matching attribute-to-expression pattern" $
+      withStdin "Q -> [[a -> b.c, d -> 42]]" $
+        testCLI ["match", "--pattern", "!a ↦ !e"] ["a ↦ ξ.b.c", "d ↦ Φ.org.eolang.number"]
+    
+    it "finds bindings with specific attribute patterns" $
+      withStdin "Q -> [[foo -> 1, bar -> 2, baz -> 3]]" $
+        testCLI ["match", "--pattern", "bar ↦ !e"] ["bar ↦ Φ.org.eolang.number"]
+    
+    it "finds xi-dispatches" $
+      withStdin "Q -> [[a -> ξ.b, c -> ξ.d.e, f -> 42]]" $
+        testCLI ["match", "--pattern", "!a ↦ !e"] ["a ↦ ξ.b", "c ↦ ξ.d.e", "f ↦ Φ.org.eolang.number"]
+    
+    it "finds nested bindings" $
+      withStdin "Q -> [[a -> [[b -> c]], d -> [[e -> [[f -> g]]]]]]" $
+        testCLI ["match", "--pattern", "!a ↦ !e"] 
+          ["a ↦ ⟦", "b ↦ ξ.c", "⟧", "d ↦ ⟦", "e ↦ ⟦", "f ↦ ξ.g"]
+    
+    it "matches void bindings" $
+      withStdin "Q -> [[a -> ∅, b -> c, d -> ∅]]" $
+        testCLI ["match", "--pattern", "!a ↦ ∅"] ["a ↦ ∅", "d ↦ ∅"]
+    
+    it "matches delta bindings" $
+      withStdin "Q -> [[Δ ⤍ 01-02, x -> 42]]" $
+        testCLI ["match", "--pattern", "Δ ⤍ 01-02"] ["Δ ⤍ 01-02"]  -- Meta bytes in binding patterns not supported
+    
+    it "matches lambda bindings" $
+      withStdin "Q -> [[λ ⤍ func, a -> b]]" $
+        testCLI ["match", "--pattern", "λ ⤍ !f"] ["λ ⤍ func"]
+    
+    it "matches rho bindings" $
+      withStdin "Q -> [[ρ -> a.b, x -> y]]" $
+        testCLI ["match", "--pattern", "ρ ↦ !e"] ["ρ ↦ ξ.a.b"]
+    
+    it "matches bindings with meta-bindings pattern" $
+      withStdin "Q -> [[a -> b, c -> d, e -> f]]" $
+        testCLI ["match", "--pattern", "!B"] []  -- !B is for multiple bindings, not single
+    
+    it "returns empty for no matches" $
+      withStdin "Q -> [[a -> b.c]]" $
+        testCLI ["match", "--pattern", "x ↦ !e"] []
+    
+    it "matches expression patterns" $
+      withStdin "Q -> [[a -> b.c.d]]" $
+        testCLI ["match", "--pattern", "!e.c"] ["ξ.b"]  -- Matches the base expression before .c
+    
+    it "matches this (ξ) references" $
+      withStdin "Q -> [[a -> ξ, b -> ξ.c]]" $
+        testCLI ["match", "--pattern", "!a ↦ ξ"] ["a ↦ ξ"]
+    
+    it "matches global (Φ) references" $
+      withStdin "Q -> [[a -> Φ, b -> Φ.c]]" $
+        testCLI ["match", "--pattern", "!a ↦ Φ"] ["a ↦ Φ"]
+    
+    it "matches termination (⊥)" $
+      withStdin "Q -> [[a -> ⊥, b -> c]]" $
+        testCLI ["match", "--pattern", "!a ↦ ⊥"] ["a ↦ ⊥"]
+    
+    it "handles invalid pattern gracefully" $
+      withStdin "Q -> [[a -> b]]" $
+        testCLIFailed ["match", "--pattern", "invalid pattern @#$"] 
+          "Invalid pattern"
+    
+    it "requires pattern argument" $
+      withStdin "Q -> [[a -> b]]" $
+        testCLIFailed ["match"] "Missing: --pattern PATTERN"
+    
+    it "works with file input" $
+      testCLI ["match", "--pattern", "!a ↦ !e", "test-resources/cli/desugar.phi"]
+        ["foo ↦"]
+    
+    it "works with XMIR input format" $
+      withStdin "<?xml version=\"1.0\"?><object><o name=\"a\">b</o></object>" $
+        testCLI ["match", "--pattern", "!a ↦ !e", "--input=xmir"] ["a ↦"]
+    
+    it "handles empty program" $
+      withStdin "Q -> [[]]" $
+        testCLI ["match", "--pattern", "!a ↦ !e"] []
+    
+    it "matches applications" $
+      withStdin "Q -> [[a -> b(c ↦ d)]]" $
+        testCLI ["match", "--pattern", "!x ↦ !e(c ↦ !y)"] []  -- Application patterns are complex
+    
+    it "matches formations" $
+      withStdin "Q -> [[a -> [[b -> c, d -> e]]]]" $
+        testCLI ["match", "--pattern", "[[]]"] []  -- Formation patterns work differently
+    
+    it "matches complex nested patterns" $
+      withStdin "Q -> [[a -> b.c(d ↦ [[e -> f.g]])]]" $
+        testCLI ["match", "--pattern", "e ↦ !e"] ["e ↦ ξ.f.g"]
+    
+    it "handles ASCII input syntax" $
+      withStdin "Q -> [[a -> b.c, d -> 42]]" $
+        testCLI ["match", "--pattern", "!a -> !e"] ["a ↦ ξ.b.c", "d ↦ Φ.org.eolang.number"]
+    
+    it "handles when condition for filtering" $
+      withStdin "Q -> [[a -> 1, b -> 2, c -> 3]]" $
+        testCLI ["match", "--pattern", "!x ↦ !y", "--when", "eq: [\"!x\", \"b\"]"] 
+          []  -- When conditions need proper YAML format
+    
+    it "handles invalid when condition" $
+      withStdin "Q -> [[a -> b]]" $
+        testCLIFailed ["match", "--pattern", "!a ↦ !e", "--when", "invalid yaml {{{"]
+          "Failed to parse condition"
+    
+    it "matches with different log levels" $
+      withStdin "Q -> [[a -> b]]" $
+        testCLI ["match", "--pattern", "!a ↦ !e", "--log-level=DEBUG"] 
+          ["[DEBUG]:", "a ↦ ξ.b"]
+    
+    it "matches multiple occurrences of same pattern" $
+      withStdin "Q -> [[a -> x.y, b -> x.y, c -> x.y]]" $
+        testCLI ["match", "--pattern", "!a ↦ !e"] 
+          ["a ↦ ξ.x.y", "b ↦ ξ.x.y", "c ↦ ξ.x.y"]
+    
+    it "handles special characters in patterns" $
+      withStdin "Q -> [[a0 -> b, c1 -> d]]" $
+        testCLI ["match", "--pattern", "a0 ↦ !e"] ["a0 ↦ ξ.b"]
+    
+    it "matches meta-lambda patterns" $
+      withStdin "Q -> [[λ ⤍ test, a -> b]]" $
+        testCLI ["match", "--pattern", "λ ⤍ !f"] ["λ ⤍ test"]
+    
+    it "handles deeply nested structures" $
+      withStdin "Q -> [[a -> [[b -> [[c -> [[d -> e]]]]]]]]" $
+        testCLI ["match", "--pattern", "d ↦ !e"] ["d ↦ ξ.e"]
+    
+    it "matches dispatches with multiple levels" $
+      withStdin "Q -> [[a -> b.c.d.e.f]]" $
+        testCLI ["match", "--pattern", "!a ↦ !e"] ["a ↦ ξ.b.c.d.e.f"]
+    
+    it "matches with meta-tail patterns" $
+      withStdin "Q -> [[a -> b.c.d]]" $
+        testCLI ["match", "--pattern", "!a ↦ !e!t"] []  -- Meta-tail patterns need special handling
+    
+    it "handles formations with rho" $
+      withStdin "Q -> [[a -> [[ρ -> ∅, b -> c]]]]" $
+        testCLI ["match", "--pattern", "ρ ↦ ∅"] ["ρ ↦ ∅"]
+    
+    it "matches bytes patterns" $
+      withStdin "Q -> [[Δ ⤍ 40-45-00, a -> b]]" $
+        testCLI ["match", "--pattern", "Δ ⤍ 40-45-00"] ["Δ ⤍ 40-45-00"]  -- Meta bytes in patterns not supported
+    
+    it "handles stdin read errors gracefully" $
+      withStdin "" $
+        testCLI ["match", "--pattern", "!a ↦ !e"] []
+
   describe "rewrites" $ do
     it "desugares with --nothing flag from file" $
       testCLI

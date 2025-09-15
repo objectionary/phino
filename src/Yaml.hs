@@ -6,12 +6,13 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Yaml where
+module Yaml (module Yaml) where
 
 import Ast
 import Control.Applicative (asum)
 import Data.Aeson
 import qualified Data.ByteString as BS
+import qualified Data.ByteString.Char8 as BSC
 import Data.FileEmbed (embedDir)
 import Data.Text (unpack)
 import Data.Yaml (Parser)
@@ -192,3 +193,9 @@ normalizationRules = map decodeRule $(embedDir "resources")
 
 yamlRule :: FilePath -> IO Rule
 yamlRule = Yaml.decodeFileThrow
+
+parseConditionString :: String -> IO Condition
+parseConditionString str = do
+  case Yaml.decodeEither' (BSC.pack str) of
+    Right cond -> pure cond
+    Left err -> error $ "Failed to parse condition: " ++ show err
