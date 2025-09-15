@@ -63,6 +63,13 @@ withStdout action =
   where
     cleanup (fp, _) = removeFile fp
 
+withTempFile :: String -> ((FilePath, Handle) -> IO a) -> IO a
+withTempFile pattern action =
+  bracket
+    (openTempFile "." pattern)
+    (\(path, _) -> removeFile path)
+    action
+
 testCLI :: [String] -> [String] -> Expectation
 testCLI args outputs = do
   (out, _) <- withStdout (try (runCLI args) :: IO (Either ExitCode ()))
@@ -331,27 +338,102 @@ spec = do
           ["rewrite", "--rule=test-resources/cli/simple.yaml", "--must=1", "--sweet"]
           ["x ↦ \"bar\""]
 
-    it "fails with --nothing and --must" $
+    it "fails with --nothing and --must=1" $
       withStdin "Q -> [[ ]]" $
-        testCLIFailed ["rewrite", "--nothing", "--must"] "it's expected exactly 1 rewriting cycles happened, but rewriting stopped after 0"
+        testCLIFailed ["rewrite", "--nothing", "--must=1"] "it's expected rewriting cycles to be in range [1], but rewriting stopped after 0"
 
-    it "fails with --normalize and --must" $
+    it "fails with --normalize and --must=1" $
       withStdin "Q -> [[ x -> [[ y -> 5 ]].y ]].x" $
-        testCLIFailed ["rewrite", "--max-depth=2", "--normalize", "--must"] "it's expected exactly 1 rewriting cycles happened, but rewriting is still going"
+        testCLIFailed ["rewrite", "--max-depth=2", "--normalize", "--must=1"] "it's expected rewriting cycles to be in range [1], but rewriting has already reached 2"
+
+    describe "must range tests" $ do
+      it "accepts range ..5 (0 to 5 cycles)" $
+        withStdin "Q -> [[ ]]" $
+          testCLI ["rewrite", "--nothing", "--must=..5", "--sweet"] ["{⟦⟧}"]
+
+      it "accepts range 0..0 (exactly 0 cycles)" $
+        withStdin "Q -> [[ ]]" $
+          testCLI ["rewrite", "--nothing", "--must=0..0", "--sweet"] ["{⟦⟧}"]
+
+      it "accepts range 1..1 (exactly 1 cycle)" $
+        withStdin "{⟦ t ↦ ⟦ x ↦ \"foo\" ⟧ ⟧}" $
+          testCLI
+            ["rewrite", "--rule=test-resources/cli/simple.yaml", "--must=1..1", "--sweet"]
+            ["x ↦ \"bar\""]
+
+      it "accepts range 1..3 when 1 cycle happens" $
+        withStdin "{⟦ t ↦ ⟦ x ↦ \"foo\" ⟧ ⟧}" $
+          testCLI
+            ["rewrite", "--rule=test-resources/cli/simple.yaml", "--must=1..3", "--sweet"]
+            ["x ↦ \"bar\""]
+
+      it "accepts range 0.. (0 or more)" $
+        withStdin "Q -> [[ ]]" $
+          testCLI ["rewrite", "--nothing", "--must=0..", "--sweet"] ["{⟦⟧}"]
+
+      it "fails when cycles exceed range ..1" $
+        withStdin "Q -> [[ x -> [[ y -> 5 ]].y ]].x" $
+          testCLIFailed 
+            ["rewrite", "--max-depth=2", "--normalize", "--must=..1"] 
+            "it's expected rewriting cycles to be in range [..1], but rewriting has already reached 2"
+
+      it "fails when cycles below range 2.." $
+        withStdin "{⟦ t ↦ ⟦ x ↦ \"foo\" ⟧ ⟧}" $
+          testCLIFailed
+            ["rewrite", "--rule=test-resources/cli/simple.yaml", "--must=2.."]
+            "it's expected rewriting cycles to be in range [2..], but rewriting stopped after 1"
+
+      it "fails with invalid range 5..3" $
+        withStdin "Q -> [[ ]]" $
+          testCLIFailed
+            ["rewrite", "--nothing", "--must=5..3"]
+            "cannot parse value `5..3'"
+
+      it "fails with negative in range -1..5" $
+        withStdin "Q -> [[ ]]" $
+          testCLIFailed
+            ["rewrite", "--nothing", "--must=-1..5"]
+            "cannot parse value `-1..5'"
+
+      it "fails with malformed range syntax" $
+        withStdin "Q -> [[ ]]" $
+          testCLIFailed
+            ["rewrite", "--nothing", "--must=3...5"]
+            "cannot parse value `3...5'"
 
     it "prints to target file" $
       withStdin "Q -> [[ ]]" $
-        bracket
-          (openTempFile "." "targetXXXXXX.tmp")
-          (\(path, _) -> removeFile path)
-          ( \(path, h) -> do
-              hClose h
-              testCLI
-                ["rewrite", "--nothing", "--sweet", printf "--target=%s" path]
-                [printf "The result program was saved in '%s'" path]
-              content <- readFile path
-              content `shouldBe` "{⟦⟧}"
-          )
+        withTempFile "targetXXXXXX.tmp" $ \(path, h) -> do
+          hClose h
+          testCLI
+            ["rewrite", "--nothing", "--sweet", printf "--target=%s" path]
+            [printf "The command result was saved in '%s'" path]
+          content <- readFile path
+          content `shouldBe` "{⟦⟧}"
+
+    it "modifies file in-place" $
+      withTempFile "inplaceXXXXXX.phi" $ \(path, h) -> do
+        hPutStr h "Q -> [[ x -> \"foo\" ]]"
+        hClose h
+        testCLI
+          ["rewrite", "--rule=test-resources/cli/simple.yaml", "--in-place", "--sweet", path]
+          [printf "The file '%s' was modified in-place" path]
+        content <- readFile path
+        content `shouldBe` "{⟦\n  x ↦ \"bar\"\n⟧}"
+
+    it "fails when --in-place is used without input file" $
+      withStdin "Q -> [[ ]]" $
+        testCLIFailed
+          ["rewrite", "--in-place", "--nothing"]
+          "--in-place requires an input file"
+
+    it "fails when --in-place is used with --target" $
+      withTempFile "inplaceXXXXXX.phi" $ \(path, h) -> do
+        hPutStr h "Q -> [[ ]]"
+        hClose h
+        testCLIFailed
+          ["rewrite", "--in-place", "--target=output.phi", "--nothing", path]
+          "--in-place and --target cannot be used together"
 
     it "rewrites with cycles" $
       withStdin "Q -> [[ x -> \"x\" ]]" $
@@ -384,3 +466,38 @@ spec = do
     it "fails to dataize" $
       withStdin "Q -> [[ ]]" $
         testCLIFailed ["dataize"] "[ERROR]: Could not dataize given program"
+
+  describe "explain" $ do
+    it "explains single rule" $
+      testCLI
+        ["explain", "--rule=resources/copy.yaml"]
+        ["\\documentclass{article}", "\\usepackage{amsmath}", "\\begin{document}", "\\rule{COPY}", "\\end{document}"]
+
+    it "explains multiple rules" $
+      testCLI
+        ["explain", "--rule=resources/copy.yaml", "--rule=resources/alpha.yaml"]
+        ["\\documentclass{article}", "\\rule{COPY}", "\\rule{ALPHA}"]
+
+    it "explains normalization rules" $
+      testCLI
+        ["explain", "--normalize"]
+        ["\\documentclass{article}", "\\begin{document}", "\\end{document}"]
+
+    it "fails with no rules specified" $
+      testCLIFailed
+        ["explain"]
+        "Either --rule or --normalize must be specified"
+
+    it "writes to target file" $
+      bracket
+        (openTempFile "." "explainXXXXXX.tex")
+        (\(path, _) -> removeFile path)
+        ( \(path, h) -> do
+            hClose h
+            testCLI
+              ["explain", "--normalize", printf "--target=%s" path]
+              [printf "was saved in '%s'" path]
+            content <- readFile path
+            content `shouldContain` "\\documentclass{article}"
+            content `shouldContain` "\\begin{document}"
+        )

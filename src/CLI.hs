@@ -15,14 +15,17 @@ import Control.Exception.Base
 import Control.Monad (when)
 import Data.Char (toLower, toUpper)
 import Data.List (intercalate)
+import Data.Maybe (isJust, isNothing)
 import Data.Version (showVersion)
 import Dataize (DataizeContext (DataizeContext), dataize)
 import Functions (buildTerm)
 import qualified Functions
+import LaTeX (explainRules)
 import Logger
 import Matcher (matchProgram, matchExpressionDeep, matchBinding, defaultScope, Subst(..), MetaValue(..))
 import Misc (ensuredFile)
 import qualified Misc
+import Must (Must (..))
 import Options.Applicative
 import Parser (parseProgramThrows)
 import Paths_phino (version)
@@ -55,6 +58,7 @@ data Command
   = CmdRewrite OptsRewrite
   | CmdDataize OptsDataize
   | CmdMatch OptsMatch
+  | CmdExplain OptsExplain
 
 data IOFormat = XMIR | PHI
   deriving (Eq)
@@ -80,6 +84,15 @@ data OptsMatch = OptsMatch
     inputFile :: Maybe FilePath
   }
 
+data OptsExplain = OptsExplain
+  { logLevel :: LogLevel,
+    rules :: [FilePath],
+    normalize :: Bool,
+    nothing :: Bool,
+    shuffle :: Bool,
+    targetFile :: Maybe FilePath
+  }
+
 data OptsRewrite = OptsRewrite
   { logLevel :: LogLevel,
     rules :: [FilePath],
@@ -92,9 +105,10 @@ data OptsRewrite = OptsRewrite
     omitListing :: Bool,
     omitComments :: Bool,
     depthSensitive :: Bool,
-    must :: Integer,
+    must :: Must,
     maxDepth :: Integer,
     maxCycles :: Integer,
+    inPlace :: Bool,
     targetFile :: Maybe FilePath,
     inputFile :: Maybe FilePath
   }
@@ -142,6 +156,33 @@ optLogLevel =
       "NONE" -> Right NONE
       _ -> Left $ "unknown log-level: " <> lvl
 
+optRule :: Parser [FilePath]
+optRule = many (strOption (long "rule" <> metavar "FILE" <> help "Path to custom rule"))
+
+optNormalize :: Parser Bool
+optNormalize = switch (long "normalize" <> help "Use built-in normalization rules")
+
+optTarget :: Parser (Maybe FilePath)
+optTarget = optional (strOption (long "target" <> short 't' <> metavar "FILE" <> help "File to save output to"))
+
+optNothing :: Parser Bool
+optNothing = switch (long "nothing" <> help "Just desugar provided 𝜑-program")
+
+optShuffle :: Parser Bool
+optShuffle = switch (long "shuffle" <> help "Shuffle rules before applying")
+
+explainParser :: Parser Command
+explainParser =
+  CmdExplain
+    <$> ( OptsExplain
+            <$> optLogLevel
+            <*> optRule
+            <*> optNormalize
+            <*> optNothing
+            <*> optShuffle
+            <*> optTarget
+        )
+
 dataizeParser :: Parser Command
 dataizeParser =
   CmdDataize
@@ -170,22 +211,28 @@ rewriteParser =
   CmdRewrite
     <$> ( OptsRewrite
             <$> optLogLevel
-            <*> many (strOption (long "rule" <> metavar "FILE" <> help "Path to custom rule"))
+            <*> optRule
             <*> optInputFormat
             <*> option (parseIOFormat "output") (long "output" <> metavar "FORMAT" <> help "Program output format (phi, xmir)" <> value PHI <> showDefault)
             <*> flag SALTY SWEET (long "sweet" <> help "Print 𝜑-program using syntax sugar")
-            <*> switch (long "normalize" <> help "Use built-in normalization rules")
-            <*> switch (long "nothing" <> help "Just desugar provided 𝜑-program")
-            <*> switch (long "shuffle" <> help "Shuffle rules before applying")
+            <*> optNormalize
+            <*> optNothing
+            <*> optShuffle
             <*> switch (long "omit-listing" <> help "Omit full program listing in XMIR output")
             <*> switch (long "omit-comments" <> help "Omit comments in XMIR output")
             <*> optDepthSensitive
-            <*> ( flag' 1 (long "must" <> help "Enable must-rewrite with default value 1")
-                    <|> option auto (long "must" <> metavar "N" <> help "Must-rewrite, stops execution if not exactly N rules applied (default 1 when specified without value, if 0 - flag is disabled)" <> value 0)
-                )
+            <*> option
+              auto
+              ( long "must"
+                  <> metavar "RANGE"
+                  <> help "Must-rewrite range (e.g., '3', '..5', '3..', '3..5'). Stops execution if number of rules applied is not in range. Use 0 to disable."
+                  <> value MtDisabled
+                  <> showDefaultWith show
+              )
             <*> optMaxDepth
             <*> optMaxCycles
-            <*> optional (strOption (long "target" <> short 't' <> metavar "FILE" <> help "File to save output to"))
+            <*> switch (long "in-place" <> help "Edit file in-place instead of printing to console")
+            <*> optTarget
             <*> argInputFile
         )
 
@@ -195,6 +242,7 @@ commandParser =
     ( command "rewrite" (info rewriteParser (progDesc "Rewrite the program"))
         <> command "dataize" (info dataizeParser (progDesc "Dataize the program"))
         <> command "match" (info matchParser (progDesc "Find patterns in the program"))
+        <> command "explain" (info explainParser (progDesc "Explain rules in LaTeX format"))
     )
 
 parserInfo :: ParserInfo Command
@@ -216,6 +264,7 @@ setLogLevel' cmd =
         CmdRewrite OptsRewrite {logLevel} -> logLevel
         CmdDataize OptsDataize {logLevel} -> logLevel
         CmdMatch OptsMatch {logLevel} -> logLevel
+        CmdExplain OptsExplain {logLevel} -> logLevel
    in setLogLevel level
 
 runCLI :: [String] -> IO ()
@@ -224,61 +273,59 @@ runCLI args = handle handler $ do
   setLogLevel' cmd
   case cmd of
     CmdRewrite opts@OptsRewrite {..} -> do
-      validateRewriteArguments opts
+      validateOpts
       logDebug (printf "Amount of rewriting cycles across all the rules: %d, per rule: %d" maxCycles maxDepth)
       input <- readInput inputFile
-      rules' <- getRules
+      rules' <- getRules nothing normalize shuffle rules
       program <- parseProgram input inputFormat
       rewritten <- rewrite' program rules' (RewriteContext program maxDepth maxCycles depthSensitive buildTerm must)
       logDebug (printf "Printing rewritten 𝜑-program as %s" (show outputFormat))
       prog <- printProgram rewritten outputFormat printMode input
-      output prog
+      output targetFile prog
       where
-        getRules :: IO [Y.Rule]
-        getRules = do
-          ordered <-
-            if nothing
-              then do
-                logDebug "The --nothing option is provided, no rules are used"
-                pure []
-              else
-                if normalize
-                  then do
-                    let rules' = normalizationRules
-                    logDebug (printf "The --normalize option is provided, %d built-it normalization rules are used" (length rules'))
-                    pure rules'
-                  else
-                    if null rules
-                      then throwIO (InvalidRewriteArguments "no --rule, no --normalize, no --nothing are provided")
-                      else do
-                        logDebug (printf "Using rules from files: [%s]" (intercalate ", " rules))
-                        yamls <- mapM ensuredFile rules
-                        mapM Y.yamlRule yamls
-          if shuffle
-            then do
-              logDebug "The --shuffle option is provided, rules are used in random order"
-              Misc.shuffle ordered
-            else pure ordered
+        validateOpts :: IO ()
+        validateOpts = do
+          when
+            (printMode == SWEET && outputFormat == XMIR)
+            (throwIO (InvalidRewriteArguments "The --sweet and --output=xmir can't stay together"))
+          when
+            (inPlace && isNothing inputFile)
+            (throwIO (InvalidRewriteArguments "--in-place requires an input file"))
+          when
+            (inPlace && isJust targetFile)
+            (throwIO (InvalidRewriteArguments "--in-place and --target cannot be used together"))
+          validateMaxDepth maxDepth
+          validateMaxCycles maxCycles
+          validateMust must
         printProgram :: Program -> IOFormat -> PrintMode -> String -> IO String
         printProgram prog PHI mode _ = pure (prettyProgram' prog mode)
         printProgram prog XMIR _ listing = do
           xmir <- programToXMIR prog (XmirContext omitListing omitComments listing)
           pure (printXMIR xmir)
-        output :: String -> IO ()
-        output prog = case targetFile of
-          Nothing -> do
-            logDebug "The option '--target' is not specified, printing to console..."
-            putStrLn prog
-          Just file -> do
+        output :: Maybe FilePath -> String -> IO ()
+        output target prog = case (inPlace, target, inputFile) of
+          (True, _, Just file) -> do
+            logDebug (printf "The option '--in-place' is specified, writing back to '%s'..." file)
+            writeFile file prog
+            logInfo (printf "The file '%s' was modified in-place" file)
+          (False, Just file, _) -> do
             logDebug (printf "The option '--target' is specified, printing to '%s'..." file)
             writeFile file prog
-            logInfo (printf "The result program was saved in '%s'" file)
+            logInfo (printf "The command result was saved in '%s'" file)
+          (False, Nothing, _) -> do
+            logDebug "The option '--target' is not specified, printing to console..."
+            putStrLn prog
     CmdDataize opts@OptsDataize {..} -> do
-      validateDataizeArguments opts
+      validateOpts
       input <- readInput inputFile
       prog <- parseProgram input inputFormat
       dataized <- dataize prog (DataizeContext prog maxDepth maxCycles depthSensitive buildTerm)
       maybe (throwIO CouldNotDataize) (putStrLn . prettyBytes) dataized
+      where
+        validateOpts :: IO ()
+        validateOpts = do
+          validateMaxDepth maxDepth
+          validateMaxCycles maxCycles
     CmdMatch OptsMatch {..} -> do
       input <- readInput inputFile
       prog <- parseProgram input inputFormat
@@ -287,19 +334,18 @@ runCLI args = handle handler $ do
         Just condStr -> Just <$> parseConditionString condStr
       result <- performMatch' pattern cond prog SALTY
       putStr result
+    CmdExplain opts@OptsExplain {..} -> do
+      validateOpts
+      rules' <- getRules nothing normalize shuffle rules
+      let latex = explainRules rules'
+      output targetFile (explainRules rules')
+      where
+        validateOpts :: IO ()
+        validateOpts =
+          when
+            (null rules && not normalize)
+            (throwIO (InvalidRewriteArguments "Either --rule or --normalize must be specified"))
   where
-    validateRewriteArguments :: OptsRewrite -> IO ()
-    validateRewriteArguments OptsRewrite{..} = do
-      when
-        (printMode == SWEET && outputFormat == XMIR)
-        (throwIO (InvalidRewriteArguments "The --sweet and --output=xmir can't stay together"))
-      validateMaxDepth maxDepth
-      validateMaxCycles maxCycles
-      validateIntArgument must (< 0) "--must must be positive"
-    validateDataizeArguments :: OptsDataize -> IO ()
-    validateDataizeArguments OptsDataize{..} = do
-      validateMaxDepth maxDepth
-      validateMaxCycles maxCycles
     validateIntArgument :: Integer -> (Integer -> Bool) -> String -> IO ()
     validateIntArgument num cmp msg =
       when
@@ -309,6 +355,20 @@ runCLI args = handle handler $ do
     validateMaxDepth depth = validateIntArgument depth (<= 0) "--max-depth must be positive"
     validateMaxCycles :: Integer -> IO ()
     validateMaxCycles cycles = validateIntArgument cycles (<= 0) "--max-cycles must be positive"
+    validateMust :: Must -> IO ()
+    validateMust MtDisabled = pure ()
+    validateMust (MtExact n) = validateIntArgument n (<= 0) "--must exact value must be positive"
+    validateMust (MtRange minVal maxVal) = do
+      maybe (pure ()) (\n -> validateIntArgument n (< 0) "--must minimum must be non-negative") minVal
+      maybe (pure ()) (\n -> validateIntArgument n (< 0) "--must maximum must be non-negative") maxVal
+      case (minVal, maxVal) of
+        (Just min, Just max)
+          | min > max ->
+              throwIO
+                ( InvalidRewriteArguments
+                    (printf "--must range invalid: minimum (%d) is greater than maximum (%d)" min max)
+                )
+        _ -> pure ()
     readInput :: Maybe FilePath -> IO String
     readInput inputFile' = case inputFile' of
       Just pth -> do
@@ -378,3 +438,37 @@ runCLI args = handle handler $ do
     parseProgram xmir XMIR = do
       doc <- parseXMIRThrows xmir
       xmirToPhi doc
+    getRules :: Bool -> Bool -> Bool -> [FilePath] -> IO [Y.Rule]
+    getRules nothing normalize shuffle rules = do
+      ordered <-
+        if nothing
+          then do
+            logDebug "The --nothing option is provided, no rules are used"
+            pure []
+          else
+            if normalize
+              then do
+                let rules' = normalizationRules
+                logDebug (printf "The --normalize option is provided, %d built-it normalization rules are used" (length rules'))
+                pure rules'
+              else
+                if null rules
+                  then throwIO (InvalidRewriteArguments "no --rule, no --normalize, no --nothing are provided")
+                  else do
+                    logDebug (printf "Using rules from files: [%s]" (intercalate ", " rules))
+                    yamls <- mapM ensuredFile rules
+                    mapM Y.yamlRule yamls
+      if shuffle
+        then do
+          logDebug "The --shuffle option is provided, rules are used in random order"
+          Misc.shuffle ordered
+        else pure ordered
+    output :: Maybe FilePath -> String -> IO ()
+    output target content = case target of
+      Nothing -> do
+        logDebug "The option '--target' is not specified, printing to console..."
+        putStrLn content
+      Just file -> do
+        logDebug (printf "The option '--target' is specified, printing to '%s'..." file)
+        writeFile file content
+        logInfo (printf "The command result was saved in '%s'" file)
