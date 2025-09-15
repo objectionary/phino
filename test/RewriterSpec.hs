@@ -15,6 +15,7 @@ import Data.Yaml qualified as Yaml
 import Functions (buildTerm)
 import GHC.Generics
 import Misc (allPathsIn, ensuredFile)
+import Must (Must(..))
 import Parser (parseProgramThrows)
 import Pretty (PrintMode (SWEET), prettyProgram')
 import Rewriter (RewriteContext (RewriteContext), rewrite', SaveStepFunc)
@@ -74,8 +75,8 @@ spec =
                     Just num -> num
                     _ -> 1
               must' = case must pack of
-                Just num -> num
-                _ -> 0
+                Just num -> MtExact num
+                _ -> MtDisabled
           case skip pack of
             Just True -> pending
             _ -> do

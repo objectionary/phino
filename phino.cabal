@@ -37,11 +37,13 @@ library
     Functions,
     Term,
     Misc,
+    Must,
     Logger,
     Regexp,
     Pretty,
     Random,
-    XMIR
+    XMIR,
+    LaTeX
   hs-source-dirs: src
   other-modules:
     Paths_phino

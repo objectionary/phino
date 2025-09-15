@@ -14,6 +14,7 @@ import Control.Exception (Exception, throwIO)
 import Data.Maybe (fromMaybe)
 import Logger (logDebug)
 import Matcher (MetaValue (MvAttribute, MvBindings, MvBytes, MvExpression), Subst (Subst), combine, combineMany, defaultScope, matchProgram, substEmpty, substSingle)
+import Must (Must (..), exceedsUpperBound, inRange)
 import Parser (parseProgram, parseProgramThrows)
 import Pretty (PrintMode (SWEET), prettyAttribute, prettyBytes, prettyExpression, prettyExpression', prettyProgram, prettyProgram', prettySubsts)
 import Replacer (ReplaceProgramContext (ReplaceProgramContext), ReplaceProgramThrowsFunc, replaceProgramFastThrows, replaceProgramThrows)
@@ -40,30 +41,31 @@ data RewriteContext = RewriteContext
     _depthSensitive :: Bool,
     -- | Function to build terms during rewriting
     _buildTerm :: BuildTermFunc,
-    -- | Expected exact number of rewrites (0 means no requirement)
-    _must :: Integer,
+    -- | Expected exact number of rewrites
+    _must :: Must,
     -- | Function to save intermediate steps (if needed)
     _saveStep :: SaveStepFunc
   }
 
 data RewriteException
-  = MustBeGoing {must :: Integer, count :: Integer}
-  | MustStopBefore {must :: Integer}
+  = MustBeGoing {must :: Must, count :: Integer}
+  | MustStopBefore {must :: Must, count :: Integer}
   | StoppedOnLimit {flag :: String, limit :: Integer}
   deriving (Exception)
 
 instance Show RewriteException where
   show MustBeGoing {..} =
     printf
-      "With option --must=%d it's expected exactly %d rewriting cycles happened, but rewriting stopped after %d"
-      must
-      must
+      "With option --must=%s it's expected rewriting cycles to be in range [%s], but rewriting stopped after %d cycles"
+      (show must)
+      (show must)
       count
   show MustStopBefore {..} =
     printf
-      "With option --must=%d it's expected exactly %d rewriting cycles happened, but rewriting is still going"
-      must
-      must
+      "With option --must=%s it's expected rewriting cycles to be in range [%s], but rewriting has already reached %d cycles and is still going"
+      (show must)
+      (show must)
+      count
   show StoppedOnLimit {..} =
     printf
       "With option --depth-sensitive it's expected rewriting iterations amount does not reach the limit: --%s=%d"
@@ -174,10 +176,11 @@ rewrite' prog rules ctx = _rewrite prog 1
     _rewrite prog count = do
       let cycles = _maxCycles ctx
           must = _must ctx
-      if must /= 0 && count - 1 > must
-        then throwIO (MustStopBefore must)
+          current = count - 1
+      if not (inRange must current) && current > 0 && exceedsUpperBound must current
+        then throwIO (MustStopBefore must current)
         else
-          if count - 1 == cycles
+          if current == cycles
             then do
               logDebug (printf "Max amount of rewriting cycles for all rules (%d) has been reached, rewriting is stopped" cycles)
               if _depthSensitive ctx
@@ -189,8 +192,8 @@ rewrite' prog rules ctx = _rewrite prog 1
               if rewritten == prog
                 then do
                   logDebug "No rule matched, rewriting is stopped"
-                  if must /= 0 && count - 1 /= must
-                    then throwIO (MustBeGoing must (count - 1))
+                  if not (inRange must current)
+                    then throwIO (MustBeGoing must current)
                     else pure rewritten
                 else do
                   _saveStep ctx rewritten count
