@@ -16,7 +16,7 @@ import Functions (buildTerm)
 import GHC.Generics
 import Misc (allPathsIn, ensuredFile)
 import Parser (parseProgramThrows)
-import Pretty (PrintMode (SWEET, SALTY), prettyProgram')
+import Pretty (PrintMode (SWEET), prettyProgram')
 import Rewriter (RewriteContext (RewriteContext), rewrite', SaveStepFunc)
 import System.FilePath (makeRelative, replaceExtension, (</>))
 import Test.Hspec (Spec, describe, expectationFailure, it, pending, runIO)

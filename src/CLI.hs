@@ -205,28 +205,29 @@ runCLI args = handle handler $ do
       input <- readInput inputFile
       rules' <- getRules
       program <- parseProgram input inputFormat
-      let saveFunc = createSaveStepFunc stepsDir outputFormat printMode omitListing omitComments input
+      let saveFunc = createSaveStepFunc opts input
       rewritten <- rewrite' program rules' (RewriteContext program maxDepth maxCycles depthSensitive buildTerm must saveFunc)
       logDebug (printf "Printing rewritten 𝜑-program as %s" (show outputFormat))
       prog <- printProgram rewritten outputFormat printMode input
       output prog
       where
-        createSaveStepFunc :: Maybe FilePath -> IOFormat -> PrintMode -> Bool -> Bool -> String -> SaveStepFunc
-        createSaveStepFunc Nothing _ _ _ _ _ = \_ _ -> pure ()
-        createSaveStepFunc (Just dir) format mode omitList omitComm listing = \prog stepNum -> do
-          createDirectoryIfMissing True dir
-          let fileName = printf "%05d.%s" stepNum ext
-              filePath = dir </> fileName
-              ext = case format of
-                PHI -> "phi"
-                XMIR -> "xmir"
-          content <- case format of
-            PHI -> pure $ prettyProgram' prog mode
-            XMIR -> do
-              xmir <- programToXMIR prog (XmirContext omitList omitComm listing)
-              pure $ printXMIR xmir
-          writeFile filePath content
-          logDebug (printf "Saved step %d to %s" stepNum filePath)
+        createSaveStepFunc :: OptsRewrite -> String -> SaveStepFunc
+        createSaveStepFunc OptsRewrite{..} listing = case stepsDir of
+          Nothing -> \_ _ -> pure ()
+          Just dir -> \prog stepNum -> do
+            createDirectoryIfMissing True dir
+            let fileName = printf "%05d.%s" stepNum ext
+                filePath = dir </> fileName
+                ext = case outputFormat of
+                  PHI -> "phi"
+                  XMIR -> "xmir"
+            content <- case outputFormat of
+              PHI -> pure $ prettyProgram' prog printMode
+              XMIR -> do
+                xmir <- programToXMIR prog (XmirContext omitListing omitComments listing)
+                pure $ printXMIR xmir
+            writeFile filePath content
+            logDebug (printf "Saved step %d to %s" stepNum filePath)
         getRules :: IO [Y.Rule]
         getRules = do
           ordered <-
