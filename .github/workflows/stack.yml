@@ -28,7 +28,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-stack-
       - name: Set up GHC
-        uses: haskell-actions/setup@v2.8.0
+        uses: haskell-actions/setup@v2.8.2
         with:
           ghc-version: '9.6.7'
           enable-stack: true
