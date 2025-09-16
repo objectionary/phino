@@ -6,17 +6,14 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Rewriter (rewrite, rewrite', RewriteContext (..)) where
+module Rewriter (rewrite, rewrite', RewriteContext (..), SaveStepFunc) where
 
 import Ast
 import Builder
 import Control.Exception (Exception, throwIO)
-import Data.Foldable (foldlM)
-import qualified Data.Map.Strict as M
-import Data.Maybe (catMaybes, fromMaybe, isJust)
+import Data.Maybe (fromMaybe)
 import Logger (logDebug)
 import Matcher (MetaValue (MvAttribute, MvBindings, MvBytes, MvExpression), Subst (Subst), combine, combineMany, defaultScope, matchProgram, substEmpty, substSingle)
-import Misc (ensuredFile)
 import Must (Must (..), exceedsUpperBound, inRange)
 import Parser (parseProgram, parseProgramThrows)
 import Pretty (PrintMode (SWEET), prettyAttribute, prettyBytes, prettyExpression, prettyExpression', prettyProgram, prettyProgram', prettySubsts)
@@ -28,13 +25,26 @@ import Text.Printf
 import Yaml (ExtraArgument (..))
 import qualified Yaml as Y
 
+-- | Function type for saving intermediate rewriting steps.
+type SaveStepFunc = Program -> Integer -> IO ()
+
+-- | Context for controlling the rewriting process.
+-- Contains all configuration and state needed to perform program rewriting.
 data RewriteContext = RewriteContext
-  { _program :: Program,
+  { -- | The initial program before any rewriting
+    _program :: Program,
+    -- | Maximum number of rewriting iterations per rule
     _maxDepth :: Integer,
+    -- | Maximum number of rewriting cycles across all rules
     _maxCycles :: Integer,
+    -- | If True, fail when reaching max depth/cycles limits; if False, just stop
     _depthSensitive :: Bool,
+    -- | Function to build terms during rewriting
     _buildTerm :: BuildTermFunc,
-    _must :: Must
+    -- | Expected exact number of rewrites
+    _must :: Must,
+    -- | Function to save intermediate steps (if needed)
+    _saveStep :: SaveStepFunc
   }
 
 data RewriteException
@@ -61,6 +71,7 @@ instance Show RewriteException where
       "With option --depth-sensitive it's expected rewriting iterations amount does not reach the limit: --%s=%d"
       flag
       limit
+
 
 -- Build pattern and result expression and replace patterns to results in given program
 buildAndReplace' :: Expression -> Expression -> [Subst] -> ReplaceProgramThrowsFunc -> ReplaceProgramContext -> IO Program
@@ -184,4 +195,6 @@ rewrite' prog rules ctx = _rewrite prog 1
                   if not (inRange must current)
                     then throwIO (MustBeGoing must current)
                     else pure rewritten
-                else _rewrite rewritten (count + 1)
+                else do
+                  _saveStep ctx rewritten count
+                  _rewrite rewritten (count + 1)

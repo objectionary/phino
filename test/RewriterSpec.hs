@@ -18,7 +18,7 @@ import Misc (allPathsIn, ensuredFile)
 import Must (Must(..))
 import Parser (parseProgramThrows)
 import Pretty (PrintMode (SWEET), prettyProgram')
-import Rewriter (RewriteContext (RewriteContext), rewrite')
+import Rewriter (RewriteContext (RewriteContext), rewrite', SaveStepFunc)
 import System.FilePath (makeRelative, replaceExtension, (</>))
 import Test.Hspec (Spec, describe, expectationFailure, it, pending, runIO)
 import Yaml (normalizationRules)
@@ -97,7 +97,9 @@ spec =
                   if normalize'
                     then pure normalizationRules
                     else pure []
-              rewritten <- rewrite' program rules' (RewriteContext program repeat' repeat' False buildTerm must')
+              let noSaveStep :: SaveStepFunc
+                  noSaveStep _ _ = pure ()
+              rewritten <- rewrite' program rules' (RewriteContext program repeat' repeat' False buildTerm must' noSaveStep)
               result' <- parseProgramThrows (output pack)
               unless (rewritten == result') $
                 expectationFailure

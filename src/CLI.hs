@@ -29,7 +29,9 @@ import Options.Applicative
 import Parser (parseProgramThrows)
 import Paths_phino (version)
 import Pretty (PrintMode (SALTY, SWEET), prettyBytes, prettyProgram')
-import Rewriter (RewriteContext (RewriteContext), rewrite')
+import Rewriter (RewriteContext (RewriteContext), rewrite', SaveStepFunc)
+import System.Directory (createDirectoryIfMissing)
+import System.FilePath ((</>))
 import System.Exit (ExitCode (..), exitFailure)
 import System.IO (getContents')
 import Text.Printf (printf)
@@ -95,7 +97,8 @@ data OptsRewrite = OptsRewrite
     maxCycles :: Integer,
     inPlace :: Bool,
     targetFile :: Maybe FilePath,
-    inputFile :: Maybe FilePath
+    inputFile :: Maybe FilePath,
+    stepsDir :: Maybe FilePath
   }
 
 parseIOFormat :: String -> ReadM IOFormat
@@ -208,6 +211,7 @@ rewriteParser =
             <*> switch (long "in-place" <> help "Edit file in-place instead of printing to console")
             <*> optTarget
             <*> argInputFile
+            <*> optional (strOption (long "steps-dir" <> metavar "DIR" <> help "Directory to save intermediate steps"))
         )
 
 commandParser :: Parser Command
@@ -250,11 +254,29 @@ runCLI args = handle handler $ do
       input <- readInput inputFile
       rules' <- getRules nothing normalize shuffle rules
       program <- parseProgram input inputFormat
-      rewritten <- rewrite' program rules' (RewriteContext program maxDepth maxCycles depthSensitive buildTerm must)
+      let saveFunc = createSaveStepFunc opts input
+      rewritten <- rewrite' program rules' (RewriteContext program maxDepth maxCycles depthSensitive buildTerm must saveFunc)
       logDebug (printf "Printing rewritten 𝜑-program as %s" (show outputFormat))
       prog <- printProgram rewritten outputFormat printMode input
       output targetFile prog
       where
+        createSaveStepFunc :: OptsRewrite -> String -> SaveStepFunc
+        createSaveStepFunc OptsRewrite{..} listing = case stepsDir of
+          Nothing -> \_ _ -> pure ()
+          Just dir -> \prog stepNum -> do
+            createDirectoryIfMissing True dir
+            let fileName = printf "%05d.%s" stepNum ext
+                filePath = dir </> fileName
+                ext = case outputFormat of
+                  PHI -> "phi"
+                  XMIR -> "xmir"
+            content <- case outputFormat of
+              PHI -> pure $ prettyProgram' prog printMode
+              XMIR -> do
+                xmir <- programToXMIR prog (XmirContext omitListing omitComments listing)
+                pure $ printXMIR xmir
+            writeFile filePath content
+            logDebug (printf "Saved step %d to %s" stepNum filePath)
         validateOpts :: IO ()
         validateOpts = do
           when
