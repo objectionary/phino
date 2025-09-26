@@ -8,12 +8,12 @@ module CLISpec (spec) where
 
 import CLI (runCLI)
 import Control.Exception
-import Control.Monad (forM_, unless)
+import Control.Monad (forM_, unless, when)
 import Data.List (isInfixOf)
 import Data.Version (showVersion)
 import GHC.IO.Handle
 import Paths_phino (version)
-import System.Directory (removeFile)
+import System.Directory (removeFile, doesDirectoryExist, listDirectory, removeDirectoryRecursive, doesFileExist)
 import System.Exit (ExitCode (ExitFailure))
 import System.IO
 import Test.Hspec
@@ -298,6 +298,22 @@ spec = do
                 "⟧}"
               ]
           ]
+    
+    it "saves steps to directory with --steps-dir" $ do
+      let stepsDir = "test-steps-temp"
+      dirExists <- doesDirectoryExist stepsDir
+      when dirExists $ removeDirectoryRecursive stepsDir
+      
+      withStdin "Q -> [[x -> \"hello\"]]" $ do
+        (_, _) <- withStdout (try (runCLI ["rewrite", "--rule=test-resources/cli/infinite.yaml", "--max-cycles=2", "--steps-dir=" ++ stepsDir]) :: IO (Either ExitCode ()))
+        
+        dirCreated <- doesDirectoryExist stepsDir
+        dirCreated `shouldBe` True
+        files <- listDirectory stepsDir
+        length files `shouldSatisfy` (>= 1)
+        firstStepExists <- doesFileExist (stepsDir ++ "/00001.phi")
+        firstStepExists `shouldBe` True
+        removeDirectoryRecursive stepsDir
     
     it "fails with --depth-sensitive" $
       withStdin "Q -> [[ x -> \"x\"]]" $
