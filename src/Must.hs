@@ -13,7 +13,7 @@ data Must
   deriving (Eq)
 
 instance Show Must where
-  show MtDisabled = "disabled"
+  show MtDisabled = "0"
   show (MtExact n) = show n
   show (MtRange Nothing Nothing) = ".."
   show (MtRange Nothing (Just max)) = ".." ++ show max
