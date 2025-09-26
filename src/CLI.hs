@@ -73,7 +73,6 @@ data OptsExplain = OptsExplain
   { logLevel :: LogLevel,
     rules :: [FilePath],
     normalize :: Bool,
-    nothing :: Bool,
     shuffle :: Bool,
     targetFile :: Maybe FilePath
   }
@@ -85,7 +84,6 @@ data OptsRewrite = OptsRewrite
     outputFormat :: IOFormat,
     printMode :: PrintMode,
     normalize :: Bool,
-    nothing :: Bool,
     shuffle :: Bool,
     omitListing :: Bool,
     omitComments :: Bool,
@@ -150,9 +148,6 @@ optNormalize = switch (long "normalize" <> help "Use built-in normalization rule
 optTarget :: Parser (Maybe FilePath)
 optTarget = optional (strOption (long "target" <> short 't' <> metavar "FILE" <> help "File to save output to"))
 
-optNothing :: Parser Bool
-optNothing = switch (long "nothing" <> help "Just desugar provided 𝜑-program")
-
 optShuffle :: Parser Bool
 optShuffle = switch (long "shuffle" <> help "Shuffle rules before applying")
 
@@ -163,7 +158,6 @@ explainParser =
             <$> optLogLevel
             <*> optRule
             <*> optNormalize
-            <*> optNothing
             <*> optShuffle
             <*> optTarget
         )
@@ -190,7 +184,6 @@ rewriteParser =
             <*> option (parseIOFormat "output") (long "output" <> metavar "FORMAT" <> help "Program output format (phi, xmir)" <> value PHI <> showDefault)
             <*> flag SALTY SWEET (long "sweet" <> help "Print 𝜑-program using syntax sugar")
             <*> optNormalize
-            <*> optNothing
             <*> optShuffle
             <*> switch (long "omit-listing" <> help "Omit full program listing in XMIR output")
             <*> switch (long "omit-comments" <> help "Omit comments in XMIR output")
@@ -205,7 +198,7 @@ rewriteParser =
               )
             <*> optMaxDepth
             <*> optMaxCycles
-            <*> switch (long "in-place" <> help "Edit file in-place instead of printing to console")
+            <*> switch (long "in-place" <> help "Edit file in-place instead of printing to output")
             <*> optTarget
             <*> argInputFile
         )
@@ -248,7 +241,7 @@ runCLI args = handle handler $ do
       validateOpts
       logDebug (printf "Amount of rewriting cycles across all the rules: %d, per rule: %d" maxCycles maxDepth)
       input <- readInput inputFile
-      rules' <- getRules nothing normalize shuffle rules
+      rules' <- getRules normalize shuffle rules
       program <- parseProgram input inputFormat
       rewritten <- rewrite' program rules' (RewriteContext program maxDepth maxCycles depthSensitive buildTerm must)
       logDebug (printf "Printing rewritten 𝜑-program as %s" (show outputFormat))
@@ -300,7 +293,7 @@ runCLI args = handle handler $ do
           validateMaxCycles maxCycles
     CmdExplain opts@OptsExplain {..} -> do
       validateOpts
-      rules' <- getRules nothing normalize shuffle rules
+      rules' <- getRules normalize shuffle rules
       let latex = explainRules rules'
       output targetFile (explainRules rules')
       where
@@ -346,26 +339,23 @@ runCLI args = handle handler $ do
     parseProgram xmir XMIR = do
       doc <- parseXMIRThrows xmir
       xmirToPhi doc
-    getRules :: Bool -> Bool -> Bool -> [FilePath] -> IO [Y.Rule]
-    getRules nothing normalize shuffle rules = do
+    getRules :: Bool -> Bool -> [FilePath] -> IO [Y.Rule]
+    getRules normalize shuffle rules = do
       ordered <-
-        if nothing
+        if normalize
           then do
-            logDebug "The --nothing option is provided, no rules are used"
-            pure []
+            let rules' = normalizationRules
+            logDebug (printf "The --normalize option is provided, %d built-it normalization rules are used" (length rules'))
+            pure rules'
           else
-            if normalize
+            if null rules
               then do
-                let rules' = normalizationRules
-                logDebug (printf "The --normalize option is provided, %d built-it normalization rules are used" (length rules'))
-                pure rules'
-              else
-                if null rules
-                  then throwIO (InvalidRewriteArguments "no --rule, no --normalize, no --nothing are provided")
-                  else do
-                    logDebug (printf "Using rules from files: [%s]" (intercalate ", " rules))
-                    yamls <- mapM ensuredFile rules
-                    mapM Y.yamlRule yamls
+                logDebug "No --rule and no --normalize options are provided, no rules are used"
+                pure []
+              else do
+                logDebug (printf "Using rules from files: [%s]" (intercalate ", " rules))
+                yamls <- mapM ensuredFile rules
+                mapM Y.yamlRule yamls
       if shuffle
         then do
           logDebug "The --shuffle option is provided, rules are used in random order"

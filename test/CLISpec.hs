@@ -64,11 +64,10 @@ withStdout action =
     cleanup (fp, _) = removeFile fp
 
 withTempFile :: String -> ((FilePath, Handle) -> IO a) -> IO a
-withTempFile pattern action =
+withTempFile pattern =
   bracket
     (openTempFile "." pattern)
     (\(path, _) -> removeFile path)
-    action
 
 testCLI :: [String] -> [String] -> Expectation
 testCLI args outputs = do
@@ -99,17 +98,17 @@ spec = do
 
   it "prints debug info with --log-level=DEBUG" $
     withStdin "Q -> [[]]" $
-      testCLI ["rewrite", "--nothing", "--log-level=DEBUG"] ["[DEBUG]:"]
+      testCLI ["rewrite", "--log-level=DEBUG"] ["[DEBUG]:"]
 
   describe "rewrites" $ do
-    it "desugares with --nothing flag from file" $
+    it "desugares without any rules flag from file" $
       testCLI
-        ["rewrite", "--nothing", "test-resources/cli/desugar.phi"]
+        ["rewrite", "test-resources/cli/desugar.phi"]
         ["Φ ↦ ⟦\n  foo ↦ Φ.org.eolang,\n  ρ ↦ ∅\n⟧"]
 
-    it "desugares with --nothing flag from stdin" $
+    it "desugares with without any rules flag from stdin" $
       withStdin "{[[foo ↦ QQ]]}" $
-        testCLI ["rewrite", "--nothing"] ["Φ ↦ ⟦\n  foo ↦ Φ.org.eolang,\n  ρ ↦ ∅\n⟧"]
+        testCLI ["rewrite"] ["Φ ↦ ⟦\n  foo ↦ Φ.org.eolang,\n  ρ ↦ ∅\n⟧"]
 
     it "rewrites with single rule" $
       withStdin "{T(x -> Q.y)}" $
@@ -135,10 +134,6 @@ spec = do
       withStdin "" $
         testCLIFailed ["rewrite", "--max-depth=-1"] "--max-depth must be positive"
 
-    it "fails with no rewriting options provided" $
-      withStdin "" $
-        testCLIFailed ["rewrite"] "no --rule, no --normalize, no --nothing are provided"
-
     it "normalizes from stdin" $
       withStdin "Φ ↦ ⟦ a ↦ ⟦ b ↦ ∅ ⟧ (b ↦ [[ ]]) ⟧" $
         testCLI
@@ -157,19 +152,19 @@ spec = do
     it "rewrites with --sweet flag" $
       withStdin "Q -> [[ x -> 5]]" $
         testCLI
-          ["rewrite", "--nothing", "--sweet"]
+          ["rewrite", "--sweet"]
           ["{⟦\n  x ↦ 5\n⟧}"]
 
     it "rewrites as XMIR" $
       withStdin "Q -> [[ x -> Q.y ]]" $
         testCLI
-          ["rewrite", "--nothing", "--output=xmir"]
+          ["rewrite", "--output=xmir"]
           ["<?xml version=\"1.0\" encoding=\"UTF-8\"?>", "<object", "  <o base=\"Q.y\" name=\"x\"/>"]
 
     it "rewrites with XMIR as input" $
       withStdin "<object><o name=\"app\"><o name=\"x\" base=\"Q.number\"/></o></object>" $
         testCLI
-          ["rewrite", "--nothing", "--input=xmir", "--sweet"]
+          ["rewrite", "--input=xmir", "--sweet"]
           [ unlines
               [ "{⟦",
                 "  app ↦ ⟦",
@@ -182,7 +177,7 @@ spec = do
     it "rewrites as XMIR with omit-listing flag" $
       withStdin "Q -> [[ x -> Q.y ]]" $
         testCLI
-          ["rewrite", "--nothing", "--output=xmir", "--omit-listing"]
+          ["rewrite", "--output=xmir", "--omit-listing"]
           ["<?xml version=\"1.0\" encoding=\"UTF-8\"?>", "<object", "<listing>1 line(s)</listing>", "  <o base=\"Q.y\" name=\"x\"/>"]
 
     it "does not fail on exactly 1 rewriting" $
@@ -191,10 +186,6 @@ spec = do
           ["rewrite", "--rule=test-resources/cli/simple.yaml", "--must=1", "--sweet"]
           ["x ↦ \"bar\""]
 
-    it "fails with --nothing and --must=1" $
-      withStdin "Q -> [[ ]]" $
-        testCLIFailed ["rewrite", "--nothing", "--must=1"] "it's expected rewriting cycles to be in range [1], but rewriting stopped after 0"
-
     it "fails with --normalize and --must=1" $
       withStdin "Q -> [[ x -> [[ y -> 5 ]].y ]].x" $
         testCLIFailed ["rewrite", "--max-depth=2", "--normalize", "--must=1"] "it's expected rewriting cycles to be in range [1], but rewriting has already reached 2"
@@ -202,11 +193,11 @@ spec = do
     describe "must range tests" $ do
       it "accepts range ..5 (0 to 5 cycles)" $
         withStdin "Q -> [[ ]]" $
-          testCLI ["rewrite", "--nothing", "--must=..5", "--sweet"] ["{⟦⟧}"]
+          testCLI ["rewrite", "--must=..5", "--sweet"] ["{⟦⟧}"]
 
       it "accepts range 0..0 (exactly 0 cycles)" $
         withStdin "Q -> [[ ]]" $
-          testCLI ["rewrite", "--nothing", "--must=0..0", "--sweet"] ["{⟦⟧}"]
+          testCLI ["rewrite", "--must=0..0", "--sweet"] ["{⟦⟧}"]
 
       it "accepts range 1..1 (exactly 1 cycle)" $
         withStdin "{⟦ t ↦ ⟦ x ↦ \"foo\" ⟧ ⟧}" $
@@ -222,12 +213,12 @@ spec = do
 
       it "accepts range 0.. (0 or more)" $
         withStdin "Q -> [[ ]]" $
-          testCLI ["rewrite", "--nothing", "--must=0..", "--sweet"] ["{⟦⟧}"]
+          testCLI ["rewrite", "--must=0..", "--sweet"] ["{⟦⟧}"]
 
       it "fails when cycles exceed range ..1" $
         withStdin "Q -> [[ x -> [[ y -> 5 ]].y ]].x" $
-          testCLIFailed 
-            ["rewrite", "--max-depth=2", "--normalize", "--must=..1"] 
+          testCLIFailed
+            ["rewrite", "--max-depth=2", "--normalize", "--must=..1"]
             "it's expected rewriting cycles to be in range [..1], but rewriting has already reached 2"
 
       it "fails when cycles below range 2.." $
@@ -239,19 +230,19 @@ spec = do
       it "fails with invalid range 5..3" $
         withStdin "Q -> [[ ]]" $
           testCLIFailed
-            ["rewrite", "--nothing", "--must=5..3"]
+            ["rewrite", "--must=5..3"]
             "cannot parse value `5..3'"
 
       it "fails with negative in range -1..5" $
         withStdin "Q -> [[ ]]" $
           testCLIFailed
-            ["rewrite", "--nothing", "--must=-1..5"]
+            ["rewrite", "--must=-1..5"]
             "cannot parse value `-1..5'"
 
       it "fails with malformed range syntax" $
         withStdin "Q -> [[ ]]" $
           testCLIFailed
-            ["rewrite", "--nothing", "--must=3...5"]
+            ["rewrite", "--must=3...5"]
             "cannot parse value `3...5'"
 
     it "prints to target file" $
@@ -259,7 +250,7 @@ spec = do
         withTempFile "targetXXXXXX.tmp" $ \(path, h) -> do
           hClose h
           testCLI
-            ["rewrite", "--nothing", "--sweet", printf "--target=%s" path]
+            ["rewrite", "--sweet", printf "--target=%s" path]
             [printf "The command result was saved in '%s'" path]
           content <- readFile path
           content `shouldBe` "{⟦⟧}"
@@ -277,7 +268,7 @@ spec = do
     it "fails when --in-place is used without input file" $
       withStdin "Q -> [[ ]]" $
         testCLIFailed
-          ["rewrite", "--in-place", "--nothing"]
+          ["rewrite", "--in-place"]
           "--in-place requires an input file"
 
     it "fails when --in-place is used with --target" $
@@ -285,7 +276,7 @@ spec = do
         hPutStr h "Q -> [[ ]]"
         hClose h
         testCLIFailed
-          ["rewrite", "--in-place", "--target=output.phi", "--nothing", path]
+          ["rewrite", "--in-place", "--target=output.phi", path]
           "--in-place and --target cannot be used together"
 
     it "rewrites with cycles" $
@@ -298,7 +289,7 @@ spec = do
                 "⟧}"
               ]
           ]
-    
+
     it "fails with --depth-sensitive" $
       withStdin "Q -> [[ x -> \"x\"]]" $
         testCLIFailed
@@ -308,7 +299,7 @@ spec = do
     it "fails on --sweet and --output=xmir together" $
       withStdin "Q -> [[ ]]" $
         testCLIFailed
-          ["rewrite", "--sweet", "--output=xmir", "--nothing"]
+          ["rewrite", "--sweet", "--output=xmir"]
           "The --sweet and --output=xmir can't stay together"
 
   describe "dataize" $ do
