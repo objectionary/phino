@@ -168,7 +168,7 @@ instance Pretty (Formatted Expression) where
   pretty (Formatted (_, UNICODE, ExGlobal)) = pretty "Φ"
   pretty (Formatted (_, ASCII, ExGlobal)) = pretty "Q"
   pretty (Formatted (_, UNICODE, ExTermination)) = pretty "⊥"
-  pretty (Formatted (_, ASCII, ExTermination)) = pretty "\\dead"
+  pretty (Formatted (_, ASCII, ExTermination)) = pretty "T"
   pretty (Formatted (_, _, ExMeta meta)) = prettyMeta meta
   pretty (Formatted (SWEET, encoding, ExApplication (ExApplication expr tau) tau')) =
     let (expr', taus, exprs) = complexApplication (ExApplication (ExApplication expr tau) tau')
