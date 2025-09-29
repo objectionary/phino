@@ -54,10 +54,6 @@ data XmirContext = XmirContext
 defaultXmirContext :: XmirContext
 defaultXmirContext = XmirContext True True ""
 
--- @todo #116:30min Refactor XMIR module. This module became so big and hard to read.
---  Now it's responsible for 3 different operations: 1) converting Phi AST to XML Document Ast,
---  2) printing XML Document, 3) parsing XMIR to Phi AST. I think we should separate the logic
---  in order to keep modules as little as possible.
 data XMIRException
   = UnsupportedProgram {prog :: Program}
   | UnsupportedExpression {expr :: Expression}
