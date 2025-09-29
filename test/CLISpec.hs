@@ -130,6 +130,10 @@ spec = do
             ]
         ]
 
+    it "fails with --input=latex" $
+      withStdin "" $
+        testCLIFailed ["rewrite", "--input=latex"] "The value 'latex' can't be used for '--input' option"
+
     it "fails with negative --max-depth" $
       withStdin "" $
         testCLIFailed ["rewrite", "--max-depth=-1"] "--max-depth must be positive"
@@ -160,6 +164,21 @@ spec = do
         testCLI
           ["rewrite", "--output=xmir"]
           ["<?xml version=\"1.0\" encoding=\"UTF-8\"?>", "<object", "  <o base=\"Q.y\" name=\"x\"/>"]
+
+    it "rewrites as LaTeX" $
+      withStdin "Q -> [[ x -> 5 ]]" $
+        testCLI
+          ["rewrite", "--output=latex", "--sweet"]
+          [ "\\documentclass{article}",
+            "\\usepackage{eolang}",
+            "\\begin{document}",
+            "\\begin{phiquation}",
+            "{⟦",
+            "  x ↦ 5",
+            "⟧}",
+            "\\end{phiquation}",
+            "\\end{document}"
+          ]
 
     it "rewrites with XMIR as input" $
       withStdin "<object><o name=\"app\"><o name=\"x\" base=\"Q.number\"/></o></object>" $

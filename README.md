@@ -100,7 +100,7 @@ syntax sugar. The `rewrite` command also allows you to desugar the expression
 and print it in canonical syntax:
 
 ```bash
-$ echo 'Q -> [[ @ -> QQ.io.stdout("hello") ]]' | phino rewrite --nothing
+$ echo 'Q -> [[ @ -> QQ.io.stdout("hello") ]]' | phino rewrite
 Φ ↦ ⟦
   φ ↦ Φ.org.eolang.io.stdout(
     α0 ↦ Φ.org.eolang.string(

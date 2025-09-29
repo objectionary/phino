@@ -20,7 +20,7 @@ import Data.Version (showVersion)
 import Dataize (DataizeContext (DataizeContext), dataize)
 import Functions (buildTerm)
 import qualified Functions
-import LaTeX (explainRules)
+import LaTeX (explainRules, programToLaTeX)
 import Logger
 import Misc (ensuredFile)
 import qualified Misc
@@ -53,12 +53,13 @@ data Command
   | CmdDataize OptsDataize
   | CmdExplain OptsExplain
 
-data IOFormat = XMIR | PHI
+data IOFormat = XMIR | PHI | LATEX
   deriving (Eq)
 
 instance Show IOFormat where
   show XMIR = "xmir"
   show PHI = "phi"
+  show LATEX = "latex"
 
 data OptsDataize = OptsDataize
   { logLevel :: LogLevel,
@@ -97,10 +98,11 @@ data OptsRewrite = OptsRewrite
   }
 
 parseIOFormat :: String -> ReadM IOFormat
-parseIOFormat type' = eitherReader $ \format -> case map toLower format of
-  "xmir" -> Right XMIR
-  "phi" -> Right PHI
-  _ -> Left (printf "invalid %s format: expected '%s' or '%s'" type' (show PHI) (show XMIR))
+parseIOFormat type' = eitherReader $ \format -> case (map toLower format, type') of
+  ("xmir", _) -> Right XMIR
+  ("phi", _) -> Right PHI
+  ("latex", "output") -> Right LATEX
+  _ -> Left (printf "The value '%s' can't be used for '--%s' option, use --help to check possible values" format type')
 
 argInputFile :: Parser (Maybe FilePath)
 argInputFile = optional (argument str (metavar "FILE" <> help "Path to input file"))
@@ -112,7 +114,7 @@ optMaxCycles :: Parser Integer
 optMaxCycles = option auto (long "max-cycles" <> metavar "CYCLES" <> help "Maximum number of rewriting cycles across all rules" <> value 25 <> showDefault)
 
 optInputFormat :: Parser IOFormat
-optInputFormat = option (parseIOFormat "input") (long "input" <> metavar "FORMAT" <> help "Program input format (phi, xmir)" <> value PHI <> showDefault)
+optInputFormat = option (parseIOFormat "input") (long "input" <> metavar "FORMAT" <> help "Program input format (phi, xmir, latex)" <> value PHI <> showDefault)
 
 optDepthSensitive :: Parser Bool
 optDepthSensitive = switch (long "depth-sensitive" <> help "Fail if rewriting is not finished after reaching max attempts (see --max-cycles or --max-depth)")
@@ -267,6 +269,7 @@ runCLI args = handle handler $ do
         printProgram prog XMIR _ listing = do
           xmir <- programToXMIR prog (XmirContext omitListing omitComments listing)
           pure (printXMIR xmir)
+        printProgram prog LATEX mode _ = pure (programToLaTeX prog mode)
         output :: Maybe FilePath -> String -> IO ()
         output target prog = case (inPlace, target, inputFile) of
           (True, _, Just file) -> do
