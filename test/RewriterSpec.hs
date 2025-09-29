@@ -17,7 +17,7 @@ import GHC.Generics
 import Misc (allPathsIn, ensuredFile)
 import Must (Must(..))
 import Parser (parseProgramThrows)
-import Pretty (PrintMode (SWEET), prettyProgram')
+import Pretty (PrintMode (SWEET), prettyProgram', Encoding (UNICODE))
 import Rewriter (RewriteContext (RewriteContext), rewrite')
 import System.FilePath (makeRelative, replaceExtension, (</>))
 import Test.Hspec (Spec, describe, expectationFailure, it, pending, runIO)
@@ -102,8 +102,8 @@ spec =
               unless (rewritten == result') $
                 expectationFailure
                   ( "Wrong rewritten program. Expected:\n"
-                      ++ prettyProgram' result' SWEET
+                      ++ prettyProgram' result' SWEET UNICODE
                       ++ "\nGot:\n"
-                      ++ prettyProgram' rewritten SWEET
+                      ++ prettyProgram' rewritten SWEET UNICODE
                   )
       )

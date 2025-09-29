@@ -10,10 +10,10 @@ import Parser (parseProgramThrows)
 import Pretty
 import Test.Hspec (Example (Arg), Expectation, Spec, SpecWith, describe, it, runIO, shouldBe)
 
-test :: (a -> PrintMode -> String) -> [(String, String, a, PrintMode)] -> SpecWith (Arg Expectation)
+test :: (a -> PrintMode -> Encoding -> String) -> [(String, String, a, PrintMode)] -> SpecWith (Arg Expectation)
 test function useCases =
   forM_ useCases $ \(input, output, arg, mode) ->
-    it input $ function arg mode `shouldBe` output
+    it input $ function arg mode UNICODE `shouldBe` output
 
 prep :: PrintMode -> (String, String) -> IO (String, String, Program, PrintMode)
 prep mode (input, output) = do

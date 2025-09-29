@@ -28,7 +28,7 @@ import Must (Must (..))
 import Options.Applicative
 import Parser (parseProgramThrows)
 import Paths_phino (version)
-import Pretty (PrintMode (SALTY, SWEET), prettyBytes, prettyProgram')
+import Pretty (PrintMode (SALTY, SWEET), prettyBytes, prettyProgram', Encoding (UNICODE))
 import Rewriter (RewriteContext (RewriteContext), rewrite')
 import System.Exit (ExitCode (..), exitFailure)
 import System.IO (getContents')
@@ -265,7 +265,7 @@ runCLI args = handle handler $ do
           validateMaxCycles maxCycles
           validateMust must
         printProgram :: Program -> IOFormat -> PrintMode -> String -> IO String
-        printProgram prog PHI mode _ = pure (prettyProgram' prog mode)
+        printProgram prog PHI mode _ = pure (prettyProgram' prog mode UNICODE)
         printProgram prog XMIR _ listing = do
           xmir <- programToXMIR prog (XmirContext omitListing omitComments listing)
           pure (printXMIR xmir)

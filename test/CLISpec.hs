@@ -166,16 +166,18 @@ spec = do
           ["<?xml version=\"1.0\" encoding=\"UTF-8\"?>", "<object", "  <o base=\"Q.y\" name=\"x\"/>"]
 
     it "rewrites as LaTeX" $
-      withStdin "Q -> [[ x -> 5 ]]" $
+      withStdin "Q -> [[ x -> QQ.z(y -> 5) ]]" $
         testCLI
           ["rewrite", "--output=latex", "--sweet"]
           [ "\\documentclass{article}",
             "\\usepackage{eolang}",
             "\\begin{document}",
             "\\begin{phiquation}",
-            "{⟦",
-            "  x ↦ 5",
-            "⟧}",
+            "{[[",
+            "  x -> QQ.z(",
+            "    y -> 5",
+            "  )",
+            "]]}",
             "\\end{phiquation}",
             "\\end{document}"
           ]
