@@ -7,7 +7,7 @@ import Data.List (intercalate)
 import Data.Maybe (fromMaybe)
 import qualified Yaml as Y
 import Ast (Program)
-import Pretty (PrintMode, prettyProgram')
+import Pretty (PrintMode, prettyProgram', Encoding (ASCII))
 
 programToLaTeX :: Program -> PrintMode -> String
 programToLaTeX prog mode = unlines
@@ -16,7 +16,7 @@ programToLaTeX prog mode = unlines
     "\\usepackage{eolang}",
     "\\begin{document}",
     "\\begin{phiquation}",
-    prettyProgram' prog mode,
+    prettyProgram' prog mode ASCII,
     "\\end{phiquation}",
     "\\end{document}"
   ]
