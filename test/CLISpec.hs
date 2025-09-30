@@ -166,7 +166,7 @@ spec = do
           ["<?xml version=\"1.0\" encoding=\"UTF-8\"?>", "<object", "  <o base=\"Q.y\" name=\"x\"/>"]
 
     it "rewrites as LaTeX" $
-      withStdin "Q -> [[ x -> QQ.z(y -> 5), q -> T ]]" $
+      withStdin "Q -> [[ x -> QQ.z(y -> 5), q -> T, w -> $, ^ -> Q, @ -> 1, y -> \"H$@^M\"]]" $
         testCLI
           ["rewrite", "--output=latex", "--sweet"]
           [ "\\documentclass{article}",
@@ -177,7 +177,11 @@ spec = do
             "  x -> QQ.z(",
             "    y -> 5",
             "  ),",
-            "  q -> T",
+            "  q -> T,",
+            "  w -> \\char36{},",
+            "  \\char94{} -> Q,",
+            "  \\char64{} -> 1,",
+            "  y -> \"H\\char36{}\\char64{}\\char94{}M\"",
             "]]}",
             "\\end{phiquation}",
             "\\end{document}"
