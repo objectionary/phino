@@ -1,14 +1,14 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 # SPDX-License-Identifier: MIT
 ---
-input: Q -> [[x -> $.q, y -> Q.a]].~0
+input: Q -> [[x -> $.q, y -> Q.a]](~0 -> Q.x)
 output: |-
   Φ ↦ ⟦
     y ↦ Φ.a
   ⟧
 rules:
   custom:
-    - pattern: '[[!a1 -> $.q, !B]].!a2'
+    - pattern: '[[!a1 -> $.q, !B]](!a2 -> !e)'
       result: '[[!B]]'
       when:
         and:

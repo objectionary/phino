@@ -209,6 +209,8 @@ Here's list of functions that are supported for extensions:
   If dataized string can't be converted to attribute - an error is thrown.
 * `string` - accepts `Φ̇.string` or `Φ̇.number` or attribute and converts it
   to `Φ̇.string`.
+* `number` - accepts `Φ̇.string` and converts it `Φ̇.number`
+* `sum` - accepts list of `Φ̇.number` or `Φ̇.bytes` and returns sum of them as `Φ̇.number`
 
 ## Meta variables
 
