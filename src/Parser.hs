@@ -359,7 +359,7 @@ exHead =
         str <- manyTill (choice [escapedChar, noneOf ['\\', '"']]) (char '"')
         return (DataString (strToBts str)),
       try (ExMeta <$> meta' 'e' "𝑒"),
-      ExDispatch ExThis <$> fullAttribute
+      ExDispatch ExThis <$> attribute
     ]
     <?> "expression head"
 
@@ -378,7 +378,7 @@ exTail expr =
           choice
             [ do
                 _ <- symbol "."
-                ExDispatch expr <$> fullAttribute,
+                ExDispatch expr <$> attribute,
               do
                 guard
                   ( case expr of

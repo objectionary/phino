@@ -14,7 +14,7 @@
         num -> 42,
         str -> "Hello, world!"
       ]],
-      w -> x(~1, -42, "Hi", y, QQ.io.text),
+      w -> x(-42, "Hi", y, QQ.io.text),
       error -> T
     ]]
   ]]

@@ -1,8 +1,8 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 # SPDX-License-Identifier: MIT
 ---
-expression: '[[ x -> Q.y, w -> $ ]].~0'
-pattern: '[[ !B ]].!a'
+expression: '[[ x -> Q.y, w -> $ ]](~0 -> Q)'
+pattern: '[[ !B ]](!a -> Q)'
 condition:
   eq:
     - length: '!B'
