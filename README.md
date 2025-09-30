@@ -211,6 +211,9 @@ Here's list of functions that are supported for extensions:
   to `Φ̇.string`.
 * `number` - accepts `Φ̇.string` and converts it `Φ̇.number`
 * `sum` - accepts list of `Φ̇.number` or `Φ̇.bytes` and returns sum of them as `Φ̇.number`
+* `join` - accepts list of bindings and returns list of joined bindings. Duplicated
+  `ρ`, `Δ` and `λ` attributes are ignored, all other duplicated attributes are replaced
+  with unique attributes using `random-tau` function.
 
 ## Meta variables
 
