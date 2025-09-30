@@ -14,6 +14,7 @@ import Data.Char (intToDigit)
 import Data.Functor
 import Data.Set (Set)
 import qualified Data.Set
+import qualified Data.Set as Set
 import GHC.IO (unsafePerformIO)
 import Matcher
 import Misc
@@ -40,6 +41,7 @@ buildTerm "tau" = _tau
 buildTerm "string" = _string
 buildTerm "number" = _number
 buildTerm "sum" = _sum
+buildTerm "join" = _join
 buildTerm func = _unsupported func
 
 argToBytes :: Y.ExtraArgument -> Subst -> Program -> IO Bytes
@@ -207,6 +209,38 @@ _sum :: BuildTermMethod
 _sum args subst prog = do
   nums <- traverse (\arg -> argToNumber arg subst prog) args
   pure (TeExpression (DataNumber (numToBts (sum nums))))
+
+_join :: BuildTermMethod
+_join [] _ _ = pure (TeBindings [])
+_join args subst _ = do
+  bds <- buildBindings args
+  pure (TeBindings (join' bds Set.empty))
+  where
+    buildBindings :: [Y.ExtraArgument] -> IO [Binding]
+    buildBindings [] = pure []
+    buildBindings (Y.ArgBinding bd : args') = do
+      bds <- buildBindingThrows bd subst
+      next <- buildBindings args'
+      pure (bds ++ next)
+    buildBindings _ = throwIO (userError "Function 'join' can work with bindings only")
+    join' :: [Binding] -> Set.Set Attribute -> [Binding]
+    join' [] _ = []
+    join' (bd : bds) attrs =
+      let [attr] = attributesFromBindings [bd]
+       in if Set.member attr attrs
+            then
+              if attr == AtRho || attr == AtDelta || attr == AtLambda
+                then join' bds attrs
+                else
+                  let new = case bd of
+                        BiTau attr expr -> BiTau (updated attr attrs) expr
+                        BiVoid attr -> BiVoid (updated attr attrs)
+                   in new : join' bds attrs
+            else bd : join' bds (Set.insert attr attrs)
+    updated :: Attribute -> Set.Set Attribute -> Attribute
+    updated attr attrs =
+      let (TeAttribute attr') = unsafePerformIO (_randomTau (map Y.ArgAttribute (Set.toList attrs)) subst (Program ExGlobal))
+       in attr'
 
 _unsupported :: BuildTermFunc
 _unsupported func _ _ _ = throwIO (userError (printf "Function %s() is not supported or does not exist" func))

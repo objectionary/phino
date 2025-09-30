@@ -119,8 +119,10 @@ instance Pretty (Formatted Binding) where
   pretty (Formatted (mode, UNICODE, BiVoid attr)) = pretty (Formatted (mode, UNICODE, attr)) <+> prettyArrow UNICODE <+> pretty "∅"
   pretty (Formatted (mode, ASCII, BiVoid attr)) = pretty (Formatted (mode, ASCII, attr)) <+> prettyArrow ASCII <+> pretty "?"
 
--- >>> render (Formatted (SWEET, [BiVoid AtRho]))
+-- >>> render (Formatted (SWEET, UNICODE, [BiVoid AtRho]))
 -- ""
+-- >>> render (Formatted (SWEET, UNICODE, [BiTau (AtLabel "x") ExGlobal, BiVoid AtPhi]))
+-- "x \8614 \934,\n\966 \8614 \8709"
 instance {-# OVERLAPPING #-} Pretty (Formatted [Binding]) where
   pretty (Formatted (SWEET, encoding, bds)) = vsep (punctuate comma (excludeVoidRho (\bd -> pretty (Formatted (SWEET, encoding, bd))) [] bds))
     where

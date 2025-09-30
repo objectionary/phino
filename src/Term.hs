@@ -13,7 +13,11 @@ import Yaml
 import Matcher
 import Ast
 
-data Term = TeExpression Expression | TeAttribute Attribute | TeBytes Bytes
+data Term
+  = TeExpression Expression
+  | TeAttribute Attribute
+  | TeBytes Bytes
+  | TeBindings [Binding]
 
 type BuildTermMethod = [ExtraArgument] -> Subst -> Program -> IO Term
 
