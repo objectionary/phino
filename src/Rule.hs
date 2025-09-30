@@ -19,7 +19,7 @@ import GHC.IO (unsafePerformIO)
 import Logger (logDebug)
 import Matcher
 import Misc (allPathsIn, btsToUnescapedStr)
-import Pretty (prettyAttribute, prettyBytes, prettyExpression, prettyExpression', prettySubsts)
+import Pretty (prettyAttribute, prettyBytes, prettyExpression, prettyExpression', prettySubsts, prettyBinding)
 import Regexp (match)
 import Term (BuildTermFunc, Term (..))
 import Text.Printf (printf)
@@ -258,6 +258,9 @@ extraSubstitutions substs extras RuleContext {..} = case extras of
                   TeBytes bytes -> do
                     logDebug (printf "Function %s() returned bytes: %s" func (prettyBytes bytes))
                     pure (MvBytes bytes)
+                  TeBindings bds -> do
+                    logDebug (printf "Function %s return bindings: %s" func (prettyExpression' (ExFormation bds)))
+                    pure (MvBindings bds)
                 case maybeName of
                   Just name -> pure (combine (substSingle name meta) subst')
                   _ -> pure Nothing
