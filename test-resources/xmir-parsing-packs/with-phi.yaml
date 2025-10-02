@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 # SPDX-License-Identifier: MIT
 ---
-xmir: | 
+xmir: |
   <object>
     <o name="app">
       <o name="φ" base="ξ.φ"/>
