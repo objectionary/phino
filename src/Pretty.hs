@@ -149,7 +149,7 @@ complexApplication (ExApplication (ExApplication expr tau) tau') =
 complexApplication (ExApplication expr (BiTau (AtAlpha 0) expr')) = (expr, [BiTau (AtAlpha 0) expr'], [expr'])
 complexApplication (ExApplication expr tau) = (expr, [tau], [])
 
--- >>> render (Formatted (SWEET, ExFormation [BiVoid AtRho]))
+-- >>> render (Formatted (SWEET, UNICODE, ExFormation [BiVoid AtRho]))
 -- "\10214\10215"
 instance Pretty (Formatted Expression) where
   pretty (Formatted (SWEET, UNICODE, ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang"))) = pretty "Φ̇"

@@ -10,18 +10,18 @@ module Ast where
 import GHC.Generics (Generic)
 
 newtype Program = Program Expression -- Q -> expr
-  deriving (Eq, Show)
+  deriving (Eq, Ord, Show)
 
 data Expression
-  = ExFormation [Binding] -- [bindings]
-  | ExThis
+  = ExFormation [Binding] -- [[ bindings ]]
+  | ExThis -- $
   | ExGlobal -- Q
   | ExTermination -- T
   | ExMeta String -- !e
   | ExApplication Expression Binding -- expr(attr -> expr)
   | ExDispatch Expression Attribute -- expr.attr
   | ExMetaTail Expression String -- expr * !t
-  deriving (Eq, Show, Generic)
+  deriving (Eq, Ord, Show, Generic)
 
 data Binding
   = BiTau Attribute Expression -- attr -> expr
@@ -30,14 +30,14 @@ data Binding
   | BiVoid Attribute -- attr ↦ ?
   | BiLambda String -- λ ⤍ Function
   | BiMetaLambda String -- λ ⤍ !F
-  deriving (Eq, Show, Generic)
+  deriving (Eq, Ord, Show, Generic)
 
 data Bytes
   = BtEmpty -- --
   | BtOne String -- 1F-
   | BtMany [String] -- 00-01-02-...04
   | BtMeta String -- !b
-  deriving (Eq, Show, Generic)
+  deriving (Eq, Ord, Show, Generic)
 
 data Attribute
   = AtLabel String -- attr

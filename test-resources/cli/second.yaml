@@ -1,0 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+name: second
+pattern: Q.x(y -> !e)
+result: ⟦ x -> !e ⟧
