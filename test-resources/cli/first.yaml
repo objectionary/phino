@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+name: first
+pattern: ⟦ x -> !e ⟧
+result: Q.x(y -> !e1)
+where:
+  - meta: '!e1'
+    function: sed
+    args:
+      - '!e'
+      - '"s/0/2/g"'
+      - '"s/1/0/g"'
+      - '"s/2/1/g"'

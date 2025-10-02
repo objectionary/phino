@@ -83,6 +83,7 @@ testCLI args outputs = do
 testCLIFailed :: [String] -> String -> Expectation
 testCLIFailed args output = do
   (out, result) <- withStdout (try (runCLI args) :: IO (Either ExitCode ()))
+  putStrLn out
   out `shouldContain` output
   result `shouldBe` Left (ExitFailure 1)
 
@@ -100,7 +101,52 @@ spec = do
     withStdin "Q -> [[]]" $
       testCLI ["rewrite", "--log-level=DEBUG"] ["[DEBUG]:"]
 
-  describe "rewrites" $ do
+  describe "rewriting" $ do
+    describe "fails" $ do
+      it "with --input=latex" $
+        withStdin "" $
+          testCLIFailed ["rewrite", "--input=latex"] "The value 'latex' can't be used for '--input' option"
+
+      it "with negative --max-depth" $
+        withStdin "" $
+          testCLIFailed ["rewrite", "--max-depth=-1"] "--max-depth must be positive"
+
+      it "with --normalize and --must=1" $
+        withStdin "Q -> [[ x -> [[ y -> 5 ]].y ]].x" $
+          testCLIFailed ["rewrite", "--max-depth=2", "--normalize", "--must=1"] "it's expected rewriting cycles to be in range [1], but rewriting has already reached 2"
+
+      it "when --in-place is used without input file" $
+        withStdin "Q -> [[ ]]" $
+          testCLIFailed
+            ["rewrite", "--in-place"]
+            "--in-place requires an input file"
+
+      it "when --in-place is used with --target" $
+        withTempFile "inplaceXXXXXX.phi" $ \(path, h) -> do
+          hPutStr h "Q -> [[ ]]"
+          hClose h
+          testCLIFailed
+            ["rewrite", "--in-place", "--target=output.phi", path]
+            "--in-place and --target cannot be used together"
+
+      it "with --depth-sensitive" $
+        withStdin "Q -> [[ x -> \"x\"]]" $
+          testCLIFailed
+            ["rewrite", "--depth-sensitive", "--max-depth=1", "--max-cycles=1", "--rule=test-resources/cli/infinite.yaml"]
+            "[ERROR]: With option --depth-sensitive it's expected rewriting iterations amount does not reach the limit: --max-depth=1"
+
+      it "on --sweet and --output=xmir together" $
+        withStdin "Q -> [[ ]]" $
+          testCLIFailed
+            ["rewrite", "--sweet", "--output=xmir"]
+            "The --sweet and --output=xmir can't stay together"
+      
+      it "with looping rules" $
+        withStdin "Q -> [[ x -> \"0\" ]]" $
+          testCLIFailed
+            ["rewrite", "--rule=test-resources/cli/first.yaml", "--rule=test-resources/cli/second.yaml", "--max-depth=1", "--max-cycles=3"]
+            "it seems rewriting is looping"
+
     it "desugares without any rules flag from file" $
       testCLI
         ["rewrite", "test-resources/cli/desugar.phi"]
@@ -129,14 +175,6 @@ spec = do
               "⟧"
             ]
         ]
-
-    it "fails with --input=latex" $
-      withStdin "" $
-        testCLIFailed ["rewrite", "--input=latex"] "The value 'latex' can't be used for '--input' option"
-
-    it "fails with negative --max-depth" $
-      withStdin "" $
-        testCLIFailed ["rewrite", "--max-depth=-1"] "--max-depth must be positive"
 
     it "normalizes from stdin" $
       withStdin "Φ ↦ ⟦ a ↦ ⟦ b ↦ ∅ ⟧ (b ↦ [[ ]]) ⟧" $
@@ -212,11 +250,38 @@ spec = do
           ["rewrite", "--rule=test-resources/cli/simple.yaml", "--must=1", "--sweet"]
           ["x ↦ \"bar\""]
 
-    it "fails with --normalize and --must=1" $
-      withStdin "Q -> [[ x -> [[ y -> 5 ]].y ]].x" $
-        testCLIFailed ["rewrite", "--max-depth=2", "--normalize", "--must=1"] "it's expected rewriting cycles to be in range [1], but rewriting has already reached 2"
-
     describe "must range tests" $ do
+      describe "fails" $ do
+        it "when cycles exceed range ..1" $
+          withStdin "Q -> [[ x -> [[ y -> 5 ]].y ]].x" $
+            testCLIFailed
+              ["rewrite", "--max-depth=2", "--normalize", "--must=..1"]
+              "it's expected rewriting cycles to be in range [..1], but rewriting has already reached 2"
+
+        it "when cycles below range 2.." $
+          withStdin "{⟦ t ↦ ⟦ x ↦ \"foo\" ⟧ ⟧}" $
+            testCLIFailed
+              ["rewrite", "--rule=test-resources/cli/simple.yaml", "--must=2.."]
+              "it's expected rewriting cycles to be in range [2..], but rewriting stopped after 1"
+
+        it "with invalid range 5..3" $
+          withStdin "Q -> [[ ]]" $
+            testCLIFailed
+              ["rewrite", "--must=5..3"]
+              "cannot parse value `5..3'"
+
+        it "with negative in range -1..5" $
+          withStdin "Q -> [[ ]]" $
+            testCLIFailed
+              ["rewrite", "--must=-1..5"]
+              "cannot parse value `-1..5'"
+
+        it "with malformed range syntax" $
+          withStdin "Q -> [[ ]]" $
+            testCLIFailed
+              ["rewrite", "--must=3...5"]
+              "cannot parse value `3...5'"
+
       it "accepts range ..5 (0 to 5 cycles)" $
         withStdin "Q -> [[ ]]" $
           testCLI ["rewrite", "--must=..5", "--sweet"] ["{⟦⟧}"]
@@ -241,36 +306,6 @@ spec = do
         withStdin "Q -> [[ ]]" $
           testCLI ["rewrite", "--must=0..", "--sweet"] ["{⟦⟧}"]
 
-      it "fails when cycles exceed range ..1" $
-        withStdin "Q -> [[ x -> [[ y -> 5 ]].y ]].x" $
-          testCLIFailed
-            ["rewrite", "--max-depth=2", "--normalize", "--must=..1"]
-            "it's expected rewriting cycles to be in range [..1], but rewriting has already reached 2"
-
-      it "fails when cycles below range 2.." $
-        withStdin "{⟦ t ↦ ⟦ x ↦ \"foo\" ⟧ ⟧}" $
-          testCLIFailed
-            ["rewrite", "--rule=test-resources/cli/simple.yaml", "--must=2.."]
-            "it's expected rewriting cycles to be in range [2..], but rewriting stopped after 1"
-
-      it "fails with invalid range 5..3" $
-        withStdin "Q -> [[ ]]" $
-          testCLIFailed
-            ["rewrite", "--must=5..3"]
-            "cannot parse value `5..3'"
-
-      it "fails with negative in range -1..5" $
-        withStdin "Q -> [[ ]]" $
-          testCLIFailed
-            ["rewrite", "--must=-1..5"]
-            "cannot parse value `-1..5'"
-
-      it "fails with malformed range syntax" $
-        withStdin "Q -> [[ ]]" $
-          testCLIFailed
-            ["rewrite", "--must=3...5"]
-            "cannot parse value `3...5'"
-
     it "prints to target file" $
       withStdin "Q -> [[ ]]" $
         withTempFile "targetXXXXXX.tmp" $ \(path, h) -> do
@@ -291,20 +326,6 @@ spec = do
         content <- readFile path
         content `shouldBe` "{⟦\n  x ↦ \"bar\"\n⟧}"
 
-    it "fails when --in-place is used without input file" $
-      withStdin "Q -> [[ ]]" $
-        testCLIFailed
-          ["rewrite", "--in-place"]
-          "--in-place requires an input file"
-
-    it "fails when --in-place is used with --target" $
-      withTempFile "inplaceXXXXXX.phi" $ \(path, h) -> do
-        hPutStr h "Q -> [[ ]]"
-        hClose h
-        testCLIFailed
-          ["rewrite", "--in-place", "--target=output.phi", path]
-          "--in-place and --target cannot be used together"
-
     it "rewrites with cycles" $
       withStdin "Q -> [[ x -> \"x\" ]]" $
         testCLI
@@ -315,18 +336,6 @@ spec = do
                 "⟧}"
               ]
           ]
-
-    it "fails with --depth-sensitive" $
-      withStdin "Q -> [[ x -> \"x\"]]" $
-        testCLIFailed
-          ["rewrite", "--depth-sensitive", "--max-depth=1", "--max-cycles=1", "--rule=test-resources/cli/infinite.yaml"]
-          "[ERROR]: With option --depth-sensitive it's expected rewriting iterations amount does not reach the limit: --max-depth=1"
-
-    it "fails on --sweet and --output=xmir together" $
-      withStdin "Q -> [[ ]]" $
-        testCLIFailed
-          ["rewrite", "--sweet", "--output=xmir"]
-          "The --sweet and --output=xmir can't stay together"
 
   describe "dataize" $ do
     it "dataizes simple program" $

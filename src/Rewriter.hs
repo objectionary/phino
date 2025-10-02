@@ -14,12 +14,13 @@ import Control.Exception (Exception, throwIO)
 import Data.Foldable (foldlM)
 import qualified Data.Map.Strict as M
 import Data.Maybe (catMaybes, fromMaybe, isJust)
+import qualified Data.Set as Set
 import Logger (logDebug)
 import Matcher (MetaValue (MvAttribute, MvBindings, MvBytes, MvExpression), Subst (Subst), combine, combineMany, defaultScope, matchProgram, substEmpty, substSingle)
 import Misc (ensuredFile)
 import Must (Must (..), exceedsUpperBound, inRange)
 import Parser (parseProgram, parseProgramThrows)
-import Pretty (PrintMode (SWEET), prettyAttribute, prettyBytes, prettyExpression, prettyExpression', prettyProgram, prettyProgram', prettySubsts)
+import Pretty (Encoding (UNICODE), PrintMode (SWEET), prettyAttribute, prettyBytes, prettyExpression, prettyExpression', prettyProgram, prettyProgram', prettySubsts)
 import Replacer (ReplaceProgramContext (ReplaceProgramContext), ReplaceProgramThrowsFunc, replaceProgramFastThrows, replaceProgramThrows)
 import Rule (RuleContext (RuleContext), matchProgramWithRule)
 import qualified Rule as R
@@ -41,6 +42,7 @@ data RewriteException
   = MustBeGoing {must :: Must, count :: Integer}
   | MustStopBefore {must :: Must, count :: Integer}
   | StoppedOnLimit {flag :: String, limit :: Integer}
+  | LoopingRewriting {prog :: String, rule :: String, step :: Integer}
   deriving (Exception)
 
 instance Show RewriteException where
@@ -61,6 +63,12 @@ instance Show RewriteException where
       "With option --depth-sensitive it's expected rewriting iterations amount does not reach the limit: --%s=%d"
       flag
       limit
+  show LoopingRewriting {..} =
+    printf
+      "On rewriting step '%d' of rule '%s' we got the same program as we got at one of the previous step, it seems rewriting is looping\nProgram: %s"
+      step
+      rule
+      prog
 
 -- Build pattern and result expression and replace patterns to results in given program
 buildAndReplace' :: Expression -> Expression -> [Subst] -> ReplaceProgramThrowsFunc -> ReplaceProgramContext -> IO Program
@@ -109,14 +117,14 @@ tryBuildAndReplaceFast (ExFormation pbds) (ExFormation rbds) substs ctx =
     hasMetaBindings = foldl (\acc bd -> acc || isMetaBinding bd) False
 tryBuildAndReplaceFast ptn res substs ctx = buildAndReplace' ptn res substs replaceProgramThrows ctx
 
-rewrite :: Program -> [Y.Rule] -> RewriteContext -> IO Program
-rewrite program [] _ = pure program
-rewrite program (rule : rest) ctx = do
-  prog <- _rewrite program 1
-  rewrite prog rest ctx
+rewrite :: Program -> [Y.Rule] -> Set.Set Program -> RewriteContext -> IO (Program, Set.Set Program)
+rewrite program [] progs _ = pure (program, progs)
+rewrite program (rule : rest) progs ctx = do
+  (prog, _progs) <- _rewrite program 1 progs
+  rewrite prog rest _progs ctx
   where
-    _rewrite :: Program -> Integer -> IO Program
-    _rewrite prog count =
+    _rewrite :: Program -> Integer -> Set.Set Program -> IO (Program, Set.Set Program)
+    _rewrite prog count progs' =
       let ruleName = fromMaybe "unknown" (Y.name rule)
           ptn = Y.pattern rule
           res = Y.result rule
@@ -126,43 +134,39 @@ rewrite program (rule : rest) ctx = do
               logDebug (printf "Max amount of rewriting cycles (%d) for rule '%s' has been reached, rewriting is stopped" depth ruleName)
               if _depthSensitive ctx
                 then throwIO (StoppedOnLimit "max-depth" depth)
-                else pure prog
+                else pure (prog, progs')
             else do
               logDebug (printf "Starting rewriting cycle for rule '%s': %d out of %d" ruleName count depth)
               matched <- R.matchProgramWithRule prog rule (RuleContext (_program ctx) (_buildTerm ctx))
               if null matched
                 then do
                   logDebug (printf "Rule '%s' does not match, rewriting is stopped" ruleName)
-                  pure prog
+                  pure (prog, progs')
                 else do
                   logDebug (printf "Rule '%s' has been matched, applying..." ruleName)
                   prog' <- tryBuildAndReplaceFast ptn res matched (ReplaceProgramContext prog depth)
                   if prog == prog'
                     then do
                       logDebug (printf "Applied '%s', no changes made" ruleName)
-                      pure prog
-                    else do
-                      logDebug
-                        ( printf
-                            "Applied '%s' (%d nodes -> %d nodes)"
-                            ruleName
-                            (countNodes prog)
-                            (countNodes prog')
-                        )
-                      _rewrite prog' (count + 1)
+                      pure (prog, progs')
+                    else
+                      if Set.member prog' progs
+                        then throwIO (LoopingRewriting (prettyProgram' prog' SWEET UNICODE) ruleName count)
+                        else do
+                          logDebug
+                            ( printf
+                                "Applied '%s' (%d nodes -> %d nodes)"
+                                ruleName
+                                (countNodes prog)
+                                (countNodes prog')
+                            )
+                          _rewrite prog' (count + 1) (Set.insert prog' progs)
 
--- @todo #169:30min Memorize previous rewritten programs. Right now in order not to
---  get an infinite recursion during rewriting we just count have many times we apply
---  rewriting rules. If we reach given amount - we just stop. It's not idiomatic and may
---  not work on big programs. We need to introduce some mechanism which would memorize
---  all rewritten program on each step and if on some step we get the program that have already
---  been memorized - we fail because we got into infinite recursion. Ofc we should keep counting
---  rewriting cycles if program just only grows on each rewriting.
 rewrite' :: Program -> [Y.Rule] -> RewriteContext -> IO Program
-rewrite' prog rules ctx = _rewrite prog 1
+rewrite' prog rules ctx = _rewrite prog 1 Set.empty
   where
-    _rewrite :: Program -> Integer -> IO Program
-    _rewrite prog count = do
+    _rewrite :: Program -> Integer -> Set.Set Program -> IO Program
+    _rewrite prog count progs = do
       let cycles = _maxCycles ctx
           must = _must ctx
           current = count - 1
@@ -177,11 +181,11 @@ rewrite' prog rules ctx = _rewrite prog 1
                 else pure prog
             else do
               logDebug (printf "Starting rewriting cycle for all rules: %d out of %d" count cycles)
-              rewritten <- rewrite prog rules ctx
+              (rewritten, progs') <- rewrite prog rules progs ctx
               if rewritten == prog
                 then do
-                  logDebug "No rule matched, rewriting is stopped"
+                  logDebug "Rewriting is stopped since it has no effect"
                   if not (inRange must current)
                     then throwIO (MustBeGoing must current)
                     else pure rewritten
-                else _rewrite rewritten (count + 1)
+                else _rewrite rewritten (count + 1) progs'
