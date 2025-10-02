@@ -5,9 +5,10 @@
 # fails if rules lead to repeating programs across several iterations.
 # Here on the first cycle we rewrite formation with "0" to application with "1"
 # In second.yaml this application is rewritten formation with "1"
-# Then on the second cycle the formation with "1" is rewritten to application with "0",
-# Then in the second.yaml the application is rewritten to formation with "0".
-# Here we get back to program we started from and rewriting should fail on this step.
+# Then on the second cycle the formation with "1" is rewritten to application 
+# with "0", nhen in the second.yaml the application is rewritten to formation
+# with "0". Here we get back to program we started from and rewriting should
+fail on this step.
 name: first
 pattern: ⟦ x -> !e ⟧
 result: Q.x(y -> !e1)
