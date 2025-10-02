@@ -6,7 +6,7 @@ xmir: |
     <o name="app">
       <o name="x" base=".plus">
         <o>
-          <o name="plus" base="Q.number"/>
+          <o name="plus" base="Φ.number"/>
         </o>
       </o>
     </o>

@@ -88,24 +88,15 @@ element name attrs children = do
 object :: [(String, String)] -> [Node] -> Node
 object attrs children = NodeElement (element "o" attrs children)
 
--- @todo #278:30min Remove xmirAttributure and replace to prettyAttribute. Right now XMIR does not
---  support "ρ" and "φ" in @base and @name attributes. When it's done, we should also generate
---  such valid XMIR. To achieve that we should get rid of xmirAttribute function and use prettyAttribute
---  instead. Also we should use "@" in formationBinding. Don't forget to remove the puzzle.
-xmirAttribute :: Attribute -> String
-xmirAttribute AtPhi = "@"
-xmirAttribute AtRho = "^"
-xmirAttribute other = prettyAttribute other
-
 expression :: Expression -> XmirContext -> IO (String, [Node])
-expression ExThis _ = pure ("$", [])
-expression ExGlobal _ = pure ("Q", [])
+expression ExThis _ = pure (prettyExpression ExThis, [])
+expression ExGlobal _ = pure (prettyExpression ExGlobal, [])
 expression (ExFormation bds) ctx = do
   nested <- nestedBindings bds ctx
   pure ("", nested)
 expression (ExDispatch expr attr) ctx = do
   (base, children) <- expression expr ctx
-  let attr' = xmirAttribute attr
+  let attr' = prettyAttribute attr
   if null base
     then pure ('.' : attr', [object [] children])
     else
@@ -115,10 +106,10 @@ expression (ExDispatch expr attr) ctx = do
 expression (DataNumber bytes) XmirContext {..} =
   let bts =
         object
-          [("as", prettyAttribute (AtAlpha 0)), ("base", "Q.org.eolang.bytes")]
+          [("as", prettyAttribute (AtAlpha 0)), ("base", "Φ.org.eolang.bytes")]
           [object [] [NodeContent (T.pack (prettyBytes bytes))]]
    in pure
-        ( "Q.org.eolang.number",
+        ( "Φ.org.eolang.number",
           if omitComments
             then [bts]
             else
@@ -129,10 +120,10 @@ expression (DataNumber bytes) XmirContext {..} =
 expression (DataString bytes) XmirContext {..} =
   let bts =
         object
-          [("as", prettyAttribute (AtAlpha 0)), ("base", "Q.org.eolang.bytes")]
+          [("as", prettyAttribute (AtAlpha 0)), ("base", "Φ.org.eolang.bytes")]
           [object [] [NodeContent (T.pack (prettyBytes bytes))]]
    in pure
-        ( "Q.org.eolang.string",
+        ( "Φ.org.eolang.string",
           if omitComments
             then [bts]
             else
@@ -143,7 +134,7 @@ expression (DataString bytes) XmirContext {..} =
 expression (ExApplication expr (BiTau attr texpr)) ctx = do
   (base, children) <- expression expr ctx
   (base', children') <- expression texpr ctx
-  let as = xmirAttribute attr
+  let as = prettyAttribute attr
       attrs =
         if null base'
           then [("as", as)]
@@ -161,12 +152,12 @@ formationBinding (BiTau (AtLabel label) expr) ctx = do
   pure (Just (object [("name", label), ("base", base)] children))
 formationBinding (BiTau AtPhi expr) ctx = do
   (base, children) <- expression expr ctx
-  pure (Just (object [("name", "@"), ("base", base)] children))
+  pure (Just (object [("name", show AtPhi), ("base", base)] children))
 formationBinding (BiTau AtRho _) _ = pure Nothing
 formationBinding (BiDelta bytes) _ = pure (Just (NodeContent (T.pack (prettyBytes bytes))))
-formationBinding (BiLambda func) _ = pure (Just (object [("name", "λ")] []))
+formationBinding (BiLambda func) _ = pure (Just (object [("name", show AtLambda)] []))
 formationBinding (BiVoid AtRho) _ = pure Nothing
-formationBinding (BiVoid AtPhi) _ = pure (Just (object [("name", "@"), ("base", "∅")] []))
+formationBinding (BiVoid AtPhi) _ = pure (Just (object [("name", show AtPhi), ("base", "∅")] []))
 formationBinding (BiVoid (AtLabel label)) _ = pure (Just (object [("name", label), ("base", "∅")] []))
 formationBinding binding _ = throwIO (UnsupportedBinding binding)
 
@@ -389,13 +380,13 @@ xmirToFormationBinding cur fqn
       case name of
         "λ" -> pure (BiLambda (intercalate "_" ("L" : reverse fqn)))
         ('α' : _) -> throwIO (InvalidXMIRFormat "Formation child @name can't start with α" cur)
-        "@" -> pure (BiTau AtPhi (ExFormation (withVoidRho bds)))
+        "φ" -> pure (BiTau AtPhi (ExFormation (withVoidRho bds)))
         _ -> pure (BiTau (AtLabel name) (ExFormation (withVoidRho bds)))
   | otherwise = do
       name <- getAttr "name" cur
       base <- getAttr "base" cur
       attr <- case name of
-        "@" -> pure AtPhi
+        "φ" -> pure AtPhi
         ('α' : _) -> throwIO (InvalidXMIRFormat "Formation child @name can't start with α" cur)
         _ -> pure (AtLabel name)
       case base of
@@ -421,17 +412,17 @@ xmirToExpression cur fqn
                       attr <- toAttr rest cur
                       let disp = ExDispatch expr attr
                       xmirToApplication disp (tail args) fqn
-        "$" ->
+        "ξ" ->
           if null (cur C.$/ C.element (toName "o"))
             then pure ExThis
-            else throwIO (InvalidXMIRFormat "Application of '$' is illegal in XMIR" cur)
-        "Q" ->
+            else throwIO (InvalidXMIRFormat "Application of 'ξ' is illegal in XMIR" cur)
+        "Φ" ->
           if null (cur C.$/ C.element (toName "o"))
             then pure ExGlobal
-            else throwIO (InvalidXMIRFormat "Application of 'Q' is illegal in XMIR" cur)
-        'Q' : '.' : rest -> xmirToExpression' ExGlobal "Q" rest cur fqn
-        '$' : '.' : rest -> xmirToExpression' ExThis "$" rest cur fqn
-        _ -> throwIO (InvalidXMIRFormat "The @base attribute must be either ['∅'|'Q'] or start with ['Q.'|'$.'|'.']" cur)
+            else throwIO (InvalidXMIRFormat "Application of 'Φ' is illegal in XMIR" cur)
+        'Φ' : '.' : rest -> xmirToExpression' ExGlobal "Φ" rest cur fqn
+        'ξ' : '.' : rest -> xmirToExpression' ExThis "ξ" rest cur fqn
+        _ -> throwIO (InvalidXMIRFormat "The @base attribute must be either ['∅'|'Φ'] or start with ['Φ.'|'ξ.'|'.']" cur)
   | otherwise = do
       bds <- mapM (`xmirToFormationBinding` fqn) (cur C.$/ C.element (toName "o")) >>= uniqueBindings'
       pure (ExFormation (withVoidRho bds))
@@ -478,7 +469,7 @@ xmirToApplication = xmirToApplication' 0
           as <- getAttr "as" cur
           attr <- toAttr as cur
           case attr of
-            AtRho -> throwIO (InvalidXMIRFormat "The '^' in @as attribute is illegal in XMIR" cur)
+            AtRho -> throwIO (InvalidXMIRFormat "The 'ρ' in @as attribute is illegal in XMIR" cur)
             other -> pure other
       | otherwise = pure (AtAlpha idx)
 
@@ -488,8 +479,8 @@ toAttr attr cur = case attr of
     case TR.readMaybe rest' :: Maybe Integer of
       Just idx -> pure (AtAlpha idx)
       Nothing -> throwIO (InvalidXMIRFormat "The attribute started with 'α' must be followed by integer" cur)
-  "@" -> pure AtPhi
-  "^" -> pure AtRho
+  "φ" -> pure AtPhi
+  "ρ" -> pure AtRho
   _
     | head attr `notElem` ['a' .. 'z'] -> throwIO (InvalidXMIRFormat (printf "The attribute '%s' must start with ['a'..'z']" attr) cur)
     | '.' `elem` attr -> throwIO (InvalidXMIRFormat "Attribute can't contain dots" cur)

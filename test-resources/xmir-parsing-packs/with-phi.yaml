@@ -4,7 +4,7 @@
 xmir: |
   <object>
     <o name="app">
-      <o name="@" base="$.@"/>
+      <o name="φ" base="ξ.φ"/>
     </o>
   </object>
-phi: '{[[ app -> [[ @ -> $.@ ]] ]]}'
+phi: '{[[ app -> [[ φ -> $.φ ]] ]]}'

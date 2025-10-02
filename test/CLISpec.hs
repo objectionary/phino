@@ -201,7 +201,7 @@ spec = do
       withStdin "Q -> [[ x -> Q.y ]]" $
         testCLI
           ["rewrite", "--output=xmir"]
-          ["<?xml version=\"1.0\" encoding=\"UTF-8\"?>", "<object", "  <o base=\"Q.y\" name=\"x\"/>"]
+          ["<?xml version=\"1.0\" encoding=\"UTF-8\"?>", "<object", "  <o base=\"Φ.y\" name=\"x\"/>"]
 
     it "rewrites as LaTeX" $
       withStdin "Q -> [[ x -> QQ.z(y -> 5), q -> T, w -> $, ^ -> Q, @ -> 1, y -> \"H$@^M\"]]" $
@@ -226,7 +226,7 @@ spec = do
           ]
 
     it "rewrites with XMIR as input" $
-      withStdin "<object><o name=\"app\"><o name=\"x\" base=\"Q.number\"/></o></object>" $
+      withStdin "<object><o name=\"app\"><o name=\"x\" base=\"Φ.number\"/></o></object>" $
         testCLI
           ["rewrite", "--input=xmir", "--sweet"]
           [ unlines
@@ -242,7 +242,7 @@ spec = do
       withStdin "Q -> [[ x -> Q.y ]]" $
         testCLI
           ["rewrite", "--output=xmir", "--omit-listing"]
-          ["<?xml version=\"1.0\" encoding=\"UTF-8\"?>", "<object", "<listing>1 line(s)</listing>", "  <o base=\"Q.y\" name=\"x\"/>"]
+          ["<?xml version=\"1.0\" encoding=\"UTF-8\"?>", "<object", "<listing>1 line(s)</listing>", "  <o base=\"Φ.y\" name=\"x\"/>"]
 
     it "does not fail on exactly 1 rewriting" $
       withStdin "{⟦ t ↦ ⟦ x ↦ \"foo\" ⟧ ⟧}" $
