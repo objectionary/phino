@@ -6,10 +6,10 @@ xmir: |
   <object>
     <o name="app">
       <o name="x" base=".plus">
-        <o base="Q.number">
+        <o base="Φ.number">
           <o>00-00-00-01</o>
         </o>
-        <o as="arg" base="Q.number">
+        <o as="arg" base="Φ.number">
           <o>00-00-00-02</o>
         </o>
       </o>

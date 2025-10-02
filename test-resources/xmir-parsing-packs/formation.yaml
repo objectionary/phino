@@ -4,8 +4,8 @@
 xmir: |
   <object>
     <o name="app">
-      <o name="x" base="Q"/>
-      <o name="y" base="$"/>
+      <o name="x" base="Φ"/>
+      <o name="y" base="ξ"/>
     </o>
   </object>
 phi: '{[[ app -> [[ x -> Q, y -> $ ]] ]]}'

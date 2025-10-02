@@ -5,13 +5,13 @@
 xmir: |
   <object>
     <o name="app">
-      <o name="x" base="Q.org.eolang">
-        <o base="Q.x"/>
+      <o name="x" base="Φ.org.eolang">
+        <o base="Φ.x"/>
         <o as="α1" base=".plus">
-          <o base="Q.y"/>
+          <o base="Φ.y"/>
         </o>
         <o as="arg">
-          <o name="y" base="$"/>
+          <o name="y" base="ξ"/>
         </o>
       </o>
     </o>

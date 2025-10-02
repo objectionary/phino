@@ -5,7 +5,7 @@ xmir: |
   <object>
     <o name="app">
       <o name="x" base=".eolang">
-        <o base="Q.org"/>
+        <o base="Φ.org"/>
       </o>
     </o>
   </object>

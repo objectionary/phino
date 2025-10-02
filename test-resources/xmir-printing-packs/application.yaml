@@ -4,9 +4,13 @@
 ---
 phi: |
   Q -> [[
-    foo -> Q.y(5, "foo")
+    foo -> [[
+      @ -> $.^.z,
+      bar -> Q.y(5, "foo")
+    ]]
   ]]
 xpaths:
-  - '/object/o[@name="foo" and @base="Q.y"]'
-  - '/object/o/o[@as="α0" and @base="Q.org.eolang.number"]'
-  - '/object/o/o[@as="α1" and @base="Q.org.eolang.string"]'
+  - '/object/o[@name="foo" and o[2][@base="Φ.y"]]'
+  - '/object/o/o/o[@as="α0" and @base="Φ.org.eolang.number"]'
+  - '/object/o/o/o[@as="α1" and @base="Φ.org.eolang.string"]'
+  - '/object/o/o[@name="φ" and @base="ξ.ρ.z"]'
