@@ -1,0 +1,18 @@
+{⟦
+  j$kafka ↦ ⟦
+    j$server ↦ ⟦
+      j$KafkaRequestHandler ↦ ⟦
+        φ ↦ Φ.jeo.class,
+        j$$anonfun$run$1 ↦ ⟦
+          φ ↦ Φ.jeo.method,
+          params ↦ ⟦
+            φ ↦ Φ.jeo.params,
+            $this ↦ ⟦⟧
+          ⟧
+        ⟧
+      ⟧,
+      λ ⤍ Package
+    ⟧,
+    λ ⤍ Package
+  ⟧
+⟧}

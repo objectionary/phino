@@ -22,18 +22,14 @@ where
 import Ast
 import Control.Exception (Exception, throwIO)
 import Control.Monad (guard)
-import Control.Monad.IO.Class (MonadIO (liftIO))
-import Data.Char (isAsciiLower, isDigit, isLower)
-import Data.List (intercalate)
+import Data.Char (isAsciiLower, isDigit)
 import Data.Scientific (toRealFloat)
-import Data.Sequence (mapWithIndex)
-import Data.Text.Internal.Fusion.Size (lowerBound)
 import Data.Void
-import GHC.Char (chr)
+import GHC.Char
 import Misc
-import Numeric (readHex)
+import Numeric
 import Text.Megaparsec
-import Text.Megaparsec.Char (alphaNumChar, char, digitChar, hexDigitChar, letterChar, lowerChar, space1, string, upperChar)
+import Text.Megaparsec.Char
 import qualified Text.Megaparsec.Char.Lexer as L
 import Text.Printf (printf)
 
@@ -212,13 +208,17 @@ number :: Parser Expression
 number = do
   sign <- optional (choice [char '-', char '+'])
   unsigned <- lexeme L.scientific
-  let num =
-        toRealFloat
-          ( case sign of
-              Just '-' -> negate unsigned
-              _ -> unsigned
-          )
-  return (DataNumber (numToBts num))
+  return
+    ( DataNumber
+        ( numToBts
+            ( toRealFloat
+                ( case sign of
+                    Just '-' -> negate unsigned
+                    _ -> unsigned
+                )
+            )
+        )
+    )
 
 tauBinding :: Parser Attribute -> Parser Binding
 tauBinding attr = do
@@ -229,13 +229,21 @@ tauBinding attr = do
         BiTau attr' <$> expression,
       do
         _ <- symbol "("
-        voids <- map BiVoid <$> void' `sepBy` symbol ","
-        _ <- symbol ")"
+        voids <-
+          choice
+            [ rb >> return [],
+              do
+                voids' <- map BiVoid <$> void' `sepBy1` symbol ","
+                rb >> return voids'
+            ]
         _ <- arrow
         bs <- formationBindings
         bds <- validatedBindings (voids ++ bs)
         return (BiTau attr' (ExFormation (withVoidRho bds)))
     ]
+  where
+    rb :: Parser String
+    rb = symbol ")"
 
 metaBinding :: Parser Binding
 metaBinding = BiMeta <$> meta' 'B' "𝐵"
@@ -324,9 +332,15 @@ validatedBindings bds = case uniqueBindings bds of
 formationBindings :: Parser [Binding]
 formationBindings = do
   _ <- choice [symbol "[[", symbol "⟦"]
-  bs <- binding `sepBy` symbol ","
-  _ <- choice [symbol "]]", symbol "⟧"]
-  return bs
+  choice
+    [ rsb >> return [],
+      do
+        bs <- binding `sepBy1` symbol ","
+        rsb >> return bs
+    ]
+  where
+    rsb :: Parser String
+    rsb = choice [symbol "]]", symbol "⟧"]
 
 -- head part of expression
 -- 1. formation
