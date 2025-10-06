@@ -14,49 +14,49 @@ jobs:
   test:
     runs-on: macos-15
     steps:
-    - uses: actions/checkout@v5
-    - uses: actions/cache@v4
-      with:
-        path: |
-          ~/.ghcup
-          ~/.cabal/packages
-          ~/.cabal/store
-          ~/.ghc
-          dist-newstyle
-        key: ${{ runner.os }}-cabal-${{ hashFiles('**/*.cabal') }}-${{ hashFiles('cabal.project', 'cabal.project.freeze') }}
-        restore-keys: |
-          ${{ runner.os }}-cabal-
-    - name: Set up GHC
-      uses: haskell-actions/setup@v2.8.2
-      with:
-        ghc-version: '9.6.7'
-        cabal-version: '3.12.1.0'
-    - name: Install xmllint on Ubuntu
-      if: runner.os == 'Linux'
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y libxml2-utils
-    - name: Install xmllint on macOS
-      if: runner.os == 'macOS'
-      run: |
-        brew install libxml2
-    - name: Configure Cabal
-      run: |
-        cabal update
-        cabal configure --enable-tests --enable-benchmarks --enable-coverage
-    - name: Build project
-      run: cabal build all
-    - name: Run tests with coverage
-      run: |
-        cabal test all --test-show-details=direct --enable-coverage
-    - name: Generate coverage report
-      run: |
-        cabal hpc report --verbose all --destdir=coverage
-    - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v4
-      with:
-        token: ${{ secrets.CODECOV_TOKEN }}
-        directory: coverage
-        flags: unittests
-        name: codecov-umbrella
-        fail_ci_if_error: true
+      - uses: actions/checkout@v5
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.ghcup
+            ~/.cabal/packages
+            ~/.cabal/store
+            ~/.ghc
+            dist-newstyle
+          key: ${{ runner.os }}-cabal-${{ hashFiles('**/*.cabal') }}-${{ hashFiles('cabal.project', 'cabal.project.freeze') }}
+          restore-keys: |
+            ${{ runner.os }}-cabal-
+      - name: Set up GHC
+        uses: haskell-actions/setup@v2.8.2
+        with:
+          ghc-version: '9.6.7'
+          cabal-version: '3.12.1.0'
+      - name: Install xmllint on Ubuntu
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libxml2-utils
+      - name: Install xmllint on macOS
+        if: runner.os == 'macOS'
+        run: |
+          brew install libxml2
+      - name: Configure Cabal
+        run: |
+          cabal update
+          cabal configure --enable-tests --enable-benchmarks --enable-coverage
+      - name: Build project
+        run: cabal build all
+      - name: Run tests with coverage
+        run: |
+          cabal test all --test-show-details=direct --enable-coverage
+      - name: Generate coverage report
+        run: |
+          cabal hpc report --verbose all --destdir=coverage
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          directory: coverage
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: true
