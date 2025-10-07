@@ -43,7 +43,7 @@ jobs:
           cp "$(cabal list-bin phino)" dist-release/phino
           chmod +x dist-release/phino
       - name: Upload phino binary to Amazon S3
-        uses: aws-actions/configure-aws-credentials@v5.0.0
+        uses: aws-actions/configure-aws-credentials@v5.1.0
         with:
           aws-access-key-id: ${{ secrets.S3_KEY }}
           aws-secret-access-key: ${{ secrets.S3_SECRET }}
