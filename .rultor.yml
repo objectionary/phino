@@ -5,6 +5,8 @@
 docker:
   image: maxonfjvipon/rultor-image-hs:master
   as_root: true
+architect:
+  - maxonfjvipon
 assets:
   hackage-auth: maxonfjvipon/secrets#.hackage-auth
 install: |
