@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# OPTIONS_GHC -Wno-unused-do-bind #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
@@ -8,12 +9,12 @@ module CLISpec (spec) where
 
 import CLI (runCLI)
 import Control.Exception
-import Control.Monad (forM_, unless)
+import Control.Monad (forM_, unless, when)
 import Data.List (isInfixOf)
 import Data.Version (showVersion)
 import GHC.IO.Handle
 import Paths_phino (version)
-import System.Directory (removeFile)
+import System.Directory (doesDirectoryExist, doesFileExist, listDirectory, removeDirectoryRecursive, removeFile)
 import System.Exit (ExitCode (ExitFailure))
 import System.IO
 import Test.Hspec
@@ -153,14 +154,29 @@ spec = do
             ["rewrite", "--rule=test-resources/cli/first.yaml", "--rule=test-resources/cli/second.yaml", "--max-depth=1", "--max-cycles=3"]
             ["it seems rewriting is looping"]
 
-    it "with wrong attribute and valid error message" $
-      testCLIFailed
-        ["rewrite", "test-resources/cli/with-$this-attribute.phi"]
-        [ "[ERROR]: Couldn't parse given phi program, cause: program:10:13:",
-          "10 |             $this ↦ ⟦⟧",
-          "   |             ^^",
-          "unexpected \"$t\""
-        ]
+      it "with wrong attribute and valid error message" $
+        testCLIFailed
+          ["rewrite", "test-resources/cli/with-$this-attribute.phi"]
+          [ "[ERROR]: Couldn't parse given phi program, cause: program:10:13:",
+            "10 |             $this ↦ ⟦⟧",
+            "   |             ^^",
+            "unexpected \"$t\""
+          ]
+
+    it "saves steps to dir with --steps-dir" $ do
+      let dir = "test-steps-temp"
+      dirExists <- doesDirectoryExist dir
+      when dirExists (removeDirectoryRecursive dir)
+      withStdin "Q -> [[ x -> \"hello\"]]" $ do
+        testCLISucceeded
+          ["rewrite", "--rule=test-resources/cli/infinite.yaml", "--max-cycles=2", "--max-depth=2", "--steps-dir=" ++ dir, "--sweet"]
+          ["hello_hi_hi"]
+        (`shouldBe` True) <$> doesDirectoryExist dir
+        files <- listDirectory dir
+        length files `shouldBe` 4
+        (`shouldBe` True) <$> doesFileExist (dir ++ "/00001.phi")
+        (`shouldBe` True) <$> doesFileExist (dir ++ "/00003.phi")
+        removeDirectoryRecursive dir
 
     it "desugares without any rules flag from file" $
       testCLISucceeded

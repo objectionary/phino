@@ -118,26 +118,25 @@ tryBuildAndReplaceFast (ExFormation pbds) (ExFormation rbds) substs ctx =
     hasMetaBindings = foldl (\acc bd -> acc || isMetaBinding bd) False
 tryBuildAndReplaceFast ptn res substs ctx = buildAndReplace' ptn res substs replaceProgramThrows ctx
 
-rewrite :: Program -> [Y.Rule] -> Set.Set Program -> RewriteContext -> IO (Program, Set.Set Program)
-rewrite program [] progs _ = pure (program, progs)
-rewrite program (rule : rest) progs ctx@RewriteContext {..} = do
+rewrite :: Program -> [Y.Rule] -> Set.Set Program -> Integer -> RewriteContext -> IO (Program, Set.Set Program)
+rewrite program [] progs _ _ = pure (program, progs)
+rewrite program (rule : rest) progs iteration ctx@RewriteContext {..} = do
   (prog, _progs) <- _rewrite program 1 progs
-  rewrite prog rest _progs ctx
+  rewrite prog rest _progs iteration ctx
   where
     _rewrite :: Program -> Integer -> Set.Set Program -> IO (Program, Set.Set Program)
     _rewrite prog count progs' =
       let ruleName = fromMaybe "unknown" (Y.name rule)
           ptn = Y.pattern rule
           res = Y.result rule
-          depth = _maxDepth
-       in if count - 1 == depth
+       in if count - 1 == _maxDepth
             then do
-              logDebug (printf "Max amount of rewriting cycles (%d) for rule '%s' has been reached, rewriting is stopped" depth ruleName)
+              logDebug (printf "Max amount of rewriting cycles (%d) for rule '%s' has been reached, rewriting is stopped" _maxDepth ruleName)
               if _depthSensitive
-                then throwIO (StoppedOnLimit "max-depth" depth)
+                then throwIO (StoppedOnLimit "max-depth" _maxDepth)
                 else pure (prog, progs')
             else do
-              logDebug (printf "Starting rewriting cycle for rule '%s': %d out of %d" ruleName count depth)
+              logDebug (printf "Starting rewriting cycle for rule '%s': %d out of %d" ruleName count _maxDepth)
               matched <- R.matchProgramWithRule prog rule (RuleContext _program _buildTerm)
               if null matched
                 then do
@@ -145,7 +144,7 @@ rewrite program (rule : rest) progs ctx@RewriteContext {..} = do
                   pure (prog, progs')
                 else do
                   logDebug (printf "Rule '%s' has been matched, applying..." ruleName)
-                  prog' <- tryBuildAndReplaceFast ptn res matched (ReplaceProgramContext prog depth)
+                  prog' <- tryBuildAndReplaceFast ptn res matched (ReplaceProgramContext prog _maxDepth)
                   if prog == prog'
                     then do
                       logDebug (printf "Applied '%s', no changes made" ruleName)
@@ -161,7 +160,7 @@ rewrite program (rule : rest) progs ctx@RewriteContext {..} = do
                                 (countNodes prog)
                                 (countNodes prog')
                             )
-                          _saveStep prog' (count + 1)
+                          _saveStep prog' (((iteration - 1) * _maxDepth) + count)
                           _rewrite prog' (count + 1) (Set.insert prog' progs)
 
 rewrite' :: Program -> [Y.Rule] -> RewriteContext -> IO Program
@@ -183,7 +182,7 @@ rewrite' prog rules ctx = _rewrite prog 1 Set.empty
                 else pure prog
             else do
               logDebug (printf "Starting rewriting cycle for all rules: %d out of %d" count cycles)
-              (rewritten, progs') <- rewrite prog rules progs ctx
+              (rewritten, progs') <- rewrite prog rules progs count ctx
               if rewritten == prog
                 then do
                   logDebug "Rewriting is stopped since it has no effect"
