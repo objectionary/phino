@@ -67,8 +67,8 @@ instance Show FsException where
   show DirectoryDoesNotExist {..} = printf "Directory '%s' does not exist" dir
 
 -- Minimal matcher function (required for view pattern)
-matchDataoObject :: Expression -> Maybe (String, Bytes)
-matchDataoObject
+matchDataObject :: Expression -> Maybe (String, Bytes)
+matchDataObject
   ( ExApplication
       (ExDispatch (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang")) (AtLabel label))
       ( BiTau
@@ -82,7 +82,7 @@ matchDataoObject
             )
         )
     ) = Just (label, bts)
-matchDataoObject _ = Nothing
+matchDataObject _ = Nothing
 
 pattern DataString :: Bytes -> Expression
 pattern DataString bts = DataObject "string" bts
@@ -91,7 +91,7 @@ pattern DataNumber :: Bytes -> Expression
 pattern DataNumber bts = DataObject "number" bts
 
 pattern DataObject :: String -> Bytes -> Expression
-pattern DataObject label bts <- (matchDataoObject -> Just (label, bts))
+pattern DataObject label bts <- (matchDataObject -> Just (label, bts))
   where
     DataObject label bts =
       ExApplication

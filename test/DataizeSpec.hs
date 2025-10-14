@@ -5,13 +5,14 @@ module DataizeSpec (spec) where
 
 import Ast
 import Control.Monad
-import Dataize (dataize, dataize', morph, DataizeContext (DataizeContext))
+import Dataize (DataizeContext (DataizeContext), dataize, dataize', morph)
+import Deps (dontSaveStep)
+import Functions (buildTerm)
 import Parser (parseProgramThrows)
 import Test.Hspec
-import Functions (buildTerm)
 
 defaultDataizeContext :: Program -> DataizeContext
-defaultDataizeContext prog = DataizeContext prog 25 1 False buildTerm
+defaultDataizeContext prog = DataizeContext prog 25 1 False buildTerm dontSaveStep
 
 test :: (Eq a, Show a) => (Expression -> DataizeContext -> IO (Maybe a)) -> [(String, Expression, Expression, Maybe a)] -> Spec
 test func useCases =

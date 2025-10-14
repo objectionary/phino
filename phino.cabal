@@ -35,7 +35,7 @@ library
     Rule,
     Dataize,
     Functions,
-    Term,
+    Deps,
     Misc,
     Must,
     Logger,

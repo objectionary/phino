@@ -18,6 +18,7 @@ import Data.List (intercalate)
 import Data.Maybe (isJust, isNothing)
 import Data.Version (showVersion)
 import Dataize (DataizeContext (DataizeContext), dataize)
+import Deps (saveStep)
 import Functions (buildTerm)
 import qualified Functions
 import LaTeX (explainRules, programToLaTeX)
@@ -28,12 +29,12 @@ import Must (Must (..))
 import Options.Applicative
 import Parser (parseProgramThrows)
 import Paths_phino (version)
-import Pretty (PrintMode (SALTY, SWEET), prettyBytes, prettyProgram', Encoding (UNICODE))
+import Pretty (Encoding (UNICODE), PrintMode (SALTY, SWEET), prettyBytes, prettyProgram')
 import Rewriter (RewriteContext (RewriteContext), rewrite')
 import System.Exit (ExitCode (..), exitFailure)
 import System.IO (getContents')
 import Text.Printf (printf)
-import XMIR (XmirContext (XmirContext), parseXMIRThrows, printXMIR, programToXMIR, xmirToPhi)
+import XMIR (XmirContext (XmirContext), defaultXmirContext, parseXMIRThrows, printXMIR, programToXMIR, xmirToPhi)
 import Yaml (normalizationRules)
 import qualified Yaml as Y
 
@@ -67,6 +68,7 @@ data OptsDataize = OptsDataize
     maxDepth :: Integer,
     maxCycles :: Integer,
     depthSensitive :: Bool,
+    stepsDir :: Maybe FilePath,
     inputFile :: Maybe FilePath
   }
 
@@ -94,6 +96,7 @@ data OptsRewrite = OptsRewrite
     maxCycles :: Integer,
     inPlace :: Bool,
     targetFile :: Maybe FilePath,
+    stepsDir :: Maybe FilePath,
     inputFile :: Maybe FilePath
   }
 
@@ -150,6 +153,9 @@ optNormalize = switch (long "normalize" <> help "Use built-in normalization rule
 optTarget :: Parser (Maybe FilePath)
 optTarget = optional (strOption (long "target" <> short 't' <> metavar "FILE" <> help "File to save output to"))
 
+optStepsDir :: Parser (Maybe FilePath)
+optStepsDir = optional (strOption (long "steps-dir" <> metavar "FILE" <> help "Directory to save intermediate steps during rewriting/dataizing"))
+
 optShuffle :: Parser Bool
 optShuffle = switch (long "shuffle" <> help "Shuffle rules before applying")
 
@@ -173,6 +179,7 @@ dataizeParser =
             <*> optMaxDepth
             <*> optMaxCycles
             <*> optDepthSensitive
+            <*> optStepsDir
             <*> argInputFile
         )
 
@@ -202,6 +209,7 @@ rewriteParser =
             <*> optMaxCycles
             <*> switch (long "in-place" <> help "Edit file in-place instead of printing to output")
             <*> optTarget
+            <*> optStepsDir
             <*> argInputFile
         )
 
@@ -243,11 +251,12 @@ runCLI args = handle handler $ do
       validateOpts
       logDebug (printf "Amount of rewriting cycles across all the rules: %d, per rule: %d" maxCycles maxDepth)
       input <- readInput inputFile
+      let xmirCtx = Just (XmirContext omitListing omitComments input)
       rules' <- getRules normalize shuffle rules
       program <- parseProgram input inputFormat
-      rewritten <- rewrite' program rules' (RewriteContext program maxDepth maxCycles depthSensitive buildTerm must)
+      rewritten <- rewrite' program rules' (context program xmirCtx)
       logDebug (printf "Printing rewritten 𝜑-program as %s" (show outputFormat))
-      prog <- printProgram rewritten outputFormat printMode input
+      prog <- printProgram outputFormat printMode xmirCtx rewritten
       output targetFile prog
       where
         validateOpts :: IO ()
@@ -264,12 +273,6 @@ runCLI args = handle handler $ do
           validateMaxDepth maxDepth
           validateMaxCycles maxCycles
           validateMust must
-        printProgram :: Program -> IOFormat -> PrintMode -> String -> IO String
-        printProgram prog PHI mode _ = pure (prettyProgram' prog mode UNICODE)
-        printProgram prog XMIR _ listing = do
-          xmir <- programToXMIR prog (XmirContext omitListing omitComments listing)
-          pure (printXMIR xmir)
-        printProgram prog LATEX mode _ = pure (programToLaTeX prog mode)
         output :: Maybe FilePath -> String -> IO ()
         output target prog = case (inPlace, target, inputFile) of
           (True, _, Just file) -> do
@@ -283,17 +286,36 @@ runCLI args = handle handler $ do
           (False, Nothing, _) -> do
             logDebug "The option '--target' is not specified, printing to console..."
             putStrLn prog
+        context :: Program -> Maybe XmirContext -> RewriteContext
+        context program ctx =
+          RewriteContext
+            program
+            maxDepth
+            maxCycles
+            depthSensitive
+            buildTerm
+            must
+            (saveStep stepsDir (ioToExtension outputFormat) (printProgram outputFormat printMode ctx))
     CmdDataize opts@OptsDataize {..} -> do
       validateOpts
       input <- readInput inputFile
       prog <- parseProgram input inputFormat
-      dataized <- dataize prog (DataizeContext prog maxDepth maxCycles depthSensitive buildTerm)
+      dataized <- dataize prog (context prog)
       maybe (throwIO CouldNotDataize) (putStrLn . prettyBytes) dataized
       where
         validateOpts :: IO ()
         validateOpts = do
           validateMaxDepth maxDepth
           validateMaxCycles maxCycles
+        context :: Program -> DataizeContext
+        context program =
+          DataizeContext
+            program
+            maxDepth
+            maxCycles
+            depthSensitive
+            buildTerm
+            (saveStep stepsDir (ioToExtension PHI) (printProgram PHI SWEET Nothing))
     CmdExplain opts@OptsExplain {..} -> do
       validateOpts
       rules' <- getRules normalize shuffle rules
@@ -342,6 +364,13 @@ runCLI args = handle handler $ do
     parseProgram xmir XMIR = do
       doc <- parseXMIRThrows xmir
       xmirToPhi doc
+    printProgram :: IOFormat -> PrintMode -> Maybe XmirContext -> Program -> IO String
+    printProgram PHI mode _ prog = pure (prettyProgram' prog mode UNICODE)
+    printProgram XMIR mode Nothing prog = printProgram XMIR mode (Just defaultXmirContext) prog
+    printProgram XMIR _ (Just ctx) prog = do
+      xmir <- programToXMIR prog ctx
+      pure (printXMIR xmir)
+    printProgram LATEX mode _ prog = pure (programToLaTeX prog mode)
     getRules :: Bool -> Bool -> [FilePath] -> IO [Y.Rule]
     getRules normalize shuffle rules = do
       ordered <-
@@ -373,3 +402,6 @@ runCLI args = handle handler $ do
         logDebug (printf "The option '--target' is specified, printing to '%s'..." file)
         writeFile file content
         logInfo (printf "The command result was saved in '%s'" file)
+    ioToExtension :: IOFormat -> String
+    ioToExtension LATEX = "tex"
+    ioToExtension format = show format

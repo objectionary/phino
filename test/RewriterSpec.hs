@@ -12,12 +12,13 @@ import Control.Monad (forM_, unless)
 import Data.Aeson
 import Data.Char (isSpace)
 import Data.Yaml qualified as Yaml
+import Deps (dontSaveStep)
 import Functions (buildTerm)
 import GHC.Generics
 import Misc (allPathsIn, ensuredFile)
-import Must (Must(..))
+import Must (Must (..))
 import Parser (parseProgramThrows)
-import Pretty (PrintMode (SWEET), prettyProgram', Encoding (UNICODE))
+import Pretty (Encoding (UNICODE), PrintMode (SWEET), prettyProgram')
 import Rewriter (RewriteContext (RewriteContext), rewrite')
 import System.FilePath (makeRelative, replaceExtension, (</>))
 import Test.Hspec (Spec, describe, expectationFailure, it, pending, runIO)
@@ -97,7 +98,19 @@ spec =
                   if normalize'
                     then pure normalizationRules
                     else pure []
-              rewritten <- rewrite' program rules' (RewriteContext program repeat' repeat' False buildTerm must')
+              rewritten <-
+                rewrite'
+                  program
+                  rules'
+                  ( RewriteContext
+                      program
+                      repeat'
+                      repeat'
+                      False
+                      buildTerm
+                      must'
+                      dontSaveStep
+                  )
               result' <- parseProgramThrows (output pack)
               unless (rewritten == result') $
                 expectationFailure

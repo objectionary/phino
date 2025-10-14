@@ -21,7 +21,7 @@ import Matcher
 import Misc (allPathsIn, btsToUnescapedStr)
 import Pretty (prettyAttribute, prettyBytes, prettyExpression, prettyExpression', prettySubsts, prettyBinding)
 import Regexp (match)
-import Term (BuildTermFunc, Term (..))
+import Deps (BuildTermFunc, Term (..))
 import Text.Printf (printf)
 import Yaml (normalizationRules)
 import qualified Yaml as Y

@@ -15,6 +15,7 @@ import Data.Foldable (foldlM)
 import qualified Data.Map.Strict as M
 import Data.Maybe (catMaybes, fromMaybe, isJust)
 import qualified Data.Set as Set
+import Deps
 import Logger (logDebug)
 import Matcher (MetaValue (MvAttribute, MvBindings, MvBytes, MvExpression), Subst (Subst), combine, combineMany, defaultScope, matchProgram, substEmpty, substSingle)
 import Misc (ensuredFile)
@@ -24,7 +25,6 @@ import Pretty (Encoding (UNICODE), PrintMode (SWEET), prettyAttribute, prettyByt
 import Replacer (ReplaceProgramContext (ReplaceProgramContext), ReplaceProgramThrowsFunc, replaceProgramFastThrows, replaceProgramThrows)
 import Rule (RuleContext (RuleContext), matchProgramWithRule)
 import qualified Rule as R
-import Term
 import Text.Printf
 import Yaml (ExtraArgument (..))
 import qualified Yaml as Y
@@ -35,7 +35,8 @@ data RewriteContext = RewriteContext
     _maxCycles :: Integer,
     _depthSensitive :: Bool,
     _buildTerm :: BuildTermFunc,
-    _must :: Must
+    _must :: Must,
+    _saveStep :: SaveStepFunc
   }
 
 data RewriteException
@@ -119,7 +120,7 @@ tryBuildAndReplaceFast ptn res substs ctx = buildAndReplace' ptn res substs repl
 
 rewrite :: Program -> [Y.Rule] -> Set.Set Program -> RewriteContext -> IO (Program, Set.Set Program)
 rewrite program [] progs _ = pure (program, progs)
-rewrite program (rule : rest) progs ctx = do
+rewrite program (rule : rest) progs ctx@RewriteContext {..} = do
   (prog, _progs) <- _rewrite program 1 progs
   rewrite prog rest _progs ctx
   where
@@ -128,16 +129,16 @@ rewrite program (rule : rest) progs ctx = do
       let ruleName = fromMaybe "unknown" (Y.name rule)
           ptn = Y.pattern rule
           res = Y.result rule
-          depth = _maxDepth ctx
+          depth = _maxDepth
        in if count - 1 == depth
             then do
               logDebug (printf "Max amount of rewriting cycles (%d) for rule '%s' has been reached, rewriting is stopped" depth ruleName)
-              if _depthSensitive ctx
+              if _depthSensitive
                 then throwIO (StoppedOnLimit "max-depth" depth)
                 else pure (prog, progs')
             else do
               logDebug (printf "Starting rewriting cycle for rule '%s': %d out of %d" ruleName count depth)
-              matched <- R.matchProgramWithRule prog rule (RuleContext (_program ctx) (_buildTerm ctx))
+              matched <- R.matchProgramWithRule prog rule (RuleContext _program _buildTerm)
               if null matched
                 then do
                   logDebug (printf "Rule '%s' does not match, rewriting is stopped" ruleName)
@@ -160,6 +161,7 @@ rewrite program (rule : rest) progs ctx = do
                                 (countNodes prog)
                                 (countNodes prog')
                             )
+                          _saveStep prog' (count + 1)
                           _rewrite prog' (count + 1) (Set.insert prog' progs)
 
 rewrite' :: Program -> [Y.Rule] -> RewriteContext -> IO Program

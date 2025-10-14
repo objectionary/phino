@@ -24,7 +24,7 @@ import Pretty
 import Random (randomString)
 import Regexp
 import System.Random (randomRIO)
-import Term
+import Deps
 import Text.Printf (printf)
 import qualified Yaml as Y
 
