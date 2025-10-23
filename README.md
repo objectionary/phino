@@ -46,6 +46,34 @@ Download paths are:
 * Ubuntu: <http://phino.objectionary.com/releases/ubuntu-24.04/phino-latest>
 * MacOS: <http://phino.objectionary.com/releases/macos-15/phino-latest>
 
+## Build
+
+To build `phino` from source, clone this repository:
+
+```bash
+git clone git@github.com:objectionary/phino.git
+cd phino
+```
+
+Then, run the following command (ensure you have [Cabal][cabal] installed):
+
+```bash
+cabal build all
+```
+
+Next, run this command to install `phino` system-wide:
+
+```bash
+sudo cp "$(cabal list-bin phino)" /usr/local/bin/phino
+```
+
+Verify that `phino` is installed correctly:
+
+```bash
+phino --version
+0.0.0.0
+```
+
 ## Dataize
 
 Then, you dataize the program:
