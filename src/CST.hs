@@ -442,7 +442,7 @@ withPrintMode SWEET prog = prog
 withPrintMode SALTY prog = toSalty prog
 
 -- By default CST is generated with all possible syntax sugar
--- The main purpose of this class is to get rid of sytax sugar
+-- The main purpose of this class is to get rid of syntax sugar
 
 --  |----------------------------|-------------------------------------------------------|
 --  | sugar                      | verbose version                                       |
