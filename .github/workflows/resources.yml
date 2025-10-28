@@ -16,6 +16,10 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - run: |-
+          if [ -f "src/Ast.hs" ]; then
+            mv src/Ast.hs src/AST.hs
+          fi
+
           # Create source distribution
           echo "Running: cabal sdist"
           cabal sdist
