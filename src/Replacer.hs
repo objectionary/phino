@@ -18,7 +18,7 @@ module Replacer
   )
 where
 
-import Ast
+import AST
 import Control.Exception (Exception, throwIO)
 import Matcher (Tail (TaApplication, TaDispatch))
 import Pretty (prettyExpression, prettyProgram)

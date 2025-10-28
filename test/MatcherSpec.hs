@@ -7,7 +7,7 @@
 
 module MatcherSpec where
 
-import Ast
+import AST
 import Control.Monad (forM_)
 import Data.Map.Strict qualified as Map
 import Data.Maybe (fromMaybe)

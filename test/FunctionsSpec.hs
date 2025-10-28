@@ -3,7 +3,7 @@
 
 module FunctionsSpec where
 
-import Ast
+import AST
 import Data.Map.Strict qualified as Map
 import Functions (buildTerm)
 import Logger (logDebug)

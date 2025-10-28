@@ -7,7 +7,7 @@
 
 module XMIRSpec where
 
-import Ast
+import AST
 import Control.Exception (bracket)
 import Control.Monad (filterM, forM_, unless)
 import Data.Aeson

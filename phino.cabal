@@ -25,7 +25,8 @@ common warnings
 library
   exposed-modules:
     CLI,
-    Ast,
+    AST,
+    CST,
     Parser,
     Matcher,
     Builder,
@@ -93,6 +94,7 @@ test-suite spec
   other-modules:
     Spec,
     CLISpec,
+    CSTSpec,
     ParserSpec,
     MatcherSpec,
     BuilderSpec,

@@ -8,7 +8,7 @@
 
 module Yaml where
 
-import Ast
+import AST
 import Control.Applicative (asum)
 import Data.Aeson
 import qualified Data.ByteString as BS

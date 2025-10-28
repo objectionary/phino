@@ -3,7 +3,7 @@
 
 module ReplacerSpec where
 
-import Ast
+import AST
 import Control.Monad (forM_)
 import Replacer
 import Test.Hspec (Example (Arg), Expectation, Spec, SpecWith, describe, it, shouldBe)

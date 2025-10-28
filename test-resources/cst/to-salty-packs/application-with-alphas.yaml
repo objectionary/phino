@@ -1,0 +1,33 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+# yamllint disable rule:line-length
+# @todo #163:30min Fix salty formatting for application.
+#  Right now we print all the arguments of application
+#  in single braces. It's a sugar. For salty printing we
+#  must print each binding in its own braces. So instead
+#  e(a1 -> e1, a2 -> e2) it should be e(a1 -> e1)(a2 -> e2)
+---
+program: |
+  {[[ x -> Q.y(1, 2) ]]}
+result: |-
+  Φ ↦ ⟦
+    x ↦ Φ.y(
+      α0 ↦ Φ.org.eolang.number(
+        α0 ↦ Φ.org.eolang.bytes(
+          α0 ↦ ⟦
+            Δ ⤍ 3F-F0-00-00-00-00-00-00,
+            ρ ↦ ∅
+          ⟧
+        )
+      ),
+      α1 ↦ Φ.org.eolang.number(
+        α0 ↦ Φ.org.eolang.bytes(
+          α0 ↦ ⟦
+            Δ ⤍ 40-00-00-00-00-00-00-00,
+            ρ ↦ ∅
+          ⟧
+        )
+      )
+    ),
+    ρ ↦ ∅
+  ⟧

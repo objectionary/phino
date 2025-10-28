@@ -6,7 +6,7 @@
 
 module RuleSpec where
 
-import Ast (Expression, Program (Program))
+import AST (Expression, Program (Program))
 import Control.Monad
 import Data.Aeson
 import Data.Yaml qualified as Y

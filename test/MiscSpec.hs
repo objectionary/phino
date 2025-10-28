@@ -6,7 +6,7 @@ module MiscSpec where
 import Control.Monad (forM_)
 import Misc (withVoidRho, uniqueBindings)
 import Test.Hspec (Example (Arg), Expectation, Spec, SpecWith, describe, it, shouldBe, shouldSatisfy)
-import Ast
+import AST
 import Data.Either (isLeft, isRight)
 
 testWithVoidRho :: [(String, [Binding], [Binding])] -> SpecWith (Arg Expectation)

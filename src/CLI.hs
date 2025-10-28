@@ -9,7 +9,7 @@
 
 module CLI (runCLI) where
 
-import Ast (Program (Program))
+import AST (Program (Program))
 import Control.Exception (Exception (displayException), SomeException, handle, throw, throwIO)
 import Control.Exception.Base
 import Control.Monad (when)

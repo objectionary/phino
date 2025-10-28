@@ -6,7 +6,7 @@
 
 module Dataize (morph, dataize, dataize', DataizeContext (..)) where
 
-import Ast
+import AST
 import Builder (contextualize)
 import Control.Exception (throwIO)
 import Data.List (partition)

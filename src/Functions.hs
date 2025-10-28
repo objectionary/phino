@@ -5,7 +5,7 @@
 
 module Functions (buildTerm) where
 
-import Ast
+import AST
 import Builder
 import Control.Exception (throwIO)
 import Control.Monad (replicateM, when)

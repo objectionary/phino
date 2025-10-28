@@ -3,7 +3,7 @@
 
 module DataizeSpec (spec) where
 
-import Ast
+import AST
 import Control.Monad
 import Dataize (DataizeContext (DataizeContext), dataize, dataize', morph)
 import Deps (dontSaveStep)

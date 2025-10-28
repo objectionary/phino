@@ -30,7 +30,7 @@ module Misc
   )
 where
 
-import Ast
+import AST
 import Control.Exception
 import Control.Monad
 import Data.Binary.IEEE754
@@ -193,6 +193,7 @@ allPathsIn dir = do
 -- >>> toDouble 5
 -- 5.0
 toDouble :: Integer -> Double
+
 toDouble = fromIntegral
 
 -- >>> btsToWord8 BtEmpty
@@ -276,6 +277,8 @@ numToBts num = word8ToBytes (unpack (toLazyByteString (word64BE (doubleToWord nu
 -- BtMany ["68","22"]
 -- >>> strToBts "\x01\x01"
 -- BtMany ["01","01"]
+-- >>> strToBts "Hey"
+-- BtMany ["48","65","79"]
 strToBts :: String -> Bytes
 strToBts "" = BtEmpty
 strToBts [ch] = word8ToBytes (unpack (U.fromString [ch]))

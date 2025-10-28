@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+# yamllint disable rule:line-length
+---
+program: |
+  Q -> Q.org.bar.baz
+result: |-
+  {Φ.org.bar.baz}

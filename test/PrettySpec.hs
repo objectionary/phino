@@ -3,7 +3,7 @@
 
 module PrettySpec where
 
-import Ast
+import AST
 import Control.Monad (forM_)
 import Matcher (MetaValue (MvAttribute, MvExpression), substEmpty, substSingle, defaultScope)
 import Parser (parseProgramThrows)

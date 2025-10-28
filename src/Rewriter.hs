@@ -8,7 +8,7 @@
 
 module Rewriter (rewrite, rewrite', RewriteContext (..)) where
 
-import Ast
+import AST
 import Builder
 import Control.Exception (Exception, throwIO)
 import Data.Foldable (foldlM)

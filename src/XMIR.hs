@@ -18,7 +18,7 @@ module XMIR
   )
 where
 
-import Ast
+import AST
 import Control.Exception (Exception (displayException), SomeException, throwIO)
 import Control.Exception.Base (Exception)
 import qualified Data.Bifunctor

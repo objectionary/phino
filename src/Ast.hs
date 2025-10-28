@@ -4,9 +4,10 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
--- This module represents Ast tree for parsed phi-calculus program
-module Ast where
+-- This module represents AST tree for parsed phi-calculus program
+module AST where
 
+import Data.List (intercalate)
 import GHC.Generics (Generic)
 
 newtype Program = Program Expression -- Q -> expr
@@ -14,7 +15,7 @@ newtype Program = Program Expression -- Q -> expr
 
 data Expression
   = ExFormation [Binding] -- [[ bindings ]]
-  | ExThis -- $
+  | ExThis
   | ExGlobal -- Q
   | ExTermination -- T
   | ExMeta String -- !e

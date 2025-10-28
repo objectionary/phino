@@ -9,7 +9,7 @@
 -- Functions module because Rewriter does not depend on Functions anymore.
 module Deps where
 
-import Ast
+import AST
 import Logger (logDebug)
 import Matcher
 import System.Directory (createDirectoryIfMissing)

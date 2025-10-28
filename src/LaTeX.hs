@@ -3,7 +3,7 @@
 
 module LaTeX (explainRules, programToLaTeX) where
 
-import Ast (Program)
+import AST (Program)
 import Data.List (intercalate)
 import Data.Maybe (fromMaybe)
 import Pretty (Encoding (ASCII), PrintMode, prettyProgram')

@@ -22,7 +22,7 @@ module Builder
   )
 where
 
-import Ast
+import AST
 import Control.Exception (Exception, throwIO)
 import qualified Data.Map.Strict as Map
 import Matcher

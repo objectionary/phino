@@ -1,0 +1,21 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+# yamllint disable rule:line-length
+---
+program: |
+  Q -> [[
+    foo -> [[
+      @ -> $.^.z,
+      bar -> Q.y(5, "foo")
+    ]]
+  ]]
+result: |-
+  {⟦
+    foo ↦ ⟦
+      φ ↦ ρ.z,
+      bar ↦ Φ.y(
+        5,
+        "foo"
+      )
+    ⟧
+  ⟧}

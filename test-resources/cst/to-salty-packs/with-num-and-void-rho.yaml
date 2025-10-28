@@ -1,0 +1,21 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+# yamllint disable rule:line-length
+---
+program: |
+  {[[ x -> 1, z -> [[ ]] ]]}
+result: |-
+  Φ ↦ ⟦
+    x ↦ Φ.org.eolang.number(
+      α0 ↦ Φ.org.eolang.bytes(
+        α0 ↦ ⟦
+          Δ ⤍ 3F-F0-00-00-00-00-00-00,
+          ρ ↦ ∅
+        ⟧
+      )
+    ),
+    z ↦ ⟦
+      ρ ↦ ∅
+    ⟧,
+    ρ ↦ ∅
+  ⟧

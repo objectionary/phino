@@ -4,7 +4,7 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
--- The goal of the module is to parse given phi program to Ast
+-- The goal of the module is to parse given phi program to AST
 module Parser
   ( parseProgram,
     parseProgramThrows,
@@ -19,7 +19,7 @@ module Parser
   )
 where
 
-import Ast
+import AST
 import Control.Exception (Exception, throwIO)
 import Control.Monad (guard)
 import Data.Char (isAsciiLower, isDigit)

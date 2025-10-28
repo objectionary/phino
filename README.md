@@ -145,7 +145,7 @@ For more details, use `--help` option.
 ## Rule structure
 
 This is BNF-like yaml rule structure. Here types ended with
-apostrophe, like `Attribute'` are built types from 𝜑-program [AST](src/Ast.hs)
+apostrophe, like `Attribute'` are built types from 𝜑-program [AST](src/AST.hs)
 
 ```bnfc
 Rule:

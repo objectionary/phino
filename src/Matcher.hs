@@ -3,11 +3,11 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
--- The goal of the module is to traverse given Ast and build substitutions
+-- The goal of the module is to traverse given AST and build substitutions
 -- from meta variables to appropriate meta values
 module Matcher where
 
-import Ast
+import AST
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
 import Data.Maybe (catMaybes)

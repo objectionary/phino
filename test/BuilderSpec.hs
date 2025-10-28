@@ -3,7 +3,7 @@
 
 module BuilderSpec where
 
-import Ast
+import AST
 import Builder
 import Control.Monad
 import Data.Map.Strict qualified as Map

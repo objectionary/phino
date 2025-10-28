@@ -6,7 +6,7 @@
 
 module Rule (RuleContext (..), isNF, matchProgramWithRule, meetCondition) where
 
-import Ast
+import AST
 import Builder (buildAttribute, buildBinding, buildBindingThrows, buildExpression, buildExpressionThrows)
 import Control.Exception (SomeException (SomeException), evaluate)
 import Control.Exception.Base (try)

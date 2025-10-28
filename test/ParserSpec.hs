@@ -6,7 +6,7 @@
 
 module ParserSpec where
 
-import Ast
+import AST
 import Control.Monad (forM_)
 import Data.Either (isLeft, isRight)
 import Misc (allPathsIn)
