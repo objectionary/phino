@@ -1,0 +1,37 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+# yamllint disable rule:line-length
+program: |
+  {⟦
+    number ↦ ⟦
+      a ↦ ∅,
+      b ↦ Φ.org.ρ.φ,
+      c ↦ ξ.xyz(
+        q ↦ Φ.y,
+        α0 ↦ ξ.a.b
+      ),
+      z ↦ ⟦
+        λ ⤍ Func,
+        Δ ⤍ 00-,
+        def ↦ Φ̇.txt.sprintf
+      ⟧,
+      error ↦ ⊥
+    ⟧
+  ⟧}
+result: |-
+  {[[
+    number -> [[
+      a -> ?,
+      b -> Q.org.^.@,
+      c -> xyz(
+        q -> Q.y,
+        ~0 -> a.b
+      ),
+      z -> [[
+        L> Func,
+        D> 00-,
+        def -> QQ.txt.sprintf
+      ]],
+      error -> T
+    ]]
+  ]]}

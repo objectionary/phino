@@ -21,9 +21,6 @@ instance Pretty PrintMode where
   pretty SWEET = "sweet"
   pretty SALTY = "salty"
 
-data Encoding = ASCII | UNICODE
-  deriving (Eq, Show)
-
 data LineMode = SINLELINE | MULTILINE
   deriving (Eq, Show)
 
@@ -148,7 +145,7 @@ class Pretty a where
   pretty :: a -> String
 
 instance Pretty String where
-  pretty = show
+  pretty str = str
 
 instance Pretty Integer where
   pretty = show
@@ -157,7 +154,7 @@ instance Pretty Double where
   pretty = show
 
 instance Pretty Char where
-  pretty = show
+  pretty ch = [ch]
 
 instance Pretty LSB where
   pretty LSB = "⟦"
@@ -244,10 +241,10 @@ instance Pretty PROGRAM where
 instance Pretty PAIR where
   pretty PA_TAU {..} = pretty attr <> pretty SPACE <> pretty arrow <> pretty SPACE <> pretty expr
   pretty PA_LAMBDA {..} = pretty LAMBDA <> pretty SPACE <> pretty DASHED_ARROW <> pretty SPACE <> pretty func
-  pretty PA_LAMBDA' {..} = pretty "L> " <> pretty func
+  pretty PA_LAMBDA' {..} = "L> " <> func
   pretty PA_VOID {..} = pretty attr <> pretty SPACE <> pretty arrow <> pretty SPACE <> pretty void
   pretty PA_DELTA {..} = pretty DELTA <> pretty SPACE <> pretty DASHED_ARROW <> pretty SPACE <> pretty bytes
-  pretty PA_DELTA' {..} = pretty "D> " <> pretty bytes
+  pretty PA_DELTA' {..} = "D> " <> pretty bytes
 
 instance Pretty BINDINGS where
   pretty BDS_EMPTY {..} = ""
@@ -278,7 +275,7 @@ instance Pretty EXPRESSION where
   pretty EX_DISPATCH {..} = pretty expr <> "." <> pretty attr
   pretty EX_APPLICATION {..} = pretty expr <> "(" <> pretty eol <> pretty tab <> pretty bindings <> pretty eol' <> pretty tab' <> ")"
   pretty EX_APPLICATION' {..} = pretty expr <> "(" <> pretty eol <> pretty tab <> pretty args <> pretty eol' <> pretty tab' <> ")"
-  pretty EX_STRING {..} = pretty str
+  pretty EX_STRING {..} = show str
   pretty EX_NUMBER {..} = either show show num
 
 instance Pretty ATTRIBUTE where
@@ -304,6 +301,7 @@ instance ToCST Program PROGRAM where
 instance ToCST Expression EXPRESSION where
   toCST ExGlobal _ = EX_GLOBAL Φ
   toCST ExThis _ = EX_XI XI
+  toCST ExTermination _ = EX_TERMINATION DEAD
   toCST (ExFormation bds) tabs =
     let next = tabs + 1
         bds' = toCST (withoutLastVoidRho bds) next :: BINDING
@@ -367,7 +365,7 @@ instance ToCST Expression EXPRESSION where
                 _ -> (before, taus', [])
       complexApplication (ExApplication expr (BiTau (AtAlpha 0) expr')) = (expr, [BiTau (AtAlpha 0) expr'], [expr'])
       complexApplication (ExApplication expr tau) = (expr, [tau], [])
-  toCST app@(ExApplication expr tau) tabs =
+  toCST (ExApplication expr tau) tabs =
     let next = tabs + 1
      in EX_APPLICATION (toCST expr tabs) EOL (TAB next) (toCST [tau] next) EOL (TAB tabs)
 
@@ -557,53 +555,6 @@ instance ToSalty BINDINGS where
 instance ToSalty PAIR where
   toSalty PA_TAU {..} = PA_TAU attr arrow (toSalty expr)
   toSalty pair = pair
-
-withEncoding :: Encoding -> PROGRAM -> PROGRAM
-withEncoding UNICODE prog = prog
-withEncoding ASCII prog = toASCII prog
-
-class ToASCII a where
-  toASCII :: a -> a
-
--- @todo #163:30min Implement CST with ASCII encoding.
---  For printing CST to LaTeX we need to be able to print CST
---  with ASCII encoding replacing all the corresponding unicode characters.
-instance ToASCII PROGRAM where
-  toASCII PR_SALTY {..} = PR_SALTY Q ARROW' expr
-  toASCII PR_SWEET {..} = PR_SWEET expr
-
-instance ToASCII EXPRESSION where
-  toASCII EX_GLOBAL {..} = EX_GLOBAL Q
-  toASCII EX_DEF_PACKAGE {..} = EX_DEF_PACKAGE QQ
-  toASCII EX_XI {..} = EX_XI DOLLAR
-  toASCII EX_ATTR {..} = EX_ATTR (toASCII attr)
-  toASCII EX_TERMINATION {..} = EX_TERMINATION T
-  toASCII EX_FORMATION {..} = EX_FORMATION LSB' eol tab (toASCII binding) eol' tab' RSB'
-  toASCII EX_DISPATCH {..} = EX_DISPATCH (toASCII expr) (toASCII attr)
-  toASCII EX_APPLICATION {..} = EX_APPLICATION (toASCII expr) eol tab (toASCII bindings) eol' tab'
-  toASCII expr = expr
-
-instance ToASCII BINDING where
-  toASCII BI_PAIR {..} = BI_PAIR (toASCII pair) (toASCII bindings) tab
-  toASCII bd = bd
-
-instance ToASCII BINDINGS where
-  toASCII BDS_PAIR {..} = BDS_PAIR eol tab (toASCII pair) (toASCII bindings)
-  toASCII bds = bds
-
-instance ToASCII PAIR where
-  toASCII PA_TAU {..} = PA_TAU (toASCII attr) ARROW' (toASCII expr)
-  toASCII PA_VOID {..} = PA_VOID (toASCII attr) ARROW' QUESTION
-  toASCII PA_LAMBDA {..} = PA_LAMBDA' func
-  toASCII PA_DELTA {..} = PA_DELTA' bytes
-  toASCII pair = pair
-
-instance ToASCII ATTRIBUTE where
-  toASCII :: ATTRIBUTE -> ATTRIBUTE
-  toASCII AT_ALPHA {..} = AT_ALPHA ALPHA' idx
-  toASCII AT_PHI {..} = AT_PHI AT
-  toASCII AT_RHO {..} = AT_RHO CARET
-  toASCII attr = attr
 
 withLineMode :: LineMode -> PROGRAM -> PROGRAM
 withLineMode MULTILINE prog = prog

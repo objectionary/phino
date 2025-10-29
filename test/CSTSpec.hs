@@ -15,6 +15,7 @@ import Misc
 import Parser (parseProgramThrows)
 import System.FilePath
 import Test.Hspec
+import ASCII (ToASCII(toASCII))
 
 data CSTPack = CSTPack
   { program :: String,
@@ -69,7 +70,18 @@ spec = do
           prog <- parseProgramThrows (program pack)
           let cst = astToCst prog
               salty = toSalty cst
-          -- print cst
-          -- print salty
           pretty salty `shouldBe` result pack
+      )
+
+  describe "converts to ascii CST" $ do
+    let resources = "test-resources/cst/to-ascii-packs"
+    packs <- runIO (allPathsIn resources)
+    forM_
+      packs
+      ( \pth -> it (makeRelative resources pth) $ do
+          pack <- cstPack pth
+          prog <- parseProgramThrows (program pack)
+          let cst = astToCst prog
+              ascii = toASCII cst
+          pretty ascii `shouldBe` result pack
       )
