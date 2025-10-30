@@ -7,9 +7,6 @@ module Encoding where
 
 import CST
 
-data LineMode = SINLELINE | MULTILINE
-  deriving (Eq, Show)
-
 data Encoding = ASCII | UNICODE
   deriving (Eq, Show)
 
