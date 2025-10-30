@@ -21,9 +21,6 @@ instance Pretty PrintMode where
   pretty SWEET = "sweet"
   pretty SALTY = "salty"
 
-data LineMode = SINLELINE | MULTILINE
-  deriving (Eq, Show)
-
 data LSB = LSB | LSB'
   deriving (Eq, Show)
 
@@ -555,17 +552,3 @@ instance ToSalty BINDINGS where
 instance ToSalty PAIR where
   toSalty PA_TAU {..} = PA_TAU attr arrow (toSalty expr)
   toSalty pair = pair
-
-withLineMode :: LineMode -> PROGRAM -> PROGRAM
-withLineMode MULTILINE prog = prog
-withLineMode SINLELINE prog = toSingleLine prog
-
-class ToSingleLine a where
-  toSingleLine :: a -> a
-
--- @todo #163:30min Implement single line CST converting.
---  For printing to LaTeX we need to implement converting CST into single line
---  With this mode we need to replace all EOL with NO_EOL and all TAB with TAB'.
-instance ToSingleLine PROGRAM where
-  toSingleLine PR_SALTY {global, arrow, expr} = PR_SALTY global arrow expr
-  toSingleLine PR_SWEET {expr} = PR_SWEET expr

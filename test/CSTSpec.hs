@@ -15,7 +15,8 @@ import Misc
 import Parser (parseProgramThrows)
 import System.FilePath
 import Test.Hspec
-import ASCII (ToASCII(toASCII))
+import Encoding (ToASCII(toASCII))
+import Lining (ToSingleLine(toSingleLine))
 
 data CSTPack = CSTPack
   { program :: String,
@@ -83,5 +84,18 @@ spec = do
           prog <- parseProgramThrows (program pack)
           let cst = astToCst prog
               ascii = toASCII cst
+          pretty ascii `shouldBe` result pack
+      )
+
+  describe "converts to singleline CST" $ do
+    let resources = "test-resources/cst/to-singleline-packs"
+    packs <- runIO (allPathsIn resources)
+    forM_
+      packs
+      ( \pth -> it (makeRelative resources pth) $ do
+          pack <- cstPack pth
+          prog <- parseProgramThrows (program pack)
+          let cst = astToCst prog
+              ascii = toSingleLine cst
           pretty ascii `shouldBe` result pack
       )

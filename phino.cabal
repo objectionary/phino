@@ -25,7 +25,8 @@ common warnings
 library
   exposed-modules:
     CLI,
-    ASCII,
+    Encoding,
+    Lining,
     AST,
     CST,
     Parser,

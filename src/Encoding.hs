@@ -1,12 +1,14 @@
-{-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE RecordWildCards #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module ASCII where
+module Encoding where
 
 import CST
+
+data LineMode = SINLELINE | MULTILINE
+  deriving (Eq, Show)
 
 data Encoding = ASCII | UNICODE
   deriving (Eq, Show)
@@ -63,7 +65,6 @@ instance ToASCII PAIR where
 --  converting to ASCII because attribute itself may contain unicode characters and we need to deal with
 --  them somehow.
 instance ToASCII ATTRIBUTE where
-  toASCII :: ATTRIBUTE -> ATTRIBUTE
   toASCII AT_ALPHA {..} = AT_ALPHA ALPHA' idx
   toASCII AT_PHI {..} = AT_PHI AT
   toASCII AT_RHO {..} = AT_RHO CARET
