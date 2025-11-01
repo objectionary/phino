@@ -10,10 +10,6 @@ import CST
 data Encoding = ASCII | UNICODE
   deriving (Eq, Show)
 
-withEncoding :: Encoding -> PROGRAM -> PROGRAM
-withEncoding UNICODE prog = prog
-withEncoding ASCII prog = toASCII prog
-
 class ToASCII a where
   toASCII :: a -> a
 

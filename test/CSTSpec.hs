@@ -17,6 +17,8 @@ import System.FilePath
 import Test.Hspec
 import Encoding (ToASCII(toASCII))
 import Lining (ToSingleLine(toSingleLine))
+import Sugar
+import Render (Render(render))
 
 data CSTPack = CSTPack
   { program :: String,
@@ -47,7 +49,7 @@ spec = do
       ]
       ( \(prog, cst) -> it prog $ do
           ast <- parseProgramThrows prog
-          astToCst ast `shouldBe` cst
+          programToCST ast `shouldBe` cst
       )
 
   describe "CST printing packs" $ do
@@ -58,7 +60,7 @@ spec = do
       ( \pth -> it (makeRelative resources pth) $ do
           pack <- cstPack pth
           prog <- parseProgramThrows (program pack)
-          pretty (astToCst prog) `shouldBe` result pack
+          render (programToCST prog) `shouldBe` result pack
       )
 
   describe "converts to salty CST" $ do
@@ -69,9 +71,9 @@ spec = do
       ( \pth -> it (makeRelative resources pth) $ do
           pack <- cstPack pth
           prog <- parseProgramThrows (program pack)
-          let cst = astToCst prog
+          let cst = programToCST prog
               salty = toSalty cst
-          pretty salty `shouldBe` result pack
+          render salty `shouldBe` result pack
       )
 
   describe "converts to ascii CST" $ do
@@ -82,9 +84,9 @@ spec = do
       ( \pth -> it (makeRelative resources pth) $ do
           pack <- cstPack pth
           prog <- parseProgramThrows (program pack)
-          let cst = astToCst prog
+          let cst = programToCST prog
               ascii = toASCII cst
-          pretty ascii `shouldBe` result pack
+          render ascii `shouldBe` result pack
       )
 
   describe "converts to singleline CST" $ do
@@ -95,7 +97,7 @@ spec = do
       ( \pth -> it (makeRelative resources pth) $ do
           pack <- cstPack pth
           prog <- parseProgramThrows (program pack)
-          let cst = astToCst prog
+          let cst = programToCST prog
               ascii = toSingleLine cst
-          pretty ascii `shouldBe` result pack
+          render ascii `shouldBe` result pack
       )

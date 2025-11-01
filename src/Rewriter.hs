@@ -21,13 +21,13 @@ import Matcher (MetaValue (MvAttribute, MvBindings, MvBytes, MvExpression), Subs
 import Misc (ensuredFile)
 import Must (Must (..), exceedsUpperBound, inRange)
 import Parser (parseProgram, parseProgramThrows)
-import Pretty (Encoding (UNICODE), PrintMode (SWEET), prettyAttribute, prettyBytes, prettyExpression, prettyExpression', prettyProgram, prettyProgram', prettySubsts)
 import Replacer (ReplaceProgramContext (ReplaceProgramContext), ReplaceProgramThrowsFunc, replaceProgramFastThrows, replaceProgramThrows)
 import Rule (RuleContext (RuleContext), matchProgramWithRule)
 import qualified Rule as R
 import Text.Printf
 import Yaml (ExtraArgument (..))
 import qualified Yaml as Y
+import Printer (printProgram')
 
 data RewriteContext = RewriteContext
   { _program :: Program,
@@ -151,7 +151,7 @@ rewrite program (rule : rest) progs iteration ctx@RewriteContext {..} = do
                       pure (prog, progs')
                     else
                       if Set.member prog' progs
-                        then throwIO (LoopingRewriting (prettyProgram' prog' SWEET UNICODE) ruleName count)
+                        then throwIO (LoopingRewriting (printProgram' prog') ruleName count)
                         else do
                           logDebug
                             ( printf

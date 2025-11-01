@@ -10,22 +10,22 @@ import AST
 import Builder (buildAttribute, buildBinding, buildBindingThrows, buildExpression, buildExpressionThrows)
 import Control.Exception (SomeException (SomeException), evaluate)
 import Control.Exception.Base (try)
+import Control.Monad (when)
 import Data.Aeson (FromJSON)
 import qualified Data.ByteString.Char8 as B
 import Data.Foldable (foldlM)
 import qualified Data.Map.Strict as M
 import Data.Maybe (catMaybes, fromMaybe)
+import Deps (BuildTermFunc, Term (..))
 import GHC.IO (unsafePerformIO)
 import Logger (logDebug)
 import Matcher
-import Misc (allPathsIn, btsToUnescapedStr)
-import Pretty (prettyAttribute, prettyBytes, prettyExpression, prettyExpression', prettySubsts, prettyBinding)
+import Misc (btsToUnescapedStr)
+import Printer
 import Regexp (match)
-import Deps (BuildTermFunc, Term (..))
 import Text.Printf (printf)
 import Yaml (normalizationRules)
 import qualified Yaml as Y
-import Control.Monad (when)
 
 data RuleContext = RuleContext
   { _program :: Program,
@@ -119,7 +119,7 @@ _eq (Y.CmpNum left) (Y.CmpNum right) subst _ = case (numToInt left subst, numToI
   (Just left_, Just right_) -> pure [subst | left_ == right_]
   (_, _) -> pure []
   where
-      -- Convert Number to Integer
+    -- Convert Number to Integer
     numToInt :: Y.Number -> Subst -> Maybe Integer
     numToInt (Y.Ordinal (AtMeta meta)) (Subst mp) = case M.lookup meta mp of
       Just (MvAttribute (AtAlpha idx)) -> Just idx
@@ -250,16 +250,16 @@ extraSubstitutions substs extras RuleContext {..} = case extras of
                 term <- _buildTerm func args subst' _program
                 meta <- case term of
                   TeExpression expr -> do
-                    logDebug (printf "Function %s() returned expression:\n%s" func (prettyExpression' expr))
+                    logDebug (printf "Function %s() returned expression:\n%s" func (printExpression' expr))
                     pure (MvExpression expr defaultScope)
                   TeAttribute attr -> do
-                    logDebug (printf "Function %s() returned attribute: %s" func (prettyAttribute attr))
+                    logDebug (printf "Function %s() returned attribute: %s" func (printAttribute' attr))
                     pure (MvAttribute attr)
                   TeBytes bytes -> do
-                    logDebug (printf "Function %s() returned bytes: %s" func (prettyBytes bytes))
+                    logDebug (printf "Function %s() returned bytes: %s" func (printBytes bytes))
                     pure (MvBytes bytes)
                   TeBindings bds -> do
-                    logDebug (printf "Function %s return bindings: %s" func (prettyExpression' (ExFormation bds)))
+                    logDebug (printf "Function %s return bindings: %s" func (printExpression' (ExFormation bds)))
                     pure (MvBindings bds)
                 case maybeName of
                   Just name -> pure (combine (substSingle name meta) subst')

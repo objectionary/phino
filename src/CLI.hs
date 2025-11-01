@@ -29,14 +29,17 @@ import Must (Must (..))
 import Options.Applicative
 import Parser (parseProgramThrows)
 import Paths_phino (version)
-import Pretty (Encoding (UNICODE), PrintMode (SALTY, SWEET), prettyBytes, prettyProgram')
+import qualified Printer as P
 import Rewriter (RewriteContext (RewriteContext), rewrite')
+import Sugar
 import System.Exit (ExitCode (..), exitFailure)
 import System.IO (getContents')
 import Text.Printf (printf)
 import XMIR (XmirContext (XmirContext), defaultXmirContext, parseXMIRThrows, printXMIR, programToXMIR, xmirToPhi)
 import Yaml (normalizationRules)
 import qualified Yaml as Y
+import Lining (LineFormat(MULTILINE))
+import Encoding (Encoding(UNICODE))
 
 data CmdException
   = InvalidRewriteArguments {message :: String}
@@ -85,7 +88,7 @@ data OptsRewrite = OptsRewrite
     rules :: [FilePath],
     inputFormat :: IOFormat,
     outputFormat :: IOFormat,
-    printMode :: PrintMode,
+    sugarType :: SugarType,
     normalize :: Bool,
     shuffle :: Bool,
     omitListing :: Bool,
@@ -256,13 +259,13 @@ runCLI args = handle handler $ do
       program <- parseProgram input inputFormat
       rewritten <- rewrite' program rules' (context program xmirCtx)
       logDebug (printf "Printing rewritten 𝜑-program as %s" (show outputFormat))
-      prog <- printProgram outputFormat printMode xmirCtx rewritten
+      prog <- printProgram outputFormat sugarType xmirCtx rewritten
       output targetFile prog
       where
         validateOpts :: IO ()
         validateOpts = do
           when
-            (printMode == SWEET && outputFormat == XMIR)
+            (sugarType == SWEET && outputFormat == XMIR)
             (throwIO (InvalidRewriteArguments "The --sweet and --output=xmir can't stay together"))
           when
             (inPlace && isNothing inputFile)
@@ -295,13 +298,13 @@ runCLI args = handle handler $ do
             depthSensitive
             buildTerm
             must
-            (saveStep stepsDir (ioToExtension outputFormat) (printProgram outputFormat printMode ctx))
+            (saveStep stepsDir (ioToExtension outputFormat) (printProgram outputFormat sugarType ctx))
     CmdDataize opts@OptsDataize {..} -> do
       validateOpts
       input <- readInput inputFile
       prog <- parseProgram input inputFormat
       dataized <- dataize prog (context prog)
-      maybe (throwIO CouldNotDataize) (putStrLn . prettyBytes) dataized
+      maybe (throwIO CouldNotDataize) (putStrLn . P.printBytes) dataized
       where
         validateOpts :: IO ()
         validateOpts = do
@@ -364,8 +367,8 @@ runCLI args = handle handler $ do
     parseProgram xmir XMIR = do
       doc <- parseXMIRThrows xmir
       xmirToPhi doc
-    printProgram :: IOFormat -> PrintMode -> Maybe XmirContext -> Program -> IO String
-    printProgram PHI mode _ prog = pure (prettyProgram' prog mode UNICODE)
+    printProgram :: IOFormat -> SugarType -> Maybe XmirContext -> Program -> IO String
+    printProgram PHI mode _ prog = pure (P.printProgram prog (mode, UNICODE, MULTILINE))
     printProgram XMIR mode Nothing prog = printProgram XMIR mode (Just defaultXmirContext) prog
     printProgram XMIR _ (Just ctx) prog = do
       xmir <- programToXMIR prog ctx

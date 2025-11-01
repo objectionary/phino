@@ -14,13 +14,6 @@ import AST
 import Data.List (intercalate)
 import Misc
 
-data PrintMode = SWEET | SALTY
-  deriving (Eq, Show)
-
-instance Pretty PrintMode where
-  pretty SWEET = "sweet"
-  pretty SALTY = "salty"
-
 data LSB = LSB | LSB'
   deriving (Eq, Show)
 
@@ -138,153 +131,11 @@ data ATTRIBUTE
   | AT_DELTA {delta :: DELTA}
   deriving (Eq, Show)
 
-class Pretty a where
-  pretty :: a -> String
+programToCST :: Program -> PROGRAM
+programToCST prog = toCST prog 0
 
-instance Pretty String where
-  pretty str = str
-
-instance Pretty Integer where
-  pretty = show
-
-instance Pretty Double where
-  pretty = show
-
-instance Pretty Char where
-  pretty ch = [ch]
-
-instance Pretty LSB where
-  pretty LSB = "⟦"
-  pretty LSB' = "[["
-
-instance Pretty RSB where
-  pretty RSB = "⟧"
-  pretty RSB' = "]]"
-
-instance Pretty COMMA where
-  pretty COMMA = ","
-  pretty NO_COMMA = ""
-
-instance Pretty ARROW where
-  pretty ARROW = "↦"
-  pretty ARROW' = "->"
-
-instance Pretty DASHED_ARROW where
-  pretty DASHED_ARROW = "⤍"
-
-instance Pretty VOID where
-  pretty EMPTY = "∅"
-  pretty QUESTION = "?"
-
-instance Pretty PHI where
-  pretty :: PHI -> String
-  pretty PHI = "φ"
-  pretty AT = "@"
-  pretty CHAR_64 = "\\char64{}"
-
-instance Pretty RHO where
-  pretty RHO = "ρ"
-  pretty CARET = "^"
-  pretty CHAR_94 = "\\char94{}"
-
-instance Pretty DELTA where
-  pretty DELTA = "Δ"
-
-instance Pretty XI where
-  pretty XI = "ξ"
-  pretty DOLLAR = "$"
-  pretty CHAR_36 = "\\char36{}"
-
-instance Pretty LAMBDA where
-  pretty LAMBDA = "λ"
-
-instance Pretty GLOBAL where
-  pretty Φ = "Φ"
-  pretty Q = "Q"
-
-instance Pretty DEF_PACKAGE where
-  pretty Φ̇ = "Φ̇"
-  pretty QQ = "QQ"
-
-instance Pretty TERMINATION where
-  pretty DEAD = "⊥"
-  pretty T = "T"
-
-instance Pretty SPACE where
-  pretty SPACE = " "
-
-instance Pretty EOL where
-  pretty EOL = "\n"
-  pretty NO_EOL = ""
-
-instance Pretty BYTES where
-  pretty BT_EMPTY = "--"
-  pretty (BT_ONE bte) = pretty bte <> "-"
-  pretty (BT_MANY bts) = intercalate "-" bts
-
-instance Pretty ALPHA where
-  pretty ALPHA = "α"
-  pretty ALPHA' = "~"
-
-instance Pretty TAB where
-  pretty TAB {..} = intercalate "" (replicate (fromIntegral indent) "  ")
-  pretty TAB' = " "
-  pretty NO_TAB = ""
-
-instance Pretty PROGRAM where
-  pretty PR_SWEET {..} = "{" <> pretty expr <> "}"
-  pretty PR_SALTY {..} = pretty global <> pretty SPACE <> pretty arrow <> pretty SPACE <> pretty expr
-
-instance Pretty PAIR where
-  pretty PA_TAU {..} = pretty attr <> pretty SPACE <> pretty arrow <> pretty SPACE <> pretty expr
-  pretty PA_LAMBDA {..} = pretty LAMBDA <> pretty SPACE <> pretty DASHED_ARROW <> pretty SPACE <> pretty func
-  pretty PA_LAMBDA' {..} = "L> " <> func
-  pretty PA_VOID {..} = pretty attr <> pretty SPACE <> pretty arrow <> pretty SPACE <> pretty void
-  pretty PA_DELTA {..} = pretty DELTA <> pretty SPACE <> pretty DASHED_ARROW <> pretty SPACE <> pretty bytes
-  pretty PA_DELTA' {..} = "D> " <> pretty bytes
-
-instance Pretty BINDINGS where
-  pretty BDS_EMPTY {..} = ""
-  pretty BDS_PAIR {..} = pretty COMMA <> pretty eol <> pretty tab <> pretty pair <> pretty bindings
-
-instance Pretty BINDING where
-  pretty BI_PAIR {..} = pretty pair <> pretty bindings
-  pretty BI_EMPTY {..} = ""
-
-instance Pretty APP_ARG where
-  pretty APP_ARG {..} = pretty expr <> pretty args
-
-instance Pretty APP_ARGS where
-  pretty AAS_EMPTY = ""
-  pretty AAS_EXPR {..} = pretty COMMA <> pretty eol <> pretty tab <> pretty expr <> pretty args
-
--- @todo #163:30min Introduce node for formation with inlined voids.
---  We need to be able to print formation with inlined void attributes:
---  x(a, b) -> [[ y -> 1 ]] => x -> [[ a -> ?, b -> ?, y -> 1 ]]
---  Don't forget to extend toSalty instance so such sugar.
-instance Pretty EXPRESSION where
-  pretty EX_GLOBAL {..} = pretty global
-  pretty EX_DEF_PACKAGE {..} = pretty pckg
-  pretty EX_XI {..} = pretty xi
-  pretty EX_ATTR {..} = pretty attr
-  pretty EX_TERMINATION {..} = pretty termination
-  pretty EX_FORMATION {..} = pretty lsb <> pretty eol <> pretty tab <> pretty binding <> pretty eol' <> pretty tab' <> pretty rsb
-  pretty EX_DISPATCH {..} = pretty expr <> "." <> pretty attr
-  pretty EX_APPLICATION {..} = pretty expr <> "(" <> pretty eol <> pretty tab <> pretty bindings <> pretty eol' <> pretty tab' <> ")"
-  pretty EX_APPLICATION' {..} = pretty expr <> "(" <> pretty eol <> pretty tab <> pretty args <> pretty eol' <> pretty tab' <> ")"
-  pretty EX_STRING {..} = show str
-  pretty EX_NUMBER {..} = either show show num
-
-instance Pretty ATTRIBUTE where
-  pretty AT_LABEL {..} = label
-  pretty AT_ALPHA {..} = pretty alpha <> pretty idx
-  pretty AT_RHO {..} = pretty rho
-  pretty AT_PHI {..} = pretty phi
-  pretty AT_LAMBDA {..} = pretty lambda
-  pretty AT_DELTA {..} = pretty delta
-
-astToCst :: Program -> PROGRAM
-astToCst prog = toCST prog 0
+expressionToCST :: Expression -> EXPRESSION
+expressionToCST expr = toCST expr 0
 
 -- This class is used to convert AST to CST
 -- CST is created with sugar and unicode
@@ -299,6 +150,8 @@ instance ToCST Expression EXPRESSION where
   toCST ExGlobal _ = EX_GLOBAL Φ
   toCST ExThis _ = EX_XI XI
   toCST ExTermination _ = EX_TERMINATION DEAD
+  toCST (ExFormation []) _ = EX_FORMATION LSB NO_EOL NO_TAB (BI_EMPTY NO_TAB) NO_EOL NO_TAB RSB
+  toCST (ExFormation [BiVoid AtRho]) _ = toCST (ExFormation []) 0
   toCST (ExFormation bds) tabs =
     let next = tabs + 1
         bds' = toCST (withoutLastVoidRho bds) next :: BINDING
@@ -313,6 +166,7 @@ instance ToCST Expression EXPRESSION where
     where
       withoutLastVoidRho :: [Binding] -> [Binding]
       withoutLastVoidRho [] = []
+      withoutLastVoidRho [BiVoid AtRho] = []
       withoutLastVoidRho (bd : [BiVoid AtRho]) = [bd]
       withoutLastVoidRho (bd : bds') = bd : withoutLastVoidRho bds'
   toCST (DataString bts) tabs = EX_STRING (btsToStr bts) (TAB tabs)
@@ -397,6 +251,8 @@ instance ToCST Attribute ATTRIBUTE where
   toCST (AtAlpha idx) _ = AT_ALPHA ALPHA idx
   toCST AtPhi _ = AT_PHI PHI
   toCST AtRho _ = AT_RHO RHO
+  toCST AtDelta _ = AT_DELTA DELTA
+  toCST AtLambda _ = AT_LAMBDA LAMBDA
 
 class HasEOL a where
   hasEOL :: a -> Bool
@@ -431,124 +287,3 @@ instance HasEOL APP_ARGS where
   hasEOL AAS_EMPTY = False
   hasEOL AAS_EXPR {eol = NO_EOL, expr, args} = hasEOL expr || hasEOL args
   hasEOL AAS_EXPR {..} = True
-
-withPrintMode :: PrintMode -> PROGRAM -> PROGRAM
-withPrintMode SWEET prog = prog
-withPrintMode SALTY prog = toSalty prog
-
--- By default CST is generated with all possible syntax sugar
--- The main purpose of this class is to get rid of syntax sugar
-
---  |----------------------------|-------------------------------------------------------|
---  | sugar                      | verbose version                                       |
---  |----------------------------|-------------------------------------------------------|
---  | {e}                        | Q -> e                                                |
---  | QQ                         | Q.org.eolang                                          |
---  | a1 -> a2                   | a1 ↦ $.a2                                             |
---  | a -> 42                    | QQ.number(QQ.bytes([[ D> 40-45-00-00-00-00-00-00 ]])) |
---  | a -> "Hey"                 | QQ.number(QQ.bytes([[ D> 48-65-79 ]]))                |
---  | [[ B ]]                    | [[ B, ^ -> ? ]], if rho is absent in 'B'              |
---  | a1(a2, a3, ...) -> [[ B ]] | a1 -> [[ a2 -> ?, a3 -> ?, ..., B ]]                  |
---  | e(e0, e1, ...)             | e(~0 -> e0, ~1 -> e1, ...)                            |
---  | e(a1 -> e1, a2 -> e2, ...) | e(a1 -> e1)(a2 -> e2)...                              |
---  |----------------------------|-------------------------------------------------------|
-class ToSalty a where
-  toSalty :: a -> a
-
-instance ToSalty PROGRAM where
-  toSalty :: PROGRAM -> PROGRAM
-  toSalty PR_SWEET {..} = PR_SALTY Φ ARROW (toSalty expr)
-  toSalty prog = prog
-
-instance ToSalty EXPRESSION where
-  toSalty EX_DEF_PACKAGE {..} = EX_DISPATCH (EX_DISPATCH (EX_GLOBAL Φ) (AT_LABEL "org")) (AT_LABEL "eolang")
-  toSalty EX_ATTR {..} = EX_DISPATCH (EX_XI XI) attr
-  toSalty EX_DISPATCH {..} = EX_DISPATCH (toSalty expr) attr
-  toSalty EX_FORMATION {..} = EX_FORMATION lsb eol tab (toSalty (bdWithVoidRho binding)) eol' tab' rsb
-    where
-      voidRho :: PAIR
-      voidRho = PA_VOID (AT_RHO RHO) ARROW EMPTY
-      bdWithVoidRho :: BINDING -> BINDING
-      bdWithVoidRho BI_EMPTY {..} = BI_PAIR voidRho (BDS_EMPTY tab) tab
-      bdWithVoidRho bd@BI_PAIR {pair = PA_VOID {attr = AT_RHO _}} = bd
-      bdWithVoidRho bd@BI_PAIR {pair = PA_TAU {attr = AT_RHO _}} = bd
-      bdWithVoidRho BI_PAIR {..} = BI_PAIR pair (bdsWithVoidRho bindings) tab
-      bdsWithVoidRho :: BINDINGS -> BINDINGS
-      bdsWithVoidRho BDS_EMPTY {..} = BDS_PAIR EOL tab voidRho (BDS_EMPTY tab)
-      bdsWithVoidRho bds@BDS_PAIR {pair = PA_VOID {attr = AT_RHO _}} = bds
-      bdsWithVoidRho bds@BDS_PAIR {pair = PA_TAU {attr = AT_RHO _}} = bds
-      bdsWithVoidRho BDS_PAIR {..} = BDS_PAIR eol tab pair (bdsWithVoidRho bindings)
-  toSalty EX_APPLICATION {..} = EX_APPLICATION (toSalty expr) eol tab (toSalty bindings) eol' tab'
-  toSalty EX_APPLICATION' {..} = EX_APPLICATION (toSalty expr) eol tab (toSalty (argToBinding args tab)) eol' tab'
-    where
-      argToBinding :: APP_ARG -> TAB -> BINDING
-      argToBinding APP_ARG {..} =
-        BI_PAIR
-          (PA_TAU (AT_ALPHA ALPHA 0) ARROW expr)
-          (argsToBindings args 1 tab)
-      argsToBindings :: APP_ARGS -> Integer -> TAB -> BINDINGS
-      argsToBindings AAS_EMPTY _ tab = BDS_EMPTY tab
-      argsToBindings AAS_EXPR {..} idx tb = BDS_PAIR eol tb (PA_TAU (AT_ALPHA ALPHA idx) ARROW expr) (argsToBindings args (idx + 1) tb)
-  toSalty EX_NUMBER {num, tab = tb@TAB {..}} =
-    let number = ExDispatch (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang")) (AtLabel "number")
-        bytes = ExDispatch (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang")) (AtLabel "bytes")
-        number' = toCST number (indent + 1) :: EXPRESSION
-        bytes' = toCST bytes (indent + 2) :: EXPRESSION
-        data' = toCST (ExFormation [BiDelta (numToBts (either toDouble id num))]) (indent + 2) :: EXPRESSION
-     in toSalty
-          ( EX_APPLICATION'
-              number'
-              EOL
-              (TAB (indent + 1))
-              ( APP_ARG
-                  ( EX_APPLICATION'
-                      bytes'
-                      EOL
-                      (TAB (indent + 2))
-                      (APP_ARG data' AAS_EMPTY)
-                      EOL
-                      (TAB (indent + 1))
-                  )
-                  AAS_EMPTY
-              )
-              EOL
-              tb
-          )
-  toSalty EX_STRING {str, tab = tb@TAB {..}} =
-    let string = ExDispatch (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang")) (AtLabel "string")
-        bytes = ExDispatch (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang")) (AtLabel "bytes")
-        string' = toCST string (indent + 1) :: EXPRESSION
-        bytes' = toCST bytes (indent + 2) :: EXPRESSION
-        data' = toCST (ExFormation [BiDelta (strToBts str)]) (indent + 2) :: EXPRESSION
-     in toSalty
-          ( EX_APPLICATION'
-              string'
-              EOL
-              (TAB (indent + 1))
-              ( APP_ARG
-                  ( EX_APPLICATION'
-                      bytes'
-                      EOL
-                      (TAB (indent + 2))
-                      (APP_ARG data' AAS_EMPTY)
-                      EOL
-                      (TAB (indent + 1))
-                  )
-                  AAS_EMPTY
-              )
-              EOL
-              tb
-          )
-  toSalty expr = expr
-
-instance ToSalty BINDING where
-  toSalty BI_PAIR {..} = BI_PAIR (toSalty pair) (toSalty bindings) tab
-  toSalty bd = bd
-
-instance ToSalty BINDINGS where
-  toSalty BDS_PAIR {..} = BDS_PAIR eol tab (toSalty pair) (toSalty bindings)
-  toSalty bds = bds
-
-instance ToSalty PAIR where
-  toSalty PA_TAU {..} = PA_TAU attr arrow (toSalty expr)
-  toSalty pair = pair
