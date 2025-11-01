@@ -1,18 +1,17 @@
-cabal-version:      3.0
-
-name:               phino
-version:            0.0.0.0
-license:            MIT
-synopsis:           Command-Line Manipulator of 𝜑-Calculus Expressions
-description:        Please see the README on GitHub at <https://github.com/objectionary/phino#readme>
-homepage:           https://github.com/objectionary/phino#readme
-bug-reports:        https://github.com/objectionary/phino/issues
-license-file:       LICENSES/MIT.txt
-author:             maxonfjvipon
-maintainer:         mtrunnikov@gmail.com
-copyright:          2025 Objectionary.com
-category:           Language, Code Analysis
-build-type:         Simple
+cabal-version: 3.0
+name: phino
+version: 0.0.0.0
+license: MIT
+synopsis: Command-Line Manipulator of 𝜑-Calculus Expressions
+description: Please see the README on GitHub at <https://github.com/objectionary/phino#readme>
+homepage: https://github.com/objectionary/phino#readme
+bug-reports: https://github.com/objectionary/phino/issues
+license-file: LICENSES/MIT.txt
+author: maxonfjvipon
+maintainer: mtrunnikov@gmail.com
+copyright: 2025 Objectionary.com
+category: Language, Code Analysis
+build-type: Simple
 extra-source-files: resources/*.yaml
 
 source-repository head
@@ -20,116 +19,135 @@ source-repository head
   location: https://github.com/objectionary/phino
 
 common warnings
-  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -Wno-missing-export-lists
+  ghc-options:
+    -Wall
+    -Wcompat
+    -Widentities
+    -Wincomplete-record-updates
+    -Wincomplete-uni-patterns
+    -Wmissing-home-modules
+    -Wpartial-fields
+    -Wredundant-constraints
+    -Wno-missing-export-lists
 
 library
   exposed-modules:
-    AST,
-    Builder,
-    CLI,
-    CST,
-    Dataize,
-    Deps,
-    Encoding,
-    Functions,
-    LaTeX,
-    Lining,
-    Logger,
-    Matcher,
-    Misc,
-    Must,
-    Parser,
-    Printer,
-    Random,
-    Regexp,
-    Render,
-    Replacer,
-    Rewriter,
-    Rule,
-    Sugar,
-    XMIR,
+    AST
+    Builder
+    CLI
+    CST
+    Dataize
+    Deps
+    Encoding
+    Functions
+    LaTeX
+    Lining
+    Logger
+    Matcher
+    Misc
+    Must
+    Parser
+    Printer
+    Random
+    Regexp
+    Render
+    Replacer
+    Rewriter
+    Rule
+    Sugar
+    XMIR
     Yaml
+
   hs-source-dirs: src
   other-modules:
     Paths_phino
+
   autogen-modules:
     Paths_phino
+
   build-depends:
-    file-embed ^>=0.0.16.0,
-    base >=4.18.3.0 && <5,
-    containers,
-    megaparsec >= 9.0,
-    text,
     aeson,
-    yaml,
-    directory,
-    filepath,
-    scientific,
+    array,
+    base >=4.18.3.0 && <5,
     binary-ieee754,
     bytestring,
-    utf8-string,
+    containers,
+    directory,
+    file-embed ^>=0.0.16.0,
+    filepath,
+    megaparsec >=9.0,
     optparse-applicative,
-    vector,
     random,
-    xml-conduit ^>=1.10,
+    regex-pcre-builtin,
+    scientific,
+    text,
     time ^>=1.12,
     transformers,
-    regex-pcre-builtin,
-    array
+    utf8-string,
+    vector,
+    xml-conduit ^>=1.10,
+    yaml,
+
   default-language: Haskell2010
 
 -- Executable using the library
 executable phino
-  import:           warnings
-  main-is:          Main.hs
-  hs-source-dirs:   app
+  import: warnings
+  main-is: Main.hs
+  hs-source-dirs: app
   build-depends:
+    base,
     phino,
-    base
+
   default-language: Haskell2010
 
 -- Test suite for Matcher
 test-suite spec
-  import:           warnings
-  type:             exitcode-stdio-1.0
-  main-is:          Main.hs
-  hs-source-dirs:   test
+  import: warnings
+  type: exitcode-stdio-1.0
+  main-is: Main.hs
+  hs-source-dirs: test
   other-modules:
-    Spec,
-    CLISpec,
-    CSTSpec,
-    ParserSpec,
-    MatcherSpec,
-    BuilderSpec,
-    ReplacerSpec,
-    RewriterSpec,
-    RuleSpec,
-    YamlSpec,
-    MiscSpec,
-    XMIRSpec,
-    DataizeSpec,
-    FunctionsSpec,
+    BuilderSpec
+    CLISpec
+    CSTSpec
+    DataizeSpec
+    FunctionsSpec
+    MatcherSpec
+    MiscSpec
+    ParserSpec
     Paths_phino
+    ReplacerSpec
+    RewriterSpec
+    RuleSpec
+    Spec
+    XMIRSpec
+    YamlSpec
+
   autogen-modules:
     Paths_phino
+
   default-extensions:
     ImportQualifiedPost
+
   build-depends:
-    optparse-applicative,
+    aeson,
     base,
-    megaparsec,
-    phino,
     containers,
+    directory,
+    filepath,
     hspec,
     hspec-core,
-    filepath,
-    aeson,
-    yaml,
-    text,
-    silently,
-    directory,
+    megaparsec,
+    optparse-applicative,
+    phino,
     process,
-    xml-conduit ^>=1.10
+    silently,
+    text,
+    xml-conduit ^>=1.10,
+    yaml,
+
   build-tool-depends:
     hspec-discover:hspec-discover
+
   default-language: Haskell2010
