@@ -26,7 +26,7 @@ bdWithVoidRho BI_PAIR {..} = BI_PAIR pair (bdsWithVoidRho bindings) tab
     bdsWithVoidRho BDS_PAIR {..} = BDS_PAIR eol tab pair (bdsWithVoidRho bindings)
 
 data SugarType = SWEET | SALTY
-  deriving (Eq)
+  deriving (Eq, Show)
 
 -- By default CST is generated with all possible syntax sugar
 -- The main purpose of this class is to get rid of syntax sugar

@@ -18,7 +18,7 @@ import Rule (RuleContext (RuleContext), meetCondition)
 import System.FilePath
 import Test.Hspec (Spec, describe, expectationFailure, it, runIO)
 import Yaml qualified
-import Printer (printSubsts')
+import Printer (printSubsts)
 
 data ConditionPack = ConditionPack
   { failure :: Maybe Bool,
@@ -46,13 +46,13 @@ spec = describe "check conditions" $ do
               (null met)
               ( expectationFailure $
                   "List of substitutions after condition check must be empty, but got:\n"
-                    ++ printSubsts' matched
+                    ++ printSubsts matched
               )
           _ ->
             when
               (null met)
               ( expectationFailure $
                   "List of substitution after condition check must be not empty\nOriginal substitutions:\n"
-                    ++ printSubsts' matched
+                    ++ printSubsts matched
               )
     )

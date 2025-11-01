@@ -26,7 +26,7 @@ import System.Random (randomRIO)
 import Deps
 import Text.Printf (printf)
 import qualified Yaml as Y
-import Printer (printAttribute', printExpression', printExtraArg')
+import Printer (printAttribute, printExpression, printExtraArg)
 import Logger (logDebug)
 
 buildTerm :: BuildTermFunc
@@ -55,7 +55,7 @@ argToBytes (Y.ArgBytes bytes) subst _ = buildBytesThrows bytes subst
 argToBytes (Y.ArgExpression expr) subst prog = do
   (TeBytes bts) <- _dataize [Y.ArgExpression expr] subst prog
   pure bts
-argToBytes arg _ _ = throwIO (userError (printf "Can't extract bytes from given argument: %s" (printExtraArg' arg)))
+argToBytes arg _ _ = throwIO (userError (printf "Can't extract bytes from given argument: %s" (printExtraArg arg)))
 
 argToString :: Y.ExtraArgument -> Subst -> Program -> IO String
 argToString arg subst prog = argToBytes arg subst prog <&> btsToUnescapedStr
@@ -89,7 +89,7 @@ _randomTau args subst _ = do
       Y.ArgAttribute attr -> do
         attr' <- buildAttributeThrows attr subst
         rest' <- argsToAttrs rest
-        pure (printAttribute' attr' : rest')
+        pure (printAttribute attr' : rest')
       Y.ArgBinding bd -> do
         bds <- buildBindingThrows bd subst
         rest' <- argsToAttrs rest
@@ -192,13 +192,13 @@ _string [Y.ArgExpression expr] subst _ = do
         ( userError
             ( printf
                 "Couldn't convert given expression to 'Φ̇.string' object, only 'Φ̇.number' or 'Φ̇.string' are allowed\n%s"
-                (printExpression' exp)
+                (printExpression exp)
             )
         )
   pure (TeExpression str)
 _string [Y.ArgAttribute attr] subst _ = do
   attr' <- buildAttributeThrows attr subst
-  pure (TeExpression (DataString (strToBts (printAttribute' attr'))))
+  pure (TeExpression (DataString (strToBts (printAttribute attr'))))
 _string _ _ _ = throwIO (userError "Function string() requires exactly 1 argument as attribute or data expression (Φ̇.number or Φ̇.string)")
 
 _number :: BuildTermMethod
@@ -208,7 +208,7 @@ _number [Y.ArgExpression expr] subst _ = do
     DataString bts -> do
       num <- parseNumberThrows (btsToUnescapedStr bts)
       pure (TeExpression num)
-    _ -> throwIO (userError (printf "Function number() expects expression to be 'Φ̇.string', but got:\n%s" (printExpression' expr')))
+    _ -> throwIO (userError (printf "Function number() expects expression to be 'Φ̇.string', but got:\n%s" (printExpression expr')))
 _number _ _ _ = throwIO (userError "Function number() requires exactly 1 argument as 'Φ̇.string'")
 
 _sum :: BuildTermMethod

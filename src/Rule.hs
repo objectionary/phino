@@ -250,16 +250,16 @@ extraSubstitutions substs extras RuleContext {..} = case extras of
                 term <- _buildTerm func args subst' _program
                 meta <- case term of
                   TeExpression expr -> do
-                    logDebug (printf "Function %s() returned expression:\n%s" func (printExpression' expr))
+                    logDebug (printf "Function %s() returned expression:\n%s" func (printExpression expr))
                     pure (MvExpression expr defaultScope)
                   TeAttribute attr -> do
-                    logDebug (printf "Function %s() returned attribute: %s" func (printAttribute' attr))
+                    logDebug (printf "Function %s() returned attribute: %s" func (printAttribute attr))
                     pure (MvAttribute attr)
                   TeBytes bytes -> do
                     logDebug (printf "Function %s() returned bytes: %s" func (printBytes bytes))
                     pure (MvBytes bytes)
                   TeBindings bds -> do
-                    logDebug (printf "Function %s return bindings: %s" func (printExpression' (ExFormation bds)))
+                    logDebug (printf "Function %s return bindings: %s" func (printExpression (ExFormation bds)))
                     pure (MvBindings bds)
                 case maybeName of
                   Just name -> pure (combine (substSingle name meta) subst')

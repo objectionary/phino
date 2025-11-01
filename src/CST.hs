@@ -150,8 +150,8 @@ instance ToCST Expression EXPRESSION where
   toCST ExGlobal _ = EX_GLOBAL Φ
   toCST ExThis _ = EX_XI XI
   toCST ExTermination _ = EX_TERMINATION DEAD
-  toCST (ExFormation []) _ = EX_FORMATION LSB NO_EOL NO_TAB (BI_EMPTY NO_TAB) NO_EOL NO_TAB RSB
   toCST (ExFormation [BiVoid AtRho]) _ = toCST (ExFormation []) 0
+  toCST (ExFormation []) _ = EX_FORMATION LSB NO_EOL NO_TAB (BI_EMPTY NO_TAB) NO_EOL NO_TAB RSB
   toCST (ExFormation bds) tabs =
     let next = tabs + 1
         bds' = toCST (withoutLastVoidRho bds) next :: BINDING

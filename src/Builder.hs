@@ -52,17 +52,17 @@ instance Show BuildException where
     printf
       "Couldn't build expression, %s\n--Expression: %s"
       _msg
-      (printExpression' _expr)
+      (printExpression _expr)
   show CouldNotBuildAttribute {..} =
     printf
       "Couldn't build attribute '%s', %s"
-      (printAttribute' _attr)
+      (printAttribute _attr)
       _msg
   show CouldNotBuildBinding {..} =
     printf
       "Couldn't build binding, %s\n--Binding: %s"
       _msg
-      (printBinding' _bd)
+      (printBinding _bd)
   show CouldNotBuildBytes {..} =
     printf
       "Couldn't build bytes '%s', %s"

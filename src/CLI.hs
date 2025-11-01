@@ -14,14 +14,18 @@ import Control.Exception (Exception (displayException), SomeException, handle, t
 import Control.Exception.Base
 import Control.Monad (when)
 import Data.Char (toLower, toUpper)
+import Data.Functor ((<&>))
 import Data.List (intercalate)
 import Data.Maybe (isJust, isNothing)
 import Data.Version (showVersion)
 import Dataize (DataizeContext (DataizeContext), dataize)
+import Debug.Trace (trace)
 import Deps (saveStep)
+import Encoding (Encoding (ASCII, UNICODE))
 import Functions (buildTerm)
 import qualified Functions
-import LaTeX (explainRules, programToLaTeX)
+import LaTeX (LatexContext (LatexContext), explainRules, programToLaTeX)
+import Lining (LineFormat (MULTILINE, SINGLELINE))
 import Logger
 import Misc (ensuredFile)
 import qualified Misc
@@ -38,8 +42,6 @@ import Text.Printf (printf)
 import XMIR (XmirContext (XmirContext), defaultXmirContext, parseXMIRThrows, printXMIR, programToXMIR, xmirToPhi)
 import Yaml (normalizationRules)
 import qualified Yaml as Y
-import Lining (LineFormat(MULTILINE))
-import Encoding (Encoding(UNICODE))
 
 data CmdException
   = InvalidRewriteArguments {message :: String}
@@ -68,6 +70,8 @@ instance Show IOFormat where
 data OptsDataize = OptsDataize
   { logLevel :: LogLevel,
     inputFormat :: IOFormat,
+    sugarType :: SugarType,
+    flat :: LineFormat,
     maxDepth :: Integer,
     maxCycles :: Integer,
     depthSensitive :: Bool,
@@ -89,6 +93,7 @@ data OptsRewrite = OptsRewrite
     inputFormat :: IOFormat,
     outputFormat :: IOFormat,
     sugarType :: SugarType,
+    flat :: LineFormat,
     normalize :: Bool,
     shuffle :: Bool,
     omitListing :: Bool,
@@ -162,6 +167,12 @@ optStepsDir = optional (strOption (long "steps-dir" <> metavar "FILE" <> help "D
 optShuffle :: Parser Bool
 optShuffle = switch (long "shuffle" <> help "Shuffle rules before applying")
 
+optSugar :: Parser SugarType
+optSugar = flag SALTY SWEET (long "sweet" <> help "Print result 𝜑-program and/or 𝜑-expression in logs using syntax sugar")
+
+optLineFormat :: Parser LineFormat
+optLineFormat = flag MULTILINE SINGLELINE (long "flat" <> help "Print result 𝜑-program and/or 𝜑-expression in logs in one line")
+
 explainParser :: Parser Command
 explainParser =
   CmdExplain
@@ -179,6 +190,8 @@ dataizeParser =
     <$> ( OptsDataize
             <$> optLogLevel
             <*> optInputFormat
+            <*> optSugar
+            <*> optLineFormat
             <*> optMaxDepth
             <*> optMaxCycles
             <*> optDepthSensitive
@@ -194,7 +207,8 @@ rewriteParser =
             <*> optRule
             <*> optInputFormat
             <*> option (parseIOFormat "output") (long "output" <> metavar "FORMAT" <> help "Program output format (phi, xmir)" <> value PHI <> showDefault)
-            <*> flag SALTY SWEET (long "sweet" <> help "Print 𝜑-program using syntax sugar")
+            <*> optSugar
+            <*> optLineFormat
             <*> optNormalize
             <*> optShuffle
             <*> switch (long "omit-listing" <> help "Omit full program listing in XMIR output")
@@ -219,8 +233,8 @@ rewriteParser =
 commandParser :: Parser Command
 commandParser =
   hsubparser
-    ( command "rewrite" (info rewriteParser (progDesc "Rewrite the program"))
-        <> command "dataize" (info dataizeParser (progDesc "Dataize the program"))
+    ( command "rewrite" (info rewriteParser (progDesc "Rewrite the 𝜑-program"))
+        <> command "dataize" (info dataizeParser (progDesc "Dataize the 𝜑-program"))
         <> command "explain" (info explainParser (progDesc "Explain rules in LaTeX format"))
     )
 
@@ -259,7 +273,7 @@ runCLI args = handle handler $ do
       program <- parseProgram input inputFormat
       rewritten <- rewrite' program rules' (context program xmirCtx)
       logDebug (printf "Printing rewritten 𝜑-program as %s" (show outputFormat))
-      prog <- printProgram outputFormat sugarType xmirCtx rewritten
+      prog <- printProgram outputFormat (sugarType, flat) xmirCtx rewritten
       output targetFile prog
       where
         validateOpts :: IO ()
@@ -298,7 +312,7 @@ runCLI args = handle handler $ do
             depthSensitive
             buildTerm
             must
-            (saveStep stepsDir (ioToExtension outputFormat) (printProgram outputFormat sugarType ctx))
+            (saveStep stepsDir (ioToExtension outputFormat) (printProgram outputFormat (sugarType, flat) ctx))
     CmdDataize opts@OptsDataize {..} -> do
       validateOpts
       input <- readInput inputFile
@@ -318,7 +332,7 @@ runCLI args = handle handler $ do
             maxCycles
             depthSensitive
             buildTerm
-            (saveStep stepsDir (ioToExtension PHI) (printProgram PHI SWEET Nothing))
+            (saveStep stepsDir (ioToExtension PHI) (printProgram PHI (SWEET, MULTILINE) Nothing))
     CmdExplain opts@OptsExplain {..} -> do
       validateOpts
       rules' <- getRules normalize shuffle rules
@@ -367,13 +381,11 @@ runCLI args = handle handler $ do
     parseProgram xmir XMIR = do
       doc <- parseXMIRThrows xmir
       xmirToPhi doc
-    printProgram :: IOFormat -> SugarType -> Maybe XmirContext -> Program -> IO String
-    printProgram PHI mode _ prog = pure (P.printProgram prog (mode, UNICODE, MULTILINE))
-    printProgram XMIR mode Nothing prog = printProgram XMIR mode (Just defaultXmirContext) prog
-    printProgram XMIR _ (Just ctx) prog = do
-      xmir <- programToXMIR prog ctx
-      pure (printXMIR xmir)
-    printProgram LATEX mode _ prog = pure (programToLaTeX prog mode)
+    printProgram :: IOFormat -> (SugarType, LineFormat) -> Maybe XmirContext -> Program -> IO String
+    printProgram PHI (sugar, line) _ prog = pure (P.printProgram' prog (sugar, UNICODE, line))
+    printProgram XMIR cfg Nothing prog = printProgram XMIR cfg (Just defaultXmirContext) prog
+    printProgram XMIR _ (Just ctx) prog = programToXMIR prog ctx <&> printXMIR
+    printProgram LATEX (sugar, line) _ prog = pure (programToLaTeX prog (LatexContext sugar line))
     getRules :: Bool -> Bool -> [FilePath] -> IO [Y.Rule]
     getRules normalize shuffle rules = do
       ordered <-

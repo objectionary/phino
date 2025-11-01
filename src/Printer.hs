@@ -8,35 +8,35 @@ module Printer
   ( printProgram,
     printProgram',
     printExpression,
-    printExpression',
     printAttribute,
-    printAttribute',
     printBinding,
-    printBinding',
     printBytes,
     printExtraArg,
-    printExtraArg',
     printSubsts,
-    printSubsts',
+    PrintConfig(..)
   )
 where
 
 import AST
 import CST
+import Data.IORef (IORef, newIORef, readIORef, writeIORef)
 import Data.List (intercalate)
 import qualified Data.Map.Strict as Map
+import Debug.Trace
 import Encoding
+import GHC.IO (unsafePerformIO)
 import Lining
 import Matcher
 import Render
 import Sugar
 import Yaml (ExtraArgument (ArgAttribute, ArgBinding, ArgBytes, ArgExpression))
 import Prelude hiding (print)
+import System.IO (hFlush, stdout)
 
 type PrintConfig = (SugarType, Encoding, LineFormat)
 
-defConfig :: PrintConfig
-defConfig = (SWEET, UNICODE, MULTILINE)
+defaultPrintConfig :: PrintConfig
+defaultPrintConfig = (SWEET, UNICODE, MULTILINE)
 
 withSugarType :: (ToSalty a) => SugarType -> a -> a
 withSugarType SWEET prog = prog
@@ -50,51 +50,53 @@ withEncoding :: (ToASCII a) => Encoding -> a -> a
 withEncoding UNICODE prog = prog
 withEncoding ASCII prog = toASCII prog
 
-printProgram :: Program -> PrintConfig -> String
-printProgram prog (sugar, encoding, line) = render (withLineFormat line $ withEncoding encoding $ withSugarType sugar $ programToCST prog)
+printProgram' :: Program -> PrintConfig -> String
+printProgram' prog (sugar, encoding, line) = render (withLineFormat line $ withEncoding encoding $ withSugarType sugar $ programToCST prog)
 
-printProgram' :: Program -> String
-printProgram' prog = printProgram prog defConfig
+printProgram :: Program -> String
+printProgram prog = printProgram' prog defaultPrintConfig
 
-printExpression :: Expression -> PrintConfig -> String
-printExpression expr (sugar, encoding, line) = render (withLineFormat line $ withEncoding encoding $ withSugarType sugar $ expressionToCST expr)
+printExpression' :: Expression -> PrintConfig -> String
+printExpression' expr (sugar, encoding, line) = render (withLineFormat line $ withEncoding encoding $ withSugarType sugar $ expressionToCST expr)
 
-printExpression' :: Expression -> String
-printExpression' expr = printExpression expr defConfig
+printExpression :: Expression -> String
+printExpression expr = printExpression' expr defaultPrintConfig
 
-printAttribute :: Attribute -> Encoding -> String
-printAttribute attr encoding = render (withEncoding encoding (toCST attr 0 :: ATTRIBUTE))
+printAttribute' :: Attribute -> Encoding -> String
+printAttribute' attr encoding = render (withEncoding encoding (toCST attr 0 :: ATTRIBUTE))
 
-printAttribute' :: Attribute -> String
-printAttribute' attr = printAttribute attr UNICODE
+printAttribute :: Attribute -> String
+printAttribute attr =
+  let (_, encoding, _) = defaultPrintConfig
+   in printAttribute' attr encoding
 
-printBinding :: Binding -> PrintConfig -> String
-printBinding bd = printExpression (ExFormation [bd])
+printBinding' :: Binding -> PrintConfig -> String
+printBinding' bd = printExpression' (ExFormation [bd])
 
-printBinding' :: Binding -> String
-printBinding' bd = printBinding bd defConfig
+printBinding :: Binding -> String
+printBinding bd = printBinding' bd defaultPrintConfig
 
 printBytes :: Bytes -> String
 printBytes bts = render (toCST bts 0 :: BYTES)
 
-printExtraArg :: ExtraArgument -> PrintConfig -> String
-printExtraArg (ArgAttribute attr) (_, encoding, _) = printAttribute attr encoding
-printExtraArg (ArgBinding bd) config = printBinding bd config
-printExtraArg (ArgExpression expr) config = printExpression expr config
-printExtraArg (ArgBytes bts) _ = printBytes bts
+printExtraArg' :: ExtraArgument -> PrintConfig -> String
+printExtraArg' (ArgAttribute attr) (_, encoding, _) = printAttribute' attr encoding
+printExtraArg' (ArgBinding bd) config = printBinding' bd config
+printExtraArg' (ArgExpression expr) config = printExpression' expr config
+printExtraArg' (ArgBytes bts) _ = printBytes bts
 
-printExtraArg' :: ExtraArgument -> String
-printExtraArg' arg = printExtraArg arg defConfig
+printExtraArg :: ExtraArgument -> String
+printExtraArg arg = printExtraArg' arg defaultPrintConfig
 
 printTail :: Tail -> PrintConfig -> String
-printTail (TaApplication tau) config = "(" <> printBinding tau config <> ")"
-printTail (TaDispatch attr) (_, encoding, _) = "." <> printAttribute attr encoding
+printTail (TaApplication tau) config = "(" <> printBinding' tau config <> ")"
+printTail (TaDispatch attr) (_, encoding, _) = "." <> printAttribute' attr encoding
 
 printMetaValue :: MetaValue -> PrintConfig -> String
-printMetaValue (MvAttribute attr) (_, encoding, _) = printAttribute attr encoding
-printMetaValue (MvExpression expr _) config = printExpression expr config
+printMetaValue (MvAttribute attr) (_, encoding, _) = printAttribute' attr encoding
+printMetaValue (MvExpression expr _) config = printExpression' expr config
 printMetaValue (MvBytes bts) _ = printBytes bts
-printMetaValue (MvBindings bds) config = printExpression (ExFormation bds) config
+printMetaValue (MvBindings bds) config = printExpression' (ExFormation bds) config
 printMetaValue (MvFunction func) _ = func
 printMetaValue (MvTail tails) config = intercalate "," (map (`printTail` config) tails)
 
@@ -105,8 +107,8 @@ printSubst (Subst mp) config =
       "\n  "
       (map (\(key, value) -> key <> " >> " <> printMetaValue value config) (Map.toList mp))
 
-printSubsts :: [Subst] -> PrintConfig -> String
-printSubsts substs config = intercalate "\n---\n" (map (`printSubst` config) substs)
+printSubsts' :: [Subst] -> PrintConfig -> String
+printSubsts' substs config = intercalate "\n---\n" (map (`printSubst` config) substs)
 
-printSubsts' :: [Subst] -> String
-printSubsts' substs = printSubsts substs defConfig
+printSubsts :: [Subst] -> String
+printSubsts substs = printSubsts' substs defaultPrintConfig

@@ -63,9 +63,9 @@ data XMIRException
   deriving (Exception)
 
 instance Show XMIRException where
-  show UnsupportedProgram {..} = printf "XMIR does not support such program:\n%s" (printProgram' prog)
-  show UnsupportedExpression {..} = printf "XMIR does not support such expression:\n%s" (printExpression' expr)
-  show UnsupportedBinding {..} = printf "XMIR does not support such bindings: %s" (printBinding' binding)
+  show UnsupportedProgram {..} = printf "XMIR does not support such program:\n%s" (printProgram prog)
+  show UnsupportedExpression {..} = printf "XMIR does not support such expression:\n%s" (printExpression expr)
+  show UnsupportedBinding {..} = printf "XMIR does not support such bindings: %s" (printBinding binding)
   show CouldNotParseXMIR {..} = printf "Couldn't parse given XMIR, cause: %s" message
   show InvalidXMIRFormat {..} =
     printf
@@ -89,14 +89,14 @@ object :: [(String, String)] -> [Node] -> Node
 object attrs children = NodeElement (element "o" attrs children)
 
 expression :: Expression -> XmirContext -> IO (String, [Node])
-expression ExThis _ = pure (printExpression' ExThis, [])
-expression ExGlobal _ = pure (printExpression' ExGlobal, [])
+expression ExThis _ = pure (printExpression ExThis, [])
+expression ExGlobal _ = pure (printExpression ExGlobal, [])
 expression (ExFormation bds) ctx = do
   nested <- nestedBindings bds ctx
   pure ("", nested)
 expression (ExDispatch expr attr) ctx = do
   (base, children) <- expression expr ctx
-  let attr' = printAttribute' attr
+  let attr' = printAttribute attr
   if null base
     then pure ('.' : attr', [object [] children])
     else
@@ -106,7 +106,7 @@ expression (ExDispatch expr attr) ctx = do
 expression (DataNumber bytes) XmirContext {..} =
   let bts =
         object
-          [("as", printAttribute' (AtAlpha 0)), ("base", "Φ.org.eolang.bytes")]
+          [("as", printAttribute (AtAlpha 0)), ("base", "Φ.org.eolang.bytes")]
           [object [] [NodeContent (T.pack (printBytes bytes))]]
    in pure
         ( "Φ.org.eolang.number",
@@ -120,7 +120,7 @@ expression (DataNumber bytes) XmirContext {..} =
 expression (DataString bytes) XmirContext {..} =
   let bts =
         object
-          [("as", printAttribute' (AtAlpha 0)), ("base", "Φ.org.eolang.bytes")]
+          [("as", printAttribute (AtAlpha 0)), ("base", "Φ.org.eolang.bytes")]
           [object [] [NodeContent (T.pack (printBytes bytes))]]
    in pure
         ( "Φ.org.eolang.string",
@@ -134,7 +134,7 @@ expression (DataString bytes) XmirContext {..} =
 expression (ExApplication expr (BiTau attr texpr)) ctx = do
   (base, children) <- expression expr ctx
   (base', children') <- expression texpr ctx
-  let as = printAttribute' attr
+  let as = printAttribute attr
       attrs =
         if null base'
           then [("as", as)]
@@ -216,7 +216,7 @@ programToXMIR prog@(Program expr@(ExFormation [BiTau (AtLabel _) arg, BiVoid AtR
       pure (label : pckg, expr')
     getPackage (ExFormation [BiTau attr expr, BiLambda "Package", BiVoid AtRho]) = pure ([], ExFormation [BiTau attr expr, BiVoid AtRho])
     getPackage (ExFormation [bd, BiVoid AtRho]) = pure ([], ExFormation [bd, BiVoid AtRho])
-    getPackage expr = throwIO (userError (printf "Can't extract package from given expression:\n %s" (printExpression' expr)))
+    getPackage expr = throwIO (userError (printf "Can't extract package from given expression:\n %s" (printExpression expr)))
     -- Convert root Expression to Node
     rootExpression :: Expression -> XmirContext -> IO Node
     rootExpression (ExFormation [bd, BiVoid AtRho]) ctx = do

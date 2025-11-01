@@ -1,16 +1,22 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
+{-# LANGUAGE RecordWildCards #-}
 
-module LaTeX (explainRules, programToLaTeX) where
+module LaTeX (explainRules, programToLaTeX, LatexContext(..)) where
 
 import AST (Program)
 import Data.List (intercalate)
 import Data.Maybe (fromMaybe)
-import qualified Yaml as Y
+import Encoding (Encoding (ASCII))
+import Lining (LineFormat (MULTILINE, SINGLELINE))
+import Printer (printProgram')
 import Sugar (SugarType (SWEET))
-import Printer (printProgram)
-import Encoding (Encoding(ASCII))
-import Lining (LineFormat(MULTILINE))
+import qualified Yaml as Y
+
+data LatexContext = LatexContext
+  { sugar :: SugarType,
+    line :: LineFormat
+  }
 
 escapeUnprintedChars :: String -> String
 escapeUnprintedChars [] = []
@@ -20,14 +26,14 @@ escapeUnprintedChars (ch : rest) = case ch of
   '^' -> "\\char94{}" ++ escapeUnprintedChars rest
   _ -> ch : escapeUnprintedChars rest
 
-programToLaTeX :: Program -> SugarType -> String
-programToLaTeX prog sugar =
+programToLaTeX :: Program -> LatexContext -> String
+programToLaTeX prog LatexContext{..} =
   unlines
     [ "\\documentclass{article}",
       "\\usepackage{eolang}",
       "\\begin{document}",
       "\\begin{phiquation}",
-      escapeUnprintedChars (printProgram prog (sugar, ASCII, MULTILINE)),
+      escapeUnprintedChars (printProgram' prog (sugar, ASCII, line)),
       "\\end{phiquation}",
       "\\end{document}"
     ]

@@ -27,7 +27,7 @@ import qualified Rule as R
 import Text.Printf
 import Yaml (ExtraArgument (..))
 import qualified Yaml as Y
-import Printer (printProgram')
+import Printer (printProgram)
 
 data RewriteContext = RewriteContext
   { _program :: Program,
@@ -151,7 +151,7 @@ rewrite program (rule : rest) progs iteration ctx@RewriteContext {..} = do
                       pure (prog, progs')
                     else
                       if Set.member prog' progs
-                        then throwIO (LoopingRewriting (printProgram' prog') ruleName count)
+                        then throwIO (LoopingRewriting (printProgram prog') ruleName count)
                         else do
                           logDebug
                             ( printf

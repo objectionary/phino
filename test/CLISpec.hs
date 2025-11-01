@@ -367,6 +367,12 @@ spec = do
                 "⟧}"
               ]
           ]
+    
+    it "prints in line with --flat" $
+      withStdin "Q -> [[ x -> 5, y -> \"hey\", z -> [[ w -> [[ ]] ]] ]]" $
+        testCLISucceeded
+          ["rewrite", "--sweet", "--flat"]
+          ["{⟦ x ↦ 5, y ↦ \"hey\", z ↦ ⟦ w ↦ ⟦⟧ ⟧ ⟧}"]
 
   describe "dataize" $ do
     it "dataizes simple program" $

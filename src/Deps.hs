@@ -31,10 +31,10 @@ type SaveStepFunc = Program -> Integer -> IO ()
 
 saveStep :: Maybe FilePath -> String -> (Program -> IO String) -> SaveStepFunc
 saveStep Nothing _ _ _ _ = pure ()
-saveStep (Just dir) ext print' prog step = do
+saveStep (Just dir) ext print prog step = do
   createDirectoryIfMissing True dir
   let path = dir </> printf "%05d.%s" step ext
-  content <- print' prog
+  content <- print prog
   writeFile path content
   logDebug (printf "Saved step '%d' to '%s'" step path)
 
