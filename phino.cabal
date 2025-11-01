@@ -43,8 +43,10 @@ library
     Must,
     Logger,
     Regexp,
-    Pretty,
+    Printer,
+    Render,
     Random,
+    Sugar,
     XMIR,
     LaTeX
   hs-source-dirs: src
@@ -101,7 +103,6 @@ test-suite spec
     MatcherSpec,
     BuilderSpec,
     ReplacerSpec,
-    PrettySpec,
     RewriterSpec,
     RuleSpec,
     YamlSpec,

@@ -6,8 +6,11 @@ module LaTeX (explainRules, programToLaTeX) where
 import AST (Program)
 import Data.List (intercalate)
 import Data.Maybe (fromMaybe)
-import Pretty (Encoding (ASCII), PrintMode, prettyProgram')
 import qualified Yaml as Y
+import Sugar (SugarType (SWEET))
+import Printer (printProgram)
+import Encoding (Encoding(ASCII))
+import Lining (LineFormat(MULTILINE))
 
 escapeUnprintedChars :: String -> String
 escapeUnprintedChars [] = []
@@ -17,14 +20,14 @@ escapeUnprintedChars (ch : rest) = case ch of
   '^' -> "\\char94{}" ++ escapeUnprintedChars rest
   _ -> ch : escapeUnprintedChars rest
 
-programToLaTeX :: Program -> PrintMode -> String
+programToLaTeX :: Program -> SugarType -> String
 programToLaTeX prog mode =
   unlines
     [ "\\documentclass{article}",
       "\\usepackage{eolang}",
       "\\begin{document}",
       "\\begin{phiquation}",
-      escapeUnprintedChars (prettyProgram' prog mode ASCII),
+      escapeUnprintedChars (printProgram prog (SWEET, ASCII, MULTILINE)),
       "\\end{phiquation}",
       "\\end{document}"
     ]

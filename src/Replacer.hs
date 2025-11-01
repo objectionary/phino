@@ -21,9 +21,9 @@ where
 import AST
 import Control.Exception (Exception, throwIO)
 import Matcher (Tail (TaApplication, TaDispatch))
-import Pretty (prettyExpression, prettyProgram)
 import Text.Printf (printf)
 import Data.List (isPrefixOf)
+import Printer (printProgram')
 
 data ReplaceProgramContext = ReplaceProgramContext
   { _program :: Program,
@@ -51,7 +51,7 @@ instance Show ReplaceException where
   show CouldNotReplace {..} =
     printf
       "Couldn't replace expression in program, lists of patterns and targets has different lengths\nProgram: %s"
-      (prettyProgram prog)
+      (printProgram' prog)
 
 replaceBindings :: [Binding] -> [Expression] -> [Expression] -> ReplaceExpressionContext -> ReplaceExpressionFunc -> ([Binding], [Expression], [Expression])
 replaceBindings bds [] [] _ _ = (bds, [], [])

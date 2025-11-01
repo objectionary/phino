@@ -10,10 +10,6 @@ import CST
 data LineFormat = SINGLELINE | MULTILINE
   deriving (Show, Eq)
 
-withLineFormat :: LineFormat -> PROGRAM -> PROGRAM
-withLineFormat MULTILINE prog = prog
-withLineFormat SINGLELINE prog = toSingleLine prog
-
 class ToSingleLine a where
   toSingleLine :: a -> a
 

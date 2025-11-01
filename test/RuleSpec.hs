@@ -14,11 +14,11 @@ import Functions (buildTerm)
 import GHC.Generics
 import Matcher
 import Misc
-import Pretty
 import Rule (RuleContext (RuleContext), meetCondition)
 import System.FilePath
 import Test.Hspec (Spec, describe, expectationFailure, it, runIO)
 import Yaml qualified
+import Printer (printSubsts')
 
 data ConditionPack = ConditionPack
   { failure :: Maybe Bool,
@@ -46,13 +46,13 @@ spec = describe "check conditions" $ do
               (null met)
               ( expectationFailure $
                   "List of substitutions after condition check must be empty, but got:\n"
-                    ++ prettySubsts matched
+                    ++ printSubsts' matched
               )
           _ ->
             when
               (null met)
               ( expectationFailure $
                   "List of substitution after condition check must be not empty\nOriginal substitutions:\n"
-                    ++ prettySubsts matched
+                    ++ printSubsts' matched
               )
     )

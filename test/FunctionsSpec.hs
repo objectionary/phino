@@ -5,12 +5,12 @@ module FunctionsSpec where
 
 import AST
 import Data.Map.Strict qualified as Map
+import Deps (Term (TeBindings))
 import Functions (buildTerm)
 import Logger (logDebug)
 import Matcher (MetaValue (MvBindings), Subst (Subst))
 import Misc (uniqueBindings')
-import Pretty (prettyExpression')
-import Deps (Term (TeBindings))
+import Printer (printExpression')
 import Test.Hspec (Spec, describe, it, shouldBe)
 import Text.Printf (printf)
 import Yaml (ExtraArgument (ArgBinding))
@@ -24,5 +24,5 @@ spec = describe "Functions" $
         subst = Subst (Map.fromList [first, second, third])
     TeBindings bds <- buildTerm "join" [ArgBinding (BiMeta "B1"), ArgBinding (BiMeta "B2"), ArgBinding (BiMeta "B3")] subst (Program ExGlobal)
     bds' <- uniqueBindings' bds
-    logDebug (printf "Joined bindings:\n%s" (prettyExpression' (ExFormation bds')))
+    logDebug (printf "Joined bindings:\n%s" (printExpression' (ExFormation bds')))
     length bds' `shouldBe` 9
