@@ -24,31 +24,31 @@ common warnings
 
 library
   exposed-modules:
-    CLI,
-    Encoding,
-    Lining,
     AST,
-    CST,
-    Parser,
-    Matcher,
     Builder,
-    Replacer,
-    Rewriter,
-    Yaml,
-    Rule,
+    CLI,
+    CST,
     Dataize,
-    Functions,
     Deps,
+    Encoding,
+    Functions,
+    LaTeX,
+    Lining,
+    Logger,
+    Matcher,
     Misc,
     Must,
-    Logger,
-    Regexp,
+    Parser,
     Printer,
-    Render,
     Random,
+    Regexp,
+    Render,
+    Replacer,
+    Rewriter,
+    Rule,
     Sugar,
     XMIR,
-    LaTeX
+    Yaml
   hs-source-dirs: src
   other-modules:
     Paths_phino
