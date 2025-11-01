@@ -21,13 +21,13 @@ escapeUnprintedChars (ch : rest) = case ch of
   _ -> ch : escapeUnprintedChars rest
 
 programToLaTeX :: Program -> SugarType -> String
-programToLaTeX prog mode =
+programToLaTeX prog sugar =
   unlines
     [ "\\documentclass{article}",
       "\\usepackage{eolang}",
       "\\begin{document}",
       "\\begin{phiquation}",
-      escapeUnprintedChars (printProgram prog (SWEET, ASCII, MULTILINE)),
+      escapeUnprintedChars (printProgram prog (sugar, ASCII, MULTILINE)),
       "\\end{phiquation}",
       "\\end{document}"
     ]
