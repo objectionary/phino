@@ -50,63 +50,63 @@ withEncoding :: (ToASCII a) => Encoding -> a -> a
 withEncoding UNICODE prog = prog
 withEncoding ASCII prog = toASCII prog
 
-printProgram :: Program -> PrintConfig -> Prelude.String
-printProgram prog (sugar, encoding, line) = render (withLineFormat line Prelude.$ withEncoding encoding Prelude.$ withSugarType sugar Prelude.$ programToCST prog)
+printProgram :: Program -> PrintConfig -> String
+printProgram prog (sugar, encoding, line) = render (withLineFormat line $ withEncoding encoding $ withSugarType sugar $ programToCST prog)
 
-printProgram' :: Program -> Prelude.String
+printProgram' :: Program -> String
 printProgram' prog = printProgram prog defConfig
 
-printExpression :: Expression -> PrintConfig -> Prelude.String
-printExpression expr (sugar, encoding, line) = render (withLineFormat line Prelude.$ withEncoding encoding Prelude.$ withSugarType sugar Prelude.$ expressionToCST expr)
+printExpression :: Expression -> PrintConfig -> String
+printExpression expr (sugar, encoding, line) = render (withLineFormat line $ withEncoding encoding $ withSugarType sugar $ expressionToCST expr)
 
-printExpression' :: Expression -> Prelude.String
+printExpression' :: Expression -> String
 printExpression' expr = printExpression expr defConfig
 
-printAttribute :: Attribute -> Encoding -> Prelude.String
+printAttribute :: Attribute -> Encoding -> String
 printAttribute attr encoding = render (withEncoding encoding (toCST attr 0 :: ATTRIBUTE))
 
-printAttribute' :: Attribute -> Prelude.String
+printAttribute' :: Attribute -> String
 printAttribute' attr = printAttribute attr UNICODE
 
-printBinding :: Binding -> PrintConfig -> Prelude.String
+printBinding :: Binding -> PrintConfig -> String
 printBinding bd = printExpression (ExFormation [bd])
 
-printBinding' :: Binding -> Prelude.String
+printBinding' :: Binding -> String
 printBinding' bd = printBinding bd defConfig
 
-printBytes :: Bytes -> Prelude.String
+printBytes :: Bytes -> String
 printBytes bts = render (toCST bts 0 :: BYTES)
 
-printExtraArg :: ExtraArgument -> PrintConfig -> Prelude.String
+printExtraArg :: ExtraArgument -> PrintConfig -> String
 printExtraArg (ArgAttribute attr) (_, encoding, _) = printAttribute attr encoding
 printExtraArg (ArgBinding bd) config = printBinding bd config
 printExtraArg (ArgExpression expr) config = printExpression expr config
 printExtraArg (ArgBytes bts) _ = printBytes bts
 
-printExtraArg' :: ExtraArgument -> Prelude.String
+printExtraArg' :: ExtraArgument -> String
 printExtraArg' arg = printExtraArg arg defConfig
 
-printTail :: Tail -> PrintConfig -> Prelude.String
-printTail (TaApplication tau) config = "(" Prelude.<> printBinding tau config Prelude.<> ")"
-printTail (TaDispatch attr) (_, encoding, _) = "." Prelude.<> printAttribute attr encoding
+printTail :: Tail -> PrintConfig -> String
+printTail (TaApplication tau) config = "(" <> printBinding tau config <> ")"
+printTail (TaDispatch attr) (_, encoding, _) = "." <> printAttribute attr encoding
 
-printMetaValue :: MetaValue -> PrintConfig -> Prelude.String
+printMetaValue :: MetaValue -> PrintConfig -> String
 printMetaValue (MvAttribute attr) (_, encoding, _) = printAttribute attr encoding
 printMetaValue (MvExpression expr _) config = printExpression expr config
 printMetaValue (MvBytes bts) _ = printBytes bts
 printMetaValue (MvBindings bds) config = printExpression (ExFormation bds) config
 printMetaValue (MvFunction func) _ = func
-printMetaValue (MvTail tails) config = intercalate "," (Prelude.map (`printTail` config) tails)
+printMetaValue (MvTail tails) config = intercalate "," (map (`printTail` config) tails)
 
-printSubst :: Subst -> PrintConfig -> Prelude.String
+printSubst :: Subst -> PrintConfig -> String
 printSubst (Subst mp) config =
   "  "
-    Prelude.<> intercalate
+    <> intercalate
       "\n  "
-      (Prelude.map (\(key, value) -> key Prelude.<> " >> " Prelude.<> printMetaValue value config) (Map.toList mp))
+      (map (\(key, value) -> key <> " >> " <> printMetaValue value config) (Map.toList mp))
 
-printSubsts :: [Subst] -> PrintConfig -> Prelude.String
-printSubsts substs config = intercalate "\n---\n" (Prelude.map (`printSubst` config) substs)
+printSubsts :: [Subst] -> PrintConfig -> String
+printSubsts substs config = intercalate "\n---\n" (map (`printSubst` config) substs)
 
-printSubsts' :: [Subst] -> Prelude.String
+printSubsts' :: [Subst] -> String
 printSubsts' substs = printSubsts substs defConfig
