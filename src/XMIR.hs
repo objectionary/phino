@@ -36,7 +36,6 @@ import Data.Time
 import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds)
 import Data.Time.Format (defaultTimeLocale, formatTime)
 import Data.Version (showVersion)
-import Debug.Trace
 import Misc
 import Paths_phino (version)
 import Printer

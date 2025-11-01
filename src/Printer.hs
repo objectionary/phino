@@ -22,7 +22,6 @@ import CST
 import Data.IORef (IORef, newIORef, readIORef, writeIORef)
 import Data.List (intercalate)
 import qualified Data.Map.Strict as Map
-import Debug.Trace
 import Encoding
 import GHC.IO (unsafePerformIO)
 import Lining
