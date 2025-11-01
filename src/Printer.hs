@@ -19,18 +19,15 @@ where
 
 import AST
 import CST
-import Data.IORef (IORef, newIORef, readIORef, writeIORef)
 import Data.List (intercalate)
 import qualified Data.Map.Strict as Map
 import Encoding
-import GHC.IO (unsafePerformIO)
 import Lining
 import Matcher
 import Render
 import Sugar
 import Yaml (ExtraArgument (ArgAttribute, ArgBinding, ArgBytes, ArgExpression))
 import Prelude hiding (print)
-import System.IO (hFlush, stdout)
 
 type PrintConfig = (SugarType, Encoding, LineFormat)
 
