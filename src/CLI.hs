@@ -167,10 +167,10 @@ optShuffle :: Parser Bool
 optShuffle = switch (long "shuffle" <> help "Shuffle rules before applying")
 
 optSugar :: Parser SugarType
-optSugar = flag SALTY SWEET (long "sweet" <> help "Print result 𝜑-program and/or 𝜑-expression in logs using syntax sugar")
+optSugar = flag SALTY SWEET (long "sweet" <> help "Print result and intermediate (see --steps flag) 𝜑-programs using syntax sugar")
 
 optLineFormat :: Parser LineFormat
-optLineFormat = flag MULTILINE SINGLELINE (long "flat" <> help "Print result 𝜑-program and/or 𝜑-expression in logs in one line")
+optLineFormat = flag MULTILINE SINGLELINE (long "flat" <> help "Print result and intermediate (see --steps flag) 𝜑-programs in one line")
 
 explainParser :: Parser Command
 explainParser =
