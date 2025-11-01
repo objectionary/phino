@@ -13,7 +13,7 @@ module Printer
     printBytes,
     printExtraArg,
     printSubsts,
-    PrintConfig(..)
+    PrintConfig (..),
   )
 where
 
