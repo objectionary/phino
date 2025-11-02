@@ -10,15 +10,15 @@ import CST
 import Control.Monad (forM_)
 import Data.Aeson
 import Data.Yaml qualified as Yaml
+import Encoding (Encoding (ASCII), withEncoding)
 import GHC.Generics (Generic)
+import Lining (LineFormat (SINGLELINE), withLineFormat)
 import Misc
 import Parser (parseProgramThrows)
+import Render (Render (render))
+import Sugar
 import System.FilePath
 import Test.Hspec
-import Encoding (ToASCII(toASCII))
-import Lining (ToSingleLine(toSingleLine))
-import Sugar
-import Render (Render(render))
 
 data CSTPack = CSTPack
   { program :: String,
@@ -85,7 +85,7 @@ spec = do
           pack <- cstPack pth
           prog <- parseProgramThrows (program pack)
           let cst = programToCST prog
-              ascii = toASCII cst
+              ascii = withEncoding ASCII cst
           render ascii `shouldBe` result pack
       )
 
@@ -98,6 +98,6 @@ spec = do
           pack <- cstPack pth
           prog <- parseProgramThrows (program pack)
           let cst = programToCST prog
-              ascii = toSingleLine cst
+              ascii = withLineFormat SINGLELINE cst
           render ascii `shouldBe` result pack
       )

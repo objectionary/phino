@@ -4,9 +4,13 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Lining where
+module Lining (toSingleLine, LineFormat (..), withLineFormat) where
 
 import CST
+
+withLineFormat :: (ToSingleLine a) => LineFormat -> a -> a
+withLineFormat MULTILINE prog = prog
+withLineFormat SINGLELINE prog = toSingleLine prog
 
 data LineFormat = SINGLELINE | MULTILINE
   deriving (Show, Eq)

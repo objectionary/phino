@@ -3,12 +3,16 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Encoding where
+module Encoding (toASCII, withEncoding, Encoding (..)) where
 
 import CST
 
 data Encoding = ASCII | UNICODE
   deriving (Eq, Show)
+
+withEncoding :: (ToASCII a) => Encoding -> a -> a
+withEncoding UNICODE prog = prog
+withEncoding ASCII prog = toASCII prog
 
 class ToASCII a where
   toASCII :: a -> a
@@ -17,9 +21,6 @@ instance ToASCII PROGRAM where
   toASCII PR_SALTY {..} = PR_SALTY Q ARROW' (toASCII expr)
   toASCII PR_SWEET {..} = PR_SWEET (toASCII expr)
 
--- @todo #404:30min Convert EX_STRING to ASCII. We need to decide what to do with EX_STRING when
---  converting to ASCII because string itself may contain unicode characters and we need to deal with
---  them somehow.
 instance ToASCII EXPRESSION where
   toASCII EX_GLOBAL {..} = EX_GLOBAL Q
   toASCII EX_DEF_PACKAGE {..} = EX_DEF_PACKAGE QQ
@@ -54,9 +55,6 @@ instance ToASCII PAIR where
   toASCII PA_DELTA {..} = PA_DELTA' bytes
   toASCII pair = pair
 
--- @todo #404:30min Convert AT_LABEL to ASCII. We need to decide what to do with AT_LABEL when
---  converting to ASCII because attribute itself may contain unicode characters and we need to deal with
---  them somehow.
 instance ToASCII ATTRIBUTE where
   toASCII AT_ALPHA {..} = AT_ALPHA ALPHA' idx
   toASCII AT_PHI {..} = AT_PHI AT

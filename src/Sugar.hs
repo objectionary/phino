@@ -4,11 +4,15 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Sugar where
+module Sugar (toSalty, withSugarType, SugarType (..)) where
 
 import AST
 import CST
 import Misc
+
+withSugarType :: (ToSalty a) => SugarType -> a -> a
+withSugarType SWEET prog = prog
+withSugarType SALTY prog = toSalty prog
 
 voidRho :: PAIR
 voidRho = PA_VOID (AT_RHO RHO) ARROW EMPTY
@@ -54,7 +58,7 @@ instance ToSalty EXPRESSION where
   toSalty EX_DEF_PACKAGE {..} = EX_DISPATCH (EX_DISPATCH (EX_GLOBAL Φ) (AT_LABEL "org")) (AT_LABEL "eolang")
   toSalty EX_ATTR {..} = EX_DISPATCH (EX_XI XI) attr
   toSalty EX_DISPATCH {..} = EX_DISPATCH (toSalty expr) attr
-  toSalty EX_FORMATION {lsb, binding = bd@BI_EMPTY{..}, rsb} = EX_FORMATION lsb NO_EOL TAB' (toSalty (bdWithVoidRho bd)) NO_EOL TAB' rsb
+  toSalty EX_FORMATION {lsb, binding = bd@BI_EMPTY {..}, rsb} = EX_FORMATION lsb NO_EOL TAB' (toSalty (bdWithVoidRho bd)) NO_EOL TAB' rsb
   toSalty EX_FORMATION {..} = EX_FORMATION lsb eol tab (toSalty (bdWithVoidRho binding)) eol' tab' rsb
   toSalty EX_APPLICATION {..} = EX_APPLICATION (toSalty expr) eol tab (toSalty bindings) eol' tab'
   toSalty EX_APPLICATION' {..} = EX_APPLICATION (toSalty expr) eol tab (toSalty (argToBinding args tab)) eol' tab'

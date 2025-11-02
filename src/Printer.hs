@@ -34,18 +34,6 @@ type PrintConfig = (SugarType, Encoding, LineFormat)
 defaultPrintConfig :: PrintConfig
 defaultPrintConfig = (SWEET, UNICODE, MULTILINE)
 
-withSugarType :: (ToSalty a) => SugarType -> a -> a
-withSugarType SWEET prog = prog
-withSugarType SALTY prog = toSalty prog
-
-withLineFormat :: (ToSingleLine a) => LineFormat -> a -> a
-withLineFormat MULTILINE prog = prog
-withLineFormat SINGLELINE prog = toSingleLine prog
-
-withEncoding :: (ToASCII a) => Encoding -> a -> a
-withEncoding UNICODE prog = prog
-withEncoding ASCII prog = toASCII prog
-
 printProgram' :: Program -> PrintConfig -> String
 printProgram' prog (sugar, encoding, line) = render (withLineFormat line $ withEncoding encoding $ withSugarType sugar $ programToCST prog)
 

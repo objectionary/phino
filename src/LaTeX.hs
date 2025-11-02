@@ -1,42 +1,94 @@
--- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
--- SPDX-License-Identifier: MIT
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE RecordWildCards #-}
 
-module LaTeX (explainRules, programToLaTeX, LatexContext(..)) where
+-- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+-- SPDX-License-Identifier: MIT
+
+module LaTeX (explainRules, programToLaTeX, LatexContext (..)) where
 
 import AST (Program)
+import CST
 import Data.List (intercalate)
 import Data.Maybe (fromMaybe)
-import Encoding (Encoding (ASCII))
-import Lining (LineFormat (MULTILINE, SINGLELINE))
+import Encoding (Encoding (ASCII), withEncoding)
+import Lining (LineFormat (MULTILINE, SINGLELINE), withLineFormat)
 import Printer (printProgram')
-import Sugar (SugarType (SWEET))
+import Render (Render (render))
+import Sugar (SugarType (SWEET), withSugarType)
 import qualified Yaml as Y
+import Debug.Trace (trace)
 
 data LatexContext = LatexContext
   { sugar :: SugarType,
     line :: LineFormat
   }
 
-escapeUnprintedChars :: String -> String
-escapeUnprintedChars [] = []
-escapeUnprintedChars (ch : rest) = case ch of
-  '$' -> "\\char36{}" ++ escapeUnprintedChars rest
-  '@' -> "\\char64{}" ++ escapeUnprintedChars rest
-  '^' -> "\\char94{}" ++ escapeUnprintedChars rest
-  _ -> ch : escapeUnprintedChars rest
-
 programToLaTeX :: Program -> LatexContext -> String
-programToLaTeX prog LatexContext{..} =
+programToLaTeX prog LatexContext {..} =
   unlines
     [ "\\documentclass{article}",
       "\\usepackage{eolang}",
       "\\begin{document}",
       "\\begin{phiquation}",
-      escapeUnprintedChars (printProgram' prog (sugar, ASCII, line)),
+      render (toLaTeX $ withLineFormat line $ withEncoding ASCII $ withSugarType sugar $ programToCST prog),
       "\\end{phiquation}",
       "\\end{document}"
     ]
+
+class ToLaTeX a where
+  toLaTeX :: a -> a
+
+instance ToLaTeX PROGRAM where
+  toLaTeX PR_SWEET {..} = PR_SWEET (toLaTeX expr)
+  toLaTeX PR_SALTY {..} = PR_SALTY global arrow (toLaTeX expr)
+
+instance ToLaTeX EXPRESSION where
+  toLaTeX EX_XI {..} = EX_XI CHAR_36
+  toLaTeX EX_ATTR {..} = EX_ATTR (toLaTeX attr)
+  toLaTeX EX_FORMATION {..} = EX_FORMATION lsb eol tab (toLaTeX binding) eol' tab' rsb
+  toLaTeX EX_APPLICATION {..} = EX_APPLICATION (toLaTeX expr) eol tab (toLaTeX bindings) eol' tab'
+  toLaTeX EX_APPLICATION' {..} = EX_APPLICATION' (toLaTeX expr) eol tab (toLaTeX args) eol' tab'
+  toLaTeX EX_STRING {..} = EX_STRING (toLaTeX str) tab
+  toLaTeX expr = expr
+
+instance ToLaTeX ATTRIBUTE where
+  toLaTeX AT_LABEL {..} = AT_LABEL (toLaTeX label)
+  toLaTeX AT_RHO {..} = AT_RHO CHAR_94
+  toLaTeX AT_PHI {..} = AT_PHI CHAR_64
+  toLaTeX attr = attr
+
+instance ToLaTeX BINDING where
+  toLaTeX BI_PAIR {..} = BI_PAIR (toLaTeX pair) (toLaTeX bindings) tab
+  toLaTeX bd = bd
+
+instance ToLaTeX BINDINGS where
+  toLaTeX BDS_PAIR {..} = BDS_PAIR eol tab (toLaTeX pair) (toLaTeX bindings)
+  toLaTeX bds = bds
+
+instance ToLaTeX PAIR where
+  toLaTeX PA_DELTA {..} = PA_DELTA' bytes
+  toLaTeX PA_LAMBDA {..} = PA_LAMBDA' func
+  toLaTeX PA_VOID {..} = PA_VOID (toLaTeX attr) arrow void
+  toLaTeX PA_TAU {..} = PA_TAU (toLaTeX attr) arrow (toLaTeX expr)
+  toLaTeX pair = pair
+
+instance ToLaTeX APP_ARG where
+  toLaTeX APP_ARG {..} = APP_ARG (toLaTeX expr) (toLaTeX args)
+
+instance ToLaTeX APP_ARGS where
+  toLaTeX AAS_EXPR {..} = AAS_EXPR eol tab (toLaTeX expr) (toLaTeX args)
+  toLaTeX args = args
+
+instance ToLaTeX String where
+  toLaTeX = escapeUnprintedChars
+    where
+      escapeUnprintedChars :: String -> String
+      escapeUnprintedChars [] = []
+      escapeUnprintedChars (ch : rest) = case ch of
+        '$' -> render CHAR_36 <> escapeUnprintedChars rest
+        '@' -> render CHAR_64 <> escapeUnprintedChars rest
+        '^' -> render CHAR_94 <> escapeUnprintedChars rest
+        _ -> ch : escapeUnprintedChars rest
 
 -- @todo #114:30min Implement LaTeX conversion for rules.
 --  Convert Rule data structure to LaTeX inference rule format.
