@@ -102,6 +102,7 @@ data OptsRewrite = OptsRewrite
     maxDepth :: Integer,
     maxCycles :: Integer,
     inPlace :: Bool,
+    sequence :: Bool,
     targetFile :: Maybe FilePath,
     stepsDir :: Maybe FilePath,
     inputFile :: Maybe FilePath
@@ -224,6 +225,7 @@ rewriteParser =
             <*> optMaxDepth
             <*> optMaxCycles
             <*> switch (long "in-place" <> help "Edit file in-place instead of printing to output")
+            <*> switch (long "sequence" <> help "Result output contains all intermediate 𝜑-programs concatenated with EOL")
             <*> optTarget
             <*> optStepsDir
             <*> argInputFile
@@ -272,8 +274,8 @@ runCLI args = handle handler $ do
       program <- parseProgram input inputFormat
       rewritten <- rewrite' program rules' (context program xmirCtx)
       logDebug (printf "Printing rewritten 𝜑-program as %s" (show outputFormat))
-      prog <- printProgram outputFormat (sugarType, flat) xmirCtx rewritten
-      output targetFile prog
+      progs <- printPrograms xmirCtx rewritten
+      output targetFile progs
       where
         validateOpts :: IO ()
         validateOpts = do
@@ -309,9 +311,14 @@ runCLI args = handle handler $ do
             maxDepth
             maxCycles
             depthSensitive
+            sequence
             buildTerm
             must
             (saveStep stepsDir (ioToExtension outputFormat) (printProgram outputFormat (sugarType, flat) ctx))
+        printPrograms :: Maybe XmirContext -> [Program] -> IO String
+        printPrograms ctx progs = do
+          progs' <- mapM (printProgram outputFormat (sugarType, flat) ctx) progs
+          pure (intercalate "\n" progs')
     CmdDataize opts@OptsDataize {..} -> do
       validateOpts
       input <- readInput inputFile

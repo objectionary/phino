@@ -98,7 +98,7 @@ spec =
                   if normalize'
                     then pure normalizationRules
                     else pure []
-              rewritten <-
+              [rewritten] <-
                 rewrite'
                   program
                   rules'
@@ -106,6 +106,7 @@ spec =
                       program
                       repeat'
                       repeat'
+                      False
                       False
                       buildTerm
                       must'

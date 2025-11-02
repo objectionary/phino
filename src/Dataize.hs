@@ -35,6 +35,7 @@ switchContext DataizeContext {..} =
     _maxDepth
     _maxCycles
     _depthSensitive
+    False
     _buildTerm
     MtDisabled
     _saveStep
@@ -130,7 +131,7 @@ morph expr ctx = do
       if isNF expr (RuleContext (_program ctx) (_buildTerm ctx))
         then pure Nothing
         else do
-          (Program expr') <- rewrite' (Program expr) normalizationRules (switchContext ctx) -- NMZ
+          [Program expr'] <- rewrite' (Program expr) normalizationRules (switchContext ctx) -- NMZ
           morph expr' ctx
 
 -- The goal of 'dataize' function is retrieve bytes from given expression.
