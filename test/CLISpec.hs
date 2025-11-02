@@ -238,10 +238,7 @@ spec = do
       withStdin "Q -> [[ x -> QQ.z(y -> 5), q -> T, w -> $, ^ -> Q, @ -> 1, y -> \"H$@^M\"]]" $
         testCLISucceeded
           ["rewrite", "--output=latex", "--sweet"]
-          [ "\\documentclass{article}",
-            "\\usepackage{eolang}",
-            "\\begin{document}",
-            "\\begin{phiquation}",
+          [ "\\begin{phiquation}",
             "{[[",
             "  x -> QQ.z(",
             "    y -> 5",
@@ -252,8 +249,7 @@ spec = do
             "  \\char64{} -> 1,",
             "  y -> \"H\\char36{}\\char64{}\\char94{}M\"",
             "]]}",
-            "\\end{phiquation}",
-            "\\end{document}"
+            "\\end{phiquation}"
           ]
 
     it "rewrites with XMIR as input" $

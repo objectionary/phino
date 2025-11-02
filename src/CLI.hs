@@ -23,7 +23,7 @@ import Deps (saveStep)
 import Encoding (Encoding (ASCII, UNICODE))
 import Functions (buildTerm)
 import qualified Functions
-import LaTeX (LatexContext (LatexContext), explainRules, programToLaTeX)
+import LaTeX (LatexContext (LatexContext), explainRules, programToLaTeX, programsToLatex)
 import Lining (LineFormat (MULTILINE, SINGLELINE))
 import Logger
 import Misc (ensuredFile)
@@ -316,9 +316,9 @@ runCLI args = handle handler $ do
             must
             (saveStep stepsDir (ioToExtension outputFormat) (printProgram outputFormat (sugarType, flat) ctx))
         printPrograms :: Maybe XmirContext -> [Program] -> IO String
-        printPrograms ctx progs = do
-          progs' <- mapM (printProgram outputFormat (sugarType, flat) ctx) progs
-          pure (intercalate "\n" progs')
+        printPrograms ctx progs
+          | outputFormat == LATEX = pure (programsToLatex progs (LatexContext sugarType flat))
+          | otherwise = mapM (printProgram outputFormat (sugarType, flat) ctx) progs <&> intercalate "\n"
     CmdDataize opts@OptsDataize {..} -> do
       validateOpts
       input <- readInput inputFile

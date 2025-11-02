@@ -4,35 +4,42 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module LaTeX (explainRules, programToLaTeX, LatexContext (..)) where
+module LaTeX (explainRules, programsToLatex, programToLaTeX, LatexContext (..)) where
 
 import AST (Program)
 import CST
 import Data.List (intercalate)
 import Data.Maybe (fromMaybe)
+import Debug.Trace (trace)
 import Encoding (Encoding (ASCII), withEncoding)
 import Lining (LineFormat (MULTILINE, SINGLELINE), withLineFormat)
 import Printer (printProgram')
 import Render (Render (render))
 import Sugar (SugarType (SWEET), withSugarType)
 import qualified Yaml as Y
-import Debug.Trace (trace)
 
 data LatexContext = LatexContext
   { sugar :: SugarType,
     line :: LineFormat
   }
 
-programToLaTeX :: Program -> LatexContext -> String
-programToLaTeX prog LatexContext {..} =
+renderToLatex :: Program -> LatexContext -> String
+renderToLatex prog LatexContext {..} = render (toLaTeX $ withLineFormat line $ withEncoding ASCII $ withSugarType sugar $ programToCST prog)
+
+programsToLatex :: [Program] -> LatexContext -> String
+programsToLatex progs ctx =
   unlines
-    [ "\\documentclass{article}",
-      "\\usepackage{eolang}",
-      "\\begin{document}",
-      "\\begin{phiquation}",
-      render (toLaTeX $ withLineFormat line $ withEncoding ASCII $ withSugarType sugar $ programToCST prog),
-      "\\end{phiquation}",
-      "\\end{document}"
+    ( "\\begin{phiquation}"
+        : map (`renderToLatex` ctx) progs
+        ++ ["\\end{phiquation}"]
+    )
+
+programToLaTeX :: Program -> LatexContext -> String
+programToLaTeX prog ctx =
+  unlines
+    [ "\\begin{phiquation}",
+      renderToLatex prog ctx,
+      "\\end{phiquation}"
     ]
 
 class ToLaTeX a where
