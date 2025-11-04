@@ -10,7 +10,6 @@ import AST (Program)
 import CST
 import Data.List (intercalate)
 import Data.Maybe (fromMaybe)
-import Debug.Trace (trace)
 import Encoding (Encoding (ASCII), withEncoding)
 import Lining (LineFormat (MULTILINE, SINGLELINE), withLineFormat)
 import Printer (printProgram')
