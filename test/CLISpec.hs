@@ -277,6 +277,47 @@ spec = do
           ["rewrite", "--rule=test-resources/cli/simple.yaml", "--must=1", "--sweet"]
           ["x ↦ \"bar\""]
 
+    it "prints many programs with --sequence" $
+      withStdin "{[[ x -> \"foo\" ]]}" $
+        testCLISucceeded
+          [ "rewrite",
+            "--rule=test-resources/cli/first.yaml",
+            "--rule=test-resources/cli/second.yaml",
+            "--max-depth=1",
+            "--max-cycles=2",
+            "--sequence",
+            "--sweet",
+            "--flat"
+          ]
+          [ unlines
+              [ "{⟦ x ↦ \"foo\" ⟧}",
+                "{Φ.x( y ↦ \"foo\" )}",
+                "{⟦ x ↦ \"foo\" ⟧}"
+              ]
+          ]
+
+    it "prints only one latex preambule with --sequence" $
+      withStdin "{[[ x -> \"foo\" ]]}" $
+        testCLISucceeded
+          [ "rewrite",
+            "--rule=test-resources/cli/first.yaml",
+            "--rule=test-resources/cli/second.yaml",
+            "--max-depth=1",
+            "--max-cycles=2",
+            "--sequence",
+            "--sweet",
+            "--flat",
+            "--output=latex"
+          ]
+          [ unlines
+              [ "\\begin{phiquation}",
+                "{[[ x -> \"foo\" ]]}",
+                "{Q.x( y -> \"foo\" )}",
+                "{[[ x -> \"foo\" ]]}",
+                "\\end{phiquation}"
+              ]
+          ]
+
     describe "must range tests" $ do
       describe "fails" $ do
         it "when cycles exceed range ..1" $
@@ -363,7 +404,7 @@ spec = do
                 "⟧}"
               ]
           ]
-    
+
     it "prints in line with --flat" $
       withStdin "Q -> [[ x -> 5, y -> \"hey\", z -> [[ w -> [[ ]] ]] ]]" $
         testCLISucceeded
