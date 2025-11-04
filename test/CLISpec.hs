@@ -296,7 +296,7 @@ spec = do
               ]
           ]
 
-    it "prints only one latex preambule with --sequence" $
+    it "prints only one latex preamble with --sequence" $
       withStdin "{[[ x -> \"foo\" ]]}" $
         testCLISucceeded
           [ "rewrite",
