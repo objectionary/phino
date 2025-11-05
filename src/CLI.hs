@@ -23,7 +23,7 @@ import Deps (saveStep)
 import Encoding (Encoding (ASCII, UNICODE))
 import Functions (buildTerm)
 import qualified Functions
-import LaTeX (LatexContext (LatexContext), explainRules, programToLaTeX, programsToLatex)
+import LaTeX (LatexContext (LatexContext), explainRules, programToLaTeX, rewrittensToLatex)
 import Lining (LineFormat (MULTILINE, SINGLELINE))
 import Logger
 import Misc (ensuredFile)
@@ -33,7 +33,7 @@ import Options.Applicative
 import Parser (parseProgramThrows)
 import Paths_phino (version)
 import qualified Printer as P
-import Rewriter (RewriteContext (RewriteContext), rewrite')
+import Rewriter (RewriteContext (RewriteContext), Rewritten (..), rewrite')
 import Sugar
 import System.Exit (ExitCode (..), exitFailure)
 import System.IO (getContents')
@@ -272,9 +272,9 @@ runCLI args = handle handler $ do
       let xmirCtx = Just (XmirContext omitListing omitComments input)
       rules' <- getRules normalize shuffle rules
       program <- parseProgram input inputFormat
-      rewritten <- rewrite' program rules' (context program xmirCtx)
+      rewrittens <- rewrite' program rules' (context program xmirCtx)
       logDebug (printf "Printing rewritten 𝜑-program as %s" (show outputFormat))
-      progs <- printPrograms xmirCtx rewritten
+      progs <- printRewrittens xmirCtx rewrittens
       output targetFile progs
       where
         validateOpts :: IO ()
@@ -315,10 +315,10 @@ runCLI args = handle handler $ do
             buildTerm
             must
             (saveStep stepsDir (ioToExtension outputFormat) (printProgram outputFormat (sugarType, flat) ctx))
-        printPrograms :: Maybe XmirContext -> [Program] -> IO String
-        printPrograms ctx progs
-          | outputFormat == LATEX = pure (programsToLatex progs (LatexContext sugarType flat))
-          | otherwise = mapM (printProgram outputFormat (sugarType, flat) ctx) progs <&> intercalate "\n"
+        printRewrittens :: Maybe XmirContext -> [Rewritten] -> IO String
+        printRewrittens ctx rewrittens
+          | outputFormat == LATEX = pure (rewrittensToLatex rewrittens (LatexContext sugarType flat))
+          | otherwise = mapM (printProgram outputFormat (sugarType, flat) ctx . program) rewrittens <&> intercalate "\n"
     CmdDataize opts@OptsDataize {..} -> do
       validateOpts
       input <- readInput inputFile

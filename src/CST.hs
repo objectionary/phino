@@ -32,16 +32,16 @@ data DASHED_ARROW = DASHED_ARROW
 data VOID = EMPTY | QUESTION
   deriving (Eq, Show)
 
-data PHI = PHI | AT | CHAR_64
+data PHI = PHI | AT
   deriving (Eq, Show)
 
-data RHO = RHO | CARET | CHAR_94
+data RHO = RHO | CARET
   deriving (Eq, Show)
 
 data DELTA = DELTA
   deriving (Eq, Show)
 
-data XI = XI | DOLLAR | CHAR_36
+data XI = XI | DOLLAR
   deriving (Eq, Show)
 
 data LAMBDA = LAMBDA
