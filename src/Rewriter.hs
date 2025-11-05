@@ -144,7 +144,7 @@ rewrite rewrittens (rule : rest) unique iteration ctx@RewriteContext {..} = do
       let ruleName = fromMaybe "unknown" (Y.name rule)
           ptn = Y.pattern rule
           res = Y.result rule
-          rewritten@Rewritten {..} = head _rewrittens
+          Rewritten {..} = head _rewrittens
        in if _count - 1 == _maxDepth
             then do
               logDebug (printf "Max amount of rewriting cycles (%d) for rule '%s' has been reached, rewriting is stopped" _maxDepth ruleName)
