@@ -312,8 +312,8 @@ spec = do
           [ unlines
               [ "\\begin{phiquation}",
                 "{[[ x -> \"foo\" ]]} \\leadsto_{\\nameref{r:first}}",
-                "\\leadsto {Q.x( y -> \"foo\" )} \\leadsto_{\\nameref{r:second}}",
-                "\\leadsto {[[ x -> \"foo\" ]]}",
+                "  \\leadsto {Q.x( y -> \"foo\" )} \\leadsto_{\\nameref{r:second}}",
+                "  \\leadsto {[[ x -> \"foo\" ]]}",
                 "\\end{phiquation}"
               ]
           ]

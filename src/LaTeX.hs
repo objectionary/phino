@@ -33,7 +33,7 @@ rewrittensToLatex rewrittens ctx =
   concat
     [ "\\begin{phiquation}\n",
       intercalate
-        "\n\\leadsto "
+        "\n  \\leadsto "
         ( map
             ( \Rewritten {..} ->
                 let prog = renderToLatex program ctx
