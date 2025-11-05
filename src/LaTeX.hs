@@ -4,17 +4,20 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module LaTeX (explainRules, programsToLatex, programToLaTeX, LatexContext (..)) where
+module LaTeX (explainRules, rewrittensToLatex, programToLaTeX, LatexContext (..)) where
 
 import AST (Program)
 import CST
+import Data.Char (toLower)
 import Data.List (intercalate)
 import Data.Maybe (fromMaybe)
 import Encoding (Encoding (ASCII), withEncoding)
 import Lining (LineFormat (MULTILINE, SINGLELINE), withLineFormat)
 import Printer (printProgram')
 import Render (Render (render))
+import Rewriter (Rewritten (..))
 import Sugar (SugarType (SWEET), withSugarType)
+import Text.Printf (printf)
 import qualified Yaml as Y
 
 data LatexContext = LatexContext
@@ -25,13 +28,27 @@ data LatexContext = LatexContext
 renderToLatex :: Program -> LatexContext -> String
 renderToLatex prog LatexContext {..} = render (toLaTeX $ withLineFormat line $ withEncoding ASCII $ withSugarType sugar $ programToCST prog)
 
-programsToLatex :: [Program] -> LatexContext -> String
-programsToLatex progs ctx =
-  unlines
-    ( "\\begin{phiquation}"
-        : map (`renderToLatex` ctx) progs
-        ++ ["\\end{phiquation}"]
-    )
+rewrittensToLatex :: [Rewritten] -> LatexContext -> String
+rewrittensToLatex rewrittens ctx =
+  concat
+    [ "\\begin{phiquation}\n",
+      intercalate
+        "\n\\leadsto "
+        ( map
+            ( \Rewritten {..} ->
+                let prog = renderToLatex program ctx
+                    unknown = "unknown"
+                    maybeTo = case maybeRule of
+                      Just (Y.Rule {..}) -> Just (map toLower (fromMaybe unknown name))
+                      _ -> Nothing
+                 in case maybeTo of
+                      Just name -> printf "%s \\leadsto_{\\nameref{r:%s}}" prog name
+                      _ -> prog
+            )
+            rewrittens
+        ),
+      "\n\\end{phiquation}"
+    ]
 
 programToLaTeX :: Program -> LatexContext -> String
 programToLaTeX prog ctx =
@@ -49,18 +66,14 @@ instance ToLaTeX PROGRAM where
   toLaTeX PR_SALTY {..} = PR_SALTY global arrow (toLaTeX expr)
 
 instance ToLaTeX EXPRESSION where
-  toLaTeX EX_XI {..} = EX_XI CHAR_36
   toLaTeX EX_ATTR {..} = EX_ATTR (toLaTeX attr)
   toLaTeX EX_FORMATION {..} = EX_FORMATION lsb eol tab (toLaTeX binding) eol' tab' rsb
   toLaTeX EX_APPLICATION {..} = EX_APPLICATION (toLaTeX expr) eol tab (toLaTeX bindings) eol' tab'
   toLaTeX EX_APPLICATION' {..} = EX_APPLICATION' (toLaTeX expr) eol tab (toLaTeX args) eol' tab'
-  toLaTeX EX_STRING {..} = EX_STRING (toLaTeX str) tab
   toLaTeX expr = expr
 
 instance ToLaTeX ATTRIBUTE where
   toLaTeX AT_LABEL {..} = AT_LABEL (toLaTeX label)
-  toLaTeX AT_RHO {..} = AT_RHO CHAR_94
-  toLaTeX AT_PHI {..} = AT_PHI CHAR_64
   toLaTeX attr = attr
 
 instance ToLaTeX BINDING where
@@ -91,9 +104,9 @@ instance ToLaTeX String where
       escapeUnprintedChars :: String -> String
       escapeUnprintedChars [] = []
       escapeUnprintedChars (ch : rest) = case ch of
-        '$' -> render CHAR_36 <> escapeUnprintedChars rest
-        '@' -> render CHAR_64 <> escapeUnprintedChars rest
-        '^' -> render CHAR_94 <> escapeUnprintedChars rest
+        '$' -> "\\char36{}" <> escapeUnprintedChars rest
+        '@' -> "\\char64{}" <> escapeUnprintedChars rest
+        '^' -> "\\char94{}" <> escapeUnprintedChars rest
         _ -> ch : escapeUnprintedChars rest
 
 -- @todo #114:30min Implement LaTeX conversion for rules.

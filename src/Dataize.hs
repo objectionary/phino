@@ -13,7 +13,7 @@ import Data.List (partition)
 import Deps (BuildTermFunc, SaveStepFunc)
 import Misc
 import Must (Must (..))
-import Rewriter (RewriteContext (RewriteContext), rewrite')
+import Rewriter (RewriteContext (RewriteContext), Rewritten (Rewritten, program), rewrite')
 import Rule (RuleContext (RuleContext), isNF)
 import Text.Printf (printf)
 import XMIR (XmirContext (XmirContext))
@@ -131,7 +131,7 @@ morph expr ctx = do
       if isNF expr (RuleContext (_program ctx) (_buildTerm ctx))
         then pure Nothing
         else do
-          [Program expr'] <- rewrite' (Program expr) normalizationRules (switchContext ctx) -- NMZ
+          [Rewritten {program = Program expr'}] <- rewrite' (Program expr) normalizationRules (switchContext ctx) -- NMZ
           morph expr' ctx
 
 -- The goal of 'dataize' function is retrieve bytes from given expression.

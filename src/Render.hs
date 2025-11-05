@@ -51,12 +51,10 @@ instance Render VOID where
 instance Render PHI where
   render PHI = "φ"
   render AT = "@"
-  render CHAR_64 = "\\char64{}"
 
 instance Render RHO where
   render RHO = "ρ"
   render CARET = "^"
-  render CHAR_94 = "\\char94{}"
 
 instance Render DELTA where
   render DELTA = "Δ"
@@ -64,7 +62,6 @@ instance Render DELTA where
 instance Render XI where
   render XI = "ξ"
   render DOLLAR = "$"
-  render CHAR_36 = "\\char36{}"
 
 instance Render LAMBDA where
   render LAMBDA = "λ"

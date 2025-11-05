@@ -134,13 +134,13 @@ data Number
   = Ordinal Attribute
   | Length Binding
   | Literal Integer
-  deriving (Generic, Show)
+  deriving (Generic, Show, Eq)
 
 data Comparable
   = CmpAttr Attribute
   | CmpNum Number
   | CmpExpr Expression
-  deriving (Generic, Show)
+  deriving (Generic, Show, Eq)
 
 data Condition
   = And [Condition]
@@ -153,21 +153,21 @@ data Condition
   | XI Expression
   | Matches String Expression
   | PartOf Expression Binding
-  deriving (Generic, Show)
+  deriving (Generic, Show, Eq)
 
 data ExtraArgument
   = ArgAttribute Attribute
   | ArgExpression Expression
   | ArgBinding Binding
   | ArgBytes Bytes
-  deriving (Generic, Show)
+  deriving (Generic, Show, Eq)
 
 data Extra = Extra
   { meta :: ExtraArgument,
     function :: String,
     args :: [ExtraArgument]
   }
-  deriving (Generic, Show)
+  deriving (Generic, Show, Eq)
 
 data Rule = Rule
   { name :: Maybe String,
@@ -178,7 +178,7 @@ data Rule = Rule
     where_ :: Maybe [Extra],
     having :: Maybe Condition
   }
-  deriving (Generic, Show)
+  deriving (Generic, Show, Eq)
 
 normalizationRules :: [Rule]
 {-# NOINLINE normalizationRules #-}

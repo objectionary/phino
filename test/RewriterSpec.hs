@@ -1,6 +1,7 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE RecordWildCards #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
@@ -19,7 +20,7 @@ import Misc (allPathsIn, ensuredFile)
 import Must (Must (..))
 import Parser (parseProgramThrows)
 import Printer (printProgram)
-import Rewriter (RewriteContext (RewriteContext), rewrite')
+import Rewriter (RewriteContext (RewriteContext), Rewritten (..), rewrite')
 import System.FilePath (makeRelative, replaceExtension, (</>))
 import Test.Hspec (Spec, describe, expectationFailure, it, pending, runIO)
 import Yaml (normalizationRules)
@@ -81,7 +82,7 @@ spec =
           case skip pack of
             Just True -> pending
             _ -> do
-              program <- parseProgramThrows (input pack)
+              prog <- parseProgramThrows (input pack)
               rules' <- case rules pack of
                 Just _rules -> case custom _rules of
                   Just custom' -> pure custom'
@@ -98,12 +99,12 @@ spec =
                   if normalize'
                     then pure normalizationRules
                     else pure []
-              [rewritten] <-
+              [Rewritten {..}] <-
                 rewrite'
-                  program
+                  prog
                   rules'
                   ( RewriteContext
-                      program
+                      prog
                       repeat'
                       repeat'
                       False
@@ -113,11 +114,11 @@ spec =
                       dontSaveStep
                   )
               result' <- parseProgramThrows (output pack)
-              unless (rewritten == result') $
+              unless (program == result') $
                 expectationFailure
                   ( "Wrong rewritten program. Expected:\n"
                       ++ printProgram result'
                       ++ "\nGot:\n"
-                      ++ printProgram rewritten
+                      ++ printProgram program
                   )
       )

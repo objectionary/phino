@@ -244,10 +244,10 @@ spec = do
             "    y -> 5",
             "  ),",
             "  q -> T,",
-            "  w -> \\char36{},",
-            "  \\char94{} -> Q,",
-            "  \\char64{} -> 1,",
-            "  y -> \"H\\char36{}\\char64{}\\char94{}M\"",
+            "  w -> $,",
+            "  ^ -> Q,",
+            "  @ -> 1,",
+            "  y -> \"H$@^M\"",
             "]]}",
             "\\end{phiquation}"
           ]
@@ -311,9 +311,9 @@ spec = do
           ]
           [ unlines
               [ "\\begin{phiquation}",
-                "{[[ x -> \"foo\" ]]}",
-                "{Q.x( y -> \"foo\" )}",
-                "{[[ x -> \"foo\" ]]}",
+                "{[[ x -> \"foo\" ]]} \\leadsto_{\\nameref{r:first}}",
+                "\\leadsto {Q.x( y -> \"foo\" )} \\leadsto_{\\nameref{r:second}}",
+                "\\leadsto {[[ x -> \"foo\" ]]}",
                 "\\end{phiquation}"
               ]
           ]
