@@ -163,6 +163,12 @@ spec = do
             "unexpected \"$t\""
           ]
 
+      it "with --output != latex and --nonumber" $
+        withStdin "{[[]]}" $
+          testCLIFailed
+            ["rewrite", "--nonumber", "--output=xmir"]
+            ["The --nonumber option can stay together with --output=latex only"]
+
     it "saves steps to dir with --steps-dir" $ do
       let dir = "test-steps-temp"
       dirExists <- doesDirectoryExist dir
@@ -250,6 +256,15 @@ spec = do
             "  |y| -> \"H$@^M\"",
             "]]}",
             "\\end{phiquation}"
+          ]
+
+    it "rewrites as LaTeX without numeration" $
+      withStdin "Q -> [[ x -> 5 ]]" $
+        testCLISucceeded
+          ["rewrite", "--output=latex", "--sweet", "--nonumber", "--flat"]
+          [ "\\begin{phiquation*}",
+            "{[[ |x| -> 5 ]]}",
+            "\\end{phiquation*}"
           ]
 
     it "rewrites with XMIR as input" $
