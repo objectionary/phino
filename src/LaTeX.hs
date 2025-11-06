@@ -22,41 +22,52 @@ import qualified Yaml as Y
 
 data LatexContext = LatexContext
   { sugar :: SugarType,
-    line :: LineFormat
+    line :: LineFormat,
+    nonumber :: Bool
   }
 
 renderToLatex :: Program -> LatexContext -> String
 renderToLatex prog LatexContext {..} = render (toLaTeX $ withLineFormat line $ withEncoding ASCII $ withSugarType sugar $ programToCST prog)
 
+phiquation :: LatexContext -> String
+phiquation LatexContext {nonumber = True} = "phiquation*"
+phiquation LatexContext {nonumber = False} = "phiquation"
+
 rewrittensToLatex :: [Rewritten] -> LatexContext -> String
 rewrittensToLatex rewrittens ctx =
-  concat
-    [ "\\begin{phiquation}\n",
-      intercalate
-        "\n  \\leadsto "
-        ( map
-            ( \Rewritten {..} ->
-                let prog = renderToLatex program ctx
-                    unknown = "unknown"
-                    maybeTo = case maybeRule of
-                      Just (Y.Rule {..}) -> Just (map toLower (fromMaybe unknown name))
-                      _ -> Nothing
-                 in case maybeTo of
-                      Just name -> printf "%s \\leadsto_{\\nameref{r:%s}}" prog name
-                      _ -> prog
-            )
-            rewrittens
-        ),
-      "\n\\end{phiquation}"
-    ]
+  let equation = phiquation ctx
+   in concat
+        [ printf "\\begin{%s}\n" equation,
+          intercalate
+            "\n  \\leadsto "
+            ( map
+                ( \Rewritten {..} ->
+                    let prog = renderToLatex program ctx
+                        unknown = "unknown"
+                        maybeTo = case maybeRule of
+                          Just (Y.Rule {..}) -> Just (map toLower (fromMaybe unknown name))
+                          _ -> Nothing
+                     in case maybeTo of
+                          Just name -> printf "%s \\leadsto_{\\nameref{r:%s}}" prog name
+                          _ -> prog
+                )
+                rewrittens
+            ),
+          printf "\n\\end{%s}" equation
+        ]
 
 programToLaTeX :: Program -> LatexContext -> String
 programToLaTeX prog ctx =
-  unlines
-    [ "\\begin{phiquation}",
-      renderToLatex prog ctx,
-      "\\end{phiquation}"
-    ]
+  let equation = phiquation ctx
+   in concat
+        [ "\\begin{",
+          equation,
+          "}\n",
+          renderToLatex prog ctx,
+          "\n\\end{",
+          equation,
+          "}"
+        ]
 
 class ToLaTeX a where
   toLaTeX :: a -> a

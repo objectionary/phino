@@ -42,6 +42,13 @@ import XMIR (XmirContext (XmirContext), defaultXmirContext, parseXMIRThrows, pri
 import Yaml (normalizationRules)
 import qualified Yaml as Y
 
+data PrintProgramContext = PrintProgCtx
+  { sugar :: SugarType,
+    line :: LineFormat,
+    xmirCtx :: XmirContext,
+    nonumber :: Bool
+  }
+
 data CmdException
   = InvalidRewriteArguments {message :: String}
   | CouldNotReadFromStdin {message :: String}
@@ -99,6 +106,7 @@ data OptsRewrite = OptsRewrite
     omitListing :: Bool,
     omitComments :: Bool,
     depthSensitive :: Bool,
+    nonumber :: Bool,
     must :: Must,
     maxDepth :: Integer,
     maxCycles :: Integer,
@@ -244,6 +252,7 @@ rewriteParser =
                 <*> optOmitListing
                 <*> optOmitComments
                 <*> optDepthSensitive
+                <*> switch (long "nonumber" <> help "Turn off equation auto numbering in LaTeX rendering")
                 <*> option
                   auto
                   ( long "must"
@@ -316,12 +325,13 @@ runCLI args = handle handler $ do
       validateOpts
       logDebug (printf "Amount of rewriting cycles across all the rules: %d, per rule: %d" maxCycles maxDepth)
       input <- readInput inputFile
-      let xmirCtx = Just (XmirContext omitListing omitComments input)
+      let xmirCtx = XmirContext omitListing omitComments input
+          printProgCtx = PrintProgCtx sugarType flat xmirCtx nonumber
       rules' <- getRules normalize shuffle rules
       program <- parseProgram input inputFormat
-      rewrittens <- rewrite' program rules' (context program xmirCtx)
+      rewrittens <- rewrite' program rules' (context program printProgCtx)
       logDebug (printf "Printing rewritten 𝜑-program as %s" (show outputFormat))
-      progs <- printRewrittens xmirCtx rewrittens
+      progs <- printRewrittens printProgCtx rewrittens
       output targetFile progs
       where
         validateOpts :: IO ()
@@ -335,6 +345,9 @@ runCLI args = handle handler $ do
           when
             (inPlace && isJust targetFile)
             (throwIO (InvalidRewriteArguments "--in-place and --target cannot be used together"))
+          when
+            (nonumber && outputFormat /= LATEX)
+            (throwIO (InvalidRewriteArguments "The --nonumber option can stay together with --output=latex only"))
           validateMaxDepth maxDepth
           validateMaxCycles maxCycles
           validateMust must
@@ -351,7 +364,7 @@ runCLI args = handle handler $ do
           (False, Nothing, _) -> do
             logDebug "The option '--target' is not specified, printing to console..."
             putStrLn prog
-        context :: Program -> Maybe XmirContext -> RewriteContext
+        context :: Program -> PrintProgramContext -> RewriteContext
         context program ctx =
           RewriteContext
             program
@@ -361,11 +374,11 @@ runCLI args = handle handler $ do
             sequence
             buildTerm
             must
-            (saveStep stepsDir (ioToExtension outputFormat) (printProgram outputFormat (sugarType, flat) ctx))
-        printRewrittens :: Maybe XmirContext -> [Rewritten] -> IO String
+            (saveStep stepsDir (ioToExtension outputFormat) (printProgram outputFormat ctx))
+        printRewrittens :: PrintProgramContext -> [Rewritten] -> IO String
         printRewrittens ctx rewrittens
-          | outputFormat == LATEX = pure (rewrittensToLatex rewrittens (LatexContext sugarType flat))
-          | otherwise = mapM (printProgram outputFormat (sugarType, flat) ctx . program) rewrittens <&> intercalate "\n"
+          | outputFormat == LATEX = pure (rewrittensToLatex rewrittens (LatexContext sugarType flat nonumber))
+          | otherwise = mapM (printProgram outputFormat ctx . program) rewrittens <&> intercalate "\n"
     CmdDataize opts@OptsDataize {..} -> do
       validateOpts
       input <- readInput inputFile
@@ -385,7 +398,7 @@ runCLI args = handle handler $ do
             maxCycles
             depthSensitive
             buildTerm
-            (saveStep stepsDir (ioToExtension PHI) (printProgram PHI (SWEET, MULTILINE) Nothing))
+            (saveStep stepsDir (ioToExtension PHI) (printProgram PHI (PrintProgCtx sugarType flat defaultXmirContext False)))
     CmdExplain opts@OptsExplain {..} -> do
       validateOpts
       rules' <- getRules normalize shuffle rules
@@ -437,11 +450,10 @@ runCLI args = handle handler $ do
     parseProgram xmir XMIR = do
       doc <- parseXMIRThrows xmir
       xmirToPhi doc
-    printProgram :: IOFormat -> (SugarType, LineFormat) -> Maybe XmirContext -> Program -> IO String
-    printProgram PHI (sugar, line) _ prog = pure (P.printProgram' prog (sugar, UNICODE, line))
-    printProgram XMIR cfg Nothing prog = printProgram XMIR cfg (Just defaultXmirContext) prog
-    printProgram XMIR _ (Just ctx) prog = programToXMIR prog ctx <&> printXMIR
-    printProgram LATEX (sugar, line) _ prog = pure (programToLaTeX prog (LatexContext sugar line))
+    printProgram :: IOFormat -> PrintProgramContext -> Program -> IO String
+    printProgram PHI PrintProgCtx {..} prog = pure (P.printProgram' prog (sugar, UNICODE, line))
+    printProgram XMIR PrintProgCtx {..} prog = programToXMIR prog xmirCtx <&> printXMIR
+    printProgram LATEX PrintProgCtx {..} prog = pure (programToLaTeX prog (LatexContext sugar line nonumber))
     getRules :: Bool -> Bool -> [FilePath] -> IO [Y.Rule]
     getRules normalize shuffle rules = do
       ordered <-
