@@ -26,6 +26,7 @@ import qualified Functions
 import LaTeX (LatexContext (LatexContext), explainRules, programToLaTeX, rewrittensToLatex)
 import Lining (LineFormat (MULTILINE, SINGLELINE))
 import Logger
+import Merge (merge, MergeContext (MergeContext))
 import Misc (ensuredFile)
 import qualified Misc
 import Must (Must (..))
@@ -50,13 +51,13 @@ data PrintProgramContext = PrintProgCtx
   }
 
 data CmdException
-  = InvalidRewriteArguments {message :: String}
+  = InvalidCLIArguments {message :: String}
   | CouldNotReadFromStdin {message :: String}
   | CouldNotDataize
   deriving (Exception)
 
 instance Show CmdException where
-  show InvalidRewriteArguments {..} = printf "Invalid set of arguments for 'rewrite' command: %s" message
+  show InvalidCLIArguments {..} = printf "Invalid set of arguments: %s" message
   show CouldNotReadFromStdin {..} = printf "Could not read input from stdin\nReason: %s" message
   show CouldNotDataize = "Could not dataize given program"
 
@@ -325,10 +326,11 @@ runCLI args = handle handler $ do
       validateOpts
       logDebug (printf "Amount of rewriting cycles across all the rules: %d, per rule: %d" maxCycles maxDepth)
       input <- readInput inputFile
-      let xmirCtx = XmirContext omitListing omitComments input
-          printProgCtx = PrintProgCtx sugarType flat xmirCtx nonumber
       rules' <- getRules normalize shuffle rules
       program <- parseProgram input inputFormat
+      let listing = if null rules' then const input else (\prog -> P.printProgram' prog (sugarType, UNICODE, flat))
+          xmirCtx = XmirContext omitListing omitComments listing
+          printProgCtx = PrintProgCtx sugarType flat xmirCtx nonumber
       rewrittens <- rewrite' program rules' (context program printProgCtx)
       logDebug (printf "Printing rewritten 𝜑-program as %s" (show outputFormat))
       progs <- printRewrittens printProgCtx rewrittens
@@ -337,20 +339,18 @@ runCLI args = handle handler $ do
         validateOpts :: IO ()
         validateOpts = do
           when
-            (sugarType == SWEET && outputFormat == XMIR)
-            (throwIO (InvalidRewriteArguments "The --sweet and --output=xmir can't stay together"))
-          when
             (inPlace && isNothing inputFile)
-            (throwIO (InvalidRewriteArguments "--in-place requires an input file"))
+            (throwIO (InvalidCLIArguments "--in-place requires an input file"))
           when
             (inPlace && isJust targetFile)
-            (throwIO (InvalidRewriteArguments "--in-place and --target cannot be used together"))
+            (throwIO (InvalidCLIArguments "--in-place and --target cannot be used together"))
           when
             (nonumber && outputFormat /= LATEX)
-            (throwIO (InvalidRewriteArguments "The --nonumber option can stay together with --output=latex only"))
+            (throwIO (InvalidCLIArguments "The --nonumber option can stay together with --output=latex only"))
           validateMaxDepth maxDepth
           validateMaxCycles maxCycles
           validateMust must
+          validateXmirOptions outputFormat omitListing omitComments
         output :: Maybe FilePath -> String -> IO ()
         output target prog = case (inPlace, target, inputFile) of
           (True, _, Just file) -> do
@@ -409,16 +409,31 @@ runCLI args = handle handler $ do
         validateOpts =
           when
             (null rules && not normalize)
-            (throwIO (InvalidRewriteArguments "Either --rule or --normalize must be specified"))
-    CmdMerge opts@OptsMerge{..} -> do
+            (throwIO (InvalidCLIArguments "Either --rule or --normalize must be specified"))
+    CmdMerge opts@OptsMerge {..} -> do
+      validateXmirOptions outputFormat omitListing omitComments
       inputs' <- traverse (readInput . Just) inputs
-      putStrLn ""
+      progs <- traverse (`parseProgram` inputFormat) inputs'
+      prog <- merge progs (MergeContext buildTerm)
+      let listing = const (P.printProgram' prog (sugarType, UNICODE, flat))
+          xmirCtx = XmirContext omitListing omitComments listing
+          printProgCtx = PrintProgCtx sugarType flat xmirCtx False
+      prog' <- printProgram outputFormat printProgCtx prog
+      output targetFile prog'
   where
+    validateXmirOptions :: IOFormat -> Bool -> Bool -> IO ()
+    validateXmirOptions outputFormat omitListing omitComments = do
+      when
+        (outputFormat /= XMIR && omitListing)
+        (throwIO (InvalidCLIArguments "--omit-listing can be used only with --output-format=xmir"))
+      when
+        (outputFormat /= XMIR && omitComments)
+        (throwIO (InvalidCLIArguments "--omit-comments can be used only with --output-format=xmir"))
     validateIntArgument :: Integer -> (Integer -> Bool) -> String -> IO ()
     validateIntArgument num cmp msg =
       when
         (cmp num)
-        (throwIO (InvalidRewriteArguments msg))
+        (throwIO (InvalidCLIArguments msg))
     validateMaxDepth :: Integer -> IO ()
     validateMaxDepth depth = validateIntArgument depth (<= 0) "--max-depth must be positive"
     validateMaxCycles :: Integer -> IO ()
@@ -433,7 +448,7 @@ runCLI args = handle handler $ do
         (Just min, Just max)
           | min > max ->
               throwIO
-                ( InvalidRewriteArguments
+                ( InvalidCLIArguments
                     (printf "--must range invalid: minimum (%d) is greater than maximum (%d)" min max)
                 )
         _ -> pure ()

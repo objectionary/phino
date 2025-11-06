@@ -47,11 +47,11 @@ import qualified Text.XML.Cursor as C
 data XmirContext = XmirContext
   { omitListing :: Bool,
     omitComments :: Bool,
-    listing :: String
+    listing :: Program -> String
   }
 
 defaultXmirContext :: XmirContext
-defaultXmirContext = XmirContext True True ""
+defaultXmirContext = XmirContext True True (const "")
 
 data XMIRException
   = UnsupportedProgram {prog :: Program}
@@ -176,10 +176,11 @@ programToXMIR prog@(Program expr@(ExFormation [BiTau (AtLabel _) arg, BiVoid AtR
       (pckg, expr') <- getPackage expr
       root <- rootExpression expr' ctx
       now <- getCurrentTime
-      let listingContent =
+      let text = listing prog
+          listingContent =
             if omitListing
-              then show (length (lines listing)) ++ " line(s)"
-              else listing
+              then show (length (lines text)) ++ " line(s)"
+              else text
           listing' = NodeElement (element "listing" [] [NodeContent (T.pack listingContent)])
           metas = metasWithPackage (intercalate "." pckg)
       pure
@@ -261,20 +262,24 @@ programToXMIR prog _ = throwIO (UnsupportedProgram prog)
 indent :: Int -> TB.Builder
 indent n = TB.fromText (T.replicate n (T.pack "  "))
 
+newline' :: Bool -> TB.Builder
+newline' True = newline
+newline' False = ""
+
 newline :: TB.Builder
 newline = TB.fromString "\n"
 
--- >>> printElement 0 (element "doc" [("a", ""), ("b", ""), ("c", ""), ("d", ""), ("e", "")] [])
+-- >>> printElement 0 (element "doc" [("a", ""), ("b", ""), ("c", ""), ("d", ""), ("e", "")] []) True
 -- "<doc a=\"\" b=\"\" c=\"\" d=\"\" e=\"\"/>\n"
-printElement :: Int -> Element -> TB.Builder
-printElement indentLevel (Element name attrs nodes)
+printElement :: Int -> Element -> Bool -> TB.Builder
+printElement indentLevel (Element name attrs nodes) eol
   | null nodes =
       indent indentLevel
         <> TB.fromString "<"
         <> TB.fromText (nameLocalName name)
         <> attrsText
         <> TB.fromString "/>"
-        <> newline
+        <> newline' eol
   | all isTextNode nodes =
       indent indentLevel
         <> TB.fromString "<"
@@ -285,7 +290,7 @@ printElement indentLevel (Element name attrs nodes)
         <> TB.fromString "</"
         <> TB.fromText (nameLocalName name)
         <> TB.fromString ">"
-        <> newline
+        <> newline' eol
   | otherwise =
       indent indentLevel
         <> TB.fromString "<"
@@ -298,7 +303,7 @@ printElement indentLevel (Element name attrs nodes)
         <> TB.fromString "</"
         <> TB.fromText (nameLocalName name)
         <> TB.fromString ">"
-        <> newline
+        <> newline' eol
   where
     attrsText =
       mconcat
@@ -316,7 +321,7 @@ printElement indentLevel (Element name attrs nodes)
 -- "<!-- &#45;&#45;hello&#45;&#45; -->\n"
 printNode :: Int -> Node -> TB.Builder
 printNode _ (NodeContent t) = TB.fromText t -- print text exactly as-is
-printNode i (NodeElement e) = printElement i e -- pretty-print elements
+printNode i (NodeElement e) = printElement i e True -- pretty-print elements
 printNode i (NodeComment t) =
   indent i
     <> TB.fromString "<!-- "
@@ -331,7 +336,7 @@ printXMIR (Document _ root _) =
     ( TB.toLazyText
         ( TB.fromString "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
             <> newline
-            <> printElement 0 root
+            <> printElement 0 root False
         )
     )
 

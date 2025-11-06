@@ -142,12 +142,6 @@ spec = do
             ["rewrite", "--depth-sensitive", "--max-depth=1", "--max-cycles=1", "--rule=test-resources/cli/infinite.yaml"]
             ["[ERROR]: With option --depth-sensitive it's expected rewriting iterations amount does not reach the limit: --max-depth=1"]
 
-      it "on --sweet and --output=xmir together" $
-        withStdin "Q -> [[ ]]" $
-          testCLIFailed
-            ["rewrite", "--sweet", "--output=xmir"]
-            ["The --sweet and --output=xmir can't stay together"]
-
       it "with looping rules" $
         withStdin "Q -> [[ x -> \"0\" ]]" $
           testCLIFailed
@@ -168,6 +162,18 @@ spec = do
           testCLIFailed
             ["rewrite", "--nonumber", "--output=xmir"]
             ["The --nonumber option can stay together with --output=latex only"]
+
+      it "with --omit-listing and --output != xmir" $
+        withStdin "{[[]]}" $
+          testCLIFailed
+            ["rewrite", "--omit-listing", "--output=phi"]
+            ["--omit-listing"]
+
+      it "with --omit-comments and --output != xmir" $
+        withStdin "{[[]]}" $
+          testCLIFailed
+            ["rewrite", "--omit-comments", "--output=phi"]
+            ["--omit-comments"]
 
     it "saves steps to dir with --steps-dir" $ do
       let dir = "test-steps-temp"
@@ -264,7 +270,7 @@ spec = do
           ["rewrite", "--output=latex", "--sweet", "--nonumber", "--flat"]
           [ "\\begin{phiquation*}",
             "{[[ |x| -> 5 ]]}",
-            "\\end{phiquation*}"  
+            "\\end{phiquation*}"
           ]
 
     it "rewrites with XMIR as input" $
@@ -332,6 +338,18 @@ spec = do
                 "\\end{phiquation}"
               ]
           ]
+
+    it "prints input as listing in XMIR" $
+      withStdin "{[[ app -> [[]] ]]}" $
+        testCLISucceeded
+          ["rewrite", "--output=xmir", "--omit-comments", "--sweet", "--flat"]
+          ["  <listing>{[[ app -> [[]] ]]}</listing>"]
+
+    it "print program in listing in XMIRs with --sequence" $
+      withStdin "{[[ x -> \"foo\" ]]}" $
+        testCLISucceeded
+          ["rewrite", "--output=xmir", "--omit-comments", "--sweet", "--flat", "--sequence", "--rule=test-resources/cli/simple.yaml"]
+          ["  <listing>{⟦ x ↦ \"foo\" ⟧}</listing>", "  <listing>{⟦ x ↦ \"bar\" ⟧}</listing>"]
 
     describe "must range tests" $ do
       describe "fails" $ do
@@ -469,3 +487,9 @@ spec = do
             content `shouldContain` "\\documentclass{article}"
             content `shouldContain` "\\begin{document}"
         )
+
+  describe "merge" $
+    it "merges single program" $
+      testCLISucceeded
+        ["merge", "test-resources/cli/desugar.phi", "--sweet", "--flat"]
+        ["{⟦ foo ↦ Φ̇ ⟧}"]

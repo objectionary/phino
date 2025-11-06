@@ -44,6 +44,7 @@ library
     Lining
     Logger
     Matcher
+    Merge
     Misc
     Must
     Parser
