@@ -70,10 +70,14 @@ instance ToLaTeX EXPRESSION where
   toLaTeX EX_FORMATION {..} = EX_FORMATION lsb eol tab (toLaTeX binding) eol' tab' rsb
   toLaTeX EX_APPLICATION {..} = EX_APPLICATION (toLaTeX expr) eol tab (toLaTeX bindings) eol' tab'
   toLaTeX EX_APPLICATION' {..} = EX_APPLICATION' (toLaTeX expr) eol tab (toLaTeX args) eol' tab'
+  toLaTeX EX_DISPATCH{..} = EX_DISPATCH (toLaTeX expr) (toLaTeX attr)
   toLaTeX expr = expr
 
 instance ToLaTeX ATTRIBUTE where
-  toLaTeX AT_LABEL {..} = AT_LABEL (toLaTeX label)
+  toLaTeX AT_LABEL {..} = AT_LABEL (piped (toLaTeX label))
+    where
+      piped :: String -> String
+      piped str = "|" <> str <> "|"
   toLaTeX attr = attr
 
 instance ToLaTeX BINDING where

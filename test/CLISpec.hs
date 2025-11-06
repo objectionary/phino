@@ -240,14 +240,14 @@ spec = do
           ["rewrite", "--output=latex", "--sweet"]
           [ "\\begin{phiquation}",
             "{[[",
-            "  x -> QQ.z(",
-            "    y -> 5",
+            "  |x| -> QQ.|z|(",
+            "    |y| -> 5",
             "  ),",
-            "  q -> T,",
-            "  w -> $,",
+            "  |q| -> T,",
+            "  |w| -> $,",
             "  ^ -> Q,",
             "  @ -> 1,",
-            "  y -> \"H$@^M\"",
+            "  |y| -> \"H$@^M\"",
             "]]}",
             "\\end{phiquation}"
           ]
@@ -311,9 +311,9 @@ spec = do
           ]
           [ unlines
               [ "\\begin{phiquation}",
-                "{[[ x -> \"foo\" ]]} \\leadsto_{\\nameref{r:first}}",
-                "  \\leadsto {Q.x( y -> \"foo\" )} \\leadsto_{\\nameref{r:second}}",
-                "  \\leadsto {[[ x -> \"foo\" ]]}",
+                "{[[ |x| -> \"foo\" ]]} \\leadsto_{\\nameref{r:first}}",
+                "  \\leadsto {Q.|x|( |y| -> \"foo\" )} \\leadsto_{\\nameref{r:second}}",
+                "  \\leadsto {[[ |x| -> \"foo\" ]]}",
                 "\\end{phiquation}"
               ]
           ]
