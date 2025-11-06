@@ -264,7 +264,7 @@ spec = do
           ["rewrite", "--output=latex", "--sweet", "--nonumber", "--flat"]
           [ "\\begin{phiquation*}",
             "{[[ |x| -> 5 ]]}",
-            "\\end{phiquation*}"
+            "\\end{phiquation*}"  
           ]
 
     it "rewrites with XMIR as input" $

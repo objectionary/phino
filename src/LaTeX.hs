@@ -35,9 +35,9 @@ phiquation LatexContext {nonumber = False} = "phiquation"
 
 rewrittensToLatex :: [Rewritten] -> LatexContext -> String
 rewrittensToLatex rewrittens ctx =
-  let quation = phiquation ctx
+  let equation = phiquation ctx
    in concat
-        [ printf "\\begin{%s}\n" quation,
+        [ printf "\\begin{%s}\n" equation,
           intercalate
             "\n  \\leadsto "
             ( map
@@ -53,19 +53,19 @@ rewrittensToLatex rewrittens ctx =
                 )
                 rewrittens
             ),
-          printf "\n\\end{%s}" quation
+          printf "\n\\end{%s}" equation
         ]
 
 programToLaTeX :: Program -> LatexContext -> String
 programToLaTeX prog ctx =
-  let quation = phiquation ctx
+  let equation = phiquation ctx
    in concat
         [ "\\begin{",
-          quation,
+          equation,
           "}\n",
           renderToLatex prog ctx,
           "\n\\end{",
-          quation,
+          equation,
           "}"
         ]
 
