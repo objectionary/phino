@@ -57,6 +57,7 @@ data Command
   = CmdRewrite OptsRewrite
   | CmdDataize OptsDataize
   | CmdExplain OptsExplain
+  | CmdMerge OptsMerge
 
 data IOFormat = XMIR | PHI | LATEX
   deriving (Eq)
@@ -108,27 +109,17 @@ data OptsRewrite = OptsRewrite
     inputFile :: Maybe FilePath
   }
 
-parseIOFormat :: String -> ReadM IOFormat
-parseIOFormat type' = eitherReader $ \format -> case (map toLower format, type') of
-  ("xmir", _) -> Right XMIR
-  ("phi", _) -> Right PHI
-  ("latex", "output") -> Right LATEX
-  _ -> Left (printf "The value '%s' can't be used for '--%s' option, use --help to check possible values" format type')
-
-argInputFile :: Parser (Maybe FilePath)
-argInputFile = optional (argument str (metavar "FILE" <> help "Path to input file"))
-
-optMaxDepth :: Parser Integer
-optMaxDepth = option auto (long "max-depth" <> metavar "DEPTH" <> help "Maximum number of rewriting iterations per rule" <> value 25 <> showDefault)
-
-optMaxCycles :: Parser Integer
-optMaxCycles = option auto (long "max-cycles" <> metavar "CYCLES" <> help "Maximum number of rewriting cycles across all rules" <> value 25 <> showDefault)
-
-optInputFormat :: Parser IOFormat
-optInputFormat = option (parseIOFormat "input") (long "input" <> metavar "FORMAT" <> help "Program input format (phi, xmir, latex)" <> value PHI <> showDefault)
-
-optDepthSensitive :: Parser Bool
-optDepthSensitive = switch (long "depth-sensitive" <> help "Fail if rewriting is not finished after reaching max attempts (see --max-cycles or --max-depth)")
+data OptsMerge = OptsMerge
+  { logLevel :: LogLevel,
+    inputFormat :: IOFormat,
+    outputFormat :: IOFormat,
+    sugarType :: SugarType,
+    flat :: LineFormat,
+    omitListing :: Bool,
+    omitComments :: Bool,
+    targetFile :: Maybe FilePath,
+    inputs :: [FilePath]
+  }
 
 optLogLevel :: Parser LogLevel
 optLogLevel =
@@ -152,8 +143,33 @@ optLogLevel =
       "NONE" -> Right NONE
       _ -> Left $ "unknown log-level: " <> lvl
 
+parseIOFormat :: String -> ReadM IOFormat
+parseIOFormat type' = eitherReader $ \format -> case (map toLower format, type') of
+  ("xmir", _) -> Right XMIR
+  ("phi", _) -> Right PHI
+  ("latex", "output") -> Right LATEX
+  _ -> Left (printf "The value '%s' can't be used for '--%s' option, use --help to check possible values" format type')
+
+argInputFile :: Parser (Maybe FilePath)
+argInputFile = optional (argument str (metavar "FILE" <> help "Path to input file"))
+
+optMaxDepth :: Parser Integer
+optMaxDepth = option auto (long "max-depth" <> metavar "DEPTH" <> help "Maximum number of rewriting iterations per rule" <> value 25 <> showDefault)
+
+optMaxCycles :: Parser Integer
+optMaxCycles = option auto (long "max-cycles" <> metavar "CYCLES" <> help "Maximum number of rewriting cycles across all rules" <> value 25 <> showDefault)
+
+optInputFormat :: Parser IOFormat
+optInputFormat = option (parseIOFormat "input") (long "input" <> metavar "FORMAT" <> help "Program input format (phi, xmir)" <> value PHI <> showDefault)
+
+optOutputFormat :: Parser IOFormat
+optOutputFormat = option (parseIOFormat "output") (long "output" <> metavar "FORMAT" <> help "Program output format (phi, xmir, latex)" <> value PHI <> showDefault)
+
+optDepthSensitive :: Parser Bool
+optDepthSensitive = switch (long "depth-sensitive" <> help "Fail if rewriting is not finished after reaching max attempts (see --max-cycles or --max-depth)")
+
 optRule :: Parser [FilePath]
-optRule = many (strOption (long "rule" <> metavar "FILE" <> help "Path to custom rule"))
+optRule = many (strOption (long "rule" <> metavar "[FILE]" <> help "Path to custom rule"))
 
 optNormalize :: Parser Bool
 optNormalize = switch (long "normalize" <> help "Use built-in normalization rules")
@@ -167,11 +183,23 @@ optStepsDir = optional (strOption (long "steps-dir" <> metavar "FILE" <> help "D
 optShuffle :: Parser Bool
 optShuffle = switch (long "shuffle" <> help "Shuffle rules before applying")
 
-optSugar :: Parser SugarType
-optSugar = flag SALTY SWEET (long "sweet" <> help "Print result and intermediate (see --steps flag) 𝜑-programs using syntax sugar")
+optSugar :: [String] -> Parser SugarType
+optSugar opts = flag SALTY SWEET (long "sweet" <> help (printf "Print result and intermediate (see %s option(s)) 𝜑-programs using syntax sugar" (intercalate ", " opts)))
 
-optLineFormat :: Parser LineFormat
-optLineFormat = flag MULTILINE SINGLELINE (long "flat" <> help "Print result and intermediate (see --steps flag) 𝜑-programs in one line")
+optSugar' :: Parser SugarType
+optSugar' = flag SALTY SWEET (long "sweet" <> help "Print result 𝜑-program using syntax sugar")
+
+optLineFormat :: [String] -> Parser LineFormat
+optLineFormat opts = flag MULTILINE SINGLELINE (long "flat" <> help (printf "Print result and intermediate (see %s option(s)) 𝜑-programs in one line" (intercalate ", " opts)))
+
+optLineFormat' :: Parser LineFormat
+optLineFormat' = flag MULTILINE SINGLELINE (long "flat" <> help "Print result 𝜑-program in one line")
+
+optOmitListing :: Parser Bool
+optOmitListing = switch (long "omit-listing" <> help "Omit full program listing in XMIR output")
+
+optOmitComments :: Parser Bool
+optOmitComments = switch (long "omit-comments" <> help "Omit comments in XMIR output")
 
 explainParser :: Parser Command
 explainParser =
@@ -186,49 +214,66 @@ explainParser =
 
 dataizeParser :: Parser Command
 dataizeParser =
-  CmdDataize
-    <$> ( OptsDataize
-            <$> optLogLevel
-            <*> optInputFormat
-            <*> optSugar
-            <*> optLineFormat
-            <*> optMaxDepth
-            <*> optMaxCycles
-            <*> optDepthSensitive
-            <*> optStepsDir
-            <*> argInputFile
-        )
+  let steps = ["--steps-dir"]
+   in CmdDataize
+        <$> ( OptsDataize
+                <$> optLogLevel
+                <*> optInputFormat
+                <*> optSugar steps
+                <*> optLineFormat steps
+                <*> optMaxDepth
+                <*> optMaxCycles
+                <*> optDepthSensitive
+                <*> optStepsDir
+                <*> argInputFile
+            )
 
 rewriteParser :: Parser Command
 rewriteParser =
-  CmdRewrite
-    <$> ( OptsRewrite
+  let opts = ["--sequence", "--steps-dir"]
+   in CmdRewrite
+        <$> ( OptsRewrite
+                <$> optLogLevel
+                <*> optRule
+                <*> optInputFormat
+                <*> optOutputFormat
+                <*> optSugar opts
+                <*> optLineFormat opts
+                <*> optNormalize
+                <*> optShuffle
+                <*> optOmitListing
+                <*> optOmitComments
+                <*> optDepthSensitive
+                <*> option
+                  auto
+                  ( long "must"
+                      <> metavar "RANGE"
+                      <> help "Must-rewrite range (e.g., '3', '..5', '3..', '3..5'). Stops execution if number of rules applied is not in range. Use 0 to disable."
+                      <> value MtDisabled
+                      <> showDefaultWith show
+                  )
+                <*> optMaxDepth
+                <*> optMaxCycles
+                <*> switch (long "in-place" <> help "Edit file in-place instead of printing to output")
+                <*> switch (long "sequence" <> help "Result output contains all intermediate 𝜑-programs concatenated with EOL")
+                <*> optTarget
+                <*> optStepsDir
+                <*> argInputFile
+            )
+
+mergeParser :: Parser Command
+mergeParser =
+  CmdMerge
+    <$> ( OptsMerge
             <$> optLogLevel
-            <*> optRule
             <*> optInputFormat
-            <*> option (parseIOFormat "output") (long "output" <> metavar "FORMAT" <> help "Program output format (phi, xmir)" <> value PHI <> showDefault)
-            <*> optSugar
-            <*> optLineFormat
-            <*> optNormalize
-            <*> optShuffle
-            <*> switch (long "omit-listing" <> help "Omit full program listing in XMIR output")
-            <*> switch (long "omit-comments" <> help "Omit comments in XMIR output")
-            <*> optDepthSensitive
-            <*> option
-              auto
-              ( long "must"
-                  <> metavar "RANGE"
-                  <> help "Must-rewrite range (e.g., '3', '..5', '3..', '3..5'). Stops execution if number of rules applied is not in range. Use 0 to disable."
-                  <> value MtDisabled
-                  <> showDefaultWith show
-              )
-            <*> optMaxDepth
-            <*> optMaxCycles
-            <*> switch (long "in-place" <> help "Edit file in-place instead of printing to output")
-            <*> switch (long "sequence" <> help "Result output contains all intermediate 𝜑-programs concatenated with EOL")
+            <*> optOutputFormat
+            <*> optSugar'
+            <*> optLineFormat'
+            <*> optOmitListing
+            <*> optOmitComments
             <*> optTarget
-            <*> optStepsDir
-            <*> argInputFile
+            <*> many (argument str (metavar "[FILE]" <> help "Paths to input files"))
         )
 
 commandParser :: Parser Command
@@ -237,6 +282,7 @@ commandParser =
     ( command "rewrite" (info rewriteParser (progDesc "Rewrite the 𝜑-program"))
         <> command "dataize" (info dataizeParser (progDesc "Dataize the 𝜑-program"))
         <> command "explain" (info explainParser (progDesc "Explain rules in LaTeX format"))
+        <> command "merge" (info mergeParser (progDesc "Merge 𝜑-programs into single one by merging their top level formations"))
     )
 
 parserInfo :: ParserInfo Command
@@ -258,6 +304,7 @@ setLogLevel' cmd =
         CmdRewrite OptsRewrite {logLevel} -> logLevel
         CmdDataize OptsDataize {logLevel} -> logLevel
         CmdExplain OptsExplain {logLevel} -> logLevel
+        CmdMerge OptsMerge {logLevel} -> logLevel
    in setLogLevel level
 
 runCLI :: [String] -> IO ()
@@ -350,6 +397,9 @@ runCLI args = handle handler $ do
           when
             (null rules && not normalize)
             (throwIO (InvalidRewriteArguments "Either --rule or --normalize must be specified"))
+    CmdMerge opts@OptsMerge{..} -> do
+      inputs' <- traverse (readInput . Just) inputs
+      putStrLn ""
   where
     validateIntArgument :: Integer -> (Integer -> Bool) -> String -> IO ()
     validateIntArgument num cmp msg =
