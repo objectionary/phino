@@ -25,11 +25,11 @@ data MergeException
 instance Show MergeException where
   show WrongProgramFormat {..} =
     printf
-      "Invalid program format, only programs with top level formations are supported for 'merge' command, given:\n"
+      "Invalid program format, only programs with top level formations are supported for 'merge' command, given:\n%s"
       (printProgram program)
   show CanNotMergeBinding {..} =
     printf
-      "Can't merge two bindings, conflict found:%s"
+      "Can't merge two bindings, conflict found:\n%s"
       (printExpression (ExFormation [first, second]))
 
 mergeBinding :: Binding -> Binding -> IO Binding

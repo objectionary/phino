@@ -88,6 +88,12 @@ testCLISucceeded args outputs = testCLI' args outputs (Right ())
 testCLIFailed :: [String] -> [String] -> Expectation
 testCLIFailed args outputs = testCLI' args outputs (Left (ExitFailure 1))
 
+resource :: String -> String
+resource file = "test-resources/cli/" <> file
+
+rule :: String -> String
+rule file = "--rule=" <> resource file
+
 spec :: Spec
 spec = do
   it "prints version" $
@@ -139,18 +145,18 @@ spec = do
       it "with --depth-sensitive" $
         withStdin "Q -> [[ x -> \"x\"]]" $
           testCLIFailed
-            ["rewrite", "--depth-sensitive", "--max-depth=1", "--max-cycles=1", "--rule=test-resources/cli/infinite.yaml"]
+            ["rewrite", "--depth-sensitive", "--max-depth=1", "--max-cycles=1", rule "infinite.yaml"]
             ["[ERROR]: With option --depth-sensitive it's expected rewriting iterations amount does not reach the limit: --max-depth=1"]
 
       it "with looping rules" $
         withStdin "Q -> [[ x -> \"0\" ]]" $
           testCLIFailed
-            ["rewrite", "--rule=test-resources/cli/first.yaml", "--rule=test-resources/cli/second.yaml", "--max-depth=1", "--max-cycles=3"]
+            ["rewrite", rule "first.yaml", rule "second.yaml", "--max-depth=1", "--max-cycles=3"]
             ["it seems rewriting is looping"]
 
       it "with wrong attribute and valid error message" $
         testCLIFailed
-          ["rewrite", "test-resources/cli/with-$this-attribute.phi"]
+          ["rewrite", resource "with-$this-attribute.phi"]
           [ "[ERROR]: Couldn't parse given phi program, cause: program:10:13:",
             "10 |             $this ↦ ⟦⟧",
             "   |             ^^",
@@ -181,7 +187,7 @@ spec = do
       when dirExists (removeDirectoryRecursive dir)
       withStdin "Q -> [[ x -> \"hello\"]]" $ do
         testCLISucceeded
-          ["rewrite", "--rule=test-resources/cli/infinite.yaml", "--max-cycles=2", "--max-depth=2", "--steps-dir=" ++ dir, "--sweet"]
+          ["rewrite", rule "infinite.yaml", "--max-cycles=2", "--max-depth=2", "--steps-dir=" ++ dir, "--sweet"]
           ["hello_hi_hi"]
         (`shouldBe` True) <$> doesDirectoryExist dir
         files <- listDirectory dir
@@ -192,7 +198,7 @@ spec = do
 
     it "desugares without any rules flag from file" $
       testCLISucceeded
-        ["rewrite", "test-resources/cli/desugar.phi"]
+        ["rewrite", resource "desugar.phi"]
         ["Φ ↦ ⟦\n  foo ↦ Φ.org.eolang,\n  ρ ↦ ∅\n⟧"]
 
     it "desugares with without any rules flag from stdin" $
@@ -205,7 +211,7 @@ spec = do
 
     it "normalizes with --normalize flag" $
       testCLISucceeded
-        ["rewrite", "--normalize", "test-resources/cli/normalize.phi"]
+        ["rewrite", "--normalize", resource "normalize.phi"]
         [ unlines
             [ "Φ ↦ ⟦",
               "  x ↦ ⟦",
@@ -295,15 +301,15 @@ spec = do
     it "does not fail on exactly 1 rewriting" $
       withStdin "{⟦ t ↦ ⟦ x ↦ \"foo\" ⟧ ⟧}" $
         testCLISucceeded
-          ["rewrite", "--rule=test-resources/cli/simple.yaml", "--must=1", "--sweet"]
+          ["rewrite", rule "simple.yaml", "--must=1", "--sweet"]
           ["x ↦ \"bar\""]
 
     it "prints many programs with --sequence" $
       withStdin "{[[ x -> \"foo\" ]]}" $
         testCLISucceeded
           [ "rewrite",
-            "--rule=test-resources/cli/first.yaml",
-            "--rule=test-resources/cli/second.yaml",
+            rule "first.yaml",
+            rule "second.yaml",
             "--max-depth=1",
             "--max-cycles=2",
             "--sequence",
@@ -321,8 +327,8 @@ spec = do
       withStdin "{[[ x -> \"foo\" ]]}" $
         testCLISucceeded
           [ "rewrite",
-            "--rule=test-resources/cli/first.yaml",
-            "--rule=test-resources/cli/second.yaml",
+            rule "first.yaml",
+            rule "second.yaml",
             "--max-depth=1",
             "--max-cycles=2",
             "--sequence",
@@ -348,7 +354,7 @@ spec = do
     it "print program in listing in XMIRs with --sequence" $
       withStdin "{[[ x -> \"foo\" ]]}" $
         testCLISucceeded
-          ["rewrite", "--output=xmir", "--omit-comments", "--sweet", "--flat", "--sequence", "--rule=test-resources/cli/simple.yaml"]
+          ["rewrite", "--output=xmir", "--omit-comments", "--sweet", "--flat", "--sequence", rule "simple.yaml"]
           ["  <listing>{⟦ x ↦ \"foo\" ⟧}</listing>", "  <listing>{⟦ x ↦ \"bar\" ⟧}</listing>"]
 
     describe "must range tests" $ do
@@ -362,7 +368,7 @@ spec = do
         it "when cycles below range 2.." $
           withStdin "{⟦ t ↦ ⟦ x ↦ \"foo\" ⟧ ⟧}" $
             testCLIFailed
-              ["rewrite", "--rule=test-resources/cli/simple.yaml", "--must=2.."]
+              ["rewrite", rule "simple.yaml", "--must=2.."]
               ["it's expected rewriting cycles to be in range [2..], but rewriting stopped after 1"]
 
         it "with invalid range 5..3" $
@@ -394,13 +400,13 @@ spec = do
       it "accepts range 1..1 (exactly 1 cycle)" $
         withStdin "{⟦ t ↦ ⟦ x ↦ \"foo\" ⟧ ⟧}" $
           testCLISucceeded
-            ["rewrite", "--rule=test-resources/cli/simple.yaml", "--must=1..1", "--sweet"]
+            ["rewrite", rule "simple.yaml", "--must=1..1", "--sweet"]
             ["x ↦ \"bar\""]
 
       it "accepts range 1..3 when 1 cycle happens" $
         withStdin "{⟦ t ↦ ⟦ x ↦ \"foo\" ⟧ ⟧}" $
           testCLISucceeded
-            ["rewrite", "--rule=test-resources/cli/simple.yaml", "--must=1..3", "--sweet"]
+            ["rewrite", rule "simple.yaml", "--must=1..3", "--sweet"]
             ["x ↦ \"bar\""]
 
       it "accepts range 0.. (0 or more)" $
@@ -422,7 +428,7 @@ spec = do
         hPutStr h "Q -> [[ x -> \"foo\" ]]"
         hClose h
         testCLISucceeded
-          ["rewrite", "--rule=test-resources/cli/simple.yaml", "--in-place", "--sweet", path]
+          ["rewrite", rule "simple.yaml", "--in-place", "--sweet", path]
           [printf "The file '%s' was modified in-place" path]
         content <- readFile path
         content `shouldBe` "{⟦\n  x ↦ \"bar\"\n⟧}"
@@ -430,7 +436,7 @@ spec = do
     it "rewrites with cycles" $
       withStdin "Q -> [[ x -> \"x\" ]]" $
         testCLISucceeded
-          ["rewrite", "--sweet", "--rule=test-resources/cli/infinite.yaml", "--max-depth=1", "--max-cycles=2"]
+          ["rewrite", "--sweet", rule "infinite.yaml", "--max-depth=1", "--max-cycles=2"]
           [ unlines
               [ "{⟦",
                 "  x ↦ \"x_hi_hi\"",
@@ -488,8 +494,42 @@ spec = do
             content `shouldContain` "\\begin{document}"
         )
 
-  describe "merge" $
+  describe "merge" $ do
     it "merges single program" $
       testCLISucceeded
-        ["merge", "test-resources/cli/desugar.phi", "--sweet", "--flat"]
+        ["merge", resource "desugar.phi", "--sweet", "--flat"]
         ["{⟦ foo ↦ Φ̇ ⟧}"]
+
+    it "merges EO programs" $
+      testCLISucceeded
+        ["merge", "--sweet", resource "number.phi", resource "bytes.phi", resource "string.phi"]
+        [ unlines
+            [ "{⟦",
+              "  org ↦ ⟦",
+              "    eolang ↦ ⟦",
+              "      number ↦ ⟦",
+              "        φ ↦ ∅",
+              "      ⟧,",
+              "      bytes ↦ ⟦",
+              "        data ↦ ∅",
+              "      ⟧,",
+              "      string ↦ ⟦",
+              "        φ ↦ ∅",
+              "      ⟧,",
+              "      λ ⤍ Package",
+              "    ⟧,",
+              "    λ ⤍ Package",
+              "  ⟧",
+              "⟧}"
+            ]
+        ]
+
+    it "fails on merging non formations" $
+      testCLIFailed
+        ["merge", resource "dispatch.phi", resource "number.phi"]
+        ["Invalid program format, only programs with top level formations are supported for 'merge' command"]
+    
+    it "fails on merging conflicted bindings" $
+      testCLIFailed
+        ["merge", resource "foo.phi", resource "desugar.phi"]
+        ["Can't merge two bindings, conflict found"]
