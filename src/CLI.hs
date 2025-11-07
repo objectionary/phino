@@ -411,7 +411,6 @@ runCLI args = handle handler $ do
             (null rules && not normalize)
             (throwIO (InvalidCLIArguments "Either --rule or --normalize must be specified"))
     CmdMerge OptsMerge {..} -> do
-      validateXmirOptions outputFormat omitListing omitComments
       inputs' <- traverse (readInput . Just) inputs
       progs <- traverse (`parseProgram` inputFormat) inputs'
       prog <- merge progs
@@ -420,6 +419,13 @@ runCLI args = handle handler $ do
           printProgCtx = PrintProgCtx sugarType flat xmirCtx False
       prog' <- printProgram outputFormat printProgCtx prog
       output targetFile prog'
+      where
+        validateOpts :: IO ()
+        validateOpts = do
+          when
+            (null inputs)
+            (throwIO (InvalidCLIArguments "At least one input file must be specified for 'merge' command"))
+          validateXmirOptions outputFormat omitListing omitComments
   where
     validateXmirOptions :: IOFormat -> Bool -> Bool -> IO ()
     validateXmirOptions outputFormat omitListing omitComments = do

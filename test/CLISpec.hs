@@ -528,8 +528,13 @@ spec = do
       testCLIFailed
         ["merge", resource "dispatch.phi", resource "number.phi"]
         ["Invalid program format, only programs with top level formations are supported for 'merge' command"]
-    
+
     it "fails on merging conflicted bindings" $
       testCLIFailed
         ["merge", resource "foo.phi", resource "desugar.phi"]
         ["Can't merge two bindings, conflict found"]
+
+    it "fails on merging empty list of programs" $
+      testCLIFailed
+        ["merge"]
+        ["Nothing to merge"]

@@ -13,13 +13,14 @@ import Data.Functor ((<&>))
 import Deps (BuildTermFunc, Term (TeBindings))
 import Matcher (substEmpty)
 import Misc
-import Printer (printBinding, printProgram, printExpression)
+import Printer (printBinding, printExpression, printProgram)
 import Text.Printf (printf)
 import qualified Yaml as Y
 
 data MergeException
   = WrongProgramFormat {program :: Program}
   | CanNotMergeBinding {first :: Binding, second :: Binding}
+  | EmptyProgramList
   deriving (Exception)
 
 instance Show MergeException where
@@ -31,6 +32,7 @@ instance Show MergeException where
     printf
       "Can't merge two bindings, conflict found:\n%s"
       (printExpression (ExFormation [first, second]))
+  show EmptyProgramList = "Nothing to merge: provide at least one program"
 
 mergeBinding :: Binding -> Binding -> IO Binding
 mergeBinding first@(BiTau a (ExFormation xs)) second@(BiTau b (ExFormation ys))
@@ -51,6 +53,7 @@ mergeBindings xs ys = do
   pure (xs' <> ys' <> ws)
 
 merge' :: [Program] -> IO Program
+merge' [] = throwIO EmptyProgramList
 merge' [prog@(Program (ExFormation bds))] = pure prog
 merge' (prog@(Program (ExFormation bds)) : rest) = do
   Program (ExFormation bds') <- merge' rest
