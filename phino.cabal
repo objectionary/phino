@@ -115,6 +115,7 @@ test-suite spec
     DataizeSpec
     FunctionsSpec
     MatcherSpec
+    MergeSpec
     MiscSpec
     ParserSpec
     Paths_phino

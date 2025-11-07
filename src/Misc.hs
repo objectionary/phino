@@ -21,6 +21,8 @@ module Misc
     toDouble,
     btsToUnescapedStr,
     attributesFromBindings,
+    attributesFromBindings',
+    attributeFromBinding,
     uniqueBindings,
     uniqueBindings',
     validateYamlObject,
@@ -33,6 +35,9 @@ where
 import AST
 import Control.Exception
 import Control.Monad
+import Data.Aeson (Object)
+import qualified Data.Aeson.Key as Key
+import qualified Data.Aeson.KeyMap as KeyMap
 import Data.Binary.IEEE754
 import Data.Bits (Bits (shiftL), (.|.))
 import qualified Data.Bits as IOArray
@@ -42,6 +47,7 @@ import Data.ByteString.Lazy (unpack)
 import qualified Data.ByteString.Lazy.UTF8 as U
 import Data.Char (chr, isPrint, ord)
 import Data.List (intercalate)
+import Data.Maybe (catMaybes)
 import qualified Data.Set as Set
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
@@ -53,9 +59,6 @@ import System.Directory (doesDirectoryExist, doesFileExist, listDirectory)
 import System.FilePath ((</>))
 import System.Random.Stateful
 import Text.Printf (printf)
-import Data.Aeson (Object)
-import qualified Data.Aeson.KeyMap as KeyMap
-import qualified Data.Aeson.Key as Key
 
 data FsException
   = FileDoesNotExist {file :: FilePath}
@@ -107,20 +110,22 @@ pattern DataObject label bts <- (matchDataObject -> Just (label, bts))
             )
         )
 
+-- Extract attribute from binding
+attributeFromBinding :: Binding -> Maybe Attribute
+attributeFromBinding (BiTau attr _) = Just attr
+attributeFromBinding (BiDelta _) = Just AtDelta
+attributeFromBinding (BiLambda _) = Just AtLambda
+attributeFromBinding (BiVoid attr) = Just attr
+attributeFromBinding (BiMeta _) = Nothing
+attributeFromBinding (BiMetaLambda _) = Just AtLambda
+
 -- Extract attributes from bindings
 attributesFromBindings :: [Binding] -> [Attribute]
 attributesFromBindings [] = []
-attributesFromBindings (bd : bds) =
-  let attr = case bd of
-        BiTau attr _ -> Just attr
-        BiDelta _ -> Just AtDelta
-        BiLambda _ -> Just AtLambda
-        BiVoid attr -> Just attr
-        BiMeta _ -> Nothing
-        BiMetaLambda _ -> Just AtLambda
-   in case attr of
-        Just attr' -> attr' : attributesFromBindings bds
-        _ -> attributesFromBindings bds
+attributesFromBindings bds = catMaybes (attributesFromBindings' bds)
+
+attributesFromBindings' :: [Binding] -> [Maybe Attribute]
+attributesFromBindings' = map attributeFromBinding
 
 uniqueBindings' :: [Binding] -> IO [Binding]
 uniqueBindings' bds = case uniqueBindings bds of
@@ -193,7 +198,6 @@ allPathsIn dir = do
 -- >>> toDouble 5
 -- 5.0
 toDouble :: Integer -> Double
-
 toDouble = fromIntegral
 
 -- >>> btsToWord8 BtEmpty

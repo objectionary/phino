@@ -26,7 +26,7 @@ import qualified Functions
 import LaTeX (LatexContext (LatexContext), explainRules, programToLaTeX, rewrittensToLatex)
 import Lining (LineFormat (MULTILINE, SINGLELINE))
 import Logger
-import Merge (merge, MergeContext (MergeContext))
+import Merge (merge)
 import Misc (ensuredFile)
 import qualified Misc
 import Must (Must (..))
@@ -322,7 +322,7 @@ runCLI args = handle handler $ do
   cmd <- handleParseResult (execParserPure defaultPrefs parserInfo args)
   setLogLevel' cmd
   case cmd of
-    CmdRewrite opts@OptsRewrite {..} -> do
+    CmdRewrite OptsRewrite {..} -> do
       validateOpts
       logDebug (printf "Amount of rewriting cycles across all the rules: %d, per rule: %d" maxCycles maxDepth)
       input <- readInput inputFile
@@ -379,7 +379,7 @@ runCLI args = handle handler $ do
         printRewrittens ctx rewrittens
           | outputFormat == LATEX = pure (rewrittensToLatex rewrittens (LatexContext sugarType flat nonumber))
           | otherwise = mapM (printProgram outputFormat ctx . program) rewrittens <&> intercalate "\n"
-    CmdDataize opts@OptsDataize {..} -> do
+    CmdDataize OptsDataize {..} -> do
       validateOpts
       input <- readInput inputFile
       prog <- parseProgram input inputFormat
@@ -399,7 +399,7 @@ runCLI args = handle handler $ do
             depthSensitive
             buildTerm
             (saveStep stepsDir (ioToExtension PHI) (printProgram PHI (PrintProgCtx sugarType flat defaultXmirContext False)))
-    CmdExplain opts@OptsExplain {..} -> do
+    CmdExplain OptsExplain {..} -> do
       validateOpts
       rules' <- getRules normalize shuffle rules
       let latex = explainRules rules'
@@ -410,11 +410,11 @@ runCLI args = handle handler $ do
           when
             (null rules && not normalize)
             (throwIO (InvalidCLIArguments "Either --rule or --normalize must be specified"))
-    CmdMerge opts@OptsMerge {..} -> do
+    CmdMerge OptsMerge {..} -> do
       validateXmirOptions outputFormat omitListing omitComments
       inputs' <- traverse (readInput . Just) inputs
       progs <- traverse (`parseProgram` inputFormat) inputs'
-      prog <- merge progs (MergeContext buildTerm)
+      prog <- merge progs
       let listing = const (P.printProgram' prog (sugarType, UNICODE, flat))
           xmirCtx = XmirContext omitListing omitComments listing
           printProgCtx = PrintProgCtx sugarType flat xmirCtx False

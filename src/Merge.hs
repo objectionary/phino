@@ -1,27 +1,25 @@
-{-# HLINT ignore "Use newtype instead of data" #-}
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE RecordWildCards #-}
+
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
-{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 
-module Merge where
+module Merge (merge) where
 
 import AST
 import Control.Exception (throwIO)
 import Control.Exception.Base
+import Data.Functor ((<&>))
 import Deps (BuildTermFunc, Term (TeBindings))
 import Matcher (substEmpty)
-import Printer (printProgram)
+import Misc
+import Printer (printBinding, printProgram, printExpression)
 import Text.Printf (printf)
 import qualified Yaml as Y
 
-newtype MergeContext = MergeContext
-  { _buildTerm :: BuildTermFunc
-  }
-
 data MergeException
   = WrongProgramFormat {program :: Program}
+  | CanNotMergeBinding {first :: Binding, second :: Binding}
   deriving (Exception)
 
 instance Show MergeException where
@@ -29,15 +27,36 @@ instance Show MergeException where
     printf
       "Invalid program format, only programs with top level formations are supported for 'merge' command, given:\n"
       (printProgram program)
+  show CanNotMergeBinding {..} =
+    printf
+      "Can't merge two bindings, conflict found:%s"
+      (printExpression (ExFormation [first, second]))
 
-merge :: [Program] -> MergeContext -> IO Program
+mergeBinding :: Binding -> Binding -> IO Binding
+mergeBinding first@(BiTau a (ExFormation xs)) second@(BiTau b (ExFormation ys))
+  | a == b = mergeBindings xs ys <&> BiTau a . ExFormation
+  | otherwise = throwIO (CanNotMergeBinding first second)
+mergeBinding x y
+  | x == y = pure x
+  | otherwise = throwIO (CanNotMergeBinding x y)
+
+mergeBindings :: [Binding] -> [Binding] -> IO [Binding]
+mergeBindings xs ys = do
+  let as = attributesFromBindings' xs
+      bs = attributesFromBindings' ys
+      xs' = [x | x <- xs, attributeFromBinding x `notElem` bs]
+      ys' = [y | y <- ys, attributeFromBinding y `notElem` as]
+      collisions = [(x, y) | x <- xs, y <- ys, attributeFromBinding x == attributeFromBinding y]
+  ws <- mapM (uncurry mergeBinding) collisions
+  pure (xs' <> ys' <> ws)
+
+merge' :: [Program] -> IO Program
+merge' [prog@(Program (ExFormation bds))] = pure prog
+merge' (prog@(Program (ExFormation bds)) : rest) = do
+  Program (ExFormation bds') <- merge' rest
+  merged <- mergeBindings bds' bds
+  pure (Program (ExFormation merged))
+merge' (prog : rest) = throwIO (WrongProgramFormat prog)
+
+merge :: [Program] -> IO Program
 merge progs = merge' (reverse progs)
-
-merge' :: [Program] -> MergeContext -> IO Program
-merge' [prog@(Program (ExFormation bds))] _ = pure prog
-merge' (prog@(Program (ExFormation bds)) : rest) ctx@MergeContext {..} = do
-  Program (ExFormation bds') <- merge' rest ctx
-  let bindings = map Y.ArgBinding (bds ++ bds')
-  TeBindings joined <- _buildTerm "join" bindings substEmpty (Program (ExFormation []))
-  pure (Program (ExFormation joined))
-merge' (prog : rest) _ = throwIO (WrongProgramFormat prog)
