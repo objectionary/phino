@@ -537,4 +537,4 @@ spec = do
     it "fails on merging empty list of programs" $
       testCLIFailed
         ["merge"]
-        ["Nothing to merge"]
+        ["At least one input file must be specified for 'merge' command"]
