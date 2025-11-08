@@ -411,6 +411,7 @@ runCLI args = handle handler $ do
             (null rules && not normalize)
             (throwIO (InvalidCLIArguments "Either --rule or --normalize must be specified"))
     CmdMerge OptsMerge {..} -> do
+      validateOpts
       inputs' <- traverse (readInput . Just) inputs
       progs <- traverse (`parseProgram` inputFormat) inputs'
       prog <- merge progs
