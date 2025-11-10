@@ -271,7 +271,7 @@ extraSubstitutions substs extras RuleContext {..} = case extras of
     logDebug "Extra substitutions have been built"
     pure (catMaybes res)
 
--- @todo #432:30min Fix log for not mached pattern. Right now we print
+-- @todo #432:30min Fix log for not matched pattern. Right now we print
 --  the name of the rule if pattern is not matched. It would be better to print
 --  the pattern itself. To achieve that we should extend CST so it supports meta
 --  attributes, expressions and so on. Don't forget to remove the puzzle
