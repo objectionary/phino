@@ -31,7 +31,6 @@ data DataizeContext = DataizeContext
 switchContext :: DataizeContext -> RewriteContext
 switchContext DataizeContext {..} =
   RewriteContext
-    _program
     _maxDepth
     _maxCycles
     _depthSensitive
@@ -128,7 +127,7 @@ morph expr ctx = do
   case resolved of
     Just obj -> morph obj ctx
     _ ->
-      if isNF expr (RuleContext (_program ctx) (_buildTerm ctx))
+      if isNF expr (RuleContext (_buildTerm ctx))
         then pure Nothing
         else do
           [Rewritten {program = Program expr'}] <- rewrite' (Program expr) normalizationRules (switchContext ctx) -- NMZ
@@ -151,7 +150,7 @@ dataize' (ExFormation bds) ctx = case maybeDelta bds of
     (Just (BiTau AtPhi expr), bds') -> case maybeLambda bds' of
       (Just (BiLambda _), _) -> throwIO (userError "The 𝜑 and λ can't be present in formation at the same time")
       (_, _) ->
-        let expr' = contextualize expr (ExFormation bds) (_program ctx)
+        let expr' = contextualize expr (ExFormation bds)
          in dataize' expr' ctx
     (Nothing, _) -> case maybeLambda bds of
       (Just (BiLambda _), _) -> do

@@ -69,15 +69,15 @@ instance Show BuildException where
       (printBytes _bts)
       _msg
 
-contextualize :: Expression -> Expression -> Program -> Expression
-contextualize ExGlobal _ (Program expr) = expr
-contextualize ExThis expr _ = expr
-contextualize ExTermination _ _ = ExTermination
-contextualize (ExFormation bds) _ _ = ExFormation bds
-contextualize (ExDispatch expr attr) context prog = ExDispatch (contextualize expr context prog) attr
-contextualize (ExApplication expr (BiTau attr bexpr)) context prog =
-  let expr' = contextualize expr context prog
-      bexpr' = contextualize bexpr context prog
+contextualize :: Expression -> Expression -> Expression
+contextualize ExGlobal _ = ExGlobal
+contextualize ExThis expr = expr
+contextualize ExTermination _ = ExTermination
+contextualize (ExFormation bds) _ = ExFormation bds
+contextualize (ExDispatch expr attr) context = ExDispatch (contextualize expr context) attr
+contextualize (ExApplication expr (BiTau attr bexpr)) context =
+  let expr' = contextualize expr context
+      bexpr' = contextualize bexpr context
    in ExApplication expr' (BiTau attr bexpr')
 
 buildAttribute :: Attribute -> Subst -> Built Attribute

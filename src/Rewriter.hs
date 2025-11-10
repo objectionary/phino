@@ -31,6 +31,8 @@ import Text.Printf
 import Yaml (ExtraArgument (..))
 import qualified Yaml as Y
 
+type RewriteState = ([Rewritten], Set.Set Program)
+
 data Rewritten = Rewritten
   { program :: Program,
     maybeRule :: Maybe Y.Rule
@@ -40,8 +42,7 @@ instance Eq Rewritten where
   left == right = program left == program right
 
 data RewriteContext = RewriteContext
-  { _program :: Program,
-    _maxDepth :: Integer,
+  { _maxDepth :: Integer,
     _maxCycles :: Integer,
     _depthSensitive :: Bool,
     _sequence :: Bool,
@@ -133,14 +134,14 @@ tryBuildAndReplaceFast ptn res substs ctx = buildAndReplace' ptn res substs repl
 -- - X is sequence of programs; for more details about this sequence see description of rewrite' function
 -- - Y is Set of unique programs after each rule application. It allows to stop the rewriting if we're getting
 --   into loop and get back to program which we've already got before
-rewrite :: [Rewritten] -> [Y.Rule] -> Set.Set Program -> Integer -> RewriteContext -> IO ([Rewritten], Set.Set Program)
-rewrite rewrittens [] unique _ _ = pure (rewrittens, unique)
-rewrite rewrittens (rule : rest) unique iteration ctx@RewriteContext {..} = do
-  (rewrittens', unique') <- _rewrite rewrittens 1 unique
-  rewrite rewrittens' rest unique' iteration ctx
+rewrite :: RewriteState -> [Y.Rule] -> Integer -> RewriteContext -> IO RewriteState
+rewrite state [] _ _ = pure state
+rewrite state (rule : rest) iteration ctx@RewriteContext {..} = do
+  state' <- _rewrite state 1
+  rewrite state' rest iteration ctx
   where
-    _rewrite :: [Rewritten] -> Integer -> Set.Set Program -> IO ([Rewritten], Set.Set Program)
-    _rewrite _rewrittens _count _unique =
+    _rewrite :: RewriteState -> Integer -> IO RewriteState
+    _rewrite (_rewrittens, _unique) _count =
       let ruleName = fromMaybe "unknown" (Y.name rule)
           ptn = Y.pattern rule
           res = Y.result rule
@@ -153,7 +154,7 @@ rewrite rewrittens (rule : rest) unique iteration ctx@RewriteContext {..} = do
                 else pure (_rewrittens, _unique)
             else do
               logDebug (printf "Starting rewriting cycle for rule '%s': %d out of %d" ruleName _count _maxDepth)
-              matched <- R.matchProgramWithRule program rule (RuleContext _program _buildTerm)
+              matched <- R.matchProgramWithRule program rule (RuleContext _buildTerm)
               if null matched
                 then do
                   logDebug (printf "Rule '%s' does not match, rewriting is stopped" ruleName)
@@ -171,13 +172,14 @@ rewrite rewrittens (rule : rest) unique iteration ctx@RewriteContext {..} = do
                         else do
                           logDebug
                             ( printf
-                                "Applied '%s' (%d nodes -> %d nodes)"
+                                "Applied '%s' (%d nodes -> %d nodes)\n%s"
                                 ruleName
                                 (countNodes program)
                                 (countNodes prog)
+                                (printProgram prog)
                             )
                           _saveStep prog (((iteration - 1) * _maxDepth) + _count)
-                          _rewrite (rewriteSequence prog) (_count + 1) (Set.insert prog _unique)
+                          _rewrite (rewriteSequence prog, Set.insert prog _unique) (_count + 1)
       where
         rewriteSequence :: Program -> [Rewritten]
         rewriteSequence _prog
@@ -191,12 +193,12 @@ rewrite rewrittens (rule : rest) unique iteration ctx@RewriteContext {..} = do
 -- programs after each rule application are included into sequence
 -- Otherwise sequence contains only one program
 rewrite' :: Program -> [Y.Rule] -> RewriteContext -> IO [Rewritten]
-rewrite' prog rules ctx = _rewrite [Rewritten prog Nothing] 1 Set.empty <&> reverse
+rewrite' prog rules ctx = _rewrite ([Rewritten prog Nothing], Set.empty) 1 ctx <&> reverse
   where
-    _rewrite :: [Rewritten] -> Integer -> Set.Set Program -> IO [Rewritten]
-    _rewrite rewrittens count unique = do
-      let cycles = _maxCycles ctx
-          must = _must ctx
+    _rewrite :: RewriteState -> Integer -> RewriteContext -> IO [Rewritten]
+    _rewrite state@(rewrittens, unique) count ctx@RewriteContext{..} = do
+      let cycles = _maxCycles
+          must = _must
           current = count - 1
       if not (inRange must current) && current > 0 && exceedsUpperBound must current
         then throwIO (MustStopBefore must current)
@@ -204,16 +206,16 @@ rewrite' prog rules ctx = _rewrite [Rewritten prog Nothing] 1 Set.empty <&> reve
           if current == cycles
             then do
               logDebug (printf "Max amount of rewriting cycles for all rules (%d) has been reached, rewriting is stopped" cycles)
-              if _depthSensitive ctx
+              if _depthSensitive
                 then throwIO (StoppedOnLimit "max-cycles" cycles)
                 else pure rewrittens
             else do
               logDebug (printf "Starting rewriting cycle for all rules: %d out of %d" count cycles)
-              (rewrittens', unique') <- rewrite rewrittens rules unique count ctx
+              state'@(rewrittens', unique') <- rewrite state rules count ctx
               if head rewrittens' == head rewrittens
                 then do
                   logDebug "Rewriting is stopped since it has no effect"
                   if not (inRange must current)
                     then throwIO (MustBeGoing must current)
                     else pure rewrittens'
-                else _rewrite rewrittens' (count + 1) unique'
+                else _rewrite state' (count + 1) ctx

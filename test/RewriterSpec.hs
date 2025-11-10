@@ -104,7 +104,6 @@ spec =
                   prog
                   rules'
                   ( RewriteContext
-                      prog
                       repeat'
                       repeat'
                       False

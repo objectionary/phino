@@ -125,7 +125,7 @@ spec = do
       it "with --normalize and --must=1" $
         withStdin "Q -> [[ x -> [[ y -> 5 ]].y ]].x" $
           testCLIFailed
-            ["rewrite", "--max-depth=2", "--normalize", "--must=1"]
+            ["rewrite", "--max-cycles=2", "--max-depth=1", "--normalize", "--must=1"]
             ["it's expected rewriting cycles to be in range [1], but rewriting has already reached 2"]
 
       it "when --in-place is used without input file" $
@@ -362,7 +362,7 @@ spec = do
         it "when cycles exceed range ..1" $
           withStdin "Q -> [[ x -> [[ y -> 5 ]].y ]].x" $
             testCLIFailed
-              ["rewrite", "--max-depth=2", "--normalize", "--must=..1"]
+              ["rewrite", "--max-depth=1", "--max-cycles=2", "--normalize", "--must=..1"]
               ["it's expected rewriting cycles to be in range [..1], but rewriting has already reached 2"]
 
         it "when cycles below range 2.." $

@@ -331,7 +331,7 @@ runCLI args = handle handler $ do
       let listing = if null rules' then const input else (\prog -> P.printProgram' prog (sugarType, UNICODE, flat))
           xmirCtx = XmirContext omitListing omitComments listing
           printProgCtx = PrintProgCtx sugarType flat xmirCtx nonumber
-      rewrittens <- rewrite' program rules' (context program printProgCtx)
+      rewrittens <- rewrite' program rules' (context printProgCtx)
       logDebug (printf "Printing rewritten 𝜑-program as %s" (show outputFormat))
       progs <- printRewrittens printProgCtx rewrittens
       output targetFile progs
@@ -364,10 +364,9 @@ runCLI args = handle handler $ do
           (False, Nothing, _) -> do
             logDebug "The option '--target' is not specified, printing to console..."
             putStrLn prog
-        context :: Program -> PrintProgramContext -> RewriteContext
-        context program ctx =
+        context :: PrintProgramContext -> RewriteContext
+        context ctx =
           RewriteContext
-            program
             maxDepth
             maxCycles
             depthSensitive

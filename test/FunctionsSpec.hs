@@ -22,7 +22,7 @@ spec = describe "Functions" $
         second = ("B2", MvBindings [BiTau AtRho ExThis, BiLambda "Func", BiDelta (BtOne "00"), BiVoid (AtAlpha 1)])
         third = ("B3", MvBindings [BiLambda "Some", BiTau (AtLabel "y") ExThis, BiTau (AtLabel "x") ExThis, BiVoid (AtAlpha 0)])
         subst = Subst (Map.fromList [first, second, third])
-    TeBindings bds <- buildTerm "join" [ArgBinding (BiMeta "B1"), ArgBinding (BiMeta "B2"), ArgBinding (BiMeta "B3")] subst (Program ExGlobal)
+    TeBindings bds <- buildTerm "join" [ArgBinding (BiMeta "B1"), ArgBinding (BiMeta "B2"), ArgBinding (BiMeta "B3")] subst
     bds' <- uniqueBindings' bds
     logDebug (printf "Joined bindings:\n%s" (printExpression (ExFormation bds')))
     length bds' `shouldBe` 9

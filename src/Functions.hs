@@ -15,24 +15,30 @@ import Data.Functor
 import Data.Set (Set)
 import qualified Data.Set
 import qualified Data.Set as Set
+import Deps
+import Encoding (Encoding (UNICODE))
 import GHC.IO (unsafePerformIO)
+import Lining (LineFormat (SINGLELINE))
+import Logger (logDebug)
 import Matcher
 import Misc
+import Must (Must (MtDisabled))
 import Numeric (showHex)
 import Parser (parseAttributeThrows, parseNumberThrows)
+import Printer (printAttribute, printExpression, printExpression', printExtraArg, printProgram)
 import Random (randomString)
 import Regexp
+import Rewriter
+import Sugar (SugarType (SWEET))
 import System.Random (randomRIO)
-import Deps
 import Text.Printf (printf)
+import Yaml (normalizationRules)
 import qualified Yaml as Y
-import Printer (printAttribute, printExpression, printExtraArg)
-import Logger (logDebug)
 
 buildTerm :: BuildTermFunc
-buildTerm func args subst prog = do
+buildTerm func args subst = do
   logDebug (printf "Building new term using '%s' function..." func)
-  buildTerm' func args subst prog
+  buildTerm' func args subst
 
 buildTerm' :: BuildTermFunc
 buildTerm' "contextualize" = _contextualize
@@ -50,34 +56,34 @@ buildTerm' "sum" = _sum
 buildTerm' "join" = _join
 buildTerm' func = _unsupported func
 
-argToBytes :: Y.ExtraArgument -> Subst -> Program -> IO Bytes
-argToBytes (Y.ArgBytes bytes) subst _ = buildBytesThrows bytes subst
-argToBytes (Y.ArgExpression expr) subst prog = do
-  (TeBytes bts) <- _dataize [Y.ArgExpression expr] subst prog
+argToBytes :: Y.ExtraArgument -> Subst -> IO Bytes
+argToBytes (Y.ArgBytes bytes) subst = buildBytesThrows bytes subst
+argToBytes (Y.ArgExpression expr) subst = do
+  (TeBytes bts) <- _dataize [Y.ArgExpression expr] subst
   pure bts
-argToBytes arg _ _ = throwIO (userError (printf "Can't extract bytes from given argument: %s" (printExtraArg arg)))
+argToBytes arg _ = throwIO (userError (printf "Can't extract bytes from given argument: %s" (printExtraArg arg)))
 
-argToString :: Y.ExtraArgument -> Subst -> Program -> IO String
-argToString arg subst prog = argToBytes arg subst prog <&> btsToUnescapedStr
+argToString :: Y.ExtraArgument -> Subst -> IO String
+argToString arg subst = argToBytes arg subst <&> btsToUnescapedStr
 
-argToNumber :: Y.ExtraArgument -> Subst -> Program -> IO Double
-argToNumber arg subst prog = argToBytes arg subst prog <&> either toDouble id . btsToNum
+argToNumber :: Y.ExtraArgument -> Subst -> IO Double
+argToNumber arg subst = argToBytes arg subst <&> either toDouble id . btsToNum
 
 _contextualize :: BuildTermMethod
-_contextualize [Y.ArgExpression expr, Y.ArgExpression context] subst prog = do
+_contextualize [Y.ArgExpression expr, Y.ArgExpression context] subst = do
   (expr', _) <- buildExpressionThrows expr subst
   (context', _) <- buildExpressionThrows context subst
-  pure (TeExpression (contextualize expr' context' prog))
-_contextualize _ _ _ = throwIO (userError "Function contextualize() requires exactly 2 arguments as expression")
+  pure (TeExpression (contextualize expr' context'))
+_contextualize _ _ = throwIO (userError "Function contextualize() requires exactly 2 arguments as expression")
 
 _scope :: BuildTermMethod
-_scope [Y.ArgExpression expr] subst _ = do
+_scope [Y.ArgExpression expr] subst = do
   (_, scope) <- buildExpressionThrows expr subst
   pure (TeExpression scope)
-_scope _ _ _ = throwIO (userError "Function scope() requires exactly 1 argument as expression")
+_scope _ _ = throwIO (userError "Function scope() requires exactly 1 argument as expression")
 
 _randomTau :: BuildTermMethod
-_randomTau args subst _ = do
+_randomTau args subst = do
   attrs <- argsToAttrs args
   tau <- randomTau attrs
   pure (TeAttribute (AtLabel tau))
@@ -101,28 +107,28 @@ _randomTau args subst _ = do
       if tau `elem` attrs then randomTau attrs else pure tau
 
 _dataize :: BuildTermMethod
-_dataize [Y.ArgBytes bytes] subst _ = do
+_dataize [Y.ArgBytes bytes] subst = do
   bts <- buildBytesThrows bytes subst
   pure (TeBytes bts)
-_dataize [Y.ArgExpression expr] subst _ = do
+_dataize [Y.ArgExpression expr] subst = do
   (expr', _) <- buildExpressionThrows expr subst
   case expr' of
     DataObject _ bytes -> pure (TeBytes bytes)
     _ -> throwIO (userError "Only data objects and bytes are supported by 'dataize' function now")
-_dataize _ _ _ = throwIO (userError "Function dataize() requires exactly 1 argument as expression or bytes")
+_dataize _ _ = throwIO (userError "Function dataize() requires exactly 1 argument as expression or bytes")
 
 _concat :: BuildTermMethod
-_concat args subst prog = do
-  args' <- traverse (\arg -> argToString arg subst prog) args
+_concat args subst = do
+  args' <- traverse (\arg -> argToString arg subst) args
   pure (TeExpression (DataString (strToBts (concat args'))))
 
 _sed :: BuildTermMethod
-_sed args subst prog = do
+_sed args subst = do
   when (length args < 2) (throwIO (userError "Function sed() requires at least two arguments"))
   args' <-
     traverse
       ( \arg -> do
-          bts <- argToString arg subst prog
+          bts <- argToString arg subst
           pure (B.pack bts)
       )
       args
@@ -162,27 +168,27 @@ _sed args subst prog = do
         | otherwise -> nextUntilSlash rest (B.snoc acc h) escape
 
 _randomString :: BuildTermMethod
-_randomString [arg] subst prog = do
-  pat <- argToString arg subst prog
+_randomString [arg] subst = do
+  pat <- argToString arg subst
   str <- randomString pat
   pure (TeExpression (DataString (strToBts str)))
-_randomString _ _ _ = throwIO (userError "Function random-string() requires exactly 1 dataizable argument")
+_randomString _ _ = throwIO (userError "Function random-string() requires exactly 1 dataizable argument")
 
 _size :: BuildTermMethod
-_size [Y.ArgBinding (BiMeta meta)] subst _ = do
+_size [Y.ArgBinding (BiMeta meta)] subst = do
   bds <- buildBindingThrows (BiMeta meta) subst
   pure (TeExpression (DataNumber (numToBts (fromIntegral (length bds)))))
-_size _ _ _ = throwIO (userError "Function size() requires exactly 1 meta binding")
+_size _ _ = throwIO (userError "Function size() requires exactly 1 meta binding")
 
 _tau :: BuildTermMethod
-_tau [Y.ArgExpression expr] subst prog = do
-  TeBytes bts <- _dataize [Y.ArgExpression expr] subst prog
+_tau [Y.ArgExpression expr] subst = do
+  TeBytes bts <- _dataize [Y.ArgExpression expr] subst
   attr <- parseAttributeThrows (btsToUnescapedStr bts)
   pure (TeAttribute attr)
-_tau _ _ _ = throwIO (userError "Function tau() requires exactly 1 argument as expression")
+_tau _ _ = throwIO (userError "Function tau() requires exactly 1 argument as expression")
 
 _string :: BuildTermMethod
-_string [Y.ArgExpression expr] subst _ = do
+_string [Y.ArgExpression expr] subst = do
   (expr', _) <- buildExpressionThrows expr subst
   str <- case expr' of
     DataNumber bts -> pure (DataString (strToBts (either show show (btsToNum bts))))
@@ -196,29 +202,29 @@ _string [Y.ArgExpression expr] subst _ = do
             )
         )
   pure (TeExpression str)
-_string [Y.ArgAttribute attr] subst _ = do
+_string [Y.ArgAttribute attr] subst = do
   attr' <- buildAttributeThrows attr subst
   pure (TeExpression (DataString (strToBts (printAttribute attr'))))
-_string _ _ _ = throwIO (userError "Function string() requires exactly 1 argument as attribute or data expression (Φ̇.number or Φ̇.string)")
+_string _ _ = throwIO (userError "Function string() requires exactly 1 argument as attribute or data expression (Φ̇.number or Φ̇.string)")
 
 _number :: BuildTermMethod
-_number [Y.ArgExpression expr] subst _ = do
+_number [Y.ArgExpression expr] subst = do
   (expr', _) <- buildExpressionThrows expr subst
   case expr' of
     DataString bts -> do
       num <- parseNumberThrows (btsToUnescapedStr bts)
       pure (TeExpression num)
     _ -> throwIO (userError (printf "Function number() expects expression to be 'Φ̇.string', but got:\n%s" (printExpression expr')))
-_number _ _ _ = throwIO (userError "Function number() requires exactly 1 argument as 'Φ̇.string'")
+_number _ _ = throwIO (userError "Function number() requires exactly 1 argument as 'Φ̇.string'")
 
 _sum :: BuildTermMethod
-_sum args subst prog = do
-  nums <- traverse (\arg -> argToNumber arg subst prog) args
+_sum args subst = do
+  nums <- traverse (`argToNumber` subst) args
   pure (TeExpression (DataNumber (numToBts (sum nums))))
 
 _join :: BuildTermMethod
-_join [] _ _ = pure (TeBindings [])
-_join args subst _ = do
+_join [] _ = pure (TeBindings [])
+_join args subst = do
   bds <- buildBindings args
   pure (TeBindings (join' bds Set.empty))
   where
@@ -245,8 +251,8 @@ _join args subst _ = do
             else bd : join' bds (Set.insert attr attrs)
     updated :: Attribute -> Set.Set Attribute -> Attribute
     updated attr attrs =
-      let (TeAttribute attr') = unsafePerformIO (_randomTau (map Y.ArgAttribute (Set.toList attrs)) subst (Program ExGlobal))
+      let (TeAttribute attr') = unsafePerformIO (_randomTau (map Y.ArgAttribute (Set.toList attrs)) subst)
        in attr'
 
 _unsupported :: BuildTermFunc
-_unsupported func _ _ _ = throwIO (userError (printf "Function %s() is not supported or does not exist" func))
+_unsupported func _ _ = throwIO (userError (printf "Function %s() is not supported or does not exist" func))

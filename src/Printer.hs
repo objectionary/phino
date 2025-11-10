@@ -8,12 +8,14 @@ module Printer
   ( printProgram,
     printProgram',
     printExpression,
+    printExpression',
     printAttribute,
     printBinding,
     printBytes,
     printExtraArg,
     printSubsts,
     PrintConfig (..),
+    logPrintConfig,
   )
 where
 
@@ -33,6 +35,9 @@ type PrintConfig = (SugarType, Encoding, LineFormat)
 
 defaultPrintConfig :: PrintConfig
 defaultPrintConfig = (SWEET, UNICODE, MULTILINE)
+
+logPrintConfig :: (SugarType, Encoding, LineFormat)
+logPrintConfig = (SWEET, UNICODE, SINGLELINE)
 
 printProgram' :: Program -> PrintConfig -> String
 printProgram' prog (sugar, encoding, line) = render (withLineFormat line $ withEncoding encoding $ withSugarType sugar $ programToCST prog)

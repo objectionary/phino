@@ -23,7 +23,7 @@ newtype Logger = Logger {level :: LogLevel}
 
 logger :: IORef Logger
 {-# NOINLINE logger #-}
-logger = unsafePerformIO (newIORef (Logger INFO))
+logger = unsafePerformIO (newIORef (Logger DEBUG))
 
 setLogLevel :: LogLevel -> IO ()
 setLogLevel lvl = writeIORef logger (Logger lvl)

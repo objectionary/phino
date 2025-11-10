@@ -14,6 +14,7 @@ import Control.Monad (when)
 import Data.Aeson (FromJSON)
 import qualified Data.ByteString.Char8 as B
 import Data.Foldable (foldlM)
+import Data.Map.Strict (size)
 import qualified Data.Map.Strict as M
 import Data.Maybe (catMaybes, fromMaybe)
 import Deps (BuildTermFunc, Term (..))
@@ -27,9 +28,8 @@ import Text.Printf (printf)
 import Yaml (normalizationRules)
 import qualified Yaml as Y
 
-data RuleContext = RuleContext
-  { _program :: Program,
-    _buildTerm :: BuildTermFunc
+newtype RuleContext = RuleContext
+  { _buildTerm :: BuildTermFunc
   }
 
 -- Returns True if given expression matches with any of given normalization rules
@@ -182,7 +182,7 @@ _matches pat (ExMeta meta) (Subst mp) ctx = case M.lookup meta mp of
   Just (MvExpression expr _) -> _matches pat expr (Subst mp) ctx
   _ -> pure []
 _matches pat expr subst ctx = do
-  (TeBytes tgt) <- _buildTerm ctx "dataize" [Y.ArgExpression expr] subst (Program expr)
+  (TeBytes tgt) <- _buildTerm ctx "dataize" [Y.ArgExpression expr] subst
   matched <- match (B.pack pat) (B.pack (btsToUnescapedStr tgt))
   pure [subst | matched]
 
@@ -234,7 +234,7 @@ extraSubstitutions :: [Subst] -> Maybe [Y.Extra] -> RuleContext -> IO [Subst]
 extraSubstitutions substs extras RuleContext {..} = case extras of
   Nothing -> pure substs
   Just extras' -> do
-    logDebug "Building extra substitutions..."
+    logDebug (printf "Building %d sets of extra substitutions.." (length substs))
     res <-
       sequence
         [ foldlM
@@ -247,7 +247,7 @@ extraSubstitutions substs extras RuleContext {..} = case extras of
                       _ -> Nothing
                     func = Y.function extra
                     args = Y.args extra
-                term <- _buildTerm func args subst' _program
+                term <- _buildTerm func args subst'
                 meta <- case term of
                   TeExpression expr -> do
                     logDebug (printf "Function %s() returned expression:\n%s" func (printExpression expr))
@@ -269,15 +269,21 @@ extraSubstitutions substs extras RuleContext {..} = case extras of
             extras'
           | subst <- substs
         ]
+    logDebug "Extra substitutions have been built"
     pure (catMaybes res)
 
+-- @todo #432:30min Fix log for not mached pattern. Right now we print
+--  the name of the rule if pattern is not matched. It would be better to print
+--  the pattern itself. To achieve that we should extend CST so it supports meta
+--  attributes, expressions and so on. Don't forget to remove the puzzle
 matchProgramWithRule :: Program -> Y.Rule -> RuleContext -> IO [Subst]
 matchProgramWithRule program rule ctx =
   let ptn = Y.pattern rule
       matched = matchProgram ptn program
+      name = fromMaybe "unknown" (Y.name rule)
    in if null matched
         then do
-          logDebug "Pattern was not matched"
+          logDebug (printf "Pattern from rule '%s' was not matched" name)
           pure []
         else do
           when' <- meetMaybeCondition (Y.when rule) matched ctx
@@ -286,6 +292,7 @@ matchProgramWithRule program rule ctx =
               logDebug "The 'when' condition wasn't met"
               pure []
             else do
+              logDebug (printf "Rule %s" (fromMaybe "unknown" (Y.name rule)))
               extended <- extraSubstitutions when' (Y.where_ rule) ctx
               if null extended
                 then do

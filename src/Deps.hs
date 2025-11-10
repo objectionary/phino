@@ -23,7 +23,7 @@ data Term
   | TeBytes Bytes
   | TeBindings [Binding]
 
-type BuildTermMethod = [ExtraArgument] -> Subst -> Program -> IO Term
+type BuildTermMethod = [ExtraArgument] -> Subst -> IO Term
 
 type BuildTermFunc = String -> BuildTermMethod
 
