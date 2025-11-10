@@ -14,7 +14,6 @@ import Control.Monad (when)
 import Data.Aeson (FromJSON)
 import qualified Data.ByteString.Char8 as B
 import Data.Foldable (foldlM)
-import Data.Map.Strict (size)
 import qualified Data.Map.Strict as M
 import Data.Maybe (catMaybes, fromMaybe)
 import Deps (BuildTermFunc, Term (..))
