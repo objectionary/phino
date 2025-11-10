@@ -10,29 +10,18 @@ import Builder
 import Control.Exception (throwIO)
 import Control.Monad (replicateM, when)
 import qualified Data.ByteString.Char8 as B
-import Data.Char (intToDigit)
 import Data.Functor
-import Data.Set (Set)
-import qualified Data.Set
 import qualified Data.Set as Set
 import Deps
-import Encoding (Encoding (UNICODE))
 import GHC.IO (unsafePerformIO)
-import Lining (LineFormat (SINGLELINE))
 import Logger (logDebug)
 import Matcher
 import Misc
-import Must (Must (MtDisabled))
-import Numeric (showHex)
 import Parser (parseAttributeThrows, parseNumberThrows)
-import Printer (printAttribute, printExpression, printExpression', printExtraArg, printProgram)
+import Printer (printAttribute, printExpression, printExtraArg)
 import Random (randomString)
 import Regexp
-import Rewriter
-import Sugar (SugarType (SWEET))
-import System.Random (randomRIO)
 import Text.Printf (printf)
-import Yaml (normalizationRules)
 import qualified Yaml as Y
 
 buildTerm :: BuildTermFunc
