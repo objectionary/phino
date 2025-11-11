@@ -320,8 +320,8 @@ setLogLevel' cmd =
         CmdMerge OptsMerge {logLevel} -> logLevel
    in setLogLevel level
 
-invalidCLIArugments :: String -> IO ()
-invalidCLIArugments msg = throwIO (InvalidCLIArguments msg)
+invalidCLIArguments :: String -> IO ()
+invalidCLIArguments msg = throwIO (InvalidCLIArguments msg)
 
 runCLI :: [String] -> IO ()
 runCLI args = handle handler $ do
@@ -346,16 +346,16 @@ runCLI args = handle handler $ do
         validateOpts = do
           when
             (inPlace && isNothing inputFile)
-            (invalidCLIArugments "--in-place requires an input file")
+            (invalidCLIArguments "--in-place requires an input file")
           when
             (inPlace && isJust targetFile)
-            (invalidCLIArugments "--in-place and --target cannot be used together")
+            (invalidCLIArguments "--in-place and --target cannot be used together")
           when
             (nonumber && outputFormat /= LATEX)
-            (invalidCLIArugments "The --nonumber option can stay together with --output=latex only")
+            (invalidCLIArguments "The --nonumber option can stay together with --output=latex only")
           when
             (isJust expression && outputFormat /= LATEX)
-            (invalidCLIArugments "The --expression option can stay together with --output=latex only")
+            (invalidCLIArguments "The --expression option can stay together with --output=latex only")
           validateMaxDepth maxDepth
           validateMaxCycles maxCycles
           validateMust must
@@ -440,15 +440,15 @@ runCLI args = handle handler $ do
     validateXmirOptions outputFormat omitListing omitComments = do
       when
         (outputFormat /= XMIR && omitListing)
-        (invalidCLIArugments "--omit-listing can be used only with --output-format=xmir")
+        (invalidCLIArguments "--omit-listing can be used only with --output-format=xmir")
       when
         (outputFormat /= XMIR && omitComments)
-        (invalidCLIArugments "--omit-comments can be used only with --output-format=xmir")
+        (invalidCLIArguments "--omit-comments can be used only with --output-format=xmir")
     validateIntArgument :: Integer -> (Integer -> Bool) -> String -> IO ()
     validateIntArgument num cmp msg =
       when
         (cmp num)
-        (invalidCLIArugments msg)
+        (invalidCLIArguments msg)
     validateMaxDepth :: Integer -> IO ()
     validateMaxDepth depth = validateIntArgument depth (<= 0) "--max-depth must be positive"
     validateMaxCycles :: Integer -> IO ()
@@ -462,7 +462,7 @@ runCLI args = handle handler $ do
       case (minVal, maxVal) of
         (Just min, Just max)
           | min > max ->
-              invalidCLIArugments
+              invalidCLIArguments
                 (printf "--must range invalid: minimum (%d) is greater than maximum (%d)" min max)
         _ -> pure ()
     readInput :: Maybe FilePath -> IO String
