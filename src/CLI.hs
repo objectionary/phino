@@ -12,7 +12,7 @@ module CLI (runCLI) where
 import AST
 import Control.Exception (Exception (displayException), SomeException, handle, throw, throwIO)
 import Control.Exception.Base
-import Control.Monad (when, (<=<), (>=>))
+import Control.Monad (when, (>=>))
 import Data.Char (toLower, toUpper)
 import Data.Functor ((<&>))
 import Data.List (intercalate)
