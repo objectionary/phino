@@ -184,7 +184,7 @@ spec = do
       it "with --expression and --output != latex" $
         withStdin "{[[]]}" $
           testCLIFailed
-            ["rewrite", "--expression", "--output=phi"]
+            ["rewrite", "--expression=foo", "--output=phi"]
             ["--expression option can stay together with --output=latex only"]
 
     it "saves steps to dir with --steps-dir" $ do
