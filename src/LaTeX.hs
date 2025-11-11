@@ -23,7 +23,8 @@ import qualified Yaml as Y
 data LatexContext = LatexContext
   { sugar :: SugarType,
     line :: LineFormat,
-    nonumber :: Bool
+    nonumber :: Bool,
+    expression :: Maybe String
   }
 
 renderToLatex :: Program -> LatexContext -> String
@@ -34,10 +35,13 @@ phiquation LatexContext {nonumber = True} = "phiquation*"
 phiquation LatexContext {nonumber = False} = "phiquation"
 
 rewrittensToLatex :: [Rewritten] -> LatexContext -> String
-rewrittensToLatex rewrittens ctx =
+rewrittensToLatex rewrittens ctx@LatexContext {..} =
   let equation = phiquation ctx
    in concat
         [ printf "\\begin{%s}\n" equation,
+          case expression of
+            Just expr -> printf "\\phiExpression{%s} " expr
+            _ -> "",
           intercalate
             "\n  \\leadsto "
             ( map
@@ -81,7 +85,7 @@ instance ToLaTeX EXPRESSION where
   toLaTeX EX_FORMATION {..} = EX_FORMATION lsb eol tab (toLaTeX binding) eol' tab' rsb
   toLaTeX EX_APPLICATION {..} = EX_APPLICATION (toLaTeX expr) eol tab (toLaTeX bindings) eol' tab'
   toLaTeX EX_APPLICATION' {..} = EX_APPLICATION' (toLaTeX expr) eol tab (toLaTeX args) eol' tab'
-  toLaTeX EX_DISPATCH{..} = EX_DISPATCH (toLaTeX expr) (toLaTeX attr)
+  toLaTeX EX_DISPATCH {..} = EX_DISPATCH (toLaTeX expr) (toLaTeX attr)
   toLaTeX expr = expr
 
 instance ToLaTeX ATTRIBUTE where
