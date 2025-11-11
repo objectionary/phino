@@ -180,8 +180,6 @@ data Rule = Rule
   }
   deriving (Generic, Show)
 
-
-
 normalizationRules :: [Rule]
 {-# NOINLINE normalizationRules #-}
 normalizationRules = map decodeRule $(embedDir "resources")
