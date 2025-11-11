@@ -32,10 +32,12 @@ instance ToSingleLine EXPRESSION where
 
 instance ToSingleLine BINDING where
   toSingleLine BI_PAIR {..} = BI_PAIR (toSingleLine pair) (toSingleLine bindings) TAB'
+  toSingleLine BI_META {..} = BI_META meta (toSingleLine bindings) TAB'
   toSingleLine bd = bd
 
 instance ToSingleLine BINDINGS where
   toSingleLine BDS_PAIR {..} = BDS_PAIR NO_EOL TAB' (toSingleLine pair) (toSingleLine bindings)
+  toSingleLine BDS_META {..} = BDS_META NO_EOL TAB' meta (toSingleLine bindings)
   toSingleLine bds = bds
 
 instance ToSingleLine PAIR where
