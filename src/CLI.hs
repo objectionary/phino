@@ -47,7 +47,8 @@ data PrintProgramContext = PrintProgCtx
   { sugar :: SugarType,
     line :: LineFormat,
     xmirCtx :: XmirContext,
-    nonumber :: Bool
+    nonumber :: Bool,
+    expression :: Maybe String
   }
 
 data CmdException
@@ -113,6 +114,7 @@ data OptsRewrite = OptsRewrite
     maxCycles :: Integer,
     inPlace :: Bool,
     sequence :: Bool,
+    expression :: Maybe String,
     targetFile :: Maybe FilePath,
     stepsDir :: Maybe FilePath,
     inputFile :: Maybe FilePath
@@ -266,6 +268,7 @@ rewriteParser =
                 <*> optMaxCycles
                 <*> switch (long "in-place" <> help "Edit file in-place instead of printing to output")
                 <*> switch (long "sequence" <> help "Result output contains all intermediate 𝜑-programs concatenated with EOL")
+                <*> optional (strOption (long "expression" <> metavar "NAME" <> help "Name for 'phiExpression' when rendering to LaTeX"))
                 <*> optTarget
                 <*> optStepsDir
                 <*> argInputFile
@@ -317,6 +320,9 @@ setLogLevel' cmd =
         CmdMerge OptsMerge {logLevel} -> logLevel
    in setLogLevel level
 
+invalidCLIArguments :: String -> IO ()
+invalidCLIArguments msg = throwIO (InvalidCLIArguments msg)
+
 runCLI :: [String] -> IO ()
 runCLI args = handle handler $ do
   cmd <- handleParseResult (execParserPure defaultPrefs parserInfo args)
@@ -330,7 +336,7 @@ runCLI args = handle handler $ do
       program <- parseProgram input inputFormat
       let listing = if null rules' then const input else (\prog -> P.printProgram' prog (sugarType, UNICODE, flat))
           xmirCtx = XmirContext omitListing omitComments listing
-          printProgCtx = PrintProgCtx sugarType flat xmirCtx nonumber
+          printProgCtx = PrintProgCtx sugarType flat xmirCtx nonumber expression
       rewrittens <- rewrite' program rules' (context printProgCtx)
       logDebug (printf "Printing rewritten 𝜑-program as %s" (show outputFormat))
       progs <- printRewrittens printProgCtx rewrittens
@@ -340,13 +346,16 @@ runCLI args = handle handler $ do
         validateOpts = do
           when
             (inPlace && isNothing inputFile)
-            (throwIO (InvalidCLIArguments "--in-place requires an input file"))
+            (invalidCLIArguments "--in-place requires an input file")
           when
             (inPlace && isJust targetFile)
-            (throwIO (InvalidCLIArguments "--in-place and --target cannot be used together"))
+            (invalidCLIArguments "--in-place and --target cannot be used together")
           when
             (nonumber && outputFormat /= LATEX)
-            (throwIO (InvalidCLIArguments "The --nonumber option can stay together with --output=latex only"))
+            (invalidCLIArguments "The --nonumber option can stay together with --output=latex only")
+          when
+            (isJust expression && outputFormat /= LATEX)
+            (invalidCLIArguments "The --expression option can stay together with --output=latex only")
           validateMaxDepth maxDepth
           validateMaxCycles maxCycles
           validateMust must
@@ -376,7 +385,7 @@ runCLI args = handle handler $ do
             (saveStep stepsDir (ioToExtension outputFormat) (printProgram outputFormat ctx))
         printRewrittens :: PrintProgramContext -> [Rewritten] -> IO String
         printRewrittens ctx rewrittens
-          | outputFormat == LATEX = pure (rewrittensToLatex rewrittens (LatexContext sugarType flat nonumber))
+          | outputFormat == LATEX = pure (rewrittensToLatex rewrittens (LatexContext sugarType flat nonumber expression))
           | otherwise = mapM (printProgram outputFormat ctx . program) rewrittens <&> intercalate "\n"
     CmdDataize OptsDataize {..} -> do
       validateOpts
@@ -397,7 +406,7 @@ runCLI args = handle handler $ do
             maxCycles
             depthSensitive
             buildTerm
-            (saveStep stepsDir (ioToExtension PHI) (printProgram PHI (PrintProgCtx sugarType flat defaultXmirContext False)))
+            (saveStep stepsDir (ioToExtension PHI) (printProgram PHI (PrintProgCtx sugarType flat defaultXmirContext False Nothing)))
     CmdExplain OptsExplain {..} -> do
       validateOpts
       rules' <- getRules normalize shuffle rules
@@ -416,7 +425,7 @@ runCLI args = handle handler $ do
       prog <- merge progs
       let listing = const (P.printProgram' prog (sugarType, UNICODE, flat))
           xmirCtx = XmirContext omitListing omitComments listing
-          printProgCtx = PrintProgCtx sugarType flat xmirCtx False
+          printProgCtx = PrintProgCtx sugarType flat xmirCtx False Nothing
       prog' <- printProgram outputFormat printProgCtx prog
       output targetFile prog'
       where
@@ -431,15 +440,15 @@ runCLI args = handle handler $ do
     validateXmirOptions outputFormat omitListing omitComments = do
       when
         (outputFormat /= XMIR && omitListing)
-        (throwIO (InvalidCLIArguments "--omit-listing can be used only with --output-format=xmir"))
+        (invalidCLIArguments "--omit-listing can be used only with --output-format=xmir")
       when
         (outputFormat /= XMIR && omitComments)
-        (throwIO (InvalidCLIArguments "--omit-comments can be used only with --output-format=xmir"))
+        (invalidCLIArguments "--omit-comments can be used only with --output-format=xmir")
     validateIntArgument :: Integer -> (Integer -> Bool) -> String -> IO ()
     validateIntArgument num cmp msg =
       when
         (cmp num)
-        (throwIO (InvalidCLIArguments msg))
+        (invalidCLIArguments msg)
     validateMaxDepth :: Integer -> IO ()
     validateMaxDepth depth = validateIntArgument depth (<= 0) "--max-depth must be positive"
     validateMaxCycles :: Integer -> IO ()
@@ -453,10 +462,8 @@ runCLI args = handle handler $ do
       case (minVal, maxVal) of
         (Just min, Just max)
           | min > max ->
-              throwIO
-                ( InvalidCLIArguments
-                    (printf "--must range invalid: minimum (%d) is greater than maximum (%d)" min max)
-                )
+              invalidCLIArguments
+                (printf "--must range invalid: minimum (%d) is greater than maximum (%d)" min max)
         _ -> pure ()
     readInput :: Maybe FilePath -> IO String
     readInput inputFile' = case inputFile' of
@@ -474,7 +481,7 @@ runCLI args = handle handler $ do
     printProgram :: IOFormat -> PrintProgramContext -> Program -> IO String
     printProgram PHI PrintProgCtx {..} prog = pure (P.printProgram' prog (sugar, UNICODE, line))
     printProgram XMIR PrintProgCtx {..} prog = programToXMIR prog xmirCtx <&> printXMIR
-    printProgram LATEX PrintProgCtx {..} prog = pure (programToLaTeX prog (LatexContext sugar line nonumber))
+    printProgram LATEX PrintProgCtx {..} prog = pure (programToLaTeX prog (LatexContext sugar line nonumber expression))
     getRules :: Bool -> Bool -> [FilePath] -> IO [Y.Rule]
     getRules normalize shuffle rules = do
       ordered <-

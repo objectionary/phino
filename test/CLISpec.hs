@@ -180,6 +180,12 @@ spec = do
           testCLIFailed
             ["rewrite", "--omit-comments", "--output=phi"]
             ["--omit-comments"]
+      
+      it "with --expression and --output != latex" $
+        withStdin "{[[]]}" $
+          testCLIFailed
+            ["rewrite", "--expression=foo", "--output=phi"]
+            ["--expression option can stay together with --output=latex only"]
 
     it "saves steps to dir with --steps-dir" $ do
       let dir = "test-steps-temp"
@@ -277,6 +283,15 @@ spec = do
           [ "\\begin{phiquation*}",
             "{[[ |x| -> 5 ]]}",
             "\\end{phiquation*}"
+          ]
+    
+    it "rewrite as LaTeX with expression name" $
+      withStdin "Q -> [[ x -> 5 ]]" $
+        testCLISucceeded
+          ["rewrite", "--output=latex", "--sweet", "--flat", "--expression=foo"]
+          [ "\\begin{phiquation}",
+            "\\phiExpression{foo} {[[ |x| -> 5 ]]}",
+            "\\end{phiquation}"
           ]
 
     it "rewrites with XMIR as input" $
