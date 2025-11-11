@@ -187,6 +187,12 @@ spec = do
             ["rewrite", "--expression=foo", "--output=phi"]
             ["--expression option can stay together with --output=latex only"]
 
+      it "with wrong --hide option" $
+        withStdin "{[[]]}" $
+          testCLIFailed
+            ["rewrite", "--hide=Q.x(Q.y)"]
+            ["[ERROR]: Invalid set of arguments: Only dispatch expression", "but given: Φ.x( Φ.y )"]
+
     it "saves steps to dir with --steps-dir" $ do
       let dir = "test-steps-temp"
       dirExists <- doesDirectoryExist dir
@@ -458,6 +464,18 @@ spec = do
                 "⟧}"
               ]
           ]
+    
+    it "hides default package" $
+      withStdin "{[[ org -> [[ eolang -> [[ number -> [[]] ]]]], x -> 42 ]]}" $
+        testCLISucceeded
+          ["rewrite", "--sweet", "--flat", "--hide=Q.org"]
+          ["{⟦ x ↦ 42 ⟧}"]
+
+    it "hides several FQNs" $
+      withStdin "{[[ org -> [[ eolang -> Q.x, yegor256 -> Q.y ]], x -> 42 ]]}" $
+        testCLISucceeded
+          ["rewrite", "--sweet", "--flat", "--hide=Q.org.eolang", "--hide=Q.org.yegor256"]
+          ["{⟦ org ↦ ⟦⟧, x ↦ 42 ⟧}"]
 
     it "prints in line with --flat" $
       withStdin "Q -> [[ x -> 5, y -> \"hey\", z -> [[ w -> [[ ]] ]] ]]" $

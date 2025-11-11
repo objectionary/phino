@@ -202,14 +202,14 @@ instance ToCST Expression EXPRESSION where
   toCST (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang")) _ = EX_DEF_PACKAGE Φ̇
   toCST (ExDispatch ExThis attr) tabs = EX_ATTR (toCST attr tabs)
   toCST (ExDispatch expr attr) tabs = EX_DISPATCH (toCST expr tabs) (toCST attr tabs)
-  toCST app@(ExApplication (ExApplication expr tau) tau') tabs =
-    let (expr', taus, exprs) = complexApplication app
+  toCST app@(ExApplication _ _) tabs =
+    let (expr, taus, exprs) = complexApplication app
         next = tabs + 1
-        expr'' = toCST expr' tabs :: EXPRESSION
+        expr'' = toCST expr tabs :: EXPRESSION
      in if null exprs
           then
             EX_APPLICATION
-              (toCST expr' tabs)
+              (toCST expr tabs)
               EOL
               (TAB next)
               (toCST (reverse taus) next)
@@ -217,7 +217,7 @@ instance ToCST Expression EXPRESSION where
               (TAB tabs)
           else
             EX_APPLICATION'
-              (toCST expr' tabs)
+              (toCST expr tabs)
               EOL
               (TAB next)
               (toCST (reverse exprs) next)
@@ -244,9 +244,6 @@ instance ToCST Expression EXPRESSION where
                 _ -> (before, taus', [])
       complexApplication (ExApplication expr (BiTau (AtAlpha 0) expr')) = (expr, [BiTau (AtAlpha 0) expr'], [expr'])
       complexApplication (ExApplication expr tau) = (expr, [tau], [])
-  toCST (ExApplication expr tau) tabs =
-    let next = tabs + 1
-     in EX_APPLICATION (toCST expr tabs) EOL (TAB next) (toCST [tau] next) EOL (TAB tabs)
 
 instance ToCST [Expression] APP_ARG where
   toCST (expr : exprs) tabs = APP_ARG (toCST expr tabs) (toCST exprs tabs)

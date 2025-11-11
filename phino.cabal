@@ -40,6 +40,7 @@ library
     Deps
     Encoding
     Functions
+    Hide
     LaTeX
     Lining
     Logger
@@ -114,6 +115,7 @@ test-suite spec
     CSTSpec
     DataizeSpec
     FunctionsSpec
+    HideSpec
     MatcherSpec
     MergeSpec
     MiscSpec

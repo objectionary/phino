@@ -9,10 +9,10 @@
 
 module CLI (runCLI) where
 
-import AST (Program (Program))
+import AST
 import Control.Exception (Exception (displayException), SomeException, handle, throw, throwIO)
 import Control.Exception.Base
-import Control.Monad (when)
+import Control.Monad (when, (<=<), (>=>))
 import Data.Char (toLower, toUpper)
 import Data.Functor ((<&>))
 import Data.List (intercalate)
@@ -23,6 +23,7 @@ import Deps (saveStep)
 import Encoding (Encoding (ASCII, UNICODE))
 import Functions (buildTerm)
 import qualified Functions
+import qualified Hide as H
 import LaTeX (LatexContext (LatexContext), explainRules, programToLaTeX, rewrittensToLatex)
 import Lining (LineFormat (MULTILINE, SINGLELINE))
 import Logger
@@ -31,8 +32,9 @@ import Misc (ensuredFile)
 import qualified Misc
 import Must (Must (..))
 import Options.Applicative
-import Parser (parseProgramThrows)
+import Parser (parseExpressionThrows, parseProgramThrows)
 import Paths_phino (version)
+import Printer (printExpression')
 import qualified Printer as P
 import Rewriter (RewriteContext (RewriteContext), Rewritten (..), rewrite')
 import Sugar
@@ -115,6 +117,7 @@ data OptsRewrite = OptsRewrite
     inPlace :: Bool,
     sequence :: Bool,
     expression :: Maybe String,
+    hide :: [String],
     targetFile :: Maybe FilePath,
     stepsDir :: Maybe FilePath,
     inputFile :: Maybe FilePath
@@ -269,6 +272,7 @@ rewriteParser =
                 <*> switch (long "in-place" <> help "Edit file in-place instead of printing to output")
                 <*> switch (long "sequence" <> help "Result output contains all intermediate 𝜑-programs concatenated with EOL")
                 <*> optional (strOption (long "expression" <> metavar "NAME" <> help "Name for 'phiExpression' when rendering to LaTeX"))
+                <*> many (strOption (long "hide" <> metavar "FQN" <> help "Location of object to exclude from result program after rewriting, must be a valid dispatch expression; e.g. Q.org.eolang"))
                 <*> optTarget
                 <*> optStepsDir
                 <*> argInputFile
@@ -320,7 +324,7 @@ setLogLevel' cmd =
         CmdMerge OptsMerge {logLevel} -> logLevel
    in setLogLevel level
 
-invalidCLIArguments :: String -> IO ()
+invalidCLIArguments :: String -> IO a
 invalidCLIArguments msg = throwIO (InvalidCLIArguments msg)
 
 runCLI :: [String] -> IO ()
@@ -330,6 +334,7 @@ runCLI args = handle handler $ do
   case cmd of
     CmdRewrite OptsRewrite {..} -> do
       validateOpts
+      exclude <- traverse (parseExpressionThrows >=> canBeHidden) hide
       logDebug (printf "Amount of rewriting cycles across all the rules: %d, per rule: %d" maxCycles maxDepth)
       input <- readInput inputFile
       rules' <- getRules normalize shuffle rules
@@ -337,7 +342,7 @@ runCLI args = handle handler $ do
       let listing = if null rules' then const input else (\prog -> P.printProgram' prog (sugarType, UNICODE, flat))
           xmirCtx = XmirContext omitListing omitComments listing
           printProgCtx = PrintProgCtx sugarType flat xmirCtx nonumber expression
-      rewrittens <- rewrite' program rules' (context printProgCtx)
+      rewrittens <- rewrite' program rules' (context printProgCtx) <&> (`H.hide` exclude)
       logDebug (printf "Printing rewritten 𝜑-program as %s" (show outputFormat))
       progs <- printRewrittens printProgCtx rewrittens
       output targetFile progs
@@ -387,6 +392,18 @@ runCLI args = handle handler $ do
         printRewrittens ctx rewrittens
           | outputFormat == LATEX = pure (rewrittensToLatex rewrittens (LatexContext sugarType flat nonumber expression))
           | otherwise = mapM (printProgram outputFormat ctx . program) rewrittens <&> intercalate "\n"
+        canBeHidden :: Expression -> IO Expression
+        canBeHidden expr = canBeHidden' expr expr
+          where
+            canBeHidden' :: Expression -> Expression -> IO Expression
+            canBeHidden' exp@(ExDispatch ExGlobal _) _ = pure exp
+            canBeHidden' exp@(ExDispatch expr attr) full = canBeHidden' expr full >> pure exp
+            canBeHidden' _ full =
+              invalidCLIArguments
+                ( printf
+                    "Only dispatch expression started with Φ (or Q) can be used in --hide, but given: %s"
+                    (printExpression' full P.logPrintConfig)
+                )
     CmdDataize OptsDataize {..} -> do
       validateOpts
       input <- readInput inputFile
