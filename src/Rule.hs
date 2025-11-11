@@ -271,10 +271,6 @@ extraSubstitutions substs extras RuleContext {..} = case extras of
     logDebug "Extra substitutions have been built"
     pure (catMaybes res)
 
--- @todo #432:30min Fix log for not matched pattern. Right now we print
---  the name of the rule if pattern is not matched. It would be better to print
---  the pattern itself. To achieve that we should extend CST so it supports meta
---  attributes, expressions and so on. Don't forget to remove the puzzle
 matchProgramWithRule :: Program -> Y.Rule -> RuleContext -> IO [Subst]
 matchProgramWithRule program rule ctx =
   let ptn = Y.pattern rule
@@ -282,7 +278,7 @@ matchProgramWithRule program rule ctx =
       name = fromMaybe "unknown" (Y.name rule)
    in if null matched
         then do
-          logDebug (printf "Pattern from rule '%s' was not matched" name)
+          logDebug (printf "Pattern from rule '%s' was not matched:\n%s" name (printExpression' ptn logPrintConfig))
           pure []
         else do
           when' <- meetMaybeCondition (Y.when rule) matched ctx

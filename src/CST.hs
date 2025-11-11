@@ -62,7 +62,24 @@ data SPACE = SPACE
 data EOL = EOL | NO_EOL
   deriving (Eq, Show)
 
-data BYTES = BT_EMPTY | BT_ONE String | BT_MANY [String]
+data BYTES
+  = BT_EMPTY
+  | BT_ONE String
+  | BT_MANY [String]
+  | BT_META META
+  deriving (Eq, Show)
+
+data META
+  = MT_EXPRESSION {rest :: String}
+  | MT_EXPRESSION' {rest :: String}
+  | MT_ATTRIBUTE {rest :: String}
+  | MT_ATTRIBUTE' {rest :: String}
+  | MT_BINDING {rest :: String}
+  | MT_BINDING' {rest :: String}
+  | MT_BYTES {rest :: String}
+  | MT_BYTES' {rest :: String}
+  | MT_TAIL {rest :: String}
+  | MT_FUNCTION {rest :: String}
   deriving (Eq, Show)
 
 data TAB
@@ -84,18 +101,24 @@ data PAIR
   | PA_VOID {attr :: ATTRIBUTE, arrow :: ARROW, void :: VOID}
   | PA_LAMBDA {func :: String}
   | PA_LAMBDA' {func :: String} -- ASCII version of PA_LAMBDA
+  | PA_META_LAMBDA {meta :: META}
+  | PA_META_LAMBDA' {meta :: META} -- ASCII version of PA_META_LAMBDA'
   | PA_DELTA {bytes :: BYTES}
   | PA_DELTA' {bytes :: BYTES} -- ASCII version of PA_DELTA
+  | PA_META_DELTA {meta :: META}
+  | PA_META_DELTA' {meta :: META} -- ASCII version of PA_META_DELTA
   deriving (Eq, Show)
 
 data BINDING
   = BI_PAIR {pair :: PAIR, bindings :: BINDINGS, tab :: TAB}
   | BI_EMPTY {tab :: TAB}
+  | BI_META {meta :: META, bindings :: BINDINGS, tab :: TAB}
   deriving (Eq, Show)
 
 data BINDINGS
   = BDS_PAIR {eol :: EOL, tab :: TAB, pair :: PAIR, bindings :: BINDINGS}
   | BDS_EMPTY {tab :: TAB}
+  | BDS_META {eol :: EOL, tab :: TAB, meta :: META, bindings :: BINDINGS}
   deriving (Eq, Show)
 
 -- Arguments for application with default α attributes
@@ -120,6 +143,8 @@ data EXPRESSION
   | EX_APPLICATION' {expr :: EXPRESSION, eol :: EOL, tab :: TAB, args :: APP_ARG, eol' :: EOL, tab' :: TAB}
   | EX_STRING {str :: String, tab :: TAB}
   | EX_NUMBER {num :: Either Integer Double, tab :: TAB}
+  | EX_META {meta :: META}
+  | EX_META_TAIL {expr :: EXPRESSION, meta :: META}
   deriving (Eq, Show)
 
 data ATTRIBUTE
@@ -129,6 +154,7 @@ data ATTRIBUTE
   | AT_PHI {phi :: PHI}
   | AT_LAMBDA {lambda :: LAMBDA}
   | AT_DELTA {delta :: DELTA}
+  | AT_META {meta :: META}
   deriving (Eq, Show)
 
 programToCST :: Program -> PROGRAM
@@ -149,6 +175,8 @@ instance ToCST Program PROGRAM where
 instance ToCST Expression EXPRESSION where
   toCST ExGlobal _ = EX_GLOBAL Φ
   toCST ExThis _ = EX_XI XI
+  toCST (ExMeta mt) _ = EX_META (MT_EXPRESSION (tail mt))
+  toCST (ExMetaTail expr mt) tabs = EX_META_TAIL (toCST expr tabs) (MT_TAIL (tail mt))
   toCST ExTermination _ = EX_TERMINATION DEAD
   toCST (ExFormation [BiVoid AtRho]) _ = toCST (ExFormation []) 0
   toCST (ExFormation []) _ = EX_FORMATION LSB NO_EOL NO_TAB (BI_EMPTY NO_TAB) NO_EOL NO_TAB RSB
@@ -229,10 +257,12 @@ instance ToCST [Expression] APP_ARGS where
 
 instance ToCST [Binding] BINDING where
   toCST [] tabs = BI_EMPTY (TAB tabs)
+  toCST (BiMeta mt : bds) tabs = BI_META (MT_BINDING (tail mt)) (toCST bds tabs) (TAB tabs)
   toCST (bd : bds) tabs = BI_PAIR (toCST bd tabs) (toCST bds tabs) (TAB tabs)
 
 instance ToCST [Binding] BINDINGS where
   toCST [] tabs = BDS_EMPTY (TAB tabs)
+  toCST (BiMeta mt : bds) tabs = BDS_META EOL (TAB tabs) (MT_BINDING (tail mt)) (toCST bds tabs)
   toCST (bd : bds) tabs = BDS_PAIR EOL (TAB tabs) (toCST bd tabs) (toCST bds tabs)
 
 instance ToCST Binding PAIR where
@@ -240,11 +270,13 @@ instance ToCST Binding PAIR where
   toCST (BiVoid attr) tabs = PA_VOID (toCST attr tabs) ARROW EMPTY
   toCST (BiDelta bts) tabs = PA_DELTA (toCST bts tabs)
   toCST (BiLambda func) _ = PA_LAMBDA func
+  toCST (BiMetaLambda mt) _ = PA_META_LAMBDA (MT_FUNCTION (tail mt))
 
 instance ToCST Bytes BYTES where
   toCST BtEmpty _ = BT_EMPTY
   toCST (BtOne byte) _ = BT_ONE byte
   toCST (BtMany bts) _ = BT_MANY bts
+  toCST (BtMeta mt) _ = BT_META (MT_BYTES (tail mt))
 
 instance ToCST Attribute ATTRIBUTE where
   toCST (AtLabel label) _ = AT_LABEL label
@@ -253,6 +285,7 @@ instance ToCST Attribute ATTRIBUTE where
   toCST AtRho _ = AT_RHO RHO
   toCST AtDelta _ = AT_DELTA DELTA
   toCST AtLambda _ = AT_LAMBDA LAMBDA
+  toCST (AtMeta mt) _ = AT_META (MT_ATTRIBUTE (tail mt))
 
 class HasEOL a where
   hasEOL :: a -> Bool
