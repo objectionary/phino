@@ -33,9 +33,10 @@ spec :: Spec
 spec = do
   describe "builds valid CST" $
     forM_
-      [ ("Q -> Q", PR_SWEET (EX_GLOBAL Φ)),
+      [ ("Q -> Q", PR_SWEET LCB (EX_GLOBAL Φ) RCB),
         ( "{[[ x -> Q.y ]]}",
           PR_SWEET
+            LCB
             ( EX_FORMATION
                 LSB
                 EOL
@@ -45,6 +46,7 @@ spec = do
                 (TAB 0)
                 RSB
             )
+            RCB
         )
       ]
       ( \(prog, cst) -> it prog $ do

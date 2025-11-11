@@ -269,7 +269,7 @@ spec = do
         testCLISucceeded
           ["rewrite", "--output=latex", "--sweet"]
           [ "\\begin{phiquation}",
-            "{[[",
+            "\\Big\\{[[",
             "  |x| -> QQ.|z|(",
             "    |y| -> 5",
             "  ),",
@@ -278,7 +278,7 @@ spec = do
             "  ^ -> Q,",
             "  @ -> 1,",
             "  |y| -> \"H$@^M\"",
-            "]]}",
+            "]]\\Big\\}",
             "\\end{phiquation}"
           ]
 
@@ -287,7 +287,7 @@ spec = do
         testCLISucceeded
           ["rewrite", "--output=latex", "--sweet", "--nonumber", "--flat"]
           [ "\\begin{phiquation*}",
-            "{[[ |x| -> 5 ]]}",
+            "\\Big\\{[[ |x| -> 5 ]]\\Big\\}",
             "\\end{phiquation*}"
           ]
     
@@ -296,7 +296,7 @@ spec = do
         testCLISucceeded
           ["rewrite", "--output=latex", "--sweet", "--flat", "--expression=foo"]
           [ "\\begin{phiquation}",
-            "\\phiExpression{foo} {[[ |x| -> 5 ]]}",
+            "\\phiExpression{foo} \\Big\\{[[ |x| -> 5 ]]\\Big\\}",
             "\\end{phiquation}"
           ]
 
@@ -359,9 +359,9 @@ spec = do
           ]
           [ unlines
               [ "\\begin{phiquation}",
-                "{[[ |x| -> \"foo\" ]]} \\leadsto_{\\nameref{r:first}}",
-                "  \\leadsto {Q.|x|( |y| -> \"foo\" )} \\leadsto_{\\nameref{r:second}}",
-                "  \\leadsto {[[ |x| -> \"foo\" ]]}",
+                "\\Big\\{[[ |x| -> \"foo\" ]]\\Big\\} \\leadsto_{\\nameref{r:first}}",
+                "  \\leadsto \\Big\\{Q.|x|( |y| -> \"foo\" )\\Big\\} \\leadsto_{\\nameref{r:second}}",
+                "  \\leadsto \\Big\\{[[ |x| -> \"foo\" ]]\\Big\\}",
                 "\\end{phiquation}"
               ]
           ]

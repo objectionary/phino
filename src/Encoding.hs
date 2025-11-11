@@ -19,7 +19,7 @@ class ToASCII a where
 
 instance ToASCII PROGRAM where
   toASCII PR_SALTY {..} = PR_SALTY Q ARROW' (toASCII expr)
-  toASCII PR_SWEET {..} = PR_SWEET (toASCII expr)
+  toASCII PR_SWEET {..} = PR_SWEET lcb (toASCII expr) rcb
 
 instance ToASCII EXPRESSION where
   toASCII EX_GLOBAL {..} = EX_GLOBAL Q
