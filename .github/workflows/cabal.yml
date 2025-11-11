@@ -14,7 +14,7 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [macos-15]
+        os: [macos-15, macos-15-intel]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v5
@@ -29,7 +29,21 @@ jobs:
           key: ${{ runner.os }}-cabal-${{ hashFiles('**/*.cabal') }}-${{ hashFiles('cabal.project', 'cabal.project.freeze') }}
           restore-keys: |
             ${{ runner.os }}-cabal-
+      - name: Set up GHC and Cabal (macOS Intel)
+        if: matrix.os == 'macos-15-intel'
+        run: |
+          set -e
+          curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | BOOTSTRAP_HASKELL_NONINTERACTIVE=1 BOOTSTRAP_HASKELL_MINIMAL=1 BOOTSTRAP_HASKELL_ADJUST_BASHRC=0 sh
+          echo "$HOME/.ghcup/bin" >> $GITHUB_PATH
+          export PATH="$HOME/.ghcup/bin:$PATH"
+          ghcup install ghc 9.6.7
+          ghcup set ghc 9.6.7
+          ghcup install cabal 3.12.1.0
+          ghcup set cabal 3.12.1.0
+          ghc --version
+          cabal --version
       - name: Set up GHC
+        if: matrix.os != 'macos-15-intel'
         uses: haskell-actions/setup@v2.8.2
         with:
           ghc-version: '9.6.7'
