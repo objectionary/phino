@@ -14,6 +14,12 @@ import AST
 import Data.List (intercalate)
 import Misc
 
+data LCB = LCB | BIG_LCB
+  deriving (Eq, Show)
+
+data RCB = RCB | BIG_RCB
+  deriving (Eq, Show)
+
 data LSB = LSB | LSB'
   deriving (Eq, Show)
 
@@ -92,7 +98,7 @@ data ALPHA = ALPHA | ALPHA'
   deriving (Eq, Show)
 
 data PROGRAM
-  = PR_SWEET {expr :: EXPRESSION}
+  = PR_SWEET {lcb :: LCB, expr :: EXPRESSION, rcb :: RCB}
   | PR_SALTY {global :: GLOBAL, arrow :: ARROW, expr :: EXPRESSION}
   deriving (Eq, Show)
 
@@ -170,7 +176,7 @@ class ToCST a b where
   toCST :: a -> Integer -> b
 
 instance ToCST Program PROGRAM where
-  toCST (Program expr) tabs = PR_SWEET (toCST expr tabs)
+  toCST (Program expr) tabs = PR_SWEET LCB (toCST expr tabs) RCB
 
 instance ToCST Expression EXPRESSION where
   toCST ExGlobal _ = EX_GLOBAL Φ

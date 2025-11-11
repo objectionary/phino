@@ -77,7 +77,7 @@ class ToLaTeX a where
   toLaTeX :: a -> a
 
 instance ToLaTeX PROGRAM where
-  toLaTeX PR_SWEET {..} = PR_SWEET (toLaTeX expr)
+  toLaTeX PR_SWEET {..} = PR_SWEET BIG_LCB (toLaTeX expr) BIG_RCB
   toLaTeX PR_SALTY {..} = PR_SALTY global arrow (toLaTeX expr)
 
 instance ToLaTeX EXPRESSION where

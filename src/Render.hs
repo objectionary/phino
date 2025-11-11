@@ -25,6 +25,14 @@ instance Render Double where
 instance Render Char where
   render ch = [ch]
 
+instance Render LCB where
+  render LCB = "{"
+  render BIG_LCB = "\\Big\\{"
+
+instance Render RCB where
+  render RCB = "}"
+  render BIG_RCB = "\\Big\\}"
+
 instance Render LSB where
   render LSB = "⟦"
   render LSB' = "[["
@@ -112,7 +120,7 @@ instance Render TAB where
   render NO_TAB = ""
 
 instance Render PROGRAM where
-  render PR_SWEET {..} = "{" <> render expr <> "}"
+  render PR_SWEET {..} = render lcb <> render expr <> render rcb
   render PR_SALTY {..} = render global <> render SPACE <> render arrow <> render SPACE <> render expr
 
 instance Render PAIR where
