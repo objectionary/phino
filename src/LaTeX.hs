@@ -61,7 +61,7 @@ rewrittensToLatex rewrittens ctx@LatexContext {..} =
                 )
                 rewrittens
             ),
-          printf "\n\\end{%s}" equation
+          printf ".\n\\end{%s}" equation
         ]
 
 programToLaTeX :: Program -> LatexContext -> String

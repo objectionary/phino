@@ -303,7 +303,7 @@ spec = do
         testCLISucceeded
           ["rewrite", "--output=latex", "--sweet", "--flat", "--expression=foo"]
           [ "\\begin{phiquation}",
-            "\\phiExpression{foo} \\Big\\{[[ |x| -> 5 ]]\\Big\\}",
+            "\\phiExpression{foo} \\Big\\{[[ |x| -> 5 ]]\\Big\\}.\n",
             "\\end{phiquation}"
           ]
 
@@ -312,7 +312,7 @@ spec = do
         testCLISucceeded
           ["rewrite", "--output=latex", "--sweet", "--flat", "--label=foo"]
           [ "\\begin{phiquation}\n\\label{foo}\n",
-            "\\Big\\{[[ |x| -> 5 ]]\\Big\\}\n",
+            "\\Big\\{[[ |x| -> 5 ]]\\Big\\}.\n",
             "\\end{phiquation}"
           ]
 
@@ -377,7 +377,7 @@ spec = do
               [ "\\begin{phiquation}",
                 "\\Big\\{[[ |x| -> \"foo\" ]]\\Big\\} \\leadsto_{\\nameref{r:first}}",
                 "  \\leadsto \\Big\\{Q.|x|( |y| -> \"foo\" )\\Big\\} \\leadsto_{\\nameref{r:second}}",
-                "  \\leadsto \\Big\\{[[ |x| -> \"foo\" ]]\\Big\\}",
+                "  \\leadsto \\Big\\{[[ |x| -> \"foo\" ]]\\Big\\}.",
                 "\\end{phiquation}"
               ]
           ]
