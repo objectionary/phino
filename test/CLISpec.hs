@@ -180,12 +180,18 @@ spec = do
           testCLIFailed
             ["rewrite", "--omit-comments", "--output=phi"]
             ["--omit-comments"]
-      
+
       it "with --expression and --output != latex" $
         withStdin "{[[]]}" $
           testCLIFailed
             ["rewrite", "--expression=foo", "--output=phi"]
             ["--expression option can stay together with --output=latex only"]
+
+      it "with --label and --output != latex" $
+        withStdin "{[[]]}" $
+          testCLIFailed
+            ["rewrite", "--label=foo", "--output=phi"]
+            ["--label option can stay together with --output=latex only"]
 
       it "with wrong --hide option" $
         withStdin "{[[]]}" $
@@ -290,13 +296,22 @@ spec = do
             "\\Big\\{[[ |x| -> 5 ]]\\Big\\}",
             "\\end{phiquation*}"
           ]
-    
+
     it "rewrite as LaTeX with expression name" $
       withStdin "Q -> [[ x -> 5 ]]" $
         testCLISucceeded
           ["rewrite", "--output=latex", "--sweet", "--flat", "--expression=foo"]
           [ "\\begin{phiquation}",
             "\\phiExpression{foo} \\Big\\{[[ |x| -> 5 ]]\\Big\\}",
+            "\\end{phiquation}"
+          ]
+
+    it "rewrite as LaTeX with label name" $
+      withStdin "Q -> [[ x -> 5 ]]" $
+        testCLISucceeded
+          ["rewrite", "--output=latex", "--sweet", "--flat", "--label=foo"]
+          [ "\\begin{phiquation}\n\\label{foo}\n",
+            "\\Big\\{[[ |x| -> 5 ]]\\Big\\}\n",
             "\\end{phiquation}"
           ]
 
@@ -464,7 +479,7 @@ spec = do
                 "⟧}"
               ]
           ]
-    
+
     it "hides default package" $
       withStdin "{[[ org -> [[ eolang -> [[ number -> [[]] ]]]], x -> 42 ]]}" $
         testCLISucceeded

@@ -50,7 +50,8 @@ data PrintProgramContext = PrintProgCtx
     line :: LineFormat,
     xmirCtx :: XmirContext,
     nonumber :: Bool,
-    expression :: Maybe String
+    expression :: Maybe String,
+    label :: Maybe String
   }
 
 data CmdException
@@ -117,6 +118,7 @@ data OptsRewrite = OptsRewrite
     inPlace :: Bool,
     sequence :: Bool,
     expression :: Maybe String,
+    label :: Maybe String,
     hide :: [String],
     targetFile :: Maybe FilePath,
     stepsDir :: Maybe FilePath,
@@ -271,7 +273,8 @@ rewriteParser =
                 <*> optMaxCycles
                 <*> switch (long "in-place" <> help "Edit file in-place instead of printing to output")
                 <*> switch (long "sequence" <> help "Result output contains all intermediate 𝜑-programs concatenated with EOL")
-                <*> optional (strOption (long "expression" <> metavar "NAME" <> help "Name for 'phiExpression' when rendering to LaTeX"))
+                <*> optional (strOption (long "expression" <> metavar "NAME" <> help "Name for 'phiExpression' element when rendering to LaTeX"))
+                <*> optional (strOption (long "label" <> metavar "NAME" <> help "Name for 'label' element when rendering to LaTeX"))
                 <*> many (strOption (long "hide" <> metavar "FQN" <> help "Location of object to exclude from result program after rewriting, must be a valid dispatch expression; e.g. Q.org.eolang"))
                 <*> optTarget
                 <*> optStepsDir
@@ -341,7 +344,7 @@ runCLI args = handle handler $ do
       program <- parseProgram input inputFormat
       let listing = if null rules' then const input else (\prog -> P.printProgram' prog (sugarType, UNICODE, flat))
           xmirCtx = XmirContext omitListing omitComments listing
-          printProgCtx = PrintProgCtx sugarType flat xmirCtx nonumber expression
+          printProgCtx = PrintProgCtx sugarType flat xmirCtx nonumber expression label
       rewrittens <- rewrite' program rules' (context printProgCtx) <&> (`H.hide` exclude)
       logDebug (printf "Printing rewritten 𝜑-program as %s" (show outputFormat))
       progs <- printRewrittens printProgCtx rewrittens
@@ -361,6 +364,9 @@ runCLI args = handle handler $ do
           when
             (isJust expression && outputFormat /= LATEX)
             (invalidCLIArguments "The --expression option can stay together with --output=latex only")
+          when
+            (isJust label && outputFormat /= LATEX)
+            (invalidCLIArguments "The --label option can stay together with --output=latex only")
           validateMaxDepth maxDepth
           validateMaxCycles maxCycles
           validateMust must
@@ -390,7 +396,7 @@ runCLI args = handle handler $ do
             (saveStep stepsDir (ioToExtension outputFormat) (printProgram outputFormat ctx))
         printRewrittens :: PrintProgramContext -> [Rewritten] -> IO String
         printRewrittens ctx rewrittens
-          | outputFormat == LATEX = pure (rewrittensToLatex rewrittens (LatexContext sugarType flat nonumber expression))
+          | outputFormat == LATEX = pure (rewrittensToLatex rewrittens (LatexContext sugarType flat nonumber expression label))
           | otherwise = mapM (printProgram outputFormat ctx . program) rewrittens <&> intercalate "\n"
         canBeHidden :: Expression -> IO Expression
         canBeHidden expr = canBeHidden' expr expr
@@ -423,7 +429,7 @@ runCLI args = handle handler $ do
             maxCycles
             depthSensitive
             buildTerm
-            (saveStep stepsDir (ioToExtension PHI) (printProgram PHI (PrintProgCtx sugarType flat defaultXmirContext False Nothing)))
+            (saveStep stepsDir (ioToExtension PHI) (printProgram PHI (PrintProgCtx sugarType flat defaultXmirContext False Nothing Nothing)))
     CmdExplain OptsExplain {..} -> do
       validateOpts
       rules' <- getRules normalize shuffle rules
@@ -442,7 +448,7 @@ runCLI args = handle handler $ do
       prog <- merge progs
       let listing = const (P.printProgram' prog (sugarType, UNICODE, flat))
           xmirCtx = XmirContext omitListing omitComments listing
-          printProgCtx = PrintProgCtx sugarType flat xmirCtx False Nothing
+          printProgCtx = PrintProgCtx sugarType flat xmirCtx False Nothing Nothing
       prog' <- printProgram outputFormat printProgCtx prog
       output targetFile prog'
       where
@@ -498,7 +504,7 @@ runCLI args = handle handler $ do
     printProgram :: IOFormat -> PrintProgramContext -> Program -> IO String
     printProgram PHI PrintProgCtx {..} prog = pure (P.printProgram' prog (sugar, UNICODE, line))
     printProgram XMIR PrintProgCtx {..} prog = programToXMIR prog xmirCtx <&> printXMIR
-    printProgram LATEX PrintProgCtx {..} prog = pure (programToLaTeX prog (LatexContext sugar line nonumber expression))
+    printProgram LATEX PrintProgCtx {..} prog = pure (programToLaTeX prog (LatexContext sugar line nonumber expression label))
     getRules :: Bool -> Bool -> [FilePath] -> IO [Y.Rule]
     getRules normalize shuffle rules = do
       ordered <-

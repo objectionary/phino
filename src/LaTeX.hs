@@ -24,7 +24,8 @@ data LatexContext = LatexContext
   { sugar :: SugarType,
     line :: LineFormat,
     nonumber :: Bool,
-    expression :: Maybe String
+    expression :: Maybe String,
+    label :: Maybe String
   }
 
 renderToLatex :: Program -> LatexContext -> String
@@ -39,6 +40,9 @@ rewrittensToLatex rewrittens ctx@LatexContext {..} =
   let equation = phiquation ctx
    in concat
         [ printf "\\begin{%s}\n" equation,
+          case label of
+            Just lbl -> printf "\\label{%s}\n" lbl
+            _ -> "",
           case expression of
             Just expr -> printf "\\phiExpression{%s} " expr
             _ -> "",
