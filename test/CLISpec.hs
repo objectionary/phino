@@ -265,19 +265,20 @@ spec = do
           ["<?xml version=\"1.0\" encoding=\"UTF-8\"?>", "<object", "  <o base=\"Φ.y\" name=\"x\"/>"]
 
     it "rewrites as LaTeX" $
-      withStdin "Q -> [[ x -> QQ.z(y -> 5), q -> T, w -> $, ^ -> Q, @ -> 1, y -> \"H$@^M\"]]" $
+      withStdin "Q -> [[ x_o -> QQ.z(y -> 5), q$ -> T, w -> $, ^ -> Q, @ -> 1, y -> \"H$@^M\", L> Fu_nc ]]" $
         testCLISucceeded
           ["rewrite", "--output=latex", "--sweet"]
           [ "\\begin{phiquation}",
-            "\\Big\\{[[",
-            "  |x| -> QQ.|z|(",
-            "    |y| -> 5",
-            "  ),",
-            "  |q| -> T,",
-            "  |w| -> $,",
-            "  ^ -> Q,",
-            "  @ -> 1,",
-            "  |y| -> \"H$@^M\"",
+            "\\Big\\{[[\n",
+            "  |x\\char95{}o| -> QQ.|z|(\n",
+            "    |y| -> 5\n",
+            "  ),\n",
+            "  |q\\char36{}| -> T,\n",
+            "  |w| -> $,\n",
+            "  ^ -> Q,\n",
+            "  @ -> 1,\n",
+            "  |y| -> \"H$@^M\",\n",
+            "  L> |Fu\\char95{}nc|\n",
             "]]\\Big\\}",
             "\\end{phiquation}"
           ]
