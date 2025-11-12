@@ -77,6 +77,9 @@ programToLaTeX prog ctx =
           "}"
         ]
 
+piped :: String -> String
+piped str = "|" <> str <> "|"
+
 class ToLaTeX a where
   toLaTeX :: a -> a
 
@@ -94,9 +97,6 @@ instance ToLaTeX EXPRESSION where
 
 instance ToLaTeX ATTRIBUTE where
   toLaTeX AT_LABEL {..} = AT_LABEL (piped (toLaTeX label))
-    where
-      piped :: String -> String
-      piped str = "|" <> str <> "|"
   toLaTeX attr = attr
 
 instance ToLaTeX BINDING where
@@ -109,7 +109,8 @@ instance ToLaTeX BINDINGS where
 
 instance ToLaTeX PAIR where
   toLaTeX PA_DELTA {..} = PA_DELTA' bytes
-  toLaTeX PA_LAMBDA {..} = PA_LAMBDA' func
+  toLaTeX PA_LAMBDA {..} = PA_LAMBDA' (piped (toLaTeX func))
+  toLaTeX PA_LAMBDA' {..} = PA_LAMBDA' (piped (toLaTeX func))
   toLaTeX PA_VOID {..} = PA_VOID (toLaTeX attr) arrow void
   toLaTeX PA_TAU {..} = PA_TAU (toLaTeX attr) arrow (toLaTeX expr)
   toLaTeX pair = pair
@@ -130,6 +131,7 @@ instance ToLaTeX String where
         '$' -> "\\char36{}" <> escapeUnprintedChars rest
         '@' -> "\\char64{}" <> escapeUnprintedChars rest
         '^' -> "\\char94{}" <> escapeUnprintedChars rest
+        '_' -> "\\char95{}" <> escapeUnprintedChars rest
         _ -> ch : escapeUnprintedChars rest
 
 -- @todo #114:30min Implement LaTeX conversion for rules.
