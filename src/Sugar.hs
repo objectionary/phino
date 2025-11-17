@@ -32,17 +32,6 @@ bdWithVoidRho BI_PAIR {..} = BI_PAIR pair (bdsWithVoidRho bindings) tab
 data SugarType = SWEET | SALTY
   deriving (Eq, Show)
 
-class ToSweet a where
-  toSweet :: a -> a
-
-instance ToSweet PROGRAM where
-  toSweet PR_SALTY {..} = PR_SWEET LCB (toSweet expr) RCB
-  toSweet prog = prog
-
-instance ToSweet EXPRESSION where
-  toSweet (EX_DISPATCH {expr = EX_DISPATCH {expr = EX_GLOBAL {..}, attr = AT_LABEL {label = "org"}}, attr = AT_LABEL {label = "eolang"}}) = EX_DEF_PACKAGE Φ̇
-  toSweet expr = expr
-
 -- By default CST is generated with all possible syntax sugar
 -- The main purpose of this class is to get rid of syntax sugar
 --  |----------------------------|-------------------------------------------------------|
