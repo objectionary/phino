@@ -82,11 +82,19 @@ instance Show IOFormat where
 data OptsDataize = OptsDataize
   { logLevel :: LogLevel,
     inputFormat :: IOFormat,
+    outputFormat :: IOFormat,
     sugarType :: SugarType,
     flat :: LineFormat,
+    omitListing :: Bool,
+    omitComments :: Bool,
+    nonumber :: Bool,
+    sequence :: Bool,
+    depthSensitive :: Bool,
     maxDepth :: Integer,
     maxCycles :: Integer,
-    depthSensitive :: Bool,
+    hide :: [String],
+    expression :: Maybe String,
+    label :: Maybe String,
     stepsDir :: Maybe FilePath,
     inputFile :: Maybe FilePath
   }
@@ -101,25 +109,25 @@ data OptsExplain = OptsExplain
 
 data OptsRewrite = OptsRewrite
   { logLevel :: LogLevel,
-    rules :: [FilePath],
     inputFormat :: IOFormat,
     outputFormat :: IOFormat,
     sugarType :: SugarType,
     flat :: LineFormat,
+    must :: Must,
     normalize :: Bool,
     shuffle :: Bool,
     omitListing :: Bool,
     omitComments :: Bool,
     depthSensitive :: Bool,
     nonumber :: Bool,
-    must :: Must,
-    maxDepth :: Integer,
-    maxCycles :: Integer,
     inPlace :: Bool,
     sequence :: Bool,
+    maxDepth :: Integer,
+    maxCycles :: Integer,
+    rules :: [FilePath],
+    hide :: [String],
     expression :: Maybe String,
     label :: Maybe String,
-    hide :: [String],
     targetFile :: Maybe FilePath,
     stepsDir :: Maybe FilePath,
     inputFile :: Maybe FilePath
@@ -159,12 +167,24 @@ optLogLevel =
       "NONE" -> Right NONE
       _ -> Left $ "unknown log-level: " <> lvl
 
+optRule :: Parser [FilePath]
+optRule = many (strOption (long "rule" <> metavar "[FILE]" <> help "Path to custom rule"))
+
+optInputFormat :: Parser IOFormat
+optInputFormat = option (parseIOFormat "input") (long "input" <> metavar "FORMAT" <> help "Program input format (phi, xmir)" <> value PHI <> showDefault)
+
 parseIOFormat :: String -> ReadM IOFormat
 parseIOFormat type' = eitherReader $ \format -> case (map toLower format, type') of
   ("xmir", _) -> Right XMIR
   ("phi", _) -> Right PHI
   ("latex", "output") -> Right LATEX
   _ -> Left (printf "The value '%s' can't be used for '--%s' option, use --help to check possible values" format type')
+
+optOutputFormat :: Parser IOFormat
+optOutputFormat =
+  option
+    (parseIOFormat "output")
+    (long "output" <> metavar "FORMAT" <> help (printf "Result and intermediate (see %s option(s)) programs output format (phi, xmir, latex)" _intermediateOptions) <> value PHI <> showDefault)
 
 argInputFile :: Parser (Maybe FilePath)
 argInputFile = optional (argument str (metavar "FILE" <> help "Path to input file"))
@@ -175,17 +195,24 @@ optMaxDepth = option auto (long "max-depth" <> metavar "DEPTH" <> help "Maximum 
 optMaxCycles :: Parser Integer
 optMaxCycles = option auto (long "max-cycles" <> metavar "CYCLES" <> help "Maximum number of rewriting cycles across all rules" <> value 25 <> showDefault)
 
-optInputFormat :: Parser IOFormat
-optInputFormat = option (parseIOFormat "input") (long "input" <> metavar "FORMAT" <> help "Program input format (phi, xmir)" <> value PHI <> showDefault)
-
-optOutputFormat :: Parser IOFormat
-optOutputFormat = option (parseIOFormat "output") (long "output" <> metavar "FORMAT" <> help "Program output format (phi, xmir, latex)" <> value PHI <> showDefault)
-
 optDepthSensitive :: Parser Bool
 optDepthSensitive = switch (long "depth-sensitive" <> help "Fail if rewriting is not finished after reaching max attempts (see --max-cycles or --max-depth)")
 
-optRule :: Parser [FilePath]
-optRule = many (strOption (long "rule" <> metavar "[FILE]" <> help "Path to custom rule"))
+optNonumber :: Parser Bool
+optNonumber = switch (long "nonumber" <> help "Turn off equation auto numbering in LaTeX rendering (see --latex option)")
+
+optSequence :: Parser Bool
+optSequence = switch (long "sequence" <> help "Result output contains all intermediate 𝜑-programs concatenated with EOL")
+
+optExpression :: Parser (Maybe String)
+optExpression = optional (strOption (long "expression" <> metavar "NAME" <> help "Name for 'phiExpression' element when rendering to LaTeX (see --latex option)"))
+
+optLabel :: Parser (Maybe String)
+optLabel = optional (strOption (long "label" <> metavar "NAME" <> help "Name for 'label' element when rendering to LaTeX (see --latex option)"))
+
+optHide :: Parser [String]
+optHide = many (strOption (long "hide" <> metavar "FQN" <> help "Location of object to exclude from result and intermediate programs after rewriting. Must be a valid dispatch expression; e.g. Q.org.eolang"))
+
 
 optNormalize :: Parser Bool
 optNormalize = switch (long "normalize" <> help "Use built-in normalization rules")
@@ -199,14 +226,14 @@ optStepsDir = optional (strOption (long "steps-dir" <> metavar "FILE" <> help "D
 optShuffle :: Parser Bool
 optShuffle = switch (long "shuffle" <> help "Shuffle rules before applying")
 
-optSugar :: [String] -> Parser SugarType
-optSugar opts = flag SALTY SWEET (long "sweet" <> help (printf "Print result and intermediate (see %s option(s)) 𝜑-programs using syntax sugar" (intercalate ", " opts)))
+optSugar :: Parser SugarType
+optSugar = flag SALTY SWEET (long "sweet" <> help (printf "Print result and intermediate (see %s option(s)) 𝜑-programs using syntax sugar" _intermediateOptions))
 
 optSugar' :: Parser SugarType
 optSugar' = flag SALTY SWEET (long "sweet" <> help "Print result 𝜑-program using syntax sugar")
 
-optLineFormat :: [String] -> Parser LineFormat
-optLineFormat opts = flag MULTILINE SINGLELINE (long "flat" <> help (printf "Print result and intermediate (see %s option(s)) 𝜑-programs in one line" (intercalate ", " opts)))
+optLineFormat :: Parser LineFormat
+optLineFormat = flag MULTILINE SINGLELINE (long "flat" <> help (printf "Print result and intermediate (see %s option(s)) 𝜑-programs in one line" _intermediateOptions))
 
 optLineFormat' :: Parser LineFormat
 optLineFormat' = flag MULTILINE SINGLELINE (long "flat" <> help "Print result 𝜑-program in one line")
@@ -216,6 +243,9 @@ optOmitListing = switch (long "omit-listing" <> help "Omit full program listing 
 
 optOmitComments :: Parser Bool
 optOmitComments = switch (long "omit-comments" <> help "Omit comments in XMIR output")
+
+_intermediateOptions :: String
+_intermediateOptions = intercalate ", " ["--sequence", "--steps-dir"]
 
 explainParser :: Parser Command
 explainParser =
@@ -230,56 +260,62 @@ explainParser =
 
 dataizeParser :: Parser Command
 dataizeParser =
-  let steps = ["--steps-dir"]
-   in CmdDataize
-        <$> ( OptsDataize
-                <$> optLogLevel
-                <*> optInputFormat
-                <*> optSugar steps
-                <*> optLineFormat steps
-                <*> optMaxDepth
-                <*> optMaxCycles
-                <*> optDepthSensitive
-                <*> optStepsDir
-                <*> argInputFile
-            )
+  CmdDataize
+    <$> ( OptsDataize
+            <$> optLogLevel
+            <*> optInputFormat
+            <*> optOutputFormat
+            <*> optSugar
+            <*> optLineFormat
+            <*> optOmitListing
+            <*> optOmitComments
+            <*> optNonumber
+            <*> optSequence
+            <*> optDepthSensitive
+            <*> optMaxDepth
+            <*> optMaxCycles
+            <*> optHide
+            <*> optExpression
+            <*> optLabel
+            <*> optStepsDir
+            <*> argInputFile
+        )
 
 rewriteParser :: Parser Command
 rewriteParser =
-  let opts = ["--sequence", "--steps-dir"]
-   in CmdRewrite
-        <$> ( OptsRewrite
-                <$> optLogLevel
-                <*> optRule
-                <*> optInputFormat
-                <*> optOutputFormat
-                <*> optSugar opts
-                <*> optLineFormat opts
-                <*> optNormalize
-                <*> optShuffle
-                <*> optOmitListing
-                <*> optOmitComments
-                <*> optDepthSensitive
-                <*> switch (long "nonumber" <> help "Turn off equation auto numbering in LaTeX rendering")
-                <*> option
-                  auto
-                  ( long "must"
-                      <> metavar "RANGE"
-                      <> help "Must-rewrite range (e.g., '3', '..5', '3..', '3..5'). Stops execution if number of rules applied is not in range. Use 0 to disable."
-                      <> value MtDisabled
-                      <> showDefaultWith show
-                  )
-                <*> optMaxDepth
-                <*> optMaxCycles
-                <*> switch (long "in-place" <> help "Edit file in-place instead of printing to output")
-                <*> switch (long "sequence" <> help "Result output contains all intermediate 𝜑-programs concatenated with EOL")
-                <*> optional (strOption (long "expression" <> metavar "NAME" <> help "Name for 'phiExpression' element when rendering to LaTeX"))
-                <*> optional (strOption (long "label" <> metavar "NAME" <> help "Name for 'label' element when rendering to LaTeX"))
-                <*> many (strOption (long "hide" <> metavar "FQN" <> help "Location of object to exclude from result program after rewriting, must be a valid dispatch expression; e.g. Q.org.eolang"))
-                <*> optTarget
-                <*> optStepsDir
-                <*> argInputFile
-            )
+  CmdRewrite
+    <$> ( OptsRewrite
+            <$> optLogLevel
+            <*> optInputFormat
+            <*> optOutputFormat
+            <*> optSugar
+            <*> optLineFormat
+            <*> option
+              auto
+              ( long "must"
+                  <> metavar "RANGE"
+                  <> help "Must-rewrite range (e.g., '3', '..5', '3..', '3..5'). Stops execution if number of rules applied is not in range. Use 0 to disable."
+                  <> value MtDisabled
+                  <> showDefaultWith show
+              )
+            <*> optNormalize
+            <*> optShuffle
+            <*> optOmitListing
+            <*> optOmitComments
+            <*> optDepthSensitive
+            <*> optNonumber
+            <*> switch (long "in-place" <> help "Edit file in-place instead of printing to output")
+            <*> optSequence
+            <*> optMaxDepth
+            <*> optMaxCycles
+            <*> optRule
+            <*> optHide
+            <*> optExpression
+            <*> optLabel
+            <*> optTarget
+            <*> optStepsDir
+            <*> argInputFile
+        )
 
 mergeParser :: Parser Command
 mergeParser =
@@ -287,7 +323,7 @@ mergeParser =
     <$> ( OptsMerge
             <$> optLogLevel
             <*> optInputFormat
-            <*> optOutputFormat
+            <*> option (parseIOFormat "output") (long "output" <> metavar "FORMAT" <> help (printf "Result program output format (phi, xmir, latex)") <> value PHI <> showDefault)
             <*> optSugar'
             <*> optLineFormat'
             <*> optOmitListing
