@@ -246,10 +246,6 @@ instance ToCST Expression EXPRESSION where
                   EOL
                   (TAB tabs)
     where
-      applicationToPrimitive :: Expression -> Integer -> [Binding] -> EXPRESSION
-      applicationToPrimitive (DataNumber bts) tabs = EX_NUMBER (btsToNum bts) (TAB tabs)
-      applicationToPrimitive (DataString bts) tabs = EX_STRING (btsToStr bts) (TAB tabs)
-
       withoutRhosInPrimitives :: Expression -> [Binding] -> ([Binding], [(Binding, Integer)])
       withoutRhosInPrimitives = withoutRhosInPrimitives' 0
         where
@@ -268,6 +264,9 @@ instance ToCST Expression EXPRESSION where
           withoutRhosInPrimitives' _ _ bds = (bds, [])
           primitives :: [String]
           primitives = ["number", "string"]
+      applicationToPrimitive :: Expression -> Integer -> [Binding] -> EXPRESSION
+      applicationToPrimitive (DataNumber bts) tabs = EX_NUMBER (btsToNum bts) (TAB tabs)
+      applicationToPrimitive (DataString bts) tabs = EX_STRING (btsToStr bts) (TAB tabs)
       -- Here we unroll nested application sequence into flat structure
       -- The returned tuple consists of:
       -- 1. deepest start expression
