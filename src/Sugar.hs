@@ -54,9 +54,9 @@ instance ToSalty PROGRAM where
   toSalty PR_SWEET {..} = PR_SALTY Φ ARROW (toSalty expr)
   toSalty prog = prog
 
--- @todo #451:30min Fix converting for primtives. In #451 we managed to remove unnecessary rho bindings in
+-- @todo #451:30min Fix converting for primitives. In #451 we managed to remove unnecessary rho bindings in
 --  applications with primitives. These rho bindings are saved in EX_STRING and EX_NUMBER, so in order to keep
---  phi expression consisten - we should not lose them while converting to salty notation. So let's include them
+--  phi expression consistent - we should not lose them while converting to salty notation. So let's include them
 --  to salty CST.
 instance ToSalty EXPRESSION where
   toSalty EX_DEF_PACKAGE {..} = EX_DISPATCH (EX_DISPATCH (EX_GLOBAL Φ) (AT_LABEL "org")) (AT_LABEL "eolang")

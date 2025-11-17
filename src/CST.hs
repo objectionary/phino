@@ -217,7 +217,7 @@ instance ToCST Expression EXPRESSION where
   -- converted to salty notation without losing information.
   -- In the end we just get CST with data primitive which is printed correctly.
   -- If given application is not such primitive - we just convert it to one of the applications:
-  -- 1. either with pure expression with arguments, which means there are incremeted only alpha bindings
+  -- 1. either with pure expression with arguments, which means there are incremented only alpha bindings
   -- 2. or with just bindings
   toCST app@(ExApplication _ _) tabs =
     let (expr, taus, exprs) = complexApplication app
