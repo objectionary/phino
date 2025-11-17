@@ -13,7 +13,6 @@ module CST where
 import AST
 import Data.List (intercalate)
 import Data.Maybe (isJust)
-import Debug.Trace (trace)
 import Misc
 
 data LCB = LCB | BIG_LCB
