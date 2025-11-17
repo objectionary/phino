@@ -9,7 +9,7 @@ module ParserSpec where
 import AST
 import Control.Monad (forM_)
 import Data.Either (isLeft, isRight)
-import Misc (allPathsIn)
+import Misc
 import Parser
 import System.FilePath (takeBaseName)
 import Test.Hspec (Example (Arg), Expectation, Spec, SpecWith, describe, it, runIO, shouldBe, shouldSatisfy)
@@ -147,56 +147,20 @@ spec = do
           Just
             ( ExApplication
                 ( ExDispatch
-                    ( ExApplication
-                        (ExDispatch (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang")) (AtLabel "number"))
-                        ( BiTau
-                            (AtAlpha 0)
-                            ( ExApplication
-                                (ExDispatch (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang")) (AtLabel "bytes"))
-                                ( BiTau
-                                    (AtAlpha 0)
-                                    (ExFormation [BiDelta (BtMany ["40", "14", "00", "00", "00", "00", "00", "00"]), BiVoid AtRho])
-                                )
-                            )
-                        )
-                    )
+                    (DataNumber (BtMany ["40", "14", "00", "00", "00", "00", "00", "00"]))
                     (AtLabel "plus")
                 )
                 ( BiTau
                     (AtAlpha 0)
                     ( ExApplication
                         ( ExDispatch
-                            ( ExApplication
-                                (ExDispatch (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang")) (AtLabel "number"))
-                                ( BiTau
-                                    (AtAlpha 0)
-                                    ( ExApplication
-                                        (ExDispatch (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang")) (AtLabel "bytes"))
-                                        ( BiTau
-                                            (AtAlpha 0)
-                                            (ExFormation [BiDelta (BtMany ["40", "14", "00", "00", "00", "00", "00", "00"]), BiVoid AtRho])
-                                        )
-                                    )
-                                )
-                            )
+                            (DataNumber (BtMany ["40", "14", "00", "00", "00", "00", "00", "00"]))
                             (AtLabel "q")
                         )
                         ( BiTau
                             (AtAlpha 0)
                             ( ExDispatch
-                                ( ExApplication
-                                    (ExDispatch (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang")) (AtLabel "string"))
-                                    ( BiTau
-                                        (AtAlpha 0)
-                                        ( ExApplication
-                                            (ExDispatch (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang")) (AtLabel "bytes"))
-                                            ( BiTau
-                                                (AtAlpha 0)
-                                                (ExFormation [BiDelta (BtMany ["68", "65", "6C", "6C", "6F"]), BiVoid AtRho])
-                                            )
-                                        )
-                                    )
-                                )
+                                (DataString (BtMany ["68", "65", "6C", "6C", "6F"]))
                                 (AtLabel "length")
                             )
                         )

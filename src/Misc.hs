@@ -26,9 +26,11 @@ module Misc
     uniqueBindings,
     uniqueBindings',
     validateYamlObject,
+    matchDataObject,
     pattern DataObject,
     pattern DataString,
     pattern DataNumber,
+    pattern BaseObject,
   )
 where
 
@@ -69,15 +71,24 @@ instance Show FsException where
   show FileDoesNotExist {..} = printf "File '%s' does not exist" file
   show DirectoryDoesNotExist {..} = printf "Directory '%s' does not exist" dir
 
+matchBaseObject :: Expression -> Maybe String
+matchBaseObject (ExDispatch (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang")) (AtLabel label)) = Just label
+matchBaseObject _ = Nothing
+
+pattern BaseObject :: String -> Expression
+pattern BaseObject label <- (matchBaseObject -> Just label)
+  where
+    BaseObject label = ExDispatch (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang")) (AtLabel label)
+
 -- Minimal matcher function (required for view pattern)
 matchDataObject :: Expression -> Maybe (String, Bytes)
 matchDataObject
   ( ExApplication
-      (ExDispatch (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang")) (AtLabel label))
+      (BaseObject label)
       ( BiTau
           (AtAlpha 0)
           ( ExApplication
-              (ExDispatch (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang")) (AtLabel "bytes"))
+              (BaseObject "bytes")
               ( BiTau
                   (AtAlpha 0)
                   (ExFormation [BiDelta bts, BiVoid AtRho])
@@ -98,11 +109,11 @@ pattern DataObject label bts <- (matchDataObject -> Just (label, bts))
   where
     DataObject label bts =
       ExApplication
-        (ExDispatch (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang")) (AtLabel label))
+        (BaseObject label)
         ( BiTau
             (AtAlpha 0)
             ( ExApplication
-                (ExDispatch (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang")) (AtLabel "bytes"))
+                (BaseObject "bytes")
                 ( BiTau
                     (AtAlpha 0)
                     (ExFormation [BiDelta bts, BiVoid AtRho])

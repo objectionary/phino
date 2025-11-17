@@ -12,6 +12,8 @@ module CST where
 
 import AST
 import Data.List (intercalate)
+import Data.Maybe (isJust)
+import Debug.Trace (trace)
 import Misc
 
 data LCB = LCB | BIG_LCB
@@ -147,8 +149,8 @@ data EXPRESSION
   | EX_DISPATCH {expr :: EXPRESSION, attr :: ATTRIBUTE}
   | EX_APPLICATION {expr :: EXPRESSION, eol :: EOL, tab :: TAB, bindings :: BINDING, eol' :: EOL, tab' :: TAB}
   | EX_APPLICATION' {expr :: EXPRESSION, eol :: EOL, tab :: TAB, args :: APP_ARG, eol' :: EOL, tab' :: TAB}
-  | EX_STRING {str :: String, tab :: TAB}
-  | EX_NUMBER {num :: Either Integer Double, tab :: TAB}
+  | EX_STRING {str :: String, tab :: TAB, rhos :: [Binding]}
+  | EX_NUMBER {num :: Either Integer Double, tab :: TAB, rhos :: [Binding]}
   | EX_META {meta :: META}
   | EX_META_TAIL {expr :: EXPRESSION, meta :: META}
   deriving (Eq, Show)
@@ -203,33 +205,70 @@ instance ToCST Expression EXPRESSION where
       withoutLastVoidRho [BiVoid AtRho] = []
       withoutLastVoidRho (bd : [BiVoid AtRho]) = [bd]
       withoutLastVoidRho (bd : bds') = bd : withoutLastVoidRho bds'
-  toCST (DataString bts) tabs = EX_STRING (btsToStr bts) (TAB tabs)
-  toCST (DataNumber bts) tabs = EX_NUMBER (btsToNum bts) (TAB tabs)
+  toCST (DataString bts) tabs = EX_STRING (btsToStr bts) (TAB tabs) []
+  toCST (DataNumber bts) tabs = EX_NUMBER (btsToNum bts) (TAB tabs) []
   toCST (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang")) _ = EX_DEF_PACKAGE Φ̇
   toCST (ExDispatch ExThis attr) tabs = EX_ATTR (toCST attr tabs)
   toCST (ExDispatch expr attr) tabs = EX_DISPATCH (toCST expr tabs) (toCST attr tabs)
+  -- Since we convert AST to CST in sweet notation, here we're trying to get rid of unnecessary rho bindings
+  -- in primitives (more details here: https://github.com/objectionary/phino/issues/451)
+  -- If we find something similar to:
+  -- `QQ.number(~0 -> QQ.bytes(...), ^ -> ..., ^ -> ...)`
+  -- We remove unnecessary rho bindings and save them to EX_STRING or EX_NUMBER so they can be successfully
+  -- converted to salty notation without losing information.
+  -- In the end we just get CST with data primitive which is printed correctly.
+  -- If given application is not such primitive - we just convert it to one of the applications:
+  -- 1. either with pure expression with arguments, which means there are incremeted only alpha bindings
+  -- 2. or with just bindings
   toCST app@(ExApplication _ _) tabs =
     let (expr, taus, exprs) = complexApplication app
         next = tabs + 1
-        expr'' = toCST expr tabs :: EXPRESSION
-     in if null exprs
-          then
-            EX_APPLICATION
-              (toCST expr tabs)
-              EOL
-              (TAB next)
-              (toCST (reverse taus) next)
-              EOL
-              (TAB tabs)
+        expr' = toCST expr tabs :: EXPRESSION
+        (taus', pairs) = withoutRhosInPrimitives expr taus
+        obj = ExApplication expr (head taus')
+     in if length taus' == 1 && isJust (matchDataObject obj)
+          then applicationToPrimitive obj tabs taus'
           else
-            EX_APPLICATION'
-              (toCST expr tabs)
-              EOL
-              (TAB next)
-              (toCST (reverse exprs) next)
-              EOL
-              (TAB tabs)
+            if null exprs
+              then
+                EX_APPLICATION
+                  expr'
+                  EOL
+                  (TAB next)
+                  (toCST taus' next :: BINDING)
+                  EOL
+                  (TAB tabs)
+              else
+                EX_APPLICATION'
+                  expr'
+                  EOL
+                  (TAB next)
+                  (toCST exprs next)
+                  EOL
+                  (TAB tabs)
     where
+      applicationToPrimitive :: Expression -> Integer -> [Binding] -> EXPRESSION
+      applicationToPrimitive (DataNumber bts) tabs = EX_NUMBER (btsToNum bts) (TAB tabs)
+      applicationToPrimitive (DataString bts) tabs = EX_STRING (btsToStr bts) (TAB tabs)
+
+      withoutRhosInPrimitives :: Expression -> [Binding] -> ([Binding], [(Binding, Integer)])
+      withoutRhosInPrimitives = withoutRhosInPrimitives' 0
+        where
+          withoutRhosInPrimitives' :: Integer -> Expression -> [Binding] -> ([Binding], [(Binding, Integer)])
+          withoutRhosInPrimitives' _ _ [] = ([], [])
+          withoutRhosInPrimitives' index obj@(BaseObject label) bds@(bd@(BiTau AtRho _) : rest)
+            | label `elem` primitives =
+                let (bds', pairs) = withoutRhosInPrimitives' (index + 1) obj rest
+                 in (bds', (bd, index) : pairs)
+            | otherwise = (bds, [])
+          withoutRhosInPrimitives' index obj@(BaseObject label) bds@(bd : rest)
+            | label `elem` primitives =
+                let (bds', pairs) = withoutRhosInPrimitives' (index + 1) obj rest
+                 in (bd : bds', pairs)
+            | otherwise = (bds, [])
+          withoutRhosInPrimitives' _ _ bds = (bds, [])
+          primitives :: [String]
+          primitives = ["number", "string"]
       -- Here we unroll nested application sequence into flat structure
       -- The returned tuple consists of:
       -- 1. deepest start expression
@@ -237,19 +276,24 @@ instance ToCST Expression EXPRESSION where
       -- 3. list of expressions which are applied to start expression with default
       --    alpha attributes (~0 -> e1, ~1 -> e2, ...)
       complexApplication :: Expression -> (Expression, [Binding], [Expression])
-      complexApplication (ExApplication (ExApplication expr tau) tau') =
-        let (before, taus, exprs) = complexApplication (ExApplication expr tau)
-            taus' = tau' : taus
-         in if null exprs
-              then (before, taus', [])
-              else case tau' of
-                BiTau (AtAlpha idx) expr' ->
-                  if idx == fromIntegral (length exprs)
-                    then (before, taus', expr' : exprs)
-                    else (before, taus', [])
-                _ -> (before, taus', [])
-      complexApplication (ExApplication expr (BiTau (AtAlpha 0) expr')) = (expr, [BiTau (AtAlpha 0) expr'], [expr'])
-      complexApplication (ExApplication expr tau) = (expr, [tau], [])
+      complexApplication expr =
+        let (expr', taus', exprs') = complexApplication' expr
+         in (expr', reverse taus', reverse exprs')
+        where
+          complexApplication' :: Expression -> (Expression, [Binding], [Expression])
+          complexApplication' (ExApplication (ExApplication expr tau) tau') =
+            let (before, taus, exprs) = complexApplication' (ExApplication expr tau)
+                taus' = tau' : taus
+             in if null exprs
+                  then (before, taus', [])
+                  else case tau' of
+                    BiTau (AtAlpha idx) expr' ->
+                      if idx == fromIntegral (length exprs)
+                        then (before, taus', expr' : exprs)
+                        else (before, taus', [])
+                    _ -> (before, taus', [])
+          complexApplication' (ExApplication expr (BiTau (AtAlpha 0) expr')) = (expr, [BiTau (AtAlpha 0) expr'], [expr'])
+          complexApplication' (ExApplication expr tau) = (expr, [tau], [])
 
 instance ToCST [Expression] APP_ARG where
   toCST (expr : exprs) tabs = APP_ARG (toCST expr tabs) (toCST exprs tabs)

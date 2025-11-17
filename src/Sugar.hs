@@ -32,6 +32,17 @@ bdWithVoidRho BI_PAIR {..} = BI_PAIR pair (bdsWithVoidRho bindings) tab
 data SugarType = SWEET | SALTY
   deriving (Eq, Show)
 
+class ToSweet a where
+  toSweet :: a -> a
+
+instance ToSweet PROGRAM where
+  toSweet PR_SALTY {..} = PR_SWEET LCB (toSweet expr) RCB
+  toSweet prog = prog
+
+instance ToSweet EXPRESSION where
+  toSweet (EX_DISPATCH {expr = EX_DISPATCH {expr = EX_GLOBAL {..}, attr = AT_LABEL {label = "org"}}, attr = AT_LABEL {label = "eolang"}}) = EX_DEF_PACKAGE Φ̇
+  toSweet expr = expr
+
 -- By default CST is generated with all possible syntax sugar
 -- The main purpose of this class is to get rid of syntax sugar
 --  |----------------------------|-------------------------------------------------------|
@@ -54,6 +65,10 @@ instance ToSalty PROGRAM where
   toSalty PR_SWEET {..} = PR_SALTY Φ ARROW (toSalty expr)
   toSalty prog = prog
 
+-- @todo #451:30min Fix converting for primtives. In #451 we managed to remove unnecessary rho bindings in
+--  applications with primitives. These rho bindings are saved in EX_STRING and EX_NUMBER, so in order to keep
+--  phi expression consisten - we should not lose them while converting to salty notation. So let's include them
+--  to salty CST.
 instance ToSalty EXPRESSION where
   toSalty EX_DEF_PACKAGE {..} = EX_DISPATCH (EX_DISPATCH (EX_GLOBAL Φ) (AT_LABEL "org")) (AT_LABEL "eolang")
   toSalty EX_ATTR {..} = EX_DISPATCH (EX_XI XI) attr
@@ -72,8 +87,8 @@ instance ToSalty EXPRESSION where
       argsToBindings AAS_EMPTY _ tab = BDS_EMPTY tab
       argsToBindings AAS_EXPR {..} idx tb = BDS_PAIR eol tb (PA_TAU (AT_ALPHA ALPHA idx) ARROW expr) (argsToBindings args (idx + 1) tb)
   toSalty EX_NUMBER {num, tab = tb@TAB {..}} =
-    let number = ExDispatch (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang")) (AtLabel "number")
-        bytes = ExDispatch (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang")) (AtLabel "bytes")
+    let number = BaseObject "number"
+        bytes = BaseObject "bytes"
         number' = toCST number (indent + 1) :: EXPRESSION
         bytes' = toCST bytes (indent + 2) :: EXPRESSION
         data' = toCST (ExFormation [BiDelta (numToBts (either toDouble id num))]) (indent + 2) :: EXPRESSION
@@ -97,8 +112,8 @@ instance ToSalty EXPRESSION where
               tb
           )
   toSalty EX_STRING {str, tab = tb@TAB {..}} =
-    let string = ExDispatch (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang")) (AtLabel "string")
-        bytes = ExDispatch (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang")) (AtLabel "bytes")
+    let string = BaseObject "string"
+        bytes = BaseObject "bytes"
         string' = toCST string (indent + 1) :: EXPRESSION
         bytes' = toCST bytes (indent + 2) :: EXPRESSION
         data' = toCST (ExFormation [BiDelta (strToBts str)]) (indent + 2) :: EXPRESSION

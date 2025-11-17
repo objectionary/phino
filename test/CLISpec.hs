@@ -499,6 +499,20 @@ spec = do
           ["rewrite", "--sweet", "--flat"]
           ["{⟦ x ↦ 5, y ↦ \"hey\", z ↦ ⟦ w ↦ ⟦⟧ ⟧ ⟧}"]
 
+    it "removes unnecessary rho bindings in primitive applications" $
+      withStdin
+        ( unlines
+            [ "{[[",
+              "  z -> [[ x -> [[ t -> 42 ]].t ]].x,",
+              "  org -> [[ eolang -> [[ bytes -> [[ data -> ? ]], number -> [[ as-bytes -> ? ]] ]] ]]",
+              "]]}"
+            ]
+        )
+        ( testCLISucceeded
+            ["rewrite", "--sweet", "--normalize", "--flat"]
+            ["{⟦ z ↦ 42, org ↦ ⟦ eolang ↦ ⟦ bytes ↦ ⟦ data ↦ ∅ ⟧, number ↦ ⟦ as-bytes ↦ ∅ ⟧ ⟧ ⟧ ⟧}"]
+        )
+
   describe "dataize" $ do
     it "dataizes simple program" $
       withStdin "Q -> [[ D> 01- ]]" $
