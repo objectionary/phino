@@ -14,12 +14,14 @@ import Control.Exception (Exception (displayException), SomeException, handle, t
 import Control.Exception.Base
 import Control.Monad (when, (>=>))
 import Data.Char (toLower, toUpper)
+import Data.Foldable (for_)
+import qualified Data.Foldable
 import Data.Functor ((<&>))
 import Data.List (intercalate)
-import Data.Maybe (isJust, isNothing)
+import Data.Maybe (fromJust, isJust, isNothing)
 import Data.Version (showVersion)
 import Dataize (DataizeContext (DataizeContext), dataize)
-import Deps (saveStep)
+import Deps (SaveStepFunc, saveStep)
 import Encoding (Encoding (ASCII, UNICODE))
 import Functions (buildTerm)
 import qualified Functions
@@ -30,7 +32,7 @@ import Logger
 import Merge (merge)
 import Misc (ensuredFile)
 import qualified Misc
-import Must (Must (..))
+import Must (Must (..), validateMust)
 import Options.Applicative
 import Parser (parseExpressionThrows, parseProgramThrows)
 import Paths_phino (version)
@@ -213,7 +215,6 @@ optLabel = optional (strOption (long "label" <> metavar "NAME" <> help "Name for
 optHide :: Parser [String]
 optHide = many (strOption (long "hide" <> metavar "FQN" <> help "Location of object to exclude from result and intermediate programs after rewriting. Must be a valid dispatch expression; e.g. Q.org.eolang"))
 
-
 optNormalize :: Parser Bool
 optNormalize = switch (long "normalize" <> help "Use built-in normalization rules")
 
@@ -373,17 +374,17 @@ runCLI args = handle handler $ do
   case cmd of
     CmdRewrite OptsRewrite {..} -> do
       validateOpts
-      exclude <- traverse (parseExpressionThrows >=> canBeHidden) hide
+      exclude <- expressionsToHide hide
       logDebug (printf "Amount of rewriting cycles across all the rules: %d, per rule: %d" maxCycles maxDepth)
       input <- readInput inputFile
       rules' <- getRules normalize shuffle rules
       program <- parseProgram input inputFormat
       let listing = if null rules' then const input else (\prog -> P.printProgram' prog (sugarType, UNICODE, flat))
           xmirCtx = XmirContext omitListing omitComments listing
-          printProgCtx = PrintProgCtx sugarType flat xmirCtx nonumber expression label
-      rewrittens <- rewrite' program rules' (context printProgCtx) <&> (`H.hide` exclude)
+          printCtx = PrintProgCtx sugarType flat xmirCtx nonumber expression label
+      rewrittens <- rewrite' program rules' (context printCtx) <&> (`H.hide` exclude)
       logDebug (printf "Printing rewritten 𝜑-program as %s" (show outputFormat))
-      progs <- printRewrittens printProgCtx rewrittens
+      progs <- printRewrittens printCtx rewrittens
       output targetFile progs
       where
         validateOpts :: IO ()
@@ -394,18 +395,10 @@ runCLI args = handle handler $ do
           when
             (inPlace && isJust targetFile)
             (invalidCLIArguments "--in-place and --target cannot be used together")
-          when
-            (nonumber && outputFormat /= LATEX)
-            (invalidCLIArguments "The --nonumber option can stay together with --output=latex only")
-          when
-            (isJust expression && outputFormat /= LATEX)
-            (invalidCLIArguments "The --expression option can stay together with --output=latex only")
-          when
-            (isJust label && outputFormat /= LATEX)
-            (invalidCLIArguments "The --label option can stay together with --output=latex only")
+          validateLatexOptions outputFormat nonumber expression label
+          validateMust' must
           validateMaxDepth maxDepth
           validateMaxCycles maxCycles
-          validateMust must
           validateXmirOptions outputFormat omitListing omitComments
         output :: Maybe FilePath -> String -> IO ()
         output target prog = case (inPlace, target, inputFile) of
@@ -429,43 +422,35 @@ runCLI args = handle handler $ do
             sequence
             buildTerm
             must
-            (saveStep stepsDir (ioToExtension outputFormat) (printProgram outputFormat ctx))
+            (saveStepFunc outputFormat stepsDir ctx)
         printRewrittens :: PrintProgramContext -> [Rewritten] -> IO String
         printRewrittens ctx rewrittens
           | outputFormat == LATEX = pure (rewrittensToLatex rewrittens (LatexContext sugarType flat nonumber expression label))
           | otherwise = mapM (printProgram outputFormat ctx . program) rewrittens <&> intercalate "\n"
-        canBeHidden :: Expression -> IO Expression
-        canBeHidden expr = canBeHidden' expr expr
-          where
-            canBeHidden' :: Expression -> Expression -> IO Expression
-            canBeHidden' exp@(ExDispatch ExGlobal _) _ = pure exp
-            canBeHidden' exp@(ExDispatch expr attr) full = canBeHidden' expr full >> pure exp
-            canBeHidden' _ full =
-              invalidCLIArguments
-                ( printf
-                    "Only dispatch expression started with Φ (or Q) can be used in --hide, but given: %s"
-                    (printExpression' full P.logPrintConfig)
-                )
     CmdDataize OptsDataize {..} -> do
       validateOpts
+      exclude <- expressionsToHide hide
       input <- readInput inputFile
       prog <- parseProgram input inputFormat
-      dataized <- dataize prog (context prog)
+      let printCtx = PrintProgCtx sugarType flat defaultXmirContext nonumber expression label
+      dataized <- dataize prog (context prog printCtx)
       maybe (throwIO CouldNotDataize) (putStrLn . P.printBytes) dataized
       where
         validateOpts :: IO ()
         validateOpts = do
           validateMaxDepth maxDepth
           validateMaxCycles maxCycles
-        context :: Program -> DataizeContext
-        context program =
+          validateLatexOptions outputFormat nonumber expression label
+          validateXmirOptions outputFormat omitListing omitComments
+        context :: Program -> PrintProgramContext -> DataizeContext
+        context program ctx =
           DataizeContext
             program
             maxDepth
             maxCycles
             depthSensitive
             buildTerm
-            (saveStep stepsDir (ioToExtension PHI) (printProgram PHI (PrintProgCtx sugarType flat defaultXmirContext False Nothing Nothing)))
+            (saveStepFunc outputFormat stepsDir ctx)
     CmdExplain OptsExplain {..} -> do
       validateOpts
       rules' <- getRules normalize shuffle rules
@@ -494,84 +479,124 @@ runCLI args = handle handler $ do
             (null inputs)
             (throwIO (InvalidCLIArguments "At least one input file must be specified for 'merge' command"))
           validateXmirOptions outputFormat omitListing omitComments
+
+-- Prepare saveStepFunc
+saveStepFunc :: IOFormat -> Maybe FilePath -> PrintProgramContext -> SaveStepFunc
+saveStepFunc LATEX stepsDir ctx = saveStep stepsDir "tex" (printProgram LATEX ctx)
+saveStepFunc format stepsDir ctx = saveStep stepsDir (show format) (printProgram format ctx)
+
+-- Get list of expressions which must be hidden in printed programs
+expressionsToHide :: [String] -> IO [Expression]
+expressionsToHide = traverse (parseExpressionThrows >=> canBeHidden)
   where
-    validateXmirOptions :: IOFormat -> Bool -> Bool -> IO ()
-    validateXmirOptions outputFormat omitListing omitComments = do
-      when
-        (outputFormat /= XMIR && omitListing)
-        (invalidCLIArguments "--omit-listing can be used only with --output-format=xmir")
-      when
-        (outputFormat /= XMIR && omitComments)
-        (invalidCLIArguments "--omit-comments can be used only with --output-format=xmir")
-    validateIntArgument :: Integer -> (Integer -> Bool) -> String -> IO ()
-    validateIntArgument num cmp msg =
-      when
-        (cmp num)
-        (invalidCLIArguments msg)
-    validateMaxDepth :: Integer -> IO ()
-    validateMaxDepth depth = validateIntArgument depth (<= 0) "--max-depth must be positive"
-    validateMaxCycles :: Integer -> IO ()
-    validateMaxCycles cycles = validateIntArgument cycles (<= 0) "--max-cycles must be positive"
-    validateMust :: Must -> IO ()
-    validateMust MtDisabled = pure ()
-    validateMust (MtExact n) = validateIntArgument n (<= 0) "--must exact value must be positive"
-    validateMust (MtRange minVal maxVal) = do
-      maybe (pure ()) (\n -> validateIntArgument n (< 0) "--must minimum must be non-negative") minVal
-      maybe (pure ()) (\n -> validateIntArgument n (< 0) "--must maximum must be non-negative") maxVal
-      case (minVal, maxVal) of
-        (Just min, Just max)
-          | min > max ->
-              invalidCLIArguments
-                (printf "--must range invalid: minimum (%d) is greater than maximum (%d)" min max)
-        _ -> pure ()
-    readInput :: Maybe FilePath -> IO String
-    readInput inputFile' = case inputFile' of
-      Just pth -> do
-        logDebug (printf "Reading from file: '%s'" pth)
-        readFile =<< ensuredFile pth
-      Nothing -> do
-        logDebug "Reading from stdin"
-        getContents' `catch` (\(e :: SomeException) -> throwIO (CouldNotReadFromStdin (show e)))
-    parseProgram :: String -> IOFormat -> IO Program
-    parseProgram phi PHI = parseProgramThrows phi
-    parseProgram xmir XMIR = do
-      doc <- parseXMIRThrows xmir
-      xmirToPhi doc
-    printProgram :: IOFormat -> PrintProgramContext -> Program -> IO String
-    printProgram PHI PrintProgCtx {..} prog = pure (P.printProgram' prog (sugar, UNICODE, line))
-    printProgram XMIR PrintProgCtx {..} prog = programToXMIR prog xmirCtx <&> printXMIR
-    printProgram LATEX PrintProgCtx {..} prog = pure (programToLaTeX prog (LatexContext sugar line nonumber expression label))
-    getRules :: Bool -> Bool -> [FilePath] -> IO [Y.Rule]
-    getRules normalize shuffle rules = do
-      ordered <-
-        if normalize
+    canBeHidden :: Expression -> IO Expression
+    canBeHidden expr = canBeHidden' expr expr
+    canBeHidden' :: Expression -> Expression -> IO Expression
+    canBeHidden' exp@(ExDispatch ExGlobal _) _ = pure exp
+    canBeHidden' exp@(ExDispatch expr attr) full = canBeHidden' expr full >> pure exp
+    canBeHidden' _ full =
+      invalidCLIArguments
+        ( printf
+            "Only dispatch expression started with Φ (or Q) can be used in --hide, but given: %s"
+            (printExpression' full P.logPrintConfig)
+        )
+
+-- Validate LaTeX options
+validateLatexOptions :: IOFormat -> Bool -> Maybe String -> Maybe String -> IO ()
+validateLatexOptions outputFormat nonumber expression label = do
+  when
+    (nonumber && outputFormat /= LATEX)
+    (invalidCLIArguments "The --nonumber option can stay together with --output=latex only")
+  when
+    (isJust expression && outputFormat /= LATEX)
+    (invalidCLIArguments "The --expression option can stay together with --output=latex only")
+  when
+    (isJust label && outputFormat /= LATEX)
+    (invalidCLIArguments "The --label option can stay together with --output=latex only")
+
+-- Validate 'must' option
+validateMust' :: Must -> IO ()
+validateMust' must = for_ (validateMust must) invalidCLIArguments
+
+-- Validate options for output to XMIR
+validateXmirOptions :: IOFormat -> Bool -> Bool -> IO ()
+validateXmirOptions outputFormat omitListing omitComments = do
+  when
+    (outputFormat /= XMIR && omitListing)
+    (invalidCLIArguments "--omit-listing can be used only with --output-format=xmir")
+  when
+    (outputFormat /= XMIR && omitComments)
+    (invalidCLIArguments "--omit-comments can be used only with --output-format=xmir")
+
+-- Validate integer argument
+validateIntArgument :: Integer -> (Integer -> Bool) -> String -> IO ()
+validateIntArgument num cmp msg =
+  when
+    (cmp num)
+    (invalidCLIArguments msg)
+
+-- Validate 'maxDepth' option
+validateMaxDepth :: Integer -> IO ()
+validateMaxDepth depth = validateIntArgument depth (<= 0) "--max-depth must be positive"
+
+-- Validate 'maxCycles' option
+validateMaxCycles :: Integer -> IO ()
+validateMaxCycles cycles = validateIntArgument cycles (<= 0) "--max-cycles must be positive"
+
+-- Read input from file or stdin
+readInput :: Maybe FilePath -> IO String
+readInput inputFile' = case inputFile' of
+  Just pth -> do
+    logDebug (printf "Reading from file: '%s'" pth)
+    readFile =<< ensuredFile pth
+  Nothing -> do
+    logDebug "Reading from stdin"
+    getContents' `catch` (\(e :: SomeException) -> throwIO (CouldNotReadFromStdin (show e)))
+
+-- Parse program from String input depending on input IO format
+parseProgram :: String -> IOFormat -> IO Program
+parseProgram phi PHI = parseProgramThrows phi
+parseProgram xmir XMIR = do
+  doc <- parseXMIRThrows xmir
+  xmirToPhi doc
+
+-- Convert program to corresponding String format
+printProgram :: IOFormat -> PrintProgramContext -> Program -> IO String
+printProgram PHI PrintProgCtx {..} prog = pure (P.printProgram' prog (sugar, UNICODE, line))
+printProgram XMIR PrintProgCtx {..} prog = programToXMIR prog xmirCtx <&> printXMIR
+printProgram LATEX PrintProgCtx {..} prog = pure (programToLaTeX prog (LatexContext sugar line nonumber expression label))
+
+-- Get rules for rewriting depending on provided flags
+getRules :: Bool -> Bool -> [FilePath] -> IO [Y.Rule]
+getRules normalize shuffle rules = do
+  ordered <-
+    if normalize
+      then do
+        let rules' = normalizationRules
+        logDebug (printf "The --normalize option is provided, %d built-it normalization rules are used" (length rules'))
+        pure rules'
+      else
+        if null rules
           then do
-            let rules' = normalizationRules
-            logDebug (printf "The --normalize option is provided, %d built-it normalization rules are used" (length rules'))
-            pure rules'
-          else
-            if null rules
-              then do
-                logDebug "No --rule and no --normalize options are provided, no rules are used"
-                pure []
-              else do
-                logDebug (printf "Using rules from files: [%s]" (intercalate ", " rules))
-                yamls <- mapM ensuredFile rules
-                mapM Y.yamlRule yamls
-      if shuffle
-        then do
-          logDebug "The --shuffle option is provided, rules are used in random order"
-          Misc.shuffle ordered
-        else pure ordered
-    output :: Maybe FilePath -> String -> IO ()
-    output target content = case target of
-      Nothing -> do
-        logDebug "The option '--target' is not specified, printing to console..."
-        putStrLn content
-      Just file -> do
-        logDebug (printf "The option '--target' is specified, printing to '%s'..." file)
-        writeFile file content
-        logInfo (printf "The command result was saved in '%s'" file)
-    ioToExtension :: IOFormat -> String
-    ioToExtension LATEX = "tex"
-    ioToExtension format = show format
+            logDebug "No --rule and no --normalize options are provided, no rules are used"
+            pure []
+          else do
+            logDebug (printf "Using rules from files: [%s]" (intercalate ", " rules))
+            yamls <- mapM ensuredFile rules
+            mapM Y.yamlRule yamls
+  if shuffle
+    then do
+      logDebug "The --shuffle option is provided, rules are used in random order"
+      Misc.shuffle ordered
+    else pure ordered
+
+-- Output content
+output :: Maybe FilePath -> String -> IO ()
+output target content = case target of
+  Nothing -> do
+    logDebug "The option '--target' is not specified, printing to console..."
+    putStrLn content
+  Just file -> do
+    logDebug (printf "The option '--target' is specified, printing to '%s'..." file)
+    writeFile file content
+    logInfo (printf "The command result was saved in '%s'" file)

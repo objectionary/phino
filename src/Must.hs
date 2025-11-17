@@ -1,10 +1,11 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Must (Must (..), inRange, exceedsUpperBound) where
+module Must (Must (..), inRange, exceedsUpperBound, validateMust) where
 
 import Data.List (isInfixOf)
 import Text.Read (readMaybe)
+import Text.Printf (printf)
 
 data Must
   = MtDisabled
@@ -63,3 +64,15 @@ exceedsUpperBound MtDisabled _ = False
 exceedsUpperBound (MtExact n) current = current > n
 exceedsUpperBound (MtRange _ (Just max)) current = current > max
 exceedsUpperBound (MtRange _ Nothing) _ = False
+
+validateMust :: Must -> Maybe String
+validateMust MtDisabled = Nothing
+validateMust (MtExact n) | n <= 0 = Just "--must exact value must be positive"
+validateMust (MtRange (Just minVal) _) | minVal < 0 = Just "--must minimum must be non-negative"
+validateMust (MtRange _ (Just maxVal)) | maxVal < 0 = Just "--must maximum must be non-negative"
+validateMust (MtRange Nothing _) = Nothing
+validateMust (MtRange _ Nothing) = Nothing
+validateMust (MtRange (Just min) (Just max))
+  | min > max = Just (printf "--must range invalid: minimum (%d) is greater than maximum (%d)" min max)
+  | otherwise = Nothing
+validateMust _ = Nothing
