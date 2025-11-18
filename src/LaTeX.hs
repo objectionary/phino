@@ -49,7 +49,7 @@ rewrittensToLatex rewrittens ctx@LatexContext {..} =
           intercalate
             "\n  \\leadsto "
             ( map
-                ( \Rewritten {..} ->
+                ( \(program, maybeRule) ->
                     let prog = renderToLatex program ctx
                         unknown = "unknown"
                         maybeTo = case maybeRule of

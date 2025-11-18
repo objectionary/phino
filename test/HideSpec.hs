@@ -15,7 +15,6 @@ import GHC.Generics (Generic)
 import Hide (hide)
 import Misc
 import Parser (parseExpressionThrows, parseProgramThrows)
-import Rewriter
 import System.FilePath
 import Test.Hspec
 import Yaml (normalizationRules)
@@ -44,6 +43,6 @@ spec =
           prog <- parseProgramThrows program
           expr <- parseExpressionThrows hidden
           res <- parseProgramThrows result
-          let [Rewritten {program = prog'}] = hide [Rewritten prog (Just rule)] [expr]
+          let [(prog', _)] = hide [(prog, Just rule)] [expr]
           prog' `shouldBe` res
       )

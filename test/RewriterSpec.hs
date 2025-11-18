@@ -1,7 +1,6 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE RecordWildCards #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
@@ -20,7 +19,7 @@ import Misc (allPathsIn, ensuredFile)
 import Must (Must (..))
 import Parser (parseProgramThrows)
 import Printer (printProgram)
-import Rewriter (RewriteContext (RewriteContext), Rewritten (..), rewrite')
+import Rewriter (RewriteContext (RewriteContext), rewrite')
 import System.FilePath (makeRelative, replaceExtension, (</>))
 import Test.Hspec (Spec, describe, expectationFailure, it, pending, runIO)
 import Yaml (normalizationRules)
@@ -99,7 +98,7 @@ spec =
                   if normalize'
                     then pure normalizationRules
                     else pure []
-              [Rewritten {..}] <-
+              [(program, _)] <-
                 rewrite'
                   prog
                   rules'

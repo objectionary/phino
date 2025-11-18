@@ -426,7 +426,7 @@ runCLI args = handle handler $ do
         printRewrittens :: PrintProgramContext -> [Rewritten] -> IO String
         printRewrittens ctx rewrittens
           | outputFormat == LATEX = pure (rewrittensToLatex rewrittens (LatexContext sugarType flat nonumber expression label))
-          | otherwise = mapM (printProgram outputFormat ctx . program) rewrittens <&> intercalate "\n"
+          | otherwise = mapM (printProgram outputFormat ctx . fst) rewrittens <&> intercalate "\n"
     CmdDataize OptsDataize {..} -> do
       validateOpts
       exclude <- expressionsToHide hide
@@ -449,6 +449,7 @@ runCLI args = handle handler $ do
             maxDepth
             maxCycles
             depthSensitive
+            sequence
             buildTerm
             (saveStepFunc outputFormat stepsDir ctx)
     CmdExplain OptsExplain {..} -> do

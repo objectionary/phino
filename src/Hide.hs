@@ -41,4 +41,4 @@ hide' prog (fqn : rest) = prog
 
 hide :: [Rewritten] -> [Expression] -> [Rewritten]
 hide [] _ = []
-hide (Rewritten {..} : rest) exprs = Rewritten (hide' program exprs) maybeRule : hide rest exprs
+hide ((program, maybeRule) : rest) exprs = (hide' program exprs, maybeRule) : hide rest exprs

@@ -1,3 +1,4 @@
+{-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE RecordWildCards #-}
 
@@ -13,17 +14,22 @@ import Data.List (partition)
 import Deps (BuildTermFunc, SaveStepFunc)
 import Misc
 import Must (Must (..))
-import Rewriter (RewriteContext (RewriteContext), Rewritten (Rewritten, program), rewrite')
+import Rewriter (RewriteContext (RewriteContext), Rewritten, rewrite')
 import Rule (RuleContext (RuleContext), isNF)
 import Text.Printf (printf)
 import XMIR (XmirContext (XmirContext))
 import Yaml (normalizationRules)
+
+type Dataized = (Maybe Bytes, [Rewritten])
+
+type Dataizable = (Expression, [Rewritten])
 
 data DataizeContext = DataizeContext
   { _program :: Program,
     _maxDepth :: Integer,
     _maxCycles :: Integer,
     _depthSensitive :: Bool,
+    _sequence :: Bool,
     _buildTerm :: BuildTermFunc,
     _saveStep :: SaveStepFunc
   }
@@ -34,7 +40,7 @@ switchContext DataizeContext {..} =
     _maxDepth
     _maxCycles
     _depthSensitive
-    False
+    _sequence
     _buildTerm
     MtDisabled
     _saveStep
@@ -130,7 +136,7 @@ morph expr ctx = do
       if isNF expr (RuleContext (_buildTerm ctx))
         then pure Nothing
         else do
-          [Rewritten {program = Program expr'}] <- rewrite' (Program expr) normalizationRules (switchContext ctx) -- NMZ
+          [(Program expr', _)] <- rewrite' (Program expr) normalizationRules (switchContext ctx) -- NMZ
           morph expr' ctx
 
 -- The goal of 'dataize' function is retrieve bytes from given expression.

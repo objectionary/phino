@@ -7,7 +7,7 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Rewriter (rewrite, rewrite', RewriteContext (..), Rewritten (..)) where
+module Rewriter (rewrite, rewrite', RewriteContext (..), Rewritten) where
 
 import AST
 import Builder
@@ -33,13 +33,7 @@ import qualified Yaml as Y
 
 type RewriteState = ([Rewritten], Set.Set Program)
 
-data Rewritten = Rewritten
-  { program :: Program,
-    maybeRule :: Maybe Y.Rule
-  }
-
-instance Eq Rewritten where
-  left == right = program left == program right
+type Rewritten = (Program, Maybe Y.Rule)
 
 data RewriteContext = RewriteContext
   { _maxDepth :: Integer,
@@ -145,7 +139,7 @@ rewrite state (rule : rest) iteration ctx@RewriteContext {..} = do
       let ruleName = fromMaybe "unknown" (Y.name rule)
           ptn = Y.pattern rule
           res = Y.result rule
-          Rewritten {..} = head _rewrittens
+          (program, _) = head _rewrittens
        in if _count - 1 == _maxDepth
             then do
               logDebug (printf "Max amount of rewriting cycles (%d) for rule '%s' has been reached, rewriting is stopped" _maxDepth ruleName)
@@ -184,19 +178,19 @@ rewrite state (rule : rest) iteration ctx@RewriteContext {..} = do
         rewriteSequence :: Program -> [Rewritten]
         rewriteSequence _prog
           | _sequence =
-              let Rewritten {..} : rest = _rewrittens
-               in Rewritten _prog Nothing : Rewritten program (Just rule) : rest
-          | otherwise = [Rewritten _prog Nothing]
+              let (program, _) : rest = _rewrittens
+               in (_prog, Nothing) : (program, Just rule) : rest
+          | otherwise = [(_prog, Nothing)]
 
 -- The function accepts single program but returns sequence of programs
 -- If RewriteContext has _sequence == True - all the intermediate
 -- programs after each rule application are included into sequence
 -- Otherwise sequence contains only one program
 rewrite' :: Program -> [Y.Rule] -> RewriteContext -> IO [Rewritten]
-rewrite' prog rules ctx = _rewrite ([Rewritten prog Nothing], Set.empty) 1 ctx <&> reverse
+rewrite' prog rules ctx = _rewrite ([(prog, Nothing)], Set.empty) 1 ctx <&> reverse
   where
     _rewrite :: RewriteState -> Integer -> RewriteContext -> IO [Rewritten]
-    _rewrite state@(rewrittens, unique) count ctx@RewriteContext{..} = do
+    _rewrite state@(rewrittens, unique) count ctx@RewriteContext {..} = do
       let cycles = _maxCycles
           must = _must
           current = count - 1
@@ -212,7 +206,9 @@ rewrite' prog rules ctx = _rewrite ([Rewritten prog Nothing], Set.empty) 1 ctx <
             else do
               logDebug (printf "Starting rewriting cycle for all rules: %d out of %d" count cycles)
               state'@(rewrittens', unique') <- rewrite state rules count ctx
-              if head rewrittens' == head rewrittens
+              let (program', _) = head rewrittens'
+                  (program, _) = head rewrittens
+              if program' == program
                 then do
                   logDebug "Rewriting is stopped since it has no effect"
                   if not (inRange must current)

@@ -12,7 +12,7 @@ import Parser (parseProgramThrows)
 import Test.Hspec
 
 defaultDataizeContext :: Program -> DataizeContext
-defaultDataizeContext prog = DataizeContext prog 25 25 False buildTerm dontSaveStep
+defaultDataizeContext prog = DataizeContext prog 25 25 False False buildTerm dontSaveStep
 
 test :: (Eq a, Show a) => (Expression -> DataizeContext -> IO (Maybe a)) -> [(String, Expression, Expression, Maybe a)] -> Spec
 test func useCases =
