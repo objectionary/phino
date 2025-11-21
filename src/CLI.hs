@@ -525,10 +525,10 @@ validateXmirOptions :: IOFormat -> Bool -> Bool -> IO ()
 validateXmirOptions outputFormat omitListing omitComments = do
   when
     (outputFormat /= XMIR && omitListing)
-    (invalidCLIArguments "--omit-listing can be used only with --output-format=xmir")
+    (invalidCLIArguments "--omit-listing can be used only with --output=xmir")
   when
     (outputFormat /= XMIR && omitComments)
-    (invalidCLIArguments "--omit-comments can be used only with --output-format=xmir")
+    (invalidCLIArguments "--omit-comments can be used only with --output=xmir")
 
 -- Validate integer argument
 validateIntArgument :: Integer -> (Integer -> Bool) -> String -> IO ()
