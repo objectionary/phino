@@ -53,7 +53,8 @@ data PrintProgramContext = PrintProgCtx
     xmirCtx :: XmirContext,
     nonumber :: Bool,
     expression :: Maybe String,
-    label :: Maybe String
+    label :: Maybe String,
+    outputFormat :: IOFormat
   }
 
 data CmdException
@@ -381,10 +382,11 @@ runCLI args = handle handler $ do
       program <- parseProgram input inputFormat
       let listing = if null rules' then const input else (\prog -> P.printProgram' prog (sugarType, UNICODE, flat))
           xmirCtx = XmirContext omitListing omitComments listing
-          printCtx = PrintProgCtx sugarType flat xmirCtx nonumber expression label
+          printCtx = PrintProgCtx sugarType flat xmirCtx nonumber expression label outputFormat
       rewrittens <- rewrite' program rules' (context printCtx) <&> (`H.hide` exclude)
+      let rewrittens' = if sequence then rewrittens else [last rewrittens]
       logDebug (printf "Printing rewritten 𝜑-program as %s" (show outputFormat))
-      progs <- printRewrittens printCtx rewrittens
+      progs <- printRewrittens printCtx rewrittens'
       output targetFile progs
       where
         validateOpts :: IO ()
@@ -419,22 +421,18 @@ runCLI args = handle handler $ do
             maxDepth
             maxCycles
             depthSensitive
-            sequence
             buildTerm
             must
-            (saveStepFunc outputFormat stepsDir ctx)
-        printRewrittens :: PrintProgramContext -> [Rewritten] -> IO String
-        printRewrittens ctx rewrittens
-          | outputFormat == LATEX = pure (rewrittensToLatex rewrittens (LatexContext sugarType flat nonumber expression label))
-          | otherwise = mapM (printProgram outputFormat ctx . fst) rewrittens <&> intercalate "\n"
+            (saveStepFunc stepsDir ctx)
     CmdDataize OptsDataize {..} -> do
       validateOpts
       exclude <- expressionsToHide hide
       input <- readInput inputFile
       prog <- parseProgram input inputFormat
-      let printCtx = PrintProgCtx sugarType flat defaultXmirContext nonumber expression label
-      dataized <- dataize prog (context prog printCtx)
-      maybe (throwIO CouldNotDataize) (putStrLn . P.printBytes) dataized
+      let printCtx = PrintProgCtx sugarType flat defaultXmirContext nonumber expression label outputFormat
+      (maybeBytes, seq) <- dataize prog (context prog printCtx)
+      when sequence (putStrLn =<< printRewrittens printCtx seq)
+      putStrLn (maybe (P.printExpression ExTermination) P.printBytes maybeBytes)
       where
         validateOpts :: IO ()
         validateOpts = do
@@ -449,9 +447,8 @@ runCLI args = handle handler $ do
             maxDepth
             maxCycles
             depthSensitive
-            sequence
             buildTerm
-            (saveStepFunc outputFormat stepsDir ctx)
+            (saveStepFunc stepsDir ctx)
     CmdExplain OptsExplain {..} -> do
       validateOpts
       rules' <- getRules normalize shuffle rules
@@ -470,8 +467,8 @@ runCLI args = handle handler $ do
       prog <- merge progs
       let listing = const (P.printProgram' prog (sugarType, UNICODE, flat))
           xmirCtx = XmirContext omitListing omitComments listing
-          printProgCtx = PrintProgCtx sugarType flat xmirCtx False Nothing Nothing
-      prog' <- printProgram outputFormat printProgCtx prog
+          printProgCtx = PrintProgCtx sugarType flat xmirCtx False Nothing Nothing outputFormat
+      prog' <- printProgram printProgCtx prog
       output targetFile prog'
       where
         validateOpts :: IO ()
@@ -482,9 +479,13 @@ runCLI args = handle handler $ do
           validateXmirOptions outputFormat omitListing omitComments
 
 -- Prepare saveStepFunc
-saveStepFunc :: IOFormat -> Maybe FilePath -> PrintProgramContext -> SaveStepFunc
-saveStepFunc LATEX stepsDir ctx = saveStep stepsDir "tex" (printProgram LATEX ctx)
-saveStepFunc format stepsDir ctx = saveStep stepsDir (show format) (printProgram format ctx)
+saveStepFunc :: Maybe FilePath -> PrintProgramContext -> SaveStepFunc
+saveStepFunc stepsDir ctx@PrintProgCtx {..} = saveStep stepsDir ioToExt (printProgram ctx)
+  where
+    ioToExt :: String
+    ioToExt
+      | outputFormat == LATEX = "tex"
+      | otherwise = show outputFormat
 
 -- Get list of expressions which must be hidden in printed programs
 expressionsToHide :: [String] -> IO [Expression]
@@ -561,11 +562,17 @@ parseProgram xmir XMIR = do
   doc <- parseXMIRThrows xmir
   xmirToPhi doc
 
+printRewrittens :: PrintProgramContext -> [Rewritten] -> IO String
+printRewrittens ctx@PrintProgCtx {..} rewrittens
+  | outputFormat == LATEX = pure (rewrittensToLatex rewrittens (LatexContext sugar line nonumber expression label))
+  | otherwise = mapM (printProgram ctx . fst) rewrittens <&> intercalate "\n"
+
 -- Convert program to corresponding String format
-printProgram :: IOFormat -> PrintProgramContext -> Program -> IO String
-printProgram PHI PrintProgCtx {..} prog = pure (P.printProgram' prog (sugar, UNICODE, line))
-printProgram XMIR PrintProgCtx {..} prog = programToXMIR prog xmirCtx <&> printXMIR
-printProgram LATEX PrintProgCtx {..} prog = pure (programToLaTeX prog (LatexContext sugar line nonumber expression label))
+printProgram :: PrintProgramContext -> Program -> IO String
+printProgram PrintProgCtx {..} prog = case outputFormat of
+  PHI -> pure (P.printProgram' prog (sugar, UNICODE, line))
+  XMIR -> programToXMIR prog xmirCtx <&> printXMIR
+  LATEX -> pure (programToLaTeX prog (LatexContext sugar line nonumber expression label))
 
 -- Get rules for rewriting depending on provided flags
 getRules :: Bool -> Bool -> [FilePath] -> IO [Y.Rule]

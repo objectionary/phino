@@ -108,7 +108,7 @@ _dataize _ _ = throwIO (userError "Function dataize() requires exactly 1 argumen
 
 _concat :: BuildTermMethod
 _concat args subst = do
-  args' <- traverse (\arg -> argToString arg subst) args
+  args' <- traverse (`argToString` subst) args
   pure (TeExpression (DataString (strToBts (concat args'))))
 
 _sed :: BuildTermMethod

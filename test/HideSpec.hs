@@ -17,7 +17,6 @@ import Misc
 import Parser (parseExpressionThrows, parseProgramThrows)
 import System.FilePath
 import Test.Hspec
-import Yaml (normalizationRules)
 
 data YamlPack = YamlPack
   { program :: String,
@@ -33,9 +32,7 @@ spec :: Spec
 spec =
   describe "hide packs" $ do
     let resources = "test-resources/hide-packs"
-        rule = head normalizationRules
     packs <- runIO (allPathsIn resources)
-
     forM_
       packs
       ( \pth -> it (makeRelative resources pth) $ do
@@ -43,6 +40,6 @@ spec =
           prog <- parseProgramThrows program
           expr <- parseExpressionThrows hidden
           res <- parseProgramThrows result
-          let [(prog', _)] = hide [(prog, Just rule)] [expr]
+          let [(prog', _)] = hide [(prog, Nothing)] [expr]
           prog' `shouldBe` res
       )

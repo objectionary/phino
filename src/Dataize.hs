@@ -10,6 +10,7 @@ module Dataize (morph, dataize, dataize', DataizeContext (..)) where
 import AST
 import Builder (contextualize)
 import Control.Exception (throwIO)
+import Data.IntMap (restrictKeys)
 import Data.List (partition)
 import Deps (BuildTermFunc, SaveStepFunc)
 import Misc
@@ -24,12 +25,13 @@ type Dataized = (Maybe Bytes, [Rewritten])
 
 type Dataizable = (Expression, [Rewritten])
 
+type Morphed = Dataizable
+
 data DataizeContext = DataizeContext
   { _program :: Program,
     _maxDepth :: Integer,
     _maxCycles :: Integer,
     _depthSensitive :: Bool,
-    _sequence :: Bool,
     _buildTerm :: BuildTermFunc,
     _saveStep :: SaveStepFunc
   }
@@ -40,7 +42,6 @@ switchContext DataizeContext {..} =
     _maxDepth
     _maxCycles
     _depthSensitive
-    _sequence
     _buildTerm
     MtDisabled
     _saveStep
@@ -62,50 +63,58 @@ maybeDelta = maybeBinding (\case BiDelta _ -> True; _ -> False)
 maybePhi :: [Binding] -> (Maybe Binding, [Binding])
 maybePhi = maybeBinding (\case (BiTau AtPhi _) -> True; _ -> False)
 
-formation :: [Binding] -> DataizeContext -> IO (Maybe Expression)
+-- Resolve formation for LAMBDA Morphing rule.
+-- If formation contains λ binding, the called atom
+-- result is returned.
+formation :: [Binding] -> DataizeContext -> IO (Maybe (Expression, String))
 formation bds ctx = do
   let (lambda, bds') = maybeLambda bds
   case lambda of
     Just (BiLambda func) -> do
-      obj' <- atom func (ExFormation bds') ctx
-      case obj' of
-        Just obj -> pure (Just obj)
-        _ -> pure Nothing
+      obj <- atom func (ExFormation bds') ctx
+      pure (Just (obj, "M(lambda)"))
     _ -> pure Nothing
 
-phiDispatch :: String -> Expression -> Maybe Expression
-phiDispatch attr expr = case expr of
+-- Resolve dispatch from global object (Q.tau) for PHI Morphing rule.
+-- Here tau is the name of the attribute which is taken from Q
+-- and expr is expression which program refers to.
+-- If Q refers to formation which contains binding with attribute == tau -
+-- the expression from this binding is returned.
+phiDispatch :: String -> Expression -> Maybe (Expression, String)
+phiDispatch tau expr = case expr of
   ExFormation bds -> boundExpr bds
   _ -> Nothing
   where
-    boundExpr :: [Binding] -> Maybe Expression
+    boundExpr :: [Binding] -> Maybe (Expression, String)
     boundExpr [] = Nothing
     boundExpr (bd : bds) = case bd of
-      BiTau (AtLabel attr') expr' -> if attr' == attr then Just expr' else boundExpr bds
+      BiTau (AtLabel attr) expr' -> if attr == tau then Just (expr', "M(phi)") else boundExpr bds
       _ -> boundExpr bds
 
-withTail :: Expression -> DataizeContext -> IO (Maybe Expression)
+-- Resolve tail PHI and LAMBDA Morphing rules.
+-- Tail MUST start with dispatch, that's why most of the applications return Nothing
+withTail :: Expression -> DataizeContext -> IO (Maybe (Expression, String))
 withTail (ExApplication (ExFormation _) _) _ = pure Nothing
 withTail (ExApplication (ExDispatch ExGlobal _) _) _ = pure Nothing
 withTail (ExApplication expr tau) ctx = do
-  exp' <- withTail expr ctx
-  case exp' of
-    Just exp -> pure (Just (ExApplication exp tau))
+  tailed <- withTail expr ctx
+  case tailed of
+    Just (exp, rule) -> pure (Just (ExApplication exp tau, rule))
     _ -> pure Nothing
 withTail (ExDispatch (ExFormation bds) attr) ctx = do
-  obj' <- formation bds ctx
-  case obj' of
-    Just obj -> pure (Just (ExDispatch obj attr))
+  tailed <- formation bds ctx
+  case tailed of
+    Just (obj, rule) -> pure (Just (ExDispatch obj attr, rule))
     _ -> pure Nothing
 withTail (ExFormation bds) ctx = formation bds ctx
 withTail (ExDispatch (ExDispatch ExGlobal (AtLabel label)) attr) (DataizeContext {_program = Program expr}) = case phiDispatch label expr of
-  Just obj -> pure (Just (ExDispatch obj attr))
+  Just (obj, rule) -> pure (Just (ExDispatch obj attr, rule))
   _ -> pure Nothing
 withTail (ExDispatch ExGlobal (AtLabel label)) (DataizeContext {_program = Program expr}) = pure (phiDispatch label expr)
 withTail (ExDispatch expr attr) ctx = do
-  exp' <- withTail expr ctx
-  case exp' of
-    Just exp -> pure (Just (ExDispatch exp attr))
+  tailed <- withTail expr ctx
+  case tailed of
+    Just (exp, rule) -> pure (Just (ExDispatch exp attr, rule))
     _ -> pure Nothing
 withTail _ _ = pure Nothing
 
@@ -120,24 +129,26 @@ withTail _ _ = pure Nothing
 -- NMZ:    M(e1) -> M(e2)                         if e2 := N(e1) and e1 != e2
 -- LAMBDA: M([B1, λ -> F, B2] * t) -> M(e2 * t)   if e3 := [B1,B2] and e2 := F(e3)
 -- PHI:    M(Q.tau * t) -> M(e * t)               if Q -> [B1, tau -> e, B2], t is tail started with dispatch
---         M(e) -> nothing                        otherwise
-morph :: Expression -> DataizeContext -> IO (Maybe Expression)
-morph ExTermination _ = pure (Just ExTermination) -- PRIM
-morph (ExFormation bds) ctx = do
-  resolved <- withTail (ExFormation bds) ctx
+--         M(e) -> ⊥                              otherwise
+morph :: Morphed -> DataizeContext -> IO Morphed
+morph (ExTermination, seq) _ = pure (ExTermination, leadsTo seq "M(prim)" ExTermination) -- PRIM
+morph (form@(ExFormation bds), seq) ctx = do
+  resolved <- withTail form ctx
   case resolved of
-    Just obj -> morph obj ctx -- LAMBDA or PHI
-    _ -> pure (Just (ExFormation bds)) -- PRIM
-morph expr ctx = do
+    Just (expr, rule) -> morph (expr, leadsTo seq rule expr) ctx -- LAMBDA or PHI
+    _ -> pure (form, leadsTo seq "M(prim)" form) -- PRIM
+morph (expr, seq) ctx = do
   resolved <- withTail expr ctx
   case resolved of
-    Just obj -> morph obj ctx
+    Just (expr', rule) -> morph (expr', leadsTo seq rule expr') ctx
     _ ->
       if isNF expr (RuleContext (_buildTerm ctx))
-        then pure Nothing
+        then morph (ExTermination, seq) ctx -- PRIM
         else do
-          [(Program expr', _)] <- rewrite' (Program expr) normalizationRules (switchContext ctx) -- NMZ
-          morph expr' ctx
+          rewrittens' <- rewrite' (Program expr) normalizationRules (switchContext ctx) -- NMZ
+          let _seq = reverse rewrittens' <> tail seq
+              (Program expr') = fst (head _seq)
+          morph (expr', _seq) ctx
 
 -- The goal of 'dataize' function is retrieve bytes from given expression.
 --
@@ -145,62 +156,61 @@ morph expr ctx = do
 -- BOX:   D([B1, 𝜑 -> e, B2]) -> D(С(e))        if [B1,B2] has no delta/lambda, where С(e) - contextualization
 -- NORM:  D(e1) -> D(e2)                        if e2 := M(e1) and e1 is not primitive
 --        nothing                               otherwise
-dataize :: Program -> DataizeContext -> IO (Maybe Bytes)
-dataize (Program expr) = dataize' expr
+dataize :: Program -> DataizeContext -> IO Dataized
+dataize (Program expr) ctx = do
+  (maybeBytes, seq) <- dataize' (expr, [(Program expr, Nothing)]) ctx
+  pure (maybeBytes, reverse seq)
 
-dataize' :: Expression -> DataizeContext -> IO (Maybe Bytes)
-dataize' ExTermination _ = pure Nothing
-dataize' (ExFormation bds) ctx = case maybeDelta bds of
-  (Just (BiDelta bytes), _) -> pure (Just bytes)
+dataize' :: Dataizable -> DataizeContext -> IO Dataized
+dataize' (ExTermination, seq) _ = pure (Nothing, seq)
+dataize' (ExFormation bds, seq) ctx = case maybeDelta bds of
+  (Just (BiDelta bytes), _) -> pure (Just bytes, seq)
   (Nothing, _) -> case maybePhi bds of
     (Just (BiTau AtPhi expr), bds') -> case maybeLambda bds' of
       (Just (BiLambda _), _) -> throwIO (userError "The 𝜑 and λ can't be present in formation at the same time")
       (_, _) ->
         let expr' = contextualize expr (ExFormation bds)
-         in dataize' expr' ctx
+         in dataize' (expr', leadsTo seq "contextualize" expr') ctx
     (Nothing, _) -> case maybeLambda bds of
-      (Just (BiLambda _), _) -> do
-        morphed' <- morph (ExFormation bds) ctx
-        case morphed' of
-          Just morphed -> dataize' morphed ctx
-          _ -> pure Nothing
-      (Nothing, _) -> pure Nothing
-dataize' expr prog = do
-  morphed' <- morph expr prog
-  case morphed' of
-    Just morphed -> dataize' morphed prog
-    _ -> pure Nothing
+      (Just (BiLambda _), _) -> morph (ExFormation bds, seq) ctx >>= (`dataize'` ctx)
+      (Nothing, _) -> pure (Nothing, seq)
+dataize' dataizable ctx = morph dataizable ctx >>= (`dataize'` ctx)
 
-atom :: String -> Expression -> DataizeContext -> IO (Maybe Expression)
+leadsTo :: [Rewritten] -> String -> Expression -> [Rewritten]
+leadsTo seq rule expr =
+  let (prog, _) : rest = seq
+   in (Program expr, Nothing) : (prog, Just rule) : rest
+
+atom :: String -> Expression -> DataizeContext -> IO Expression
 atom "L_org_eolang_number_plus" self ctx = do
-  left <- dataize' (ExDispatch self (AtLabel "x")) ctx
-  right <- dataize' (ExDispatch self AtRho) ctx
+  (left, _) <- dataize (Program (ExDispatch self (AtLabel "x"))) ctx
+  (right, _) <- dataize (Program (ExDispatch self AtRho)) ctx
   case (left, right) of
     (Just left', Just right') -> do
       let first = either toDouble id (btsToNum left')
           second = either toDouble id (btsToNum right')
           sum = first + second
-      pure (Just (DataNumber (numToBts sum)))
-    _ -> pure Nothing
+      pure (DataNumber (numToBts sum))
+    _ -> pure ExTermination
 atom "L_org_eolang_number_times" self ctx = do
-  left <- dataize' (ExDispatch self (AtLabel "x")) ctx
-  right <- dataize' (ExDispatch self AtRho) ctx
+  (left, _) <- dataize (Program (ExDispatch self (AtLabel "x"))) ctx
+  (right, _) <- dataize (Program (ExDispatch self AtRho)) ctx
   case (left, right) of
     (Just left', Just right') -> do
       let first = either toDouble id (btsToNum left')
           second = either toDouble id (btsToNum right')
           sum = first * second
-      pure (Just (DataNumber (numToBts sum)))
-    _ -> pure Nothing
+      pure (DataNumber (numToBts sum))
+    _ -> pure ExTermination
 atom "L_org_eolang_number_eq" self ctx = do
-  x <- dataize' (ExDispatch self (AtLabel "x")) ctx
-  rho <- dataize' (ExDispatch self AtRho) ctx
+  (x, _) <- dataize (Program (ExDispatch self (AtLabel "x"))) ctx
+  (rho, _) <- dataize (Program (ExDispatch self AtRho)) ctx
   case (x, rho) of
     (Just x', Just rho') -> do
       let self' = either toDouble id (btsToNum rho')
           first = either toDouble id (btsToNum x')
       if self' == first
-        then pure (Just (DataNumber (numToBts first)))
-        else pure (Just (ExDispatch self (AtLabel "y")))
-    _ -> pure Nothing
+        then pure (DataNumber (numToBts first))
+        else pure (ExDispatch self (AtLabel "y"))
+    _ -> pure ExTermination
 atom func _ _ = throwIO (userError (printf "Atom '%s' does not exist" func))

@@ -98,7 +98,7 @@ spec =
                   if normalize'
                     then pure normalizationRules
                     else pure []
-              [(program, _)] <-
+              rewrittens <-
                 rewrite'
                   prog
                   rules'
@@ -106,11 +106,11 @@ spec =
                       repeat'
                       repeat'
                       False
-                      False
                       buildTerm
                       must'
                       dontSaveStep
                   )
+              let (program, _) = last rewrittens
               result' <- parseProgramThrows (output pack)
               unless (program == result') $
                 expectationFailure

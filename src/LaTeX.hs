@@ -40,24 +40,14 @@ rewrittensToLatex rewrittens ctx@LatexContext {..} =
   let equation = phiquation ctx
    in concat
         [ printf "\\begin{%s}\n" equation,
-          case label of
-            Just lbl -> printf "\\label{%s}\n" lbl
-            _ -> "",
-          case expression of
-            Just expr -> printf "\\phiExpression{%s} " expr
-            _ -> "",
+          maybe "" (printf "\\label{%s}\n") label,
+          maybe "" (printf "\\phiExpression{%s} ") expression,
           intercalate
             "\n  \\leadsto "
             ( map
-                ( \(program, maybeRule) ->
+                ( \(program, maybeName) ->
                     let prog = renderToLatex program ctx
-                        unknown = "unknown"
-                        maybeTo = case maybeRule of
-                          Just (Y.Rule {..}) -> Just (map toLower (fromMaybe unknown name))
-                          _ -> Nothing
-                     in case maybeTo of
-                          Just name -> printf "%s \\leadsto_{\\nameref{r:%s}}" prog name
-                          _ -> prog
+                     in maybe prog (printf "%s \\leadsto_{\\nameref{r:%s}}" prog) maybeName
                 )
                 rewrittens
             ),

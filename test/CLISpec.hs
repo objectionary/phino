@@ -10,7 +10,7 @@ module CLISpec (spec) where
 import CLI (runCLI)
 import Control.Exception
 import Control.Monad (forM_, unless, when)
-import Data.List (isInfixOf)
+import Data.List (intercalate, isInfixOf)
 import Data.Version (showVersion)
 import GHC.IO.Handle
 import Paths_phino (version)
@@ -518,9 +518,64 @@ spec = do
       withStdin "Q -> [[ D> 01- ]]" $
         testCLISucceeded ["dataize"] ["01-"]
 
-    it "fails to dataize" $
+    it "dataizes to dead" $
       withStdin "Q -> [[ ]]" $
-        testCLIFailed ["dataize"] ["[ERROR]: Could not dataize given program"]
+        testCLISucceeded ["dataize"] ["⊥"]
+
+    it "dataizes with --sequence" $
+      withStdin "{[[ @ -> [[ x -> [[ D> 01-, y -> ? ]](y -> [[ ]]) ]].x ]]}" $
+        testCLISucceeded
+          ["dataize", "--sequence", "--output=latex", "--flat", "--sweet"]
+          [ intercalate
+              "\n"
+              [ "\\begin{phiquation}",
+                "\\Big\\{[[ @ -> [[ |x| -> [[ D> 01-, |y| -> ? ]]( |y| -> [[]] ) ]].|x| ]]\\Big\\} \\leadsto_{\\nameref{r:contextualize}}",
+                "  \\leadsto \\Big\\{[[ |x| -> [[ D> 01-, |y| -> ? ]]( |y| -> [[]] ) ]].|x|\\Big\\} \\leadsto_{\\nameref{r:copy}}",
+                "  \\leadsto \\Big\\{[[ |x| -> [[ D> 01-, |y| -> [[]] ]] ]].|x|\\Big\\} \\leadsto_{\\nameref{r:dot}}",
+                "  \\leadsto \\Big\\{[[ D> 01-, |y| -> [[]] ]]( ^ -> [[ |x| -> [[ D> 01-, |y| -> [[]] ]] ]] )\\Big\\} \\leadsto_{\\nameref{r:copy}}",
+                "  \\leadsto \\Big\\{[[ D> 01-, |y| -> [[]], ^ -> [[ |x| -> [[ D> 01-, |y| -> [[]] ]] ]] ]]\\Big\\} \\leadsto_{\\nameref{r:M(prim)}}",
+                "  \\leadsto \\Big\\{[[ D> 01-, |y| -> [[]], ^ -> [[ |x| -> [[ D> 01-, |y| -> [[]] ]] ]] ]]\\Big\\}.",
+                "\\end{phiquation}",
+                "01-"
+              ]
+          ]
+
+    describe "fails" $ do
+      it "with --output != latex and --nonumber" $
+        withStdin "{[[]]}" $
+          testCLIFailed
+            ["dataize", "--nonumber", "--output=xmir"]
+            ["The --nonumber option can stay together with --output=latex only"]
+
+      it "with --omit-listing and --output != xmir" $
+        withStdin "{[[]]}" $
+          testCLIFailed
+            ["dataize", "--omit-listing", "--output=phi"]
+            ["--omit-listing"]
+
+      it "with --omit-comments and --output != xmir" $
+        withStdin "{[[]]}" $
+          testCLIFailed
+            ["dataize", "--omit-comments", "--output=phi"]
+            ["--omit-comments"]
+
+      it "with --expression and --output != latex" $
+        withStdin "{[[]]}" $
+          testCLIFailed
+            ["dataize", "--expression=foo", "--output=phi"]
+            ["--expression option can stay together with --output=latex only"]
+
+      it "with --label and --output != latex" $
+        withStdin "{[[]]}" $
+          testCLIFailed
+            ["dataize", "--label=foo", "--output=phi"]
+            ["--label option can stay together with --output=latex only"]
+
+      it "with wrong --hide option" $
+        withStdin "{[[]]}" $
+          testCLIFailed
+            ["dataize", "--hide=Q.x(Q.y)"]
+            ["[ERROR]: Invalid set of arguments: Only dispatch expression", "but given: Φ.x( Φ.y )"]
 
   describe "explain" $ do
     it "explains single rule" $

@@ -9,16 +9,25 @@ import Dataize (DataizeContext (DataizeContext), dataize, dataize', morph)
 import Deps (dontSaveStep)
 import Functions (buildTerm)
 import Parser (parseProgramThrows)
+import Rewriter (Rewritten)
 import Test.Hspec
+import Printer (printProgram)
 
 defaultDataizeContext :: Program -> DataizeContext
-defaultDataizeContext prog = DataizeContext prog 25 25 False False buildTerm dontSaveStep
+defaultDataizeContext prog = DataizeContext prog 25 25 False buildTerm dontSaveStep
 
-test :: (Eq a, Show a) => (Expression -> DataizeContext -> IO (Maybe a)) -> [(String, Expression, Expression, Maybe a)] -> Spec
+test :: (Eq a, Show a) => ((Expression, [Rewritten]) -> DataizeContext -> IO (Maybe a, [Rewritten])) -> [(String, Expression, Expression, Maybe a)] -> Spec
 test func useCases =
   forM_ useCases $ \(desc, input, prog, output) ->
     it desc $ do
-      res <- func input (defaultDataizeContext (Program prog))
+      (res, _) <- func (input, []) (defaultDataizeContext (Program prog))
+      res `shouldBe` output
+
+test' :: (Eq a, Show a) => ((Expression, [Rewritten]) -> DataizeContext -> IO (a, [Rewritten])) -> [(String, Expression, Expression, a)] -> Spec
+test' func useCases =
+  forM_ useCases $ \(desc, input, prog, output) ->
+    it desc $ do
+      (res, _) <- func (input, []) (defaultDataizeContext (Program prog))
       res `shouldBe` output
 
 testDataize :: [(String, String, Bytes)] -> Spec
@@ -26,22 +35,23 @@ testDataize useCases =
   forM_ useCases $ \(name, prog, res) ->
     it name $ do
       prog' <- parseProgramThrows prog
-      value <- dataize prog' (defaultDataizeContext prog')
+      putStrLn (printProgram prog')
+      (value, _) <- dataize prog' (defaultDataizeContext prog')
       value `shouldBe` Just res
 
 spec :: Spec
 spec = do
   describe "morph" $
-    test
+    test'
       morph
-      [ ("[[ D> 00- ]] => [[ D> 00- ]]", ExFormation [BiDelta (BtOne "00")], ExGlobal, Just (ExFormation [BiDelta (BtOne "00")])),
-        ("T => T", ExTermination, ExGlobal, Just ExTermination),
-        ("$ => X", ExThis, ExGlobal, Nothing),
-        ("Q => X", ExGlobal, ExGlobal, Nothing),
+      [ ("[[ D> 00- ]] => [[ D> 00- ]]", ExFormation [BiDelta (BtOne "00")], ExGlobal, ExFormation [BiDelta (BtOne "00")]),
+        ("T => T", ExTermination, ExGlobal, ExTermination),
+        ("$ => X", ExThis, ExGlobal, ExTermination),
+        ("Q => X", ExGlobal, ExGlobal, ExTermination),
         ( "Q.x (Q -> [[ x -> [[]] ]]) => [[]]",
           ExDispatch ExGlobal (AtLabel "x"),
           ExFormation [BiTau (AtLabel "x") (ExFormation [])],
-          Just (ExFormation [])
+          ExFormation []
         )
       ]
 

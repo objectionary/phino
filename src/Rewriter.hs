@@ -12,6 +12,7 @@ module Rewriter (rewrite, rewrite', RewriteContext (..), Rewritten) where
 import AST
 import Builder
 import Control.Exception (Exception, throwIO)
+import Data.Char (toLower)
 import Data.Foldable (foldlM)
 import Data.Functor ((<&>))
 import qualified Data.Map.Strict as M
@@ -33,13 +34,12 @@ import qualified Yaml as Y
 
 type RewriteState = ([Rewritten], Set.Set Program)
 
-type Rewritten = (Program, Maybe Y.Rule)
+type Rewritten = (Program, Maybe String)
 
 data RewriteContext = RewriteContext
   { _maxDepth :: Integer,
     _maxCycles :: Integer,
     _depthSensitive :: Bool,
-    _sequence :: Bool,
     _buildTerm :: BuildTermFunc,
     _must :: Must,
     _saveStep :: SaveStepFunc
@@ -125,7 +125,7 @@ tryBuildAndReplaceFast (ExFormation pbds) (ExFormation rbds) substs ctx =
 tryBuildAndReplaceFast ptn res substs ctx = buildAndReplace' ptn res substs replaceProgramThrows ctx
 
 -- The function returns tuple (X, Y) where
--- - X is sequence of programs; for more details about this sequence see description of rewrite' function
+-- - X is sequence of programs;
 -- - Y is Set of unique programs after each rule application. It allows to stop the rewriting if we're getting
 --   into loop and get back to program which we've already got before
 rewrite :: RewriteState -> [Y.Rule] -> Integer -> RewriteContext -> IO RewriteState
@@ -173,19 +173,14 @@ rewrite state (rule : rest) iteration ctx@RewriteContext {..} = do
                                 (printProgram prog)
                             )
                           _saveStep prog (((iteration - 1) * _maxDepth) + _count)
-                          _rewrite (rewriteSequence prog, Set.insert prog _unique) (_count + 1)
+                          _rewrite (leadsTo prog, Set.insert prog _unique) (_count + 1)
       where
-        rewriteSequence :: Program -> [Rewritten]
-        rewriteSequence _prog
-          | _sequence =
-              let (program, _) : rest = _rewrittens
-               in (_prog, Nothing) : (program, Just rule) : rest
-          | otherwise = [(_prog, Nothing)]
+        leadsTo :: Program -> [Rewritten]
+        leadsTo _prog =
+          let (program, _) : rest = _rewrittens
+           in (_prog, Nothing) : (program, Just (map toLower (fromMaybe "unknown" (Y.name rule)))) : rest
 
 -- The function accepts single program but returns sequence of programs
--- If RewriteContext has _sequence == True - all the intermediate
--- programs after each rule application are included into sequence
--- Otherwise sequence contains only one program
 rewrite' :: Program -> [Y.Rule] -> RewriteContext -> IO [Rewritten]
 rewrite' prog rules ctx = _rewrite ([(prog, Nothing)], Set.empty) 1 ctx <&> reverse
   where
