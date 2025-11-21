@@ -202,16 +202,16 @@ optDepthSensitive :: Parser Bool
 optDepthSensitive = switch (long "depth-sensitive" <> help "Fail if rewriting is not finished after reaching max attempts (see --max-cycles or --max-depth)")
 
 optNonumber :: Parser Bool
-optNonumber = switch (long "nonumber" <> help "Turn off equation auto numbering in LaTeX rendering (see --latex option)")
+optNonumber = switch (long "nonumber" <> help "Turn off equation auto numbering in LaTeX rendering (see --output option)")
 
 optSequence :: Parser Bool
 optSequence = switch (long "sequence" <> help "Result output contains all intermediate 𝜑-programs concatenated with EOL")
 
 optExpression :: Parser (Maybe String)
-optExpression = optional (strOption (long "expression" <> metavar "NAME" <> help "Name for 'phiExpression' element when rendering to LaTeX (see --latex option)"))
+optExpression = optional (strOption (long "expression" <> metavar "NAME" <> help "Name for 'phiExpression' element when rendering to LaTeX (see --output option)"))
 
 optLabel :: Parser (Maybe String)
-optLabel = optional (strOption (long "label" <> metavar "NAME" <> help "Name for 'label' element when rendering to LaTeX (see --latex option)"))
+optLabel = optional (strOption (long "label" <> metavar "NAME" <> help "Name for 'label' element when rendering to LaTeX (see --output option)"))
 
 optHide :: Parser [String]
 optHide = many (strOption (long "hide" <> metavar "FQN" <> help "Location of object to exclude from result and intermediate programs after rewriting. Must be a valid dispatch expression; e.g. Q.org.eolang"))
