@@ -431,7 +431,7 @@ runCLI args = handle handler $ do
       prog <- parseProgram input inputFormat
       let printCtx = PrintProgCtx sugarType flat defaultXmirContext nonumber expression label outputFormat
       (maybeBytes, seq) <- dataize prog (context prog printCtx)
-      when sequence (putStrLn =<< printRewrittens printCtx seq)
+      when sequence (putStrLn =<< printRewrittens printCtx (H.hide seq exclude))
       putStrLn (maybe (P.printExpression ExTermination) P.printBytes maybeBytes)
       where
         validateOpts :: IO ()
