@@ -9,9 +9,9 @@ import Dataize (DataizeContext (DataizeContext), dataize, dataize', morph)
 import Deps (dontSaveStep)
 import Functions (buildTerm)
 import Parser (parseProgramThrows)
+import Printer (printProgram)
 import Rewriter (Rewritten)
 import Test.Hspec
-import Printer (printProgram)
 
 defaultDataizeContext :: Program -> DataizeContext
 defaultDataizeContext prog = DataizeContext prog 25 25 False buildTerm dontSaveStep
@@ -27,7 +27,7 @@ test' :: (Eq a, Show a) => ((Expression, [Rewritten]) -> DataizeContext -> IO (a
 test' func useCases =
   forM_ useCases $ \(desc, input, prog, output) ->
     it desc $ do
-      (res, _) <- func (input, []) (defaultDataizeContext (Program prog))
+      (res, _) <- func (input, [(Program prog, Nothing)]) (defaultDataizeContext (Program prog))
       res `shouldBe` output
 
 testDataize :: [(String, String, Bytes)] -> Spec
