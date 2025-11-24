@@ -108,6 +108,13 @@ If you want to use many rules, just use `--rule` as many times as you need:
 phino rewrite --rule=rule1.yaml --rule=rule2.yaml ...
 ```
 
+You can also use [built-in rules](resources), which are designed
+to normalize expressions:
+
+```bash
+phino rewrite --normalize hello.phi
+```
+
 If no input file is provided, the 𝜑-expression is taken from `stdin`:
 
 ```bash
@@ -115,11 +122,11 @@ $ echo 'Φ ↦ ⟦ φ ↦ ⟦ Δ ⤍ 68-65-6C-6C-6F ⟧ ⟧' | phino rewrite --r
 Φ ↦ ⟦ φ ↦ ⟦ Δ ⤍ 62-79-65 ⟧ ⟧
 ```
 
-You can also use [built-in rules](resources), which are designed
-to normalize expressions:
+You're able to pass [`XMIR`](xmir) as input. Use `--input=xmir` and `phino` will parse
+given `XMIR` from file or `stdin` and convert it to `phi` AST.
 
 ```bash
-phino rewrite --normalize hello.phi
+phino rewrite --rule=my-rule.yaml --input=xmir file.xmir
 ```
 
 Also `phino` supports 𝜑-expressions in
@@ -140,7 +147,7 @@ $ echo 'Q -> [[ @ -> QQ.io.stdout("hello") ]]' | phino rewrite
 ⟧
 ```
 
-For more details, use `--help` option.
+For more details, use `phino [COMMAND] --help` option.
 
 ## Rule structure
 
@@ -287,3 +294,4 @@ You will need [GHC] and [Cabal ≥3.0][cabal] or [Stack ≥ 3.0][stack] installe
 [stack]: https://docs.haskellstack.org/en/stable/install_and_upgrade/
 [GHC]: https://www.haskell.org/ghc/
 [guidelines]: https://www.yegor256.com/2014/04/15/github-guidelines.html
+[xmir]: https://news.eolang.org/2022-11-25-xmir-guide.html
