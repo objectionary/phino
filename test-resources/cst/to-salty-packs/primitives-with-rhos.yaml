@@ -1,0 +1,39 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+# yamllint disable rule:line-length
+---
+program: |
+  {[[
+    x -> QQ.number(
+      ~0 -> QQ.bytes([[D> 3F-F0-00-00-00-00-00-00]]), ^ -> Q.x, ^ -> [[ ]]
+    ),
+    y -> QQ.string(
+      ~0 -> QQ.bytes([[D> 48-65-79]]), ^ -> $.x
+    )
+  ]]}
+result: |-
+  Φ ↦ ⟦
+    x ↦ Φ.org.eolang.number(
+      α0 ↦ Φ.org.eolang.bytes(
+        α0 ↦ ⟦
+          Δ ⤍ 3F-F0-00-00-00-00-00-00,
+          ρ ↦ ∅
+        ⟧
+      )
+    )(
+      ρ ↦ Φ.x
+    )(
+      ρ ↦ ⟦ ρ ↦ ∅ ⟧
+    ),
+    y ↦ Φ.org.eolang.string(
+      α0 ↦ Φ.org.eolang.bytes(
+        α0 ↦ ⟦
+          Δ ⤍ 48-65-79,
+          ρ ↦ ∅
+        ⟧
+      )
+    )(
+      ρ ↦ ξ.x
+    ),
+    ρ ↦ ∅
+  ⟧
