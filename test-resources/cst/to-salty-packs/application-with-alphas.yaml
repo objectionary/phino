@@ -14,7 +14,8 @@ result: |-
             ρ ↦ ∅
           ⟧
         )
-      ),
+      )
+    )(
       α1 ↦ Φ.org.eolang.number(
         α0 ↦ Φ.org.eolang.bytes(
           α0 ↦ ⟦

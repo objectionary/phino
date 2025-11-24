@@ -80,14 +80,18 @@ instance ToLaTeX PROGRAM where
 instance ToLaTeX EXPRESSION where
   toLaTeX EX_ATTR {..} = EX_ATTR (toLaTeX attr)
   toLaTeX EX_FORMATION {..} = EX_FORMATION lsb eol tab (toLaTeX binding) eol' tab' rsb
-  toLaTeX EX_APPLICATION {..} = EX_APPLICATION (toLaTeX expr) eol tab (toLaTeX bindings) eol' tab'
-  toLaTeX EX_APPLICATION' {..} = EX_APPLICATION' (toLaTeX expr) eol tab (toLaTeX args) eol' tab'
+  toLaTeX EX_APPLICATION {..} = EX_APPLICATION (toLaTeX expr) eol tab (toLaTeX tau) eol' tab'
+  toLaTeX EX_APPLICATION_TAUS {..} = EX_APPLICATION_TAUS (toLaTeX expr) eol tab (toLaTeX taus) eol' tab'
+  toLaTeX EX_APPLICATION_EXPRS {..} = EX_APPLICATION_EXPRS (toLaTeX expr) eol tab (toLaTeX args) eol' tab'
   toLaTeX EX_DISPATCH {..} = EX_DISPATCH (toLaTeX expr) (toLaTeX attr)
   toLaTeX expr = expr
 
 instance ToLaTeX ATTRIBUTE where
   toLaTeX AT_LABEL {..} = AT_LABEL (piped (toLaTeX label))
   toLaTeX attr = attr
+
+instance ToLaTeX APP_BINDING where
+  toLaTeX APP_BINDING {..} = APP_BINDING (toLaTeX pair)
 
 instance ToLaTeX BINDING where
   toLaTeX BI_PAIR {..} = BI_PAIR (toLaTeX pair) (toLaTeX bindings) tab

@@ -140,6 +140,9 @@ instance Render BINDINGS where
   render BDS_PAIR {..} = render COMMA <> render eol <> render tab <> render pair <> render bindings
   render BDS_META {..} = render COMMA <> render eol <> render tab <> render meta <> render bindings
 
+instance Render APP_BINDING where
+  render APP_BINDING{..} = render pair
+
 instance Render BINDING where
   render BI_EMPTY {..} = ""
   render BI_PAIR {..} = render pair <> render bindings
@@ -164,8 +167,9 @@ instance Render EXPRESSION where
   render EX_TERMINATION {..} = render termination
   render EX_FORMATION {..} = render lsb <> render eol <> render tab <> render binding <> render eol' <> render tab' <> render rsb
   render EX_DISPATCH {..} = render expr <> "." <> render attr
-  render EX_APPLICATION {..} = render expr <> "(" <> render eol <> render tab <> render bindings <> render eol' <> render tab' <> ")"
-  render EX_APPLICATION' {..} = render expr <> "(" <> render eol <> render tab <> render args <> render eol' <> render tab' <> ")"
+  render EX_APPLICATION {..} = render expr <> "(" <> render eol <> render tab <> render tau <> render eol' <> render tab' <> ")"
+  render EX_APPLICATION_TAUS {..} = render expr <> "(" <> render eol <> render tab <> render taus <> render eol' <> render tab' <> ")"
+  render EX_APPLICATION_EXPRS {..} = render expr <> "(" <> render eol <> render tab <> render args <> render eol' <> render tab' <> ")"
   render EX_STRING {..} = '"' : render str <> "\""
   render EX_NUMBER {..} = either show show num
   render EX_META {..} = render meta

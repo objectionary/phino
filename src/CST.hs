@@ -116,6 +116,9 @@ data PAIR
   | PA_META_DELTA' {meta :: META} -- ASCII version of PA_META_DELTA
   deriving (Eq, Show)
 
+newtype APP_BINDING = APP_BINDING {pair :: PAIR}
+  deriving (Eq, Show)
+
 data BINDING
   = BI_PAIR {pair :: PAIR, bindings :: BINDINGS, tab :: TAB}
   | BI_EMPTY {tab :: TAB}
@@ -146,8 +149,9 @@ data EXPRESSION
   | EX_TERMINATION {termination :: TERMINATION}
   | EX_FORMATION {lsb :: LSB, eol :: EOL, tab :: TAB, binding :: BINDING, eol' :: EOL, tab' :: TAB, rsb :: RSB}
   | EX_DISPATCH {expr :: EXPRESSION, attr :: ATTRIBUTE}
-  | EX_APPLICATION {expr :: EXPRESSION, eol :: EOL, tab :: TAB, bindings :: BINDING, eol' :: EOL, tab' :: TAB}
-  | EX_APPLICATION' {expr :: EXPRESSION, eol :: EOL, tab :: TAB, args :: APP_ARG, eol' :: EOL, tab' :: TAB}
+  | EX_APPLICATION {expr :: EXPRESSION, eol :: EOL, tab :: TAB, tau :: APP_BINDING, eol' :: EOL, tab' :: TAB} -- e(a1 -> e1)
+  | EX_APPLICATION_TAUS {expr :: EXPRESSION, eol :: EOL, tab :: TAB, taus :: BINDING, eol' :: EOL, tab' :: TAB}
+  | EX_APPLICATION_EXPRS {expr :: EXPRESSION, eol :: EOL, tab :: TAB, args :: APP_ARG, eol' :: EOL, tab' :: TAB} -- e(e1, e2, ...)
   | EX_STRING {str :: String, tab :: TAB, rhos :: [Binding]}
   | EX_NUMBER {num :: Either Integer Double, tab :: TAB, rhos :: [Binding]}
   | EX_META {meta :: META}
@@ -219,26 +223,26 @@ instance ToCST Expression EXPRESSION where
   -- If given application is not such primitive - we just convert it to one of the applications:
   -- 1. either with pure expression with arguments, which means there are incremented only alpha bindings
   -- 2. or with just bindings
-  toCST app@(ExApplication _ _) tabs =
+  toCST app@(ExApplication exp tau) tabs =
     let (expr, taus, exprs) = complexApplication app
-        next = tabs + 1
         expr' = toCST expr tabs :: EXPRESSION
-        (taus', pairs) = withoutRhosInPrimitives expr taus
+        next = tabs + 1
+        (taus', rhos) = withoutRhosInPrimitives expr taus
         obj = ExApplication expr (head taus')
      in if length taus' == 1 && isJust (matchDataObject obj)
-          then applicationToPrimitive obj tabs taus'
+          then applicationToPrimitive obj tabs rhos
           else
             if null exprs
               then
-                EX_APPLICATION
+                EX_APPLICATION_TAUS
                   expr'
                   EOL
                   (TAB next)
-                  (toCST taus' next :: BINDING)
+                  (toCST taus next :: BINDING)
                   EOL
                   (TAB tabs)
               else
-                EX_APPLICATION'
+                EX_APPLICATION_EXPRS
                   expr'
                   EOL
                   (TAB next)
@@ -246,24 +250,21 @@ instance ToCST Expression EXPRESSION where
                   EOL
                   (TAB tabs)
     where
-      withoutRhosInPrimitives :: Expression -> [Binding] -> ([Binding], [(Binding, Integer)])
-      withoutRhosInPrimitives = withoutRhosInPrimitives' 0
-        where
-          withoutRhosInPrimitives' :: Integer -> Expression -> [Binding] -> ([Binding], [(Binding, Integer)])
-          withoutRhosInPrimitives' _ _ [] = ([], [])
-          withoutRhosInPrimitives' index obj@(BaseObject label) bds@(bd@(BiTau AtRho _) : rest)
-            | label `elem` primitives =
-                let (bds', pairs) = withoutRhosInPrimitives' (index + 1) obj rest
-                 in (bds', (bd, index) : pairs)
-            | otherwise = (bds, [])
-          withoutRhosInPrimitives' index obj@(BaseObject label) bds@(bd : rest)
-            | label `elem` primitives =
-                let (bds', pairs) = withoutRhosInPrimitives' (index + 1) obj rest
-                 in (bd : bds', pairs)
-            | otherwise = (bds, [])
-          withoutRhosInPrimitives' _ _ bds = (bds, [])
-          primitives :: [String]
-          primitives = ["number", "string"]
+      primitives :: [String]
+      primitives = ["number", "string"]
+      withoutRhosInPrimitives :: Expression -> [Binding] -> ([Binding], [Binding])
+      withoutRhosInPrimitives _ [] = ([], [])
+      withoutRhosInPrimitives obj@(BaseObject label) bds@(rho@(BiTau AtRho _) : rest)
+        | label `elem` primitives =
+            let (bds', rhos) = withoutRhosInPrimitives obj rest
+             in (bds', rho : rhos)
+        | otherwise = (bds, [])
+      withoutRhosInPrimitives obj@(BaseObject label) bds@(bd : rest)
+        | label `elem` primitives =
+            let (bds', rhos) = withoutRhosInPrimitives obj rest
+             in (bd : bds', rhos)
+        | otherwise = (bds, [])
+      withoutRhosInPrimitives _ bds = (bds, [])
       applicationToPrimitive :: Expression -> Integer -> [Binding] -> EXPRESSION
       applicationToPrimitive (DataNumber bts) tabs = EX_NUMBER (btsToNum bts) (TAB tabs)
       applicationToPrimitive (DataString bts) tabs = EX_STRING (btsToStr bts) (TAB tabs)
@@ -317,6 +318,9 @@ instance ToCST Binding PAIR where
   toCST (BiLambda func) _ = PA_LAMBDA func
   toCST (BiMetaLambda mt) _ = PA_META_LAMBDA (MT_FUNCTION (tail mt))
 
+instance ToCST Binding APP_BINDING where
+  toCST bd@(BiTau _ _) tabs = APP_BINDING (toCST bd tabs :: PAIR)
+
 instance ToCST Bytes BYTES where
   toCST BtEmpty _ = BT_EMPTY
   toCST (BtOne byte) _ = BT_ONE byte
@@ -331,37 +335,3 @@ instance ToCST Attribute ATTRIBUTE where
   toCST AtDelta _ = AT_DELTA DELTA
   toCST AtLambda _ = AT_LAMBDA LAMBDA
   toCST (AtMeta mt) _ = AT_META (MT_ATTRIBUTE (tail mt))
-
-class HasEOL a where
-  hasEOL :: a -> Bool
-
-instance HasEOL EXPRESSION where
-  hasEOL EX_FORMATION {eol = NO_EOL, binding, eol' = NO_EOL} = hasEOL binding
-  hasEOL EX_FORMATION {..} = True
-  hasEOL EX_DISPATCH {..} = hasEOL expr
-  hasEOL EX_APPLICATION {eol = NO_EOL, expr, bindings, eol' = NO_EOL} = hasEOL expr || hasEOL bindings
-  hasEOL EX_APPLICATION {..} = True
-  hasEOL EX_APPLICATION' {eol = NO_EOL, expr, args, eol' = NO_EOL} = hasEOL expr || hasEOL args
-  hasEOL EX_APPLICATION' {..} = True
-  hasEOL _ = False
-
-instance HasEOL BINDING where
-  hasEOL BI_EMPTY {..} = False
-  hasEOL BI_PAIR {..} = hasEOL pair || hasEOL bindings
-
-instance HasEOL BINDINGS where
-  hasEOL BDS_PAIR {eol = NO_EOL, pair, bindings} = hasEOL pair || hasEOL bindings
-  hasEOL BDS_PAIR {..} = True
-  hasEOL BDS_EMPTY {..} = False
-
-instance HasEOL PAIR where
-  hasEOL PA_TAU {..} = hasEOL expr
-  hasEOL _ = False
-
-instance HasEOL APP_ARG where
-  hasEOL APP_ARG {..} = hasEOL expr || hasEOL args
-
-instance HasEOL APP_ARGS where
-  hasEOL AAS_EMPTY = False
-  hasEOL AAS_EXPR {eol = NO_EOL, expr, args} = hasEOL expr || hasEOL args
-  hasEOL AAS_EXPR {..} = True

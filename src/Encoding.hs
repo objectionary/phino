@@ -29,11 +29,15 @@ instance ToASCII EXPRESSION where
   toASCII EX_TERMINATION {..} = EX_TERMINATION T
   toASCII EX_FORMATION {..} = EX_FORMATION LSB' eol tab (toASCII binding) eol' tab' RSB'
   toASCII EX_DISPATCH {..} = EX_DISPATCH (toASCII expr) (toASCII attr)
-  toASCII EX_APPLICATION {..} = EX_APPLICATION (toASCII expr) eol tab (toASCII bindings) eol' tab'
-  toASCII EX_APPLICATION' {..} = EX_APPLICATION' (toASCII expr) eol tab (toASCII args) eol' tab'
+  toASCII EX_APPLICATION {..} = EX_APPLICATION (toASCII expr) eol tab (toASCII tau) eol' tab'
+  toASCII EX_APPLICATION_TAUS {..} = EX_APPLICATION_TAUS (toASCII expr) eol tab (toASCII taus) eol' tab'
+  toASCII EX_APPLICATION_EXPRS {..} = EX_APPLICATION_EXPRS (toASCII expr) eol tab (toASCII args) eol' tab'
   toASCII EX_META {..} = EX_META (MT_EXPRESSION' (rest meta))
   toASCII EX_META_TAIL {..} = EX_META_TAIL (toASCII expr) (MT_TAIL (rest meta))
   toASCII expr = expr
+
+instance ToASCII APP_BINDING where
+  toASCII APP_BINDING {..} = APP_BINDING (toASCII pair)
 
 instance ToASCII BINDING where
   toASCII BI_PAIR {..} = BI_PAIR (toASCII pair) (toASCII bindings) tab
