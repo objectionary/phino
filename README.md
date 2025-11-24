@@ -122,7 +122,7 @@ $ echo 'Φ ↦ ⟦ φ ↦ ⟦ Δ ⤍ 68-65-6C-6C-6F ⟧ ⟧' | phino rewrite --r
 Φ ↦ ⟦ φ ↦ ⟦ Δ ⤍ 62-79-65 ⟧ ⟧
 ```
 
-You're able to pass [`XMIR`](xmir) as input. Use `--input=xmir` and `phino`
+You're able to pass [`XMIR`][xmir] as input. Use `--input=xmir` and `phino`
 will parse given `XMIR` from file or `stdin` and convert it to `phi` AST.
 
 ```bash
