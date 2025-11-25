@@ -19,7 +19,6 @@ import qualified Data.Foldable
 import Data.Functor ((<&>))
 import Data.List (intercalate)
 import Data.Maybe (fromJust, isJust, isNothing)
-import Data.Scientific (isInteger)
 import Data.Version (showVersion)
 import Dataize (DataizeContext (DataizeContext), dataize)
 import Deps (SaveStepFunc, saveStep)
