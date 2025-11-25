@@ -1,3 +1,4 @@
+{-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE RecordWildCards #-}
 
@@ -142,4 +143,14 @@ instance ToSalty BINDINGS where
 
 instance ToSalty PAIR where
   toSalty PA_TAU {..} = PA_TAU attr arrow (toSalty expr)
+  toSalty PA_FORMATION {voids, attr, arrow, expr = expr@EX_FORMATION {..}} =
+    PA_TAU attr arrow (toSalty (EX_FORMATION lsb eol tab (joinToBinding voids binding) eol' tab' rsb))
+    where
+      joinToBinding :: [ATTRIBUTE] -> BINDING -> BINDING
+      joinToBinding [] bd = bd
+      joinToBinding (attr : rest) bd = BI_PAIR (PA_VOID attr arrow EMPTY) (joinToBindings rest bd) tab
+      joinToBindings :: [ATTRIBUTE] -> BINDING -> BINDINGS
+      joinToBindings [] BI_EMPTY {..} = BDS_EMPTY tab
+      joinToBindings [] BI_PAIR {..} = BDS_PAIR eol tab pair bindings
+      joinToBindings (attr : rest) bd = BDS_PAIR eol tab (PA_VOID attr arrow EMPTY) (joinToBindings rest bd)
   toSalty pair = pair

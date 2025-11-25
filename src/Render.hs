@@ -1,4 +1,5 @@
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE RecordWildCards #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
@@ -125,6 +126,8 @@ instance Render PROGRAM where
 
 instance Render PAIR where
   render PA_TAU {..} = render attr <> render SPACE <> render arrow <> render SPACE <> render expr
+  render PA_FORMATION {voids = [], attr, arrow, expr} = render (PA_TAU attr arrow expr)
+  render PA_FORMATION {..} = render attr <> "(" <> intercalate ", " (map render voids) <> ")" <> render SPACE <> render arrow <> render SPACE <> render expr
   render PA_LAMBDA {..} = render LAMBDA <> render SPACE <> render DASHED_ARROW <> render SPACE <> render func
   render PA_LAMBDA' {..} = "L> " <> func
   render PA_VOID {..} = render attr <> render SPACE <> render arrow <> render SPACE <> render void
@@ -141,7 +144,7 @@ instance Render BINDINGS where
   render BDS_META {..} = render COMMA <> render eol <> render tab <> render meta <> render bindings
 
 instance Render APP_BINDING where
-  render APP_BINDING{..} = render pair
+  render APP_BINDING {..} = render pair
 
 instance Render BINDING where
   render BI_EMPTY {..} = ""

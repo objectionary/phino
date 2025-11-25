@@ -103,6 +103,7 @@ data PROGRAM
 
 data PAIR
   = PA_TAU {attr :: ATTRIBUTE, arrow :: ARROW, expr :: EXPRESSION}
+  | PA_FORMATION {attr :: ATTRIBUTE, voids :: [ATTRIBUTE], arrow :: ARROW, expr :: EXPRESSION}
   | PA_VOID {attr :: ATTRIBUTE, arrow :: ARROW, void :: VOID}
   | PA_LAMBDA {func :: String}
   | PA_LAMBDA' {func :: String} -- ASCII version of PA_LAMBDA
@@ -141,14 +142,14 @@ data APP_ARGS
 
 data EXPRESSION
   = EX_GLOBAL {global :: GLOBAL}
-  | EX_DEF_PACKAGE {pckg :: DEF_PACKAGE}
+  | EX_DEF_PACKAGE {pckg :: DEF_PACKAGE} -- sugar fo Q.org.eolang
   | EX_XI {xi :: XI}
   | EX_ATTR {attr :: ATTRIBUTE} -- sugar for $.x -> just x
   | EX_TERMINATION {termination :: TERMINATION}
   | EX_FORMATION {lsb :: LSB, eol :: EOL, tab :: TAB, binding :: BINDING, eol' :: EOL, tab' :: TAB, rsb :: RSB}
   | EX_DISPATCH {expr :: EXPRESSION, attr :: ATTRIBUTE}
   | EX_APPLICATION {expr :: EXPRESSION, eol :: EOL, tab :: TAB, tau :: APP_BINDING, eol' :: EOL, tab' :: TAB} -- e(a1 -> e1)
-  | EX_APPLICATION_TAUS {expr :: EXPRESSION, eol :: EOL, tab :: TAB, taus :: BINDING, eol' :: EOL, tab' :: TAB}
+  | EX_APPLICATION_TAUS {expr :: EXPRESSION, eol :: EOL, tab :: TAB, taus :: BINDING, eol' :: EOL, tab' :: TAB} -- e(a1 -> e1)(a2 -> e2)(...)
   | EX_APPLICATION_EXPRS {expr :: EXPRESSION, eol :: EOL, tab :: TAB, args :: APP_ARG, eol' :: EOL, tab' :: TAB} -- e(e1, e2, ...)
   | EX_STRING {str :: String, tab :: TAB, rhos :: [Binding]}
   | EX_NUMBER {num :: Either Integer Double, tab :: TAB, rhos :: [Binding]}
@@ -310,6 +311,24 @@ instance ToCST [Binding] BINDINGS where
   toCST (bd : bds) tabs = BDS_PAIR EOL (TAB tabs) (toCST bd tabs) (toCST bds tabs)
 
 instance ToCST Binding PAIR where
+  toCST (BiTau attr exp@(ExFormation bds)) tabs =
+    let voids' = voids bds
+        attr' = toCST attr tabs
+     in if null voids'
+          then PA_TAU attr' ARROW (toCST exp tabs)
+          else
+            let (_voids, _bds) = if length voids' == length bds && last voids' == AtRho then (init voids', []) else (voids', drop (length voids') bds)
+             in PA_FORMATION
+                  attr'
+                  (map (`toCST` tabs) _voids)
+                  ARROW
+                  (toCST (ExFormation _bds) tabs)
+    where
+      voids :: [Binding] -> [Attribute]
+      voids [] = []
+      voids (bd : bds) = case bd of
+        BiVoid attr -> attr : voids bds
+        _ -> []
   toCST (BiTau attr exp) tabs = PA_TAU (toCST attr tabs) ARROW (toCST exp tabs)
   toCST (BiVoid attr) tabs = PA_VOID (toCST attr tabs) ARROW EMPTY
   toCST (BiDelta bts) tabs = PA_DELTA (toCST bts tabs)

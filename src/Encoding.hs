@@ -58,6 +58,7 @@ instance ToASCII APP_ARGS where
 
 instance ToASCII PAIR where
   toASCII PA_TAU {..} = PA_TAU (toASCII attr) ARROW' (toASCII expr)
+  toASCII PA_FORMATION{..} = PA_FORMATION (toASCII attr) (map toASCII voids) ARROW' (toASCII expr)
   toASCII PA_VOID {..} = PA_VOID (toASCII attr) ARROW' QUESTION
   toASCII PA_LAMBDA {..} = PA_LAMBDA' func
   toASCII PA_DELTA {..} = PA_DELTA' bytes

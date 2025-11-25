@@ -516,7 +516,7 @@ spec = do
         )
         ( testCLISucceeded
             ["rewrite", "--sweet", "--normalize", "--flat"]
-            ["{⟦ z ↦ 42, org ↦ ⟦ eolang ↦ ⟦ bytes ↦ ⟦ data ↦ ∅ ⟧, number ↦ ⟦ as-bytes ↦ ∅ ⟧ ⟧ ⟧ ⟧}"]
+            ["{⟦ z ↦ 42, org ↦ ⟦ eolang ↦ ⟦ bytes(data) ↦ ⟦⟧, number(as-bytes) ↦ ⟦⟧ ⟧ ⟧ ⟧}"]
         )
 
     it "reduces log message" $
@@ -645,15 +645,9 @@ spec = do
             [ "{⟦",
               "  org ↦ ⟦",
               "    eolang ↦ ⟦",
-              "      number ↦ ⟦",
-              "        φ ↦ ∅",
-              "      ⟧,",
-              "      bytes ↦ ⟦",
-              "        data ↦ ∅",
-              "      ⟧,",
-              "      string ↦ ⟦",
-              "        φ ↦ ∅",
-              "      ⟧,",
+              "      number(φ) ↦ ⟦⟧,",
+              "      bytes(data) ↦ ⟦⟧,",
+              "      string(φ) ↦ ⟦⟧,",
               "      λ ⤍ Package",
               "    ⟧,",
               "    λ ⤍ Package",

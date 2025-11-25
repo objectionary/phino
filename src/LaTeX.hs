@@ -107,6 +107,7 @@ instance ToLaTeX PAIR where
   toLaTeX PA_LAMBDA' {..} = PA_LAMBDA' (piped (toLaTeX func))
   toLaTeX PA_VOID {..} = PA_VOID (toLaTeX attr) arrow void
   toLaTeX PA_TAU {..} = PA_TAU (toLaTeX attr) arrow (toLaTeX expr)
+  toLaTeX PA_FORMATION {..} = PA_FORMATION (toLaTeX attr) (map toLaTeX voids) arrow (toLaTeX expr)
   toLaTeX pair = pair
 
 instance ToLaTeX APP_ARG where

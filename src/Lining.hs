@@ -46,6 +46,7 @@ instance ToSingleLine BINDINGS where
 
 instance ToSingleLine PAIR where
   toSingleLine PA_TAU {..} = PA_TAU attr arrow (toSingleLine expr)
+  toSingleLine PA_FORMATION {..} = PA_FORMATION attr voids arrow (toSingleLine expr)
   toSingleLine pair = pair
 
 instance ToSingleLine APP_ARG where

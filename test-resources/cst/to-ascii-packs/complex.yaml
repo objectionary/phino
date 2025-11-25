@@ -21,8 +21,7 @@ program: |
   ⟧}
 result: |-
   {[[
-    number -> [[
-      a -> ?,
+    number(a) -> [[
       b -> Q.org.^.@,
       c -> xyz(
         q -> Q.y,
