@@ -344,7 +344,7 @@ instance ToCST Binding APP_BINDING where
 
 instance ToCST Bytes BYTES where
   toCST BtEmpty _ _ = BT_EMPTY
-  toCST (BtOne byte) _ _= BT_ONE byte
+  toCST (BtOne byte) _ _ = BT_ONE byte
   toCST (BtMany bts) _ _ = BT_MANY bts
   toCST (BtMeta mt) _ _ = BT_META (MT_BYTES (tail mt))
 
