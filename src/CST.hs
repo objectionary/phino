@@ -142,7 +142,7 @@ data APP_ARGS
 
 data EXPRESSION
   = EX_GLOBAL {global :: GLOBAL}
-  | EX_DEF_PACKAGE {pckg :: DEF_PACKAGE} -- sugar fo Q.org.eolang
+  | EX_DEF_PACKAGE {pckg :: DEF_PACKAGE} -- sugar for Q.org.eolang
   | EX_XI {xi :: XI}
   | EX_ATTR {attr :: ATTRIBUTE} -- sugar for $.x -> just x
   | EX_TERMINATION {termination :: TERMINATION}
