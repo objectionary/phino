@@ -1,0 +1,45 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+# yamllint disable rule:line-length
+---
+program: |
+  {[[
+    x -> Q.x(Φ.jeo.opcode.lconst_0(
+      9
+    ),
+    Φ.jeo.opcode.lstore(
+      55,
+      1
+    ),
+    Φ.jeo.opcode.iconst_0(
+      3
+    ),
+    Φ.jeo.opcode.istore(
+      54,
+      3
+    ),
+    Φ.jeo.label(
+      Φ̇.bytes(
+        ⟦
+          Δ ⤍ 4C-31-32-38-34-34-34-35-32-36-37,
+          ρ ↦ ∅
+        ⟧
+      )
+    ))
+  ]]}
+result: |-
+  {⟦
+    x ↦ Φ.x(
+      Φ.jeo.opcode.lconst_0( 9 ),
+      Φ.jeo.opcode.lstore( 55, 1 ),
+      Φ.jeo.opcode.iconst_0( 3 ),
+      Φ.jeo.opcode.istore( 54, 3 ),
+      Φ.jeo.label(
+        Φ̇.bytes(
+          ⟦
+            Δ ⤍ 4C-31-32-38-34-34-34-35-32-36-37
+          ⟧
+        )
+      )
+    )
+  ⟧}
