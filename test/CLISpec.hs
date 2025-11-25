@@ -116,6 +116,12 @@ spec = do
             ["rewrite", "--input=latex"]
             ["The value 'latex' can't be used for '--input' option"]
 
+      it "with negative --log-lines" $
+        withStdin "" $
+          testCLIFailed
+            ["rewrite", "--log-lines=-2"]
+            ["--log-lines must be >= -1"]
+
       it "with negative --max-depth" $
         withStdin "" $
           testCLIFailed
@@ -512,6 +518,20 @@ spec = do
             ["rewrite", "--sweet", "--normalize", "--flat"]
             ["{⟦ z ↦ 42, org ↦ ⟦ eolang ↦ ⟦ bytes ↦ ⟦ data ↦ ∅ ⟧, number ↦ ⟦ as-bytes ↦ ∅ ⟧ ⟧ ⟧ ⟧}"]
         )
+
+    it "reduces log message" $
+      withStdin "{[[ x -> [[ y -> ? ]](y -> 5) ]]}" $
+        testCLISucceeded
+          ["rewrite", "--log-level=debug", "--log-lines=4", "--normalize"]
+          [ intercalate
+              "\n"
+              [ "[DEBUG]: Applied 'COPY' (28 nodes -> 25 nodes)",
+                "{⟦",
+                "  x ↦ ⟦",
+                "    y ↦ 5",
+                "---| log is limited by --log-lines=4 option |---"
+              ]
+          ]
 
   describe "dataize" $ do
     it "dataizes simple program" $
