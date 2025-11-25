@@ -43,10 +43,6 @@ metaMsg = printf "meta '%s' is either does not exist or refers to an inappropria
 
 type Built a = Either String a
 
--- @todo #277:30min Error messages are too verbose. Now, if we can't build expression or binding, we
---  throw an exception and just print whole expression or binding to console.
---  If this elements are big, it's just a mess and error message became unreadable. It would be nice to
---  print expression or binding in some reduce way, removing some parts or printing only first N lines
 instance Show BuildException where
   show CouldNotBuildExpression {..} =
     printf

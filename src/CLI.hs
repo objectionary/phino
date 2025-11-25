@@ -84,6 +84,7 @@ instance Show IOFormat where
 
 data OptsDataize = OptsDataize
   { logLevel :: LogLevel,
+    logLines :: Integer,
     inputFormat :: IOFormat,
     outputFormat :: IOFormat,
     sugarType :: SugarType,
@@ -104,6 +105,7 @@ data OptsDataize = OptsDataize
 
 data OptsExplain = OptsExplain
   { logLevel :: LogLevel,
+    logLines :: Integer,
     rules :: [FilePath],
     normalize :: Bool,
     shuffle :: Bool,
@@ -112,6 +114,7 @@ data OptsExplain = OptsExplain
 
 data OptsRewrite = OptsRewrite
   { logLevel :: LogLevel,
+    logLines :: Integer,
     inputFormat :: IOFormat,
     outputFormat :: IOFormat,
     sugarType :: SugarType,
@@ -138,6 +141,7 @@ data OptsRewrite = OptsRewrite
 
 data OptsMerge = OptsMerge
   { logLevel :: LogLevel,
+    logLines :: Integer,
     inputFormat :: IOFormat,
     outputFormat :: IOFormat,
     sugarType :: SugarType,
@@ -147,6 +151,11 @@ data OptsMerge = OptsMerge
     targetFile :: Maybe FilePath,
     inputs :: [FilePath]
   }
+
+validateIntegerOption :: (Integer -> Bool) -> String -> Integer -> ReadM Integer
+validateIntegerOption cmp msg num
+  | cmp num = return num
+  | otherwise = readerError msg
 
 optLogLevel :: Parser LogLevel
 optLogLevel =
@@ -169,6 +178,12 @@ optLogLevel =
       "ERR" -> Right ERROR
       "NONE" -> Right NONE
       _ -> Left $ "unknown log-level: " <> lvl
+
+optLogLines :: Parser Integer
+optLogLines =
+  option
+    (auto >>= validateIntegerOption (>= -1) "--log-lines must be >= -1")
+    (long "log-lines" <> metavar "LINES" <> help "Amount of lines printed to console per each log operation (0 - print nothing, -1 - no limits)" <> value 25 <> showDefault)
 
 optRule :: Parser [FilePath]
 optRule = many (strOption (long "rule" <> metavar "[FILE]" <> help "Path to custom rule"))
@@ -193,10 +208,16 @@ argInputFile :: Parser (Maybe FilePath)
 argInputFile = optional (argument str (metavar "FILE" <> help "Path to input file"))
 
 optMaxDepth :: Parser Integer
-optMaxDepth = option auto (long "max-depth" <> metavar "DEPTH" <> help "Maximum number of rewriting iterations per rule" <> value 25 <> showDefault)
+optMaxDepth =
+  option
+    (auto >>= validateIntegerOption (> 0) "--max-depth must be positive")
+    (long "max-depth" <> metavar "DEPTH" <> help "Maximum number of rewriting iterations per rule" <> value 25 <> showDefault)
 
 optMaxCycles :: Parser Integer
-optMaxCycles = option auto (long "max-cycles" <> metavar "CYCLES" <> help "Maximum number of rewriting cycles across all rules" <> value 25 <> showDefault)
+optMaxCycles =
+  option
+    (auto >>= validateIntegerOption (> 0) "--max-cycles must be positive")
+    (long "max-cycles" <> metavar "CYCLES" <> help "Maximum number of rewriting cycles across all rules" <> value 25 <> showDefault)
 
 optDepthSensitive :: Parser Bool
 optDepthSensitive = switch (long "depth-sensitive" <> help "Fail if rewriting is not finished after reaching max attempts (see --max-cycles or --max-depth)")
@@ -254,6 +275,7 @@ explainParser =
   CmdExplain
     <$> ( OptsExplain
             <$> optLogLevel
+            <*> optLogLines
             <*> optRule
             <*> optNormalize
             <*> optShuffle
@@ -265,6 +287,7 @@ dataizeParser =
   CmdDataize
     <$> ( OptsDataize
             <$> optLogLevel
+            <*> optLogLines
             <*> optInputFormat
             <*> optOutputFormat
             <*> optSugar
@@ -288,6 +311,7 @@ rewriteParser =
   CmdRewrite
     <$> ( OptsRewrite
             <$> optLogLevel
+            <*> optLogLines
             <*> optInputFormat
             <*> optOutputFormat
             <*> optSugar
@@ -324,6 +348,7 @@ mergeParser =
   CmdMerge
     <$> ( OptsMerge
             <$> optLogLevel
+            <*> optLogLines
             <*> optInputFormat
             <*> option (parseIOFormat "output") (long "output" <> metavar "FORMAT" <> help (printf "Result program output format (phi, xmir, latex)") <> value PHI <> showDefault)
             <*> optSugar'
@@ -356,14 +381,14 @@ handler e = case fromException e of
     logError (displayException e)
     exitFailure
 
-setLogLevel' :: Command -> IO ()
-setLogLevel' cmd =
-  let level = case cmd of
-        CmdRewrite OptsRewrite {logLevel} -> logLevel
-        CmdDataize OptsDataize {logLevel} -> logLevel
-        CmdExplain OptsExplain {logLevel} -> logLevel
-        CmdMerge OptsMerge {logLevel} -> logLevel
-   in setLogLevel level
+setLogger :: Command -> IO ()
+setLogger cmd =
+  let (level, lines) = case cmd of
+        CmdRewrite OptsRewrite {logLevel, logLines} -> (logLevel, logLines)
+        CmdDataize OptsDataize {logLevel, logLines} -> (logLevel, logLines)
+        CmdExplain OptsExplain {logLevel, logLines} -> (logLevel, logLines)
+        CmdMerge OptsMerge {logLevel, logLines} -> (logLevel, logLines)
+   in setLogConfig level lines
 
 invalidCLIArguments :: String -> IO a
 invalidCLIArguments msg = throwIO (InvalidCLIArguments msg)
@@ -371,7 +396,7 @@ invalidCLIArguments msg = throwIO (InvalidCLIArguments msg)
 runCLI :: [String] -> IO ()
 runCLI args = handle handler $ do
   cmd <- handleParseResult (execParserPure defaultPrefs parserInfo args)
-  setLogLevel' cmd
+  setLogger cmd
   case cmd of
     CmdRewrite OptsRewrite {..} -> do
       validateOpts
@@ -399,8 +424,6 @@ runCLI args = handle handler $ do
             (invalidCLIArguments "--in-place and --target cannot be used together")
           validateLatexOptions outputFormat nonumber expression label
           validateMust' must
-          validateMaxDepth maxDepth
-          validateMaxCycles maxCycles
           validateXmirOptions outputFormat omitListing omitComments
         output :: Maybe FilePath -> String -> IO ()
         output target prog = case (inPlace, target, inputFile) of
@@ -436,8 +459,6 @@ runCLI args = handle handler $ do
       where
         validateOpts :: IO ()
         validateOpts = do
-          validateMaxDepth maxDepth
-          validateMaxCycles maxCycles
           validateLatexOptions outputFormat nonumber expression label
           validateXmirOptions outputFormat omitListing omitComments
         context :: Program -> PrintProgramContext -> DataizeContext
@@ -529,21 +550,6 @@ validateXmirOptions outputFormat omitListing omitComments = do
   when
     (outputFormat /= XMIR && omitComments)
     (invalidCLIArguments "--omit-comments can be used only with --output=xmir")
-
--- Validate integer argument
-validateIntArgument :: Integer -> (Integer -> Bool) -> String -> IO ()
-validateIntArgument num cmp msg =
-  when
-    (cmp num)
-    (invalidCLIArguments msg)
-
--- Validate 'maxDepth' option
-validateMaxDepth :: Integer -> IO ()
-validateMaxDepth depth = validateIntArgument depth (<= 0) "--max-depth must be positive"
-
--- Validate 'maxCycles' option
-validateMaxCycles :: Integer -> IO ()
-validateMaxCycles cycles = validateIntArgument cycles (<= 0) "--max-cycles must be positive"
 
 -- Read input from file or stdin
 readInput :: Maybe FilePath -> IO String
