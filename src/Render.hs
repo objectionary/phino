@@ -158,10 +158,6 @@ instance Render APP_ARGS where
   render AAS_EMPTY = ""
   render AAS_EXPR {..} = render COMMA <> render eol <> render tab <> render expr <> render args
 
--- @todo #163:30min Introduce node for formation with inlined voids.
---  We need to be able to print formation with inlined void attributes:
---  x(a, b) -> [[ y -> 1 ]] => x -> [[ a -> ?, b -> ?, y -> 1 ]]
---  Don't forget to extend toSalty instance so such sugar.
 instance Render EXPRESSION where
   render EX_GLOBAL {..} = render global
   render EX_DEF_PACKAGE {..} = render pckg
