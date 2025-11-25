@@ -26,9 +26,9 @@ instance ToSingleLine EXPRESSION where
   toSingleLine EX_FORMATION {lsb, binding = bd@BI_EMPTY {..}, rsb} = EX_FORMATION lsb NO_EOL NO_TAB bd NO_EOL NO_TAB rsb
   toSingleLine EX_FORMATION {..} = EX_FORMATION lsb NO_EOL TAB' (toSingleLine binding) NO_EOL TAB' rsb
   toSingleLine EX_DISPATCH {..} = EX_DISPATCH (toSingleLine expr) attr
-  toSingleLine EX_APPLICATION {..} = EX_APPLICATION (toSingleLine expr) NO_EOL TAB' (toSingleLine tau) NO_EOL TAB'
-  toSingleLine EX_APPLICATION_TAUS {..} = EX_APPLICATION_TAUS (toSingleLine expr) NO_EOL TAB' (toSingleLine taus) NO_EOL TAB'
-  toSingleLine EX_APPLICATION_EXPRS {..} = EX_APPLICATION_EXPRS (toSingleLine expr) NO_EOL TAB' (toSingleLine args) NO_EOL TAB'
+  toSingleLine EX_APPLICATION {..} = EX_APPLICATION (toSingleLine expr) NO_EOL TAB' (toSingleLine tau) NO_EOL TAB' indent
+  toSingleLine EX_APPLICATION_TAUS {..} = EX_APPLICATION_TAUS (toSingleLine expr) NO_EOL TAB' (toSingleLine taus) NO_EOL TAB' indent
+  toSingleLine EX_APPLICATION_EXPRS {..} = EX_APPLICATION_EXPRS (toSingleLine expr) NO_EOL TAB' (toSingleLine args) NO_EOL TAB' indent
   toSingleLine expr = expr
 
 instance ToSingleLine APP_BINDING where

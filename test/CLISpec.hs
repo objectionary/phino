@@ -282,9 +282,7 @@ spec = do
           ["rewrite", "--output=latex", "--sweet"]
           [ "\\begin{phiquation}",
             "\\Big\\{[[\n",
-            "  |x\\char95{}o| -> QQ.|z|(\n",
-            "    |y| -> 5\n",
-            "  ),\n",
+            "  |x\\char95{}o| -> QQ.|z|( |y| -> 5 ),\n",
             "  |q\\char36{}| -> T,\n",
             "  |w| -> $,\n",
             "  ^ -> Q,\n",

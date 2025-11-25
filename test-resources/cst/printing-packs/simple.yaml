@@ -13,9 +13,6 @@ result: |-
   {⟦
     foo ↦ ⟦
       φ ↦ ρ.z,
-      bar ↦ Φ.y(
-        5,
-        "foo"
-      )
+      bar ↦ Φ.y( 5, "foo" )
     ⟧
   ⟧}

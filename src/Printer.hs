@@ -52,7 +52,7 @@ printExpression :: Expression -> String
 printExpression expr = printExpression' expr defaultPrintConfig
 
 printAttribute' :: Attribute -> Encoding -> String
-printAttribute' attr encoding = render (withEncoding encoding (toCST attr 0 :: ATTRIBUTE))
+printAttribute' attr encoding = render (withEncoding encoding (toCST attr 0 NO_EOL :: ATTRIBUTE))
 
 printAttribute :: Attribute -> String
 printAttribute attr =
@@ -66,7 +66,7 @@ printBinding :: Binding -> String
 printBinding bd = printBinding' bd defaultPrintConfig
 
 printBytes :: Bytes -> String
-printBytes bts = render (toCST bts 0 :: BYTES)
+printBytes bts = render (toCST bts 0 NO_EOL :: BYTES)
 
 printExtraArg' :: ExtraArgument -> PrintConfig -> String
 printExtraArg' (ArgAttribute attr) (_, encoding, _) = printAttribute' attr encoding

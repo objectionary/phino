@@ -61,7 +61,7 @@ instance ToSalty EXPRESSION where
   toSalty EX_DISPATCH {..} = EX_DISPATCH (toSalty expr) attr
   toSalty EX_FORMATION {lsb, binding = bd@BI_EMPTY {..}, rsb} = EX_FORMATION lsb NO_EOL TAB' (toSalty (bdWithVoidRho bd)) NO_EOL TAB' rsb
   toSalty EX_FORMATION {..} = EX_FORMATION lsb eol tab (toSalty (bdWithVoidRho binding)) eol' tab' rsb
-  toSalty EX_APPLICATION {..} = EX_APPLICATION (toSalty expr) eol tab (toSalty tau) eol' tab'
+  toSalty EX_APPLICATION {..} = EX_APPLICATION (toSalty expr) EOL (TAB indent) (toSalty tau) EOL (TAB (indent - 1)) indent
   toSalty EX_APPLICATION_TAUS {..} =
     foldl
       toApplication
@@ -70,13 +70,13 @@ instance ToSalty EXPRESSION where
     where
       toApplication :: EXPRESSION -> PAIR -> EXPRESSION
       toApplication exp pair =
-        EX_APPLICATION (toSalty exp) eol tab (APP_BINDING (toSalty pair)) eol' tab'
+        EX_APPLICATION (toSalty exp) EOL (TAB indent) (APP_BINDING (toSalty pair)) EOL (TAB (indent - 1)) indent
       tauToPairs :: BINDING -> [PAIR]
       tauToPairs BI_PAIR {..} = pair : tausToPairs bindings
       tausToPairs :: BINDINGS -> [PAIR]
       tausToPairs BDS_EMPTY {..} = []
       tausToPairs BDS_PAIR {..} = pair : tausToPairs bindings
-  toSalty EX_APPLICATION_EXPRS {..} = toSalty (EX_APPLICATION_TAUS expr eol tab (argToBinding args tab) eol' tab')
+  toSalty EX_APPLICATION_EXPRS {..} = toSalty (EX_APPLICATION_TAUS expr EOL (TAB indent) (argToBinding args tab) EOL (TAB (indent - 1)) indent)
     where
       argToBinding :: APP_ARG -> TAB -> BINDING
       argToBinding APP_ARG {..} =
@@ -88,16 +88,16 @@ instance ToSalty EXPRESSION where
       argsToBindings AAS_EXPR {..} idx tb = BDS_PAIR eol tb (PA_TAU (AT_ALPHA ALPHA idx) ARROW expr) (argsToBindings args (idx + 1) tb)
   toSalty EX_NUMBER {num, tab = tab@TAB {..}, rhos} =
     saltifyPrimitive
-      (toCST (BaseObject "number") (indent + 1))
-      (toCST (BaseObject "bytes") (indent + 2))
-      (toCST (ExFormation [BiDelta (numToBts (either toDouble id num))]) (indent + 2))
+      (toCST (BaseObject "number") (indent + 1) EOL)
+      (toCST (BaseObject "bytes") (indent + 2) EOL)
+      (toCST (ExFormation [BiDelta (numToBts (either toDouble id num))]) (indent + 2) EOL)
       tab
       rhos
   toSalty EX_STRING {str, tab = tab@TAB {..}, rhos} =
     saltifyPrimitive
-      (toCST (BaseObject "string") (indent + 1))
-      (toCST (BaseObject "bytes") (indent + 2))
-      (toCST (ExFormation [BiDelta (strToBts str)]) (indent + 2))
+      (toCST (BaseObject "string") (indent + 1) EOL)
+      (toCST (BaseObject "bytes") (indent + 2) EOL)
+      (toCST (ExFormation [BiDelta (strToBts str)]) (indent + 2) EOL)
       tab
       rhos
   toSalty expr = expr
@@ -121,13 +121,15 @@ saltifyPrimitive base bytes data' tb@TAB {..} rhos =
                         (APP_ARG data' AAS_EMPTY)
                         EOL
                         next
+                        (indent + 2)
                     )
                 )
-                (toCST rhos (indent + 1))
+                (toCST rhos (indent + 1) EOL)
                 next
             )
             EOL
             tb
+            (indent + 1)
         )
 
 instance ToSalty BINDING where

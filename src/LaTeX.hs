@@ -80,9 +80,9 @@ instance ToLaTeX PROGRAM where
 instance ToLaTeX EXPRESSION where
   toLaTeX EX_ATTR {..} = EX_ATTR (toLaTeX attr)
   toLaTeX EX_FORMATION {..} = EX_FORMATION lsb eol tab (toLaTeX binding) eol' tab' rsb
-  toLaTeX EX_APPLICATION {..} = EX_APPLICATION (toLaTeX expr) eol tab (toLaTeX tau) eol' tab'
-  toLaTeX EX_APPLICATION_TAUS {..} = EX_APPLICATION_TAUS (toLaTeX expr) eol tab (toLaTeX taus) eol' tab'
-  toLaTeX EX_APPLICATION_EXPRS {..} = EX_APPLICATION_EXPRS (toLaTeX expr) eol tab (toLaTeX args) eol' tab'
+  toLaTeX EX_APPLICATION {..} = EX_APPLICATION (toLaTeX expr) eol tab (toLaTeX tau) eol' tab' indent
+  toLaTeX EX_APPLICATION_TAUS {..} = EX_APPLICATION_TAUS (toLaTeX expr) eol tab (toLaTeX taus) eol' tab' indent
+  toLaTeX EX_APPLICATION_EXPRS {..} = EX_APPLICATION_EXPRS (toLaTeX expr) eol tab (toLaTeX args) eol' tab' indent
   toLaTeX EX_DISPATCH {..} = EX_DISPATCH (toLaTeX expr) (toLaTeX attr)
   toLaTeX expr = expr
 
