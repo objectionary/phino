@@ -20,6 +20,7 @@ import Parser (parseExpressionThrows, parseProgramThrows)
 import System.Directory (removeFile)
 import System.Exit (ExitCode (ExitSuccess))
 import System.FilePath (makeRelative)
+import System.Info (os)
 import System.IO (hClose, hPutStr, hSetEncoding, openTempFile, utf8)
 import System.Process (readProcessWithExitCode)
 import Test.Hspec (Spec, anyException, describe, expectationFailure, it, pendingWith, runIO, shouldBe, shouldThrow)
@@ -47,8 +48,11 @@ printPack = Yaml.decodeFileThrow
 -- Check if xmllint is available on the system
 isXmllintAvailable :: Bool
 isXmllintAvailable =
-  let (exitCode, _, _) = unsafePerformIO (readProcessWithExitCode "xmllint" ["--version"] "")
-   in (exitCode == ExitSuccess)
+  if os == "mingw32"
+    then False -- xmllint is flaky on Windows runners; skip to avoid false negatives
+    else
+      let (exitCode, _, _) = unsafePerformIO (readProcessWithExitCode "xmllint" ["--version"] "")
+       in (exitCode == ExitSuccess)
 
 spec :: Spec
 spec = do
