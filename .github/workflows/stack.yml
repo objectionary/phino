@@ -32,8 +32,9 @@ jobs:
         if: runner.os == 'Windows'
         shell: powershell
         run: |
-          choco install -y libxml2
-          echo 'C:\Program Files\libxml2\bin' | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          choco install -y msys2
+          C:\tools\msys64\usr\bin\bash -lc "pacman -Sy --noconfirm mingw-w64-x86_64-libxml2"
+          echo 'C:\tools\msys64\mingw64\bin' | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
       - name: Cache ~/.stack (Linux/macOS)
         if: runner.os != 'Windows'
