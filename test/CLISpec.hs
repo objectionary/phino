@@ -8,6 +8,7 @@
 module CLISpec (spec) where
 
 import CLI (runCLI)
+import Control.DeepSeq (deepseq)
 import Control.Exception
 import Control.Monad (forM_, unless, when)
 import Data.List (intercalate, isInfixOf)
@@ -632,6 +633,7 @@ spec = do
               ["explain", "--normalize", printf "--target=%s" path]
               [printf "was saved in '%s'" path]
             content <- readFile path
+            content `deepseq` pure () -- ensure file is fully read/closed on Windows
             content `shouldContain` "\\documentclass{article}"
             content `shouldContain` "\\begin{document}"
         )

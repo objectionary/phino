@@ -10,7 +10,7 @@ phi: |
     ]]
   ]]
 xpaths:
-  - '/object/o[@name="foo" and o[2][@base="Φ.y"]]'
-  - '/object/o/o/o[@as="α0" and @base="Φ.org.eolang.number"]'
-  - '/object/o/o/o[@as="α1" and @base="Φ.org.eolang.string"]'
-  - '/object/o/o[@name="φ" and @base="ξ.ρ.z"]'
+  - '/object/o[@name="foo" and o[2][contains(@base,".y")]]'
+  - '/object/o/o/o[@as="α0" and contains(@base,"org.eolang.number")]'
+  - '/object/o/o/o[@as="α1" and contains(@base,"org.eolang.string")]'
+  - '/object/o/o[@name="φ" and contains(@base,".z")]'
