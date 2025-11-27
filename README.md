@@ -205,7 +205,7 @@ $ phino merge bytes.phi number.phi foo.phi --sweet
 
 ## Match
 
-You cant test the 𝜑-program matches against the [rule](#rule-structure)
+You can test the 𝜑-program matches against the [rule](#rule-structure)
 pattern. The result output contains matched substitutions:
 
 ```bash
