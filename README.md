@@ -149,7 +149,7 @@ $ echo 'Q -> [[ @ -> QQ.io.stdout("hello") ]]' | phino rewrite
 
 ## Merge
 
-You can merge several 𝜑-programs into a sinlge one by merging their
+You can merge several 𝜑-programs into a single one by merging their
 top level formations:
 
 ```bash
