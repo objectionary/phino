@@ -37,7 +37,6 @@ import Must (Must (..), validateMust)
 import Options.Applicative
 import Parser (parseExpressionThrows, parseProgramThrows)
 import Paths_phino (version)
-import Printer (printExpression)
 import qualified Printer as P
 import Rewriter (RewriteContext (RewriteContext), Rewritten (..), rewrite')
 import Rule (RuleContext (RuleContext), matchProgramWithRule)
