@@ -10,6 +10,7 @@
 module CLI (runCLI) where
 
 import AST
+import Condition (parseConditionThrows)
 import Control.Exception (Exception (displayException), SomeException, handle, throw, throwIO)
 import Control.Exception.Base
 import Control.Monad (when, (>=>))
@@ -36,9 +37,9 @@ import Must (Must (..), validateMust)
 import Options.Applicative
 import Parser (parseExpressionThrows, parseProgramThrows)
 import Paths_phino (version)
-import Printer (printExpression')
 import qualified Printer as P
 import Rewriter (RewriteContext (RewriteContext), Rewritten (..), rewrite')
+import Rule (RuleContext (RuleContext), matchProgramWithRule)
 import Sugar
 import System.Exit (ExitCode (..), exitFailure)
 import System.IO (getContents')
@@ -73,6 +74,7 @@ data Command
   | CmdDataize OptsDataize
   | CmdExplain OptsExplain
   | CmdMerge OptsMerge
+  | CmdMatch OptsMatch
 
 data IOFormat = XMIR | PHI | LATEX
   deriving (Eq)
@@ -150,6 +152,16 @@ data OptsMerge = OptsMerge
     omitComments :: Bool,
     targetFile :: Maybe FilePath,
     inputs :: [FilePath]
+  }
+
+data OptsMatch = OptsMatch
+  { logLevel :: LogLevel,
+    logLines :: Integer,
+    sugarType :: SugarType,
+    flat :: LineFormat,
+    pattern :: Maybe String,
+    when' :: Maybe String,
+    inputFile :: Maybe FilePath
   }
 
 validateIntegerOption :: (Integer -> Bool) -> String -> Integer -> ReadM Integer
@@ -359,6 +371,19 @@ mergeParser =
             <*> many (argument str (metavar "[FILE]" <> help "Paths to input files"))
         )
 
+matchParser :: Parser Command
+matchParser =
+  CmdMatch
+    <$> ( OptsMatch
+            <$> optLogLevel
+            <*> optLogLines
+            <*> optSugar
+            <*> optLineFormat
+            <*> optional (strOption (long "pattern" <> metavar "EXPRESSION" <> help "Pattern expression to match against"))
+            <*> optional (strOption (long "when" <> metavar "CONDITION" <> help "Predicate for matched substitutions"))
+            <*> argInputFile
+        )
+
 commandParser :: Parser Command
 commandParser =
   hsubparser
@@ -366,6 +391,7 @@ commandParser =
         <> command "dataize" (info dataizeParser (progDesc "Dataize the 𝜑-program"))
         <> command "explain" (info explainParser (progDesc "Explain rules in LaTeX format"))
         <> command "merge" (info mergeParser (progDesc "Merge 𝜑-programs into single one by merging their top level formations"))
+        <> command "match" (info matchParser (progDesc "Match 𝜑-program against provided pattern and build matched substitutions"))
     )
 
 parserInfo :: ParserInfo Command
@@ -388,6 +414,7 @@ setLogger cmd =
         CmdDataize OptsDataize {logLevel, logLines} -> (logLevel, logLines)
         CmdExplain OptsExplain {logLevel, logLines} -> (logLevel, logLines)
         CmdMerge OptsMerge {logLevel, logLines} -> (logLevel, logLines)
+        CmdMatch OptsMatch {logLevel, logLines} -> (logLevel, logLines)
    in setLogConfig level lines
 
 invalidCLIArguments :: String -> IO a
@@ -498,6 +525,21 @@ runCLI args = handle handler $ do
             (null inputs)
             (throwIO (InvalidCLIArguments "At least one input file must be specified for 'merge' command"))
           validateXmirOptions outputFormat omitListing omitComments
+    CmdMatch OptsMatch {..} -> do
+      input <- readInput inputFile
+      prog <- parseProgram input PHI
+      if isNothing pattern
+        then logInfo "The --pattern is not provided, no substitutions are built"
+        else do
+          ptn <- parseExpressionThrows (fromJust pattern)
+          condition <- traverse parseConditionThrows when'
+          substs <- matchProgramWithRule prog (rule ptn condition) (RuleContext buildTerm)
+          if null substs
+            then logInfo "Provided pattern was not matched, no substitutions are built"
+            else putStrLn (P.printSubsts' substs (sugarType, UNICODE, flat))
+      where
+        rule :: Expression -> Maybe Y.Condition -> Y.Rule
+        rule ptn cnd = Y.Rule Nothing Nothing ptn ExGlobal cnd Nothing Nothing
 
 -- Prepare saveStepFunc
 saveStepFunc :: Maybe FilePath -> PrintProgramContext -> SaveStepFunc
@@ -521,7 +563,7 @@ expressionsToHide = traverse (parseExpressionThrows >=> canBeHidden)
       invalidCLIArguments
         ( printf
             "Only dispatch expression started with Φ (or Q) can be used in --hide, but given: %s"
-            (printExpression' full P.logPrintConfig)
+            (P.printExpression' full P.logPrintConfig)
         )
 
 -- Validate LaTeX options

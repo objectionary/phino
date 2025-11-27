@@ -134,13 +134,13 @@ data Number
   = Ordinal Attribute
   | Length Binding
   | Literal Integer
-  deriving (Generic, Show)
+  deriving (Eq, Generic, Show)
 
 data Comparable
   = CmpAttr Attribute
   | CmpNum Number
   | CmpExpr Expression
-  deriving (Generic, Show)
+  deriving (Eq, Generic, Show)
 
 data Condition
   = And [Condition]
@@ -153,7 +153,7 @@ data Condition
   | XI Expression
   | Matches String Expression
   | PartOf Expression Binding
-  deriving (Generic, Show)
+  deriving (Eq, Generic, Show)
 
 data ExtraArgument
   = ArgAttribute Attribute
