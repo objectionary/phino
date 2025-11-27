@@ -85,7 +85,7 @@ $ phino dataize hello.phi
 
 ## Rewrite
 
-You can rewrite this expression with the help of rules
+You can rewrite this expression with the help of [rules](#rule-structure)
 defined in the `my-rule.yml` YAML file (here, the `!d` is a capturing group,
 similar to regular expressions):
 
@@ -145,6 +145,86 @@ $ echo 'Q -> [[ @ -> QQ.io.stdout("hello") ]]' | phino rewrite
     )
   )
 ⟧
+```
+
+## Merge
+
+You can merge several 𝜑-programs into a sinle one by merging their
+top level formations:
+
+```bash
+$ cat bytes.phi
+{⟦
+  org ↦ ⟦
+    eolang ↦ ⟦
+      bytes ↦ ⟦
+        data ↦ ∅,
+        φ ↦ data
+      ⟧
+    ⟧
+  ⟧
+⟧}
+$ cat number.phi
+{⟦
+  org ↦ ⟦
+    eolang ↦ ⟦
+      number ↦ ⟦
+        as-bytes ↦ ∅,
+        φ ↦ as-bytes,
+        plus(x) ↦ ⟦
+          λ ⤍ L_org_eolang_number_plus
+        ⟧
+      ⟧
+    ⟧
+  ⟧
+⟧}
+$ cat foo.phi
+{⟦
+  foo ↦ 5.plus(3)
+⟧}
+$ phino merge bytes.phi number.phi foo.phi --sweet
+{⟦
+  org ↦ ⟦
+    eolang ↦ ⟦
+      bytes ↦ ⟦
+        data ↦ ∅,
+        φ ↦ data
+      ⟧,
+      number ↦ ⟦
+        as-bytes ↦ ∅,
+        φ ↦ as-bytes,
+        plus(x) ↦ ⟦
+          λ ⤍ L_org_eolang_number_plus
+        ⟧
+      ⟧
+    ⟧
+  ⟧,
+  foo ↦ 5.plus(3)
+⟧}
+```
+
+## Match
+
+You cant test the 𝜑-program matches agains the [rule](#rule-structure) pattern. The result output contains matched substitutions:
+
+```bash
+$ phino match --pattern='⟦ Δ ⤍ !d, !B ⟧' hello.phi
+B >> ⟦ ρ ↦ ∅ ⟧
+d >> 68-65-6C-6C-6F
+```
+
+## Explain (under developement)
+
+You can _explain_ rewriting rule by printing them in [LaTeX][latex]format:
+
+```bash
+$ phino explain --rule=my-rule.yaml
+\documentclass{article}
+\usepackage{amsmath}
+\begin{document}
+\rule{My custom rule}
+\...
+\end{document}
 ```
 
 For more details, use `phino [COMMAND] --help` option.
@@ -295,3 +375,4 @@ You will need [GHC] and [Cabal ≥3.0][cabal] or [Stack ≥ 3.0][stack] installe
 [GHC]: https://www.haskell.org/ghc/
 [guidelines]: https://www.yegor256.com/2014/04/15/github-guidelines.html
 [xmir]: https://news.eolang.org/2022-11-25-xmir-guide.html
+[latex]: https://en.wikipedia.org/wiki/LaTeX
