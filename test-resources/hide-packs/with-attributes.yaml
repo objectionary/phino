@@ -1,0 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+program: '{[[ t -> [[ xi🌵 -> ?, q -> ?, a -> ?, x -> [[ ]], k -> [[ xi🌵 -> ? ]] ]] ]]}'
+hidden: 'Q.t.k.xi🌵'
+result: '{[[ t -> [[ xi🌵 -> ?, q -> ?, a -> ?, x -> [[ ]], k -> [[ ]] ]] ]]}'

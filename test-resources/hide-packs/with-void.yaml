@@ -1,0 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+program: '{⟦ order ↦ ⟦ qty ↦ ∅, json ↦ ⟦ xi🌵 ↦ ξ ⟧ ⟧ ⟧}'
+hidden: 'Q.order.json.xi🌵'
+result: '{⟦ order ↦ ⟦ qty ↦ ∅, json ↦ ⟦ ⟧ ⟧ ⟧}'

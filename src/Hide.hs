@@ -33,7 +33,7 @@ hide' (Program expr@(ExFormation _)) (fqn : rest) = hide' (Program (hiddenFormat
         hiddenBindings (bd@(BiTau attr form@(ExFormation _)) : bds) attrs@(attr' : rest)
           | attr == attr' = BiTau attr (hiddenFormation form rest) : bds
           | otherwise = bd : hiddenBindings bds attrs
-        hiddenBindings bds _ = bds
+        hiddenBindings (bd : bds) attrs = bd : hiddenBindings bds attrs
     hiddenFormation expr attr = expr
 hide' prog (fqn : rest) = prog
 
