@@ -149,7 +149,7 @@ $ echo 'Q -> [[ @ -> QQ.io.stdout("hello") ]]' | phino rewrite
 
 ## Merge
 
-You can merge several 𝜑-programs into a sinle one by merging their
+You can merge several 𝜑-programs into a sinlge one by merging their
 top level formations:
 
 ```bash
@@ -205,7 +205,8 @@ $ phino merge bytes.phi number.phi foo.phi --sweet
 
 ## Match
 
-You cant test the 𝜑-program matches agains the [rule](#rule-structure) pattern. The result output contains matched substitutions:
+You cant test the 𝜑-program matches against the [rule](#rule-structure)
+pattern. The result output contains matched substitutions:
 
 ```bash
 $ phino match --pattern='⟦ Δ ⤍ !d, !B ⟧' hello.phi
@@ -213,7 +214,7 @@ B >> ⟦ ρ ↦ ∅ ⟧
 d >> 68-65-6C-6C-6F
 ```
 
-## Explain (under developement)
+## Explain (under development)
 
 You can _explain_ rewriting rule by printing them in [LaTeX][latex]format:
 
