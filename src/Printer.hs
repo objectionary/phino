@@ -92,10 +92,9 @@ printMetaValue (MvTail tails) config = intercalate "," (map (`printTail` config)
 
 printSubst :: Subst -> PrintConfig -> String
 printSubst (Subst mp) config =
-  ""
-    <> intercalate
-      "\n"
-      (map (\(key, value) -> key <> " >> " <> printMetaValue value config) (Map.toList mp))
+  intercalate
+    "\n"
+    (map (\(key, value) -> key <> " >> " <> printMetaValue value config) (Map.toList mp))
 
 printSubsts' :: [Subst] -> PrintConfig -> String
 printSubsts' [] _ = "------"
