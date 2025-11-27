@@ -18,6 +18,17 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v6
+
+      - name: Install xmllint on Ubuntu
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libxml2-utils
+
+      - name: Install xmllint on macOS
+        if: runner.os == 'macOS'
+        run: brew install libxml2
+
       - name: Cache ~/.stack (Linux/macOS)
         if: runner.os != 'Windows'
         uses: actions/cache@v4
