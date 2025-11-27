@@ -8,7 +8,7 @@
 module XMIRSpec where
 
 import AST
-import Control.Exception (bracket)
+import Control.Exception (IOException, bracket, try)
 import Control.Monad (filterM, forM_, unless)
 import Data.Aeson
 import Data.List (intercalate)
@@ -20,7 +20,6 @@ import Parser (parseExpressionThrows, parseProgramThrows)
 import System.Directory (removeFile)
 import System.Exit (ExitCode (ExitSuccess))
 import System.FilePath (makeRelative)
-import System.Info (os)
 import System.IO (hClose, hPutStr, hSetEncoding, openTempFile, utf8)
 import System.Process (readProcessWithExitCode)
 import Test.Hspec (Spec, anyException, describe, expectationFailure, it, pendingWith, runIO, shouldBe, shouldThrow)
@@ -48,11 +47,10 @@ printPack = Yaml.decodeFileThrow
 -- Check if xmllint is available on the system
 isXmllintAvailable :: Bool
 isXmllintAvailable =
-  if os == "mingw32"
-    then False -- xmllint is flaky on Windows runners; skip to avoid false negatives
-    else
-      let (exitCode, _, _) = unsafePerformIO (readProcessWithExitCode "xmllint" ["--version"] "")
-       in (exitCode == ExitSuccess)
+  let result = unsafePerformIO (try (readProcessWithExitCode "xmllint" ["--version"] "")) :: Either IOException (ExitCode, String, String)
+   in case result of
+        Right (code, _, _) -> code == ExitSuccess
+        Left _ -> False
 
 spec :: Spec
 spec = do
