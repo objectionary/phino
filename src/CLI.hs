@@ -10,6 +10,7 @@
 module CLI (runCLI) where
 
 import AST
+import qualified Canonizer as C
 import Condition (parseConditionThrows)
 import Control.Exception (Exception (displayException), SomeException, handle, throw, throwIO)
 import Control.Exception.Base
@@ -130,6 +131,7 @@ data OptsRewrite = OptsRewrite
     nonumber :: Bool,
     inPlace :: Bool,
     sequence :: Bool,
+    canonize :: Bool,
     maxDepth :: Integer,
     maxCycles :: Integer,
     rules :: [FilePath],
@@ -344,6 +346,7 @@ rewriteParser =
             <*> optNonumber
             <*> switch (long "in-place" <> help "Edit file in-place instead of printing to output")
             <*> optSequence
+            <*> switch (long "canonize" <> help "Rename all functions attached to λ binding with F1, F2, etc.")
             <*> optMaxDepth
             <*> optMaxCycles
             <*> optRule
@@ -435,7 +438,9 @@ runCLI args = handle handler $ do
       let listing = if null rules' then const input else (\prog -> P.printProgram' prog (sugarType, UNICODE, flat))
           xmirCtx = XmirContext omitListing omitComments listing
           printCtx = PrintProgCtx sugarType flat xmirCtx nonumber expression label outputFormat
-      rewrittens <- rewrite' program rules' (context printCtx) <&> (`H.hide` exclude)
+          canonize' = if canonize then C.canonize else id
+          hide' = (`H.hide` exclude)
+      rewrittens <- rewrite' program rules' (context printCtx) <&> hide' . canonize'
       let rewrittens' = if sequence then rewrittens else [last rewrittens]
       logDebug (printf "Printing rewritten 𝜑-program as %s" (show outputFormat))
       progs <- printRewrittens printCtx rewrittens'
@@ -445,10 +450,10 @@ runCLI args = handle handler $ do
         validateOpts = do
           when
             (inPlace && isNothing inputFile)
-            (invalidCLIArguments "--in-place requires an input file")
+            (invalidCLIArguments "The option --in-place requires an input file")
           when
             (inPlace && isJust targetFile)
-            (invalidCLIArguments "--in-place and --target cannot be used together")
+            (invalidCLIArguments "The options --in-place and --target cannot be used together")
           validateLatexOptions outputFormat nonumber expression label
           validateMust' must
           validateXmirOptions outputFormat omitListing omitComments

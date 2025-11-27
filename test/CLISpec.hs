@@ -531,6 +531,12 @@ spec = do
               ]
           ]
 
+    it "canonizes program" $
+      withStdin "{[[ x -> [[ y -> [[ L> Func ]].q, z -> Q.x(a -> [[ w -> [[ L> Atom ]], L> Hello ]]) ]], L> Package ]]}" $
+        testCLISucceeded
+          ["rewrite", "--canonize", "--sweet", "--flat"]
+          ["{⟦ x ↦ ⟦ y ↦ ⟦ λ ⤍ F1 ⟧.q, z ↦ Φ.x( a ↦ ⟦ w ↦ ⟦ λ ⤍ F2 ⟧, λ ⤍ F3 ⟧ ) ⟧, λ ⤍ F4 ⟧}"]
+
   describe "dataize" $ do
     it "dataizes simple program" $
       withStdin "Q -> [[ D> 01- ]]" $
