@@ -14,6 +14,7 @@ module Printer
     printBytes,
     printExtraArg,
     printSubsts,
+    printSubsts',
     PrintConfig (..),
     logPrintConfig,
   )
@@ -91,13 +92,14 @@ printMetaValue (MvTail tails) config = intercalate "," (map (`printTail` config)
 
 printSubst :: Subst -> PrintConfig -> String
 printSubst (Subst mp) config =
-  "  "
+  ""
     <> intercalate
-      "\n  "
+      "\n"
       (map (\(key, value) -> key <> " >> " <> printMetaValue value config) (Map.toList mp))
 
 printSubsts' :: [Subst] -> PrintConfig -> String
-printSubsts' substs config = intercalate "\n---\n" (map (`printSubst` config) substs)
+printSubsts' [] _ = "------"
+printSubsts' substs config = intercalate "\n------\n" (map (`printSubst` config) substs)
 
 printSubsts :: [Subst] -> String
 printSubsts substs = printSubsts' substs defaultPrintConfig

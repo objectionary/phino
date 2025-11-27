@@ -668,3 +668,40 @@ spec = do
       testCLIFailed
         ["merge"]
         ["At least one input file must be specified for 'merge' command"]
+  
+  describe "match" $ do
+    it "takes from stdin" $
+      withStdin "{[[]]}" $
+        testCLISucceeded ["match"] ["[INFO]"]
+    
+    it "takes from file" $
+      testCLISucceeded ["match", "test-resources/cli/foo.phi"] ["[INFO]"]
+    
+    it "does not print substitutions without pattern" $
+      withStdin "{[[]]}" $
+        testCLISucceeded ["match"] ["[INFO]: The --pattern is not provided, no substitutions are built"]
+    
+    it "prints one substitution" $
+      withStdin "{[[ x -> Q.x ]]}" $
+        testCLISucceeded ["match", "--pattern=Q.!a"] ["a >> x"]
+    
+    it "prints many substitutions" $
+      withStdin "{[[ x -> Q.x, y -> Q.y ]]}" $
+        testCLISucceeded ["match", "--pattern=Q.!a"] ["a >> x\n------\na >> y"]
+
+    it "builds substitutions with conditions" $
+      withStdin "{[[ x -> Q.y ]].x}" $
+        testCLISucceeded
+          ["match", "--pattern=[[ !a -> Q.y, !B ]].!a", "--when=and(not(alpha(!a)),eq(length(!B),1))"]
+          ["B >> ⟦ ρ ↦ ∅ ⟧\na >> x"]
+    
+    it "builds with condition from file" $
+      testCLISucceeded
+        ["match", "--pattern=[[ !B ]]", "--when=eq(length(!B),2)", "test-resources/cli/foo.phi"]
+        ["B >> ⟦\n  foo ↦ Φ.org.eolang.x,\n  ρ ↦ ∅\n⟧"]
+    
+    it "fails on parsing --when condition" $
+      withStdin "{[[]]}" $
+        testCLIFailed
+          ["match", "--pattern=[[!B]]", "--when=hello"]
+          ["[ERROR]: Couldn't parse given condition"]
