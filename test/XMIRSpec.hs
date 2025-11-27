@@ -20,7 +20,7 @@ import Parser (parseExpressionThrows, parseProgramThrows)
 import System.Directory (removeFile)
 import System.Exit (ExitCode (ExitSuccess))
 import System.FilePath (makeRelative)
-import System.IO (hClose, hPutStr, openTempFile)
+import System.IO (hClose, hPutStr, hSetEncoding, openTempFile, utf8)
 import System.Process (readProcessWithExitCode)
 import Test.Hspec (Spec, anyException, describe, expectationFailure, it, pendingWith, runIO, shouldBe, shouldThrow)
 import XMIR (defaultXmirContext, parseXMIRThrows, printXMIR, programToXMIR, xmirToPhi)
@@ -107,6 +107,7 @@ spec = do
                   (openTempFile "." "xmirXXXXXX.tmp")
                   (\(fp, _) -> removeFile fp)
                   ( \(path, hTmp) -> do
+                      hSetEncoding hTmp utf8 -- ensure UTF-8 characters like Φ are written correctly on Windows
                       hPutStr hTmp xml
                       hClose hTmp
                       failed <-
