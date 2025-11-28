@@ -632,8 +632,11 @@ spec = do
             testCLISucceeded
               ["explain", "--normalize", printf "--target=%s" path]
               [printf "was saved in '%s'" path]
-            content <- readFile path
-            content `deepseq` pure () -- ensure file is fully read/closed on Windows
+            content <-
+              withFile path ReadMode $ \h -> do
+                hSetEncoding h utf8
+                txt <- hGetContents h
+                txt `deepseq` pure txt
             content `shouldContain` "\\documentclass{article}"
             content `shouldContain` "\\begin{document}"
         )

@@ -20,6 +20,7 @@ import Parser (parseExpressionThrows, parseProgramThrows)
 import System.Directory (removeFile)
 import System.Exit (ExitCode (ExitSuccess))
 import System.FilePath (makeRelative)
+import System.Info (os)
 import System.IO (hClose, hPutStr, hSetEncoding, openTempFile, utf8)
 import System.Process (readProcessWithExitCode)
 import Test.Hspec (Spec, anyException, describe, expectationFailure, it, pendingWith, runIO, shouldBe, shouldThrow)
@@ -108,10 +109,11 @@ spec = do
                 bracket
                   (openTempFile "." "xmirXXXXXX.tmp")
                   (\(fp, _) -> removeFile fp)
-                  ( \(path, hTmp) -> do
+                  ( \(pathWin, hTmp) -> do
                       hSetEncoding hTmp utf8 -- ensure UTF-8 characters like Φ are written correctly on Windows
                       hPutStr hTmp xml
                       hClose hTmp
+                      path <- toXmllintPath pathWin
                       failed <-
                         filterM
                           ( \xpath -> do
@@ -124,3 +126,16 @@ spec = do
                         (expectationFailure ("Failed xpaths:\n - " ++ intercalate "\n - " failed ++ "\nXMIR is:\n" ++ xml))
                   )
       )
+
+-- Convert Windows paths to a format msys2 xmllint understands; no-op elsewhere
+toXmllintPath :: FilePath -> IO FilePath
+toXmllintPath p
+  | os /= "mingw32" = pure p
+  | otherwise = do
+      let args = ["-u", p]
+      result <- try (readProcessWithExitCode "cygpath" args "") :: IO (Either SomeException (ExitCode, String, String))
+      case result of
+        Right (ExitSuccess, out, _) -> pure (trimNewline out)
+        _ -> pure p
+  where
+    trimNewline = reverse . dropWhile (== '\n') . reverse
