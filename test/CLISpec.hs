@@ -8,6 +8,7 @@
 module CLISpec (spec) where
 
 import CLI (runCLI)
+import Control.DeepSeq (deepseq)
 import Control.Exception
 import Control.Monad (forM_, unless, when)
 import Data.List (intercalate, isInfixOf)
@@ -631,7 +632,11 @@ spec = do
             testCLISucceeded
               ["explain", "--normalize", printf "--target=%s" path]
               [printf "was saved in '%s'" path]
-            content <- readFile path
+            content <-
+              withFile path ReadMode $ \h -> do
+                hSetEncoding h utf8
+                txt <- hGetContents h
+                txt `deepseq` pure txt
             content `shouldContain` "\\documentclass{article}"
             content `shouldContain` "\\begin{document}"
         )
