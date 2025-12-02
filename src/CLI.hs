@@ -14,7 +14,7 @@ import qualified Canonizer as C
 import Condition (parseConditionThrows)
 import Control.Exception (Exception (displayException), SomeException, handle, throw, throwIO)
 import Control.Exception.Base
-import Control.Monad (when, (>=>))
+import Control.Monad (when, (>=>), unless)
 import Data.Char (toLower, toUpper)
 import Data.Foldable (for_)
 import qualified Data.Foldable
@@ -97,6 +97,7 @@ data OptsDataize = OptsDataize
     nonumber :: Bool,
     sequence :: Bool,
     depthSensitive :: Bool,
+    quiet :: Bool,
     maxDepth :: Integer,
     maxCycles :: Integer,
     hide :: [String],
@@ -311,6 +312,7 @@ dataizeParser =
             <*> optNonumber
             <*> optSequence
             <*> optDepthSensitive
+            <*> switch (long "quiet" <> help "Don't print the result of dataization")
             <*> optMaxDepth
             <*> optMaxCycles
             <*> optHide
@@ -487,7 +489,7 @@ runCLI args = handle handler $ do
       let printCtx = PrintProgCtx sugarType flat defaultXmirContext nonumber expression label outputFormat
       (maybeBytes, seq) <- dataize prog (context prog printCtx)
       when sequence (putStrLn =<< printRewrittens printCtx (H.hide seq exclude))
-      putStrLn (maybe (P.printExpression ExTermination) P.printBytes maybeBytes)
+      unless quiet (putStrLn (maybe (P.printExpression ExTermination) P.printBytes maybeBytes))
       where
         validateOpts :: IO ()
         validateOpts = do
