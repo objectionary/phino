@@ -73,13 +73,18 @@ withTempFile pattern =
 testCLI' :: [String] -> [String] -> Either ExitCode () -> Expectation
 testCLI' args outputs exit = do
   (out, result) <- withStdout (try (runCLI args) :: IO (Either ExitCode ()))
-  forM_
-    outputs
-    ( \output ->
-        unless (output `isInfixOf` out) $
-          expectationFailure
-            ("Expected that output contains:\n" ++ output ++ "\nbut got:\n" ++ out)
-    )
+  if null outputs
+    then
+      unless (null out) $
+        expectationFailure ("Expected that output is empty, but got:\n" ++ out)
+    else
+      forM_
+        outputs
+        ( \output ->
+            unless (output `isInfixOf` out) $
+              expectationFailure
+                ("Expected that output contains:\n" ++ output ++ "\nbut got:\n" ++ out)
+        )
   result `shouldBe` exit
 
 testCLISucceeded :: [String] -> [String] -> Expectation
@@ -564,6 +569,10 @@ spec = do
               ]
           ]
 
+    it "does not print bytes with --quiet" $
+      withStdin "Q -> [[ D> 01- ]]" $
+        testCLISucceeded ["dataize", "--quiet"] []
+
     describe "fails" $ do
       it "with --output != latex and --nonumber" $
         withStdin "{[[]]}" $
@@ -674,23 +683,23 @@ spec = do
       testCLIFailed
         ["merge"]
         ["At least one input file must be specified for 'merge' command"]
-  
+
   describe "match" $ do
     it "takes from stdin" $
       withStdin "{[[]]}" $
         testCLISucceeded ["match"] ["[INFO]"]
-    
+
     it "takes from file" $
       testCLISucceeded ["match", "test-resources/cli/foo.phi"] ["[INFO]"]
-    
+
     it "does not print substitutions without pattern" $
       withStdin "{[[]]}" $
         testCLISucceeded ["match"] ["[INFO]: The --pattern is not provided, no substitutions are built"]
-    
+
     it "prints one substitution" $
       withStdin "{[[ x -> Q.x ]]}" $
         testCLISucceeded ["match", "--pattern=Q.!a"] ["a >> x"]
-    
+
     it "prints many substitutions" $
       withStdin "{[[ x -> Q.x, y -> Q.y ]]}" $
         testCLISucceeded ["match", "--pattern=Q.!a"] ["a >> x\n------\na >> y"]
@@ -700,12 +709,12 @@ spec = do
         testCLISucceeded
           ["match", "--pattern=[[ !a -> Q.y, !B ]].!a", "--when=and(not(alpha(!a)),eq(length(!B),1))"]
           ["B >> ⟦ ρ ↦ ∅ ⟧\na >> x"]
-    
+
     it "builds with condition from file" $
       testCLISucceeded
         ["match", "--pattern=[[ !B ]]", "--when=eq(length(!B),2)", "test-resources/cli/foo.phi"]
         ["B >> ⟦\n  foo ↦ Φ.org.eolang.x,\n  ρ ↦ ∅\n⟧"]
-    
+
     it "fails on parsing --when condition" $
       withStdin "{[[]]}" $
         testCLIFailed
