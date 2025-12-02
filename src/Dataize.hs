@@ -72,7 +72,7 @@ formation bds ctx = do
   case lambda of
     Just (BiLambda func) -> do
       obj <- atom func (ExFormation bds') ctx
-      pure (Just (obj, "M(lambda)"))
+      pure (Just (obj, "Mlambda"))
     _ -> pure Nothing
 
 -- Resolve dispatch from global object (Q.tau) for PHI Morphing rule.
@@ -88,7 +88,7 @@ phiDispatch tau expr = case expr of
     boundExpr :: [Binding] -> Maybe (Expression, String)
     boundExpr [] = Nothing
     boundExpr (bd : bds) = case bd of
-      BiTau (AtLabel attr) expr' -> if attr == tau then Just (expr', "M(phi)") else boundExpr bds
+      BiTau (AtLabel attr) expr' -> if attr == tau then Just (expr', "Mphi") else boundExpr bds
       _ -> boundExpr bds
 
 -- Resolve tail PHI and LAMBDA Morphing rules.
@@ -131,12 +131,12 @@ withTail _ _ = pure Nothing
 -- PHI:    M(Q.tau * t) -> M(e * t)               if Q -> [B1, tau -> e, B2], t is tail started with dispatch
 --         M(e) -> ⊥                              otherwise
 morph :: Morphed -> DataizeContext -> IO Morphed
-morph (ExTermination, seq) _ = pure (ExTermination, leadsTo seq "M(prim)" ExTermination) -- PRIM
+morph (ExTermination, seq) _ = pure (ExTermination, leadsTo seq "Mprim" ExTermination) -- PRIM
 morph (form@(ExFormation bds), seq) ctx = do
   resolved <- withTail form ctx
   case resolved of
     Just (expr, rule) -> morph (expr, leadsTo seq rule expr) ctx -- LAMBDA or PHI
-    _ -> pure (form, leadsTo seq "M(prim)" form) -- PRIM
+    _ -> pure (form, leadsTo seq "Mprim" form) -- PRIM
 morph (expr, seq) ctx = do
   resolved <- withTail expr ctx
   case resolved of

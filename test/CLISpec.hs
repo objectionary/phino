@@ -557,7 +557,7 @@ spec = do
                 "  \\leadsto \\Big\\{[[ |x| -> [[ D> 01-, |y| -> ? ]]( |y| -> [[]] ) ]].|x|\\Big\\} \\leadsto_{\\nameref{r:copy}}",
                 "  \\leadsto \\Big\\{[[ |x| -> [[ D> 01-, |y| -> [[]] ]] ]].|x|\\Big\\} \\leadsto_{\\nameref{r:dot}}",
                 "  \\leadsto \\Big\\{[[ D> 01-, |y| -> [[]] ]]( ^ -> [[ |x| -> [[ D> 01-, |y| -> [[]] ]] ]] )\\Big\\} \\leadsto_{\\nameref{r:copy}}",
-                "  \\leadsto \\Big\\{[[ D> 01-, |y| -> [[]], ^ -> [[ |x| -> [[ D> 01-, |y| -> [[]] ]] ]] ]]\\Big\\} \\leadsto_{\\nameref{r:M(prim)}}",
+                "  \\leadsto \\Big\\{[[ D> 01-, |y| -> [[]], ^ -> [[ |x| -> [[ D> 01-, |y| -> [[]] ]] ]] ]]\\Big\\} \\leadsto_{\\nameref{r:Mprim}}",
                 "  \\leadsto \\Big\\{[[ D> 01-, |y| -> [[]], ^ -> [[ |x| -> [[ D> 01-, |y| -> [[]] ]] ]] ]]\\Big\\}.",
                 "\\end{phiquation}",
                 "01-"
