@@ -25,9 +25,9 @@ import Data.Version (showVersion)
 import Dataize (DataizeContext (DataizeContext), dataize)
 import Deps (SaveStepFunc, saveStep)
 import Encoding (Encoding (ASCII, UNICODE))
+import qualified Filter as F
 import Functions (buildTerm)
 import qualified Functions
-import qualified Hide as H
 import LaTeX (LatexContext (LatexContext), explainRules, programToLaTeX, rewrittensToLatex)
 import Lining (LineFormat (MULTILINE, SINGLELINE))
 import Logger
@@ -101,6 +101,7 @@ data OptsDataize = OptsDataize
     maxDepth :: Integer,
     maxCycles :: Integer,
     hide :: [String],
+    show' :: [String],
     expression :: Maybe String,
     label :: Maybe String,
     stepsDir :: Maybe FilePath,
@@ -137,6 +138,7 @@ data OptsRewrite = OptsRewrite
     maxCycles :: Integer,
     rules :: [FilePath],
     hide :: [String],
+    show' :: [String],
     expression :: Maybe String,
     label :: Maybe String,
     targetFile :: Maybe FilePath,
@@ -252,6 +254,19 @@ optLabel = optional (strOption (long "label" <> metavar "NAME" <> help "Name for
 optHide :: Parser [String]
 optHide = many (strOption (long "hide" <> metavar "FQN" <> help "Location of object to exclude from result and intermediate programs after rewriting. Must be a valid dispatch expression; e.g. Q.org.eolang"))
 
+optShow :: Parser [String]
+optShow =
+  many
+    ( strOption
+        ( long "show"
+            <> metavar "FQN"
+            <> help
+              "Location of object to include to result and intermediate programs after rewriting. \
+              \Must be a valid dispatch expression; e.g. Q.org.eolang. \
+              \Can throw exception if shown parts of programs can't be merged together"
+        )
+    )
+
 optNormalize :: Parser Bool
 optNormalize = switch (long "normalize" <> help "Use built-in normalization rules")
 
@@ -316,6 +331,7 @@ dataizeParser =
             <*> optMaxDepth
             <*> optMaxCycles
             <*> optHide
+            <*> optShow
             <*> optExpression
             <*> optLabel
             <*> optStepsDir
@@ -353,6 +369,7 @@ rewriteParser =
             <*> optMaxCycles
             <*> optRule
             <*> optHide
+            <*> optShow
             <*> optExpression
             <*> optLabel
             <*> optTarget
@@ -432,7 +449,8 @@ runCLI args = handle handler $ do
   case cmd of
     CmdRewrite OptsRewrite {..} -> do
       validateOpts
-      exclude <- expressionsToHide hide
+      exclude <- expressionsToFilter "hide" hide
+      include <- expressionsToFilter "show" show'
       logDebug (printf "Amount of rewriting cycles across all the rules: %d, per rule: %d" maxCycles maxDepth)
       input <- readInput inputFile
       rules' <- getRules normalize shuffle rules
@@ -440,9 +458,10 @@ runCLI args = handle handler $ do
       let listing = if null rules' then const input else (\prog -> P.printProgram' prog (sugarType, UNICODE, flat))
           xmirCtx = XmirContext omitListing omitComments listing
           printCtx = PrintProgCtx sugarType flat xmirCtx nonumber expression label outputFormat
-          canonize' = if canonize then C.canonize else id
-          hide' = (`H.hide` exclude)
-      rewrittens <- rewrite' program rules' (context printCtx) <&> hide' . canonize'
+          _canonize = if canonize then C.canonize else id
+          _hide = (`F.hide` exclude)
+          _show = (`F.show` include)
+      rewrittens <- rewrite' program rules' (context printCtx) >>= _show <&> _canonize . _hide
       let rewrittens' = if sequence then rewrittens else [last rewrittens]
       logDebug (printf "Printing rewritten 𝜑-program as %s" (show outputFormat))
       progs <- printRewrittens printCtx rewrittens'
@@ -483,7 +502,8 @@ runCLI args = handle handler $ do
             (saveStepFunc stepsDir ctx)
     CmdDataize OptsDataize {..} -> do
       validateOpts
-      exclude <- expressionsToHide hide
+      exclude <- expressionsToFilter "hide" hide
+      include <- expressionsToFilter "show" show'
       input <- readInput inputFile
       prog <- parseProgram input inputFormat
       let printCtx = PrintProgCtx sugarType flat defaultXmirContext nonumber expression label outputFormat
@@ -558,20 +578,22 @@ saveStepFunc stepsDir ctx@PrintProgCtx {..} = saveStep stepsDir ioToExt (printPr
       | otherwise = show outputFormat
 
 -- Get list of expressions which must be hidden in printed programs
-expressionsToHide :: [String] -> IO [Expression]
-expressionsToHide = traverse (parseExpressionThrows >=> canBeHidden)
+expressionsToFilter :: String -> [String] -> IO [Expression]
+expressionsToFilter opt = traverse (parseExpressionThrows >=> asFilter)
   where
-    canBeHidden :: Expression -> IO Expression
-    canBeHidden expr = canBeHidden' expr expr
-    canBeHidden' :: Expression -> Expression -> IO Expression
-    canBeHidden' exp@(ExDispatch ExGlobal _) _ = pure exp
-    canBeHidden' exp@(ExDispatch expr attr) full = canBeHidden' expr full >> pure exp
-    canBeHidden' _ full =
-      invalidCLIArguments
-        ( printf
-            "Only dispatch expression started with Φ (or Q) can be used in --hide, but given: %s"
-            (P.printExpression' full P.logPrintConfig)
-        )
+    asFilter :: Expression -> IO Expression
+    asFilter expr = asFilter' expr
+      where
+        asFilter' :: Expression -> IO Expression
+        asFilter' exp@(ExDispatch ExGlobal _) = pure exp
+        asFilter' exp@(ExDispatch expr attr) = asFilter' expr >> pure exp
+        asFilter' _ =
+          invalidCLIArguments
+            ( printf
+                "Only dispatch expression started with Φ (or Q) can be used in --%s, but given: %s"
+                opt
+                (P.printExpression' expr P.logPrintConfig)
+            )
 
 -- Validate LaTeX options
 validateLatexOptions :: IOFormat -> Bool -> Maybe String -> Maybe String -> IO ()

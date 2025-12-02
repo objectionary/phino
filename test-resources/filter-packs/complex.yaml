@@ -5,5 +5,6 @@ program: |
   {[[
     org -> [[ eolang -> [[ number -> [[]], bytes -> [[ ]] ]] ]], some -> Q
   ]]}
-hidden: 'Q.org'
+hidden: ['Q.org']
+shown: []
 result: '{[[ some -> Q ]]}'

@@ -3,5 +3,6 @@
 # yamllint disable rule:line-length
 ---
 program: '{[[ t -> [[ xi🌵 -> ?, q -> ?, a -> ?, x -> [[ ]], k -> [[ xi🌵 -> ? ]] ]] ]]}'
-hidden: 'Q.t.k.xi🌵'
+hidden: ['Q.t.k.xi🌵']
+shown: []
 result: '{[[ t -> [[ xi🌵 -> ?, q -> ?, a -> ?, x -> [[ ]], k -> [[ ]] ]] ]]}'

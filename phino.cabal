@@ -41,8 +41,8 @@ library
     Dataize
     Deps
     Encoding
+    Filter
     Functions
-    Hide
     LaTeX
     Lining
     Logger
@@ -117,8 +117,8 @@ test-suite spec
     ConditionSpec
     CSTSpec
     DataizeSpec
+    FilterSpec
     FunctionsSpec
-    HideSpec
     MatcherSpec
     MergeSpec
     MiscSpec

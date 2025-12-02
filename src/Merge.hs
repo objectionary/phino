@@ -59,7 +59,7 @@ merge' (prog@(Program (ExFormation bds)) : rest) = do
   Program (ExFormation bds') <- merge' rest
   merged <- mergeBindings bds' bds
   pure (Program (ExFormation merged))
-merge' (prog : rest) = throwIO (WrongProgramFormat prog)
+merge' (prog : _) = throwIO (WrongProgramFormat prog)
 
 merge :: [Program] -> IO Program
 merge progs = merge' (reverse progs)
