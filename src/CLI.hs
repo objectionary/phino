@@ -14,7 +14,7 @@ import qualified Canonizer as C
 import Condition (parseConditionThrows)
 import Control.Exception (Exception (displayException), SomeException, handle, throw, throwIO)
 import Control.Exception.Base
-import Control.Monad (when, (>=>), unless)
+import Control.Monad (unless, when, (>=>))
 import Data.Char (toLower, toUpper)
 import Data.Foldable (for_)
 import qualified Data.Foldable
