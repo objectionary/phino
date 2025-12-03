@@ -170,92 +170,92 @@ programToXMIR prog@(Program expr@(ExFormation [BiTau (AtLabel _) arg, BiVoid AtR
   ExDispatch _ _ -> programToXMIR'
   ExGlobal -> programToXMIR'
   _ -> throwIO (UnsupportedProgram prog)
- where
-  programToXMIR' :: IO Document
-  programToXMIR' = do
-    (pckg, expr') <- getPackage expr
-    root <- rootExpression expr' ctx
-    now <- getCurrentTime
-    let text = listing prog
-        listingContent =
-          if omitListing
-            then show (length (lines text)) ++ " line(s)"
-            else text
-        listing' = NodeElement (element "listing" [] [NodeContent (T.pack listingContent)])
-        metas = metasWithPackage (intercalate "." pckg)
-    pure
-      ( Document
-          (Prologue [] Nothing [])
-          ( element
-              "object"
-              [ ("dob", formatTime defaultTimeLocale "%Y-%m-%dT%H:%M:%S" now)
-              , ("ms", "0")
-              , ("revision", "1234567")
-              , ("time", time now)
-              , ("version", showVersion version)
-              , ("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance")
-              , ("xsi:noNamespaceSchemaLocation", "https://raw.githubusercontent.com/objectionary/eo/refs/heads/gh-pages/XMIR.xsd")
-              ]
-              ( if null pckg
-                  then [listing', root]
-                  else [listing', metas, root]
-              )
-          )
-          []
-      )
-  -- Extract package from given expression
-  -- The function returns tuple (X, Y), where
-  -- - X: list of package parts
-  -- - Y: root object expression
-  getPackage :: Expression -> IO ([String], Expression)
-  getPackage (ExFormation [BiTau (AtLabel label) (ExFormation [bd, BiLambda "Package", BiVoid AtRho]), BiVoid AtRho]) = do
-    (pckg, expr') <- getPackage (ExFormation [bd, BiLambda "Package", BiVoid AtRho])
-    pure (label : pckg, expr')
-  getPackage (ExFormation [BiTau (AtLabel label) (ExFormation [bd, BiLambda "Package", BiVoid AtRho]), BiLambda "Package", BiVoid AtRho]) = do
-    (pckg, expr') <- getPackage (ExFormation [bd, BiLambda "Package", BiVoid AtRho])
-    pure (label : pckg, expr')
-  getPackage (ExFormation [BiTau attr expr, BiLambda "Package", BiVoid AtRho]) = pure ([], ExFormation [BiTau attr expr, BiVoid AtRho])
-  getPackage (ExFormation [bd, BiVoid AtRho]) = pure ([], ExFormation [bd, BiVoid AtRho])
-  getPackage expr = throwIO (userError (printf "Can't extract package from given expression:\n %s" (printExpression expr)))
-  -- Convert root Expression to Node
-  rootExpression :: Expression -> XmirContext -> IO Node
-  rootExpression (ExFormation [bd, BiVoid AtRho]) ctx = do
-    [bd'] <- nestedBindings [bd] ctx
-    pure bd'
-  rootExpression expr _ = throwIO (UnsupportedExpression expr)
-  -- Returns metas Node with package:
-  -- <metas>
-  --   <meta>
-  --     <head>package</head>
-  --     <tail><!-- package here --></tail>
-  --     <part><!-- package here --></part>
-  --   </meta>
-  -- </metas>
-  metasWithPackage :: String -> Node
-  metasWithPackage pckg =
-    NodeElement
-      ( element
-          "metas"
-          []
-          [ NodeElement
-              ( element
-                  "meta"
-                  []
-                  [ NodeElement (element "head" [] [NodeContent (T.pack "package")])
-                  , NodeElement (element "tail" [] [NodeContent (T.pack pckg)])
-                  , NodeElement (element "part" [] [NodeContent (T.pack pckg)])
-                  ]
-              )
-          ]
-      )
-  time :: UTCTime -> String
-  time now = do
-    let base = formatTime defaultTimeLocale "%Y-%m-%dT%H:%M:%S" now
-        posix = utcTimeToPOSIXSeconds now
-        fractional :: Double
-        fractional = realToFrac posix - fromInteger (floor posix)
-        nanos = floor (fractional * 1_000_000_000) :: Int
-    base ++ "." ++ printf "%09d" nanos ++ "Z"
+  where
+    programToXMIR' :: IO Document
+    programToXMIR' = do
+      (pckg, expr') <- getPackage expr
+      root <- rootExpression expr' ctx
+      now <- getCurrentTime
+      let text = listing prog
+          listingContent =
+            if omitListing
+              then show (length (lines text)) ++ " line(s)"
+              else text
+          listing' = NodeElement (element "listing" [] [NodeContent (T.pack listingContent)])
+          metas = metasWithPackage (intercalate "." pckg)
+      pure
+        ( Document
+            (Prologue [] Nothing [])
+            ( element
+                "object"
+                [ ("dob", formatTime defaultTimeLocale "%Y-%m-%dT%H:%M:%S" now)
+                , ("ms", "0")
+                , ("revision", "1234567")
+                , ("time", time now)
+                , ("version", showVersion version)
+                , ("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance")
+                , ("xsi:noNamespaceSchemaLocation", "https://raw.githubusercontent.com/objectionary/eo/refs/heads/gh-pages/XMIR.xsd")
+                ]
+                ( if null pckg
+                    then [listing', root]
+                    else [listing', metas, root]
+                )
+            )
+            []
+        )
+    -- Extract package from given expression
+    -- The function returns tuple (X, Y), where
+    -- - X: list of package parts
+    -- - Y: root object expression
+    getPackage :: Expression -> IO ([String], Expression)
+    getPackage (ExFormation [BiTau (AtLabel label) (ExFormation [bd, BiLambda "Package", BiVoid AtRho]), BiVoid AtRho]) = do
+      (pckg, expr') <- getPackage (ExFormation [bd, BiLambda "Package", BiVoid AtRho])
+      pure (label : pckg, expr')
+    getPackage (ExFormation [BiTau (AtLabel label) (ExFormation [bd, BiLambda "Package", BiVoid AtRho]), BiLambda "Package", BiVoid AtRho]) = do
+      (pckg, expr') <- getPackage (ExFormation [bd, BiLambda "Package", BiVoid AtRho])
+      pure (label : pckg, expr')
+    getPackage (ExFormation [BiTau attr expr, BiLambda "Package", BiVoid AtRho]) = pure ([], ExFormation [BiTau attr expr, BiVoid AtRho])
+    getPackage (ExFormation [bd, BiVoid AtRho]) = pure ([], ExFormation [bd, BiVoid AtRho])
+    getPackage expr = throwIO (userError (printf "Can't extract package from given expression:\n %s" (printExpression expr)))
+    -- Convert root Expression to Node
+    rootExpression :: Expression -> XmirContext -> IO Node
+    rootExpression (ExFormation [bd, BiVoid AtRho]) ctx = do
+      [bd'] <- nestedBindings [bd] ctx
+      pure bd'
+    rootExpression expr _ = throwIO (UnsupportedExpression expr)
+    -- Returns metas Node with package:
+    -- <metas>
+    --   <meta>
+    --     <head>package</head>
+    --     <tail><!-- package here --></tail>
+    --     <part><!-- package here --></part>
+    --   </meta>
+    -- </metas>
+    metasWithPackage :: String -> Node
+    metasWithPackage pckg =
+      NodeElement
+        ( element
+            "metas"
+            []
+            [ NodeElement
+                ( element
+                    "meta"
+                    []
+                    [ NodeElement (element "head" [] [NodeContent (T.pack "package")])
+                    , NodeElement (element "tail" [] [NodeContent (T.pack pckg)])
+                    , NodeElement (element "part" [] [NodeContent (T.pack pckg)])
+                    ]
+                )
+            ]
+        )
+    time :: UTCTime -> String
+    time now = do
+      let base = formatTime defaultTimeLocale "%Y-%m-%dT%H:%M:%S" now
+          posix = utcTimeToPOSIXSeconds now
+          fractional :: Double
+          fractional = realToFrac posix - fromInteger (floor posix)
+          nanos = floor (fractional * 1_000_000_000) :: Int
+      base ++ "." ++ printf "%09d" nanos ++ "Z"
 programToXMIR prog _ = throwIO (UnsupportedProgram prog)
 
 -- Add indentation (2 spaces per level).
@@ -304,18 +304,18 @@ printElement indentLevel (Element name attrs nodes) eol
         <> TB.fromText (nameLocalName name)
         <> TB.fromString ">"
         <> newline' eol
- where
-  attrsText =
-    mconcat
-      [ TB.fromString " " <> TB.fromText (nameLocalName k) <> TB.fromString "=\"" <> TB.fromText v <> TB.fromString "\""
-      | (k, v) <- M.toList attrs
-      ]
+  where
+    attrsText =
+      mconcat
+        [ TB.fromString " " <> TB.fromText (nameLocalName k) <> TB.fromString "=\"" <> TB.fromText v <> TB.fromString "\""
+        | (k, v) <- M.toList attrs
+        ]
 
-  isTextNode (NodeContent _) = True
-  isTextNode _ = False
+    isTextNode (NodeContent _) = True
+    isTextNode _ = False
 
-  printRawText (NodeContent t) = TB.fromText t
-  printRawText _ = mempty
+    printRawText (NodeContent t) = TB.fromText t
+    printRawText _ = mempty
 
 -- >>> printNode 0 (NodeComment (T.pack "--hello--"))
 -- "<!-- &#45;&#45;hello&#45;&#45; -->\n"
@@ -430,52 +430,52 @@ xmirToExpression cur fqn
   | otherwise = do
       bds <- mapM (`xmirToFormationBinding` fqn) (cur C.$/ C.element (toName "o")) >>= uniqueBindings'
       pure (ExFormation (withVoidRho bds))
- where
-  xmirToExpression' :: Expression -> String -> String -> C.Cursor -> [String] -> IO Expression
-  xmirToExpression' start symbol rest cur fqn =
-    if null rest
-      then throwIO (InvalidXMIRFormat (printf "The @base='%s.' is illegal in XMIR" symbol) cur)
-      else do
-        head' <-
-          foldlM
-            (\acc part -> ExDispatch acc <$> toAttr (T.unpack part) cur)
-            start
-            (T.splitOn "." (T.pack rest))
-        xmirToApplication head' (cur C.$/ C.element (toName "o")) fqn
+  where
+    xmirToExpression' :: Expression -> String -> String -> C.Cursor -> [String] -> IO Expression
+    xmirToExpression' start symbol rest cur fqn =
+      if null rest
+        then throwIO (InvalidXMIRFormat (printf "The @base='%s.' is illegal in XMIR" symbol) cur)
+        else do
+          head' <-
+            foldlM
+              (\acc part -> ExDispatch acc <$> toAttr (T.unpack part) cur)
+              start
+              (T.splitOn "." (T.pack rest))
+          xmirToApplication head' (cur C.$/ C.element (toName "o")) fqn
 
 xmirToApplication :: Expression -> [C.Cursor] -> [String] -> IO Expression
 xmirToApplication = xmirToApplication' 0
- where
-  xmirToApplication' :: Integer -> Expression -> [C.Cursor] -> [String] -> IO Expression
-  xmirToApplication' _ expr [] _ = pure expr
-  xmirToApplication' idx expr (arg : args) fqn = do
-    let app
-          | hasAttr "name" arg = throwIO (InvalidXMIRFormat "Application argument can't have @name attribute" arg)
-          | hasAttr "base" arg && hasText arg = throwIO (InvalidXMIRFormat "It's illegal in XMIR to have @base and text() at the same time" arg)
-          | not (hasAttr "base" arg) && not (hasText arg) = do
-              bds <- mapM (`xmirToFormationBinding` fqn) (arg C.$/ C.element (toName "o"))
-              as <- asToAttr arg idx
-              pure (ExApplication expr (BiTau as (ExFormation (withVoidRho bds))))
-          | not (hasAttr "base" arg) && hasText arg = do
-              as <- asToAttr arg idx
-              bytes <- getText arg
-              pure (ExApplication expr (BiTau as (ExFormation [BiDelta (bytesToBts bytes), BiVoid AtRho])))
-          | otherwise = do
-              as <- asToAttr arg idx
-              arg' <- xmirToExpression arg fqn
-              pure (ExApplication expr (BiTau as arg'))
-    app' <- app
-    xmirToApplication' (idx + 1) app' args fqn
+  where
+    xmirToApplication' :: Integer -> Expression -> [C.Cursor] -> [String] -> IO Expression
+    xmirToApplication' _ expr [] _ = pure expr
+    xmirToApplication' idx expr (arg : args) fqn = do
+      let app
+            | hasAttr "name" arg = throwIO (InvalidXMIRFormat "Application argument can't have @name attribute" arg)
+            | hasAttr "base" arg && hasText arg = throwIO (InvalidXMIRFormat "It's illegal in XMIR to have @base and text() at the same time" arg)
+            | not (hasAttr "base" arg) && not (hasText arg) = do
+                bds <- mapM (`xmirToFormationBinding` fqn) (arg C.$/ C.element (toName "o"))
+                as <- asToAttr arg idx
+                pure (ExApplication expr (BiTau as (ExFormation (withVoidRho bds))))
+            | not (hasAttr "base" arg) && hasText arg = do
+                as <- asToAttr arg idx
+                bytes <- getText arg
+                pure (ExApplication expr (BiTau as (ExFormation [BiDelta (bytesToBts bytes), BiVoid AtRho])))
+            | otherwise = do
+                as <- asToAttr arg idx
+                arg' <- xmirToExpression arg fqn
+                pure (ExApplication expr (BiTau as arg'))
+      app' <- app
+      xmirToApplication' (idx + 1) app' args fqn
 
-  asToAttr :: C.Cursor -> Integer -> IO Attribute
-  asToAttr cur idx
-    | hasAttr "as" cur = do
-        as <- getAttr "as" cur
-        attr <- toAttr as cur
-        case attr of
-          AtRho -> throwIO (InvalidXMIRFormat "The 'ρ' in @as attribute is illegal in XMIR" cur)
-          other -> pure other
-    | otherwise = pure (AtAlpha idx)
+    asToAttr :: C.Cursor -> Integer -> IO Attribute
+    asToAttr cur idx
+      | hasAttr "as" cur = do
+          as <- getAttr "as" cur
+          attr <- toAttr as cur
+          case attr of
+            AtRho -> throwIO (InvalidXMIRFormat "The 'ρ' in @as attribute is illegal in XMIR" cur)
+            other -> pure other
+      | otherwise = pure (AtAlpha idx)
 
 toAttr :: String -> C.Cursor -> IO Attribute
 toAttr attr cur = case attr of
@@ -506,10 +506,10 @@ getAttr key cur =
 
 hasText :: C.Cursor -> Bool
 hasText cur = any isNonEmptyTextNode (C.child cur)
- where
-  isNonEmptyTextNode cur' = case C.node cur' of
-    NodeContent t -> not (T.null (T.strip t)) -- strip to ignore whitespace-only
-    _ -> False
+  where
+    isNonEmptyTextNode cur' = case C.node cur' of
+      NodeContent t -> not (T.null (T.strip t)) -- strip to ignore whitespace-only
+      _ -> False
 
 getText :: C.Cursor -> IO String
 getText cur =

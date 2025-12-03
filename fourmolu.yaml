@@ -7,7 +7,7 @@ column-limit: none
 function-arrows: trailing
 comma-style: leading
 import-export-style: leading
-indent-wheres: false
+indent-wheres: true
 record-brace-space: false
 newlines-between-decls: 1
 

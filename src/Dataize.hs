@@ -84,12 +84,12 @@ phiDispatch :: String -> Expression -> Maybe (Expression, String)
 phiDispatch tau expr = case expr of
   ExFormation bds -> boundExpr bds
   _ -> Nothing
- where
-  boundExpr :: [Binding] -> Maybe (Expression, String)
-  boundExpr [] = Nothing
-  boundExpr (bd : bds) = case bd of
-    BiTau (AtLabel attr) expr' -> if attr == tau then Just (expr', "Mphi") else boundExpr bds
-    _ -> boundExpr bds
+  where
+    boundExpr :: [Binding] -> Maybe (Expression, String)
+    boundExpr [] = Nothing
+    boundExpr (bd : bds) = case bd of
+      BiTau (AtLabel attr) expr' -> if attr == tau then Just (expr', "Mphi") else boundExpr bds
+      _ -> boundExpr bds
 
 -- Resolve tail PHI and LAMBDA Morphing rules.
 -- Tail MUST start with dispatch, that's why most of the applications return Nothing

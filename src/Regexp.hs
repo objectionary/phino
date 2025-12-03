@@ -43,20 +43,20 @@ extractGroups regex input = do
 
 substituteGroups :: B.ByteString -> [B.ByteString] -> B.ByteString
 substituteGroups rep groups = B.concat (go (B.unpack rep))
- where
-  go [] = []
-  go ('$' : rest) =
-    let (digits, afterDigits) = span isDigit rest
-     in if null digits
-          then B.singleton '$' : go rest
-          else
-            let idx = read digits
-                val = fromMaybe (B.pack ('$' : digits)) (safeIndex idx groups)
-             in val : go afterDigits
-  go (c : rest) = B.singleton c : go rest
-  safeIndex i xs
-    | i >= 0 && i < length xs = Just (xs !! i)
-    | otherwise = Nothing
+  where
+    go [] = []
+    go ('$' : rest) =
+      let (digits, afterDigits) = span isDigit rest
+       in if null digits
+            then B.singleton '$' : go rest
+            else
+              let idx = read digits
+                  val = fromMaybe (B.pack ('$' : digits)) (safeIndex idx groups)
+               in val : go afterDigits
+    go (c : rest) = B.singleton c : go rest
+    safeIndex i xs
+      | i >= 0 && i < length xs = Just (xs !! i)
+      | otherwise = Nothing
 
 replaceFirst :: R.Regex -> B.ByteString -> B.ByteString -> IO B.ByteString
 replaceFirst regex rep input = do
@@ -74,16 +74,16 @@ replaceFirst regex rep input = do
 
 replaceAll :: R.Regex -> B.ByteString -> B.ByteString -> IO B.ByteString
 replaceAll regex rep input = go input B.empty
- where
-  go bs acc = do
-    result <- R.execute regex bs
-    case result of
-      Left _ -> return $ B.append acc bs
-      Right Nothing -> return $ B.append acc bs
-      Right (Just arr) -> do
-        let (off, len) = arr ! 0
-            (before, rest1) = B.splitAt off bs
-            (_, rest2) = B.splitAt len rest1
-        groups <- extractGroups regex bs
-        let replacement = substituteGroups rep groups
-        go rest2 (B.concat [acc, before, replacement])
+  where
+    go bs acc = do
+      result <- R.execute regex bs
+      case result of
+        Left _ -> return $ B.append acc bs
+        Right Nothing -> return $ B.append acc bs
+        Right (Just arr) -> do
+          let (off, len) = arr ! 0
+              (before, rest1) = B.splitAt off bs
+              (_, rest2) = B.splitAt len rest1
+          groups <- extractGroups regex bs
+          let replacement = substituteGroups rep groups
+          go rest2 (B.concat [acc, before, replacement])

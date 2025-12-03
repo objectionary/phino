@@ -23,12 +23,12 @@ bdWithVoidRho BI_EMPTY{..} = BI_PAIR voidRho (BDS_EMPTY tab) tab
 bdWithVoidRho bd@BI_PAIR{pair = PA_VOID{attr = AT_RHO _}} = bd
 bdWithVoidRho bd@BI_PAIR{pair = PA_TAU{attr = AT_RHO _}} = bd
 bdWithVoidRho BI_PAIR{..} = BI_PAIR pair (bdsWithVoidRho bindings) tab
- where
-  bdsWithVoidRho :: BINDINGS -> BINDINGS
-  bdsWithVoidRho BDS_EMPTY{..} = BDS_PAIR EOL tab voidRho (BDS_EMPTY tab)
-  bdsWithVoidRho bds@BDS_PAIR{pair = PA_VOID{attr = AT_RHO _}} = bds
-  bdsWithVoidRho bds@BDS_PAIR{pair = PA_TAU{attr = AT_RHO _}} = bds
-  bdsWithVoidRho BDS_PAIR{..} = BDS_PAIR eol tab pair (bdsWithVoidRho bindings)
+  where
+    bdsWithVoidRho :: BINDINGS -> BINDINGS
+    bdsWithVoidRho BDS_EMPTY{..} = BDS_PAIR EOL tab voidRho (BDS_EMPTY tab)
+    bdsWithVoidRho bds@BDS_PAIR{pair = PA_VOID{attr = AT_RHO _}} = bds
+    bdsWithVoidRho bds@BDS_PAIR{pair = PA_TAU{attr = AT_RHO _}} = bds
+    bdsWithVoidRho BDS_PAIR{..} = BDS_PAIR eol tab pair (bdsWithVoidRho bindings)
 
 data SugarType = SWEET | SALTY
   deriving (Eq, Show)
@@ -67,25 +67,25 @@ instance ToSalty EXPRESSION where
       toApplication
       expr
       (tauToPairs taus)
-   where
-    toApplication :: EXPRESSION -> PAIR -> EXPRESSION
-    toApplication exp pair =
-      EX_APPLICATION (toSalty exp) EOL (TAB indent) (APP_BINDING (toSalty pair)) EOL (TAB (indent - 1)) indent
-    tauToPairs :: BINDING -> [PAIR]
-    tauToPairs BI_PAIR{..} = pair : tausToPairs bindings
-    tausToPairs :: BINDINGS -> [PAIR]
-    tausToPairs BDS_EMPTY{..} = []
-    tausToPairs BDS_PAIR{..} = pair : tausToPairs bindings
+    where
+      toApplication :: EXPRESSION -> PAIR -> EXPRESSION
+      toApplication exp pair =
+        EX_APPLICATION (toSalty exp) EOL (TAB indent) (APP_BINDING (toSalty pair)) EOL (TAB (indent - 1)) indent
+      tauToPairs :: BINDING -> [PAIR]
+      tauToPairs BI_PAIR{..} = pair : tausToPairs bindings
+      tausToPairs :: BINDINGS -> [PAIR]
+      tausToPairs BDS_EMPTY{..} = []
+      tausToPairs BDS_PAIR{..} = pair : tausToPairs bindings
   toSalty EX_APPLICATION_EXPRS{..} = toSalty (EX_APPLICATION_TAUS expr EOL (TAB indent) (argToBinding args tab) EOL (TAB (indent - 1)) indent)
-   where
-    argToBinding :: APP_ARG -> TAB -> BINDING
-    argToBinding APP_ARG{..} =
-      BI_PAIR
-        (PA_TAU (AT_ALPHA ALPHA 0) ARROW expr)
-        (argsToBindings args 1 tab)
-    argsToBindings :: APP_ARGS -> Integer -> TAB -> BINDINGS
-    argsToBindings AAS_EMPTY _ tab = BDS_EMPTY tab
-    argsToBindings AAS_EXPR{..} idx tb = BDS_PAIR eol tb (PA_TAU (AT_ALPHA ALPHA idx) ARROW expr) (argsToBindings args (idx + 1) tb)
+    where
+      argToBinding :: APP_ARG -> TAB -> BINDING
+      argToBinding APP_ARG{..} =
+        BI_PAIR
+          (PA_TAU (AT_ALPHA ALPHA 0) ARROW expr)
+          (argsToBindings args 1 tab)
+      argsToBindings :: APP_ARGS -> Integer -> TAB -> BINDINGS
+      argsToBindings AAS_EMPTY _ tab = BDS_EMPTY tab
+      argsToBindings AAS_EXPR{..} idx tb = BDS_PAIR eol tb (PA_TAU (AT_ALPHA ALPHA idx) ARROW expr) (argsToBindings args (idx + 1) tb)
   toSalty EX_NUMBER{num, tab = tab@TAB{..}, rhos} =
     saltifyPrimitive
       (toCST (BaseObject "number") (indent + 1) EOL)
@@ -147,12 +147,12 @@ instance ToSalty PAIR where
   toSalty PA_TAU{..} = PA_TAU attr arrow (toSalty expr)
   toSalty PA_FORMATION{voids, attr, arrow, expr = expr@EX_FORMATION{..}} =
     PA_TAU attr arrow (toSalty (EX_FORMATION lsb eol tab (joinToBinding voids binding) eol' tab' rsb))
-   where
-    joinToBinding :: [ATTRIBUTE] -> BINDING -> BINDING
-    joinToBinding [] bd = bd
-    joinToBinding (attr : rest) bd = BI_PAIR (PA_VOID attr arrow EMPTY) (joinToBindings rest bd) tab
-    joinToBindings :: [ATTRIBUTE] -> BINDING -> BINDINGS
-    joinToBindings [] BI_EMPTY{..} = BDS_EMPTY tab
-    joinToBindings [] BI_PAIR{..} = BDS_PAIR eol tab pair bindings
-    joinToBindings (attr : rest) bd = BDS_PAIR eol tab (PA_VOID attr arrow EMPTY) (joinToBindings rest bd)
+    where
+      joinToBinding :: [ATTRIBUTE] -> BINDING -> BINDING
+      joinToBinding [] bd = bd
+      joinToBinding (attr : rest) bd = BI_PAIR (PA_VOID attr arrow EMPTY) (joinToBindings rest bd) tab
+      joinToBindings :: [ATTRIBUTE] -> BINDING -> BINDINGS
+      joinToBindings [] BI_EMPTY{..} = BDS_EMPTY tab
+      joinToBindings [] BI_PAIR{..} = BDS_PAIR eol tab pair bindings
+      joinToBindings (attr : rest) bd = BDS_PAIR eol tab (PA_VOID attr arrow EMPTY) (joinToBindings rest bd)
   toSalty pair = pair

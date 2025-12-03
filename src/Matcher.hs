@@ -50,19 +50,19 @@ defaultScope = ExFormation [BiVoid AtRho]
 -- Fails if values by the same keys are not equal
 combine :: Subst -> Subst -> Maybe Subst
 combine (Subst a) (Subst b) = combine' (Map.toList b) a
- where
-  combine' :: [(String, MetaValue)] -> Map String MetaValue -> Maybe Subst
-  combine' [] acc = Just (Subst acc)
-  combine' ((key, MvExpression tgt scope) : rest) acc = case Map.lookup key acc of
-    Just (MvExpression expr _)
-      | expr == tgt -> combine' rest acc
-      | otherwise -> Nothing
-    Nothing -> combine' rest (Map.insert key (MvExpression tgt scope) acc)
-  combine' ((key, value) : rest) acc = case Map.lookup key acc of
-    Just found
-      | found == value -> combine' rest acc
-      | otherwise -> Nothing
-    Nothing -> combine' rest (Map.insert key value acc)
+  where
+    combine' :: [(String, MetaValue)] -> Map String MetaValue -> Maybe Subst
+    combine' [] acc = Just (Subst acc)
+    combine' ((key, MvExpression tgt scope) : rest) acc = case Map.lookup key acc of
+      Just (MvExpression expr _)
+        | expr == tgt -> combine' rest acc
+        | otherwise -> Nothing
+      Nothing -> combine' rest (Map.insert key (MvExpression tgt scope) acc)
+    combine' ((key, value) : rest) acc = case Map.lookup key acc of
+      Just found
+        | found == value -> combine' rest acc
+        | otherwise -> Nothing
+      Nothing -> combine' rest (Map.insert key value acc)
 
 combineMany :: [Subst] -> [Subst] -> [Subst]
 combineMany xs xy = catMaybes [combine x y | x <- xs, y <- xy]
@@ -108,25 +108,25 @@ tailExpressions :: Expression -> Expression -> Expression -> ([Subst], [Tail])
 tailExpressions ptn tgt scope = case tailExpressionsReversed ptn tgt of
   Just (substs, tails) -> (substs, reverse tails)
   _ -> ([], [])
- where
-  tailExpressionsReversed :: Expression -> Expression -> Maybe ([Subst], [Tail])
-  tailExpressionsReversed ptn' tgt' = case matchExpression ptn' tgt' scope of
-    [] -> case tgt' of
-      ExDispatch expr attr -> do
-        (substs, tails) <- tailExpressionsReversed ptn' expr
-        Just (substs, TaDispatch attr : tails)
-      ExApplication expr tau -> do
-        (substs, tails) <- tailExpressionsReversed ptn' expr
-        if not (null tails) && isDispatch (head tails)
-          then Just (substs, TaApplication tau : tails)
-          else Nothing
-       where
-        isDispatch :: Tail -> Bool
-        isDispatch = \case
-          TaDispatch _ -> True
-          TaApplication _ -> False
-      _ -> Just ([], [])
-    substs -> Just (substs, [])
+  where
+    tailExpressionsReversed :: Expression -> Expression -> Maybe ([Subst], [Tail])
+    tailExpressionsReversed ptn' tgt' = case matchExpression ptn' tgt' scope of
+      [] -> case tgt' of
+        ExDispatch expr attr -> do
+          (substs, tails) <- tailExpressionsReversed ptn' expr
+          Just (substs, TaDispatch attr : tails)
+        ExApplication expr tau -> do
+          (substs, tails) <- tailExpressionsReversed ptn' expr
+          if not (null tails) && isDispatch (head tails)
+            then Just (substs, TaApplication tau : tails)
+            else Nothing
+          where
+            isDispatch :: Tail -> Bool
+            isDispatch = \case
+              TaDispatch _ -> True
+              TaApplication _ -> False
+        _ -> Just ([], [])
+      substs -> Just (substs, [])
 
 matchExpression :: Expression -> Expression -> Expression -> [Subst]
 matchExpression (ExMeta meta) tgt scope = [substSingle meta (MvExpression tgt scope)]

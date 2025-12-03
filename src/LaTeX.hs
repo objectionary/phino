@@ -119,15 +119,15 @@ instance ToLaTeX APP_ARGS where
 
 instance ToLaTeX String where
   toLaTeX = escapeUnprintedChars
-   where
-    escapeUnprintedChars :: String -> String
-    escapeUnprintedChars [] = []
-    escapeUnprintedChars (ch : rest) = case ch of
-      '$' -> "\\char36{}" <> escapeUnprintedChars rest
-      '@' -> "\\char64{}" <> escapeUnprintedChars rest
-      '^' -> "\\char94{}" <> escapeUnprintedChars rest
-      '_' -> "\\char95{}" <> escapeUnprintedChars rest
-      _ -> ch : escapeUnprintedChars rest
+    where
+      escapeUnprintedChars :: String -> String
+      escapeUnprintedChars [] = []
+      escapeUnprintedChars (ch : rest) = case ch of
+        '$' -> "\\char36{}" <> escapeUnprintedChars rest
+        '@' -> "\\char64{}" <> escapeUnprintedChars rest
+        '^' -> "\\char94{}" <> escapeUnprintedChars rest
+        '_' -> "\\char95{}" <> escapeUnprintedChars rest
+        _ -> ch : escapeUnprintedChars rest
 
 -- @todo #114:30min Implement LaTeX conversion for rules.
 --  Convert Rule data structure to LaTeX inference rule format.

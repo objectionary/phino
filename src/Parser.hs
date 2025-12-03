@@ -137,10 +137,10 @@ byte = do
   f <- hexDigitChar >>= upperHex
   s <- hexDigitChar >>= upperHex
   return [f, s]
- where
-  upperHex ch
-    | isDigit ch || ('A' <= ch && ch <= 'F') = return ch
-    | otherwise = fail ("expected 0-9 or A-F, got " ++ show ch)
+  where
+    upperHex ch
+      | isDigit ch || ('A' <= ch && ch <= 'F') = return ch
+      | otherwise = fail ("expected 0-9 or A-F, got " ++ show ch)
 
 -- bytes
 -- 0. meta: !b
@@ -185,54 +185,54 @@ number = do
 
 quotedStr :: Parser String
 quotedStr = char '"' >> manyTill (choice [escapedChar, noneOf ['\\', '"']]) (char '"')
- where
-  escapedChar :: Parser Char
-  escapedChar = do
-    _ <- char '\\'
-    c <- oneOf ['\\', '"', 'n', 'r', 't', 'b', 'f', 'u', 'x']
-    case c of
-      '\\' -> return '\\'
-      '"' -> return '"'
-      'n' -> return '\n'
-      'r' -> return '\r'
-      't' -> return '\t'
-      'b' -> return '\b'
-      'f' -> return '\f'
-      'u' -> unicodeEscape
-      'x' -> hexEscape
-      _ -> fail ("Unknown escape: \\" ++ [c])
-  unicodeEscape :: Parser Char
-  unicodeEscape = do
-    hexDigits <- count 4 hexDigitChar
-    case readHex hexDigits of
-      [(n, "")] ->
-        if n >= 0xD800 && n <= 0xDBFF
-          then -- High surrogate, look for low surrogate
-            do
-              _ <- string "\\u"
-              lowHexDigits <- count 4 hexDigitChar
-              case readHex lowHexDigits of
-                [(low, "")] ->
-                  if low >= 0xDC00 && low <= 0xDFFF
-                    then do
-                      -- Valid surrogate pair, combine them
-                      let codePoint = 0x10000 + ((n - 0xD800) * 0x400) + (low - 0xDC00)
-                      return (chr codePoint)
-                    else fail ("Invalid low surrogate: \\u" ++ lowHexDigits)
-                _ -> fail ("Invalid low surrogate hex: \\u" ++ lowHexDigits)
-          else
-            if n >= 0xDC00 && n <= 0xDFFF
-              then fail ("Unexpected low surrogate: \\u" ++ hexDigits)
-              else
-                if n >= 0 && n <= 0x10FFFF
-                  then return (chr n)
-                  else fail ("Invalid Unicode code point: \\u" ++ hexDigits)
-  hexEscape :: Parser Char
-  hexEscape = do
-    digits <- count 2 hexDigitChar
-    case readHex digits of
-      [(n, "")] -> return (chr n)
-      _ -> fail ("Invalid hex escape: \\x" ++ digits)
+  where
+    escapedChar :: Parser Char
+    escapedChar = do
+      _ <- char '\\'
+      c <- oneOf ['\\', '"', 'n', 'r', 't', 'b', 'f', 'u', 'x']
+      case c of
+        '\\' -> return '\\'
+        '"' -> return '"'
+        'n' -> return '\n'
+        'r' -> return '\r'
+        't' -> return '\t'
+        'b' -> return '\b'
+        'f' -> return '\f'
+        'u' -> unicodeEscape
+        'x' -> hexEscape
+        _ -> fail ("Unknown escape: \\" ++ [c])
+    unicodeEscape :: Parser Char
+    unicodeEscape = do
+      hexDigits <- count 4 hexDigitChar
+      case readHex hexDigits of
+        [(n, "")] ->
+          if n >= 0xD800 && n <= 0xDBFF
+            then -- High surrogate, look for low surrogate
+              do
+                _ <- string "\\u"
+                lowHexDigits <- count 4 hexDigitChar
+                case readHex lowHexDigits of
+                  [(low, "")] ->
+                    if low >= 0xDC00 && low <= 0xDFFF
+                      then do
+                        -- Valid surrogate pair, combine them
+                        let codePoint = 0x10000 + ((n - 0xD800) * 0x400) + (low - 0xDC00)
+                        return (chr codePoint)
+                      else fail ("Invalid low surrogate: \\u" ++ lowHexDigits)
+                  _ -> fail ("Invalid low surrogate hex: \\u" ++ lowHexDigits)
+            else
+              if n >= 0xDC00 && n <= 0xDFFF
+                then fail ("Unexpected low surrogate: \\u" ++ hexDigits)
+                else
+                  if n >= 0 && n <= 0x10FFFF
+                    then return (chr n)
+                    else fail ("Invalid Unicode code point: \\u" ++ hexDigits)
+    hexEscape :: Parser Char
+    hexEscape = do
+      digits <- count 2 hexDigitChar
+      case readHex digits of
+        [(n, "")] -> return (chr n)
+        _ -> fail ("Invalid hex escape: \\x" ++ digits)
 
 tauBinding :: Parser Attribute -> Parser Binding
 tauBinding attr = do
@@ -255,9 +255,9 @@ tauBinding attr = do
         bds <- validatedBindings (voids ++ bs)
         return (BiTau attr' (ExFormation (withVoidRho bds)))
     ]
- where
-  rb :: Parser String
-  rb = symbol ")"
+  where
+    rb :: Parser String
+    rb = symbol ")"
 
 metaBinding :: Parser Binding
 metaBinding = BiMeta <$> meta' 'B' "𝐵"
@@ -352,9 +352,9 @@ formationBindings = do
         bs <- binding `sepBy1` symbol ","
         rsb >> return bs
     ]
- where
-  rsb :: Parser String
-  rsb = choice [symbol "]]", symbol "⟧"]
+  where
+    rsb :: Parser String
+    rsb = choice [symbol "]]", symbol "⟧"]
 
 -- head part of expression
 -- 1. formation

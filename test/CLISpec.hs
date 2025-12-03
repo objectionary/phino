@@ -33,9 +33,9 @@ withStdin input action =
         hDuplicateTo hIn stdin
         hSetEncoding stdin utf8
         action
- where
-  restoreStdin orig = hDuplicateTo orig stdin >> hClose orig
-  cleanup (fp, _) = removeFile fp
+  where
+    restoreStdin orig = hDuplicateTo orig stdin >> hClose orig
+    cleanup (fp, _) = removeFile fp
 
 withStdout :: IO a -> IO (String, a)
 withStdout action =
@@ -61,8 +61,8 @@ withStdout action =
         _ <- evaluate (length captured)
         return (captured, result)
     )
- where
-  cleanup (fp, _) = removeFile fp
+  where
+    cleanup (fp, _) = removeFile fp
 
 withTempFile :: String -> ((FilePath, Handle) -> IO a) -> IO a
 withTempFile pattern =

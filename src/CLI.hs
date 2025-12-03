@@ -184,17 +184,17 @@ optLogLevel =
         <> value INFO
         <> showDefault
     )
- where
-  parseLogLevel :: ReadM LogLevel
-  parseLogLevel = eitherReader $ \lvl -> case map toUpper lvl of
-    "DEBUG" -> Right DEBUG
-    "INFO" -> Right INFO
-    "WARNING" -> Right WARNING
-    "WARN" -> Right WARNING
-    "ERROR" -> Right ERROR
-    "ERR" -> Right ERROR
-    "NONE" -> Right NONE
-    _ -> Left $ "unknown log-level: " <> lvl
+  where
+    parseLogLevel :: ReadM LogLevel
+    parseLogLevel = eitherReader $ \lvl -> case map toUpper lvl of
+      "DEBUG" -> Right DEBUG
+      "INFO" -> Right INFO
+      "WARNING" -> Right WARNING
+      "WARN" -> Right WARNING
+      "ERROR" -> Right ERROR
+      "ERR" -> Right ERROR
+      "NONE" -> Right NONE
+      _ -> Left $ "unknown log-level: " <> lvl
 
 optLogLines :: Parser Integer
 optLogLines =
@@ -465,41 +465,41 @@ runCLI args = handle handler $ do
       logDebug (printf "Printing rewritten 𝜑-program as %s" (show outputFormat))
       progs <- printRewrittens printCtx rewrittens'
       output targetFile progs
-     where
-      validateOpts :: IO ()
-      validateOpts = do
-        when
-          (inPlace && isNothing inputFile)
-          (invalidCLIArguments "The option --in-place requires an input file")
-        when
-          (inPlace && isJust targetFile)
-          (invalidCLIArguments "The options --in-place and --target cannot be used together")
-        when (length show' > 1) (invalidCLIArguments "The option --show can be used only once")
-        validateLatexOptions outputFormat nonumber expression label
-        validateMust' must
-        validateXmirOptions outputFormat omitListing omitComments
-      output :: Maybe FilePath -> String -> IO ()
-      output target prog = case (inPlace, target, inputFile) of
-        (True, _, Just file) -> do
-          logDebug (printf "The option '--in-place' is specified, writing back to '%s'..." file)
-          writeFile file prog
-          logInfo (printf "The file '%s' was modified in-place" file)
-        (False, Just file, _) -> do
-          logDebug (printf "The option '--target' is specified, printing to '%s'..." file)
-          writeFile file prog
-          logInfo (printf "The command result was saved in '%s'" file)
-        (False, Nothing, _) -> do
-          logDebug "The option '--target' is not specified, printing to console..."
-          putStrLn prog
-      context :: PrintProgramContext -> RewriteContext
-      context ctx =
-        RewriteContext
-          maxDepth
-          maxCycles
-          depthSensitive
-          buildTerm
-          must
-          (saveStepFunc stepsDir ctx)
+      where
+        validateOpts :: IO ()
+        validateOpts = do
+          when
+            (inPlace && isNothing inputFile)
+            (invalidCLIArguments "The option --in-place requires an input file")
+          when
+            (inPlace && isJust targetFile)
+            (invalidCLIArguments "The options --in-place and --target cannot be used together")
+          when (length show' > 1) (invalidCLIArguments "The option --show can be used only once")
+          validateLatexOptions outputFormat nonumber expression label
+          validateMust' must
+          validateXmirOptions outputFormat omitListing omitComments
+        output :: Maybe FilePath -> String -> IO ()
+        output target prog = case (inPlace, target, inputFile) of
+          (True, _, Just file) -> do
+            logDebug (printf "The option '--in-place' is specified, writing back to '%s'..." file)
+            writeFile file prog
+            logInfo (printf "The file '%s' was modified in-place" file)
+          (False, Just file, _) -> do
+            logDebug (printf "The option '--target' is specified, printing to '%s'..." file)
+            writeFile file prog
+            logInfo (printf "The command result was saved in '%s'" file)
+          (False, Nothing, _) -> do
+            logDebug "The option '--target' is not specified, printing to console..."
+            putStrLn prog
+        context :: PrintProgramContext -> RewriteContext
+        context ctx =
+          RewriteContext
+            maxDepth
+            maxCycles
+            depthSensitive
+            buildTerm
+            must
+            (saveStepFunc stepsDir ctx)
     CmdDataize OptsDataize{..} -> do
       validateOpts
       excluded <- expressionsToFilter "hide" hide
@@ -512,32 +512,32 @@ runCLI args = handle handler $ do
       (maybeBytes, seq) <- dataize prog (context prog printCtx)
       when sequence (printRewrittens printCtx (_hide (_show seq)) >>= putStrLn)
       unless quiet (putStrLn (maybe (P.printExpression ExTermination) P.printBytes maybeBytes))
-     where
-      validateOpts :: IO ()
-      validateOpts = do
-        validateLatexOptions outputFormat nonumber expression label
-        validateXmirOptions outputFormat omitListing omitComments
-        when (length show' > 1) (invalidCLIArguments "The option --show can be used only once")
-      context :: Program -> PrintProgramContext -> DataizeContext
-      context program ctx =
-        DataizeContext
-          program
-          maxDepth
-          maxCycles
-          depthSensitive
-          buildTerm
-          (saveStepFunc stepsDir ctx)
+      where
+        validateOpts :: IO ()
+        validateOpts = do
+          validateLatexOptions outputFormat nonumber expression label
+          validateXmirOptions outputFormat omitListing omitComments
+          when (length show' > 1) (invalidCLIArguments "The option --show can be used only once")
+        context :: Program -> PrintProgramContext -> DataizeContext
+        context program ctx =
+          DataizeContext
+            program
+            maxDepth
+            maxCycles
+            depthSensitive
+            buildTerm
+            (saveStepFunc stepsDir ctx)
     CmdExplain OptsExplain{..} -> do
       validateOpts
       rules' <- getRules normalize shuffle rules
       let latex = explainRules rules'
       output targetFile (explainRules rules')
-     where
-      validateOpts :: IO ()
-      validateOpts =
-        when
-          (null rules && not normalize)
-          (throwIO (InvalidCLIArguments "Either --rule or --normalize must be specified"))
+      where
+        validateOpts :: IO ()
+        validateOpts =
+          when
+            (null rules && not normalize)
+            (throwIO (InvalidCLIArguments "Either --rule or --normalize must be specified"))
     CmdMerge OptsMerge{..} -> do
       validateOpts
       inputs' <- traverse (readInput . Just) inputs
@@ -548,13 +548,13 @@ runCLI args = handle handler $ do
           printProgCtx = PrintProgCtx sugarType flat xmirCtx False Nothing Nothing outputFormat
       prog' <- printProgram printProgCtx prog
       output targetFile prog'
-     where
-      validateOpts :: IO ()
-      validateOpts = do
-        when
-          (null inputs)
-          (throwIO (InvalidCLIArguments "At least one input file must be specified for 'merge' command"))
-        validateXmirOptions outputFormat omitListing omitComments
+      where
+        validateOpts :: IO ()
+        validateOpts = do
+          when
+            (null inputs)
+            (throwIO (InvalidCLIArguments "At least one input file must be specified for 'merge' command"))
+          validateXmirOptions outputFormat omitListing omitComments
     CmdMatch OptsMatch{..} -> do
       input <- readInput inputFile
       prog <- parseProgram input PHI
@@ -567,36 +567,36 @@ runCLI args = handle handler $ do
           if null substs
             then logInfo "Provided pattern was not matched, no substitutions are built"
             else putStrLn (P.printSubsts' substs (sugarType, UNICODE, flat))
-     where
-      rule :: Expression -> Maybe Y.Condition -> Y.Rule
-      rule ptn cnd = Y.Rule Nothing Nothing ptn ExGlobal cnd Nothing Nothing
+      where
+        rule :: Expression -> Maybe Y.Condition -> Y.Rule
+        rule ptn cnd = Y.Rule Nothing Nothing ptn ExGlobal cnd Nothing Nothing
 
 -- Prepare saveStepFunc
 saveStepFunc :: Maybe FilePath -> PrintProgramContext -> SaveStepFunc
 saveStepFunc stepsDir ctx@PrintProgCtx{..} = saveStep stepsDir ioToExt (printProgram ctx)
- where
-  ioToExt :: String
-  ioToExt
-    | outputFormat == LATEX = "tex"
-    | otherwise = show outputFormat
+  where
+    ioToExt :: String
+    ioToExt
+      | outputFormat == LATEX = "tex"
+      | otherwise = show outputFormat
 
 -- Get list of expressions which must be hidden in printed programs
 expressionsToFilter :: String -> [String] -> IO [Expression]
 expressionsToFilter opt = traverse (parseExpressionThrows >=> asFilter)
- where
-  asFilter :: Expression -> IO Expression
-  asFilter expr = asFilter' expr
-   where
-    asFilter' :: Expression -> IO Expression
-    asFilter' exp@(ExDispatch ExGlobal _) = pure exp
-    asFilter' exp@(ExDispatch expr attr) = asFilter' expr >> pure exp
-    asFilter' _ =
-      invalidCLIArguments
-        ( printf
-            "Only dispatch expression started with Φ (or Q) can be used in --%s, but given: %s"
-            opt
-            (P.printExpression' expr P.logPrintConfig)
-        )
+  where
+    asFilter :: Expression -> IO Expression
+    asFilter expr = asFilter' expr
+      where
+        asFilter' :: Expression -> IO Expression
+        asFilter' exp@(ExDispatch ExGlobal _) = pure exp
+        asFilter' exp@(ExDispatch expr attr) = asFilter' expr >> pure exp
+        asFilter' _ =
+          invalidCLIArguments
+            ( printf
+                "Only dispatch expression started with Φ (or Q) can be used in --%s, but given: %s"
+                opt
+                (P.printExpression' expr P.logPrintConfig)
+            )
 
 -- Validate LaTeX options
 validateLatexOptions :: IOFormat -> Bool -> Maybe String -> Maybe String -> IO ()
