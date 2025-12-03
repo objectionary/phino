@@ -11,10 +11,14 @@ module FilterSpec where
 import Control.Monad
 import Data.Aeson
 import Data.Yaml qualified as Yaml
+import Encoding (Encoding (UNICODE))
 import Filter qualified as F
 import GHC.Generics (Generic)
+import Lining (LineFormat (MULTILINE))
 import Misc
 import Parser (parseExpressionThrows, parseProgramThrows)
+import Printer (printProgram')
+import Sugar (SugarType (SALTY))
 import System.FilePath
 import Test.Hspec
 
@@ -39,9 +43,18 @@ spec =
       ( \pth -> it (makeRelative resources pth) $ do
           YamlPack {..} <- yamlPack pth
           prog <- parseProgramThrows program
-          include <- traverse parseExpressionThrows shown
-          exclude <- traverse parseExpressionThrows hidden
+          included <- traverse parseExpressionThrows shown
+          excluded <- traverse parseExpressionThrows hidden
           res <- parseProgramThrows result
-          let [(prog', _)] = F.hide (F.show [(prog, Nothing)] include) exclude
+          let [(prog', _)] = F.exclude (F.include [(prog, Nothing)] included) excluded
           prog' `shouldBe` res
+          when
+            (prog' /= res)
+            ( expectationFailure
+                ( "Expected:\n"
+                    ++ printProgram' res (SALTY, UNICODE, MULTILINE)
+                    ++ "\nbut got:\n"
+                    ++ printProgram' prog' (SALTY, UNICODE, MULTILINE)
+                )
+            )
       )

@@ -262,8 +262,7 @@ optShow =
             <> metavar "FQN"
             <> help
               "Location of object to include to result and intermediate programs after rewriting. \
-              \Must be a valid dispatch expression; e.g. Q.org.eolang. \
-              \Can throw exception if shown parts of programs can't be merged together"
+              \Must be a valid dispatch expression; e.g. Q.org.eolang. Unlike --hide, can be used only once"
         )
     )
 
@@ -449,8 +448,8 @@ runCLI args = handle handler $ do
   case cmd of
     CmdRewrite OptsRewrite {..} -> do
       validateOpts
-      exclude <- expressionsToFilter "hide" hide
-      include <- expressionsToFilter "show" show'
+      excluded <- expressionsToFilter "hide" hide
+      included <- expressionsToFilter "show" show'
       logDebug (printf "Amount of rewriting cycles across all the rules: %d, per rule: %d" maxCycles maxDepth)
       input <- readInput inputFile
       rules' <- getRules normalize shuffle rules
@@ -459,9 +458,9 @@ runCLI args = handle handler $ do
           xmirCtx = XmirContext omitListing omitComments listing
           printCtx = PrintProgCtx sugarType flat xmirCtx nonumber expression label outputFormat
           _canonize = if canonize then C.canonize else id
-          _hide = (`F.hide` exclude)
-          _show = (`F.show` include)
-      rewrittens <- rewrite' program rules' (context printCtx) >>= _show <&> _canonize . _hide
+          _hide = (`F.exclude` excluded)
+          _show = (`F.include` included)
+      rewrittens <- rewrite' program rules' (context printCtx) <&> _canonize . _hide . _show
       let rewrittens' = if sequence then rewrittens else [last rewrittens]
       logDebug (printf "Printing rewritten 𝜑-program as %s" (show outputFormat))
       progs <- printRewrittens printCtx rewrittens'
@@ -475,6 +474,7 @@ runCLI args = handle handler $ do
           when
             (inPlace && isJust targetFile)
             (invalidCLIArguments "The options --in-place and --target cannot be used together")
+          when (length show' > 1) (invalidCLIArguments "The option --show can be used only once")
           validateLatexOptions outputFormat nonumber expression label
           validateMust' must
           validateXmirOptions outputFormat omitListing omitComments
@@ -502,19 +502,22 @@ runCLI args = handle handler $ do
             (saveStepFunc stepsDir ctx)
     CmdDataize OptsDataize {..} -> do
       validateOpts
-      exclude <- expressionsToFilter "hide" hide
-      include <- expressionsToFilter "show" show'
+      excluded <- expressionsToFilter "hide" hide
+      included <- expressionsToFilter "show" show'
       input <- readInput inputFile
       prog <- parseProgram input inputFormat
       let printCtx = PrintProgCtx sugarType flat defaultXmirContext nonumber expression label outputFormat
+          _hide = (`F.exclude` excluded)
+          _show = (`F.include` included)
       (maybeBytes, seq) <- dataize prog (context prog printCtx)
-      when sequence (putStrLn =<< printRewrittens printCtx (H.hide seq exclude))
+      when sequence (printRewrittens printCtx (_hide (_show seq)) >>= putStrLn)
       unless quiet (putStrLn (maybe (P.printExpression ExTermination) P.printBytes maybeBytes))
       where
         validateOpts :: IO ()
         validateOpts = do
           validateLatexOptions outputFormat nonumber expression label
           validateXmirOptions outputFormat omitListing omitComments
+          when (length show' > 1) (invalidCLIArguments "The option --show can be used only once")
         context :: Program -> PrintProgramContext -> DataizeContext
         context program ctx =
           DataizeContext

@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 # SPDX-License-Identifier: MIT
 ---
-program: '{[[ org -> [[ eolang -> [[ number -> [[ ]], bytes -> [[ ]], string -> [[ ]] ]] ]] ]]}'
-shown: ['Q.org.eolang.number', 'Q.org.eolang.string']
-hidden: []
+program: '{[[ org -> [[ eolang -> [[ number -> [[ ]], bytes -> [[ ]], string -> [[ ]] ]] ]], xyz -> [[ ]] ]]}'
+shown: ['Q.org.eolang']
+hidden: ['Q.org.eolang.bytes', 'Q.org.eolang.string']
 result: '{[[ org -> [[ eolang -> [[ number -> [[ ]] ]] ]] ]]}'

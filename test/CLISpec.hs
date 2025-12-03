@@ -210,6 +210,18 @@ spec = do
             ["rewrite", "--hide=Q.x(Q.y)"]
             ["[ERROR]: Invalid set of arguments: Only dispatch expression", "but given: Φ.x( Φ.y )"]
 
+      it "with many --show options" $
+        withStdin "{[[]]}" $
+          testCLIFailed
+            ["rewrite", "--show=Q.x.y", "--show=hello"]
+            ["The option --show can be used only once"]
+      
+      it "with wrong --show option" $
+        withStdin "{[[]]}" $
+          testCLIFailed
+            ["rewrite", "--show=Q.x(Q.y)"]
+            ["[ERROR]:", "Only dispatch expression started with Φ (or Q) can be used in --show"]
+
     it "saves steps to dir with --steps-dir" $ do
       let dir = "test-steps-temp"
       dirExists <- doesDirectoryExist dir
@@ -501,6 +513,12 @@ spec = do
         testCLISucceeded
           ["rewrite", "--sweet", "--flat", "--hide=Q.org.eolang", "--hide=Q.org.yegor256"]
           ["{⟦ org ↦ ⟦⟧, x ↦ 42 ⟧}"]
+
+    it "shows and hides" $
+      withStdin "{[[ org -> [[ eolang -> Q.x, yegor256 -> Q.y ]], x -> 42 ]]}" $
+        testCLISucceeded
+          ["rewrite", "--sweet", "--flat", "--show=Q.org", "--hide=Q.org.eolang"]
+          ["{⟦ org ↦ ⟦ yegor256 ↦ Φ.y ⟧ ⟧}"]
 
     it "prints in line with --flat" $
       withStdin "Q -> [[ x -> 5, y -> \"hey\", z -> [[ w -> [[ ]] ]] ]]" $

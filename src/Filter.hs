@@ -1,19 +1,14 @@
-{-# HLINT ignore "Avoid restricted module" #-}
-{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
-
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Filter (hide, show) where
+module Filter (include, exclude) where
 
 import AST
 import Logger (logDebug)
 import Misc
-import Printer (logPrintConfig, printExpression')
+import Printer (logPrintConfig, printExpression, printExpression', printProgram)
 import Rewriter
 import Text.Printf (printf)
-import Prelude hiding (show)
-import Merge (merge)
 
 fqnToAttrs :: Expression -> [Attribute]
 fqnToAttrs = reverse . fqnToAttrs'
@@ -23,37 +18,48 @@ fqnToAttrs = reverse . fqnToAttrs'
     fqnToAttrs' (ExDispatch expr attr) = attr : fqnToAttrs' expr
     fqnToAttrs' expr = []
 
-filter' :: (Maybe Attribute -> Maybe Attribute -> Bool) -> Program -> [Expression] -> Program
-filter' _ prog [] = prog
-filter' cmp (Program expr@(ExFormation _)) (fqn : rest) = filter' cmp (Program (filteredFormation expr (fqnToAttrs fqn))) rest
+exclude' :: Program -> [Expression] -> Program
+exclude' prog [] = prog
+exclude' (Program expr@(ExFormation _)) (fqn : rest) = exclude' (Program (excludedFormation expr (fqnToAttrs fqn))) rest
   where
-    filteredFormation :: Expression -> [Attribute] -> Expression
-    filteredFormation (ExFormation bds) [attr] =
-      let bds' = [bd | bd <- bds, cmp (attributeFromBinding bd) (Just attr)]
-       in ExFormation bds'
-    filteredFormation (ExFormation bds) attrs = ExFormation (filteredBindings bds attrs)
+    excludedFormation :: Expression -> [Attribute] -> Expression
+    excludedFormation (ExFormation bds) [attr] = ExFormation [bd | bd <- bds, attributeFromBinding bd /= Just attr]
+    excludedFormation (ExFormation bds) attrs = ExFormation (excludedBindings bds attrs)
       where
-        filteredBindings :: [Binding] -> [Attribute] -> [Binding]
-        filteredBindings [] _ = []
-        filteredBindings (bd@(BiTau attr form@(ExFormation _)) : bds) attrs@(attr' : rest)
-          | attr == attr' = BiTau attr (filteredFormation form rest) : bds
-          | otherwise = bd : filteredBindings bds attrs
-        filteredBindings (bd : bds) attrs = bd : filteredBindings bds attrs
-    filteredFormation expr _ = expr
-filter' _ prog _ = prog
+        excludedBindings :: [Binding] -> [Attribute] -> [Binding]
+        excludedBindings [] _ = []
+        excludedBindings (bd@(BiTau attr form@(ExFormation _)) : bds) attrs@(attr' : rest)
+          | attr == attr' = BiTau attr (excludedFormation form rest) : bds
+          | otherwise = bd : excludedBindings bds attrs
+        excludedBindings (bd : bds) attrs = bd : excludedBindings bds attrs
+    excludedFormation expr _ = expr
+exclude' prog _ = prog
 
-hide :: [Rewritten] -> [Expression] -> [Rewritten]
-hide [] _ = []
-hide ((program, maybeRule) : rest) exprs = (filter' (/=) program exprs, maybeRule) : hide rest exprs
+exclude :: [Rewritten] -> [Expression] -> [Rewritten]
+exclude [] _ = []
+exclude rs [] = rs
+exclude ((program, maybeRule) : rest) exprs = (exclude' program exprs, maybeRule) : exclude rest exprs
 
-show :: [Rewritten] -> [Expression] -> IO [Rewritten]
-show [] _ = pure []
--- show rewrs exprs =
---   let x =
---         map
---           ( \(prog, mr) -> do
---               let progs = map (\expr -> filter' (==) prog [expr]) exprs
---               merge
---           )
---           rewrs
---    in (filter' (==) program exprs, maybeRule) : show rest exprs
+include' :: Program -> Expression -> Program
+include' prog@(Program expr@(ExFormation _)) fqn = case includedFormation expr (fqnToAttrs fqn) of
+  Just expr -> Program expr
+  _ -> Program (ExFormation [BiVoid AtRho])
+  where
+    includedFormation :: Expression -> [Attribute] -> Maybe Expression
+    includedFormation (ExFormation bds) [attr] =
+      let bds' = [bd | bd <- bds, attributeFromBinding bd == Just attr]
+       in if null bds' then Nothing else Just (ExFormation (withVoidRho bds'))
+    includedFormation (ExFormation bds) attrs = includedBindings bds attrs >>= (Just . ExFormation . (: [BiVoid AtRho]))
+      where
+        includedBindings :: [Binding] -> [Attribute] -> Maybe Binding
+        includedBindings (bd@(BiTau attr form@(ExFormation _)) : bds) attrs@(attr' : rest)
+          | attr == attr' = includedFormation form rest >>= Just . BiTau attr
+          | otherwise = includedBindings bds attrs
+        includedBindings _ _ = Nothing
+    includedFormation _ _ = Nothing
+include' _ _ = Program (ExFormation [BiVoid AtRho])
+
+include :: [Rewritten] -> [Expression] -> [Rewritten]
+include [] _ = []
+include rs [] = rs
+include ((program, maybeRule) : rest) (expr : _) = (include' program expr, maybeRule) : include rest [expr]
