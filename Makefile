@@ -4,7 +4,7 @@
 .ONESHELL:
 .SHELLFLAGS := -e -o pipefail -c -x
 SHELL := bash
-.PHONY: all test hlint fourmolu
+.PHONY: all test hlint fourmolu coverage
 
 all: test hlint fourmolu
 
@@ -27,3 +27,7 @@ fourmolu:
 	else
 		echo "fourmolu not found, skipping." >&2
 	fi
+
+.SILENT:
+coverage:
+	cabal test --enable-coverage

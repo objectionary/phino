@@ -13,16 +13,17 @@
 *.log
 *.o
 *.prof
-.DS_Store
-.HTF/
+.aidy/
 .cabal-sandbox/
-coverage-report/
 .cache/
+.claude/
 .direnv
+.DS_Store
 .eoc
 .ghc.environment.*
 .hpc
 .hsenv
+.HTF/
 .idea/
 .pipeline
 .stack-work/
@@ -32,6 +33,7 @@ cabal-dev
 cabal.project.local
 cabal.project.local~
 cabal.sandbox.config
+coverage-report/
 dist
 dist-*
 docs/site
@@ -45,4 +47,3 @@ result
 tmp
 try-unphi
 venv
-.aidy/

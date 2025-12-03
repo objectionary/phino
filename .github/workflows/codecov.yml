@@ -1,0 +1,52 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+name: codecov
+'on':
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+jobs:
+  coverage:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.ghcup
+            ~/.cabal/packages
+            ~/.cabal/store
+            ~/.ghc
+            dist-newstyle
+          key: ${{ runner.os }}-codecov-${{ hashFiles('**/*.cabal') }}-${{ hashFiles('cabal.project', 'cabal.project.freeze') }}
+          restore-keys: |
+            ${{ runner.os }}-codecov-
+      - name: Set up GHC
+        uses: haskell-actions/setup@v2.8.2
+        with:
+          ghc-version: '9.6.7'
+          cabal-version: '3.12.1.0'
+      - name: Install xmllint on macOS
+        run: brew install libxml2
+      - name: Update package list
+        run: cabal update
+      - name: Build project
+        run: cabal build all --enable-coverage
+      - name: Run tests with coverage
+        run: cabal test all --enable-coverage
+      - name: Install hpc-codecov
+        run: cabal install hpc-codecov --overwrite-policy=always
+      - name: Convert coverage to Codecov format
+        run: |
+          hpc-codecov cabal:spec --out=coverage.json
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          files: coverage.json
+          fail_ci_if_error: true
+          verbose: true
