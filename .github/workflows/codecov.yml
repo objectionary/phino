@@ -24,7 +24,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-codecov-
       - name: Set up GHC
-        uses: haskell-actions/setup@v2.8.2
+        uses: haskell-actions/setup@v2.8.0
         with:
           ghc-version: '9.6.7'
           cabal-version: '3.12.1.0'
@@ -42,7 +42,7 @@ jobs:
         run: |
           hpc-codecov cabal:spec --out=coverage.json
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v5.5.1
         with:
           files: coverage.json
           fail_ci_if_error: true
