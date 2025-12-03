@@ -7,9 +7,6 @@ name: codecov
   push:
     branches:
       - master
-  pull_request:
-    branches:
-      - master
 jobs:
   coverage:
     runs-on: macos-15
