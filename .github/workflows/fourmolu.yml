@@ -1,0 +1,23 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+name: fourmolu
+'on':
+  pull_request:
+    branches:
+      - master
+  push:
+    branches:
+      - master
+jobs:
+  fourmolu:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: haskell-actions/run-fourmolu@v11
+        with:
+          version: '0.16.2.0'
+          pattern: |
+            src/**/*.hs
+            app/**/*.hs
+            test/**/*.hs

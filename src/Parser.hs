@@ -6,18 +6,18 @@
 
 -- The goal of the module is to parse given phi program to AST
 module Parser
-  ( parseProgram,
-    parseProgramThrows,
-    parseExpression,
-    parseExpressionThrows,
-    parseAttribute,
-    parseAttributeThrows,
-    parseNumber,
-    parseNumberThrows,
-    parseBinding,
-    parseBytes,
-    PhiParser (..),
-    phiParser,
+  ( parseProgram
+  , parseProgramThrows
+  , parseExpression
+  , parseExpressionThrows
+  , parseAttribute
+  , parseAttributeThrows
+  , parseNumber
+  , parseNumberThrows
+  , parseBinding
+  , parseBytes
+  , PhiParser (..)
+  , phiParser
   )
 where
 
@@ -45,20 +45,20 @@ data ParserException
   deriving (Exception)
 
 data PhiParser = PhiParser
-  { _attribute :: Parser Attribute,
-    _binding :: Parser Binding,
-    _expression :: Parser Expression,
-    _string :: Parser String
+  { _attribute :: Parser Attribute
+  , _binding :: Parser Binding
+  , _expression :: Parser Expression
+  , _string :: Parser String
   }
 
 phiParser :: PhiParser
 phiParser = PhiParser fullAttribute binding expression quotedStr
 
 instance Show ParserException where
-  show CouldNotParseProgram {..} = printf "Couldn't parse given phi program, cause: %s" message
-  show CouldNotParseExpression {..} = printf "Couldn't parse given phi expression, cause: %s" message
-  show CouldNotParseAttribute {..} = printf "Couldn't parse given attribute, cause: %s" message
-  show CouldNotParseNumber {..} = printf "Couldn't parse given number to 'Φ̇.number', cause: %s" message
+  show CouldNotParseProgram{..} = printf "Couldn't parse given phi program, cause: %s" message
+  show CouldNotParseExpression{..} = printf "Couldn't parse given phi expression, cause: %s" message
+  show CouldNotParseAttribute{..} = printf "Couldn't parse given attribute, cause: %s" message
+  show CouldNotParseNumber{..} = printf "Couldn't parse given number to 'Φ̇.number', cause: %s" message
 
 -- White space consumer
 whiteSpace :: Parser ()
@@ -92,15 +92,15 @@ function = lexeme $ do
 delta :: Parser String
 delta =
   choice
-    [ symbol "D>",
-      symbol "Δ" >> dashedArrow
+    [ symbol "D>"
+    , symbol "Δ" >> dashedArrow
     ]
 
 lambda :: Parser String
 lambda =
   choice
-    [ symbol "L>",
-      symbol "λ" >> dashedArrow
+    [ symbol "L>"
+    , symbol "λ" >> dashedArrow
     ]
 
 dashedArrow :: Parser String
@@ -125,8 +125,8 @@ meta ch = do
 meta' :: Char -> String -> Parser String
 meta' ch uni =
   choice
-    [ meta ch,
-      do
+    [ meta ch
+    , do
         _ <- symbol uni
         suf <- metaSuffix
         return (ch : suf)
@@ -137,10 +137,10 @@ byte = do
   f <- hexDigitChar >>= upperHex
   s <- hexDigitChar >>= upperHex
   return [f, s]
-  where
-    upperHex ch
-      | isDigit ch || ('A' <= ch && ch <= 'F') = return ch
-      | otherwise = fail ("expected 0-9 or A-F, got " ++ show ch)
+ where
+  upperHex ch
+    | isDigit ch || ('A' <= ch && ch <= 'F') = return ch
+    | otherwise = fail ("expected 0-9 or A-F, got " ++ show ch)
 
 -- bytes
 -- 0. meta: !b
@@ -151,15 +151,15 @@ bytes :: Parser Bytes
 bytes =
   lexeme
     ( choice
-        [ BtMeta <$> meta' 'd' "δ",
-          symbol "--" >> return BtEmpty,
-          try $ do
+        [ BtMeta <$> meta' 'd' "δ"
+        , symbol "--" >> return BtEmpty
+        , try $ do
             first <- byte
             rest <- some $ do
               _ <- char '-'
               byte
-            return (BtMany (first : rest)),
-          do
+            return (BtMany (first : rest))
+        , do
             bte <- byte
             _ <- char '-'
             return (BtOne bte)
@@ -185,54 +185,54 @@ number = do
 
 quotedStr :: Parser String
 quotedStr = char '"' >> manyTill (choice [escapedChar, noneOf ['\\', '"']]) (char '"')
-  where
-    escapedChar :: Parser Char
-    escapedChar = do
-      _ <- char '\\'
-      c <- oneOf ['\\', '"', 'n', 'r', 't', 'b', 'f', 'u', 'x']
-      case c of
-        '\\' -> return '\\'
-        '"' -> return '"'
-        'n' -> return '\n'
-        'r' -> return '\r'
-        't' -> return '\t'
-        'b' -> return '\b'
-        'f' -> return '\f'
-        'u' -> unicodeEscape
-        'x' -> hexEscape
-        _ -> fail ("Unknown escape: \\" ++ [c])
-    unicodeEscape :: Parser Char
-    unicodeEscape = do
-      hexDigits <- count 4 hexDigitChar
-      case readHex hexDigits of
-        [(n, "")] ->
-          if n >= 0xD800 && n <= 0xDBFF
-            then -- High surrogate, look for low surrogate
-              do
-                _ <- string "\\u"
-                lowHexDigits <- count 4 hexDigitChar
-                case readHex lowHexDigits of
-                  [(low, "")] ->
-                    if low >= 0xDC00 && low <= 0xDFFF
-                      then do
-                        -- Valid surrogate pair, combine them
-                        let codePoint = 0x10000 + ((n - 0xD800) * 0x400) + (low - 0xDC00)
-                        return (chr codePoint)
-                      else fail ("Invalid low surrogate: \\u" ++ lowHexDigits)
-                  _ -> fail ("Invalid low surrogate hex: \\u" ++ lowHexDigits)
-            else
-              if n >= 0xDC00 && n <= 0xDFFF
-                then fail ("Unexpected low surrogate: \\u" ++ hexDigits)
-                else
-                  if n >= 0 && n <= 0x10FFFF
-                    then return (chr n)
-                    else fail ("Invalid Unicode code point: \\u" ++ hexDigits)
-    hexEscape :: Parser Char
-    hexEscape = do
-      digits <- count 2 hexDigitChar
-      case readHex digits of
-        [(n, "")] -> return (chr n)
-        _ -> fail ("Invalid hex escape: \\x" ++ digits)
+ where
+  escapedChar :: Parser Char
+  escapedChar = do
+    _ <- char '\\'
+    c <- oneOf ['\\', '"', 'n', 'r', 't', 'b', 'f', 'u', 'x']
+    case c of
+      '\\' -> return '\\'
+      '"' -> return '"'
+      'n' -> return '\n'
+      'r' -> return '\r'
+      't' -> return '\t'
+      'b' -> return '\b'
+      'f' -> return '\f'
+      'u' -> unicodeEscape
+      'x' -> hexEscape
+      _ -> fail ("Unknown escape: \\" ++ [c])
+  unicodeEscape :: Parser Char
+  unicodeEscape = do
+    hexDigits <- count 4 hexDigitChar
+    case readHex hexDigits of
+      [(n, "")] ->
+        if n >= 0xD800 && n <= 0xDBFF
+          then -- High surrogate, look for low surrogate
+            do
+              _ <- string "\\u"
+              lowHexDigits <- count 4 hexDigitChar
+              case readHex lowHexDigits of
+                [(low, "")] ->
+                  if low >= 0xDC00 && low <= 0xDFFF
+                    then do
+                      -- Valid surrogate pair, combine them
+                      let codePoint = 0x10000 + ((n - 0xD800) * 0x400) + (low - 0xDC00)
+                      return (chr codePoint)
+                    else fail ("Invalid low surrogate: \\u" ++ lowHexDigits)
+                _ -> fail ("Invalid low surrogate hex: \\u" ++ lowHexDigits)
+          else
+            if n >= 0xDC00 && n <= 0xDFFF
+              then fail ("Unexpected low surrogate: \\u" ++ hexDigits)
+              else
+                if n >= 0 && n <= 0x10FFFF
+                  then return (chr n)
+                  else fail ("Invalid Unicode code point: \\u" ++ hexDigits)
+  hexEscape :: Parser Char
+  hexEscape = do
+    digits <- count 2 hexDigitChar
+    case readHex digits of
+      [(n, "")] -> return (chr n)
+      _ -> fail ("Invalid hex escape: \\x" ++ digits)
 
 tauBinding :: Parser Attribute -> Parser Binding
 tauBinding attr = do
@@ -240,13 +240,13 @@ tauBinding attr = do
   choice
     [ try $ do
         _ <- arrow
-        BiTau attr' <$> expression,
-      do
+        BiTau attr' <$> expression
+    , do
         _ <- symbol "("
         voids <-
           choice
-            [ rb >> return [],
-              do
+            [ rb >> return []
+            , do
                 voids' <- map BiVoid <$> void' `sepBy1` symbol ","
                 rb >> return voids'
             ]
@@ -255,9 +255,9 @@ tauBinding attr = do
         bds <- validatedBindings (voids ++ bs)
         return (BiTau attr' (ExFormation (withVoidRho bds)))
     ]
-  where
-    rb :: Parser String
-    rb = symbol ")"
+ where
+  rb :: Parser String
+  rb = symbol ")"
 
 metaBinding :: Parser Binding
 metaBinding = BiMeta <$> meta' 'B' "𝐵"
@@ -273,20 +273,20 @@ metaBinding = BiMeta <$> meta' 'B' "𝐵"
 binding :: Parser Binding
 binding =
   choice
-    [ try (tauBinding attribute),
-      try $ do
+    [ try (tauBinding attribute)
+    , try $ do
         attr <- attribute
         _ <- arrow
         _ <- choice [symbol "?", symbol "∅"]
-        return (BiVoid attr),
-      try $ do
+        return (BiVoid attr)
+    , try $ do
         _ <- delta
-        BiDelta <$> bytes,
-      try metaBinding,
-      try $ do
+        BiDelta <$> bytes
+    , try metaBinding
+    , try $ do
         _ <- lambda
-        BiLambda <$> function,
-      do
+        BiLambda <$> function
+    , do
         _ <- lambda
         BiMetaLambda <$> meta 'F'
     ]
@@ -299,11 +299,11 @@ binding =
 void' :: Parser Attribute
 void' =
   choice
-    [ AtLabel <$> label',
-      do
+    [ AtLabel <$> label'
+    , do
         _ <- choice [symbol "^", symbol "ρ"]
-        return AtRho,
-      do
+        return AtRho
+    , do
         _ <- choice [symbol "@", symbol "φ"]
         return AtPhi
     ]
@@ -316,8 +316,8 @@ void' =
 attribute :: Parser Attribute
 attribute =
   choice
-    [ void',
-      AtMeta <$> meta' 'a' "𝜏"
+    [ void'
+    , AtMeta <$> meta' 'a' "𝜏"
     ]
     <?> "attribute"
 
@@ -330,8 +330,8 @@ attribute =
 fullAttribute :: Parser Attribute
 fullAttribute =
   choice
-    [ attribute,
-      do
+    [ attribute
+    , do
         _ <- choice [symbol "~", symbol "α"]
         AtAlpha <$> lexeme L.decimal
     ]
@@ -347,14 +347,14 @@ formationBindings :: Parser [Binding]
 formationBindings = do
   _ <- choice [symbol "[[", symbol "⟦"]
   choice
-    [ rsb >> return [],
-      do
+    [ rsb >> return []
+    , do
         bs <- binding `sepBy1` symbol ","
         rsb >> return bs
     ]
-  where
-    rsb :: Parser String
-    rsb = choice [symbol "]]", symbol "⟧"]
+ where
+  rsb :: Parser String
+  rsb = choice [symbol "]]", symbol "⟧"]
 
 -- head part of expression
 -- 1. formation
@@ -368,23 +368,23 @@ exHead =
   choice
     [ do
         bs <- formationBindings >>= validatedBindings
-        return (ExFormation (withVoidRho bs)),
-      do
+        return (ExFormation (withVoidRho bs))
+    , do
         _ <- choice [symbol "$", symbol "ξ"]
-        return ExThis,
-      try $ do
+        return ExThis
+    , try $ do
         _ <- choice [symbol "QQ", symbol "Φ̇"]
-        return (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang")),
-      do
+        return (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang"))
+    , do
         _ <- global
-        return ExGlobal,
-      do
+        return ExGlobal
+    , do
         _ <- choice [symbol "T", symbol "⊥"]
-        return ExTermination,
-      number,
-      lexeme (DataString . strToBts <$> quotedStr),
-      try (ExMeta <$> meta' 'e' "𝑒"),
-      ExDispatch ExThis <$> attribute
+        return ExTermination
+    , number
+    , lexeme (DataString . strToBts <$> quotedStr)
+    , try (ExMeta <$> meta' 'e' "𝑒")
+    , ExDispatch ExThis <$> attribute
     ]
     <?> "expression head"
 
@@ -403,8 +403,8 @@ exTail expr =
           choice
             [ do
                 _ <- symbol "."
-                ExDispatch expr <$> attribute,
-              do
+                ExDispatch expr <$> attribute
+            , do
                 guard
                   ( case expr of
                       ExThis -> False
@@ -414,14 +414,14 @@ exTail expr =
                 _ <- symbol "("
                 bds <-
                   choice
-                    [ try $ tauBinding fullAttribute `sepBy1` symbol ",",
-                      do
+                    [ try $ tauBinding fullAttribute `sepBy1` symbol ","
+                    , do
                         exprs <- expression `sepBy1` symbol ","
                         return (zipWith (BiTau . AtAlpha) [0 ..] exprs) -- \idx expr -> BiTau (AtAlpha idx) expr
                     ]
                 _ <- symbol ")"
-                return (application expr bds),
-              do
+                return (application expr bds)
+            , do
                 guard
                   ( case expr of
                       ExMetaTail _ _ -> False
@@ -431,8 +431,8 @@ exTail expr =
                 ExMetaTail expr <$> meta 't'
             ]
             <?> "dispatch or application"
-        exTail next,
-      return expr
+        exTail next
+    , return expr
     ]
 
 expression :: Parser Expression
@@ -447,8 +447,8 @@ program =
         _ <- symbol "{"
         prog <- Program <$> expression
         _ <- symbol "}"
-        return prog,
-      do
+        return prog
+    , do
         _ <- global
         _ <- arrow
         Program <$> expression

@@ -13,14 +13,14 @@ import Parser (PhiParser (..), phiParser)
 import Text.Megaparsec
 import Text.Megaparsec.Char
 import qualified Text.Megaparsec.Char.Lexer as L
-import qualified Yaml as Y
 import Text.Printf (printf)
+import qualified Yaml as Y
 
 newtype ConditionException = CouldNotParseCondition {message :: String}
   deriving (Exception)
 
 instance Show ConditionException where
-  show CouldNotParseCondition {..} = printf "Couldn't parse given condition, cause: %s" message
+  show CouldNotParseCondition{..} = printf "Couldn't parse given condition, cause: %s" message
 
 type Parser = Parsec Void String
 
@@ -52,13 +52,13 @@ number =
         _ <- symbol "ordinal" >> lparen
         attr <- _attribute phiParser
         _ <- rparen
-        return (Y.Ordinal attr),
-      do
+        return (Y.Ordinal attr)
+    , do
         _ <- symbol "length" >> lparen
         bd <- _binding phiParser
         _ <- rparen
-        return (Y.Length bd),
-      do
+        return (Y.Length bd)
+    , do
         sign <- optional (choice [char '-', char '+'])
         unsigned <- lexeme L.decimal
         return
@@ -73,9 +73,9 @@ number =
 comparable :: Parser Y.Comparable
 comparable =
   choice
-    [ try $ Y.CmpNum <$> number,
-      try $ Y.CmpAttr <$> _attribute phiParser,
-      Y.CmpExpr <$> _expression phiParser
+    [ try $ Y.CmpNum <$> number
+    , try $ Y.CmpAttr <$> _attribute phiParser
+    , Y.CmpExpr <$> _expression phiParser
     ]
 
 condition :: Parser Y.Condition
@@ -85,54 +85,54 @@ condition =
         _ <- symbol "and" >> lparen
         args <- condition `sepBy1` comma
         _ <- rparen
-        return (Y.And args),
-      do
+        return (Y.And args)
+    , do
         _ <- symbol "or" >> lparen
         args <- condition `sepBy1` comma
         _ <- rparen
-        return (Y.Or args),
-      do
+        return (Y.Or args)
+    , do
         _ <- symbol "in" >> lparen
         attr <- _attribute phiParser
         _ <- comma
         bd <- _binding phiParser
         _ <- rparen
-        return (Y.In attr bd),
-      do
+        return (Y.In attr bd)
+    , do
         _ <- symbol "not" >> lparen
         cond <- condition
         _ <- rparen
-        return (Y.Not cond),
-      do
+        return (Y.Not cond)
+    , do
         _ <- symbol "alpha" >> lparen
         attr <- _attribute phiParser
         _ <- rparen
-        return (Y.Alpha attr),
-      do
+        return (Y.Alpha attr)
+    , do
         _ <- symbol "eq" >> lparen
         left <- comparable
         _ <- comma
         right <- comparable
         _ <- rparen
-        return (Y.Eq left right),
-      do
+        return (Y.Eq left right)
+    , do
         _ <- symbol "nf" >> lparen
         expr <- _expression phiParser
         _ <- rparen
-        return (Y.NF expr),
-      do
+        return (Y.NF expr)
+    , do
         _ <- symbol "xi" >> lparen
         expr <- _expression phiParser
         _ <- rparen
-        return (Y.XI expr),
-      do
+        return (Y.XI expr)
+    , do
         _ <- symbol "matches" >> lparen
         ptn <- _string phiParser
         _ <- comma
         expr <- _expression phiParser
         _ <- rparen
-        return (Y.Matches ptn expr),
-      do
+        return (Y.Matches ptn expr)
+    , do
         _ <- symbol "part-of" >> lparen
         expr <- _expression phiParser
         _ <- comma

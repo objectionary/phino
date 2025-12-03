@@ -8,17 +8,17 @@
 -- pattern expression and set of substitutions by replacing
 -- meta variables with appropriate meta values
 module Builder
-  ( buildExpressions,
-    buildExpression,
-    buildExpressionThrows,
-    buildAttribute,
-    buildAttributeThrows,
-    buildBinding,
-    buildBindingThrows,
-    buildBytes,
-    buildBytesThrows,
-    contextualize,
-    BuildException (..),
+  ( buildExpressions
+  , buildExpression
+  , buildExpressionThrows
+  , buildAttribute
+  , buildAttributeThrows
+  , buildBinding
+  , buildBindingThrows
+  , buildBytes
+  , buildBytesThrows
+  , contextualize
+  , BuildException (..)
   )
 where
 
@@ -44,22 +44,22 @@ metaMsg = printf "meta '%s' is either does not exist or refers to an inappropria
 type Built a = Either String a
 
 instance Show BuildException where
-  show CouldNotBuildExpression {..} =
+  show CouldNotBuildExpression{..} =
     printf
       "Couldn't build expression, %s\n--Expression: %s"
       _msg
       (printExpression _expr)
-  show CouldNotBuildAttribute {..} =
+  show CouldNotBuildAttribute{..} =
     printf
       "Couldn't build attribute '%s', %s"
       (printAttribute _attr)
       _msg
-  show CouldNotBuildBinding {..} =
+  show CouldNotBuildBinding{..} =
     printf
       "Couldn't build binding, %s\n--Binding: %s"
       _msg
       (printBinding _bd)
-  show CouldNotBuildBytes {..} =
+  show CouldNotBuildBytes{..} =
     printf
       "Couldn't build bytes '%s', %s"
       (printBytes _bts)

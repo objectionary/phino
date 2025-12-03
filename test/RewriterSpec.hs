@@ -26,19 +26,19 @@ import Yaml (normalizationRules)
 import Yaml qualified as Y
 
 data Rules = Rules
-  { basic :: Maybe [String],
-    custom :: Maybe [Y.Rule]
+  { basic :: Maybe [String]
+  , custom :: Maybe [Y.Rule]
   }
   deriving (Generic, FromJSON, Show)
 
 data YamlPack = YamlPack
-  { input :: String,
-    output :: String,
-    rules :: Maybe Rules,
-    skip :: Maybe Bool,
-    repeat_ :: Maybe Integer,
-    must :: Maybe Integer,
-    normalize :: Maybe Bool
+  { input :: String
+  , output :: String
+  , rules :: Maybe Rules
+  , skip :: Maybe Bool
+  , repeat_ :: Maybe Integer
+  , must :: Maybe Integer
+  , normalize :: Maybe Bool
   }
   deriving (Generic, Show)
 

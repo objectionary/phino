@@ -5,18 +5,18 @@
 -- SPDX-License-Identifier: MIT
 
 module Printer
-  ( printProgram,
-    printProgram',
-    printExpression,
-    printExpression',
-    printAttribute,
-    printBinding,
-    printBytes,
-    printExtraArg,
-    printSubsts,
-    printSubsts',
-    PrintConfig (..),
-    logPrintConfig,
+  ( printProgram
+  , printProgram'
+  , printExpression
+  , printExpression'
+  , printAttribute
+  , printBinding
+  , printBytes
+  , printExtraArg
+  , printSubsts
+  , printSubsts'
+  , PrintConfig (..)
+  , logPrintConfig
   )
 where
 

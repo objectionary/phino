@@ -23,10 +23,10 @@ import System.FilePath
 import Test.Hspec
 
 data YamlPack = YamlPack
-  { program :: String,
-    shown :: [String],
-    hidden :: [String],
-    result :: String
+  { program :: String
+  , shown :: [String]
+  , hidden :: [String]
+  , result :: String
   }
   deriving (Generic, Show, FromJSON)
 
@@ -41,7 +41,7 @@ spec =
     forM_
       packs
       ( \pth -> it (makeRelative resources pth) $ do
-          YamlPack {..} <- yamlPack pth
+          YamlPack{..} <- yamlPack pth
           prog <- parseProgramThrows program
           included <- traverse parseExpressionThrows shown
           excluded <- traverse parseExpressionThrows hidden

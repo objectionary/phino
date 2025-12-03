@@ -1,0 +1,24 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+
+# Indentation
+indentation: 2
+column-limit: none
+function-arrows: trailing
+comma-style: leading
+import-export-style: leading
+indent-wheres: false
+record-brace-space: false
+newlines-between-decls: 1
+
+# Let-in style
+in-style: right-align
+single-constraint-parens: auto
+single-deriving-parens: auto
+
+# Unicode
+unicode: never
+
+# Sorting imports
+respectful: true
+fixities: []

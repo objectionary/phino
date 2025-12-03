@@ -4,12 +4,12 @@
 -- SPDX-License-Identifier: MIT
 
 module Logger
-  ( logDebug,
-    logInfo,
-    logWarning,
-    logError,
-    setLogConfig,
-    LogLevel (DEBUG, INFO, WARNING, ERROR, NONE),
+  ( logDebug
+  , logInfo
+  , logWarning
+  , logError
+  , setLogConfig
+  , LogLevel (DEBUG, INFO, WARNING, ERROR, NONE)
   )
 where
 
@@ -33,7 +33,7 @@ setLogConfig lvl lines = writeIORef logger (Logger lvl (fromIntegral lines))
 
 logMessage :: LogLevel -> String -> IO ()
 logMessage lvl message = do
-  Logger {..} <- readIORef logger
+  Logger{..} <- readIORef logger
   when
     (lvl >= level && lines /= 0)
     ( let lines' = DL.lines message

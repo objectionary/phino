@@ -4,8 +4,8 @@
 module Must (Must (..), inRange, exceedsUpperBound, validateMust) where
 
 import Data.List (isInfixOf)
-import Text.Read (readMaybe)
 import Text.Printf (printf)
+import Text.Read (readMaybe)
 
 data Must
   = MtDisabled
@@ -26,37 +26,37 @@ instance Read Must where
   readsPrec _ s
     | ".." `isInfixOf` s = parseRange s
     | otherwise = parseExact s
-    where
-      parseRange :: String -> [(Must, String)]
-      parseRange str = case break (== '.') str of
-        (minStr, '.' : '.' : maxStr) ->
-          let minPart = if null minStr then Nothing else readMaybe minStr
-              maxPart = if null maxStr then Nothing else readMaybe maxStr
-           in case (minPart, maxPart, null minStr, null maxStr) of
-                (Nothing, Nothing, False, False) -> [] -- Invalid range: non-numeric values
-                (Nothing, Nothing, True, True) -> [] -- Invalid range: empty range '..'
-                (Nothing, Just max, True, False) ->
-                  [(MtRange Nothing (Just max), "") | max >= 0]
-                (Just min, Nothing, False, True) ->
-                  [(MtRange (Just min) Nothing, "") | min >= 0]
-                (Just min, Just max, False, False) ->
-                  [(MtRange (Just min) (Just max), "") | min >= 0 && max >= 0 && min <= max]
-                _ -> [] -- Invalid range format
-        _ -> [] -- Invalid range: expected format like '3..5', '3..', or '..5'
-      parseExact :: String -> [(Must, String)]
-      parseExact str = case readMaybe str of
-        Just n | n >= 0 -> [(if n == 0 then MtDisabled else MtExact n, "")]
-        Just _ -> [] -- Invalid value: must be non-negative
-        Nothing -> [] -- Invalid value: expected integer
+   where
+    parseRange :: String -> [(Must, String)]
+    parseRange str = case break (== '.') str of
+      (minStr, '.' : '.' : maxStr) ->
+        let minPart = if null minStr then Nothing else readMaybe minStr
+            maxPart = if null maxStr then Nothing else readMaybe maxStr
+         in case (minPart, maxPart, null minStr, null maxStr) of
+              (Nothing, Nothing, False, False) -> [] -- Invalid range: non-numeric values
+              (Nothing, Nothing, True, True) -> [] -- Invalid range: empty range '..'
+              (Nothing, Just max, True, False) ->
+                [(MtRange Nothing (Just max), "") | max >= 0]
+              (Just min, Nothing, False, True) ->
+                [(MtRange (Just min) Nothing, "") | min >= 0]
+              (Just min, Just max, False, False) ->
+                [(MtRange (Just min) (Just max), "") | min >= 0 && max >= 0 && min <= max]
+              _ -> [] -- Invalid range format
+      _ -> [] -- Invalid range: expected format like '3..5', '3..', or '..5'
+    parseExact :: String -> [(Must, String)]
+    parseExact str = case readMaybe str of
+      Just n | n >= 0 -> [(if n == 0 then MtDisabled else MtExact n, "")]
+      Just _ -> [] -- Invalid value: must be non-negative
+      Nothing -> [] -- Invalid value: expected integer
 
 inRange :: Must -> Integer -> Bool
 inRange MtDisabled _ = True
 inRange (MtExact expected) actual = actual == expected
 inRange (MtRange minVal maxVal) actual =
   checkMin && checkMax
-  where
-    checkMin = maybe True (<= actual) minVal
-    checkMax = maybe True (>= actual) maxVal
+ where
+  checkMin = maybe True (<= actual) minVal
+  checkMax = maybe True (>= actual) maxVal
 
 -- | Check if a value exceeds the upper bound of the range
 exceedsUpperBound :: Must -> Integer -> Bool

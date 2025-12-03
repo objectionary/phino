@@ -55,8 +55,8 @@ instance FromJSON Number where
     Object o -> do
       validateYamlObject o ["ordinal", "length"]
       asum
-        [ Ordinal <$> o .: "ordinal",
-          Length <$> o .: "length"
+        [ Ordinal <$> o .: "ordinal"
+        , Length <$> o .: "length"
         ]
     Number num -> pure (Literal (round num))
     _ ->
@@ -65,9 +65,9 @@ instance FromJSON Number where
 instance FromJSON Comparable where
   parseJSON v =
     asum
-      [ CmpAttr <$> parseJSON v,
-        CmpNum <$> parseJSON v,
-        CmpExpr <$> parseJSON v
+      [ CmpAttr <$> parseJSON v
+      , CmpNum <$> parseJSON v
+      , CmpExpr <$> parseJSON v
       ]
 
 instance FromJSON Condition where
@@ -77,31 +77,31 @@ instance FromJSON Condition where
       ( \v -> do
           validateYamlObject v ["and", "or", "not", "alpha", "nf", "xi", "eq", "in", "matches", "part-of"]
           asum
-            [ And <$> v .: "and",
-              Or <$> v .: "or",
-              Not <$> v .: "not",
-              Alpha <$> v .: "alpha",
-              NF <$> v .: "nf",
-              XI <$> v .: "xi",
-              do
+            [ And <$> v .: "and"
+            , Or <$> v .: "or"
+            , Not <$> v .: "not"
+            , Alpha <$> v .: "alpha"
+            , NF <$> v .: "nf"
+            , XI <$> v .: "xi"
+            , do
                 vals <- v .: "eq"
                 case vals of
                   [left_, right_] -> Eq <$> parseJSON left_ <*> parseJSON right_
-                  _ -> fail "'eq' expects exactly two arguments",
-              do
+                  _ -> fail "'eq' expects exactly two arguments"
+            , do
                 vals <- v .: "in"
                 case vals of
                   [attr_, binding_] -> do
                     attr <- parseJSON attr_
                     bd <- parseJSON binding_
                     pure (In attr bd)
-                  _ -> fail "'in' expects exactly two arguments",
-              do
+                  _ -> fail "'in' expects exactly two arguments"
+            , do
                 vals <- v .: "matches"
                 case vals of
                   [pat, exp] -> Matches <$> parseJSON pat <*> parseJSON exp
-                  _ -> fail "'matches' expects exactly two arguments",
-              do
+                  _ -> fail "'matches' expects exactly two arguments"
+            , do
                 vals <- v .: "part-of"
                 case vals of
                   [exp, bd] -> PartOf <$> parseJSON exp <*> parseJSON bd
@@ -112,10 +112,10 @@ instance FromJSON Condition where
 instance FromJSON ExtraArgument where
   parseJSON v =
     asum
-      [ ArgAttribute <$> parseJSON v,
-        ArgBinding <$> parseJSON v,
-        ArgExpression <$> parseJSON v,
-        ArgBytes <$> parseJSON v
+      [ ArgAttribute <$> parseJSON v
+      , ArgBinding <$> parseJSON v
+      , ArgExpression <$> parseJSON v
+      , ArgBytes <$> parseJSON v
       ]
 
 instance FromJSON Extra where
@@ -163,32 +163,32 @@ data ExtraArgument
   deriving (Generic, Show)
 
 data Extra = Extra
-  { meta :: ExtraArgument,
-    function :: String,
-    args :: [ExtraArgument]
+  { meta :: ExtraArgument
+  , function :: String
+  , args :: [ExtraArgument]
   }
   deriving (Generic, Show)
 
 data Rule = Rule
-  { name :: Maybe String,
-    description :: Maybe String,
-    pattern :: Expression,
-    result :: Expression,
-    when :: Maybe Condition,
-    where_ :: Maybe [Extra],
-    having :: Maybe Condition
+  { name :: Maybe String
+  , description :: Maybe String
+  , pattern :: Expression
+  , result :: Expression
+  , when :: Maybe Condition
+  , where_ :: Maybe [Extra]
+  , having :: Maybe Condition
   }
   deriving (Generic, Show)
 
 normalizationRules :: [Rule]
 {-# NOINLINE normalizationRules #-}
 normalizationRules = map decodeRule $(embedDir "resources")
-  where
-    decodeRule :: (FilePath, BS.ByteString) -> Rule
-    decodeRule (path, bs) =
-      case Yaml.decodeEither' bs of
-        Right r -> r
-        Left err -> error $ "YAML parse error in " ++ path ++ ": " ++ show err
+ where
+  decodeRule :: (FilePath, BS.ByteString) -> Rule
+  decodeRule (path, bs) =
+    case Yaml.decodeEither' bs of
+      Right r -> r
+      Left err -> error $ "YAML parse error in " ++ path ++ ": " ++ show err
 
 yamlRule :: FilePath -> IO Rule
 yamlRule = Yaml.decodeFileThrow

@@ -201,12 +201,12 @@ instance ToCST Expression EXPRESSION where
           EOL
           (TAB tabs)
           RSB
-    where
-      withoutLastVoidRho :: [Binding] -> [Binding]
-      withoutLastVoidRho [] = []
-      withoutLastVoidRho [BiVoid AtRho] = []
-      withoutLastVoidRho (bd : [BiVoid AtRho]) = [bd]
-      withoutLastVoidRho (bd : bds') = bd : withoutLastVoidRho bds'
+   where
+    withoutLastVoidRho :: [Binding] -> [Binding]
+    withoutLastVoidRho [] = []
+    withoutLastVoidRho [BiVoid AtRho] = []
+    withoutLastVoidRho (bd : [BiVoid AtRho]) = [bd]
+    withoutLastVoidRho (bd : bds') = bd : withoutLastVoidRho bds'
   toCST (DataString bts) tabs _ = EX_STRING (btsToStr bts) (TAB tabs) []
   toCST (DataNumber bts) tabs _ = EX_NUMBER (btsToNum bts) (TAB tabs) []
   toCST (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang")) _ _ = EX_DEF_PACKAGE Φ̇
@@ -252,50 +252,50 @@ instance ToCST Expression EXPRESSION where
                       eol'
                       (tabOfEOL eol' tabs)
                       next
-    where
-      primitives :: [String]
-      primitives = ["number", "string"]
-      withoutRhosInPrimitives :: Expression -> [Binding] -> ([Binding], [Binding])
-      withoutRhosInPrimitives _ [] = ([], [])
-      withoutRhosInPrimitives obj@(BaseObject label) bds@(rho@(BiTau AtRho _) : rest)
-        | label `elem` primitives =
-            let (bds', rhos) = withoutRhosInPrimitives obj rest
-             in (bds', rho : rhos)
-        | otherwise = (bds, [])
-      withoutRhosInPrimitives obj@(BaseObject label) bds@(bd : rest)
-        | label `elem` primitives =
-            let (bds', rhos) = withoutRhosInPrimitives obj rest
-             in (bd : bds', rhos)
-        | otherwise = (bds, [])
-      withoutRhosInPrimitives _ bds = (bds, [])
-      applicationToPrimitive :: Expression -> Integer -> [Binding] -> EXPRESSION
-      applicationToPrimitive (DataNumber bts) tabs = EX_NUMBER (btsToNum bts) (TAB tabs)
-      applicationToPrimitive (DataString bts) tabs = EX_STRING (btsToStr bts) (TAB tabs)
-      -- Here we unroll nested application sequence into flat structure
-      -- The returned tuple consists of:
-      -- 1. deepest start expression
-      -- 2. list of tau bindings which are applied to start expression
-      -- 3. list of expressions which are applied to start expression with default
-      --    alpha attributes (~0 -> e1, ~1 -> e2, ...)
-      complexApplication :: Expression -> (Expression, [Binding], [Expression])
-      complexApplication expr =
-        let (expr', taus', exprs') = complexApplication' expr
-         in (expr', reverse taus', reverse exprs')
-        where
-          complexApplication' :: Expression -> (Expression, [Binding], [Expression])
-          complexApplication' (ExApplication (ExApplication expr tau) tau') =
-            let (before, taus, exprs) = complexApplication' (ExApplication expr tau)
-                taus' = tau' : taus
-             in if null exprs
-                  then (before, taus', [])
-                  else case tau' of
-                    BiTau (AtAlpha idx) expr' ->
-                      if idx == fromIntegral (length exprs)
-                        then (before, taus', expr' : exprs)
-                        else (before, taus', [])
-                    _ -> (before, taus', [])
-          complexApplication' (ExApplication expr (BiTau (AtAlpha 0) expr')) = (expr, [BiTau (AtAlpha 0) expr'], [expr'])
-          complexApplication' (ExApplication expr tau) = (expr, [tau], [])
+   where
+    primitives :: [String]
+    primitives = ["number", "string"]
+    withoutRhosInPrimitives :: Expression -> [Binding] -> ([Binding], [Binding])
+    withoutRhosInPrimitives _ [] = ([], [])
+    withoutRhosInPrimitives obj@(BaseObject label) bds@(rho@(BiTau AtRho _) : rest)
+      | label `elem` primitives =
+          let (bds', rhos) = withoutRhosInPrimitives obj rest
+           in (bds', rho : rhos)
+      | otherwise = (bds, [])
+    withoutRhosInPrimitives obj@(BaseObject label) bds@(bd : rest)
+      | label `elem` primitives =
+          let (bds', rhos) = withoutRhosInPrimitives obj rest
+           in (bd : bds', rhos)
+      | otherwise = (bds, [])
+    withoutRhosInPrimitives _ bds = (bds, [])
+    applicationToPrimitive :: Expression -> Integer -> [Binding] -> EXPRESSION
+    applicationToPrimitive (DataNumber bts) tabs = EX_NUMBER (btsToNum bts) (TAB tabs)
+    applicationToPrimitive (DataString bts) tabs = EX_STRING (btsToStr bts) (TAB tabs)
+    -- Here we unroll nested application sequence into flat structure
+    -- The returned tuple consists of:
+    -- 1. deepest start expression
+    -- 2. list of tau bindings which are applied to start expression
+    -- 3. list of expressions which are applied to start expression with default
+    --    alpha attributes (~0 -> e1, ~1 -> e2, ...)
+    complexApplication :: Expression -> (Expression, [Binding], [Expression])
+    complexApplication expr =
+      let (expr', taus', exprs') = complexApplication' expr
+       in (expr', reverse taus', reverse exprs')
+     where
+      complexApplication' :: Expression -> (Expression, [Binding], [Expression])
+      complexApplication' (ExApplication (ExApplication expr tau) tau') =
+        let (before, taus, exprs) = complexApplication' (ExApplication expr tau)
+            taus' = tau' : taus
+         in if null exprs
+              then (before, taus', [])
+              else case tau' of
+                BiTau (AtAlpha idx) expr' ->
+                  if idx == fromIntegral (length exprs)
+                    then (before, taus', expr' : exprs)
+                    else (before, taus', [])
+                _ -> (before, taus', [])
+      complexApplication' (ExApplication expr (BiTau (AtAlpha 0) expr')) = (expr, [BiTau (AtAlpha 0) expr'], [expr'])
+      complexApplication' (ExApplication expr tau) = (expr, [tau], [])
 
 instance ToCST [Expression] APP_ARG where
   toCST (expr : exprs) tabs eol = APP_ARG (toCST expr tabs eol) (toCST exprs tabs eol)
@@ -327,12 +327,12 @@ instance ToCST Binding PAIR where
                   (map (\at -> toCST at tabs eol) _voids)
                   ARROW
                   (toCST (ExFormation _bds) tabs eol)
-    where
-      voids :: [Binding] -> [Attribute]
-      voids [] = []
-      voids (bd : bds) = case bd of
-        BiVoid attr -> attr : voids bds
-        _ -> []
+   where
+    voids :: [Binding] -> [Attribute]
+    voids [] = []
+    voids (bd : bds) = case bd of
+      BiVoid attr -> attr : voids bds
+      _ -> []
   toCST (BiTau attr exp) tabs eol = PA_TAU (toCST attr tabs eol) ARROW (toCST exp tabs eol)
   toCST (BiVoid attr) tabs eol = PA_VOID (toCST attr tabs eol) ARROW EMPTY
   toCST (BiDelta bts) tabs eol = PA_DELTA (toCST bts tabs eol)

@@ -14,17 +14,17 @@ import Functions (buildTerm)
 import GHC.Generics
 import Matcher
 import Misc
+import Printer (printSubsts)
 import Rule (RuleContext (RuleContext), meetCondition)
 import System.FilePath
 import Test.Hspec (Spec, describe, expectationFailure, it, runIO)
 import Yaml qualified
-import Printer (printSubsts)
 
 data ConditionPack = ConditionPack
-  { failure :: Maybe Bool,
-    expression :: Expression,
-    pattern :: Expression,
-    condition :: Yaml.Condition
+  { failure :: Maybe Bool
+  , expression :: Expression
+  , pattern :: Expression
+  , condition :: Yaml.Condition
   }
   deriving (Generic, FromJSON, Show)
 

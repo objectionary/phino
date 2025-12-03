@@ -61,12 +61,12 @@ instance Show Attribute where
 
 countNodes :: Program -> Integer
 countNodes (Program expr) = countNodes' expr
-  where
-    countNodes' :: Expression -> Integer
-    countNodes' ExGlobal = 1
-    countNodes' ExTermination = 1
-    countNodes' ExThis = 1
-    countNodes' (ExApplication expr' (BiTau attr bexpr')) = 2 + countNodes' expr' + countNodes' bexpr'
-    countNodes' (ExDispatch expr' attr) = 2 + countNodes' expr'
-    countNodes' (ExFormation bds) = 1 + sum (map (\case BiTau attr expr' -> countNodes' expr'; _ -> 1) bds)
-    countNodes' _ = 0
+ where
+  countNodes' :: Expression -> Integer
+  countNodes' ExGlobal = 1
+  countNodes' ExTermination = 1
+  countNodes' ExThis = 1
+  countNodes' (ExApplication expr' (BiTau attr bexpr')) = 2 + countNodes' expr' + countNodes' bexpr'
+  countNodes' (ExDispatch expr' attr) = 2 + countNodes' expr'
+  countNodes' (ExFormation bds) = 1 + sum (map (\case BiTau attr expr' -> countNodes' expr'; _ -> 1) bds)
+  countNodes' _ = 0

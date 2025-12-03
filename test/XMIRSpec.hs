@@ -26,15 +26,15 @@ import Test.Hspec (Spec, anyException, describe, expectationFailure, it, pending
 import XMIR (defaultXmirContext, parseXMIRThrows, printXMIR, programToXMIR, xmirToPhi)
 
 data ParsePack = ParsePack
-  { failure :: Maybe Bool,
-    xmir :: String,
-    phi :: String
+  { failure :: Maybe Bool
+  , xmir :: String
+  , phi :: String
   }
   deriving (Generic, Show, FromJSON)
 
 data PrintPack = PrintPack
-  { phi :: String,
-    xpaths :: [String]
+  { phi :: String
+  , xpaths :: [String]
   }
   deriving (Generic, Show, FromJSON)
 
@@ -59,7 +59,7 @@ spec = do
       packs
       ( \pth -> it (makeRelative resources pth) $ do
           pack <- parsePack pth
-          let ParsePack {phi = phi'} = pack
+          let ParsePack{phi = phi'} = pack
               xmir' = do
                 doc <- parseXMIRThrows (xmir pack)
                 xmirToPhi doc
@@ -73,14 +73,14 @@ spec = do
 
   describe "prohibit to convert to XMIR" $
     forM_
-      [ "[[ ]]",
-        "T",
-        "[[ x -> ? ]]",
-        "[[ ^ -> 5 ]]",
-        "Q.x.y.z",
-        "\"Hello\"",
-        "Q",
-        "$"
+      [ "[[ ]]"
+      , "T"
+      , "[[ x -> ? ]]"
+      , "[[ ^ -> 5 ]]"
+      , "Q.x.y.z"
+      , "\"Hello\""
+      , "Q"
+      , "$"
       ]
       ( \phi' -> it phi' $ do
           expr <- parseExpressionThrows phi'
@@ -99,7 +99,7 @@ spec = do
               then pendingWith "The 'xmllint' is not available"
               else do
                 pack <- printPack pth
-                let PrintPack {phi = phi', xpaths = xpaths'} = pack
+                let PrintPack{phi = phi', xpaths = xpaths'} = pack
                 prog <- parseProgramThrows phi'
                 xmir' <- programToXMIR prog defaultXmirContext
                 let xml = printXMIR xmir'

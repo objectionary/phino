@@ -21,28 +21,28 @@ import Text.Printf (printf)
 import qualified Yaml as Y
 
 data LatexContext = LatexContext
-  { sugar :: SugarType,
-    line :: LineFormat,
-    nonumber :: Bool,
-    expression :: Maybe String,
-    label :: Maybe String
+  { sugar :: SugarType
+  , line :: LineFormat
+  , nonumber :: Bool
+  , expression :: Maybe String
+  , label :: Maybe String
   }
 
 renderToLatex :: Program -> LatexContext -> String
-renderToLatex prog LatexContext {..} = render (toLaTeX $ withLineFormat line $ withEncoding ASCII $ withSugarType sugar $ programToCST prog)
+renderToLatex prog LatexContext{..} = render (toLaTeX $ withLineFormat line $ withEncoding ASCII $ withSugarType sugar $ programToCST prog)
 
 phiquation :: LatexContext -> String
-phiquation LatexContext {nonumber = True} = "phiquation*"
-phiquation LatexContext {nonumber = False} = "phiquation"
+phiquation LatexContext{nonumber = True} = "phiquation*"
+phiquation LatexContext{nonumber = False} = "phiquation"
 
 rewrittensToLatex :: [Rewritten] -> LatexContext -> String
-rewrittensToLatex rewrittens ctx@LatexContext {..} =
+rewrittensToLatex rewrittens ctx@LatexContext{..} =
   let equation = phiquation ctx
    in concat
-        [ printf "\\begin{%s}\n" equation,
-          maybe "" (printf "\\label{%s}\n") label,
-          maybe "" (printf "\\phiExpression{%s} ") expression,
-          intercalate
+        [ printf "\\begin{%s}\n" equation
+        , maybe "" (printf "\\label{%s}\n") label
+        , maybe "" (printf "\\phiExpression{%s} ") expression
+        , intercalate
             "\n  \\leadsto "
             ( map
                 ( \(program, maybeName) ->
@@ -50,21 +50,21 @@ rewrittensToLatex rewrittens ctx@LatexContext {..} =
                      in maybe prog (printf "%s \\leadsto_{\\nameref{r:%s}}" prog) maybeName
                 )
                 rewrittens
-            ),
-          printf ".\n\\end{%s}" equation
+            )
+        , printf ".\n\\end{%s}" equation
         ]
 
 programToLaTeX :: Program -> LatexContext -> String
 programToLaTeX prog ctx =
   let equation = phiquation ctx
    in concat
-        [ "\\begin{",
-          equation,
-          "}\n",
-          renderToLatex prog ctx,
-          "\n\\end{",
-          equation,
-          "}"
+        [ "\\begin{"
+        , equation
+        , "}\n"
+        , renderToLatex prog ctx
+        , "\n\\end{"
+        , equation
+        , "}"
         ]
 
 piped :: String -> String
@@ -74,60 +74,60 @@ class ToLaTeX a where
   toLaTeX :: a -> a
 
 instance ToLaTeX PROGRAM where
-  toLaTeX PR_SWEET {..} = PR_SWEET BIG_LCB (toLaTeX expr) BIG_RCB
-  toLaTeX PR_SALTY {..} = PR_SALTY global arrow (toLaTeX expr)
+  toLaTeX PR_SWEET{..} = PR_SWEET BIG_LCB (toLaTeX expr) BIG_RCB
+  toLaTeX PR_SALTY{..} = PR_SALTY global arrow (toLaTeX expr)
 
 instance ToLaTeX EXPRESSION where
-  toLaTeX EX_ATTR {..} = EX_ATTR (toLaTeX attr)
-  toLaTeX EX_FORMATION {..} = EX_FORMATION lsb eol tab (toLaTeX binding) eol' tab' rsb
-  toLaTeX EX_APPLICATION {..} = EX_APPLICATION (toLaTeX expr) eol tab (toLaTeX tau) eol' tab' indent
-  toLaTeX EX_APPLICATION_TAUS {..} = EX_APPLICATION_TAUS (toLaTeX expr) eol tab (toLaTeX taus) eol' tab' indent
-  toLaTeX EX_APPLICATION_EXPRS {..} = EX_APPLICATION_EXPRS (toLaTeX expr) eol tab (toLaTeX args) eol' tab' indent
-  toLaTeX EX_DISPATCH {..} = EX_DISPATCH (toLaTeX expr) (toLaTeX attr)
+  toLaTeX EX_ATTR{..} = EX_ATTR (toLaTeX attr)
+  toLaTeX EX_FORMATION{..} = EX_FORMATION lsb eol tab (toLaTeX binding) eol' tab' rsb
+  toLaTeX EX_APPLICATION{..} = EX_APPLICATION (toLaTeX expr) eol tab (toLaTeX tau) eol' tab' indent
+  toLaTeX EX_APPLICATION_TAUS{..} = EX_APPLICATION_TAUS (toLaTeX expr) eol tab (toLaTeX taus) eol' tab' indent
+  toLaTeX EX_APPLICATION_EXPRS{..} = EX_APPLICATION_EXPRS (toLaTeX expr) eol tab (toLaTeX args) eol' tab' indent
+  toLaTeX EX_DISPATCH{..} = EX_DISPATCH (toLaTeX expr) (toLaTeX attr)
   toLaTeX expr = expr
 
 instance ToLaTeX ATTRIBUTE where
-  toLaTeX AT_LABEL {..} = AT_LABEL (piped (toLaTeX label))
+  toLaTeX AT_LABEL{..} = AT_LABEL (piped (toLaTeX label))
   toLaTeX attr = attr
 
 instance ToLaTeX APP_BINDING where
-  toLaTeX APP_BINDING {..} = APP_BINDING (toLaTeX pair)
+  toLaTeX APP_BINDING{..} = APP_BINDING (toLaTeX pair)
 
 instance ToLaTeX BINDING where
-  toLaTeX BI_PAIR {..} = BI_PAIR (toLaTeX pair) (toLaTeX bindings) tab
+  toLaTeX BI_PAIR{..} = BI_PAIR (toLaTeX pair) (toLaTeX bindings) tab
   toLaTeX bd = bd
 
 instance ToLaTeX BINDINGS where
-  toLaTeX BDS_PAIR {..} = BDS_PAIR eol tab (toLaTeX pair) (toLaTeX bindings)
+  toLaTeX BDS_PAIR{..} = BDS_PAIR eol tab (toLaTeX pair) (toLaTeX bindings)
   toLaTeX bds = bds
 
 instance ToLaTeX PAIR where
-  toLaTeX PA_DELTA {..} = PA_DELTA' bytes
-  toLaTeX PA_LAMBDA {..} = PA_LAMBDA' (piped (toLaTeX func))
-  toLaTeX PA_LAMBDA' {..} = PA_LAMBDA' (piped (toLaTeX func))
-  toLaTeX PA_VOID {..} = PA_VOID (toLaTeX attr) arrow void
-  toLaTeX PA_TAU {..} = PA_TAU (toLaTeX attr) arrow (toLaTeX expr)
-  toLaTeX PA_FORMATION {..} = PA_FORMATION (toLaTeX attr) (map toLaTeX voids) arrow (toLaTeX expr)
+  toLaTeX PA_DELTA{..} = PA_DELTA' bytes
+  toLaTeX PA_LAMBDA{..} = PA_LAMBDA' (piped (toLaTeX func))
+  toLaTeX PA_LAMBDA'{..} = PA_LAMBDA' (piped (toLaTeX func))
+  toLaTeX PA_VOID{..} = PA_VOID (toLaTeX attr) arrow void
+  toLaTeX PA_TAU{..} = PA_TAU (toLaTeX attr) arrow (toLaTeX expr)
+  toLaTeX PA_FORMATION{..} = PA_FORMATION (toLaTeX attr) (map toLaTeX voids) arrow (toLaTeX expr)
   toLaTeX pair = pair
 
 instance ToLaTeX APP_ARG where
-  toLaTeX APP_ARG {..} = APP_ARG (toLaTeX expr) (toLaTeX args)
+  toLaTeX APP_ARG{..} = APP_ARG (toLaTeX expr) (toLaTeX args)
 
 instance ToLaTeX APP_ARGS where
-  toLaTeX AAS_EXPR {..} = AAS_EXPR eol tab (toLaTeX expr) (toLaTeX args)
+  toLaTeX AAS_EXPR{..} = AAS_EXPR eol tab (toLaTeX expr) (toLaTeX args)
   toLaTeX args = args
 
 instance ToLaTeX String where
   toLaTeX = escapeUnprintedChars
-    where
-      escapeUnprintedChars :: String -> String
-      escapeUnprintedChars [] = []
-      escapeUnprintedChars (ch : rest) = case ch of
-        '$' -> "\\char36{}" <> escapeUnprintedChars rest
-        '@' -> "\\char64{}" <> escapeUnprintedChars rest
-        '^' -> "\\char94{}" <> escapeUnprintedChars rest
-        '_' -> "\\char95{}" <> escapeUnprintedChars rest
-        _ -> ch : escapeUnprintedChars rest
+   where
+    escapeUnprintedChars :: String -> String
+    escapeUnprintedChars [] = []
+    escapeUnprintedChars (ch : rest) = case ch of
+      '$' -> "\\char36{}" <> escapeUnprintedChars rest
+      '@' -> "\\char64{}" <> escapeUnprintedChars rest
+      '^' -> "\\char94{}" <> escapeUnprintedChars rest
+      '_' -> "\\char95{}" <> escapeUnprintedChars rest
+      _ -> ch : escapeUnprintedChars rest
 
 -- @todo #114:30min Implement LaTeX conversion for rules.
 --  Convert Rule data structure to LaTeX inference rule format.
@@ -144,9 +144,9 @@ explainRule rule = "\\rule{" ++ fromMaybe "unnamed" (Y.name rule) ++ "}"
 explainRules :: [Y.Rule] -> String
 explainRules rules' =
   unlines
-    [ "\\documentclass{article}",
-      "\\usepackage{amsmath}",
-      "\\begin{document}"
+    [ "\\documentclass{article}"
+    , "\\usepackage{amsmath}"
+    , "\\begin{document}"
     ]
     ++ unlines (map explainRule rules')
     ++ "\\end{document}"

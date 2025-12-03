@@ -4,9 +4,9 @@
 .ONESHELL:
 .SHELLFLAGS := -e -o pipefail -c -x
 SHELL := bash
-.PHONY: all test hlint
+.PHONY: all test hlint fourmolu
 
-all: test hlint
+all: test hlint fourmolu
 
 .SILENT:
 test:
@@ -18,4 +18,12 @@ hlint:
 		hlint src app test
 	else
 		echo "hlint not found, skipping." >&2
+	fi
+
+.SILENT:
+fourmolu:
+	if command -v fourmolu &> /dev/null; then
+		fourmolu --mode check src app test
+	else
+		echo "fourmolu not found, skipping." >&2
 	fi

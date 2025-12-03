@@ -258,7 +258,7 @@ Condition:
   | nf: Expression'      # returns True if given expression in normal form
                          # which means that no more other normalization rules
                          # can be applied
-  | xi: Expression'      # special condition for Rcopy normalization rule to 
+  | xi: Expression'      # special condition for Rcopy normalization rule to
                          # avoid infinite recursion while the condition checking
                          # returns True if there's no ξ outside of the formation
                          # in given expression.

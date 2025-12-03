@@ -100,85 +100,85 @@ instance Render BYTES where
   render (BT_MANY bts) = intercalate "-" bts
 
 instance Render META where
-  render MT_EXPRESSION {..} = '𝑒' : rest
-  render MT_EXPRESSION' {..} = "!e" <> rest
-  render MT_ATTRIBUTE {..} = '𝜏' : rest
-  render MT_ATTRIBUTE' {..} = "!a" <> rest
-  render MT_BINDING {..} = '𝐵' : rest
-  render MT_BINDING' {..} = "!B" <> rest
-  render MT_BYTES {..} = 'δ' : rest
-  render MT_BYTES' {..} = "!d" <> rest
-  render MT_TAIL {..} = "!t" <> rest
-  render MT_FUNCTION {..} = "!F" <> rest
+  render MT_EXPRESSION{..} = '𝑒' : rest
+  render MT_EXPRESSION'{..} = "!e" <> rest
+  render MT_ATTRIBUTE{..} = '𝜏' : rest
+  render MT_ATTRIBUTE'{..} = "!a" <> rest
+  render MT_BINDING{..} = '𝐵' : rest
+  render MT_BINDING'{..} = "!B" <> rest
+  render MT_BYTES{..} = 'δ' : rest
+  render MT_BYTES'{..} = "!d" <> rest
+  render MT_TAIL{..} = "!t" <> rest
+  render MT_FUNCTION{..} = "!F" <> rest
 
 instance Render ALPHA where
   render ALPHA = "α"
   render ALPHA' = "~"
 
 instance Render TAB where
-  render TAB {..} = intercalate "" (replicate (fromIntegral indent) "  ")
+  render TAB{..} = intercalate "" (replicate (fromIntegral indent) "  ")
   render TAB' = " "
   render NO_TAB = ""
 
 instance Render PROGRAM where
-  render PR_SWEET {..} = render lcb <> render expr <> render rcb
-  render PR_SALTY {..} = render global <> render SPACE <> render arrow <> render SPACE <> render expr
+  render PR_SWEET{..} = render lcb <> render expr <> render rcb
+  render PR_SALTY{..} = render global <> render SPACE <> render arrow <> render SPACE <> render expr
 
 instance Render PAIR where
-  render PA_TAU {..} = render attr <> render SPACE <> render arrow <> render SPACE <> render expr
-  render PA_FORMATION {voids = [], attr, arrow, expr} = render (PA_TAU attr arrow expr)
-  render PA_FORMATION {..} = render attr <> "(" <> intercalate ", " (map render voids) <> ")" <> render SPACE <> render arrow <> render SPACE <> render expr
-  render PA_LAMBDA {..} = render LAMBDA <> render SPACE <> render DASHED_ARROW <> render SPACE <> render func
-  render PA_LAMBDA' {..} = "L> " <> func
-  render PA_VOID {..} = render attr <> render SPACE <> render arrow <> render SPACE <> render void
-  render PA_DELTA {..} = render DELTA <> render SPACE <> render DASHED_ARROW <> render SPACE <> render bytes
-  render PA_DELTA' {..} = "D> " <> render bytes
-  render PA_META_LAMBDA {..} = render LAMBDA <> render SPACE <> render DASHED_ARROW <> render SPACE <> render meta
-  render PA_META_LAMBDA' {..} = render "L> " <> render meta
-  render PA_META_DELTA {..} = render DELTA <> render SPACE <> render DASHED_ARROW <> render SPACE <> render meta
-  render PA_META_DELTA' {..} = render "D> " <> render meta
+  render PA_TAU{..} = render attr <> render SPACE <> render arrow <> render SPACE <> render expr
+  render PA_FORMATION{voids = [], attr, arrow, expr} = render (PA_TAU attr arrow expr)
+  render PA_FORMATION{..} = render attr <> "(" <> intercalate ", " (map render voids) <> ")" <> render SPACE <> render arrow <> render SPACE <> render expr
+  render PA_LAMBDA{..} = render LAMBDA <> render SPACE <> render DASHED_ARROW <> render SPACE <> render func
+  render PA_LAMBDA'{..} = "L> " <> func
+  render PA_VOID{..} = render attr <> render SPACE <> render arrow <> render SPACE <> render void
+  render PA_DELTA{..} = render DELTA <> render SPACE <> render DASHED_ARROW <> render SPACE <> render bytes
+  render PA_DELTA'{..} = "D> " <> render bytes
+  render PA_META_LAMBDA{..} = render LAMBDA <> render SPACE <> render DASHED_ARROW <> render SPACE <> render meta
+  render PA_META_LAMBDA'{..} = render "L> " <> render meta
+  render PA_META_DELTA{..} = render DELTA <> render SPACE <> render DASHED_ARROW <> render SPACE <> render meta
+  render PA_META_DELTA'{..} = render "D> " <> render meta
 
 instance Render BINDINGS where
-  render BDS_EMPTY {..} = ""
-  render BDS_PAIR {..} = render COMMA <> render eol <> render tab <> render pair <> render bindings
-  render BDS_META {..} = render COMMA <> render eol <> render tab <> render meta <> render bindings
+  render BDS_EMPTY{..} = ""
+  render BDS_PAIR{..} = render COMMA <> render eol <> render tab <> render pair <> render bindings
+  render BDS_META{..} = render COMMA <> render eol <> render tab <> render meta <> render bindings
 
 instance Render APP_BINDING where
-  render APP_BINDING {..} = render pair
+  render APP_BINDING{..} = render pair
 
 instance Render BINDING where
-  render BI_EMPTY {..} = ""
-  render BI_PAIR {..} = render pair <> render bindings
-  render BI_META {..} = render meta <> render bindings
+  render BI_EMPTY{..} = ""
+  render BI_PAIR{..} = render pair <> render bindings
+  render BI_META{..} = render meta <> render bindings
 
 instance Render APP_ARG where
-  render APP_ARG {..} = render expr <> render args
+  render APP_ARG{..} = render expr <> render args
 
 instance Render APP_ARGS where
   render AAS_EMPTY = ""
-  render AAS_EXPR {..} = render COMMA <> render eol <> render tab <> render expr <> render args
+  render AAS_EXPR{..} = render COMMA <> render eol <> render tab <> render expr <> render args
 
 instance Render EXPRESSION where
-  render EX_GLOBAL {..} = render global
-  render EX_DEF_PACKAGE {..} = render pckg
-  render EX_XI {..} = render xi
-  render EX_ATTR {..} = render attr
-  render EX_TERMINATION {..} = render termination
-  render EX_FORMATION {..} = render lsb <> render eol <> render tab <> render binding <> render eol' <> render tab' <> render rsb
-  render EX_DISPATCH {..} = render expr <> "." <> render attr
-  render EX_APPLICATION {..} = render expr <> "(" <> render eol <> render tab <> render tau <> render eol' <> render tab' <> ")"
-  render EX_APPLICATION_TAUS {..} = render expr <> "(" <> render eol <> render tab <> render taus <> render eol' <> render tab' <> ")"
-  render EX_APPLICATION_EXPRS {..} = render expr <> "(" <> render eol <> render tab <> render args <> render eol' <> render tab' <> ")"
-  render EX_STRING {..} = '"' : render str <> "\""
-  render EX_NUMBER {..} = either show show num
-  render EX_META {..} = render meta
-  render EX_META_TAIL {..} = render expr <> " * " <> render meta
+  render EX_GLOBAL{..} = render global
+  render EX_DEF_PACKAGE{..} = render pckg
+  render EX_XI{..} = render xi
+  render EX_ATTR{..} = render attr
+  render EX_TERMINATION{..} = render termination
+  render EX_FORMATION{..} = render lsb <> render eol <> render tab <> render binding <> render eol' <> render tab' <> render rsb
+  render EX_DISPATCH{..} = render expr <> "." <> render attr
+  render EX_APPLICATION{..} = render expr <> "(" <> render eol <> render tab <> render tau <> render eol' <> render tab' <> ")"
+  render EX_APPLICATION_TAUS{..} = render expr <> "(" <> render eol <> render tab <> render taus <> render eol' <> render tab' <> ")"
+  render EX_APPLICATION_EXPRS{..} = render expr <> "(" <> render eol <> render tab <> render args <> render eol' <> render tab' <> ")"
+  render EX_STRING{..} = '"' : render str <> "\""
+  render EX_NUMBER{..} = either show show num
+  render EX_META{..} = render meta
+  render EX_META_TAIL{..} = render expr <> " * " <> render meta
 
 instance Render ATTRIBUTE where
-  render AT_LABEL {..} = label
-  render AT_ALPHA {..} = render alpha <> render idx
-  render AT_RHO {..} = render rho
-  render AT_PHI {..} = render phi
-  render AT_LAMBDA {..} = render lambda
-  render AT_DELTA {..} = render delta
-  render AT_META {..} = render meta
+  render AT_LABEL{..} = label
+  render AT_ALPHA{..} = render alpha <> render idx
+  render AT_RHO{..} = render rho
+  render AT_PHI{..} = render phi
+  render AT_LAMBDA{..} = render lambda
+  render AT_DELTA{..} = render delta
+  render AT_META{..} = render meta

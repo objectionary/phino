@@ -37,12 +37,12 @@ type RewriteState = ([Rewritten], Set.Set Program)
 type Rewritten = (Program, Maybe String)
 
 data RewriteContext = RewriteContext
-  { _maxDepth :: Integer,
-    _maxCycles :: Integer,
-    _depthSensitive :: Bool,
-    _buildTerm :: BuildTermFunc,
-    _must :: Must,
-    _saveStep :: SaveStepFunc
+  { _maxDepth :: Integer
+  , _maxCycles :: Integer
+  , _depthSensitive :: Bool
+  , _buildTerm :: BuildTermFunc
+  , _must :: Must
+  , _saveStep :: SaveStepFunc
   }
 
 data RewriteException
@@ -53,24 +53,24 @@ data RewriteException
   deriving (Exception)
 
 instance Show RewriteException where
-  show MustBeGoing {..} =
+  show MustBeGoing{..} =
     printf
       "With option --must=%s it's expected rewriting cycles to be in range [%s], but rewriting stopped after %d cycles"
       (show must)
       (show must)
       count
-  show MustStopBefore {..} =
+  show MustStopBefore{..} =
     printf
       "With option --must=%s it's expected rewriting cycles to be in range [%s], but rewriting has already reached %d cycles and is still going"
       (show must)
       (show must)
       count
-  show StoppedOnLimit {..} =
+  show StoppedOnLimit{..} =
     printf
       "With option --depth-sensitive it's expected rewriting iterations amount does not reach the limit: --%s=%d"
       flag
       limit
-  show LoopingRewriting {..} =
+  show LoopingRewriting{..} =
     printf
       "On rewriting step '%d' of rule '%s' we got the same program as we got at one of the previous step, it seems rewriting is looping\nProgram: %s"
       step
@@ -110,18 +110,18 @@ tryBuildAndReplaceFast (ExFormation pbds) (ExFormation rbds) substs ctx =
         else do
           logDebug "Applying regular replacing..."
           buildAndReplace' (ExFormation pbds) (ExFormation rbds) substs replaceProgramThrows ctx
-  where
-    startsAndEndsWithMeta :: [Binding] -> Bool
-    startsAndEndsWithMeta bds =
-      length bds > 1
-        && isMetaBinding (head bds)
-        && isMetaBinding (last bds)
-    hasMetaBindings :: [Binding] -> Bool
-    isMetaBinding :: Binding -> Bool
-    isMetaBinding = \case
-      BiMeta _ -> True
-      _ -> False
-    hasMetaBindings = foldl (\acc bd -> acc || isMetaBinding bd) False
+ where
+  startsAndEndsWithMeta :: [Binding] -> Bool
+  startsAndEndsWithMeta bds =
+    length bds > 1
+      && isMetaBinding (head bds)
+      && isMetaBinding (last bds)
+  hasMetaBindings :: [Binding] -> Bool
+  isMetaBinding :: Binding -> Bool
+  isMetaBinding = \case
+    BiMeta _ -> True
+    _ -> False
+  hasMetaBindings = foldl (\acc bd -> acc || isMetaBinding bd) False
 tryBuildAndReplaceFast ptn res substs ctx = buildAndReplace' ptn res substs replaceProgramThrows ctx
 
 -- The function returns tuple (X, Y) where
@@ -130,83 +130,83 @@ tryBuildAndReplaceFast ptn res substs ctx = buildAndReplace' ptn res substs repl
 --   into loop and get back to program which we've already got before
 rewrite :: RewriteState -> [Y.Rule] -> Integer -> RewriteContext -> IO RewriteState
 rewrite state [] _ _ = pure state
-rewrite state (rule : rest) iteration ctx@RewriteContext {..} = do
+rewrite state (rule : rest) iteration ctx@RewriteContext{..} = do
   state' <- _rewrite state 1
   rewrite state' rest iteration ctx
-  where
-    _rewrite :: RewriteState -> Integer -> IO RewriteState
-    _rewrite (_rewrittens, _unique) _count =
-      let ruleName = fromMaybe "unknown" (Y.name rule)
-          ptn = Y.pattern rule
-          res = Y.result rule
-          (program, _) = head _rewrittens
-       in if _count - 1 == _maxDepth
-            then do
-              logDebug (printf "Max amount of rewriting cycles (%d) for rule '%s' has been reached, rewriting is stopped" _maxDepth ruleName)
-              if _depthSensitive
-                then throwIO (StoppedOnLimit "max-depth" _maxDepth)
-                else pure (_rewrittens, _unique)
-            else do
-              logDebug (printf "Starting rewriting cycle for rule '%s': %d out of %d" ruleName _count _maxDepth)
-              matched <- R.matchProgramWithRule program rule (RuleContext _buildTerm)
-              if null matched
-                then do
-                  logDebug (printf "Rule '%s' does not match, rewriting is stopped" ruleName)
-                  pure (_rewrittens, _unique)
-                else do
-                  logDebug (printf "Rule '%s' has been matched, applying..." ruleName)
-                  prog <- tryBuildAndReplaceFast ptn res matched (ReplaceProgramContext program _maxDepth)
-                  if program == prog
-                    then do
-                      logDebug (printf "Applied '%s', no changes made" ruleName)
-                      pure (_rewrittens, _unique)
-                    else
-                      if Set.member prog _unique
-                        then throwIO (LoopingRewriting (printProgram prog) ruleName _count)
-                        else do
-                          logDebug
-                            ( printf
-                                "Applied '%s' (%d nodes -> %d nodes)\n%s"
-                                ruleName
-                                (countNodes program)
-                                (countNodes prog)
-                                (printProgram prog)
-                            )
-                          _saveStep prog (((iteration - 1) * _maxDepth) + _count)
-                          _rewrite (leadsTo prog, Set.insert prog _unique) (_count + 1)
-      where
-        leadsTo :: Program -> [Rewritten]
-        leadsTo _prog =
-          let (program, _) : rest = _rewrittens
-           in (_prog, Nothing) : (program, Just (map toLower (fromMaybe "unknown" (Y.name rule)))) : rest
+ where
+  _rewrite :: RewriteState -> Integer -> IO RewriteState
+  _rewrite (_rewrittens, _unique) _count =
+    let ruleName = fromMaybe "unknown" (Y.name rule)
+        ptn = Y.pattern rule
+        res = Y.result rule
+        (program, _) = head _rewrittens
+     in if _count - 1 == _maxDepth
+          then do
+            logDebug (printf "Max amount of rewriting cycles (%d) for rule '%s' has been reached, rewriting is stopped" _maxDepth ruleName)
+            if _depthSensitive
+              then throwIO (StoppedOnLimit "max-depth" _maxDepth)
+              else pure (_rewrittens, _unique)
+          else do
+            logDebug (printf "Starting rewriting cycle for rule '%s': %d out of %d" ruleName _count _maxDepth)
+            matched <- R.matchProgramWithRule program rule (RuleContext _buildTerm)
+            if null matched
+              then do
+                logDebug (printf "Rule '%s' does not match, rewriting is stopped" ruleName)
+                pure (_rewrittens, _unique)
+              else do
+                logDebug (printf "Rule '%s' has been matched, applying..." ruleName)
+                prog <- tryBuildAndReplaceFast ptn res matched (ReplaceProgramContext program _maxDepth)
+                if program == prog
+                  then do
+                    logDebug (printf "Applied '%s', no changes made" ruleName)
+                    pure (_rewrittens, _unique)
+                  else
+                    if Set.member prog _unique
+                      then throwIO (LoopingRewriting (printProgram prog) ruleName _count)
+                      else do
+                        logDebug
+                          ( printf
+                              "Applied '%s' (%d nodes -> %d nodes)\n%s"
+                              ruleName
+                              (countNodes program)
+                              (countNodes prog)
+                              (printProgram prog)
+                          )
+                        _saveStep prog (((iteration - 1) * _maxDepth) + _count)
+                        _rewrite (leadsTo prog, Set.insert prog _unique) (_count + 1)
+   where
+    leadsTo :: Program -> [Rewritten]
+    leadsTo _prog =
+      let (program, _) : rest = _rewrittens
+       in (_prog, Nothing) : (program, Just (map toLower (fromMaybe "unknown" (Y.name rule)))) : rest
 
 -- The function accepts single program but returns sequence of programs
 rewrite' :: Program -> [Y.Rule] -> RewriteContext -> IO [Rewritten]
 rewrite' prog rules ctx = _rewrite ([(prog, Nothing)], Set.empty) 1 ctx <&> reverse
-  where
-    _rewrite :: RewriteState -> Integer -> RewriteContext -> IO [Rewritten]
-    _rewrite state@(rewrittens, unique) count ctx@RewriteContext {..} = do
-      let cycles = _maxCycles
-          must = _must
-          current = count - 1
-      if not (inRange must current) && current > 0 && exceedsUpperBound must current
-        then throwIO (MustStopBefore must current)
-        else
-          if current == cycles
-            then do
-              logDebug (printf "Max amount of rewriting cycles for all rules (%d) has been reached, rewriting is stopped" cycles)
-              if _depthSensitive
-                then throwIO (StoppedOnLimit "max-cycles" cycles)
-                else pure rewrittens
-            else do
-              logDebug (printf "Starting rewriting cycle for all rules: %d out of %d" count cycles)
-              state'@(rewrittens', unique') <- rewrite state rules count ctx
-              let (program', _) = head rewrittens'
-                  (program, _) = head rewrittens
-              if program' == program
-                then do
-                  logDebug "Rewriting is stopped since it has no effect"
-                  if not (inRange must current)
-                    then throwIO (MustBeGoing must current)
-                    else pure rewrittens'
-                else _rewrite state' (count + 1) ctx
+ where
+  _rewrite :: RewriteState -> Integer -> RewriteContext -> IO [Rewritten]
+  _rewrite state@(rewrittens, unique) count ctx@RewriteContext{..} = do
+    let cycles = _maxCycles
+        must = _must
+        current = count - 1
+    if not (inRange must current) && current > 0 && exceedsUpperBound must current
+      then throwIO (MustStopBefore must current)
+      else
+        if current == cycles
+          then do
+            logDebug (printf "Max amount of rewriting cycles for all rules (%d) has been reached, rewriting is stopped" cycles)
+            if _depthSensitive
+              then throwIO (StoppedOnLimit "max-cycles" cycles)
+              else pure rewrittens
+          else do
+            logDebug (printf "Starting rewriting cycle for all rules: %d out of %d" count cycles)
+            state'@(rewrittens', unique') <- rewrite state rules count ctx
+            let (program', _) = head rewrittens'
+                (program, _) = head rewrittens
+            if program' == program
+              then do
+                logDebug "Rewriting is stopped since it has no effect"
+                if not (inRange must current)
+                  then throwIO (MustBeGoing must current)
+                  else pure rewrittens'
+              else _rewrite state' (count + 1) ctx

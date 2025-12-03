@@ -33,9 +33,9 @@ withStdin input action =
         hDuplicateTo hIn stdin
         hSetEncoding stdin utf8
         action
-  where
-    restoreStdin orig = hDuplicateTo orig stdin >> hClose orig
-    cleanup (fp, _) = removeFile fp
+ where
+  restoreStdin orig = hDuplicateTo orig stdin >> hClose orig
+  cleanup (fp, _) = removeFile fp
 
 withStdout :: IO a -> IO (String, a)
 withStdout action =
@@ -61,8 +61,8 @@ withStdout action =
         _ <- evaluate (length captured)
         return (captured, result)
     )
-  where
-    cleanup (fp, _) = removeFile fp
+ where
+  cleanup (fp, _) = removeFile fp
 
 withTempFile :: String -> ((FilePath, Handle) -> IO a) -> IO a
 withTempFile pattern =
@@ -168,10 +168,10 @@ spec = do
       it "with wrong attribute and valid error message" $
         testCLIFailed
           ["rewrite", resource "with-$this-attribute.phi"]
-          [ "[ERROR]: Couldn't parse given phi program, cause: program:10:13:",
-            "10 |             $this ↦ ⟦⟧",
-            "   |             ^^",
-            "unexpected \"$t\""
+          [ "[ERROR]: Couldn't parse given phi program, cause: program:10:13:"
+          , "10 |             $this ↦ ⟦⟧"
+          , "   |             ^^"
+          , "unexpected \"$t\""
           ]
 
       it "with --output != latex and --nonumber" $
@@ -215,7 +215,7 @@ spec = do
           testCLIFailed
             ["rewrite", "--show=Q.x.y", "--show=hello"]
             ["The option --show can be used only once"]
-      
+
       it "with wrong --show option" $
         withStdin "{[[]]}" $
           testCLIFailed
@@ -254,15 +254,15 @@ spec = do
       testCLISucceeded
         ["rewrite", "--normalize", resource "normalize.phi"]
         [ unlines
-            [ "Φ ↦ ⟦",
-              "  x ↦ ⟦",
-              "    ρ ↦ ⟦",
-              "      y ↦ ⟦ ρ ↦ ∅ ⟧,",
-              "      ρ ↦ ∅",
-              "    ⟧",
-              "  ⟧,",
-              "  ρ ↦ ∅",
-              "⟧"
+            [ "Φ ↦ ⟦"
+            , "  x ↦ ⟦"
+            , "    ρ ↦ ⟦"
+            , "      y ↦ ⟦ ρ ↦ ∅ ⟧,"
+            , "      ρ ↦ ∅"
+            , "    ⟧"
+            , "  ⟧,"
+            , "  ρ ↦ ∅"
+            , "⟧"
             ]
         ]
 
@@ -271,13 +271,13 @@ spec = do
         testCLISucceeded
           ["rewrite", "--normalize"]
           [ unlines
-              [ "Φ ↦ ⟦",
-                "  a ↦ ⟦",
-                "    b ↦ ⟦ ρ ↦ ∅ ⟧,",
-                "    ρ ↦ ∅",
-                "  ⟧,",
-                "  ρ ↦ ∅",
-                "⟧"
+              [ "Φ ↦ ⟦"
+              , "  a ↦ ⟦"
+              , "    b ↦ ⟦ ρ ↦ ∅ ⟧,"
+              , "    ρ ↦ ∅"
+              , "  ⟧,"
+              , "  ρ ↦ ∅"
+              , "⟧"
               ]
           ]
 
@@ -297,44 +297,44 @@ spec = do
       withStdin "Q -> [[ x_o -> QQ.z(y -> 5), q$ -> T, w -> $, ^ -> Q, @ -> 1, y -> \"H$@^M\", L> Fu_nc ]]" $
         testCLISucceeded
           ["rewrite", "--output=latex", "--sweet"]
-          [ "\\begin{phiquation}",
-            "\\Big\\{[[\n",
-            "  |x\\char95{}o| -> QQ.|z|( |y| -> 5 ),\n",
-            "  |q\\char36{}| -> T,\n",
-            "  |w| -> $,\n",
-            "  ^ -> Q,\n",
-            "  @ -> 1,\n",
-            "  |y| -> \"H$@^M\",\n",
-            "  L> |Fu\\char95{}nc|\n",
-            "]]\\Big\\}",
-            "\\end{phiquation}"
+          [ "\\begin{phiquation}"
+          , "\\Big\\{[[\n"
+          , "  |x\\char95{}o| -> QQ.|z|( |y| -> 5 ),\n"
+          , "  |q\\char36{}| -> T,\n"
+          , "  |w| -> $,\n"
+          , "  ^ -> Q,\n"
+          , "  @ -> 1,\n"
+          , "  |y| -> \"H$@^M\",\n"
+          , "  L> |Fu\\char95{}nc|\n"
+          , "]]\\Big\\}"
+          , "\\end{phiquation}"
           ]
 
     it "rewrites as LaTeX without numeration" $
       withStdin "Q -> [[ x -> 5 ]]" $
         testCLISucceeded
           ["rewrite", "--output=latex", "--sweet", "--nonumber", "--flat"]
-          [ "\\begin{phiquation*}",
-            "\\Big\\{[[ |x| -> 5 ]]\\Big\\}",
-            "\\end{phiquation*}"
+          [ "\\begin{phiquation*}"
+          , "\\Big\\{[[ |x| -> 5 ]]\\Big\\}"
+          , "\\end{phiquation*}"
           ]
 
     it "rewrite as LaTeX with expression name" $
       withStdin "Q -> [[ x -> 5 ]]" $
         testCLISucceeded
           ["rewrite", "--output=latex", "--sweet", "--flat", "--expression=foo"]
-          [ "\\begin{phiquation}",
-            "\\phiExpression{foo} \\Big\\{[[ |x| -> 5 ]]\\Big\\}.\n",
-            "\\end{phiquation}"
+          [ "\\begin{phiquation}"
+          , "\\phiExpression{foo} \\Big\\{[[ |x| -> 5 ]]\\Big\\}.\n"
+          , "\\end{phiquation}"
           ]
 
     it "rewrite as LaTeX with label name" $
       withStdin "Q -> [[ x -> 5 ]]" $
         testCLISucceeded
           ["rewrite", "--output=latex", "--sweet", "--flat", "--label=foo"]
-          [ "\\begin{phiquation}\n\\label{foo}\n",
-            "\\Big\\{[[ |x| -> 5 ]]\\Big\\}.\n",
-            "\\end{phiquation}"
+          [ "\\begin{phiquation}\n\\label{foo}\n"
+          , "\\Big\\{[[ |x| -> 5 ]]\\Big\\}.\n"
+          , "\\end{phiquation}"
           ]
 
     it "rewrites with XMIR as input" $
@@ -342,11 +342,11 @@ spec = do
         testCLISucceeded
           ["rewrite", "--input=xmir", "--sweet"]
           [ unlines
-              [ "{⟦",
-                "  app ↦ ⟦",
-                "    x ↦ Φ.number",
-                "  ⟧",
-                "⟧}"
+              [ "{⟦"
+              , "  app ↦ ⟦"
+              , "    x ↦ Φ.number"
+              , "  ⟧"
+              , "⟧}"
               ]
           ]
 
@@ -365,41 +365,41 @@ spec = do
     it "prints many programs with --sequence" $
       withStdin "{[[ x -> \"foo\" ]]}" $
         testCLISucceeded
-          [ "rewrite",
-            rule "first.yaml",
-            rule "second.yaml",
-            "--max-depth=1",
-            "--max-cycles=2",
-            "--sequence",
-            "--sweet",
-            "--flat"
+          [ "rewrite"
+          , rule "first.yaml"
+          , rule "second.yaml"
+          , "--max-depth=1"
+          , "--max-cycles=2"
+          , "--sequence"
+          , "--sweet"
+          , "--flat"
           ]
           [ unlines
-              [ "{⟦ x ↦ \"foo\" ⟧}",
-                "{Φ.x( y ↦ \"foo\" )}",
-                "{⟦ x ↦ \"foo\" ⟧}"
+              [ "{⟦ x ↦ \"foo\" ⟧}"
+              , "{Φ.x( y ↦ \"foo\" )}"
+              , "{⟦ x ↦ \"foo\" ⟧}"
               ]
           ]
 
     it "prints only one latex preamble with --sequence" $
       withStdin "{[[ x -> \"foo\" ]]}" $
         testCLISucceeded
-          [ "rewrite",
-            rule "first.yaml",
-            rule "second.yaml",
-            "--max-depth=1",
-            "--max-cycles=2",
-            "--sequence",
-            "--sweet",
-            "--flat",
-            "--output=latex"
+          [ "rewrite"
+          , rule "first.yaml"
+          , rule "second.yaml"
+          , "--max-depth=1"
+          , "--max-cycles=2"
+          , "--sequence"
+          , "--sweet"
+          , "--flat"
+          , "--output=latex"
           ]
           [ unlines
-              [ "\\begin{phiquation}",
-                "\\Big\\{[[ |x| -> \"foo\" ]]\\Big\\} \\leadsto_{\\nameref{r:first}}",
-                "  \\leadsto \\Big\\{Q.|x|( |y| -> \"foo\" )\\Big\\} \\leadsto_{\\nameref{r:second}}",
-                "  \\leadsto \\Big\\{[[ |x| -> \"foo\" ]]\\Big\\}.",
-                "\\end{phiquation}"
+              [ "\\begin{phiquation}"
+              , "\\Big\\{[[ |x| -> \"foo\" ]]\\Big\\} \\leadsto_{\\nameref{r:first}}"
+              , "  \\leadsto \\Big\\{Q.|x|( |y| -> \"foo\" )\\Big\\} \\leadsto_{\\nameref{r:second}}"
+              , "  \\leadsto \\Big\\{[[ |x| -> \"foo\" ]]\\Big\\}."
+              , "\\end{phiquation}"
               ]
           ]
 
@@ -496,9 +496,9 @@ spec = do
         testCLISucceeded
           ["rewrite", "--sweet", rule "infinite.yaml", "--max-depth=1", "--max-cycles=2"]
           [ unlines
-              [ "{⟦",
-                "  x ↦ \"x_hi_hi\"",
-                "⟧}"
+              [ "{⟦"
+              , "  x ↦ \"x_hi_hi\""
+              , "⟧}"
               ]
           ]
 
@@ -529,10 +529,10 @@ spec = do
     it "removes unnecessary rho bindings in primitive applications" $
       withStdin
         ( unlines
-            [ "{[[",
-              "  z -> [[ x -> [[ t -> 42 ]].t ]].x,",
-              "  org -> [[ eolang -> [[ bytes -> [[ data -> ? ]], number -> [[ as-bytes -> ? ]] ]] ]]",
-              "]]}"
+            [ "{[["
+            , "  z -> [[ x -> [[ t -> 42 ]].t ]].x,"
+            , "  org -> [[ eolang -> [[ bytes -> [[ data -> ? ]], number -> [[ as-bytes -> ? ]] ]] ]]"
+            , "]]}"
             ]
         )
         ( testCLISucceeded
@@ -546,11 +546,11 @@ spec = do
           ["rewrite", "--log-level=debug", "--log-lines=4", "--normalize"]
           [ intercalate
               "\n"
-              [ "[DEBUG]: Applied 'COPY' (28 nodes -> 25 nodes)",
-                "{⟦",
-                "  x ↦ ⟦",
-                "    y ↦ 5",
-                "---| log is limited by --log-lines=4 option |---"
+              [ "[DEBUG]: Applied 'COPY' (28 nodes -> 25 nodes)"
+              , "{⟦"
+              , "  x ↦ ⟦"
+              , "    y ↦ 5"
+              , "---| log is limited by --log-lines=4 option |---"
               ]
           ]
 
@@ -575,15 +575,15 @@ spec = do
           ["dataize", "--sequence", "--output=latex", "--flat", "--sweet"]
           [ intercalate
               "\n"
-              [ "\\begin{phiquation}",
-                "\\Big\\{[[ @ -> [[ |x| -> [[ D> 01-, |y| -> ? ]]( |y| -> [[]] ) ]].|x| ]]\\Big\\} \\leadsto_{\\nameref{r:contextualize}}",
-                "  \\leadsto \\Big\\{[[ |x| -> [[ D> 01-, |y| -> ? ]]( |y| -> [[]] ) ]].|x|\\Big\\} \\leadsto_{\\nameref{r:copy}}",
-                "  \\leadsto \\Big\\{[[ |x| -> [[ D> 01-, |y| -> [[]] ]] ]].|x|\\Big\\} \\leadsto_{\\nameref{r:dot}}",
-                "  \\leadsto \\Big\\{[[ D> 01-, |y| -> [[]] ]]( ^ -> [[ |x| -> [[ D> 01-, |y| -> [[]] ]] ]] )\\Big\\} \\leadsto_{\\nameref{r:copy}}",
-                "  \\leadsto \\Big\\{[[ D> 01-, |y| -> [[]], ^ -> [[ |x| -> [[ D> 01-, |y| -> [[]] ]] ]] ]]\\Big\\} \\leadsto_{\\nameref{r:Mprim}}",
-                "  \\leadsto \\Big\\{[[ D> 01-, |y| -> [[]], ^ -> [[ |x| -> [[ D> 01-, |y| -> [[]] ]] ]] ]]\\Big\\}.",
-                "\\end{phiquation}",
-                "01-"
+              [ "\\begin{phiquation}"
+              , "\\Big\\{[[ @ -> [[ |x| -> [[ D> 01-, |y| -> ? ]]( |y| -> [[]] ) ]].|x| ]]\\Big\\} \\leadsto_{\\nameref{r:contextualize}}"
+              , "  \\leadsto \\Big\\{[[ |x| -> [[ D> 01-, |y| -> ? ]]( |y| -> [[]] ) ]].|x|\\Big\\} \\leadsto_{\\nameref{r:copy}}"
+              , "  \\leadsto \\Big\\{[[ |x| -> [[ D> 01-, |y| -> [[]] ]] ]].|x|\\Big\\} \\leadsto_{\\nameref{r:dot}}"
+              , "  \\leadsto \\Big\\{[[ D> 01-, |y| -> [[]] ]]( ^ -> [[ |x| -> [[ D> 01-, |y| -> [[]] ]] ]] )\\Big\\} \\leadsto_{\\nameref{r:copy}}"
+              , "  \\leadsto \\Big\\{[[ D> 01-, |y| -> [[]], ^ -> [[ |x| -> [[ D> 01-, |y| -> [[]] ]] ]] ]]\\Big\\} \\leadsto_{\\nameref{r:Mprim}}"
+              , "  \\leadsto \\Big\\{[[ D> 01-, |y| -> [[]], ^ -> [[ |x| -> [[ D> 01-, |y| -> [[]] ]] ]] ]]\\Big\\}."
+              , "\\end{phiquation}"
+              , "01-"
               ]
           ]
 
@@ -673,17 +673,17 @@ spec = do
       testCLISucceeded
         ["merge", "--sweet", resource "number.phi", resource "bytes.phi", resource "string.phi"]
         [ unlines
-            [ "{⟦",
-              "  org ↦ ⟦",
-              "    eolang ↦ ⟦",
-              "      number(φ) ↦ ⟦⟧,",
-              "      bytes(data) ↦ ⟦⟧,",
-              "      string(φ) ↦ ⟦⟧,",
-              "      λ ⤍ Package",
-              "    ⟧,",
-              "    λ ⤍ Package",
-              "  ⟧",
-              "⟧}"
+            [ "{⟦"
+            , "  org ↦ ⟦"
+            , "    eolang ↦ ⟦"
+            , "      number(φ) ↦ ⟦⟧,"
+            , "      bytes(data) ↦ ⟦⟧,"
+            , "      string(φ) ↦ ⟦⟧,"
+            , "      λ ⤍ Package"
+            , "    ⟧,"
+            , "    λ ⤍ Package"
+            , "  ⟧"
+            , "⟧}"
             ]
         ]
 

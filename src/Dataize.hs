@@ -28,16 +28,16 @@ type Dataizable = (Expression, [Rewritten])
 type Morphed = Dataizable
 
 data DataizeContext = DataizeContext
-  { _program :: Program,
-    _maxDepth :: Integer,
-    _maxCycles :: Integer,
-    _depthSensitive :: Bool,
-    _buildTerm :: BuildTermFunc,
-    _saveStep :: SaveStepFunc
+  { _program :: Program
+  , _maxDepth :: Integer
+  , _maxCycles :: Integer
+  , _depthSensitive :: Bool
+  , _buildTerm :: BuildTermFunc
+  , _saveStep :: SaveStepFunc
   }
 
 switchContext :: DataizeContext -> RewriteContext
-switchContext DataizeContext {..} =
+switchContext DataizeContext{..} =
   RewriteContext
     _maxDepth
     _maxCycles
@@ -84,12 +84,12 @@ phiDispatch :: String -> Expression -> Maybe (Expression, String)
 phiDispatch tau expr = case expr of
   ExFormation bds -> boundExpr bds
   _ -> Nothing
-  where
-    boundExpr :: [Binding] -> Maybe (Expression, String)
-    boundExpr [] = Nothing
-    boundExpr (bd : bds) = case bd of
-      BiTau (AtLabel attr) expr' -> if attr == tau then Just (expr', "Mphi") else boundExpr bds
-      _ -> boundExpr bds
+ where
+  boundExpr :: [Binding] -> Maybe (Expression, String)
+  boundExpr [] = Nothing
+  boundExpr (bd : bds) = case bd of
+    BiTau (AtLabel attr) expr' -> if attr == tau then Just (expr', "Mphi") else boundExpr bds
+    _ -> boundExpr bds
 
 -- Resolve tail PHI and LAMBDA Morphing rules.
 -- Tail MUST start with dispatch, that's why most of the applications return Nothing
@@ -107,10 +107,10 @@ withTail (ExDispatch (ExFormation bds) attr) ctx = do
     Just (obj, rule) -> pure (Just (ExDispatch obj attr, rule))
     _ -> pure Nothing
 withTail (ExFormation bds) ctx = formation bds ctx
-withTail (ExDispatch (ExDispatch ExGlobal (AtLabel label)) attr) (DataizeContext {_program = Program expr}) = case phiDispatch label expr of
+withTail (ExDispatch (ExDispatch ExGlobal (AtLabel label)) attr) (DataizeContext{_program = Program expr}) = case phiDispatch label expr of
   Just (obj, rule) -> pure (Just (ExDispatch obj attr, rule))
   _ -> pure Nothing
-withTail (ExDispatch ExGlobal (AtLabel label)) (DataizeContext {_program = Program expr}) = pure (phiDispatch label expr)
+withTail (ExDispatch ExGlobal (AtLabel label)) (DataizeContext{_program = Program expr}) = pure (phiDispatch label expr)
 withTail (ExDispatch expr attr) ctx = do
   tailed <- withTail expr ctx
   case tailed of

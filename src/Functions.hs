@@ -76,24 +76,24 @@ _randomTau args subst = do
   attrs <- argsToAttrs args
   tau <- randomTau attrs
   pure (TeAttribute (AtLabel tau))
-  where
-    argsToAttrs :: [Y.ExtraArgument] -> IO [String]
-    argsToAttrs [] = pure []
-    argsToAttrs (arg : rest) = case arg of
-      Y.ArgExpression _ -> argsToAttrs rest
-      Y.ArgAttribute attr -> do
-        attr' <- buildAttributeThrows attr subst
-        rest' <- argsToAttrs rest
-        pure (printAttribute attr' : rest')
-      Y.ArgBinding bd -> do
-        bds <- buildBindingThrows bd subst
-        rest' <- argsToAttrs rest
-        pure (map show (attributesFromBindings bds) ++ rest')
-      Y.ArgBytes _ -> throwIO (userError "Bytes can't be argument of random-tau() function")
-    randomTau :: [String] -> IO String
-    randomTau attrs = do
-      tau <- randomString "a🌵%d"
-      if tau `elem` attrs then randomTau attrs else pure tau
+ where
+  argsToAttrs :: [Y.ExtraArgument] -> IO [String]
+  argsToAttrs [] = pure []
+  argsToAttrs (arg : rest) = case arg of
+    Y.ArgExpression _ -> argsToAttrs rest
+    Y.ArgAttribute attr -> do
+      attr' <- buildAttributeThrows attr subst
+      rest' <- argsToAttrs rest
+      pure (printAttribute attr' : rest')
+    Y.ArgBinding bd -> do
+      bds <- buildBindingThrows bd subst
+      rest' <- argsToAttrs rest
+      pure (map show (attributesFromBindings bds) ++ rest')
+    Y.ArgBytes _ -> throwIO (userError "Bytes can't be argument of random-tau() function")
+  randomTau :: [String] -> IO String
+  randomTau attrs = do
+    tau <- randomString "a🌵%d"
+    if tau `elem` attrs then randomTau attrs else pure tau
 
 _dataize :: BuildTermMethod
 _dataize [Y.ArgBytes bytes] subst = do
@@ -123,38 +123,38 @@ _sed args subst = do
       args
   res <- sed (head args') (tail args')
   pure (TeExpression (DataString (strToBts (B.unpack res))))
-  where
-    sed :: B.ByteString -> [B.ByteString] -> IO B.ByteString
-    sed tgt [] = pure tgt
-    sed tgt (ptn : ptns) = do
-      (pat, rep, global) <- parse ptn
-      regex <- compile pat
-      next <-
-        if global
-          then replaceAll regex rep tgt
-          else replaceFirst regex rep tgt
-      sed next ptns
-    parse :: B.ByteString -> IO (B.ByteString, B.ByteString, Bool)
-    parse input =
-      case B.stripPrefix "s/" input of
-        Just body ->
-          let (pat, rest) = nextUntilSlash body B.empty False
-              (rep, flag) = nextUntilSlash rest B.empty True
-           in case [pat, rep, flag] of
-                [pat, rep, "g"] -> pure (pat, rep, True)
-                [pat, rep, ""] -> pure (pat, rep, False)
-                _ -> throwIO (userError "sed pattern must be in format s/pat/rep/[g]")
-        _ -> throwIO (userError "sed pattern must start with s/")
-    -- Cut part from given string until regular slash.
-    nextUntilSlash :: B.ByteString -> B.ByteString -> Bool -> (B.ByteString, B.ByteString)
-    nextUntilSlash input acc escape = case B.uncons input of
-      Nothing -> (acc, B.empty)
-      Just (h, rest)
-        | h == '\\' -> case B.uncons rest of
-            Just (h', rest') -> nextUntilSlash rest' ((if escape then acc else B.snoc acc '\\') `B.append` B.singleton h') escape
-            Nothing -> (if escape then acc else B.snoc acc '\\', B.empty)
-        | h == '/' -> (acc, rest)
-        | otherwise -> nextUntilSlash rest (B.snoc acc h) escape
+ where
+  sed :: B.ByteString -> [B.ByteString] -> IO B.ByteString
+  sed tgt [] = pure tgt
+  sed tgt (ptn : ptns) = do
+    (pat, rep, global) <- parse ptn
+    regex <- compile pat
+    next <-
+      if global
+        then replaceAll regex rep tgt
+        else replaceFirst regex rep tgt
+    sed next ptns
+  parse :: B.ByteString -> IO (B.ByteString, B.ByteString, Bool)
+  parse input =
+    case B.stripPrefix "s/" input of
+      Just body ->
+        let (pat, rest) = nextUntilSlash body B.empty False
+            (rep, flag) = nextUntilSlash rest B.empty True
+         in case [pat, rep, flag] of
+              [pat, rep, "g"] -> pure (pat, rep, True)
+              [pat, rep, ""] -> pure (pat, rep, False)
+              _ -> throwIO (userError "sed pattern must be in format s/pat/rep/[g]")
+      _ -> throwIO (userError "sed pattern must start with s/")
+  -- Cut part from given string until regular slash.
+  nextUntilSlash :: B.ByteString -> B.ByteString -> Bool -> (B.ByteString, B.ByteString)
+  nextUntilSlash input acc escape = case B.uncons input of
+    Nothing -> (acc, B.empty)
+    Just (h, rest)
+      | h == '\\' -> case B.uncons rest of
+          Just (h', rest') -> nextUntilSlash rest' ((if escape then acc else B.snoc acc '\\') `B.append` B.singleton h') escape
+          Nothing -> (if escape then acc else B.snoc acc '\\', B.empty)
+      | h == '/' -> (acc, rest)
+      | otherwise -> nextUntilSlash rest (B.snoc acc h) escape
 
 _randomString :: BuildTermMethod
 _randomString [arg] subst = do
@@ -216,32 +216,32 @@ _join [] _ = pure (TeBindings [])
 _join args subst = do
   bds <- buildBindings args
   pure (TeBindings (join' bds Set.empty))
-  where
-    buildBindings :: [Y.ExtraArgument] -> IO [Binding]
-    buildBindings [] = pure []
-    buildBindings (Y.ArgBinding bd : args') = do
-      bds <- buildBindingThrows bd subst
-      next <- buildBindings args'
-      pure (bds ++ next)
-    buildBindings _ = throwIO (userError "Function 'join' can work with bindings only")
-    join' :: [Binding] -> Set.Set Attribute -> [Binding]
-    join' [] _ = []
-    join' (bd : bds) attrs =
-      let [attr] = attributesFromBindings [bd]
-       in if Set.member attr attrs
-            then
-              if attr == AtRho || attr == AtDelta || attr == AtLambda
-                then join' bds attrs
-                else
-                  let new = case bd of
-                        BiTau attr expr -> BiTau (updated attr attrs) expr
-                        BiVoid attr -> BiVoid (updated attr attrs)
-                   in new : join' bds attrs
-            else bd : join' bds (Set.insert attr attrs)
-    updated :: Attribute -> Set.Set Attribute -> Attribute
-    updated attr attrs =
-      let (TeAttribute attr') = unsafePerformIO (_randomTau (map Y.ArgAttribute (Set.toList attrs)) subst)
-       in attr'
+ where
+  buildBindings :: [Y.ExtraArgument] -> IO [Binding]
+  buildBindings [] = pure []
+  buildBindings (Y.ArgBinding bd : args') = do
+    bds <- buildBindingThrows bd subst
+    next <- buildBindings args'
+    pure (bds ++ next)
+  buildBindings _ = throwIO (userError "Function 'join' can work with bindings only")
+  join' :: [Binding] -> Set.Set Attribute -> [Binding]
+  join' [] _ = []
+  join' (bd : bds) attrs =
+    let [attr] = attributesFromBindings [bd]
+     in if Set.member attr attrs
+          then
+            if attr == AtRho || attr == AtDelta || attr == AtLambda
+              then join' bds attrs
+              else
+                let new = case bd of
+                      BiTau attr expr -> BiTau (updated attr attrs) expr
+                      BiVoid attr -> BiVoid (updated attr attrs)
+                 in new : join' bds attrs
+          else bd : join' bds (Set.insert attr attrs)
+  updated :: Attribute -> Set.Set Attribute -> Attribute
+  updated attr attrs =
+    let (TeAttribute attr') = unsafePerformIO (_randomTau (map Y.ArgAttribute (Set.toList attrs)) subst)
+     in attr'
 
 _unsupported :: BuildTermFunc
 _unsupported func _ _ = throwIO (userError (printf "Function %s() is not supported or does not exist" func))

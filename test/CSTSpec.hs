@@ -21,8 +21,8 @@ import System.FilePath
 import Test.Hspec
 
 data CSTPack = CSTPack
-  { program :: String,
-    result :: String
+  { program :: String
+  , result :: String
   }
   deriving (Generic, Show, FromJSON)
 
@@ -33,9 +33,10 @@ spec :: Spec
 spec = do
   describe "builds valid CST" $
     forM_
-      [ ("Q -> Q", PR_SWEET LCB (EX_GLOBAL Φ) RCB),
-        ( "{[[ x -> Q.y ]]}",
-          PR_SWEET
+      [ ("Q -> Q", PR_SWEET LCB (EX_GLOBAL Φ) RCB)
+      ,
+        ( "{[[ x -> Q.y ]]}"
+        , PR_SWEET
             LCB
             ( EX_FORMATION
                 LSB

@@ -8,35 +8,35 @@
 -- The goal of the module is to traverse though the Program with replacing
 -- pattern sub expression with target expressions
 module Replacer
-  ( replaceProgram,
-    replaceProgramThrows,
-    replaceProgramFast,
-    replaceProgramFastThrows,
-    ReplaceProgramThrowsFunc,
-    ReplaceProgramFunc,
-    ReplaceProgramContext (..),
+  ( replaceProgram
+  , replaceProgramThrows
+  , replaceProgramFast
+  , replaceProgramFastThrows
+  , ReplaceProgramThrowsFunc
+  , ReplaceProgramFunc
+  , ReplaceProgramContext (..)
   )
 where
 
 import AST
 import Control.Exception (Exception, throwIO)
-import Matcher (Tail (TaApplication, TaDispatch))
-import Text.Printf (printf)
 import Data.List (isPrefixOf)
+import Matcher (Tail (TaApplication, TaDispatch))
 import Printer (printProgram)
+import Text.Printf (printf)
 
 data ReplaceProgramContext = ReplaceProgramContext
-  { _program :: Program,
-    _maxDepth :: Integer
+  { _program :: Program
+  , _maxDepth :: Integer
   }
 
 data ReplaceExpressionContext = ReplaceExpressionContext
-  { _expression :: Expression,
-    _maxDepth :: Integer
+  { _expression :: Expression
+  , _maxDepth :: Integer
   }
 
 updateExpressionContext :: ReplaceExpressionContext -> Expression -> ReplaceExpressionContext
-updateExpressionContext ReplaceExpressionContext {..} expr = ReplaceExpressionContext expr _maxDepth
+updateExpressionContext ReplaceExpressionContext{..} expr = ReplaceExpressionContext expr _maxDepth
 
 type ReplaceProgramThrowsFunc = [Expression] -> [Expression] -> ReplaceProgramContext -> IO Program
 
@@ -48,7 +48,7 @@ newtype ReplaceException = CouldNotReplace {prog :: Program}
   deriving (Exception)
 
 instance Show ReplaceException where
-  show CouldNotReplace {..} =
+  show CouldNotReplace{..} =
     printf
       "Couldn't replace expression in program, lists of patterns and targets has different lengths\nProgram: %s"
       (printProgram prog)
@@ -65,8 +65,8 @@ replaceBindings (bd : bds) ptns repls ctx func =
    in (bd : bds', ptns', repls')
 
 replaceExpression :: ReplaceExpressionFunc
-replaceExpression [] [] ReplaceExpressionContext {..} = (_expression, [], [])
-replaceExpression ptns@(ptn : ptnsRest) repls@(repl : replsRest) ctx@ReplaceExpressionContext {..} =
+replaceExpression [] [] ReplaceExpressionContext{..} = (_expression, [], [])
+replaceExpression ptns@(ptn : ptnsRest) repls@(repl : replsRest) ctx@ReplaceExpressionContext{..} =
   if _expression == ptn
     then replaceExpression ptnsRest replsRest (updateExpressionContext ctx repl)
     else case _expression of
@@ -87,42 +87,42 @@ replaceBindingsFast bds [] [] = bds
 replaceBindingsFast bds ((ExFormation pbds) : rptns) ((ExFormation rbds) : rrepls) =
   let replaced = replaceBindingsFast' bds pbds rbds
    in replaceBindingsFast replaced rptns rrepls
-  where
-    replaceBindingsFast' :: [Binding] -> [Binding] -> [Binding] -> [Binding]
-    replaceBindingsFast' bds pattern replacement
-      | null pattern = replacement
-      | otherwise = findAndReplace bds pattern replacement
-    findAndReplace :: [Binding] -> [Binding] -> [Binding] -> [Binding]
-    findAndReplace [] _ _ = []
-    findAndReplace xs@(x : xs') pattern replacement
-      | pattern `isPrefixOf` xs = replacement ++ findAndReplace (drop (length pattern) xs) pattern replacement
-      | otherwise = x : findAndReplace xs' pattern replacement
+ where
+  replaceBindingsFast' :: [Binding] -> [Binding] -> [Binding] -> [Binding]
+  replaceBindingsFast' bds pattern replacement
+    | null pattern = replacement
+    | otherwise = findAndReplace bds pattern replacement
+  findAndReplace :: [Binding] -> [Binding] -> [Binding] -> [Binding]
+  findAndReplace [] _ _ = []
+  findAndReplace xs@(x : xs') pattern replacement
+    | pattern `isPrefixOf` xs = replacement ++ findAndReplace (drop (length pattern) xs) pattern replacement
+    | otherwise = x : findAndReplace xs' pattern replacement
 
 replaceExpressionFast :: ReplaceExpressionFunc
 replaceExpressionFast = replaceExpressionFast' 0
-  where
-    replaceExpressionFast' :: Integer -> ReplaceExpressionFunc
-    replaceExpressionFast' _ [] [] ReplaceExpressionContext {..} = (_expression, [], [])
-    replaceExpressionFast' depth ptns@((ExFormation pbds) : rptns) repls@((ExFormation rbds) : rrepls) ctx@ReplaceExpressionContext {..} =
-      if depth == _maxDepth
-        then (_expression, [], [])
-        else case _expression of
-          ExFormation bds ->
-            let replaced = replaceBindingsFast bds ptns repls
-                (bds', ptns', repls') = replaceBindings replaced ptns repls ctx (replaceExpressionFast' (depth + 1))
-             in (ExFormation bds', ptns', repls')
-          ExDispatch inner attr ->
-            let (expr', ptns', repls') = replaceExpressionFast ptns repls (updateExpressionContext ctx inner)
-             in (ExDispatch expr' attr, ptns', repls')
-          ExApplication inner (BiTau attr texpr) ->
-            let (expr', ptns', repls') = replaceExpressionFast ptns repls (updateExpressionContext ctx inner)
-                (expr'', ptns'', repls'') = replaceExpressionFast ptns' repls' (updateExpressionContext ctx texpr)
-             in (ExApplication expr' (BiTau attr expr''), ptns'', repls'')
-          _ -> (_expression, ptns, repls)
-    replaceExpressionFast' _ ptns repls ctx@ReplaceExpressionContext{..} = (_expression, ptns, repls)
+ where
+  replaceExpressionFast' :: Integer -> ReplaceExpressionFunc
+  replaceExpressionFast' _ [] [] ReplaceExpressionContext{..} = (_expression, [], [])
+  replaceExpressionFast' depth ptns@((ExFormation pbds) : rptns) repls@((ExFormation rbds) : rrepls) ctx@ReplaceExpressionContext{..} =
+    if depth == _maxDepth
+      then (_expression, [], [])
+      else case _expression of
+        ExFormation bds ->
+          let replaced = replaceBindingsFast bds ptns repls
+              (bds', ptns', repls') = replaceBindings replaced ptns repls ctx (replaceExpressionFast' (depth + 1))
+           in (ExFormation bds', ptns', repls')
+        ExDispatch inner attr ->
+          let (expr', ptns', repls') = replaceExpressionFast ptns repls (updateExpressionContext ctx inner)
+           in (ExDispatch expr' attr, ptns', repls')
+        ExApplication inner (BiTau attr texpr) ->
+          let (expr', ptns', repls') = replaceExpressionFast ptns repls (updateExpressionContext ctx inner)
+              (expr'', ptns'', repls'') = replaceExpressionFast ptns' repls' (updateExpressionContext ctx texpr)
+           in (ExApplication expr' (BiTau attr expr''), ptns'', repls'')
+        _ -> (_expression, ptns, repls)
+  replaceExpressionFast' _ ptns repls ctx@ReplaceExpressionContext{..} = (_expression, ptns, repls)
 
 replaceProgram' :: ReplaceExpressionFunc -> ReplaceProgramFunc
-replaceProgram' func ptns repls ReplaceProgramContext {_program = Program expr, ..}
+replaceProgram' func ptns repls ReplaceProgramContext{_program = Program expr, ..}
   | length ptns == length repls =
       let (expr', _, _) = func ptns repls (ReplaceExpressionContext expr _maxDepth)
        in Just (Program expr')

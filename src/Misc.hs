@@ -9,28 +9,28 @@
 
 -- This module provides commonly used helper functions for other modules
 module Misc
-  ( numToBts,
-    strToBts,
-    bytesToBts,
-    btsToStr,
-    btsToNum,
-    withVoidRho,
-    allPathsIn,
-    ensuredFile,
-    shuffle,
-    toDouble,
-    btsToUnescapedStr,
-    attributesFromBindings,
-    attributesFromBindings',
-    attributeFromBinding,
-    uniqueBindings,
-    uniqueBindings',
-    validateYamlObject,
-    matchDataObject,
-    pattern DataObject,
-    pattern DataString,
-    pattern DataNumber,
-    pattern BaseObject,
+  ( numToBts
+  , strToBts
+  , bytesToBts
+  , btsToStr
+  , btsToNum
+  , withVoidRho
+  , allPathsIn
+  , ensuredFile
+  , shuffle
+  , toDouble
+  , btsToUnescapedStr
+  , attributesFromBindings
+  , attributesFromBindings'
+  , attributeFromBinding
+  , uniqueBindings
+  , uniqueBindings'
+  , validateYamlObject
+  , matchDataObject
+  , pattern DataObject
+  , pattern DataString
+  , pattern DataNumber
+  , pattern BaseObject
   )
 where
 
@@ -68,8 +68,8 @@ data FsException
   deriving (Exception)
 
 instance Show FsException where
-  show FileDoesNotExist {..} = printf "File '%s' does not exist" file
-  show DirectoryDoesNotExist {..} = printf "Directory '%s' does not exist" dir
+  show FileDoesNotExist{..} = printf "File '%s' does not exist" file
+  show DirectoryDoesNotExist{..} = printf "Directory '%s' does not exist" dir
 
 matchBaseObject :: Expression -> Maybe String
 matchBaseObject (ExDispatch (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang")) (AtLabel label)) = Just label
@@ -154,35 +154,35 @@ uniqueBindings bds = case maybeDuplicatedAttribute bds Set.empty of
           (intercalate ", " (map show (attributesFromBindings bds)))
       )
   _ -> Right bds
-  where
-    maybeDuplicatedAttribute :: [Binding] -> Set.Set Attribute -> Maybe Attribute
-    maybeDuplicatedAttribute [] = const Nothing
-    maybeDuplicatedAttribute ((BiTau attr _) : rest) = checkAttr attr rest
-    maybeDuplicatedAttribute (BiVoid attr : rest) = checkAttr attr rest
-    maybeDuplicatedAttribute (BiLambda _ : rest) = checkAttr AtLambda rest
-    maybeDuplicatedAttribute (BiMetaLambda _ : rest) = checkAttr AtLambda rest
-    maybeDuplicatedAttribute (BiDelta _ : rest) = checkAttr AtDelta rest
-    maybeDuplicatedAttribute (BiMeta _ : rest) = maybeDuplicatedAttribute rest
+ where
+  maybeDuplicatedAttribute :: [Binding] -> Set.Set Attribute -> Maybe Attribute
+  maybeDuplicatedAttribute [] = const Nothing
+  maybeDuplicatedAttribute ((BiTau attr _) : rest) = checkAttr attr rest
+  maybeDuplicatedAttribute (BiVoid attr : rest) = checkAttr attr rest
+  maybeDuplicatedAttribute (BiLambda _ : rest) = checkAttr AtLambda rest
+  maybeDuplicatedAttribute (BiMetaLambda _ : rest) = checkAttr AtLambda rest
+  maybeDuplicatedAttribute (BiDelta _ : rest) = checkAttr AtDelta rest
+  maybeDuplicatedAttribute (BiMeta _ : rest) = maybeDuplicatedAttribute rest
 
-    checkAttr :: Attribute -> [Binding] -> Set.Set Attribute -> Maybe Attribute
-    checkAttr attr rest acc
-      | attr `Set.member` acc = Just attr
-      | otherwise = maybeDuplicatedAttribute rest (Set.insert attr acc)
+  checkAttr :: Attribute -> [Binding] -> Set.Set Attribute -> Maybe Attribute
+  checkAttr attr rest acc
+    | attr `Set.member` acc = Just attr
+    | otherwise = maybeDuplicatedAttribute rest (Set.insert attr acc)
 
 -- Add void rho binding to the end of the list of any rho binding is not present
 withVoidRho :: [Binding] -> [Binding]
 withVoidRho bds = withVoidRho' bds False
-  where
-    withVoidRho' :: [Binding] -> Bool -> [Binding]
-    withVoidRho' [] hasRho = [BiVoid AtRho | not hasRho]
-    withVoidRho' (bd : bds) hasRho =
-      case bd of
-        BiMeta _ -> bd : bds
-        BiVoid (AtMeta _) -> bd : bds
-        BiTau (AtMeta _) _ -> bd : bds
-        BiVoid AtRho -> bd : withVoidRho' bds True
-        BiTau AtRho _ -> bd : withVoidRho' bds True
-        _ -> bd : withVoidRho' bds hasRho
+ where
+  withVoidRho' :: [Binding] -> Bool -> [Binding]
+  withVoidRho' [] hasRho = [BiVoid AtRho | not hasRho]
+  withVoidRho' (bd : bds) hasRho =
+    case bd of
+      BiMeta _ -> bd : bds
+      BiVoid (AtMeta _) -> bd : bds
+      BiTau (AtMeta _) _ -> bd : bds
+      BiVoid AtRho -> bd : withVoidRho' bds True
+      BiTau AtRho _ -> bd : withVoidRho' bds True
+      _ -> bd : withVoidRho' bds hasRho
 
 ensuredFile :: FilePath -> IO FilePath
 ensuredFile pth = do
@@ -256,18 +256,18 @@ btsToNum hx =
            in case properFraction val of
                 (n, 0.0) -> Left n
                 _ -> Right val
-  where
-    toWord64BE :: [Word8] -> Word64
-    toWord64BE [a, b, c, d, e, f, g, h] =
-      fromIntegral a `shiftL` 56
-        .|. fromIntegral b `shiftL` 48
-        .|. fromIntegral c `shiftL` 40
-        .|. fromIntegral d `shiftL` 32
-        .|. fromIntegral e `shiftL` 24
-        .|. fromIntegral f `shiftL` 16
-        .|. fromIntegral g `shiftL` 8
-        .|. fromIntegral h
-    toWord64BE _ = error "Expected 8 bytes for Double"
+ where
+  toWord64BE :: [Word8] -> Word64
+  toWord64BE [a, b, c, d, e, f, g, h] =
+    fromIntegral a `shiftL` 56
+      .|. fromIntegral b `shiftL` 48
+      .|. fromIntegral c `shiftL` 40
+      .|. fromIntegral d `shiftL` 32
+      .|. fromIntegral e `shiftL` 24
+      .|. fromIntegral f `shiftL` 16
+      .|. fromIntegral g `shiftL` 8
+      .|. fromIntegral h
+  toWord64BE _ = error "Expected 8 bytes for Double"
 
 -- >>> numToBts 0.0
 -- BtMany ["00","00","00","00","00","00","00","00"]
@@ -330,17 +330,17 @@ bytesToBts str =
 btsToStr :: Bytes -> String
 btsToStr BtEmpty = ""
 btsToStr bytes = escapeStr (btsToUnescapedStr bytes)
-  where
-    escapeStr :: String -> String
-    escapeStr = concatMap escapeChar
-      where
-        escapeChar '"' = "\\\""
-        escapeChar '\\' = "\\\\"
-        escapeChar '\n' = "\\n"
-        escapeChar '\t' = "\\t"
-        escapeChar c
-          | isPrint c && c /= '\\' && c /= '"' = [c]
-          | otherwise = printf "\\x%02x" (ord c)
+ where
+  escapeStr :: String -> String
+  escapeStr = concatMap escapeChar
+   where
+    escapeChar '"' = "\\\""
+    escapeChar '\\' = "\\\\"
+    escapeChar '\n' = "\\n"
+    escapeChar '\t' = "\\t"
+    escapeChar c
+      | isPrint c && c /= '\\' && c /= '"' = [c]
+      | otherwise = printf "\\x%02x" (ord c)
 
 -- >>> btsToUnescapedStr (BtMany ["01", "02"])
 -- "\SOH\STX"
