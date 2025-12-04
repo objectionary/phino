@@ -23,27 +23,20 @@ jobs:
           key: ${{ runner.os }}-codecov-${{ hashFiles('**/*.cabal') }}-${{ hashFiles('cabal.project', 'cabal.project.freeze') }}
           restore-keys: |
             ${{ runner.os }}-codecov-
-      - name: Set up GHC
-        uses: haskell-actions/setup@v2.8.0
+      - uses: haskell-actions/setup@v2.8.0
         with:
           ghc-version: '9.6.7'
           cabal-version: '3.12.1.0'
-      - name: Install xmllint on macOS
-        run: brew install libxml2
-      - name: Update package list
-        run: cabal update
-      - name: Build project
-        run: cabal build all --enable-coverage
-      - name: Run tests with coverage
-        run: cabal test all --enable-coverage
-      - name: Install hpc-codecov
-        run: cabal install hpc-codecov --overwrite-policy=always
-      - name: Convert coverage to Codecov format
-        run: |
+      - run: brew install libxml2
+      - run: cabal update
+      - run: cabal build all --enable-coverage
+      - run: cabal test all --enable-coverage
+      - run: cabal install hpc-codecov --overwrite-policy=always
+      - run: |
           hpc-codecov cabal:spec --out=coverage.json
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v5.5.1
+      - uses: codecov/codecov-action@v5.5.1
         with:
+          token: ${{ secrets.CODECOV_TOKEN }}
           files: coverage.json
           fail_ci_if_error: true
           verbose: true
