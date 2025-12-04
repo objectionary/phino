@@ -1,0 +1,339 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# HLINT ignore &quot;Avoid restricted module&quot; #-}</span><span>
+</span><span id="line-2"></span><span class="hs-pragma">{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}</span><span>
+</span><span id="line-3"></span><span>
+</span><span id="line-4"></span><span class="hs-comment">-- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com</span><span>
+</span><span id="line-5"></span><span class="hs-comment">-- SPDX-License-Identifier: MIT</span><span>
+</span><span id="line-6"></span><span>
+</span><span id="line-7"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Printer</span><span>
+</span><span id="line-8"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="Printer.html#printProgram"><span class="hs-identifier">printProgram</span></a></span><span>
+</span><span id="line-9"></span><span>  </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Printer.html#printProgram%27"><span class="hs-identifier">printProgram'</span></a></span><span>
+</span><span id="line-10"></span><span>  </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Printer.html#printExpression"><span class="hs-identifier">printExpression</span></a></span><span>
+</span><span id="line-11"></span><span>  </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Printer.html#printExpression%27"><span class="hs-identifier">printExpression'</span></a></span><span>
+</span><span id="line-12"></span><span>  </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Printer.html#printAttribute"><span class="hs-identifier">printAttribute</span></a></span><span>
+</span><span id="line-13"></span><span>  </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Printer.html#printBinding"><span class="hs-identifier">printBinding</span></a></span><span>
+</span><span id="line-14"></span><span>  </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Printer.html#printBytes"><span class="hs-identifier">printBytes</span></a></span><span>
+</span><span id="line-15"></span><span>  </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Printer.html#printExtraArg"><span class="hs-identifier">printExtraArg</span></a></span><span>
+</span><span id="line-16"></span><span>  </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Printer.html#printSubsts"><span class="hs-identifier">printSubsts</span></a></span><span>
+</span><span id="line-17"></span><span>  </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Printer.html#printSubsts%27"><span class="hs-identifier">printSubsts'</span></a></span><span>
+</span><span id="line-18"></span><span>  </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Printer.html#PrintConfig"><span class="hs-identifier">PrintConfig</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><span id="line-19"></span><span>  </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Printer.html#logPrintConfig"><span class="hs-identifier">logPrintConfig</span></a></span><span>
+</span><span id="line-20"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-21"></span><span class="hs-keyword">where</span><span>
+</span><span id="line-22"></span><span>
+</span><span id="line-23"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="AST.html"><span class="hs-identifier">AST</span></a></span><span>
+</span><span id="line-24"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="CST.html"><span class="hs-identifier">CST</span></a></span><span>
+</span><span id="line-25"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.List</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">intercalate</span></span><span class="hs-special">)</span><span>
+</span><span id="line-26"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><span class="hs-identifier">Data.Map.Strict</span></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Map</span></span><span>
+</span><span id="line-27"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Encoding.html"><span class="hs-identifier">Encoding</span></a></span><span>
+</span><span id="line-28"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Lining.html"><span class="hs-identifier">Lining</span></a></span><span>
+</span><span id="line-29"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Matcher.html"><span class="hs-identifier">Matcher</span></a></span><span>
+</span><span id="line-30"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Render.html"><span class="hs-identifier">Render</span></a></span><span>
+</span><span id="line-31"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Sugar.html"><span class="hs-identifier">Sugar</span></a></span><span>
+</span><span id="line-32"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Yaml.html"><span class="hs-identifier">Yaml</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Yaml.html#ExtraArgument"><span class="hs-identifier">ExtraArgument</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Yaml.html#ArgAttribute"><span class="hs-identifier">ArgAttribute</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Yaml.html#ArgBinding"><span class="hs-identifier">ArgBinding</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Yaml.html#ArgBytes"><span class="hs-identifier">ArgBytes</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Yaml.html#ArgExpression"><span class="hs-identifier">ArgExpression</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-33"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Prelude</span></span><span> </span><span class="hs-keyword">hiding</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">print</span></span><span class="hs-special">)</span><span>
+</span><span id="line-34"></span><span>
+</span><span id="line-35"></span><span class="hs-keyword">type</span><span> </span><span id="PrintConfig"><span class="annot"><a href="Printer.html#PrintConfig"><span class="hs-identifier hs-var">PrintConfig</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Sugar.html#SugarType"><span class="hs-identifier hs-type">SugarType</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Encoding.html#Encoding"><span class="hs-identifier hs-type">Encoding</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Lining.html#LineFormat"><span class="hs-identifier hs-type">LineFormat</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-36"></span><span>
+</span><span id="line-37"></span><span class="annot"><a href="Printer.html#defaultPrintConfig"><span class="hs-identifier hs-type">defaultPrintConfig</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Printer.html#PrintConfig"><span class="hs-identifier hs-type">PrintConfig</span></a></span><span>
+</span><span id="line-38"></span><span id="defaultPrintConfig"><span class="annot"><span class="annottext">defaultPrintConfig :: PrintConfig
+</span><a href="Printer.html#defaultPrintConfig"><span class="hs-identifier hs-var hs-var">defaultPrintConfig</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">SugarType
+</span><a href="Sugar.html#SWEET"><span class="hs-identifier hs-var">SWEET</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Encoding
+</span><a href="Encoding.html#UNICODE"><span class="hs-identifier hs-var">UNICODE</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">LineFormat
+</span><a href="Lining.html#MULTILINE"><span class="hs-identifier hs-var">MULTILINE</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-39"></span><span>
+</span><span id="line-40"></span><span class="annot"><a href="Printer.html#logPrintConfig"><span class="hs-identifier hs-type">logPrintConfig</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Sugar.html#SugarType"><span class="hs-identifier hs-type">SugarType</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Encoding.html#Encoding"><span class="hs-identifier hs-type">Encoding</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Lining.html#LineFormat"><span class="hs-identifier hs-type">LineFormat</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-41"></span><span id="logPrintConfig"><span class="annot"><span class="annottext">logPrintConfig :: PrintConfig
+</span><a href="Printer.html#logPrintConfig"><span class="hs-identifier hs-var hs-var">logPrintConfig</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">SugarType
+</span><a href="Sugar.html#SWEET"><span class="hs-identifier hs-var">SWEET</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Encoding
+</span><a href="Encoding.html#UNICODE"><span class="hs-identifier hs-var">UNICODE</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">LineFormat
+</span><a href="Lining.html#SINGLELINE"><span class="hs-identifier hs-var">SINGLELINE</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-42"></span><span>
+</span><span id="line-43"></span><span class="annot"><a href="Printer.html#printProgram%27"><span class="hs-identifier hs-type">printProgram'</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="AST.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Printer.html#PrintConfig"><span class="hs-identifier hs-type">PrintConfig</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
+</span><span id="line-44"></span><span id="printProgram%27"><span class="annot"><span class="annottext">printProgram' :: Program -&gt; PrintConfig -&gt; String
+</span><a href="Printer.html#printProgram%27"><span class="hs-identifier hs-var hs-var">printProgram'</span></a></span></span><span> </span><span id="local-6989586621679213778"><span class="annot"><span class="annottext">Program
+</span><a href="#local-6989586621679213778"><span class="hs-identifier hs-var">prog</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679213779"><span class="annot"><span class="annottext">SugarType
+</span><a href="#local-6989586621679213779"><span class="hs-identifier hs-var">sugar</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679213780"><span class="annot"><span class="annottext">Encoding
+</span><a href="#local-6989586621679213780"><span class="hs-identifier hs-var">encoding</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679213781"><span class="annot"><span class="annottext">LineFormat
+</span><a href="#local-6989586621679213781"><span class="hs-identifier hs-var">line</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">PROGRAM -&gt; String
+forall a. Render a =&gt; a -&gt; String
+</span><a href="Render.html#render"><span class="hs-identifier hs-var">render</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">LineFormat -&gt; PROGRAM -&gt; PROGRAM
+forall a. ToSingleLine a =&gt; LineFormat -&gt; a -&gt; a
+</span><a href="Lining.html#withLineFormat"><span class="hs-identifier hs-var">withLineFormat</span></a></span><span> </span><span class="annot"><span class="annottext">LineFormat
+</span><a href="#local-6989586621679213781"><span class="hs-identifier hs-var">line</span></a></span><span> </span><span class="annot"><span class="annottext">(PROGRAM -&gt; PROGRAM) -&gt; PROGRAM -&gt; PROGRAM
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Encoding -&gt; PROGRAM -&gt; PROGRAM
+forall a. ToASCII a =&gt; Encoding -&gt; a -&gt; a
+</span><a href="Encoding.html#withEncoding"><span class="hs-identifier hs-var">withEncoding</span></a></span><span> </span><span class="annot"><span class="annottext">Encoding
+</span><a href="#local-6989586621679213780"><span class="hs-identifier hs-var">encoding</span></a></span><span> </span><span class="annot"><span class="annottext">(PROGRAM -&gt; PROGRAM) -&gt; PROGRAM -&gt; PROGRAM
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">SugarType -&gt; PROGRAM -&gt; PROGRAM
+forall a. ToSalty a =&gt; SugarType -&gt; a -&gt; a
+</span><a href="Sugar.html#withSugarType"><span class="hs-identifier hs-var">withSugarType</span></a></span><span> </span><span class="annot"><span class="annottext">SugarType
+</span><a href="#local-6989586621679213779"><span class="hs-identifier hs-var">sugar</span></a></span><span> </span><span class="annot"><span class="annottext">(PROGRAM -&gt; PROGRAM) -&gt; PROGRAM -&gt; PROGRAM
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Program -&gt; PROGRAM
+</span><a href="CST.html#programToCST"><span class="hs-identifier hs-var">programToCST</span></a></span><span> </span><span class="annot"><span class="annottext">Program
+</span><a href="#local-6989586621679213778"><span class="hs-identifier hs-var">prog</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-45"></span><span>
+</span><span id="line-46"></span><span class="annot"><a href="Printer.html#printProgram"><span class="hs-identifier hs-type">printProgram</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="AST.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
+</span><span id="line-47"></span><span id="printProgram"><span class="annot"><span class="annottext">printProgram :: Program -&gt; String
+</span><a href="Printer.html#printProgram"><span class="hs-identifier hs-var hs-var">printProgram</span></a></span></span><span> </span><span id="local-6989586621679213787"><span class="annot"><span class="annottext">Program
+</span><a href="#local-6989586621679213787"><span class="hs-identifier hs-var">prog</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Program -&gt; PrintConfig -&gt; String
+</span><a href="Printer.html#printProgram%27"><span class="hs-identifier hs-var">printProgram'</span></a></span><span> </span><span class="annot"><span class="annottext">Program
+</span><a href="#local-6989586621679213787"><span class="hs-identifier hs-var">prog</span></a></span><span> </span><span class="annot"><span class="annottext">PrintConfig
+</span><a href="Printer.html#defaultPrintConfig"><span class="hs-identifier hs-var">defaultPrintConfig</span></a></span><span>
+</span><span id="line-48"></span><span>
+</span><span id="line-49"></span><span class="annot"><a href="Printer.html#printExpression%27"><span class="hs-identifier hs-type">printExpression'</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Printer.html#PrintConfig"><span class="hs-identifier hs-type">PrintConfig</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
+</span><span id="line-50"></span><span id="printExpression%27"><span class="annot"><span class="annottext">printExpression' :: Expression -&gt; PrintConfig -&gt; String
+</span><a href="Printer.html#printExpression%27"><span class="hs-identifier hs-var hs-var">printExpression'</span></a></span></span><span> </span><span id="local-6989586621679213788"><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679213788"><span class="hs-identifier hs-var">expr</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679213789"><span class="annot"><span class="annottext">SugarType
+</span><a href="#local-6989586621679213789"><span class="hs-identifier hs-var">sugar</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679213790"><span class="annot"><span class="annottext">Encoding
+</span><a href="#local-6989586621679213790"><span class="hs-identifier hs-var">encoding</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679213791"><span class="annot"><span class="annottext">LineFormat
+</span><a href="#local-6989586621679213791"><span class="hs-identifier hs-var">line</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">EXPRESSION -&gt; String
+forall a. Render a =&gt; a -&gt; String
+</span><a href="Render.html#render"><span class="hs-identifier hs-var">render</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">LineFormat -&gt; EXPRESSION -&gt; EXPRESSION
+forall a. ToSingleLine a =&gt; LineFormat -&gt; a -&gt; a
+</span><a href="Lining.html#withLineFormat"><span class="hs-identifier hs-var">withLineFormat</span></a></span><span> </span><span class="annot"><span class="annottext">LineFormat
+</span><a href="#local-6989586621679213791"><span class="hs-identifier hs-var">line</span></a></span><span> </span><span class="annot"><span class="annottext">(EXPRESSION -&gt; EXPRESSION) -&gt; EXPRESSION -&gt; EXPRESSION
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Encoding -&gt; EXPRESSION -&gt; EXPRESSION
+forall a. ToASCII a =&gt; Encoding -&gt; a -&gt; a
+</span><a href="Encoding.html#withEncoding"><span class="hs-identifier hs-var">withEncoding</span></a></span><span> </span><span class="annot"><span class="annottext">Encoding
+</span><a href="#local-6989586621679213790"><span class="hs-identifier hs-var">encoding</span></a></span><span> </span><span class="annot"><span class="annottext">(EXPRESSION -&gt; EXPRESSION) -&gt; EXPRESSION -&gt; EXPRESSION
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">SugarType -&gt; EXPRESSION -&gt; EXPRESSION
+forall a. ToSalty a =&gt; SugarType -&gt; a -&gt; a
+</span><a href="Sugar.html#withSugarType"><span class="hs-identifier hs-var">withSugarType</span></a></span><span> </span><span class="annot"><span class="annottext">SugarType
+</span><a href="#local-6989586621679213789"><span class="hs-identifier hs-var">sugar</span></a></span><span> </span><span class="annot"><span class="annottext">(EXPRESSION -&gt; EXPRESSION) -&gt; EXPRESSION -&gt; EXPRESSION
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Expression -&gt; EXPRESSION
+</span><a href="CST.html#expressionToCST"><span class="hs-identifier hs-var">expressionToCST</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679213788"><span class="hs-identifier hs-var">expr</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-51"></span><span>
+</span><span id="line-52"></span><span class="annot"><a href="Printer.html#printExpression"><span class="hs-identifier hs-type">printExpression</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
+</span><span id="line-53"></span><span id="printExpression"><span class="annot"><span class="annottext">printExpression :: Expression -&gt; String
+</span><a href="Printer.html#printExpression"><span class="hs-identifier hs-var hs-var">printExpression</span></a></span></span><span> </span><span id="local-6989586621679213793"><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679213793"><span class="hs-identifier hs-var">expr</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expression -&gt; PrintConfig -&gt; String
+</span><a href="Printer.html#printExpression%27"><span class="hs-identifier hs-var">printExpression'</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679213793"><span class="hs-identifier hs-var">expr</span></a></span><span> </span><span class="annot"><span class="annottext">PrintConfig
+</span><a href="Printer.html#defaultPrintConfig"><span class="hs-identifier hs-var">defaultPrintConfig</span></a></span><span>
+</span><span id="line-54"></span><span>
+</span><span id="line-55"></span><span class="annot"><a href="Printer.html#printAttribute%27"><span class="hs-identifier hs-type">printAttribute'</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="AST.html#Attribute"><span class="hs-identifier hs-type">Attribute</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Encoding.html#Encoding"><span class="hs-identifier hs-type">Encoding</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
+</span><span id="line-56"></span><span id="printAttribute%27"><span class="annot"><span class="annottext">printAttribute' :: Attribute -&gt; Encoding -&gt; String
+</span><a href="Printer.html#printAttribute%27"><span class="hs-identifier hs-var hs-var">printAttribute'</span></a></span></span><span> </span><span id="local-6989586621679213795"><span class="annot"><span class="annottext">Attribute
+</span><a href="#local-6989586621679213795"><span class="hs-identifier hs-var">attr</span></a></span></span><span> </span><span id="local-6989586621679213796"><span class="annot"><span class="annottext">Encoding
+</span><a href="#local-6989586621679213796"><span class="hs-identifier hs-var">encoding</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ATTRIBUTE -&gt; String
+forall a. Render a =&gt; a -&gt; String
+</span><a href="Render.html#render"><span class="hs-identifier hs-var">render</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Encoding -&gt; ATTRIBUTE -&gt; ATTRIBUTE
+forall a. ToASCII a =&gt; Encoding -&gt; a -&gt; a
+</span><a href="Encoding.html#withEncoding"><span class="hs-identifier hs-var">withEncoding</span></a></span><span> </span><span class="annot"><span class="annottext">Encoding
+</span><a href="#local-6989586621679213796"><span class="hs-identifier hs-var">encoding</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Attribute -&gt; Integer -&gt; EOL -&gt; ATTRIBUTE
+forall a b. ToCST a b =&gt; a -&gt; Integer -&gt; EOL -&gt; b
+</span><a href="CST.html#toCST"><span class="hs-identifier hs-var">toCST</span></a></span><span> </span><span class="annot"><span class="annottext">Attribute
+</span><a href="#local-6989586621679213795"><span class="hs-identifier hs-var">attr</span></a></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><span class="hs-number">0</span></span><span> </span><span class="annot"><span class="annottext">EOL
+</span><a href="CST.html#NO_EOL"><span class="hs-identifier hs-var">NO_EOL</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="CST.html#ATTRIBUTE"><span class="hs-identifier hs-type">ATTRIBUTE</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-57"></span><span>
+</span><span id="line-58"></span><span class="annot"><a href="Printer.html#printAttribute"><span class="hs-identifier hs-type">printAttribute</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="AST.html#Attribute"><span class="hs-identifier hs-type">Attribute</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
+</span><span id="line-59"></span><span id="printAttribute"><span class="annot"><span class="annottext">printAttribute :: Attribute -&gt; String
+</span><a href="Printer.html#printAttribute"><span class="hs-identifier hs-var hs-var">printAttribute</span></a></span></span><span> </span><span id="local-6989586621679213799"><span class="annot"><span class="annottext">Attribute
+</span><a href="#local-6989586621679213799"><span class="hs-identifier hs-var">attr</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-60"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">SugarType
+</span><span class="hs-identifier">_</span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679213800"><span class="annot"><span class="annottext">Encoding
+</span><a href="#local-6989586621679213800"><span class="hs-identifier hs-var">encoding</span></a></span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">LineFormat
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">PrintConfig
+</span><a href="Printer.html#defaultPrintConfig"><span class="hs-identifier hs-var">defaultPrintConfig</span></a></span><span>
+</span><span id="line-61"></span><span>   </span><span class="hs-keyword">in</span><span> </span><span class="annot"><span class="annottext">Attribute -&gt; Encoding -&gt; String
+</span><a href="Printer.html#printAttribute%27"><span class="hs-identifier hs-var">printAttribute'</span></a></span><span> </span><span class="annot"><span class="annottext">Attribute
+</span><a href="#local-6989586621679213799"><span class="hs-identifier hs-var">attr</span></a></span><span> </span><span class="annot"><span class="annottext">Encoding
+</span><a href="#local-6989586621679213800"><span class="hs-identifier hs-var">encoding</span></a></span><span>
+</span><span id="line-62"></span><span>
+</span><span id="line-63"></span><span class="annot"><a href="Printer.html#printBinding%27"><span class="hs-identifier hs-type">printBinding'</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="AST.html#Binding"><span class="hs-identifier hs-type">Binding</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Printer.html#PrintConfig"><span class="hs-identifier hs-type">PrintConfig</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
+</span><span id="line-64"></span><span id="printBinding%27"><span class="annot"><span class="annottext">printBinding' :: Binding -&gt; PrintConfig -&gt; String
+</span><a href="Printer.html#printBinding%27"><span class="hs-identifier hs-var hs-var">printBinding'</span></a></span></span><span> </span><span id="local-6989586621679213802"><span class="annot"><span class="annottext">Binding
+</span><a href="#local-6989586621679213802"><span class="hs-identifier hs-var">bd</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expression -&gt; PrintConfig -&gt; String
+</span><a href="Printer.html#printExpression%27"><span class="hs-identifier hs-var">printExpression'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[Binding] -&gt; Expression
+</span><a href="AST.html#ExFormation"><span class="hs-identifier hs-var">ExFormation</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Binding
+</span><a href="#local-6989586621679213802"><span class="hs-identifier hs-var">bd</span></a></span><span class="hs-special">]</span><span class="hs-special">)</span><span>
+</span><span id="line-65"></span><span>
+</span><span id="line-66"></span><span class="annot"><a href="Printer.html#printBinding"><span class="hs-identifier hs-type">printBinding</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="AST.html#Binding"><span class="hs-identifier hs-type">Binding</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
+</span><span id="line-67"></span><span id="printBinding"><span class="annot"><span class="annottext">printBinding :: Binding -&gt; String
+</span><a href="Printer.html#printBinding"><span class="hs-identifier hs-var hs-var">printBinding</span></a></span></span><span> </span><span id="local-6989586621679213804"><span class="annot"><span class="annottext">Binding
+</span><a href="#local-6989586621679213804"><span class="hs-identifier hs-var">bd</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Binding -&gt; PrintConfig -&gt; String
+</span><a href="Printer.html#printBinding%27"><span class="hs-identifier hs-var">printBinding'</span></a></span><span> </span><span class="annot"><span class="annottext">Binding
+</span><a href="#local-6989586621679213804"><span class="hs-identifier hs-var">bd</span></a></span><span> </span><span class="annot"><span class="annottext">PrintConfig
+</span><a href="Printer.html#defaultPrintConfig"><span class="hs-identifier hs-var">defaultPrintConfig</span></a></span><span>
+</span><span id="line-68"></span><span>
+</span><span id="line-69"></span><span class="annot"><a href="Printer.html#printBytes"><span class="hs-identifier hs-type">printBytes</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="AST.html#Bytes"><span class="hs-identifier hs-type">Bytes</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
+</span><span id="line-70"></span><span id="printBytes"><span class="annot"><span class="annottext">printBytes :: Bytes -&gt; String
+</span><a href="Printer.html#printBytes"><span class="hs-identifier hs-var hs-var">printBytes</span></a></span></span><span> </span><span id="local-6989586621679213805"><span class="annot"><span class="annottext">Bytes
+</span><a href="#local-6989586621679213805"><span class="hs-identifier hs-var">bts</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">BYTES -&gt; String
+forall a. Render a =&gt; a -&gt; String
+</span><a href="Render.html#render"><span class="hs-identifier hs-var">render</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Bytes -&gt; Integer -&gt; EOL -&gt; BYTES
+forall a b. ToCST a b =&gt; a -&gt; Integer -&gt; EOL -&gt; b
+</span><a href="CST.html#toCST"><span class="hs-identifier hs-var">toCST</span></a></span><span> </span><span class="annot"><span class="annottext">Bytes
+</span><a href="#local-6989586621679213805"><span class="hs-identifier hs-var">bts</span></a></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><span class="hs-number">0</span></span><span> </span><span class="annot"><span class="annottext">EOL
+</span><a href="CST.html#NO_EOL"><span class="hs-identifier hs-var">NO_EOL</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="CST.html#BYTES"><span class="hs-identifier hs-type">BYTES</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-71"></span><span>
+</span><span id="line-72"></span><span class="annot"><a href="Printer.html#printExtraArg%27"><span class="hs-identifier hs-type">printExtraArg'</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Yaml.html#ExtraArgument"><span class="hs-identifier hs-type">ExtraArgument</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Printer.html#PrintConfig"><span class="hs-identifier hs-type">PrintConfig</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
+</span><span id="line-73"></span><span id="printExtraArg%27"><span class="annot"><span class="annottext">printExtraArg' :: ExtraArgument -&gt; PrintConfig -&gt; String
+</span><a href="Printer.html#printExtraArg%27"><span class="hs-identifier hs-var hs-var">printExtraArg'</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Yaml.html#ArgAttribute"><span class="hs-identifier hs-type">ArgAttribute</span></a></span><span> </span><span id="local-6989586621679213807"><span class="annot"><span class="annottext">Attribute
+</span><a href="#local-6989586621679213807"><span class="hs-identifier hs-var">attr</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">SugarType
+</span><span class="hs-identifier">_</span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679213808"><span class="annot"><span class="annottext">Encoding
+</span><a href="#local-6989586621679213808"><span class="hs-identifier hs-var">encoding</span></a></span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">LineFormat
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Attribute -&gt; Encoding -&gt; String
+</span><a href="Printer.html#printAttribute%27"><span class="hs-identifier hs-var">printAttribute'</span></a></span><span> </span><span class="annot"><span class="annottext">Attribute
+</span><a href="#local-6989586621679213807"><span class="hs-identifier hs-var">attr</span></a></span><span> </span><span class="annot"><span class="annottext">Encoding
+</span><a href="#local-6989586621679213808"><span class="hs-identifier hs-var">encoding</span></a></span><span>
+</span><span id="line-74"></span><span class="annot"><a href="Printer.html#printExtraArg%27"><span class="hs-identifier hs-var">printExtraArg'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Yaml.html#ArgBinding"><span class="hs-identifier hs-type">ArgBinding</span></a></span><span> </span><span id="local-6989586621679213809"><span class="annot"><span class="annottext">Binding
+</span><a href="#local-6989586621679213809"><span class="hs-identifier hs-var">bd</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679213810"><span class="annot"><span class="annottext">PrintConfig
+</span><a href="#local-6989586621679213810"><span class="hs-identifier hs-var">config</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Binding -&gt; PrintConfig -&gt; String
+</span><a href="Printer.html#printBinding%27"><span class="hs-identifier hs-var">printBinding'</span></a></span><span> </span><span class="annot"><span class="annottext">Binding
+</span><a href="#local-6989586621679213809"><span class="hs-identifier hs-var">bd</span></a></span><span> </span><span class="annot"><span class="annottext">PrintConfig
+</span><a href="#local-6989586621679213810"><span class="hs-identifier hs-var">config</span></a></span><span>
+</span><span id="line-75"></span><span class="annot"><a href="Printer.html#printExtraArg%27"><span class="hs-identifier hs-var">printExtraArg'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Yaml.html#ArgExpression"><span class="hs-identifier hs-type">ArgExpression</span></a></span><span> </span><span id="local-6989586621679213811"><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679213811"><span class="hs-identifier hs-var">expr</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679213812"><span class="annot"><span class="annottext">PrintConfig
+</span><a href="#local-6989586621679213812"><span class="hs-identifier hs-var">config</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expression -&gt; PrintConfig -&gt; String
+</span><a href="Printer.html#printExpression%27"><span class="hs-identifier hs-var">printExpression'</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679213811"><span class="hs-identifier hs-var">expr</span></a></span><span> </span><span class="annot"><span class="annottext">PrintConfig
+</span><a href="#local-6989586621679213812"><span class="hs-identifier hs-var">config</span></a></span><span>
+</span><span id="line-76"></span><span class="annot"><a href="Printer.html#printExtraArg%27"><span class="hs-identifier hs-var">printExtraArg'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Yaml.html#ArgBytes"><span class="hs-identifier hs-type">ArgBytes</span></a></span><span> </span><span id="local-6989586621679213813"><span class="annot"><span class="annottext">Bytes
+</span><a href="#local-6989586621679213813"><span class="hs-identifier hs-var">bts</span></a></span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">PrintConfig
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bytes -&gt; String
+</span><a href="Printer.html#printBytes"><span class="hs-identifier hs-var">printBytes</span></a></span><span> </span><span class="annot"><span class="annottext">Bytes
+</span><a href="#local-6989586621679213813"><span class="hs-identifier hs-var">bts</span></a></span><span>
+</span><span id="line-77"></span><span>
+</span><span id="line-78"></span><span class="annot"><a href="Printer.html#printExtraArg"><span class="hs-identifier hs-type">printExtraArg</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Yaml.html#ExtraArgument"><span class="hs-identifier hs-type">ExtraArgument</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
+</span><span id="line-79"></span><span id="printExtraArg"><span class="annot"><span class="annottext">printExtraArg :: ExtraArgument -&gt; String
+</span><a href="Printer.html#printExtraArg"><span class="hs-identifier hs-var hs-var">printExtraArg</span></a></span></span><span> </span><span id="local-6989586621679213814"><span class="annot"><span class="annottext">ExtraArgument
+</span><a href="#local-6989586621679213814"><span class="hs-identifier hs-var">arg</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ExtraArgument -&gt; PrintConfig -&gt; String
+</span><a href="Printer.html#printExtraArg%27"><span class="hs-identifier hs-var">printExtraArg'</span></a></span><span> </span><span class="annot"><span class="annottext">ExtraArgument
+</span><a href="#local-6989586621679213814"><span class="hs-identifier hs-var">arg</span></a></span><span> </span><span class="annot"><span class="annottext">PrintConfig
+</span><a href="Printer.html#defaultPrintConfig"><span class="hs-identifier hs-var">defaultPrintConfig</span></a></span><span>
+</span><span id="line-80"></span><span>
+</span><span id="line-81"></span><span class="annot"><a href="Printer.html#printTail"><span class="hs-identifier hs-type">printTail</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Matcher.html#Tail"><span class="hs-identifier hs-type">Tail</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Printer.html#PrintConfig"><span class="hs-identifier hs-type">PrintConfig</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
+</span><span id="line-82"></span><span id="printTail"><span class="annot"><span class="annottext">printTail :: Tail -&gt; PrintConfig -&gt; String
+</span><a href="Printer.html#printTail"><span class="hs-identifier hs-var hs-var">printTail</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Matcher.html#TaApplication"><span class="hs-identifier hs-type">TaApplication</span></a></span><span> </span><span id="local-6989586621679213817"><span class="annot"><span class="annottext">Binding
+</span><a href="#local-6989586621679213817"><span class="hs-identifier hs-var">tau</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679213818"><span class="annot"><span class="annottext">PrintConfig
+</span><a href="#local-6989586621679213818"><span class="hs-identifier hs-var">config</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;(&quot;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Binding -&gt; PrintConfig -&gt; String
+</span><a href="Printer.html#printBinding%27"><span class="hs-identifier hs-var">printBinding'</span></a></span><span> </span><span class="annot"><span class="annottext">Binding
+</span><a href="#local-6989586621679213817"><span class="hs-identifier hs-var">tau</span></a></span><span> </span><span class="annot"><span class="annottext">PrintConfig
+</span><a href="#local-6989586621679213818"><span class="hs-identifier hs-var">config</span></a></span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;)&quot;</span></span><span>
+</span><span id="line-83"></span><span class="annot"><a href="Printer.html#printTail"><span class="hs-identifier hs-var">printTail</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Matcher.html#TaDispatch"><span class="hs-identifier hs-type">TaDispatch</span></a></span><span> </span><span id="local-6989586621679213820"><span class="annot"><span class="annottext">Attribute
+</span><a href="#local-6989586621679213820"><span class="hs-identifier hs-var">attr</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">SugarType
+</span><span class="hs-identifier">_</span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679213821"><span class="annot"><span class="annottext">Encoding
+</span><a href="#local-6989586621679213821"><span class="hs-identifier hs-var">encoding</span></a></span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">LineFormat
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;.&quot;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Attribute -&gt; Encoding -&gt; String
+</span><a href="Printer.html#printAttribute%27"><span class="hs-identifier hs-var">printAttribute'</span></a></span><span> </span><span class="annot"><span class="annottext">Attribute
+</span><a href="#local-6989586621679213820"><span class="hs-identifier hs-var">attr</span></a></span><span> </span><span class="annot"><span class="annottext">Encoding
+</span><a href="#local-6989586621679213821"><span class="hs-identifier hs-var">encoding</span></a></span><span>
+</span><span id="line-84"></span><span>
+</span><span id="line-85"></span><span class="annot"><a href="Printer.html#printMetaValue"><span class="hs-identifier hs-type">printMetaValue</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Matcher.html#MetaValue"><span class="hs-identifier hs-type">MetaValue</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Printer.html#PrintConfig"><span class="hs-identifier hs-type">PrintConfig</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
+</span><span id="line-86"></span><span id="printMetaValue"><span class="annot"><span class="annottext">printMetaValue :: MetaValue -&gt; PrintConfig -&gt; String
+</span><a href="Printer.html#printMetaValue"><span class="hs-identifier hs-var hs-var">printMetaValue</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Matcher.html#MvAttribute"><span class="hs-identifier hs-type">MvAttribute</span></a></span><span> </span><span id="local-6989586621679213824"><span class="annot"><span class="annottext">Attribute
+</span><a href="#local-6989586621679213824"><span class="hs-identifier hs-var">attr</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">SugarType
+</span><span class="hs-identifier">_</span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679213825"><span class="annot"><span class="annottext">Encoding
+</span><a href="#local-6989586621679213825"><span class="hs-identifier hs-var">encoding</span></a></span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">LineFormat
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Attribute -&gt; Encoding -&gt; String
+</span><a href="Printer.html#printAttribute%27"><span class="hs-identifier hs-var">printAttribute'</span></a></span><span> </span><span class="annot"><span class="annottext">Attribute
+</span><a href="#local-6989586621679213824"><span class="hs-identifier hs-var">attr</span></a></span><span> </span><span class="annot"><span class="annottext">Encoding
+</span><a href="#local-6989586621679213825"><span class="hs-identifier hs-var">encoding</span></a></span><span>
+</span><span id="line-87"></span><span class="annot"><a href="Printer.html#printMetaValue"><span class="hs-identifier hs-var">printMetaValue</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Matcher.html#MvExpression"><span class="hs-identifier hs-type">MvExpression</span></a></span><span> </span><span id="local-6989586621679213827"><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679213827"><span class="hs-identifier hs-var">expr</span></a></span></span><span> </span><span class="annot"><span class="annottext">Expression
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679213828"><span class="annot"><span class="annottext">PrintConfig
+</span><a href="#local-6989586621679213828"><span class="hs-identifier hs-var">config</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expression -&gt; PrintConfig -&gt; String
+</span><a href="Printer.html#printExpression%27"><span class="hs-identifier hs-var">printExpression'</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679213827"><span class="hs-identifier hs-var">expr</span></a></span><span> </span><span class="annot"><span class="annottext">PrintConfig
+</span><a href="#local-6989586621679213828"><span class="hs-identifier hs-var">config</span></a></span><span>
+</span><span id="line-88"></span><span class="annot"><a href="Printer.html#printMetaValue"><span class="hs-identifier hs-var">printMetaValue</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Matcher.html#MvBytes"><span class="hs-identifier hs-type">MvBytes</span></a></span><span> </span><span id="local-6989586621679213830"><span class="annot"><span class="annottext">Bytes
+</span><a href="#local-6989586621679213830"><span class="hs-identifier hs-var">bts</span></a></span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">PrintConfig
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bytes -&gt; String
+</span><a href="Printer.html#printBytes"><span class="hs-identifier hs-var">printBytes</span></a></span><span> </span><span class="annot"><span class="annottext">Bytes
+</span><a href="#local-6989586621679213830"><span class="hs-identifier hs-var">bts</span></a></span><span>
+</span><span id="line-89"></span><span class="annot"><a href="Printer.html#printMetaValue"><span class="hs-identifier hs-var">printMetaValue</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Matcher.html#MvBindings"><span class="hs-identifier hs-type">MvBindings</span></a></span><span> </span><span id="local-6989586621679213832"><span class="annot"><span class="annottext">[Binding]
+</span><a href="#local-6989586621679213832"><span class="hs-identifier hs-var">bds</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679213833"><span class="annot"><span class="annottext">PrintConfig
+</span><a href="#local-6989586621679213833"><span class="hs-identifier hs-var">config</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expression -&gt; PrintConfig -&gt; String
+</span><a href="Printer.html#printExpression%27"><span class="hs-identifier hs-var">printExpression'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[Binding] -&gt; Expression
+</span><a href="AST.html#ExFormation"><span class="hs-identifier hs-var">ExFormation</span></a></span><span> </span><span class="annot"><span class="annottext">[Binding]
+</span><a href="#local-6989586621679213832"><span class="hs-identifier hs-var">bds</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">PrintConfig
+</span><a href="#local-6989586621679213833"><span class="hs-identifier hs-var">config</span></a></span><span>
+</span><span id="line-90"></span><span class="annot"><a href="Printer.html#printMetaValue"><span class="hs-identifier hs-var">printMetaValue</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Matcher.html#MvFunction"><span class="hs-identifier hs-type">MvFunction</span></a></span><span> </span><span id="local-6989586621679213835"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679213835"><span class="hs-identifier hs-var">func</span></a></span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">PrintConfig
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679213835"><span class="hs-identifier hs-var">func</span></a></span><span>
+</span><span id="line-91"></span><span class="annot"><a href="Printer.html#printMetaValue"><span class="hs-identifier hs-var">printMetaValue</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Matcher.html#MvTail"><span class="hs-identifier hs-type">MvTail</span></a></span><span> </span><span id="local-6989586621679213837"><span class="annot"><span class="annottext">[Tail]
+</span><a href="#local-6989586621679213837"><span class="hs-identifier hs-var">tails</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679213838"><span class="annot"><span class="annottext">PrintConfig
+</span><a href="#local-6989586621679213838"><span class="hs-identifier hs-var">config</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; [String] -&gt; String
+forall a. [a] -&gt; [[a]] -&gt; [a]
+</span><span class="hs-identifier hs-var">intercalate</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;,&quot;</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Tail -&gt; String) -&gt; [Tail] -&gt; [String]
+forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
+</span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Tail -&gt; PrintConfig -&gt; String
+</span><a href="Printer.html#printTail"><span class="hs-operator hs-var">`printTail`</span></a></span><span> </span><span class="annot"><span class="annottext">PrintConfig
+</span><a href="#local-6989586621679213838"><span class="hs-identifier hs-var">config</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[Tail]
+</span><a href="#local-6989586621679213837"><span class="hs-identifier hs-var">tails</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-92"></span><span>
+</span><span id="line-93"></span><span class="annot"><a href="Printer.html#printSubst"><span class="hs-identifier hs-type">printSubst</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Matcher.html#Subst"><span class="hs-identifier hs-type">Subst</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Printer.html#PrintConfig"><span class="hs-identifier hs-type">PrintConfig</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
+</span><span id="line-94"></span><span id="printSubst"><span class="annot"><span class="annottext">printSubst :: Subst -&gt; PrintConfig -&gt; String
+</span><a href="Printer.html#printSubst"><span class="hs-identifier hs-var hs-var">printSubst</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Matcher.html#Subst"><span class="hs-identifier hs-type">Subst</span></a></span><span> </span><span id="local-6989586621679213841"><span class="annot"><span class="annottext">Map String MetaValue
+</span><a href="#local-6989586621679213841"><span class="hs-identifier hs-var">mp</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679213842"><span class="annot"><span class="annottext">PrintConfig
+</span><a href="#local-6989586621679213842"><span class="hs-identifier hs-var">config</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-95"></span><span>  </span><span class="annot"><span class="annottext">String -&gt; [String] -&gt; String
+forall a. [a] -&gt; [[a]] -&gt; [a]
+</span><span class="hs-identifier hs-var">intercalate</span></span><span>
+</span><span id="line-96"></span><span>    </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;\n&quot;</span></span><span>
+</span><span id="line-97"></span><span>    </span><span class="hs-special">(</span><span class="annot"><span class="annottext">((String, MetaValue) -&gt; String)
+-&gt; [(String, MetaValue)] -&gt; [String]
+forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
+</span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span class="hs-special">(</span><span id="local-6989586621679213843"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679213843"><span class="hs-identifier hs-var">key</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679213844"><span class="annot"><span class="annottext">MetaValue
+</span><a href="#local-6989586621679213844"><span class="hs-identifier hs-var">value</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679213843"><span class="hs-identifier hs-var">key</span></a></span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot; &gt;&gt; &quot;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">MetaValue -&gt; PrintConfig -&gt; String
+</span><a href="Printer.html#printMetaValue"><span class="hs-identifier hs-var">printMetaValue</span></a></span><span> </span><span class="annot"><span class="annottext">MetaValue
+</span><a href="#local-6989586621679213844"><span class="hs-identifier hs-var">value</span></a></span><span> </span><span class="annot"><span class="annottext">PrintConfig
+</span><a href="#local-6989586621679213842"><span class="hs-identifier hs-var">config</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Map String MetaValue -&gt; [(String, MetaValue)]
+forall k a. Map k a -&gt; [(k, a)]
+</span><span class="hs-identifier hs-var">Map.toList</span></span><span> </span><span class="annot"><span class="annottext">Map String MetaValue
+</span><a href="#local-6989586621679213841"><span class="hs-identifier hs-var">mp</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-98"></span><span>
+</span><span id="line-99"></span><span class="annot"><a href="Printer.html#printSubsts%27"><span class="hs-identifier hs-type">printSubsts'</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Matcher.html#Subst"><span class="hs-identifier hs-type">Subst</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Printer.html#PrintConfig"><span class="hs-identifier hs-type">PrintConfig</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
+</span><span id="line-100"></span><span id="printSubsts%27"><span class="annot"><span class="annottext">printSubsts' :: [Subst] -&gt; PrintConfig -&gt; String
+</span><a href="Printer.html#printSubsts%27"><span class="hs-identifier hs-var hs-var">printSubsts'</span></a></span></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="annot"><span class="annottext">PrintConfig
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;------&quot;</span></span><span>
+</span><span id="line-101"></span><span class="annot"><a href="Printer.html#printSubsts%27"><span class="hs-identifier hs-var">printSubsts'</span></a></span><span> </span><span id="local-6989586621679213846"><span class="annot"><span class="annottext">[Subst]
+</span><a href="#local-6989586621679213846"><span class="hs-identifier hs-var">substs</span></a></span></span><span> </span><span id="local-6989586621679213847"><span class="annot"><span class="annottext">PrintConfig
+</span><a href="#local-6989586621679213847"><span class="hs-identifier hs-var">config</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; [String] -&gt; String
+forall a. [a] -&gt; [[a]] -&gt; [a]
+</span><span class="hs-identifier hs-var">intercalate</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;\n------\n&quot;</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Subst -&gt; String) -&gt; [Subst] -&gt; [String]
+forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
+</span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Subst -&gt; PrintConfig -&gt; String
+</span><a href="Printer.html#printSubst"><span class="hs-operator hs-var">`printSubst`</span></a></span><span> </span><span class="annot"><span class="annottext">PrintConfig
+</span><a href="#local-6989586621679213847"><span class="hs-identifier hs-var">config</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[Subst]
+</span><a href="#local-6989586621679213846"><span class="hs-identifier hs-var">substs</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-102"></span><span>
+</span><span id="line-103"></span><span class="annot"><a href="Printer.html#printSubsts"><span class="hs-identifier hs-type">printSubsts</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Matcher.html#Subst"><span class="hs-identifier hs-type">Subst</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
+</span><span id="line-104"></span><span id="printSubsts"><span class="annot"><span class="annottext">printSubsts :: [Subst] -&gt; String
+</span><a href="Printer.html#printSubsts"><span class="hs-identifier hs-var hs-var">printSubsts</span></a></span></span><span> </span><span id="local-6989586621679213848"><span class="annot"><span class="annottext">[Subst]
+</span><a href="#local-6989586621679213848"><span class="hs-identifier hs-var">substs</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Subst] -&gt; PrintConfig -&gt; String
+</span><a href="Printer.html#printSubsts%27"><span class="hs-identifier hs-var">printSubsts'</span></a></span><span> </span><span class="annot"><span class="annottext">[Subst]
+</span><a href="#local-6989586621679213848"><span class="hs-identifier hs-var">substs</span></a></span><span> </span><span class="annot"><span class="annottext">PrintConfig
+</span><a href="Printer.html#defaultPrintConfig"><span class="hs-identifier hs-var">defaultPrintConfig</span></a></span><span>
+</span><span id="line-105"></span></pre></body></html>

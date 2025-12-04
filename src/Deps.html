@@ -1,0 +1,92 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-comment">-- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com</span><span>
+</span><span id="line-2"></span><span class="hs-comment">-- SPDX-License-Identifier: MIT</span><span>
+</span><span id="line-3"></span><span>
+</span><span id="line-4"></span><span class="hs-comment">-- The main goal of this module is breaking cyclic dependency:</span><span>
+</span><span id="line-5"></span><span class="hs-comment">-- Dataize -&gt; Functions -&gt; Rewriter -&gt; Dataize</span><span>
+</span><span id="line-6"></span><span class="hs-comment">-- Here we provide custom type BuildTermFunc and add it to</span><span>
+</span><span id="line-7"></span><span class="hs-comment">-- RewriteContext and DataizeContext. Now Dataize and Rewrite depends</span><span>
+</span><span id="line-8"></span><span class="hs-comment">-- only on Term module. This allows us to use Rewriter and Dataize in</span><span>
+</span><span id="line-9"></span><span class="hs-comment">-- Functions module because Rewriter does not depend on Functions anymore.</span><span>
+</span><span id="line-10"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Deps</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-11"></span><span>
+</span><span id="line-12"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="AST.html"><span class="hs-identifier">AST</span></a></span><span>
+</span><span id="line-13"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Logger.html"><span class="hs-identifier">Logger</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Logger.html#logDebug"><span class="hs-identifier">logDebug</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-14"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Matcher.html"><span class="hs-identifier">Matcher</span></a></span><span>
+</span><span id="line-15"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">System.Directory</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">createDirectoryIfMissing</span></span><span class="hs-special">)</span><span>
+</span><span id="line-16"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">System.FilePath</span></span><span>
+</span><span id="line-17"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Text.Printf</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">printf</span></span><span class="hs-special">)</span><span>
+</span><span id="line-18"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Yaml.html"><span class="hs-identifier">Yaml</span></a></span><span>
+</span><span id="line-19"></span><span>
+</span><span id="line-20"></span><span class="hs-keyword">data</span><span> </span><span id="Term"><span class="annot"><a href="Deps.html#Term"><span class="hs-identifier hs-var">Term</span></a></span></span><span>
+</span><span id="line-21"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span id="TeExpression"><span class="annot"><a href="Deps.html#TeExpression"><span class="hs-identifier hs-var">TeExpression</span></a></span></span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span>
+</span><span id="line-22"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="TeAttribute"><span class="annot"><a href="Deps.html#TeAttribute"><span class="hs-identifier hs-var">TeAttribute</span></a></span></span><span> </span><span class="annot"><a href="AST.html#Attribute"><span class="hs-identifier hs-type">Attribute</span></a></span><span>
+</span><span id="line-23"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="TeBytes"><span class="annot"><a href="Deps.html#TeBytes"><span class="hs-identifier hs-var">TeBytes</span></a></span></span><span> </span><span class="annot"><a href="AST.html#Bytes"><span class="hs-identifier hs-type">Bytes</span></a></span><span>
+</span><span id="line-24"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="TeBindings"><span class="annot"><a href="Deps.html#TeBindings"><span class="hs-identifier hs-var">TeBindings</span></a></span></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="AST.html#Binding"><span class="hs-identifier hs-type">Binding</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-25"></span><span>
+</span><span id="line-26"></span><span class="hs-keyword">type</span><span> </span><span id="BuildTermMethod"><span class="annot"><a href="Deps.html#BuildTermMethod"><span class="hs-identifier hs-var">BuildTermMethod</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Yaml.html#ExtraArgument"><span class="hs-identifier hs-type">ExtraArgument</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Matcher.html#Subst"><span class="hs-identifier hs-type">Subst</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="annot"><a href="Deps.html#Term"><span class="hs-identifier hs-type">Term</span></a></span><span>
+</span><span id="line-27"></span><span>
+</span><span id="line-28"></span><span class="hs-keyword">type</span><span> </span><span id="BuildTermFunc"><span class="annot"><a href="Deps.html#BuildTermFunc"><span class="hs-identifier hs-var">BuildTermFunc</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Deps.html#BuildTermMethod"><span class="hs-identifier hs-type">BuildTermMethod</span></a></span><span>
+</span><span id="line-29"></span><span>
+</span><span id="line-30"></span><span class="hs-keyword">type</span><span> </span><span id="SaveStepFunc"><span class="annot"><a href="Deps.html#SaveStepFunc"><span class="hs-identifier hs-var">SaveStepFunc</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="AST.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Integer</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-31"></span><span>
+</span><span id="line-32"></span><span class="annot"><a href="Deps.html#saveStep"><span class="hs-identifier hs-type">saveStep</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">FilePath</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Deps.html#SaveStepFunc"><span class="hs-identifier hs-type">SaveStepFunc</span></a></span><span>
+</span><span id="line-33"></span><span id="saveStep"><span class="annot"><span class="annottext">saveStep :: Maybe FilePath
+-&gt; FilePath -&gt; (Program -&gt; IO FilePath) -&gt; SaveStepFunc
+</span><a href="Deps.html#saveStep"><span class="hs-identifier hs-var hs-var">saveStep</span></a></span></span><span> </span><span class="annot"><span class="annottext">Maybe FilePath
+</span><span class="hs-identifier hs-var">Nothing</span></span><span> </span><span class="annot"><span class="annottext">FilePath
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">Program -&gt; IO FilePath
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">Program
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">() -&gt; IO ()
+forall a. a -&gt; IO a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-34"></span><span class="annot"><a href="Deps.html#saveStep"><span class="hs-identifier hs-var">saveStep</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span id="local-6989586621679214980"><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621679214980"><span class="hs-identifier hs-var">dir</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679214981"><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621679214981"><span class="hs-identifier hs-var">ext</span></a></span></span><span> </span><span id="local-6989586621679214982"><span class="annot"><span class="annottext">Program -&gt; IO FilePath
+</span><a href="#local-6989586621679214982"><span class="hs-identifier hs-var">print</span></a></span></span><span> </span><span id="local-6989586621679214983"><span class="annot"><span class="annottext">Program
+</span><a href="#local-6989586621679214983"><span class="hs-identifier hs-var">prog</span></a></span></span><span> </span><span id="local-6989586621679214984"><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679214984"><span class="hs-identifier hs-var">step</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-35"></span><span>  </span><span class="annot"><span class="annottext">Bool -&gt; FilePath -&gt; IO ()
+</span><span class="hs-identifier hs-var">createDirectoryIfMissing</span></span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">True</span></span><span> </span><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621679214980"><span class="hs-identifier hs-var">dir</span></a></span><span>
+</span><span id="line-36"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679214986"><span class="annot"><span class="annottext">path :: FilePath
+</span><a href="#local-6989586621679214986"><span class="hs-identifier hs-var hs-var">path</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621679214980"><span class="hs-identifier hs-var">dir</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; FilePath -&gt; FilePath
+</span><span class="hs-operator hs-var">&lt;/&gt;</span></span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; Integer -&gt; FilePath -&gt; FilePath
+forall r. PrintfType r =&gt; FilePath -&gt; r
+</span><span class="hs-identifier hs-var">printf</span></span><span> </span><span class="annot"><span class="annottext">FilePath
+</span><span class="hs-string">&quot;%05d.%s&quot;</span></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679214984"><span class="hs-identifier hs-var">step</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621679214981"><span class="hs-identifier hs-var">ext</span></a></span><span>
+</span><span id="line-37"></span><span>  </span><span id="local-6989586621679214988"><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621679214988"><span class="hs-identifier hs-var">content</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Program -&gt; IO FilePath
+</span><a href="#local-6989586621679214982"><span class="hs-identifier hs-var">print</span></a></span><span> </span><span class="annot"><span class="annottext">Program
+</span><a href="#local-6989586621679214983"><span class="hs-identifier hs-var">prog</span></a></span><span>
+</span><span id="line-38"></span><span>  </span><span class="annot"><span class="annottext">FilePath -&gt; FilePath -&gt; IO ()
+</span><span class="hs-identifier hs-var">writeFile</span></span><span> </span><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621679214986"><span class="hs-identifier hs-var">path</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621679214988"><span class="hs-identifier hs-var">content</span></a></span><span>
+</span><span id="line-39"></span><span>  </span><span class="annot"><span class="annottext">FilePath -&gt; IO ()
+</span><a href="Logger.html#logDebug"><span class="hs-identifier hs-var">logDebug</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">FilePath -&gt; Integer -&gt; FilePath -&gt; FilePath
+forall r. PrintfType r =&gt; FilePath -&gt; r
+</span><span class="hs-identifier hs-var">printf</span></span><span> </span><span class="annot"><span class="annottext">FilePath
+</span><span class="hs-string">&quot;Saved step '%d' to '%s'&quot;</span></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679214984"><span class="hs-identifier hs-var">step</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621679214986"><span class="hs-identifier hs-var">path</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-40"></span><span>
+</span><span id="line-41"></span><span class="annot"><a href="Deps.html#dontSaveStep"><span class="hs-identifier hs-type">dontSaveStep</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Deps.html#SaveStepFunc"><span class="hs-identifier hs-type">SaveStepFunc</span></a></span><span>
+</span><span id="line-42"></span><span id="dontSaveStep"><span class="annot"><span class="annottext">dontSaveStep :: SaveStepFunc
+</span><a href="Deps.html#dontSaveStep"><span class="hs-identifier hs-var hs-var">dontSaveStep</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Maybe FilePath
+-&gt; FilePath -&gt; (Program -&gt; IO FilePath) -&gt; SaveStepFunc
+</span><a href="Deps.html#saveStep"><span class="hs-identifier hs-var">saveStep</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe FilePath
+forall a. Maybe a
+</span><span class="hs-identifier hs-var">Nothing</span></span><span> </span><span class="annot"><span class="annottext">FilePath
+</span><span class="hs-string">&quot;&quot;</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span class="annot"><span class="annottext">Program
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; IO FilePath
+forall a. a -&gt; IO a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">FilePath
+</span><span class="hs-string">&quot;&quot;</span></span><span class="hs-special">)</span><span>
+</span><span id="line-43"></span></pre></body></html>

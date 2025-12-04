@@ -1,0 +1,563 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE RecordWildCards #-}</span><span>
+</span><span id="line-2"></span><span>
+</span><span id="line-3"></span><span class="hs-comment">-- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com</span><span>
+</span><span id="line-4"></span><span class="hs-comment">-- SPDX-License-Identifier: MIT</span><span>
+</span><span id="line-5"></span><span>
+</span><span id="line-6"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Encoding</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Encoding.html#toASCII"><span class="hs-identifier">toASCII</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Encoding.html#withEncoding"><span class="hs-identifier">withEncoding</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Encoding.html#Encoding"><span class="hs-identifier">Encoding</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-7"></span><span>
+</span><span id="line-8"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="CST.html"><span class="hs-identifier">CST</span></a></span><span>
+</span><span id="line-9"></span><span>
+</span><span id="line-10"></span><span class="hs-keyword">data</span><span> </span><span id="Encoding"><span class="annot"><a href="Encoding.html#Encoding"><span class="hs-identifier hs-var">Encoding</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="ASCII"><span class="annot"><a href="Encoding.html#ASCII"><span class="hs-identifier hs-var">ASCII</span></a></span></span><span> </span><span class="hs-glyph">|</span><span> </span><span id="UNICODE"><span class="annot"><a href="Encoding.html#UNICODE"><span class="hs-identifier hs-var">UNICODE</span></a></span></span><span>
+</span><span id="line-11"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679210226"><span id="local-6989586621679210228"><span class="annot"><span class="annottext">Encoding -&gt; Encoding -&gt; Bool
+(Encoding -&gt; Encoding -&gt; Bool)
+-&gt; (Encoding -&gt; Encoding -&gt; Bool) -&gt; Eq Encoding
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+$c== :: Encoding -&gt; Encoding -&gt; Bool
+== :: Encoding -&gt; Encoding -&gt; Bool
+$c/= :: Encoding -&gt; Encoding -&gt; Bool
+/= :: Encoding -&gt; Encoding -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679210233"><span id="local-6989586621679210235"><span id="local-6989586621679210239"><span class="annot"><span class="annottext">Int -&gt; Encoding -&gt; ShowS
+[Encoding] -&gt; ShowS
+Encoding -&gt; String
+(Int -&gt; Encoding -&gt; ShowS)
+-&gt; (Encoding -&gt; String) -&gt; ([Encoding] -&gt; ShowS) -&gt; Show Encoding
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+$cshowsPrec :: Int -&gt; Encoding -&gt; ShowS
+showsPrec :: Int -&gt; Encoding -&gt; ShowS
+$cshow :: Encoding -&gt; String
+show :: Encoding -&gt; String
+$cshowList :: [Encoding] -&gt; ShowS
+showList :: [Encoding] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-12"></span><span>
+</span><span id="line-13"></span><span id="local-6989586621679210189"><span class="annot"><a href="Encoding.html#withEncoding"><span class="hs-identifier hs-type">withEncoding</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Encoding.html#ToASCII"><span class="hs-identifier hs-type">ToASCII</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679210189"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Encoding.html#Encoding"><span class="hs-identifier hs-type">Encoding</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679210189"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679210189"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-14"></span><span id="withEncoding"><span class="annot"><span class="annottext">withEncoding :: forall a. ToASCII a =&gt; Encoding -&gt; a -&gt; a
+</span><a href="Encoding.html#withEncoding"><span class="hs-identifier hs-var hs-var">withEncoding</span></a></span></span><span> </span><span class="annot"><span class="annottext">Encoding
+</span><a href="Encoding.html#UNICODE"><span class="hs-identifier hs-var">UNICODE</span></a></span><span> </span><span id="local-6989586621679210244"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679210244"><span class="hs-identifier hs-var">prog</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679210244"><span class="hs-identifier hs-var">prog</span></a></span><span>
+</span><span id="line-15"></span><span class="annot"><a href="Encoding.html#withEncoding"><span class="hs-identifier hs-var">withEncoding</span></a></span><span> </span><span class="annot"><span class="annottext">Encoding
+</span><a href="Encoding.html#ASCII"><span class="hs-identifier hs-var">ASCII</span></a></span><span> </span><span id="local-6989586621679210245"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679210245"><span class="hs-identifier hs-var">prog</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; a
+forall a. ToASCII a =&gt; a -&gt; a
+</span><a href="Encoding.html#toASCII"><span class="hs-identifier hs-var">toASCII</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679210245"><span class="hs-identifier hs-var">prog</span></a></span><span>
+</span><span id="line-16"></span><span>
+</span><span id="line-17"></span><span class="hs-keyword">class</span><span> </span><span id="ToASCII"><span class="annot"><a href="Encoding.html#ToASCII"><span class="hs-identifier hs-var">ToASCII</span></a></span></span><span> </span><span id="local-6989586621679210192"><span class="annot"><a href="#local-6989586621679210192"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-18"></span><span>  </span><span id="toASCII"><span class="annot"><a href="Encoding.html#toASCII"><span class="hs-identifier hs-type">toASCII</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="#local-6989586621679210192"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679210192"><span class="hs-identifier hs-type">a</span></a></span><span>
+</span><span id="line-19"></span><span>
+</span><span id="line-20"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Encoding.html#ToASCII"><span class="hs-identifier hs-type">ToASCII</span></a></span><span> </span><span class="annot"><a href="CST.html#PROGRAM"><span class="hs-identifier hs-type">PROGRAM</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-21"></span><span>  </span><span id="local-6989586621679210252"><span class="annot"><span class="annottext">toASCII :: PROGRAM -&gt; PROGRAM
+</span><a href="Encoding.html#toASCII"><span class="hs-identifier hs-var hs-var hs-var hs-var">toASCII</span></a></span></span><span> </span><span class="annot"><a href="CST.html#PR_SALTY"><span class="hs-identifier hs-type">PR_SALTY</span></a></span><span class="hs-special">{</span><span id="local-6989586621679210254"><span id="local-6989586621679210255"><span id="local-6989586621679210256"><span class="annot"><span class="annottext">EXPRESSION
+GLOBAL
+ARROW
+global :: GLOBAL
+arrow :: ARROW
+expr :: EXPRESSION
+$sel:expr:PR_SWEET :: PROGRAM -&gt; EXPRESSION
+$sel:global:PR_SWEET :: PROGRAM -&gt; GLOBAL
+$sel:arrow:PR_SWEET :: PROGRAM -&gt; ARROW
+</span><a href="#local-6989586621679210254"><span class="hs-glyph hs-var hs-var hs-var hs-var hs-var hs-var">..</span></a></span></span></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">GLOBAL -&gt; ARROW -&gt; EXPRESSION -&gt; PROGRAM
+</span><a href="CST.html#PR_SALTY"><span class="hs-identifier hs-var">PR_SALTY</span></a></span><span> </span><span class="annot"><span class="annottext">GLOBAL
+</span><a href="CST.html#Q"><span class="hs-identifier hs-var">Q</span></a></span><span> </span><span class="annot"><span class="annottext">ARROW
+</span><a href="CST.html#ARROW%27"><span class="hs-identifier hs-var">ARROW'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">EXPRESSION -&gt; EXPRESSION
+forall a. ToASCII a =&gt; a -&gt; a
+</span><a href="Encoding.html#toASCII"><span class="hs-identifier hs-var">toASCII</span></a></span><span> </span><span class="annot"><span class="annottext">EXPRESSION
+</span><a href="#local-6989586621679210256"><span class="hs-identifier hs-var">expr</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-22"></span><span>  </span><span class="annot"><a href="Encoding.html#toASCII"><span class="hs-identifier hs-var">toASCII</span></a></span><span> </span><span class="annot"><a href="CST.html#PR_SWEET"><span class="hs-identifier hs-type">PR_SWEET</span></a></span><span class="hs-special">{</span><span id="local-6989586621679210263"><span id="local-6989586621679210264"><span id="local-6989586621679210265"><span class="annot"><span class="annottext">EXPRESSION
+RCB
+LCB
+$sel:expr:PR_SWEET :: PROGRAM -&gt; EXPRESSION
+lcb :: LCB
+expr :: EXPRESSION
+rcb :: RCB
+$sel:lcb:PR_SWEET :: PROGRAM -&gt; LCB
+$sel:rcb:PR_SWEET :: PROGRAM -&gt; RCB
+</span><a href="CST.html#%24sel%3Aexpr%3APR_SWEET"><span class="hs-glyph hs-var hs-var hs-var hs-var hs-var hs-var">..</span></a></span></span></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">LCB -&gt; EXPRESSION -&gt; RCB -&gt; PROGRAM
+</span><a href="CST.html#PR_SWEET"><span class="hs-identifier hs-var">PR_SWEET</span></a></span><span> </span><span class="annot"><span class="annottext">LCB
+</span><a href="#local-6989586621679210263"><span class="hs-identifier hs-var">lcb</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">EXPRESSION -&gt; EXPRESSION
+forall a. ToASCII a =&gt; a -&gt; a
+</span><a href="Encoding.html#toASCII"><span class="hs-identifier hs-var">toASCII</span></a></span><span> </span><span class="annot"><span class="annottext">EXPRESSION
+</span><a href="#local-6989586621679210264"><span class="hs-identifier hs-var">expr</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">RCB
+</span><a href="#local-6989586621679210265"><span class="hs-identifier hs-var">rcb</span></a></span><span>
+</span><span id="line-23"></span><span>
+</span><span id="line-24"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Encoding.html#ToASCII"><span class="hs-identifier hs-type">ToASCII</span></a></span><span> </span><span class="annot"><a href="CST.html#EXPRESSION"><span class="hs-identifier hs-type">EXPRESSION</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-25"></span><span>  </span><span id="local-6989586621679210284"><span class="annot"><span class="annottext">toASCII :: EXPRESSION -&gt; EXPRESSION
+</span><a href="Encoding.html#toASCII"><span class="hs-identifier hs-var hs-var hs-var hs-var">toASCII</span></a></span></span><span> </span><span class="annot"><a href="CST.html#EX_GLOBAL"><span class="hs-identifier hs-type">EX_GLOBAL</span></a></span><span class="hs-special">{</span><span id="local-6989586621679210286"><span class="annot"><span class="annottext">GLOBAL
+global :: GLOBAL
+$sel:global:EX_GLOBAL :: EXPRESSION -&gt; GLOBAL
+</span><a href="#local-6989586621679210286"><span class="hs-glyph hs-var hs-var">..</span></a></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">GLOBAL -&gt; EXPRESSION
+</span><a href="CST.html#EX_GLOBAL"><span class="hs-identifier hs-var">EX_GLOBAL</span></a></span><span> </span><span class="annot"><span class="annottext">GLOBAL
+</span><a href="CST.html#Q"><span class="hs-identifier hs-var">Q</span></a></span><span>
+</span><span id="line-26"></span><span>  </span><span class="annot"><a href="Encoding.html#toASCII"><span class="hs-identifier hs-var">toASCII</span></a></span><span> </span><span class="annot"><a href="CST.html#EX_DEF_PACKAGE"><span class="hs-identifier hs-type">EX_DEF_PACKAGE</span></a></span><span class="hs-special">{</span><span id="local-6989586621679210289"><span class="annot"><span class="annottext">DEF_PACKAGE
+pckg :: DEF_PACKAGE
+$sel:pckg:EX_GLOBAL :: EXPRESSION -&gt; DEF_PACKAGE
+</span><a href="#local-6989586621679210289"><span class="hs-glyph hs-var hs-var">..</span></a></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">DEF_PACKAGE -&gt; EXPRESSION
+</span><a href="CST.html#EX_DEF_PACKAGE"><span class="hs-identifier hs-var">EX_DEF_PACKAGE</span></a></span><span> </span><span class="annot"><span class="annottext">DEF_PACKAGE
+</span><a href="CST.html#QQ"><span class="hs-identifier hs-var">QQ</span></a></span><span>
+</span><span id="line-27"></span><span>  </span><span class="annot"><a href="Encoding.html#toASCII"><span class="hs-identifier hs-var">toASCII</span></a></span><span> </span><span class="annot"><a href="CST.html#EX_XI"><span class="hs-identifier hs-type">EX_XI</span></a></span><span class="hs-special">{</span><span id="local-6989586621679210293"><span class="annot"><span class="annottext">XI
+xi :: XI
+$sel:xi:EX_GLOBAL :: EXPRESSION -&gt; XI
+</span><a href="#local-6989586621679210293"><span class="hs-glyph hs-var hs-var">..</span></a></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">XI -&gt; EXPRESSION
+</span><a href="CST.html#EX_XI"><span class="hs-identifier hs-var">EX_XI</span></a></span><span> </span><span class="annot"><span class="annottext">XI
+</span><a href="CST.html#DOLLAR"><span class="hs-identifier hs-var">DOLLAR</span></a></span><span>
+</span><span id="line-28"></span><span>  </span><span class="annot"><a href="Encoding.html#toASCII"><span class="hs-identifier hs-var">toASCII</span></a></span><span> </span><span class="annot"><a href="CST.html#EX_ATTR"><span class="hs-identifier hs-type">EX_ATTR</span></a></span><span class="hs-special">{</span><span id="local-6989586621679210297"><span class="annot"><span class="annottext">ATTRIBUTE
+attr :: ATTRIBUTE
+$sel:attr:EX_GLOBAL :: EXPRESSION -&gt; ATTRIBUTE
+</span><a href="#local-6989586621679210297"><span class="hs-glyph hs-var hs-var">..</span></a></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ATTRIBUTE -&gt; EXPRESSION
+</span><a href="CST.html#EX_ATTR"><span class="hs-identifier hs-var">EX_ATTR</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">ATTRIBUTE -&gt; ATTRIBUTE
+forall a. ToASCII a =&gt; a -&gt; a
+</span><a href="Encoding.html#toASCII"><span class="hs-identifier hs-var">toASCII</span></a></span><span> </span><span class="annot"><span class="annottext">ATTRIBUTE
+</span><a href="#local-6989586621679210297"><span class="hs-identifier hs-var">attr</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-29"></span><span>  </span><span class="annot"><a href="Encoding.html#toASCII"><span class="hs-identifier hs-var">toASCII</span></a></span><span> </span><span class="annot"><a href="CST.html#EX_TERMINATION"><span class="hs-identifier hs-type">EX_TERMINATION</span></a></span><span class="hs-special">{</span><span id="local-6989586621679210300"><span class="annot"><span class="annottext">TERMINATION
+termination :: TERMINATION
+$sel:termination:EX_GLOBAL :: EXPRESSION -&gt; TERMINATION
+</span><a href="#local-6989586621679210300"><span class="hs-glyph hs-var hs-var">..</span></a></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TERMINATION -&gt; EXPRESSION
+</span><a href="CST.html#EX_TERMINATION"><span class="hs-identifier hs-var">EX_TERMINATION</span></a></span><span> </span><span class="annot"><span class="annottext">TERMINATION
+</span><a href="CST.html#T"><span class="hs-identifier hs-var">T</span></a></span><span>
+</span><span id="line-30"></span><span>  </span><span class="annot"><a href="Encoding.html#toASCII"><span class="hs-identifier hs-var">toASCII</span></a></span><span> </span><span class="annot"><a href="CST.html#EX_FORMATION"><span class="hs-identifier hs-type">EX_FORMATION</span></a></span><span class="hs-special">{</span><span id="local-6989586621679210304"><span id="local-6989586621679210305"><span id="local-6989586621679210306"><span id="local-6989586621679210307"><span id="local-6989586621679210308"><span id="local-6989586621679210309"><span id="local-6989586621679210310"><span class="annot"><span class="annottext">BINDING
+TAB
+EOL
+RSB
+LSB
+lsb :: LSB
+eol :: EOL
+tab :: TAB
+binding :: BINDING
+eol' :: EOL
+tab' :: TAB
+rsb :: RSB
+$sel:lsb:EX_GLOBAL :: EXPRESSION -&gt; LSB
+$sel:eol:EX_GLOBAL :: EXPRESSION -&gt; EOL
+$sel:tab:EX_GLOBAL :: EXPRESSION -&gt; TAB
+$sel:binding:EX_GLOBAL :: EXPRESSION -&gt; BINDING
+$sel:eol':EX_GLOBAL :: EXPRESSION -&gt; EOL
+$sel:tab':EX_GLOBAL :: EXPRESSION -&gt; TAB
+$sel:rsb:EX_GLOBAL :: EXPRESSION -&gt; RSB
+</span><a href="#local-6989586621679210304"><span class="hs-glyph hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">..</span></a></span></span></span></span></span></span></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">LSB -&gt; EOL -&gt; TAB -&gt; BINDING -&gt; EOL -&gt; TAB -&gt; RSB -&gt; EXPRESSION
+</span><a href="CST.html#EX_FORMATION"><span class="hs-identifier hs-var">EX_FORMATION</span></a></span><span> </span><span class="annot"><span class="annottext">LSB
+</span><a href="CST.html#LSB%27"><span class="hs-identifier hs-var">LSB'</span></a></span><span> </span><span class="annot"><span class="annottext">EOL
+</span><a href="#local-6989586621679210305"><span class="hs-identifier hs-var">eol</span></a></span><span> </span><span class="annot"><span class="annottext">TAB
+</span><a href="#local-6989586621679210306"><span class="hs-identifier hs-var">tab</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">BINDING -&gt; BINDING
+forall a. ToASCII a =&gt; a -&gt; a
+</span><a href="Encoding.html#toASCII"><span class="hs-identifier hs-var">toASCII</span></a></span><span> </span><span class="annot"><span class="annottext">BINDING
+</span><a href="#local-6989586621679210307"><span class="hs-identifier hs-var">binding</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">EOL
+</span><a href="#local-6989586621679210308"><span class="hs-identifier hs-var">eol'</span></a></span><span> </span><span class="annot"><span class="annottext">TAB
+</span><a href="#local-6989586621679210309"><span class="hs-identifier hs-var">tab'</span></a></span><span> </span><span class="annot"><span class="annottext">RSB
+</span><a href="CST.html#RSB%27"><span class="hs-identifier hs-var">RSB'</span></a></span><span>
+</span><span id="line-31"></span><span>  </span><span class="annot"><a href="Encoding.html#toASCII"><span class="hs-identifier hs-var">toASCII</span></a></span><span> </span><span class="annot"><a href="CST.html#EX_DISPATCH"><span class="hs-identifier hs-type">EX_DISPATCH</span></a></span><span class="hs-special">{</span><span id="local-6989586621679210321"><span id="local-6989586621679210322"><span class="annot"><span class="annottext">ATTRIBUTE
+EXPRESSION
+$sel:attr:EX_GLOBAL :: EXPRESSION -&gt; ATTRIBUTE
+expr :: EXPRESSION
+attr :: ATTRIBUTE
+$sel:expr:EX_GLOBAL :: EXPRESSION -&gt; EXPRESSION
+</span><a href="CST.html#%24sel%3Aattr%3AEX_GLOBAL"><span class="hs-glyph hs-var hs-var hs-var hs-var">..</span></a></span></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">EXPRESSION -&gt; ATTRIBUTE -&gt; EXPRESSION
+</span><a href="CST.html#EX_DISPATCH"><span class="hs-identifier hs-var">EX_DISPATCH</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">EXPRESSION -&gt; EXPRESSION
+forall a. ToASCII a =&gt; a -&gt; a
+</span><a href="Encoding.html#toASCII"><span class="hs-identifier hs-var">toASCII</span></a></span><span> </span><span class="annot"><span class="annottext">EXPRESSION
+</span><a href="#local-6989586621679210321"><span class="hs-identifier hs-var">expr</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">ATTRIBUTE -&gt; ATTRIBUTE
+forall a. ToASCII a =&gt; a -&gt; a
+</span><a href="Encoding.html#toASCII"><span class="hs-identifier hs-var">toASCII</span></a></span><span> </span><span class="annot"><span class="annottext">ATTRIBUTE
+</span><a href="#local-6989586621679210322"><span class="hs-identifier hs-var">attr</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-32"></span><span>  </span><span class="annot"><a href="Encoding.html#toASCII"><span class="hs-identifier hs-var">toASCII</span></a></span><span> </span><span class="annot"><a href="CST.html#EX_APPLICATION"><span class="hs-identifier hs-type">EX_APPLICATION</span></a></span><span class="hs-special">{</span><span id="local-6989586621679210325"><span id="local-6989586621679210326"><span id="local-6989586621679210327"><span id="local-6989586621679210328"><span id="local-6989586621679210329"><span id="local-6989586621679210330"><span id="local-6989586621679210331"><span class="annot"><span class="annottext">Integer
+EXPRESSION
+APP_BINDING
+TAB
+EOL
+$sel:eol:EX_GLOBAL :: EXPRESSION -&gt; EOL
+$sel:tab:EX_GLOBAL :: EXPRESSION -&gt; TAB
+$sel:eol':EX_GLOBAL :: EXPRESSION -&gt; EOL
+$sel:tab':EX_GLOBAL :: EXPRESSION -&gt; TAB
+$sel:expr:EX_GLOBAL :: EXPRESSION -&gt; EXPRESSION
+expr :: EXPRESSION
+eol :: EOL
+tab :: TAB
+tau :: APP_BINDING
+eol' :: EOL
+tab' :: TAB
+indent :: Integer
+$sel:tau:EX_GLOBAL :: EXPRESSION -&gt; APP_BINDING
+$sel:indent:EX_GLOBAL :: EXPRESSION -&gt; Integer
+</span><a href="CST.html#%24sel%3Aeol%3AEX_GLOBAL"><span class="hs-glyph hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">..</span></a></span></span></span></span></span></span></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">EXPRESSION
+-&gt; EOL -&gt; TAB -&gt; APP_BINDING -&gt; EOL -&gt; TAB -&gt; Integer -&gt; EXPRESSION
+</span><a href="CST.html#EX_APPLICATION"><span class="hs-identifier hs-var">EX_APPLICATION</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">EXPRESSION -&gt; EXPRESSION
+forall a. ToASCII a =&gt; a -&gt; a
+</span><a href="Encoding.html#toASCII"><span class="hs-identifier hs-var">toASCII</span></a></span><span> </span><span class="annot"><span class="annottext">EXPRESSION
+</span><a href="#local-6989586621679210325"><span class="hs-identifier hs-var">expr</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">EOL
+</span><a href="#local-6989586621679210326"><span class="hs-identifier hs-var">eol</span></a></span><span> </span><span class="annot"><span class="annottext">TAB
+</span><a href="#local-6989586621679210327"><span class="hs-identifier hs-var">tab</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">APP_BINDING -&gt; APP_BINDING
+forall a. ToASCII a =&gt; a -&gt; a
+</span><a href="Encoding.html#toASCII"><span class="hs-identifier hs-var">toASCII</span></a></span><span> </span><span class="annot"><span class="annottext">APP_BINDING
+</span><a href="#local-6989586621679210328"><span class="hs-identifier hs-var">tau</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">EOL
+</span><a href="#local-6989586621679210329"><span class="hs-identifier hs-var">eol'</span></a></span><span> </span><span class="annot"><span class="annottext">TAB
+</span><a href="#local-6989586621679210330"><span class="hs-identifier hs-var">tab'</span></a></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679210331"><span class="hs-identifier hs-var">indent</span></a></span><span>
+</span><span id="line-33"></span><span>  </span><span class="annot"><a href="Encoding.html#toASCII"><span class="hs-identifier hs-var">toASCII</span></a></span><span> </span><span class="annot"><a href="CST.html#EX_APPLICATION_TAUS"><span class="hs-identifier hs-type">EX_APPLICATION_TAUS</span></a></span><span class="hs-special">{</span><span id="local-6989586621679210335"><span id="local-6989586621679210336"><span id="local-6989586621679210337"><span id="local-6989586621679210338"><span id="local-6989586621679210339"><span id="local-6989586621679210340"><span id="local-6989586621679210341"><span class="annot"><span class="annottext">Integer
+EXPRESSION
+BINDING
+TAB
+EOL
+$sel:eol:EX_GLOBAL :: EXPRESSION -&gt; EOL
+$sel:tab:EX_GLOBAL :: EXPRESSION -&gt; TAB
+$sel:eol':EX_GLOBAL :: EXPRESSION -&gt; EOL
+$sel:tab':EX_GLOBAL :: EXPRESSION -&gt; TAB
+$sel:expr:EX_GLOBAL :: EXPRESSION -&gt; EXPRESSION
+$sel:indent:EX_GLOBAL :: EXPRESSION -&gt; Integer
+expr :: EXPRESSION
+eol :: EOL
+tab :: TAB
+taus :: BINDING
+eol' :: EOL
+tab' :: TAB
+indent :: Integer
+$sel:taus:EX_GLOBAL :: EXPRESSION -&gt; BINDING
+</span><a href="CST.html#%24sel%3Aeol%3AEX_GLOBAL"><span class="hs-glyph hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">..</span></a></span></span></span></span></span></span></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">EXPRESSION
+-&gt; EOL -&gt; TAB -&gt; BINDING -&gt; EOL -&gt; TAB -&gt; Integer -&gt; EXPRESSION
+</span><a href="CST.html#EX_APPLICATION_TAUS"><span class="hs-identifier hs-var">EX_APPLICATION_TAUS</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">EXPRESSION -&gt; EXPRESSION
+forall a. ToASCII a =&gt; a -&gt; a
+</span><a href="Encoding.html#toASCII"><span class="hs-identifier hs-var">toASCII</span></a></span><span> </span><span class="annot"><span class="annottext">EXPRESSION
+</span><a href="#local-6989586621679210335"><span class="hs-identifier hs-var">expr</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">EOL
+</span><a href="#local-6989586621679210336"><span class="hs-identifier hs-var">eol</span></a></span><span> </span><span class="annot"><span class="annottext">TAB
+</span><a href="#local-6989586621679210337"><span class="hs-identifier hs-var">tab</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">BINDING -&gt; BINDING
+forall a. ToASCII a =&gt; a -&gt; a
+</span><a href="Encoding.html#toASCII"><span class="hs-identifier hs-var">toASCII</span></a></span><span> </span><span class="annot"><span class="annottext">BINDING
+</span><a href="#local-6989586621679210338"><span class="hs-identifier hs-var">taus</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">EOL
+</span><a href="#local-6989586621679210339"><span class="hs-identifier hs-var">eol'</span></a></span><span> </span><span class="annot"><span class="annottext">TAB
+</span><a href="#local-6989586621679210340"><span class="hs-identifier hs-var">tab'</span></a></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679210341"><span class="hs-identifier hs-var">indent</span></a></span><span>
+</span><span id="line-34"></span><span>  </span><span class="annot"><a href="Encoding.html#toASCII"><span class="hs-identifier hs-var">toASCII</span></a></span><span> </span><span class="annot"><a href="CST.html#EX_APPLICATION_EXPRS"><span class="hs-identifier hs-type">EX_APPLICATION_EXPRS</span></a></span><span class="hs-special">{</span><span id="local-6989586621679210344"><span id="local-6989586621679210345"><span id="local-6989586621679210346"><span id="local-6989586621679210347"><span id="local-6989586621679210348"><span id="local-6989586621679210349"><span id="local-6989586621679210350"><span class="annot"><span class="annottext">Integer
+EXPRESSION
+APP_ARG
+TAB
+EOL
+$sel:eol:EX_GLOBAL :: EXPRESSION -&gt; EOL
+$sel:tab:EX_GLOBAL :: EXPRESSION -&gt; TAB
+$sel:eol':EX_GLOBAL :: EXPRESSION -&gt; EOL
+$sel:tab':EX_GLOBAL :: EXPRESSION -&gt; TAB
+$sel:expr:EX_GLOBAL :: EXPRESSION -&gt; EXPRESSION
+$sel:indent:EX_GLOBAL :: EXPRESSION -&gt; Integer
+expr :: EXPRESSION
+eol :: EOL
+tab :: TAB
+args :: APP_ARG
+eol' :: EOL
+tab' :: TAB
+indent :: Integer
+$sel:args:EX_GLOBAL :: EXPRESSION -&gt; APP_ARG
+</span><a href="CST.html#%24sel%3Aeol%3AEX_GLOBAL"><span class="hs-glyph hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">..</span></a></span></span></span></span></span></span></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">EXPRESSION
+-&gt; EOL -&gt; TAB -&gt; APP_ARG -&gt; EOL -&gt; TAB -&gt; Integer -&gt; EXPRESSION
+</span><a href="CST.html#EX_APPLICATION_EXPRS"><span class="hs-identifier hs-var">EX_APPLICATION_EXPRS</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">EXPRESSION -&gt; EXPRESSION
+forall a. ToASCII a =&gt; a -&gt; a
+</span><a href="Encoding.html#toASCII"><span class="hs-identifier hs-var">toASCII</span></a></span><span> </span><span class="annot"><span class="annottext">EXPRESSION
+</span><a href="#local-6989586621679210344"><span class="hs-identifier hs-var">expr</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">EOL
+</span><a href="#local-6989586621679210345"><span class="hs-identifier hs-var">eol</span></a></span><span> </span><span class="annot"><span class="annottext">TAB
+</span><a href="#local-6989586621679210346"><span class="hs-identifier hs-var">tab</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">APP_ARG -&gt; APP_ARG
+forall a. ToASCII a =&gt; a -&gt; a
+</span><a href="Encoding.html#toASCII"><span class="hs-identifier hs-var">toASCII</span></a></span><span> </span><span class="annot"><span class="annottext">APP_ARG
+</span><a href="#local-6989586621679210347"><span class="hs-identifier hs-var">args</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">EOL
+</span><a href="#local-6989586621679210348"><span class="hs-identifier hs-var">eol'</span></a></span><span> </span><span class="annot"><span class="annottext">TAB
+</span><a href="#local-6989586621679210349"><span class="hs-identifier hs-var">tab'</span></a></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679210350"><span class="hs-identifier hs-var">indent</span></a></span><span>
+</span><span id="line-35"></span><span>  </span><span class="annot"><a href="Encoding.html#toASCII"><span class="hs-identifier hs-var">toASCII</span></a></span><span> </span><span class="annot"><a href="CST.html#EX_META"><span class="hs-identifier hs-type">EX_META</span></a></span><span class="hs-special">{</span><span id="local-6989586621679210353"><span class="annot"><span class="annottext">META
+meta :: META
+$sel:meta:EX_GLOBAL :: EXPRESSION -&gt; META
+</span><a href="#local-6989586621679210353"><span class="hs-glyph hs-var hs-var">..</span></a></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">META -&gt; EXPRESSION
+</span><a href="CST.html#EX_META"><span class="hs-identifier hs-var">EX_META</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String -&gt; META
+</span><a href="CST.html#MT_EXPRESSION%27"><span class="hs-identifier hs-var">MT_EXPRESSION'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">META -&gt; String
+</span><a href="CST.html#%24sel%3Arest%3AMT_EXPRESSION"><span class="hs-identifier hs-var">rest</span></a></span><span> </span><span class="annot"><span class="annottext">META
+</span><a href="#local-6989586621679210353"><span class="hs-identifier hs-var">meta</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-36"></span><span>  </span><span class="annot"><a href="Encoding.html#toASCII"><span class="hs-identifier hs-var">toASCII</span></a></span><span> </span><span class="annot"><a href="CST.html#EX_META_TAIL"><span class="hs-identifier hs-type">EX_META_TAIL</span></a></span><span class="hs-special">{</span><span id="local-6989586621679210358"><span id="local-6989586621679210359"><span class="annot"><span class="annottext">EXPRESSION
+META
+$sel:expr:EX_GLOBAL :: EXPRESSION -&gt; EXPRESSION
+$sel:meta:EX_GLOBAL :: EXPRESSION -&gt; META
+expr :: EXPRESSION
+meta :: META
+</span><a href="CST.html#%24sel%3Aexpr%3AEX_GLOBAL"><span class="hs-glyph hs-var hs-var hs-var hs-var">..</span></a></span></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">EXPRESSION -&gt; META -&gt; EXPRESSION
+</span><a href="CST.html#EX_META_TAIL"><span class="hs-identifier hs-var">EX_META_TAIL</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">EXPRESSION -&gt; EXPRESSION
+forall a. ToASCII a =&gt; a -&gt; a
+</span><a href="Encoding.html#toASCII"><span class="hs-identifier hs-var">toASCII</span></a></span><span> </span><span class="annot"><span class="annottext">EXPRESSION
+</span><a href="#local-6989586621679210358"><span class="hs-identifier hs-var">expr</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String -&gt; META
+</span><a href="CST.html#MT_TAIL"><span class="hs-identifier hs-var">MT_TAIL</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">META -&gt; String
+</span><a href="CST.html#%24sel%3Arest%3AMT_EXPRESSION"><span class="hs-identifier hs-var">rest</span></a></span><span> </span><span class="annot"><span class="annottext">META
+</span><a href="#local-6989586621679210359"><span class="hs-identifier hs-var">meta</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-37"></span><span>  </span><span class="annot"><a href="Encoding.html#toASCII"><span class="hs-identifier hs-var">toASCII</span></a></span><span> </span><span id="local-6989586621679210361"><span class="annot"><span class="annottext">EXPRESSION
+</span><a href="#local-6989586621679210361"><span class="hs-identifier hs-var">expr</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">EXPRESSION
+</span><a href="#local-6989586621679210361"><span class="hs-identifier hs-var">expr</span></a></span><span>
+</span><span id="line-38"></span><span>
+</span><span id="line-39"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Encoding.html#ToASCII"><span class="hs-identifier hs-type">ToASCII</span></a></span><span> </span><span class="annot"><a href="CST.html#APP_BINDING"><span class="hs-identifier hs-type">APP_BINDING</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-40"></span><span>  </span><span id="local-6989586621679210365"><span class="annot"><span class="annottext">toASCII :: APP_BINDING -&gt; APP_BINDING
+</span><a href="Encoding.html#toASCII"><span class="hs-identifier hs-var hs-var hs-var hs-var">toASCII</span></a></span></span><span> </span><span class="annot"><a href="CST.html#APP_BINDING"><span class="hs-identifier hs-type">APP_BINDING</span></a></span><span class="hs-special">{</span><span id="local-6989586621679210367"><span class="annot"><span class="annottext">PAIR
+pair :: PAIR
+$sel:pair:APP_BINDING :: APP_BINDING -&gt; PAIR
+</span><a href="#local-6989586621679210367"><span class="hs-glyph hs-var hs-var">..</span></a></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">PAIR -&gt; APP_BINDING
+</span><a href="CST.html#APP_BINDING"><span class="hs-identifier hs-var">APP_BINDING</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">PAIR -&gt; PAIR
+forall a. ToASCII a =&gt; a -&gt; a
+</span><a href="Encoding.html#toASCII"><span class="hs-identifier hs-var">toASCII</span></a></span><span> </span><span class="annot"><span class="annottext">PAIR
+</span><a href="#local-6989586621679210367"><span class="hs-identifier hs-var">pair</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-41"></span><span>
+</span><span id="line-42"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Encoding.html#ToASCII"><span class="hs-identifier hs-type">ToASCII</span></a></span><span> </span><span class="annot"><a href="CST.html#BINDING"><span class="hs-identifier hs-type">BINDING</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-43"></span><span>  </span><span id="local-6989586621679210374"><span class="annot"><span class="annottext">toASCII :: BINDING -&gt; BINDING
+</span><a href="Encoding.html#toASCII"><span class="hs-identifier hs-var hs-var hs-var hs-var">toASCII</span></a></span></span><span> </span><span class="annot"><a href="CST.html#BI_PAIR"><span class="hs-identifier hs-type">BI_PAIR</span></a></span><span class="hs-special">{</span><span id="local-6989586621679210376"><span id="local-6989586621679210377"><span id="local-6989586621679210378"><span class="annot"><span class="annottext">BINDINGS
+PAIR
+TAB
+pair :: PAIR
+bindings :: BINDINGS
+tab :: TAB
+$sel:pair:BI_PAIR :: BINDING -&gt; PAIR
+$sel:bindings:BI_PAIR :: BINDING -&gt; BINDINGS
+$sel:tab:BI_PAIR :: BINDING -&gt; TAB
+</span><a href="#local-6989586621679210376"><span class="hs-glyph hs-var hs-var hs-var hs-var hs-var hs-var">..</span></a></span></span></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">PAIR -&gt; BINDINGS -&gt; TAB -&gt; BINDING
+</span><a href="CST.html#BI_PAIR"><span class="hs-identifier hs-var">BI_PAIR</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">PAIR -&gt; PAIR
+forall a. ToASCII a =&gt; a -&gt; a
+</span><a href="Encoding.html#toASCII"><span class="hs-identifier hs-var">toASCII</span></a></span><span> </span><span class="annot"><span class="annottext">PAIR
+</span><a href="#local-6989586621679210376"><span class="hs-identifier hs-var">pair</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">BINDINGS -&gt; BINDINGS
+forall a. ToASCII a =&gt; a -&gt; a
+</span><a href="Encoding.html#toASCII"><span class="hs-identifier hs-var">toASCII</span></a></span><span> </span><span class="annot"><span class="annottext">BINDINGS
+</span><a href="#local-6989586621679210377"><span class="hs-identifier hs-var">bindings</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">TAB
+</span><a href="#local-6989586621679210378"><span class="hs-identifier hs-var">tab</span></a></span><span>
+</span><span id="line-44"></span><span>  </span><span class="annot"><a href="Encoding.html#toASCII"><span class="hs-identifier hs-var">toASCII</span></a></span><span> </span><span class="annot"><a href="CST.html#BI_META"><span class="hs-identifier hs-type">BI_META</span></a></span><span class="hs-special">{</span><span id="local-6989586621679210383"><span id="local-6989586621679210384"><span id="local-6989586621679210385"><span class="annot"><span class="annottext">BINDINGS
+TAB
+META
+$sel:bindings:BI_PAIR :: BINDING -&gt; BINDINGS
+$sel:tab:BI_PAIR :: BINDING -&gt; TAB
+meta :: META
+bindings :: BINDINGS
+tab :: TAB
+$sel:meta:BI_PAIR :: BINDING -&gt; META
+</span><a href="CST.html#%24sel%3Abindings%3ABI_PAIR"><span class="hs-glyph hs-var hs-var hs-var hs-var hs-var hs-var">..</span></a></span></span></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">META -&gt; BINDINGS -&gt; TAB -&gt; BINDING
+</span><a href="CST.html#BI_META"><span class="hs-identifier hs-var">BI_META</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String -&gt; META
+</span><a href="CST.html#MT_BINDING%27"><span class="hs-identifier hs-var">MT_BINDING'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">META -&gt; String
+</span><a href="CST.html#%24sel%3Arest%3AMT_EXPRESSION"><span class="hs-identifier hs-var">rest</span></a></span><span> </span><span class="annot"><span class="annottext">META
+</span><a href="#local-6989586621679210383"><span class="hs-identifier hs-var">meta</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">BINDINGS -&gt; BINDINGS
+forall a. ToASCII a =&gt; a -&gt; a
+</span><a href="Encoding.html#toASCII"><span class="hs-identifier hs-var">toASCII</span></a></span><span> </span><span class="annot"><span class="annottext">BINDINGS
+</span><a href="#local-6989586621679210384"><span class="hs-identifier hs-var">bindings</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">TAB
+</span><a href="#local-6989586621679210385"><span class="hs-identifier hs-var">tab</span></a></span><span>
+</span><span id="line-45"></span><span>  </span><span class="annot"><a href="Encoding.html#toASCII"><span class="hs-identifier hs-var">toASCII</span></a></span><span> </span><span id="local-6989586621679210388"><span class="annot"><span class="annottext">BINDING
+</span><a href="#local-6989586621679210388"><span class="hs-identifier hs-var">bd</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">BINDING
+</span><a href="#local-6989586621679210388"><span class="hs-identifier hs-var">bd</span></a></span><span>
+</span><span id="line-46"></span><span>
+</span><span id="line-47"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Encoding.html#ToASCII"><span class="hs-identifier hs-type">ToASCII</span></a></span><span> </span><span class="annot"><a href="CST.html#BINDINGS"><span class="hs-identifier hs-type">BINDINGS</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-48"></span><span>  </span><span id="local-6989586621679210393"><span class="annot"><span class="annottext">toASCII :: BINDINGS -&gt; BINDINGS
+</span><a href="Encoding.html#toASCII"><span class="hs-identifier hs-var hs-var hs-var hs-var">toASCII</span></a></span></span><span> </span><span class="annot"><a href="CST.html#BDS_PAIR"><span class="hs-identifier hs-type">BDS_PAIR</span></a></span><span class="hs-special">{</span><span id="local-6989586621679210395"><span id="local-6989586621679210396"><span id="local-6989586621679210397"><span id="local-6989586621679210398"><span class="annot"><span class="annottext">BINDINGS
+PAIR
+TAB
+EOL
+eol :: EOL
+tab :: TAB
+pair :: PAIR
+bindings :: BINDINGS
+$sel:eol:BDS_PAIR :: BINDINGS -&gt; EOL
+$sel:tab:BDS_PAIR :: BINDINGS -&gt; TAB
+$sel:pair:BDS_PAIR :: BINDINGS -&gt; PAIR
+$sel:bindings:BDS_PAIR :: BINDINGS -&gt; BINDINGS
+</span><a href="#local-6989586621679210395"><span class="hs-glyph hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">..</span></a></span></span></span></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">EOL -&gt; TAB -&gt; PAIR -&gt; BINDINGS -&gt; BINDINGS
+</span><a href="CST.html#BDS_PAIR"><span class="hs-identifier hs-var">BDS_PAIR</span></a></span><span> </span><span class="annot"><span class="annottext">EOL
+</span><a href="#local-6989586621679210395"><span class="hs-identifier hs-var">eol</span></a></span><span> </span><span class="annot"><span class="annottext">TAB
+</span><a href="#local-6989586621679210396"><span class="hs-identifier hs-var">tab</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">PAIR -&gt; PAIR
+forall a. ToASCII a =&gt; a -&gt; a
+</span><a href="Encoding.html#toASCII"><span class="hs-identifier hs-var">toASCII</span></a></span><span> </span><span class="annot"><span class="annottext">PAIR
+</span><a href="#local-6989586621679210397"><span class="hs-identifier hs-var">pair</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">BINDINGS -&gt; BINDINGS
+forall a. ToASCII a =&gt; a -&gt; a
+</span><a href="Encoding.html#toASCII"><span class="hs-identifier hs-var">toASCII</span></a></span><span> </span><span class="annot"><span class="annottext">BINDINGS
+</span><a href="#local-6989586621679210398"><span class="hs-identifier hs-var">bindings</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-49"></span><span>  </span><span class="annot"><a href="Encoding.html#toASCII"><span class="hs-identifier hs-var">toASCII</span></a></span><span> </span><span class="annot"><a href="CST.html#BDS_META"><span class="hs-identifier hs-type">BDS_META</span></a></span><span class="hs-special">{</span><span id="local-6989586621679210404"><span id="local-6989586621679210405"><span id="local-6989586621679210406"><span id="local-6989586621679210407"><span class="annot"><span class="annottext">BINDINGS
+TAB
+META
+EOL
+$sel:eol:BDS_PAIR :: BINDINGS -&gt; EOL
+$sel:tab:BDS_PAIR :: BINDINGS -&gt; TAB
+$sel:bindings:BDS_PAIR :: BINDINGS -&gt; BINDINGS
+eol :: EOL
+tab :: TAB
+meta :: META
+bindings :: BINDINGS
+$sel:meta:BDS_PAIR :: BINDINGS -&gt; META
+</span><a href="CST.html#%24sel%3Aeol%3ABDS_PAIR"><span class="hs-glyph hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">..</span></a></span></span></span></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">EOL -&gt; TAB -&gt; META -&gt; BINDINGS -&gt; BINDINGS
+</span><a href="CST.html#BDS_META"><span class="hs-identifier hs-var">BDS_META</span></a></span><span> </span><span class="annot"><span class="annottext">EOL
+</span><a href="#local-6989586621679210404"><span class="hs-identifier hs-var">eol</span></a></span><span> </span><span class="annot"><span class="annottext">TAB
+</span><a href="#local-6989586621679210405"><span class="hs-identifier hs-var">tab</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String -&gt; META
+</span><a href="CST.html#MT_BINDING%27"><span class="hs-identifier hs-var">MT_BINDING'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">META -&gt; String
+</span><a href="CST.html#%24sel%3Arest%3AMT_EXPRESSION"><span class="hs-identifier hs-var">rest</span></a></span><span> </span><span class="annot"><span class="annottext">META
+</span><a href="#local-6989586621679210406"><span class="hs-identifier hs-var">meta</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">BINDINGS -&gt; BINDINGS
+forall a. ToASCII a =&gt; a -&gt; a
+</span><a href="Encoding.html#toASCII"><span class="hs-identifier hs-var">toASCII</span></a></span><span> </span><span class="annot"><span class="annottext">BINDINGS
+</span><a href="#local-6989586621679210407"><span class="hs-identifier hs-var">bindings</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-50"></span><span>  </span><span class="annot"><a href="Encoding.html#toASCII"><span class="hs-identifier hs-var">toASCII</span></a></span><span> </span><span id="local-6989586621679210409"><span class="annot"><span class="annottext">BINDINGS
+</span><a href="#local-6989586621679210409"><span class="hs-identifier hs-var">bds</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">BINDINGS
+</span><a href="#local-6989586621679210409"><span class="hs-identifier hs-var">bds</span></a></span><span>
+</span><span id="line-51"></span><span>
+</span><span id="line-52"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Encoding.html#ToASCII"><span class="hs-identifier hs-type">ToASCII</span></a></span><span> </span><span class="annot"><a href="CST.html#APP_ARG"><span class="hs-identifier hs-type">APP_ARG</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-53"></span><span>  </span><span id="local-6989586621679210414"><span class="annot"><span class="annottext">toASCII :: APP_ARG -&gt; APP_ARG
+</span><a href="Encoding.html#toASCII"><span class="hs-identifier hs-var hs-var hs-var hs-var">toASCII</span></a></span></span><span> </span><span class="annot"><a href="CST.html#APP_ARG"><span class="hs-identifier hs-type">APP_ARG</span></a></span><span class="hs-special">{</span><span id="local-6989586621679210416"><span id="local-6989586621679210417"><span class="annot"><span class="annottext">EXPRESSION
+APP_ARGS
+expr :: EXPRESSION
+args :: APP_ARGS
+$sel:expr:APP_ARG :: APP_ARG -&gt; EXPRESSION
+$sel:args:APP_ARG :: APP_ARG -&gt; APP_ARGS
+</span><a href="#local-6989586621679210416"><span class="hs-glyph hs-var hs-var hs-var hs-var">..</span></a></span></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">EXPRESSION -&gt; APP_ARGS -&gt; APP_ARG
+</span><a href="CST.html#APP_ARG"><span class="hs-identifier hs-var">APP_ARG</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">EXPRESSION -&gt; EXPRESSION
+forall a. ToASCII a =&gt; a -&gt; a
+</span><a href="Encoding.html#toASCII"><span class="hs-identifier hs-var">toASCII</span></a></span><span> </span><span class="annot"><span class="annottext">EXPRESSION
+</span><a href="#local-6989586621679210416"><span class="hs-identifier hs-var">expr</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">APP_ARGS -&gt; APP_ARGS
+forall a. ToASCII a =&gt; a -&gt; a
+</span><a href="Encoding.html#toASCII"><span class="hs-identifier hs-var">toASCII</span></a></span><span> </span><span class="annot"><span class="annottext">APP_ARGS
+</span><a href="#local-6989586621679210417"><span class="hs-identifier hs-var">args</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-54"></span><span>
+</span><span id="line-55"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Encoding.html#ToASCII"><span class="hs-identifier hs-type">ToASCII</span></a></span><span> </span><span class="annot"><a href="CST.html#APP_ARGS"><span class="hs-identifier hs-type">APP_ARGS</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-56"></span><span>  </span><span id="local-6989586621679210423"><span class="annot"><span class="annottext">toASCII :: APP_ARGS -&gt; APP_ARGS
+</span><a href="Encoding.html#toASCII"><span class="hs-identifier hs-var hs-var hs-var hs-var">toASCII</span></a></span></span><span> </span><span class="annot"><a href="CST.html#AAS_EXPR"><span class="hs-identifier hs-type">AAS_EXPR</span></a></span><span class="hs-special">{</span><span id="local-6989586621679210425"><span id="local-6989586621679210426"><span id="local-6989586621679210427"><span id="local-6989586621679210428"><span class="annot"><span class="annottext">EXPRESSION
+APP_ARGS
+TAB
+EOL
+eol :: EOL
+tab :: TAB
+expr :: EXPRESSION
+args :: APP_ARGS
+$sel:eol:AAS_EXPR :: APP_ARGS -&gt; EOL
+$sel:tab:AAS_EXPR :: APP_ARGS -&gt; TAB
+$sel:expr:AAS_EXPR :: APP_ARGS -&gt; EXPRESSION
+$sel:args:AAS_EXPR :: APP_ARGS -&gt; APP_ARGS
+</span><a href="#local-6989586621679210425"><span class="hs-glyph hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">..</span></a></span></span></span></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">EOL -&gt; TAB -&gt; EXPRESSION -&gt; APP_ARGS -&gt; APP_ARGS
+</span><a href="CST.html#AAS_EXPR"><span class="hs-identifier hs-var">AAS_EXPR</span></a></span><span> </span><span class="annot"><span class="annottext">EOL
+</span><a href="#local-6989586621679210425"><span class="hs-identifier hs-var">eol</span></a></span><span> </span><span class="annot"><span class="annottext">TAB
+</span><a href="#local-6989586621679210426"><span class="hs-identifier hs-var">tab</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">EXPRESSION -&gt; EXPRESSION
+forall a. ToASCII a =&gt; a -&gt; a
+</span><a href="Encoding.html#toASCII"><span class="hs-identifier hs-var">toASCII</span></a></span><span> </span><span class="annot"><span class="annottext">EXPRESSION
+</span><a href="#local-6989586621679210427"><span class="hs-identifier hs-var">expr</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">APP_ARGS -&gt; APP_ARGS
+forall a. ToASCII a =&gt; a -&gt; a
+</span><a href="Encoding.html#toASCII"><span class="hs-identifier hs-var">toASCII</span></a></span><span> </span><span class="annot"><span class="annottext">APP_ARGS
+</span><a href="#local-6989586621679210428"><span class="hs-identifier hs-var">args</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-57"></span><span>  </span><span class="annot"><a href="Encoding.html#toASCII"><span class="hs-identifier hs-var">toASCII</span></a></span><span> </span><span id="local-6989586621679210433"><span class="annot"><span class="annottext">APP_ARGS
+</span><a href="#local-6989586621679210433"><span class="hs-identifier hs-var">args</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">APP_ARGS
+</span><a href="#local-6989586621679210433"><span class="hs-identifier hs-var">args</span></a></span><span>
+</span><span id="line-58"></span><span>
+</span><span id="line-59"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Encoding.html#ToASCII"><span class="hs-identifier hs-type">ToASCII</span></a></span><span> </span><span class="annot"><a href="CST.html#PAIR"><span class="hs-identifier hs-type">PAIR</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-60"></span><span>  </span><span id="local-6989586621679210441"><span class="annot"><span class="annottext">toASCII :: PAIR -&gt; PAIR
+</span><a href="Encoding.html#toASCII"><span class="hs-identifier hs-var hs-var hs-var hs-var">toASCII</span></a></span></span><span> </span><span class="annot"><a href="CST.html#PA_TAU"><span class="hs-identifier hs-type">PA_TAU</span></a></span><span class="hs-special">{</span><span id="local-6989586621679210443"><span id="local-6989586621679210444"><span id="local-6989586621679210445"><span class="annot"><span class="annottext">ATTRIBUTE
+EXPRESSION
+ARROW
+attr :: ATTRIBUTE
+arrow :: ARROW
+expr :: EXPRESSION
+$sel:attr:PA_TAU :: PAIR -&gt; ATTRIBUTE
+$sel:arrow:PA_TAU :: PAIR -&gt; ARROW
+$sel:expr:PA_TAU :: PAIR -&gt; EXPRESSION
+</span><a href="#local-6989586621679210443"><span class="hs-glyph hs-var hs-var hs-var hs-var hs-var hs-var">..</span></a></span></span></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ATTRIBUTE -&gt; ARROW -&gt; EXPRESSION -&gt; PAIR
+</span><a href="CST.html#PA_TAU"><span class="hs-identifier hs-var">PA_TAU</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">ATTRIBUTE -&gt; ATTRIBUTE
+forall a. ToASCII a =&gt; a -&gt; a
+</span><a href="Encoding.html#toASCII"><span class="hs-identifier hs-var">toASCII</span></a></span><span> </span><span class="annot"><span class="annottext">ATTRIBUTE
+</span><a href="#local-6989586621679210443"><span class="hs-identifier hs-var">attr</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">ARROW
+</span><a href="CST.html#ARROW%27"><span class="hs-identifier hs-var">ARROW'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">EXPRESSION -&gt; EXPRESSION
+forall a. ToASCII a =&gt; a -&gt; a
+</span><a href="Encoding.html#toASCII"><span class="hs-identifier hs-var">toASCII</span></a></span><span> </span><span class="annot"><span class="annottext">EXPRESSION
+</span><a href="#local-6989586621679210445"><span class="hs-identifier hs-var">expr</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-61"></span><span>  </span><span class="annot"><a href="Encoding.html#toASCII"><span class="hs-identifier hs-var">toASCII</span></a></span><span> </span><span class="annot"><a href="CST.html#PA_FORMATION"><span class="hs-identifier hs-type">PA_FORMATION</span></a></span><span class="hs-special">{</span><span id="local-6989586621679210450"><span id="local-6989586621679210451"><span id="local-6989586621679210452"><span id="local-6989586621679210453"><span class="annot"><span class="annottext">[ATTRIBUTE]
+ATTRIBUTE
+EXPRESSION
+ARROW
+$sel:attr:PA_TAU :: PAIR -&gt; ATTRIBUTE
+$sel:arrow:PA_TAU :: PAIR -&gt; ARROW
+$sel:expr:PA_TAU :: PAIR -&gt; EXPRESSION
+attr :: ATTRIBUTE
+voids :: [ATTRIBUTE]
+arrow :: ARROW
+expr :: EXPRESSION
+$sel:voids:PA_TAU :: PAIR -&gt; [ATTRIBUTE]
+</span><a href="CST.html#%24sel%3Aattr%3APA_TAU"><span class="hs-glyph hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">..</span></a></span></span></span></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ATTRIBUTE -&gt; [ATTRIBUTE] -&gt; ARROW -&gt; EXPRESSION -&gt; PAIR
+</span><a href="CST.html#PA_FORMATION"><span class="hs-identifier hs-var">PA_FORMATION</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">ATTRIBUTE -&gt; ATTRIBUTE
+forall a. ToASCII a =&gt; a -&gt; a
+</span><a href="Encoding.html#toASCII"><span class="hs-identifier hs-var">toASCII</span></a></span><span> </span><span class="annot"><span class="annottext">ATTRIBUTE
+</span><a href="#local-6989586621679210450"><span class="hs-identifier hs-var">attr</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(ATTRIBUTE -&gt; ATTRIBUTE) -&gt; [ATTRIBUTE] -&gt; [ATTRIBUTE]
+forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
+</span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="annot"><span class="annottext">ATTRIBUTE -&gt; ATTRIBUTE
+forall a. ToASCII a =&gt; a -&gt; a
+</span><a href="Encoding.html#toASCII"><span class="hs-identifier hs-var">toASCII</span></a></span><span> </span><span class="annot"><span class="annottext">[ATTRIBUTE]
+</span><a href="#local-6989586621679210451"><span class="hs-identifier hs-var">voids</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">ARROW
+</span><a href="CST.html#ARROW%27"><span class="hs-identifier hs-var">ARROW'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">EXPRESSION -&gt; EXPRESSION
+forall a. ToASCII a =&gt; a -&gt; a
+</span><a href="Encoding.html#toASCII"><span class="hs-identifier hs-var">toASCII</span></a></span><span> </span><span class="annot"><span class="annottext">EXPRESSION
+</span><a href="#local-6989586621679210453"><span class="hs-identifier hs-var">expr</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-62"></span><span>  </span><span class="annot"><a href="Encoding.html#toASCII"><span class="hs-identifier hs-var">toASCII</span></a></span><span> </span><span class="annot"><a href="CST.html#PA_VOID"><span class="hs-identifier hs-type">PA_VOID</span></a></span><span class="hs-special">{</span><span id="local-6989586621679210456"><span id="local-6989586621679210457"><span id="local-6989586621679210458"><span class="annot"><span class="annottext">ATTRIBUTE
+VOID
+ARROW
+$sel:attr:PA_TAU :: PAIR -&gt; ATTRIBUTE
+$sel:arrow:PA_TAU :: PAIR -&gt; ARROW
+attr :: ATTRIBUTE
+arrow :: ARROW
+void :: VOID
+$sel:void:PA_TAU :: PAIR -&gt; VOID
+</span><a href="CST.html#%24sel%3Aattr%3APA_TAU"><span class="hs-glyph hs-var hs-var hs-var hs-var hs-var hs-var">..</span></a></span></span></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ATTRIBUTE -&gt; ARROW -&gt; VOID -&gt; PAIR
+</span><a href="CST.html#PA_VOID"><span class="hs-identifier hs-var">PA_VOID</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">ATTRIBUTE -&gt; ATTRIBUTE
+forall a. ToASCII a =&gt; a -&gt; a
+</span><a href="Encoding.html#toASCII"><span class="hs-identifier hs-var">toASCII</span></a></span><span> </span><span class="annot"><span class="annottext">ATTRIBUTE
+</span><a href="#local-6989586621679210456"><span class="hs-identifier hs-var">attr</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">ARROW
+</span><a href="CST.html#ARROW%27"><span class="hs-identifier hs-var">ARROW'</span></a></span><span> </span><span class="annot"><span class="annottext">VOID
+</span><a href="CST.html#QUESTION"><span class="hs-identifier hs-var">QUESTION</span></a></span><span>
+</span><span id="line-63"></span><span>  </span><span class="annot"><a href="Encoding.html#toASCII"><span class="hs-identifier hs-var">toASCII</span></a></span><span> </span><span class="annot"><a href="CST.html#PA_LAMBDA"><span class="hs-identifier hs-type">PA_LAMBDA</span></a></span><span class="hs-special">{</span><span id="local-6989586621679210462"><span class="annot"><span class="annottext">String
+func :: String
+$sel:func:PA_TAU :: PAIR -&gt; String
+</span><a href="#local-6989586621679210462"><span class="hs-glyph hs-var hs-var">..</span></a></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; PAIR
+</span><a href="CST.html#PA_LAMBDA%27"><span class="hs-identifier hs-var">PA_LAMBDA'</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679210462"><span class="hs-identifier hs-var">func</span></a></span><span>
+</span><span id="line-64"></span><span>  </span><span class="annot"><a href="Encoding.html#toASCII"><span class="hs-identifier hs-var">toASCII</span></a></span><span> </span><span class="annot"><a href="CST.html#PA_DELTA"><span class="hs-identifier hs-type">PA_DELTA</span></a></span><span class="hs-special">{</span><span id="local-6989586621679210466"><span class="annot"><span class="annottext">BYTES
+bytes :: BYTES
+$sel:bytes:PA_TAU :: PAIR -&gt; BYTES
+</span><a href="#local-6989586621679210466"><span class="hs-glyph hs-var hs-var">..</span></a></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">BYTES -&gt; PAIR
+</span><a href="CST.html#PA_DELTA%27"><span class="hs-identifier hs-var">PA_DELTA'</span></a></span><span> </span><span class="annot"><span class="annottext">BYTES
+</span><a href="#local-6989586621679210466"><span class="hs-identifier hs-var">bytes</span></a></span><span>
+</span><span id="line-65"></span><span>  </span><span class="annot"><a href="Encoding.html#toASCII"><span class="hs-identifier hs-var">toASCII</span></a></span><span> </span><span class="annot"><a href="CST.html#PA_META_LAMBDA"><span class="hs-identifier hs-type">PA_META_LAMBDA</span></a></span><span class="hs-special">{</span><span id="local-6989586621679210470"><span class="annot"><span class="annottext">META
+meta :: META
+$sel:meta:PA_TAU :: PAIR -&gt; META
+</span><a href="#local-6989586621679210470"><span class="hs-glyph hs-var hs-var">..</span></a></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">META -&gt; PAIR
+</span><a href="CST.html#PA_META_LAMBDA%27"><span class="hs-identifier hs-var">PA_META_LAMBDA'</span></a></span><span> </span><span class="annot"><span class="annottext">META
+</span><a href="#local-6989586621679210470"><span class="hs-identifier hs-var">meta</span></a></span><span>
+</span><span id="line-66"></span><span>  </span><span class="annot"><a href="Encoding.html#toASCII"><span class="hs-identifier hs-var">toASCII</span></a></span><span> </span><span class="annot"><a href="CST.html#PA_META_DELTA"><span class="hs-identifier hs-type">PA_META_DELTA</span></a></span><span class="hs-special">{</span><span id="local-6989586621679210474"><span class="annot"><span class="annottext">META
+$sel:meta:PA_TAU :: PAIR -&gt; META
+meta :: META
+</span><a href="CST.html#%24sel%3Ameta%3APA_TAU"><span class="hs-glyph hs-var hs-var">..</span></a></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">META -&gt; PAIR
+</span><a href="CST.html#PA_META_DELTA%27"><span class="hs-identifier hs-var">PA_META_DELTA'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String -&gt; META
+</span><a href="CST.html#MT_BYTES%27"><span class="hs-identifier hs-var">MT_BYTES'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">META -&gt; String
+</span><a href="CST.html#%24sel%3Arest%3AMT_EXPRESSION"><span class="hs-identifier hs-var">rest</span></a></span><span> </span><span class="annot"><span class="annottext">META
+</span><a href="#local-6989586621679210474"><span class="hs-identifier hs-var">meta</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-67"></span><span>  </span><span class="annot"><a href="Encoding.html#toASCII"><span class="hs-identifier hs-var">toASCII</span></a></span><span> </span><span id="local-6989586621679210477"><span class="annot"><span class="annottext">PAIR
+</span><a href="#local-6989586621679210477"><span class="hs-identifier hs-var">pair</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">PAIR
+</span><a href="#local-6989586621679210477"><span class="hs-identifier hs-var">pair</span></a></span><span>
+</span><span id="line-68"></span><span>
+</span><span id="line-69"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Encoding.html#ToASCII"><span class="hs-identifier hs-type">ToASCII</span></a></span><span> </span><span class="annot"><a href="CST.html#ATTRIBUTE"><span class="hs-identifier hs-type">ATTRIBUTE</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-70"></span><span>  </span><span id="local-6989586621679210479"><span class="annot"><span class="annottext">toASCII :: ATTRIBUTE -&gt; ATTRIBUTE
+</span><a href="Encoding.html#toASCII"><span class="hs-identifier hs-var hs-var hs-var hs-var">toASCII</span></a></span></span><span> </span><span class="annot"><a href="CST.html#AT_ALPHA"><span class="hs-identifier hs-type">AT_ALPHA</span></a></span><span class="hs-special">{</span><span id="local-6989586621679210481"><span id="local-6989586621679210482"><span class="annot"><span class="annottext">Integer
+ALPHA
+alpha :: ALPHA
+idx :: Integer
+$sel:alpha:AT_LABEL :: ATTRIBUTE -&gt; ALPHA
+$sel:idx:AT_LABEL :: ATTRIBUTE -&gt; Integer
+</span><a href="#local-6989586621679210481"><span class="hs-glyph hs-var hs-var hs-var hs-var">..</span></a></span></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ALPHA -&gt; Integer -&gt; ATTRIBUTE
+</span><a href="CST.html#AT_ALPHA"><span class="hs-identifier hs-var">AT_ALPHA</span></a></span><span> </span><span class="annot"><span class="annottext">ALPHA
+</span><a href="CST.html#ALPHA%27"><span class="hs-identifier hs-var">ALPHA'</span></a></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679210482"><span class="hs-identifier hs-var">idx</span></a></span><span>
+</span><span id="line-71"></span><span>  </span><span class="annot"><a href="Encoding.html#toASCII"><span class="hs-identifier hs-var">toASCII</span></a></span><span> </span><span class="annot"><a href="CST.html#AT_PHI"><span class="hs-identifier hs-type">AT_PHI</span></a></span><span class="hs-special">{</span><span id="local-6989586621679210487"><span class="annot"><span class="annottext">PHI
+phi :: PHI
+$sel:phi:AT_LABEL :: ATTRIBUTE -&gt; PHI
+</span><a href="#local-6989586621679210487"><span class="hs-glyph hs-var hs-var">..</span></a></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">PHI -&gt; ATTRIBUTE
+</span><a href="CST.html#AT_PHI"><span class="hs-identifier hs-var">AT_PHI</span></a></span><span> </span><span class="annot"><span class="annottext">PHI
+</span><a href="CST.html#AT"><span class="hs-identifier hs-var">AT</span></a></span><span>
+</span><span id="line-72"></span><span>  </span><span class="annot"><a href="Encoding.html#toASCII"><span class="hs-identifier hs-var">toASCII</span></a></span><span> </span><span class="annot"><a href="CST.html#AT_RHO"><span class="hs-identifier hs-type">AT_RHO</span></a></span><span class="hs-special">{</span><span id="local-6989586621679210491"><span class="annot"><span class="annottext">RHO
+rho :: RHO
+$sel:rho:AT_LABEL :: ATTRIBUTE -&gt; RHO
+</span><a href="#local-6989586621679210491"><span class="hs-glyph hs-var hs-var">..</span></a></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">RHO -&gt; ATTRIBUTE
+</span><a href="CST.html#AT_RHO"><span class="hs-identifier hs-var">AT_RHO</span></a></span><span> </span><span class="annot"><span class="annottext">RHO
+</span><a href="CST.html#CARET"><span class="hs-identifier hs-var">CARET</span></a></span><span>
+</span><span id="line-73"></span><span>  </span><span class="annot"><a href="Encoding.html#toASCII"><span class="hs-identifier hs-var">toASCII</span></a></span><span> </span><span class="annot"><a href="CST.html#AT_META"><span class="hs-identifier hs-type">AT_META</span></a></span><span class="hs-special">{</span><span id="local-6989586621679210495"><span class="annot"><span class="annottext">META
+meta :: META
+$sel:meta:AT_LABEL :: ATTRIBUTE -&gt; META
+</span><a href="#local-6989586621679210495"><span class="hs-glyph hs-var hs-var">..</span></a></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">META -&gt; ATTRIBUTE
+</span><a href="CST.html#AT_META"><span class="hs-identifier hs-var">AT_META</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String -&gt; META
+</span><a href="CST.html#MT_ATTRIBUTE%27"><span class="hs-identifier hs-var">MT_ATTRIBUTE'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">META -&gt; String
+</span><a href="CST.html#%24sel%3Arest%3AMT_EXPRESSION"><span class="hs-identifier hs-var">rest</span></a></span><span> </span><span class="annot"><span class="annottext">META
+</span><a href="#local-6989586621679210495"><span class="hs-identifier hs-var">meta</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-74"></span><span>  </span><span class="annot"><a href="Encoding.html#toASCII"><span class="hs-identifier hs-var">toASCII</span></a></span><span> </span><span id="local-6989586621679210498"><span class="annot"><span class="annottext">ATTRIBUTE
+</span><a href="#local-6989586621679210498"><span class="hs-identifier hs-var">attr</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ATTRIBUTE
+</span><a href="#local-6989586621679210498"><span class="hs-identifier hs-var">attr</span></a></span><span>
+</span><span id="line-75"></span></pre></body></html>
