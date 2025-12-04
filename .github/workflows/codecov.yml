@@ -23,7 +23,7 @@ jobs:
           key: ${{ runner.os }}-codecov-${{ hashFiles('**/*.cabal') }}-${{ hashFiles('cabal.project', 'cabal.project.freeze') }}
           restore-keys: |
             ${{ runner.os }}-codecov-
-      - uses: haskell-actions/setup@v2.8.0
+      - uses: haskell-actions/setup@v2.8.2
         with:
           ghc-version: '9.6.7'
           cabal-version: '3.12.1.0'
