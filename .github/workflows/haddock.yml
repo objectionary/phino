@@ -1,0 +1,37 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+name: haddock
+'on':
+  push:
+    branches:
+      - master
+permissions:
+  contents: write
+jobs:
+  haddock:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.ghcup
+            ~/.cabal/packages
+            ~/.cabal/store
+            ~/.ghc
+            dist-newstyle
+          key: ${{ runner.os }}-haddock-${{ hashFiles('**/*.cabal') }}-${{ hashFiles('cabal.project', 'cabal.project.freeze') }}
+          restore-keys: |
+            ${{ runner.os }}-haddock-
+      - uses: haskell-actions/setup@v2.8.0
+        with:
+          ghc-version: '9.6.7'
+          cabal-version: '3.12.1.0'
+      - run: cabal update
+      - run: cabal haddock --haddock-hyperlink-source --haddock-html-location='https://hackage.haskell.org/package/$pkg-$version/docs'
+      - uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: dist-newstyle/build/aarch64-osx/ghc-9.6.7/phino-0.0.0.0/doc/html/phino
+          branch: gh-pages
