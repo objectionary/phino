@@ -11,6 +11,8 @@ permissions:
   contents: write
 jobs:
   haddock:
+    env:
+      GHC_VERSION: 9.6.7
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v6
@@ -27,11 +29,11 @@ jobs:
             ${{ runner.os }}-haddock-
       - uses: haskell-actions/setup@v2.8.0
         with:
-          ghc-version: '9.6.7'
+          ghc-version: ${{ GHC_VERSION }}
           cabal-version: '3.12.1.0'
       - run: cabal update
-      - run: cabal haddock --haddock-hyperlink-source --haddock-html-location='https://hackage.haskell.org/package/$pkg-$version/docs'
+      - run: cabal haddock --haddock-hyperlink-source
       - uses: JamesIves/github-pages-deploy-action@v4
         with:
-          folder: dist-newstyle/build/aarch64-osx/ghc-9.6.7/phino-0.0.0.0/doc/html/phino
+          folder: dist-newstyle/build/aarch64-osx/ghc-${{ GHC_VERSION }}/phino-0.0.0.0/doc/html/phino
           branch: gh-pages
