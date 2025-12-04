@@ -25,7 +25,7 @@ import Misc (ensuredFile)
 import Must (Must (..), exceedsUpperBound, inRange)
 import Parser (parseProgram, parseProgramThrows)
 import Printer (printProgram)
-import Replacer (ReplaceProgramContext (ReplaceProgramContext), ReplaceProgramThrowsFunc, replaceProgramFastThrows, replaceProgramThrows)
+import Replacer (ReplaceContext (ReplaceCtx), ReplaceProgramFunc, replaceProgramFastThrows, replaceProgramThrows)
 import Rule (RuleContext (RuleContext), matchProgramWithRule)
 import qualified Rule as R
 import Text.Printf
@@ -35,6 +35,8 @@ import qualified Yaml as Y
 type RewriteState = ([Rewritten], Set.Set Program)
 
 type Rewritten = (Program, Maybe String)
+
+type ToReplace = (Program, Expression, Expression, [Subst], ReplaceContext)
 
 data RewriteContext = RewriteContext
   { _maxDepth :: Integer
@@ -78,13 +80,13 @@ instance Show RewriteException where
       prog
 
 -- Build pattern and result expression and replace patterns to results in given program
-buildAndReplace' :: Expression -> Expression -> [Subst] -> ReplaceProgramThrowsFunc -> ReplaceProgramContext -> IO Program
-buildAndReplace' ptn res substs func ctx = do
+buildAndReplace' :: ToReplace -> ReplaceProgramFunc IO -> IO Program
+buildAndReplace' (prog, ptn, res, substs, ctx) func = do
   ptns <- buildExpressions ptn substs
   repls <- buildExpressions res substs
-  let repls' = map fst repls
-      ptns' = map fst ptns
-  func ptns' repls' ctx
+  let ptns' = map fst ptns
+      repls' = map (\ex _ -> fst ex) repls
+  func (prog, ptns', repls') ctx
 
 -- If pattern and replacement are appropriate for fast replacing - does it.
 -- Pattern and replacement expressions can be used in fast replacing only if
@@ -94,8 +96,8 @@ buildAndReplace' ptn res substs func ctx = do
 -- In such case we can just replace bindings one by one without building whole expression.
 -- You can find more details in this ticket: https://github.com/objectionary/phino/issues/321
 -- If we don't meet the conditions above - just do a regular replacing
-tryBuildAndReplaceFast :: Expression -> Expression -> [Subst] -> ReplaceProgramContext -> IO Program
-tryBuildAndReplaceFast (ExFormation pbds) (ExFormation rbds) substs ctx =
+tryBuildAndReplaceFast :: ToReplace -> IO Program
+tryBuildAndReplaceFast state@(prog, ExFormation pbds, ExFormation rbds, substs, ctx) =
   let pbds' = init (tail pbds)
       rbds' = init (tail rbds)
    in if startsAndEndsWithMeta pbds
@@ -106,10 +108,10 @@ tryBuildAndReplaceFast (ExFormation pbds) (ExFormation rbds) substs ctx =
         && not (hasMetaBindings rbds')
         then do
           logDebug "Applying fast replacing since 'pattern' and 'result' are suitable for this..."
-          buildAndReplace' (ExFormation pbds') (ExFormation rbds') substs replaceProgramFastThrows ctx
+          buildAndReplace' (prog, ExFormation pbds', ExFormation rbds', substs, ctx) replaceProgramFastThrows
         else do
           logDebug "Applying regular replacing..."
-          buildAndReplace' (ExFormation pbds) (ExFormation rbds) substs replaceProgramThrows ctx
+          buildAndReplace' state replaceProgramThrows
   where
     startsAndEndsWithMeta :: [Binding] -> Bool
     startsAndEndsWithMeta bds =
@@ -122,7 +124,7 @@ tryBuildAndReplaceFast (ExFormation pbds) (ExFormation rbds) substs ctx =
       BiMeta _ -> True
       _ -> False
     hasMetaBindings = foldl (\acc bd -> acc || isMetaBinding bd) False
-tryBuildAndReplaceFast ptn res substs ctx = buildAndReplace' ptn res substs replaceProgramThrows ctx
+tryBuildAndReplaceFast state = buildAndReplace' state replaceProgramThrows
 
 -- The function returns tuple (X, Y) where
 -- - X is sequence of programs;
@@ -155,7 +157,7 @@ rewrite state (rule : rest) iteration ctx@RewriteContext{..} = do
                   pure (_rewrittens, _unique)
                 else do
                   logDebug (printf "Rule '%s' has been matched, applying..." ruleName)
-                  prog <- tryBuildAndReplaceFast ptn res matched (ReplaceProgramContext program _maxDepth)
+                  prog <- tryBuildAndReplaceFast (program, ptn, res, matched, ReplaceCtx _maxDepth)
                   if program == prog
                     then do
                       logDebug (printf "Applied '%s', no changes made" ruleName)

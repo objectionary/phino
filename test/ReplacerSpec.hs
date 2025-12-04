@@ -8,10 +8,10 @@ import Control.Monad (forM_)
 import Replacer
 import Test.Hspec (Example (Arg), Expectation, Spec, SpecWith, describe, it, shouldBe)
 
-test :: ReplaceProgramFunc -> [(String, Program, [Expression], [Expression], Maybe Program)] -> SpecWith (Arg Expectation)
+test :: ReplaceProgramFunc Maybe -> [(String, Program, [Expression], [Expression], Maybe Program)] -> SpecWith (Arg Expectation)
 test function useCases =
   forM_ useCases $ \(desc, prog, ptns, repls, res) ->
-    it desc $ function ptns repls (ReplaceProgramContext prog 3) `shouldBe` res
+    it desc $ function (prog, ptns, map const repls) (ReplaceCtx 3) `shouldBe` res
 
 spec :: Spec
 spec = do
