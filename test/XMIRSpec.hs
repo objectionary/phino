@@ -21,6 +21,7 @@ import System.Directory (removeFile)
 import System.Exit (ExitCode (ExitSuccess))
 import System.FilePath (makeRelative)
 import System.IO (hClose, hPutStr, openTempFile)
+import System.Info (os)
 import System.Process (readProcessWithExitCode)
 import Test.Hspec (Spec, anyException, describe, expectationFailure, it, pendingWith, runIO, shouldBe, shouldThrow)
 import XMIR (defaultXmirContext, parseXMIRThrows, printXMIR, programToXMIR, xmirToPhi)
@@ -49,6 +50,10 @@ isXmllintAvailable :: Bool
 isXmllintAvailable =
   let (exitCode, _, _) = unsafePerformIO (readProcessWithExitCode "xmllint" ["--version"] "")
    in (exitCode == ExitSuccess)
+
+-- Check if running on Windows
+isWindows :: Bool
+isWindows = os == "mingw32"
 
 spec :: Spec
 spec = do
@@ -95,29 +100,32 @@ spec = do
       packs
       ( \pth ->
           it (makeRelative resources pth) $
-            if not available
-              then pendingWith "The 'xmllint' is not available"
-              else do
-                pack <- printPack pth
-                let PrintPack{phi = phi', xpaths = xpaths'} = pack
-                prog <- parseProgramThrows phi'
-                xmir' <- programToXMIR prog defaultXmirContext
-                let xml = printXMIR xmir'
-                bracket
-                  (openTempFile "." "xmirXXXXXX.tmp")
-                  (\(fp, _) -> removeFile fp)
-                  ( \(path, hTmp) -> do
-                      hPutStr hTmp xml
-                      hClose hTmp
-                      failed <-
-                        filterM
-                          ( \xpath -> do
-                              (code, _, _) <- readProcessWithExitCode "xmllint" ["--xpath", xpath, path] ""
-                              pure (code /= ExitSuccess)
-                          )
-                          xpaths'
-                      unless
-                        (null failed)
-                        (expectationFailure ("Failed xpaths:\n - " ++ intercalate "\n - " failed ++ "\nXMIR is:\n" ++ xml))
-                  )
+            if isWindows
+              then pendingWith "Skipped on Windows due to xmllint Unicode issues"
+              else
+                if not available
+                  then pendingWith "The 'xmllint' is not available"
+                  else do
+                    pack <- printPack pth
+                    let PrintPack{phi = phi', xpaths = xpaths'} = pack
+                    prog <- parseProgramThrows phi'
+                    xmir' <- programToXMIR prog defaultXmirContext
+                    let xml = printXMIR xmir'
+                    bracket
+                      (openTempFile "." "xmirXXXXXX.tmp")
+                      (\(fp, _) -> removeFile fp)
+                      ( \(path, hTmp) -> do
+                          hPutStr hTmp xml
+                          hClose hTmp
+                          failed <-
+                            filterM
+                              ( \xpath -> do
+                                  (code, _, _) <- readProcessWithExitCode "xmllint" ["--xpath", xpath, path] ""
+                                  pure (code /= ExitSuccess)
+                              )
+                              xpaths'
+                          unless
+                            (null failed)
+                            (expectationFailure ("Failed xpaths:\n - " ++ intercalate "\n - " failed ++ "\nXMIR is:\n" ++ xml))
+                      )
       )
