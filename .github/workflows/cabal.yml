@@ -14,26 +14,26 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [macos-15]
+        os: [macos-15, ubuntu-24.04, windows-2022]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/cache@v4
-        with:
-          path: |
-            ~/.ghcup
-            ~/.cabal/packages
-            ~/.cabal/store
-            ~/.ghc
-            dist-newstyle
-          key: ${{ runner.os }}-cabal-${{ hashFiles('**/*.cabal') }}-${{ hashFiles('cabal.project', 'cabal.project.freeze') }}
-          restore-keys: |
-            ${{ runner.os }}-cabal-
       - name: Set up GHC
+        id: setup
         uses: haskell-actions/setup@v2.8.2
         with:
           ghc-version: '9.6.7'
           cabal-version: '3.12.1.0'
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ${{ steps.setup.outputs.ghc-path }}
+            ${{ steps.setup.outputs.cabal-path }}
+            ${{ steps.setup.outputs.cabal-store }}
+            dist-newstyle
+          key: ${{ runner.os }}-cabal-${{ hashFiles('**/*.cabal') }}-${{ hashFiles('cabal.project', 'cabal.project.freeze') }}
+          restore-keys: |
+            ${{ runner.os }}-cabal-
       - name: Install xmllint on Ubuntu
         if: runner.os == 'Linux'
         run: |
@@ -43,6 +43,10 @@ jobs:
         if: runner.os == 'macOS'
         run: |
           brew install libxml2
+      - name: Install xmllint on Windows
+        if: runner.os == 'Windows'
+        run: |
+          choco install xsltproc
       - name: Update package list
         run: cabal update
       - name: Build project

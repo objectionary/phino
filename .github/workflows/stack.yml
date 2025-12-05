@@ -10,29 +10,31 @@ name: stack
   pull_request:
     branches:
       - master
+env:
+  STACK_ROOT: ${{ github.workspace }}/.stack-root
 jobs:
   build:
     strategy:
       matrix:
-        os: [macos-15]
+        os: [macos-15, ubuntu-24.04, windows-2022]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/cache@v4
-        with:
-          path: |
-            ~/.stack
-            ~/.ghcup
-            .stack-work
-          key: ${{ runner.os }}-stack-${{ hashFiles('**/stack.yaml.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-stack-
       - name: Set up GHC
+        id: setup
         uses: haskell-actions/setup@v2.8.2
         with:
           ghc-version: '9.6.7'
           enable-stack: true
           stack-version: '3.5.1'
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ${{ env.STACK_ROOT }}
+            .stack-work
+          key: ${{ runner.os }}-stack-${{ hashFiles('**/stack.yaml.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-stack-
       - name: Install GHC if needed
         run: stack setup
       - name: Build
