@@ -17,6 +17,7 @@ import Paths_phino (version)
 import System.Directory (doesDirectoryExist, doesFileExist, listDirectory, removeDirectoryRecursive, removeFile)
 import System.Exit (ExitCode (ExitFailure))
 import System.IO
+import System.Info (os)
 import Test.Hspec
 import Text.Printf (printf)
 
@@ -98,6 +99,9 @@ resource file = "test-resources/cli/" <> file
 
 rule :: String -> String
 rule file = "--rule=" <> resource file
+
+isWindows :: Bool
+isWindows = os == "mingw32"
 
 spec :: Spec
 spec = do
@@ -650,18 +654,21 @@ spec = do
         ["Either --rule or --normalize must be specified"]
 
     it "writes to target file" $
-      bracket
-        (openTempFile "." "explainXXXXXX.tex")
-        (\(path, _) -> removeFile path)
-        ( \(path, h) -> do
-            hClose h
-            testCLISucceeded
-              ["explain", "--normalize", printf "--target=%s" path]
-              [printf "was saved in '%s'" path]
-            content <- readFile path
-            content `shouldContain` "\\documentclass{article}"
-            content `shouldContain` "\\begin{document}"
-        )
+      if isWindows
+        then pendingWith "Skipped on Windows due to file locking issues"
+        else
+          bracket
+            (openTempFile "." "explainXXXXXX.tex")
+            (\(path, _) -> removeFile path)
+            ( \(path, h) -> do
+                hClose h
+                testCLISucceeded
+                  ["explain", "--normalize", printf "--target=%s" path]
+                  [printf "was saved in '%s'" path]
+                content <- readFile path
+                content `shouldContain` "\\documentclass{article}"
+                content `shouldContain` "\\begin{document}"
+            )
 
   describe "merge" $ do
     it "merges single program" $
