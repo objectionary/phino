@@ -9,7 +9,7 @@ module PrinterSpec where
 
 import AST
 import Control.Monad (forM_)
-import qualified Data.Map.Strict as Map
+import Data.Map.Strict qualified as Map
 import Encoding (Encoding (..))
 import Lining (LineFormat (..))
 import Matcher (MetaValue (..), Subst (..), Tail (..), defaultScope)
@@ -181,64 +181,64 @@ spec = do
           it desc (printExtraArg arg `shouldContain` expected)
       )
 
-  describe "printSubsts renders empty list" $ do
+  describe "printSubsts renders empty list" $
     it "returns separator" $
       printSubsts [] `shouldBe` "------"
 
-  describe "printSubsts renders attribute substitution" $ do
+  describe "printSubsts renders attribute substitution" $
     it "contains key and value" $
       printSubsts [Subst (Map.singleton "α" (MvAttribute (AtLabel "ατρ")))]
         `shouldContain` "α >> ατρ"
 
-  describe "printSubsts renders multiple substitutions" $ do
-    it "separates with dashed line" $ do
+  describe "printSubsts renders multiple substitutions" $
+    it "separates with dashed line" $
       let substs =
             [ Subst (Map.singleton "a" (MvAttribute AtRho))
             , Subst (Map.singleton "b" (MvAttribute AtPhi))
             ]
-      printSubsts substs `shouldContain` "------"
+       in printSubsts substs `shouldContain` "------"
 
-  describe "printSubsts renders expression value" $ do
+  describe "printSubsts renders expression value" $
     it "contains expression" $
       printSubsts [Subst (Map.singleton "e" (MvExpression ExGlobal defaultScope))]
         `shouldContain` "e >> Φ"
 
-  describe "printSubsts renders bindings value" $ do
+  describe "printSubsts renders bindings value" $
     it "contains bindings header" $
       printSubsts [Subst (Map.singleton "B" (MvBindings [BiVoid (AtLabel "x")]))]
         `shouldContain` "B >> ⟦"
 
-  describe "printSubsts renders bytes value" $ do
+  describe "printSubsts renders bytes value" $
     it "contains bytes" $
       printSubsts [Subst (Map.singleton "d" (MvBytes (BtMany ["AB", "CD"])))]
         `shouldContain` "d >> AB-CD"
 
-  describe "printSubsts renders function value" $ do
+  describe "printSubsts renders function value" $
     it "contains function name" $
       printSubsts [Subst (Map.singleton "F" (MvFunction "MyFunc"))]
         `shouldContain` "F >> MyFunc"
 
-  describe "printSubsts renders tail value with dispatch" $ do
+  describe "printSubsts renders tail value with dispatch" $
     it "contains dispatch" $
       printSubsts [Subst (Map.singleton "t" (MvTail [TaDispatch (AtLabel "attr")]))]
         `shouldContain` "t >> .attr"
 
-  describe "printSubsts renders tail value with application" $ do
+  describe "printSubsts renders tail value with application" $
     it "contains application" $
       printSubsts [Subst (Map.singleton "t" (MvTail [TaApplication (BiTau (AtLabel "x") ExThis)]))]
         `shouldContain` "(⟦"
 
-  describe "printExpression with salty config" $ do
+  describe "printExpression with salty config" $
     it "adds explicit rho binding" $
       printExpression' (ExFormation [BiVoid (AtLabel "x")]) (SALTY, UNICODE, SINGLELINE)
         `shouldContain` "ρ ↦ ∅"
 
-  describe "printExpression with multiline format" $ do
-    it "adds newlines in formation" $ do
+  describe "printExpression with multiline format" $
+    it "adds newlines in formation" $
       let expr = ExFormation [BiTau (AtLabel "x") ExGlobal, BiVoid (AtLabel "y")]
-      let result = printExpression' expr (SWEET, UNICODE, MULTILINE)
-      result `shouldContain` "\n"
+          result = printExpression' expr (SWEET, UNICODE, MULTILINE)
+       in result `shouldContain` "\n"
 
-  describe "logPrintConfig" $ do
+  describe "logPrintConfig" $
     it "is sweet unicode singleline" $
       logPrintConfig `shouldBe` (SWEET, UNICODE, SINGLELINE)
