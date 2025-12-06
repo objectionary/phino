@@ -8,7 +8,7 @@ name: codecov
     branches:
       - master
 jobs:
-  coverage:
+  codecov:
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v6
@@ -21,8 +21,7 @@ jobs:
             ~/.ghc
             dist-newstyle
           key: ${{ runner.os }}-codecov-${{ hashFiles('**/*.cabal') }}-${{ hashFiles('cabal.project', 'cabal.project.freeze') }}
-          restore-keys: |
-            ${{ runner.os }}-codecov-
+          restore-keys: ${{ runner.os }}-codecov-
       - uses: haskell-actions/setup@v2.8.2
         with:
           ghc-version: '9.6.7'
@@ -32,8 +31,7 @@ jobs:
       - run: cabal build all --enable-coverage
       - run: cabal test all --enable-coverage
       - run: cabal install hpc-codecov --overwrite-policy=always
-      - run: |
-          hpc-codecov cabal:spec --out=coverage.json
+      - run: hpc-codecov cabal:spec -x "$(find test -name '*.hs' -exec basename {} .hs \; | paste -sd,)" --out=coverage.json
       - uses: codecov/codecov-action@v5.5.1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
