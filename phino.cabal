@@ -125,6 +125,7 @@ test-suite spec
     MiscSpec
     ParserSpec
     Paths_phino
+    PrinterSpec
     ReplacerSpec
     RewriterSpec
     RuleSpec
