@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 
 .ONESHELL:
-.SHELLFLAGS := -e -o pipefail -c -x
+.SHELLFLAGS := -e -o pipefail -c
 SHELL := bash
 .PHONY: all test hlint fourmolu coverage
 
@@ -31,3 +31,15 @@ fourmolu:
 .SILENT:
 coverage:
 	cabal test --enable-coverage
+	tix=$$(find dist-newstyle -name "spec.tix" | head -1)
+	mixlib=$$(find dist-newstyle -type d -path "*/phino-0.0.0.0/build/*/hpc/vanilla/mix" | head -1)
+	mixtest=$$(find dist-newstyle -type d -path "*/spec/build/*/hpc/vanilla/mix" | head -1)
+	output=$$(hpc report "$$tix" --hpcdir="$$mixlib" --hpcdir="$$mixtest" --exclude=phino-0.0.0.0-inplace-spec)
+	echo "$$output"
+	coverage=$$(echo "$$output" | grep "expressions used" | grep -oE '[0-9]+%' | tr -d '%')
+	threshold=75
+	if [ "$$coverage" -lt "$$threshold" ]; then
+		echo "Coverage $$coverage% is below threshold $$threshold%" >&2
+		exit 1
+	fi
+	echo "Coverage $$coverage% meets threshold $$threshold%"
