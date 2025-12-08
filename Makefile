@@ -25,7 +25,7 @@ coverage:
 	cabal test --enable-coverage
 	tix=$$(find dist-newstyle -name "spec.tix" | head -1)
 	if [ -z "$$tix" ]; then echo "Error: spec.tix file not found" >&2; exit 1; fi
-	mixlib=$$(find dist-newstyle -type d -path "*/phino-0.0.0.0/build/*/hpc/vanilla/mix" | head -1)
+	mixlib=$$(find dist-newstyle -type d -path "*/phino-*/build/*/hpc/vanilla/mix" | head -1)
 	if [ -z "$$mixlib" ]; then echo "Error: mixlib directory not found" >&2; exit 1; fi
 	mixlib=$$(find dist-newstyle -type d -path "*/phino-*/build/*/hpc/vanilla/mix" | head -1)
 	mixtest=$$(find dist-newstyle -type d -path "*/spec/build/*/hpc/vanilla/mix" | head -1)
