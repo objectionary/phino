@@ -20,6 +20,9 @@ instance Render String where
 instance Render Integer where
   render = show
 
+instance Render Int where
+  render = show
+
 instance Render Double where
   render = show
 

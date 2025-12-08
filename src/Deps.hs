@@ -27,7 +27,7 @@ type BuildTermMethod = [ExtraArgument] -> Subst -> IO Term
 
 type BuildTermFunc = String -> BuildTermMethod
 
-type SaveStepFunc = Program -> Integer -> IO ()
+type SaveStepFunc = Program -> Int -> IO ()
 
 saveStep :: Maybe FilePath -> String -> (Program -> IO String) -> SaveStepFunc
 saveStep Nothing _ _ _ _ = pure ()

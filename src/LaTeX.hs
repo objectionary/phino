@@ -6,15 +6,17 @@
 
 module LaTeX (explainRules, rewrittensToLatex, programToLaTeX, LatexContext (..)) where
 
-import AST (Program)
+import AST
 import CST
 import Data.Char (toLower)
-import Data.List (intercalate)
+import Data.List (intercalate, nub, union)
 import Data.Maybe (fromMaybe)
 import Encoding (Encoding (ASCII), withEncoding)
 import Lining (LineFormat (MULTILINE, SINGLELINE), withLineFormat)
+import Matcher (matchProgram)
 import Printer (printProgram')
 import Render (Render (render))
+import Replacer (ReplaceContext (ReplaceCtx), replaceProgram)
 import Rewriter (Rewritten (..))
 import Sugar (SugarType (SWEET), withSugarType)
 import Text.Printf (printf)
@@ -27,6 +29,45 @@ data LatexContext = LatexContext
   , expression :: Maybe String
   , label :: Maybe String
   }
+
+meetInProgram :: Program -> Program -> [Expression]
+meetInProgram (Program expr) = meetInExpression expr
+  where
+    meetInExpression :: Expression -> Program -> [Expression]
+    meetInExpression ExGlobal _ = []
+    meetInExpression ExThis _ = []
+    meetInExpression ExTermination _ = []
+    meetInExpression (ExFormation [BiVoid AtRho]) _ = []
+    meetInExpression (ExFormation []) _ = []
+    meetInExpression (ExDispatch ExGlobal _) _ = []
+    meetInExpression (ExDispatch ExThis _) _ = []
+    meetInExpression (ExDispatch ExTermination _) _ = []
+    meetInExpression expr prog
+      | null (matchProgram expr prog) = case expr of
+          ExDispatch exp _ -> meetInExpression exp prog
+          ExApplication exp (BiTau _ arg) -> meetInExpression exp prog `union` meetInExpression arg prog
+          ExFormation bds -> meetInBindings bds prog
+          _ -> []
+      | otherwise = [expr]
+    meetInBindings :: [Binding] -> Program -> [Expression]
+    meetInBindings [] _ = []
+    meetInBindings (BiTau _ expr : bds) prog = meetInExpression expr prog `union` meetInBindings bds prog
+    meetInBindings (_ : bds) prog = meetInBindings bds prog
+
+meetInPrograms :: [Program] -> [Program]
+meetInPrograms [prog] = [prog]
+meetInPrograms progs@(first : rest) =
+  let met = map (meetInProgram first) rest
+      all = nub (concat met)
+      metMoreThan count = filter (\expr -> length (filter (elem expr) met) > count) all
+      fit = case length progs of
+        2 -> all
+        3 -> metMoreThan 0
+        4 -> metMoreThan 1
+        _ -> metMoreThan 1
+      prog = replaceProgram (first, fit, zipWith (\idx _ -> ExPhiMeet idx) [1 ..] fit)
+      rest' = map (\prgm -> replaceProgram (prgm, fit, zipWith (\idx _ -> ExPhiAgain idx) [1 ..] fit)) rest
+   in prog : rest'
 
 renderToLatex :: Program -> LatexContext -> String
 renderToLatex prog LatexContext{..} = render (toLaTeX $ withLineFormat line $ withEncoding ASCII $ withSugarType sugar $ programToCST prog)

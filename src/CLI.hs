@@ -87,7 +87,7 @@ instance Show IOFormat where
 
 data OptsDataize = OptsDataize
   { logLevel :: LogLevel
-  , logLines :: Integer
+  , logLines :: Int
   , inputFormat :: IOFormat
   , outputFormat :: IOFormat
   , sugarType :: SugarType
@@ -98,8 +98,8 @@ data OptsDataize = OptsDataize
   , sequence :: Bool
   , depthSensitive :: Bool
   , quiet :: Bool
-  , maxDepth :: Integer
-  , maxCycles :: Integer
+  , maxDepth :: Int
+  , maxCycles :: Int
   , hide :: [String]
   , show' :: [String]
   , expression :: Maybe String
@@ -110,7 +110,7 @@ data OptsDataize = OptsDataize
 
 data OptsExplain = OptsExplain
   { logLevel :: LogLevel
-  , logLines :: Integer
+  , logLines :: Int
   , rules :: [FilePath]
   , normalize :: Bool
   , shuffle :: Bool
@@ -119,7 +119,7 @@ data OptsExplain = OptsExplain
 
 data OptsRewrite = OptsRewrite
   { logLevel :: LogLevel
-  , logLines :: Integer
+  , logLines :: Int
   , inputFormat :: IOFormat
   , outputFormat :: IOFormat
   , sugarType :: SugarType
@@ -134,8 +134,8 @@ data OptsRewrite = OptsRewrite
   , inPlace :: Bool
   , sequence :: Bool
   , canonize :: Bool
-  , maxDepth :: Integer
-  , maxCycles :: Integer
+  , maxDepth :: Int
+  , maxCycles :: Int
   , rules :: [FilePath]
   , hide :: [String]
   , show' :: [String]
@@ -148,7 +148,7 @@ data OptsRewrite = OptsRewrite
 
 data OptsMerge = OptsMerge
   { logLevel :: LogLevel
-  , logLines :: Integer
+  , logLines :: Int
   , inputFormat :: IOFormat
   , outputFormat :: IOFormat
   , sugarType :: SugarType
@@ -161,7 +161,7 @@ data OptsMerge = OptsMerge
 
 data OptsMatch = OptsMatch
   { logLevel :: LogLevel
-  , logLines :: Integer
+  , logLines :: Int
   , sugarType :: SugarType
   , flat :: LineFormat
   , pattern :: Maybe String
@@ -169,8 +169,8 @@ data OptsMatch = OptsMatch
   , inputFile :: Maybe FilePath
   }
 
-validateIntegerOption :: (Integer -> Bool) -> String -> Integer -> ReadM Integer
-validateIntegerOption cmp msg num
+validateIntOption :: (Int -> Bool) -> String -> Int -> ReadM Int
+validateIntOption cmp msg num
   | cmp num = return num
   | otherwise = readerError msg
 
@@ -196,10 +196,10 @@ optLogLevel =
       "NONE" -> Right NONE
       _ -> Left $ "unknown log-level: " <> lvl
 
-optLogLines :: Parser Integer
+optLogLines :: Parser Int
 optLogLines =
   option
-    (auto >>= validateIntegerOption (>= -1) "--log-lines must be >= -1")
+    (auto >>= validateIntOption (>= -1) "--log-lines must be >= -1")
     (long "log-lines" <> metavar "LINES" <> help "Amount of lines printed to console per each log operation (0 - print nothing, -1 - no limits)" <> value 25 <> showDefault)
 
 optRule :: Parser [FilePath]
@@ -224,16 +224,16 @@ optOutputFormat =
 argInputFile :: Parser (Maybe FilePath)
 argInputFile = optional (argument str (metavar "FILE" <> help "Path to input file"))
 
-optMaxDepth :: Parser Integer
+optMaxDepth :: Parser Int
 optMaxDepth =
   option
-    (auto >>= validateIntegerOption (> 0) "--max-depth must be positive")
+    (auto >>= validateIntOption (> 0) "--max-depth must be positive")
     (long "max-depth" <> metavar "DEPTH" <> help "Maximum number of rewriting iterations per rule" <> value 25 <> showDefault)
 
-optMaxCycles :: Parser Integer
+optMaxCycles :: Parser Int
 optMaxCycles =
   option
-    (auto >>= validateIntegerOption (> 0) "--max-cycles must be positive")
+    (auto >>= validateIntOption (> 0) "--max-cycles must be positive")
     (long "max-cycles" <> metavar "CYCLES" <> help "Maximum number of rewriting cycles across all rules" <> value 25 <> showDefault)
 
 optDepthSensitive :: Parser Bool

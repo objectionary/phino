@@ -446,7 +446,7 @@ xmirToExpression cur fqn
 xmirToApplication :: Expression -> [C.Cursor] -> [String] -> IO Expression
 xmirToApplication = xmirToApplication' 0
   where
-    xmirToApplication' :: Integer -> Expression -> [C.Cursor] -> [String] -> IO Expression
+    xmirToApplication' :: Int -> Expression -> [C.Cursor] -> [String] -> IO Expression
     xmirToApplication' _ expr [] _ = pure expr
     xmirToApplication' idx expr (arg : args) fqn = do
       let app
@@ -467,7 +467,7 @@ xmirToApplication = xmirToApplication' 0
       app' <- app
       xmirToApplication' (idx + 1) app' args fqn
 
-    asToAttr :: C.Cursor -> Integer -> IO Attribute
+    asToAttr :: C.Cursor -> Int -> IO Attribute
     asToAttr cur idx
       | hasAttr "as" cur = do
           as <- getAttr "as" cur
@@ -480,7 +480,7 @@ xmirToApplication = xmirToApplication' 0
 toAttr :: String -> C.Cursor -> IO Attribute
 toAttr attr cur = case attr of
   'α' : rest' ->
-    case TR.readMaybe rest' :: Maybe Integer of
+    case TR.readMaybe rest' :: Maybe Int of
       Just idx -> pure (AtAlpha idx)
       Nothing -> throwIO (InvalidXMIRFormat "The attribute started with 'α' must be followed by integer" cur)
   "φ" -> pure AtPhi

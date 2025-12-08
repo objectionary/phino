@@ -28,7 +28,7 @@ logger :: IORef Logger
 {-# NOINLINE logger #-}
 logger = unsafePerformIO (newIORef (Logger INFO 25))
 
-setLogConfig :: LogLevel -> Integer -> IO ()
+setLogConfig :: LogLevel -> Int -> IO ()
 setLogConfig lvl lines = writeIORef logger (Logger lvl (fromIntegral lines))
 
 logMessage :: LogLevel -> String -> IO ()

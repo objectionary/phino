@@ -36,8 +36,8 @@ data YamlPack = YamlPack
   , output :: String
   , rules :: Maybe Rules
   , skip :: Maybe Bool
-  , repeat_ :: Maybe Integer
-  , must :: Maybe Integer
+  , repeat_ :: Maybe Int
+  , must :: Maybe Int
   , normalize :: Maybe Bool
   }
   deriving (Generic, Show)

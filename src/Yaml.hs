@@ -133,7 +133,7 @@ instance FromJSON Rule where
 data Number
   = Ordinal Attribute
   | Length Binding
-  | Literal Integer
+  | Literal Int
   deriving (Eq, Generic, Show)
 
 data Comparable

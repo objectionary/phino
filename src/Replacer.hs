@@ -1,4 +1,3 @@
-{-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE RecordWildCards #-}
 
@@ -8,10 +7,8 @@
 -- The goal of the module is to traverse though the Program with replacing
 -- pattern sub expression with target expressions
 module Replacer
-  ( replaceProgramThrows
-  , replaceProgram
+  ( replaceProgram
   , replaceProgramFast
-  , replaceProgramFastThrows
   , ReplaceContext (..)
   , ReplaceProgramFunc
   )
@@ -28,21 +25,13 @@ type ReplaceState a = (a, [Expression], [Expression -> Expression])
 
 type ReplaceExpressionFunc = ReplaceState Expression -> ReplaceContext -> ReplaceState Expression
 
-type ReplaceProgramFunc a = ReplaceState Program -> ReplaceContext -> a Program
+type ReplaceProgramFunc = ReplaceState Program -> Program
 
-newtype ReplaceContext = ReplaceCtx {_maxDepth :: Integer}
-
-newtype ReplaceException = CouldNotReplace {prog :: Program}
-  deriving (Exception)
-
-instance Show ReplaceException where
-  show CouldNotReplace{..} =
-    printf
-      "Couldn't replace expression in program, lists of patterns and targets has different lengths\nProgram: %s"
-      (printProgram prog)
+newtype ReplaceContext = ReplaceCtx {_maxDepth :: Int}
 
 replaceBindings :: ReplaceState [Binding] -> ReplaceContext -> ReplaceExpressionFunc -> ReplaceState [Binding]
-replaceBindings state@(bds, [], []) _ _ = state
+replaceBindings state@(bds, [], _) _ _ = state
+replaceBindings state@(bds, _, []) _ _ = state
 replaceBindings state@([], ptns, repls) _ _ = state
 replaceBindings (BiTau attr expr : bds, ptns, repls) ctx func =
   let (expr', ptns', repls') = func (expr, ptns, repls) ctx
@@ -53,7 +42,6 @@ replaceBindings (bd : bds, ptns, repls) ctx func =
    in (bd : bds', ptns', repls')
 
 replaceExpression :: ReplaceExpressionFunc
-replaceExpression state@(expr, [], []) _ = state
 replaceExpression state@(expr, ptns@(ptn : _ptns), repls@(repl : _repls)) ctx =
   if expr == ptn
     then replaceExpression (repl expr, _ptns, _repls) ctx
@@ -69,9 +57,9 @@ replaceExpression state@(expr, ptns@(ptn : _ptns), repls@(repl : _repls)) ctx =
         let (bds', ptns', repls') = replaceBindings (bds, ptns, repls) ctx replaceExpression
          in (ExFormation bds', ptns', repls')
       _ -> state
+replaceExpression state _ = state
 
 replaceBindingsFast :: [Binding] -> [Expression] -> [Expression] -> [Binding]
-replaceBindingsFast bds [] [] = bds
 replaceBindingsFast bds ((ExFormation pbds) : _ptns) ((ExFormation rbds) : _repls) =
   let replaced = findAndReplace bds pbds rbds
    in replaceBindingsFast replaced _ptns _repls
@@ -87,8 +75,9 @@ replaceBindingsFast bds _ _ = bds
 replaceExpressionFast :: ReplaceExpressionFunc
 replaceExpressionFast = replaceExpressionFast' 0
   where
-    replaceExpressionFast' :: Integer -> ReplaceExpressionFunc
-    replaceExpressionFast' _ state@(expr, [], []) _ = state
+    replaceExpressionFast' :: Int -> ReplaceExpressionFunc
+    replaceExpressionFast' _ state@(expr, [], _) _ = state
+    replaceExpressionFast' _ state@(expr, _, []) _ = state
     replaceExpressionFast' depth state@(expr, ptns, repls) ctx@ReplaceCtx{..} =
       if depth == _maxDepth
         then (expr, [], [])
@@ -106,26 +95,12 @@ replaceExpressionFast = replaceExpressionFast' 0
              in (ExApplication expr' (BiTau attr expr''), ptns'', repls'')
           _ -> state
 
-replaceProgram' :: ReplaceExpressionFunc -> ReplaceProgramFunc Maybe
-replaceProgram' func (Program expr, ptns, repls) ctx
-  | length ptns == length repls =
-      let (expr', _, _) = func (expr, ptns, repls) ctx
-       in Just (Program expr')
-  | otherwise = Nothing
+replaceProgram :: ReplaceProgramFunc
+replaceProgram (Program expr, ptns, repls) =
+  let (expr', _, _) = replaceExpression (expr, ptns, repls) (ReplaceCtx 0)
+   in Program expr'
 
-replaceProgram :: ReplaceProgramFunc Maybe
-replaceProgram = replaceProgram' replaceExpression
-
-replaceProgramThrows' :: ReplaceExpressionFunc -> ReplaceProgramFunc IO
-replaceProgramThrows' func state@(prog, ptns, repls) ctx = case replaceProgram' func state ctx of
-  Just prog' -> pure prog'
-  _ -> throwIO (CouldNotReplace prog)
-
-replaceProgramThrows :: ReplaceProgramFunc IO
-replaceProgramThrows = replaceProgramThrows' replaceExpression
-
-replaceProgramFast :: ReplaceProgramFunc Maybe
-replaceProgramFast = replaceProgram' replaceExpressionFast
-
-replaceProgramFastThrows :: ReplaceProgramFunc IO
-replaceProgramFastThrows = replaceProgramThrows' replaceExpressionFast
+replaceProgramFast :: ReplaceContext -> ReplaceProgramFunc
+replaceProgramFast ctx (Program expr, ptns, repls) =
+  let (expr', _, _) = replaceExpressionFast (expr, ptns, repls) ctx
+   in Program expr'

@@ -83,7 +83,7 @@ instance ToSalty EXPRESSION where
         BI_PAIR
           (PA_TAU (AT_ALPHA ALPHA 0) ARROW expr)
           (argsToBindings args 1 tab)
-      argsToBindings :: APP_ARGS -> Integer -> TAB -> BINDINGS
+      argsToBindings :: APP_ARGS -> Int -> TAB -> BINDINGS
       argsToBindings AAS_EMPTY _ tab = BDS_EMPTY tab
       argsToBindings AAS_EXPR{..} idx tb = BDS_PAIR eol tb (PA_TAU (AT_ALPHA ALPHA idx) ARROW expr) (argsToBindings args (idx + 1) tb)
   toSalty EX_NUMBER{num, tab = tab@TAB{..}, rhos} =
