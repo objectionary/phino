@@ -1,0 +1,287 @@
+-- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+-- SPDX-License-Identifier: MIT
+
+{- | Tests for the LaTeX module that provides conversion of phi-calculus
+programs and rules to LaTeX format for academic documents.
+-}
+module LaTeXSpec where
+
+import AST
+import LaTeX (LatexContext (..), explainRules, programToLaTeX, rewrittensToLatex)
+import qualified LaTeX as L
+import Lining (LineFormat (MULTILINE, SINGLELINE))
+import Parser (parseProgramThrows)
+import Sugar (SugarType (SALTY, SWEET))
+import Test.Hspec (Spec, describe, it, shouldBe, shouldContain, shouldNotContain)
+import qualified Yaml as Y
+
+spec :: Spec
+spec = do
+  describe "programToLaTeX with nonumber=True" $
+    it "uses phiquation* environment" $ do
+      prog <- parseProgramThrows "{Q}"
+      let ctx = LatexContext SWEET SINGLELINE True Nothing Nothing
+          result = programToLaTeX prog ctx
+      result `shouldContain` "\\begin{phiquation*}"
+
+  describe "programToLaTeX with nonumber=False" $
+    it "uses phiquation environment" $ do
+      prog <- parseProgramThrows "{Q}"
+      let ctx = LatexContext SWEET SINGLELINE False Nothing Nothing
+          result = programToLaTeX prog ctx
+      result `shouldContain` "\\begin{phiquation}"
+
+  describe "programToLaTeX output structure" $
+    it "contains begin and end tags" $ do
+      prog <- parseProgramThrows "{Q}"
+      let ctx = LatexContext SWEET SINGLELINE True Nothing Nothing
+          result = programToLaTeX prog ctx
+      result `shouldContain` "\\end{phiquation*}"
+
+  describe "programToLaTeX with SWEET sugar" $
+    it "renders sweet syntax with braces" $ do
+      prog <- parseProgramThrows "{Q}"
+      let ctx = LatexContext SWEET SINGLELINE True Nothing Nothing
+          result = programToLaTeX prog ctx
+      result `shouldContain` "\\Big\\{"
+
+  describe "programToLaTeX with SALTY sugar" $
+    it "renders salty syntax with arrow" $ do
+      prog <- parseProgramThrows "{Q}"
+      let ctx = LatexContext SALTY SINGLELINE True Nothing Nothing
+          result = programToLaTeX prog ctx
+      result `shouldContain` "->"
+
+  describe "programToLaTeX with MULTILINE format" $
+    it "renders multiline format" $ do
+      prog <- parseProgramThrows "{[[ x -> Q ]]}"
+      let ctx = LatexContext SWEET MULTILINE True Nothing Nothing
+          result = programToLaTeX prog ctx
+      result `shouldContain` "|x|"
+
+  describe "rewrittensToLatex with empty list" $
+    it "generates valid latex structure" $ do
+      let ctx = LatexContext SWEET SINGLELINE True Nothing Nothing
+          result = rewrittensToLatex [] ctx
+      result `shouldContain` "\\begin{phiquation*}"
+
+  describe "rewrittensToLatex with single program" $
+    it "renders single program without rule" $ do
+      prog <- parseProgramThrows "{Q}"
+      let ctx = LatexContext SWEET SINGLELINE True Nothing Nothing
+          result = rewrittensToLatex [(prog, Nothing)] ctx
+      result `shouldContain` "\\Big\\{"
+
+  describe "rewrittensToLatex with rule name" $
+    it "includes nameref for rule" $ do
+      prog <- parseProgramThrows "{Q}"
+      let ctx = LatexContext SWEET SINGLELINE True Nothing Nothing
+          result = rewrittensToLatex [(prog, Just "myrule")] ctx
+      result `shouldContain` "\\nameref{r:myrule}"
+
+  describe "rewrittensToLatex with label" $
+    it "includes label command" $ do
+      prog <- parseProgramThrows "{Q}"
+      let ctx = LatexContext SWEET SINGLELINE True Nothing (Just "myeq")
+          result = rewrittensToLatex [(prog, Nothing)] ctx
+      result `shouldContain` "\\label{myeq}"
+
+  describe "rewrittensToLatex without label" $
+    it "excludes label command" $ do
+      prog <- parseProgramThrows "{Q}"
+      let ctx = LatexContext SWEET SINGLELINE True Nothing Nothing
+          result = rewrittensToLatex [(prog, Nothing)] ctx
+      result `shouldNotContain` "\\label"
+
+  describe "rewrittensToLatex with expression" $
+    it "includes phiExpression command" $ do
+      prog <- parseProgramThrows "{Q}"
+      let ctx = LatexContext SWEET SINGLELINE True (Just "myexpr") Nothing
+          result = rewrittensToLatex [(prog, Nothing)] ctx
+      result `shouldContain` "\\phiExpression{myexpr}"
+
+  describe "rewrittensToLatex without expression" $
+    it "excludes phiExpression command" $ do
+      prog <- parseProgramThrows "{Q}"
+      let ctx = LatexContext SWEET SINGLELINE True Nothing Nothing
+          result = rewrittensToLatex [(prog, Nothing)] ctx
+      result `shouldNotContain` "\\phiExpression"
+
+  describe "rewrittensToLatex with multiple programs" $
+    it "joins with leadsto" $ do
+      prog1 <- parseProgramThrows "{Q.x}"
+      prog2 <- parseProgramThrows "{Q.y}"
+      let ctx = LatexContext SWEET SINGLELINE True Nothing Nothing
+          result = rewrittensToLatex [(prog1, Nothing), (prog2, Nothing)] ctx
+      result `shouldContain` "\\leadsto"
+
+  describe "rewrittensToLatex ends with period" $
+    it "adds period before end tag" $ do
+      prog <- parseProgramThrows "{Q}"
+      let ctx = LatexContext SWEET SINGLELINE True Nothing Nothing
+          result = rewrittensToLatex [(prog, Nothing)] ctx
+      result `shouldContain` ".\n\\end"
+
+  describe "rewrittensToLatex with nonumber=False" $
+    it "uses phiquation without asterisk" $ do
+      prog <- parseProgramThrows "{Q}"
+      let ctx = LatexContext SWEET SINGLELINE False Nothing Nothing
+          result = rewrittensToLatex [(prog, Nothing)] ctx
+      result `shouldContain` "\\begin{phiquation}"
+
+  describe "escapeUnprintedChars escapes dollar" $
+    it "replaces $ with char36 in label via AST" $ do
+      let prog = Program (ExFormation [BiTau (AtLabel "$my") ExGlobal])
+          ctx = LatexContext SWEET SINGLELINE True Nothing Nothing
+          result = programToLaTeX prog ctx
+      result `shouldContain` "\\char36{}"
+
+  describe "escapeUnprintedChars escapes at sign" $
+    it "replaces @ with char64 in label via AST" $ do
+      let prog = Program (ExFormation [BiTau (AtLabel "@my") ExGlobal])
+          ctx = LatexContext SWEET SINGLELINE True Nothing Nothing
+          result = programToLaTeX prog ctx
+      result `shouldContain` "\\char64{}"
+
+  describe "escapeUnprintedChars escapes caret" $
+    it "replaces ^ with char94 in label via AST" $ do
+      let prog = Program (ExFormation [BiTau (AtLabel "^my") ExGlobal])
+          ctx = LatexContext SWEET SINGLELINE True Nothing Nothing
+          result = programToLaTeX prog ctx
+      result `shouldContain` "\\char94{}"
+
+  describe "escapeUnprintedChars escapes underscore" $
+    it "replaces _ in label with char95" $ do
+      prog <- parseProgramThrows "{Q.my_label}"
+      let ctx = LatexContext SWEET SINGLELINE True Nothing Nothing
+          result = programToLaTeX prog ctx
+      result `shouldContain` "\\char95{}"
+
+  describe "escapeUnprintedChars preserves regular chars" $
+    it "keeps alphanumeric chars unchanged" $ do
+      prog <- parseProgramThrows "{Q.abc123}"
+      let ctx = LatexContext SWEET SINGLELINE True Nothing Nothing
+          result = programToLaTeX prog ctx
+      result `shouldContain` "abc123"
+
+  describe "explainRules with empty list" $
+    it "generates document structure" $ do
+      let result = explainRules []
+      result `shouldContain` "\\documentclass{article}"
+
+  describe "explainRules document has amsmath" $
+    it "includes amsmath package" $ do
+      let result = explainRules []
+      result `shouldContain` "\\usepackage{amsmath}"
+
+  describe "explainRules document structure" $
+    it "has begin and end document" $ do
+      let result = explainRules []
+      result `shouldContain` "\\begin{document}"
+
+  describe "explainRules document ends correctly" $
+    it "has end document tag" $ do
+      let result = explainRules []
+      result `shouldContain` "\\end{document}"
+
+  describe "explainRules with named rule" $
+    it "includes rule name" $ do
+      let rule = Y.Rule (Just "DOT") Nothing ExGlobal ExGlobal Nothing Nothing Nothing
+          result = explainRules [rule]
+      result `shouldContain` "\\rule{DOT}"
+
+  describe "explainRules with unnamed rule" $
+    it "uses unnamed as fallback" $ do
+      let rule = Y.Rule Nothing Nothing ExGlobal ExGlobal Nothing Nothing Nothing
+          result = explainRules [rule]
+      result `shouldContain` "\\rule{unnamed}"
+
+  describe "explainRules with multiple rules" $
+    it "includes all rule names" $ do
+      let rule1 = Y.Rule (Just "RULE1") Nothing ExGlobal ExGlobal Nothing Nothing Nothing
+          rule2 = Y.Rule (Just "RULE2") Nothing ExGlobal ExGlobal Nothing Nothing Nothing
+          result = explainRules [rule1, rule2]
+      result `shouldContain` "\\rule{RULE1}"
+
+  describe "explainRules with multiple rules second" $
+    it "includes second rule name" $ do
+      let rule1 = Y.Rule (Just "FIRST") Nothing ExGlobal ExGlobal Nothing Nothing Nothing
+          rule2 = Y.Rule (Just "SECOND") Nothing ExGlobal ExGlobal Nothing Nothing Nothing
+          result = explainRules [rule1, rule2]
+      result `shouldContain` "\\rule{SECOND}"
+
+  describe "LatexContext sugar field" $
+    it "stores sugar type correctly" $ do
+      let ctx = LatexContext SWEET SINGLELINE True Nothing Nothing
+      sugar ctx `shouldBe` SWEET
+
+  describe "LatexContext line field" $
+    it "stores line format correctly" $ do
+      let ctx = LatexContext SWEET MULTILINE True Nothing Nothing
+      line ctx `shouldBe` MULTILINE
+
+  describe "LatexContext nonumber field" $
+    it "stores nonumber flag correctly" $ do
+      let ctx = LatexContext SWEET SINGLELINE False Nothing Nothing
+      nonumber ctx `shouldBe` False
+
+  describe "LatexContext expression field" $
+    it "stores expression correctly" $ do
+      let ctx = LatexContext SWEET SINGLELINE True (Just "expr") Nothing
+      L.expression ctx `shouldBe` Just "expr"
+
+  describe "LatexContext label field" $
+    it "stores label correctly" $ do
+      let ctx = LatexContext SWEET SINGLELINE True Nothing (Just "lbl")
+      L.label ctx `shouldBe` Just "lbl"
+
+  describe "programToLaTeX handles formation" $
+    it "renders formation with bindings" $ do
+      prog <- parseProgramThrows "{[[ x -> Q, y -> $ ]]}"
+      let ctx = LatexContext SWEET SINGLELINE True Nothing Nothing
+          result = programToLaTeX prog ctx
+      result `shouldContain` "|x|"
+
+  describe "programToLaTeX handles dispatch" $
+    it "renders dispatch expression" $ do
+      prog <- parseProgramThrows "{Q.x.y.z}"
+      let ctx = LatexContext SWEET SINGLELINE True Nothing Nothing
+          result = programToLaTeX prog ctx
+      result `shouldContain` "|z|"
+
+  describe "programToLaTeX handles application" $
+    it "renders application expression" $ do
+      prog <- parseProgramThrows "{Q.f(x -> Q)}"
+      let ctx = LatexContext SWEET SINGLELINE True Nothing Nothing
+          result = programToLaTeX prog ctx
+      result `shouldContain` "|f|"
+
+  describe "programToLaTeX handles void binding" $
+    it "renders void in formation" $ do
+      prog <- parseProgramThrows "{[[ x -> ? ]]}"
+      let ctx = LatexContext SWEET SINGLELINE True Nothing Nothing
+          result = programToLaTeX prog ctx
+      result `shouldContain` "|x|"
+
+  describe "programToLaTeX handles nested formations" $
+    it "renders nested structures" $ do
+      prog <- parseProgramThrows "{[[ x -> [[ y -> Q ]] ]]}"
+      let ctx = LatexContext SWEET SINGLELINE True Nothing Nothing
+          result = programToLaTeX prog ctx
+      result `shouldContain` "|y|"
+
+  describe "rewrittensToLatex with label and expression" $
+    it "includes both label and expression" $ do
+      prog <- parseProgramThrows "{Q}"
+      let ctx = LatexContext SWEET SINGLELINE True (Just "expr") (Just "lbl")
+          result = rewrittensToLatex [(prog, Nothing)] ctx
+      result `shouldContain` "\\label{lbl}"
+
+  describe "rewrittensToLatex with complex rewrite chain" $
+    it "shows rewrite sequence" $ do
+      prog1 <- parseProgramThrows "{Q.x}"
+      prog2 <- parseProgramThrows "{Q.y}"
+      prog3 <- parseProgramThrows "{Q.z}"
+      let ctx = LatexContext SWEET SINGLELINE True Nothing Nothing
+          result = rewrittensToLatex [(prog1, Just "r1"), (prog2, Just "r2"), (prog3, Nothing)] ctx
+      result `shouldContain` "\\nameref{r:r1}"
