@@ -24,21 +24,21 @@ fourmolu:
 coverage:
 	cabal test --enable-coverage
 	tix=$$(find dist-newstyle -name "spec.tix" | head -1)
-	if [ -z "$$tix" ]; then echo "Error: spec.tix file not found" >&2; exit 1; fi
+	if [ -z "$$tix" ]; then echo "Error: spec.tix file not found"; exit 1; fi
 	mixlib=$$(find dist-newstyle -type d -path "*/phino-*/build/*/hpc/vanilla/mix" | head -1)
-	if [ -z "$$mixlib" ]; then echo "Error: mixlib directory not found" >&2; exit 1; fi
+	if [ -z "$$mixlib" ]; then echo "Error: mixlib directory not found"; exit 1; fi
 	mixlib=$$(find dist-newstyle -type d -path "*/phino-*/build/*/hpc/vanilla/mix" | head -1)
 	mixtest=$$(find dist-newstyle -type d -path "*/spec/build/*/hpc/vanilla/mix" | head -1)
 	output=$$(hpc report "$$tix" --hpcdir="$$mixlib" --hpcdir="$$mixtest" --exclude=phino-*-inplace-spec)
 	echo "$$output"
 	coverage=$$(echo "$$output" | grep "expressions used" | grep -oE '[0-9]+%' | tr -d '%')
 	if [ -z "$$coverage" ]; then
-		echo "Error: Could not extract coverage percentage from hpc output" >&2
+		echo "Error: Could not extract coverage percentage from hpc output"
 		exit 1
 	fi
 	threshold=$${COVERAGE_THRESHOLD:-85}
 	if [ "$$coverage" -lt "$$threshold" ]; then
-		echo "Coverage $$coverage% is below threshold $$threshold%" >&2
+		echo "Coverage $$coverage% is below threshold $$threshold%"
 		exit 1
 	fi
 	echo "Coverage $$coverage% meets threshold $$threshold%"
