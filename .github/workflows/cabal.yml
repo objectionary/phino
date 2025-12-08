@@ -56,7 +56,7 @@ jobs:
       - name: Update package list
         run: cabal update
       - name: Install fourmolu
-        run: cabal install fourmolu-0.15.0.0 --overwrite-policy=always
+        run: cabal install fourmolu-0.17.0.0 --overwrite-policy=always
       - name: Install hlint
         run: cabal install hlint-3.8 --overwrite-policy=always
       - name: Build project
