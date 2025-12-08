@@ -6,7 +6,7 @@
 SHELL := bash
 .PHONY: all test hlint fourmolu coverage
 
-all: test hlint fourmolu
+all: test hlint fourmolu coverage
 
 .SILENT:
 test:
