@@ -32,8 +32,7 @@ jobs:
             ${{ steps.setup.outputs.cabal-store }}
             dist-newstyle
           key: ${{ runner.os }}-cabal-${{ hashFiles('**/*.cabal') }}-${{ hashFiles('cabal.project', 'cabal.project.freeze') }}
-          restore-keys: |
-            ${{ runner.os }}-cabal-
+          restore-keys: ${{ runner.os }}-cabal-
       - name: Install xmllint on Ubuntu
         if: runner.os == 'Linux'
         run: |
@@ -56,6 +55,8 @@ jobs:
           echo "C:\msys64\usr\bin" | Out-File -FilePath $env:GITHUB_PATH -Append
       - name: Update package list
         run: cabal update
+      - name: Install hlint and fourmolu
+        run: cabal install hlint fourmolu --overwrite-policy=always
       - name: Build project
         run: cabal build all
       - name: Run tests
