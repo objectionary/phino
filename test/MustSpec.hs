@@ -302,7 +302,7 @@ spec = do
     it "returns error message" $
       validateMust (MtRange (Just 10) (Just 5)) `shouldSatisfy` present
 
-  describe "validateMust with negative MtExact" $
+  describe "validateMust with zero MtExact" $
     it "returns error for zero" $
       validateMust (MtExact 0) `shouldSatisfy` present
 
