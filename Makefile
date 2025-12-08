@@ -40,6 +40,10 @@ coverage:
 	output=$$(hpc report "$$tix" --hpcdir="$$mixlib" --hpcdir="$$mixtest" --exclude=phino-0.0.0.0-inplace-spec)
 	echo "$$output"
 	coverage=$$(echo "$$output" | grep "expressions used" | grep -oE '[0-9]+%' | tr -d '%')
+	if [ -z "$$coverage" ]; then
+		echo "Error: Could not extract coverage percentage from hpc output" >&2
+		exit 1
+	fi
 	threshold=75
 	if [ "$$coverage" -lt "$$threshold" ]; then
 		echo "Coverage $$coverage% is below threshold $$threshold%" >&2
