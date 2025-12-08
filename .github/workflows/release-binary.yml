@@ -34,9 +34,9 @@ jobs:
             ~/.cabal/store
             ~/.ghc
             dist-newstyle
-          key: ${{ runner.os }}-cabal-${{ hashFiles('**/*.cabal') }}-${{ hashFiles('cabal.project', 'cabal.project.freeze') }}
+          key: ${{ runner.os }}-${{ runner.arch }}-cabal-${{ hashFiles('**/*.cabal') }}-${{ hashFiles('cabal.project', 'cabal.project.freeze') }}
           restore-keys: |
-            ${{ runner.os }}-cabal-
+            ${{ runner.os }}-${{ runner.arch }}-cabal-
       - name: Build
         run: |
           cabal update
