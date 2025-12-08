@@ -40,8 +40,10 @@ jobs:
           sudo apt-get install -y libxml2-utils
       - name: Install xmllint on macOS
         if: runner.os == 'macOS'
-        run: |
-          brew install libxml2
+        run: brew install libxml2
+      - name: Install tree on macOS
+        if: runner.os == 'macOS'
+        run: brew install tree
       - name: Install xmllint on Windows
         if: runner.os == 'Windows'
         uses: msys2/setup-msys2@v2
@@ -51,8 +53,7 @@ jobs:
       - name: Add MSYS2 to PATH on Windows
         if: runner.os == 'Windows'
         shell: pwsh
-        run: |
-          echo "C:\msys64\usr\bin" | Out-File -FilePath $env:GITHUB_PATH -Append
+        run: echo "C:\msys64\usr\bin" | Out-File -FilePath $env:GITHUB_PATH -Append
       - name: Update package list
         run: cabal update
       - name: Install fourmolu
