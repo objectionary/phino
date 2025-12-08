@@ -23,11 +23,23 @@ fourmolu:
 .SILENT:
 coverage: test
 	cabal test --enable-coverage
-	tix=$$(find dist-newstyle -name spec.tix | head -1)
-	if [ -z "$$tix" ];
-		then echo "The spec.tix file not found"
-		exit 1
+	echo "Looking for spec.tix in dist-newstyle..."
+	find dist-newstyle -name "*.tix" -o -name "spec.tix" 2>/dev/null || true
+	echo "All tix files found:"
+	find . -name "*.tix" 2>/dev/null || true
+	echo "Searching for spec.tix specifically..."
+	tix=$$(find dist-newstyle -name spec.tix 2>/dev/null | head -1)
+	if [ -z "$$tix" ]; then
+		echo "The spec.tix file not found in dist-newstyle"
+		echo "Checking current directory for spec.tix..."
+		if [ ! -f "spec.tix" ]; then
+			echo "spec.tix not found anywhere"
+			exit 1
+		fi
+		echo "Found spec.tix in current directory"
+		tix="spec.tix"
 	fi
+	echo "Using tix file: $$tix"
 	mixlib=$$(find dist-newstyle -type d -path "*/phino-*/build/extra-compilation-artifacts/hpc/vanilla/mix" | head -1)
 	if [ -z "$$mixlib" ]; then
 		echo "The mixlib directory not found"
