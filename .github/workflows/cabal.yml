@@ -60,3 +60,5 @@ jobs:
         run: cabal build all
       - name: Run tests
         run: cabal test all
+      - name: Run full Make
+        run: make
