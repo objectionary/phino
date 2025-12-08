@@ -14,19 +14,11 @@ test:
 
 .SILENT:
 hlint:
-	if command -v hlint &> /dev/null; then
-		hlint src app test
-	else
-		echo "hlint not found, skipping." >&2
-	fi
+	hlint src app test
 
 .SILENT:
 fourmolu:
-	if command -v fourmolu &> /dev/null; then
-		fourmolu --mode check src app test
-	else
-		echo "fourmolu not found, skipping." >&2
-	fi
+	fourmolu --mode check src app test
 
 .SILENT:
 coverage:
