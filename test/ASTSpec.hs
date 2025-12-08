@@ -1,0 +1,268 @@
+-- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+-- SPDX-License-Identifier: MIT
+
+{- | Tests for the AST module that defines the abstract syntax tree
+for phi-calculus programs including expressions, bindings, attributes, and bytes.
+-}
+module ASTSpec where
+
+import AST
+import Control.Monad (forM_)
+import Data.List (sort)
+import Test.Hspec (Spec, describe, it, shouldBe, shouldSatisfy)
+
+spec :: Spec
+spec = do
+  describe "Attribute Show instance renders AtLabel" $
+    forM_
+      [ ("simple label", AtLabel "x", "x")
+      , ("unicode label", AtLabel "日本語", "日本語")
+      , ("long label", AtLabel "myAttribute", "myAttribute")
+      ]
+      ( \(desc, attr, expected) ->
+          it desc $ show attr `shouldBe` expected
+      )
+
+  describe "Attribute Show instance renders AtAlpha" $
+    forM_
+      [ ("zero index", AtAlpha 0, "α0")
+      , ("positive index", AtAlpha 42, "α42")
+      , ("large index", AtAlpha 999, "α999")
+      ]
+      ( \(desc, attr, expected) ->
+          it desc $ show attr `shouldBe` expected
+      )
+
+  describe "Attribute Show instance renders special attributes" $
+    forM_
+      [ ("rho", AtRho, "ρ")
+      , ("phi", AtPhi, "φ")
+      , ("delta", AtDelta, "Δ")
+      , ("lambda", AtLambda, "λ")
+      ]
+      ( \(desc, attr, expected) ->
+          it desc $ show attr `shouldBe` expected
+      )
+
+  describe "Attribute Show instance renders AtMeta" $
+    forM_
+      [ ("simple meta", AtMeta "a", "!a")
+      , ("long meta", AtMeta "attribute", "!attribute")
+      , ("unicode meta", AtMeta "メタ", "!メタ")
+      ]
+      ( \(desc, attr, expected) ->
+          it desc $ show attr `shouldBe` expected
+      )
+
+  describe "Attribute Eq instance compares same constructors" $
+    forM_
+      [ ("labels equal", AtLabel "x", AtLabel "x", True)
+      , ("labels differ", AtLabel "x", AtLabel "y", False)
+      , ("alphas equal", AtAlpha 1, AtAlpha 1, True)
+      , ("alphas differ", AtAlpha 1, AtAlpha 2, False)
+      , ("metas equal", AtMeta "a", AtMeta "a", True)
+      , ("metas differ", AtMeta "a", AtMeta "b", False)
+      , ("rho equals rho", AtRho, AtRho, True)
+      , ("phi equals phi", AtPhi, AtPhi, True)
+      , ("delta equals delta", AtDelta, AtDelta, True)
+      , ("lambda equals lambda", AtLambda, AtLambda, True)
+      ]
+      ( \(desc, lhs, rhs, expected) ->
+          it desc $ (lhs == rhs) `shouldBe` expected
+      )
+
+  describe "Attribute Eq instance compares different constructors" $
+    forM_
+      [ ("label vs alpha", AtLabel "x", AtAlpha 0, False)
+      , ("rho vs phi", AtRho, AtPhi, False)
+      , ("delta vs lambda", AtDelta, AtLambda, False)
+      , ("meta vs label", AtMeta "x", AtLabel "x", False)
+      ]
+      ( \(desc, lhs, rhs, expected) ->
+          it desc $ (lhs == rhs) `shouldBe` expected
+      )
+
+  describe "Attribute Ord instance orders correctly" $
+    it "sorts attributes by constructor order" $
+      let attrs = [AtMeta "z", AtDelta, AtLambda, AtRho, AtPhi, AtAlpha 1, AtLabel "a"]
+          sorted = sort attrs
+          isLabel (AtLabel _) = True
+          isLabel _ = False
+       in head sorted `shouldSatisfy` isLabel
+
+  describe "Bytes Eq instance compares same constructors" $
+    forM_
+      [ ("empty equals empty", BtEmpty, BtEmpty, True)
+      , ("one equals one", BtOne "FF", BtOne "FF", True)
+      , ("one differs", BtOne "FF", BtOne "00", False)
+      , ("many equals many", BtMany ["00", "01"], BtMany ["00", "01"], True)
+      , ("many differs", BtMany ["00"], BtMany ["01"], False)
+      , ("meta equals meta", BtMeta "b", BtMeta "b", True)
+      , ("meta differs", BtMeta "b", BtMeta "c", False)
+      ]
+      ( \(desc, lhs, rhs, expected) ->
+          it desc $ (lhs == rhs) `shouldBe` expected
+      )
+
+  describe "Bytes Eq instance compares different constructors" $
+    forM_
+      [ ("empty vs one", BtEmpty, BtOne "00", False)
+      , ("one vs many", BtOne "00", BtMany ["00"], False)
+      , ("many vs meta", BtMany ["00"], BtMeta "b", False)
+      ]
+      ( \(desc, lhs, rhs, expected) ->
+          it desc $ (lhs == rhs) `shouldBe` expected
+      )
+
+  describe "Bytes Ord instance orders correctly" $
+    it "sorts bytes by constructor order" $
+      let bytes = [BtMeta "z", BtMany ["00"], BtOne "FF", BtEmpty]
+          sorted = sort bytes
+       in head sorted `shouldBe` BtEmpty
+
+  describe "Binding Eq instance compares same constructors" $
+    forM_
+      [ ("tau equals tau", BiTau AtRho ExGlobal, BiTau AtRho ExGlobal, True)
+      , ("tau differs by attr", BiTau AtRho ExGlobal, BiTau AtPhi ExGlobal, False)
+      , ("tau differs by expr", BiTau AtRho ExGlobal, BiTau AtRho ExThis, False)
+      , ("meta equals meta", BiMeta "B", BiMeta "B", True)
+      , ("meta differs", BiMeta "B", BiMeta "C", False)
+      , ("delta equals delta", BiDelta BtEmpty, BiDelta BtEmpty, True)
+      , ("delta differs", BiDelta BtEmpty, BiDelta (BtOne "00"), False)
+      , ("void equals void", BiVoid AtRho, BiVoid AtRho, True)
+      , ("void differs", BiVoid AtRho, BiVoid AtPhi, False)
+      , ("lambda equals lambda", BiLambda "Func", BiLambda "Func", True)
+      , ("lambda differs", BiLambda "Func", BiLambda "Other", False)
+      , ("metalambda equals", BiMetaLambda "F", BiMetaLambda "F", True)
+      , ("metalambda differs", BiMetaLambda "F", BiMetaLambda "G", False)
+      ]
+      ( \(desc, lhs, rhs, expected) ->
+          it desc $ (lhs == rhs) `shouldBe` expected
+      )
+
+  describe "Binding Eq instance compares different constructors" $
+    forM_
+      [ ("tau vs meta", BiTau AtRho ExGlobal, BiMeta "B", False)
+      , ("delta vs void", BiDelta BtEmpty, BiVoid AtDelta, False)
+      , ("lambda vs metalambda", BiLambda "F", BiMetaLambda "F", False)
+      ]
+      ( \(desc, lhs, rhs, expected) ->
+          it desc $ (lhs == rhs) `shouldBe` expected
+      )
+
+  describe "Binding Ord instance orders correctly" $
+    it "sorts bindings by constructor order" $
+      let bindings = [BiMetaLambda "Z", BiLambda "A", BiVoid AtRho, BiDelta BtEmpty, BiMeta "B", BiTau AtRho ExGlobal]
+          sorted = sort bindings
+          isTau (BiTau _ _) = True
+          isTau _ = False
+       in head sorted `shouldSatisfy` isTau
+
+  describe "Expression Eq instance compares same constructors" $
+    forM_
+      [ ("formation equals", ExFormation [], ExFormation [], True)
+      , ("formation differs", ExFormation [], ExFormation [BiVoid AtRho], False)
+      , ("this equals this", ExThis, ExThis, True)
+      , ("global equals global", ExGlobal, ExGlobal, True)
+      , ("termination equals", ExTermination, ExTermination, True)
+      , ("meta equals meta", ExMeta "e", ExMeta "e", True)
+      , ("meta differs", ExMeta "e", ExMeta "f", False)
+      , ("application equals", ExApplication ExGlobal (BiTau AtRho ExThis), ExApplication ExGlobal (BiTau AtRho ExThis), True)
+      , ("dispatch equals", ExDispatch ExGlobal AtRho, ExDispatch ExGlobal AtRho, True)
+      , ("dispatch differs", ExDispatch ExGlobal AtRho, ExDispatch ExGlobal AtPhi, False)
+      , ("metatail equals", ExMetaTail ExGlobal "t", ExMetaTail ExGlobal "t", True)
+      , ("metatail differs", ExMetaTail ExGlobal "t", ExMetaTail ExGlobal "s", False)
+      ]
+      ( \(desc, lhs, rhs, expected) ->
+          it desc $ (lhs == rhs) `shouldBe` expected
+      )
+
+  describe "Expression Eq instance compares different constructors" $
+    forM_
+      [ ("formation vs this", ExFormation [], ExThis, False)
+      , ("global vs termination", ExGlobal, ExTermination, False)
+      , ("meta vs dispatch", ExMeta "e", ExDispatch ExGlobal AtRho, False)
+      ]
+      ( \(desc, lhs, rhs, expected) ->
+          it desc $ (lhs == rhs) `shouldBe` expected
+      )
+
+  describe "Expression Ord instance orders correctly" $
+    it "sorts expressions by constructor order" $
+      let exprs = [ExMetaTail ExGlobal "t", ExDispatch ExGlobal AtRho, ExApplication ExGlobal (BiVoid AtRho), ExMeta "e", ExTermination, ExGlobal, ExThis, ExFormation []]
+          sorted = sort exprs
+       in head sorted `shouldBe` ExFormation []
+
+  describe "Program Eq instance compares programs" $
+    forM_
+      [ ("same programs equal", Program ExGlobal, Program ExGlobal, True)
+      , ("different programs differ", Program ExGlobal, Program ExThis, False)
+      ]
+      ( \(desc, lhs, rhs, expected) ->
+          it desc $ (lhs == rhs) `shouldBe` expected
+      )
+
+  describe "Program Ord instance orders correctly" $
+    it "orders programs by expression" $
+      let progs = [Program ExThis, Program ExGlobal, Program (ExFormation [])]
+          sorted = sort progs
+       in head sorted `shouldBe` Program (ExFormation [])
+
+  describe "Program Show instance renders programs" $
+    it "shows program wrapper" $
+      let hasProgram str = "Program" `elem` words str
+       in show (Program ExGlobal) `shouldSatisfy` hasProgram
+
+  describe "countNodes counts ExGlobal" $
+    it "returns one for global" $
+      countNodes (Program ExGlobal) `shouldBe` 1
+
+  describe "countNodes counts ExTermination" $
+    it "returns one for termination" $
+      countNodes (Program ExTermination) `shouldBe` 1
+
+  describe "countNodes counts ExThis" $
+    it "returns one for this" $
+      countNodes (Program ExThis) `shouldBe` 1
+
+  describe "countNodes counts ExDispatch" $
+    it "returns three for dispatch on global" $
+      countNodes (Program (ExDispatch ExGlobal (AtLabel "x"))) `shouldBe` 3
+
+  describe "countNodes counts ExApplication" $
+    it "returns four for application with globals" $
+      countNodes (Program (ExApplication ExGlobal (BiTau AtRho ExGlobal))) `shouldBe` 4
+
+  describe "countNodes counts ExFormation with tau bindings" $
+    it "returns count including nested expressions" $
+      countNodes (Program (ExFormation [BiTau AtRho ExGlobal, BiTau AtPhi ExGlobal])) `shouldBe` 3
+
+  describe "countNodes counts ExFormation with non-tau bindings" $
+    forM_
+      [ ("empty formation", ExFormation [], 1)
+      , ("void binding", ExFormation [BiVoid AtRho], 2)
+      , ("delta binding", ExFormation [BiDelta BtEmpty], 2)
+      , ("lambda binding", ExFormation [BiLambda "Func"], 2)
+      , ("meta binding", ExFormation [BiMeta "B"], 2)
+      , ("metalambda binding", ExFormation [BiMetaLambda "F"], 2)
+      ]
+      ( \(desc, expr, expected) ->
+          it desc $ countNodes (Program expr) `shouldBe` expected
+      )
+
+  describe "countNodes returns zero for meta expressions" $
+    forM_
+      [ ("meta expression", ExMeta "e", 0)
+      , ("metatail expression", ExMetaTail ExGlobal "t", 0)
+      ]
+      ( \(desc, expr, expected) ->
+          it desc $ countNodes (Program expr) `shouldBe` expected
+      )
+
+  describe "countNodes counts nested structures" $
+    it "counts deeply nested dispatch" $
+      countNodes (Program (ExDispatch (ExDispatch ExGlobal (AtLabel "a")) (AtLabel "b"))) `shouldBe` 5
+
+  describe "countNodes counts complex formation" $
+    it "counts formation with dispatch inside" $
+      countNodes (Program (ExFormation [BiTau AtRho (ExDispatch ExGlobal (AtLabel "x"))])) `shouldBe` 4
