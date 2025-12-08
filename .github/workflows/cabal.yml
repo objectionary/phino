@@ -55,8 +55,10 @@ jobs:
           echo "C:\msys64\usr\bin" | Out-File -FilePath $env:GITHUB_PATH -Append
       - name: Update package list
         run: cabal update
-      - name: Install hlint and fourmolu
-        run: cabal install hlint fourmolu --overwrite-policy=always
+      - name: Install fourmolu
+        run: cabal install fourmolu-0.15.0.0 --overwrite-policy=always
+      - name: Install hlint
+        run: cabal install hlint-3.8 --overwrite-policy=always
       - name: Build project
         run: cabal build all
       - name: Run tests
