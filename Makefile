@@ -23,10 +23,16 @@ fourmolu:
 .SILENT:
 coverage: test
 	cabal test --enable-coverage
-	tix=$$(find dist-newstyle -name "spec.tix" | head -1)
-	if [ -z "$$tix" ]; then echo "Error: spec.tix file not found"; exit 1; fi
+	tix=$$(find dist-newstyle -name spec.tix | head -1)
+	if [ -z "$$tix" ];
+		then echo "The spec.tix file not found"
+		exit 1
+	fi
 	mixlib=$$(find dist-newstyle -type d -path "*/phino-*/build/extra-compilation-artifacts/hpc/vanilla/mix" | head -1)
-	if [ -z "$$mixlib" ]; then echo "Error: mixlib directory not found"; exit 1; fi
+	if [ -z "$$mixlib" ]; then
+		echo "The mixlib directory not found"
+		exit 1
+	fi
 	mixtest=$$(find dist-newstyle -type d -path "*/t/spec/build/*/hpc/vanilla/mix" | head -1)
 	output=$$(hpc report "$$tix" --hpcdir="$$mixlib" --hpcdir="$$mixtest" --exclude=phino-*-inplace-spec)
 	echo "$$output"
