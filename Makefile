@@ -36,7 +36,7 @@ coverage:
 		echo "Error: Could not extract coverage percentage from hpc output" >&2
 		exit 1
 	fi
-	threshold=$${COVERAGE_THRESHOLD:-75}
+	threshold=$${COVERAGE_THRESHOLD:-85}
 	if [ "$$coverage" -lt "$$threshold" ]; then
 		echo "Coverage $$coverage% is below threshold $$threshold%" >&2
 		exit 1
