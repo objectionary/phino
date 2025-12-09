@@ -60,9 +60,5 @@ jobs:
         run: cabal install fourmolu-0.17.0.0 --overwrite-policy=always
       - name: Install hlint
         run: cabal install hlint-3.8 --overwrite-policy=always
-      - name: Build project
-        run: cabal build all
-      - name: Run tests
-        run: cabal test all
       - name: Run full Make
         run: make clean all
