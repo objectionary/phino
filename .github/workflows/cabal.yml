@@ -65,4 +65,4 @@ jobs:
       - name: Run tests
         run: cabal test all
       - name: Run full Make
-        run: make
+        run: make clean all
