@@ -41,7 +41,7 @@ jobs:
       - if: runner.os == 'macOS'
         run: |
             brew install tree coreutils make
-            echo "/opt/homebrew/opt/make/libexec/gnubin" >> "${GITHUB_PATH}"
+            echo "PATH=/opt/homebrew/opt/make/libexec/gnubin:${PATH}" >> "${GITHUB_ENV}"
       - if: runner.os == 'Windows'
         uses: msys2/setup-msys2@v2
         with:
