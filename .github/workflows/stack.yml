@@ -13,7 +13,7 @@ name: stack
 env:
   STACK_ROOT: ${{ github.workspace }}/.stack-root
 jobs:
-  build:
+  stack:
     strategy:
       matrix:
         os: [macos-15, ubuntu-24.04, windows-2022]
@@ -35,17 +35,13 @@ jobs:
           key: ${{ runner.os }}-stack-${{ hashFiles('**/stack.yaml.lock') }}
           restore-keys: |
             ${{ runner.os }}-stack-
-      - name: Install xmllint on Ubuntu
-        if: runner.os == 'Linux'
+      - if: runner.os == 'Linux'
         run: |
           sudo apt-get update
           sudo apt-get install -y libxml2-utils
-      - name: Install xmllint on macOS
-        if: runner.os == 'macOS'
-        run: |
-          brew install libxml2
-      - name: Install xmllint on Windows
-        if: runner.os == 'Windows'
+      - if: runner.os == 'macOS'
+        run: brew install libxml2
+      - if: runner.os == 'Windows'
         uses: msys2/setup-msys2@v2
         with:
           update: true
@@ -53,11 +49,7 @@ jobs:
       - name: Add MSYS2 to PATH on Windows
         if: runner.os == 'Windows'
         shell: pwsh
-        run: |
-          echo "C:\msys64\usr\bin" | Out-File -FilePath $env:GITHUB_PATH -Append
-      - name: Install GHC if needed
-        run: stack setup
-      - name: Build
-        run: stack build --fast
-      - name: Run tests
-        run: stack test
+        run: echo "C:\msys64\usr\bin" | Out-File -FilePath $env:GITHUB_PATH -Append
+      - run: stack setup
+      - run: stack build --fast
+      - run: stack test

@@ -11,15 +11,14 @@ name: cabal
     branches:
       - master
 jobs:
-  build:
+  cabal:
     strategy:
       matrix:
         os: [macos-15, ubuntu-24.04, windows-2022]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v6
-      - name: Set up GHC
-        id: setup
+      - id: setup
         uses: haskell-actions/setup@v2.8.2
         with:
           ghc-version: '9.6.7'
@@ -33,32 +32,23 @@ jobs:
             dist-newstyle
           key: ${{ runner.os }}-cabal-${{ hashFiles('**/*.cabal') }}-${{ hashFiles('cabal.project', 'cabal.project.freeze') }}
           restore-keys: ${{ runner.os }}-cabal-
-      - name: Install xmllint on Ubuntu
-        if: runner.os == 'Linux'
+      - if: runner.os == 'Linux'
         run: |
           sudo apt-get update
           sudo apt-get install -y libxml2-utils
-      - name: Install xmllint on macOS
-        if: runner.os == 'macOS'
+      - if: runner.os == 'macOS'
         run: brew install libxml2
-      - name: Install tree and GNU coreutils on macOS
-        if: runner.os == 'macOS'
+      - if: runner.os == 'macOS'
         run: brew install tree coreutils
-      - name: Install xmllint on Windows
-        if: runner.os == 'Windows'
+      - if: runner.os == 'Windows'
         uses: msys2/setup-msys2@v2
         with:
           update: true
           install: libxml2
-      - name: Add MSYS2 to PATH on Windows
-        if: runner.os == 'Windows'
+      - if: runner.os == 'Windows'
         shell: pwsh
         run: echo "C:\msys64\usr\bin" | Out-File -FilePath $env:GITHUB_PATH -Append
-      - name: Update package list
-        run: cabal update
-      - name: Install fourmolu
-        run: cabal install fourmolu-0.17.0.0 --overwrite-policy=always
-      - name: Install hlint
-        run: cabal install hlint-3.8 --overwrite-policy=always
-      - name: Run full Make
-        run: make clean all
+      - run: cabal update
+      - run: cabal install fourmolu-0.17.0.0 --overwrite-policy=always
+      - run: cabal install hlint-3.8 --overwrite-policy=always
+      - run: make clean all
