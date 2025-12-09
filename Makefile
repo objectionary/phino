@@ -4,13 +4,9 @@
 .ONESHELL:
 .SHELLFLAGS := -e -o pipefail -c
 SHELL := bash
-.PHONY: all test hlint fourmolu coverage
+.PHONY: all hlint fourmolu coverage clean
 
-all: hlint fourmolu coverage
-
-.SILENT:
-test:
-	cabal test
+all: coverage hlint fourmolu
 
 .SILENT:
 hlint:
@@ -21,7 +17,7 @@ fourmolu:
 	fourmolu --mode check src app test
 
 .SILENT:
-coverage: test
+coverage:
 	set -x
 	cabal test --enable-coverage
 	tix=$$(find ./dist-newstyle -name 'spec.tix' -type f 2>/dev/null | head -1)
@@ -35,3 +31,7 @@ coverage: test
 	threshold=$${COVERAGE_THRESHOLD:-85}
 	if [ "$${coverage}" -lt "$${threshold}" ]; then echo "Coverage $${coverage}% is below threshold $${threshold}%"; exit 1; fi
 	echo "Coverage $${coverage}% meets threshold $${threshold}%"
+
+.SILENT:
+clean:
+	cabal clean
