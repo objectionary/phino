@@ -16,12 +16,11 @@ module LaTeX
 
 import AST
 import CST
-import Data.Char (toLower)
 import Data.List (intercalate, nub)
 import Data.Maybe (fromMaybe)
 import Encoding (Encoding (ASCII), withEncoding)
 import Lining (LineFormat (MULTILINE, SINGLELINE), withLineFormat)
-import Matcher (defaultScope, matchExpression, matchProgram)
+import Matcher
 import Misc
 import Printer (printProgram')
 import Render (Render (render))
