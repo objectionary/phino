@@ -25,7 +25,7 @@ import Misc (ensuredFile)
 import Must (Must (..), exceedsUpperBound, inRange)
 import Parser (parseProgram, parseProgramThrows)
 import Printer (printProgram)
-import Replacer (ReplaceProgramContext (ReplaceProgramContext), ReplaceProgramThrowsFunc, replaceProgramFastThrows, replaceProgramThrows)
+import Replacer (ReplaceContext (ReplaceCtx), ReplaceProgramFunc, replaceProgram, replaceProgramFast)
 import Rule (RuleContext (RuleContext), matchProgramWithRule)
 import qualified Rule as R
 import Text.Printf
@@ -36,9 +36,11 @@ type RewriteState = ([Rewritten], Set.Set Program)
 
 type Rewritten = (Program, Maybe String)
 
+type ToReplace = (Program, Expression, Expression, [Subst])
+
 data RewriteContext = RewriteContext
-  { _maxDepth :: Integer
-  , _maxCycles :: Integer
+  { _maxDepth :: Int
+  , _maxCycles :: Int
   , _depthSensitive :: Bool
   , _buildTerm :: BuildTermFunc
   , _must :: Must
@@ -46,10 +48,10 @@ data RewriteContext = RewriteContext
   }
 
 data RewriteException
-  = MustBeGoing {must :: Must, count :: Integer}
-  | MustStopBefore {must :: Must, count :: Integer}
-  | StoppedOnLimit {flag :: String, limit :: Integer}
-  | LoopingRewriting {prog :: String, rule :: String, step :: Integer}
+  = MustBeGoing {must :: Must, count :: Int}
+  | MustStopBefore {must :: Must, count :: Int}
+  | StoppedOnLimit {flag :: String, limit :: Int}
+  | LoopingRewriting {prog :: String, rule :: String, step :: Int}
   deriving (Exception)
 
 instance Show RewriteException where
@@ -78,13 +80,13 @@ instance Show RewriteException where
       prog
 
 -- Build pattern and result expression and replace patterns to results in given program
-buildAndReplace' :: Expression -> Expression -> [Subst] -> ReplaceProgramThrowsFunc -> ReplaceProgramContext -> IO Program
-buildAndReplace' ptn res substs func ctx = do
-  ptns <- buildExpressions ptn substs
-  repls <- buildExpressions res substs
-  let repls' = map fst repls
-      ptns' = map fst ptns
-  func ptns' repls' ctx
+buildAndReplace' :: ToReplace -> ReplaceProgramFunc -> IO Program
+buildAndReplace' (prog, ptn, res, substs) func = do
+  ptns <- buildExpressionsThrows ptn substs
+  repls <- buildExpressionsThrows res substs
+  let ptns' = map fst ptns
+      repls' = map (\ex _ -> fst ex) repls
+  pure (func (prog, ptns', repls'))
 
 -- If pattern and replacement are appropriate for fast replacing - does it.
 -- Pattern and replacement expressions can be used in fast replacing only if
@@ -94,8 +96,8 @@ buildAndReplace' ptn res substs func ctx = do
 -- In such case we can just replace bindings one by one without building whole expression.
 -- You can find more details in this ticket: https://github.com/objectionary/phino/issues/321
 -- If we don't meet the conditions above - just do a regular replacing
-tryBuildAndReplaceFast :: Expression -> Expression -> [Subst] -> ReplaceProgramContext -> IO Program
-tryBuildAndReplaceFast (ExFormation pbds) (ExFormation rbds) substs ctx =
+tryBuildAndReplaceFast :: ToReplace -> ReplaceContext -> IO Program
+tryBuildAndReplaceFast state@(prog, ExFormation pbds, ExFormation rbds, substs) ctx =
   let pbds' = init (tail pbds)
       rbds' = init (tail rbds)
    in if startsAndEndsWithMeta pbds
@@ -106,10 +108,10 @@ tryBuildAndReplaceFast (ExFormation pbds) (ExFormation rbds) substs ctx =
         && not (hasMetaBindings rbds')
         then do
           logDebug "Applying fast replacing since 'pattern' and 'result' are suitable for this..."
-          buildAndReplace' (ExFormation pbds') (ExFormation rbds') substs replaceProgramFastThrows ctx
+          buildAndReplace' (prog, ExFormation pbds', ExFormation rbds', substs) (replaceProgramFast ctx)
         else do
           logDebug "Applying regular replacing..."
-          buildAndReplace' (ExFormation pbds) (ExFormation rbds) substs replaceProgramThrows ctx
+          buildAndReplace' state replaceProgram
   where
     startsAndEndsWithMeta :: [Binding] -> Bool
     startsAndEndsWithMeta bds =
@@ -122,19 +124,19 @@ tryBuildAndReplaceFast (ExFormation pbds) (ExFormation rbds) substs ctx =
       BiMeta _ -> True
       _ -> False
     hasMetaBindings = foldl (\acc bd -> acc || isMetaBinding bd) False
-tryBuildAndReplaceFast ptn res substs ctx = buildAndReplace' ptn res substs replaceProgramThrows ctx
+tryBuildAndReplaceFast state _ = buildAndReplace' state replaceProgram
 
 -- The function returns tuple (X, Y) where
 -- - X is sequence of programs;
 -- - Y is Set of unique programs after each rule application. It allows to stop the rewriting if we're getting
 --   into loop and get back to program which we've already got before
-rewrite :: RewriteState -> [Y.Rule] -> Integer -> RewriteContext -> IO RewriteState
+rewrite :: RewriteState -> [Y.Rule] -> Int -> RewriteContext -> IO RewriteState
 rewrite state [] _ _ = pure state
 rewrite state (rule : rest) iteration ctx@RewriteContext{..} = do
   state' <- _rewrite state 1
   rewrite state' rest iteration ctx
   where
-    _rewrite :: RewriteState -> Integer -> IO RewriteState
+    _rewrite :: RewriteState -> Int -> IO RewriteState
     _rewrite (_rewrittens, _unique) _count =
       let ruleName = fromMaybe "unknown" (Y.name rule)
           ptn = Y.pattern rule
@@ -155,7 +157,7 @@ rewrite state (rule : rest) iteration ctx@RewriteContext{..} = do
                   pure (_rewrittens, _unique)
                 else do
                   logDebug (printf "Rule '%s' has been matched, applying..." ruleName)
-                  prog <- tryBuildAndReplaceFast ptn res matched (ReplaceProgramContext program _maxDepth)
+                  prog <- tryBuildAndReplaceFast (program, ptn, res, matched) (ReplaceCtx _maxDepth)
                   if program == prog
                     then do
                       logDebug (printf "Applied '%s', no changes made" ruleName)
@@ -184,7 +186,7 @@ rewrite state (rule : rest) iteration ctx@RewriteContext{..} = do
 rewrite' :: Program -> [Y.Rule] -> RewriteContext -> IO [Rewritten]
 rewrite' prog rules ctx = _rewrite ([(prog, Nothing)], Set.empty) 1 ctx <&> reverse
   where
-    _rewrite :: RewriteState -> Integer -> RewriteContext -> IO [Rewritten]
+    _rewrite :: RewriteState -> Int -> RewriteContext -> IO [Rewritten]
     _rewrite state@(rewrittens, unique) count ctx@RewriteContext{..} = do
       let cycles = _maxCycles
           must = _must

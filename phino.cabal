@@ -113,6 +113,7 @@ test-suite spec
   main-is: Main.hs
   hs-source-dirs: test
   other-modules:
+    ASTSpec
     BuilderSpec
     CLISpec
     ConditionSpec
@@ -120,16 +121,20 @@ test-suite spec
     DataizeSpec
     FilterSpec
     FunctionsSpec
+    LaTeXSpec
     MatcherSpec
     MergeSpec
     MiscSpec
+    MustSpec
     ParserSpec
     Paths_phino
     PrinterSpec
+    RandomSpec
     ReplacerSpec
     RewriterSpec
     RuleSpec
     Spec
+    SugarSpec
     XMIRSpec
     YamlSpec
 

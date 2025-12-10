@@ -208,6 +208,12 @@ spec = do
             ["rewrite", "--label=foo", "--output=phi"]
             ["--label option can stay together with --output=latex only"]
 
+      it "with --compress and --output != latex" $
+        withStdin "{[[]]}" $
+          testCLIFailed
+            ["rewrite", "--compress", "--output=phi"]
+            ["--compress option can stay together with --output=latex only"]
+
       it "with wrong --hide option" $
         withStdin "{[[]]}" $
           testCLIFailed
@@ -403,6 +409,22 @@ spec = do
               , "\\Big\\{[[ |x| -> \"foo\" ]]\\Big\\} \\leadsto_{\\nameref{r:first}}"
               , "  \\leadsto \\Big\\{Q.|x|( |y| -> \"foo\" )\\Big\\} \\leadsto_{\\nameref{r:second}}"
               , "  \\leadsto \\Big\\{[[ |x| -> \"foo\" ]]\\Big\\}."
+              , "\\end{phiquation}"
+              ]
+          ]
+
+    it "prints with compressed expressions in LaTeX" $
+      withStdin "{[[ x -> ?, y -> $.x ]](x -> [[ D> 42- ]]).y}" $
+        testCLISucceeded
+          ["rewrite", "--normalize", "--sweet", "--sequence", "--output=latex", "--flat", "--compress"]
+          [ unlines
+              [ "\\begin{phiquation}"
+              , "\\Big\\{[[ |x| -> ?, |y| -> |x| ]]( |x| -> [[ D> 42- ]] ).|y|\\Big\\} \\leadsto_{\\nameref{r:copy}}"
+              , "  \\leadsto \\Big\\{\\phiMeet{1}{[[ |x| -> [[ D> 42- ]], |y| -> |x| ]]}.|y|\\Big\\} \\leadsto_{\\nameref{r:dot}}"
+              , "  \\leadsto \\Big\\{\\phiAgain{1}.|x|( ^ -> \\phiAgain{1} )\\Big\\} \\leadsto_{\\nameref{r:dot}}"
+              , "  \\leadsto \\Big\\{[[ D> 42- ]]( ^ -> \\phiAgain{1}, ^ -> \\phiAgain{1} )\\Big\\} \\leadsto_{\\nameref{r:copy}}"
+              , "  \\leadsto \\Big\\{[[ D> 42-, ^ -> \\phiAgain{1} ]]( ^ -> \\phiAgain{1} )\\Big\\} \\leadsto_{\\nameref{r:stay}}"
+              , "  \\leadsto \\Big\\{[[ D> 42-, ^ -> \\phiAgain{1} ]]\\Big\\}."
               , "\\end{phiquation}"
               ]
           ]

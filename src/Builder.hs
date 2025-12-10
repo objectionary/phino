@@ -8,7 +8,7 @@
 -- pattern expression and set of substitutions by replacing
 -- meta variables with appropriate meta values
 module Builder
-  ( buildExpressions
+  ( buildExpressionsThrows
   , buildExpression
   , buildExpressionThrows
   , buildAttribute
@@ -177,5 +177,5 @@ buildExpressionThrows expr subst = case buildExpression expr subst of
   Left msg -> throwIO (CouldNotBuildExpression expr msg)
 
 -- Build a several expression from one expression and several substitutions
-buildExpressions :: Expression -> [Subst] -> IO [(Expression, Expression)]
-buildExpressions expr = traverse (buildExpressionThrows expr)
+buildExpressionsThrows :: Expression -> [Subst] -> IO [(Expression, Expression)]
+buildExpressionsThrows expr = traverse (buildExpressionThrows expr)

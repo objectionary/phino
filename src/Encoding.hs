@@ -34,6 +34,8 @@ instance ToASCII EXPRESSION where
   toASCII EX_APPLICATION_EXPRS{..} = EX_APPLICATION_EXPRS (toASCII expr) eol tab (toASCII args) eol' tab' indent
   toASCII EX_META{..} = EX_META (MT_EXPRESSION' (rest meta))
   toASCII EX_META_TAIL{..} = EX_META_TAIL (toASCII expr) (MT_TAIL (rest meta))
+  toASCII EX_PHI_MEET{..} = EX_PHI_MEET idx (toASCII expr)
+  toASCII EX_PHI_AGAIN{..} = EX_PHI_AGAIN idx (toASCII expr)
   toASCII expr = expr
 
 instance ToASCII APP_BINDING where

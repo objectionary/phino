@@ -18,18 +18,20 @@ data Expression
   | ExThis
   | ExGlobal -- Q
   | ExTermination -- T
-  | ExMeta String -- !e
   | ExApplication Expression Binding -- expr(attr -> expr)
   | ExDispatch Expression Attribute -- expr.attr
+  | ExMeta String -- !e
   | ExMetaTail Expression String -- expr * !t
+  | ExPhiMeet Int Expression
+  | ExPhiAgain Int Expression
   deriving (Eq, Ord, Show, Generic)
 
 data Binding
   = BiTau Attribute Expression -- attr -> expr
-  | BiMeta String -- !B
   | BiDelta Bytes -- Δ ⤍ 1F-2A
   | BiVoid Attribute -- attr ↦ ?
   | BiLambda String -- λ ⤍ Function
+  | BiMeta String -- !B
   | BiMetaLambda String -- λ ⤍ !F
   deriving (Eq, Ord, Show, Generic)
 
@@ -42,7 +44,7 @@ data Bytes
 
 data Attribute
   = AtLabel String -- attr
-  | AtAlpha Integer -- α1
+  | AtAlpha Int -- α1
   | AtPhi -- φ
   | AtRho -- ρ
   | AtLambda -- λ, used only in yaml conditions
@@ -59,10 +61,10 @@ instance Show Attribute where
   show AtLambda = "λ"
   show (AtMeta meta) = '!' : meta
 
-countNodes :: Program -> Integer
+countNodes :: Program -> Int
 countNodes (Program expr) = countNodes' expr
   where
-    countNodes' :: Expression -> Integer
+    countNodes' :: Expression -> Int
     countNodes' ExGlobal = 1
     countNodes' ExTermination = 1
     countNodes' ExThis = 1

@@ -208,7 +208,7 @@ allPathsIn dir = do
 
 -- >>> toDouble 5
 -- 5.0
-toDouble :: Integer -> Double
+toDouble :: Int -> Double
 toDouble = fromIntegral
 
 -- >>> btsToWord8 BtEmpty
@@ -245,7 +245,7 @@ word8ToBytes bts = BtMany (map (printf "%02X") bts)
 -- Left 42
 -- >>> btsToNum (BtMany ["40", "45"])
 -- Expected 8 bytes for conversion, got 2
-btsToNum :: Bytes -> Either Integer Double
+btsToNum :: Bytes -> Either Int Double
 btsToNum hx =
   let bytes = btsToWord8 hx
    in if length bytes /= 8

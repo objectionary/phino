@@ -29,8 +29,8 @@ type Morphed = Dataizable
 
 data DataizeContext = DataizeContext
   { _program :: Program
-  , _maxDepth :: Integer
-  , _maxCycles :: Integer
+  , _maxDepth :: Int
+  , _maxCycles :: Int
   , _depthSensitive :: Bool
   , _buildTerm :: BuildTermFunc
   , _saveStep :: SaveStepFunc

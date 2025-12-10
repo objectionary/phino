@@ -88,7 +88,7 @@ data META
   deriving (Eq, Show)
 
 data TAB
-  = TAB {indent :: Integer}
+  = TAB {indent :: Int}
   | TAB'
   | NO_TAB
   deriving (Eq, Show)
@@ -148,18 +148,20 @@ data EXPRESSION
   | EX_TERMINATION {termination :: TERMINATION}
   | EX_FORMATION {lsb :: LSB, eol :: EOL, tab :: TAB, binding :: BINDING, eol' :: EOL, tab' :: TAB, rsb :: RSB}
   | EX_DISPATCH {expr :: EXPRESSION, attr :: ATTRIBUTE}
-  | EX_APPLICATION {expr :: EXPRESSION, eol :: EOL, tab :: TAB, tau :: APP_BINDING, eol' :: EOL, tab' :: TAB, indent :: Integer} -- e(a1 -> e1)
-  | EX_APPLICATION_TAUS {expr :: EXPRESSION, eol :: EOL, tab :: TAB, taus :: BINDING, eol' :: EOL, tab' :: TAB, indent :: Integer} -- e(a1 -> e1)(a2 -> e2)(...)
-  | EX_APPLICATION_EXPRS {expr :: EXPRESSION, eol :: EOL, tab :: TAB, args :: APP_ARG, eol' :: EOL, tab' :: TAB, indent :: Integer} -- e(e1, e2, ...)
+  | EX_APPLICATION {expr :: EXPRESSION, eol :: EOL, tab :: TAB, tau :: APP_BINDING, eol' :: EOL, tab' :: TAB, indent :: Int} -- e(a1 -> e1)
+  | EX_APPLICATION_TAUS {expr :: EXPRESSION, eol :: EOL, tab :: TAB, taus :: BINDING, eol' :: EOL, tab' :: TAB, indent :: Int} -- e(a1 -> e1)(a2 -> e2)(...)
+  | EX_APPLICATION_EXPRS {expr :: EXPRESSION, eol :: EOL, tab :: TAB, args :: APP_ARG, eol' :: EOL, tab' :: TAB, indent :: Int} -- e(e1, e2, ...)
   | EX_STRING {str :: String, tab :: TAB, rhos :: [Binding]}
-  | EX_NUMBER {num :: Either Integer Double, tab :: TAB, rhos :: [Binding]}
+  | EX_NUMBER {num :: Either Int Double, tab :: TAB, rhos :: [Binding]}
   | EX_META {meta :: META}
   | EX_META_TAIL {expr :: EXPRESSION, meta :: META}
+  | EX_PHI_MEET {idx :: Int, expr :: EXPRESSION}
+  | EX_PHI_AGAIN {idx :: Int, expr :: EXPRESSION}
   deriving (Eq, Show)
 
 data ATTRIBUTE
   = AT_LABEL {label :: String}
-  | AT_ALPHA {alpha :: ALPHA, idx :: Integer}
+  | AT_ALPHA {alpha :: ALPHA, idx :: Int}
   | AT_RHO {rho :: RHO}
   | AT_PHI {phi :: PHI}
   | AT_LAMBDA {lambda :: LAMBDA}
@@ -177,7 +179,7 @@ expressionToCST expr = toCST expr 0 EOL
 -- CST is created with sugar and unicode
 -- All further transformations much consider that
 class ToCST a b where
-  toCST :: a -> Integer -> EOL -> b
+  toCST :: a -> Int -> EOL -> b
 
 instance ToCST Program PROGRAM where
   toCST (Program expr) tabs eol = PR_SWEET LCB (toCST expr tabs eol) RCB
@@ -190,6 +192,8 @@ instance ToCST Expression EXPRESSION where
   toCST ExTermination _ _ = EX_TERMINATION DEAD
   toCST (ExFormation [BiVoid AtRho]) _ eol = toCST (ExFormation []) 0 eol
   toCST (ExFormation []) _ _ = EX_FORMATION LSB NO_EOL NO_TAB (BI_EMPTY NO_TAB) NO_EOL NO_TAB RSB
+  toCST (ExPhiMeet idx expr) tabs eol = EX_PHI_MEET idx (toCST expr tabs eol)
+  toCST (ExPhiAgain idx expr) tabs eol = EX_PHI_AGAIN idx (toCST expr tabs eol)
   toCST (ExFormation bds) tabs eol =
     let next = tabs + 1
         bds' = toCST (withoutLastVoidRho bds) next eol :: BINDING
@@ -268,7 +272,7 @@ instance ToCST Expression EXPRESSION where
              in (bd : bds', rhos)
         | otherwise = (bds, [])
       withoutRhosInPrimitives _ bds = (bds, [])
-      applicationToPrimitive :: Expression -> Integer -> [Binding] -> EXPRESSION
+      applicationToPrimitive :: Expression -> Int -> [Binding] -> EXPRESSION
       applicationToPrimitive (DataNumber bts) tabs = EX_NUMBER (btsToNum bts) (TAB tabs)
       applicationToPrimitive (DataString bts) tabs = EX_STRING (btsToStr bts) (TAB tabs)
       -- Here we unroll nested application sequence into flat structure
@@ -361,7 +365,7 @@ inlinedEOL :: Bool -> EOL
 inlinedEOL True = NO_EOL
 inlinedEOL False = EOL
 
-tabOfEOL :: EOL -> Integer -> TAB
+tabOfEOL :: EOL -> Int -> TAB
 tabOfEOL EOL indent = TAB indent
 tabOfEOL NO_EOL _ = TAB'
 

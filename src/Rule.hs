@@ -7,8 +7,17 @@
 module Rule (RuleContext (..), isNF, matchProgramWithRule, meetCondition) where
 
 import AST
-import Builder (buildAttribute, buildBinding, buildBindingThrows, buildExpression, buildExpressionThrows)
-import Control.Exception (SomeException (SomeException), evaluate)
+import Builder
+  ( buildAttribute
+  , buildBinding
+  , buildBindingThrows
+  , buildExpression
+  , buildExpressionThrows
+  )
+import Control.Exception
+  ( SomeException (SomeException)
+  , evaluate
+  )
 import Control.Exception.Base (try)
 import Control.Monad (when)
 import Data.Aeson (FromJSON)
@@ -118,14 +127,14 @@ _eq (Y.CmpNum left) (Y.CmpNum right) subst _ = case (numToInt left subst, numToI
   (Just left_, Just right_) -> pure [subst | left_ == right_]
   (_, _) -> pure []
   where
-    -- Convert Number to Integer
-    numToInt :: Y.Number -> Subst -> Maybe Integer
+    -- Convert Number to Int
+    numToInt :: Y.Number -> Subst -> Maybe Int
     numToInt (Y.Ordinal (AtMeta meta)) (Subst mp) = case M.lookup meta mp of
       Just (MvAttribute (AtAlpha idx)) -> Just idx
       _ -> Nothing
     numToInt (Y.Ordinal (AtAlpha idx)) subst = Just idx
     numToInt (Y.Length (BiMeta meta)) (Subst mp) = case M.lookup meta mp of
-      Just (MvBindings bds) -> Just (toInteger (length bds))
+      Just (MvBindings bds) -> Just (length bds)
       _ -> Nothing
     numToInt (Y.Literal num) subst = Just num
     numToInt _ _ = Nothing

@@ -43,6 +43,24 @@ spec = do
     test
       matchExpressionDeep
       [
+        ( "Q => [[ @ -> Q, ^ -> Q ]] => [(), ()]"
+        , ExGlobal
+        , ExFormation [BiTau AtPhi ExGlobal, BiTau AtRho ExGlobal]
+        , defaultScope
+        , [[], []]
+        )
+      ,
+        ( "Q.!a => [[ @ -> Q.y, ^ -> [[ a -> Q.w ]], @ -> Q.y ]] => [(a >> y), (a >> w), (a >> y)]"
+        , ExDispatch ExGlobal (AtMeta "a")
+        , ExFormation
+            [ BiTau AtPhi (ExDispatch ExGlobal (AtLabel "y"))
+            , BiTau AtRho (ExFormation [BiTau (AtLabel "a") (ExDispatch ExGlobal (AtLabel "w"))])
+            , BiTau AtPhi (ExDispatch ExGlobal (AtLabel "y"))
+            ]
+        , defaultScope
+        , [[("a", MvAttribute (AtLabel "y"))], [("a", MvAttribute (AtLabel "w"))], [("a", MvAttribute (AtLabel "y"))]]
+        )
+      ,
         ( "[[!a -> Q.org.!a]] => [[f -> [[x -> Q.org.x]], t -> [[y -> Q.org.y]] => [(!a >> x), (!a >> y)]"
         , ExFormation [BiTau (AtMeta "a") (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtMeta "a"))]
         , ExFormation

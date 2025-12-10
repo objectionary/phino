@@ -9,8 +9,8 @@ import Text.Read (readMaybe)
 
 data Must
   = MtDisabled
-  | MtExact Integer
-  | MtRange (Maybe Integer) (Maybe Integer)
+  | MtExact Int
+  | MtRange (Maybe Int) (Maybe Int)
   deriving (Eq)
 
 instance Show Must where
@@ -49,7 +49,7 @@ instance Read Must where
         Just _ -> [] -- Invalid value: must be non-negative
         Nothing -> [] -- Invalid value: expected integer
 
-inRange :: Must -> Integer -> Bool
+inRange :: Must -> Int -> Bool
 inRange MtDisabled _ = True
 inRange (MtExact expected) actual = actual == expected
 inRange (MtRange minVal maxVal) actual =
@@ -59,7 +59,7 @@ inRange (MtRange minVal maxVal) actual =
     checkMax = maybe True (>= actual) maxVal
 
 -- | Check if a value exceeds the upper bound of the range
-exceedsUpperBound :: Must -> Integer -> Bool
+exceedsUpperBound :: Must -> Int -> Bool
 exceedsUpperBound MtDisabled _ = False
 exceedsUpperBound (MtExact n) current = current > n
 exceedsUpperBound (MtRange _ (Just max)) current = current > max

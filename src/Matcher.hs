@@ -139,11 +139,17 @@ matchExpression (ExApplication pexp pbd) (ExApplication texp tbd) scope = combin
 matchExpression (ExMetaTail exp meta) tgt scope = case tailExpressions exp tgt scope of
   ([], _) -> []
   (substs, tails) -> combineMany substs [substSingle meta (MvTail tails)]
+matchExpression (ExPhiAgain idx expr) (ExPhiAgain idx' expr') scope
+  | idx == idx' = matchExpression expr expr' scope
+  | otherwise = []
+matchExpression (ExPhiMeet idx expr) (ExPhiMeet idx' expr') scope
+  | idx == idx' = matchExpression expr expr' scope
+  | otherwise = []
 matchExpression _ _ _ = []
 
 -- Deep match pattern to expression inside binding
 matchBindingExpression :: Binding -> Expression -> Expression -> [Subst]
-matchBindingExpression (BiTau _ texp) ptn scope = matchExpressionDeep ptn texp scope
+matchBindingExpression (BiTau _ exp) ptn scope = matchExpressionDeep ptn exp scope
 matchBindingExpression _ _ _ = []
 
 -- Match expression with deep nested expression(s) matching
@@ -151,7 +157,7 @@ matchExpressionDeep :: Expression -> Expression -> Expression -> [Subst]
 matchExpressionDeep ptn tgt scope =
   let matched = matchExpression ptn tgt scope
       deep = case tgt of
-        ExFormation bds -> concatMap (\bd -> matchBindingExpression bd ptn (ExFormation bds)) bds
+        ExFormation bds -> concatMap (\bd -> matchBindingExpression bd ptn tgt) bds
         ExDispatch exp _ -> matchExpressionDeep ptn exp scope
         ExApplication exp tau -> matchExpressionDeep ptn exp scope ++ matchBindingExpression tau ptn scope
         _ -> []

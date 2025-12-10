@@ -4,17 +4,27 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module LaTeX (explainRules, rewrittensToLatex, programToLaTeX, LatexContext (..)) where
+module LaTeX
+  ( explainRules
+  , rewrittensToLatex
+  , programToLaTeX
+  , defaultLatexContext
+  , LatexContext (..)
+  , meetInPrograms
+  , meetInProgram
+  ) where
 
-import AST (Program)
+import AST
 import CST
-import Data.Char (toLower)
-import Data.List (intercalate)
+import Data.List (intercalate, nub)
 import Data.Maybe (fromMaybe)
 import Encoding (Encoding (ASCII), withEncoding)
 import Lining (LineFormat (MULTILINE, SINGLELINE), withLineFormat)
+import Matcher
+import Misc
 import Printer (printProgram')
 import Render (Render (render))
+import Replacer (ReplaceContext (ReplaceCtx), replaceProgram)
 import Rewriter (Rewritten (..))
 import Sugar (SugarType (SWEET), withSugarType)
 import Text.Printf (printf)
@@ -24,9 +34,78 @@ data LatexContext = LatexContext
   { sugar :: SugarType
   , line :: LineFormat
   , nonumber :: Bool
+  , compress :: Bool
   , expression :: Maybe String
   , label :: Maybe String
   }
+
+defaultLatexContext :: LatexContext
+defaultLatexContext = LatexContext SWEET MULTILINE False False Nothing Nothing
+
+meetInProgram :: Program -> Program -> [Expression]
+meetInProgram (Program expr) = meetInExpression expr
+  where
+    meetInExpression :: Expression -> Program -> [Expression]
+    meetInExpression ExGlobal _ = []
+    meetInExpression ExThis _ = []
+    meetInExpression ExTermination _ = []
+    meetInExpression (ExFormation [BiVoid AtRho]) _ = []
+    meetInExpression (ExFormation [BiDelta _, BiVoid AtRho]) _ = []
+    meetInExpression (ExFormation []) _ = []
+    meetInExpression (ExDispatch ExGlobal _) _ = []
+    meetInExpression (ExDispatch ExThis _) _ = []
+    meetInExpression (ExDispatch ExTermination _) _ = []
+    meetInExpression (DataString _) _ = []
+    meetInExpression (DataNumber _) _ = []
+    meetInExpression (ExPhiMeet _ _) _ = []
+    meetInExpression (ExPhiAgain _ _) _ = []
+    meetInExpression expr prog =
+      map (const expr) (matchProgram expr prog) ++ case expr of
+        ExDispatch exp _ -> meetInExpression exp prog
+        ExApplication exp (BiTau _ arg) -> meetInExpression exp prog ++ meetInExpression arg prog
+        ExFormation bds -> meetInBindings bds prog
+        _ -> []
+    meetInBindings :: [Binding] -> Program -> [Expression]
+    meetInBindings [] _ = []
+    meetInBindings (BiTau _ expr : bds) prog = meetInExpression expr prog ++ meetInBindings bds prog
+    meetInBindings (_ : bds) prog = meetInBindings bds prog
+
+{- | Here we're trying to compress sequence of programs with \phiMeet{} and \phiAgain LaTeX functions.
+We process the sequence of programs and trying to find all expressions in first program which are present
+in following programs. Then we find ONE expression which is the most frequently encountered.
+If it's encountered in more than 50% of following programs - we replace it with \phiAgain{} in following
+programs and with \phiMeet{} in first program.
+-}
+meetInPrograms :: [Program] -> [Program]
+meetInPrograms = meetInPrograms' 1
+  where
+    meetInPrograms' :: Int -> [Program] -> [Program]
+    meetInPrograms' _ [prog] = [prog]
+    meetInPrograms' idx progs@(first : rest) =
+      let met = map (meetInProgram first) rest
+          unique = nub (concat met)
+          (frequent, _) =
+            foldl
+              ( \(best, count) cur ->
+                  let len = length (filter (elem cur) met)
+                   in if len > count
+                        then (Just cur, len)
+                        else (best, count)
+              )
+              (Nothing, 0)
+              unique
+          next = first : meetInPrograms' idx rest
+       in case frequent of
+            Just expr ->
+              let met' = map (filter (== expr)) met
+                  substs = matchProgram expr first
+                  prog = replaceProgram (first, map (const expr) substs, map (const (ExPhiMeet idx)) substs)
+                  rest' = zipWith (\prgm exprs -> replaceProgram (prgm, exprs, map (const (ExPhiAgain idx)) exprs)) rest met'
+                  found = filter (not . null) met'
+               in if length met' > 1 && toDouble (length found) / toDouble (length met') >= 0.5
+                    then prog : meetInPrograms' (idx + 1) rest'
+                    else next
+            _ -> next
 
 renderToLatex :: Program -> LatexContext -> String
 renderToLatex prog LatexContext{..} = render (toLaTeX $ withLineFormat line $ withEncoding ASCII $ withSugarType sugar $ programToCST prog)
@@ -38,6 +117,8 @@ phiquation LatexContext{nonumber = False} = "phiquation"
 rewrittensToLatex :: [Rewritten] -> LatexContext -> String
 rewrittensToLatex rewrittens ctx@LatexContext{..} =
   let equation = phiquation ctx
+      (progs, rules) = unzip rewrittens
+      rewrittens' = if compress then zip (meetInPrograms progs) rules else rewrittens
    in concat
         [ printf "\\begin{%s}\n" equation
         , maybe "" (printf "\\label{%s}\n") label
@@ -49,7 +130,7 @@ rewrittensToLatex rewrittens ctx@LatexContext{..} =
                     let prog = renderToLatex program ctx
                      in maybe prog (printf "%s \\leadsto_{\\nameref{r:%s}}" prog) maybeName
                 )
-                rewrittens
+                rewrittens'
             )
         , printf ".\n\\end{%s}" equation
         ]
@@ -84,6 +165,8 @@ instance ToLaTeX EXPRESSION where
   toLaTeX EX_APPLICATION_TAUS{..} = EX_APPLICATION_TAUS (toLaTeX expr) eol tab (toLaTeX taus) eol' tab' indent
   toLaTeX EX_APPLICATION_EXPRS{..} = EX_APPLICATION_EXPRS (toLaTeX expr) eol tab (toLaTeX args) eol' tab' indent
   toLaTeX EX_DISPATCH{..} = EX_DISPATCH (toLaTeX expr) (toLaTeX attr)
+  toLaTeX EX_PHI_MEET{..} = EX_PHI_MEET idx (toLaTeX expr)
+  toLaTeX EX_PHI_AGAIN{..} = EX_PHI_AGAIN idx (toLaTeX expr)
   toLaTeX expr = expr
 
 instance ToLaTeX ATTRIBUTE where
