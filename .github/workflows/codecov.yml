@@ -26,6 +26,9 @@ jobs:
         with:
           ghc-version: '9.6.7'
           cabal-version: '3.12.1.0'
+      - run: |
+          brew install tree coreutils make
+          echo "PATH=/opt/homebrew/opt/make/libexec/gnubin:${PATH}" >> "${GITHUB_ENV}"
       - run: brew install libxml2
       - run: cabal update
       - run: cabal build all --enable-coverage
