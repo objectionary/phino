@@ -258,7 +258,7 @@ optLabel :: Parser (Maybe String)
 optLabel = optional (strOption (long "label" <> metavar "NAME" <> help "Name for 'label' element when rendering to LaTeX (see --output option)"))
 
 optMeetPrefix :: Parser (Maybe String)
-optMeetPrefix = optional (strOption (long "meet-prefix" <> metavar "PREFIX" <> help "Prefix to be inserted before index in \\phiMeet{} and \\phiAgain{} LaTeX functions"))
+optMeetPrefix = optional (strOption (long "meet-prefix" <> metavar "PREFIX" <> help "Prefix to be inserted before index in \\phiMeet{} and \\phiAgain{} LaTeX functions, e.g. \\phiMeet{foo:1}"))
 
 optHide :: Parser [String]
 optHide = many (strOption (long "hide" <> metavar "FQN" <> help "Location of object to exclude from result and intermediate programs after rewriting. Must be a valid dispatch expression; e.g. Q.org.eolang"))
