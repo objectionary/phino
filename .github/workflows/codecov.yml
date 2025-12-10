@@ -31,7 +31,7 @@ jobs:
       - run: cabal build all --enable-coverage
       - run: cabal test all --enable-coverage
       - run: cabal install hpc-codecov --overwrite-policy=always
-      - run: hpc-codecov cabal:spec -x "$(find test -name '*.hs' -exec basename {} .hs \; | paste -sd,)" --out=coverage.json
+      - run: hpc-codecov cabal:spec -x "$(find test -name '*.hs' -exec basename {} .hs \; | paste -sd, -)" --out=coverage.json
       - uses: codecov/codecov-action@v5.5.2
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
