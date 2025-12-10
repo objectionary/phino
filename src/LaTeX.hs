@@ -73,7 +73,7 @@ meetInProgram (Program expr) = meetInExpression expr
 {- | Here we're trying to compress sequence of programs with \phiMeet{} and \phiAgain LaTeX functions.
 We process the sequence of programs and trying to find all expressions in first program which are present
 in following programs. Then we find ONE expression which is the most frequently encountered.
-If it's encoutered in more than 50% of following programs - we replace it with \phiAgain{} in following
+If it's encountered in more than 50% of following programs - we replace it with \phiAgain{} in following
 programs and with \phiMeet{} in first program.
 -}
 meetInPrograms :: [Program] -> [Program]

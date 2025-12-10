@@ -24,7 +24,7 @@ spec = do
       [ ("Q.x.y", "{Q.x.y}", "{[[ x -> Q.x.y ]]}", ["Q.x.y"])
       , ("Q.x.y twice", "{Q.x.y}", "{[[ x -> Q.x.y, y -> Q.x.y.z ]]}", ["Q.x.y", "Q.x.y"])
       , ("Q.x.y.z.a and Q.x.y", "{Q.x.y.z.a}", "{[[ x -> Q.x.y, y -> Q.x.y.z ]]}", ["Q.x.y.z", "Q.x.y", "Q.x.y"])
-      , ("Ignore datas", "{[[ x -> \"foo\" ]]}", "{Q.x( y -> \"foo\" )}", [])
+      , ("Ignore data objects", "{[[ x -> \"foo\" ]]}", "{Q.x( y -> \"foo\" )}", [])
       ]
       ( \(desc, first, second, exprs) -> it desc $ do
           ptn <- parseProgramThrows first
