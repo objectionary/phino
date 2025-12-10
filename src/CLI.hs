@@ -54,6 +54,7 @@ data PrintProgramContext = PrintProgCtx
   , line :: LineFormat
   , xmirCtx :: XmirContext
   , nonumber :: Bool
+  , compress :: Bool
   , expression :: Maybe String
   , label :: Maybe String
   , outputFormat :: IOFormat
@@ -98,6 +99,7 @@ data OptsDataize = OptsDataize
   , sequence :: Bool
   , depthSensitive :: Bool
   , quiet :: Bool
+  , compress :: Bool
   , maxDepth :: Int
   , maxCycles :: Int
   , hide :: [String]
@@ -134,6 +136,7 @@ data OptsRewrite = OptsRewrite
   , inPlace :: Bool
   , sequence :: Bool
   , canonize :: Bool
+  , compress :: Bool
   , maxDepth :: Int
   , maxCycles :: Int
   , rules :: [FilePath]
@@ -296,6 +299,9 @@ optOmitListing = switch (long "omit-listing" <> help "Omit full program listing 
 optOmitComments :: Parser Bool
 optOmitComments = switch (long "omit-comments" <> help "Omit comments in XMIR output")
 
+optCompress :: Parser Bool
+optCompress = switch (long "compress" <> help "Compress expressions in LaTeX output using \\phiMeet{} and \\phiAgain{} functions")
+
 _intermediateOptions :: String
 _intermediateOptions = intercalate ", " ["--sequence", "--steps-dir"]
 
@@ -327,6 +333,7 @@ dataizeParser =
             <*> optSequence
             <*> optDepthSensitive
             <*> switch (long "quiet" <> help "Don't print the result of dataization")
+            <*> optCompress
             <*> optMaxDepth
             <*> optMaxCycles
             <*> optHide
@@ -364,6 +371,7 @@ rewriteParser =
             <*> switch (long "in-place" <> help "Edit file in-place instead of printing to output")
             <*> optSequence
             <*> switch (long "canonize" <> help "Rename all functions attached to λ binding with F1, F2, etc.")
+            <*> optCompress
             <*> optMaxDepth
             <*> optMaxCycles
             <*> optRule
@@ -456,7 +464,7 @@ runCLI args = handle handler $ do
       program <- parseProgram input inputFormat
       let listing = if null rules' then const input else (\prog -> P.printProgram' prog (sugarType, UNICODE, flat))
           xmirCtx = XmirContext omitListing omitComments listing
-          printCtx = PrintProgCtx sugarType flat xmirCtx nonumber expression label outputFormat
+          printCtx = PrintProgCtx sugarType flat xmirCtx nonumber compress expression label outputFormat
           _canonize = if canonize then C.canonize else id
           _hide = (`F.exclude` excluded)
           _show = (`F.include` included)
@@ -475,7 +483,7 @@ runCLI args = handle handler $ do
             (inPlace && isJust targetFile)
             (invalidCLIArguments "The options --in-place and --target cannot be used together")
           when (length show' > 1) (invalidCLIArguments "The option --show can be used only once")
-          validateLatexOptions outputFormat nonumber expression label
+          validateLatexOptions (outputFormat, nonumber, compress, expression, label)
           validateMust' must
           validateXmirOptions outputFormat omitListing omitComments
         output :: Maybe FilePath -> String -> IO ()
@@ -506,7 +514,7 @@ runCLI args = handle handler $ do
       included <- expressionsToFilter "show" show'
       input <- readInput inputFile
       prog <- parseProgram input inputFormat
-      let printCtx = PrintProgCtx sugarType flat defaultXmirContext nonumber expression label outputFormat
+      let printCtx = PrintProgCtx sugarType flat defaultXmirContext nonumber compress expression label outputFormat
           _hide = (`F.exclude` excluded)
           _show = (`F.include` included)
       (maybeBytes, seq) <- dataize prog (context prog printCtx)
@@ -515,7 +523,7 @@ runCLI args = handle handler $ do
       where
         validateOpts :: IO ()
         validateOpts = do
-          validateLatexOptions outputFormat nonumber expression label
+          validateLatexOptions (outputFormat, nonumber, compress, expression, label)
           validateXmirOptions outputFormat omitListing omitComments
           when (length show' > 1) (invalidCLIArguments "The option --show can be used only once")
         context :: Program -> PrintProgramContext -> DataizeContext
@@ -545,7 +553,7 @@ runCLI args = handle handler $ do
       prog <- merge progs
       let listing = const (P.printProgram' prog (sugarType, UNICODE, flat))
           xmirCtx = XmirContext omitListing omitComments listing
-          printProgCtx = PrintProgCtx sugarType flat xmirCtx False Nothing Nothing outputFormat
+          printProgCtx = PrintProgCtx sugarType flat xmirCtx False False Nothing Nothing outputFormat
       prog' <- printProgram printProgCtx prog
       output targetFile prog'
       where
@@ -599,16 +607,20 @@ expressionsToFilter opt = traverse (parseExpressionThrows >=> asFilter)
             )
 
 -- Validate LaTeX options
-validateLatexOptions :: IOFormat -> Bool -> Maybe String -> Maybe String -> IO ()
-validateLatexOptions outputFormat nonumber expression label = do
+validateLatexOptions :: (IOFormat, Bool, Bool, Maybe String, Maybe String) -> IO ()
+validateLatexOptions (LATEX, _, _, _, _) = pure ()
+validateLatexOptions (_, nonumber, compress, expression, label) = do
   when
-    (nonumber && outputFormat /= LATEX)
+    nonumber
     (invalidCLIArguments "The --nonumber option can stay together with --output=latex only")
   when
-    (isJust expression && outputFormat /= LATEX)
+    compress
+    (invalidCLIArguments "The --compress option can stay together with --output=latex only")
+  when
+    (isJust expression)
     (invalidCLIArguments "The --expression option can stay together with --output=latex only")
   when
-    (isJust label && outputFormat /= LATEX)
+    (isJust label)
     (invalidCLIArguments "The --label option can stay together with --output=latex only")
 
 -- Validate 'must' option
@@ -644,7 +656,7 @@ parseProgram xmir XMIR = do
 
 printRewrittens :: PrintProgramContext -> [Rewritten] -> IO String
 printRewrittens ctx@PrintProgCtx{..} rewrittens
-  | outputFormat == LATEX = pure (rewrittensToLatex rewrittens (LatexContext sugar line nonumber expression label))
+  | outputFormat == LATEX = pure (rewrittensToLatex rewrittens (LatexContext sugar line nonumber compress expression label))
   | otherwise = mapM (printProgram ctx . fst) rewrittens <&> intercalate "\n"
 
 -- Convert program to corresponding String format
@@ -652,7 +664,7 @@ printProgram :: PrintProgramContext -> Program -> IO String
 printProgram PrintProgCtx{..} prog = case outputFormat of
   PHI -> pure (P.printProgram' prog (sugar, UNICODE, line))
   XMIR -> programToXMIR prog xmirCtx <&> printXMIR
-  LATEX -> pure (programToLaTeX prog (LatexContext sugar line nonumber expression label))
+  LATEX -> pure (programToLaTeX prog (LatexContext sugar line nonumber compress expression label))
 
 -- Get rules for rewriting depending on provided flags
 getRules :: Bool -> Bool -> [FilePath] -> IO [Y.Rule]

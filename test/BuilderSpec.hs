@@ -93,14 +93,14 @@ spec = do
   describe "buildExpressions" $ do
     it "!e => [(!e >> Q.x), (!e >> $.y)] => [Q.x, $.y]" $ do
       built <-
-        buildExpressions
+        buildExpressionsThrows
           (ExMeta "e")
           [ substSingle "e" (MvExpression (ExDispatch ExGlobal (AtLabel "x")) defaultScope)
           , substSingle "e" (MvExpression (ExDispatch ExThis (AtLabel "y")) defaultScope)
           ]
       built `shouldBe` [(ExDispatch ExGlobal (AtLabel "x"), defaultScope), (ExDispatch ExThis (AtLabel "y"), defaultScope)]
     it "!e => [(!e1 >> Q.x)] => X" $
-      buildExpressions
+      buildExpressionsThrows
         (ExMeta "e")
         [substSingle "e1" (MvExpression (ExDispatch ExGlobal (AtLabel "x")) defaultScope)]
         `shouldThrow` anyException

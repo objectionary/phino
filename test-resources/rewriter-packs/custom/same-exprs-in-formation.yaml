@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+input: '{[[ x -> Q, ^ -> Q ]]}'
+output: |-
+  Φ ↦ [[ x -> $, ^ -> $ ]]
+rules:
+  custom:
+    - pattern: 'Q'
+      result: '$'

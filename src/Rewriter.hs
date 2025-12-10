@@ -82,8 +82,8 @@ instance Show RewriteException where
 -- Build pattern and result expression and replace patterns to results in given program
 buildAndReplace' :: ToReplace -> ReplaceProgramFunc -> IO Program
 buildAndReplace' (prog, ptn, res, substs) func = do
-  ptns <- buildExpressions ptn substs
-  repls <- buildExpressions res substs
+  ptns <- buildExpressionsThrows ptn substs
+  repls <- buildExpressionsThrows res substs
   let ptns' = map fst ptns
       repls' = map (\ex _ -> fst ex) repls
   pure (func (prog, ptns', repls'))
