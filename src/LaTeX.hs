@@ -37,10 +37,11 @@ data LatexContext = LatexContext
   , compress :: Bool
   , expression :: Maybe String
   , label :: Maybe String
+  , meetPrefix :: Maybe String
   }
 
 defaultLatexContext :: LatexContext
-defaultLatexContext = LatexContext SWEET MULTILINE False False Nothing Nothing
+defaultLatexContext = LatexContext SWEET MULTILINE False False Nothing Nothing Nothing
 
 meetInProgram :: Program -> Program -> [Expression]
 meetInProgram (Program expr) = meetInExpression expr
@@ -57,8 +58,8 @@ meetInProgram (Program expr) = meetInExpression expr
     meetInExpression (ExDispatch ExTermination _) _ = []
     meetInExpression (DataString _) _ = []
     meetInExpression (DataNumber _) _ = []
-    meetInExpression (ExPhiMeet _ _) _ = []
-    meetInExpression (ExPhiAgain _ _) _ = []
+    meetInExpression (ExPhiMeet{}) _ = []
+    meetInExpression (ExPhiAgain{}) _ = []
     meetInExpression expr prog =
       map (const expr) (matchProgram expr prog) ++ case expr of
         ExDispatch exp _ -> meetInExpression exp prog
@@ -76,8 +77,8 @@ in following programs. Then we find ONE expression which is the most frequently 
 If it's encountered in more than 50% of following programs - we replace it with \phiAgain{} in following
 programs and with \phiMeet{} in first program.
 -}
-meetInPrograms :: [Program] -> [Program]
-meetInPrograms = meetInPrograms' 1
+meetInPrograms :: Maybe String -> [Program] -> [Program]
+meetInPrograms prefix = meetInPrograms' 1
   where
     meetInPrograms' :: Int -> [Program] -> [Program]
     meetInPrograms' _ [prog] = [prog]
@@ -99,8 +100,8 @@ meetInPrograms = meetInPrograms' 1
             Just expr ->
               let met' = map (filter (== expr)) met
                   substs = matchProgram expr first
-                  prog = replaceProgram (first, map (const expr) substs, map (const (ExPhiMeet idx)) substs)
-                  rest' = zipWith (\prgm exprs -> replaceProgram (prgm, exprs, map (const (ExPhiAgain idx)) exprs)) rest met'
+                  prog = replaceProgram (first, map (const expr) substs, map (const (ExPhiMeet prefix idx)) substs)
+                  rest' = zipWith (\prgm exprs -> replaceProgram (prgm, exprs, map (const (ExPhiAgain prefix idx)) exprs)) rest met'
                   found = filter (not . null) met'
                in if length met' > 1 && toDouble (length found) / toDouble (length met') >= 0.5
                     then prog : meetInPrograms' (idx + 1) rest'
@@ -118,7 +119,7 @@ rewrittensToLatex :: [Rewritten] -> LatexContext -> String
 rewrittensToLatex rewrittens ctx@LatexContext{..} =
   let equation = phiquation ctx
       (progs, rules) = unzip rewrittens
-      rewrittens' = if compress then zip (meetInPrograms progs) rules else rewrittens
+      rewrittens' = if compress then zip (meetInPrograms meetPrefix progs) rules else rewrittens
    in concat
         [ printf "\\begin{%s}\n" equation
         , maybe "" (printf "\\label{%s}\n") label
@@ -165,8 +166,8 @@ instance ToLaTeX EXPRESSION where
   toLaTeX EX_APPLICATION_TAUS{..} = EX_APPLICATION_TAUS (toLaTeX expr) eol tab (toLaTeX taus) eol' tab' indent
   toLaTeX EX_APPLICATION_EXPRS{..} = EX_APPLICATION_EXPRS (toLaTeX expr) eol tab (toLaTeX args) eol' tab' indent
   toLaTeX EX_DISPATCH{..} = EX_DISPATCH (toLaTeX expr) (toLaTeX attr)
-  toLaTeX EX_PHI_MEET{..} = EX_PHI_MEET idx (toLaTeX expr)
-  toLaTeX EX_PHI_AGAIN{..} = EX_PHI_AGAIN idx (toLaTeX expr)
+  toLaTeX EX_PHI_MEET{..} = EX_PHI_MEET prefix idx (toLaTeX expr)
+  toLaTeX EX_PHI_AGAIN{..} = EX_PHI_AGAIN prefix idx (toLaTeX expr)
   toLaTeX expr = expr
 
 instance ToLaTeX ATTRIBUTE where

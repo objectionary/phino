@@ -139,11 +139,11 @@ matchExpression (ExApplication pexp pbd) (ExApplication texp tbd) scope = combin
 matchExpression (ExMetaTail exp meta) tgt scope = case tailExpressions exp tgt scope of
   ([], _) -> []
   (substs, tails) -> combineMany substs [substSingle meta (MvTail tails)]
-matchExpression (ExPhiAgain idx expr) (ExPhiAgain idx' expr') scope
-  | idx == idx' = matchExpression expr expr' scope
+matchExpression (ExPhiAgain prefix idx expr) (ExPhiAgain prefix' idx' expr') scope
+  | prefix == prefix' && idx == idx' = matchExpression expr expr' scope
   | otherwise = []
-matchExpression (ExPhiMeet idx expr) (ExPhiMeet idx' expr') scope
-  | idx == idx' = matchExpression expr expr' scope
+matchExpression (ExPhiMeet prefix idx expr) (ExPhiMeet prefix' idx' expr') scope
+  | prefix == prefix' && idx == idx' = matchExpression expr expr' scope
   | otherwise = []
 matchExpression _ _ _ = []
 

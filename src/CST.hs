@@ -155,8 +155,8 @@ data EXPRESSION
   | EX_NUMBER {num :: Either Int Double, tab :: TAB, rhos :: [Binding]}
   | EX_META {meta :: META}
   | EX_META_TAIL {expr :: EXPRESSION, meta :: META}
-  | EX_PHI_MEET {idx :: Int, expr :: EXPRESSION}
-  | EX_PHI_AGAIN {idx :: Int, expr :: EXPRESSION}
+  | EX_PHI_MEET {prefix :: Maybe String, idx :: Int, expr :: EXPRESSION}
+  | EX_PHI_AGAIN {prefix :: Maybe String, idx :: Int, expr :: EXPRESSION}
   deriving (Eq, Show)
 
 data ATTRIBUTE
@@ -192,8 +192,8 @@ instance ToCST Expression EXPRESSION where
   toCST ExTermination _ _ = EX_TERMINATION DEAD
   toCST (ExFormation [BiVoid AtRho]) _ eol = toCST (ExFormation []) 0 eol
   toCST (ExFormation []) _ _ = EX_FORMATION LSB NO_EOL NO_TAB (BI_EMPTY NO_TAB) NO_EOL NO_TAB RSB
-  toCST (ExPhiMeet idx expr) tabs eol = EX_PHI_MEET idx (toCST expr tabs eol)
-  toCST (ExPhiAgain idx expr) tabs eol = EX_PHI_AGAIN idx (toCST expr tabs eol)
+  toCST (ExPhiMeet prefix idx expr) tabs eol = EX_PHI_MEET prefix idx (toCST expr tabs eol)
+  toCST (ExPhiAgain prefix idx expr) tabs eol = EX_PHI_AGAIN prefix idx (toCST expr tabs eol)
   toCST (ExFormation bds) tabs eol =
     let next = tabs + 1
         bds' = toCST (withoutLastVoidRho bds) next eol :: BINDING

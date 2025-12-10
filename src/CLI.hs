@@ -14,7 +14,7 @@ import qualified Canonizer as C
 import Condition (parseConditionThrows)
 import Control.Exception (Exception (displayException), SomeException, handle, throw, throwIO)
 import Control.Exception.Base
-import Control.Monad (unless, when, (>=>))
+import Control.Monad (forM_, unless, when, (>=>))
 import Data.Char (toLower, toUpper)
 import Data.Foldable (for_)
 import qualified Data.Foldable
@@ -57,6 +57,7 @@ data PrintProgramContext = PrintProgCtx
   , compress :: Bool
   , expression :: Maybe String
   , label :: Maybe String
+  , meetPrefix :: Maybe String
   , outputFormat :: IOFormat
   }
 
@@ -106,6 +107,7 @@ data OptsDataize = OptsDataize
   , show' :: [String]
   , expression :: Maybe String
   , label :: Maybe String
+  , meetPrefix :: Maybe String
   , stepsDir :: Maybe FilePath
   , inputFile :: Maybe FilePath
   }
@@ -144,6 +146,7 @@ data OptsRewrite = OptsRewrite
   , show' :: [String]
   , expression :: Maybe String
   , label :: Maybe String
+  , meetPrefix :: Maybe String
   , targetFile :: Maybe FilePath
   , stepsDir :: Maybe FilePath
   , inputFile :: Maybe FilePath
@@ -254,6 +257,9 @@ optExpression = optional (strOption (long "expression" <> metavar "NAME" <> help
 optLabel :: Parser (Maybe String)
 optLabel = optional (strOption (long "label" <> metavar "NAME" <> help "Name for 'label' element when rendering to LaTeX (see --output option)"))
 
+optMeetPrefix :: Parser (Maybe String)
+optMeetPrefix = optional (strOption (long "meet-prefix" <> metavar "PREFIX" <> help "Prefix to be inserted before index in \\phiMeet{} and \\phiAgain{} LaTeX functions, e.g. \\phiMeet{foo:1}"))
+
 optHide :: Parser [String]
 optHide = many (strOption (long "hide" <> metavar "FQN" <> help "Location of object to exclude from result and intermediate programs after rewriting. Must be a valid dispatch expression; e.g. Q.org.eolang"))
 
@@ -340,6 +346,7 @@ dataizeParser =
             <*> optShow
             <*> optExpression
             <*> optLabel
+            <*> optMeetPrefix
             <*> optStepsDir
             <*> argInputFile
         )
@@ -379,6 +386,7 @@ rewriteParser =
             <*> optShow
             <*> optExpression
             <*> optLabel
+            <*> optMeetPrefix
             <*> optTarget
             <*> optStepsDir
             <*> argInputFile
@@ -464,7 +472,7 @@ runCLI args = handle handler $ do
       program <- parseProgram input inputFormat
       let listing = if null rules' then const input else (\prog -> P.printProgram' prog (sugarType, UNICODE, flat))
           xmirCtx = XmirContext omitListing omitComments listing
-          printCtx = PrintProgCtx sugarType flat xmirCtx nonumber compress expression label outputFormat
+          printCtx = PrintProgCtx sugarType flat xmirCtx nonumber compress expression label meetPrefix outputFormat
           _canonize = if canonize then C.canonize else id
           _hide = (`F.exclude` excluded)
           _show = (`F.include` included)
@@ -483,9 +491,14 @@ runCLI args = handle handler $ do
             (inPlace && isJust targetFile)
             (invalidCLIArguments "The options --in-place and --target cannot be used together")
           when (length show' > 1) (invalidCLIArguments "The option --show can be used only once")
-          validateLatexOptions (outputFormat, nonumber, compress, expression, label)
+          validateLatexOptions
+            outputFormat
+            [(nonumber, "nonumber"), (compress, "compress")]
+            [(expression, "expression"), (label, "label"), (meetPrefix, "meet-prefix")]
           validateMust' must
-          validateXmirOptions outputFormat omitListing omitComments
+          validateXmirOptions
+            outputFormat
+            [(omitListing, "omit-listing"), (omitComments, "omit-comments")]
         output :: Maybe FilePath -> String -> IO ()
         output target prog = case (inPlace, target, inputFile) of
           (True, _, Just file) -> do
@@ -514,7 +527,7 @@ runCLI args = handle handler $ do
       included <- expressionsToFilter "show" show'
       input <- readInput inputFile
       prog <- parseProgram input inputFormat
-      let printCtx = PrintProgCtx sugarType flat defaultXmirContext nonumber compress expression label outputFormat
+      let printCtx = PrintProgCtx sugarType flat defaultXmirContext nonumber compress expression label meetPrefix outputFormat
           _hide = (`F.exclude` excluded)
           _show = (`F.include` included)
       (maybeBytes, seq) <- dataize prog (context prog printCtx)
@@ -523,8 +536,13 @@ runCLI args = handle handler $ do
       where
         validateOpts :: IO ()
         validateOpts = do
-          validateLatexOptions (outputFormat, nonumber, compress, expression, label)
-          validateXmirOptions outputFormat omitListing omitComments
+          validateLatexOptions
+            outputFormat
+            [(nonumber, "nonumber"), (compress, "compress")]
+            [(expression, "expression"), (label, "label"), (meetPrefix, "meet-prefix")]
+          validateXmirOptions
+            outputFormat
+            [(omitListing, "omit-listing"), (omitComments, "omit-comments")]
           when (length show' > 1) (invalidCLIArguments "The option --show can be used only once")
         context :: Program -> PrintProgramContext -> DataizeContext
         context program ctx =
@@ -553,7 +571,7 @@ runCLI args = handle handler $ do
       prog <- merge progs
       let listing = const (P.printProgram' prog (sugarType, UNICODE, flat))
           xmirCtx = XmirContext omitListing omitComments listing
-          printProgCtx = PrintProgCtx sugarType flat xmirCtx False False Nothing Nothing outputFormat
+          printProgCtx = PrintProgCtx sugarType flat xmirCtx False False Nothing Nothing Nothing outputFormat
       prog' <- printProgram printProgCtx prog
       output targetFile prog'
       where
@@ -562,7 +580,7 @@ runCLI args = handle handler $ do
           when
             (null inputs)
             (throwIO (InvalidCLIArguments "At least one input file must be specified for 'merge' command"))
-          validateXmirOptions outputFormat omitListing omitComments
+          validateXmirOptions outputFormat [(omitListing, "omit-listing"), (omitComments, "omit-comments")]
     CmdMatch OptsMatch{..} -> do
       input <- readInput inputFile
       prog <- parseProgram input PHI
@@ -607,35 +625,29 @@ expressionsToFilter opt = traverse (parseExpressionThrows >=> asFilter)
             )
 
 -- Validate LaTeX options
-validateLatexOptions :: (IOFormat, Bool, Bool, Maybe String, Maybe String) -> IO ()
-validateLatexOptions (LATEX, _, _, _, _) = pure ()
-validateLatexOptions (_, nonumber, compress, expression, label) = do
-  when
-    nonumber
-    (invalidCLIArguments "The --nonumber option can stay together with --output=latex only")
-  when
-    compress
-    (invalidCLIArguments "The --compress option can stay together with --output=latex only")
-  when
-    (isJust expression)
-    (invalidCLIArguments "The --expression option can stay together with --output=latex only")
-  when
-    (isJust label)
-    (invalidCLIArguments "The --label option can stay together with --output=latex only")
+validateLatexOptions :: IOFormat -> [(Bool, String)] -> [(Maybe String, String)] -> IO ()
+validateLatexOptions LATEX _ _ = pure ()
+validateLatexOptions _ bools maybes = do
+  let (bools', opts) = unzip bools
+      msg = "The --%s option can stay together with --output=latex only"
+  validateBoolOpts (zip bools' (map (printf msg) opts))
+  forM_
+    maybes
+    (\(maybe', opt) -> when (isJust maybe') (invalidCLIArguments (printf msg opt)))
 
 -- Validate 'must' option
 validateMust' :: Must -> IO ()
 validateMust' must = for_ (validateMust must) invalidCLIArguments
 
 -- Validate options for output to XMIR
-validateXmirOptions :: IOFormat -> Bool -> Bool -> IO ()
-validateXmirOptions outputFormat omitListing omitComments = do
-  when
-    (outputFormat /= XMIR && omitListing)
-    (invalidCLIArguments "--omit-listing can be used only with --output=xmir")
-  when
-    (outputFormat /= XMIR && omitComments)
-    (invalidCLIArguments "--omit-comments can be used only with --output=xmir")
+validateXmirOptions :: IOFormat -> [(Bool, String)] -> IO ()
+validateXmirOptions XMIR _ = pure ()
+validateXmirOptions _ bools =
+  let (bools', opts) = unzip bools
+   in validateBoolOpts (zip bools' (map (printf "The --%s can be used only with --output=xmir") opts))
+
+validateBoolOpts :: [(Bool, String)] -> IO ()
+validateBoolOpts bools = forM_ bools (\(bool, msg) -> when bool (invalidCLIArguments msg))
 
 -- Read input from file or stdin
 readInput :: Maybe FilePath -> IO String
@@ -656,7 +668,7 @@ parseProgram xmir XMIR = do
 
 printRewrittens :: PrintProgramContext -> [Rewritten] -> IO String
 printRewrittens ctx@PrintProgCtx{..} rewrittens
-  | outputFormat == LATEX = pure (rewrittensToLatex rewrittens (LatexContext sugar line nonumber compress expression label))
+  | outputFormat == LATEX = pure (rewrittensToLatex rewrittens (LatexContext sugar line nonumber compress expression label meetPrefix))
   | otherwise = mapM (printProgram ctx . fst) rewrittens <&> intercalate "\n"
 
 -- Convert program to corresponding String format
@@ -664,7 +676,7 @@ printProgram :: PrintProgramContext -> Program -> IO String
 printProgram PrintProgCtx{..} prog = case outputFormat of
   PHI -> pure (P.printProgram' prog (sugar, UNICODE, line))
   XMIR -> programToXMIR prog xmirCtx <&> printXMIR
-  LATEX -> pure (programToLaTeX prog (LatexContext sugar line nonumber compress expression label))
+  LATEX -> pure (programToLaTeX prog (LatexContext sugar line nonumber compress expression label meetPrefix))
 
 -- Get rules for rewriting depending on provided flags
 getRules :: Bool -> Bool -> [FilePath] -> IO [Y.Rule]
