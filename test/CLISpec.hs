@@ -435,7 +435,6 @@ spec = do
               ]
           ]
 
-
     it "prints with compressed expressions in LaTeX" $
       withStdin "{[[ x -> ?, y -> $.x ]](x -> [[ D> 42- ]]).y}" $
         testCLISucceeded
