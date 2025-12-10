@@ -3,11 +3,15 @@
 
 .ONESHELL:
 .SHELLFLAGS := -e -o pipefail -c
-.PHONY: all hlint fourmolu coverage clean
+.PHONY: all test hlint fourmolu coverage clean
 
 SHELL := bash
 
 all: coverage hlint fourmolu
+
+.SILENT:
+test:
+	cabal test
 
 .SILENT:
 hlint:

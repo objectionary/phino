@@ -214,6 +214,12 @@ spec = do
             ["rewrite", "--compress", "--output=phi"]
             ["--compress option can stay together with --output=latex only"]
 
+      it "with --meet-prefix and --output != latex" $
+        withStdin "{[[]]}" $
+          testCLIFailed
+            ["rewrite", "--meet-prefix=foo", "--output=phi"]
+            ["--meet-prefix option can stay together with --output=latex only"]
+
       it "with wrong --hide option" $
         withStdin "{[[]]}" $
           testCLIFailed
@@ -412,6 +418,23 @@ spec = do
               , "\\end{phiquation}"
               ]
           ]
+
+    it "prints meet prefix with --meet-prefix=foo in LaTeX" $
+      withStdin "{[[ x -> ?, y -> $.x ]](x -> [[ D> 42- ]]).y}" $
+        testCLISucceeded
+          ["rewrite", "--normalize", "--sweet", "--sequence", "--output=latex", "--flat", "--compress", "--meet-prefix=foo"]
+          [ unlines
+              [ "\\begin{phiquation}"
+              , "\\Big\\{[[ |x| -> ?, |y| -> |x| ]]( |x| -> [[ D> 42- ]] ).|y|\\Big\\} \\leadsto_{\\nameref{r:copy}}"
+              , "  \\leadsto \\Big\\{\\phiMeet{foo:1}{[[ |x| -> [[ D> 42- ]], |y| -> |x| ]]}.|y|\\Big\\} \\leadsto_{\\nameref{r:dot}}"
+              , "  \\leadsto \\Big\\{\\phiAgain{foo:1}.|x|( ^ -> \\phiAgain{foo:1} )\\Big\\} \\leadsto_{\\nameref{r:dot}}"
+              , "  \\leadsto \\Big\\{[[ D> 42- ]]( ^ -> \\phiAgain{foo:1}, ^ -> \\phiAgain{foo:1} )\\Big\\} \\leadsto_{\\nameref{r:copy}}"
+              , "  \\leadsto \\Big\\{[[ D> 42-, ^ -> \\phiAgain{foo:1} ]]( ^ -> \\phiAgain{foo:1} )\\Big\\} \\leadsto_{\\nameref{r:stay}}"
+              , "  \\leadsto \\Big\\{[[ D> 42-, ^ -> \\phiAgain{foo:1} ]]\\Big\\}."
+              , "\\end{phiquation}"
+              ]
+          ]
+
 
     it "prints with compressed expressions in LaTeX" $
       withStdin "{[[ x -> ?, y -> $.x ]](x -> [[ D> 42- ]]).y}" $

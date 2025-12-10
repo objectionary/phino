@@ -10,6 +10,7 @@ module Render where
 import AST
 import CST
 import Data.List
+import Data.Maybe (fromMaybe)
 
 class Render a where
   render :: a -> String
@@ -176,8 +177,8 @@ instance Render EXPRESSION where
   render EX_NUMBER{..} = either show show num
   render EX_META{..} = render meta
   render EX_META_TAIL{..} = render expr <> " * " <> render meta
-  render EX_PHI_MEET{..} = "\\phiMeet{" <> render idx <> "}{" <> render expr <> "}"
-  render EX_PHI_AGAIN{..} = "\\phiAgain{" <> render idx <> "}"
+  render EX_PHI_MEET{..} = "\\phiMeet{" <> maybe "" (++ ":") prefix <> render idx <> "}{" <> render expr <> "}"
+  render EX_PHI_AGAIN{..} = "\\phiAgain{" <> maybe "" (++ ":") prefix <> render idx <> "}"
 
 instance Render ATTRIBUTE where
   render AT_LABEL{..} = label

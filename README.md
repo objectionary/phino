@@ -217,7 +217,7 @@ d >> 68-65-6C-6C-6F
 
 ## Explain (under development)
 
-You can _explain_ rewriting rule by printing them in [LaTeX][latex]format:
+You can _explain_ rewriting rule by printing them in [LaTeX][latex] format:
 
 ```bash
 $ phino explain --rule=my-rule.yaml
@@ -360,8 +360,7 @@ provided they don't violate our quality standards. To avoid frustration,
 before sending us your pull request please make sure all your tests pass:
 
 ```bash
-cabal build all
-make
+make all
 ```
 
 To generate a local coverage report for development, run:

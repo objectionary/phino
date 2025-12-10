@@ -100,8 +100,8 @@ instance ToSalty EXPRESSION where
       (toCST (ExFormation [BiDelta (strToBts str)]) (indent + 2) EOL)
       tab
       rhos
-  toSalty EX_PHI_MEET{..} = EX_PHI_MEET idx (toSalty expr)
-  toSalty EX_PHI_AGAIN{..} = EX_PHI_AGAIN idx (toSalty expr)
+  toSalty EX_PHI_MEET{..} = EX_PHI_MEET prefix idx (toSalty expr)
+  toSalty EX_PHI_AGAIN{..} = EX_PHI_AGAIN prefix idx (toSalty expr)
   toSalty expr = expr
 
 saltifyPrimitive :: EXPRESSION -> EXPRESSION -> EXPRESSION -> TAB -> [Binding] -> EXPRESSION

@@ -22,8 +22,8 @@ data Expression
   | ExDispatch Expression Attribute -- expr.attr
   | ExMeta String -- !e
   | ExMetaTail Expression String -- expr * !t
-  | ExPhiMeet Int Expression
-  | ExPhiAgain Int Expression
+  | ExPhiMeet (Maybe String) Int Expression
+  | ExPhiAgain (Maybe String) Int Expression
   deriving (Eq, Ord, Show, Generic)
 
 data Binding
