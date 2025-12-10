@@ -1,0 +1,5 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+
+# Force LF line endings for all text files to ensure cross-platform consistency
+* text=auto eol=lf
