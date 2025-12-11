@@ -1,6 +1,6 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# OPTIONS_GHC -Wno-name-shadowing -Wno-incomplete-patterns #-}
+{-# OPTIONS_GHC -Wno-name-shadowing #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
@@ -81,6 +81,7 @@ meetInPrograms :: Maybe String -> [Program] -> [Program]
 meetInPrograms prefix = meetInPrograms' 1
   where
     meetInPrograms' :: Int -> [Program] -> [Program]
+    meetInPrograms' _ [] = []
     meetInPrograms' _ [prog] = [prog]
     meetInPrograms' idx (first : rest) =
       let met = map (meetInProgram first) rest

@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# OPTIONS_GHC -Wno-name-shadowing -Wno-unused-matches -Wno-incomplete-patterns -Wno-incomplete-uni-patterns #-}
+{-# OPTIONS_GHC -Wno-name-shadowing -Wno-incomplete-patterns -Wno-incomplete-uni-patterns #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
@@ -127,11 +127,11 @@ _eq (Y.CmpNum left) (Y.CmpNum right) subst _ = case (numToInt left subst, numToI
     numToInt (Y.Ordinal (AtMeta meta)) (Subst mp) = case M.lookup meta mp of
       Just (MvAttribute (AtAlpha idx)) -> Just idx
       _ -> Nothing
-    numToInt (Y.Ordinal (AtAlpha idx)) subst = Just idx
+    numToInt (Y.Ordinal (AtAlpha idx)) _ = Just idx
     numToInt (Y.Length (BiMeta meta)) (Subst mp) = case M.lookup meta mp of
       Just (MvBindings bds) -> Just (length bds)
       _ -> Nothing
-    numToInt (Y.Literal num) subst = Just num
+    numToInt (Y.Literal num) _ = Just num
     numToInt _ _ = Nothing
 _eq (Y.CmpAttr left) (Y.CmpAttr right) subst _ = pure [subst | compareAttrs left right subst]
   where
@@ -172,9 +172,9 @@ _xi (ExMeta meta) (Subst mp) ctx = case M.lookup meta mp of
   Just (MvExpression expr _) -> _xi expr (Subst mp) ctx
   _ -> pure []
 _xi (ExFormation _) subst _ = pure [subst]
-_xi ExThis subst _ = pure []
+_xi ExThis _ _ = pure []
 _xi ExGlobal subst _ = pure [subst]
-_xi (ExApplication expr (BiTau attr texpr)) subst ctx = do
+_xi (ExApplication expr (BiTau _ texpr)) subst ctx = do
   onExpr <- _xi expr subst ctx
   onTau <- _xi texpr subst ctx
   pure [subst | not (null onExpr) && not (null onTau)]
@@ -196,10 +196,10 @@ _partOf exp bd subst _ = do
   pure [subst | partOf exp' bds]
   where
     partOf :: Expression -> [Binding] -> Bool
-    partOf expr [] = False
+    partOf _ [] = False
     partOf expr (BiTau _ (ExFormation bds) : rest) = expr == ExFormation bds || partOf expr bds || partOf expr rest
     partOf expr (BiTau _ expr' : rest) = expr == expr' || partOf expr rest
-    partOf expr (bd : rest) = partOf expr rest
+    partOf expr (_ : rest) = partOf expr rest
 
 meetCondition' :: Y.Condition -> Subst -> RuleContext -> IO [Subst]
 meetCondition' (Y.Or conds) = _or conds
