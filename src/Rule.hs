@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# OPTIONS_GHC -Wno-name-shadowing -Wno-incomplete-patterns #-}
+{-# OPTIONS_GHC -Wno-name-shadowing #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
@@ -179,6 +179,7 @@ _xi (ExApplication expr (BiTau _ texpr)) subst ctx = do
   onTau <- _xi texpr subst ctx
   pure [subst | not (null onExpr) && not (null onTau)]
 _xi (ExDispatch expr _) subst ctx = _xi expr subst ctx
+_xi _ _ _ = pure []
 
 _matches :: String -> Expression -> Subst -> RuleContext -> IO [Subst]
 _matches pat (ExMeta meta) (Subst mp) ctx = case M.lookup meta mp of
