@@ -22,7 +22,6 @@ import Encoding (Encoding (ASCII), withEncoding)
 import Lining (LineFormat (MULTILINE, SINGLELINE), withLineFormat)
 import Matcher
 import Misc
-import Printer (printProgram')
 import Render (Render (render))
 import Replacer (ReplaceContext (ReplaceCtx), replaceProgram)
 import Rewriter (Rewritten (..))
@@ -99,12 +98,13 @@ meetInPrograms prefix = meetInPrograms' 1
        in case frequent of
             Just expr ->
               let met' = map (filter (== expr)) met
-                  substs = matchProgram expr first
-                  prog = replaceProgram (first, map (const expr) substs, map (const (ExPhiMeet prefix idx)) substs)
+                  (subst : substs) = matchProgram expr first
+                  prog = replaceProgram (first, [expr], [ExPhiMeet prefix idx])
+                  prog' = replaceProgram (prog, map (const expr) substs, map (const (ExPhiAgain prefix idx)) substs)
                   rest' = zipWith (\prgm exprs -> replaceProgram (prgm, exprs, map (const (ExPhiAgain prefix idx)) exprs)) rest met'
                   found = filter (not . null) met'
                in if length met' > 1 && toDouble (length found) / toDouble (length met') >= 0.5
-                    then prog : meetInPrograms' (idx + 1) rest'
+                    then prog' : meetInPrograms' (idx + 1) rest'
                     else next
             _ -> next
 
