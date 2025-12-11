@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# OPTIONS_GHC -Wno-name-shadowing -Wno-incomplete-patterns -Wno-incomplete-uni-patterns #-}
+{-# OPTIONS_GHC -Wno-name-shadowing -Wno-incomplete-patterns #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
@@ -241,32 +241,34 @@ extraSubstitutions substs extras RuleContext{..} = case extras of
     res <-
       sequence
         [ foldlM
-            ( \(Just subst') extra -> do
-                let maybeName = case Y.meta extra of
-                      Y.ArgExpression (ExMeta name) -> Just name
-                      Y.ArgAttribute (AtMeta name) -> Just name
-                      Y.ArgBinding (BiMeta name) -> Just name
-                      Y.ArgBytes (BtMeta name) -> Just name
-                      _ -> Nothing
-                    func = Y.function extra
-                    args = Y.args extra
-                term <- _buildTerm func args subst'
-                meta <- case term of
-                  TeExpression expr -> do
-                    logDebug (printf "Function %s() returned expression:\n%s" func (printExpression expr))
-                    pure (MvExpression expr defaultScope)
-                  TeAttribute attr -> do
-                    logDebug (printf "Function %s() returned attribute: %s" func (printAttribute attr))
-                    pure (MvAttribute attr)
-                  TeBytes bytes -> do
-                    logDebug (printf "Function %s() returned bytes: %s" func (printBytes bytes))
-                    pure (MvBytes bytes)
-                  TeBindings bds -> do
-                    logDebug (printf "Function %s return bindings: %s" func (printExpression (ExFormation bds)))
-                    pure (MvBindings bds)
-                case maybeName of
-                  Just name -> pure (combine (substSingle name meta) subst')
-                  _ -> pure Nothing
+            ( \maybeSubst extra -> case maybeSubst of
+                Nothing -> pure Nothing
+                Just subst' -> do
+                  let maybeName = case Y.meta extra of
+                        Y.ArgExpression (ExMeta name) -> Just name
+                        Y.ArgAttribute (AtMeta name) -> Just name
+                        Y.ArgBinding (BiMeta name) -> Just name
+                        Y.ArgBytes (BtMeta name) -> Just name
+                        _ -> Nothing
+                      func = Y.function extra
+                      args = Y.args extra
+                  term <- _buildTerm func args subst'
+                  meta <- case term of
+                    TeExpression expr -> do
+                      logDebug (printf "Function %s() returned expression:\n%s" func (printExpression expr))
+                      pure (MvExpression expr defaultScope)
+                    TeAttribute attr -> do
+                      logDebug (printf "Function %s() returned attribute: %s" func (printAttribute attr))
+                      pure (MvAttribute attr)
+                    TeBytes bytes -> do
+                      logDebug (printf "Function %s() returned bytes: %s" func (printBytes bytes))
+                      pure (MvBytes bytes)
+                    TeBindings bds -> do
+                      logDebug (printf "Function %s return bindings: %s" func (printExpression (ExFormation bds)))
+                      pure (MvBindings bds)
+                  case maybeName of
+                    Just name -> pure (combine (substSingle name meta) subst')
+                    _ -> pure Nothing
             )
             (Just subst)
             extras'

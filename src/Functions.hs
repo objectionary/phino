@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# OPTIONS_GHC -Wno-name-shadowing -Wno-incomplete-uni-patterns #-}
+{-# OPTIONS_GHC -Wno-name-shadowing #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
@@ -228,22 +228,25 @@ _join args subst = do
     join' :: [Binding] -> Set.Set Attribute -> [Binding]
     join' [] _ = []
     join' (bd : bds) attrs =
-      let [attr] = attributesFromBindings [bd]
-       in if Set.member attr attrs
+      case attributesFromBindings [bd] of
+        [attr] ->
+          if Set.member attr attrs
             then
               if attr == AtRho || attr == AtDelta || attr == AtLambda
                 then join' bds attrs
                 else
                   let new = case bd of
-                        BiTau attr expr -> BiTau (updated attr attrs) expr
-                        BiVoid attr -> BiVoid (updated attr attrs)
+                        BiTau at ex -> BiTau (updated at attrs) ex
+                        BiVoid at -> BiVoid (updated at attrs)
                         other -> other
                    in new : join' bds attrs
             else bd : join' bds (Set.insert attr attrs)
+        _ -> bd : join' bds attrs
     updated :: Attribute -> Set.Set Attribute -> Attribute
     updated _ attrs =
-      let (TeAttribute attr') = unsafePerformIO (_randomTau (map Y.ArgAttribute (Set.toList attrs)) subst)
-       in attr'
+      case unsafePerformIO (_randomTau (map Y.ArgAttribute (Set.toList attrs)) subst) of
+        TeAttribute attr' -> attr'
+        _ -> AtLabel "unknown"
 
 _unsupported :: BuildTermFunc
 _unsupported func _ _ = throwIO (userError (printf "Function %s() is not supported or does not exist" func))

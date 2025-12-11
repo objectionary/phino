@@ -3,7 +3,7 @@
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# OPTIONS_GHC -Wno-partial-fields -Wno-name-shadowing -Wno-incomplete-uni-patterns #-}
+{-# OPTIONS_GHC -Wno-partial-fields -Wno-name-shadowing #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
@@ -174,9 +174,9 @@ rewrite state (rule : rest) iteration ctx@RewriteContext{..} = do
                           _rewrite (leadsTo prog, Set.insert prog _unique) (_count + 1)
       where
         leadsTo :: Program -> [Rewritten]
-        leadsTo _prog =
-          let (program, _) : rest = _rewrittens
-           in (_prog, Nothing) : (program, Just (map toLower (fromMaybe "unknown" (Y.name rule)))) : rest
+        leadsTo _prog = case _rewrittens of
+          (program, _) : rest -> (_prog, Nothing) : (program, Just (map toLower (fromMaybe "unknown" (Y.name rule)))) : rest
+          [] -> [(_prog, Nothing)]
 
 -- The function accepts single program but returns sequence of programs
 rewrite' :: Program -> [Y.Rule] -> RewriteContext -> IO [Rewritten]

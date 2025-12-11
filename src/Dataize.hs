@@ -1,7 +1,7 @@
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# OPTIONS_GHC -Wno-partial-fields -Wno-name-shadowing -Wno-incomplete-uni-patterns #-}
+{-# OPTIONS_GHC -Wno-partial-fields -Wno-name-shadowing #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
@@ -180,9 +180,8 @@ dataize' (ExFormation bds, seq) ctx = case maybeDelta bds of
 dataize' dataizable ctx = morph dataizable ctx >>= (`dataize'` ctx)
 
 leadsTo :: [Rewritten] -> String -> Expression -> [Rewritten]
-leadsTo seq rule expr =
-  let (prog, _) : rest = seq
-   in (Program expr, Nothing) : (prog, Just rule) : rest
+leadsTo [] rule expr = [(Program expr, Just rule)]
+leadsTo ((prog, _) : rest) rule expr = (Program expr, Nothing) : (prog, Just rule) : rest
 
 atom :: String -> Expression -> DataizeContext -> IO Expression
 atom "L_org_eolang_number_plus" self ctx = do
