@@ -3,7 +3,7 @@
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# OPTIONS_GHC -Wno-partial-fields -Wno-name-shadowing #-}
+{-# OPTIONS_GHC -Wno-name-shadowing #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
@@ -60,14 +60,14 @@ data PrintProgramContext = PrintProgCtx
   }
 
 data CmdException
-  = InvalidCLIArguments {message :: String}
-  | CouldNotReadFromStdin {message :: String}
+  = InvalidCLIArguments String
+  | CouldNotReadFromStdin String
   | CouldNotDataize
   deriving (Exception)
 
 instance Show CmdException where
-  show InvalidCLIArguments{..} = printf "Invalid set of arguments: %s" message
-  show CouldNotReadFromStdin{..} = printf "Could not read input from stdin\nReason: %s" message
+  show (InvalidCLIArguments msg) = printf "Invalid set of arguments: %s" msg
+  show (CouldNotReadFromStdin msg) = printf "Could not read input from stdin\nReason: %s" msg
   show CouldNotDataize = "Could not dataize given program"
 
 data Command

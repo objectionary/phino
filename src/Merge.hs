@@ -1,6 +1,4 @@
 {-# LANGUAGE DeriveAnyClass #-}
-{-# LANGUAGE RecordWildCards #-}
-{-# OPTIONS_GHC -Wno-partial-fields #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
@@ -15,17 +13,17 @@ import Printer (printExpression, printProgram)
 import Text.Printf (printf)
 
 data MergeException
-  = WrongProgramFormat {program :: Program}
-  | CanNotMergeBinding {first :: Binding, second :: Binding}
+  = WrongProgramFormat Program
+  | CanNotMergeBinding Binding Binding
   | EmptyProgramList
   deriving (Exception)
 
 instance Show MergeException where
-  show WrongProgramFormat{..} =
+  show (WrongProgramFormat prog) =
     printf
       "Invalid program format, only programs with top level formations are supported for 'merge' command, given:\n%s"
-      (printProgram program)
-  show CanNotMergeBinding{..} =
+      (printProgram prog)
+  show (CanNotMergeBinding first second) =
     printf
       "Can't merge two bindings, conflict found:\n%s"
       (printExpression (ExFormation [first, second]))

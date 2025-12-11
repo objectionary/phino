@@ -3,7 +3,7 @@
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# OPTIONS_GHC -Wno-partial-fields -Wno-name-shadowing #-}
+{-# OPTIONS_GHC -Wno-name-shadowing #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
@@ -44,36 +44,36 @@ data RewriteContext = RewriteContext
   }
 
 data RewriteException
-  = MustBeGoing {must :: Must, count :: Int}
-  | MustStopBefore {must :: Must, count :: Int}
-  | StoppedOnLimit {flag :: String, limit :: Int}
-  | LoopingRewriting {prog :: String, rule :: String, step :: Int}
+  = MustBeGoing Must Int
+  | MustStopBefore Must Int
+  | StoppedOnLimit String Int
+  | LoopingRewriting String String Int
   deriving (Exception)
 
 instance Show RewriteException where
-  show MustBeGoing{..} =
+  show (MustBeGoing mst cnt) =
     printf
       "With option --must=%s it's expected rewriting cycles to be in range [%s], but rewriting stopped after %d cycles"
-      (show must)
-      (show must)
-      count
-  show MustStopBefore{..} =
+      (show mst)
+      (show mst)
+      cnt
+  show (MustStopBefore mst cnt) =
     printf
       "With option --must=%s it's expected rewriting cycles to be in range [%s], but rewriting has already reached %d cycles and is still going"
-      (show must)
-      (show must)
-      count
-  show StoppedOnLimit{..} =
+      (show mst)
+      (show mst)
+      cnt
+  show (StoppedOnLimit flg lim) =
     printf
       "With option --depth-sensitive it's expected rewriting iterations amount does not reach the limit: --%s=%d"
-      flag
-      limit
-  show LoopingRewriting{..} =
+      flg
+      lim
+  show (LoopingRewriting prg rul stp) =
     printf
       "On rewriting step '%d' of rule '%s' we got the same program as we got at one of the previous step, it seems rewriting is looping\nProgram: %s"
-      step
-      rule
-      prog
+      stp
+      rul
+      prg
 
 -- Build pattern and result expression and replace patterns to results in given program
 buildAndReplace' :: ToReplace -> ReplaceProgramFunc -> IO Program

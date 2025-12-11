@@ -1,5 +1,5 @@
 {-# HLINT ignore "Avoid restricted module" #-}
-{-# OPTIONS_GHC -Wno-unrecognised-pragmas -Wno-dodgy-exports #-}
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
@@ -15,7 +15,7 @@ module Printer
   , printExtraArg
   , printSubsts
   , printSubsts'
-  , PrintConfig (..)
+  , PrintConfig
   , logPrintConfig
   )
 where

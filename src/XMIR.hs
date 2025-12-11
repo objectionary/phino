@@ -2,7 +2,6 @@
 {-# LANGUAGE NumericUnderscores #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# OPTIONS_GHC -Wno-partial-fields #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
@@ -51,23 +50,23 @@ defaultXmirContext :: XmirContext
 defaultXmirContext = XmirContext True True (const "")
 
 data XMIRException
-  = UnsupportedProgram {prog :: Program}
-  | UnsupportedExpression {expr :: Expression}
-  | UnsupportedBinding {binding :: Binding}
-  | CouldNotParseXMIR {message :: String}
-  | InvalidXMIRFormat {message :: String, cursor :: C.Cursor}
+  = UnsupportedProgram Program
+  | UnsupportedExpression Expression
+  | UnsupportedBinding Binding
+  | CouldNotParseXMIR String
+  | InvalidXMIRFormat String C.Cursor
   deriving (Exception)
 
 instance Show XMIRException where
-  show UnsupportedProgram{..} = printf "XMIR does not support such program:\n%s" (printProgram prog)
-  show UnsupportedExpression{..} = printf "XMIR does not support such expression:\n%s" (printExpression expr)
-  show UnsupportedBinding{..} = printf "XMIR does not support such bindings: %s" (printBinding binding)
-  show CouldNotParseXMIR{..} = printf "Couldn't parse given XMIR, cause: %s" message
-  show InvalidXMIRFormat{..} =
+  show (UnsupportedProgram prog) = printf "XMIR does not support such program:\n%s" (printProgram prog)
+  show (UnsupportedExpression expr) = printf "XMIR does not support such expression:\n%s" (printExpression expr)
+  show (UnsupportedBinding bd) = printf "XMIR does not support such bindings: %s" (printBinding bd)
+  show (CouldNotParseXMIR msg) = printf "Couldn't parse given XMIR, cause: %s" msg
+  show (InvalidXMIRFormat msg cur) =
     printf
       "Couldn't traverse though given XMIR, cause: %s\nXMIR:\n%s"
-      message
-      ( case C.node cursor of
+      msg
+      ( case C.node cur of
           NodeElement el -> printXMIR (Document (Prologue [] Nothing []) el [])
           _ -> "Unknown"
       )

@@ -1,5 +1,4 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# OPTIONS_GHC -Wno-name-shadowing #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
@@ -141,9 +140,9 @@ _sed args subst = do
         Just body ->
           let (pat, rest) = nextUntilSlash body B.empty False
               (rep, flag) = nextUntilSlash rest B.empty True
-           in case [pat, rep, flag] of
-                [pat, rep, "g"] -> pure (pat, rep, True)
-                [pat, rep, ""] -> pure (pat, rep, False)
+           in case flag of
+                "g" -> pure (pat, rep, True)
+                "" -> pure (pat, rep, False)
                 _ -> throwIO (userError "sed pattern must be in format s/pat/rep/[g]")
         _ -> throwIO (userError "sed pattern must start with s/")
     -- Cut part from given string until regular slash.
@@ -183,12 +182,12 @@ _string [Y.ArgExpression expr] subst = do
   str <- case expr' of
     DataNumber bts -> pure (DataString (strToBts (either show show (btsToNum bts))))
     DataString bts -> pure (DataString bts)
-    exp ->
+    ex ->
       throwIO
         ( userError
             ( printf
                 "Couldn't convert given expression to 'Φ̇.string' object, only 'Φ̇.number' or 'Φ̇.string' are allowed\n%s"
-                (printExpression exp)
+                (printExpression ex)
             )
         )
   pure (TeExpression str)
