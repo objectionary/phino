@@ -3,7 +3,7 @@
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# OPTIONS_GHC -Wno-unused-imports -Wno-partial-fields -Wno-unused-matches -Wno-name-shadowing -Wno-incomplete-uni-patterns #-}
+{-# OPTIONS_GHC -Wno-partial-fields -Wno-name-shadowing -Wno-incomplete-uni-patterns #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
@@ -14,23 +14,18 @@ import AST
 import Builder
 import Control.Exception (Exception, throwIO)
 import Data.Char (toLower)
-import Data.Foldable (foldlM)
 import Data.Functor ((<&>))
-import qualified Data.Map.Strict as M
-import Data.Maybe (catMaybes, fromMaybe, isJust)
+import Data.Maybe (fromMaybe)
 import qualified Data.Set as Set
 import Deps
 import Logger (logDebug)
-import Matcher (MetaValue (MvAttribute, MvBindings, MvBytes, MvExpression), Subst (Subst), combine, combineMany, defaultScope, matchProgram, substEmpty, substSingle)
-import Misc (ensuredFile)
+import Matcher (Subst)
 import Must (Must (..), exceedsUpperBound, inRange)
-import Parser (parseProgram, parseProgramThrows)
 import Printer (printProgram)
 import Replacer (ReplaceContext (ReplaceCtx), ReplaceProgramFunc, replaceProgram, replaceProgramFast)
-import Rule (RuleContext (RuleContext), matchProgramWithRule)
+import Rule (RuleContext (RuleContext))
 import qualified Rule as R
-import Text.Printf
-import Yaml (ExtraArgument (..))
+import Text.Printf (printf)
 import qualified Yaml as Y
 
 type RewriteState = ([Rewritten], Set.Set Program)
@@ -188,7 +183,7 @@ rewrite' :: Program -> [Y.Rule] -> RewriteContext -> IO [Rewritten]
 rewrite' prog rules ctx = _rewrite ([(prog, Nothing)], Set.empty) 1 ctx <&> reverse
   where
     _rewrite :: RewriteState -> Int -> RewriteContext -> IO [Rewritten]
-    _rewrite state@(rewrittens, unique) count ctx@RewriteContext{..} = do
+    _rewrite state@(rewrittens, _) count ctx@RewriteContext{..} = do
       let cycles = _maxCycles
           must = _must
           current = count - 1
@@ -203,7 +198,7 @@ rewrite' prog rules ctx = _rewrite ([(prog, Nothing)], Set.empty) 1 ctx <&> reve
                 else pure rewrittens
             else do
               logDebug (printf "Starting rewriting cycle for all rules: %d out of %d" count cycles)
-              state'@(rewrittens', unique') <- rewrite state rules count ctx
+              state'@(rewrittens', _) <- rewrite state rules count ctx
               let (program', _) = head rewrittens'
                   (program, _) = head rewrittens
               if program' == program

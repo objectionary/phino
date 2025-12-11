@@ -3,7 +3,7 @@
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# OPTIONS_GHC -Wno-partial-fields -Wno-name-shadowing -Wno-unused-imports -Wno-compat-unqualified-imports -Wno-dodgy-imports -Wno-incomplete-patterns -Wno-unused-local-binds -Wno-unused-matches #-}
+{-# OPTIONS_GHC -Wno-partial-fields -Wno-name-shadowing -Wno-incomplete-patterns #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
@@ -13,22 +13,19 @@ module CLI (runCLI) where
 import AST
 import qualified Canonizer as C
 import Condition (parseConditionThrows)
-import Control.Exception (Exception (displayException), SomeException, handle, throw, throwIO)
-import Control.Exception.Base
+import Control.Exception.Base (Exception (displayException), SomeException, catch, fromException, handle, throwIO)
 import Control.Monad (forM_, unless, when, (>=>))
 import Data.Char (toLower, toUpper)
 import Data.Foldable (for_)
-import qualified Data.Foldable
 import Data.Functor ((<&>))
 import Data.List (intercalate)
 import Data.Maybe (fromJust, isJust, isNothing)
 import Data.Version (showVersion)
 import Dataize (DataizeContext (DataizeContext), dataize)
 import Deps (SaveStepFunc, saveStep)
-import Encoding (Encoding (ASCII, UNICODE))
+import Encoding (Encoding (UNICODE))
 import qualified Filter as F
 import Functions (buildTerm)
-import qualified Functions
 import LaTeX (LatexContext (LatexContext), explainRules, programToLaTeX, rewrittensToLatex)
 import Lining (LineFormat (MULTILINE, SINGLELINE))
 import Logger
@@ -40,7 +37,7 @@ import Options.Applicative
 import Parser (parseExpressionThrows, parseProgramThrows)
 import Paths_phino (version)
 import qualified Printer as P
-import Rewriter (RewriteContext (RewriteContext), Rewritten (..), rewrite')
+import Rewriter (RewriteContext (RewriteContext), Rewritten, rewrite')
 import Rule (RuleContext (RuleContext), matchProgramWithRule)
 import Sugar
 import System.Exit (ExitCode (..), exitFailure)
@@ -557,7 +554,6 @@ runCLI args = handle handler $ do
     CmdExplain OptsExplain{..} -> do
       validateOpts
       rules' <- getRules normalize shuffle rules
-      let latex = explainRules rules'
       output targetFile (explainRules rules')
       where
         validateOpts :: IO ()
@@ -616,7 +612,7 @@ expressionsToFilter opt = traverse (parseExpressionThrows >=> asFilter)
       where
         asFilter' :: Expression -> IO Expression
         asFilter' exp@(ExDispatch ExGlobal _) = pure exp
-        asFilter' exp@(ExDispatch expr attr) = asFilter' expr >> pure exp
+        asFilter' exp@(ExDispatch ex _) = asFilter' ex >> pure exp
         asFilter' _ =
           invalidCLIArguments
             ( printf

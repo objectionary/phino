@@ -1,7 +1,7 @@
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# OPTIONS_GHC -Wno-unused-imports -Wno-partial-fields -Wno-unused-matches -Wno-name-shadowing -Wno-incomplete-uni-patterns -Wno-incomplete-patterns #-}
+{-# OPTIONS_GHC -Wno-partial-fields -Wno-name-shadowing -Wno-incomplete-uni-patterns -Wno-incomplete-patterns #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
@@ -11,7 +11,6 @@ module Dataize (morph, dataize, dataize', DataizeContext (..)) where
 import AST
 import Builder (contextualize)
 import Control.Exception (throwIO)
-import Data.IntMap (restrictKeys)
 import Data.List (partition)
 import Deps (BuildTermFunc, SaveStepFunc)
 import Misc
@@ -19,7 +18,6 @@ import Must (Must (..))
 import Rewriter (RewriteContext (RewriteContext), Rewritten, rewrite')
 import Rule (RuleContext (RuleContext), isNF)
 import Text.Printf (printf)
-import XMIR (XmirContext (XmirContext))
 import Yaml (normalizationRules)
 
 type Dataized = (Maybe Bytes, [Rewritten])
@@ -133,7 +131,7 @@ withTail _ _ = pure Nothing
 --         M(e) -> ⊥                              otherwise
 morph :: Morphed -> DataizeContext -> IO Morphed
 morph (ExTermination, seq) _ = pure (ExTermination, leadsTo seq "Mprim" ExTermination) -- PRIM
-morph (form@(ExFormation bds), seq) ctx = do
+morph (form@(ExFormation _), seq) ctx = do
   resolved <- withTail form ctx
   case resolved of
     Just (expr, rule) -> morph (expr, leadsTo seq rule expr) ctx -- LAMBDA or PHI

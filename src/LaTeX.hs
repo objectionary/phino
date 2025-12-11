@@ -1,6 +1,6 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# OPTIONS_GHC -Wno-unused-imports -Wno-name-shadowing -Wno-unused-matches -Wno-dodgy-imports -Wno-incomplete-patterns #-}
+{-# OPTIONS_GHC -Wno-name-shadowing -Wno-incomplete-patterns #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
@@ -20,13 +20,12 @@ import CST
 import Data.List (intercalate, nub)
 import Data.Maybe (fromMaybe)
 import Encoding (Encoding (ASCII), withEncoding)
-import Lining (LineFormat (MULTILINE, SINGLELINE), withLineFormat)
+import Lining (LineFormat (MULTILINE), withLineFormat)
 import Matcher
 import Misc
-import Printer (printProgram')
 import Render (Render (render))
-import Replacer (ReplaceContext (ReplaceCtx), replaceProgram)
-import Rewriter (Rewritten (..))
+import Replacer (replaceProgram)
+import Rewriter (Rewritten)
 import Sugar (SugarType (SWEET), withSugarType)
 import Text.Printf (printf)
 import qualified Yaml as Y
@@ -83,7 +82,7 @@ meetInPrograms prefix = meetInPrograms' 1
   where
     meetInPrograms' :: Int -> [Program] -> [Program]
     meetInPrograms' _ [prog] = [prog]
-    meetInPrograms' idx progs@(first : rest) =
+    meetInPrograms' idx (first : rest) =
       let met = map (meetInProgram first) rest
           unique = nub (concat met)
           (frequent, _) =

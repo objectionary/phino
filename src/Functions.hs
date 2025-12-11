@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# OPTIONS_GHC -Wno-unused-imports -Wno-name-shadowing -Wno-incomplete-patterns -Wno-incomplete-uni-patterns -Wno-unused-matches #-}
+{-# OPTIONS_GHC -Wno-name-shadowing -Wno-incomplete-patterns -Wno-incomplete-uni-patterns #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
@@ -9,7 +9,7 @@ module Functions (buildTerm) where
 import AST
 import Builder
 import Control.Exception (throwIO)
-import Control.Monad (replicateM, when)
+import Control.Monad (when)
 import qualified Data.ByteString.Char8 as B
 import Data.Functor
 import qualified Data.Set as Set
@@ -240,7 +240,7 @@ _join args subst = do
                    in new : join' bds attrs
             else bd : join' bds (Set.insert attr attrs)
     updated :: Attribute -> Set.Set Attribute -> Attribute
-    updated attr attrs =
+    updated _ attrs =
       let (TeAttribute attr') = unsafePerformIO (_randomTau (map Y.ArgAttribute (Set.toList attrs)) subst)
        in attr'
 
