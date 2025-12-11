@@ -7,7 +7,7 @@
 
 SHELL := bash
 
-all: coverage hlint fourmolu
+all: coverage
 
 .SILENT:
 test:

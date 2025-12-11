@@ -451,6 +451,19 @@ spec = do
               ]
           ]
 
+    it "should not print \\phiMeet{} twice" $
+      withStdin "{[[ ex -> [[ x -> [[ y -> ?, k -> [[ t -> 42]]  ]]( y -> [[ t -> 42 ]]) ]].i ]]}" $
+        testCLISucceeded
+          ["rewrite", "--normalize", "--sequence", "--flat", "--compress", "--output=latex", "--sweet"]
+          [ unlines
+              [ "\\begin{phiquation}"
+              , "\\Big\\{[[ |ex| -> [[ |x| -> [[ |y| -> ?, |k| -> \\phiMeet{1}{[[ |t| -> 42 ]]} ]]( |y| -> \\phiAgain{1} ) ]].|i| ]]\\Big\\} \\leadsto_{\\nameref{r:copy}}"
+              , "  \\leadsto \\Big\\{[[ |ex| -> [[ |x| -> [[ |y| -> \\phiAgain{1}, |k| -> \\phiAgain{1} ]] ]].|i| ]]\\Big\\} \\leadsto_{\\nameref{r:stop}}"
+              , "  \\leadsto \\Big\\{[[ |ex| -> T ]]\\Big\\}."
+              , "\\end{phiquation}"
+              ]
+          ]
+
     it "prints input as listing in XMIR" $
       withStdin "{[[ app -> [[]] ]]}" $
         testCLISucceeded
