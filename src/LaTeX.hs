@@ -99,14 +99,17 @@ meetInPrograms prefix = meetInPrograms' 1
           next = first : meetInPrograms' idx rest
        in case frequent of
             Just expr ->
-              let met' = map (filter (== expr)) met
-                  substs = matchProgram expr first
-                  prog = replaceProgram (first, map (const expr) substs, map (const (ExPhiMeet prefix idx)) substs)
-                  rest' = zipWith (\prgm exprs -> replaceProgram (prgm, exprs, map (const (ExPhiAgain prefix idx)) exprs)) rest met'
-                  found = filter (not . null) met'
-               in if length met' > 1 && toDouble (length found) / toDouble (length met') >= 0.5
-                    then prog : meetInPrograms' (idx + 1) rest'
-                    else next
+              case matchProgram expr first of
+                (_ : substs) ->
+                  let met' = map (filter (== expr)) met
+                      prog = replaceProgram (first, [expr], [ExPhiMeet prefix idx])
+                      prog' = replaceProgram (prog, map (const expr) substs, map (const (ExPhiAgain prefix idx)) substs)
+                      rest' = zipWith (\prgm exprs -> replaceProgram (prgm, exprs, map (const (ExPhiAgain prefix idx)) exprs)) rest met'
+                      found = filter (not . null) met'
+                   in if length met' > 1 && toDouble (length found) / toDouble (length met') >= 0.5
+                        then prog' : meetInPrograms' (idx + 1) rest'
+                        else next
+                [] -> next
             _ -> next
 
 renderToLatex :: Program -> LatexContext -> String

@@ -502,13 +502,13 @@ runCLI args = handle handler $ do
           (True, _, Just file) -> do
             logDebug (printf "The option '--in-place' is specified, writing back to '%s'..." file)
             writeFile file prog
-            logInfo (printf "The file '%s' was modified in-place" file)
+            logDebug (printf "The file '%s' was modified in-place" file)
           (True, _, Nothing) ->
             invalidCLIArguments "The option --in-place requires an input file"
           (False, Just file, _) -> do
             logDebug (printf "The option '--target' is specified, printing to '%s'..." file)
             writeFile file prog
-            logInfo (printf "The command result was saved in '%s'" file)
+            logDebug (printf "The command result was saved in '%s'" file)
           (False, Nothing, _) -> do
             logDebug "The option '--target' is not specified, printing to console..."
             putStrLn prog
@@ -584,13 +584,13 @@ runCLI args = handle handler $ do
       input <- readInput inputFile
       prog <- parseProgram input PHI
       if isNothing pattern
-        then logInfo "The --pattern is not provided, no substitutions are built"
+        then logDebug "The --pattern is not provided, no substitutions are built"
         else do
           ptn <- parseExpressionThrows (fromJust pattern)
           condition <- traverse parseConditionThrows when'
           substs <- matchProgramWithRule prog (rule ptn condition) (RuleContext buildTerm)
           if null substs
-            then logInfo "Provided pattern was not matched, no substitutions are built"
+            then logDebug "Provided pattern was not matched, no substitutions are built"
             else putStrLn (P.printSubsts' substs (sugarType, UNICODE, flat))
       where
         rule :: Expression -> Maybe Y.Condition -> Y.Rule
@@ -711,4 +711,4 @@ output target content = case target of
   Just file -> do
     logDebug (printf "The option '--target' is specified, printing to '%s'..." file)
     writeFile file content
-    logInfo (printf "The command result was saved in '%s'" file)
+    logDebug (printf "The command result was saved in '%s'" file)
