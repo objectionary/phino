@@ -2,107 +2,108 @@
 </span><span id="line-2"></span><span class="hs-pragma">{-# LANGUAGE LambdaCase #-}</span><span>
 </span><span id="line-3"></span><span class="hs-pragma">{-# LANGUAGE OverloadedStrings #-}</span><span>
 </span><span id="line-4"></span><span class="hs-pragma">{-# LANGUAGE TemplateHaskell #-}</span><span>
-</span><span id="line-5"></span><span>
-</span><span id="line-6"></span><span class="hs-comment">-- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com</span><span>
-</span><span id="line-7"></span><span class="hs-comment">-- SPDX-License-Identifier: MIT</span><span>
-</span><span id="line-8"></span><span>
-</span><span id="line-9"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Yaml</span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-10"></span><span>
-</span><span id="line-11"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="AST.html"><span class="hs-identifier">AST</span></a></span><span>
-</span><span id="line-12"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Applicative</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">asum</span></span><span class="hs-special">)</span><span>
-</span><span id="line-13"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.2.3.0-73b19e72/share/doc/html/src/Data.Aeson.html"><span class="hs-identifier">Data.Aeson</span></a></span><span>
-</span><span id="line-14"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><span class="hs-identifier">Data.ByteString</span></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">BS</span></span><span>
-</span><span id="line-15"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/fl-mbd-0.0.16.0-fd6a57ed/share/doc/html/src/Data.FileEmbed.html"><span class="hs-identifier">Data.FileEmbed</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/fl-mbd-0.0.16.0-fd6a57ed/share/doc/html/src/Data.FileEmbed.html#embedDir"><span class="hs-identifier">embedDir</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-16"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Text</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">unpack</span></span><span class="hs-special">)</span><span>
-</span><span id="line-17"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/yml-0.11.11.2-9ff661e9/share/doc/html/src/Data.Yaml.html"><span class="hs-identifier">Data.Yaml</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.2.3.0-73b19e72/share/doc/html/src/Data.Aeson.Types.Internal.html#Parser"><span class="hs-identifier">Parser</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-18"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/yml-0.11.11.2-9ff661e9/share/doc/html/src/Data.Yaml.html"><span class="hs-identifier">Data.Yaml</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><a href="Yaml.html"><span class="hs-identifier">Yaml</span></a></span><span>
-</span><span id="line-19"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">GHC.Generics</span></span><span>
-</span><span id="line-20"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Misc.html"><span class="hs-identifier">Misc</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Misc.html#allPathsIn"><span class="hs-identifier">allPathsIn</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Misc.html#validateYamlObject"><span class="hs-identifier">validateYamlObject</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-21"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Parser.html"><span class="hs-identifier">Parser</span></a></span><span>
-</span><span id="line-22"></span><span>
-</span><span id="line-23"></span><span id="local-6989586621679216920"><span class="annot"><a href="Yaml.html#parseJSON%27"><span class="hs-identifier hs-type">parseJSON'</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Either</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="annot"><a href="#local-6989586621679216920"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.2.3.0-73b19e72/share/doc/html/src/Data.Aeson.Types.Internal.html#Value"><span class="hs-identifier hs-type">Value</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.2.3.0-73b19e72/share/doc/html/src/Data.Aeson.Types.Internal.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679216920"><span class="hs-identifier hs-type">a</span></a></span></span><span>
-</span><span id="line-24"></span><span id="parseJSON%27"><span class="annot"><span class="annottext">parseJSON' :: forall a.
+</span><span id="line-5"></span><span class="hs-pragma">{-# OPTIONS_GHC -Wno-orphans #-}</span><span>
+</span><span id="line-6"></span><span>
+</span><span id="line-7"></span><span class="hs-comment">-- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com</span><span>
+</span><span id="line-8"></span><span class="hs-comment">-- SPDX-License-Identifier: MIT</span><span>
+</span><span id="line-9"></span><span>
+</span><span id="line-10"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Yaml</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-11"></span><span>
+</span><span id="line-12"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="AST.html"><span class="hs-identifier">AST</span></a></span><span>
+</span><span id="line-13"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Applicative</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">asum</span></span><span class="hs-special">)</span><span>
+</span><span id="line-14"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.2.3.0-73b19e72/share/doc/html/src/Data.Aeson.html"><span class="hs-identifier">Data.Aeson</span></a></span><span>
+</span><span id="line-15"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><span class="hs-identifier">Data.ByteString</span></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">BS</span></span><span>
+</span><span id="line-16"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/fl-mbd-0.0.16.0-fd6a57ed/share/doc/html/src/Data.FileEmbed.html"><span class="hs-identifier">Data.FileEmbed</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/fl-mbd-0.0.16.0-fd6a57ed/share/doc/html/src/Data.FileEmbed.html#embedDir"><span class="hs-identifier">embedDir</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-17"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Text</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">unpack</span></span><span class="hs-special">)</span><span>
+</span><span id="line-18"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/yml-0.11.11.2-9ff661e9/share/doc/html/src/Data.Yaml.html"><span class="hs-identifier">Data.Yaml</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.2.3.0-73b19e72/share/doc/html/src/Data.Aeson.Types.Internal.html#Parser"><span class="hs-identifier">Parser</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-19"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/yml-0.11.11.2-9ff661e9/share/doc/html/src/Data.Yaml.html"><span class="hs-identifier">Data.Yaml</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><a href="Yaml.html"><span class="hs-identifier">Yaml</span></a></span><span>
+</span><span id="line-20"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">GHC.Generics</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">Generic</span></span><span class="hs-special">)</span><span>
+</span><span id="line-21"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Misc.html"><span class="hs-identifier">Misc</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Misc.html#validateYamlObject"><span class="hs-identifier">validateYamlObject</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-22"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Parser.html"><span class="hs-identifier">Parser</span></a></span><span>
+</span><span id="line-23"></span><span>
+</span><span id="line-24"></span><span id="local-6989586621679217297"><span class="annot"><a href="Yaml.html#parseJSON%27"><span class="hs-identifier hs-type">parseJSON'</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Either</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="annot"><a href="#local-6989586621679217297"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.2.3.0-73b19e72/share/doc/html/src/Data.Aeson.Types.Internal.html#Value"><span class="hs-identifier hs-type">Value</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.2.3.0-73b19e72/share/doc/html/src/Data.Aeson.Types.Internal.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679217297"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-25"></span><span id="parseJSON%27"><span class="annot"><span class="annottext">parseJSON' :: forall a.
 [Char] -&gt; ([Char] -&gt; Either [Char] a) -&gt; Value -&gt; Parser a
-</span><a href="Yaml.html#parseJSON%27"><span class="hs-identifier hs-var hs-var">parseJSON'</span></a></span></span><span> </span><span id="local-6989586621679217099"><span class="annot"><span class="annottext">[Char]
-</span><a href="#local-6989586621679217099"><span class="hs-identifier hs-var">name</span></a></span></span><span> </span><span id="local-6989586621679217100"><span class="annot"><span class="annottext">[Char] -&gt; Either [Char] a
-</span><a href="#local-6989586621679217100"><span class="hs-identifier hs-var">func</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
-</span><span id="line-25"></span><span>  </span><span class="annot"><span class="annottext">[Char] -&gt; (Text -&gt; Parser a) -&gt; Value -&gt; Parser a
+</span><a href="Yaml.html#parseJSON%27"><span class="hs-identifier hs-var hs-var">parseJSON'</span></a></span></span><span> </span><span id="local-6989586621679217475"><span class="annot"><span class="annottext">[Char]
+</span><a href="#local-6989586621679217475"><span class="hs-identifier hs-var">nm</span></a></span></span><span> </span><span id="local-6989586621679217476"><span class="annot"><span class="annottext">[Char] -&gt; Either [Char] a
+</span><a href="#local-6989586621679217476"><span class="hs-identifier hs-var">func</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-26"></span><span>  </span><span class="annot"><span class="annottext">[Char] -&gt; (Text -&gt; Parser a) -&gt; Value -&gt; Parser a
 forall a. [Char] -&gt; (Text -&gt; Parser a) -&gt; Value -&gt; Parser a
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.2.3.0-73b19e72/share/doc/html/src/Data.Aeson.Types.FromJSON.html#withText"><span class="hs-identifier hs-var">withText</span></a></span><span>
-</span><span id="line-26"></span><span>    </span><span class="annot"><span class="annottext">[Char]
-</span><a href="#local-6989586621679217099"><span class="hs-identifier hs-var">name</span></a></span><span>
-</span><span id="line-27"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679217102"><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621679217102"><span class="hs-identifier hs-var">txt</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; Either [Char] a
-</span><a href="#local-6989586621679217100"><span class="hs-identifier hs-var">func</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text -&gt; [Char]
+</span><span id="line-27"></span><span>    </span><span class="annot"><span class="annottext">[Char]
+</span><a href="#local-6989586621679217475"><span class="hs-identifier hs-var">nm</span></a></span><span>
+</span><span id="line-28"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679217478"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679217478"><span class="hs-identifier hs-var">txt</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; Either [Char] a
+</span><a href="#local-6989586621679217476"><span class="hs-identifier hs-var">func</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text -&gt; [Char]
 </span><span class="hs-identifier hs-var">unpack</span></span><span> </span><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621679217102"><span class="hs-identifier hs-var">txt</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">of</span><span>
-</span><span id="line-28"></span><span>        </span><span class="annot"><span class="hs-identifier hs-type">Left</span></span><span> </span><span id="local-6989586621679217103"><span class="annot"><span class="annottext">[Char]
-</span><a href="#local-6989586621679217103"><span class="hs-identifier hs-var">err</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; Parser a
+</span><a href="#local-6989586621679217478"><span class="hs-identifier hs-var">txt</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-29"></span><span>        </span><span class="annot"><span class="hs-identifier hs-type">Left</span></span><span> </span><span id="local-6989586621679217479"><span class="annot"><span class="annottext">[Char]
+</span><a href="#local-6989586621679217479"><span class="hs-identifier hs-var">err</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; Parser a
 forall a. [Char] -&gt; Parser a
 forall (m :: * -&gt; *) a. MonadFail m =&gt; [Char] -&gt; m a
 </span><span class="hs-identifier hs-var">fail</span></span><span> </span><span class="annot"><span class="annottext">[Char]
-</span><a href="#local-6989586621679217103"><span class="hs-identifier hs-var">err</span></a></span><span>
-</span><span id="line-29"></span><span>        </span><span class="annot"><span class="hs-identifier hs-type">Right</span></span><span> </span><span id="local-6989586621679217104"><span class="annot"><span class="annottext">a
-</span><a href="#local-6989586621679217104"><span class="hs-identifier hs-var">parsed</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">a -&gt; Parser a
+</span><a href="#local-6989586621679217479"><span class="hs-identifier hs-var">err</span></a></span><span>
+</span><span id="line-30"></span><span>        </span><span class="annot"><span class="hs-identifier hs-type">Right</span></span><span> </span><span id="local-6989586621679217480"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679217480"><span class="hs-identifier hs-var">parsed</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">a -&gt; Parser a
 forall a. a -&gt; Parser a
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">a
-</span><a href="#local-6989586621679217104"><span class="hs-identifier hs-var">parsed</span></a></span><span>
-</span><span id="line-30"></span><span>    </span><span class="hs-special">)</span><span>
-</span><span id="line-31"></span><span>
-</span><span id="line-32"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679217107"><span id="local-6989586621679217111"><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.2.3.0-73b19e72/share/doc/html/src/Data.Aeson.Types.FromJSON.html#FromJSON"><span class="hs-identifier hs-type">FromJSON</span></a></span><span> </span><span class="annot"><a href="AST.html#Attribute"><span class="hs-identifier hs-type">Attribute</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-33"></span><span>  </span><span id="local-6989586621679217125"><span class="annot"><span class="annottext">parseJSON :: Value -&gt; Parser Attribute
-</span><a href="#local-6989586621679217125"><span class="hs-identifier hs-var hs-var hs-var hs-var">parseJSON</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
-</span><span id="line-34"></span><span>    </span><span class="annot"><span class="annottext">[Char] -&gt; (Text -&gt; Parser Attribute) -&gt; Value -&gt; Parser Attribute
+</span><a href="#local-6989586621679217480"><span class="hs-identifier hs-var">parsed</span></a></span><span>
+</span><span id="line-31"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-32"></span><span>
+</span><span id="line-33"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679217483"><span id="local-6989586621679217487"><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.2.3.0-73b19e72/share/doc/html/src/Data.Aeson.Types.FromJSON.html#FromJSON"><span class="hs-identifier hs-type">FromJSON</span></a></span><span> </span><span class="annot"><a href="AST.html#Attribute"><span class="hs-identifier hs-type">Attribute</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-34"></span><span>  </span><span id="local-6989586621679217501"><span class="annot"><span class="annottext">parseJSON :: Value -&gt; Parser Attribute
+</span><a href="#local-6989586621679217501"><span class="hs-identifier hs-var hs-var hs-var hs-var">parseJSON</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-35"></span><span>    </span><span class="annot"><span class="annottext">[Char] -&gt; (Text -&gt; Parser Attribute) -&gt; Value -&gt; Parser Attribute
 forall a. [Char] -&gt; (Text -&gt; Parser a) -&gt; Value -&gt; Parser a
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.2.3.0-73b19e72/share/doc/html/src/Data.Aeson.Types.FromJSON.html#withText"><span class="hs-identifier hs-var">withText</span></a></span><span>
-</span><span id="line-35"></span><span>      </span><span class="annot"><span class="annottext">[Char]
+</span><span id="line-36"></span><span>      </span><span class="annot"><span class="annottext">[Char]
 </span><span class="hs-string">&quot;Attribute&quot;</span></span><span>
-</span><span id="line-36"></span><span>      </span><span class="hs-special">(</span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679217127"><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621679217127"><span class="hs-identifier hs-var">txt</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Text -&gt; [Char]
+</span><span id="line-37"></span><span>      </span><span class="hs-special">(</span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679217503"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679217503"><span class="hs-identifier hs-var">txt</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Text -&gt; [Char]
 </span><span class="hs-identifier hs-var">unpack</span></span><span> </span><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621679217127"><span class="hs-identifier hs-var">txt</span></a></span><span> </span><span class="hs-keyword">of</span><span>
-</span><span id="line-37"></span><span>          </span><span class="annot"><span class="annottext">[Char]
+</span><a href="#local-6989586621679217503"><span class="hs-identifier hs-var">txt</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-38"></span><span>          </span><span class="annot"><span class="annottext">[Char]
 </span><span class="hs-string">&quot;&#955;&quot;</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Attribute -&gt; Parser Attribute
 forall a. a -&gt; Parser a
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">Attribute
 </span><a href="AST.html#AtLambda"><span class="hs-identifier hs-var">AtLambda</span></a></span><span>
-</span><span id="line-38"></span><span>          </span><span class="annot"><span class="annottext">[Char]
+</span><span id="line-39"></span><span>          </span><span class="annot"><span class="annottext">[Char]
 </span><span class="hs-string">&quot;&#916;&quot;</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Attribute -&gt; Parser Attribute
 forall a. a -&gt; Parser a
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">Attribute
 </span><a href="AST.html#AtDelta"><span class="hs-identifier hs-var">AtDelta</span></a></span><span>
-</span><span id="line-39"></span><span>          </span><span id="local-6989586621679217130"><span class="annot"><span class="annottext">[Char]
-</span><a href="#local-6989586621679217130"><span class="hs-identifier hs-var">other</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; Either [Char] Attribute
+</span><span id="line-40"></span><span>          </span><span id="local-6989586621679217506"><span class="annot"><span class="annottext">[Char]
+</span><a href="#local-6989586621679217506"><span class="hs-identifier hs-var">other</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; Either [Char] Attribute
 </span><a href="Parser.html#parseAttribute"><span class="hs-identifier hs-var">parseAttribute</span></a></span><span> </span><span class="annot"><span class="annottext">[Char]
-</span><a href="#local-6989586621679217130"><span class="hs-identifier hs-var">other</span></a></span><span> </span><span class="hs-keyword">of</span><span>
-</span><span id="line-40"></span><span>            </span><span class="annot"><span class="hs-identifier hs-type">Left</span></span><span> </span><span id="local-6989586621679217132"><span class="annot"><span class="annottext">[Char]
-</span><a href="#local-6989586621679217132"><span class="hs-identifier hs-var">err</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; Parser Attribute
+</span><a href="#local-6989586621679217506"><span class="hs-identifier hs-var">other</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-41"></span><span>            </span><span class="annot"><span class="hs-identifier hs-type">Left</span></span><span> </span><span id="local-6989586621679217508"><span class="annot"><span class="annottext">[Char]
+</span><a href="#local-6989586621679217508"><span class="hs-identifier hs-var">err</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; Parser Attribute
 forall a. [Char] -&gt; Parser a
 forall (m :: * -&gt; *) a. MonadFail m =&gt; [Char] -&gt; m a
 </span><span class="hs-identifier hs-var">fail</span></span><span> </span><span class="annot"><span class="annottext">[Char]
-</span><a href="#local-6989586621679217132"><span class="hs-identifier hs-var">err</span></a></span><span>
-</span><span id="line-41"></span><span>            </span><span class="annot"><span class="hs-identifier hs-type">Right</span></span><span> </span><span id="local-6989586621679217133"><span class="annot"><span class="annottext">Attribute
-</span><a href="#local-6989586621679217133"><span class="hs-identifier hs-var">attr</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Attribute -&gt; Parser Attribute
+</span><a href="#local-6989586621679217508"><span class="hs-identifier hs-var">err</span></a></span><span>
+</span><span id="line-42"></span><span>            </span><span class="annot"><span class="hs-identifier hs-type">Right</span></span><span> </span><span id="local-6989586621679217509"><span class="annot"><span class="annottext">Attribute
+</span><a href="#local-6989586621679217509"><span class="hs-identifier hs-var">attr</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Attribute -&gt; Parser Attribute
 forall a. a -&gt; Parser a
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">Attribute
-</span><a href="#local-6989586621679217133"><span class="hs-identifier hs-var">attr</span></a></span><span>
-</span><span id="line-42"></span><span>      </span><span class="hs-special">)</span><span>
-</span><span id="line-43"></span><span>
-</span><span id="line-44"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679217136"><span id="local-6989586621679217140"><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.2.3.0-73b19e72/share/doc/html/src/Data.Aeson.Types.FromJSON.html#FromJSON"><span class="hs-identifier hs-type">FromJSON</span></a></span><span> </span><span class="annot"><a href="AST.html#Bytes"><span class="hs-identifier hs-type">Bytes</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-45"></span><span>  </span><span id="local-6989586621679217142"><span class="annot"><span class="annottext">parseJSON :: Value -&gt; Parser Bytes
+</span><a href="#local-6989586621679217509"><span class="hs-identifier hs-var">attr</span></a></span><span>
+</span><span id="line-43"></span><span>      </span><span class="hs-special">)</span><span>
+</span><span id="line-44"></span><span>
+</span><span id="line-45"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679217512"><span id="local-6989586621679217516"><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.2.3.0-73b19e72/share/doc/html/src/Data.Aeson.Types.FromJSON.html#FromJSON"><span class="hs-identifier hs-type">FromJSON</span></a></span><span> </span><span class="annot"><a href="AST.html#Bytes"><span class="hs-identifier hs-type">Bytes</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-46"></span><span>  </span><span id="local-6989586621679217518"><span class="annot"><span class="annottext">parseJSON :: Value -&gt; Parser Bytes
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.2.3.0-73b19e72/share/doc/html/src/Data.Aeson.Types.FromJSON.html#parseJSON"><span class="hs-identifier hs-var hs-var hs-var hs-var">parseJSON</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; ([Char] -&gt; Either [Char] Bytes) -&gt; Value -&gt; Parser Bytes
 forall a.
 [Char] -&gt; ([Char] -&gt; Either [Char] a) -&gt; Value -&gt; Parser a
 </span><a href="Yaml.html#parseJSON%27"><span class="hs-identifier hs-var">parseJSON'</span></a></span><span> </span><span class="annot"><span class="annottext">[Char]
 </span><span class="hs-string">&quot;Bytes&quot;</span></span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; Either [Char] Bytes
 </span><a href="Parser.html#parseBytes"><span class="hs-identifier hs-var">parseBytes</span></a></span><span>
-</span><span id="line-46"></span><span>
-</span><span id="line-47"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679217146"><span id="local-6989586621679217150"><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.2.3.0-73b19e72/share/doc/html/src/Data.Aeson.Types.FromJSON.html#FromJSON"><span class="hs-identifier hs-type">FromJSON</span></a></span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-48"></span><span>  </span><span id="local-6989586621679217152"><span class="annot"><span class="annottext">parseJSON :: Value -&gt; Parser Expression
+</span><span id="line-47"></span><span>
+</span><span id="line-48"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679217522"><span id="local-6989586621679217526"><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.2.3.0-73b19e72/share/doc/html/src/Data.Aeson.Types.FromJSON.html#FromJSON"><span class="hs-identifier hs-type">FromJSON</span></a></span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-49"></span><span>  </span><span id="local-6989586621679217528"><span class="annot"><span class="annottext">parseJSON :: Value -&gt; Parser Expression
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.2.3.0-73b19e72/share/doc/html/src/Data.Aeson.Types.FromJSON.html#parseJSON"><span class="hs-identifier hs-var hs-var hs-var hs-var">parseJSON</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Char]
 -&gt; ([Char] -&gt; Either [Char] Expression)
 -&gt; Value
@@ -112,9 +113,9 @@ forall a.
 </span><a href="Yaml.html#parseJSON%27"><span class="hs-identifier hs-var">parseJSON'</span></a></span><span> </span><span class="annot"><span class="annottext">[Char]
 </span><span class="hs-string">&quot;Expression&quot;</span></span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; Either [Char] Expression
 </span><a href="Parser.html#parseExpression"><span class="hs-identifier hs-var">parseExpression</span></a></span><span>
-</span><span id="line-49"></span><span>
-</span><span id="line-50"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679217156"><span id="local-6989586621679217160"><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.2.3.0-73b19e72/share/doc/html/src/Data.Aeson.Types.FromJSON.html#FromJSON"><span class="hs-identifier hs-type">FromJSON</span></a></span><span> </span><span class="annot"><a href="AST.html#Binding"><span class="hs-identifier hs-type">Binding</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-51"></span><span>  </span><span id="local-6989586621679217162"><span class="annot"><span class="annottext">parseJSON :: Value -&gt; Parser Binding
+</span><span id="line-50"></span><span>
+</span><span id="line-51"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679217532"><span id="local-6989586621679217536"><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.2.3.0-73b19e72/share/doc/html/src/Data.Aeson.Types.FromJSON.html#FromJSON"><span class="hs-identifier hs-type">FromJSON</span></a></span><span> </span><span class="annot"><a href="AST.html#Binding"><span class="hs-identifier hs-type">Binding</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-52"></span><span>  </span><span id="local-6989586621679217538"><span class="annot"><span class="annottext">parseJSON :: Value -&gt; Parser Binding
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.2.3.0-73b19e72/share/doc/html/src/Data.Aeson.Types.FromJSON.html#parseJSON"><span class="hs-identifier hs-var hs-var hs-var hs-var">parseJSON</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Char]
 -&gt; ([Char] -&gt; Either [Char] Binding) -&gt; Value -&gt; Parser Binding
 forall a.
@@ -122,46 +123,44 @@ forall a.
 </span><a href="Yaml.html#parseJSON%27"><span class="hs-identifier hs-var">parseJSON'</span></a></span><span> </span><span class="annot"><span class="annottext">[Char]
 </span><span class="hs-string">&quot;Binding&quot;</span></span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; Either [Char] Binding
 </span><a href="Parser.html#parseBinding"><span class="hs-identifier hs-var">parseBinding</span></a></span><span>
-</span><span id="line-52"></span><span>
-</span><span id="line-53"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679217166"><span id="local-6989586621679217170"><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.2.3.0-73b19e72/share/doc/html/src/Data.Aeson.Types.FromJSON.html#FromJSON"><span class="hs-identifier hs-type">FromJSON</span></a></span><span> </span><span class="annot"><a href="Yaml.html#Number"><span class="hs-identifier hs-type">Number</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-54"></span><span>  </span><span id="local-6989586621679217194"><span class="annot"><span class="annottext">parseJSON :: Value -&gt; Parser Number
-</span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.2.3.0-73b19e72/share/doc/html/src/Data.Aeson.Types.FromJSON.html#parseJSON"><span class="hs-identifier hs-var hs-var hs-var hs-var">parseJSON</span></a></span></span><span> </span><span id="local-6989586621679217195"><span class="annot"><span class="annottext">Value
-</span><a href="#local-6989586621679217195"><span class="hs-identifier hs-var">v</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Value
-</span><a href="#local-6989586621679217195"><span class="hs-identifier hs-var">v</span></a></span><span> </span><span class="hs-keyword">of</span><span>
-</span><span id="line-55"></span><span>    </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.2.3.0-73b19e72/share/doc/html/src/Data.Aeson.Types.Internal.html#Object"><span class="hs-identifier hs-type">Object</span></a></span><span> </span><span id="local-6989586621679217197"><span class="annot"><span class="annottext">Object
-</span><a href="#local-6989586621679217197"><span class="hs-identifier hs-var">o</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-56"></span><span>      </span><span class="annot"><span class="annottext">Object -&gt; [[Char]] -&gt; Parser ()
-forall (a :: * -&gt; *).
-(Applicative a, MonadFail a) =&gt;
-Object -&gt; [[Char]] -&gt; a ()
+</span><span id="line-53"></span><span>
+</span><span id="line-54"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679217542"><span id="local-6989586621679217546"><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.2.3.0-73b19e72/share/doc/html/src/Data.Aeson.Types.FromJSON.html#FromJSON"><span class="hs-identifier hs-type">FromJSON</span></a></span><span> </span><span class="annot"><a href="Yaml.html#Number"><span class="hs-identifier hs-type">Number</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-55"></span><span>  </span><span id="local-6989586621679217569"><span class="annot"><span class="annottext">parseJSON :: Value -&gt; Parser Number
+</span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.2.3.0-73b19e72/share/doc/html/src/Data.Aeson.Types.FromJSON.html#parseJSON"><span class="hs-identifier hs-var hs-var hs-var hs-var">parseJSON</span></a></span></span><span> </span><span id="local-6989586621679217570"><span class="annot"><span class="annottext">Value
+</span><a href="#local-6989586621679217570"><span class="hs-identifier hs-var">v</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Value
+</span><a href="#local-6989586621679217570"><span class="hs-identifier hs-var">v</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-56"></span><span>    </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.2.3.0-73b19e72/share/doc/html/src/Data.Aeson.Types.Internal.html#Object"><span class="hs-identifier hs-type">Object</span></a></span><span> </span><span id="local-6989586621679217572"><span class="annot"><span class="annottext">Object
+</span><a href="#local-6989586621679217572"><span class="hs-identifier hs-var">o</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-57"></span><span>      </span><span class="annot"><span class="annottext">Object -&gt; [[Char]] -&gt; Parser ()
+forall (a :: * -&gt; *). MonadFail a =&gt; Object -&gt; [[Char]] -&gt; a ()
 </span><a href="Misc.html#validateYamlObject"><span class="hs-identifier hs-var">validateYamlObject</span></a></span><span> </span><span class="annot"><span class="annottext">Object
-</span><a href="#local-6989586621679217197"><span class="hs-identifier hs-var">o</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">[Char]
+</span><a href="#local-6989586621679217572"><span class="hs-identifier hs-var">o</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">[Char]
 </span><span class="hs-string">&quot;ordinal&quot;</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">[Char]
 </span><span class="hs-string">&quot;length&quot;</span></span><span class="hs-special">]</span><span>
-</span><span id="line-57"></span><span>      </span><span class="annot"><span class="annottext">[Parser Number] -&gt; Parser Number
+</span><span id="line-58"></span><span>      </span><span class="annot"><span class="annottext">[Parser Number] -&gt; Parser Number
 forall (t :: * -&gt; *) (f :: * -&gt; *) a.
 (Foldable t, Alternative f) =&gt;
 t (f a) -&gt; f a
 </span><span class="hs-identifier hs-var">asum</span></span><span>
-</span><span id="line-58"></span><span>        </span><span class="hs-special">[</span><span> </span><span class="annot"><span class="annottext">Attribute -&gt; Number
+</span><span id="line-59"></span><span>        </span><span class="hs-special">[</span><span> </span><span class="annot"><span class="annottext">Attribute -&gt; Number
 </span><a href="Yaml.html#Ordinal"><span class="hs-identifier hs-var">Ordinal</span></a></span><span> </span><span class="annot"><span class="annottext">(Attribute -&gt; Number) -&gt; Parser Attribute -&gt; Parser Number
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">Object
-</span><a href="#local-6989586621679217197"><span class="hs-identifier hs-var">o</span></a></span><span> </span><span class="annot"><span class="annottext">Object -&gt; Key -&gt; Parser Attribute
+</span><a href="#local-6989586621679217572"><span class="hs-identifier hs-var">o</span></a></span><span> </span><span class="annot"><span class="annottext">Object -&gt; Key -&gt; Parser Attribute
 forall a. FromJSON a =&gt; Object -&gt; Key -&gt; Parser a
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.2.3.0-73b19e72/share/doc/html/src/Data.Aeson.Types.FromJSON.html#.%3A"><span class="hs-operator hs-var">.:</span></a></span><span> </span><span class="annot"><span class="annottext">Key
 </span><span class="hs-string">&quot;ordinal&quot;</span></span><span>
-</span><span id="line-59"></span><span>        </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Binding -&gt; Number
+</span><span id="line-60"></span><span>        </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Binding -&gt; Number
 </span><a href="Yaml.html#Length"><span class="hs-identifier hs-var">Length</span></a></span><span> </span><span class="annot"><span class="annottext">(Binding -&gt; Number) -&gt; Parser Binding -&gt; Parser Number
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">Object
-</span><a href="#local-6989586621679217197"><span class="hs-identifier hs-var">o</span></a></span><span> </span><span class="annot"><span class="annottext">Object -&gt; Key -&gt; Parser Binding
+</span><a href="#local-6989586621679217572"><span class="hs-identifier hs-var">o</span></a></span><span> </span><span class="annot"><span class="annottext">Object -&gt; Key -&gt; Parser Binding
 forall a. FromJSON a =&gt; Object -&gt; Key -&gt; Parser a
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.2.3.0-73b19e72/share/doc/html/src/Data.Aeson.Types.FromJSON.html#.%3A"><span class="hs-operator hs-var">.:</span></a></span><span> </span><span class="annot"><span class="annottext">Key
 </span><span class="hs-string">&quot;length&quot;</span></span><span>
-</span><span id="line-60"></span><span>        </span><span class="hs-special">]</span><span>
-</span><span id="line-61"></span><span>    </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.2.3.0-73b19e72/share/doc/html/src/Data.Aeson.Types.Internal.html#Number"><span class="hs-identifier hs-type">Number</span></a></span><span> </span><span id="local-6989586621679217203"><span class="annot"><span class="annottext">Scientific
-</span><a href="#local-6989586621679217203"><span class="hs-identifier hs-var">num</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Number -&gt; Parser Number
+</span><span id="line-61"></span><span>        </span><span class="hs-special">]</span><span>
+</span><span id="line-62"></span><span>    </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.2.3.0-73b19e72/share/doc/html/src/Data.Aeson.Types.Internal.html#Number"><span class="hs-identifier hs-type">Number</span></a></span><span> </span><span id="local-6989586621679217578"><span class="annot"><span class="annottext">Scientific
+</span><a href="#local-6989586621679217578"><span class="hs-identifier hs-var">num</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Number -&gt; Parser Number
 forall a. a -&gt; Parser a
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; Number
@@ -169,64 +168,62 @@ forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 forall b. Integral b =&gt; Scientific -&gt; b
 forall a b. (RealFrac a, Integral b) =&gt; a -&gt; b
 </span><span class="hs-identifier hs-var">round</span></span><span> </span><span class="annot"><span class="annottext">Scientific
-</span><a href="#local-6989586621679217203"><span class="hs-identifier hs-var">num</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
-</span><span id="line-62"></span><span>    </span><span class="annot"><span class="annottext">Value
+</span><a href="#local-6989586621679217578"><span class="hs-identifier hs-var">num</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-63"></span><span>    </span><span class="annot"><span class="annottext">Value
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
-</span><span id="line-63"></span><span>      </span><span class="annot"><span class="annottext">[Char] -&gt; Parser Number
+</span><span id="line-64"></span><span>      </span><span class="annot"><span class="annottext">[Char] -&gt; Parser Number
 forall a. [Char] -&gt; Parser a
 forall (m :: * -&gt; *) a. MonadFail m =&gt; [Char] -&gt; m a
 </span><span class="hs-identifier hs-var">fail</span></span><span> </span><span class="annot"><span class="annottext">[Char]
 </span><span class="hs-string">&quot;Expected a numerable expression (object or number)&quot;</span></span><span>
-</span><span id="line-64"></span><span>
-</span><span id="line-65"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679217208"><span id="local-6989586621679217212"><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.2.3.0-73b19e72/share/doc/html/src/Data.Aeson.Types.FromJSON.html#FromJSON"><span class="hs-identifier hs-type">FromJSON</span></a></span><span> </span><span class="annot"><a href="Yaml.html#Comparable"><span class="hs-identifier hs-type">Comparable</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-66"></span><span>  </span><span id="local-6989586621679217222"><span class="annot"><span class="annottext">parseJSON :: Value -&gt; Parser Comparable
-</span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.2.3.0-73b19e72/share/doc/html/src/Data.Aeson.Types.FromJSON.html#parseJSON"><span class="hs-identifier hs-var hs-var hs-var hs-var">parseJSON</span></a></span></span><span> </span><span id="local-6989586621679217223"><span class="annot"><span class="annottext">Value
-</span><a href="#local-6989586621679217223"><span class="hs-identifier hs-var">v</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
-</span><span id="line-67"></span><span>    </span><span class="annot"><span class="annottext">[Parser Comparable] -&gt; Parser Comparable
+</span><span id="line-65"></span><span>
+</span><span id="line-66"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679217583"><span id="local-6989586621679217587"><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.2.3.0-73b19e72/share/doc/html/src/Data.Aeson.Types.FromJSON.html#FromJSON"><span class="hs-identifier hs-type">FromJSON</span></a></span><span> </span><span class="annot"><a href="Yaml.html#Comparable"><span class="hs-identifier hs-type">Comparable</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-67"></span><span>  </span><span id="local-6989586621679217597"><span class="annot"><span class="annottext">parseJSON :: Value -&gt; Parser Comparable
+</span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.2.3.0-73b19e72/share/doc/html/src/Data.Aeson.Types.FromJSON.html#parseJSON"><span class="hs-identifier hs-var hs-var hs-var hs-var">parseJSON</span></a></span></span><span> </span><span id="local-6989586621679217598"><span class="annot"><span class="annottext">Value
+</span><a href="#local-6989586621679217598"><span class="hs-identifier hs-var">v</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-68"></span><span>    </span><span class="annot"><span class="annottext">[Parser Comparable] -&gt; Parser Comparable
 forall (t :: * -&gt; *) (f :: * -&gt; *) a.
 (Foldable t, Alternative f) =&gt;
 t (f a) -&gt; f a
 </span><span class="hs-identifier hs-var">asum</span></span><span>
-</span><span id="line-68"></span><span>      </span><span class="hs-special">[</span><span> </span><span class="annot"><span class="annottext">Attribute -&gt; Comparable
+</span><span id="line-69"></span><span>      </span><span class="hs-special">[</span><span> </span><span class="annot"><span class="annottext">Attribute -&gt; Comparable
 </span><a href="Yaml.html#CmpAttr"><span class="hs-identifier hs-var">CmpAttr</span></a></span><span> </span><span class="annot"><span class="annottext">(Attribute -&gt; Comparable) -&gt; Parser Attribute -&gt; Parser Comparable
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">Value -&gt; Parser Attribute
 forall a. FromJSON a =&gt; Value -&gt; Parser a
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.2.3.0-73b19e72/share/doc/html/src/Data.Aeson.Types.FromJSON.html#parseJSON"><span class="hs-identifier hs-var">parseJSON</span></a></span><span> </span><span class="annot"><span class="annottext">Value
-</span><a href="#local-6989586621679217223"><span class="hs-identifier hs-var">v</span></a></span><span>
-</span><span id="line-69"></span><span>      </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Number -&gt; Comparable
+</span><a href="#local-6989586621679217598"><span class="hs-identifier hs-var">v</span></a></span><span>
+</span><span id="line-70"></span><span>      </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Number -&gt; Comparable
 </span><a href="Yaml.html#CmpNum"><span class="hs-identifier hs-var">CmpNum</span></a></span><span> </span><span class="annot"><span class="annottext">(Number -&gt; Comparable) -&gt; Parser Number -&gt; Parser Comparable
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">Value -&gt; Parser Number
 forall a. FromJSON a =&gt; Value -&gt; Parser a
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.2.3.0-73b19e72/share/doc/html/src/Data.Aeson.Types.FromJSON.html#parseJSON"><span class="hs-identifier hs-var">parseJSON</span></a></span><span> </span><span class="annot"><span class="annottext">Value
-</span><a href="#local-6989586621679217223"><span class="hs-identifier hs-var">v</span></a></span><span>
-</span><span id="line-70"></span><span>      </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Expression -&gt; Comparable
+</span><a href="#local-6989586621679217598"><span class="hs-identifier hs-var">v</span></a></span><span>
+</span><span id="line-71"></span><span>      </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Expression -&gt; Comparable
 </span><a href="Yaml.html#CmpExpr"><span class="hs-identifier hs-var">CmpExpr</span></a></span><span> </span><span class="annot"><span class="annottext">(Expression -&gt; Comparable)
 -&gt; Parser Expression -&gt; Parser Comparable
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">Value -&gt; Parser Expression
 forall a. FromJSON a =&gt; Value -&gt; Parser a
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.2.3.0-73b19e72/share/doc/html/src/Data.Aeson.Types.FromJSON.html#parseJSON"><span class="hs-identifier hs-var">parseJSON</span></a></span><span> </span><span class="annot"><span class="annottext">Value
-</span><a href="#local-6989586621679217223"><span class="hs-identifier hs-var">v</span></a></span><span>
-</span><span id="line-71"></span><span>      </span><span class="hs-special">]</span><span>
-</span><span id="line-72"></span><span>
-</span><span id="line-73"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679217229"><span id="local-6989586621679217233"><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.2.3.0-73b19e72/share/doc/html/src/Data.Aeson.Types.FromJSON.html#FromJSON"><span class="hs-identifier hs-type">FromJSON</span></a></span><span> </span><span class="annot"><a href="Yaml.html#Condition"><span class="hs-identifier hs-type">Condition</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-74"></span><span>  </span><span id="local-6989586621679217297"><span class="annot"><span class="annottext">parseJSON :: Value -&gt; Parser Condition
+</span><a href="#local-6989586621679217598"><span class="hs-identifier hs-var">v</span></a></span><span>
+</span><span id="line-72"></span><span>      </span><span class="hs-special">]</span><span>
+</span><span id="line-73"></span><span>
+</span><span id="line-74"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679217604"><span id="local-6989586621679217608"><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.2.3.0-73b19e72/share/doc/html/src/Data.Aeson.Types.FromJSON.html#FromJSON"><span class="hs-identifier hs-type">FromJSON</span></a></span><span> </span><span class="annot"><a href="Yaml.html#Condition"><span class="hs-identifier hs-type">Condition</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-75"></span><span>  </span><span id="local-6989586621679217671"><span class="annot"><span class="annottext">parseJSON :: Value -&gt; Parser Condition
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.2.3.0-73b19e72/share/doc/html/src/Data.Aeson.Types.FromJSON.html#parseJSON"><span class="hs-identifier hs-var hs-var hs-var hs-var">parseJSON</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
-</span><span id="line-75"></span><span>    </span><span class="annot"><span class="annottext">[Char] -&gt; (Object -&gt; Parser Condition) -&gt; Value -&gt; Parser Condition
+</span><span id="line-76"></span><span>    </span><span class="annot"><span class="annottext">[Char] -&gt; (Object -&gt; Parser Condition) -&gt; Value -&gt; Parser Condition
 forall a. [Char] -&gt; (Object -&gt; Parser a) -&gt; Value -&gt; Parser a
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.2.3.0-73b19e72/share/doc/html/src/Data.Aeson.Types.FromJSON.html#withObject"><span class="hs-identifier hs-var">withObject</span></a></span><span>
-</span><span id="line-76"></span><span>      </span><span class="annot"><span class="annottext">[Char]
+</span><span id="line-77"></span><span>      </span><span class="annot"><span class="annottext">[Char]
 </span><span class="hs-string">&quot;Condition&quot;</span></span><span>
-</span><span id="line-77"></span><span>      </span><span class="hs-special">(</span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679217299"><span class="annot"><span class="annottext">Object
-</span><a href="#local-6989586621679217299"><span class="hs-identifier hs-var">v</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-78"></span><span>          </span><span class="annot"><span class="annottext">Object -&gt; [[Char]] -&gt; Parser ()
-forall (a :: * -&gt; *).
-(Applicative a, MonadFail a) =&gt;
-Object -&gt; [[Char]] -&gt; a ()
+</span><span id="line-78"></span><span>      </span><span class="hs-special">(</span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679217673"><span class="annot"><span class="annottext">Object
+</span><a href="#local-6989586621679217673"><span class="hs-identifier hs-var">v</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-79"></span><span>          </span><span class="annot"><span class="annottext">Object -&gt; [[Char]] -&gt; Parser ()
+forall (a :: * -&gt; *). MonadFail a =&gt; Object -&gt; [[Char]] -&gt; a ()
 </span><a href="Misc.html#validateYamlObject"><span class="hs-identifier hs-var">validateYamlObject</span></a></span><span> </span><span class="annot"><span class="annottext">Object
-</span><a href="#local-6989586621679217299"><span class="hs-identifier hs-var">v</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">[Char]
+</span><a href="#local-6989586621679217673"><span class="hs-identifier hs-var">v</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">[Char]
 </span><span class="hs-string">&quot;and&quot;</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">[Char]
 </span><span class="hs-string">&quot;or&quot;</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">[Char]
 </span><span class="hs-string">&quot;not&quot;</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">[Char]
@@ -237,269 +234,269 @@ Object -&gt; [[Char]] -&gt; a ()
 </span><span class="hs-string">&quot;in&quot;</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">[Char]
 </span><span class="hs-string">&quot;matches&quot;</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">[Char]
 </span><span class="hs-string">&quot;part-of&quot;</span></span><span class="hs-special">]</span><span>
-</span><span id="line-79"></span><span>          </span><span class="annot"><span class="annottext">[Parser Condition] -&gt; Parser Condition
+</span><span id="line-80"></span><span>          </span><span class="annot"><span class="annottext">[Parser Condition] -&gt; Parser Condition
 forall (t :: * -&gt; *) (f :: * -&gt; *) a.
 (Foldable t, Alternative f) =&gt;
 t (f a) -&gt; f a
 </span><span class="hs-identifier hs-var">asum</span></span><span>
-</span><span id="line-80"></span><span>            </span><span class="hs-special">[</span><span> </span><span class="annot"><span class="annottext">[Condition] -&gt; Condition
+</span><span id="line-81"></span><span>            </span><span class="hs-special">[</span><span> </span><span class="annot"><span class="annottext">[Condition] -&gt; Condition
 </span><a href="Yaml.html#And"><span class="hs-identifier hs-var">And</span></a></span><span> </span><span class="annot"><span class="annottext">([Condition] -&gt; Condition)
 -&gt; Parser [Condition] -&gt; Parser Condition
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">Object
-</span><a href="#local-6989586621679217299"><span class="hs-identifier hs-var">v</span></a></span><span> </span><span class="annot"><span class="annottext">Object -&gt; Key -&gt; Parser [Condition]
+</span><a href="#local-6989586621679217673"><span class="hs-identifier hs-var">v</span></a></span><span> </span><span class="annot"><span class="annottext">Object -&gt; Key -&gt; Parser [Condition]
 forall a. FromJSON a =&gt; Object -&gt; Key -&gt; Parser a
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.2.3.0-73b19e72/share/doc/html/src/Data.Aeson.Types.FromJSON.html#.%3A"><span class="hs-operator hs-var">.:</span></a></span><span> </span><span class="annot"><span class="annottext">Key
 </span><span class="hs-string">&quot;and&quot;</span></span><span>
-</span><span id="line-81"></span><span>            </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">[Condition] -&gt; Condition
+</span><span id="line-82"></span><span>            </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">[Condition] -&gt; Condition
 </span><a href="Yaml.html#Or"><span class="hs-identifier hs-var">Or</span></a></span><span> </span><span class="annot"><span class="annottext">([Condition] -&gt; Condition)
 -&gt; Parser [Condition] -&gt; Parser Condition
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">Object
-</span><a href="#local-6989586621679217299"><span class="hs-identifier hs-var">v</span></a></span><span> </span><span class="annot"><span class="annottext">Object -&gt; Key -&gt; Parser [Condition]
+</span><a href="#local-6989586621679217673"><span class="hs-identifier hs-var">v</span></a></span><span> </span><span class="annot"><span class="annottext">Object -&gt; Key -&gt; Parser [Condition]
 forall a. FromJSON a =&gt; Object -&gt; Key -&gt; Parser a
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.2.3.0-73b19e72/share/doc/html/src/Data.Aeson.Types.FromJSON.html#.%3A"><span class="hs-operator hs-var">.:</span></a></span><span> </span><span class="annot"><span class="annottext">Key
 </span><span class="hs-string">&quot;or&quot;</span></span><span>
-</span><span id="line-82"></span><span>            </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Condition -&gt; Condition
+</span><span id="line-83"></span><span>            </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Condition -&gt; Condition
 </span><a href="Yaml.html#Not"><span class="hs-identifier hs-var">Not</span></a></span><span> </span><span class="annot"><span class="annottext">(Condition -&gt; Condition) -&gt; Parser Condition -&gt; Parser Condition
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">Object
-</span><a href="#local-6989586621679217299"><span class="hs-identifier hs-var">v</span></a></span><span> </span><span class="annot"><span class="annottext">Object -&gt; Key -&gt; Parser Condition
+</span><a href="#local-6989586621679217673"><span class="hs-identifier hs-var">v</span></a></span><span> </span><span class="annot"><span class="annottext">Object -&gt; Key -&gt; Parser Condition
 forall a. FromJSON a =&gt; Object -&gt; Key -&gt; Parser a
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.2.3.0-73b19e72/share/doc/html/src/Data.Aeson.Types.FromJSON.html#.%3A"><span class="hs-operator hs-var">.:</span></a></span><span> </span><span class="annot"><span class="annottext">Key
 </span><span class="hs-string">&quot;not&quot;</span></span><span>
-</span><span id="line-83"></span><span>            </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Attribute -&gt; Condition
+</span><span id="line-84"></span><span>            </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Attribute -&gt; Condition
 </span><a href="Yaml.html#Alpha"><span class="hs-identifier hs-var">Alpha</span></a></span><span> </span><span class="annot"><span class="annottext">(Attribute -&gt; Condition) -&gt; Parser Attribute -&gt; Parser Condition
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">Object
-</span><a href="#local-6989586621679217299"><span class="hs-identifier hs-var">v</span></a></span><span> </span><span class="annot"><span class="annottext">Object -&gt; Key -&gt; Parser Attribute
+</span><a href="#local-6989586621679217673"><span class="hs-identifier hs-var">v</span></a></span><span> </span><span class="annot"><span class="annottext">Object -&gt; Key -&gt; Parser Attribute
 forall a. FromJSON a =&gt; Object -&gt; Key -&gt; Parser a
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.2.3.0-73b19e72/share/doc/html/src/Data.Aeson.Types.FromJSON.html#.%3A"><span class="hs-operator hs-var">.:</span></a></span><span> </span><span class="annot"><span class="annottext">Key
 </span><span class="hs-string">&quot;alpha&quot;</span></span><span>
-</span><span id="line-84"></span><span>            </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Expression -&gt; Condition
+</span><span id="line-85"></span><span>            </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Expression -&gt; Condition
 </span><a href="Yaml.html#NF"><span class="hs-identifier hs-var">NF</span></a></span><span> </span><span class="annot"><span class="annottext">(Expression -&gt; Condition) -&gt; Parser Expression -&gt; Parser Condition
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">Object
-</span><a href="#local-6989586621679217299"><span class="hs-identifier hs-var">v</span></a></span><span> </span><span class="annot"><span class="annottext">Object -&gt; Key -&gt; Parser Expression
+</span><a href="#local-6989586621679217673"><span class="hs-identifier hs-var">v</span></a></span><span> </span><span class="annot"><span class="annottext">Object -&gt; Key -&gt; Parser Expression
 forall a. FromJSON a =&gt; Object -&gt; Key -&gt; Parser a
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.2.3.0-73b19e72/share/doc/html/src/Data.Aeson.Types.FromJSON.html#.%3A"><span class="hs-operator hs-var">.:</span></a></span><span> </span><span class="annot"><span class="annottext">Key
 </span><span class="hs-string">&quot;nf&quot;</span></span><span>
-</span><span id="line-85"></span><span>            </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Expression -&gt; Condition
+</span><span id="line-86"></span><span>            </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Expression -&gt; Condition
 </span><a href="Yaml.html#XI"><span class="hs-identifier hs-var">XI</span></a></span><span> </span><span class="annot"><span class="annottext">(Expression -&gt; Condition) -&gt; Parser Expression -&gt; Parser Condition
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">Object
-</span><a href="#local-6989586621679217299"><span class="hs-identifier hs-var">v</span></a></span><span> </span><span class="annot"><span class="annottext">Object -&gt; Key -&gt; Parser Expression
+</span><a href="#local-6989586621679217673"><span class="hs-identifier hs-var">v</span></a></span><span> </span><span class="annot"><span class="annottext">Object -&gt; Key -&gt; Parser Expression
 forall a. FromJSON a =&gt; Object -&gt; Key -&gt; Parser a
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.2.3.0-73b19e72/share/doc/html/src/Data.Aeson.Types.FromJSON.html#.%3A"><span class="hs-operator hs-var">.:</span></a></span><span> </span><span class="annot"><span class="annottext">Key
 </span><span class="hs-string">&quot;xi&quot;</span></span><span>
-</span><span id="line-86"></span><span>            </span><span class="hs-special">,</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-87"></span><span>                </span><span id="local-6989586621679217306"><span class="annot"><span class="annottext">[Value]
-</span><a href="#local-6989586621679217306"><span class="hs-identifier hs-var">vals</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Object
-</span><a href="#local-6989586621679217299"><span class="hs-identifier hs-var">v</span></a></span><span> </span><span class="annot"><span class="annottext">Object -&gt; Key -&gt; Parser [Value]
+</span><span id="line-87"></span><span>            </span><span class="hs-special">,</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-88"></span><span>                </span><span id="local-6989586621679217680"><span class="annot"><span class="annottext">[Value]
+</span><a href="#local-6989586621679217680"><span class="hs-identifier hs-var">vals</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Object
+</span><a href="#local-6989586621679217673"><span class="hs-identifier hs-var">v</span></a></span><span> </span><span class="annot"><span class="annottext">Object -&gt; Key -&gt; Parser [Value]
 forall a. FromJSON a =&gt; Object -&gt; Key -&gt; Parser a
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.2.3.0-73b19e72/share/doc/html/src/Data.Aeson.Types.FromJSON.html#.%3A"><span class="hs-operator hs-var">.:</span></a></span><span> </span><span class="annot"><span class="annottext">Key
 </span><span class="hs-string">&quot;eq&quot;</span></span><span>
-</span><span id="line-88"></span><span>                </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">[Value]
-</span><a href="#local-6989586621679217306"><span class="hs-identifier hs-var">vals</span></a></span><span> </span><span class="hs-keyword">of</span><span>
-</span><span id="line-89"></span><span>                  </span><span class="hs-special">[</span><span id="local-6989586621679217307"><span class="annot"><span class="annottext">Value
-</span><a href="#local-6989586621679217307"><span class="hs-identifier hs-var">left_</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679217308"><span class="annot"><span class="annottext">Value
-</span><a href="#local-6989586621679217308"><span class="hs-identifier hs-var">right_</span></a></span></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Comparable -&gt; Comparable -&gt; Condition
+</span><span id="line-89"></span><span>                </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">[Value]
+</span><a href="#local-6989586621679217680"><span class="hs-identifier hs-var">vals</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-90"></span><span>                  </span><span class="hs-special">[</span><span id="local-6989586621679217681"><span class="annot"><span class="annottext">Value
+</span><a href="#local-6989586621679217681"><span class="hs-identifier hs-var">left_</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679217682"><span class="annot"><span class="annottext">Value
+</span><a href="#local-6989586621679217682"><span class="hs-identifier hs-var">right_</span></a></span></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Comparable -&gt; Comparable -&gt; Condition
 </span><a href="Yaml.html#Eq"><span class="hs-identifier hs-var">Eq</span></a></span><span> </span><span class="annot"><span class="annottext">(Comparable -&gt; Comparable -&gt; Condition)
 -&gt; Parser Comparable -&gt; Parser (Comparable -&gt; Condition)
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">Value -&gt; Parser Comparable
 forall a. FromJSON a =&gt; Value -&gt; Parser a
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.2.3.0-73b19e72/share/doc/html/src/Data.Aeson.Types.FromJSON.html#parseJSON"><span class="hs-identifier hs-var">parseJSON</span></a></span><span> </span><span class="annot"><span class="annottext">Value
-</span><a href="#local-6989586621679217307"><span class="hs-identifier hs-var">left_</span></a></span><span> </span><span class="annot"><span class="annottext">Parser (Comparable -&gt; Condition)
+</span><a href="#local-6989586621679217681"><span class="hs-identifier hs-var">left_</span></a></span><span> </span><span class="annot"><span class="annottext">Parser (Comparable -&gt; Condition)
 -&gt; Parser Comparable -&gt; Parser Condition
 forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Value -&gt; Parser Comparable
 forall a. FromJSON a =&gt; Value -&gt; Parser a
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.2.3.0-73b19e72/share/doc/html/src/Data.Aeson.Types.FromJSON.html#parseJSON"><span class="hs-identifier hs-var">parseJSON</span></a></span><span> </span><span class="annot"><span class="annottext">Value
-</span><a href="#local-6989586621679217308"><span class="hs-identifier hs-var">right_</span></a></span><span>
-</span><span id="line-90"></span><span>                  </span><span class="annot"><span class="annottext">[Value]
+</span><a href="#local-6989586621679217682"><span class="hs-identifier hs-var">right_</span></a></span><span>
+</span><span id="line-91"></span><span>                  </span><span class="annot"><span class="annottext">[Value]
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; Parser Condition
 forall a. [Char] -&gt; Parser a
 forall (m :: * -&gt; *) a. MonadFail m =&gt; [Char] -&gt; m a
 </span><span class="hs-identifier hs-var">fail</span></span><span> </span><span class="annot"><span class="annottext">[Char]
 </span><span class="hs-string">&quot;'eq' expects exactly two arguments&quot;</span></span><span>
-</span><span id="line-91"></span><span>            </span><span class="hs-special">,</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-92"></span><span>                </span><span id="local-6989586621679217310"><span class="annot"><span class="annottext">[Value]
-</span><a href="#local-6989586621679217310"><span class="hs-identifier hs-var">vals</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Object
-</span><a href="#local-6989586621679217299"><span class="hs-identifier hs-var">v</span></a></span><span> </span><span class="annot"><span class="annottext">Object -&gt; Key -&gt; Parser [Value]
+</span><span id="line-92"></span><span>            </span><span class="hs-special">,</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-93"></span><span>                </span><span id="local-6989586621679217684"><span class="annot"><span class="annottext">[Value]
+</span><a href="#local-6989586621679217684"><span class="hs-identifier hs-var">vals</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Object
+</span><a href="#local-6989586621679217673"><span class="hs-identifier hs-var">v</span></a></span><span> </span><span class="annot"><span class="annottext">Object -&gt; Key -&gt; Parser [Value]
 forall a. FromJSON a =&gt; Object -&gt; Key -&gt; Parser a
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.2.3.0-73b19e72/share/doc/html/src/Data.Aeson.Types.FromJSON.html#.%3A"><span class="hs-operator hs-var">.:</span></a></span><span> </span><span class="annot"><span class="annottext">Key
 </span><span class="hs-string">&quot;in&quot;</span></span><span>
-</span><span id="line-93"></span><span>                </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">[Value]
-</span><a href="#local-6989586621679217310"><span class="hs-identifier hs-var">vals</span></a></span><span> </span><span class="hs-keyword">of</span><span>
-</span><span id="line-94"></span><span>                  </span><span class="hs-special">[</span><span id="local-6989586621679217311"><span class="annot"><span class="annottext">Value
-</span><a href="#local-6989586621679217311"><span class="hs-identifier hs-var">attr_</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679217312"><span class="annot"><span class="annottext">Value
-</span><a href="#local-6989586621679217312"><span class="hs-identifier hs-var">binding_</span></a></span></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-95"></span><span>                    </span><span id="local-6989586621679217313"><span class="annot"><span class="annottext">Attribute
-</span><a href="#local-6989586621679217313"><span class="hs-identifier hs-var">attr</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Value -&gt; Parser Attribute
+</span><span id="line-94"></span><span>                </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">[Value]
+</span><a href="#local-6989586621679217684"><span class="hs-identifier hs-var">vals</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-95"></span><span>                  </span><span class="hs-special">[</span><span id="local-6989586621679217685"><span class="annot"><span class="annottext">Value
+</span><a href="#local-6989586621679217685"><span class="hs-identifier hs-var">attr_</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679217686"><span class="annot"><span class="annottext">Value
+</span><a href="#local-6989586621679217686"><span class="hs-identifier hs-var">binding_</span></a></span></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-96"></span><span>                    </span><span id="local-6989586621679217687"><span class="annot"><span class="annottext">Attribute
+</span><a href="#local-6989586621679217687"><span class="hs-identifier hs-var">attr</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Value -&gt; Parser Attribute
 forall a. FromJSON a =&gt; Value -&gt; Parser a
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.2.3.0-73b19e72/share/doc/html/src/Data.Aeson.Types.FromJSON.html#parseJSON"><span class="hs-identifier hs-var">parseJSON</span></a></span><span> </span><span class="annot"><span class="annottext">Value
-</span><a href="#local-6989586621679217311"><span class="hs-identifier hs-var">attr_</span></a></span><span>
-</span><span id="line-96"></span><span>                    </span><span id="local-6989586621679217314"><span class="annot"><span class="annottext">Binding
-</span><a href="#local-6989586621679217314"><span class="hs-identifier hs-var">bd</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Value -&gt; Parser Binding
+</span><a href="#local-6989586621679217685"><span class="hs-identifier hs-var">attr_</span></a></span><span>
+</span><span id="line-97"></span><span>                    </span><span id="local-6989586621679217688"><span class="annot"><span class="annottext">Binding
+</span><a href="#local-6989586621679217688"><span class="hs-identifier hs-var">bd</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Value -&gt; Parser Binding
 forall a. FromJSON a =&gt; Value -&gt; Parser a
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.2.3.0-73b19e72/share/doc/html/src/Data.Aeson.Types.FromJSON.html#parseJSON"><span class="hs-identifier hs-var">parseJSON</span></a></span><span> </span><span class="annot"><span class="annottext">Value
-</span><a href="#local-6989586621679217312"><span class="hs-identifier hs-var">binding_</span></a></span><span>
-</span><span id="line-97"></span><span>                    </span><span class="annot"><span class="annottext">Condition -&gt; Parser Condition
+</span><a href="#local-6989586621679217686"><span class="hs-identifier hs-var">binding_</span></a></span><span>
+</span><span id="line-98"></span><span>                    </span><span class="annot"><span class="annottext">Condition -&gt; Parser Condition
 forall a. a -&gt; Parser a
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Attribute -&gt; Binding -&gt; Condition
 </span><a href="Yaml.html#In"><span class="hs-identifier hs-var">In</span></a></span><span> </span><span class="annot"><span class="annottext">Attribute
-</span><a href="#local-6989586621679217313"><span class="hs-identifier hs-var">attr</span></a></span><span> </span><span class="annot"><span class="annottext">Binding
-</span><a href="#local-6989586621679217314"><span class="hs-identifier hs-var">bd</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-98"></span><span>                  </span><span class="annot"><span class="annottext">[Value]
+</span><a href="#local-6989586621679217687"><span class="hs-identifier hs-var">attr</span></a></span><span> </span><span class="annot"><span class="annottext">Binding
+</span><a href="#local-6989586621679217688"><span class="hs-identifier hs-var">bd</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-99"></span><span>                  </span><span class="annot"><span class="annottext">[Value]
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; Parser Condition
 forall a. [Char] -&gt; Parser a
 forall (m :: * -&gt; *) a. MonadFail m =&gt; [Char] -&gt; m a
 </span><span class="hs-identifier hs-var">fail</span></span><span> </span><span class="annot"><span class="annottext">[Char]
 </span><span class="hs-string">&quot;'in' expects exactly two arguments&quot;</span></span><span>
-</span><span id="line-99"></span><span>            </span><span class="hs-special">,</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-100"></span><span>                </span><span id="local-6989586621679217316"><span class="annot"><span class="annottext">[Value]
-</span><a href="#local-6989586621679217316"><span class="hs-identifier hs-var">vals</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Object
-</span><a href="#local-6989586621679217299"><span class="hs-identifier hs-var">v</span></a></span><span> </span><span class="annot"><span class="annottext">Object -&gt; Key -&gt; Parser [Value]
+</span><span id="line-100"></span><span>            </span><span class="hs-special">,</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-101"></span><span>                </span><span id="local-6989586621679217690"><span class="annot"><span class="annottext">[Value]
+</span><a href="#local-6989586621679217690"><span class="hs-identifier hs-var">vals</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Object
+</span><a href="#local-6989586621679217673"><span class="hs-identifier hs-var">v</span></a></span><span> </span><span class="annot"><span class="annottext">Object -&gt; Key -&gt; Parser [Value]
 forall a. FromJSON a =&gt; Object -&gt; Key -&gt; Parser a
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.2.3.0-73b19e72/share/doc/html/src/Data.Aeson.Types.FromJSON.html#.%3A"><span class="hs-operator hs-var">.:</span></a></span><span> </span><span class="annot"><span class="annottext">Key
 </span><span class="hs-string">&quot;matches&quot;</span></span><span>
-</span><span id="line-101"></span><span>                </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">[Value]
-</span><a href="#local-6989586621679217316"><span class="hs-identifier hs-var">vals</span></a></span><span> </span><span class="hs-keyword">of</span><span>
-</span><span id="line-102"></span><span>                  </span><span class="hs-special">[</span><span id="local-6989586621679217317"><span class="annot"><span class="annottext">Value
-</span><a href="#local-6989586621679217317"><span class="hs-identifier hs-var">pat</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679217318"><span class="annot"><span class="annottext">Value
-</span><a href="#local-6989586621679217318"><span class="hs-identifier hs-var">exp</span></a></span></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; Expression -&gt; Condition
+</span><span id="line-102"></span><span>                </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">[Value]
+</span><a href="#local-6989586621679217690"><span class="hs-identifier hs-var">vals</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-103"></span><span>                  </span><span class="hs-special">[</span><span id="local-6989586621679217691"><span class="annot"><span class="annottext">Value
+</span><a href="#local-6989586621679217691"><span class="hs-identifier hs-var">pat</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679217692"><span class="annot"><span class="annottext">Value
+</span><a href="#local-6989586621679217692"><span class="hs-identifier hs-var">ex</span></a></span></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; Expression -&gt; Condition
 </span><a href="Yaml.html#Matches"><span class="hs-identifier hs-var">Matches</span></a></span><span> </span><span class="annot"><span class="annottext">([Char] -&gt; Expression -&gt; Condition)
 -&gt; Parser [Char] -&gt; Parser (Expression -&gt; Condition)
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">Value -&gt; Parser [Char]
 forall a. FromJSON a =&gt; Value -&gt; Parser a
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.2.3.0-73b19e72/share/doc/html/src/Data.Aeson.Types.FromJSON.html#parseJSON"><span class="hs-identifier hs-var">parseJSON</span></a></span><span> </span><span class="annot"><span class="annottext">Value
-</span><a href="#local-6989586621679217317"><span class="hs-identifier hs-var">pat</span></a></span><span> </span><span class="annot"><span class="annottext">Parser (Expression -&gt; Condition)
+</span><a href="#local-6989586621679217691"><span class="hs-identifier hs-var">pat</span></a></span><span> </span><span class="annot"><span class="annottext">Parser (Expression -&gt; Condition)
 -&gt; Parser Expression -&gt; Parser Condition
 forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Value -&gt; Parser Expression
 forall a. FromJSON a =&gt; Value -&gt; Parser a
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.2.3.0-73b19e72/share/doc/html/src/Data.Aeson.Types.FromJSON.html#parseJSON"><span class="hs-identifier hs-var">parseJSON</span></a></span><span> </span><span class="annot"><span class="annottext">Value
-</span><a href="#local-6989586621679217318"><span class="hs-identifier hs-var">exp</span></a></span><span>
-</span><span id="line-103"></span><span>                  </span><span class="annot"><span class="annottext">[Value]
+</span><a href="#local-6989586621679217692"><span class="hs-identifier hs-var">ex</span></a></span><span>
+</span><span id="line-104"></span><span>                  </span><span class="annot"><span class="annottext">[Value]
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; Parser Condition
 forall a. [Char] -&gt; Parser a
 forall (m :: * -&gt; *) a. MonadFail m =&gt; [Char] -&gt; m a
 </span><span class="hs-identifier hs-var">fail</span></span><span> </span><span class="annot"><span class="annottext">[Char]
 </span><span class="hs-string">&quot;'matches' expects exactly two arguments&quot;</span></span><span>
-</span><span id="line-104"></span><span>            </span><span class="hs-special">,</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-105"></span><span>                </span><span id="local-6989586621679217320"><span class="annot"><span class="annottext">[Value]
-</span><a href="#local-6989586621679217320"><span class="hs-identifier hs-var">vals</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Object
-</span><a href="#local-6989586621679217299"><span class="hs-identifier hs-var">v</span></a></span><span> </span><span class="annot"><span class="annottext">Object -&gt; Key -&gt; Parser [Value]
+</span><span id="line-105"></span><span>            </span><span class="hs-special">,</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-106"></span><span>                </span><span id="local-6989586621679217694"><span class="annot"><span class="annottext">[Value]
+</span><a href="#local-6989586621679217694"><span class="hs-identifier hs-var">vals</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Object
+</span><a href="#local-6989586621679217673"><span class="hs-identifier hs-var">v</span></a></span><span> </span><span class="annot"><span class="annottext">Object -&gt; Key -&gt; Parser [Value]
 forall a. FromJSON a =&gt; Object -&gt; Key -&gt; Parser a
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.2.3.0-73b19e72/share/doc/html/src/Data.Aeson.Types.FromJSON.html#.%3A"><span class="hs-operator hs-var">.:</span></a></span><span> </span><span class="annot"><span class="annottext">Key
 </span><span class="hs-string">&quot;part-of&quot;</span></span><span>
-</span><span id="line-106"></span><span>                </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">[Value]
-</span><a href="#local-6989586621679217320"><span class="hs-identifier hs-var">vals</span></a></span><span> </span><span class="hs-keyword">of</span><span>
-</span><span id="line-107"></span><span>                  </span><span class="hs-special">[</span><span id="local-6989586621679217321"><span class="annot"><span class="annottext">Value
-</span><a href="#local-6989586621679217321"><span class="hs-identifier hs-var">exp</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679217322"><span class="annot"><span class="annottext">Value
-</span><a href="#local-6989586621679217322"><span class="hs-identifier hs-var">bd</span></a></span></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expression -&gt; Binding -&gt; Condition
+</span><span id="line-107"></span><span>                </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">[Value]
+</span><a href="#local-6989586621679217694"><span class="hs-identifier hs-var">vals</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-108"></span><span>                  </span><span class="hs-special">[</span><span id="local-6989586621679217695"><span class="annot"><span class="annottext">Value
+</span><a href="#local-6989586621679217695"><span class="hs-identifier hs-var">ex</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679217696"><span class="annot"><span class="annottext">Value
+</span><a href="#local-6989586621679217696"><span class="hs-identifier hs-var">bd</span></a></span></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expression -&gt; Binding -&gt; Condition
 </span><a href="Yaml.html#PartOf"><span class="hs-identifier hs-var">PartOf</span></a></span><span> </span><span class="annot"><span class="annottext">(Expression -&gt; Binding -&gt; Condition)
 -&gt; Parser Expression -&gt; Parser (Binding -&gt; Condition)
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">Value -&gt; Parser Expression
 forall a. FromJSON a =&gt; Value -&gt; Parser a
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.2.3.0-73b19e72/share/doc/html/src/Data.Aeson.Types.FromJSON.html#parseJSON"><span class="hs-identifier hs-var">parseJSON</span></a></span><span> </span><span class="annot"><span class="annottext">Value
-</span><a href="#local-6989586621679217321"><span class="hs-identifier hs-var">exp</span></a></span><span> </span><span class="annot"><span class="annottext">Parser (Binding -&gt; Condition) -&gt; Parser Binding -&gt; Parser Condition
+</span><a href="#local-6989586621679217695"><span class="hs-identifier hs-var">ex</span></a></span><span> </span><span class="annot"><span class="annottext">Parser (Binding -&gt; Condition) -&gt; Parser Binding -&gt; Parser Condition
 forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Value -&gt; Parser Binding
 forall a. FromJSON a =&gt; Value -&gt; Parser a
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.2.3.0-73b19e72/share/doc/html/src/Data.Aeson.Types.FromJSON.html#parseJSON"><span class="hs-identifier hs-var">parseJSON</span></a></span><span> </span><span class="annot"><span class="annottext">Value
-</span><a href="#local-6989586621679217322"><span class="hs-identifier hs-var">bd</span></a></span><span>
-</span><span id="line-108"></span><span>                  </span><span class="annot"><span class="annottext">[Value]
+</span><a href="#local-6989586621679217696"><span class="hs-identifier hs-var">bd</span></a></span><span>
+</span><span id="line-109"></span><span>                  </span><span class="annot"><span class="annottext">[Value]
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; Parser Condition
 forall a. [Char] -&gt; Parser a
 forall (m :: * -&gt; *) a. MonadFail m =&gt; [Char] -&gt; m a
 </span><span class="hs-identifier hs-var">fail</span></span><span> </span><span class="annot"><span class="annottext">[Char]
 </span><span class="hs-string">&quot;'part-of' expects exactly two arguments&quot;</span></span><span>
-</span><span id="line-109"></span><span>            </span><span class="hs-special">]</span><span>
-</span><span id="line-110"></span><span>      </span><span class="hs-special">)</span><span>
-</span><span id="line-111"></span><span>
-</span><span id="line-112"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679217326"><span id="local-6989586621679217330"><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.2.3.0-73b19e72/share/doc/html/src/Data.Aeson.Types.FromJSON.html#FromJSON"><span class="hs-identifier hs-type">FromJSON</span></a></span><span> </span><span class="annot"><a href="Yaml.html#ExtraArgument"><span class="hs-identifier hs-type">ExtraArgument</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-113"></span><span>  </span><span id="local-6989586621679217342"><span class="annot"><span class="annottext">parseJSON :: Value -&gt; Parser ExtraArgument
-</span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.2.3.0-73b19e72/share/doc/html/src/Data.Aeson.Types.FromJSON.html#parseJSON"><span class="hs-identifier hs-var hs-var hs-var hs-var">parseJSON</span></a></span></span><span> </span><span id="local-6989586621679217343"><span class="annot"><span class="annottext">Value
-</span><a href="#local-6989586621679217343"><span class="hs-identifier hs-var">v</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
-</span><span id="line-114"></span><span>    </span><span class="annot"><span class="annottext">[Parser ExtraArgument] -&gt; Parser ExtraArgument
+</span><span id="line-110"></span><span>            </span><span class="hs-special">]</span><span>
+</span><span id="line-111"></span><span>      </span><span class="hs-special">)</span><span>
+</span><span id="line-112"></span><span>
+</span><span id="line-113"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679217700"><span id="local-6989586621679217704"><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.2.3.0-73b19e72/share/doc/html/src/Data.Aeson.Types.FromJSON.html#FromJSON"><span class="hs-identifier hs-type">FromJSON</span></a></span><span> </span><span class="annot"><a href="Yaml.html#ExtraArgument"><span class="hs-identifier hs-type">ExtraArgument</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-114"></span><span>  </span><span id="local-6989586621679217716"><span class="annot"><span class="annottext">parseJSON :: Value -&gt; Parser ExtraArgument
+</span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.2.3.0-73b19e72/share/doc/html/src/Data.Aeson.Types.FromJSON.html#parseJSON"><span class="hs-identifier hs-var hs-var hs-var hs-var">parseJSON</span></a></span></span><span> </span><span id="local-6989586621679217717"><span class="annot"><span class="annottext">Value
+</span><a href="#local-6989586621679217717"><span class="hs-identifier hs-var">v</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-115"></span><span>    </span><span class="annot"><span class="annottext">[Parser ExtraArgument] -&gt; Parser ExtraArgument
 forall (t :: * -&gt; *) (f :: * -&gt; *) a.
 (Foldable t, Alternative f) =&gt;
 t (f a) -&gt; f a
 </span><span class="hs-identifier hs-var">asum</span></span><span>
-</span><span id="line-115"></span><span>      </span><span class="hs-special">[</span><span> </span><span class="annot"><span class="annottext">Attribute -&gt; ExtraArgument
+</span><span id="line-116"></span><span>      </span><span class="hs-special">[</span><span> </span><span class="annot"><span class="annottext">Attribute -&gt; ExtraArgument
 </span><a href="Yaml.html#ArgAttribute"><span class="hs-identifier hs-var">ArgAttribute</span></a></span><span> </span><span class="annot"><span class="annottext">(Attribute -&gt; ExtraArgument)
 -&gt; Parser Attribute -&gt; Parser ExtraArgument
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">Value -&gt; Parser Attribute
 forall a. FromJSON a =&gt; Value -&gt; Parser a
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.2.3.0-73b19e72/share/doc/html/src/Data.Aeson.Types.FromJSON.html#parseJSON"><span class="hs-identifier hs-var">parseJSON</span></a></span><span> </span><span class="annot"><span class="annottext">Value
-</span><a href="#local-6989586621679217343"><span class="hs-identifier hs-var">v</span></a></span><span>
-</span><span id="line-116"></span><span>      </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Binding -&gt; ExtraArgument
+</span><a href="#local-6989586621679217717"><span class="hs-identifier hs-var">v</span></a></span><span>
+</span><span id="line-117"></span><span>      </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Binding -&gt; ExtraArgument
 </span><a href="Yaml.html#ArgBinding"><span class="hs-identifier hs-var">ArgBinding</span></a></span><span> </span><span class="annot"><span class="annottext">(Binding -&gt; ExtraArgument)
 -&gt; Parser Binding -&gt; Parser ExtraArgument
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">Value -&gt; Parser Binding
 forall a. FromJSON a =&gt; Value -&gt; Parser a
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.2.3.0-73b19e72/share/doc/html/src/Data.Aeson.Types.FromJSON.html#parseJSON"><span class="hs-identifier hs-var">parseJSON</span></a></span><span> </span><span class="annot"><span class="annottext">Value
-</span><a href="#local-6989586621679217343"><span class="hs-identifier hs-var">v</span></a></span><span>
-</span><span id="line-117"></span><span>      </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Expression -&gt; ExtraArgument
+</span><a href="#local-6989586621679217717"><span class="hs-identifier hs-var">v</span></a></span><span>
+</span><span id="line-118"></span><span>      </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Expression -&gt; ExtraArgument
 </span><a href="Yaml.html#ArgExpression"><span class="hs-identifier hs-var">ArgExpression</span></a></span><span> </span><span class="annot"><span class="annottext">(Expression -&gt; ExtraArgument)
 -&gt; Parser Expression -&gt; Parser ExtraArgument
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">Value -&gt; Parser Expression
 forall a. FromJSON a =&gt; Value -&gt; Parser a
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.2.3.0-73b19e72/share/doc/html/src/Data.Aeson.Types.FromJSON.html#parseJSON"><span class="hs-identifier hs-var">parseJSON</span></a></span><span> </span><span class="annot"><span class="annottext">Value
-</span><a href="#local-6989586621679217343"><span class="hs-identifier hs-var">v</span></a></span><span>
-</span><span id="line-118"></span><span>      </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Bytes -&gt; ExtraArgument
+</span><a href="#local-6989586621679217717"><span class="hs-identifier hs-var">v</span></a></span><span>
+</span><span id="line-119"></span><span>      </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Bytes -&gt; ExtraArgument
 </span><a href="Yaml.html#ArgBytes"><span class="hs-identifier hs-var">ArgBytes</span></a></span><span> </span><span class="annot"><span class="annottext">(Bytes -&gt; ExtraArgument) -&gt; Parser Bytes -&gt; Parser ExtraArgument
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">Value -&gt; Parser Bytes
 forall a. FromJSON a =&gt; Value -&gt; Parser a
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.2.3.0-73b19e72/share/doc/html/src/Data.Aeson.Types.FromJSON.html#parseJSON"><span class="hs-identifier hs-var">parseJSON</span></a></span><span> </span><span class="annot"><span class="annottext">Value
-</span><a href="#local-6989586621679217343"><span class="hs-identifier hs-var">v</span></a></span><span>
-</span><span id="line-119"></span><span>      </span><span class="hs-special">]</span><span>
-</span><span id="line-120"></span><span>
-</span><span id="line-121"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679217350"><span id="local-6989586621679217354"><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.2.3.0-73b19e72/share/doc/html/src/Data.Aeson.Types.FromJSON.html#FromJSON"><span class="hs-identifier hs-type">FromJSON</span></a></span><span> </span><span class="annot"><a href="Yaml.html#Extra"><span class="hs-identifier hs-type">Extra</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-122"></span><span>  </span><span id="local-6989586621679217447"><span class="annot"><span class="annottext">parseJSON :: Value -&gt; Parser Extra
+</span><a href="#local-6989586621679217717"><span class="hs-identifier hs-var">v</span></a></span><span>
+</span><span id="line-120"></span><span>      </span><span class="hs-special">]</span><span>
+</span><span id="line-121"></span><span>
+</span><span id="line-122"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679217724"><span id="local-6989586621679217728"><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.2.3.0-73b19e72/share/doc/html/src/Data.Aeson.Types.FromJSON.html#FromJSON"><span class="hs-identifier hs-type">FromJSON</span></a></span><span> </span><span class="annot"><a href="Yaml.html#Extra"><span class="hs-identifier hs-type">Extra</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-123"></span><span>  </span><span id="local-6989586621679217821"><span class="annot"><span class="annottext">parseJSON :: Value -&gt; Parser Extra
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.2.3.0-73b19e72/share/doc/html/src/Data.Aeson.Types.FromJSON.html#parseJSON"><span class="hs-identifier hs-var hs-var hs-var hs-var">parseJSON</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Options -&gt; Value -&gt; Parser Extra
 forall a.
 (Generic a, GFromJSON Zero (Rep a)) =&gt;
 Options -&gt; Value -&gt; Parser a
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.2.3.0-73b19e72/share/doc/html/src/Data.Aeson.Types.FromJSON.html#genericParseJSON"><span class="hs-identifier hs-var">genericParseJSON</span></a></span><span> </span><span class="annot"><span class="annottext">Options
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.2.3.0-73b19e72/share/doc/html/src/Data.Aeson.Types.Internal.html#defaultOptions"><span class="hs-identifier hs-var">defaultOptions</span></a></span><span>
-</span><span id="line-123"></span><span>
-</span><span id="line-124"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679217452"><span id="local-6989586621679217455"><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.2.3.0-73b19e72/share/doc/html/src/Data.Aeson.Types.FromJSON.html#FromJSON"><span class="hs-identifier hs-type">FromJSON</span></a></span><span> </span><span class="annot"><a href="Yaml.html#Rule"><span class="hs-identifier hs-type">Rule</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-125"></span><span>  </span><span id="local-6989586621679217560"><span class="annot"><span class="annottext">parseJSON :: Value -&gt; Parser Rule
+</span><span id="line-124"></span><span>
+</span><span id="line-125"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679217826"><span id="local-6989586621679217829"><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.2.3.0-73b19e72/share/doc/html/src/Data.Aeson.Types.FromJSON.html#FromJSON"><span class="hs-identifier hs-type">FromJSON</span></a></span><span> </span><span class="annot"><a href="Yaml.html#Rule"><span class="hs-identifier hs-type">Rule</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-126"></span><span>  </span><span id="local-6989586621679217934"><span class="annot"><span class="annottext">parseJSON :: Value -&gt; Parser Rule
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.2.3.0-73b19e72/share/doc/html/src/Data.Aeson.Types.FromJSON.html#parseJSON"><span class="hs-identifier hs-var hs-var hs-var hs-var">parseJSON</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
-</span><span id="line-126"></span><span>    </span><span class="annot"><span class="annottext">Options -&gt; Value -&gt; Parser Rule
+</span><span id="line-127"></span><span>    </span><span class="annot"><span class="annottext">Options -&gt; Value -&gt; Parser Rule
 forall a.
 (Generic a, GFromJSON Zero (Rep a)) =&gt;
 Options -&gt; Value -&gt; Parser a
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.2.3.0-73b19e72/share/doc/html/src/Data.Aeson.Types.FromJSON.html#genericParseJSON"><span class="hs-identifier hs-var">genericParseJSON</span></a></span><span>
-</span><span id="line-127"></span><span>      </span><span class="annot"><span class="annottext">Options
+</span><span id="line-128"></span><span>      </span><span class="annot"><span class="annottext">Options
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.2.3.0-73b19e72/share/doc/html/src/Data.Aeson.Types.Internal.html#defaultOptions"><span class="hs-identifier hs-var">defaultOptions</span></a></span><span>
-</span><span id="line-128"></span><span>        </span><span class="hs-special">{</span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.2.3.0-73b19e72/share/doc/html/src/Data.Aeson.Types.Internal.html#fieldLabelModifier"><span class="hs-identifier hs-var">fieldLabelModifier</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
-</span><span id="line-129"></span><span>            </span><span class="annot"><span class="annottext">[Char]
+</span><span id="line-129"></span><span>        </span><span class="hs-special">{</span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.2.3.0-73b19e72/share/doc/html/src/Data.Aeson.Types.Internal.html#fieldLabelModifier"><span class="hs-identifier hs-var">fieldLabelModifier</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
+</span><span id="line-130"></span><span>            </span><span class="annot"><span class="annottext">[Char]
 </span><span class="hs-string">&quot;where_&quot;</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">[Char]
 </span><span class="hs-string">&quot;where&quot;</span></span><span>
-</span><span id="line-130"></span><span>            </span><span id="local-6989586621679217562"><span class="annot"><span class="annottext">[Char]
-</span><a href="#local-6989586621679217562"><span class="hs-identifier hs-var">other</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">[Char]
-</span><a href="#local-6989586621679217562"><span class="hs-identifier hs-var">other</span></a></span><span>
-</span><span id="line-131"></span><span>        </span><span class="hs-special">}</span><span>
-</span><span id="line-132"></span><span>
-</span><span id="line-133"></span><span class="hs-keyword">data</span><span> </span><span id="Number"><span class="annot"><a href="Yaml.html#Number"><span class="hs-identifier hs-var">Number</span></a></span></span><span>
-</span><span id="line-134"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span id="Ordinal"><span class="annot"><a href="Yaml.html#Ordinal"><span class="hs-identifier hs-var">Ordinal</span></a></span></span><span> </span><span class="annot"><a href="AST.html#Attribute"><span class="hs-identifier hs-type">Attribute</span></a></span><span>
-</span><span id="line-135"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="Length"><span class="annot"><a href="Yaml.html#Length"><span class="hs-identifier hs-var">Length</span></a></span></span><span> </span><span class="annot"><a href="AST.html#Binding"><span class="hs-identifier hs-type">Binding</span></a></span><span>
-</span><span id="line-136"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="Literal"><span class="annot"><a href="Yaml.html#Literal"><span class="hs-identifier hs-var">Literal</span></a></span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span>
-</span><span id="line-137"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679217564"><span id="local-6989586621679217572"><span class="annot"><span class="annottext">Number -&gt; Number -&gt; Bool
+</span><span id="line-131"></span><span>            </span><span id="local-6989586621679217936"><span class="annot"><span class="annottext">[Char]
+</span><a href="#local-6989586621679217936"><span class="hs-identifier hs-var">other</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">[Char]
+</span><a href="#local-6989586621679217936"><span class="hs-identifier hs-var">other</span></a></span><span>
+</span><span id="line-132"></span><span>        </span><span class="hs-special">}</span><span>
+</span><span id="line-133"></span><span>
+</span><span id="line-134"></span><span class="hs-keyword">data</span><span> </span><span id="Number"><span class="annot"><a href="Yaml.html#Number"><span class="hs-identifier hs-var">Number</span></a></span></span><span>
+</span><span id="line-135"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span id="Ordinal"><span class="annot"><a href="Yaml.html#Ordinal"><span class="hs-identifier hs-var">Ordinal</span></a></span></span><span> </span><span class="annot"><a href="AST.html#Attribute"><span class="hs-identifier hs-type">Attribute</span></a></span><span>
+</span><span id="line-136"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="Length"><span class="annot"><a href="Yaml.html#Length"><span class="hs-identifier hs-var">Length</span></a></span></span><span> </span><span class="annot"><a href="AST.html#Binding"><span class="hs-identifier hs-type">Binding</span></a></span><span>
+</span><span id="line-137"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="Literal"><span class="annot"><a href="Yaml.html#Literal"><span class="hs-identifier hs-var">Literal</span></a></span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span>
+</span><span id="line-138"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679217938"><span id="local-6989586621679217946"><span class="annot"><span class="annottext">Number -&gt; Number -&gt; Bool
 (Number -&gt; Number -&gt; Bool)
 -&gt; (Number -&gt; Number -&gt; Bool) -&gt; Eq Number
 forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
@@ -507,7 +504,7 @@ $c== :: Number -&gt; Number -&gt; Bool
 == :: Number -&gt; Number -&gt; Bool
 $c/= :: Number -&gt; Number -&gt; Bool
 /= :: Number -&gt; Number -&gt; Bool
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679217577"><span id="local-6989586621679217579"><span class="annot"><span class="annottext">(forall x. Number -&gt; Rep Number x)
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679217951"><span id="local-6989586621679217953"><span class="annot"><span class="annottext">(forall x. Number -&gt; Rep Number x)
 -&gt; (forall x. Rep Number x -&gt; Number) -&gt; Generic Number
 forall x. Rep Number x -&gt; Number
 forall x. Number -&gt; Rep Number x
@@ -517,7 +514,7 @@ $cfrom :: forall x. Number -&gt; Rep Number x
 from :: forall x. Number -&gt; Rep Number x
 $cto :: forall x. Rep Number x -&gt; Number
 to :: forall x. Rep Number x -&gt; Number
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679217583"><span id="local-6989586621679217595"><span id="local-6989586621679217599"><span class="annot"><span class="annottext">Int -&gt; Number -&gt; [Char] -&gt; [Char]
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679217957"><span id="local-6989586621679217969"><span id="local-6989586621679217973"><span class="annot"><span class="annottext">Int -&gt; Number -&gt; [Char] -&gt; [Char]
 [Number] -&gt; [Char] -&gt; [Char]
 Number -&gt; [Char]
 (Int -&gt; Number -&gt; [Char] -&gt; [Char])
@@ -534,12 +531,12 @@ show :: Number -&gt; [Char]
 $cshowList :: [Number] -&gt; [Char] -&gt; [Char]
 showList :: [Number] -&gt; [Char] -&gt; [Char]
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">)</span><span>
-</span><span id="line-138"></span><span>
-</span><span id="line-139"></span><span class="hs-keyword">data</span><span> </span><span id="Comparable"><span class="annot"><a href="Yaml.html#Comparable"><span class="hs-identifier hs-var">Comparable</span></a></span></span><span>
-</span><span id="line-140"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span id="CmpAttr"><span class="annot"><a href="Yaml.html#CmpAttr"><span class="hs-identifier hs-var">CmpAttr</span></a></span></span><span> </span><span class="annot"><a href="AST.html#Attribute"><span class="hs-identifier hs-type">Attribute</span></a></span><span>
-</span><span id="line-141"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="CmpNum"><span class="annot"><a href="Yaml.html#CmpNum"><span class="hs-identifier hs-var">CmpNum</span></a></span></span><span> </span><span class="annot"><a href="Yaml.html#Number"><span class="hs-identifier hs-type">Number</span></a></span><span>
-</span><span id="line-142"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="CmpExpr"><span class="annot"><a href="Yaml.html#CmpExpr"><span class="hs-identifier hs-var">CmpExpr</span></a></span></span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span>
-</span><span id="line-143"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679217603"><span id="local-6989586621679217609"><span class="annot"><span class="annottext">Comparable -&gt; Comparable -&gt; Bool
+</span><span id="line-139"></span><span>
+</span><span id="line-140"></span><span class="hs-keyword">data</span><span> </span><span id="Comparable"><span class="annot"><a href="Yaml.html#Comparable"><span class="hs-identifier hs-var">Comparable</span></a></span></span><span>
+</span><span id="line-141"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span id="CmpAttr"><span class="annot"><a href="Yaml.html#CmpAttr"><span class="hs-identifier hs-var">CmpAttr</span></a></span></span><span> </span><span class="annot"><a href="AST.html#Attribute"><span class="hs-identifier hs-type">Attribute</span></a></span><span>
+</span><span id="line-142"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="CmpNum"><span class="annot"><a href="Yaml.html#CmpNum"><span class="hs-identifier hs-var">CmpNum</span></a></span></span><span> </span><span class="annot"><a href="Yaml.html#Number"><span class="hs-identifier hs-type">Number</span></a></span><span>
+</span><span id="line-143"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="CmpExpr"><span class="annot"><a href="Yaml.html#CmpExpr"><span class="hs-identifier hs-var">CmpExpr</span></a></span></span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span>
+</span><span id="line-144"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679217977"><span id="local-6989586621679217983"><span class="annot"><span class="annottext">Comparable -&gt; Comparable -&gt; Bool
 (Comparable -&gt; Comparable -&gt; Bool)
 -&gt; (Comparable -&gt; Comparable -&gt; Bool) -&gt; Eq Comparable
 forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
@@ -547,7 +544,7 @@ $c== :: Comparable -&gt; Comparable -&gt; Bool
 == :: Comparable -&gt; Comparable -&gt; Bool
 $c/= :: Comparable -&gt; Comparable -&gt; Bool
 /= :: Comparable -&gt; Comparable -&gt; Bool
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679217613"><span id="local-6989586621679217615"><span class="annot"><span class="annottext">(forall x. Comparable -&gt; Rep Comparable x)
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679217987"><span id="local-6989586621679217989"><span class="annot"><span class="annottext">(forall x. Comparable -&gt; Rep Comparable x)
 -&gt; (forall x. Rep Comparable x -&gt; Comparable) -&gt; Generic Comparable
 forall x. Rep Comparable x -&gt; Comparable
 forall x. Comparable -&gt; Rep Comparable x
@@ -557,7 +554,7 @@ $cfrom :: forall x. Comparable -&gt; Rep Comparable x
 from :: forall x. Comparable -&gt; Rep Comparable x
 $cto :: forall x. Rep Comparable x -&gt; Comparable
 to :: forall x. Rep Comparable x -&gt; Comparable
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679217618"><span id="local-6989586621679217627"><span id="local-6989586621679217631"><span class="annot"><span class="annottext">Int -&gt; Comparable -&gt; [Char] -&gt; [Char]
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679217992"><span id="local-6989586621679218001"><span id="local-6989586621679218005"><span class="annot"><span class="annottext">Int -&gt; Comparable -&gt; [Char] -&gt; [Char]
 [Comparable] -&gt; [Char] -&gt; [Char]
 Comparable -&gt; [Char]
 (Int -&gt; Comparable -&gt; [Char] -&gt; [Char])
@@ -574,19 +571,19 @@ show :: Comparable -&gt; [Char]
 $cshowList :: [Comparable] -&gt; [Char] -&gt; [Char]
 showList :: [Comparable] -&gt; [Char] -&gt; [Char]
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">)</span><span>
-</span><span id="line-144"></span><span>
-</span><span id="line-145"></span><span class="hs-keyword">data</span><span> </span><span id="Condition"><span class="annot"><a href="Yaml.html#Condition"><span class="hs-identifier hs-var">Condition</span></a></span></span><span>
-</span><span id="line-146"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span id="And"><span class="annot"><a href="Yaml.html#And"><span class="hs-identifier hs-var">And</span></a></span></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Yaml.html#Condition"><span class="hs-identifier hs-type">Condition</span></a></span><span class="hs-special">]</span><span>
-</span><span id="line-147"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="Or"><span class="annot"><a href="Yaml.html#Or"><span class="hs-identifier hs-var">Or</span></a></span></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Yaml.html#Condition"><span class="hs-identifier hs-type">Condition</span></a></span><span class="hs-special">]</span><span>
-</span><span id="line-148"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="In"><span class="annot"><a href="Yaml.html#In"><span class="hs-identifier hs-var">In</span></a></span></span><span> </span><span class="annot"><a href="AST.html#Attribute"><span class="hs-identifier hs-type">Attribute</span></a></span><span> </span><span class="annot"><a href="AST.html#Binding"><span class="hs-identifier hs-type">Binding</span></a></span><span>
-</span><span id="line-149"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="Not"><span class="annot"><a href="Yaml.html#Not"><span class="hs-identifier hs-var">Not</span></a></span></span><span> </span><span class="annot"><a href="Yaml.html#Condition"><span class="hs-identifier hs-type">Condition</span></a></span><span>
-</span><span id="line-150"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="Alpha"><span class="annot"><a href="Yaml.html#Alpha"><span class="hs-identifier hs-var">Alpha</span></a></span></span><span> </span><span class="annot"><a href="AST.html#Attribute"><span class="hs-identifier hs-type">Attribute</span></a></span><span>
-</span><span id="line-151"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="Eq"><span class="annot"><a href="Yaml.html#Eq"><span class="hs-identifier hs-var">Eq</span></a></span></span><span> </span><span class="annot"><a href="Yaml.html#Comparable"><span class="hs-identifier hs-type">Comparable</span></a></span><span> </span><span class="annot"><a href="Yaml.html#Comparable"><span class="hs-identifier hs-type">Comparable</span></a></span><span>
-</span><span id="line-152"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="NF"><span class="annot"><a href="Yaml.html#NF"><span class="hs-identifier hs-var">NF</span></a></span></span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span>
-</span><span id="line-153"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="XI"><span class="annot"><a href="Yaml.html#XI"><span class="hs-identifier hs-var">XI</span></a></span></span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span>
-</span><span id="line-154"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="Matches"><span class="annot"><a href="Yaml.html#Matches"><span class="hs-identifier hs-var">Matches</span></a></span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span>
-</span><span id="line-155"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="PartOf"><span class="annot"><a href="Yaml.html#PartOf"><span class="hs-identifier hs-var">PartOf</span></a></span></span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span> </span><span class="annot"><a href="AST.html#Binding"><span class="hs-identifier hs-type">Binding</span></a></span><span>
-</span><span id="line-156"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679217634"><span id="local-6989586621679217652"><span class="annot"><span class="annottext">Condition -&gt; Condition -&gt; Bool
+</span><span id="line-145"></span><span>
+</span><span id="line-146"></span><span class="hs-keyword">data</span><span> </span><span id="Condition"><span class="annot"><a href="Yaml.html#Condition"><span class="hs-identifier hs-var">Condition</span></a></span></span><span>
+</span><span id="line-147"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span id="And"><span class="annot"><a href="Yaml.html#And"><span class="hs-identifier hs-var">And</span></a></span></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Yaml.html#Condition"><span class="hs-identifier hs-type">Condition</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-148"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="Or"><span class="annot"><a href="Yaml.html#Or"><span class="hs-identifier hs-var">Or</span></a></span></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Yaml.html#Condition"><span class="hs-identifier hs-type">Condition</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-149"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="In"><span class="annot"><a href="Yaml.html#In"><span class="hs-identifier hs-var">In</span></a></span></span><span> </span><span class="annot"><a href="AST.html#Attribute"><span class="hs-identifier hs-type">Attribute</span></a></span><span> </span><span class="annot"><a href="AST.html#Binding"><span class="hs-identifier hs-type">Binding</span></a></span><span>
+</span><span id="line-150"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="Not"><span class="annot"><a href="Yaml.html#Not"><span class="hs-identifier hs-var">Not</span></a></span></span><span> </span><span class="annot"><a href="Yaml.html#Condition"><span class="hs-identifier hs-type">Condition</span></a></span><span>
+</span><span id="line-151"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="Alpha"><span class="annot"><a href="Yaml.html#Alpha"><span class="hs-identifier hs-var">Alpha</span></a></span></span><span> </span><span class="annot"><a href="AST.html#Attribute"><span class="hs-identifier hs-type">Attribute</span></a></span><span>
+</span><span id="line-152"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="Eq"><span class="annot"><a href="Yaml.html#Eq"><span class="hs-identifier hs-var">Eq</span></a></span></span><span> </span><span class="annot"><a href="Yaml.html#Comparable"><span class="hs-identifier hs-type">Comparable</span></a></span><span> </span><span class="annot"><a href="Yaml.html#Comparable"><span class="hs-identifier hs-type">Comparable</span></a></span><span>
+</span><span id="line-153"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="NF"><span class="annot"><a href="Yaml.html#NF"><span class="hs-identifier hs-var">NF</span></a></span></span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span>
+</span><span id="line-154"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="XI"><span class="annot"><a href="Yaml.html#XI"><span class="hs-identifier hs-var">XI</span></a></span></span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span>
+</span><span id="line-155"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="Matches"><span class="annot"><a href="Yaml.html#Matches"><span class="hs-identifier hs-var">Matches</span></a></span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span>
+</span><span id="line-156"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="PartOf"><span class="annot"><a href="Yaml.html#PartOf"><span class="hs-identifier hs-var">PartOf</span></a></span></span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span> </span><span class="annot"><a href="AST.html#Binding"><span class="hs-identifier hs-type">Binding</span></a></span><span>
+</span><span id="line-157"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679218008"><span id="local-6989586621679218026"><span class="annot"><span class="annottext">Condition -&gt; Condition -&gt; Bool
 (Condition -&gt; Condition -&gt; Bool)
 -&gt; (Condition -&gt; Condition -&gt; Bool) -&gt; Eq Condition
 forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
@@ -594,7 +591,7 @@ $c== :: Condition -&gt; Condition -&gt; Bool
 == :: Condition -&gt; Condition -&gt; Bool
 $c/= :: Condition -&gt; Condition -&gt; Bool
 /= :: Condition -&gt; Condition -&gt; Bool
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679217656"><span id="local-6989586621679217658"><span class="annot"><span class="annottext">(forall x. Condition -&gt; Rep Condition x)
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679218030"><span id="local-6989586621679218032"><span class="annot"><span class="annottext">(forall x. Condition -&gt; Rep Condition x)
 -&gt; (forall x. Rep Condition x -&gt; Condition) -&gt; Generic Condition
 forall x. Rep Condition x -&gt; Condition
 forall x. Condition -&gt; Rep Condition x
@@ -604,7 +601,7 @@ $cfrom :: forall x. Condition -&gt; Rep Condition x
 from :: forall x. Condition -&gt; Rep Condition x
 $cto :: forall x. Rep Condition x -&gt; Condition
 to :: forall x. Rep Condition x -&gt; Condition
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679217661"><span id="local-6989586621679217690"><span id="local-6989586621679217694"><span class="annot"><span class="annottext">Int -&gt; Condition -&gt; [Char] -&gt; [Char]
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679218035"><span id="local-6989586621679218064"><span id="local-6989586621679218068"><span class="annot"><span class="annottext">Int -&gt; Condition -&gt; [Char] -&gt; [Char]
 [Condition] -&gt; [Char] -&gt; [Char]
 Condition -&gt; [Char]
 (Int -&gt; Condition -&gt; [Char] -&gt; [Char])
@@ -621,13 +618,13 @@ show :: Condition -&gt; [Char]
 $cshowList :: [Condition] -&gt; [Char] -&gt; [Char]
 showList :: [Condition] -&gt; [Char] -&gt; [Char]
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">)</span><span>
-</span><span id="line-157"></span><span>
-</span><span id="line-158"></span><span class="hs-keyword">data</span><span> </span><span id="ExtraArgument"><span class="annot"><a href="Yaml.html#ExtraArgument"><span class="hs-identifier hs-var">ExtraArgument</span></a></span></span><span>
-</span><span id="line-159"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span id="ArgAttribute"><span class="annot"><a href="Yaml.html#ArgAttribute"><span class="hs-identifier hs-var">ArgAttribute</span></a></span></span><span> </span><span class="annot"><a href="AST.html#Attribute"><span class="hs-identifier hs-type">Attribute</span></a></span><span>
-</span><span id="line-160"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="ArgExpression"><span class="annot"><a href="Yaml.html#ArgExpression"><span class="hs-identifier hs-var">ArgExpression</span></a></span></span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span>
-</span><span id="line-161"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="ArgBinding"><span class="annot"><a href="Yaml.html#ArgBinding"><span class="hs-identifier hs-var">ArgBinding</span></a></span></span><span> </span><span class="annot"><a href="AST.html#Binding"><span class="hs-identifier hs-type">Binding</span></a></span><span>
-</span><span id="line-162"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="ArgBytes"><span class="annot"><a href="Yaml.html#ArgBytes"><span class="hs-identifier hs-var">ArgBytes</span></a></span></span><span> </span><span class="annot"><a href="AST.html#Bytes"><span class="hs-identifier hs-type">Bytes</span></a></span><span>
-</span><span id="line-163"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679217698"><span id="local-6989586621679217700"><span class="annot"><span class="annottext">(forall x. ExtraArgument -&gt; Rep ExtraArgument x)
+</span><span id="line-158"></span><span>
+</span><span id="line-159"></span><span class="hs-keyword">data</span><span> </span><span id="ExtraArgument"><span class="annot"><a href="Yaml.html#ExtraArgument"><span class="hs-identifier hs-var">ExtraArgument</span></a></span></span><span>
+</span><span id="line-160"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span id="ArgAttribute"><span class="annot"><a href="Yaml.html#ArgAttribute"><span class="hs-identifier hs-var">ArgAttribute</span></a></span></span><span> </span><span class="annot"><a href="AST.html#Attribute"><span class="hs-identifier hs-type">Attribute</span></a></span><span>
+</span><span id="line-161"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="ArgExpression"><span class="annot"><a href="Yaml.html#ArgExpression"><span class="hs-identifier hs-var">ArgExpression</span></a></span></span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span>
+</span><span id="line-162"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="ArgBinding"><span class="annot"><a href="Yaml.html#ArgBinding"><span class="hs-identifier hs-var">ArgBinding</span></a></span></span><span> </span><span class="annot"><a href="AST.html#Binding"><span class="hs-identifier hs-type">Binding</span></a></span><span>
+</span><span id="line-163"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="ArgBytes"><span class="annot"><a href="Yaml.html#ArgBytes"><span class="hs-identifier hs-var">ArgBytes</span></a></span></span><span> </span><span class="annot"><a href="AST.html#Bytes"><span class="hs-identifier hs-type">Bytes</span></a></span><span>
+</span><span id="line-164"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679218072"><span id="local-6989586621679218074"><span class="annot"><span class="annottext">(forall x. ExtraArgument -&gt; Rep ExtraArgument x)
 -&gt; (forall x. Rep ExtraArgument x -&gt; ExtraArgument)
 -&gt; Generic ExtraArgument
 forall x. Rep ExtraArgument x -&gt; ExtraArgument
@@ -638,7 +635,7 @@ $cfrom :: forall x. ExtraArgument -&gt; Rep ExtraArgument x
 from :: forall x. ExtraArgument -&gt; Rep ExtraArgument x
 $cto :: forall x. Rep ExtraArgument x -&gt; ExtraArgument
 to :: forall x. Rep ExtraArgument x -&gt; ExtraArgument
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679217703"><span id="local-6989586621679217714"><span id="local-6989586621679217718"><span class="annot"><span class="annottext">Int -&gt; ExtraArgument -&gt; [Char] -&gt; [Char]
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679218077"><span id="local-6989586621679218088"><span id="local-6989586621679218092"><span class="annot"><span class="annottext">Int -&gt; ExtraArgument -&gt; [Char] -&gt; [Char]
 [ExtraArgument] -&gt; [Char] -&gt; [Char]
 ExtraArgument -&gt; [Char]
 (Int -&gt; ExtraArgument -&gt; [Char] -&gt; [Char])
@@ -655,16 +652,16 @@ show :: ExtraArgument -&gt; [Char]
 $cshowList :: [ExtraArgument] -&gt; [Char] -&gt; [Char]
 showList :: [ExtraArgument] -&gt; [Char] -&gt; [Char]
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">)</span><span>
-</span><span id="line-164"></span><span>
-</span><span id="line-165"></span><span class="hs-keyword">data</span><span> </span><span id="Extra"><span class="annot"><a href="Yaml.html#Extra"><span class="hs-identifier hs-var">Extra</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="Extra"><span class="annot"><a href="Yaml.html#Extra"><span class="hs-identifier hs-var">Extra</span></a></span></span><span>
-</span><span id="line-166"></span><span>  </span><span class="hs-special">{</span><span> </span><span id="meta"><span class="annot"><span class="annottext">Extra -&gt; ExtraArgument
+</span><span id="line-165"></span><span>
+</span><span id="line-166"></span><span class="hs-keyword">data</span><span> </span><span id="Extra"><span class="annot"><a href="Yaml.html#Extra"><span class="hs-identifier hs-var">Extra</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="Extra"><span class="annot"><a href="Yaml.html#Extra"><span class="hs-identifier hs-var">Extra</span></a></span></span><span>
+</span><span id="line-167"></span><span>  </span><span class="hs-special">{</span><span> </span><span id="meta"><span class="annot"><span class="annottext">Extra -&gt; ExtraArgument
 </span><a href="Yaml.html#meta"><span class="hs-identifier hs-var hs-var">meta</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Yaml.html#ExtraArgument"><span class="hs-identifier hs-type">ExtraArgument</span></a></span><span>
-</span><span id="line-167"></span><span>  </span><span class="hs-special">,</span><span> </span><span id="function"><span class="annot"><span class="annottext">Extra -&gt; [Char]
+</span><span id="line-168"></span><span>  </span><span class="hs-special">,</span><span> </span><span id="function"><span class="annot"><span class="annottext">Extra -&gt; [Char]
 </span><a href="Yaml.html#function"><span class="hs-identifier hs-var hs-var">function</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
-</span><span id="line-168"></span><span>  </span><span class="hs-special">,</span><span> </span><span id="args"><span class="annot"><span class="annottext">Extra -&gt; [ExtraArgument]
+</span><span id="line-169"></span><span>  </span><span class="hs-special">,</span><span> </span><span id="args"><span class="annot"><span class="annottext">Extra -&gt; [ExtraArgument]
 </span><a href="Yaml.html#args"><span class="hs-identifier hs-var hs-var">args</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Yaml.html#ExtraArgument"><span class="hs-identifier hs-type">ExtraArgument</span></a></span><span class="hs-special">]</span><span>
-</span><span id="line-169"></span><span>  </span><span class="hs-special">}</span><span>
-</span><span id="line-170"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679217725"><span id="local-6989586621679217727"><span class="annot"><span class="annottext">(forall x. Extra -&gt; Rep Extra x)
+</span><span id="line-170"></span><span>  </span><span class="hs-special">}</span><span>
+</span><span id="line-171"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679218099"><span id="local-6989586621679218101"><span class="annot"><span class="annottext">(forall x. Extra -&gt; Rep Extra x)
 -&gt; (forall x. Rep Extra x -&gt; Extra) -&gt; Generic Extra
 forall x. Rep Extra x -&gt; Extra
 forall x. Extra -&gt; Rep Extra x
@@ -674,7 +671,7 @@ $cfrom :: forall x. Extra -&gt; Rep Extra x
 from :: forall x. Extra -&gt; Rep Extra x
 $cto :: forall x. Rep Extra x -&gt; Extra
 to :: forall x. Rep Extra x -&gt; Extra
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679217729"><span id="local-6989586621679217736"><span id="local-6989586621679217740"><span class="annot"><span class="annottext">Int -&gt; Extra -&gt; [Char] -&gt; [Char]
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679218103"><span id="local-6989586621679218110"><span id="local-6989586621679218114"><span class="annot"><span class="annottext">Int -&gt; Extra -&gt; [Char] -&gt; [Char]
 [Extra] -&gt; [Char] -&gt; [Char]
 Extra -&gt; [Char]
 (Int -&gt; Extra -&gt; [Char] -&gt; [Char])
@@ -689,24 +686,24 @@ show :: Extra -&gt; [Char]
 $cshowList :: [Extra] -&gt; [Char] -&gt; [Char]
 showList :: [Extra] -&gt; [Char] -&gt; [Char]
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">)</span><span>
-</span><span id="line-171"></span><span>
-</span><span id="line-172"></span><span class="hs-keyword">data</span><span> </span><span id="Rule"><span class="annot"><a href="Yaml.html#Rule"><span class="hs-identifier hs-var">Rule</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="Rule"><span class="annot"><a href="Yaml.html#Rule"><span class="hs-identifier hs-var">Rule</span></a></span></span><span>
-</span><span id="line-173"></span><span>  </span><span class="hs-special">{</span><span> </span><span id="name"><span class="annot"><span class="annottext">Rule -&gt; Maybe [Char]
+</span><span id="line-172"></span><span>
+</span><span id="line-173"></span><span class="hs-keyword">data</span><span> </span><span id="Rule"><span class="annot"><a href="Yaml.html#Rule"><span class="hs-identifier hs-var">Rule</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="Rule"><span class="annot"><a href="Yaml.html#Rule"><span class="hs-identifier hs-var">Rule</span></a></span></span><span>
+</span><span id="line-174"></span><span>  </span><span class="hs-special">{</span><span> </span><span id="name"><span class="annot"><span class="annottext">Rule -&gt; Maybe [Char]
 </span><a href="Yaml.html#name"><span class="hs-identifier hs-var hs-var">name</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
-</span><span id="line-174"></span><span>  </span><span class="hs-special">,</span><span> </span><span id="description"><span class="annot"><span class="annottext">Rule -&gt; Maybe [Char]
+</span><span id="line-175"></span><span>  </span><span class="hs-special">,</span><span> </span><span id="description"><span class="annot"><span class="annottext">Rule -&gt; Maybe [Char]
 </span><a href="Yaml.html#description"><span class="hs-identifier hs-var hs-var">description</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
-</span><span id="line-175"></span><span>  </span><span class="hs-special">,</span><span> </span><span id="pattern"><span class="annot"><span class="annottext">Rule -&gt; Expression
+</span><span id="line-176"></span><span>  </span><span class="hs-special">,</span><span> </span><span id="pattern"><span class="annot"><span class="annottext">Rule -&gt; Expression
 </span><a href="Yaml.html#pattern"><span class="hs-identifier hs-var hs-var">pattern</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span>
-</span><span id="line-176"></span><span>  </span><span class="hs-special">,</span><span> </span><span id="result"><span class="annot"><span class="annottext">Rule -&gt; Expression
+</span><span id="line-177"></span><span>  </span><span class="hs-special">,</span><span> </span><span id="result"><span class="annot"><span class="annottext">Rule -&gt; Expression
 </span><a href="Yaml.html#result"><span class="hs-identifier hs-var hs-var">result</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span>
-</span><span id="line-177"></span><span>  </span><span class="hs-special">,</span><span> </span><span id="when"><span class="annot"><span class="annottext">Rule -&gt; Maybe Condition
+</span><span id="line-178"></span><span>  </span><span class="hs-special">,</span><span> </span><span id="when"><span class="annot"><span class="annottext">Rule -&gt; Maybe Condition
 </span><a href="Yaml.html#when"><span class="hs-identifier hs-var hs-var">when</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><a href="Yaml.html#Condition"><span class="hs-identifier hs-type">Condition</span></a></span><span>
-</span><span id="line-178"></span><span>  </span><span class="hs-special">,</span><span> </span><span id="where_"><span class="annot"><span class="annottext">Rule -&gt; Maybe [Extra]
+</span><span id="line-179"></span><span>  </span><span class="hs-special">,</span><span> </span><span id="where_"><span class="annot"><span class="annottext">Rule -&gt; Maybe [Extra]
 </span><a href="Yaml.html#where_"><span class="hs-identifier hs-var hs-var">where_</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Yaml.html#Extra"><span class="hs-identifier hs-type">Extra</span></a></span><span class="hs-special">]</span><span>
-</span><span id="line-179"></span><span>  </span><span class="hs-special">,</span><span> </span><span id="having"><span class="annot"><span class="annottext">Rule -&gt; Maybe Condition
+</span><span id="line-180"></span><span>  </span><span class="hs-special">,</span><span> </span><span id="having"><span class="annot"><span class="annottext">Rule -&gt; Maybe Condition
 </span><a href="Yaml.html#having"><span class="hs-identifier hs-var hs-var">having</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><a href="Yaml.html#Condition"><span class="hs-identifier hs-type">Condition</span></a></span><span>
-</span><span id="line-180"></span><span>  </span><span class="hs-special">}</span><span>
-</span><span id="line-181"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679217751"><span id="local-6989586621679217753"><span class="annot"><span class="annottext">(forall x. Rule -&gt; Rep Rule x)
+</span><span id="line-181"></span><span>  </span><span class="hs-special">}</span><span>
+</span><span id="line-182"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679218125"><span id="local-6989586621679218127"><span class="annot"><span class="annottext">(forall x. Rule -&gt; Rep Rule x)
 -&gt; (forall x. Rep Rule x -&gt; Rule) -&gt; Generic Rule
 forall x. Rep Rule x -&gt; Rule
 forall x. Rule -&gt; Rep Rule x
@@ -716,7 +713,7 @@ $cfrom :: forall x. Rule -&gt; Rep Rule x
 from :: forall x. Rule -&gt; Rep Rule x
 $cto :: forall x. Rep Rule x -&gt; Rule
 to :: forall x. Rep Rule x -&gt; Rule
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679217755"><span id="local-6989586621679217769"><span id="local-6989586621679217773"><span class="annot"><span class="annottext">Int -&gt; Rule -&gt; [Char] -&gt; [Char]
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679218129"><span id="local-6989586621679218143"><span id="local-6989586621679218147"><span class="annot"><span class="annottext">Int -&gt; Rule -&gt; [Char] -&gt; [Char]
 [Rule] -&gt; [Char] -&gt; [Char]
 Rule -&gt; [Char]
 (Int -&gt; Rule -&gt; [Char] -&gt; [Char])
@@ -731,29 +728,29 @@ show :: Rule -&gt; [Char]
 $cshowList :: [Rule] -&gt; [Char] -&gt; [Char]
 showList :: [Rule] -&gt; [Char] -&gt; [Char]
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">)</span><span>
-</span><span id="line-182"></span><span>
-</span><span id="line-183"></span><span class="annot"><a href="Yaml.html#normalizationRules"><span class="hs-identifier hs-type">normalizationRules</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Yaml.html#Rule"><span class="hs-identifier hs-type">Rule</span></a></span><span class="hs-special">]</span><span>
-</span><span id="line-184"></span><span class="hs-pragma">{-# NOINLINE</span><span> </span><span class="annot"><a href="Yaml.html#normalizationRules"><span class="hs-pragma hs-type">normalizationRules</span></a></span><span> </span><span class="hs-pragma">#-}</span><span>
-</span><span id="line-185"></span><span id="normalizationRules"><span class="annot"><span class="annottext">normalizationRules :: [Rule]
+</span><span id="line-183"></span><span>
+</span><span id="line-184"></span><span class="annot"><a href="Yaml.html#normalizationRules"><span class="hs-identifier hs-type">normalizationRules</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Yaml.html#Rule"><span class="hs-identifier hs-type">Rule</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-185"></span><span class="hs-pragma">{-# NOINLINE</span><span> </span><span class="annot"><a href="Yaml.html#normalizationRules"><span class="hs-pragma hs-type">normalizationRules</span></a></span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-186"></span><span id="normalizationRules"><span class="annot"><span class="annottext">normalizationRules :: [Rule]
 </span><a href="Yaml.html#normalizationRules"><span class="hs-identifier hs-var hs-var">normalizationRules</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(([Char], ByteString) -&gt; Rule) -&gt; [([Char], ByteString)] -&gt; [Rule]
 forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
 </span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="annot"><span class="annottext">([Char], ByteString) -&gt; Rule
-</span><a href="#local-6989586621679217778"><span class="hs-identifier hs-var">decodeRule</span></a></span><span> </span><span class="hs-special">$</span><span class="hs-special">(</span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/fl-mbd-0.0.16.0-fd6a57ed/share/doc/html/src/Data.FileEmbed.html#embedDir"><span class="hs-identifier hs-type">embedDir</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;resources&quot;</span></span><span class="hs-special">)</span><span>
-</span><span id="line-186"></span><span>  </span><span class="hs-keyword">where</span><span>
-</span><span id="line-187"></span><span>    </span><span class="annot"><a href="#local-6989586621679217778"><span class="hs-identifier hs-type">decodeRule</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">FilePath</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">BS.ByteString</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Yaml.html#Rule"><span class="hs-identifier hs-type">Rule</span></a></span><span>
-</span><span id="line-188"></span><span>    </span><span id="local-6989586621679217778"><span class="annot"><span class="annottext">decodeRule :: ([Char], ByteString) -&gt; Rule
-</span><a href="#local-6989586621679217778"><span class="hs-identifier hs-var hs-var">decodeRule</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679217782"><span class="annot"><span class="annottext">[Char]
-</span><a href="#local-6989586621679217782"><span class="hs-identifier hs-var">path</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679217783"><span class="annot"><span class="annottext">ByteString
-</span><a href="#local-6989586621679217783"><span class="hs-identifier hs-var">bs</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
-</span><span id="line-189"></span><span>      </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">ByteString -&gt; Either ParseException Rule
+</span><a href="#local-6989586621679218152"><span class="hs-identifier hs-var">decodeRule</span></a></span><span> </span><span class="hs-special">$</span><span class="hs-special">(</span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/fl-mbd-0.0.16.0-fd6a57ed/share/doc/html/src/Data.FileEmbed.html#embedDir"><span class="hs-identifier hs-type">embedDir</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;resources&quot;</span></span><span class="hs-special">)</span><span>
+</span><span id="line-187"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-188"></span><span>    </span><span class="annot"><a href="#local-6989586621679218152"><span class="hs-identifier hs-type">decodeRule</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">FilePath</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">BS.ByteString</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Yaml.html#Rule"><span class="hs-identifier hs-type">Rule</span></a></span><span>
+</span><span id="line-189"></span><span>    </span><span id="local-6989586621679218152"><span class="annot"><span class="annottext">decodeRule :: ([Char], ByteString) -&gt; Rule
+</span><a href="#local-6989586621679218152"><span class="hs-identifier hs-var hs-var">decodeRule</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679218156"><span class="annot"><span class="annottext">[Char]
+</span><a href="#local-6989586621679218156"><span class="hs-identifier hs-var">path</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679218157"><span class="annot"><span class="annottext">ByteString
+</span><a href="#local-6989586621679218157"><span class="hs-identifier hs-var">bs</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-190"></span><span>      </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">ByteString -&gt; Either ParseException Rule
 forall a. FromJSON a =&gt; ByteString -&gt; Either ParseException a
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/yml-0.11.11.2-9ff661e9/share/doc/html/src/Data.Yaml.html#decodeEither%27"><span class="hs-identifier hs-var">Yaml.decodeEither'</span></a></span><span> </span><span class="annot"><span class="annottext">ByteString
-</span><a href="#local-6989586621679217783"><span class="hs-identifier hs-var">bs</span></a></span><span> </span><span class="hs-keyword">of</span><span>
-</span><span id="line-190"></span><span>        </span><span class="annot"><span class="hs-identifier hs-type">Right</span></span><span> </span><span id="local-6989586621679217785"><span class="annot"><span class="annottext">Rule
-</span><a href="#local-6989586621679217785"><span class="hs-identifier hs-var">r</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Rule
-</span><a href="#local-6989586621679217785"><span class="hs-identifier hs-var">r</span></a></span><span>
-</span><span id="line-191"></span><span>        </span><span class="annot"><span class="hs-identifier hs-type">Left</span></span><span> </span><span id="local-6989586621679217786"><span class="annot"><span class="annottext">ParseException
-</span><a href="#local-6989586621679217786"><span class="hs-identifier hs-var">err</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; Rule
+</span><a href="#local-6989586621679218157"><span class="hs-identifier hs-var">bs</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-191"></span><span>        </span><span class="annot"><span class="hs-identifier hs-type">Right</span></span><span> </span><span id="local-6989586621679218159"><span class="annot"><span class="annottext">Rule
+</span><a href="#local-6989586621679218159"><span class="hs-identifier hs-var">r</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Rule
+</span><a href="#local-6989586621679218159"><span class="hs-identifier hs-var">r</span></a></span><span>
+</span><span id="line-192"></span><span>        </span><span class="annot"><span class="hs-identifier hs-type">Left</span></span><span> </span><span id="local-6989586621679218160"><span class="annot"><span class="annottext">ParseException
+</span><a href="#local-6989586621679218160"><span class="hs-identifier hs-var">err</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; Rule
 forall a. HasCallStack =&gt; [Char] -&gt; a
 </span><span class="hs-identifier hs-var">error</span></span><span> </span><span class="annot"><span class="annottext">([Char] -&gt; Rule) -&gt; [Char] -&gt; Rule
 forall a b. (a -&gt; b) -&gt; a -&gt; b
@@ -761,7 +758,7 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-string">&quot;YAML parse error in &quot;</span></span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; [Char] -&gt; [Char]
 forall a. [a] -&gt; [a] -&gt; [a]
 </span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">[Char]
-</span><a href="#local-6989586621679217782"><span class="hs-identifier hs-var">path</span></a></span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; [Char] -&gt; [Char]
+</span><a href="#local-6989586621679218156"><span class="hs-identifier hs-var">path</span></a></span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; [Char] -&gt; [Char]
 forall a. [a] -&gt; [a] -&gt; [a]
 </span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">[Char]
 </span><span class="hs-string">&quot;: &quot;</span></span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; [Char] -&gt; [Char]
@@ -769,11 +766,11 @@ forall a. [a] -&gt; [a] -&gt; [a]
 </span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">ParseException -&gt; [Char]
 forall a. Show a =&gt; a -&gt; [Char]
 </span><span class="hs-identifier hs-var">show</span></span><span> </span><span class="annot"><span class="annottext">ParseException
-</span><a href="#local-6989586621679217786"><span class="hs-identifier hs-var">err</span></a></span><span>
-</span><span id="line-192"></span><span>
-</span><span id="line-193"></span><span class="annot"><a href="Yaml.html#yamlRule"><span class="hs-identifier hs-type">yamlRule</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">FilePath</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="annot"><a href="Yaml.html#Rule"><span class="hs-identifier hs-type">Rule</span></a></span><span>
-</span><span id="line-194"></span><span id="yamlRule"><span class="annot"><span class="annottext">yamlRule :: [Char] -&gt; IO Rule
+</span><a href="#local-6989586621679218160"><span class="hs-identifier hs-var">err</span></a></span><span>
+</span><span id="line-193"></span><span>
+</span><span id="line-194"></span><span class="annot"><a href="Yaml.html#yamlRule"><span class="hs-identifier hs-type">yamlRule</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">FilePath</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="annot"><a href="Yaml.html#Rule"><span class="hs-identifier hs-type">Rule</span></a></span><span>
+</span><span id="line-195"></span><span id="yamlRule"><span class="annot"><span class="annottext">yamlRule :: [Char] -&gt; IO Rule
 </span><a href="Yaml.html#yamlRule"><span class="hs-identifier hs-var hs-var">yamlRule</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; IO Rule
 forall (m :: * -&gt; *) a. (MonadIO m, FromJSON a) =&gt; [Char] -&gt; m a
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/yml-0.11.11.2-9ff661e9/share/doc/html/src/Data.Yaml.html#decodeFileThrow"><span class="hs-identifier hs-var">Yaml.decodeFileThrow</span></a></span><span>
-</span><span id="line-195"></span></pre></body></html>
+</span><span id="line-196"></span></pre></body></html>
