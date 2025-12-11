@@ -1,6 +1,5 @@
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# OPTIONS_GHC -Wno-unused-record-wildcards #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
@@ -24,7 +23,7 @@ instance ToSingleLine PROGRAM where
   toSingleLine PR_SWEET{..} = PR_SWEET lcb (toSingleLine expr) rcb
 
 instance ToSingleLine EXPRESSION where
-  toSingleLine EX_FORMATION{lsb, binding = bd@BI_EMPTY{..}, rsb} = EX_FORMATION lsb NO_EOL NO_TAB bd NO_EOL NO_TAB rsb
+  toSingleLine EX_FORMATION{lsb, binding = bd@BI_EMPTY{}, rsb} = EX_FORMATION lsb NO_EOL NO_TAB bd NO_EOL NO_TAB rsb
   toSingleLine EX_FORMATION{..} = EX_FORMATION lsb NO_EOL TAB' (toSingleLine binding) NO_EOL TAB' rsb
   toSingleLine EX_DISPATCH{..} = EX_DISPATCH (toSingleLine expr) attr
   toSingleLine EX_APPLICATION{..} = EX_APPLICATION (toSingleLine expr) NO_EOL TAB' (toSingleLine tau) NO_EOL TAB' indent

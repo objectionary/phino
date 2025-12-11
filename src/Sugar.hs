@@ -1,7 +1,7 @@
 {-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# OPTIONS_GHC -Wno-name-shadowing -Wno-incomplete-patterns -Wno-unused-record-wildcards -Wno-unused-matches #-}
+{-# OPTIONS_GHC -Wno-name-shadowing #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
@@ -30,6 +30,8 @@ bdWithVoidRho BI_PAIR{..} = BI_PAIR pair (bdsWithVoidRho bindings) tab
     bdsWithVoidRho bds@BDS_PAIR{pair = PA_VOID{attr = AT_RHO _}} = bds
     bdsWithVoidRho bds@BDS_PAIR{pair = PA_TAU{attr = AT_RHO _}} = bds
     bdsWithVoidRho BDS_PAIR{..} = BDS_PAIR eol tab pair (bdsWithVoidRho bindings)
+    bdsWithVoidRho bds@BDS_META{} = bds
+bdWithVoidRho bd@BI_META{} = bd
 
 data SugarType = SWEET | SALTY
   deriving (Eq, Show)
@@ -57,10 +59,10 @@ instance ToSalty PROGRAM where
   toSalty prog = prog
 
 instance ToSalty EXPRESSION where
-  toSalty EX_DEF_PACKAGE{..} = EX_DISPATCH (EX_DISPATCH (EX_GLOBAL Φ) (AT_LABEL "org")) (AT_LABEL "eolang")
+  toSalty EX_DEF_PACKAGE{} = EX_DISPATCH (EX_DISPATCH (EX_GLOBAL Φ) (AT_LABEL "org")) (AT_LABEL "eolang")
   toSalty EX_ATTR{..} = EX_DISPATCH (EX_XI XI) attr
   toSalty EX_DISPATCH{..} = EX_DISPATCH (toSalty expr) attr
-  toSalty EX_FORMATION{lsb, binding = bd@BI_EMPTY{..}, rsb} = EX_FORMATION lsb NO_EOL TAB' (toSalty (bdWithVoidRho bd)) NO_EOL TAB' rsb
+  toSalty EX_FORMATION{lsb, binding = bd@BI_EMPTY{}, rsb} = EX_FORMATION lsb NO_EOL TAB' (toSalty (bdWithVoidRho bd)) NO_EOL TAB' rsb
   toSalty EX_FORMATION{..} = EX_FORMATION lsb eol tab (toSalty (bdWithVoidRho binding)) eol' tab' rsb
   toSalty EX_APPLICATION{..} = EX_APPLICATION (toSalty expr) EOL (TAB indent) (toSalty tau) EOL (TAB (indent - 1)) indent
   toSalty EX_APPLICATION_TAUS{..} =
@@ -74,9 +76,12 @@ instance ToSalty EXPRESSION where
         EX_APPLICATION (toSalty exp) EOL (TAB indent) (APP_BINDING (toSalty pair)) EOL (TAB (indent - 1)) indent
       tauToPairs :: BINDING -> [PAIR]
       tauToPairs BI_PAIR{..} = pair : tausToPairs bindings
+      tauToPairs BI_EMPTY{} = []
+      tauToPairs (BI_META mt _ _) = error $ "BI_META " ++ show mt ++ " unexpected in tauToPairs"
       tausToPairs :: BINDINGS -> [PAIR]
-      tausToPairs BDS_EMPTY{..} = []
+      tausToPairs BDS_EMPTY{} = []
       tausToPairs BDS_PAIR{..} = pair : tausToPairs bindings
+      tausToPairs (BDS_META _ _ mt _) = error $ "BDS_META " ++ show mt ++ " unexpected in tausToPairs"
   toSalty EX_APPLICATION_EXPRS{..} = toSalty (EX_APPLICATION_TAUS expr EOL (TAB indent) (argToBinding args tab) EOL (TAB (indent - 1)) indent)
     where
       argToBinding :: APP_ARG -> TAB -> BINDING
@@ -134,6 +139,8 @@ saltifyPrimitive base bytes data' tb@TAB{..} rhos =
             tb
             (indent + 1)
         )
+saltifyPrimitive _ _ _ TAB' _ = error "saltifyPrimitive requires TAB with indent, got TAB'"
+saltifyPrimitive _ _ _ NO_TAB _ = error "saltifyPrimitive requires TAB with indent, got NO_TAB"
 
 instance ToSalty BINDING where
   toSalty BI_PAIR{..} = BI_PAIR (toSalty pair) (toSalty bindings) tab
@@ -148,7 +155,7 @@ instance ToSalty BINDINGS where
 
 instance ToSalty PAIR where
   toSalty PA_TAU{..} = PA_TAU attr arrow (toSalty expr)
-  toSalty PA_FORMATION{voids, attr, arrow, expr = expr@EX_FORMATION{..}} =
+  toSalty PA_FORMATION{voids, attr, arrow, expr = EX_FORMATION{..}} =
     PA_TAU attr arrow (toSalty (EX_FORMATION lsb eol tab (joinToBinding voids binding) eol' tab' rsb))
     where
       joinToBinding :: [ATTRIBUTE] -> BINDING -> BINDING
@@ -157,5 +164,6 @@ instance ToSalty PAIR where
       joinToBindings :: [ATTRIBUTE] -> BINDING -> BINDINGS
       joinToBindings [] BI_EMPTY{..} = BDS_EMPTY tab
       joinToBindings [] BI_PAIR{..} = BDS_PAIR eol tab pair bindings
+      joinToBindings [] BI_META{} = error "BI_META unexpected in joinToBindings"
       joinToBindings (attr : rest) bd = BDS_PAIR eol tab (PA_VOID attr arrow EMPTY) (joinToBindings rest bd)
   toSalty pair = pair

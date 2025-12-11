@@ -1,5 +1,4 @@
 {-# LANGUAGE RecordWildCards #-}
-{-# OPTIONS_GHC -Wno-unused-record-wildcards #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
@@ -23,11 +22,11 @@ instance ToASCII PROGRAM where
   toASCII PR_SWEET{..} = PR_SWEET lcb (toASCII expr) rcb
 
 instance ToASCII EXPRESSION where
-  toASCII EX_GLOBAL{..} = EX_GLOBAL Q
-  toASCII EX_DEF_PACKAGE{..} = EX_DEF_PACKAGE QQ
-  toASCII EX_XI{..} = EX_XI DOLLAR
+  toASCII EX_GLOBAL{} = EX_GLOBAL Q
+  toASCII EX_DEF_PACKAGE{} = EX_DEF_PACKAGE QQ
+  toASCII EX_XI{} = EX_XI DOLLAR
   toASCII EX_ATTR{..} = EX_ATTR (toASCII attr)
-  toASCII EX_TERMINATION{..} = EX_TERMINATION T
+  toASCII EX_TERMINATION{} = EX_TERMINATION T
   toASCII EX_FORMATION{..} = EX_FORMATION LSB' eol tab (toASCII binding) eol' tab' RSB'
   toASCII EX_DISPATCH{..} = EX_DISPATCH (toASCII expr) (toASCII attr)
   toASCII EX_APPLICATION{..} = EX_APPLICATION (toASCII expr) eol tab (toASCII tau) eol' tab' indent
@@ -71,7 +70,7 @@ instance ToASCII PAIR where
 
 instance ToASCII ATTRIBUTE where
   toASCII AT_ALPHA{..} = AT_ALPHA ALPHA' idx
-  toASCII AT_PHI{..} = AT_PHI AT
-  toASCII AT_RHO{..} = AT_RHO CARET
+  toASCII AT_PHI{} = AT_PHI AT
+  toASCII AT_RHO{} = AT_RHO CARET
   toASCII AT_META{..} = AT_META (MT_ATTRIBUTE' (rest meta))
   toASCII attr = attr

@@ -1,6 +1,5 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# OPTIONS_GHC -Wno-name-shadowing #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
@@ -160,5 +159,5 @@ parseCondition input = do
 
 parseConditionThrows :: String -> IO Y.Condition
 parseConditionThrows cnd = case parseCondition cnd of
-  Right condition -> pure condition
+  Right cond -> pure cond
   Left err -> throwIO (CouldNotParseCondition err)
