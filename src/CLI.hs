@@ -585,13 +585,13 @@ runCLI args = handle handler $ do
       input <- readInput inputFile
       prog <- parseProgram input PHI
       if isNothing pattern
-        then logInfo "The --pattern is not provided, no substitutions are built"
+        then logDebug "The --pattern is not provided, no substitutions are built"
         else do
           ptn <- parseExpressionThrows (fromJust pattern)
           condition <- traverse parseConditionThrows when'
           substs <- matchProgramWithRule prog (rule ptn condition) (RuleContext buildTerm)
           if null substs
-            then logInfo "Provided pattern was not matched, no substitutions are built"
+            then logDebug "Provided pattern was not matched, no substitutions are built"
             else putStrLn (P.printSubsts' substs (sugarType, UNICODE, flat))
       where
         rule :: Expression -> Maybe Y.Condition -> Y.Rule
