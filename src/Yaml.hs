@@ -2,6 +2,7 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# OPTIONS_GHC -Wno-name-shadowing -Wno-orphans #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
@@ -16,8 +17,8 @@ import Data.FileEmbed (embedDir)
 import Data.Text (unpack)
 import Data.Yaml (Parser)
 import qualified Data.Yaml as Yaml
-import GHC.Generics
-import Misc (allPathsIn, validateYamlObject)
+import GHC.Generics (Generic)
+import Misc (validateYamlObject)
 import Parser
 
 parseJSON' :: String -> (String -> Either String a) -> Value -> Parser a

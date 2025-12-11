@@ -22,6 +22,7 @@ source-repository head
 common warnings
   ghc-options:
     -Wall
+    -Werror
     -Wcompat
     -Widentities
     -Wincomplete-record-updates
@@ -32,6 +33,7 @@ common warnings
     -Wno-missing-export-lists
 
 library
+  import: warnings
   exposed-modules:
     AST
     Builder

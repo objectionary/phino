@@ -1,16 +1,15 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# OPTIONS_GHC -Wno-unused-record-wildcards -Wno-incomplete-patterns -Wno-identities #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
 module Render where
 
-import AST
 import CST
-import Data.List
-import Data.Maybe (fromMaybe)
+import Data.List (intercalate)
 
 class Render a where
   render :: a -> String

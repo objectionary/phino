@@ -59,48 +59,48 @@ spec = do
 
   describe "toSingleLine EXPRESSION for EX_FORMATION with empty binding" $
     it "removes tabs and newlines" $
-      let expr = EX_FORMATION LSB EOL (TAB 1) (BI_EMPTY (TAB 1)) EOL (TAB 0) RSB
-       in toSingleLine expr `shouldBe` EX_FORMATION LSB NO_EOL NO_TAB (BI_EMPTY (TAB 1)) NO_EOL NO_TAB RSB
+      let ex = EX_FORMATION LSB EOL (TAB 1) (BI_EMPTY (TAB 1)) EOL (TAB 0) RSB
+       in toSingleLine ex `shouldBe` EX_FORMATION LSB NO_EOL NO_TAB (BI_EMPTY (TAB 1)) NO_EOL NO_TAB RSB
 
   describe "toSingleLine EXPRESSION for EX_FORMATION with bindings" $
     it "converts to singleline with TAB markers" $
-      let binding = BI_PAIR (PA_TAU (AT_LABEL "x") ARROW (EX_GLOBAL Φ)) (BDS_EMPTY (TAB 1)) (TAB 1)
-          expr = EX_FORMATION LSB EOL (TAB 1) binding EOL (TAB 0) RSB
-          result = toSingleLine expr
+      let bd = BI_PAIR (PA_TAU (AT_LABEL "x") ARROW (EX_GLOBAL Φ)) (BDS_EMPTY (TAB 1)) (TAB 1)
+          ex = EX_FORMATION LSB EOL (TAB 1) bd EOL (TAB 0) RSB
+          result = toSingleLine ex
        in result `shouldBe` EX_FORMATION LSB NO_EOL TAB' (BI_PAIR (PA_TAU (AT_LABEL "x") ARROW (EX_GLOBAL Φ)) (BDS_EMPTY (TAB 1)) TAB') NO_EOL TAB' RSB
 
   describe "toSingleLine EXPRESSION for EX_DISPATCH" $
     it "converts nested expression" $
-      let expr = EX_DISPATCH (EX_FORMATION LSB EOL (TAB 1) (BI_EMPTY (TAB 1)) EOL (TAB 0) RSB) (AT_LABEL "attr")
-       in toSingleLine expr `shouldBe` EX_DISPATCH (EX_FORMATION LSB NO_EOL NO_TAB (BI_EMPTY (TAB 1)) NO_EOL NO_TAB RSB) (AT_LABEL "attr")
+      let ex = EX_DISPATCH (EX_FORMATION LSB EOL (TAB 1) (BI_EMPTY (TAB 1)) EOL (TAB 0) RSB) (AT_LABEL "attr")
+       in toSingleLine ex `shouldBe` EX_DISPATCH (EX_FORMATION LSB NO_EOL NO_TAB (BI_EMPTY (TAB 1)) NO_EOL NO_TAB RSB) (AT_LABEL "attr")
 
   describe "toSingleLine EXPRESSION for EX_APPLICATION" $
     it "converts with proper spacing" $
-      let tau = APP_BINDING (PA_TAU (AT_LABEL "y") ARROW (EX_GLOBAL Φ))
-          expr = EX_APPLICATION (EX_GLOBAL Φ) EOL (TAB 1) tau EOL (TAB 0) 1
-       in toSingleLine expr `shouldBe` EX_APPLICATION (EX_GLOBAL Φ) NO_EOL TAB' (APP_BINDING (PA_TAU (AT_LABEL "y") ARROW (EX_GLOBAL Φ))) NO_EOL TAB' 1
+      let t = APP_BINDING (PA_TAU (AT_LABEL "y") ARROW (EX_GLOBAL Φ))
+          ex = EX_APPLICATION (EX_GLOBAL Φ) EOL (TAB 1) t EOL (TAB 0) 1
+       in toSingleLine ex `shouldBe` EX_APPLICATION (EX_GLOBAL Φ) NO_EOL TAB' (APP_BINDING (PA_TAU (AT_LABEL "y") ARROW (EX_GLOBAL Φ))) NO_EOL TAB' 1
 
   describe "toSingleLine EXPRESSION for EX_APPLICATION_TAUS" $
     it "converts taus application" $
-      let taus = BI_PAIR (PA_TAU (AT_LABEL "z") ARROW (EX_GLOBAL Φ)) (BDS_EMPTY (TAB 1)) (TAB 1)
-          expr = EX_APPLICATION_TAUS (EX_GLOBAL Φ) EOL (TAB 1) taus EOL (TAB 0) 1
-       in toSingleLine expr `shouldBe` EX_APPLICATION_TAUS (EX_GLOBAL Φ) NO_EOL TAB' (BI_PAIR (PA_TAU (AT_LABEL "z") ARROW (EX_GLOBAL Φ)) (BDS_EMPTY (TAB 1)) TAB') NO_EOL TAB' 1
+      let ts = BI_PAIR (PA_TAU (AT_LABEL "z") ARROW (EX_GLOBAL Φ)) (BDS_EMPTY (TAB 1)) (TAB 1)
+          ex = EX_APPLICATION_TAUS (EX_GLOBAL Φ) EOL (TAB 1) ts EOL (TAB 0) 1
+       in toSingleLine ex `shouldBe` EX_APPLICATION_TAUS (EX_GLOBAL Φ) NO_EOL TAB' (BI_PAIR (PA_TAU (AT_LABEL "z") ARROW (EX_GLOBAL Φ)) (BDS_EMPTY (TAB 1)) TAB') NO_EOL TAB' 1
 
   describe "toSingleLine EXPRESSION for EX_APPLICATION_EXPRS" $
     it "converts expressions application" $
-      let args = APP_ARG (EX_GLOBAL Φ) AAS_EMPTY
-          expr = EX_APPLICATION_EXPRS (EX_GLOBAL Φ) EOL (TAB 1) args EOL (TAB 0) 1
-       in toSingleLine expr `shouldBe` EX_APPLICATION_EXPRS (EX_GLOBAL Φ) NO_EOL TAB' (APP_ARG (EX_GLOBAL Φ) AAS_EMPTY) NO_EOL TAB' 1
+      let as = APP_ARG (EX_GLOBAL Φ) AAS_EMPTY
+          ex = EX_APPLICATION_EXPRS (EX_GLOBAL Φ) EOL (TAB 1) as EOL (TAB 0) 1
+       in toSingleLine ex `shouldBe` EX_APPLICATION_EXPRS (EX_GLOBAL Φ) NO_EOL TAB' (APP_ARG (EX_GLOBAL Φ) AAS_EMPTY) NO_EOL TAB' 1
 
   describe "toSingleLine EXPRESSION for EX_PHI_MEET" $
     it "converts meet expression" $
-      let expr = EX_PHI_MEET Nothing 0 (EX_FORMATION LSB EOL (TAB 1) (BI_EMPTY (TAB 1)) EOL (TAB 0) RSB)
-       in toSingleLine expr `shouldBe` EX_PHI_MEET Nothing 0 (EX_FORMATION LSB NO_EOL NO_TAB (BI_EMPTY (TAB 1)) NO_EOL NO_TAB RSB)
+      let ex = EX_PHI_MEET Nothing 0 (EX_FORMATION LSB EOL (TAB 1) (BI_EMPTY (TAB 1)) EOL (TAB 0) RSB)
+       in toSingleLine ex `shouldBe` EX_PHI_MEET Nothing 0 (EX_FORMATION LSB NO_EOL NO_TAB (BI_EMPTY (TAB 1)) NO_EOL NO_TAB RSB)
 
   describe "toSingleLine EXPRESSION for EX_PHI_AGAIN" $
     it "converts again expression" $
-      let expr = EX_PHI_AGAIN Nothing 1 (EX_FORMATION LSB EOL (TAB 1) (BI_EMPTY (TAB 1)) EOL (TAB 0) RSB)
-       in toSingleLine expr `shouldBe` EX_PHI_AGAIN Nothing 1 (EX_FORMATION LSB NO_EOL NO_TAB (BI_EMPTY (TAB 1)) NO_EOL NO_TAB RSB)
+      let ex = EX_PHI_AGAIN Nothing 1 (EX_FORMATION LSB EOL (TAB 1) (BI_EMPTY (TAB 1)) EOL (TAB 0) RSB)
+       in toSingleLine ex `shouldBe` EX_PHI_AGAIN Nothing 1 (EX_FORMATION LSB NO_EOL NO_TAB (BI_EMPTY (TAB 1)) NO_EOL NO_TAB RSB)
 
   describe "toSingleLine EXPRESSION leaves primitives unchanged" $
     forM_
@@ -114,54 +114,54 @@ spec = do
       , ("EX_META", EX_META (MT_EXPRESSION "e"))
       , ("EX_META_TAIL", EX_META_TAIL (EX_GLOBAL Φ) (MT_TAIL "t"))
       ]
-      ( \(desc, expr) ->
-          it desc (toSingleLine expr `shouldBe` expr)
+      ( \(desc, ex) ->
+          it desc (toSingleLine ex `shouldBe` ex)
       )
 
   describe "toSingleLine APP_BINDING" $
     it "converts nested pair expression" $
-      let binding = APP_BINDING (PA_TAU (AT_LABEL "x") ARROW (EX_FORMATION LSB EOL (TAB 1) (BI_EMPTY (TAB 1)) EOL (TAB 0) RSB))
-       in toSingleLine binding `shouldBe` APP_BINDING (PA_TAU (AT_LABEL "x") ARROW (EX_FORMATION LSB NO_EOL NO_TAB (BI_EMPTY (TAB 1)) NO_EOL NO_TAB RSB))
+      let bd = APP_BINDING (PA_TAU (AT_LABEL "x") ARROW (EX_FORMATION LSB EOL (TAB 1) (BI_EMPTY (TAB 1)) EOL (TAB 0) RSB))
+       in toSingleLine bd `shouldBe` APP_BINDING (PA_TAU (AT_LABEL "x") ARROW (EX_FORMATION LSB NO_EOL NO_TAB (BI_EMPTY (TAB 1)) NO_EOL NO_TAB RSB))
 
   describe "toSingleLine BINDING for BI_PAIR" $
     it "converts to singleline" $
-      let binding = BI_PAIR (PA_TAU (AT_LABEL "x") ARROW (EX_GLOBAL Φ)) (BDS_EMPTY (TAB 1)) (TAB 1)
-       in toSingleLine binding `shouldBe` BI_PAIR (PA_TAU (AT_LABEL "x") ARROW (EX_GLOBAL Φ)) (BDS_EMPTY (TAB 1)) TAB'
+      let bd = BI_PAIR (PA_TAU (AT_LABEL "x") ARROW (EX_GLOBAL Φ)) (BDS_EMPTY (TAB 1)) (TAB 1)
+       in toSingleLine bd `shouldBe` BI_PAIR (PA_TAU (AT_LABEL "x") ARROW (EX_GLOBAL Φ)) (BDS_EMPTY (TAB 1)) TAB'
 
   describe "toSingleLine BINDING for BI_META" $
     it "converts meta binding" $
-      let binding = BI_META (MT_BINDING "B") (BDS_EMPTY (TAB 1)) (TAB 1)
-       in toSingleLine binding `shouldBe` BI_META (MT_BINDING "B") (BDS_EMPTY (TAB 1)) TAB'
+      let bd = BI_META (MT_BINDING "B") (BDS_EMPTY (TAB 1)) (TAB 1)
+       in toSingleLine bd `shouldBe` BI_META (MT_BINDING "B") (BDS_EMPTY (TAB 1)) TAB'
 
   describe "toSingleLine BINDING for BI_EMPTY" $
     it "returns binding unchanged" $
-      let binding = BI_EMPTY (TAB 1)
-       in toSingleLine binding `shouldBe` binding
+      let bd = BI_EMPTY (TAB 1)
+       in toSingleLine bd `shouldBe` bd
 
   describe "toSingleLine BINDINGS for BDS_PAIR" $
     it "converts to singleline" $
-      let bindings = BDS_PAIR EOL (TAB 1) (PA_TAU (AT_LABEL "y") ARROW (EX_GLOBAL Φ)) (BDS_EMPTY (TAB 1))
-       in toSingleLine bindings `shouldBe` BDS_PAIR NO_EOL TAB' (PA_TAU (AT_LABEL "y") ARROW (EX_GLOBAL Φ)) (BDS_EMPTY (TAB 1))
+      let bds = BDS_PAIR EOL (TAB 1) (PA_TAU (AT_LABEL "y") ARROW (EX_GLOBAL Φ)) (BDS_EMPTY (TAB 1))
+       in toSingleLine bds `shouldBe` BDS_PAIR NO_EOL TAB' (PA_TAU (AT_LABEL "y") ARROW (EX_GLOBAL Φ)) (BDS_EMPTY (TAB 1))
 
   describe "toSingleLine BINDINGS for BDS_META" $
     it "converts meta bindings" $
-      let bindings = BDS_META EOL (TAB 1) (MT_BINDING "B") (BDS_EMPTY (TAB 1))
-       in toSingleLine bindings `shouldBe` BDS_META NO_EOL TAB' (MT_BINDING "B") (BDS_EMPTY (TAB 1))
+      let bds = BDS_META EOL (TAB 1) (MT_BINDING "B") (BDS_EMPTY (TAB 1))
+       in toSingleLine bds `shouldBe` BDS_META NO_EOL TAB' (MT_BINDING "B") (BDS_EMPTY (TAB 1))
 
   describe "toSingleLine BINDINGS for BDS_EMPTY" $
     it "returns bindings unchanged" $
-      let bindings = BDS_EMPTY (TAB 1)
-       in toSingleLine bindings `shouldBe` bindings
+      let bds = BDS_EMPTY (TAB 1)
+       in toSingleLine bds `shouldBe` bds
 
   describe "toSingleLine PAIR for PA_TAU" $
     it "converts expression" $
-      let pair = PA_TAU (AT_LABEL "x") ARROW (EX_FORMATION LSB EOL (TAB 1) (BI_EMPTY (TAB 1)) EOL (TAB 0) RSB)
-       in toSingleLine pair `shouldBe` PA_TAU (AT_LABEL "x") ARROW (EX_FORMATION LSB NO_EOL NO_TAB (BI_EMPTY (TAB 1)) NO_EOL NO_TAB RSB)
+      let pr = PA_TAU (AT_LABEL "x") ARROW (EX_FORMATION LSB EOL (TAB 1) (BI_EMPTY (TAB 1)) EOL (TAB 0) RSB)
+       in toSingleLine pr `shouldBe` PA_TAU (AT_LABEL "x") ARROW (EX_FORMATION LSB NO_EOL NO_TAB (BI_EMPTY (TAB 1)) NO_EOL NO_TAB RSB)
 
   describe "toSingleLine PAIR for PA_FORMATION" $
     it "converts formation pair" $
-      let pair = PA_FORMATION (AT_LABEL "f") [AT_LABEL "v"] ARROW (EX_FORMATION LSB EOL (TAB 1) (BI_EMPTY (TAB 1)) EOL (TAB 0) RSB)
-       in toSingleLine pair `shouldBe` PA_FORMATION (AT_LABEL "f") [AT_LABEL "v"] ARROW (EX_FORMATION LSB NO_EOL NO_TAB (BI_EMPTY (TAB 1)) NO_EOL NO_TAB RSB)
+      let pr = PA_FORMATION (AT_LABEL "f") [AT_LABEL "v"] ARROW (EX_FORMATION LSB EOL (TAB 1) (BI_EMPTY (TAB 1)) EOL (TAB 0) RSB)
+       in toSingleLine pr `shouldBe` PA_FORMATION (AT_LABEL "f") [AT_LABEL "v"] ARROW (EX_FORMATION LSB NO_EOL NO_TAB (BI_EMPTY (TAB 1)) NO_EOL NO_TAB RSB)
 
   describe "toSingleLine PAIR leaves non-expression pairs unchanged" $
     forM_
@@ -175,8 +175,8 @@ spec = do
       , ("PA_META_DELTA", PA_META_DELTA (MT_BYTES "d"))
       , ("PA_META_DELTA'", PA_META_DELTA' (MT_BYTES "d"))
       ]
-      ( \(desc, pair) ->
-          it desc (toSingleLine pair `shouldBe` pair)
+      ( \(desc, pr) ->
+          it desc (toSingleLine pr `shouldBe` pr)
       )
 
   describe "toSingleLine APP_ARG" $
@@ -186,8 +186,8 @@ spec = do
 
   describe "toSingleLine APP_ARGS for AAS_EXPR" $
     it "converts nested expression" $
-      let args = AAS_EXPR EOL (TAB 1) (EX_FORMATION LSB EOL (TAB 1) (BI_EMPTY (TAB 1)) EOL (TAB 0) RSB) AAS_EMPTY
-       in toSingleLine args `shouldBe` AAS_EXPR NO_EOL TAB' (EX_FORMATION LSB NO_EOL NO_TAB (BI_EMPTY (TAB 1)) NO_EOL NO_TAB RSB) AAS_EMPTY
+      let as = AAS_EXPR EOL (TAB 1) (EX_FORMATION LSB EOL (TAB 1) (BI_EMPTY (TAB 1)) EOL (TAB 0) RSB) AAS_EMPTY
+       in toSingleLine as `shouldBe` AAS_EXPR NO_EOL TAB' (EX_FORMATION LSB NO_EOL NO_TAB (BI_EMPTY (TAB 1)) NO_EOL NO_TAB RSB) AAS_EMPTY
 
   describe "toSingleLine APP_ARGS for AAS_EMPTY" $
     it "returns unchanged" $

@@ -2,6 +2,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# OPTIONS_GHC -Wno-partial-fields -Wno-name-shadowing -Wno-incomplete-patterns -Wno-unused-matches -Wno-identities #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
@@ -9,7 +10,6 @@
 module CST where
 
 import AST
-import Data.List (intercalate)
 import Data.Maybe (isJust)
 import Misc
 
@@ -173,7 +173,7 @@ programToCST :: Program -> PROGRAM
 programToCST prog = toCST prog 0 EOL
 
 expressionToCST :: Expression -> EXPRESSION
-expressionToCST expr = toCST expr 0 EOL
+expressionToCST ex = toCST ex 0 EOL
 
 -- This class is used to convert AST to CST
 -- CST is created with sugar and unicode
@@ -226,33 +226,33 @@ instance ToCST Expression EXPRESSION where
   -- If given application is not such primitive - we just convert it to one of the applications:
   -- 1. either with pure expression with arguments, which means there are incremented only alpha bindings
   -- 2. or with just bindings
-  toCST app@(ExApplication exp tau) tabs eol =
-    let (expr, taus, exprs) = complexApplication app
-        expr' = toCST expr tabs eol :: EXPRESSION
+  toCST app@(ExApplication _ _) tabs eol =
+    let (ex, ts, exs) = complexApplication app
+        ex' = toCST ex tabs eol :: EXPRESSION
         next = tabs + 1
-        (taus', rhos) = withoutRhosInPrimitives expr taus
-        obj = ExApplication expr (head taus')
-     in if length taus' == 1 && isJust (matchDataObject obj)
-          then applicationToPrimitive obj tabs rhos
+        (ts', rs) = withoutRhosInPrimitives ex ts
+        obj = ExApplication ex (head ts')
+     in if length ts' == 1 && isJust (matchDataObject obj)
+          then applicationToPrimitive obj tabs rs
           else
-            if null exprs
+            if null exs
               then
-                let eol' = inlinedEOL (not (hasEOL taus))
+                let eol' = inlinedEOL (not (hasEOL ts))
                  in EX_APPLICATION_TAUS
-                      expr'
+                      ex'
                       eol'
                       (tabOfEOL eol' next)
-                      (toCST taus next eol' :: BINDING)
+                      (toCST ts next eol' :: BINDING)
                       eol'
                       (tabOfEOL eol' tabs)
                       next
               else
-                let eol' = inlinedEOL (not (hasEOL exprs))
+                let eol' = inlinedEOL (not (hasEOL exs))
                  in EX_APPLICATION_EXPRS
-                      expr'
+                      ex'
                       eol'
                       (tabOfEOL eol' next)
-                      (toCST exprs next eol')
+                      (toCST exs next eol')
                       eol'
                       (tabOfEOL eol' tabs)
                       next
