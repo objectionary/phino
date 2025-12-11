@@ -25,7 +25,6 @@ fourmolu:
 coverage:
 	threshold=$${COVERAGE_THRESHOLD:-70}
 	cabal test --enable-coverage
-	set -x
 	excludes=$$(find test -name '*.hs' -exec basename {} .hs \; | paste -sd, -)
 	hpc-codecov cabal:spec -x "$${excludes}" -x "Paths_phino" --out=coverage.json
 	coverage=$$(python3 -c "import json; d=json.load(open('coverage.json')); t=sum(len(v) for v in d['coverage'].values()); c=sum(1 for v in d['coverage'].values() for h in v.values() if isinstance(h,int) and h>0); print(int(100*c/t) if t else 0)")

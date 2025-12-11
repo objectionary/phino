@@ -53,4 +53,5 @@ jobs:
       - run: cabal update
       - run: cabal install fourmolu-0.17.0.0 --overwrite-policy=always
       - run: cabal install hlint-3.8 --overwrite-policy=always
+      - run: cabal install hpc-codecov-0.6.3.0 --overwrite-policy=always
       - run: make clean all
