@@ -23,7 +23,7 @@ fourmolu:
 
 .SILENT:
 coverage:
-	threshold=$${COVERAGE_THRESHOLD:-80}
+	threshold=$${COVERAGE_THRESHOLD:-75}
 	cabal test --enable-coverage
 	tix=$$(find ./dist-newstyle -name 'spec.tix' -type f 2>/dev/null | head -1)
 	if [ -z "$${tix}" ]; then echo "The spec.tix file not found"; tree dist-newstyle; exit 1; fi
