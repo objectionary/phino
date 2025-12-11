@@ -504,11 +504,11 @@ runCLI args = handle handler $ do
           (True, _, Just file) -> do
             logDebug (printf "The option '--in-place' is specified, writing back to '%s'..." file)
             writeFile file prog
-            logInfo (printf "The file '%s' was modified in-place" file)
+            logDebug (printf "The file '%s' was modified in-place" file)
           (False, Just file, _) -> do
             logDebug (printf "The option '--target' is specified, printing to '%s'..." file)
             writeFile file prog
-            logInfo (printf "The command result was saved in '%s'" file)
+            logDebug (printf "The command result was saved in '%s'" file)
           (False, Nothing, _) -> do
             logDebug "The option '--target' is not specified, printing to console..."
             putStrLn prog
@@ -711,4 +711,4 @@ output target content = case target of
   Just file -> do
     logDebug (printf "The option '--target' is specified, printing to '%s'..." file)
     writeFile file content
-    logInfo (printf "The command result was saved in '%s'" file)
+    logDebug (printf "The command result was saved in '%s'" file)
