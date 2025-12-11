@@ -536,9 +536,7 @@ spec = do
       withStdin "Q -> [[ ]]" $
         withTempFile "targetXXXXXX.tmp" $ \(path, h) -> do
           hClose h
-          testCLISucceeded
-            ["rewrite", "--sweet", printf "--target=%s" path]
-            [printf "The command result was saved in '%s'" path]
+          testCLISucceeded ["rewrite", "--sweet", printf "--target=%s" path] []
           content <- readFile path
           content `shouldBe` "{⟦⟧}"
 
@@ -546,9 +544,7 @@ spec = do
       withTempFile "inplaceXXXXXX.phi" $ \(path, h) -> do
         hPutStr h "Q -> [[ x -> \"foo\" ]]"
         hClose h
-        testCLISucceeded
-          ["rewrite", rule "simple.yaml", "--in-place", "--sweet", path]
-          [printf "The file '%s' was modified in-place" path]
+        testCLISucceeded ["rewrite", rule "simple.yaml", "--in-place", "--sweet", path] []
         content <- readFile path
         content `shouldBe` "{⟦\n  x ↦ \"bar\"\n⟧}"
 
@@ -719,9 +715,7 @@ spec = do
             (\(path, _) -> removeFile path)
             ( \(path, h) -> do
                 hClose h
-                testCLISucceeded
-                  ["explain", "--normalize", printf "--target=%s" path]
-                  [printf "was saved in '%s'" path]
+                testCLISucceeded ["explain", "--normalize", printf "--target=%s" path] []
                 content <- readFile path
                 content `shouldContain` "\\documentclass{article}"
                 content `shouldContain` "\\begin{document}"
@@ -769,14 +763,14 @@ spec = do
   describe "match" $ do
     it "takes from stdin" $
       withStdin "{[[]]}" $
-        testCLISucceeded ["match"] ["[INFO]"]
+        testCLISucceeded ["match", "--log-level=debug"] ["[DEBUG]"]
 
     it "takes from file" $
-      testCLISucceeded ["match", "test-resources/cli/foo.phi"] ["[INFO]"]
+      testCLISucceeded ["match", "test-resources/cli/foo.phi", "--log-level=debug"] ["[DEBUG]"]
 
     it "does not print substitutions without pattern" $
       withStdin "{[[]]}" $
-        testCLISucceeded ["match"] ["[INFO]: The --pattern is not provided, no substitutions are built"]
+        testCLISucceeded ["match", "--log-level=debug"] ["[DEBUG]: The --pattern is not provided, no substitutions are built"]
 
     it "prints one substitution" $
       withStdin "{[[ x -> Q.x ]]}" $
