@@ -2,7 +2,7 @@
 {-# LANGUAGE NumericUnderscores #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# OPTIONS_GHC -Wno-partial-fields -Wno-name-shadowing -Wno-unused-imports -Wno-unused-matches #-}
+{-# OPTIONS_GHC -Wno-partial-fields #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
@@ -20,20 +20,16 @@ module XMIR
 where
 
 import AST
-import Control.Exception (Exception (displayException), SomeException, throwIO)
-import Control.Exception.Base (Exception)
+import Control.Exception (Exception (displayException), throwIO)
 import qualified Data.Bifunctor
 import Data.Foldable (foldlM)
 import Data.List (intercalate)
-import qualified Data.List
-import Data.Map (Map)
 import qualified Data.Map as M
-import Data.Maybe (catMaybes, mapMaybe)
-import Data.Text (Text)
+import Data.Maybe (catMaybes)
 import qualified Data.Text as T
 import qualified Data.Text.Lazy as TL
 import qualified Data.Text.Lazy.Builder as TB
-import Data.Time
+import Data.Time (UTCTime, getCurrentTime)
 import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds)
 import Data.Time.Format (defaultTimeLocale, formatTime)
 import Data.Version (showVersion)
@@ -155,7 +151,7 @@ formationBinding (BiTau AtPhi expr) ctx = do
   pure (Just (object [("name", show AtPhi), ("base", base)] children))
 formationBinding (BiTau AtRho _) _ = pure Nothing
 formationBinding (BiDelta bytes) _ = pure (Just (NodeContent (T.pack (printBytes bytes))))
-formationBinding (BiLambda func) _ = pure (Just (object [("name", show AtLambda)] []))
+formationBinding (BiLambda _) _ = pure (Just (object [("name", show AtLambda)] []))
 formationBinding (BiVoid AtRho) _ = pure Nothing
 formationBinding (BiVoid AtPhi) _ = pure (Just (object [("name", show AtPhi), ("base", "∅")] []))
 formationBinding (BiVoid (AtLabel label)) _ = pure (Just (object [("name", label), ("base", "∅")] []))
@@ -215,15 +211,15 @@ programToXMIR prog@(Program expr@(ExFormation [BiTau (AtLabel _) arg, BiVoid AtR
     getPackage (ExFormation [BiTau (AtLabel label) (ExFormation [bd, BiLambda "Package", BiVoid AtRho]), BiLambda "Package", BiVoid AtRho]) = do
       (pckg, expr') <- getPackage (ExFormation [bd, BiLambda "Package", BiVoid AtRho])
       pure (label : pckg, expr')
-    getPackage (ExFormation [BiTau attr expr, BiLambda "Package", BiVoid AtRho]) = pure ([], ExFormation [BiTau attr expr, BiVoid AtRho])
+    getPackage (ExFormation [BiTau at ex, BiLambda "Package", BiVoid AtRho]) = pure ([], ExFormation [BiTau at ex, BiVoid AtRho])
     getPackage (ExFormation [bd, BiVoid AtRho]) = pure ([], ExFormation [bd, BiVoid AtRho])
-    getPackage expr = throwIO (userError (printf "Can't extract package from given expression:\n %s" (printExpression expr)))
+    getPackage ex = throwIO (userError (printf "Can't extract package from given expression:\n %s" (printExpression ex)))
     -- Convert root Expression to Node
     rootExpression :: Expression -> XmirContext -> IO Node
-    rootExpression (ExFormation [bd, BiVoid AtRho]) ctx = do
-      [bd'] <- nestedBindings [bd] ctx
+    rootExpression (ExFormation [bd, BiVoid AtRho]) c = do
+      [bd'] <- nestedBindings [bd] c
       pure bd'
-    rootExpression expr _ = throwIO (UnsupportedExpression expr)
+    rootExpression ex _ = throwIO (UnsupportedExpression ex)
     -- Returns metas Node with package:
     -- <metas>
     --   <meta>
@@ -433,16 +429,16 @@ xmirToExpression cur fqn
       pure (ExFormation (withVoidRho bds))
   where
     xmirToExpression' :: Expression -> String -> String -> C.Cursor -> [String] -> IO Expression
-    xmirToExpression' start symbol rest cur fqn =
-      if null rest
-        then throwIO (InvalidXMIRFormat (printf "The @base='%s.' is illegal in XMIR" symbol) cur)
+    xmirToExpression' start symbol rst c names =
+      if null rst
+        then throwIO (InvalidXMIRFormat (printf "The @base='%s.' is illegal in XMIR" symbol) c)
         else do
           head' <-
             foldlM
-              (\acc part -> ExDispatch acc <$> toAttr (T.unpack part) cur)
+              (\acc part -> ExDispatch acc <$> toAttr (T.unpack part) c)
               start
-              (T.splitOn "." (T.pack rest))
-          xmirToApplication head' (cur C.$/ C.element (toName "o")) fqn
+              (T.splitOn "." (T.pack rst))
+          xmirToApplication head' (c C.$/ C.element (toName "o")) names
 
 xmirToApplication :: Expression -> [C.Cursor] -> [String] -> IO Expression
 xmirToApplication = xmirToApplication' 0

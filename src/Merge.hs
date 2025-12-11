@@ -1,6 +1,6 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# OPTIONS_GHC -Wno-unused-imports -Wno-partial-fields -Wno-unused-matches #-}
+{-# OPTIONS_GHC -Wno-partial-fields #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
@@ -8,15 +8,11 @@
 module Merge (merge) where
 
 import AST
-import Control.Exception (throwIO)
-import Control.Exception.Base
+import Control.Exception.Base (Exception, throwIO)
 import Data.Functor ((<&>))
-import Deps (BuildTermFunc, Term (TeBindings))
-import Matcher (substEmpty)
 import Misc
-import Printer (printBinding, printExpression, printProgram)
+import Printer (printExpression, printProgram)
 import Text.Printf (printf)
-import qualified Yaml as Y
 
 data MergeException
   = WrongProgramFormat {program :: Program}
@@ -55,10 +51,10 @@ mergeBindings xs ys = do
 
 merge' :: [Program] -> IO Program
 merge' [] = throwIO EmptyProgramList
-merge' [prog@(Program (ExFormation bds))] = pure prog
-merge' (prog@(Program (ExFormation bds)) : rest) = do
+merge' [p@(Program (ExFormation _))] = pure p
+merge' (Program (ExFormation bindings) : rest) = do
   Program (ExFormation bds') <- merge' rest
-  merged <- mergeBindings bds' bds
+  merged <- mergeBindings bds' bindings
   pure (Program (ExFormation merged))
 merge' (prog : _) = throwIO (WrongProgramFormat prog)
 

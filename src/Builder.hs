@@ -1,6 +1,5 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# OPTIONS_GHC -Wno-unused-imports -Wno-incomplete-patterns -Wno-name-shadowing #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
@@ -30,7 +29,6 @@ import Matcher
 import Misc (uniqueBindings)
 import Printer
 import Text.Printf (printf)
-import Yaml (ExtraArgument (..))
 
 data BuildException
   = CouldNotBuildExpression {_expr :: Expression, _msg :: String}
@@ -68,14 +66,15 @@ instance Show BuildException where
 
 contextualize :: Expression -> Expression -> Expression
 contextualize ExGlobal _ = ExGlobal
-contextualize ExThis expr = expr
+contextualize ExThis ex = ex
 contextualize ExTermination _ = ExTermination
 contextualize (ExFormation bds) _ = ExFormation bds
-contextualize (ExDispatch expr attr) context = ExDispatch (contextualize expr context) attr
-contextualize (ExApplication expr (BiTau attr bexpr)) context =
-  let expr' = contextualize expr context
+contextualize (ExDispatch ex at) context = ExDispatch (contextualize ex context) at
+contextualize (ExApplication ex (BiTau at bexpr)) context =
+  let ex' = contextualize ex context
       bexpr' = contextualize bexpr context
-   in ExApplication expr' (BiTau attr bexpr')
+   in ExApplication ex' (BiTau at bexpr')
+contextualize ex _ = ex
 
 buildAttribute :: Attribute -> Subst -> Built Attribute
 buildAttribute (AtMeta meta) (Subst mp) = case Map.lookup meta mp of
@@ -121,9 +120,9 @@ buildBindings (bd : rest) subst = do
 
 buildExpressionWithTails :: Expression -> [Tail] -> Subst -> Expression
 buildExpressionWithTails expr [] _ = expr
-buildExpressionWithTails expr (tail : rest) subst = case tail of
-  TaApplication taus -> buildExpressionWithTails (ExApplication expr taus) rest subst
-  TaDispatch attr -> buildExpressionWithTails (ExDispatch expr attr) rest subst
+buildExpressionWithTails ex (tl : rest) subst = case tl of
+  TaApplication taus -> buildExpressionWithTails (ExApplication ex taus) rest subst
+  TaDispatch at -> buildExpressionWithTails (ExDispatch ex at) rest subst
 
 -- Build meta expression with given substitution
 -- It returns tuple (X, Y)
@@ -131,10 +130,10 @@ buildExpressionWithTails expr (tail : rest) subst = case tail of
 -- If meta expression is built from MvExpression, is has
 -- context from original Program. It have default context otherwise
 buildExpression :: Expression -> Subst -> Built (Expression, Expression)
-buildExpression (ExDispatch expr attr) subst = do
-  (dispatched, scope) <- buildExpression expr subst
-  attr <- buildAttribute attr subst
-  Right (ExDispatch dispatched attr, scope)
+buildExpression (ExDispatch ex at) subst = do
+  (dispatched, scope) <- buildExpression ex subst
+  at' <- buildAttribute at subst
+  Right (ExDispatch dispatched at', scope)
 buildExpression (ExApplication expr (BiTau battr bexpr)) subst = do
   (applied, scope) <- buildExpression expr subst
   bds <- buildBinding (BiTau battr bexpr) subst

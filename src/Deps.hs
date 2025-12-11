@@ -1,5 +1,3 @@
-{-# OPTIONS_GHC -Wno-name-shadowing #-}
-
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
@@ -33,10 +31,10 @@ type SaveStepFunc = Program -> Int -> IO ()
 
 saveStep :: Maybe FilePath -> String -> (Program -> IO String) -> SaveStepFunc
 saveStep Nothing _ _ _ _ = pure ()
-saveStep (Just dir) ext print prog step = do
+saveStep (Just dir) ext render prog step = do
   createDirectoryIfMissing True dir
   let path = dir </> printf "%05d.%s" step ext
-  content <- print prog
+  content <- render prog
   writeFile path content
   logDebug (printf "Saved step '%d' to '%s'" step path)
 

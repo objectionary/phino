@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# OPTIONS_GHC -Wno-unused-imports -Wno-name-shadowing -Wno-unused-matches -Wno-incomplete-patterns -Wno-incomplete-uni-patterns #-}
+{-# OPTIONS_GHC -Wno-name-shadowing -Wno-unused-matches -Wno-incomplete-patterns -Wno-incomplete-uni-patterns #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
@@ -12,16 +12,10 @@ import Builder
   ( buildAttribute
   , buildBinding
   , buildBindingThrows
-  , buildExpression
   , buildExpressionThrows
   )
-import Control.Exception
-  ( SomeException (SomeException)
-  , evaluate
-  )
-import Control.Exception.Base (try)
+import Control.Exception.Base (SomeException, try)
 import Control.Monad (when)
-import Data.Aeson (FromJSON)
 import qualified Data.ByteString.Char8 as B
 import Data.Foldable (foldlM)
 import qualified Data.Map.Strict as M
