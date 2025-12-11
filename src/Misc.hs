@@ -42,12 +42,11 @@ import qualified Data.Aeson.Key as Key
 import qualified Data.Aeson.KeyMap as KeyMap
 import Data.Binary.IEEE754
 import Data.Bits (Bits (shiftL), (.|.))
-import qualified Data.Bits as IOArray
 import qualified Data.ByteString as B
-import Data.ByteString.Builder (toLazyByteString, word64BE, word8)
+import Data.ByteString.Builder (toLazyByteString, word64BE)
 import Data.ByteString.Lazy (unpack)
 import qualified Data.ByteString.Lazy.UTF8 as U
-import Data.Char (chr, isPrint, ord)
+import Data.Char (isPrint, ord)
 import Data.List (intercalate)
 import Data.Maybe (catMaybes)
 import qualified Data.Set as Set
@@ -63,13 +62,13 @@ import System.Random.Stateful
 import Text.Printf (printf)
 
 data FsException
-  = FileDoesNotExist {file :: FilePath}
-  | DirectoryDoesNotExist {dir :: FilePath}
+  = FileDoesNotExist {_file :: FilePath}
+  | DirectoryDoesNotExist {_dir :: FilePath}
   deriving (Exception)
 
 instance Show FsException where
-  show FileDoesNotExist{..} = printf "File '%s' does not exist" file
-  show DirectoryDoesNotExist{..} = printf "Directory '%s' does not exist" dir
+  show FileDoesNotExist{..} = printf "File '%s' does not exist" _file
+  show DirectoryDoesNotExist{..} = printf "Directory '%s' does not exist" _dir
 
 matchBaseObject :: Expression -> Maybe String
 matchBaseObject (ExDispatch (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang")) (AtLabel label)) = Just label
@@ -175,14 +174,14 @@ withVoidRho bds = withVoidRho' bds False
   where
     withVoidRho' :: [Binding] -> Bool -> [Binding]
     withVoidRho' [] hasRho = [BiVoid AtRho | not hasRho]
-    withVoidRho' (bd : bds) hasRho =
+    withVoidRho' (bd : rest) hasRho =
       case bd of
-        BiMeta _ -> bd : bds
-        BiVoid (AtMeta _) -> bd : bds
-        BiTau (AtMeta _) _ -> bd : bds
-        BiVoid AtRho -> bd : withVoidRho' bds True
-        BiTau AtRho _ -> bd : withVoidRho' bds True
-        _ -> bd : withVoidRho' bds hasRho
+        BiMeta _ -> bd : rest
+        BiVoid (AtMeta _) -> bd : rest
+        BiTau (AtMeta _) _ -> bd : rest
+        BiVoid AtRho -> bd : withVoidRho' rest True
+        BiTau AtRho _ -> bd : withVoidRho' rest True
+        _ -> bd : withVoidRho' rest hasRho
 
 ensuredFile :: FilePath -> IO FilePath
 ensuredFile pth = do
@@ -222,12 +221,14 @@ toDouble = fromIntegral
 btsToWord8 :: Bytes -> [Word8]
 btsToWord8 BtEmpty = []
 btsToWord8 (BtOne bt) = case readHex bt of
-  [(hex, "")] -> [fromIntegral hex]
+  [(hex, "")] -> [fromIntegral (hex :: Integer)]
   _ -> error $ "Invalid hex byte; " ++ bt
 btsToWord8 (BtMany []) = []
 btsToWord8 (BtMany (bt : bts)) =
-  let [next] = btsToWord8 (BtOne bt)
-   in next : btsToWord8 (BtMany bts)
+  case btsToWord8 (BtOne bt) of
+    [byte] -> byte : btsToWord8 (BtMany bts)
+    _ -> error $ "Invalid hex byte; " ++ bt
+btsToWord8 (BtMeta mt) = error $ "Cannot convert meta bytes to Word8; " ++ mt
 
 -- >>> word8ToBytes [64, 20, 0]
 -- BtMany ["40","14","00"]
@@ -368,7 +369,7 @@ shuffle xs = do
     M.swap v i j
   V.toList <$> V.freeze v
 
-validateYamlObject :: (Applicative a, MonadFail a) => Object -> [String] -> a ()
+validateYamlObject :: (MonadFail a) => Object -> [String] -> a ()
 validateYamlObject v keys = do
   let present = filter (`KeyMap.member` v) (map Key.fromString keys)
       current = KeyMap.keys v

@@ -1,5 +1,4 @@
 {-# LANGUAGE DeriveAnyClass #-}
-{-# LANGUAGE RecordWildCards #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
@@ -7,28 +6,24 @@
 module Merge (merge) where
 
 import AST
-import Control.Exception (throwIO)
-import Control.Exception.Base
+import Control.Exception.Base (Exception, throwIO)
 import Data.Functor ((<&>))
-import Deps (BuildTermFunc, Term (TeBindings))
-import Matcher (substEmpty)
 import Misc
-import Printer (printBinding, printExpression, printProgram)
+import Printer (printExpression, printProgram)
 import Text.Printf (printf)
-import qualified Yaml as Y
 
 data MergeException
-  = WrongProgramFormat {program :: Program}
-  | CanNotMergeBinding {first :: Binding, second :: Binding}
+  = WrongProgramFormat Program
+  | CanNotMergeBinding Binding Binding
   | EmptyProgramList
   deriving (Exception)
 
 instance Show MergeException where
-  show WrongProgramFormat{..} =
+  show (WrongProgramFormat prog) =
     printf
       "Invalid program format, only programs with top level formations are supported for 'merge' command, given:\n%s"
-      (printProgram program)
-  show CanNotMergeBinding{..} =
+      (printProgram prog)
+  show (CanNotMergeBinding first second) =
     printf
       "Can't merge two bindings, conflict found:\n%s"
       (printExpression (ExFormation [first, second]))
@@ -54,10 +49,10 @@ mergeBindings xs ys = do
 
 merge' :: [Program] -> IO Program
 merge' [] = throwIO EmptyProgramList
-merge' [prog@(Program (ExFormation bds))] = pure prog
-merge' (prog@(Program (ExFormation bds)) : rest) = do
+merge' [p@(Program (ExFormation _))] = pure p
+merge' (Program (ExFormation bindings) : rest) = do
   Program (ExFormation bds') <- merge' rest
-  merged <- mergeBindings bds' bds
+  merged <- mergeBindings bds' bindings
   pure (Program (ExFormation merged))
 merge' (prog : _) = throwIO (WrongProgramFormat prog)
 

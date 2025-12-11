@@ -1,6 +1,7 @@
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# OPTIONS_GHC -Wno-name-shadowing #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
@@ -10,7 +11,6 @@ module Dataize (morph, dataize, dataize', DataizeContext (..)) where
 import AST
 import Builder (contextualize)
 import Control.Exception (throwIO)
-import Data.IntMap (restrictKeys)
 import Data.List (partition)
 import Deps (BuildTermFunc, SaveStepFunc)
 import Misc
@@ -18,7 +18,6 @@ import Must (Must (..))
 import Rewriter (RewriteContext (RewriteContext), Rewritten, rewrite')
 import Rule (RuleContext (RuleContext), isNF)
 import Text.Printf (printf)
-import XMIR (XmirContext (XmirContext))
 import Yaml (normalizationRules)
 
 type Dataized = (Maybe Bytes, [Rewritten])
@@ -132,7 +131,7 @@ withTail _ _ = pure Nothing
 --         M(e) -> ⊥                              otherwise
 morph :: Morphed -> DataizeContext -> IO Morphed
 morph (ExTermination, seq) _ = pure (ExTermination, leadsTo seq "Mprim" ExTermination) -- PRIM
-morph (form@(ExFormation bds), seq) ctx = do
+morph (form@(ExFormation _), seq) ctx = do
   resolved <- withTail form ctx
   case resolved of
     Just (expr, rule) -> morph (expr, leadsTo seq rule expr) ctx -- LAMBDA or PHI
@@ -165,21 +164,24 @@ dataize' :: Dataizable -> DataizeContext -> IO Dataized
 dataize' (ExTermination, seq) _ = pure (Nothing, seq)
 dataize' (ExFormation bds, seq) ctx = case maybeDelta bds of
   (Just (BiDelta bytes), _) -> pure (Just bytes, seq)
+  (Just _, _) -> pure (Nothing, seq)
   (Nothing, _) -> case maybePhi bds of
     (Just (BiTau AtPhi expr), bds') -> case maybeLambda bds' of
       (Just (BiLambda _), _) -> throwIO (userError "The 𝜑 and λ can't be present in formation at the same time")
-      (_, _) ->
+      (Just _, _) -> pure (Nothing, seq)
+      (Nothing, _) ->
         let expr' = contextualize expr (ExFormation bds)
          in dataize' (expr', leadsTo seq "contextualize" expr') ctx
+    (Just _, _) -> pure (Nothing, seq)
     (Nothing, _) -> case maybeLambda bds of
       (Just (BiLambda _), _) -> morph (ExFormation bds, seq) ctx >>= (`dataize'` ctx)
+      (Just _, _) -> pure (Nothing, seq)
       (Nothing, _) -> pure (Nothing, seq)
 dataize' dataizable ctx = morph dataizable ctx >>= (`dataize'` ctx)
 
 leadsTo :: [Rewritten] -> String -> Expression -> [Rewritten]
-leadsTo seq rule expr =
-  let (prog, _) : rest = seq
-   in (Program expr, Nothing) : (prog, Just rule) : rest
+leadsTo [] rule expr = [(Program expr, Just rule)]
+leadsTo ((prog, _) : rest) rule expr = (Program expr, Nothing) : (prog, Just rule) : rest
 
 atom :: String -> Expression -> DataizeContext -> IO Expression
 atom "L_org_eolang_number_plus" self ctx = do

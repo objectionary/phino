@@ -7,7 +7,6 @@
 -- This module represents AST tree for parsed phi-calculus program
 module AST where
 
-import Data.List (intercalate)
 import GHC.Generics (Generic)
 
 newtype Program = Program Expression -- Q -> expr
@@ -68,7 +67,7 @@ countNodes (Program expr) = countNodes' expr
     countNodes' ExGlobal = 1
     countNodes' ExTermination = 1
     countNodes' ExThis = 1
-    countNodes' (ExApplication expr' (BiTau attr bexpr')) = 2 + countNodes' expr' + countNodes' bexpr'
-    countNodes' (ExDispatch expr' attr) = 2 + countNodes' expr'
-    countNodes' (ExFormation bds) = 1 + sum (map (\case BiTau attr expr' -> countNodes' expr'; _ -> 1) bds)
+    countNodes' (ExApplication expr' (BiTau _ bexpr')) = 2 + countNodes' expr' + countNodes' bexpr'
+    countNodes' (ExDispatch expr' _) = 2 + countNodes' expr'
+    countNodes' (ExFormation bds) = 1 + sum (map (\case BiTau _ expr' -> countNodes' expr'; _ -> 1) bds)
     countNodes' _ = 0

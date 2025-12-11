@@ -3,6 +3,7 @@
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# OPTIONS_GHC -Wno-name-shadowing #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
@@ -12,22 +13,19 @@ module CLI (runCLI) where
 import AST
 import qualified Canonizer as C
 import Condition (parseConditionThrows)
-import Control.Exception (Exception (displayException), SomeException, handle, throw, throwIO)
-import Control.Exception.Base
+import Control.Exception.Base (Exception (displayException), SomeException, catch, fromException, handle, throwIO)
 import Control.Monad (forM_, unless, when, (>=>))
 import Data.Char (toLower, toUpper)
 import Data.Foldable (for_)
-import qualified Data.Foldable
 import Data.Functor ((<&>))
 import Data.List (intercalate)
 import Data.Maybe (fromJust, isJust, isNothing)
 import Data.Version (showVersion)
 import Dataize (DataizeContext (DataizeContext), dataize)
 import Deps (SaveStepFunc, saveStep)
-import Encoding (Encoding (ASCII, UNICODE))
+import Encoding (Encoding (UNICODE))
 import qualified Filter as F
 import Functions (buildTerm)
-import qualified Functions
 import LaTeX (LatexContext (LatexContext), explainRules, programToLaTeX, rewrittensToLatex)
 import Lining (LineFormat (MULTILINE, SINGLELINE))
 import Logger
@@ -39,7 +37,7 @@ import Options.Applicative
 import Parser (parseExpressionThrows, parseProgramThrows)
 import Paths_phino (version)
 import qualified Printer as P
-import Rewriter (RewriteContext (RewriteContext), Rewritten (..), rewrite')
+import Rewriter (RewriteContext (RewriteContext), Rewritten, rewrite')
 import Rule (RuleContext (RuleContext), matchProgramWithRule)
 import Sugar
 import System.Exit (ExitCode (..), exitFailure)
@@ -62,14 +60,14 @@ data PrintProgramContext = PrintProgCtx
   }
 
 data CmdException
-  = InvalidCLIArguments {message :: String}
-  | CouldNotReadFromStdin {message :: String}
+  = InvalidCLIArguments String
+  | CouldNotReadFromStdin String
   | CouldNotDataize
   deriving (Exception)
 
 instance Show CmdException where
-  show InvalidCLIArguments{..} = printf "Invalid set of arguments: %s" message
-  show CouldNotReadFromStdin{..} = printf "Could not read input from stdin\nReason: %s" message
+  show (InvalidCLIArguments msg) = printf "Invalid set of arguments: %s" msg
+  show (CouldNotReadFromStdin msg) = printf "Could not read input from stdin\nReason: %s" msg
   show CouldNotDataize = "Could not dataize given program"
 
 data Command
@@ -505,6 +503,8 @@ runCLI args = handle handler $ do
             logDebug (printf "The option '--in-place' is specified, writing back to '%s'..." file)
             writeFile file prog
             logDebug (printf "The file '%s' was modified in-place" file)
+          (True, _, Nothing) ->
+            error "The option --in-place requires an input file"
           (False, Just file, _) -> do
             logDebug (printf "The option '--target' is specified, printing to '%s'..." file)
             writeFile file prog
@@ -556,7 +556,6 @@ runCLI args = handle handler $ do
     CmdExplain OptsExplain{..} -> do
       validateOpts
       rules' <- getRules normalize shuffle rules
-      let latex = explainRules rules'
       output targetFile (explainRules rules')
       where
         validateOpts :: IO ()
@@ -615,7 +614,7 @@ expressionsToFilter opt = traverse (parseExpressionThrows >=> asFilter)
       where
         asFilter' :: Expression -> IO Expression
         asFilter' exp@(ExDispatch ExGlobal _) = pure exp
-        asFilter' exp@(ExDispatch expr attr) = asFilter' expr >> pure exp
+        asFilter' exp@(ExDispatch ex _) = asFilter' ex >> pure exp
         asFilter' _ =
           invalidCLIArguments
             ( printf
@@ -665,6 +664,7 @@ parseProgram phi PHI = parseProgramThrows phi
 parseProgram xmir XMIR = do
   doc <- parseXMIRThrows xmir
   xmirToPhi doc
+parseProgram _ LATEX = invalidCLIArguments "LaTeX cannot be used as input format"
 
 printRewrittens :: PrintProgramContext -> [Rewritten] -> IO String
 printRewrittens ctx@PrintProgCtx{..} rewrittens

@@ -3,6 +3,7 @@
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# OPTIONS_GHC -Wno-name-shadowing #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
@@ -13,23 +14,18 @@ import AST
 import Builder
 import Control.Exception (Exception, throwIO)
 import Data.Char (toLower)
-import Data.Foldable (foldlM)
 import Data.Functor ((<&>))
-import qualified Data.Map.Strict as M
-import Data.Maybe (catMaybes, fromMaybe, isJust)
+import Data.Maybe (fromMaybe)
 import qualified Data.Set as Set
 import Deps
 import Logger (logDebug)
-import Matcher (MetaValue (MvAttribute, MvBindings, MvBytes, MvExpression), Subst (Subst), combine, combineMany, defaultScope, matchProgram, substEmpty, substSingle)
-import Misc (ensuredFile)
+import Matcher (Subst)
 import Must (Must (..), exceedsUpperBound, inRange)
-import Parser (parseProgram, parseProgramThrows)
 import Printer (printProgram)
 import Replacer (ReplaceContext (ReplaceCtx), ReplaceProgramFunc, replaceProgram, replaceProgramFast)
-import Rule (RuleContext (RuleContext), matchProgramWithRule)
+import Rule (RuleContext (RuleContext))
 import qualified Rule as R
-import Text.Printf
-import Yaml (ExtraArgument (..))
+import Text.Printf (printf)
 import qualified Yaml as Y
 
 type RewriteState = ([Rewritten], Set.Set Program)
@@ -48,36 +44,36 @@ data RewriteContext = RewriteContext
   }
 
 data RewriteException
-  = MustBeGoing {must :: Must, count :: Int}
-  | MustStopBefore {must :: Must, count :: Int}
-  | StoppedOnLimit {flag :: String, limit :: Int}
-  | LoopingRewriting {prog :: String, rule :: String, step :: Int}
+  = MustBeGoing Must Int
+  | MustStopBefore Must Int
+  | StoppedOnLimit String Int
+  | LoopingRewriting String String Int
   deriving (Exception)
 
 instance Show RewriteException where
-  show MustBeGoing{..} =
+  show (MustBeGoing mst cnt) =
     printf
       "With option --must=%s it's expected rewriting cycles to be in range [%s], but rewriting stopped after %d cycles"
-      (show must)
-      (show must)
-      count
-  show MustStopBefore{..} =
+      (show mst)
+      (show mst)
+      cnt
+  show (MustStopBefore mst cnt) =
     printf
       "With option --must=%s it's expected rewriting cycles to be in range [%s], but rewriting has already reached %d cycles and is still going"
-      (show must)
-      (show must)
-      count
-  show StoppedOnLimit{..} =
+      (show mst)
+      (show mst)
+      cnt
+  show (StoppedOnLimit flg lim) =
     printf
       "With option --depth-sensitive it's expected rewriting iterations amount does not reach the limit: --%s=%d"
-      flag
-      limit
-  show LoopingRewriting{..} =
+      flg
+      lim
+  show (LoopingRewriting prg rul stp) =
     printf
       "On rewriting step '%d' of rule '%s' we got the same program as we got at one of the previous step, it seems rewriting is looping\nProgram: %s"
-      step
-      rule
-      prog
+      stp
+      rul
+      prg
 
 -- Build pattern and result expression and replace patterns to results in given program
 buildAndReplace' :: ToReplace -> ReplaceProgramFunc -> IO Program
@@ -178,16 +174,16 @@ rewrite state (rule : rest) iteration ctx@RewriteContext{..} = do
                           _rewrite (leadsTo prog, Set.insert prog _unique) (_count + 1)
       where
         leadsTo :: Program -> [Rewritten]
-        leadsTo _prog =
-          let (program, _) : rest = _rewrittens
-           in (_prog, Nothing) : (program, Just (map toLower (fromMaybe "unknown" (Y.name rule)))) : rest
+        leadsTo _prog = case _rewrittens of
+          (program, _) : rest -> (_prog, Nothing) : (program, Just (map toLower (fromMaybe "unknown" (Y.name rule)))) : rest
+          [] -> [(_prog, Nothing)]
 
 -- The function accepts single program but returns sequence of programs
 rewrite' :: Program -> [Y.Rule] -> RewriteContext -> IO [Rewritten]
 rewrite' prog rules ctx = _rewrite ([(prog, Nothing)], Set.empty) 1 ctx <&> reverse
   where
     _rewrite :: RewriteState -> Int -> RewriteContext -> IO [Rewritten]
-    _rewrite state@(rewrittens, unique) count ctx@RewriteContext{..} = do
+    _rewrite state@(rewrittens, _) count ctx@RewriteContext{..} = do
       let cycles = _maxCycles
           must = _must
           current = count - 1
@@ -202,7 +198,7 @@ rewrite' prog rules ctx = _rewrite ([(prog, Nothing)], Set.empty) 1 ctx <&> reve
                 else pure rewrittens
             else do
               logDebug (printf "Starting rewriting cycle for all rules: %d out of %d" count cycles)
-              state'@(rewrittens', unique') <- rewrite state rules count ctx
+              state'@(rewrittens', _) <- rewrite state rules count ctx
               let (program', _) = head rewrittens'
                   (program, _) = head rewrittens
               if program' == program

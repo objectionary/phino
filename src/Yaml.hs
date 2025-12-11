@@ -2,6 +2,7 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# OPTIONS_GHC -Wno-orphans #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
@@ -16,14 +17,14 @@ import Data.FileEmbed (embedDir)
 import Data.Text (unpack)
 import Data.Yaml (Parser)
 import qualified Data.Yaml as Yaml
-import GHC.Generics
-import Misc (allPathsIn, validateYamlObject)
+import GHC.Generics (Generic)
+import Misc (validateYamlObject)
 import Parser
 
 parseJSON' :: String -> (String -> Either String a) -> Value -> Parser a
-parseJSON' name func =
+parseJSON' nm func =
   withText
-    name
+    nm
     ( \txt -> case func (unpack txt) of
         Left err -> fail err
         Right parsed -> pure parsed
@@ -99,12 +100,12 @@ instance FromJSON Condition where
             , do
                 vals <- v .: "matches"
                 case vals of
-                  [pat, exp] -> Matches <$> parseJSON pat <*> parseJSON exp
+                  [pat, ex] -> Matches <$> parseJSON pat <*> parseJSON ex
                   _ -> fail "'matches' expects exactly two arguments"
             , do
                 vals <- v .: "part-of"
                 case vals of
-                  [exp, bd] -> PartOf <$> parseJSON exp <*> parseJSON bd
+                  [ex, bd] -> PartOf <$> parseJSON ex <*> parseJSON bd
                   _ -> fail "'part-of' expects exactly two arguments"
             ]
       )

@@ -227,6 +227,7 @@ quotedStr = char '"' >> manyTill (choice [escapedChar, noneOf ['\\', '"']]) (cha
                   if n >= 0 && n <= 0x10FFFF
                     then return (chr n)
                     else fail ("Invalid Unicode code point: \\u" ++ hexDigits)
+        _ -> fail ("Invalid Unicode escape: \\u" ++ hexDigits)
     hexEscape :: Parser Char
     hexEscape = do
       digits <- count 2 hexDigitChar
@@ -498,7 +499,7 @@ parseExpression :: String -> Either String Expression
 parseExpression = parse' "expression" expression
 
 parseExpressionThrows :: String -> IO Expression
-parseExpressionThrows expression = case parseExpression expression of
+parseExpressionThrows ex = case parseExpression ex of
   Right expr -> pure expr
   Left err -> throwIO (CouldNotParseExpression err)
 
@@ -506,6 +507,6 @@ parseProgram :: String -> Either String Program
 parseProgram = parse' "program" program
 
 parseProgramThrows :: String -> IO Program
-parseProgramThrows program = case parseProgram program of
+parseProgramThrows prg = case parseProgram prg of
   Right prog -> pure prog
   Left err -> throwIO (CouldNotParseProgram err)

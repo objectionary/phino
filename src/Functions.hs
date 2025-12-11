@@ -8,7 +8,7 @@ module Functions (buildTerm) where
 import AST
 import Builder
 import Control.Exception (throwIO)
-import Control.Monad (replicateM, when)
+import Control.Monad (when)
 import qualified Data.ByteString.Char8 as B
 import Data.Functor
 import qualified Data.Set as Set
@@ -140,9 +140,9 @@ _sed args subst = do
         Just body ->
           let (pat, rest) = nextUntilSlash body B.empty False
               (rep, flag) = nextUntilSlash rest B.empty True
-           in case [pat, rep, flag] of
-                [pat, rep, "g"] -> pure (pat, rep, True)
-                [pat, rep, ""] -> pure (pat, rep, False)
+           in case flag of
+                "g" -> pure (pat, rep, True)
+                "" -> pure (pat, rep, False)
                 _ -> throwIO (userError "sed pattern must be in format s/pat/rep/[g]")
         _ -> throwIO (userError "sed pattern must start with s/")
     -- Cut part from given string until regular slash.
@@ -182,12 +182,12 @@ _string [Y.ArgExpression expr] subst = do
   str <- case expr' of
     DataNumber bts -> pure (DataString (strToBts (either show show (btsToNum bts))))
     DataString bts -> pure (DataString bts)
-    exp ->
+    ex ->
       throwIO
         ( userError
             ( printf
                 "Couldn't convert given expression to 'Φ̇.string' object, only 'Φ̇.number' or 'Φ̇.string' are allowed\n%s"
-                (printExpression exp)
+                (printExpression ex)
             )
         )
   pure (TeExpression str)
@@ -227,21 +227,25 @@ _join args subst = do
     join' :: [Binding] -> Set.Set Attribute -> [Binding]
     join' [] _ = []
     join' (bd : bds) attrs =
-      let [attr] = attributesFromBindings [bd]
-       in if Set.member attr attrs
+      case attributesFromBindings [bd] of
+        [attr] ->
+          if Set.member attr attrs
             then
               if attr == AtRho || attr == AtDelta || attr == AtLambda
                 then join' bds attrs
                 else
                   let new = case bd of
-                        BiTau attr expr -> BiTau (updated attr attrs) expr
-                        BiVoid attr -> BiVoid (updated attr attrs)
+                        BiTau at ex -> BiTau (updated at attrs) ex
+                        BiVoid at -> BiVoid (updated at attrs)
+                        other -> other
                    in new : join' bds attrs
             else bd : join' bds (Set.insert attr attrs)
+        _ -> bd : join' bds attrs
     updated :: Attribute -> Set.Set Attribute -> Attribute
-    updated attr attrs =
-      let (TeAttribute attr') = unsafePerformIO (_randomTau (map Y.ArgAttribute (Set.toList attrs)) subst)
-       in attr'
+    updated _ attrs =
+      case unsafePerformIO (_randomTau (map Y.ArgAttribute (Set.toList attrs)) subst) of
+        TeAttribute attr' -> attr'
+        _ -> AtLabel "unknown"
 
 _unsupported :: BuildTermFunc
 _unsupported func _ _ = throwIO (userError (printf "Function %s() is not supported or does not exist" func))

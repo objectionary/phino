@@ -2,6 +2,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# OPTIONS_GHC -Wno-partial-fields -Wno-name-shadowing #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
@@ -9,7 +10,6 @@
 module CST where
 
 import AST
-import Data.List (intercalate)
 import Data.Maybe (isJust)
 import Misc
 
@@ -173,7 +173,7 @@ programToCST :: Program -> PROGRAM
 programToCST prog = toCST prog 0 EOL
 
 expressionToCST :: Expression -> EXPRESSION
-expressionToCST expr = toCST expr 0 EOL
+expressionToCST ex = toCST ex 0 EOL
 
 -- This class is used to convert AST to CST
 -- CST is created with sugar and unicode
@@ -226,33 +226,33 @@ instance ToCST Expression EXPRESSION where
   -- If given application is not such primitive - we just convert it to one of the applications:
   -- 1. either with pure expression with arguments, which means there are incremented only alpha bindings
   -- 2. or with just bindings
-  toCST app@(ExApplication exp tau) tabs eol =
-    let (expr, taus, exprs) = complexApplication app
-        expr' = toCST expr tabs eol :: EXPRESSION
+  toCST app@(ExApplication _ _) tabs eol =
+    let (ex, ts, exs) = complexApplication app
+        ex' = toCST ex tabs eol :: EXPRESSION
         next = tabs + 1
-        (taus', rhos) = withoutRhosInPrimitives expr taus
-        obj = ExApplication expr (head taus')
-     in if length taus' == 1 && isJust (matchDataObject obj)
-          then applicationToPrimitive obj tabs rhos
+        (ts', rs) = withoutRhosInPrimitives ex ts
+        obj = ExApplication ex (head ts')
+     in if length ts' == 1 && isJust (matchDataObject obj)
+          then applicationToPrimitive obj tabs rs
           else
-            if null exprs
+            if null exs
               then
-                let eol' = inlinedEOL (not (hasEOL taus))
+                let eol' = inlinedEOL (not (hasEOL ts))
                  in EX_APPLICATION_TAUS
-                      expr'
+                      ex'
                       eol'
                       (tabOfEOL eol' next)
-                      (toCST taus next eol' :: BINDING)
+                      (toCST ts next eol' :: BINDING)
                       eol'
                       (tabOfEOL eol' tabs)
                       next
               else
-                let eol' = inlinedEOL (not (hasEOL exprs))
+                let eol' = inlinedEOL (not (hasEOL exs))
                  in EX_APPLICATION_EXPRS
-                      expr'
+                      ex'
                       eol'
                       (tabOfEOL eol' next)
-                      (toCST exprs next eol')
+                      (toCST exs next eol')
                       eol'
                       (tabOfEOL eol' tabs)
                       next
@@ -275,6 +275,7 @@ instance ToCST Expression EXPRESSION where
       applicationToPrimitive :: Expression -> Int -> [Binding] -> EXPRESSION
       applicationToPrimitive (DataNumber bts) tabs = EX_NUMBER (btsToNum bts) (TAB tabs)
       applicationToPrimitive (DataString bts) tabs = EX_STRING (btsToStr bts) (TAB tabs)
+      applicationToPrimitive _ _ = error "applicationToPrimitive expects DataNumber or DataString"
       -- Here we unroll nested application sequence into flat structure
       -- The returned tuple consists of:
       -- 1. deepest start expression
@@ -294,15 +295,17 @@ instance ToCST Expression EXPRESSION where
                   then (before, taus', [])
                   else case tau' of
                     BiTau (AtAlpha idx) expr' ->
-                      if idx == fromIntegral (length exprs)
+                      if idx == length exprs
                         then (before, taus', expr' : exprs)
                         else (before, taus', [])
                     _ -> (before, taus', [])
           complexApplication' (ExApplication expr (BiTau (AtAlpha 0) expr')) = (expr, [BiTau (AtAlpha 0) expr'], [expr'])
           complexApplication' (ExApplication expr tau) = (expr, [tau], [])
+          complexApplication' expr = (expr, [], [])
 
 instance ToCST [Expression] APP_ARG where
   toCST (expr : exprs) tabs eol = APP_ARG (toCST expr tabs eol) (toCST exprs tabs eol)
+  toCST [] _ _ = error "toCST APP_ARG requires non-empty expression list"
 
 instance ToCST [Expression] APP_ARGS where
   toCST [] _ _ = AAS_EMPTY
@@ -342,9 +345,11 @@ instance ToCST Binding PAIR where
   toCST (BiDelta bts) tabs eol = PA_DELTA (toCST bts tabs eol)
   toCST (BiLambda func) _ _ = PA_LAMBDA func
   toCST (BiMetaLambda mt) _ _ = PA_META_LAMBDA (MT_FUNCTION (tail mt))
+  toCST (BiMeta mt) _ _ = error $ "BiMeta binding " ++ mt ++ " cannot be converted to PAIR"
 
 instance ToCST Binding APP_BINDING where
   toCST bd@(BiTau _ _) tabs eol = APP_BINDING (toCST bd tabs eol :: PAIR)
+  toCST bd _ _ = error $ "Only BiTau binding can be converted to APP_BINDING, got: " ++ show bd
 
 instance ToCST Bytes BYTES where
   toCST BtEmpty _ _ = BT_EMPTY
@@ -378,7 +383,7 @@ instance HasEOL [Binding] where
 
 instance HasEOL Binding where
   hasEOL (BiTau _ expr) = hasEOL expr
-  hasEOL bd = False
+  hasEOL _ = False
 
 instance HasEOL [Expression] where
   hasEOL [] = False
@@ -392,4 +397,4 @@ instance HasEOL Expression where
   hasEOL (BaseObject _) = False
   hasEOL (ExDispatch expr _) = hasEOL expr
   hasEOL (ExApplication expr tau) = hasEOL expr || hasEOL tau
-  hasEOL expr = False
+  hasEOL _ = False

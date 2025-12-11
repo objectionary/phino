@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# OPTIONS_GHC -Wno-name-shadowing #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
@@ -11,16 +12,10 @@ import Builder
   ( buildAttribute
   , buildBinding
   , buildBindingThrows
-  , buildExpression
   , buildExpressionThrows
   )
-import Control.Exception
-  ( SomeException (SomeException)
-  , evaluate
-  )
-import Control.Exception.Base (try)
+import Control.Exception.Base (SomeException, try)
 import Control.Monad (when)
-import Data.Aeson (FromJSON)
 import qualified Data.ByteString.Char8 as B
 import Data.Foldable (foldlM)
 import qualified Data.Map.Strict as M
@@ -132,11 +127,11 @@ _eq (Y.CmpNum left) (Y.CmpNum right) subst _ = case (numToInt left subst, numToI
     numToInt (Y.Ordinal (AtMeta meta)) (Subst mp) = case M.lookup meta mp of
       Just (MvAttribute (AtAlpha idx)) -> Just idx
       _ -> Nothing
-    numToInt (Y.Ordinal (AtAlpha idx)) subst = Just idx
+    numToInt (Y.Ordinal (AtAlpha idx)) _ = Just idx
     numToInt (Y.Length (BiMeta meta)) (Subst mp) = case M.lookup meta mp of
       Just (MvBindings bds) -> Just (length bds)
       _ -> Nothing
-    numToInt (Y.Literal num) subst = Just num
+    numToInt (Y.Literal num) _ = Just num
     numToInt _ _ = Nothing
 _eq (Y.CmpAttr left) (Y.CmpAttr right) subst _ = pure [subst | compareAttrs left right subst]
   where
@@ -177,13 +172,14 @@ _xi (ExMeta meta) (Subst mp) ctx = case M.lookup meta mp of
   Just (MvExpression expr _) -> _xi expr (Subst mp) ctx
   _ -> pure []
 _xi (ExFormation _) subst _ = pure [subst]
-_xi ExThis subst _ = pure []
+_xi ExThis _ _ = pure []
 _xi ExGlobal subst _ = pure [subst]
-_xi (ExApplication expr (BiTau attr texpr)) subst ctx = do
+_xi (ExApplication expr (BiTau _ texpr)) subst ctx = do
   onExpr <- _xi expr subst ctx
   onTau <- _xi texpr subst ctx
   pure [subst | not (null onExpr) && not (null onTau)]
 _xi (ExDispatch expr _) subst ctx = _xi expr subst ctx
+_xi _ _ _ = pure []
 
 _matches :: String -> Expression -> Subst -> RuleContext -> IO [Subst]
 _matches pat (ExMeta meta) (Subst mp) ctx = case M.lookup meta mp of
@@ -201,10 +197,10 @@ _partOf exp bd subst _ = do
   pure [subst | partOf exp' bds]
   where
     partOf :: Expression -> [Binding] -> Bool
-    partOf expr [] = False
+    partOf _ [] = False
     partOf expr (BiTau _ (ExFormation bds) : rest) = expr == ExFormation bds || partOf expr bds || partOf expr rest
     partOf expr (BiTau _ expr' : rest) = expr == expr' || partOf expr rest
-    partOf expr (bd : rest) = partOf expr rest
+    partOf expr (_ : rest) = partOf expr rest
 
 meetCondition' :: Y.Condition -> Subst -> RuleContext -> IO [Subst]
 meetCondition' (Y.Or conds) = _or conds
@@ -246,32 +242,34 @@ extraSubstitutions substs extras RuleContext{..} = case extras of
     res <-
       sequence
         [ foldlM
-            ( \(Just subst') extra -> do
-                let maybeName = case Y.meta extra of
-                      Y.ArgExpression (ExMeta name) -> Just name
-                      Y.ArgAttribute (AtMeta name) -> Just name
-                      Y.ArgBinding (BiMeta name) -> Just name
-                      Y.ArgBytes (BtMeta name) -> Just name
-                      _ -> Nothing
-                    func = Y.function extra
-                    args = Y.args extra
-                term <- _buildTerm func args subst'
-                meta <- case term of
-                  TeExpression expr -> do
-                    logDebug (printf "Function %s() returned expression:\n%s" func (printExpression expr))
-                    pure (MvExpression expr defaultScope)
-                  TeAttribute attr -> do
-                    logDebug (printf "Function %s() returned attribute: %s" func (printAttribute attr))
-                    pure (MvAttribute attr)
-                  TeBytes bytes -> do
-                    logDebug (printf "Function %s() returned bytes: %s" func (printBytes bytes))
-                    pure (MvBytes bytes)
-                  TeBindings bds -> do
-                    logDebug (printf "Function %s return bindings: %s" func (printExpression (ExFormation bds)))
-                    pure (MvBindings bds)
-                case maybeName of
-                  Just name -> pure (combine (substSingle name meta) subst')
-                  _ -> pure Nothing
+            ( \maybeSubst extra -> case maybeSubst of
+                Nothing -> pure Nothing
+                Just subst' -> do
+                  let maybeName = case Y.meta extra of
+                        Y.ArgExpression (ExMeta name) -> Just name
+                        Y.ArgAttribute (AtMeta name) -> Just name
+                        Y.ArgBinding (BiMeta name) -> Just name
+                        Y.ArgBytes (BtMeta name) -> Just name
+                        _ -> Nothing
+                      func = Y.function extra
+                      args = Y.args extra
+                  term <- _buildTerm func args subst'
+                  meta <- case term of
+                    TeExpression expr -> do
+                      logDebug (printf "Function %s() returned expression:\n%s" func (printExpression expr))
+                      pure (MvExpression expr defaultScope)
+                    TeAttribute attr -> do
+                      logDebug (printf "Function %s() returned attribute: %s" func (printAttribute attr))
+                      pure (MvAttribute attr)
+                    TeBytes bytes -> do
+                      logDebug (printf "Function %s() returned bytes: %s" func (printBytes bytes))
+                      pure (MvBytes bytes)
+                    TeBindings bds -> do
+                      logDebug (printf "Function %s return bindings: %s" func (printExpression (ExFormation bds)))
+                      pure (MvBindings bds)
+                  case maybeName of
+                    Just name -> pure (combine (substSingle name meta) subst')
+                    _ -> pure Nothing
             )
             (Just subst)
             extras'

@@ -1,5 +1,6 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# OPTIONS_GHC -Wno-name-shadowing #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
@@ -19,12 +20,12 @@ import CST
 import Data.List (intercalate, nub)
 import Data.Maybe (fromMaybe)
 import Encoding (Encoding (ASCII), withEncoding)
-import Lining (LineFormat (MULTILINE, SINGLELINE), withLineFormat)
+import Lining (LineFormat (MULTILINE), withLineFormat)
 import Matcher
 import Misc
 import Render (Render (render))
-import Replacer (ReplaceContext (ReplaceCtx), replaceProgram)
-import Rewriter (Rewritten (..))
+import Replacer (replaceProgram)
+import Rewriter (Rewritten)
 import Sugar (SugarType (SWEET), withSugarType)
 import Text.Printf (printf)
 import qualified Yaml as Y
@@ -80,8 +81,9 @@ meetInPrograms :: Maybe String -> [Program] -> [Program]
 meetInPrograms prefix = meetInPrograms' 1
   where
     meetInPrograms' :: Int -> [Program] -> [Program]
+    meetInPrograms' _ [] = []
     meetInPrograms' _ [prog] = [prog]
-    meetInPrograms' idx progs@(first : rest) =
+    meetInPrograms' idx (first : rest) =
       let met = map (meetInProgram first) rest
           unique = nub (concat met)
           (frequent, _) =
@@ -97,15 +99,17 @@ meetInPrograms prefix = meetInPrograms' 1
           next = first : meetInPrograms' idx rest
        in case frequent of
             Just expr ->
-              let met' = map (filter (== expr)) met
-                  (subst : substs) = matchProgram expr first
-                  prog = replaceProgram (first, [expr], [ExPhiMeet prefix idx])
-                  prog' = replaceProgram (prog, map (const expr) substs, map (const (ExPhiAgain prefix idx)) substs)
-                  rest' = zipWith (\prgm exprs -> replaceProgram (prgm, exprs, map (const (ExPhiAgain prefix idx)) exprs)) rest met'
-                  found = filter (not . null) met'
-               in if length met' > 1 && toDouble (length found) / toDouble (length met') >= 0.5
-                    then prog' : meetInPrograms' (idx + 1) rest'
-                    else next
+              case matchProgram expr first of
+                (_ : substs) ->
+                  let met' = map (filter (== expr)) met
+                      prog = replaceProgram (first, [expr], [ExPhiMeet prefix idx])
+                      prog' = replaceProgram (prog, map (const expr) substs, map (const (ExPhiAgain prefix idx)) substs)
+                      rest' = zipWith (\prgm exprs -> replaceProgram (prgm, exprs, map (const (ExPhiAgain prefix idx)) exprs)) rest met'
+                      found = filter (not . null) met'
+                   in if length met' > 1 && toDouble (length found) / toDouble (length met') >= 0.5
+                        then prog' : meetInPrograms' (idx + 1) rest'
+                        else next
+                [] -> next
             _ -> next
 
 renderToLatex :: Program -> LatexContext -> String

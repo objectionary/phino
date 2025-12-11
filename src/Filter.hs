@@ -4,35 +4,32 @@
 module Filter (include, exclude) where
 
 import AST
-import Logger (logDebug)
 import Misc
-import Printer (logPrintConfig, printExpression, printExpression', printProgram)
 import Rewriter
-import Text.Printf (printf)
 
 fqnToAttrs :: Expression -> [Attribute]
 fqnToAttrs = reverse . fqnToAttrs'
   where
     fqnToAttrs' :: Expression -> [Attribute]
     fqnToAttrs' (ExDispatch ExGlobal attr) = [attr]
-    fqnToAttrs' (ExDispatch expr attr) = attr : fqnToAttrs' expr
-    fqnToAttrs' expr = []
+    fqnToAttrs' (ExDispatch ex at) = at : fqnToAttrs' ex
+    fqnToAttrs' _ = []
 
 exclude' :: Program -> [Expression] -> Program
 exclude' prog [] = prog
-exclude' (Program expr@(ExFormation _)) (fqn : rest) = exclude' (Program (excludedFormation expr (fqnToAttrs fqn))) rest
+exclude' (Program ex@(ExFormation _)) (fqn : remaining) = exclude' (Program (excludedFormation ex (fqnToAttrs fqn))) remaining
   where
     excludedFormation :: Expression -> [Attribute] -> Expression
-    excludedFormation (ExFormation bds) [attr] = ExFormation [bd | bd <- bds, attributeFromBinding bd /= Just attr]
-    excludedFormation (ExFormation bds) attrs = ExFormation (excludedBindings bds attrs)
+    excludedFormation (ExFormation bindings) [at] = ExFormation [bd | bd <- bindings, attributeFromBinding bd /= Just at]
+    excludedFormation (ExFormation bindings) atts = ExFormation (excludedBindings bindings atts)
       where
         excludedBindings :: [Binding] -> [Attribute] -> [Binding]
         excludedBindings [] _ = []
-        excludedBindings (bd@(BiTau attr form@(ExFormation _)) : bds) attrs@(attr' : rest)
-          | attr == attr' = BiTau attr (excludedFormation form rest) : bds
-          | otherwise = bd : excludedBindings bds attrs
-        excludedBindings (bd : bds) attrs = bd : excludedBindings bds attrs
-    excludedFormation expr _ = expr
+        excludedBindings (bd@(BiTau at' form@(ExFormation _)) : bs) as@(at'' : rs)
+          | at' == at'' = BiTau at' (excludedFormation form rs) : bs
+          | otherwise = bd : excludedBindings bs as
+        excludedBindings (bd : bs) as = bd : excludedBindings bs as
+    excludedFormation e _ = e
 exclude' prog _ = prog
 
 exclude :: [Rewritten] -> [Expression] -> [Rewritten]
@@ -41,20 +38,20 @@ exclude rs [] = rs
 exclude ((program, maybeRule) : rest) exprs = (exclude' program exprs, maybeRule) : exclude rest exprs
 
 include' :: Program -> Expression -> Program
-include' prog@(Program expr@(ExFormation _)) fqn = case includedFormation expr (fqnToAttrs fqn) of
-  Just expr -> Program expr
+include' (Program ex@(ExFormation _)) fqn = case includedFormation ex (fqnToAttrs fqn) of
+  Just e -> Program e
   _ -> Program (ExFormation [BiVoid AtRho])
   where
     includedFormation :: Expression -> [Attribute] -> Maybe Expression
-    includedFormation (ExFormation bds) [attr] =
-      let bds' = [bd | bd <- bds, attributeFromBinding bd == Just attr]
-       in if null bds' then Nothing else Just (ExFormation (withVoidRho bds'))
-    includedFormation (ExFormation bds) attrs = includedBindings bds attrs >>= (Just . ExFormation . (: [BiVoid AtRho]))
+    includedFormation (ExFormation bindings) [at] =
+      let bs = [bd | bd <- bindings, attributeFromBinding bd == Just at]
+       in if null bs then Nothing else Just (ExFormation (withVoidRho bs))
+    includedFormation (ExFormation bindings) atts = includedBindings bindings atts >>= (Just . ExFormation . (: [BiVoid AtRho]))
       where
         includedBindings :: [Binding] -> [Attribute] -> Maybe Binding
-        includedBindings (bd@(BiTau attr form@(ExFormation _)) : bds) attrs@(attr' : rest)
-          | attr == attr' = includedFormation form rest >>= Just . BiTau attr
-          | otherwise = includedBindings bds attrs
+        includedBindings ((BiTau at' form@(ExFormation _)) : bs) as@(at'' : rs)
+          | at' == at'' = includedFormation form rs >>= Just . BiTau at'
+          | otherwise = includedBindings bs as
         includedBindings _ _ = Nothing
     includedFormation _ _ = Nothing
 include' _ _ = Program (ExFormation [BiVoid AtRho])

@@ -22,25 +22,25 @@ import System.IO
 data LogLevel = DEBUG | INFO | WARNING | ERROR | NONE
   deriving (Show, Ord, Eq, Bounded, Enum, Read)
 
-data Logger = Logger {level :: LogLevel, lines :: Int}
+data Logger = Logger {level :: LogLevel, lns :: Int}
 
 logger :: IORef Logger
 {-# NOINLINE logger #-}
 logger = unsafePerformIO (newIORef (Logger INFO 25))
 
 setLogConfig :: LogLevel -> Int -> IO ()
-setLogConfig lvl lines = writeIORef logger (Logger lvl (fromIntegral lines))
+setLogConfig lvl cnt = writeIORef logger (Logger lvl cnt)
 
 logMessage :: LogLevel -> String -> IO ()
 logMessage lvl message = do
   Logger{..} <- readIORef logger
   when
-    (lvl >= level && lines /= 0)
-    ( let lines' = DL.lines message
-          toPrint = take lines lines'
+    (lvl >= level && lns /= 0)
+    ( let split = DL.lines message
+          toPrint = take lns split
           msg
-            | lines == -1 = [message]
-            | length lines' > lines = toPrint ++ ["---| log is limited by --log-lines=" ++ show lines ++ " option |---"]
+            | lns == -1 = [message]
+            | length split > lns = toPrint ++ ["---| log is limited by --log-lines=" ++ show lns ++ " option |---"]
             | otherwise = toPrint
        in hPutStrLn stderr ("[" ++ show lvl ++ "]: " ++ DL.intercalate "\n" msg)
     )

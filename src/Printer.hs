@@ -15,13 +15,13 @@ module Printer
   , printExtraArg
   , printSubsts
   , printSubsts'
-  , PrintConfig (..)
+  , PrintConfig
   , logPrintConfig
   )
 where
 
 import AST
-import CST
+import qualified CST
 import Data.List (intercalate)
 import qualified Data.Map.Strict as Map
 import Encoding
@@ -41,19 +41,19 @@ logPrintConfig :: (SugarType, Encoding, LineFormat)
 logPrintConfig = (SWEET, UNICODE, SINGLELINE)
 
 printProgram' :: Program -> PrintConfig -> String
-printProgram' prog (sugar, encoding, line) = render (withLineFormat line $ withEncoding encoding $ withSugarType sugar $ programToCST prog)
+printProgram' prog (sugar, encoding, line) = render (withLineFormat line $ withEncoding encoding $ withSugarType sugar $ CST.programToCST prog)
 
 printProgram :: Program -> String
 printProgram prog = printProgram' prog defaultPrintConfig
 
 printExpression' :: Expression -> PrintConfig -> String
-printExpression' expr (sugar, encoding, line) = render (withLineFormat line $ withEncoding encoding $ withSugarType sugar $ expressionToCST expr)
+printExpression' expr (sugar, encoding, line) = render (withLineFormat line $ withEncoding encoding $ withSugarType sugar $ CST.expressionToCST expr)
 
 printExpression :: Expression -> String
 printExpression expr = printExpression' expr defaultPrintConfig
 
 printAttribute' :: Attribute -> Encoding -> String
-printAttribute' attr encoding = render (withEncoding encoding (toCST attr 0 NO_EOL :: ATTRIBUTE))
+printAttribute' attr encoding = render (withEncoding encoding (CST.toCST attr 0 CST.NO_EOL :: CST.ATTRIBUTE))
 
 printAttribute :: Attribute -> String
 printAttribute attr =
@@ -67,7 +67,7 @@ printBinding :: Binding -> String
 printBinding bd = printBinding' bd defaultPrintConfig
 
 printBytes :: Bytes -> String
-printBytes bts = render (toCST bts 0 NO_EOL :: BYTES)
+printBytes bts = render (CST.toCST bts 0 CST.NO_EOL :: CST.BYTES)
 
 printExtraArg' :: ExtraArgument -> PrintConfig -> String
 printExtraArg' (ArgAttribute attr) (_, encoding, _) = printAttribute' attr encoding

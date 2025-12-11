@@ -101,6 +101,87 @@ spec = do
                 )
             )
         )
+      ,
+        ( "Q -> T => ([], []) => Q -> T"
+        , Program ExTermination
+        , []
+        , []
+        , Program ExTermination
+        )
+      ,
+        ( "Q -> $ => ([$], [Q]) => Q -> Q"
+        , Program ExThis
+        , [ExThis]
+        , [ExGlobal]
+        , Program ExGlobal
+        )
+      ,
+        ( "Q -> Q.α0 => ([Q.α0], [$.α1]) => Q -> $.α1"
+        , Program (ExDispatch ExGlobal (AtAlpha 0))
+        , [ExDispatch ExGlobal (AtAlpha 0)]
+        , [ExDispatch ExThis (AtAlpha 1)]
+        , Program (ExDispatch ExThis (AtAlpha 1))
+        )
+      ,
+        ( "Q -> [[D> --]] => ([[D> --]], [[[L> Функція]]]) => Q -> [[L> Функція]]"
+        , Program (ExFormation [BiDelta BtEmpty])
+        , [ExFormation [BiDelta BtEmpty]]
+        , [ExFormation [BiLambda "Функція"]]
+        , Program (ExFormation [BiLambda "Функція"])
+        )
+      ,
+        ( "Q -> Q.プログラム => ([Q.プログラム], [$.コード]) => Q -> $.コード"
+        , Program (ExDispatch ExGlobal (AtLabel "プログラム"))
+        , [ExDispatch ExGlobal (AtLabel "プログラム")]
+        , [ExDispatch ExThis (AtLabel "コード")]
+        , Program (ExDispatch ExThis (AtLabel "コード"))
+        )
+      ,
+        ( "Q -> [[^ -> T, @ -> T]] => ([T, T], [Q, $]) => Q -> [[^ -> Q, @ -> $]]"
+        , Program (ExFormation [BiTau AtRho ExTermination, BiTau AtPhi ExTermination])
+        , [ExTermination, ExTermination]
+        , [ExGlobal, ExThis]
+        , Program (ExFormation [BiTau AtRho ExGlobal, BiTau AtPhi ExThis])
+        )
+      ,
+        ( "Q -> [[x -> [[y -> Q]]]].x => ([[y -> Q]], [[[z -> $]]]) => Q -> [[x -> [[z -> $]]]].x"
+        , Program (ExDispatch (ExFormation [BiTau (AtLabel "x") (ExFormation [BiTau (AtLabel "y") ExGlobal])]) (AtLabel "x"))
+        , [ExFormation [BiTau (AtLabel "y") ExGlobal]]
+        , [ExFormation [BiTau (AtLabel "z") ExThis]]
+        , Program (ExDispatch (ExFormation [BiTau (AtLabel "x") (ExFormation [BiTau (AtLabel "z") ExThis])]) (AtLabel "x"))
+        )
+      ,
+        ( "Q -> Q.a(b -> Q.c) => ([Q.a, Q.c], [$, T]) => Q -> $(b -> T)"
+        , Program (ExApplication (ExDispatch ExGlobal (AtLabel "a")) (BiTau (AtLabel "b") (ExDispatch ExGlobal (AtLabel "c"))))
+        , [ExDispatch ExGlobal (AtLabel "a"), ExDispatch ExGlobal (AtLabel "c")]
+        , [ExThis, ExTermination]
+        , Program (ExApplication ExThis (BiTau (AtLabel "b") ExTermination))
+        )
+      ,
+        ( "Q -> [[D> 00-01-02-]] => ([[D> 00-01-02-]], [[[D> FF-]]]) => Q -> [[D> FF-]]"
+        , Program (ExFormation [BiDelta (BtMany ["00", "01", "02"])])
+        , [ExFormation [BiDelta (BtMany ["00", "01", "02"])]]
+        , [ExFormation [BiDelta (BtOne "FF")]]
+        , Program (ExFormation [BiDelta (BtOne "FF")])
+        )
+      ,
+        ( "Q -> [[@ -> $.x, ^ -> $.y]] => ([$.x, $.y], [T, Q]) => Q -> [[@ -> T, ^ -> Q]]"
+        , Program (ExFormation [BiTau AtPhi (ExDispatch ExThis (AtLabel "x")), BiTau AtRho (ExDispatch ExThis (AtLabel "y"))])
+        , [ExDispatch ExThis (AtLabel "x"), ExDispatch ExThis (AtLabel "y")]
+        , [ExTermination, ExGlobal]
+        , Program (ExFormation [BiTau AtPhi ExTermination, BiTau AtRho ExGlobal])
+        )
+      ,
+        ( "Q -> Q.a.b.c => ([Q.a.b.c, Q.a.b, Q.a], [$, T, Q]) => Q -> $"
+        , Program (ExDispatch (ExDispatch (ExDispatch ExGlobal (AtLabel "a")) (AtLabel "b")) (AtLabel "c"))
+        ,
+          [ ExDispatch (ExDispatch (ExDispatch ExGlobal (AtLabel "a")) (AtLabel "b")) (AtLabel "c")
+          , ExDispatch (ExDispatch ExGlobal (AtLabel "a")) (AtLabel "b")
+          , ExDispatch ExGlobal (AtLabel "a")
+          ]
+        , [ExThis, ExTermination, ExGlobal]
+        , Program ExThis
+        )
       ]
 
   describe "replace program fast: Program => ([Expression], [Expression]) => Program" $
@@ -126,5 +207,92 @@ spec = do
         , [ExFormation [BiTau AtRho ExTermination], ExFormation [BiTau AtRho ExThis]]
         , [ExFormation [BiTau AtRho ExGlobal], ExFormation [BiVoid AtPhi]]
         , Program (ExDispatch (ExApplication (ExFormation [BiTau AtRho ExGlobal]) (BiTau AtRho (ExFormation [BiVoid AtPhi]))) AtPhi)
+        )
+      ,
+        ( "Q -> [[ ]] => ([], []) => Q -> [[ ]]"
+        , Program (ExFormation [])
+        , []
+        , []
+        , Program (ExFormation [])
+        )
+      ,
+        ( "Q -> $ => ([$], [T]) => Q -> $"
+        , Program ExThis
+        , [ExThis]
+        , [ExTermination]
+        , Program ExThis
+        )
+      ,
+        ( "Q -> [[ a -> ?, b -> ?, c -> ? ]] => ([[a -> ?]], [[a -> Q]]) => Q -> [[a -> Q, b -> ?, c -> ?]]"
+        , Program (ExFormation [BiVoid (AtLabel "a"), BiVoid (AtLabel "b"), BiVoid (AtLabel "c")])
+        , [ExFormation [BiVoid (AtLabel "a")]]
+        , [ExFormation [BiTau (AtLabel "a") ExGlobal]]
+        , Program (ExFormation [BiTau (AtLabel "a") ExGlobal, BiVoid (AtLabel "b"), BiVoid (AtLabel "c")])
+        )
+      ,
+        ( "Q -> [[ λ -> ?, D> 00- ]] => ([[λ -> ?]], [[λ -> $]]) => Q -> [[λ -> $, D> 00-]]"
+        , Program (ExFormation [BiVoid AtLambda, BiDelta (BtOne "00")])
+        , [ExFormation [BiVoid AtLambda]]
+        , [ExFormation [BiTau AtLambda ExThis]]
+        , Program (ExFormation [BiTau AtLambda ExThis, BiDelta (BtOne "00")])
+        )
+      ,
+        ( "Q -> [[x -> [[y -> ?]]]].x => ([[y -> ?]], [[y -> Q]]) => Q -> [[x -> [[y -> Q]]]].x"
+        , Program (ExDispatch (ExFormation [BiTau (AtLabel "x") (ExFormation [BiVoid (AtLabel "y")])]) (AtLabel "x"))
+        , [ExFormation [BiVoid (AtLabel "y")]]
+        , [ExFormation [BiTau (AtLabel "y") ExGlobal]]
+        , Program (ExDispatch (ExFormation [BiTau (AtLabel "x") (ExFormation [BiTau (AtLabel "y") ExGlobal])]) (AtLabel "x"))
+        )
+      ,
+        ( "Q -> [[アイテム -> ?]] => ([[アイテム -> ?]], [[アイテム -> $]]) => Q -> [[アイテム -> $]]"
+        , Program (ExFormation [BiVoid (AtLabel "アイテム")])
+        , [ExFormation [BiVoid (AtLabel "アイテム")]]
+        , [ExFormation [BiTau (AtLabel "アイテム") ExThis]]
+        , Program (ExFormation [BiTau (AtLabel "アイテム") ExThis])
+        )
+      ,
+        ( "Q -> [[a -> ?, a -> ?]] => ([[a -> ?]], [[a -> Q]]) => Q -> [[a -> Q, a -> Q]]"
+        , Program (ExFormation [BiVoid (AtLabel "a"), BiVoid (AtLabel "a")])
+        , [ExFormation [BiVoid (AtLabel "a")]]
+        , [ExFormation [BiTau (AtLabel "a") ExGlobal]]
+        , Program (ExFormation [BiTau (AtLabel "a") ExGlobal, BiTau (AtLabel "a") ExGlobal])
+        )
+      ,
+        ( "Q -> Q.a(b -> [[c -> ?]]) => ([[c -> ?]], [[c -> T]]) => Q -> Q.a(b -> [[c -> T]])"
+        , Program (ExApplication (ExDispatch ExGlobal (AtLabel "a")) (BiTau (AtLabel "b") (ExFormation [BiVoid (AtLabel "c")])))
+        , [ExFormation [BiVoid (AtLabel "c")]]
+        , [ExFormation [BiTau (AtLabel "c") ExTermination]]
+        , Program (ExApplication (ExDispatch ExGlobal (AtLabel "a")) (BiTau (AtLabel "b") (ExFormation [BiTau (AtLabel "c") ExTermination])))
+        )
+      ,
+        ( "Q -> [[ L> Функція ]] => ([[ L> Функція ]], [[ L> Код ]]) => Q -> [[ L> Код ]]"
+        , Program (ExFormation [BiLambda "Функція"])
+        , [ExFormation [BiLambda "Функція"]]
+        , [ExFormation [BiLambda "Код"]]
+        , Program (ExFormation [BiLambda "Код"])
+        )
+      ]
+
+  describe "replace program fast with depth 0" $
+    test
+      (replaceProgramFast (ReplaceCtx 0))
+      [
+        ( "Q -> [[a -> ?]] => ([[a -> ?]], [[a -> $]]) => Q -> [[a -> ?]]"
+        , Program (ExFormation [BiVoid (AtLabel "a")])
+        , [ExFormation [BiVoid (AtLabel "a")]]
+        , [ExFormation [BiTau (AtLabel "a") ExThis]]
+        , Program (ExFormation [BiVoid (AtLabel "a")])
+        )
+      ]
+
+  describe "replace program fast with depth 1" $
+    test
+      (replaceProgramFast (ReplaceCtx 1))
+      [
+        ( "Q -> [[ ^ -> ? ]] => [[ ^ -> ? ]] => [[ ^ -> [[ ^ -> ? ]] ]] => Q -> [[ ^ -> [[ ^ -> ? ]] ]]"
+        , Program (ExFormation [BiVoid AtRho])
+        , [ExFormation [BiVoid AtRho]]
+        , [ExFormation [BiTau AtRho (ExFormation [BiVoid AtRho])]]
+        , Program (ExFormation [BiTau AtRho (ExFormation [BiVoid AtRho])])
         )
       ]

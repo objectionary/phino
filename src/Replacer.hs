@@ -15,11 +15,7 @@ module Replacer
 where
 
 import AST
-import Control.Exception (Exception, throwIO)
 import Data.List (isPrefixOf)
-import Matcher (Tail (TaApplication, TaDispatch))
-import Printer (printProgram)
-import Text.Printf (printf)
 
 type ReplaceState a = (a, [Expression], [Expression -> Expression])
 
@@ -30,9 +26,9 @@ type ReplaceProgramFunc = ReplaceState Program -> Program
 newtype ReplaceContext = ReplaceCtx {_maxDepth :: Int}
 
 replaceBindings :: ReplaceState [Binding] -> ReplaceContext -> ReplaceExpressionFunc -> ReplaceState [Binding]
-replaceBindings state@(bds, [], _) _ _ = state
-replaceBindings state@(bds, _, []) _ _ = state
-replaceBindings state@([], ptns, repls) _ _ = state
+replaceBindings state@(_, [], _) _ _ = state
+replaceBindings state@(_, _, []) _ _ = state
+replaceBindings state@([], _, _) _ _ = state
 replaceBindings (BiTau attr expr : bds, ptns, repls) ctx func =
   let (expr', ptns', repls') = func (expr, ptns, repls) ctx
       (bds', ptns'', repls'') = replaceBindings (bds, ptns', repls') ctx func
@@ -51,8 +47,9 @@ replaceExpression state@(expr, ptns@(ptn : _ptns), repls@(repl : _repls)) ctx =
          in (ExDispatch expr' attr, ptns', repls')
       ExApplication inner tau ->
         let (expr', ptns', repls') = replaceExpression (inner, ptns, repls) ctx
-            ([tau'], ptns'', repls'') = replaceBindings ([tau], ptns', repls') ctx replaceExpression
-         in (ExApplication expr' tau', ptns'', repls'')
+         in case replaceBindings ([tau], ptns', repls') ctx replaceExpression of
+              ([tau'], ptns'', repls'') -> (ExApplication expr' tau', ptns'', repls'')
+              (bds', _, _) -> error $ "Expected single binding, got " ++ show (length bds')
       ExFormation bds ->
         let (bds', ptns', repls') = replaceBindings (bds, ptns, repls) ctx replaceExpression
          in (ExFormation bds', ptns', repls')
@@ -76,8 +73,8 @@ replaceExpressionFast :: ReplaceExpressionFunc
 replaceExpressionFast = replaceExpressionFast' 0
   where
     replaceExpressionFast' :: Int -> ReplaceExpressionFunc
-    replaceExpressionFast' _ state@(expr, [], _) _ = state
-    replaceExpressionFast' _ state@(expr, _, []) _ = state
+    replaceExpressionFast' _ state@(_, [], _) _ = state
+    replaceExpressionFast' _ state@(_, _, []) _ = state
     replaceExpressionFast' depth state@(expr, ptns, repls) ctx@ReplaceCtx{..} =
       if depth == _maxDepth
         then (expr, [], [])

@@ -7,10 +7,8 @@
 
 module Render where
 
-import AST
 import CST
-import Data.List
-import Data.Maybe (fromMaybe)
+import Data.List (intercalate)
 
 class Render a where
   render :: a -> String
@@ -102,6 +100,7 @@ instance Render BYTES where
   render BT_EMPTY = "--"
   render (BT_ONE bte) = render bte <> "-"
   render (BT_MANY bts) = intercalate "-" bts
+  render (BT_META mt) = render mt
 
 instance Render META where
   render MT_EXPRESSION{..} = '𝑒' : rest
@@ -120,7 +119,7 @@ instance Render ALPHA where
   render ALPHA' = "~"
 
 instance Render TAB where
-  render TAB{..} = intercalate "" (replicate (fromIntegral indent) "  ")
+  render TAB{..} = intercalate "" (replicate indent "  ")
   render TAB' = " "
   render NO_TAB = ""
 
@@ -143,7 +142,7 @@ instance Render PAIR where
   render PA_META_DELTA'{..} = render "D> " <> render meta
 
 instance Render BINDINGS where
-  render BDS_EMPTY{..} = ""
+  render BDS_EMPTY{} = ""
   render BDS_PAIR{..} = render COMMA <> render eol <> render tab <> render pair <> render bindings
   render BDS_META{..} = render COMMA <> render eol <> render tab <> render meta <> render bindings
 
@@ -151,7 +150,7 @@ instance Render APP_BINDING where
   render APP_BINDING{..} = render pair
 
 instance Render BINDING where
-  render BI_EMPTY{..} = ""
+  render BI_EMPTY{} = ""
   render BI_PAIR{..} = render pair <> render bindings
   render BI_META{..} = render meta <> render bindings
 

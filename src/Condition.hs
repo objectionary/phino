@@ -159,5 +159,5 @@ parseCondition input = do
 
 parseConditionThrows :: String -> IO Y.Condition
 parseConditionThrows cnd = case parseCondition cnd of
-  Right condition -> pure condition
+  Right cond -> pure cond
   Left err -> throwIO (CouldNotParseCondition err)
