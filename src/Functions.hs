@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# OPTIONS_GHC -Wno-name-shadowing -Wno-incomplete-patterns -Wno-incomplete-uni-patterns #-}
+{-# OPTIONS_GHC -Wno-name-shadowing -Wno-incomplete-uni-patterns #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
@@ -237,6 +237,7 @@ _join args subst = do
                   let new = case bd of
                         BiTau attr expr -> BiTau (updated attr attrs) expr
                         BiVoid attr -> BiVoid (updated attr attrs)
+                        other -> other
                    in new : join' bds attrs
             else bd : join' bds (Set.insert attr attrs)
     updated :: Attribute -> Set.Set Attribute -> Attribute

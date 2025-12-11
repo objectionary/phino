@@ -3,7 +3,7 @@
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# OPTIONS_GHC -Wno-partial-fields -Wno-name-shadowing -Wno-incomplete-patterns #-}
+{-# OPTIONS_GHC -Wno-partial-fields -Wno-name-shadowing #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
@@ -503,6 +503,8 @@ runCLI args = handle handler $ do
             logDebug (printf "The option '--in-place' is specified, writing back to '%s'..." file)
             writeFile file prog
             logInfo (printf "The file '%s' was modified in-place" file)
+          (True, _, Nothing) ->
+            invalidCLIArguments "The option --in-place requires an input file"
           (False, Just file, _) -> do
             logDebug (printf "The option '--target' is specified, printing to '%s'..." file)
             writeFile file prog
@@ -662,6 +664,7 @@ parseProgram phi PHI = parseProgramThrows phi
 parseProgram xmir XMIR = do
   doc <- parseXMIRThrows xmir
   xmirToPhi doc
+parseProgram _ LATEX = invalidCLIArguments "LaTeX cannot be used as input format"
 
 printRewrittens :: PrintProgramContext -> [Rewritten] -> IO String
 printRewrittens ctx@PrintProgCtx{..} rewrittens

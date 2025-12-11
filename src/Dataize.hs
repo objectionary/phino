@@ -1,7 +1,7 @@
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# OPTIONS_GHC -Wno-partial-fields -Wno-name-shadowing -Wno-incomplete-uni-patterns -Wno-incomplete-patterns #-}
+{-# OPTIONS_GHC -Wno-partial-fields -Wno-name-shadowing -Wno-incomplete-uni-patterns #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
@@ -164,14 +164,18 @@ dataize' :: Dataizable -> DataizeContext -> IO Dataized
 dataize' (ExTermination, seq) _ = pure (Nothing, seq)
 dataize' (ExFormation bds, seq) ctx = case maybeDelta bds of
   (Just (BiDelta bytes), _) -> pure (Just bytes, seq)
+  (Just _, _) -> pure (Nothing, seq)
   (Nothing, _) -> case maybePhi bds of
     (Just (BiTau AtPhi expr), bds') -> case maybeLambda bds' of
       (Just (BiLambda _), _) -> throwIO (userError "The 𝜑 and λ can't be present in formation at the same time")
-      (_, _) ->
+      (Just _, _) -> pure (Nothing, seq)
+      (Nothing, _) ->
         let expr' = contextualize expr (ExFormation bds)
          in dataize' (expr', leadsTo seq "contextualize" expr') ctx
+    (Just _, _) -> pure (Nothing, seq)
     (Nothing, _) -> case maybeLambda bds of
       (Just (BiLambda _), _) -> morph (ExFormation bds, seq) ctx >>= (`dataize'` ctx)
+      (Just _, _) -> pure (Nothing, seq)
       (Nothing, _) -> pure (Nothing, seq)
 dataize' dataizable ctx = morph dataizable ctx >>= (`dataize'` ctx)
 
