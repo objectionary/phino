@@ -504,7 +504,7 @@ runCLI args = handle handler $ do
             writeFile file prog
             logDebug (printf "The file '%s' was modified in-place" file)
           (True, _, Nothing) ->
-            error "Unreachable: --in-place requires an input file"
+            error "The option --in-place requires an input file"
           (False, Just file, _) -> do
             logDebug (printf "The option '--target' is specified, printing to '%s'..." file)
             writeFile file prog
