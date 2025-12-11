@@ -122,6 +122,7 @@ test-suite spec
     FilterSpec
     FunctionsSpec
     LaTeXSpec
+    LiningSpec
     MatcherSpec
     MergeSpec
     MiscSpec
