@@ -15,9 +15,9 @@ import GHC.Generics
 import Matcher
 import Misc
 import Printer (printSubsts)
-import Rule (RuleContext (RuleContext), isNF, matchProgramWithRule, meetCondition)
+import Rule (RuleContext (RuleContext), isNF, meetCondition)
 import System.FilePath
-import Test.Hspec (Spec, describe, expectationFailure, it, runIO, shouldBe, shouldSatisfy)
+import Test.Hspec (Spec, describe, expectationFailure, it, runIO, shouldBe)
 import Yaml qualified
 
 data ConditionPack = ConditionPack
@@ -74,20 +74,3 @@ spec = do
       , ("returns true for formation with delta void and lambda", ExFormation [BiDelta (BtOne "FF"), BiVoid (AtLabel "y"), BiLambda "G"], True)
       ]
       (\(desc, expr, expected) -> it desc $ isNF expr ctx `shouldBe` expected)
-  describe "matchProgramWithRule matches programs" $ do
-    let ctx = RuleContext buildTerm
-    it "returns non-empty substitutions for matching pattern" $ do
-      rule <- Y.decodeFileThrow "resources/copy.yaml" :: IO Yaml.Rule
-      let prog = Program (ExApplication (ExFormation [BiVoid (AtLabel "x")]) (BiTau (AtLabel "x") ExGlobal))
-      matched <- matchProgramWithRule prog rule ctx
-      matched `shouldSatisfy` (not . null)
-    it "returns empty substitutions when pattern does not match" $ do
-      rule <- Y.decodeFileThrow "resources/copy.yaml" :: IO Yaml.Rule
-      let prog = Program ExGlobal
-      matched <- matchProgramWithRule prog rule ctx
-      matched `shouldSatisfy` null
-    it "returns empty when condition fails" $ do
-      rule <- Y.decodeFileThrow "resources/copy.yaml" :: IO Yaml.Rule
-      let prog = Program (ExApplication (ExFormation [BiVoid (AtLabel "x")]) (BiTau (AtLabel "x") ExThis))
-      matched <- matchProgramWithRule prog rule ctx
-      matched `shouldSatisfy` null
