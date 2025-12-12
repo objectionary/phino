@@ -1,0 +1,7 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+expression: '[[ x -> Q.y, z -> Q.y ]]'
+pattern: '[[ x -> !e, !B ]]'
+condition:
+  part-of: ['!e', '!B']

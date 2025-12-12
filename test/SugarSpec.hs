@@ -287,3 +287,150 @@ spec = do
           salty = toSalty cst
           rendered = render salty
       rendered `shouldContain` "α2"
+
+  describe "toSalty EXPRESSION converts EX_PHI_MEET" $
+    it "recursively processes inner expression" $ do
+      let inner = EX_DEF_PACKAGE Φ̇
+          expr' = EX_PHI_MEET (Just "x") 1 inner
+          salty = toSalty expr'
+          isDispatch EX_DISPATCH{} = True
+          isDispatch _ = False
+      case salty of
+        EX_PHI_MEET pref ix innerSalty -> do
+          pref `shouldBe` Just "x"
+          ix `shouldBe` 1
+          innerSalty `shouldSatisfy` isDispatch
+        _ -> fail "Expected EX_PHI_MEET but got different constructor"
+
+  describe "toSalty EXPRESSION converts EX_PHI_AGAIN" $
+    it "recursively processes inner expression" $ do
+      let inner = EX_DEF_PACKAGE Φ̇
+          expr' = EX_PHI_AGAIN Nothing 5 inner
+          salty = toSalty expr'
+          isDispatch EX_DISPATCH{} = True
+          isDispatch _ = False
+      case salty of
+        EX_PHI_AGAIN pref ix innerSalty -> do
+          pref `shouldBe` Nothing
+          ix `shouldBe` 5
+          innerSalty `shouldSatisfy` isDispatch
+        _ -> fail "Expected EX_PHI_AGAIN but got different constructor"
+
+  describe "toSalty handles BI_META binding" $
+    it "preserves meta binding in formation" $ do
+      prog <- parseProgramThrows "{[[ !B ]]}"
+      let cst = programToCST prog
+          salty = toSalty cst
+      render salty `shouldContain` "𝐵"
+
+  describe "toSalty handles BDS_META in nested bindings" $
+    it "preserves meta bindings in sequence" $ do
+      prog <- parseProgramThrows "{[[ x -> Q, !B ]]}"
+      let cst = programToCST prog
+          salty = toSalty cst
+          rendered = render salty
+      rendered `shouldContain` "𝐵"
+
+  describe "toSalty preserves rho tau in nested bindings" $
+    it "keeps tau rho as first binding in sequence" $ do
+      prog <- parseProgramThrows "{[[ ^ -> $, x -> Q, y -> $ ]]}"
+      let cst = programToCST prog
+          salty = toSalty cst
+          rendered = render salty
+          count = length (filter (== 'ρ') rendered)
+      count `shouldBe` 1
+
+  describe "toSalty PAIR converts formation with empty inner binding" $
+    it "expands void parameters into empty formation" $ do
+      prog <- parseProgramThrows "{[[ f(a) -> [[]] ]]}"
+      let cst = programToCST prog
+          salty = toSalty cst
+          rendered = render salty
+      rendered `shouldContain` "a"
+
+  describe "toSalty handles floating point number" $
+    it "expands float to bytes" $ do
+      prog <- parseProgramThrows "{[[ x -> 3.14 ]]}"
+      let cst = programToCST prog
+          salty = toSalty cst
+      render salty `shouldContain` "number"
+
+  describe "toSalty handles negative number" $
+    it "expands negative integer to bytes" $ do
+      prog <- parseProgramThrows "{[[ x -> -42 ]]}"
+      let cst = programToCST prog
+          salty = toSalty cst
+      render salty `shouldContain` "number"
+
+  describe "toSalty handles single named application argument" $
+    it "processes single tau binding correctly" $ do
+      prog <- parseProgramThrows "{Q.x(y -> $)}"
+      let cst = programToCST prog
+          salty = toSalty cst
+          rendered = render salty
+      rendered `shouldContain` "y"
+
+  describe "toSalty preserves rho tau as non-first binding" $
+    it "keeps tau rho binding in sequence" $ do
+      prog <- parseProgramThrows "{[[ x -> Q, ^ -> $ ]]}"
+      let cst = programToCST prog
+          salty = toSalty cst
+          rendered = render salty
+          count = length (filter (== 'ρ') rendered)
+      count `shouldBe` 1
+
+  describe "toSalty handles single positional argument" $
+    it "converts single arg to alpha binding" $ do
+      prog <- parseProgramThrows "{Q.f($)}"
+      let cst = programToCST prog
+          salty = toSalty cst
+          rendered = render salty
+      rendered `shouldContain` "α0"
+
+  describe "toSalty PAIR handles formation with multiple voids and empty body" $
+    it "expands multiple void parameters into empty formation" $ do
+      prog <- parseProgramThrows "{[[ g(a, b, c) -> [[]] ]]}"
+      let cst = programToCST prog
+          salty = toSalty cst
+          rendered = render salty
+      rendered `shouldContain` "a"
+
+  describe "toSalty handles unicode attribute in dispatch" $
+    it "processes dispatch with decorated name" $ do
+      prog <- parseProgramThrows "{Q.größe}"
+      let cst = programToCST prog
+          salty = toSalty cst
+          rendered = render salty
+      rendered `shouldContain` "größe"
+
+  describe "toSalty handles empty string literal" $
+    it "expands empty string to bytes" $ do
+      prog <- parseProgramThrows "{[[ x -> \"\" ]]}"
+      let cst = programToCST prog
+          salty = toSalty cst
+      render salty `shouldContain` "string"
+
+  describe "toSalty handles scientific notation number" $
+    it "expands scientific number to bytes" $ do
+      prog <- parseProgramThrows "{[[ x -> 1e10 ]]}"
+      let cst = programToCST prog
+          salty = toSalty cst
+      render salty `shouldContain` "number"
+
+  describe "toSalty handles deeply nested formations" $
+    it "adds rho to all nested levels" $ do
+      prog <- parseProgramThrows "{[[ x -> [[ y -> [[ z -> Q ]] ]] ]]}"
+      let cst = programToCST prog
+          salty = toSalty cst
+          rendered = render salty
+          count = length (filter (== 'ρ') rendered)
+      count `shouldBe` 3
+
+  describe "toSalty handles formation with only rho void" $
+    it "preserves single rho void binding" $ do
+      prog <- parseProgramThrows "{[[ ^ -> ? ]]}"
+      let cst = programToCST prog
+          salty = toSalty cst
+          rendered = render salty
+          count = length (filter (== 'ρ') rendered)
+      count `shouldBe` 1

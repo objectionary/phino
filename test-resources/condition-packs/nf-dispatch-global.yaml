@@ -1,0 +1,7 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+expression: '[[ x -> Q.foo ]]'
+pattern: '[[ x -> !e ]]'
+condition:
+  nf: '!e'

@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+expression: '[[ x -> Q.y, z -> Q.w ]]'
+pattern: '[[ !a1 -> Q.!a2, !B ]]'
+condition:
+  and:
+    - eq: ['!a1', 'x']
+    - eq: ['!a2', 'y']
+    - not:
+        eq: ['!a1', '!a2']
