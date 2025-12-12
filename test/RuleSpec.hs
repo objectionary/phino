@@ -59,30 +59,21 @@ spec = do
       )
   describe "isNF determines normal form" $ do
     let ctx = RuleContext buildTerm
-    it "returns true for ExThis" $
-      isNF ExThis ctx `shouldBe` True
-    it "returns true for ExGlobal" $
-      isNF ExGlobal ctx `shouldBe` True
-    it "returns true for ExTermination" $
-      isNF ExTermination ctx `shouldBe` True
-    it "returns true for dispatch on ExThis" $
-      isNF (ExDispatch ExThis (AtLabel "foo")) ctx `shouldBe` True
-    it "returns true for dispatch on ExGlobal" $
-      isNF (ExDispatch ExGlobal (AtLabel "bar")) ctx `shouldBe` True
-    it "returns false for dispatch on ExTermination" $
-      isNF (ExDispatch ExTermination (AtLabel "x")) ctx `shouldBe` False
-    it "returns false for application on ExTermination" $
-      isNF (ExApplication ExTermination (BiTau (AtLabel "y") ExGlobal)) ctx `shouldBe` False
-    it "returns true for empty formation" $
-      isNF (ExFormation []) ctx `shouldBe` True
-    it "returns true for formation with only delta binding" $
-      isNF (ExFormation [BiDelta (BtMany ["00", "01"])]) ctx `shouldBe` True
-    it "returns true for formation with only void binding" $
-      isNF (ExFormation [BiVoid (AtLabel "x")]) ctx `shouldBe` True
-    it "returns true for formation with only lambda binding" $
-      isNF (ExFormation [BiLambda "Func"]) ctx `shouldBe` True
-    it "returns true for formation with delta void and lambda" $
-      isNF (ExFormation [BiDelta (BtOne "FF"), BiVoid (AtLabel "y"), BiLambda "G"]) ctx `shouldBe` True
+    forM_
+      [ ("returns true for ExThis", ExThis, True)
+      , ("returns true for ExGlobal", ExGlobal, True)
+      , ("returns true for ExTermination", ExTermination, True)
+      , ("returns true for dispatch on ExThis", ExDispatch ExThis (AtLabel "foo"), True)
+      , ("returns true for dispatch on ExGlobal", ExDispatch ExGlobal (AtLabel "bar"), True)
+      , ("returns false for dispatch on ExTermination", ExDispatch ExTermination (AtLabel "x"), False)
+      , ("returns false for application on ExTermination", ExApplication ExTermination (BiTau (AtLabel "y") ExGlobal), False)
+      , ("returns true for empty formation", ExFormation [], True)
+      , ("returns true for formation with only delta binding", ExFormation [BiDelta (BtMany ["00", "01"])], True)
+      , ("returns true for formation with only void binding", ExFormation [BiVoid (AtLabel "x")], True)
+      , ("returns true for formation with only lambda binding", ExFormation [BiLambda "Func"], True)
+      , ("returns true for formation with delta void and lambda", ExFormation [BiDelta (BtOne "FF"), BiVoid (AtLabel "y"), BiLambda "G"], True)
+      ]
+      (\(desc, expr, expected) -> it desc $ isNF expr ctx `shouldBe` expected)
   describe "matchProgramWithRule matches programs" $ do
     let ctx = RuleContext buildTerm
     it "returns non-empty substitutions for matching pattern" $ do
