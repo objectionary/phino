@@ -10,10 +10,28 @@ stack test
 make test
 ```
 
-To run `hlint` you can do:
+To run [`hlint`](https://github.com/ndmitchell/hlint) you can do:
 
 ```bash
 make hlint
+```
+
+To run [`fourmolu`](https://github.com/fourmolu/fourmolu) you can do:
+
+```bash
+make fourmolu
+```
+
+To check [coverage](https://en.wikipedia.org/wiki/Code_coverage) you can do:
+
+```bash
+make coverage
+```
+
+To run full pipeline before pull request just do:
+
+```bash
+make all
 ```
 
 To run a specific test you can do:

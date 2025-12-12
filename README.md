@@ -366,7 +366,7 @@ make all
 To generate a local coverage report for development, run:
 
 ```bash
-cabal test --enable-coverage
+make coverage
 ```
 
 You will need [GHC] and [Cabal ≥3.0][cabal] or [Stack ≥ 3.0][stack] installed.
