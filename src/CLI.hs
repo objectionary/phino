@@ -96,6 +96,7 @@ data OptsDataize = OptsDataize
   , omitComments :: Bool
   , nonumber :: Bool
   , sequence :: Bool
+  , canonize :: Bool
   , depthSensitive :: Bool
   , quiet :: Bool
   , compress :: Bool
@@ -103,6 +104,7 @@ data OptsDataize = OptsDataize
   , maxCycles :: Int
   , hide :: [String]
   , show' :: [String]
+  , locator :: String
   , expression :: Maybe String
   , label :: Maybe String
   , meetPrefix :: Maybe String
@@ -249,6 +251,9 @@ optNonumber = switch (long "nonumber" <> help "Turn off equation auto numbering 
 optSequence :: Parser Bool
 optSequence = switch (long "sequence" <> help "Result output contains all intermediate 𝜑-programs concatenated with EOL")
 
+optCanonize :: Parser Bool
+optCanonize = switch (long "canonize" <> help "Rename all functions attached to λ binding with F1, F2, etc.")
+
 optExpression :: Parser (Maybe String)
 optExpression = optional (strOption (long "expression" <> metavar "NAME" <> help "Name for 'phiExpression' element when rendering to LaTeX (see --output option)"))
 
@@ -335,6 +340,7 @@ dataizeParser =
             <*> optOmitComments
             <*> optNonumber
             <*> optSequence
+            <*> optCanonize
             <*> optDepthSensitive
             <*> switch (long "quiet" <> help "Don't print the result of dataization")
             <*> optCompress
@@ -342,6 +348,7 @@ dataizeParser =
             <*> optMaxCycles
             <*> optHide
             <*> optShow
+            <*> strOption (long "locator" <> metavar "FQN" <> help "Location of object to dataize. Must be a valid dispatch expression; e.g. Q.foo.bar" <> value "Q" <> showDefault)
             <*> optExpression
             <*> optLabel
             <*> optMeetPrefix
@@ -375,7 +382,7 @@ rewriteParser =
             <*> optNonumber
             <*> switch (long "in-place" <> help "Edit file in-place instead of printing to output")
             <*> optSequence
-            <*> switch (long "canonize" <> help "Rename all functions attached to λ binding with F1, F2, etc.")
+            <*> optCanonize
             <*> optCompress
             <*> optMaxDepth
             <*> optMaxCycles
@@ -462,8 +469,8 @@ runCLI args = handle handler $ do
   case cmd of
     CmdRewrite OptsRewrite{..} -> do
       validateOpts
-      excluded <- expressionsToFilter "hide" hide
-      included <- expressionsToFilter "show" show'
+      excluded <- validatedDispatches "hide" hide
+      included <- validatedDispatches "show" show'
       logDebug (printf "Amount of rewriting cycles across all the rules: %d, per rule: %d" maxCycles maxDepth)
       input <- readInput inputFile
       rules' <- getRules normalize shuffle rules
@@ -523,15 +530,17 @@ runCLI args = handle handler $ do
             (saveStepFunc stepsDir ctx)
     CmdDataize OptsDataize{..} -> do
       validateOpts
-      excluded <- expressionsToFilter "hide" hide
-      included <- expressionsToFilter "show" show'
+      excluded <- validatedDispatches "hide" hide
+      included <- validatedDispatches "show" show'
+      [loc] <- validatedDispatches "locator" [locator]
       input <- readInput inputFile
       prog <- parseProgram input inputFormat
       let printCtx = PrintProgCtx sugarType flat defaultXmirContext nonumber compress expression label meetPrefix outputFormat
+          _canonize = if canonize then C.canonize else id
           _hide = (`F.exclude` excluded)
           _show = (`F.include` included)
-      (maybeBytes, seq) <- dataize prog (context prog printCtx)
-      when sequence (printRewrittens printCtx (_hide (_show seq)) >>= putStrLn)
+      (maybeBytes, seq) <- dataize loc (context prog printCtx)
+      when sequence (printRewrittens printCtx (_canonize $ _hide $ _show seq) >>= putStrLn)
       unless quiet (putStrLn (maybe (P.printExpression ExTermination) P.printBytes maybeBytes))
       where
         validateOpts :: IO ()
@@ -605,17 +614,17 @@ saveStepFunc stepsDir ctx@PrintProgCtx{..} = saveStep stepsDir ioToExt (printPro
       | outputFormat == LATEX = "tex"
       | otherwise = show outputFormat
 
--- Get list of expressions which must be hidden in printed programs
-expressionsToFilter :: String -> [String] -> IO [Expression]
-expressionsToFilter opt = traverse (parseExpressionThrows >=> asFilter)
+-- Validate given expressions as valid dispatches
+validatedDispatches :: String -> [String] -> IO [Expression]
+validatedDispatches opt = traverse (parseExpressionThrows >=> asDispatch)
   where
-    asFilter :: Expression -> IO Expression
-    asFilter expr = asFilter' expr
+    asDispatch :: Expression -> IO Expression
+    asDispatch expr = asDispatch' expr
       where
-        asFilter' :: Expression -> IO Expression
-        asFilter' exp@(ExDispatch ExGlobal _) = pure exp
-        asFilter' exp@(ExDispatch ex _) = asFilter' ex >> pure exp
-        asFilter' _ =
+        asDispatch' :: Expression -> IO Expression
+        asDispatch' exp@ExGlobal = pure exp
+        asDispatch' exp@(ExDispatch ex _) = asDispatch' ex >> pure exp
+        asDispatch' _ =
           invalidCLIArguments
             ( printf
                 "Only dispatch expression started with Φ (or Q) can be used in --%s, but given: %s"

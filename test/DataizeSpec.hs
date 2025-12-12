@@ -36,7 +36,7 @@ testDataize useCases =
     it name $ do
       prog' <- parseProgramThrows prog
       putStrLn (printProgram prog')
-      (value, _) <- dataize prog' (defaultDataizeContext prog')
+      (value, _) <- dataize ExGlobal (defaultDataizeContext prog')
       value `shouldBe` Just res
 
 spec :: Spec

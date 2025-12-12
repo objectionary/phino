@@ -20,6 +20,7 @@ module Misc
   , shuffle
   , toDouble
   , btsToUnescapedStr
+  , fqnToAttrs
   , attributesFromBindings
   , attributesFromBindings'
   , attributeFromBinding
@@ -56,6 +57,10 @@ import qualified Data.Vector as V
 import qualified Data.Vector.Mutable as M
 import Data.Word (Word64, Word8)
 import Numeric (readHex)
+
+-- import Printer (printExpression)
+
+import Data.Functor ((<&>))
 import System.Directory (doesDirectoryExist, doesFileExist, listDirectory)
 import System.FilePath ((</>))
 import System.Random.Stateful
@@ -182,6 +187,21 @@ withVoidRho bds = withVoidRho' bds False
         BiVoid AtRho -> bd : withVoidRho' rest True
         BiTau AtRho _ -> bd : withVoidRho' rest True
         _ -> bd : withVoidRho' rest hasRho
+
+-- Transform dispatch to list of attributes
+-- >>> fqnToAttrs (ExDispatch (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang")) (AtLabel "number"))
+-- Just [org,eolang,number]
+-- >>> fqnToAttrs (ExFormation [])
+-- Nothing
+-- >>> fqnToAttrs ExGlobal
+-- Just []
+fqnToAttrs :: Expression -> Maybe [Attribute]
+fqnToAttrs expr = fqnToAttrs' expr <&> reverse
+  where
+    fqnToAttrs' :: Expression -> Maybe [Attribute]
+    fqnToAttrs' ExGlobal = Just []
+    fqnToAttrs' (ExDispatch ex at) = fqnToAttrs' ex <&> (:) at
+    fqnToAttrs' _ = Nothing
 
 ensuredFile :: FilePath -> IO FilePath
 ensuredFile pth = do

@@ -1,5 +1,6 @@
 {-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
 
@@ -10,7 +11,7 @@ module Sugar (toSalty, withSugarType, SugarType (..)) where
 
 import AST
 import CST
-import Misc
+import Misc (numToBts, toDouble, pattern BaseObject, strToBts)
 
 withSugarType :: (ToSalty a) => SugarType -> a -> a
 withSugarType SWEET prog = prog

@@ -7,17 +7,11 @@ import AST
 import Misc
 import Rewriter
 
-fqnToAttrs :: Expression -> [Attribute]
-fqnToAttrs = reverse . fqnToAttrs'
-  where
-    fqnToAttrs' :: Expression -> [Attribute]
-    fqnToAttrs' (ExDispatch ExGlobal attr) = [attr]
-    fqnToAttrs' (ExDispatch ex at) = at : fqnToAttrs' ex
-    fqnToAttrs' _ = []
-
 exclude' :: Program -> [Expression] -> Program
 exclude' prog [] = prog
-exclude' (Program ex@(ExFormation _)) (fqn : remaining) = exclude' (Program (excludedFormation ex (fqnToAttrs fqn))) remaining
+exclude' prog@(Program ex@(ExFormation _)) (fqn : remaining) = case fqnToAttrs fqn of
+  Just fqn' -> exclude' (Program (excludedFormation ex fqn')) remaining
+  _ -> prog
   where
     excludedFormation :: Expression -> [Attribute] -> Expression
     excludedFormation (ExFormation bindings) [at] = ExFormation [bd | bd <- bindings, attributeFromBinding bd /= Just at]
@@ -38,9 +32,13 @@ exclude rs [] = rs
 exclude ((program, maybeRule) : rest) exprs = (exclude' program exprs, maybeRule) : exclude rest exprs
 
 include' :: Program -> Expression -> Program
-include' (Program ex@(ExFormation _)) fqn = case includedFormation ex (fqnToAttrs fqn) of
-  Just e -> Program e
-  _ -> Program (ExFormation [BiVoid AtRho])
+include' (Program ex@(ExFormation _)) fqn =
+  let def = Program (ExFormation [BiVoid AtRho])
+   in case fqnToAttrs fqn of
+        Just fqn' -> case includedFormation ex fqn' of
+          Just e -> Program e
+          _ -> def
+        _ -> def
   where
     includedFormation :: Expression -> [Attribute] -> Maybe Expression
     includedFormation (ExFormation bindings) [at] =

@@ -2,6 +2,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE PatternSynonyms #-}
 {-# OPTIONS_GHC -Wno-partial-fields -Wno-name-shadowing #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
@@ -11,7 +12,7 @@ module CST where
 
 import AST
 import Data.Maybe (isJust)
-import Misc
+import Misc (btsToNum, btsToStr, matchDataObject, pattern BaseObject, pattern DataNumber, pattern DataString)
 
 data LCB = LCB | BIG_LCB
   deriving (Eq, Show)

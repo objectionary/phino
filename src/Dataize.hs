@@ -1,7 +1,9 @@
+{-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
+{-# OPTIONS_GHC -Wno-unused-record-wildcards #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
@@ -10,11 +12,12 @@ module Dataize (morph, dataize, dataize', DataizeContext (..)) where
 
 import AST
 import Builder (contextualize)
-import Control.Exception (throwIO)
+import Control.Exception (Exception, throwIO)
 import Data.List (partition)
 import Deps (BuildTermFunc, SaveStepFunc)
 import Misc
 import Must (Must (..))
+import Printer (printExpression)
 import Rewriter (RewriteContext (RewriteContext), Rewritten, rewrite')
 import Rule (RuleContext (RuleContext), isNF)
 import Text.Printf (printf)
@@ -25,6 +28,15 @@ type Dataized = (Maybe Bytes, [Rewritten])
 type Dataizable = (Expression, [Rewritten])
 
 type Morphed = Dataizable
+
+data LocatorException
+  = CanNotFindObjectByLocator {fqn :: Expression}
+  | InvalidLocatorProvided {fqn :: Expression}
+  deriving Exception
+
+instance Show LocatorException where
+  show CanNotFindObjectByLocator{..} = printf "Can't find object by locator: '%s'" (printExpression fqn)
+  show InvalidLocatorProvided{..} = printf "Can't dataize object by invalid locator: '%s'" (printExpression fqn)
 
 data DataizeContext = DataizeContext
   { _program :: Program
@@ -149,17 +161,37 @@ morph (expr, seq) ctx = do
               (Program expr') = fst (head _seq)
           morph (expr', _seq) ctx
 
+dataize :: Expression -> DataizeContext -> IO Dataized
+dataize locator ctx@DataizeContext{_program = Program expr} = do
+  fqn <- case fqnToAttrs locator of
+    Just attrs -> pure attrs
+    _ -> throwIO (InvalidLocatorProvided locator)
+  exp <- located expr fqn
+  (maybeBytes, seq) <- dataize' (exp, [(Program exp, Nothing)]) ctx
+  pure (maybeBytes, reverse seq)
+  where
+    located :: Expression -> [Attribute] -> IO Expression
+    located expr [] = pure expr
+    located (ExFormation bds) [attr] = case locatedInBindings attr bds of
+      Just expr -> pure expr
+      _ -> throwIO (CanNotFindObjectByLocator locator)
+    located (ExFormation bds) (attr : rest) = case locatedInBindings attr bds of
+      Just expr -> located expr rest
+      _ -> throwIO (CanNotFindObjectByLocator locator)
+    located _ _ = throwIO (CanNotFindObjectByLocator locator)
+    locatedInBindings :: Attribute -> [Binding] -> Maybe Expression
+    locatedInBindings _ [] = Nothing
+    locatedInBindings attr (BiTau attr' expr : rest)
+      | attr == attr' = Just expr
+      | otherwise = locatedInBindings attr rest
+    locatedInBindings attr (_ : rest) = locatedInBindings attr rest
+
 -- The goal of 'dataize' function is retrieve bytes from given expression.
 --
 -- DELTA: D(e) -> data                          if e = [B1, Δ -> data, B2]
 -- BOX:   D([B1, 𝜑 -> e, B2]) -> D(С(e))        if [B1,B2] has no delta/lambda, where С(e) - contextualization
 -- NORM:  D(e1) -> D(e2)                        if e2 := M(e1) and e1 is not primitive
 --        nothing                               otherwise
-dataize :: Program -> DataizeContext -> IO Dataized
-dataize (Program expr) ctx = do
-  (maybeBytes, seq) <- dataize' (expr, [(Program expr, Nothing)]) ctx
-  pure (maybeBytes, reverse seq)
-
 dataize' :: Dataizable -> DataizeContext -> IO Dataized
 dataize' (ExTermination, seq) _ = pure (Nothing, seq)
 dataize' (ExFormation bds, seq) ctx = case maybeDelta bds of
@@ -185,8 +217,8 @@ leadsTo ((prog, _) : rest) rule expr = (Program expr, Nothing) : (prog, Just rul
 
 atom :: String -> Expression -> DataizeContext -> IO Expression
 atom "L_org_eolang_number_plus" self ctx = do
-  (left, _) <- dataize (Program (ExDispatch self (AtLabel "x"))) ctx
-  (right, _) <- dataize (Program (ExDispatch self AtRho)) ctx
+  (left, _) <- dataize' (ExDispatch self (AtLabel "x"), []) ctx
+  (right, _) <- dataize' (ExDispatch self AtRho, []) ctx
   case (left, right) of
     (Just left', Just right') -> do
       let first = either toDouble id (btsToNum left')
@@ -195,8 +227,8 @@ atom "L_org_eolang_number_plus" self ctx = do
       pure (DataNumber (numToBts sum))
     _ -> pure ExTermination
 atom "L_org_eolang_number_times" self ctx = do
-  (left, _) <- dataize (Program (ExDispatch self (AtLabel "x"))) ctx
-  (right, _) <- dataize (Program (ExDispatch self AtRho)) ctx
+  (left, _) <- dataize' (ExDispatch self (AtLabel "x"), []) ctx
+  (right, _) <- dataize' (ExDispatch self AtRho, []) ctx
   case (left, right) of
     (Just left', Just right') -> do
       let first = either toDouble id (btsToNum left')
@@ -205,8 +237,8 @@ atom "L_org_eolang_number_times" self ctx = do
       pure (DataNumber (numToBts sum))
     _ -> pure ExTermination
 atom "L_org_eolang_number_eq" self ctx = do
-  (x, _) <- dataize (Program (ExDispatch self (AtLabel "x"))) ctx
-  (rho, _) <- dataize (Program (ExDispatch self AtRho)) ctx
+  (x, _) <- dataize' (ExDispatch self (AtLabel "x"), []) ctx
+  (rho, _) <- dataize' (ExDispatch self AtRho, []) ctx
   case (x, rho) of
     (Just x', Just rho') -> do
       let self' = either toDouble id (btsToNum rho')
