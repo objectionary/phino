@@ -8,7 +8,7 @@ import Control.Monad
 import Dataize (DataizeContext (DataizeContext), dataize, dataize', morph)
 import Deps (dontSaveStep)
 import Functions (buildTerm)
-import Parser (parseProgramThrows)
+import Parser (parseExpressionThrows, parseProgramThrows)
 import Printer (printProgram)
 import Rewriter (Rewritten)
 import Test.Hspec
@@ -30,13 +30,14 @@ test' func useCases =
       (res, _) <- func (input, [(Program prog, Nothing)]) (defaultDataizeContext (Program prog))
       res `shouldBe` output
 
-testDataize :: [(String, String, Bytes)] -> Spec
+testDataize :: [(String, String, String, Bytes)] -> Spec
 testDataize useCases =
-  forM_ useCases $ \(name, prog, res) ->
+  forM_ useCases $ \(name, loc, prog, res) ->
     it name $ do
       prog' <- parseProgramThrows prog
+      loc' <- parseExpressionThrows loc
       putStrLn (printProgram prog')
-      (value, _) <- dataize ExGlobal (defaultDataizeContext prog')
+      (value, _) <- dataize loc' (defaultDataizeContext prog')
       value `shouldBe` Just res
 
 spec :: Spec
@@ -104,6 +105,7 @@ spec = do
   testDataize
     [
       ( "5.plus(5)"
+      , "Q"
       , unlines
           [ "Q -> [["
           , "  org -> [["
@@ -126,6 +128,7 @@ spec = do
       )
     ,
       ( "Fahrenheit"
+      , "Q"
       , unlines
           [ "Q -> [["
           , "  org -> [["
@@ -150,6 +153,7 @@ spec = do
       )
     ,
       ( "Factorial"
+      , "Q"
       , unlines
           [ "Q -> [["
           , "  org -> [["
@@ -178,5 +182,20 @@ spec = do
           , "]]"
           ]
       , BtMany ["40", "18", "00", "00", "00", "00", "00", "00"]
+      )
+    ,
+      ( "Located"
+      , "Q.foo.bar"
+      , unlines
+          [ "Q -> [["
+          , "  foo -> [["
+          , "    bar -> [["
+          , "      @ -> Q.x"
+          , "    ]]"
+          , "  ]],"
+          , "  x -> [[ D> 42- ]]"
+          , "]]"
+          ]
+      , BtOne "42"
       )
     ]

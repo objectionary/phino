@@ -36,7 +36,11 @@ data LocatorException
 
 instance Show LocatorException where
   show CanNotFindObjectByLocator{..} = printf "Can't find object by locator: '%s'" (printExpression fqn)
-  show InvalidLocatorProvided{..} = printf "Can't dataize object by invalid locator: '%s'" (printExpression fqn)
+  show InvalidLocatorProvided{..} =
+    printf
+      "Can't dataize object by invalid locator. \
+      \'Q' or dispatch started with 'Q' expected, but got: '%s'"
+      (printExpression fqn)
 
 data DataizeContext = DataizeContext
   { _program :: Program
