@@ -643,6 +643,10 @@ spec = do
               , "01-"
               ]
           ]
+    
+    it "dataizes with --locator" $
+      withStdin "{[[ ex -> [[ @ -> Q.x ]], x -> [[ D> 42- ]] ]]}" $
+        testCLISucceeded ["dataize", "--locator=Q.ex"] ["42-"]
 
     it "does not print bytes with --quiet" $
       withStdin "Q -> [[ D> 01- ]]" $
