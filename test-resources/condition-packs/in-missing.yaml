@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+failure: true
+expression: '[[ x -> Q.y, z -> Q.z ]].foo'
+pattern: '[[ !B ]].!a'
+condition:
+  in:
+    - '!a'
+    - '!B'

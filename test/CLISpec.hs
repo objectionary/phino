@@ -430,7 +430,7 @@ spec = do
           [ unlines
               [ "\\begin{phiquation}"
               , "\\Big\\{[[ |x| -> ?, |y| -> |x| ]]( |x| -> [[ D> 42- ]] ).|y|\\Big\\} \\leadsto_{\\nameref{r:copy}}"
-              , "  \\leadsto \\Big\\{\\phiMeet{foo:1}{[[ |x| -> [[ D> 42- ]], |y| -> |x| ]]}.|y|\\Big\\} \\leadsto_{\\nameref{r:dot}}"
+              , "  \\leadsto \\Big\\{\\phiMeet{foo:1}{ [[ |x| -> [[ D> 42- ]], |y| -> |x| ]] }.|y|\\Big\\} \\leadsto_{\\nameref{r:dot}}"
               , "  \\leadsto \\Big\\{\\phiAgain{foo:1}.|x|( ^ -> \\phiAgain{foo:1} )\\Big\\} \\leadsto_{\\nameref{r:dot}}"
               , "  \\leadsto \\Big\\{[[ D> 42- ]]( ^ -> \\phiAgain{foo:1}, ^ -> \\phiAgain{foo:1} )\\Big\\} \\leadsto_{\\nameref{r:copy}}"
               , "  \\leadsto \\Big\\{[[ D> 42-, ^ -> \\phiAgain{foo:1} ]]( ^ -> \\phiAgain{foo:1} )\\Big\\} \\leadsto_{\\nameref{r:stay}}"
@@ -446,7 +446,7 @@ spec = do
           [ unlines
               [ "\\begin{phiquation}"
               , "\\Big\\{[[ |x| -> ?, |y| -> |x| ]]( |x| -> [[ D> 42- ]] ).|y|\\Big\\} \\leadsto_{\\nameref{r:copy}}"
-              , "  \\leadsto \\Big\\{\\phiMeet{1}{[[ |x| -> [[ D> 42- ]], |y| -> |x| ]]}.|y|\\Big\\} \\leadsto_{\\nameref{r:dot}}"
+              , "  \\leadsto \\Big\\{\\phiMeet{1}{ [[ |x| -> [[ D> 42- ]], |y| -> |x| ]] }.|y|\\Big\\} \\leadsto_{\\nameref{r:dot}}"
               , "  \\leadsto \\Big\\{\\phiAgain{1}.|x|( ^ -> \\phiAgain{1} )\\Big\\} \\leadsto_{\\nameref{r:dot}}"
               , "  \\leadsto \\Big\\{[[ D> 42- ]]( ^ -> \\phiAgain{1}, ^ -> \\phiAgain{1} )\\Big\\} \\leadsto_{\\nameref{r:copy}}"
               , "  \\leadsto \\Big\\{[[ D> 42-, ^ -> \\phiAgain{1} ]]( ^ -> \\phiAgain{1} )\\Big\\} \\leadsto_{\\nameref{r:stay}}"
@@ -461,7 +461,7 @@ spec = do
           ["rewrite", "--normalize", "--sequence", "--flat", "--compress", "--output=latex", "--sweet"]
           [ unlines
               [ "\\begin{phiquation}"
-              , "\\Big\\{[[ |ex| -> [[ |x| -> [[ |y| -> ?, |k| -> \\phiMeet{1}{[[ |t| -> 42 ]]} ]]( |y| -> \\phiAgain{1} ) ]].|i| ]]\\Big\\} \\leadsto_{\\nameref{r:copy}}"
+              , "\\Big\\{[[ |ex| -> [[ |x| -> [[ |y| -> ?, |k| -> \\phiMeet{1}{ [[ |t| -> 42 ]] } ]]( |y| -> \\phiAgain{1} ) ]].|i| ]]\\Big\\} \\leadsto_{\\nameref{r:copy}}"
               , "  \\leadsto \\Big\\{[[ |ex| -> [[ |x| -> [[ |y| -> \\phiAgain{1}, |k| -> \\phiAgain{1} ]] ]].|i| ]]\\Big\\} \\leadsto_{\\nameref{r:stop}}"
               , "  \\leadsto \\Big\\{[[ |ex| -> T ]]\\Big\\}."
               , "\\end{phiquation}"

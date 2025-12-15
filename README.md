@@ -29,7 +29,7 @@ Install [Cabal][cabal] first and then:
 
 ```bash
 cabal update
-cabal install --overwrite-policy=always phino-0.0.0.54
+cabal install --overwrite-policy=always phino-0.0.0.55
 phino --version
 ```
 
@@ -366,7 +366,7 @@ make all
 To generate a local coverage report for development, run:
 
 ```bash
-cabal test --enable-coverage
+make coverage
 ```
 
 You will need [GHC] and [Cabal ≥3.0][cabal] or [Stack ≥ 3.0][stack] installed.
