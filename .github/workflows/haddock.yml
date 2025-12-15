@@ -27,7 +27,7 @@ jobs:
           key: ${{ runner.os }}-haddock-${{ hashFiles('**/*.cabal') }}-${{ hashFiles('cabal.project', 'cabal.project.freeze') }}
           restore-keys: |
             ${{ runner.os }}-haddock-
-      - uses: haskell-actions/setup@v2.8.2
+      - uses: haskell-actions/setup@v2.9.0
         with:
           ghc-version: ${{ env.GHC_VERSION }}
           cabal-version: '3.12.1.0'
