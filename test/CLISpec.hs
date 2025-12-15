@@ -238,6 +238,10 @@ spec = do
             ["rewrite", "--show=Q.x(Q.y)"]
             ["[ERROR]:", "Only dispatch expression started with Φ (or Q) can be used in --show"]
 
+    it "prints help" $
+      testCLISucceeded
+        ["rewrite", "--help"] ["Rewrite the 𝜑-program"]
+
     it "saves steps to dir with --steps-dir" $ do
       let dir = "test-steps-temp"
       dirExists <- doesDirectoryExist dir
@@ -618,6 +622,9 @@ spec = do
           ["{⟦ x ↦ ⟦ y ↦ ⟦ λ ⤍ F1 ⟧.q, z ↦ Φ.x( a ↦ ⟦ w ↦ ⟦ λ ⤍ F2 ⟧, λ ⤍ F3 ⟧ ) ⟧, λ ⤍ F4 ⟧}"]
 
   describe "dataize" $ do
+    it "prints help" $
+      testCLISucceeded ["dataize", "--help"] ["Dataize the 𝜑-program"]
+
     it "dataizes simple program" $
       withStdin "Q -> [[ D> 01- ]]" $
         testCLISucceeded ["dataize"] ["01-"]

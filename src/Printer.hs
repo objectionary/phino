@@ -21,7 +21,7 @@ module Printer
 where
 
 import AST
-import qualified CST
+import CST
 import Data.List (intercalate)
 import qualified Data.Map.Strict as Map
 import Encoding
@@ -41,24 +41,24 @@ logPrintConfig :: (SugarType, Encoding, LineFormat)
 logPrintConfig = (SWEET, UNICODE, SINGLELINE)
 
 printProgram' :: Program -> PrintConfig -> String
-printProgram' prog (sugar, encoding, line) = render (withLineFormat line $ withEncoding encoding $ withSugarType sugar $ CST.programToCST prog)
+printProgram' prog (sugar, encoding, line) = render (withLineFormat line $ withEncoding encoding $ withSugarType sugar $ programToCST prog)
 
 printProgram :: Program -> String
 printProgram prog = printProgram' prog defaultPrintConfig
 
 printExpression' :: Expression -> PrintConfig -> String
-printExpression' expr (sugar, encoding, line) = render (withLineFormat line $ withEncoding encoding $ withSugarType sugar $ CST.expressionToCST expr)
+printExpression' ex (sugar, encoding, line) = render (withLineFormat line $ withEncoding encoding $ withSugarType sugar $ expressionToCST ex)
 
 printExpression :: Expression -> String
-printExpression expr = printExpression' expr defaultPrintConfig
+printExpression ex = printExpression' ex defaultPrintConfig
 
 printAttribute' :: Attribute -> Encoding -> String
-printAttribute' attr encoding = render (withEncoding encoding (CST.toCST attr 0 CST.NO_EOL :: CST.ATTRIBUTE))
+printAttribute' att encoding = render (withEncoding encoding (toCST att 0 NO_EOL :: ATTRIBUTE))
 
 printAttribute :: Attribute -> String
-printAttribute attr =
+printAttribute att =
   let (_, encoding, _) = defaultPrintConfig
-   in printAttribute' attr encoding
+   in printAttribute' att encoding
 
 printBinding' :: Binding -> PrintConfig -> String
 printBinding' bd = printExpression' (ExFormation [bd])
@@ -67,27 +67,27 @@ printBinding :: Binding -> String
 printBinding bd = printBinding' bd defaultPrintConfig
 
 printBytes :: Bytes -> String
-printBytes bts = render (CST.toCST bts 0 CST.NO_EOL :: CST.BYTES)
+printBytes bts = render (toCST bts 0 NO_EOL :: BYTES)
 
 printExtraArg' :: ExtraArgument -> PrintConfig -> String
-printExtraArg' (ArgAttribute attr) (_, encoding, _) = printAttribute' attr encoding
+printExtraArg' (ArgAttribute att) (_, encoding, _) = printAttribute' att encoding
 printExtraArg' (ArgBinding bd) config = printBinding' bd config
-printExtraArg' (ArgExpression expr) config = printExpression' expr config
+printExtraArg' (ArgExpression ex) config = printExpression' ex config
 printExtraArg' (ArgBytes bts) _ = printBytes bts
 
 printExtraArg :: ExtraArgument -> String
 printExtraArg arg = printExtraArg' arg defaultPrintConfig
 
 printTail :: Tail -> PrintConfig -> String
-printTail (TaApplication tau) config = "(" <> printBinding' tau config <> ")"
-printTail (TaDispatch attr) (_, encoding, _) = "." <> printAttribute' attr encoding
+printTail (TaApplication bd) config = "(" <> printBinding' bd config <> ")"
+printTail (TaDispatch att) (_, encoding, _) = "." <> printAttribute' att encoding
 
 printMetaValue :: MetaValue -> PrintConfig -> String
-printMetaValue (MvAttribute attr) (_, encoding, _) = printAttribute' attr encoding
-printMetaValue (MvExpression expr _) config = printExpression' expr config
+printMetaValue (MvAttribute att) (_, encoding, _) = printAttribute' att encoding
+printMetaValue (MvExpression ex _) config = printExpression' ex config
 printMetaValue (MvBytes bts) _ = printBytes bts
 printMetaValue (MvBindings bds) config = printExpression' (ExFormation bds) config
-printMetaValue (MvFunction func) _ = func
+printMetaValue (MvFunction fun) _ = fun
 printMetaValue (MvTail tails) config = intercalate "," (map (`printTail` config) tails)
 
 printSubst :: Subst -> PrintConfig -> String
