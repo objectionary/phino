@@ -133,6 +133,7 @@ test-suite spec
     Paths_phino
     PrinterSpec
     RandomSpec
+    RegexpSpec
     ReplacerSpec
     RewriterSpec
     RuleSpec
@@ -150,6 +151,7 @@ test-suite spec
   build-depends:
     aeson,
     base,
+    bytestring,
     containers,
     directory,
     filepath,
