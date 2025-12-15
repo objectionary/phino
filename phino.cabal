@@ -22,7 +22,6 @@ source-repository head
 common warnings
   ghc-options:
     -Wall
-    -Werror
     -Wcompat
     -Widentities
     -Wincomplete-record-updates
