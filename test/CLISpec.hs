@@ -240,7 +240,8 @@ spec = do
 
     it "prints help" $
       testCLISucceeded
-        ["rewrite", "--help"] ["Rewrite the 𝜑-program"]
+        ["rewrite", "--help"]
+        ["Rewrite the 𝜑-program"]
 
     it "saves steps to dir with --steps-dir" $ do
       let dir = "test-steps-temp"
