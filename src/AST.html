@@ -10,7 +10,7 @@
 </span><span id="line-10"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">GHC.Generics</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">Generic</span></span><span class="hs-special">)</span><span>
 </span><span id="line-11"></span><span>
 </span><span id="line-12"></span><span class="hs-keyword">newtype</span><span> </span><span id="Program"><span class="annot"><a href="AST.html#Program"><span class="hs-identifier hs-var">Program</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="Program"><span class="annot"><a href="AST.html#Program"><span class="hs-identifier hs-var">Program</span></a></span></span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span> </span><span class="hs-comment">-- Q -&gt; expr</span><span>
-</span><span id="line-13"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679211319"><span id="local-6989586621679211324"><span class="annot"><span class="annottext">Program -&gt; Program -&gt; Bool
+</span><span id="line-13"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679212049"><span id="local-6989586621679212054"><span class="annot"><span class="annottext">Program -&gt; Program -&gt; Bool
 (Program -&gt; Program -&gt; Bool)
 -&gt; (Program -&gt; Program -&gt; Bool) -&gt; Eq Program
 forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
@@ -18,7 +18,7 @@ $c== :: Program -&gt; Program -&gt; Bool
 == :: Program -&gt; Program -&gt; Bool
 $c/= :: Program -&gt; Program -&gt; Bool
 /= :: Program -&gt; Program -&gt; Bool
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679211332"><span id="local-6989586621679211337"><span id="local-6989586621679211341"><span id="local-6989586621679211345"><span id="local-6989586621679211349"><span id="local-6989586621679211353"><span id="local-6989586621679211357"><span class="annot"><span class="annottext">Eq Program
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679212062"><span id="local-6989586621679212067"><span id="local-6989586621679212071"><span id="local-6989586621679212075"><span id="local-6989586621679212079"><span id="local-6989586621679212083"><span id="local-6989586621679212087"><span class="annot"><span class="annottext">Eq Program
 Eq Program =&gt;
 (Program -&gt; Program -&gt; Ordering)
 -&gt; (Program -&gt; Program -&gt; Bool)
@@ -55,7 +55,7 @@ $cmax :: Program -&gt; Program -&gt; Program
 max :: Program -&gt; Program -&gt; Program
 $cmin :: Program -&gt; Program -&gt; Program
 min :: Program -&gt; Program -&gt; Program
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679211363"><span id="local-6989586621679211369"><span id="local-6989586621679211373"><span class="annot"><span class="annottext">Int -&gt; Program -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679212093"><span id="local-6989586621679212099"><span id="local-6989586621679212103"><span class="annot"><span class="annottext">Int -&gt; Program -&gt; ShowS
 [Program] -&gt; ShowS
 Program -&gt; String
 (Int -&gt; Program -&gt; ShowS)
@@ -81,7 +81,7 @@ showList :: [Program] -&gt; ShowS
 </span><span id="line-23"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="ExMetaTail"><span class="annot"><a href="AST.html#ExMetaTail"><span class="hs-identifier hs-var">ExMetaTail</span></a></span></span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-comment">-- expr * !t</span><span>
 </span><span id="line-24"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="ExPhiMeet"><span class="annot"><a href="AST.html#ExPhiMeet"><span class="hs-identifier hs-var">ExPhiMeet</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span>
 </span><span id="line-25"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="ExPhiAgain"><span class="annot"><a href="AST.html#ExPhiAgain"><span class="hs-identifier hs-var">ExPhiAgain</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span>
-</span><span id="line-26"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679211387"><span id="local-6989586621679211409"><span class="annot"><span class="annottext">Expression -&gt; Expression -&gt; Bool
+</span><span id="line-26"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679212117"><span id="local-6989586621679212139"><span class="annot"><span class="annottext">Expression -&gt; Expression -&gt; Bool
 (Expression -&gt; Expression -&gt; Bool)
 -&gt; (Expression -&gt; Expression -&gt; Bool) -&gt; Eq Expression
 forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
@@ -89,7 +89,7 @@ $c== :: Expression -&gt; Expression -&gt; Bool
 == :: Expression -&gt; Expression -&gt; Bool
 $c/= :: Expression -&gt; Expression -&gt; Bool
 /= :: Expression -&gt; Expression -&gt; Bool
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679211416"><span id="local-6989586621679211437"><span id="local-6989586621679211440"><span id="local-6989586621679211443"><span id="local-6989586621679211446"><span id="local-6989586621679211449"><span id="local-6989586621679211452"><span class="annot"><span class="annottext">Eq Expression
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679212146"><span id="local-6989586621679212167"><span id="local-6989586621679212170"><span id="local-6989586621679212173"><span id="local-6989586621679212176"><span id="local-6989586621679212179"><span id="local-6989586621679212182"><span class="annot"><span class="annottext">Eq Expression
 Eq Expression =&gt;
 (Expression -&gt; Expression -&gt; Ordering)
 -&gt; (Expression -&gt; Expression -&gt; Bool)
@@ -126,7 +126,7 @@ $cmax :: Expression -&gt; Expression -&gt; Expression
 max :: Expression -&gt; Expression -&gt; Expression
 $cmin :: Expression -&gt; Expression -&gt; Expression
 min :: Expression -&gt; Expression -&gt; Expression
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679211457"><span id="local-6989586621679211486"><span id="local-6989586621679211489"><span class="annot"><span class="annottext">Int -&gt; Expression -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679212187"><span id="local-6989586621679212216"><span id="local-6989586621679212219"><span class="annot"><span class="annottext">Int -&gt; Expression -&gt; ShowS
 [Expression] -&gt; ShowS
 Expression -&gt; String
 (Int -&gt; Expression -&gt; ShowS)
@@ -141,7 +141,7 @@ $cshow :: Expression -&gt; String
 show :: Expression -&gt; String
 $cshowList :: [Expression] -&gt; ShowS
 showList :: [Expression] -&gt; ShowS
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679211494"><span id="local-6989586621679211496"><span class="annot"><span class="annottext">(forall x. Expression -&gt; Rep Expression x)
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679212224"><span id="local-6989586621679212226"><span class="annot"><span class="annottext">(forall x. Expression -&gt; Rep Expression x)
 -&gt; (forall x. Rep Expression x -&gt; Expression) -&gt; Generic Expression
 forall x. Rep Expression x -&gt; Expression
 forall x. Expression -&gt; Rep Expression x
@@ -160,7 +160,7 @@ to :: forall x. Rep Expression x -&gt; Expression
 </span><span id="line-32"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="BiLambda"><span class="annot"><a href="AST.html#BiLambda"><span class="hs-identifier hs-var">BiLambda</span></a></span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-comment">-- &#955; &#10509; Function</span><span>
 </span><span id="line-33"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="BiMeta"><span class="annot"><a href="AST.html#BiMeta"><span class="hs-identifier hs-var">BiMeta</span></a></span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-comment">-- !B</span><span>
 </span><span id="line-34"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="BiMetaLambda"><span class="annot"><a href="AST.html#BiMetaLambda"><span class="hs-identifier hs-var">BiMetaLambda</span></a></span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-comment">-- &#955; &#10509; !F</span><span>
-</span><span id="line-35"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679211506"><span id="local-6989586621679211517"><span class="annot"><span class="annottext">Binding -&gt; Binding -&gt; Bool
+</span><span id="line-35"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679212236"><span id="local-6989586621679212247"><span class="annot"><span class="annottext">Binding -&gt; Binding -&gt; Bool
 (Binding -&gt; Binding -&gt; Bool)
 -&gt; (Binding -&gt; Binding -&gt; Bool) -&gt; Eq Binding
 forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
@@ -168,7 +168,7 @@ $c== :: Binding -&gt; Binding -&gt; Bool
 == :: Binding -&gt; Binding -&gt; Bool
 $c/= :: Binding -&gt; Binding -&gt; Bool
 /= :: Binding -&gt; Binding -&gt; Bool
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679211522"><span id="local-6989586621679211533"><span id="local-6989586621679211536"><span id="local-6989586621679211539"><span id="local-6989586621679211542"><span id="local-6989586621679211545"><span id="local-6989586621679211548"><span class="annot"><span class="annottext">Eq Binding
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679212252"><span id="local-6989586621679212263"><span id="local-6989586621679212266"><span id="local-6989586621679212269"><span id="local-6989586621679212272"><span id="local-6989586621679212275"><span id="local-6989586621679212278"><span class="annot"><span class="annottext">Eq Binding
 Eq Binding =&gt;
 (Binding -&gt; Binding -&gt; Ordering)
 -&gt; (Binding -&gt; Binding -&gt; Bool)
@@ -205,7 +205,7 @@ $cmax :: Binding -&gt; Binding -&gt; Binding
 max :: Binding -&gt; Binding -&gt; Binding
 $cmin :: Binding -&gt; Binding -&gt; Binding
 min :: Binding -&gt; Binding -&gt; Binding
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679211551"><span id="local-6989586621679211568"><span id="local-6989586621679211571"><span class="annot"><span class="annottext">Int -&gt; Binding -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679212281"><span id="local-6989586621679212298"><span id="local-6989586621679212301"><span class="annot"><span class="annottext">Int -&gt; Binding -&gt; ShowS
 [Binding] -&gt; ShowS
 Binding -&gt; String
 (Int -&gt; Binding -&gt; ShowS)
@@ -218,7 +218,7 @@ $cshow :: Binding -&gt; String
 show :: Binding -&gt; String
 $cshowList :: [Binding] -&gt; ShowS
 showList :: [Binding] -&gt; ShowS
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679211574"><span id="local-6989586621679211576"><span class="annot"><span class="annottext">(forall x. Binding -&gt; Rep Binding x)
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679212304"><span id="local-6989586621679212306"><span class="annot"><span class="annottext">(forall x. Binding -&gt; Rep Binding x)
 -&gt; (forall x. Rep Binding x -&gt; Binding) -&gt; Generic Binding
 forall x. Rep Binding x -&gt; Binding
 forall x. Binding -&gt; Rep Binding x
@@ -235,14 +235,14 @@ to :: forall x. Rep Binding x -&gt; Binding
 </span><span id="line-39"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="BtOne"><span class="annot"><a href="AST.html#BtOne"><span class="hs-identifier hs-var">BtOne</span></a></span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-comment">-- 1F-</span><span>
 </span><span id="line-40"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="BtMany"><span class="annot"><a href="AST.html#BtMany"><span class="hs-identifier hs-var">BtMany</span></a></span></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span class="hs-special">]</span><span> </span><span class="hs-comment">-- 00-01-02-...04</span><span>
 </span><span id="line-41"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="BtMeta"><span class="annot"><a href="AST.html#BtMeta"><span class="hs-identifier hs-var">BtMeta</span></a></span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-comment">-- !b</span><span>
-</span><span id="line-42"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679211583"><span id="local-6989586621679211589"><span class="annot"><span class="annottext">Bytes -&gt; Bytes -&gt; Bool
+</span><span id="line-42"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679212313"><span id="local-6989586621679212319"><span class="annot"><span class="annottext">Bytes -&gt; Bytes -&gt; Bool
 (Bytes -&gt; Bytes -&gt; Bool) -&gt; (Bytes -&gt; Bytes -&gt; Bool) -&gt; Eq Bytes
 forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
 $c== :: Bytes -&gt; Bytes -&gt; Bool
 == :: Bytes -&gt; Bytes -&gt; Bool
 $c/= :: Bytes -&gt; Bytes -&gt; Bool
 /= :: Bytes -&gt; Bytes -&gt; Bool
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679211594"><span id="local-6989586621679211600"><span id="local-6989586621679211603"><span id="local-6989586621679211606"><span id="local-6989586621679211609"><span id="local-6989586621679211612"><span id="local-6989586621679211615"><span class="annot"><span class="annottext">Eq Bytes
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679212324"><span id="local-6989586621679212330"><span id="local-6989586621679212333"><span id="local-6989586621679212336"><span id="local-6989586621679212339"><span id="local-6989586621679212342"><span id="local-6989586621679212345"><span class="annot"><span class="annottext">Eq Bytes
 Eq Bytes =&gt;
 (Bytes -&gt; Bytes -&gt; Ordering)
 -&gt; (Bytes -&gt; Bytes -&gt; Bool)
@@ -279,7 +279,7 @@ $cmax :: Bytes -&gt; Bytes -&gt; Bytes
 max :: Bytes -&gt; Bytes -&gt; Bytes
 $cmin :: Bytes -&gt; Bytes -&gt; Bytes
 min :: Bytes -&gt; Bytes -&gt; Bytes
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679211618"><span id="local-6989586621679211627"><span id="local-6989586621679211630"><span class="annot"><span class="annottext">Int -&gt; Bytes -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679212348"><span id="local-6989586621679212357"><span id="local-6989586621679212360"><span class="annot"><span class="annottext">Int -&gt; Bytes -&gt; ShowS
 [Bytes] -&gt; ShowS
 Bytes -&gt; String
 (Int -&gt; Bytes -&gt; ShowS)
@@ -292,7 +292,7 @@ $cshow :: Bytes -&gt; String
 show :: Bytes -&gt; String
 $cshowList :: [Bytes] -&gt; ShowS
 showList :: [Bytes] -&gt; ShowS
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679211633"><span id="local-6989586621679211635"><span class="annot"><span class="annottext">(forall x. Bytes -&gt; Rep Bytes x)
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679212363"><span id="local-6989586621679212365"><span class="annot"><span class="annottext">(forall x. Bytes -&gt; Rep Bytes x)
 -&gt; (forall x. Rep Bytes x -&gt; Bytes) -&gt; Generic Bytes
 forall x. Rep Bytes x -&gt; Bytes
 forall x. Bytes -&gt; Rep Bytes x
@@ -312,7 +312,7 @@ to :: forall x. Rep Bytes x -&gt; Bytes
 </span><span id="line-49"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="AtLambda"><span class="annot"><a href="AST.html#AtLambda"><span class="hs-identifier hs-var">AtLambda</span></a></span></span><span> </span><span class="hs-comment">-- &#955;, used only in yaml conditions</span><span>
 </span><span id="line-50"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="AtDelta"><span class="annot"><a href="AST.html#AtDelta"><span class="hs-identifier hs-var">AtDelta</span></a></span></span><span> </span><span class="hs-comment">-- &#916;, used only in yaml conditions</span><span>
 </span><span id="line-51"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="AtMeta"><span class="annot"><a href="AST.html#AtMeta"><span class="hs-identifier hs-var">AtMeta</span></a></span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-comment">-- !a</span><span>
-</span><span id="line-52"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679211645"><span id="local-6989586621679211651"><span class="annot"><span class="annottext">Attribute -&gt; Attribute -&gt; Bool
+</span><span id="line-52"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679212375"><span id="local-6989586621679212381"><span class="annot"><span class="annottext">Attribute -&gt; Attribute -&gt; Bool
 (Attribute -&gt; Attribute -&gt; Bool)
 -&gt; (Attribute -&gt; Attribute -&gt; Bool) -&gt; Eq Attribute
 forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
@@ -320,7 +320,7 @@ $c== :: Attribute -&gt; Attribute -&gt; Bool
 == :: Attribute -&gt; Attribute -&gt; Bool
 $c/= :: Attribute -&gt; Attribute -&gt; Bool
 /= :: Attribute -&gt; Attribute -&gt; Bool
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679211654"><span id="local-6989586621679211656"><span class="annot"><span class="annottext">(forall x. Attribute -&gt; Rep Attribute x)
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679212384"><span id="local-6989586621679212386"><span class="annot"><span class="annottext">(forall x. Attribute -&gt; Rep Attribute x)
 -&gt; (forall x. Rep Attribute x -&gt; Attribute) -&gt; Generic Attribute
 forall x. Rep Attribute x -&gt; Attribute
 forall x. Attribute -&gt; Rep Attribute x
@@ -330,7 +330,7 @@ $cfrom :: forall x. Attribute -&gt; Rep Attribute x
 from :: forall x. Attribute -&gt; Rep Attribute x
 $cto :: forall x. Rep Attribute x -&gt; Attribute
 to :: forall x. Rep Attribute x -&gt; Attribute
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679211661"><span id="local-6989586621679211667"><span id="local-6989586621679211670"><span id="local-6989586621679211673"><span id="local-6989586621679211676"><span id="local-6989586621679211679"><span id="local-6989586621679211682"><span class="annot"><span class="annottext">Eq Attribute
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679212391"><span id="local-6989586621679212397"><span id="local-6989586621679212400"><span id="local-6989586621679212403"><span id="local-6989586621679212406"><span id="local-6989586621679212409"><span id="local-6989586621679212412"><span class="annot"><span class="annottext">Eq Attribute
 Eq Attribute =&gt;
 (Attribute -&gt; Attribute -&gt; Ordering)
 -&gt; (Attribute -&gt; Attribute -&gt; Bool)
@@ -369,19 +369,19 @@ $cmin :: Attribute -&gt; Attribute -&gt; Attribute
 min :: Attribute -&gt; Attribute -&gt; Attribute
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">)</span><span>
 </span><span id="line-53"></span><span>
-</span><span id="line-54"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679211685"><span id="local-6989586621679211689"><span class="annot"><span class="hs-identifier hs-type">Show</span></span><span> </span><span class="annot"><a href="AST.html#Attribute"><span class="hs-identifier hs-type">Attribute</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-55"></span><span>  </span><span id="local-6989586621679211692"><span class="annot"><span class="annottext">show :: Attribute -&gt; String
-</span><a href="#local-6989586621679211692"><span class="hs-identifier hs-var hs-var hs-var hs-var">show</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#AtLabel"><span class="hs-identifier hs-type">AtLabel</span></a></span><span> </span><span id="local-6989586621679211694"><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679211694"><span class="hs-keyword hs-var">label</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679211694"><span class="hs-keyword hs-var">label</span></a></span><span>
-</span><span id="line-56"></span><span>  </span><span class="annot"><span class="hs-identifier hs-var">show</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#AtAlpha"><span class="hs-identifier hs-type">AtAlpha</span></a></span><span> </span><span id="local-6989586621679211695"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679211695"><span class="hs-identifier hs-var">idx</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Char
+</span><span id="line-54"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679212415"><span id="local-6989586621679212419"><span class="annot"><span class="hs-identifier hs-type">Show</span></span><span> </span><span class="annot"><a href="AST.html#Attribute"><span class="hs-identifier hs-type">Attribute</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-55"></span><span>  </span><span id="local-6989586621679212422"><span class="annot"><span class="annottext">show :: Attribute -&gt; String
+</span><a href="#local-6989586621679212422"><span class="hs-identifier hs-var hs-var hs-var hs-var">show</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#AtLabel"><span class="hs-identifier hs-type">AtLabel</span></a></span><span> </span><span id="local-6989586621679212424"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679212424"><span class="hs-keyword hs-var">label</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679212424"><span class="hs-keyword hs-var">label</span></a></span><span>
+</span><span id="line-56"></span><span>  </span><span class="annot"><span class="hs-identifier hs-var">show</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#AtAlpha"><span class="hs-identifier hs-type">AtAlpha</span></a></span><span> </span><span id="local-6989586621679212425"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679212425"><span class="hs-identifier hs-var">idx</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Char
 </span><span class="hs-char">'&#945;'</span></span><span> </span><span class="annot"><span class="annottext">Char -&gt; ShowS
 forall a. a -&gt; [a] -&gt; [a]
 </span><span class="hs-glyph hs-var">:</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; String
 forall a. Show a =&gt; a -&gt; String
 </span><span class="hs-identifier hs-var">show</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679211695"><span class="hs-identifier hs-var">idx</span></a></span><span>
+</span><a href="#local-6989586621679212425"><span class="hs-identifier hs-var">idx</span></a></span><span>
 </span><span id="line-57"></span><span>  </span><span class="annot"><span class="hs-identifier hs-var">show</span></span><span> </span><span class="annot"><span class="annottext">Attribute
 </span><a href="AST.html#AtRho"><span class="hs-identifier hs-var">AtRho</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;&#961;&quot;</span></span><span>
@@ -394,54 +394,54 @@ forall a. Show a =&gt; a -&gt; String
 </span><span id="line-60"></span><span>  </span><span class="annot"><span class="hs-identifier hs-var">show</span></span><span> </span><span class="annot"><span class="annottext">Attribute
 </span><a href="AST.html#AtLambda"><span class="hs-identifier hs-var">AtLambda</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;&#955;&quot;</span></span><span>
-</span><span id="line-61"></span><span>  </span><span class="annot"><span class="hs-identifier hs-var">show</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#AtMeta"><span class="hs-identifier hs-type">AtMeta</span></a></span><span> </span><span id="local-6989586621679211696"><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679211696"><span class="hs-identifier hs-var">meta</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Char
+</span><span id="line-61"></span><span>  </span><span class="annot"><span class="hs-identifier hs-var">show</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#AtMeta"><span class="hs-identifier hs-type">AtMeta</span></a></span><span> </span><span id="local-6989586621679212426"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679212426"><span class="hs-identifier hs-var">meta</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Char
 </span><span class="hs-char">'!'</span></span><span> </span><span class="annot"><span class="annottext">Char -&gt; ShowS
 forall a. a -&gt; [a] -&gt; [a]
 </span><span class="hs-glyph hs-var">:</span></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679211696"><span class="hs-identifier hs-var">meta</span></a></span><span>
+</span><a href="#local-6989586621679212426"><span class="hs-identifier hs-var">meta</span></a></span><span>
 </span><span id="line-62"></span><span>
 </span><span id="line-63"></span><span class="annot"><a href="AST.html#countNodes"><span class="hs-identifier hs-type">countNodes</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="AST.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span>
 </span><span id="line-64"></span><span id="countNodes"><span class="annot"><span class="annottext">countNodes :: Program -&gt; Int
-</span><a href="AST.html#countNodes"><span class="hs-identifier hs-var hs-var">countNodes</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span> </span><span id="local-6989586621679211698"><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679211698"><span class="hs-identifier hs-var">expr</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expression -&gt; Int
-</span><a href="#local-6989586621679211699"><span class="hs-identifier hs-var">countNodes'</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679211698"><span class="hs-identifier hs-var">expr</span></a></span><span>
+</span><a href="AST.html#countNodes"><span class="hs-identifier hs-var hs-var">countNodes</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span> </span><span id="local-6989586621679212428"><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679212428"><span class="hs-identifier hs-var">expr</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expression -&gt; Int
+</span><a href="#local-6989586621679212429"><span class="hs-identifier hs-var">countNodes'</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679212428"><span class="hs-identifier hs-var">expr</span></a></span><span>
 </span><span id="line-65"></span><span>  </span><span class="hs-keyword">where</span><span>
-</span><span id="line-66"></span><span>    </span><span class="annot"><a href="#local-6989586621679211699"><span class="hs-identifier hs-type">countNodes'</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span>
-</span><span id="line-67"></span><span>    </span><span id="local-6989586621679211699"><span class="annot"><span class="annottext">countNodes' :: Expression -&gt; Int
-</span><a href="#local-6989586621679211699"><span class="hs-identifier hs-var hs-var">countNodes'</span></a></span></span><span> </span><span class="annot"><span class="annottext">Expression
+</span><span id="line-66"></span><span>    </span><span class="annot"><a href="#local-6989586621679212429"><span class="hs-identifier hs-type">countNodes'</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span>
+</span><span id="line-67"></span><span>    </span><span id="local-6989586621679212429"><span class="annot"><span class="annottext">countNodes' :: Expression -&gt; Int
+</span><a href="#local-6989586621679212429"><span class="hs-identifier hs-var hs-var">countNodes'</span></a></span></span><span> </span><span class="annot"><span class="annottext">Expression
 </span><a href="AST.html#ExGlobal"><span class="hs-identifier hs-var">ExGlobal</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">1</span></span><span>
-</span><span id="line-68"></span><span>    </span><span class="annot"><a href="#local-6989586621679211699"><span class="hs-identifier hs-var">countNodes'</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
+</span><span id="line-68"></span><span>    </span><span class="annot"><a href="#local-6989586621679212429"><span class="hs-identifier hs-var">countNodes'</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
 </span><a href="AST.html#ExTermination"><span class="hs-identifier hs-var">ExTermination</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">1</span></span><span>
-</span><span id="line-69"></span><span>    </span><span class="annot"><a href="#local-6989586621679211699"><span class="hs-identifier hs-var">countNodes'</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
+</span><span id="line-69"></span><span>    </span><span class="annot"><a href="#local-6989586621679212429"><span class="hs-identifier hs-var">countNodes'</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
 </span><a href="AST.html#ExThis"><span class="hs-identifier hs-var">ExThis</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">1</span></span><span>
-</span><span id="line-70"></span><span>    </span><span class="annot"><a href="#local-6989586621679211699"><span class="hs-identifier hs-var">countNodes'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#ExApplication"><span class="hs-identifier hs-type">ExApplication</span></a></span><span> </span><span id="local-6989586621679211700"><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679211700"><span class="hs-identifier hs-var">expr'</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#BiTau"><span class="hs-identifier hs-type">BiTau</span></a></span><span> </span><span class="annot"><span class="annottext">Attribute
-</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679211701"><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679211701"><span class="hs-identifier hs-var">bexpr'</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int
+</span><span id="line-70"></span><span>    </span><span class="annot"><a href="#local-6989586621679212429"><span class="hs-identifier hs-var">countNodes'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#ExApplication"><span class="hs-identifier hs-type">ExApplication</span></a></span><span> </span><span id="local-6989586621679212430"><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679212430"><span class="hs-identifier hs-var">expr'</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#BiTau"><span class="hs-identifier hs-type">BiTau</span></a></span><span> </span><span class="annot"><span class="annottext">Attribute
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679212431"><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679212431"><span class="hs-identifier hs-var">bexpr'</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">2</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
 forall a. Num a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">Expression -&gt; Int
-</span><a href="#local-6989586621679211699"><span class="hs-identifier hs-var">countNodes'</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679211700"><span class="hs-identifier hs-var">expr'</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+</span><a href="#local-6989586621679212429"><span class="hs-identifier hs-var">countNodes'</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679212430"><span class="hs-identifier hs-var">expr'</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
 forall a. Num a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">Expression -&gt; Int
-</span><a href="#local-6989586621679211699"><span class="hs-identifier hs-var">countNodes'</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679211701"><span class="hs-identifier hs-var">bexpr'</span></a></span><span>
-</span><span id="line-71"></span><span>    </span><span class="annot"><a href="#local-6989586621679211699"><span class="hs-identifier hs-var">countNodes'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#ExDispatch"><span class="hs-identifier hs-type">ExDispatch</span></a></span><span> </span><span id="local-6989586621679211703"><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679211703"><span class="hs-identifier hs-var">expr'</span></a></span></span><span> </span><span class="annot"><span class="annottext">Attribute
+</span><a href="#local-6989586621679212429"><span class="hs-identifier hs-var">countNodes'</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679212431"><span class="hs-identifier hs-var">bexpr'</span></a></span><span>
+</span><span id="line-71"></span><span>    </span><span class="annot"><a href="#local-6989586621679212429"><span class="hs-identifier hs-var">countNodes'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#ExDispatch"><span class="hs-identifier hs-type">ExDispatch</span></a></span><span> </span><span id="local-6989586621679212433"><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679212433"><span class="hs-identifier hs-var">expr'</span></a></span></span><span> </span><span class="annot"><span class="annottext">Attribute
 </span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">2</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
 forall a. Num a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">Expression -&gt; Int
-</span><a href="#local-6989586621679211699"><span class="hs-identifier hs-var">countNodes'</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679211703"><span class="hs-identifier hs-var">expr'</span></a></span><span>
-</span><span id="line-72"></span><span>    </span><span class="annot"><a href="#local-6989586621679211699"><span class="hs-identifier hs-var">countNodes'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#ExFormation"><span class="hs-identifier hs-type">ExFormation</span></a></span><span> </span><span id="local-6989586621679211704"><span class="annot"><span class="annottext">[Binding]
-</span><a href="#local-6989586621679211704"><span class="hs-identifier hs-var">bds</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679212429"><span class="hs-identifier hs-var">countNodes'</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679212433"><span class="hs-identifier hs-var">expr'</span></a></span><span>
+</span><span id="line-72"></span><span>    </span><span class="annot"><a href="#local-6989586621679212429"><span class="hs-identifier hs-var">countNodes'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#ExFormation"><span class="hs-identifier hs-type">ExFormation</span></a></span><span> </span><span id="local-6989586621679212434"><span class="annot"><span class="annottext">[Binding]
+</span><a href="#local-6989586621679212434"><span class="hs-identifier hs-var">bds</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">1</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
 forall a. Num a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">[Int] -&gt; Int
@@ -450,14 +450,14 @@ forall (t :: * -&gt; *) a. (Foldable t, Num a) =&gt; t a -&gt; a
 </span><span class="hs-identifier hs-var">sum</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Binding -&gt; Int) -&gt; [Binding] -&gt; [Int]
 forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
 </span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span> </span><span class="annot"><a href="AST.html#BiTau"><span class="hs-identifier hs-type">BiTau</span></a></span><span> </span><span class="annot"><span class="annottext">Attribute
-</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679211706"><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679211706"><span class="hs-identifier hs-var">expr'</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expression -&gt; Int
-</span><a href="#local-6989586621679211699"><span class="hs-identifier hs-var">countNodes'</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679211706"><span class="hs-identifier hs-var">expr'</span></a></span><span class="hs-special">;</span><span> </span><span class="annot"><span class="annottext">Binding
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679212436"><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679212436"><span class="hs-identifier hs-var">expr'</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expression -&gt; Int
+</span><a href="#local-6989586621679212429"><span class="hs-identifier hs-var">countNodes'</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679212436"><span class="hs-identifier hs-var">expr'</span></a></span><span class="hs-special">;</span><span> </span><span class="annot"><span class="annottext">Binding
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">1</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[Binding]
-</span><a href="#local-6989586621679211704"><span class="hs-identifier hs-var">bds</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-73"></span><span>    </span><span class="annot"><a href="#local-6989586621679211699"><span class="hs-identifier hs-var">countNodes'</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679212434"><span class="hs-identifier hs-var">bds</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-73"></span><span>    </span><span class="annot"><a href="#local-6989586621679212429"><span class="hs-identifier hs-var">countNodes'</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">0</span></span><span>
 </span><span id="line-74"></span></pre></body></html>
