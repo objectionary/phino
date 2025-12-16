@@ -128,11 +128,6 @@ spec = do
       result <- randomString "a!@#b"
       result `shouldBe` "a!@#b"
 
-  describe "randomString with unicode" $
-    it "preserves unicode characters" $ do
-      result <- randomString "test"
-      result `shouldBe` "test"
-
   describe "randomString %d range" $
     it "generates numbers in 0-9999 range" $ do
       result <- randomString "%d"
