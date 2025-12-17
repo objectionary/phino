@@ -10,12 +10,9 @@ import AST
 import Data.Map.Strict qualified as Map
 import Deps (Term (TeAttribute, TeBindings, TeBytes, TeExpression))
 import Functions (buildTerm)
-import Logger (logDebug)
 import Matcher (MetaValue (MvBindings, MvBytes, MvExpression), Subst (Subst), defaultScope, substEmpty)
 import Misc (numToBts, strToBts, uniqueBindings', pattern DataNumber, pattern DataString)
-import Printer (printExpression)
 import Test.Hspec (Spec, anyException, describe, it, shouldBe, shouldSatisfy, shouldThrow)
-import Text.Printf (printf)
 import Yaml (ExtraArgument (ArgAttribute, ArgBinding, ArgBytes, ArgExpression))
 
 spec :: Test.Hspec.Spec
@@ -28,7 +25,6 @@ spec = do
           subst = Subst (Map.fromList [first, second, third])
       TeBindings bds <- buildTerm "join" [ArgBinding (BiMeta "B1"), ArgBinding (BiMeta "B2"), ArgBinding (BiMeta "B3")] subst
       bds' <- uniqueBindings' bds
-      logDebug (printf "Joined bindings:\n%s" (printExpression (ExFormation bds')))
       length bds' `shouldBe` 9
 
     Test.Hspec.it "returns empty bindings for empty arguments" $ do
