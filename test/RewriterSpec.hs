@@ -8,6 +8,7 @@
 
 module RewriterSpec where
 
+import AST (Expression (ExGlobal))
 import Control.Monad (forM_, unless)
 import Data.Aeson
 import Data.Char (isSpace)
@@ -19,7 +20,7 @@ import Misc (allPathsIn, ensuredFile)
 import Must (Must (..))
 import Parser (parseProgramThrows)
 import Printer (printProgram)
-import Rewriter (RewriteContext (RewriteContext), rewrite')
+import Rewriter (RewriteContext (RewriteContext), rewrite)
 import System.FilePath (makeRelative, replaceExtension, (</>))
 import Test.Hspec (Spec, describe, expectationFailure, it, pending, runIO)
 import Yaml (normalizationRules)
@@ -99,10 +100,11 @@ spec =
                     then pure normalizationRules
                     else pure []
               rewrittens <-
-                rewrite'
+                rewrite
                   prog
                   rules'
                   ( RewriteContext
+                      ExGlobal
                       repeat'
                       repeat'
                       False
