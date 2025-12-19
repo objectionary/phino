@@ -607,7 +607,6 @@ spec = do
         testCLISucceeded
           ["rewrite", "--log-level=debug", "--log-lines=4", "--normalize"]
           [ intercalate
-          
               "\n"
               [ "[DEBUG]: Applied 'COPY' (28 nodes -> 25 nodes)"
               , "⟦"
@@ -622,7 +621,7 @@ spec = do
         testCLISucceeded
           ["rewrite", "--canonize", "--sweet", "--flat"]
           ["{⟦ x ↦ ⟦ y ↦ ⟦ λ ⤍ F1 ⟧.q, z ↦ Φ.x( a ↦ ⟦ w ↦ ⟦ λ ⤍ F2 ⟧, λ ⤍ F3 ⟧ ) ⟧, λ ⤍ F4 ⟧}"]
-    
+
     it "rewrites by locator" $
       withStdin "{[[ ex -> [[ x -> [[ y -> 5 ]].y ]], abc -> [[ x -> ? ]](x -> 5) ]]}" $
         testCLISucceeded
