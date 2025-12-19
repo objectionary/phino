@@ -182,7 +182,7 @@ rewrite' state (rule : rest) iteration ctx@RewriteContext{..} = do
           (program, _) : rest -> (_prog, Nothing) : (program, Just (map toLower (fromMaybe "unknown" (Y.name rule)))) : rest
           [] -> [(_prog, Nothing)]
 
--- Rewrite program from RewriteContext by provided locator
+-- Rewrite program by provided locator from RewriteContext
 rewrite :: Program -> [Y.Rule] -> RewriteContext -> IO [Rewritten]
 rewrite prog rules ctx@RewriteContext{..} = _rewrite ([(prog, Nothing)], Set.empty) 0 <&> reverse
   where
