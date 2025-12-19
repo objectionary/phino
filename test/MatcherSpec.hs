@@ -407,7 +407,7 @@ spec = do
 
   describe "matchExpression: expression => pattern => substitution" $
     test
-      matchExpression
+      matchExpression'
       [ ("$ => $ => [()]", ExThis, ExThis, defaultScope, [[]])
       , ("Q => Q => [()]", ExGlobal, ExGlobal, defaultScope, [[]])
       ,

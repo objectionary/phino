@@ -12,9 +12,10 @@ import GHC.Generics (Generic)
 newtype Program = Program Expression -- Q -> expr
   deriving (Eq, Ord, Show)
 
+
 data Expression
   = ExFormation [Binding] -- [[ bindings ]]
-  | ExThis
+  | ExThis -- $
   | ExGlobal -- Q
   | ExTermination -- T
   | ExApplication Expression Binding -- expr(attr -> expr)
@@ -60,14 +61,11 @@ instance Show Attribute where
   show AtLambda = "λ"
   show (AtMeta meta) = '!' : meta
 
-countNodes :: Program -> Int
-countNodes (Program expr) = countNodes' expr
-  where
-    countNodes' :: Expression -> Int
-    countNodes' ExGlobal = 1
-    countNodes' ExTermination = 1
-    countNodes' ExThis = 1
-    countNodes' (ExApplication expr' (BiTau _ bexpr')) = 2 + countNodes' expr' + countNodes' bexpr'
-    countNodes' (ExDispatch expr' _) = 2 + countNodes' expr'
-    countNodes' (ExFormation bds) = 1 + sum (map (\case BiTau _ expr' -> countNodes' expr'; _ -> 1) bds)
-    countNodes' _ = 0
+countNodes :: Expression -> Int
+countNodes ExGlobal = 1
+countNodes ExTermination = 1
+countNodes ExThis = 1
+countNodes (ExApplication expr' (BiTau _ bexpr')) = 2 + countNodes expr' + countNodes bexpr'
+countNodes (ExDispatch expr' _) = 2 + countNodes expr'
+countNodes (ExFormation bds) = 1 + sum (map (\case BiTau _ expr' -> countNodes expr'; _ -> 1) bds)
+countNodes _ = 0

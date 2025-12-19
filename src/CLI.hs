@@ -37,7 +37,7 @@ import Options.Applicative
 import Parser (parseExpressionThrows, parseProgramThrows)
 import Paths_phino (version)
 import qualified Printer as P
-import Rewriter (RewriteContext (RewriteContext), Rewritten, rewrite')
+import Rewriter (RewriteContext (RewriteContext), Rewritten, rewrite)
 import Rule (RuleContext (RuleContext), matchProgramWithRule)
 import Sugar
 import System.Exit (ExitCode (..), exitFailure)
@@ -144,6 +144,7 @@ data OptsRewrite = OptsRewrite
   , rules :: [FilePath]
   , hide :: [String]
   , show' :: [String]
+  , locator :: String
   , expression :: Maybe String
   , label :: Maybe String
   , meetPrefix :: Maybe String
@@ -278,6 +279,9 @@ optShow =
         )
     )
 
+optLocator :: Parser String
+optLocator = strOption (long "locator" <> metavar "FQN" <> help "Location of object to dataize. Must be a valid dispatch expression; e.g. Q.foo.bar" <> value "Q" <> showDefault)
+
 optNormalize :: Parser Bool
 optNormalize = switch (long "normalize" <> help "Use built-in normalization rules")
 
@@ -348,7 +352,7 @@ dataizeParser =
             <*> optMaxCycles
             <*> optHide
             <*> optShow
-            <*> strOption (long "locator" <> metavar "FQN" <> help "Location of object to dataize. Must be a valid dispatch expression; e.g. Q.foo.bar" <> value "Q" <> showDefault)
+            <*> optLocator
             <*> optExpression
             <*> optLabel
             <*> optMeetPrefix
@@ -389,6 +393,7 @@ rewriteParser =
             <*> optRule
             <*> optHide
             <*> optShow
+            <*> optLocator
             <*> optExpression
             <*> optLabel
             <*> optMeetPrefix
@@ -471,6 +476,7 @@ runCLI args = handle handler $ do
       validateOpts
       excluded <- validatedDispatches "hide" hide
       included <- validatedDispatches "show" show'
+      [loc] <- validatedDispatches "locator" [locator]
       logDebug (printf "Amount of rewriting cycles across all the rules: %d, per rule: %d" maxCycles maxDepth)
       input <- readInput inputFile
       rules' <- getRules normalize shuffle rules
@@ -481,7 +487,7 @@ runCLI args = handle handler $ do
           _canonize = if canonize then C.canonize else id
           _hide = (`F.exclude` excluded)
           _show = (`F.include` included)
-      rewrittens <- rewrite' program rules' (context printCtx) <&> _canonize . _hide . _show
+      rewrittens <- rewrite program rules' (context loc printCtx) <&> _canonize . _hide . _show
       let rewrittens' = if sequence then rewrittens else [last rewrittens]
       logDebug (printf "Printing rewritten 𝜑-program as %s" (show outputFormat))
       progs <- printRewrittens printCtx rewrittens'
@@ -519,9 +525,10 @@ runCLI args = handle handler $ do
           (False, Nothing, _) -> do
             logDebug "The option '--target' is not specified, printing to console..."
             putStrLn prog
-        context :: PrintProgramContext -> RewriteContext
-        context ctx =
+        context :: Expression -> PrintProgramContext -> RewriteContext
+        context loc ctx =
           RewriteContext
+            loc
             maxDepth
             maxCycles
             depthSensitive
@@ -539,7 +546,7 @@ runCLI args = handle handler $ do
           _canonize = if canonize then C.canonize else id
           _hide = (`F.exclude` excluded)
           _show = (`F.include` included)
-      (maybeBytes, seq) <- dataize loc (context prog printCtx)
+      (maybeBytes, seq) <- dataize (context loc prog printCtx)
       when sequence (printRewrittens printCtx (_canonize $ _hide $ _show seq) >>= putStrLn)
       unless quiet (putStrLn (maybe (P.printExpression ExTermination) P.printBytes maybeBytes))
       where
@@ -553,10 +560,11 @@ runCLI args = handle handler $ do
             outputFormat
             [(omitListing, "omit-listing"), (omitComments, "omit-comments")]
           when (length show' > 1) (invalidCLIArguments "The option --show can be used only once")
-        context :: Program -> PrintProgramContext -> DataizeContext
-        context program ctx =
+        context :: Expression -> Program -> PrintProgramContext -> DataizeContext
+        context loc prog ctx =
           DataizeContext
-            program
+            loc
+            prog
             maxDepth
             maxCycles
             depthSensitive

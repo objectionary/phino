@@ -5,7 +5,7 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Rule (RuleContext (..), isNF, matchProgramWithRule, meetCondition) where
+module Rule (RuleContext (..), isNF, matchProgramWithRule, matchExpressionWithRule, meetCondition) where
 
 import AST
 import Builder
@@ -44,7 +44,7 @@ matchesAnyNormalizationRule expr ctx = matchesAnyNormalizationRule' expr normali
     matchesAnyNormalizationRule' :: Expression -> [Y.Rule] -> RuleContext -> Bool
     matchesAnyNormalizationRule' _ [] _ = False
     matchesAnyNormalizationRule' expr (rule : rules) ctx =
-      let matched = unsafePerformIO (matchProgramWithRule (Program expr) rule ctx)
+      let matched = unsafePerformIO (matchExpressionWithRule expr rule ctx)
        in not (null matched) || matchesAnyNormalizationRule' expr rules ctx
 
 -- Returns True if given expression is in the normal form
@@ -242,46 +242,46 @@ extraSubstitutions substs extras RuleContext{..} = case extras of
     res <-
       sequence
         [ foldlM
-            ( \maybeSubst extra -> case maybeSubst of
-                Nothing -> pure Nothing
-                Just subst' -> do
-                  let maybeName = case Y.meta extra of
-                        Y.ArgExpression (ExMeta name) -> Just name
-                        Y.ArgAttribute (AtMeta name) -> Just name
-                        Y.ArgBinding (BiMeta name) -> Just name
-                        Y.ArgBytes (BtMeta name) -> Just name
-                        _ -> Nothing
-                      func = Y.function extra
-                      args = Y.args extra
-                  term <- _buildTerm func args subst'
-                  meta <- case term of
-                    TeExpression expr -> do
-                      logDebug (printf "Function %s() returned expression:\n%s" func (printExpression expr))
-                      pure (MvExpression expr defaultScope)
-                    TeAttribute attr -> do
-                      logDebug (printf "Function %s() returned attribute: %s" func (printAttribute attr))
-                      pure (MvAttribute attr)
-                    TeBytes bytes -> do
-                      logDebug (printf "Function %s() returned bytes: %s" func (printBytes bytes))
-                      pure (MvBytes bytes)
-                    TeBindings bds -> do
-                      logDebug (printf "Function %s return bindings: %s" func (printExpression (ExFormation bds)))
-                      pure (MvBindings bds)
-                  case maybeName of
-                    Just name -> pure (combine (substSingle name meta) subst')
-                    _ -> pure Nothing
-            )
-            (Just subst)
-            extras'
+          ( \maybeSubst extra -> case maybeSubst of
+              Nothing -> pure Nothing
+              Just subst' -> do
+                let maybeName = case Y.meta extra of
+                      Y.ArgExpression (ExMeta name) -> Just name
+                      Y.ArgAttribute (AtMeta name) -> Just name
+                      Y.ArgBinding (BiMeta name) -> Just name
+                      Y.ArgBytes (BtMeta name) -> Just name
+                      _ -> Nothing
+                    func = Y.function extra
+                    args = Y.args extra
+                term <- _buildTerm func args subst'
+                meta <- case term of
+                  TeExpression expr -> do
+                    logDebug (printf "Function %s() returned expression:\n%s" func (printExpression expr))
+                    pure (MvExpression expr defaultScope)
+                  TeAttribute attr -> do
+                    logDebug (printf "Function %s() returned attribute: %s" func (printAttribute attr))
+                    pure (MvAttribute attr)
+                  TeBytes bytes -> do
+                    logDebug (printf "Function %s() returned bytes: %s" func (printBytes bytes))
+                    pure (MvBytes bytes)
+                  TeBindings bds -> do
+                    logDebug (printf "Function %s return bindings: %s" func (printExpression (ExFormation bds)))
+                    pure (MvBindings bds)
+                case maybeName of
+                  Just name -> pure (combine (substSingle name meta) subst')
+                  _ -> pure Nothing
+          )
+          (Just subst)
+          extras'
         | subst <- substs
         ]
     logDebug "Extra substitutions have been built"
     pure (catMaybes res)
 
-matchProgramWithRule :: Program -> Y.Rule -> RuleContext -> IO [Subst]
-matchProgramWithRule program rule ctx =
+matchExpressionWithRule :: Expression -> Y.Rule -> RuleContext -> IO [Subst]
+matchExpressionWithRule expr rule ctx =
   let ptn = Y.pattern rule
-      matched = matchProgram ptn program
+      matched = matchExpression ptn expr
       name = fromMaybe "unknown" (Y.name rule)
    in if null matched
         then do
@@ -304,3 +304,6 @@ matchProgramWithRule program rule ctx =
                   met <- meetMaybeCondition (Y.having rule) extended ctx
                   when (null met) (logDebug "The 'having' condition wan't met")
                   pure met
+
+matchProgramWithRule :: Program -> Y.Rule -> RuleContext -> IO [Subst]
+matchProgramWithRule (Program expr) = matchExpressionWithRule expr

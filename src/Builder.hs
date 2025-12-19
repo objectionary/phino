@@ -43,26 +43,10 @@ metaMsg = printf "meta '%s' is either does not exist or refers to an inappropria
 type Built a = Either String a
 
 instance Show BuildException where
-  show CouldNotBuildExpression{..} =
-    printf
-      "Couldn't build expression, %s\n--Expression: %s"
-      _msg
-      (printExpression _expr)
-  show CouldNotBuildAttribute{..} =
-    printf
-      "Couldn't build attribute '%s', %s"
-      (printAttribute _attr)
-      _msg
-  show CouldNotBuildBinding{..} =
-    printf
-      "Couldn't build binding, %s\n--Binding: %s"
-      _msg
-      (printBinding _bd)
-  show CouldNotBuildBytes{..} =
-    printf
-      "Couldn't build bytes '%s', %s"
-      (printBytes _bts)
-      _msg
+  show CouldNotBuildExpression{..} = printf "Couldn't build expression, %s\n--Expression: %s" _msg (printExpression _expr)
+  show CouldNotBuildAttribute{..} = printf "Couldn't build attribute '%s', %s" (printAttribute _attr) _msg
+  show CouldNotBuildBinding{..} = printf "Couldn't build binding, %s\n--Binding: %s" _msg (printBinding _bd)
+  show CouldNotBuildBytes{..} = printf "Couldn't build bytes '%s', %s" (printBytes _bts) _msg
 
 contextualize :: Expression -> Expression -> Expression
 contextualize ExGlobal _ = ExGlobal
@@ -71,9 +55,7 @@ contextualize ExTermination _ = ExTermination
 contextualize (ExFormation bds) _ = ExFormation bds
 contextualize (ExDispatch ex at) context = ExDispatch (contextualize ex context) at
 contextualize (ExApplication ex (BiTau at bexpr)) context =
-  let ex' = contextualize ex context
-      bexpr' = contextualize bexpr context
-   in ExApplication ex' (BiTau at bexpr')
+  ExApplication (contextualize ex context) (BiTau at (contextualize bexpr context))
 contextualize ex _ = ex
 
 buildAttribute :: Attribute -> Subst -> Built Attribute

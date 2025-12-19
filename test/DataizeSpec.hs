@@ -9,25 +9,26 @@ import Dataize (DataizeContext (DataizeContext), dataize, dataize', morph)
 import Deps (dontSaveStep)
 import Functions (buildTerm)
 import Parser (parseExpressionThrows, parseProgramThrows)
-import Printer (printProgram)
 import Rewriter (Rewritten)
 import Test.Hspec
 
-defaultDataizeContext :: Program -> DataizeContext
-defaultDataizeContext prog = DataizeContext prog 25 25 False buildTerm dontSaveStep
+defaultDataizeContext :: Expression -> Program -> DataizeContext
+defaultDataizeContext loc prog = DataizeContext loc prog 25 25 False buildTerm dontSaveStep
 
 test :: (Eq a, Show a) => ((Expression, [Rewritten]) -> DataizeContext -> IO (Maybe a, [Rewritten])) -> [(String, Expression, Expression, Maybe a)] -> Spec
 test func useCases =
-  forM_ useCases $ \(desc, input, prog, output) ->
+  forM_ useCases $ \(desc, input, expr, output) ->
     it desc $ do
-      (res, _) <- func (input, []) (defaultDataizeContext (Program prog))
+      let prog = Program expr
+      (res, _) <- func (input, [(prog, Nothing)]) (defaultDataizeContext ExGlobal prog)
       res `shouldBe` output
 
 test' :: (Eq a, Show a) => ((Expression, [Rewritten]) -> DataizeContext -> IO (a, [Rewritten])) -> [(String, Expression, Expression, a)] -> Spec
 test' func useCases =
-  forM_ useCases $ \(desc, input, prog, output) ->
+  forM_ useCases $ \(desc, input, expr, output) ->
     it desc $ do
-      (res, _) <- func (input, [(Program prog, Nothing)]) (defaultDataizeContext (Program prog))
+      let prog = Program expr
+      (res, _) <- func (input, [(prog, Nothing)]) (defaultDataizeContext ExGlobal prog)
       res `shouldBe` output
 
 testDataize :: [(String, String, String, Bytes)] -> Spec
@@ -36,8 +37,7 @@ testDataize useCases =
     it name $ do
       prog' <- parseProgramThrows prog
       loc' <- parseExpressionThrows loc
-      putStrLn (printProgram prog')
-      (value, _) <- dataize loc' (defaultDataizeContext prog')
+      (value, _) <- dataize (defaultDataizeContext loc' prog')
       value `shouldBe` Just res
 
 spec :: Spec
@@ -104,7 +104,7 @@ spec = do
 
   testDataize
     [
-      ( "5.plus(5)"
+      ( "5.plus(6)"
       , "Q"
       , unlines
           [ "Q -> [["
@@ -121,10 +121,10 @@ spec = do
           , "      ]]"
           , "    ]]"
           , "  ]],"
-          , "  @ -> 5.plus(5)"
+          , "  @ -> 5.plus(6)"
           , "]]"
           ]
-      , BtMany ["40", "24", "00", "00", "00", "00", "00", "00"]
+      , BtMany ["40", "26", "00", "00", "00", "00", "00", "00"]
       )
     ,
       ( "Fahrenheit"
@@ -197,5 +197,21 @@ spec = do
           , "]]"
           ]
       , BtOne "42"
+      )
+    ,
+      ( "Five"
+      , "Q.x"
+      , unlines
+          [ "Q -> [["
+          , "  org -> [["
+          , "    eolang -> [["
+          , "      number(as-bytes) -> [[ @ -> as-bytes ]],"
+          , "      bytes(data) -> [[ @ -> data ]]"
+          , "    ]]"
+          , "  ]],"
+          , "  x -> 5"
+          , "]]"
+          ]
+      , BtMany ["40", "14", "00", "00", "00", "00", "00", "00"]
       )
     ]

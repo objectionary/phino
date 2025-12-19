@@ -214,56 +214,25 @@ spec = do
       let hasProgram str = "Program" `elem` words str
        in show (Program ExGlobal) `shouldSatisfy` hasProgram
 
-  describe "countNodes counts ExGlobal" $
-    it "returns one for global" $
-      countNodes (Program ExGlobal) `shouldBe` 1
-
-  describe "countNodes counts ExTermination" $
-    it "returns one for termination" $
-      countNodes (Program ExTermination) `shouldBe` 1
-
-  describe "countNodes counts ExThis" $
-    it "returns one for this" $
-      countNodes (Program ExThis) `shouldBe` 1
-
-  describe "countNodes counts ExDispatch" $
-    it "returns three for dispatch on global" $
-      countNodes (Program (ExDispatch ExGlobal (AtLabel "x"))) `shouldBe` 3
-
-  describe "countNodes counts ExApplication" $
-    it "returns four for application with globals" $
-      countNodes (Program (ExApplication ExGlobal (BiTau AtRho ExGlobal))) `shouldBe` 4
-
-  describe "countNodes counts ExFormation with tau bindings" $
-    it "returns count including nested expressions" $
-      countNodes (Program (ExFormation [BiTau AtRho ExGlobal, BiTau AtPhi ExGlobal])) `shouldBe` 3
-
   describe "countNodes counts ExFormation with non-tau bindings" $
     forM_
-      [ ("empty formation", ExFormation [], 1)
+      [ ("Q", ExGlobal, 1)
+      , ("T", ExTermination, 1)
+      , ("$", ExThis, 1)
+      , ("dispatch on global", ExDispatch ExGlobal (AtLabel "x"), 3)
+      , ("application with globals", ExApplication ExGlobal (BiTau AtRho ExGlobal), 4)
+      , ("nested expressions", ExFormation [BiTau AtRho ExGlobal, BiTau AtPhi ExGlobal], 3)
+      , ("empty formation", ExFormation [], 1)
       , ("void binding", ExFormation [BiVoid AtRho], 2)
       , ("delta binding", ExFormation [BiDelta BtEmpty], 2)
       , ("lambda binding", ExFormation [BiLambda "Func"], 2)
       , ("meta binding", ExFormation [BiMeta "B"], 2)
       , ("metalambda binding", ExFormation [BiMetaLambda "F"], 2)
-      ]
-      ( \(desc, expr, expected) ->
-          it desc $ countNodes (Program expr) `shouldBe` expected
-      )
-
-  describe "countNodes returns zero for meta expressions" $
-    forM_
-      [ ("meta expression", ExMeta "e", 0)
+      , ("meta expression", ExMeta "e", 0)
       , ("metatail expression", ExMetaTail ExGlobal "t", 0)
+      , ("deeply nested dispatch", ExDispatch (ExDispatch ExGlobal (AtLabel "a")) (AtLabel "b"), 5)
+      , ("formation with dispatch inside", ExFormation [BiTau AtRho (ExDispatch ExGlobal (AtLabel "x"))], 4)
       ]
       ( \(desc, expr, expected) ->
-          it desc $ countNodes (Program expr) `shouldBe` expected
+          it desc $ countNodes expr `shouldBe` expected
       )
-
-  describe "countNodes counts nested structures" $
-    it "counts deeply nested dispatch" $
-      countNodes (Program (ExDispatch (ExDispatch ExGlobal (AtLabel "a")) (AtLabel "b"))) `shouldBe` 5
-
-  describe "countNodes counts complex formation" $
-    it "counts formation with dispatch inside" $
-      countNodes (Program (ExFormation [BiTau AtRho (ExDispatch ExGlobal (AtLabel "x"))])) `shouldBe` 4
