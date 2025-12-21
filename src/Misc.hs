@@ -86,20 +86,30 @@ pattern BaseObject label <- (matchBaseObject -> Just label)
 
 -- Minimal matcher function (required for view pattern)
 matchDataObject :: Expression -> Maybe (String, Bytes)
-matchDataObject
-  ( ExApplication
-      (BaseObject label)
-      ( BiTau
-          (AtAlpha 0)
-          ( ExApplication
-              (BaseObject "bytes")
-              ( BiTau
-                  (AtAlpha 0)
-                  (ExFormation [BiDelta bts, BiVoid AtRho])
-                )
-            )
-        )
-    ) = Just (label, bts)
+matchDataObject (ExApplication outer (BiTau (AtAlpha 0) inner)) = case (matchOuter outer, matchInner inner) of
+  (Just label, Just bts) -> Just (label, bts)
+  _ -> Nothing
+  where
+    matchOuter :: Expression -> Maybe String
+    matchOuter (BaseObject label) = Just label
+    matchOuter (ExPhiAgain _ _ (BaseObject label)) = Just label
+    matchOuter _ = Nothing
+    matchInner :: Expression -> Maybe Bytes
+    matchInner (ExPhiAgain _ _ inner') = matchInner inner'
+    matchInner inner' = matchInner' inner'
+    matchInner' :: Expression -> Maybe Bytes
+    matchInner' ( ExApplication bytes ( BiTau (AtAlpha 0) formation )) = case (matchesBytes bytes, matchFormation formation) of
+      (True, Just bts) -> Just bts
+      _ -> Nothing
+    matchInner' _ = Nothing
+    matchesBytes :: Expression -> Bool
+    matchesBytes (BaseObject "bytes") = True
+    matchesBytes (ExPhiAgain _ _ (BaseObject "bytes")) = True
+    matchesBytes _ = False
+    matchFormation :: Expression -> Maybe Bytes
+    matchFormation (ExFormation [BiDelta bts, BiVoid AtRho]) = Just bts
+    matchFormation (ExPhiAgain _ _ (ExFormation [BiDelta bts, BiVoid AtRho])) = Just bts
+    matchFormation _ = Nothing
 matchDataObject _ = Nothing
 
 pattern DataString :: Bytes -> Expression
