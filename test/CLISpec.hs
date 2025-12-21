@@ -345,7 +345,7 @@ spec = do
         testCLISucceeded
           ["rewrite", "--output=latex", "--sweet", "--flat", "--expression=foo"]
           [ "\\begin{phiquation}"
-          , "\\phiExpression{foo} \\Big\\{[[ |x| -> 5 ]]\\Big\\}.\n"
+          , "\\phiExpression{foo} \\Big\\{[[ |x| -> 5 ]]\\Big\\}{.}\n"
           , "\\end{phiquation}"
           ]
 
@@ -354,7 +354,7 @@ spec = do
         testCLISucceeded
           ["rewrite", "--output=latex", "--sweet", "--flat", "--label=foo"]
           [ "\\begin{phiquation}\n\\label{foo}\n"
-          , "\\Big\\{[[ |x| -> 5 ]]\\Big\\}.\n"
+          , "\\Big\\{[[ |x| -> 5 ]]\\Big\\}{.}\n"
           , "\\end{phiquation}"
           ]
 
@@ -419,7 +419,7 @@ spec = do
               [ "\\begin{phiquation}"
               , "\\Big\\{[[ |x| -> \"foo\" ]]\\Big\\} \\leadsto_{\\nameref{r:first}}"
               , "  \\leadsto \\Big\\{Q.|x|( |y| -> \"foo\" )\\Big\\} \\leadsto_{\\nameref{r:second}}"
-              , "  \\leadsto \\Big\\{[[ |x| -> \"foo\" ]]\\Big\\}."
+              , "  \\leadsto \\Big\\{[[ |x| -> \"foo\" ]]\\Big\\}{.}"
               , "\\end{phiquation}"
               ]
           ]
@@ -435,7 +435,7 @@ spec = do
               , "  \\leadsto \\Big\\{\\phiAgain{foo:1}.|x|( ^ -> \\phiAgain{foo:1} )\\Big\\} \\leadsto_{\\nameref{r:dot}}"
               , "  \\leadsto \\Big\\{[[ D> 42- ]]( ^ -> \\phiAgain{foo:1}, ^ -> \\phiAgain{foo:1} )\\Big\\} \\leadsto_{\\nameref{r:copy}}"
               , "  \\leadsto \\Big\\{[[ D> 42-, ^ -> \\phiAgain{foo:1} ]]( ^ -> \\phiAgain{foo:1} )\\Big\\} \\leadsto_{\\nameref{r:stay}}"
-              , "  \\leadsto \\Big\\{[[ D> 42-, ^ -> \\phiAgain{foo:1} ]]\\Big\\}."
+              , "  \\leadsto \\Big\\{[[ D> 42-, ^ -> \\phiAgain{foo:1} ]]\\Big\\}{.}"
               , "\\end{phiquation}"
               ]
           ]
@@ -451,7 +451,7 @@ spec = do
               , "  \\leadsto \\Big\\{\\phiAgain{1}.|x|( ^ -> \\phiAgain{1} )\\Big\\} \\leadsto_{\\nameref{r:dot}}"
               , "  \\leadsto \\Big\\{[[ D> 42- ]]( ^ -> \\phiAgain{1}, ^ -> \\phiAgain{1} )\\Big\\} \\leadsto_{\\nameref{r:copy}}"
               , "  \\leadsto \\Big\\{[[ D> 42-, ^ -> \\phiAgain{1} ]]( ^ -> \\phiAgain{1} )\\Big\\} \\leadsto_{\\nameref{r:stay}}"
-              , "  \\leadsto \\Big\\{[[ D> 42-, ^ -> \\phiAgain{1} ]]\\Big\\}."
+              , "  \\leadsto \\Big\\{[[ D> 42-, ^ -> \\phiAgain{1} ]]\\Big\\}{.}"
               , "\\end{phiquation}"
               ]
           ]
@@ -464,7 +464,7 @@ spec = do
               [ "\\begin{phiquation}"
               , "\\Big\\{[[ |ex| -> [[ |x| -> [[ |y| -> ?, |k| -> \\phiMeet{1}{ [[ |t| -> 42 ]] } ]]( |y| -> \\phiAgain{1} ) ]].|i| ]]\\Big\\} \\leadsto_{\\nameref{r:copy}}"
               , "  \\leadsto \\Big\\{[[ |ex| -> [[ |x| -> [[ |y| -> \\phiAgain{1}, |k| -> \\phiAgain{1} ]] ]].|i| ]]\\Big\\} \\leadsto_{\\nameref{r:stop}}"
-              , "  \\leadsto \\Big\\{[[ |ex| -> T ]]\\Big\\}."
+              , "  \\leadsto \\Big\\{[[ |ex| -> T ]]\\Big\\}{.}"
               , "\\end{phiquation}"
               ]
           ]
@@ -652,7 +652,7 @@ spec = do
               , "  \\leadsto \\Big\\{[[ |x| -> [[ D> 01-, |y| -> [[]] ]] ]].|x|\\Big\\} \\leadsto_{\\nameref{r:dot}}"
               , "  \\leadsto \\Big\\{[[ D> 01-, |y| -> [[]] ]]( ^ -> [[ |x| -> [[ D> 01-, |y| -> [[]] ]] ]] )\\Big\\} \\leadsto_{\\nameref{r:copy}}"
               , "  \\leadsto \\Big\\{[[ D> 01-, |y| -> [[]], ^ -> [[ |x| -> [[ D> 01-, |y| -> [[]] ]] ]] ]]\\Big\\} \\leadsto_{\\nameref{r:Mprim}}"
-              , "  \\leadsto \\Big\\{[[ D> 01-, |y| -> [[]], ^ -> [[ |x| -> [[ D> 01-, |y| -> [[]] ]] ]] ]]\\Big\\}."
+              , "  \\leadsto \\Big\\{[[ D> 01-, |y| -> [[]], ^ -> [[ |x| -> [[ D> 01-, |y| -> [[]] ]] ]] ]]\\Big\\}{.}"
               , "\\end{phiquation}"
               , "01-"
               ]
