@@ -15,7 +15,7 @@ test:
 
 .SILENT:
 hlint:
-	hlint src app test
+	cabal exec hlint -- src app test
 
 .SILENT:
 fourmolu:
