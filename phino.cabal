@@ -156,6 +156,7 @@ test-suite spec
     containers,
     directory,
     filepath,
+    hlint,
     hspec,
     hspec-core,
     megaparsec,

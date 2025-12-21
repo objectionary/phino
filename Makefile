@@ -15,11 +15,11 @@ test:
 
 .SILENT:
 hlint:
-	hlint src app test
+	cabal exec hlint -- src app test
 
 .SILENT:
 fourmolu:
-	fourmolu --mode check src app test
+	cabal exec fourmolu -- --mode check src app test
 
 .SILENT:
 coverage:
