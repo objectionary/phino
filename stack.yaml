@@ -23,6 +23,15 @@ packages:
 # forks / in-progress versions pinned to a git hash. For example:
 #
 extra-deps:
+  - aeson-2.2.3.0@sha256:61e559f2bad61a98aac564f2a4fd892d21e9e1712e14e3db93326317aa944a9b,6378
+  - character-ps-0.1@sha256:b38ed1c07ae49e7461e44ca1d00c9ca24d1dcb008424ccd919916f92fd48d9fe,1315
+  - hashable-1.4.7.0@sha256:573f3ab242f75465a0d67ce9d84202650a1606575e6dbd6d31ffcf4767a9a379,6629
+  - megaparsec-9.7.0@sha256:77e331b4240385974e68d1f8d5ca9014274983cc9ccb8caced743d360c3a409f,3407
+  - optparse-applicative-0.19.0.0
+  - primitive-0.9.1.0@sha256:dfdd6572944c11e69208237dd32a2eb9d975b4f4e9064a7b8dc952cb0e256846,3119
+  - random-1.2.1.3@sha256:117541ba0a177397a3333f94870f789ef050dca31b0688a19824b2bc401b8823,6237
+  - scientific-0.3.8.0@sha256:ba83a6701dd0110138443757aca4a42786afa94272b73045ef878fd860d1732e,4397
+  - vector-0.13.2.0@sha256:b736a57b73520d2acf4865e3e2b40030d69782f35f870e376dc717ee2508d81f,8804
   - xml-conduit-1.10.0.0@sha256:29fa134ed3f2b20bf3026de5116ef30cc14fab61b2d7c8efe261ba7ed217c1a9,3058
 # - acme-missiles-0.3
 # - git: https://github.com/commercialhaskell/stack.git
