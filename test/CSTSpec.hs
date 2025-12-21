@@ -72,7 +72,7 @@ spec = do
       , ("number(again(bytes)(data))", app number (bt (app (again bts) (bt form))))
       , ("again(number)(again(bytes)(data))", app (again number) (bt (app (again bts) (bt form))))
       , ("number(bytes(again(data)))", app number (bt (app bts (bt (again form)))))
-      , ("again(number)(again(bytes)(again(bytes)))", app (again number) (bt (app (again bts) (bt (again form)))))
+      , ("again(number)(again(bytes)(again(data)))", app (again number) (bt (app (again bts) (bt (again form)))))
       ]
       (\(desc, ex) -> it desc (toCST ex 0 EOL `shouldSatisfy` isCSTNumber))
 
