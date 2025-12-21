@@ -105,7 +105,6 @@ spec = do
   describe "toSingleLine EXPRESSION leaves primitives unchanged" $
     forM_
       [ ("EX_GLOBAL", EX_GLOBAL Φ)
-      , ("EX_DEF_PACKAGE", EX_DEF_PACKAGE Φ̇)
       , ("EX_XI", EX_XI XI)
       , ("EX_ATTR", EX_ATTR (AT_LABEL "attr"))
       , ("EX_TERMINATION", EX_TERMINATION DEAD)

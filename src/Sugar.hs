@@ -43,7 +43,6 @@ data SugarType = SWEET | SALTY
 --  | sugar                      | verbose version                                       |
 --  |----------------------------|-------------------------------------------------------|
 --  | {e}                        | Q -> e                                                |
---  | QQ                         | Q.org.eolang                                          |
 --  | a1 -> a2                   | a1 ↦ $.a2                                             |
 --  | a -> 42                    | QQ.number(QQ.bytes([[ D> 40-45-00-00-00-00-00-00 ]])) |
 --  | a -> "Hey"                 | QQ.number(QQ.bytes([[ D> 48-65-79 ]]))                |
@@ -60,7 +59,6 @@ instance ToSalty PROGRAM where
   toSalty prog = prog
 
 instance ToSalty EXPRESSION where
-  toSalty EX_DEF_PACKAGE{} = EX_DISPATCH (EX_DISPATCH (EX_GLOBAL Φ) (AT_LABEL "org")) (AT_LABEL "eolang")
   toSalty EX_ATTR{..} = EX_DISPATCH (EX_XI XI) attr
   toSalty EX_DISPATCH{..} = EX_DISPATCH (toSalty expr) attr
   toSalty EX_FORMATION{lsb, binding = bd@BI_EMPTY{}, rsb} = EX_FORMATION lsb NO_EOL TAB' (toSalty (bdWithVoidRho bd)) NO_EOL TAB' rsb

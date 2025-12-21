@@ -11,6 +11,6 @@ phi: |
   ]]
 xpaths:
   - '/object/o[@name="foo" and o[2][@base="Φ.y"]]'
-  - '/object/o/o/o[@as="α0" and @base="Φ.org.eolang.number"]'
-  - '/object/o/o/o[@as="α1" and @base="Φ.org.eolang.string"]'
+  - '/object/o/o/o[@as="α0" and @base="Φ.number"]'
+  - '/object/o/o/o[@as="α1" and @base="Φ.string"]'
   - '/object/o/o[@name="φ" and @base="ξ.ρ.z"]'

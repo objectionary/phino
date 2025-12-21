@@ -261,11 +261,11 @@ spec = do
     it "desugares without any rules flag from file" $
       testCLISucceeded
         ["rewrite", resource "desugar.phi"]
-        ["Φ ↦ ⟦\n  foo ↦ Φ.org.eolang,\n  ρ ↦ ∅\n⟧"]
+        ["Φ ↦ ⟦\n  foo ↦ ξ.x,\n  ρ ↦ ∅\n⟧"]
 
     it "desugares with without any rules flag from stdin" $
-      withStdin "{[[foo ↦ QQ]]}" $
-        testCLISucceeded ["rewrite"] ["Φ ↦ ⟦\n  foo ↦ Φ.org.eolang,\n  ρ ↦ ∅\n⟧"]
+      withStdin "{[[foo ↦ x]]}" $
+        testCLISucceeded ["rewrite"] ["Φ ↦ ⟦\n  foo ↦ ξ.x,\n  ρ ↦ ∅\n⟧"]
 
     it "rewrites with single rule" $
       withStdin "{T(x -> Q.y)}" $
@@ -315,12 +315,12 @@ spec = do
           ["<?xml version=\"1.0\" encoding=\"UTF-8\"?>", "<object", "  <o base=\"Φ.y\" name=\"x\"/>"]
 
     it "rewrites as LaTeX" $
-      withStdin "Q -> [[ x_o -> QQ.z(y -> 5), q$ -> T, w -> $, ^ -> Q, @ -> 1, y -> \"H$@^M\", L> Fu_nc ]]" $
+      withStdin "Q -> [[ x_o -> Q.z(y -> 5), q$ -> T, w -> $, ^ -> Q, @ -> 1, y -> \"H$@^M\", L> Fu_nc ]]" $
         testCLISucceeded
           ["rewrite", "--output=latex", "--sweet"]
           [ "\\begin{phiquation}"
           , "\\Big\\{[[\n"
-          , "  |x\\char95{}o| -> QQ.|z|( |y| -> 5 ),\n"
+          , "  |x\\char95{}o| -> Q.|z|( |y| -> 5 ),\n"
           , "  |q\\char36{}| -> T,\n"
           , "  |w| -> $,\n"
           , "  ^ -> Q,\n"
@@ -608,7 +608,7 @@ spec = do
           ["rewrite", "--log-level=debug", "--log-lines=4", "--normalize"]
           [ intercalate
               "\n"
-              [ "[DEBUG]: Applied 'COPY' (28 nodes -> 25 nodes)"
+              [ "[DEBUG]: Applied 'COPY' (20 nodes -> 17 nodes)"
               , "⟦"
               , "  x ↦ ⟦"
               , "    y ↦ 5"
@@ -743,7 +743,7 @@ spec = do
     it "merges single program" $
       testCLISucceeded
         ["merge", resource "desugar.phi", "--sweet", "--flat"]
-        ["{⟦ foo ↦ Φ̇ ⟧}"]
+        ["{⟦ foo ↦ x ⟧}"]
 
     it "merges EO programs" $
       testCLISucceeded

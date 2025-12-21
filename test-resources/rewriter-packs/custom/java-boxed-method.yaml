@@ -12,14 +12,14 @@ input: |
         v96 ↦ "java/util/stream/IntStream",
         v97 ↦ "boxed",
         v98 ↦ "()Ljava/util/stream/Stream;",
-        v99 ↦ Φ̇.true
+        v99 ↦ Φ.true
       ⟧,
       i96 ↦ ⟦
         φ ↦ Φ.jeo.opcode.invokeinterface,
         v96 ↦ "java/util/stream/LongStream",
         v97 ↦ "boxed",
         v98 ↦ "()Ljava/util/stream/Stream;",
-        v99 ↦ Φ̇.true
+        v99 ↦ Φ.true
       ⟧
     ⟧,
     name ↦ "main"
@@ -49,7 +49,7 @@ rules:
           𝜏-stream-class ↦ 𝑒-stream-class,
           𝜏-method ↦ "boxed",
           𝜏-signature ↦ "()Ljava/util/stream/Stream;",
-          𝜏-flag ↦ Φ̇.true,
+          𝜏-flag ↦ Φ.true,
           ρ ↦ ∅
         ⟧
       result: |

@@ -34,7 +34,6 @@ spec = do
       , ("Q -> T(x -> Q)", Just (Program (ExApplication ExTermination (BiTau (AtLabel "x") ExGlobal))))
       , ("Q -> Q.org.eolang", Just (Program (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang"))))
       , ("Q -> [[x -> $, y -> ?]]", Just (Program (ExFormation [BiTau (AtLabel "x") ExThis, BiVoid (AtLabel "y"), BiVoid AtRho])))
-      , ("{[[foo ↦ QQ]]}", Just (Program (ExFormation [BiTau (AtLabel "foo") (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang")), BiVoid AtRho])))
       ]
 
   describe "parse expression" $
@@ -190,7 +189,6 @@ spec = do
     forM_
       [ "[[x -> $, y -> ?]]"
       , "[[x() -> [[]] ]]"
-      , "[[x(^, @, y) -> [[q -> QQ]] ]]"
       , "Q.x(y() -> [[]])"
       , "Q.x(y(q) -> [[w -> !e]])"
       , "Q.x(~1(^,@) -> [[]])"
@@ -217,6 +215,7 @@ spec = do
       ( map
           (\input -> (input, Nothing))
           [ "Q.x()"
+          , "[[x(^, @, y) -> [[q -> QQ]] ]]"
           , "Q * !t1 * !t2"
           , "Q(x -> [[]])"
           , "$(x -> [[]])"
@@ -424,7 +423,6 @@ spec = do
       [ ("ξ", Just ExThis)
       , ("Φ", Just ExGlobal)
       , ("⊥", Just ExTermination)
-      , ("Φ̇", Just (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang")))
       , ("⟦⟧", Just (ExFormation [BiVoid AtRho]))
       , ("⟦ x ↦ ξ ⟧", Just (ExFormation [BiTau (AtLabel "x") ExThis, BiVoid AtRho]))
       , ("ξ.ρ", Just (ExDispatch ExThis AtRho))

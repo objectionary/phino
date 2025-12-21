@@ -139,7 +139,6 @@ test-suite spec
     RewriterSpec
     RuleSpec
     Spec
-    SugarSpec
     XMIRSpec
     YamlSpec
 

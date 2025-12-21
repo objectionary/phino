@@ -99,7 +99,6 @@ phiDispatch tau expr = case expr of
 -- Tail MUST start with dispatch, that's why most of the applications return Nothing
 withTail :: Expression -> DataizeContext -> IO (Maybe (Expression, String))
 withTail (ExApplication (ExFormation _) _) _ = pure Nothing
-withTail (ExApplication (ExDispatch ExGlobal _) _) _ = pure Nothing
 withTail (ExApplication expr tau) ctx = do
   tailed <- withTail expr ctx
   case tailed of
@@ -111,10 +110,6 @@ withTail (ExDispatch (ExFormation bds) attr) ctx = do
     Just (obj, rule) -> pure (Just (ExDispatch obj attr, rule))
     _ -> pure Nothing
 withTail (ExFormation bds) ctx = formation bds ctx
-withTail (ExDispatch (ExDispatch ExGlobal (AtLabel label)) attr) DataizeContext{_program = Program expr} =
-  case phiDispatch label expr of
-    Just (obj, rule) -> pure (Just (ExDispatch obj attr, rule))
-    _ -> pure Nothing
 withTail (ExDispatch ExGlobal (AtLabel label)) DataizeContext{_program = Program expr} = pure (phiDispatch label expr)
 withTail (ExDispatch expr attr) ctx = do
   tailed <- withTail expr ctx
@@ -214,7 +209,7 @@ _dataize expr ctx@DataizeContext{_buildTerm = buildTerm, _program = Program (ExF
 _dataize _ _ = throwIO (userError "Can't call _dataize from atoms with non-formation program")
 
 atom :: String -> Expression -> DataizeContext -> IO Expression
-atom "L_org_eolang_number_plus" self ctx = do
+atom "L_number_plus" self ctx = do
   left <- _dataize (ExDispatch self (AtLabel "x")) ctx
   right <- _dataize (ExDispatch self AtRho) ctx
   case (left, right) of
@@ -224,7 +219,7 @@ atom "L_org_eolang_number_plus" self ctx = do
           sum = first + second
       pure (DataNumber (numToBts sum))
     _ -> pure ExTermination
-atom "L_org_eolang_number_times" self ctx = do
+atom "L_number_times" self ctx = do
   left <- _dataize (ExDispatch self (AtLabel "x")) ctx
   right <- _dataize (ExDispatch self AtRho) ctx
   case (left, right) of
@@ -234,7 +229,7 @@ atom "L_org_eolang_number_times" self ctx = do
           sum = first * second
       pure (DataNumber (numToBts sum))
     _ -> pure ExTermination
-atom "L_org_eolang_number_eq" self ctx = do
+atom "L_number_eq" self ctx = do
   x <- _dataize (ExDispatch self (AtLabel "x")) ctx
   rho <- _dataize (ExDispatch self AtRho) ctx
   case (x, rho) of

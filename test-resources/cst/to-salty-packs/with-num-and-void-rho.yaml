@@ -6,8 +6,8 @@ program: |
   {[[ x -> 1, z -> [[ ]] ]]}
 result: |-
   Φ ↦ ⟦
-    x ↦ Φ.org.eolang.number(
-      α0 ↦ Φ.org.eolang.bytes(
+    x ↦ Φ.number(
+      α0 ↦ Φ.bytes(
         α0 ↦ ⟦
           Δ ⤍ 3F-F0-00-00-00-00-00-00,
           ρ ↦ ∅

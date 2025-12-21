@@ -17,4 +17,4 @@ phi: |
 xpaths:
   - '/object/metas/meta[head="package" and tail="org.eolang"]'
   - '/object/o[@name="foo"]'
-  - '/object/o/o[@name="x" and @base="Φ.org.eolang.number"]'
+  - '/object/o/o[@name="x" and @base="Φ.number"]'

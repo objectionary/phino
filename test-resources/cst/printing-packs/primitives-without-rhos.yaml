@@ -4,8 +4,8 @@
 ---
 program: |
   Q -> [[
-    x -> QQ.number(~0 -> QQ.bytes([[ D> 3F-F0-00-00-00-00-00-00 ]]), ^ -> [[ t -> 42 ]], ^ -> Q.x.y.z),
-    y -> QQ.string(~0 -> QQ.bytes([[ D> 68-65-79 ]]), ^ -> Q.x.y.z)
+    x -> Q.number(~0 -> Q.bytes([[ D> 3F-F0-00-00-00-00-00-00 ]]), ^ -> [[ t -> 42 ]], ^ -> Q.x.y.z),
+    y -> Q.string(~0 -> Q.bytes([[ D> 68-65-79 ]]), ^ -> Q.x.y.z)
   ]]
 result: |-
   {⟦

@@ -25,8 +25,8 @@ output: |-
         fibonacci ↦ ⟦
           n ↦ ∅,
           φ ↦ ξ.n.lt(
-            α0 ↦ Φ.org.eolang.number(
-              α0 ↦ Φ.org.eolang.bytes(
+            α0 ↦ Φ.number(
+              α0 ↦ Φ.bytes(
                 α0 ↦ ⟦ Δ ⤍ 40-00-00-00-00-00-00-00 ⟧
               )
             )
@@ -35,8 +35,8 @@ output: |-
           )(
             α1 ↦ Φ.eo.example.fibonacci(
               α0 ↦ ξ.n.minus(
-                α0 ↦ Φ.org.eolang.number(
-                  α0 ↦ Φ.org.eolang.bytes(
+                α0 ↦ Φ.number(
+                  α0 ↦ Φ.bytes(
                     α0 ↦ ⟦ Δ ⤍ 3F-F0-00-00-00-00-00-00 ⟧
                   )
                 )
@@ -44,8 +44,8 @@ output: |-
             ).plus(
               α0 ↦ Φ.eo.example.fibonacci(
                 α0 ↦ ξ.n.minus(
-                  α0 ↦ Φ.org.eolang.number(
-                    α0 ↦ Φ.org.eolang.bytes(
+                  α0 ↦ Φ.number(
+                    α0 ↦ Φ.bytes(
                       α0 ↦ ⟦ Δ ⤍ 40-00-00-00-00-00-00-00 ⟧
                     )
                   )

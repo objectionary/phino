@@ -19,7 +19,7 @@ program: |
       3
     ),
     Φ.jeo.label(
-      Φ̇.bytes(
+      Φ.bytes(
         ⟦
           Δ ⤍ 4C-31-32-38-34-34-34-35-32-36-37,
           ρ ↦ ∅
@@ -35,7 +35,7 @@ result: |-
       Φ.jeo.opcode.iconst_0( 3 ),
       Φ.jeo.opcode.istore( 54, 3 ),
       Φ.jeo.label(
-        Φ̇.bytes(
+        Φ.bytes(
           ⟦
             Δ ⤍ 4C-31-32-38-34-34-34-35-32-36-37
           ⟧

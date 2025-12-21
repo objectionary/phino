@@ -9,7 +9,7 @@ Q -> [[
     z -> [[
       L> Func,
       D> 00-,
-      def -> QQ.txt.sprintf
+      def -> Q.txt.sprintf
     ]],
     error -> T
   ]]

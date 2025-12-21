@@ -14,7 +14,7 @@ program: |
       z ↦ ⟦
         λ ⤍ Func,
         Δ ⤍ 00-,
-        def ↦ Φ̇.txt.sprintf
+        def ↦ Φ.txt.sprintf
       ⟧,
       error ↦ ⊥
     ⟧
@@ -27,7 +27,7 @@ result: |-
       z -> [[
         L> Func,
         D> 00-,
-        def -> QQ.txt.sprintf
+        def -> Q.txt.sprintf
       ]],
       error -> T
     ]]

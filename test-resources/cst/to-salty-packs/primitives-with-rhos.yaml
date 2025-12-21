@@ -4,17 +4,17 @@
 ---
 program: |
   {[[
-    x -> QQ.number(
-      ~0 -> QQ.bytes([[D> 3F-F0-00-00-00-00-00-00]]), ^ -> Q.x, ^ -> [[ ]]
+    x -> Q.number(
+      ~0 -> Q.bytes([[D> 3F-F0-00-00-00-00-00-00]]), ^ -> Q.x, ^ -> [[ ]]
     ),
-    y -> QQ.string(
-      ~0 -> QQ.bytes([[D> 48-65-79]]), ^ -> $.x
+    y -> Q.string(
+      ~0 -> Q.bytes([[D> 48-65-79]]), ^ -> $.x
     )
   ]]}
 result: |-
   Φ ↦ ⟦
-    x ↦ Φ.org.eolang.number(
-      α0 ↦ Φ.org.eolang.bytes(
+    x ↦ Φ.number(
+      α0 ↦ Φ.bytes(
         α0 ↦ ⟦
           Δ ⤍ 3F-F0-00-00-00-00-00-00,
           ρ ↦ ∅
@@ -25,8 +25,8 @@ result: |-
     )(
       ρ ↦ ⟦ ρ ↦ ∅ ⟧
     ),
-    y ↦ Φ.org.eolang.string(
-      α0 ↦ Φ.org.eolang.bytes(
+    y ↦ Φ.string(
+      α0 ↦ Φ.bytes(
         α0 ↦ ⟦
           Δ ⤍ 48-65-79,
           ρ ↦ ∅

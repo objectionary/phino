@@ -10,8 +10,8 @@ input: |
 output: |-
   Φ ↦ ⟦
     foo ↦ ⟦
-      x ↦ Φ.org.eolang.number(
-        α0 ↦ Φ.org.eolang.bytes(
+      x ↦ Φ.number(
+        α0 ↦ Φ.bytes(
           α0 ↦ ⟦ Δ ⤍ 41-EF-FF-FF-FF-E0-00-00 ⟧
         )
       )

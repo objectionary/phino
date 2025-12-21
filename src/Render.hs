@@ -163,7 +163,6 @@ instance Render APP_ARGS where
 
 instance Render EXPRESSION where
   render EX_GLOBAL{..} = render global
-  render EX_DEF_PACKAGE{..} = render pckg
   render EX_XI{..} = render xi
   render EX_ATTR{..} = render attr
   render EX_TERMINATION{..} = render termination

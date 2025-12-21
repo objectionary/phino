@@ -7,8 +7,8 @@ program: |
 result: |-
   Φ ↦ ⟦
     x ↦ Φ.y(
-      z ↦ Φ.org.eolang.string(
-        α0 ↦ Φ.org.eolang.bytes(
+      z ↦ Φ.string(
+        α0 ↦ Φ.bytes(
           α0 ↦ ⟦
             Δ ⤍ 68-65-79,
             ρ ↦ ∅
@@ -16,8 +16,8 @@ result: |-
         )
       )
     )(
-      b ↦ Φ.org.eolang.number(
-        α0 ↦ Φ.org.eolang.bytes(
+      b ↦ Φ.number(
+        α0 ↦ Φ.bytes(
           α0 ↦ ⟦
             Δ ⤍ 3F-F0-00-00-00-00-00-00,
             ρ ↦ ∅

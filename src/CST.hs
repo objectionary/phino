@@ -143,7 +143,6 @@ data APP_ARGS
 
 data EXPRESSION
   = EX_GLOBAL {global :: GLOBAL}
-  | EX_DEF_PACKAGE {pckg :: DEF_PACKAGE} -- sugar for Q.org.eolang
   | EX_XI {xi :: XI}
   | EX_ATTR {attr :: ATTRIBUTE} -- sugar for $.x -> just x
   | EX_TERMINATION {termination :: TERMINATION}
@@ -214,7 +213,6 @@ instance ToCST Expression EXPRESSION where
       withoutLastVoidRho (bd : bds') = bd : withoutLastVoidRho bds'
   toCST (DataString bts) tabs _ = EX_STRING (btsToStr bts) (TAB tabs) []
   toCST (DataNumber bts) tabs _ = EX_NUMBER (btsToNum bts) (TAB tabs) []
-  toCST (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang")) _ _ = EX_DEF_PACKAGE Φ̇
   toCST (ExDispatch ExThis attr) tabs eol = EX_ATTR (toCST attr tabs eol)
   toCST (ExDispatch expr attr) tabs eol = EX_DISPATCH (toCST expr tabs eol) (toCST attr tabs eol)
   -- Since we convert AST to CST in sweet notation, here we're trying to get rid of unnecessary rho bindings

@@ -373,9 +373,6 @@ exHead =
     , do
         _ <- choice [symbol "$", symbol "ξ"]
         return ExThis
-    , try $ do
-        _ <- choice [symbol "QQ", symbol "Φ̇"]
-        return (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang"))
     , do
         _ <- global
         return ExGlobal

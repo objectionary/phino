@@ -101,10 +101,10 @@ expression (ExDispatch expr attr) ctx = do
 expression (DataNumber bytes) XmirContext{..} =
   let bts =
         object
-          [("as", printAttribute (AtAlpha 0)), ("base", "Φ.org.eolang.bytes")]
+          [("as", printAttribute (AtAlpha 0)), ("base", "Φ.bytes")]
           [object [] [NodeContent (T.pack (printBytes bytes))]]
    in pure
-        ( "Φ.org.eolang.number"
+        ( "Φ.number"
         , if omitComments
             then [bts]
             else
@@ -115,10 +115,10 @@ expression (DataNumber bytes) XmirContext{..} =
 expression (DataString bytes) XmirContext{..} =
   let bts =
         object
-          [("as", printAttribute (AtAlpha 0)), ("base", "Φ.org.eolang.bytes")]
+          [("as", printAttribute (AtAlpha 0)), ("base", "Φ.bytes")]
           [object [] [NodeContent (T.pack (printBytes bytes))]]
    in pure
-        ( "Φ.org.eolang.string"
+        ( "Φ.string"
         , if omitComments
             then [bts]
             else

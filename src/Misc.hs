@@ -76,13 +76,13 @@ instance Show FsException where
   show DirectoryDoesNotExist{..} = printf "Directory '%s' does not exist" _dir
 
 matchBaseObject :: Expression -> Maybe String
-matchBaseObject (ExDispatch (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang")) (AtLabel label)) = Just label
+matchBaseObject (ExDispatch ExGlobal (AtLabel label)) = Just label
 matchBaseObject _ = Nothing
 
 pattern BaseObject :: String -> Expression
 pattern BaseObject label <- (matchBaseObject -> Just label)
   where
-    BaseObject label = ExDispatch (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang")) (AtLabel label)
+    BaseObject label = ExDispatch ExGlobal (AtLabel label)
 
 -- Minimal matcher function (required for view pattern)
 matchDataObject :: Expression -> Maybe (String, Bytes)

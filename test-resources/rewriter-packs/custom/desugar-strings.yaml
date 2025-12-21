@@ -11,28 +11,28 @@ input: |
   ⟧}
 output: |-
   Φ ↦ ⟦
-    str ↦ Φ.org.eolang.string(
-      α0 ↦ Φ.org.eolang.bytes(
+    str ↦ Φ.string(
+      α0 ↦ Φ.bytes(
         α0 ↦ ⟦ Δ ⤍ 68-65-6C-6C-6F ⟧
       )
     ),
-    ch ↦ Φ.org.eolang.string(
-      α0 ↦ Φ.org.eolang.bytes(
+    ch ↦ Φ.string(
+      α0 ↦ Φ.bytes(
         α0 ↦ ⟦ Δ ⤍ 68- ⟧
       )
     ),
-    uni ↦ Φ.org.eolang.string(
-      α0 ↦ Φ.org.eolang.bytes(
+    uni ↦ Φ.string(
+      α0 ↦ Φ.bytes(
         α0 ↦ ⟦ Δ ⤍ 01-02 ⟧
       )
     ),
-    empty ↦ Φ.org.eolang.string(
-      α0 ↦ Φ.org.eolang.bytes(
+    empty ↦ Φ.string(
+      α0 ↦ Φ.bytes(
         α0 ↦ ⟦ Δ ⤍ -- ⟧
       )
     ),
-    new-line ↦ Φ.org.eolang.string(
-      α0 ↦ Φ.org.eolang.bytes(
+    new-line ↦ Φ.string(
+      α0 ↦ Φ.bytes(
         α0 ↦ ⟦ Δ ⤍ 68-0A-65 ⟧
       )
     )

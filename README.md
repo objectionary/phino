@@ -139,9 +139,9 @@ and print it in canonical syntax:
 ```bash
 $ echo 'Q -> [[ @ -> QQ.io.stdout("hello") ]]' | phino rewrite
 Φ ↦ ⟦
-  φ ↦ Φ.org.eolang.io.stdout(
-    α0 ↦ Φ.org.eolang.string(
-      α0 ↦ Φ.org.eolang.bytes(
+  φ ↦ Φ.io.stdout(
+    α0 ↦ Φ.string(
+      α0 ↦ Φ.bytes(
         α0 ↦ ⟦ Δ ⤍ 68-65-6C-6C-6F ⟧
       )
     )
@@ -309,7 +309,7 @@ Here's list of functions that are supported for extensions:
 * `concat` - accepts bytes or dataizable expressions as arguments,
   concatenates them into single sequence and convert it to expression
   that can be pretty printed as human readable string:
-  `Φ.org.eolang.string(Φ.org.eolang.bytes⟦ Δ ⤍ !d ⟧)`.
+  `Φ.string(Φ.bytes⟦ Δ ⤍ !d ⟧)`.
 * `sed` - pattern replacer, works like unix `sed` function.
   Accepts two arguments: target expression and pattern.
   Pattern must start with `s/`, consists of three parts
