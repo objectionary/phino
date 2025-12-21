@@ -12,6 +12,48 @@ packages:
   original:
     hackage: aeson-2.2.3.0@sha256:61e559f2bad61a98aac564f2a4fd892d21e9e1712e14e3db93326317aa944a9b,6378
 - completed:
+    hackage: ghc-lib-parser-9.8.5.20250214@sha256:8b7a116819926006bbb77cdba63429a411880ac9d4fdee260aba94fd5b51cb99,17129
+    pantry-tree:
+      sha256: 91db98d3aacfea016a4b83ce0226109d934b56d652c54052d64eba8e5994619b
+      size: 36526
+  original:
+    hackage: ghc-lib-parser-9.8.5.20250214@sha256:8b7a116819926006bbb77cdba63429a411880ac9d4fdee260aba94fd5b51cb99,17129
+- completed:
+    hackage: ghc-lib-parser-ex-9.8.0.2@sha256:f4a440c45063fb79097e785ac93dbf5bd283547a9c4dc7e4aee5cb9dcc7a1daa,3519
+    pantry-tree:
+      sha256: 81da4d5f1b0c3613a3e74c17e81c249ef15fea509139ffdbb65c4c1054292adb
+      size: 1955
+  original:
+    hackage: ghc-lib-parser-ex-9.8.0.2@sha256:f4a440c45063fb79097e785ac93dbf5bd283547a9c4dc7e4aee5cb9dcc7a1daa,3519
+- completed:
+    hackage: hlint-3.8@sha256:c12a46452e85fc74fb7b0e25aa7653256716f5dc2f8168385b69c79c763d4a0d,4455
+    pantry-tree:
+      sha256: 2ea03fbf224056512452a896f811ac80ee9960cdb0a370fa3edb37dc81e8cb36
+      size: 6224
+  original:
+    hackage: hlint-3.8@sha256:c12a46452e85fc74fb7b0e25aa7653256716f5dc2f8168385b69c79c763d4a0d,4455
+- completed:
+    hackage: hspec-2.11.16@sha256:e7c8a9d8263791d26821c11263d3d6085b34f4353748883a67f96fef5e785375,1895
+    pantry-tree:
+      sha256: 13b9a787e0a0fe6441f19e45d45418b039c8ad4f0b3425cfeb000291c1d4de9d
+      size: 585
+  original:
+    hackage: hspec-2.11.16@sha256:e7c8a9d8263791d26821c11263d3d6085b34f4353748883a67f96fef5e785375,1895
+- completed:
+    hackage: hspec-core-2.11.16@sha256:bdec3b591f24a6b91ac26674d3d42c11303ddcaed16ef917e198f98c52292a09,7823
+    pantry-tree:
+      sha256: 810a0dd6732413d8f740b059b732b87b9714c998ca8d302b8214f7fc002f4bf7
+      size: 6797
+  original:
+    hackage: hspec-core-2.11.16@sha256:bdec3b591f24a6b91ac26674d3d42c11303ddcaed16ef917e198f98c52292a09,7823
+- completed:
+    hackage: hspec-discover-2.11.16@sha256:aea472812fdd9a65d99d09f8a2c9f3a71717045cce42de15910bc82f0b9513c1,2171
+    pantry-tree:
+      sha256: ef6aea4a83a6225394f5ed81e41104944195071867bce4d7fb1cabb612ba9aae
+      size: 829
+  original:
+    hackage: hspec-discover-2.11.16@sha256:aea472812fdd9a65d99d09f8a2c9f3a71717045cce42de15910bc82f0b9513c1,2171
+- completed:
     hackage: character-ps-0.1@sha256:b38ed1c07ae49e7461e44ca1d00c9ca24d1dcb008424ccd919916f92fd48d9fe,1315
     pantry-tree:
       sha256: 22d98d7c8b4c2bb9cb7fe429adf52bfed0c18269eac146b1e591c5941e26161a
