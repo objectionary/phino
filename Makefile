@@ -14,15 +14,15 @@ test:
 	cabal test --ghc-options=-Werror
 
 .SILENT:
-hlint:
+hlint: test
 	cabal exec hlint -- src app test
 
 .SILENT:
-fourmolu:
+fourmolu: test
 	cabal exec fourmolu -- --mode check src app test
 
 .SILENT:
-coverage:
+coverage: test
 	threshold=$${COVERAGE_THRESHOLD:-70}
 	cabal test --enable-coverage --ghc-options=-Werror
 	excludes=$$(find test -name '*.hs' -exec basename {} .hs \; | paste -sd, -)
