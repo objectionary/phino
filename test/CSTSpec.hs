@@ -74,8 +74,7 @@ spec = do
       , ("number(bytes(again(data)))", app number (bt (app bts (bt (again form)))))
       , ("again(number)(again(bytes)(again(bytes)))", app (again number) (bt (app (again bts) (bt (again form)))))
       ]
-      ( \(desc, ex) -> it desc (toCST ex 0 EOL `shouldSatisfy` isCSTNumber)
-      )
+      (\(desc, ex) -> it desc (toCST ex 0 EOL `shouldSatisfy` isCSTNumber))
 
   describe "CST printing packs" $ do
     let resources = "test-resources/cst/printing-packs"

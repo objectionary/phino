@@ -98,7 +98,7 @@ matchDataObject (ExApplication outer (BiTau (AtAlpha 0) inner)) = case (matchOut
     matchInner (ExPhiAgain _ _ inner') = matchInner inner'
     matchInner inner' = matchInner' inner'
     matchInner' :: Expression -> Maybe Bytes
-    matchInner' ( ExApplication bytes ( BiTau (AtAlpha 0) formation )) = case (matchesBytes bytes, matchFormation formation) of
+    matchInner' (ExApplication bytes (BiTau (AtAlpha 0) formation)) = case (matchesBytes bytes, matchFormation formation) of
       (True, Just bts) -> Just bts
       _ -> Nothing
     matchInner' _ = Nothing
