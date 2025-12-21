@@ -19,7 +19,7 @@ hlint:
 
 .SILENT:
 fourmolu:
-	cabal exec fourmolu -- --mode check src app test
+	fourmolu --mode check src app test
 
 .SILENT:
 coverage:
