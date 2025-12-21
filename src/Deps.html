@@ -41,40 +41,40 @@
 forall a. a -&gt; IO a
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
-</span><span id="line-34"></span><span class="annot"><a href="Deps.html#saveStep"><span class="hs-identifier hs-var">saveStep</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span id="local-6989586621679221261"><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621679221261"><span class="hs-identifier hs-var">dir</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679221262"><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621679221262"><span class="hs-identifier hs-var">ext</span></a></span></span><span> </span><span id="local-6989586621679221263"><span class="annot"><span class="annottext">Program -&gt; IO FilePath
-</span><a href="#local-6989586621679221263"><span class="hs-identifier hs-var">render</span></a></span></span><span> </span><span id="local-6989586621679221264"><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679221264"><span class="hs-identifier hs-var">prog</span></a></span></span><span> </span><span id="local-6989586621679221265"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679221265"><span class="hs-identifier hs-var">step</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-34"></span><span class="annot"><a href="Deps.html#saveStep"><span class="hs-identifier hs-var">saveStep</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span id="local-6989586621679220302"><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621679220302"><span class="hs-identifier hs-var">dir</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679220303"><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621679220303"><span class="hs-identifier hs-var">ext</span></a></span></span><span> </span><span id="local-6989586621679220304"><span class="annot"><span class="annottext">Program -&gt; IO FilePath
+</span><a href="#local-6989586621679220304"><span class="hs-identifier hs-var">render</span></a></span></span><span> </span><span id="local-6989586621679220305"><span class="annot"><span class="annottext">Program
+</span><a href="#local-6989586621679220305"><span class="hs-identifier hs-var">prog</span></a></span></span><span> </span><span id="local-6989586621679220306"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679220306"><span class="hs-identifier hs-var">step</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
 </span><span id="line-35"></span><span>  </span><span class="annot"><span class="annottext">Bool -&gt; FilePath -&gt; IO ()
 </span><span class="hs-identifier hs-var">createDirectoryIfMissing</span></span><span> </span><span class="annot"><span class="annottext">Bool
 </span><span class="hs-identifier hs-var">True</span></span><span> </span><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621679221261"><span class="hs-identifier hs-var">dir</span></a></span><span>
-</span><span id="line-36"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679221267"><span class="annot"><span class="annottext">path :: FilePath
-</span><a href="#local-6989586621679221267"><span class="hs-identifier hs-var hs-var">path</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621679221261"><span class="hs-identifier hs-var">dir</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; FilePath -&gt; FilePath
+</span><a href="#local-6989586621679220302"><span class="hs-identifier hs-var">dir</span></a></span><span>
+</span><span id="line-36"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679220308"><span class="annot"><span class="annottext">path :: FilePath
+</span><a href="#local-6989586621679220308"><span class="hs-identifier hs-var hs-var">path</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621679220302"><span class="hs-identifier hs-var">dir</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; FilePath -&gt; FilePath
 </span><span class="hs-operator hs-var">&lt;/&gt;</span></span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; Int -&gt; FilePath -&gt; FilePath
 forall r. PrintfType r =&gt; FilePath -&gt; r
 </span><span class="hs-identifier hs-var">printf</span></span><span> </span><span class="annot"><span class="annottext">FilePath
 </span><span class="hs-string">&quot;%05d.%s&quot;</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679221265"><span class="hs-identifier hs-var">step</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621679221262"><span class="hs-identifier hs-var">ext</span></a></span><span>
-</span><span id="line-37"></span><span>  </span><span id="local-6989586621679221269"><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621679221269"><span class="hs-identifier hs-var">content</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Program -&gt; IO FilePath
-</span><a href="#local-6989586621679221263"><span class="hs-identifier hs-var">render</span></a></span><span> </span><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679221264"><span class="hs-identifier hs-var">prog</span></a></span><span>
+</span><a href="#local-6989586621679220306"><span class="hs-identifier hs-var">step</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621679220303"><span class="hs-identifier hs-var">ext</span></a></span><span>
+</span><span id="line-37"></span><span>  </span><span id="local-6989586621679220310"><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621679220310"><span class="hs-identifier hs-var">content</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Program -&gt; IO FilePath
+</span><a href="#local-6989586621679220304"><span class="hs-identifier hs-var">render</span></a></span><span> </span><span class="annot"><span class="annottext">Program
+</span><a href="#local-6989586621679220305"><span class="hs-identifier hs-var">prog</span></a></span><span>
 </span><span id="line-38"></span><span>  </span><span class="annot"><span class="annottext">FilePath -&gt; FilePath -&gt; IO ()
 </span><span class="hs-identifier hs-var">writeFile</span></span><span> </span><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621679221267"><span class="hs-identifier hs-var">path</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621679221269"><span class="hs-identifier hs-var">content</span></a></span><span>
+</span><a href="#local-6989586621679220308"><span class="hs-identifier hs-var">path</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621679220310"><span class="hs-identifier hs-var">content</span></a></span><span>
 </span><span id="line-39"></span><span>  </span><span class="annot"><span class="annottext">FilePath -&gt; IO ()
 </span><a href="Logger.html#logDebug"><span class="hs-identifier hs-var">logDebug</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">FilePath -&gt; Int -&gt; FilePath -&gt; FilePath
 forall r. PrintfType r =&gt; FilePath -&gt; r
 </span><span class="hs-identifier hs-var">printf</span></span><span> </span><span class="annot"><span class="annottext">FilePath
 </span><span class="hs-string">&quot;Saved step '%d' to '%s'&quot;</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679221265"><span class="hs-identifier hs-var">step</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621679221267"><span class="hs-identifier hs-var">path</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679220306"><span class="hs-identifier hs-var">step</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621679220308"><span class="hs-identifier hs-var">path</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-40"></span><span>
 </span><span id="line-41"></span><span class="annot"><a href="Deps.html#dontSaveStep"><span class="hs-identifier hs-type">dontSaveStep</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Deps.html#SaveStepFunc"><span class="hs-identifier hs-type">SaveStepFunc</span></a></span><span>
 </span><span id="line-42"></span><span id="dontSaveStep"><span class="annot"><span class="annottext">dontSaveStep :: SaveStepFunc
