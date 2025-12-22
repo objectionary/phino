@@ -26,13 +26,6 @@ packages:
   original:
     hackage: ghc-lib-parser-ex-9.8.0.2@sha256:f4a440c45063fb79097e785ac93dbf5bd283547a9c4dc7e4aee5cb9dcc7a1daa,3519
 - completed:
-    hackage: hlint-3.8@sha256:c12a46452e85fc74fb7b0e25aa7653256716f5dc2f8168385b69c79c763d4a0d,4455
-    pantry-tree:
-      sha256: 2ea03fbf224056512452a896f811ac80ee9960cdb0a370fa3edb37dc81e8cb36
-      size: 6224
-  original:
-    hackage: hlint-3.8@sha256:c12a46452e85fc74fb7b0e25aa7653256716f5dc2f8168385b69c79c763d4a0d,4455
-- completed:
     hackage: hspec-2.11.16@sha256:e7c8a9d8263791d26821c11263d3d6085b34f4353748883a67f96fef5e785375,1895
     pantry-tree:
       sha256: 13b9a787e0a0fe6441f19e45d45418b039c8ad4f0b3425cfeb000291c1d4de9d
