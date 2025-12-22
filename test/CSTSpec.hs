@@ -106,64 +106,25 @@ spec = do
           render ascii `shouldBe` result pack
       )
 
-  describe "expressionToCST converts ExGlobal" $
-    it "produces EX_GLOBAL with Φ" $
-      expressionToCST ExGlobal `shouldBe` EX_GLOBAL Φ
-
-  describe "expressionToCST converts ExThis" $
-    it "produces EX_XI with XI" $
-      expressionToCST ExThis `shouldBe` EX_XI XI
-
-  describe "expressionToCST converts ExTermination" $
-    it "produces EX_TERMINATION with DEAD" $
-      expressionToCST ExTermination `shouldBe` EX_TERMINATION DEAD
-
-  describe "expressionToCST converts ExMeta" $
-    it "produces EX_META with MT_EXPRESSION" $
-      expressionToCST (ExMeta "!expr") `shouldBe` EX_META (MT_EXPRESSION "expr")
-
-  describe "expressionToCST converts ExMetaTail" $
-    it "produces EX_META_TAIL with MT_TAIL" $
-      expressionToCST (ExMetaTail ExGlobal "!tail")
-        `shouldBe` EX_META_TAIL (EX_GLOBAL Φ) (MT_TAIL "tail")
-
-  describe "expressionToCST converts ExPhiMeet" $
+  describe "expressionToCST" $
     forM_
-      [ ("with prefix", ExPhiMeet (Just "pfx") 42 ExGlobal, EX_PHI_MEET (Just "pfx") 42 (EX_GLOBAL Φ))
-      , ("without prefix", ExPhiMeet Nothing 7 ExThis, EX_PHI_MEET Nothing 7 (EX_XI XI))
+      [ ("ExGlobal", ExGlobal, EX_GLOBAL Φ)
+      , ("ExThis", ExThis, EX_XI XI)
+      , ("ExTermination", ExTermination, EX_TERMINATION DEAD)
+      , ("ExMeta", ExMeta "!expr", EX_META (MT_EXPRESSION "expr"))
+      , ("ExMetaTail", ExMetaTail ExGlobal "!tail", EX_META_TAIL (EX_GLOBAL Φ) (MT_TAIL "tail"))
+      , ("ExPhiMeet with prefix", ExPhiMeet (Just "pfx") 42 ExGlobal, EX_PHI_MEET (Just "pfx") 42 (EX_GLOBAL Φ))
+      , ("ExPhiMeet without prefix", ExPhiMeet Nothing 7 ExThis, EX_PHI_MEET Nothing 7 (EX_XI XI))
+      , ("ExPhiAgain with prefix", ExPhiAgain (Just "pfx") 42 ExGlobal, EX_PHI_AGAIN (Just "pfx") 42 (EX_GLOBAL Φ))
+      , ("ExPhiAgain without prefix", ExPhiAgain Nothing 7 ExThis, EX_PHI_AGAIN Nothing 7 (EX_XI XI))
+      , ("empty ExFormation", ExFormation [], EX_FORMATION LSB NO_EOL NO_TAB (BI_EMPTY NO_TAB) NO_EOL NO_TAB RSB)
+      , ("ExFormation with only void rho", ExFormation [BiVoid AtRho], EX_FORMATION LSB NO_EOL NO_TAB (BI_EMPTY NO_TAB) NO_EOL NO_TAB RSB)
+      , ("ExDispatch with ExThis", ExDispatch ExThis (AtLabel "foo"), EX_ATTR (AT_LABEL "foo"))
+      , ("dispatch to default package", ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang"), EX_DEF_PACKAGE Φ̇)
       ]
       ( \(desc, input, expected) ->
           it desc $ expressionToCST input `shouldBe` expected
       )
-
-  describe "expressionToCST converts ExPhiAgain" $
-    forM_
-      [ ("with prefix", ExPhiAgain (Just "pfx") 42 ExGlobal, EX_PHI_AGAIN (Just "pfx") 42 (EX_GLOBAL Φ))
-      , ("without prefix", ExPhiAgain Nothing 7 ExThis, EX_PHI_AGAIN Nothing 7 (EX_XI XI))
-      ]
-      ( \(desc, input, expected) ->
-          it desc $ expressionToCST input `shouldBe` expected
-      )
-
-  describe "expressionToCST converts empty ExFormation" $
-    it "produces inlined EX_FORMATION" $
-      expressionToCST (ExFormation [])
-        `shouldBe` EX_FORMATION LSB NO_EOL NO_TAB (BI_EMPTY NO_TAB) NO_EOL NO_TAB RSB
-
-  describe "expressionToCST converts ExFormation with only void rho" $
-    it "produces inlined EX_FORMATION same as empty" $
-      expressionToCST (ExFormation [BiVoid AtRho])
-        `shouldBe` EX_FORMATION LSB NO_EOL NO_TAB (BI_EMPTY NO_TAB) NO_EOL NO_TAB RSB
-
-  describe "expressionToCST converts ExDispatch with ExThis" $
-    it "produces EX_ATTR sugar" $
-      expressionToCST (ExDispatch ExThis (AtLabel "foo"))
-        `shouldBe` EX_ATTR (AT_LABEL "foo")
-
-  describe "expressionToCST converts dispatch to default package" $
-    it "produces EX_DEF_PACKAGE" $
-      expressionToCST (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang"))
-        `shouldBe` EX_DEF_PACKAGE Φ̇
 
   describe "toCST converts Bytes" $
     forM_
