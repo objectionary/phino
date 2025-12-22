@@ -35,13 +35,14 @@ data LatexContext = LatexContext
   , line :: LineFormat
   , nonumber :: Bool
   , compress :: Bool
+  , meetPopularity :: Int
   , expression :: Maybe String
   , label :: Maybe String
   , meetPrefix :: Maybe String
   }
 
 defaultLatexContext :: LatexContext
-defaultLatexContext = LatexContext SWEET MULTILINE False False Nothing Nothing Nothing
+defaultLatexContext = LatexContext SWEET MULTILINE False False 50 Nothing Nothing Nothing
 
 meetInProgram :: Program -> Program -> [Expression]
 meetInProgram (Program expr) = meetInExpression expr
@@ -77,8 +78,8 @@ in following programs. Then we find ONE expression which is the most frequently 
 If it's encountered in more than 50% of following programs - we replace it with \phiAgain{} in following
 programs and with \phiMeet{} in first program.
 -}
-meetInPrograms :: Maybe String -> [Program] -> [Program]
-meetInPrograms prefix = meetInPrograms' 1
+meetInPrograms :: [Program] -> LatexContext -> [Program]
+meetInPrograms prog LatexContext{..} = meetInPrograms' 1 prog
   where
     meetInPrograms' :: Int -> [Program] -> [Program]
     meetInPrograms' _ [] = []
@@ -102,15 +103,17 @@ meetInPrograms prefix = meetInPrograms' 1
               case matchProgram expr first of
                 (_ : substs) ->
                   let met' = map (filter (== expr)) met
-                      prog = replaceProgram (first, [expr], [ExPhiMeet prefix idx])
-                      prog' = replaceProgram (prog, map (const expr) substs, map (const (ExPhiAgain prefix idx)) substs)
-                      rest' = zipWith (\prgm exprs -> replaceProgram (prgm, exprs, map (const (ExPhiAgain prefix idx)) exprs)) rest met'
+                      prog = replaceProgram (first, [expr], [ExPhiMeet meetPrefix idx])
+                      prog' = replaceProgram (prog, map (const expr) substs, map (const (ExPhiAgain meetPrefix idx)) substs)
+                      rest' = zipWith (\prgm exprs -> replaceProgram (prgm, exprs, map (const (ExPhiAgain meetPrefix idx)) exprs)) rest met'
                       found = filter (not . null) met'
-                   in if length met' > 1 && toDouble (length found) / toDouble (length met') >= 0.5
+                   in if length met' > 1 && toDouble (length found) / toDouble (length met') >= popularity
                         then prog' : meetInPrograms' (idx + 1) rest'
                         else next
                 [] -> next
             _ -> next
+    popularity :: Double
+    popularity = toDouble meetPopularity / 100.0
 
 renderToLatex :: Program -> LatexContext -> String
 renderToLatex prog LatexContext{..} = render (toLaTeX $ withLineFormat line $ withEncoding ASCII $ withSugarType sugar $ programToCST prog)
@@ -123,7 +126,7 @@ rewrittensToLatex :: [Rewritten] -> LatexContext -> String
 rewrittensToLatex rewrittens ctx@LatexContext{..} =
   let equation = phiquation ctx
       (progs, rules) = unzip rewrittens
-      rewrittens' = if compress then zip (meetInPrograms meetPrefix progs) rules else rewrittens
+      rewrittens' = if compress then zip (meetInPrograms progs ctx) rules else rewrittens
    in concat
         [ printf "\\begin{%s}\n" equation
         , maybe "" (printf "\\label{%s}\n") label

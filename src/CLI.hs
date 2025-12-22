@@ -53,6 +53,7 @@ data PrintProgramContext = PrintProgCtx
   , xmirCtx :: XmirContext
   , nonumber :: Bool
   , compress :: Bool
+  , meetPopularity :: Int
   , expression :: Maybe String
   , label :: Maybe String
   , meetPrefix :: Maybe String
@@ -102,6 +103,7 @@ data OptsDataize = OptsDataize
   , compress :: Bool
   , maxDepth :: Int
   , maxCycles :: Int
+  , meetPopularity :: Int
   , hide :: [String]
   , show' :: [String]
   , locator :: String
@@ -141,6 +143,7 @@ data OptsRewrite = OptsRewrite
   , compress :: Bool
   , maxDepth :: Int
   , maxCycles :: Int
+  , meetPopularity :: Int
   , rules :: [FilePath]
   , hide :: [String]
   , show' :: [String]
@@ -242,6 +245,15 @@ optMaxCycles =
   option
     (auto >>= validateIntOption (> 0) "--max-cycles must be positive")
     (long "max-cycles" <> metavar "CYCLES" <> help "Maximum number of rewriting cycles across all rules" <> value 25 <> showDefault)
+
+optMeetPopularity :: Parser Int
+optMeetPopularity =
+  option
+    ( auto
+        >>= validateIntOption (> 0) "--meet-popularity must be positive"
+        >>= validateIntOption (<= 100) "--meet-popularity can't be more than 100"
+    )
+    (long "meet-popularity" <> metavar "PERCENTAGE" <> help "Minimum popularity of an expression in order to be suitable for \\phiMeet{}, in percentage." <> value 50 <> showDefault)
 
 optDepthSensitive :: Parser Bool
 optDepthSensitive = switch (long "depth-sensitive" <> help "Fail if rewriting is not finished after reaching max attempts (see --max-cycles or --max-depth)")
@@ -350,6 +362,7 @@ dataizeParser =
             <*> optCompress
             <*> optMaxDepth
             <*> optMaxCycles
+            <*> optMeetPopularity
             <*> optHide
             <*> optShow
             <*> optLocator
@@ -390,6 +403,7 @@ rewriteParser =
             <*> optCompress
             <*> optMaxDepth
             <*> optMaxCycles
+            <*> optMeetPopularity
             <*> optRule
             <*> optHide
             <*> optShow
@@ -483,7 +497,7 @@ runCLI args = handle handler $ do
       program <- parseProgram input inputFormat
       let listing = if null rules' then const input else (\prog -> P.printProgram' prog (sugarType, UNICODE, flat))
           xmirCtx = XmirContext omitListing omitComments listing
-          printCtx = PrintProgCtx sugarType flat xmirCtx nonumber compress expression label meetPrefix outputFormat
+          printCtx = PrintProgCtx sugarType flat xmirCtx nonumber compress meetPopularity expression label meetPrefix outputFormat
           _canonize = if canonize then C.canonize else id
           _hide = (`F.exclude` excluded)
           _show = (`F.include` included)
@@ -542,7 +556,7 @@ runCLI args = handle handler $ do
       [loc] <- validatedDispatches "locator" [locator]
       input <- readInput inputFile
       prog <- parseProgram input inputFormat
-      let printCtx = PrintProgCtx sugarType flat defaultXmirContext nonumber compress expression label meetPrefix outputFormat
+      let printCtx = PrintProgCtx sugarType flat defaultXmirContext nonumber compress meetPopularity expression label meetPrefix outputFormat
           _canonize = if canonize then C.canonize else id
           _hide = (`F.exclude` excluded)
           _show = (`F.include` included)
@@ -587,7 +601,7 @@ runCLI args = handle handler $ do
       prog <- merge progs
       let listing = const (P.printProgram' prog (sugarType, UNICODE, flat))
           xmirCtx = XmirContext omitListing omitComments listing
-          printProgCtx = PrintProgCtx sugarType flat xmirCtx False False Nothing Nothing Nothing outputFormat
+          printProgCtx = PrintProgCtx sugarType flat xmirCtx False False 50 Nothing Nothing Nothing outputFormat
       prog' <- printProgram printProgCtx prog
       output targetFile prog'
       where
@@ -685,7 +699,7 @@ parseProgram _ LATEX = invalidCLIArguments "LaTeX cannot be used as input format
 
 printRewrittens :: PrintProgramContext -> [Rewritten] -> IO String
 printRewrittens ctx@PrintProgCtx{..} rewrittens
-  | outputFormat == LATEX = pure (rewrittensToLatex rewrittens (LatexContext sugar line nonumber compress expression label meetPrefix))
+  | outputFormat == LATEX = pure (rewrittensToLatex rewrittens (LatexContext sugar line nonumber compress meetPopularity expression label meetPrefix))
   | otherwise = mapM (printProgram ctx . fst) rewrittens <&> intercalate "\n"
 
 -- Convert program to corresponding String format
@@ -693,7 +707,7 @@ printProgram :: PrintProgramContext -> Program -> IO String
 printProgram PrintProgCtx{..} prog = case outputFormat of
   PHI -> pure (P.printProgram' prog (sugar, UNICODE, line))
   XMIR -> programToXMIR prog xmirCtx <&> printXMIR
-  LATEX -> pure (programToLaTeX prog (LatexContext sugar line nonumber compress expression label meetPrefix))
+  LATEX -> pure (programToLaTeX prog (LatexContext sugar line nonumber compress meetPopularity expression label meetPrefix))
 
 -- Get rules for rewriting depending on provided flags
 getRules :: Bool -> Bool -> [FilePath] -> IO [Y.Rule]
