@@ -237,19 +237,19 @@ spec = do
           testCLIFailed
             ["rewrite", "--show=Q.x(Q.y)"]
             ["[ERROR]:", "Only dispatch expression started with Φ (or Q) can be used in --show"]
-      
+
       it "with --meet-popularity < 0" $
         withStdin "{[[]]}" $
           testCLIFailed
             ["rewrite", "--meet-popularity=-1"]
             ["[ERROR]:", "--meet-popularity must be positive"]
-      
+
       it "with --meet-popularity > 100" $
         withStdin "{[[]]}" $
           testCLIFailed
             ["rewrite", "--meet-popularity=102"]
             ["[ERROR]:", "--meet-popularity must be <= 100"]
-      
+
     it "prints help" $
       testCLISucceeded
         ["rewrite", "--help"]
@@ -480,7 +480,7 @@ spec = do
               , "\\end{phiquation}"
               ]
           ]
-    
+
     it "should not meet expression with high --meet-popularity" $
       withStdin "{[[ ex -> [[ x -> [[ y -> ?, k -> [[ t -> 42]]  ]]( y -> [[ t -> 42 ]]) ]].i ]]}" $
         testCLISucceeded
