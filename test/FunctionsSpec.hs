@@ -7,6 +7,7 @@
 module FunctionsSpec where
 
 import AST
+import Control.Monad (forM_)
 import Data.Map.Strict qualified as Map
 import Deps (Term (TeAttribute, TeBindings, TeBytes, TeExpression))
 import Functions (buildTerm)
@@ -197,23 +198,13 @@ spec = do
       buildTerm "size" [ArgBinding (BiVoid (AtLabel "x"))] substEmpty `shouldThrow` anyException
 
   describe "tau function" $ do
-    Test.Hspec.it "converts string to attribute" $ do
-      let expr = ("e", MvExpression (DataString (strToBts "myattr")) defaultScope)
-          subst = Subst (Map.fromList [expr])
-      TeAttribute result <- buildTerm "tau" [ArgExpression (ExMeta "e")] subst
-      result `shouldBe` AtLabel "myattr"
-
-    Test.Hspec.it "converts string to alpha attribute" $ do
-      let expr = ("e", MvExpression (DataString (strToBts "α42")) defaultScope)
-          subst = Subst (Map.fromList [expr])
-      TeAttribute result <- buildTerm "tau" [ArgExpression (ExMeta "e")] subst
-      result `shouldBe` AtAlpha 42
-
-    Test.Hspec.it "converts string to rho attribute" $ do
-      let expr = ("e", MvExpression (DataString (strToBts "ρ")) defaultScope)
-          subst = Subst (Map.fromList [expr])
-      TeAttribute result <- buildTerm "tau" [ArgExpression (ExMeta "e")] subst
-      result `shouldBe` AtRho
+    Test.Hspec.it "converts strings to attributes" $ do
+      let cases = [("myattr", AtLabel "myattr"), ("α42", AtAlpha 42), ("ρ", AtRho)]
+      forM_ cases $ \(input, expected) -> do
+        let expr = ("e", MvExpression (DataString (strToBts input)) defaultScope)
+            subst = Subst (Map.fromList [expr])
+        TeAttribute result <- buildTerm "tau" [ArgExpression (ExMeta "e")] subst
+        result `shouldBe` expected
 
     Test.Hspec.it "fails with multiple arguments" $
       buildTerm "tau" [ArgExpression ExGlobal, ArgExpression ExThis] substEmpty `shouldThrow` anyException
@@ -231,13 +222,11 @@ spec = do
       TeExpression (DataString result) <- buildTerm "string" [ArgExpression (ExMeta "e")] subst
       result `shouldBe` strToBts "Ω"
 
-    Test.Hspec.it "converts attribute to string" $ do
-      TeExpression (DataString result) <- buildTerm "string" [ArgAttribute (AtLabel "attr")] substEmpty
-      result `shouldBe` strToBts "attr"
-
-    Test.Hspec.it "converts rho attribute to string" $ do
-      TeExpression (DataString result) <- buildTerm "string" [ArgAttribute AtRho] substEmpty
-      result `shouldBe` strToBts "ρ"
+    Test.Hspec.it "converts attributes to strings" $ do
+      let cases = [(AtLabel "attr", "attr"), (AtRho, "ρ")]
+      forM_ cases $ \(input, expected) -> do
+        TeExpression (DataString result) <- buildTerm "string" [ArgAttribute input] substEmpty
+        result `shouldBe` strToBts expected
 
     Test.Hspec.it "fails with non-data expression" $ do
       let expr = ("e", MvExpression ExGlobal defaultScope)
@@ -248,23 +237,13 @@ spec = do
       buildTerm "string" [] substEmpty `shouldThrow` anyException
 
   describe "number function" $ do
-    Test.Hspec.it "parses integer from string" $ do
-      let expr = ("e", MvExpression (DataString (strToBts "123")) defaultScope)
-          subst = Subst (Map.fromList [expr])
-      TeExpression (DataNumber result) <- buildTerm "number" [ArgExpression (ExMeta "e")] subst
-      result `shouldBe` numToBts 123
-
-    Test.Hspec.it "parses float from string" $ do
-      let expr = ("e", MvExpression (DataString (strToBts "3.14")) defaultScope)
-          subst = Subst (Map.fromList [expr])
-      TeExpression (DataNumber result) <- buildTerm "number" [ArgExpression (ExMeta "e")] subst
-      result `shouldBe` numToBts 3.14
-
-    Test.Hspec.it "parses negative number from string" $ do
-      let expr = ("e", MvExpression (DataString (strToBts "-42")) defaultScope)
-          subst = Subst (Map.fromList [expr])
-      TeExpression (DataNumber result) <- buildTerm "number" [ArgExpression (ExMeta "e")] subst
-      result `shouldBe` numToBts (-42)
+    Test.Hspec.it "parses numbers from strings" $ do
+      let cases = [("123", numToBts 123), ("3.14", numToBts 3.14), ("-42", numToBts (-42))]
+      forM_ cases $ \(input, expected) -> do
+        let expr = ("e", MvExpression (DataString (strToBts input)) defaultScope)
+            subst = Subst (Map.fromList [expr])
+        TeExpression (DataNumber result) <- buildTerm "number" [ArgExpression (ExMeta "e")] subst
+        result `shouldBe` expected
 
     Test.Hspec.it "fails with non-string expression" $ do
       let expr = ("e", MvExpression (DataNumber (numToBts 42)) defaultScope)
