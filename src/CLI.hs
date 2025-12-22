@@ -251,7 +251,7 @@ optMeetPopularity =
   option
     ( auto
         >>= validateIntOption (> 0) "--meet-popularity must be positive"
-        >>= validateIntOption (<= 100) "--meet-popularity can't be more than 100"
+        >>= validateIntOption (< 100) "--meet-popularity must be <= 100"
     )
     (long "meet-popularity" <> metavar "PERCENTAGE" <> help "Minimum popularity of an expression in order to be suitable for \\phiMeet{}, in percentage." <> value 50 <> showDefault)
 

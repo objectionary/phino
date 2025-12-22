@@ -237,7 +237,19 @@ spec = do
           testCLIFailed
             ["rewrite", "--show=Q.x(Q.y)"]
             ["[ERROR]:", "Only dispatch expression started with Φ (or Q) can be used in --show"]
-
+      
+      it "with --meet-popularity < 0" $
+        withStdin "{[[]]}" $
+          testCLIFailed
+            ["rewrite", "--meet-popularity=-1"]
+            ["[ERROR]:", "--meet-popularity must be positive"]
+      
+      it "with --meet-popularity > 100" $
+        withStdin "{[[]]}" $
+          testCLIFailed
+            ["rewrite", "--meet-popularity=102"]
+            ["[ERROR]:", "--meet-popularity must be <= 100"]
+      
     it "prints help" $
       testCLISucceeded
         ["rewrite", "--help"]
@@ -430,12 +442,12 @@ spec = do
           ["rewrite", "--normalize", "--sweet", "--sequence", "--output=latex", "--flat", "--compress", "--meet-prefix=foo"]
           [ unlines
               [ "\\begin{phiquation}"
-              , "\\Big\\{[[ |x| -> ?, |y| -> |x| ]]( |x| -> [[ D> 42- ]] ).|y|\\Big\\} \\leadsto_{\\nameref{r:copy}}"
-              , "  \\leadsto \\Big\\{\\phiMeet{foo:1}{ [[ |x| -> [[ D> 42- ]], |y| -> |x| ]] }.|y|\\Big\\} \\leadsto_{\\nameref{r:dot}}"
-              , "  \\leadsto \\Big\\{\\phiAgain{foo:1}.|x|( ^ -> \\phiAgain{foo:1} )\\Big\\} \\leadsto_{\\nameref{r:dot}}"
-              , "  \\leadsto \\Big\\{[[ D> 42- ]]( ^ -> \\phiAgain{foo:1}, ^ -> \\phiAgain{foo:1} )\\Big\\} \\leadsto_{\\nameref{r:copy}}"
-              , "  \\leadsto \\Big\\{[[ D> 42-, ^ -> \\phiAgain{foo:1} ]]( ^ -> \\phiAgain{foo:1} )\\Big\\} \\leadsto_{\\nameref{r:stay}}"
-              , "  \\leadsto \\Big\\{[[ D> 42-, ^ -> \\phiAgain{foo:1} ]]\\Big\\}{.}"
+              , "\\Big\\{[[ |x| -> ?, |y| -> |x| ]]( |x| -> \\phiMeet{foo:1}{ [[ D> 42- ]] } ).|y|\\Big\\} \\leadsto_{\\nameref{r:copy}}"
+              , "  \\leadsto \\Big\\{\\phiMeet{foo:2}{ [[ |x| -> \\phiAgain{foo:1}, |y| -> |x| ]] }.|y|\\Big\\} \\leadsto_{\\nameref{r:dot}}"
+              , "  \\leadsto \\Big\\{\\phiAgain{foo:2}.|x|( ^ -> \\phiAgain{foo:2} )\\Big\\} \\leadsto_{\\nameref{r:dot}}"
+              , "  \\leadsto \\Big\\{\\phiAgain{foo:1}( ^ -> \\phiAgain{foo:2}, ^ -> \\phiAgain{foo:2} )\\Big\\} \\leadsto_{\\nameref{r:copy}}"
+              , "  \\leadsto \\Big\\{[[ D> 42-, ^ -> \\phiAgain{foo:2} ]]( ^ -> \\phiAgain{foo:2} )\\Big\\} \\leadsto_{\\nameref{r:stay}}"
+              , "  \\leadsto \\Big\\{[[ D> 42-, ^ -> \\phiAgain{foo:2} ]]\\Big\\}{.}"
               , "\\end{phiquation}"
               ]
           ]
@@ -446,12 +458,12 @@ spec = do
           ["rewrite", "--normalize", "--sweet", "--sequence", "--output=latex", "--flat", "--compress"]
           [ unlines
               [ "\\begin{phiquation}"
-              , "\\Big\\{[[ |x| -> ?, |y| -> |x| ]]( |x| -> [[ D> 42- ]] ).|y|\\Big\\} \\leadsto_{\\nameref{r:copy}}"
-              , "  \\leadsto \\Big\\{\\phiMeet{1}{ [[ |x| -> [[ D> 42- ]], |y| -> |x| ]] }.|y|\\Big\\} \\leadsto_{\\nameref{r:dot}}"
-              , "  \\leadsto \\Big\\{\\phiAgain{1}.|x|( ^ -> \\phiAgain{1} )\\Big\\} \\leadsto_{\\nameref{r:dot}}"
-              , "  \\leadsto \\Big\\{[[ D> 42- ]]( ^ -> \\phiAgain{1}, ^ -> \\phiAgain{1} )\\Big\\} \\leadsto_{\\nameref{r:copy}}"
-              , "  \\leadsto \\Big\\{[[ D> 42-, ^ -> \\phiAgain{1} ]]( ^ -> \\phiAgain{1} )\\Big\\} \\leadsto_{\\nameref{r:stay}}"
-              , "  \\leadsto \\Big\\{[[ D> 42-, ^ -> \\phiAgain{1} ]]\\Big\\}{.}"
+              , "\\Big\\{[[ |x| -> ?, |y| -> |x| ]]( |x| -> \\phiMeet{1}{ [[ D> 42- ]] } ).|y|\\Big\\} \\leadsto_{\\nameref{r:copy}}"
+              , "  \\leadsto \\Big\\{\\phiMeet{2}{ [[ |x| -> \\phiAgain{1}, |y| -> |x| ]] }.|y|\\Big\\} \\leadsto_{\\nameref{r:dot}}"
+              , "  \\leadsto \\Big\\{\\phiAgain{2}.|x|( ^ -> \\phiAgain{2} )\\Big\\} \\leadsto_{\\nameref{r:dot}}"
+              , "  \\leadsto \\Big\\{\\phiAgain{1}( ^ -> \\phiAgain{2}, ^ -> \\phiAgain{2} )\\Big\\} \\leadsto_{\\nameref{r:copy}}"
+              , "  \\leadsto \\Big\\{[[ D> 42-, ^ -> \\phiAgain{2} ]]( ^ -> \\phiAgain{2} )\\Big\\} \\leadsto_{\\nameref{r:stay}}"
+              , "  \\leadsto \\Big\\{[[ D> 42-, ^ -> \\phiAgain{2} ]]\\Big\\}{.}"
               , "\\end{phiquation}"
               ]
           ]
@@ -464,6 +476,19 @@ spec = do
               [ "\\begin{phiquation}"
               , "\\Big\\{[[ |ex| -> [[ |x| -> [[ |y| -> ?, |k| -> \\phiMeet{1}{ [[ |t| -> 42 ]] } ]]( |y| -> \\phiAgain{1} ) ]].|i| ]]\\Big\\} \\leadsto_{\\nameref{r:copy}}"
               , "  \\leadsto \\Big\\{[[ |ex| -> [[ |x| -> [[ |y| -> \\phiAgain{1}, |k| -> \\phiAgain{1} ]] ]].|i| ]]\\Big\\} \\leadsto_{\\nameref{r:stop}}"
+              , "  \\leadsto \\Big\\{[[ |ex| -> T ]]\\Big\\}{.}"
+              , "\\end{phiquation}"
+              ]
+          ]
+    
+    it "should not meet expression with high --meet-popularity" $
+      withStdin "{[[ ex -> [[ x -> [[ y -> ?, k -> [[ t -> 42]]  ]]( y -> [[ t -> 42 ]]) ]].i ]]}" $
+        testCLISucceeded
+          ["rewrite", "--normalize", "--sequence", "--flat", "--compress", "--output=latex", "--sweet", "--meet-popularity=70"]
+          [ unlines
+              [ "\\begin{phiquation}"
+              , "\\Big\\{[[ |ex| -> [[ |x| -> [[ |y| -> ?, |k| -> [[ |t| -> 42 ]] ]]( |y| -> [[ |t| -> 42 ]] ) ]].|i| ]]\\Big\\} \\leadsto_{\\nameref{r:copy}}"
+              , "  \\leadsto \\Big\\{[[ |ex| -> [[ |x| -> [[ |y| -> [[ |t| -> 42 ]], |k| -> [[ |t| -> 42 ]] ]] ]].|i| ]]\\Big\\} \\leadsto_{\\nameref{r:stop}}"
               , "  \\leadsto \\Big\\{[[ |ex| -> T ]]\\Big\\}{.}"
               , "\\end{phiquation}"
               ]

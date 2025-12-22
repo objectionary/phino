@@ -51,8 +51,6 @@ meetInProgram (Program expr) = meetInExpression expr
     meetInExpression ExGlobal _ = []
     meetInExpression ExThis _ = []
     meetInExpression ExTermination _ = []
-    meetInExpression (ExFormation [BiVoid AtRho]) _ = []
-    meetInExpression (ExFormation [BiDelta _, BiVoid AtRho]) _ = []
     meetInExpression (ExFormation []) _ = []
     meetInExpression (ExDispatch ExGlobal _) _ = []
     meetInExpression (ExDispatch ExThis _) _ = []
@@ -79,12 +77,12 @@ If it's encountered in more than 50% of following programs - we replace it with 
 programs and with \phiMeet{} in first program.
 -}
 meetInPrograms :: [Program] -> LatexContext -> [Program]
-meetInPrograms prog LatexContext{..} = meetInPrograms' 1 prog
+meetInPrograms prog LatexContext{..} = meetInPrograms' prog 1
   where
-    meetInPrograms' :: Int -> [Program] -> [Program]
-    meetInPrograms' _ [] = []
-    meetInPrograms' _ [prog] = [prog]
-    meetInPrograms' idx (first : rest) =
+    meetInPrograms' :: [Program] -> Int -> [Program]
+    meetInPrograms' [] _ = []
+    meetInPrograms' [prog] _ = [prog]
+    meetInPrograms' (first : rest) idx =
       let met = map (meetInProgram first) rest
           unique = nub (concat met)
           (frequent, _) =
@@ -97,7 +95,7 @@ meetInPrograms prog LatexContext{..} = meetInPrograms' 1 prog
               )
               (Nothing, 0)
               unique
-          next = first : meetInPrograms' idx rest
+          next = first : meetInPrograms' rest idx
        in case frequent of
             Just expr ->
               case matchProgram expr first of
@@ -108,7 +106,7 @@ meetInPrograms prog LatexContext{..} = meetInPrograms' 1 prog
                       rest' = zipWith (\prgm exprs -> replaceProgram (prgm, exprs, map (const (ExPhiAgain meetPrefix idx)) exprs)) rest met'
                       found = filter (not . null) met'
                    in if length met' > 1 && toDouble (length found) / toDouble (length met') >= popularity
-                        then prog' : meetInPrograms' (idx + 1) rest'
+                        then prog' : meetInPrograms' rest' (idx + 1)
                         else next
                 [] -> next
             _ -> next
