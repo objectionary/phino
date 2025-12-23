@@ -264,7 +264,7 @@ optMeetLength :: Parser (Maybe Int)
 optMeetLength =
   optional
     ( option
-        (auto >>= validateIntOption (> 0) "--meet-popularity must be positive")
+        (auto >>= validateIntOption (> 0) "--meet-length must be positive")
         (long "meet-length" <> metavar "NODES" <> help "The minimum length of an expression that fits into \\phiMeet{}, in AST nodes (default: 8)")
     )
 
