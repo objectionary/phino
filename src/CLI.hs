@@ -74,7 +74,7 @@ instance Show CmdException where
   show (InvalidCLIArguments msg) = printf "Invalid set of arguments: %s" msg
   show (CouldNotReadFromStdin msg) = printf "Could not read input from stdin\nReason: %s" msg
   show CouldNotDataize = "Could not dataize given program"
-  show CouldNotPrintExpressionInXMIR = "Could not print expression in with --output=xmir, only program printing is allowed"
+  show CouldNotPrintExpressionInXMIR = "Could not print expression with --output=xmir, only program printing is allowed"
 
 data Command
   = CmdRewrite OptsRewrite
