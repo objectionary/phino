@@ -53,6 +53,7 @@ data PrintProgramContext = PrintProgCtx
   , _xmirCtx :: XmirContext
   , _nonumber :: Bool
   , _compress :: Bool
+  , _sequence :: Bool
   , _meetPopularity :: Int
   , _meetLength :: Int
   , _focus :: Expression
@@ -589,6 +590,7 @@ runCLI args = handle handler $ do
             xmirCtx
             _nonumber
             _compress
+            _sequence
             (justMeetPopularity _meetPopularity)
             (justMeetLength _meetLength)
             focus
@@ -639,6 +641,7 @@ runCLI args = handle handler $ do
             defaultXmirContext
             _nonumber
             _compress
+            _sequence
             (justMeetPopularity _meetPopularity)
             (justMeetLength _meetLength)
             focus
@@ -679,6 +682,7 @@ runCLI args = handle handler $ do
             _sugarType
             _flat
             xmirCtx
+            False
             False
             False
             (justMeetPopularity Nothing)
@@ -782,7 +786,7 @@ parseProgram _ LATEX = invalidCLIArguments "LaTeX cannot be used as input format
 
 printRewrittens :: PrintProgramContext -> [Rewritten] -> IO String
 printRewrittens ctx@PrintProgCtx{..} rewrittens
-  | _outputFormat == LATEX = rewrittensToLatex rewrittens (LatexContext _sugar _line _nonumber _compress _meetPopularity _meetLength _focus _expression _label _meetPrefix)
+  | _outputFormat == LATEX && _sequence = rewrittensToLatex rewrittens (LatexContext _sugar _line _nonumber _compress _meetPopularity _meetLength _focus _expression _label _meetPrefix)
   | _focus == ExGlobal = mapM (printProgram ctx . fst) rewrittens <&> intercalate "\n"
   | otherwise = mapM (\(prog, _) -> locatedExpression _focus prog >>= printExpression ctx) rewrittens <&> intercalate "\n"
 

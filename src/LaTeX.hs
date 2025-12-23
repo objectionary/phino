@@ -170,29 +170,19 @@ rewrittensToLatex rewrittens ctx@LatexContext{..} = do
 
 programToLaTeX :: Program -> LatexContext -> String
 programToLaTeX prog ctx =
-  let equation = phiquation ctx
-   in concat
-        [ "\\begin{"
-        , equation
-        , "}\n"
-        , renderToLatex (programToCST prog) ctx
-        , "\n\\end{"
-        , equation
-        , "}"
-        ]
+  concat
+    [ preamble ctx
+    , renderToLatex (programToCST prog) ctx
+    , ending ctx
+    ]
 
 expressionToLaTeX :: Expression -> LatexContext -> String
 expressionToLaTeX ex ctx =
-  let equation = phiquation ctx
-   in concat
-        [ "\\begin{"
-        , equation
-        , "}\n"
-        , renderToLatex (expressionToCST ex) ctx
-        , "\n\\end"
-        , equation
-        , "}"
-        ]
+  concat
+    [ preamble ctx
+    , renderToLatex (expressionToCST ex) ctx
+    , ending ctx
+    ]
 
 piped :: String -> String
 piped str = "|" <> str <> "|"

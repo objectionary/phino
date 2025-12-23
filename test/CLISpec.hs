@@ -354,44 +354,52 @@ spec = do
       withStdin "Q -> [[ x_o -> Q.z(y -> 5), q$ -> T, w -> $, ^ -> Q, @ -> 1, y -> \"H$@^M\", L> Fu_nc ]]" $
         testCLISucceeded
           ["rewrite", "--output=latex", "--sweet"]
-          [ "\\begin{phiquation}"
-          , "\\Big\\{[[\n"
-          , "  |x\\char95{}o| -> Q.|z|( |y| -> 5 ),\n"
-          , "  |q\\char36{}| -> T,\n"
-          , "  |w| -> $,\n"
-          , "  ^ -> Q,\n"
-          , "  @ -> 1,\n"
-          , "  |y| -> \"H$@^M\",\n"
-          , "  L> |Fu\\char95{}nc|\n"
-          , "]]\\Big\\}"
-          , "\\end{phiquation}"
+          [ unlines
+              [ "\\begin{phiquation}"
+              , "\\Big\\{[["
+              , "  |x\\char95{}o| -> Q.|z|( |y| -> 5 ),"
+              , "  |q\\char36{}| -> T,"
+              , "  |w| -> $,"
+              , "  ^ -> Q,"
+              , "  @ -> 1,"
+              , "  |y| -> \"H$@^M\","
+              , "  L> |Fu\\char95{}nc|"
+              , "]]\\Big\\}{.}"
+              , "\\end{phiquation}"
+              ]
           ]
 
     it "rewrites as LaTeX without numeration" $
       withStdin "Q -> [[ x -> 5 ]]" $
         testCLISucceeded
           ["rewrite", "--output=latex", "--sweet", "--nonumber", "--flat"]
-          [ "\\begin{phiquation*}"
-          , "\\Big\\{[[ |x| -> 5 ]]\\Big\\}"
-          , "\\end{phiquation*}"
+          [ unlines
+              [ "\\begin{phiquation*}"
+              , "\\Big\\{[[ |x| -> 5 ]]\\Big\\}{.}"
+              , "\\end{phiquation*}"
+              ]
           ]
 
     it "rewrite as LaTeX with expression name" $
       withStdin "Q -> [[ x -> 5 ]]" $
         testCLISucceeded
           ["rewrite", "--output=latex", "--sweet", "--flat", "--expression=foo"]
-          [ "\\begin{phiquation}"
-          , "\\phiExpression{foo} \\Big\\{[[ |x| -> 5 ]]\\Big\\}{.}\n"
-          , "\\end{phiquation}"
+          [ unlines
+              [ "\\begin{phiquation}"
+              , "\\phiExpression{foo} \\Big\\{[[ |x| -> 5 ]]\\Big\\}{.}"
+              , "\\end{phiquation}"
+              ]
           ]
 
     it "rewrite as LaTeX with label name" $
       withStdin "Q -> [[ x -> 5 ]]" $
         testCLISucceeded
           ["rewrite", "--output=latex", "--sweet", "--flat", "--label=foo"]
-          [ "\\begin{phiquation}\n\\label{foo}\n"
-          , "\\Big\\{[[ |x| -> 5 ]]\\Big\\}{.}\n"
-          , "\\end{phiquation}"
+          [ unlines
+              [ "\\begin{phiquation}\n\\label{foo}"
+              , "\\Big\\{[[ |x| -> 5 ]]\\Big\\}{.}"
+              , "\\end{phiquation}"
+              ]
           ]
 
     it "rewrites with XMIR as input" $
