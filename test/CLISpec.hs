@@ -249,7 +249,7 @@ spec = do
           testCLIFailed
             ["rewrite", "--meet-popularity=102"]
             ["[ERROR]:", "--meet-popularity must be <= 100"]
-      
+
       it "with --meet-popularity and output != latex" $
         withStdin "{[[]]}" $
           testCLIFailed
@@ -261,7 +261,6 @@ spec = do
           testCLIFailed
             ["rewrite", "--meet-length=4", "--output=phi"]
             ["[ERROR]:", "--meet-length option can stay together with --output=latex only"]
-
 
     it "prints help" $
       testCLISucceeded
@@ -506,7 +505,7 @@ spec = do
               , "\\end{phiquation}"
               ]
           ]
-      
+
     it "meets with --meet-length = 32" $
       withStdin "{[[ ex -> [[ x -> [[ y -> ?, k -> [[ t -> 42]]  ]]( y -> [[ t -> 42 ]]) ]].i ]]}" $
         testCLISucceeded
