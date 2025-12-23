@@ -31,9 +31,7 @@ import Text.Printf (printf)
 import Yaml (normalizationRules)
 import qualified Yaml as Y
 
-newtype RuleContext = RuleContext
-  { _buildTerm :: BuildTermFunc
-  }
+newtype RuleContext = RuleContext {_buildTerm :: BuildTermFunc}
 
 -- Returns True if given expression matches with any of given normalization rules
 -- Here we use unsafePerformIO because we're sure that conditions which are used

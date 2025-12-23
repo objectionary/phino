@@ -34,16 +34,16 @@ import Text.Printf (printf)
 import qualified Yaml as Y
 
 data LatexContext = LatexContext
-  { sugar :: SugarType
-  , line :: LineFormat
-  , nonumber :: Bool
-  , compress :: Bool
-  , meetPopularity :: Int
-  , meetLength :: Int
-  , focus :: Expression
-  , expression :: Maybe String
-  , label :: Maybe String
-  , meetPrefix :: Maybe String
+  { _sugar :: SugarType
+  , _line :: LineFormat
+  , _nonumber :: Bool
+  , _compress :: Bool
+  , _meetPopularity :: Int
+  , _meetLength :: Int
+  , _focus :: Expression
+  , _expression :: Maybe String
+  , _label :: Maybe String
+  , _meetPrefix :: Maybe String
   }
 
 defaultLatexContext :: LatexContext
@@ -72,7 +72,7 @@ meetInProgram (Program expr) len = meetInExpression expr
 {- | Here we're trying to compress sequence of programs with \phiMeet{} and \phiAgain LaTeX functions.
 We process the sequence of programs and trying to find all expressions in first program which are present
 in following programs. Then we find ONE expression which is the most frequently encountered.
-If it's encountered in more than specific percentage (meetPopularity) of following programs - we replace
+If it's encountered in more than specific percentage (_meetPopularity) of following programs - we replace
 it with \phiAgain{} in following programs and with \phiMeet{} in first program.
 -}
 meetInPrograms :: [Program] -> LatexContext -> [Program]
@@ -82,7 +82,7 @@ meetInPrograms prog LatexContext{..} = meetInPrograms' prog 1
     meetInPrograms' [] _ = []
     meetInPrograms' [program] _ = [program]
     meetInPrograms' (first : rest) idx =
-      let met = map (meetInProgram first meetLength) rest
+      let met = map (meetInProgram first _meetLength) rest
           unique = nub (concat met)
           (frequent, _) =
             foldl
@@ -100,9 +100,9 @@ meetInPrograms prog LatexContext{..} = meetInPrograms' prog 1
               case matchProgram expr first of
                 (_ : substs) ->
                   let met' = map (filter (== expr)) met
-                      program = replaceProgram (first, [expr], [ExPhiMeet meetPrefix idx])
-                      program' = replaceProgram (program, map (const expr) substs, map (const (ExPhiAgain meetPrefix idx)) substs)
-                      rest' = zipWith (\prgm exprs -> replaceProgram (prgm, exprs, map (const (ExPhiAgain meetPrefix idx)) exprs)) rest met'
+                      program = replaceProgram (first, [expr], [ExPhiMeet _meetPrefix idx])
+                      program' = replaceProgram (program, map (const expr) substs, map (const (ExPhiAgain _meetPrefix idx)) substs)
+                      rest' = zipWith (\prgm exprs -> replaceProgram (prgm, exprs, map (const (ExPhiAgain _meetPrefix idx)) exprs)) rest met'
                       found = filter (not . null) met'
                    in if length met' > 1 && toDouble (length found) / toDouble (length met') >= popularity
                         then program' : meetInPrograms' rest' (idx + 1)
@@ -110,22 +110,22 @@ meetInPrograms prog LatexContext{..} = meetInPrograms' prog 1
                 [] -> next
             _ -> next
     popularity :: Double
-    popularity = toDouble meetPopularity / 100.0
+    popularity = toDouble _meetPopularity / 100.0
 
 renderToLatex :: (ToSalty a, ToASCII a, ToSingleLine a, ToLaTeX a, Render a) => a -> LatexContext -> String
-renderToLatex renderable LatexContext{..} = render (toLaTeX $ withLineFormat line $ withEncoding ASCII $ withSugarType sugar renderable)
+renderToLatex renderable LatexContext{..} = render (toLaTeX $ withLineFormat _line $ withEncoding ASCII $ withSugarType _sugar renderable)
 
 phiquation :: LatexContext -> String
-phiquation LatexContext{nonumber = True} = "phiquation*"
-phiquation LatexContext{nonumber = False} = "phiquation"
+phiquation LatexContext{_nonumber = True} = "phiquation*"
+phiquation LatexContext{_nonumber = False} = "phiquation"
 
 preamble :: LatexContext -> String
 preamble ctx@LatexContext{..} =
   let equation = phiquation ctx
    in concat
         [ printf "\\begin{%s}\n" equation
-        , maybe "" (printf "\\label{%s}\n") label
-        , maybe "" (printf "\\phiExpression{%s} ") expression
+        , maybe "" (printf "\\label{%s}\n") _label
+        , maybe "" (printf "\\phiExpression{%s} ") _expression
         ]
 
 body :: [(a, Maybe String)] -> (a -> String) -> String
@@ -146,10 +146,10 @@ ending ctx = printf "{.}\n\\end{%s}" (phiquation ctx)
 metRewrittens :: [Rewritten] -> LatexContext -> [Rewritten]
 metRewrittens rewrittens ctx@LatexContext{..} =
   let (progs, rules) = unzip rewrittens
-   in if compress then zip (meetInPrograms progs ctx) rules else rewrittens
+   in if _compress then zip (meetInPrograms progs ctx) rules else rewrittens
 
 rewrittensToLatex :: [Rewritten] -> LatexContext -> IO String
-rewrittensToLatex rewrittens ctx@LatexContext{focus = ExGlobal} =
+rewrittensToLatex rewrittens ctx@LatexContext{_focus = ExGlobal} =
   pure
     ( concat
         [ preamble ctx
@@ -159,7 +159,7 @@ rewrittensToLatex rewrittens ctx@LatexContext{focus = ExGlobal} =
     )
 rewrittensToLatex rewrittens ctx@LatexContext{..} = do
   let (progs, rules) = unzip (metRewrittens rewrittens ctx)
-  exprs <- mapM (locatedExpression focus) progs
+  exprs <- mapM (locatedExpression _focus) progs
   pure
     ( concat
         [ preamble ctx

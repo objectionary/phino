@@ -41,9 +41,9 @@ import Text.XML
 import qualified Text.XML.Cursor as C
 
 data XmirContext = XmirContext
-  { omitListing :: Bool
-  , omitComments :: Bool
-  , listing :: Program -> String
+  { _omitListing :: Bool
+  , _omitComments :: Bool
+  , _listing :: Program -> String
   }
 
 defaultXmirContext :: XmirContext
@@ -105,7 +105,7 @@ expression (DataNumber bytes) XmirContext{..} =
           [object [] [NodeContent (T.pack (printBytes bytes))]]
    in pure
         ( "Φ.number"
-        , if omitComments
+        , if _omitComments
             then [bts]
             else
               [ NodeComment (T.pack (either show show (btsToNum bytes)))
@@ -119,7 +119,7 @@ expression (DataString bytes) XmirContext{..} =
           [object [] [NodeContent (T.pack (printBytes bytes))]]
    in pure
         ( "Φ.string"
-        , if omitComments
+        , if _omitComments
             then [bts]
             else
               [ NodeComment (T.pack ('"' : btsToStr bytes ++ "\""))
@@ -172,12 +172,12 @@ programToXMIR prog@(Program expr@(ExFormation [BiTau (AtLabel _) arg, BiVoid AtR
       (pckg, expr') <- getPackage expr
       root <- rootExpression expr' ctx
       now <- getCurrentTime
-      let text = listing prog
-          listingContent =
-            if omitListing
+      let text = _listing prog
+          listing =
+            if _omitListing
               then show (length (lines text)) ++ " line(s)"
               else text
-          listing' = NodeElement (element "listing" [] [NodeContent (T.pack listingContent)])
+          listing' = NodeElement (element "listing" [] [NodeContent (T.pack listing)])
           metas = metasWithPackage (intercalate "." pckg)
       pure
         ( Document

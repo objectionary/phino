@@ -3,7 +3,6 @@
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# OPTIONS_GHC -Wno-name-shadowing #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
@@ -49,18 +48,18 @@ import Yaml (normalizationRules)
 import qualified Yaml as Y
 
 data PrintProgramContext = PrintProgCtx
-  { sugar :: SugarType
-  , line :: LineFormat
-  , xmirCtx :: XmirContext
-  , nonumber :: Bool
-  , compress :: Bool
-  , meetPopularity :: Int
-  , meetLength :: Int
-  , focus :: Expression
-  , expression :: Maybe String
-  , label :: Maybe String
-  , meetPrefix :: Maybe String
-  , outputFormat :: IOFormat
+  { _sugar :: SugarType
+  , _line :: LineFormat
+  , _xmirCtx :: XmirContext
+  , _nonumber :: Bool
+  , _compress :: Bool
+  , _meetPopularity :: Int
+  , _meetLength :: Int
+  , _focus :: Expression
+  , _expression :: Maybe String
+  , _label :: Maybe String
+  , _meetPrefix :: Maybe String
+  , _outputFormat :: IOFormat
   }
 
 data CmdException
@@ -90,100 +89,100 @@ instance Show IOFormat where
   show LATEX = "latex"
 
 data OptsDataize = OptsDataize
-  { logLevel :: LogLevel
-  , logLines :: Int
-  , inputFormat :: IOFormat
-  , outputFormat :: IOFormat
-  , sugarType :: SugarType
-  , flat :: LineFormat
-  , omitListing :: Bool
-  , omitComments :: Bool
-  , nonumber :: Bool
-  , sequence :: Bool
-  , canonize :: Bool
-  , depthSensitive :: Bool
-  , quiet :: Bool
-  , compress :: Bool
-  , maxDepth :: Int
-  , maxCycles :: Int
-  , meetPopularity :: Maybe Int
-  , meetLength :: Maybe Int
-  , hide :: [String]
-  , show' :: [String]
-  , locator :: String
-  , focus :: String
-  , expression :: Maybe String
-  , label :: Maybe String
-  , meetPrefix :: Maybe String
-  , stepsDir :: Maybe FilePath
-  , inputFile :: Maybe FilePath
+  { _logLevel :: LogLevel
+  , _logLines :: Int
+  , _inputFormat :: IOFormat
+  , _outputFormat :: IOFormat
+  , _sugarType :: SugarType
+  , _flat :: LineFormat
+  , _omitListing :: Bool
+  , _omitComments :: Bool
+  , _nonumber :: Bool
+  , _sequence :: Bool
+  , _canonize :: Bool
+  , _depthSensitive :: Bool
+  , _quiet :: Bool
+  , _compress :: Bool
+  , _maxDepth :: Int
+  , _maxCycles :: Int
+  , _meetPopularity :: Maybe Int
+  , _meetLength :: Maybe Int
+  , _hide :: [String]
+  , _show :: [String]
+  , _locator :: String
+  , _focus :: String
+  , _expression :: Maybe String
+  , _label :: Maybe String
+  , _meetPrefix :: Maybe String
+  , _stepsDir :: Maybe FilePath
+  , _inputFile :: Maybe FilePath
   }
 
 data OptsExplain = OptsExplain
-  { logLevel :: LogLevel
-  , logLines :: Int
-  , rules :: [FilePath]
-  , normalize :: Bool
-  , shuffle :: Bool
-  , targetFile :: Maybe FilePath
+  { _logLevel :: LogLevel
+  , _logLines :: Int
+  , _rules :: [FilePath]
+  , _normalize :: Bool
+  , _shuffle :: Bool
+  , _targetFile :: Maybe FilePath
   }
 
 data OptsRewrite = OptsRewrite
-  { logLevel :: LogLevel
-  , logLines :: Int
-  , inputFormat :: IOFormat
-  , outputFormat :: IOFormat
-  , sugarType :: SugarType
-  , flat :: LineFormat
-  , must :: Must
-  , normalize :: Bool
-  , shuffle :: Bool
-  , omitListing :: Bool
-  , omitComments :: Bool
-  , depthSensitive :: Bool
-  , nonumber :: Bool
-  , inPlace :: Bool
-  , sequence :: Bool
-  , canonize :: Bool
-  , compress :: Bool
-  , maxDepth :: Int
-  , maxCycles :: Int
-  , meetPopularity :: Maybe Int
-  , meetLength :: Maybe Int
-  , rules :: [FilePath]
-  , hide :: [String]
-  , show' :: [String]
-  , locator :: String
-  , focus :: String
-  , expression :: Maybe String
-  , label :: Maybe String
-  , meetPrefix :: Maybe String
-  , targetFile :: Maybe FilePath
-  , stepsDir :: Maybe FilePath
-  , inputFile :: Maybe FilePath
+  { _logLevel :: LogLevel
+  , _logLines :: Int
+  , _inputFormat :: IOFormat
+  , _outputFormat :: IOFormat
+  , _sugarType :: SugarType
+  , _flat :: LineFormat
+  , _must :: Must
+  , _normalize :: Bool
+  , _shuffle :: Bool
+  , _omitListing :: Bool
+  , _omitComments :: Bool
+  , _depthSensitive :: Bool
+  , _nonumber :: Bool
+  , _inPlace :: Bool
+  , _sequence :: Bool
+  , _canonize :: Bool
+  , _compress :: Bool
+  , _maxDepth :: Int
+  , _maxCycles :: Int
+  , _meetPopularity :: Maybe Int
+  , _meetLength :: Maybe Int
+  , _rules :: [FilePath]
+  , _hide :: [String]
+  , _show :: [String]
+  , _locator :: String
+  , _focus :: String
+  , _expression :: Maybe String
+  , _label :: Maybe String
+  , _meetPrefix :: Maybe String
+  , _targetFile :: Maybe FilePath
+  , _stepsDir :: Maybe FilePath
+  , _inputFile :: Maybe FilePath
   }
 
 data OptsMerge = OptsMerge
-  { logLevel :: LogLevel
-  , logLines :: Int
-  , inputFormat :: IOFormat
-  , outputFormat :: IOFormat
-  , sugarType :: SugarType
-  , flat :: LineFormat
-  , omitListing :: Bool
-  , omitComments :: Bool
-  , targetFile :: Maybe FilePath
-  , inputs :: [FilePath]
+  { _logLevel :: LogLevel
+  , _logLines :: Int
+  , _inputFormat :: IOFormat
+  , _outputFormat :: IOFormat
+  , _sugarType :: SugarType
+  , _flat :: LineFormat
+  , _omitListing :: Bool
+  , _omitComments :: Bool
+  , _targetFile :: Maybe FilePath
+  , _inputs :: [FilePath]
   }
 
 data OptsMatch = OptsMatch
-  { logLevel :: LogLevel
-  , logLines :: Int
-  , sugarType :: SugarType
-  , flat :: LineFormat
-  , pattern :: Maybe String
-  , when' :: Maybe String
-  , inputFile :: Maybe FilePath
+  { _logLevel :: LogLevel
+  , _logLines :: Int
+  , _sugarType :: SugarType
+  , _flat :: LineFormat
+  , _pattern :: Maybe String
+  , _when :: Maybe String
+  , _inputFile :: Maybe FilePath
   }
 
 validateIntOption :: (Int -> Bool) -> String -> Int -> ReadM Int
@@ -501,13 +500,13 @@ handler e = case fromException e of
 
 setLogger :: Command -> IO ()
 setLogger cmd =
-  let (level, lines) = case cmd of
-        CmdRewrite OptsRewrite{logLevel, logLines} -> (logLevel, logLines)
-        CmdDataize OptsDataize{logLevel, logLines} -> (logLevel, logLines)
-        CmdExplain OptsExplain{logLevel, logLines} -> (logLevel, logLines)
-        CmdMerge OptsMerge{logLevel, logLines} -> (logLevel, logLines)
-        CmdMatch OptsMatch{logLevel, logLines} -> (logLevel, logLines)
-   in setLogConfig level lines
+  let (level, lns) = case cmd of
+        CmdRewrite OptsRewrite{_logLevel, _logLines} -> (_logLevel, _logLines)
+        CmdDataize OptsDataize{_logLevel, _logLines} -> (_logLevel, _logLines)
+        CmdExplain OptsExplain{_logLevel, _logLines} -> (_logLevel, _logLines)
+        CmdMerge OptsMerge{_logLevel, _logLines} -> (_logLevel, _logLines)
+        CmdMatch OptsMatch{_logLevel, _logLines} -> (_logLevel, _logLines)
+   in setLogConfig level lns
 
 invalidCLIArguments :: String -> IO a
 invalidCLIArguments msg = throwIO (InvalidCLIArguments msg)
@@ -519,44 +518,44 @@ runCLI args = handle handler $ do
   case cmd of
     CmdRewrite OptsRewrite{..} -> do
       validateOpts
-      excluded <- validatedDispatches "hide" hide
-      included <- validatedDispatches "show" show'
-      [loc] <- validatedDispatches "locator" [locator]
-      [foc] <- validatedDispatches "focus" [focus]
-      logDebug (printf "Amount of rewriting cycles across all the rules: %d, per rule: %d" maxCycles maxDepth)
-      input <- readInput inputFile
-      rules' <- getRules normalize shuffle rules
-      program <- parseProgram input inputFormat
-      let listing = if null rules' then const input else (\prog -> P.printProgram' prog (sugarType, UNICODE, flat))
-          xmirCtx = XmirContext omitListing omitComments listing
+      excluded <- validatedDispatches "hide" _hide
+      included <- validatedDispatches "show" _show
+      [loc] <- validatedDispatches "locator" [_locator]
+      [foc] <- validatedDispatches "focus" [_focus]
+      logDebug (printf "Amount of rewriting cycles across all the rules: %d, per rule: %d" _maxCycles _maxDepth)
+      input <- readInput _inputFile
+      rules <- getRules _normalize _shuffle _rules
+      program <- parseProgram input _inputFormat
+      let listing = if null rules then const input else (\prog -> P.printProgram' prog (_sugarType, UNICODE, _flat))
+          xmirCtx = XmirContext _omitListing _omitComments listing
           printCtx = printProgCtx xmirCtx foc
-          _canonize = if canonize then C.canonize else id
-          _hide = (`F.exclude` excluded)
-          _show = (`F.include` included)
-      rewrittens <- rewrite program rules' (context loc printCtx) <&> _canonize . _hide . _show
-      let rewrittens' = if sequence then rewrittens else [last rewrittens]
-      logDebug (printf "Printing rewritten 𝜑-program as %s" (show outputFormat))
+          canonize = if _canonize then C.canonize else id
+          exclude = (`F.exclude` excluded)
+          include = (`F.include` included)
+      rewrittens <- rewrite program rules (context loc printCtx) <&> canonize . exclude . include
+      let rewrittens' = if _sequence then rewrittens else [last rewrittens]
+      logDebug (printf "Printing rewritten 𝜑-program as %s" (show _outputFormat))
       progs <- printRewrittens printCtx rewrittens'
-      output targetFile progs
+      output _targetFile progs
       where
         validateOpts :: IO ()
         validateOpts = do
           when
-            (inPlace && isNothing inputFile)
+            (_inPlace && isNothing _inputFile)
             (invalidCLIArguments "The option --in-place requires an input file")
           when
-            (inPlace && isJust targetFile)
+            (_inPlace && isJust _targetFile)
             (invalidCLIArguments "The options --in-place and --target cannot be used together")
-          when (length show' > 1) (invalidCLIArguments "The option --show can be used only once")
+          when (length _show > 1) (invalidCLIArguments "The option --show can be used only once")
           validateLatexOptions
-            outputFormat
-            [(nonumber, "nonumber"), (compress, "compress")]
-            [(expression, "expression"), (label, "label"), (meetPrefix, "meet-prefix")]
-            [(meetPopularity, "meet-popularity"), (meetLength, "meet-length")]
-          validateMust' must
-          validateXmirOptions outputFormat [(omitListing, "omit-listing"), (omitComments, "omit-comments")] focus
+            _outputFormat
+            [(_nonumber, "nonumber"), (_compress, "compress")]
+            [(_expression, "expression"), (_label, "label"), (_meetPrefix, "meet-prefix")]
+            [(_meetPopularity, "meet-popularity"), (_meetLength, "meet-length")]
+          validateMust' _must
+          validateXmirOptions _outputFormat [(_omitListing, "omit-listing"), (_omitComments, "omit-comments")] _focus
         output :: Maybe FilePath -> String -> IO ()
-        output target prog = case (inPlace, target, inputFile) of
+        output target prog = case (_inPlace, target, _inputFile) of
           (True, _, Just file) -> do
             logDebug (printf "The option '--in-place' is specified, writing back to '%s'..." file)
             writeFile file prog
@@ -574,109 +573,109 @@ runCLI args = handle handler $ do
         context loc ctx =
           RewriteContext
             loc
-            maxDepth
-            maxCycles
-            depthSensitive
+            _maxDepth
+            _maxCycles
+            _depthSensitive
             buildTerm
-            must
-            (saveStepFunc stepsDir ctx)
+            _must
+            (saveStepFunc _stepsDir ctx)
         printProgCtx :: XmirContext -> Expression -> PrintProgramContext
         printProgCtx xmirCtx focus =
           PrintProgCtx
-            sugarType
-            flat
+            _sugarType
+            _flat
             xmirCtx
-            nonumber
-            compress
-            (justMeetPopularity meetPopularity)
-            (justMeetLength meetLength)
+            _nonumber
+            _compress
+            (justMeetPopularity _meetPopularity)
+            (justMeetLength _meetLength)
             focus
-            expression
-            label
-            meetPrefix
-            outputFormat
+            _expression
+            _label
+            _meetPrefix
+            _outputFormat
     CmdDataize OptsDataize{..} -> do
       validateOpts
-      excluded <- validatedDispatches "hide" hide
-      included <- validatedDispatches "show" show'
-      [loc] <- validatedDispatches "locator" [locator]
-      [foc] <- validatedDispatches "focus" [focus]
-      input <- readInput inputFile
-      prog <- parseProgram input inputFormat
+      excluded <- validatedDispatches "hide" _hide
+      included <- validatedDispatches "show" _show
+      [loc] <- validatedDispatches "locator" [_locator]
+      [foc] <- validatedDispatches "focus" [_focus]
+      input <- readInput _inputFile
+      prog <- parseProgram input _inputFormat
       let printCtx = printProgCtx foc
-          _canonize = if canonize then C.canonize else id
-          _hide = (`F.exclude` excluded)
-          _show = (`F.include` included)
-      (maybeBytes, seq) <- dataize (context loc prog printCtx)
-      when sequence (printRewrittens printCtx (_canonize $ _hide $ _show seq) >>= putStrLn)
-      unless quiet (putStrLn (maybe (P.printExpression ExTermination) P.printBytes maybeBytes))
+          canonize = if _canonize then C.canonize else id
+          exclude = (`F.exclude` excluded)
+          include = (`F.include` included)
+      (maybeBytes, chain) <- dataize (context loc prog printCtx)
+      when _sequence (printRewrittens printCtx (canonize $ exclude $ include chain) >>= putStrLn)
+      unless _quiet (putStrLn (maybe (P.printExpression ExTermination) P.printBytes maybeBytes))
       where
         validateOpts :: IO ()
         validateOpts = do
           validateLatexOptions
-            outputFormat
-            [(nonumber, "nonumber"), (compress, "compress")]
-            [(expression, "expression"), (label, "label"), (meetPrefix, "meet-prefix")]
-            [(meetPopularity, "meet-popularity"), (meetLength, "meet-length")]
-          validateXmirOptions outputFormat [(omitListing, "omit-listing"), (omitComments, "omit-comments")] focus
-          when (length show' > 1) (invalidCLIArguments "The option --show can be used only once")
+            _outputFormat
+            [(_nonumber, "nonumber"), (_compress, "compress")]
+            [(_expression, "expression"), (_label, "label"), (_meetPrefix, "meet-prefix")]
+            [(_meetPopularity, "meet-popularity"), (_meetLength, "meet-length")]
+          validateXmirOptions _outputFormat [(_omitListing, "omit-listing"), (_omitComments, "omit-comments")] _focus
+          when (length _show > 1) (invalidCLIArguments "The option --show can be used only once")
         context :: Expression -> Program -> PrintProgramContext -> DataizeContext
         context loc prog ctx =
           DataizeContext
             loc
             prog
-            maxDepth
-            maxCycles
-            depthSensitive
+            _maxDepth
+            _maxCycles
+            _depthSensitive
             buildTerm
-            (saveStepFunc stepsDir ctx)
+            (saveStepFunc _stepsDir ctx)
         printProgCtx :: Expression -> PrintProgramContext
         printProgCtx focus =
           PrintProgCtx
-            sugarType
-            flat
+            _sugarType
+            _flat
             defaultXmirContext
-            nonumber
-            compress
-            (justMeetPopularity meetPopularity)
-            (justMeetLength meetLength)
+            _nonumber
+            _compress
+            (justMeetPopularity _meetPopularity)
+            (justMeetLength _meetLength)
             focus
-            expression
-            label
-            meetPrefix
-            outputFormat
+            _expression
+            _label
+            _meetPrefix
+            _outputFormat
     CmdExplain OptsExplain{..} -> do
       validateOpts
-      rules' <- getRules normalize shuffle rules
-      output targetFile (explainRules rules')
+      rules <- getRules _normalize _shuffle _rules
+      printOut _targetFile (explainRules rules)
       where
         validateOpts :: IO ()
         validateOpts =
           when
-            (null rules && not normalize)
+            (null _rules && not _normalize)
             (throwIO (InvalidCLIArguments "Either --rule or --normalize must be specified"))
     CmdMerge OptsMerge{..} -> do
       validateOpts
-      inputs' <- traverse (readInput . Just) inputs
-      progs <- traverse (`parseProgram` inputFormat) inputs'
+      inputs' <- traverse (readInput . Just) _inputs
+      progs <- traverse (`parseProgram` _inputFormat) inputs'
       prog <- merge progs
-      let listing = const (P.printProgram' prog (sugarType, UNICODE, flat))
-          xmirCtx = XmirContext omitListing omitComments listing
+      let listing = const (P.printProgram' prog (_sugarType, UNICODE, _flat))
+          xmirCtx = XmirContext _omitListing _omitComments listing
           printCtx = printProgCtx xmirCtx
       prog' <- printProgram printCtx prog
-      output targetFile prog'
+      printOut _targetFile prog'
       where
         validateOpts :: IO ()
         validateOpts = do
           when
-            (null inputs)
+            (null _inputs)
             (throwIO (InvalidCLIArguments "At least one input file must be specified for 'merge' command"))
-          validateXmirOptions outputFormat [(omitListing, "omit-listing"), (omitComments, "omit-comments")] "Q"
+          validateXmirOptions _outputFormat [(_omitListing, "omit-listing"), (_omitComments, "omit-comments")] "Q"
         printProgCtx :: XmirContext -> PrintProgramContext
         printProgCtx xmirCtx =
           PrintProgCtx
-            sugarType
-            flat
+            _sugarType
+            _flat
             xmirCtx
             False
             False
@@ -686,19 +685,19 @@ runCLI args = handle handler $ do
             Nothing
             Nothing
             Nothing
-            outputFormat
+            _outputFormat
     CmdMatch OptsMatch{..} -> do
-      input <- readInput inputFile
+      input <- readInput _inputFile
       prog <- parseProgram input PHI
-      if isNothing pattern
+      if isNothing _pattern
         then logDebug "The --pattern is not provided, no substitutions are built"
         else do
-          ptn <- parseExpressionThrows (fromJust pattern)
-          condition <- traverse parseConditionThrows when'
+          ptn <- parseExpressionThrows (fromJust _pattern)
+          condition <- traverse parseConditionThrows _when
           substs <- matchProgramWithRule prog (rule ptn condition) (RuleContext buildTerm)
           if null substs
             then logDebug "Provided pattern was not matched, no substitutions are built"
-            else putStrLn (P.printSubsts' substs (sugarType, UNICODE, flat))
+            else putStrLn (P.printSubsts' substs (_sugarType, UNICODE, _flat))
       where
         rule :: Expression -> Maybe Y.Condition -> Y.Rule
         rule ptn cnd = Y.Rule Nothing Nothing ptn ExGlobal cnd Nothing Nothing
@@ -715,8 +714,8 @@ saveStepFunc stepsDir ctx@PrintProgCtx{..} = saveStep stepsDir ioToExt (printPro
   where
     ioToExt :: String
     ioToExt
-      | outputFormat == LATEX = "tex"
-      | otherwise = show outputFormat
+      | _outputFormat == LATEX = "tex"
+      | otherwise = show _outputFormat
 
 -- Validate given expressions as valid dispatches
 validatedDispatches :: String -> [String] -> IO [Expression]
@@ -726,8 +725,8 @@ validatedDispatches opt = traverse (parseExpressionThrows >=> asDispatch)
     asDispatch expr = asDispatch' expr
       where
         asDispatch' :: Expression -> IO Expression
-        asDispatch' exp@ExGlobal = pure exp
-        asDispatch' exp@(ExDispatch ex _) = asDispatch' ex >> pure exp
+        asDispatch' ex@ExGlobal = pure ex
+        asDispatch' disp@(ExDispatch ex _) = asDispatch' ex >> pure disp
         asDispatch' _ =
           invalidCLIArguments
             ( printf
@@ -781,22 +780,23 @@ parseProgram _ LATEX = invalidCLIArguments "LaTeX cannot be used as input format
 
 printRewrittens :: PrintProgramContext -> [Rewritten] -> IO String
 printRewrittens ctx@PrintProgCtx{..} rewrittens
-  | outputFormat == LATEX = rewrittensToLatex rewrittens (LatexContext sugar line nonumber compress meetPopularity meetLength focus expression label meetPrefix)
-  | focus == ExGlobal = mapM (printProgram ctx . fst) rewrittens <&> intercalate "\n"
-  | otherwise = mapM (\(prog, _) -> locatedExpression focus prog >>= printExpression ctx) rewrittens <&> intercalate "\n"
+  | _outputFormat == LATEX = rewrittensToLatex rewrittens (LatexContext _sugar _line _nonumber _compress _meetPopularity _meetLength _focus _expression _label _meetPrefix)
+  | _focus == ExGlobal = mapM (printProgram ctx . fst) rewrittens <&> intercalate "\n"
+  | otherwise = mapM (\(prog, _) -> locatedExpression _focus prog >>= printExpression ctx) rewrittens <&> intercalate "\n"
 
 printExpression :: PrintProgramContext -> Expression -> IO String
-printExpression PrintProgCtx{..} ex = case outputFormat of
-  PHI -> pure (P.printExpression' ex (sugar, UNICODE, line))
-  XMIR -> programToXMIR (Program ex) xmirCtx <&> printXMIR
-  LATEX -> pure (expressionToLaTeX ex (LatexContext sugar line nonumber compress meetPopularity meetLength focus expression label meetPrefix))
+printExpression PrintProgCtx{..} ex = case _outputFormat of
+  PHI -> pure (P.printExpression' ex (_sugar, UNICODE, _line))
+  XMIR -> programToXMIR (Program ex) _xmirCtx <&> printXMIR
+  LATEX -> pure (expressionToLaTeX ex (LatexContext _sugar _line _nonumber _compress _meetPopularity _meetLength _focus _expression _label _meetPrefix))
 
+-- Convert
 -- Convert program to corresponding String format
 printProgram :: PrintProgramContext -> Program -> IO String
-printProgram PrintProgCtx{..} prog = case outputFormat of
-  PHI -> pure (P.printProgram' prog (sugar, UNICODE, line))
-  XMIR -> programToXMIR prog xmirCtx <&> printXMIR
-  LATEX -> pure (programToLaTeX prog (LatexContext sugar line nonumber compress meetPopularity meetLength focus expression label meetPrefix))
+printProgram PrintProgCtx{..} prog = case _outputFormat of
+  PHI -> pure (P.printProgram' prog (_sugar, UNICODE, _line))
+  XMIR -> programToXMIR prog _xmirCtx <&> printXMIR
+  LATEX -> pure (programToLaTeX prog (LatexContext _sugar _line _nonumber _compress _meetPopularity _meetLength _focus _expression _label _meetPrefix))
 
 -- Get rules for rewriting depending on provided flags
 getRules :: Bool -> Bool -> [FilePath] -> IO [Y.Rule]
@@ -823,8 +823,8 @@ getRules normalize shuffle rules = do
     else pure ordered
 
 -- Output content
-output :: Maybe FilePath -> String -> IO ()
-output target content = case target of
+printOut :: Maybe FilePath -> String -> IO ()
+printOut target content = case target of
   Nothing -> do
     logDebug "The option '--target' is not specified, printing to console..."
     putStrLn content
