@@ -506,6 +506,19 @@ spec = do
               , "\\end{phiquation}"
               ]
           ]
+      
+    it "meets with --meet-length = 32" $
+      withStdin "{[[ ex -> [[ x -> [[ y -> ?, k -> [[ t -> 42]]  ]]( y -> [[ t -> 42 ]]) ]].i ]]}" $
+        testCLISucceeded
+          ["rewrite", "--normalize", "--sequence", "--flat", "--compress", "--output=latex", "--sweet", "--meet-length=32"]
+          [ unlines
+              [ "\\begin{phiquation}"
+              , "\\Big\\{[[ |ex| -> [[ |x| -> [[ |y| -> ?, |k| -> [[ |t| -> 42 ]] ]]( |y| -> [[ |t| -> 42 ]] ) ]].|i| ]]\\Big\\} \\leadsto_{\\nameref{r:copy}}"
+              , "  \\leadsto \\Big\\{[[ |ex| -> [[ |x| -> [[ |y| -> [[ |t| -> 42 ]], |k| -> [[ |t| -> 42 ]] ]] ]].|i| ]]\\Big\\} \\leadsto_{\\nameref{r:stop}}"
+              , "  \\leadsto \\Big\\{[[ |ex| -> T ]]\\Big\\}{.}"
+              , "\\end{phiquation}"
+              ]
+          ]
 
     it "prints input as listing in XMIR" $
       withStdin "{[[ app -> [[]] ]]}" $

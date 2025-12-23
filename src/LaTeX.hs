@@ -43,7 +43,7 @@ data LatexContext = LatexContext
   }
 
 defaultLatexContext :: LatexContext
-defaultLatexContext = LatexContext SWEET MULTILINE False False 50 5 Nothing Nothing Nothing
+defaultLatexContext = LatexContext SWEET MULTILINE False False 50 8 Nothing Nothing Nothing
 
 meetInProgram :: Program -> Int -> Program -> [Expression]
 meetInProgram (Program expr) len = meetInExpression expr
@@ -53,14 +53,13 @@ meetInProgram (Program expr) len = meetInExpression expr
     meetInExpression (DataNumber _) _ = []
     meetInExpression (ExPhiMeet{}) _ = []
     meetInExpression (ExPhiAgain{}) _ = []
-    meetInExpression expr prog
-      | countNodes expr >= len =
-          map (const expr) (matchProgram expr prog) ++ case expr of
+    meetInExpression expr prog =
+      let matched = if countNodes expr >= len then map (const expr) (matchProgram expr prog) else []
+       in matched ++ case expr of
             ExDispatch exp _ -> meetInExpression exp prog
             ExApplication exp (BiTau _ arg) -> meetInExpression exp prog ++ meetInExpression arg prog
             ExFormation bds -> meetInBindings bds prog
             _ -> []
-      | otherwise = []
     meetInBindings :: [Binding] -> Program -> [Expression]
     meetInBindings [] _ = []
     meetInBindings (BiTau _ expr : bds) prog = meetInExpression expr prog ++ meetInBindings bds prog
