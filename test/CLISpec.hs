@@ -249,6 +249,12 @@ spec = do
           testCLIFailed
             ["rewrite", "--meet-popularity=102"]
             ["[ERROR]:", "--meet-popularity must be <= 100"]
+      
+      it "with --meet-popularity and output != latex" $
+        withStdin "{[[]]}" $
+          testCLIFailed
+            ["rewrite", "--meet-popularity=51", "--output=phi"]
+            ["[ERROR]:", "--meet-popularity option can stay together with --output=latex only"]
 
     it "prints help" $
       testCLISucceeded

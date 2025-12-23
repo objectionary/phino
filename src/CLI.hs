@@ -19,7 +19,7 @@ import Data.Char (toLower, toUpper)
 import Data.Foldable (for_)
 import Data.Functor ((<&>))
 import Data.List (intercalate)
-import Data.Maybe (fromJust, isJust, isNothing)
+import Data.Maybe (fromJust, isJust, isNothing, fromMaybe)
 import Data.Version (showVersion)
 import Dataize (DataizeContext (DataizeContext), dataize)
 import Deps (SaveStepFunc, saveStep)
@@ -103,7 +103,7 @@ data OptsDataize = OptsDataize
   , compress :: Bool
   , maxDepth :: Int
   , maxCycles :: Int
-  , meetPopularity :: Int
+  , meetPopularity :: Maybe Int
   , hide :: [String]
   , show' :: [String]
   , locator :: String
@@ -143,7 +143,7 @@ data OptsRewrite = OptsRewrite
   , compress :: Bool
   , maxDepth :: Int
   , maxCycles :: Int
-  , meetPopularity :: Int
+  , meetPopularity :: Maybe Int
   , rules :: [FilePath]
   , hide :: [String]
   , show' :: [String]
@@ -246,14 +246,16 @@ optMaxCycles =
     (auto >>= validateIntOption (> 0) "--max-cycles must be positive")
     (long "max-cycles" <> metavar "CYCLES" <> help "Maximum number of rewriting cycles across all rules" <> value 25 <> showDefault)
 
-optMeetPopularity :: Parser Int
+optMeetPopularity :: Parser (Maybe Int)
 optMeetPopularity =
-  option
-    ( auto
-        >>= validateIntOption (> 0) "--meet-popularity must be positive"
-        >>= validateIntOption (< 100) "--meet-popularity must be <= 100"
+  optional
+    ( option
+        ( auto
+            >>= validateIntOption (> 0) "--meet-popularity must be positive"
+            >>= validateIntOption (< 100) "--meet-popularity must be <= 100"
+        )
+        (long "meet-popularity" <> metavar "PERCENTAGE" <> help "Minimum popularity of an expression in order to be suitable for \\phiMeet{}, in percentage (default: 50)")
     )
-    (long "meet-popularity" <> metavar "PERCENTAGE" <> help "Minimum popularity of an expression in order to be suitable for \\phiMeet{}, in percentage." <> value 50 <> showDefault)
 
 optDepthSensitive :: Parser Bool
 optDepthSensitive = switch (long "depth-sensitive" <> help "Fail if rewriting is not finished after reaching max attempts (see --max-cycles or --max-depth)")
@@ -497,7 +499,7 @@ runCLI args = handle handler $ do
       program <- parseProgram input inputFormat
       let listing = if null rules' then const input else (\prog -> P.printProgram' prog (sugarType, UNICODE, flat))
           xmirCtx = XmirContext omitListing omitComments listing
-          printCtx = PrintProgCtx sugarType flat xmirCtx nonumber compress meetPopularity expression label meetPrefix outputFormat
+          printCtx = PrintProgCtx sugarType flat xmirCtx nonumber compress (justMeetPopularity meetPopularity) expression label meetPrefix outputFormat
           _canonize = if canonize then C.canonize else id
           _hide = (`F.exclude` excluded)
           _show = (`F.include` included)
@@ -520,6 +522,7 @@ runCLI args = handle handler $ do
             outputFormat
             [(nonumber, "nonumber"), (compress, "compress")]
             [(expression, "expression"), (label, "label"), (meetPrefix, "meet-prefix")]
+            [(meetPopularity, "meet-popularity")]
           validateMust' must
           validateXmirOptions
             outputFormat
@@ -556,7 +559,7 @@ runCLI args = handle handler $ do
       [loc] <- validatedDispatches "locator" [locator]
       input <- readInput inputFile
       prog <- parseProgram input inputFormat
-      let printCtx = PrintProgCtx sugarType flat defaultXmirContext nonumber compress meetPopularity expression label meetPrefix outputFormat
+      let printCtx = PrintProgCtx sugarType flat defaultXmirContext nonumber compress (justMeetPopularity meetPopularity) expression label meetPrefix outputFormat
           _canonize = if canonize then C.canonize else id
           _hide = (`F.exclude` excluded)
           _show = (`F.include` included)
@@ -570,6 +573,7 @@ runCLI args = handle handler $ do
             outputFormat
             [(nonumber, "nonumber"), (compress, "compress")]
             [(expression, "expression"), (label, "label"), (meetPrefix, "meet-prefix")]
+            [(meetPopularity, "meet-popularity")]
           validateXmirOptions
             outputFormat
             [(omitListing, "omit-listing"), (omitComments, "omit-comments")]
@@ -627,6 +631,9 @@ runCLI args = handle handler $ do
         rule :: Expression -> Maybe Y.Condition -> Y.Rule
         rule ptn cnd = Y.Rule Nothing Nothing ptn ExGlobal cnd Nothing Nothing
 
+justMeetPopularity :: Maybe Int -> Int
+justMeetPopularity = fromMaybe 50
+
 -- Prepare saveStepFunc
 saveStepFunc :: Maybe FilePath -> PrintProgramContext -> SaveStepFunc
 saveStepFunc stepsDir ctx@PrintProgCtx{..} = saveStep stepsDir ioToExt (printProgram ctx)
@@ -655,15 +662,15 @@ validatedDispatches opt = traverse (parseExpressionThrows >=> asDispatch)
             )
 
 -- Validate LaTeX options
-validateLatexOptions :: IOFormat -> [(Bool, String)] -> [(Maybe String, String)] -> IO ()
-validateLatexOptions LATEX _ _ = pure ()
-validateLatexOptions _ bools maybes = do
+validateLatexOptions :: IOFormat -> [(Bool, String)] -> [(Maybe String, String)] -> [(Maybe Int, String)] -> IO ()
+validateLatexOptions LATEX _ _ _ = pure ()
+validateLatexOptions _ bools strings ints = do
   let (bools', opts) = unzip bools
       msg = "The --%s option can stay together with --output=latex only"
+      callback (maybe', opt) = when (isJust maybe') (invalidCLIArguments (printf msg opt))
   validateBoolOpts (zip bools' (map (printf msg) opts))
-  forM_
-    maybes
-    (\(maybe', opt) -> when (isJust maybe') (invalidCLIArguments (printf msg opt)))
+  forM_ strings callback
+  forM_ ints callback
 
 -- Validate 'must' option
 validateMust' :: Must -> IO ()
