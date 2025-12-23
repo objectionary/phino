@@ -16,7 +16,7 @@
 </span><span id="line-16"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span id="WrongProgramFormat"><span class="annot"><a href="Merge.html#WrongProgramFormat"><span class="hs-identifier hs-var">WrongProgramFormat</span></a></span></span><span> </span><span class="annot"><a href="AST.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span>
 </span><span id="line-17"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="CanNotMergeBinding"><span class="annot"><a href="Merge.html#CanNotMergeBinding"><span class="hs-identifier hs-var">CanNotMergeBinding</span></a></span></span><span> </span><span class="annot"><a href="AST.html#Binding"><span class="hs-identifier hs-type">Binding</span></a></span><span> </span><span class="annot"><a href="AST.html#Binding"><span class="hs-identifier hs-type">Binding</span></a></span><span>
 </span><span id="line-18"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="EmptyProgramList"><span class="annot"><a href="Merge.html#EmptyProgramList"><span class="hs-identifier hs-var">EmptyProgramList</span></a></span></span><span>
-</span><span id="line-19"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679221987"><span id="local-6989586621679221990"><span id="local-6989586621679221993"><span class="annot"><span class="annottext">Show MergeException
+</span><span id="line-19"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679222626"><span id="local-6989586621679222629"><span id="local-6989586621679222632"><span class="annot"><span class="annottext">Show MergeException
 Typeable MergeException
 (Typeable MergeException, Show MergeException) =&gt;
 (MergeException -&gt; SomeException)
@@ -38,10 +38,10 @@ $cdisplayException :: MergeException -&gt; String
 displayException :: MergeException -&gt; String
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Exception</span></span></span></span></span><span class="hs-special">)</span><span>
 </span><span id="line-20"></span><span>
-</span><span id="line-21"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679221997"><span id="local-6989586621679222001"><span class="annot"><span class="hs-identifier hs-type">Show</span></span><span> </span><span class="annot"><a href="Merge.html#MergeException"><span class="hs-identifier hs-type">MergeException</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-22"></span><span>  </span><span id="local-6989586621679222013"><span class="annot"><span class="annottext">show :: MergeException -&gt; String
-</span><a href="#local-6989586621679222013"><span class="hs-identifier hs-var hs-var hs-var hs-var">show</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Merge.html#WrongProgramFormat"><span class="hs-identifier hs-type">WrongProgramFormat</span></a></span><span> </span><span id="local-6989586621679222015"><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679222015"><span class="hs-identifier hs-var">prog</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-21"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679222636"><span id="local-6989586621679222640"><span class="annot"><span class="hs-identifier hs-type">Show</span></span><span> </span><span class="annot"><a href="Merge.html#MergeException"><span class="hs-identifier hs-type">MergeException</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-22"></span><span>  </span><span id="local-6989586621679222652"><span class="annot"><span class="annottext">show :: MergeException -&gt; String
+</span><a href="#local-6989586621679222652"><span class="hs-identifier hs-var hs-var hs-var hs-var">show</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Merge.html#WrongProgramFormat"><span class="hs-identifier hs-type">WrongProgramFormat</span></a></span><span> </span><span id="local-6989586621679222654"><span class="annot"><span class="annottext">Program
+</span><a href="#local-6989586621679222654"><span class="hs-identifier hs-var">prog</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-23"></span><span>    </span><span class="annot"><span class="annottext">String -&gt; ShowS
 forall r. PrintfType r =&gt; String -&gt; r
 </span><span class="hs-identifier hs-var">printf</span></span><span>
@@ -49,10 +49,10 @@ forall r. PrintfType r =&gt; String -&gt; r
 </span><span class="hs-string">&quot;Invalid program format, only programs with top level formations are supported for 'merge' command, given:\n%s&quot;</span></span><span>
 </span><span id="line-25"></span><span>      </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Program -&gt; String
 </span><a href="Printer.html#printProgram"><span class="hs-identifier hs-var">printProgram</span></a></span><span> </span><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679222015"><span class="hs-identifier hs-var">prog</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-26"></span><span>  </span><span class="annot"><span class="hs-identifier hs-var">show</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Merge.html#CanNotMergeBinding"><span class="hs-identifier hs-type">CanNotMergeBinding</span></a></span><span> </span><span id="local-6989586621679222016"><span class="annot"><span class="annottext">Binding
-</span><a href="#local-6989586621679222016"><span class="hs-identifier hs-var">first</span></a></span></span><span> </span><span id="local-6989586621679222017"><span class="annot"><span class="annottext">Binding
-</span><a href="#local-6989586621679222017"><span class="hs-identifier hs-var">second</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><a href="#local-6989586621679222654"><span class="hs-identifier hs-var">prog</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-26"></span><span>  </span><span class="annot"><span class="hs-identifier hs-var">show</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Merge.html#CanNotMergeBinding"><span class="hs-identifier hs-type">CanNotMergeBinding</span></a></span><span> </span><span id="local-6989586621679222655"><span class="annot"><span class="annottext">Binding
+</span><a href="#local-6989586621679222655"><span class="hs-identifier hs-var">first</span></a></span></span><span> </span><span id="local-6989586621679222656"><span class="annot"><span class="annottext">Binding
+</span><a href="#local-6989586621679222656"><span class="hs-identifier hs-var">second</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-27"></span><span>    </span><span class="annot"><span class="annottext">String -&gt; ShowS
 forall r. PrintfType r =&gt; String -&gt; r
 </span><span class="hs-identifier hs-var">printf</span></span><span>
@@ -61,33 +61,33 @@ forall r. PrintfType r =&gt; String -&gt; r
 </span><span id="line-29"></span><span>      </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expression -&gt; String
 </span><a href="Printer.html#printExpression"><span class="hs-identifier hs-var">printExpression</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[Binding] -&gt; Expression
 </span><a href="AST.html#ExFormation"><span class="hs-identifier hs-var">ExFormation</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Binding
-</span><a href="#local-6989586621679222016"><span class="hs-identifier hs-var">first</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Binding
-</span><a href="#local-6989586621679222017"><span class="hs-identifier hs-var">second</span></a></span><span class="hs-special">]</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679222655"><span class="hs-identifier hs-var">first</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Binding
+</span><a href="#local-6989586621679222656"><span class="hs-identifier hs-var">second</span></a></span><span class="hs-special">]</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
 </span><span id="line-30"></span><span>  </span><span class="annot"><span class="hs-identifier hs-var">show</span></span><span> </span><span class="annot"><span class="annottext">MergeException
 </span><a href="Merge.html#EmptyProgramList"><span class="hs-identifier hs-var">EmptyProgramList</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;Nothing to merge: provide at least one program&quot;</span></span><span>
 </span><span id="line-31"></span><span>
 </span><span id="line-32"></span><span class="annot"><a href="Merge.html#mergeBinding"><span class="hs-identifier hs-type">mergeBinding</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="AST.html#Binding"><span class="hs-identifier hs-type">Binding</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="AST.html#Binding"><span class="hs-identifier hs-type">Binding</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="annot"><a href="AST.html#Binding"><span class="hs-identifier hs-type">Binding</span></a></span><span>
 </span><span id="line-33"></span><span id="mergeBinding"><span class="annot"><span class="annottext">mergeBinding :: Binding -&gt; Binding -&gt; IO Binding
-</span><a href="Merge.html#mergeBinding"><span class="hs-identifier hs-var hs-var">mergeBinding</span></a></span></span><span> </span><span id="local-6989586621679222020"><span class="annot"><span class="annottext">first :: Binding
-</span><a href="#local-6989586621679222020"><span class="hs-identifier hs-var">first</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="AST.html#BiTau"><span class="hs-identifier hs-type">BiTau</span></a></span><span> </span><span id="local-6989586621679222022"><span class="annot"><span class="annottext">Attribute
-</span><a href="#local-6989586621679222022"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#ExFormation"><span class="hs-identifier hs-type">ExFormation</span></a></span><span> </span><span id="local-6989586621679222023"><span class="annot"><span class="annottext">[Binding]
-</span><a href="#local-6989586621679222023"><span class="hs-identifier hs-var">xs</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span id="local-6989586621679222024"><span class="annot"><span class="annottext">second :: Binding
-</span><a href="#local-6989586621679222024"><span class="hs-identifier hs-var">second</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="AST.html#BiTau"><span class="hs-identifier hs-type">BiTau</span></a></span><span> </span><span id="local-6989586621679222025"><span class="annot"><span class="annottext">Attribute
-</span><a href="#local-6989586621679222025"><span class="hs-identifier hs-var">b</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#ExFormation"><span class="hs-identifier hs-type">ExFormation</span></a></span><span> </span><span id="local-6989586621679222026"><span class="annot"><span class="annottext">[Binding]
-</span><a href="#local-6989586621679222026"><span class="hs-identifier hs-var">ys</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><a href="Merge.html#mergeBinding"><span class="hs-identifier hs-var hs-var">mergeBinding</span></a></span></span><span> </span><span id="local-6989586621679222659"><span class="annot"><span class="annottext">first :: Binding
+</span><a href="#local-6989586621679222659"><span class="hs-identifier hs-var">first</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="AST.html#BiTau"><span class="hs-identifier hs-type">BiTau</span></a></span><span> </span><span id="local-6989586621679222661"><span class="annot"><span class="annottext">Attribute
+</span><a href="#local-6989586621679222661"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#ExFormation"><span class="hs-identifier hs-type">ExFormation</span></a></span><span> </span><span id="local-6989586621679222662"><span class="annot"><span class="annottext">[Binding]
+</span><a href="#local-6989586621679222662"><span class="hs-identifier hs-var">xs</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span id="local-6989586621679222663"><span class="annot"><span class="annottext">second :: Binding
+</span><a href="#local-6989586621679222663"><span class="hs-identifier hs-var">second</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="AST.html#BiTau"><span class="hs-identifier hs-type">BiTau</span></a></span><span> </span><span id="local-6989586621679222664"><span class="annot"><span class="annottext">Attribute
+</span><a href="#local-6989586621679222664"><span class="hs-identifier hs-var">b</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#ExFormation"><span class="hs-identifier hs-type">ExFormation</span></a></span><span> </span><span id="local-6989586621679222665"><span class="annot"><span class="annottext">[Binding]
+</span><a href="#local-6989586621679222665"><span class="hs-identifier hs-var">ys</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
 </span><span id="line-34"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Attribute
-</span><a href="#local-6989586621679222022"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">Attribute -&gt; Attribute -&gt; Bool
+</span><a href="#local-6989586621679222661"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">Attribute -&gt; Attribute -&gt; Bool
 forall a. Eq a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">Attribute
-</span><a href="#local-6989586621679222025"><span class="hs-identifier hs-var">b</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Binding] -&gt; [Binding] -&gt; IO [Binding]
+</span><a href="#local-6989586621679222664"><span class="hs-identifier hs-var">b</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Binding] -&gt; [Binding] -&gt; IO [Binding]
 </span><a href="Merge.html#mergeBindings"><span class="hs-identifier hs-var">mergeBindings</span></a></span><span> </span><span class="annot"><span class="annottext">[Binding]
-</span><a href="#local-6989586621679222023"><span class="hs-identifier hs-var">xs</span></a></span><span> </span><span class="annot"><span class="annottext">[Binding]
-</span><a href="#local-6989586621679222026"><span class="hs-identifier hs-var">ys</span></a></span><span> </span><span class="annot"><span class="annottext">IO [Binding] -&gt; ([Binding] -&gt; Binding) -&gt; IO Binding
+</span><a href="#local-6989586621679222662"><span class="hs-identifier hs-var">xs</span></a></span><span> </span><span class="annot"><span class="annottext">[Binding]
+</span><a href="#local-6989586621679222665"><span class="hs-identifier hs-var">ys</span></a></span><span> </span><span class="annot"><span class="annottext">IO [Binding] -&gt; ([Binding] -&gt; Binding) -&gt; IO Binding
 forall (f :: * -&gt; *) a b. Functor f =&gt; f a -&gt; (a -&gt; b) -&gt; f b
 </span><span class="hs-operator hs-var">&lt;&amp;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Attribute -&gt; Expression -&gt; Binding
 </span><a href="AST.html#BiTau"><span class="hs-identifier hs-var">BiTau</span></a></span><span> </span><span class="annot"><span class="annottext">Attribute
-</span><a href="#local-6989586621679222022"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">(Expression -&gt; Binding)
+</span><a href="#local-6989586621679222661"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">(Expression -&gt; Binding)
 -&gt; ([Binding] -&gt; Expression) -&gt; [Binding] -&gt; Binding
 forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
 </span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">[Binding] -&gt; Expression
@@ -97,77 +97,77 @@ forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
 forall e a. Exception e =&gt; e -&gt; IO a
 </span><span class="hs-identifier hs-var">throwIO</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Binding -&gt; Binding -&gt; MergeException
 </span><a href="Merge.html#CanNotMergeBinding"><span class="hs-identifier hs-var">CanNotMergeBinding</span></a></span><span> </span><span class="annot"><span class="annottext">Binding
-</span><a href="#local-6989586621679222020"><span class="hs-identifier hs-var">first</span></a></span><span> </span><span class="annot"><span class="annottext">Binding
-</span><a href="#local-6989586621679222024"><span class="hs-identifier hs-var">second</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-36"></span><span class="annot"><a href="Merge.html#mergeBinding"><span class="hs-identifier hs-var">mergeBinding</span></a></span><span> </span><span id="local-6989586621679222029"><span class="annot"><span class="annottext">Binding
-</span><a href="#local-6989586621679222029"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="local-6989586621679222030"><span class="annot"><span class="annottext">Binding
-</span><a href="#local-6989586621679222030"><span class="hs-identifier hs-var">y</span></a></span></span><span>
+</span><a href="#local-6989586621679222659"><span class="hs-identifier hs-var">first</span></a></span><span> </span><span class="annot"><span class="annottext">Binding
+</span><a href="#local-6989586621679222663"><span class="hs-identifier hs-var">second</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-36"></span><span class="annot"><a href="Merge.html#mergeBinding"><span class="hs-identifier hs-var">mergeBinding</span></a></span><span> </span><span id="local-6989586621679222668"><span class="annot"><span class="annottext">Binding
+</span><a href="#local-6989586621679222668"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="local-6989586621679222669"><span class="annot"><span class="annottext">Binding
+</span><a href="#local-6989586621679222669"><span class="hs-identifier hs-var">y</span></a></span></span><span>
 </span><span id="line-37"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Binding
-</span><a href="#local-6989586621679222029"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Binding -&gt; Binding -&gt; Bool
+</span><a href="#local-6989586621679222668"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Binding -&gt; Binding -&gt; Bool
 forall a. Eq a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">Binding
-</span><a href="#local-6989586621679222030"><span class="hs-identifier hs-var">y</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Binding -&gt; IO Binding
+</span><a href="#local-6989586621679222669"><span class="hs-identifier hs-var">y</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Binding -&gt; IO Binding
 forall a. a -&gt; IO a
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">Binding
-</span><a href="#local-6989586621679222029"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><a href="#local-6989586621679222668"><span class="hs-identifier hs-var">x</span></a></span><span>
 </span><span id="line-38"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
 </span><span class="hs-identifier hs-var">otherwise</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">MergeException -&gt; IO Binding
 forall e a. Exception e =&gt; e -&gt; IO a
 </span><span class="hs-identifier hs-var">throwIO</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Binding -&gt; Binding -&gt; MergeException
 </span><a href="Merge.html#CanNotMergeBinding"><span class="hs-identifier hs-var">CanNotMergeBinding</span></a></span><span> </span><span class="annot"><span class="annottext">Binding
-</span><a href="#local-6989586621679222029"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Binding
-</span><a href="#local-6989586621679222030"><span class="hs-identifier hs-var">y</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679222668"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Binding
+</span><a href="#local-6989586621679222669"><span class="hs-identifier hs-var">y</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-39"></span><span>
 </span><span id="line-40"></span><span class="annot"><a href="Merge.html#mergeBindings"><span class="hs-identifier hs-type">mergeBindings</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="AST.html#Binding"><span class="hs-identifier hs-type">Binding</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="AST.html#Binding"><span class="hs-identifier hs-type">Binding</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="AST.html#Binding"><span class="hs-identifier hs-type">Binding</span></a></span><span class="hs-special">]</span><span>
 </span><span id="line-41"></span><span id="mergeBindings"><span class="annot"><span class="annottext">mergeBindings :: [Binding] -&gt; [Binding] -&gt; IO [Binding]
-</span><a href="Merge.html#mergeBindings"><span class="hs-identifier hs-var hs-var">mergeBindings</span></a></span></span><span> </span><span id="local-6989586621679222031"><span class="annot"><span class="annottext">[Binding]
-</span><a href="#local-6989586621679222031"><span class="hs-identifier hs-var">xs</span></a></span></span><span> </span><span id="local-6989586621679222032"><span class="annot"><span class="annottext">[Binding]
-</span><a href="#local-6989586621679222032"><span class="hs-identifier hs-var">ys</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-42"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679222033"><span class="annot"><span class="annottext">as :: [Maybe Attribute]
-</span><a href="#local-6989586621679222033"><span class="hs-keyword hs-var hs-var">as</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Binding] -&gt; [Maybe Attribute]
+</span><a href="Merge.html#mergeBindings"><span class="hs-identifier hs-var hs-var">mergeBindings</span></a></span></span><span> </span><span id="local-6989586621679222670"><span class="annot"><span class="annottext">[Binding]
+</span><a href="#local-6989586621679222670"><span class="hs-identifier hs-var">xs</span></a></span></span><span> </span><span id="local-6989586621679222671"><span class="annot"><span class="annottext">[Binding]
+</span><a href="#local-6989586621679222671"><span class="hs-identifier hs-var">ys</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-42"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679222672"><span class="annot"><span class="annottext">as :: [Maybe Attribute]
+</span><a href="#local-6989586621679222672"><span class="hs-keyword hs-var hs-var">as</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Binding] -&gt; [Maybe Attribute]
 </span><a href="Misc.html#attributesFromBindings%27"><span class="hs-identifier hs-var">attributesFromBindings'</span></a></span><span> </span><span class="annot"><span class="annottext">[Binding]
-</span><a href="#local-6989586621679222031"><span class="hs-identifier hs-var">xs</span></a></span><span>
-</span><span id="line-43"></span><span>      </span><span id="local-6989586621679222035"><span class="annot"><span class="annottext">bs :: [Maybe Attribute]
-</span><a href="#local-6989586621679222035"><span class="hs-identifier hs-var hs-var">bs</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Binding] -&gt; [Maybe Attribute]
+</span><a href="#local-6989586621679222670"><span class="hs-identifier hs-var">xs</span></a></span><span>
+</span><span id="line-43"></span><span>      </span><span id="local-6989586621679222674"><span class="annot"><span class="annottext">bs :: [Maybe Attribute]
+</span><a href="#local-6989586621679222674"><span class="hs-identifier hs-var hs-var">bs</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Binding] -&gt; [Maybe Attribute]
 </span><a href="Misc.html#attributesFromBindings%27"><span class="hs-identifier hs-var">attributesFromBindings'</span></a></span><span> </span><span class="annot"><span class="annottext">[Binding]
-</span><a href="#local-6989586621679222032"><span class="hs-identifier hs-var">ys</span></a></span><span>
-</span><span id="line-44"></span><span>      </span><span id="local-6989586621679222041"><span class="annot"><span class="annottext">xs' :: [Binding]
-</span><a href="#local-6989586621679222041"><span class="hs-identifier hs-var hs-var">xs'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Binding
-</span><a href="#local-6989586621679222042"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="hs-glyph">|</span><span> </span><span id="local-6989586621679222042"><span class="annot"><span class="annottext">Binding
-</span><a href="#local-6989586621679222042"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">[Binding]
-</span><a href="#local-6989586621679222031"><span class="hs-identifier hs-var">xs</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Binding -&gt; Maybe Attribute
+</span><a href="#local-6989586621679222671"><span class="hs-identifier hs-var">ys</span></a></span><span>
+</span><span id="line-44"></span><span>      </span><span id="local-6989586621679222680"><span class="annot"><span class="annottext">xs' :: [Binding]
+</span><a href="#local-6989586621679222680"><span class="hs-identifier hs-var hs-var">xs'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Binding
+</span><a href="#local-6989586621679222681"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="hs-glyph">|</span><span> </span><span id="local-6989586621679222681"><span class="annot"><span class="annottext">Binding
+</span><a href="#local-6989586621679222681"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">[Binding]
+</span><a href="#local-6989586621679222670"><span class="hs-identifier hs-var">xs</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Binding -&gt; Maybe Attribute
 </span><a href="Misc.html#attributeFromBinding"><span class="hs-identifier hs-var">attributeFromBinding</span></a></span><span> </span><span class="annot"><span class="annottext">Binding
-</span><a href="#local-6989586621679222042"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe Attribute -&gt; [Maybe Attribute] -&gt; Bool
+</span><a href="#local-6989586621679222681"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe Attribute -&gt; [Maybe Attribute] -&gt; Bool
 forall (t :: * -&gt; *) a. (Foldable t, Eq a) =&gt; a -&gt; t a -&gt; Bool
 </span><span class="hs-operator hs-var">`notElem`</span></span><span> </span><span class="annot"><span class="annottext">[Maybe Attribute]
-</span><a href="#local-6989586621679222035"><span class="hs-identifier hs-var">bs</span></a></span><span class="hs-special">]</span><span>
-</span><span id="line-45"></span><span>      </span><span id="local-6989586621679222048"><span class="annot"><span class="annottext">ys' :: [Binding]
-</span><a href="#local-6989586621679222048"><span class="hs-identifier hs-var hs-var">ys'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Binding
-</span><a href="#local-6989586621679222049"><span class="hs-identifier hs-var">y</span></a></span><span> </span><span class="hs-glyph">|</span><span> </span><span id="local-6989586621679222049"><span class="annot"><span class="annottext">Binding
-</span><a href="#local-6989586621679222049"><span class="hs-identifier hs-var">y</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">[Binding]
-</span><a href="#local-6989586621679222032"><span class="hs-identifier hs-var">ys</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Binding -&gt; Maybe Attribute
+</span><a href="#local-6989586621679222674"><span class="hs-identifier hs-var">bs</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-45"></span><span>      </span><span id="local-6989586621679222687"><span class="annot"><span class="annottext">ys' :: [Binding]
+</span><a href="#local-6989586621679222687"><span class="hs-identifier hs-var hs-var">ys'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Binding
+</span><a href="#local-6989586621679222688"><span class="hs-identifier hs-var">y</span></a></span><span> </span><span class="hs-glyph">|</span><span> </span><span id="local-6989586621679222688"><span class="annot"><span class="annottext">Binding
+</span><a href="#local-6989586621679222688"><span class="hs-identifier hs-var">y</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">[Binding]
+</span><a href="#local-6989586621679222671"><span class="hs-identifier hs-var">ys</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Binding -&gt; Maybe Attribute
 </span><a href="Misc.html#attributeFromBinding"><span class="hs-identifier hs-var">attributeFromBinding</span></a></span><span> </span><span class="annot"><span class="annottext">Binding
-</span><a href="#local-6989586621679222049"><span class="hs-identifier hs-var">y</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe Attribute -&gt; [Maybe Attribute] -&gt; Bool
+</span><a href="#local-6989586621679222688"><span class="hs-identifier hs-var">y</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe Attribute -&gt; [Maybe Attribute] -&gt; Bool
 forall (t :: * -&gt; *) a. (Foldable t, Eq a) =&gt; a -&gt; t a -&gt; Bool
 </span><span class="hs-operator hs-var">`notElem`</span></span><span> </span><span class="annot"><span class="annottext">[Maybe Attribute]
-</span><a href="#local-6989586621679222033"><span class="hs-keyword hs-var">as</span></a></span><span class="hs-special">]</span><span>
-</span><span id="line-46"></span><span>      </span><span id="local-6989586621679222052"><span class="annot"><span class="annottext">collisions :: [(Binding, Binding)]
-</span><a href="#local-6989586621679222052"><span class="hs-identifier hs-var hs-var">collisions</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><span class="annottext">Binding
-</span><a href="#local-6989586621679222053"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Binding
-</span><a href="#local-6989586621679222054"><span class="hs-identifier hs-var">y</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">|</span><span> </span><span id="local-6989586621679222053"><span class="annot"><span class="annottext">Binding
-</span><a href="#local-6989586621679222053"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">[Binding]
-</span><a href="#local-6989586621679222031"><span class="hs-identifier hs-var">xs</span></a></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679222054"><span class="annot"><span class="annottext">Binding
-</span><a href="#local-6989586621679222054"><span class="hs-identifier hs-var">y</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">[Binding]
-</span><a href="#local-6989586621679222032"><span class="hs-identifier hs-var">ys</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Binding -&gt; Maybe Attribute
+</span><a href="#local-6989586621679222672"><span class="hs-keyword hs-var">as</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-46"></span><span>      </span><span id="local-6989586621679222691"><span class="annot"><span class="annottext">collisions :: [(Binding, Binding)]
+</span><a href="#local-6989586621679222691"><span class="hs-identifier hs-var hs-var">collisions</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><span class="annottext">Binding
+</span><a href="#local-6989586621679222692"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Binding
+</span><a href="#local-6989586621679222693"><span class="hs-identifier hs-var">y</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">|</span><span> </span><span id="local-6989586621679222692"><span class="annot"><span class="annottext">Binding
+</span><a href="#local-6989586621679222692"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">[Binding]
+</span><a href="#local-6989586621679222670"><span class="hs-identifier hs-var">xs</span></a></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679222693"><span class="annot"><span class="annottext">Binding
+</span><a href="#local-6989586621679222693"><span class="hs-identifier hs-var">y</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">[Binding]
+</span><a href="#local-6989586621679222671"><span class="hs-identifier hs-var">ys</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Binding -&gt; Maybe Attribute
 </span><a href="Misc.html#attributeFromBinding"><span class="hs-identifier hs-var">attributeFromBinding</span></a></span><span> </span><span class="annot"><span class="annottext">Binding
-</span><a href="#local-6989586621679222053"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe Attribute -&gt; Maybe Attribute -&gt; Bool
+</span><a href="#local-6989586621679222692"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe Attribute -&gt; Maybe Attribute -&gt; Bool
 forall a. Eq a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">Binding -&gt; Maybe Attribute
 </span><a href="Misc.html#attributeFromBinding"><span class="hs-identifier hs-var">attributeFromBinding</span></a></span><span> </span><span class="annot"><span class="annottext">Binding
-</span><a href="#local-6989586621679222054"><span class="hs-identifier hs-var">y</span></a></span><span class="hs-special">]</span><span>
-</span><span id="line-47"></span><span>  </span><span id="local-6989586621679222055"><span class="annot"><span class="annottext">[Binding]
-</span><a href="#local-6989586621679222055"><span class="hs-identifier hs-var">ws</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">((Binding, Binding) -&gt; IO Binding)
+</span><a href="#local-6989586621679222693"><span class="hs-identifier hs-var">y</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-47"></span><span>  </span><span id="local-6989586621679222694"><span class="annot"><span class="annottext">[Binding]
+</span><a href="#local-6989586621679222694"><span class="hs-identifier hs-var">ws</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">((Binding, Binding) -&gt; IO Binding)
 -&gt; [(Binding, Binding)] -&gt; IO [Binding]
 forall (t :: * -&gt; *) (m :: * -&gt; *) a b.
 (Traversable t, Monad m) =&gt;
@@ -178,18 +178,18 @@ forall (m :: * -&gt; *) a b. Monad m =&gt; (a -&gt; m b) -&gt; [a] -&gt; m [b]
 forall a b c. (a -&gt; b -&gt; c) -&gt; (a, b) -&gt; c
 </span><span class="hs-identifier hs-var">uncurry</span></span><span> </span><span class="annot"><span class="annottext">Binding -&gt; Binding -&gt; IO Binding
 </span><a href="Merge.html#mergeBinding"><span class="hs-identifier hs-var">mergeBinding</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[(Binding, Binding)]
-</span><a href="#local-6989586621679222052"><span class="hs-identifier hs-var">collisions</span></a></span><span>
+</span><a href="#local-6989586621679222691"><span class="hs-identifier hs-var">collisions</span></a></span><span>
 </span><span id="line-48"></span><span>  </span><span class="annot"><span class="annottext">[Binding] -&gt; IO [Binding]
 forall a. a -&gt; IO a
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[Binding]
-</span><a href="#local-6989586621679222041"><span class="hs-identifier hs-var">xs'</span></a></span><span> </span><span class="annot"><span class="annottext">[Binding] -&gt; [Binding] -&gt; [Binding]
+</span><a href="#local-6989586621679222680"><span class="hs-identifier hs-var">xs'</span></a></span><span> </span><span class="annot"><span class="annottext">[Binding] -&gt; [Binding] -&gt; [Binding]
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">[Binding]
-</span><a href="#local-6989586621679222048"><span class="hs-identifier hs-var">ys'</span></a></span><span> </span><span class="annot"><span class="annottext">[Binding] -&gt; [Binding] -&gt; [Binding]
+</span><a href="#local-6989586621679222687"><span class="hs-identifier hs-var">ys'</span></a></span><span> </span><span class="annot"><span class="annottext">[Binding] -&gt; [Binding] -&gt; [Binding]
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">[Binding]
-</span><a href="#local-6989586621679222055"><span class="hs-identifier hs-var">ws</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679222694"><span class="hs-identifier hs-var">ws</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-49"></span><span>
 </span><span id="line-50"></span><span class="annot"><a href="Merge.html#merge%27"><span class="hs-identifier hs-type">merge'</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="AST.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="annot"><a href="AST.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span>
 </span><span id="line-51"></span><span id="merge%27"><span class="annot"><span class="annottext">merge' :: [Program] -&gt; IO Program
@@ -197,46 +197,46 @@ forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 forall e a. Exception e =&gt; e -&gt; IO a
 </span><span class="hs-identifier hs-var">throwIO</span></span><span> </span><span class="annot"><span class="annottext">MergeException
 </span><a href="Merge.html#EmptyProgramList"><span class="hs-identifier hs-var">EmptyProgramList</span></a></span><span>
-</span><span id="line-52"></span><span class="annot"><a href="Merge.html#merge%27"><span class="hs-identifier hs-var">merge'</span></a></span><span> </span><span class="hs-special">[</span><span id="local-6989586621679222059"><span class="annot"><span class="annottext">p :: Program
-</span><a href="#local-6989586621679222059"><span class="hs-identifier hs-var">p</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="AST.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#ExFormation"><span class="hs-identifier hs-type">ExFormation</span></a></span><span> </span><span class="annot"><span class="annottext">[Binding]
+</span><span id="line-52"></span><span class="annot"><a href="Merge.html#merge%27"><span class="hs-identifier hs-var">merge'</span></a></span><span> </span><span class="hs-special">[</span><span id="local-6989586621679222698"><span class="annot"><span class="annottext">p :: Program
+</span><a href="#local-6989586621679222698"><span class="hs-identifier hs-var">p</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="AST.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#ExFormation"><span class="hs-identifier hs-type">ExFormation</span></a></span><span> </span><span class="annot"><span class="annottext">[Binding]
 </span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Program -&gt; IO Program
 forall a. a -&gt; IO a
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679222059"><span class="hs-identifier hs-var">p</span></a></span><span>
-</span><span id="line-53"></span><span class="annot"><a href="Merge.html#merge%27"><span class="hs-identifier hs-var">merge'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#ExFormation"><span class="hs-identifier hs-type">ExFormation</span></a></span><span> </span><span id="local-6989586621679222061"><span class="annot"><span class="annottext">[Binding]
-</span><a href="#local-6989586621679222061"><span class="hs-identifier hs-var">bindings</span></a></span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621679222062"><span class="annot"><span class="annottext">[Program]
-</span><a href="#local-6989586621679222062"><span class="hs-identifier hs-var">rest</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-54"></span><span>  </span><span class="annot"><a href="AST.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#ExFormation"><span class="hs-identifier hs-type">ExFormation</span></a></span><span> </span><span id="local-6989586621679222063"><span class="annot"><span class="annottext">[Binding]
-</span><a href="#local-6989586621679222063"><span class="hs-identifier hs-var">bds'</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">[Program] -&gt; IO Program
+</span><a href="#local-6989586621679222698"><span class="hs-identifier hs-var">p</span></a></span><span>
+</span><span id="line-53"></span><span class="annot"><a href="Merge.html#merge%27"><span class="hs-identifier hs-var">merge'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#ExFormation"><span class="hs-identifier hs-type">ExFormation</span></a></span><span> </span><span id="local-6989586621679222700"><span class="annot"><span class="annottext">[Binding]
+</span><a href="#local-6989586621679222700"><span class="hs-identifier hs-var">bindings</span></a></span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621679222701"><span class="annot"><span class="annottext">[Program]
+</span><a href="#local-6989586621679222701"><span class="hs-identifier hs-var">rest</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-54"></span><span>  </span><span class="annot"><a href="AST.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#ExFormation"><span class="hs-identifier hs-type">ExFormation</span></a></span><span> </span><span id="local-6989586621679222702"><span class="annot"><span class="annottext">[Binding]
+</span><a href="#local-6989586621679222702"><span class="hs-identifier hs-var">bds'</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">[Program] -&gt; IO Program
 </span><a href="Merge.html#merge%27"><span class="hs-identifier hs-var">merge'</span></a></span><span> </span><span class="annot"><span class="annottext">[Program]
-</span><a href="#local-6989586621679222062"><span class="hs-identifier hs-var">rest</span></a></span><span>
-</span><span id="line-55"></span><span>  </span><span id="local-6989586621679222064"><span class="annot"><span class="annottext">[Binding]
-</span><a href="#local-6989586621679222064"><span class="hs-identifier hs-var">merged</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">[Binding] -&gt; [Binding] -&gt; IO [Binding]
+</span><a href="#local-6989586621679222701"><span class="hs-identifier hs-var">rest</span></a></span><span>
+</span><span id="line-55"></span><span>  </span><span id="local-6989586621679222703"><span class="annot"><span class="annottext">[Binding]
+</span><a href="#local-6989586621679222703"><span class="hs-identifier hs-var">merged</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">[Binding] -&gt; [Binding] -&gt; IO [Binding]
 </span><a href="Merge.html#mergeBindings"><span class="hs-identifier hs-var">mergeBindings</span></a></span><span> </span><span class="annot"><span class="annottext">[Binding]
-</span><a href="#local-6989586621679222063"><span class="hs-identifier hs-var">bds'</span></a></span><span> </span><span class="annot"><span class="annottext">[Binding]
-</span><a href="#local-6989586621679222061"><span class="hs-identifier hs-var">bindings</span></a></span><span>
+</span><a href="#local-6989586621679222702"><span class="hs-identifier hs-var">bds'</span></a></span><span> </span><span class="annot"><span class="annottext">[Binding]
+</span><a href="#local-6989586621679222700"><span class="hs-identifier hs-var">bindings</span></a></span><span>
 </span><span id="line-56"></span><span>  </span><span class="annot"><span class="annottext">Program -&gt; IO Program
 forall a. a -&gt; IO a
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expression -&gt; Program
 </span><a href="AST.html#Program"><span class="hs-identifier hs-var">Program</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[Binding] -&gt; Expression
 </span><a href="AST.html#ExFormation"><span class="hs-identifier hs-var">ExFormation</span></a></span><span> </span><span class="annot"><span class="annottext">[Binding]
-</span><a href="#local-6989586621679222064"><span class="hs-identifier hs-var">merged</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
-</span><span id="line-57"></span><span class="annot"><a href="Merge.html#merge%27"><span class="hs-identifier hs-var">merge'</span></a></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679222065"><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679222065"><span class="hs-identifier hs-var">prog</span></a></span></span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span class="annot"><span class="annottext">[Program]
+</span><a href="#local-6989586621679222703"><span class="hs-identifier hs-var">merged</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-57"></span><span class="annot"><a href="Merge.html#merge%27"><span class="hs-identifier hs-var">merge'</span></a></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679222704"><span class="annot"><span class="annottext">Program
+</span><a href="#local-6989586621679222704"><span class="hs-identifier hs-var">prog</span></a></span></span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span class="annot"><span class="annottext">[Program]
 </span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">MergeException -&gt; IO Program
 forall e a. Exception e =&gt; e -&gt; IO a
 </span><span class="hs-identifier hs-var">throwIO</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Program -&gt; MergeException
 </span><a href="Merge.html#WrongProgramFormat"><span class="hs-identifier hs-var">WrongProgramFormat</span></a></span><span> </span><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679222065"><span class="hs-identifier hs-var">prog</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679222704"><span class="hs-identifier hs-var">prog</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-58"></span><span>
 </span><span id="line-59"></span><span class="annot"><a href="Merge.html#merge"><span class="hs-identifier hs-type">merge</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="AST.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="annot"><a href="AST.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span>
 </span><span id="line-60"></span><span id="merge"><span class="annot"><span class="annottext">merge :: [Program] -&gt; IO Program
-</span><a href="Merge.html#merge"><span class="hs-identifier hs-var hs-var">merge</span></a></span></span><span> </span><span id="local-6989586621679222066"><span class="annot"><span class="annottext">[Program]
-</span><a href="#local-6989586621679222066"><span class="hs-identifier hs-var">progs</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Program] -&gt; IO Program
+</span><a href="Merge.html#merge"><span class="hs-identifier hs-var hs-var">merge</span></a></span></span><span> </span><span id="local-6989586621679222705"><span class="annot"><span class="annottext">[Program]
+</span><a href="#local-6989586621679222705"><span class="hs-identifier hs-var">progs</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Program] -&gt; IO Program
 </span><a href="Merge.html#merge%27"><span class="hs-identifier hs-var">merge'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[Program] -&gt; [Program]
 forall a. [a] -&gt; [a]
 </span><span class="hs-identifier hs-var">reverse</span></span><span> </span><span class="annot"><span class="annottext">[Program]
-</span><a href="#local-6989586621679222066"><span class="hs-identifier hs-var">progs</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679222705"><span class="hs-identifier hs-var">progs</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-61"></span></pre></body></html>

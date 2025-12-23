@@ -29,12 +29,12 @@ forall a. a -&gt; IO a
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span>
 </span><span id="line-20"></span><span class="annot"><a href="Random.html#generate"><span class="hs-identifier hs-var">generate</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Char
-</span><span class="hs-char">'%'</span></span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621679218594"><span class="annot"><span class="annottext">Char
-</span><a href="#local-6989586621679218594"><span class="hs-identifier hs-var">ch</span></a></span></span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621679218595"><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679218595"><span class="hs-identifier hs-var">rest</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-21"></span><span>  </span><span id="local-6989586621679218596"><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679218596"><span class="hs-identifier hs-var">rep</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Char
-</span><a href="#local-6989586621679218594"><span class="hs-identifier hs-var">ch</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span class="hs-char">'%'</span></span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621679219233"><span class="annot"><span class="annottext">Char
+</span><a href="#local-6989586621679219233"><span class="hs-identifier hs-var">ch</span></a></span></span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621679219234"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679219234"><span class="hs-identifier hs-var">rest</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-21"></span><span>  </span><span id="local-6989586621679219235"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679219235"><span class="hs-identifier hs-var">rep</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Char
+</span><a href="#local-6989586621679219233"><span class="hs-identifier hs-var">ch</span></a></span><span> </span><span class="hs-keyword">of</span><span>
 </span><span id="line-22"></span><span>    </span><span class="annot"><span class="annottext">Char
 </span><span class="hs-char">'x'</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Int -&gt; IO Char -&gt; IO String
 forall (m :: * -&gt; *) a. Applicative m =&gt; Int -&gt; m a -&gt; m [a]
@@ -42,8 +42,8 @@ forall (m :: * -&gt; *) a. Applicative m =&gt; Int -&gt; m a -&gt; m [a]
 </span><span class="hs-number">8</span></span><span> </span><span class="annot"><span class="annottext">(IO Char -&gt; IO String) -&gt; IO Char -&gt; IO String
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-23"></span><span>      </span><span id="local-6989586621679218597"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679218597"><span class="hs-identifier hs-var">v</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">(Int, Int) -&gt; IO Int
+</span><span id="line-23"></span><span>      </span><span id="local-6989586621679219236"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679219236"><span class="hs-identifier hs-var">v</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">(Int, Int) -&gt; IO Int
 forall a (m :: * -&gt; *). (Random a, MonadIO m) =&gt; (a, a) -&gt; m a
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/rndm-1.3.1-7ccf9f47/share/doc/html/src/System.Random.html#randomRIO"><span class="hs-identifier hs-var">randomRIO</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">0</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
@@ -53,7 +53,7 @@ forall a. a -&gt; IO a
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; Char
 </span><span class="hs-identifier hs-var">intToDigit</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679218597"><span class="hs-identifier hs-var">v</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679219236"><span class="hs-identifier hs-var">v</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-25"></span><span>    </span><span class="annot"><span class="annottext">Char
 </span><span class="hs-char">'d'</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Int -&gt; String
 forall a. Show a =&gt; a -&gt; String
@@ -70,53 +70,53 @@ forall a. a -&gt; IO a
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Char
 </span><span class="hs-char">'%'</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Char
-</span><a href="#local-6989586621679218594"><span class="hs-identifier hs-var">ch</span></a></span><span class="hs-special">]</span><span>
-</span><span id="line-27"></span><span>  </span><span id="local-6989586621679218600"><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679218600"><span class="hs-identifier hs-var">next</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">String -&gt; IO String
+</span><a href="#local-6989586621679219233"><span class="hs-identifier hs-var">ch</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-27"></span><span>  </span><span id="local-6989586621679219239"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679219239"><span class="hs-identifier hs-var">next</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">String -&gt; IO String
 </span><a href="Random.html#generate"><span class="hs-identifier hs-var">generate</span></a></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679218595"><span class="hs-identifier hs-var">rest</span></a></span><span>
+</span><a href="#local-6989586621679219234"><span class="hs-identifier hs-var">rest</span></a></span><span>
 </span><span id="line-28"></span><span>  </span><span class="annot"><span class="annottext">String -&gt; IO String
 forall a. a -&gt; IO a
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679218596"><span class="hs-identifier hs-var">rep</span></a></span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
+</span><a href="#local-6989586621679219235"><span class="hs-identifier hs-var">rep</span></a></span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
 forall a. [a] -&gt; [a] -&gt; [a]
 </span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679218600"><span class="hs-identifier hs-var">next</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-29"></span><span class="annot"><a href="Random.html#generate"><span class="hs-identifier hs-var">generate</span></a></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679218601"><span class="annot"><span class="annottext">Char
-</span><a href="#local-6989586621679218601"><span class="hs-identifier hs-var">ch</span></a></span></span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621679218602"><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679218602"><span class="hs-identifier hs-var">rest</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-30"></span><span>  </span><span id="local-6989586621679218603"><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679218603"><span class="hs-identifier hs-var">rest'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">String -&gt; IO String
+</span><a href="#local-6989586621679219239"><span class="hs-identifier hs-var">next</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-29"></span><span class="annot"><a href="Random.html#generate"><span class="hs-identifier hs-var">generate</span></a></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679219240"><span class="annot"><span class="annottext">Char
+</span><a href="#local-6989586621679219240"><span class="hs-identifier hs-var">ch</span></a></span></span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621679219241"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679219241"><span class="hs-identifier hs-var">rest</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-30"></span><span>  </span><span id="local-6989586621679219242"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679219242"><span class="hs-identifier hs-var">rest'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">String -&gt; IO String
 </span><a href="Random.html#generate"><span class="hs-identifier hs-var">generate</span></a></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679218602"><span class="hs-identifier hs-var">rest</span></a></span><span>
+</span><a href="#local-6989586621679219241"><span class="hs-identifier hs-var">rest</span></a></span><span>
 </span><span id="line-31"></span><span>  </span><span class="annot"><span class="annottext">String -&gt; IO String
 forall a. a -&gt; IO a
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Char
-</span><a href="#local-6989586621679218601"><span class="hs-identifier hs-var">ch</span></a></span><span> </span><span class="annot"><span class="annottext">Char -&gt; String -&gt; String
+</span><a href="#local-6989586621679219240"><span class="hs-identifier hs-var">ch</span></a></span><span> </span><span class="annot"><span class="annottext">Char -&gt; String -&gt; String
 forall a. a -&gt; [a] -&gt; [a]
 </span><span class="hs-glyph hs-var">:</span></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679218603"><span class="hs-identifier hs-var">rest'</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679219242"><span class="hs-identifier hs-var">rest'</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-32"></span><span>
 </span><span id="line-33"></span><span class="annot"><a href="Random.html#regenerate"><span class="hs-identifier hs-type">regenerate</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Set</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
 </span><span id="line-34"></span><span id="regenerate"><span class="annot"><span class="annottext">regenerate :: String -&gt; Set String -&gt; IO String
-</span><a href="Random.html#regenerate"><span class="hs-identifier hs-var hs-var">regenerate</span></a></span></span><span> </span><span id="local-6989586621679218605"><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679218605"><span class="hs-identifier hs-var">pat</span></a></span></span><span> </span><span id="local-6989586621679218606"><span class="annot"><span class="annottext">Set String
-</span><a href="#local-6989586621679218606"><span class="hs-identifier hs-var">set</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-35"></span><span>  </span><span id="local-6989586621679218607"><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679218607"><span class="hs-identifier hs-var">next</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">String -&gt; IO String
+</span><a href="Random.html#regenerate"><span class="hs-identifier hs-var hs-var">regenerate</span></a></span></span><span> </span><span id="local-6989586621679219244"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679219244"><span class="hs-identifier hs-var">pat</span></a></span></span><span> </span><span id="local-6989586621679219245"><span class="annot"><span class="annottext">Set String
+</span><a href="#local-6989586621679219245"><span class="hs-identifier hs-var">set</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-35"></span><span>  </span><span id="local-6989586621679219246"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679219246"><span class="hs-identifier hs-var">next</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">String -&gt; IO String
 </span><a href="Random.html#generate"><span class="hs-identifier hs-var">generate</span></a></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679218605"><span class="hs-identifier hs-var">pat</span></a></span><span>
+</span><a href="#local-6989586621679219244"><span class="hs-identifier hs-var">pat</span></a></span><span>
 </span><span id="line-36"></span><span>  </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679218607"><span class="hs-identifier hs-var">next</span></a></span><span> </span><span class="annot"><span class="annottext">String -&gt; Set String -&gt; Bool
+</span><a href="#local-6989586621679219246"><span class="hs-identifier hs-var">next</span></a></span><span> </span><span class="annot"><span class="annottext">String -&gt; Set String -&gt; Bool
 forall a. Ord a =&gt; a -&gt; Set a -&gt; Bool
 </span><span class="hs-operator hs-var">`Set.member`</span></span><span> </span><span class="annot"><span class="annottext">Set String
-</span><a href="#local-6989586621679218606"><span class="hs-identifier hs-var">set</span></a></span><span>
+</span><a href="#local-6989586621679219245"><span class="hs-identifier hs-var">set</span></a></span><span>
 </span><span id="line-37"></span><span>    </span><span class="hs-keyword">then</span><span> </span><span class="annot"><span class="annottext">String -&gt; Set String -&gt; IO String
 </span><a href="Random.html#regenerate"><span class="hs-identifier hs-var">regenerate</span></a></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679218605"><span class="hs-identifier hs-var">pat</span></a></span><span> </span><span class="annot"><span class="annottext">Set String
-</span><a href="#local-6989586621679218606"><span class="hs-identifier hs-var">set</span></a></span><span>
+</span><a href="#local-6989586621679219244"><span class="hs-identifier hs-var">pat</span></a></span><span> </span><span class="annot"><span class="annottext">Set String
+</span><a href="#local-6989586621679219245"><span class="hs-identifier hs-var">set</span></a></span><span>
 </span><span id="line-38"></span><span>    </span><span class="hs-keyword">else</span><span> </span><span class="hs-keyword">do</span><span>
 </span><span id="line-39"></span><span>      </span><span class="annot"><span class="annottext">IORef (Set String) -&gt; (Set String -&gt; Set String) -&gt; IO ()
 forall a. IORef a -&gt; (a -&gt; a) -&gt; IO ()
@@ -124,24 +124,24 @@ forall a. IORef a -&gt; (a -&gt; a) -&gt; IO ()
 </span><a href="Random.html#strings"><span class="hs-identifier hs-var">strings</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String -&gt; Set String -&gt; Set String
 forall a. Ord a =&gt; a -&gt; Set a -&gt; Set a
 </span><span class="hs-identifier hs-var">Set.insert</span></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679218607"><span class="hs-identifier hs-var">next</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679219246"><span class="hs-identifier hs-var">next</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-40"></span><span>      </span><span class="annot"><span class="annottext">String -&gt; IO String
 forall a. a -&gt; IO a
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679218607"><span class="hs-identifier hs-var">next</span></a></span><span>
+</span><a href="#local-6989586621679219246"><span class="hs-identifier hs-var">next</span></a></span><span>
 </span><span id="line-41"></span><span>
 </span><span id="line-42"></span><span class="annot"><a href="Random.html#randomString"><span class="hs-identifier hs-type">randomString</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
 </span><span id="line-43"></span><span id="randomString"><span class="annot"><span class="annottext">randomString :: String -&gt; IO String
-</span><a href="Random.html#randomString"><span class="hs-identifier hs-var hs-var">randomString</span></a></span></span><span> </span><span id="local-6989586621679218610"><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679218610"><span class="hs-identifier hs-var">pat</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-44"></span><span>  </span><span id="local-6989586621679218611"><span class="annot"><span class="annottext">Set String
-</span><a href="#local-6989586621679218611"><span class="hs-identifier hs-var">set</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">IORef (Set String) -&gt; IO (Set String)
+</span><a href="Random.html#randomString"><span class="hs-identifier hs-var hs-var">randomString</span></a></span></span><span> </span><span id="local-6989586621679219249"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679219249"><span class="hs-identifier hs-var">pat</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-44"></span><span>  </span><span id="local-6989586621679219250"><span class="annot"><span class="annottext">Set String
+</span><a href="#local-6989586621679219250"><span class="hs-identifier hs-var">set</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">IORef (Set String) -&gt; IO (Set String)
 forall a. IORef a -&gt; IO a
 </span><span class="hs-identifier hs-var">readIORef</span></span><span> </span><span class="annot"><span class="annottext">IORef (Set String)
 </span><a href="Random.html#strings"><span class="hs-identifier hs-var">strings</span></a></span><span>
 </span><span id="line-45"></span><span>  </span><span class="annot"><span class="annottext">String -&gt; Set String -&gt; IO String
 </span><a href="Random.html#regenerate"><span class="hs-identifier hs-var">regenerate</span></a></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679218610"><span class="hs-identifier hs-var">pat</span></a></span><span> </span><span class="annot"><span class="annottext">Set String
-</span><a href="#local-6989586621679218611"><span class="hs-identifier hs-var">set</span></a></span><span>
+</span><a href="#local-6989586621679219249"><span class="hs-identifier hs-var">pat</span></a></span><span> </span><span class="annot"><span class="annottext">Set String
+</span><a href="#local-6989586621679219250"><span class="hs-identifier hs-var">set</span></a></span><span>
 </span><span id="line-46"></span></pre></body></html>
