@@ -66,12 +66,14 @@ data CmdException
   = InvalidCLIArguments String
   | CouldNotReadFromStdin String
   | CouldNotDataize
+  | CouldNotPrintExpressionInXMIR
   deriving (Exception)
 
 instance Show CmdException where
   show (InvalidCLIArguments msg) = printf "Invalid set of arguments: %s" msg
   show (CouldNotReadFromStdin msg) = printf "Could not read input from stdin\nReason: %s" msg
   show CouldNotDataize = "Could not dataize given program"
+  show CouldNotPrintExpressionInXMIR = "Could not print expression in with --output=xmir, only program printing is allowed"
 
 data Command
   = CmdRewrite OptsRewrite
@@ -787,7 +789,7 @@ printRewrittens ctx@PrintProgCtx{..} rewrittens
 printExpression :: PrintProgramContext -> Expression -> IO String
 printExpression PrintProgCtx{..} ex = case _outputFormat of
   PHI -> pure (P.printExpression' ex (_sugar, UNICODE, _line))
-  XMIR -> programToXMIR (Program ex) _xmirCtx <&> printXMIR
+  XMIR -> throwIO CouldNotPrintExpressionInXMIR
   LATEX -> pure (expressionToLaTeX ex (LatexContext _sugar _line _nonumber _compress _meetPopularity _meetLength _focus _expression _label _meetPrefix))
 
 -- Convert
