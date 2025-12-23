@@ -36,35 +36,31 @@ data LatexContext = LatexContext
   , nonumber :: Bool
   , compress :: Bool
   , meetPopularity :: Int
+  , meetLength :: Int
   , expression :: Maybe String
   , label :: Maybe String
   , meetPrefix :: Maybe String
   }
 
 defaultLatexContext :: LatexContext
-defaultLatexContext = LatexContext SWEET MULTILINE False False 50 Nothing Nothing Nothing
+defaultLatexContext = LatexContext SWEET MULTILINE False False 50 5 Nothing Nothing Nothing
 
-meetInProgram :: Program -> Program -> [Expression]
-meetInProgram (Program expr) = meetInExpression expr
+meetInProgram :: Program -> Int -> Program -> [Expression]
+meetInProgram (Program expr) len = meetInExpression expr
   where
     meetInExpression :: Expression -> Program -> [Expression]
-    meetInExpression ExGlobal _ = []
-    meetInExpression ExThis _ = []
-    meetInExpression ExTermination _ = []
-    meetInExpression (ExFormation []) _ = []
-    meetInExpression (ExDispatch ExGlobal _) _ = []
-    meetInExpression (ExDispatch ExThis _) _ = []
-    meetInExpression (ExDispatch ExTermination _) _ = []
     meetInExpression (DataString _) _ = []
     meetInExpression (DataNumber _) _ = []
     meetInExpression (ExPhiMeet{}) _ = []
     meetInExpression (ExPhiAgain{}) _ = []
-    meetInExpression expr prog =
-      map (const expr) (matchProgram expr prog) ++ case expr of
-        ExDispatch exp _ -> meetInExpression exp prog
-        ExApplication exp (BiTau _ arg) -> meetInExpression exp prog ++ meetInExpression arg prog
-        ExFormation bds -> meetInBindings bds prog
-        _ -> []
+    meetInExpression expr prog
+      | countNodes expr >= len =
+          map (const expr) (matchProgram expr prog) ++ case expr of
+            ExDispatch exp _ -> meetInExpression exp prog
+            ExApplication exp (BiTau _ arg) -> meetInExpression exp prog ++ meetInExpression arg prog
+            ExFormation bds -> meetInBindings bds prog
+            _ -> []
+      | otherwise = []
     meetInBindings :: [Binding] -> Program -> [Expression]
     meetInBindings [] _ = []
     meetInBindings (BiTau _ expr : bds) prog = meetInExpression expr prog ++ meetInBindings bds prog
@@ -83,7 +79,7 @@ meetInPrograms prog LatexContext{..} = meetInPrograms' prog 1
     meetInPrograms' [] _ = []
     meetInPrograms' [prog] _ = [prog]
     meetInPrograms' (first : rest) idx =
-      let met = map (meetInProgram first) rest
+      let met = map (meetInProgram first meetLength) rest
           unique = nub (concat met)
           (frequent, _) =
             foldl

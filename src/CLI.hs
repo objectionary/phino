@@ -19,7 +19,7 @@ import Data.Char (toLower, toUpper)
 import Data.Foldable (for_)
 import Data.Functor ((<&>))
 import Data.List (intercalate)
-import Data.Maybe (fromJust, isJust, isNothing, fromMaybe)
+import Data.Maybe (fromJust, fromMaybe, isJust, isNothing)
 import Data.Version (showVersion)
 import Dataize (DataizeContext (DataizeContext), dataize)
 import Deps (SaveStepFunc, saveStep)
@@ -54,6 +54,7 @@ data PrintProgramContext = PrintProgCtx
   , nonumber :: Bool
   , compress :: Bool
   , meetPopularity :: Int
+  , meetLength :: Int
   , expression :: Maybe String
   , label :: Maybe String
   , meetPrefix :: Maybe String
@@ -104,6 +105,7 @@ data OptsDataize = OptsDataize
   , maxDepth :: Int
   , maxCycles :: Int
   , meetPopularity :: Maybe Int
+  , meetLength :: Maybe Int
   , hide :: [String]
   , show' :: [String]
   , locator :: String
@@ -144,6 +146,7 @@ data OptsRewrite = OptsRewrite
   , maxDepth :: Int
   , maxCycles :: Int
   , meetPopularity :: Maybe Int
+  , meetLength :: Maybe Int
   , rules :: [FilePath]
   , hide :: [String]
   , show' :: [String]
@@ -254,7 +257,15 @@ optMeetPopularity =
             >>= validateIntOption (> 0) "--meet-popularity must be positive"
             >>= validateIntOption (< 100) "--meet-popularity must be <= 100"
         )
-        (long "meet-popularity" <> metavar "PERCENTAGE" <> help "Minimum popularity of an expression in order to be suitable for \\phiMeet{}, in percentage (default: 50)")
+        (long "meet-popularity" <> metavar "PERCENTAGE" <> help "The minimum popularity of an expression in order to be suitable for \\phiMeet{}, in percentage (default: 50)")
+    )
+
+optMeetLength :: Parser (Maybe Int)
+optMeetLength =
+  optional
+    ( option
+        (auto >>= validateIntOption (> 0) "--meet-popularity must be positive")
+        (long "meet-length" <> metavar "NODES" <> help "The minimum length of an expression that fits into \\phiMeet{}, in AST nodes (default: 8)")
     )
 
 optDepthSensitive :: Parser Bool
@@ -365,6 +376,7 @@ dataizeParser =
             <*> optMaxDepth
             <*> optMaxCycles
             <*> optMeetPopularity
+            <*> optMeetLength
             <*> optHide
             <*> optShow
             <*> optLocator
@@ -406,6 +418,7 @@ rewriteParser =
             <*> optMaxDepth
             <*> optMaxCycles
             <*> optMeetPopularity
+            <*> optMeetLength
             <*> optRule
             <*> optHide
             <*> optShow
@@ -499,7 +512,7 @@ runCLI args = handle handler $ do
       program <- parseProgram input inputFormat
       let listing = if null rules' then const input else (\prog -> P.printProgram' prog (sugarType, UNICODE, flat))
           xmirCtx = XmirContext omitListing omitComments listing
-          printCtx = PrintProgCtx sugarType flat xmirCtx nonumber compress (justMeetPopularity meetPopularity) expression label meetPrefix outputFormat
+          printCtx = printProgCtx xmirCtx
           _canonize = if canonize then C.canonize else id
           _hide = (`F.exclude` excluded)
           _show = (`F.include` included)
@@ -522,7 +535,7 @@ runCLI args = handle handler $ do
             outputFormat
             [(nonumber, "nonumber"), (compress, "compress")]
             [(expression, "expression"), (label, "label"), (meetPrefix, "meet-prefix")]
-            [(meetPopularity, "meet-popularity")]
+            [(meetPopularity, "meet-popularity"), (meetLength, "meet-length")]
           validateMust' must
           validateXmirOptions
             outputFormat
@@ -552,6 +565,20 @@ runCLI args = handle handler $ do
             buildTerm
             must
             (saveStepFunc stepsDir ctx)
+        printProgCtx :: XmirContext -> PrintProgramContext
+        printProgCtx xmirCtx =
+          PrintProgCtx
+            sugarType
+            flat
+            xmirCtx
+            nonumber
+            compress
+            (justMeetPopularity meetPopularity)
+            (justMeetLength meetLength)
+            expression
+            label
+            meetPrefix
+            outputFormat
     CmdDataize OptsDataize{..} -> do
       validateOpts
       excluded <- validatedDispatches "hide" hide
@@ -559,7 +586,7 @@ runCLI args = handle handler $ do
       [loc] <- validatedDispatches "locator" [locator]
       input <- readInput inputFile
       prog <- parseProgram input inputFormat
-      let printCtx = PrintProgCtx sugarType flat defaultXmirContext nonumber compress (justMeetPopularity meetPopularity) expression label meetPrefix outputFormat
+      let printCtx = printProgCtx
           _canonize = if canonize then C.canonize else id
           _hide = (`F.exclude` excluded)
           _show = (`F.include` included)
@@ -573,7 +600,7 @@ runCLI args = handle handler $ do
             outputFormat
             [(nonumber, "nonumber"), (compress, "compress")]
             [(expression, "expression"), (label, "label"), (meetPrefix, "meet-prefix")]
-            [(meetPopularity, "meet-popularity")]
+            [(meetPopularity, "meet-popularity"), (meetLength, "meet-length")]
           validateXmirOptions
             outputFormat
             [(omitListing, "omit-listing"), (omitComments, "omit-comments")]
@@ -588,6 +615,20 @@ runCLI args = handle handler $ do
             depthSensitive
             buildTerm
             (saveStepFunc stepsDir ctx)
+        printProgCtx :: PrintProgramContext
+        printProgCtx =
+          PrintProgCtx
+            sugarType
+            flat
+            defaultXmirContext
+            nonumber
+            compress
+            (justMeetPopularity meetPopularity)
+            (justMeetLength meetLength)
+            expression
+            label
+            meetPrefix
+            outputFormat
     CmdExplain OptsExplain{..} -> do
       validateOpts
       rules' <- getRules normalize shuffle rules
@@ -605,8 +646,8 @@ runCLI args = handle handler $ do
       prog <- merge progs
       let listing = const (P.printProgram' prog (sugarType, UNICODE, flat))
           xmirCtx = XmirContext omitListing omitComments listing
-          printProgCtx = PrintProgCtx sugarType flat xmirCtx False False 50 Nothing Nothing Nothing outputFormat
-      prog' <- printProgram printProgCtx prog
+          printCtx = printProgCtx xmirCtx
+      prog' <- printProgram printCtx prog
       output targetFile prog'
       where
         validateOpts :: IO ()
@@ -615,6 +656,20 @@ runCLI args = handle handler $ do
             (null inputs)
             (throwIO (InvalidCLIArguments "At least one input file must be specified for 'merge' command"))
           validateXmirOptions outputFormat [(omitListing, "omit-listing"), (omitComments, "omit-comments")]
+        printProgCtx :: XmirContext -> PrintProgramContext
+        printProgCtx xmirCtx =
+          PrintProgCtx
+            sugarType
+            flat
+            xmirCtx
+            False
+            False
+            (justMeetPopularity Nothing)
+            (justMeetLength Nothing)
+            Nothing
+            Nothing
+            Nothing
+            outputFormat
     CmdMatch OptsMatch{..} -> do
       input <- readInput inputFile
       prog <- parseProgram input PHI
@@ -633,6 +688,9 @@ runCLI args = handle handler $ do
 
 justMeetPopularity :: Maybe Int -> Int
 justMeetPopularity = fromMaybe 50
+
+justMeetLength :: Maybe Int -> Int
+justMeetLength = fromMaybe 8
 
 -- Prepare saveStepFunc
 saveStepFunc :: Maybe FilePath -> PrintProgramContext -> SaveStepFunc
@@ -706,7 +764,7 @@ parseProgram _ LATEX = invalidCLIArguments "LaTeX cannot be used as input format
 
 printRewrittens :: PrintProgramContext -> [Rewritten] -> IO String
 printRewrittens ctx@PrintProgCtx{..} rewrittens
-  | outputFormat == LATEX = pure (rewrittensToLatex rewrittens (LatexContext sugar line nonumber compress meetPopularity expression label meetPrefix))
+  | outputFormat == LATEX = pure (rewrittensToLatex rewrittens (LatexContext sugar line nonumber compress meetPopularity meetLength expression label meetPrefix))
   | otherwise = mapM (printProgram ctx . fst) rewrittens <&> intercalate "\n"
 
 -- Convert program to corresponding String format
@@ -714,7 +772,7 @@ printProgram :: PrintProgramContext -> Program -> IO String
 printProgram PrintProgCtx{..} prog = case outputFormat of
   PHI -> pure (P.printProgram' prog (sugar, UNICODE, line))
   XMIR -> programToXMIR prog xmirCtx <&> printXMIR
-  LATEX -> pure (programToLaTeX prog (LatexContext sugar line nonumber compress meetPopularity expression label meetPrefix))
+  LATEX -> pure (programToLaTeX prog (LatexContext sugar line nonumber compress meetPopularity meetLength expression label meetPrefix))
 
 -- Get rules for rewriting depending on provided flags
 getRules :: Bool -> Bool -> [FilePath] -> IO [Y.Rule]

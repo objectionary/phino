@@ -14,7 +14,7 @@ import Test.Hspec (Spec, describe, it, shouldBe)
 spec :: Spec
 spec =
   describe "meet program in program" $
-    Control.Monad.forM_
+    forM_
       [ ("Q.x.y", "{Q.x.y}", "{[[ x -> Q.x.y ]]}", ["Q.x.y"])
       , ("Q.x.y twice", "{Q.x.y}", "{[[ x -> Q.x.y, y -> Q.x.y.z ]]}", ["Q.x.y", "Q.x.y"])
       , ("Q.x.y.z.a and Q.x.y", "{Q.x.y.z.a}", "{[[ x -> Q.x.y, y -> Q.x.y.z ]]}", ["Q.x.y.z", "Q.x.y", "Q.x.y"])
@@ -26,5 +26,5 @@ spec =
           ptn <- parseProgramThrows first
           tgt <- parseProgramThrows second
           res <- traverse parseExpressionThrows exprs
-          meetInProgram ptn tgt `shouldBe` res
+          meetInProgram ptn 4 tgt `shouldBe` res
       )

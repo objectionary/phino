@@ -1,5 +1,4 @@
 {-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE LambdaCase #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
@@ -61,10 +60,15 @@ instance Show Attribute where
   show (AtMeta meta) = '!' : meta
 
 countNodes :: Expression -> Int
-countNodes ExGlobal = 1
-countNodes ExTermination = 1
-countNodes ExThis = 1
-countNodes (ExApplication expr' (BiTau _ bexpr')) = 2 + countNodes expr' + countNodes bexpr'
+countNodes (ExFormation bds) = 1 + sum (map nodesInBinding bds) + length bds
+  where
+    nodesInBinding :: Binding -> Int
+    nodesInBinding (BiTau _ expr) = countNodes expr + 2
+    nodesInBinding (BiMeta _) = 1
+    nodesInBinding _ = 3
+countNodes (ExApplication expr (BiTau _ expr')) = 4 + countNodes expr + countNodes expr'
 countNodes (ExDispatch expr' _) = 2 + countNodes expr'
-countNodes (ExFormation bds) = 1 + sum (map (\case BiTau _ expr' -> countNodes expr'; _ -> 1) bds)
-countNodes _ = 0
+countNodes (ExMetaTail expr _) = 2 + countNodes expr
+countNodes (ExPhiMeet _ _ expr) = countNodes expr
+countNodes (ExPhiAgain _ _ expr) = countNodes expr
+countNodes _ = 1

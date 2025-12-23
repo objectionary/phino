@@ -256,6 +256,13 @@ spec = do
             ["rewrite", "--meet-popularity=51", "--output=phi"]
             ["[ERROR]:", "--meet-popularity option can stay together with --output=latex only"]
 
+      it "with --meet-length and output != latex" $
+        withStdin "{[[]]}" $
+          testCLIFailed
+            ["rewrite", "--meet-length=4", "--output=phi"]
+            ["[ERROR]:", "--meet-length option can stay together with --output=latex only"]
+
+
     it "prints help" $
       testCLISucceeded
         ["rewrite", "--help"]
@@ -639,7 +646,7 @@ spec = do
           ["rewrite", "--log-level=debug", "--log-lines=4", "--normalize"]
           [ intercalate
               "\n"
-              [ "[DEBUG]: Applied 'COPY' (20 nodes -> 17 nodes)"
+              [ "[DEBUG]: Applied 'COPY' (44 nodes -> 39 nodes)"
               , "⟦"
               , "  x ↦ ⟦"
               , "    y ↦ 5"
