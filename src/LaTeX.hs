@@ -1,6 +1,7 @@
+{-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# OPTIONS_GHC -Wno-name-shadowing #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
@@ -9,6 +10,7 @@ module LaTeX
   ( explainRules
   , rewrittensToLatex
   , programToLaTeX
+  , expressionToLaTeX
   , defaultLatexContext
   , LatexContext (..)
   , meetInPrograms
@@ -19,14 +21,15 @@ import AST
 import CST
 import Data.List (intercalate, nub)
 import Data.Maybe (fromMaybe)
-import Encoding (Encoding (ASCII), withEncoding)
-import Lining (LineFormat (MULTILINE), withLineFormat)
+import Encoding (Encoding (ASCII), ToASCII, withEncoding)
+import Lining (LineFormat (MULTILINE), ToSingleLine, withLineFormat)
+import Locator (locatedExpression)
 import Matcher
 import Misc
 import Render (Render (render))
 import Replacer (replaceProgram)
 import Rewriter (Rewritten)
-import Sugar (SugarType (SWEET), withSugarType)
+import Sugar (SugarType (SWEET), ToSalty, withSugarType)
 import Text.Printf (printf)
 import qualified Yaml as Y
 
@@ -37,13 +40,14 @@ data LatexContext = LatexContext
   , compress :: Bool
   , meetPopularity :: Int
   , meetLength :: Int
+  , focus :: Expression
   , expression :: Maybe String
   , label :: Maybe String
   , meetPrefix :: Maybe String
   }
 
 defaultLatexContext :: LatexContext
-defaultLatexContext = LatexContext SWEET MULTILINE False False 50 8 Nothing Nothing Nothing
+defaultLatexContext = LatexContext SWEET MULTILINE False False 50 8 ExGlobal Nothing Nothing Nothing
 
 meetInProgram :: Program -> Int -> Program -> [Expression]
 meetInProgram (Program expr) len = meetInExpression expr
@@ -53,16 +57,16 @@ meetInProgram (Program expr) len = meetInExpression expr
     meetInExpression (DataNumber _) _ = []
     meetInExpression (ExPhiMeet{}) _ = []
     meetInExpression (ExPhiAgain{}) _ = []
-    meetInExpression expr prog =
-      let matched = if countNodes expr >= len then map (const expr) (matchProgram expr prog) else []
-       in matched ++ case expr of
-            ExDispatch exp _ -> meetInExpression exp prog
-            ExApplication exp (BiTau _ arg) -> meetInExpression exp prog ++ meetInExpression arg prog
+    meetInExpression ex prog =
+      let matched = if countNodes ex >= len then map (const ex) (matchProgram ex prog) else []
+       in matched ++ case ex of
+            ExDispatch ex' _ -> meetInExpression ex' prog
+            ExApplication ex' (BiTau _ arg) -> meetInExpression ex' prog ++ meetInExpression arg prog
             ExFormation bds -> meetInBindings bds prog
             _ -> []
     meetInBindings :: [Binding] -> Program -> [Expression]
     meetInBindings [] _ = []
-    meetInBindings (BiTau _ expr : bds) prog = meetInExpression expr prog ++ meetInBindings bds prog
+    meetInBindings (BiTau _ ex : bds) prog = meetInExpression ex prog ++ meetInBindings bds prog
     meetInBindings (_ : bds) prog = meetInBindings bds prog
 
 {- | Here we're trying to compress sequence of programs with \phiMeet{} and \phiAgain LaTeX functions.
@@ -76,7 +80,7 @@ meetInPrograms prog LatexContext{..} = meetInPrograms' prog 1
   where
     meetInPrograms' :: [Program] -> Int -> [Program]
     meetInPrograms' [] _ = []
-    meetInPrograms' [prog] _ = [prog]
+    meetInPrograms' [program] _ = [program]
     meetInPrograms' (first : rest) idx =
       let met = map (meetInProgram first meetLength) rest
           unique = nub (concat met)
@@ -96,45 +100,73 @@ meetInPrograms prog LatexContext{..} = meetInPrograms' prog 1
               case matchProgram expr first of
                 (_ : substs) ->
                   let met' = map (filter (== expr)) met
-                      prog = replaceProgram (first, [expr], [ExPhiMeet meetPrefix idx])
-                      prog' = replaceProgram (prog, map (const expr) substs, map (const (ExPhiAgain meetPrefix idx)) substs)
+                      program = replaceProgram (first, [expr], [ExPhiMeet meetPrefix idx])
+                      program' = replaceProgram (program, map (const expr) substs, map (const (ExPhiAgain meetPrefix idx)) substs)
                       rest' = zipWith (\prgm exprs -> replaceProgram (prgm, exprs, map (const (ExPhiAgain meetPrefix idx)) exprs)) rest met'
                       found = filter (not . null) met'
                    in if length met' > 1 && toDouble (length found) / toDouble (length met') >= popularity
-                        then prog' : meetInPrograms' rest' (idx + 1)
+                        then program' : meetInPrograms' rest' (idx + 1)
                         else next
                 [] -> next
             _ -> next
     popularity :: Double
     popularity = toDouble meetPopularity / 100.0
 
-renderToLatex :: Program -> LatexContext -> String
-renderToLatex prog LatexContext{..} = render (toLaTeX $ withLineFormat line $ withEncoding ASCII $ withSugarType sugar $ programToCST prog)
+renderToLatex :: (ToSalty a, ToASCII a, ToSingleLine a, ToLaTeX a, Render a) => a -> LatexContext -> String
+renderToLatex renderable LatexContext{..} = render (toLaTeX $ withLineFormat line $ withEncoding ASCII $ withSugarType sugar renderable)
 
 phiquation :: LatexContext -> String
 phiquation LatexContext{nonumber = True} = "phiquation*"
 phiquation LatexContext{nonumber = False} = "phiquation"
 
-rewrittensToLatex :: [Rewritten] -> LatexContext -> String
-rewrittensToLatex rewrittens ctx@LatexContext{..} =
+preamble :: LatexContext -> String
+preamble ctx@LatexContext{..} =
   let equation = phiquation ctx
-      (progs, rules) = unzip rewrittens
-      rewrittens' = if compress then zip (meetInPrograms progs ctx) rules else rewrittens
    in concat
         [ printf "\\begin{%s}\n" equation
         , maybe "" (printf "\\label{%s}\n") label
         , maybe "" (printf "\\phiExpression{%s} ") expression
-        , intercalate
-            "\n  \\leadsto "
-            ( map
-                ( \(program, maybeName) ->
-                    let prog = renderToLatex program ctx
-                     in maybe prog (printf "%s \\leadsto_{\\nameref{r:%s}}" prog) maybeName
-                )
-                rewrittens'
-            )
-        , printf "{.}\n\\end{%s}" equation
         ]
+
+body :: [(a, Maybe String)] -> (a -> String) -> String
+body printed toLatex =
+  intercalate
+    "\n  \\leadsto "
+    ( map
+        ( \(item, maybeName) ->
+            let item' = toLatex item
+             in maybe item' (printf "%s \\leadsto_{\\nameref{r:%s}}" item') maybeName
+        )
+        printed
+    )
+
+ending :: LatexContext -> String
+ending ctx = printf "{.}\n\\end{%s}" (phiquation ctx)
+
+metRewrittens :: [Rewritten] -> LatexContext -> [Rewritten]
+metRewrittens rewrittens ctx@LatexContext{..} =
+  let (progs, rules) = unzip rewrittens
+   in if compress then zip (meetInPrograms progs ctx) rules else rewrittens
+
+rewrittensToLatex :: [Rewritten] -> LatexContext -> IO String
+rewrittensToLatex rewrittens ctx@LatexContext{focus = ExGlobal} =
+  pure
+    ( concat
+        [ preamble ctx
+        , body (metRewrittens rewrittens ctx) (\prog -> renderToLatex (programToCST prog) ctx)
+        , ending ctx
+        ]
+    )
+rewrittensToLatex rewrittens ctx@LatexContext{..} = do
+  let (progs, rules) = unzip (metRewrittens rewrittens ctx)
+  exprs <- mapM (locatedExpression focus) progs
+  pure
+    ( concat
+        [ preamble ctx
+        , body (zip exprs rules) (\expr -> renderToLatex (expressionToCST expr) ctx)
+        , ending ctx
+        ]
+    )
 
 programToLaTeX :: Program -> LatexContext -> String
 programToLaTeX prog ctx =
@@ -143,8 +175,21 @@ programToLaTeX prog ctx =
         [ "\\begin{"
         , equation
         , "}\n"
-        , renderToLatex prog ctx
+        , renderToLatex (programToCST prog) ctx
         , "\n\\end{"
+        , equation
+        , "}"
+        ]
+
+expressionToLaTeX :: Expression -> LatexContext -> String
+expressionToLaTeX ex ctx =
+  let equation = phiquation ctx
+   in concat
+        [ "\\begin{"
+        , equation
+        , "}\n"
+        , renderToLatex (expressionToCST ex) ctx
+        , "\n\\end"
         , equation
         , "}"
         ]

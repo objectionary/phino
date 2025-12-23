@@ -3,7 +3,7 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Encoding (toASCII, withEncoding, Encoding (..)) where
+module Encoding (toASCII, withEncoding, Encoding (..), ToASCII) where
 
 import CST
 

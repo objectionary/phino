@@ -262,6 +262,18 @@ spec = do
             ["rewrite", "--meet-length=4", "--output=phi"]
             ["[ERROR]:", "--meet-length option can stay together with --output=latex only"]
 
+      it "with non-dispatch --focus" $
+        withStdin "{[[]]}" $
+          testCLIFailed
+            ["rewrite", "--focus=Q.x(Q.y)"]
+            ["[ERROR]"]
+
+      it "with --focus!=Q and --output=XMIR" $
+        withStdin "{[[]]}" $
+          testCLIFailed
+            ["rewrite", "--focus=Q.x", "--output=xmir"]
+            ["[ERROR]"]
+
     it "prints help" $
       testCLISucceeded
         ["rewrite", "--help"]
@@ -506,7 +518,7 @@ spec = do
               ]
           ]
 
-    it "meets with --meet-length = 32" $
+    it "meets with --meet-length=32" $
       withStdin "{[[ ex -> [[ x -> [[ y -> ?, k -> [[ t -> 42]]  ]]( y -> [[ t -> 42 ]]) ]].i ]]}" $
         testCLISucceeded
           ["rewrite", "--normalize", "--sequence", "--flat", "--compress", "--output=latex", "--sweet", "--meet-length=32"]
@@ -516,6 +528,47 @@ spec = do
               , "  \\leadsto \\Big\\{[[ |ex| -> [[ |x| -> [[ |y| -> [[ |t| -> 42 ]], |k| -> [[ |t| -> 42 ]] ]] ]].|i| ]]\\Big\\} \\leadsto_{\\nameref{r:stop}}"
               , "  \\leadsto \\Big\\{[[ |ex| -> T ]]\\Big\\}{.}"
               , "\\end{phiquation}"
+              ]
+          ]
+
+    it "focuses expression in latex with sequence" $
+      withStdin "{[[ ex -> [[ x -> [[ y -> ?, k -> [[ t -> 42]]  ]]( y -> [[ t -> 42 ]]) ]].i ]]}" $
+        testCLISucceeded
+          ["rewrite", "--normalize", "--sequence", "--flat", "--output=latex", "--sweet", "--focus=Q.ex"]
+          [ unlines
+              [ "\\begin{phiquation}"
+              , "[[ |x| -> [[ |y| -> ?, |k| -> [[ |t| -> 42 ]] ]]( |y| -> [[ |t| -> 42 ]] ) ]].|i| \\leadsto_{\\nameref{r:copy}}"
+              , "  \\leadsto [[ |x| -> [[ |y| -> [[ |t| -> 42 ]], |k| -> [[ |t| -> 42 ]] ]] ]].|i| \\leadsto_{\\nameref{r:stop}}"
+              , "  \\leadsto T{.}"
+              , "\\end{phiquation}"
+              ]
+          ]
+
+    it "focuses expression in latex without sequence" $
+      withStdin "{[[ ex -> [[ x -> [[ y -> ?, k -> [[ t -> 42]]  ]]( y -> [[ t -> 42 ]]) ]].i ]]}" $
+        testCLISucceeded
+          ["rewrite", "--normalize", "--flat", "--output=latex", "--sweet", "--focus=Q.ex"]
+          [ unlines
+              [ "\\begin{phiquation}"
+              , "T{.}"
+              , "\\end{phiquation}"
+              ]
+          ]
+
+    it "focuses expression in phi without sequence" $
+      withStdin "{[[ ex -> [[ x -> [[ y -> ?, k -> [[ t -> 42]]  ]]( y -> [[ t -> 42 ]]) ]].i ]]}" $
+        testCLISucceeded
+          ["rewrite", "--normalize", "--flat", "--output=phi", "--sweet", "--focus=Q.ex"]
+          ["⊥"]
+
+    it "focuses expression in phi with sequence" $
+      withStdin "{[[ ex -> [[ x -> [[ y -> ?, k -> [[ t -> 42]]  ]]( y -> [[ t -> 42 ]]) ]].i ]]}" $
+        testCLISucceeded
+          ["rewrite", "--normalize", "--sequence", "--flat", "--output=phi", "--sweet", "--focus=Q.ex"]
+          [ unlines
+              [ "⟦ x ↦ ⟦ y ↦ ∅, k ↦ ⟦ t ↦ 42 ⟧ ⟧( y ↦ ⟦ t ↦ 42 ⟧ ) ⟧.i"
+              , "⟦ x ↦ ⟦ y ↦ ⟦ t ↦ 42 ⟧, k ↦ ⟦ t ↦ 42 ⟧ ⟧ ⟧.i"
+              , "⊥"
               ]
           ]
 

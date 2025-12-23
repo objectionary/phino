@@ -26,8 +26,9 @@ import Deps (SaveStepFunc, saveStep)
 import Encoding (Encoding (UNICODE))
 import qualified Filter as F
 import Functions (buildTerm)
-import LaTeX (LatexContext (LatexContext), explainRules, programToLaTeX, rewrittensToLatex)
+import LaTeX (LatexContext (LatexContext), explainRules, expressionToLaTeX, programToLaTeX, rewrittensToLatex)
 import Lining (LineFormat (MULTILINE, SINGLELINE))
+import Locator (locatedExpression)
 import Logger
 import Merge (merge)
 import Misc (ensuredFile)
@@ -55,6 +56,7 @@ data PrintProgramContext = PrintProgCtx
   , compress :: Bool
   , meetPopularity :: Int
   , meetLength :: Int
+  , focus :: Expression
   , expression :: Maybe String
   , label :: Maybe String
   , meetPrefix :: Maybe String
@@ -109,6 +111,7 @@ data OptsDataize = OptsDataize
   , hide :: [String]
   , show' :: [String]
   , locator :: String
+  , focus :: String
   , expression :: Maybe String
   , label :: Maybe String
   , meetPrefix :: Maybe String
@@ -151,6 +154,7 @@ data OptsRewrite = OptsRewrite
   , hide :: [String]
   , show' :: [String]
   , locator :: String
+  , focus :: String
   , expression :: Maybe String
   , label :: Maybe String
   , meetPrefix :: Maybe String
@@ -307,6 +311,16 @@ optShow =
 optLocator :: Parser String
 optLocator = strOption (long "locator" <> metavar "FQN" <> help "Location of object to dataize. Must be a valid dispatch expression; e.g. Q.foo.bar" <> value "Q" <> showDefault)
 
+optFocus :: Parser String
+optFocus =
+  strOption
+    ( long "focus"
+        <> metavar "FQN"
+        <> help "Location of only object to be printed in entire program. Must be a valid dispatch expression; e.g. Q.foo.bar"
+        <> value "Q"
+        <> showDefault
+    )
+
 optNormalize :: Parser Bool
 optNormalize = switch (long "normalize" <> help "Use built-in normalization rules")
 
@@ -380,6 +394,7 @@ dataizeParser =
             <*> optHide
             <*> optShow
             <*> optLocator
+            <*> optFocus
             <*> optExpression
             <*> optLabel
             <*> optMeetPrefix
@@ -423,6 +438,7 @@ rewriteParser =
             <*> optHide
             <*> optShow
             <*> optLocator
+            <*> optFocus
             <*> optExpression
             <*> optLabel
             <*> optMeetPrefix
@@ -506,13 +522,14 @@ runCLI args = handle handler $ do
       excluded <- validatedDispatches "hide" hide
       included <- validatedDispatches "show" show'
       [loc] <- validatedDispatches "locator" [locator]
+      [foc] <- validatedDispatches "focus" [focus]
       logDebug (printf "Amount of rewriting cycles across all the rules: %d, per rule: %d" maxCycles maxDepth)
       input <- readInput inputFile
       rules' <- getRules normalize shuffle rules
       program <- parseProgram input inputFormat
       let listing = if null rules' then const input else (\prog -> P.printProgram' prog (sugarType, UNICODE, flat))
           xmirCtx = XmirContext omitListing omitComments listing
-          printCtx = printProgCtx xmirCtx
+          printCtx = printProgCtx xmirCtx foc
           _canonize = if canonize then C.canonize else id
           _hide = (`F.exclude` excluded)
           _show = (`F.include` included)
@@ -537,9 +554,7 @@ runCLI args = handle handler $ do
             [(expression, "expression"), (label, "label"), (meetPrefix, "meet-prefix")]
             [(meetPopularity, "meet-popularity"), (meetLength, "meet-length")]
           validateMust' must
-          validateXmirOptions
-            outputFormat
-            [(omitListing, "omit-listing"), (omitComments, "omit-comments")]
+          validateXmirOptions outputFormat [(omitListing, "omit-listing"), (omitComments, "omit-comments")] focus
         output :: Maybe FilePath -> String -> IO ()
         output target prog = case (inPlace, target, inputFile) of
           (True, _, Just file) -> do
@@ -565,8 +580,8 @@ runCLI args = handle handler $ do
             buildTerm
             must
             (saveStepFunc stepsDir ctx)
-        printProgCtx :: XmirContext -> PrintProgramContext
-        printProgCtx xmirCtx =
+        printProgCtx :: XmirContext -> Expression -> PrintProgramContext
+        printProgCtx xmirCtx focus =
           PrintProgCtx
             sugarType
             flat
@@ -575,6 +590,7 @@ runCLI args = handle handler $ do
             compress
             (justMeetPopularity meetPopularity)
             (justMeetLength meetLength)
+            focus
             expression
             label
             meetPrefix
@@ -584,9 +600,10 @@ runCLI args = handle handler $ do
       excluded <- validatedDispatches "hide" hide
       included <- validatedDispatches "show" show'
       [loc] <- validatedDispatches "locator" [locator]
+      [foc] <- validatedDispatches "focus" [focus]
       input <- readInput inputFile
       prog <- parseProgram input inputFormat
-      let printCtx = printProgCtx
+      let printCtx = printProgCtx foc
           _canonize = if canonize then C.canonize else id
           _hide = (`F.exclude` excluded)
           _show = (`F.include` included)
@@ -601,9 +618,7 @@ runCLI args = handle handler $ do
             [(nonumber, "nonumber"), (compress, "compress")]
             [(expression, "expression"), (label, "label"), (meetPrefix, "meet-prefix")]
             [(meetPopularity, "meet-popularity"), (meetLength, "meet-length")]
-          validateXmirOptions
-            outputFormat
-            [(omitListing, "omit-listing"), (omitComments, "omit-comments")]
+          validateXmirOptions outputFormat [(omitListing, "omit-listing"), (omitComments, "omit-comments")] focus
           when (length show' > 1) (invalidCLIArguments "The option --show can be used only once")
         context :: Expression -> Program -> PrintProgramContext -> DataizeContext
         context loc prog ctx =
@@ -615,8 +630,8 @@ runCLI args = handle handler $ do
             depthSensitive
             buildTerm
             (saveStepFunc stepsDir ctx)
-        printProgCtx :: PrintProgramContext
-        printProgCtx =
+        printProgCtx :: Expression -> PrintProgramContext
+        printProgCtx focus =
           PrintProgCtx
             sugarType
             flat
@@ -625,6 +640,7 @@ runCLI args = handle handler $ do
             compress
             (justMeetPopularity meetPopularity)
             (justMeetLength meetLength)
+            focus
             expression
             label
             meetPrefix
@@ -655,7 +671,7 @@ runCLI args = handle handler $ do
           when
             (null inputs)
             (throwIO (InvalidCLIArguments "At least one input file must be specified for 'merge' command"))
-          validateXmirOptions outputFormat [(omitListing, "omit-listing"), (omitComments, "omit-comments")]
+          validateXmirOptions outputFormat [(omitListing, "omit-listing"), (omitComments, "omit-comments")] "Q"
         printProgCtx :: XmirContext -> PrintProgramContext
         printProgCtx xmirCtx =
           PrintProgCtx
@@ -666,6 +682,7 @@ runCLI args = handle handler $ do
             False
             (justMeetPopularity Nothing)
             (justMeetLength Nothing)
+            ExGlobal
             Nothing
             Nothing
             Nothing
@@ -735,9 +752,9 @@ validateMust' :: Must -> IO ()
 validateMust' must = for_ (validateMust must) invalidCLIArguments
 
 -- Validate options for output to XMIR
-validateXmirOptions :: IOFormat -> [(Bool, String)] -> IO ()
-validateXmirOptions XMIR _ = pure ()
-validateXmirOptions _ bools =
+validateXmirOptions :: IOFormat -> [(Bool, String)] -> String -> IO ()
+validateXmirOptions XMIR _ focus = when (focus /= "Q") (invalidCLIArguments "Only --focus=Q is allowed to be used with --output=xmir")
+validateXmirOptions _ bools _ =
   let (bools', opts) = unzip bools
    in validateBoolOpts (zip bools' (map (printf "The --%s can be used only with --output=xmir") opts))
 
@@ -764,15 +781,22 @@ parseProgram _ LATEX = invalidCLIArguments "LaTeX cannot be used as input format
 
 printRewrittens :: PrintProgramContext -> [Rewritten] -> IO String
 printRewrittens ctx@PrintProgCtx{..} rewrittens
-  | outputFormat == LATEX = pure (rewrittensToLatex rewrittens (LatexContext sugar line nonumber compress meetPopularity meetLength expression label meetPrefix))
-  | otherwise = mapM (printProgram ctx . fst) rewrittens <&> intercalate "\n"
+  | outputFormat == LATEX = rewrittensToLatex rewrittens (LatexContext sugar line nonumber compress meetPopularity meetLength focus expression label meetPrefix)
+  | focus == ExGlobal = mapM (printProgram ctx . fst) rewrittens <&> intercalate "\n"
+  | otherwise = mapM (\(prog, _) -> locatedExpression focus prog >>= printExpression ctx) rewrittens <&> intercalate "\n"
+
+printExpression :: PrintProgramContext -> Expression -> IO String
+printExpression PrintProgCtx{..} ex = case outputFormat of
+  PHI -> pure (P.printExpression' ex (sugar, UNICODE, line))
+  XMIR -> programToXMIR (Program ex) xmirCtx <&> printXMIR
+  LATEX -> pure (expressionToLaTeX ex (LatexContext sugar line nonumber compress meetPopularity meetLength focus expression label meetPrefix))
 
 -- Convert program to corresponding String format
 printProgram :: PrintProgramContext -> Program -> IO String
 printProgram PrintProgCtx{..} prog = case outputFormat of
   PHI -> pure (P.printProgram' prog (sugar, UNICODE, line))
   XMIR -> programToXMIR prog xmirCtx <&> printXMIR
-  LATEX -> pure (programToLaTeX prog (LatexContext sugar line nonumber compress meetPopularity meetLength expression label meetPrefix))
+  LATEX -> pure (programToLaTeX prog (LatexContext sugar line nonumber compress meetPopularity meetLength focus expression label meetPrefix))
 
 -- Get rules for rewriting depending on provided flags
 getRules :: Bool -> Bool -> [FilePath] -> IO [Y.Rule]
