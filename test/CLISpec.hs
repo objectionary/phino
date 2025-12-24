@@ -846,6 +846,7 @@ spec = do
         ( \(path, _) -> do
             testCLISucceeded ["explain", "--normalize", printf "--target=%s" path] []
             content <- readFile path
+            _ <- evaluate (length content)
             content `shouldContain` "\\documentclass{article}"
             content `shouldContain` "\\begin{document}"
         )
