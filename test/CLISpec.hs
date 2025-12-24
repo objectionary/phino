@@ -102,9 +102,6 @@ resource file = "test-resources/cli/" <> file
 rule :: String -> String
 rule file = "--rule=" <> resource file
 
-isWindows :: Bool
-isWindows = os == "mingw32"
-
 spec :: Spec
 spec = do
   it "prints version" $
