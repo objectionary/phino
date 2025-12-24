@@ -5,11 +5,9 @@
 
 module Logger
   ( logDebug
-  , logInfo
-  , logWarning
   , logError
   , setLogConfig
-  , LogLevel (DEBUG, INFO, WARNING, ERROR, NONE)
+  , LogLevel (DEBUG, ERROR, NONE)
   )
 where
 
@@ -19,14 +17,14 @@ import qualified Data.List as DL
 import GHC.IO (unsafePerformIO)
 import System.IO
 
-data LogLevel = DEBUG | INFO | WARNING | ERROR | NONE
+data LogLevel = DEBUG | ERROR | NONE
   deriving (Show, Ord, Eq, Bounded, Enum, Read)
 
 data Logger = Logger {level :: LogLevel, lns :: Int}
 
 logger :: IORef Logger
 {-# NOINLINE logger #-}
-logger = unsafePerformIO (newIORef (Logger INFO 25))
+logger = unsafePerformIO (newIORef (Logger ERROR 25))
 
 setLogConfig :: LogLevel -> Int -> IO ()
 setLogConfig lvl cnt = writeIORef logger (Logger lvl cnt)
@@ -45,8 +43,6 @@ logMessage lvl message = do
        in hPutStrLn stderr ("[" ++ show lvl ++ "]: " ++ DL.intercalate "\n" msg)
     )
 
-logDebug, logInfo, logWarning, logError :: String -> IO ()
+logDebug, logError :: String -> IO ()
 logDebug = logMessage DEBUG
-logInfo = logMessage INFO
-logWarning = logMessage WARNING
 logError = logMessage ERROR

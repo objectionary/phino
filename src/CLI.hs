@@ -199,17 +199,14 @@ optLogLevel =
     parseLogLevel
     ( long "log-level"
         <> metavar "LEVEL"
-        <> help ("Log level (" <> intercalate ", " (map show [DEBUG, INFO, WARNING, ERROR, NONE]) <> ")")
-        <> value INFO
+        <> help ("Log level (" <> intercalate ", " (map show [DEBUG, ERROR, NONE]) <> ")")
+        <> value ERROR
         <> showDefault
     )
   where
     parseLogLevel :: ReadM LogLevel
     parseLogLevel = eitherReader $ \lvl -> case map toUpper lvl of
       "DEBUG" -> Right DEBUG
-      "INFO" -> Right INFO
-      "WARNING" -> Right WARNING
-      "WARN" -> Right WARNING
       "ERROR" -> Right ERROR
       "ERR" -> Right ERROR
       "NONE" -> Right NONE
