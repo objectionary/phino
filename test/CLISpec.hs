@@ -19,7 +19,6 @@ import System.Directory (createDirectoryIfMissing, doesDirectoryExist, doesFileE
 import System.Exit (ExitCode (ExitFailure))
 import System.FilePath ((</>))
 import System.IO
-import System.Info (os)
 import Test.Hspec
 import Text.Printf (printf)
 
