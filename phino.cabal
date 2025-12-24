@@ -163,6 +163,7 @@ test-suite spec
     process ^>=1.6.19.0,
     silently ^>=1.2.5.4,
     text ^>=2.0.2,
+    time ^>=1.12,
     xml-conduit ^>=1.10,
     yaml ^>=0.11.11.2,
 

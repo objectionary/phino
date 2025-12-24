@@ -11,11 +11,13 @@ import CLI (runCLI)
 import Control.Exception
 import Control.Monad (forM_, unless, when)
 import Data.List (intercalate, isInfixOf)
+import Data.Time.Clock.POSIX (getPOSIXTime)
 import Data.Version (showVersion)
 import GHC.IO.Handle
 import Paths_phino (version)
-import System.Directory (doesDirectoryExist, doesFileExist, listDirectory, removeDirectoryRecursive, removeFile)
+import System.Directory (createDirectoryIfMissing, doesDirectoryExist, doesFileExist, getTemporaryDirectory, listDirectory, removeDirectoryRecursive, removeFile)
 import System.Exit (ExitCode (ExitFailure))
+import System.FilePath ((</>))
 import System.IO
 import System.Info (os)
 import Test.Hspec
@@ -836,19 +838,21 @@ spec = do
         ["Either --rule or --normalize must be specified"]
 
     it "writes to target file" $
-      if isWindows
-        then pendingWith "Skipped on Windows due to file locking issues"
-        else
-          bracket
-            (openTempFile "." "explainXXXXXX.tex")
-            (\(path, _) -> removeFile path)
-            ( \(path, h) -> do
-                hClose h
-                testCLISucceeded ["explain", "--normalize", printf "--target=%s" path] []
-                content <- readFile path
-                content `shouldContain` "\\documentclass{article}"
-                content `shouldContain` "\\begin{document}"
-            )
+      bracket
+        ( do
+            tmp <- getTemporaryDirectory
+            stamp <- getPOSIXTime
+            let dir = tmp </> ("phino-test-" ++ show (floor stamp :: Integer))
+            createDirectoryIfMissing True dir
+            pure (dir </> "explain.tex", dir)
+        )
+        (\(_, dir) -> removeDirectoryRecursive dir)
+        ( \(path, _) -> do
+            testCLISucceeded ["explain", "--normalize", printf "--target=%s" path] []
+            content <- readFile path
+            content `shouldContain` "\\documentclass{article}"
+            content `shouldContain` "\\begin{document}"
+        )
 
   describe "merge" $ do
     it "merges single program" $
