@@ -79,8 +79,9 @@ parsePredicate ('[' : rest) =
 parsePredicate str = ([], str)
 
 splitBracket :: String -> (String, String)
-splitBracket = go 0 ""
+splitBracket = go (0 :: Int) ""
   where
+    go :: Int -> String -> String -> (String, String)
     go _ acc "" = (reverse acc, "")
     go 0 acc (']' : rest) = (reverse acc, rest)
     go n acc ('[' : rest) = go (n + 1) ('[' : acc) rest
@@ -101,8 +102,9 @@ parsePredicateInner str
     tails s@(_ : xs) = s : tails xs
 
 splitAnd :: String -> [String]
-splitAnd = go 0 ""
+splitAnd = go (0 :: Int) ""
   where
+    go :: Int -> String -> String -> [String]
     go _ acc "" = [reverse acc | not (null acc)]
     go n acc ('[' : rest) = go (n + 1) ('[' : acc) rest
     go n acc (']' : rest) = go (n - 1) (']' : acc) rest
