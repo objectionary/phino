@@ -56,10 +56,11 @@ data Predicate
 data Step = Step String [Predicate]
   deriving (Show)
 
--- | Parse a simple XPath expression into steps.
--- Supports: /element/element[@attr="val" and child="val" and child[N][@attr="val"]]
+{- | Parse a simple XPath expression into steps.
+Supports: /element/element[@attr="val" and child="val" and child[N][@attr="val"]]
+-}
 xpath :: String -> [Step]
-xpath ('/':rest) = steps rest
+xpath ('/' : rest) = steps rest
 xpath _ = []
 
 steps :: String -> [Step]
@@ -70,7 +71,7 @@ steps str =
    in Step step preds : steps (dropWhile (== '/') remaining)
 
 parsePredicate :: String -> ([Predicate], String)
-parsePredicate ('[':rest) =
+parsePredicate ('[' : rest) =
   let (inner, after) = splitBracket rest
       pred' = parsePredicateInner inner
       (more, final) = parsePredicate after
@@ -81,10 +82,10 @@ splitBracket :: String -> (String, String)
 splitBracket = go 0 ""
   where
     go _ acc "" = (reverse acc, "")
-    go 0 acc (']':rest) = (reverse acc, rest)
-    go n acc ('[':rest) = go (n+1) ('[':acc) rest
-    go n acc (']':rest) = go (n-1) (']':acc) rest
-    go n acc (c:rest) = go n (c:acc) rest
+    go 0 acc (']' : rest) = (reverse acc, rest)
+    go n acc ('[' : rest) = go (n + 1) ('[' : acc) rest
+    go n acc (']' : rest) = go (n - 1) (']' : acc) rest
+    go n acc (c : rest) = go n (c : acc) rest
 
 parsePredicateInner :: String -> Predicate
 parsePredicateInner str
@@ -92,21 +93,21 @@ parsePredicateInner str
       let parts = splitAnd str
        in foldr1 AndPred (map parsePredicateInner parts)
   | all isDigit str = PositionIs (read str)
-  | '@':rest <- str = parseAttrPred rest
+  | '@' : rest <- str = parseAttrPred rest
   | otherwise = parseChildPred str
   where
     isInfixOf' needle haystack = needle `elem` tails haystack
     tails [] = [[]]
-    tails s@(_:xs) = s : tails xs
+    tails s@(_ : xs) = s : tails xs
 
 splitAnd :: String -> [String]
 splitAnd = go 0 ""
   where
     go _ acc "" = [reverse acc | not (null acc)]
-    go n acc ('[':rest) = go (n+1) ('[':acc) rest
-    go n acc (']':rest) = go (n-1) (']':acc) rest
-    go 0 acc (' ':'a':'n':'d':' ':rest) = reverse acc : go 0 "" rest
-    go n acc (c:rest) = go n (c:acc) rest
+    go n acc ('[' : rest) = go (n + 1) ('[' : acc) rest
+    go n acc (']' : rest) = go (n - 1) (']' : acc) rest
+    go 0 acc (' ' : 'a' : 'n' : 'd' : ' ' : rest) = reverse acc : go 0 "" rest
+    go n acc (c : rest) = go n (c : acc) rest
 
 parseAttrPred :: String -> Predicate
 parseAttrPred str =
@@ -127,11 +128,12 @@ parseChildPred str
   | otherwise = ChildExists str []
 
 extractQuoted :: String -> String
-extractQuoted ('"':rest) = takeWhile (/= '"') rest
+extractQuoted ('"' : rest) = takeWhile (/= '"') rest
 extractQuoted s = s
 
--- | Evaluate an XPath expression on a document, returning matched cursors.
--- Note: fromDocument returns cursor at root element, so first step must match root.
+{- | Evaluate an XPath expression on a document, returning matched cursors.
+Note: fromDocument returns cursor at root element, so first step must match root.
+-}
 evaluate :: Document -> [Step] -> [C.Cursor]
 evaluate doc [] = [C.fromDocument doc]
 evaluate doc (Step name preds : rest) =
