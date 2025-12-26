@@ -130,7 +130,8 @@ parseChildPred str
   | otherwise = ChildExists str []
 
 extractQuoted :: String -> String
-extractQuoted ('"' : rest) = takeWhile (/= '"') rest
+extractQuoted (q : rest)
+  | q == '"' || q == '\'' = takeWhile (/= q) rest
 extractQuoted s = s
 
 {- | Evaluate an XPath expression on a document, returning matched cursors.
