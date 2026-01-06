@@ -1,4 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# OPTIONS_GHC -Wno-unused-do-bind #-}
 
@@ -114,7 +113,7 @@ spec = do
       ["Phino - CLI Manipulator of 𝜑-Calculus Expressions", "Usage:"]
 
   it "prints debug info with --log-level=DEBUG" $
-    withStdin "Q -> [[]]" $
+    withStdin "{[[]]}" $
       testCLISucceeded ["rewrite", "--log-level=DEBUG"] ["[DEBUG]:"]
 
   describe "rewriting" $ do
@@ -138,7 +137,7 @@ spec = do
             ["--max-depth must be positive"]
 
       it "with --normalize and --must=1" $
-        withStdin "Q -> [[ x -> [[ y -> 5 ]].y ]].x" $
+        withStdin "{[[ x -> [[ y -> 5 ]].y ]].x}" $
           testCLIFailed
             ["rewrite", "--max-cycles=2", "--max-depth=1", "--normalize", "--must=1"]
             ["it's expected rewriting cycles to be in range [1], but rewriting has already reached 2"]
@@ -179,99 +178,105 @@ spec = do
           ]
 
       it "with --output != latex and --nonumber" $
-        withStdin "{[[]]}" $
+        withStdin "" $
           testCLIFailed
             ["rewrite", "--nonumber", "--output=xmir"]
             ["The --nonumber option can stay together with --output=latex only"]
 
       it "with --omit-listing and --output != xmir" $
-        withStdin "{[[]]}" $
+        withStdin "" $
           testCLIFailed
             ["rewrite", "--omit-listing", "--output=phi"]
             ["--omit-listing"]
 
       it "with --omit-comments and --output != xmir" $
-        withStdin "{[[]]}" $
+        withStdin "" $
           testCLIFailed
             ["rewrite", "--omit-comments", "--output=phi"]
             ["--omit-comments"]
 
       it "with --expression and --output != latex" $
-        withStdin "{[[]]}" $
+        withStdin "" $
           testCLIFailed
             ["rewrite", "--expression=foo", "--output=phi"]
             ["--expression option can stay together with --output=latex only"]
 
       it "with --label and --output != latex" $
-        withStdin "{[[]]}" $
+        withStdin "" $
           testCLIFailed
             ["rewrite", "--label=foo", "--output=phi"]
             ["--label option can stay together with --output=latex only"]
 
       it "with --compress and --output != latex" $
-        withStdin "{[[]]}" $
+        withStdin "" $
           testCLIFailed
             ["rewrite", "--compress", "--output=phi"]
             ["--compress option can stay together with --output=latex only"]
 
       it "with --meet-prefix and --output != latex" $
-        withStdin "{[[]]}" $
+        withStdin "" $
           testCLIFailed
             ["rewrite", "--meet-prefix=foo", "--output=phi"]
             ["--meet-prefix option can stay together with --output=latex only"]
 
       it "with wrong --hide option" $
-        withStdin "{[[]]}" $
+        withStdin "" $
           testCLIFailed
             ["rewrite", "--hide=Q.x(Q.y)"]
             ["[ERROR]: Invalid set of arguments: Only dispatch expression", "but given: Φ.x( Φ.y )"]
 
       it "with many --show options" $
-        withStdin "{[[]]}" $
+        withStdin "" $
           testCLIFailed
             ["rewrite", "--show=Q.x.y", "--show=hello"]
             ["The option --show can be used only once"]
 
       it "with wrong --show option" $
-        withStdin "{[[]]}" $
+        withStdin "" $
           testCLIFailed
             ["rewrite", "--show=Q.x(Q.y)"]
             ["[ERROR]:", "Only dispatch expression started with Φ (or Q) can be used in --show"]
 
       it "with --meet-popularity < 0" $
-        withStdin "{[[]]}" $
+        withStdin "" $
           testCLIFailed
             ["rewrite", "--meet-popularity=-1"]
             ["[ERROR]:", "--meet-popularity must be positive"]
 
       it "with --meet-popularity > 100" $
-        withStdin "{[[]]}" $
+        withStdin "" $
           testCLIFailed
             ["rewrite", "--meet-popularity=102"]
             ["[ERROR]:", "--meet-popularity must be <= 100"]
 
       it "with --meet-popularity and output != latex" $
-        withStdin "{[[]]}" $
+        withStdin "" $
           testCLIFailed
             ["rewrite", "--meet-popularity=51", "--output=phi"]
             ["[ERROR]:", "--meet-popularity option can stay together with --output=latex only"]
 
       it "with --meet-length and output != latex" $
-        withStdin "{[[]]}" $
+        withStdin "" $
           testCLIFailed
             ["rewrite", "--meet-length=4", "--output=phi"]
             ["[ERROR]:", "--meet-length option can stay together with --output=latex only"]
 
       it "with non-dispatch --focus" $
-        withStdin "{[[]]}" $
+        withStdin "" $
           testCLIFailed
             ["rewrite", "--focus=Q.x(Q.y)"]
             ["[ERROR]"]
 
       it "with --focus!=Q and --output=XMIR" $
-        withStdin "{[[]]}" $
+        withStdin "" $
           testCLIFailed
             ["rewrite", "--focus=Q.x", "--output=xmir"]
+            ["[ERROR]"]
+
+      it "with --margin < 0" $
+        withStdin "" $
+          testCLIFailed
+            ["rewrite", "--margin=-1"]
             ["[ERROR]"]
 
     it "prints help" $
@@ -297,11 +302,11 @@ spec = do
     it "desugares without any rules flag from file" $
       testCLISucceeded
         ["rewrite", resource "desugar.phi"]
-        ["Φ ↦ ⟦\n  foo ↦ ξ.x,\n  ρ ↦ ∅\n⟧"]
+        ["Φ ↦ ⟦ foo ↦ ξ.x, ρ ↦ ∅ ⟧"]
 
     it "desugares with without any rules flag from stdin" $
       withStdin "{[[foo ↦ x]]}" $
-        testCLISucceeded ["rewrite"] ["Φ ↦ ⟦\n  foo ↦ ξ.x,\n  ρ ↦ ∅\n⟧"]
+        testCLISucceeded ["rewrite"] ["Φ ↦ ⟦ foo ↦ ξ.x, ρ ↦ ∅ ⟧"]
 
     it "rewrites with single rule" $
       withStdin "{T(x -> Q.y)}" $
@@ -309,7 +314,7 @@ spec = do
 
     it "normalizes with --normalize flag" $
       testCLISucceeded
-        ["rewrite", "--normalize", resource "normalize.phi"]
+        ["rewrite", "--normalize", resource "normalize.phi", "--margin=25"]
         [ unlines
             [ "Φ ↦ ⟦"
             , "  x ↦ ⟦"
@@ -326,7 +331,7 @@ spec = do
     it "normalizes from stdin" $
       withStdin "Φ ↦ ⟦ a ↦ ⟦ b ↦ ∅ ⟧ (b ↦ [[ ]]) ⟧" $
         testCLISucceeded
-          ["rewrite", "--normalize"]
+          ["rewrite", "--normalize", "--margin=20"]
           [ unlines
               [ "Φ ↦ ⟦"
               , "  a ↦ ⟦"
@@ -342,7 +347,7 @@ spec = do
       withStdin "Q -> [[ x -> 5]]" $
         testCLISucceeded
           ["rewrite", "--sweet"]
-          ["{⟦\n  x ↦ 5\n⟧}"]
+          ["{⟦ x ↦ 5 ⟧}"]
 
     it "rewrites as XMIR" $
       withStdin "Q -> [[ x -> Q.y ]]" $
@@ -406,14 +411,7 @@ spec = do
       withStdin "<object><o name=\"app\"><o name=\"x\" base=\"Φ.number\"/></o></object>" $
         testCLISucceeded
           ["rewrite", "--input=xmir", "--sweet"]
-          [ unlines
-              [ "{⟦"
-              , "  app ↦ ⟦"
-              , "    x ↦ Φ.number"
-              , "  ⟧"
-              , "⟧}"
-              ]
-          ]
+          ["{⟦ app ↦ ⟦ x ↦ Φ.number ⟧ ⟧}"]
 
     it "rewrites as XMIR with omit-listing flag" $
       withStdin "Q -> [[ x -> Q.y ]]" $
@@ -662,18 +660,13 @@ spec = do
         hClose h
         testCLISucceeded ["rewrite", rule "simple.yaml", "--in-place", "--sweet", path] []
         content <- readFile path
-        content `shouldBe` "{⟦\n  x ↦ \"bar\"\n⟧}"
+        content `shouldBe` "{⟦ x ↦ \"bar\" ⟧}"
 
     it "rewrites with cycles" $
       withStdin "Q -> [[ x -> \"x\" ]]" $
         testCLISucceeded
           ["rewrite", "--sweet", rule "infinite.yaml", "--max-depth=1", "--max-cycles=2"]
-          [ unlines
-              [ "{⟦"
-              , "  x ↦ \"x_hi_hi\""
-              , "⟧}"
-              ]
-          ]
+          ["{⟦ x ↦ \"x_hi_hi\" ⟧}"]
 
     it "hides default package" $
       withStdin "{[[ org -> [[ eolang -> [[ number -> [[]] ]]]], x -> 42 ]]}" $
@@ -716,14 +709,11 @@ spec = do
     it "reduces log message" $
       withStdin "{[[ x -> [[ y -> ? ]](y -> 5) ]]}" $
         testCLISucceeded
-          ["rewrite", "--log-level=debug", "--log-lines=4", "--normalize"]
+          ["rewrite", "--log-level=debug", "--log-lines=1", "--normalize"]
           [ intercalate
               "\n"
               [ "[DEBUG]: Applied 'COPY' (44 nodes -> 39 nodes)"
-              , "⟦"
-              , "  x ↦ ⟦"
-              , "    y ↦ 5"
-              , "---| log is limited by --log-lines=4 option |---"
+              , "---| log is limited by --log-lines=1 option |---"
               ]
           ]
 
@@ -779,37 +769,37 @@ spec = do
 
     describe "fails" $ do
       it "with --output != latex and --nonumber" $
-        withStdin "{[[]]}" $
+        withStdin "" $
           testCLIFailed
             ["dataize", "--nonumber", "--output=xmir"]
             ["The --nonumber option can stay together with --output=latex only"]
 
       it "with --omit-listing and --output != xmir" $
-        withStdin "{[[]]}" $
+        withStdin "" $
           testCLIFailed
             ["dataize", "--omit-listing", "--output=phi"]
             ["--omit-listing"]
 
       it "with --omit-comments and --output != xmir" $
-        withStdin "{[[]]}" $
+        withStdin "" $
           testCLIFailed
             ["dataize", "--omit-comments", "--output=phi"]
             ["--omit-comments"]
 
       it "with --expression and --output != latex" $
-        withStdin "{[[]]}" $
+        withStdin "" $
           testCLIFailed
             ["dataize", "--expression=foo", "--output=phi"]
             ["--expression option can stay together with --output=latex only"]
 
       it "with --label and --output != latex" $
-        withStdin "{[[]]}" $
+        withStdin "" $
           testCLIFailed
             ["dataize", "--label=foo", "--output=phi"]
             ["--label option can stay together with --output=latex only"]
 
       it "with wrong --hide option" $
-        withStdin "{[[]]}" $
+        withStdin "" $
           testCLIFailed
             ["dataize", "--hide=Q.x(Q.y)"]
             ["[ERROR]: Invalid set of arguments: Only dispatch expression", "but given: Φ.x( Φ.y )"]
@@ -858,7 +848,7 @@ spec = do
 
     it "merges EO programs" $
       testCLISucceeded
-        ["merge", "--sweet", resource "number.phi", resource "bytes.phi", resource "string.phi"]
+        ["merge", "--sweet", resource "number.phi", resource "bytes.phi", resource "string.phi", "--margin=25"]
         [ unlines
             [ "{⟦"
             , "  org ↦ ⟦"
@@ -918,7 +908,7 @@ spec = do
     it "builds with condition from file" $
       testCLISucceeded
         ["match", "--pattern=[[ !B ]]", "--when=eq(length(!B),2)", "test-resources/cli/foo.phi"]
-        ["B >> ⟦\n  foo ↦ Φ.org.eolang.x,\n  ρ ↦ ∅\n⟧"]
+        ["B >> ⟦ foo ↦ Φ.org.eolang.x, ρ ↦ ∅ ⟧"]
 
     it "fails on parsing --when condition" $
       withStdin "{[[]]}" $

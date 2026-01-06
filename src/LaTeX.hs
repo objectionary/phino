@@ -12,6 +12,8 @@ module LaTeX
   , programToLaTeX
   , expressionToLaTeX
   , defaultLatexContext
+  , defaultMeetLength
+  , defaultMeetPopularity
   , LatexContext (..)
   , meetInPrograms
   , meetInProgram
@@ -24,6 +26,7 @@ import Data.Maybe (fromMaybe)
 import Encoding (Encoding (ASCII), ToASCII, withEncoding)
 import Lining (LineFormat (MULTILINE), ToSingleLine, withLineFormat)
 import Locator (locatedExpression)
+import Margin (WithMargin, defaultMargin, withMargin)
 import Matcher
 import Misc
 import Render (Render (render))
@@ -36,6 +39,7 @@ import qualified Yaml as Y
 data LatexContext = LatexContext
   { _sugar :: SugarType
   , _line :: LineFormat
+  , _margin :: Int
   , _nonumber :: Bool
   , _compress :: Bool
   , _meetPopularity :: Int
@@ -47,7 +51,13 @@ data LatexContext = LatexContext
   }
 
 defaultLatexContext :: LatexContext
-defaultLatexContext = LatexContext SWEET MULTILINE False False 50 8 ExGlobal Nothing Nothing Nothing
+defaultLatexContext = LatexContext SWEET MULTILINE defaultMargin False False defaultMeetPopularity defaultMeetLength ExGlobal Nothing Nothing Nothing
+
+defaultMeetPopularity :: Int
+defaultMeetPopularity = 50
+
+defaultMeetLength :: Int
+defaultMeetLength = 8
 
 meetInProgram :: Program -> Int -> Program -> [Expression]
 meetInProgram (Program expr) len = meetInExpression expr
@@ -112,8 +122,8 @@ meetInPrograms prog LatexContext{..} = meetInPrograms' prog 1
     popularity :: Double
     popularity = toDouble _meetPopularity / 100.0
 
-renderToLatex :: (ToSalty a, ToASCII a, ToSingleLine a, ToLaTeX a, Render a) => a -> LatexContext -> String
-renderToLatex renderable LatexContext{..} = render (toLaTeX $ withLineFormat _line $ withEncoding ASCII $ withSugarType _sugar renderable)
+renderToLatex :: (ToSalty a, ToASCII a, ToSingleLine a, ToLaTeX a, WithMargin a, Render a) => a -> LatexContext -> String
+renderToLatex renderable LatexContext{..} = render (toLaTeX $ withLineFormat _line $ withMargin _margin $ withEncoding ASCII $ withSugarType _sugar renderable)
 
 phiquation :: LatexContext -> String
 phiquation LatexContext{_nonumber = True} = "phiquation*"
@@ -121,12 +131,11 @@ phiquation LatexContext{_nonumber = False} = "phiquation"
 
 preamble :: LatexContext -> String
 preamble ctx@LatexContext{..} =
-  let equation = phiquation ctx
-   in concat
-        [ printf "\\begin{%s}\n" equation
-        , maybe "" (printf "\\label{%s}\n") _label
-        , maybe "" (printf "\\phiExpression{%s} ") _expression
-        ]
+  concat
+    [ printf "\\begin{%s}\n" (phiquation ctx)
+    , maybe "" (printf "\\label{%s}\n") _label
+    , maybe "" (printf "\\phiExpression{%s} ") _expression
+    ]
 
 body :: [(a, Maybe String)] -> (a -> String) -> String
 body printed toLatex =
@@ -143,8 +152,8 @@ body printed toLatex =
 ending :: LatexContext -> String
 ending ctx = printf "{.}\n\\end{%s}" (phiquation ctx)
 
-metRewrittens :: [Rewritten] -> LatexContext -> [Rewritten]
-metRewrittens rewrittens ctx@LatexContext{..} =
+compressedRewrittens :: [Rewritten] -> LatexContext -> [Rewritten]
+compressedRewrittens rewrittens ctx@LatexContext{..} =
   let (progs, rules) = unzip rewrittens
    in if _compress then zip (meetInPrograms progs ctx) rules else rewrittens
 
@@ -153,12 +162,12 @@ rewrittensToLatex rewrittens ctx@LatexContext{_focus = ExGlobal} =
   pure
     ( concat
         [ preamble ctx
-        , body (metRewrittens rewrittens ctx) (\prog -> renderToLatex (programToCST prog) ctx)
+        , body (compressedRewrittens rewrittens ctx) (\prog -> renderToLatex (programToCST prog) ctx)
         , ending ctx
         ]
     )
 rewrittensToLatex rewrittens ctx@LatexContext{..} = do
-  let (progs, rules) = unzip (metRewrittens rewrittens ctx)
+  let (progs, rules) = unzip (compressedRewrittens rewrittens ctx)
   exprs <- mapM (locatedExpression _focus) progs
   pure
     ( concat

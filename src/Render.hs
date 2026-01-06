@@ -81,10 +81,6 @@ instance Render GLOBAL where
   render Φ = "Φ"
   render Q = "Q"
 
-instance Render DEF_PACKAGE where
-  render Φ̇ = "Φ̇"
-  render QQ = "QQ"
-
 instance Render TERMINATION where
   render DEAD = "⊥"
   render T = "T"
@@ -119,7 +115,7 @@ instance Render ALPHA where
   render ALPHA' = "~"
 
 instance Render TAB where
-  render TAB{..} = intercalate "" (replicate indent "  ")
+  render TAB{..} = concat (replicate indent "  ")
   render TAB' = " "
   render NO_TAB = ""
 
@@ -130,7 +126,7 @@ instance Render PROGRAM where
 instance Render PAIR where
   render PA_TAU{..} = render attr <> render SPACE <> render arrow <> render SPACE <> render expr
   render PA_FORMATION{voids = [], attr, arrow, expr} = render (PA_TAU attr arrow expr)
-  render PA_FORMATION{..} = render attr <> "(" <> intercalate ", " (map render voids) <> ")" <> render SPACE <> render arrow <> render SPACE <> render expr
+  render PA_FORMATION{..} = render attr <> "(" <> render voids <> ")" <> render SPACE <> render arrow <> render SPACE <> render expr
   render PA_LAMBDA{..} = render LAMBDA <> render SPACE <> render DASHED_ARROW <> render SPACE <> render func
   render PA_LAMBDA'{..} = "L> " <> func
   render PA_VOID{..} = render attr <> render SPACE <> render arrow <> render SPACE <> render void
@@ -177,6 +173,9 @@ instance Render EXPRESSION where
   render EX_META_TAIL{..} = render expr <> " * " <> render meta
   render EX_PHI_MEET{..} = "\\phiMeet{" <> maybe "" (++ ":") prefix <> render idx <> "}{ " <> render expr <> " }"
   render EX_PHI_AGAIN{..} = "\\phiAgain{" <> maybe "" (++ ":") prefix <> render idx <> "}"
+
+instance Render [ATTRIBUTE] where
+  render attrs = intercalate ", " (map render attrs)
 
 instance Render ATTRIBUTE where
   render AT_LABEL{..} = label

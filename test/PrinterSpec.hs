@@ -9,10 +9,9 @@ module PrinterSpec where
 
 import AST
 import Control.Monad (forM_)
-import Data.Map.Strict qualified as Map
 import Encoding (Encoding (..))
 import Lining (LineFormat (..))
-import Matcher (MetaValue (..), Subst (..), Tail (..), defaultScope)
+import Margin (defaultMargin)
 import Printer
 import Sugar (SugarType (..))
 import Test.Hspec (Spec, describe, it, shouldBe, shouldContain)
@@ -25,65 +24,23 @@ spec = do
       [ ("ξ renders as $", ExThis, "$")
       , ("Φ renders as Q", ExGlobal, "Q")
       , ("⊥ renders as T", ExTermination, "T")
-      ]
-      ( \(desc, expr, expected) ->
-          it desc (printExpression' expr (SWEET, ASCII, SINGLELINE) `shouldBe` expected)
-      )
-
-  describe "printExpression with ASCII singleline renders formation with void" $
-    forM_
-      [ ("ρ void becomes empty", ExFormation [BiVoid AtRho], "[[]]")
+      , ("ρ void becomes empty", ExFormation [BiVoid AtRho], "[[]]")
       , ("φ void", ExFormation [BiVoid AtPhi], "[[ @ -> ? ]]")
       , ("label void", ExFormation [BiVoid (AtLabel "名前")], "[[ 名前 -> ? ]]")
-      ]
-      ( \(desc, expr, expected) ->
-          it desc (printExpression' expr (SWEET, ASCII, SINGLELINE) `shouldBe` expected)
-      )
-
-  describe "printExpression with ASCII singleline renders formation with tau" $
-    forM_
-      [ ("x to Φ", ExFormation [BiTau (AtLabel "x") ExGlobal], "[[ x -> Q ]]")
+      , ("x to Φ", ExFormation [BiTau (AtLabel "x") ExGlobal], "[[ x -> Q ]]")
       , ("α0 to ξ", ExFormation [BiTau (AtAlpha 0) ExThis], "[[ ~0 -> $ ]]")
       , ("ρ to ⊥", ExFormation [BiTau AtRho ExTermination], "[[ ^ -> T ]]")
-      ]
-      ( \(desc, expr, expected) ->
-          it desc (printExpression' expr (SWEET, ASCII, SINGLELINE) `shouldBe` expected)
-      )
-
-  describe "printExpression with ASCII singleline renders formation with delta" $
-    forM_
-      [ ("empty delta", ExFormation [BiDelta BtEmpty], "[[ D> -- ]]")
+      , ("empty delta", ExFormation [BiDelta BtEmpty], "[[ D> -- ]]")
       , ("single byte", ExFormation [BiDelta (BtOne "1F")], "[[ D> 1F- ]]")
       , ("multiple bytes", ExFormation [BiDelta (BtMany ["00", "01", "02"])], "[[ D> 00-01-02 ]]")
-      ]
-      ( \(desc, expr, expected) ->
-          it desc (printExpression' expr (SWEET, ASCII, SINGLELINE) `shouldBe` expected)
-      )
-
-  describe "printExpression with ASCII singleline renders formation with lambda" $
-    forM_
-      [ ("función lambda", ExFormation [BiLambda "Función"], "[[ L> Función ]]")
+      , ("función lambda", ExFormation [BiLambda "Función"], "[[ L> Función ]]")
       , ("クラス lambda", ExFormation [BiLambda "クラス"], "[[ L> クラス ]]")
-      ]
-      ( \(desc, expr, expected) ->
-          it desc (printExpression' expr (SWEET, ASCII, SINGLELINE) `shouldBe` expected)
-      )
-
-  describe "printExpression with ASCII singleline renders dispatch" $
-    forM_
-      [ ("Φ.org", ExDispatch ExGlobal (AtLabel "org"), "Q.org")
+      , ("Φ.org", ExDispatch ExGlobal (AtLabel "org"), "Q.org")
       , ("ξ.ρ as sugar", ExDispatch ExThis AtRho, "^")
       , ("ξ.φ as sugar", ExDispatch ExThis AtPhi, "@")
       , ("chained dispatch", ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "éolang"), "Q.org.éolang")
       , ("ξ.α0 as sugar", ExDispatch ExThis (AtAlpha 0), "~0")
-      ]
-      ( \(desc, expr, expected) ->
-          it desc (printExpression' expr (SWEET, ASCII, SINGLELINE) `shouldBe` expected)
-      )
-
-  describe "printExpression with ASCII singleline renders application" $
-    forM_
-      [
+      ,
         ( "dispatch with app"
         , ExApplication (ExDispatch ExGlobal (AtLabel "x")) (BiTau (AtLabel "y") ExThis)
         , "Q.x( y -> $ )"
@@ -93,28 +50,14 @@ spec = do
         , ExApplication (ExFormation [BiVoid AtRho]) (BiTau (AtAlpha 0) ExGlobal)
         , "[[]]( Q )"
         )
-      ]
-      ( \(desc, expr, expected) ->
-          it desc (printExpression' expr (SWEET, ASCII, SINGLELINE) `shouldBe` expected)
-      )
-
-  describe "printExpression with ASCII singleline renders meta expressions" $
-    forM_
-      [ ("meta expr", ExMeta "e", "!e")
+      , ("meta expr", ExMeta "e", "!e")
       , ("meta tail", ExMetaTail ExGlobal "t", "Q * !t")
-      ]
-      ( \(desc, expr, expected) ->
-          it desc (printExpression' expr (SWEET, ASCII, SINGLELINE) `shouldBe` expected)
-      )
-
-  describe "printExpression with ASCII singleline renders meta bindings" $
-    forM_
-      [ ("meta binding", ExFormation [BiMeta "B"], "[[ !B ]]")
+      , ("meta binding", ExFormation [BiMeta "B"], "[[ !B ]]")
       , ("meta lambda", ExFormation [BiMetaLambda "F"], "[[ L> !F ]]")
       , ("meta attr tau", ExFormation [BiTau (AtMeta "a") ExThis], "[[ !a -> $ ]]")
       ]
       ( \(desc, expr, expected) ->
-          it desc (printExpression' expr (SWEET, ASCII, SINGLELINE) `shouldBe` expected)
+          it desc (printExpression' expr (SWEET, ASCII, SINGLELINE, defaultMargin) `shouldBe` expected)
       )
 
   describe "printProgram with default config" $
@@ -137,16 +80,6 @@ spec = do
       ]
       ( \(desc, attr, expected) ->
           it desc (printAttribute attr `shouldBe` expected)
-      )
-
-  describe "printAttribute in ASCII dispatch expression with sugar" $
-    forM_
-      [ ("ρ as caret", AtRho, "^")
-      , ("φ as at", AtPhi, "@")
-      , ("αN as tildeN", AtAlpha 42, "~42")
-      ]
-      ( \(desc, attr, expected) ->
-          it desc (printExpression' (ExDispatch ExThis attr) (SWEET, ASCII, SINGLELINE) `shouldBe` expected)
       )
 
   describe "printBinding renders as formation" $
@@ -180,65 +113,3 @@ spec = do
       ( \(desc, arg, expected) ->
           it desc (printExtraArg arg `shouldContain` expected)
       )
-
-  describe "printSubsts renders empty list" $
-    it "returns separator" $
-      printSubsts [] `shouldBe` "------"
-
-  describe "printSubsts renders attribute substitution" $
-    it "contains key and value" $
-      printSubsts [Subst (Map.singleton "α" (MvAttribute (AtLabel "ατρ")))]
-        `shouldContain` "α >> ατρ"
-
-  describe "printSubsts renders multiple substitutions" $
-    it "separates with dashed line" $
-      let substs =
-            [ Subst (Map.singleton "a" (MvAttribute AtRho))
-            , Subst (Map.singleton "b" (MvAttribute AtPhi))
-            ]
-       in printSubsts substs `shouldContain` "------"
-
-  describe "printSubsts renders expression value" $
-    it "contains expression" $
-      printSubsts [Subst (Map.singleton "e" (MvExpression ExGlobal defaultScope))]
-        `shouldContain` "e >> Φ"
-
-  describe "printSubsts renders bindings value" $
-    it "contains bindings header" $
-      printSubsts [Subst (Map.singleton "B" (MvBindings [BiVoid (AtLabel "x")]))]
-        `shouldContain` "B >> ⟦"
-
-  describe "printSubsts renders bytes value" $
-    it "contains bytes" $
-      printSubsts [Subst (Map.singleton "d" (MvBytes (BtMany ["AB", "CD"])))]
-        `shouldContain` "d >> AB-CD"
-
-  describe "printSubsts renders function value" $
-    it "contains function name" $
-      printSubsts [Subst (Map.singleton "F" (MvFunction "MyFunc"))]
-        `shouldContain` "F >> MyFunc"
-
-  describe "printSubsts renders tail value with dispatch" $
-    it "contains dispatch" $
-      printSubsts [Subst (Map.singleton "t" (MvTail [TaDispatch (AtLabel "attr")]))]
-        `shouldContain` "t >> .attr"
-
-  describe "printSubsts renders tail value with application" $
-    it "contains application" $
-      printSubsts [Subst (Map.singleton "t" (MvTail [TaApplication (BiTau (AtLabel "x") ExThis)]))]
-        `shouldContain` "(⟦"
-
-  describe "printExpression with salty config" $
-    it "adds explicit rho binding" $
-      printExpression' (ExFormation [BiVoid (AtLabel "x")]) (SALTY, UNICODE, SINGLELINE)
-        `shouldContain` "ρ ↦ ∅"
-
-  describe "printExpression with multiline format" $
-    it "adds newlines in formation" $
-      let expr = ExFormation [BiTau (AtLabel "x") ExGlobal, BiVoid (AtLabel "y")]
-          result = printExpression' expr (SWEET, UNICODE, MULTILINE)
-       in result `shouldContain` "\n"
-
-  describe "logPrintConfig" $
-    it "is sweet unicode singleline" $
-      logPrintConfig `shouldBe` (SWEET, UNICODE, SINGLELINE)

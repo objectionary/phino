@@ -11,8 +11,8 @@ data Encoding = ASCII | UNICODE
   deriving (Eq, Show)
 
 withEncoding :: (ToASCII a) => Encoding -> a -> a
-withEncoding UNICODE prog = prog
-withEncoding ASCII prog = toASCII prog
+withEncoding UNICODE node = node
+withEncoding ASCII node = toASCII node
 
 class ToASCII a where
   toASCII :: a -> a

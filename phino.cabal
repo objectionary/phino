@@ -49,6 +49,7 @@ library
     Lining
     Locator
     Logger
+    Margin
     Matcher
     Merge
     Misc

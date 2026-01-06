@@ -25,10 +25,11 @@ import Deps (SaveStepFunc, saveStep)
 import Encoding (Encoding (UNICODE))
 import qualified Filter as F
 import Functions (buildTerm)
-import LaTeX (LatexContext (LatexContext), explainRules, expressionToLaTeX, programToLaTeX, rewrittensToLatex)
+import LaTeX (LatexContext (LatexContext), defaultMeetLength, defaultMeetPopularity, explainRules, expressionToLaTeX, programToLaTeX, rewrittensToLatex)
 import Lining (LineFormat (MULTILINE, SINGLELINE))
 import Locator (locatedExpression)
 import Logger
+import Margin (defaultMargin)
 import Merge (merge)
 import Misc (ensuredFile)
 import qualified Misc
@@ -50,6 +51,7 @@ import qualified Yaml as Y
 data PrintProgramContext = PrintProgCtx
   { _sugar :: SugarType
   , _line :: LineFormat
+  , _margin :: Int
   , _xmirCtx :: XmirContext
   , _nonumber :: Bool
   , _compress :: Bool
@@ -108,6 +110,7 @@ data OptsDataize = OptsDataize
   , _compress :: Bool
   , _maxDepth :: Int
   , _maxCycles :: Int
+  , _margin :: Int
   , _meetPopularity :: Maybe Int
   , _meetLength :: Maybe Int
   , _hide :: [String]
@@ -150,6 +153,7 @@ data OptsRewrite = OptsRewrite
   , _compress :: Bool
   , _maxDepth :: Int
   , _maxCycles :: Int
+  , _margin :: Int
   , _meetPopularity :: Maybe Int
   , _meetLength :: Maybe Int
   , _rules :: [FilePath]
@@ -174,6 +178,7 @@ data OptsMerge = OptsMerge
   , _flat :: LineFormat
   , _omitListing :: Bool
   , _omitComments :: Bool
+  , _margin :: Int
   , _targetFile :: Maybe FilePath
   , _inputs :: [FilePath]
   }
@@ -255,6 +260,12 @@ optMaxCycles =
     (auto >>= validateIntOption (> 0) "--max-cycles must be positive")
     (long "max-cycles" <> metavar "CYCLES" <> help "Maximum number of rewriting cycles across all rules" <> value 25 <> showDefault)
 
+optMargin :: Parser Int
+optMargin =
+  option
+    (auto >>= validateIntOption (> 0) "--margin must be positive")
+    (long "margin" <> help "The maximum right margin for the printed 𝜑-programs or 𝜑-expressions" <> value defaultMargin <> showDefault)
+
 optMeetPopularity :: Parser (Maybe Int)
 optMeetPopularity =
   optional
@@ -263,7 +274,10 @@ optMeetPopularity =
             >>= validateIntOption (> 0) "--meet-popularity must be positive"
             >>= validateIntOption (< 100) "--meet-popularity must be <= 100"
         )
-        (long "meet-popularity" <> metavar "PERCENTAGE" <> help "The minimum popularity of an expression in order to be suitable for \\phiMeet{}, in percentage (default: 50)")
+        ( long "meet-popularity"
+            <> metavar "PERCENTAGE"
+            <> help (printf "The minimum popularity of an expression in order to be suitable for \\phiMeet{}, in percentage (default: %d)" defaultMeetPopularity)
+        )
     )
 
 optMeetLength :: Parser (Maybe Int)
@@ -271,7 +285,10 @@ optMeetLength =
   optional
     ( option
         (auto >>= validateIntOption (> 0) "--meet-length must be positive")
-        (long "meet-length" <> metavar "NODES" <> help "The minimum length of an expression that fits into \\phiMeet{}, in AST nodes (default: 8)")
+        ( long "meet-length"
+            <> metavar "NODES"
+            <> help (printf "The minimum length of an expression that fits into \\phiMeet{}, in AST nodes (default: %d)" defaultMeetLength)
+        )
     )
 
 optDepthSensitive :: Parser Bool
@@ -391,6 +408,7 @@ dataizeParser =
             <*> optCompress
             <*> optMaxDepth
             <*> optMaxCycles
+            <*> optMargin
             <*> optMeetPopularity
             <*> optMeetLength
             <*> optHide
@@ -434,6 +452,7 @@ rewriteParser =
             <*> optCompress
             <*> optMaxDepth
             <*> optMaxCycles
+            <*> optMargin
             <*> optMeetPopularity
             <*> optMeetLength
             <*> optRule
@@ -461,6 +480,7 @@ mergeParser =
             <*> optLineFormat'
             <*> optOmitListing
             <*> optOmitComments
+            <*> optMargin
             <*> optTarget
             <*> many (argument str (metavar "[FILE]" <> help "Paths to input files"))
         )
@@ -529,7 +549,7 @@ runCLI args = handle handler $ do
       input <- readInput _inputFile
       rules <- getRules _normalize _shuffle _rules
       program <- parseProgram input _inputFormat
-      let listing = if null rules then const input else (\prog -> P.printProgram' prog (_sugarType, UNICODE, _flat))
+      let listing = if null rules then const input else (\prog -> P.printProgram' prog (_sugarType, UNICODE, _flat, _margin))
           xmirCtx = XmirContext _omitListing _omitComments listing
           printCtx = printProgCtx xmirCtx foc
           canonize = if _canonize then C.canonize else id
@@ -587,6 +607,7 @@ runCLI args = handle handler $ do
           PrintProgCtx
             _sugarType
             _flat
+            _margin
             xmirCtx
             _nonumber
             _compress
@@ -638,6 +659,7 @@ runCLI args = handle handler $ do
           PrintProgCtx
             _sugarType
             _flat
+            _margin
             defaultXmirContext
             _nonumber
             _compress
@@ -664,7 +686,7 @@ runCLI args = handle handler $ do
       inputs' <- traverse (readInput . Just) _inputs
       progs <- traverse (`parseProgram` _inputFormat) inputs'
       prog <- merge progs
-      let listing = const (P.printProgram' prog (_sugarType, UNICODE, _flat))
+      let listing = const (P.printProgram' prog (_sugarType, UNICODE, _flat, _margin))
           xmirCtx = XmirContext _omitListing _omitComments listing
           printCtx = printProgCtx xmirCtx
       prog' <- printProgram printCtx prog
@@ -681,6 +703,7 @@ runCLI args = handle handler $ do
           PrintProgCtx
             _sugarType
             _flat
+            _margin
             xmirCtx
             False
             False
@@ -703,16 +726,16 @@ runCLI args = handle handler $ do
           substs <- matchProgramWithRule prog (rule ptn condition) (RuleContext buildTerm)
           if null substs
             then logDebug "Provided pattern was not matched, no substitutions are built"
-            else putStrLn (P.printSubsts' substs (_sugarType, UNICODE, _flat))
+            else putStrLn (P.printSubsts' substs (_sugarType, UNICODE, _flat, defaultMargin))
       where
         rule :: Expression -> Maybe Y.Condition -> Y.Rule
         rule ptn cnd = Y.Rule Nothing Nothing ptn ExGlobal cnd Nothing Nothing
 
 justMeetPopularity :: Maybe Int -> Int
-justMeetPopularity = fromMaybe 50
+justMeetPopularity = fromMaybe defaultMeetPopularity
 
 justMeetLength :: Maybe Int -> Int
-justMeetLength = fromMaybe 8
+justMeetLength = fromMaybe defaultMeetLength
 
 -- Prepare saveStepFunc
 saveStepFunc :: Maybe FilePath -> PrintProgramContext -> SaveStepFunc
@@ -786,23 +809,23 @@ parseProgram _ LATEX = invalidCLIArguments "LaTeX cannot be used as input format
 
 printRewrittens :: PrintProgramContext -> [Rewritten] -> IO String
 printRewrittens ctx@PrintProgCtx{..} rewrittens
-  | _outputFormat == LATEX && _sequence = rewrittensToLatex rewrittens (LatexContext _sugar _line _nonumber _compress _meetPopularity _meetLength _focus _expression _label _meetPrefix)
+  | _outputFormat == LATEX && _sequence = rewrittensToLatex rewrittens (LatexContext _sugar _line _margin _nonumber _compress _meetPopularity _meetLength _focus _expression _label _meetPrefix)
   | _focus == ExGlobal = mapM (printProgram ctx . fst) rewrittens <&> intercalate "\n"
   | otherwise = mapM (\(prog, _) -> locatedExpression _focus prog >>= printExpression ctx) rewrittens <&> intercalate "\n"
 
 printExpression :: PrintProgramContext -> Expression -> IO String
 printExpression PrintProgCtx{..} ex = case _outputFormat of
-  PHI -> pure (P.printExpression' ex (_sugar, UNICODE, _line))
+  PHI -> pure (P.printExpression' ex (_sugar, UNICODE, _line, _margin))
   XMIR -> throwIO CouldNotPrintExpressionInXMIR
-  LATEX -> pure (expressionToLaTeX ex (LatexContext _sugar _line _nonumber _compress _meetPopularity _meetLength _focus _expression _label _meetPrefix))
+  LATEX -> pure (expressionToLaTeX ex (LatexContext _sugar _line _margin _nonumber _compress _meetPopularity _meetLength _focus _expression _label _meetPrefix))
 
 -- Convert
 -- Convert program to corresponding String format
 printProgram :: PrintProgramContext -> Program -> IO String
 printProgram PrintProgCtx{..} prog = case _outputFormat of
-  PHI -> pure (P.printProgram' prog (_sugar, UNICODE, _line))
+  PHI -> pure (P.printProgram' prog (_sugar, UNICODE, _line, _margin))
   XMIR -> programToXMIR prog _xmirCtx <&> printXMIR
-  LATEX -> pure (programToLaTeX prog (LatexContext _sugar _line _nonumber _compress _meetPopularity _meetLength _focus _expression _label _meetPrefix))
+  LATEX -> pure (programToLaTeX prog (LatexContext _sugar _line _margin _nonumber _compress _meetPopularity _meetLength _focus _expression _label _meetPrefix))
 
 -- Get rules for rewriting depending on provided flags
 getRules :: Bool -> Bool -> [FilePath] -> IO [Y.Rule]

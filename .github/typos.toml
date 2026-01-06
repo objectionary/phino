@@ -9,4 +9,5 @@ extend-exclude = [
 [default]
 extend-ignore-identifiers-re = [
   "ASS*"       # false positive
+  "bimap"      # false positive
 ]

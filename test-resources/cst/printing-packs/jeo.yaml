@@ -34,12 +34,6 @@ result: |-
       Φ.jeo.opcode.lstore( 55, 1 ),
       Φ.jeo.opcode.iconst_0( 3 ),
       Φ.jeo.opcode.istore( 54, 3 ),
-      Φ.jeo.label(
-        Φ.bytes(
-          ⟦
-            Δ ⤍ 4C-31-32-38-34-34-34-35-32-36-37
-          ⟧
-        )
-      )
+      Φ.jeo.label( Φ.bytes( ⟦ Δ ⤍ 4C-31-32-38-34-34-34-35-32-36-37 ⟧ ) )
     )
   ⟧}

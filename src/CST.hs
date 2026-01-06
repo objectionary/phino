@@ -1,8 +1,6 @@
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE PatternSynonyms #-}
 {-# OPTIONS_GHC -Wno-partial-fields -Wno-name-shadowing #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
@@ -12,7 +10,7 @@ module CST where
 
 import AST
 import Data.Maybe (isJust)
-import Misc (btsToNum, btsToStr, matchDataObject, pattern BaseObject, pattern DataNumber, pattern DataString)
+import Misc
 
 data LCB = LCB | BIG_LCB
   deriving (Eq, Show)
@@ -54,9 +52,6 @@ data LAMBDA = LAMBDA
   deriving (Eq, Show)
 
 data GLOBAL = Φ | Q
-  deriving (Eq, Show)
-
-data DEF_PACKAGE = Φ̇ | QQ
   deriving (Eq, Show)
 
 data TERMINATION = DEAD | T
@@ -170,33 +165,33 @@ data ATTRIBUTE
   deriving (Eq, Show)
 
 programToCST :: Program -> PROGRAM
-programToCST prog = toCST prog 0 EOL
+programToCST prog = toCST prog (0, EOL)
 
 expressionToCST :: Expression -> EXPRESSION
-expressionToCST ex = toCST ex 0 EOL
+expressionToCST ex = toCST ex (0, EOL)
 
 -- This class is used to convert AST to CST
 -- CST is created with sugar and unicode
--- All further transformations much consider that
+-- All further transformations must consider that
 class ToCST a b where
-  toCST :: a -> Int -> EOL -> b
+  toCST :: a -> (Int, EOL) -> b
 
 instance ToCST Program PROGRAM where
-  toCST (Program expr) tabs eol = PR_SWEET LCB (toCST expr tabs eol) RCB
+  toCST (Program expr) ctx = PR_SWEET LCB (toCST expr ctx) RCB
 
 instance ToCST Expression EXPRESSION where
-  toCST ExGlobal _ _ = EX_GLOBAL Φ
-  toCST ExThis _ _ = EX_XI XI
-  toCST (ExMeta mt) _ _ = EX_META (MT_EXPRESSION (tail mt))
-  toCST (ExMetaTail expr mt) tabs eol = EX_META_TAIL (toCST expr tabs eol) (MT_TAIL (tail mt))
-  toCST ExTermination _ _ = EX_TERMINATION DEAD
-  toCST (ExFormation [BiVoid AtRho]) _ eol = toCST (ExFormation []) 0 eol
-  toCST (ExFormation []) _ _ = EX_FORMATION LSB NO_EOL NO_TAB (BI_EMPTY NO_TAB) NO_EOL NO_TAB RSB
-  toCST (ExPhiMeet prefix idx expr) tabs eol = EX_PHI_MEET prefix idx (toCST expr tabs eol)
-  toCST (ExPhiAgain prefix idx expr) tabs eol = EX_PHI_AGAIN prefix idx (toCST expr tabs eol)
-  toCST (ExFormation bds) tabs eol =
+  toCST ExGlobal _ = EX_GLOBAL Φ
+  toCST ExThis _ = EX_XI XI
+  toCST (ExMeta mt) _ = EX_META (MT_EXPRESSION (tail mt))
+  toCST (ExMetaTail expr mt) ctx = EX_META_TAIL (toCST expr ctx) (MT_TAIL (tail mt))
+  toCST ExTermination _ = EX_TERMINATION DEAD
+  toCST (ExPhiMeet prefix idx expr) ctx = EX_PHI_MEET prefix idx (toCST expr ctx)
+  toCST (ExPhiAgain prefix idx expr) ctx = EX_PHI_AGAIN prefix idx (toCST expr ctx)
+  toCST (ExFormation [BiVoid AtRho]) ctx = toCST (ExFormation []) ctx
+  toCST (ExFormation []) _ = EX_FORMATION LSB NO_EOL NO_TAB (BI_EMPTY NO_TAB) NO_EOL NO_TAB RSB
+  toCST (ExFormation bds) (tabs, eol) =
     let next = tabs + 1
-        bds' = toCST (withoutLastVoidRho bds) next eol :: BINDING
+        bds' = toCST (withoutLastVoidRho bds) (next, eol) :: BINDING
      in EX_FORMATION
           LSB
           EOL
@@ -209,25 +204,24 @@ instance ToCST Expression EXPRESSION where
       withoutLastVoidRho :: [Binding] -> [Binding]
       withoutLastVoidRho [] = []
       withoutLastVoidRho [BiVoid AtRho] = []
-      withoutLastVoidRho (bd : [BiVoid AtRho]) = [bd]
       withoutLastVoidRho (bd : bds') = bd : withoutLastVoidRho bds'
-  toCST (DataString bts) tabs _ = EX_STRING (btsToStr bts) (TAB tabs) []
-  toCST (DataNumber bts) tabs _ = EX_NUMBER (btsToNum bts) (TAB tabs) []
-  toCST (ExDispatch ExThis attr) tabs eol = EX_ATTR (toCST attr tabs eol)
-  toCST (ExDispatch expr attr) tabs eol = EX_DISPATCH (toCST expr tabs eol) (toCST attr tabs eol)
+  toCST (DataString bts) (tabs, _) = EX_STRING (btsToStr bts) (TAB tabs) []
+  toCST (DataNumber bts) (tabs, _) = EX_NUMBER (btsToNum bts) (TAB tabs) []
+  toCST (ExDispatch ExThis attr) ctx = EX_ATTR (toCST attr ctx)
+  toCST (ExDispatch expr attr) ctx = EX_DISPATCH (toCST expr ctx) (toCST attr ctx)
   -- Since we convert AST to CST in sweet notation, here we're trying to get rid of unnecessary rho bindings
   -- in primitives (more details here: https://github.com/objectionary/phino/issues/451)
   -- If we find something similar to:
-  -- `QQ.number(~0 -> QQ.bytes(...), ^ -> ..., ^ -> ...)`
+  -- `Q.number(~0 -> Q.bytes(...), ^ -> ..., ^ -> ...)`
   -- We remove unnecessary rho bindings and save them to EX_STRING or EX_NUMBER so they can be successfully
   -- converted to salty notation without losing information.
   -- In the end we just get CST with data primitive which is printed correctly.
   -- If given application is not such primitive - we just convert it to one of the applications:
   -- 1. either with pure expression with arguments, which means there are incremented only alpha bindings
   -- 2. or with just bindings
-  toCST app@(ExApplication _ _) tabs eol =
+  toCST app@(ExApplication _ _) ctx@(tabs, eol) =
     let (ex, ts, exs) = complexApplication app
-        ex' = toCST ex tabs eol :: EXPRESSION
+        ex' = toCST ex ctx :: EXPRESSION
         next = tabs + 1
         (ts', rs) = withoutRhosInPrimitives ex ts
         obj = ExApplication ex (head ts')
@@ -236,25 +230,23 @@ instance ToCST Expression EXPRESSION where
           else
             if null exs
               then
-                let eol' = inlinedEOL (not (hasEOL ts))
-                 in EX_APPLICATION_TAUS
-                      ex'
-                      eol'
-                      (tabOfEOL eol' next)
-                      (toCST ts next eol' :: BINDING)
-                      eol'
-                      (tabOfEOL eol' tabs)
-                      next
+                EX_APPLICATION_TAUS
+                  ex'
+                  eol
+                  (TAB next)
+                  (toCST ts (next, eol) :: BINDING)
+                  eol
+                  (TAB tabs)
+                  next
               else
-                let eol' = inlinedEOL (not (hasEOL exs))
-                 in EX_APPLICATION_EXPRS
-                      ex'
-                      eol'
-                      (tabOfEOL eol' next)
-                      (toCST exs next eol')
-                      eol'
-                      (tabOfEOL eol' tabs)
-                      next
+                EX_APPLICATION_EXPRS
+                  ex'
+                  eol
+                  (TAB next)
+                  (toCST exs (next, eol))
+                  eol
+                  (TAB tabs)
+                  next
     where
       primitives :: [String]
       primitives = ["number", "string"]
@@ -303,97 +295,64 @@ instance ToCST Expression EXPRESSION where
           complexApplication' expr = (expr, [], [])
 
 instance ToCST [Expression] APP_ARG where
-  toCST (expr : exprs) tabs eol = APP_ARG (toCST expr tabs eol) (toCST exprs tabs eol)
-  toCST [] _ _ = error "toCST APP_ARG requires non-empty expression list"
+  toCST (expr : exprs) ctx = APP_ARG (toCST expr ctx) (toCST exprs ctx)
+  toCST [] _ = error "toCST APP_ARG requires non-empty expression list"
 
 instance ToCST [Expression] APP_ARGS where
-  toCST [] _ _ = AAS_EMPTY
-  toCST (expr : exprs) tabs eol = AAS_EXPR eol (tabOfEOL eol tabs) (toCST expr tabs eol) (toCST exprs tabs eol)
+  toCST [] _ = AAS_EMPTY
+  toCST (expr : exprs) ctx@(tabs, eol) = AAS_EXPR eol (TAB tabs) (toCST expr ctx) (toCST exprs ctx)
 
 instance ToCST [Binding] BINDING where
-  toCST [] tabs _ = BI_EMPTY (TAB tabs)
-  toCST (BiMeta mt : bds) tabs eol = BI_META (MT_BINDING (tail mt)) (toCST bds tabs eol) (tabOfEOL eol tabs)
-  toCST (bd : bds) tabs eol = BI_PAIR (toCST bd tabs eol) (toCST bds tabs eol) (tabOfEOL eol tabs)
+  toCST [] (tabs, _) = BI_EMPTY (TAB tabs)
+  toCST (BiMeta mt : bds) ctx@(tabs, _) = BI_META (MT_BINDING (tail mt)) (toCST bds ctx) (TAB tabs)
+  toCST (bd : bds) ctx@(tabs, _) = BI_PAIR (toCST bd ctx) (toCST bds ctx) (TAB tabs)
 
 instance ToCST [Binding] BINDINGS where
-  toCST [] tabs _ = BDS_EMPTY (TAB tabs)
-  toCST (BiMeta mt : bds) tabs eol = BDS_META eol (tabOfEOL eol tabs) (MT_BINDING (tail mt)) (toCST bds tabs eol)
-  toCST (bd : bds) tabs eol = BDS_PAIR eol (tabOfEOL eol tabs) (toCST bd tabs eol) (toCST bds tabs eol)
+  toCST [] (tabs, _) = BDS_EMPTY (TAB tabs)
+  toCST (BiMeta mt : bds) ctx@(tabs, eol) = BDS_META eol (TAB tabs) (MT_BINDING (tail mt)) (toCST bds ctx)
+  toCST (bd : bds) ctx@(tabs, eol) = BDS_PAIR eol (TAB tabs) (toCST bd ctx) (toCST bds ctx)
 
 instance ToCST Binding PAIR where
-  toCST (BiTau attr exp@(ExFormation bds)) tabs eol =
+  toCST (BiTau attr exp@(ExFormation bds)) ctx =
     let voids' = voids bds
-        attr' = toCST attr tabs eol
+        attr' = toCST attr ctx
      in if null voids'
-          then PA_TAU attr' ARROW (toCST exp tabs eol)
+          then PA_TAU attr' ARROW (toCST exp ctx)
           else
             let (_voids, _bds) = if length voids' == length bds && last voids' == AtRho then (init voids', []) else (voids', drop (length voids') bds)
              in PA_FORMATION
                   attr'
-                  (map (\at -> toCST at tabs eol) _voids)
+                  (map (`toCST` ctx) _voids)
                   ARROW
-                  (toCST (ExFormation _bds) tabs eol)
+                  (toCST (ExFormation _bds) ctx)
     where
       voids :: [Binding] -> [Attribute]
       voids [] = []
       voids (bd : bds) = case bd of
         BiVoid attr -> attr : voids bds
         _ -> []
-  toCST (BiTau attr exp) tabs eol = PA_TAU (toCST attr tabs eol) ARROW (toCST exp tabs eol)
-  toCST (BiVoid attr) tabs eol = PA_VOID (toCST attr tabs eol) ARROW EMPTY
-  toCST (BiDelta bts) tabs eol = PA_DELTA (toCST bts tabs eol)
-  toCST (BiLambda func) _ _ = PA_LAMBDA func
-  toCST (BiMetaLambda mt) _ _ = PA_META_LAMBDA (MT_FUNCTION (tail mt))
-  toCST (BiMeta mt) _ _ = error $ "BiMeta binding " ++ mt ++ " cannot be converted to PAIR"
+  toCST (BiTau attr exp) ctx = PA_TAU (toCST attr ctx) ARROW (toCST exp ctx)
+  toCST (BiVoid attr) ctx = PA_VOID (toCST attr ctx) ARROW EMPTY
+  toCST (BiDelta bts) ctx = PA_DELTA (toCST bts ctx)
+  toCST (BiLambda func) _ = PA_LAMBDA func
+  toCST (BiMetaLambda mt) _ = PA_META_LAMBDA (MT_FUNCTION (tail mt))
+  toCST (BiMeta mt) _ = error $ "BiMeta binding " ++ mt ++ " cannot be converted to PAIR"
 
 instance ToCST Binding APP_BINDING where
-  toCST bd@(BiTau _ _) tabs eol = APP_BINDING (toCST bd tabs eol :: PAIR)
-  toCST bd _ _ = error $ "Only BiTau binding can be converted to APP_BINDING, got: " ++ show bd
+  toCST bd@(BiTau _ _) ctx = APP_BINDING (toCST bd ctx :: PAIR)
+  toCST bd _ = error $ "Only BiTau binding can be converted to APP_BINDING, got: " ++ show bd
 
 instance ToCST Bytes BYTES where
-  toCST BtEmpty _ _ = BT_EMPTY
-  toCST (BtOne byte) _ _ = BT_ONE byte
-  toCST (BtMany bts) _ _ = BT_MANY bts
-  toCST (BtMeta mt) _ _ = BT_META (MT_BYTES (tail mt))
+  toCST BtEmpty _ = BT_EMPTY
+  toCST (BtOne byte) _ = BT_ONE byte
+  toCST (BtMany bts) _ = BT_MANY bts
+  toCST (BtMeta mt) _ = BT_META (MT_BYTES (tail mt))
 
 instance ToCST Attribute ATTRIBUTE where
-  toCST (AtLabel label) _ _ = AT_LABEL label
-  toCST (AtAlpha idx) _ _ = AT_ALPHA ALPHA idx
-  toCST AtPhi _ _ = AT_PHI PHI
-  toCST AtRho _ _ = AT_RHO RHO
-  toCST AtDelta _ _ = AT_DELTA DELTA
-  toCST AtLambda _ _ = AT_LAMBDA LAMBDA
-  toCST (AtMeta mt) _ _ = AT_META (MT_ATTRIBUTE (tail mt))
-
-inlinedEOL :: Bool -> EOL
-inlinedEOL True = NO_EOL
-inlinedEOL False = EOL
-
-tabOfEOL :: EOL -> Int -> TAB
-tabOfEOL EOL indent = TAB indent
-tabOfEOL NO_EOL _ = TAB'
-
-class HasEOL a where
-  hasEOL :: a -> Bool
-
-instance HasEOL [Binding] where
-  hasEOL [] = False
-  hasEOL (bd : rest) = hasEOL bd || hasEOL rest
-
-instance HasEOL Binding where
-  hasEOL (BiTau _ expr) = hasEOL expr
-  hasEOL _ = False
-
-instance HasEOL [Expression] where
-  hasEOL [] = False
-  hasEOL (expr : rest) = hasEOL expr || hasEOL rest
-
-instance HasEOL Expression where
-  hasEOL (ExFormation []) = False
-  hasEOL (ExFormation _) = True
-  hasEOL (DataNumber _) = False
-  hasEOL (DataString _) = False
-  hasEOL (BaseObject _) = False
-  hasEOL (ExDispatch expr _) = hasEOL expr
-  hasEOL (ExApplication expr tau) = hasEOL expr || hasEOL tau
-  hasEOL _ = False
+  toCST (AtLabel label) _ = AT_LABEL label
+  toCST (AtAlpha idx) _ = AT_ALPHA ALPHA idx
+  toCST AtPhi _ = AT_PHI PHI
+  toCST AtRho _ = AT_RHO RHO
+  toCST AtDelta _ = AT_DELTA DELTA
+  toCST AtLambda _ = AT_LAMBDA LAMBDA
+  toCST (AtMeta mt) _ = AT_META (MT_ATTRIBUTE (tail mt))

@@ -14,6 +14,7 @@ import Data.Yaml qualified as Yaml
 import Encoding (Encoding (ASCII), withEncoding)
 import GHC.Generics (Generic)
 import Lining (LineFormat (SINGLELINE), withLineFormat)
+import Margin (defaultMargin, withMargin)
 import Misc
 import Parser (parseProgramThrows)
 import Render (Render (render))
@@ -74,7 +75,7 @@ spec = do
       , ("number(bytes(again(data)))", app number (bt (app bts (bt (again form)))))
       , ("again(number)(again(bytes)(again(data)))", app (again number) (bt (app (again bts) (bt (again form)))))
       ]
-      (\(desc, ex) -> it desc (toCST ex 0 EOL `shouldSatisfy` isCSTNumber))
+      (\(desc, ex) -> it desc (toCST ex (0, EOL) `shouldSatisfy` isCSTNumber))
 
   describe "CST printing packs" $ do
     let resources = "test-resources/cst/printing-packs"
@@ -84,7 +85,7 @@ spec = do
       ( \pth -> it (makeRelative resources pth) $ do
           pack <- cstPack pth
           prog <- parseProgramThrows (program pack)
-          render (programToCST prog) `shouldBe` result pack
+          render (withMargin defaultMargin (programToCST prog)) `shouldBe` result pack
       )
 
   describe "converts to salty CST" $ do
@@ -109,7 +110,7 @@ spec = do
           pack <- cstPack pth
           prog <- parseProgramThrows (program pack)
           let cst = programToCST prog
-              ascii = withEncoding ASCII cst
+              ascii = withMargin defaultMargin (withEncoding ASCII cst)
           render ascii `shouldBe` result pack
       )
 

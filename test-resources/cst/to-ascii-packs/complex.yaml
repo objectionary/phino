@@ -24,11 +24,7 @@ result: |-
     number(a) -> [[
       b -> Q.org.^.@,
       c -> xyz( q -> Q.y, ~0 -> a.b ),
-      z -> [[
-        L> Func,
-        D> 00-,
-        def -> Q.txt.sprintf
-      ]],
+      z -> [[ L> Func, D> 00-, def -> Q.txt.sprintf ]],
       error -> T
     ]]
   ]]}

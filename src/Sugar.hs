@@ -14,8 +14,8 @@ import CST
 import Misc (numToBts, strToBts, toDouble, pattern BaseObject)
 
 withSugarType :: (ToSalty a) => SugarType -> a -> a
-withSugarType SWEET prog = prog
-withSugarType SALTY prog = toSalty prog
+withSugarType SWEET node = node
+withSugarType SALTY node = toSalty node
 
 voidRho :: PAIR
 voidRho = PA_VOID (AT_RHO RHO) ARROW EMPTY
@@ -39,18 +39,18 @@ data SugarType = SWEET | SALTY
 
 -- By default CST is generated with all possible syntax sugar
 -- The main purpose of this class is to get rid of syntax sugar
---  |----------------------------|-------------------------------------------------------|
---  | sugar                      | verbose version                                       |
---  |----------------------------|-------------------------------------------------------|
---  | {e}                        | Q -> e                                                |
---  | a1 -> a2                   | a1 ↦ $.a2                                             |
---  | a -> 42                    | QQ.number(QQ.bytes([[ D> 40-45-00-00-00-00-00-00 ]])) |
---  | a -> "Hey"                 | QQ.number(QQ.bytes([[ D> 48-65-79 ]]))                |
---  | [[ B ]]                    | [[ B, ^ -> ? ]], if rho is absent in 'B'              |
---  | a1(a2, a3, ...) -> [[ B ]] | a1 -> [[ a2 -> ?, a3 -> ?, ..., B ]]                  |
---  | e(e0, e1, ...)             | e(~0 -> e0, ~1 -> e1, ...)                            |
---  | e(a1 -> e1, a2 -> e2, ...) | e(a1 -> e1)(a2 -> e2)...                              |
---  |----------------------------|-------------------------------------------------------|
+--  |----------------------------|-----------------------------------------------------|
+--  | sugar                      | verbose version                                     |
+--  |----------------------------|-----------------------------------------------------|
+--  | {e}                        | Q -> e                                              |
+--  | a1 -> a2                   | a1 ↦ $.a2                                           |
+--  | a -> 42                    | Q.number(Q.bytes([[ D> 40-45-00-00-00-00-00-00 ]])) |
+--  | a -> "Hey"                 | Q.number(Q.bytes([[ D> 48-65-79 ]]))                |
+--  | [[ B ]]                    | [[ B, ^ -> ? ]], if rho is absent in 'B'            |
+--  | a1(a2, a3, ...) -> [[ B ]] | a1 -> [[ a2 -> ?, a3 -> ?, ..., B ]]                |
+--  | e(e0, e1, ...)             | e(~0 -> e0, ~1 -> e1, ...)                          |
+--  | e(a1 -> e1, a2 -> e2, ...) | e(a1 -> e1)(a2 -> e2)...                            |
+--  |----------------------------|-----------------------------------------------------|
 class ToSalty a where
   toSalty :: a -> a
 
@@ -93,16 +93,16 @@ instance ToSalty EXPRESSION where
       argsToBindings AAS_EXPR{..} idx tb = BDS_PAIR eol tb (PA_TAU (AT_ALPHA ALPHA idx) ARROW expr) (argsToBindings args (idx + 1) tb)
   toSalty EX_NUMBER{num, tab = tab@TAB{..}, rhos} =
     saltifyPrimitive
-      (toCST (BaseObject "number") (indent + 1) EOL)
-      (toCST (BaseObject "bytes") (indent + 2) EOL)
-      (toCST (ExFormation [BiDelta (numToBts (either toDouble id num))]) (indent + 2) EOL)
+      (toCST (BaseObject "number") (indent + 1, EOL))
+      (toCST (BaseObject "bytes") (indent + 2, EOL))
+      (toCST (ExFormation [BiDelta (numToBts (either toDouble id num))]) (indent + 2, EOL))
       tab
       rhos
   toSalty EX_STRING{str, tab = tab@TAB{..}, rhos} =
     saltifyPrimitive
-      (toCST (BaseObject "string") (indent + 1) EOL)
-      (toCST (BaseObject "bytes") (indent + 2) EOL)
-      (toCST (ExFormation [BiDelta (strToBts str)]) (indent + 2) EOL)
+      (toCST (BaseObject "string") (indent + 1, EOL))
+      (toCST (BaseObject "bytes") (indent + 2, EOL))
+      (toCST (ExFormation [BiDelta (strToBts str)]) (indent + 2, EOL))
       tab
       rhos
   toSalty EX_PHI_MEET{..} = EX_PHI_MEET prefix idx (toSalty expr)
@@ -131,7 +131,7 @@ saltifyPrimitive base bytes data' tb@TAB{..} rhos =
                         (indent + 2)
                     )
                 )
-                (toCST rhos (indent + 1) EOL)
+                (toCST rhos (indent + 1, EOL))
                 next
             )
             EOL
