@@ -38,6 +38,11 @@ library
     Builder
     Canonizer
     CLI
+    CLI.Helpers
+    CLI.Parsers
+    CLI.Runners
+    CLI.Types
+    CLI.Validators
     Condition
     CST
     Dataize
