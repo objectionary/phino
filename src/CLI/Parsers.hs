@@ -93,7 +93,7 @@ optMeetPopularity =
     ( option
         ( auto
             >>= validateIntOption (> 0) "--meet-popularity must be positive"
-            >>= validateIntOption (< 100) "--meet-popularity must be <= 100"
+            >>= validateIntOption (<= 100) "--meet-popularity must be <= 100"
         )
         ( long "meet-popularity"
             <> metavar "PERCENTAGE"
