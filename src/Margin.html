@@ -1,0 +1,933 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE ConstrainedClassMethods #-}</span><span>
+</span><span id="line-2"></span><span class="hs-pragma">{-# LANGUAGE MultiWayIf #-}</span><span>
+</span><span id="line-3"></span><span class="hs-pragma">{-# LANGUAGE RecordWildCards #-}</span><span>
+</span><span id="line-4"></span><span>
+</span><span id="line-5"></span><span class="hs-comment">-- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com</span><span>
+</span><span id="line-6"></span><span class="hs-comment">-- SPDX-License-Identifier: MIT</span><span>
+</span><span id="line-7"></span><span>
+</span><span id="line-8"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Margin</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Margin.html#defaultMargin"><span class="hs-identifier">defaultMargin</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Margin.html#withMargin"><span class="hs-identifier">withMargin</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Margin.html#WithMargin"><span class="hs-identifier">WithMargin</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-9"></span><span>
+</span><span id="line-10"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="CST.html"><span class="hs-identifier">CST</span></a></span><span>
+</span><span id="line-11"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Lining.html"><span class="hs-identifier">Lining</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Lining.html#ToSingleLine"><span class="hs-identifier">ToSingleLine</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-12"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Render.html"><span class="hs-identifier">Render</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Render.html#Render"><span class="hs-identifier">Render</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-13"></span><span>
+</span><span id="line-14"></span><span class="annot"><a href="Margin.html#defaultMargin"><span class="hs-identifier hs-type">defaultMargin</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span>
+</span><span id="line-15"></span><span id="defaultMargin"><span class="annot"><span class="annottext">defaultMargin :: Int
+</span><a href="Margin.html#defaultMargin"><span class="hs-identifier hs-var hs-var">defaultMargin</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">80</span></span><span>
+</span><span id="line-16"></span><span>
+</span><span id="line-17"></span><span id="local-6989586621679221327"><span class="annot"><a href="Margin.html#withMargin"><span class="hs-identifier hs-type">withMargin</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Margin.html#WithMargin"><span class="hs-identifier hs-type">WithMargin</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679221327"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679221327"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679221327"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-18"></span><span id="withMargin"><span class="annot"><span class="annottext">withMargin :: forall a. WithMargin a =&gt; Int -&gt; a -&gt; a
+</span><a href="Margin.html#withMargin"><span class="hs-identifier hs-var hs-var">withMargin</span></a></span></span><span> </span><span id="local-6989586621679221365"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679221365"><span class="hs-identifier hs-var">margin</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Int, Int) -&gt; a -&gt; a
+forall a. WithMargin a =&gt; (Int, Int) -&gt; a -&gt; a
+</span><a href="Margin.html#withMargin%27"><span class="hs-identifier hs-var">withMargin'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">0</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679221365"><span class="hs-identifier hs-var">margin</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-19"></span><span>
+</span><span id="line-20"></span><span class="hs-keyword">class</span><span> </span><span id="WithMargin"><span class="annot"><a href="Margin.html#WithMargin"><span class="hs-identifier hs-var">WithMargin</span></a></span></span><span> </span><span id="local-6989586621679221330"><span class="annot"><a href="#local-6989586621679221330"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-21"></span><span>  </span><span id="withMargin%27"><span class="annot"><a href="Margin.html#withMargin%27"><span class="hs-identifier hs-type">withMargin'</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679221330"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679221330"><span class="hs-identifier hs-type">a</span></a></span><span>
+</span><span id="line-22"></span><span>
+</span><span id="line-23"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Margin.html#WithMargin"><span class="hs-identifier hs-type">WithMargin</span></a></span><span> </span><span class="annot"><a href="CST.html#PROGRAM"><span class="hs-identifier hs-type">PROGRAM</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-24"></span><span>  </span><span id="local-6989586621679221373"><span class="annot"><span class="annottext">withMargin' :: (Int, Int) -&gt; PROGRAM -&gt; PROGRAM
+</span><a href="Margin.html#withMargin%27"><span class="hs-identifier hs-var hs-var hs-var hs-var">withMargin'</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><span class="hs-identifier">_</span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679221374"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679221374"><span class="hs-identifier hs-var">margin</span></a></span></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="CST.html#PR_SWEET"><span class="hs-identifier hs-type">PR_SWEET</span></a></span><span class="hs-special">{</span><span id="local-6989586621679221376"><span id="local-6989586621679221377"><span id="local-6989586621679221378"><span class="annot"><span class="annottext">EXPRESSION
+RCB
+LCB
+lcb :: LCB
+expr :: EXPRESSION
+rcb :: RCB
+$sel:lcb:PR_SWEET :: PROGRAM -&gt; LCB
+$sel:expr:PR_SWEET :: PROGRAM -&gt; EXPRESSION
+$sel:rcb:PR_SWEET :: PROGRAM -&gt; RCB
+</span><a href="#local-6989586621679221376"><span class="hs-glyph hs-var hs-var hs-var hs-var hs-var hs-var">..</span></a></span></span></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">LCB -&gt; EXPRESSION -&gt; RCB -&gt; PROGRAM
+</span><a href="CST.html#PR_SWEET"><span class="hs-identifier hs-var">PR_SWEET</span></a></span><span> </span><span class="annot"><span class="annottext">LCB
+</span><a href="#local-6989586621679221376"><span class="hs-identifier hs-var">lcb</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Int, Int) -&gt; EXPRESSION -&gt; EXPRESSION
+forall a. WithMargin a =&gt; (Int, Int) -&gt; a -&gt; a
+</span><a href="Margin.html#withMargin%27"><span class="hs-identifier hs-var">withMargin'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">2</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679221374"><span class="hs-identifier hs-var">margin</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">EXPRESSION
+</span><a href="#local-6989586621679221377"><span class="hs-identifier hs-var">expr</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">RCB
+</span><a href="#local-6989586621679221378"><span class="hs-identifier hs-var">rcb</span></a></span><span>
+</span><span id="line-25"></span><span>  </span><span class="annot"><a href="Margin.html#withMargin%27"><span class="hs-identifier hs-var">withMargin'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><span class="hs-identifier">_</span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679221382"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679221382"><span class="hs-identifier hs-var">margin</span></a></span></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="CST.html#PR_SALTY"><span class="hs-identifier hs-type">PR_SALTY</span></a></span><span class="hs-special">{</span><span id="local-6989586621679221384"><span id="local-6989586621679221385"><span id="local-6989586621679221386"><span class="annot"><span class="annottext">EXPRESSION
+GLOBAL
+ARROW
+$sel:expr:PR_SWEET :: PROGRAM -&gt; EXPRESSION
+global :: GLOBAL
+arrow :: ARROW
+expr :: EXPRESSION
+$sel:global:PR_SWEET :: PROGRAM -&gt; GLOBAL
+$sel:arrow:PR_SWEET :: PROGRAM -&gt; ARROW
+</span><a href="CST.html#%24sel%3Aexpr%3APR_SWEET"><span class="hs-glyph hs-var hs-var hs-var hs-var hs-var hs-var">..</span></a></span></span></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-26"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679221397"><span class="annot"><span class="annottext">before :: Int
+</span><a href="#local-6989586621679221397"><span class="hs-identifier hs-var hs-var">before</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">GLOBAL -&gt; Int
+forall a. Render a =&gt; a -&gt; Int
+</span><a href="Margin.html#lengthOf"><span class="hs-identifier hs-var">lengthOf</span></a></span><span> </span><span class="annot"><span class="annottext">GLOBAL
+</span><a href="#local-6989586621679221384"><span class="hs-identifier hs-var">global</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">ARROW -&gt; Int
+forall a. Render a =&gt; a -&gt; Int
+</span><a href="Margin.html#lengthOf"><span class="hs-identifier hs-var">lengthOf</span></a></span><span> </span><span class="annot"><span class="annottext">ARROW
+</span><a href="#local-6989586621679221385"><span class="hs-identifier hs-var">arrow</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">2</span></span><span> </span><span class="hs-comment">-- 'Q -&gt; '</span><span>
+</span><span id="line-27"></span><span>     </span><span class="hs-keyword">in</span><span> </span><span class="annot"><span class="annottext">GLOBAL -&gt; ARROW -&gt; EXPRESSION -&gt; PROGRAM
+</span><a href="CST.html#PR_SALTY"><span class="hs-identifier hs-var">PR_SALTY</span></a></span><span> </span><span class="annot"><span class="annottext">GLOBAL
+</span><a href="#local-6989586621679221384"><span class="hs-identifier hs-var">global</span></a></span><span> </span><span class="annot"><span class="annottext">ARROW
+</span><a href="#local-6989586621679221385"><span class="hs-identifier hs-var">arrow</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Int, Int) -&gt; EXPRESSION -&gt; EXPRESSION
+forall a. WithMargin a =&gt; (Int, Int) -&gt; a -&gt; a
+</span><a href="Margin.html#withMargin%27"><span class="hs-identifier hs-var">withMargin'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679221397"><span class="hs-identifier hs-var">before</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679221382"><span class="hs-identifier hs-var">margin</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">EXPRESSION
+</span><a href="#local-6989586621679221386"><span class="hs-identifier hs-var">expr</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-28"></span><span>
+</span><span id="line-29"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Margin.html#WithMargin"><span class="hs-identifier hs-type">WithMargin</span></a></span><span> </span><span class="annot"><a href="CST.html#EXPRESSION"><span class="hs-identifier hs-type">EXPRESSION</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-30"></span><span>  </span><span id="local-6989586621679221440"><span class="annot"><span class="annottext">withMargin' :: (Int, Int) -&gt; EXPRESSION -&gt; EXPRESSION
+</span><a href="Margin.html#withMargin%27"><span class="hs-identifier hs-var hs-var hs-var hs-var">withMargin'</span></a></span></span><span> </span><span class="annot"><span class="annottext">(Int, Int)
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679221441"><span class="annot"><span class="annottext">ex :: EXPRESSION
+</span><a href="#local-6989586621679221441"><span class="hs-identifier hs-var">ex</span></a></span></span><span class="hs-glyph">@</span><span class="annot"><a href="CST.html#EX_FORMATION"><span class="hs-identifier hs-type">EX_FORMATION</span></a></span><span class="hs-special">{</span><span class="annot"><span class="annottext">$sel:binding:EX_GLOBAL :: EXPRESSION -&gt; BINDING
+</span><a href="CST.html#%24sel%3Abinding%3AEX_GLOBAL"><span class="hs-identifier hs-var">binding</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="CST.html#BI_EMPTY"><span class="hs-identifier hs-type">BI_EMPTY</span></a></span><span class="hs-special">{</span><span class="hs-special">}</span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">EXPRESSION
+</span><a href="#local-6989586621679221441"><span class="hs-identifier hs-var">ex</span></a></span><span>
+</span><span id="line-31"></span><span>  </span><span class="annot"><a href="Margin.html#withMargin%27"><span class="hs-identifier hs-var">withMargin'</span></a></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679221445"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679221445"><span class="hs-identifier hs-var">extra</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679221446"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679221446"><span class="hs-identifier hs-var">margin</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679221447"><span class="annot"><span class="annottext">ex :: EXPRESSION
+</span><a href="#local-6989586621679221447"><span class="hs-identifier hs-var">ex</span></a></span></span><span class="hs-glyph">@</span><span class="annot"><a href="CST.html#EX_FORMATION"><span class="hs-identifier hs-type">EX_FORMATION</span></a></span><span class="hs-special">{</span><span class="annot"><span class="annottext">$sel:tab:EX_GLOBAL :: EXPRESSION -&gt; TAB
+</span><a href="CST.html#%24sel%3Atab%3AEX_GLOBAL"><span class="hs-identifier hs-var">tab</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="local-6989586621679221449"><span class="annot"><span class="annottext">tab :: TAB
+</span><a href="#local-6989586621679221449"><span class="hs-identifier hs-var">tab</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="CST.html#TAB"><span class="hs-identifier hs-type">TAB</span></a></span><span> </span><span id="local-6989586621679221451"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679221451"><span class="hs-identifier hs-var">indent</span></a></span></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span id="local-6989586621679221452"><span id="local-6989586621679221453"><span id="local-6989586621679221454"><span id="local-6989586621679221455"><span id="local-6989586621679221456"><span id="local-6989586621679221457"><span class="annot"><span class="annottext">BINDING
+TAB
+EOL
+RSB
+LSB
+$sel:binding:EX_GLOBAL :: EXPRESSION -&gt; BINDING
+lsb :: LSB
+eol :: EOL
+binding :: BINDING
+eol' :: EOL
+tab' :: TAB
+rsb :: RSB
+$sel:lsb:EX_GLOBAL :: EXPRESSION -&gt; LSB
+$sel:eol:EX_GLOBAL :: EXPRESSION -&gt; EOL
+$sel:eol':EX_GLOBAL :: EXPRESSION -&gt; EOL
+$sel:tab':EX_GLOBAL :: EXPRESSION -&gt; TAB
+$sel:rsb:EX_GLOBAL :: EXPRESSION -&gt; RSB
+</span><a href="CST.html#%24sel%3Abinding%3AEX_GLOBAL"><span class="hs-glyph hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">..</span></a></span></span></span></span></span></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-32"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679221465"><span class="annot"><span class="annottext">single :: EXPRESSION
+</span><a href="#local-6989586621679221465"><span class="hs-identifier hs-var hs-var">single</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">EXPRESSION -&gt; EXPRESSION
+forall a. ToSingleLine a =&gt; a -&gt; a
+</span><a href="Lining.html#toSingleLine"><span class="hs-identifier hs-var">toSingleLine</span></a></span><span> </span><span class="annot"><span class="annottext">EXPRESSION
+</span><a href="#local-6989586621679221447"><span class="hs-identifier hs-var">ex</span></a></span><span>
+</span><span id="line-33"></span><span>        </span><span id="local-6989586621679221469"><span class="annot"><span class="annottext">ex' :: EXPRESSION
+</span><a href="#local-6989586621679221469"><span class="hs-identifier hs-var hs-var">ex'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">LSB -&gt; EOL -&gt; TAB -&gt; BINDING -&gt; EOL -&gt; TAB -&gt; RSB -&gt; EXPRESSION
+</span><a href="CST.html#EX_FORMATION"><span class="hs-identifier hs-var">EX_FORMATION</span></a></span><span> </span><span class="annot"><span class="annottext">LSB
+</span><a href="#local-6989586621679221452"><span class="hs-identifier hs-var">lsb</span></a></span><span> </span><span class="annot"><span class="annottext">EOL
+</span><a href="CST.html#EOL"><span class="hs-identifier hs-var">EOL</span></a></span><span> </span><span class="annot"><span class="annottext">TAB
+</span><a href="#local-6989586621679221449"><span class="hs-identifier hs-var">tab</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Int, Int) -&gt; BINDING -&gt; BINDING
+forall a. WithMargin a =&gt; (Int, Int) -&gt; a -&gt; a
+</span><a href="Margin.html#withMargin%27"><span class="hs-identifier hs-var">withMargin'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679221451"><span class="hs-identifier hs-var">indent</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679221446"><span class="hs-identifier hs-var">margin</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">BINDING
+</span><a href="#local-6989586621679221454"><span class="hs-identifier hs-var">binding</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">EOL
+</span><a href="CST.html#EOL"><span class="hs-identifier hs-var">EOL</span></a></span><span> </span><span class="annot"><span class="annottext">TAB
+</span><a href="#local-6989586621679221456"><span class="hs-identifier hs-var">tab'</span></a></span><span> </span><span class="annot"><span class="annottext">RSB
+</span><a href="#local-6989586621679221457"><span class="hs-identifier hs-var">rsb</span></a></span><span>
+</span><span id="line-34"></span><span>     </span><span class="hs-keyword">in</span><span> </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">EXPRESSION -&gt; Int
+forall a. Render a =&gt; a -&gt; Int
+</span><a href="Margin.html#lengthOf"><span class="hs-identifier hs-var">lengthOf</span></a></span><span> </span><span class="annot"><span class="annottext">EXPRESSION
+</span><a href="#local-6989586621679221465"><span class="hs-identifier hs-var">single</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679221445"><span class="hs-identifier hs-var">extra</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">&lt;=</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679221446"><span class="hs-identifier hs-var">margin</span></a></span><span> </span><span class="hs-keyword">then</span><span> </span><span class="annot"><span class="annottext">EXPRESSION
+</span><a href="#local-6989586621679221465"><span class="hs-identifier hs-var">single</span></a></span><span> </span><span class="hs-keyword">else</span><span> </span><span class="annot"><span class="annottext">EXPRESSION
+</span><a href="#local-6989586621679221469"><span class="hs-identifier hs-var">ex'</span></a></span><span>
+</span><span id="line-35"></span><span>  </span><span class="annot"><a href="Margin.html#withMargin%27"><span class="hs-identifier hs-var">withMargin'</span></a></span><span> </span><span class="annot"><span class="annottext">(Int, Int)
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679221472"><span class="annot"><span class="annottext">num :: EXPRESSION
+</span><a href="#local-6989586621679221472"><span class="hs-identifier hs-var">num</span></a></span></span><span class="hs-glyph">@</span><span class="annot"><a href="CST.html#EX_NUMBER"><span class="hs-identifier hs-type">EX_NUMBER</span></a></span><span class="hs-special">{</span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">EXPRESSION
+</span><a href="#local-6989586621679221472"><span class="hs-identifier hs-var">num</span></a></span><span>
+</span><span id="line-36"></span><span>  </span><span class="annot"><a href="Margin.html#withMargin%27"><span class="hs-identifier hs-var">withMargin'</span></a></span><span> </span><span class="annot"><span class="annottext">(Int, Int)
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679221474"><span class="annot"><span class="annottext">str :: EXPRESSION
+</span><a href="#local-6989586621679221474"><span class="hs-identifier hs-var">str</span></a></span></span><span class="hs-glyph">@</span><span class="annot"><a href="CST.html#EX_STRING"><span class="hs-identifier hs-type">EX_STRING</span></a></span><span class="hs-special">{</span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">EXPRESSION
+</span><a href="#local-6989586621679221474"><span class="hs-identifier hs-var">str</span></a></span><span>
+</span><span id="line-37"></span><span>  </span><span class="annot"><a href="Margin.html#withMargin%27"><span class="hs-identifier hs-var">withMargin'</span></a></span><span> </span><span id="local-6989586621679221476"><span class="annot"><span class="annottext">(Int, Int)
+</span><a href="#local-6989586621679221476"><span class="hs-identifier hs-var">cfg</span></a></span></span><span> </span><span class="annot"><a href="CST.html#EX_DISPATCH"><span class="hs-identifier hs-type">EX_DISPATCH</span></a></span><span class="hs-special">{</span><span id="local-6989586621679221478"><span id="local-6989586621679221479"><span class="annot"><span class="annottext">ATTRIBUTE
+EXPRESSION
+expr :: EXPRESSION
+attr :: ATTRIBUTE
+$sel:attr:EX_GLOBAL :: EXPRESSION -&gt; ATTRIBUTE
+$sel:expr:EX_GLOBAL :: EXPRESSION -&gt; EXPRESSION
+</span><a href="#local-6989586621679221478"><span class="hs-glyph hs-var hs-var hs-var hs-var">..</span></a></span></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">EXPRESSION -&gt; ATTRIBUTE -&gt; EXPRESSION
+</span><a href="CST.html#EX_DISPATCH"><span class="hs-identifier hs-var">EX_DISPATCH</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Int, Int) -&gt; EXPRESSION -&gt; EXPRESSION
+forall a. WithMargin a =&gt; (Int, Int) -&gt; a -&gt; a
+</span><a href="Margin.html#withMargin%27"><span class="hs-identifier hs-var">withMargin'</span></a></span><span> </span><span class="annot"><span class="annottext">(Int, Int)
+</span><a href="#local-6989586621679221476"><span class="hs-identifier hs-var">cfg</span></a></span><span> </span><span class="annot"><span class="annottext">EXPRESSION
+</span><a href="#local-6989586621679221478"><span class="hs-identifier hs-var">expr</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">ATTRIBUTE
+</span><a href="#local-6989586621679221479"><span class="hs-identifier hs-var">attr</span></a></span><span>
+</span><span id="line-38"></span><span>  </span><span class="annot"><a href="Margin.html#withMargin%27"><span class="hs-identifier hs-var">withMargin'</span></a></span><span> </span><span id="local-6989586621679221482"><span class="annot"><span class="annottext">(Int, Int)
+</span><a href="#local-6989586621679221482"><span class="hs-identifier hs-var">cfg</span></a></span></span><span> </span><span class="annot"><a href="CST.html#EX_META_TAIL"><span class="hs-identifier hs-type">EX_META_TAIL</span></a></span><span class="hs-special">{</span><span id="local-6989586621679221484"><span id="local-6989586621679221485"><span class="annot"><span class="annottext">EXPRESSION
+META
+$sel:expr:EX_GLOBAL :: EXPRESSION -&gt; EXPRESSION
+expr :: EXPRESSION
+meta :: META
+$sel:meta:EX_GLOBAL :: EXPRESSION -&gt; META
+</span><a href="CST.html#%24sel%3Aexpr%3AEX_GLOBAL"><span class="hs-glyph hs-var hs-var hs-var hs-var">..</span></a></span></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">EXPRESSION -&gt; META -&gt; EXPRESSION
+</span><a href="CST.html#EX_META_TAIL"><span class="hs-identifier hs-var">EX_META_TAIL</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Int, Int) -&gt; EXPRESSION -&gt; EXPRESSION
+forall a. WithMargin a =&gt; (Int, Int) -&gt; a -&gt; a
+</span><a href="Margin.html#withMargin%27"><span class="hs-identifier hs-var">withMargin'</span></a></span><span> </span><span class="annot"><span class="annottext">(Int, Int)
+</span><a href="#local-6989586621679221482"><span class="hs-identifier hs-var">cfg</span></a></span><span> </span><span class="annot"><span class="annottext">EXPRESSION
+</span><a href="#local-6989586621679221484"><span class="hs-identifier hs-var">expr</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">META
+</span><a href="#local-6989586621679221485"><span class="hs-identifier hs-var">meta</span></a></span><span>
+</span><span id="line-39"></span><span>  </span><span class="annot"><a href="Margin.html#withMargin%27"><span class="hs-identifier hs-var">withMargin'</span></a></span><span> </span><span id="local-6989586621679221487"><span class="annot"><span class="annottext">(Int, Int)
+</span><a href="#local-6989586621679221487"><span class="hs-identifier hs-var">cfg</span></a></span></span><span> </span><span class="annot"><a href="CST.html#EX_PHI_AGAIN"><span class="hs-identifier hs-type">EX_PHI_AGAIN</span></a></span><span class="hs-special">{</span><span id="local-6989586621679221489"><span id="local-6989586621679221490"><span id="local-6989586621679221491"><span class="annot"><span class="annottext">Int
+Maybe String
+EXPRESSION
+$sel:expr:EX_GLOBAL :: EXPRESSION -&gt; EXPRESSION
+prefix :: Maybe String
+idx :: Int
+expr :: EXPRESSION
+$sel:prefix:EX_GLOBAL :: EXPRESSION -&gt; Maybe String
+$sel:idx:EX_GLOBAL :: EXPRESSION -&gt; Int
+</span><a href="CST.html#%24sel%3Aexpr%3AEX_GLOBAL"><span class="hs-glyph hs-var hs-var hs-var hs-var hs-var hs-var">..</span></a></span></span></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Maybe String -&gt; Int -&gt; EXPRESSION -&gt; EXPRESSION
+</span><a href="CST.html#EX_PHI_AGAIN"><span class="hs-identifier hs-var">EX_PHI_AGAIN</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe String
+</span><a href="#local-6989586621679221489"><span class="hs-identifier hs-var">prefix</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679221490"><span class="hs-identifier hs-var">idx</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Int, Int) -&gt; EXPRESSION -&gt; EXPRESSION
+forall a. WithMargin a =&gt; (Int, Int) -&gt; a -&gt; a
+</span><a href="Margin.html#withMargin%27"><span class="hs-identifier hs-var">withMargin'</span></a></span><span> </span><span class="annot"><span class="annottext">(Int, Int)
+</span><a href="#local-6989586621679221487"><span class="hs-identifier hs-var">cfg</span></a></span><span> </span><span class="annot"><span class="annottext">EXPRESSION
+</span><a href="#local-6989586621679221491"><span class="hs-identifier hs-var">expr</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-40"></span><span>  </span><span class="annot"><a href="Margin.html#withMargin%27"><span class="hs-identifier hs-var">withMargin'</span></a></span><span> </span><span id="local-6989586621679221494"><span class="annot"><span class="annottext">(Int, Int)
+</span><a href="#local-6989586621679221494"><span class="hs-identifier hs-var">cfg</span></a></span></span><span> </span><span class="annot"><a href="CST.html#EX_PHI_MEET"><span class="hs-identifier hs-type">EX_PHI_MEET</span></a></span><span class="hs-special">{</span><span id="local-6989586621679221496"><span id="local-6989586621679221497"><span id="local-6989586621679221498"><span class="annot"><span class="annottext">Int
+Maybe String
+EXPRESSION
+$sel:expr:EX_GLOBAL :: EXPRESSION -&gt; EXPRESSION
+$sel:prefix:EX_GLOBAL :: EXPRESSION -&gt; Maybe String
+$sel:idx:EX_GLOBAL :: EXPRESSION -&gt; Int
+prefix :: Maybe String
+idx :: Int
+expr :: EXPRESSION
+</span><a href="CST.html#%24sel%3Aexpr%3AEX_GLOBAL"><span class="hs-glyph hs-var hs-var hs-var hs-var hs-var hs-var">..</span></a></span></span></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Maybe String -&gt; Int -&gt; EXPRESSION -&gt; EXPRESSION
+</span><a href="CST.html#EX_PHI_MEET"><span class="hs-identifier hs-var">EX_PHI_MEET</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe String
+</span><a href="#local-6989586621679221496"><span class="hs-identifier hs-var">prefix</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679221497"><span class="hs-identifier hs-var">idx</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Int, Int) -&gt; EXPRESSION -&gt; EXPRESSION
+forall a. WithMargin a =&gt; (Int, Int) -&gt; a -&gt; a
+</span><a href="Margin.html#withMargin%27"><span class="hs-identifier hs-var">withMargin'</span></a></span><span> </span><span class="annot"><span class="annottext">(Int, Int)
+</span><a href="#local-6989586621679221494"><span class="hs-identifier hs-var">cfg</span></a></span><span> </span><span class="annot"><span class="annottext">EXPRESSION
+</span><a href="#local-6989586621679221498"><span class="hs-identifier hs-var">expr</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-41"></span><span>  </span><span class="annot"><a href="Margin.html#withMargin%27"><span class="hs-identifier hs-var">withMargin'</span></a></span><span> </span><span id="local-6989586621679221499"><span class="annot"><span class="annottext">cfg :: (Int, Int)
+</span><a href="#local-6989586621679221499"><span class="hs-identifier hs-var">cfg</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span id="local-6989586621679221500"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679221500"><span class="hs-identifier hs-var">extra</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679221501"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679221501"><span class="hs-identifier hs-var">margin</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679221502"><span class="annot"><span class="annottext">ex :: EXPRESSION
+</span><a href="#local-6989586621679221502"><span class="hs-identifier hs-var">ex</span></a></span></span><span class="hs-glyph">@</span><span class="annot"><a href="CST.html#EX_APPLICATION"><span class="hs-identifier hs-type">EX_APPLICATION</span></a></span><span class="hs-special">{</span><span class="annot"><span class="annottext">$sel:tab:EX_GLOBAL :: EXPRESSION -&gt; TAB
+</span><a href="CST.html#%24sel%3Atab%3AEX_GLOBAL"><span class="hs-identifier hs-var">tab</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="local-6989586621679221504"><span class="annot"><span class="annottext">tab :: TAB
+</span><a href="#local-6989586621679221504"><span class="hs-identifier hs-var">tab</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="CST.html#TAB"><span class="hs-identifier hs-type">TAB</span></a></span><span> </span><span id="local-6989586621679221505"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679221505"><span class="hs-identifier hs-var">indt</span></a></span></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span id="local-6989586621679221506"><span id="local-6989586621679221507"><span id="local-6989586621679221508"><span id="local-6989586621679221509"><span id="local-6989586621679221510"><span id="local-6989586621679221511"><span class="annot"><span class="annottext">Int
+EXPRESSION
+APP_BINDING
+TAB
+EOL
+$sel:eol:EX_GLOBAL :: EXPRESSION -&gt; EOL
+$sel:eol':EX_GLOBAL :: EXPRESSION -&gt; EOL
+$sel:tab':EX_GLOBAL :: EXPRESSION -&gt; TAB
+$sel:expr:EX_GLOBAL :: EXPRESSION -&gt; EXPRESSION
+expr :: EXPRESSION
+eol :: EOL
+tau :: APP_BINDING
+eol' :: EOL
+tab' :: TAB
+indent :: Int
+$sel:tau:EX_GLOBAL :: EXPRESSION -&gt; APP_BINDING
+$sel:indent:EX_GLOBAL :: EXPRESSION -&gt; Int
+</span><a href="CST.html#%24sel%3Aeol%3AEX_GLOBAL"><span class="hs-glyph hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">..</span></a></span></span></span></span></span></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-42"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679221515"><span class="annot"><span class="annottext">single :: EXPRESSION
+</span><a href="#local-6989586621679221515"><span class="hs-identifier hs-var hs-var">single</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">EXPRESSION -&gt; EXPRESSION
+forall a. ToSingleLine a =&gt; a -&gt; a
+</span><a href="Lining.html#toSingleLine"><span class="hs-identifier hs-var">toSingleLine</span></a></span><span> </span><span class="annot"><span class="annottext">EXPRESSION
+</span><a href="#local-6989586621679221502"><span class="hs-identifier hs-var">ex</span></a></span><span>
+</span><span id="line-43"></span><span>        </span><span id="local-6989586621679221517"><span class="annot"><span class="annottext">main :: EXPRESSION
+</span><a href="#local-6989586621679221517"><span class="hs-identifier hs-var hs-var">main</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Int, Int) -&gt; EXPRESSION -&gt; EXPRESSION
+forall a. WithMargin a =&gt; (Int, Int) -&gt; a -&gt; a
+</span><a href="Margin.html#withMargin%27"><span class="hs-identifier hs-var">withMargin'</span></a></span><span> </span><span class="annot"><span class="annottext">(Int, Int)
+</span><a href="#local-6989586621679221499"><span class="hs-identifier hs-var">cfg</span></a></span><span> </span><span class="annot"><span class="annottext">EXPRESSION
+</span><a href="#local-6989586621679221506"><span class="hs-identifier hs-var">expr</span></a></span><span>
+</span><span id="line-44"></span><span>        </span><span id="local-6989586621679221519"><span class="annot"><span class="annottext">singleMain :: EXPRESSION
+</span><a href="#local-6989586621679221519"><span class="hs-identifier hs-var hs-var">singleMain</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">EXPRESSION -&gt; EXPRESSION
+forall a. ToSingleLine a =&gt; a -&gt; a
+</span><a href="Lining.html#toSingleLine"><span class="hs-identifier hs-var">toSingleLine</span></a></span><span> </span><span class="annot"><span class="annottext">EXPRESSION
+</span><a href="#local-6989586621679221517"><span class="hs-identifier hs-var">main</span></a></span><span>
+</span><span id="line-45"></span><span>        </span><span id="local-6989586621679221527"><span class="annot"><span class="annottext">extra' :: Int
+</span><a href="#local-6989586621679221527"><span class="hs-identifier hs-var hs-var">extra'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; Int
+forall a. [a] -&gt; Int
+forall (t :: * -&gt; *) a. Foldable t =&gt; t a -&gt; Int
+</span><span class="hs-identifier hs-var">length</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[String] -&gt; String
+forall a. HasCallStack =&gt; [a] -&gt; a
+</span><span class="hs-identifier hs-var">last</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String -&gt; [String]
+</span><span class="hs-identifier hs-var">lines</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">EXPRESSION -&gt; String
+forall a. Render a =&gt; a -&gt; String
+</span><a href="Render.html#render"><span class="hs-identifier hs-var">render</span></a></span><span> </span><span class="annot"><span class="annottext">EXPRESSION
+</span><a href="#local-6989586621679221517"><span class="hs-identifier hs-var">main</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">4</span></span><span> </span><span class="hs-comment">-- 2 spaces + 2 braces around argument</span><span>
+</span><span id="line-46"></span><span>        </span><span id="local-6989586621679221534"><span class="annot"><span class="annottext">arg :: APP_BINDING
+</span><a href="#local-6989586621679221534"><span class="hs-identifier hs-var hs-var">arg</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Int, Int) -&gt; APP_BINDING -&gt; APP_BINDING
+forall a. WithMargin a =&gt; (Int, Int) -&gt; a -&gt; a
+</span><a href="Margin.html#withMargin%27"><span class="hs-identifier hs-var">withMargin'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679221505"><span class="hs-identifier hs-var">indt</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679221501"><span class="hs-identifier hs-var">margin</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">APP_BINDING
+</span><a href="#local-6989586621679221508"><span class="hs-identifier hs-var">tau</span></a></span><span>
+</span><span id="line-47"></span><span>        </span><span id="local-6989586621679221537"><span class="annot"><span class="annottext">singleArg :: APP_BINDING
+</span><a href="#local-6989586621679221537"><span class="hs-identifier hs-var hs-var">singleArg</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">APP_BINDING -&gt; APP_BINDING
+forall a. ToSingleLine a =&gt; a -&gt; a
+</span><a href="Lining.html#toSingleLine"><span class="hs-identifier hs-var">toSingleLine</span></a></span><span> </span><span class="annot"><span class="annottext">APP_BINDING
+</span><a href="#local-6989586621679221534"><span class="hs-identifier hs-var">arg</span></a></span><span>
+</span><span id="line-48"></span><span>     </span><span class="hs-keyword">in</span><span> </span><span class="hs-keyword">if</span><span>
+</span><span id="line-49"></span><span>          </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">EXPRESSION -&gt; Int
+forall a. Render a =&gt; a -&gt; Int
+</span><a href="Margin.html#lengthOf"><span class="hs-identifier hs-var">lengthOf</span></a></span><span> </span><span class="annot"><span class="annottext">EXPRESSION
+</span><a href="#local-6989586621679221515"><span class="hs-identifier hs-var">single</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679221500"><span class="hs-identifier hs-var">extra</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">&lt;=</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679221501"><span class="hs-identifier hs-var">margin</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">EXPRESSION
+</span><a href="#local-6989586621679221515"><span class="hs-identifier hs-var">single</span></a></span><span>
+</span><span id="line-50"></span><span>          </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">EXPRESSION -&gt; Int
+forall a. Render a =&gt; a -&gt; Int
+</span><a href="Margin.html#lengthOf"><span class="hs-identifier hs-var">lengthOf</span></a></span><span> </span><span class="annot"><span class="annottext">EXPRESSION
+</span><a href="#local-6989586621679221519"><span class="hs-identifier hs-var">singleMain</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679221500"><span class="hs-identifier hs-var">extra</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">&lt;=</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679221501"><span class="hs-identifier hs-var">margin</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">EXPRESSION
+-&gt; EOL -&gt; TAB -&gt; APP_BINDING -&gt; EOL -&gt; TAB -&gt; Int -&gt; EXPRESSION
+</span><a href="CST.html#EX_APPLICATION"><span class="hs-identifier hs-var">EX_APPLICATION</span></a></span><span> </span><span class="annot"><span class="annottext">EXPRESSION
+</span><a href="#local-6989586621679221519"><span class="hs-identifier hs-var">singleMain</span></a></span><span> </span><span class="annot"><span class="annottext">EOL
+</span><a href="CST.html#EOL"><span class="hs-identifier hs-var">EOL</span></a></span><span> </span><span class="annot"><span class="annottext">TAB
+</span><a href="#local-6989586621679221504"><span class="hs-identifier hs-var">tab</span></a></span><span> </span><span class="annot"><span class="annottext">APP_BINDING
+</span><a href="#local-6989586621679221534"><span class="hs-identifier hs-var">arg</span></a></span><span> </span><span class="annot"><span class="annottext">EOL
+</span><a href="CST.html#EOL"><span class="hs-identifier hs-var">EOL</span></a></span><span> </span><span class="annot"><span class="annottext">TAB
+</span><a href="#local-6989586621679221510"><span class="hs-identifier hs-var">tab'</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679221511"><span class="hs-identifier hs-var">indent</span></a></span><span>
+</span><span id="line-51"></span><span>          </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">APP_BINDING -&gt; Int
+forall a. Render a =&gt; a -&gt; Int
+</span><a href="Margin.html#lengthOf"><span class="hs-identifier hs-var">lengthOf</span></a></span><span> </span><span class="annot"><span class="annottext">APP_BINDING
+</span><a href="#local-6989586621679221537"><span class="hs-identifier hs-var">singleArg</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679221527"><span class="hs-identifier hs-var">extra'</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">&lt;=</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679221501"><span class="hs-identifier hs-var">margin</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">EXPRESSION
+-&gt; EOL -&gt; TAB -&gt; APP_BINDING -&gt; EOL -&gt; TAB -&gt; Int -&gt; EXPRESSION
+</span><a href="CST.html#EX_APPLICATION"><span class="hs-identifier hs-var">EX_APPLICATION</span></a></span><span> </span><span class="annot"><span class="annottext">EXPRESSION
+</span><a href="#local-6989586621679221517"><span class="hs-identifier hs-var">main</span></a></span><span> </span><span class="annot"><span class="annottext">EOL
+</span><a href="CST.html#NO_EOL"><span class="hs-identifier hs-var">NO_EOL</span></a></span><span> </span><span class="annot"><span class="annottext">TAB
+</span><a href="CST.html#TAB%27"><span class="hs-identifier hs-var">TAB'</span></a></span><span> </span><span class="annot"><span class="annottext">APP_BINDING
+</span><a href="#local-6989586621679221537"><span class="hs-identifier hs-var">singleArg</span></a></span><span> </span><span class="annot"><span class="annottext">EOL
+</span><a href="CST.html#NO_EOL"><span class="hs-identifier hs-var">NO_EOL</span></a></span><span> </span><span class="annot"><span class="annottext">TAB
+</span><a href="CST.html#TAB%27"><span class="hs-identifier hs-var">TAB'</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679221511"><span class="hs-identifier hs-var">indent</span></a></span><span>
+</span><span id="line-52"></span><span>          </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">otherwise</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">EXPRESSION
+-&gt; EOL -&gt; TAB -&gt; APP_BINDING -&gt; EOL -&gt; TAB -&gt; Int -&gt; EXPRESSION
+</span><a href="CST.html#EX_APPLICATION"><span class="hs-identifier hs-var">EX_APPLICATION</span></a></span><span> </span><span class="annot"><span class="annottext">EXPRESSION
+</span><a href="#local-6989586621679221517"><span class="hs-identifier hs-var">main</span></a></span><span> </span><span class="annot"><span class="annottext">EOL
+</span><a href="CST.html#EOL"><span class="hs-identifier hs-var">EOL</span></a></span><span> </span><span class="annot"><span class="annottext">TAB
+</span><a href="#local-6989586621679221504"><span class="hs-identifier hs-var">tab</span></a></span><span> </span><span class="annot"><span class="annottext">APP_BINDING
+</span><a href="#local-6989586621679221534"><span class="hs-identifier hs-var">arg</span></a></span><span> </span><span class="annot"><span class="annottext">EOL
+</span><a href="CST.html#EOL"><span class="hs-identifier hs-var">EOL</span></a></span><span> </span><span class="annot"><span class="annottext">TAB
+</span><a href="#local-6989586621679221510"><span class="hs-identifier hs-var">tab'</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679221511"><span class="hs-identifier hs-var">indent</span></a></span><span>
+</span><span id="line-53"></span><span>  </span><span class="annot"><a href="Margin.html#withMargin%27"><span class="hs-identifier hs-var">withMargin'</span></a></span><span> </span><span id="local-6989586621679221540"><span class="annot"><span class="annottext">cfg :: (Int, Int)
+</span><a href="#local-6989586621679221540"><span class="hs-identifier hs-var">cfg</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span id="local-6989586621679221541"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679221541"><span class="hs-identifier hs-var">extra</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679221542"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679221542"><span class="hs-identifier hs-var">margin</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679221543"><span class="annot"><span class="annottext">ex :: EXPRESSION
+</span><a href="#local-6989586621679221543"><span class="hs-identifier hs-var">ex</span></a></span></span><span class="hs-glyph">@</span><span class="annot"><a href="CST.html#EX_APPLICATION_EXPRS"><span class="hs-identifier hs-type">EX_APPLICATION_EXPRS</span></a></span><span class="hs-special">{</span><span class="annot"><span class="annottext">$sel:tab:EX_GLOBAL :: EXPRESSION -&gt; TAB
+</span><a href="CST.html#%24sel%3Atab%3AEX_GLOBAL"><span class="hs-identifier hs-var">tab</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="local-6989586621679221545"><span class="annot"><span class="annottext">tab :: TAB
+</span><a href="#local-6989586621679221545"><span class="hs-identifier hs-var">tab</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="CST.html#TAB"><span class="hs-identifier hs-type">TAB</span></a></span><span> </span><span id="local-6989586621679221546"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679221546"><span class="hs-identifier hs-var">indt</span></a></span></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span id="local-6989586621679221547"><span id="local-6989586621679221548"><span id="local-6989586621679221549"><span id="local-6989586621679221550"><span id="local-6989586621679221551"><span id="local-6989586621679221552"><span class="annot"><span class="annottext">Int
+EXPRESSION
+APP_ARG
+TAB
+EOL
+$sel:eol:EX_GLOBAL :: EXPRESSION -&gt; EOL
+$sel:eol':EX_GLOBAL :: EXPRESSION -&gt; EOL
+$sel:tab':EX_GLOBAL :: EXPRESSION -&gt; TAB
+$sel:expr:EX_GLOBAL :: EXPRESSION -&gt; EXPRESSION
+$sel:indent:EX_GLOBAL :: EXPRESSION -&gt; Int
+expr :: EXPRESSION
+eol :: EOL
+args :: APP_ARG
+eol' :: EOL
+tab' :: TAB
+indent :: Int
+$sel:args:EX_GLOBAL :: EXPRESSION -&gt; APP_ARG
+</span><a href="CST.html#%24sel%3Aeol%3AEX_GLOBAL"><span class="hs-glyph hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">..</span></a></span></span></span></span></span></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-54"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679221555"><span class="annot"><span class="annottext">single :: EXPRESSION
+</span><a href="#local-6989586621679221555"><span class="hs-identifier hs-var hs-var">single</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">EXPRESSION -&gt; EXPRESSION
+forall a. ToSingleLine a =&gt; a -&gt; a
+</span><a href="Lining.html#toSingleLine"><span class="hs-identifier hs-var">toSingleLine</span></a></span><span> </span><span class="annot"><span class="annottext">EXPRESSION
+</span><a href="#local-6989586621679221543"><span class="hs-identifier hs-var">ex</span></a></span><span>
+</span><span id="line-55"></span><span>        </span><span id="local-6989586621679221557"><span class="annot"><span class="annottext">main :: EXPRESSION
+</span><a href="#local-6989586621679221557"><span class="hs-identifier hs-var hs-var">main</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Int, Int) -&gt; EXPRESSION -&gt; EXPRESSION
+forall a. WithMargin a =&gt; (Int, Int) -&gt; a -&gt; a
+</span><a href="Margin.html#withMargin%27"><span class="hs-identifier hs-var">withMargin'</span></a></span><span> </span><span class="annot"><span class="annottext">(Int, Int)
+</span><a href="#local-6989586621679221540"><span class="hs-identifier hs-var">cfg</span></a></span><span> </span><span class="annot"><span class="annottext">EXPRESSION
+</span><a href="#local-6989586621679221547"><span class="hs-identifier hs-var">expr</span></a></span><span>
+</span><span id="line-56"></span><span>        </span><span id="local-6989586621679221559"><span class="annot"><span class="annottext">singleMain :: EXPRESSION
+</span><a href="#local-6989586621679221559"><span class="hs-identifier hs-var hs-var">singleMain</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">EXPRESSION -&gt; EXPRESSION
+forall a. ToSingleLine a =&gt; a -&gt; a
+</span><a href="Lining.html#toSingleLine"><span class="hs-identifier hs-var">toSingleLine</span></a></span><span> </span><span class="annot"><span class="annottext">EXPRESSION
+</span><a href="#local-6989586621679221557"><span class="hs-identifier hs-var">main</span></a></span><span>
+</span><span id="line-57"></span><span>        </span><span id="local-6989586621679221566"><span class="annot"><span class="annottext">extra' :: Int
+</span><a href="#local-6989586621679221566"><span class="hs-identifier hs-var hs-var">extra'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; Int
+forall a. [a] -&gt; Int
+forall (t :: * -&gt; *) a. Foldable t =&gt; t a -&gt; Int
+</span><span class="hs-identifier hs-var">length</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[String] -&gt; String
+forall a. HasCallStack =&gt; [a] -&gt; a
+</span><span class="hs-identifier hs-var">last</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String -&gt; [String]
+</span><span class="hs-identifier hs-var">lines</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">EXPRESSION -&gt; String
+forall a. Render a =&gt; a -&gt; String
+</span><a href="Render.html#render"><span class="hs-identifier hs-var">render</span></a></span><span> </span><span class="annot"><span class="annottext">EXPRESSION
+</span><a href="#local-6989586621679221557"><span class="hs-identifier hs-var">main</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">4</span></span><span> </span><span class="hs-comment">-- 2 spaces + 2 braces around arguments</span><span>
+</span><span id="line-58"></span><span>        </span><span id="local-6989586621679221569"><span class="annot"><span class="annottext">exprs :: APP_ARG
+</span><a href="#local-6989586621679221569"><span class="hs-identifier hs-var hs-var">exprs</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Int, Int) -&gt; APP_ARG -&gt; APP_ARG
+forall a. WithMargin a =&gt; (Int, Int) -&gt; a -&gt; a
+</span><a href="Margin.html#withMargin%27"><span class="hs-identifier hs-var">withMargin'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679221546"><span class="hs-identifier hs-var">indt</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679221542"><span class="hs-identifier hs-var">margin</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">APP_ARG
+</span><a href="#local-6989586621679221549"><span class="hs-identifier hs-var">args</span></a></span><span>
+</span><span id="line-59"></span><span>        </span><span id="local-6989586621679221572"><span class="annot"><span class="annottext">singleExprs :: APP_ARG
+</span><a href="#local-6989586621679221572"><span class="hs-identifier hs-var hs-var">singleExprs</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">APP_ARG -&gt; APP_ARG
+forall a. ToSingleLine a =&gt; a -&gt; a
+</span><a href="Lining.html#toSingleLine"><span class="hs-identifier hs-var">toSingleLine</span></a></span><span> </span><span class="annot"><span class="annottext">APP_ARG
+</span><a href="#local-6989586621679221569"><span class="hs-identifier hs-var">exprs</span></a></span><span>
+</span><span id="line-60"></span><span>     </span><span class="hs-keyword">in</span><span> </span><span class="hs-keyword">if</span><span>
+</span><span id="line-61"></span><span>          </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">EXPRESSION -&gt; Int
+forall a. Render a =&gt; a -&gt; Int
+</span><a href="Margin.html#lengthOf"><span class="hs-identifier hs-var">lengthOf</span></a></span><span> </span><span class="annot"><span class="annottext">EXPRESSION
+</span><a href="#local-6989586621679221555"><span class="hs-identifier hs-var">single</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679221541"><span class="hs-identifier hs-var">extra</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">&lt;=</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679221542"><span class="hs-identifier hs-var">margin</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">EXPRESSION
+</span><a href="#local-6989586621679221555"><span class="hs-identifier hs-var">single</span></a></span><span>
+</span><span id="line-62"></span><span>          </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">EXPRESSION -&gt; Int
+forall a. Render a =&gt; a -&gt; Int
+</span><a href="Margin.html#lengthOf"><span class="hs-identifier hs-var">lengthOf</span></a></span><span> </span><span class="annot"><span class="annottext">EXPRESSION
+</span><a href="#local-6989586621679221559"><span class="hs-identifier hs-var">singleMain</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679221541"><span class="hs-identifier hs-var">extra</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">&lt;=</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679221542"><span class="hs-identifier hs-var">margin</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">EXPRESSION
+-&gt; EOL -&gt; TAB -&gt; APP_ARG -&gt; EOL -&gt; TAB -&gt; Int -&gt; EXPRESSION
+</span><a href="CST.html#EX_APPLICATION_EXPRS"><span class="hs-identifier hs-var">EX_APPLICATION_EXPRS</span></a></span><span> </span><span class="annot"><span class="annottext">EXPRESSION
+</span><a href="#local-6989586621679221559"><span class="hs-identifier hs-var">singleMain</span></a></span><span> </span><span class="annot"><span class="annottext">EOL
+</span><a href="CST.html#EOL"><span class="hs-identifier hs-var">EOL</span></a></span><span> </span><span class="annot"><span class="annottext">TAB
+</span><a href="#local-6989586621679221545"><span class="hs-identifier hs-var">tab</span></a></span><span> </span><span class="annot"><span class="annottext">APP_ARG
+</span><a href="#local-6989586621679221569"><span class="hs-identifier hs-var">exprs</span></a></span><span> </span><span class="annot"><span class="annottext">EOL
+</span><a href="CST.html#EOL"><span class="hs-identifier hs-var">EOL</span></a></span><span> </span><span class="annot"><span class="annottext">TAB
+</span><a href="#local-6989586621679221551"><span class="hs-identifier hs-var">tab'</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679221552"><span class="hs-identifier hs-var">indent</span></a></span><span>
+</span><span id="line-63"></span><span>          </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">APP_ARG -&gt; Int
+forall a. Render a =&gt; a -&gt; Int
+</span><a href="Margin.html#lengthOf"><span class="hs-identifier hs-var">lengthOf</span></a></span><span> </span><span class="annot"><span class="annottext">APP_ARG
+</span><a href="#local-6989586621679221572"><span class="hs-identifier hs-var">singleExprs</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679221566"><span class="hs-identifier hs-var">extra'</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">&lt;=</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679221542"><span class="hs-identifier hs-var">margin</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">EXPRESSION
+-&gt; EOL -&gt; TAB -&gt; APP_ARG -&gt; EOL -&gt; TAB -&gt; Int -&gt; EXPRESSION
+</span><a href="CST.html#EX_APPLICATION_EXPRS"><span class="hs-identifier hs-var">EX_APPLICATION_EXPRS</span></a></span><span> </span><span class="annot"><span class="annottext">EXPRESSION
+</span><a href="#local-6989586621679221557"><span class="hs-identifier hs-var">main</span></a></span><span> </span><span class="annot"><span class="annottext">EOL
+</span><a href="CST.html#NO_EOL"><span class="hs-identifier hs-var">NO_EOL</span></a></span><span> </span><span class="annot"><span class="annottext">TAB
+</span><a href="CST.html#TAB%27"><span class="hs-identifier hs-var">TAB'</span></a></span><span> </span><span class="annot"><span class="annottext">APP_ARG
+</span><a href="#local-6989586621679221572"><span class="hs-identifier hs-var">singleExprs</span></a></span><span> </span><span class="annot"><span class="annottext">EOL
+</span><a href="CST.html#NO_EOL"><span class="hs-identifier hs-var">NO_EOL</span></a></span><span> </span><span class="annot"><span class="annottext">TAB
+</span><a href="CST.html#TAB%27"><span class="hs-identifier hs-var">TAB'</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679221552"><span class="hs-identifier hs-var">indent</span></a></span><span>
+</span><span id="line-64"></span><span>          </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">otherwise</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">EXPRESSION
+-&gt; EOL -&gt; TAB -&gt; APP_ARG -&gt; EOL -&gt; TAB -&gt; Int -&gt; EXPRESSION
+</span><a href="CST.html#EX_APPLICATION_EXPRS"><span class="hs-identifier hs-var">EX_APPLICATION_EXPRS</span></a></span><span> </span><span class="annot"><span class="annottext">EXPRESSION
+</span><a href="#local-6989586621679221557"><span class="hs-identifier hs-var">main</span></a></span><span> </span><span class="annot"><span class="annottext">EOL
+</span><a href="CST.html#EOL"><span class="hs-identifier hs-var">EOL</span></a></span><span> </span><span class="annot"><span class="annottext">TAB
+</span><a href="#local-6989586621679221545"><span class="hs-identifier hs-var">tab</span></a></span><span> </span><span class="annot"><span class="annottext">APP_ARG
+</span><a href="#local-6989586621679221569"><span class="hs-identifier hs-var">exprs</span></a></span><span> </span><span class="annot"><span class="annottext">EOL
+</span><a href="CST.html#EOL"><span class="hs-identifier hs-var">EOL</span></a></span><span> </span><span class="annot"><span class="annottext">TAB
+</span><a href="#local-6989586621679221551"><span class="hs-identifier hs-var">tab'</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679221552"><span class="hs-identifier hs-var">indent</span></a></span><span>
+</span><span id="line-65"></span><span>  </span><span class="annot"><a href="Margin.html#withMargin%27"><span class="hs-identifier hs-var">withMargin'</span></a></span><span> </span><span id="local-6989586621679221573"><span class="annot"><span class="annottext">cfg :: (Int, Int)
+</span><a href="#local-6989586621679221573"><span class="hs-identifier hs-var">cfg</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span id="local-6989586621679221574"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679221574"><span class="hs-identifier hs-var">extra</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679221575"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679221575"><span class="hs-identifier hs-var">margin</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679221576"><span class="annot"><span class="annottext">ex :: EXPRESSION
+</span><a href="#local-6989586621679221576"><span class="hs-identifier hs-var">ex</span></a></span></span><span class="hs-glyph">@</span><span class="annot"><a href="CST.html#EX_APPLICATION_TAUS"><span class="hs-identifier hs-type">EX_APPLICATION_TAUS</span></a></span><span class="hs-special">{</span><span class="annot"><span class="annottext">$sel:tab:EX_GLOBAL :: EXPRESSION -&gt; TAB
+</span><a href="CST.html#%24sel%3Atab%3AEX_GLOBAL"><span class="hs-identifier hs-var">tab</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="local-6989586621679221578"><span class="annot"><span class="annottext">tab :: TAB
+</span><a href="#local-6989586621679221578"><span class="hs-identifier hs-var">tab</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="CST.html#TAB"><span class="hs-identifier hs-type">TAB</span></a></span><span> </span><span id="local-6989586621679221579"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679221579"><span class="hs-identifier hs-var">indt</span></a></span></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span id="local-6989586621679221580"><span id="local-6989586621679221581"><span id="local-6989586621679221582"><span id="local-6989586621679221583"><span id="local-6989586621679221584"><span id="local-6989586621679221585"><span class="annot"><span class="annottext">Int
+EXPRESSION
+BINDING
+TAB
+EOL
+$sel:eol:EX_GLOBAL :: EXPRESSION -&gt; EOL
+$sel:eol':EX_GLOBAL :: EXPRESSION -&gt; EOL
+$sel:tab':EX_GLOBAL :: EXPRESSION -&gt; TAB
+$sel:expr:EX_GLOBAL :: EXPRESSION -&gt; EXPRESSION
+$sel:indent:EX_GLOBAL :: EXPRESSION -&gt; Int
+expr :: EXPRESSION
+eol :: EOL
+taus :: BINDING
+eol' :: EOL
+tab' :: TAB
+indent :: Int
+$sel:taus:EX_GLOBAL :: EXPRESSION -&gt; BINDING
+</span><a href="CST.html#%24sel%3Aeol%3AEX_GLOBAL"><span class="hs-glyph hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">..</span></a></span></span></span></span></span></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-66"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679221588"><span class="annot"><span class="annottext">single :: EXPRESSION
+</span><a href="#local-6989586621679221588"><span class="hs-identifier hs-var hs-var">single</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">EXPRESSION -&gt; EXPRESSION
+forall a. ToSingleLine a =&gt; a -&gt; a
+</span><a href="Lining.html#toSingleLine"><span class="hs-identifier hs-var">toSingleLine</span></a></span><span> </span><span class="annot"><span class="annottext">EXPRESSION
+</span><a href="#local-6989586621679221576"><span class="hs-identifier hs-var">ex</span></a></span><span>
+</span><span id="line-67"></span><span>        </span><span id="local-6989586621679221590"><span class="annot"><span class="annottext">main :: EXPRESSION
+</span><a href="#local-6989586621679221590"><span class="hs-identifier hs-var hs-var">main</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Int, Int) -&gt; EXPRESSION -&gt; EXPRESSION
+forall a. WithMargin a =&gt; (Int, Int) -&gt; a -&gt; a
+</span><a href="Margin.html#withMargin%27"><span class="hs-identifier hs-var">withMargin'</span></a></span><span> </span><span class="annot"><span class="annottext">(Int, Int)
+</span><a href="#local-6989586621679221573"><span class="hs-identifier hs-var">cfg</span></a></span><span> </span><span class="annot"><span class="annottext">EXPRESSION
+</span><a href="#local-6989586621679221580"><span class="hs-identifier hs-var">expr</span></a></span><span>
+</span><span id="line-68"></span><span>        </span><span id="local-6989586621679221592"><span class="annot"><span class="annottext">singleMain :: EXPRESSION
+</span><a href="#local-6989586621679221592"><span class="hs-identifier hs-var hs-var">singleMain</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">EXPRESSION -&gt; EXPRESSION
+forall a. ToSingleLine a =&gt; a -&gt; a
+</span><a href="Lining.html#toSingleLine"><span class="hs-identifier hs-var">toSingleLine</span></a></span><span> </span><span class="annot"><span class="annottext">EXPRESSION
+</span><a href="#local-6989586621679221590"><span class="hs-identifier hs-var">main</span></a></span><span>
+</span><span id="line-69"></span><span>        </span><span id="local-6989586621679221599"><span class="annot"><span class="annottext">extra' :: Int
+</span><a href="#local-6989586621679221599"><span class="hs-identifier hs-var hs-var">extra'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; Int
+forall a. [a] -&gt; Int
+forall (t :: * -&gt; *) a. Foldable t =&gt; t a -&gt; Int
+</span><span class="hs-identifier hs-var">length</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[String] -&gt; String
+forall a. HasCallStack =&gt; [a] -&gt; a
+</span><span class="hs-identifier hs-var">last</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String -&gt; [String]
+</span><span class="hs-identifier hs-var">lines</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">EXPRESSION -&gt; String
+forall a. Render a =&gt; a -&gt; String
+</span><a href="Render.html#render"><span class="hs-identifier hs-var">render</span></a></span><span> </span><span class="annot"><span class="annottext">EXPRESSION
+</span><a href="#local-6989586621679221590"><span class="hs-identifier hs-var">main</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">4</span></span><span> </span><span class="hs-comment">-- 2 spaces + 2 braces around arguments</span><span>
+</span><span id="line-70"></span><span>        </span><span id="local-6989586621679221601"><span class="annot"><span class="annottext">taus' :: BINDING
+</span><a href="#local-6989586621679221601"><span class="hs-identifier hs-var hs-var">taus'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Int, Int) -&gt; BINDING -&gt; BINDING
+forall a. WithMargin a =&gt; (Int, Int) -&gt; a -&gt; a
+</span><a href="Margin.html#withMargin%27"><span class="hs-identifier hs-var">withMargin'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679221579"><span class="hs-identifier hs-var">indt</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679221575"><span class="hs-identifier hs-var">margin</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">BINDING
+</span><a href="#local-6989586621679221582"><span class="hs-identifier hs-var">taus</span></a></span><span>
+</span><span id="line-71"></span><span>        </span><span id="local-6989586621679221604"><span class="annot"><span class="annottext">singleTaus :: BINDING
+</span><a href="#local-6989586621679221604"><span class="hs-identifier hs-var hs-var">singleTaus</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">BINDING -&gt; BINDING
+forall a. ToSingleLine a =&gt; a -&gt; a
+</span><a href="Lining.html#toSingleLine"><span class="hs-identifier hs-var">toSingleLine</span></a></span><span> </span><span class="annot"><span class="annottext">BINDING
+</span><a href="#local-6989586621679221601"><span class="hs-identifier hs-var">taus'</span></a></span><span>
+</span><span id="line-72"></span><span>     </span><span class="hs-keyword">in</span><span> </span><span class="hs-keyword">if</span><span>
+</span><span id="line-73"></span><span>          </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">EXPRESSION -&gt; Int
+forall a. Render a =&gt; a -&gt; Int
+</span><a href="Margin.html#lengthOf"><span class="hs-identifier hs-var">lengthOf</span></a></span><span> </span><span class="annot"><span class="annottext">EXPRESSION
+</span><a href="#local-6989586621679221588"><span class="hs-identifier hs-var">single</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679221574"><span class="hs-identifier hs-var">extra</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">&lt;=</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679221575"><span class="hs-identifier hs-var">margin</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">EXPRESSION
+</span><a href="#local-6989586621679221588"><span class="hs-identifier hs-var">single</span></a></span><span>
+</span><span id="line-74"></span><span>          </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">EXPRESSION -&gt; Int
+forall a. Render a =&gt; a -&gt; Int
+</span><a href="Margin.html#lengthOf"><span class="hs-identifier hs-var">lengthOf</span></a></span><span> </span><span class="annot"><span class="annottext">EXPRESSION
+</span><a href="#local-6989586621679221592"><span class="hs-identifier hs-var">singleMain</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679221574"><span class="hs-identifier hs-var">extra</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">&lt;=</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679221575"><span class="hs-identifier hs-var">margin</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">EXPRESSION
+-&gt; EOL -&gt; TAB -&gt; BINDING -&gt; EOL -&gt; TAB -&gt; Int -&gt; EXPRESSION
+</span><a href="CST.html#EX_APPLICATION_TAUS"><span class="hs-identifier hs-var">EX_APPLICATION_TAUS</span></a></span><span> </span><span class="annot"><span class="annottext">EXPRESSION
+</span><a href="#local-6989586621679221592"><span class="hs-identifier hs-var">singleMain</span></a></span><span> </span><span class="annot"><span class="annottext">EOL
+</span><a href="CST.html#EOL"><span class="hs-identifier hs-var">EOL</span></a></span><span> </span><span class="annot"><span class="annottext">TAB
+</span><a href="#local-6989586621679221578"><span class="hs-identifier hs-var">tab</span></a></span><span> </span><span class="annot"><span class="annottext">BINDING
+</span><a href="#local-6989586621679221601"><span class="hs-identifier hs-var">taus'</span></a></span><span> </span><span class="annot"><span class="annottext">EOL
+</span><a href="CST.html#EOL"><span class="hs-identifier hs-var">EOL</span></a></span><span> </span><span class="annot"><span class="annottext">TAB
+</span><a href="#local-6989586621679221584"><span class="hs-identifier hs-var">tab'</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679221585"><span class="hs-identifier hs-var">indent</span></a></span><span>
+</span><span id="line-75"></span><span>          </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">BINDING -&gt; Int
+forall a. Render a =&gt; a -&gt; Int
+</span><a href="Margin.html#lengthOf"><span class="hs-identifier hs-var">lengthOf</span></a></span><span> </span><span class="annot"><span class="annottext">BINDING
+</span><a href="#local-6989586621679221604"><span class="hs-identifier hs-var">singleTaus</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679221599"><span class="hs-identifier hs-var">extra'</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">&lt;=</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679221575"><span class="hs-identifier hs-var">margin</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">EXPRESSION
+-&gt; EOL -&gt; TAB -&gt; BINDING -&gt; EOL -&gt; TAB -&gt; Int -&gt; EXPRESSION
+</span><a href="CST.html#EX_APPLICATION_TAUS"><span class="hs-identifier hs-var">EX_APPLICATION_TAUS</span></a></span><span> </span><span class="annot"><span class="annottext">EXPRESSION
+</span><a href="#local-6989586621679221590"><span class="hs-identifier hs-var">main</span></a></span><span> </span><span class="annot"><span class="annottext">EOL
+</span><a href="CST.html#NO_EOL"><span class="hs-identifier hs-var">NO_EOL</span></a></span><span> </span><span class="annot"><span class="annottext">TAB
+</span><a href="CST.html#TAB%27"><span class="hs-identifier hs-var">TAB'</span></a></span><span> </span><span class="annot"><span class="annottext">BINDING
+</span><a href="#local-6989586621679221604"><span class="hs-identifier hs-var">singleTaus</span></a></span><span> </span><span class="annot"><span class="annottext">EOL
+</span><a href="CST.html#NO_EOL"><span class="hs-identifier hs-var">NO_EOL</span></a></span><span> </span><span class="annot"><span class="annottext">TAB
+</span><a href="CST.html#TAB%27"><span class="hs-identifier hs-var">TAB'</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679221585"><span class="hs-identifier hs-var">indent</span></a></span><span>
+</span><span id="line-76"></span><span>          </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">otherwise</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">EXPRESSION
+-&gt; EOL -&gt; TAB -&gt; BINDING -&gt; EOL -&gt; TAB -&gt; Int -&gt; EXPRESSION
+</span><a href="CST.html#EX_APPLICATION_TAUS"><span class="hs-identifier hs-var">EX_APPLICATION_TAUS</span></a></span><span> </span><span class="annot"><span class="annottext">EXPRESSION
+</span><a href="#local-6989586621679221590"><span class="hs-identifier hs-var">main</span></a></span><span> </span><span class="annot"><span class="annottext">EOL
+</span><a href="CST.html#EOL"><span class="hs-identifier hs-var">EOL</span></a></span><span> </span><span class="annot"><span class="annottext">TAB
+</span><a href="#local-6989586621679221578"><span class="hs-identifier hs-var">tab</span></a></span><span> </span><span class="annot"><span class="annottext">BINDING
+</span><a href="#local-6989586621679221601"><span class="hs-identifier hs-var">taus'</span></a></span><span> </span><span class="annot"><span class="annottext">EOL
+</span><a href="CST.html#EOL"><span class="hs-identifier hs-var">EOL</span></a></span><span> </span><span class="annot"><span class="annottext">TAB
+</span><a href="#local-6989586621679221584"><span class="hs-identifier hs-var">tab'</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679221585"><span class="hs-identifier hs-var">indent</span></a></span><span>
+</span><span id="line-77"></span><span>  </span><span class="annot"><a href="Margin.html#withMargin%27"><span class="hs-identifier hs-var">withMargin'</span></a></span><span> </span><span class="annot"><span class="annottext">(Int, Int)
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679221605"><span class="annot"><span class="annottext">EXPRESSION
+</span><a href="#local-6989586621679221605"><span class="hs-identifier hs-var">ex</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">EXPRESSION
+</span><a href="#local-6989586621679221605"><span class="hs-identifier hs-var">ex</span></a></span><span>
+</span><span id="line-78"></span><span>
+</span><span id="line-79"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Margin.html#WithMargin"><span class="hs-identifier hs-type">WithMargin</span></a></span><span> </span><span class="annot"><a href="CST.html#APP_BINDING"><span class="hs-identifier hs-type">APP_BINDING</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-80"></span><span>  </span><span id="local-6989586621679221609"><span class="annot"><span class="annottext">withMargin' :: (Int, Int) -&gt; APP_BINDING -&gt; APP_BINDING
+</span><a href="Margin.html#withMargin%27"><span class="hs-identifier hs-var hs-var hs-var hs-var">withMargin'</span></a></span></span><span> </span><span id="local-6989586621679221610"><span class="annot"><span class="annottext">(Int, Int)
+</span><a href="#local-6989586621679221610"><span class="hs-identifier hs-var">cfg</span></a></span></span><span> </span><span class="annot"><a href="CST.html#APP_BINDING"><span class="hs-identifier hs-type">APP_BINDING</span></a></span><span class="hs-special">{</span><span id="local-6989586621679221612"><span class="annot"><span class="annottext">PAIR
+pair :: PAIR
+$sel:pair:APP_BINDING :: APP_BINDING -&gt; PAIR
+</span><a href="#local-6989586621679221612"><span class="hs-glyph hs-var hs-var">..</span></a></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">PAIR -&gt; APP_BINDING
+</span><a href="CST.html#APP_BINDING"><span class="hs-identifier hs-var">APP_BINDING</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Int, Int) -&gt; PAIR -&gt; PAIR
+forall a. WithMargin a =&gt; (Int, Int) -&gt; a -&gt; a
+</span><a href="Margin.html#withMargin%27"><span class="hs-identifier hs-var">withMargin'</span></a></span><span> </span><span class="annot"><span class="annottext">(Int, Int)
+</span><a href="#local-6989586621679221610"><span class="hs-identifier hs-var">cfg</span></a></span><span> </span><span class="annot"><span class="annottext">PAIR
+</span><a href="#local-6989586621679221612"><span class="hs-identifier hs-var">pair</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-81"></span><span>
+</span><span id="line-82"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Margin.html#WithMargin"><span class="hs-identifier hs-type">WithMargin</span></a></span><span> </span><span class="annot"><a href="CST.html#APP_ARG"><span class="hs-identifier hs-type">APP_ARG</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-83"></span><span>  </span><span id="local-6989586621679221621"><span class="annot"><span class="annottext">withMargin' :: (Int, Int) -&gt; APP_ARG -&gt; APP_ARG
+</span><a href="Margin.html#withMargin%27"><span class="hs-identifier hs-var hs-var hs-var hs-var">withMargin'</span></a></span></span><span> </span><span id="local-6989586621679221622"><span class="annot"><span class="annottext">cfg :: (Int, Int)
+</span><a href="#local-6989586621679221622"><span class="hs-identifier hs-var">cfg</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span id="local-6989586621679221623"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679221623"><span class="hs-identifier hs-var">extra</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679221624"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679221624"><span class="hs-identifier hs-var">margin</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679221625"><span class="annot"><span class="annottext">arg :: APP_ARG
+</span><a href="#local-6989586621679221625"><span class="hs-identifier hs-var">arg</span></a></span></span><span class="hs-glyph">@</span><span class="annot"><a href="CST.html#APP_ARG"><span class="hs-identifier hs-type">APP_ARG</span></a></span><span class="hs-special">{</span><span id="local-6989586621679221627"><span id="local-6989586621679221628"><span class="annot"><span class="annottext">EXPRESSION
+APP_ARGS
+expr :: EXPRESSION
+args :: APP_ARGS
+$sel:expr:APP_ARG :: APP_ARG -&gt; EXPRESSION
+$sel:args:APP_ARG :: APP_ARG -&gt; APP_ARGS
+</span><a href="#local-6989586621679221627"><span class="hs-glyph hs-var hs-var hs-var hs-var">..</span></a></span></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-84"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679221632"><span class="annot"><span class="annottext">single :: APP_ARG
+</span><a href="#local-6989586621679221632"><span class="hs-identifier hs-var hs-var">single</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">APP_ARG -&gt; APP_ARG
+forall a. ToSingleLine a =&gt; a -&gt; a
+</span><a href="Lining.html#toSingleLine"><span class="hs-identifier hs-var">toSingleLine</span></a></span><span> </span><span class="annot"><span class="annottext">APP_ARG
+</span><a href="#local-6989586621679221625"><span class="hs-identifier hs-var">arg</span></a></span><span>
+</span><span id="line-85"></span><span>     </span><span class="hs-keyword">in</span><span> </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">APP_ARG -&gt; Int
+forall a. Render a =&gt; a -&gt; Int
+</span><a href="Margin.html#lengthOf"><span class="hs-identifier hs-var">lengthOf</span></a></span><span> </span><span class="annot"><span class="annottext">APP_ARG
+</span><a href="#local-6989586621679221632"><span class="hs-identifier hs-var">single</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679221623"><span class="hs-identifier hs-var">extra</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">&lt;=</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679221624"><span class="hs-identifier hs-var">margin</span></a></span><span> </span><span class="hs-keyword">then</span><span> </span><span class="annot"><span class="annottext">APP_ARG
+</span><a href="#local-6989586621679221632"><span class="hs-identifier hs-var">single</span></a></span><span> </span><span class="hs-keyword">else</span><span> </span><span class="annot"><span class="annottext">EXPRESSION -&gt; APP_ARGS -&gt; APP_ARG
+</span><a href="CST.html#APP_ARG"><span class="hs-identifier hs-var">APP_ARG</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Int, Int) -&gt; EXPRESSION -&gt; EXPRESSION
+forall a. WithMargin a =&gt; (Int, Int) -&gt; a -&gt; a
+</span><a href="Margin.html#withMargin%27"><span class="hs-identifier hs-var">withMargin'</span></a></span><span> </span><span class="annot"><span class="annottext">(Int, Int)
+</span><a href="#local-6989586621679221622"><span class="hs-identifier hs-var">cfg</span></a></span><span> </span><span class="annot"><span class="annottext">EXPRESSION
+</span><a href="#local-6989586621679221627"><span class="hs-identifier hs-var">expr</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Int, Int) -&gt; APP_ARGS -&gt; APP_ARGS
+forall a. WithMargin a =&gt; (Int, Int) -&gt; a -&gt; a
+</span><a href="Margin.html#withMargin%27"><span class="hs-identifier hs-var">withMargin'</span></a></span><span> </span><span class="annot"><span class="annottext">(Int, Int)
+</span><a href="#local-6989586621679221622"><span class="hs-identifier hs-var">cfg</span></a></span><span> </span><span class="annot"><span class="annottext">APP_ARGS
+</span><a href="#local-6989586621679221628"><span class="hs-identifier hs-var">args</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-86"></span><span>
+</span><span id="line-87"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Margin.html#WithMargin"><span class="hs-identifier hs-type">WithMargin</span></a></span><span> </span><span class="annot"><a href="CST.html#APP_ARGS"><span class="hs-identifier hs-type">APP_ARGS</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-88"></span><span>  </span><span id="local-6989586621679221636"><span class="annot"><span class="annottext">withMargin' :: (Int, Int) -&gt; APP_ARGS -&gt; APP_ARGS
+</span><a href="Margin.html#withMargin%27"><span class="hs-identifier hs-var hs-var hs-var hs-var">withMargin'</span></a></span></span><span> </span><span id="local-6989586621679221637"><span class="annot"><span class="annottext">(Int, Int)
+</span><a href="#local-6989586621679221637"><span class="hs-identifier hs-var">cfg</span></a></span></span><span> </span><span class="annot"><a href="CST.html#AAS_EXPR"><span class="hs-identifier hs-type">AAS_EXPR</span></a></span><span class="hs-special">{</span><span id="local-6989586621679221639"><span id="local-6989586621679221640"><span id="local-6989586621679221641"><span id="local-6989586621679221642"><span class="annot"><span class="annottext">EXPRESSION
+APP_ARGS
+TAB
+EOL
+eol :: EOL
+tab :: TAB
+expr :: EXPRESSION
+args :: APP_ARGS
+$sel:eol:AAS_EXPR :: APP_ARGS -&gt; EOL
+$sel:tab:AAS_EXPR :: APP_ARGS -&gt; TAB
+$sel:expr:AAS_EXPR :: APP_ARGS -&gt; EXPRESSION
+$sel:args:AAS_EXPR :: APP_ARGS -&gt; APP_ARGS
+</span><a href="#local-6989586621679221639"><span class="hs-glyph hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">..</span></a></span></span></span></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">EOL -&gt; TAB -&gt; EXPRESSION -&gt; APP_ARGS -&gt; APP_ARGS
+</span><a href="CST.html#AAS_EXPR"><span class="hs-identifier hs-var">AAS_EXPR</span></a></span><span> </span><span class="annot"><span class="annottext">EOL
+</span><a href="CST.html#EOL"><span class="hs-identifier hs-var">EOL</span></a></span><span> </span><span class="annot"><span class="annottext">TAB
+</span><a href="#local-6989586621679221640"><span class="hs-identifier hs-var">tab</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Int, Int) -&gt; EXPRESSION -&gt; EXPRESSION
+forall a. WithMargin a =&gt; (Int, Int) -&gt; a -&gt; a
+</span><a href="Margin.html#withMargin%27"><span class="hs-identifier hs-var">withMargin'</span></a></span><span> </span><span class="annot"><span class="annottext">(Int, Int)
+</span><a href="#local-6989586621679221637"><span class="hs-identifier hs-var">cfg</span></a></span><span> </span><span class="annot"><span class="annottext">EXPRESSION
+</span><a href="#local-6989586621679221641"><span class="hs-identifier hs-var">expr</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Int, Int) -&gt; APP_ARGS -&gt; APP_ARGS
+forall a. WithMargin a =&gt; (Int, Int) -&gt; a -&gt; a
+</span><a href="Margin.html#withMargin%27"><span class="hs-identifier hs-var">withMargin'</span></a></span><span> </span><span class="annot"><span class="annottext">(Int, Int)
+</span><a href="#local-6989586621679221637"><span class="hs-identifier hs-var">cfg</span></a></span><span> </span><span class="annot"><span class="annottext">APP_ARGS
+</span><a href="#local-6989586621679221642"><span class="hs-identifier hs-var">args</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-89"></span><span>  </span><span class="annot"><a href="Margin.html#withMargin%27"><span class="hs-identifier hs-var">withMargin'</span></a></span><span> </span><span class="annot"><span class="annottext">(Int, Int)
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679221647"><span class="annot"><span class="annottext">APP_ARGS
+</span><a href="#local-6989586621679221647"><span class="hs-identifier hs-var">args</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">APP_ARGS
+</span><a href="#local-6989586621679221647"><span class="hs-identifier hs-var">args</span></a></span><span>
+</span><span id="line-90"></span><span>
+</span><span id="line-91"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Margin.html#WithMargin"><span class="hs-identifier hs-type">WithMargin</span></a></span><span> </span><span class="annot"><a href="CST.html#BINDING"><span class="hs-identifier hs-type">BINDING</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-92"></span><span>  </span><span id="local-6989586621679221653"><span class="annot"><span class="annottext">withMargin' :: (Int, Int) -&gt; BINDING -&gt; BINDING
+</span><a href="Margin.html#withMargin%27"><span class="hs-identifier hs-var hs-var hs-var hs-var">withMargin'</span></a></span></span><span> </span><span id="local-6989586621679221654"><span class="annot"><span class="annottext">(Int, Int)
+</span><a href="#local-6989586621679221654"><span class="hs-identifier hs-var">cfg</span></a></span></span><span> </span><span class="annot"><a href="CST.html#BI_PAIR"><span class="hs-identifier hs-type">BI_PAIR</span></a></span><span class="hs-special">{</span><span id="local-6989586621679221656"><span id="local-6989586621679221657"><span id="local-6989586621679221658"><span class="annot"><span class="annottext">BINDINGS
+PAIR
+TAB
+pair :: PAIR
+bindings :: BINDINGS
+tab :: TAB
+$sel:pair:BI_PAIR :: BINDING -&gt; PAIR
+$sel:bindings:BI_PAIR :: BINDING -&gt; BINDINGS
+$sel:tab:BI_PAIR :: BINDING -&gt; TAB
+</span><a href="#local-6989586621679221656"><span class="hs-glyph hs-var hs-var hs-var hs-var hs-var hs-var">..</span></a></span></span></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">PAIR -&gt; BINDINGS -&gt; TAB -&gt; BINDING
+</span><a href="CST.html#BI_PAIR"><span class="hs-identifier hs-var">BI_PAIR</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Int, Int) -&gt; PAIR -&gt; PAIR
+forall a. WithMargin a =&gt; (Int, Int) -&gt; a -&gt; a
+</span><a href="Margin.html#withMargin%27"><span class="hs-identifier hs-var">withMargin'</span></a></span><span> </span><span class="annot"><span class="annottext">(Int, Int)
+</span><a href="#local-6989586621679221654"><span class="hs-identifier hs-var">cfg</span></a></span><span> </span><span class="annot"><span class="annottext">PAIR
+</span><a href="#local-6989586621679221656"><span class="hs-identifier hs-var">pair</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Int, Int) -&gt; BINDINGS -&gt; BINDINGS
+forall a. WithMargin a =&gt; (Int, Int) -&gt; a -&gt; a
+</span><a href="Margin.html#withMargin%27"><span class="hs-identifier hs-var">withMargin'</span></a></span><span> </span><span class="annot"><span class="annottext">(Int, Int)
+</span><a href="#local-6989586621679221654"><span class="hs-identifier hs-var">cfg</span></a></span><span> </span><span class="annot"><span class="annottext">BINDINGS
+</span><a href="#local-6989586621679221657"><span class="hs-identifier hs-var">bindings</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">TAB
+</span><a href="#local-6989586621679221658"><span class="hs-identifier hs-var">tab</span></a></span><span>
+</span><span id="line-93"></span><span>  </span><span class="annot"><a href="Margin.html#withMargin%27"><span class="hs-identifier hs-var">withMargin'</span></a></span><span> </span><span id="local-6989586621679221662"><span class="annot"><span class="annottext">(Int, Int)
+</span><a href="#local-6989586621679221662"><span class="hs-identifier hs-var">cfg</span></a></span></span><span> </span><span class="annot"><a href="CST.html#BI_META"><span class="hs-identifier hs-type">BI_META</span></a></span><span class="hs-special">{</span><span id="local-6989586621679221664"><span id="local-6989586621679221665"><span id="local-6989586621679221666"><span class="annot"><span class="annottext">BINDINGS
+TAB
+META
+$sel:bindings:BI_PAIR :: BINDING -&gt; BINDINGS
+$sel:tab:BI_PAIR :: BINDING -&gt; TAB
+meta :: META
+bindings :: BINDINGS
+tab :: TAB
+$sel:meta:BI_PAIR :: BINDING -&gt; META
+</span><a href="CST.html#%24sel%3Abindings%3ABI_PAIR"><span class="hs-glyph hs-var hs-var hs-var hs-var hs-var hs-var">..</span></a></span></span></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">META -&gt; BINDINGS -&gt; TAB -&gt; BINDING
+</span><a href="CST.html#BI_META"><span class="hs-identifier hs-var">BI_META</span></a></span><span> </span><span class="annot"><span class="annottext">META
+</span><a href="#local-6989586621679221664"><span class="hs-identifier hs-var">meta</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Int, Int) -&gt; BINDINGS -&gt; BINDINGS
+forall a. WithMargin a =&gt; (Int, Int) -&gt; a -&gt; a
+</span><a href="Margin.html#withMargin%27"><span class="hs-identifier hs-var">withMargin'</span></a></span><span> </span><span class="annot"><span class="annottext">(Int, Int)
+</span><a href="#local-6989586621679221662"><span class="hs-identifier hs-var">cfg</span></a></span><span> </span><span class="annot"><span class="annottext">BINDINGS
+</span><a href="#local-6989586621679221665"><span class="hs-identifier hs-var">bindings</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">TAB
+</span><a href="#local-6989586621679221666"><span class="hs-identifier hs-var">tab</span></a></span><span>
+</span><span id="line-94"></span><span>  </span><span class="annot"><a href="Margin.html#withMargin%27"><span class="hs-identifier hs-var">withMargin'</span></a></span><span> </span><span class="annot"><span class="annottext">(Int, Int)
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679221668"><span class="annot"><span class="annottext">BINDING
+</span><a href="#local-6989586621679221668"><span class="hs-identifier hs-var">bd</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">BINDING
+</span><a href="#local-6989586621679221668"><span class="hs-identifier hs-var">bd</span></a></span><span>
+</span><span id="line-95"></span><span>
+</span><span id="line-96"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Margin.html#WithMargin"><span class="hs-identifier hs-type">WithMargin</span></a></span><span> </span><span class="annot"><a href="CST.html#BINDINGS"><span class="hs-identifier hs-type">BINDINGS</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-97"></span><span>  </span><span id="local-6989586621679221673"><span class="annot"><span class="annottext">withMargin' :: (Int, Int) -&gt; BINDINGS -&gt; BINDINGS
+</span><a href="Margin.html#withMargin%27"><span class="hs-identifier hs-var hs-var hs-var hs-var">withMargin'</span></a></span></span><span> </span><span id="local-6989586621679221674"><span class="annot"><span class="annottext">(Int, Int)
+</span><a href="#local-6989586621679221674"><span class="hs-identifier hs-var">cfg</span></a></span></span><span> </span><span class="annot"><a href="CST.html#BDS_PAIR"><span class="hs-identifier hs-type">BDS_PAIR</span></a></span><span class="hs-special">{</span><span id="local-6989586621679221676"><span id="local-6989586621679221677"><span id="local-6989586621679221678"><span id="local-6989586621679221679"><span class="annot"><span class="annottext">BINDINGS
+PAIR
+TAB
+EOL
+eol :: EOL
+tab :: TAB
+pair :: PAIR
+bindings :: BINDINGS
+$sel:eol:BDS_PAIR :: BINDINGS -&gt; EOL
+$sel:tab:BDS_PAIR :: BINDINGS -&gt; TAB
+$sel:pair:BDS_PAIR :: BINDINGS -&gt; PAIR
+$sel:bindings:BDS_PAIR :: BINDINGS -&gt; BINDINGS
+</span><a href="#local-6989586621679221676"><span class="hs-glyph hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">..</span></a></span></span></span></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">EOL -&gt; TAB -&gt; PAIR -&gt; BINDINGS -&gt; BINDINGS
+</span><a href="CST.html#BDS_PAIR"><span class="hs-identifier hs-var">BDS_PAIR</span></a></span><span> </span><span class="annot"><span class="annottext">EOL
+</span><a href="CST.html#EOL"><span class="hs-identifier hs-var">EOL</span></a></span><span> </span><span class="annot"><span class="annottext">TAB
+</span><a href="#local-6989586621679221677"><span class="hs-identifier hs-var">tab</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Int, Int) -&gt; PAIR -&gt; PAIR
+forall a. WithMargin a =&gt; (Int, Int) -&gt; a -&gt; a
+</span><a href="Margin.html#withMargin%27"><span class="hs-identifier hs-var">withMargin'</span></a></span><span> </span><span class="annot"><span class="annottext">(Int, Int)
+</span><a href="#local-6989586621679221674"><span class="hs-identifier hs-var">cfg</span></a></span><span> </span><span class="annot"><span class="annottext">PAIR
+</span><a href="#local-6989586621679221678"><span class="hs-identifier hs-var">pair</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Int, Int) -&gt; BINDINGS -&gt; BINDINGS
+forall a. WithMargin a =&gt; (Int, Int) -&gt; a -&gt; a
+</span><a href="Margin.html#withMargin%27"><span class="hs-identifier hs-var">withMargin'</span></a></span><span> </span><span class="annot"><span class="annottext">(Int, Int)
+</span><a href="#local-6989586621679221674"><span class="hs-identifier hs-var">cfg</span></a></span><span> </span><span class="annot"><span class="annottext">BINDINGS
+</span><a href="#local-6989586621679221679"><span class="hs-identifier hs-var">bindings</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-98"></span><span>  </span><span class="annot"><a href="Margin.html#withMargin%27"><span class="hs-identifier hs-var">withMargin'</span></a></span><span> </span><span id="local-6989586621679221684"><span class="annot"><span class="annottext">(Int, Int)
+</span><a href="#local-6989586621679221684"><span class="hs-identifier hs-var">cfg</span></a></span></span><span> </span><span class="annot"><a href="CST.html#BDS_META"><span class="hs-identifier hs-type">BDS_META</span></a></span><span class="hs-special">{</span><span id="local-6989586621679221686"><span id="local-6989586621679221687"><span id="local-6989586621679221688"><span id="local-6989586621679221689"><span class="annot"><span class="annottext">BINDINGS
+TAB
+META
+EOL
+$sel:eol:BDS_PAIR :: BINDINGS -&gt; EOL
+$sel:tab:BDS_PAIR :: BINDINGS -&gt; TAB
+$sel:bindings:BDS_PAIR :: BINDINGS -&gt; BINDINGS
+eol :: EOL
+tab :: TAB
+meta :: META
+bindings :: BINDINGS
+$sel:meta:BDS_PAIR :: BINDINGS -&gt; META
+</span><a href="CST.html#%24sel%3Aeol%3ABDS_PAIR"><span class="hs-glyph hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">..</span></a></span></span></span></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">EOL -&gt; TAB -&gt; META -&gt; BINDINGS -&gt; BINDINGS
+</span><a href="CST.html#BDS_META"><span class="hs-identifier hs-var">BDS_META</span></a></span><span> </span><span class="annot"><span class="annottext">EOL
+</span><a href="CST.html#EOL"><span class="hs-identifier hs-var">EOL</span></a></span><span> </span><span class="annot"><span class="annottext">TAB
+</span><a href="#local-6989586621679221687"><span class="hs-identifier hs-var">tab</span></a></span><span> </span><span class="annot"><span class="annottext">META
+</span><a href="#local-6989586621679221688"><span class="hs-identifier hs-var">meta</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Int, Int) -&gt; BINDINGS -&gt; BINDINGS
+forall a. WithMargin a =&gt; (Int, Int) -&gt; a -&gt; a
+</span><a href="Margin.html#withMargin%27"><span class="hs-identifier hs-var">withMargin'</span></a></span><span> </span><span class="annot"><span class="annottext">(Int, Int)
+</span><a href="#local-6989586621679221684"><span class="hs-identifier hs-var">cfg</span></a></span><span> </span><span class="annot"><span class="annottext">BINDINGS
+</span><a href="#local-6989586621679221689"><span class="hs-identifier hs-var">bindings</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-99"></span><span>  </span><span class="annot"><a href="Margin.html#withMargin%27"><span class="hs-identifier hs-var">withMargin'</span></a></span><span> </span><span class="annot"><span class="annottext">(Int, Int)
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679221691"><span class="annot"><span class="annottext">BINDINGS
+</span><a href="#local-6989586621679221691"><span class="hs-identifier hs-var">bds</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">BINDINGS
+</span><a href="#local-6989586621679221691"><span class="hs-identifier hs-var">bds</span></a></span><span>
+</span><span id="line-100"></span><span>
+</span><span id="line-101"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Margin.html#WithMargin"><span class="hs-identifier hs-type">WithMargin</span></a></span><span> </span><span class="annot"><a href="CST.html#PAIR"><span class="hs-identifier hs-type">PAIR</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-102"></span><span>  </span><span id="local-6989586621679221700"><span class="annot"><span class="annottext">withMargin' :: (Int, Int) -&gt; PAIR -&gt; PAIR
+</span><a href="Margin.html#withMargin%27"><span class="hs-identifier hs-var hs-var hs-var hs-var">withMargin'</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679221701"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679221701"><span class="hs-identifier hs-var">extra</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679221702"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679221702"><span class="hs-identifier hs-var">margin</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679221703"><span class="annot"><span class="annottext">pa :: PAIR
+</span><a href="#local-6989586621679221703"><span class="hs-identifier hs-var">pa</span></a></span></span><span class="hs-glyph">@</span><span class="annot"><a href="CST.html#PA_TAU"><span class="hs-identifier hs-type">PA_TAU</span></a></span><span class="hs-special">{</span><span id="local-6989586621679221705"><span id="local-6989586621679221706"><span id="local-6989586621679221707"><span class="annot"><span class="annottext">ATTRIBUTE
+EXPRESSION
+ARROW
+attr :: ATTRIBUTE
+arrow :: ARROW
+expr :: EXPRESSION
+$sel:attr:PA_TAU :: PAIR -&gt; ATTRIBUTE
+$sel:arrow:PA_TAU :: PAIR -&gt; ARROW
+$sel:expr:PA_TAU :: PAIR -&gt; EXPRESSION
+</span><a href="#local-6989586621679221705"><span class="hs-glyph hs-var hs-var hs-var hs-var hs-var hs-var">..</span></a></span></span></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-103"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679221713"><span class="annot"><span class="annottext">single :: PAIR
+</span><a href="#local-6989586621679221713"><span class="hs-identifier hs-var hs-var">single</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">PAIR -&gt; PAIR
+forall a. ToSingleLine a =&gt; a -&gt; a
+</span><a href="Lining.html#toSingleLine"><span class="hs-identifier hs-var">toSingleLine</span></a></span><span> </span><span class="annot"><span class="annottext">PAIR
+</span><a href="#local-6989586621679221703"><span class="hs-identifier hs-var">pa</span></a></span><span>
+</span><span id="line-104"></span><span>        </span><span id="local-6989586621679221721"><span class="annot"><span class="annottext">extra' :: Int
+</span><a href="#local-6989586621679221721"><span class="hs-identifier hs-var hs-var">extra'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679221701"><span class="hs-identifier hs-var">extra</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">ATTRIBUTE -&gt; Int
+forall a. Render a =&gt; a -&gt; Int
+</span><a href="Margin.html#lengthOf"><span class="hs-identifier hs-var">lengthOf</span></a></span><span> </span><span class="annot"><span class="annottext">ATTRIBUTE
+</span><a href="#local-6989586621679221705"><span class="hs-identifier hs-var">attr</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">ARROW -&gt; Int
+forall a. Render a =&gt; a -&gt; Int
+</span><a href="Margin.html#lengthOf"><span class="hs-identifier hs-var">lengthOf</span></a></span><span> </span><span class="annot"><span class="annottext">ARROW
+</span><a href="#local-6989586621679221706"><span class="hs-identifier hs-var">arrow</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">2</span></span><span> </span><span class="hs-comment">-- indent + attr + arrow + 2 spaces</span><span>
+</span><span id="line-105"></span><span>        </span><span id="local-6989586621679221723"><span class="annot"><span class="annottext">pa' :: PAIR
+</span><a href="#local-6989586621679221723"><span class="hs-identifier hs-var hs-var">pa'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ATTRIBUTE -&gt; ARROW -&gt; EXPRESSION -&gt; PAIR
+</span><a href="CST.html#PA_TAU"><span class="hs-identifier hs-var">PA_TAU</span></a></span><span> </span><span class="annot"><span class="annottext">ATTRIBUTE
+</span><a href="#local-6989586621679221705"><span class="hs-identifier hs-var">attr</span></a></span><span> </span><span class="annot"><span class="annottext">ARROW
+</span><a href="#local-6989586621679221706"><span class="hs-identifier hs-var">arrow</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Int, Int) -&gt; EXPRESSION -&gt; EXPRESSION
+forall a. WithMargin a =&gt; (Int, Int) -&gt; a -&gt; a
+</span><a href="Margin.html#withMargin%27"><span class="hs-identifier hs-var">withMargin'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679221721"><span class="hs-identifier hs-var">extra'</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679221702"><span class="hs-identifier hs-var">margin</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">EXPRESSION
+</span><a href="#local-6989586621679221707"><span class="hs-identifier hs-var">expr</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-106"></span><span>     </span><span class="hs-keyword">in</span><span> </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">PAIR -&gt; Int
+forall a. Render a =&gt; a -&gt; Int
+</span><a href="Margin.html#lengthOf"><span class="hs-identifier hs-var">lengthOf</span></a></span><span> </span><span class="annot"><span class="annottext">PAIR
+</span><a href="#local-6989586621679221713"><span class="hs-identifier hs-var">single</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679221701"><span class="hs-identifier hs-var">extra</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">&lt;=</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679221702"><span class="hs-identifier hs-var">margin</span></a></span><span> </span><span class="hs-keyword">then</span><span> </span><span class="annot"><span class="annottext">PAIR
+</span><a href="#local-6989586621679221713"><span class="hs-identifier hs-var">single</span></a></span><span> </span><span class="hs-keyword">else</span><span> </span><span class="annot"><span class="annottext">PAIR
+</span><a href="#local-6989586621679221723"><span class="hs-identifier hs-var">pa'</span></a></span><span>
+</span><span id="line-107"></span><span>  </span><span class="annot"><a href="Margin.html#withMargin%27"><span class="hs-identifier hs-var">withMargin'</span></a></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679221724"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679221724"><span class="hs-identifier hs-var">extra</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679221725"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679221725"><span class="hs-identifier hs-var">margin</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679221726"><span class="annot"><span class="annottext">pa :: PAIR
+</span><a href="#local-6989586621679221726"><span class="hs-identifier hs-var">pa</span></a></span></span><span class="hs-glyph">@</span><span class="annot"><a href="CST.html#PA_FORMATION"><span class="hs-identifier hs-type">PA_FORMATION</span></a></span><span class="hs-special">{</span><span id="local-6989586621679221728"><span id="local-6989586621679221729"><span id="local-6989586621679221730"><span id="local-6989586621679221731"><span class="annot"><span class="annottext">[ATTRIBUTE]
+ATTRIBUTE
+EXPRESSION
+ARROW
+$sel:attr:PA_TAU :: PAIR -&gt; ATTRIBUTE
+$sel:arrow:PA_TAU :: PAIR -&gt; ARROW
+$sel:expr:PA_TAU :: PAIR -&gt; EXPRESSION
+attr :: ATTRIBUTE
+voids :: [ATTRIBUTE]
+arrow :: ARROW
+expr :: EXPRESSION
+$sel:voids:PA_TAU :: PAIR -&gt; [ATTRIBUTE]
+</span><a href="CST.html#%24sel%3Aattr%3APA_TAU"><span class="hs-glyph hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">..</span></a></span></span></span></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-108"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679221734"><span class="annot"><span class="annottext">single :: PAIR
+</span><a href="#local-6989586621679221734"><span class="hs-identifier hs-var hs-var">single</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">PAIR -&gt; PAIR
+forall a. ToSingleLine a =&gt; a -&gt; a
+</span><a href="Lining.html#toSingleLine"><span class="hs-identifier hs-var">toSingleLine</span></a></span><span> </span><span class="annot"><span class="annottext">PAIR
+</span><a href="#local-6989586621679221726"><span class="hs-identifier hs-var">pa</span></a></span><span>
+</span><span id="line-109"></span><span>        </span><span id="local-6989586621679221744"><span class="annot"><span class="annottext">extra' :: Int
+</span><a href="#local-6989586621679221744"><span class="hs-identifier hs-var hs-var">extra'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679221724"><span class="hs-identifier hs-var">extra</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">ATTRIBUTE -&gt; Int
+forall a. Render a =&gt; a -&gt; Int
+</span><a href="Margin.html#lengthOf"><span class="hs-identifier hs-var">lengthOf</span></a></span><span> </span><span class="annot"><span class="annottext">ATTRIBUTE
+</span><a href="#local-6989586621679221728"><span class="hs-identifier hs-var">attr</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">[ATTRIBUTE] -&gt; Int
+forall a. Render a =&gt; a -&gt; Int
+</span><a href="Margin.html#lengthOf"><span class="hs-identifier hs-var">lengthOf</span></a></span><span> </span><span class="annot"><span class="annottext">[ATTRIBUTE]
+</span><a href="#local-6989586621679221729"><span class="hs-identifier hs-var">voids</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">ARROW -&gt; Int
+forall a. Render a =&gt; a -&gt; Int
+</span><a href="Margin.html#lengthOf"><span class="hs-identifier hs-var">lengthOf</span></a></span><span> </span><span class="annot"><span class="annottext">ARROW
+</span><a href="#local-6989586621679221730"><span class="hs-identifier hs-var">arrow</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">4</span></span><span> </span><span class="hs-comment">-- indent + 2 braces + 2 spaces + voids</span><span>
+</span><span id="line-110"></span><span>        </span><span id="local-6989586621679221746"><span class="annot"><span class="annottext">pa' :: PAIR
+</span><a href="#local-6989586621679221746"><span class="hs-identifier hs-var hs-var">pa'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ATTRIBUTE -&gt; [ATTRIBUTE] -&gt; ARROW -&gt; EXPRESSION -&gt; PAIR
+</span><a href="CST.html#PA_FORMATION"><span class="hs-identifier hs-var">PA_FORMATION</span></a></span><span> </span><span class="annot"><span class="annottext">ATTRIBUTE
+</span><a href="#local-6989586621679221728"><span class="hs-identifier hs-var">attr</span></a></span><span> </span><span class="annot"><span class="annottext">[ATTRIBUTE]
+</span><a href="#local-6989586621679221729"><span class="hs-identifier hs-var">voids</span></a></span><span> </span><span class="annot"><span class="annottext">ARROW
+</span><a href="#local-6989586621679221730"><span class="hs-identifier hs-var">arrow</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Int, Int) -&gt; EXPRESSION -&gt; EXPRESSION
+forall a. WithMargin a =&gt; (Int, Int) -&gt; a -&gt; a
+</span><a href="Margin.html#withMargin%27"><span class="hs-identifier hs-var">withMargin'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679221744"><span class="hs-identifier hs-var">extra'</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679221725"><span class="hs-identifier hs-var">margin</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">EXPRESSION
+</span><a href="#local-6989586621679221731"><span class="hs-identifier hs-var">expr</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-111"></span><span>     </span><span class="hs-keyword">in</span><span> </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">PAIR -&gt; Int
+forall a. Render a =&gt; a -&gt; Int
+</span><a href="Margin.html#lengthOf"><span class="hs-identifier hs-var">lengthOf</span></a></span><span> </span><span class="annot"><span class="annottext">PAIR
+</span><a href="#local-6989586621679221734"><span class="hs-identifier hs-var">single</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679221724"><span class="hs-identifier hs-var">extra</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">&lt;=</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679221725"><span class="hs-identifier hs-var">margin</span></a></span><span> </span><span class="hs-keyword">then</span><span> </span><span class="annot"><span class="annottext">PAIR
+</span><a href="#local-6989586621679221734"><span class="hs-identifier hs-var">single</span></a></span><span> </span><span class="hs-keyword">else</span><span> </span><span class="annot"><span class="annottext">PAIR
+</span><a href="#local-6989586621679221746"><span class="hs-identifier hs-var">pa'</span></a></span><span>
+</span><span id="line-112"></span><span>  </span><span class="annot"><a href="Margin.html#withMargin%27"><span class="hs-identifier hs-var">withMargin'</span></a></span><span> </span><span class="annot"><span class="annottext">(Int, Int)
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679221747"><span class="annot"><span class="annottext">PAIR
+</span><a href="#local-6989586621679221747"><span class="hs-identifier hs-var">pa</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">PAIR
+</span><a href="#local-6989586621679221747"><span class="hs-identifier hs-var">pa</span></a></span><span>
+</span><span id="line-113"></span><span>
+</span><span id="line-114"></span><span id="local-6989586621679221338"><span class="annot"><a href="Margin.html#lengthOf"><span class="hs-identifier hs-type">lengthOf</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Render.html#Render"><span class="hs-identifier hs-type">Render</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679221338"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679221338"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span></span><span>
+</span><span id="line-115"></span><span id="lengthOf"><span class="annot"><span class="annottext">lengthOf :: forall a. Render a =&gt; a -&gt; Int
+</span><a href="Margin.html#lengthOf"><span class="hs-identifier hs-var hs-var">lengthOf</span></a></span></span><span> </span><span id="local-6989586621679221751"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679221751"><span class="hs-identifier hs-var">renderable</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; Int
+forall a. [a] -&gt; Int
+forall (t :: * -&gt; *) a. Foldable t =&gt; t a -&gt; Int
+</span><span class="hs-identifier hs-var">length</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a -&gt; String
+forall a. Render a =&gt; a -&gt; String
+</span><a href="Render.html#render"><span class="hs-identifier hs-var">render</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679221751"><span class="hs-identifier hs-var">renderable</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-116"></span></pre></body></html>

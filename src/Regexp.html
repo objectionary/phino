@@ -12,58 +12,58 @@
 </span><span id="line-12"></span><span>
 </span><span id="line-13"></span><span class="annot"><a href="Regexp.html#compile"><span class="hs-identifier hs-type">compile</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">B.ByteString</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/rgx-pcr-bltn-0.95.2.3.8.44-e6e3376b/share/doc/html/src/Text.Regex.PCRE.Wrap.html#Regex"><span class="hs-identifier hs-type">R.Regex</span></a></span><span>
 </span><span id="line-14"></span><span id="compile"><span class="annot"><span class="annottext">compile :: ByteString -&gt; IO Regex
-</span><a href="Regexp.html#compile"><span class="hs-identifier hs-var hs-var">compile</span></a></span></span><span> </span><span id="local-6989586621679219239"><span class="annot"><span class="annottext">ByteString
-</span><a href="#local-6989586621679219239"><span class="hs-identifier hs-var">pat</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-15"></span><span>  </span><span id="local-6989586621679219240"><span class="annot"><span class="annottext">Either (MatchOffset, String) Regex
-</span><a href="#local-6989586621679219240"><span class="hs-identifier hs-var">compiled</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">CompOption
+</span><a href="Regexp.html#compile"><span class="hs-identifier hs-var hs-var">compile</span></a></span></span><span> </span><span id="local-6989586621679220537"><span class="annot"><span class="annottext">ByteString
+</span><a href="#local-6989586621679220537"><span class="hs-identifier hs-var">pat</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-15"></span><span>  </span><span id="local-6989586621679220538"><span class="annot"><span class="annottext">Either (MatchOffset, String) Regex
+</span><a href="#local-6989586621679220538"><span class="hs-identifier hs-var">compiled</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">CompOption
 -&gt; ExecOption
 -&gt; ByteString
 -&gt; IO (Either (MatchOffset, String) Regex)
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/rgx-pcr-bltn-0.95.2.3.8.44-e6e3376b/share/doc/html/src/Text.Regex.PCRE.ByteString.html#compile"><span class="hs-identifier hs-var">R.compile</span></a></span><span> </span><span class="annot"><span class="annottext">CompOption
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/rgx-pcr-bltn-0.95.2.3.8.44-e6e3376b/share/doc/html/src/Text.Regex.PCRE.Wrap.html#compBlank"><span class="hs-identifier hs-var">R.compBlank</span></a></span><span> </span><span class="annot"><span class="annottext">ExecOption
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/rgx-pcr-bltn-0.95.2.3.8.44-e6e3376b/share/doc/html/src/Text.Regex.PCRE.Wrap.html#execBlank"><span class="hs-identifier hs-var">R.execBlank</span></a></span><span> </span><span class="annot"><span class="annottext">ByteString
-</span><a href="#local-6989586621679219239"><span class="hs-identifier hs-var">pat</span></a></span><span>
+</span><a href="#local-6989586621679220537"><span class="hs-identifier hs-var">pat</span></a></span><span>
 </span><span id="line-16"></span><span>  </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Either (MatchOffset, String) Regex
-</span><a href="#local-6989586621679219240"><span class="hs-identifier hs-var">compiled</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><a href="#local-6989586621679220538"><span class="hs-identifier hs-var">compiled</span></a></span><span> </span><span class="hs-keyword">of</span><span>
 </span><span id="line-17"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">Left</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">MatchOffset
-</span><span class="hs-identifier">_</span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679219244"><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679219244"><span class="hs-identifier hs-var">err</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">IOError -&gt; IO Regex
+</span><span class="hs-identifier">_</span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679220542"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679220542"><span class="hs-identifier hs-var">err</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">IOError -&gt; IO Regex
 forall e a. Exception e =&gt; e -&gt; IO a
 </span><span class="hs-identifier hs-var">throwIO</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String -&gt; IOError
 </span><span class="hs-identifier hs-var">userError</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;Regex compilation failed: &quot;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
 forall a. [a] -&gt; [a] -&gt; [a]
 </span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679219244"><span class="hs-identifier hs-var">err</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
-</span><span id="line-18"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">Right</span></span><span> </span><span id="local-6989586621679219247"><span class="annot"><span class="annottext">Regex
-</span><a href="#local-6989586621679219247"><span class="hs-identifier hs-var">regex</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Regex -&gt; IO Regex
+</span><a href="#local-6989586621679220542"><span class="hs-identifier hs-var">err</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-18"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">Right</span></span><span> </span><span id="local-6989586621679220545"><span class="annot"><span class="annottext">Regex
+</span><a href="#local-6989586621679220545"><span class="hs-identifier hs-var">regex</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Regex -&gt; IO Regex
 forall a. a -&gt; IO a
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">Regex
-</span><a href="#local-6989586621679219247"><span class="hs-identifier hs-var">regex</span></a></span><span>
+</span><a href="#local-6989586621679220545"><span class="hs-identifier hs-var">regex</span></a></span><span>
 </span><span id="line-19"></span><span>
 </span><span id="line-20"></span><span class="annot"><a href="Regexp.html#match"><span class="hs-identifier hs-type">match</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">B.ByteString</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">B.ByteString</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span>
 </span><span id="line-21"></span><span id="match"><span class="annot"><span class="annottext">match :: ByteString -&gt; ByteString -&gt; IO Bool
-</span><a href="Regexp.html#match"><span class="hs-identifier hs-var hs-var">match</span></a></span></span><span> </span><span id="local-6989586621679219249"><span class="annot"><span class="annottext">ByteString
-</span><a href="#local-6989586621679219249"><span class="hs-identifier hs-var">pattern</span></a></span></span><span> </span><span id="local-6989586621679219250"><span class="annot"><span class="annottext">ByteString
-</span><a href="#local-6989586621679219250"><span class="hs-identifier hs-var">input</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-22"></span><span>  </span><span id="local-6989586621679219251"><span class="annot"><span class="annottext">Regex
-</span><a href="#local-6989586621679219251"><span class="hs-identifier hs-var">regex</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">ByteString -&gt; IO Regex
+</span><a href="Regexp.html#match"><span class="hs-identifier hs-var hs-var">match</span></a></span></span><span> </span><span id="local-6989586621679220547"><span class="annot"><span class="annottext">ByteString
+</span><a href="#local-6989586621679220547"><span class="hs-identifier hs-var">pattern</span></a></span></span><span> </span><span id="local-6989586621679220548"><span class="annot"><span class="annottext">ByteString
+</span><a href="#local-6989586621679220548"><span class="hs-identifier hs-var">input</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-22"></span><span>  </span><span id="local-6989586621679220549"><span class="annot"><span class="annottext">Regex
+</span><a href="#local-6989586621679220549"><span class="hs-identifier hs-var">regex</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">ByteString -&gt; IO Regex
 </span><a href="Regexp.html#compile"><span class="hs-identifier hs-var">compile</span></a></span><span> </span><span class="annot"><span class="annottext">ByteString
-</span><a href="#local-6989586621679219249"><span class="hs-identifier hs-var">pattern</span></a></span><span>
-</span><span id="line-23"></span><span>  </span><span id="local-6989586621679219252"><span class="annot"><span class="annottext">Either
+</span><a href="#local-6989586621679220547"><span class="hs-identifier hs-var">pattern</span></a></span><span>
+</span><span id="line-23"></span><span>  </span><span id="local-6989586621679220550"><span class="annot"><span class="annottext">Either
   WrapError (Maybe (Array MatchOffset (MatchOffset, MatchOffset)))
-</span><a href="#local-6989586621679219252"><span class="hs-identifier hs-var">res</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Regex
+</span><a href="#local-6989586621679220550"><span class="hs-identifier hs-var">res</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Regex
 -&gt; ByteString
 -&gt; IO
      (Either
         WrapError (Maybe (Array MatchOffset (MatchOffset, MatchOffset))))
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/rgx-pcr-bltn-0.95.2.3.8.44-e6e3376b/share/doc/html/src/Text.Regex.PCRE.ByteString.html#execute"><span class="hs-identifier hs-var">R.execute</span></a></span><span> </span><span class="annot"><span class="annottext">Regex
-</span><a href="#local-6989586621679219251"><span class="hs-identifier hs-var">regex</span></a></span><span> </span><span class="annot"><span class="annottext">ByteString
-</span><a href="#local-6989586621679219250"><span class="hs-identifier hs-var">input</span></a></span><span>
+</span><a href="#local-6989586621679220549"><span class="hs-identifier hs-var">regex</span></a></span><span> </span><span class="annot"><span class="annottext">ByteString
+</span><a href="#local-6989586621679220548"><span class="hs-identifier hs-var">input</span></a></span><span>
 </span><span id="line-24"></span><span>  </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Either
   WrapError (Maybe (Array MatchOffset (MatchOffset, MatchOffset)))
-</span><a href="#local-6989586621679219252"><span class="hs-identifier hs-var">res</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><a href="#local-6989586621679220550"><span class="hs-identifier hs-var">res</span></a></span><span> </span><span class="hs-keyword">of</span><span>
 </span><span id="line-25"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">Left</span></span><span> </span><span class="annot"><span class="annottext">WrapError
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Bool -&gt; IO Bool
 forall a. a -&gt; IO a
@@ -85,22 +85,22 @@ forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span id="line-28"></span><span>
 </span><span id="line-29"></span><span class="annot"><a href="Regexp.html#extractGroups"><span class="hs-identifier hs-type">extractGroups</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/rgx-pcr-bltn-0.95.2.3.8.44-e6e3376b/share/doc/html/src/Text.Regex.PCRE.Wrap.html#Regex"><span class="hs-identifier hs-type">R.Regex</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">B.ByteString</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="hs-identifier hs-type">B.ByteString</span></span><span class="hs-special">]</span><span>
 </span><span id="line-30"></span><span id="extractGroups"><span class="annot"><span class="annottext">extractGroups :: Regex -&gt; ByteString -&gt; IO [ByteString]
-</span><a href="Regexp.html#extractGroups"><span class="hs-identifier hs-var hs-var">extractGroups</span></a></span></span><span> </span><span id="local-6989586621679219255"><span class="annot"><span class="annottext">Regex
-</span><a href="#local-6989586621679219255"><span class="hs-identifier hs-var">regex</span></a></span></span><span> </span><span id="local-6989586621679219256"><span class="annot"><span class="annottext">ByteString
-</span><a href="#local-6989586621679219256"><span class="hs-identifier hs-var">input</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-31"></span><span>  </span><span id="local-6989586621679219257"><span class="annot"><span class="annottext">Either
+</span><a href="Regexp.html#extractGroups"><span class="hs-identifier hs-var hs-var">extractGroups</span></a></span></span><span> </span><span id="local-6989586621679220553"><span class="annot"><span class="annottext">Regex
+</span><a href="#local-6989586621679220553"><span class="hs-identifier hs-var">regex</span></a></span></span><span> </span><span id="local-6989586621679220554"><span class="annot"><span class="annottext">ByteString
+</span><a href="#local-6989586621679220554"><span class="hs-identifier hs-var">input</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-31"></span><span>  </span><span id="local-6989586621679220555"><span class="annot"><span class="annottext">Either
   WrapError (Maybe (Array MatchOffset (MatchOffset, MatchOffset)))
-</span><a href="#local-6989586621679219257"><span class="hs-identifier hs-var">result</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Regex
+</span><a href="#local-6989586621679220555"><span class="hs-identifier hs-var">result</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Regex
 -&gt; ByteString
 -&gt; IO
      (Either
         WrapError (Maybe (Array MatchOffset (MatchOffset, MatchOffset))))
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/rgx-pcr-bltn-0.95.2.3.8.44-e6e3376b/share/doc/html/src/Text.Regex.PCRE.ByteString.html#execute"><span class="hs-identifier hs-var">R.execute</span></a></span><span> </span><span class="annot"><span class="annottext">Regex
-</span><a href="#local-6989586621679219255"><span class="hs-identifier hs-var">regex</span></a></span><span> </span><span class="annot"><span class="annottext">ByteString
-</span><a href="#local-6989586621679219256"><span class="hs-identifier hs-var">input</span></a></span><span>
+</span><a href="#local-6989586621679220553"><span class="hs-identifier hs-var">regex</span></a></span><span> </span><span class="annot"><span class="annottext">ByteString
+</span><a href="#local-6989586621679220554"><span class="hs-identifier hs-var">input</span></a></span><span>
 </span><span id="line-32"></span><span>  </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Either
   WrapError (Maybe (Array MatchOffset (MatchOffset, MatchOffset)))
-</span><a href="#local-6989586621679219257"><span class="hs-identifier hs-var">result</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><a href="#local-6989586621679220555"><span class="hs-identifier hs-var">result</span></a></span><span> </span><span class="hs-keyword">of</span><span>
 </span><span id="line-33"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">Left</span></span><span> </span><span class="annot"><span class="annottext">WrapError
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">[ByteString] -&gt; IO [ByteString]
 forall a. a -&gt; IO a
@@ -111,138 +111,138 @@ forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 forall a. a -&gt; IO a
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span>
-</span><span id="line-35"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">Right</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span id="local-6989586621679219258"><span class="annot"><span class="annottext">Array MatchOffset (MatchOffset, MatchOffset)
-</span><a href="#local-6989586621679219258"><span class="hs-identifier hs-var">arr</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span>
-</span><span id="line-36"></span><span>      </span><span class="hs-keyword">let</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679219259"><span class="annot"><span class="annottext">MatchOffset
-</span><a href="#local-6989586621679219259"><span class="hs-identifier hs-var">start</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679219260"><span class="annot"><span class="annottext">MatchOffset
-</span><a href="#local-6989586621679219260"><span class="hs-identifier hs-var">end</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Array MatchOffset (MatchOffset, MatchOffset)
+</span><span id="line-35"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">Right</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span id="local-6989586621679220556"><span class="annot"><span class="annottext">Array MatchOffset (MatchOffset, MatchOffset)
+</span><a href="#local-6989586621679220556"><span class="hs-identifier hs-var">arr</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-36"></span><span>      </span><span class="hs-keyword">let</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679220557"><span class="annot"><span class="annottext">MatchOffset
+</span><a href="#local-6989586621679220557"><span class="hs-identifier hs-var">start</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679220558"><span class="annot"><span class="annottext">MatchOffset
+</span><a href="#local-6989586621679220558"><span class="hs-identifier hs-var">end</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Array MatchOffset (MatchOffset, MatchOffset)
 -&gt; (MatchOffset, MatchOffset)
 forall i e. Array i e -&gt; (i, i)
 </span><span class="hs-identifier hs-var">bounds</span></span><span> </span><span class="annot"><span class="annottext">Array MatchOffset (MatchOffset, MatchOffset)
-</span><a href="#local-6989586621679219258"><span class="hs-identifier hs-var">arr</span></a></span><span>
-</span><span id="line-37"></span><span>          </span><span id="local-6989586621679219268"><span class="annot"><span class="annottext">groups :: [ByteString]
-</span><a href="#local-6989586621679219268"><span class="hs-identifier hs-var hs-var">groups</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
-</span><span id="line-38"></span><span>            </span><span class="hs-special">[</span><span> </span><span class="hs-keyword">let</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679219271"><span class="annot"><span class="annottext">MatchOffset
-</span><a href="#local-6989586621679219271"><span class="hs-identifier hs-var">off</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679219272"><span class="annot"><span class="annottext">MatchOffset
-</span><a href="#local-6989586621679219272"><span class="hs-identifier hs-var">len</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Array MatchOffset (MatchOffset, MatchOffset)
-</span><a href="#local-6989586621679219258"><span class="hs-identifier hs-var">arr</span></a></span><span> </span><span class="annot"><span class="annottext">Array MatchOffset (MatchOffset, MatchOffset)
+</span><a href="#local-6989586621679220556"><span class="hs-identifier hs-var">arr</span></a></span><span>
+</span><span id="line-37"></span><span>          </span><span id="local-6989586621679220566"><span class="annot"><span class="annottext">groups :: [ByteString]
+</span><a href="#local-6989586621679220566"><span class="hs-identifier hs-var hs-var">groups</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-38"></span><span>            </span><span class="hs-special">[</span><span> </span><span class="hs-keyword">let</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679220569"><span class="annot"><span class="annottext">MatchOffset
+</span><a href="#local-6989586621679220569"><span class="hs-identifier hs-var">off</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679220570"><span class="annot"><span class="annottext">MatchOffset
+</span><a href="#local-6989586621679220570"><span class="hs-identifier hs-var">len</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Array MatchOffset (MatchOffset, MatchOffset)
+</span><a href="#local-6989586621679220556"><span class="hs-identifier hs-var">arr</span></a></span><span> </span><span class="annot"><span class="annottext">Array MatchOffset (MatchOffset, MatchOffset)
 -&gt; MatchOffset -&gt; (MatchOffset, MatchOffset)
 forall i e. Ix i =&gt; Array i e -&gt; i -&gt; e
 </span><span class="hs-operator hs-var">!</span></span><span> </span><span class="annot"><span class="annottext">MatchOffset
-</span><a href="#local-6989586621679219273"><span class="hs-identifier hs-var">i</span></a></span><span>
+</span><a href="#local-6989586621679220571"><span class="hs-identifier hs-var">i</span></a></span><span>
 </span><span id="line-39"></span><span>               </span><span class="hs-keyword">in</span><span> </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">MatchOffset
-</span><a href="#local-6989586621679219271"><span class="hs-identifier hs-var">off</span></a></span><span> </span><span class="annot"><span class="annottext">MatchOffset -&gt; MatchOffset -&gt; Bool
+</span><a href="#local-6989586621679220569"><span class="hs-identifier hs-var">off</span></a></span><span> </span><span class="annot"><span class="annottext">MatchOffset -&gt; MatchOffset -&gt; Bool
 forall a. Eq a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">==</span></span><span> </span><span class="hs-glyph">-</span><span class="annot"><span class="annottext">MatchOffset
 </span><span class="hs-number">1</span></span><span> </span><span class="hs-keyword">then</span><span> </span><span class="annot"><span class="annottext">ByteString
 </span><span class="hs-identifier hs-var">B.empty</span></span><span> </span><span class="hs-keyword">else</span><span> </span><span class="annot"><span class="annottext">MatchOffset -&gt; ByteString -&gt; ByteString
 </span><span class="hs-identifier hs-var">B.take</span></span><span> </span><span class="annot"><span class="annottext">MatchOffset
-</span><a href="#local-6989586621679219272"><span class="hs-identifier hs-var">len</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">MatchOffset -&gt; ByteString -&gt; ByteString
+</span><a href="#local-6989586621679220570"><span class="hs-identifier hs-var">len</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">MatchOffset -&gt; ByteString -&gt; ByteString
 </span><span class="hs-identifier hs-var">B.drop</span></span><span> </span><span class="annot"><span class="annottext">MatchOffset
-</span><a href="#local-6989586621679219271"><span class="hs-identifier hs-var">off</span></a></span><span> </span><span class="annot"><span class="annottext">ByteString
-</span><a href="#local-6989586621679219256"><span class="hs-identifier hs-var">input</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-40"></span><span>            </span><span class="hs-glyph">|</span><span> </span><span id="local-6989586621679219273"><span class="annot"><span class="annottext">MatchOffset
-</span><a href="#local-6989586621679219273"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">MatchOffset
-</span><a href="#local-6989586621679219259"><span class="hs-identifier hs-var">start</span></a></span><span> </span><span class="hs-glyph">..</span><span> </span><span class="annot"><span class="annottext">MatchOffset
-</span><a href="#local-6989586621679219260"><span class="hs-identifier hs-var">end</span></a></span><span class="hs-special">]</span><span>
+</span><a href="#local-6989586621679220569"><span class="hs-identifier hs-var">off</span></a></span><span> </span><span class="annot"><span class="annottext">ByteString
+</span><a href="#local-6989586621679220554"><span class="hs-identifier hs-var">input</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-40"></span><span>            </span><span class="hs-glyph">|</span><span> </span><span id="local-6989586621679220571"><span class="annot"><span class="annottext">MatchOffset
+</span><a href="#local-6989586621679220571"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">MatchOffset
+</span><a href="#local-6989586621679220557"><span class="hs-identifier hs-var">start</span></a></span><span> </span><span class="hs-glyph">..</span><span> </span><span class="annot"><span class="annottext">MatchOffset
+</span><a href="#local-6989586621679220558"><span class="hs-identifier hs-var">end</span></a></span><span class="hs-special">]</span><span>
 </span><span id="line-41"></span><span>            </span><span class="hs-special">]</span><span>
 </span><span id="line-42"></span><span>       </span><span class="hs-keyword">in</span><span> </span><span class="annot"><span class="annottext">[ByteString] -&gt; IO [ByteString]
 forall a. a -&gt; IO a
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">[ByteString]
-</span><a href="#local-6989586621679219268"><span class="hs-identifier hs-var">groups</span></a></span><span>
+</span><a href="#local-6989586621679220566"><span class="hs-identifier hs-var">groups</span></a></span><span>
 </span><span id="line-43"></span><span>
 </span><span id="line-44"></span><span class="annot"><a href="Regexp.html#substituteGroups"><span class="hs-identifier hs-type">substituteGroups</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">B.ByteString</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="hs-identifier hs-type">B.ByteString</span></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">B.ByteString</span></span><span>
 </span><span id="line-45"></span><span id="substituteGroups"><span class="annot"><span class="annottext">substituteGroups :: ByteString -&gt; [ByteString] -&gt; ByteString
-</span><a href="Regexp.html#substituteGroups"><span class="hs-identifier hs-var hs-var">substituteGroups</span></a></span></span><span> </span><span id="local-6989586621679219278"><span class="annot"><span class="annottext">ByteString
-</span><a href="#local-6989586621679219278"><span class="hs-identifier hs-var">rep</span></a></span></span><span> </span><span id="local-6989586621679219279"><span class="annot"><span class="annottext">[ByteString]
-</span><a href="#local-6989586621679219279"><span class="hs-identifier hs-var">groups</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[ByteString] -&gt; ByteString
+</span><a href="Regexp.html#substituteGroups"><span class="hs-identifier hs-var hs-var">substituteGroups</span></a></span></span><span> </span><span id="local-6989586621679220576"><span class="annot"><span class="annottext">ByteString
+</span><a href="#local-6989586621679220576"><span class="hs-identifier hs-var">rep</span></a></span></span><span> </span><span id="local-6989586621679220577"><span class="annot"><span class="annottext">[ByteString]
+</span><a href="#local-6989586621679220577"><span class="hs-identifier hs-var">groups</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[ByteString] -&gt; ByteString
 </span><span class="hs-identifier hs-var">B.concat</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String -&gt; [ByteString]
-</span><a href="#local-6989586621679219281"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">ByteString -&gt; String
+</span><a href="#local-6989586621679220579"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">ByteString -&gt; String
 </span><span class="hs-identifier hs-var">B.unpack</span></span><span> </span><span class="annot"><span class="annottext">ByteString
-</span><a href="#local-6989586621679219278"><span class="hs-identifier hs-var">rep</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679220576"><span class="hs-identifier hs-var">rep</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
 </span><span id="line-46"></span><span>  </span><span class="hs-keyword">where</span><span>
-</span><span id="line-47"></span><span>    </span><span id="local-6989586621679219281"><span class="annot"><span class="annottext">go :: String -&gt; [ByteString]
-</span><a href="#local-6989586621679219281"><span class="hs-identifier hs-var hs-var">go</span></a></span></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span>
-</span><span id="line-48"></span><span>    </span><span class="annot"><a href="#local-6989586621679219281"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Char
-</span><span class="hs-char">'$'</span></span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621679219285"><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679219285"><span class="hs-identifier hs-var">rest</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
-</span><span id="line-49"></span><span>      </span><span class="hs-keyword">let</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679219286"><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679219286"><span class="hs-identifier hs-var">digits</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679219287"><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679219287"><span class="hs-identifier hs-var">afterDigits</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Char -&gt; Bool) -&gt; String -&gt; (String, String)
+</span><span id="line-47"></span><span>    </span><span id="local-6989586621679220579"><span class="annot"><span class="annottext">go :: String -&gt; [ByteString]
+</span><a href="#local-6989586621679220579"><span class="hs-identifier hs-var hs-var">go</span></a></span></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span>
+</span><span id="line-48"></span><span>    </span><span class="annot"><a href="#local-6989586621679220579"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Char
+</span><span class="hs-char">'$'</span></span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621679220583"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679220583"><span class="hs-identifier hs-var">rest</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-49"></span><span>      </span><span class="hs-keyword">let</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679220584"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679220584"><span class="hs-identifier hs-var">digits</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679220585"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679220585"><span class="hs-identifier hs-var">afterDigits</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Char -&gt; Bool) -&gt; String -&gt; (String, String)
 forall a. (a -&gt; Bool) -&gt; [a] -&gt; ([a], [a])
 </span><span class="hs-identifier hs-var">span</span></span><span> </span><span class="annot"><span class="annottext">Char -&gt; Bool
 </span><span class="hs-identifier hs-var">isDigit</span></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679219285"><span class="hs-identifier hs-var">rest</span></a></span><span>
+</span><a href="#local-6989586621679220583"><span class="hs-identifier hs-var">rest</span></a></span><span>
 </span><span id="line-50"></span><span>       </span><span class="hs-keyword">in</span><span> </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">String -&gt; Bool
 forall a. [a] -&gt; Bool
 forall (t :: * -&gt; *) a. Foldable t =&gt; t a -&gt; Bool
 </span><span class="hs-identifier hs-var">null</span></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679219286"><span class="hs-identifier hs-var">digits</span></a></span><span>
+</span><a href="#local-6989586621679220584"><span class="hs-identifier hs-var">digits</span></a></span><span>
 </span><span id="line-51"></span><span>            </span><span class="hs-keyword">then</span><span> </span><span class="annot"><span class="annottext">Char -&gt; ByteString
 </span><span class="hs-identifier hs-var">B.singleton</span></span><span> </span><span class="annot"><span class="annottext">Char
 </span><span class="hs-char">'$'</span></span><span> </span><span class="annot"><span class="annottext">ByteString -&gt; [ByteString] -&gt; [ByteString]
 forall a. a -&gt; [a] -&gt; [a]
 </span><span class="hs-glyph hs-var">:</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; [ByteString]
-</span><a href="#local-6989586621679219281"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679219285"><span class="hs-identifier hs-var">rest</span></a></span><span>
+</span><a href="#local-6989586621679220579"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679220583"><span class="hs-identifier hs-var">rest</span></a></span><span>
 </span><span id="line-52"></span><span>            </span><span class="hs-keyword">else</span><span>
-</span><span id="line-53"></span><span>              </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679219293"><span class="annot"><span class="annottext">idx :: MatchOffset
-</span><a href="#local-6989586621679219293"><span class="hs-identifier hs-var hs-var">idx</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; MatchOffset
+</span><span id="line-53"></span><span>              </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679220591"><span class="annot"><span class="annottext">idx :: MatchOffset
+</span><a href="#local-6989586621679220591"><span class="hs-identifier hs-var hs-var">idx</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; MatchOffset
 forall a. Read a =&gt; String -&gt; a
 </span><span class="hs-identifier hs-var">read</span></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679219286"><span class="hs-identifier hs-var">digits</span></a></span><span>
-</span><span id="line-54"></span><span>                  </span><span id="local-6989586621679219295"><span class="annot"><span class="annottext">val :: ByteString
-</span><a href="#local-6989586621679219295"><span class="hs-identifier hs-var hs-var">val</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ByteString -&gt; Maybe ByteString -&gt; ByteString
+</span><a href="#local-6989586621679220584"><span class="hs-identifier hs-var">digits</span></a></span><span>
+</span><span id="line-54"></span><span>                  </span><span id="local-6989586621679220593"><span class="annot"><span class="annottext">val :: ByteString
+</span><a href="#local-6989586621679220593"><span class="hs-identifier hs-var hs-var">val</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ByteString -&gt; Maybe ByteString -&gt; ByteString
 forall a. a -&gt; Maybe a -&gt; a
 </span><span class="hs-identifier hs-var">fromMaybe</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String -&gt; ByteString
 </span><span class="hs-identifier hs-var">B.pack</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Char
 </span><span class="hs-char">'$'</span></span><span> </span><span class="annot"><span class="annottext">Char -&gt; String -&gt; String
 forall a. a -&gt; [a] -&gt; [a]
 </span><span class="hs-glyph hs-var">:</span></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679219286"><span class="hs-identifier hs-var">digits</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">MatchOffset -&gt; [ByteString] -&gt; Maybe ByteString
+</span><a href="#local-6989586621679220584"><span class="hs-identifier hs-var">digits</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">MatchOffset -&gt; [ByteString] -&gt; Maybe ByteString
 forall {a}. MatchOffset -&gt; [a] -&gt; Maybe a
-</span><a href="#local-6989586621679219297"><span class="hs-identifier hs-var">safeIndex</span></a></span><span> </span><span class="annot"><span class="annottext">MatchOffset
-</span><a href="#local-6989586621679219293"><span class="hs-identifier hs-var">idx</span></a></span><span> </span><span class="annot"><span class="annottext">[ByteString]
-</span><a href="#local-6989586621679219279"><span class="hs-identifier hs-var">groups</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679220595"><span class="hs-identifier hs-var">safeIndex</span></a></span><span> </span><span class="annot"><span class="annottext">MatchOffset
+</span><a href="#local-6989586621679220591"><span class="hs-identifier hs-var">idx</span></a></span><span> </span><span class="annot"><span class="annottext">[ByteString]
+</span><a href="#local-6989586621679220577"><span class="hs-identifier hs-var">groups</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-55"></span><span>               </span><span class="hs-keyword">in</span><span> </span><span class="annot"><span class="annottext">ByteString
-</span><a href="#local-6989586621679219295"><span class="hs-identifier hs-var">val</span></a></span><span> </span><span class="annot"><span class="annottext">ByteString -&gt; [ByteString] -&gt; [ByteString]
+</span><a href="#local-6989586621679220593"><span class="hs-identifier hs-var">val</span></a></span><span> </span><span class="annot"><span class="annottext">ByteString -&gt; [ByteString] -&gt; [ByteString]
 forall a. a -&gt; [a] -&gt; [a]
 </span><span class="hs-glyph hs-var">:</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; [ByteString]
-</span><a href="#local-6989586621679219281"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679219287"><span class="hs-identifier hs-var">afterDigits</span></a></span><span>
-</span><span id="line-56"></span><span>    </span><span class="annot"><a href="#local-6989586621679219281"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679219298"><span class="annot"><span class="annottext">Char
-</span><a href="#local-6989586621679219298"><span class="hs-identifier hs-var">c</span></a></span></span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621679219299"><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679219299"><span class="hs-identifier hs-var">rest</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Char -&gt; ByteString
+</span><a href="#local-6989586621679220579"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679220585"><span class="hs-identifier hs-var">afterDigits</span></a></span><span>
+</span><span id="line-56"></span><span>    </span><span class="annot"><a href="#local-6989586621679220579"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679220596"><span class="annot"><span class="annottext">Char
+</span><a href="#local-6989586621679220596"><span class="hs-identifier hs-var">c</span></a></span></span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621679220597"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679220597"><span class="hs-identifier hs-var">rest</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Char -&gt; ByteString
 </span><span class="hs-identifier hs-var">B.singleton</span></span><span> </span><span class="annot"><span class="annottext">Char
-</span><a href="#local-6989586621679219298"><span class="hs-identifier hs-var">c</span></a></span><span> </span><span class="annot"><span class="annottext">ByteString -&gt; [ByteString] -&gt; [ByteString]
+</span><a href="#local-6989586621679220596"><span class="hs-identifier hs-var">c</span></a></span><span> </span><span class="annot"><span class="annottext">ByteString -&gt; [ByteString] -&gt; [ByteString]
 forall a. a -&gt; [a] -&gt; [a]
 </span><span class="hs-glyph hs-var">:</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; [ByteString]
-</span><a href="#local-6989586621679219281"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679219299"><span class="hs-identifier hs-var">rest</span></a></span><span>
-</span><span id="line-57"></span><span>    </span><span id="local-6989586621679219297"><span class="annot"><span class="annottext">safeIndex :: MatchOffset -&gt; [a] -&gt; Maybe a
-</span><a href="#local-6989586621679219297"><span class="hs-identifier hs-var hs-var">safeIndex</span></a></span></span><span> </span><span id="local-6989586621679219307"><span class="annot"><span class="annottext">MatchOffset
-</span><a href="#local-6989586621679219307"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span id="local-6989586621679219308"><span class="annot"><span class="annottext">[a]
-</span><a href="#local-6989586621679219308"><span class="hs-identifier hs-var">xs</span></a></span></span><span>
+</span><a href="#local-6989586621679220579"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679220597"><span class="hs-identifier hs-var">rest</span></a></span><span>
+</span><span id="line-57"></span><span>    </span><span id="local-6989586621679220595"><span class="annot"><span class="annottext">safeIndex :: MatchOffset -&gt; [a] -&gt; Maybe a
+</span><a href="#local-6989586621679220595"><span class="hs-identifier hs-var hs-var">safeIndex</span></a></span></span><span> </span><span id="local-6989586621679220605"><span class="annot"><span class="annottext">MatchOffset
+</span><a href="#local-6989586621679220605"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span id="local-6989586621679220606"><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621679220606"><span class="hs-identifier hs-var">xs</span></a></span></span><span>
 </span><span id="line-58"></span><span>      </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">MatchOffset
-</span><a href="#local-6989586621679219307"><span class="hs-identifier hs-var">i</span></a></span><span> </span><span class="annot"><span class="annottext">MatchOffset -&gt; MatchOffset -&gt; Bool
+</span><a href="#local-6989586621679220605"><span class="hs-identifier hs-var">i</span></a></span><span> </span><span class="annot"><span class="annottext">MatchOffset -&gt; MatchOffset -&gt; Bool
 forall a. Ord a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">&gt;=</span></span><span> </span><span class="annot"><span class="annottext">MatchOffset
 </span><span class="hs-number">0</span></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
 </span><span class="hs-operator hs-var">&amp;&amp;</span></span><span> </span><span class="annot"><span class="annottext">MatchOffset
-</span><a href="#local-6989586621679219307"><span class="hs-identifier hs-var">i</span></a></span><span> </span><span class="annot"><span class="annottext">MatchOffset -&gt; MatchOffset -&gt; Bool
+</span><a href="#local-6989586621679220605"><span class="hs-identifier hs-var">i</span></a></span><span> </span><span class="annot"><span class="annottext">MatchOffset -&gt; MatchOffset -&gt; Bool
 forall a. Ord a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">&lt;</span></span><span> </span><span class="annot"><span class="annottext">[a] -&gt; MatchOffset
 forall a. [a] -&gt; MatchOffset
 forall (t :: * -&gt; *) a. Foldable t =&gt; t a -&gt; MatchOffset
 </span><span class="hs-identifier hs-var">length</span></span><span> </span><span class="annot"><span class="annottext">[a]
-</span><a href="#local-6989586621679219308"><span class="hs-identifier hs-var">xs</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; Maybe a
+</span><a href="#local-6989586621679220606"><span class="hs-identifier hs-var">xs</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; Maybe a
 forall a. a -&gt; Maybe a
 </span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[a]
-</span><a href="#local-6989586621679219308"><span class="hs-identifier hs-var">xs</span></a></span><span> </span><span class="annot"><span class="annottext">[a] -&gt; MatchOffset -&gt; a
+</span><a href="#local-6989586621679220606"><span class="hs-identifier hs-var">xs</span></a></span><span> </span><span class="annot"><span class="annottext">[a] -&gt; MatchOffset -&gt; a
 forall a. HasCallStack =&gt; [a] -&gt; MatchOffset -&gt; a
 </span><span class="hs-operator hs-var">!!</span></span><span> </span><span class="annot"><span class="annottext">MatchOffset
-</span><a href="#local-6989586621679219307"><span class="hs-identifier hs-var">i</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679220605"><span class="hs-identifier hs-var">i</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-59"></span><span>      </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
 </span><span class="hs-identifier hs-var">otherwise</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Maybe a
 forall a. Maybe a
@@ -250,67 +250,67 @@ forall a. Maybe a
 </span><span id="line-60"></span><span>
 </span><span id="line-61"></span><span class="annot"><a href="Regexp.html#replaceFirst"><span class="hs-identifier hs-type">replaceFirst</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/rgx-pcr-bltn-0.95.2.3.8.44-e6e3376b/share/doc/html/src/Text.Regex.PCRE.Wrap.html#Regex"><span class="hs-identifier hs-type">R.Regex</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">B.ByteString</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">B.ByteString</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">B.ByteString</span></span><span>
 </span><span id="line-62"></span><span id="replaceFirst"><span class="annot"><span class="annottext">replaceFirst :: Regex -&gt; ByteString -&gt; ByteString -&gt; IO ByteString
-</span><a href="Regexp.html#replaceFirst"><span class="hs-identifier hs-var hs-var">replaceFirst</span></a></span></span><span> </span><span id="local-6989586621679219314"><span class="annot"><span class="annottext">Regex
-</span><a href="#local-6989586621679219314"><span class="hs-identifier hs-var">regex</span></a></span></span><span> </span><span id="local-6989586621679219315"><span class="annot"><span class="annottext">ByteString
-</span><a href="#local-6989586621679219315"><span class="hs-identifier hs-var">rep</span></a></span></span><span> </span><span id="local-6989586621679219316"><span class="annot"><span class="annottext">ByteString
-</span><a href="#local-6989586621679219316"><span class="hs-identifier hs-var">input</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-63"></span><span>  </span><span id="local-6989586621679219317"><span class="annot"><span class="annottext">Either
+</span><a href="Regexp.html#replaceFirst"><span class="hs-identifier hs-var hs-var">replaceFirst</span></a></span></span><span> </span><span id="local-6989586621679220612"><span class="annot"><span class="annottext">Regex
+</span><a href="#local-6989586621679220612"><span class="hs-identifier hs-var">regex</span></a></span></span><span> </span><span id="local-6989586621679220613"><span class="annot"><span class="annottext">ByteString
+</span><a href="#local-6989586621679220613"><span class="hs-identifier hs-var">rep</span></a></span></span><span> </span><span id="local-6989586621679220614"><span class="annot"><span class="annottext">ByteString
+</span><a href="#local-6989586621679220614"><span class="hs-identifier hs-var">input</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-63"></span><span>  </span><span id="local-6989586621679220615"><span class="annot"><span class="annottext">Either
   WrapError (Maybe (Array MatchOffset (MatchOffset, MatchOffset)))
-</span><a href="#local-6989586621679219317"><span class="hs-identifier hs-var">result</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Regex
+</span><a href="#local-6989586621679220615"><span class="hs-identifier hs-var">result</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Regex
 -&gt; ByteString
 -&gt; IO
      (Either
         WrapError (Maybe (Array MatchOffset (MatchOffset, MatchOffset))))
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/rgx-pcr-bltn-0.95.2.3.8.44-e6e3376b/share/doc/html/src/Text.Regex.PCRE.ByteString.html#execute"><span class="hs-identifier hs-var">R.execute</span></a></span><span> </span><span class="annot"><span class="annottext">Regex
-</span><a href="#local-6989586621679219314"><span class="hs-identifier hs-var">regex</span></a></span><span> </span><span class="annot"><span class="annottext">ByteString
-</span><a href="#local-6989586621679219316"><span class="hs-identifier hs-var">input</span></a></span><span>
+</span><a href="#local-6989586621679220612"><span class="hs-identifier hs-var">regex</span></a></span><span> </span><span class="annot"><span class="annottext">ByteString
+</span><a href="#local-6989586621679220614"><span class="hs-identifier hs-var">input</span></a></span><span>
 </span><span id="line-64"></span><span>  </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Either
   WrapError (Maybe (Array MatchOffset (MatchOffset, MatchOffset)))
-</span><a href="#local-6989586621679219317"><span class="hs-identifier hs-var">result</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><a href="#local-6989586621679220615"><span class="hs-identifier hs-var">result</span></a></span><span> </span><span class="hs-keyword">of</span><span>
 </span><span id="line-65"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">Left</span></span><span> </span><span class="annot"><span class="annottext">WrapError
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">ByteString -&gt; IO ByteString
 forall a. a -&gt; IO a
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">ByteString
-</span><a href="#local-6989586621679219316"><span class="hs-identifier hs-var">input</span></a></span><span>
+</span><a href="#local-6989586621679220614"><span class="hs-identifier hs-var">input</span></a></span><span>
 </span><span id="line-66"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">Right</span></span><span> </span><span class="annot"><span class="annottext">Maybe (Array MatchOffset (MatchOffset, MatchOffset))
 </span><span class="hs-identifier hs-var">Nothing</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">ByteString -&gt; IO ByteString
 forall a. a -&gt; IO a
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">ByteString
-</span><a href="#local-6989586621679219316"><span class="hs-identifier hs-var">input</span></a></span><span>
-</span><span id="line-67"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">Right</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span id="local-6989586621679219318"><span class="annot"><span class="annottext">Array MatchOffset (MatchOffset, MatchOffset)
-</span><a href="#local-6989586621679219318"><span class="hs-identifier hs-var">arr</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-68"></span><span>      </span><span id="local-6989586621679219319"><span class="annot"><span class="annottext">[ByteString]
-</span><a href="#local-6989586621679219319"><span class="hs-identifier hs-var">groups</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Regex -&gt; ByteString -&gt; IO [ByteString]
+</span><a href="#local-6989586621679220614"><span class="hs-identifier hs-var">input</span></a></span><span>
+</span><span id="line-67"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">Right</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span id="local-6989586621679220616"><span class="annot"><span class="annottext">Array MatchOffset (MatchOffset, MatchOffset)
+</span><a href="#local-6989586621679220616"><span class="hs-identifier hs-var">arr</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-68"></span><span>      </span><span id="local-6989586621679220617"><span class="annot"><span class="annottext">[ByteString]
+</span><a href="#local-6989586621679220617"><span class="hs-identifier hs-var">groups</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Regex -&gt; ByteString -&gt; IO [ByteString]
 </span><a href="Regexp.html#extractGroups"><span class="hs-identifier hs-var">extractGroups</span></a></span><span> </span><span class="annot"><span class="annottext">Regex
-</span><a href="#local-6989586621679219314"><span class="hs-identifier hs-var">regex</span></a></span><span> </span><span class="annot"><span class="annottext">ByteString
-</span><a href="#local-6989586621679219316"><span class="hs-identifier hs-var">input</span></a></span><span>
-</span><span id="line-69"></span><span>      </span><span class="hs-keyword">let</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679219322"><span class="annot"><span class="annottext">MatchOffset
-</span><a href="#local-6989586621679219322"><span class="hs-identifier hs-var">off</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679219323"><span class="annot"><span class="annottext">MatchOffset
-</span><a href="#local-6989586621679219323"><span class="hs-identifier hs-var">len</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Array MatchOffset (MatchOffset, MatchOffset)
-</span><a href="#local-6989586621679219318"><span class="hs-identifier hs-var">arr</span></a></span><span> </span><span class="annot"><span class="annottext">Array MatchOffset (MatchOffset, MatchOffset)
+</span><a href="#local-6989586621679220612"><span class="hs-identifier hs-var">regex</span></a></span><span> </span><span class="annot"><span class="annottext">ByteString
+</span><a href="#local-6989586621679220614"><span class="hs-identifier hs-var">input</span></a></span><span>
+</span><span id="line-69"></span><span>      </span><span class="hs-keyword">let</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679220620"><span class="annot"><span class="annottext">MatchOffset
+</span><a href="#local-6989586621679220620"><span class="hs-identifier hs-var">off</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679220621"><span class="annot"><span class="annottext">MatchOffset
+</span><a href="#local-6989586621679220621"><span class="hs-identifier hs-var">len</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Array MatchOffset (MatchOffset, MatchOffset)
+</span><a href="#local-6989586621679220616"><span class="hs-identifier hs-var">arr</span></a></span><span> </span><span class="annot"><span class="annottext">Array MatchOffset (MatchOffset, MatchOffset)
 -&gt; MatchOffset -&gt; (MatchOffset, MatchOffset)
 forall i e. Ix i =&gt; Array i e -&gt; i -&gt; e
 </span><span class="hs-operator hs-var">!</span></span><span> </span><span class="annot"><span class="annottext">MatchOffset
 </span><span class="hs-number">0</span></span><span>
-</span><span id="line-70"></span><span>          </span><span class="hs-special">(</span><span id="local-6989586621679219324"><span class="annot"><span class="annottext">ByteString
-</span><a href="#local-6989586621679219324"><span class="hs-identifier hs-var">before</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679219325"><span class="annot"><span class="annottext">ByteString
-</span><a href="#local-6989586621679219325"><span class="hs-identifier hs-var">rest</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">MatchOffset -&gt; ByteString -&gt; (ByteString, ByteString)
+</span><span id="line-70"></span><span>          </span><span class="hs-special">(</span><span id="local-6989586621679220622"><span class="annot"><span class="annottext">ByteString
+</span><a href="#local-6989586621679220622"><span class="hs-identifier hs-var">before</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679220623"><span class="annot"><span class="annottext">ByteString
+</span><a href="#local-6989586621679220623"><span class="hs-identifier hs-var">rest</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">MatchOffset -&gt; ByteString -&gt; (ByteString, ByteString)
 </span><span class="hs-identifier hs-var">B.splitAt</span></span><span> </span><span class="annot"><span class="annottext">MatchOffset
-</span><a href="#local-6989586621679219322"><span class="hs-identifier hs-var">off</span></a></span><span> </span><span class="annot"><span class="annottext">ByteString
-</span><a href="#local-6989586621679219316"><span class="hs-identifier hs-var">input</span></a></span><span>
+</span><a href="#local-6989586621679220620"><span class="hs-identifier hs-var">off</span></a></span><span> </span><span class="annot"><span class="annottext">ByteString
+</span><a href="#local-6989586621679220614"><span class="hs-identifier hs-var">input</span></a></span><span>
 </span><span id="line-71"></span><span>          </span><span class="hs-special">(</span><span class="annot"><span class="annottext">ByteString
-</span><span class="hs-identifier">_</span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679219327"><span class="annot"><span class="annottext">ByteString
-</span><a href="#local-6989586621679219327"><span class="hs-identifier hs-var">after</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">MatchOffset -&gt; ByteString -&gt; (ByteString, ByteString)
+</span><span class="hs-identifier">_</span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679220625"><span class="annot"><span class="annottext">ByteString
+</span><a href="#local-6989586621679220625"><span class="hs-identifier hs-var">after</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">MatchOffset -&gt; ByteString -&gt; (ByteString, ByteString)
 </span><span class="hs-identifier hs-var">B.splitAt</span></span><span> </span><span class="annot"><span class="annottext">MatchOffset
-</span><a href="#local-6989586621679219323"><span class="hs-identifier hs-var">len</span></a></span><span> </span><span class="annot"><span class="annottext">ByteString
-</span><a href="#local-6989586621679219325"><span class="hs-identifier hs-var">rest</span></a></span><span>
-</span><span id="line-72"></span><span>          </span><span id="local-6989586621679219328"><span class="annot"><span class="annottext">replacement :: ByteString
-</span><a href="#local-6989586621679219328"><span class="hs-identifier hs-var hs-var">replacement</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ByteString -&gt; [ByteString] -&gt; ByteString
+</span><a href="#local-6989586621679220621"><span class="hs-identifier hs-var">len</span></a></span><span> </span><span class="annot"><span class="annottext">ByteString
+</span><a href="#local-6989586621679220623"><span class="hs-identifier hs-var">rest</span></a></span><span>
+</span><span id="line-72"></span><span>          </span><span id="local-6989586621679220626"><span class="annot"><span class="annottext">replacement :: ByteString
+</span><a href="#local-6989586621679220626"><span class="hs-identifier hs-var hs-var">replacement</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ByteString -&gt; [ByteString] -&gt; ByteString
 </span><a href="Regexp.html#substituteGroups"><span class="hs-identifier hs-var">substituteGroups</span></a></span><span> </span><span class="annot"><span class="annottext">ByteString
-</span><a href="#local-6989586621679219315"><span class="hs-identifier hs-var">rep</span></a></span><span> </span><span class="annot"><span class="annottext">[ByteString]
-</span><a href="#local-6989586621679219319"><span class="hs-identifier hs-var">groups</span></a></span><span>
+</span><a href="#local-6989586621679220613"><span class="hs-identifier hs-var">rep</span></a></span><span> </span><span class="annot"><span class="annottext">[ByteString]
+</span><a href="#local-6989586621679220617"><span class="hs-identifier hs-var">groups</span></a></span><span>
 </span><span id="line-73"></span><span>      </span><span class="annot"><span class="annottext">ByteString -&gt; IO ByteString
 forall a. a -&gt; IO a
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
@@ -318,37 +318,37 @@ forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">[ByteString] -&gt; ByteString
 </span><span class="hs-identifier hs-var">B.concat</span></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">ByteString
-</span><a href="#local-6989586621679219324"><span class="hs-identifier hs-var">before</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">ByteString
-</span><a href="#local-6989586621679219328"><span class="hs-identifier hs-var">replacement</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">ByteString
-</span><a href="#local-6989586621679219327"><span class="hs-identifier hs-var">after</span></a></span><span class="hs-special">]</span><span>
+</span><a href="#local-6989586621679220622"><span class="hs-identifier hs-var">before</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">ByteString
+</span><a href="#local-6989586621679220626"><span class="hs-identifier hs-var">replacement</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">ByteString
+</span><a href="#local-6989586621679220625"><span class="hs-identifier hs-var">after</span></a></span><span class="hs-special">]</span><span>
 </span><span id="line-74"></span><span>
 </span><span id="line-75"></span><span class="annot"><a href="Regexp.html#replaceAll"><span class="hs-identifier hs-type">replaceAll</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/rgx-pcr-bltn-0.95.2.3.8.44-e6e3376b/share/doc/html/src/Text.Regex.PCRE.Wrap.html#Regex"><span class="hs-identifier hs-type">R.Regex</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">B.ByteString</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">B.ByteString</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">B.ByteString</span></span><span>
 </span><span id="line-76"></span><span id="replaceAll"><span class="annot"><span class="annottext">replaceAll :: Regex -&gt; ByteString -&gt; ByteString -&gt; IO ByteString
-</span><a href="Regexp.html#replaceAll"><span class="hs-identifier hs-var hs-var">replaceAll</span></a></span></span><span> </span><span id="local-6989586621679219330"><span class="annot"><span class="annottext">Regex
-</span><a href="#local-6989586621679219330"><span class="hs-identifier hs-var">regex</span></a></span></span><span> </span><span id="local-6989586621679219331"><span class="annot"><span class="annottext">ByteString
-</span><a href="#local-6989586621679219331"><span class="hs-identifier hs-var">rep</span></a></span></span><span> </span><span id="local-6989586621679219332"><span class="annot"><span class="annottext">ByteString
-</span><a href="#local-6989586621679219332"><span class="hs-identifier hs-var">input</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ByteString -&gt; ByteString -&gt; IO ByteString
-</span><a href="#local-6989586621679219333"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">ByteString
-</span><a href="#local-6989586621679219332"><span class="hs-identifier hs-var">input</span></a></span><span> </span><span class="annot"><span class="annottext">ByteString
+</span><a href="Regexp.html#replaceAll"><span class="hs-identifier hs-var hs-var">replaceAll</span></a></span></span><span> </span><span id="local-6989586621679220628"><span class="annot"><span class="annottext">Regex
+</span><a href="#local-6989586621679220628"><span class="hs-identifier hs-var">regex</span></a></span></span><span> </span><span id="local-6989586621679220629"><span class="annot"><span class="annottext">ByteString
+</span><a href="#local-6989586621679220629"><span class="hs-identifier hs-var">rep</span></a></span></span><span> </span><span id="local-6989586621679220630"><span class="annot"><span class="annottext">ByteString
+</span><a href="#local-6989586621679220630"><span class="hs-identifier hs-var">input</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ByteString -&gt; ByteString -&gt; IO ByteString
+</span><a href="#local-6989586621679220631"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">ByteString
+</span><a href="#local-6989586621679220630"><span class="hs-identifier hs-var">input</span></a></span><span> </span><span class="annot"><span class="annottext">ByteString
 </span><span class="hs-identifier hs-var">B.empty</span></span><span>
 </span><span id="line-77"></span><span>  </span><span class="hs-keyword">where</span><span>
-</span><span id="line-78"></span><span>    </span><span id="local-6989586621679219333"><span class="annot"><span class="annottext">go :: ByteString -&gt; ByteString -&gt; IO ByteString
-</span><a href="#local-6989586621679219333"><span class="hs-identifier hs-var hs-var">go</span></a></span></span><span> </span><span id="local-6989586621679219338"><span class="annot"><span class="annottext">ByteString
-</span><a href="#local-6989586621679219338"><span class="hs-identifier hs-var">bs</span></a></span></span><span> </span><span id="local-6989586621679219339"><span class="annot"><span class="annottext">ByteString
-</span><a href="#local-6989586621679219339"><span class="hs-identifier hs-var">acc</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-79"></span><span>      </span><span id="local-6989586621679219340"><span class="annot"><span class="annottext">Either
+</span><span id="line-78"></span><span>    </span><span id="local-6989586621679220631"><span class="annot"><span class="annottext">go :: ByteString -&gt; ByteString -&gt; IO ByteString
+</span><a href="#local-6989586621679220631"><span class="hs-identifier hs-var hs-var">go</span></a></span></span><span> </span><span id="local-6989586621679220636"><span class="annot"><span class="annottext">ByteString
+</span><a href="#local-6989586621679220636"><span class="hs-identifier hs-var">bs</span></a></span></span><span> </span><span id="local-6989586621679220637"><span class="annot"><span class="annottext">ByteString
+</span><a href="#local-6989586621679220637"><span class="hs-identifier hs-var">acc</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-79"></span><span>      </span><span id="local-6989586621679220638"><span class="annot"><span class="annottext">Either
   WrapError (Maybe (Array MatchOffset (MatchOffset, MatchOffset)))
-</span><a href="#local-6989586621679219340"><span class="hs-identifier hs-var">result</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Regex
+</span><a href="#local-6989586621679220638"><span class="hs-identifier hs-var">result</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Regex
 -&gt; ByteString
 -&gt; IO
      (Either
         WrapError (Maybe (Array MatchOffset (MatchOffset, MatchOffset))))
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/rgx-pcr-bltn-0.95.2.3.8.44-e6e3376b/share/doc/html/src/Text.Regex.PCRE.ByteString.html#execute"><span class="hs-identifier hs-var">R.execute</span></a></span><span> </span><span class="annot"><span class="annottext">Regex
-</span><a href="#local-6989586621679219330"><span class="hs-identifier hs-var">regex</span></a></span><span> </span><span class="annot"><span class="annottext">ByteString
-</span><a href="#local-6989586621679219338"><span class="hs-identifier hs-var">bs</span></a></span><span>
+</span><a href="#local-6989586621679220628"><span class="hs-identifier hs-var">regex</span></a></span><span> </span><span class="annot"><span class="annottext">ByteString
+</span><a href="#local-6989586621679220636"><span class="hs-identifier hs-var">bs</span></a></span><span>
 </span><span id="line-80"></span><span>      </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Either
   WrapError (Maybe (Array MatchOffset (MatchOffset, MatchOffset)))
-</span><a href="#local-6989586621679219340"><span class="hs-identifier hs-var">result</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><a href="#local-6989586621679220638"><span class="hs-identifier hs-var">result</span></a></span><span> </span><span class="hs-keyword">of</span><span>
 </span><span id="line-81"></span><span>        </span><span class="annot"><span class="hs-identifier hs-type">Left</span></span><span> </span><span class="annot"><span class="annottext">WrapError
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">ByteString -&gt; IO ByteString
 forall a. a -&gt; IO a
@@ -357,8 +357,8 @@ forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">ByteString -&gt; ByteString -&gt; ByteString
 </span><span class="hs-identifier hs-var">B.append</span></span><span> </span><span class="annot"><span class="annottext">ByteString
-</span><a href="#local-6989586621679219339"><span class="hs-identifier hs-var">acc</span></a></span><span> </span><span class="annot"><span class="annottext">ByteString
-</span><a href="#local-6989586621679219338"><span class="hs-identifier hs-var">bs</span></a></span><span>
+</span><a href="#local-6989586621679220637"><span class="hs-identifier hs-var">acc</span></a></span><span> </span><span class="annot"><span class="annottext">ByteString
+</span><a href="#local-6989586621679220636"><span class="hs-identifier hs-var">bs</span></a></span><span>
 </span><span id="line-82"></span><span>        </span><span class="annot"><span class="hs-identifier hs-type">Right</span></span><span> </span><span class="annot"><span class="annottext">Maybe (Array MatchOffset (MatchOffset, MatchOffset))
 </span><span class="hs-identifier hs-var">Nothing</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">ByteString -&gt; IO ByteString
 forall a. a -&gt; IO a
@@ -367,45 +367,45 @@ forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">ByteString -&gt; ByteString -&gt; ByteString
 </span><span class="hs-identifier hs-var">B.append</span></span><span> </span><span class="annot"><span class="annottext">ByteString
-</span><a href="#local-6989586621679219339"><span class="hs-identifier hs-var">acc</span></a></span><span> </span><span class="annot"><span class="annottext">ByteString
-</span><a href="#local-6989586621679219338"><span class="hs-identifier hs-var">bs</span></a></span><span>
-</span><span id="line-83"></span><span>        </span><span class="annot"><span class="hs-identifier hs-type">Right</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span id="local-6989586621679219342"><span class="annot"><span class="annottext">Array MatchOffset (MatchOffset, MatchOffset)
-</span><a href="#local-6989586621679219342"><span class="hs-identifier hs-var">arr</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-84"></span><span>          </span><span class="hs-keyword">let</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679219345"><span class="annot"><span class="annottext">MatchOffset
-</span><a href="#local-6989586621679219345"><span class="hs-identifier hs-var">off</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679219346"><span class="annot"><span class="annottext">MatchOffset
-</span><a href="#local-6989586621679219346"><span class="hs-identifier hs-var">len</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Array MatchOffset (MatchOffset, MatchOffset)
-</span><a href="#local-6989586621679219342"><span class="hs-identifier hs-var">arr</span></a></span><span> </span><span class="annot"><span class="annottext">Array MatchOffset (MatchOffset, MatchOffset)
+</span><a href="#local-6989586621679220637"><span class="hs-identifier hs-var">acc</span></a></span><span> </span><span class="annot"><span class="annottext">ByteString
+</span><a href="#local-6989586621679220636"><span class="hs-identifier hs-var">bs</span></a></span><span>
+</span><span id="line-83"></span><span>        </span><span class="annot"><span class="hs-identifier hs-type">Right</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span id="local-6989586621679220640"><span class="annot"><span class="annottext">Array MatchOffset (MatchOffset, MatchOffset)
+</span><a href="#local-6989586621679220640"><span class="hs-identifier hs-var">arr</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-84"></span><span>          </span><span class="hs-keyword">let</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679220643"><span class="annot"><span class="annottext">MatchOffset
+</span><a href="#local-6989586621679220643"><span class="hs-identifier hs-var">off</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679220644"><span class="annot"><span class="annottext">MatchOffset
+</span><a href="#local-6989586621679220644"><span class="hs-identifier hs-var">len</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Array MatchOffset (MatchOffset, MatchOffset)
+</span><a href="#local-6989586621679220640"><span class="hs-identifier hs-var">arr</span></a></span><span> </span><span class="annot"><span class="annottext">Array MatchOffset (MatchOffset, MatchOffset)
 -&gt; MatchOffset -&gt; (MatchOffset, MatchOffset)
 forall i e. Ix i =&gt; Array i e -&gt; i -&gt; e
 </span><span class="hs-operator hs-var">!</span></span><span> </span><span class="annot"><span class="annottext">MatchOffset
 </span><span class="hs-number">0</span></span><span>
-</span><span id="line-85"></span><span>              </span><span class="hs-special">(</span><span id="local-6989586621679219347"><span class="annot"><span class="annottext">ByteString
-</span><a href="#local-6989586621679219347"><span class="hs-identifier hs-var">before</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679219348"><span class="annot"><span class="annottext">ByteString
-</span><a href="#local-6989586621679219348"><span class="hs-identifier hs-var">rest1</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">MatchOffset -&gt; ByteString -&gt; (ByteString, ByteString)
+</span><span id="line-85"></span><span>              </span><span class="hs-special">(</span><span id="local-6989586621679220645"><span class="annot"><span class="annottext">ByteString
+</span><a href="#local-6989586621679220645"><span class="hs-identifier hs-var">before</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679220646"><span class="annot"><span class="annottext">ByteString
+</span><a href="#local-6989586621679220646"><span class="hs-identifier hs-var">rest1</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">MatchOffset -&gt; ByteString -&gt; (ByteString, ByteString)
 </span><span class="hs-identifier hs-var">B.splitAt</span></span><span> </span><span class="annot"><span class="annottext">MatchOffset
-</span><a href="#local-6989586621679219345"><span class="hs-identifier hs-var">off</span></a></span><span> </span><span class="annot"><span class="annottext">ByteString
-</span><a href="#local-6989586621679219338"><span class="hs-identifier hs-var">bs</span></a></span><span>
+</span><a href="#local-6989586621679220643"><span class="hs-identifier hs-var">off</span></a></span><span> </span><span class="annot"><span class="annottext">ByteString
+</span><a href="#local-6989586621679220636"><span class="hs-identifier hs-var">bs</span></a></span><span>
 </span><span id="line-86"></span><span>              </span><span class="hs-special">(</span><span class="annot"><span class="annottext">ByteString
-</span><span class="hs-identifier">_</span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679219349"><span class="annot"><span class="annottext">ByteString
-</span><a href="#local-6989586621679219349"><span class="hs-identifier hs-var">rest2</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">MatchOffset -&gt; ByteString -&gt; (ByteString, ByteString)
+</span><span class="hs-identifier">_</span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679220647"><span class="annot"><span class="annottext">ByteString
+</span><a href="#local-6989586621679220647"><span class="hs-identifier hs-var">rest2</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">MatchOffset -&gt; ByteString -&gt; (ByteString, ByteString)
 </span><span class="hs-identifier hs-var">B.splitAt</span></span><span> </span><span class="annot"><span class="annottext">MatchOffset
-</span><a href="#local-6989586621679219346"><span class="hs-identifier hs-var">len</span></a></span><span> </span><span class="annot"><span class="annottext">ByteString
-</span><a href="#local-6989586621679219348"><span class="hs-identifier hs-var">rest1</span></a></span><span>
-</span><span id="line-87"></span><span>          </span><span id="local-6989586621679219350"><span class="annot"><span class="annottext">[ByteString]
-</span><a href="#local-6989586621679219350"><span class="hs-identifier hs-var">groups</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Regex -&gt; ByteString -&gt; IO [ByteString]
+</span><a href="#local-6989586621679220644"><span class="hs-identifier hs-var">len</span></a></span><span> </span><span class="annot"><span class="annottext">ByteString
+</span><a href="#local-6989586621679220646"><span class="hs-identifier hs-var">rest1</span></a></span><span>
+</span><span id="line-87"></span><span>          </span><span id="local-6989586621679220648"><span class="annot"><span class="annottext">[ByteString]
+</span><a href="#local-6989586621679220648"><span class="hs-identifier hs-var">groups</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Regex -&gt; ByteString -&gt; IO [ByteString]
 </span><a href="Regexp.html#extractGroups"><span class="hs-identifier hs-var">extractGroups</span></a></span><span> </span><span class="annot"><span class="annottext">Regex
-</span><a href="#local-6989586621679219330"><span class="hs-identifier hs-var">regex</span></a></span><span> </span><span class="annot"><span class="annottext">ByteString
-</span><a href="#local-6989586621679219338"><span class="hs-identifier hs-var">bs</span></a></span><span>
-</span><span id="line-88"></span><span>          </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679219351"><span class="annot"><span class="annottext">replacement :: ByteString
-</span><a href="#local-6989586621679219351"><span class="hs-identifier hs-var hs-var">replacement</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ByteString -&gt; [ByteString] -&gt; ByteString
+</span><a href="#local-6989586621679220628"><span class="hs-identifier hs-var">regex</span></a></span><span> </span><span class="annot"><span class="annottext">ByteString
+</span><a href="#local-6989586621679220636"><span class="hs-identifier hs-var">bs</span></a></span><span>
+</span><span id="line-88"></span><span>          </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679220649"><span class="annot"><span class="annottext">replacement :: ByteString
+</span><a href="#local-6989586621679220649"><span class="hs-identifier hs-var hs-var">replacement</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ByteString -&gt; [ByteString] -&gt; ByteString
 </span><a href="Regexp.html#substituteGroups"><span class="hs-identifier hs-var">substituteGroups</span></a></span><span> </span><span class="annot"><span class="annottext">ByteString
-</span><a href="#local-6989586621679219331"><span class="hs-identifier hs-var">rep</span></a></span><span> </span><span class="annot"><span class="annottext">[ByteString]
-</span><a href="#local-6989586621679219350"><span class="hs-identifier hs-var">groups</span></a></span><span>
+</span><a href="#local-6989586621679220629"><span class="hs-identifier hs-var">rep</span></a></span><span> </span><span class="annot"><span class="annottext">[ByteString]
+</span><a href="#local-6989586621679220648"><span class="hs-identifier hs-var">groups</span></a></span><span>
 </span><span id="line-89"></span><span>          </span><span class="annot"><span class="annottext">ByteString -&gt; ByteString -&gt; IO ByteString
-</span><a href="#local-6989586621679219333"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">ByteString
-</span><a href="#local-6989586621679219349"><span class="hs-identifier hs-var">rest2</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[ByteString] -&gt; ByteString
+</span><a href="#local-6989586621679220631"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">ByteString
+</span><a href="#local-6989586621679220647"><span class="hs-identifier hs-var">rest2</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[ByteString] -&gt; ByteString
 </span><span class="hs-identifier hs-var">B.concat</span></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">ByteString
-</span><a href="#local-6989586621679219339"><span class="hs-identifier hs-var">acc</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">ByteString
-</span><a href="#local-6989586621679219347"><span class="hs-identifier hs-var">before</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">ByteString
-</span><a href="#local-6989586621679219351"><span class="hs-identifier hs-var">replacement</span></a></span><span class="hs-special">]</span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679220637"><span class="hs-identifier hs-var">acc</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">ByteString
+</span><a href="#local-6989586621679220645"><span class="hs-identifier hs-var">before</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">ByteString
+</span><a href="#local-6989586621679220649"><span class="hs-identifier hs-var">replacement</span></a></span><span class="hs-special">]</span><span class="hs-special">)</span><span>
 </span><span id="line-90"></span></pre></body></html>
