@@ -137,7 +137,7 @@ syntax sugar. The `rewrite` command also allows you to desugar the expression
 and print it in canonical syntax:
 
 ```bash
-$ echo 'Q -> [[ @ -> QQ.io.stdout("hello") ]]' | phino rewrite
+$ echo 'Q -> [[ @ -> Q.io.stdout("hello") ]]' | phino rewrite
 Φ ↦ ⟦
   φ ↦ Φ.io.stdout(
     α0 ↦ Φ.string(

@@ -9,8 +9,8 @@ module Lining (toSingleLine, LineFormat (..), withLineFormat, ToSingleLine) wher
 import CST
 
 withLineFormat :: (ToSingleLine a) => LineFormat -> a -> a
-withLineFormat MULTILINE prog = prog
-withLineFormat SINGLELINE prog = toSingleLine prog
+withLineFormat MULTILINE node = node
+withLineFormat SINGLELINE node = toSingleLine node
 
 data LineFormat = SINGLELINE | MULTILINE
   deriving (Show, Eq)

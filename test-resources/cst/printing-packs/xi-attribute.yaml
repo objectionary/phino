@@ -5,6 +5,4 @@
 program: |
   {[[ x -> y ]]}
 result: |-
-  {⟦
-    x ↦ y
-  ⟧}
+  {⟦ x ↦ y ⟧}

@@ -11,6 +11,4 @@ program: |
     )
   ⟧}
 result: |-
-  {⟦
-    x ↦ Φ.foo( x ↦ Φ.k ).bar( x ↦ Φ.k )
-  ⟧}
+  {⟦ x ↦ Φ.foo( x ↦ Φ.k ).bar( x ↦ Φ.k ) ⟧}

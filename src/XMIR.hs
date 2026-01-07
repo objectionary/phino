@@ -20,7 +20,7 @@ where
 
 import AST
 import Control.Exception (Exception (displayException), throwIO)
-import qualified Data.Bifunctor
+import Data.Bifunctor (bimap)
 import Data.Foldable (foldlM)
 import Data.List (intercalate)
 import qualified Data.Map as M
@@ -75,10 +75,10 @@ toName :: String -> Name
 toName str = Name (T.pack str) Nothing Nothing
 
 element :: String -> [(String, String)] -> [Node] -> Element
-element name attrs children = do
+element name attrs children =
   let name' = toName name
-      attrs' = M.fromList (map (Data.Bifunctor.bimap toName T.pack) attrs)
-  Element name' attrs' children
+      attrs' = M.fromList (map (bimap toName T.pack) attrs)
+   in Element name' attrs' children
 
 object :: [(String, String)] -> [Node] -> Node
 object attrs children = NodeElement (element "o" attrs children)
@@ -245,13 +245,13 @@ programToXMIR prog@(Program expr@(ExFormation [BiTau (AtLabel _) arg, BiVoid AtR
             ]
         )
     time :: UTCTime -> String
-    time now = do
+    time now =
       let base = formatTime defaultTimeLocale "%Y-%m-%dT%H:%M:%S" now
           posix = utcTimeToPOSIXSeconds now
           fractional :: Double
           fractional = realToFrac posix - fromInteger (floor posix)
           nanos = floor (fractional * 1_000_000_000) :: Int
-      base ++ "." ++ printf "%09d" nanos ++ "Z"
+       in base ++ "." ++ printf "%09d" nanos ++ "Z"
 programToXMIR prog _ = throwIO (UnsupportedProgram prog)
 
 -- Add indentation (2 spaces per level).

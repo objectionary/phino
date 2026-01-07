@@ -1,6 +1,9 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
+-- Canonization is the process of replacing function names attrached to
+-- lambda bindings with numbered identifiers started from 'F'
+-- like 'F1', 'F2', etc.
 module Canonizer (canonize) where
 
 import AST
