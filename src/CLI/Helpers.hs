@@ -20,7 +20,7 @@ import Logger
 import qualified Misc as M
 import Parser (parseProgramThrows)
 import qualified Printer as P
-import Rewriter (Rewritten)
+import Rewriter (Rewrittens)
 import System.IO (getContents')
 import Text.Printf (printf)
 import XMIR (parseXMIRThrows, printXMIR, programToXMIR, xmirToPhi)
@@ -58,11 +58,11 @@ parseProgram phi PHI = parseProgramThrows phi
 parseProgram xmir XMIR = parseXMIRThrows xmir >>= xmirToPhi
 parseProgram _ LATEX = invalidCLIArguments "LaTeX cannot be used as input format"
 
-printRewrittens :: PrintProgramContext -> [Rewritten] -> IO String
-printRewrittens ctx@PrintProgCtx{..} rewrittens
+printRewrittens :: PrintProgramContext -> Rewrittens -> IO String
+printRewrittens ctx@PrintProgCtx{..} rewrittens@(chain, _)
   | _outputFormat == LATEX && _sequence = rewrittensToLatex rewrittens (printCtxToLatexCtx ctx)
-  | _focus == ExGlobal = mapM (printProgram ctx . fst) rewrittens <&> intercalate "\n"
-  | otherwise = mapM (\(prog, _) -> locatedExpression _focus prog >>= printExpression ctx) rewrittens <&> intercalate "\n"
+  | _focus == ExGlobal = mapM (printProgram ctx . fst) chain <&> intercalate "\n"
+  | otherwise = mapM (\(prog, _) -> locatedExpression _focus prog >>= printExpression ctx) chain <&> intercalate "\n"
 
 printExpression :: PrintProgramContext -> Expression -> IO String
 printExpression ctx@PrintProgCtx{..} ex = case _outputFormat of

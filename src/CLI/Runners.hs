@@ -14,7 +14,6 @@ import qualified Canonizer as C
 import Condition (parseConditionThrows)
 import Control.Exception
 import Control.Monad (unless, when)
-import Data.Functor ((<&>))
 import Data.Maybe (fromJust, isJust, isNothing)
 import Dataize
 import Encoding
@@ -49,10 +48,10 @@ runRewrite OptsRewrite{..} = do
       canonize = if _canonize then C.canonize else id
       exclude = (`F.exclude` excluded)
       include = (`F.include` included)
-  rewrittens <- rewrite program rules (context loc printCtx) <&> canonize . exclude . include
-  let rewrittens' = if _sequence then rewrittens else [last rewrittens]
+  (rewrittens, exceeded) <- rewrite program rules (context loc printCtx)
+  let rewrittens' = canonize $ exclude $ include (if _sequence then rewrittens else [last rewrittens])
   logDebug (printf "Printing rewritten 𝜑-program as %s" (show _outputFormat))
-  progs <- printRewrittens printCtx rewrittens'
+  progs <- printRewrittens printCtx (rewrittens', exceeded)
   output _targetFile progs
   where
     validateOpts :: IO ()
@@ -116,7 +115,7 @@ runDataize OptsDataize{..} = do
       exclude = (`F.exclude` excluded)
       include = (`F.include` included)
   (maybeBytes, chain) <- dataize (context loc prog printCtx)
-  when _sequence (printRewrittens printCtx (canonize $ exclude $ include chain) >>= putStrLn)
+  when _sequence (printRewrittens printCtx (canonize $ exclude $ include chain, False) >>= putStrLn)
   unless _quiet (putStrLn (maybe (P.printExpression ExTermination) P.printBytes maybeBytes))
   where
     validateOpts :: IO ()

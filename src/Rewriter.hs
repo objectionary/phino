@@ -8,13 +8,12 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Rewriter (rewrite, RewriteContext (..), Rewritten) where
+module Rewriter (rewrite, RewriteContext (..), Rewritten, Rewrittens) where
 
 import AST
 import Builder
 import Control.Exception (Exception, throwIO)
 import Data.Char (toLower)
-import Data.Functor ((<&>))
 import Data.Maybe (fromMaybe)
 import qualified Data.Set as Set
 import Deps
@@ -32,6 +31,8 @@ import qualified Yaml as Y
 type RewriteState = ([Rewritten], Set.Set Expression)
 
 type Rewritten = (Program, Maybe String)
+
+type Rewrittens = ([Rewritten], Bool)
 
 type ToReplace = (Expression, Expression, Expression, [Subst])
 
@@ -183,17 +184,19 @@ rewrite' state (rule : rest) iteration ctx@RewriteContext{..} = do
           [] -> [(_prog, Nothing)]
 
 -- Rewrite program by provided locator from RewriteContext
-rewrite :: Program -> [Y.Rule] -> RewriteContext -> IO [Rewritten]
-rewrite prog rules ctx@RewriteContext{..} = _rewrite ([(prog, Nothing)], Set.empty) 0 <&> reverse
+rewrite :: Program -> [Y.Rule] -> RewriteContext -> IO Rewrittens
+rewrite prog rules ctx@RewriteContext{..} = do
+  (rewrittens, exceeded) <- _rewrite ([(prog, Nothing)], Set.empty) 0
+  pure (reverse rewrittens, exceeded)
   where
-    _rewrite :: RewriteState -> Int -> IO [Rewritten]
+    _rewrite :: RewriteState -> Int -> IO Rewrittens
     _rewrite state@(rewrittens, _) count
       | not (inRange _must count) && count > 0 && exceedsUpperBound _must count = throwIO (MustStopBefore _must count)
       | count == _maxCycles = do
           logDebug (printf "Max amount of rewriting cycles for all rules (%d) has been reached, rewriting is stopped" _maxCycles)
           if _depthSensitive
             then throwIO (StoppedOnLimit "max-cycles" _maxCycles)
-            else pure rewrittens
+            else pure (rewrittens, True)
       | otherwise = do
           logDebug (printf "Starting rewriting cycle for all rules: %d out of %d" count _maxCycles)
           state'@(rewrittens', _) <- rewrite' state rules count ctx
@@ -204,5 +207,5 @@ rewrite prog rules ctx@RewriteContext{..} = _rewrite ([(prog, Nothing)], Set.emp
               logDebug "Rewriting is stopped since it has no effect"
               if not (inRange _must count)
                 then throwIO (MustBeGoing _must count)
-                else pure rewrittens'
+                else pure (rewrittens', False)
             else _rewrite state' (count + 1)
