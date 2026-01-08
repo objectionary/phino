@@ -150,7 +150,7 @@ body printed toLatex =
     )
 
 ending :: Bool -> LatexContext -> String
-ending True ctx = printf "\n  \\leadsto \\dots\n\\end{%s}" (phiquation ctx)
+ending True ctx = printf " \\leadsto\n  \\leadsto \\dots\n\\end{%s}" (phiquation ctx)
 ending False ctx = printf "{.}\n\\end{%s}" (phiquation ctx)
 
 compressedRewrittens :: [Rewritten] -> LatexContext -> [Rewritten]

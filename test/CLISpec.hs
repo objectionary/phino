@@ -566,7 +566,7 @@ spec = do
           [ unlines
               [ "\\begin{phiquation}"
               , "\\Big\\{[[ |x| -> |y|, |y| -> |x| ]].|x|\\Big\\} \\leadsto_{\\nameref{r:dot}}"
-              , "  \\leadsto \\Big\\{[[ |x| -> |y|, |y| -> |x| ]].|y|( ^ -> [[ |x| -> |y|, |y| -> |x| ]] )\\Big\\}"
+              , "  \\leadsto \\Big\\{[[ |x| -> |y|, |y| -> |x| ]].|y|( ^ -> [[ |x| -> |y|, |y| -> |x| ]] )\\Big\\} \\leadsto"
               , "  \\leadsto \\dots"
               , "\\end{phiquation}"
               ]
