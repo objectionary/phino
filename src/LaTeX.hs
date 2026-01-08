@@ -31,7 +31,7 @@ import Matcher
 import Misc
 import Render (Render (render))
 import Replacer (replaceProgram)
-import Rewriter (Rewritten)
+import Rewriter (Rewritten, Rewrittens)
 import Sugar (SugarType (SWEET), ToSalty, withSugarType)
 import Text.Printf (printf)
 import qualified Yaml as Y
@@ -149,31 +149,32 @@ body printed toLatex =
         printed
     )
 
-ending :: LatexContext -> String
-ending ctx = printf "{.}\n\\end{%s}" (phiquation ctx)
+ending :: Bool -> LatexContext -> String
+ending True ctx = printf "\n  \\leadsto \\dots\n\\end{%s}" (phiquation ctx)
+ending False ctx = printf "{.}\n\\end{%s}" (phiquation ctx)
 
 compressedRewrittens :: [Rewritten] -> LatexContext -> [Rewritten]
 compressedRewrittens rewrittens ctx@LatexContext{..} =
   let (progs, rules) = unzip rewrittens
    in if _compress then zip (meetInPrograms progs ctx) rules else rewrittens
 
-rewrittensToLatex :: [Rewritten] -> LatexContext -> IO String
-rewrittensToLatex rewrittens ctx@LatexContext{_focus = ExGlobal} =
+rewrittensToLatex :: Rewrittens -> LatexContext -> IO String
+rewrittensToLatex (rewrittens, exceeded) ctx@LatexContext{_focus = ExGlobal} =
   pure
     ( concat
         [ preamble ctx
         , body (compressedRewrittens rewrittens ctx) (\prog -> renderToLatex (programToCST prog) ctx)
-        , ending ctx
+        , ending exceeded ctx
         ]
     )
-rewrittensToLatex rewrittens ctx@LatexContext{..} = do
+rewrittensToLatex (rewrittens, exceeded) ctx@LatexContext{..} = do
   let (progs, rules) = unzip (compressedRewrittens rewrittens ctx)
   exprs <- mapM (locatedExpression _focus) progs
   pure
     ( concat
         [ preamble ctx
         , body (zip exprs rules) (\expr -> renderToLatex (expressionToCST expr) ctx)
-        , ending ctx
+        , ending exceeded ctx
         ]
     )
 
@@ -182,7 +183,7 @@ programToLaTeX prog ctx =
   concat
     [ preamble ctx
     , renderToLatex (programToCST prog) ctx
-    , ending ctx
+    , ending False ctx
     ]
 
 expressionToLaTeX :: Expression -> LatexContext -> String
@@ -190,7 +191,7 @@ expressionToLaTeX ex ctx =
   concat
     [ preamble ctx
     , renderToLatex (expressionToCST ex) ctx
-    , ending ctx
+    , ending False ctx
     ]
 
 piped :: String -> String

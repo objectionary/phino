@@ -99,7 +99,7 @@ spec =
                   if normalize'
                     then pure normalizationRules
                     else pure []
-              rewrittens <-
+              (rewrittens, _) <-
                 rewrite
                   prog
                   rules'

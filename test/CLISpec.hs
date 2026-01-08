@@ -559,6 +559,19 @@ spec = do
               ]
           ]
 
+    it "shows exceeding of limits in latex" $
+      withStdin "{[[ x -> $.y, y -> $.x ]].x}" $
+        testCLISucceeded
+          ["rewrite", "--normalize", "--flat", "--sequence", "--output=latex", "--sweet", "--max-depth=1", "--max-cycles=1"]
+          [ unlines
+              [ "\\begin{phiquation}"
+              , "\\Big\\{[[ |x| -> |y|, |y| -> |x| ]].|x|\\Big\\} \\leadsto_{\\nameref{r:dot}}"
+              , "  \\leadsto \\Big\\{[[ |x| -> |y|, |y| -> |x| ]].|y|( ^ -> [[ |x| -> |y|, |y| -> |x| ]] )\\Big\\}"
+              , "  \\leadsto \\dots"
+              , "\\end{phiquation}"
+              ]
+          ]
+
     it "focuses expression in phi without sequence" $
       withStdin "{[[ ex -> [[ x -> [[ y -> ?, k -> [[ t -> 42]]  ]]( y -> [[ t -> 42 ]]) ]].i ]]}" $
         testCLISucceeded
