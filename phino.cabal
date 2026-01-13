@@ -130,7 +130,6 @@ test-suite spec
     FilterSpec
     FunctionsSpec
     LaTeXSpec
-    LiningSpec
     LocatorSpec
     MatcherSpec
     MergeSpec

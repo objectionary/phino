@@ -566,7 +566,7 @@ spec = do
           [ unlines
               [ "\\begin{phiquation}"
               , "\\Big\\{[[ |x| -> |y|, |y| -> |x| ]].|x|\\Big\\} \\leadsto_{\\nameref{r:dot}}"
-              , "  \\leadsto \\Big\\{[[ |x| -> |y|, |y| -> |x| ]].|y|( ^ -> [[ |x| -> |y|, |y| -> |x| ]] )\\Big\\}"
+              , "  \\leadsto \\Big\\{[[ |x| -> |y|, |y| -> |x| ]].|y|( ^ -> [[ |x| -> |y|, |y| -> |x| ]] )\\Big\\} \\leadsto"
               , "  \\leadsto \\dots"
               , "\\end{phiquation}"
               ]
@@ -819,17 +819,24 @@ spec = do
     it "explains single rule" $
       testCLISucceeded
         ["explain", "--rule=resources/copy.yaml"]
-        ["\\documentclass{article}", "\\usepackage{amsmath}", "\\begin{document}", "\\rule{COPY}", "\\end{document}"]
+        [ unlines
+            [ "\\begin{tabular}{rl}"
+            , "\\trrule{COPY}"
+            , "  { [[ B1, \\tau -> ?, B2 ]]( \\tau -> e1 ) }"
+            , "  { [[ B1, \\tau -> e3, B2 ]] }"
+            , "\\end{tabular}"
+            ]
+        ]
 
     it "explains multiple rules" $
       testCLISucceeded
         ["explain", "--rule=resources/copy.yaml", "--rule=resources/alpha.yaml"]
-        ["\\documentclass{article}", "\\rule{COPY}", "\\rule{ALPHA}"]
+        ["\\begin{tabular}{rl}", "\\trrule{COPY}", "\\trrule{ALPHA}"]
 
     it "explains normalization rules" $
       testCLISucceeded
         ["explain", "--normalize"]
-        ["\\documentclass{article}", "\\begin{document}", "\\end{document}"]
+        ["\\begin{tabular}{rl}", "\\trrule{COPY}", "\\trrule{ALPHA}", "\\trrule{NULL}", "\\end{tabular}"]
 
     it "fails with no rules specified" $
       testCLIFailed
@@ -850,8 +857,8 @@ spec = do
             testCLISucceeded ["explain", "--normalize", printf "--target=%s" path] []
             content <- readFile path
             _ <- evaluate (length content)
-            content `shouldContain` "\\documentclass{article}"
-            content `shouldContain` "\\begin{document}"
+            content `shouldContain` "\\begin{tabular}{rl}"
+            content `shouldContain` "\\end{tabular}"
         )
 
   describe "merge" $ do

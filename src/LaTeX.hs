@@ -23,8 +23,8 @@ import AST
 import CST
 import Data.List (intercalate, nub)
 import Data.Maybe (fromMaybe)
-import Encoding (Encoding (ASCII), ToASCII, withEncoding)
-import Lining (LineFormat (MULTILINE), ToSingleLine, withLineFormat)
+import Encoding (Encoding (ASCII), ToASCII (toASCII), withEncoding)
+import Lining (LineFormat (MULTILINE), ToSingleLine (toSingleLine), withLineFormat)
 import Locator (locatedExpression)
 import Margin (WithMargin, defaultMargin, withMargin)
 import Matcher
@@ -150,7 +150,7 @@ body printed toLatex =
     )
 
 ending :: Bool -> LatexContext -> String
-ending True ctx = printf "\n  \\leadsto \\dots\n\\end{%s}" (phiquation ctx)
+ending True ctx = printf " \\leadsto\n  \\leadsto \\dots\n\\end{%s}" (phiquation ctx)
 ending False ctx = printf "{.}\n\\end{%s}" (phiquation ctx)
 
 compressedRewrittens :: [Rewritten] -> LatexContext -> [Rewritten]
@@ -213,10 +213,12 @@ instance ToLaTeX EXPRESSION where
   toLaTeX EX_DISPATCH{..} = EX_DISPATCH (toLaTeX expr) (toLaTeX attr)
   toLaTeX EX_PHI_MEET{..} = EX_PHI_MEET prefix idx (toLaTeX expr)
   toLaTeX EX_PHI_AGAIN{..} = EX_PHI_AGAIN prefix idx (toLaTeX expr)
+  toLaTeX EX_META{..} = EX_META (META NO_EXCL E' (rest meta))
   toLaTeX expr = expr
 
 instance ToLaTeX ATTRIBUTE where
   toLaTeX AT_LABEL{..} = AT_LABEL (piped (toLaTeX label))
+  toLaTeX AT_META{..} = AT_META (META NO_EXCL TAU' (rest meta))
   toLaTeX attr = attr
 
 instance ToLaTeX APP_BINDING where
@@ -224,10 +226,12 @@ instance ToLaTeX APP_BINDING where
 
 instance ToLaTeX BINDING where
   toLaTeX BI_PAIR{..} = BI_PAIR (toLaTeX pair) (toLaTeX bindings) tab
+  toLaTeX BI_META{..} = BI_META (META NO_EXCL B' (rest meta)) (toLaTeX bindings) tab
   toLaTeX bd = bd
 
 instance ToLaTeX BINDINGS where
   toLaTeX BDS_PAIR{..} = BDS_PAIR eol tab (toLaTeX pair) (toLaTeX bindings)
+  toLaTeX BDS_META{..} = BDS_META eol tab (META NO_EXCL B' (rest meta)) (toLaTeX bindings)
   toLaTeX bds = bds
 
 instance ToLaTeX PAIR where
@@ -237,6 +241,10 @@ instance ToLaTeX PAIR where
   toLaTeX PA_VOID{..} = PA_VOID (toLaTeX attr) arrow void
   toLaTeX PA_TAU{..} = PA_TAU (toLaTeX attr) arrow (toLaTeX expr)
   toLaTeX PA_FORMATION{..} = PA_FORMATION (toLaTeX attr) (map toLaTeX voids) arrow (toLaTeX expr)
+  toLaTeX PA_META_DELTA{..} = toLaTeX (PA_META_DELTA' meta)
+  toLaTeX PA_META_DELTA'{..} = PA_META_DELTA' (META NO_EXCL D' (rest meta))
+  toLaTeX PA_META_LAMBDA{..} = toLaTeX (PA_META_LAMBDA' meta)
+  toLaTeX PA_META_LAMBDA'{..} = PA_META_LAMBDA' (META NO_EXCL F (rest meta))
   toLaTeX pair = pair
 
 instance ToLaTeX APP_ARG where
@@ -258,24 +266,26 @@ instance ToLaTeX String where
         '_' -> "\\char95{}" <> escapeUnprintedChars rest
         _ -> ch : escapeUnprintedChars rest
 
--- @todo #114:30min Implement LaTeX conversion for rules.
---  Convert Rule data structure to LaTeX inference rule format.
---  Each rule should be formatted as a LaTeX inference rule with
---  pattern, result, and optional conditions.
---  Tests must be added for LaTeX conversion logic.
+-- @todo #356:30min Extend rule explanation. We need to extend rule explanation
+--  by nicely printing sections 'when', 'where', 'having'. For this we need to
+--  be able print Yaml.Condition to LaTeX.
 explainRule :: Y.Rule -> String
-explainRule rule = "\\rule{" ++ fromMaybe "unnamed" (Y.name rule) ++ "}"
-
--- @todo #114:30min Create LaTeX document wrapper.
---  Generate proper LaTeX document with tabular format for rules.
---  Each rule should be   in its own tabular environment.
---  Include tests for document structure generation.
-explainRules :: [Y.Rule] -> String
-explainRules rules' =
-  unlines
-    [ "\\documentclass{article}"
-    , "\\usepackage{amsmath}"
-    , "\\begin{document}"
+explainRule rule =
+  intercalate
+    "\n  "
+    [ "\\trrule{" ++ fromMaybe "unknown" (Y.name rule) ++ "}"
+    , braced (render $ toLaTeX $ toSingleLine $ toASCII $ expressionToCST $ Y.pattern rule)
+    , braced (render $ toLaTeX $ toSingleLine $ toASCII $ expressionToCST $ Y.result rule)
     ]
-    ++ unlines (map explainRule rules')
-    ++ "\\end{document}"
+  where
+    braced :: String -> String
+    braced = printf "{ %s }"
+
+explainRules :: [Y.Rule] -> String
+explainRules rules =
+  intercalate
+    "\n"
+    [ "\\begin{tabular}{rl}"
+    , intercalate "\n" (map explainRule rules)
+    , "\\end{tabular}"
+    ]
