@@ -98,17 +98,25 @@ instance Render BYTES where
   render (BT_MANY bts) = intercalate "-" bts
   render (BT_META mt) = render mt
 
+instance Render EXCLAMATION where
+  render EXCL = "!"
+  render NO_EXCL = ""
+
+instance Render META_HEAD where
+  render E = "𝑒"
+  render E' = "e"
+  render A = "a"
+  render TAU = "𝜏"
+  render TAU' = "\\tau"
+  render B = "𝐵"
+  render B' = "B"
+  render D = "δ"
+  render D' = "d"
+  render TAIL = "t"
+  render F = "F"
+
 instance Render META where
-  render MT_EXPRESSION{..} = '𝑒' : rest
-  render MT_EXPRESSION'{..} = "!e" <> rest
-  render MT_ATTRIBUTE{..} = '𝜏' : rest
-  render MT_ATTRIBUTE'{..} = "!a" <> rest
-  render MT_BINDING{..} = '𝐵' : rest
-  render MT_BINDING'{..} = "!B" <> rest
-  render MT_BYTES{..} = 'δ' : rest
-  render MT_BYTES'{..} = "!d" <> rest
-  render MT_TAIL{..} = "!t" <> rest
-  render MT_FUNCTION{..} = "!F" <> rest
+  render META{..} = render excl <> render hd <> render rest
 
 instance Render ALPHA where
   render ALPHA = "α"

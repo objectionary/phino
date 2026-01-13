@@ -70,17 +70,24 @@ data BYTES
   | BT_META META
   deriving (Eq, Show)
 
-data META
-  = MT_EXPRESSION {rest :: String}
-  | MT_EXPRESSION' {rest :: String}
-  | MT_ATTRIBUTE {rest :: String}
-  | MT_ATTRIBUTE' {rest :: String}
-  | MT_BINDING {rest :: String}
-  | MT_BINDING' {rest :: String}
-  | MT_BYTES {rest :: String}
-  | MT_BYTES' {rest :: String}
-  | MT_TAIL {rest :: String}
-  | MT_FUNCTION {rest :: String}
+data META_HEAD
+  = E
+  | E'
+  | A
+  | TAU
+  | TAU'
+  | B
+  | B'
+  | D
+  | D'
+  | TAIL
+  | F
+  deriving (Eq, Show)
+
+data EXCLAMATION = EXCL | NO_EXCL
+  deriving (Eq, Show)
+
+data META = META {excl :: EXCLAMATION, hd :: META_HEAD, rest :: String}
   deriving (Eq, Show)
 
 data TAB
@@ -170,6 +177,9 @@ programToCST prog = toCST prog (0, EOL)
 expressionToCST :: Expression -> EXPRESSION
 expressionToCST ex = toCST ex (0, EOL)
 
+metaTail :: String -> String
+metaTail = tail
+
 -- This class is used to convert AST to CST
 -- CST is created with sugar and unicode
 -- All further transformations must consider that
@@ -182,8 +192,8 @@ instance ToCST Program PROGRAM where
 instance ToCST Expression EXPRESSION where
   toCST ExGlobal _ = EX_GLOBAL Φ
   toCST ExThis _ = EX_XI XI
-  toCST (ExMeta mt) _ = EX_META (MT_EXPRESSION (tail mt))
-  toCST (ExMetaTail expr mt) ctx = EX_META_TAIL (toCST expr ctx) (MT_TAIL (tail mt))
+  toCST (ExMeta mt) _ = EX_META (META NO_EXCL E (metaTail mt))
+  toCST (ExMetaTail expr mt) ctx = EX_META_TAIL (toCST expr ctx) (META EXCL TAIL (metaTail mt))
   toCST ExTermination _ = EX_TERMINATION DEAD
   toCST (ExPhiMeet prefix idx expr) ctx = EX_PHI_MEET prefix idx (toCST expr ctx)
   toCST (ExPhiAgain prefix idx expr) ctx = EX_PHI_AGAIN prefix idx (toCST expr ctx)
@@ -304,12 +314,12 @@ instance ToCST [Expression] APP_ARGS where
 
 instance ToCST [Binding] BINDING where
   toCST [] (tabs, _) = BI_EMPTY (TAB tabs)
-  toCST (BiMeta mt : bds) ctx@(tabs, _) = BI_META (MT_BINDING (tail mt)) (toCST bds ctx) (TAB tabs)
+  toCST (BiMeta mt : bds) ctx@(tabs, _) = BI_META (META NO_EXCL B (metaTail mt)) (toCST bds ctx) (TAB tabs)
   toCST (bd : bds) ctx@(tabs, _) = BI_PAIR (toCST bd ctx) (toCST bds ctx) (TAB tabs)
 
 instance ToCST [Binding] BINDINGS where
   toCST [] (tabs, _) = BDS_EMPTY (TAB tabs)
-  toCST (BiMeta mt : bds) ctx@(tabs, eol) = BDS_META eol (TAB tabs) (MT_BINDING (tail mt)) (toCST bds ctx)
+  toCST (BiMeta mt : bds) ctx@(tabs, eol) = BDS_META eol (TAB tabs) (META NO_EXCL B (metaTail mt)) (toCST bds ctx)
   toCST (bd : bds) ctx@(tabs, eol) = BDS_PAIR eol (TAB tabs) (toCST bd ctx) (toCST bds ctx)
 
 instance ToCST Binding PAIR where
@@ -335,7 +345,7 @@ instance ToCST Binding PAIR where
   toCST (BiVoid attr) ctx = PA_VOID (toCST attr ctx) ARROW EMPTY
   toCST (BiDelta bts) ctx = PA_DELTA (toCST bts ctx)
   toCST (BiLambda func) _ = PA_LAMBDA func
-  toCST (BiMetaLambda mt) _ = PA_META_LAMBDA (MT_FUNCTION (tail mt))
+  toCST (BiMetaLambda mt) _ = PA_META_LAMBDA (META EXCL F (metaTail mt))
   toCST (BiMeta mt) _ = error $ "BiMeta binding " ++ mt ++ " cannot be converted to PAIR"
 
 instance ToCST Binding APP_BINDING where
@@ -346,7 +356,7 @@ instance ToCST Bytes BYTES where
   toCST BtEmpty _ = BT_EMPTY
   toCST (BtOne byte) _ = BT_ONE byte
   toCST (BtMany bts) _ = BT_MANY bts
-  toCST (BtMeta mt) _ = BT_META (MT_BYTES (tail mt))
+  toCST (BtMeta mt) _ = BT_META (META NO_EXCL D (metaTail mt))
 
 instance ToCST Attribute ATTRIBUTE where
   toCST (AtLabel label) _ = AT_LABEL label
@@ -355,4 +365,4 @@ instance ToCST Attribute ATTRIBUTE where
   toCST AtRho _ = AT_RHO RHO
   toCST AtDelta _ = AT_DELTA DELTA
   toCST AtLambda _ = AT_LAMBDA LAMBDA
-  toCST (AtMeta mt) _ = AT_META (MT_ATTRIBUTE (tail mt))
+  toCST (AtMeta mt) _ = AT_META (META NO_EXCL TAU (metaTail mt))

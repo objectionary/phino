@@ -31,8 +31,8 @@ instance ToASCII EXPRESSION where
   toASCII EX_APPLICATION{..} = EX_APPLICATION (toASCII expr) eol tab (toASCII tau) eol' tab' indent
   toASCII EX_APPLICATION_TAUS{..} = EX_APPLICATION_TAUS (toASCII expr) eol tab (toASCII taus) eol' tab' indent
   toASCII EX_APPLICATION_EXPRS{..} = EX_APPLICATION_EXPRS (toASCII expr) eol tab (toASCII args) eol' tab' indent
-  toASCII EX_META{..} = EX_META (MT_EXPRESSION' (rest meta))
-  toASCII EX_META_TAIL{..} = EX_META_TAIL (toASCII expr) (MT_TAIL (rest meta))
+  toASCII EX_META{..} = EX_META (META EXCL E' (rest meta))
+  toASCII EX_META_TAIL{..} = EX_META_TAIL (toASCII expr) meta
   toASCII EX_PHI_MEET{..} = EX_PHI_MEET prefix idx (toASCII expr)
   toASCII EX_PHI_AGAIN{..} = EX_PHI_AGAIN prefix idx (toASCII expr)
   toASCII expr = expr
@@ -42,12 +42,12 @@ instance ToASCII APP_BINDING where
 
 instance ToASCII BINDING where
   toASCII BI_PAIR{..} = BI_PAIR (toASCII pair) (toASCII bindings) tab
-  toASCII BI_META{..} = BI_META (MT_BINDING' (rest meta)) (toASCII bindings) tab
+  toASCII BI_META{meta = META{..}, ..} = BI_META (META EXCL B' rest) (toASCII bindings) tab
   toASCII bd = bd
 
 instance ToASCII BINDINGS where
   toASCII BDS_PAIR{..} = BDS_PAIR eol tab (toASCII pair) (toASCII bindings)
-  toASCII BDS_META{..} = BDS_META eol tab (MT_BINDING' (rest meta)) (toASCII bindings)
+  toASCII BDS_META{..} = BDS_META eol tab (META EXCL B' (rest meta)) (toASCII bindings)
   toASCII bds = bds
 
 instance ToASCII APP_ARG where
@@ -64,12 +64,12 @@ instance ToASCII PAIR where
   toASCII PA_LAMBDA{..} = PA_LAMBDA' func
   toASCII PA_DELTA{..} = PA_DELTA' bytes
   toASCII PA_META_LAMBDA{..} = PA_META_LAMBDA' meta
-  toASCII PA_META_DELTA{..} = PA_META_DELTA' (MT_BYTES' (rest meta))
+  toASCII PA_META_DELTA{..} = PA_META_DELTA' (META EXCL D' (rest meta))
   toASCII pair = pair
 
 instance ToASCII ATTRIBUTE where
   toASCII AT_ALPHA{..} = AT_ALPHA ALPHA' idx
   toASCII AT_PHI{} = AT_PHI AT
   toASCII AT_RHO{} = AT_RHO CARET
-  toASCII AT_META{..} = AT_META (MT_ATTRIBUTE' (rest meta))
+  toASCII AT_META{..} = AT_META (META EXCL A (rest meta))
   toASCII attr = attr
