@@ -51,7 +51,7 @@
 </span><span id="line-37"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="CouldNotReadFromStdin"><span class="annot"><a href="CLI.Types.html#CouldNotReadFromStdin"><span class="hs-identifier hs-var">CouldNotReadFromStdin</span></a></span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
 </span><span id="line-38"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="CouldNotDataize"><span class="annot"><a href="CLI.Types.html#CouldNotDataize"><span class="hs-identifier hs-var">CouldNotDataize</span></a></span></span><span>
 </span><span id="line-39"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="CouldNotPrintExpressionInXMIR"><span class="annot"><a href="CLI.Types.html#CouldNotPrintExpressionInXMIR"><span class="hs-identifier hs-var">CouldNotPrintExpressionInXMIR</span></a></span></span><span>
-</span><span id="line-40"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679224548"><span id="local-6989586621679224552"><span id="local-6989586621679224555"><span class="annot"><span class="annottext">Show CmdException
+</span><span id="line-40"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679230217"><span id="local-6989586621679230221"><span id="local-6989586621679230224"><span class="annot"><span class="annottext">Show CmdException
 Typeable CmdException
 (Typeable CmdException, Show CmdException) =&gt;
 (CmdException -&gt; SomeException)
@@ -73,20 +73,20 @@ $cdisplayException :: CmdException -&gt; String
 displayException :: CmdException -&gt; String
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Exception</span></span></span></span></span><span class="hs-special">)</span><span>
 </span><span id="line-41"></span><span>
-</span><span id="line-42"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679224559"><span id="local-6989586621679224563"><span class="annot"><span class="hs-identifier hs-type">Show</span></span><span> </span><span class="annot"><a href="CLI.Types.html#CmdException"><span class="hs-identifier hs-type">CmdException</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-43"></span><span>  </span><span id="local-6989586621679224575"><span class="annot"><span class="annottext">show :: CmdException -&gt; String
-</span><a href="#local-6989586621679224575"><span class="hs-identifier hs-var hs-var hs-var hs-var">show</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="CLI.Types.html#InvalidCLIArguments"><span class="hs-identifier hs-type">InvalidCLIArguments</span></a></span><span> </span><span id="local-6989586621679224577"><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679224577"><span class="hs-identifier hs-var">msg</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; ShowS
+</span><span id="line-42"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679230228"><span id="local-6989586621679230232"><span class="annot"><span class="hs-identifier hs-type">Show</span></span><span> </span><span class="annot"><a href="CLI.Types.html#CmdException"><span class="hs-identifier hs-type">CmdException</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-43"></span><span>  </span><span id="local-6989586621679230244"><span class="annot"><span class="annottext">show :: CmdException -&gt; String
+</span><a href="#local-6989586621679230244"><span class="hs-identifier hs-var hs-var hs-var hs-var">show</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="CLI.Types.html#InvalidCLIArguments"><span class="hs-identifier hs-type">InvalidCLIArguments</span></a></span><span> </span><span id="local-6989586621679230246"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679230246"><span class="hs-identifier hs-var">msg</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; ShowS
 forall r. PrintfType r =&gt; String -&gt; r
 </span><span class="hs-identifier hs-var">printf</span></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;Invalid set of arguments: %s&quot;</span></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679224577"><span class="hs-identifier hs-var">msg</span></a></span><span>
-</span><span id="line-44"></span><span>  </span><span class="annot"><span class="hs-identifier hs-var">show</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="CLI.Types.html#CouldNotReadFromStdin"><span class="hs-identifier hs-type">CouldNotReadFromStdin</span></a></span><span> </span><span id="local-6989586621679224578"><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679224578"><span class="hs-identifier hs-var">msg</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; ShowS
+</span><a href="#local-6989586621679230246"><span class="hs-identifier hs-var">msg</span></a></span><span>
+</span><span id="line-44"></span><span>  </span><span class="annot"><span class="hs-identifier hs-var">show</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="CLI.Types.html#CouldNotReadFromStdin"><span class="hs-identifier hs-type">CouldNotReadFromStdin</span></a></span><span> </span><span id="local-6989586621679230247"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679230247"><span class="hs-identifier hs-var">msg</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; ShowS
 forall r. PrintfType r =&gt; String -&gt; r
 </span><span class="hs-identifier hs-var">printf</span></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;Could not read input from stdin\nReason: %s&quot;</span></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679224578"><span class="hs-identifier hs-var">msg</span></a></span><span>
+</span><a href="#local-6989586621679230247"><span class="hs-identifier hs-var">msg</span></a></span><span>
 </span><span id="line-45"></span><span>  </span><span class="annot"><span class="hs-identifier hs-var">show</span></span><span> </span><span class="annot"><span class="annottext">CmdException
 </span><a href="CLI.Types.html#CouldNotDataize"><span class="hs-identifier hs-var">CouldNotDataize</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;Could not dataize given program&quot;</span></span><span>
@@ -102,7 +102,7 @@ forall r. PrintfType r =&gt; String -&gt; r
 </span><span id="line-53"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="CmdMatch"><span class="annot"><a href="CLI.Types.html#CmdMatch"><span class="hs-identifier hs-var">CmdMatch</span></a></span></span><span> </span><span class="annot"><a href="CLI.Types.html#OptsMatch"><span class="hs-identifier hs-type">OptsMatch</span></a></span><span>
 </span><span id="line-54"></span><span>
 </span><span id="line-55"></span><span class="hs-keyword">data</span><span> </span><span id="IOFormat"><span class="annot"><a href="CLI.Types.html#IOFormat"><span class="hs-identifier hs-var">IOFormat</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="XMIR"><span class="annot"><a href="CLI.Types.html#XMIR"><span class="hs-identifier hs-var">XMIR</span></a></span></span><span> </span><span class="hs-glyph">|</span><span> </span><span id="PHI"><span class="annot"><a href="CLI.Types.html#PHI"><span class="hs-identifier hs-var">PHI</span></a></span></span><span> </span><span class="hs-glyph">|</span><span> </span><span id="LATEX"><span class="annot"><a href="CLI.Types.html#LATEX"><span class="hs-identifier hs-var">LATEX</span></a></span></span><span>
-</span><span id="line-56"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679224589"><span id="local-6989586621679224591"><span class="annot"><span class="annottext">IOFormat -&gt; IOFormat -&gt; Bool
+</span><span id="line-56"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679230258"><span id="local-6989586621679230260"><span class="annot"><span class="annottext">IOFormat -&gt; IOFormat -&gt; Bool
 (IOFormat -&gt; IOFormat -&gt; Bool)
 -&gt; (IOFormat -&gt; IOFormat -&gt; Bool) -&gt; Eq IOFormat
 forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
@@ -112,8 +112,8 @@ $c/= :: IOFormat -&gt; IOFormat -&gt; Bool
 /= :: IOFormat -&gt; IOFormat -&gt; Bool
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">)</span><span>
 </span><span id="line-57"></span><span>
-</span><span id="line-58"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679224596"><span id="local-6989586621679224601"><span class="annot"><span class="hs-identifier hs-type">Show</span></span><span> </span><span class="annot"><a href="CLI.Types.html#IOFormat"><span class="hs-identifier hs-type">IOFormat</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-59"></span><span>  </span><span id="local-6989586621679224603"><span class="annot"><span class="annottext">show :: IOFormat -&gt; String
+</span><span id="line-58"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679230265"><span id="local-6989586621679230270"><span class="annot"><span class="hs-identifier hs-type">Show</span></span><span> </span><span class="annot"><a href="CLI.Types.html#IOFormat"><span class="hs-identifier hs-type">IOFormat</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-59"></span><span>  </span><span id="local-6989586621679230272"><span class="annot"><span class="annottext">show :: IOFormat -&gt; String
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var">show</span></span></span><span> </span><span class="annot"><span class="annottext">IOFormat
 </span><a href="CLI.Types.html#XMIR"><span class="hs-identifier hs-var">XMIR</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;xmir&quot;</span></span><span>
