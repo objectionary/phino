@@ -208,7 +208,7 @@ meetCondition' (Y.In attr binding) = _in attr binding
 meetCondition' (Y.Alpha attr) = _alpha attr
 meetCondition' (Y.Eq left right) = _eq left right
 meetCondition' (Y.NF expr) = _nf expr
-meetCondition' (Y.XI expr) = _xi expr
+meetCondition' (Y.Xi expr) = _xi expr
 meetCondition' (Y.Matches pat expr) = _matches pat expr
 meetCondition' (Y.PartOf expr bd) = _partOf expr bd
 

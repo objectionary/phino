@@ -9,6 +9,7 @@ module Render where
 
 import CST
 import Data.List (intercalate)
+import Text.Printf (printf)
 
 class Render a where
   render :: a -> String
@@ -76,6 +77,7 @@ instance Render XI where
 
 instance Render LAMBDA where
   render LAMBDA = "λ"
+  render LAMBDA' = "\\lambda"
 
 instance Render GLOBAL where
   render Φ = "Φ"
@@ -91,6 +93,10 @@ instance Render SPACE where
 instance Render EOL where
   render EOL = "\n"
   render NO_EOL = ""
+
+instance Render DOTS where
+  render DOTS = "..."
+  render DOTS' = "\\dots"
 
 instance Render BYTES where
   render BT_EMPTY = "--"
@@ -193,3 +199,53 @@ instance Render ATTRIBUTE where
   render AT_LAMBDA{..} = render lambda
   render AT_DELTA{..} = render delta
   render AT_META{..} = render meta
+  render AT_REST{..} = render dots
+
+instance Render BELONGING where
+  render IN = "\\in"
+  render NOT_IN = "\\notin"
+
+instance Render SET where
+  render ST_BINDING{..} = render binding
+  render ST_ATTRIBUTES{..} = printf "[ %s ]" (intercalate ", " (map render attrs))
+
+instance Render LOGIC_OPERATOR where
+  render AND = "and"
+  render OR = "or"
+
+instance Render NUMBER where
+  render ORDINAL{..} = renderFunc "ordinal" attr
+  render LENGTH{..} = renderFunc "length" binding
+  render LITERAL{..} = show num
+
+instance Render COMPARABLE where
+  render CMP_ATTR{..} = render attr
+  render CMP_EXPR{..} = render expr
+  render CMP_NUM{..} = render num
+
+instance Render EQUAL where
+  render EQUAL = "="
+  render NOT_EQUAL = "\\not="
+
+instance Render CONDITION where
+  render CO_BELONGS{..} = render attr <> render SPACE <> render belongs <> render SPACE <> render set
+  render CO_LOGIC{conditions = [cond]} = render cond
+  render CO_LOGIC{..} = printf "\\( %s \\)" (intercalate (printf " \\) %s \\( " (render operator)) (map render conditions))
+  render CO_NF{..} = renderFunc "NF" expr
+  render CO_NOT{..} = renderFunc "not" condition
+  render CO_COMPARE{..} = render left <> render SPACE <> render equal <> render SPACE <> render right
+  render CO_MATCHES{..} = printf "matches( %s, %s )" regex (render expr)
+  render CO_PART_OF{..} = printf "part-of( %s, %s )" (render expr) (render binding)
+  render CO_EMPTY = ""
+
+renderFunc :: Render a => String -> a -> String
+renderFunc func renderable = printf "%s( %s )" func (render renderable)
+
+instance Render EXTRA_ARG where
+  render ARG_ATTR{..} = render attr
+  render ARG_EXPR{..} = render expr
+  render ARG_BINDING{..} = render binding
+  render ARG_BYTES{..} = render bytes
+
+instance Render EXTRA where
+  render EXTRA{..} = render meta <> " <- " <> printf "%s( %s )" func (intercalate ", " (map render args))

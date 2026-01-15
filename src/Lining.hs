@@ -57,3 +57,35 @@ instance ToSingleLine APP_ARG where
 instance ToSingleLine APP_ARGS where
   toSingleLine AAS_EXPR{..} = AAS_EXPR NO_EOL TAB' (toSingleLine expr) (toSingleLine args)
   toSingleLine args = args
+
+instance ToSingleLine SET where
+  toSingleLine ST_BINDING{..} = ST_BINDING (toSingleLine binding)
+  toSingleLine st = st
+
+instance ToSingleLine NUMBER where
+  toSingleLine LENGTH{..} = LENGTH (toSingleLine binding)
+  toSingleLine num = num
+
+instance ToSingleLine COMPARABLE where
+  toSingleLine comp@CMP_ATTR{} = comp
+  toSingleLine CMP_EXPR{..} = CMP_EXPR (toSingleLine expr)
+  toSingleLine CMP_NUM{..} = CMP_NUM (toSingleLine num)
+
+instance ToSingleLine CONDITION where
+  toSingleLine CO_BELONGS{..} = CO_BELONGS attr belongs (toSingleLine set)
+  toSingleLine CO_LOGIC{..} = CO_LOGIC (map toSingleLine conditions) operator
+  toSingleLine CO_NF{..} = CO_NF (toSingleLine expr)
+  toSingleLine CO_NOT{..} = CO_NOT (toSingleLine condition)
+  toSingleLine CO_COMPARE{..} = CO_COMPARE (toSingleLine left) equal (toSingleLine right)
+  toSingleLine CO_MATCHES{..} = CO_MATCHES regex (toSingleLine expr)
+  toSingleLine CO_PART_OF{..} = CO_PART_OF (toSingleLine expr) (toSingleLine binding)
+  toSingleLine CO_EMPTY = CO_EMPTY
+
+instance ToSingleLine EXTRA_ARG where
+  toSingleLine ARG_EXPR{..} = ARG_EXPR (toSingleLine expr)
+  toSingleLine ARG_BINDING{..} = ARG_BINDING (toSingleLine binding)
+  toSingleLine at@ARG_ATTR{} = at
+  toSingleLine bts@ARG_BYTES{} = bts
+
+instance ToSingleLine EXTRA where
+  toSingleLine EXTRA{..} = EXTRA (toSingleLine meta) func (map toSingleLine args)

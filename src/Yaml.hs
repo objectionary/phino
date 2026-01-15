@@ -83,7 +83,7 @@ instance FromJSON Condition where
             , Not <$> v .: "not"
             , Alpha <$> v .: "alpha"
             , NF <$> v .: "nf"
-            , XI <$> v .: "xi"
+            , Xi <$> v .: "xi"
             , do
                 vals <- v .: "eq"
                 case vals of
@@ -151,7 +151,7 @@ data Condition
   | Alpha Attribute
   | Eq Comparable Comparable
   | NF Expression
-  | XI Expression
+  | Xi Expression
   | Matches String Expression
   | PartOf Expression Binding
   deriving (Eq, Generic, Show)

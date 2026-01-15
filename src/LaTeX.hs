@@ -23,8 +23,8 @@ import AST
 import CST
 import Data.List (intercalate, nub)
 import Data.Maybe (fromMaybe)
-import Encoding (Encoding (ASCII), ToASCII (toASCII), withEncoding)
-import Lining (LineFormat (MULTILINE), ToSingleLine (toSingleLine), withLineFormat)
+import Encoding
+import Lining
 import Locator (locatedExpression)
 import Margin (WithMargin, defaultMargin, withMargin)
 import Matcher
@@ -51,7 +51,7 @@ data LatexContext = LatexContext
   }
 
 defaultLatexContext :: LatexContext
-defaultLatexContext = LatexContext SWEET MULTILINE defaultMargin False False defaultMeetPopularity defaultMeetLength ExGlobal Nothing Nothing Nothing
+defaultLatexContext = LatexContext SWEET SINGLELINE defaultMargin False False defaultMeetPopularity defaultMeetLength ExGlobal Nothing Nothing Nothing
 
 defaultMeetPopularity :: Int
 defaultMeetPopularity = 50
@@ -219,6 +219,8 @@ instance ToLaTeX EXPRESSION where
 instance ToLaTeX ATTRIBUTE where
   toLaTeX AT_LABEL{..} = AT_LABEL (piped (toLaTeX label))
   toLaTeX AT_META{..} = AT_META (META NO_EXCL TAU' (rest meta))
+  toLaTeX AT_LAMBDA{} = AT_LAMBDA LAMBDA'
+  toLaTeX AT_REST{} = AT_REST DOTS'
   toLaTeX attr = attr
 
 instance ToLaTeX APP_BINDING where
@@ -266,20 +268,68 @@ instance ToLaTeX String where
         '_' -> "\\char95{}" <> escapeUnprintedChars rest
         _ -> ch : escapeUnprintedChars rest
 
--- @todo #356:30min Extend rule explanation. We need to extend rule explanation
---  by nicely printing sections 'when', 'where', 'having'. For this we need to
---  be able print Yaml.Condition to LaTeX.
+instance ToLaTeX SET where
+  toLaTeX ST_BINDING{..} = ST_BINDING (toLaTeX binding)
+  toLaTeX ST_ATTRIBUTES{..} = ST_ATTRIBUTES (map toLaTeX attrs)
+
+instance ToLaTeX NUMBER where
+  toLaTeX ORDINAL{..} = ORDINAL (toLaTeX attr)
+  toLaTeX LENGTH{..} = LENGTH (toLaTeX binding)
+  toLaTeX literal@LITERAL{} = literal
+
+instance ToLaTeX COMPARABLE where
+  toLaTeX CMP_EXPR{..} = CMP_EXPR (toLaTeX expr)
+  toLaTeX CMP_ATTR{..} = CMP_ATTR (toLaTeX attr)
+  toLaTeX CMP_NUM{..} = CMP_NUM (toLaTeX num)
+
+instance ToLaTeX CONDITION where
+  toLaTeX CO_BELONGS{..} = CO_BELONGS (toLaTeX attr) belongs (toLaTeX set)
+  toLaTeX CO_LOGIC{..} = CO_LOGIC (map toLaTeX conditions) operator
+  toLaTeX CO_NF{..} = CO_NF (toLaTeX expr)
+  toLaTeX CO_NOT{..} = CO_NOT (toLaTeX condition)
+  toLaTeX CO_COMPARE{..} = CO_COMPARE (toLaTeX left) equal (toLaTeX right)
+  toLaTeX CO_MATCHES{..} = CO_MATCHES regex (toLaTeX expr)
+  toLaTeX CO_PART_OF{..} = CO_PART_OF (toLaTeX expr) (toLaTeX binding)
+  toLaTeX CO_EMPTY = CO_EMPTY
+
+instance ToLaTeX EXTRA_ARG where
+  toLaTeX ARG_ATTR{..} = ARG_ATTR (toLaTeX attr)
+  toLaTeX ARG_EXPR{..} = ARG_EXPR (toLaTeX expr)
+  toLaTeX ARG_BINDING{..} = ARG_BINDING (toLaTeX binding)
+  toLaTeX bts@ARG_BYTES{} = bts
+
+instance ToLaTeX EXTRA where
+  toLaTeX EXTRA{..} = EXTRA (toLaTeX meta) func (map toLaTeX args)
+
 explainRule :: Y.Rule -> String
 explainRule rule =
   intercalate
     "\n  "
     [ "\\trrule{" ++ fromMaybe "unknown" (Y.name rule) ++ "}"
-    , braced (render $ toLaTeX $ toSingleLine $ toASCII $ expressionToCST $ Y.pattern rule)
-    , braced (render $ toLaTeX $ toSingleLine $ toASCII $ expressionToCST $ Y.result rule)
+    , braced (renderToLatex (expressionToCST (Y.pattern rule)) defaultLatexContext)
+    , braced (renderToLatex (expressionToCST (Y.result rule)) defaultLatexContext)
+    , conditionToLatex (joinedConditions (Y.when rule) (Y.having rule))
+    , extraArgumentsToLatex (Y.where_ rule)
     ]
   where
+    conditionToLatex :: Maybe Y.Condition -> String
+    conditionToLatex Nothing = "{ }"
+    conditionToLatex (Just cond) = case conditionToCST cond of
+      CO_EMPTY -> "{ }"
+      cond' -> braced ("if " <> renderToLatex cond' defaultLatexContext)
+    extraArgumentsToLatex :: Maybe [Y.Extra] -> String
+    extraArgumentsToLatex Nothing = "{ }"
+    extraArgumentsToLatex (Just extras) =
+      let extras' = map ((`renderToLatex` defaultLatexContext) . extraToCST) extras
+       in braced ("where " <> intercalate "; " extras')
     braced :: String -> String
     braced = printf "{ %s }"
+    -- Join two maybe conditions into single one using Y.And if at least one is just.
+    joinedConditions :: Maybe Y.Condition -> Maybe Y.Condition -> Maybe Y.Condition
+    joinedConditions Nothing Nothing = Nothing
+    joinedConditions first@(Just _) Nothing = first
+    joinedConditions Nothing second@(Just _) = second
+    joinedConditions (Just first) (Just second) = Just (Y.And [first, second])
 
 explainRules :: [Y.Rule] -> String
 explainRules rules =

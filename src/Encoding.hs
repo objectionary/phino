@@ -73,3 +73,36 @@ instance ToASCII ATTRIBUTE where
   toASCII AT_RHO{} = AT_RHO CARET
   toASCII AT_META{..} = AT_META (META EXCL A (rest meta))
   toASCII attr = attr
+
+instance ToASCII SET where
+  toASCII ST_BINDING{..} = ST_BINDING (toASCII binding)
+  toASCII ST_ATTRIBUTES{..} = ST_ATTRIBUTES (map toASCII attrs)
+
+instance ToASCII NUMBER where
+  toASCII ORDINAL{..} = ORDINAL (toASCII attr)
+  toASCII LENGTH{..} = LENGTH (toASCII binding)
+  toASCII literal@LITERAL{} = literal
+
+instance ToASCII COMPARABLE where
+  toASCII CMP_ATTR{..} = CMP_ATTR (toASCII attr)
+  toASCII CMP_EXPR{..} = CMP_EXPR (toASCII expr)
+  toASCII CMP_NUM{..} = CMP_NUM (toASCII num)
+
+instance ToASCII CONDITION where
+  toASCII CO_BELONGS{..} = CO_BELONGS (toASCII attr) belongs (toASCII set)
+  toASCII CO_LOGIC{..} = CO_LOGIC (map toASCII conditions) operator
+  toASCII CO_NF{..} = CO_NF (toASCII expr)
+  toASCII CO_NOT{..} = CO_NOT (toASCII condition)
+  toASCII CO_COMPARE{..} = CO_COMPARE (toASCII left) equal (toASCII right)
+  toASCII CO_MATCHES{..} = CO_MATCHES regex (toASCII expr)
+  toASCII CO_PART_OF{..} = CO_PART_OF (toASCII expr) (toASCII binding)
+  toASCII CO_EMPTY = CO_EMPTY
+
+instance ToASCII EXTRA_ARG where
+  toASCII ARG_ATTR{..} = ARG_ATTR (toASCII attr)
+  toASCII ARG_EXPR{..} = ARG_EXPR (toASCII expr)
+  toASCII ARG_BINDING{..} = ARG_BINDING (toASCII binding)
+  toASCII bts@ARG_BYTES{} = bts
+
+instance ToASCII EXTRA where
+  toASCII EXTRA{..} = EXTRA (toASCII meta) func (map toASCII args)

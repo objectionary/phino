@@ -124,7 +124,7 @@ condition =
         _ <- symbol "xi" >> lparen
         expr <- _expression phiParser
         _ <- rparen
-        return (Y.XI expr)
+        return (Y.Xi expr)
     , do
         _ <- symbol "matches" >> lparen
         ptn <- _string phiParser

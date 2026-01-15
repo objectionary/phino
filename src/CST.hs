@@ -1,6 +1,7 @@
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE RecordWildCards #-}
 {-# OPTIONS_GHC -Wno-partial-fields -Wno-name-shadowing #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
@@ -11,6 +12,7 @@ module CST where
 import AST
 import Data.Maybe (isJust)
 import Misc
+import qualified Yaml as Y
 
 data LCB = LCB | BIG_LCB
   deriving (Eq, Show)
@@ -48,7 +50,7 @@ data DELTA = DELTA
 data XI = XI | DOLLAR
   deriving (Eq, Show)
 
-data LAMBDA = LAMBDA
+data LAMBDA = LAMBDA | LAMBDA'
   deriving (Eq, Show)
 
 data GLOBAL = Φ | Q
@@ -63,6 +65,9 @@ data SPACE = SPACE
 data EOL = EOL | NO_EOL
   deriving (Eq, Show)
 
+data DOTS = DOTS | DOTS'
+  deriving (Eq, Show)
+
 data BYTES
   = BT_EMPTY
   | BT_ONE String
@@ -71,17 +76,17 @@ data BYTES
   deriving (Eq, Show)
 
 data META_HEAD
-  = E
-  | E'
-  | A
-  | TAU
-  | TAU'
-  | B
-  | B'
-  | D
-  | D'
-  | TAIL
-  | F
+  = E -- 𝑒
+  | E' -- e
+  | A -- a
+  | TAU -- 𝜏
+  | TAU' -- \tau
+  | B -- 𝐵
+  | B' -- B
+  | D -- δ
+  | D' -- d
+  | TAIL -- t
+  | F -- F
   deriving (Eq, Show)
 
 data EXCLAMATION = EXCL | NO_EXCL
@@ -169,13 +174,88 @@ data ATTRIBUTE
   | AT_LAMBDA {lambda :: LAMBDA}
   | AT_DELTA {delta :: DELTA}
   | AT_META {meta :: META}
+  | AT_REST {dots :: DOTS}
+  deriving (Eq, Show)
+
+data BELONGING
+  = IN
+  | NOT_IN
+  deriving (Eq, Show)
+
+data SET
+  = ST_BINDING {binding :: BINDING}
+  | ST_ATTRIBUTES {attrs :: [ATTRIBUTE]}
+  deriving (Eq, Show)
+
+data LOGIC_OPERATOR
+  = AND
+  | OR
+  deriving (Eq, Show)
+
+data EQUAL
+  = EQUAL
+  | NOT_EQUAL
+  deriving (Eq, Show)
+
+data NUMBER
+  = ORDINAL {attr :: ATTRIBUTE}
+  | LENGTH {binding :: BINDING}
+  | LITERAL {num :: Int}
+  deriving (Eq, Show)
+
+data COMPARABLE
+  = CMP_ATTR {attr :: ATTRIBUTE}
+  | CMP_EXPR {expr :: EXPRESSION}
+  | CMP_NUM {num :: NUMBER}
+  deriving (Eq, Show)
+
+data CONDITION
+  = CO_EMPTY
+  | CO_BELONGS {attr :: ATTRIBUTE, belongs :: BELONGING, set :: SET}
+  | CO_LOGIC {conditions :: [CONDITION], operator :: LOGIC_OPERATOR}
+  | CO_NF {expr :: EXPRESSION}
+  | CO_NOT {condition :: CONDITION}
+  | CO_COMPARE {left :: COMPARABLE, equal :: EQUAL, right :: COMPARABLE}
+  | CO_MATCHES {regex :: String, expr :: EXPRESSION}
+  | CO_PART_OF {expr :: EXPRESSION, binding :: BINDING}
+  deriving (Eq, Show)
+
+data EXTRA_ARG
+  = ARG_EXPR {expr :: EXPRESSION}
+  | ARG_ATTR {attr :: ATTRIBUTE}
+  | ARG_BINDING {binding :: BINDING}
+  | ARG_BYTES {bytes :: BYTES}
+  deriving (Eq, Show)
+
+data EXTRA = EXTRA {meta :: EXTRA_ARG, func :: String, args :: [EXTRA_ARG]}
   deriving (Eq, Show)
 
 programToCST :: Program -> PROGRAM
-programToCST prog = toCST prog (0, EOL)
+programToCST = toCST'
 
 expressionToCST :: Expression -> EXPRESSION
-expressionToCST ex = toCST ex (0, EOL)
+expressionToCST = toCST'
+
+attributeToCST :: Attribute -> ATTRIBUTE
+attributeToCST = toCST'
+
+bindingsToCST :: [Binding] -> BINDING
+bindingsToCST = toCST'
+
+conditionToCST :: Y.Condition -> CONDITION
+conditionToCST = toCST'
+
+comparableToCST :: Y.Comparable -> COMPARABLE
+comparableToCST = toCST'
+
+numberToCST :: Y.Number -> NUMBER
+numberToCST = toCST'
+
+extraToCST :: Y.Extra -> EXTRA
+extraToCST = toCST'
+
+toCST' :: ToCST a b => a -> b
+toCST' = (`toCST` (0, EOL))
 
 metaTail :: String -> String
 metaTail = tail
@@ -366,3 +446,51 @@ instance ToCST Attribute ATTRIBUTE where
   toCST AtDelta _ = AT_DELTA DELTA
   toCST AtLambda _ = AT_LAMBDA LAMBDA
   toCST (AtMeta mt) _ = AT_META (META NO_EXCL TAU (metaTail mt))
+
+withoutXi :: [Y.Condition] -> [Y.Condition]
+withoutXi conds = [cond | cond <- conds, not (singleXi cond)]
+  where
+    singleXi :: Y.Condition -> Bool
+    singleXi (Y.Xi _) = True
+    singleXi (Y.Not (Y.Xi _)) = True
+    singleXi (Y.And [cond]) = singleXi cond
+    singleXi (Y.Or [cond]) = singleXi cond
+    singleXi _ = False
+
+instance ToCST Y.Condition CONDITION where
+  toCST (Y.Not (Y.In attr binding)) _ = CO_BELONGS (attributeToCST attr) NOT_IN (ST_BINDING (bindingsToCST [binding]))
+  toCST (Y.Not (Y.Eq left right)) _ = CO_COMPARE (comparableToCST left) NOT_EQUAL (comparableToCST right)
+  toCST (Y.Not (Y.Alpha attr)) _ = CO_BELONGS (attributeToCST attr) NOT_IN (ST_ATTRIBUTES [attributeToCST (AtAlpha 0), attributeToCST (AtAlpha 1), AT_REST DOTS])
+  toCST (Y.In attr binding) _ = CO_BELONGS (attributeToCST attr) IN (ST_BINDING (bindingsToCST [binding]))
+  toCST (Y.And conds) _ = case withoutXi conds of
+    [] -> CO_EMPTY
+    conds' -> CO_LOGIC (map toCST' (withoutXi conds')) AND
+  toCST (Y.Or conds) _ = case withoutXi conds of
+    [] -> CO_EMPTY
+    conds' -> CO_LOGIC (map toCST' (withoutXi conds')) OR
+  toCST (Y.Alpha attr) _ = CO_BELONGS (attributeToCST attr) IN (ST_ATTRIBUTES [attributeToCST (AtAlpha 0), attributeToCST (AtAlpha 1), AT_REST DOTS])
+  toCST (Y.NF expr) _ = CO_NF (expressionToCST expr)
+  toCST (Y.Not cond) _ = CO_NOT (conditionToCST cond)
+  toCST (Y.Eq left right) _ = CO_COMPARE (comparableToCST left) EQUAL (comparableToCST right)
+  toCST (Y.Matches regex expr) _ = CO_MATCHES regex (expressionToCST expr)
+  toCST (Y.PartOf expr binding) _ = CO_PART_OF (expressionToCST expr) (bindingsToCST [binding])
+  toCST (Y.Xi _) _ = CO_EMPTY
+
+instance ToCST Y.Comparable COMPARABLE where
+  toCST (Y.CmpAttr attr) _ = CMP_ATTR (attributeToCST attr)
+  toCST (Y.CmpExpr expr) _ = CMP_EXPR (expressionToCST expr)
+  toCST (Y.CmpNum num) _ = CMP_NUM (numberToCST num)
+
+instance ToCST Y.Number NUMBER where
+  toCST (Y.Ordinal attr) _ = ORDINAL (attributeToCST attr)
+  toCST (Y.Length binding) _ = LENGTH (bindingsToCST [binding])
+  toCST (Y.Literal num) _ = LITERAL num
+
+instance ToCST Y.ExtraArgument EXTRA_ARG where
+  toCST (Y.ArgAttribute attr) _ = ARG_ATTR (attributeToCST attr)
+  toCST (Y.ArgExpression expr) _ = ARG_EXPR (expressionToCST expr)
+  toCST (Y.ArgBinding binding) _ = ARG_BINDING (bindingsToCST [binding])
+  toCST (Y.ArgBytes bytes) _ = ARG_BYTES (toCST' bytes)
+
+instance ToCST Y.Extra EXTRA where
+  toCST Y.Extra{..} _ = EXTRA (toCST' meta) function (map toCST' args)

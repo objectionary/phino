@@ -111,5 +111,11 @@ instance WithMargin PAIR where
      in if lengthOf single + extra <= margin then single else pa'
   withMargin' _ pa = pa
 
+instance WithMargin CONDITION where
+  withMargin' _ co = co
+
+instance WithMargin EXTRA where
+  withMargin' _ = id
+
 lengthOf :: Render a => a -> Int
 lengthOf renderable = length (render renderable)

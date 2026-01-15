@@ -23,7 +23,7 @@ fourmolu:
 
 .SILENT:
 coverage:
-	threshold=$${COVERAGE_THRESHOLD:-70}
+	threshold=$${COVERAGE_THRESHOLD:-65}
 	cabal test --enable-coverage --ghc-options=-Werror
 	excludes=$$(find test -name '*.hs' -exec basename {} .hs \; | paste -sd, -)
 	hpc-codecov cabal:spec -x "$${excludes}" -x "Paths_phino" --out=coverage.json

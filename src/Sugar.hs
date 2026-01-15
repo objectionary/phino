@@ -166,3 +166,35 @@ instance ToSalty PAIR where
       joinToBindings [] BI_META{} = error "BI_META unexpected in joinToBindings"
       joinToBindings (attr : rest) bd = BDS_PAIR eol tab (PA_VOID attr arrow EMPTY) (joinToBindings rest bd)
   toSalty pair = pair
+
+instance ToSalty SET where
+  toSalty ST_BINDING{..} = ST_BINDING (toSalty binding)
+  toSalty st = st
+
+instance ToSalty NUMBER where
+  toSalty LENGTH{..} = LENGTH (toSalty binding)
+  toSalty num = num
+
+instance ToSalty COMPARABLE where
+  toSalty comp@CMP_ATTR{} = comp
+  toSalty CMP_EXPR{..} = CMP_EXPR (toSalty expr)
+  toSalty CMP_NUM{..} = CMP_NUM (toSalty num)
+
+instance ToSalty CONDITION where
+  toSalty CO_BELONGS{..} = CO_BELONGS attr belongs (toSalty set)
+  toSalty CO_LOGIC{..} = CO_LOGIC (map toSalty conditions) operator
+  toSalty CO_NF{..} = CO_NF (toSalty expr)
+  toSalty CO_NOT{..} = CO_NOT (toSalty condition)
+  toSalty CO_COMPARE{..} = CO_COMPARE (toSalty left) equal (toSalty right)
+  toSalty CO_MATCHES{..} = CO_MATCHES regex (toSalty expr)
+  toSalty CO_PART_OF{..} = CO_PART_OF (toSalty expr) (toSalty binding)
+  toSalty CO_EMPTY = CO_EMPTY
+
+instance ToSalty EXTRA_ARG where
+  toSalty ARG_EXPR{..} = ARG_EXPR (toSalty expr)
+  toSalty ARG_BINDING{..} = ARG_BINDING (toSalty binding)
+  toSalty at@ARG_ATTR{} = at
+  toSalty bts@ARG_BYTES{} = bts
+
+instance ToSalty EXTRA where
+  toSalty EXTRA{..} = EXTRA (toSalty meta) func (map toSalty args)
