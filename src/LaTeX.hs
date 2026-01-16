@@ -316,12 +316,12 @@ explainRule rule =
     conditionToLatex Nothing = "{ }"
     conditionToLatex (Just cond) = case conditionToCST cond of
       CO_EMPTY -> "{ }"
-      cond' -> braced ("if " <> renderToLatex cond' defaultLatexContext)
+      cond' -> braced ("if $ " <> renderToLatex cond' defaultLatexContext <> " $")
     extraArgumentsToLatex :: Maybe [Y.Extra] -> String
     extraArgumentsToLatex Nothing = "{ }"
     extraArgumentsToLatex (Just extras) =
       let extras' = map ((`renderToLatex` defaultLatexContext) . extraToCST) extras
-       in braced ("where " <> intercalate "; " extras')
+       in braced ("where " <> intercalate " and " extras')
     braced :: String -> String
     braced = printf "{ %s }"
     -- Join two maybe conditions into single one using Y.And if at least one is just.
