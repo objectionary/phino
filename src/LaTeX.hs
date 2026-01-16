@@ -22,7 +22,7 @@ module LaTeX
 import AST
 import CST
 import Data.List (intercalate, nub)
-import Data.Maybe (fromMaybe)
+import Data.Maybe (fromMaybe, isJust)
 import Encoding
 import Lining
 import Locator (locatedExpression)
@@ -34,6 +34,7 @@ import Replacer (replaceProgram)
 import Rewriter (Rewritten, Rewrittens)
 import Sugar (SugarType (SWEET), ToSalty, withSugarType)
 import Text.Printf (printf)
+import Text.Read (readMaybe)
 import qualified Yaml as Y
 
 data LatexContext = LatexContext
@@ -213,12 +214,12 @@ instance ToLaTeX EXPRESSION where
   toLaTeX EX_DISPATCH{..} = EX_DISPATCH (toLaTeX expr) (toLaTeX attr)
   toLaTeX EX_PHI_MEET{..} = EX_PHI_MEET prefix idx (toLaTeX expr)
   toLaTeX EX_PHI_AGAIN{..} = EX_PHI_AGAIN prefix idx (toLaTeX expr)
-  toLaTeX EX_META{..} = EX_META (META NO_EXCL E' (rest meta))
+  toLaTeX EX_META{..} = EX_META (toLaTeX meta)
   toLaTeX expr = expr
 
 instance ToLaTeX ATTRIBUTE where
   toLaTeX AT_LABEL{..} = AT_LABEL (piped (toLaTeX label))
-  toLaTeX AT_META{..} = AT_META (META NO_EXCL TAU' (rest meta))
+  toLaTeX AT_META{..} = AT_META (toLaTeX meta)
   toLaTeX AT_LAMBDA{} = AT_LAMBDA LAMBDA'
   toLaTeX AT_REST{} = AT_REST DOTS'
   toLaTeX attr = attr
@@ -228,12 +229,12 @@ instance ToLaTeX APP_BINDING where
 
 instance ToLaTeX BINDING where
   toLaTeX BI_PAIR{..} = BI_PAIR (toLaTeX pair) (toLaTeX bindings) tab
-  toLaTeX BI_META{..} = BI_META (META NO_EXCL B' (rest meta)) (toLaTeX bindings) tab
+  toLaTeX BI_META{..} = BI_META (toLaTeX meta) (toLaTeX bindings) tab
   toLaTeX bd = bd
 
 instance ToLaTeX BINDINGS where
   toLaTeX BDS_PAIR{..} = BDS_PAIR eol tab (toLaTeX pair) (toLaTeX bindings)
-  toLaTeX BDS_META{..} = BDS_META eol tab (META NO_EXCL B' (rest meta)) (toLaTeX bindings)
+  toLaTeX BDS_META{..} = BDS_META eol tab (toLaTeX meta) (toLaTeX bindings)
   toLaTeX bds = bds
 
 instance ToLaTeX PAIR where
@@ -244,10 +245,24 @@ instance ToLaTeX PAIR where
   toLaTeX PA_TAU{..} = PA_TAU (toLaTeX attr) arrow (toLaTeX expr)
   toLaTeX PA_FORMATION{..} = PA_FORMATION (toLaTeX attr) (map toLaTeX voids) arrow (toLaTeX expr)
   toLaTeX PA_META_DELTA{..} = toLaTeX (PA_META_DELTA' meta)
-  toLaTeX PA_META_DELTA'{..} = PA_META_DELTA' (META NO_EXCL D' (rest meta))
+  toLaTeX PA_META_DELTA'{..} = PA_META_DELTA' (toLaTeX meta)
   toLaTeX PA_META_LAMBDA{..} = toLaTeX (PA_META_LAMBDA' meta)
-  toLaTeX PA_META_LAMBDA'{..} = PA_META_LAMBDA' (META NO_EXCL F (rest meta))
+  toLaTeX PA_META_LAMBDA'{..} = PA_META_LAMBDA' (toLaTeX meta)
   toLaTeX pair = pair
+
+instance ToLaTeX META where
+  toLaTeX META{..} =
+    let idx = readMaybe rest :: Maybe Int
+        rest' = if not (null rest) && length rest <= 2 && isJust idx then '_' : rest else rest
+     in META NO_EXCL (toLaTeX hd) rest'
+
+instance ToLaTeX META_HEAD where
+  toLaTeX E = E'
+  toLaTeX A = TAU'
+  toLaTeX TAU = TAU'
+  toLaTeX B = B'
+  toLaTeX D = D'
+  toLaTeX mh = mh
 
 instance ToLaTeX APP_ARG where
   toLaTeX APP_ARG{..} = APP_ARG (toLaTeX expr) (toLaTeX args)
