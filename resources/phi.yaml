@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 # SPDX-License-Identifier: MIT
 ---
-name: PHI
+name: phi
 pattern: ⟦𝐵⟧.𝜏
 result: ⟦𝐵⟧.φ.𝜏
 when:

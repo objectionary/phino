@@ -13,7 +13,6 @@ module Rewriter (rewrite, RewriteContext (..), Rewritten, Rewrittens) where
 import AST
 import Builder
 import Control.Exception (Exception, throwIO)
-import Data.Char (toLower)
 import Data.Maybe (fromMaybe)
 import qualified Data.Set as Set
 import Deps
@@ -180,7 +179,7 @@ rewrite' state (rule : rest) iteration ctx@RewriteContext{..} = do
       where
         leadsTo :: Program -> [Rewritten]
         leadsTo _prog = case _rewrittens of
-          (program, _) : rest -> (_prog, Nothing) : (program, Just (map toLower (fromMaybe "unknown" (Y.name rule)))) : rest
+          (program, _) : rest -> (_prog, Nothing) : (program, Just (fromMaybe "unknown" (Y.name rule))) : rest
           [] -> [(_prog, Nothing)]
 
 -- Rewrite program by provided locator from RewriteContext

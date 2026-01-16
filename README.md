@@ -195,23 +195,23 @@ You can _explain_ rewriting rule by printing them in [LaTeX][latex] format:
 ```bash
 $ phino explain --normalize
 \begin{tabular}{rl}
-\trrule{ALPHA}
+\trrule{alpha}
   { [[ B_1, \tau_1 -> ?, B_2 ]] ( \tau_2 -> e ) }
   { [[ B_1, \tau_1 -> ?, B_2 ]] ( \tau_1 -> e ) }
-  { if $ \indexof{ \tau_2 } = |B_1| $ }
+  { if $ \indexof{ \tau_2 } = \vert B_1 \vert $ }
   { }
-\trrule{COPY}
+\trrule{copy}
   { [[ B_1, \tau -> ?, B_2 ]] ( \tau -> e_1 ) }
   { [[ B_1, \tau -> e_3, B_2 ]] }
   { if $ \isnormal{ e_1 } $ }
   { where $ e_2 \coloneqq \scopeof{ e_1 } $ and $ e_3 \coloneqq \ctx{ e_1 }{ e_2 } $ }
-\trrule{DC}
+\trrule{dc}
   { T ( \tau -> e ) }
   { T }
   { }
   { }
 ...
-\trrule{STOP}
+\trrule{stop}
   { [[ B ]] . \tau }
   { T }
   { if $ \tau \notin B \;\text{and}\; @ \notin B \;\text{and}\; L \notin B $ }

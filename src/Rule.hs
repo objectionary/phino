@@ -292,7 +292,7 @@ matchExpressionWithRule expr rule ctx =
               logDebug "The 'when' condition wasn't met"
               pure []
             else do
-              logDebug (printf "Rule %s" (fromMaybe "unknown" (Y.name rule)))
+              logDebug (printf "Rule %s" name)
               extended <- extraSubstitutions when' (Y.where_ rule) ctx
               if null extended
                 then do
