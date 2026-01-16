@@ -20,15 +20,15 @@ class ToSingleLine a where
 
 instance ToSingleLine PROGRAM where
   toSingleLine PR_SALTY{..} = PR_SALTY global arrow (toSingleLine expr)
-  toSingleLine PR_SWEET{..} = PR_SWEET lcb (toSingleLine expr) rcb
+  toSingleLine PR_SWEET{..} = PR_SWEET lcb (toSingleLine expr) rcb space
 
 instance ToSingleLine EXPRESSION where
   toSingleLine EX_FORMATION{lsb, binding = bd@BI_EMPTY{}, rsb} = EX_FORMATION lsb NO_EOL NO_TAB bd NO_EOL NO_TAB rsb
   toSingleLine EX_FORMATION{..} = EX_FORMATION lsb NO_EOL TAB' (toSingleLine binding) NO_EOL TAB' rsb
-  toSingleLine EX_DISPATCH{..} = EX_DISPATCH (toSingleLine expr) attr
-  toSingleLine EX_APPLICATION{..} = EX_APPLICATION (toSingleLine expr) NO_EOL TAB' (toSingleLine tau) NO_EOL TAB' indent
-  toSingleLine EX_APPLICATION_TAUS{..} = EX_APPLICATION_TAUS (toSingleLine expr) NO_EOL TAB' (toSingleLine taus) NO_EOL TAB' indent
-  toSingleLine EX_APPLICATION_EXPRS{..} = EX_APPLICATION_EXPRS (toSingleLine expr) NO_EOL TAB' (toSingleLine args) NO_EOL TAB' indent
+  toSingleLine EX_DISPATCH{..} = EX_DISPATCH (toSingleLine expr) space attr
+  toSingleLine EX_APPLICATION{..} = EX_APPLICATION (toSingleLine expr) space NO_EOL TAB' (toSingleLine tau) NO_EOL TAB' indent
+  toSingleLine EX_APPLICATION_TAUS{..} = EX_APPLICATION_TAUS (toSingleLine expr) space NO_EOL TAB' (toSingleLine taus) NO_EOL TAB' indent
+  toSingleLine EX_APPLICATION_EXPRS{..} = EX_APPLICATION_EXPRS (toSingleLine expr) space NO_EOL TAB' (toSingleLine args) NO_EOL TAB' indent
   toSingleLine EX_PHI_MEET{..} = EX_PHI_MEET prefix idx (toSingleLine expr)
   toSingleLine EX_PHI_AGAIN{..} = EX_PHI_AGAIN prefix idx (toSingleLine expr)
   toSingleLine expr = expr

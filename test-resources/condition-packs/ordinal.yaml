@@ -5,5 +5,5 @@ expression: '[[ x -> Q.y ]](~0 -> Q)'
 pattern: '[[ !B ]](!a -> !e)'
 condition:
   eq:
-    - ordinal: '!a'
+    - index: '!a'
     - 0

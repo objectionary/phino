@@ -7,5 +7,5 @@ condition:
   and:
     - alpha: '!a2'
     - eq:
-        - ordinal: '!a2'
+        - index: '!a2'
         - length: '!B1'

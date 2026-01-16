@@ -59,11 +59,11 @@ instance ToSalty PROGRAM where
   toSalty prog = prog
 
 instance ToSalty EXPRESSION where
-  toSalty EX_ATTR{..} = EX_DISPATCH (EX_XI XI) attr
-  toSalty EX_DISPATCH{..} = EX_DISPATCH (toSalty expr) attr
+  toSalty EX_ATTR{..} = EX_DISPATCH (EX_XI XI) NO_SPACE attr
+  toSalty EX_DISPATCH{..} = EX_DISPATCH (toSalty expr) space attr
   toSalty EX_FORMATION{lsb, binding = bd@BI_EMPTY{}, rsb} = EX_FORMATION lsb NO_EOL TAB' (toSalty (bdWithVoidRho bd)) NO_EOL TAB' rsb
   toSalty EX_FORMATION{..} = EX_FORMATION lsb eol tab (toSalty (bdWithVoidRho binding)) eol' tab' rsb
-  toSalty EX_APPLICATION{..} = EX_APPLICATION (toSalty expr) EOL (TAB indent) (toSalty tau) EOL (TAB (indent - 1)) indent
+  toSalty EX_APPLICATION{..} = EX_APPLICATION (toSalty expr) space EOL (TAB indent) (toSalty tau) EOL (TAB (indent - 1)) indent
   toSalty EX_APPLICATION_TAUS{..} =
     foldl
       toApplication
@@ -72,7 +72,7 @@ instance ToSalty EXPRESSION where
     where
       toApplication :: EXPRESSION -> PAIR -> EXPRESSION
       toApplication exp pair =
-        EX_APPLICATION (toSalty exp) EOL (TAB indent) (APP_BINDING (toSalty pair)) EOL (TAB (indent - 1)) indent
+        EX_APPLICATION (toSalty exp) space EOL (TAB indent) (APP_BINDING (toSalty pair)) EOL (TAB (indent - 1)) indent
       tauToPairs :: BINDING -> [PAIR]
       tauToPairs BI_PAIR{..} = pair : tausToPairs bindings
       tauToPairs BI_EMPTY{} = []
@@ -81,7 +81,7 @@ instance ToSalty EXPRESSION where
       tausToPairs BDS_EMPTY{} = []
       tausToPairs BDS_PAIR{..} = pair : tausToPairs bindings
       tausToPairs (BDS_META _ _ mt _) = error $ "BDS_META " ++ show mt ++ " unexpected in tausToPairs"
-  toSalty EX_APPLICATION_EXPRS{..} = toSalty (EX_APPLICATION_TAUS expr EOL (TAB indent) (argToBinding args tab) EOL (TAB (indent - 1)) indent)
+  toSalty EX_APPLICATION_EXPRS{..} = toSalty (EX_APPLICATION_TAUS expr space EOL (TAB indent) (argToBinding args tab) EOL (TAB (indent - 1)) indent)
     where
       argToBinding :: APP_ARG -> TAB -> BINDING
       argToBinding APP_ARG{..} =
@@ -115,6 +115,7 @@ saltifyPrimitive base bytes data' tb@TAB{..} rhos =
    in toSalty
         ( EX_APPLICATION_TAUS
             base
+            NO_SPACE
             EOL
             next
             ( BI_PAIR
@@ -123,6 +124,7 @@ saltifyPrimitive base bytes data' tb@TAB{..} rhos =
                     ARROW
                     ( EX_APPLICATION_EXPRS
                         bytes
+                        NO_SPACE
                         EOL
                         (TAB (indent + 2))
                         (APP_ARG data' AAS_EMPTY)

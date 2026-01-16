@@ -77,7 +77,7 @@ instance Render XI where
 
 instance Render LAMBDA where
   render LAMBDA = "λ"
-  render LAMBDA' = "\\lambda"
+  render LAMBDA' = "L"
 
 instance Render GLOBAL where
   render Φ = "Φ"
@@ -89,6 +89,7 @@ instance Render TERMINATION where
 
 instance Render SPACE where
   render SPACE = " "
+  render NO_SPACE = ""
 
 instance Render EOL where
   render EOL = "\n"
@@ -134,7 +135,7 @@ instance Render TAB where
   render NO_TAB = ""
 
 instance Render PROGRAM where
-  render PR_SWEET{..} = render lcb <> render expr <> render rcb
+  render PR_SWEET{..} = render lcb <> render space <> render expr <> render space <> render rcb
   render PR_SALTY{..} = render global <> render SPACE <> render arrow <> render SPACE <> render expr
 
 instance Render PAIR where
@@ -177,10 +178,10 @@ instance Render EXPRESSION where
   render EX_ATTR{..} = render attr
   render EX_TERMINATION{..} = render termination
   render EX_FORMATION{..} = render lsb <> render eol <> render tab <> render binding <> render eol' <> render tab' <> render rsb
-  render EX_DISPATCH{..} = render expr <> "." <> render attr
-  render EX_APPLICATION{..} = render expr <> "(" <> render eol <> render tab <> render tau <> render eol' <> render tab' <> ")"
-  render EX_APPLICATION_TAUS{..} = render expr <> "(" <> render eol <> render tab <> render taus <> render eol' <> render tab' <> ")"
-  render EX_APPLICATION_EXPRS{..} = render expr <> "(" <> render eol <> render tab <> render args <> render eol' <> render tab' <> ")"
+  render EX_DISPATCH{..} = render expr <> render space <> "." <> render space <> render attr
+  render EX_APPLICATION{..} = render expr <> render space <> "(" <> render eol <> render tab <> render tau <> render eol' <> render tab' <> ")"
+  render EX_APPLICATION_TAUS{..} = render expr <> render space <> "(" <> render eol <> render tab <> render taus <> render eol' <> render tab' <> ")"
+  render EX_APPLICATION_EXPRS{..} = render expr <> render space <> "(" <> render eol <> render tab <> render args <> render eol' <> render tab' <> ")"
   render EX_STRING{..} = '"' : render str <> "\""
   render EX_NUMBER{..} = either show show num
   render EX_META{..} = render meta
@@ -214,7 +215,7 @@ instance Render LOGIC_OPERATOR where
   render OR = "\\;\\text{or}\\;"
 
 instance Render NUMBER where
-  render ORDINAL{..} = renderFunc "ordinal" attr
+  render INDEX{..} = printf "\\indexof{ %s }" (render attr)
   render LENGTH{..} = printf "|%s|" (render binding)
   render LITERAL{..} = show num
 
@@ -230,8 +231,13 @@ instance Render EQUAL where
 instance Render CONDITION where
   render CO_BELONGS{..} = render attr <> render SPACE <> render belongs <> render SPACE <> render set
   render CO_LOGIC{conditions = [cond]} = render cond
-  render CO_LOGIC{..} = printf "\\( %s \\)" (intercalate (printf " \\) %s \\( " (render operator)) (map render conditions))
-  render CO_NF{..} = renderFunc "NF" expr
+  render CO_LOGIC{..} = intercalate (printf " %s " (render operator)) (map renderWrapped conditions)
+    where
+      renderWrapped :: CONDITION -> String
+      renderWrapped CO_LOGIC{conditions = [cond]} = render cond
+      renderWrapped cond@CO_LOGIC{} = printf "( %s )" (render cond)
+      renderWrapped cond = render cond
+  render CO_NF{..} = printf "\\isnormal{ %s }" (render expr)
   render CO_NOT{..} = renderFunc "not" condition
   render CO_COMPARE{..} = render left <> render SPACE <> render equal <> render SPACE <> render right
   render CO_MATCHES{..} = printf "matches( %s, %s )" regex (render expr)
@@ -248,5 +254,6 @@ instance Render EXTRA_ARG where
   render ARG_BYTES{..} = render bytes
 
 instance Render EXTRA where
-  render EXTRA{func = "contextualize", ..} = printf "$ %s <- \\ctx{ %s }{ %s } $" (render meta) (render (head args)) (intercalate ", " (map render (tail args)))
-  render EXTRA{..} = printf "$ %s <- %s( %s ) $" (render meta) func (intercalate ", " (map render args))
+  render EXTRA{func = "contextualize", ..} = printf "$ %s \\coloneqq \\ctx{ %s }{ %s } $" (render meta) (render (head args)) (intercalate ", " (map render (tail args)))
+  render EXTRA{func = "scope", ..} = printf "$ %s \\coloneqq \\scopeof{ %s } $" (render meta) (render (head args))
+  render EXTRA{..} = printf "$ %s \\coloneqq %s( %s ) $" (render meta) func (intercalate ", " (map render args))

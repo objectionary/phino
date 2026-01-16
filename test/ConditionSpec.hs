@@ -18,7 +18,7 @@ spec = do
       , " not   (in (!a1,   !B))   "
       , "alpha(x)"
       , "eq(1, 1)"
-      , "or(eq(ordinal(a),1),eq(length(!B),-2),eq(!e1,!e2),eq(!a1,x),eq(Q.org.eolang,[[ x -> 2 ]]))"
+      , "or(eq(index(a),1),eq(length(!B),-2),eq(!e1,!e2),eq(!a1,x),eq(Q.org.eolang,[[ x -> 2 ]]))"
       , "and(alpha(q),eq(-5,21))"
       , "nf([[ x -> !e ]].x)"
       , "xi(!e1)"
@@ -34,7 +34,7 @@ spec = do
       , ("not(in(!a,!B))", Y.Not (Y.In (AtMeta "a") (BiMeta "B")))
       , ("alpha(y)", Y.Alpha (AtLabel "y"))
       , ("eq(1,-2)", Y.Eq (Y.CmpNum (Y.Literal 1)) (Y.CmpNum (Y.Literal (-2))))
-      , ("eq(ordinal(z),length(!B1))", Y.Eq (Y.CmpNum (Y.Ordinal (AtLabel "z"))) (Y.CmpNum (Y.Length (BiMeta "B1"))))
+      , ("eq(index(z),length(!B1))", Y.Eq (Y.CmpNum (Y.Index (AtLabel "z"))) (Y.CmpNum (Y.Length (BiMeta "B1"))))
       , ("eq(!a1, !e2)", Y.Eq (Y.CmpAttr (AtMeta "a1")) (Y.CmpExpr (ExMeta "e2")))
       , ("or(xi(!e1), nf(Q.x))", Y.Or [Y.Xi (ExMeta "e1"), Y.NF (ExDispatch ExGlobal (AtLabel "x"))])
       , ("and(matches(\"hi\", !e),part-of(!e, !B))", Y.And [Y.Matches "hi" (ExMeta "e"), Y.PartOf (ExMeta "e") (BiMeta "B")])

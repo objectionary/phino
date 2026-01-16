@@ -21,7 +21,7 @@ class WithMargin a where
   withMargin' :: (Int, Int) -> a -> a
 
 instance WithMargin PROGRAM where
-  withMargin' (_, margin) PR_SWEET{..} = PR_SWEET lcb (withMargin' (2, margin) expr) rcb
+  withMargin' (_, margin) PR_SWEET{..} = PR_SWEET lcb (withMargin' (2, margin) expr) rcb space
   withMargin' (_, margin) PR_SALTY{..} =
     let before = lengthOf global + lengthOf arrow + 2 -- 'Q -> '
      in PR_SALTY global arrow (withMargin' (before, margin) expr)
@@ -34,7 +34,7 @@ instance WithMargin EXPRESSION where
      in if lengthOf single + extra <= margin then single else ex'
   withMargin' _ num@EX_NUMBER{} = num
   withMargin' _ str@EX_STRING{} = str
-  withMargin' cfg EX_DISPATCH{..} = EX_DISPATCH (withMargin' cfg expr) attr
+  withMargin' cfg EX_DISPATCH{..} = EX_DISPATCH (withMargin' cfg expr) space attr
   withMargin' cfg EX_META_TAIL{..} = EX_META_TAIL (withMargin' cfg expr) meta
   withMargin' cfg EX_PHI_AGAIN{..} = EX_PHI_AGAIN prefix idx (withMargin' cfg expr)
   withMargin' cfg EX_PHI_MEET{..} = EX_PHI_MEET prefix idx (withMargin' cfg expr)
@@ -47,9 +47,9 @@ instance WithMargin EXPRESSION where
         singleArg = toSingleLine arg
      in if
           | lengthOf single + extra <= margin -> single
-          | lengthOf singleMain + extra <= margin -> EX_APPLICATION singleMain EOL tab arg EOL tab' indent
-          | lengthOf singleArg + extra' <= margin -> EX_APPLICATION main NO_EOL TAB' singleArg NO_EOL TAB' indent
-          | otherwise -> EX_APPLICATION main EOL tab arg EOL tab' indent
+          | lengthOf singleMain + extra <= margin -> EX_APPLICATION singleMain space EOL tab arg EOL tab' indent
+          | lengthOf singleArg + extra' <= margin -> EX_APPLICATION main space NO_EOL TAB' singleArg NO_EOL TAB' indent
+          | otherwise -> EX_APPLICATION main space EOL tab arg EOL tab' indent
   withMargin' cfg@(extra, margin) ex@EX_APPLICATION_EXPRS{tab = tab@(TAB indt), ..} =
     let single = toSingleLine ex
         main = withMargin' cfg expr
@@ -59,9 +59,9 @@ instance WithMargin EXPRESSION where
         singleExprs = toSingleLine exprs
      in if
           | lengthOf single + extra <= margin -> single
-          | lengthOf singleMain + extra <= margin -> EX_APPLICATION_EXPRS singleMain EOL tab exprs EOL tab' indent
-          | lengthOf singleExprs + extra' <= margin -> EX_APPLICATION_EXPRS main NO_EOL TAB' singleExprs NO_EOL TAB' indent
-          | otherwise -> EX_APPLICATION_EXPRS main EOL tab exprs EOL tab' indent
+          | lengthOf singleMain + extra <= margin -> EX_APPLICATION_EXPRS singleMain space EOL tab exprs EOL tab' indent
+          | lengthOf singleExprs + extra' <= margin -> EX_APPLICATION_EXPRS main space NO_EOL TAB' singleExprs NO_EOL TAB' indent
+          | otherwise -> EX_APPLICATION_EXPRS main space EOL tab exprs EOL tab' indent
   withMargin' cfg@(extra, margin) ex@EX_APPLICATION_TAUS{tab = tab@(TAB indt), ..} =
     let single = toSingleLine ex
         main = withMargin' cfg expr
@@ -71,9 +71,9 @@ instance WithMargin EXPRESSION where
         singleTaus = toSingleLine taus'
      in if
           | lengthOf single + extra <= margin -> single
-          | lengthOf singleMain + extra <= margin -> EX_APPLICATION_TAUS singleMain EOL tab taus' EOL tab' indent
-          | lengthOf singleTaus + extra' <= margin -> EX_APPLICATION_TAUS main NO_EOL TAB' singleTaus NO_EOL TAB' indent
-          | otherwise -> EX_APPLICATION_TAUS main EOL tab taus' EOL tab' indent
+          | lengthOf singleMain + extra <= margin -> EX_APPLICATION_TAUS singleMain space EOL tab taus' EOL tab' indent
+          | lengthOf singleTaus + extra' <= margin -> EX_APPLICATION_TAUS main space NO_EOL TAB' singleTaus NO_EOL TAB' indent
+          | otherwise -> EX_APPLICATION_TAUS main space EOL tab taus' EOL tab' indent
   withMargin' _ ex = ex
 
 instance WithMargin APP_BINDING where

@@ -19,7 +19,7 @@ class ToASCII a where
 
 instance ToASCII PROGRAM where
   toASCII PR_SALTY{..} = PR_SALTY Q ARROW' (toASCII expr)
-  toASCII PR_SWEET{..} = PR_SWEET lcb (toASCII expr) rcb
+  toASCII PR_SWEET{..} = PR_SWEET lcb (toASCII expr) rcb space
 
 instance ToASCII EXPRESSION where
   toASCII EX_GLOBAL{} = EX_GLOBAL Q
@@ -27,10 +27,10 @@ instance ToASCII EXPRESSION where
   toASCII EX_ATTR{..} = EX_ATTR (toASCII attr)
   toASCII EX_TERMINATION{} = EX_TERMINATION T
   toASCII EX_FORMATION{..} = EX_FORMATION LSB' eol tab (toASCII binding) eol' tab' RSB'
-  toASCII EX_DISPATCH{..} = EX_DISPATCH (toASCII expr) (toASCII attr)
-  toASCII EX_APPLICATION{..} = EX_APPLICATION (toASCII expr) eol tab (toASCII tau) eol' tab' indent
-  toASCII EX_APPLICATION_TAUS{..} = EX_APPLICATION_TAUS (toASCII expr) eol tab (toASCII taus) eol' tab' indent
-  toASCII EX_APPLICATION_EXPRS{..} = EX_APPLICATION_EXPRS (toASCII expr) eol tab (toASCII args) eol' tab' indent
+  toASCII EX_DISPATCH{..} = EX_DISPATCH (toASCII expr) space (toASCII attr)
+  toASCII EX_APPLICATION{..} = EX_APPLICATION (toASCII expr) space eol tab (toASCII tau) eol' tab' indent
+  toASCII EX_APPLICATION_TAUS{..} = EX_APPLICATION_TAUS (toASCII expr) space eol tab (toASCII taus) eol' tab' indent
+  toASCII EX_APPLICATION_EXPRS{..} = EX_APPLICATION_EXPRS (toASCII expr) space eol tab (toASCII args) eol' tab' indent
   toASCII EX_META{..} = EX_META (META EXCL E' (rest meta))
   toASCII EX_META_TAIL{..} = EX_META_TAIL (toASCII expr) meta
   toASCII EX_PHI_MEET{..} = EX_PHI_MEET prefix idx (toASCII expr)
@@ -79,7 +79,7 @@ instance ToASCII SET where
   toASCII ST_ATTRIBUTES{..} = ST_ATTRIBUTES (map toASCII attrs)
 
 instance ToASCII NUMBER where
-  toASCII ORDINAL{..} = ORDINAL (toASCII attr)
+  toASCII INDEX{..} = INDEX (toASCII attr)
   toASCII LENGTH{..} = LENGTH (toASCII binding)
   toASCII literal@LITERAL{} = literal
 

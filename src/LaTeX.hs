@@ -202,16 +202,16 @@ class ToLaTeX a where
   toLaTeX :: a -> a
 
 instance ToLaTeX PROGRAM where
-  toLaTeX PR_SWEET{..} = PR_SWEET BIG_LCB (toLaTeX expr) BIG_RCB
+  toLaTeX PR_SWEET{..} = PR_SWEET BIG_LCB (toLaTeX expr) BIG_RCB SPACE
   toLaTeX PR_SALTY{..} = PR_SALTY global arrow (toLaTeX expr)
 
 instance ToLaTeX EXPRESSION where
   toLaTeX EX_ATTR{..} = EX_ATTR (toLaTeX attr)
   toLaTeX EX_FORMATION{..} = EX_FORMATION lsb eol tab (toLaTeX binding) eol' tab' rsb
-  toLaTeX EX_APPLICATION{..} = EX_APPLICATION (toLaTeX expr) eol tab (toLaTeX tau) eol' tab' indent
-  toLaTeX EX_APPLICATION_TAUS{..} = EX_APPLICATION_TAUS (toLaTeX expr) eol tab (toLaTeX taus) eol' tab' indent
-  toLaTeX EX_APPLICATION_EXPRS{..} = EX_APPLICATION_EXPRS (toLaTeX expr) eol tab (toLaTeX args) eol' tab' indent
-  toLaTeX EX_DISPATCH{..} = EX_DISPATCH (toLaTeX expr) (toLaTeX attr)
+  toLaTeX EX_APPLICATION{..} = EX_APPLICATION (toLaTeX expr) SPACE eol tab (toLaTeX tau) eol' tab' indent
+  toLaTeX EX_APPLICATION_TAUS{..} = EX_APPLICATION_TAUS (toLaTeX expr) SPACE eol tab (toLaTeX taus) eol' tab' indent
+  toLaTeX EX_APPLICATION_EXPRS{..} = EX_APPLICATION_EXPRS (toLaTeX expr) SPACE eol tab (toLaTeX args) eol' tab' indent
+  toLaTeX EX_DISPATCH{..} = EX_DISPATCH (toLaTeX expr) SPACE (toLaTeX attr)
   toLaTeX EX_PHI_MEET{..} = EX_PHI_MEET prefix idx (toLaTeX expr)
   toLaTeX EX_PHI_AGAIN{..} = EX_PHI_AGAIN prefix idx (toLaTeX expr)
   toLaTeX EX_META{..} = EX_META (toLaTeX meta)
@@ -288,7 +288,7 @@ instance ToLaTeX SET where
   toLaTeX ST_ATTRIBUTES{..} = ST_ATTRIBUTES (map toLaTeX attrs)
 
 instance ToLaTeX NUMBER where
-  toLaTeX ORDINAL{..} = ORDINAL (toLaTeX attr)
+  toLaTeX INDEX{..} = INDEX (toLaTeX attr)
   toLaTeX LENGTH{..} = LENGTH (toLaTeX binding)
   toLaTeX literal@LITERAL{} = literal
 

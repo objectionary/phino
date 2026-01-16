@@ -49,10 +49,10 @@ number :: Parser Y.Number
 number =
   choice
     [ do
-        _ <- symbol "ordinal" >> lparen
+        _ <- symbol "index" >> lparen
         attr <- _attribute phiParser
         _ <- rparen
-        return (Y.Ordinal attr)
+        return (Y.Index attr)
     , do
         _ <- symbol "length" >> lparen
         bd <- _binding phiParser

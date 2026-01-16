@@ -59,7 +59,7 @@ data GLOBAL = Φ | Q
 data TERMINATION = DEAD | T
   deriving (Eq, Show)
 
-data SPACE = SPACE
+data SPACE = SPACE | NO_SPACE
   deriving (Eq, Show)
 
 data EOL = EOL | NO_EOL
@@ -105,7 +105,7 @@ data ALPHA = ALPHA | ALPHA'
   deriving (Eq, Show)
 
 data PROGRAM
-  = PR_SWEET {lcb :: LCB, expr :: EXPRESSION, rcb :: RCB}
+  = PR_SWEET {lcb :: LCB, expr :: EXPRESSION, rcb :: RCB, space :: SPACE}
   | PR_SALTY {global :: GLOBAL, arrow :: ARROW, expr :: EXPRESSION}
   deriving (Eq, Show)
 
@@ -154,10 +154,10 @@ data EXPRESSION
   | EX_ATTR {attr :: ATTRIBUTE} -- sugar for $.x -> just x
   | EX_TERMINATION {termination :: TERMINATION}
   | EX_FORMATION {lsb :: LSB, eol :: EOL, tab :: TAB, binding :: BINDING, eol' :: EOL, tab' :: TAB, rsb :: RSB}
-  | EX_DISPATCH {expr :: EXPRESSION, attr :: ATTRIBUTE}
-  | EX_APPLICATION {expr :: EXPRESSION, eol :: EOL, tab :: TAB, tau :: APP_BINDING, eol' :: EOL, tab' :: TAB, indent :: Int} -- e(a1 -> e1)
-  | EX_APPLICATION_TAUS {expr :: EXPRESSION, eol :: EOL, tab :: TAB, taus :: BINDING, eol' :: EOL, tab' :: TAB, indent :: Int} -- e(a1 -> e1)(a2 -> e2)(...)
-  | EX_APPLICATION_EXPRS {expr :: EXPRESSION, eol :: EOL, tab :: TAB, args :: APP_ARG, eol' :: EOL, tab' :: TAB, indent :: Int} -- e(e1, e2, ...)
+  | EX_DISPATCH {expr :: EXPRESSION, space :: SPACE, attr :: ATTRIBUTE}
+  | EX_APPLICATION {expr :: EXPRESSION, space :: SPACE, eol :: EOL, tab :: TAB, tau :: APP_BINDING, eol' :: EOL, tab' :: TAB, indent :: Int} -- e(a1 -> e1)
+  | EX_APPLICATION_TAUS {expr :: EXPRESSION, space :: SPACE, eol :: EOL, tab :: TAB, taus :: BINDING, eol' :: EOL, tab' :: TAB, indent :: Int} -- e(a1 -> e1)(a2 -> e2)(...)
+  | EX_APPLICATION_EXPRS {expr :: EXPRESSION, space :: SPACE, eol :: EOL, tab :: TAB, args :: APP_ARG, eol' :: EOL, tab' :: TAB, indent :: Int} -- e(e1, e2, ...)
   | EX_STRING {str :: String, tab :: TAB, rhos :: [Binding]}
   | EX_NUMBER {num :: Either Int Double, tab :: TAB, rhos :: [Binding]}
   | EX_META {meta :: META}
@@ -198,7 +198,7 @@ data EQUAL
   deriving (Eq, Show)
 
 data NUMBER
-  = ORDINAL {attr :: ATTRIBUTE}
+  = INDEX {attr :: ATTRIBUTE}
   | LENGTH {binding :: BINDING}
   | LITERAL {num :: Int}
   deriving (Eq, Show)
@@ -267,7 +267,7 @@ class ToCST a b where
   toCST :: a -> (Int, EOL) -> b
 
 instance ToCST Program PROGRAM where
-  toCST (Program expr) ctx = PR_SWEET LCB (toCST expr ctx) RCB
+  toCST (Program expr) ctx = PR_SWEET LCB (toCST expr ctx) RCB NO_SPACE
 
 instance ToCST Expression EXPRESSION where
   toCST ExGlobal _ = EX_GLOBAL Φ
@@ -298,7 +298,7 @@ instance ToCST Expression EXPRESSION where
   toCST (DataString bts) (tabs, _) = EX_STRING (btsToStr bts) (TAB tabs) []
   toCST (DataNumber bts) (tabs, _) = EX_NUMBER (btsToNum bts) (TAB tabs) []
   toCST (ExDispatch ExThis attr) ctx = EX_ATTR (toCST attr ctx)
-  toCST (ExDispatch expr attr) ctx = EX_DISPATCH (toCST expr ctx) (toCST attr ctx)
+  toCST (ExDispatch expr attr) ctx = EX_DISPATCH (toCST expr ctx) NO_SPACE (toCST attr ctx)
   -- Since we convert AST to CST in sweet notation, here we're trying to get rid of unnecessary rho bindings
   -- in primitives (more details here: https://github.com/objectionary/phino/issues/451)
   -- If we find something similar to:
@@ -322,6 +322,7 @@ instance ToCST Expression EXPRESSION where
               then
                 EX_APPLICATION_TAUS
                   ex'
+                  NO_SPACE
                   eol
                   (TAB next)
                   (toCST ts (next, eol) :: BINDING)
@@ -331,6 +332,7 @@ instance ToCST Expression EXPRESSION where
               else
                 EX_APPLICATION_EXPRS
                   ex'
+                  NO_SPACE
                   eol
                   (TAB next)
                   (toCST exs (next, eol))
@@ -482,7 +484,7 @@ instance ToCST Y.Comparable COMPARABLE where
   toCST (Y.CmpNum num) _ = CMP_NUM (numberToCST num)
 
 instance ToCST Y.Number NUMBER where
-  toCST (Y.Ordinal attr) _ = ORDINAL (attributeToCST attr)
+  toCST (Y.Index attr) _ = INDEX (attributeToCST attr)
   toCST (Y.Length binding) _ = LENGTH (bindingsToCST [binding])
   toCST (Y.Literal num) _ = LITERAL num
 

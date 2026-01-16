@@ -359,15 +359,15 @@ spec = do
           ["rewrite", "--output=latex", "--sweet"]
           [ unlines
               [ "\\begin{phiquation}"
-              , "\\Big\\{[["
-              , "  |x\\char95{}o| -> Q.|z|( |y| -> 5 ),"
+              , "\\Big\\{ [["
+              , "  |x\\char95{}o| -> Q . |z| ( |y| -> 5 ),"
               , "  |q\\char36{}| -> T,"
               , "  |w| -> $,"
               , "  ^ -> Q,"
               , "  @ -> 1,"
               , "  |y| -> \"H$@^M\","
               , "  L> |Fu\\char95{}nc|"
-              , "]]\\Big\\}{.}"
+              , "]] \\Big\\}{.}"
               , "\\end{phiquation}"
               ]
           ]
@@ -378,7 +378,7 @@ spec = do
           ["rewrite", "--output=latex", "--sweet", "--nonumber", "--flat"]
           [ unlines
               [ "\\begin{phiquation*}"
-              , "\\Big\\{[[ |x| -> 5 ]]\\Big\\}{.}"
+              , "\\Big\\{ [[ |x| -> 5 ]] \\Big\\}{.}"
               , "\\end{phiquation*}"
               ]
           ]
@@ -389,7 +389,7 @@ spec = do
           ["rewrite", "--output=latex", "--sweet", "--flat", "--expression=foo"]
           [ unlines
               [ "\\begin{phiquation}"
-              , "\\phiExpression{foo} \\Big\\{[[ |x| -> 5 ]]\\Big\\}{.}"
+              , "\\phiExpression{foo} \\Big\\{ [[ |x| -> 5 ]] \\Big\\}{.}"
               , "\\end{phiquation}"
               ]
           ]
@@ -400,7 +400,7 @@ spec = do
           ["rewrite", "--output=latex", "--sweet", "--flat", "--label=foo"]
           [ unlines
               [ "\\begin{phiquation}\n\\label{foo}"
-              , "\\Big\\{[[ |x| -> 5 ]]\\Big\\}{.}"
+              , "\\Big\\{ [[ |x| -> 5 ]] \\Big\\}{.}"
               , "\\end{phiquation}"
               ]
           ]
@@ -457,9 +457,9 @@ spec = do
           ]
           [ unlines
               [ "\\begin{phiquation}"
-              , "\\Big\\{[[ |x| -> \"foo\" ]]\\Big\\} \\leadsto_{\\nameref{r:first}}"
-              , "  \\leadsto \\Big\\{Q.|x|( |y| -> \"foo\" )\\Big\\} \\leadsto_{\\nameref{r:second}}"
-              , "  \\leadsto \\Big\\{[[ |x| -> \"foo\" ]]\\Big\\}{.}"
+              , "\\Big\\{ [[ |x| -> \"foo\" ]] \\Big\\} \\leadsto_{\\nameref{r:first}}"
+              , "  \\leadsto \\Big\\{ Q . |x| ( |y| -> \"foo\" ) \\Big\\} \\leadsto_{\\nameref{r:second}}"
+              , "  \\leadsto \\Big\\{ [[ |x| -> \"foo\" ]] \\Big\\}{.}"
               , "\\end{phiquation}"
               ]
           ]
@@ -470,12 +470,12 @@ spec = do
           ["rewrite", "--normalize", "--sweet", "--sequence", "--output=latex", "--flat", "--compress", "--meet-prefix=foo"]
           [ unlines
               [ "\\begin{phiquation}"
-              , "\\Big\\{[[ |x| -> ?, |y| -> |x| ]]( |x| -> \\phiMeet{foo:1}{ [[ D> 42- ]] } ).|y|\\Big\\} \\leadsto_{\\nameref{r:copy}}"
-              , "  \\leadsto \\Big\\{\\phiMeet{foo:2}{ [[ |x| -> \\phiAgain{foo:1}, |y| -> |x| ]] }.|y|\\Big\\} \\leadsto_{\\nameref{r:dot}}"
-              , "  \\leadsto \\Big\\{\\phiAgain{foo:2}.|x|( ^ -> \\phiAgain{foo:2} )\\Big\\} \\leadsto_{\\nameref{r:dot}}"
-              , "  \\leadsto \\Big\\{\\phiAgain{foo:1}( ^ -> \\phiAgain{foo:2}, ^ -> \\phiAgain{foo:2} )\\Big\\} \\leadsto_{\\nameref{r:copy}}"
-              , "  \\leadsto \\Big\\{[[ D> 42-, ^ -> \\phiAgain{foo:2} ]]( ^ -> \\phiAgain{foo:2} )\\Big\\} \\leadsto_{\\nameref{r:stay}}"
-              , "  \\leadsto \\Big\\{[[ D> 42-, ^ -> \\phiAgain{foo:2} ]]\\Big\\}{.}"
+              , "\\Big\\{ [[ |x| -> ?, |y| -> |x| ]] ( |x| -> \\phiMeet{foo:1}{ [[ D> 42- ]] } ) . |y| \\Big\\} \\leadsto_{\\nameref{r:copy}}"
+              , "  \\leadsto \\Big\\{ \\phiMeet{foo:2}{ [[ |x| -> \\phiAgain{foo:1}, |y| -> |x| ]] } . |y| \\Big\\} \\leadsto_{\\nameref{r:dot}}"
+              , "  \\leadsto \\Big\\{ \\phiAgain{foo:2} . |x| ( ^ -> \\phiAgain{foo:2} ) \\Big\\} \\leadsto_{\\nameref{r:dot}}"
+              , "  \\leadsto \\Big\\{ \\phiAgain{foo:1} ( ^ -> \\phiAgain{foo:2}, ^ -> \\phiAgain{foo:2} ) \\Big\\} \\leadsto_{\\nameref{r:copy}}"
+              , "  \\leadsto \\Big\\{ [[ D> 42-, ^ -> \\phiAgain{foo:2} ]] ( ^ -> \\phiAgain{foo:2} ) \\Big\\} \\leadsto_{\\nameref{r:stay}}"
+              , "  \\leadsto \\Big\\{ [[ D> 42-, ^ -> \\phiAgain{foo:2} ]] \\Big\\}{.}"
               , "\\end{phiquation}"
               ]
           ]
@@ -486,12 +486,12 @@ spec = do
           ["rewrite", "--normalize", "--sweet", "--sequence", "--output=latex", "--flat", "--compress"]
           [ unlines
               [ "\\begin{phiquation}"
-              , "\\Big\\{[[ |x| -> ?, |y| -> |x| ]]( |x| -> \\phiMeet{1}{ [[ D> 42- ]] } ).|y|\\Big\\} \\leadsto_{\\nameref{r:copy}}"
-              , "  \\leadsto \\Big\\{\\phiMeet{2}{ [[ |x| -> \\phiAgain{1}, |y| -> |x| ]] }.|y|\\Big\\} \\leadsto_{\\nameref{r:dot}}"
-              , "  \\leadsto \\Big\\{\\phiAgain{2}.|x|( ^ -> \\phiAgain{2} )\\Big\\} \\leadsto_{\\nameref{r:dot}}"
-              , "  \\leadsto \\Big\\{\\phiAgain{1}( ^ -> \\phiAgain{2}, ^ -> \\phiAgain{2} )\\Big\\} \\leadsto_{\\nameref{r:copy}}"
-              , "  \\leadsto \\Big\\{[[ D> 42-, ^ -> \\phiAgain{2} ]]( ^ -> \\phiAgain{2} )\\Big\\} \\leadsto_{\\nameref{r:stay}}"
-              , "  \\leadsto \\Big\\{[[ D> 42-, ^ -> \\phiAgain{2} ]]\\Big\\}{.}"
+              , "\\Big\\{ [[ |x| -> ?, |y| -> |x| ]] ( |x| -> \\phiMeet{1}{ [[ D> 42- ]] } ) . |y| \\Big\\} \\leadsto_{\\nameref{r:copy}}"
+              , "  \\leadsto \\Big\\{ \\phiMeet{2}{ [[ |x| -> \\phiAgain{1}, |y| -> |x| ]] } . |y| \\Big\\} \\leadsto_{\\nameref{r:dot}}"
+              , "  \\leadsto \\Big\\{ \\phiAgain{2} . |x| ( ^ -> \\phiAgain{2} ) \\Big\\} \\leadsto_{\\nameref{r:dot}}"
+              , "  \\leadsto \\Big\\{ \\phiAgain{1} ( ^ -> \\phiAgain{2}, ^ -> \\phiAgain{2} ) \\Big\\} \\leadsto_{\\nameref{r:copy}}"
+              , "  \\leadsto \\Big\\{ [[ D> 42-, ^ -> \\phiAgain{2} ]] ( ^ -> \\phiAgain{2} ) \\Big\\} \\leadsto_{\\nameref{r:stay}}"
+              , "  \\leadsto \\Big\\{ [[ D> 42-, ^ -> \\phiAgain{2} ]] \\Big\\}{.}"
               , "\\end{phiquation}"
               ]
           ]
@@ -502,9 +502,9 @@ spec = do
           ["rewrite", "--normalize", "--sequence", "--flat", "--compress", "--output=latex", "--sweet"]
           [ unlines
               [ "\\begin{phiquation}"
-              , "\\Big\\{[[ |ex| -> [[ |x| -> [[ |y| -> ?, |k| -> \\phiMeet{1}{ [[ |t| -> 42 ]] } ]]( |y| -> \\phiAgain{1} ) ]].|i| ]]\\Big\\} \\leadsto_{\\nameref{r:copy}}"
-              , "  \\leadsto \\Big\\{[[ |ex| -> [[ |x| -> [[ |y| -> \\phiAgain{1}, |k| -> \\phiAgain{1} ]] ]].|i| ]]\\Big\\} \\leadsto_{\\nameref{r:stop}}"
-              , "  \\leadsto \\Big\\{[[ |ex| -> T ]]\\Big\\}{.}"
+              , "\\Big\\{ [[ |ex| -> [[ |x| -> [[ |y| -> ?, |k| -> \\phiMeet{1}{ [[ |t| -> 42 ]] } ]] ( |y| -> \\phiAgain{1} ) ]] . |i| ]] \\Big\\} \\leadsto_{\\nameref{r:copy}}"
+              , "  \\leadsto \\Big\\{ [[ |ex| -> [[ |x| -> [[ |y| -> \\phiAgain{1}, |k| -> \\phiAgain{1} ]] ]] . |i| ]] \\Big\\} \\leadsto_{\\nameref{r:stop}}"
+              , "  \\leadsto \\Big\\{ [[ |ex| -> T ]] \\Big\\}{.}"
               , "\\end{phiquation}"
               ]
           ]
@@ -515,9 +515,9 @@ spec = do
           ["rewrite", "--normalize", "--sequence", "--flat", "--compress", "--output=latex", "--sweet", "--meet-popularity=70"]
           [ unlines
               [ "\\begin{phiquation}"
-              , "\\Big\\{[[ |ex| -> [[ |x| -> [[ |y| -> ?, |k| -> [[ |t| -> 42 ]] ]]( |y| -> [[ |t| -> 42 ]] ) ]].|i| ]]\\Big\\} \\leadsto_{\\nameref{r:copy}}"
-              , "  \\leadsto \\Big\\{[[ |ex| -> [[ |x| -> [[ |y| -> [[ |t| -> 42 ]], |k| -> [[ |t| -> 42 ]] ]] ]].|i| ]]\\Big\\} \\leadsto_{\\nameref{r:stop}}"
-              , "  \\leadsto \\Big\\{[[ |ex| -> T ]]\\Big\\}{.}"
+              , "\\Big\\{ [[ |ex| -> [[ |x| -> [[ |y| -> ?, |k| -> [[ |t| -> 42 ]] ]] ( |y| -> [[ |t| -> 42 ]] ) ]] . |i| ]] \\Big\\} \\leadsto_{\\nameref{r:copy}}"
+              , "  \\leadsto \\Big\\{ [[ |ex| -> [[ |x| -> [[ |y| -> [[ |t| -> 42 ]], |k| -> [[ |t| -> 42 ]] ]] ]] . |i| ]] \\Big\\} \\leadsto_{\\nameref{r:stop}}"
+              , "  \\leadsto \\Big\\{ [[ |ex| -> T ]] \\Big\\}{.}"
               , "\\end{phiquation}"
               ]
           ]
@@ -528,9 +528,9 @@ spec = do
           ["rewrite", "--normalize", "--sequence", "--flat", "--compress", "--output=latex", "--sweet", "--meet-length=32"]
           [ unlines
               [ "\\begin{phiquation}"
-              , "\\Big\\{[[ |ex| -> [[ |x| -> [[ |y| -> ?, |k| -> [[ |t| -> 42 ]] ]]( |y| -> [[ |t| -> 42 ]] ) ]].|i| ]]\\Big\\} \\leadsto_{\\nameref{r:copy}}"
-              , "  \\leadsto \\Big\\{[[ |ex| -> [[ |x| -> [[ |y| -> [[ |t| -> 42 ]], |k| -> [[ |t| -> 42 ]] ]] ]].|i| ]]\\Big\\} \\leadsto_{\\nameref{r:stop}}"
-              , "  \\leadsto \\Big\\{[[ |ex| -> T ]]\\Big\\}{.}"
+              , "\\Big\\{ [[ |ex| -> [[ |x| -> [[ |y| -> ?, |k| -> [[ |t| -> 42 ]] ]] ( |y| -> [[ |t| -> 42 ]] ) ]] . |i| ]] \\Big\\} \\leadsto_{\\nameref{r:copy}}"
+              , "  \\leadsto \\Big\\{ [[ |ex| -> [[ |x| -> [[ |y| -> [[ |t| -> 42 ]], |k| -> [[ |t| -> 42 ]] ]] ]] . |i| ]] \\Big\\} \\leadsto_{\\nameref{r:stop}}"
+              , "  \\leadsto \\Big\\{ [[ |ex| -> T ]] \\Big\\}{.}"
               , "\\end{phiquation}"
               ]
           ]
@@ -541,8 +541,8 @@ spec = do
           ["rewrite", "--normalize", "--sequence", "--flat", "--output=latex", "--sweet", "--focus=Q.ex"]
           [ unlines
               [ "\\begin{phiquation}"
-              , "[[ |x| -> [[ |y| -> ?, |k| -> [[ |t| -> 42 ]] ]]( |y| -> [[ |t| -> 42 ]] ) ]].|i| \\leadsto_{\\nameref{r:copy}}"
-              , "  \\leadsto [[ |x| -> [[ |y| -> [[ |t| -> 42 ]], |k| -> [[ |t| -> 42 ]] ]] ]].|i| \\leadsto_{\\nameref{r:stop}}"
+              , "[[ |x| -> [[ |y| -> ?, |k| -> [[ |t| -> 42 ]] ]] ( |y| -> [[ |t| -> 42 ]] ) ]] . |i| \\leadsto_{\\nameref{r:copy}}"
+              , "  \\leadsto [[ |x| -> [[ |y| -> [[ |t| -> 42 ]], |k| -> [[ |t| -> 42 ]] ]] ]] . |i| \\leadsto_{\\nameref{r:stop}}"
               , "  \\leadsto T{.}"
               , "\\end{phiquation}"
               ]
@@ -565,8 +565,8 @@ spec = do
           ["rewrite", "--normalize", "--flat", "--sequence", "--output=latex", "--sweet", "--max-depth=1", "--max-cycles=1"]
           [ unlines
               [ "\\begin{phiquation}"
-              , "\\Big\\{[[ |x| -> |y|, |y| -> |x| ]].|x|\\Big\\} \\leadsto_{\\nameref{r:dot}}"
-              , "  \\leadsto \\Big\\{[[ |x| -> |y|, |y| -> |x| ]].|y|( ^ -> [[ |x| -> |y|, |y| -> |x| ]] )\\Big\\} \\leadsto"
+              , "\\Big\\{ [[ |x| -> |y|, |y| -> |x| ]] . |x| \\Big\\} \\leadsto_{\\nameref{r:dot}}"
+              , "  \\leadsto \\Big\\{ [[ |x| -> |y|, |y| -> |x| ]] . |y| ( ^ -> [[ |x| -> |y|, |y| -> |x| ]] ) \\Big\\} \\leadsto"
               , "  \\leadsto \\dots"
               , "\\end{phiquation}"
               ]
@@ -759,12 +759,12 @@ spec = do
           [ intercalate
               "\n"
               [ "\\begin{phiquation}"
-              , "\\Big\\{[[ @ -> [[ |x| -> [[ D> 01-, |y| -> ? ]]( |y| -> [[]] ) ]].|x| ]]\\Big\\} \\leadsto_{\\nameref{r:contextualize}}"
-              , "  \\leadsto \\Big\\{[[ |x| -> [[ D> 01-, |y| -> ? ]]( |y| -> [[]] ) ]].|x|\\Big\\} \\leadsto_{\\nameref{r:copy}}"
-              , "  \\leadsto \\Big\\{[[ |x| -> [[ D> 01-, |y| -> [[]] ]] ]].|x|\\Big\\} \\leadsto_{\\nameref{r:dot}}"
-              , "  \\leadsto \\Big\\{[[ D> 01-, |y| -> [[]] ]]( ^ -> [[ |x| -> [[ D> 01-, |y| -> [[]] ]] ]] )\\Big\\} \\leadsto_{\\nameref{r:copy}}"
-              , "  \\leadsto \\Big\\{[[ D> 01-, |y| -> [[]], ^ -> [[ |x| -> [[ D> 01-, |y| -> [[]] ]] ]] ]]\\Big\\} \\leadsto_{\\nameref{r:Mprim}}"
-              , "  \\leadsto \\Big\\{[[ D> 01-, |y| -> [[]], ^ -> [[ |x| -> [[ D> 01-, |y| -> [[]] ]] ]] ]]\\Big\\}{.}"
+              , "\\Big\\{ [[ @ -> [[ |x| -> [[ D> 01-, |y| -> ? ]] ( |y| -> [[]] ) ]] . |x| ]] \\Big\\} \\leadsto_{\\nameref{r:contextualize}}"
+              , "  \\leadsto \\Big\\{ [[ |x| -> [[ D> 01-, |y| -> ? ]] ( |y| -> [[]] ) ]] . |x| \\Big\\} \\leadsto_{\\nameref{r:copy}}"
+              , "  \\leadsto \\Big\\{ [[ |x| -> [[ D> 01-, |y| -> [[]] ]] ]] . |x| \\Big\\} \\leadsto_{\\nameref{r:dot}}"
+              , "  \\leadsto \\Big\\{ [[ D> 01-, |y| -> [[]] ]] ( ^ -> [[ |x| -> [[ D> 01-, |y| -> [[]] ]] ]] ) \\Big\\} \\leadsto_{\\nameref{r:copy}}"
+              , "  \\leadsto \\Big\\{ [[ D> 01-, |y| -> [[]], ^ -> [[ |x| -> [[ D> 01-, |y| -> [[]] ]] ]] ]] \\Big\\} \\leadsto_{\\nameref{r:Mprim}}"
+              , "  \\leadsto \\Big\\{ [[ D> 01-, |y| -> [[]], ^ -> [[ |x| -> [[ D> 01-, |y| -> [[]] ]] ]] ]] \\Big\\}{.}"
               , "\\end{phiquation}"
               , "01-"
               ]
@@ -822,10 +822,10 @@ spec = do
         [ unlines
             [ "\\begin{tabular}{rl}"
             , "\\trrule{COPY}"
-            , "  { [[ B_1, \\tau -> ?, B_2 ]]( \\tau -> e_1 ) }"
+            , "  { [[ B_1, \\tau -> ?, B_2 ]] ( \\tau -> e_1 ) }"
             , "  { [[ B_1, \\tau -> e_3, B_2 ]] }"
-            , "  { if $ NF( e_1 ) $ }"
-            , "  { where $ e_2 <- scope( e_1 ) $ and $ e_3 <- \\ctx{ e_1 }{ e_2 } $ }"
+            , "  { if $ \\isnormal{ e_1 } $ }"
+            , "  { where $ e_2 \\coloneqq \\scopeof{ e_1 } $ and $ e_3 \\coloneqq \\ctx{ e_1 }{ e_2 } $ }"
             , "\\end{tabular}"
             ]
         ]
@@ -841,59 +841,59 @@ spec = do
         [ unlines
             [ "\\begin{tabular}{rl}"
             , "\\trrule{ALPHA}"
-            , "  { [[ B_1, \\tau_1 -> ?, B_2 ]]( \\tau_2 -> e ) }"
-            , "  { [[ B_1, \\tau_1 -> ?, B_2 ]]( \\tau_1 -> e ) }"
-            , "  { if $ ordinal( \\tau_2 ) = |B_1| $ }"
+            , "  { [[ B_1, \\tau_1 -> ?, B_2 ]] ( \\tau_2 -> e ) }"
+            , "  { [[ B_1, \\tau_1 -> ?, B_2 ]] ( \\tau_1 -> e ) }"
+            , "  { if $ \\indexof{ \\tau_2 } = |B_1| $ }"
             , "  { }"
             , "\\trrule{COPY}"
-            , "  { [[ B_1, \\tau -> ?, B_2 ]]( \\tau -> e_1 ) }"
+            , "  { [[ B_1, \\tau -> ?, B_2 ]] ( \\tau -> e_1 ) }"
             , "  { [[ B_1, \\tau -> e_3, B_2 ]] }"
-            , "  { if $ NF( e_1 ) $ }"
-            , "  { where $ e_2 <- scope( e_1 ) $ and $ e_3 <- \\ctx{ e_1 }{ e_2 } $ }"
+            , "  { if $ \\isnormal{ e_1 } $ }"
+            , "  { where $ e_2 \\coloneqq \\scopeof{ e_1 } $ and $ e_3 \\coloneqq \\ctx{ e_1 }{ e_2 } $ }"
             , "\\trrule{DC}"
-            , "  { T( \\tau -> e ) }"
+            , "  { T ( \\tau -> e ) }"
             , "  { T }"
             , "  { }"
             , "  { }"
             , "\\trrule{DD}"
-            , "  { T.\\tau }"
+            , "  { T . \\tau }"
             , "  { T }"
             , "  { }"
             , "  { }"
             , "\\trrule{DOT}"
-            , "  { [[ B_1, \\tau -> e_1, B_2 ]].\\tau }"
-            , "  { e_2( ^ -> [[ B_1, \\tau -> e_1, B_2 ]] ) }"
-            , "  { if $ NF( e_1 ) $ }"
-            , "  { where $ e_2 <- \\ctx{ e_1 }{ [[ B_1, \\tau -> e_1, B_2 ]] } $ }"
+            , "  { [[ B_1, \\tau -> e_1, B_2 ]] . \\tau }"
+            , "  { e_2 ( ^ -> [[ B_1, \\tau -> e_1, B_2 ]] ) }"
+            , "  { if $ \\isnormal{ e_1 } $ }"
+            , "  { where $ e_2 \\coloneqq \\ctx{ e_1 }{ [[ B_1, \\tau -> e_1, B_2 ]] } $ }"
             , "\\trrule{MISS}"
-            , "  { [[ B ]]( \\tau -> e ) }"
+            , "  { [[ B ]] ( \\tau -> e ) }"
             , "  { T }"
-            , "  { if $ \\( \\tau \\notin B \\) \\;\\text{and}\\; \\( \\tau \\notin [ ~0, ~1, \\dots ] \\) $ }"
+            , "  { if $ \\tau \\notin B \\;\\text{and}\\; \\tau \\notin [ ~0, ~1, \\dots ] $ }"
             , "  { }"
             , "\\trrule{NULL}"
-            , "  { [[ B_1, \\tau -> ?, B_2 ]].\\tau }"
+            , "  { [[ B_1, \\tau -> ?, B_2 ]] . \\tau }"
             , "  { T }"
             , "  { }"
             , "  { }"
             , "\\trrule{OVER}"
-            , "  { [[ B_1, \\tau -> e_1, B_2 ]]( \\tau -> e_2 ) }"
+            , "  { [[ B_1, \\tau -> e_1, B_2 ]] ( \\tau -> e_2 ) }"
             , "  { T }"
             , "  { if $ \\tau \\not= ^ $ }"
             , "  { }"
             , "\\trrule{PHI}"
-            , "  { [[ B ]].\\tau }"
-            , "  { [[ B ]].@.\\tau }"
-            , "  { if $ \\( @ \\in B \\) \\;\\text{and}\\; \\( \\tau \\notin B \\) $ }"
+            , "  { [[ B ]] . \\tau }"
+            , "  { [[ B ]] . @ . \\tau }"
+            , "  { if $ @ \\in B \\;\\text{and}\\; \\tau \\notin B $ }"
             , "  { }"
             , "\\trrule{STAY}"
-            , "  { [[ B_1, ^ -> e_1, B_2 ]]( ^ -> e_2 ) }"
+            , "  { [[ B_1, ^ -> e_1, B_2 ]] ( ^ -> e_2 ) }"
             , "  { [[ B_1, ^ -> e_1, B_2 ]] }"
             , "  { }"
             , "  { }"
             , "\\trrule{STOP}"
-            , "  { [[ B ]].\\tau }"
+            , "  { [[ B ]] . \\tau }"
             , "  { T }"
-            , "  { if $ \\( \\tau \\notin B \\) \\;\\text{and}\\; \\( @ \\notin B \\) \\;\\text{and}\\; \\( \\lambda \\notin B \\) $ }"
+            , "  { if $ \\tau \\notin B \\;\\text{and}\\; @ \\notin B \\;\\text{and}\\; L \\notin B $ }"
             , "  { }"
             , "\\end{tabular}"
             ]

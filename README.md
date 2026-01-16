@@ -156,52 +156,24 @@ top level formations:
 
 ```bash
 $ cat bytes.phi
-{⟦
-  org ↦ ⟦
-    eolang ↦ ⟦
-      bytes ↦ ⟦
-        data ↦ ∅,
-        φ ↦ data
-      ⟧
-    ⟧
-  ⟧
-⟧}
+{⟦ bytes(data) ↦ ⟦ φ ↦ data ⟧ ⟧}
 $ cat number.phi
 {⟦
-  org ↦ ⟦
-    eolang ↦ ⟦
-      number ↦ ⟦
-        as-bytes ↦ ∅,
-        φ ↦ as-bytes,
-        plus(x) ↦ ⟦
-          λ ⤍ L_org_eolang_number_plus
-        ⟧
-      ⟧
-    ⟧
+  number(as-bytes) ↦ ⟦
+    φ ↦ as-bytes,
+    plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧
   ⟧
 ⟧}
-$ cat foo.phi
+$ cat minus.phi
+{⟦ number ↦ ⟦ minus(x) ↦ ⟦ λ ⤍ L_number_minus ⟧ ⟧ ⟧}
+$ phino merge bytes.phi number.phi minus.phi --sweet
 {⟦
-  foo ↦ 5.plus(3)
-⟧}
-$ phino merge bytes.phi number.phi foo.phi --sweet
-{⟦
-  org ↦ ⟦
-    eolang ↦ ⟦
-      bytes ↦ ⟦
-        data ↦ ∅,
-        φ ↦ data
-      ⟧,
-      number ↦ ⟦
-        as-bytes ↦ ∅,
-        φ ↦ as-bytes,
-        plus(x) ↦ ⟦
-          λ ⤍ L_org_eolang_number_plus
-        ⟧
-      ⟧
-    ⟧
-  ⟧,
-  foo ↦ 5.plus(3)
+  bytes(data) ↦ ⟦ φ ↦ data ⟧,
+  number(as-bytes) ↦ ⟦
+    φ ↦ as-bytes,
+    plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧,
+    minus(x) ↦ ⟦ λ ⤍ L_number_minus ⟧
+  ⟧
 ⟧}
 ```
 
@@ -216,18 +188,35 @@ B >> ⟦ ρ ↦ ∅ ⟧
 d >> 68-65-6C-6C-6F
 ```
 
-## Explain (under development)
+## Explain
 
 You can _explain_ rewriting rule by printing them in [LaTeX][latex] format:
 
 ```bash
-$ phino explain --rule=my-rule.yaml
-\documentclass{article}
-\usepackage{amsmath}
-\begin{document}
-\rule{My custom rule}
-\...
-\end{document}
+$ phino explain --normalize
+\begin{tabular}{rl}
+\trrule{ALPHA}
+  { [[ B_1, \tau_1 -> ?, B_2 ]] ( \tau_2 -> e ) }
+  { [[ B_1, \tau_1 -> ?, B_2 ]] ( \tau_1 -> e ) }
+  { if $ \indexof{ \tau_2 } = |B_1| $ }
+  { }
+\trrule{COPY}
+  { [[ B_1, \tau -> ?, B_2 ]] ( \tau -> e_1 ) }
+  { [[ B_1, \tau -> e_3, B_2 ]] }
+  { if $ \isnormal{ e_1 } $ }
+  { where $ e_2 \coloneqq \scopeof{ e_1 } $ and $ e_3 \coloneqq \ctx{ e_1 }{ e_2 } $ }
+\trrule{DC}
+  { T ( \tau -> e ) }
+  { T }
+  { }
+  { }
+...
+\trrule{STOP}
+  { [[ B ]] . \tau }
+  { T }
+  { if $ \tau \notin B \;\text{and}\; @ \notin B \;\text{and}\; L \notin B $ }
+  { }
+\end{tabular}
 ```
 
 For more details, use `phino [COMMAND] --help` option.
@@ -278,7 +267,7 @@ Comparable:              # comparable object that may be used in 'eq' condition
 
 Number:                  # comparable number
   = Integer              # just regular integer
-  | ordinal: Attribute'  # calculate index of alpha attribute
+  | index: Attribute'  # calculate index of alpha attribute
   | length: BiMeta'      # calculate length of bindings by given meta binding
 
 Extension:               # substitutions extension used to introduce new meta variables

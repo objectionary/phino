@@ -154,7 +154,7 @@ morph (expr, seq) ctx@DataizeContext{..} = do
         then morph (ExTermination, seq) ctx -- PRIM
         else do
           prog' <- withLocatedExpression _locator expr _program
-          (rewrittens', _) <- rewrite prog' normalizationRules (switchContext ctx) -- NMZ todo
+          (rewrittens', _) <- rewrite prog' normalizationRules (switchContext ctx) -- NMZ
           let seq' = reverse rewrittens' <> tail seq
           expr' <- locatedExpression _locator (fst (head seq'))
           morph (expr', seq') ctx
