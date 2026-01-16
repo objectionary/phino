@@ -19,22 +19,22 @@
 </span><span id="line-19"></span><span>
 </span><span id="line-20"></span><span class="annot"><a href="CLI.Parsers.html#validateIntOption"><span class="hs-identifier hs-type">validateIntOption</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/ptprs-pplctv-0.19.0.0-b1353d5d/share/doc/html/src/Options.Applicative.Types.html#ReadM"><span class="hs-identifier hs-type">ReadM</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span>
 </span><span id="line-21"></span><span id="validateIntOption"><span class="annot"><span class="annottext">validateIntOption :: (Int -&gt; Bool) -&gt; String -&gt; Int -&gt; ReadM Int
-</span><a href="CLI.Parsers.html#validateIntOption"><span class="hs-identifier hs-var hs-var">validateIntOption</span></a></span></span><span> </span><span id="local-6989586621679235032"><span class="annot"><span class="annottext">Int -&gt; Bool
-</span><a href="#local-6989586621679235032"><span class="hs-identifier hs-var">cmp</span></a></span></span><span> </span><span id="local-6989586621679235033"><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679235033"><span class="hs-identifier hs-var">msg</span></a></span></span><span> </span><span id="local-6989586621679235034"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679235034"><span class="hs-identifier hs-var">num</span></a></span></span><span>
+</span><a href="CLI.Parsers.html#validateIntOption"><span class="hs-identifier hs-var hs-var">validateIntOption</span></a></span></span><span> </span><span id="local-6989586621679235022"><span class="annot"><span class="annottext">Int -&gt; Bool
+</span><a href="#local-6989586621679235022"><span class="hs-identifier hs-var">cmp</span></a></span></span><span> </span><span id="local-6989586621679235023"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679235023"><span class="hs-identifier hs-var">msg</span></a></span></span><span> </span><span id="local-6989586621679235024"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679235024"><span class="hs-identifier hs-var">num</span></a></span></span><span>
 </span><span id="line-22"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Bool
-</span><a href="#local-6989586621679235032"><span class="hs-identifier hs-var">cmp</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679235034"><span class="hs-identifier hs-var">num</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; ReadM Int
+</span><a href="#local-6989586621679235022"><span class="hs-identifier hs-var">cmp</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679235024"><span class="hs-identifier hs-var">num</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; ReadM Int
 forall a. a -&gt; ReadM a
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679235034"><span class="hs-identifier hs-var">num</span></a></span><span>
+</span><a href="#local-6989586621679235024"><span class="hs-identifier hs-var">num</span></a></span><span>
 </span><span id="line-23"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
 </span><span class="hs-identifier hs-var">otherwise</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; ReadM Int
 forall a. String -&gt; ReadM a
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/ptprs-pplctv-0.19.0.0-b1353d5d/share/doc/html/src/Options.Applicative.Types.html#readerError"><span class="hs-identifier hs-var">readerError</span></a></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679235033"><span class="hs-identifier hs-var">msg</span></a></span><span>
+</span><a href="#local-6989586621679235023"><span class="hs-identifier hs-var">msg</span></a></span><span>
 </span><span id="line-24"></span><span>
 </span><span id="line-25"></span><span class="annot"><a href="CLI.Parsers.html#optLogLevel"><span class="hs-identifier hs-type">optLogLevel</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/ptprs-pplctv-0.19.0.0-b1353d5d/share/doc/html/src/Options.Applicative.Types.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="annot"><a href="Logger.html#LogLevel"><span class="hs-identifier hs-type">LogLevel</span></a></span><span>
 </span><span id="line-26"></span><span id="optLogLevel"><span class="annot"><span class="annottext">optLogLevel :: Parser LogLevel
@@ -43,7 +43,7 @@ forall a. String -&gt; ReadM a
 forall a. ReadM a -&gt; Mod OptionFields a -&gt; Parser a
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/ptprs-pplctv-0.19.0.0-b1353d5d/share/doc/html/src/Options.Applicative.Builder.html#option"><span class="hs-identifier hs-var">option</span></a></span><span>
 </span><span id="line-28"></span><span>    </span><span class="annot"><span class="annottext">ReadM LogLevel
-</span><a href="#local-6989586621679235038"><span class="hs-identifier hs-var">parseLogLevel</span></a></span><span>
+</span><a href="#local-6989586621679235028"><span class="hs-identifier hs-var">parseLogLevel</span></a></span><span>
 </span><span id="line-29"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="annottext">String -&gt; Mod OptionFields LogLevel
 forall (f :: * -&gt; *) a. HasName f =&gt; String -&gt; Mod f a
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/ptprs-pplctv-0.19.0.0-b1353d5d/share/doc/html/src/Options.Applicative.Builder.html#long"><span class="hs-identifier hs-var">long</span></a></span><span> </span><span class="annot"><span class="annottext">String
@@ -92,19 +92,19 @@ forall a (f :: * -&gt; *). Show a =&gt; Mod f a
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/ptprs-pplctv-0.19.0.0-b1353d5d/share/doc/html/src/Options.Applicative.Builder.html#showDefault"><span class="hs-identifier hs-var">showDefault</span></a></span><span>
 </span><span id="line-34"></span><span>    </span><span class="hs-special">)</span><span>
 </span><span id="line-35"></span><span>  </span><span class="hs-keyword">where</span><span>
-</span><span id="line-36"></span><span>    </span><span class="annot"><a href="#local-6989586621679235038"><span class="hs-identifier hs-type">parseLogLevel</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/ptprs-pplctv-0.19.0.0-b1353d5d/share/doc/html/src/Options.Applicative.Types.html#ReadM"><span class="hs-identifier hs-type">ReadM</span></a></span><span> </span><span class="annot"><a href="Logger.html#LogLevel"><span class="hs-identifier hs-type">LogLevel</span></a></span><span>
-</span><span id="line-37"></span><span>    </span><span id="local-6989586621679235038"><span class="annot"><span class="annottext">parseLogLevel :: ReadM LogLevel
-</span><a href="#local-6989586621679235038"><span class="hs-identifier hs-var hs-var">parseLogLevel</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(String -&gt; Either String LogLevel) -&gt; ReadM LogLevel
+</span><span id="line-36"></span><span>    </span><span class="annot"><a href="#local-6989586621679235028"><span class="hs-identifier hs-type">parseLogLevel</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/ptprs-pplctv-0.19.0.0-b1353d5d/share/doc/html/src/Options.Applicative.Types.html#ReadM"><span class="hs-identifier hs-type">ReadM</span></a></span><span> </span><span class="annot"><a href="Logger.html#LogLevel"><span class="hs-identifier hs-type">LogLevel</span></a></span><span>
+</span><span id="line-37"></span><span>    </span><span id="local-6989586621679235028"><span class="annot"><span class="annottext">parseLogLevel :: ReadM LogLevel
+</span><a href="#local-6989586621679235028"><span class="hs-identifier hs-var hs-var">parseLogLevel</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(String -&gt; Either String LogLevel) -&gt; ReadM LogLevel
 forall a. (String -&gt; Either String a) -&gt; ReadM a
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/ptprs-pplctv-0.19.0.0-b1353d5d/share/doc/html/src/Options.Applicative.Builder.html#eitherReader"><span class="hs-identifier hs-var">eitherReader</span></a></span><span> </span><span class="annot"><span class="annottext">((String -&gt; Either String LogLevel) -&gt; ReadM LogLevel)
 -&gt; (String -&gt; Either String LogLevel) -&gt; ReadM LogLevel
 forall a b. (a -&gt; b) -&gt; a -&gt; b
-</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679235049"><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679235049"><span class="hs-identifier hs-var">lvl</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">(Char -&gt; Char) -&gt; String -&gt; String
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679235039"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679235039"><span class="hs-identifier hs-var">lvl</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">(Char -&gt; Char) -&gt; String -&gt; String
 forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
 </span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="annot"><span class="annottext">Char -&gt; Char
 </span><span class="hs-identifier hs-var">toUpper</span></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679235049"><span class="hs-identifier hs-var">lvl</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><a href="#local-6989586621679235039"><span class="hs-identifier hs-var">lvl</span></a></span><span> </span><span class="hs-keyword">of</span><span>
 </span><span id="line-38"></span><span>      </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;DEBUG&quot;</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">LogLevel -&gt; Either String LogLevel
 forall a b. b -&gt; Either a b
@@ -135,7 +135,7 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-string">&quot;unknown log-level: &quot;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679235049"><span class="hs-identifier hs-var">lvl</span></a></span><span>
+</span><a href="#local-6989586621679235039"><span class="hs-identifier hs-var">lvl</span></a></span><span>
 </span><span id="line-43"></span><span>
 </span><span id="line-44"></span><span class="annot"><a href="CLI.Parsers.html#optLogLines"><span class="hs-identifier hs-type">optLogLines</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/ptprs-pplctv-0.19.0.0-b1353d5d/share/doc/html/src/Options.Applicative.Types.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span>
 </span><span id="line-45"></span><span id="optLogLines"><span class="annot"><span class="annottext">optLogLines :: Parser Int
@@ -242,19 +242,19 @@ forall a (f :: * -&gt; *). Show a =&gt; Mod f a
 </span><span id="line-55"></span><span>
 </span><span id="line-56"></span><span class="annot"><a href="CLI.Parsers.html#parseIOFormat"><span class="hs-identifier hs-type">parseIOFormat</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/ptprs-pplctv-0.19.0.0-b1353d5d/share/doc/html/src/Options.Applicative.Types.html#ReadM"><span class="hs-identifier hs-type">ReadM</span></a></span><span> </span><span class="annot"><a href="CLI.Types.html#IOFormat"><span class="hs-identifier hs-type">IOFormat</span></a></span><span>
 </span><span id="line-57"></span><span id="parseIOFormat"><span class="annot"><span class="annottext">parseIOFormat :: String -&gt; ReadM IOFormat
-</span><a href="CLI.Parsers.html#parseIOFormat"><span class="hs-identifier hs-var hs-var">parseIOFormat</span></a></span></span><span> </span><span id="local-6989586621679235059"><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679235059"><span class="hs-identifier hs-var">type'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(String -&gt; Either String IOFormat) -&gt; ReadM IOFormat
+</span><a href="CLI.Parsers.html#parseIOFormat"><span class="hs-identifier hs-var hs-var">parseIOFormat</span></a></span></span><span> </span><span id="local-6989586621679235049"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679235049"><span class="hs-identifier hs-var">type'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(String -&gt; Either String IOFormat) -&gt; ReadM IOFormat
 forall a. (String -&gt; Either String a) -&gt; ReadM a
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/ptprs-pplctv-0.19.0.0-b1353d5d/share/doc/html/src/Options.Applicative.Builder.html#eitherReader"><span class="hs-identifier hs-var">eitherReader</span></a></span><span> </span><span class="annot"><span class="annottext">((String -&gt; Either String IOFormat) -&gt; ReadM IOFormat)
 -&gt; (String -&gt; Either String IOFormat) -&gt; ReadM IOFormat
 forall a b. (a -&gt; b) -&gt; a -&gt; b
-</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679235060"><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679235060"><span class="hs-identifier hs-var">format</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Char -&gt; Char) -&gt; String -&gt; String
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679235050"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679235050"><span class="hs-identifier hs-var">format</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Char -&gt; Char) -&gt; String -&gt; String
 forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
 </span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="annot"><span class="annottext">Char -&gt; Char
 </span><span class="hs-identifier hs-var">toLower</span></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679235060"><span class="hs-identifier hs-var">format</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679235059"><span class="hs-identifier hs-var">type'</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">of</span><span>
+</span><a href="#local-6989586621679235050"><span class="hs-identifier hs-var">format</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679235049"><span class="hs-identifier hs-var">type'</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">of</span><span>
 </span><span id="line-58"></span><span>  </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;xmir&quot;</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">IOFormat -&gt; Either String IOFormat
@@ -280,8 +280,8 @@ forall a b. a -&gt; Either a b
 forall r. PrintfType r =&gt; String -&gt; r
 </span><span class="hs-identifier hs-var">printf</span></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;The value '%s' can't be used for '--%s' option, use --help to check possible values&quot;</span></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679235060"><span class="hs-identifier hs-var">format</span></a></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679235059"><span class="hs-identifier hs-var">type'</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679235050"><span class="hs-identifier hs-var">format</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679235049"><span class="hs-identifier hs-var">type'</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-62"></span><span>
 </span><span id="line-63"></span><span class="annot"><a href="CLI.Parsers.html#optOutputFormat"><span class="hs-identifier hs-type">optOutputFormat</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/ptprs-pplctv-0.19.0.0-b1353d5d/share/doc/html/src/Options.Applicative.Types.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="annot"><a href="CLI.Types.html#IOFormat"><span class="hs-identifier hs-type">IOFormat</span></a></span><span>
 </span><span id="line-64"></span><span id="optOutputFormat"><span class="annot"><span class="annottext">optOutputFormat :: Parser IOFormat

@@ -17,11 +17,11 @@
 </span><span id="line-17"></span><span>
 </span><span id="line-18"></span><span class="annot"><a href="CLI.html#handler"><span class="hs-identifier hs-type">handler</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">SomeException</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
 </span><span id="line-19"></span><span id="handler"><span class="annot"><span class="annottext">handler :: SomeException -&gt; IO ()
-</span><a href="CLI.html#handler"><span class="hs-identifier hs-var hs-var">handler</span></a></span></span><span> </span><span id="local-6989586621679235966"><span class="annot"><span class="annottext">SomeException
-</span><a href="#local-6989586621679235966"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">SomeException -&gt; Maybe ExitCode
+</span><a href="CLI.html#handler"><span class="hs-identifier hs-var hs-var">handler</span></a></span></span><span> </span><span id="local-6989586621679235956"><span class="annot"><span class="annottext">SomeException
+</span><a href="#local-6989586621679235956"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">SomeException -&gt; Maybe ExitCode
 forall e. Exception e =&gt; SomeException -&gt; Maybe e
 </span><span class="hs-identifier hs-var">fromException</span></span><span> </span><span class="annot"><span class="annottext">SomeException
-</span><a href="#local-6989586621679235966"><span class="hs-identifier hs-var">e</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><a href="#local-6989586621679235956"><span class="hs-identifier hs-var">e</span></a></span><span> </span><span class="hs-keyword">of</span><span>
 </span><span id="line-20"></span><span>  </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span class="annot"><span class="annottext">ExitCode
 </span><span class="hs-identifier hs-var">ExitSuccess</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">() -&gt; IO ()
 forall a. a -&gt; IO a
@@ -33,80 +33,80 @@ forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><a href="Logger.html#logError"><span class="hs-identifier hs-var">logError</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">SomeException -&gt; String
 forall e. Exception e =&gt; e -&gt; String
 </span><span class="hs-identifier hs-var">displayException</span></span><span> </span><span class="annot"><span class="annottext">SomeException
-</span><a href="#local-6989586621679235966"><span class="hs-identifier hs-var">e</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679235956"><span class="hs-identifier hs-var">e</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-23"></span><span>    </span><span class="annot"><span class="annottext">IO ()
 forall a. IO a
 </span><span class="hs-identifier hs-var">exitFailure</span></span><span>
 </span><span id="line-24"></span><span>
 </span><span id="line-25"></span><span class="annot"><a href="CLI.html#setLogger"><span class="hs-identifier hs-type">setLogger</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="CLI.Types.html#Command"><span class="hs-identifier hs-type">Command</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
 </span><span id="line-26"></span><span id="setLogger"><span class="annot"><span class="annottext">setLogger :: Command -&gt; IO ()
-</span><a href="CLI.html#setLogger"><span class="hs-identifier hs-var hs-var">setLogger</span></a></span></span><span> </span><span id="local-6989586621679235970"><span class="annot"><span class="annottext">Command
-</span><a href="#local-6989586621679235970"><span class="hs-identifier hs-var">cmd</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
-</span><span id="line-27"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679235971"><span class="annot"><span class="annottext">LogLevel
-</span><a href="#local-6989586621679235971"><span class="hs-identifier hs-var">level</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679235972"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679235972"><span class="hs-identifier hs-var">lns</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Command
-</span><a href="#local-6989586621679235970"><span class="hs-identifier hs-var">cmd</span></a></span><span> </span><span class="hs-keyword">of</span><span>
-</span><span id="line-28"></span><span>        </span><span class="annot"><a href="CLI.Types.html#CmdRewrite"><span class="hs-identifier hs-type">CmdRewrite</span></a></span><span> </span><span class="annot"><a href="CLI.Types.html#OptsRewrite"><span class="hs-identifier hs-type">OptsRewrite</span></a></span><span class="hs-special">{</span><span id="local-6989586621679235975"><span class="annot"><span class="annottext">LogLevel
+</span><a href="CLI.html#setLogger"><span class="hs-identifier hs-var hs-var">setLogger</span></a></span></span><span> </span><span id="local-6989586621679235960"><span class="annot"><span class="annottext">Command
+</span><a href="#local-6989586621679235960"><span class="hs-identifier hs-var">cmd</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-27"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679235961"><span class="annot"><span class="annottext">LogLevel
+</span><a href="#local-6989586621679235961"><span class="hs-identifier hs-var">level</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679235962"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679235962"><span class="hs-identifier hs-var">lns</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Command
+</span><a href="#local-6989586621679235960"><span class="hs-identifier hs-var">cmd</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-28"></span><span>        </span><span class="annot"><a href="CLI.Types.html#CmdRewrite"><span class="hs-identifier hs-type">CmdRewrite</span></a></span><span> </span><span class="annot"><a href="CLI.Types.html#OptsRewrite"><span class="hs-identifier hs-type">OptsRewrite</span></a></span><span class="hs-special">{</span><span id="local-6989586621679235965"><span class="annot"><span class="annottext">LogLevel
 _logLevel :: LogLevel
 $sel:_logLevel:OptsRewrite :: OptsRewrite -&gt; LogLevel
-</span><a href="#local-6989586621679235975"><span class="hs-identifier hs-var hs-var">_logLevel</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679235977"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679235965"><span class="hs-identifier hs-var hs-var">_logLevel</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679235967"><span class="annot"><span class="annottext">Int
 _logLines :: Int
 $sel:_logLines:OptsRewrite :: OptsRewrite -&gt; Int
-</span><a href="#local-6989586621679235977"><span class="hs-identifier hs-var hs-var">_logLines</span></a></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">LogLevel
-</span><a href="#local-6989586621679235975"><span class="hs-identifier hs-var">_logLevel</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679235977"><span class="hs-identifier hs-var">_logLines</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-29"></span><span>        </span><span class="annot"><a href="CLI.Types.html#CmdDataize"><span class="hs-identifier hs-type">CmdDataize</span></a></span><span> </span><span class="annot"><a href="CLI.Types.html#OptsDataize"><span class="hs-identifier hs-type">OptsDataize</span></a></span><span class="hs-special">{</span><span id="local-6989586621679235981"><span class="annot"><span class="annottext">LogLevel
+</span><a href="#local-6989586621679235967"><span class="hs-identifier hs-var hs-var">_logLines</span></a></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">LogLevel
+</span><a href="#local-6989586621679235965"><span class="hs-identifier hs-var">_logLevel</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679235967"><span class="hs-identifier hs-var">_logLines</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-29"></span><span>        </span><span class="annot"><a href="CLI.Types.html#CmdDataize"><span class="hs-identifier hs-type">CmdDataize</span></a></span><span> </span><span class="annot"><a href="CLI.Types.html#OptsDataize"><span class="hs-identifier hs-type">OptsDataize</span></a></span><span class="hs-special">{</span><span id="local-6989586621679235971"><span class="annot"><span class="annottext">LogLevel
 _logLevel :: LogLevel
 $sel:_logLevel:OptsDataize :: OptsDataize -&gt; LogLevel
-</span><a href="#local-6989586621679235981"><span class="hs-identifier hs-var hs-var">_logLevel</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679235983"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679235971"><span class="hs-identifier hs-var hs-var">_logLevel</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679235973"><span class="annot"><span class="annottext">Int
 _logLines :: Int
 $sel:_logLines:OptsDataize :: OptsDataize -&gt; Int
-</span><a href="#local-6989586621679235983"><span class="hs-identifier hs-var hs-var">_logLines</span></a></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">LogLevel
-</span><a href="#local-6989586621679235981"><span class="hs-identifier hs-var">_logLevel</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679235983"><span class="hs-identifier hs-var">_logLines</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-30"></span><span>        </span><span class="annot"><a href="CLI.Types.html#CmdExplain"><span class="hs-identifier hs-type">CmdExplain</span></a></span><span> </span><span class="annot"><a href="CLI.Types.html#OptsExplain"><span class="hs-identifier hs-type">OptsExplain</span></a></span><span class="hs-special">{</span><span id="local-6989586621679235987"><span class="annot"><span class="annottext">LogLevel
+</span><a href="#local-6989586621679235973"><span class="hs-identifier hs-var hs-var">_logLines</span></a></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">LogLevel
+</span><a href="#local-6989586621679235971"><span class="hs-identifier hs-var">_logLevel</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679235973"><span class="hs-identifier hs-var">_logLines</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-30"></span><span>        </span><span class="annot"><a href="CLI.Types.html#CmdExplain"><span class="hs-identifier hs-type">CmdExplain</span></a></span><span> </span><span class="annot"><a href="CLI.Types.html#OptsExplain"><span class="hs-identifier hs-type">OptsExplain</span></a></span><span class="hs-special">{</span><span id="local-6989586621679235977"><span class="annot"><span class="annottext">LogLevel
 _logLevel :: LogLevel
 $sel:_logLevel:OptsExplain :: OptsExplain -&gt; LogLevel
-</span><a href="#local-6989586621679235987"><span class="hs-identifier hs-var hs-var">_logLevel</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679235989"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679235977"><span class="hs-identifier hs-var hs-var">_logLevel</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679235979"><span class="annot"><span class="annottext">Int
 _logLines :: Int
 $sel:_logLines:OptsExplain :: OptsExplain -&gt; Int
-</span><a href="#local-6989586621679235989"><span class="hs-identifier hs-var hs-var">_logLines</span></a></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">LogLevel
-</span><a href="#local-6989586621679235987"><span class="hs-identifier hs-var">_logLevel</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679235989"><span class="hs-identifier hs-var">_logLines</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-31"></span><span>        </span><span class="annot"><a href="CLI.Types.html#CmdMerge"><span class="hs-identifier hs-type">CmdMerge</span></a></span><span> </span><span class="annot"><a href="CLI.Types.html#OptsMerge"><span class="hs-identifier hs-type">OptsMerge</span></a></span><span class="hs-special">{</span><span id="local-6989586621679235993"><span class="annot"><span class="annottext">LogLevel
+</span><a href="#local-6989586621679235979"><span class="hs-identifier hs-var hs-var">_logLines</span></a></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">LogLevel
+</span><a href="#local-6989586621679235977"><span class="hs-identifier hs-var">_logLevel</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679235979"><span class="hs-identifier hs-var">_logLines</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-31"></span><span>        </span><span class="annot"><a href="CLI.Types.html#CmdMerge"><span class="hs-identifier hs-type">CmdMerge</span></a></span><span> </span><span class="annot"><a href="CLI.Types.html#OptsMerge"><span class="hs-identifier hs-type">OptsMerge</span></a></span><span class="hs-special">{</span><span id="local-6989586621679235983"><span class="annot"><span class="annottext">LogLevel
 _logLevel :: LogLevel
 $sel:_logLevel:OptsMerge :: OptsMerge -&gt; LogLevel
-</span><a href="#local-6989586621679235993"><span class="hs-identifier hs-var hs-var">_logLevel</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679235995"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679235983"><span class="hs-identifier hs-var hs-var">_logLevel</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679235985"><span class="annot"><span class="annottext">Int
 _logLines :: Int
 $sel:_logLines:OptsMerge :: OptsMerge -&gt; Int
-</span><a href="#local-6989586621679235995"><span class="hs-identifier hs-var hs-var">_logLines</span></a></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">LogLevel
-</span><a href="#local-6989586621679235993"><span class="hs-identifier hs-var">_logLevel</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679235995"><span class="hs-identifier hs-var">_logLines</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-32"></span><span>        </span><span class="annot"><a href="CLI.Types.html#CmdMatch"><span class="hs-identifier hs-type">CmdMatch</span></a></span><span> </span><span class="annot"><a href="CLI.Types.html#OptsMatch"><span class="hs-identifier hs-type">OptsMatch</span></a></span><span class="hs-special">{</span><span id="local-6989586621679235999"><span class="annot"><span class="annottext">LogLevel
+</span><a href="#local-6989586621679235985"><span class="hs-identifier hs-var hs-var">_logLines</span></a></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">LogLevel
+</span><a href="#local-6989586621679235983"><span class="hs-identifier hs-var">_logLevel</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679235985"><span class="hs-identifier hs-var">_logLines</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-32"></span><span>        </span><span class="annot"><a href="CLI.Types.html#CmdMatch"><span class="hs-identifier hs-type">CmdMatch</span></a></span><span> </span><span class="annot"><a href="CLI.Types.html#OptsMatch"><span class="hs-identifier hs-type">OptsMatch</span></a></span><span class="hs-special">{</span><span id="local-6989586621679235989"><span class="annot"><span class="annottext">LogLevel
 _logLevel :: LogLevel
 $sel:_logLevel:OptsMatch :: OptsMatch -&gt; LogLevel
-</span><a href="#local-6989586621679235999"><span class="hs-identifier hs-var hs-var">_logLevel</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679236001"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679235989"><span class="hs-identifier hs-var hs-var">_logLevel</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679235991"><span class="annot"><span class="annottext">Int
 _logLines :: Int
 $sel:_logLines:OptsMatch :: OptsMatch -&gt; Int
-</span><a href="#local-6989586621679236001"><span class="hs-identifier hs-var hs-var">_logLines</span></a></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">LogLevel
-</span><a href="#local-6989586621679235999"><span class="hs-identifier hs-var">_logLevel</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679236001"><span class="hs-identifier hs-var">_logLines</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679235991"><span class="hs-identifier hs-var hs-var">_logLines</span></a></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">LogLevel
+</span><a href="#local-6989586621679235989"><span class="hs-identifier hs-var">_logLevel</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679235991"><span class="hs-identifier hs-var">_logLines</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-33"></span><span>   </span><span class="hs-keyword">in</span><span> </span><span class="annot"><span class="annottext">LogLevel -&gt; Int -&gt; IO ()
 </span><a href="Logger.html#setLogConfig"><span class="hs-identifier hs-var">setLogConfig</span></a></span><span> </span><span class="annot"><span class="annottext">LogLevel
-</span><a href="#local-6989586621679235971"><span class="hs-identifier hs-var">level</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679235972"><span class="hs-identifier hs-var">lns</span></a></span><span>
+</span><a href="#local-6989586621679235961"><span class="hs-identifier hs-var">level</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679235962"><span class="hs-identifier hs-var">lns</span></a></span><span>
 </span><span id="line-34"></span><span>
 </span><span id="line-35"></span><span class="annot"><a href="CLI.html#runCLI"><span class="hs-identifier hs-type">runCLI</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
 </span><span id="line-36"></span><span id="runCLI"><span class="annot"><span class="annottext">runCLI :: [String] -&gt; IO ()
-</span><a href="CLI.html#runCLI"><span class="hs-identifier hs-var hs-var">runCLI</span></a></span></span><span> </span><span id="local-6989586621679236004"><span class="annot"><span class="annottext">[String]
-</span><a href="#local-6989586621679236004"><span class="hs-identifier hs-var">args</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(SomeException -&gt; IO ()) -&gt; IO () -&gt; IO ()
+</span><a href="CLI.html#runCLI"><span class="hs-identifier hs-var hs-var">runCLI</span></a></span></span><span> </span><span id="local-6989586621679235994"><span class="annot"><span class="annottext">[String]
+</span><a href="#local-6989586621679235994"><span class="hs-identifier hs-var">args</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(SomeException -&gt; IO ()) -&gt; IO () -&gt; IO ()
 forall e a. Exception e =&gt; (e -&gt; IO a) -&gt; IO a -&gt; IO a
 </span><span class="hs-identifier hs-var">handle</span></span><span> </span><span class="annot"><span class="annottext">SomeException -&gt; IO ()
 </span><a href="CLI.html#handler"><span class="hs-identifier hs-var">handler</span></a></span><span> </span><span class="annot"><span class="annottext">(IO () -&gt; IO ()) -&gt; IO () -&gt; IO ()
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-37"></span><span>  </span><span id="local-6989586621679236005"><span class="annot"><span class="annottext">Command
-</span><a href="#local-6989586621679236005"><span class="hs-identifier hs-var">cmd</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">ParserResult Command -&gt; IO Command
+</span><span id="line-37"></span><span>  </span><span id="local-6989586621679235995"><span class="annot"><span class="annottext">Command
+</span><a href="#local-6989586621679235995"><span class="hs-identifier hs-var">cmd</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">ParserResult Command -&gt; IO Command
 forall a. ParserResult a -&gt; IO a
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/ptprs-pplctv-0.19.0.0-b1353d5d/share/doc/html/src/Options.Applicative.Extra.html#handleParseResult"><span class="hs-identifier hs-var">handleParseResult</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">ParserPrefs
 -&gt; ParserInfo Command -&gt; [String] -&gt; ParserResult Command
@@ -114,30 +114,30 @@ forall a. ParserPrefs -&gt; ParserInfo a -&gt; [String] -&gt; ParserResult a
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/ptprs-pplctv-0.19.0.0-b1353d5d/share/doc/html/src/Options.Applicative.Extra.html#execParserPure"><span class="hs-identifier hs-var">execParserPure</span></a></span><span> </span><span class="annot"><span class="annottext">ParserPrefs
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/ptprs-pplctv-0.19.0.0-b1353d5d/share/doc/html/src/Options.Applicative.Builder.html#defaultPrefs"><span class="hs-identifier hs-var">defaultPrefs</span></a></span><span> </span><span class="annot"><span class="annottext">ParserInfo Command
 </span><a href="CLI.Parsers.html#parserInfo"><span class="hs-identifier hs-var">parserInfo</span></a></span><span> </span><span class="annot"><span class="annottext">[String]
-</span><a href="#local-6989586621679236004"><span class="hs-identifier hs-var">args</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679235994"><span class="hs-identifier hs-var">args</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-38"></span><span>  </span><span class="annot"><span class="annottext">Command -&gt; IO ()
 </span><a href="CLI.html#setLogger"><span class="hs-identifier hs-var">setLogger</span></a></span><span> </span><span class="annot"><span class="annottext">Command
-</span><a href="#local-6989586621679236005"><span class="hs-identifier hs-var">cmd</span></a></span><span>
+</span><a href="#local-6989586621679235995"><span class="hs-identifier hs-var">cmd</span></a></span><span>
 </span><span id="line-39"></span><span>  </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Command
-</span><a href="#local-6989586621679236005"><span class="hs-identifier hs-var">cmd</span></a></span><span> </span><span class="hs-keyword">of</span><span>
-</span><span id="line-40"></span><span>    </span><span class="annot"><a href="CLI.Types.html#CmdRewrite"><span class="hs-identifier hs-type">CmdRewrite</span></a></span><span> </span><span id="local-6989586621679236010"><span class="annot"><span class="annottext">OptsRewrite
-</span><a href="#local-6989586621679236010"><span class="hs-identifier hs-var">opts</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">OptsRewrite -&gt; IO ()
+</span><a href="#local-6989586621679235995"><span class="hs-identifier hs-var">cmd</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-40"></span><span>    </span><span class="annot"><a href="CLI.Types.html#CmdRewrite"><span class="hs-identifier hs-type">CmdRewrite</span></a></span><span> </span><span id="local-6989586621679236000"><span class="annot"><span class="annottext">OptsRewrite
+</span><a href="#local-6989586621679236000"><span class="hs-identifier hs-var">opts</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">OptsRewrite -&gt; IO ()
 </span><a href="CLI.Runners.html#runRewrite"><span class="hs-identifier hs-var">runRewrite</span></a></span><span> </span><span class="annot"><span class="annottext">OptsRewrite
-</span><a href="#local-6989586621679236010"><span class="hs-identifier hs-var">opts</span></a></span><span>
-</span><span id="line-41"></span><span>    </span><span class="annot"><a href="CLI.Types.html#CmdDataize"><span class="hs-identifier hs-type">CmdDataize</span></a></span><span> </span><span id="local-6989586621679236012"><span class="annot"><span class="annottext">OptsDataize
-</span><a href="#local-6989586621679236012"><span class="hs-identifier hs-var">opts</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">OptsDataize -&gt; IO ()
+</span><a href="#local-6989586621679236000"><span class="hs-identifier hs-var">opts</span></a></span><span>
+</span><span id="line-41"></span><span>    </span><span class="annot"><a href="CLI.Types.html#CmdDataize"><span class="hs-identifier hs-type">CmdDataize</span></a></span><span> </span><span id="local-6989586621679236002"><span class="annot"><span class="annottext">OptsDataize
+</span><a href="#local-6989586621679236002"><span class="hs-identifier hs-var">opts</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">OptsDataize -&gt; IO ()
 </span><a href="CLI.Runners.html#runDataize"><span class="hs-identifier hs-var">runDataize</span></a></span><span> </span><span class="annot"><span class="annottext">OptsDataize
-</span><a href="#local-6989586621679236012"><span class="hs-identifier hs-var">opts</span></a></span><span>
-</span><span id="line-42"></span><span>    </span><span class="annot"><a href="CLI.Types.html#CmdExplain"><span class="hs-identifier hs-type">CmdExplain</span></a></span><span> </span><span id="local-6989586621679236014"><span class="annot"><span class="annottext">OptsExplain
-</span><a href="#local-6989586621679236014"><span class="hs-identifier hs-var">opts</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">OptsExplain -&gt; IO ()
+</span><a href="#local-6989586621679236002"><span class="hs-identifier hs-var">opts</span></a></span><span>
+</span><span id="line-42"></span><span>    </span><span class="annot"><a href="CLI.Types.html#CmdExplain"><span class="hs-identifier hs-type">CmdExplain</span></a></span><span> </span><span id="local-6989586621679236004"><span class="annot"><span class="annottext">OptsExplain
+</span><a href="#local-6989586621679236004"><span class="hs-identifier hs-var">opts</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">OptsExplain -&gt; IO ()
 </span><a href="CLI.Runners.html#runExplain"><span class="hs-identifier hs-var">runExplain</span></a></span><span> </span><span class="annot"><span class="annottext">OptsExplain
-</span><a href="#local-6989586621679236014"><span class="hs-identifier hs-var">opts</span></a></span><span>
-</span><span id="line-43"></span><span>    </span><span class="annot"><a href="CLI.Types.html#CmdMerge"><span class="hs-identifier hs-type">CmdMerge</span></a></span><span> </span><span id="local-6989586621679236016"><span class="annot"><span class="annottext">OptsMerge
-</span><a href="#local-6989586621679236016"><span class="hs-identifier hs-var">opts</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">OptsMerge -&gt; IO ()
+</span><a href="#local-6989586621679236004"><span class="hs-identifier hs-var">opts</span></a></span><span>
+</span><span id="line-43"></span><span>    </span><span class="annot"><a href="CLI.Types.html#CmdMerge"><span class="hs-identifier hs-type">CmdMerge</span></a></span><span> </span><span id="local-6989586621679236006"><span class="annot"><span class="annottext">OptsMerge
+</span><a href="#local-6989586621679236006"><span class="hs-identifier hs-var">opts</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">OptsMerge -&gt; IO ()
 </span><a href="CLI.Runners.html#runMerge"><span class="hs-identifier hs-var">runMerge</span></a></span><span> </span><span class="annot"><span class="annottext">OptsMerge
-</span><a href="#local-6989586621679236016"><span class="hs-identifier hs-var">opts</span></a></span><span>
-</span><span id="line-44"></span><span>    </span><span class="annot"><a href="CLI.Types.html#CmdMatch"><span class="hs-identifier hs-type">CmdMatch</span></a></span><span> </span><span id="local-6989586621679236018"><span class="annot"><span class="annottext">OptsMatch
-</span><a href="#local-6989586621679236018"><span class="hs-identifier hs-var">opts</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">OptsMatch -&gt; IO ()
+</span><a href="#local-6989586621679236006"><span class="hs-identifier hs-var">opts</span></a></span><span>
+</span><span id="line-44"></span><span>    </span><span class="annot"><a href="CLI.Types.html#CmdMatch"><span class="hs-identifier hs-type">CmdMatch</span></a></span><span> </span><span id="local-6989586621679236008"><span class="annot"><span class="annottext">OptsMatch
+</span><a href="#local-6989586621679236008"><span class="hs-identifier hs-var">opts</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">OptsMatch -&gt; IO ()
 </span><a href="CLI.Runners.html#runMatch"><span class="hs-identifier hs-var">runMatch</span></a></span><span> </span><span class="annot"><span class="annottext">OptsMatch
-</span><a href="#local-6989586621679236018"><span class="hs-identifier hs-var">opts</span></a></span><span>
+</span><a href="#local-6989586621679236008"><span class="hs-identifier hs-var">opts</span></a></span><span>
 </span><span id="line-45"></span></pre></body></html>
