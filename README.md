@@ -311,13 +311,13 @@ Here's list of functions that are supported for extensions:
   decimals accordingly. Uniqueness is guaranteed during one
   execution of `phino`.
 * `size` - accepts exactly one meta binding and returns size of it and
-  `Φ̇.number`.
-* `tau` - accepts `Φ̇.string`, dataizes it and converts it to attribute.
+  `Φ.number`.
+* `tau` - accepts `Φ.string`, dataizes it and converts it to attribute.
   If dataized string can't be converted to attribute - an error is thrown.
-* `string` - accepts `Φ̇.string` or `Φ̇.number` or attribute and converts it
-  to `Φ̇.string`.
-* `number` - accepts `Φ̇.string` and converts it `Φ̇.number`
-* `sum` - accepts list of `Φ̇.number` or `Φ̇.bytes` and returns sum of them as `Φ̇.number`
+* `string` - accepts `Φ.string` or `Φ.number` or attribute and converts it
+  to `Φ.string`.
+* `number` - accepts `Φ.string` and converts it `Φ.number`
+* `sum` - accepts list of `Φ.number` or `Φ.bytes` and returns sum of them as `Φ.number`
 * `join` - accepts list of bindings and returns list of joined bindings. Duplicated
   `ρ`, `Δ` and `λ` attributes are ignored, all other duplicated attributes are replaced
   with unique attributes using `random-tau` function.
