@@ -825,7 +825,7 @@ spec = do
             , "  { [[ B1, \\tau -> ?, B2 ]]( \\tau -> e1 ) }"
             , "  { [[ B1, \\tau -> e3, B2 ]] }"
             , "  { if NF( e1 ) }"
-            , "  { where e2 <- scope( e1 ); e3 <- contextualize( e1, e2 ) }"
+            , "  { where e2 <- scope( e1 ); e3 <- \\ctx{ e1 }{ e2 } }"
             , "\\end{tabular}"
             ]
         ]
@@ -849,7 +849,7 @@ spec = do
             , "  { [[ B1, \\tau -> ?, B2 ]]( \\tau -> e1 ) }"
             , "  { [[ B1, \\tau -> e3, B2 ]] }"
             , "  { if NF( e1 ) }"
-            , "  { where e2 <- scope( e1 ); e3 <- contextualize( e1, e2 ) }"
+            , "  { where e2 <- scope( e1 ); e3 <- \\ctx{ e1 }{ e2 } }"
             , "\\trrule{DC}"
             , "  { T( \\tau -> e ) }"
             , "  { T }"
@@ -864,7 +864,7 @@ spec = do
             , "  { [[ B1, \\tau -> e1, B2 ]].\\tau }"
             , "  { e2( ^ -> [[ B1, \\tau -> e1, B2 ]] ) }"
             , "  { if NF( e1 ) }"
-            , "  { where e2 <- contextualize( e1, [[ B1, \\tau -> e1, B2 ]] ) }"
+            , "  { where e2 <- \\ctx{ e1 }{ [[ B1, \\tau -> e1, B2 ]] } }"
             , "\\trrule{MISS}"
             , "  { [[ B ]]( \\tau -> e ) }"
             , "  { T }"
