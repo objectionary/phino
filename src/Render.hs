@@ -216,7 +216,7 @@ instance Render LOGIC_OPERATOR where
 
 instance Render NUMBER where
   render INDEX{..} = printf "\\indexof{ %s }" (render attr)
-  render LENGTH{..} = printf "|%s|" (render binding)
+  render LENGTH{..} = printf "\\vert %s \\vert" (render binding)
   render LITERAL{..} = show num
 
 instance Render COMPARABLE where
