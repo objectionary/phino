@@ -267,7 +267,7 @@ Comparable:              # comparable object that may be used in 'eq' condition
 
 Number:                  # comparable number
   = Integer              # just regular integer
-  | index: Attribute'  # calculate index of alpha attribute
+  | index: Attribute'    # calculate index of alpha attribute
   | length: BiMeta'      # calculate length of bindings by given meta binding
 
 Extension:               # substitutions extension used to introduce new meta variables
