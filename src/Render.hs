@@ -210,12 +210,12 @@ instance Render SET where
   render ST_ATTRIBUTES{..} = printf "[ %s ]" (intercalate ", " (map render attrs))
 
 instance Render LOGIC_OPERATOR where
-  render AND = "and"
-  render OR = "or"
+  render AND = "\\;\\text{and}\\;"
+  render OR = "\\;\\text{or}\\;"
 
 instance Render NUMBER where
   render ORDINAL{..} = renderFunc "ordinal" attr
-  render LENGTH{..} = renderFunc "length" binding
+  render LENGTH{..} = printf "|%s|" (render binding)
   render LITERAL{..} = show num
 
 instance Render COMPARABLE where
