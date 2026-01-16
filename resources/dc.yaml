@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 # SPDX-License-Identifier: MIT
 ---
-name: DC
+name: dc
 pattern: ⊥(𝜏 ↦ 𝑒)
 result: ⊥
