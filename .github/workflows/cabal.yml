@@ -61,8 +61,9 @@ jobs:
       - if: runner.os == 'Linux'
         run: |
           set -e -o pipefail
-          e=$(find dist-newstyle/ -name phino -type f | head -1)
-          echo "phino found at: ${e}."
+          e=$(find ./dist-newstyle/ -name phino -type f | head -1)
+          if [ -z "${e}" ]; then exit 1; fi
+          echo "phino found at: '${e}'."
           (
             printf '\\documentclass{article}'
             printf '\\usepackage{eolang}'
