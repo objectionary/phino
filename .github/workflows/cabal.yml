@@ -61,7 +61,7 @@ jobs:
       - if: runner.os == 'Linux'
         run: |
           set -e -o pipefail
-          e=$(find dist-newstyle/ -name phino | head -1)
+          e=$(find dist-newstyle/ -name phino -type f | head -1)
           (
             printf '\\documentclass{article}'
             printf '\\usepackage{eolang}'
