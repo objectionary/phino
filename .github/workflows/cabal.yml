@@ -23,6 +23,10 @@ jobs:
         with:
           ghc-version: '9.6.7'
           cabal-version: '3.12.1.0'
+      - uses: teatimeguest/setup-texlive-action@v3.3.4
+        with:
+          update-all-packages: true
+          packages: scheme-basic geometry xcolor naive-ebnf microtype eolang
       - uses: actions/cache@v5
         with:
           path: |
@@ -53,3 +57,16 @@ jobs:
       - run: cabal update
       - run: cabal install hpc-codecov-0.6.3.0 --overwrite-policy=always
       - run: make clean coverage
+      - run: |
+          e=$(find .stack-work/install/ -name phino | head -1)
+          (
+            echo "\documentclass{article}"
+            echo "\usepackage{eolang}"
+            echo "\begin{document}"
+            echo "\newcommand\scopeof[1]{#1}"
+            echo "\newcommand\isnormal[1]{#1}"
+            "${e}" explain --normalize
+            echo '{[[ x -> [[ y -> ? ]].y ]]}' | "${e}" rewrite --normalize --output=latex --sequence
+            echo "\end{document}"
+          ) > article.tex
+          pdflatex article
