@@ -60,13 +60,14 @@ jobs:
       - run: make clean coverage
       - if: runner.os == 'Linux'
         run: |
-          e=$(find .stack-work/install/ -name phino | head -1)
+          set -e -o pipefail
+          e=$(find dist-newstyle/ -name phino | head -1)
           (
             printf "\\documentclass{article}"
             printf "\\usepackage{eolang}"
             printf "\\begin{document}"
-            printf "\\newcommand\scopeof[1]{#1}"
-            printf "\\newcommand\isnormal[1]{#1}"
+            printf "\\newcommand\\scopeof[1]{#1}"
+            printf "\\newcommand\\isnormal[1]{#1}"
             "${e}" explain --normalize
             printf '{[[ x -> [[ y -> ? ]].y ]]}' | "${e}" rewrite --normalize --output=latex --sequence
             printf "\\end{document}"
