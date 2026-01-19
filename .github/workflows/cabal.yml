@@ -63,13 +63,13 @@ jobs:
           set -e -o pipefail
           e=$(find dist-newstyle/ -name phino | head -1)
           (
-            printf "\\documentclass{article}"
-            printf "\\usepackage{eolang}"
-            printf "\\begin{document}"
-            printf "\\newcommand\\scopeof[1]{#1}"
-            printf "\\newcommand\\isnormal[1]{#1}"
+            printf '\\documentclass{article}'
+            printf '\\usepackage{eolang}'
+            printf '\\begin{document}'
+            printf '\\newcommand\\scopeof[1]{#1}'
+            printf '\\newcommand\\isnormal[1]{#1}'
             "${e}" explain --normalize
             printf '{[[ x -> [[ y -> ? ]].y ]]}' | "${e}" rewrite --normalize --output=latex --sequence
-            printf "\\end{document}"
+            printf '\\end{document}'
           ) > article.tex
           pdflatex article
