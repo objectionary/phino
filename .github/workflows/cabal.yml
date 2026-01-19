@@ -23,7 +23,8 @@ jobs:
         with:
           ghc-version: '9.6.7'
           cabal-version: '3.12.1.0'
-      - uses: zauguin/install-texlive@v4.0.0
+      - if: runner.os == 'Linux'
+        uses: zauguin/install-texlive@v4.0.0
         with:
           packages: scheme-basic eolang
           texlive_version: 2025
@@ -57,7 +58,8 @@ jobs:
       - run: cabal update
       - run: cabal install hpc-codecov-0.6.3.0 --overwrite-policy=always
       - run: make clean coverage
-      - run: |
+      - if: runner.os == 'Linux'
+        run: |
           e=$(find .stack-work/install/ -name phino | head -1)
           (
             echo "\documentclass{article}"
