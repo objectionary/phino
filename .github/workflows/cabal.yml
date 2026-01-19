@@ -23,10 +23,10 @@ jobs:
         with:
           ghc-version: '9.6.7'
           cabal-version: '3.12.1.0'
-      - uses: teatimeguest/setup-texlive-action@v3.3.4
+      - uses: zauguin/install-texlive@v4.0.0
         with:
-          update-all-packages: true
-          packages: scheme-basic geometry xcolor naive-ebnf microtype eolang
+          packages: scheme-basic eolang
+          texlive_version: 2025
       - uses: actions/cache@v5
         with:
           path: |
