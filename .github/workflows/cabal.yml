@@ -59,6 +59,7 @@ jobs:
       - run: cabal install hpc-codecov-0.6.3.0 --overwrite-policy=always
       - run: make clean coverage
       - if: runner.os == 'Linux'
+        shell: bash
         run: |
           set -e -o pipefail
           cabal build
