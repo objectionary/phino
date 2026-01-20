@@ -71,6 +71,7 @@ jobs:
             printf '\\begin{document}'
             printf '\\newcommand\\scopeof[1]{#1}'
             printf '\\newcommand\\isnormal[1]{#1}'
+            printf '\\newcommand\\trrule[5]{#1 $#2$ $#3$ #4 #5}'
             "${e}" explain --normalize
             printf '{[[ x -> [[ y -> ? ]].y ]]}' | "${e}" rewrite --normalize --output=latex --sequence
             printf '\\end{document}'
