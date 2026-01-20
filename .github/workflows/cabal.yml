@@ -61,6 +61,7 @@ jobs:
       - if: runner.os == 'Linux'
         run: |
           set -e -o pipefail
+          cabal build
           e=$(find ./dist-newstyle/ -name phino -type f | head -1)
           if [ -z "${e}" ]; then exit 1; fi
           echo "phino found at: '${e}'."
