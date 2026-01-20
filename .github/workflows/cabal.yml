@@ -75,4 +75,4 @@ jobs:
             printf '{[[ x -> [[ y -> ? ]].y ]]}' | "${e}" rewrite --normalize --output=latex --sequence
             printf '\\end{document}'
           ) > article.tex
-          pdflatex article
+          pdflatex -shell-escape -interaction=errorstopmode -halt-on-error article
