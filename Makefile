@@ -35,3 +35,4 @@ coverage:
 .SILENT:
 clean:
 	cabal clean
+	rm -rf .stack-work
