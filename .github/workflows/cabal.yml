@@ -70,12 +70,12 @@ jobs:
             printf '\\documentclass{article}\n'
             printf '\\usepackage{mathtools}\n'
             printf '\\usepackage{eolang}\n'
-            printf '\\begin{document}\n'
             printf '\\newcommand\\ctx[2]{#1 #2}\n'
             printf '\\newcommand\\indexof[1]{#1}\n'
             printf '\\newcommand\\scopeof[1]{#1}\n'
             printf '\\newcommand\\isnormal[1]{#1}\n'
             printf '\\newcommand\\trrule[5]{#1 $#2$ $#3$ #4 #5}\n'
+            printf '\\begin{document}\n'
             "${e}" explain --normalize
             printf '{[[ x -> [[ y -> ? ]].y ]]}' | "${e}" rewrite --normalize --output=latex --sequence
             printf '\\end{document}\n'
