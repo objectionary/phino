@@ -93,7 +93,7 @@ library
     random >=1.2 && <1.4,
     regex-pcre-builtin ^>=0.95.2.3.8.44,
     scientific ^>=0.3.8.0,
-    text ^>=2.0.2,
+    text >=2.0.2,
     time ^>=1.12,
     transformers ^>=0.6.1.0,
     utf8-string ^>=1.0.2,
