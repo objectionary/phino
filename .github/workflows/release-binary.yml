@@ -55,6 +55,3 @@ jobs:
       - name: Upload phino binary to S3
         run: |
           aws s3 cp dist-release/phino s3://${{ secrets.S3_BUCKET }}/releases/${{ matrix.os }}/phino-0.${{ github.ref_name }} --acl public-read
-      - name: Upload as phino-latest
-        run: |
-          aws s3 cp dist-release/phino s3://${{ secrets.S3_BUCKET }}/releases/${{ matrix.os }}/phino-latest --acl public-read
