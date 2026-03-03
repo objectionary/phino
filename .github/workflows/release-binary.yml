@@ -2,6 +2,9 @@
 # SPDX-License-Identifier: MIT
 ---
 # yamllint disable rule:line-length
+# Here we use macos-14-large as x86-64 arch instead of macos-15-intel
+# because of the bug in haskell-actions/setup plugin.
+# For more details see this: https://github.com/haskell-actions/setup/issues/77
 name: Release binary to S3
 'on':
   push:
@@ -11,18 +14,19 @@ jobs:
   build-and-release:
     strategy:
       matrix:
-        os: [macos-15, ubuntu-24.04]
+        os: [macos-15, ubuntu-22.04, macos-14-large]
+      fail-fast: false
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Set up GHC and Cabal
-        uses: haskell-actions/setup@v2.8.2
+        uses: haskell-actions/setup@v2.10.3
         with:
           ghc-version: '9.6.7'
           cabal-version: '3.12.1.0'
       - name: Cache Cabal build artifacts
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/.ghcup
@@ -30,9 +34,9 @@ jobs:
             ~/.cabal/store
             ~/.ghc
             dist-newstyle
-          key: ${{ runner.os }}-cabal-${{ hashFiles('**/*.cabal') }}-${{ hashFiles('cabal.project', 'cabal.project.freeze') }}
+          key: ${{ runner.os }}-${{ runner.arch }}-cabal-${{ hashFiles('**/*.cabal') }}-${{ hashFiles('cabal.project', 'cabal.project.freeze') }}
           restore-keys: |
-            ${{ runner.os }}-cabal-
+            ${{ runner.os }}-${{ runner.arch }}-cabal-
       - name: Build
         run: |
           cabal update
@@ -43,7 +47,7 @@ jobs:
           cp "$(cabal list-bin phino)" dist-release/phino
           chmod +x dist-release/phino
       - name: Upload phino binary to Amazon S3
-        uses: aws-actions/configure-aws-credentials@v5.0.0
+        uses: aws-actions/configure-aws-credentials@v6.0.0
         with:
           aws-access-key-id: ${{ secrets.S3_KEY }}
           aws-secret-access-key: ${{ secrets.S3_SECRET }}
