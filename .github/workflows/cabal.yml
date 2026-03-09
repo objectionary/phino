@@ -27,7 +27,7 @@ jobs:
         uses: zauguin/install-texlive@v4.0.0
         with:
           packages: scheme-basic eolang mathtools
-          texlive_version: 2025
+          texlive_version: 2026
       - uses: actions/cache@v5
         with:
           path: |
