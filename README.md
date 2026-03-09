@@ -72,7 +72,7 @@ sudo cp "$(cabal list-bin phino)" /usr/local/bin/phino
 Verify that `phino` is installed correctly:
 
 ```bash
-$  phino --version
+$ phino --version
 0.0.0.0
 ```
 
