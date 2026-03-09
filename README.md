@@ -200,11 +200,6 @@ $ phino explain --normalize
   { [[ B_1, \tau_1 -> ?, B_2 ]] ( \tau_1 -> e ) }
   { if $ \indexof{ \tau_2 } = \vert B_1 \vert $ }
   { }
-\trrule{copy}
-  { [[ B_1, \tau -> ?, B_2 ]] ( \tau -> e_1 ) }
-  { [[ B_1, \tau -> e_3, B_2 ]] }
-  { if $ \isnormal{ e_1 } $ }
-  { where $ e_2 \coloneqq \scopeof{ e_1 } $ and $ e_3 \coloneqq \ctx{ e_1 }{ e_2 } $ }
 \trrule{dc}
   { T ( \tau -> e ) }
   { T }
