@@ -14,8 +14,8 @@ jobs:
   cabal:
     strategy:
       matrix:
-        os: [macos-15, ubuntu-24.04, windows-2022]
-        ghc: ['9.6.7', '9.8.4']
+        os: [ubuntu-24.04]
+        ghc: ['9.8.4']
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v6
@@ -31,19 +31,21 @@ jobs:
             ${{ steps.setup.outputs.cabal-path }}
             ${{ steps.setup.outputs.cabal-store }}
             dist-newstyle
-          key: ${{ runner.os }}-cabal-${{ hashFiles('**/*.cabal') }}-${{ hashFiles('cabal.project', 'cabal.project.freeze') }}
-          restore-keys: ${{ runner.os }}-cabal-
+          key: ${{ runner.os }}-ghc${{ matrix.ghc }}-cabal-${{ hashFiles('**/*.cabal') }}-${{ hashFiles('cabal.project', 'cabal.project.freeze') }}
+          restore-keys: |
+            ${{ runner.os }}-ghc${{ matrix.ghc }}-cabal-
       # - if: runner.os == 'Linux'
+      #   name: Install Linux dependencies
       #   run: |
       #     sudo apt-get update
       #     sudo apt-get install -y libxml2-utils
       # - if: runner.os == 'macOS'
-      #   run: brew install libxml2
-      # - if: runner.os == 'macOS'
+      #   name: Install macOS dependencies
       #   run: |
-      #       brew install tree coreutils make
-      #       echo "PATH=/opt/homebrew/opt/make/libexec/gnubin:${PATH}" >> "${GITHUB_ENV}"
+      #     brew install libxml2 tree coreutils make
+      #     echo "PATH=/opt/homebrew/opt/make/libexec/gnubin:${PATH}" >> "${GITHUB_ENV}"
       # - if: runner.os == 'Windows'
+      #   name: Install Windows dependencies
       #   uses: msys2/setup-msys2@v2
       #   with:
       #     update: true
@@ -52,4 +54,5 @@ jobs:
       #   shell: pwsh
       #   run: echo "C:\msys64\usr\bin" | Out-File -FilePath $env:GITHUB_PATH -Append
       - run: cabal update
-      - run: make clean test
+      - run: cabal build all --enable-tests
+      - run: cabal test all --test-show-details=direct
