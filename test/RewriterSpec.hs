@@ -25,6 +25,7 @@ import System.FilePath (makeRelative, replaceExtension, (</>))
 import Test.Hspec (Spec, describe, expectationFailure, it, pending, runIO)
 import Yaml (normalizationRules)
 import Yaml qualified as Y
+import qualified Data.List.NonEmpty as NE
 
 data Rules = Rules
   { basic :: Maybe [String]
@@ -112,7 +113,7 @@ spec =
                       must'
                       dontSaveStep
                   )
-              let (program, _) = last rewrittens
+              let (program, _) = NE.last rewrittens
               result' <- parseProgramThrows (output pack)
               unless (program == result') $
                 expectationFailure

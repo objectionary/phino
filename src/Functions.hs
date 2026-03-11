@@ -114,14 +114,14 @@ _concat args subst = do
 _sed :: BuildTermMethod
 _sed args subst = do
   when (length args < 2) (throwIO (userError "Function sed() requires at least two arguments"))
-  args' <-
+  first : rest <-
     traverse
       ( \arg -> do
           bts <- argToString arg subst
           pure (B.pack bts)
       )
       args
-  res <- sed (head args') (tail args')
+  res <- sed first rest
   pure (TeExpression (DataString (strToBts (B.unpack res))))
   where
     sed :: B.ByteString -> [B.ByteString] -> IO B.ByteString

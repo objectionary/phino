@@ -92,10 +92,10 @@ expression (ExFormation bds) ctx = do
 expression (ExDispatch expr attr) ctx = do
   (base, children) <- expression expr ctx
   let attr' = printAttribute attr
-  if null base
-    then pure ('.' : attr', [object [] children])
-    else
-      if head base == '.' || not (null children)
+  case base of
+    [] -> pure ('.' : attr', [object [] children])
+    ch : _ ->
+      if ch == '.' || not (null children)
         then pure ('.' : attr', [object [("base", base)] children])
         else pure (base ++ ('.' : attr'), children)
 expression (DataNumber bytes) XmirContext{..} =
@@ -360,8 +360,8 @@ xmirToPhi xmir =
                     | meta <- doc C.$/ C.element (toName "metas") C.&/ C.element (toName "meta")
                     , let heads = meta C.$/ C.element (toName "head") C.&/ C.content
                     , heads == ["package"]
-                    , tail' <- meta C.$/ C.element (toName "tail") C.&/ C.content
-                    , t <- T.splitOn "." tail'
+                    , _tail <- meta C.$/ C.element (toName "tail") C.&/ C.content
+                    , t <- T.splitOn "." _tail
                     ]
               if null pckg
                 then pure (Program (ExFormation [obj, BiVoid AtRho]))
@@ -405,13 +405,13 @@ xmirToExpression cur fqn
             then throwIO (InvalidXMIRFormat "The @base attribute can't be just '.'" cur)
             else
               let args = cur C.$/ C.element (toName "o")
-               in if null args
-                    then throwIO (InvalidXMIRFormat (printf "Element with @base='%s' must have at least one child" base) cur)
-                    else do
-                      expr <- xmirToExpression (head args) fqn
+               in case args of
+                    [] -> throwIO (InvalidXMIRFormat (printf "Element with @base='%s' must have at least one child" base) cur)
+                    arg : args' -> do
+                      expr <- xmirToExpression arg fqn
                       attr <- toAttr rest cur
                       let disp = ExDispatch expr attr
-                      xmirToApplication disp (tail args) fqn
+                      xmirToApplication disp args' fqn
         "ξ" ->
           if null (cur C.$/ C.element (toName "o"))
             then pure ExThis
@@ -432,12 +432,12 @@ xmirToExpression cur fqn
       if null rst
         then throwIO (InvalidXMIRFormat (printf "The @base='%s.' is illegal in XMIR" symbol) c)
         else do
-          head' <-
+          _head <-
             foldlM
               (\acc part -> ExDispatch acc <$> toAttr (T.unpack part) c)
               start
               (T.splitOn "." (T.pack rst))
-          xmirToApplication head' (c C.$/ C.element (toName "o")) names
+          xmirToApplication _head (c C.$/ C.element (toName "o")) names
 
 xmirToApplication :: Expression -> [C.Cursor] -> [String] -> IO Expression
 xmirToApplication = xmirToApplication' 0
@@ -470,7 +470,7 @@ xmirToApplication = xmirToApplication' 0
           attr <- toAttr as cur
           case attr of
             AtRho -> throwIO (InvalidXMIRFormat "The 'ρ' in @as attribute is illegal in XMIR" cur)
-            other -> pure other
+            _ -> pure attr
       | otherwise = pure (AtAlpha idx)
 
 toAttr :: String -> C.Cursor -> IO Attribute
@@ -481,10 +481,11 @@ toAttr attr cur = case attr of
       Nothing -> throwIO (InvalidXMIRFormat "The attribute started with 'α' must be followed by integer" cur)
   "φ" -> pure AtPhi
   "ρ" -> pure AtRho
-  _
-    | head attr `notElem` ['a' .. 'z'] -> throwIO (InvalidXMIRFormat (printf "The attribute '%s' must start with ['a'..'z']" attr) cur)
+  ch : _
+    | ch `notElem` ['a' .. 'z'] -> throwIO (InvalidXMIRFormat (printf "The attribute '%s' must start with ['a'..'z']" attr) cur)
     | '.' `elem` attr -> throwIO (InvalidXMIRFormat "Attribute can't contain dots" cur)
     | otherwise -> pure (AtLabel attr)
+  _ -> throwIO (InvalidXMIRFormat (printf "Invalid attribute given: %s" attr) cur)
 
 hasAttr :: String -> C.Cursor -> Bool
 hasAttr key cur = not (null (C.attribute (toName key) cur))
@@ -492,10 +493,10 @@ hasAttr key cur = not (null (C.attribute (toName key) cur))
 getAttr :: String -> C.Cursor -> IO String
 getAttr key cur =
   let attrs = C.attribute (toName key) cur
-   in if null attrs
-        then throwIO (InvalidXMIRFormat (printf "Couldn't find attribute '%s'" key) cur)
-        else
-          let attr = (T.unpack . head) attrs
+   in case attrs of
+        [] -> throwIO (InvalidXMIRFormat (printf "Couldn't find attribute '%s'" key) cur)
+        at : _ ->
+          let attr = T.unpack at
            in if null attr
                 then throwIO (InvalidXMIRFormat (printf "The attribute '%s' is not expected to be empty" attr) cur)
                 else pure attr

@@ -24,6 +24,7 @@ where
 
 import AST
 import Control.Exception (Exception, throwIO)
+import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.Map.Strict as Map
 import Matcher
 import Misc (uniqueBindings)
@@ -118,8 +119,12 @@ buildExpression (ExDispatch ex at) subst = do
   Right (ExDispatch dispatched at', scope)
 buildExpression (ExApplication expr (BiTau battr bexpr)) subst = do
   (applied, scope) <- buildExpression expr subst
-  bds <- buildBinding (BiTau battr bexpr) subst
-  Right (ExApplication applied (head bds), scope)
+  bd :| _ <- nonEmpty' =<< buildBinding (BiTau battr bexpr) subst
+  Right (ExApplication applied bd, scope)
+  where
+    nonEmpty' :: [a] -> Built (NonEmpty a)
+    nonEmpty' [] = Left ""
+    nonEmpty' (x : xs) = Right (x :| xs)
 buildExpression (ExFormation bds) subst = do
   bds' <- buildBindings bds subst >>= uniqueBindings
   Right (ExFormation bds', defaultScope)

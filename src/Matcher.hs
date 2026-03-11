@@ -117,8 +117,8 @@ tailExpressions ptn tgt scope = case tailExpressionsReversed ptn tgt of
           (substs, tails) <- tailExpressionsReversed ptn' expr
           Just (substs, TaDispatch attr : tails)
         ExApplication expr tau -> do
-          (substs, tails) <- tailExpressionsReversed ptn' expr
-          if not (null tails) && isDispatch (head tails)
+          (substs, tails@(t : _)) <- tailExpressionsReversed ptn' expr
+          if not (null tails) && isDispatch t
             then Just (substs, TaApplication tau : tails)
             else Nothing
           where

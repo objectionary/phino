@@ -5,6 +5,7 @@ module DataizeSpec (spec) where
 
 import AST
 import Control.Monad
+import Data.List.NonEmpty (NonEmpty (..))
 import Dataize (DataizeContext (DataizeContext), dataize, dataize', morph)
 import Deps (dontSaveStep)
 import Functions (buildTerm)
@@ -15,20 +16,20 @@ import Test.Hspec
 defaultDataizeContext :: Expression -> Program -> DataizeContext
 defaultDataizeContext loc prog = DataizeContext loc prog 25 25 False buildTerm dontSaveStep
 
-test :: (Eq a, Show a) => ((Expression, [Rewritten]) -> DataizeContext -> IO (Maybe a, [Rewritten])) -> [(String, Expression, Expression, Maybe a)] -> Spec
+test :: (Eq a, Show a) => ((Expression, NonEmpty Rewritten) -> DataizeContext -> IO (Maybe a, [Rewritten])) -> [(String, Expression, Expression, Maybe a)] -> Spec
 test func useCases =
   forM_ useCases $ \(desc, input, expr, output) ->
     it desc $ do
       let prog = Program expr
-      (res, _) <- func (input, [(prog, Nothing)]) (defaultDataizeContext ExGlobal prog)
+      (res, _) <- func (input, (prog, Nothing) :| []) (defaultDataizeContext ExGlobal prog)
       res `shouldBe` output
 
-test' :: (Eq a, Show a) => ((Expression, [Rewritten]) -> DataizeContext -> IO (a, [Rewritten])) -> [(String, Expression, Expression, a)] -> Spec
+test' :: (Eq a, Show a) => ((Expression, NonEmpty Rewritten) -> DataizeContext -> IO (a, NonEmpty Rewritten)) -> [(String, Expression, Expression, a)] -> Spec
 test' func useCases =
   forM_ useCases $ \(desc, input, expr, output) ->
     it desc $ do
       let prog = Program expr
-      (res, _) <- func (input, [(prog, Nothing)]) (defaultDataizeContext ExGlobal prog)
+      (res, _) <- func (input, (prog, Nothing) :| []) (defaultDataizeContext ExGlobal prog)
       res `shouldBe` output
 
 testDataize :: [(String, String, String, Bytes)] -> Spec

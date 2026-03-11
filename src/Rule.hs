@@ -222,9 +222,9 @@ meetCondition cond (subst : rest) ctx = do
   case met of
     Right first -> do
       next <- meetCondition cond rest ctx
-      if null first
-        then pure next
-        else pure (head first : next)
+      case first of
+        [] -> pure next
+        sbt : _ -> pure (sbt : next)
     Left _ -> meetCondition cond rest ctx
 
 meetMaybeCondition :: Maybe Y.Condition -> [Subst] -> RuleContext -> IO [Subst]

@@ -31,7 +31,7 @@ import Matcher
 import Misc
 import Render (Render (render))
 import Replacer (replaceProgram)
-import Rewriter (Rewritten, Rewrittens)
+import Rewriter (Rewritten, Rewrittens')
 import Sugar (SugarType (SWEET), ToSalty, withSugarType)
 import Text.Printf (printf)
 import Text.Read (readMaybe)
@@ -159,7 +159,7 @@ compressedRewrittens rewrittens ctx@LatexContext{..} =
   let (progs, rules) = unzip rewrittens
    in if _compress then zip (meetInPrograms progs ctx) rules else rewrittens
 
-rewrittensToLatex :: Rewrittens -> LatexContext -> IO String
+rewrittensToLatex :: Rewrittens' -> LatexContext -> IO String
 rewrittensToLatex (rewrittens, exceeded) ctx@LatexContext{_focus = ExGlobal} =
   pure
     ( concat

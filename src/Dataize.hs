@@ -13,6 +13,8 @@ import AST
 import Builder (contextualize)
 import Control.Exception (throwIO)
 import Data.List (partition)
+import Data.List.NonEmpty (NonEmpty (..))
+import qualified Data.List.NonEmpty as NE
 import Deps (BuildTermFunc, SaveStepFunc, Term (TeAttribute))
 import Locator (locatedExpression, withLocatedExpression)
 import Matcher (substEmpty)
@@ -25,7 +27,7 @@ import Yaml (ExtraArgument (ArgAttribute), normalizationRules)
 
 type Dataized = (Maybe Bytes, [Rewritten])
 
-type Dataizable = (Expression, [Rewritten])
+type Dataizable = (Expression, NonEmpty Rewritten)
 
 type Morphed = Dataizable
 
@@ -154,15 +156,16 @@ morph (expr, seq) ctx@DataizeContext{..} = do
         then morph (ExTermination, seq) ctx -- PRIM
         else do
           prog' <- withLocatedExpression _locator expr _program
-          (rewrittens', _) <- rewrite prog' normalizationRules (switchContext ctx) -- NMZ
-          let seq' = reverse rewrittens' <> tail seq
-          expr' <- locatedExpression _locator (fst (head seq'))
+          (rewrittens, _) <- rewrite prog' normalizationRules (switchContext ctx) -- NMZ
+          let (rw :| rws) = NE.reverse rewrittens
+              seq' = rw :| rws <> NE.tail seq
+          expr' <- locatedExpression _locator (fst rw)
           morph (expr', seq') ctx
 
 dataize :: DataizeContext -> IO Dataized
 dataize ctx@DataizeContext{..} = do
   expr <- locatedExpression _locator _program
-  (maybeBytes, seq) <- dataize' (expr, [(_program, Nothing)]) ctx
+  (maybeBytes, seq) <- dataize' (expr, (_program, Nothing) :| []) ctx
   pure (maybeBytes, reverse seq)
 
 -- The goal of 'dataize' function is retrieve bytes from given expression.
@@ -172,30 +175,31 @@ dataize ctx@DataizeContext{..} = do
 -- NORM:  D(e1) -> D(e2)                        if e2 := M(e1) and e1 is not primitive
 --        nothing                               otherwise
 dataize' :: Dataizable -> DataizeContext -> IO Dataized
-dataize' (ExTermination, seq) _ = pure (Nothing, seq)
-dataize' (form@(ExFormation bds), seq) ctx@DataizeContext{..} = case maybeDelta bds of
-  (Just (BiDelta bytes), _) -> pure (Just bytes, seq)
-  (Just _, _) -> pure (Nothing, seq)
-  (Nothing, _) -> case maybePhi bds of
-    (Just (BiTau AtPhi expr), bds') -> case maybeLambda bds' of
-      (Just (BiLambda _), _) -> throwIO (userError "The 𝜑 and λ can't be present in formation at the same time")
-      (Just _, _) -> pure (Nothing, seq)
-      (Nothing, _) -> do
-        let expr' = contextualize expr form
-        seq' <- leadsTo seq "contextualize" expr' ctx
-        dataize' (expr', seq') ctx
-    (Just _, _) -> pure (Nothing, seq)
-    (Nothing, _) -> case maybeLambda bds of
-      (Just (BiLambda _), _) -> morph (form, seq) ctx >>= (`dataize'` ctx)
-      (Just _, _) -> pure (Nothing, seq)
-      (Nothing, _) -> pure (Nothing, seq)
+dataize' (ExTermination, seq) _ = pure (Nothing, NE.toList seq)
+dataize' (form@(ExFormation bds), seq) ctx@DataizeContext{..} =
+  let _seq = NE.toList seq
+   in case maybeDelta bds of
+        (Just (BiDelta bytes), _) -> pure (Just bytes, _seq)
+        (Just _, _) -> pure (Nothing, _seq)
+        (Nothing, _) -> case maybePhi bds of
+          (Just (BiTau AtPhi expr), bds') -> case maybeLambda bds' of
+            (Just (BiLambda _), _) -> throwIO (userError "The 𝜑 and λ can't be present in formation at the same time")
+            (Just _, _) -> pure (Nothing, _seq)
+            (Nothing, _) -> do
+              let expr' = contextualize expr form
+              seq' <- leadsTo seq "contextualize" expr' ctx
+              dataize' (expr', seq') ctx
+          (Just _, _) -> pure (Nothing, _seq)
+          (Nothing, _) -> case maybeLambda bds of
+            (Just (BiLambda _), _) -> morph (form, seq) ctx >>= (`dataize'` ctx)
+            (Just _, _) -> pure (Nothing, _seq)
+            (Nothing, _) -> pure (Nothing, _seq)
 dataize' dataizable ctx = morph dataizable ctx >>= (`dataize'` ctx)
 
-leadsTo :: [Rewritten] -> String -> Expression -> DataizeContext -> IO [Rewritten]
-leadsTo [] _ _ _ = throwIO (userError "Empty rewritten sequence should never met during dataization process")
-leadsTo ((prog, _) : rest) rule expr DataizeContext{..} = do
+leadsTo :: NonEmpty Rewritten -> String -> Expression -> DataizeContext -> IO (NonEmpty Rewritten)
+leadsTo ((prog, _) :| rest) rule expr DataizeContext{..} = do
   prog' <- withLocatedExpression _locator expr prog
-  pure ((prog', Nothing) : (prog, Just rule) : rest)
+  pure ((prog', Nothing) :| (prog, Just rule) : rest)
 
 -- Synthetic dataize function for internal usage inside atoms
 -- Here we modify original program from context by adding new binding
@@ -204,7 +208,7 @@ _dataize :: Expression -> DataizeContext -> IO (Maybe Bytes)
 _dataize expr ctx@DataizeContext{_buildTerm = buildTerm, _program = Program (ExFormation bds)} = do
   (TeAttribute attr) <- buildTerm "random-tau" (map ArgAttribute (attributesFromBindings bds)) substEmpty
   let prog = Program (ExFormation (BiTau attr expr : bds))
-  (bts, _) <- dataize' (expr, [(prog, Nothing)]) ctx{_program = prog}
+  (bts, _) <- dataize' (expr, (prog, Nothing) :| []) ctx{_program = prog}
   pure bts
 _dataize _ _ = throwIO (userError "Can't call _dataize from atoms with non-formation program")
 

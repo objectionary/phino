@@ -254,6 +254,6 @@ instance Render EXTRA_ARG where
   render ARG_BYTES{..} = render bytes
 
 instance Render EXTRA where
-  render EXTRA{func = "contextualize", ..} = printf "$ %s \\coloneqq \\ctx{ %s }{ %s } $" (render meta) (render (head args)) (intercalate ", " (map render (tail args)))
-  render EXTRA{func = "scope", ..} = printf "$ %s \\coloneqq \\scopeof{ %s } $" (render meta) (render (head args))
+  render EXTRA{func = "contextualize", args = arg : rest, ..} = printf "$ %s \\coloneqq \\ctx{ %s }{ %s } $" (render meta) (render arg) (intercalate ", " (map render rest))
+  render EXTRA{func = "scope", args = arg : _, ..} = printf "$ %s \\coloneqq \\scopeof{ %s } $" (render meta) (render arg)
   render EXTRA{..} = printf "$ %s \\coloneqq %s( %s ) $" (render meta) func (intercalate ", " (map render args))

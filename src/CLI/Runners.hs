@@ -14,6 +14,7 @@ import qualified Canonizer as C
 import Condition (parseConditionThrows)
 import Control.Exception
 import Control.Monad (unless, when)
+import qualified Data.List.NonEmpty as NE
 import Data.Maybe (fromJust, isJust, isNothing)
 import Dataize
 import Encoding
@@ -49,7 +50,7 @@ runRewrite OptsRewrite{..} = do
       exclude = (`F.exclude` excluded)
       include = (`F.include` included)
   (rewrittens, exceeded) <- rewrite program rules (context loc printCtx)
-  let rewrittens' = canonize $ exclude $ include (if _sequence then rewrittens else [last rewrittens])
+  let rewrittens' = canonize $ exclude $ include (if _sequence then NE.toList rewrittens else [NE.last rewrittens])
   logDebug (printf "Printing rewritten 𝜑-program as %s" (show _outputFormat))
   progs <- printRewrittens printCtx (rewrittens', exceeded)
   output _targetFile progs

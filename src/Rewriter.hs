@@ -8,11 +8,13 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Rewriter (rewrite, RewriteContext (..), Rewritten, Rewrittens) where
+module Rewriter (rewrite, RewriteContext (..), Rewritten, Rewrittens, Rewrittens') where
 
 import AST
 import Builder
 import Control.Exception (Exception, throwIO)
+import Data.List.NonEmpty (NonEmpty (..))
+import qualified Data.List.NonEmpty as NE
 import Data.Maybe (fromMaybe)
 import qualified Data.Set as Set
 import Deps
@@ -27,11 +29,13 @@ import qualified Rule as R
 import Text.Printf (printf)
 import qualified Yaml as Y
 
-type RewriteState = ([Rewritten], Set.Set Expression)
+type RewriteState = (NonEmpty Rewritten, Set.Set Expression)
 
 type Rewritten = (Program, Maybe String)
 
-type Rewrittens = ([Rewritten], Bool)
+type Rewrittens = (NonEmpty Rewritten, Bool)
+
+type Rewrittens' = ([Rewritten], Bool)
 
 type ToReplace = (Expression, Expression, Expression, [Subst])
 
@@ -95,12 +99,12 @@ buildAndReplace' (expr, ptn, res, substs) func = do
 -- You can find more details in this ticket: https://github.com/objectionary/phino/issues/321
 -- If we don't meet the conditions above - just do a regular replacing
 tryBuildAndReplaceFast :: ToReplace -> ReplaceContext -> IO Expression
-tryBuildAndReplaceFast state@(expr, ExFormation pbds, ExFormation rbds, substs) ctx =
-  let pbds' = init (tail pbds)
-      rbds' = init (tail rbds)
-   in if startsAndEndsWithMeta pbds
-        && startsAndEndsWithMeta rbds
-        && head pbds == head rbds
+tryBuildAndReplaceFast state@(expr, ExFormation _pbds@(pbd : pbds), ExFormation _rbds@(rbd : rbds), substs) ctx =
+  let pbds' = init pbds
+      rbds' = init rbds
+   in if startsAndEndsWithMeta _pbds
+        && startsAndEndsWithMeta _rbds
+        && pbd == rbd
         && last pbds == last rbds
         && not (hasMetaBindings pbds')
         && not (hasMetaBindings rbds')
@@ -112,9 +116,10 @@ tryBuildAndReplaceFast state@(expr, ExFormation pbds, ExFormation rbds, substs) 
           buildAndReplace' state replaceExpression
   where
     startsAndEndsWithMeta :: [Binding] -> Bool
-    startsAndEndsWithMeta bds =
+    startsAndEndsWithMeta [] = False
+    startsAndEndsWithMeta bds@(bd : _) =
       length bds > 1
-        && isMetaBinding (head bds)
+        && isMetaBinding bd
         && isMetaBinding (last bds)
     hasMetaBindings :: [Binding] -> Bool
     isMetaBinding :: Binding -> Bool
@@ -135,11 +140,10 @@ rewrite' state (rule : rest) iteration ctx@RewriteContext{..} = do
   rewrite' state' rest iteration ctx
   where
     _rewrite :: RewriteState -> Int -> IO RewriteState
-    _rewrite (_rewrittens, _unique) _count =
+    _rewrite (_rewrittens@((program, _) :| _), _unique) _count =
       let ruleName = fromMaybe "unknown" (Y.name rule)
           ptn = Y.pattern rule
           res = Y.result rule
-          (program, _) = head _rewrittens
        in if _count - 1 == _maxDepth
             then do
               logDebug (printf "Max amount of rewriting cycles (%d) for rule '%s' has been reached, rewriting is stopped" _maxDepth ruleName)
@@ -177,19 +181,19 @@ rewrite' state (rule : rest) iteration ctx@RewriteContext{..} = do
                           _saveStep prog (((iteration - 1) * _maxDepth) + _count)
                           _rewrite (leadsTo prog, Set.insert expr _unique) (_count + 1)
       where
-        leadsTo :: Program -> [Rewritten]
-        leadsTo _prog = case _rewrittens of
-          (program, _) : rest -> (_prog, Nothing) : (program, Just (fromMaybe "unknown" (Y.name rule))) : rest
-          [] -> [(_prog, Nothing)]
+        leadsTo :: Program -> NonEmpty Rewritten
+        leadsTo _prog =
+          let (program, _) :| rest = _rewrittens
+           in (_prog, Nothing) :| (program, Just (fromMaybe "unknown" (Y.name rule))) : rest
 
 -- Rewrite program by provided locator from RewriteContext
 rewrite :: Program -> [Y.Rule] -> RewriteContext -> IO Rewrittens
 rewrite prog rules ctx@RewriteContext{..} = do
-  (rewrittens, exceeded) <- _rewrite ([(prog, Nothing)], Set.empty) 0
-  pure (reverse rewrittens, exceeded)
+  (rewrittens, exceeded) <- _rewrite ((prog, Nothing) :| [], Set.empty) 0
+  pure (NE.reverse rewrittens, exceeded)
   where
     _rewrite :: RewriteState -> Int -> IO Rewrittens
-    _rewrite state@(rewrittens, _) count
+    _rewrite state@(rewrittens@((program, _) :| _), _) count
       | not (inRange _must count) && count > 0 && exceedsUpperBound _must count = throwIO (MustStopBefore _must count)
       | count == _maxCycles = do
           logDebug (printf "Max amount of rewriting cycles for all rules (%d) has been reached, rewriting is stopped" _maxCycles)
@@ -198,9 +202,7 @@ rewrite prog rules ctx@RewriteContext{..} = do
             else pure (rewrittens, True)
       | otherwise = do
           logDebug (printf "Starting rewriting cycle for all rules: %d out of %d" count _maxCycles)
-          state'@(rewrittens', _) <- rewrite' state rules count ctx
-          let (program', _) = head rewrittens'
-              (program, _) = head rewrittens
+          state'@(rewrittens'@((program', _) :| _), _) <- rewrite' state rules count ctx
           if program' == program
             then do
               logDebug "Rewriting is stopped since it has no effect"

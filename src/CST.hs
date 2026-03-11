@@ -2,7 +2,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# OPTIONS_GHC -Wno-x-partial -Wno-partial-fields -Wno-name-shadowing #-}
+{-# OPTIONS_GHC -Wno-partial-fields -Wno-name-shadowing #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
@@ -314,7 +314,7 @@ instance ToCST Expression EXPRESSION where
         ex' = toCST ex ctx :: EXPRESSION
         next = tabs + 1
         (ts', rs) = withoutRhosInPrimitives ex ts
-        obj = ExApplication ex (head ts')
+        obj = ExApplication ex (head' ts')
      in if length ts' == 1 && isJust (matchDataObject obj)
           then applicationToPrimitive obj tabs rs
           else
@@ -385,6 +385,15 @@ instance ToCST Expression EXPRESSION where
           complexApplication' (ExApplication expr (BiTau (AtAlpha 0) expr')) = (expr, [BiTau (AtAlpha 0) expr'], [expr'])
           complexApplication' (ExApplication expr tau) = (expr, [tau], [])
           complexApplication' expr = (expr, [], [])
+      -- This head' works the same as head from Prelude but doesn't throw an error
+      -- It's used to bypass the x-partial error in ghc 9.8.*
+      -- This approach is just simpler that switching to NonEmpty for complexApplication or withoutRhosInPrimitives functions
+      -- but not a brightest design
+      -- There never be an empty list because application always has binding, which means complex application
+      -- always has non empty list of bindings
+      head' :: [a] -> a
+      head' [] = error "Should never be called"
+      head' (x : _) = x
 
 instance ToCST [Expression] APP_ARG where
   toCST (expr : exprs) ctx = APP_ARG (toCST expr ctx) (toCST exprs ctx)
