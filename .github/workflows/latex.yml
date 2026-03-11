@@ -33,11 +33,11 @@ jobs:
             dist-newstyle
           key: ${{ runner.os }}-cabal-${{ hashFiles('**/*.cabal') }}-${{ hashFiles('cabal.project', 'cabal.project.freeze') }}
           restore-keys: ${{ runner.os }}-cabal-
-      - run: |
-          sudo apt-get update
-          sudo apt-get install -y libxml2-utils
+      # - run: |
+      #     sudo apt-get update
+      #     sudo apt-get install -y libxml2-utils
       - run: cabal update
-      - run: make build
+      - run: cabal build
       - shell: bash
         run: |
           set -e -o pipefail

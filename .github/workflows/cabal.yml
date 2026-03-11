@@ -15,19 +15,15 @@ jobs:
     strategy:
       matrix:
         os: [macos-15, ubuntu-24.04, windows-2022]
+        ghc: ['9.6.7', '9.8.4']
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v6
       - id: setup
         uses: haskell-actions/setup@v2.10.3
         with:
-          ghc-version: '9.6.7'
+          ghc-version: ${{ matrix.ghc }}
           cabal-version: '3.12.1.0'
-      - if: runner.os == 'Linux'
-        uses: zauguin/install-texlive@v4.0.0
-        with:
-          packages: scheme-basic eolang mathtools
-          texlive_version: 2026
       - uses: actions/cache@v5
         with:
           path: |
@@ -37,48 +33,23 @@ jobs:
             dist-newstyle
           key: ${{ runner.os }}-cabal-${{ hashFiles('**/*.cabal') }}-${{ hashFiles('cabal.project', 'cabal.project.freeze') }}
           restore-keys: ${{ runner.os }}-cabal-
-      - if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libxml2-utils
-      - if: runner.os == 'macOS'
-        run: brew install libxml2
-      - if: runner.os == 'macOS'
-        run: |
-            brew install tree coreutils make
-            echo "PATH=/opt/homebrew/opt/make/libexec/gnubin:${PATH}" >> "${GITHUB_ENV}"
-      - if: runner.os == 'Windows'
-        uses: msys2/setup-msys2@v2
-        with:
-          update: true
-          install: libxml2
-      - if: runner.os == 'Windows'
-        shell: pwsh
-        run: echo "C:\msys64\usr\bin" | Out-File -FilePath $env:GITHUB_PATH -Append
+      # - if: runner.os == 'Linux'
+      #   run: |
+      #     sudo apt-get update
+      #     sudo apt-get install -y libxml2-utils
+      # - if: runner.os == 'macOS'
+      #   run: brew install libxml2
+      # - if: runner.os == 'macOS'
+      #   run: |
+      #       brew install tree coreutils make
+      #       echo "PATH=/opt/homebrew/opt/make/libexec/gnubin:${PATH}" >> "${GITHUB_ENV}"
+      # - if: runner.os == 'Windows'
+      #   uses: msys2/setup-msys2@v2
+      #   with:
+      #     update: true
+      #     install: libxml2
+      # - if: runner.os == 'Windows'
+      #   shell: pwsh
+      #   run: echo "C:\msys64\usr\bin" | Out-File -FilePath $env:GITHUB_PATH -Append
       - run: cabal update
-      - run: cabal install hpc-codecov-0.6.3.0 --overwrite-policy=always
-      - run: make clean coverage
-      - if: runner.os == 'Linux'
-        shell: bash
-        run: |
-          set -e -o pipefail
-          cabal build
-          e=$(find ./dist-newstyle/ -name phino -type f | head -1)
-          if [ -z "${e}" ]; then exit 1; fi
-          echo "phino found at: '${e}'."
-          (
-            printf '\\documentclass{article}\n'
-            printf '\\usepackage{mathtools}\n'
-            printf '\\usepackage{eolang}\n'
-            printf '\\newcommand\\ctx[2]{#1 #2}\n'
-            printf '\\newcommand\\indexof[1]{#1}\n'
-            printf '\\newcommand\\scopeof[1]{#1}\n'
-            printf '\\newcommand\\isnormal[1]{#1}\n'
-            printf '\\newcommand\\trrule[5]{#1 $#2$ $#3$ #4 #5}\n'
-            printf '\\begin{document}\n'
-            "${e}" explain --normalize
-            printf '{[[ x -> [[ y -> ? ]].y ]]}' | "${e}" rewrite --normalize --output=latex --sequence
-            printf '{[[ x -> [[ y -> ? ]].y ]]}' | "${e}" dataize --output=latex --sequence --quiet
-            printf '\\end{document}\n'
-          ) > article.tex
-          pdflatex -shell-escape -interaction=errorstopmode -halt-on-error article
+      - run: make clean test
