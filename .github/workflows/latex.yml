@@ -1,0 +1,63 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+name: latex
+'on':
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+jobs:
+  cabal:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+      - id: setup
+        uses: haskell-actions/setup@v2.10.3
+        with:
+          ghc-version: '9.6.7'
+          cabal-version: '3.12.1.0'
+      - uses: zauguin/install-texlive@v4.0.0
+        with:
+          packages: scheme-basic eolang mathtools
+          texlive_version: 2026
+      - uses: actions/cache@v5
+        with:
+          path: |
+            ${{ steps.setup.outputs.ghc-path }}
+            ${{ steps.setup.outputs.cabal-path }}
+            ${{ steps.setup.outputs.cabal-store }}
+            dist-newstyle
+          key: ${{ runner.os }}-cabal-${{ hashFiles('**/*.cabal') }}-${{ hashFiles('cabal.project', 'cabal.project.freeze') }}
+          restore-keys: ${{ runner.os }}-cabal-
+      - run: |
+          sudo apt-get update
+          sudo apt-get install -y libxml2-utils
+      - run: cabal update
+      - run: make build
+      - shell: bash
+        run: |
+          set -e -o pipefail
+          cabal build
+          e=$(find ./dist-newstyle/ -name phino -type f | head -1)
+          if [ -z "${e}" ]; then exit 1; fi
+          echo "phino found at: '${e}'."
+          (
+            printf '\\documentclass{article}\n'
+            printf '\\usepackage{mathtools}\n'
+            printf '\\usepackage{eolang}\n'
+            printf '\\newcommand\\ctx[2]{#1 #2}\n'
+            printf '\\newcommand\\indexof[1]{#1}\n'
+            printf '\\newcommand\\scopeof[1]{#1}\n'
+            printf '\\newcommand\\isnormal[1]{#1}\n'
+            printf '\\newcommand\\trrule[5]{#1 $#2$ $#3$ #4 #5}\n'
+            printf '\\begin{document}\n'
+            "${e}" explain --normalize
+            printf '{[[ x -> [[ y -> ? ]].y ]]}' | "${e}" rewrite --normalize --output=latex --sequence
+            printf '{[[ x -> [[ y -> ? ]].y ]]}' | "${e}" dataize --output=latex --sequence --quiet
+            printf '\\end{document}\n'
+          ) > article.tex
+          pdflatex -shell-escape -interaction=errorstopmode -halt-on-error article
