@@ -2,7 +2,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# OPTIONS_GHC -Wno-partial-fields -Wno-name-shadowing #-}
+{-# OPTIONS_GHC -Wno-x-partial -Wno-partial-fields -Wno-name-shadowing #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
@@ -258,7 +258,7 @@ toCST' :: ToCST a b => a -> b
 toCST' = (`toCST` (0, EOL))
 
 metaTail :: String -> String
-metaTail = tail
+metaTail = drop 1
 
 -- This class is used to convert AST to CST
 -- CST is created with sugar and unicode
