@@ -29,7 +29,6 @@ common warnings
     -Wmissing-home-modules
     -Wpartial-fields
     -Wredundant-constraints
-    -Wno-missing-export-lists
 
 library
   import: warnings
@@ -95,7 +94,6 @@ library
     scientific >=0.3.7 && <0.4,
     text >=2.0.2 && <2.2,
     time >=1.12 && <1.15,
-    transformers >=0.6.0 && <0.7,
     utf8-string >=1.0.2 && <1.1,
     vector >=0.13.0 && <0.14,
     xml-conduit >=1.9 && <1.10,
