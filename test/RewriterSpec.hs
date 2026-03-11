@@ -12,6 +12,7 @@ import AST (Expression (ExGlobal))
 import Control.Monad (forM_, unless)
 import Data.Aeson
 import Data.Char (isSpace)
+import Data.List.NonEmpty qualified as NE
 import Data.Yaml qualified as Yaml
 import Deps (dontSaveStep)
 import Functions (buildTerm)
@@ -25,7 +26,6 @@ import System.FilePath (makeRelative, replaceExtension, (</>))
 import Test.Hspec (Spec, describe, expectationFailure, it, pending, runIO)
 import Yaml (normalizationRules)
 import Yaml qualified as Y
-import qualified Data.List.NonEmpty as NE
 
 data Rules = Rules
   { basic :: Maybe [String]
