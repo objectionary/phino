@@ -355,7 +355,8 @@ To generate a local coverage report for development, run:
 make coverage
 ```
 
-You will need [GHC ≥ 9.6.7][GHC] and [Cabal ≥ 3.0 (recommended)][cabal] or [Stack ≥ 3.0][stack] installed.
+You will need [GHC ≥ 9.6.7][GHC] and [Cabal ≥ 3.0 (recommended)][cabal]
+or [Stack ≥ 3.0][stack] installed.
 
 [cabal]: https://www.haskell.org/cabal/
 [stack]: https://docs.haskellstack.org/en/stable/install_and_upgrade/
