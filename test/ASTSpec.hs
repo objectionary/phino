@@ -1,6 +1,7 @@
+{-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
+
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
-{-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
 
 {- | Tests for the AST module that defines the abstract syntax tree
 for phi-calculus programs including expressions, bindings, attributes, and bytes.
