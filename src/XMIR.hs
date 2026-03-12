@@ -360,8 +360,8 @@ xmirToPhi xmir =
                     | meta <- doc C.$/ C.element (toName "metas") C.&/ C.element (toName "meta")
                     , let heads = meta C.$/ C.element (toName "head") C.&/ C.content
                     , heads == ["package"]
-                    , _tail <- meta C.$/ C.element (toName "tail") C.&/ C.content
-                    , t <- T.splitOn "." _tail
+                    , tail' <- meta C.$/ C.element (toName "tail") C.&/ C.content
+                    , t <- T.splitOn "." tail'
                     ]
               if null pckg
                 then pure (Program (ExFormation [obj, BiVoid AtRho]))
@@ -432,12 +432,12 @@ xmirToExpression cur fqn
       if null rst
         then throwIO (InvalidXMIRFormat (printf "The @base='%s.' is illegal in XMIR" symbol) c)
         else do
-          _head <-
+          head' <-
             foldlM
               (\acc part -> ExDispatch acc <$> toAttr (T.unpack part) c)
               start
               (T.splitOn "." (T.pack rst))
-          xmirToApplication _head (c C.$/ C.element (toName "o")) names
+          xmirToApplication head' (c C.$/ C.element (toName "o")) names
 
 xmirToApplication :: Expression -> [C.Cursor] -> [String] -> IO Expression
 xmirToApplication = xmirToApplication' 0
