@@ -37,16 +37,6 @@ jobs:
           key: ${{ runner.os }}-${{ runner.arch }}-cabal-${{ hashFiles('**/*.cabal') }}-${{ hashFiles('cabal.project', 'cabal.project.freeze') }}
           restore-keys: |
             ${{ runner.os }}-${{ runner.arch }}-cabal-
-      - name: Set up msys2 (Windows)
-        if: runner.os == 'Windows'
-        uses: msys2/setup-msys2@v2
-        with:
-          update: true
-          install: libxml2
-      - name: Add msys2 to PATH (Windows)
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: echo "C:\msys64\usr\bin" | Out-File -FilePath $env:GITHUB_PATH -Append
       - name: Build
         run: |
           cabal update
