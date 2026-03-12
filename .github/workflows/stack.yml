@@ -17,7 +17,7 @@ jobs:
     strategy:
       matrix:
         os: [macos-15, ubuntu-24.04, windows-2022]
-        ghc: ['9.6.7', '9.8.4']
+        ghc: ['9.6.7']
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v6
@@ -36,21 +36,6 @@ jobs:
           key: ${{ runner.os }}-ghc${{ matrix.ghc }}-stack-${{ hashFiles('**/stack.yaml.lock') }}
           restore-keys: |
             ${{ runner.os }}-ghc${{ matrix.ghc }}-stack-
-      # - if: runner.os == 'Linux'
-      #   run: |
-      #     sudo apt-get update
-      #     sudo apt-get install -y libxml2-utils
-      # - if: runner.os == 'macOS'
-      #   run: brew install libxml2
-      # - if: runner.os == 'Windows'
-      #   uses: msys2/setup-msys2@v2
-      #   with:
-      #     update: true
-      #     install: libxml2
-      # - name: Add MSYS2 to PATH on Windows
-      #   if: runner.os == 'Windows'
-      #   shell: pwsh
-      #   run: echo "C:\msys64\usr\bin" | Out-File -FilePath $env:GITHUB_PATH -Append
       - run: stack setup
       - run: stack build --fast
       - run: stack test

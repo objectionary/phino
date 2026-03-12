@@ -39,7 +39,7 @@ jobs:
         run: |
           set -e -o pipefail
           cabal build
-          e=$(find ./dist-newstyle/ -name phino -type f | head -1)
+          e=$(cabal list-bin exe:phino)
           if [ -z "${e}" ]; then exit 1; fi
           echo "phino found at: '${e}'."
           (
