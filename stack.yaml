@@ -37,7 +37,7 @@ extra-deps:
   - random-1.2.1.3@sha256:117541ba0a177397a3333f94870f789ef050dca31b0688a19824b2bc401b8823,6237
   - scientific-0.3.8.0@sha256:ba83a6701dd0110138443757aca4a42786afa94272b73045ef878fd860d1732e,4397
   - vector-0.13.2.0@sha256:b736a57b73520d2acf4865e3e2b40030d69782f35f870e376dc717ee2508d81f,8804
-  - xml-conduit-1.9.1.4@sha256:554bb02f0e236fb0c99c4c9be5ddb0893ad294decc1cff3964c900e31462fbdd,3008
+  - xml-conduit-1.10.0.0@sha256:29fa134ed3f2b20bf3026de5116ef30cc14fab61b2d7c8efe261ba7ed217c1a9,3058
 # - acme-missiles-0.3
 # - git: https://github.com/commercialhaskell/stack.git
 #   commit: e7b331f14bcffb8367cd58fbfc8b40ec7642100a
