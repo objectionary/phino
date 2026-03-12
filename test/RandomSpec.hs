@@ -1,6 +1,7 @@
+{-# LANGUAGE LambdaCase #-}
+
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
-{-# LANGUAGE LambdaCase #-}
 
 {- | Tests for the Random module that provides random string generation
 with pattern substitution for unique identifier creation.
