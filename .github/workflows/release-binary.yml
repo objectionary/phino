@@ -14,15 +14,7 @@ jobs:
   build-and-release:
     strategy:
       matrix:
-        include:
-          - os: macos-15
-            artifact: phino
-          - os: ubuntu-22.04
-            artifact: phino
-          - os: macos-14-large
-            artifact: phino
-          - os: windows-2022
-            artifact: phino.exe
+        os: [macos-15, ubuntu-22.04, macos-14-large, windows-2022]
       fail-fast: false
     runs-on: ${{ matrix.os }}
     steps:
@@ -80,7 +72,7 @@ jobs:
           aws-region: ${{ secrets.S3_REGION }}
       - name: Upload phino binary to S3
         run: |
-          aws s3 cp dist-release/${{ matrix.artifact }} s3://${{ secrets.S3_BUCKET }}/releases/${{ matrix.os }}/phino-0.${{ github.ref_name }}${{ runner.os == 'Windows' && '.exe' || '' }} --acl public-read
+          aws s3 cp dist-release/${{ runner.os == 'Windows' && 'phino.exe' || 'phino' }} s3://${{ secrets.S3_BUCKET }}/releases/${{ matrix.os }}/phino-0.${{ github.ref_name }}${{ runner.os == 'Windows' && '.exe' || '' }} --acl public-read
       - name: Upload as phino-latest
         run: |
-          aws s3 cp dist-release/${{ matrix.artifact }} s3://${{ secrets.S3_BUCKET }}/releases/${{ matrix.os }}/phino-latest${{ runner.os == 'Windows' && '.exe' || '' }} --acl public-read
+          aws s3 cp dist-release/${{ runner.os == 'Windows' && 'phino.exe' || 'phino' }} s3://${{ secrets.S3_BUCKET }}/releases/${{ matrix.os }}/phino-latest${{ runner.os == 'Windows' && '.exe' || '' }} --acl public-read
