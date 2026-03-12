@@ -155,7 +155,7 @@ spec = do
   describe "Binding Ord instance orders correctly" $
     it "sorts bindings by constructor order" $
       let bindings = [BiMetaLambda "Z", BiLambda "A", BiVoid AtRho, BiDelta BtEmpty, BiMeta "B", BiTau AtRho ExGlobal]
-          (first : _) = sort bindings
+          first : _ = sort bindings
           isTau (BiTau _ _) = True
           isTau _ = False
        in first `shouldSatisfy` isTau
