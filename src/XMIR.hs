@@ -14,6 +14,7 @@ module XMIR
   , parseXMIRThrows
   , xmirToPhi
   , defaultXmirContext
+  , escapeXML
   , XmirContext (XmirContext)
   )
 where
@@ -253,6 +254,17 @@ programToXMIR prog@(Program expr@(ExFormation [BiTau (AtLabel _) arg, BiVoid AtR
           nanos = floor (fractional * 1_000_000_000) :: Int
        in base ++ "." ++ printf "%09d" nanos ++ "Z"
 programToXMIR prog _ = throwIO (UnsupportedProgram prog)
+
+escapeXML :: String -> String
+escapeXML = concatMap escapeChar
+  where
+    escapeChar :: Char -> String
+    escapeChar '&' = "&amp;"
+    escapeChar '<' = "&lt;"
+    escapeChar '>' = "&gt;"
+    escapeChar '"' = "&quot;"
+    escapeChar '\'' = "&apos;"
+    escapeChar ch = [ch]
 
 -- Add indentation (2 spaces per level).
 indent :: Int -> TB.Builder

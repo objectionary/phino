@@ -43,7 +43,10 @@ runRewrite OptsRewrite{..} = do
   input <- readInput _inputFile
   rules <- getRules _normalize _shuffle _rules
   program <- parseProgram input _inputFormat
-  let listing = if null rules then const input else (\prog -> P.printProgram' prog (_sugarType, UNICODE, _flat, _margin))
+  let listing = case (rules, _inputFormat, _outputFormat) of
+        ([], XMIR, XMIR) -> (\_ -> escapeXML input)
+        ([], _, _) -> const input
+        (_, _, _) -> (\prog -> P.printProgram' prog (_sugarType, UNICODE, _flat, _margin))
       xmirCtx = XmirContext _omitListing _omitComments listing
       printCtx = printProgCtx xmirCtx foc
       canonize = if _canonize then C.canonize else id

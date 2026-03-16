@@ -411,6 +411,21 @@ spec = do
           ["rewrite", "--input=xmir", "--sweet"]
           ["{⟦ app ↦ ⟦ x ↦ Φ.number ⟧ ⟧}"]
 
+    it "rewrites and prints with XMIR as input and output" $
+      withStdin
+        ( intercalate
+            ""
+            [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+            , "<object><o name=\"app\"><o name=\"x\" base=\"Φ.number\"/></o></object>"
+            ]
+        )
+        ( testCLISucceeded
+            ["rewrite", "--input=xmir", "--output=xmir", "--sweet"]
+            [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+            , "<listing>&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;&lt;object&gt;&lt;o name=&quot;app&quot;&gt;&lt;o name=&quot;x&quot; base=&quot;Φ.number&quot;/&gt;&lt;/o&gt;&lt;/object&gt;</listing>"
+            ]
+        )
+
     it "rewrites as XMIR with omit-listing flag" $
       withStdin "Q -> [[ x -> Q.y ]]" $
         testCLISucceeded
