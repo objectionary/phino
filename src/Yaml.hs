@@ -171,7 +171,7 @@ data Extra = Extra
   deriving (Generic, Show)
 
 data Rule = Rule
-  { name :: Maybe String
+  { name :: String
   , description :: Maybe String
   , pattern :: Expression
   , result :: Expression

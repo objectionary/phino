@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 # SPDX-License-Identifier: MIT
 ---
+name: wrong-condition-name
 pattern: 'Q'
 result: 'Q'
 when:

@@ -9,7 +9,8 @@ output: |-
   ⟧.φ.x
 rules:
   custom:
-    - pattern: '[[!B]].!a'
+    - name: with-simple-condition
+      pattern: '[[!B]].!a'
       result: '[[!B]].@.!a'
       when:
         and:

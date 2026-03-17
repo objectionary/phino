@@ -10,7 +10,8 @@ output: |-
   ⟧
 rules:
   custom:
-    - pattern: '[[ x -> Q.y, !B ]]'
+    - name: part-of-after
+      pattern: '[[ x -> Q.y, !B ]]'
       result: '[[ x -> Q.y, z -> !e, !B ]]'
       where:
         - meta: '!e'

@@ -9,7 +9,8 @@ output: |-
   ⟧
 rules:
   custom:
-    - pattern: '[[ x -> !e1, y -> !e2 ]]'
+    - name: number
+      pattern: '[[ x -> !e1, y -> !e2 ]]'
       result: '[[ x -> !e11, y -> !e22 ]]'
       where:
         - meta: '!e11'

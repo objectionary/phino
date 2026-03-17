@@ -50,6 +50,7 @@ switchContext DataizeContext{..} =
     _depthSensitive
     _buildTerm
     MtDisabled
+    Nothing
     _saveStep
 
 maybeBinding :: (Binding -> Bool) -> [Binding] -> (Maybe Binding, [Binding])

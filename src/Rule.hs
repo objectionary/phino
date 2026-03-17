@@ -19,7 +19,7 @@ import Control.Monad (when)
 import qualified Data.ByteString.Char8 as B
 import Data.Foldable (foldlM)
 import qualified Data.Map.Strict as M
-import Data.Maybe (catMaybes, fromMaybe)
+import Data.Maybe (catMaybes)
 import Deps (BuildTermFunc, Term (..))
 import GHC.IO (unsafePerformIO)
 import Logger (logDebug)
@@ -280,7 +280,7 @@ matchExpressionWithRule :: Expression -> Y.Rule -> RuleContext -> IO [Subst]
 matchExpressionWithRule expr rule ctx =
   let ptn = Y.pattern rule
       matched = matchExpression ptn expr
-      name = fromMaybe "unknown" (Y.name rule)
+      name = Y.name rule
    in if null matched
         then do
           logDebug (printf "Pattern from rule '%s' was not matched:\n%s" name (printExpression' ptn logPrintConfig))

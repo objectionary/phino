@@ -9,7 +9,8 @@ output: |-
   ⟧
 rules:
   custom:
-    - pattern: '[[ !B, !a -> ?, !B1 ]](!a -> !e)'
+    - name: with-program-scope
+      pattern: '[[ !B, !a -> ?, !B1 ]](!a -> !e)'
       result: '[[ !B, !a -> !e2, !B1 ]]'
       where:
         - meta: '!e1'

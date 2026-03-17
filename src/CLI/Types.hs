@@ -131,6 +131,7 @@ data OptsRewrite = OptsRewrite
   , _expression :: Maybe String
   , _label :: Maybe String
   , _meetPrefix :: Maybe String
+  , _breakpoint :: Maybe String
   , _targetFile :: Maybe FilePath
   , _stepsDir :: Maybe FilePath
   , _inputFile :: Maybe FilePath

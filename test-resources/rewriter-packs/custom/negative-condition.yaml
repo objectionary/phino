@@ -6,7 +6,8 @@ output: |-
   Φ ↦ Φ.z
 rules:
   custom:
-    - pattern: '[[!B]].!a'
+    - name: negative-condition
+      pattern: '[[!B]].!a'
       result: 'Q.!a'
       when:
         not:

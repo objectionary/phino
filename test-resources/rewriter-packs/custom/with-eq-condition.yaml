@@ -8,7 +8,8 @@ output: |-
   ⟧
 rules:
   custom:
-    - pattern: '[[!a1 -> $.q, !a2 -> !e, !B]]'
+    - name: with-eq-condition
+      pattern: '[[!a1 -> $.q, !a2 -> !e, !B]]'
       result: '[[!a2 -> !e, !B]]'
       when:
         and:

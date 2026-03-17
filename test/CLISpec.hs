@@ -277,6 +277,12 @@ spec = do
             ["rewrite", "--margin=-1"]
             ["[ERROR]"]
 
+      it "with --breakpoint which does not exist across the rules" $
+        withStdin "" $
+          testCLIFailed
+            ["rewrite", "--breakpoint=hello", "--normalize"]
+            ["[ERROR]"]
+
     it "prints help" $
       testCLISucceeded
         ["rewrite", "--help"]
@@ -754,6 +760,15 @@ spec = do
         testCLISucceeded
           ["rewrite", "--sweet", "--flat", "--locator=Q.ex", "--normalize"]
           ["{⟦ ex ↦ ⟦ x ↦ 5 ⟧, abc ↦ ⟦ x ↦ ∅ ⟧( x ↦ 5 ) ⟧}"]
+
+    it "returns original program on --breakpoint" $
+      withStdin "{[[ x -> ?, y -> $.x ]](x -> [[ D> 42- ]]).y}" $
+        testCLISucceeded
+          ["rewrite", "--sweet", "--flat", "--normalize", "--breakpoint=stop", "--log-level=debug"]
+          [ "Applied 'copy' (30 nodes -> 25 nodes)"
+          , "Rule 'stop' is a breakpoint, dropping down all the previous rewritings..."
+          , "{⟦ x ↦ ∅, y ↦ x ⟧( x ↦ ⟦ Δ ⤍ 42- ⟧ ).y}"
+          ]
 
   describe "dataize" $ do
     it "prints help" $

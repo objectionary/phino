@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 # SPDX-License-Identifier: MIT
 ---
+name: two-condition-objects
 pattern: 'Q'
 result: 'Q'
 when:

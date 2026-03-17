@@ -14,6 +14,7 @@ import qualified Canonizer as C
 import Condition (parseConditionThrows)
 import Control.Exception
 import Control.Monad (unless, when)
+import Data.List (intercalate)
 import qualified Data.List.NonEmpty as NE
 import Data.Maybe (fromJust, isJust, isNothing)
 import Dataize
@@ -39,10 +40,11 @@ runRewrite OptsRewrite{..} = do
   included <- validatedDispatches "show" _show
   [loc] <- validatedDispatches "locator" [_locator]
   [foc] <- validatedDispatches "focus" [_focus]
-  logDebug (printf "Amount of rewriting cycles across all the rules: %d, per rule: %d" _maxCycles _maxDepth)
-  input <- readInput _inputFile
   rules <- getRules _normalize _shuffle _rules
+  validateBreakpoint rules
+  input <- readInput _inputFile
   program <- parseProgram input _inputFormat
+  logDebug (printf "Amount of rewriting cycles across all the rules: %d, per rule: %d" _maxCycles _maxDepth)
   let listing = case (rules, _inputFormat, _outputFormat) of
         ([], XMIR, XMIR) -> (\_ -> escapeXML input)
         ([], _, _) -> const input
@@ -70,6 +72,15 @@ runRewrite OptsRewrite{..} = do
         [(_meetPopularity, "meet-popularity"), (_meetLength, "meet-length")]
       validateMust' _must
       validateXmirOptions _outputFormat [(_omitListing, "omit-listing"), (_omitComments, "omit-comments")] _focus
+    validateBreakpoint :: [Y.Rule] -> IO ()
+    validateBreakpoint rules =
+      let names = map Y.name rules
+       in case _breakpoint of
+            Nothing -> pure ()
+            Just nme ->
+              unless
+                (nme `elem` names)
+                (invalidCLIArguments (printf "The rule '%s' provided in '--breakpoint' option is absent across given rewriting rules: %s" nme (intercalate ", " names)))
     output :: Maybe FilePath -> String -> IO ()
     output target prog = case (_inPlace, target, _inputFile) of
       (True, _, Just file) -> do
@@ -86,7 +97,7 @@ runRewrite OptsRewrite{..} = do
         logDebug "The option '--target' is not specified, printing to console..."
         putStrLn prog
     context :: Expression -> PrintProgramContext -> RewriteContext
-    context loc ctx = RewriteContext loc _maxDepth _maxCycles _depthSensitive buildTerm _must (saveStepFunc _stepsDir ctx)
+    context loc ctx = RewriteContext loc _maxDepth _maxCycles _depthSensitive buildTerm _must _breakpoint (saveStepFunc _stepsDir ctx)
     printProgCtx :: XmirContext -> Expression -> PrintProgramContext
     printProgCtx xmirCtx focus =
       PrintProgCtx
@@ -209,4 +220,4 @@ runMatch OptsMatch{..} = do
         else putStrLn (P.printSubsts' substs (_sugarType, UNICODE, _flat, defaultMargin))
   where
     rule :: Expression -> Maybe Y.Condition -> Y.Rule
-    rule ptn cnd = Y.Rule Nothing Nothing ptn ExGlobal cnd Nothing Nothing
+    rule ptn cnd = Y.Rule "custom" Nothing ptn ExGlobal cnd Nothing Nothing

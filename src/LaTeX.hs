@@ -22,7 +22,7 @@ module LaTeX
 import AST
 import CST
 import Data.List (intercalate, nub)
-import Data.Maybe (fromMaybe, isJust)
+import Data.Maybe (isJust)
 import Encoding
 import Lining
 import Locator (locatedExpression)
@@ -320,7 +320,7 @@ explainRule :: Y.Rule -> String
 explainRule rule =
   intercalate
     "\n  "
-    [ "\\trrule{" ++ fromMaybe "unknown" (Y.name rule) ++ "}"
+    [ "\\trrule{" ++ Y.name rule ++ "}"
     , braced (renderToLatex (expressionToCST (Y.pattern rule)) defaultLatexContext)
     , braced (renderToLatex (expressionToCST (Y.result rule)) defaultLatexContext)
     , conditionToLatex (joinedConditions (Y.when rule) (Y.having rule))

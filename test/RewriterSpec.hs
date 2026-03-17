@@ -111,6 +111,7 @@ spec =
                       False
                       buildTerm
                       must'
+                      Nothing
                       dontSaveStep
                   )
               let (program, _) = NE.last rewrittens

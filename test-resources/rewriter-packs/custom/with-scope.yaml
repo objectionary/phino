@@ -16,7 +16,8 @@ output: |-
   ⟧
 rules:
   custom:
-    - pattern: '[[ x -> [[ y -> ? ]](y -> !e) ]]'
+    - name: with-scope
+      pattern: '[[ x -> [[ y -> ? ]](y -> !e) ]]'
       result: '[[ x -> [[ y -> !e1 ]] ]]'
       where:
         - meta: '!e1'

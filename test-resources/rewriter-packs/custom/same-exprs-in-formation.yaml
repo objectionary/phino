@@ -6,5 +6,6 @@ output: |-
   Φ ↦ [[ x -> $, ^ -> $ ]]
 rules:
   custom:
-    - pattern: 'Q'
+    - name: same-exrs
+      pattern: 'Q'
       result: '$'

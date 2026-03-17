@@ -19,5 +19,6 @@ output: |-
   ⟧
 rules:
   custom:
-    - pattern: Φ.x.y.z
+    - name: desugar without match
+      pattern: Φ.x.y.z
       result: Φ.a.b.c

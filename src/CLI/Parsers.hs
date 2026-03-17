@@ -133,6 +133,9 @@ optLabel = optional (strOption (long "label" <> metavar "NAME" <> help "Name for
 optMeetPrefix :: Parser (Maybe String)
 optMeetPrefix = optional (strOption (long "meet-prefix" <> metavar "PREFIX" <> help "Prefix to be inserted before index in \\phiMeet{} and \\phiAgain{} LaTeX functions, e.g. \\phiMeet{foo:1}"))
 
+optBreakpoint :: Parser (Maybe FilePath)
+optBreakpoint = optional (strOption (long "breakpoint" <> metavar "FILE" <> help "The name of the first unmatched rule which leads to stopping entire rewriting process and returning original program"))
+
 optHide :: Parser [String]
 optHide =
   many
@@ -191,6 +194,17 @@ optLineFormat = flag MULTILINE SINGLELINE (long "flat" <> help (printf "Print re
 
 optLineFormat' :: Parser LineFormat
 optLineFormat' = flag MULTILINE SINGLELINE (long "flat" <> help "Print result 𝜑-program in one line")
+
+optMust :: Parser Must
+optMust =
+  option
+    auto
+    ( long "must"
+        <> metavar "RANGE"
+        <> help "Must-rewrite range (e.g., '3', '..5', '3..', '3..5'). Stops execution if number of rules applied is not in range. Use 0 to disable."
+        <> value MtDisabled
+        <> showDefaultWith show
+    )
 
 optOmitListing :: Parser Bool
 optOmitListing = switch (long "omit-listing" <> help "Omit full program listing in XMIR output")
@@ -260,14 +274,7 @@ rewriteParser =
             <*> optOutputFormat
             <*> optSugar
             <*> optLineFormat
-            <*> option
-              auto
-              ( long "must"
-                  <> metavar "RANGE"
-                  <> help "Must-rewrite range (e.g., '3', '..5', '3..', '3..5'). Stops execution if number of rules applied is not in range. Use 0 to disable."
-                  <> value MtDisabled
-                  <> showDefaultWith show
-              )
+            <*> optMust
             <*> optNormalize
             <*> optShuffle
             <*> optOmitListing
@@ -291,6 +298,7 @@ rewriteParser =
             <*> optExpression
             <*> optLabel
             <*> optMeetPrefix
+            <*> optBreakpoint
             <*> optTarget
             <*> optStepsDir
             <*> argInputFile

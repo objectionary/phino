@@ -15,7 +15,6 @@ import Builder
 import Control.Exception (Exception, throwIO)
 import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as NE
-import Data.Maybe (fromMaybe)
 import qualified Data.Set as Set
 import Deps
 import Locator (locatedExpression, withLocatedExpression)
@@ -29,7 +28,7 @@ import qualified Rule as R
 import Text.Printf (printf)
 import qualified Yaml as Y
 
-type RewriteState = (NonEmpty Rewritten, Set.Set Expression)
+type RewriteState = (NonEmpty Rewritten, Set.Set Expression, Bool)
 
 type Rewritten = (Program, Maybe String)
 
@@ -46,6 +45,7 @@ data RewriteContext = RewriteContext
   , _depthSensitive :: Bool
   , _buildTerm :: BuildTermFunc
   , _must :: Must
+  , _breakpoint :: Maybe String
   , _saveStep :: SaveStepFunc
   }
 
@@ -129,19 +129,23 @@ tryBuildAndReplaceFast state@(expr, ExFormation _pbds@(pbd : pbds), ExFormation 
     hasMetaBindings = foldl (\acc bd -> acc || isMetaBinding bd) False
 tryBuildAndReplaceFast state _ = buildAndReplace' state replaceExpression
 
--- The function returns tuple (X, Y) where
+-- The function returns tuple (X, Y, Z) where
 -- - X is sequence of programs;
 -- - Y is Set of unique programs after each rule application. It allows to stop the rewriting if we're getting
 --   into loop and get back to program which we've already got before
+-- - Z is boolean flag which tells us if we reach breakpoint. If unmatched rule is equal to breakpoint rule - entire
+--   rewriting must be stoped and original program must be returned
 rewrite' :: RewriteState -> [Y.Rule] -> Int -> RewriteContext -> IO RewriteState
 rewrite' state [] _ _ = pure state
 rewrite' state (rule : rest) iteration ctx@RewriteContext{..} = do
   state' <- _rewrite state 1
-  rewrite' state' rest iteration ctx
+  case state' of
+    (_, _, True) -> pure state'
+    _ -> rewrite' state' rest iteration ctx
   where
     _rewrite :: RewriteState -> Int -> IO RewriteState
-    _rewrite (_rewrittens@((program, _) :| _), _unique) _count =
-      let ruleName = fromMaybe "unknown" (Y.name rule)
+    _rewrite (_rewrittens@((program, _) :| _), _unique, _) _count =
+      let ruleName = Y.name rule
           ptn = Y.pattern rule
           res = Y.result rule
        in if _count - 1 == _maxDepth
@@ -149,22 +153,25 @@ rewrite' state (rule : rest) iteration ctx@RewriteContext{..} = do
               logDebug (printf "Max amount of rewriting cycles (%d) for rule '%s' has been reached, rewriting is stopped" _maxDepth ruleName)
               if _depthSensitive
                 then throwIO (StoppedOnLimit "max-depth" _maxDepth)
-                else pure (_rewrittens, _unique)
+                else pure (_rewrittens, _unique, False)
             else do
               logDebug (printf "Starting rewriting cycle for rule '%s': %d out of %d" ruleName _count _maxDepth)
               expression <- locatedExpression _locator program
-              matched <- R.matchExpressionWithRule expression rule (RuleContext _buildTerm)
-              if null matched
-                then do
+              R.matchExpressionWithRule expression rule (RuleContext _buildTerm) >>= \case
+                [] -> do
                   logDebug (printf "Rule '%s' does not match, rewriting is stopped" ruleName)
-                  pure (_rewrittens, _unique)
-                else do
+                  if _breakpoint == Just ruleName
+                    then do
+                      logDebug (printf "Rule '%s' is a breakpoint, dropping down all the previous rewritings..." ruleName)
+                      pure (_rewrittens, _unique, True)
+                    else pure (_rewrittens, _unique, False)
+                matched -> do
                   logDebug (printf "Rule '%s' has been matched, applying..." ruleName)
                   expr <- tryBuildAndReplaceFast (expression, ptn, res, matched) (ReplaceCtx _maxDepth)
                   if expression == expr
                     then do
                       logDebug (printf "Applied '%s', no changes made" ruleName)
-                      pure (_rewrittens, _unique)
+                      pure (_rewrittens, _unique, False)
                     else
                       if Set.member expr _unique
                         then throwIO (LoopingRewriting (printExpression expr) ruleName _count)
@@ -179,21 +186,21 @@ rewrite' state (rule : rest) iteration ctx@RewriteContext{..} = do
                             )
                           prog <- withLocatedExpression _locator expr program
                           _saveStep prog (((iteration - 1) * _maxDepth) + _count)
-                          _rewrite (leadsTo prog, Set.insert expr _unique) (_count + 1)
+                          _rewrite (leadsTo prog, Set.insert expr _unique, False) (_count + 1)
       where
         leadsTo :: Program -> NonEmpty Rewritten
         leadsTo _prog =
           let (program, _) :| rest = _rewrittens
-           in (_prog, Nothing) :| (program, Just (fromMaybe "unknown" (Y.name rule))) : rest
+           in (_prog, Nothing) :| (program, Just (Y.name rule)) : rest
 
 -- Rewrite program by provided locator from RewriteContext
 rewrite :: Program -> [Y.Rule] -> RewriteContext -> IO Rewrittens
 rewrite prog rules ctx@RewriteContext{..} = do
-  (rewrittens, exceeded) <- _rewrite ((prog, Nothing) :| [], Set.empty) 0
+  (rewrittens, exceeded) <- _rewrite ((prog, Nothing) :| [], Set.empty, False) 0
   pure (NE.reverse rewrittens, exceeded)
   where
     _rewrite :: RewriteState -> Int -> IO Rewrittens
-    _rewrite state@(rewrittens@((program, _) :| _), _) count
+    _rewrite state@(rewrittens@((program, _) :| _), _, _) count
       | not (inRange _must count) && count > 0 && exceedsUpperBound _must count = throwIO (MustStopBefore _must count)
       | count == _maxCycles = do
           logDebug (printf "Max amount of rewriting cycles for all rules (%d) has been reached, rewriting is stopped" _maxCycles)
@@ -202,11 +209,13 @@ rewrite prog rules ctx@RewriteContext{..} = do
             else pure (rewrittens, True)
       | otherwise = do
           logDebug (printf "Starting rewriting cycle for all rules: %d out of %d" count _maxCycles)
-          state'@(rewrittens'@((program', _) :| _), _) <- rewrite' state rules count ctx
-          if program' == program
-            then do
-              logDebug "Rewriting is stopped since it has no effect"
-              if not (inRange _must count)
-                then throwIO (MustBeGoing _must count)
-                else pure (rewrittens', False)
-            else _rewrite state' (count + 1)
+          rewrite' state rules count ctx >>= \case
+            (_, _, True) -> pure ((prog, Nothing) :| [], False) -- breakpoint, return original program
+            state'@(rewrittens'@((program', _) :| _), _, False) ->
+              if program' == program
+                then do
+                  logDebug "Rewriting is stopped since it has no effect"
+                  if not (inRange _must count)
+                    then throwIO (MustBeGoing _must count)
+                    else pure (rewrittens', False)
+                else _rewrite state' (count + 1)

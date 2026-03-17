@@ -8,7 +8,8 @@ output: |-
   ⟧
 rules:
   custom:
-    - pattern: '[[!a1 -> $.q, !B]](!a2 -> !e)'
+    - name: with-alpha-conditiion
+      pattern: '[[!a1 -> $.q, !B]](!a2 -> !e)'
       result: '[[!B]]'
       when:
         and:

@@ -8,7 +8,8 @@ output: |-
   ⟧
 rules:
   custom:
-    - pattern: '[[ x -> !e1, y -> !e2 ]]'
+    - name: sum
+      pattern: '[[ x -> !e1, y -> !e2 ]]'
       result: '[[ z -> !e3 ]]'
       where:
         - meta: '!e3'
