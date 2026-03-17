@@ -41,7 +41,7 @@ runRewrite OptsRewrite{..} = do
   [loc] <- validatedDispatches "locator" [_locator]
   [foc] <- validatedDispatches "focus" [_focus]
   rules <- getRules _normalize _shuffle _rules
-  validateBreakpoint rules
+  validateBreakpoint _breakpoint rules
   input <- readInput _inputFile
   program <- parseProgram input _inputFormat
   logDebug (printf "Amount of rewriting cycles across all the rules: %d, per rule: %d" _maxCycles _maxDepth)
@@ -72,15 +72,13 @@ runRewrite OptsRewrite{..} = do
         [(_meetPopularity, "meet-popularity"), (_meetLength, "meet-length")]
       validateMust' _must
       validateXmirOptions _outputFormat [(_omitListing, "omit-listing"), (_omitComments, "omit-comments")] _focus
-    validateBreakpoint :: [Y.Rule] -> IO ()
-    validateBreakpoint rules =
+    validateBreakpoint :: Maybe String -> [Y.Rule] -> IO ()
+    validateBreakpoint Nothing _ = pure ()
+    validateBreakpoint (Just rule) rules =
       let names = map Y.name rules
-       in case _breakpoint of
-            Nothing -> pure ()
-            Just nme ->
-              unless
-                (nme `elem` names)
-                (invalidCLIArguments (printf "The rule '%s' provided in '--breakpoint' option is absent across given rewriting rules: %s" nme (intercalate ", " names)))
+       in unless
+            (rule `elem` names)
+            (invalidCLIArguments (printf "The rule '%s' provided in '--breakpoint' option is absent across given rewriting rules: %s" rule (intercalate ", " names)))
     output :: Maybe FilePath -> String -> IO ()
     output target prog = case (_inPlace, target, _inputFile) of
       (True, _, Just file) -> do
