@@ -214,7 +214,7 @@ runMatch OptsMatch{..} = do
       condition <- traverse parseConditionThrows _when
       substs <- matchProgramWithRule prog (rule ptn condition) (RuleContext buildTerm)
       if null substs
-        then logDebug "Provided pattern was not matched, no substitutions are built"
+        then throwIO EmptySubstsOnMatch
         else putStrLn (P.printSubsts' substs (_sugarType, UNICODE, _flat, defaultMargin))
   where
     rule :: Expression -> Maybe Y.Condition -> Y.Rule

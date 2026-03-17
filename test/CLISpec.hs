@@ -1027,3 +1027,9 @@ spec = do
         testCLIFailed
           ["match", "--pattern=[[!B]]", "--when=hello"]
           ["[ERROR]: Couldn't parse given condition"]
+    
+    it "fails on empty substitutions" $
+      withStdin "{Q.x.y}" $
+        testCLIFailed
+          ["match", "--pattern=$.!a"]
+          ["[ERROR]"]

@@ -37,6 +37,7 @@ data CmdException
   | CouldNotReadFromStdin String
   | CouldNotDataize
   | CouldNotPrintExpressionInXMIR
+  | EmptySubstsOnMatch
   deriving (Exception)
 
 instance Show CmdException where
@@ -44,6 +45,7 @@ instance Show CmdException where
   show (CouldNotReadFromStdin msg) = printf "Could not read input from stdin\nReason: %s" msg
   show CouldNotDataize = "Could not dataize given program"
   show CouldNotPrintExpressionInXMIR = "Could not print expression with --output=xmir, only program printing is allowed"
+  show EmptySubstsOnMatch = "Provided pattern was not matched, no substitutions are built"
 
 data Command
   = CmdRewrite OptsRewrite
