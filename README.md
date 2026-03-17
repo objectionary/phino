@@ -44,7 +44,8 @@ phino --version
 
 Download paths are:
 
-* Ubuntu: <http://phino.objectionary.com/releases/ubuntu-24.04/phino-latest>
+* Ubuntu 22.04: <http://phino.objectionary.com/releases/ubuntu-22.04/phino-latest>
+* Ubuntu 24.04: <http://phino.objectionary.com/releases/ubuntu-24.04/phino-latest>
 * MacOS (ARM): <http://phino.objectionary.com/releases/macos-15/phino-latest>
 * MacOS (Intel): <http://phino.objectionary.com/releases/macos-14-large/phino-latest>
 * Windows: <http://phino.objectionary.com/releases/windows-2022/phino-latest.exe>
