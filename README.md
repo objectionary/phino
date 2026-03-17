@@ -225,7 +225,7 @@ apostrophe, like `Attribute'` are built types from 𝜑-program [AST](src/AST.hs
 
 ```bnfc
 Rule:
-  name: String?
+  name: String
   pattern: String
   result: String
   when: Condition?       # predicate, works with substitutions before extension

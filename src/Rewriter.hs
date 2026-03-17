@@ -134,7 +134,7 @@ tryBuildAndReplaceFast state _ = buildAndReplace' state replaceExpression
 -- - Y is Set of unique programs after each rule application. It allows to stop the rewriting if we're getting
 --   into loop and get back to program which we've already got before
 -- - Z is boolean flag which tells us if we reach breakpoint. If unmatched rule is equal to breakpoint rule - entire
---   rewriting must be stoped and original program must be returned
+--   rewriting must be stopped and original program must be returned
 rewrite' :: RewriteState -> [Y.Rule] -> Int -> RewriteContext -> IO RewriteState
 rewrite' state [] _ _ = pure state
 rewrite' state (rule : rest) iteration ctx@RewriteContext{..} = do
