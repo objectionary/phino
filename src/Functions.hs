@@ -187,7 +187,7 @@ _string [Y.ArgExpression expr] subst = do
       throwIO
         ( userError
             ( printf
-                "Couldn't convert given expression to 'Φ̇.string' object, only 'Φ̇.number' or 'Φ̇.string' are allowed\n%s"
+                "Couldn't convert given expression to 'Φ.string' object, only 'Φ.number' or 'Φ.string' are allowed\n%s"
                 (printExpression ex)
             )
         )
@@ -195,7 +195,7 @@ _string [Y.ArgExpression expr] subst = do
 _string [Y.ArgAttribute attr] subst = do
   attr' <- buildAttributeThrows attr subst
   pure (TeExpression (DataString (strToBts (printAttribute attr'))))
-_string _ _ = throwIO (userError "Function string() requires exactly 1 argument as attribute or data expression (Φ̇.number or Φ̇.string)")
+_string _ _ = throwIO (userError "Function string() requires exactly 1 argument as attribute or data expression (Φ.number or Φ.string)")
 
 _number :: BuildTermMethod
 _number [Y.ArgExpression expr] subst = do
@@ -204,8 +204,8 @@ _number [Y.ArgExpression expr] subst = do
     DataString bts -> do
       num <- parseNumberThrows (btsToUnescapedStr bts)
       pure (TeExpression num)
-    _ -> throwIO (userError (printf "Function number() expects expression to be 'Φ̇.string', but got:\n%s" (printExpression expr')))
-_number _ _ = throwIO (userError "Function number() requires exactly 1 argument as 'Φ̇.string'")
+    _ -> throwIO (userError (printf "Function number() expects expression to be 'Φ.string', but got:\n%s" (printExpression expr')))
+_number _ _ = throwIO (userError "Function number() requires exactly 1 argument as 'Φ.string'")
 
 _sum :: BuildTermMethod
 _sum args subst = do

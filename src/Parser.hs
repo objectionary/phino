@@ -59,7 +59,7 @@ instance Show ParserException where
   show CouldNotParseProgram{..} = printf "Couldn't parse given phi program, cause: %s" message
   show CouldNotParseExpression{..} = printf "Couldn't parse given phi expression, cause: %s" message
   show CouldNotParseAttribute{..} = printf "Couldn't parse given attribute, cause: %s" message
-  show CouldNotParseNumber{..} = printf "Couldn't parse given number to 'Φ̇.number', cause: %s" message
+  show CouldNotParseNumber{..} = printf "Couldn't parse given number to 'Φ.number', cause: %s" message
 
 -- White space consumer
 whiteSpace :: Parser ()
