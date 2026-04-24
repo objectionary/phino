@@ -1,6 +1,7 @@
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# OPTIONS_GHC -Wno-partial-fields -Wno-name-shadowing #-}
 
@@ -11,6 +12,7 @@ module CST where
 
 import AST
 import Data.Maybe (isJust)
+import qualified Data.Text as T
 import Misc
 import qualified Yaml as Y
 
@@ -92,7 +94,7 @@ data META_HEAD
 data EXCLAMATION = EXCL | NO_EXCL
   deriving (Eq, Show)
 
-data META = META {excl :: EXCLAMATION, hd :: META_HEAD, rest :: String}
+data META = META {excl :: EXCLAMATION, hd :: META_HEAD, rest :: T.Text}
   deriving (Eq, Show)
 
 data TAB
@@ -113,8 +115,8 @@ data PAIR
   = PA_TAU {attr :: ATTRIBUTE, arrow :: ARROW, expr :: EXPRESSION}
   | PA_FORMATION {attr :: ATTRIBUTE, voids :: [ATTRIBUTE], arrow :: ARROW, expr :: EXPRESSION}
   | PA_VOID {attr :: ATTRIBUTE, arrow :: ARROW, void :: VOID}
-  | PA_LAMBDA {func :: String}
-  | PA_LAMBDA' {func :: String} -- ASCII version of PA_LAMBDA
+  | PA_LAMBDA {func :: T.Text}
+  | PA_LAMBDA' {func :: T.Text} -- ASCII version of PA_LAMBDA
   | PA_META_LAMBDA {meta :: META}
   | PA_META_LAMBDA' {meta :: META} -- ASCII version of PA_META_LAMBDA'
   | PA_DELTA {bytes :: BYTES}
@@ -167,7 +169,7 @@ data EXPRESSION
   deriving (Eq, Show)
 
 data ATTRIBUTE
-  = AT_LABEL {label :: String}
+  = AT_LABEL {label :: T.Text}
   | AT_ALPHA {alpha :: ALPHA, idx :: Int}
   | AT_RHO {rho :: RHO}
   | AT_PHI {phi :: PHI}
@@ -257,8 +259,8 @@ extraToCST = toCST'
 toCST' :: ToCST a b => a -> b
 toCST' = (`toCST` (0, EOL))
 
-metaTail :: String -> String
-metaTail = drop 1
+metaTail :: T.Text -> T.Text
+metaTail = T.drop 1
 
 -- This class is used to convert AST to CST
 -- CST is created with sugar and unicode
@@ -340,7 +342,7 @@ instance ToCST Expression EXPRESSION where
                   (TAB tabs)
                   next
     where
-      primitives :: [String]
+      primitives :: [T.Text]
       primitives = ["number", "string"]
       withoutRhosInPrimitives :: Expression -> [Binding] -> ([Binding], [Binding])
       withoutRhosInPrimitives _ [] = ([], [])
@@ -437,7 +439,7 @@ instance ToCST Binding PAIR where
   toCST (BiDelta bts) ctx = PA_DELTA (toCST bts ctx)
   toCST (BiLambda func) _ = PA_LAMBDA func
   toCST (BiMetaLambda mt) _ = PA_META_LAMBDA (META EXCL F (metaTail mt))
-  toCST (BiMeta mt) _ = error $ "BiMeta binding " ++ mt ++ " cannot be converted to PAIR"
+  toCST (BiMeta mt) _ = error $ "BiMeta binding " ++ T.unpack mt ++ " cannot be converted to PAIR"
 
 instance ToCST Binding APP_BINDING where
   toCST bd@(BiTau _ _) ctx = APP_BINDING (toCST bd ctx :: PAIR)

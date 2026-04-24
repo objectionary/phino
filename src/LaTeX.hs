@@ -1,6 +1,7 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
@@ -23,6 +24,7 @@ import AST
 import CST
 import Data.List (intercalate, nub)
 import Data.Maybe (isJust)
+import qualified Data.Text as T
 import Encoding
 import Lining
 import Locator (locatedExpression)
@@ -124,7 +126,7 @@ meetInPrograms prog LatexContext{..} = meetInPrograms' prog 1
     popularity = toDouble _meetPopularity / 100.0
 
 renderToLatex :: (ToSalty a, ToASCII a, ToSingleLine a, ToLaTeX a, WithMargin a, Render a) => a -> LatexContext -> String
-renderToLatex renderable LatexContext{..} = render (toLaTeX $ withLineFormat _line $ withMargin _margin $ withEncoding ASCII $ withSugarType _sugar renderable)
+renderToLatex renderable LatexContext{..} = T.unpack $ render (toLaTeX $ withLineFormat _line $ withMargin _margin $ withEncoding ASCII $ withSugarType _sugar renderable)
 
 phiquation :: LatexContext -> String
 phiquation LatexContext{_nonumber = True} = "phiquation*"
@@ -195,8 +197,8 @@ expressionToLaTeX ex ctx =
     , ending False ctx
     ]
 
-piped :: String -> String
-piped str = "|" <> str <> "|"
+piped :: T.Text -> T.Text
+piped str = "|" <> toLaTeX str <> "|"
 
 class ToLaTeX a where
   toLaTeX :: a -> a
@@ -218,7 +220,7 @@ instance ToLaTeX EXPRESSION where
   toLaTeX expr = expr
 
 instance ToLaTeX ATTRIBUTE where
-  toLaTeX AT_LABEL{..} = AT_LABEL (piped (toLaTeX label))
+  toLaTeX AT_LABEL{..} = AT_LABEL (piped label)
   toLaTeX AT_META{..} = AT_META (toLaTeX meta)
   toLaTeX AT_LAMBDA{} = AT_LAMBDA LAMBDA'
   toLaTeX AT_REST{} = AT_REST DOTS'
@@ -239,8 +241,8 @@ instance ToLaTeX BINDINGS where
 
 instance ToLaTeX PAIR where
   toLaTeX PA_DELTA{..} = PA_DELTA' bytes
-  toLaTeX PA_LAMBDA{..} = PA_LAMBDA' (piped (toLaTeX func))
-  toLaTeX PA_LAMBDA'{..} = PA_LAMBDA' (piped (toLaTeX func))
+  toLaTeX PA_LAMBDA{..} = PA_LAMBDA' (piped func)
+  toLaTeX PA_LAMBDA'{..} = PA_LAMBDA' (piped func)
   toLaTeX PA_VOID{..} = PA_VOID (toLaTeX attr) arrow void
   toLaTeX PA_TAU{..} = PA_TAU (toLaTeX attr) arrow (toLaTeX expr)
   toLaTeX PA_FORMATION{..} = PA_FORMATION (toLaTeX attr) (map toLaTeX voids) arrow (toLaTeX expr)
@@ -252,8 +254,8 @@ instance ToLaTeX PAIR where
 
 instance ToLaTeX META where
   toLaTeX META{..} =
-    let idx = readMaybe rest :: Maybe Int
-        rest' = if not (null rest) && length rest <= 2 && isJust idx then '_' : rest else rest
+    let idx = readMaybe (T.unpack rest) :: Maybe Int
+        rest' = if not (T.null rest) && T.length rest <= 2 && isJust idx then T.cons '_' rest else rest
      in META NO_EXCL (toLaTeX hd) rest'
 
 instance ToLaTeX META_HEAD where
@@ -271,17 +273,14 @@ instance ToLaTeX APP_ARGS where
   toLaTeX AAS_EXPR{..} = AAS_EXPR eol tab (toLaTeX expr) (toLaTeX args)
   toLaTeX args = args
 
-instance ToLaTeX String where
-  toLaTeX = escapeUnprintedChars
+instance ToLaTeX T.Text where
+  toLaTeX = T.concatMap escape
     where
-      escapeUnprintedChars :: String -> String
-      escapeUnprintedChars [] = []
-      escapeUnprintedChars (ch : rest) = case ch of
-        '$' -> "\\char36{}" <> escapeUnprintedChars rest
-        '@' -> "\\char64{}" <> escapeUnprintedChars rest
-        '^' -> "\\char94{}" <> escapeUnprintedChars rest
-        '_' -> "\\char95{}" <> escapeUnprintedChars rest
-        _ -> ch : escapeUnprintedChars rest
+      escape '$' = "\\char36{}"
+      escape '@' = "\\char64{}"
+      escape '^' = "\\char94{}"
+      escape '_' = "\\char95{}"
+      escape ch = T.singleton ch
 
 instance ToLaTeX SET where
   toLaTeX ST_BINDING{..} = ST_BINDING (toLaTeX binding)

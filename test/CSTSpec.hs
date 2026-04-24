@@ -1,5 +1,6 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
@@ -10,6 +11,7 @@ import AST
 import CST
 import Control.Monad (forM_)
 import Data.Aeson
+import Data.Text qualified as T
 import Data.Yaml qualified as Yaml
 import Encoding (Encoding (ASCII), withEncoding)
 import GHC.Generics (Generic)
@@ -24,7 +26,7 @@ import Test.Hspec
 
 data CSTPack = CSTPack
   { program :: String
-  , result :: String
+  , result :: T.Text
   }
   deriving (Generic, Show, FromJSON)
 

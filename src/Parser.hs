@@ -26,6 +26,7 @@ import Control.Exception (Exception, throwIO)
 import Control.Monad (guard)
 import Data.Char (isAsciiLower, isDigit)
 import Data.Scientific (toRealFloat)
+import qualified Data.Text as T
 import Data.Void
 import GHC.Char
 import Misc
@@ -72,11 +73,12 @@ lexeme = L.lexeme whiteSpace
 symbol :: String -> Parser String
 symbol = L.symbol whiteSpace
 
-label' :: Parser String
+-- Parsed as String then packed to Text once; BiLambda keeps String so function stays String
+label' :: Parser T.Text
 label' = lexeme $ do
   first <- oneOf ['a' .. 'z']
   rest <- many (satisfy (`notElem` " \r\n\t,.|':;!?][}{)(⟧⟦") <?> "allowed character")
-  return (first : rest)
+  return (T.pack (first : rest))
 
 function :: Parser String
 function = lexeme $ do
@@ -115,21 +117,22 @@ global = choice [symbol "Q", symbol "Φ"]
 metaSuffix :: Parser String
 metaSuffix = lexeme (many (oneOf ('_' : '-' : ['0' .. '9'] ++ ['a' .. 'z'] ++ ['A' .. 'Z']) <?> "meta suffix"))
 
-meta :: Char -> Parser String
+-- Meta variable names are packed to Text once here; all AST meta fields are Text
+meta :: Char -> Parser T.Text
 meta ch = do
   _ <- char '!'
   c <- char ch
   suf <- metaSuffix
-  return (c : suf)
+  return (T.pack (c : suf))
 
-meta' :: Char -> String -> Parser String
+meta' :: Char -> String -> Parser T.Text
 meta' ch uni =
   choice
     [ meta ch
     , do
         _ <- symbol uni
         suf <- metaSuffix
-        return (ch : suf)
+        return (T.pack (ch : suf))
     ]
 
 byte :: Parser String
@@ -286,7 +289,7 @@ binding =
     , try metaBinding
     , try $ do
         _ <- lambda
-        BiLambda <$> function
+        BiLambda . T.pack <$> function
     , do
         _ <- lambda
         BiMetaLambda <$> meta 'F'

@@ -11,6 +11,7 @@ import AST
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
 import Data.Maybe (catMaybes)
+import Data.Text (Text)
 
 -- Meta value
 -- The right part of substitution
@@ -18,7 +19,7 @@ data MetaValue
   = MvAttribute Attribute -- !a
   | MvBytes Bytes -- !b
   | MvBindings [Binding] -- !B
-  | MvFunction String -- !F
+  | MvFunction Text -- !F
   | MvExpression Expression Expression -- !e, the second expression is scope, which is closest formation
   | MvTail [Tail] -- !t
   deriving (Eq, Show)
@@ -32,7 +33,7 @@ data Tail
 
 -- Substitution
 -- Shows the match of meta name to meta value
-newtype Subst = Subst (Map String MetaValue)
+newtype Subst = Subst (Map Text MetaValue)
   deriving (Eq, Show)
 
 -- Empty substitution
@@ -40,7 +41,7 @@ substEmpty :: Subst
 substEmpty = Subst Map.empty
 
 -- Singleton substitution with one (key -> value) pair
-substSingle :: String -> MetaValue -> Subst
+substSingle :: Text -> MetaValue -> Subst
 substSingle key value = Subst (Map.singleton key value)
 
 defaultScope :: Expression
@@ -51,7 +52,7 @@ defaultScope = ExFormation [BiVoid AtRho]
 combine :: Subst -> Subst -> Maybe Subst
 combine (Subst a) (Subst b) = combine' (Map.toList b) a
   where
-    combine' :: [(String, MetaValue)] -> Map String MetaValue -> Maybe Subst
+    combine' :: [(Text, MetaValue)] -> Map Text MetaValue -> Maybe Subst
     combine' [] acc = Just (Subst acc)
     combine' ((key, MvExpression tgt scope) : rest) acc = case Map.lookup key acc of
       Just (MvExpression expr' _)

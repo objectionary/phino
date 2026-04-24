@@ -1,5 +1,6 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
@@ -8,26 +9,23 @@
 module Render where
 
 import CST
-import Data.List (intercalate)
-import Text.Printf (printf)
+import Data.Text (Text)
+import qualified Data.Text as T
 
 class Render a where
-  render :: a -> String
+  render :: a -> Text
 
 instance Render String where
-  render str = str
+  render = T.pack
 
-instance Render Integer where
-  render = show
+instance Render Text where
+  render = id
 
 instance Render Int where
-  render = show
-
-instance Render Double where
-  render = show
+  render = T.pack . show
 
 instance Render Char where
-  render ch = [ch]
+  render = T.singleton
 
 instance Render LCB where
   render LCB = "{"
@@ -102,7 +100,7 @@ instance Render DOTS where
 instance Render BYTES where
   render BT_EMPTY = "--"
   render (BT_ONE bte) = render bte <> "-"
-  render (BT_MANY bts) = intercalate "-" bts
+  render (BT_MANY bts) = T.intercalate "-" (map render bts)
   render (BT_META mt) = render mt
 
 instance Render EXCLAMATION where
@@ -130,7 +128,7 @@ instance Render ALPHA where
   render ALPHA' = "~"
 
 instance Render TAB where
-  render TAB{..} = concat (replicate indent "  ")
+  render TAB{..} = T.replicate indent "  "
   render TAB' = " "
   render NO_TAB = ""
 
@@ -143,14 +141,14 @@ instance Render PAIR where
   render PA_FORMATION{voids = [], attr, arrow, expr} = render (PA_TAU attr arrow expr)
   render PA_FORMATION{..} = render attr <> "(" <> render voids <> ")" <> render SPACE <> render arrow <> render SPACE <> render expr
   render PA_LAMBDA{..} = render LAMBDA <> render SPACE <> render DASHED_ARROW <> render SPACE <> render func
-  render PA_LAMBDA'{..} = "L> " <> func
+  render PA_LAMBDA'{..} = "L> " <> render func
   render PA_VOID{..} = render attr <> render SPACE <> render arrow <> render SPACE <> render void
   render PA_DELTA{..} = render DELTA <> render SPACE <> render DASHED_ARROW <> render SPACE <> render bytes
   render PA_DELTA'{..} = "D> " <> render bytes
   render PA_META_LAMBDA{..} = render LAMBDA <> render SPACE <> render DASHED_ARROW <> render SPACE <> render meta
-  render PA_META_LAMBDA'{..} = render "L> " <> render meta
+  render PA_META_LAMBDA'{..} = "L> " <> render meta
   render PA_META_DELTA{..} = render DELTA <> render SPACE <> render DASHED_ARROW <> render SPACE <> render meta
-  render PA_META_DELTA'{..} = render "D> " <> render meta
+  render PA_META_DELTA'{..} = "D> " <> render meta
 
 instance Render BINDINGS where
   render BDS_EMPTY{} = ""
@@ -182,18 +180,18 @@ instance Render EXPRESSION where
   render EX_APPLICATION{..} = render expr <> render space <> "(" <> render eol <> render tab <> render tau <> render eol' <> render tab' <> ")"
   render EX_APPLICATION_TAUS{..} = render expr <> render space <> "(" <> render eol <> render tab <> render taus <> render eol' <> render tab' <> ")"
   render EX_APPLICATION_EXPRS{..} = render expr <> render space <> "(" <> render eol <> render tab <> render args <> render eol' <> render tab' <> ")"
-  render EX_STRING{..} = '"' : render str <> "\""
-  render EX_NUMBER{..} = either show show num
+  render EX_STRING{..} = "\"" <> render str <> "\""
+  render EX_NUMBER{..} = either (T.pack . show) (T.pack . show) num
   render EX_META{..} = render meta
   render EX_META_TAIL{..} = render expr <> " * " <> render meta
-  render EX_PHI_MEET{..} = "\\phiMeet{" <> maybe "" (++ ":") prefix <> render idx <> "}{ " <> render expr <> " }"
-  render EX_PHI_AGAIN{..} = "\\phiAgain{" <> maybe "" (++ ":") prefix <> render idx <> "}"
+  render EX_PHI_MEET{..} = "\\phiMeet{" <> maybe "" (\p -> T.pack p <> ":") prefix <> render idx <> "}{ " <> render expr <> " }"
+  render EX_PHI_AGAIN{..} = "\\phiAgain{" <> maybe "" (\p -> T.pack p <> ":") prefix <> render idx <> "}"
 
 instance Render [ATTRIBUTE] where
-  render attrs = intercalate ", " (map render attrs)
+  render attrs = T.intercalate ", " (map render attrs)
 
 instance Render ATTRIBUTE where
-  render AT_LABEL{..} = label
+  render AT_LABEL{..} = render label
   render AT_ALPHA{..} = render alpha <> render idx
   render AT_RHO{..} = render rho
   render AT_PHI{..} = render phi
@@ -208,16 +206,16 @@ instance Render BELONGING where
 
 instance Render SET where
   render ST_BINDING{..} = render binding
-  render ST_ATTRIBUTES{..} = printf "[ %s ]" (intercalate ", " (map render attrs))
+  render ST_ATTRIBUTES{..} = "[ " <> T.intercalate ", " (map render attrs) <> " ]"
 
 instance Render LOGIC_OPERATOR where
   render AND = "\\;\\text{and}\\;"
   render OR = "\\;\\text{or}\\;"
 
 instance Render NUMBER where
-  render INDEX{..} = printf "\\indexof{ %s }" (render attr)
-  render LENGTH{..} = printf "\\vert %s \\vert" (render binding)
-  render LITERAL{..} = show num
+  render INDEX{..} = "\\indexof{ " <> render attr <> " }"
+  render LENGTH{..} = "\\vert " <> render binding <> " \\vert"
+  render LITERAL{..} = T.pack (show num)
 
 instance Render COMPARABLE where
   render CMP_ATTR{..} = render attr
@@ -229,23 +227,23 @@ instance Render EQUAL where
   render NOT_EQUAL = "\\not="
 
 instance Render CONDITION where
-  render CO_BELONGS{..} = render attr <> render SPACE <> render belongs <> render SPACE <> render set
+  render CO_BELONGS{..} = render attr <> " " <> render belongs <> " " <> render set
   render CO_LOGIC{conditions = [cond]} = render cond
-  render CO_LOGIC{..} = intercalate (printf " %s " (render operator)) (map renderWrapped conditions)
+  render CO_LOGIC{..} = T.intercalate (" " <> render operator <> " ") (map renderWrapped conditions)
     where
-      renderWrapped :: CONDITION -> String
+      renderWrapped :: CONDITION -> Text
       renderWrapped CO_LOGIC{conditions = [cond]} = render cond
-      renderWrapped cond@CO_LOGIC{} = printf "( %s )" (render cond)
+      renderWrapped cond@CO_LOGIC{} = "( " <> render cond <> " )"
       renderWrapped cond = render cond
-  render CO_NF{..} = printf "\\isnormal{ %s }" (render expr)
+  render CO_NF{..} = "\\isnormal{ " <> render expr <> " }"
   render CO_NOT{..} = renderFunc "not" condition
-  render CO_COMPARE{..} = render left <> render SPACE <> render equal <> render SPACE <> render right
-  render CO_MATCHES{..} = printf "matches( %s, %s )" regex (render expr)
-  render CO_PART_OF{..} = printf "part-of( %s, %s )" (render expr) (render binding)
+  render CO_COMPARE{..} = render left <> " " <> render equal <> " " <> render right
+  render CO_MATCHES{..} = "matches( " <> T.pack regex <> ", " <> render expr <> " )"
+  render CO_PART_OF{..} = "part-of( " <> render expr <> ", " <> render binding <> " )"
   render CO_EMPTY = ""
 
-renderFunc :: Render a => String -> a -> String
-renderFunc func renderable = printf "%s( %s )" func (render renderable)
+renderFunc :: Render a => Text -> a -> Text
+renderFunc func renderable = func <> "( " <> render renderable <> " )"
 
 instance Render EXTRA_ARG where
   render ARG_ATTR{..} = render attr
@@ -254,6 +252,6 @@ instance Render EXTRA_ARG where
   render ARG_BYTES{..} = render bytes
 
 instance Render EXTRA where
-  render EXTRA{func = "contextualize", args = arg : rest, ..} = printf "$ %s \\coloneqq \\ctx{ %s }{ %s } $" (render meta) (render arg) (intercalate ", " (map render rest))
-  render EXTRA{func = "scope", args = arg : _, ..} = printf "$ %s \\coloneqq \\scopeof{ %s } $" (render meta) (render arg)
-  render EXTRA{..} = printf "$ %s \\coloneqq %s( %s ) $" (render meta) func (intercalate ", " (map render args))
+  render EXTRA{func = "contextualize", args = arg : rest, ..} = "$ " <> render meta <> " \\coloneqq \\ctx{ " <> render arg <> " }{ " <> T.intercalate ", " (map render rest) <> " } $"
+  render EXTRA{func = "scope", args = arg : _, ..} = "$ " <> render meta <> " \\coloneqq \\scopeof{ " <> render arg <> " } $"
+  render EXTRA{..} = "$ " <> render meta <> " \\coloneqq " <> T.pack func <> "( " <> T.intercalate ", " (map render args) <> " ) $"

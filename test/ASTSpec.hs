@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 {-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com

@@ -7,13 +7,14 @@
 module Canonizer (canonize) where
 
 import AST
+import qualified Data.Text as T
 import Rewriter (Rewritten)
 
 canonizeBindings :: [Binding] -> Int -> ([Binding], Int)
 canonizeBindings [] idx = ([], idx)
 canonizeBindings ((BiLambda _) : rest) idx =
   let (bds', idx') = canonizeBindings rest (idx + 1)
-   in (BiLambda ('F' : show idx) : bds', idx')
+   in (BiLambda (T.pack ('F' : show idx)) : bds', idx')
 canonizeBindings (BiTau attr expr : rest) idx =
   let (expr', idx') = canonizeExpression expr idx
       (bds', idx'') = canonizeBindings rest idx'

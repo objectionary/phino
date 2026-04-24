@@ -12,6 +12,7 @@ import Control.Monad (when)
 import qualified Data.ByteString.Char8 as B
 import Data.Functor
 import qualified Data.Set as Set
+import qualified Data.Text as T
 import Deps
 import GHC.IO (unsafePerformIO)
 import Logger (logDebug)
@@ -75,7 +76,7 @@ _randomTau :: BuildTermMethod
 _randomTau args subst = do
   attrs <- argsToAttrs args
   tau <- randomTau attrs
-  pure (TeAttribute (AtLabel tau))
+  pure (TeAttribute (AtLabel (T.pack tau)))
   where
     argsToAttrs :: [Y.ExtraArgument] -> IO [String]
     argsToAttrs [] = pure []

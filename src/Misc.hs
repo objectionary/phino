@@ -3,6 +3,7 @@
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ViewPatterns #-}
+{-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
@@ -75,22 +76,22 @@ instance Show FsException where
   show FileDoesNotExist{..} = printf "File '%s' does not exist" _file
   show DirectoryDoesNotExist{..} = printf "Directory '%s' does not exist" _dir
 
-matchBaseObject :: Expression -> Maybe String
+matchBaseObject :: Expression -> Maybe T.Text
 matchBaseObject (ExDispatch ExGlobal (AtLabel label)) = Just label
 matchBaseObject _ = Nothing
 
-pattern BaseObject :: String -> Expression
+pattern BaseObject :: T.Text -> Expression
 pattern BaseObject label <- (matchBaseObject -> Just label)
   where
     BaseObject label = ExDispatch ExGlobal (AtLabel label)
 
 -- Minimal matcher function (required for view pattern)
-matchDataObject :: Expression -> Maybe (String, Bytes)
+matchDataObject :: Expression -> Maybe (T.Text, Bytes)
 matchDataObject (ExApplication outer (BiTau (AtAlpha 0) inner)) = case (matchOuter outer, matchInner inner) of
   (Just label, Just bts) -> Just (label, bts)
   _ -> Nothing
   where
-    matchOuter :: Expression -> Maybe String
+    matchOuter :: Expression -> Maybe T.Text
     matchOuter (BaseObject label) = Just label
     matchOuter (ExPhiAgain _ _ (BaseObject label)) = Just label
     matchOuter _ = Nothing
@@ -118,7 +119,7 @@ pattern DataString bts = DataObject "string" bts
 pattern DataNumber :: Bytes -> Expression
 pattern DataNumber bts = DataObject "number" bts
 
-pattern DataObject :: String -> Bytes -> Expression
+pattern DataObject :: T.Text -> Bytes -> Expression
 pattern DataObject label bts <- (matchDataObject -> Just (label, bts))
   where
     DataObject label bts =
@@ -258,7 +259,7 @@ btsToWord8 (BtMany (bt : bts)) =
   case btsToWord8 (BtOne bt) of
     [byte] -> byte : btsToWord8 (BtMany bts)
     _ -> error $ "Invalid hex byte; " ++ bt
-btsToWord8 (BtMeta mt) = error $ "Cannot convert meta bytes to Word8; " ++ mt
+btsToWord8 (BtMeta mt) = error $ "Cannot convert meta bytes to Word8; " ++ T.unpack mt
 
 -- >>> word8ToBytes [64, 20, 0]
 -- BtMany ["40","14","00"]

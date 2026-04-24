@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}

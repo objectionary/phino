@@ -26,6 +26,8 @@ import AST
 import Control.Exception (Exception, throwIO)
 import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.Map.Strict as Map
+import Data.Text (Text)
+import qualified Data.Text as T
 import Matcher
 import Misc (uniqueBindings)
 import Printer
@@ -38,8 +40,8 @@ data BuildException
   | CouldNotBuildBytes {_bts :: Bytes, _msg :: String}
   deriving (Exception)
 
-metaMsg :: String -> String
-metaMsg = printf "meta '%s' is either does not exist or refers to an inappropriate term"
+metaMsg :: Text -> String
+metaMsg meta = printf "meta '%s' is either does not exist or refers to an inappropriate term" (T.unpack meta)
 
 type Built a = Either String a
 

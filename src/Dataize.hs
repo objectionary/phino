@@ -1,5 +1,6 @@
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
 {-# OPTIONS_GHC -Wno-unused-record-wildcards #-}
@@ -15,6 +16,7 @@ import Control.Exception (throwIO)
 import Data.List (partition)
 import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as NE
+import qualified Data.Text as T
 import Deps (BuildTermFunc, SaveStepFunc, Term (TeAttribute))
 import Locator (locatedExpression, withLocatedExpression)
 import Matcher (substEmpty)
@@ -87,7 +89,7 @@ formation bds ctx = do
 -- and expr is expression which program refers to.
 -- If Q refers to formation which contains binding with attribute == tau -
 -- the expression from this binding is returned.
-phiDispatch :: String -> Expression -> Maybe (Expression, String)
+phiDispatch :: T.Text -> Expression -> Maybe (Expression, String)
 phiDispatch tau expr = case expr of
   ExFormation bds -> boundExpr bds
   _ -> Nothing
@@ -213,7 +215,7 @@ _dataize expr ctx@DataizeContext{_buildTerm = buildTerm, _program = Program (ExF
   pure bts
 _dataize _ _ = throwIO (userError "Can't call _dataize from atoms with non-formation program")
 
-atom :: String -> Expression -> DataizeContext -> IO Expression
+atom :: T.Text -> Expression -> DataizeContext -> IO Expression
 atom "L_number_plus" self ctx = do
   left <- _dataize (ExDispatch self (AtLabel "x")) ctx
   right <- _dataize (ExDispatch self AtRho) ctx
@@ -245,4 +247,4 @@ atom "L_number_eq" self ctx = do
         then pure (DataNumber (numToBts first))
         else pure (ExDispatch self (AtLabel "y"))
     _ -> pure ExTermination
-atom func _ _ = throwIO (userError (printf "Atom '%s' does not exist" func))
+atom func _ _ = throwIO (userError (printf "Atom '%s' does not exist" (T.unpack func)))

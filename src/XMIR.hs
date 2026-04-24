@@ -142,10 +142,10 @@ expression expr _ = throwIO (UnsupportedExpression expr)
 formationBinding :: Binding -> XmirContext -> IO (Maybe Node)
 formationBinding (BiTau (AtLabel label) (ExFormation bds)) ctx = do
   inners <- nestedBindings bds ctx
-  pure (Just (object [("name", label)] inners))
+  pure (Just (object [("name", T.unpack label)] inners))
 formationBinding (BiTau (AtLabel label) expr) ctx = do
   (base, children) <- expression expr ctx
-  pure (Just (object [("name", label), ("base", base)] children))
+  pure (Just (object [("name", T.unpack label), ("base", base)] children))
 formationBinding (BiTau AtPhi expr) ctx = do
   (base, children) <- expression expr ctx
   pure (Just (object [("name", show AtPhi), ("base", base)] children))
@@ -154,7 +154,7 @@ formationBinding (BiDelta bytes) _ = pure (Just (NodeContent (T.pack (printBytes
 formationBinding (BiLambda _) _ = pure (Just (object [("name", show AtLambda)] []))
 formationBinding (BiVoid AtRho) _ = pure Nothing
 formationBinding (BiVoid AtPhi) _ = pure (Just (object [("name", show AtPhi), ("base", "∅")] []))
-formationBinding (BiVoid (AtLabel label)) _ = pure (Just (object [("name", label), ("base", "∅")] []))
+formationBinding (BiVoid (AtLabel label)) _ = pure (Just (object [("name", T.unpack label), ("base", "∅")] []))
 formationBinding binding _ = throwIO (UnsupportedBinding binding)
 
 nestedBindings :: [Binding] -> XmirContext -> IO [Node]
@@ -207,10 +207,10 @@ programToXMIR prog@(Program expr@(ExFormation [BiTau (AtLabel _) arg, BiVoid AtR
     getPackage :: Expression -> IO ([String], Expression)
     getPackage (ExFormation [BiTau (AtLabel label) (ExFormation [bd, BiLambda "Package", BiVoid AtRho]), BiVoid AtRho]) = do
       (pckg, expr') <- getPackage (ExFormation [bd, BiLambda "Package", BiVoid AtRho])
-      pure (label : pckg, expr')
+      pure (T.unpack label : pckg, expr')
     getPackage (ExFormation [BiTau (AtLabel label) (ExFormation [bd, BiLambda "Package", BiVoid AtRho]), BiLambda "Package", BiVoid AtRho]) = do
       (pckg, expr') <- getPackage (ExFormation [bd, BiLambda "Package", BiVoid AtRho])
-      pure (label : pckg, expr')
+      pure (T.unpack label : pckg, expr')
     getPackage (ExFormation [BiTau at ex, BiLambda "Package", BiVoid AtRho]) = pure ([], ExFormation [BiTau at ex, BiVoid AtRho])
     getPackage (ExFormation [bd, BiVoid AtRho]) = pure ([], ExFormation [bd, BiVoid AtRho])
     getPackage ex = throwIO (userError (printf "Can't extract package from given expression:\n %s" (printExpression ex)))
@@ -378,7 +378,7 @@ xmirToPhi xmir =
               if null pckg
                 then pure (Program (ExFormation [obj, BiVoid AtRho]))
                 else
-                  let bd = foldr (\part acc -> BiTau (AtLabel part) (ExFormation [acc, BiLambda "Package", BiVoid AtRho])) obj pckg
+                  let bd = foldr (\part acc -> BiTau (AtLabel (T.pack part)) (ExFormation [acc, BiLambda "Package", BiVoid AtRho])) obj pckg
                    in pure (Program (ExFormation [bd, BiVoid AtRho]))
           | otherwise -> throwIO (InvalidXMIRFormat "Expected single <object> element" doc)
         _ -> throwIO (InvalidXMIRFormat "NodeElement is expected as root element" doc)
@@ -390,17 +390,17 @@ xmirToFormationBinding cur fqn
       name <- getAttr "name" cur
       bds <- mapM (`xmirToFormationBinding` (name : fqn)) (cur C.$/ C.element (toName "o")) >>= uniqueBindings'
       case name of
-        "λ" -> pure (BiLambda (intercalate "_" ("L" : reverse fqn)))
+        "λ" -> pure (BiLambda (T.pack (intercalate "_" ("L" : reverse fqn))))
         ('α' : _) -> throwIO (InvalidXMIRFormat "Formation child @name can't start with α" cur)
         "φ" -> pure (BiTau AtPhi (ExFormation (withVoidRho bds)))
-        _ -> pure (BiTau (AtLabel name) (ExFormation (withVoidRho bds)))
+        _ -> pure (BiTau (AtLabel (T.pack name)) (ExFormation (withVoidRho bds)))
   | otherwise = do
       name <- getAttr "name" cur
       base <- getAttr "base" cur
       attr <- case name of
         "φ" -> pure AtPhi
         ('α' : _) -> throwIO (InvalidXMIRFormat "Formation child @name can't start with α" cur)
-        _ -> pure (AtLabel name)
+        _ -> pure (AtLabel (T.pack name))
       case base of
         "∅" -> pure (BiVoid attr)
         _ -> do
@@ -496,7 +496,7 @@ toAttr attr cur = case attr of
   ch : _
     | ch `notElem` ['a' .. 'z'] -> throwIO (InvalidXMIRFormat (printf "The attribute '%s' must start with ['a'..'z']" attr) cur)
     | '.' `elem` attr -> throwIO (InvalidXMIRFormat "Attribute can't contain dots" cur)
-    | otherwise -> pure (AtLabel attr)
+    | otherwise -> pure (AtLabel (T.pack attr))
   _ -> throwIO (InvalidXMIRFormat (printf "Invalid attribute given: %s" attr) cur)
 
 hasAttr :: String -> C.Cursor -> Bool

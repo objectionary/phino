@@ -8,6 +8,7 @@
 module Margin (defaultMargin, withMargin, WithMargin) where
 
 import CST
+import qualified Data.Text as T
 import Lining (ToSingleLine (..))
 import Render (Render (..))
 
@@ -42,7 +43,7 @@ instance WithMargin EXPRESSION where
     let single = toSingleLine ex
         main = withMargin' cfg expr
         singleMain = toSingleLine main
-        extra' = length (last (lines (render main))) + 4 -- 2 spaces + 2 braces around argument
+        extra' = T.length (last (T.lines (render main))) + 4 -- 2 spaces + 2 braces around argument
         arg = withMargin' (indt, margin) tau
         singleArg = toSingleLine arg
      in if
@@ -54,7 +55,7 @@ instance WithMargin EXPRESSION where
     let single = toSingleLine ex
         main = withMargin' cfg expr
         singleMain = toSingleLine main
-        extra' = length (last (lines (render main))) + 4 -- 2 spaces + 2 braces around arguments
+        extra' = T.length (last (T.lines (render main))) + 4 -- 2 spaces + 2 braces around arguments
         exprs = withMargin' (indt, margin) args
         singleExprs = toSingleLine exprs
      in if
@@ -66,7 +67,7 @@ instance WithMargin EXPRESSION where
     let single = toSingleLine ex
         main = withMargin' cfg expr
         singleMain = toSingleLine main
-        extra' = length (last (lines (render main))) + 4 -- 2 spaces + 2 braces around arguments
+        extra' = T.length (last (T.lines (render main))) + 4 -- 2 spaces + 2 braces around arguments
         taus' = withMargin' (indt, margin) taus
         singleTaus = toSingleLine taus'
      in if
@@ -118,4 +119,4 @@ instance WithMargin EXTRA where
   withMargin' _ = id
 
 lengthOf :: Render a => a -> Int
-lengthOf renderable = length (render renderable)
+lengthOf renderable = T.length (render renderable)

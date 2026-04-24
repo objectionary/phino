@@ -6,6 +6,8 @@
 -- This module represents AST tree for parsed phi-calculus program
 module AST where
 
+import Data.Text (Text)
+import qualified Data.Text as T
 import GHC.Generics (Generic)
 
 newtype Program = Program Expression
@@ -18,8 +20,8 @@ data Expression
   | ExTermination
   | ExApplication Expression Binding
   | ExDispatch Expression Attribute
-  | ExMeta String
-  | ExMetaTail Expression String
+  | ExMeta Text
+  | ExMetaTail Expression Text
   | ExPhiMeet (Maybe String) Int Expression
   | ExPhiAgain (Maybe String) Int Expression
   deriving (Eq, Ord, Show, Generic)
@@ -28,36 +30,36 @@ data Binding
   = BiTau Attribute Expression
   | BiDelta Bytes
   | BiVoid Attribute
-  | BiLambda String
-  | BiMeta String
-  | BiMetaLambda String
+  | BiLambda Text
+  | BiMeta Text
+  | BiMetaLambda Text
   deriving (Eq, Ord, Show, Generic)
 
 data Bytes
   = BtEmpty
   | BtOne String
   | BtMany [String]
-  | BtMeta String
+  | BtMeta Text
   deriving (Eq, Ord, Show, Generic)
 
 data Attribute
-  = AtLabel String
+  = AtLabel Text
   | AtAlpha Int
   | AtPhi
   | AtRho
   | AtLambda
   | AtDelta
-  | AtMeta String
+  | AtMeta Text
   deriving (Eq, Generic, Ord)
 
 instance Show Attribute where
-  show (AtLabel label) = label
+  show (AtLabel label) = T.unpack label
   show (AtAlpha idx) = 'α' : show idx
   show AtRho = "ρ"
   show AtPhi = "φ"
   show AtDelta = "Δ"
   show AtLambda = "λ"
-  show (AtMeta meta) = '!' : meta
+  show (AtMeta meta) = '!' : T.unpack meta
 
 countNodes :: Expression -> Int
 countNodes (ExFormation bds) = 1 + sum (map nodesInBinding bds) + length bds

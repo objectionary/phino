@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
@@ -8,10 +10,11 @@ import Builder
 import Control.Monad
 import Data.Either (isLeft)
 import Data.Map.Strict qualified as Map
+import Data.Text qualified as T
 import Matcher
 import Test.Hspec (Example (Arg), Expectation, Spec, SpecWith, anyException, describe, it, shouldBe, shouldSatisfy, shouldThrow)
 
-test :: (Show a, Eq a) => (a -> Subst -> Either String (a, a)) -> [(String, a, [(String, MetaValue)], Either String (a, a))] -> SpecWith (Arg Expectation)
+test :: (Show a, Eq a) => (a -> Subst -> Either String (a, a)) -> [(String, a, [(T.Text, MetaValue)], Either String (a, a))] -> SpecWith (Arg Expectation)
 test function useCases =
   forM_ useCases $ \(desc, expr, mp, res) ->
     it desc $ function expr (Subst (Map.fromList mp)) `shouldBe` res
