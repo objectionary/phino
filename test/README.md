@@ -1,3 +1,8 @@
+<!--
+SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+SPDX-License-Identifier: MIT
+-->
+
 # Phino Tests
 
 To run all the tests you can do:
