@@ -13,7 +13,7 @@ with code in this repository.
 ```bash
 make test          # cabal test --ghc-options=-Werror
 make hlint         # hlint src app test
-make fourmolu      # fourmolu --mode check src app test (2-space indent, leading commas)
+make fourmolu      # --mode check src app test (2-space indent, leading commas)
 make coverage      # cabal test --enable-coverage + hpc-codecov (threshold 65%)
 make all           # coverage + hlint + fourmolu
 ```
