@@ -41,7 +41,7 @@ data BuildException
   deriving (Exception)
 
 metaMsg :: Text -> String
-metaMsg meta = printf "meta '%s' is either does not exist or refers to an inappropriate term" (T.unpack meta)
+metaMsg = printf "meta '%s' is either does not exist or refers to an inappropriate term" . T.unpack
 
 type Built a = Either String a
 
