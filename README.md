@@ -1,3 +1,8 @@
+<!--
+SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+SPDX-License-Identifier: MIT
+-->
+
 # Command-Line Manipulator of 𝜑-Calculus Expressions
 
 [![DevOps By Rultor.com](https://www.rultor.com/b/objectionary/phino)](https://www.rultor.com/p/objectionary/phino)
