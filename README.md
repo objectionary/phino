@@ -339,6 +339,26 @@ Every meta variable may also be used with an integer index, like `!B1` or `𝜏0
 Incorrect usage of meta variables in 𝜑-expression patterns leads to
 parsing errors.
 
+## Benchmark
+
+To run performance benchmarks, you need [Java 8+][java] and [curl][curl].
+Maven is downloaded automatically on first run via `benchmark/mvnw`.
+
+The benchmark uses the compiled [`Native`][jna-native] class from
+[JNA][jna] — a large real-world Java class — as its test input.
+On first run, `make bench` downloads the class, disassembles it to
+[XMIR][xmir] via [jeo-maven-plugin][jeo], converts it to 𝜑 using
+`phino rewrite`, and caches the results in `benchmark/tmp/`.
+Subsequent runs skip straight to the benchmarks.
+
+```bash
+make bench
+```
+
+<!-- benchmark_begin -->
+TBD
+<!-- benchmark_end -->
+
 ## How to Contribute
 
 Fork repository, make changes, then send us a [pull request][guidelines].
@@ -365,3 +385,9 @@ or [Stack ≥ 3.0][stack] installed.
 [guidelines]: https://www.yegor256.com/2014/04/15/github-guidelines.html
 [xmir]: https://news.eolang.org/2022-11-25-xmir-guide.html
 [latex]: https://en.wikipedia.org/wiki/LaTeX
+[java]: https://www.java.com/en/download/
+[curl]: https://curl.se/
+[jna]: https://github.com/java-native-access/jna
+[jna-native]: https://github.com/java-native-access/jna/blob/master/src/com/sun/jna/Native.java
+[jeo]: https://github.com/objectionary/jeo-maven-plugin
+[benchmark-gha]: https://github.com/objectionary/phino/actions/workflows/benchmark.yml

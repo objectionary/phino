@@ -9,6 +9,7 @@ make test          # cabal test --ghc-options=-Werror
 make hlint         # hlint src app test
 make fourmolu      # fourmolu --mode check src app test (2-space indent, leading commas)
 make coverage      # cabal test --enable-coverage + hpc-codecov (threshold 65%)
+make bench         # prepare resources + cabal bench --enable-benchmarks
 make all           # coverage + hlint + fourmolu
 ```
 
@@ -18,9 +19,17 @@ cabal v2-run spec -- --match "parse bytes"
 cabal v2-run spec -- --match "Rewriter"
 ```
 
+Benchmarks run 3 warmup iterations, auto-calibrate batch size to hit a
+~20ms measurement window per batch, then run 10 batches and print total,
+avg, min, max, and std dev per operation. Batch size scales automatically
+so the same benchmark works for both tiny and large inputs. Resource files
+(`benchmark/tmp/`) are generated on first run and cached by Make; removed
+by `make clean`. Requires Java and curl; Maven is fetched automatically
+via `benchmark/mvnw`.
+
 ## Architecture
 
-`phino` is a CLI tool for manipulating phi-calculus (𝜑-calculus) expressions — the formal foundation of the EO programming language. Three Cabal components: `library` (`src/`), executable `phino` (`app/`), test suite `spec` (`test/`).
+`phino` is a CLI tool for manipulating phi-calculus (𝜑-calculus) expressions — the formal foundation of the EO programming language. Four Cabal components: `library` (`src/`), executable `phino` (`app/`), test suite `spec` (`test/`), benchmark suite `bench` (`benchmark/`).
 
 ### Five CLI commands
 `rewrite` | `dataize` | `explain` | `merge` | `match` — all wired in `src/CLI/Runners.hs`, parsed in `src/CLI/Parsers.hs`.

@@ -1,0 +1,34 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+name: jeo-update
+'on':
+  schedule:
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+jobs:
+  update:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+      - name: Check latest jeo version
+        id: jeo
+        run: |
+          latest=$(git ls-remote --tags --refs https://github.com/objectionary/jeo-maven-plugin.git \
+            | grep -oP '\d+\.\d+\.\d+' | sort -V | tail -1)
+          current=$(sed -n 's/^JEO_VERSION := //p' Makefile)
+          echo "latest=${latest}" >> $GITHUB_OUTPUT
+          echo "changed=$([ "${latest}" != "${current}" ] && echo true || echo false)" >> $GITHUB_OUTPUT
+      - name: Update Makefile
+        if: steps.jeo.outputs.changed == 'true'
+        run: sed -i "s/^JEO_VERSION := .*/JEO_VERSION := ${{ steps.jeo.outputs.latest }}/" Makefile
+      - uses: peter-evans/create-pull-request@v7
+        if: steps.jeo.outputs.changed == 'true'
+        with:
+          sign-commits: true
+          branch: jeo-update
+          commit-message: 'jeo-maven-plugin updated to ${{ steps.jeo.outputs.latest }}'
+          delete-branch: true
+          title: 'Update jeo-maven-plugin to ${{ steps.jeo.outputs.latest }}'
+          base: master
