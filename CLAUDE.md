@@ -37,7 +37,7 @@ via `benchmark/mvnw`.
 
 ## Architecture
 
-phino` is a CLI tool for manipulating phi-calculus (𝜑-calculus) expressions
+`phino` is a CLI tool for manipulating phi-calculus (𝜑-calculus) expressions
 — the formal foundation of the EO programming language. Four Cabal
 components: `library` (`src/`), executable `phino` (`app/`), test suite
 `spec` (`test/`), benchmark suite `bench` (`benchmark/`).
