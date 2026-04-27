@@ -18,8 +18,8 @@ jobs:
           latest=$(git ls-remote --tags --refs https://github.com/objectionary/jeo-maven-plugin.git \
             | grep -oP '\d+\.\d+\.\d+' | sort -V | tail -1)
           current=$(sed -n 's/^JEO_VERSION := //p' Makefile)
-          echo "latest=${latest}" >> $GITHUB_OUTPUT
-          echo "changed=$([ "${latest}" != "${current}" ] && echo true || echo false)" >> $GITHUB_OUTPUT
+          echo "latest=${latest}" >> "$GITHUB_OUTPUT"
+          echo "changed=$([ "${latest}" != "${current}" ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
       - name: Update Makefile
         if: steps.jeo.outputs.changed == 'true'
         run: sed -i "s/^JEO_VERSION := .*/JEO_VERSION := ${{ steps.jeo.outputs.latest }}/" Makefile

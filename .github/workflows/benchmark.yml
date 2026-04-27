@@ -40,7 +40,7 @@ jobs:
       - run: cabal update
       - run: |
           cabal build all
-          echo "$(cabal list-bin phino | xargs dirname)" >> $GITHUB_PATH
+          cabal list-bin phino | xargs dirname >> "$GITHUB_PATH"
       - run: |
           set -e
           output=$(make bench 2>&1)
