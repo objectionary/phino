@@ -361,7 +361,7 @@ make bench
 ```
 
 <!-- benchmark_begin -->
-TBD
+TBD with [GHA job][benchmark-gha]
 <!-- benchmark_end -->
 
 ## How to Contribute
