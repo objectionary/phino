@@ -21,7 +21,7 @@ jobs:
         with:
           ghc-version: '9.8.4'
           cabal-version: '3.12.1.0'
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: 'temurin'
           java-version: 21
