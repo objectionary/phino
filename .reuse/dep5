@@ -1,8 +1,0 @@
-Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
-Upstream-Name: phino
-Upstream-Contact: objectionary@gmail.com
-Source: https://github.com/objectionary/phino
-
-Files: benchmark/mvnw benchmark/mvnw.cmd benchmark/.mvn/*
-Copyright: The Apache Software Foundation
-License: Apache-2.0
