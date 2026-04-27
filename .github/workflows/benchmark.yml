@@ -38,10 +38,10 @@ jobs:
           key: ubuntu-m2-${{ hashFiles('benchmark/.mvn/wrapper/maven-wrapper.properties') }}
           restore-keys: ubuntu-m2-
       - run: cabal update
-      - run: |-
+      - run: |
           cabal build all
           echo "$(cabal list-bin phino | xargs dirname)" >> $GITHUB_PATH
-      - run: |-
+      - run: |
           set -e
           output=$(make bench 2>&1)
           echo "$output"
