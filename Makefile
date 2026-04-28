@@ -3,7 +3,7 @@
 
 .ONESHELL:
 .SHELLFLAGS := -e -o pipefail -c
-.PHONY: all test hlint fourmolu coverage bench clean
+.PHONY: all test hlint fourmolu coverage bench binary clean
 
 SHELL := bash
 
@@ -11,8 +11,19 @@ JNA_VERSION := 5.15.0
 JEO_VERSION := 0.15.1
 ifeq ($(OS),Windows_NT)
   MVNW := $(CURDIR)/benchmark/mvnw.cmd
+  BIN_EXT := .exe
+  RELEASE_SPLIT :=
+  RELEASE_LDOPT :=
 else
   MVNW := $(CURDIR)/benchmark/mvnw
+  BIN_EXT :=
+  ifeq ($(shell uname -s),Darwin)
+    RELEASE_SPLIT :=
+    RELEASE_LDOPT := -optl-Wl,-dead_strip
+  else
+    RELEASE_SPLIT := -split-sections
+    RELEASE_LDOPT := -optl-Wl,--gc-sections
+  endif
 endif
 
 all: coverage hlint fourmolu
@@ -55,6 +66,13 @@ benchmark/tmp/Native.xmir:
 	cd $(CURDIR)/benchmark/tmp/jeo && $(MVNW) org.eolang:jeo-maven-plugin:$(JEO_VERSION):disassemble -Djeo.disassemble.sourcesDir=target/classes -Djeo.disassemble.outputDir=xmir -q
 	mv $(CURDIR)/benchmark/tmp/jeo/xmir/com/sun/jna/Native.xmir $(CURDIR)/benchmark/tmp/Native.xmir
 	rm -rf $(CURDIR)/benchmark/tmp/jeo
+
+.SILENT:
+binary:
+	cabal build --ghc-options="$(RELEASE_SPLIT) $(RELEASE_LDOPT)"
+	mkdir -p dist-release
+	cp "$$(cabal list-bin phino)" dist-release/phino$(BIN_EXT)
+	strip dist-release/phino$(BIN_EXT)
 
 .SILENT:
 clean:

@@ -22,7 +22,7 @@ release:
     sed -i "s/0\.0\.0\.0/0.${tag}/" phino.cabal
     chmod 755 ../hackage-auth
     cabal check
-    cabal build
+    make binary
     cabal test
     git commit -am "set version to ${tag}"
     cabal sdist

@@ -37,23 +37,11 @@ jobs:
           key: ${{ runner.os }}-${{ runner.arch }}-cabal-${{ hashFiles('**/*.cabal') }}-${{ hashFiles('cabal.project', 'cabal.project.freeze') }}
           restore-keys: |
             ${{ runner.os }}-${{ runner.arch }}-cabal-
-      - name: Build
+      - name: Build release binary
+        shell: bash
         run: |
           cabal update
-          cabal build
-      - name: Copy binary (Unix)
-        if: runner.os != 'Windows'
-        run: |
-          mkdir -p dist-release
-          cp "$(cabal list-bin phino)" dist-release/phino
-          chmod +x dist-release/phino
-      - name: Copy binary (Windows)
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          New-Item -ItemType Directory -Force -Path dist-release | Out-Null
-          $bin = (cabal list-bin phino).Trim()
-          Copy-Item $bin dist-release\phino.exe
+          make binary
       - name: Upload phino binary to Amazon S3
         uses: aws-actions/configure-aws-credentials@v6.1.0
         with:
@@ -61,8 +49,10 @@ jobs:
           aws-secret-access-key: ${{ secrets.S3_SECRET }}
           aws-region: ${{ secrets.S3_REGION }}
       - name: Upload phino binary to S3
+        shell: bash
         run: |
           aws s3 cp dist-release/${{ runner.os == 'Windows' && 'phino.exe' || 'phino' }} s3://${{ secrets.S3_BUCKET }}/releases/${{ matrix.os }}/phino-0.${{ github.ref_name }}${{ runner.os == 'Windows' && '.exe' || '' }} --acl public-read
       - name: Upload as phino-latest
+        shell: bash
         run: |
           aws s3 cp dist-release/${{ runner.os == 'Windows' && 'phino.exe' || 'phino' }} s3://${{ secrets.S3_BUCKET }}/releases/${{ matrix.os }}/phino-latest${{ runner.os == 'Windows' && '.exe' || '' }} --acl public-read
