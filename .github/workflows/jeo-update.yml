@@ -23,7 +23,7 @@ jobs:
       - name: Update Makefile
         if: steps.jeo.outputs.changed == 'true'
         run: sed -i "s/^JEO_VERSION := .*/JEO_VERSION := ${{ steps.jeo.outputs.latest }}/" Makefile
-      - uses: peter-evans/create-pull-request@v7
+      - uses: peter-evans/create-pull-request@v8
         if: steps.jeo.outputs.changed == 'true'
         with:
           sign-commits: true

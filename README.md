@@ -361,7 +361,38 @@ make bench
 ```
 
 <!-- benchmark_begin -->
-TBD with [GHA job][benchmark-gha]
+
+```text
+=== parse/phi ===
+  warmup:     3 iterations
+  batches:    10 x 1
+  total:      1449203.072 μs
+  avg:        144920.307 μs
+  min:        128152.707 μs
+  max:        181750.667 μs
+  std dev:    17552.610 μs
+=== parse/xmir ===
+  warmup:     3 iterations
+  batches:    10 x 1
+  total:      7614526.340 μs
+  avg:        761452.634 μs
+  min:        693167.338 μs
+  max:        895530.009 μs
+  std dev:    56742.181 μs
+=== rewrite/normalize ===
+  warmup:     3 iterations
+  batches:    10 x 1
+  total:      382745.451 μs
+  avg:        38274.545 μs
+  min:        36911.225 μs
+  max:        40867.410 μs
+  std dev:    1209.295 μs
+```
+
+The results were calculated in [this GHA job][benchmark-gha]
+on 2026-04-27 at 23:51,
+on Linux with 4 CPUs.
+
 <!-- benchmark_end -->
 
 ## How to Contribute
@@ -395,4 +426,4 @@ or [Stack ≥ 3.0][stack] installed.
 [jna]: https://github.com/java-native-access/jna
 [jna-native]: https://github.com/java-native-access/jna/blob/master/src/com/sun/jna/Native.java
 [jeo]: https://github.com/objectionary/jeo-maven-plugin
-[benchmark-gha]: https://github.com/objectionary/phino/actions/workflows/benchmark.yml
+[benchmark-gha]: https://github.com/objectionary/phino/actions/runs/25025752851
