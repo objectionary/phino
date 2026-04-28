@@ -30,6 +30,7 @@ make hlint         # hlint src app test
 make fourmolu      # --mode check src app test (2-space indent, leading commas)
 make coverage      # cabal test --enable-coverage + hpc-codecov (threshold 65%)
 make bench         # prepare resources + cabal bench --enable-benchmarks
+make binary        # build stripped release binary into dist-release/phino[.exe]
 make all           # coverage + hlint + fourmolu
 ```
 
