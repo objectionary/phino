@@ -282,6 +282,7 @@ rewriteParser =
             <*> optDepthSensitive
             <*> optNonumber
             <*> switch (long "in-place" <> help "Edit file in-place instead of printing to output")
+            <*> switch (long "update" <> help "Skip rewriting if --target file is newer than the input file")
             <*> optSequence
             <*> optCanonize
             <*> optCompress

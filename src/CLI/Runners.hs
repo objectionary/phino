@@ -29,6 +29,8 @@ import Parser (parseExpressionThrows)
 import qualified Printer as P
 import Rewriter
 import Rule (RuleContext (..), matchProgramWithRule)
+import System.Directory (doesFileExist, getModificationTime)
+import System.Exit (exitSuccess)
 import Text.Printf (printf)
 import XMIR
 import qualified Yaml as Y
@@ -36,6 +38,7 @@ import qualified Yaml as Y
 runRewrite :: OptsRewrite -> IO ()
 runRewrite OptsRewrite{..} = do
   validateOpts
+  checkUpdate
   excluded <- validatedDispatches "hide" _hide
   included <- validatedDispatches "show" _show
   [loc] <- validatedDispatches "locator" [_locator]
@@ -64,6 +67,9 @@ runRewrite OptsRewrite{..} = do
     validateOpts = do
       when (_inPlace && isNothing _inputFile) (invalidCLIArguments "The option --in-place requires an input file")
       when (_inPlace && isJust _targetFile) (invalidCLIArguments "The options --in-place and --target cannot be used together")
+      when (_update && _inPlace) (invalidCLIArguments "The options --update and --in-place cannot be used together")
+      when (_update && isNothing _targetFile) (invalidCLIArguments "The option --update requires --target")
+      when (_update && isNothing _inputFile) (invalidCLIArguments "The option --update requires an input file")
       when (length _show > 1) (invalidCLIArguments "The option --show can be used only once")
       validateLatexOptions
         _outputFormat
@@ -72,6 +78,17 @@ runRewrite OptsRewrite{..} = do
         [(_meetPopularity, "meet-popularity"), (_meetLength, "meet-length")]
       validateMust' _must
       validateXmirOptions _outputFormat [(_omitListing, "omit-listing"), (_omitComments, "omit-comments")] _focus
+    checkUpdate :: IO ()
+    checkUpdate = case (_update, _inputFile, _targetFile) of
+      (True, Just src, Just tgt) -> do
+        targetExists <- doesFileExist tgt
+        when targetExists $ do
+          srcMtime <- getModificationTime src
+          tgtMtime <- getModificationTime tgt
+          when (tgtMtime > srcMtime) $ do
+            logDebug (printf "Target '%s' is newer than source '%s', skipping rewriting (--update)" tgt src)
+            exitSuccess
+      _ -> pure ()
     validateBreakpoint :: Maybe String -> [Y.Rule] -> IO ()
     validateBreakpoint Nothing _ = pure ()
     validateBreakpoint (Just rule) rules =
