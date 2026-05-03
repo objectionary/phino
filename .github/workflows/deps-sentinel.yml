@@ -15,7 +15,7 @@ jobs:
       - uses: maxonfjvipon/deps-sentinel-action@0.0.2
         with:
           token: ${{ secrets.MERGE_TOKEN }}
-          owner: maxonfjvipon
+          owner: yegor256
           bot-logins: |-
             renovate[bot]
             github-actions[bot]
