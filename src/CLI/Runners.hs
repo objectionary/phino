@@ -81,11 +81,10 @@ runRewrite OptsRewrite{..} = do
     checkUpdate :: IO ()
     checkUpdate = case (_update, _inputFile, _targetFile) of
       (True, Just src, Just tgt) -> do
-        targetExists <- doesFileExist tgt
-        when targetExists $ do
-          srcMtime <- getModificationTime src
-          tgtMtime <- getModificationTime tgt
-          when (tgtMtime > srcMtime) $ do
+        exists <- doesFileExist tgt
+        when exists $ do
+          newer <- (>) <$> getModificationTime tgt <*> getModificationTime src
+          when newer $ do
             logDebug (printf "Target '%s' is newer than source '%s', skipping rewriting (--update)" tgt src)
             exitSuccess
       _ -> pure ()

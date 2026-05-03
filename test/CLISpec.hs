@@ -721,27 +721,27 @@ spec = do
         content `shouldBe` "{⟦ x ↦ \"bar\" ⟧}"
 
     it "skips rewriting with --update when target is newer than source" $
-      withTempFileContent "src-XXXXXX.phi" "Q -> [[ x -> \"foo\" ]]" $ \srcPath ->
-        withTempFileContent "tgt-XXXXXX.phi" "ORIGINAL" $ \tgtPath -> do
+      withTempFileContent "src-XXXXXX.phi" "Q -> [[ x -> \"foo\" ]]" $ \src ->
+        withTempFileContent "tgt-XXXXXX.phi" "ORIGINAL" $ \tgt -> do
           now <- getCurrentTime
-          setModificationTime srcPath (addUTCTime (-60) now)
-          setModificationTime tgtPath now
+          setModificationTime src (addUTCTime (-60) now)
+          setModificationTime tgt now
           testCLISucceeded
-            ["rewrite", rule "simple.yaml", "--update", "--sweet", "--target=" ++ tgtPath, srcPath]
+            ["rewrite", rule "simple.yaml", "--update", "--sweet", "--target=" ++ tgt, src]
             []
-          content <- readFile tgtPath
+          content <- readFile tgt
           content `shouldBe` "ORIGINAL"
 
     it "rewrites with --update when source is newer than target" $
-      withTempFileContent "src-XXXXXX.phi" "Q -> [[ x -> \"foo\" ]]" $ \srcPath ->
-        withTempFileContent "tgt-XXXXXX.phi" "ORIGINAL" $ \tgtPath -> do
+      withTempFileContent "src-XXXXXX.phi" "Q -> [[ x -> \"foo\" ]]" $ \src ->
+        withTempFileContent "tgt-XXXXXX.phi" "ORIGINAL" $ \tgt -> do
           now <- getCurrentTime
-          setModificationTime tgtPath (addUTCTime (-60) now)
-          setModificationTime srcPath now
+          setModificationTime tgt (addUTCTime (-60) now)
+          setModificationTime src now
           testCLISucceeded
-            ["rewrite", rule "simple.yaml", "--update", "--sweet", "--target=" ++ tgtPath, srcPath]
+            ["rewrite", rule "simple.yaml", "--update", "--sweet", "--target=" ++ tgt, src]
             []
-          content <- readFile tgtPath
+          content <- readFile tgt
           content `shouldBe` "{⟦ x ↦ \"bar\" ⟧}"
 
     it "rewrites with cycles" $
