@@ -72,6 +72,13 @@ withTempFile pattern =
     (openTempFile "." pattern)
     (\(path, _) -> removeFile path)
 
+withTempFileContent :: String -> String -> (FilePath -> IO a) -> IO a
+withTempFileContent pattern content action =
+  withTempFile pattern $ \(path, h) -> do
+    hPutStr h content
+    hClose h
+    action path
+
 testCLI' :: [String] -> [String] -> Either ExitCode () -> Expectation
 testCLI' args outputs exit = do
   (out, result) <- withStdout (try (runCLI args) :: IO (Either ExitCode ()))
@@ -156,11 +163,9 @@ spec = do
             ["--in-place and --target cannot be used together"]
 
       it "when --update is used without --target" $
-        withTempFile "updateXXXXXX.phi" $ \(path, h) -> do
-          hPutStr h "Q -> [[ ]]"
-          hClose h
+        withStdin "Q -> [[ ]]" $
           testCLIFailed
-            ["rewrite", "--update", path]
+            ["rewrite", "--update"]
             ["--update requires --target"]
 
       it "when --update is used without an input file" $
@@ -170,11 +175,9 @@ spec = do
             ["--update requires an input file"]
 
       it "when --update is used with --in-place" $
-        withTempFile "updateXXXXXX.phi" $ \(path, h) -> do
-          hPutStr h "Q -> [[ ]]"
-          hClose h
+        withStdin "Q -> [[ ]]" $
           testCLIFailed
-            ["rewrite", "--update", "--in-place", path]
+            ["rewrite", "--update", "--in-place", "input.phi"]
             ["--update and --in-place cannot be used together"]
 
       it "with --depth-sensitive" $
@@ -718,12 +721,8 @@ spec = do
         content `shouldBe` "{⟦ x ↦ \"bar\" ⟧}"
 
     it "skips rewriting with --update when target is newer than source" $
-      withTempFile "src-XXXXXX.phi" $ \(srcPath, srcH) -> do
-        hPutStr srcH "Q -> [[ x -> \"foo\" ]]"
-        hClose srcH
-        withTempFile "tgt-XXXXXX.phi" $ \(tgtPath, tgtH) -> do
-          hPutStr tgtH "ORIGINAL"
-          hClose tgtH
+      withTempFileContent "src-XXXXXX.phi" "Q -> [[ x -> \"foo\" ]]" $ \srcPath ->
+        withTempFileContent "tgt-XXXXXX.phi" "ORIGINAL" $ \tgtPath -> do
           now <- getCurrentTime
           setModificationTime srcPath (addUTCTime (-60) now)
           setModificationTime tgtPath now
@@ -734,12 +733,8 @@ spec = do
           content `shouldBe` "ORIGINAL"
 
     it "rewrites with --update when source is newer than target" $
-      withTempFile "src-XXXXXX.phi" $ \(srcPath, srcH) -> do
-        hPutStr srcH "Q -> [[ x -> \"foo\" ]]"
-        hClose srcH
-        withTempFile "tgt-XXXXXX.phi" $ \(tgtPath, tgtH) -> do
-          hPutStr tgtH "ORIGINAL"
-          hClose tgtH
+      withTempFileContent "src-XXXXXX.phi" "Q -> [[ x -> \"foo\" ]]" $ \srcPath ->
+        withTempFileContent "tgt-XXXXXX.phi" "ORIGINAL" $ \tgtPath -> do
           now <- getCurrentTime
           setModificationTime tgtPath (addUTCTime (-60) now)
           setModificationTime srcPath now
