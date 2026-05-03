@@ -10,11 +10,12 @@ import CLI (runCLI)
 import Control.Exception
 import Control.Monad (forM_, unless, when)
 import Data.List (intercalate, isInfixOf)
+import Data.Time.Clock (addUTCTime, getCurrentTime)
 import Data.Time.Clock.POSIX (getPOSIXTime)
 import Data.Version (showVersion)
 import GHC.IO.Handle
 import Paths_phino (version)
-import System.Directory (createDirectoryIfMissing, doesDirectoryExist, doesFileExist, getTemporaryDirectory, listDirectory, removeDirectoryRecursive, removeFile)
+import System.Directory (createDirectoryIfMissing, doesDirectoryExist, doesFileExist, getTemporaryDirectory, listDirectory, removeDirectoryRecursive, removeFile, setModificationTime)
 import System.Exit (ExitCode (ExitFailure))
 import System.FilePath ((</>))
 import System.IO
@@ -70,6 +71,13 @@ withTempFile pattern =
   bracket
     (openTempFile "." pattern)
     (\(path, _) -> removeFile path)
+
+withTempFileContent :: String -> String -> (FilePath -> IO a) -> IO a
+withTempFileContent pattern content action =
+  withTempFile pattern $ \(path, h) -> do
+    hPutStr h content
+    hClose h
+    action path
 
 testCLI' :: [String] -> [String] -> Either ExitCode () -> Expectation
 testCLI' args outputs exit = do
@@ -153,6 +161,24 @@ spec = do
           testCLIFailed
             ["rewrite", "--in-place", "--target=output.phi", path]
             ["--in-place and --target cannot be used together"]
+
+      it "when --update is used without --target" $
+        withStdin "Q -> [[ ]]" $
+          testCLIFailed
+            ["rewrite", "--update"]
+            ["--update requires --target"]
+
+      it "when --update is used without an input file" $
+        withStdin "Q -> [[ ]]" $
+          testCLIFailed
+            ["rewrite", "--update", "--target=output.phi"]
+            ["--update requires an input file"]
+
+      it "when --update is used with --in-place" $
+        withStdin "Q -> [[ ]]" $
+          testCLIFailed
+            ["rewrite", "--update", "--in-place", "input.phi"]
+            ["--update and --in-place cannot be used together"]
 
       it "with --depth-sensitive" $
         withStdin "Q -> [[ x -> \"x\"]]" $
@@ -693,6 +719,30 @@ spec = do
         testCLISucceeded ["rewrite", rule "simple.yaml", "--in-place", "--sweet", path] []
         content <- readFile path
         content `shouldBe` "{⟦ x ↦ \"bar\" ⟧}"
+
+    it "skips rewriting with --update when target is newer than source" $
+      withTempFileContent "src-XXXXXX.phi" "Q -> [[ x -> \"foo\" ]]" $ \src ->
+        withTempFileContent "tgt-XXXXXX.phi" "ORIGINAL" $ \tgt -> do
+          now <- getCurrentTime
+          setModificationTime src (addUTCTime (-60) now)
+          setModificationTime tgt now
+          testCLISucceeded
+            ["rewrite", rule "simple.yaml", "--update", "--sweet", "--target=" ++ tgt, src]
+            []
+          content <- readFile tgt
+          content `shouldBe` "ORIGINAL"
+
+    it "rewrites with --update when source is newer than target" $
+      withTempFileContent "src-XXXXXX.phi" "Q -> [[ x -> \"foo\" ]]" $ \src ->
+        withTempFileContent "tgt-XXXXXX.phi" "ORIGINAL" $ \tgt -> do
+          now <- getCurrentTime
+          setModificationTime tgt (addUTCTime (-60) now)
+          setModificationTime src now
+          testCLISucceeded
+            ["rewrite", rule "simple.yaml", "--update", "--sweet", "--target=" ++ tgt, src]
+            []
+          content <- readFile tgt
+          content `shouldBe` "{⟦ x ↦ \"bar\" ⟧}"
 
     it "rewrites with cycles" $
       withStdin "Q -> [[ x -> \"x\" ]]" $

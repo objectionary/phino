@@ -117,6 +117,7 @@ data OptsRewrite = OptsRewrite
   , _depthSensitive :: Bool
   , _nonumber :: Bool
   , _inPlace :: Bool
+  , _update :: Bool
   , _sequence :: Bool
   , _canonize :: Bool
   , _compress :: Bool
