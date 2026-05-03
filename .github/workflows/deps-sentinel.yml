@@ -1,0 +1,21 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+name: deps-sentinel
+'on':
+  schedule:
+    - cron: '0 * * * *'
+jobs:
+  merge:
+    timeout-minutes: 15
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+      - uses: maxonfjvipon/deps-sentinel-action@0.0.2
+        with:
+          token: ${{ secrets.RENOVATE_MERGE_TOKEN }}
+          owner: maxonfjvipon
+          bot-logins: |-
+            renovate[bot]
+            github-actions[bot]
