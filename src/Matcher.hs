@@ -12,7 +12,6 @@ import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
 import Data.Maybe (catMaybes)
 import Data.Text (Text)
-import qualified Data.Text as T
 
 -- Meta value
 -- The right part of substitution
@@ -41,25 +40,9 @@ newtype Subst = Subst (Map Text MetaValue)
 substEmpty :: Subst
 substEmpty = Subst Map.empty
 
--- Names of anonymous meta variables (bare 𝜏, 𝐵, 𝑒, etc.) are minted
--- by the parser with this prefix. They are uniquely matched so the rewriter
--- can rebuild the matched fragment, but they cannot be referenced in
--- result/when/where (the Builder rejects any lookup of such a name).
-anonMetaPrefix :: Text
-anonMetaPrefix = T.pack "_anon_"
-
-isAnonMeta :: Text -> Bool
-isAnonMeta = T.isPrefixOf anonMetaPrefix
-
 -- Singleton substitution with one (key -> value) pair
 substSingle :: Text -> MetaValue -> Subst
 substSingle key value = Subst (Map.singleton key value)
-
--- Drop bindings whose key is anonymous so the substitution can no longer
--- be used to look up sentinel names. Pattern-rebuild keeps the unfiltered
--- substitution; result-build, conditions and `where` extras use this view.
-filterAnon :: Subst -> Subst
-filterAnon (Subst mp) = Subst (Map.filterWithKey (\k _ -> not (isAnonMeta k)) mp)
 
 defaultScope :: Expression
 defaultScope = ExFormation [BiVoid AtRho]
@@ -86,22 +69,28 @@ combine (Subst a) (Subst b) = combine' (Map.toList b) a
 combineMany :: [Subst] -> [Subst] -> [Subst]
 combineMany xs xy = catMaybes [combine x y | x <- xs, y <- xy]
 
+-- Match a meta with optional name: anonymous metas (Nothing) match without
+-- adding any binding; named metas (Just) bind the value under that name.
+substMeta :: Maybe Text -> MetaValue -> Subst
+substMeta Nothing _ = substEmpty
+substMeta (Just key) value = substSingle key value
+
 matchAttribute :: Attribute -> Attribute -> [Subst]
-matchAttribute (AtMeta meta) tgt = [substSingle meta (MvAttribute tgt)]
+matchAttribute (AtMeta meta) tgt = [substMeta meta (MvAttribute tgt)]
 matchAttribute ptn tgt
   | ptn == tgt = [substEmpty]
   | otherwise = []
 
 matchBinding :: Binding -> Binding -> Expression -> [Subst]
 matchBinding (BiVoid pattr) (BiVoid tattr) _ = matchAttribute pattr tattr
-matchBinding (BiDelta (BtMeta meta)) (BiDelta tdata) _ = [substSingle meta (MvBytes tdata)]
+matchBinding (BiDelta (BtMeta meta)) (BiDelta tdata) _ = [substMeta meta (MvBytes tdata)]
 matchBinding (BiDelta pdata) (BiDelta tdata) _
   | pdata == tdata = [substEmpty]
   | otherwise = []
 matchBinding (BiLambda pFunc) (BiLambda tFunc) _
   | pFunc == tFunc = [substEmpty]
   | otherwise = []
-matchBinding (BiMetaLambda meta) (BiLambda tFunc) _ = [substSingle meta (MvFunction tFunc)]
+matchBinding (BiMetaLambda meta) (BiLambda tFunc) _ = [substMeta meta (MvFunction tFunc)]
 matchBinding (BiTau pattr pexp) (BiTau tattr texp) scope = combineMany (matchAttribute pattr tattr) (matchExpression' pexp texp scope)
 matchBinding _ _ _ = []
 
@@ -112,7 +101,7 @@ matchBindings [] _ _ = []
 matchBindings ((BiMeta name) : pbs) tbs scope =
   let splits = [splitAt idx tbs | idx <- [0 .. length tbs]]
    in catMaybes
-        [ combine (substSingle name (MvBindings before)) subst
+        [ combine (substMeta name (MvBindings before)) subst
         | (before, after) <- splits
         , subst <- matchBindings pbs after scope
         ]
@@ -148,7 +137,7 @@ tailExpressions ptn tgt scope = case tailExpressionsReversed ptn tgt of
       substs -> Just (substs, [])
 
 matchExpression' :: Expression -> Expression -> Expression -> [Subst]
-matchExpression' (ExMeta meta) tgt scope = [substSingle meta (MvExpression tgt scope)]
+matchExpression' (ExMeta meta) tgt scope = [substMeta meta (MvExpression tgt scope)]
 matchExpression' ExThis ExThis _ = [substEmpty]
 matchExpression' ExGlobal ExGlobal _ = [substEmpty]
 matchExpression' ExTermination ExTermination _ = [substEmpty]
@@ -157,7 +146,7 @@ matchExpression' (ExDispatch pexp pattr) (ExDispatch texp tattr) scope = combine
 matchExpression' (ExApplication pexp pbd) (ExApplication texp tbd) scope = combineMany (matchExpression' pexp texp scope) (matchBinding pbd tbd scope)
 matchExpression' (ExMetaTail expr meta) tgt scope = case tailExpressions expr tgt scope of
   ([], _) -> []
-  (substs, tails) -> combineMany substs [substSingle meta (MvTail tails)]
+  (substs, tails) -> combineMany substs [substMeta meta (MvTail tails)]
 matchExpression' (ExPhiAgain prefix idx expr) (ExPhiAgain prefix' idx' expr') scope
   | prefix == prefix' && idx == idx' = matchExpression' expr expr' scope
   | otherwise = []
@@ -166,24 +155,26 @@ matchExpression' (ExPhiMeet prefix idx expr) (ExPhiMeet prefix' idx' expr') scop
   | otherwise = []
 matchExpression' _ _ _ = []
 
--- Deep match pattern to expression inside binding
-matchBindingExpression :: Binding -> Expression -> Expression -> [Subst]
+-- Deep match pattern to expression inside binding, returning the matched
+-- target subexpression alongside each substitution.
+matchBindingExpression :: Binding -> Expression -> Expression -> [(Expression, Subst)]
 matchBindingExpression (BiTau _ expr) ptn scope = matchExpressionDeep ptn expr scope
 matchBindingExpression _ _ _ = []
 
--- Match expression with deep nested expression(s) matching
-matchExpressionDeep :: Expression -> Expression -> Expression -> [Subst]
+-- Match expression with deep nested expression(s) matching, returning the
+-- matched target subexpression alongside each substitution.
+matchExpressionDeep :: Expression -> Expression -> Expression -> [(Expression, Subst)]
 matchExpressionDeep ptn tgt scope =
-  let matched = matchExpression' ptn tgt scope
+  let here = [(tgt, s) | s <- matchExpression' ptn tgt scope]
       deep = case tgt of
         ExFormation bds -> concatMap (\bd -> matchBindingExpression bd ptn tgt) bds
         ExDispatch expr _ -> matchExpressionDeep ptn expr scope
         ExApplication expr tau -> matchExpressionDeep ptn expr scope ++ matchBindingExpression tau ptn scope
         _ -> []
-   in matched ++ deep
+   in here ++ deep
 
-matchExpression :: Expression -> Expression -> [Subst]
+matchExpression :: Expression -> Expression -> [(Expression, Subst)]
 matchExpression ptn tgt = matchExpressionDeep ptn tgt defaultScope
 
-matchProgram :: Expression -> Program -> [Subst]
+matchProgram :: Expression -> Program -> [(Expression, Subst)]
 matchProgram ptn (Program expr) = matchExpression ptn expr

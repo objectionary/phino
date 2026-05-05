@@ -50,9 +50,9 @@ spec = do
 
   describe "Attribute Show instance renders AtMeta" $
     forM_
-      [ ("simple meta", AtMeta "a", "!a")
-      , ("long meta", AtMeta "attribute", "!attribute")
-      , ("unicode meta", AtMeta "メタ", "!メタ")
+      [ ("simple meta", AtMeta (Just "a"), "!a")
+      , ("long meta", AtMeta (Just "attribute"), "!attribute")
+      , ("unicode meta", AtMeta (Just "メタ"), "!メタ")
       ]
       ( \(desc, attr, expected) ->
           it desc $ show attr `shouldBe` expected
@@ -64,8 +64,8 @@ spec = do
       , ("labels differ", AtLabel "x", AtLabel "y", False)
       , ("alphas equal", AtAlpha 1, AtAlpha 1, True)
       , ("alphas differ", AtAlpha 1, AtAlpha 2, False)
-      , ("metas equal", AtMeta "a", AtMeta "a", True)
-      , ("metas differ", AtMeta "a", AtMeta "b", False)
+      , ("metas equal", AtMeta (Just "a"), AtMeta (Just "a"), True)
+      , ("metas differ", AtMeta (Just "a"), AtMeta (Just "b"), False)
       , ("rho equals rho", AtRho, AtRho, True)
       , ("phi equals phi", AtPhi, AtPhi, True)
       , ("delta equals delta", AtDelta, AtDelta, True)
@@ -80,7 +80,7 @@ spec = do
       [ ("label vs alpha", AtLabel "x", AtAlpha 0, False)
       , ("rho vs phi", AtRho, AtPhi, False)
       , ("delta vs lambda", AtDelta, AtLambda, False)
-      , ("meta vs label", AtMeta "x", AtLabel "x", False)
+      , ("meta vs label", AtMeta (Just "x"), AtLabel "x", False)
       ]
       ( \(desc, lhs, rhs, expected) ->
           it desc $ (lhs == rhs) `shouldBe` expected
@@ -88,7 +88,7 @@ spec = do
 
   describe "Attribute Ord instance orders correctly" $
     it "sorts attributes by constructor order" $
-      let attrs = [AtMeta "z", AtDelta, AtLambda, AtRho, AtPhi, AtAlpha 1, AtLabel "a"]
+      let attrs = [AtMeta (Just "z"), AtDelta, AtLambda, AtRho, AtPhi, AtAlpha 1, AtLabel "a"]
           first : _ = sort attrs
           isLabel (AtLabel _) = True
           isLabel _ = False
@@ -101,8 +101,8 @@ spec = do
       , ("one differs", BtOne "FF", BtOne "00", False)
       , ("many equals many", BtMany ["00", "01"], BtMany ["00", "01"], True)
       , ("many differs", BtMany ["00"], BtMany ["01"], False)
-      , ("meta equals meta", BtMeta "b", BtMeta "b", True)
-      , ("meta differs", BtMeta "b", BtMeta "c", False)
+      , ("meta equals meta", BtMeta (Just "b"), BtMeta (Just "b"), True)
+      , ("meta differs", BtMeta (Just "b"), BtMeta (Just "c"), False)
       ]
       ( \(desc, lhs, rhs, expected) ->
           it desc $ (lhs == rhs) `shouldBe` expected
@@ -112,7 +112,7 @@ spec = do
     forM_
       [ ("empty vs one", BtEmpty, BtOne "00", False)
       , ("one vs many", BtOne "00", BtMany ["00"], False)
-      , ("many vs meta", BtMany ["00"], BtMeta "b", False)
+      , ("many vs meta", BtMany ["00"], BtMeta (Just "b"), False)
       ]
       ( \(desc, lhs, rhs, expected) ->
           it desc $ (lhs == rhs) `shouldBe` expected
@@ -120,7 +120,7 @@ spec = do
 
   describe "Bytes Ord instance orders correctly" $
     it "sorts bytes by constructor order" $
-      let bytes = [BtMeta "z", BtMany ["00"], BtOne "FF", BtEmpty]
+      let bytes = [BtMeta (Just "z"), BtMany ["00"], BtOne "FF", BtEmpty]
           first : _ = sort bytes
        in first `shouldBe` BtEmpty
 
@@ -129,16 +129,16 @@ spec = do
       [ ("tau equals tau", BiTau AtRho ExGlobal, BiTau AtRho ExGlobal, True)
       , ("tau differs by attr", BiTau AtRho ExGlobal, BiTau AtPhi ExGlobal, False)
       , ("tau differs by expr", BiTau AtRho ExGlobal, BiTau AtRho ExThis, False)
-      , ("meta equals meta", BiMeta "B", BiMeta "B", True)
-      , ("meta differs", BiMeta "B", BiMeta "C", False)
+      , ("meta equals meta", BiMeta (Just "B"), BiMeta (Just "B"), True)
+      , ("meta differs", BiMeta (Just "B"), BiMeta (Just "C"), False)
       , ("delta equals delta", BiDelta BtEmpty, BiDelta BtEmpty, True)
       , ("delta differs", BiDelta BtEmpty, BiDelta (BtOne "00"), False)
       , ("void equals void", BiVoid AtRho, BiVoid AtRho, True)
       , ("void differs", BiVoid AtRho, BiVoid AtPhi, False)
       , ("lambda equals lambda", BiLambda "Func", BiLambda "Func", True)
       , ("lambda differs", BiLambda "Func", BiLambda "Other", False)
-      , ("metalambda equals", BiMetaLambda "F", BiMetaLambda "F", True)
-      , ("metalambda differs", BiMetaLambda "F", BiMetaLambda "G", False)
+      , ("metalambda equals", BiMetaLambda (Just "F"), BiMetaLambda (Just "F"), True)
+      , ("metalambda differs", BiMetaLambda (Just "F"), BiMetaLambda (Just "G"), False)
       ]
       ( \(desc, lhs, rhs, expected) ->
           it desc $ (lhs == rhs) `shouldBe` expected
@@ -146,9 +146,9 @@ spec = do
 
   describe "Binding Eq instance compares different constructors" $
     forM_
-      [ ("tau vs meta", BiTau AtRho ExGlobal, BiMeta "B", False)
+      [ ("tau vs meta", BiTau AtRho ExGlobal, BiMeta (Just "B"), False)
       , ("delta vs void", BiDelta BtEmpty, BiVoid AtDelta, False)
-      , ("lambda vs metalambda", BiLambda "F", BiMetaLambda "F", False)
+      , ("lambda vs metalambda", BiLambda "F", BiMetaLambda (Just "F"), False)
       ]
       ( \(desc, lhs, rhs, expected) ->
           it desc $ (lhs == rhs) `shouldBe` expected
@@ -156,7 +156,7 @@ spec = do
 
   describe "Binding Ord instance orders correctly" $
     it "sorts bindings by constructor order" $
-      let bindings = [BiMetaLambda "Z", BiLambda "A", BiVoid AtRho, BiDelta BtEmpty, BiMeta "B", BiTau AtRho ExGlobal]
+      let bindings = [BiMetaLambda (Just "Z"), BiLambda "A", BiVoid AtRho, BiDelta BtEmpty, BiMeta (Just "B"), BiTau AtRho ExGlobal]
           first : _ = sort bindings
           isTau (BiTau _ _) = True
           isTau _ = False
@@ -169,13 +169,13 @@ spec = do
       , ("this equals this", ExThis, ExThis, True)
       , ("global equals global", ExGlobal, ExGlobal, True)
       , ("termination equals", ExTermination, ExTermination, True)
-      , ("meta equals meta", ExMeta "e", ExMeta "e", True)
-      , ("meta differs", ExMeta "e", ExMeta "f", False)
+      , ("meta equals meta", ExMeta (Just "e"), ExMeta (Just "e"), True)
+      , ("meta differs", ExMeta (Just "e"), ExMeta (Just "f"), False)
       , ("application equals", ExApplication ExGlobal (BiTau AtRho ExThis), ExApplication ExGlobal (BiTau AtRho ExThis), True)
       , ("dispatch equals", ExDispatch ExGlobal AtRho, ExDispatch ExGlobal AtRho, True)
       , ("dispatch differs", ExDispatch ExGlobal AtRho, ExDispatch ExGlobal AtPhi, False)
-      , ("metatail equals", ExMetaTail ExGlobal "t", ExMetaTail ExGlobal "t", True)
-      , ("metatail differs", ExMetaTail ExGlobal "t", ExMetaTail ExGlobal "s", False)
+      , ("metatail equals", ExMetaTail ExGlobal (Just "t"), ExMetaTail ExGlobal (Just "t"), True)
+      , ("metatail differs", ExMetaTail ExGlobal (Just "t"), ExMetaTail ExGlobal (Just "s"), False)
       ]
       ( \(desc, lhs, rhs, expected) ->
           it desc $ (lhs == rhs) `shouldBe` expected
@@ -185,7 +185,7 @@ spec = do
     forM_
       [ ("formation vs this", ExFormation [], ExThis, False)
       , ("global vs termination", ExGlobal, ExTermination, False)
-      , ("meta vs dispatch", ExMeta "e", ExDispatch ExGlobal AtRho, False)
+      , ("meta vs dispatch", ExMeta (Just "e"), ExDispatch ExGlobal AtRho, False)
       ]
       ( \(desc, lhs, rhs, expected) ->
           it desc $ (lhs == rhs) `shouldBe` expected
@@ -193,7 +193,7 @@ spec = do
 
   describe "Expression Ord instance orders correctly" $
     it "sorts expressions by constructor order" $
-      let exprs = [ExMetaTail ExGlobal "t", ExDispatch ExGlobal AtRho, ExApplication ExGlobal (BiVoid AtRho), ExMeta "e", ExTermination, ExGlobal, ExThis, ExFormation []]
+      let exprs = [ExMetaTail ExGlobal (Just "t"), ExDispatch ExGlobal AtRho, ExApplication ExGlobal (BiVoid AtRho), ExMeta (Just "e"), ExTermination, ExGlobal, ExThis, ExFormation []]
           first : _ = sort exprs
        in first `shouldBe` ExFormation []
 
@@ -229,10 +229,10 @@ spec = do
       , ("void binding", ExFormation [BiVoid AtRho], 5)
       , ("delta binding", ExFormation [BiDelta BtEmpty], 5)
       , ("lambda binding", ExFormation [BiLambda "Func"], 5)
-      , ("meta binding", ExFormation [BiMeta "B"], 3)
-      , ("metalambda binding", ExFormation [BiMetaLambda "F"], 5)
-      , ("meta expression", ExMeta "e", 1)
-      , ("metatail expression", ExMetaTail ExGlobal "t", 3)
+      , ("meta binding", ExFormation [BiMeta (Just "B")], 3)
+      , ("metalambda binding", ExFormation [BiMetaLambda (Just "F")], 5)
+      , ("meta expression", ExMeta (Just "e"), 1)
+      , ("metatail expression", ExMetaTail ExGlobal (Just "t"), 3)
       , ("deeply nested dispatch", ExDispatch (ExDispatch ExGlobal (AtLabel "a")) (AtLabel "b"), 5)
       , ("formation with dispatch inside", ExFormation [BiTau AtRho (ExDispatch ExGlobal (AtLabel "x"))], 7)
       ]

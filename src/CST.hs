@@ -11,7 +11,7 @@
 module CST where
 
 import AST
-import Data.Maybe (isJust)
+import Data.Maybe (fromMaybe, isJust)
 import qualified Data.Text as T
 import Misc
 import qualified Yaml as Y
@@ -259,12 +259,11 @@ extraToCST = toCST'
 toCST' :: ToCST a b => a -> b
 toCST' = (`toCST` (0, EOL))
 
--- Anonymous metas (parsed from a bare sigil with no index) carry a sentinel
--- name like "_anon_<ch>_<offset>" - render them back as the bare sigil.
-metaTail :: T.Text -> T.Text
-metaTail t
-  | T.isPrefixOf (T.pack "_anon_") t = T.empty
-  | otherwise = T.drop 1 t
+-- Anonymous metas render back as the bare sigil; named metas drop the leading
+-- prefix character and render the remainder as the index.
+metaTail :: Maybe T.Text -> T.Text
+metaTail Nothing = T.empty
+metaTail (Just t) = T.drop 1 t
 
 -- This class is used to convert AST to CST
 -- CST is created with sugar and unicode
@@ -443,7 +442,7 @@ instance ToCST Binding PAIR where
   toCST (BiDelta bts) ctx = PA_DELTA (toCST bts ctx)
   toCST (BiLambda func) _ = PA_LAMBDA func
   toCST (BiMetaLambda mt) _ = PA_META_LAMBDA (META EXCL F (metaTail mt))
-  toCST (BiMeta mt) _ = error $ "BiMeta binding " ++ T.unpack mt ++ " cannot be converted to PAIR"
+  toCST (BiMeta mt) _ = error $ "BiMeta binding " ++ T.unpack (fromMaybe T.empty mt) ++ " cannot be converted to PAIR"
 
 instance ToCST Binding APP_BINDING where
   toCST bd@(BiTau _ _) ctx = APP_BINDING (toCST bd ctx :: PAIR)

@@ -71,7 +71,7 @@ meetInProgram (Program expr) len = meetInExpression expr
     meetInExpression (ExPhiMeet{}) _ = []
     meetInExpression (ExPhiAgain{}) _ = []
     meetInExpression ex prog =
-      let matched = if countNodes ex >= len then map (const ex) (matchProgram ex prog) else []
+      let matched = if countNodes ex >= len then map (const ex . snd) (matchProgram ex prog) else []
        in matched ++ case ex of
             ExDispatch ex' _ -> meetInExpression ex' prog
             ExApplication ex' (BiTau _ arg) -> meetInExpression ex' prog ++ meetInExpression arg prog
@@ -111,8 +111,9 @@ meetInPrograms prog LatexContext{..} = meetInPrograms' prog 1
        in case frequent of
             Just expr ->
               case matchProgram expr first of
-                (_ : substs) ->
-                  let met' = map (filter (== expr)) met
+                (_ : pairs) ->
+                  let substs = map snd pairs
+                      met' = map (filter (== expr)) met
                       program = replaceProgram (first, [expr], [ExPhiMeet _meetPrefix idx])
                       program' = replaceProgram (program, map (const expr) substs, map (const (ExPhiAgain _meetPrefix idx)) substs)
                       rest' = zipWith (\prgm exprs -> replaceProgram (prgm, exprs, map (const (ExPhiAgain _meetPrefix idx)) exprs)) rest met'

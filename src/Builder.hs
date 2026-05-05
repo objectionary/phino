@@ -40,10 +40,15 @@ data BuildException
   | CouldNotBuildBytes {_bts :: Bytes, _msg :: String}
   deriving (Exception)
 
-metaMsg :: Text -> String
-metaMsg name
-  | isAnonMeta name = "anonymous meta variable cannot be referenced (it has no index)"
-  | otherwise = printf "meta '%s' is either does not exist or refers to an inappropriate term" (T.unpack name)
+metaMsg :: Maybe Text -> String
+metaMsg Nothing = "anonymous meta variable cannot be referenced (it has no index)"
+metaMsg (Just name) = printf "meta '%s' is either does not exist or refers to an inappropriate term" (T.unpack name)
+
+lookupNamedMeta :: Maybe Text -> Map.Map Text MetaValue -> Either String MetaValue
+lookupNamedMeta Nothing _ = Left (metaMsg Nothing)
+lookupNamedMeta (Just name) mp = case Map.lookup name mp of
+  Just v -> Right v
+  Nothing -> Left (metaMsg (Just name))
 
 type Built a = Either String a
 
@@ -64,15 +69,17 @@ contextualize (ExApplication ex (BiTau at bexpr)) context =
 contextualize ex _ = ex
 
 buildAttribute :: Attribute -> Subst -> Built Attribute
-buildAttribute (AtMeta meta) (Subst mp) = case Map.lookup meta mp of
-  Just (MvAttribute attr) -> Right attr
-  _ -> Left (metaMsg meta)
+buildAttribute (AtMeta meta) (Subst mp) = case lookupNamedMeta meta mp of
+  Right (MvAttribute attr) -> Right attr
+  Right _ -> Left (metaMsg meta)
+  Left err -> Left err
 buildAttribute attr _ = Right attr
 
 buildBytes :: Bytes -> Subst -> Built Bytes
-buildBytes (BtMeta meta) (Subst mp) = case Map.lookup meta mp of
-  Just (MvBytes bytes) -> Right bytes
-  _ -> Left (metaMsg meta)
+buildBytes (BtMeta meta) (Subst mp) = case lookupNamedMeta meta mp of
+  Right (MvBytes bytes) -> Right bytes
+  Right _ -> Left (metaMsg meta)
+  Left err -> Left err
 buildBytes bts _ = Right bts
 
 -- Build binding
@@ -86,15 +93,17 @@ buildBinding (BiTau attr expr) subst = do
 buildBinding (BiVoid attr) subst = do
   attribute <- buildAttribute attr subst
   Right [BiVoid attribute]
-buildBinding (BiMeta meta) (Subst mp) = case Map.lookup meta mp of
-  Just (MvBindings bds) -> uniqueBindings bds
-  _ -> Left (metaMsg meta)
+buildBinding (BiMeta meta) (Subst mp) = case lookupNamedMeta meta mp of
+  Right (MvBindings bds) -> uniqueBindings bds
+  Right _ -> Left (metaMsg meta)
+  Left err -> Left err
 buildBinding (BiDelta bytes) subst = do
   bts <- buildBytes bytes subst
   Right [BiDelta bts]
-buildBinding (BiMetaLambda meta) (Subst mp) = case Map.lookup meta mp of
-  Just (MvFunction func) -> Right [BiLambda func]
-  _ -> Left (metaMsg meta)
+buildBinding (BiMetaLambda meta) (Subst mp) = case lookupNamedMeta meta mp of
+  Right (MvFunction func) -> Right [BiLambda func]
+  Right _ -> Left (metaMsg meta)
+  Left err -> Left err
 buildBinding binding _ = Right [binding]
 
 -- Build bindings that may contain meta binding (BiMeta)
@@ -132,19 +141,21 @@ buildExpression (ExApplication expr (BiTau battr bexpr)) subst = do
 buildExpression (ExFormation bds) subst = do
   bds' <- buildBindings bds subst >>= uniqueBindings
   Right (ExFormation bds', defaultScope)
-buildExpression (ExMeta meta) (Subst mp) = case Map.lookup meta mp of
-  Just (MvExpression expr scope) ->
+buildExpression (ExMeta meta) (Subst mp) = case lookupNamedMeta meta mp of
+  Right (MvExpression expr scope) ->
     let res = Right (expr, scope)
      in case expr of
           ExFormation bds -> uniqueBindings bds >> res
           _ -> res
-  _ -> Left (metaMsg meta)
+  Right _ -> Left (metaMsg meta)
+  Left err -> Left err
 buildExpression (ExMetaTail expr meta) subst = do
   let (Subst mp) = subst
   (expression, scope) <- buildExpression expr subst
-  case Map.lookup meta mp of
-    Just (MvTail tails) -> Right (buildExpressionWithTails expression tails subst, scope)
-    _ -> Left (metaMsg meta)
+  case lookupNamedMeta meta mp of
+    Right (MvTail tails) -> Right (buildExpressionWithTails expression tails subst, scope)
+    Right _ -> Left (metaMsg meta)
+    Left err -> Left err
 buildExpression expr _ = Right (expr, defaultScope)
 
 buildBytesThrows :: Bytes -> Subst -> IO Bytes

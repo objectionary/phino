@@ -19,7 +19,7 @@ import qualified Data.Set as Set
 import Deps
 import Locator (locatedExpression, withLocatedExpression)
 import Logger (logDebug)
-import Matcher (Subst, filterAnon)
+import Matcher (Subst)
 import Must (Must (..), exceedsUpperBound, inRange)
 import Printer (printExpression)
 import Replacer (ReplaceContext (ReplaceCtx), ReplaceExpressionFunc, replaceExpression, replaceExpressionFast)
@@ -36,7 +36,7 @@ type Rewrittens = (NonEmpty Rewritten, Bool)
 
 type Rewrittens' = ([Rewritten], Bool)
 
-type ToReplace = (Expression, Expression, Expression, [Subst])
+type ToReplace = (Expression, Expression, Expression, [(Expression, Subst)])
 
 data RewriteContext = RewriteContext
   { _locator :: Expression
@@ -81,53 +81,100 @@ instance Show RewriteException where
       rul
       expr
 
--- Build pattern and result expression and replace patterns to results in given expression
+-- Replace each matched fragment in the given expression with the corresponding
+-- result, built from the matched substitution. Patterns aren't rebuilt — the
+-- matcher already returned the exact subexpressions where the rule fired.
 buildAndReplace' :: ToReplace -> ReplaceExpressionFunc -> IO Expression
-buildAndReplace' (expr, ptn, res, substs) func = do
-  ptns <- buildExpressionsThrows ptn substs
-  repls <- buildExpressionsThrows res (map filterAnon substs)
-  let ptns' = map fst ptns
-      repls' = map (\ex _ -> fst ex) repls
-  pure (func (expr, ptns', repls'))
+buildAndReplace' (expr, _ptn, res, fragSubsts) func = do
+  let frags = map fst fragSubsts
+      substs = map snd fragSubsts
+  repls <- buildExpressionsThrows res substs
+  let repls' = map (\ex _ -> fst ex) repls
+  pure (func (expr, frags, repls'))
 
 -- If pattern and replacement are appropriate for fast replacing - does it.
 -- Pattern and replacement expressions can be used in fast replacing only if
 -- 1. they are both formations
--- 2. they start and end with the same meta bindings, e.g. [!B1, ..., !B2]
--- 3. the does not have meta bindings between first and last meta bindings
+-- 2. they start and end with the same NAMED meta bindings, e.g. [!B1, ..., !B2]
+-- 3. they do not have meta bindings between first and last meta bindings
+-- 4. neither side contains any anonymous meta variables (which don't bind in
+--    the substitution and so can't be filled in during result-build)
 -- In such case we can just replace bindings one by one without building whole expression.
 -- You can find more details in this ticket: https://github.com/objectionary/phino/issues/321
 -- If we don't meet the conditions above - just do a regular replacing
 tryBuildAndReplaceFast :: ToReplace -> ReplaceContext -> IO Expression
-tryBuildAndReplaceFast state@(expr, ExFormation _pbds@(pbd : pbds), ExFormation _rbds@(rbd : rbds), substs) ctx =
+tryBuildAndReplaceFast state@(expr, ptn@(ExFormation _pbds@(pbd : pbds)), res@(ExFormation _rbds@(rbd : rbds)), substs) ctx =
   let pbds' = init pbds
       rbds' = init rbds
-   in if startsAndEndsWithMeta _pbds
-        && startsAndEndsWithMeta _rbds
+   in if startsAndEndsWithNamedMeta _pbds
+        && startsAndEndsWithNamedMeta _rbds
         && pbd == rbd
         && last pbds == last rbds
         && not (hasMetaBindings pbds')
         && not (hasMetaBindings rbds')
+        && not (hasAnonExpr ptn)
+        && not (hasAnonExpr res)
         then do
           logDebug "Applying fast replacing since 'pattern' and 'result' are suitable for this..."
-          buildAndReplace' (expr, ExFormation pbds', ExFormation rbds', substs) (replaceExpressionFast ctx)
+          buildAndReplaceFast (expr, ExFormation pbds', ExFormation rbds', substs) ctx
         else do
           logDebug "Applying regular replacing..."
           buildAndReplace' state replaceExpression
   where
-    startsAndEndsWithMeta :: [Binding] -> Bool
-    startsAndEndsWithMeta [] = False
-    startsAndEndsWithMeta bds@(bd : _) =
+    startsAndEndsWithNamedMeta :: [Binding] -> Bool
+    startsAndEndsWithNamedMeta [] = False
+    startsAndEndsWithNamedMeta bds@(bd : _) =
       length bds > 1
-        && isMetaBinding bd
-        && isMetaBinding (last bds)
+        && isNamedMetaBinding bd
+        && isNamedMetaBinding (last bds)
     hasMetaBindings :: [Binding] -> Bool
+    isNamedMetaBinding :: Binding -> Bool
+    isNamedMetaBinding = \case
+      BiMeta (Just _) -> True
+      _ -> False
     isMetaBinding :: Binding -> Bool
     isMetaBinding = \case
       BiMeta _ -> True
       _ -> False
     hasMetaBindings = foldl (\acc bd -> acc || isMetaBinding bd) False
 tryBuildAndReplaceFast state _ = buildAndReplace' state replaceExpression
+
+-- Variant of buildAndReplace' for the fast path: builds middle pattern/result
+-- from the named substitution and uses replaceExpressionFast for bulk binding
+-- replacement.
+buildAndReplaceFast :: ToReplace -> ReplaceContext -> IO Expression
+buildAndReplaceFast (expr, ptn, res, fragSubsts) ctx = do
+  let substs = map snd fragSubsts
+  ptns <- buildExpressionsThrows ptn substs
+  repls <- buildExpressionsThrows res substs
+  let ptns' = map fst ptns
+      repls' = map (\ex _ -> fst ex) repls
+  pure (replaceExpressionFast ctx (expr, ptns', repls'))
+
+-- True if an expression contains any anonymous meta variable anywhere.
+hasAnonExpr :: Expression -> Bool
+hasAnonExpr (ExMeta Nothing) = True
+hasAnonExpr (ExMeta (Just _)) = False
+hasAnonExpr (ExMetaTail _ Nothing) = True
+hasAnonExpr (ExMetaTail e (Just _)) = hasAnonExpr e
+hasAnonExpr (ExFormation bds) = any hasAnonBinding bds
+hasAnonExpr (ExDispatch e a) = hasAnonAttr a || hasAnonExpr e
+hasAnonExpr (ExApplication e bd) = hasAnonExpr e || hasAnonBinding bd
+hasAnonExpr (ExPhiMeet _ _ e) = hasAnonExpr e
+hasAnonExpr (ExPhiAgain _ _ e) = hasAnonExpr e
+hasAnonExpr _ = False
+
+hasAnonBinding :: Binding -> Bool
+hasAnonBinding (BiMeta Nothing) = True
+hasAnonBinding (BiMetaLambda Nothing) = True
+hasAnonBinding (BiTau a e) = hasAnonAttr a || hasAnonExpr e
+hasAnonBinding (BiVoid a) = hasAnonAttr a
+hasAnonBinding (BiDelta (BtMeta Nothing)) = True
+hasAnonBinding _ = False
+
+hasAnonAttr :: Attribute -> Bool
+hasAnonAttr (AtMeta Nothing) = True
+hasAnonAttr _ = False
 
 -- The function returns tuple (X, Y, Z) where
 -- - X is sequence of programs;

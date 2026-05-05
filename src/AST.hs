@@ -20,8 +20,8 @@ data Expression
   | ExTermination
   | ExApplication Expression Binding
   | ExDispatch Expression Attribute
-  | ExMeta Text
-  | ExMetaTail Expression Text
+  | ExMeta (Maybe Text)
+  | ExMetaTail Expression (Maybe Text)
   | ExPhiMeet (Maybe String) Int Expression
   | ExPhiAgain (Maybe String) Int Expression
   deriving (Eq, Ord, Show, Generic)
@@ -31,15 +31,15 @@ data Binding
   | BiDelta Bytes
   | BiVoid Attribute
   | BiLambda Text
-  | BiMeta Text
-  | BiMetaLambda Text
+  | BiMeta (Maybe Text)
+  | BiMetaLambda (Maybe Text)
   deriving (Eq, Ord, Show, Generic)
 
 data Bytes
   = BtEmpty
   | BtOne String
   | BtMany [String]
-  | BtMeta Text
+  | BtMeta (Maybe Text)
   deriving (Eq, Ord, Show, Generic)
 
 data Attribute
@@ -49,7 +49,7 @@ data Attribute
   | AtRho
   | AtLambda
   | AtDelta
-  | AtMeta Text
+  | AtMeta (Maybe Text)
   deriving (Eq, Generic, Ord)
 
 instance Show Attribute where
@@ -59,7 +59,7 @@ instance Show Attribute where
   show AtPhi = "φ"
   show AtDelta = "Δ"
   show AtLambda = "λ"
-  show (AtMeta meta) = '!' : T.unpack meta
+  show (AtMeta meta) = '!' : maybe "" T.unpack meta
 
 countNodes :: Expression -> Int
 countNodes (ExFormation bds) = 1 + sum (map nodesInBinding bds) + length bds

@@ -35,27 +35,27 @@ spec = do
         , [BiTau AtRho (ExDispatch ExGlobal (AtLabel "x")), BiTau AtRho (ExDispatch ExTermination (AtLabel "y"))]
         , [BiTau AtRho (ExDispatch ExGlobal (AtLabel "x")), BiTau AtRho (ExDispatch ExTermination (AtLabel "y"))]
         )
-      , ("[[!B]] => [[!B]]", [BiMeta "B"], [BiMeta "B"])
-      , ("[[x -> ?, !B]] => [[x -> ?, !B]]", [BiVoid (AtLabel "x"), BiMeta "B"], [BiVoid (AtLabel "x"), BiMeta "B"])
+      , ("[[!B]] => [[!B]]", [BiMeta (Just "B")], [BiMeta (Just "B")])
+      , ("[[x -> ?, !B]] => [[x -> ?, !B]]", [BiVoid (AtLabel "x"), BiMeta (Just "B")], [BiVoid (AtLabel "x"), BiMeta (Just "B")])
       ,
         ( "[[x -> ?, !B, y -> ?]] => [[x -> ?, !B, y -> ?]]"
-        , [BiVoid (AtLabel "x"), BiMeta "B", BiVoid (AtLabel "y")]
-        , [BiVoid (AtLabel "x"), BiMeta "B", BiVoid (AtLabel "y")]
+        , [BiVoid (AtLabel "x"), BiMeta (Just "B"), BiVoid (AtLabel "y")]
+        , [BiVoid (AtLabel "x"), BiMeta (Just "B"), BiVoid (AtLabel "y")]
         )
       ,
         ( "[[^ -> ?, !B, y -> ?]] => [[^ -> ?, !B, y -> ?]]"
-        , [BiVoid AtRho, BiMeta "B", BiVoid (AtLabel "y")]
-        , [BiVoid AtRho, BiMeta "B", BiVoid (AtLabel "y")]
+        , [BiVoid AtRho, BiMeta (Just "B"), BiVoid (AtLabel "y")]
+        , [BiVoid AtRho, BiMeta (Just "B"), BiVoid (AtLabel "y")]
         )
       ,
         ( "[[!a -> ?, x -> $.y]] => [[!a -> Q.x, x -> $.y]]"
-        , [BiVoid (AtMeta "a"), BiTau AtRho (ExDispatch ExTermination (AtLabel "y"))]
-        , [BiVoid (AtMeta "a"), BiTau AtRho (ExDispatch ExTermination (AtLabel "y"))]
+        , [BiVoid (AtMeta (Just "a")), BiTau AtRho (ExDispatch ExTermination (AtLabel "y"))]
+        , [BiVoid (AtMeta (Just "a")), BiTau AtRho (ExDispatch ExTermination (AtLabel "y"))]
         )
       ,
         ( "[[!a -> Q.x, x -> $.y]] => [[!a -> Q.x, x -> $.y]]"
-        , [BiTau (AtMeta "a") (ExDispatch ExGlobal (AtLabel "x")), BiTau AtRho (ExDispatch ExTermination (AtLabel "y"))]
-        , [BiTau (AtMeta "a") (ExDispatch ExGlobal (AtLabel "x")), BiTau AtRho (ExDispatch ExTermination (AtLabel "y"))]
+        , [BiTau (AtMeta (Just "a")) (ExDispatch ExGlobal (AtLabel "x")), BiTau AtRho (ExDispatch ExTermination (AtLabel "y"))]
+        , [BiTau (AtMeta (Just "a")) (ExDispatch ExGlobal (AtLabel "x")), BiTau AtRho (ExDispatch ExTermination (AtLabel "y"))]
         )
       ]
 

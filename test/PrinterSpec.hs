@@ -52,11 +52,11 @@ spec = do
         , ExApplication (ExFormation [BiVoid AtRho]) (BiTau (AtAlpha 0) ExGlobal)
         , "[[]]( Q )"
         )
-      , ("meta expr", ExMeta "e", "!e")
-      , ("meta tail", ExMetaTail ExGlobal "t", "Q * !t")
-      , ("meta binding", ExFormation [BiMeta "B"], "[[ !B ]]")
-      , ("meta lambda", ExFormation [BiMetaLambda "F"], "[[ L> !F ]]")
-      , ("meta attr tau", ExFormation [BiTau (AtMeta "a") ExThis], "[[ !a -> $ ]]")
+      , ("meta expr", ExMeta (Just "e"), "!e")
+      , ("meta tail", ExMetaTail ExGlobal (Just "t"), "Q * !t")
+      , ("meta binding", ExFormation [BiMeta (Just "B")], "[[ !B ]]")
+      , ("meta lambda", ExFormation [BiMetaLambda (Just "F")], "[[ L> !F ]]")
+      , ("meta attr tau", ExFormation [BiTau (AtMeta (Just "a")) ExThis], "[[ !a -> $ ]]")
       ]
       ( \(desc, expr, expected) ->
           it desc (printExpression' expr (SWEET, ASCII, SINGLELINE, defaultMargin) `shouldBe` expected)

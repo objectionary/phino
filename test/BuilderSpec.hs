@@ -26,19 +26,19 @@ spec = do
       buildExpression
       [
         ( "Q.!a => (!a >> x) => Q.x"
-        , ExDispatch ExGlobal (AtMeta "a")
+        , ExDispatch ExGlobal (AtMeta (Just "a"))
         , [("a", MvAttribute (AtLabel "x"))]
         , Right (ExDispatch ExGlobal (AtLabel "x"), defaultScope)
         )
       ,
         ( "Q.c(!a -> !e) => (!a >> x, !e >> $.y.z) => Q.c(x -> $.y.z)"
-        , ExApplication (ExDispatch ExGlobal (AtLabel "c")) (BiTau (AtMeta "a") (ExMeta "e"))
+        , ExApplication (ExDispatch ExGlobal (AtLabel "c")) (BiTau (AtMeta (Just "a")) (ExMeta (Just "e")))
         , [("a", MvAttribute (AtLabel "x")), ("e", MvExpression (ExDispatch (ExDispatch ExThis (AtLabel "y")) (AtLabel "z")) defaultScope)]
         , Right (ExApplication (ExDispatch ExGlobal (AtLabel "c")) (BiTau (AtLabel "x") (ExDispatch (ExDispatch ExThis (AtLabel "y")) (AtLabel "z"))), defaultScope)
         )
       ,
         ( "[[!a -> $.x, !B]] => (!a >> y, !B >> [[b -> ?, L> Func]]) => [[y -> $.x, b -> ?, L> Func]]"
-        , ExFormation [BiTau (AtMeta "a") (ExDispatch ExThis (AtLabel "x")), BiMeta "B"]
+        , ExFormation [BiTau (AtMeta (Just "a")) (ExDispatch ExThis (AtLabel "x")), BiMeta (Just "B")]
         , [("a", MvAttribute (AtLabel "y")), ("B", MvBindings [BiVoid (AtLabel "b"), BiLambda "Func"])]
         , Right
             ( ExFormation
@@ -51,19 +51,19 @@ spec = do
         )
       ,
         ( "Q * !t => (!t >> [.a, .b, (~1 -> $.x)]) => Q.a.b(~1 -> $.x)"
-        , ExMetaTail ExGlobal "t"
+        , ExMetaTail ExGlobal (Just "t")
         , [("t", MvTail [TaDispatch (AtLabel "a"), TaDispatch (AtLabel "b"), TaApplication (BiTau (AtAlpha 1) (ExDispatch ExThis (AtLabel "x")))])]
         , Right (ExApplication (ExDispatch (ExDispatch ExGlobal (AtLabel "a")) (AtLabel "b")) (BiTau (AtAlpha 1) (ExDispatch ExThis (AtLabel "x"))), defaultScope)
         )
       ,
         ( "Q.!a => () => X"
-        , ExDispatch ExGlobal (AtMeta "a")
+        , ExDispatch ExGlobal (AtMeta (Just "a"))
         , []
         , Left "meta 'a' is either does not exist or refers to an inappropriate term"
         )
       ,
         ( "!e0(!a1 -> !e1, !a2 => !e2) => (!e0 >> [[]], !a1 >> x, !e1 >> Q, !a2 >> y, !e2 >> $) => [[]](x -> Q, y -> $)"
-        , ExApplication (ExApplication (ExMeta "e0") (BiTau (AtMeta "a1") (ExMeta "e1"))) (BiTau (AtMeta "a2") (ExMeta "e2"))
+        , ExApplication (ExApplication (ExMeta (Just "e0")) (BiTau (AtMeta (Just "a1")) (ExMeta (Just "e1")))) (BiTau (AtMeta (Just "a2")) (ExMeta (Just "e2")))
         ,
           [ ("e0", MvExpression (ExFormation []) defaultScope)
           , ("a1", MvAttribute (AtLabel "x"))
@@ -75,7 +75,7 @@ spec = do
         )
       ,
         ( "⟦!a ↦ ∅, !B⟧.!a => (!a >> t, !B >> ⟦ x ↦ ξ.t ⟧ ) => ⟦ t ↦ ∅, x ↦ ξ.t ⟧.t"
-        , ExDispatch (ExFormation [BiVoid (AtMeta "a"), BiMeta "B"]) (AtMeta "a")
+        , ExDispatch (ExFormation [BiVoid (AtMeta (Just "a")), BiMeta (Just "B")]) (AtMeta (Just "a"))
         ,
           [ ("a", MvAttribute (AtLabel "t"))
           , ("B", MvBindings [BiTau (AtLabel "x") (ExDispatch ExThis (AtLabel "t"))])
@@ -97,27 +97,27 @@ spec = do
     it "!e => [(!e >> Q.x), (!e >> $.y)] => [Q.x, $.y]" $ do
       built <-
         buildExpressionsThrows
-          (ExMeta "e")
+          (ExMeta (Just "e"))
           [ substSingle "e" (MvExpression (ExDispatch ExGlobal (AtLabel "x")) defaultScope)
           , substSingle "e" (MvExpression (ExDispatch ExThis (AtLabel "y")) defaultScope)
           ]
       built `shouldBe` [(ExDispatch ExGlobal (AtLabel "x"), defaultScope), (ExDispatch ExThis (AtLabel "y"), defaultScope)]
     it "!e => [(!e1 >> Q.x)] => X" $
       buildExpressionsThrows
-        (ExMeta "e")
+        (ExMeta (Just "e"))
         [substSingle "e1" (MvExpression (ExDispatch ExGlobal (AtLabel "x")) defaultScope)]
         `shouldThrow` anyException
 
   describe "build with duplicate attributes in bindings" $ do
     it "build binding with duplicates" $
-      buildBinding (BiMeta "B") (substSingle "B" (MvBindings [BiVoid AtRho, BiVoid AtRho])) `shouldSatisfy` isLeft
+      buildBinding (BiMeta (Just "B")) (substSingle "B" (MvBindings [BiVoid AtRho, BiVoid AtRho])) `shouldSatisfy` isLeft
     it "build formation with duplicates" $
-      buildExpression (ExMeta "e") (substSingle "e" (MvExpression (ExFormation [BiVoid AtRho, BiVoid AtRho]) ExThis)) `shouldSatisfy` isLeft
+      buildExpression (ExMeta (Just "e")) (substSingle "e" (MvExpression (ExFormation [BiVoid AtRho, BiVoid AtRho]) ExThis)) `shouldSatisfy` isLeft
 
   describe "anonymous meta variable referenced on RHS" $ do
     it "fails with a clear error when an anonymous attribute meta is referenced" $
-      buildAttribute (AtMeta "_anon_a_42") (Subst Map.empty)
+      buildAttribute (AtMeta Nothing) (Subst Map.empty)
         `shouldBe` Left "anonymous meta variable cannot be referenced (it has no index)"
     it "fails with a clear error when an anonymous expression meta is referenced" $
-      buildExpression (ExMeta "_anon_e_7") (Subst Map.empty)
+      buildExpression (ExMeta Nothing) (Subst Map.empty)
         `shouldBe` Left "anonymous meta variable cannot be referenced (it has no index)"

@@ -50,7 +50,7 @@ import Data.ByteString.Lazy (unpack)
 import qualified Data.ByteString.Lazy.UTF8 as U
 import Data.Char (isPrint, ord)
 import Data.List (intercalate)
-import Data.Maybe (catMaybes)
+import Data.Maybe (catMaybes, fromMaybe)
 import qualified Data.Set as Set
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
@@ -179,7 +179,11 @@ uniqueBindings bds = case maybeDuplicatedAttribute bds Set.empty of
     maybeDuplicatedAttribute (BiDelta _ : rest) = checkAttr AtDelta rest
     maybeDuplicatedAttribute (BiMeta _ : rest) = maybeDuplicatedAttribute rest
 
+    -- Anonymous attribute metas (AtMeta Nothing) stand for distinct unknown
+    -- attributes per occurrence, so two of them in the same binding list do
+    -- not constitute a duplicate.
     checkAttr :: Attribute -> [Binding] -> Set.Set Attribute -> Maybe Attribute
+    checkAttr (AtMeta Nothing) rest acc = maybeDuplicatedAttribute rest acc
     checkAttr attr rest acc
       | attr `Set.member` acc = Just attr
       | otherwise = maybeDuplicatedAttribute rest (Set.insert attr acc)
@@ -259,7 +263,7 @@ btsToWord8 (BtMany (bt : bts)) =
   case btsToWord8 (BtOne bt) of
     [byte] -> byte : btsToWord8 (BtMany bts)
     _ -> error $ "Invalid hex byte; " ++ bt
-btsToWord8 (BtMeta mt) = error $ "Cannot convert meta bytes to Word8; " ++ T.unpack mt
+btsToWord8 (BtMeta mt) = error $ "Cannot convert meta bytes to Word8; " ++ T.unpack (fromMaybe T.empty mt)
 
 -- >>> word8ToBytes [64, 20, 0]
 -- BtMany ["40","14","00"]

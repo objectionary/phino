@@ -228,10 +228,10 @@ runMatch OptsMatch{..} = do
     else do
       ptn <- parseExpressionThrows (fromJust _pattern)
       condition <- traverse parseConditionThrows _when
-      substs <- matchProgramWithRule prog (rule ptn condition) (RuleContext buildTerm)
-      if null substs
+      pairs <- matchProgramWithRule prog (rule ptn condition) (RuleContext buildTerm)
+      if null pairs
         then throwIO EmptySubstsOnMatch
-        else putStrLn (P.printSubsts' substs (_sugarType, UNICODE, _flat, defaultMargin))
+        else putStrLn (P.printSubsts' (map snd pairs) (_sugarType, UNICODE, _flat, defaultMargin))
   where
     rule :: Expression -> Maybe Y.Condition -> Y.Rule
     rule ptn cnd = Y.Rule "custom" Nothing ptn ExGlobal cnd Nothing Nothing
