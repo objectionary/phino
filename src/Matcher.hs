@@ -36,6 +36,13 @@ data Tail
 newtype Subst = Subst (Map Text MetaValue)
   deriving (Eq, Show)
 
+-- A successful match: the matched target subexpression paired with the
+-- substitution it produced. The fragment must be threaded through alongside
+-- the substitution because anonymous metas (bare 𝜏 / 𝐵 / 𝑒) leave no entry
+-- in the substitution, so the Rewriter cannot reconstruct the matched
+-- subexpression by re-building the pattern from the substitution alone.
+type Match = (Expression, Subst)
+
 -- Empty substitution
 substEmpty :: Subst
 substEmpty = Subst Map.empty
@@ -155,15 +162,15 @@ matchExpression' (ExPhiMeet prefix idx expr) (ExPhiMeet prefix' idx' expr') scop
   | otherwise = []
 matchExpression' _ _ _ = []
 
--- Deep match pattern to expression inside binding, returning the matched
--- target subexpression alongside each substitution.
-matchBindingExpression :: Binding -> Expression -> Expression -> [(Expression, Subst)]
+-- Deep match pattern to expression inside binding. See `Match` for why each
+-- substitution is paired with the matched target subexpression.
+matchBindingExpression :: Binding -> Expression -> Expression -> [Match]
 matchBindingExpression (BiTau _ expr) ptn scope = matchExpressionDeep ptn expr scope
 matchBindingExpression _ _ _ = []
 
--- Match expression with deep nested expression(s) matching, returning the
--- matched target subexpression alongside each substitution.
-matchExpressionDeep :: Expression -> Expression -> Expression -> [(Expression, Subst)]
+-- Match expression with deep nested expression(s) matching. See `Match` for
+-- why each substitution is paired with the matched target subexpression.
+matchExpressionDeep :: Expression -> Expression -> Expression -> [Match]
 matchExpressionDeep ptn tgt scope =
   let here = [(tgt, s) | s <- matchExpression' ptn tgt scope]
       deep = case tgt of
@@ -173,8 +180,8 @@ matchExpressionDeep ptn tgt scope =
         _ -> []
    in here ++ deep
 
-matchExpression :: Expression -> Expression -> [(Expression, Subst)]
+matchExpression :: Expression -> Expression -> [Match]
 matchExpression ptn tgt = matchExpressionDeep ptn tgt defaultScope
 
-matchProgram :: Expression -> Program -> [(Expression, Subst)]
+matchProgram :: Expression -> Program -> [Match]
 matchProgram ptn (Program expr) = matchExpression ptn expr

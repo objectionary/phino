@@ -19,7 +19,7 @@ import qualified Data.Set as Set
 import Deps
 import Locator (locatedExpression, withLocatedExpression)
 import Logger (logDebug)
-import Matcher (Subst)
+import Matcher (Match)
 import Must (Must (..), exceedsUpperBound, inRange)
 import Printer (printExpression)
 import Replacer (ReplaceContext (ReplaceCtx), ReplaceExpressionFunc, replaceExpression, replaceExpressionFast)
@@ -36,7 +36,7 @@ type Rewrittens = (NonEmpty Rewritten, Bool)
 
 type Rewrittens' = ([Rewritten], Bool)
 
-type ToReplace = (Expression, Expression, Expression, [(Expression, Subst)])
+type ToReplace = (Expression, Expression, Expression, [Match])
 
 data RewriteContext = RewriteContext
   { _locator :: Expression

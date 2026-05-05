@@ -231,7 +231,11 @@ meetCondition cond (subst : rest) ctx = do
         _ -> pure (subst : next)
     Left _ -> meetCondition cond rest ctx
 
-matchExpressionWithRule :: Expression -> Y.Rule -> RuleContext -> IO [(Expression, Subst)]
+-- Match an expression against a rule, threading the matched fragment through
+-- alongside each substitution (see `Match` in Matcher). The fragment is what
+-- the rewriter will replace; with anonymous metas it cannot be reconstructed
+-- from the substitution alone.
+matchExpressionWithRule :: Expression -> Y.Rule -> RuleContext -> IO [Match]
 matchExpressionWithRule expr rule ctx =
   let ptn = Y.pattern rule
       matched = matchExpression ptn expr
@@ -241,49 +245,46 @@ matchExpressionWithRule expr rule ctx =
           logDebug (printf "Pattern from rule '%s' was not matched:\n%s" name (printExpression' ptn logPrintConfig))
           pure []
         else do
-          when' <- meetMaybeConditionPaired (Y.when rule) matched ctx
+          when' <- meetMaybeCondition (Y.when rule) matched ctx
           if null when'
             then do
               logDebug "The 'when' condition wasn't met"
               pure []
             else do
               logDebug (printf "Rule %s" name)
-              extended <- extraSubstitutionsPaired when' (Y.where_ rule) ctx
+              extended <- extraSubstitutions when' (Y.where_ rule) ctx
               if null extended
                 then do
                   logDebug "Substitution is empty after enxtending, maybe some metas are duplicated"
                   pure []
                 else do
-                  met <- meetMaybeConditionPaired (Y.having rule) extended ctx
+                  met <- meetMaybeCondition (Y.having rule) extended ctx
                   when (null met) (logDebug "The 'having' condition wan't met")
                   pure met
 
-matchProgramWithRule :: Program -> Y.Rule -> RuleContext -> IO [(Expression, Subst)]
+matchProgramWithRule :: Program -> Y.Rule -> RuleContext -> IO [Match]
 matchProgramWithRule (Program expr) = matchExpressionWithRule expr
 
--- Variants of meetMaybeCondition/extraSubstitutions that thread the matched
--- fragment through alongside each substitution. Conditions filter pairs;
--- `where` extras attach new bindings to the substitution while keeping the
--- fragment fixed.
-meetMaybeConditionPaired :: Maybe Y.Condition -> [(Expression, Subst)] -> RuleContext -> IO [(Expression, Subst)]
-meetMaybeConditionPaired Nothing pairs _ = pure pairs
-meetMaybeConditionPaired (Just cond) pairs ctx = meetConditionPaired cond pairs ctx
-
-meetConditionPaired :: Y.Condition -> [(Expression, Subst)] -> RuleContext -> IO [(Expression, Subst)]
-meetConditionPaired _ [] _ = pure []
-meetConditionPaired cond ((frag, subst) : rest) ctx = do
+-- Filter matches by an optional condition. The condition is checked against
+-- the substitution; the matched fragment is carried through unchanged.
+meetMaybeCondition :: Maybe Y.Condition -> [Match] -> RuleContext -> IO [Match]
+meetMaybeCondition Nothing pairs _ = pure pairs
+meetMaybeCondition (Just _) [] _ = pure []
+meetMaybeCondition (Just cond) ((frag, subst) : rest) ctx = do
   met <- try (meetCondition' cond subst ctx) :: IO (Either SomeException [Subst])
   case met of
     Right first -> do
-      next <- meetConditionPaired cond rest ctx
+      next <- meetMaybeCondition (Just cond) rest ctx
       case first of
         [] -> pure next
         _ -> pure ((frag, subst) : next)
-    Left _ -> meetConditionPaired cond rest ctx
+    Left _ -> meetMaybeCondition (Just cond) rest ctx
 
-extraSubstitutionsPaired :: [(Expression, Subst)] -> Maybe [Y.Extra] -> RuleContext -> IO [(Expression, Subst)]
-extraSubstitutionsPaired pairs Nothing _ = pure pairs
-extraSubstitutionsPaired pairs (Just extras') RuleContext{..} = do
+-- Extend each match with extra bindings produced by `where` rule entries.
+-- The matched fragment is preserved; only the substitution is augmented.
+extraSubstitutions :: [Match] -> Maybe [Y.Extra] -> RuleContext -> IO [Match]
+extraSubstitutions pairs Nothing _ = pure pairs
+extraSubstitutions pairs (Just extras') RuleContext{..} = do
   logDebug (printf "Building %d sets of extra substitutions.." (length pairs))
   res <-
     sequence
