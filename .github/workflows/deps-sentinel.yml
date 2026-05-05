@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v6
-      - uses: maxonfjvipon/deps-sentinel-action@0.0.2
+      - uses: maxonfjvipon/deps-sentinel-action@0.0.3
         with:
           token: ${{ secrets.MERGE_TOKEN }}
           owner: yegor256
