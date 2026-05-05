@@ -29,5 +29,4 @@ release:
     cabal upload --token=$(cat ../hackage-auth) --publish dist-newstyle/sdist/phino-0.${tag}.tar.gz
 merge:
   script: |-
-    cabal build
-    make
+    make -j

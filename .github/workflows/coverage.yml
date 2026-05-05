@@ -1,0 +1,31 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+name: coverage
+'on':
+  pull_request:
+    branches:
+      - master
+jobs:
+  coverage:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+      - id: setup
+        uses: haskell-actions/setup@v2.11.0
+        with:
+          ghc-version: '9.6.7'
+          cabal-version: '3.12.1.0'
+      - uses: actions/cache@v5
+        with:
+          path: |
+            ${{ steps.setup.outputs.ghc-path }}
+            ${{ steps.setup.outputs.cabal-path }}
+            ${{ steps.setup.outputs.cabal-store }}
+            dist-newstyle
+          key: ${{ runner.os }}-coverage-${{ hashFiles('**/*.cabal') }}
+          restore-keys: ${{ runner.os }}-coverage-
+      - run: cabal update
+      - run: cabal install hpc-codecov --overwrite-policy=always
+      - run: make coverage
