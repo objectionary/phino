@@ -10,13 +10,13 @@
 # with "0". Here we get back to program we started from and rewriting should
 # fail on this step.
 name: first
-pattern: ⟦ x -> !e ⟧
+pattern: ⟦ x -> !e0 ⟧
 result: Q.x(y -> !e1)
 where:
   - meta: '!e1'
     function: sed
     args:
-      - '!e'
+      - '!e0'
       - '"s/0/2/g"'
       - '"s/1/0/g"'
       - '"s/2/1/g"'

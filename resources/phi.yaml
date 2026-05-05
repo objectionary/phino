@@ -2,14 +2,14 @@
 # SPDX-License-Identifier: MIT
 ---
 name: phi
-pattern: ⟦𝐵⟧.𝜏
-result: ⟦𝐵⟧.φ.𝜏
+pattern: ⟦𝐵1⟧.𝜏1
+result: ⟦𝐵1⟧.φ.𝜏1
 when:
   and:
     - in:
         - φ
-        - 𝐵
+        - 𝐵1
     - not:
         in:
-          - 𝜏
-          - 𝐵
+          - 𝜏1
+          - 𝐵1

@@ -113,3 +113,11 @@ spec = do
       buildBinding (BiMeta "B") (substSingle "B" (MvBindings [BiVoid AtRho, BiVoid AtRho])) `shouldSatisfy` isLeft
     it "build formation with duplicates" $
       buildExpression (ExMeta "e") (substSingle "e" (MvExpression (ExFormation [BiVoid AtRho, BiVoid AtRho]) ExThis)) `shouldSatisfy` isLeft
+
+  describe "anonymous meta variable referenced on RHS" $ do
+    it "fails with a clear error when an anonymous attribute meta is referenced" $
+      buildAttribute (AtMeta "_anon_a_42") (Subst Map.empty)
+        `shouldBe` Left "anonymous meta variable cannot be referenced (it has no index)"
+    it "fails with a clear error when an anonymous expression meta is referenced" $
+      buildExpression (ExMeta "_anon_e_7") (Subst Map.empty)
+        `shouldBe` Left "anonymous meta variable cannot be referenced (it has no index)"

@@ -341,6 +341,13 @@ This is the list of supported meta variables:
 
 Every meta variable may also be used with an integer index, like `!B1` or `𝜏0`.
 
+A meta variable written without any index (a bare `𝜏`, `!a`, `𝐵`, `!B`,
+`𝑒`, `!e`, `δ`, `!d`, `!t`, `!F`) is **anonymous**: it matches anything
+in the pattern but cannot be referenced in `result`, `when`, `where`, or
+`having`. Each occurrence is matched independently, so two bare `𝜏`s do
+not need to bind to the same value. Use indexed names whenever you need
+to refer to the matched value later.
+
 Incorrect usage of meta variables in 𝜑-expression patterns leads to
 parsing errors.
 

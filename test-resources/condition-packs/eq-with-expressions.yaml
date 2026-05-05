@@ -2,8 +2,8 @@
 # SPDX-License-Identifier: MIT
 ---
 expression: '[[ x -> "Hello, world" ]]'
-pattern: '[[ x -> !e ]]'
+pattern: '[[ x -> !e0 ]]'
 condition:
   eq:
-    - '!e'
+    - '!e0'
     - '"Hello, world"'

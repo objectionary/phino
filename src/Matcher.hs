@@ -12,6 +12,7 @@ import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
 import Data.Maybe (catMaybes)
 import Data.Text (Text)
+import qualified Data.Text as T
 
 -- Meta value
 -- The right part of substitution
@@ -40,9 +41,25 @@ newtype Subst = Subst (Map Text MetaValue)
 substEmpty :: Subst
 substEmpty = Subst Map.empty
 
+-- Names of anonymous meta variables (bare 𝜏, 𝐵, 𝑒, etc.) are minted
+-- by the parser with this prefix. They are uniquely matched so the rewriter
+-- can rebuild the matched fragment, but they cannot be referenced in
+-- result/when/where (the Builder rejects any lookup of such a name).
+anonMetaPrefix :: Text
+anonMetaPrefix = T.pack "_anon_"
+
+isAnonMeta :: Text -> Bool
+isAnonMeta = T.isPrefixOf anonMetaPrefix
+
 -- Singleton substitution with one (key -> value) pair
 substSingle :: Text -> MetaValue -> Subst
 substSingle key value = Subst (Map.singleton key value)
+
+-- Drop bindings whose key is anonymous so the substitution can no longer
+-- be used to look up sentinel names. Pattern-rebuild keeps the unfiltered
+-- substitution; result-build, conditions and `where` extras use this view.
+filterAnon :: Subst -> Subst
+filterAnon (Subst mp) = Subst (Map.filterWithKey (\k _ -> not (isAnonMeta k)) mp)
 
 defaultScope :: Expression
 defaultScope = ExFormation [BiVoid AtRho]

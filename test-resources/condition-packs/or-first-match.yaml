@@ -2,8 +2,8 @@
 # SPDX-License-Identifier: MIT
 ---
 expression: '[[ x -> Q.x ]]'
-pattern: '[[ x -> Q.!a ]]'
+pattern: '[[ x -> Q.!a0 ]]'
 condition:
   or:
-    - eq: ['!a', 'x']
-    - eq: ['!a', 'y']
+    - eq: ['!a0', 'x']
+    - eq: ['!a0', 'y']

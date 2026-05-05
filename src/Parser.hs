@@ -117,13 +117,25 @@ global = choice [symbol "Q", symbol "Φ"]
 metaSuffix :: Parser String
 metaSuffix = lexeme (many (oneOf ('_' : '-' : ['0' .. '9'] ++ ['a' .. 'z'] ++ ['A' .. 'Z']) <?> "meta suffix"))
 
+-- Generate a parse-unique sentinel name for a bare (anonymous) meta.
+-- Real meta names always start with a prefix character (a/B/e/d/F/t),
+-- so the "_anon_" prefix can't collide with a user-supplied name.
+-- Within a single parse, each occurrence gets a distinct offset and thus a
+-- distinct name. Cross-parse collisions are mitigated downstream by filtering
+-- "_anon_*" keys out of substitutions before they reach result-build,
+-- conditions or `where` extras.
+anonMetaName :: Char -> Parser T.Text
+anonMetaName ch = do
+  off <- getOffset
+  return (T.pack ("_anon_" ++ ch : '_' : show off))
+
 -- Meta variable names are packed to Text once here; all AST meta fields are Text
 meta :: Char -> Parser T.Text
 meta ch = do
   _ <- char '!'
   c <- char ch
   suf <- metaSuffix
-  return (T.pack (c : suf))
+  if null suf then anonMetaName c else return (T.pack (c : suf))
 
 meta' :: Char -> String -> Parser T.Text
 meta' ch uni =
@@ -132,7 +144,7 @@ meta' ch uni =
     , do
         _ <- symbol uni
         suf <- metaSuffix
-        return (T.pack (ch : suf))
+        if null suf then anonMetaName ch else return (T.pack (ch : suf))
     ]
 
 byte :: Parser String

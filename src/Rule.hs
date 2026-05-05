@@ -214,17 +214,19 @@ meetCondition' (Y.PartOf expr bd) = _partOf expr bd
 
 -- For each substitution check if it meetCondition to given condition
 -- If substitution does not meet the condition - it's thrown out
--- and is not used in replacement
+-- and is not used in replacement.
+-- Anonymous bindings are filtered out so that bare 𝜏/𝐵/𝑒 written inside a
+-- condition cannot accidentally resolve through a same-offset pattern binding.
 meetCondition :: Y.Condition -> [Subst] -> RuleContext -> IO [Subst]
 meetCondition _ [] _ = pure []
 meetCondition cond (subst : rest) ctx = do
-  met <- try (meetCondition' cond subst ctx) :: IO (Either SomeException [Subst])
+  met <- try (meetCondition' cond (filterAnon subst) ctx) :: IO (Either SomeException [Subst])
   case met of
     Right first -> do
       next <- meetCondition cond rest ctx
       case first of
         [] -> pure next
-        sbt : _ -> pure (sbt : next)
+        _ -> pure (subst : next)
     Left _ -> meetCondition cond rest ctx
 
 meetMaybeCondition :: Maybe Y.Condition -> [Subst] -> RuleContext -> IO [Subst]
@@ -251,7 +253,7 @@ extraSubstitutions substs extras RuleContext{..} = case extras of
                         _ -> Nothing
                       func = Y.function extra
                       args = Y.args extra
-                  term <- _buildTerm func args subst'
+                  term <- _buildTerm func args (filterAnon subst')
                   meta <- case term of
                     TeExpression expr -> do
                       logDebug (printf "Function %s() returned expression:\n%s" func (printExpression expr))

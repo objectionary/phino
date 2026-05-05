@@ -41,7 +41,9 @@ data BuildException
   deriving (Exception)
 
 metaMsg :: Text -> String
-metaMsg = printf "meta '%s' is either does not exist or refers to an inappropriate term" . T.unpack
+metaMsg name
+  | isAnonMeta name = "anonymous meta variable cannot be referenced (it has no index)"
+  | otherwise = printf "meta '%s' is either does not exist or refers to an inappropriate term" (T.unpack name)
 
 type Built a = Either String a
 

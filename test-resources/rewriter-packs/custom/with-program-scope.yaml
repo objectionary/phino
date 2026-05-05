@@ -10,12 +10,12 @@ output: |-
 rules:
   custom:
     - name: with-program-scope
-      pattern: '[[ !B, !a -> ?, !B1 ]](!a -> !e)'
-      result: '[[ !B, !a -> !e2, !B1 ]]'
+      pattern: '[[ !B0, !a0 -> ?, !B1 ]](!a0 -> !e0)'
+      result: '[[ !B0, !a0 -> !e2, !B1 ]]'
       where:
         - meta: '!e1'
           function: scope
-          args: ['!e']
+          args: ['!e0']
         - meta: '!e2'
           function: contextualize
-          args: ['!e', '!e1']
+          args: ['!e0', '!e1']

@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 ---
 expression: '[[ x -> T(y -> Q.z) ]]'
-pattern: '[[ x -> !e ]]'
+pattern: '[[ x -> !e0 ]]'
 condition:
   not:
-    nf: '!e'
+    nf: '!e0'

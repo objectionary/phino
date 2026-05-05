@@ -259,8 +259,12 @@ extraToCST = toCST'
 toCST' :: ToCST a b => a -> b
 toCST' = (`toCST` (0, EOL))
 
+-- Anonymous metas (parsed from a bare sigil with no index) carry a sentinel
+-- name like "_anon_<ch>_<offset>" - render them back as the bare sigil.
 metaTail :: T.Text -> T.Text
-metaTail = T.drop 1
+metaTail t
+  | T.isPrefixOf (T.pack "_anon_") t = T.empty
+  | otherwise = T.drop 1 t
 
 -- This class is used to convert AST to CST
 -- CST is created with sugar and unicode

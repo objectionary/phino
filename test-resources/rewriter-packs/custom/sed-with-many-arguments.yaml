@@ -12,13 +12,13 @@ output: |-
 rules:
   custom:
     - name: sed with many arguments
-      pattern: '[[ x -> !e ]]'
+      pattern: '[[ x -> !e0 ]]'
       result: '[[ x -> !e1 ]]'
       where:
         - meta: '!e1'
           function: sed
           args:
-            - '!e'
+            - '!e0'
             - '"s/1/2/g"'
             - '"s/2/3/g"'
             - '"s/3/4/g"'

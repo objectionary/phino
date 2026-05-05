@@ -9,10 +9,10 @@ rules:
   custom:
     - name: attribute from string
       pattern: |
-        [[ x -> !e ]]
+        [[ x -> !e0 ]]
       result: |
-        [[ x -> !e, !a -> [[ ]], ^ -> ? ]]
+        [[ x -> !e0, !a0 -> [[ ]], ^ -> ? ]]
       where:
-        - meta: '!a'
+        - meta: '!a0'
           function: tau
-          args: ['!e']
+          args: ['!e0']

@@ -93,10 +93,11 @@ printMetaValue (MvFunction fun) _ = T.unpack fun
 printMetaValue (MvTail tails) config = intercalate "," (map (`printTail` config) tails)
 
 printSubst :: Subst -> PrintConfig -> String
-printSubst (Subst mp) config =
-  intercalate
-    "\n"
-    (map (\(key, value) -> T.unpack key <> " >> " <> printMetaValue value config) (Map.toList mp))
+printSubst subst config =
+  let Subst mp = filterAnon subst
+   in intercalate
+        "\n"
+        (map (\(key, value) -> T.unpack key <> " >> " <> printMetaValue value config) (Map.toList mp))
 
 printSubsts' :: [Subst] -> PrintConfig -> String
 printSubsts' [] _ = "------"

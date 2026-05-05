@@ -2,6 +2,6 @@
 # SPDX-License-Identifier: MIT
 ---
 expression: '[[ x -> Q.foo.bar ]]'
-pattern: '[[ x -> !e ]]'
+pattern: '[[ x -> !e0 ]]'
 condition:
-  xi: '!e'
+  xi: '!e0'

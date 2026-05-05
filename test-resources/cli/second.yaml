@@ -2,5 +2,5 @@
 # SPDX-License-Identifier: MIT
 ---
 name: second
-pattern: Q.x(y -> !e)
-result: ⟦ x -> !e ⟧
+pattern: Q.x(y -> !e0)
+result: ⟦ x -> !e0 ⟧

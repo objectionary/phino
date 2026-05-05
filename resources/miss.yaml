@@ -2,13 +2,13 @@
 # SPDX-License-Identifier: MIT
 ---
 name: miss
-pattern: ⟦𝐵⟧(𝜏 ↦ 𝑒)
+pattern: ⟦𝐵1⟧(𝜏1 ↦ 𝑒)
 result: ⊥
 when:
   and:
     - not:
         in:
-          - 𝜏
-          - 𝐵
+          - 𝜏1
+          - 𝐵1
     - not:
-        alpha: 𝜏
+        alpha: 𝜏1

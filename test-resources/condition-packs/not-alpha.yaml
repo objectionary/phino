@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 ---
 expression: 'Q.foo'
-pattern: 'Q.!a'
+pattern: 'Q.!a0'
 condition:
   not:
-    alpha: '!a'
+    alpha: '!a0'

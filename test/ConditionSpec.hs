@@ -32,14 +32,14 @@ spec = do
 
   describe "parses correctly" $
     forM_
-      [ ("in(!a, !B)", Y.In (AtMeta "a") (BiMeta "B"))
-      , ("not(in(!a,!B))", Y.Not (Y.In (AtMeta "a") (BiMeta "B")))
+      [ ("in(!a1, !B1)", Y.In (AtMeta "a1") (BiMeta "B1"))
+      , ("not(in(!a1,!B1))", Y.Not (Y.In (AtMeta "a1") (BiMeta "B1")))
       , ("alpha(y)", Y.Alpha (AtLabel "y"))
       , ("eq(1,-2)", Y.Eq (Y.CmpNum (Y.Literal 1)) (Y.CmpNum (Y.Literal (-2))))
       , ("eq(index(z),length(!B1))", Y.Eq (Y.CmpNum (Y.Index (AtLabel "z"))) (Y.CmpNum (Y.Length (BiMeta "B1"))))
       , ("eq(!a1, !e2)", Y.Eq (Y.CmpAttr (AtMeta "a1")) (Y.CmpExpr (ExMeta "e2")))
       , ("or(xi(!e1), nf(Q.x))", Y.Or [Y.Xi (ExMeta "e1"), Y.NF (ExDispatch ExGlobal (AtLabel "x"))])
-      , ("and(matches(\"hi\", !e),part-of(!e, !B))", Y.And [Y.Matches "hi" (ExMeta "e"), Y.PartOf (ExMeta "e") (BiMeta "B")])
+      , ("and(matches(\"hi\", !e1),part-of(!e1, !B1))", Y.And [Y.Matches "hi" (ExMeta "e1"), Y.PartOf (ExMeta "e1") (BiMeta "B1")])
       ]
       (\(expr, res) -> it expr (parseCondition expr `shouldBe` Right res))
 

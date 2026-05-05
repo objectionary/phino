@@ -10,13 +10,13 @@ output: |-
 rules:
   custom:
     - name: with-simple-condition
-      pattern: '[[!B]].!a'
-      result: '[[!B]].@.!a'
+      pattern: '[[!B0]].!a0'
+      result: '[[!B0]].@.!a0'
       when:
         and:
           - in:
-              - '!a'
-              - '!B'
+              - '!a0'
+              - '!B0'
           - in:
               - 'y'
-              - '!B'
+              - '!B0'

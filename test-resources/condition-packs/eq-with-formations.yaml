@@ -2,8 +2,8 @@
 # SPDX-License-Identifier: MIT
 ---
 expression: '[[ x -> [[ a -> "hey", b -> "jeff" ]] ]]'
-pattern: '[[ x -> !e ]]'
+pattern: '[[ x -> !e0 ]]'
 condition:
   eq:
-    - '!e'
+    - '!e0'
     - '[[ a -> "hey", b -> "jeff" ]]'

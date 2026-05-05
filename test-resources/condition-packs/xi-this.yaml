@@ -3,6 +3,6 @@
 ---
 failure: true
 expression: '[[ x -> $ ]]'
-pattern: '[[ x -> !e ]]'
+pattern: '[[ x -> !e0 ]]'
 condition:
-  xi: '!e'
+  xi: '!e0'

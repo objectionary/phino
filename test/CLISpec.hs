@@ -902,8 +902,8 @@ spec = do
         [ unlines
             [ "\\begin{tabular}{rl}"
             , "\\trrule{copy}"
-            , "  { [[ B_1, \\tau -> ?, B_2 ]] ( \\tau -> e_1 ) }"
-            , "  { [[ B_1, \\tau -> e_3, B_2 ]] }"
+            , "  { [[ B_1, \\tau_1 -> ?, B_2 ]] ( \\tau_1 -> e_1 ) }"
+            , "  { [[ B_1, \\tau_1 -> e_3, B_2 ]] }"
             , "  { if $ \\isnormal{ e_1 } $ }"
             , "  { where $ e_2 \\coloneqq \\scopeof{ e_1 } $ and $ e_3 \\coloneqq \\ctx{ e_1 }{ e_2 } $ }"
             , "\\end{tabular}"
@@ -921,13 +921,13 @@ spec = do
         [ unlines
             [ "\\begin{tabular}{rl}"
             , "\\trrule{alpha}"
-            , "  { [[ B_1, \\tau_1 -> ?, B_2 ]] ( \\tau_2 -> e ) }"
-            , "  { [[ B_1, \\tau_1 -> ?, B_2 ]] ( \\tau_1 -> e ) }"
+            , "  { [[ B_1, \\tau_1 -> ?, B_2 ]] ( \\tau_2 -> e_1 ) }"
+            , "  { [[ B_1, \\tau_1 -> ?, B_2 ]] ( \\tau_1 -> e_1 ) }"
             , "  { if $ \\indexof{ \\tau_2 } = \\vert B_1 \\vert $ }"
             , "  { }"
             , "\\trrule{copy}"
-            , "  { [[ B_1, \\tau -> ?, B_2 ]] ( \\tau -> e_1 ) }"
-            , "  { [[ B_1, \\tau -> e_3, B_2 ]] }"
+            , "  { [[ B_1, \\tau_1 -> ?, B_2 ]] ( \\tau_1 -> e_1 ) }"
+            , "  { [[ B_1, \\tau_1 -> e_3, B_2 ]] }"
             , "  { if $ \\isnormal{ e_1 } $ }"
             , "  { where $ e_2 \\coloneqq \\scopeof{ e_1 } $ and $ e_3 \\coloneqq \\ctx{ e_1 }{ e_2 } $ }"
             , "\\trrule{dc}"
@@ -941,29 +941,29 @@ spec = do
             , "  { }"
             , "  { }"
             , "\\trrule{dot}"
-            , "  { [[ B_1, \\tau -> e_1, B_2 ]] . \\tau }"
-            , "  { e_2 ( ^ -> [[ B_1, \\tau -> e_1, B_2 ]] ) }"
+            , "  { [[ B_1, \\tau_1 -> e_1, B_2 ]] . \\tau_1 }"
+            , "  { e_2 ( ^ -> [[ B_1, \\tau_1 -> e_1, B_2 ]] ) }"
             , "  { if $ \\isnormal{ e_1 } $ }"
-            , "  { where $ e_2 \\coloneqq \\ctx{ e_1 }{ [[ B_1, \\tau -> e_1, B_2 ]] } $ }"
+            , "  { where $ e_2 \\coloneqq \\ctx{ e_1 }{ [[ B_1, \\tau_1 -> e_1, B_2 ]] } $ }"
             , "\\trrule{miss}"
-            , "  { [[ B ]] ( \\tau -> e ) }"
+            , "  { [[ B_1 ]] ( \\tau_1 -> e ) }"
             , "  { T }"
-            , "  { if $ \\tau \\notin B \\;\\text{and}\\; \\tau \\notin [ ~0, ~1, \\dots ] $ }"
+            , "  { if $ \\tau_1 \\notin B_1 \\;\\text{and}\\; \\tau_1 \\notin [ ~0, ~1, \\dots ] $ }"
             , "  { }"
             , "\\trrule{null}"
-            , "  { [[ B_1, \\tau -> ?, B_2 ]] . \\tau }"
+            , "  { [[ B_1, \\tau_1 -> ?, B_2 ]] . \\tau_1 }"
             , "  { T }"
             , "  { }"
             , "  { }"
             , "\\trrule{over}"
-            , "  { [[ B_1, \\tau -> e_1, B_2 ]] ( \\tau -> e_2 ) }"
+            , "  { [[ B_1, \\tau_1 -> e_1, B_2 ]] ( \\tau_1 -> e_2 ) }"
             , "  { T }"
-            , "  { if $ \\tau \\not= ^ $ }"
+            , "  { if $ \\tau_1 \\not= ^ $ }"
             , "  { }"
             , "\\trrule{phi}"
-            , "  { [[ B ]] . \\tau }"
-            , "  { [[ B ]] . @ . \\tau }"
-            , "  { if $ @ \\in B \\;\\text{and}\\; \\tau \\notin B $ }"
+            , "  { [[ B_1 ]] . \\tau_1 }"
+            , "  { [[ B_1 ]] . @ . \\tau_1 }"
+            , "  { if $ @ \\in B_1 \\;\\text{and}\\; \\tau_1 \\notin B_1 $ }"
             , "  { }"
             , "\\trrule{stay}"
             , "  { [[ B_1, ^ -> e_1, B_2 ]] ( ^ -> e_2 ) }"
@@ -971,9 +971,9 @@ spec = do
             , "  { }"
             , "  { }"
             , "\\trrule{stop}"
-            , "  { [[ B ]] . \\tau }"
+            , "  { [[ B_1 ]] . \\tau_1 }"
             , "  { T }"
-            , "  { if $ \\tau \\notin B \\;\\text{and}\\; @ \\notin B \\;\\text{and}\\; L \\notin B $ }"
+            , "  { if $ \\tau_1 \\notin B_1 \\;\\text{and}\\; @ \\notin B_1 \\;\\text{and}\\; L \\notin B_1 $ }"
             , "  { }"
             , "\\end{tabular}"
             ]
@@ -1055,22 +1055,22 @@ spec = do
 
     it "prints one substitution" $
       withStdin "{[[ x -> Q.x ]]}" $
-        testCLISucceeded ["match", "--pattern=Q.!a"] ["a >> x"]
+        testCLISucceeded ["match", "--pattern=Q.!a1"] ["a1 >> x"]
 
     it "prints many substitutions" $
       withStdin "{[[ x -> Q.x, y -> Q.y ]]}" $
-        testCLISucceeded ["match", "--pattern=Q.!a"] ["a >> x\n------\na >> y"]
+        testCLISucceeded ["match", "--pattern=Q.!a1"] ["a1 >> x\n------\na1 >> y"]
 
     it "builds substitutions with conditions" $
       withStdin "{[[ x -> Q.y ]].x}" $
         testCLISucceeded
-          ["match", "--pattern=[[ !a -> Q.y, !B ]].!a", "--when=and(not(alpha(!a)),eq(length(!B),1))"]
-          ["B >> ⟦ ρ ↦ ∅ ⟧\na >> x"]
+          ["match", "--pattern=[[ !a1 -> Q.y, !B1 ]].!a1", "--when=and(not(alpha(!a1)),eq(length(!B1),1))"]
+          ["B1 >> ⟦ ρ ↦ ∅ ⟧\na1 >> x"]
 
     it "builds with condition from file" $
       testCLISucceeded
-        ["match", "--pattern=[[ !B ]]", "--when=eq(length(!B),2)", "test-resources/cli/foo.phi"]
-        ["B >> ⟦ foo ↦ Φ.org.eolang.x, ρ ↦ ∅ ⟧"]
+        ["match", "--pattern=[[ !B1 ]]", "--when=eq(length(!B1),2)", "test-resources/cli/foo.phi"]
+        ["B1 >> ⟦ foo ↦ Φ.org.eolang.x, ρ ↦ ∅ ⟧"]
 
     it "fails on parsing --when condition" $
       withStdin "{[[]]}" $

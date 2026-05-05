@@ -2,6 +2,6 @@
 # SPDX-License-Identifier: MIT
 ---
 expression: '[[ x -> [[ D> 00-01-02 ]] ]]'
-pattern: '[[ x -> !e ]]'
+pattern: '[[ x -> !e0 ]]'
 condition:
-  nf: '!e'
+  nf: '!e0'

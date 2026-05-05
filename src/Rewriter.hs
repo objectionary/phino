@@ -19,7 +19,7 @@ import qualified Data.Set as Set
 import Deps
 import Locator (locatedExpression, withLocatedExpression)
 import Logger (logDebug)
-import Matcher (Subst)
+import Matcher (Subst, filterAnon)
 import Must (Must (..), exceedsUpperBound, inRange)
 import Printer (printExpression)
 import Replacer (ReplaceContext (ReplaceCtx), ReplaceExpressionFunc, replaceExpression, replaceExpressionFast)
@@ -85,7 +85,7 @@ instance Show RewriteException where
 buildAndReplace' :: ToReplace -> ReplaceExpressionFunc -> IO Expression
 buildAndReplace' (expr, ptn, res, substs) func = do
   ptns <- buildExpressionsThrows ptn substs
-  repls <- buildExpressionsThrows res substs
+  repls <- buildExpressionsThrows res (map filterAnon substs)
   let ptns' = map fst ptns
       repls' = map (\ex _ -> fst ex) repls
   pure (func (expr, ptns', repls'))

@@ -2,6 +2,6 @@
 # SPDX-License-Identifier: MIT
 ---
 expression: '⟦ x ↦ ξ.t, t ↦ ∅ ⟧.x'
-pattern: '[[ x -> !e, !B ]].x'
+pattern: '[[ x -> !e0, !B0 ]].x'
 condition:
-  nf: '!e'
+  nf: '!e0'

@@ -7,10 +7,10 @@ output: |-
 rules:
   custom:
     - name: negative-condition
-      pattern: '[[!B]].!a'
-      result: 'Q.!a'
+      pattern: '[[!B0]].!a0'
+      result: 'Q.!a0'
       when:
         not:
           in:
-            - '!a'
-            - '!B'
+            - '!a0'
+            - '!B0'

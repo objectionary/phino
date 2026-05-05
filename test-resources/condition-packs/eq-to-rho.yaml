@@ -2,8 +2,8 @@
 # SPDX-License-Identifier: MIT
 ---
 expression: '[[ ^ -> Q.x ]]'
-pattern: '[[ !a -> !e ]]'
+pattern: '[[ !a0 -> !e0 ]]'
 condition:
   eq:
-    - '!a'
+    - '!a0'
     - '^'

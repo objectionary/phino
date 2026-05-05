@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 ---
 expression: '[[ x -> Q.y, z -> Q.w ]]'
-pattern: '[[ !a1 -> Q.!a2, !B ]]'
+pattern: '[[ !a1 -> Q.!a2, !B0 ]]'
 condition:
   and:
     - eq: ['!a1', 'x']

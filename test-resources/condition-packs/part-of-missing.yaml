@@ -3,6 +3,6 @@
 ---
 failure: true
 expression: '[[ x -> Q.y, z -> Q.z ]]'
-pattern: '[[ x -> !e1, !B ]]'
+pattern: '[[ x -> !e1, !B0 ]]'
 condition:
-  part-of: ['!e1', '!B']
+  part-of: ['!e1', '!B0']

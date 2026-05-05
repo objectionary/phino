@@ -2,19 +2,19 @@
 # SPDX-License-Identifier: MIT
 ---
 name: stop
-pattern: ⟦𝐵⟧.𝜏
+pattern: ⟦𝐵1⟧.𝜏1
 result: ⊥
 when:
   and:
     - not:
         in:
-          - 𝜏
-          - 𝐵
+          - 𝜏1
+          - 𝐵1
     - not:
         in:
           - φ
-          - 𝐵
+          - 𝐵1
     - not:
         in:
           - λ
-          - 𝐵
+          - 𝐵1

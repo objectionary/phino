@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 ---
 expression: '⟦ x ↦ [[ t -> ⊥.z ]].t ⟧.x'
-pattern: '[[ x -> !e ]].x'
+pattern: '[[ x -> !e0 ]].x'
 condition:
   not:
-    nf: '!e'
+    nf: '!e0'

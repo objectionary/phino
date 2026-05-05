@@ -9,8 +9,8 @@ output: |-
 rules:
   custom:
     - name: with-alpha-conditiion
-      pattern: '[[!a1 -> $.q, !B]](!a2 -> !e)'
-      result: '[[!B]]'
+      pattern: '[[!a1 -> $.q, !B0]](!a2 -> !e0)'
+      result: '[[!B0]]'
       when:
         and:
           - alpha: '!a2'

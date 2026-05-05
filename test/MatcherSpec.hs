@@ -11,7 +11,8 @@ import Data.Map.Strict qualified as Map
 import Data.Maybe (fromMaybe)
 import Data.Text qualified as T
 import Matcher
-import Test.Hspec (Example (Arg), Expectation, Spec, SpecWith, describe, it, shouldBe)
+import Parser (parseExpressionThrows)
+import Test.Hspec (Example (Arg), Expectation, Spec, SpecWith, describe, it, shouldBe, shouldSatisfy)
 
 substs :: [[(T.Text, MetaValue)]] -> [Subst]
 substs = map (Subst . Map.fromList)
@@ -560,3 +561,18 @@ spec = do
               )
           second = Subst (Map.singleton "x" (MvAttribute AtPhi))
       combine first second `shouldBe` Nothing
+
+  describe "anonymous meta variables (bare 𝜏 / 𝐵 / 𝑒, no index)" $ do
+    it "isAnonMeta recognizes the parser-minted sentinel prefix" $ do
+      isAnonMeta "_anon_a_42" `shouldBe` True
+      isAnonMeta "a1" `shouldBe` False
+    it "two bare 𝜏 in a pattern match without conflict" $ do
+      ptn <- parseExpressionThrows "⟦𝜏 ↦ Q, 𝜏 ↦ $, 𝐵⟧"
+      tgt <- parseExpressionThrows "⟦x ↦ Q, y ↦ $⟧"
+      matchExpression ptn tgt `shouldSatisfy` (not . null)
+    it "named 𝜏1 used twice still requires equality" $ do
+      ptn <- parseExpressionThrows "⟦𝜏1 ↦ 𝑒1, 𝐵⟧.𝜏1"
+      consistent <- parseExpressionThrows "⟦x ↦ Q⟧.x"
+      conflicting <- parseExpressionThrows "⟦x ↦ Q⟧.y"
+      matchExpression ptn consistent `shouldSatisfy` (not . null)
+      matchExpression ptn conflicting `shouldBe` []

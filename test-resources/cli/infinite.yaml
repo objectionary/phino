@@ -2,9 +2,9 @@
 # SPDX-License-Identifier: MIT
 ---
 name: infinite
-pattern: ⟦ x -> !e ⟧
+pattern: ⟦ x -> !e0 ⟧
 result: ⟦ x -> !e1 ⟧
 where:
   - meta: '!e1'
     function: concat
-    args: ['!e', '"_hi"']
+    args: ['!e0', '"_hi"']
