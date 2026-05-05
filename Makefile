@@ -26,7 +26,7 @@ else
   endif
 endif
 
-all: coverage hlint fourmolu
+all: test hlint fourmolu
 
 .SILENT:
 test:
