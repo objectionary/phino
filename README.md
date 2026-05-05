@@ -366,31 +366,31 @@ make bench
 === parse/phi ===
   warmup:     3 iterations
   batches:    10 x 1
-  total:      1448084.022 μs
-  avg:        144808.402 μs
-  min:        132128.592 μs
-  max:        172729.096 μs
-  std dev:    14478.250 μs
+  total:      1409730.412 μs
+  avg:        140973.041 μs
+  min:        129571.601 μs
+  max:        165234.483 μs
+  std dev:    13575.759 μs
 === parse/xmir ===
   warmup:     3 iterations
   batches:    10 x 1
-  total:      7786370.047 μs
-  avg:        778637.005 μs
-  min:        692475.169 μs
-  max:        921955.018 μs
-  std dev:    63179.364 μs
+  total:      7480493.223 μs
+  avg:        748049.322 μs
+  min:        687866.917 μs
+  max:        801032.584 μs
+  std dev:    40334.568 μs
 === rewrite/normalize ===
   warmup:     3 iterations
   batches:    10 x 1
-  total:      382490.198 μs
-  avg:        38249.020 μs
-  min:        37340.181 μs
-  max:        40035.978 μs
-  std dev:    787.542 μs
+  total:      401076.550 μs
+  avg:        40107.655 μs
+  min:        38673.798 μs
+  max:        42481.140 μs
+  std dev:    1227.997 μs
 ```
 
 The results were calculated in [this GHA job][benchmark-gha]
-on 2026-04-28 at 09:52,
+on 2026-05-05 at 18:34,
 on Linux with 4 CPUs.
 
 <!-- benchmark_end -->
@@ -426,4 +426,4 @@ or [Stack ≥ 3.0][stack] installed.
 [jna]: https://github.com/java-native-access/jna
 [jna-native]: https://github.com/java-native-access/jna/blob/master/src/com/sun/jna/Native.java
 [jeo]: https://github.com/objectionary/jeo-maven-plugin
-[benchmark-gha]: https://github.com/objectionary/phino/actions/runs/25045958265
+[benchmark-gha]: https://github.com/objectionary/phino/actions/runs/25394862823
