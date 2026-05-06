@@ -96,7 +96,10 @@ printSubst :: Subst -> PrintConfig -> String
 printSubst (Subst mp) config =
   intercalate
     "\n"
-    (map (\(key, value) -> T.unpack key <> " >> " <> printMetaValue value config) (Map.toList mp))
+    [ T.unpack key <> " >> " <> printMetaValue value config
+    | (key, values) <- Map.toList mp
+    , value <- values
+    ]
 
 printSubsts' :: [Subst] -> PrintConfig -> String
 printSubsts' [] _ = "------"

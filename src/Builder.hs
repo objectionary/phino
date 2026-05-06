@@ -44,11 +44,11 @@ metaMsg :: Maybe Text -> String
 metaMsg Nothing = "anonymous meta variable cannot be referenced (it has no index)"
 metaMsg (Just name) = printf "meta '%s' is either does not exist or refers to an inappropriate term" (T.unpack name)
 
-lookupMeta :: Maybe Text -> Map.Map Text MetaValue -> Either String MetaValue
+lookupMeta :: Maybe Text -> Map.Map Text [MetaValue] -> Either String MetaValue
 lookupMeta Nothing _ = Left (metaMsg Nothing)
 lookupMeta (Just name) mp = case Map.lookup name mp of
-  Just v -> Right v
-  Nothing -> Left (metaMsg (Just name))
+  Just [v] -> Right v
+  _ -> Left (metaMsg (Just name))
 
 type Built a = Either String a
 

@@ -39,23 +39,23 @@ spec = do
       ( \pth -> it (makeRelative resources pth) $ do
           pack <- Y.decodeFileThrow pth :: IO ConditionPack
           let prog = Program (expression pack)
-          let substs = map snd (matchProgram (pattern pack) prog)
-          unless (substs /= []) (expectationFailure "List of matched substitutions is empty which is not expected")
-          met <- meetCondition (condition pack) substs (RuleContext buildTerm)
+          let matched = matchProgram (pattern pack) prog
+          unless (matched /= []) (expectationFailure "List of matched substitutions is empty which is not expected")
+          met <- meetCondition (condition pack) matched (RuleContext buildTerm)
           case failure pack of
             Just True ->
               unless
                 (null met)
                 ( expectationFailure $
                     "List of substitutions after condition check must be empty, but got:\n"
-                      ++ printSubsts substs
+                      ++ printSubsts matched
                 )
             _ ->
               when
                 (null met)
                 ( expectationFailure $
                     "List of substitution after condition check must be not empty\nOriginal substitutions:\n"
-                      ++ printSubsts substs
+                      ++ printSubsts matched
                 )
       )
   describe "isNF determines normal form" $ do

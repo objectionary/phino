@@ -15,11 +15,13 @@ import Builder
 import Control.Exception (Exception, throwIO)
 import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as NE
+import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
+import qualified Data.Text as T
 import Deps
 import Locator (locatedExpression, withLocatedExpression)
 import Logger (logDebug)
-import Matcher (Match)
+import Matcher (Subst (Subst), anonKey)
 import Must (Must (..), exceedsUpperBound, inRange)
 import Printer (printExpression)
 import Replacer (ReplaceContext (ReplaceCtx), ReplaceExpressionFunc, replaceExpression, replaceExpressionFast)
@@ -36,7 +38,7 @@ type Rewrittens = (NonEmpty Rewritten, Bool)
 
 type Rewrittens' = ([Rewritten], Bool)
 
-type ToReplace = (Expression, Expression, Expression, [Match])
+type ToReplace = (Expression, Expression, Expression, [Subst])
 
 data RewriteContext = RewriteContext
   { _locator :: Expression
@@ -82,19 +84,96 @@ instance Show RewriteException where
       expr
 
 -- Replace each matched fragment in the given expression with the
--- corresponding result, built from the matched substitution. Patterns
--- aren't rebuilt — the matcher already paired the exact subexpression
--- where the rule fired with each substitution (see Matcher.Match). For
--- literal patterns or named-only metas the fragment is recoverable from
--- the substitution, but anonymous metas (bare 𝜏 / 𝐵 / 𝑒) leave no entry,
--- so we always trust the matcher's recorded target.
+-- corresponding result, built from the matched substitution. The pattern
+-- is rebuilt per-substitution to recover the firing site so the replacer
+-- can locate it via structural equality. Anonymous metas (bare 𝜏 / 𝐵 /
+-- 𝑒) carry no name in the AST and cannot be looked up by key, so before
+-- rebuilding we desugar them: each anonymous occurrence in the pattern
+-- gets a synthetic name like `_anon_0`, `_anon_1`, ..., and the matched
+-- values stored under the sentinel `anonKey` are spread across those
+-- synthetic entries in the same order. The standard Builder then handles
+-- both kinds uniformly.
 buildAndReplace' :: ToReplace -> ReplaceExpressionFunc -> IO Expression
-buildAndReplace' (expr, _ptn, res, matches) func = do
-  let frags = map fst matches
-      substs = map snd matches
+buildAndReplace' (expr, ptn, res, substs) func = do
+  let (ptn', anonCount) = desugarAnonExpr 0 ptn
+      substs' = map (splatAnon anonCount) substs
+  ptns <- buildExpressionsThrows ptn' substs'
   repls <- buildExpressionsThrows res substs
-  let repls' = map (\ex _ -> fst ex) repls
+  let frags = map fst ptns
+      repls' = map (\ex _ -> fst ex) repls
   pure (func (expr, frags, repls'))
+
+-- Synthetic name used for the n-th anonymous meta encountered while
+-- walking a pattern.
+anonName :: Int -> T.Text
+anonName n = T.pack ("_anon_" ++ show n)
+
+-- Spread the sentinel-key list of anonymous values across synthetic
+-- `_anon_<i>` entries, matching the desugared pattern.
+splatAnon :: Int -> Subst -> Subst
+splatAnon expected (Subst mp) =
+  let anons = Map.findWithDefault [] anonKey mp
+      withoutAnon = Map.delete anonKey mp
+      pairs = take expected (zip [0 ..] anons)
+      synth = Map.fromList [(anonName i, [v]) | (i, v) <- pairs]
+   in Subst (Map.union withoutAnon synth)
+
+-- Walk a pattern and replace each anonymous meta with a uniquely-named
+-- synthetic meta. Returns the rewritten pattern and the count of
+-- anonymous metas encountered. Walk order must match the matcher's
+-- combine order so that the n-th anonymous value in the substitution
+-- aligns with the n-th synthetic name.
+desugarAnonExpr :: Int -> Expression -> (Expression, Int)
+desugarAnonExpr n (ExMeta Nothing) = (ExMeta (Just (anonName n)), n + 1)
+desugarAnonExpr n (ExMetaTail e meta) =
+  let (e', n1) = desugarAnonExpr n e
+   in case meta of
+        Nothing -> (ExMetaTail e' (Just (anonName n1)), n1 + 1)
+        Just _ -> (ExMetaTail e' meta, n1)
+desugarAnonExpr n (ExDispatch e a) =
+  let (e', n1) = desugarAnonExpr n e
+      (a', n2) = desugarAnonAttr n1 a
+   in (ExDispatch e' a', n2)
+desugarAnonExpr n (ExApplication e bd) =
+  let (e', n1) = desugarAnonExpr n e
+      (bd', n2) = desugarAnonBinding n1 bd
+   in (ExApplication e' bd', n2)
+desugarAnonExpr n (ExFormation bds) =
+  let (bds', n') = desugarAnonBindings n bds
+   in (ExFormation bds', n')
+desugarAnonExpr n (ExPhiMeet p i e) =
+  let (e', n') = desugarAnonExpr n e in (ExPhiMeet p i e', n')
+desugarAnonExpr n (ExPhiAgain p i e) =
+  let (e', n') = desugarAnonExpr n e in (ExPhiAgain p i e', n')
+desugarAnonExpr n e = (e, n)
+
+desugarAnonAttr :: Int -> Attribute -> (Attribute, Int)
+desugarAnonAttr n (AtMeta Nothing) = (AtMeta (Just (anonName n)), n + 1)
+desugarAnonAttr n a = (a, n)
+
+desugarAnonBytes :: Int -> Bytes -> (Bytes, Int)
+desugarAnonBytes n (BtMeta Nothing) = (BtMeta (Just (anonName n)), n + 1)
+desugarAnonBytes n bts = (bts, n)
+
+desugarAnonBinding :: Int -> Binding -> (Binding, Int)
+desugarAnonBinding n (BiTau a e) =
+  let (a', n1) = desugarAnonAttr n a
+      (e', n2) = desugarAnonExpr n1 e
+   in (BiTau a' e', n2)
+desugarAnonBinding n (BiVoid a) =
+  let (a', n') = desugarAnonAttr n a in (BiVoid a', n')
+desugarAnonBinding n (BiMeta Nothing) = (BiMeta (Just (anonName n)), n + 1)
+desugarAnonBinding n (BiMetaLambda Nothing) = (BiMetaLambda (Just (anonName n)), n + 1)
+desugarAnonBinding n (BiDelta bts) =
+  let (bts', n') = desugarAnonBytes n bts in (BiDelta bts', n')
+desugarAnonBinding n bd = (bd, n)
+
+desugarAnonBindings :: Int -> [Binding] -> ([Binding], Int)
+desugarAnonBindings n [] = ([], n)
+desugarAnonBindings n (bd : rest) =
+  let (bd', n1) = desugarAnonBinding n bd
+      (rest', n2) = desugarAnonBindings n1 rest
+   in (bd' : rest', n2)
 
 -- If pattern and replacement are appropriate for fast replacing - does it.
 -- Pattern and replacement expressions can be used in fast replacing only if
@@ -147,8 +226,7 @@ tryBuildAndReplaceFast state _ = buildAndReplace' state replaceExpression
 -- from the named substitution and uses replaceExpressionFast for bulk binding
 -- replacement.
 buildAndReplaceFast :: ToReplace -> ReplaceContext -> IO Expression
-buildAndReplaceFast (expr, ptn, res, matches) ctx = do
-  let substs = map snd matches
+buildAndReplaceFast (expr, ptn, res, substs) ctx = do
   ptns <- buildExpressionsThrows ptn substs
   repls <- buildExpressionsThrows res substs
   let ptns' = map fst ptns

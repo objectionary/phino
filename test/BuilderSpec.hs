@@ -17,7 +17,7 @@ import Test.Hspec (Example (Arg), Expectation, Spec, SpecWith, anyException, des
 test :: (Show a, Eq a) => (a -> Subst -> Either String (a, a)) -> [(String, a, [(T.Text, MetaValue)], Either String (a, a))] -> SpecWith (Arg Expectation)
 test function useCases =
   forM_ useCases $ \(desc, expr, mp, res) ->
-    it desc $ function expr (Subst (Map.fromList mp)) `shouldBe` res
+    it desc $ function expr (Subst (Map.fromList [(k, [v]) | (k, v) <- mp])) `shouldBe` res
 
 spec :: Spec
 spec = do

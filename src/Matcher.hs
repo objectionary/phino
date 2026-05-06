@@ -12,6 +12,7 @@ import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
 import Data.Maybe (catMaybes)
 import Data.Text (Text)
+import qualified Data.Text as T
 
 -- Meta value
 -- The right part of substitution
@@ -31,18 +32,20 @@ data Tail
   | TaDispatch Attribute
   deriving (Eq, Show)
 
--- Substitution: maps meta names to the meta values they were bound to
--- during a successful match. Anonymous metas (Nothing) bind nothing and
--- leave no entry here.
-newtype Subst = Subst (Map Text MetaValue)
+-- Substitution: maps meta names to the values they were bound to during a
+-- successful match. Each name maps to a list: for named metas the list is
+-- always a singleton and `combine` enforces that all occurrences agree;
+-- anonymous metas (Nothing in the AST) accumulate under the sentinel key
+-- `anonKey` in pattern walk order so the Rewriter can recover the firing
+-- site by replaying that order during pattern reconstruction.
+newtype Subst = Subst (Map Text [MetaValue])
   deriving (Eq, Show)
 
--- A successful match: the matched target subexpression paired with the
--- substitution it produced. The fragment must travel alongside the
--- substitution because anonymous metas (bare 𝜏 / 𝐵 / 𝑒) leave no entry,
--- so the Rewriter cannot reconstruct the matched subexpression by
--- re-building the pattern from the substitution alone.
-type Match = (Expression, Subst)
+-- Sentinel key under which anonymous-meta values are accumulated.
+-- The parser requires at least one character after the meta prefix, so an
+-- empty Text never collides with a user-provided name.
+anonKey :: Text
+anonKey = T.empty
 
 -- Empty substitution
 substEmpty :: Subst
@@ -50,37 +53,42 @@ substEmpty = Subst Map.empty
 
 -- Singleton substitution with one (key -> value) pair
 substSingle :: Text -> MetaValue -> Subst
-substSingle key value = Subst (Map.singleton key value)
+substSingle key value = Subst (Map.singleton key [value])
 
 defaultScope :: Expression
 defaultScope = ExFormation [BiVoid AtRho]
 
--- Combine two substitutions into a single one
--- Fails if values by the same keys are not equal
+-- Combine two substitutions into a single one. For named keys both sides
+-- must agree (singleton lists with equal values modulo expression scope);
+-- for the anonymous sentinel key the lists are concatenated in
+-- left-to-right order, so the matcher's combine order determines the
+-- order in which the rewriter consumes anonymous values when
+-- reconstructing the firing site.
 combine :: Subst -> Subst -> Maybe Subst
 combine (Subst a) (Subst b) = combine' (Map.toList b) a
   where
-    combine' :: [(Text, MetaValue)] -> Map Text MetaValue -> Maybe Subst
+    combine' :: [(Text, [MetaValue])] -> Map Text [MetaValue] -> Maybe Subst
     combine' [] acc = Just (Subst acc)
-    combine' ((key, MvExpression tgt scope) : rest) acc = case Map.lookup key acc of
-      Just (MvExpression expr' _)
-        | expr' == tgt -> combine' rest acc
-        | otherwise -> Nothing
-      Just _ -> Nothing
-      Nothing -> combine' rest (Map.insert key (MvExpression tgt scope) acc)
-    combine' ((key, value) : rest) acc = case Map.lookup key acc of
-      Just found
-        | found == value -> combine' rest acc
-        | otherwise -> Nothing
-      Nothing -> combine' rest (Map.insert key value acc)
+    combine' ((key, vs) : rest) acc
+      | key == anonKey = case Map.lookup anonKey acc of
+          Just prior -> combine' rest (Map.insert anonKey (prior ++ vs) acc)
+          Nothing -> combine' rest (Map.insert anonKey vs acc)
+      | otherwise = case (vs, Map.lookup key acc) of
+          ([v], Just [v']) | metaEq v v' -> combine' rest acc
+          ([_], Just _) -> Nothing
+          ([_], Nothing) -> combine' rest (Map.insert key vs acc)
+          _ -> Nothing
+    metaEq :: MetaValue -> MetaValue -> Bool
+    metaEq (MvExpression x _) (MvExpression y _) = x == y
+    metaEq x y = x == y
 
 combineMany :: [Subst] -> [Subst] -> [Subst]
 combineMany xs xy = catMaybes [combine x y | x <- xs, y <- xy]
 
--- Match a meta with optional name: anonymous metas (Nothing) match without
--- adding any binding; named metas (Just) bind the value under that name.
+-- Match a meta with optional name: named metas bind under their name;
+-- anonymous metas push their value onto the sentinel list.
 substMeta :: Maybe Text -> MetaValue -> Subst
-substMeta Nothing _ = substEmpty
+substMeta Nothing value = Subst (Map.singleton anonKey [value])
 substMeta (Just key) value = substSingle key value
 
 matchAttribute :: Attribute -> Attribute -> [Subst]
@@ -150,7 +158,7 @@ matchExpression' ExThis ExThis _ = [substEmpty]
 matchExpression' ExGlobal ExGlobal _ = [substEmpty]
 matchExpression' ExTermination ExTermination _ = [substEmpty]
 matchExpression' (ExFormation pbs) (ExFormation tbs) _ = matchBindings pbs tbs (ExFormation tbs)
-matchExpression' (ExDispatch pexp pattr) (ExDispatch texp tattr) scope = combineMany (matchAttribute pattr tattr) (matchExpression' pexp texp scope)
+matchExpression' (ExDispatch pexp pattr) (ExDispatch texp tattr) scope = combineMany (matchExpression' pexp texp scope) (matchAttribute pattr tattr)
 matchExpression' (ExApplication pexp pbd) (ExApplication texp tbd) scope = combineMany (matchExpression' pexp texp scope) (matchBinding pbd tbd scope)
 matchExpression' (ExMetaTail expr meta) tgt scope = case tailExpressions expr tgt scope of
   ([], _) -> []
@@ -163,17 +171,15 @@ matchExpression' (ExPhiMeet prefix idx expr) (ExPhiMeet prefix' idx' expr') scop
   | otherwise = []
 matchExpression' _ _ _ = []
 
--- Deep match pattern to expression inside binding. See `Match` for why each
--- substitution is paired with the matched target subexpression.
-matchBindingExpression :: Binding -> Expression -> Expression -> [Match]
+-- Deep match pattern to expression inside binding.
+matchBindingExpression :: Binding -> Expression -> Expression -> [Subst]
 matchBindingExpression (BiTau _ expr) ptn scope = matchExpressionDeep ptn expr scope
 matchBindingExpression _ _ _ = []
 
--- Match expression with deep nested expression(s) matching. See `Match` for
--- why each substitution is paired with the matched target subexpression.
-matchExpressionDeep :: Expression -> Expression -> Expression -> [Match]
+-- Match expression with deep nested expression(s) matching.
+matchExpressionDeep :: Expression -> Expression -> Expression -> [Subst]
 matchExpressionDeep ptn tgt scope =
-  let here = [(tgt, s) | s <- matchExpression' ptn tgt scope]
+  let here = matchExpression' ptn tgt scope
       deep = case tgt of
         ExFormation bds -> concatMap (\bd -> matchBindingExpression bd ptn tgt) bds
         ExDispatch expr _ -> matchExpressionDeep ptn expr scope
@@ -181,8 +187,8 @@ matchExpressionDeep ptn tgt scope =
         _ -> []
    in here ++ deep
 
-matchExpression :: Expression -> Expression -> [Match]
+matchExpression :: Expression -> Expression -> [Subst]
 matchExpression ptn tgt = matchExpressionDeep ptn tgt defaultScope
 
-matchProgram :: Expression -> Program -> [Match]
+matchProgram :: Expression -> Program -> [Subst]
 matchProgram ptn (Program expr) = matchExpression ptn expr
