@@ -15,7 +15,7 @@ import Parser (parseExpressionThrows)
 import Test.Hspec (Example (Arg), Expectation, Spec, SpecWith, describe, it, shouldBe, shouldSatisfy)
 
 substs :: [[(T.Text, MetaValue)]] -> [Subst]
-substs = map (Subst Nothing . Map.fromList)
+substs = map (Subst . Map.fromList)
 
 maybeCombined :: Subst -> Subst -> Subst
 maybeCombined first second =
@@ -31,12 +31,10 @@ test function useCases =
   forM_ useCases $ \(desc, ptn, tgt, scope, expected) ->
     it desc $ function ptn tgt scope `shouldBe` expected
 
--- Strip the matched-target field so test fixtures (which only specify the
--- bindings) compare equal to whatever `matchExpressionDeep` decorates with.
+-- Discard the matched fragment from each Match so test fixtures (which only
+-- specify the substitution) compare directly against the matcher output.
 matchExpressionDeepSubsts :: Expression -> Expression -> Expression -> [Subst]
-matchExpressionDeepSubsts ptn tgt scope = map clearTarget (matchExpressionDeep ptn tgt scope)
-  where
-    clearTarget (Subst _ mp) = Subst Nothing mp
+matchExpressionDeepSubsts ptn tgt scope = map snd (matchExpressionDeep ptn tgt scope)
 
 spec :: Spec
 spec = do
@@ -533,42 +531,40 @@ spec = do
     it "combines empty substitutions" $
       combine substEmpty substEmpty `shouldBe` Just substEmpty
     it "combines two empty substs from list" $
-      combine (Subst Nothing Map.empty) (Subst Nothing Map.empty) `shouldBe` Just substEmpty
+      combine (Subst Map.empty) (Subst Map.empty) `shouldBe` Just substEmpty
     it "combines empty subst with single one" $ do
-      let Subst _ joined = maybeCombined substEmpty (Subst Nothing (Map.singleton "at" (MvAttribute AtPhi)))
+      let Subst joined = maybeCombined substEmpty (Subst (Map.singleton "at" (MvAttribute AtPhi)))
       Map.lookup "at" joined `shouldBe` Just (MvAttribute AtPhi)
     it "combines two different subst" $ do
-      let Subst _ joined =
+      let Subst joined =
             maybeCombined
-              (Subst Nothing (Map.singleton "first" (MvAttribute AtPhi)))
-              (Subst Nothing (Map.singleton "second" (MvBytes (BtOne "00"))))
+              (Subst (Map.singleton "first" (MvAttribute AtPhi)))
+              (Subst (Map.singleton "second" (MvBytes (BtOne "00"))))
       Map.lookup "first" joined `shouldBe` Just (MvAttribute AtPhi)
       Map.lookup "second" joined `shouldBe` Just (MvBytes (BtOne "00"))
     it "leave values in the same substs" $ do
       let rho = MvAttribute AtRho
           first =
             Subst
-              Nothing
               ( Map.fromList
                   [ ("first", rho)
                   , ("second", MvAttribute AtPhi)
                   ]
               )
-          second = Subst Nothing (Map.singleton "first" rho)
-          Subst _ joined = maybeCombined first second
+          second = Subst (Map.singleton "first" rho)
+          Subst joined = maybeCombined first second
       Map.lookup "first" joined `shouldBe` Just (MvAttribute AtRho)
     it "returns Nothing if values are different" $
-      combine (Subst Nothing (Map.singleton "x" (MvAttribute AtPhi))) (Subst Nothing (Map.singleton "x" (MvAttribute AtRho))) `shouldBe` Nothing
+      combine (Subst (Map.singleton "x" (MvAttribute AtPhi))) (Subst (Map.singleton "x" (MvAttribute AtRho))) `shouldBe` Nothing
     it "clears all the values" $ do
       let first =
             Subst
-              Nothing
               ( Map.fromList
                   [ ("x", MvAttribute AtRho)
                   , ("y", MvBytes (BtOne "1F"))
                   ]
               )
-          second = Subst Nothing (Map.singleton "x" (MvAttribute AtPhi))
+          second = Subst (Map.singleton "x" (MvAttribute AtPhi))
       combine first second `shouldBe` Nothing
 
   describe "anonymous meta variables (bare 𝜏 / 𝐵 / 𝑒, no index)" $ do

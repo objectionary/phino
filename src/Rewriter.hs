@@ -19,7 +19,7 @@ import qualified Data.Set as Set
 import Deps
 import Locator (locatedExpression, withLocatedExpression)
 import Logger (logDebug)
-import Matcher (Subst, substTarget)
+import Matcher (Match)
 import Must (Must (..), exceedsUpperBound, inRange)
 import Printer (printExpression)
 import Replacer (ReplaceContext (ReplaceCtx), ReplaceExpressionFunc, replaceExpression, replaceExpressionFast)
@@ -36,7 +36,7 @@ type Rewrittens = (NonEmpty Rewritten, Bool)
 
 type Rewrittens' = ([Rewritten], Bool)
 
-type ToReplace = (Expression, Expression, Expression, [Subst])
+type ToReplace = (Expression, Expression, Expression, [Match])
 
 data RewriteContext = RewriteContext
   { _locator :: Expression
@@ -83,24 +83,18 @@ instance Show RewriteException where
 
 -- Replace each matched fragment in the given expression with the
 -- corresponding result, built from the matched substitution. Patterns
--- aren't rebuilt — the matcher already attached the exact subexpression
--- where the rule fired to each Subst (see Matcher.Subst). For literal
--- patterns or named-only metas the fragment is recoverable from the
--- substitution, but anonymous metas (bare 𝜏 / 𝐵 / 𝑒) leave no entry, so
--- we always trust the matcher's recorded target.
+-- aren't rebuilt — the matcher already paired the exact subexpression
+-- where the rule fired with each substitution (see Matcher.Match). For
+-- literal patterns or named-only metas the fragment is recoverable from
+-- the substitution, but anonymous metas (bare 𝜏 / 𝐵 / 𝑒) leave no entry,
+-- so we always trust the matcher's recorded target.
 buildAndReplace' :: ToReplace -> ReplaceExpressionFunc -> IO Expression
-buildAndReplace' (expr, _ptn, res, substs) func = do
-  let frags = map matchedFragment substs
+buildAndReplace' (expr, _ptn, res, matches) func = do
+  let frags = map fst matches
+      substs = map snd matches
   repls <- buildExpressionsThrows res substs
   let repls' = map (\ex _ -> fst ex) repls
   pure (func (expr, frags, repls'))
-
--- The matcher decorates every successful match with the subexpression
--- where it fired; if it's missing here it's a programming error.
-matchedFragment :: Subst -> Expression
-matchedFragment s = case substTarget s of
-  Just t -> t
-  Nothing -> error "matched substitution is missing its target subexpression"
 
 -- If pattern and replacement are appropriate for fast replacing - does it.
 -- Pattern and replacement expressions can be used in fast replacing only if
@@ -153,7 +147,8 @@ tryBuildAndReplaceFast state _ = buildAndReplace' state replaceExpression
 -- from the named substitution and uses replaceExpressionFast for bulk binding
 -- replacement.
 buildAndReplaceFast :: ToReplace -> ReplaceContext -> IO Expression
-buildAndReplaceFast (expr, ptn, res, substs) ctx = do
+buildAndReplaceFast (expr, ptn, res, matches) ctx = do
+  let substs = map snd matches
   ptns <- buildExpressionsThrows ptn substs
   repls <- buildExpressionsThrows res substs
   let ptns' = map fst ptns

@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE TupleSections #-}
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
@@ -110,7 +111,7 @@ _in attr binding subst _ =
 
 _alpha :: Attribute -> Subst -> RuleContext -> IO [Subst]
 _alpha (AtAlpha _) subst _ = pure [subst]
-_alpha (AtMeta (Just name)) s@(Subst _ mp) _ = case M.lookup name mp of
+_alpha (AtMeta (Just name)) s@(Subst mp) _ = case M.lookup name mp of
   Just (MvAttribute (AtAlpha _)) -> pure [s]
   _ -> pure []
 _alpha _ _ _ = pure []
@@ -122,11 +123,11 @@ _eq (Y.CmpNum left) (Y.CmpNum right) subst _ = case (numToInt left subst, numToI
   where
     -- Convert Number to Int
     numToInt :: Y.Number -> Subst -> Maybe Int
-    numToInt (Y.Index (AtMeta (Just meta))) (Subst _ mp) = case M.lookup meta mp of
+    numToInt (Y.Index (AtMeta (Just meta))) (Subst mp) = case M.lookup meta mp of
       Just (MvAttribute (AtAlpha idx)) -> Just idx
       _ -> Nothing
     numToInt (Y.Index (AtAlpha idx)) _ = Just idx
-    numToInt (Y.Length (BiMeta (Just meta))) (Subst _ mp) = case M.lookup meta mp of
+    numToInt (Y.Length (BiMeta (Just meta))) (Subst mp) = case M.lookup meta mp of
       Just (MvBindings bds) -> Just (length bds)
       _ -> Nothing
     numToInt (Y.Literal num) _ = Just num
@@ -134,40 +135,40 @@ _eq (Y.CmpNum left) (Y.CmpNum right) subst _ = case (numToInt left subst, numToI
 _eq (Y.CmpAttr left) (Y.CmpAttr right) subst _ = pure [subst | compareAttrs left right subst]
   where
     compareAttrs :: Attribute -> Attribute -> Subst -> Bool
-    compareAttrs (AtMeta (Just left)) (AtMeta (Just right)) s@(Subst _ mp) = case (M.lookup left mp, M.lookup right mp) of
+    compareAttrs (AtMeta (Just left)) (AtMeta (Just right)) s@(Subst mp) = case (M.lookup left mp, M.lookup right mp) of
       (Just (MvAttribute left'), Just (MvAttribute right')) -> compareAttrs left' right' s
       _ -> False
-    compareAttrs attr (AtMeta (Just meta)) (Subst _ mp) = case M.lookup meta mp of
+    compareAttrs attr (AtMeta (Just meta)) (Subst mp) = case M.lookup meta mp of
       Just (MvAttribute found) -> attr == found
       _ -> False
-    compareAttrs (AtMeta (Just meta)) attr (Subst _ mp) = case M.lookup meta mp of
+    compareAttrs (AtMeta (Just meta)) attr (Subst mp) = case M.lookup meta mp of
       Just (MvAttribute found) -> attr == found
       _ -> False
     compareAttrs left right _ = right == left
 _eq (Y.CmpExpr left) (Y.CmpExpr right) subst _ = pure [subst | compareExprs left right subst]
   where
     compareExprs :: Expression -> Expression -> Subst -> Bool
-    compareExprs (ExMeta (Just left)) (ExMeta (Just right)) s@(Subst _ mp) = case (M.lookup left mp, M.lookup right mp) of
+    compareExprs (ExMeta (Just left)) (ExMeta (Just right)) s@(Subst mp) = case (M.lookup left mp, M.lookup right mp) of
       (Just (MvExpression left' _), Just (MvExpression right' _)) -> compareExprs left' right' s
       _ -> False
-    compareExprs expr (ExMeta (Just meta)) (Subst _ mp) = case M.lookup meta mp of
+    compareExprs expr (ExMeta (Just meta)) (Subst mp) = case M.lookup meta mp of
       Just (MvExpression found _) -> expr == found
       _ -> False
-    compareExprs (ExMeta (Just meta)) expr (Subst _ mp) = case M.lookup meta mp of
+    compareExprs (ExMeta (Just meta)) expr (Subst mp) = case M.lookup meta mp of
       Just (MvExpression found _) -> expr == found
       _ -> False
     compareExprs left right _ = left == right
 _eq _ _ _ _ = pure []
 
 _nf :: Expression -> Subst -> RuleContext -> IO [Subst]
-_nf (ExMeta (Just meta)) s@(Subst _ mp) ctx = case M.lookup meta mp of
+_nf (ExMeta (Just meta)) s@(Subst mp) ctx = case M.lookup meta mp of
   Just (MvExpression expr _) -> _nf expr s ctx
   _ -> pure []
 _nf (ExMeta Nothing) _ _ = pure []
 _nf expr subst ctx = pure [subst | isNF expr ctx]
 
 _xi :: Expression -> Subst -> RuleContext -> IO [Subst]
-_xi (ExMeta (Just meta)) s@(Subst _ mp) ctx = case M.lookup meta mp of
+_xi (ExMeta (Just meta)) s@(Subst mp) ctx = case M.lookup meta mp of
   Just (MvExpression expr _) -> _xi expr s ctx
   _ -> pure []
 _xi (ExMeta Nothing) _ _ = pure []
@@ -182,7 +183,7 @@ _xi (ExDispatch expr _) subst ctx = _xi expr subst ctx
 _xi _ _ _ = pure []
 
 _matches :: String -> Expression -> Subst -> RuleContext -> IO [Subst]
-_matches pat (ExMeta (Just meta)) s@(Subst _ mp) ctx = case M.lookup meta mp of
+_matches pat (ExMeta (Just meta)) s@(Subst mp) ctx = case M.lookup meta mp of
   Just (MvExpression expr _) -> _matches pat expr s ctx
   _ -> pure []
 _matches _ (ExMeta Nothing) _ _ = pure []
@@ -230,10 +231,11 @@ meetCondition cond (subst : rest) ctx = do
         _ -> pure (subst : next)
     Left _ -> meetCondition cond rest ctx
 
--- Match an expression against a rule. Each returned Subst carries the
--- matched target subexpression — see `Subst` in Matcher for why this is
--- needed when patterns contain anonymous metas.
-matchExpressionWithRule :: Expression -> Y.Rule -> RuleContext -> IO [Subst]
+-- Match an expression against a rule, threading the matched fragment through
+-- alongside each substitution (see `Match` in Matcher). The fragment is what
+-- the Rewriter will replace; with anonymous metas it cannot be reconstructed
+-- from the substitution alone.
+matchExpressionWithRule :: Expression -> Y.Rule -> RuleContext -> IO [Match]
 matchExpressionWithRule expr rule ctx =
   let ptn = Y.pattern rule
       matched = matchExpression ptn expr
@@ -260,65 +262,68 @@ matchExpressionWithRule expr rule ctx =
                   when (null met) (logDebug "The 'having' condition wan't met")
                   pure met
 
-matchProgramWithRule :: Program -> Y.Rule -> RuleContext -> IO [Subst]
+matchProgramWithRule :: Program -> Y.Rule -> RuleContext -> IO [Match]
 matchProgramWithRule (Program expr) = matchExpressionWithRule expr
 
--- Filter substitutions by an optional condition.
-meetMaybeCondition :: Maybe Y.Condition -> [Subst] -> RuleContext -> IO [Subst]
-meetMaybeCondition Nothing substs _ = pure substs
+-- Filter matches by an optional condition. The condition is checked against
+-- the substitution; the matched fragment is carried through unchanged.
+meetMaybeCondition :: Maybe Y.Condition -> [Match] -> RuleContext -> IO [Match]
+meetMaybeCondition Nothing pairs _ = pure pairs
 meetMaybeCondition (Just _) [] _ = pure []
-meetMaybeCondition (Just cond) (subst : rest) ctx = do
+meetMaybeCondition (Just cond) ((frag, subst) : rest) ctx = do
   met <- try (meetCondition' cond subst ctx) :: IO (Either SomeException [Subst])
   case met of
     Right first -> do
       next <- meetMaybeCondition (Just cond) rest ctx
       case first of
         [] -> pure next
-        _ -> pure (subst : next)
+        _ -> pure ((frag, subst) : next)
     Left _ -> meetMaybeCondition (Just cond) rest ctx
 
--- Extend each substitution with extra bindings produced by `where` rule
--- entries. The matched target carried inside each Subst is preserved by
--- `combine`.
-extraSubstitutions :: [Subst] -> Maybe [Y.Extra] -> RuleContext -> IO [Subst]
-extraSubstitutions substs Nothing _ = pure substs
-extraSubstitutions substs (Just extras') RuleContext{..} = do
-  logDebug (printf "Building %d sets of extra substitutions.." (length substs))
+-- Extend each match with extra bindings produced by `where` rule entries.
+-- The matched fragment is preserved; only the substitution is augmented.
+extraSubstitutions :: [Match] -> Maybe [Y.Extra] -> RuleContext -> IO [Match]
+extraSubstitutions pairs Nothing _ = pure pairs
+extraSubstitutions pairs (Just extras') RuleContext{..} = do
+  logDebug (printf "Building %d sets of extra substitutions.." (length pairs))
   res <-
     sequence
-      [ foldlM
-          ( \maybeSubst extra -> case maybeSubst of
-              Nothing -> pure Nothing
-              Just subst' -> do
-                let maybeName = case Y.meta extra of
-                      Y.ArgExpression (ExMeta (Just name)) -> Just name
-                      Y.ArgAttribute (AtMeta (Just name)) -> Just name
-                      Y.ArgBinding (BiMeta (Just name)) -> Just name
-                      Y.ArgBytes (BtMeta (Just name)) -> Just name
-                      _ -> Nothing
-                    func = Y.function extra
-                    args = Y.args extra
-                term <- _buildTerm func args subst'
-                meta <- case term of
-                  TeExpression expr -> do
-                    logDebug (printf "Function %s() returned expression:\n%s" func (printExpression expr))
-                    pure (MvExpression expr defaultScope)
-                  TeAttribute attr -> do
-                    logDebug (printf "Function %s() returned attribute: %s" func (printAttribute attr))
-                    pure (MvAttribute attr)
-                  TeBytes bytes -> do
-                    logDebug (printf "Function %s() returned bytes: %s" func (printBytes bytes))
-                    pure (MvBytes bytes)
-                  TeBindings bds -> do
-                    logDebug (printf "Function %s return bindings: %s" func (printExpression (ExFormation bds)))
-                    pure (MvBindings bds)
-                case maybeName of
-                  Just name -> pure (combine (substSingle name meta) subst')
-                  _ -> pure Nothing
-          )
-          (Just subst)
-          extras'
-      | subst <- substs
+      [ do
+          extended <-
+            foldlM
+              ( \maybeSubst extra -> case maybeSubst of
+                  Nothing -> pure Nothing
+                  Just subst' -> do
+                    let maybeName = case Y.meta extra of
+                          Y.ArgExpression (ExMeta (Just name)) -> Just name
+                          Y.ArgAttribute (AtMeta (Just name)) -> Just name
+                          Y.ArgBinding (BiMeta (Just name)) -> Just name
+                          Y.ArgBytes (BtMeta (Just name)) -> Just name
+                          _ -> Nothing
+                        func = Y.function extra
+                        args = Y.args extra
+                    term <- _buildTerm func args subst'
+                    meta <- case term of
+                      TeExpression expr -> do
+                        logDebug (printf "Function %s() returned expression:\n%s" func (printExpression expr))
+                        pure (MvExpression expr defaultScope)
+                      TeAttribute attr -> do
+                        logDebug (printf "Function %s() returned attribute: %s" func (printAttribute attr))
+                        pure (MvAttribute attr)
+                      TeBytes bytes -> do
+                        logDebug (printf "Function %s() returned bytes: %s" func (printBytes bytes))
+                        pure (MvBytes bytes)
+                      TeBindings bds -> do
+                        logDebug (printf "Function %s return bindings: %s" func (printExpression (ExFormation bds)))
+                        pure (MvBindings bds)
+                    case maybeName of
+                      Just name -> pure (combine (substSingle name meta) subst')
+                      _ -> pure Nothing
+              )
+              (Just subst)
+              extras'
+          pure (fmap (frag,) extended)
+      | (frag, subst) <- pairs
       ]
   logDebug "Extra substitutions have been built"
   pure (catMaybes res)
