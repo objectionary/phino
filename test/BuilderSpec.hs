@@ -17,7 +17,7 @@ import Test.Hspec (Example (Arg), Expectation, Spec, SpecWith, anyException, des
 test :: (Show a, Eq a) => (a -> Subst -> Either String (a, a)) -> [(String, a, [(T.Text, MetaValue)], Either String (a, a))] -> SpecWith (Arg Expectation)
 test function useCases =
   forM_ useCases $ \(desc, expr, mp, res) ->
-    it desc $ function expr (Subst (Map.fromList mp)) `shouldBe` res
+    it desc $ function expr (Subst Nothing (Map.fromList mp)) `shouldBe` res
 
 spec :: Spec
 spec = do
@@ -116,8 +116,8 @@ spec = do
 
   describe "anonymous meta variable referenced on RHS" $ do
     it "fails with a clear error when an anonymous attribute meta is referenced" $
-      buildAttribute (AtMeta Nothing) (Subst Map.empty)
+      buildAttribute (AtMeta Nothing) (Subst Nothing Map.empty)
         `shouldBe` Left "anonymous meta variable cannot be referenced (it has no index)"
     it "fails with a clear error when an anonymous expression meta is referenced" $
-      buildExpression (ExMeta Nothing) (Subst Map.empty)
+      buildExpression (ExMeta Nothing) (Subst Nothing Map.empty)
         `shouldBe` Left "anonymous meta variable cannot be referenced (it has no index)"

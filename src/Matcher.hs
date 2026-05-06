@@ -32,46 +32,63 @@ data Tail
   deriving (Eq, Show)
 
 -- Substitution
--- Shows the match of meta name to meta value
-newtype Subst = Subst (Map Text MetaValue)
+-- Shows the match of meta name to meta value. The first field is the
+-- matched target subexpression: it's set by `matchExpressionDeep` (the only
+-- caller that knows which subexpression of the program fired) and read by
+-- the Rewriter to know where to apply the replacement. Inner matchers leave
+-- it Nothing. The field is invisible to user templates: the Builder never
+-- reads it and the Printer never prints it.
+data Subst = Subst (Maybe Expression) (Map Text MetaValue)
   deriving (Eq, Show)
 
--- A successful match: the matched target subexpression paired with the
--- substitution it produced. The fragment must be threaded through alongside
--- the substitution because anonymous metas (bare 𝜏 / 𝐵 / 𝑒) leave no entry
--- in the substitution, so the Rewriter cannot reconstruct the matched
--- subexpression by re-building the pattern from the substitution alone.
-type Match = (Expression, Subst)
+substTarget :: Subst -> Maybe Expression
+substTarget (Subst t _) = t
 
 -- Empty substitution
 substEmpty :: Subst
-substEmpty = Subst Map.empty
+substEmpty = Subst Nothing Map.empty
 
 -- Singleton substitution with one (key -> value) pair
 substSingle :: Text -> MetaValue -> Subst
-substSingle key value = Subst (Map.singleton key value)
+substSingle key value = Subst Nothing (Map.singleton key value)
+
+-- Attach the matched target to a substitution.
+withTarget :: Expression -> Subst -> Subst
+withTarget tgt (Subst _ mp) = Subst (Just tgt) mp
 
 defaultScope :: Expression
 defaultScope = ExFormation [BiVoid AtRho]
 
 -- Combine two substitutions into a single one
 -- Fails if values by the same keys are not equal
+-- The matched-target field is preserved from whichever side has it set;
+-- if both are set, they must agree (this can't actually happen because only
+-- `matchExpressionDeep` sets the target and `combine` is only called below
+-- that level).
 combine :: Subst -> Subst -> Maybe Subst
-combine (Subst a) (Subst b) = combine' (Map.toList b) a
+combine (Subst ta a) (Subst tb b) = case combineTargets ta tb of
+  Nothing -> Nothing
+  Just t -> combine' (Map.toList b) a t
   where
-    combine' :: [(Text, MetaValue)] -> Map Text MetaValue -> Maybe Subst
-    combine' [] acc = Just (Subst acc)
-    combine' ((key, MvExpression tgt scope) : rest) acc = case Map.lookup key acc of
+    combineTargets :: Maybe Expression -> Maybe Expression -> Maybe (Maybe Expression)
+    combineTargets Nothing y = Just y
+    combineTargets x Nothing = Just x
+    combineTargets (Just x) (Just y)
+      | x == y = Just (Just x)
+      | otherwise = Nothing
+    combine' :: [(Text, MetaValue)] -> Map Text MetaValue -> Maybe Expression -> Maybe Subst
+    combine' [] acc t = Just (Subst t acc)
+    combine' ((key, MvExpression tgt scope) : rest) acc t = case Map.lookup key acc of
       Just (MvExpression expr' _)
-        | expr' == tgt -> combine' rest acc
+        | expr' == tgt -> combine' rest acc t
         | otherwise -> Nothing
       Just _ -> Nothing
-      Nothing -> combine' rest (Map.insert key (MvExpression tgt scope) acc)
-    combine' ((key, value) : rest) acc = case Map.lookup key acc of
+      Nothing -> combine' rest (Map.insert key (MvExpression tgt scope) acc) t
+    combine' ((key, value) : rest) acc t = case Map.lookup key acc of
       Just found
-        | found == value -> combine' rest acc
+        | found == value -> combine' rest acc t
         | otherwise -> Nothing
-      Nothing -> combine' rest (Map.insert key value acc)
+      Nothing -> combine' rest (Map.insert key value acc) t
 
 combineMany :: [Subst] -> [Subst] -> [Subst]
 combineMany xs xy = catMaybes [combine x y | x <- xs, y <- xy]
@@ -162,17 +179,23 @@ matchExpression' (ExPhiMeet prefix idx expr) (ExPhiMeet prefix' idx' expr') scop
   | otherwise = []
 matchExpression' _ _ _ = []
 
--- Deep match pattern to expression inside binding. See `Match` for why each
--- substitution is paired with the matched target subexpression.
-matchBindingExpression :: Binding -> Expression -> Expression -> [Match]
+-- Deep match pattern to expression inside binding. Each returned Subst is
+-- decorated with the matched target subexpression so the Rewriter knows
+-- where to apply the replacement.
+matchBindingExpression :: Binding -> Expression -> Expression -> [Subst]
 matchBindingExpression (BiTau _ expr) ptn scope = matchExpressionDeep ptn expr scope
 matchBindingExpression _ _ _ = []
 
--- Match expression with deep nested expression(s) matching. See `Match` for
--- why each substitution is paired with the matched target subexpression.
-matchExpressionDeep :: Expression -> Expression -> Expression -> [Match]
+-- Match expression with deep nested expression(s) matching. Inner matchers
+-- only know how to bind metas; the matched target subexpression — required
+-- by the Rewriter to position the replacement — is attached here, the only
+-- place that knows which fragment of the program fired. Anonymous metas
+-- leave no entry in the substitution, so the Rewriter cannot reconstruct
+-- the matched subexpression by re-building the pattern from the
+-- substitution alone — hence the target travels in the Subst itself.
+matchExpressionDeep :: Expression -> Expression -> Expression -> [Subst]
 matchExpressionDeep ptn tgt scope =
-  let here = [(tgt, s) | s <- matchExpression' ptn tgt scope]
+  let here = map (withTarget tgt) (matchExpression' ptn tgt scope)
       deep = case tgt of
         ExFormation bds -> concatMap (\bd -> matchBindingExpression bd ptn tgt) bds
         ExDispatch expr _ -> matchExpressionDeep ptn expr scope
@@ -180,8 +203,8 @@ matchExpressionDeep ptn tgt scope =
         _ -> []
    in here ++ deep
 
-matchExpression :: Expression -> Expression -> [Match]
+matchExpression :: Expression -> Expression -> [Subst]
 matchExpression ptn tgt = matchExpressionDeep ptn tgt defaultScope
 
-matchProgram :: Expression -> Program -> [Match]
+matchProgram :: Expression -> Program -> [Subst]
 matchProgram ptn (Program expr) = matchExpression ptn expr

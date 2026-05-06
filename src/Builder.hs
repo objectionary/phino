@@ -69,13 +69,13 @@ contextualize (ExApplication ex (BiTau at bexpr)) context =
 contextualize ex _ = ex
 
 buildAttribute :: Attribute -> Subst -> Built Attribute
-buildAttribute (AtMeta meta) (Subst mp) = case lookupMeta meta mp of
+buildAttribute (AtMeta meta) (Subst _ mp) = case lookupMeta meta mp of
   Right (MvAttribute attr) -> Right attr
   _ -> Left (metaMsg meta)
 buildAttribute attr _ = Right attr
 
 buildBytes :: Bytes -> Subst -> Built Bytes
-buildBytes (BtMeta meta) (Subst mp) = case lookupMeta meta mp of
+buildBytes (BtMeta meta) (Subst _ mp) = case lookupMeta meta mp of
   Right (MvBytes bytes) -> Right bytes
   _ -> Left (metaMsg meta)
 buildBytes bts _ = Right bts
@@ -91,13 +91,13 @@ buildBinding (BiTau attr expr) subst = do
 buildBinding (BiVoid attr) subst = do
   attribute <- buildAttribute attr subst
   Right [BiVoid attribute]
-buildBinding (BiMeta meta) (Subst mp) = case lookupMeta meta mp of
+buildBinding (BiMeta meta) (Subst _ mp) = case lookupMeta meta mp of
   Right (MvBindings bds) -> uniqueBindings bds
   _ -> Left (metaMsg meta)
 buildBinding (BiDelta bytes) subst = do
   bts <- buildBytes bytes subst
   Right [BiDelta bts]
-buildBinding (BiMetaLambda meta) (Subst mp) = case lookupMeta meta mp of
+buildBinding (BiMetaLambda meta) (Subst _ mp) = case lookupMeta meta mp of
   Right (MvFunction func) -> Right [BiLambda func]
   _ -> Left (metaMsg meta)
 buildBinding binding _ = Right [binding]
@@ -137,7 +137,7 @@ buildExpression (ExApplication expr (BiTau battr bexpr)) subst = do
 buildExpression (ExFormation bds) subst = do
   bds' <- buildBindings bds subst >>= uniqueBindings
   Right (ExFormation bds', defaultScope)
-buildExpression (ExMeta meta) (Subst mp) = case lookupMeta meta mp of
+buildExpression (ExMeta meta) (Subst _ mp) = case lookupMeta meta mp of
   Right (MvExpression expr scope) ->
     let res = Right (expr, scope)
      in case expr of
@@ -145,7 +145,7 @@ buildExpression (ExMeta meta) (Subst mp) = case lookupMeta meta mp of
           _ -> res
   _ -> Left (metaMsg meta)
 buildExpression (ExMetaTail expr meta) subst = do
-  let (Subst mp) = subst
+  let (Subst _ mp) = subst
   (expression, scope) <- buildExpression expr subst
   case lookupMeta meta mp of
     Right (MvTail tails) -> Right (buildExpressionWithTails expression tails subst, scope)
