@@ -8,7 +8,7 @@
 SHELL := bash
 
 JNA_VERSION := 5.15.0
-JEO_VERSION := 0.15.1
+JEO_VERSION := 0.15.2
 ifeq ($(OS),Windows_NT)
   MVNW := $(CURDIR)/benchmark/mvnw.cmd
   BIN_EXT := .exe
