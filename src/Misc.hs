@@ -43,12 +43,12 @@ import Data.Aeson (Object)
 import qualified Data.Aeson.Key as Key
 import qualified Data.Aeson.KeyMap as KeyMap
 import Data.Binary.IEEE754
-import Data.Bits (Bits (shiftL), (.|.))
+import Data.Bits (Bits (shiftL, shiftR), (.&.), (.|.))
 import qualified Data.ByteString as B
 import Data.ByteString.Builder (toLazyByteString, word64BE)
 import Data.ByteString.Lazy (unpack)
 import qualified Data.ByteString.Lazy.UTF8 as U
-import Data.Char (isPrint, ord)
+import Data.Char (chr, isPrint, ord)
 import Data.List (intercalate)
 import Data.Maybe (catMaybes)
 import qualified Data.Set as Set
@@ -251,22 +251,28 @@ toDouble = fromIntegral
 -- [64,20,0,0,0,0,0,0]
 btsToWord8 :: Bytes -> [Word8]
 btsToWord8 BtEmpty = []
-btsToWord8 (BtOne bt) = case readHex bt of
-  [(hex, "")] -> [fromIntegral (hex :: Integer)]
-  _ -> error $ "Invalid hex byte; " ++ bt
-btsToWord8 (BtMany []) = []
-btsToWord8 (BtMany (bt : bts)) =
-  case btsToWord8 (BtOne bt) of
-    [byte] -> byte : btsToWord8 (BtMany bts)
-    _ -> error $ "Invalid hex byte; " ++ bt
+btsToWord8 (BtOne bt) = [hexByte bt]
+btsToWord8 (BtMany bts) = map hexByte bts
 btsToWord8 (BtMeta mt) = error $ "Cannot convert meta bytes to Word8; " ++ T.unpack mt
+
+hexByte :: String -> Word8
+hexByte bt = case readHex bt of
+  [(hex, "")] -> fromIntegral (hex :: Integer)
+  _ -> error $ "Invalid hex byte; " ++ bt
 
 -- >>> word8ToBytes [64, 20, 0]
 -- BtMany ["40","14","00"]
 word8ToBytes :: [Word8] -> Bytes
 word8ToBytes [] = BtEmpty
-word8ToBytes [w8] = BtOne (printf "%02X" w8)
-word8ToBytes bts = BtMany (map (printf "%02X") bts)
+word8ToBytes [w8] = BtOne (toHex w8)
+word8ToBytes bts = BtMany (map toHex bts)
+
+toHex :: Word8 -> String
+toHex w = [digit (w `shiftR` 4), digit (w .&. 0x0F)]
+  where
+    digit n
+      | n < 10 = chr (fromIntegral n + ord '0')
+      | otherwise = chr (fromIntegral n + ord 'A' - 10)
 
 -- Convert Bytes back to Double
 -- >>> btsToNum (BtMany ["40", "14", "00", "00", "00", "00", "00", "00"])
