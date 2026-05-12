@@ -11,6 +11,8 @@ module Render where
 import CST
 import Data.Text (Text)
 import qualified Data.Text as T
+import qualified Data.Text.Lazy as TL
+import qualified Data.Text.Lazy.Builder as TLB
 
 class Render a where
   render :: a -> Text
@@ -151,9 +153,12 @@ instance Render PAIR where
   render PA_META_DELTA'{..} = "D> " <> render meta
 
 instance Render BINDINGS where
-  render BDS_EMPTY{} = ""
-  render BDS_PAIR{..} = render COMMA <> render eol <> render tab <> render pair <> render bindings
-  render BDS_META{..} = render COMMA <> render eol <> render tab <> render meta <> render bindings
+  render = TL.toStrict . TLB.toLazyText . binds
+
+binds :: BINDINGS -> TLB.Builder
+binds BDS_EMPTY{} = mempty
+binds BDS_PAIR{..} = TLB.fromText (render COMMA <> render eol <> render tab <> render pair) <> binds bindings
+binds BDS_META{..} = TLB.fromText (render COMMA <> render eol <> render tab <> render meta) <> binds bindings
 
 instance Render APP_BINDING where
   render APP_BINDING{..} = render pair
@@ -167,8 +172,11 @@ instance Render APP_ARG where
   render APP_ARG{..} = render expr <> render args
 
 instance Render APP_ARGS where
-  render AAS_EMPTY = ""
-  render AAS_EXPR{..} = render COMMA <> render eol <> render tab <> render expr <> render args
+  render = TL.toStrict . TLB.toLazyText . arguments
+
+arguments :: APP_ARGS -> TLB.Builder
+arguments AAS_EMPTY = mempty
+arguments AAS_EXPR{..} = TLB.fromText (render COMMA <> render eol <> render tab <> render expr) <> arguments args
 
 instance Render EXPRESSION where
   render EX_GLOBAL{..} = render global
