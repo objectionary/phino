@@ -366,31 +366,55 @@ make bench
 === parse/phi ===
   warmup:     3 iterations
   batches:    10 x 1
-  total:      1424623.412 μs
-  avg:        142462.341 μs
-  min:        129344.202 μs
-  max:        171540.299 μs
-  std dev:    16103.764 μs
+  total:      1451299.376 μs
+  avg:        145129.938 μs
+  min:        131851.125 μs
+  max:        171659.732 μs
+  std dev:    15385.751 μs
 === parse/xmir ===
   warmup:     3 iterations
   batches:    10 x 1
-  total:      7477282.155 μs
-  avg:        747728.216 μs
-  min:        672630.643 μs
-  max:        893485.031 μs
-  std dev:    58601.273 μs
+  total:      7557600.383 μs
+  avg:        755760.038 μs
+  min:        683231.090 μs
+  max:        902582.797 μs
+  std dev:    58309.400 μs
 === rewrite/normalize ===
   warmup:     3 iterations
   batches:    10 x 1
-  total:      362959.778 μs
-  avg:        36295.978 μs
-  min:        35392.502 μs
-  max:        38853.741 μs
-  std dev:    924.081 μs
+  total:      360187.406 μs
+  avg:        36018.741 μs
+  min:        35033.024 μs
+  max:        36738.433 μs
+  std dev:    576.477 μs
+=== print/sweet/multiline ===
+  warmup:     3 iterations
+  batches:    10 x 1
+  total:      15332350.695 μs
+  avg:        1533235.070 μs
+  min:        1513190.947 μs
+  max:        1571805.492 μs
+  std dev:    18868.220 μs
+=== print/sweet/flat ===
+  warmup:     3 iterations
+  batches:    10 x 1
+  total:      14495687.303 μs
+  avg:        1449568.730 μs
+  min:        1430677.020 μs
+  max:        1472481.430 μs
+  std dev:    11705.717 μs
+=== print/salty/multiline ===
+  warmup:     3 iterations
+  batches:    10 x 1
+  total:      43093130.526 μs
+  avg:        4309313.053 μs
+  min:        4257940.000 μs
+  max:        4346911.680 μs
+  std dev:    27349.630 μs
 ```
 
 The results were calculated in [this GHA job][benchmark-gha]
-on 2026-05-11 at 01:30,
+on 2026-05-12 at 16:00,
 on Linux with 4 CPUs.
 
 <!-- benchmark_end -->
@@ -426,4 +450,4 @@ or [Stack ≥ 3.0][stack] installed.
 [jna]: https://github.com/java-native-access/jna
 [jna-native]: https://github.com/java-native-access/jna/blob/master/src/com/sun/jna/Native.java
 [jeo]: https://github.com/objectionary/jeo-maven-plugin
-[benchmark-gha]: https://github.com/objectionary/phino/actions/runs/25645525037
+[benchmark-gha]: https://github.com/objectionary/phino/actions/runs/25746028993
