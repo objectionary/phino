@@ -8,10 +8,15 @@ import Control.Exception (evaluate)
 import Control.Monad (replicateM, replicateM_)
 import Data.Time.Clock
 import Deps (dontSaveStep)
+import Encoding (Encoding (UNICODE))
 import Functions (buildTerm)
+import Lining (LineFormat (MULTILINE, SINGLELINE))
+import Margin (defaultMargin)
 import Must (Must (MtDisabled))
 import Parser (parseProgramThrows)
+import Printer (printProgram')
 import Rewriter (RewriteContext (RewriteContext), rewrite)
+import Sugar (SugarType (SALTY, SWEET))
 import Text.Printf (printf)
 import XMIR (parseXMIRThrows, xmirToPhi)
 import Yaml (normalizationRules)
@@ -86,3 +91,12 @@ main = do
   runBench "parse/phi" (parseProgramThrows src)
   runBench "parse/xmir" (parseXMIRThrows xsrc >>= xmirToPhi)
   runBench "rewrite/normalize" (rewrite prog normalizationRules rewriteCtx)
+  runBench
+    "print/sweet/multiline"
+    (evaluate (length (printProgram' prog (SWEET, UNICODE, MULTILINE, defaultMargin))))
+  runBench
+    "print/sweet/flat"
+    (evaluate (length (printProgram' prog (SWEET, UNICODE, SINGLELINE, defaultMargin))))
+  runBench
+    "print/salty/multiline"
+    (evaluate (length (printProgram' prog (SALTY, UNICODE, MULTILINE, defaultMargin))))
