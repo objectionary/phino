@@ -137,7 +137,7 @@ jobs:
         id: compare
         run: |
           set +e
-          python3 .github/scripts/bench-compare.py /tmp/base.out /tmp/head.out 0.20 > /tmp/comparison.md
+          .github/scripts/bench-compare.sh /tmp/base.out /tmp/head.out 0.20 > /tmp/comparison.md
           status=$?
           cat /tmp/comparison.md
           cat /tmp/comparison.md >> "$GITHUB_STEP_SUMMARY"
