@@ -115,8 +115,8 @@ jobs:
           set -e
           git checkout ${{ github.event.pull_request.base.sha }}
           cabal build all
-          export PATH="$(dirname "$(cabal list-bin phino)"):$PATH"
-          make benchmark/tmp/native.phi
+          phino_dir=$(dirname "$(cabal list-bin phino)")
+          PATH="$phino_dir:$PATH" make benchmark/tmp/native.phi
           cp benchmark/tmp/native.phi /tmp/native.phi
           cp benchmark/tmp/Native.xmir /tmp/Native.xmir
       - name: Bench at merge-base
