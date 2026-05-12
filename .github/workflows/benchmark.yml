@@ -9,11 +9,19 @@ name: benchmark
       - master
     paths-ignore:
       - README.md
+      - '**/*.md'
+  pull_request:
+    paths-ignore:
+      - '**/*.md'
 concurrency:
   group: benchmark-${{ github.ref }}
   cancel-in-progress: true
+env:
+  GHC_VERSION: '9.8.4'
+  CABAL_VERSION: '3.12.1.0'
 jobs:
   benchmark:
+    if: github.event_name == 'push'
     timeout-minutes: 60
     runs-on: ubuntu-24.04
     steps:
@@ -21,8 +29,8 @@ jobs:
       - id: setup
         uses: haskell-actions/setup@v2.11.0
         with:
-          ghc-version: '9.8.4'
-          cabal-version: '3.12.1.0'
+          ghc-version: ${{ env.GHC_VERSION }}
+          cabal-version: ${{ env.CABAL_VERSION }}
       - uses: actions/setup-java@v5
         with:
           distribution: 'temurin'
@@ -32,8 +40,8 @@ jobs:
           path: |
             ${{ steps.setup.outputs.cabal-store }}
             dist-newstyle
-          key: ubuntu-ghc9.8.4-cabal-${{ hashFiles('**/*.cabal') }}
-          restore-keys: ubuntu-ghc9.8.4-cabal-
+          key: ubuntu-ghc${{ env.GHC_VERSION }}-cabal-${{ hashFiles('**/*.cabal') }}
+          restore-keys: ubuntu-ghc${{ env.GHC_VERSION }}-cabal-
       - uses: actions/cache@v5
         with:
           path: ~/.m2/repository
@@ -69,3 +77,86 @@ jobs:
           delete-branch: true
           title: 'New benchmarking results'
           base: master
+  regression-check:
+    if: github.event_name == 'pull_request'
+    timeout-minutes: 90
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - id: setup
+        uses: haskell-actions/setup@v2.11.0
+        with:
+          ghc-version: ${{ env.GHC_VERSION }}
+          cabal-version: ${{ env.CABAL_VERSION }}
+      - uses: actions/setup-java@v5
+        with:
+          distribution: 'temurin'
+          java-version: 21
+      - uses: actions/cache@v5
+        with:
+          path: |
+            ${{ steps.setup.outputs.cabal-store }}
+            dist-newstyle
+          key: ubuntu-ghc${{ env.GHC_VERSION }}-cabal-${{ hashFiles('**/*.cabal') }}
+          restore-keys: ubuntu-ghc${{ env.GHC_VERSION }}-cabal-
+      - uses: actions/cache@v5
+        with:
+          path: ~/.m2/repository
+          key: ubuntu-m2-${{ hashFiles('benchmark/.mvn/wrapper/maven-wrapper.properties') }}
+          restore-keys: ubuntu-m2-
+      - run: cabal update
+      - name: Generate frozen fixture from merge-base
+        run: |
+          set -e
+          git checkout ${{ github.event.pull_request.base.sha }}
+          cabal build all
+          export PATH="$(dirname "$(cabal list-bin phino)"):$PATH"
+          make benchmark/tmp/native.phi
+          cp benchmark/tmp/native.phi /tmp/native.phi
+          cp benchmark/tmp/Native.xmir /tmp/Native.xmir
+      - name: Bench at merge-base
+        run: |
+          set -e
+          cabal bench --enable-benchmarks 2>&1 | tee /tmp/base.out
+      - name: Restore fixture at PR head
+        run: |
+          set -e
+          git checkout ${{ github.event.pull_request.head.sha }}
+          mkdir -p benchmark/tmp
+          cp /tmp/native.phi benchmark/tmp/native.phi
+          cp /tmp/Native.xmir benchmark/tmp/Native.xmir
+      - name: Bench at PR head
+        run: |
+          set -e
+          cabal bench --enable-benchmarks 2>&1 | tee /tmp/head.out
+      - name: Compare and gate
+        id: compare
+        run: |
+          set +e
+          python3 .github/scripts/bench-compare.py /tmp/base.out /tmp/head.out 0.20 > /tmp/comparison.md
+          status=$?
+          cat /tmp/comparison.md
+          cat /tmp/comparison.md >> "$GITHUB_STEP_SUMMARY"
+          exit "$status"
+      - name: Post comparison comment
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -e
+          marker='<!-- benchmark-comparison -->'
+          body=$(printf '%s\n\n%s' "$marker" "$(cat /tmp/comparison.md)")
+          existing=$(gh api "repos/$REPO/issues/$PR_NUMBER/comments" \
+            --jq ".[] | select(.body | contains(\"$marker\")) | .id" | head -n 1)
+          if [ -n "$existing" ]; then
+            gh api -X PATCH "repos/$REPO/issues/comments/$existing" -f body="$body"
+          else
+            gh pr comment "$PR_NUMBER" --body "$body"
+          fi
