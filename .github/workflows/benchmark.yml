@@ -31,14 +31,14 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: 21
-      - uses: actions/cache@v5
+      - uses: actions/cache@v6
         with:
           path: |
             ${{ steps.setup.outputs.cabal-store }}
             dist-newstyle
           key: ubuntu-ghc${{ env.GHC_VERSION }}-cabal-${{ hashFiles('**/*.cabal') }}
           restore-keys: ubuntu-ghc${{ env.GHC_VERSION }}-cabal-
-      - uses: actions/cache@v5
+      - uses: actions/cache@v6
         with:
           path: ~/.m2/repository
           key: ubuntu-m2-${{ hashFiles('benchmark/.mvn/wrapper/maven-wrapper.properties') }}
