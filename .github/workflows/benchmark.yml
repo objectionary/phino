@@ -9,9 +9,13 @@ name: benchmark
       - master
     paths-ignore:
       - README.md
+      - '**/*.md'
 concurrency:
   group: benchmark-${{ github.ref }}
   cancel-in-progress: true
+env:
+  GHC_VERSION: '9.8.4'
+  CABAL_VERSION: '3.12.1.0'
 jobs:
   benchmark:
     timeout-minutes: 60
@@ -21,8 +25,8 @@ jobs:
       - id: setup
         uses: haskell-actions/setup@v2.11.0
         with:
-          ghc-version: '9.8.4'
-          cabal-version: '3.12.1.0'
+          ghc-version: ${{ env.GHC_VERSION }}
+          cabal-version: ${{ env.CABAL_VERSION }}
       - uses: actions/setup-java@v5
         with:
           distribution: 'temurin'
@@ -32,8 +36,8 @@ jobs:
           path: |
             ${{ steps.setup.outputs.cabal-store }}
             dist-newstyle
-          key: ubuntu-ghc9.8.4-cabal-${{ hashFiles('**/*.cabal') }}
-          restore-keys: ubuntu-ghc9.8.4-cabal-
+          key: ubuntu-ghc${{ env.GHC_VERSION }}-cabal-${{ hashFiles('**/*.cabal') }}
+          restore-keys: ubuntu-ghc${{ env.GHC_VERSION }}-cabal-
       - uses: actions/cache@v5
         with:
           path: ~/.m2/repository

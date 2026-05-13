@@ -1,0 +1,33 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+name: post-comment
+'on':
+  workflow_run:
+    workflows: [regression-check]
+    types:
+      - completed
+jobs:
+  post-comment:
+    timeout-minutes: 15
+    runs-on: ubuntu-24.04
+    permissions:
+      pull-requests: write
+      actions: read
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v8
+        with:
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Read PR number
+        run: |
+          PR_NUMBER=$(cat pr-number/pr-number)
+          echo "PR_NUMBER=$PR_NUMBER" >> "$GITHUB_ENV"
+      - name: Post or update sticky comment
+        uses: mshick/add-pr-comment@v3
+        with:
+          issue: ${{ env.PR_NUMBER }}
+          message-path: benchmark-comment/benchmark-comment.md
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
