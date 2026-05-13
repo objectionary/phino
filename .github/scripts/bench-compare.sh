@@ -1,22 +1,26 @@
 #!/usr/bin/env bash
 # SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 # SPDX-License-Identifier: MIT
-#
-# Compare two benchmark runs and gate on regressions.
-#
-# Usage: bench-compare.sh BASE.txt HEAD.txt THRESHOLD
-#
-# BASE/HEAD: stdout captures of `cabal bench` (the bench prints `=== name ===`
-# blocks with an `avg: X.YYY us` line per case).
-#
-# THRESHOLD: max allowed positive delta as a fraction, e.g. 0.20 for +20%.
-#
-# Prints a markdown comparison table to stdout, exits 1 if any case present in
-# both runs regressed by more than THRESHOLD.
 set -euo pipefail
 
+usage() {
+  cat <<'EOF'
+Compare two benchmark runs and gate on regressions.
+
+Usage: bench-compare.sh BASE.txt HEAD.txt THRESHOLD
+
+BASE/HEAD: stdout captures of `cabal bench` (the bench prints `=== name ===`
+blocks with an `avg: X.YYY us` line per case).
+
+THRESHOLD: max allowed positive delta as a fraction, e.g. 0.20 for +20%.
+
+Prints a markdown comparison table to stdout, exits 1 if any case present in
+both runs regressed by more than THRESHOLD.
+EOF
+}
+
 if [ "$#" -ne 3 ]; then
-  sed -n '6,15p' "$0" >&2
+  usage >&2
   exit 2
 fi
 
@@ -46,9 +50,9 @@ body=$(
         b = (("base", k) in vals) ? vals["base", k] : ""
         h = (("head", k) in vals) ? vals["head", k] : ""
         if (b == "") {
-          printf "%s\t| `%s` | - | %.0f | new |\n", k, k, h
+          printf "%s\t| `%s` | - | %.2f | new |\n", k, k, h
         } else if (h == "") {
-          printf "%s\t| `%s` | %.0f | - | removed |\n", k, k, b
+          printf "%s\t| `%s` | %.2f | - | removed |\n", k, k, b
         } else {
           d = (h - b) / b
           pct = d * 100
@@ -59,7 +63,7 @@ body=$(
           } else if (d < -0.05) {
             note = " (improved)"
           }
-          printf "%s\t| `%s` | %.0f | %.0f | %+.1f%%%s |\n", k, k, b, h, pct, note
+          printf "%s\t| `%s` | %.2f | %.2f | %+.1f%%%s |\n", k, k, b, h, pct, note
         }
       }
       print "REGRESSIONS=" regressions
