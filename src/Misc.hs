@@ -48,7 +48,7 @@ import qualified Data.ByteString as B
 import Data.ByteString.Builder (toLazyByteString, word64BE)
 import Data.ByteString.Lazy (unpack)
 import qualified Data.ByteString.Lazy.UTF8 as U
-import Data.Char (chr, isPrint, ord)
+import Data.Char (chr, isDigit, isPrint, ord)
 import Data.List (intercalate)
 import Data.Maybe (catMaybes)
 import qualified Data.Set as Set
@@ -256,6 +256,13 @@ btsToWord8 (BtMany bts) = map hexByte bts
 btsToWord8 (BtMeta mt) = error $ "Cannot convert meta bytes to Word8; " ++ T.unpack mt
 
 hexByte :: String -> Word8
+hexByte [hi, lo] = (nibble hi `shiftL` 4) .|. nibble lo
+  where
+    nibble c
+      | isDigit c = fromIntegral (ord c - ord '0')
+      | c >= 'A' && c <= 'F' = fromIntegral (ord c - ord 'A' + 10)
+      | c >= 'a' && c <= 'f' = fromIntegral (ord c - ord 'a' + 10)
+      | otherwise = error ("Invalid hex digit: " ++ [c])
 hexByte bt = case readHex bt of
   [(hex, "")] -> fromIntegral (hex :: Integer)
   _ -> error $ "Invalid hex byte; " ++ bt
