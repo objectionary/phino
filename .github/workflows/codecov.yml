@@ -9,7 +9,7 @@ name: codecov
       - master
 jobs:
   codecov:
-    runs-on: macos-15
+    runs-on: macos-26
     steps:
       - uses: actions/checkout@v6
       - uses: actions/cache@v5
