@@ -154,11 +154,11 @@ instance Render PAIR where
 
 instance Render BINDINGS where
   render = TL.toStrict . TLB.toLazyText . binds
-
-binds :: BINDINGS -> TLB.Builder
-binds BDS_EMPTY{} = mempty
-binds BDS_PAIR{..} = TLB.fromText (render COMMA <> render eol <> render tab <> render pair) <> binds bindings
-binds BDS_META{..} = TLB.fromText (render COMMA <> render eol <> render tab <> render meta) <> binds bindings
+    where
+      binds :: BINDINGS -> TLB.Builder
+      binds BDS_EMPTY{} = mempty
+      binds BDS_PAIR{..} = TLB.fromText (render COMMA <> render eol <> render tab <> render pair) <> binds bindings
+      binds BDS_META{..} = TLB.fromText (render COMMA <> render eol <> render tab <> render meta) <> binds bindings
 
 instance Render APP_BINDING where
   render APP_BINDING{..} = render pair
@@ -173,10 +173,10 @@ instance Render APP_ARG where
 
 instance Render APP_ARGS where
   render = TL.toStrict . TLB.toLazyText . arguments
-
-arguments :: APP_ARGS -> TLB.Builder
-arguments AAS_EMPTY = mempty
-arguments AAS_EXPR{..} = TLB.fromText (render COMMA <> render eol <> render tab <> render expr) <> arguments args
+    where
+      arguments :: APP_ARGS -> TLB.Builder
+      arguments AAS_EMPTY = mempty
+      arguments AAS_EXPR{..} = TLB.fromText (render COMMA <> render eol <> render tab <> render expr) <> arguments args
 
 instance Render EXPRESSION where
   render EX_GLOBAL{..} = render global
