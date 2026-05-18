@@ -125,7 +125,7 @@ spec = do
           ["--pin=" ++ showVersion version, "rewrite", "--sweet"]
           ["{⟦⟧}"]
 
-    it "fails when --pin doesnt match actual version" $
+    it "fails when --pin doesn't match actual version" $
       withStdin "Q -> [[ ]]" $
         testCLIFailed
           ["--pin=9.9.9.9", "rewrite"]
