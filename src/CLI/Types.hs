@@ -38,6 +38,7 @@ data CmdException
   | CouldNotDataize
   | CouldNotPrintExpressionInXMIR
   | EmptySubstsOnMatch
+  | VersionMismatch String String
   deriving (Exception)
 
 instance Show CmdException where
@@ -46,6 +47,8 @@ instance Show CmdException where
   show CouldNotDataize = "Could not dataize given program"
   show CouldNotPrintExpressionInXMIR = "Could not print expression with --output=xmir, only program printing is allowed"
   show EmptySubstsOnMatch = "Provided pattern was not matched, no substitutions are built"
+  show (VersionMismatch expected actual) =
+    printf "Version mismatch: --pin requires '%s', but this is phino %s" expected actual
 
 data Command
   = CmdRewrite OptsRewrite
@@ -53,6 +56,11 @@ data Command
   | CmdExplain OptsExplain
   | CmdMerge OptsMerge
   | CmdMatch OptsMatch
+
+data CliArgs = CliArgs
+  { _pin :: Maybe String
+  , _command :: Command
+  }
 
 data IOFormat = XMIR | PHI | LATEX
   deriving (Eq)

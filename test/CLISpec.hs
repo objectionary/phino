@@ -118,6 +118,25 @@ spec = do
       ["--help"]
       ["Phino - CLI Manipulator of 𝜑-Calculus Expressions", "Usage:"]
 
+  describe "--pin" $ do
+    it "succeeds when --pin matches actual version" $
+      withStdin "Q -> [[ ]]" $
+        testCLISucceeded
+          ["--pin=" ++ showVersion version, "rewrite", "--sweet"]
+          ["{⟦⟧}"]
+
+    it "fails when --pin doesnt match actual version" $
+      withStdin "Q -> [[ ]]" $
+        testCLIFailed
+          ["--pin=9.9.9.9", "rewrite"]
+          ["Version mismatch: --pin requires '9.9.9.9', but this is phino " ++ showVersion version]
+
+    it "fails when --pin is empty" $
+      withStdin "Q -> [[ ]]" $
+        testCLIFailed
+          ["--pin=", "rewrite"]
+          ["Version mismatch: --pin requires ''"]
+
   it "prints debug info with --log-level=DEBUG" $
     withStdin "{[[]]}" $
       testCLISucceeded ["rewrite", "--log-level=DEBUG"] ["[DEBUG]:"]

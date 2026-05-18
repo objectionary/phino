@@ -83,6 +83,14 @@ $ phino --version
 0.0.0.0
 ```
 
+You can ensure scripts are run with a specific version of `phino` using
+the `--pin` global option. It exits with an error when the version supplied
+doesn't match the installed one:
+
+```bash
+phino --pin=0.0.0.67 dataize hello.phi
+```
+
 ## Dataize
 
 Then, you dataize the program:

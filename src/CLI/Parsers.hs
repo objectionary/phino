@@ -345,8 +345,21 @@ commandParser =
         <> command "match" (info matchParser (progDesc "Match 𝜑-program against provided pattern and build matched substitutions"))
     )
 
-parserInfo :: ParserInfo Command
+optPin :: Parser (Maybe String)
+optPin =
+  optional
+    ( strOption
+        ( long "pin"
+            <> metavar "VERSION"
+            <> help "Fail if this version doesn't match the version of phino"
+        )
+    )
+
+cliArgsParser :: Parser CliArgs
+cliArgsParser = CliArgs <$> optPin <*> commandParser
+
+parserInfo :: ParserInfo CliArgs
 parserInfo =
   info
-    (commandParser <**> helper <**> simpleVersioner (showVersion version))
+    (cliArgsParser <**> helper <**> simpleVersioner (showVersion version))
     (fullDesc <> header "Phino - CLI Manipulator of 𝜑-Calculus Expressions")

@@ -10,9 +10,11 @@ module CLI (runCLI) where
 import CLI.Parsers
 import CLI.Runners
 import CLI.Types
-import Control.Exception.Base (Exception (displayException), SomeException, fromException, handle)
+import Control.Exception.Base (Exception (displayException), SomeException, fromException, handle, throwIO)
+import Data.Version (showVersion)
 import Logger
 import Options.Applicative
+import Paths_phino (version)
 import System.Exit (ExitCode (..), exitFailure)
 
 handler :: SomeException -> IO ()
@@ -32,11 +34,20 @@ setLogger cmd =
         CmdMatch OptsMatch{_logLevel, _logLines} -> (_logLevel, _logLines)
    in setLogConfig level lns
 
+checkPin :: Maybe String -> IO ()
+checkPin Nothing = pure ()
+checkPin (Just expected)
+  | expected == actual = pure ()
+  | otherwise = throwIO (VersionMismatch expected actual)
+  where
+    actual = showVersion version
+
 runCLI :: [String] -> IO ()
 runCLI args = handle handler $ do
-  cmd <- handleParseResult (execParserPure defaultPrefs parserInfo args)
-  setLogger cmd
-  case cmd of
+  CliArgs{_pin, _command} <- handleParseResult (execParserPure defaultPrefs parserInfo args)
+  checkPin _pin
+  setLogger _command
+  case _command of
     CmdRewrite opts -> runRewrite opts
     CmdDataize opts -> runDataize opts
     CmdExplain opts -> runExplain opts
