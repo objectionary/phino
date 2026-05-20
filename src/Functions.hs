@@ -44,6 +44,7 @@ buildTerm' "string" = _string
 buildTerm' "number" = _number
 buildTerm' "sum" = _sum
 buildTerm' "join" = _join
+buildTerm' "splice" = _splice
 buildTerm' func = _unsupported func
 
 argToBytes :: Y.ExtraArgument -> Subst -> IO Bytes
@@ -247,6 +248,45 @@ _join args subst = do
       case unsafePerformIO (_randomTau (map Y.ArgAttribute (Set.toList attrs)) subst) of
         TeAttribute attr' -> attr'
         _ -> AtLabel "unknown"
+
+_splice :: BuildTermMethod
+_splice [Y.ArgBinding inArg, Y.ArgExpression sentExpr, Y.ArgBinding repArg] subst = do
+  inBds <- buildBindingThrows inArg subst
+  repBds <- buildBindingThrows repArg subst
+  (sentinel, _) <- buildExpressionThrows sentExpr subst
+  let avoid = map Y.ArgAttribute (attributesFromBindings (inBds ++ repBds))
+  spliced <- splice inBds sentinel repBds avoid
+  pure (TeBindings spliced)
+  where
+    splice :: [Binding] -> Expression -> [Binding] -> [Y.ExtraArgument] -> IO [Binding]
+    splice [] _ _ _ = pure []
+    splice (bd : rest) sent rep avoid
+      | matches sent bd = do
+          fresh <- traverse (renamed avoid) rep
+          tail' <- splice rest sent rep avoid
+          pure (fresh ++ bd : tail')
+      | otherwise = do
+          tail' <- splice rest sent rep avoid
+          pure (bd : tail')
+    matches :: Expression -> Binding -> Bool
+    matches sent (BiTau _ (ExFormation bds)) = any (isPhi sent) bds
+    matches _ _ = False
+    isPhi :: Expression -> Binding -> Bool
+    isPhi sent (BiTau AtPhi expr) = expr == sent
+    isPhi _ _ = False
+    renamed :: [Y.ExtraArgument] -> Binding -> IO Binding
+    renamed avoid (BiTau (AtLabel _) expr) = do
+      term <- _randomTau avoid subst
+      case term of
+        TeAttribute attr -> pure (BiTau attr expr)
+        _ -> throwIO (userError "Failed to generate fresh tau attribute for splice")
+    renamed avoid (BiVoid (AtLabel _)) = do
+      term <- _randomTau avoid subst
+      case term of
+        TeAttribute attr -> pure (BiVoid attr)
+        _ -> throwIO (userError "Failed to generate fresh tau attribute for splice")
+    renamed _ bd = pure bd
+_splice _ _ = throwIO (userError "Function splice() requires exactly 3 arguments: input bindings, sentinel expression, replacement bindings")
 
 _unsupported :: BuildTermFunc
 _unsupported func _ _ = throwIO (userError (printf "Function %s() is not supported or does not exist" func))
