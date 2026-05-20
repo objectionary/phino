@@ -22,7 +22,11 @@ output: |-
 rules:
   custom:
     - name: splice and count
-      pattern: '[[ cps -> [[ !B-cps, ^ -> ? ]], auto -> [[ !B-auto, ^ -> ? ]] ]]'
+      pattern: |
+        [[
+          cps -> [[ !B-cps, ^ -> ? ]],
+          auto -> [[ !B-auto, ^ -> ? ]]
+        ]]
       result: '[[ n -> !e ]]'
       where:
         - meta: '!B-spliced'
