@@ -335,11 +335,13 @@ Here's list of functions that are supported for extensions:
   and replacement bindings `𝐵-rep`. Returns a new binding group where `𝐵-rep`
   is inserted in front of every binding in `𝐵-in` whose value is a formation
   with `φ` equal to the sentinel. Every spliced copy of `𝐵-rep` has its
-  `τ`-labelled attributes renamed via `random-tau`, so duplicates introduced
-  by repeated insertion are avoided only for those `τ` attributes. If `𝐵-rep`
-  contains non-`τ` special attributes such as `ρ`, `Δ`, `λ`, or `φ`, splicing
-  at multiple positions may still produce duplicates. When no binding matches
-  the sentinel the output equals the input unchanged.
+  `τ`-labelled attributes renamed via `random-tau` so the resulting binding
+  group has no duplicates. `𝐵-rep` must contain only `τ`-labelled bindings
+  (`BiTau (AtLabel _) _` or `BiVoid (AtLabel _)`); any `ρ`, `Δ`, `λ`, `φ`,
+  `α`, or meta-attribute binding in `𝐵-rep` makes the function fail fast
+  because such bindings cannot be renamed and would produce duplicates
+  when spliced at more than one position. When no binding matches the
+  sentinel, the output equals the input unchanged.
 
 ## Meta variables
 

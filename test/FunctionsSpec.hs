@@ -6,6 +6,8 @@
 module FunctionsSpec where
 
 import AST
+import Control.Exception (try)
+import Control.Monad (void)
 import Data.Map.Strict qualified as Map
 import Data.Text qualified as T
 import Deps (Term (TeBindings))
@@ -24,6 +26,10 @@ emit = ExDispatch (ExDispatch ExGlobal (AtLabel "hone")) (AtLabel "emit")
 phiBinding :: T.Text -> Expression -> Binding
 phiBinding name body = BiTau (AtLabel name) (ExFormation [BiTau AtPhi body])
 
+bodyOf :: Binding -> Maybe Expression
+bodyOf (BiTau _ (ExFormation [BiTau AtPhi expr])) = Just expr
+bodyOf _ = Nothing
+
 spec :: Test.Hspec.Spec
 spec = describe "Functions" $ do
   Test.Hspec.it "contains only unique bindings after 'join'" $ do
@@ -35,7 +41,7 @@ spec = describe "Functions" $ do
     bds' <- uniqueBindings' bds
     logDebug (printf "Joined bindings:\n%s" (printExpression (ExFormation bds')))
     length bds' `shouldBe` 9
-  Test.Hspec.it "splices replacement before every sentinel match" $ do
+  Test.Hspec.it "splices replacement in the correct order before every sentinel match" $ do
     let foo = ExDispatch ExGlobal (AtLabel "foo")
         bar = ExDispatch ExGlobal (AtLabel "bar")
         cpsBody =
@@ -65,7 +71,16 @@ spec = describe "Functions" $ do
         subst
     bds <- uniqueBindings' result
     logDebug (printf "Spliced bindings:\n%s" (printExpression (ExFormation bds)))
-    length bds `shouldBe` length cpsBody + 2 * length autoBody
+    map bodyOf bds
+      `shouldBe` [ Just foo
+                 , Just foo
+                 , Just bar
+                 , Just emit
+                 , Just bar
+                 , Just foo
+                 , Just bar
+                 , Just emit
+                 ]
   Test.Hspec.it "returns the input unchanged when no sentinel match is found" $ do
     let foo = ExDispatch ExGlobal (AtLabel "foo")
         body = [phiBinding "x" foo, phiBinding "y" foo]
@@ -106,3 +121,31 @@ spec = describe "Functions" $ do
         subst
     bds <- uniqueBindings' result
     bds `shouldSatisfy` ((== length body + 5 * length rep) . length)
+  Test.Hspec.it "fails fast when replacement contains a non-label binding" $ do
+    let body = [phiBinding "e1" emit, phiBinding "e2" emit]
+        rep = [phiBinding "a" emit, BiVoid AtRho]
+        subst =
+          Subst
+            ( Map.fromList
+                [ ("B-in", MvBindings body)
+                , ("B-rep", MvBindings rep)
+                ]
+            )
+    outcome <-
+      try
+        ( void
+            ( buildTerm
+                "splice"
+                [ ArgBinding (BiMeta "B-in")
+                , ArgExpression emit
+                , ArgBinding (BiMeta "B-rep")
+                ]
+                subst
+            )
+        ) ::
+        IO (Either IOError ())
+    outcome `shouldSatisfy` isLeft
+  where
+    isLeft :: Either a b -> Bool
+    isLeft (Left _) = True
+    isLeft _ = False

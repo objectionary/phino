@@ -19,7 +19,7 @@ import Logger (logDebug)
 import Matcher
 import Misc
 import Parser (parseAttributeThrows, parseNumberThrows)
-import Printer (printAttribute, printExpression, printExtraArg)
+import Printer (printAttribute, printBinding, printExpression, printExtraArg)
 import Random (randomString)
 import Regexp
 import Text.Printf (printf)
@@ -253,11 +253,23 @@ _splice :: BuildTermMethod
 _splice [Y.ArgBinding inArg, Y.ArgExpression sentExpr, Y.ArgBinding repArg] subst = do
   inBds <- buildBindingThrows inArg subst
   repBds <- buildBindingThrows repArg subst
+  mapM_ validateRep repBds
   (sentinel, _) <- buildExpressionThrows sentExpr subst
   let avoid = map Y.ArgAttribute (attributesFromBindings (inBds ++ repBds))
   spliced <- splice inBds sentinel repBds avoid
   pure (TeBindings spliced)
   where
+    validateRep :: Binding -> IO ()
+    validateRep (BiTau (AtLabel _) _) = pure ()
+    validateRep (BiVoid (AtLabel _)) = pure ()
+    validateRep bd =
+      throwIO
+        ( userError
+            ( printf
+                "Function splice() can only rename τ-labelled bindings in the replacement group, but got '%s' which would produce duplicates when spliced more than once"
+                (printBinding bd)
+            )
+        )
     splice :: [Binding] -> Expression -> [Binding] -> [Y.ExtraArgument] -> IO [Binding]
     splice [] _ _ _ = pure []
     splice (bd : rest) sent rep avoid
