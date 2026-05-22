@@ -16,6 +16,7 @@ module Misc
   , btsToStr
   , btsToNum
   , withVoidRho
+  , normalizeFormations
   , allPathsIn
   , ensuredFile
   , shuffle
@@ -198,6 +199,19 @@ withVoidRho bds = withVoidRho' bds False
         BiVoid AtRho -> bd : withVoidRho' rest True
         BiTau AtRho _ -> bd : withVoidRho' rest True
         _ -> bd : withVoidRho' rest hasRho
+
+-- Recursively ensure all formations have a BiVoid AtRho binding (ρ ↦ ∅).
+-- Fixes in-memory ExFormation [] to ExFormation [BiVoid AtRho] after rewriting,
+-- keeping the invariant that the parser enforces via withVoidRho.
+normalizeFormations :: Expression -> Expression
+normalizeFormations (ExFormation bds) = ExFormation (withVoidRho (map normalizeFormationsB bds))
+normalizeFormations (ExDispatch e a) = ExDispatch (normalizeFormations e) a
+normalizeFormations (ExApplication e b) = ExApplication (normalizeFormations e) (normalizeFormationsB b)
+normalizeFormations e = e
+
+normalizeFormationsB :: Binding -> Binding
+normalizeFormationsB (BiTau a e) = BiTau a (normalizeFormations e)
+normalizeFormationsB b = b
 
 -- Transform dispatch to list of attributes
 -- >>> fqnToAttrs (ExDispatch (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang")) (AtLabel "number"))

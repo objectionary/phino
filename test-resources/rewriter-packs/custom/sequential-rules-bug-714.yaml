@@ -1,0 +1,26 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# Regression test for https://github.com/objectionary/phino/issues/714
+# Rule A (fast path) removes void bindings until the formation is empty.
+# Rule B must then match the empty formation [[ ]] and replace it.
+# Without the fix, rule A produces ExFormation [] (no rho binding) while
+# rule B's pattern is parsed as ExFormation [BiVoid AtRho], so they never match.
+repeat: 5
+must: 1
+input: |
+  {[[ x -> ? ]]}
+output: |
+  {[[ x -> Q ]]}
+rules:
+  custom:
+    - name: remove void
+      pattern: |
+        [[ !B1, !a -> ?, !B2 ]]
+      result: |
+        [[ !B1, !B2 ]]
+    - name: empty to filled
+      pattern: |
+        [[ ]]
+      result: |
+        [[ x -> Q ]]
