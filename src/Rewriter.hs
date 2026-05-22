@@ -20,7 +20,7 @@ import Deps
 import Locator (locatedExpression, withLocatedExpression)
 import Logger (logDebug)
 import Matcher (Subst)
-import Misc (normalizeFormations)
+import Misc (recoverFormations)
 import Must (Must (..), exceedsUpperBound, inRange)
 import Printer (printExpression)
 import Replacer (ReplaceContext (ReplaceCtx), ReplaceExpressionFunc, replaceExpression, replaceExpressionFast)
@@ -168,7 +168,7 @@ rewrite' state (rule : rest) iteration ctx@RewriteContext{..} = do
                     else pure (_rewrittens, _unique, False)
                 matched -> do
                   logDebug (printf "Rule '%s' has been matched, applying..." ruleName)
-                  expr <- normalizeFormations <$> tryBuildAndReplaceFast (expression, ptn, res, matched) (ReplaceCtx _maxDepth)
+                  expr <- recoverFormations <$> tryBuildAndReplaceFast (expression, ptn, res, matched) (ReplaceCtx _maxDepth)
                   if expression == expr
                     then do
                       logDebug (printf "Applied '%s', no changes made" ruleName)

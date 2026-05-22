@@ -16,7 +16,7 @@ module Misc
   , btsToStr
   , btsToNum
   , withVoidRho
-  , normalizeFormations
+  , recoverFormations
   , allPathsIn
   , ensuredFile
   , shuffle
@@ -203,15 +203,15 @@ withVoidRho bds = withVoidRho' bds False
 -- Recursively ensure all formations have a BiVoid AtRho binding (ρ ↦ ∅).
 -- Fixes in-memory ExFormation [] to ExFormation [BiVoid AtRho] after rewriting,
 -- keeping the invariant that the parser enforces via withVoidRho.
-normalizeFormations :: Expression -> Expression
-normalizeFormations (ExFormation bds) = ExFormation (withVoidRho (map normalizeFormationsB bds))
-normalizeFormations (ExDispatch e a) = ExDispatch (normalizeFormations e) a
-normalizeFormations (ExApplication e b) = ExApplication (normalizeFormations e) (normalizeFormationsB b)
-normalizeFormations e = e
+recoverFormations :: Expression -> Expression
+recoverFormations (ExFormation bindings) = ExFormation (withVoidRho (map recoverFormations' bindings))
+recoverFormations (ExDispatch expr attr) = ExDispatch (recoverFormations expr) attr
+recoverFormations (ExApplication expr binding) = ExApplication (recoverFormations expr) (recoverFormations' binding)
+recoverFormations expr = expr
 
-normalizeFormationsB :: Binding -> Binding
-normalizeFormationsB (BiTau a e) = BiTau a (normalizeFormations e)
-normalizeFormationsB b = b
+recoverFormations' :: Binding -> Binding
+recoverFormations' (BiTau attr expr) = BiTau attr (recoverFormations expr)
+recoverFormations' binding = binding
 
 -- Transform dispatch to list of attributes
 -- >>> fqnToAttrs (ExDispatch (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang")) (AtLabel "number"))
