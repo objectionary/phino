@@ -80,6 +80,14 @@ spec = do
       ]
       (\(desc, ex) -> it desc (toCST ex (0, EOL) `shouldSatisfy` isCSTNumber))
 
+    xit "keeps non-primitive data-shaped applications out of primitive conversion" $ do
+      let foo = BaseObject "foo"
+          bts = BaseObject "bytes"
+          bt = BiTau (AtAlpha 0)
+          form = ExFormation [BiDelta (BtOne "01"), BiVoid AtRho]
+          nonPrimitive = ExApplication foo (bt (ExApplication bts (bt form)))
+      toCST nonPrimitive (0, EOL) `shouldSatisfy` const True
+
   describe "CST printing packs" $ do
     let resources = "test-resources/cst/printing-packs"
     packs <- runIO (allPathsIn resources)
