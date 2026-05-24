@@ -342,6 +342,13 @@ Here's list of functions that are supported for extensions:
   because such bindings cannot be renamed and would produce duplicates
   when spliced at more than one position. When no binding matches the
   sentinel, the output equals the input unchanged.
+* `graft` - same call shape as `splice` (`𝐵-in`, sentinel, `𝐵-rep`) and the
+  same renaming guarantees, but every matched sentinel binding is replaced by
+  the renamed copy of `𝐵-rep` instead of preserved in place. Use it when the
+  marker must not survive the substitution — for example, when fusing two
+  bodies that both produce the same effect and the original marker would fire
+  a second time. When no binding matches the sentinel, the output equals the
+  input unchanged.
 
 ## Meta variables
 

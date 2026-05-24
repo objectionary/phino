@@ -145,6 +145,108 @@ spec = describe "Functions" $ do
         ) ::
         IO (Either IOError ())
     outcome `shouldSatisfy` isLeft
+  Test.Hspec.it "grafts replacement in place of every sentinel match" $ do
+    let foo = ExDispatch ExGlobal (AtLabel "foo")
+        bar = ExDispatch ExGlobal (AtLabel "bar")
+        cpsBody =
+          [ phiBinding "x" foo
+          , phiBinding "emit1" emit
+          , phiBinding "y" bar
+          , phiBinding "emit2" emit
+          ]
+        autoBody =
+          [ phiBinding "add1" foo
+          , phiBinding "add2" bar
+          ]
+        subst =
+          Subst
+            ( Map.fromList
+                [ ("B-in", MvBindings cpsBody)
+                , ("B-rep", MvBindings autoBody)
+                ]
+            )
+    TeBindings result <-
+      buildTerm
+        "graft"
+        [ ArgBinding (BiMeta "B-in")
+        , ArgExpression emit
+        , ArgBinding (BiMeta "B-rep")
+        ]
+        subst
+    bds <- uniqueBindings' result
+    logDebug (printf "Grafted bindings:\n%s" (printExpression (ExFormation bds)))
+    map bodyOf bds
+      `shouldBe` [ Just foo
+                 , Just foo
+                 , Just bar
+                 , Just bar
+                 , Just foo
+                 , Just bar
+                 ]
+  Test.Hspec.it "returns the input unchanged when graft finds no sentinel" $ do
+    let foo = ExDispatch ExGlobal (AtLabel "foo")
+        body = [phiBinding "x" foo, phiBinding "y" foo]
+        subst =
+          Subst
+            ( Map.fromList
+                [ ("B-in", MvBindings body)
+                , ("B-rep", MvBindings [phiBinding "z" foo])
+                ]
+            )
+    TeBindings result <-
+      buildTerm
+        "graft"
+        [ ArgBinding (BiMeta "B-in")
+        , ArgExpression emit
+        , ArgBinding (BiMeta "B-rep")
+        ]
+        subst
+    result `shouldBe` body
+  Test.Hspec.it "produces only unique attributes for many graft positions" $ do
+    let foo = ExDispatch ExGlobal (AtLabel "foo")
+        body = [phiBinding (T.pack ('e' : show i)) emit | i <- [1 .. 5 :: Int]]
+        rep = [phiBinding "a" foo, phiBinding "b" foo]
+        subst =
+          Subst
+            ( Map.fromList
+                [ ("B-in", MvBindings body)
+                , ("B-rep", MvBindings rep)
+                ]
+            )
+    TeBindings result <-
+      buildTerm
+        "graft"
+        [ ArgBinding (BiMeta "B-in")
+        , ArgExpression emit
+        , ArgBinding (BiMeta "B-rep")
+        ]
+        subst
+    bds <- uniqueBindings' result
+    bds `shouldSatisfy` ((== 5 * length rep) . length)
+  Test.Hspec.it "fails fast when graft replacement contains a non-label binding" $ do
+    let body = [phiBinding "e1" emit, phiBinding "e2" emit]
+        rep = [phiBinding "a" emit, BiVoid AtRho]
+        subst =
+          Subst
+            ( Map.fromList
+                [ ("B-in", MvBindings body)
+                , ("B-rep", MvBindings rep)
+                ]
+            )
+    outcome <-
+      try
+        ( void
+            ( buildTerm
+                "graft"
+                [ ArgBinding (BiMeta "B-in")
+                , ArgExpression emit
+                , ArgBinding (BiMeta "B-rep")
+                ]
+                subst
+            )
+        ) ::
+        IO (Either IOError ())
+    outcome `shouldSatisfy` isLeft
   where
     isLeft :: Either a b -> Bool
     isLeft (Left _) = True

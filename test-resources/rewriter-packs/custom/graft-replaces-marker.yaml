@@ -1,0 +1,40 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+input: |
+  Q -> [[
+    cps -> [[
+      a -> [[ @ ->Q.hone.emit ]],
+      x -> [[ @ ->Q.jeo.opcode.iconst_0 ]],
+      b -> [[ @ ->Q.hone.emit ]],
+      y -> [[ @ ->Q.jeo.opcode.iconst_1 ]],
+      c -> [[ @ ->Q.hone.emit ]]
+    ]],
+    auto -> [[
+      r1 -> [[ @ ->Q.jeo.opcode.iadd ]],
+      r2 -> [[ @ ->Q.jeo.opcode.istore ]]
+    ]]
+  ]]
+output: |-
+  Φ ↦ ⟦
+    n ↦ 8
+  ⟧
+rules:
+  custom:
+    - name: graft and count
+      pattern: |
+        [[
+          cps -> [[ !B-cps, ^ -> ? ]],
+          auto -> [[ !B-auto, ^ -> ? ]]
+        ]]
+      result: '[[ n -> !e ]]'
+      where:
+        - meta: '!B-grafted'
+          function: graft
+          args:
+            - '!B-cps'
+            - 'Φ.hone.emit'
+            - '!B-auto'
+        - meta: '!e'
+          function: size
+          args: ['!B-grafted']

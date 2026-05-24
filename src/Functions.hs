@@ -45,6 +45,7 @@ buildTerm' "number" = _number
 buildTerm' "sum" = _sum
 buildTerm' "join" = _join
 buildTerm' "splice" = _splice
+buildTerm' "graft" = _graft
 buildTerm' func = _unsupported func
 
 argToBytes :: Y.ExtraArgument -> Subst -> IO Bytes
@@ -250,14 +251,20 @@ _join args subst = do
         _ -> AtLabel "unknown"
 
 _splice :: BuildTermMethod
-_splice [Y.ArgBinding inArg, Y.ArgExpression sentExpr, Y.ArgBinding repArg] subst = do
+_splice = _spliceLike "splice" True
+
+_graft :: BuildTermMethod
+_graft = _spliceLike "graft" False
+
+_spliceLike :: String -> Bool -> BuildTermMethod
+_spliceLike name keepMarker [Y.ArgBinding inArg, Y.ArgExpression sentExpr, Y.ArgBinding repArg] subst = do
   inBds <- buildBindingThrows inArg subst
   repBds <- buildBindingThrows repArg subst
   mapM_ validateRep repBds
   (sentinel, _) <- buildExpressionThrows sentExpr subst
   let avoid = map Y.ArgAttribute (attributesFromBindings (inBds ++ repBds))
-  spliced <- splice inBds sentinel repBds avoid
-  pure (TeBindings spliced)
+  result <- walk inBds sentinel repBds avoid
+  pure (TeBindings result)
   where
     validateRep :: Binding -> IO ()
     validateRep (BiTau (AtLabel _) _) = pure ()
@@ -266,19 +273,20 @@ _splice [Y.ArgBinding inArg, Y.ArgExpression sentExpr, Y.ArgBinding repArg] subs
       throwIO
         ( userError
             ( printf
-                "Function splice() can only rename τ-labelled bindings in the replacement group, but got '%s' which would produce duplicates when spliced more than once"
+                "Function %s() can only rename τ-labelled bindings in the replacement group, but got '%s' which would produce duplicates when applied at more than one position"
+                name
                 (printBinding bd)
             )
         )
-    splice :: [Binding] -> Expression -> [Binding] -> [Y.ExtraArgument] -> IO [Binding]
-    splice [] _ _ _ = pure []
-    splice (bd : rest) sent rep avoid
+    walk :: [Binding] -> Expression -> [Binding] -> [Y.ExtraArgument] -> IO [Binding]
+    walk [] _ _ _ = pure []
+    walk (bd : rest) sent rep avoid
       | matches sent bd = do
           fresh <- traverse (renamed avoid) rep
-          tail' <- splice rest sent rep avoid
-          pure (fresh ++ bd : tail')
+          tail' <- walk rest sent rep avoid
+          pure (fresh ++ (if keepMarker then bd : tail' else tail'))
       | otherwise = do
-          tail' <- splice rest sent rep avoid
+          tail' <- walk rest sent rep avoid
           pure (bd : tail')
     matches :: Expression -> Binding -> Bool
     matches sent (BiTau _ (ExFormation bds)) = any (isPhi sent) bds
@@ -291,14 +299,15 @@ _splice [Y.ArgBinding inArg, Y.ArgExpression sentExpr, Y.ArgBinding repArg] subs
       term <- _randomTau avoid subst
       case term of
         TeAttribute attr -> pure (BiTau attr expr)
-        _ -> throwIO (userError "Failed to generate fresh tau attribute for splice")
+        _ -> throwIO (userError (printf "Failed to generate fresh tau attribute for %s" name))
     renamed avoid (BiVoid (AtLabel _)) = do
       term <- _randomTau avoid subst
       case term of
         TeAttribute attr -> pure (BiVoid attr)
-        _ -> throwIO (userError "Failed to generate fresh tau attribute for splice")
+        _ -> throwIO (userError (printf "Failed to generate fresh tau attribute for %s" name))
     renamed _ bd = pure bd
-_splice _ _ = throwIO (userError "Function splice() requires exactly 3 arguments: input bindings, sentinel expression, replacement bindings")
+_spliceLike name _ _ _ =
+  throwIO (userError (printf "Function %s() requires exactly 3 arguments: input bindings, sentinel expression, replacement bindings" name))
 
 _unsupported :: BuildTermFunc
 _unsupported func _ _ = throwIO (userError (printf "Function %s() is not supported or does not exist" func))
