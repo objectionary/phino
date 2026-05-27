@@ -25,7 +25,7 @@ import Must (Must (..))
 import Rewriter (RewriteContext (RewriteContext), Rewritten, rewrite)
 import Rule (RuleContext (RuleContext), isNF)
 import Text.Printf (printf)
-import Yaml (ExtraArgument (ArgAttribute), normalizationRules)
+import Yaml (normalizationRules)
 
 type Dataized = (Maybe Bytes, [Rewritten])
 
@@ -209,7 +209,7 @@ leadsTo ((prog, _) :| rest) rule expr DataizeContext{..} = do
 -- which refers to expression we want to dataize.
 _dataize :: Expression -> DataizeContext -> IO (Maybe Bytes)
 _dataize expr ctx@DataizeContext{_buildTerm = buildTerm, _program = Program (ExFormation bds)} = do
-  (TeAttribute attr) <- buildTerm "random-tau" (map ArgAttribute (attributesFromBindings bds)) substEmpty
+  (TeAttribute attr) <- buildTerm "random-tau" [] substEmpty
   let prog = Program (ExFormation (BiTau attr expr : bds))
   (bts, _) <- dataize' (expr, (prog, Nothing) :| []) ctx{_program = prog}
   pure bts

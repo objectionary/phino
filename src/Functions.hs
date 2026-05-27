@@ -12,9 +12,7 @@ import Control.Monad (when)
 import qualified Data.ByteString.Char8 as B
 import Data.Functor
 import qualified Data.Set as Set
-import qualified Data.Text as T
 import Deps
-import GHC.IO (unsafePerformIO)
 import Logger (logDebug)
 import Matcher
 import Misc
@@ -22,6 +20,7 @@ import Parser (parseAttributeThrows, parseNumberThrows)
 import Printer (printAttribute, printBinding, printExpression, printExtraArg)
 import Random (randomString)
 import Regexp
+import Tau (freshTau)
 import Text.Printf (printf)
 import qualified Yaml as Y
 
@@ -74,29 +73,13 @@ _scope [Y.ArgExpression expr] subst = do
   pure (TeExpression scope)
 _scope _ _ = throwIO (userError "Function scope() requires exactly 1 argument as expression")
 
+-- Uniqueness is the engine's job: 'freshTau' draws from the document-wide
+-- avoid-set seeded at the start of the run, so no collision list is needed.
+-- Any arguments are accepted but ignored for backward compatibility.
 _randomTau :: BuildTermMethod
-_randomTau args subst = do
-  attrs <- argsToAttrs args
-  tau <- randomTau attrs
-  pure (TeAttribute (AtLabel (T.pack tau)))
-  where
-    argsToAttrs :: [Y.ExtraArgument] -> IO [String]
-    argsToAttrs [] = pure []
-    argsToAttrs (arg : rest) = case arg of
-      Y.ArgExpression _ -> argsToAttrs rest
-      Y.ArgAttribute attr -> do
-        attr' <- buildAttributeThrows attr subst
-        rest' <- argsToAttrs rest
-        pure (printAttribute attr' : rest')
-      Y.ArgBinding bd -> do
-        bds <- buildBindingThrows bd subst
-        rest' <- argsToAttrs rest
-        pure (map show (attributesFromBindings bds) ++ rest')
-      Y.ArgBytes _ -> throwIO (userError "Bytes can't be argument of random-tau() function")
-    randomTau :: [String] -> IO String
-    randomTau attrs = do
-      tau <- randomString "a🌵%d"
-      if tau `elem` attrs then randomTau attrs else pure tau
+_randomTau _ _ = do
+  tau <- freshTau
+  pure (TeAttribute (AtLabel tau))
 
 _dataize :: BuildTermMethod
 _dataize [Y.ArgBytes bytes] subst = do
@@ -218,7 +201,7 @@ _join :: BuildTermMethod
 _join [] _ = pure (TeBindings [])
 _join args subst = do
   bds <- buildBindings args
-  pure (TeBindings (join' bds Set.empty))
+  TeBindings <$> join' bds Set.empty
   where
     buildBindings :: [Y.ExtraArgument] -> IO [Binding]
     buildBindings [] = pure []
@@ -227,8 +210,8 @@ _join args subst = do
       next <- buildBindings args'
       pure (bds ++ next)
     buildBindings _ = throwIO (userError "Function 'join' can work with bindings only")
-    join' :: [Binding] -> Set.Set Attribute -> [Binding]
-    join' [] _ = []
+    join' :: [Binding] -> Set.Set Attribute -> IO [Binding]
+    join' [] _ = pure []
     join' (bd : bds) attrs =
       case attributesFromBindings [bd] of
         [attr] ->
@@ -236,19 +219,22 @@ _join args subst = do
             then
               if attr == AtRho || attr == AtDelta || attr == AtLambda
                 then join' bds attrs
-                else
-                  let new = case bd of
-                        BiTau at ex -> BiTau (updated at attrs) ex
-                        BiVoid at -> BiVoid (updated at attrs)
-                        other -> other
-                   in new : join' bds attrs
-            else bd : join' bds (Set.insert attr attrs)
-        _ -> bd : join' bds attrs
-    updated :: Attribute -> Set.Set Attribute -> Attribute
-    updated _ attrs =
-      case unsafePerformIO (_randomTau (map Y.ArgAttribute (Set.toList attrs)) subst) of
-        TeAttribute attr' -> attr'
-        _ -> AtLabel "unknown"
+                else do
+                  new <- case bd of
+                    BiTau _ ex -> do
+                      attr' <- freshAttr
+                      pure (BiTau attr' ex)
+                    BiVoid _ -> BiVoid <$> freshAttr
+                    other -> pure other
+                  (new :) <$> join' bds attrs
+            else (bd :) <$> join' bds (Set.insert attr attrs)
+        _ -> (bd :) <$> join' bds attrs
+    freshAttr :: IO Attribute
+    freshAttr = do
+      term <- _randomTau [] subst
+      case term of
+        TeAttribute attr' -> pure attr'
+        _ -> pure (AtLabel "unknown")
 
 _splice :: BuildTermMethod
 _splice = _spliceLike "splice" True
@@ -262,8 +248,7 @@ _spliceLike name keepMarker [Y.ArgBinding inArg, Y.ArgExpression sentExpr, Y.Arg
   repBds <- buildBindingThrows repArg subst
   mapM_ validateRep repBds
   (sentinel, _) <- buildExpressionThrows sentExpr subst
-  let avoid = map Y.ArgAttribute (attributesFromBindings (inBds ++ repBds))
-  result <- walk inBds sentinel repBds avoid
+  result <- walk inBds sentinel repBds
   pure (TeBindings result)
   where
     validateRep :: Binding -> IO ()
@@ -278,15 +263,15 @@ _spliceLike name keepMarker [Y.ArgBinding inArg, Y.ArgExpression sentExpr, Y.Arg
                 (printBinding bd)
             )
         )
-    walk :: [Binding] -> Expression -> [Binding] -> [Y.ExtraArgument] -> IO [Binding]
-    walk [] _ _ _ = pure []
-    walk (bd : rest) sent rep avoid
+    walk :: [Binding] -> Expression -> [Binding] -> IO [Binding]
+    walk [] _ _ = pure []
+    walk (bd : rest) sent rep
       | matches sent bd = do
-          fresh <- traverse (renamed avoid) rep
-          tail' <- walk rest sent rep avoid
+          fresh <- traverse renamed rep
+          tail' <- walk rest sent rep
           pure (fresh ++ (if keepMarker then bd : tail' else tail'))
       | otherwise = do
-          tail' <- walk rest sent rep avoid
+          tail' <- walk rest sent rep
           pure (bd : tail')
     matches :: Expression -> Binding -> Bool
     matches sent (BiTau _ (ExFormation bds)) = any (isPhi sent) bds
@@ -294,18 +279,18 @@ _spliceLike name keepMarker [Y.ArgBinding inArg, Y.ArgExpression sentExpr, Y.Arg
     isPhi :: Expression -> Binding -> Bool
     isPhi sent (BiTau AtPhi expr) = expr == sent
     isPhi _ _ = False
-    renamed :: [Y.ExtraArgument] -> Binding -> IO Binding
-    renamed avoid (BiTau (AtLabel _) expr) = do
-      term <- _randomTau avoid subst
+    renamed :: Binding -> IO Binding
+    renamed (BiTau (AtLabel _) expr) = do
+      term <- _randomTau [] subst
       case term of
         TeAttribute attr -> pure (BiTau attr expr)
         _ -> throwIO (userError (printf "Failed to generate fresh tau attribute for %s" name))
-    renamed avoid (BiVoid (AtLabel _)) = do
-      term <- _randomTau avoid subst
+    renamed (BiVoid (AtLabel _)) = do
+      term <- _randomTau [] subst
       case term of
         TeAttribute attr -> pure (BiVoid attr)
         _ -> throwIO (userError (printf "Failed to generate fresh tau attribute for %s" name))
-    renamed _ bd = pure bd
+    renamed bd = pure bd
 _spliceLike name _ _ _ =
   throwIO (userError (printf "Function %s() requires exactly 3 arguments: input bindings, sentinel expression, replacement bindings" name))
 

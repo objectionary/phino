@@ -31,6 +31,7 @@ import Rewriter
 import Rule (RuleContext (..), matchProgramWithRule)
 import System.Directory (doesFileExist, getModificationTime)
 import System.Exit (exitSuccess)
+import Tau (seedTaus)
 import Text.Printf (printf)
 import XMIR
 import qualified Yaml as Y
@@ -47,6 +48,7 @@ runRewrite OptsRewrite{..} = do
   validateBreakpoint _breakpoint rules
   input <- readInput _inputFile
   program <- parseProgram input _inputFormat
+  seedTaus program
   logDebug (printf "Amount of rewriting cycles across all the rules: %d, per rule: %d" _maxCycles _maxDepth)
   let listing = case (rules, _inputFormat, _outputFormat) of
         ([], XMIR, XMIR) -> (\_ -> escapeXML input)
@@ -139,6 +141,7 @@ runDataize OptsDataize{..} = do
   [foc] <- validatedDispatches "focus" [_focus]
   input <- readInput _inputFile
   prog <- parseProgram input _inputFormat
+  seedTaus prog
   let printCtx = printProgCtx foc
       canonize = if _canonize then C.canonize else id
       exclude = (`F.exclude` excluded)
@@ -223,6 +226,7 @@ runMatch :: OptsMatch -> IO ()
 runMatch OptsMatch{..} = do
   input <- readInput _inputFile
   prog <- parseProgram input PHI
+  seedTaus prog
   if isNothing _pattern
     then logDebug "The --pattern is not provided, no substitutions are built"
     else do

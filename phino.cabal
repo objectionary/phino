@@ -67,6 +67,7 @@ library
     Rewriter
     Rule
     Sugar
+    Tau
     XMIR
     Yaml
 
@@ -142,6 +143,7 @@ test-suite spec
     RewriterSpec
     RuleSpec
     Spec
+    TauSpec
     XMIRSpec
     YamlSpec
 
