@@ -14,7 +14,7 @@ emptyProgram :: Program
 emptyProgram = Program (ExFormation [])
 
 programWith :: [Attribute] -> Program
-programWith attrs = Program (ExFormation [BiTau attr ExGlobal | attr <- attrs])
+programWith attrs = Program (ExFormation (map (`BiTau` ExGlobal) attrs))
 
 spec :: Spec
 spec = describe "Tau" $ do

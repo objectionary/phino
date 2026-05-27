@@ -77,9 +77,7 @@ _scope _ _ = throwIO (userError "Function scope() requires exactly 1 argument as
 -- avoid-set seeded at the start of the run, so no collision list is needed.
 -- Any arguments are accepted but ignored for backward compatibility.
 _randomTau :: BuildTermMethod
-_randomTau _ _ = do
-  tau <- freshTau
-  pure (TeAttribute (AtLabel tau))
+_randomTau _ _ = TeAttribute . AtLabel <$> freshTau
 
 _dataize :: BuildTermMethod
 _dataize [Y.ArgBytes bytes] subst = do
@@ -221,9 +219,7 @@ _join args subst = do
                 then join' bds attrs
                 else do
                   new <- case bd of
-                    BiTau _ ex -> do
-                      attr' <- freshAttr
-                      pure (BiTau attr' ex)
+                    BiTau _ ex -> (`BiTau` ex) <$> freshAttr
                     BiVoid _ -> BiVoid <$> freshAttr
                     other -> pure other
                   (new :) <$> join' bds attrs
