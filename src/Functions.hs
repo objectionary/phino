@@ -75,9 +75,16 @@ _scope _ _ = throwIO (userError "Function scope() requires exactly 1 argument as
 
 -- Uniqueness is the engine's job: 'freshTau' draws from the document-wide
 -- avoid-set seeded at the start of the run, so no collision list is needed.
--- Any arguments are accepted but ignored for backward compatibility.
+-- Legacy attribute/binding arguments are accepted but ignored; bytes are
+-- still rejected so rule mistakes are not silently accepted.
 _randomTau :: BuildTermMethod
-_randomTau _ _ = TeAttribute . AtLabel <$> freshTau
+_randomTau args _ = do
+  mapM_ rejectBytes args
+  TeAttribute . AtLabel <$> freshTau
+  where
+    rejectBytes :: Y.ExtraArgument -> IO ()
+    rejectBytes (Y.ArgBytes _) = throwIO (userError "Bytes can't be argument of random-tau() function")
+    rejectBytes _ = pure ()
 
 _dataize :: BuildTermMethod
 _dataize [Y.ArgBytes bytes] subst = do
@@ -230,7 +237,7 @@ _join args subst = do
       term <- _randomTau [] subst
       case term of
         TeAttribute attr' -> pure attr'
-        _ -> pure (AtLabel "unknown")
+        _ -> throwIO (userError "random-tau() did not return an attribute, internal invariant violated")
 
 _splice :: BuildTermMethod
 _splice = _spliceLike "splice" True

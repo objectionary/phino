@@ -1,0 +1,17 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+input: |
+  {⟦ x -> "foo" ⟧}
+output: |-
+  {⟦ x -> "foo", a🌵0 -> ⟦⟧ ⟧}
+rules:
+  custom:
+    - name: append fresh tau
+      pattern: |
+        [[ x -> !e ]]
+      result: |
+        [[ x -> !e, !a -> [[ ]], ^ -> ? ]]
+      where:
+        - meta: '!a'
+          function: random-tau

@@ -23,6 +23,7 @@ import Parser (parseProgramThrows)
 import Printer (printProgram)
 import Rewriter (RewriteContext (RewriteContext), rewrite)
 import System.FilePath (makeRelative, replaceExtension, (</>))
+import Tau (seedTaus)
 import Test.Hspec (Spec, describe, expectationFailure, it, pending, runIO)
 import Yaml (normalizationRules)
 import Yaml qualified as Y
@@ -84,6 +85,7 @@ spec =
             Just True -> pending
             _ -> do
               prog <- parseProgramThrows (input pack)
+              seedTaus prog
               rules' <- case rules pack of
                 Just _rules -> case custom _rules of
                   Just custom' -> pure custom'

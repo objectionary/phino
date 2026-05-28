@@ -9,12 +9,12 @@
 -- remember every attribute label it already uses. Each minted name is added
 -- back to that set so later firings (the fixpoint loop re-applies rules across
 -- cycles) never reuse one. A monotonic cursor advances past taken indices so
--- minting stays O(1) per call rather than rescanning. Names are sequential
--- rather than random, which makes the rewritten output deterministic.
+-- minting never rescans the document. Names are sequential rather than
+-- random, which makes the rewritten output deterministic.
 module Tau (seedTaus, freshTau) where
 
 import AST
-import Data.IORef (IORef, newIORef, readIORef, writeIORef)
+import Data.IORef (IORef, atomicModifyIORef', newIORef, writeIORef)
 import Data.Set (Set)
 import qualified Data.Set as Set
 import Data.Text (Text)
@@ -34,13 +34,14 @@ seedTaus (Program expr) = writeIORef taus (exprLabels expr, 0)
 
 -- Mint a fresh, deterministic 𝜏-label that collides with no taken name,
 -- advancing the cursor past taken indices and recording the new name so it is
--- never handed out again.
+-- never handed out again. Atomic so concurrent callers cannot mint duplicates
+-- or lose updates.
 freshTau :: IO Text
-freshTau = do
-  (taken, cursor) <- readIORef taus
-  let (minted, idx) = mint taken cursor
-  writeIORef taus (Set.insert minted taken, idx + 1)
-  pure minted
+freshTau = atomicModifyIORef' taus advance
+  where
+    advance (taken, cursor) =
+      let (minted, idx) = mint taken cursor
+       in ((Set.insert minted taken, idx + 1), minted)
 
 -- Find the first index at or after the cursor whose name is still free.
 mint :: Set Text -> Int -> (Text, Int)
