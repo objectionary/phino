@@ -1,0 +1,28 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# Demonstrates that random-tau steers clear of names taken anywhere in the
+# document, not just in the formation being rewritten. The 'used' formation
+# already owns 'a🌵0' and 'a🌵1', so the freshly minted label for 'target'
+# must be 'a🌵2'.
+input: |
+  Q -> [[
+    used -> [[ a🌵0 -> ⟦⟧, a🌵1 -> ⟦⟧ ]],
+    target -> [[ x -> "foo" ]]
+  ]]
+output: |-
+  Q -> [[
+    used -> [[ a🌵0 -> ⟦⟧, a🌵1 -> ⟦⟧ ]],
+    target -> [[ x -> "foo", a🌵2 -> ⟦⟧ ]]
+  ]]
+rules:
+  custom:
+    - name: append fresh tau into target
+      pattern: |
+        [[ x -> !e ]]
+      result: |
+        [[ x -> !e, !a -> [[ ]], ^ -> ? ]]
+      where:
+        - meta: '!a'
+          function: random-tau
+          args: []
