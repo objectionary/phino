@@ -79,7 +79,7 @@ _scope _ _ = throwIO (userError "Function scope() requires exactly 1 argument as
 -- not silently accepted.
 _randomTau :: BuildTermMethod
 _randomTau [] _ = TeAttribute . AtLabel <$> freshTau
-_randomTau args _ = throwIO (userError ("random-tau() takes no arguments, got " ++ show (length args)))
+_randomTau _ _ = throwIO (userError "Function random-tau() requires exactly 0 arguments")
 
 _dataize :: BuildTermMethod
 _dataize [Y.ArgBytes bytes] subst = do
