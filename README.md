@@ -34,7 +34,7 @@ Install [Cabal][cabal] first and then:
 
 ```bash
 cabal update
-cabal install --overwrite-policy=always phino-0.0.0.72
+cabal install --overwrite-policy=always phino-0.0.0.73
 phino --version
 ```
 
