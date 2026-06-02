@@ -120,7 +120,15 @@ instance FromJSON ExtraArgument where
       ]
 
 instance FromJSON Extra where
-  parseJSON = genericParseJSON defaultOptions
+  parseJSON =
+    withObject
+      "Extra"
+      ( \o ->
+          Extra
+            <$> o .: "meta"
+            <*> o .: "function"
+            <*> o .:? "args" .!= []
+      )
 
 instance FromJSON Rule where
   parseJSON =

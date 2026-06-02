@@ -15,4 +15,3 @@ rules:
       where:
         - meta: '!a'
           function: random-tau
-          args: []
