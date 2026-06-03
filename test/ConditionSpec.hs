@@ -37,6 +37,7 @@ spec = do
       , ("alpha(y)", Y.Alpha (AtLabel "y"))
       , ("eq(1,-2)", Y.Eq (Y.CmpNum (Y.Literal 1)) (Y.CmpNum (Y.Literal (-2))))
       , ("eq(index(z),length(!B1))", Y.Eq (Y.CmpNum (Y.Index (AtLabel "z"))) (Y.CmpNum (Y.Length (BiMeta "B1"))))
+      , ("eq(index(z),domain(!B1))", Y.Eq (Y.CmpNum (Y.Index (AtLabel "z"))) (Y.CmpNum (Y.Domain (BiMeta "B1"))))
       , ("eq(!a1, !e2)", Y.Eq (Y.CmpAttr (AtMeta "a1")) (Y.CmpExpr (ExMeta "e2")))
       , ("or(xi-free(!e1), nf(Q.x))", Y.Or [Y.XiFree (ExMeta "e1"), Y.NF (ExDispatch ExGlobal (AtLabel "x"))])
       , ("and(matches(\"hi\", !e),part-of(!e, !B))", Y.And [Y.Matches "hi" (ExMeta "e"), Y.PartOf (ExMeta "e") (BiMeta "B")])

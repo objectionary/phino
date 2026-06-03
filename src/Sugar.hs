@@ -176,6 +176,7 @@ instance ToSalty SET where
 
 instance ToSalty NUMBER where
   toSalty LENGTH{..} = LENGTH (toSalty binding)
+  toSalty DOMAIN{..} = DOMAIN (toSalty binding)
   toSalty num = num
 
 instance ToSalty COMPARABLE where

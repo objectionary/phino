@@ -202,6 +202,7 @@ data EQUAL
 data NUMBER
   = INDEX {attr :: ATTRIBUTE}
   | LENGTH {binding :: BINDING}
+  | DOMAIN {binding :: BINDING}
   | LITERAL {num :: Int}
   deriving (Eq, Show)
 
@@ -488,6 +489,7 @@ instance ToCST Y.Comparable COMPARABLE where
 instance ToCST Y.Number NUMBER where
   toCST (Y.Index attr) _ = INDEX (attributeToCST attr)
   toCST (Y.Length binding) _ = LENGTH (bindingsToCST [binding])
+  toCST (Y.Domain binding) _ = DOMAIN (bindingsToCST [binding])
   toCST (Y.Literal num) _ = LITERAL num
 
 instance ToCST Y.ExtraArgument EXTRA_ARG where

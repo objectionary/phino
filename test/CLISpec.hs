@@ -942,7 +942,7 @@ spec = do
             , "\\trrule{alpha}"
             , "  { [[ B_1, \\tau_1 -> ?, B_2 ]] ( \\tau_2 -> e ) }"
             , "  { [[ B_1, \\tau_1 -> ?, B_2 ]] ( \\tau_1 -> e ) }"
-            , "  { if $ \\indexof{ \\tau_2 } = \\vert B_1 \\vert $ }"
+            , "  { if $ \\indexof{ \\tau_2 } = \\vert \\overline{ B_1 } \\vert $ }"
             , "  { }"
             , "\\trrule{copy}"
             , "  { [[ B_1, \\tau -> ?, B_2 ]] ( \\tau -> e ) }"

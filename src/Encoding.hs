@@ -81,6 +81,7 @@ instance ToASCII SET where
 instance ToASCII NUMBER where
   toASCII INDEX{..} = INDEX (toASCII attr)
   toASCII LENGTH{..} = LENGTH (toASCII binding)
+  toASCII DOMAIN{..} = DOMAIN (toASCII binding)
   toASCII literal@LITERAL{} = literal
 
 instance ToASCII COMPARABLE where

@@ -59,6 +59,11 @@ number =
         _ <- rparen
         return (Y.Length bd)
     , do
+        _ <- symbol "domain" >> lparen
+        bd <- _binding phiParser
+        _ <- rparen
+        return (Y.Domain bd)
+    , do
         sign <- optional (choice [char '-', char '+'])
         unsigned <- lexeme L.decimal
         return

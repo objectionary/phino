@@ -289,6 +289,7 @@ instance ToLaTeX SET where
 instance ToLaTeX NUMBER where
   toLaTeX INDEX{..} = INDEX (toLaTeX attr)
   toLaTeX LENGTH{..} = LENGTH (toLaTeX binding)
+  toLaTeX DOMAIN{..} = DOMAIN (toLaTeX binding)
   toLaTeX literal@LITERAL{} = literal
 
 instance ToLaTeX COMPARABLE where
