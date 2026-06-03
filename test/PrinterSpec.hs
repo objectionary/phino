@@ -71,6 +71,28 @@ spec = do
           it desc (printProgram prog `shouldBe` expected)
       )
 
+  describe "printProgram in salty does not inject a duplicate void rho when rho is already present" $
+    forM_
+      [
+        ( "rho bound to an empty formation"
+        , Program (ExFormation [BiTau AtRho (ExFormation [BiVoid AtRho])])
+        , "Φ ↦ ⟦ ρ ↦ ⟦ ρ ↦ ∅ ⟧ ⟧"
+        )
+      ,
+        ( "rho bound to a non empty formation"
+        , Program (ExFormation [BiTau AtRho (ExFormation [BiVoid (AtLabel "名前"), BiVoid AtRho])])
+        , "Φ ↦ ⟦ ρ ↦ ⟦ 名前 ↦ ∅, ρ ↦ ∅ ⟧ ⟧"
+        )
+      ,
+        ( "rho binding placed after another binding"
+        , Program (ExFormation [BiTau (AtLabel "café") ExGlobal, BiTau AtRho (ExFormation [BiVoid AtRho])])
+        , "Φ ↦ ⟦ café ↦ Φ, ρ ↦ ⟦ ρ ↦ ∅ ⟧ ⟧"
+        )
+      ]
+      ( \(desc, prog, expected) ->
+          it desc (printProgram' prog (SALTY, UNICODE, SINGLELINE, defaultMargin) `shouldBe` expected)
+      )
+
   describe "printAttribute with default encoding" $
     forM_
       [ ("label", AtLabel "attr", "attr")

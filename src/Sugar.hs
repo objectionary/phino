@@ -25,12 +25,14 @@ bdWithVoidRho :: BINDING -> BINDING
 bdWithVoidRho BI_EMPTY{..} = BI_PAIR voidRho (BDS_EMPTY tab) tab
 bdWithVoidRho bd@BI_PAIR{pair = PA_VOID{attr = AT_RHO _}} = bd
 bdWithVoidRho bd@BI_PAIR{pair = PA_TAU{attr = AT_RHO _}} = bd
+bdWithVoidRho bd@BI_PAIR{pair = PA_FORMATION{attr = AT_RHO _}} = bd
 bdWithVoidRho BI_PAIR{..} = BI_PAIR pair (bdsWithVoidRho bindings) tab
   where
     bdsWithVoidRho :: BINDINGS -> BINDINGS
     bdsWithVoidRho BDS_EMPTY{..} = BDS_PAIR EOL tab voidRho (BDS_EMPTY tab)
     bdsWithVoidRho bds@BDS_PAIR{pair = PA_VOID{attr = AT_RHO _}} = bds
     bdsWithVoidRho bds@BDS_PAIR{pair = PA_TAU{attr = AT_RHO _}} = bds
+    bdsWithVoidRho bds@BDS_PAIR{pair = PA_FORMATION{attr = AT_RHO _}} = bds
     bdsWithVoidRho BDS_PAIR{..} = BDS_PAIR eol tab pair (bdsWithVoidRho bindings)
     bdsWithVoidRho bds@BDS_META{} = bds
 bdWithVoidRho bd@BI_META{} = bd
