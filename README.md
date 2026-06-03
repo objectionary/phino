@@ -388,55 +388,55 @@ make bench
 === parse/phi ===
   warmup:     3 iterations
   batches:    10 x 1
-  total:      1424691.412 μs
-  avg:        142469.141 μs
-  min:        130114.625 μs
-  max:        173027.565 μs
-  std dev:    16432.682 μs
+  total:      1309885.482 μs
+  avg:        130988.548 μs
+  min:        119182.611 μs
+  max:        164424.034 μs
+  std dev:    17120.368 μs
 === parse/xmir ===
   warmup:     3 iterations
   batches:    10 x 1
-  total:      7703983.064 μs
-  avg:        770398.306 μs
-  min:        707770.767 μs
-  max:        837124.832 μs
-  std dev:    38915.572 μs
+  total:      8166516.875 μs
+  avg:        816651.687 μs
+  min:        746631.521 μs
+  max:        905684.717 μs
+  std dev:    58484.723 μs
 === rewrite/normalize ===
   warmup:     3 iterations
   batches:    10 x 1
-  total:      452270.369 μs
-  avg:        45227.037 μs
-  min:        40900.677 μs
-  max:        49806.157 μs
-  std dev:    3014.635 μs
+  total:      1020794.192 μs
+  avg:        102079.419 μs
+  min:        98049.050 μs
+  max:        109067.886 μs
+  std dev:    2847.343 μs
 === print/sweet/multiline ===
   warmup:     3 iterations
   batches:    10 x 1
-  total:      4258334.485 μs
-  avg:        425833.449 μs
-  min:        422387.581 μs
-  max:        432194.387 μs
-  std dev:    2736.734 μs
+  total:      5308178.500 μs
+  avg:        530817.850 μs
+  min:        500095.243 μs
+  max:        590475.507 μs
+  std dev:    29328.246 μs
 === print/sweet/flat ===
   warmup:     3 iterations
   batches:    10 x 1
-  total:      4292231.466 μs
-  avg:        429223.147 μs
-  min:        387333.675 μs
-  max:        458277.686 μs
-  std dev:    22287.211 μs
+  total:      5104935.589 μs
+  avg:        510493.559 μs
+  min:        449111.602 μs
+  max:        555034.745 μs
+  std dev:    36795.722 μs
 === print/salty/multiline ===
   warmup:     3 iterations
   batches:    10 x 1
-  total:      14200493.450 μs
-  avg:        1420049.345 μs
-  min:        1384869.298 μs
-  max:        1455948.597 μs
-  std dev:    20539.169 μs
+  total:      15066270.227 μs
+  avg:        1506627.023 μs
+  min:        1427131.813 μs
+  max:        1580723.339 μs
+  std dev:    45705.458 μs
 ```
 
 The results were calculated in [this GHA job][benchmark-gha]
-on 2026-06-03 at 08:19,
+on 2026-06-03 at 13:35,
 on Linux with 4 CPUs.
 
 <!-- benchmark_end -->
@@ -472,4 +472,4 @@ or [Stack ≥ 3.0][stack] installed.
 [jna]: https://github.com/java-native-access/jna
 [jna-native]: https://github.com/java-native-access/jna/blob/master/src/com/sun/jna/Native.java
 [jeo]: https://github.com/objectionary/jeo-maven-plugin
-[benchmark-gha]: https://github.com/objectionary/phino/actions/runs/26872396428
+[benchmark-gha]: https://github.com/objectionary/phino/actions/runs/26888116250
