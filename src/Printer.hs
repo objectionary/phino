@@ -86,7 +86,7 @@ printTail (TaDispatch att) (_, encoding, _, _) = "." <> printAttribute' att enco
 
 printMetaValue :: MetaValue -> PrintConfig -> String
 printMetaValue (MvAttribute att) (_, encoding, _, _) = printAttribute' att encoding
-printMetaValue (MvExpression ex _) config = printExpression' ex config
+printMetaValue (MvExpression ex) config = printExpression' ex config
 printMetaValue (MvBytes bts) _ = printBytes bts
 printMetaValue (MvBindings bds) config = printExpression' (ExFormation bds) config
 printMetaValue (MvFunction fun) _ = T.unpack fun

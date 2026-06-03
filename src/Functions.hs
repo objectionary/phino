@@ -61,8 +61,8 @@ argToNumber arg subst = argToBytes arg subst <&> either toDouble id . btsToNum
 
 _contextualize :: BuildTermMethod
 _contextualize [Y.ArgExpression expr, Y.ArgExpression context] subst = do
-  (expr', _) <- buildExpressionThrows expr subst
-  (context', _) <- buildExpressionThrows context subst
+  expr' <- buildExpressionThrows expr subst
+  context' <- buildExpressionThrows context subst
   pure (TeExpression (contextualize expr' context'))
 _contextualize _ _ = throwIO (userError "Function contextualize() requires exactly 2 arguments as expression")
 
@@ -79,7 +79,7 @@ _dataize [Y.ArgBytes bytes] subst = do
   bts <- buildBytesThrows bytes subst
   pure (TeBytes bts)
 _dataize [Y.ArgExpression expr] subst = do
-  (expr', _) <- buildExpressionThrows expr subst
+  expr' <- buildExpressionThrows expr subst
   case expr' of
     DataObject _ bytes -> pure (TeBytes bytes)
     _ -> throwIO (userError "Only data objects and bytes are supported by 'dataize' function now")
@@ -157,7 +157,7 @@ _tau _ _ = throwIO (userError "Function tau() requires exactly 1 argument as exp
 
 _string :: BuildTermMethod
 _string [Y.ArgExpression expr] subst = do
-  (expr', _) <- buildExpressionThrows expr subst
+  expr' <- buildExpressionThrows expr subst
   str <- case expr' of
     DataNumber bts -> pure (DataString (strToBts (either show show (btsToNum bts))))
     DataString bts -> pure (DataString bts)
@@ -177,7 +177,7 @@ _string _ _ = throwIO (userError "Function string() requires exactly 1 argument 
 
 _number :: BuildTermMethod
 _number [Y.ArgExpression expr] subst = do
-  (expr', _) <- buildExpressionThrows expr subst
+  expr' <- buildExpressionThrows expr subst
   case expr' of
     DataString bts -> do
       num <- parseNumberThrows (btsToUnescapedStr bts)
@@ -238,7 +238,7 @@ _spliceLike name keepMarker [Y.ArgBinding inArg, Y.ArgExpression sentExpr, Y.Arg
   inBds <- buildBindingThrows inArg subst
   repBds <- buildBindingThrows repArg subst
   mapM_ validateRep repBds
-  (sentinel, _) <- buildExpressionThrows sentExpr subst
+  sentinel <- buildExpressionThrows sentExpr subst
   result <- walk inBds sentinel repBds
   pure (TeBindings result)
   where

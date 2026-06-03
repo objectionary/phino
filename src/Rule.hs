@@ -148,26 +148,26 @@ _eq (Y.CmpExpr left) (Y.CmpExpr right) subst _ = pure [subst | compareExprs left
   where
     compareExprs :: Expression -> Expression -> Subst -> Bool
     compareExprs (ExMeta left) (ExMeta right) (Subst mp) = case (M.lookup left mp, M.lookup right mp) of
-      (Just (MvExpression left' _), Just (MvExpression right' _)) -> compareExprs left' right' (Subst mp)
+      (Just (MvExpression left'), Just (MvExpression right')) -> compareExprs left' right' (Subst mp)
       _ -> False
     compareExprs expr (ExMeta meta) (Subst mp) = case M.lookup meta mp of
-      Just (MvExpression found _) -> expr == found
+      Just (MvExpression found) -> expr == found
       _ -> False
     compareExprs (ExMeta meta) expr (Subst mp) = case M.lookup meta mp of
-      Just (MvExpression found _) -> expr == found
+      Just (MvExpression found) -> expr == found
       _ -> False
     compareExprs left right _ = left == right
 _eq _ _ _ _ = pure []
 
 _nf :: Expression -> Subst -> RuleContext -> IO [Subst]
 _nf (ExMeta meta) (Subst mp) ctx = case M.lookup meta mp of
-  Just (MvExpression expr _) -> _nf expr (Subst mp) ctx
+  Just (MvExpression expr) -> _nf expr (Subst mp) ctx
   _ -> pure []
 _nf expr subst ctx = pure [subst | isNF expr ctx]
 
 _xiFree :: Expression -> Subst -> RuleContext -> IO [Subst]
 _xiFree (ExMeta meta) (Subst mp) ctx = case M.lookup meta mp of
-  Just (MvExpression expr _) -> _xiFree expr (Subst mp) ctx
+  Just (MvExpression expr) -> _xiFree expr (Subst mp) ctx
   _ -> pure []
 _xiFree (ExFormation _) subst _ = pure [subst]
 _xiFree ExThis _ _ = pure []
@@ -181,7 +181,7 @@ _xiFree _ _ _ = pure []
 
 _matches :: String -> Expression -> Subst -> RuleContext -> IO [Subst]
 _matches pat (ExMeta meta) (Subst mp) ctx = case M.lookup meta mp of
-  Just (MvExpression expr _) -> _matches pat expr (Subst mp) ctx
+  Just (MvExpression expr) -> _matches pat expr (Subst mp) ctx
   _ -> pure []
 _matches pat expr subst ctx = do
   (TeBytes tgt) <- _buildTerm ctx "dataize" [Y.ArgExpression expr] subst
@@ -190,7 +190,7 @@ _matches pat expr subst ctx = do
 
 _partOf :: Expression -> Binding -> Subst -> RuleContext -> IO [Subst]
 _partOf exp bd subst _ = do
-  (exp', _) <- buildExpressionThrows exp subst
+  exp' <- buildExpressionThrows exp subst
   bds <- buildBindingThrows bd subst
   pure [subst | partOf exp' bds]
   where
@@ -255,7 +255,7 @@ extraSubstitutions substs extras RuleContext{..} = case extras of
                   meta <- case term of
                     TeExpression expr -> do
                       logDebug (printf "Function %s() returned expression:\n%s" func (printExpression expr))
-                      pure (MvExpression expr defaultScope)
+                      pure (MvExpression expr)
                     TeAttribute attr -> do
                       logDebug (printf "Function %s() returned attribute: %s" func (printAttribute attr))
                       pure (MvAttribute attr)

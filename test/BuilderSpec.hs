@@ -14,7 +14,7 @@ import Data.Text qualified as T
 import Matcher
 import Test.Hspec (Example (Arg), Expectation, Spec, SpecWith, anyException, describe, it, shouldBe, shouldSatisfy, shouldThrow)
 
-test :: (Show a, Eq a) => (a -> Subst -> Either String (a, a)) -> [(String, a, [(T.Text, MetaValue)], Either String (a, a))] -> SpecWith (Arg Expectation)
+test :: (Show a, Eq a) => (a -> Subst -> Either String a) -> [(String, a, [(T.Text, MetaValue)], Either String a)] -> SpecWith (Arg Expectation)
 test function useCases =
   forM_ useCases $ \(desc, expr, mp, res) ->
     it desc $ function expr (Subst (Map.fromList mp)) `shouldBe` res
@@ -28,13 +28,13 @@ spec = do
         ( "Q.!a => (!a >> x) => Q.x"
         , ExDispatch ExGlobal (AtMeta "a")
         , [("a", MvAttribute (AtLabel "x"))]
-        , Right (ExDispatch ExGlobal (AtLabel "x"), defaultScope)
+        , Right (ExDispatch ExGlobal (AtLabel "x"))
         )
       ,
         ( "Q.c(!a -> !e) => (!a >> x, !e >> $.y.z) => Q.c(x -> $.y.z)"
         , ExApplication (ExDispatch ExGlobal (AtLabel "c")) (BiTau (AtMeta "a") (ExMeta "e"))
-        , [("a", MvAttribute (AtLabel "x")), ("e", MvExpression (ExDispatch (ExDispatch ExThis (AtLabel "y")) (AtLabel "z")) defaultScope)]
-        , Right (ExApplication (ExDispatch ExGlobal (AtLabel "c")) (BiTau (AtLabel "x") (ExDispatch (ExDispatch ExThis (AtLabel "y")) (AtLabel "z"))), defaultScope)
+        , [("a", MvAttribute (AtLabel "x")), ("e", MvExpression (ExDispatch (ExDispatch ExThis (AtLabel "y")) (AtLabel "z")))]
+        , Right (ExApplication (ExDispatch ExGlobal (AtLabel "c")) (BiTau (AtLabel "x") (ExDispatch (ExDispatch ExThis (AtLabel "y")) (AtLabel "z"))))
         )
       ,
         ( "[[!a -> $.x, !B]] => (!a >> y, !B >> [[b -> ?, L> Func]]) => [[y -> $.x, b -> ?, L> Func]]"
@@ -46,14 +46,13 @@ spec = do
                 , BiVoid (AtLabel "b")
                 , BiLambda "Func"
                 ]
-            , defaultScope
             )
         )
       ,
         ( "Q * !t => (!t >> [.a, .b, (~1 -> $.x)]) => Q.a.b(~1 -> $.x)"
         , ExMetaTail ExGlobal "t"
         , [("t", MvTail [TaDispatch (AtLabel "a"), TaDispatch (AtLabel "b"), TaApplication (BiTau (AtAlpha 1) (ExDispatch ExThis (AtLabel "x")))])]
-        , Right (ExApplication (ExDispatch (ExDispatch ExGlobal (AtLabel "a")) (AtLabel "b")) (BiTau (AtAlpha 1) (ExDispatch ExThis (AtLabel "x"))), defaultScope)
+        , Right (ExApplication (ExDispatch (ExDispatch ExGlobal (AtLabel "a")) (AtLabel "b")) (BiTau (AtAlpha 1) (ExDispatch ExThis (AtLabel "x"))))
         )
       ,
         ( "Q.!a => () => X"
@@ -65,13 +64,13 @@ spec = do
         ( "!e0(!a1 -> !e1, !a2 => !e2) => (!e0 >> [[]], !a1 >> x, !e1 >> Q, !a2 >> y, !e2 >> $) => [[]](x -> Q, y -> $)"
         , ExApplication (ExApplication (ExMeta "e0") (BiTau (AtMeta "a1") (ExMeta "e1"))) (BiTau (AtMeta "a2") (ExMeta "e2"))
         ,
-          [ ("e0", MvExpression (ExFormation []) defaultScope)
+          [ ("e0", MvExpression (ExFormation []))
           , ("a1", MvAttribute (AtLabel "x"))
-          , ("e1", MvExpression ExGlobal defaultScope)
+          , ("e1", MvExpression ExGlobal)
           , ("a2", MvAttribute (AtLabel "y"))
-          , ("e2", MvExpression ExThis defaultScope)
+          , ("e2", MvExpression ExThis)
           ]
-        , Right (ExApplication (ExApplication (ExFormation []) (BiTau (AtLabel "x") ExGlobal)) (BiTau (AtLabel "y") ExThis), defaultScope)
+        , Right (ExApplication (ExApplication (ExFormation []) (BiTau (AtLabel "x") ExGlobal)) (BiTau (AtLabel "y") ExThis))
         )
       ,
         ( "⟦!a ↦ ∅, !B⟧.!a => (!a >> t, !B >> ⟦ x ↦ ξ.t ⟧ ) => ⟦ t ↦ ∅, x ↦ ξ.t ⟧.t"
@@ -88,7 +87,6 @@ spec = do
                     ]
                 )
                 (AtLabel "t")
-            , defaultScope
             )
         )
       ]
@@ -98,18 +96,18 @@ spec = do
       built <-
         buildExpressionsThrows
           (ExMeta "e")
-          [ substSingle "e" (MvExpression (ExDispatch ExGlobal (AtLabel "x")) defaultScope)
-          , substSingle "e" (MvExpression (ExDispatch ExThis (AtLabel "y")) defaultScope)
+          [ substSingle "e" (MvExpression (ExDispatch ExGlobal (AtLabel "x")))
+          , substSingle "e" (MvExpression (ExDispatch ExThis (AtLabel "y")))
           ]
-      built `shouldBe` [(ExDispatch ExGlobal (AtLabel "x"), defaultScope), (ExDispatch ExThis (AtLabel "y"), defaultScope)]
+      built `shouldBe` [ExDispatch ExGlobal (AtLabel "x"), ExDispatch ExThis (AtLabel "y")]
     it "!e => [(!e1 >> Q.x)] => X" $
       buildExpressionsThrows
         (ExMeta "e")
-        [substSingle "e1" (MvExpression (ExDispatch ExGlobal (AtLabel "x")) defaultScope)]
+        [substSingle "e1" (MvExpression (ExDispatch ExGlobal (AtLabel "x")))]
         `shouldThrow` anyException
 
   describe "build with duplicate attributes in bindings" $ do
     it "build binding with duplicates" $
       buildBinding (BiMeta "B") (substSingle "B" (MvBindings [BiVoid AtRho, BiVoid AtRho])) `shouldSatisfy` isLeft
     it "build formation with duplicates" $
-      buildExpression (ExMeta "e") (substSingle "e" (MvExpression (ExFormation [BiVoid AtRho, BiVoid AtRho]) ExThis)) `shouldSatisfy` isLeft
+      buildExpression (ExMeta "e") (substSingle "e" (MvExpression (ExFormation [BiVoid AtRho, BiVoid AtRho]))) `shouldSatisfy` isLeft
