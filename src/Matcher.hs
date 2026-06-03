@@ -20,7 +20,7 @@ data MetaValue
   | MvBytes Bytes -- !b
   | MvBindings [Binding] -- !B
   | MvFunction Text -- !F
-  | MvExpression Expression Expression -- !e, the second expression is scope, which is closest formation
+  | MvExpression Expression -- !e
   | MvTail [Tail] -- !t
   deriving (Eq, Show)
 
@@ -44,9 +44,6 @@ substEmpty = Subst Map.empty
 substSingle :: Text -> MetaValue -> Subst
 substSingle key value = Subst (Map.singleton key value)
 
-defaultScope :: Expression
-defaultScope = ExFormation [BiVoid AtRho]
-
 -- Combine two substitutions into a single one
 -- Fails if values by the same keys are not equal
 combine :: Subst -> Subst -> Maybe Subst
@@ -54,12 +51,6 @@ combine (Subst a) (Subst b) = combine' (Map.toList b) a
   where
     combine' :: [(Text, MetaValue)] -> Map Text MetaValue -> Maybe Subst
     combine' [] acc = Just (Subst acc)
-    combine' ((key, MvExpression tgt scope) : rest) acc = case Map.lookup key acc of
-      Just (MvExpression expr' _)
-        | expr' == tgt -> combine' rest acc
-        | otherwise -> Nothing
-      Just _ -> Nothing
-      Nothing -> combine' rest (Map.insert key (MvExpression tgt scope) acc)
     combine' ((key, value) : rest) acc = case Map.lookup key acc of
       Just found
         | found == value -> combine' rest acc
@@ -75,44 +66,44 @@ matchAttribute ptn tgt
   | ptn == tgt = [substEmpty]
   | otherwise = []
 
-matchBinding :: Binding -> Binding -> Expression -> [Subst]
-matchBinding (BiVoid pattr) (BiVoid tattr) _ = matchAttribute pattr tattr
-matchBinding (BiDelta (BtMeta meta)) (BiDelta tdata) _ = [substSingle meta (MvBytes tdata)]
-matchBinding (BiDelta pdata) (BiDelta tdata) _
+matchBinding :: Binding -> Binding -> [Subst]
+matchBinding (BiVoid pattr) (BiVoid tattr) = matchAttribute pattr tattr
+matchBinding (BiDelta (BtMeta meta)) (BiDelta tdata) = [substSingle meta (MvBytes tdata)]
+matchBinding (BiDelta pdata) (BiDelta tdata)
   | pdata == tdata = [substEmpty]
   | otherwise = []
-matchBinding (BiLambda pFunc) (BiLambda tFunc) _
+matchBinding (BiLambda pFunc) (BiLambda tFunc)
   | pFunc == tFunc = [substEmpty]
   | otherwise = []
-matchBinding (BiMetaLambda meta) (BiLambda tFunc) _ = [substSingle meta (MvFunction tFunc)]
-matchBinding (BiTau pattr pexp) (BiTau tattr texp) scope = combineMany (matchAttribute pattr tattr) (matchExpression' pexp texp scope)
-matchBinding _ _ _ = []
+matchBinding (BiMetaLambda meta) (BiLambda tFunc) = [substSingle meta (MvFunction tFunc)]
+matchBinding (BiTau pattr pexp) (BiTau tattr texp) = combineMany (matchAttribute pattr tattr) (matchExpression' pexp texp)
+matchBinding _ _ = []
 
 -- Match bindings with ordering
-matchBindings :: [Binding] -> [Binding] -> Expression -> [Subst]
-matchBindings [] [] _ = [substEmpty]
-matchBindings [] _ _ = []
-matchBindings ((BiMeta name) : pbs) tbs scope =
+matchBindings :: [Binding] -> [Binding] -> [Subst]
+matchBindings [] [] = [substEmpty]
+matchBindings [] _ = []
+matchBindings ((BiMeta name) : pbs) tbs =
   let splits = [splitAt idx tbs | idx <- [0 .. length tbs]]
    in catMaybes
         [ combine (substSingle name (MvBindings before)) subst
         | (before, after) <- splits
-        , subst <- matchBindings pbs after scope
+        , subst <- matchBindings pbs after
         ]
-matchBindings (pb : pbs) (tb : tbs) scope = combineMany (matchBinding pb tb scope) (matchBindings pbs tbs scope)
-matchBindings _ _ _ = []
+matchBindings (pb : pbs) (tb : tbs) = combineMany (matchBinding pb tb) (matchBindings pbs tbs)
+matchBindings _ _ = []
 
 -- Recursively go through given target expression and try to find
 -- the head expression which matches to given pattern.
 -- If there's one - build the list of all the tail operations after head expression.
 -- The tail operations may be only dispatches or applications
-tailExpressions :: Expression -> Expression -> Expression -> ([Subst], [Tail])
-tailExpressions ptn tgt scope = case tailExpressionsReversed ptn tgt of
+tailExpressions :: Expression -> Expression -> ([Subst], [Tail])
+tailExpressions ptn tgt = case tailExpressionsReversed ptn tgt of
   Just (substs, tails) -> (substs, reverse tails)
   _ -> ([], [])
   where
     tailExpressionsReversed :: Expression -> Expression -> Maybe ([Subst], [Tail])
-    tailExpressionsReversed ptn' tgt' = case matchExpression' ptn' tgt' scope of
+    tailExpressionsReversed ptn' tgt' = case matchExpression' ptn' tgt' of
       [] -> case tgt' of
         ExDispatch expr attr -> do
           (substs, tails) <- tailExpressionsReversed ptn' expr
@@ -130,43 +121,43 @@ tailExpressions ptn tgt scope = case tailExpressionsReversed ptn tgt of
         _ -> Just ([], [])
       substs -> Just (substs, [])
 
-matchExpression' :: Expression -> Expression -> Expression -> [Subst]
-matchExpression' (ExMeta meta) tgt scope = [substSingle meta (MvExpression tgt scope)]
-matchExpression' ExThis ExThis _ = [substEmpty]
-matchExpression' ExGlobal ExGlobal _ = [substEmpty]
-matchExpression' ExTermination ExTermination _ = [substEmpty]
-matchExpression' (ExFormation pbs) (ExFormation tbs) _ = matchBindings pbs tbs (ExFormation tbs)
-matchExpression' (ExDispatch pexp pattr) (ExDispatch texp tattr) scope = combineMany (matchAttribute pattr tattr) (matchExpression' pexp texp scope)
-matchExpression' (ExApplication pexp pbd) (ExApplication texp tbd) scope = combineMany (matchExpression' pexp texp scope) (matchBinding pbd tbd scope)
-matchExpression' (ExMetaTail expr meta) tgt scope = case tailExpressions expr tgt scope of
+matchExpression' :: Expression -> Expression -> [Subst]
+matchExpression' (ExMeta meta) tgt = [substSingle meta (MvExpression tgt)]
+matchExpression' ExThis ExThis = [substEmpty]
+matchExpression' ExGlobal ExGlobal = [substEmpty]
+matchExpression' ExTermination ExTermination = [substEmpty]
+matchExpression' (ExFormation pbs) (ExFormation tbs) = matchBindings pbs tbs
+matchExpression' (ExDispatch pexp pattr) (ExDispatch texp tattr) = combineMany (matchAttribute pattr tattr) (matchExpression' pexp texp)
+matchExpression' (ExApplication pexp pbd) (ExApplication texp tbd) = combineMany (matchExpression' pexp texp) (matchBinding pbd tbd)
+matchExpression' (ExMetaTail expr meta) tgt = case tailExpressions expr tgt of
   ([], _) -> []
   (substs, tails) -> combineMany substs [substSingle meta (MvTail tails)]
-matchExpression' (ExPhiAgain prefix idx expr) (ExPhiAgain prefix' idx' expr') scope
-  | prefix == prefix' && idx == idx' = matchExpression' expr expr' scope
+matchExpression' (ExPhiAgain prefix idx expr) (ExPhiAgain prefix' idx' expr')
+  | prefix == prefix' && idx == idx' = matchExpression' expr expr'
   | otherwise = []
-matchExpression' (ExPhiMeet prefix idx expr) (ExPhiMeet prefix' idx' expr') scope
-  | prefix == prefix' && idx == idx' = matchExpression' expr expr' scope
+matchExpression' (ExPhiMeet prefix idx expr) (ExPhiMeet prefix' idx' expr')
+  | prefix == prefix' && idx == idx' = matchExpression' expr expr'
   | otherwise = []
-matchExpression' _ _ _ = []
+matchExpression' _ _ = []
 
 -- Deep match pattern to expression inside binding
-matchBindingExpression :: Binding -> Expression -> Expression -> [Subst]
-matchBindingExpression (BiTau _ expr) ptn scope = matchExpressionDeep ptn expr scope
-matchBindingExpression _ _ _ = []
+matchBindingExpression :: Binding -> Expression -> [Subst]
+matchBindingExpression (BiTau _ expr) ptn = matchExpressionDeep ptn expr
+matchBindingExpression _ _ = []
 
 -- Match expression with deep nested expression(s) matching
-matchExpressionDeep :: Expression -> Expression -> Expression -> [Subst]
-matchExpressionDeep ptn tgt scope =
-  let matched = matchExpression' ptn tgt scope
+matchExpressionDeep :: Expression -> Expression -> [Subst]
+matchExpressionDeep ptn tgt =
+  let matched = matchExpression' ptn tgt
       deep = case tgt of
-        ExFormation bds -> concatMap (\bd -> matchBindingExpression bd ptn tgt) bds
-        ExDispatch expr _ -> matchExpressionDeep ptn expr scope
-        ExApplication expr tau -> matchExpressionDeep ptn expr scope ++ matchBindingExpression tau ptn scope
+        ExFormation bds -> concatMap (`matchBindingExpression` ptn) bds
+        ExDispatch expr _ -> matchExpressionDeep ptn expr
+        ExApplication expr tau -> matchExpressionDeep ptn expr ++ matchBindingExpression tau ptn
         _ -> []
    in matched ++ deep
 
 matchExpression :: Expression -> Expression -> [Subst]
-matchExpression ptn tgt = matchExpressionDeep ptn tgt defaultScope
+matchExpression = matchExpressionDeep
 
 matchProgram :: Expression -> Program -> [Subst]
 matchProgram ptn (Program expr) = matchExpression ptn expr

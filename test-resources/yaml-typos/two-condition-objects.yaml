@@ -6,4 +6,4 @@ pattern: 'Q'
 result: 'Q'
 when:
   eq: [1]
-  xi: [1]
+  xi-free: [1]

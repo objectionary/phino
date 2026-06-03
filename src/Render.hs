@@ -244,6 +244,7 @@ instance Render CONDITION where
       renderWrapped cond@CO_LOGIC{} = "( " <> render cond <> " )"
       renderWrapped cond = render cond
   render CO_NF{..} = "\\isnormal{ " <> render expr <> " }"
+  render CO_XIFREE{..} = "\\xifree{ " <> render expr <> " }"
   render CO_NOT{..} = renderFunc "not" condition
   render CO_COMPARE{..} = render left <> " " <> render equal <> " " <> render right
   render CO_MATCHES{..} = "matches( " <> T.pack regex <> ", " <> render expr <> " )"
@@ -261,5 +262,4 @@ instance Render EXTRA_ARG where
 
 instance Render EXTRA where
   render EXTRA{func = "contextualize", args = arg : rest, ..} = "$ " <> render meta <> " \\coloneqq \\ctx{ " <> render arg <> " }{ " <> T.intercalate ", " (map render rest) <> " } $"
-  render EXTRA{func = "scope", args = arg : _, ..} = "$ " <> render meta <> " \\coloneqq \\scopeof{ " <> render arg <> " } $"
   render EXTRA{..} = "$ " <> render meta <> " \\coloneqq " <> T.pack func <> "( " <> T.intercalate ", " (map render args) <> " ) $"

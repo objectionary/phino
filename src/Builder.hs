@@ -79,7 +79,7 @@ buildBytes bts _ = Right bts
 buildBinding :: Binding -> Subst -> Built [Binding]
 buildBinding (BiTau attr expr) subst = do
   attribute <- buildAttribute attr subst
-  (expression, _) <- buildExpression expr subst
+  expression <- buildExpression expr subst
   Right [BiTau attribute expression]
 buildBinding (BiVoid attr) subst = do
   attribute <- buildAttribute attr subst
@@ -110,40 +110,36 @@ buildExpressionWithTails ex (tl : rest) subst = case tl of
   TaDispatch at -> buildExpressionWithTails (ExDispatch ex at) rest subst
 
 -- Build meta expression with given substitution
--- It returns tuple (X, Y)
--- where X is built expression and Y is context of X
--- If meta expression is built from MvExpression, is has
--- context from original Program. It have default context otherwise
-buildExpression :: Expression -> Subst -> Built (Expression, Expression)
+buildExpression :: Expression -> Subst -> Built Expression
 buildExpression (ExDispatch ex at) subst = do
-  (dispatched, scope) <- buildExpression ex subst
+  dispatched <- buildExpression ex subst
   at' <- buildAttribute at subst
-  Right (ExDispatch dispatched at', scope)
+  Right (ExDispatch dispatched at')
 buildExpression (ExApplication expr (BiTau battr bexpr)) subst = do
-  (applied, scope) <- buildExpression expr subst
+  applied <- buildExpression expr subst
   bd :| _ <- nonEmpty' =<< buildBinding (BiTau battr bexpr) subst
-  Right (ExApplication applied bd, scope)
+  Right (ExApplication applied bd)
   where
     nonEmpty' :: [a] -> Built (NonEmpty a)
     nonEmpty' [] = Left ""
     nonEmpty' (x : xs) = Right (x :| xs)
 buildExpression (ExFormation bds) subst = do
   bds' <- buildBindings bds subst >>= uniqueBindings
-  Right (ExFormation bds', defaultScope)
+  Right (ExFormation bds')
 buildExpression (ExMeta meta) (Subst mp) = case Map.lookup meta mp of
-  Just (MvExpression expr scope) ->
-    let res = Right (expr, scope)
+  Just (MvExpression expr) ->
+    let res = Right expr
      in case expr of
           ExFormation bds -> uniqueBindings bds >> res
           _ -> res
   _ -> Left (metaMsg meta)
 buildExpression (ExMetaTail expr meta) subst = do
   let (Subst mp) = subst
-  (expression, scope) <- buildExpression expr subst
+  expression <- buildExpression expr subst
   case Map.lookup meta mp of
-    Just (MvTail tails) -> Right (buildExpressionWithTails expression tails subst, scope)
+    Just (MvTail tails) -> Right (buildExpressionWithTails expression tails subst)
     _ -> Left (metaMsg meta)
-buildExpression expr _ = Right (expr, defaultScope)
+buildExpression expr _ = Right expr
 
 buildBytesThrows :: Bytes -> Subst -> IO Bytes
 buildBytesThrows bytes subst = case buildBytes bytes subst of
@@ -160,11 +156,11 @@ buildAttributeThrows attr subst = case buildAttribute attr subst of
   Right attr' -> pure attr'
   Left msg -> throwIO (CouldNotBuildAttribute attr msg)
 
-buildExpressionThrows :: Expression -> Subst -> IO (Expression, Expression)
+buildExpressionThrows :: Expression -> Subst -> IO Expression
 buildExpressionThrows expr subst = case buildExpression expr subst of
   Right built -> pure built
   Left msg -> throwIO (CouldNotBuildExpression expr msg)
 
 -- Build a several expression from one expression and several substitutions
-buildExpressionsThrows :: Expression -> [Subst] -> IO [(Expression, Expression)]
+buildExpressionsThrows :: Expression -> [Subst] -> IO [Expression]
 buildExpressionsThrows expr = traverse (buildExpressionThrows expr)
