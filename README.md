@@ -259,7 +259,7 @@ Condition:
   | nf: Expression'      # returns True if given expression in normal form
                          # which means that no more other normalization rules
                          # can be applied
-  | xi: Expression'      # special condition for Rcopy normalization rule to
+  | xi-free: Expression' # special condition for Rcopy normalization rule to
                          # avoid infinite recursion while the condition checking
                          # returns True if there's no ξ outside of the formation
                          # in given expression.
@@ -297,10 +297,6 @@ Here's list of functions that are supported for extensions:
 * `contextualize` - function of two arguments, that rewrites given expression
   depending on provided context according to the contextualization
   [rules](assets/contextualize.jpg)
-* `scope` - resolves the scope for given expression. Works only with meta
-  expressions denotes as `𝑒` or `!e`. The scope is nearest outer formation,
-  if it's present. In all other cases the default scope is used, which is
-  anonymous formation `⟦ ρ ↦ ∅ ⟧`.
 * `random-tau` - creates attribute with random unique name. Accepts bindings,
   and attributes. Ensures that created attribute is not present in list of
   provided attributes and does not exist as attribute in provided bindings.
