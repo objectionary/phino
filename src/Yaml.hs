@@ -54,10 +54,11 @@ instance FromJSON Binding where
 instance FromJSON Number where
   parseJSON v = case v of
     Object o -> do
-      validateYamlObject o ["index", "length"]
+      validateYamlObject o ["index", "length", "domain"]
       asum
         [ Index <$> o .: "index"
         , Length <$> o .: "length"
+        , Domain <$> o .: "domain"
         ]
     Number num -> pure (Literal (round num))
     _ ->
@@ -142,6 +143,7 @@ instance FromJSON Rule where
 data Number
   = Index Attribute
   | Length Binding
+  | Domain Binding
   | Literal Int
   deriving (Eq, Generic, Show)
 

@@ -64,6 +64,7 @@ instance ToSingleLine SET where
 
 instance ToSingleLine NUMBER where
   toSingleLine LENGTH{..} = LENGTH (toSingleLine binding)
+  toSingleLine DOMAIN{..} = DOMAIN (toSingleLine binding)
   toSingleLine num = num
 
 instance ToSingleLine COMPARABLE where

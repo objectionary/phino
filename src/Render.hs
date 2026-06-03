@@ -223,6 +223,7 @@ instance Render LOGIC_OPERATOR where
 instance Render NUMBER where
   render INDEX{..} = "\\indexof{ " <> render attr <> " }"
   render LENGTH{..} = "\\vert " <> render binding <> " \\vert"
+  render DOMAIN{..} = "\\vert \\overline{ " <> render binding <> " } \\vert"
   render LITERAL{..} = T.pack (show num)
 
 instance Render COMPARABLE where

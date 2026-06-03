@@ -129,8 +129,15 @@ _eq (Y.CmpNum left) (Y.CmpNum right) subst _ = case (numToInt left subst, numToI
     numToInt (Y.Length (BiMeta meta)) (Subst mp) = case M.lookup meta mp of
       Just (MvBindings bds) -> Just (length bds)
       _ -> Nothing
+    numToInt (Y.Domain (BiMeta meta)) (Subst mp) = case M.lookup meta mp of
+      Just (MvBindings bds) -> Just (length (filter notAsset bds))
+      _ -> Nothing
     numToInt (Y.Literal num) _ = Just num
     numToInt _ _ = Nothing
+    notAsset (BiDelta _) = False
+    notAsset (BiLambda _) = False
+    notAsset (BiMetaLambda _) = False
+    notAsset _ = True
 _eq (Y.CmpAttr left) (Y.CmpAttr right) subst _ = pure [subst | compareAttrs left right subst]
   where
     compareAttrs :: Attribute -> Attribute -> Subst -> Bool
