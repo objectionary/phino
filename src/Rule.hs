@@ -165,19 +165,19 @@ _nf (ExMeta meta) (Subst mp) ctx = case M.lookup meta mp of
   _ -> pure []
 _nf expr subst ctx = pure [subst | isNF expr ctx]
 
-_xi :: Expression -> Subst -> RuleContext -> IO [Subst]
-_xi (ExMeta meta) (Subst mp) ctx = case M.lookup meta mp of
-  Just (MvExpression expr _) -> _xi expr (Subst mp) ctx
+_xiFree :: Expression -> Subst -> RuleContext -> IO [Subst]
+_xiFree (ExMeta meta) (Subst mp) ctx = case M.lookup meta mp of
+  Just (MvExpression expr _) -> _xiFree expr (Subst mp) ctx
   _ -> pure []
-_xi (ExFormation _) subst _ = pure [subst]
-_xi ExThis _ _ = pure []
-_xi ExGlobal subst _ = pure [subst]
-_xi (ExApplication expr (BiTau _ texpr)) subst ctx = do
-  onExpr <- _xi expr subst ctx
-  onTau <- _xi texpr subst ctx
+_xiFree (ExFormation _) subst _ = pure [subst]
+_xiFree ExThis _ _ = pure []
+_xiFree ExGlobal subst _ = pure [subst]
+_xiFree (ExApplication expr (BiTau _ texpr)) subst ctx = do
+  onExpr <- _xiFree expr subst ctx
+  onTau <- _xiFree texpr subst ctx
   pure [subst | not (null onExpr) && not (null onTau)]
-_xi (ExDispatch expr _) subst ctx = _xi expr subst ctx
-_xi _ _ _ = pure []
+_xiFree (ExDispatch expr _) subst ctx = _xiFree expr subst ctx
+_xiFree _ _ _ = pure []
 
 _matches :: String -> Expression -> Subst -> RuleContext -> IO [Subst]
 _matches pat (ExMeta meta) (Subst mp) ctx = case M.lookup meta mp of
@@ -208,7 +208,7 @@ meetCondition' (Y.In attr binding) = _in attr binding
 meetCondition' (Y.Alpha attr) = _alpha attr
 meetCondition' (Y.Eq left right) = _eq left right
 meetCondition' (Y.NF expr) = _nf expr
-meetCondition' (Y.Xi expr) = _xi expr
+meetCondition' (Y.XiFree expr) = _xiFree expr
 meetCondition' (Y.Matches pat expr) = _matches pat expr
 meetCondition' (Y.PartOf expr bd) = _partOf expr bd
 

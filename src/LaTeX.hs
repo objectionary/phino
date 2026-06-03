@@ -300,6 +300,7 @@ instance ToLaTeX CONDITION where
   toLaTeX CO_BELONGS{..} = CO_BELONGS (toLaTeX attr) belongs (toLaTeX set)
   toLaTeX CO_LOGIC{..} = CO_LOGIC (map toLaTeX conditions) operator
   toLaTeX CO_NF{..} = CO_NF (toLaTeX expr)
+  toLaTeX CO_XIFREE{..} = CO_XIFREE (toLaTeX expr)
   toLaTeX CO_NOT{..} = CO_NOT (toLaTeX condition)
   toLaTeX CO_COMPARE{..} = CO_COMPARE (toLaTeX left) equal (toLaTeX right)
   toLaTeX CO_MATCHES{..} = CO_MATCHES regex (toLaTeX expr)

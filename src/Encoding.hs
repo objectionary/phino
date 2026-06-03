@@ -92,6 +92,7 @@ instance ToASCII CONDITION where
   toASCII CO_BELONGS{..} = CO_BELONGS (toASCII attr) belongs (toASCII set)
   toASCII CO_LOGIC{..} = CO_LOGIC (map toASCII conditions) operator
   toASCII CO_NF{..} = CO_NF (toASCII expr)
+  toASCII CO_XIFREE{..} = CO_XIFREE (toASCII expr)
   toASCII CO_NOT{..} = CO_NOT (toASCII condition)
   toASCII CO_COMPARE{..} = CO_COMPARE (toASCII left) equal (toASCII right)
   toASCII CO_MATCHES{..} = CO_MATCHES regex (toASCII expr)

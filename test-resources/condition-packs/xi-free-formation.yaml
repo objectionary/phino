@@ -1,8 +1,7 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 # SPDX-License-Identifier: MIT
 ---
-failure: true
-expression: '[[ x -> $ ]]'
+expression: '[[ x -> [[ y -> Q ]] ]]'
 pattern: '[[ x -> !e ]]'
 condition:
-  xi: '!e'
+  xi-free: '!e'

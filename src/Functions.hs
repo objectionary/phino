@@ -31,7 +31,6 @@ buildTerm func args subst = do
 
 buildTerm' :: BuildTermFunc
 buildTerm' "contextualize" = _contextualize
-buildTerm' "scope" = _scope
 buildTerm' "random-tau" = _randomTau
 buildTerm' "dataize" = _dataize
 buildTerm' "concat" = _concat
@@ -66,12 +65,6 @@ _contextualize [Y.ArgExpression expr, Y.ArgExpression context] subst = do
   (context', _) <- buildExpressionThrows context subst
   pure (TeExpression (contextualize expr' context'))
 _contextualize _ _ = throwIO (userError "Function contextualize() requires exactly 2 arguments as expression")
-
-_scope :: BuildTermMethod
-_scope [Y.ArgExpression expr] subst = do
-  (_, scope) <- buildExpressionThrows expr subst
-  pure (TeExpression scope)
-_scope _ _ = throwIO (userError "Function scope() requires exactly 1 argument as expression")
 
 -- Uniqueness is the engine's job: 'freshTau' draws from the document-wide
 -- avoid-set seeded at the start of the run, so no collision list is needed.
