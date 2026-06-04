@@ -80,6 +80,8 @@ data BYTES
 data META_HEAD
   = E -- 𝑒
   | E' -- e
+  | N -- 𝑛
+  | N' -- n
   | A -- a
   | TAU -- 𝜏
   | TAU' -- \tau
@@ -264,6 +266,14 @@ toCST' = (`toCST` (0, EOL))
 metaTail :: T.Text -> T.Text
 metaTail = T.drop 1
 
+-- The first character of an expression meta name encodes its kind:
+-- 'n'-prefixed names are normal-form-constrained '𝑛' metas, everything
+-- else is an ordinary '𝑒' meta.
+exMetaHead :: T.Text -> META_HEAD
+exMetaHead mt
+  | T.isPrefixOf "n" mt = N
+  | otherwise = E
+
 -- This class is used to convert AST to CST
 -- CST is created with sugar and unicode
 -- All further transformations must consider that
@@ -276,7 +286,7 @@ instance ToCST Program PROGRAM where
 instance ToCST Expression EXPRESSION where
   toCST ExGlobal _ = EX_GLOBAL Φ
   toCST ExThis _ = EX_XI XI
-  toCST (ExMeta mt) _ = EX_META (META NO_EXCL E (metaTail mt))
+  toCST (ExMeta mt) _ = EX_META (META NO_EXCL (exMetaHead mt) (metaTail mt))
   toCST (ExMetaTail expr mt) ctx = EX_META_TAIL (toCST expr ctx) (META EXCL TAIL (metaTail mt))
   toCST ExTermination _ = EX_TERMINATION DEAD
   toCST (ExPhiMeet prefix idx expr) ctx = EX_PHI_MEET prefix idx (toCST expr ctx)

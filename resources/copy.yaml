@@ -2,9 +2,7 @@
 # SPDX-License-Identifier: MIT
 ---
 name: copy
-pattern: ⟦ 𝐵1, 𝜏 ↦ ∅, 𝐵2 ⟧(𝜏 ↦ 𝑒)
-result: ⟦ 𝐵1, 𝜏 ↦ 𝑒, 𝐵2 ⟧
+pattern: ⟦ 𝐵1, 𝜏 ↦ ∅, 𝐵2 ⟧(𝜏 ↦ 𝑛)
+result: ⟦ 𝐵1, 𝜏 ↦ 𝑛, 𝐵2 ⟧
 when:
-  and:
-    - xi-free: 𝑒
-    - nf: 𝑒
+  xi-free: 𝑛

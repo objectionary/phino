@@ -112,6 +112,8 @@ instance Render EXCLAMATION where
 instance Render META_HEAD where
   render E = "𝑒"
   render E' = "e"
+  render N = "𝑛"
+  render N' = "n"
   render A = "a"
   render TAU = "𝜏"
   render TAU' = "\\tau"
