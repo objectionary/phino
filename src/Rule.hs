@@ -316,9 +316,6 @@ matchExpressionWithRule expr rule ctx =
           logDebug (printf "Pattern from rule '%s' was not matched:\n%s" name (printExpression' ptn logPrintConfig))
           pure []
         else do
-          -- Every '𝑛' meta in the pattern carries an implicit normal-form
-          -- constraint, enforced here so the YAML rules don't need explicit
-          -- 'nf:' guards (and 'explain'/'merge' stay free of that clause).
           inNf <- foldlM (\substs nm -> meetCondition (Y.NF (ExMeta nm)) substs ctx) matched (nfMetaNames ptn)
           if null inNf
             then do
