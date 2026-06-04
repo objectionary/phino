@@ -332,11 +332,11 @@ matchExpressionWithRule expr rule ctx =
                   extended <- extraSubstitutions when' (Y.where_ rule) ctx
                   if null extended
                     then do
-                      logDebug "Substitution is empty after enxtending, maybe some metas are duplicated"
+                      logDebug "Substitution is empty after extending, maybe some metas are duplicated"
                       pure []
                     else do
                       met <- meetMaybeCondition (Y.having rule) extended ctx
-                      when (null met) (logDebug "The 'having' condition wan't met")
+                      when (null met) (logDebug "The 'having' condition wasn't met")
                       pure met
 
 matchProgramWithRule :: Program -> Y.Rule -> RuleContext -> IO [Subst]
