@@ -469,6 +469,11 @@ spec = do
       , ("𝑒0", Just (ExMeta "e0"))
       , ("!e.x", Just (ExDispatch (ExMeta "e") (AtLabel "x")))
       , ("!e(Q)", Just (ExApplication (ExMeta "e") (BiTau (AtAlpha 0) ExGlobal)))
+      , ("!n", Just (ExMeta "n"))
+      , ("!n1", Just (ExMeta "n1"))
+      , ("𝑛", Just (ExMeta "n"))
+      , ("𝑛1", Just (ExMeta "n1"))
+      , ("𝑛.x", Just (ExDispatch (ExMeta "n") (AtLabel "x")))
       ]
 
   describe "parse meta tails" $

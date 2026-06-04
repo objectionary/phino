@@ -18,8 +18,10 @@ import Control.Exception.Base (SomeException, try)
 import Control.Monad (when)
 import qualified Data.ByteString.Char8 as B
 import Data.Foldable (foldlM)
+import Data.List (nub)
 import qualified Data.Map.Strict as M
 import Data.Maybe (catMaybes)
+import qualified Data.Text as T
 import Deps (BuildTermFunc, Term (..))
 import GHC.IO (unsafePerformIO)
 import Logger (logDebug)
@@ -283,6 +285,27 @@ extraSubstitutions substs extras RuleContext{..} = case extras of
     logDebug "Extra substitutions have been built"
     pure (catMaybes res)
 
+-- Collect the names of NF-constrained expression meta-variables ('𝑛'/'!n')
+-- used in a pattern. Their names are 'n'-prefixed and live in their own
+-- key-space, so a pattern may freely mix plain '𝑒' captures with '𝑛' ones.
+nfMetaNames :: Expression -> [T.Text]
+nfMetaNames = nub . go
+  where
+    go :: Expression -> [T.Text]
+    go (ExMeta mt)
+      | T.isPrefixOf "n" mt = [mt]
+      | otherwise = []
+    go (ExFormation bds) = concatMap goBinding bds
+    go (ExApplication e bd) = go e ++ goBinding bd
+    go (ExDispatch e _) = go e
+    go (ExMetaTail e _) = go e
+    go (ExPhiMeet _ _ e) = go e
+    go (ExPhiAgain _ _ e) = go e
+    go _ = []
+    goBinding :: Binding -> [T.Text]
+    goBinding (BiTau _ e) = go e
+    goBinding _ = []
+
 matchExpressionWithRule :: Expression -> Y.Rule -> RuleContext -> IO [Subst]
 matchExpressionWithRule expr rule ctx =
   let ptn = Y.pattern rule
@@ -293,22 +316,28 @@ matchExpressionWithRule expr rule ctx =
           logDebug (printf "Pattern from rule '%s' was not matched:\n%s" name (printExpression' ptn logPrintConfig))
           pure []
         else do
-          when' <- meetMaybeCondition (Y.when rule) matched ctx
-          if null when'
+          inNf <- foldlM (\substs nm -> meetCondition (Y.NF (ExMeta nm)) substs ctx) matched (nfMetaNames ptn)
+          if null inNf
             then do
-              logDebug "The 'when' condition wasn't met"
+              logDebug "An NF-constrained '𝑛' meta-variable is not in normal form"
               pure []
             else do
-              logDebug (printf "Rule %s" name)
-              extended <- extraSubstitutions when' (Y.where_ rule) ctx
-              if null extended
+              when' <- meetMaybeCondition (Y.when rule) inNf ctx
+              if null when'
                 then do
-                  logDebug "Substitution is empty after enxtending, maybe some metas are duplicated"
+                  logDebug "The 'when' condition wasn't met"
                   pure []
                 else do
-                  met <- meetMaybeCondition (Y.having rule) extended ctx
-                  when (null met) (logDebug "The 'having' condition wan't met")
-                  pure met
+                  logDebug (printf "Rule %s" name)
+                  extended <- extraSubstitutions when' (Y.where_ rule) ctx
+                  if null extended
+                    then do
+                      logDebug "Substitution is empty after extending, maybe some metas are duplicated"
+                      pure []
+                    else do
+                      met <- meetMaybeCondition (Y.having rule) extended ctx
+                      when (null met) (logDebug "The 'having' condition wasn't met")
+                      pure met
 
 matchProgramWithRule :: Program -> Y.Rule -> RuleContext -> IO [Subst]
 matchProgramWithRule (Program expr) = matchExpressionWithRule expr

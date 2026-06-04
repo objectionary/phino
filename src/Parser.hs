@@ -385,6 +385,7 @@ exHead =
     , number
     , lexeme (DataString . strToBts <$> quotedStr)
     , try (ExMeta <$> meta' 'e' "𝑒")
+    , try (ExMeta <$> meta' 'n' "𝑛")
     , ExDispatch ExThis <$> attribute
     ]
     <?> "expression head"

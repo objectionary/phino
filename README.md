@@ -355,6 +355,9 @@ This is the list of supported meta variables:
 
 * `!a` || `𝜏` - attribute
 * `!e` || `𝑒` - any expression
+* `!n` || `𝑛` - any expression that is already in normal form (behaves like
+                `!e`/`𝑒`, but only binds a sub-expression in NF, so no explicit
+                `nf:` guard is needed)
 * `!B` || `𝐵` - list of bindings
 * `!d` || `δ` - bytes in meta delta binding
 * `!t` - tail after expression, sequence of applications and/or dispatches,

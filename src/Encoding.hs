@@ -31,6 +31,7 @@ instance ToASCII EXPRESSION where
   toASCII EX_APPLICATION{..} = EX_APPLICATION (toASCII expr) space eol tab (toASCII tau) eol' tab' indent
   toASCII EX_APPLICATION_TAUS{..} = EX_APPLICATION_TAUS (toASCII expr) space eol tab (toASCII taus) eol' tab' indent
   toASCII EX_APPLICATION_EXPRS{..} = EX_APPLICATION_EXPRS (toASCII expr) space eol tab (toASCII args) eol' tab' indent
+  toASCII EX_META{meta = META{hd = N, ..}} = EX_META (META EXCL N' rest)
   toASCII EX_META{..} = EX_META (META EXCL E' (rest meta))
   toASCII EX_META_TAIL{..} = EX_META_TAIL (toASCII expr) meta
   toASCII EX_PHI_MEET{..} = EX_PHI_MEET prefix idx (toASCII expr)
