@@ -86,7 +86,7 @@ spec = do
           bt = BiTau (AtAlpha 0)
           form = ExFormation [BiDelta (BtOne "01"), BiVoid AtRho]
           nonPrimitive = ExApplication foo (bt (ExApplication bts (bt form)))
-      toCST nonPrimitive (0, EOL) `shouldSatisfy` const True
+      (toCST nonPrimitive (0, EOL) :: EXPRESSION) `shouldSatisfy` const True
 
   describe "CST printing packs" $ do
     let resources = "test-resources/cst/printing-packs"
