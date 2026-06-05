@@ -82,10 +82,10 @@ spec = do
 
     xit "keeps non-primitive data-shaped applications out of primitive conversion" $ do
       let foo = BaseObject "foo"
-          bytes = BaseObject "bytes"
-          alpha = BiTau (AtAlpha 0)
+          byteObject = BaseObject "bytes"
+          alphaBinding = BiTau (AtAlpha 0)
           body = ExFormation [BiDelta (BtOne "01"), BiVoid AtRho]
-          nonPrimitive = ExApplication foo (alpha (ExApplication bytes (alpha body)))
+          nonPrimitive = ExApplication foo (alphaBinding (ExApplication byteObject (alphaBinding body)))
       (toCST nonPrimitive (0, EOL) :: EXPRESSION) `shouldSatisfy` const True
 
   describe "CST printing packs" $ do
