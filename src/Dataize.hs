@@ -1,5 +1,6 @@
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
@@ -178,7 +179,7 @@ morphByRules (expr, seq) ctx@DataizeContext{..} = do
   case matched of
     Just (rule, subst)
       | usesNormalize rule -> normalized
-      | otherwise -> apply (Y.mrThen rule) (Y.mrName rule) subst
+      | otherwise -> apply rule.then_ rule.name subst
     Nothing -> pure (expr, seq)
   where
     firstMatch :: [Y.MorphRule] -> IO (Maybe (Y.MorphRule, Subst))
@@ -192,9 +193,9 @@ morphByRules (expr, seq) ctx@DataizeContext{..} = do
     -- maps onto the 'having' slot (which runs after 'where'), not 'when' (which
     -- 'matchExpressionWithRule' runs before 'where').
     asRule :: Y.MorphRule -> Y.Rule
-    asRule rule = Y.Rule (Y.mrName rule) (Y.mrDescription rule) (Y.mrMatch rule) ExGlobal Nothing (Y.mrWhere rule) (Y.mrWhen rule)
+    asRule rule = Y.Rule rule.name rule.description rule.match ExGlobal Nothing rule.where_ rule.when
     usesNormalize :: Y.MorphRule -> Bool
-    usesNormalize rule = maybe False (any ((== "normalize") . Y.function)) (Y.mrWhere rule)
+    usesNormalize rule = maybe False (any ((== "normalize") . Y.function)) rule.where_
     apply :: Y.MorphOutcome -> String -> Subst -> IO Morphed
     apply (Y.MoStop result) name subst = do
       built <- buildExpressionThrows result subst

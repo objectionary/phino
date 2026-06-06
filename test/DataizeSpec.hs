@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
@@ -151,11 +152,11 @@ spec = do
   describe "labels every step with a defined rule or operation" $ do
     let funcs = maybe [] (map Yaml.function)
         allowed =
-          map Yaml.mrName Yaml.morphingRules
-            ++ map Yaml.drName Yaml.dataizationRules
-            ++ map Yaml.name Yaml.normalizationRules
-            ++ concatMap (funcs . Yaml.mrWhere) Yaml.morphingRules
-            ++ concatMap (funcs . Yaml.drWhere) Yaml.dataizationRules
+          map (.name) Yaml.morphingRules
+            ++ map (.name) Yaml.dataizationRules
+            ++ map (.name) Yaml.normalizationRules
+            ++ concatMap (funcs . (.where_)) Yaml.morphingRules
+            ++ concatMap (funcs . (.where_)) Yaml.dataizationRules
     it "uses no step label without a defining rule or operation" $ do
       prog <-
         parseProgramThrows

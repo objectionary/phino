@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell #-}
@@ -232,24 +233,24 @@ data DataizeOutcome
 -- One ordered morphing rule: match the expression, build extra metas in
 -- 'where', filter by 'when', then reduce per 'then'.
 data MorphRule = MorphRule
-  { mrName :: String
-  , mrDescription :: Maybe String
-  , mrMatch :: Expression
-  , mrWhere :: Maybe [Extra]
-  , mrWhen :: Maybe Condition
-  , mrThen :: MorphOutcome
+  { name :: String
+  , description :: Maybe String
+  , match :: Expression
+  , where_ :: Maybe [Extra]
+  , when :: Maybe Condition
+  , then_ :: MorphOutcome
   }
   deriving (Generic, Show)
 
 -- One ordered dataization rule, structured like 'MorphRule' but reducing
 -- under 𝔻 and able to terminate with bytes or 'nothing'.
 data DataizeRule = DataizeRule
-  { drName :: String
-  , drDescription :: Maybe String
-  , drMatch :: Expression
-  , drWhere :: Maybe [Extra]
-  , drWhen :: Maybe Condition
-  , drThen :: DataizeOutcome
+  { name :: String
+  , description :: Maybe String
+  , match :: Expression
+  , where_ :: Maybe [Extra]
+  , when :: Maybe Condition
+  , then_ :: DataizeOutcome
   }
   deriving (Generic, Show)
 

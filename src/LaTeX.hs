@@ -1,6 +1,7 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 
@@ -326,11 +327,11 @@ instance ToLaTeX EXTRA where
 explainRule :: Y.Rule -> String
 explainRule rule =
   trrule
-    (Y.name rule)
+    rule.name
     (renderToLatex (expressionToCST (Y.pattern rule)) defaultLatexContext)
     (renderToLatex (expressionToCST (Y.result rule)) defaultLatexContext)
-    (joinedConditions (Y.when rule) (Y.having rule))
-    (Y.where_ rule)
+    (joinedConditions rule.when (Y.having rule))
+    rule.where_
   where
     -- Join two maybe conditions into single one using Y.And if at least one is just.
     joinedConditions :: Maybe Y.Condition -> Maybe Y.Condition -> Maybe Y.Condition
@@ -342,11 +343,11 @@ explainRule rule =
 explainMorphRule :: Y.MorphRule -> String
 explainMorphRule rule =
   trrule
-    (Y.mrName rule)
-    (morphOp (renderToLatex (expressionToCST (Y.mrMatch rule)) defaultLatexContext))
-    (morphOutcome (Y.mrThen rule))
-    (Y.mrWhen rule)
-    (Y.mrWhere rule)
+    rule.name
+    (morphOp (renderToLatex (expressionToCST rule.match) defaultLatexContext))
+    (morphOutcome rule.then_)
+    rule.when
+    rule.where_
   where
     morphOutcome :: Y.MorphOutcome -> String
     morphOutcome (Y.MoMorph expr) = morphOp (renderToLatex (expressionToCST expr) defaultLatexContext)
@@ -355,11 +356,11 @@ explainMorphRule rule =
 explainDataizeRule :: Y.DataizeRule -> String
 explainDataizeRule rule =
   trrule
-    (Y.drName rule)
-    (dataizeOp (renderToLatex (expressionToCST (Y.drMatch rule)) defaultLatexContext))
-    (dataizeOutcome (Y.drThen rule))
-    (Y.drWhen rule)
-    (Y.drWhere rule)
+    rule.name
+    (dataizeOp (renderToLatex (expressionToCST rule.match) defaultLatexContext))
+    (dataizeOutcome rule.then_)
+    rule.when
+    rule.where_
   where
     dataizeOutcome :: Y.DataizeOutcome -> String
     dataizeOutcome (Y.DoDataize expr) = dataizeOp (renderToLatex (expressionToCST expr) defaultLatexContext)

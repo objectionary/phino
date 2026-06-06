@@ -2,6 +2,7 @@
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
 
@@ -145,7 +146,7 @@ rewrite' state (rule : rest) iteration ctx@RewriteContext{..} = do
   where
     _rewrite :: RewriteState -> Int -> IO RewriteState
     _rewrite (_rewrittens@((program, _) :| _), _unique, _) _count =
-      let ruleName = Y.name rule
+      let ruleName = rule.name
           ptn = Y.pattern rule
           res = Y.result rule
        in if _count - 1 == _maxDepth
@@ -191,7 +192,7 @@ rewrite' state (rule : rest) iteration ctx@RewriteContext{..} = do
         leadsTo :: Program -> NonEmpty Rewritten
         leadsTo _prog =
           let (program, _) :| rest = _rewrittens
-           in (_prog, Nothing) :| (program, Just (Y.name rule)) : rest
+           in (_prog, Nothing) :| (program, Just rule.name) : rest
 
 -- Rewrite program by provided locator from RewriteContext
 rewrite :: Program -> [Y.Rule] -> RewriteContext -> IO Rewrittens
