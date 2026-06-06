@@ -11,7 +11,7 @@ import Control.Monad
 import Data.List (nub)
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.List.NonEmpty qualified as NE
-import Dataize (DataizeContext (DataizeContext), dataize, dataize', mdBuildTerm, morph, morphByRules)
+import Dataize (DataizeContext (DataizeContext), dataize, dataize', dataizeByRules, mdBuildTerm, morph, morphByRules)
 import Deps (Term (TeExpression), dontSaveStep)
 import Functions (buildTerm)
 import Matcher (substEmpty)
@@ -146,6 +146,30 @@ spec = do
       ( \(desc, input, universe) -> it desc $ do
           expected <- labels morph input universe
           actual <- labels morphByRules input universe
+          actual `shouldBe` expected
+      )
+
+  describe "dataizeByRules matches the executor" $ do
+    let run f input universe = do
+          (bytes, chain) <- f (input, (Program universe, Nothing) :| []) (defaultDataizeContext ExGlobal (Program universe))
+          pure (bytes, [label | (_, Just label) <- chain])
+    forM_
+      [ ("a delta formation yields bytes", ExFormation [BiDelta (BtOne "00")], ExGlobal)
+      , ("termination has no data", ExTermination, ExGlobal)
+      ,
+        ( "a box dataizes its body"
+        , ExFormation [BiTau AtPhi (ExFormation [BiDelta (BtOne "00"), BiVoid AtRho]), BiVoid AtRho]
+        , ExGlobal
+        )
+      ,
+        ( "a dispatch dataizes through morphing"
+        , ExDispatch (ExFormation [BiTau (AtLabel "x") (ExFormation [BiDelta (BtOne "01"), BiVoid AtRho]), BiVoid AtRho]) (AtLabel "x")
+        , ExGlobal
+        )
+      ]
+      ( \(desc, input, universe) -> it desc $ do
+          expected <- run dataize' input universe
+          actual <- run dataizeByRules input universe
           actual `shouldBe` expected
       )
 

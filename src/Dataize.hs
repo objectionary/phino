@@ -9,10 +9,10 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Dataize (morph, morphByRules, dataize, dataize', DataizeContext (..), mdBuildTerm) where
+module Dataize (morph, morphByRules, dataize, dataize', dataizeByRules, DataizeContext (..), mdBuildTerm) where
 
 import AST
-import Builder (buildAttributeThrows, buildExpressionThrows, contextualize)
+import Builder (buildAttributeThrows, buildBytesThrows, buildExpressionThrows, contextualize)
 import Control.Exception (throwIO)
 import Data.List (partition)
 import Data.List.NonEmpty (NonEmpty (..))
@@ -248,6 +248,49 @@ dataize' (form@(ExFormation bds), seq) ctx@DataizeContext{..} =
             (Nothing, _) -> pure (Nothing, _seq)
 dataize' dataizable ctx = morph dataizable ctx >>= (`dataize'` ctx)
 
+-- The rule-driven dataization relation: it reproduces 'dataize'' by interpreting
+-- the ordered rules from 'dataization.yaml'. 'delta' yields the asset bytes,
+-- 'none' yields nothing, 'box' contextualizes the φ-body and keeps dataizing
+-- (its step is labelled by the operation, 'contextualize'), and 'norm' reduces
+-- through morphing, splicing the morphing steps into the chain as the
+-- hand-written NORM branch does.
+dataizeByRules :: Dataizable -> DataizeContext -> IO Dataized
+dataizeByRules (expr, seq) ctx = do
+  matched <- firstMatch Y.dataizationRules
+  case matched of
+    Just (rule, subst) -> apply rule subst
+    Nothing -> pure (Nothing, NE.toList seq)
+  where
+    firstMatch :: [Y.DataizeRule] -> IO (Maybe (Y.DataizeRule, Subst))
+    firstMatch [] = pure Nothing
+    firstMatch (rule : rest) = do
+      substs <- matchExpressionWithRule' expr (asRule rule) (RuleContext (mdBuildTerm ctx))
+      case substs of
+        (subst : _) -> pure (Just (rule, subst))
+        [] -> firstMatch rest
+    asRule :: Y.DataizeRule -> Y.Rule
+    asRule rule = Y.Rule rule.name rule.description rule.match ExGlobal Nothing rule.where_ rule.when
+    apply :: Y.DataizeRule -> Subst -> IO Dataized
+    apply rule subst = case rule.then_ of
+      Y.DoData bytes -> do
+        bts <- buildBytesThrows bytes subst
+        pure (Just bts, NE.toList seq)
+      Y.DoNothing -> pure (Nothing, NE.toList seq)
+      Y.DoDataize result
+        | usesMorph rule -> do
+            (morphed, seq') <- morphByRules (expr, seq) ctx
+            dataizeByRules (morphed, seq') ctx
+        | otherwise -> do
+            built <- buildExpressionThrows result subst
+            seq' <- leadsTo seq (operation rule) built ctx
+            dataizeByRules (built, seq') ctx
+    usesMorph :: Y.DataizeRule -> Bool
+    usesMorph rule = maybe False (any ((== "morph") . Y.function)) rule.where_
+    operation :: Y.DataizeRule -> String
+    operation rule = case rule.where_ of
+      Just (extra : _) -> Y.function extra
+      _ -> ""
+
 leadsTo :: NonEmpty Rewritten -> String -> Expression -> DataizeContext -> IO (NonEmpty Rewritten)
 leadsTo ((prog, _) :| rest) rule expr DataizeContext{..} = do
   prog' <- withLocatedExpression _locator expr prog
@@ -306,6 +349,7 @@ mdBuildTerm :: DataizeContext -> BuildTermFunc
 mdBuildTerm ctx "lambda" = _lambda ctx
 mdBuildTerm ctx "global" = _global ctx
 mdBuildTerm ctx "normalize" = _normalize ctx
+mdBuildTerm ctx "morph" = _morph ctx
 mdBuildTerm ctx func = _buildTerm ctx func
 
 _lambda :: DataizeContext -> BuildTermMethod
@@ -338,3 +382,10 @@ _normalize ctx@DataizeContext{..} [ArgExpression expr] subst = do
   e' <- locatedExpression _locator (fst (NE.last rewrittens))
   pure (TeExpression e')
 _normalize _ _ _ = throwIO (userError "Function normalize() requires exactly 1 expression argument")
+
+_morph :: DataizeContext -> BuildTermMethod
+_morph ctx@DataizeContext{..} [ArgExpression expr] subst = do
+  e <- buildExpressionThrows expr subst
+  (morphed, _) <- morphByRules (e, (_program, Nothing) :| []) ctx
+  pure (TeExpression morphed)
+_morph _ _ _ = throwIO (userError "Function morph() requires exactly 1 expression argument")
