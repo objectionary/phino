@@ -4,12 +4,12 @@
 # Dataization 𝔻 — applied top-to-bottom, first matching clause wins.
 
 - name: delta
-  description: A formation with a Δ asset dataizes to its bytes
+  description: '𝔻(⟦𝐵1, Δ ⤍ δ, 𝐵2⟧) ⟿ δ'
   match: ⟦𝐵1, Δ ⤍ δ, 𝐵2⟧
   then: δ
 
 - name: box
-  description: A formation with a φ binding dataizes its contextualized body
+  description: '𝔻(⟦𝐵1, φ ↦ e, 𝐵2⟧) ⟿ 𝔻(𝒞(e)) if [Δ, λ] ∩ (𝐵1 ∪ 𝐵2) = ∅'
   match: ⟦𝐵1, φ ↦ 𝑒, 𝐵2⟧
   where:
     - meta: 𝑒1
@@ -25,7 +25,7 @@
     dataize: 𝑒1
 
 - name: norm
-  description: A non-primitive expression dataizes after morphing
+  description: '𝔻(e) ⟿ 𝔻(𝕄(e)) if e ∉ 𝒫'
   match: 𝑒
   where:
     - meta: 𝑒1
@@ -39,6 +39,6 @@
     dataize: 𝑒1
 
 - name: none
-  description: Any other expression has no data
+  description: '𝔻(e) ⟿ nothing otherwise'
   match: 𝑒
   then: nothing

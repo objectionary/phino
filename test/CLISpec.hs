@@ -862,7 +862,7 @@ spec = do
               , "  \\leadsto \\Big\\{ [[ |x| -> [[ D> 01-, |y| -> ? ]] ( |y| -> [[]] ) ]] . |x| \\Big\\} \\leadsto_{\\nameref{r:copy}}"
               , "  \\leadsto \\Big\\{ [[ |x| -> [[ D> 01-, |y| -> [[]] ]] ]] . |x| \\Big\\} \\leadsto_{\\nameref{r:dot}}"
               , "  \\leadsto \\Big\\{ [[ D> 01-, |y| -> [[]] ]] ( ^ -> [[ |x| -> [[ D> 01-, |y| -> [[]] ]] ]] ) \\Big\\} \\leadsto_{\\nameref{r:copy}}"
-              , "  \\leadsto \\Big\\{ [[ D> 01-, |y| -> [[]], ^ -> [[ |x| -> [[ D> 01-, |y| -> [[]] ]] ]] ]] \\Big\\} \\leadsto_{\\nameref{r:prim}}"
+              , "  \\leadsto \\Big\\{ [[ D> 01-, |y| -> [[]], ^ -> [[ |x| -> [[ D> 01-, |y| -> [[]] ]] ]] ]] \\Big\\} \\leadsto_{\\nameref{r:Mprim}}"
               , "  \\leadsto \\Big\\{ [[ D> 01-, |y| -> [[]], ^ -> [[ |x| -> [[ D> 01-, |y| -> [[]] ]] ]] ]] \\Big\\}{.}"
               , "\\end{phiquation}"
               , "01-"
@@ -1003,27 +1003,27 @@ spec = do
         ["explain", "--morph"]
         [ unlines
             [ "\\begin{tabular}{rl}"
-            , "\\trrule{prim}"
+            , "\\trrule{Mprim}"
             , "  { \\mathbb{M}( e ) }"
             , "  { e }"
             , "  { if $ e \\in \\mathcal{P} $ }"
             , "  { }"
-            , "\\trrule{nmz}"
+            , "\\trrule{Mnmz}"
             , "  { \\mathbb{M}( e ) }"
             , "  { \\mathbb{M}( n ) }"
             , "  { if $ e \\not= n $ }"
             , "  { where $ n \\coloneqq normalize( e ) $ }"
-            , "\\trrule{lambda}"
+            , "\\trrule{Mlambda}"
             , "  { \\mathbb{M}( [[ B_1, L> F, B_2 ]] * t ) }"
             , "  { \\mathbb{M}( e * t ) }"
             , "  { }"
             , "  { where $ e \\coloneqq lambda( [[ B_1, L> F, B_2 ]] ) $ }"
-            , "\\trrule{phi}"
+            , "\\trrule{Mphi}"
             , "  { \\mathbb{M}( Q . \\tau * t ) }"
             , "  { \\mathbb{M}( e * t ) }"
             , "  { }"
             , "  { where $ e \\coloneqq global( \\tau ) $ }"
-            , "\\trrule{stuck}"
+            , "\\trrule{Mstuck}"
             , "  { \\mathbb{M}( e ) }"
             , "  { T }"
             , "  { }"
@@ -1065,6 +1065,11 @@ spec = do
       testCLIFailed
         ["explain"]
         ["Either --rule, --normalize, --morph or --dataize must be specified"]
+
+    it "fails when more than one rule set is specified" $
+      testCLIFailed
+        ["explain", "--morph", "--dataize"]
+        ["Only one of --rule, --normalize, --morph or --dataize can be specified"]
 
     it "writes to target file" $
       bracket

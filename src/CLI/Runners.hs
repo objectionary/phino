@@ -180,16 +180,20 @@ runDataize OptsDataize{..} = do
         _outputFormat
 
 runExplain :: OptsExplain -> IO ()
-runExplain OptsExplain{..}
-  | _morph = printOut _targetFile (explainMorphRules Y.morphingRules)
-  | _dataize = printOut _targetFile (explainDataizeRules Y.dataizationRules)
-  | otherwise = do
-      validateOpts
-      rules <- getRules _normalize _shuffle _rules
-      printOut _targetFile (explainRules rules)
+runExplain OptsExplain{..} = do
+  validateOpts
+  explained >>= printOut _targetFile
   where
+    explained :: IO String
+    explained
+      | _morph = pure (explainMorphRules Y.morphingRules)
+      | _dataize = pure (explainDataizeRules Y.dataizationRules)
+      | otherwise = explainRules <$> getRules _normalize _shuffle _rules
     validateOpts :: IO ()
-    validateOpts = when (null _rules && not _normalize) (invalidCLIArguments "Either --rule, --normalize, --morph or --dataize must be specified")
+    validateOpts = do
+      let selected = length (filter id [not (null _rules), _normalize, _morph, _dataize])
+      when (selected == 0) (invalidCLIArguments "Either --rule, --normalize, --morph or --dataize must be specified")
+      when (selected > 1) (invalidCLIArguments "Only one of --rule, --normalize, --morph or --dataize can be specified")
 
 runMerge :: OptsMerge -> IO ()
 runMerge OptsMerge{..} = do

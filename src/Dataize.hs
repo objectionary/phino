@@ -81,7 +81,7 @@ formation bds ctx = do
   case lambda of
     Just (BiLambda func) -> do
       obj <- atom func (ExFormation bds') ctx
-      pure (Just (obj, "lambda"))
+      pure (Just (obj, "Mlambda"))
     _ -> pure Nothing
 
 -- Resolve dispatch from global object (Q.tau) for PHI Morphing rule.
@@ -97,7 +97,7 @@ phiDispatch tau expr = case expr of
     boundExpr :: [Binding] -> Maybe (Expression, String)
     boundExpr [] = Nothing
     boundExpr (bd : bds) = case bd of
-      BiTau (AtLabel attr) expr' -> if attr == tau then Just (expr', "phi") else boundExpr bds
+      BiTau (AtLabel attr) expr' -> if attr == tau then Just (expr', "Mphi") else boundExpr bds
       _ -> boundExpr bds
 
 -- Resolve tail PHI and LAMBDA Morphing rules.
@@ -137,7 +137,7 @@ withTail _ _ = pure Nothing
 --         M(e) -> ⊥                              otherwise
 morph :: Morphed -> DataizeContext -> IO Morphed
 morph (expr@ExTermination, seq) ctx = do
-  seq' <- leadsTo seq "prim" expr ctx
+  seq' <- leadsTo seq "Mprim" expr ctx
   pure (expr, seq')
 morph (form@(ExFormation _), seq) ctx = do
   resolved <- withTail form ctx
@@ -146,7 +146,7 @@ morph (form@(ExFormation _), seq) ctx = do
       seq' <- leadsTo seq rule expr ctx -- LAMBDA or PHI
       morph (expr, seq') ctx
     _ -> do
-      seq' <- leadsTo seq "prim" form ctx
+      seq' <- leadsTo seq "Mprim" form ctx
       pure (form, seq')
 morph (expr, seq) ctx@DataizeContext{..} = do
   resolved <- withTail expr ctx
@@ -156,9 +156,7 @@ morph (expr, seq) ctx@DataizeContext{..} = do
       morph (expr', seq') ctx
     _ ->
       if isNF expr (RuleContext _buildTerm)
-        then do
-          seq' <- leadsTo seq "stuck" ExTermination ctx
-          pure (ExTermination, seq')
+        then morph (ExTermination, seq) ctx
         else do
           prog' <- withLocatedExpression _locator expr _program
           (rewrittens, _) <- rewrite prog' normalizationRules (switchContext ctx) -- NMZ

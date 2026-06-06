@@ -3,15 +3,15 @@
 ---
 # Morphing 𝕄 — applied top-to-bottom, first matching clause wins.
 
-- name: prim
-  description: A primitive expression morphs to itself
+- name: Mprim
+  description: '𝕄(e) ⟿ e if e ∈ 𝒫'
   match: 𝑒
   when:
     primitive: 𝑒
   then: 𝑒
 
-- name: nmz
-  description: A reducible expression morphs by normalizing it first
+- name: Mnmz
+  description: '𝕄(e) ⟿ 𝕄(𝒩(e)) if e ≢ 𝒩(e)'
   match: 𝑒
   where:
     - meta: 𝑛
@@ -26,8 +26,8 @@
   then:
     morph: 𝑛
 
-- name: lambda
-  description: A formation with a λ asset morphs by applying the atom to its bindings
+- name: Mlambda
+  description: '𝕄(⟦𝐵1, λ ⤍ F, 𝐵2⟧ * t) ⟿ 𝕄(F(⟦𝐵1, 𝐵2⟧) * t)'
   match: '⟦𝐵1, λ ⤍ !F, 𝐵2⟧ * !t'
   where:
     - meta: 𝑒
@@ -37,8 +37,8 @@
   then:
     morph: '𝑒 * !t'
 
-- name: phi
-  description: A dispatch on the global object morphs to the bound expression
+- name: Mphi
+  description: '𝕄(Φ.τ * t) ⟿ 𝕄(e * t) if Φ ↦ ⟦𝐵1, τ ↦ e, 𝐵2⟧'
   match: 'Φ.𝜏 * !t'
   where:
     - meta: 𝑒
@@ -48,7 +48,7 @@
   then:
     morph: '𝑒 * !t'
 
-- name: stuck
-  description: Any other expression morphs to termination
+- name: Mstuck
+  description: '𝕄(e) ⟿ ⊥ otherwise'
   match: 𝑒
   then: ⊥
