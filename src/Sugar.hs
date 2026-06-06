@@ -110,6 +110,7 @@ instance ToSalty EXPRESSION where
       rhos
   toSalty EX_PHI_MEET{..} = EX_PHI_MEET prefix idx (toSalty expr)
   toSalty EX_PHI_AGAIN{..} = EX_PHI_AGAIN prefix idx (toSalty expr)
+  toSalty EX_META_TAIL{..} = EX_META_TAIL (toSalty expr) meta
   toSalty expr = expr
 
 saltifyPrimitive :: EXPRESSION -> EXPRESSION -> EXPRESSION -> TAB -> [Binding] -> EXPRESSION
@@ -195,6 +196,8 @@ instance ToSalty CONDITION where
   toSalty CO_COMPARE{..} = CO_COMPARE (toSalty left) equal (toSalty right)
   toSalty CO_MATCHES{..} = CO_MATCHES regex (toSalty expr)
   toSalty CO_PART_OF{..} = CO_PART_OF (toSalty expr) (toSalty binding)
+  toSalty CO_PRIMITIVE{..} = CO_PRIMITIVE (toSalty expr) belongs
+  toSalty CO_DISJOINT{..} = CO_DISJOINT attrs (map toSalty groups)
   toSalty CO_EMPTY = CO_EMPTY
 
 instance ToSalty EXTRA_ARG where

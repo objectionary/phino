@@ -106,6 +106,8 @@ data OptsExplain = OptsExplain
   , _logLines :: Int
   , _rules :: [FilePath]
   , _normalize :: Bool
+  , _morph :: Bool
+  , _dataize :: Bool
   , _shuffle :: Bool
   , _targetFile :: Maybe FilePath
   }

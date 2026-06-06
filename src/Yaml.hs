@@ -13,7 +13,7 @@ import AST
 import Control.Applicative (asum)
 import Data.Aeson
 import qualified Data.ByteString as BS
-import Data.FileEmbed (embedDir)
+import Data.FileEmbed (embedDir, embedFile)
 import Data.Text (unpack)
 import Data.Yaml (Parser)
 import qualified Data.Yaml as Yaml
@@ -77,7 +77,7 @@ instance FromJSON Condition where
     withObject
       "Condition"
       ( \v -> do
-          validateYamlObject v ["and", "or", "not", "alpha", "nf", "xi-free", "eq", "in", "matches", "part-of"]
+          validateYamlObject v ["and", "or", "not", "alpha", "nf", "xi-free", "eq", "in", "matches", "part-of", "primitive", "disjoint"]
           asum
             [ And <$> v .: "and"
             , Or <$> v .: "or"
@@ -85,6 +85,12 @@ instance FromJSON Condition where
             , Alpha <$> v .: "alpha"
             , NF <$> v .: "nf"
             , XiFree <$> v .: "xi-free"
+            , Primitive <$> v .: "primitive"
+            , do
+                vals <- v .: "disjoint"
+                case vals of
+                  [attrs_, bds_] -> Disjoint <$> parseJSON attrs_ <*> parseJSON bds_
+                  _ -> fail "'disjoint' expects exactly two arguments"
             , do
                 vals <- v .: "eq"
                 case vals of
@@ -164,6 +170,8 @@ data Condition
   | XiFree Expression
   | Matches String Expression
   | PartOf Expression Binding
+  | Primitive Expression
+  | Disjoint [Attribute] [Binding]
   deriving (Eq, Generic, Show)
 
 data ExtraArgument
@@ -193,7 +201,7 @@ data Rule = Rule
 
 normalizationRules :: [Rule]
 {-# NOINLINE normalizationRules #-}
-normalizationRules = map decodeRule $(embedDir "resources")
+normalizationRules = map decodeRule $(embedDir "resources/normalize")
   where
     decodeRule :: (FilePath, BS.ByteString) -> Rule
     decodeRule (path, bs) =
@@ -203,3 +211,98 @@ normalizationRules = map decodeRule $(embedDir "resources")
 
 yamlRule :: FilePath -> IO Rule
 yamlRule = Yaml.decodeFileThrow
+
+-- The right-hand side of a morphing reduction 𝕄(match) ⟿ then.
+-- A mapping ('{ morph: e }') keeps reducing under 𝕄; a bare expression
+-- (including ⊥) is the terminal primitive result.
+data MorphOutcome
+  = MoMorph Expression
+  | MoStop Expression
+  deriving (Eq, Generic, Show)
+
+-- The right-hand side of a dataization reduction 𝔻(match) ⟿ then.
+-- A mapping ('{ dataize: e }') keeps reducing under 𝔻; a bare bytes scalar
+-- yields data; the 'nothing' keyword marks the function as undefined.
+data DataizeOutcome
+  = DoDataize Expression
+  | DoData Bytes
+  | DoNothing
+  deriving (Eq, Generic, Show)
+
+-- One ordered morphing rule: match the expression, build extra metas in
+-- 'where', filter by 'when', then reduce per 'then'.
+data MorphRule = MorphRule
+  { mrName :: String
+  , mrDescription :: Maybe String
+  , mrMatch :: Expression
+  , mrWhere :: Maybe [Extra]
+  , mrWhen :: Maybe Condition
+  , mrThen :: MorphOutcome
+  }
+  deriving (Generic, Show)
+
+-- One ordered dataization rule, structured like 'MorphRule' but reducing
+-- under 𝔻 and able to terminate with bytes or 'nothing'.
+data DataizeRule = DataizeRule
+  { drName :: String
+  , drDescription :: Maybe String
+  , drMatch :: Expression
+  , drWhere :: Maybe [Extra]
+  , drWhen :: Maybe Condition
+  , drThen :: DataizeOutcome
+  }
+  deriving (Generic, Show)
+
+instance FromJSON MorphOutcome where
+  parseJSON (Object o) = do
+    validateYamlObject o ["morph"]
+    MoMorph <$> o .: "morph"
+  parseJSON v = MoStop <$> parseJSON v
+
+instance FromJSON DataizeOutcome where
+  parseJSON (Object o) = do
+    validateYamlObject o ["dataize"]
+    DoDataize <$> o .: "dataize"
+  parseJSON (String "nothing") = pure DoNothing
+  parseJSON v = DoData <$> parseJSON v
+
+instance FromJSON MorphRule where
+  parseJSON =
+    withObject
+      "MorphRule"
+      ( \o ->
+          MorphRule
+            <$> o .: "name"
+            <*> o .:? "description"
+            <*> o .: "match"
+            <*> o .:? "where"
+            <*> o .:? "when"
+            <*> o .: "then"
+      )
+
+instance FromJSON DataizeRule where
+  parseJSON =
+    withObject
+      "DataizeRule"
+      ( \o ->
+          DataizeRule
+            <$> o .: "name"
+            <*> o .:? "description"
+            <*> o .: "match"
+            <*> o .:? "where"
+            <*> o .:? "when"
+            <*> o .: "then"
+      )
+
+decodeRules :: (FromJSON a) => FilePath -> BS.ByteString -> [a]
+decodeRules path bs = case Yaml.decodeEither' bs of
+  Right rs -> rs
+  Left err -> error $ "YAML parse error in " ++ path ++ ": " ++ show err
+
+morphingRules :: [MorphRule]
+{-# NOINLINE morphingRules #-}
+morphingRules = decodeRules "resources/morphing.yaml" $(embedFile "resources/morphing.yaml")
+
+dataizationRules :: [DataizeRule]
+{-# NOINLINE dataizationRules #-}
+dataizationRules = decodeRules "resources/dataization.yaml" $(embedFile "resources/dataization.yaml")

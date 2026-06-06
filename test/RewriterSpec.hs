@@ -93,7 +93,7 @@ spec =
                     Just basic' ->
                       mapM
                         ( \name -> do
-                            yaml <- ensuredFile ("resources" </> replaceExtension name ".yaml")
+                            yaml <- ensuredFile ("resources/normalize" </> replaceExtension name ".yaml")
                             Y.yamlRule yaml
                         )
                         basic'

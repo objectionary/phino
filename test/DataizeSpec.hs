@@ -7,6 +7,7 @@ module DataizeSpec (spec) where
 
 import AST
 import Control.Monad
+import Data.List (nub)
 import Data.List.NonEmpty (NonEmpty (..))
 import Dataize (DataizeContext (DataizeContext), dataize, dataize', morph)
 import Deps (dontSaveStep)
@@ -14,6 +15,7 @@ import Functions (buildTerm)
 import Parser (parseExpressionThrows, parseProgramThrows)
 import Rewriter (Rewritten)
 import Test.Hspec
+import Yaml qualified
 
 defaultDataizeContext :: Expression -> Program -> DataizeContext
 defaultDataizeContext loc prog = DataizeContext loc prog 25 25 False buildTerm dontSaveStep
@@ -104,6 +106,32 @@ spec = do
         , Just (BtOne "01")
         )
       ]
+
+  describe "labels every step with a defined rule or operation" $ do
+    let funcs = maybe [] (map Yaml.function)
+        allowed =
+          map Yaml.mrName Yaml.morphingRules
+            ++ map Yaml.drName Yaml.dataizationRules
+            ++ map Yaml.name Yaml.normalizationRules
+            ++ concatMap (funcs . Yaml.mrWhere) Yaml.morphingRules
+            ++ concatMap (funcs . Yaml.drWhere) Yaml.dataizationRules
+    it "uses no step label without a defining rule or operation" $ do
+      prog <-
+        parseProgramThrows
+          ( unlines
+              [ "Q -> [["
+              , "  bytes(data) -> [[ @ -> $.data ]],"
+              , "  number(as-bytes) -> [[ @ -> $.as-bytes, plus(x) -> [[ L> L_number_plus ]] ]],"
+              , "  @ -> 5.plus(6)"
+              , "]]"
+              ]
+          )
+      loc <- parseExpressionThrows "Q"
+      (_, chain) <- dataize (defaultDataizeContext loc prog)
+      let orphans = nub [label | (_, Just label) <- chain, label `notElem` allowed]
+      unless
+        (null orphans)
+        (expectationFailure ("Dataization emitted step labels with no defining rule or operation: " ++ show orphans))
 
   testDataize
     [

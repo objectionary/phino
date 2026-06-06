@@ -1,0 +1,44 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# Dataization 𝔻 — applied top-to-bottom, first matching clause wins.
+
+- name: delta
+  description: A formation with a Δ asset dataizes to its bytes
+  match: ⟦𝐵1, Δ ⤍ δ, 𝐵2⟧
+  then: δ
+
+- name: box
+  description: A formation with a φ binding dataizes its contextualized body
+  match: ⟦𝐵1, φ ↦ 𝑒, 𝐵2⟧
+  where:
+    - meta: 𝑒1
+      function: contextualize
+      args:
+        - 𝑒
+        - ⟦𝐵1, φ ↦ 𝑒, 𝐵2⟧
+  when:
+    disjoint:
+      - [Δ, λ]
+      - [𝐵1, 𝐵2]
+  then:
+    dataize: 𝑒1
+
+- name: norm
+  description: A non-primitive expression dataizes after morphing
+  match: 𝑒
+  where:
+    - meta: 𝑒1
+      function: morph
+      args:
+        - 𝑒
+  when:
+    not:
+      primitive: 𝑒
+  then:
+    dataize: 𝑒1
+
+- name: none
+  description: Any other expression has no data
+  match: 𝑒
+  then: nothing

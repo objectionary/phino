@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+failure: true
+expression: '[[ a -> [[ ]], x -> [[ ]], L> Foo ]]'
+pattern: '[[ !B1, x -> !e, !B2 ]]'
+condition:
+  disjoint:
+    - [Δ, λ]
+    - [𝐵1, 𝐵2]

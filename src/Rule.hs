@@ -209,6 +209,43 @@ _partOf exp bd subst _ = do
     partOf expr (BiTau _ expr' : rest) = expr == expr' || partOf expr rest
     partOf expr (_ : rest) = partOf expr rest
 
+-- A primitive is the termination ⊥ or a formation without a λ binding;
+-- expression metas are resolved through the substitution first.
+_primitive :: Expression -> Subst -> RuleContext -> IO [Subst]
+_primitive (ExMeta meta) (Subst mp) ctx = case M.lookup meta mp of
+  Just (MvExpression expr) -> _primitive expr (Subst mp) ctx
+  _ -> pure []
+_primitive expr subst _ = pure [subst | primitive expr]
+  where
+    primitive :: Expression -> Bool
+    primitive ExTermination = True
+    primitive (ExFormation bds) = not (any lambda bds)
+    primitive _ = False
+    lambda :: Binding -> Bool
+    lambda (BiLambda _) = True
+    lambda (BiMetaLambda _) = True
+    lambda _ = False
+
+-- Hold if none of the given attributes is present in the union of the
+-- bindings captured by the given binding metas.
+_disjoint :: [Attribute] -> [Binding] -> Subst -> RuleContext -> IO [Subst]
+_disjoint attrs bindings subst _ =
+  case (traverse (`buildAttribute` subst) attrs, traverse (`buildBinding` subst) bindings) of
+    (Right attrs', Right bdss) ->
+      let bds = concat bdss
+       in pure [subst | not (any (`presentIn` bds) attrs')]
+    (_, _) -> pure []
+  where
+    presentIn :: Attribute -> [Binding] -> Bool
+    presentIn attr = any (presentInBinding attr)
+    presentInBinding :: Attribute -> Binding -> Bool
+    presentInBinding attr (BiTau battr _) = attr == battr
+    presentInBinding attr (BiVoid battr) = attr == battr
+    presentInBinding AtLambda (BiLambda _) = True
+    presentInBinding AtLambda (BiMetaLambda _) = True
+    presentInBinding AtDelta (BiDelta _) = True
+    presentInBinding _ _ = False
+
 meetCondition' :: Y.Condition -> Subst -> RuleContext -> IO [Subst]
 meetCondition' (Y.Or conds) = _or conds
 meetCondition' (Y.And conds) = _and conds
@@ -220,6 +257,8 @@ meetCondition' (Y.NF expr) = _nf expr
 meetCondition' (Y.XiFree expr) = _xiFree expr
 meetCondition' (Y.Matches pat expr) = _matches pat expr
 meetCondition' (Y.PartOf expr bd) = _partOf expr bd
+meetCondition' (Y.Primitive expr) = _primitive expr
+meetCondition' (Y.Disjoint attrs bds) = _disjoint attrs bds
 
 -- For each substitution check if it meetCondition to given condition
 -- If substitution does not meet the condition - it's thrown out

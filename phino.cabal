@@ -12,7 +12,7 @@ maintainer: mtrunnikov@gmail.com
 copyright: 2025 Objectionary.com
 category: Language, Code Analysis
 build-type: Simple
-extra-source-files: resources/*.yaml
+extra-source-files: resources/*.yaml resources/normalize/*.yaml
 extra-doc-files: README.md
 
 source-repository head

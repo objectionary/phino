@@ -359,7 +359,7 @@ spec = do
 
     it "rewrites with single rule" $
       withStdin "{T(x -> Q.y)}" $
-        testCLISucceeded ["rewrite", "--rule=resources/dc.yaml"] ["Φ ↦ ⊥"]
+        testCLISucceeded ["rewrite", "--rule=resources/normalize/dc.yaml"] ["Φ ↦ ⊥"]
 
     it "normalizes with --normalize flag" $
       testCLISucceeded
@@ -862,7 +862,7 @@ spec = do
               , "  \\leadsto \\Big\\{ [[ |x| -> [[ D> 01-, |y| -> ? ]] ( |y| -> [[]] ) ]] . |x| \\Big\\} \\leadsto_{\\nameref{r:copy}}"
               , "  \\leadsto \\Big\\{ [[ |x| -> [[ D> 01-, |y| -> [[]] ]] ]] . |x| \\Big\\} \\leadsto_{\\nameref{r:dot}}"
               , "  \\leadsto \\Big\\{ [[ D> 01-, |y| -> [[]] ]] ( ^ -> [[ |x| -> [[ D> 01-, |y| -> [[]] ]] ]] ) \\Big\\} \\leadsto_{\\nameref{r:copy}}"
-              , "  \\leadsto \\Big\\{ [[ D> 01-, |y| -> [[]], ^ -> [[ |x| -> [[ D> 01-, |y| -> [[]] ]] ]] ]] \\Big\\} \\leadsto_{\\nameref{r:Mprim}}"
+              , "  \\leadsto \\Big\\{ [[ D> 01-, |y| -> [[]], ^ -> [[ |x| -> [[ D> 01-, |y| -> [[]] ]] ]] ]] \\Big\\} \\leadsto_{\\nameref{r:prim}}"
               , "  \\leadsto \\Big\\{ [[ D> 01-, |y| -> [[]], ^ -> [[ |x| -> [[ D> 01-, |y| -> [[]] ]] ]] ]] \\Big\\}{.}"
               , "\\end{phiquation}"
               , "01-"
@@ -917,7 +917,7 @@ spec = do
   describe "explain" $ do
     it "explains single rule" $
       testCLISucceeded
-        ["explain", "--rule=resources/copy.yaml"]
+        ["explain", "--rule=resources/normalize/copy.yaml"]
         [ unlines
             [ "\\begin{tabular}{rl}"
             , "\\trrule{copy}"
@@ -931,7 +931,7 @@ spec = do
 
     it "explains multiple rules" $
       testCLISucceeded
-        ["explain", "--rule=resources/copy.yaml", "--rule=resources/alpha.yaml"]
+        ["explain", "--rule=resources/normalize/copy.yaml", "--rule=resources/normalize/alpha.yaml"]
         ["\\begin{tabular}{rl}", "\\trrule{copy}", "\\trrule{alpha}"]
 
     it "explains normalization rules" $
@@ -998,10 +998,73 @@ spec = do
             ]
         ]
 
+    it "explains morphing rules" $
+      testCLISucceeded
+        ["explain", "--morph"]
+        [ unlines
+            [ "\\begin{tabular}{rl}"
+            , "\\trrule{prim}"
+            , "  { \\mathbb{M}( e ) }"
+            , "  { e }"
+            , "  { if $ e \\in \\mathcal{P} $ }"
+            , "  { }"
+            , "\\trrule{nmz}"
+            , "  { \\mathbb{M}( e ) }"
+            , "  { \\mathbb{M}( n ) }"
+            , "  { if $ e \\not= n $ }"
+            , "  { where $ n \\coloneqq normalize( e ) $ }"
+            , "\\trrule{lambda}"
+            , "  { \\mathbb{M}( [[ B_1, L> F, B_2 ]] * t ) }"
+            , "  { \\mathbb{M}( e * t ) }"
+            , "  { }"
+            , "  { where $ e \\coloneqq lambda( [[ B_1, L> F, B_2 ]] ) $ }"
+            , "\\trrule{phi}"
+            , "  { \\mathbb{M}( Q . \\tau * t ) }"
+            , "  { \\mathbb{M}( e * t ) }"
+            , "  { }"
+            , "  { where $ e \\coloneqq global( \\tau ) $ }"
+            , "\\trrule{stuck}"
+            , "  { \\mathbb{M}( e ) }"
+            , "  { T }"
+            , "  { }"
+            , "  { }"
+            , "\\end{tabular}"
+            ]
+        ]
+
+    it "explains dataization rules" $
+      testCLISucceeded
+        ["explain", "--dataize"]
+        [ unlines
+            [ "\\begin{tabular}{rl}"
+            , "\\trrule{delta}"
+            , "  { \\mathbb{D}( [[ B_1, D> δ, B_2 ]] ) }"
+            , "  { δ }"
+            , "  { }"
+            , "  { }"
+            , "\\trrule{box}"
+            , "  { \\mathbb{D}( [[ B_1, @ -> e, B_2 ]] ) }"
+            , "  { \\mathbb{D}( e_1 ) }"
+            , "  { if $ [ Δ, L ] \\cap ( B_1 \\cup B_2 ) = \\emptyset $ }"
+            , "  { where $ e_1 \\coloneqq \\ctx{ e }{ [[ B_1, @ -> e, B_2 ]] } $ }"
+            , "\\trrule{norm}"
+            , "  { \\mathbb{D}( e ) }"
+            , "  { \\mathbb{D}( e_1 ) }"
+            , "  { if $ e \\notin \\mathcal{P} $ }"
+            , "  { where $ e_1 \\coloneqq morph( e ) $ }"
+            , "\\trrule{none}"
+            , "  { \\mathbb{D}( e ) }"
+            , "  { \\varnothing }"
+            , "  { }"
+            , "  { }"
+            , "\\end{tabular}"
+            ]
+        ]
+
     it "fails with no rules specified" $
       testCLIFailed
         ["explain"]
-        ["Either --rule or --normalize must be specified"]
+        ["Either --rule, --normalize, --morph or --dataize must be specified"]
 
     it "writes to target file" $
       bracket

@@ -9,6 +9,8 @@
 
 module LaTeX
   ( explainRules
+  , explainMorphRules
+  , explainDataizeRules
   , rewrittensToLatex
   , programToLaTeX
   , expressionToLaTeX
@@ -217,6 +219,7 @@ instance ToLaTeX EXPRESSION where
   toLaTeX EX_PHI_MEET{..} = EX_PHI_MEET prefix idx (toLaTeX expr)
   toLaTeX EX_PHI_AGAIN{..} = EX_PHI_AGAIN prefix idx (toLaTeX expr)
   toLaTeX EX_META{..} = EX_META (toLaTeX meta)
+  toLaTeX EX_META_TAIL{..} = EX_META_TAIL (toLaTeX expr) (toLaTeX meta)
   toLaTeX expr = expr
 
 instance ToLaTeX ATTRIBUTE where
@@ -307,6 +310,8 @@ instance ToLaTeX CONDITION where
   toLaTeX CO_COMPARE{..} = CO_COMPARE (toLaTeX left) equal (toLaTeX right)
   toLaTeX CO_MATCHES{..} = CO_MATCHES regex (toLaTeX expr)
   toLaTeX CO_PART_OF{..} = CO_PART_OF (toLaTeX expr) (toLaTeX binding)
+  toLaTeX CO_PRIMITIVE{..} = CO_PRIMITIVE (toLaTeX expr) belongs
+  toLaTeX CO_DISJOINT{..} = CO_DISJOINT (map toLaTeX attrs) (map toLaTeX groups)
   toLaTeX CO_EMPTY = CO_EMPTY
 
 instance ToLaTeX EXTRA_ARG where
@@ -320,27 +325,13 @@ instance ToLaTeX EXTRA where
 
 explainRule :: Y.Rule -> String
 explainRule rule =
-  intercalate
-    "\n  "
-    [ "\\trrule{" ++ Y.name rule ++ "}"
-    , braced (renderToLatex (expressionToCST (Y.pattern rule)) defaultLatexContext)
-    , braced (renderToLatex (expressionToCST (Y.result rule)) defaultLatexContext)
-    , conditionToLatex (joinedConditions (Y.when rule) (Y.having rule))
-    , extraArgumentsToLatex (Y.where_ rule)
-    ]
+  trrule
+    (Y.name rule)
+    (renderToLatex (expressionToCST (Y.pattern rule)) defaultLatexContext)
+    (renderToLatex (expressionToCST (Y.result rule)) defaultLatexContext)
+    (joinedConditions (Y.when rule) (Y.having rule))
+    (Y.where_ rule)
   where
-    conditionToLatex :: Maybe Y.Condition -> String
-    conditionToLatex Nothing = "{ }"
-    conditionToLatex (Just cond) = case conditionToCST cond of
-      CO_EMPTY -> "{ }"
-      cond' -> braced ("if $ " <> renderToLatex cond' defaultLatexContext <> " $")
-    extraArgumentsToLatex :: Maybe [Y.Extra] -> String
-    extraArgumentsToLatex Nothing = "{ }"
-    extraArgumentsToLatex (Just extras) =
-      let extras' = map ((`renderToLatex` defaultLatexContext) . extraToCST) extras
-       in braced ("where " <> intercalate " and " extras')
-    braced :: String -> String
-    braced = printf "{ %s }"
     -- Join two maybe conditions into single one using Y.And if at least one is just.
     joinedConditions :: Maybe Y.Condition -> Maybe Y.Condition -> Maybe Y.Condition
     joinedConditions Nothing Nothing = Nothing
@@ -348,11 +339,81 @@ explainRule rule =
     joinedConditions Nothing second@(Just _) = second
     joinedConditions (Just first) (Just second) = Just (Y.And [first, second])
 
+explainMorphRule :: Y.MorphRule -> String
+explainMorphRule rule =
+  trrule
+    (Y.mrName rule)
+    (morphOp (renderToLatex (expressionToCST (Y.mrMatch rule)) defaultLatexContext))
+    (morphOutcome (Y.mrThen rule))
+    (Y.mrWhen rule)
+    (Y.mrWhere rule)
+  where
+    morphOutcome :: Y.MorphOutcome -> String
+    morphOutcome (Y.MoMorph expr) = morphOp (renderToLatex (expressionToCST expr) defaultLatexContext)
+    morphOutcome (Y.MoStop expr) = renderToLatex (expressionToCST expr) defaultLatexContext
+
+explainDataizeRule :: Y.DataizeRule -> String
+explainDataizeRule rule =
+  trrule
+    (Y.drName rule)
+    (dataizeOp (renderToLatex (expressionToCST (Y.drMatch rule)) defaultLatexContext))
+    (dataizeOutcome (Y.drThen rule))
+    (Y.drWhen rule)
+    (Y.drWhere rule)
+  where
+    dataizeOutcome :: Y.DataizeOutcome -> String
+    dataizeOutcome (Y.DoDataize expr) = dataizeOp (renderToLatex (expressionToCST expr) defaultLatexContext)
+    dataizeOutcome (Y.DoData bytes) = T.unpack (render (toCST' bytes :: BYTES))
+    dataizeOutcome Y.DoNothing = "\\varnothing"
+
+-- Render a single rule row through the shared \trrule macro: name, left-hand
+-- side, right-hand side, the optional 'if' condition and 'where' extras.
+trrule :: String -> String -> String -> Maybe Y.Condition -> Maybe [Y.Extra] -> String
+trrule name lhs rhs cond extras =
+  intercalate
+    "\n  "
+    [ "\\trrule{" ++ name ++ "}"
+    , braced lhs
+    , braced rhs
+    , conditionToLatex cond
+    , extraArgumentsToLatex extras
+    ]
+
+morphOp :: String -> String
+morphOp inner = "\\mathbb{M}( " ++ inner ++ " )"
+
+dataizeOp :: String -> String
+dataizeOp inner = "\\mathbb{D}( " ++ inner ++ " )"
+
+braced :: String -> String
+braced = printf "{ %s }"
+
+conditionToLatex :: Maybe Y.Condition -> String
+conditionToLatex Nothing = "{ }"
+conditionToLatex (Just cond) = case conditionToCST cond of
+  CO_EMPTY -> "{ }"
+  cond' -> braced ("if $ " <> renderToLatex cond' defaultLatexContext <> " $")
+
+extraArgumentsToLatex :: Maybe [Y.Extra] -> String
+extraArgumentsToLatex Nothing = "{ }"
+extraArgumentsToLatex (Just extras) =
+  let extras' = map ((`renderToLatex` defaultLatexContext) . extraToCST) extras
+   in braced ("where " <> intercalate " and " extras')
+
 explainRules :: [Y.Rule] -> String
-explainRules rules =
+explainRules = explainTabular . map explainRule
+
+explainMorphRules :: [Y.MorphRule] -> String
+explainMorphRules = explainTabular . map explainMorphRule
+
+explainDataizeRules :: [Y.DataizeRule] -> String
+explainDataizeRules = explainTabular . map explainDataizeRule
+
+explainTabular :: [String] -> String
+explainTabular rows =
   intercalate
     "\n"
     [ "\\begin{tabular}{rl}"
-    , intercalate "\n" (map explainRule rules)
+    , intercalate "\n" rows
     , "\\end{tabular}"
     ]

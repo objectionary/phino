@@ -174,6 +174,12 @@ optFocus =
 optNormalize :: Parser Bool
 optNormalize = switch (long "normalize" <> help "Use built-in normalization rules")
 
+optMorph :: Parser Bool
+optMorph = switch (long "morph" <> help "Explain built-in morphing rules")
+
+optDataize :: Parser Bool
+optDataize = switch (long "dataize" <> help "Explain built-in dataization rules")
+
 optTarget :: Parser (Maybe FilePath)
 optTarget = optional (strOption (long "target" <> short 't' <> metavar "FILE" <> help "File to save output to"))
 
@@ -226,6 +232,8 @@ explainParser =
             <*> optLogLines
             <*> optRule
             <*> optNormalize
+            <*> optMorph
+            <*> optDataize
             <*> optShuffle
             <*> optTarget
         )

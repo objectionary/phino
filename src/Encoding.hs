@@ -99,6 +99,8 @@ instance ToASCII CONDITION where
   toASCII CO_COMPARE{..} = CO_COMPARE (toASCII left) equal (toASCII right)
   toASCII CO_MATCHES{..} = CO_MATCHES regex (toASCII expr)
   toASCII CO_PART_OF{..} = CO_PART_OF (toASCII expr) (toASCII binding)
+  toASCII CO_PRIMITIVE{..} = CO_PRIMITIVE (toASCII expr) belongs
+  toASCII CO_DISJOINT{..} = CO_DISJOINT (map toASCII attrs) (map toASCII groups)
   toASCII CO_EMPTY = CO_EMPTY
 
 instance ToASCII EXTRA_ARG where

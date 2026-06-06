@@ -21,7 +21,7 @@ import Dataize
 import Encoding
 import qualified Filter as F
 import Functions (buildTerm)
-import LaTeX (explainRules)
+import LaTeX (explainDataizeRules, explainMorphRules, explainRules)
 import Logger
 import Margin (defaultMargin)
 import Merge (merge)
@@ -180,13 +180,16 @@ runDataize OptsDataize{..} = do
         _outputFormat
 
 runExplain :: OptsExplain -> IO ()
-runExplain OptsExplain{..} = do
-  validateOpts
-  rules <- getRules _normalize _shuffle _rules
-  printOut _targetFile (explainRules rules)
+runExplain OptsExplain{..}
+  | _morph = printOut _targetFile (explainMorphRules Y.morphingRules)
+  | _dataize = printOut _targetFile (explainDataizeRules Y.dataizationRules)
+  | otherwise = do
+      validateOpts
+      rules <- getRules _normalize _shuffle _rules
+      printOut _targetFile (explainRules rules)
   where
     validateOpts :: IO ()
-    validateOpts = when (null _rules && not _normalize) (invalidCLIArguments "Either --rule or --normalize must be specified")
+    validateOpts = when (null _rules && not _normalize) (invalidCLIArguments "Either --rule, --normalize, --morph or --dataize must be specified")
 
 runMerge :: OptsMerge -> IO ()
 runMerge OptsMerge{..} = do
