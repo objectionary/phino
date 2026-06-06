@@ -34,6 +34,10 @@ data Tail
 newtype Subst = Subst (Map Text MetaValue)
   deriving (Eq, Show)
 
+-- A way to match a pattern expression against a target expression, yielding
+-- the substitutions under which they agree.
+type MatchExpressionFunc = Expression -> Expression -> [Subst]
+
 -- Empty substitution
 substEmpty :: Subst
 substEmpty = Subst Map.empty
@@ -112,7 +116,7 @@ tailExpressions ptn tgt = case tailExpressionsReversed ptn tgt of
         _ -> Just ([], [])
       substs -> Just (substs, [])
 
-matchExpression' :: Expression -> Expression -> [Subst]
+matchExpression' :: MatchExpressionFunc
 matchExpression' (ExMeta meta) tgt = [substSingle meta (MvExpression tgt)]
 matchExpression' ExThis ExThis = [substEmpty]
 matchExpression' ExGlobal ExGlobal = [substEmpty]
@@ -137,7 +141,7 @@ matchBindingExpression (BiTau _ expr) ptn = matchExpressionDeep ptn expr
 matchBindingExpression _ _ = []
 
 -- Match expression with deep nested expression(s) matching
-matchExpressionDeep :: Expression -> Expression -> [Subst]
+matchExpressionDeep :: MatchExpressionFunc
 matchExpressionDeep ptn tgt =
   let matched = matchExpression' ptn tgt
       deep = case tgt of
@@ -147,7 +151,7 @@ matchExpressionDeep ptn tgt =
         _ -> []
    in matched ++ deep
 
-matchExpression :: Expression -> Expression -> [Subst]
+matchExpression :: MatchExpressionFunc
 matchExpression = matchExpressionDeep
 
 matchProgram :: Expression -> Program -> [Subst]

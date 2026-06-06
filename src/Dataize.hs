@@ -23,7 +23,7 @@ import Matcher (Subst, substEmpty)
 import Misc
 import Must (Must (..))
 import Rewriter (RewriteContext (RewriteContext), Rewritten, rewrite)
-import Rule (RuleContext (RuleContext), isNF, matchExpressionWithRuleTop)
+import Rule (RuleContext (RuleContext), isNF, matchExpressionWithRule')
 import Text.Printf (printf)
 import Yaml (ExtraArgument (..), normalizationRules)
 import qualified Yaml as Y
@@ -184,7 +184,7 @@ morphByRules (expr, seq) ctx@DataizeContext{..} = do
     firstMatch :: [Y.MorphRule] -> IO (Maybe (Y.MorphRule, Subst))
     firstMatch [] = pure Nothing
     firstMatch (rule : rest) = do
-      substs <- matchExpressionWithRuleTop expr (asRule rule) (RuleContext (mdBuildTerm ctx))
+      substs <- matchExpressionWithRule' expr (asRule rule) (RuleContext (mdBuildTerm ctx))
       case substs of
         (subst : _) -> pure (Just (rule, subst))
         [] -> firstMatch rest
