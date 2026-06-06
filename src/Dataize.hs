@@ -8,7 +8,7 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Dataize (morph, dataize, dataize', DataizeContext (..), mdBuildTerm) where
+module Dataize (morph, morphByRules, dataize, dataize', DataizeContext (..), mdBuildTerm) where
 
 import AST
 import Builder (buildAttributeThrows, buildExpressionThrows, contextualize)
@@ -19,13 +19,14 @@ import qualified Data.List.NonEmpty as NE
 import qualified Data.Text as T
 import Deps (BuildTermFunc, BuildTermMethod, SaveStepFunc, Term (TeAttribute, TeExpression))
 import Locator (locatedExpression, withLocatedExpression)
-import Matcher (substEmpty)
+import Matcher (Subst, substEmpty)
 import Misc
 import Must (Must (..))
 import Rewriter (RewriteContext (RewriteContext), Rewritten, rewrite)
-import Rule (RuleContext (RuleContext), isNF)
+import Rule (RuleContext (RuleContext), isNF, matchExpressionWithRuleTop)
 import Text.Printf (printf)
 import Yaml (ExtraArgument (..), normalizationRules)
+import qualified Yaml as Y
 
 type Dataized = (Maybe Bytes, [Rewritten])
 
@@ -164,6 +165,53 @@ morph (expr, seq) ctx@DataizeContext{..} = do
               seq' = rw :| rws <> NE.tail seq
           expr' <- locatedExpression _locator (fst rw)
           morph (expr', seq') ctx
+
+-- The rule-driven morphing relation: it reproduces 'morph' by interpreting the
+-- ordered rules from 'morphing.yaml'. The first rule whose pattern, 'when' and
+-- 'where' all hold is applied; its 'then' outcome either stops with a primitive
+-- ('MoStop') or continues morphing ('MoMorph'). The 'Mnmz' rule reduces through
+-- the normalization rewriter, so its many sub-steps are spliced into the chain
+-- exactly as the hand-written NMZ branch does.
+morphByRules :: Morphed -> DataizeContext -> IO Morphed
+morphByRules (expr, seq) ctx@DataizeContext{..} = do
+  matched <- firstMatch Y.morphingRules
+  case matched of
+    Just (rule, subst)
+      | usesNormalize rule -> normalized
+      | otherwise -> apply (Y.mrThen rule) (Y.mrName rule) subst
+    Nothing -> pure (expr, seq)
+  where
+    firstMatch :: [Y.MorphRule] -> IO (Maybe (Y.MorphRule, Subst))
+    firstMatch [] = pure Nothing
+    firstMatch (rule : rest) = do
+      substs <- matchExpressionWithRuleTop expr (asRule rule) (RuleContext (mdBuildTerm ctx))
+      case substs of
+        (subst : _) -> pure (Just (rule, subst))
+        [] -> firstMatch rest
+    -- The M/D rules evaluate as 'match → where → when', so the rule's guard
+    -- maps onto the 'having' slot (which runs after 'where'), not 'when' (which
+    -- 'matchExpressionWithRule' runs before 'where').
+    asRule :: Y.MorphRule -> Y.Rule
+    asRule rule = Y.Rule (Y.mrName rule) (Y.mrDescription rule) (Y.mrMatch rule) ExGlobal Nothing (Y.mrWhere rule) (Y.mrWhen rule)
+    usesNormalize :: Y.MorphRule -> Bool
+    usesNormalize rule = maybe False (any ((== "normalize") . Y.function)) (Y.mrWhere rule)
+    apply :: Y.MorphOutcome -> String -> Subst -> IO Morphed
+    apply (Y.MoStop result) name subst = do
+      built <- buildExpressionThrows result subst
+      seq' <- leadsTo seq name built ctx
+      pure (built, seq')
+    apply (Y.MoMorph result) name subst = do
+      built <- buildExpressionThrows result subst
+      seq' <- leadsTo seq name built ctx
+      morphByRules (built, seq') ctx
+    normalized :: IO Morphed
+    normalized = do
+      prog' <- withLocatedExpression _locator expr _program
+      (rewrittens, _) <- rewrite prog' normalizationRules (switchContext ctx)
+      let (rw :| rws) = NE.reverse rewrittens
+          seq' = rw :| rws <> NE.tail seq
+      expr' <- locatedExpression _locator (fst rw)
+      morphByRules (expr', seq') ctx
 
 dataize :: DataizeContext -> IO Dataized
 dataize ctx@DataizeContext{..} = do

@@ -9,7 +9,8 @@ import AST
 import Control.Monad
 import Data.List (nub)
 import Data.List.NonEmpty (NonEmpty (..))
-import Dataize (DataizeContext (DataizeContext), dataize, dataize', mdBuildTerm, morph)
+import Data.List.NonEmpty qualified as NE
+import Dataize (DataizeContext (DataizeContext), dataize, dataize', mdBuildTerm, morph, morphByRules)
 import Deps (Term (TeExpression), dontSaveStep)
 import Functions (buildTerm)
 import Matcher (substEmpty)
@@ -122,6 +123,30 @@ spec = do
       case term of
         TeExpression actual -> actual `shouldBe` ExTermination
         _ -> expectationFailure "normalize() did not return an expression"
+
+  describe "morphByRules matches the executor" $ do
+    let labels f input universe = do
+          (e, sq) <- f (input, (Program universe, Nothing) :| []) (defaultDataizeContext ExGlobal (Program universe))
+          pure (e, [label | (_, Just label) <- NE.toList sq])
+    forM_
+      [ ("a delta formation is primitive", ExFormation [BiDelta (BtOne "00")], ExGlobal)
+      , ("termination is primitive", ExTermination, ExGlobal)
+      ,
+        ( "global dispatch resolves and reduces"
+        , ExDispatch ExGlobal (AtLabel "x")
+        , ExFormation [BiTau (AtLabel "x") (ExFormation [])]
+        )
+      ,
+        ( "a reducible dispatch normalizes"
+        , ExDispatch (ExFormation [BiTau (AtLabel "x") (ExFormation [BiDelta (BtOne "00")])]) (AtLabel "x")
+        , ExGlobal
+        )
+      ]
+      ( \(desc, input, universe) -> it desc $ do
+          expected <- labels morph input universe
+          actual <- labels morphByRules input universe
+          actual `shouldBe` expected
+      )
 
   describe "labels every step with a defined rule or operation" $ do
     let funcs = maybe [] (map Yaml.function)

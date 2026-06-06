@@ -5,7 +5,7 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Rule (RuleContext (..), isNF, matchProgramWithRule, matchExpressionWithRule, meetCondition) where
+module Rule (RuleContext (..), isNF, matchProgramWithRule, matchExpressionWithRule, matchExpressionWithRuleTop, meetCondition) where
 
 import AST
 import Builder
@@ -346,9 +346,19 @@ nfMetaNames = nub . go
     goBinding _ = []
 
 matchExpressionWithRule :: Expression -> Y.Rule -> RuleContext -> IO [Subst]
-matchExpressionWithRule expr rule ctx =
+matchExpressionWithRule = matchWith matchExpression
+
+-- Like 'matchExpressionWithRule' but matches the pattern against the whole
+-- expression only (no deep, sub-expression matching). Used by the dataization
+-- and morphing driver, where a rule applies to the entire configuration rather
+-- than to nested redexes.
+matchExpressionWithRuleTop :: Expression -> Y.Rule -> RuleContext -> IO [Subst]
+matchExpressionWithRuleTop = matchWith matchExpression'
+
+matchWith :: (Expression -> Expression -> [Subst]) -> Expression -> Y.Rule -> RuleContext -> IO [Subst]
+matchWith matcher expr rule ctx =
   let ptn = Y.pattern rule
-      matched = matchExpression ptn expr
+      matched = matcher ptn expr
       name = Y.name rule
    in if null matched
         then do
