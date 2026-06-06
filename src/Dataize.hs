@@ -8,16 +8,16 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Dataize (morph, dataize, dataize', DataizeContext (..)) where
+module Dataize (morph, dataize, dataize', DataizeContext (..), mdBuildTerm) where
 
 import AST
-import Builder (contextualize)
+import Builder (buildAttributeThrows, buildExpressionThrows, contextualize)
 import Control.Exception (throwIO)
 import Data.List (partition)
 import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as NE
 import qualified Data.Text as T
-import Deps (BuildTermFunc, SaveStepFunc, Term (TeAttribute))
+import Deps (BuildTermFunc, BuildTermMethod, SaveStepFunc, Term (TeAttribute, TeExpression))
 import Locator (locatedExpression, withLocatedExpression)
 import Matcher (substEmpty)
 import Misc
@@ -25,7 +25,7 @@ import Must (Must (..))
 import Rewriter (RewriteContext (RewriteContext), Rewritten, rewrite)
 import Rule (RuleContext (RuleContext), isNF)
 import Text.Printf (printf)
-import Yaml (normalizationRules)
+import Yaml (ExtraArgument (..), normalizationRules)
 
 type Dataized = (Maybe Bytes, [Rewritten])
 
@@ -248,3 +248,44 @@ atom "L_number_eq" self ctx = do
         else pure (ExDispatch self (AtLabel "y"))
     _ -> pure ExTermination
 atom func _ _ = throwIO (userError (printf "Atom '%s' does not exist" (T.unpack func)))
+
+-- Augment the injected, context-free term builder with the dataization and
+-- morphing operations that need the full evaluation context: 'lambda' applies
+-- an atom, 'global' dispatches from the universe Q and 'normalize' reduces an
+-- expression to its normal form. Every other function is delegated unchanged.
+mdBuildTerm :: DataizeContext -> BuildTermFunc
+mdBuildTerm ctx "lambda" = _lambda ctx
+mdBuildTerm ctx "global" = _global ctx
+mdBuildTerm ctx "normalize" = _normalize ctx
+mdBuildTerm ctx func = _buildTerm ctx func
+
+_lambda :: DataizeContext -> BuildTermMethod
+_lambda ctx [ArgExpression expr] subst = do
+  form <- buildExpressionThrows expr subst
+  case form of
+    ExFormation bds -> do
+      resolved <- formation bds ctx
+      case resolved of
+        Just (obj, _) -> pure (TeExpression obj)
+        Nothing -> throwIO (userError "Function lambda() expects a formation with a λ binding")
+    _ -> throwIO (userError "Function lambda() expects a formation")
+_lambda _ _ _ = throwIO (userError "Function lambda() requires exactly 1 expression argument")
+
+_global :: DataizeContext -> BuildTermMethod
+_global DataizeContext{_program = Program prog} [ArgAttribute attr] subst = do
+  attr' <- buildAttributeThrows attr subst
+  case attr' of
+    AtLabel label -> case phiDispatch label prog of
+      Just (expr, _) -> pure (TeExpression expr)
+      Nothing -> throwIO (userError (printf "Universe Q has no attribute '%s'" (show attr')))
+    _ -> throwIO (userError "Function global() expects a labelled attribute")
+_global _ _ _ = throwIO (userError "Function global() requires exactly 1 attribute argument")
+
+_normalize :: DataizeContext -> BuildTermMethod
+_normalize ctx@DataizeContext{..} [ArgExpression expr] subst = do
+  e <- buildExpressionThrows expr subst
+  prog <- withLocatedExpression _locator e _program
+  (rewrittens, _) <- rewrite prog normalizationRules (switchContext ctx)
+  e' <- locatedExpression _locator (fst (NE.last rewrittens))
+  pure (TeExpression e')
+_normalize _ _ _ = throwIO (userError "Function normalize() requires exactly 1 expression argument")

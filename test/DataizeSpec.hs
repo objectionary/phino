@@ -9,9 +9,10 @@ import AST
 import Control.Monad
 import Data.List (nub)
 import Data.List.NonEmpty (NonEmpty (..))
-import Dataize (DataizeContext (DataizeContext), dataize, dataize', morph)
-import Deps (dontSaveStep)
+import Dataize (DataizeContext (DataizeContext), dataize, dataize', mdBuildTerm, morph)
+import Deps (Term (TeExpression), dontSaveStep)
 import Functions (buildTerm)
+import Matcher (substEmpty)
 import Parser (parseExpressionThrows, parseProgramThrows)
 import Rewriter (Rewritten)
 import Test.Hspec
@@ -106,6 +107,21 @@ spec = do
         , Just (BtOne "01")
         )
       ]
+
+  describe "mdBuildTerm" $ do
+    it "resolves global dispatch from the universe Q" $ do
+      prog <- parseProgramThrows "Q -> [[ x -> [[ D> 42- ]] ]]"
+      expected <- parseExpressionThrows "[[ D> 42- ]]"
+      term <- mdBuildTerm (defaultDataizeContext ExGlobal prog) "global" [Yaml.ArgAttribute (AtLabel "x")] substEmpty
+      case term of
+        TeExpression actual -> actual `shouldBe` expected
+        _ -> expectationFailure "global() did not return an expression"
+    it "reduces an expression to its normal form" $ do
+      reducible <- parseExpressionThrows "⊥.x"
+      term <- mdBuildTerm (defaultDataizeContext ExGlobal (Program ExGlobal)) "normalize" [Yaml.ArgExpression reducible] substEmpty
+      case term of
+        TeExpression actual -> actual `shouldBe` ExTermination
+        _ -> expectationFailure "normalize() did not return an expression"
 
   describe "labels every step with a defined rule or operation" $ do
     let funcs = maybe [] (map Yaml.function)
