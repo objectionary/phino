@@ -205,7 +205,10 @@ d >> 68-65-6C-6C-6F
 
 ## Explain
 
-You can _explain_ rewriting rule by printing them in [LaTeX][latex] format:
+You can _explain_ the built-in rules by printing them in [LaTeX][latex]
+format. Pass exactly one of `--normalize`, `--morph` or `--dataize` for
+the rewriting, morphing (𝕄) or dataization (𝔻) rules (or `--rule` for a
+custom rule file):
 
 ```bash
 $ phino explain --normalize
@@ -225,6 +228,42 @@ $ phino explain --normalize
   { [[ B ]] . \tau }
   { T }
   { if $ \tau \notin B \;\text{and}\; @ \notin B \;\text{and}\; L \notin B $ }
+  { }
+\end{tabular}
+```
+
+The morphing and dataization rules are printed the same way:
+
+```bash
+$ phino explain --morph
+\begin{tabular}{rl}
+\trrule{Mprim}
+  { \mathbb{M}( e ) }
+  { e }
+  { if $ e \in \mathcal{P} $ }
+  { }
+...
+\trrule{Mphi}
+  { \mathbb{M}( Q . \tau * t ) }
+  { \mathbb{M}( e * t ) }
+  { }
+  { where $ e \coloneqq global( \tau ) $ }
+\end{tabular}
+```
+
+```bash
+$ phino explain --dataize
+\begin{tabular}{rl}
+\trrule{delta}
+  { \mathbb{D}( [[ B_1, D> δ, B_2 ]] ) }
+  { δ }
+  { }
+  { }
+...
+\trrule{none}
+  { \mathbb{D}( e ) }
+  { \varnothing }
+  { }
   { }
 \end{tabular}
 ```
