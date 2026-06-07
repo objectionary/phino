@@ -69,6 +69,8 @@ spec = do
         form = ExFormation [BiDelta (BtMany ["40", "18", "00", "00", "00", "00", "00", "00"]), BiVoid AtRho]
         isCSTNumber (EX_NUMBER{}) = True
         isCSTNumber _ = False
+        isApplicationTaus (EX_APPLICATION_TAUS{}) = True
+        isApplicationTaus _ = False
     forM_
       [ ("number(bytes(data))", app number (bt (app bts (bt form))))
       , ("again(number)(bytes(data))", app (again number) (bt (app bts (bt form))))
@@ -80,13 +82,13 @@ spec = do
       ]
       (\(desc, ex) -> it desc (toCST ex (0, EOL) `shouldSatisfy` isCSTNumber))
 
-    xit "keeps non-primitive data-shaped applications out of primitive conversion" $ do
+    it "keeps non-primitive data-shaped applications out of primitive conversion" $ do
       let foo = BaseObject "foo"
           byteObject = BaseObject "bytes"
           alphaBinding = BiTau (AtAlpha 0)
           body = ExFormation [BiDelta (BtOne "01"), BiVoid AtRho]
           nonPrimitive = ExApplication foo (alphaBinding (ExApplication byteObject (alphaBinding body)))
-      (toCST nonPrimitive (0, EOL) :: EXPRESSION) `shouldSatisfy` const True
+      (toCST nonPrimitive (0, EOL) :: EXPRESSION) `shouldSatisfy` isApplicationTaus
 
   describe "CST printing packs" $ do
     let resources = "test-resources/cst/printing-packs"
