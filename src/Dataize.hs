@@ -9,7 +9,7 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Dataize (morph, dataize, dataize', DataizeContext (..), mdBuildTerm) where
+module Dataize (morph, dataize, dataize', DataizeContext (..), execBuildTerm) where
 
 import AST
 import Builder (buildAttributeThrows, buildBytesThrows, buildExpressionThrows)
@@ -99,7 +99,7 @@ morph (expr, seq) ctx@DataizeContext{..} = do
     firstMatch :: [Y.MorphRule] -> IO (Maybe (Y.MorphRule, Subst))
     firstMatch [] = pure Nothing
     firstMatch (rule : rest) = do
-      substs <- matchExpressionWithRule' expr (asRule rule) (RuleContext (mdBuildTerm ctx))
+      substs <- matchExpressionWithRule' expr (asRule rule) (RuleContext (execBuildTerm ctx))
       case substs of
         (subst : _) -> pure (Just (rule, subst))
         [] -> firstMatch rest
@@ -160,7 +160,7 @@ dataize' (expr, seq) ctx = do
     firstMatch :: [Y.DataizeRule] -> IO (Maybe (Y.DataizeRule, Subst))
     firstMatch [] = pure Nothing
     firstMatch (rule : rest) = do
-      substs <- matchExpressionWithRule' expr (asRule rule) (RuleContext (mdBuildTerm ctx))
+      substs <- matchExpressionWithRule' expr (asRule rule) (RuleContext (execBuildTerm ctx))
       case substs of
         (subst : _) -> pure (Just (rule, subst))
         [] -> firstMatch rest
@@ -241,10 +241,10 @@ atom func _ _ = throwIO (userError (printf "Atom '%s' does not exist" (T.unpack 
 -- morphing operations that need the full evaluation context: 'lambda' applies
 -- an atom and 'global' dispatches from the universe Q. Every other function is
 -- delegated unchanged.
-mdBuildTerm :: DataizeContext -> BuildTermFunc
-mdBuildTerm ctx "lambda" = _lambda ctx
-mdBuildTerm ctx "global" = _global ctx
-mdBuildTerm ctx func = _buildTerm ctx func
+execBuildTerm :: DataizeContext -> BuildTermFunc
+execBuildTerm ctx "lambda" = _lambda ctx
+execBuildTerm ctx "global" = _global ctx
+execBuildTerm ctx func = _buildTerm ctx func
 
 _lambda :: DataizeContext -> BuildTermMethod
 _lambda ctx [ArgExpression expr] subst = do

@@ -10,7 +10,7 @@ import AST
 import Control.Monad
 import Data.List (nub)
 import Data.List.NonEmpty (NonEmpty (..))
-import Dataize (DataizeContext (DataizeContext), dataize, dataize', mdBuildTerm, morph)
+import Dataize (DataizeContext (DataizeContext), dataize, dataize', execBuildTerm, morph)
 import Deps (Term (TeExpression), dontSaveStep)
 import Functions (buildTerm)
 import Matcher (substEmpty)
@@ -109,11 +109,11 @@ spec = do
         )
       ]
 
-  describe "mdBuildTerm" $
+  describe "execBuildTerm" $
     it "resolves global dispatch from the universe Q" $ do
       prog <- parseProgramThrows "Q -> [[ x -> [[ D> 42- ]] ]]"
       expected <- parseExpressionThrows "[[ D> 42- ]]"
-      term <- mdBuildTerm (defaultDataizeContext ExGlobal prog) "global" [Yaml.ArgAttribute (AtLabel "x")] substEmpty
+      term <- execBuildTerm (defaultDataizeContext ExGlobal prog) "global" [Yaml.ArgAttribute (AtLabel "x")] substEmpty
       case term of
         TeExpression actual -> actual `shouldBe` expected
         _ -> expectationFailure "global() did not return an expression"
