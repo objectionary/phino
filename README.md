@@ -399,8 +399,8 @@ This is the list of supported meta variables:
                 `nf:` guard is needed)
 * `!B` || `𝐵` - list of bindings
 * `!d` || `δ` - bytes in meta delta binding
-* `!t` - tail after expression, sequence of applications and/or dispatches,
-         must start only with dispatch
+* `!t` - tail after expression, a possibly empty sequence of applications
+         and/or dispatches
 * `!F` - function name in meta lambda binding
 
 Every meta variable may also be used with an integer index, like `!B1` or `𝜏0`.
