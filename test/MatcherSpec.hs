@@ -409,6 +409,12 @@ spec = do
         , substs [[("t", MvTail [TaDispatch (AtLabel "org"), TaApplication (BiTau (AtLabel "x") (ExFormation [BiVoid AtRho]))])]]
         )
       ,
+        ( "Q.x * !t => Q.x(y -> [[]]) => [(!t >> [(y -> [[]])])]"
+        , ExMetaTail (ExDispatch ExGlobal (AtLabel "x")) "t"
+        , ExApplication (ExDispatch ExGlobal (AtLabel "x")) (BiTau (AtLabel "y") (ExFormation [BiVoid AtRho]))
+        , substs [[("t", MvTail [TaApplication (BiTau (AtLabel "y") (ExFormation [BiVoid AtRho]))])]]
+        )
+      ,
         ( "Q.!a * !t => Q.org.eolang(x -> [[]]) => [(!a >> org, !t >> [ .eolang, ( x -> [[ ]] ) ])]"
         , ExMetaTail (ExDispatch ExGlobal (AtMeta "a")) "t"
         , ExApplication (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang")) (BiTau (AtLabel "x") (ExFormation [BiVoid AtRho]))

@@ -1,5 +1,3 @@
-{-# LANGUAGE LambdaCase #-}
-
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
@@ -109,15 +107,8 @@ tailExpressions ptn tgt = case tailExpressionsReversed ptn tgt of
           (substs, tails) <- tailExpressionsReversed ptn' expr
           Just (substs, TaDispatch attr : tails)
         ExApplication expr tau -> do
-          (substs, tails@(t : _)) <- tailExpressionsReversed ptn' expr
-          if not (null tails) && isDispatch t
-            then Just (substs, TaApplication tau : tails)
-            else Nothing
-          where
-            isDispatch :: Tail -> Bool
-            isDispatch = \case
-              TaDispatch _ -> True
-              TaApplication _ -> False
+          (substs, tails) <- tailExpressionsReversed ptn' expr
+          Just (substs, TaApplication tau : tails)
         _ -> Just ([], [])
       substs -> Just (substs, [])
 
