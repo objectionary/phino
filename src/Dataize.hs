@@ -48,13 +48,11 @@ data DataizeContext = DataizeContext
 -- Resolve formation for LAMBDA Morphing rule.
 -- If formation contains λ binding, the called atom
 -- result is returned.
-formation :: [Binding] -> DataizeContext -> IO (Maybe (Expression, String))
+formation :: [Binding] -> DataizeContext -> IO (Maybe Expression)
 formation bds ctx = do
   let (lambda, bds') = maybeLambda bds
   case lambda of
-    Just (BiLambda func) -> do
-      obj <- atom func (ExFormation bds') ctx
-      pure (Just (obj, "Mlambda"))
+    Just (BiLambda func) -> Just <$> atom func (ExFormation bds') ctx
     _ -> pure Nothing
   where
     maybeLambda :: [Binding] -> (Maybe Binding, [Binding])
@@ -72,15 +70,15 @@ formation bds ctx = do
 -- and expr is expression which program refers to.
 -- If Q refers to formation which contains binding with attribute == tau -
 -- the expression from this binding is returned.
-phiDispatch :: T.Text -> Expression -> Maybe (Expression, String)
+phiDispatch :: T.Text -> Expression -> Maybe Expression
 phiDispatch tau expr = case expr of
   ExFormation bds -> boundExpr bds
   _ -> Nothing
   where
-    boundExpr :: [Binding] -> Maybe (Expression, String)
+    boundExpr :: [Binding] -> Maybe Expression
     boundExpr [] = Nothing
     boundExpr (bd : bds) = case bd of
-      BiTau (AtLabel attr) expr' -> if attr == tau then Just (expr', "Mphi") else boundExpr bds
+      BiTau (AtLabel attr) expr' -> if attr == tau then Just expr' else boundExpr bds
       _ -> boundExpr bds
 
 -- The Morphing function 𝕄 maps objects to primitives. It is driven by the
@@ -252,7 +250,7 @@ _lambda ctx [ArgExpression expr] subst = do
     ExFormation bds -> do
       resolved <- formation bds ctx
       case resolved of
-        Just (obj, _) -> pure (TeExpression obj)
+        Just obj -> pure (TeExpression obj)
         Nothing -> throwIO (userError "Function lambda() expects a formation with a λ binding")
     _ -> throwIO (userError "Function lambda() expects a formation")
 _lambda _ _ _ = throwIO (userError "Function lambda() requires exactly 1 expression argument")
@@ -262,7 +260,7 @@ _global DataizeContext{_program = Program prog} [ArgAttribute attr] subst = do
   attr' <- buildAttributeThrows attr subst
   case attr' of
     AtLabel label -> case phiDispatch label prog of
-      Just (expr, _) -> pure (TeExpression expr)
+      Just expr -> pure (TeExpression expr)
       Nothing -> throwIO (userError (printf "Universe Q has no attribute '%s'" (show attr')))
     _ -> throwIO (userError "Function global() expects a labelled attribute")
 _global _ _ _ = throwIO (userError "Function global() requires exactly 1 attribute argument")
