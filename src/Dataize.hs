@@ -9,10 +9,10 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Dataize (morph, morphByRules, dataize, dataize', dataizeByRules, DataizeContext (..), mdBuildTerm) where
+module Dataize (morph, dataize, dataize', DataizeContext (..), mdBuildTerm) where
 
 import AST
-import Builder (buildAttributeThrows, buildBytesThrows, buildExpressionThrows, contextualize)
+import Builder (buildAttributeThrows, buildBytesThrows, buildExpressionThrows)
 import Control.Exception (throwIO)
 import Data.List (partition)
 import Data.List.NonEmpty (NonEmpty (..))
@@ -24,7 +24,7 @@ import Matcher (Subst, substEmpty)
 import Misc
 import Must (Must (..))
 import Rewriter (RewriteContext (RewriteContext), Rewritten, rewrite)
-import Rule (RuleContext (RuleContext), isNF, matchExpressionWithRule')
+import Rule (RuleContext (RuleContext), matchExpressionWithRule')
 import Text.Printf (printf)
 import Yaml (ExtraArgument (..), normalizationRules)
 import qualified Yaml as Y
@@ -68,12 +68,6 @@ maybeBinding func bds =
 maybeLambda :: [Binding] -> (Maybe Binding, [Binding])
 maybeLambda = maybeBinding (\case BiLambda _ -> True; _ -> False)
 
-maybeDelta :: [Binding] -> (Maybe Binding, [Binding])
-maybeDelta = maybeBinding (\case BiDelta _ -> True; _ -> False)
-
-maybePhi :: [Binding] -> (Maybe Binding, [Binding])
-maybePhi = maybeBinding (\case (BiTau AtPhi _) -> True; _ -> False)
-
 -- Resolve formation for LAMBDA Morphing rule.
 -- If formation contains λ binding, the called atom
 -- result is returned.
@@ -102,79 +96,14 @@ phiDispatch tau expr = case expr of
       BiTau (AtLabel attr) expr' -> if attr == tau then Just (expr', "Mphi") else boundExpr bds
       _ -> boundExpr bds
 
--- Resolve tail PHI and LAMBDA Morphing rules.
--- Tail MUST start with dispatch, that's why most of the applications return Nothing
-withTail :: Expression -> DataizeContext -> IO (Maybe (Expression, String))
-withTail (ExApplication (ExFormation _) _) _ = pure Nothing
-withTail (ExApplication expr tau) ctx = do
-  tailed <- withTail expr ctx
-  case tailed of
-    Just (expr', rule) -> pure (Just (ExApplication expr' tau, rule))
-    _ -> pure Nothing
-withTail (ExDispatch (ExFormation bds) attr) ctx = do
-  tailed <- formation bds ctx
-  case tailed of
-    Just (obj, rule) -> pure (Just (ExDispatch obj attr, rule))
-    _ -> pure Nothing
-withTail (ExFormation bds) ctx = formation bds ctx
-withTail (ExDispatch ExGlobal (AtLabel label)) DataizeContext{_program = Program expr} = pure (phiDispatch label expr)
-withTail (ExDispatch expr attr) ctx = do
-  tailed <- withTail expr ctx
-  case tailed of
-    Just (exp, rule) -> pure (Just (ExDispatch exp attr, rule))
-    _ -> pure Nothing
-withTail _ _ = pure Nothing
-
--- The Morphing function M:<B,S> -> <P,S> maps objects to
--- primitives, possibly modifying the state of evaluation.
--- Terminology:
--- P(e) - is e Primitive, which is either formation without λ binding or termination ⊥
--- N(e) - normalize e
--- NF(e) - is e in normal form (can't be normalized anymore)
---
--- PRIM:   M(e) -> e                              if P(e)
--- NMZ:    M(e1) -> M(e2)                         if e2 := N(e1) and e1 != e2
--- LAMBDA: M([B1, λ -> F, B2] * t) -> M(e2 * t)   if e3 := [B1,B2] and e2 := F(e3)
--- PHI:    M(Q.tau * t) -> M(e * t)               if Q -> [B1, tau -> e, B2], t is tail started with dispatch
---         M(e) -> ⊥                              otherwise
+-- The Morphing function 𝕄 maps objects to primitives. It is driven by the
+-- ordered rules from 'morphing.yaml': the first rule whose pattern, 'where'
+-- and 'when' all hold is applied, and its 'then' outcome either stops with a
+-- primitive ('MoStop') or continues morphing ('MoMorph'). The 'Mnmz' rule
+-- reduces through the normalization rewriter, so its many sub-steps are
+-- spliced into the chain.
 morph :: Morphed -> DataizeContext -> IO Morphed
-morph (expr@ExTermination, seq) ctx = do
-  seq' <- leadsTo seq "Mprim" expr ctx
-  pure (expr, seq')
-morph (form@(ExFormation _), seq) ctx = do
-  resolved <- withTail form ctx
-  case resolved of
-    Just (expr, rule) -> do
-      seq' <- leadsTo seq rule expr ctx -- LAMBDA or PHI
-      morph (expr, seq') ctx
-    _ -> do
-      seq' <- leadsTo seq "Mprim" form ctx
-      pure (form, seq')
 morph (expr, seq) ctx@DataizeContext{..} = do
-  resolved <- withTail expr ctx
-  case resolved of
-    Just (expr', rule) -> do
-      seq' <- leadsTo seq rule expr' ctx
-      morph (expr', seq') ctx
-    _ ->
-      if isNF expr (RuleContext _buildTerm)
-        then morph (ExTermination, seq) ctx
-        else do
-          prog' <- withLocatedExpression _locator expr _program
-          (rewrittens, _) <- rewrite prog' normalizationRules (switchContext ctx) -- NMZ
-          let (rw :| rws) = NE.reverse rewrittens
-              seq' = rw :| rws <> NE.tail seq
-          expr' <- locatedExpression _locator (fst rw)
-          morph (expr', seq') ctx
-
--- The rule-driven morphing relation: it reproduces 'morph' by interpreting the
--- ordered rules from 'morphing.yaml'. The first rule whose pattern, 'when' and
--- 'where' all hold is applied; its 'then' outcome either stops with a primitive
--- ('MoStop') or continues morphing ('MoMorph'). The 'Mnmz' rule reduces through
--- the normalization rewriter, so its many sub-steps are spliced into the chain
--- exactly as the hand-written NMZ branch does.
-morphByRules :: Morphed -> DataizeContext -> IO Morphed
-morphByRules (expr, seq) ctx@DataizeContext{..} = do
   matched <- firstMatch Y.morphingRules
   case matched of
     Just (rule, subst)
@@ -204,7 +133,7 @@ morphByRules (expr, seq) ctx@DataizeContext{..} = do
     apply (Y.MoMorph result) name subst = do
       built <- buildExpressionThrows result subst
       seq' <- leadsTo seq name built ctx
-      morphByRules (built, seq') ctx
+      morph (built, seq') ctx
     normalized :: IO Morphed
     normalized = do
       prog' <- withLocatedExpression _locator expr _program
@@ -212,50 +141,21 @@ morphByRules (expr, seq) ctx@DataizeContext{..} = do
       let (rw :| rws) = NE.reverse rewrittens
           seq' = rw :| rws <> NE.tail seq
       expr' <- locatedExpression _locator (fst rw)
-      morphByRules (expr', seq') ctx
+      morph (expr', seq') ctx
 
 dataize :: DataizeContext -> IO Dataized
 dataize ctx@DataizeContext{..} = do
   expr <- locatedExpression _locator _program
-  (maybeBytes, seq) <- dataizeByRules (expr, (_program, Nothing) :| []) ctx
+  (maybeBytes, seq) <- dataize' (expr, (_program, Nothing) :| []) ctx
   pure (maybeBytes, reverse seq)
 
--- The goal of 'dataize' function is retrieve bytes from given expression.
---
--- DELTA: D(e) -> data                          if e = [B1, Δ -> data, B2]
--- BOX:   D([B1, 𝜑 -> e, B2]) -> D(С(e))        if [B1,B2] has no delta/lambda, where С(e) - contextualization
--- NORM:  D(e1) -> D(e2)                        if e2 := M(e1) and e1 is not primitive
---        nothing                               otherwise
-dataize' :: Dataizable -> DataizeContext -> IO Dataized
-dataize' (ExTermination, seq) _ = pure (Nothing, NE.toList seq)
-dataize' (form@(ExFormation bds), seq) ctx@DataizeContext{..} =
-  let _seq = NE.toList seq
-   in case maybeDelta bds of
-        (Just (BiDelta bytes), _) -> pure (Just bytes, _seq)
-        (Just _, _) -> pure (Nothing, _seq)
-        (Nothing, _) -> case maybePhi bds of
-          (Just (BiTau AtPhi expr), bds') -> case maybeLambda bds' of
-            (Just (BiLambda _), _) -> throwIO (userError "The 𝜑 and λ can't be present in formation at the same time")
-            (Just _, _) -> pure (Nothing, _seq)
-            (Nothing, _) -> do
-              let expr' = contextualize expr form
-              seq' <- leadsTo seq "contextualize" expr' ctx
-              dataize' (expr', seq') ctx
-          (Just _, _) -> pure (Nothing, _seq)
-          (Nothing, _) -> case maybeLambda bds of
-            (Just (BiLambda _), _) -> morph (form, seq) ctx >>= (`dataize'` ctx)
-            (Just _, _) -> pure (Nothing, _seq)
-            (Nothing, _) -> pure (Nothing, _seq)
-dataize' dataizable ctx = morph dataizable ctx >>= (`dataize'` ctx)
-
--- The rule-driven dataization relation: it reproduces 'dataize'' by interpreting
--- the ordered rules from 'dataization.yaml'. 'delta' yields the asset bytes,
+-- The Dataization function 𝔻 retrieves bytes from an expression. It is driven
+-- by the ordered rules from 'dataization.yaml': 'delta' yields the asset bytes,
 -- 'none' yields nothing, 'box' contextualizes the φ-body and keeps dataizing
 -- (its step is labelled by the operation, 'contextualize'), and 'norm' reduces
--- through morphing, splicing the morphing steps into the chain as the
--- hand-written NORM branch does.
-dataizeByRules :: Dataizable -> DataizeContext -> IO Dataized
-dataizeByRules (expr, seq) ctx = do
+-- through morphing, splicing the morphing steps into the chain.
+dataize' :: Dataizable -> DataizeContext -> IO Dataized
+dataize' (expr, seq) ctx = do
   matched <- firstMatch Y.dataizationRules
   case matched of
     Just (rule, subst) -> apply rule subst
@@ -278,12 +178,12 @@ dataizeByRules (expr, seq) ctx = do
       Y.DoNothing -> pure (Nothing, NE.toList seq)
       Y.DoDataize result
         | usesMorph rule -> do
-            (morphed, seq') <- morphByRules (expr, seq) ctx
-            dataizeByRules (morphed, seq') ctx
+            (morphed, seq') <- morph (expr, seq) ctx
+            dataize' (morphed, seq') ctx
         | otherwise -> do
             built <- buildExpressionThrows result subst
             seq' <- leadsTo seq (operation rule) built ctx
-            dataizeByRules (built, seq') ctx
+            dataize' (built, seq') ctx
     usesMorph :: Y.DataizeRule -> Bool
     usesMorph rule = maybe False (any ((== "morph") . Y.function)) rule.where_
     operation :: Y.DataizeRule -> String
@@ -386,6 +286,6 @@ _normalize _ _ _ = throwIO (userError "Function normalize() requires exactly 1 e
 _morph :: DataizeContext -> BuildTermMethod
 _morph ctx@DataizeContext{..} [ArgExpression expr] subst = do
   e <- buildExpressionThrows expr subst
-  (morphed, _) <- morphByRules (e, (_program, Nothing) :| []) ctx
+  (morphed, _) <- morph (e, (_program, Nothing) :| []) ctx
   pure (TeExpression morphed)
 _morph _ _ _ = throwIO (userError "Function morph() requires exactly 1 expression argument")
