@@ -276,16 +276,16 @@ _global _ _ _ = throwIO (userError "Function global() requires exactly 1 attribu
 
 _normalize :: DataizeContext -> BuildTermMethod
 _normalize ctx@DataizeContext{..} [ArgExpression expr] subst = do
-  e <- buildExpressionThrows expr subst
-  prog <- withLocatedExpression _locator e _program
+  expr' <- buildExpressionThrows expr subst
+  prog <- withLocatedExpression _locator expr' _program
   (rewrittens, _) <- rewrite prog normalizationRules (switchContext ctx)
-  e' <- locatedExpression _locator (fst (NE.last rewrittens))
-  pure (TeExpression e')
+  normalized <- locatedExpression _locator (fst (NE.last rewrittens))
+  pure (TeExpression normalized)
 _normalize _ _ _ = throwIO (userError "Function normalize() requires exactly 1 expression argument")
 
 _morph :: DataizeContext -> BuildTermMethod
 _morph ctx@DataizeContext{..} [ArgExpression expr] subst = do
-  e <- buildExpressionThrows expr subst
-  (morphed, _) <- morph (e, (_program, Nothing) :| []) ctx
+  expr' <- buildExpressionThrows expr subst
+  (morphed, _) <- morph (expr', (_program, Nothing) :| []) ctx
   pure (TeExpression morphed)
 _morph _ _ _ = throwIO (userError "Function morph() requires exactly 1 expression argument")
