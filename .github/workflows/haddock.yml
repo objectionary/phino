@@ -35,5 +35,5 @@ jobs:
       - run: cabal haddock --haddock-hyperlink-source
       - uses: JamesIves/github-pages-deploy-action@v4
         with:
-          folder: dist-newstyle/build/aarch64-osx/ghc-${{ env.GHC_VERSION }}/phino-0.0.0.0/doc/html/phino
+          folder: dist-newstyle/build/aarch64-osx/ghc-${{ env.GHC_VERSION }}/phino-0.0.0/doc/html/phino
           branch: gh-pages
