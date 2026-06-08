@@ -147,8 +147,8 @@ rewrite' state (rule : rest) iteration ctx@RewriteContext{..} = do
     _rewrite :: RewriteState -> Int -> IO RewriteState
     _rewrite (_rewrittens@((program, _) :| _), _unique, _) _count =
       let ruleName = rule.name
-          ptn = Y.pattern rule
-          res = Y.result rule
+          ptn = rule.pattern
+          res = rule.result
        in if _count - 1 == _maxDepth
             then do
               logDebug (printf "Max amount of rewriting cycles (%d) for rule '%s' has been reached, rewriting is stopped" _maxDepth ruleName)

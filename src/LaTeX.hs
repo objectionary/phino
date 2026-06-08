@@ -328,9 +328,9 @@ explainRule :: Y.Rule -> String
 explainRule rule =
   trrule
     rule.name
-    (renderToLatex (expressionToCST (Y.pattern rule)) defaultLatexContext)
-    (renderToLatex (expressionToCST (Y.result rule)) defaultLatexContext)
-    (joinedConditions rule.when (Y.having rule))
+    (renderToLatex (expressionToCST rule.pattern) defaultLatexContext)
+    (renderToLatex (expressionToCST rule.result) defaultLatexContext)
+    (joinedConditions rule.when rule.having)
     rule.where_
   where
     -- Join two maybe conditions into single one using Y.And if at least one is just.

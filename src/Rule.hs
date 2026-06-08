@@ -358,7 +358,7 @@ matchExpressionWithRule' = matchExpressionBy matchExpression'
 
 matchExpressionBy :: MatchExpressionFunc -> Expression -> Y.Rule -> RuleContext -> IO [Subst]
 matchExpressionBy matcher expr rule ctx =
-  let ptn = Y.pattern rule
+  let ptn = rule.pattern
       matched = matcher ptn expr
       name = rule.name
    in if null matched
@@ -385,7 +385,7 @@ matchExpressionBy matcher expr rule ctx =
                       logDebug "Substitution is empty after extending, maybe some metas are duplicated"
                       pure []
                     else do
-                      met <- meetMaybeCondition (Y.having rule) extended ctx
+                      met <- meetMaybeCondition rule.having extended ctx
                       when (null met) (logDebug "The 'having' condition wasn't met")
                       pure met
 
