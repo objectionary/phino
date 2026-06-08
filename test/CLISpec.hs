@@ -1051,7 +1051,7 @@ spec = do
             , "\\trrule{box}"
             , "  { \\mathbb{D}( [[ B_1, @ -> e, B_2 ]] ) }"
             , "  { \\mathbb{D}( e_1 ) }"
-            , "  { if $ [ Δ, L ] \\cap ( B_1 \\cup B_2 ) = \\emptyset $ }"
+            , "  { if $ [ \\Delta, L ] \\cap ( B_1 \\cup B_2 ) = \\emptyset $ }"
             , "  { where $ e_1 \\coloneqq \\ctx{ e }{ [[ B_1, @ -> e, B_2 ]] } $ }"
             , "\\trrule{norm}"
             , "  { \\mathbb{D}( e ) }"
