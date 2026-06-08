@@ -10,6 +10,7 @@ import AST
 import CLI.Types
 import CLI.Validators (invalidCLIArguments)
 import Control.Exception
+import Control.Monad ((>=>))
 import Data.Functor ((<&>))
 import Data.List (intercalate)
 import Data.Maybe
@@ -101,23 +102,21 @@ getRules normalize shuffle rules = do
           else do
             logDebug (printf "Using rules from files: [%s]" (intercalate ", " rules))
             yamls <- mapM M.ensuredFile rules
-            loaded <- mapM Y.yamlRule yamls
-            mapM_ validateRewriteRule loaded
-            pure loaded
+            mapM (Y.yamlRule >=> validateRewriteRule) yamls
   if shuffle
     then do
       logDebug "The --shuffle option is provided, rules are used in random order"
       M.shuffle ordered
     else pure ordered
 
--- Reject a user-supplied rewriting rule that references a build-term function
--- which needs the dataization context: those work only for dataization and
--- morphing, never for plain rewriting.
-validateRewriteRule :: Y.Rule -> IO ()
+-- Pass a user-supplied rewriting rule through unchanged, or fail fast if it
+-- references a build-term function which needs the dataization context: those
+-- work only for dataization and morphing, never for plain rewriting.
+validateRewriteRule :: Y.Rule -> IO Y.Rule
 validateRewriteRule rule =
   let used = maybe [] (map Y.function) rule.where_
    in case filter (`elem` morphDataizeFunctions) used of
-        [] -> pure ()
+        [] -> pure rule
         (fn : _) ->
           invalidCLIArguments
             (printf "Function '%s' in rule '%s' is available only for dataization and morphing, not for rewriting" fn rule.name)
