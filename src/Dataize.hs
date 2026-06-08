@@ -217,7 +217,7 @@ morphByRules (expr, seq) ctx@DataizeContext{..} = do
 dataize :: DataizeContext -> IO Dataized
 dataize ctx@DataizeContext{..} = do
   expr <- locatedExpression _locator _program
-  (maybeBytes, seq) <- dataize' (expr, (_program, Nothing) :| []) ctx
+  (maybeBytes, seq) <- dataizeByRules (expr, (_program, Nothing) :| []) ctx
   pure (maybeBytes, reverse seq)
 
 -- The goal of 'dataize' function is retrieve bytes from given expression.
