@@ -18,15 +18,15 @@ install: |
 release:
   pre: false
   script: |
-    [[ "${tag}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || exit -1
-    sed -i "s/0\.0\.0\.0/0.${tag}/" phino.cabal
+    [[ "${tag}" =~ ^0\.[0-9]+\.[0-9]+\.[0-9]+$ ]] || exit -1
+    sed -i "s/0\.0\.0\.0/${tag}/" phino.cabal
     chmod 755 ../hackage-auth
     cabal check
     make binary
     cabal test
     git commit -am "set version to ${tag}"
     cabal sdist
-    cabal upload --token=$(cat ../hackage-auth) --publish dist-newstyle/sdist/phino-0.${tag}.tar.gz
+    cabal upload --token=$(cat ../hackage-auth) --publish dist-newstyle/sdist/phino-${tag}.tar.gz
 merge:
   script: |-
     make -j
