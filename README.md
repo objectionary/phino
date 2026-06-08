@@ -80,7 +80,7 @@ Verify that `phino` is installed correctly:
 
 ```bash
 $ phino --version
-0.0.0.0
+0.0.0
 ```
 
 You can ensure scripts are run with a specific version of `phino` using
