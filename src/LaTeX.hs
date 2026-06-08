@@ -1,6 +1,7 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 
@@ -326,11 +327,11 @@ instance ToLaTeX EXTRA where
 explainRule :: Y.Rule -> String
 explainRule rule =
   trrule
-    (Y.name rule)
-    (renderToLatex (expressionToCST (Y.pattern rule)) defaultLatexContext)
-    (renderToLatex (expressionToCST (Y.result rule)) defaultLatexContext)
-    (joinedConditions (Y.when rule) (Y.having rule))
-    (Y.where_ rule)
+    rule.name
+    (renderToLatex (expressionToCST rule.pattern) defaultLatexContext)
+    (renderToLatex (expressionToCST rule.result) defaultLatexContext)
+    (joinedConditions rule.when rule.having)
+    rule.where_
   where
     -- Join two maybe conditions into single one using Y.And if at least one is just.
     joinedConditions :: Maybe Y.Condition -> Maybe Y.Condition -> Maybe Y.Condition
@@ -342,27 +343,29 @@ explainRule rule =
 explainMorphRule :: Y.MorphRule -> String
 explainMorphRule rule =
   trrule
-    (Y.mrName rule)
-    (morphOp (renderToLatex (expressionToCST (Y.mrMatch rule)) defaultLatexContext))
-    (morphOutcome (Y.mrThen rule))
-    (Y.mrWhen rule)
-    (Y.mrWhere rule)
+    rule.name
+    (morph (renderToLatex (expressionToCST rule.match) defaultLatexContext))
+    (morphOutcome rule.then_)
+    rule.when
+    rule.where_
   where
     morphOutcome :: Y.MorphOutcome -> String
-    morphOutcome (Y.MoMorph expr) = morphOp (renderToLatex (expressionToCST expr) defaultLatexContext)
+    morphOutcome (Y.MoMorph (Y.MaExpr expr)) = morph (renderToLatex (expressionToCST expr) defaultLatexContext)
+    morphOutcome (Y.MoMorph (Y.MaNormalize expr)) = morph (normalize (renderToLatex (expressionToCST expr) defaultLatexContext))
     morphOutcome (Y.MoStop expr) = renderToLatex (expressionToCST expr) defaultLatexContext
 
 explainDataizeRule :: Y.DataizeRule -> String
 explainDataizeRule rule =
   trrule
-    (Y.drName rule)
-    (dataizeOp (renderToLatex (expressionToCST (Y.drMatch rule)) defaultLatexContext))
-    (dataizeOutcome (Y.drThen rule))
-    (Y.drWhen rule)
-    (Y.drWhere rule)
+    rule.name
+    (dataize (renderToLatex (expressionToCST rule.match) defaultLatexContext))
+    (dataizeOutcome rule.then_)
+    rule.when
+    rule.where_
   where
     dataizeOutcome :: Y.DataizeOutcome -> String
-    dataizeOutcome (Y.DoDataize expr) = dataizeOp (renderToLatex (expressionToCST expr) defaultLatexContext)
+    dataizeOutcome (Y.DoDataize (Y.DaExpr expr)) = dataize (renderToLatex (expressionToCST expr) defaultLatexContext)
+    dataizeOutcome (Y.DoDataize (Y.DaMorph expr)) = dataize (morph (renderToLatex (expressionToCST expr) defaultLatexContext))
     dataizeOutcome (Y.DoData bytes) = T.unpack (render (toCST' bytes :: BYTES))
     dataizeOutcome Y.DoNothing = "\\varnothing"
 
@@ -379,11 +382,14 @@ trrule name lhs rhs cond extras =
     , extraArgumentsToLatex extras
     ]
 
-morphOp :: String -> String
-morphOp inner = "\\mathbb{M}( " ++ inner ++ " )"
+morph :: String -> String
+morph inner = "\\mathbb{M}( " ++ inner ++ " )"
 
-dataizeOp :: String -> String
-dataizeOp inner = "\\mathbb{D}( " ++ inner ++ " )"
+dataize :: String -> String
+dataize inner = "\\mathbb{D}( " ++ inner ++ " )"
+
+normalize :: String -> String
+normalize inner = "\\mathcal{N}( " ++ inner ++ " )"
 
 braced :: String -> String
 braced = printf "{ %s }"

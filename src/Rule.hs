@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
@@ -5,7 +6,7 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Rule (RuleContext (..), isNF, matchProgramWithRule, matchExpressionWithRule, meetCondition) where
+module Rule (RuleContext (..), isNF, matchProgramWithRule, matchExpressionWithRule, matchExpressionWithRule', meetCondition) where
 
 import AST
 import Builder
@@ -346,10 +347,20 @@ nfMetaNames = nub . go
     goBinding _ = []
 
 matchExpressionWithRule :: Expression -> Y.Rule -> RuleContext -> IO [Subst]
-matchExpressionWithRule expr rule ctx =
-  let ptn = Y.pattern rule
-      matched = matchExpression ptn expr
-      name = Y.name rule
+matchExpressionWithRule = matchExpressionBy matchExpression
+
+-- Like 'matchExpressionWithRule' but matches the pattern against the whole
+-- expression only (no deep, sub-expression matching). Used by the dataization
+-- and morphing driver, where a rule applies to the entire configuration rather
+-- than to nested redexes.
+matchExpressionWithRule' :: Expression -> Y.Rule -> RuleContext -> IO [Subst]
+matchExpressionWithRule' = matchExpressionBy matchExpression'
+
+matchExpressionBy :: MatchExpressionFunc -> Expression -> Y.Rule -> RuleContext -> IO [Subst]
+matchExpressionBy matcher expr rule ctx =
+  let ptn = rule.pattern
+      matched = matcher ptn expr
+      name = rule.name
    in if null matched
         then do
           logDebug (printf "Pattern from rule '%s' was not matched:\n%s" name (printExpression' ptn logPrintConfig))
@@ -361,20 +372,20 @@ matchExpressionWithRule expr rule ctx =
               logDebug "An NF-constrained '𝑛' meta-variable is not in normal form"
               pure []
             else do
-              when' <- meetMaybeCondition (Y.when rule) inNf ctx
+              when' <- meetMaybeCondition rule.when inNf ctx
               if null when'
                 then do
                   logDebug "The 'when' condition wasn't met"
                   pure []
                 else do
                   logDebug (printf "Rule %s" name)
-                  extended <- extraSubstitutions when' (Y.where_ rule) ctx
+                  extended <- extraSubstitutions when' rule.where_ ctx
                   if null extended
                     then do
                       logDebug "Substitution is empty after extending, maybe some metas are duplicated"
                       pure []
                     else do
-                      met <- meetMaybeCondition (Y.having rule) extended ctx
+                      met <- meetMaybeCondition rule.having extended ctx
                       when (null met) (logDebug "The 'having' condition wasn't met")
                       pure met
 

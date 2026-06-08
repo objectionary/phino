@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell #-}
@@ -213,43 +214,57 @@ yamlRule :: FilePath -> IO Rule
 yamlRule = Yaml.decodeFileThrow
 
 -- The right-hand side of a morphing reduction 𝕄(match) ⟿ then.
--- A mapping ('{ morph: e }') keeps reducing under 𝕄; a bare expression
+-- A mapping ('{ morph: arg }') keeps reducing under 𝕄; a bare expression
 -- (including ⊥) is the terminal primitive result.
 data MorphOutcome
-  = MoMorph Expression
+  = MoMorph MorphArg
   | MoStop Expression
   deriving (Eq, Generic, Show)
 
+-- The argument of a morphing continuation: either a plain expression ('𝕄(e)')
+-- or the normalization of one ('𝕄(𝒩(e))', written '{ normalize: e }').
+data MorphArg
+  = MaExpr Expression
+  | MaNormalize Expression
+  deriving (Eq, Generic, Show)
+
 -- The right-hand side of a dataization reduction 𝔻(match) ⟿ then.
--- A mapping ('{ dataize: e }') keeps reducing under 𝔻; a bare bytes scalar
+-- A mapping ('{ dataize: arg }') keeps reducing under 𝔻; a bare bytes scalar
 -- yields data; the 'nothing' keyword marks the function as undefined.
 data DataizeOutcome
-  = DoDataize Expression
+  = DoDataize DataizeArg
   | DoData Bytes
   | DoNothing
+  deriving (Eq, Generic, Show)
+
+-- The argument of a dataization continuation: either a plain expression
+-- ('𝔻(e)') or the morphing of one ('𝔻(𝕄(e))', written '{ morph: e }').
+data DataizeArg
+  = DaExpr Expression
+  | DaMorph Expression
   deriving (Eq, Generic, Show)
 
 -- One ordered morphing rule: match the expression, build extra metas in
 -- 'where', filter by 'when', then reduce per 'then'.
 data MorphRule = MorphRule
-  { mrName :: String
-  , mrDescription :: Maybe String
-  , mrMatch :: Expression
-  , mrWhere :: Maybe [Extra]
-  , mrWhen :: Maybe Condition
-  , mrThen :: MorphOutcome
+  { name :: String
+  , description :: Maybe String
+  , match :: Expression
+  , where_ :: Maybe [Extra]
+  , when :: Maybe Condition
+  , then_ :: MorphOutcome
   }
   deriving (Generic, Show)
 
 -- One ordered dataization rule, structured like 'MorphRule' but reducing
 -- under 𝔻 and able to terminate with bytes or 'nothing'.
 data DataizeRule = DataizeRule
-  { drName :: String
-  , drDescription :: Maybe String
-  , drMatch :: Expression
-  , drWhere :: Maybe [Extra]
-  , drWhen :: Maybe Condition
-  , drThen :: DataizeOutcome
+  { name :: String
+  , description :: Maybe String
+  , match :: Expression
+  , where_ :: Maybe [Extra]
+  , when :: Maybe Condition
+  , then_ :: DataizeOutcome
   }
   deriving (Generic, Show)
 
@@ -259,12 +274,24 @@ instance FromJSON MorphOutcome where
     MoMorph <$> o .: "morph"
   parseJSON v = MoStop <$> parseJSON v
 
+instance FromJSON MorphArg where
+  parseJSON (Object o) = do
+    validateYamlObject o ["normalize"]
+    MaNormalize <$> o .: "normalize"
+  parseJSON v = MaExpr <$> parseJSON v
+
 instance FromJSON DataizeOutcome where
   parseJSON (Object o) = do
     validateYamlObject o ["dataize"]
     DoDataize <$> o .: "dataize"
   parseJSON (String "nothing") = pure DoNothing
   parseJSON v = DoData <$> parseJSON v
+
+instance FromJSON DataizeArg where
+  parseJSON (Object o) = do
+    validateYamlObject o ["morph"]
+    DaMorph <$> o .: "morph"
+  parseJSON v = DaExpr <$> parseJSON v
 
 instance FromJSON MorphRule where
   parseJSON =

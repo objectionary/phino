@@ -11,20 +11,14 @@
   then: 𝑒
 
 - name: Mnmz
-  description: '𝕄(e) ⟿ 𝕄(𝒩(e)) if e ≢ 𝒩(e)'
+  description: '𝕄(e) ⟿ 𝕄(𝒩(e)) if e ∉ NF'
   match: 𝑒
-  where:
-    - meta: 𝑛
-      function: normalize
-      args:
-        - 𝑒
   when:
     not:
-      eq:
-        - 𝑒
-        - 𝑛
+      nf: 𝑒
   then:
-    morph: 𝑛
+    morph:
+      normalize: 𝑒
 
 - name: Mlambda
   description: '𝕄(⟦𝐵1, λ ⤍ F, 𝐵2⟧ * t) ⟿ 𝕄(F(⟦𝐵1, 𝐵2⟧) * t)'

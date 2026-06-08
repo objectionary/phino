@@ -27,16 +27,12 @@
 - name: norm
   description: '𝔻(e) ⟿ 𝔻(𝕄(e)) if e ∉ 𝒫'
   match: 𝑒
-  where:
-    - meta: 𝑒1
-      function: morph
-      args:
-        - 𝑒
   when:
     not:
       primitive: 𝑒
   then:
-    dataize: 𝑒1
+    dataize:
+      morph: 𝑒
 
 - name: none
   description: '𝔻(e) ⟿ nothing otherwise'

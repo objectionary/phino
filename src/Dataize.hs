@@ -1,5 +1,6 @@
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
@@ -8,24 +9,25 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Dataize (morph, dataize, dataize', DataizeContext (..)) where
+module Dataize (morph, dataize, dataize', DataizeContext (..), execBuildTerm) where
 
 import AST
-import Builder (contextualize)
+import Builder (buildAttributeThrows, buildBytesThrows, buildExpressionThrows)
 import Control.Exception (throwIO)
 import Data.List (partition)
 import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as NE
 import qualified Data.Text as T
-import Deps (BuildTermFunc, SaveStepFunc, Term (TeAttribute))
+import Deps (BuildTermFunc, BuildTermMethod, SaveStepFunc, Term (TeAttribute, TeExpression))
 import Locator (locatedExpression, withLocatedExpression)
-import Matcher (substEmpty)
+import Matcher (Subst, substEmpty)
 import Misc
 import Must (Must (..))
 import Rewriter (RewriteContext (RewriteContext), Rewritten, rewrite)
-import Rule (RuleContext (RuleContext), isNF)
+import Rule (RuleContext (RuleContext), matchExpressionWithRule')
 import Text.Printf (printf)
-import Yaml (normalizationRules)
+import Yaml (ExtraArgument (..), normalizationRules)
+import qualified Yaml as Y
 
 type Dataized = (Maybe Bytes, [Rewritten])
 
@@ -43,127 +45,96 @@ data DataizeContext = DataizeContext
   , _saveStep :: SaveStepFunc
   }
 
-switchContext :: DataizeContext -> RewriteContext
-switchContext DataizeContext{..} =
-  RewriteContext
-    _locator
-    _maxDepth
-    _maxCycles
-    _depthSensitive
-    _buildTerm
-    MtDisabled
-    Nothing
-    _saveStep
-
-maybeBinding :: (Binding -> Bool) -> [Binding] -> (Maybe Binding, [Binding])
-maybeBinding _ [] = (Nothing, [])
-maybeBinding func bds =
-  let (found, rest) = partition func bds
-   in case found of
-        [bd] -> (Just bd, rest)
-        _ -> (Nothing, bds)
-
-maybeLambda :: [Binding] -> (Maybe Binding, [Binding])
-maybeLambda = maybeBinding (\case BiLambda _ -> True; _ -> False)
-
-maybeDelta :: [Binding] -> (Maybe Binding, [Binding])
-maybeDelta = maybeBinding (\case BiDelta _ -> True; _ -> False)
-
-maybePhi :: [Binding] -> (Maybe Binding, [Binding])
-maybePhi = maybeBinding (\case (BiTau AtPhi _) -> True; _ -> False)
-
 -- Resolve formation for LAMBDA Morphing rule.
 -- If formation contains λ binding, the called atom
 -- result is returned.
-formation :: [Binding] -> DataizeContext -> IO (Maybe (Expression, String))
+formation :: [Binding] -> DataizeContext -> IO (Maybe Expression)
 formation bds ctx = do
   let (lambda, bds') = maybeLambda bds
   case lambda of
-    Just (BiLambda func) -> do
-      obj <- atom func (ExFormation bds') ctx
-      pure (Just (obj, "Mlambda"))
+    Just (BiLambda func) -> Just <$> atom func (ExFormation bds') ctx
     _ -> pure Nothing
+  where
+    maybeLambda :: [Binding] -> (Maybe Binding, [Binding])
+    maybeLambda = maybeBinding (\case BiLambda _ -> True; _ -> False)
+    maybeBinding :: (Binding -> Bool) -> [Binding] -> (Maybe Binding, [Binding])
+    maybeBinding _ [] = (Nothing, [])
+    maybeBinding func bds =
+      let (found, rest) = partition func bds
+       in case found of
+            [bd] -> (Just bd, rest)
+            _ -> (Nothing, bds)
 
 -- Resolve dispatch from global object (Q.tau) for PHI Morphing rule.
 -- Here tau is the name of the attribute which is taken from Q
 -- and expr is expression which program refers to.
 -- If Q refers to formation which contains binding with attribute == tau -
 -- the expression from this binding is returned.
-phiDispatch :: T.Text -> Expression -> Maybe (Expression, String)
+phiDispatch :: T.Text -> Expression -> Maybe Expression
 phiDispatch tau expr = case expr of
   ExFormation bds -> boundExpr bds
   _ -> Nothing
   where
-    boundExpr :: [Binding] -> Maybe (Expression, String)
+    boundExpr :: [Binding] -> Maybe Expression
     boundExpr [] = Nothing
     boundExpr (bd : bds) = case bd of
-      BiTau (AtLabel attr) expr' -> if attr == tau then Just (expr', "Mphi") else boundExpr bds
+      BiTau (AtLabel attr) expr' -> if attr == tau then Just expr' else boundExpr bds
       _ -> boundExpr bds
 
--- Resolve tail PHI and LAMBDA Morphing rules.
--- Tail MUST start with dispatch, that's why most of the applications return Nothing
-withTail :: Expression -> DataizeContext -> IO (Maybe (Expression, String))
-withTail (ExApplication (ExFormation _) _) _ = pure Nothing
-withTail (ExApplication expr tau) ctx = do
-  tailed <- withTail expr ctx
-  case tailed of
-    Just (expr', rule) -> pure (Just (ExApplication expr' tau, rule))
-    _ -> pure Nothing
-withTail (ExDispatch (ExFormation bds) attr) ctx = do
-  tailed <- formation bds ctx
-  case tailed of
-    Just (obj, rule) -> pure (Just (ExDispatch obj attr, rule))
-    _ -> pure Nothing
-withTail (ExFormation bds) ctx = formation bds ctx
-withTail (ExDispatch ExGlobal (AtLabel label)) DataizeContext{_program = Program expr} = pure (phiDispatch label expr)
-withTail (ExDispatch expr attr) ctx = do
-  tailed <- withTail expr ctx
-  case tailed of
-    Just (exp, rule) -> pure (Just (ExDispatch exp attr, rule))
-    _ -> pure Nothing
-withTail _ _ = pure Nothing
-
--- The Morphing function M:<B,S> -> <P,S> maps objects to
--- primitives, possibly modifying the state of evaluation.
--- Terminology:
--- P(e) - is e Primitive, which is either formation without λ binding or termination ⊥
--- N(e) - normalize e
--- NF(e) - is e in normal form (can't be normalized anymore)
---
--- PRIM:   M(e) -> e                              if P(e)
--- NMZ:    M(e1) -> M(e2)                         if e2 := N(e1) and e1 != e2
--- LAMBDA: M([B1, λ -> F, B2] * t) -> M(e2 * t)   if e3 := [B1,B2] and e2 := F(e3)
--- PHI:    M(Q.tau * t) -> M(e * t)               if Q -> [B1, tau -> e, B2], t is tail started with dispatch
---         M(e) -> ⊥                              otherwise
+-- The Morphing function 𝕄 maps objects to primitives. It is driven by the
+-- ordered rules from 'morphing.yaml': the first matching rule's 'then' outcome
+-- either stops with a primitive ('MoStop') or keeps morphing ('MoMorph'). When
+-- the morphed argument is a normalization ('MaNormalize', the 'Mnmz' rule), the
+-- rewriter runs and its individual steps are spliced into the chain.
 morph :: Morphed -> DataizeContext -> IO Morphed
-morph (expr@ExTermination, seq) ctx = do
-  seq' <- leadsTo seq "Mprim" expr ctx
-  pure (expr, seq')
-morph (form@(ExFormation _), seq) ctx = do
-  resolved <- withTail form ctx
-  case resolved of
-    Just (expr, rule) -> do
-      seq' <- leadsTo seq rule expr ctx -- LAMBDA or PHI
-      morph (expr, seq') ctx
-    _ -> do
-      seq' <- leadsTo seq "Mprim" form ctx
-      pure (form, seq')
 morph (expr, seq) ctx@DataizeContext{..} = do
-  resolved <- withTail expr ctx
-  case resolved of
-    Just (expr', rule) -> do
-      seq' <- leadsTo seq rule expr' ctx
+  matched <- firstMatch Y.morphingRules
+  case matched of
+    Just (rule, subst) -> apply rule.then_ rule.name subst
+    Nothing -> pure (expr, seq)
+  where
+    firstMatch :: [Y.MorphRule] -> IO (Maybe (Y.MorphRule, Subst))
+    firstMatch [] = pure Nothing
+    firstMatch (rule : rest) = do
+      substs <- matchExpressionWithRule' expr (asRule rule) (RuleContext (execBuildTerm ctx))
+      case substs of
+        (subst : _) -> pure (Just (rule, subst))
+        [] -> firstMatch rest
+    -- The M/D rules evaluate as 'match → where → when', so the rule's guard
+    -- maps onto the 'having' slot (which runs after 'where'), not 'when' (which
+    -- 'matchExpressionWithRule'' runs before 'where').
+    asRule :: Y.MorphRule -> Y.Rule
+    asRule rule = Y.Rule rule.name rule.description rule.match ExGlobal Nothing rule.where_ rule.when
+    apply :: Y.MorphOutcome -> String -> Subst -> IO Morphed
+    apply (Y.MoStop result) name subst = do
+      built <- buildExpressionThrows result subst
+      seq' <- leadsTo seq name built ctx
+      pure (built, seq')
+    apply (Y.MoMorph (Y.MaExpr result)) name subst = do
+      built <- buildExpressionThrows result subst
+      seq' <- leadsTo seq name built ctx
+      morph (built, seq') ctx
+    -- 𝕄(𝒩(e)) delegates to the normalization rewriter and splices its
+    -- individual steps (alpha, copy, dot, …) into the chain before morphing on.
+    apply (Y.MoMorph (Y.MaNormalize arg)) _ subst = do
+      built <- buildExpressionThrows arg subst
+      prog' <- withLocatedExpression _locator built _program
+      (rewrittens, _) <- rewrite prog' normalizationRules (switchContext ctx)
+      let (rw :| rws) = NE.reverse rewrittens
+          seq' = rw :| rws <> NE.tail seq
+      expr' <- locatedExpression _locator (fst rw)
       morph (expr', seq') ctx
-    _ ->
-      if isNF expr (RuleContext _buildTerm)
-        then morph (ExTermination, seq) ctx
-        else do
-          prog' <- withLocatedExpression _locator expr _program
-          (rewrittens, _) <- rewrite prog' normalizationRules (switchContext ctx) -- NMZ
-          let (rw :| rws) = NE.reverse rewrittens
-              seq' = rw :| rws <> NE.tail seq
-          expr' <- locatedExpression _locator (fst rw)
-          morph (expr', seq') ctx
+    switchContext :: DataizeContext -> RewriteContext
+    switchContext DataizeContext{..} =
+      RewriteContext
+        _locator
+        _maxDepth
+        _maxCycles
+        _depthSensitive
+        _buildTerm
+        MtDisabled
+        Nothing
+        _saveStep
 
 dataize :: DataizeContext -> IO Dataized
 dataize ctx@DataizeContext{..} = do
@@ -171,33 +142,47 @@ dataize ctx@DataizeContext{..} = do
   (maybeBytes, seq) <- dataize' (expr, (_program, Nothing) :| []) ctx
   pure (maybeBytes, reverse seq)
 
--- The goal of 'dataize' function is retrieve bytes from given expression.
---
--- DELTA: D(e) -> data                          if e = [B1, Δ -> data, B2]
--- BOX:   D([B1, 𝜑 -> e, B2]) -> D(С(e))        if [B1,B2] has no delta/lambda, where С(e) - contextualization
--- NORM:  D(e1) -> D(e2)                        if e2 := M(e1) and e1 is not primitive
---        nothing                               otherwise
+-- The Dataization function 𝔻 retrieves bytes from an expression. It is driven
+-- by the ordered rules from 'dataization.yaml': 'delta' yields the asset bytes,
+-- 'none' yields nothing, 'box' contextualizes the φ-body and keeps dataizing
+-- (its step is labelled by the operation, 'contextualize'), and 'norm' reduces
+-- through morphing, splicing the morphing steps into the chain.
 dataize' :: Dataizable -> DataizeContext -> IO Dataized
-dataize' (ExTermination, seq) _ = pure (Nothing, NE.toList seq)
-dataize' (form@(ExFormation bds), seq) ctx@DataizeContext{..} =
-  let _seq = NE.toList seq
-   in case maybeDelta bds of
-        (Just (BiDelta bytes), _) -> pure (Just bytes, _seq)
-        (Just _, _) -> pure (Nothing, _seq)
-        (Nothing, _) -> case maybePhi bds of
-          (Just (BiTau AtPhi expr), bds') -> case maybeLambda bds' of
-            (Just (BiLambda _), _) -> throwIO (userError "The 𝜑 and λ can't be present in formation at the same time")
-            (Just _, _) -> pure (Nothing, _seq)
-            (Nothing, _) -> do
-              let expr' = contextualize expr form
-              seq' <- leadsTo seq "contextualize" expr' ctx
-              dataize' (expr', seq') ctx
-          (Just _, _) -> pure (Nothing, _seq)
-          (Nothing, _) -> case maybeLambda bds of
-            (Just (BiLambda _), _) -> morph (form, seq) ctx >>= (`dataize'` ctx)
-            (Just _, _) -> pure (Nothing, _seq)
-            (Nothing, _) -> pure (Nothing, _seq)
-dataize' dataizable ctx = morph dataizable ctx >>= (`dataize'` ctx)
+dataize' (expr, seq) ctx = do
+  matched <- firstMatch Y.dataizationRules
+  case matched of
+    Just (rule, subst) -> apply rule subst
+    Nothing -> pure (Nothing, NE.toList seq)
+  where
+    firstMatch :: [Y.DataizeRule] -> IO (Maybe (Y.DataizeRule, Subst))
+    firstMatch [] = pure Nothing
+    firstMatch (rule : rest) = do
+      substs <- matchExpressionWithRule' expr (asRule rule) (RuleContext (execBuildTerm ctx))
+      case substs of
+        (subst : _) -> pure (Just (rule, subst))
+        [] -> firstMatch rest
+    asRule :: Y.DataizeRule -> Y.Rule
+    asRule rule = Y.Rule rule.name rule.description rule.match ExGlobal Nothing rule.where_ rule.when
+    apply :: Y.DataizeRule -> Subst -> IO Dataized
+    apply rule subst = case rule.then_ of
+      Y.DoData bytes -> do
+        bts <- buildBytesThrows bytes subst
+        pure (Just bts, NE.toList seq)
+      Y.DoNothing -> pure (Nothing, NE.toList seq)
+      Y.DoDataize (Y.DaExpr result) -> do
+        built <- buildExpressionThrows result subst
+        seq' <- leadsTo seq (operation rule) built ctx
+        dataize' (built, seq') ctx
+      -- 𝔻(𝕄(e)) delegates to the morphing relation, splicing its steps into
+      -- the chain before dataizing on.
+      Y.DoDataize (Y.DaMorph arg) -> do
+        built <- buildExpressionThrows arg subst
+        (morphed, seq') <- morph (built, seq) ctx
+        dataize' (morphed, seq') ctx
+    operation :: Y.DataizeRule -> String
+    operation rule = case rule.where_ of
+      Just (extra : _) -> Y.function extra
+      _ -> ""
 
 leadsTo :: NonEmpty Rewritten -> String -> Expression -> DataizeContext -> IO (NonEmpty Rewritten)
 leadsTo ((prog, _) :| rest) rule expr DataizeContext{..} = do
@@ -248,3 +233,34 @@ atom "L_number_eq" self ctx = do
         else pure (ExDispatch self (AtLabel "y"))
     _ -> pure ExTermination
 atom func _ _ = throwIO (userError (printf "Atom '%s' does not exist" (T.unpack func)))
+
+-- Augment the injected, context-free term builder with the dataization and
+-- morphing operations that need the full evaluation context: 'lambda' applies
+-- an atom and 'global' dispatches from the universe Q. Every other function is
+-- delegated unchanged.
+execBuildTerm :: DataizeContext -> BuildTermFunc
+execBuildTerm ctx "lambda" = _lambda ctx
+execBuildTerm ctx "global" = _global ctx
+execBuildTerm ctx func = _buildTerm ctx func
+
+_lambda :: DataizeContext -> BuildTermMethod
+_lambda ctx [ArgExpression expr] subst = do
+  form <- buildExpressionThrows expr subst
+  case form of
+    ExFormation bds -> do
+      resolved <- formation bds ctx
+      case resolved of
+        Just obj -> pure (TeExpression obj)
+        Nothing -> throwIO (userError "Function lambda() expects a formation with a λ binding")
+    _ -> throwIO (userError "Function lambda() expects a formation")
+_lambda _ _ _ = throwIO (userError "Function lambda() requires exactly 1 expression argument")
+
+_global :: DataizeContext -> BuildTermMethod
+_global DataizeContext{_program = Program prog} [ArgAttribute attr] subst = do
+  attr' <- buildAttributeThrows attr subst
+  case attr' of
+    AtLabel label -> case phiDispatch label prog of
+      Just expr -> pure (TeExpression expr)
+      Nothing -> throwIO (userError (printf "Universe Q has no attribute '%s'" (show attr')))
+    _ -> throwIO (userError "Function global() expects a labelled attribute")
+_global _ _ _ = throwIO (userError "Function global() requires exactly 1 attribute argument")

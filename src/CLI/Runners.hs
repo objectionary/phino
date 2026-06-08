@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
@@ -93,7 +94,7 @@ runRewrite OptsRewrite{..} = do
     validateBreakpoint :: Maybe String -> [Y.Rule] -> IO ()
     validateBreakpoint Nothing _ = pure ()
     validateBreakpoint (Just rule) rules =
-      let names = map Y.name rules
+      let names = map (.name) rules
        in unless
             (rule `elem` names)
             (invalidCLIArguments (printf "The rule '%s' provided in '--breakpoint' option is absent across given rewriting rules: %s" rule (intercalate ", " names)))

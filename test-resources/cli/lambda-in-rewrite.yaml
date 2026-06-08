@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# This rule references the 'lambda' function, which needs the evaluation
+# context and is therefore only available to dataization/morphing rules.
+# It is used to test that 'rewrite' rejects such rules at load time.
+name: uses-lambda
+pattern: '!e'
+result: '!e1'
+where:
+  - meta: '!e1'
+    function: lambda
+    args:
+      - '!e'

@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
@@ -9,9 +10,10 @@ import AST
 import Control.Monad
 import Data.List (nub)
 import Data.List.NonEmpty (NonEmpty (..))
-import Dataize (DataizeContext (DataizeContext), dataize, dataize', morph)
-import Deps (dontSaveStep)
+import Dataize (DataizeContext (DataizeContext), dataize, dataize', execBuildTerm, morph)
+import Deps (Term (TeExpression), dontSaveStep)
 import Functions (buildTerm)
+import Matcher (substEmpty)
 import Parser (parseExpressionThrows, parseProgramThrows)
 import Rewriter (Rewritten)
 import Test.Hspec
@@ -107,14 +109,23 @@ spec = do
         )
       ]
 
+  describe "execBuildTerm" $
+    it "resolves global dispatch from the universe Q" $ do
+      prog <- parseProgramThrows "Q -> [[ x -> [[ D> 42- ]] ]]"
+      expected <- parseExpressionThrows "[[ D> 42- ]]"
+      term <- execBuildTerm (defaultDataizeContext ExGlobal prog) "global" [Yaml.ArgAttribute (AtLabel "x")] substEmpty
+      case term of
+        TeExpression actual -> actual `shouldBe` expected
+        _ -> expectationFailure "global() did not return an expression"
+
   describe "labels every step with a defined rule or operation" $ do
     let funcs = maybe [] (map Yaml.function)
         allowed =
-          map Yaml.mrName Yaml.morphingRules
-            ++ map Yaml.drName Yaml.dataizationRules
-            ++ map Yaml.name Yaml.normalizationRules
-            ++ concatMap (funcs . Yaml.mrWhere) Yaml.morphingRules
-            ++ concatMap (funcs . Yaml.drWhere) Yaml.dataizationRules
+          map (.name) Yaml.morphingRules
+            ++ map (.name) Yaml.dataizationRules
+            ++ map (.name) Yaml.normalizationRules
+            ++ concatMap (funcs . (.where_)) Yaml.morphingRules
+            ++ concatMap (funcs . (.where_)) Yaml.dataizationRules
     it "uses no step label without a defining rule or operation" $ do
       prog <-
         parseProgramThrows
@@ -132,6 +143,47 @@ spec = do
       unless
         (null orphans)
         (expectationFailure ("Dataization emitted step labels with no defining rule or operation: " ++ show orphans))
+
+  describe "preserves the reduction label sequence" $ do
+    let labelsOf loc src = do
+          prog <- parseProgramThrows src
+          loc' <- parseExpressionThrows loc
+          (_, chain) <- dataize (defaultDataizeContext loc' prog)
+          pure [label | (_, Just label) <- chain]
+    it "dataizes 5.plus(6) through the expected rules" $ do
+      labels <-
+        labelsOf
+          "Q"
+          "Q -> [[ bytes(data) -> [[ @ -> $.data ]], number(as-bytes) -> [[ @ -> $.as-bytes, plus(x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6) ]]"
+      labels
+        `shouldBe` [ "contextualize"
+                   , "Mphi"
+                   , "alpha"
+                   , "copy"
+                   , "dot"
+                   , "copy"
+                   , "alpha"
+                   , "copy"
+                   , "Mlambda"
+                   , "Mphi"
+                   , "alpha"
+                   , "copy"
+                   , "Mprim"
+                   , "contextualize"
+                   , "dot"
+                   , "Mphi"
+                   , "alpha"
+                   , "copy"
+                   , "copy"
+                   , "Mprim"
+                   , "contextualize"
+                   , "dot"
+                   , "copy"
+                   , "Mprim"
+                   ]
+    it "dataizes a located reference through the expected rules" $ do
+      labels <- labelsOf "Q.foo.bar" "Q -> [[ foo -> [[ bar -> [[ @ -> Q.x ]] ]], x -> [[ D> 42- ]] ]]"
+      labels `shouldBe` ["contextualize", "Mphi", "Mprim"]
 
   testDataize
     [

@@ -3,7 +3,7 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Functions (buildTerm) where
+module Functions (buildTerm, execFunctions) where
 
 import AST
 import Builder
@@ -23,6 +23,13 @@ import Regexp
 import Tau (freshTau)
 import Text.Printf (printf)
 import qualified Yaml as Y
+
+-- Names of build-term functions that need the full evaluation context
+-- (program plus atom evaluation) and are therefore provided only by
+-- 'Dataize.execBuildTerm', not by 'buildTerm'. They are available while
+-- executing dataization and morphing rules, but not rewriting rules.
+execFunctions :: [String]
+execFunctions = ["lambda", "global"]
 
 buildTerm :: BuildTermFunc
 buildTerm func args subst = do
