@@ -84,11 +84,10 @@ phiDispatch tau expr = case expr of
       _ -> boundExpr bds
 
 -- The Morphing function 𝕄 maps objects to primitives. It is driven by the
--- ordered rules from 'morphing.yaml': the first rule whose pattern, 'where'
--- and 'when' all hold is applied, and its 'then' outcome either stops with a
--- primitive ('MoStop') or continues morphing ('MoMorph'). The 'Mnmz' rule
--- reduces through the normalization rewriter, so its many sub-steps are
--- spliced into the chain.
+-- ordered rules from 'morphing.yaml': the first matching rule's 'then' outcome
+-- either stops with a primitive ('MoStop') or keeps morphing ('MoMorph'). When
+-- the morphed argument is a normalization ('MaNormalize', the 'Mnmz' rule), the
+-- rewriter runs and its individual steps are spliced into the chain.
 morph :: Morphed -> DataizeContext -> IO Morphed
 morph (expr, seq) ctx@DataizeContext{..} = do
   matched <- firstMatch Y.morphingRules
@@ -105,7 +104,7 @@ morph (expr, seq) ctx@DataizeContext{..} = do
         [] -> firstMatch rest
     -- The M/D rules evaluate as 'match → where → when', so the rule's guard
     -- maps onto the 'having' slot (which runs after 'where'), not 'when' (which
-    -- 'matchExpressionWithRule' runs before 'where').
+    -- 'matchExpressionWithRule'' runs before 'where').
     asRule :: Y.MorphRule -> Y.Rule
     asRule rule = Y.Rule rule.name rule.description rule.match ExGlobal Nothing rule.where_ rule.when
     apply :: Y.MorphOutcome -> String -> Subst -> IO Morphed
