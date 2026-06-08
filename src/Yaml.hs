@@ -214,24 +214,34 @@ yamlRule :: FilePath -> IO Rule
 yamlRule = Yaml.decodeFileThrow
 
 -- The right-hand side of a morphing reduction 𝕄(match) ⟿ then.
--- A mapping ('{ morph: e }') keeps reducing under 𝕄; the 'normalize' keyword
--- reduces through the normalization relation 𝒩; a bare expression (including
--- ⊥) is the terminal primitive result.
+-- A mapping ('{ morph: arg }') keeps reducing under 𝕄; a bare expression
+-- (including ⊥) is the terminal primitive result.
 data MorphOutcome
-  = MoMorph Expression
-  | MoNormalize
+  = MoMorph MorphArg
   | MoStop Expression
   deriving (Eq, Generic, Show)
 
+-- The argument of a morphing continuation: either a plain expression ('𝕄(e)')
+-- or the normalization of one ('𝕄(𝒩(e))', written '{ normalize: e }').
+data MorphArg
+  = MaExpr Expression
+  | MaNormalize Expression
+  deriving (Eq, Generic, Show)
+
 -- The right-hand side of a dataization reduction 𝔻(match) ⟿ then.
--- A mapping ('{ dataize: e }') keeps reducing under 𝔻; the 'morph' keyword
--- reduces through the morphing relation 𝕄; a bare bytes scalar yields data;
--- the 'nothing' keyword marks the function as undefined.
+-- A mapping ('{ dataize: arg }') keeps reducing under 𝔻; a bare bytes scalar
+-- yields data; the 'nothing' keyword marks the function as undefined.
 data DataizeOutcome
-  = DoDataize Expression
-  | DoMorph
+  = DoDataize DataizeArg
   | DoData Bytes
   | DoNothing
+  deriving (Eq, Generic, Show)
+
+-- The argument of a dataization continuation: either a plain expression
+-- ('𝔻(e)') or the morphing of one ('𝔻(𝕄(e))', written '{ morph: e }').
+data DataizeArg
+  = DaExpr Expression
+  | DaMorph Expression
   deriving (Eq, Generic, Show)
 
 -- One ordered morphing rule: match the expression, build extra metas in
@@ -262,16 +272,26 @@ instance FromJSON MorphOutcome where
   parseJSON (Object o) = do
     validateYamlObject o ["morph"]
     MoMorph <$> o .: "morph"
-  parseJSON (String "normalize") = pure MoNormalize
   parseJSON v = MoStop <$> parseJSON v
+
+instance FromJSON MorphArg where
+  parseJSON (Object o) = do
+    validateYamlObject o ["normalize"]
+    MaNormalize <$> o .: "normalize"
+  parseJSON v = MaExpr <$> parseJSON v
 
 instance FromJSON DataizeOutcome where
   parseJSON (Object o) = do
     validateYamlObject o ["dataize"]
     DoDataize <$> o .: "dataize"
-  parseJSON (String "morph") = pure DoMorph
   parseJSON (String "nothing") = pure DoNothing
   parseJSON v = DoData <$> parseJSON v
+
+instance FromJSON DataizeArg where
+  parseJSON (Object o) = do
+    validateYamlObject o ["morph"]
+    DaMorph <$> o .: "morph"
+  parseJSON v = DaExpr <$> parseJSON v
 
 instance FromJSON MorphRule where
   parseJSON =

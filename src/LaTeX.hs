@@ -350,8 +350,8 @@ explainMorphRule rule =
     rule.where_
   where
     morphOutcome :: Y.MorphOutcome -> String
-    morphOutcome (Y.MoMorph expr) = morphOp (renderToLatex (expressionToCST expr) defaultLatexContext)
-    morphOutcome Y.MoNormalize = morphOp (normalizeOp (renderToLatex (expressionToCST rule.match) defaultLatexContext))
+    morphOutcome (Y.MoMorph (Y.MaExpr expr)) = morphOp (renderToLatex (expressionToCST expr) defaultLatexContext)
+    morphOutcome (Y.MoMorph (Y.MaNormalize expr)) = morphOp (normalizeOp (renderToLatex (expressionToCST expr) defaultLatexContext))
     morphOutcome (Y.MoStop expr) = renderToLatex (expressionToCST expr) defaultLatexContext
 
 explainDataizeRule :: Y.DataizeRule -> String
@@ -364,8 +364,8 @@ explainDataizeRule rule =
     rule.where_
   where
     dataizeOutcome :: Y.DataizeOutcome -> String
-    dataizeOutcome (Y.DoDataize expr) = dataizeOp (renderToLatex (expressionToCST expr) defaultLatexContext)
-    dataizeOutcome Y.DoMorph = dataizeOp (morphOp (renderToLatex (expressionToCST rule.match) defaultLatexContext))
+    dataizeOutcome (Y.DoDataize (Y.DaExpr expr)) = dataizeOp (renderToLatex (expressionToCST expr) defaultLatexContext)
+    dataizeOutcome (Y.DoDataize (Y.DaMorph expr)) = dataizeOp (morphOp (renderToLatex (expressionToCST expr) defaultLatexContext))
     dataizeOutcome (Y.DoData bytes) = T.unpack (render (toCST' bytes :: BYTES))
     dataizeOutcome Y.DoNothing = "\\varnothing"
 

@@ -30,7 +30,9 @@
   when:
     not:
       primitive: 𝑒
-  then: morph
+  then:
+    dataize:
+      morph: 𝑒
 
 - name: none
   description: '𝔻(e) ⟿ nothing otherwise'

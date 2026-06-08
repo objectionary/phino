@@ -113,14 +113,15 @@ morph (expr, seq) ctx@DataizeContext{..} = do
       built <- buildExpressionThrows result subst
       seq' <- leadsTo seq name built ctx
       pure (built, seq')
-    apply (Y.MoMorph result) name subst = do
+    apply (Y.MoMorph (Y.MaExpr result)) name subst = do
       built <- buildExpressionThrows result subst
       seq' <- leadsTo seq name built ctx
       morph (built, seq') ctx
-    -- 'normalize' delegates to the normalization rewriter and splices its
-    -- individual steps (alpha, copy, dot, …) into the chain.
-    apply Y.MoNormalize _ _ = do
-      prog' <- withLocatedExpression _locator expr _program
+    -- 𝕄(𝒩(e)) delegates to the normalization rewriter and splices its
+    -- individual steps (alpha, copy, dot, …) into the chain before morphing on.
+    apply (Y.MoMorph (Y.MaNormalize arg)) _ subst = do
+      built <- buildExpressionThrows arg subst
+      prog' <- withLocatedExpression _locator built _program
       (rewrittens, _) <- rewrite prog' normalizationRules (switchContext ctx)
       let (rw :| rws) = NE.reverse rewrittens
           seq' = rw :| rws <> NE.tail seq
@@ -171,14 +172,16 @@ dataize' (expr, seq) ctx = do
         bts <- buildBytesThrows bytes subst
         pure (Just bts, NE.toList seq)
       Y.DoNothing -> pure (Nothing, NE.toList seq)
-      -- 'morph' delegates to the morphing relation and splices its steps.
-      Y.DoMorph -> do
-        (morphed, seq') <- morph (expr, seq) ctx
-        dataize' (morphed, seq') ctx
-      Y.DoDataize result -> do
+      Y.DoDataize (Y.DaExpr result) -> do
         built <- buildExpressionThrows result subst
         seq' <- leadsTo seq (operation rule) built ctx
         dataize' (built, seq') ctx
+      -- 𝔻(𝕄(e)) delegates to the morphing relation, splicing its steps into
+      -- the chain before dataizing on.
+      Y.DoDataize (Y.DaMorph arg) -> do
+        built <- buildExpressionThrows arg subst
+        (morphed, seq') <- morph (built, seq) ctx
+        dataize' (morphed, seq') ctx
     operation :: Y.DataizeRule -> String
     operation rule = case rule.where_ of
       Just (extra : _) -> Y.function extra
