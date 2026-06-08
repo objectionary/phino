@@ -361,6 +361,12 @@ spec = do
       withStdin "{T(x -> Q.y)}" $
         testCLISucceeded ["rewrite", "--rule=resources/normalize/dc.yaml"] ["Φ ↦ ⊥"]
 
+    it "fails when a rewriting rule uses a dataization-only function" $
+      withStdin "{⟦⟧}" $
+        testCLIFailed
+          ["rewrite", rule "morph-in-rewrite.yaml"]
+          ["Function 'morph' in rule 'uses-morph' is available only for dataization and morphing, not for rewriting"]
+
     it "normalizes with --normalize flag" $
       testCLISucceeded
         ["rewrite", "--normalize", resource "normalize.phi", "--margin=25"]

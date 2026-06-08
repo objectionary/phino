@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# This rule references the 'morph' function, which needs the dataization
+# context and is therefore only available to dataization/morphing rules.
+# It is used to test that 'rewrite' rejects such rules at load time.
+name: uses-morph
+pattern: '!e'
+result: '!e1'
+where:
+  - meta: '!e1'
+    function: morph
+    args:
+      - '!e'

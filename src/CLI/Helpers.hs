@@ -1,5 +1,6 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
+{-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
@@ -14,6 +15,7 @@ import Data.List (intercalate)
 import Data.Maybe
 import Deps (SaveStepFunc, saveStep)
 import Encoding
+import Functions (morphDataizeFunctions)
 import LaTeX (LatexContext (..), defaultMeetLength, defaultMeetPopularity, expressionToLaTeX, programToLaTeX, rewrittensToLatex)
 import Locator (locatedExpression)
 import Logger
@@ -99,12 +101,26 @@ getRules normalize shuffle rules = do
           else do
             logDebug (printf "Using rules from files: [%s]" (intercalate ", " rules))
             yamls <- mapM M.ensuredFile rules
-            mapM Y.yamlRule yamls
+            loaded <- mapM Y.yamlRule yamls
+            mapM_ validateRewriteRule loaded
+            pure loaded
   if shuffle
     then do
       logDebug "The --shuffle option is provided, rules are used in random order"
       M.shuffle ordered
     else pure ordered
+
+-- Reject a user-supplied rewriting rule that references a build-term function
+-- which needs the dataization context: those work only for dataization and
+-- morphing, never for plain rewriting.
+validateRewriteRule :: Y.Rule -> IO ()
+validateRewriteRule rule =
+  let used = maybe [] (map Y.function) rule.where_
+   in case filter (`elem` morphDataizeFunctions) used of
+        [] -> pure ()
+        (fn : _) ->
+          invalidCLIArguments
+            (printf "Function '%s' in rule '%s' is available only for dataization and morphing, not for rewriting" fn rule.name)
 
 -- Output content
 printOut :: Maybe FilePath -> String -> IO ()
