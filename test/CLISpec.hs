@@ -1044,8 +1044,8 @@ spec = do
         [ unlines
             [ "\\begin{tabular}{rl}"
             , "\\trrule{delta}"
-            , "  { \\mathbb{D}( [[ B_1, D> δ, B_2 ]] ) }"
-            , "  { δ }"
+            , "  { \\mathbb{D}( [[ B_1, D> \\delta, B_2 ]] ) }"
+            , "  { \\delta }"
             , "  { }"
             , "  { }"
             , "\\trrule{box}"

@@ -244,7 +244,8 @@ instance ToLaTeX BINDINGS where
   toLaTeX bds = bds
 
 instance ToLaTeX PAIR where
-  toLaTeX PA_DELTA{..} = PA_DELTA' bytes
+  toLaTeX PA_DELTA{..} = toLaTeX (PA_DELTA' bytes)
+  toLaTeX PA_DELTA'{..} = PA_DELTA' (toLaTeX bytes)
   toLaTeX PA_LAMBDA{..} = PA_LAMBDA' (piped func)
   toLaTeX PA_LAMBDA'{..} = PA_LAMBDA' (piped func)
   toLaTeX PA_VOID{..} = PA_VOID (toLaTeX attr) arrow void
@@ -254,7 +255,6 @@ instance ToLaTeX PAIR where
   toLaTeX PA_META_DELTA'{..} = PA_META_DELTA' (toLaTeX meta)
   toLaTeX PA_META_LAMBDA{..} = toLaTeX (PA_META_LAMBDA' meta)
   toLaTeX PA_META_LAMBDA'{..} = PA_META_LAMBDA' (toLaTeX meta)
-  toLaTeX pair = pair
 
 instance ToLaTeX META where
   toLaTeX META{..} =
@@ -270,6 +270,10 @@ instance ToLaTeX META_HEAD where
   toLaTeX B = B'
   toLaTeX D = D'
   toLaTeX mh = mh
+
+instance ToLaTeX BYTES where
+  toLaTeX (BT_META meta) = BT_META (toLaTeX meta)
+  toLaTeX bts = bts
 
 instance ToLaTeX APP_ARG where
   toLaTeX APP_ARG{..} = APP_ARG (toLaTeX expr) (toLaTeX args)
@@ -366,7 +370,7 @@ explainDataizeRule rule =
     dataizeOutcome :: Y.DataizeOutcome -> String
     dataizeOutcome (Y.DoDataize (Y.DaExpr expr)) = dataize (renderToLatex (expressionToCST expr) defaultLatexContext)
     dataizeOutcome (Y.DoDataize (Y.DaMorph expr)) = dataize (morph (renderToLatex (expressionToCST expr) defaultLatexContext))
-    dataizeOutcome (Y.DoData bytes) = T.unpack (render (toCST' bytes :: BYTES))
+    dataizeOutcome (Y.DoData bytes) = T.unpack (render (toLaTeX (toCST' bytes :: BYTES)))
     dataizeOutcome Y.DoNothing = "\\varnothing"
 
 -- Render a single rule row through the shared \trrule macro: name, left-hand

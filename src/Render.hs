@@ -120,7 +120,7 @@ instance Render META_HEAD where
   render B = "𝐵"
   render B' = "B"
   render D = "δ"
-  render D' = "d"
+  render D' = "\\delta"
   render TAIL = "t"
   render F = "F"
 

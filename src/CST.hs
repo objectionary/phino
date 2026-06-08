@@ -88,7 +88,7 @@ data META_HEAD
   | B -- 𝐵
   | B' -- B
   | D -- δ
-  | D' -- d
+  | D' -- \delta
   | TAIL -- t
   | F -- F
   deriving (Eq, Show)
