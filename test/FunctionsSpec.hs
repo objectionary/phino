@@ -18,7 +18,7 @@ import Text.Printf (printf)
 import Yaml (ExtraArgument (ArgBinding))
 
 spec :: Test.Hspec.Spec
-spec = describe "Functions" $ do
+spec = describe "Functions" $
   Test.Hspec.it "contains only unique bindings after 'join'" $ do
     let first = ("B1", MvBindings [BiVoid AtRho, BiDelta BtEmpty, BiTau (AtLabel "x") ExGlobal, BiVoid (AtAlpha 0)])
         second = ("B2", MvBindings [BiTau AtRho ExThis, BiLambda "Func", BiDelta (BtOne "00"), BiVoid (AtAlpha 1)])
