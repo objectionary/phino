@@ -344,28 +344,28 @@ explainMorphRule :: Y.MorphRule -> String
 explainMorphRule rule =
   trrule
     rule.name
-    (morphOp (renderToLatex (expressionToCST rule.match) defaultLatexContext))
+    (morph (renderToLatex (expressionToCST rule.match) defaultLatexContext))
     (morphOutcome rule.then_)
     rule.when
     rule.where_
   where
     morphOutcome :: Y.MorphOutcome -> String
-    morphOutcome (Y.MoMorph (Y.MaExpr expr)) = morphOp (renderToLatex (expressionToCST expr) defaultLatexContext)
-    morphOutcome (Y.MoMorph (Y.MaNormalize expr)) = morphOp (normalizeOp (renderToLatex (expressionToCST expr) defaultLatexContext))
+    morphOutcome (Y.MoMorph (Y.MaExpr expr)) = morph (renderToLatex (expressionToCST expr) defaultLatexContext)
+    morphOutcome (Y.MoMorph (Y.MaNormalize expr)) = morph (normalize (renderToLatex (expressionToCST expr) defaultLatexContext))
     morphOutcome (Y.MoStop expr) = renderToLatex (expressionToCST expr) defaultLatexContext
 
 explainDataizeRule :: Y.DataizeRule -> String
 explainDataizeRule rule =
   trrule
     rule.name
-    (dataizeOp (renderToLatex (expressionToCST rule.match) defaultLatexContext))
+    (dataize (renderToLatex (expressionToCST rule.match) defaultLatexContext))
     (dataizeOutcome rule.then_)
     rule.when
     rule.where_
   where
     dataizeOutcome :: Y.DataizeOutcome -> String
-    dataizeOutcome (Y.DoDataize (Y.DaExpr expr)) = dataizeOp (renderToLatex (expressionToCST expr) defaultLatexContext)
-    dataizeOutcome (Y.DoDataize (Y.DaMorph expr)) = dataizeOp (morphOp (renderToLatex (expressionToCST expr) defaultLatexContext))
+    dataizeOutcome (Y.DoDataize (Y.DaExpr expr)) = dataize (renderToLatex (expressionToCST expr) defaultLatexContext)
+    dataizeOutcome (Y.DoDataize (Y.DaMorph expr)) = dataize (morph (renderToLatex (expressionToCST expr) defaultLatexContext))
     dataizeOutcome (Y.DoData bytes) = T.unpack (render (toCST' bytes :: BYTES))
     dataizeOutcome Y.DoNothing = "\\varnothing"
 
@@ -382,14 +382,14 @@ trrule name lhs rhs cond extras =
     , extraArgumentsToLatex extras
     ]
 
-morphOp :: String -> String
-morphOp inner = "\\mathbb{M}( " ++ inner ++ " )"
+morph :: String -> String
+morph inner = "\\mathbb{M}( " ++ inner ++ " )"
 
-dataizeOp :: String -> String
-dataizeOp inner = "\\mathbb{D}( " ++ inner ++ " )"
+dataize :: String -> String
+dataize inner = "\\mathbb{D}( " ++ inner ++ " )"
 
-normalizeOp :: String -> String
-normalizeOp inner = "\\mathcal{N}( " ++ inner ++ " )"
+normalize :: String -> String
+normalize inner = "\\mathcal{N}( " ++ inner ++ " )"
 
 braced :: String -> String
 braced = printf "{ %s }"
