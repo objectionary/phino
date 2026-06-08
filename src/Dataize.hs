@@ -45,26 +45,6 @@ data DataizeContext = DataizeContext
   , _saveStep :: SaveStepFunc
   }
 
-switchContext :: DataizeContext -> RewriteContext
-switchContext DataizeContext{..} =
-  RewriteContext
-    _locator
-    _maxDepth
-    _maxCycles
-    _depthSensitive
-    _buildTerm
-    MtDisabled
-    Nothing
-    _saveStep
-
-maybeBinding :: (Binding -> Bool) -> [Binding] -> (Maybe Binding, [Binding])
-maybeBinding _ [] = (Nothing, [])
-maybeBinding func bds =
-  let (found, rest) = partition func bds
-   in case found of
-        [bd] -> (Just bd, rest)
-        _ -> (Nothing, bds)
-
 -- Resolve formation for LAMBDA Morphing rule.
 -- If formation contains λ binding, the called atom
 -- result is returned.
@@ -79,6 +59,13 @@ formation bds ctx = do
   where
     maybeLambda :: [Binding] -> (Maybe Binding, [Binding])
     maybeLambda = maybeBinding (\case BiLambda _ -> True; _ -> False)
+    maybeBinding :: (Binding -> Bool) -> [Binding] -> (Maybe Binding, [Binding])
+    maybeBinding _ [] = (Nothing, [])
+    maybeBinding func bds =
+      let (found, rest) = partition func bds
+       in case found of
+            [bd] -> (Just bd, rest)
+            _ -> (Nothing, bds)
 
 -- Resolve dispatch from global object (Q.tau) for PHI Morphing rule.
 -- Here tau is the name of the attribute which is taken from Q
@@ -139,6 +126,17 @@ morph (expr, seq) ctx@DataizeContext{..} = do
           seq' = rw :| rws <> NE.tail seq
       expr' <- locatedExpression _locator (fst rw)
       morph (expr', seq') ctx
+    switchContext :: DataizeContext -> RewriteContext
+    switchContext DataizeContext{..} =
+      RewriteContext
+        _locator
+        _maxDepth
+        _maxCycles
+        _depthSensitive
+        _buildTerm
+        MtDisabled
+        Nothing
+        _saveStep
 
 dataize :: DataizeContext -> IO Dataized
 dataize ctx@DataizeContext{..} = do
@@ -173,16 +171,14 @@ dataize' (expr, seq) ctx = do
         bts <- buildBytesThrows bytes subst
         pure (Just bts, NE.toList seq)
       Y.DoNothing -> pure (Nothing, NE.toList seq)
-      Y.DoDataize result
-        | usesMorph rule -> do
-            (morphed, seq') <- morph (expr, seq) ctx
-            dataize' (morphed, seq') ctx
-        | otherwise -> do
-            built <- buildExpressionThrows result subst
-            seq' <- leadsTo seq (operation rule) built ctx
-            dataize' (built, seq') ctx
-    usesMorph :: Y.DataizeRule -> Bool
-    usesMorph rule = maybe False (any ((== "morph") . Y.function)) rule.where_
+      -- 'morph' delegates to the morphing relation and splices its steps.
+      Y.DoMorph -> do
+        (morphed, seq') <- morph (expr, seq) ctx
+        dataize' (morphed, seq') ctx
+      Y.DoDataize result -> do
+        built <- buildExpressionThrows result subst
+        seq' <- leadsTo seq (operation rule) built ctx
+        dataize' (built, seq') ctx
     operation :: Y.DataizeRule -> String
     operation rule = case rule.where_ of
       Just (extra : _) -> Y.function extra
@@ -245,7 +241,6 @@ atom func _ _ = throwIO (userError (printf "Atom '%s' does not exist" (T.unpack 
 mdBuildTerm :: DataizeContext -> BuildTermFunc
 mdBuildTerm ctx "lambda" = _lambda ctx
 mdBuildTerm ctx "global" = _global ctx
-mdBuildTerm ctx "morph" = _morph ctx
 mdBuildTerm ctx func = _buildTerm ctx func
 
 _lambda :: DataizeContext -> BuildTermMethod
@@ -269,10 +264,3 @@ _global DataizeContext{_program = Program prog} [ArgAttribute attr] subst = do
       Nothing -> throwIO (userError (printf "Universe Q has no attribute '%s'" (show attr')))
     _ -> throwIO (userError "Function global() expects a labelled attribute")
 _global _ _ _ = throwIO (userError "Function global() requires exactly 1 attribute argument")
-
-_morph :: DataizeContext -> BuildTermMethod
-_morph ctx@DataizeContext{..} [ArgExpression expr] subst = do
-  expr' <- buildExpressionThrows expr subst
-  (morphed, _) <- morph (expr', (_program, Nothing) :| []) ctx
-  pure (TeExpression morphed)
-_morph _ _ _ = throwIO (userError "Function morph() requires exactly 1 expression argument")

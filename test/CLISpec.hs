@@ -364,8 +364,8 @@ spec = do
     it "fails when a rewriting rule uses a dataization-only function" $
       withStdin "{⟦⟧}" $
         testCLIFailed
-          ["rewrite", rule "morph-in-rewrite.yaml"]
-          ["Function 'morph' in rule 'uses-morph' is available only for dataization and morphing, not for rewriting"]
+          ["rewrite", rule "lambda-in-rewrite.yaml"]
+          ["Function 'lambda' in rule 'uses-lambda' is available only for dataization and morphing, not for rewriting"]
 
     it "normalizes with --normalize flag" $
       testCLISucceeded
@@ -1055,9 +1055,9 @@ spec = do
             , "  { where $ e_1 \\coloneqq \\ctx{ e }{ [[ B_1, @ -> e, B_2 ]] } $ }"
             , "\\trrule{norm}"
             , "  { \\mathbb{D}( e ) }"
-            , "  { \\mathbb{D}( e_1 ) }"
+            , "  { \\mathbb{D}( \\mathbb{M}( e ) ) }"
             , "  { if $ e \\notin \\mathcal{P} $ }"
-            , "  { where $ e_1 \\coloneqq morph( e ) $ }"
+            , "  { }"
             , "\\trrule{none}"
             , "  { \\mathbb{D}( e ) }"
             , "  { \\varnothing }"

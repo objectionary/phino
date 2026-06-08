@@ -224,10 +224,12 @@ data MorphOutcome
   deriving (Eq, Generic, Show)
 
 -- The right-hand side of a dataization reduction 𝔻(match) ⟿ then.
--- A mapping ('{ dataize: e }') keeps reducing under 𝔻; a bare bytes scalar
--- yields data; the 'nothing' keyword marks the function as undefined.
+-- A mapping ('{ dataize: e }') keeps reducing under 𝔻; the 'morph' keyword
+-- reduces through the morphing relation 𝕄; a bare bytes scalar yields data;
+-- the 'nothing' keyword marks the function as undefined.
 data DataizeOutcome
   = DoDataize Expression
+  | DoMorph
   | DoData Bytes
   | DoNothing
   deriving (Eq, Generic, Show)
@@ -267,6 +269,7 @@ instance FromJSON DataizeOutcome where
   parseJSON (Object o) = do
     validateYamlObject o ["dataize"]
     DoDataize <$> o .: "dataize"
+  parseJSON (String "morph") = pure DoMorph
   parseJSON (String "nothing") = pure DoNothing
   parseJSON v = DoData <$> parseJSON v
 

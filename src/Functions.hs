@@ -29,7 +29,7 @@ import qualified Yaml as Y
 -- 'Dataize.mdBuildTerm', not by 'buildTerm'. They are available while executing
 -- dataization and morphing rules, but not to rewriting/normalization rules.
 execFunctions :: [String]
-execFunctions = ["lambda", "global", "morph"]
+execFunctions = ["lambda", "global"]
 
 buildTerm :: BuildTermFunc
 buildTerm func args subst = do
