@@ -227,6 +227,7 @@ instance ToLaTeX ATTRIBUTE where
   toLaTeX AT_LABEL{..} = AT_LABEL (piped label)
   toLaTeX AT_META{..} = AT_META (toLaTeX meta)
   toLaTeX AT_LAMBDA{} = AT_LAMBDA LAMBDA'
+  toLaTeX AT_DELTA{} = AT_DELTA DELTA'
   toLaTeX AT_REST{} = AT_REST DOTS'
   toLaTeX attr = attr
 

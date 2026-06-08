@@ -46,7 +46,7 @@ data PHI = PHI | AT
 data RHO = RHO | CARET
   deriving (Eq, Show)
 
-data DELTA = DELTA
+data DELTA = DELTA | DELTA'
   deriving (Eq, Show)
 
 data XI = XI | DOLLAR
