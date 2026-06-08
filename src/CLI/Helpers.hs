@@ -16,7 +16,7 @@ import Data.List (intercalate)
 import Data.Maybe
 import Deps (SaveStepFunc, saveStep)
 import Encoding
-import Functions (morphDataizeFunctions)
+import Functions (execFunctions)
 import LaTeX (LatexContext (..), defaultMeetLength, defaultMeetPopularity, expressionToLaTeX, programToLaTeX, rewrittensToLatex)
 import Locator (locatedExpression)
 import Logger
@@ -115,7 +115,7 @@ getRules normalize shuffle rules = do
 validateRewriteRule :: Y.Rule -> IO Y.Rule
 validateRewriteRule rule =
   let used = maybe [] (map Y.function) rule.where_
-   in case filter (`elem` morphDataizeFunctions) used of
+   in case filter (`elem` execFunctions) used of
         [] -> pure rule
         (fn : _) ->
           invalidCLIArguments
