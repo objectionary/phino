@@ -65,9 +65,6 @@ maybeBinding func bds =
         [bd] -> (Just bd, rest)
         _ -> (Nothing, bds)
 
-maybeLambda :: [Binding] -> (Maybe Binding, [Binding])
-maybeLambda = maybeBinding (\case BiLambda _ -> True; _ -> False)
-
 -- Resolve formation for LAMBDA Morphing rule.
 -- If formation contains λ binding, the called atom
 -- result is returned.
@@ -79,6 +76,9 @@ formation bds ctx = do
       obj <- atom func (ExFormation bds') ctx
       pure (Just (obj, "Mlambda"))
     _ -> pure Nothing
+  where
+    maybeLambda :: [Binding] -> (Maybe Binding, [Binding])
+    maybeLambda = maybeBinding (\case BiLambda _ -> True; _ -> False)
 
 -- Resolve dispatch from global object (Q.tau) for PHI Morphing rule.
 -- Here tau is the name of the attribute which is taken from Q
@@ -106,9 +106,7 @@ morph :: Morphed -> DataizeContext -> IO Morphed
 morph (expr, seq) ctx@DataizeContext{..} = do
   matched <- firstMatch Y.morphingRules
   case matched of
-    Just (rule, subst)
-      | usesNormalize rule -> normalized
-      | otherwise -> apply rule.then_ rule.name subst
+    Just (rule, subst) -> apply rule.then_ rule.name subst
     Nothing -> pure (expr, seq)
   where
     firstMatch :: [Y.MorphRule] -> IO (Maybe (Y.MorphRule, Subst))
@@ -123,8 +121,6 @@ morph (expr, seq) ctx@DataizeContext{..} = do
     -- 'matchExpressionWithRule' runs before 'where').
     asRule :: Y.MorphRule -> Y.Rule
     asRule rule = Y.Rule rule.name rule.description rule.match ExGlobal Nothing rule.where_ rule.when
-    usesNormalize :: Y.MorphRule -> Bool
-    usesNormalize rule = maybe False (any ((== "normalize") . Y.function)) rule.where_
     apply :: Y.MorphOutcome -> String -> Subst -> IO Morphed
     apply (Y.MoStop result) name subst = do
       built <- buildExpressionThrows result subst
@@ -134,8 +130,9 @@ morph (expr, seq) ctx@DataizeContext{..} = do
       built <- buildExpressionThrows result subst
       seq' <- leadsTo seq name built ctx
       morph (built, seq') ctx
-    normalized :: IO Morphed
-    normalized = do
+    -- 'normalize' delegates to the normalization rewriter and splices its
+    -- individual steps (alpha, copy, dot, …) into the chain.
+    apply Y.MoNormalize _ _ = do
       prog' <- withLocatedExpression _locator expr _program
       (rewrittens, _) <- rewrite prog' normalizationRules (switchContext ctx)
       let (rw :| rws) = NE.reverse rewrittens
@@ -243,12 +240,11 @@ atom func _ _ = throwIO (userError (printf "Atom '%s' does not exist" (T.unpack 
 
 -- Augment the injected, context-free term builder with the dataization and
 -- morphing operations that need the full evaluation context: 'lambda' applies
--- an atom, 'global' dispatches from the universe Q and 'normalize' reduces an
--- expression to its normal form. Every other function is delegated unchanged.
+-- an atom and 'global' dispatches from the universe Q. Every other function is
+-- delegated unchanged.
 mdBuildTerm :: DataizeContext -> BuildTermFunc
 mdBuildTerm ctx "lambda" = _lambda ctx
 mdBuildTerm ctx "global" = _global ctx
-mdBuildTerm ctx "normalize" = _normalize ctx
 mdBuildTerm ctx "morph" = _morph ctx
 mdBuildTerm ctx func = _buildTerm ctx func
 
@@ -273,15 +269,6 @@ _global DataizeContext{_program = Program prog} [ArgAttribute attr] subst = do
       Nothing -> throwIO (userError (printf "Universe Q has no attribute '%s'" (show attr')))
     _ -> throwIO (userError "Function global() expects a labelled attribute")
 _global _ _ _ = throwIO (userError "Function global() requires exactly 1 attribute argument")
-
-_normalize :: DataizeContext -> BuildTermMethod
-_normalize ctx@DataizeContext{..} [ArgExpression expr] subst = do
-  expr' <- buildExpressionThrows expr subst
-  prog <- withLocatedExpression _locator expr' _program
-  (rewrittens, _) <- rewrite prog normalizationRules (switchContext ctx)
-  normalized <- locatedExpression _locator (fst (NE.last rewrittens))
-  pure (TeExpression normalized)
-_normalize _ _ _ = throwIO (userError "Function normalize() requires exactly 1 expression argument")
 
 _morph :: DataizeContext -> BuildTermMethod
 _morph ctx@DataizeContext{..} [ArgExpression expr] subst = do

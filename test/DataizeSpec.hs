@@ -109,7 +109,7 @@ spec = do
         )
       ]
 
-  describe "mdBuildTerm" $ do
+  describe "mdBuildTerm" $
     it "resolves global dispatch from the universe Q" $ do
       prog <- parseProgramThrows "Q -> [[ x -> [[ D> 42- ]] ]]"
       expected <- parseExpressionThrows "[[ D> 42- ]]"
@@ -117,12 +117,6 @@ spec = do
       case term of
         TeExpression actual -> actual `shouldBe` expected
         _ -> expectationFailure "global() did not return an expression"
-    it "reduces an expression to its normal form" $ do
-      reducible <- parseExpressionThrows "⊥.x"
-      term <- mdBuildTerm (defaultDataizeContext ExGlobal (Program ExGlobal)) "normalize" [Yaml.ArgExpression reducible] substEmpty
-      case term of
-        TeExpression actual -> actual `shouldBe` ExTermination
-        _ -> expectationFailure "normalize() did not return an expression"
 
   describe "labels every step with a defined rule or operation" $ do
     let funcs = maybe [] (map Yaml.function)

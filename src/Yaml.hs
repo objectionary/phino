@@ -214,10 +214,12 @@ yamlRule :: FilePath -> IO Rule
 yamlRule = Yaml.decodeFileThrow
 
 -- The right-hand side of a morphing reduction 𝕄(match) ⟿ then.
--- A mapping ('{ morph: e }') keeps reducing under 𝕄; a bare expression
--- (including ⊥) is the terminal primitive result.
+-- A mapping ('{ morph: e }') keeps reducing under 𝕄; the 'normalize' keyword
+-- reduces through the normalization relation 𝒩; a bare expression (including
+-- ⊥) is the terminal primitive result.
 data MorphOutcome
   = MoMorph Expression
+  | MoNormalize
   | MoStop Expression
   deriving (Eq, Generic, Show)
 
@@ -258,6 +260,7 @@ instance FromJSON MorphOutcome where
   parseJSON (Object o) = do
     validateYamlObject o ["morph"]
     MoMorph <$> o .: "morph"
+  parseJSON (String "normalize") = pure MoNormalize
   parseJSON v = MoStop <$> parseJSON v
 
 instance FromJSON DataizeOutcome where

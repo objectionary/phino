@@ -351,6 +351,7 @@ explainMorphRule rule =
   where
     morphOutcome :: Y.MorphOutcome -> String
     morphOutcome (Y.MoMorph expr) = morphOp (renderToLatex (expressionToCST expr) defaultLatexContext)
+    morphOutcome Y.MoNormalize = morphOp (normalizeOp (renderToLatex (expressionToCST rule.match) defaultLatexContext))
     morphOutcome (Y.MoStop expr) = renderToLatex (expressionToCST expr) defaultLatexContext
 
 explainDataizeRule :: Y.DataizeRule -> String
@@ -385,6 +386,9 @@ morphOp inner = "\\mathbb{M}( " ++ inner ++ " )"
 
 dataizeOp :: String -> String
 dataizeOp inner = "\\mathbb{D}( " ++ inner ++ " )"
+
+normalizeOp :: String -> String
+normalizeOp inner = "\\mathcal{N}( " ++ inner ++ " )"
 
 braced :: String -> String
 braced = printf "{ %s }"
