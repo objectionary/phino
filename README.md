@@ -366,24 +366,6 @@ Here's list of functions that are supported for extensions:
 * `join` - accepts list of bindings and returns list of joined bindings. Duplicated
   `ρ`, `Δ` and `λ` attributes are ignored, all other duplicated attributes are replaced
   with unique attributes using `random-tau` function.
-* `splice` - accepts three arguments: input bindings `𝐵-in`, a sentinel expression,
-  and replacement bindings `𝐵-rep`. Returns a new binding group where `𝐵-rep`
-  is inserted in front of every binding in `𝐵-in` whose value is a formation
-  with `φ` equal to the sentinel. Every spliced copy of `𝐵-rep` has its
-  `τ`-labelled attributes renamed via `random-tau` so the resulting binding
-  group has no duplicates. `𝐵-rep` must contain only `τ`-labelled bindings
-  (`BiTau (AtLabel _) _` or `BiVoid (AtLabel _)`); any `ρ`, `Δ`, `λ`, `φ`,
-  `α`, or meta-attribute binding in `𝐵-rep` makes the function fail fast
-  because such bindings cannot be renamed and would produce duplicates
-  when spliced at more than one position. When no binding matches the
-  sentinel, the output equals the input unchanged.
-* `graft` - same call shape as `splice` (`𝐵-in`, sentinel, `𝐵-rep`) and the
-  same renaming guarantees, but every matched sentinel binding is replaced by
-  the renamed copy of `𝐵-rep` instead of preserved in place. Use it when the
-  marker must not survive the substitution — for example, when fusing two
-  bodies that both produce the same effect and the original marker would fire
-  a second time. When no binding matches the sentinel, the output equals the
-  input unchanged.
 
 ## Meta variables
 
