@@ -17,7 +17,7 @@ import Logger (logDebug)
 import Matcher
 import Misc
 import Parser (parseAttributeThrows, parseNumberThrows)
-import Printer (printAttribute, printBinding, printExpression, printExtraArg)
+import Printer (printAttribute, printExpression, printExtraArg)
 import Random (randomString)
 import Regexp
 import Tau (freshTau)
@@ -49,8 +49,6 @@ buildTerm' "string" = _string
 buildTerm' "number" = _number
 buildTerm' "sum" = _sum
 buildTerm' "join" = _join
-buildTerm' "splice" = _splice
-buildTerm' "graft" = _graft
 buildTerm' func = _unsupported func
 
 argToBytes :: Y.ExtraArgument -> Subst -> IO Bytes
@@ -233,64 +231,6 @@ _join args subst = do
       case term of
         TeAttribute attr' -> pure attr'
         _ -> throwIO (userError "random-tau() did not return an attribute, internal invariant violated")
-
-_splice :: BuildTermMethod
-_splice = _spliceLike "splice" True
-
-_graft :: BuildTermMethod
-_graft = _spliceLike "graft" False
-
-_spliceLike :: String -> Bool -> BuildTermMethod
-_spliceLike name keepMarker [Y.ArgBinding inArg, Y.ArgExpression sentExpr, Y.ArgBinding repArg] subst = do
-  inBds <- buildBindingThrows inArg subst
-  repBds <- buildBindingThrows repArg subst
-  mapM_ validateRep repBds
-  sentinel <- buildExpressionThrows sentExpr subst
-  result <- walk inBds sentinel repBds
-  pure (TeBindings result)
-  where
-    validateRep :: Binding -> IO ()
-    validateRep (BiTau (AtLabel _) _) = pure ()
-    validateRep (BiVoid (AtLabel _)) = pure ()
-    validateRep bd =
-      throwIO
-        ( userError
-            ( printf
-                "Function %s() can only rename τ-labelled bindings in the replacement group, but got '%s' which would produce duplicates when applied at more than one position"
-                name
-                (printBinding bd)
-            )
-        )
-    walk :: [Binding] -> Expression -> [Binding] -> IO [Binding]
-    walk [] _ _ = pure []
-    walk (bd : rest) sent rep
-      | matches sent bd = do
-          fresh <- traverse renamed rep
-          tail' <- walk rest sent rep
-          pure (fresh ++ (if keepMarker then bd : tail' else tail'))
-      | otherwise = do
-          tail' <- walk rest sent rep
-          pure (bd : tail')
-    matches :: Expression -> Binding -> Bool
-    matches sent (BiTau _ (ExFormation bds)) = any (isPhi sent) bds
-    matches _ _ = False
-    isPhi :: Expression -> Binding -> Bool
-    isPhi sent (BiTau AtPhi expr) = expr == sent
-    isPhi _ _ = False
-    renamed :: Binding -> IO Binding
-    renamed (BiTau (AtLabel _) expr) = do
-      term <- _randomTau [] subst
-      case term of
-        TeAttribute attr -> pure (BiTau attr expr)
-        _ -> throwIO (userError (printf "Failed to generate fresh tau attribute for %s" name))
-    renamed (BiVoid (AtLabel _)) = do
-      term <- _randomTau [] subst
-      case term of
-        TeAttribute attr -> pure (BiVoid attr)
-        _ -> throwIO (userError (printf "Failed to generate fresh tau attribute for %s" name))
-    renamed bd = pure bd
-_spliceLike name _ _ _ =
-  throwIO (userError (printf "Function %s() requires exactly 3 arguments: input bindings, sentinel expression, replacement bindings" name))
 
 _unsupported :: BuildTermFunc
 _unsupported func _ _ = throwIO (userError (printf "Function %s() is not supported or does not exist" func))
