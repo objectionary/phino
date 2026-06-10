@@ -175,19 +175,24 @@ _nf (ExMeta meta) (Subst mp) ctx = case M.lookup meta mp of
   _ -> pure []
 _nf expr subst ctx = pure [subst | isNF expr ctx]
 
-_xiFree :: Expression -> Subst -> RuleContext -> IO [Subst]
-_xiFree (ExMeta meta) (Subst mp) ctx = case M.lookup meta mp of
-  Just (MvExpression expr) -> _xiFree expr (Subst mp) ctx
+-- An expression is xi-free when it contains no ξ outside of a formation: it is
+-- Φ, a formation, a dispatch with a xi-free subject, or an application with a
+-- xi-free subject and argument. Together with a normal-form check this is what
+-- makes an expression absolute (𝒦 ⊆ 𝒩); the '𝑘' meta-variable applies this
+-- xi-free check first (cheap, structural, rules out the ξ-recursion the
+-- normal-form check could loop on) and the normal-form check second.
+_absolute :: Expression -> Subst -> RuleContext -> IO [Subst]
+_absolute (ExMeta meta) (Subst mp) ctx = case M.lookup meta mp of
+  Just (MvExpression expr) -> _absolute expr (Subst mp) ctx
   _ -> pure []
-_xiFree (ExFormation _) subst _ = pure [subst]
-_xiFree ExThis _ _ = pure []
-_xiFree ExGlobal subst _ = pure [subst]
-_xiFree (ExApplication expr (BiTau _ texpr)) subst ctx = do
-  onExpr <- _xiFree expr subst ctx
-  onTau <- _xiFree texpr subst ctx
-  pure [subst | not (null onExpr) && not (null onTau)]
-_xiFree (ExDispatch expr _) subst ctx = _xiFree expr subst ctx
-_xiFree _ _ _ = pure []
+_absolute expr subst _ = pure [subst | xiFree expr]
+  where
+    xiFree :: Expression -> Bool
+    xiFree (ExFormation _) = True
+    xiFree ExGlobal = True
+    xiFree (ExApplication e (BiTau _ te)) = xiFree e && xiFree te
+    xiFree (ExDispatch e _) = xiFree e
+    xiFree _ = False
 
 _matches :: String -> Expression -> Subst -> RuleContext -> IO [Subst]
 _matches pat (ExMeta meta) (Subst mp) ctx = case M.lookup meta mp of
@@ -255,7 +260,7 @@ meetCondition' (Y.In attr binding) = _in attr binding
 meetCondition' (Y.Alpha attr) = _alpha attr
 meetCondition' (Y.Eq left right) = _eq left right
 meetCondition' (Y.NF expr) = _nf expr
-meetCondition' (Y.XiFree expr) = _xiFree expr
+meetCondition' (Y.Absolute expr) = _absolute expr
 meetCondition' (Y.Matches pat expr) = _matches pat expr
 meetCondition' (Y.PartOf expr bd) = _partOf expr bd
 meetCondition' (Y.Primitive expr) = _primitive expr
@@ -325,15 +330,16 @@ extraSubstitutions substs extras RuleContext{..} = case extras of
     logDebug "Extra substitutions have been built"
     pure (catMaybes res)
 
--- Collect the names of NF-constrained expression meta-variables ('𝑛'/'!n')
--- used in a pattern. Their names are 'n'-prefixed and live in their own
--- key-space, so a pattern may freely mix plain '𝑒' captures with '𝑛' ones.
-nfMetaNames :: Expression -> [T.Text]
-nfMetaNames = nub . go
+-- Collect the names of constrained expression meta-variables with the given
+-- one-character prefix used in a pattern. Each kind ('𝑛'/'!n' normal-form,
+-- '𝑘'/'!k' absolute) lives in its own 'n'-/'k'-prefixed key-space, so a
+-- pattern may freely mix them with plain '𝑒' captures.
+metaNamesWithPrefix :: T.Text -> Expression -> [T.Text]
+metaNamesWithPrefix prefix = nub . go
   where
     go :: Expression -> [T.Text]
     go (ExMeta mt)
-      | T.isPrefixOf "n" mt = [mt]
+      | T.isPrefixOf prefix mt = [mt]
       | otherwise = []
     go (ExFormation bds) = concatMap goBinding bds
     go (ExApplication e bd) = go e ++ goBinding bd
@@ -345,6 +351,12 @@ nfMetaNames = nub . go
     goBinding :: Binding -> [T.Text]
     goBinding (BiTau _ e) = go e
     goBinding _ = []
+
+nfMetaNames :: Expression -> [T.Text]
+nfMetaNames = metaNamesWithPrefix "n"
+
+kMetaNames :: Expression -> [T.Text]
+kMetaNames = metaNamesWithPrefix "k"
 
 matchExpressionWithRule :: Expression -> Y.Rule -> RuleContext -> IO [Subst]
 matchExpressionWithRule = matchExpressionBy matchExpression
@@ -366,10 +378,14 @@ matchExpressionBy matcher expr rule ctx =
           logDebug (printf "Pattern from rule '%s' was not matched:\n%s" name (printExpression' ptn logPrintConfig))
           pure []
         else do
-          inNf <- foldlM (\substs nm -> meetCondition (Y.NF (ExMeta nm)) substs ctx) matched (nfMetaNames ptn)
+          -- A '𝑘' meta-variable is absolute (𝒦 ⊆ 𝒩): check it is xi-free first
+          -- (cheap, structural), then fold its name into the same normal-form
+          -- check used for '𝑛' metas, so 'isNF' is applied in a single place.
+          inXiFree <- foldlM (\substs nm -> meetCondition (Y.Absolute (ExMeta nm)) substs ctx) matched (kMetaNames ptn)
+          inNf <- foldlM (\substs nm -> meetCondition (Y.NF (ExMeta nm)) substs ctx) inXiFree (nfMetaNames ptn ++ kMetaNames ptn)
           if null inNf
             then do
-              logDebug "An NF-constrained '𝑛' meta-variable is not in normal form"
+              logDebug "A '𝑛'/'𝑘' meta-variable is not in normal form, or a '𝑘' meta-variable is not xi-free"
               pure []
             else do
               when' <- meetMaybeCondition rule.when inNf ctx

@@ -32,6 +32,7 @@ instance ToASCII EXPRESSION where
   toASCII EX_APPLICATION_TAUS{..} = EX_APPLICATION_TAUS (toASCII expr) space eol tab (toASCII taus) eol' tab' indent
   toASCII EX_APPLICATION_EXPRS{..} = EX_APPLICATION_EXPRS (toASCII expr) space eol tab (toASCII args) eol' tab' indent
   toASCII EX_META{meta = META{hd = N, ..}} = EX_META (META EXCL N' rest)
+  toASCII EX_META{meta = META{hd = K, ..}} = EX_META (META EXCL K' rest)
   toASCII EX_META{..} = EX_META (META EXCL E' (rest meta))
   toASCII EX_META_TAIL{..} = EX_META_TAIL (toASCII expr) meta
   toASCII EX_PHI_MEET{..} = EX_PHI_MEET prefix idx (toASCII expr)
@@ -94,7 +95,7 @@ instance ToASCII CONDITION where
   toASCII CO_BELONGS{..} = CO_BELONGS (toASCII attr) belongs (toASCII set)
   toASCII CO_LOGIC{..} = CO_LOGIC (map toASCII conditions) operator
   toASCII CO_NF{..} = CO_NF (toASCII expr)
-  toASCII CO_XIFREE{..} = CO_XIFREE (toASCII expr)
+  toASCII CO_ABSOLUTE{..} = CO_ABSOLUTE (toASCII expr) belongs
   toASCII CO_NOT{..} = CO_NOT (toASCII condition)
   toASCII CO_COMPARE{..} = CO_COMPARE (toASCII left) equal (toASCII right)
   toASCII CO_MATCHES{..} = CO_MATCHES regex (toASCII expr)

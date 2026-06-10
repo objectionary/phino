@@ -77,7 +77,7 @@ instance ToSingleLine CONDITION where
   toSingleLine CO_BELONGS{..} = CO_BELONGS attr belongs (toSingleLine set)
   toSingleLine CO_LOGIC{..} = CO_LOGIC (map toSingleLine conditions) operator
   toSingleLine CO_NF{..} = CO_NF (toSingleLine expr)
-  toSingleLine CO_XIFREE{..} = CO_XIFREE (toSingleLine expr)
+  toSingleLine CO_ABSOLUTE{..} = CO_ABSOLUTE (toSingleLine expr) belongs
   toSingleLine CO_NOT{..} = CO_NOT (toSingleLine condition)
   toSingleLine CO_COMPARE{..} = CO_COMPARE (toSingleLine left) equal (toSingleLine right)
   toSingleLine CO_MATCHES{..} = CO_MATCHES regex (toSingleLine expr)
