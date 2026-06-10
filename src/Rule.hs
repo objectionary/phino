@@ -175,24 +175,24 @@ _nf (ExMeta meta) (Subst mp) ctx = case M.lookup meta mp of
   _ -> pure []
 _nf expr subst ctx = pure [subst | isNF expr ctx]
 
--- An expression is xi-free when it contains no ξ outside of a formation: it is
--- Φ, a formation, a dispatch with a xi-free subject, or an application with a
--- xi-free subject and argument. Together with a normal-form check this is what
--- makes an expression absolute (𝒦 ⊆ 𝒩); the '𝑘' meta-variable applies this
--- xi-free check first (cheap, structural, rules out the ξ-recursion the
--- normal-form check could loop on) and the normal-form check second.
+-- An expression is absolute (ranges over 𝒦 ⊆ 𝒩) when, being a normal form, it
+-- is Φ, a formation, a dispatch with an absolute subject, or an application
+-- with an absolute subject and argument (equivalently, no ξ leaks outside of a
+-- formation). This checks that structure; the '𝑘' meta-variable applies this
+-- check first (cheap, structural, rules out the recursion the normal-form check
+-- could loop on) and the normal-form check second.
 _absolute :: Expression -> Subst -> RuleContext -> IO [Subst]
 _absolute (ExMeta meta) (Subst mp) ctx = case M.lookup meta mp of
   Just (MvExpression expr) -> _absolute expr (Subst mp) ctx
   _ -> pure []
-_absolute expr subst _ = pure [subst | xiFree expr]
+_absolute expr subst _ = pure [subst | absolute expr]
   where
-    xiFree :: Expression -> Bool
-    xiFree (ExFormation _) = True
-    xiFree ExGlobal = True
-    xiFree (ExApplication e (BiTau _ te)) = xiFree e && xiFree te
-    xiFree (ExDispatch e _) = xiFree e
-    xiFree _ = False
+    absolute :: Expression -> Bool
+    absolute (ExFormation _) = True
+    absolute ExGlobal = True
+    absolute (ExApplication e (BiTau _ te)) = absolute e && absolute te
+    absolute (ExDispatch e _) = absolute e
+    absolute _ = False
 
 _matches :: String -> Expression -> Subst -> RuleContext -> IO [Subst]
 _matches pat (ExMeta meta) (Subst mp) ctx = case M.lookup meta mp of
@@ -378,14 +378,15 @@ matchExpressionBy matcher expr rule ctx =
           logDebug (printf "Pattern from rule '%s' was not matched:\n%s" name (printExpression' ptn logPrintConfig))
           pure []
         else do
-          -- A '𝑘' meta-variable is absolute (𝒦 ⊆ 𝒩): check it is xi-free first
-          -- (cheap, structural), then fold its name into the same normal-form
-          -- check used for '𝑛' metas, so 'isNF' is applied in a single place.
-          inXiFree <- foldlM (\substs nm -> meetCondition (Y.Absolute (ExMeta nm)) substs ctx) matched (kMetaNames ptn)
-          inNf <- foldlM (\substs nm -> meetCondition (Y.NF (ExMeta nm)) substs ctx) inXiFree (nfMetaNames ptn ++ kMetaNames ptn)
+          -- A '𝑘' meta-variable is absolute (𝒦 ⊆ 𝒩): check its absolute
+          -- structure first (cheap, structural), then fold its name into the
+          -- same normal-form check used for '𝑛' metas, so 'isNF' is applied in
+          -- a single place.
+          inAbsolute <- foldlM (\substs nm -> meetCondition (Y.Absolute (ExMeta nm)) substs ctx) matched (kMetaNames ptn)
+          inNf <- foldlM (\substs nm -> meetCondition (Y.NF (ExMeta nm)) substs ctx) inAbsolute (nfMetaNames ptn ++ kMetaNames ptn)
           if null inNf
             then do
-              logDebug "A '𝑛'/'𝑘' meta-variable is not in normal form, or a '𝑘' meta-variable is not xi-free"
+              logDebug "A '𝑛'/'𝑘' meta-variable is not in normal form, or a '𝑘' meta-variable is not absolute"
               pure []
             else do
               when' <- meetMaybeCondition rule.when inNf ctx
