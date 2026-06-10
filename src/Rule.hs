@@ -175,12 +175,12 @@ _nf (ExMeta meta) (Subst mp) ctx = case M.lookup meta mp of
   _ -> pure []
 _nf expr subst ctx = pure [subst | isNF expr ctx]
 
--- An expression is absolute (ranges over 𝒦 ⊆ 𝒩) when, being a normal form, it
--- is Φ, a formation, a dispatch with an absolute subject, or an application
--- with an absolute subject and argument (equivalently, no ξ leaks outside of a
--- formation). This checks that structure; the '𝑘' meta-variable applies this
--- check first (cheap, structural, rules out the recursion the normal-form check
--- could loop on) and the normal-form check second.
+-- Checks the structural part of absoluteness: an expression is absolute in
+-- structure when it is Φ, a formation, a dispatch with an absolute subject, or
+-- an application with an absolute subject and argument (equivalently, no ξ
+-- leaks outside of a formation). It does not enforce normal form on its own;
+-- the '𝑘' meta-variable combines this structural check (applied first, since it
+-- is cheap) with the normal-form check, so that 𝒦 ⊆ 𝒩.
 _absolute :: Expression -> Subst -> RuleContext -> IO [Subst]
 _absolute (ExMeta meta) (Subst mp) ctx = case M.lookup meta mp of
   Just (MvExpression expr) -> _absolute expr (Subst mp) ctx
@@ -378,18 +378,14 @@ matchExpressionBy matcher expr rule ctx =
           logDebug (printf "Pattern from rule '%s' was not matched:\n%s" name (printExpression' ptn logPrintConfig))
           pure []
         else do
-          -- A '𝑘' meta-variable is absolute (𝒦 ⊆ 𝒩): check its absolute
-          -- structure first (cheap, structural), then fold its name into the
-          -- same normal-form check used for '𝑛' metas, so 'isNF' is applied in
-          -- a single place.
-          inAbsolute <- foldlM (\substs nm -> meetCondition (Y.Absolute (ExMeta nm)) substs ctx) matched (kMetaNames ptn)
-          inNf <- foldlM (\substs nm -> meetCondition (Y.NF (ExMeta nm)) substs ctx) inAbsolute (nfMetaNames ptn ++ kMetaNames ptn)
-          if null inNf
+          absolute <- foldlM (\substs nm -> meetCondition (Y.Absolute (ExMeta nm)) substs ctx) matched (kMetaNames ptn)
+          normal <- foldlM (\substs nm -> meetCondition (Y.NF (ExMeta nm)) substs ctx) absolute (nfMetaNames ptn ++ kMetaNames ptn)
+          if null normal
             then do
               logDebug "A '𝑛'/'𝑘' meta-variable is not in normal form, or a '𝑘' meta-variable is not absolute"
               pure []
             else do
-              when' <- meetMaybeCondition rule.when inNf ctx
+              when' <- meetMaybeCondition rule.when normal ctx
               if null when'
                 then do
                   logDebug "The 'when' condition wasn't met"
