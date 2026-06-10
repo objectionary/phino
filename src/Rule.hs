@@ -175,19 +175,18 @@ _nf (ExMeta meta) (Subst mp) ctx = case M.lookup meta mp of
   _ -> pure []
 _nf expr subst ctx = pure [subst | isNF expr ctx]
 
--- An expression is absolute (ranges over 𝒦 ⊆ 𝒩) when it is xi-free and in
--- normal form. The xi-free check runs first: it is cheap, purely structural,
--- and rules out the ξ-recursion that the normal-form check could loop on.
--- Used through the '𝑘' meta-variable by the COPY normalization rule.
+-- An expression is xi-free when it contains no ξ outside of a formation: it is
+-- Φ, a formation, a dispatch with a xi-free subject, or an application with a
+-- xi-free subject and argument. Together with a normal-form check this is what
+-- makes an expression absolute (𝒦 ⊆ 𝒩); the '𝑘' meta-variable applies this
+-- xi-free check first (cheap, structural, rules out the ξ-recursion the
+-- normal-form check could loop on) and the normal-form check second.
 _absolute :: Expression -> Subst -> RuleContext -> IO [Subst]
 _absolute (ExMeta meta) (Subst mp) ctx = case M.lookup meta mp of
   Just (MvExpression expr) -> _absolute expr (Subst mp) ctx
   _ -> pure []
-_absolute expr subst ctx = pure [subst | xiFree expr && isNF expr ctx]
+_absolute expr subst _ = pure [subst | xiFree expr]
   where
-    -- xi-free: contains no ξ outside of a formation, i.e. it is Φ, a
-    -- formation, a dispatch with a xi-free subject, or an application with
-    -- a xi-free subject and argument.
     xiFree :: Expression -> Bool
     xiFree (ExFormation _) = True
     xiFree ExGlobal = True
@@ -379,14 +378,17 @@ matchExpressionBy matcher expr rule ctx =
           logDebug (printf "Pattern from rule '%s' was not matched:\n%s" name (printExpression' ptn logPrintConfig))
           pure []
         else do
-          inNf <- foldlM (\substs nm -> meetCondition (Y.NF (ExMeta nm)) substs ctx) matched (nfMetaNames ptn)
-          inK <- foldlM (\substs nm -> meetCondition (Y.Absolute (ExMeta nm)) substs ctx) inNf (kMetaNames ptn)
-          if null inK
+          -- A '𝑘' meta-variable is absolute (𝒦 ⊆ 𝒩): check it is xi-free first
+          -- (cheap, structural), then fold its name into the same normal-form
+          -- check used for '𝑛' metas, so 'isNF' is applied in a single place.
+          inXiFree <- foldlM (\substs nm -> meetCondition (Y.Absolute (ExMeta nm)) substs ctx) matched (kMetaNames ptn)
+          inNf <- foldlM (\substs nm -> meetCondition (Y.NF (ExMeta nm)) substs ctx) inXiFree (nfMetaNames ptn ++ kMetaNames ptn)
+          if null inNf
             then do
-              logDebug "An NF-constrained '𝑛' or absolute-constrained '𝑘' meta-variable failed its constraint"
+              logDebug "A '𝑛'/'𝑘' meta-variable is not in normal form, or a '𝑘' meta-variable is not xi-free"
               pure []
             else do
-              when' <- meetMaybeCondition rule.when inK ctx
+              when' <- meetMaybeCondition rule.when inNf ctx
               if null when'
                 then do
                   logDebug "The 'when' condition wasn't met"
