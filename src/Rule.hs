@@ -175,16 +175,6 @@ _nf (ExMeta meta) (Subst mp) ctx = case M.lookup meta mp of
   _ -> pure []
 _nf expr subst ctx = pure [subst | isNF expr ctx]
 
--- An expression is xi-free when it contains no ξ outside of a formation:
--- it is Φ, a formation, a dispatch with a xi-free subject, or an application
--- with a xi-free subject and argument.
-xiFree :: Expression -> Bool
-xiFree (ExFormation _) = True
-xiFree ExGlobal = True
-xiFree (ExApplication expr (BiTau _ texpr)) = xiFree expr && xiFree texpr
-xiFree (ExDispatch expr _) = xiFree expr
-xiFree _ = False
-
 -- An expression is absolute (ranges over 𝒦 ⊆ 𝒩) when it is xi-free and in
 -- normal form. The xi-free check runs first: it is cheap, purely structural,
 -- and rules out the ξ-recursion that the normal-form check could loop on.
@@ -194,6 +184,16 @@ _absolute (ExMeta meta) (Subst mp) ctx = case M.lookup meta mp of
   Just (MvExpression expr) -> _absolute expr (Subst mp) ctx
   _ -> pure []
 _absolute expr subst ctx = pure [subst | xiFree expr && isNF expr ctx]
+  where
+    -- xi-free: contains no ξ outside of a formation, i.e. it is Φ, a
+    -- formation, a dispatch with a xi-free subject, or an application with
+    -- a xi-free subject and argument.
+    xiFree :: Expression -> Bool
+    xiFree (ExFormation _) = True
+    xiFree ExGlobal = True
+    xiFree (ExApplication e (BiTau _ te)) = xiFree e && xiFree te
+    xiFree (ExDispatch e _) = xiFree e
+    xiFree _ = False
 
 _matches :: String -> Expression -> Subst -> RuleContext -> IO [Subst]
 _matches pat (ExMeta meta) (Subst mp) ctx = case M.lookup meta mp of
