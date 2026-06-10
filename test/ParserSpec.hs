@@ -57,6 +57,8 @@ spec = do
       , ("[[!B, !B1]]", Just (ExFormation [BiMeta "B", BiMeta "B1"]))
       , ("[[!B2, !a2 -> $]]", Just (ExFormation [BiMeta "B2", BiTau (AtMeta "a2") ExThis]))
       , ("!e0", Just (ExMeta "e0"))
+      , ("!k", Just (ExMeta "k"))
+      , ("[[x -> !k1]]", Just (ExFormation [BiTau (AtLabel "x") (ExMeta "k1"), BiVoid AtRho]))
       , ("[[x -> !e]]", Just (ExFormation [BiTau (AtLabel "x") (ExMeta "e"), BiVoid AtRho]))
       , ("[[!a -> !e1]]", Just (ExFormation [BiTau (AtMeta "a") (ExMeta "e1")]))
       , ("Q * !t", Just (ExMetaTail ExGlobal "t"))

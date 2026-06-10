@@ -2,7 +2,5 @@
 # SPDX-License-Identifier: MIT
 ---
 name: copy
-pattern: ⟦ 𝐵1, 𝜏 ↦ ∅, 𝐵2 ⟧(𝜏 ↦ 𝑛)
-result: ⟦ 𝐵1, 𝜏 ↦ 𝑛, 𝐵2 ⟧
-when:
-  absolute: 𝑛
+pattern: ⟦ 𝐵1, 𝜏 ↦ ∅, 𝐵2 ⟧(𝜏 ↦ 𝑘)
+result: ⟦ 𝐵1, 𝜏 ↦ 𝑘, 𝐵2 ⟧

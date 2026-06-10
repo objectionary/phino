@@ -175,23 +175,25 @@ _nf (ExMeta meta) (Subst mp) ctx = case M.lookup meta mp of
   _ -> pure []
 _nf expr subst ctx = pure [subst | isNF expr ctx]
 
--- An expression is absolute (ranges over 𝒜 ⊆ 𝒩) when it is built only from
--- Φ, formations, dispatches with an absolute subject, and applications with an
--- absolute subject and argument — i.e. it contains no ξ outside of a formation.
--- Used by the COPY normalization rule to avoid infinite recursion.
+-- An expression is xi-free when it contains no ξ outside of a formation:
+-- it is Φ, a formation, a dispatch with a xi-free subject, or an application
+-- with a xi-free subject and argument.
+xiFree :: Expression -> Bool
+xiFree (ExFormation _) = True
+xiFree ExGlobal = True
+xiFree (ExApplication expr (BiTau _ texpr)) = xiFree expr && xiFree texpr
+xiFree (ExDispatch expr _) = xiFree expr
+xiFree _ = False
+
+-- An expression is absolute (ranges over 𝒦 ⊆ 𝒩) when it is xi-free and in
+-- normal form. The xi-free check runs first: it is cheap, purely structural,
+-- and rules out the ξ-recursion that the normal-form check could loop on.
+-- Used through the '𝑘' meta-variable by the COPY normalization rule.
 _absolute :: Expression -> Subst -> RuleContext -> IO [Subst]
 _absolute (ExMeta meta) (Subst mp) ctx = case M.lookup meta mp of
   Just (MvExpression expr) -> _absolute expr (Subst mp) ctx
   _ -> pure []
-_absolute (ExFormation _) subst _ = pure [subst]
-_absolute ExThis _ _ = pure []
-_absolute ExGlobal subst _ = pure [subst]
-_absolute (ExApplication expr (BiTau _ texpr)) subst ctx = do
-  onExpr <- _absolute expr subst ctx
-  onTau <- _absolute texpr subst ctx
-  pure [subst | not (null onExpr) && not (null onTau)]
-_absolute (ExDispatch expr _) subst ctx = _absolute expr subst ctx
-_absolute _ _ _ = pure []
+_absolute expr subst ctx = pure [subst | xiFree expr && isNF expr ctx]
 
 _matches :: String -> Expression -> Subst -> RuleContext -> IO [Subst]
 _matches pat (ExMeta meta) (Subst mp) ctx = case M.lookup meta mp of
@@ -329,15 +331,16 @@ extraSubstitutions substs extras RuleContext{..} = case extras of
     logDebug "Extra substitutions have been built"
     pure (catMaybes res)
 
--- Collect the names of NF-constrained expression meta-variables ('𝑛'/'!n')
--- used in a pattern. Their names are 'n'-prefixed and live in their own
--- key-space, so a pattern may freely mix plain '𝑒' captures with '𝑛' ones.
-nfMetaNames :: Expression -> [T.Text]
-nfMetaNames = nub . go
+-- Collect the names of constrained expression meta-variables with the given
+-- one-character prefix used in a pattern. Each kind ('𝑛'/'!n' normal-form,
+-- '𝑘'/'!k' absolute) lives in its own 'n'-/'k'-prefixed key-space, so a
+-- pattern may freely mix them with plain '𝑒' captures.
+metaNamesWithPrefix :: T.Text -> Expression -> [T.Text]
+metaNamesWithPrefix prefix = nub . go
   where
     go :: Expression -> [T.Text]
     go (ExMeta mt)
-      | T.isPrefixOf "n" mt = [mt]
+      | T.isPrefixOf prefix mt = [mt]
       | otherwise = []
     go (ExFormation bds) = concatMap goBinding bds
     go (ExApplication e bd) = go e ++ goBinding bd
@@ -349,6 +352,12 @@ nfMetaNames = nub . go
     goBinding :: Binding -> [T.Text]
     goBinding (BiTau _ e) = go e
     goBinding _ = []
+
+nfMetaNames :: Expression -> [T.Text]
+nfMetaNames = metaNamesWithPrefix "n"
+
+kMetaNames :: Expression -> [T.Text]
+kMetaNames = metaNamesWithPrefix "k"
 
 matchExpressionWithRule :: Expression -> Y.Rule -> RuleContext -> IO [Subst]
 matchExpressionWithRule = matchExpressionBy matchExpression
@@ -371,12 +380,13 @@ matchExpressionBy matcher expr rule ctx =
           pure []
         else do
           inNf <- foldlM (\substs nm -> meetCondition (Y.NF (ExMeta nm)) substs ctx) matched (nfMetaNames ptn)
-          if null inNf
+          inK <- foldlM (\substs nm -> meetCondition (Y.Absolute (ExMeta nm)) substs ctx) inNf (kMetaNames ptn)
+          if null inK
             then do
-              logDebug "An NF-constrained '𝑛' meta-variable is not in normal form"
+              logDebug "An NF-constrained '𝑛' or absolute-constrained '𝑘' meta-variable failed its constraint"
               pure []
             else do
-              when' <- meetMaybeCondition rule.when inNf ctx
+              when' <- meetMaybeCondition rule.when inK ctx
               if null when'
                 then do
                   logDebug "The 'when' condition wasn't met"

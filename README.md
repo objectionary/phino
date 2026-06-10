@@ -298,13 +298,13 @@ Condition:
   | nf: Expression'      # returns True if given expression in normal form
                          # which means that no more other normalization rules
                          # can be applied
-  | absolute: Expression' # special condition for Rcopy normalization rule to
-                         # avoid infinite recursion. Returns True if given
-                         # expression is absolute (ranges over 𝒜 ⊆ 𝒩), i.e. it
-                         # is either Φ, a formation, a dispatch with an absolute
-                         # subject, or an application with an absolute subject
-                         # and argument — in other words there is no ξ outside
-                         # of a formation.
+  | absolute: Expression' # returns True if given expression is absolute,
+                         # i.e. it ranges over 𝒦 ⊆ 𝒩: it is xi-free (Φ, a
+                         # formation, a dispatch with an absolute subject, or
+                         # an application with an absolute subject and argument,
+                         # so there is no ξ outside of a formation) and it is
+                         # also in normal form. Underlies the '𝑘'/'!k' meta
+                         # variable used by the Rcopy normalization rule.
   | matches:             # returns True if given expression after dataization
       - String           # matches to given regex
       - Expression
@@ -382,6 +382,10 @@ This is the list of supported meta variables:
 * `!n` || `𝑛` - any expression that is already in normal form (behaves like
                 `!e`/`𝑒`, but only binds a sub-expression in NF, so no explicit
                 `nf:` guard is needed)
+* `!k` || `𝑘` - any expression that is absolute, i.e. in normal form and
+                xi-free (ranges over `𝒦 ⊆ 𝒩`); behaves like `!e`/`𝑒` but only
+                binds an absolute sub-expression, so no explicit `absolute:`
+                guard is needed
 * `!B` || `𝐵` - list of bindings
 * `!d` || `δ` - bytes in meta delta binding
 * `!t` - tail after expression, a possibly empty sequence of applications

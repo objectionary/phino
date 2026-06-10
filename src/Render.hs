@@ -115,6 +115,8 @@ instance Render META_HEAD where
   render E' = "e"
   render N = "𝑛"
   render N' = "n"
+  render K = "𝑘"
+  render K' = "k"
   render A = "a"
   render TAU = "𝜏"
   render TAU' = "\\tau"
@@ -248,7 +250,7 @@ instance Render CONDITION where
       renderWrapped cond@CO_LOGIC{} = "( " <> render cond <> " )"
       renderWrapped cond = render cond
   render CO_NF{..} = "\\isnormal{ " <> render expr <> " }"
-  render CO_ABSOLUTE{..} = render expr <> " " <> render belongs <> " \\mathcal{A}"
+  render CO_ABSOLUTE{..} = render expr <> " " <> render belongs <> " \\mathcal{K}"
   render CO_NOT{..} = renderFunc "not" condition
   render CO_COMPARE{..} = render left <> " " <> render equal <> " " <> render right
   render CO_MATCHES{..} = "matches( " <> T.pack regex <> ", " <> render expr <> " )"
