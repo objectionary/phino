@@ -219,7 +219,7 @@ data CONDITION
   | CO_BELONGS {attr :: ATTRIBUTE, belongs :: BELONGING, set :: SET}
   | CO_LOGIC {conditions :: [CONDITION], operator :: LOGIC_OPERATOR}
   | CO_NF {expr :: EXPRESSION}
-  | CO_XIFREE {expr :: EXPRESSION}
+  | CO_ABSOLUTE {expr :: EXPRESSION, belongs :: BELONGING}
   | CO_NOT {condition :: CONDITION}
   | CO_COMPARE {left :: COMPARABLE, equal :: EQUAL, right :: COMPARABLE}
   | CO_MATCHES {regex :: String, expr :: EXPRESSION}
@@ -480,6 +480,8 @@ instance ToCST Y.Condition CONDITION where
   toCST (Y.Not (Y.Alpha attr)) _ = CO_BELONGS (attributeToCST attr) NOT_IN (ST_ATTRIBUTES [attributeToCST (AtAlpha 0), attributeToCST (AtAlpha 1), AT_REST DOTS])
   toCST (Y.Not (Y.Primitive expr)) _ = CO_PRIMITIVE (expressionToCST expr) NOT_IN
   toCST (Y.Primitive expr) _ = CO_PRIMITIVE (expressionToCST expr) IN
+  toCST (Y.Not (Y.Absolute expr)) _ = CO_ABSOLUTE (expressionToCST expr) NOT_IN
+  toCST (Y.Absolute expr) _ = CO_ABSOLUTE (expressionToCST expr) IN
   toCST (Y.Disjoint attrs groups) _ = CO_DISJOINT (map attributeToCST attrs) (map (\bd -> bindingsToCST [bd]) groups)
   toCST (Y.In attr binding) _ = CO_BELONGS (attributeToCST attr) IN (ST_BINDING (bindingsToCST [binding]))
   toCST (Y.And conds) _ = case conds of
@@ -494,7 +496,6 @@ instance ToCST Y.Condition CONDITION where
   toCST (Y.Eq left right) _ = CO_COMPARE (comparableToCST left) EQUAL (comparableToCST right)
   toCST (Y.Matches regex expr) _ = CO_MATCHES regex (expressionToCST expr)
   toCST (Y.PartOf expr binding) _ = CO_PART_OF (expressionToCST expr) (bindingsToCST [binding])
-  toCST (Y.XiFree expr) _ = CO_XIFREE (expressionToCST expr)
 
 instance ToCST Y.Comparable COMPARABLE where
   toCST (Y.CmpAttr attr) _ = CMP_ATTR (attributeToCST attr)

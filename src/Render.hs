@@ -248,7 +248,7 @@ instance Render CONDITION where
       renderWrapped cond@CO_LOGIC{} = "( " <> render cond <> " )"
       renderWrapped cond = render cond
   render CO_NF{..} = "\\isnormal{ " <> render expr <> " }"
-  render CO_XIFREE{..} = "\\xifree{ " <> render expr <> " }"
+  render CO_ABSOLUTE{..} = render expr <> " " <> render belongs <> " \\mathcal{A}"
   render CO_NOT{..} = renderFunc "not" condition
   render CO_COMPARE{..} = render left <> " " <> render equal <> " " <> render right
   render CO_MATCHES{..} = "matches( " <> T.pack regex <> ", " <> render expr <> " )"

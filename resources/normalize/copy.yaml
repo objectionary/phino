@@ -5,4 +5,4 @@ name: copy
 pattern: ⟦ 𝐵1, 𝜏 ↦ ∅, 𝐵2 ⟧(𝜏 ↦ 𝑛)
 result: ⟦ 𝐵1, 𝜏 ↦ 𝑛, 𝐵2 ⟧
 when:
-  xi-free: 𝑛
+  absolute: 𝑛

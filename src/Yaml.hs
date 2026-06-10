@@ -78,14 +78,14 @@ instance FromJSON Condition where
     withObject
       "Condition"
       ( \v -> do
-          validateYamlObject v ["and", "or", "not", "alpha", "nf", "xi-free", "eq", "in", "matches", "part-of", "primitive", "disjoint"]
+          validateYamlObject v ["and", "or", "not", "alpha", "nf", "absolute", "eq", "in", "matches", "part-of", "primitive", "disjoint"]
           asum
             [ And <$> v .: "and"
             , Or <$> v .: "or"
             , Not <$> v .: "not"
             , Alpha <$> v .: "alpha"
             , NF <$> v .: "nf"
-            , XiFree <$> v .: "xi-free"
+            , Absolute <$> v .: "absolute"
             , Primitive <$> v .: "primitive"
             , do
                 vals <- v .: "disjoint"
@@ -168,7 +168,7 @@ data Condition
   | Alpha Attribute
   | Eq Comparable Comparable
   | NF Expression
-  | XiFree Expression
+  | Absolute Expression
   | Matches String Expression
   | PartOf Expression Binding
   | Primitive Expression

@@ -175,19 +175,23 @@ _nf (ExMeta meta) (Subst mp) ctx = case M.lookup meta mp of
   _ -> pure []
 _nf expr subst ctx = pure [subst | isNF expr ctx]
 
-_xiFree :: Expression -> Subst -> RuleContext -> IO [Subst]
-_xiFree (ExMeta meta) (Subst mp) ctx = case M.lookup meta mp of
-  Just (MvExpression expr) -> _xiFree expr (Subst mp) ctx
+-- An expression is absolute (ranges over 𝒜 ⊆ 𝒩) when it is built only from
+-- Φ, formations, dispatches with an absolute subject, and applications with an
+-- absolute subject and argument — i.e. it contains no ξ outside of a formation.
+-- Used by the COPY normalization rule to avoid infinite recursion.
+_absolute :: Expression -> Subst -> RuleContext -> IO [Subst]
+_absolute (ExMeta meta) (Subst mp) ctx = case M.lookup meta mp of
+  Just (MvExpression expr) -> _absolute expr (Subst mp) ctx
   _ -> pure []
-_xiFree (ExFormation _) subst _ = pure [subst]
-_xiFree ExThis _ _ = pure []
-_xiFree ExGlobal subst _ = pure [subst]
-_xiFree (ExApplication expr (BiTau _ texpr)) subst ctx = do
-  onExpr <- _xiFree expr subst ctx
-  onTau <- _xiFree texpr subst ctx
+_absolute (ExFormation _) subst _ = pure [subst]
+_absolute ExThis _ _ = pure []
+_absolute ExGlobal subst _ = pure [subst]
+_absolute (ExApplication expr (BiTau _ texpr)) subst ctx = do
+  onExpr <- _absolute expr subst ctx
+  onTau <- _absolute texpr subst ctx
   pure [subst | not (null onExpr) && not (null onTau)]
-_xiFree (ExDispatch expr _) subst ctx = _xiFree expr subst ctx
-_xiFree _ _ _ = pure []
+_absolute (ExDispatch expr _) subst ctx = _absolute expr subst ctx
+_absolute _ _ _ = pure []
 
 _matches :: String -> Expression -> Subst -> RuleContext -> IO [Subst]
 _matches pat (ExMeta meta) (Subst mp) ctx = case M.lookup meta mp of
@@ -255,7 +259,7 @@ meetCondition' (Y.In attr binding) = _in attr binding
 meetCondition' (Y.Alpha attr) = _alpha attr
 meetCondition' (Y.Eq left right) = _eq left right
 meetCondition' (Y.NF expr) = _nf expr
-meetCondition' (Y.XiFree expr) = _xiFree expr
+meetCondition' (Y.Absolute expr) = _absolute expr
 meetCondition' (Y.Matches pat expr) = _matches pat expr
 meetCondition' (Y.PartOf expr bd) = _partOf expr bd
 meetCondition' (Y.Primitive expr) = _primitive expr

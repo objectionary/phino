@@ -191,7 +191,7 @@ instance ToSalty CONDITION where
   toSalty CO_BELONGS{..} = CO_BELONGS attr belongs (toSalty set)
   toSalty CO_LOGIC{..} = CO_LOGIC (map toSalty conditions) operator
   toSalty CO_NF{..} = CO_NF (toSalty expr)
-  toSalty CO_XIFREE{..} = CO_XIFREE (toSalty expr)
+  toSalty CO_ABSOLUTE{..} = CO_ABSOLUTE (toSalty expr) belongs
   toSalty CO_NOT{..} = CO_NOT (toSalty condition)
   toSalty CO_COMPARE{..} = CO_COMPARE (toSalty left) equal (toSalty right)
   toSalty CO_MATCHES{..} = CO_MATCHES regex (toSalty expr)

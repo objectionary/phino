@@ -298,10 +298,13 @@ Condition:
   | nf: Expression'      # returns True if given expression in normal form
                          # which means that no more other normalization rules
                          # can be applied
-  | xi-free: Expression' # special condition for Rcopy normalization rule to
-                         # avoid infinite recursion while the condition checking
-                         # returns True if there's no ξ outside of the formation
-                         # in given expression.
+  | absolute: Expression' # special condition for Rcopy normalization rule to
+                         # avoid infinite recursion. Returns True if given
+                         # expression is absolute (ranges over 𝒜 ⊆ 𝒩), i.e. it
+                         # is either Φ, a formation, a dispatch with an absolute
+                         # subject, or an application with an absolute subject
+                         # and argument — in other words there is no ξ outside
+                         # of a formation.
   | matches:             # returns True if given expression after dataization
       - String           # matches to given regex
       - Expression

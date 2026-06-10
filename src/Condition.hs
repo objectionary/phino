@@ -126,10 +126,10 @@ condition =
         _ <- rparen
         return (Y.NF expr)
     , do
-        _ <- symbol "xi-free" >> lparen
+        _ <- symbol "absolute" >> lparen
         expr <- _expression phiParser
         _ <- rparen
-        return (Y.XiFree expr)
+        return (Y.Absolute expr)
     , do
         _ <- symbol "matches" >> lparen
         ptn <- _string phiParser

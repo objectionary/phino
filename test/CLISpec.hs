@@ -929,7 +929,7 @@ spec = do
             , "\\trrule{copy}"
             , "  { [[ B_1, \\tau -> ?, B_2 ]] ( \\tau -> n ) }"
             , "  { [[ B_1, \\tau -> n, B_2 ]] }"
-            , "  { if $ \\xifree{ n } $ }"
+            , "  { if $ n \\in \\mathcal{A} $ }"
             , "  { }"
             , "\\end{tabular}"
             ]
@@ -953,7 +953,7 @@ spec = do
             , "\\trrule{copy}"
             , "  { [[ B_1, \\tau -> ?, B_2 ]] ( \\tau -> n ) }"
             , "  { [[ B_1, \\tau -> n, B_2 ]] }"
-            , "  { if $ \\xifree{ n } $ }"
+            , "  { if $ n \\in \\mathcal{A} $ }"
             , "  { }"
             , "\\trrule{dc}"
             , "  { T ( \\tau -> e ) }"
