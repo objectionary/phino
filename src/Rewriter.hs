@@ -16,7 +16,7 @@ import Builder
 import Control.Exception (Exception, throwIO)
 import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as NE
-import qualified Data.Set as Set
+import qualified Data.Map.Strict as Map
 import Deps
 import Locator (locatedExpression, withLocatedExpression)
 import Logger (logDebug)
@@ -30,7 +30,23 @@ import qualified Rule as R
 import Text.Printf (printf)
 import qualified Yaml as Y
 
-type RewriteState = (NonEmpty Rewritten, Set.Set Expression, Bool)
+type RewriteState = (NonEmpty Rewritten, Seen, Bool)
+
+-- Loop-detection store. It maps a cheap fixed-size digest of a program (see
+-- 'hashExpression') to the full expressions that produced that digest. A
+-- digest collision is resolved by a slow, exact structural (==) comparison,
+-- so loops are still detected soundly while the common (no collision) case
+-- stays O(1) on the digest instead of O(programSize) per lookup/insert.
+type Seen = Map.Map Int [Expression]
+
+-- Has this exact program been seen before? The digest lookup is fast; the
+-- (==) check runs only on a digest match, guarding against hash collisions.
+seenMember :: Int -> Expression -> Seen -> Bool
+seenMember digest expr seen = maybe False (elem expr) (Map.lookup digest seen)
+
+-- Remember a program under its digest, keeping any earlier collisions.
+seenInsert :: Int -> Expression -> Seen -> Seen
+seenInsert digest expr = Map.insertWith (++) digest [expr]
 
 type Rewritten = (Program, Maybe String)
 
@@ -174,20 +190,21 @@ rewrite' state (rule : rest) iteration ctx@RewriteContext{..} = do
                       logDebug (printf "Applied '%s', no changes made" ruleName)
                       pure (_rewrittens, _unique, False)
                     else
-                      if Set.member expr _unique
-                        then throwIO (LoopingRewriting (printExpression expr) ruleName _count)
-                        else do
-                          logDebug
-                            ( printf
-                                "Applied '%s' (%d nodes -> %d nodes)\n%s"
-                                ruleName
-                                (countNodes expression)
-                                (countNodes expr)
-                                (printExpression expr)
-                            )
-                          prog <- withLocatedExpression _locator expr program
-                          _saveStep prog (((iteration - 1) * _maxDepth) + _count)
-                          _rewrite (leadsTo prog, Set.insert expr _unique, False) (_count + 1)
+                      let digest = hashExpression expr
+                       in if seenMember digest expr _unique
+                            then throwIO (LoopingRewriting (printExpression expr) ruleName _count)
+                            else do
+                              logDebug
+                                ( printf
+                                    "Applied '%s' (%d nodes -> %d nodes)\n%s"
+                                    ruleName
+                                    (countNodes expression)
+                                    (countNodes expr)
+                                    (printExpression expr)
+                                )
+                              prog <- withLocatedExpression _locator expr program
+                              _saveStep prog (((iteration - 1) * _maxDepth) + _count)
+                              _rewrite (leadsTo prog, seenInsert digest expr _unique, False) (_count + 1)
       where
         leadsTo :: Program -> NonEmpty Rewritten
         leadsTo _prog =
@@ -197,7 +214,7 @@ rewrite' state (rule : rest) iteration ctx@RewriteContext{..} = do
 -- Rewrite program by provided locator from RewriteContext
 rewrite :: Program -> [Y.Rule] -> RewriteContext -> IO Rewrittens
 rewrite prog rules ctx@RewriteContext{..} = do
-  (rewrittens, exceeded) <- _rewrite ((prog, Nothing) :| [], Set.empty, False) 0
+  (rewrittens, exceeded) <- _rewrite ((prog, Nothing) :| [], Map.empty, False) 0
   pure (NE.reverse rewrittens, exceeded)
   where
     _rewrite :: RewriteState -> Int -> IO Rewrittens
