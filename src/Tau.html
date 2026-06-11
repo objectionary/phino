@@ -39,13 +39,13 @@ forall a. Set a
 </span><span id="line-31"></span><span class="hs-comment">-- contains, resetting the cursor back to the start.</span><span>
 </span><span id="line-32"></span><span class="annot"><a href="Tau.html#seedTaus"><span class="hs-identifier hs-type">seedTaus</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="AST.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
 </span><span id="line-33"></span><span id="seedTaus"><span class="annot"><span class="annottext">seedTaus :: Program -&gt; IO ()
-</span><a href="Tau.html#seedTaus"><span class="hs-identifier hs-var hs-var">seedTaus</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span> </span><span id="local-6989586621679234936"><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679234936"><span class="hs-identifier hs-var">expr</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">IORef (Set Text, Int) -&gt; (Set Text, Int) -&gt; IO ()
+</span><a href="Tau.html#seedTaus"><span class="hs-identifier hs-var hs-var">seedTaus</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span> </span><span id="local-6989586621679235009"><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679235009"><span class="hs-identifier hs-var">expr</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">IORef (Set Text, Int) -&gt; (Set Text, Int) -&gt; IO ()
 forall a. IORef a -&gt; a -&gt; IO ()
 </span><span class="hs-identifier hs-var">writeIORef</span></span><span> </span><span class="annot"><span class="annottext">IORef (Set Text, Int)
 </span><a href="Tau.html#taus"><span class="hs-identifier hs-var">taus</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expression -&gt; Set Text
 </span><a href="Tau.html#exprLabels"><span class="hs-identifier hs-var">exprLabels</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679234936"><span class="hs-identifier hs-var">expr</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679235009"><span class="hs-identifier hs-var">expr</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">0</span></span><span class="hs-special">)</span><span>
 </span><span id="line-34"></span><span>
 </span><span id="line-35"></span><span class="hs-comment">-- Mint a fresh, deterministic &#120591;-label that collides with no taken name,</span><span>
@@ -59,106 +59,106 @@ forall a. IORef a -&gt; a -&gt; IO ()
 forall a b. IORef a -&gt; (a -&gt; (a, b)) -&gt; IO b
 </span><span class="hs-identifier hs-var">atomicModifyIORef'</span></span><span> </span><span class="annot"><span class="annottext">IORef (Set Text, Int)
 </span><a href="Tau.html#taus"><span class="hs-identifier hs-var">taus</span></a></span><span> </span><span class="annot"><span class="annottext">(Set Text, Int) -&gt; ((Set Text, Int), Text)
-</span><a href="#local-6989586621679234938"><span class="hs-identifier hs-var">advance</span></a></span><span>
+</span><a href="#local-6989586621679235011"><span class="hs-identifier hs-var">advance</span></a></span><span>
 </span><span id="line-41"></span><span>  </span><span class="hs-keyword">where</span><span>
-</span><span id="line-42"></span><span>    </span><span id="local-6989586621679234938"><span class="annot"><span class="annottext">advance :: (Set Text, Int) -&gt; ((Set Text, Int), Text)
-</span><a href="#local-6989586621679234938"><span class="hs-identifier hs-var hs-var">advance</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679234942"><span class="annot"><span class="annottext">Set Text
-</span><a href="#local-6989586621679234942"><span class="hs-identifier hs-var">taken</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679234943"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679234943"><span class="hs-identifier hs-var">cursor</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
-</span><span id="line-43"></span><span>      </span><span class="hs-keyword">let</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679234944"><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621679234944"><span class="hs-identifier hs-var">minted</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679234945"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679234945"><span class="hs-identifier hs-var">idx</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Set Text -&gt; Int -&gt; (Text, Int)
+</span><span id="line-42"></span><span>    </span><span id="local-6989586621679235011"><span class="annot"><span class="annottext">advance :: (Set Text, Int) -&gt; ((Set Text, Int), Text)
+</span><a href="#local-6989586621679235011"><span class="hs-identifier hs-var hs-var">advance</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679235015"><span class="annot"><span class="annottext">Set Text
+</span><a href="#local-6989586621679235015"><span class="hs-identifier hs-var">taken</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679235016"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679235016"><span class="hs-identifier hs-var">cursor</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-43"></span><span>      </span><span class="hs-keyword">let</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679235017"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679235017"><span class="hs-identifier hs-var">minted</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679235018"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679235018"><span class="hs-identifier hs-var">idx</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Set Text -&gt; Int -&gt; (Text, Int)
 </span><a href="Tau.html#mint"><span class="hs-identifier hs-var">mint</span></a></span><span> </span><span class="annot"><span class="annottext">Set Text
-</span><a href="#local-6989586621679234942"><span class="hs-identifier hs-var">taken</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679234943"><span class="hs-identifier hs-var">cursor</span></a></span><span>
+</span><a href="#local-6989586621679235015"><span class="hs-identifier hs-var">taken</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679235016"><span class="hs-identifier hs-var">cursor</span></a></span><span>
 </span><span id="line-44"></span><span>       </span><span class="hs-keyword">in</span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text -&gt; Set Text -&gt; Set Text
 forall a. Ord a =&gt; a -&gt; Set a -&gt; Set a
 </span><span class="hs-identifier hs-var">Set.insert</span></span><span> </span><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621679234944"><span class="hs-identifier hs-var">minted</span></a></span><span> </span><span class="annot"><span class="annottext">Set Text
-</span><a href="#local-6989586621679234942"><span class="hs-identifier hs-var">taken</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679234945"><span class="hs-identifier hs-var">idx</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+</span><a href="#local-6989586621679235017"><span class="hs-identifier hs-var">minted</span></a></span><span> </span><span class="annot"><span class="annottext">Set Text
+</span><a href="#local-6989586621679235015"><span class="hs-identifier hs-var">taken</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679235018"><span class="hs-identifier hs-var">idx</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
 forall a. Num a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">1</span></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621679234944"><span class="hs-identifier hs-var">minted</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679235017"><span class="hs-identifier hs-var">minted</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-45"></span><span>
 </span><span id="line-46"></span><span class="hs-comment">-- Find the first index at or after the cursor whose name is still free.</span><span>
 </span><span id="line-47"></span><span class="annot"><a href="Tau.html#mint"><span class="hs-identifier hs-type">mint</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Set</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">)</span><span>
 </span><span id="line-48"></span><span id="mint"><span class="annot"><span class="annottext">mint :: Set Text -&gt; Int -&gt; (Text, Int)
-</span><a href="Tau.html#mint"><span class="hs-identifier hs-var hs-var">mint</span></a></span></span><span> </span><span id="local-6989586621679234949"><span class="annot"><span class="annottext">Set Text
-</span><a href="#local-6989586621679234949"><span class="hs-identifier hs-var">taken</span></a></span></span><span> </span><span id="local-6989586621679234950"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679234950"><span class="hs-identifier hs-var">idx</span></a></span></span><span>
+</span><a href="Tau.html#mint"><span class="hs-identifier hs-var hs-var">mint</span></a></span></span><span> </span><span id="local-6989586621679235022"><span class="annot"><span class="annottext">Set Text
+</span><a href="#local-6989586621679235022"><span class="hs-identifier hs-var">taken</span></a></span></span><span> </span><span id="local-6989586621679235023"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679235023"><span class="hs-identifier hs-var">idx</span></a></span></span><span>
 </span><span id="line-49"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621679234951"><span class="hs-identifier hs-var">name</span></a></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Set Text -&gt; Bool
+</span><a href="#local-6989586621679235024"><span class="hs-identifier hs-var">name</span></a></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Set Text -&gt; Bool
 forall a. Ord a =&gt; a -&gt; Set a -&gt; Bool
 </span><span class="hs-operator hs-var">`Set.member`</span></span><span> </span><span class="annot"><span class="annottext">Set Text
-</span><a href="#local-6989586621679234949"><span class="hs-identifier hs-var">taken</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Set Text -&gt; Int -&gt; (Text, Int)
+</span><a href="#local-6989586621679235022"><span class="hs-identifier hs-var">taken</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Set Text -&gt; Int -&gt; (Text, Int)
 </span><a href="Tau.html#mint"><span class="hs-identifier hs-var">mint</span></a></span><span> </span><span class="annot"><span class="annottext">Set Text
-</span><a href="#local-6989586621679234949"><span class="hs-identifier hs-var">taken</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679234950"><span class="hs-identifier hs-var">idx</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+</span><a href="#local-6989586621679235022"><span class="hs-identifier hs-var">taken</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679235023"><span class="hs-identifier hs-var">idx</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
 forall a. Num a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">1</span></span><span class="hs-special">)</span><span>
 </span><span id="line-50"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
 </span><span class="hs-identifier hs-var">otherwise</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621679234951"><span class="hs-identifier hs-var">name</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679234950"><span class="hs-identifier hs-var">idx</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679235024"><span class="hs-identifier hs-var">name</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679235023"><span class="hs-identifier hs-var">idx</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-51"></span><span>  </span><span class="hs-keyword">where</span><span>
-</span><span id="line-52"></span><span>    </span><span id="local-6989586621679234951"><span class="annot"><span class="annottext">name :: Text
-</span><a href="#local-6989586621679234951"><span class="hs-identifier hs-var hs-var">name</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Text
+</span><span id="line-52"></span><span>    </span><span id="local-6989586621679235024"><span class="annot"><span class="annottext">name :: Text
+</span><a href="#local-6989586621679235024"><span class="hs-identifier hs-var hs-var">name</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Text
 </span><span class="hs-string">&quot;a&#127797;&quot;</span></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; Text
 </span><span class="hs-identifier hs-var">T.pack</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; String
 forall a. Show a =&gt; a -&gt; String
 </span><span class="hs-identifier hs-var">show</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679234950"><span class="hs-identifier hs-var">idx</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679235023"><span class="hs-identifier hs-var">idx</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-53"></span><span>
 </span><span id="line-54"></span><span class="annot"><a href="Tau.html#exprLabels"><span class="hs-identifier hs-type">exprLabels</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Set</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span>
 </span><span id="line-55"></span><span id="exprLabels"><span class="annot"><span class="annottext">exprLabels :: Expression -&gt; Set Text
-</span><a href="Tau.html#exprLabels"><span class="hs-identifier hs-var hs-var">exprLabels</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#ExFormation"><span class="hs-identifier hs-type">ExFormation</span></a></span><span> </span><span id="local-6989586621679234962"><span class="annot"><span class="annottext">[Binding]
-</span><a href="#local-6989586621679234962"><span class="hs-identifier hs-var">bds</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Set Text] -&gt; Set Text
+</span><a href="Tau.html#exprLabels"><span class="hs-identifier hs-var hs-var">exprLabels</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#ExFormation"><span class="hs-identifier hs-type">ExFormation</span></a></span><span> </span><span id="local-6989586621679235035"><span class="annot"><span class="annottext">[Binding]
+</span><a href="#local-6989586621679235035"><span class="hs-identifier hs-var">bds</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Set Text] -&gt; Set Text
 forall (f :: * -&gt; *) a. (Foldable f, Ord a) =&gt; f (Set a) -&gt; Set a
 </span><span class="hs-identifier hs-var">Set.unions</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Binding -&gt; Set Text) -&gt; [Binding] -&gt; [Set Text]
 forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
 </span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="annot"><span class="annottext">Binding -&gt; Set Text
 </span><a href="Tau.html#bindingLabels"><span class="hs-identifier hs-var">bindingLabels</span></a></span><span> </span><span class="annot"><span class="annottext">[Binding]
-</span><a href="#local-6989586621679234962"><span class="hs-identifier hs-var">bds</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-56"></span><span class="annot"><a href="Tau.html#exprLabels"><span class="hs-identifier hs-var">exprLabels</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#ExApplication"><span class="hs-identifier hs-type">ExApplication</span></a></span><span> </span><span id="local-6989586621679234966"><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679234966"><span class="hs-identifier hs-var">expr</span></a></span></span><span> </span><span id="local-6989586621679234967"><span class="annot"><span class="annottext">Binding
-</span><a href="#local-6989586621679234967"><span class="hs-identifier hs-var">bd</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expression -&gt; Set Text
+</span><a href="#local-6989586621679235035"><span class="hs-identifier hs-var">bds</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-56"></span><span class="annot"><a href="Tau.html#exprLabels"><span class="hs-identifier hs-var">exprLabels</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#ExApplication"><span class="hs-identifier hs-type">ExApplication</span></a></span><span> </span><span id="local-6989586621679235039"><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679235039"><span class="hs-identifier hs-var">expr</span></a></span></span><span> </span><span id="local-6989586621679235040"><span class="annot"><span class="annottext">Binding
+</span><a href="#local-6989586621679235040"><span class="hs-identifier hs-var">bd</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expression -&gt; Set Text
 </span><a href="Tau.html#exprLabels"><span class="hs-identifier hs-var">exprLabels</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679234966"><span class="hs-identifier hs-var">expr</span></a></span><span> </span><span class="annot"><span class="annottext">Set Text -&gt; Set Text -&gt; Set Text
+</span><a href="#local-6989586621679235039"><span class="hs-identifier hs-var">expr</span></a></span><span> </span><span class="annot"><span class="annottext">Set Text -&gt; Set Text -&gt; Set Text
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Binding -&gt; Set Text
 </span><a href="Tau.html#bindingLabels"><span class="hs-identifier hs-var">bindingLabels</span></a></span><span> </span><span class="annot"><span class="annottext">Binding
-</span><a href="#local-6989586621679234967"><span class="hs-identifier hs-var">bd</span></a></span><span>
-</span><span id="line-57"></span><span class="annot"><a href="Tau.html#exprLabels"><span class="hs-identifier hs-var">exprLabels</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#ExDispatch"><span class="hs-identifier hs-type">ExDispatch</span></a></span><span> </span><span id="local-6989586621679234969"><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679234969"><span class="hs-identifier hs-var">expr</span></a></span></span><span> </span><span id="local-6989586621679234970"><span class="annot"><span class="annottext">Attribute
-</span><a href="#local-6989586621679234970"><span class="hs-identifier hs-var">attr</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expression -&gt; Set Text
+</span><a href="#local-6989586621679235040"><span class="hs-identifier hs-var">bd</span></a></span><span>
+</span><span id="line-57"></span><span class="annot"><a href="Tau.html#exprLabels"><span class="hs-identifier hs-var">exprLabels</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#ExDispatch"><span class="hs-identifier hs-type">ExDispatch</span></a></span><span> </span><span id="local-6989586621679235042"><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679235042"><span class="hs-identifier hs-var">expr</span></a></span></span><span> </span><span id="local-6989586621679235043"><span class="annot"><span class="annottext">Attribute
+</span><a href="#local-6989586621679235043"><span class="hs-identifier hs-var">attr</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expression -&gt; Set Text
 </span><a href="Tau.html#exprLabels"><span class="hs-identifier hs-var">exprLabels</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679234969"><span class="hs-identifier hs-var">expr</span></a></span><span> </span><span class="annot"><span class="annottext">Set Text -&gt; Set Text -&gt; Set Text
+</span><a href="#local-6989586621679235042"><span class="hs-identifier hs-var">expr</span></a></span><span> </span><span class="annot"><span class="annottext">Set Text -&gt; Set Text -&gt; Set Text
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Attribute -&gt; Set Text
 </span><a href="Tau.html#attrLabel"><span class="hs-identifier hs-var">attrLabel</span></a></span><span> </span><span class="annot"><span class="annottext">Attribute
-</span><a href="#local-6989586621679234970"><span class="hs-identifier hs-var">attr</span></a></span><span>
-</span><span id="line-58"></span><span class="annot"><a href="Tau.html#exprLabels"><span class="hs-identifier hs-var">exprLabels</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#ExMetaTail"><span class="hs-identifier hs-type">ExMetaTail</span></a></span><span> </span><span id="local-6989586621679234973"><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679234973"><span class="hs-identifier hs-var">expr</span></a></span></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679235043"><span class="hs-identifier hs-var">attr</span></a></span><span>
+</span><span id="line-58"></span><span class="annot"><a href="Tau.html#exprLabels"><span class="hs-identifier hs-var">exprLabels</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#ExMetaTail"><span class="hs-identifier hs-type">ExMetaTail</span></a></span><span> </span><span id="local-6989586621679235046"><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679235046"><span class="hs-identifier hs-var">expr</span></a></span></span><span> </span><span class="annot"><span class="annottext">Text
 </span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expression -&gt; Set Text
 </span><a href="Tau.html#exprLabels"><span class="hs-identifier hs-var">exprLabels</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679234973"><span class="hs-identifier hs-var">expr</span></a></span><span>
+</span><a href="#local-6989586621679235046"><span class="hs-identifier hs-var">expr</span></a></span><span>
 </span><span id="line-59"></span><span class="annot"><a href="Tau.html#exprLabels"><span class="hs-identifier hs-var">exprLabels</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#ExPhiMeet"><span class="hs-identifier hs-type">ExPhiMeet</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe String
 </span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679234975"><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679234975"><span class="hs-identifier hs-var">expr</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expression -&gt; Set Text
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679235048"><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679235048"><span class="hs-identifier hs-var">expr</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expression -&gt; Set Text
 </span><a href="Tau.html#exprLabels"><span class="hs-identifier hs-var">exprLabels</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679234975"><span class="hs-identifier hs-var">expr</span></a></span><span>
+</span><a href="#local-6989586621679235048"><span class="hs-identifier hs-var">expr</span></a></span><span>
 </span><span id="line-60"></span><span class="annot"><a href="Tau.html#exprLabels"><span class="hs-identifier hs-var">exprLabels</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#ExPhiAgain"><span class="hs-identifier hs-type">ExPhiAgain</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe String
 </span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679234977"><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679234977"><span class="hs-identifier hs-var">expr</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expression -&gt; Set Text
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679235050"><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679235050"><span class="hs-identifier hs-var">expr</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expression -&gt; Set Text
 </span><a href="Tau.html#exprLabels"><span class="hs-identifier hs-var">exprLabels</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679234977"><span class="hs-identifier hs-var">expr</span></a></span><span>
+</span><a href="#local-6989586621679235050"><span class="hs-identifier hs-var">expr</span></a></span><span>
 </span><span id="line-61"></span><span class="annot"><a href="Tau.html#exprLabels"><span class="hs-identifier hs-var">exprLabels</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Set Text
 forall a. Set a
@@ -166,19 +166,19 @@ forall a. Set a
 </span><span id="line-62"></span><span>
 </span><span id="line-63"></span><span class="annot"><a href="Tau.html#bindingLabels"><span class="hs-identifier hs-type">bindingLabels</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="AST.html#Binding"><span class="hs-identifier hs-type">Binding</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Set</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span>
 </span><span id="line-64"></span><span id="bindingLabels"><span class="annot"><span class="annottext">bindingLabels :: Binding -&gt; Set Text
-</span><a href="Tau.html#bindingLabels"><span class="hs-identifier hs-var hs-var">bindingLabels</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#BiTau"><span class="hs-identifier hs-type">BiTau</span></a></span><span> </span><span id="local-6989586621679234979"><span class="annot"><span class="annottext">Attribute
-</span><a href="#local-6989586621679234979"><span class="hs-identifier hs-var">attr</span></a></span></span><span> </span><span id="local-6989586621679234980"><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679234980"><span class="hs-identifier hs-var">expr</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Attribute -&gt; Set Text
+</span><a href="Tau.html#bindingLabels"><span class="hs-identifier hs-var hs-var">bindingLabels</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#BiTau"><span class="hs-identifier hs-type">BiTau</span></a></span><span> </span><span id="local-6989586621679235052"><span class="annot"><span class="annottext">Attribute
+</span><a href="#local-6989586621679235052"><span class="hs-identifier hs-var">attr</span></a></span></span><span> </span><span id="local-6989586621679235053"><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679235053"><span class="hs-identifier hs-var">expr</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Attribute -&gt; Set Text
 </span><a href="Tau.html#attrLabel"><span class="hs-identifier hs-var">attrLabel</span></a></span><span> </span><span class="annot"><span class="annottext">Attribute
-</span><a href="#local-6989586621679234979"><span class="hs-identifier hs-var">attr</span></a></span><span> </span><span class="annot"><span class="annottext">Set Text -&gt; Set Text -&gt; Set Text
+</span><a href="#local-6989586621679235052"><span class="hs-identifier hs-var">attr</span></a></span><span> </span><span class="annot"><span class="annottext">Set Text -&gt; Set Text -&gt; Set Text
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Expression -&gt; Set Text
 </span><a href="Tau.html#exprLabels"><span class="hs-identifier hs-var">exprLabels</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679234980"><span class="hs-identifier hs-var">expr</span></a></span><span>
-</span><span id="line-65"></span><span class="annot"><a href="Tau.html#bindingLabels"><span class="hs-identifier hs-var">bindingLabels</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#BiVoid"><span class="hs-identifier hs-type">BiVoid</span></a></span><span> </span><span id="local-6989586621679234982"><span class="annot"><span class="annottext">Attribute
-</span><a href="#local-6989586621679234982"><span class="hs-identifier hs-var">attr</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Attribute -&gt; Set Text
+</span><a href="#local-6989586621679235053"><span class="hs-identifier hs-var">expr</span></a></span><span>
+</span><span id="line-65"></span><span class="annot"><a href="Tau.html#bindingLabels"><span class="hs-identifier hs-var">bindingLabels</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#BiVoid"><span class="hs-identifier hs-type">BiVoid</span></a></span><span> </span><span id="local-6989586621679235055"><span class="annot"><span class="annottext">Attribute
+</span><a href="#local-6989586621679235055"><span class="hs-identifier hs-var">attr</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Attribute -&gt; Set Text
 </span><a href="Tau.html#attrLabel"><span class="hs-identifier hs-var">attrLabel</span></a></span><span> </span><span class="annot"><span class="annottext">Attribute
-</span><a href="#local-6989586621679234982"><span class="hs-identifier hs-var">attr</span></a></span><span>
+</span><a href="#local-6989586621679235055"><span class="hs-identifier hs-var">attr</span></a></span><span>
 </span><span id="line-66"></span><span class="annot"><a href="Tau.html#bindingLabels"><span class="hs-identifier hs-var">bindingLabels</span></a></span><span> </span><span class="annot"><span class="annottext">Binding
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Set Text
 forall a. Set a
@@ -186,11 +186,11 @@ forall a. Set a
 </span><span id="line-67"></span><span>
 </span><span id="line-68"></span><span class="annot"><a href="Tau.html#attrLabel"><span class="hs-identifier hs-type">attrLabel</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="AST.html#Attribute"><span class="hs-identifier hs-type">Attribute</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Set</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span>
 </span><span id="line-69"></span><span id="attrLabel"><span class="annot"><span class="annottext">attrLabel :: Attribute -&gt; Set Text
-</span><a href="Tau.html#attrLabel"><span class="hs-identifier hs-var hs-var">attrLabel</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#AtLabel"><span class="hs-identifier hs-type">AtLabel</span></a></span><span> </span><span id="local-6989586621679234984"><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621679234984"><span class="hs-keyword hs-var">label</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Text -&gt; Set Text
+</span><a href="Tau.html#attrLabel"><span class="hs-identifier hs-var hs-var">attrLabel</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#AtLabel"><span class="hs-identifier hs-type">AtLabel</span></a></span><span> </span><span id="local-6989586621679235057"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679235057"><span class="hs-keyword hs-var">label</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Text -&gt; Set Text
 forall a. a -&gt; Set a
 </span><span class="hs-identifier hs-var">Set.singleton</span></span><span> </span><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621679234984"><span class="hs-keyword hs-var">label</span></a></span><span>
+</span><a href="#local-6989586621679235057"><span class="hs-keyword hs-var">label</span></a></span><span>
 </span><span id="line-70"></span><span class="annot"><a href="Tau.html#attrLabel"><span class="hs-identifier hs-var">attrLabel</span></a></span><span> </span><span class="annot"><span class="annottext">Attribute
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Set Text
 forall a. Set a
