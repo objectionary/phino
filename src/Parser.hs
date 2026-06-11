@@ -24,6 +24,7 @@ where
 import AST
 import Control.Exception (Exception, throwIO)
 import Control.Monad (guard)
+import Data.Binary.IEEE754 (wordToDouble)
 import Data.Char (isAsciiLower, isDigit)
 import Data.Scientific (toRealFloat)
 import qualified Data.Text as T
@@ -176,7 +177,7 @@ number = do
   unsigned <-
     choice
       [ (1 / 0) <$ lexeme (string "Infinity")
-      , (0 / 0) <$ lexeme (string "NaN")
+      , canonicalNaN <$ lexeme (string "NaN")
       , toRealFloat <$> lexeme L.scientific
       ]
   return
@@ -188,6 +189,12 @@ number = do
             )
         )
     )
+  where
+    -- The canonical positive quiet NaN (matching Java's Double.NaN); building it
+    -- from its bit pattern keeps the result deterministic across architectures,
+    -- unlike `0 / 0` whose sign bit is platform-dependent.
+    canonicalNaN :: Double
+    canonicalNaN = wordToDouble 0x7FF8000000000000
 
 quotedStr :: Parser String
 quotedStr = char '"' >> manyTill (choice [escapedChar, noneOf ['\\', '"']]) (char '"')
