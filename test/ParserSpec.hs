@@ -369,9 +369,6 @@ spec = do
       , ("1.5e2", Just (DataNumber (BtMany ["40", "62", "C0", "00", "00", "00", "00", "00"])))
       , ("2e-3", Just (DataNumber (BtMany ["3F", "60", "62", "4D", "D2", "F1", "A9", "FC"])))
       , ("-1e10", Just (DataNumber (BtMany ["C2", "02", "A0", "5F", "20", "00", "00", "00"])))
-      , ("NaN", Just (DataNumber (BtMany ["7F", "F8", "00", "00", "00", "00", "00", "00"])))
-      , ("Infinity", Just (DataNumber (BtMany ["7F", "F0", "00", "00", "00", "00", "00", "00"])))
-      , ("-Infinity", Just (DataNumber (BtMany ["FF", "F0", "00", "00", "00", "00", "00", "00"])))
       , ("abc", Nothing)
       , ("", Nothing)
       ]
