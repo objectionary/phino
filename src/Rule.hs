@@ -175,17 +175,17 @@ _nf (ExMeta meta) (Subst mp) ctx = case M.lookup meta mp of
   _ -> pure []
 _nf expr subst ctx = pure [subst | isNF expr ctx]
 
--- Checks the structural part of absoluteness: an expression is absolute in
--- structure when it is Φ, a formation, a dispatch with an absolute subject, or
--- an application with an absolute subject and argument (equivalently, no ξ
--- leaks outside of a formation). It does not enforce normal form on its own;
--- the '𝑘' meta-variable combines this structural check (applied first, since it
--- is cheap) with the normal-form check, so that 𝒦 ⊆ 𝒩.
+-- An expression is absolute (it ranges over 𝒦 ⊆ 𝒩) when it is in normal form
+-- and is Φ, a formation, a dispatch with an absolute subject, or an application
+-- with an absolute subject and argument (equivalently, no ξ leaks outside of a
+-- formation). Only a normal form may be absolute, so the structural shape and
+-- the normal-form check are both required; the structural check is cheap, so it
+-- runs first.
 _absolute :: Expression -> Subst -> RuleContext -> IO [Subst]
 _absolute (ExMeta meta) (Subst mp) ctx = case M.lookup meta mp of
   Just (MvExpression expr) -> _absolute expr (Subst mp) ctx
   _ -> pure []
-_absolute expr subst _ = pure [subst | absolute expr]
+_absolute expr subst ctx = pure [subst | absolute expr && isNF expr ctx]
   where
     absolute :: Expression -> Bool
     absolute (ExFormation _) = True
@@ -379,10 +379,10 @@ matchExpressionBy matcher expr rule ctx =
           pure []
         else do
           absolute <- foldlM (\substs nm -> meetCondition (Y.Absolute (ExMeta nm)) substs ctx) matched (kMetaNames ptn)
-          normal <- foldlM (\substs nm -> meetCondition (Y.NF (ExMeta nm)) substs ctx) absolute (nfMetaNames ptn ++ kMetaNames ptn)
+          normal <- foldlM (\substs nm -> meetCondition (Y.NF (ExMeta nm)) substs ctx) absolute (nfMetaNames ptn)
           if null normal
             then do
-              logDebug "A '𝑛'/'𝑘' meta-variable is not in normal form, or a '𝑘' meta-variable is not absolute"
+              logDebug "A '𝑛' meta-variable is not in normal form, or a '𝑘' meta-variable is not absolute"
               pure []
             else do
               when' <- meetMaybeCondition rule.when normal ctx

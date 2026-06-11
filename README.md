@@ -298,13 +298,13 @@ Condition:
   | nf: Expression'      # returns True if given expression in normal form
                          # which means that no more other normalization rules
                          # can be applied
-  | absolute: Expression' # returns True if given expression is absolute in
-                         # structure: it is Φ, a formation, a dispatch with an
-                         # absolute subject, or an application with an absolute
-                         # subject and argument (equivalently, no ξ leaks
-                         # outside of a formation). Combined with a normal-form
-                         # check by the '𝑘'/'!k' meta variable, which ranges
-                         # over the absolute expressions 𝒦 ⊆ 𝒩, used by Rcopy.
+  | absolute: Expression' # returns True if given expression is absolute, i.e.
+                         # it is in normal form and is Φ, a formation, a
+                         # dispatch with an absolute subject, or an application
+                         # with an absolute subject and argument (equivalently,
+                         # no ξ leaks outside of a formation). Ranges over the
+                         # absolute expressions 𝒦 ⊆ 𝒩; used by the '𝑘'/'!k'
+                         # meta variable and the Rcopy rule.
   | matches:             # returns True if given expression after dataization
       - String           # matches to given regex
       - Expression
