@@ -356,6 +356,9 @@ spec = do
     test
       parseNumber
       [ ("0", Just (DataNumber (BtMany ["00", "00", "00", "00", "00", "00", "00", "00"])))
+      , ("-0", Just (DataNumber (BtMany ["80", "00", "00", "00", "00", "00", "00", "00"])))
+      , ("-0.0", Just (DataNumber (BtMany ["80", "00", "00", "00", "00", "00", "00", "00"])))
+      , ("+0", Just (DataNumber (BtMany ["00", "00", "00", "00", "00", "00", "00", "00"])))
       , ("1", Just (DataNumber (BtMany ["3F", "F0", "00", "00", "00", "00", "00", "00"])))
       , ("-1", Just (DataNumber (BtMany ["BF", "F0", "00", "00", "00", "00", "00", "00"])))
       , ("+1", Just (DataNumber (BtMany ["3F", "F0", "00", "00", "00", "00", "00", "00"])))

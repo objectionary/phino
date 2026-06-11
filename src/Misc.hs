@@ -310,6 +310,8 @@ toHex w = [digit (w `shiftR` 4), digit (w .&. 0x0F)]
 -- Right Infinity
 -- >>> btsToNum (BtMany ["FF", "F0", "00", "00", "00", "00", "00", "00"])
 -- Right (-Infinity)
+-- >>> btsToNum (BtMany ["80", "00", "00", "00", "00", "00", "00", "00"])
+-- Right (-0.0)
 btsToNum :: Bytes -> Either Int Double
 btsToNum hx =
   let bytes = btsToWord8 hx
@@ -318,7 +320,7 @@ btsToNum hx =
         else
           let word = toWord64BE bytes
               val = wordToDouble word
-           in if isNaN val || isInfinite val
+           in if isNaN val || isInfinite val || isNegativeZero val
                 then Right val
                 else case properFraction val of
                   (n, 0.0) -> Left n

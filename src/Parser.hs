@@ -177,11 +177,12 @@ number = do
   return
     ( DataNumber
         ( numToBts
-            ( toRealFloat
-                ( case sign of
-                    Just '-' -> negate unsigned
-                    _ -> unsigned
-                )
+            ( case sign of
+                -- Negate the Double rather than the Scientific so that a zero
+                -- literal preserves its sign: Scientific has no negative zero,
+                -- but negate on Double yields -0.0, a distinct IEEE-754 value.
+                Just '-' -> negate (toRealFloat unsigned)
+                _ -> toRealFloat unsigned
             )
         )
     )
