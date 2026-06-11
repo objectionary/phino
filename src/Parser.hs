@@ -173,15 +173,18 @@ bytes =
 number :: Parser Expression
 number = do
   sign <- optional (choice [char '-', char '+'])
-  unsigned <- lexeme L.scientific
+  unsigned <-
+    choice
+      [ (1 / 0) <$ lexeme (string "Infinity")
+      , (0 / 0) <$ lexeme (string "NaN")
+      , toRealFloat <$> lexeme L.scientific
+      ]
   return
     ( DataNumber
         ( numToBts
-            ( toRealFloat
-                ( case sign of
-                    Just '-' -> negate unsigned
-                    _ -> unsigned
-                )
+            ( case sign of
+                Just '-' -> negate unsigned
+                _ -> unsigned
             )
         )
     )

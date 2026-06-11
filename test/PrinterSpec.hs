@@ -14,6 +14,7 @@ import Control.Monad (forM_)
 import Encoding (Encoding (..))
 import Lining (LineFormat (..))
 import Margin (defaultMargin)
+import Misc (pattern DataNumber)
 import Printer
 import Sugar (SugarType (..))
 import Test.Hspec (Spec, describe, it, shouldBe, shouldContain)
@@ -52,6 +53,9 @@ spec = do
         , ExApplication (ExFormation [BiVoid AtRho]) (BiTau (AtAlpha 0) ExGlobal)
         , "[[]]( Q )"
         )
+      , ("NaN double", DataNumber (BtMany ["7F", "F8", "00", "00", "00", "00", "00", "00"]), "NaN")
+      , ("positive infinity", DataNumber (BtMany ["7F", "F0", "00", "00", "00", "00", "00", "00"]), "Infinity")
+      , ("negative infinity", DataNumber (BtMany ["FF", "F0", "00", "00", "00", "00", "00", "00"]), "-Infinity")
       , ("meta expr", ExMeta "e", "!e")
       , ("meta tail", ExMetaTail ExGlobal "t", "Q * !t")
       , ("meta binding", ExFormation [BiMeta "B"], "[[ !B ]]")
