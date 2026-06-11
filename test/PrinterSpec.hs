@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE PatternSynonyms #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
@@ -14,6 +15,8 @@ import Control.Monad (forM_)
 import Encoding (Encoding (..))
 import Lining (LineFormat (..))
 import Margin (defaultMargin)
+import Misc (pattern DataNumber)
+import Parser (parseExpression)
 import Printer
 import Sugar (SugarType (..))
 import Test.Hspec (Spec, describe, it, shouldBe, shouldContain)
@@ -60,6 +63,22 @@ spec = do
       ]
       ( \(desc, expr, expected) ->
           it desc (printExpression' expr (SWEET, ASCII, SINGLELINE, defaultMargin) `shouldBe` expected)
+      )
+
+  describe "printExpression keeps special double values in byte form so they re-parse" $
+    forM_
+      [ ("NaN", BtMany ["7F", "F8", "00", "00", "00", "00", "00", "00"])
+      , ("positive infinity", BtMany ["7F", "F0", "00", "00", "00", "00", "00", "00"])
+      , ("negative infinity", BtMany ["FF", "F0", "00", "00", "00", "00", "00", "00"])
+      ]
+      ( \(desc, bts) ->
+          it desc $ do
+            let expr = DataNumber bts
+                printed = printExpression' expr (SWEET, ASCII, SINGLELINE, defaultMargin)
+            -- rendered as Q.number( Q.bytes( [[ D> .. ]] ) ), not a bare literal
+            printed `shouldContain` "number"
+            printed `shouldContain` "bytes"
+            parseExpression printed `shouldBe` Right expr
       )
 
   describe "printProgram with default config" $

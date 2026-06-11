@@ -246,6 +246,20 @@ programToCST = toCST'
 expressionToCST :: Expression -> EXPRESSION
 expressionToCST = toCST'
 
+-- A number can be rendered with the sweet numeric literal only when it is
+-- finite. NaN and the infinities have no such literal — and the bare `show`
+-- tokens (`NaN`, `Infinity`, `-Infinity`) would collide with object/function
+-- names — so they are kept in their byte form instead.
+sweetNumber :: Bytes -> Bool
+sweetNumber bts = case btsToNum bts of
+  Right d -> not (isNaN d || isInfinite d)
+  Left _ -> True
+
+-- Whether a data object may be collapsed into its sweet literal form.
+sweetCollapsible :: Expression -> Bool
+sweetCollapsible (DataNumber bts) = sweetNumber bts
+sweetCollapsible _ = True
+
 attributeToCST :: Attribute -> ATTRIBUTE
 attributeToCST = toCST'
 
@@ -316,7 +330,11 @@ instance ToCST Expression EXPRESSION where
       withoutLastVoidRho [BiVoid AtRho] = []
       withoutLastVoidRho (bd : bds') = bd : withoutLastVoidRho bds'
   toCST (DataString bts) (tabs, _) = EX_STRING (btsToStr bts) (TAB tabs) []
-  toCST (DataNumber bts) (tabs, _) = EX_NUMBER (btsToNum bts) (TAB tabs) []
+  -- NaN and the infinities have no sweet numeric literal (and printing the bare
+  -- `show` tokens would collide with object/function names), so they are left in
+  -- their byte form `Φ.number(Φ.bytes(⟦ Δ ⤍ … ⟧))` by falling through to the
+  -- generic application clause below.
+  toCST (DataNumber bts) (tabs, _) | sweetNumber bts = EX_NUMBER (btsToNum bts) (TAB tabs) []
   toCST (ExDispatch ExThis attr) ctx = EX_ATTR (toCST attr ctx)
   toCST (ExDispatch expr attr) ctx = EX_DISPATCH (toCST expr ctx) NO_SPACE (toCST attr ctx)
   -- Since we convert AST to CST in sweet notation, here we're trying to get rid of unnecessary rho bindings
@@ -335,7 +353,7 @@ instance ToCST Expression EXPRESSION where
         next = tabs + 1
         (ts', rs) = withoutRhosInPrimitives ex ts
         obj = ExApplication ex (head' ts')
-     in if length ts' == 1 && isJust (matchDataObject obj)
+     in if length ts' == 1 && isJust (matchDataObject obj) && sweetCollapsible obj
           then applicationToPrimitive obj tabs rs
           else
             if null exs

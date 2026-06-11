@@ -304,6 +304,12 @@ toHex w = [digit (w `shiftR` 4), digit (w .&. 0x0F)]
 -- Left 42
 -- >>> btsToNum (BtMany ["40", "45"])
 -- Expected 8 bytes for conversion, got 2
+-- >>> btsToNum (BtMany ["7F", "F8", "00", "00", "00", "00", "00", "00"])
+-- Right NaN
+-- >>> btsToNum (BtMany ["7F", "F0", "00", "00", "00", "00", "00", "00"])
+-- Right Infinity
+-- >>> btsToNum (BtMany ["FF", "F0", "00", "00", "00", "00", "00", "00"])
+-- Right (-Infinity)
 btsToNum :: Bytes -> Either Int Double
 btsToNum hx =
   let bytes = btsToWord8 hx
@@ -312,9 +318,11 @@ btsToNum hx =
         else
           let word = toWord64BE bytes
               val = wordToDouble word
-           in case properFraction val of
-                (n, 0.0) -> Left n
-                _ -> Right val
+           in if isNaN val || isInfinite val
+                then Right val
+                else case properFraction val of
+                  (n, 0.0) -> Left n
+                  _ -> Right val
   where
     toWord64BE :: [Word8] -> Word64
     toWord64BE [a, b, c, d, e, f, g, h] =
