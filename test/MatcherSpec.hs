@@ -361,6 +361,30 @@ spec = do
         , substs [[("e", MvExpression ExGlobal)]]
         )
       ,
+        ( "!p => T => [(!p >> T)]"
+        , ExMeta "p"
+        , ExTermination
+        , substs [[("p", MvExpression ExTermination)]]
+        )
+      ,
+        ( "!p => [[ x -> Q ]] => [(!p >> [[ x -> Q ]])]"
+        , ExMeta "p"
+        , ExFormation [BiTau (AtLabel "x") ExGlobal]
+        , substs [[("p", MvExpression (ExFormation [BiTau (AtLabel "x") ExGlobal]))]]
+        )
+      ,
+        ( "!p => Q => []"
+        , ExMeta "p"
+        , ExGlobal
+        , substs []
+        )
+      ,
+        ( "!p => [[ L> Func ]] => []"
+        , ExMeta "p"
+        , ExFormation [BiLambda "Func"]
+        , substs []
+        )
+      ,
         ( "!e => Q.org(x -> $) => [(!e >> Q.org(x -> $))]"
         , ExMeta "e"
         , ExApplication (ExDispatch ExGlobal (AtLabel "org")) (BiTau (AtLabel "x") ExThis)

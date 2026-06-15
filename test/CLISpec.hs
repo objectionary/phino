@@ -1010,9 +1010,9 @@ spec = do
         [ unlines
             [ "\\begin{tabular}{rl}"
             , "\\trrule{Mprim}"
-            , "  { \\mathbb{M}( e ) }"
-            , "  { e }"
-            , "  { if $ e \\in \\mathcal{P} $ }"
+            , "  { \\mathbb{M}( p ) }"
+            , "  { p }"
+            , "  { }"
             , "  { }"
             , "\\trrule{Mnmz}"
             , "  { \\mathbb{M}( e ) }"

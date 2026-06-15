@@ -388,6 +388,7 @@ exHead =
     , try (ExMeta <$> meta' 'e' "𝑒")
     , try (ExMeta <$> meta' 'n' "𝑛")
     , try (ExMeta <$> meta' 'k' "𝑘")
+    , try (ExMeta <$> meta' 'p' "𝑝")
     , ExDispatch ExThis <$> attribute
     ]
     <?> "expression head"

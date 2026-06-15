@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
@@ -9,7 +11,7 @@ import AST
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
 import Data.Maybe (catMaybes)
-import Data.Text (Text)
+import Data.Text (Text, isPrefixOf)
 
 -- Meta value
 -- The right part of substitution
@@ -117,7 +119,9 @@ tailExpressions ptn tgt = case tailExpressionsReversed ptn tgt of
       substs -> Just (substs, [])
 
 matchExpression' :: MatchExpressionFunc
-matchExpression' (ExMeta meta) tgt = [substSingle meta (MvExpression tgt)]
+matchExpression' (ExMeta meta) tgt
+  | "p" `isPrefixOf` meta = [substSingle meta (MvExpression tgt) | primitive tgt]
+  | otherwise = [substSingle meta (MvExpression tgt)]
 matchExpression' ExThis ExThis = [substEmpty]
 matchExpression' ExGlobal ExGlobal = [substEmpty]
 matchExpression' ExTermination ExTermination = [substEmpty]

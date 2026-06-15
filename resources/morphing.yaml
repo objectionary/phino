@@ -4,11 +4,9 @@
 # Morphing 𝕄 — applied top-to-bottom, first matching clause wins.
 
 - name: Mprim
-  description: '𝕄(e) ⟿ e if e ∈ 𝒫'
-  match: 𝑒
-  when:
-    primitive: 𝑒
-  then: 𝑒
+  description: '𝕄(p) ⟿ p'
+  match: 𝑝
+  then: 𝑝
 
 - name: Mnmz
   description: '𝕄(e) ⟿ 𝕄(𝒩(e)) if e ∉ NF'

@@ -222,15 +222,6 @@ _primitive (ExMeta meta) (Subst mp) ctx = case M.lookup meta mp of
   Just (MvExpression expr) -> _primitive expr (Subst mp) ctx
   _ -> pure []
 _primitive expr subst _ = pure [subst | primitive expr]
-  where
-    primitive :: Expression -> Bool
-    primitive ExTermination = True
-    primitive (ExFormation bds) = not (any lambda bds)
-    primitive _ = False
-    lambda :: Binding -> Bool
-    lambda (BiLambda _) = True
-    lambda (BiMetaLambda _) = True
-    lambda _ = False
 
 -- Hold if none of the given attributes is present in the union of the
 -- bindings captured by the given binding metas.

@@ -117,6 +117,8 @@ instance Render META_HEAD where
   render N' = "n"
   render K = "𝑘"
   render K' = "k"
+  render P = "𝑝"
+  render P' = "p"
   render A = "a"
   render TAU = "𝜏"
   render TAU' = "\\tau"
