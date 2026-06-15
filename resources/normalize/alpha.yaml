@@ -2,9 +2,9 @@
 # SPDX-License-Identifier: MIT
 ---
 name: alpha
-pattern: ⟦𝐵1, 𝜏1 ↦ ∅, 𝐵2⟧(𝛼 ↦ 𝑒)
+pattern: ⟦𝐵1, 𝜏1 ↦ ∅, 𝐵2⟧(𝜂 ↦ 𝑒)
 result: ⟦𝐵1, 𝜏1 ↦ ∅, 𝐵2⟧(𝜏1 ↦ 𝑒)
 when:
   eq:
-    - index: 𝛼
+    - index: 𝜂
     - domain: 𝐵1

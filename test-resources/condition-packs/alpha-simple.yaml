@@ -2,10 +2,10 @@
 # SPDX-License-Identifier: MIT
 ---
 expression: '[[ xxxx -> ? ]](~0 -> Q.y)'
-pattern: '[[ !B1, !a1 -> ?, !B2 ]](!A2 -> !e)'
+pattern: '[[ !B1, !a1 -> ?, !B2 ]](!h2 -> !e)'
 condition:
   and:
-    - alpha: '!A2'
+    - alpha: '!h2'
     - eq:
-        - index: '!A2'
+        - index: '!h2'
         - length: '!B1'

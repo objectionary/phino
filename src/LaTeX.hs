@@ -270,7 +270,8 @@ instance ToLaTeX META_HEAD where
   toLaTeX P = P'
   toLaTeX A = TAU'
   toLaTeX TAU = TAU'
-  toLaTeX MALPHA = MALPHA'
+  toLaTeX ETA = ETA'
+  toLaTeX H = ETA'
   toLaTeX B = B'
   toLaTeX D = D'
   toLaTeX mh = mh

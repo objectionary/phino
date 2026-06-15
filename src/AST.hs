@@ -139,7 +139,7 @@ primitive (ExFormation bds) = not (any lambda bds)
     lambda _ = False
 primitive _ = False
 
--- An 𝛼-attribute is a positional index (α0, α1, …); a 𝜏-attribute never is.
+-- An alpha attribute is a positional index (α0, α1, …); a 𝜏-attribute never is.
 alpha :: Attribute -> Bool
 alpha (AtAlpha _) = True
 alpha _ = False

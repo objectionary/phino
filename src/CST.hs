@@ -89,8 +89,9 @@ data META_HEAD
   | A -- a
   | TAU -- 𝜏
   | TAU' -- \tau
-  | MALPHA -- 𝛼
-  | MALPHA' -- \alpha
+  | ETA -- 𝜂
+  | ETA' -- \eta
+  | H -- h
   | B -- 𝐵
   | B' -- B
   | D -- δ
@@ -300,11 +301,11 @@ exMetaHead mt
   | otherwise = E
 
 -- The first character of an attribute meta name encodes its kind:
--- 'A'-prefixed names are alpha-constrained '𝛼' metas, everything else is an
+-- 'h'-prefixed names are alpha-constrained '𝜂' metas, everything else is an
 -- ordinary '𝜏' meta.
 attrMetaHead :: T.Text -> META_HEAD
 attrMetaHead mt
-  | T.isPrefixOf "A" mt = MALPHA
+  | T.isPrefixOf "h" mt = ETA
   | otherwise = TAU
 
 -- This class is used to convert AST to CST
