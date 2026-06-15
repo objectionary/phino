@@ -10,18 +10,7 @@ with code in this repository.
 
 ## Repository
 
-This is a personal fork of `objectionary/phino`. Two remotes are configured:
-
-- `upstream` — the original `objectionary/phino` repo
-- `origin` — the personal fork (`maxonfjvipon/phino`)
-
-`master` must always be synced from `upstream` before branching:
-
-```bash
-git checkout master
-git pull upstream master
-```
-
+A single `origin` remote points at `objectionary/phino`.
 Never commit directly to `master`. Always branch from an up-to-date `master`.
 
 ## Commands
