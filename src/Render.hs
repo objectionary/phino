@@ -122,6 +122,8 @@ instance Render META_HEAD where
   render A = "a"
   render TAU = "𝜏"
   render TAU' = "\\tau"
+  render MALPHA = "𝛼"
+  render MALPHA' = "\\alpha"
   render B = "𝐵"
   render B' = "B"
   render D = "δ"

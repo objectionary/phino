@@ -155,6 +155,9 @@ spec = do
       [ ("~1 => ~1 => [()]", AtAlpha 1, AtAlpha 1, substs [[]])
       , ("!a => ^ => [(!a >> ^)]", AtMeta "a", AtRho, substs [[("a", MvAttribute AtRho)]])
       , ("!a => @ => [(!a >> @)]", AtMeta "a", AtPhi, substs [[("a", MvAttribute AtPhi)]])
+      , ("!a => ~0 => []", AtMeta "a", AtAlpha 0, substs [])
+      , ("!A => ~0 => [(!A >> ~0)]", AtMeta "A", AtAlpha 0, substs [[("A", MvAttribute (AtAlpha 0))]])
+      , ("!A => ^ => []", AtMeta "A", AtRho, substs [])
       , ("~0 => [] => [()]", AtAlpha 0, AtLabel "x", substs [])
       ]
       ( \(desc, ptn, tgt, expected) ->

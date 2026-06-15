@@ -1,11 +1,6 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 # SPDX-License-Identifier: MIT
 ---
-name: miss
-pattern: ⟦𝐵⟧(𝜏 ↦ 𝑒)
+name: dca
+pattern: ⊥(𝛼 ↦ 𝑒)
 result: ⊥
-when:
-  not:
-    in:
-      - 𝜏
-      - 𝐵

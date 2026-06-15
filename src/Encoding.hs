@@ -74,7 +74,9 @@ instance ToASCII ATTRIBUTE where
   toASCII AT_ALPHA{..} = AT_ALPHA ALPHA' idx
   toASCII AT_PHI{} = AT_PHI AT
   toASCII AT_RHO{} = AT_RHO CARET
-  toASCII AT_META{..} = AT_META (META EXCL A (rest meta))
+  toASCII AT_META{..}
+    | hd meta == MALPHA = AT_META (META EXCL MALPHA (rest meta))
+    | otherwise = AT_META (META EXCL A (rest meta))
   toASCII attr = attr
 
 instance ToASCII SET where

@@ -139,6 +139,11 @@ primitive (ExFormation bds) = not (any lambda bds)
     lambda _ = False
 primitive _ = False
 
+-- An 𝛼-attribute is a positional index (α0, α1, …); a 𝜏-attribute never is.
+alpha :: Attribute -> Bool
+alpha (AtAlpha _) = True
+alpha _ = False
+
 countNodes :: Expression -> Int
 countNodes (ExFormation bds) = 1 + sum (map nodesInBinding bds) + length bds
   where
