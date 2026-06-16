@@ -71,7 +71,7 @@ buildAttribute attr _ = Right attr
 
 buildAlpha :: Alpha -> Subst -> Built Alpha
 buildAlpha (AlMeta meta) (Subst mp) = case Map.lookup meta mp of
-  Just (MvAlpha a) -> Right a
+  Just (MvAlpha alpha) -> Right alpha
   _ -> Left (metaMsg meta)
 buildAlpha a _ = Right a
 

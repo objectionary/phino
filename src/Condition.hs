@@ -50,9 +50,9 @@ number =
   choice
     [ do
         _ <- symbol "index" >> lparen
-        a <- _alpha phiParser
+        alpha <- _alpha phiParser
         _ <- rparen
-        return (Y.Index a)
+        return (Y.Index alpha)
     , do
         _ <- symbol "length" >> lparen
         bd <- _binding phiParser

@@ -333,8 +333,8 @@ metaNamesWithPrefix prefix = nub . go
     goBinding (BiTau _ e) = go e
     goBinding _ = []
     goArgument :: Argument -> [T.Text]
-    goArgument (ArTau _ e) = go e
-    goArgument (ArAlpha _ e) = go e
+    goArgument (ArTau _ expr) = go expr
+    goArgument (ArAlpha _ expr) = go expr
 
 nfMetaNames :: Expression -> [T.Text]
 nfMetaNames = metaNamesWithPrefix "n"

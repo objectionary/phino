@@ -29,6 +29,7 @@ common warnings
     -Wmissing-home-modules
     -Wpartial-fields
     -Wredundant-constraints
+    -Wno-name-shadowing
 
 library
   import: warnings

@@ -137,8 +137,8 @@ expression (ExApplication expr arg) ctx = do
   pure (base, children ++ [object attrs children'])
   where
     (as, texpr) = case arg of
-      ArTau attr e -> (printAttribute attr, e)
-      ArAlpha al e -> (printAlpha al, e)
+      ArTau attr value -> (printAttribute attr, value)
+      ArAlpha alpha value -> (printAlpha alpha, value)
 expression expr _ = throwIO (UnsupportedExpression expr)
 
 formationBinding :: Binding -> XmirContext -> IO (Maybe Node)
@@ -478,8 +478,8 @@ xmirToApplication = xmirToApplication' 0
       xmirToApplication' (idx + 1) app' args fqn
 
     mkArg :: Either Alpha Attribute -> Expression -> Argument
-    mkArg (Left a) e = ArAlpha a e
-    mkArg (Right at) e = ArTau at e
+    mkArg (Left alpha) expr = ArAlpha alpha expr
+    mkArg (Right attr) expr = ArTau attr expr
 
     asToKey :: C.Cursor -> Int -> IO (Either Alpha Attribute)
     asToKey cur idx
@@ -487,7 +487,7 @@ xmirToApplication = xmirToApplication' 0
           as <- getAttr "as" cur
           case as of
             'α' : rest' -> case TR.readMaybe rest' :: Maybe Int of
-              Just i -> pure (Left (Alpha i))
+              Just idx -> pure (Left (Alpha idx))
               Nothing -> throwIO (InvalidXMIRFormat "The attribute started with 'α' must be followed by integer" cur)
             "ρ" -> throwIO (InvalidXMIRFormat "The 'ρ' in @as attribute is illegal in XMIR" cur)
             _ -> Right <$> toAttr as cur

@@ -547,7 +547,7 @@ instance ToCST Y.Comparable COMPARABLE where
   toCST (Y.CmpNum num) _ = CMP_NUM (numberToCST num)
 
 instance ToCST Y.Number NUMBER where
-  toCST (Y.Index a) _ = INDEX (alphaToCST a)
+  toCST (Y.Index alpha) _ = INDEX (alphaToCST alpha)
   toCST (Y.Length binding) _ = LENGTH (bindingsToCST [binding])
   toCST (Y.Domain binding) _ = DOMAIN (bindingsToCST [binding])
   toCST (Y.Literal num) _ = LITERAL num
