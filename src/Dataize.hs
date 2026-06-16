@@ -52,7 +52,7 @@ formation :: [Binding] -> DataizeContext -> IO (Maybe Expression)
 formation bds ctx = do
   let (lambda, bds') = maybeLambda bds
   case lambda of
-    Just (BiLambda func) -> Just <$> atom func (ExFormation bds') ctx
+    Just (BiLambda (Function func)) -> Just <$> atom func (ExFormation bds') ctx
     _ -> pure Nothing
   where
     maybeLambda :: [Binding] -> (Maybe Binding, [Binding])
@@ -104,7 +104,7 @@ morph (expr, seq) ctx@DataizeContext{..} = do
     -- maps onto the 'having' slot (which runs after 'where'), not 'when' (which
     -- 'matchExpressionWithRule'' runs before 'where').
     asRule :: Y.MorphRule -> Y.Rule
-    asRule rule = Y.Rule rule.name rule.description rule.match ExGlobal Nothing rule.where_ rule.when
+    asRule rule = Y.Rule rule.name rule.description rule.match ExRoot Nothing rule.where_ rule.when
     apply :: Y.MorphOutcome -> String -> Subst -> IO Morphed
     apply (Y.MoStop result) name subst = do
       built <- buildExpressionThrows result subst
@@ -162,7 +162,7 @@ dataize' (expr, seq) ctx = do
         (subst : _) -> pure (Just (rule, subst))
         [] -> firstMatch rest
     asRule :: Y.DataizeRule -> Y.Rule
-    asRule rule = Y.Rule rule.name rule.description rule.match ExGlobal Nothing rule.where_ rule.when
+    asRule rule = Y.Rule rule.name rule.description rule.match ExRoot Nothing rule.where_ rule.when
     apply :: Y.DataizeRule -> Subst -> IO Dataized
     apply rule subst = case rule.then_ of
       Y.DoData bytes -> do

@@ -50,11 +50,11 @@ matchesAnyNormalizationRule expr ctx = matchesAnyNormalizationRule' expr normali
 
 -- Returns True if given expression is in the normal form
 isNF :: Expression -> RuleContext -> Bool
-isNF ExThis _ = True
-isNF ExGlobal _ = True
+isNF ExXi _ = True
+isNF ExRoot _ = True
 isNF ExTermination _ = True
-isNF (ExDispatch ExThis _) _ = True
-isNF (ExDispatch ExGlobal _) _ = True
+isNF (ExDispatch ExXi _) _ = True
+isNF (ExDispatch ExRoot _) _ = True
 isNF (ExDispatch ExTermination _) _ = False -- dd rule
 isNF (ExApplication ExTermination _) _ = False -- dc rule
 isNF (ExFormation []) _ = True
@@ -96,10 +96,9 @@ _not cond subst ctx = do
 _in :: Attribute -> Binding -> Subst -> RuleContext -> IO [Subst]
 _in attr binding subst _ =
   case (buildAttribute attr subst, buildBinding binding subst) of
-    (Right attr, Right bds) -> pure [subst | attrInBindings attr bds] -- if attrInBindings attr bd then [subst] else []
+    (Right attr, Right bds) -> pure [subst | attrInBindings attr bds]
     (_, _) -> pure []
   where
-    -- Check if given attribute is present in given binding
     attrInBindings :: Attribute -> [Binding] -> Bool
     attrInBindings attr (bd : bds) = attrInBinding attr bd || attrInBindings attr bds
       where
@@ -111,13 +110,6 @@ _in attr binding subst _ =
         attrInBinding _ _ = False
     attrInBindings _ _ = False
 
-_alpha :: Attribute -> Subst -> RuleContext -> IO [Subst]
-_alpha (AtAlpha _) subst _ = pure [subst]
-_alpha (AtMeta name) (Subst mp) _ = case M.lookup name mp of
-  Just (MvAttribute (AtAlpha _)) -> pure [Subst mp]
-  _ -> pure []
-_alpha _ _ _ = pure []
-
 _eq :: Y.Comparable -> Y.Comparable -> Subst -> RuleContext -> IO [Subst]
 _eq (Y.CmpNum left) (Y.CmpNum right) subst _ = case (numToInt left subst, numToInt right subst) of
   (Just left_, Just right_) -> pure [subst | left_ == right_]
@@ -125,10 +117,10 @@ _eq (Y.CmpNum left) (Y.CmpNum right) subst _ = case (numToInt left subst, numToI
   where
     -- Convert Number to Int
     numToInt :: Y.Number -> Subst -> Maybe Int
-    numToInt (Y.Index (AtMeta meta)) (Subst mp) = case M.lookup meta mp of
-      Just (MvAttribute (AtAlpha idx)) -> Just idx
+    numToInt (Y.Index (AlMeta meta)) (Subst mp) = case M.lookup meta mp of
+      Just (MvAlpha (Alpha idx)) -> Just idx
       _ -> Nothing
-    numToInt (Y.Index (AtAlpha idx)) _ = Just idx
+    numToInt (Y.Index (Alpha idx)) _ = Just idx
     numToInt (Y.Length (BiMeta meta)) (Subst mp) = case M.lookup meta mp of
       Just (MvBindings bds) -> Just (length bds)
       _ -> Nothing
@@ -139,7 +131,6 @@ _eq (Y.CmpNum left) (Y.CmpNum right) subst _ = case (numToInt left subst, numToI
     numToInt _ _ = Nothing
     notAsset (BiDelta _) = False
     notAsset (BiLambda _) = False
-    notAsset (BiMetaLambda _) = False
     notAsset _ = True
 _eq (Y.CmpAttr left) (Y.CmpAttr right) subst _ = pure [subst | compareAttrs left right subst]
   where
@@ -189,8 +180,9 @@ _absolute expr subst _ = pure [subst | xiFree expr]
   where
     xiFree :: Expression -> Bool
     xiFree (ExFormation _) = True
-    xiFree ExGlobal = True
-    xiFree (ExApplication e (BiTau _ te)) = xiFree e && xiFree te
+    xiFree ExRoot = True
+    xiFree (ExApplication e (ArTau _ te)) = xiFree e && xiFree te
+    xiFree (ExApplication e (ArAlpha _ te)) = xiFree e && xiFree te
     xiFree (ExDispatch e _) = xiFree e
     xiFree _ = False
 
@@ -239,7 +231,6 @@ _disjoint attrs bindings subst _ =
     presentInBinding attr (BiTau battr _) = attr == battr
     presentInBinding attr (BiVoid battr) = attr == battr
     presentInBinding AtLambda (BiLambda _) = True
-    presentInBinding AtLambda (BiMetaLambda _) = True
     presentInBinding AtDelta (BiDelta _) = True
     presentInBinding _ _ = False
 
@@ -248,7 +239,6 @@ meetCondition' (Y.Or conds) = _or conds
 meetCondition' (Y.And conds) = _and conds
 meetCondition' (Y.Not cond) = _not cond
 meetCondition' (Y.In attr binding) = _in attr binding
-meetCondition' (Y.Alpha attr) = _alpha attr
 meetCondition' (Y.Eq left right) = _eq left right
 meetCondition' (Y.NF expr) = _nf expr
 meetCondition' (Y.Absolute expr) = _absolute expr
@@ -333,7 +323,7 @@ metaNamesWithPrefix prefix = nub . go
       | T.isPrefixOf prefix mt = [mt]
       | otherwise = []
     go (ExFormation bds) = concatMap goBinding bds
-    go (ExApplication e bd) = go e ++ goBinding bd
+    go (ExApplication e arg) = go e ++ goArgument arg
     go (ExDispatch e _) = go e
     go (ExMetaTail e _) = go e
     go (ExPhiMeet _ _ e) = go e
@@ -342,6 +332,9 @@ metaNamesWithPrefix prefix = nub . go
     goBinding :: Binding -> [T.Text]
     goBinding (BiTau _ e) = go e
     goBinding _ = []
+    goArgument :: Argument -> [T.Text]
+    goArgument (ArTau _ expr) = go expr
+    goArgument (ArAlpha _ expr) = go expr
 
 nfMetaNames :: Expression -> [T.Text]
 nfMetaNames = metaNamesWithPrefix "n"

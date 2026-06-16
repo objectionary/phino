@@ -7,7 +7,7 @@
 
 module RuleSpec where
 
-import AST (Attribute (..), Binding (..), Bytes (..), Expression (..), Program (Program))
+import AST (Argument (..), Attribute (..), Binding (..), Bytes (..), Expression (..), Function (..), Program (Program))
 import Control.Monad
 import Data.Aeson
 import Data.Yaml qualified as Y
@@ -61,17 +61,17 @@ spec = do
   describe "isNF determines normal form" $ do
     let ctx = RuleContext buildTerm
     forM_
-      [ ("returns true for ExThis", ExThis, True)
-      , ("returns true for ExGlobal", ExGlobal, True)
+      [ ("returns true for ExXi", ExXi, True)
+      , ("returns true for ExRoot", ExRoot, True)
       , ("returns true for ExTermination", ExTermination, True)
-      , ("returns true for dispatch on ExThis", ExDispatch ExThis (AtLabel "foo"), True)
-      , ("returns true for dispatch on ExGlobal", ExDispatch ExGlobal (AtLabel "bar"), True)
+      , ("returns true for dispatch on ExXi", ExDispatch ExXi (AtLabel "foo"), True)
+      , ("returns true for dispatch on ExRoot", ExDispatch ExRoot (AtLabel "bar"), True)
       , ("returns false for dispatch on ExTermination", ExDispatch ExTermination (AtLabel "x"), False)
-      , ("returns false for application on ExTermination", ExApplication ExTermination (BiTau (AtLabel "y") ExGlobal), False)
+      , ("returns false for application on ExTermination", ExApplication ExTermination (ArTau (AtLabel "y") ExRoot), False)
       , ("returns true for empty formation", ExFormation [], True)
       , ("returns true for formation with only delta binding", ExFormation [BiDelta (BtMany ["00", "01"])], True)
       , ("returns true for formation with only void binding", ExFormation [BiVoid (AtLabel "x")], True)
-      , ("returns true for formation with only lambda binding", ExFormation [BiLambda "Func"], True)
-      , ("returns true for formation with delta void and lambda", ExFormation [BiDelta (BtOne "FF"), BiVoid (AtLabel "y"), BiLambda "G"], True)
+      , ("returns true for formation with only lambda binding", ExFormation [BiLambda (Function "Func")], True)
+      , ("returns true for formation with delta void and lambda", ExFormation [BiDelta (BtOne "FF"), BiVoid (AtLabel "y"), BiLambda (Function "G")], True)
       ]
       (\(desc, expr, expected) -> it desc $ isNF expr ctx `shouldBe` expected)

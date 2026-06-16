@@ -43,6 +43,9 @@ instance FromJSON Attribute where
             Right attr -> pure attr
       )
 
+instance FromJSON Alpha where
+  parseJSON = parseJSON' "Alpha" parseAlpha
+
 instance FromJSON Bytes where
   parseJSON = parseJSON' "Bytes" parseBytes
 
@@ -78,12 +81,11 @@ instance FromJSON Condition where
     withObject
       "Condition"
       ( \v -> do
-          validateYamlObject v ["and", "or", "not", "alpha", "nf", "absolute", "eq", "in", "matches", "part-of", "primitive", "disjoint"]
+          validateYamlObject v ["and", "or", "not", "nf", "absolute", "eq", "in", "matches", "part-of", "primitive", "disjoint"]
           asum
             [ And <$> v .: "and"
             , Or <$> v .: "or"
             , Not <$> v .: "not"
-            , Alpha <$> v .: "alpha"
             , NF <$> v .: "nf"
             , Absolute <$> v .: "absolute"
             , Primitive <$> v .: "primitive"
@@ -148,7 +150,7 @@ instance FromJSON Rule where
         }
 
 data Number
-  = Index Attribute
+  = Index Alpha
   | Length Binding
   | Domain Binding
   | Literal Int
@@ -165,7 +167,6 @@ data Condition
   | Or [Condition]
   | In Attribute Binding
   | Not Condition
-  | Alpha Attribute
   | Eq Comparable Comparable
   | NF Expression
   | Absolute Expression
@@ -207,7 +208,7 @@ normalizationRules = map decodeRule $(embedDir "resources/normalize")
     decodeRule :: (FilePath, BS.ByteString) -> Rule
     decodeRule (path, bs) =
       case Yaml.decodeEither' bs of
-        Right r -> r
+        Right rule -> rule
         Left err -> error $ "YAML parse error in " ++ path ++ ": " ++ show err
 
 yamlRule :: FilePath -> IO Rule

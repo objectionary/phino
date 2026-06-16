@@ -8,7 +8,7 @@
 
 module RewriterSpec where
 
-import AST (Expression (ExGlobal))
+import AST (Expression (ExRoot))
 import Control.Monad (forM_, unless)
 import Data.Aeson
 import Data.Char (isSpace)
@@ -107,7 +107,7 @@ spec =
                   prog
                   rules'
                   ( RewriteContext
-                      ExGlobal
+                      ExRoot
                       repeat'
                       repeat'
                       False

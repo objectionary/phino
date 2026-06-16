@@ -25,7 +25,7 @@ validatedDispatches opt = traverse (parseExpressionThrows >=> asDispatch)
     asDispatch expr = asDispatch' expr
       where
         asDispatch' :: Expression -> IO Expression
-        asDispatch' ex@ExGlobal = pure ex
+        asDispatch' ex@ExRoot = pure ex
         asDispatch' disp@(ExDispatch ex _) = asDispatch' ex >> pure disp
         asDispatch' _ =
           invalidCLIArguments

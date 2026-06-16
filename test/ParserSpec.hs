@@ -32,44 +32,44 @@ spec = do
     test
       parseProgram
       [ ("Q -> [[]]", Just (Program (ExFormation [BiVoid AtRho])))
-      , ("Q -> T(x -> Q)", Just (Program (ExApplication ExTermination (BiTau (AtLabel "x") ExGlobal))))
-      , ("Q -> Q.org.eolang", Just (Program (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang"))))
-      , ("Q -> [[x -> $, y -> ?]]", Just (Program (ExFormation [BiTau (AtLabel "x") ExThis, BiVoid (AtLabel "y"), BiVoid AtRho])))
+      , ("Q -> T(x -> Q)", Just (Program (ExApplication ExTermination (ArTau (AtLabel "x") ExRoot))))
+      , ("Q -> Q.org.eolang", Just (Program (ExDispatch (ExDispatch ExRoot (AtLabel "org")) (AtLabel "eolang"))))
+      , ("Q -> [[x -> $, y -> ?]]", Just (Program (ExFormation [BiTau (AtLabel "x") ExXi, BiVoid (AtLabel "y"), BiVoid AtRho])))
       ]
 
   describe "parse expression" $
     test
       parseExpression
-      [ ("Q.!a", Just (ExDispatch ExGlobal (AtMeta "a")))
-      , ("[[]](!a1 -> $)", Just (ExApplication (ExFormation [BiVoid AtRho]) (BiTau (AtMeta "a1") ExThis)))
+      [ ("Q.!a", Just (ExDispatch ExRoot (AtMeta "a")))
+      , ("[[]](!a1 -> $)", Just (ExApplication (ExFormation [BiVoid AtRho]) (ArTau (AtMeta "a1") ExXi)))
       ,
         ( "[[]](~0 -> $)(~11 -> Q)"
         , Just
             ( ExApplication
                 ( ExApplication
                     (ExFormation [BiVoid AtRho])
-                    (BiTau (AtAlpha 0) ExThis)
+                    (ArAlpha (Alpha 0) ExXi)
                 )
-                (BiTau (AtAlpha 11) ExGlobal)
+                (ArAlpha (Alpha 11) ExRoot)
             )
         )
-      , ("[[]](x -> $, y -> Q)", Just (ExApplication (ExApplication (ExFormation [BiVoid AtRho]) (BiTau (AtLabel "x") ExThis)) (BiTau (AtLabel "y") ExGlobal)))
+      , ("[[]](x -> $, y -> Q)", Just (ExApplication (ExApplication (ExFormation [BiVoid AtRho]) (ArTau (AtLabel "x") ExXi)) (ArTau (AtLabel "y") ExRoot)))
       , ("[[!B, !B1]]", Just (ExFormation [BiMeta "B", BiMeta "B1"]))
-      , ("[[!B2, !a2 -> $]]", Just (ExFormation [BiMeta "B2", BiTau (AtMeta "a2") ExThis]))
+      , ("[[!B2, !a2 -> $]]", Just (ExFormation [BiMeta "B2", BiTau (AtMeta "a2") ExXi]))
       , ("!e0", Just (ExMeta "e0"))
       , ("!k", Just (ExMeta "k"))
       , ("[[x -> !k1]]", Just (ExFormation [BiTau (AtLabel "x") (ExMeta "k1"), BiVoid AtRho]))
       , ("[[x -> !e]]", Just (ExFormation [BiTau (AtLabel "x") (ExMeta "e"), BiVoid AtRho]))
       , ("[[!a -> !e1]]", Just (ExFormation [BiTau (AtMeta "a") (ExMeta "e1")]))
-      , ("Q * !t", Just (ExMetaTail ExGlobal "t"))
-      , ("[[]](x -> $) * !t1", Just (ExMetaTail (ExApplication (ExFormation [BiVoid AtRho]) (BiTau (AtLabel "x") ExThis)) "t1"))
+      , ("Q * !t", Just (ExMetaTail ExRoot "t"))
+      , ("[[]](x -> $) * !t1", Just (ExMetaTail (ExApplication (ExFormation [BiVoid AtRho]) (ArTau (AtLabel "x") ExXi)) "t1"))
       , ("[[D> --]]", Just (ExFormation [BiDelta BtEmpty, BiVoid AtRho]))
       , ("[[D> 1F-]]", Just (ExFormation [BiDelta (BtOne "1F"), BiVoid AtRho]))
-      , ("[[\n  L> Func,\n  D> 00-\n]]", Just (ExFormation [BiLambda "Func", BiDelta (BtOne "00"), BiVoid AtRho]))
+      , ("[[\n  L> Func,\n  D> 00-\n]]", Just (ExFormation [BiLambda (Function "Func"), BiDelta (BtOne "00"), BiVoid AtRho]))
       , ("[[D> 1F-2A-00]]", Just (ExFormation [BiDelta (BtMany ["1F", "2A", "00"]), BiVoid AtRho]))
       , ("[[D> !d0]]", Just (ExFormation [BiDelta (BtMeta "d0"), BiVoid AtRho]))
-      , ("[[L> Function]]", Just (ExFormation [BiLambda "Function", BiVoid AtRho]))
-      , ("[[L> !F3]]", Just (ExFormation [BiMetaLambda "F3", BiVoid AtRho]))
+      , ("[[L> Function]]", Just (ExFormation [BiLambda (Function "Function"), BiVoid AtRho]))
+      , ("[[L> !F3]]", Just (ExFormation [BiLambda (FnMeta "F3"), BiVoid AtRho]))
       , ("[[x() -> [[]] ]]", Just (ExFormation [BiTau (AtLabel "x") (ExFormation [BiVoid AtRho]), BiVoid AtRho]))
       ,
         ( "[[y(^,@,z) -> [[q -> Q.a]] ]]"
@@ -81,7 +81,7 @@ spec = do
                         [ BiVoid AtRho
                         , BiVoid AtPhi
                         , BiVoid (AtLabel "z")
-                        , BiTau (AtLabel "q") (ExDispatch ExGlobal (AtLabel "a"))
+                        , BiTau (AtLabel "q") (ExDispatch ExRoot (AtLabel "a"))
                         ]
                     )
                 , BiVoid AtRho
@@ -93,7 +93,7 @@ spec = do
         , Just
             ( ExApplication
                 (ExMeta "e")
-                ( BiTau
+                ( ArTau
                     (AtLabel "x")
                     ( ExFormation
                         [ BiVoid AtRho
@@ -110,16 +110,16 @@ spec = do
             ( ExFormation
                 [ BiTau
                     (AtLabel "x")
-                    (ExDispatch (ExDispatch ExThis (AtLabel "y")) (AtLabel "z"))
+                    (ExDispatch (ExDispatch ExXi (AtLabel "y")) (AtLabel "z"))
                 , BiTau
                     (AtLabel "w")
-                    (ExDispatch ExThis AtRho)
+                    (ExDispatch ExXi AtRho)
                 , BiTau
                     (AtLabel "u")
-                    (ExDispatch ExThis AtPhi)
+                    (ExDispatch ExXi AtPhi)
                 , BiTau
                     (AtLabel "p")
-                    (ExDispatch ExThis (AtMeta "a"))
+                    (ExDispatch ExXi (AtMeta "a"))
                 , BiTau
                     (AtLabel "q")
                     (ExMeta "e")
@@ -133,19 +133,19 @@ spec = do
             ( ExApplication
                 ( ExApplication
                     ( ExApplication
-                        (ExDispatch ExGlobal (AtLabel "x"))
-                        (BiTau (AtAlpha 0) (ExDispatch ExThis (AtLabel "y")))
+                        (ExDispatch ExRoot (AtLabel "x"))
+                        (ArAlpha (Alpha 0) (ExDispatch ExXi (AtLabel "y")))
                     )
-                    (BiTau (AtAlpha 1) (ExDispatch (ExFormation [BiVoid AtRho]) (AtLabel "z")))
+                    (ArAlpha (Alpha 1) (ExDispatch (ExFormation [BiVoid AtRho]) (AtLabel "z")))
                 )
-                ( BiTau
-                    (AtAlpha 2)
+                ( ArAlpha
+                    (Alpha 2)
                     ( ExApplication
                         ( ExApplication
-                            (ExDispatch ExGlobal (AtLabel "y"))
-                            (BiTau (AtAlpha 0) (ExDispatch ExThis AtRho))
+                            (ExDispatch ExRoot (AtLabel "y"))
+                            (ArAlpha (Alpha 0) (ExDispatch ExXi AtRho))
                         )
-                        (BiTau (AtAlpha 1) (ExDispatch ExThis AtPhi))
+                        (ArAlpha (Alpha 1) (ExDispatch ExXi AtPhi))
                     )
                 )
             )
@@ -158,15 +158,15 @@ spec = do
                     (DataNumber (BtMany ["40", "14", "00", "00", "00", "00", "00", "00"]))
                     (AtLabel "plus")
                 )
-                ( BiTau
-                    (AtAlpha 0)
+                ( ArAlpha
+                    (Alpha 0)
                     ( ExApplication
                         ( ExDispatch
                             (DataNumber (BtMany ["40", "14", "00", "00", "00", "00", "00", "00"]))
                             (AtLabel "q")
                         )
-                        ( BiTau
-                            (AtAlpha 0)
+                        ( ArAlpha
+                            (Alpha 0)
                             ( ExDispatch
                                 (DataString (BtMany ["68", "65", "6C", "6C", "6F"]))
                                 (AtLabel "length")
@@ -181,7 +181,7 @@ spec = do
         , Just
             ( ExFormation
                 [ BiMeta "B1"
-                , BiTau (AtMeta "a0") ExThis
+                , BiTau (AtMeta "a0") ExXi
                 , BiTau (AtLabel "x") (ExMeta "e")
                 ]
             )
@@ -287,28 +287,28 @@ spec = do
   describe "parse binding" $
     test
       parseBinding
-      [ ("x -> $", Just (BiTau (AtLabel "x") ExThis))
-      , ("y -> Q", Just (BiTau (AtLabel "y") ExGlobal))
+      [ ("x -> $", Just (BiTau (AtLabel "x") ExXi))
+      , ("y -> Q", Just (BiTau (AtLabel "y") ExRoot))
       , ("z -> ?", Just (BiVoid (AtLabel "z")))
       , ("w -> ∅", Just (BiVoid (AtLabel "w")))
       , ("^ -> T", Just (BiTau AtRho ExTermination))
-      , ("@ -> $", Just (BiTau AtPhi ExThis))
-      , ("ρ -> Q", Just (BiTau AtRho ExGlobal))
+      , ("@ -> $", Just (BiTau AtPhi ExXi))
+      , ("ρ -> Q", Just (BiTau AtRho ExRoot))
       , ("φ -> T", Just (BiTau AtPhi ExTermination))
-      , ("!a -> $", Just (BiTau (AtMeta "a") ExThis))
-      , ("!a0 -> Q", Just (BiTau (AtMeta "a0") ExGlobal))
+      , ("!a -> $", Just (BiTau (AtMeta "a") ExXi))
+      , ("!a0 -> Q", Just (BiTau (AtMeta "a0") ExRoot))
       , ("D> --", Just (BiDelta BtEmpty))
       , ("D> 42-", Just (BiDelta (BtOne "42")))
       , ("D> 01-02-03", Just (BiDelta (BtMany ["01", "02", "03"])))
       , ("D> !d", Just (BiDelta (BtMeta "d")))
       , ("Δ ⤍ FF-", Just (BiDelta (BtOne "FF")))
       , ("Δ ⤍ --", Just (BiDelta BtEmpty))
-      , ("L> Func", Just (BiLambda "Func"))
-      , ("L> Function_name", Just (BiLambda "Function_name"))
-      , ("L> Aφ", Just (BiLambda "Aφ"))
-      , ("λ ⤍ Test", Just (BiLambda "Test"))
-      , ("L> !F", Just (BiMetaLambda "F"))
-      , ("L> !F0", Just (BiMetaLambda "F0"))
+      , ("L> Func", Just (BiLambda (Function "Func")))
+      , ("L> Function_name", Just (BiLambda (Function "Function_name")))
+      , ("L> Aφ", Just (BiLambda (Function "Aφ")))
+      , ("λ ⤍ Test", Just (BiLambda (Function "Test")))
+      , ("L> !F", Just (BiLambda (FnMeta "F")))
+      , ("L> !F0", Just (BiLambda (FnMeta "F0")))
       , ("!B", Just (BiMeta "B"))
       , ("!B0", Just (BiMeta "B0"))
       , ("!B_test", Just (BiMeta "B_test"))
@@ -317,8 +317,8 @@ spec = do
       , ("x() -> [[]]", Just (BiTau (AtLabel "x") (ExFormation [BiVoid AtRho])))
       , ("y(^) -> [[]]", Just (BiTau (AtLabel "y") (ExFormation [BiVoid AtRho])))
       , ("z(^, @) -> [[]]", Just (BiTau (AtLabel "z") (ExFormation [BiVoid AtRho, BiVoid AtPhi])))
-      , ("x -> [[y -> $]]", Just (BiTau (AtLabel "x") (ExFormation [BiTau (AtLabel "y") ExThis, BiVoid AtRho])))
-      , ("x ↦ ξ", Just (BiTau (AtLabel "x") ExThis))
+      , ("x -> [[y -> $]]", Just (BiTau (AtLabel "x") (ExFormation [BiTau (AtLabel "y") ExXi, BiVoid AtRho])))
+      , ("x ↦ ξ", Just (BiTau (AtLabel "x") ExXi))
       , ("x -> ", Nothing)
       , ("-> Q", Nothing)
       , ("L>", Nothing)
@@ -342,11 +342,11 @@ spec = do
       , ("!a_test", Just (AtMeta "a_test"))
       , ("𝜏", Just (AtMeta "a"))
       , ("𝜏0", Just (AtMeta "a0"))
-      , ("~0", Just (AtAlpha 0))
-      , ("~1", Just (AtAlpha 1))
-      , ("~123", Just (AtAlpha 123))
-      , ("α0", Just (AtAlpha 0))
-      , ("α42", Just (AtAlpha 42))
+      , ("~0", Nothing)
+      , ("~1", Nothing)
+      , ("~123", Nothing)
+      , ("α0", Nothing)
+      , ("α42", Nothing)
       , ("X", Nothing)
       , ("123", Nothing)
       , ("", Nothing)
@@ -384,7 +384,7 @@ spec = do
 
   describe "parseExpressionThrows" $ do
     it "returns expression on valid input" $
-      parseExpressionThrows "Q.x" `shouldReturn` ExDispatch ExGlobal (AtLabel "x")
+      parseExpressionThrows "Q.x" `shouldReturn` ExDispatch ExRoot (AtLabel "x")
     it "throws on invalid input" $
       parseExpressionThrows "[[invalid" `shouldThrow` anyException
 
@@ -426,24 +426,24 @@ spec = do
   describe "parse unicode syntax" $
     test
       parseExpression
-      [ ("ξ", Just ExThis)
-      , ("Φ", Just ExGlobal)
+      [ ("ξ", Just ExXi)
+      , ("Φ", Just ExRoot)
       , ("⊥", Just ExTermination)
       , ("⟦⟧", Just (ExFormation [BiVoid AtRho]))
-      , ("⟦ x ↦ ξ ⟧", Just (ExFormation [BiTau (AtLabel "x") ExThis, BiVoid AtRho]))
-      , ("ξ.ρ", Just (ExDispatch ExThis AtRho))
-      , ("ξ.φ", Just (ExDispatch ExThis AtPhi))
+      , ("⟦ x ↦ ξ ⟧", Just (ExFormation [BiTau (AtLabel "x") ExXi, BiVoid AtRho]))
+      , ("ξ.ρ", Just (ExDispatch ExXi AtRho))
+      , ("ξ.φ", Just (ExDispatch ExXi AtPhi))
       ]
 
   describe "parse labels with special characters" $
     test
       parseExpression
-      [ ("foo123", Just (ExDispatch ExThis (AtLabel "foo123")))
-      , ("with-dash", Just (ExDispatch ExThis (AtLabel "with-dash")))
-      , ("with_underscore", Just (ExDispatch ExThis (AtLabel "with_underscore")))
-      , ("aкирилиця", Just (ExDispatch ExThis (AtLabel "aкирилиця")))
-      , ("a日本語", Just (ExDispatch ExThis (AtLabel "a日本語")))
-      , ("name123_test", Just (ExDispatch ExThis (AtLabel "name123_test")))
+      [ ("foo123", Just (ExDispatch ExXi (AtLabel "foo123")))
+      , ("with-dash", Just (ExDispatch ExXi (AtLabel "with-dash")))
+      , ("with_underscore", Just (ExDispatch ExXi (AtLabel "with_underscore")))
+      , ("aкирилиця", Just (ExDispatch ExXi (AtLabel "aкирилиця")))
+      , ("a日本語", Just (ExDispatch ExXi (AtLabel "a日本語")))
+      , ("name123_test", Just (ExDispatch ExXi (AtLabel "name123_test")))
       ]
 
   describe "parse complex formations" $
@@ -452,16 +452,16 @@ spec = do
       [ ("[[^ -> ?]]", Just (ExFormation [BiVoid AtRho]))
       , ("[[@ -> ?]]", Just (ExFormation [BiVoid AtPhi, BiVoid AtRho]))
       , ("[[^ -> ?, @ -> ?]]", Just (ExFormation [BiVoid AtRho, BiVoid AtPhi]))
-      , ("[[^ -> Q, @ -> $]]", Just (ExFormation [BiTau AtRho ExGlobal, BiTau AtPhi ExThis]))
+      , ("[[^ -> Q, @ -> $]]", Just (ExFormation [BiTau AtRho ExRoot, BiTau AtPhi ExXi]))
       ]
 
   describe "parse applications with mixed bindings" $
     test
       parseExpression
-      [ ("[[]](Q)", Just (ExApplication (ExFormation [BiVoid AtRho]) (BiTau (AtAlpha 0) ExGlobal)))
-      , ("[[]](Q, T)", Just (ExApplication (ExApplication (ExFormation [BiVoid AtRho]) (BiTau (AtAlpha 0) ExGlobal)) (BiTau (AtAlpha 1) ExTermination)))
-      , ("Q.x(y -> $)", Just (ExApplication (ExDispatch ExGlobal (AtLabel "x")) (BiTau (AtLabel "y") ExThis)))
-      , ("[[x -> ?]].x(Q)", Just (ExApplication (ExDispatch (ExFormation [BiVoid (AtLabel "x"), BiVoid AtRho]) (AtLabel "x")) (BiTau (AtAlpha 0) ExGlobal)))
+      [ ("[[]](Q)", Just (ExApplication (ExFormation [BiVoid AtRho]) (ArAlpha (Alpha 0) ExRoot)))
+      , ("[[]](Q, T)", Just (ExApplication (ExApplication (ExFormation [BiVoid AtRho]) (ArAlpha (Alpha 0) ExRoot)) (ArAlpha (Alpha 1) ExTermination)))
+      , ("Q.x(y -> $)", Just (ExApplication (ExDispatch ExRoot (AtLabel "x")) (ArTau (AtLabel "y") ExXi)))
+      , ("[[x -> ?]].x(Q)", Just (ExApplication (ExDispatch (ExFormation [BiVoid (AtLabel "x"), BiVoid AtRho]) (AtLabel "x")) (ArAlpha (Alpha 0) ExRoot)))
       ]
 
   describe "parse meta expressions" $
@@ -473,7 +473,7 @@ spec = do
       , ("𝑒", Just (ExMeta "e"))
       , ("𝑒0", Just (ExMeta "e0"))
       , ("!e.x", Just (ExDispatch (ExMeta "e") (AtLabel "x")))
-      , ("!e(Q)", Just (ExApplication (ExMeta "e") (BiTau (AtAlpha 0) ExGlobal)))
+      , ("!e(Q)", Just (ExApplication (ExMeta "e") (ArAlpha (Alpha 0) ExRoot)))
       , ("!n", Just (ExMeta "n"))
       , ("!n1", Just (ExMeta "n1"))
       , ("𝑛", Just (ExMeta "n"))
@@ -484,8 +484,8 @@ spec = do
   describe "parse meta tails" $
     test
       parseExpression
-      [ ("Q * !t", Just (ExMetaTail ExGlobal "t"))
-      , ("Q.x * !t", Just (ExMetaTail (ExDispatch ExGlobal (AtLabel "x")) "t"))
+      [ ("Q * !t", Just (ExMetaTail ExRoot "t"))
+      , ("Q.x * !t", Just (ExMetaTail (ExDispatch ExRoot (AtLabel "x")) "t"))
       , ("[[]].y * !t0", Just (ExMetaTail (ExDispatch (ExFormation [BiVoid AtRho]) (AtLabel "y")) "t0"))
       , ("Q * !t * !t2", Nothing)
       ]

@@ -1,8 +1,6 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 # SPDX-License-Identifier: MIT
 ---
-expression: 'Q.foo'
-pattern: 'Q.!a'
-condition:
-  not:
-    alpha: '!a'
+name: dca
+pattern: ⊥(𝜂 ↦ 𝑒)
+result: ⊥

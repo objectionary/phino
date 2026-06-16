@@ -17,6 +17,7 @@ import Data.Text (Text, isPrefixOf)
 -- The right part of substitution
 data MetaValue
   = MvAttribute Attribute -- !a
+  | MvAlpha Alpha -- !h
   | MvBytes Bytes -- !b
   | MvBindings [Binding] -- !B
   | MvFunction Text -- !F
@@ -27,7 +28,7 @@ data MetaValue
 -- Tail operation after expression
 -- Dispatch or application
 data Tail
-  = TaApplication Binding -- BiTau only
+  = TaApplication Argument -- application argument
   | TaDispatch Attribute
   deriving (Eq, Show)
 
@@ -70,18 +71,32 @@ matchAttribute ptn tgt
   | ptn == tgt = [substEmpty]
   | otherwise = []
 
+matchAlpha :: Alpha -> Alpha -> [Subst]
+matchAlpha (AlMeta meta) tgt = [substSingle meta (MvAlpha tgt)]
+matchAlpha ptn tgt
+  | ptn == tgt = [substEmpty]
+  | otherwise = []
+
+matchFunction :: Function -> Function -> [Subst]
+matchFunction (FnMeta meta) (Function name) = [substSingle meta (MvFunction name)]
+matchFunction ptn tgt
+  | ptn == tgt = [substEmpty]
+  | otherwise = []
+
 matchBinding :: Binding -> Binding -> [Subst]
 matchBinding (BiVoid pattr) (BiVoid tattr) = matchAttribute pattr tattr
 matchBinding (BiDelta (BtMeta meta)) (BiDelta tdata) = [substSingle meta (MvBytes tdata)]
 matchBinding (BiDelta pdata) (BiDelta tdata)
   | pdata == tdata = [substEmpty]
   | otherwise = []
-matchBinding (BiLambda pFunc) (BiLambda tFunc)
-  | pFunc == tFunc = [substEmpty]
-  | otherwise = []
-matchBinding (BiMetaLambda meta) (BiLambda tFunc) = [substSingle meta (MvFunction tFunc)]
+matchBinding (BiLambda pFunc) (BiLambda tFunc) = matchFunction pFunc tFunc
 matchBinding (BiTau pattr pexp) (BiTau tattr texp) = combineMany (matchAttribute pattr tattr) (matchExpression' pexp texp)
 matchBinding _ _ = []
+
+matchArgument :: Argument -> Argument -> [Subst]
+matchArgument (ArTau pattr pexp) (ArTau tattr texp) = combineMany (matchAttribute pattr tattr) (matchExpression' pexp texp)
+matchArgument (ArAlpha palpha pexp) (ArAlpha talpha texp) = combineMany (matchAlpha palpha talpha) (matchExpression' pexp texp)
+matchArgument _ _ = []
 
 -- Match bindings with ordering
 matchBindings :: [Binding] -> [Binding] -> [Subst]
@@ -112,9 +127,9 @@ tailExpressions ptn tgt = case tailExpressionsReversed ptn tgt of
         ExDispatch expr attr -> do
           (substs, tails) <- tailExpressionsReversed ptn' expr
           Just (substs, TaDispatch attr : tails)
-        ExApplication expr tau -> do
+        ExApplication expr arg -> do
           (substs, tails) <- tailExpressionsReversed ptn' expr
-          Just (substs, TaApplication tau : tails)
+          Just (substs, TaApplication arg : tails)
         _ -> Just ([], [])
       substs -> Just (substs, [])
 
@@ -122,12 +137,12 @@ matchExpression' :: MatchExpressionFunc
 matchExpression' (ExMeta meta) tgt
   | "p" `isPrefixOf` meta = [substSingle meta (MvExpression tgt) | primitive tgt]
   | otherwise = [substSingle meta (MvExpression tgt)]
-matchExpression' ExThis ExThis = [substEmpty]
-matchExpression' ExGlobal ExGlobal = [substEmpty]
+matchExpression' ExXi ExXi = [substEmpty]
+matchExpression' ExRoot ExRoot = [substEmpty]
 matchExpression' ExTermination ExTermination = [substEmpty]
 matchExpression' (ExFormation pbs) (ExFormation tbs) = matchBindings pbs tbs
 matchExpression' (ExDispatch pexp pattr) (ExDispatch texp tattr) = combineMany (matchAttribute pattr tattr) (matchExpression' pexp texp)
-matchExpression' (ExApplication pexp pbd) (ExApplication texp tbd) = combineMany (matchExpression' pexp texp) (matchBinding pbd tbd)
+matchExpression' (ExApplication pexp parg) (ExApplication texp targ) = combineMany (matchExpression' pexp texp) (matchArgument parg targ)
 matchExpression' (ExMetaTail expr meta) tgt = case tailExpressions expr tgt of
   ([], _) -> []
   (substs, tails) -> combineMany substs [substSingle meta (MvTail tails)]
@@ -144,6 +159,10 @@ matchBindingExpression :: Binding -> Expression -> [Subst]
 matchBindingExpression (BiTau _ expr) ptn = matchExpressionDeep ptn expr
 matchBindingExpression _ _ = []
 
+matchArgumentExpression :: Argument -> Expression -> [Subst]
+matchArgumentExpression (ArTau _ expr) ptn = matchExpressionDeep ptn expr
+matchArgumentExpression (ArAlpha _ expr) ptn = matchExpressionDeep ptn expr
+
 -- Match expression with deep nested expression(s) matching
 matchExpressionDeep :: MatchExpressionFunc
 matchExpressionDeep ptn tgt =
@@ -151,7 +170,7 @@ matchExpressionDeep ptn tgt =
       deep = case tgt of
         ExFormation bds -> concatMap (`matchBindingExpression` ptn) bds
         ExDispatch expr _ -> matchExpressionDeep ptn expr
-        ExApplication expr tau -> matchExpressionDeep ptn expr ++ matchBindingExpression tau ptn
+        ExApplication expr arg -> matchExpressionDeep ptn expr ++ matchArgumentExpression arg ptn
         _ -> []
    in matched ++ deep
 

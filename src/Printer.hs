@@ -10,6 +10,7 @@ module Printer
   , printExpression
   , printExpression'
   , printAttribute
+  , printAlpha
   , printBinding
   , printBytes
   , printExtraArg
@@ -62,11 +63,22 @@ printAttribute att =
   let (_, encoding, _, _) = defaultPrintConfig
    in printAttribute' att encoding
 
+printAlpha' :: Alpha -> Encoding -> String
+printAlpha' index encoding = T.unpack $ render (withEncoding encoding (toCST index (0, NO_EOL) :: ATTRIBUTE))
+
+printAlpha :: Alpha -> String
+printAlpha index =
+  let (_, encoding, _, _) = defaultPrintConfig
+   in printAlpha' index encoding
+
 printBinding' :: Binding -> PrintConfig -> String
 printBinding' bd = printExpression' (ExFormation [bd])
 
 printBinding :: Binding -> String
 printBinding bd = printBinding' bd defaultPrintConfig
+
+printArgument' :: Argument -> PrintConfig -> String
+printArgument' arg (_, encoding, _, _) = T.unpack $ render (withEncoding encoding (toCST arg (0, NO_EOL) :: PAIR))
 
 printBytes :: Bytes -> String
 printBytes bts = T.unpack $ render (toCST bts (0, NO_EOL) :: BYTES)
@@ -81,11 +93,12 @@ printExtraArg :: ExtraArgument -> String
 printExtraArg arg = printExtraArg' arg defaultPrintConfig
 
 printTail :: Tail -> PrintConfig -> String
-printTail (TaApplication bd) config = "(" <> printBinding' bd config <> ")"
+printTail (TaApplication arg) config = "(" <> printArgument' arg config <> ")"
 printTail (TaDispatch att) (_, encoding, _, _) = "." <> printAttribute' att encoding
 
 printMetaValue :: MetaValue -> PrintConfig -> String
 printMetaValue (MvAttribute att) (_, encoding, _, _) = printAttribute' att encoding
+printMetaValue (MvAlpha index) (_, encoding, _, _) = printAlpha' index encoding
 printMetaValue (MvExpression ex) config = printExpression' ex config
 printMetaValue (MvBytes bts) _ = printBytes bts
 printMetaValue (MvBindings bds) config = printExpression' (ExFormation bds) config

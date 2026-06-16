@@ -26,40 +26,38 @@ spec :: Spec
 spec = do
   describe "printExpression with ASCII singleline renders primitives" $
     forM_
-      [ ("ξ renders as $", ExThis, "$")
-      , ("Φ renders as Q", ExGlobal, "Q")
+      [ ("ξ renders as $", ExXi, "$")
+      , ("Φ renders as Q", ExRoot, "Q")
       , ("⊥ renders as T", ExTermination, "T")
       , ("ρ void becomes empty", ExFormation [BiVoid AtRho], "[[]]")
       , ("φ void", ExFormation [BiVoid AtPhi], "[[ @ -> ? ]]")
       , ("label void", ExFormation [BiVoid (AtLabel "名前")], "[[ 名前 -> ? ]]")
-      , ("x to Φ", ExFormation [BiTau (AtLabel "x") ExGlobal], "[[ x -> Q ]]")
-      , ("α0 to ξ", ExFormation [BiTau (AtAlpha 0) ExThis], "[[ ~0 -> $ ]]")
+      , ("x to Φ", ExFormation [BiTau (AtLabel "x") ExRoot], "[[ x -> Q ]]")
       , ("ρ to ⊥", ExFormation [BiTau AtRho ExTermination], "[[ ^ -> T ]]")
       , ("empty delta", ExFormation [BiDelta BtEmpty], "[[ D> -- ]]")
       , ("single byte", ExFormation [BiDelta (BtOne "1F")], "[[ D> 1F- ]]")
       , ("multiple bytes", ExFormation [BiDelta (BtMany ["00", "01", "02"])], "[[ D> 00-01-02 ]]")
-      , ("función lambda", ExFormation [BiLambda "Función"], "[[ L> Función ]]")
-      , ("クラス lambda", ExFormation [BiLambda "クラス"], "[[ L> クラス ]]")
-      , ("Φ.org", ExDispatch ExGlobal (AtLabel "org"), "Q.org")
-      , ("ξ.ρ as sugar", ExDispatch ExThis AtRho, "^")
-      , ("ξ.φ as sugar", ExDispatch ExThis AtPhi, "@")
-      , ("chained dispatch", ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "éolang"), "Q.org.éolang")
-      , ("ξ.α0 as sugar", ExDispatch ExThis (AtAlpha 0), "~0")
+      , ("función lambda", ExFormation [BiLambda (Function "Función")], "[[ L> Función ]]")
+      , ("クラス lambda", ExFormation [BiLambda (Function "クラス")], "[[ L> クラス ]]")
+      , ("Φ.org", ExDispatch ExRoot (AtLabel "org"), "Q.org")
+      , ("ξ.ρ as sugar", ExDispatch ExXi AtRho, "^")
+      , ("ξ.φ as sugar", ExDispatch ExXi AtPhi, "@")
+      , ("chained dispatch", ExDispatch (ExDispatch ExRoot (AtLabel "org")) (AtLabel "éolang"), "Q.org.éolang")
       ,
         ( "dispatch with app"
-        , ExApplication (ExDispatch ExGlobal (AtLabel "x")) (BiTau (AtLabel "y") ExThis)
+        , ExApplication (ExDispatch ExRoot (AtLabel "x")) (ArTau (AtLabel "y") ExXi)
         , "Q.x( y -> $ )"
         )
       ,
         ( "formation with app"
-        , ExApplication (ExFormation [BiVoid AtRho]) (BiTau (AtAlpha 0) ExGlobal)
+        , ExApplication (ExFormation [BiVoid AtRho]) (ArAlpha (Alpha 0) ExRoot)
         , "[[]]( Q )"
         )
       , ("meta expr", ExMeta "e", "!e")
-      , ("meta tail", ExMetaTail ExGlobal "t", "Q * !t")
+      , ("meta tail", ExMetaTail ExRoot "t", "Q * !t")
       , ("meta binding", ExFormation [BiMeta "B"], "[[ !B ]]")
-      , ("meta lambda", ExFormation [BiMetaLambda "F"], "[[ L> !F ]]")
-      , ("meta attr tau", ExFormation [BiTau (AtMeta "a") ExThis], "[[ !a -> $ ]]")
+      , ("meta lambda", ExFormation [BiLambda (FnMeta "F")], "[[ L> !F ]]")
+      , ("meta attr tau", ExFormation [BiTau (AtMeta "a") ExXi], "[[ !a -> $ ]]")
       ]
       ( \(desc, expr, expected) ->
           it desc (printExpression' expr (SWEET, ASCII, SINGLELINE, defaultMargin) `shouldBe` expected)
@@ -84,7 +82,7 @@ spec = do
   describe "printProgram with default config" $
     forM_
       [ ("empty formation", Program (ExFormation [BiVoid AtRho]), "{⟦⟧}")
-      , ("dispatch", Program (ExDispatch ExGlobal (AtLabel "org")), "{Φ.org}")
+      , ("dispatch", Program (ExDispatch ExRoot (AtLabel "org")), "{Φ.org}")
       ]
       ( \(desc, prog, expected) ->
           it desc (printProgram prog `shouldBe` expected)
@@ -104,7 +102,7 @@ spec = do
         )
       ,
         ( "rho binding placed after another binding"
-        , Program (ExFormation [BiTau (AtLabel "café") ExGlobal, BiTau AtRho (ExFormation [BiVoid AtRho])])
+        , Program (ExFormation [BiTau (AtLabel "café") ExRoot, BiTau AtRho (ExFormation [BiVoid AtRho])])
         , "Φ ↦ ⟦ café ↦ Φ, ρ ↦ ⟦ ρ ↦ ∅ ⟧ ⟧"
         )
       ]
@@ -117,7 +115,6 @@ spec = do
       [ ("label", AtLabel "attr", "attr")
       , ("ρ", AtRho, "ρ")
       , ("φ", AtPhi, "φ")
-      , ("α42", AtAlpha 42, "α42")
       , ("λ", AtLambda, "λ")
       , ("Δ", AtDelta, "Δ")
       ]
@@ -125,12 +122,15 @@ spec = do
           it desc (printAttribute attr `shouldBe` expected)
       )
 
+  describe "printAlpha with default encoding" $
+    it "α42" (printAlpha (Alpha 42) `shouldBe` "α42")
+
   describe "printBinding renders as formation" $
     forM_
-      [ ("tau binding", BiTau (AtLabel "x") ExGlobal, "x ↦ Φ")
+      [ ("tau binding", BiTau (AtLabel "x") ExRoot, "x ↦ Φ")
       , ("void binding", BiVoid (AtLabel "y"), "y ↦ ∅")
       , ("delta binding", BiDelta (BtOne "00"), "Δ ⤍ 00-")
-      , ("lambda binding", BiLambda "Func", "λ ⤍ Func")
+      , ("lambda binding", BiLambda (Function "Func"), "λ ⤍ Func")
       ]
       ( \(desc, bd, expected) ->
           it desc (printBinding bd `shouldContain` expected)
@@ -150,7 +150,7 @@ spec = do
     forM_
       [ ("attribute arg", ArgAttribute (AtLabel "tëst"), "tëst")
       , ("binding arg", ArgBinding (BiVoid (AtLabel "βind")), "βind ↦ ∅")
-      , ("expression arg", ArgExpression ExGlobal, "Φ")
+      , ("expression arg", ArgExpression ExRoot, "Φ")
       , ("bytes arg", ArgBytes (BtOne "FF"), "FF-")
       ]
       ( \(desc, arg, expected) ->

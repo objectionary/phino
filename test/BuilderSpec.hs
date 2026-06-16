@@ -26,64 +26,64 @@ spec = do
       buildExpression
       [
         ( "Q.!a => (!a >> x) => Q.x"
-        , ExDispatch ExGlobal (AtMeta "a")
+        , ExDispatch ExRoot (AtMeta "a")
         , [("a", MvAttribute (AtLabel "x"))]
-        , Right (ExDispatch ExGlobal (AtLabel "x"))
+        , Right (ExDispatch ExRoot (AtLabel "x"))
         )
       ,
         ( "Q.c(!a -> !e) => (!a >> x, !e >> $.y.z) => Q.c(x -> $.y.z)"
-        , ExApplication (ExDispatch ExGlobal (AtLabel "c")) (BiTau (AtMeta "a") (ExMeta "e"))
-        , [("a", MvAttribute (AtLabel "x")), ("e", MvExpression (ExDispatch (ExDispatch ExThis (AtLabel "y")) (AtLabel "z")))]
-        , Right (ExApplication (ExDispatch ExGlobal (AtLabel "c")) (BiTau (AtLabel "x") (ExDispatch (ExDispatch ExThis (AtLabel "y")) (AtLabel "z"))))
+        , ExApplication (ExDispatch ExRoot (AtLabel "c")) (ArTau (AtMeta "a") (ExMeta "e"))
+        , [("a", MvAttribute (AtLabel "x")), ("e", MvExpression (ExDispatch (ExDispatch ExXi (AtLabel "y")) (AtLabel "z")))]
+        , Right (ExApplication (ExDispatch ExRoot (AtLabel "c")) (ArTau (AtLabel "x") (ExDispatch (ExDispatch ExXi (AtLabel "y")) (AtLabel "z"))))
         )
       ,
         ( "[[!a -> $.x, !B]] => (!a >> y, !B >> [[b -> ?, L> Func]]) => [[y -> $.x, b -> ?, L> Func]]"
-        , ExFormation [BiTau (AtMeta "a") (ExDispatch ExThis (AtLabel "x")), BiMeta "B"]
-        , [("a", MvAttribute (AtLabel "y")), ("B", MvBindings [BiVoid (AtLabel "b"), BiLambda "Func"])]
+        , ExFormation [BiTau (AtMeta "a") (ExDispatch ExXi (AtLabel "x")), BiMeta "B"]
+        , [("a", MvAttribute (AtLabel "y")), ("B", MvBindings [BiVoid (AtLabel "b"), BiLambda (Function "Func")])]
         , Right
             ( ExFormation
-                [ BiTau (AtLabel "y") (ExDispatch ExThis (AtLabel "x"))
+                [ BiTau (AtLabel "y") (ExDispatch ExXi (AtLabel "x"))
                 , BiVoid (AtLabel "b")
-                , BiLambda "Func"
+                , BiLambda (Function "Func")
                 ]
             )
         )
       ,
         ( "Q * !t => (!t >> [.a, .b, (~1 -> $.x)]) => Q.a.b(~1 -> $.x)"
-        , ExMetaTail ExGlobal "t"
-        , [("t", MvTail [TaDispatch (AtLabel "a"), TaDispatch (AtLabel "b"), TaApplication (BiTau (AtAlpha 1) (ExDispatch ExThis (AtLabel "x")))])]
-        , Right (ExApplication (ExDispatch (ExDispatch ExGlobal (AtLabel "a")) (AtLabel "b")) (BiTau (AtAlpha 1) (ExDispatch ExThis (AtLabel "x"))))
+        , ExMetaTail ExRoot "t"
+        , [("t", MvTail [TaDispatch (AtLabel "a"), TaDispatch (AtLabel "b"), TaApplication (ArAlpha (Alpha 1) (ExDispatch ExXi (AtLabel "x")))])]
+        , Right (ExApplication (ExDispatch (ExDispatch ExRoot (AtLabel "a")) (AtLabel "b")) (ArAlpha (Alpha 1) (ExDispatch ExXi (AtLabel "x"))))
         )
       ,
         ( "Q.!a => () => X"
-        , ExDispatch ExGlobal (AtMeta "a")
+        , ExDispatch ExRoot (AtMeta "a")
         , []
         , Left "meta 'a' is either does not exist or refers to an inappropriate term"
         )
       ,
         ( "!e0(!a1 -> !e1, !a2 => !e2) => (!e0 >> [[]], !a1 >> x, !e1 >> Q, !a2 >> y, !e2 >> $) => [[]](x -> Q, y -> $)"
-        , ExApplication (ExApplication (ExMeta "e0") (BiTau (AtMeta "a1") (ExMeta "e1"))) (BiTau (AtMeta "a2") (ExMeta "e2"))
+        , ExApplication (ExApplication (ExMeta "e0") (ArTau (AtMeta "a1") (ExMeta "e1"))) (ArTau (AtMeta "a2") (ExMeta "e2"))
         ,
           [ ("e0", MvExpression (ExFormation []))
           , ("a1", MvAttribute (AtLabel "x"))
-          , ("e1", MvExpression ExGlobal)
+          , ("e1", MvExpression ExRoot)
           , ("a2", MvAttribute (AtLabel "y"))
-          , ("e2", MvExpression ExThis)
+          , ("e2", MvExpression ExXi)
           ]
-        , Right (ExApplication (ExApplication (ExFormation []) (BiTau (AtLabel "x") ExGlobal)) (BiTau (AtLabel "y") ExThis))
+        , Right (ExApplication (ExApplication (ExFormation []) (ArTau (AtLabel "x") ExRoot)) (ArTau (AtLabel "y") ExXi))
         )
       ,
         ( "⟦!a ↦ ∅, !B⟧.!a => (!a >> t, !B >> ⟦ x ↦ ξ.t ⟧ ) => ⟦ t ↦ ∅, x ↦ ξ.t ⟧.t"
         , ExDispatch (ExFormation [BiVoid (AtMeta "a"), BiMeta "B"]) (AtMeta "a")
         ,
           [ ("a", MvAttribute (AtLabel "t"))
-          , ("B", MvBindings [BiTau (AtLabel "x") (ExDispatch ExThis (AtLabel "t"))])
+          , ("B", MvBindings [BiTau (AtLabel "x") (ExDispatch ExXi (AtLabel "t"))])
           ]
         , Right
             ( ExDispatch
                 ( ExFormation
                     [ BiVoid (AtLabel "t")
-                    , BiTau (AtLabel "x") (ExDispatch ExThis (AtLabel "t"))
+                    , BiTau (AtLabel "x") (ExDispatch ExXi (AtLabel "t"))
                     ]
                 )
                 (AtLabel "t")
@@ -96,14 +96,14 @@ spec = do
       built <-
         buildExpressionsThrows
           (ExMeta "e")
-          [ substSingle "e" (MvExpression (ExDispatch ExGlobal (AtLabel "x")))
-          , substSingle "e" (MvExpression (ExDispatch ExThis (AtLabel "y")))
+          [ substSingle "e" (MvExpression (ExDispatch ExRoot (AtLabel "x")))
+          , substSingle "e" (MvExpression (ExDispatch ExXi (AtLabel "y")))
           ]
-      built `shouldBe` [ExDispatch ExGlobal (AtLabel "x"), ExDispatch ExThis (AtLabel "y")]
+      built `shouldBe` [ExDispatch ExRoot (AtLabel "x"), ExDispatch ExXi (AtLabel "y")]
     it "!e => [(!e1 >> Q.x)] => X" $
       buildExpressionsThrows
         (ExMeta "e")
-        [substSingle "e1" (MvExpression (ExDispatch ExGlobal (AtLabel "x")))]
+        [substSingle "e1" (MvExpression (ExDispatch ExRoot (AtLabel "x")))]
         `shouldThrow` anyException
 
   describe "build with duplicate attributes in bindings" $ do

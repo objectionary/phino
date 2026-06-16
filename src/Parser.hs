@@ -12,6 +12,7 @@ module Parser
   , parseExpressionThrows
   , parseAttribute
   , parseAttributeThrows
+  , parseAlpha
   , parseNumber
   , parseNumberThrows
   , parseBinding
@@ -47,13 +48,14 @@ data ParserException
 
 data PhiParser = PhiParser
   { _attribute :: Parser Attribute
+  , _alpha :: Parser Alpha
   , _binding :: Parser Binding
   , _expression :: Parser Expression
   , _string :: Parser String
   }
 
 phiParser :: PhiParser
-phiParser = PhiParser fullAttribute binding expression quotedStr
+phiParser = PhiParser attribute alpha binding expression quotedStr
 
 instance Show ParserException where
   show CouldNotParseProgram{..} = printf "Couldn't parse given phi program, cause: %s" message
@@ -239,13 +241,12 @@ quotedStr = char '"' >> manyTill (choice [escapedChar, noneOf ['\\', '"']]) (cha
         [(n, "")] -> return (chr n)
         _ -> fail ("Invalid hex escape: \\x" ++ digits)
 
-tauBinding :: Parser Attribute -> Parser Binding
-tauBinding attr = do
-  attr' <- attr
+tauValue :: Parser Expression
+tauValue =
   choice
     [ try $ do
         _ <- arrow
-        BiTau attr' <$> expression
+        expression
     , do
         _ <- symbol "("
         voids <-
@@ -258,11 +259,14 @@ tauBinding attr = do
         _ <- arrow
         bs <- formationBindings
         bds <- validatedBindings (voids ++ bs)
-        return (BiTau attr' (ExFormation (withVoidRho bds)))
+        return (ExFormation (withVoidRho bds))
     ]
   where
     rb :: Parser String
     rb = symbol ")"
+
+tauBinding :: Parser Attribute -> Parser Binding
+tauBinding attr = BiTau <$> attr <*> tauValue
 
 metaBinding :: Parser Binding
 metaBinding = BiMeta <$> meta' 'B' "𝐵"
@@ -290,10 +294,10 @@ binding =
     , try metaBinding
     , try $ do
         _ <- lambda
-        BiLambda . T.pack <$> function
+        BiLambda . Function . T.pack <$> function
     , do
         _ <- lambda
-        BiMetaLambda <$> meta 'F'
+        BiLambda . FnMeta <$> meta 'F'
     ]
     <?> "binding"
 
@@ -326,21 +330,29 @@ attribute =
     ]
     <?> "attribute"
 
--- full attribute
--- 1. label
--- 2. meta
--- 3. rho
--- 4. phi
--- 5. alpha
-fullAttribute :: Parser Attribute
-fullAttribute =
+-- alpha
+-- 1. index: ~0, α0
+-- 2. meta: !h, 𝜂
+alpha :: Parser Alpha
+alpha =
   choice
-    [ attribute
-    , do
+    [ do
         _ <- choice [symbol "~", symbol "α"]
-        AtAlpha <$> lexeme L.decimal
+        Alpha <$> lexeme L.decimal
+    , AlMeta <$> meta' 'h' "𝜂"
     ]
-    <?> "full attribute"
+    <?> "alpha"
+
+-- application argument
+-- 1. tau: <attribute> ↦ <expression>
+-- 2. alpha: <alpha> ↦ <expression>
+argument :: Parser Argument
+argument =
+  choice
+    [ try (ArAlpha <$> alpha <*> tauValue)
+    , ArTau <$> attribute <*> tauValue
+    ]
+    <?> "argument"
 
 validatedBindings :: [Binding] -> Parser [Binding]
 validatedBindings bds = case uniqueBindings bds of
@@ -376,10 +388,10 @@ exHead =
         return (ExFormation (withVoidRho bs))
     , do
         _ <- choice [symbol "$", symbol "ξ"]
-        return ExThis
+        return ExXi
     , do
         _ <- global
-        return ExGlobal
+        return ExRoot
     , do
         _ <- choice [symbol "T", symbol "⊥"]
         return ExTermination
@@ -389,11 +401,11 @@ exHead =
     , try (ExMeta <$> meta' 'n' "𝑛")
     , try (ExMeta <$> meta' 'k' "𝑘")
     , try (ExMeta <$> meta' 'p' "𝑝")
-    , ExDispatch ExThis <$> attribute
+    , ExDispatch ExXi <$> attribute
     ]
     <?> "expression head"
 
-application :: Expression -> [Binding] -> Expression
+application :: Expression -> [Argument] -> Expression
 application = foldl ExApplication
 
 -- tail optional part of application
@@ -412,17 +424,17 @@ exTail expr =
             , do
                 guard
                   ( case expr of
-                      ExThis -> False
-                      ExGlobal -> False
+                      ExXi -> False
+                      ExRoot -> False
                       _ -> True
                   )
                 _ <- symbol "("
                 bds <-
                   choice
-                    [ try $ tauBinding fullAttribute `sepBy1` symbol ","
+                    [ try $ argument `sepBy1` symbol ","
                     , do
                         exprs <- expression `sepBy1` symbol ","
-                        return (zipWith (BiTau . AtAlpha) [0 ..] exprs) -- \idx expr -> BiTau (AtAlpha idx) expr
+                        return (zipWith (ArAlpha . Alpha) [0 ..] exprs)
                     ]
                 _ <- symbol ")"
                 return (application expr bds)
@@ -492,7 +504,10 @@ parseNumberThrows num = case parseNumber num of
   Left err -> throwIO (CouldNotParseNumber err)
 
 parseAttribute :: String -> Either String Attribute
-parseAttribute = parse' "attribute" fullAttribute
+parseAttribute = parse' "attribute" attribute
+
+parseAlpha :: String -> Either String Alpha
+parseAlpha = parse' "alpha" alpha
 
 parseAttributeThrows :: String -> IO Attribute
 parseAttributeThrows attr = case parseAttribute attr of

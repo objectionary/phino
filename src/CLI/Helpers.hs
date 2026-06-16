@@ -64,7 +64,7 @@ parseProgram _ LATEX = invalidCLIArguments "LaTeX cannot be used as input format
 printRewrittens :: PrintProgramContext -> Rewrittens' -> IO String
 printRewrittens ctx@PrintProgCtx{..} rewrittens@(chain, _)
   | _outputFormat == LATEX && _sequence = rewrittensToLatex rewrittens (printCtxToLatexCtx ctx)
-  | _focus == ExGlobal = mapM (printProgram ctx . fst) chain <&> intercalate "\n"
+  | _focus == ExRoot = mapM (printProgram ctx . fst) chain <&> intercalate "\n"
   | otherwise = mapM (\(prog, _) -> locatedExpression _focus prog >>= printExpression ctx) chain <&> intercalate "\n"
 
 printExpression :: PrintProgramContext -> Expression -> IO String

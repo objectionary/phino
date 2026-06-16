@@ -224,7 +224,7 @@ runMerge OptsMerge{..} = do
         False
         (justMeetPopularity Nothing)
         (justMeetLength Nothing)
-        ExGlobal
+        ExRoot
         Nothing
         Nothing
         Nothing
@@ -246,4 +246,4 @@ runMatch OptsMatch{..} = do
         else putStrLn (P.printSubsts' substs (_sugarType, UNICODE, _flat, defaultMargin))
   where
     rule :: Expression -> Maybe Y.Condition -> Y.Rule
-    rule ptn cnd = Y.Rule "custom" Nothing ptn ExGlobal cnd Nothing Nothing
+    rule ptn cnd = Y.Rule "custom" Nothing ptn ExRoot cnd Nothing Nothing

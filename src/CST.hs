@@ -89,6 +89,9 @@ data META_HEAD
   | A -- a
   | TAU -- 𝜏
   | TAU' -- \tau
+  | ETA -- 𝜂
+  | ETA' -- \eta
+  | H -- h
   | B -- 𝐵
   | B' -- B
   | D -- δ
@@ -166,8 +169,8 @@ data EXPRESSION
   | EX_APPLICATION {expr :: EXPRESSION, space :: SPACE, eol :: EOL, tab :: TAB, tau :: APP_BINDING, eol' :: EOL, tab' :: TAB, indent :: Int} -- e(a1 -> e1)
   | EX_APPLICATION_TAUS {expr :: EXPRESSION, space :: SPACE, eol :: EOL, tab :: TAB, taus :: BINDING, eol' :: EOL, tab' :: TAB, indent :: Int} -- e(a1 -> e1)(a2 -> e2)(...)
   | EX_APPLICATION_EXPRS {expr :: EXPRESSION, space :: SPACE, eol :: EOL, tab :: TAB, args :: APP_ARG, eol' :: EOL, tab' :: TAB, indent :: Int} -- e(e1, e2, ...)
-  | EX_STRING {str :: String, tab :: TAB, rhos :: [Binding]}
-  | EX_NUMBER {num :: Either Int Double, tab :: TAB, rhos :: [Binding]}
+  | EX_STRING {str :: String, tab :: TAB, rhos :: [Argument]}
+  | EX_NUMBER {num :: Either Int Double, tab :: TAB, rhos :: [Argument]}
   | EX_META {meta :: META}
   | EX_META_TAIL {expr :: EXPRESSION, meta :: META}
   | EX_PHI_MEET {prefix :: Maybe String, idx :: Int, expr :: EXPRESSION}
@@ -265,6 +268,9 @@ sweetCollapsible _ = True
 attributeToCST :: Attribute -> ATTRIBUTE
 attributeToCST = toCST'
 
+alphaToCST :: Alpha -> ATTRIBUTE
+alphaToCST = toCST'
+
 bindingsToCST :: [Binding] -> BINDING
 bindingsToCST = toCST'
 
@@ -307,8 +313,8 @@ instance ToCST Program PROGRAM where
   toCST (Program expr) ctx = PR_SWEET LCB (toCST expr ctx) RCB NO_SPACE
 
 instance ToCST Expression EXPRESSION where
-  toCST ExGlobal _ = EX_GLOBAL Φ
-  toCST ExThis _ = EX_XI XI
+  toCST ExRoot _ = EX_GLOBAL Φ
+  toCST ExXi _ = EX_XI XI
   toCST (ExMeta mt) _ = EX_META (META NO_EXCL (exMetaHead mt) (metaTail mt))
   toCST (ExMetaTail expr mt) ctx = EX_META_TAIL (toCST expr ctx) (META EXCL TAIL (metaTail mt))
   toCST ExTermination _ = EX_TERMINATION DEAD
@@ -338,7 +344,7 @@ instance ToCST Expression EXPRESSION where
   -- their byte form `Φ.number(Φ.bytes(⟦ Δ ⤍ … ⟧))` by falling through to the
   -- generic application clause below.
   toCST (DataNumber bts) (tabs, _) | sweetNumber bts = EX_NUMBER (btsToNum bts) (TAB tabs) []
-  toCST (ExDispatch ExThis attr) ctx = EX_ATTR (toCST attr ctx)
+  toCST (ExDispatch ExXi attr) ctx = EX_ATTR (toCST attr ctx)
   toCST (ExDispatch expr attr) ctx = EX_DISPATCH (toCST expr ctx) NO_SPACE (toCST attr ctx)
   -- Since we convert AST to CST in sweet notation, here we're trying to get rid of unnecessary rho bindings
   -- in primitives (more details here: https://github.com/objectionary/phino/issues/451)
@@ -383,9 +389,9 @@ instance ToCST Expression EXPRESSION where
     where
       primitives :: [T.Text]
       primitives = ["number", "string"]
-      withoutRhosInPrimitives :: Expression -> [Binding] -> ([Binding], [Binding])
+      withoutRhosInPrimitives :: Expression -> [Argument] -> ([Argument], [Argument])
       withoutRhosInPrimitives _ [] = ([], [])
-      withoutRhosInPrimitives obj@(BaseObject label) bds@(rho@(BiTau AtRho _) : rest)
+      withoutRhosInPrimitives obj@(BaseObject label) bds@(rho@(ArTau AtRho _) : rest)
         | label `elem` primitives =
             let (bds', rhos) = withoutRhosInPrimitives obj rest
              in (bds', rho : rhos)
@@ -396,7 +402,7 @@ instance ToCST Expression EXPRESSION where
              in (bd : bds', rhos)
         | otherwise = (bds, [])
       withoutRhosInPrimitives _ bds = (bds, [])
-      applicationToPrimitive :: Expression -> Int -> [Binding] -> EXPRESSION
+      applicationToPrimitive :: Expression -> Int -> [Argument] -> EXPRESSION
       applicationToPrimitive (DataNumber bts) tabs = EX_NUMBER (btsToNum bts) (TAB tabs)
       applicationToPrimitive (DataString bts) tabs = EX_STRING (btsToStr bts) (TAB tabs)
       applicationToPrimitive _ _ = error "applicationToPrimitive expects DataNumber or DataString"
@@ -406,24 +412,24 @@ instance ToCST Expression EXPRESSION where
       -- 2. list of tau bindings which are applied to start expression
       -- 3. list of expressions which are applied to start expression with default
       --    alpha attributes (~0 -> e1, ~1 -> e2, ...)
-      complexApplication :: Expression -> (Expression, [Binding], [Expression])
+      complexApplication :: Expression -> (Expression, [Argument], [Expression])
       complexApplication expr =
         let (expr', taus', exprs') = complexApplication' expr
          in (expr', reverse taus', reverse exprs')
         where
-          complexApplication' :: Expression -> (Expression, [Binding], [Expression])
+          complexApplication' :: Expression -> (Expression, [Argument], [Expression])
           complexApplication' (ExApplication (ExApplication expr tau) tau') =
             let (before, taus, exprs) = complexApplication' (ExApplication expr tau)
                 taus' = tau' : taus
              in if null exprs
                   then (before, taus', [])
                   else case tau' of
-                    BiTau (AtAlpha idx) expr' ->
+                    ArAlpha (Alpha idx) expr' ->
                       if idx == length exprs
                         then (before, taus', expr' : exprs)
                         else (before, taus', [])
                     _ -> (before, taus', [])
-          complexApplication' (ExApplication expr (BiTau (AtAlpha 0) expr')) = (expr, [BiTau (AtAlpha 0) expr'], [expr'])
+          complexApplication' (ExApplication expr (ArAlpha (Alpha 0) expr')) = (expr, [ArAlpha (Alpha 0) expr'], [expr'])
           complexApplication' (ExApplication expr tau) = (expr, [tau], [])
           complexApplication' expr = (expr, [], [])
       -- This head' works the same as head from Prelude but doesn't throw an error
@@ -476,9 +482,21 @@ instance ToCST Binding PAIR where
   toCST (BiTau attr exp) ctx = PA_TAU (toCST attr ctx) ARROW (toCST exp ctx)
   toCST (BiVoid attr) ctx = PA_VOID (toCST attr ctx) ARROW EMPTY
   toCST (BiDelta bts) ctx = PA_DELTA (toCST bts ctx)
-  toCST (BiLambda func) _ = PA_LAMBDA func
-  toCST (BiMetaLambda mt) _ = PA_META_LAMBDA (META EXCL F (metaTail mt))
+  toCST (BiLambda (Function name)) _ = PA_LAMBDA name
+  toCST (BiLambda (FnMeta mt)) _ = PA_META_LAMBDA (META EXCL F (metaTail mt))
   toCST (BiMeta mt) _ = error $ "BiMeta binding " ++ T.unpack mt ++ " cannot be converted to PAIR"
+
+instance ToCST Argument PAIR where
+  toCST (ArTau attr exp) ctx = toCST (BiTau attr exp) ctx
+  toCST (ArAlpha alpha exp) ctx = PA_TAU (toCST alpha ctx) ARROW (toCST exp ctx)
+
+instance ToCST [Argument] BINDING where
+  toCST [] (tabs, _) = BI_EMPTY (TAB tabs)
+  toCST (arg : args) ctx@(tabs, _) = BI_PAIR (toCST arg ctx) (toCST args ctx) (TAB tabs)
+
+instance ToCST [Argument] BINDINGS where
+  toCST [] (tabs, _) = BDS_EMPTY (TAB tabs)
+  toCST (arg : args) ctx@(tabs, eol) = BDS_PAIR eol (TAB tabs) (toCST arg ctx) (toCST args ctx)
 
 instance ToCST Binding APP_BINDING where
   toCST bd@(BiTau _ _) ctx = APP_BINDING (toCST bd ctx :: PAIR)
@@ -492,17 +510,19 @@ instance ToCST Bytes BYTES where
 
 instance ToCST Attribute ATTRIBUTE where
   toCST (AtLabel label) _ = AT_LABEL label
-  toCST (AtAlpha idx) _ = AT_ALPHA ALPHA idx
   toCST AtPhi _ = AT_PHI PHI
   toCST AtRho _ = AT_RHO RHO
   toCST AtDelta _ = AT_DELTA DELTA
   toCST AtLambda _ = AT_LAMBDA LAMBDA
   toCST (AtMeta mt) _ = AT_META (META NO_EXCL TAU (metaTail mt))
 
+instance ToCST Alpha ATTRIBUTE where
+  toCST (Alpha idx) _ = AT_ALPHA ALPHA idx
+  toCST (AlMeta mt) _ = AT_META (META NO_EXCL ETA (metaTail mt))
+
 instance ToCST Y.Condition CONDITION where
   toCST (Y.Not (Y.In attr binding)) _ = CO_BELONGS (attributeToCST attr) NOT_IN (ST_BINDING (bindingsToCST [binding]))
   toCST (Y.Not (Y.Eq left right)) _ = CO_COMPARE (comparableToCST left) NOT_EQUAL (comparableToCST right)
-  toCST (Y.Not (Y.Alpha attr)) _ = CO_BELONGS (attributeToCST attr) NOT_IN (ST_ATTRIBUTES [attributeToCST (AtAlpha 0), attributeToCST (AtAlpha 1), AT_REST DOTS])
   toCST (Y.Not (Y.Primitive expr)) _ = CO_PRIMITIVE (expressionToCST expr) NOT_IN
   toCST (Y.Primitive expr) _ = CO_PRIMITIVE (expressionToCST expr) IN
   toCST (Y.Not (Y.Absolute expr)) _ = CO_ABSOLUTE (expressionToCST expr) NOT_IN
@@ -515,7 +535,6 @@ instance ToCST Y.Condition CONDITION where
   toCST (Y.Or conds) _ = case conds of
     [] -> CO_EMPTY
     _ -> CO_LOGIC (map toCST' conds) OR
-  toCST (Y.Alpha attr) _ = CO_BELONGS (attributeToCST attr) IN (ST_ATTRIBUTES [attributeToCST (AtAlpha 0), attributeToCST (AtAlpha 1), AT_REST DOTS])
   toCST (Y.NF expr) _ = CO_NF (expressionToCST expr)
   toCST (Y.Not cond) _ = CO_NOT (conditionToCST cond)
   toCST (Y.Eq left right) _ = CO_COMPARE (comparableToCST left) EQUAL (comparableToCST right)
@@ -528,7 +547,7 @@ instance ToCST Y.Comparable COMPARABLE where
   toCST (Y.CmpNum num) _ = CMP_NUM (numberToCST num)
 
 instance ToCST Y.Number NUMBER where
-  toCST (Y.Index attr) _ = INDEX (attributeToCST attr)
+  toCST (Y.Index alpha) _ = INDEX (alphaToCST alpha)
   toCST (Y.Length binding) _ = LENGTH (bindingsToCST [binding])
   toCST (Y.Domain binding) _ = DOMAIN (bindingsToCST [binding])
   toCST (Y.Literal num) _ = LITERAL num

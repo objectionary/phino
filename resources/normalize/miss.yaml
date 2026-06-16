@@ -5,10 +5,7 @@ name: miss
 pattern: ⟦𝐵⟧(𝜏 ↦ 𝑒)
 result: ⊥
 when:
-  and:
-    - not:
-        in:
-          - 𝜏
-          - 𝐵
-    - not:
-        alpha: 𝜏
+  not:
+    in:
+      - 𝜏
+      - 𝐵

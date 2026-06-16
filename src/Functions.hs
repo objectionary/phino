@@ -211,10 +211,9 @@ _join args subst = do
     join' :: [Binding] -> Set.Set Attribute -> IO [Binding]
     join' [] _ = pure []
     join' (bd : bds) attrs =
-      case attributesFromBindings [bd] of
-        [attr] ->
-          if Set.member attr attrs
-            then
+      case attributeFromBinding bd of
+        Just attr
+          | Set.member attr attrs ->
               if attr == AtRho || attr == AtDelta || attr == AtLambda
                 then join' bds attrs
                 else do
@@ -223,8 +222,8 @@ _join args subst = do
                     BiVoid _ -> BiVoid <$> freshAttr
                     other -> pure other
                   (new :) <$> join' bds attrs
-            else (bd :) <$> join' bds (Set.insert attr attrs)
-        _ -> (bd :) <$> join' bds attrs
+          | otherwise -> (bd :) <$> join' bds (Set.insert attr attrs)
+        Nothing -> (bd :) <$> join' bds attrs
     freshAttr :: IO Attribute
     freshAttr = do
       term <- _randomTau [] subst

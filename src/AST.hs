@@ -18,10 +18,10 @@ newtype Program = Program Expression
 
 data Expression
   = ExFormation [Binding]
-  | ExThis
-  | ExGlobal
+  | ExXi
+  | ExRoot
   | ExTermination
-  | ExApplication Expression Binding
+  | ExApplication Expression Argument
   | ExDispatch Expression Attribute
   | ExMeta Text
   | ExMetaTail Expression Text
@@ -29,13 +29,22 @@ data Expression
   | ExPhiAgain (Maybe String) Int Expression
   deriving (Eq, Ord, Show, Generic)
 
+data Argument
+  = ArTau Attribute Expression
+  | ArAlpha Alpha Expression
+  deriving (Eq, Ord, Show, Generic)
+
+data Alpha
+  = Alpha Int
+  | AlMeta Text
+  deriving (Eq, Ord, Generic)
+
 data Binding
   = BiTau Attribute Expression
-  | BiDelta Bytes
   | BiVoid Attribute
-  | BiLambda Text
+  | BiDelta Bytes
+  | BiLambda Function
   | BiMeta Text
-  | BiMetaLambda Text
   deriving (Eq, Ord, Show, Generic)
 
 data Bytes
@@ -47,7 +56,6 @@ data Bytes
 
 data Attribute
   = AtLabel Text
-  | AtAlpha Int
   | AtPhi
   | AtRho
   | AtLambda
@@ -55,14 +63,22 @@ data Attribute
   | AtMeta Text
   deriving (Eq, Generic, Ord)
 
+data Function
+  = Function Text
+  | FnMeta Text
+  deriving (Eq, Generic, Show, Ord)
+
 instance Show Attribute where
   show (AtLabel label) = T.unpack label
-  show (AtAlpha idx) = 'α' : show idx
   show AtRho = "ρ"
   show AtPhi = "φ"
   show AtDelta = "Δ"
   show AtLambda = "λ"
   show (AtMeta meta) = '!' : T.unpack meta
+
+instance Show Alpha where
+  show (Alpha idx) = 'α' : show idx
+  show (AlMeta meta) = '!' : T.unpack meta
 
 -- A cheap, fixed-size digest of an expression, used for fast (dirty) equality
 -- checks during loop detection. Equal expressions always produce the same
@@ -74,59 +90,61 @@ hashExpression = goExpr fnvOffset
     fnvPrime, fnvOffset :: Int
     fnvPrime = 1099511628211
     fnvOffset = 14695981039
-
     -- FNV-1a style mixing step (Int multiplication wraps silently).
     step :: Int -> Int -> Int
     step h x = (h `xor` x) * fnvPrime
-
     hashText :: Int -> Text -> Int
     hashText = T.foldl' (\h c -> step h (fromEnum c))
-
     hashString :: Int -> String -> Int
     hashString = foldl' (\h c -> step h (fromEnum c))
-
     hashMaybeString :: Int -> Maybe String -> Int
     hashMaybeString h Nothing = step h 0
     hashMaybeString h (Just s) = hashString (step h 1) s
-
     goExpr :: Int -> Expression -> Int
     goExpr h = \case
       ExFormation bds -> foldl' goBinding (step h 1) bds
-      ExThis -> step h 2
-      ExGlobal -> step h 3
+      ExXi -> step h 2
+      ExRoot -> step h 3
       ExTermination -> step h 4
-      ExApplication ex bd -> goBinding (goExpr (step h 5) ex) bd
+      ExApplication ex arg -> goArgument (goExpr (step h 5) ex) arg
       ExDispatch ex at -> goAttribute (goExpr (step h 6) ex) at
       ExMeta t -> hashText (step h 7) t
       ExMetaTail ex t -> hashText (goExpr (step h 8) ex) t
       ExPhiMeet ms i ex -> goExpr (hashMaybeString (step (step h 9) i) ms) ex
       ExPhiAgain ms i ex -> goExpr (hashMaybeString (step (step h 10) i) ms) ex
-
     goBinding :: Int -> Binding -> Int
     goBinding h = \case
       BiTau at ex -> goExpr (goAttribute (step h 11) at) ex
       BiDelta bts -> goBytes (step h 12) bts
       BiVoid at -> goAttribute (step h 13) at
-      BiLambda t -> hashText (step h 14) t
+      BiLambda fn -> goFunction (step h 14) fn
       BiMeta t -> hashText (step h 15) t
-      BiMetaLambda t -> hashText (step h 16) t
-
     goBytes :: Int -> Bytes -> Int
     goBytes h = \case
       BtEmpty -> step h 17
       BtOne s -> hashString (step h 18) s
       BtMany ss -> foldl' hashString (step h 19) ss
       BtMeta t -> hashText (step h 20) t
-
     goAttribute :: Int -> Attribute -> Int
     goAttribute h = \case
       AtLabel t -> hashText (step h 21) t
-      AtAlpha i -> step (step h 22) i
       AtPhi -> step h 23
       AtRho -> step h 24
       AtLambda -> step h 25
       AtDelta -> step h 26
       AtMeta t -> hashText (step h 27) t
+    goArgument :: Int -> Argument -> Int
+    goArgument h = \case
+      ArTau at ex -> goExpr (goAttribute (step h 22) at) ex
+      ArAlpha al ex -> goExpr (goAlpha (step h 30) al) ex
+    goAlpha :: Int -> Alpha -> Int
+    goAlpha h = \case
+      Alpha idx -> step (step h 31) idx
+      AlMeta t -> hashText (step h 28) t
+    goFunction :: Int -> Function -> Int
+    goFunction h = \case
+      Function t -> hashText (step h 16) t
+      FnMeta t -> hashText (step h 29) t
 
 -- A primitive is the termination ⊥ or a formation without a λ binding.
 primitive :: Expression -> Bool
@@ -135,7 +153,6 @@ primitive (ExFormation bds) = not (any lambda bds)
   where
     lambda :: Binding -> Bool
     lambda (BiLambda _) = True
-    lambda (BiMetaLambda _) = True
     lambda _ = False
 primitive _ = False
 
@@ -146,7 +163,8 @@ countNodes (ExFormation bds) = 1 + sum (map nodesInBinding bds) + length bds
     nodesInBinding (BiTau _ expr) = countNodes expr + 2
     nodesInBinding (BiMeta _) = 1
     nodesInBinding _ = 3
-countNodes (ExApplication expr (BiTau _ expr')) = 4 + countNodes expr + countNodes expr'
+countNodes (ExApplication expr (ArTau _ expr')) = 4 + countNodes expr + countNodes expr'
+countNodes (ExApplication expr (ArAlpha _ expr')) = 4 + countNodes expr + countNodes expr'
 countNodes (ExDispatch expr' _) = 2 + countNodes expr'
 countNodes (ExMetaTail expr _) = 2 + countNodes expr
 countNodes (ExPhiMeet _ _ expr) = countNodes expr

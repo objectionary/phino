@@ -27,7 +27,7 @@ test func useCases =
   forM_ useCases $ \(desc, input, expr, output) ->
     it desc $ do
       let prog = Program expr
-      (res, _) <- func (input, (prog, Nothing) :| []) (defaultDataizeContext ExGlobal prog)
+      (res, _) <- func (input, (prog, Nothing) :| []) (defaultDataizeContext ExRoot prog)
       res `shouldBe` output
 
 test' :: (Eq a, Show a) => ((Expression, NonEmpty Rewritten) -> DataizeContext -> IO (a, NonEmpty Rewritten)) -> [(String, Expression, Expression, a)] -> Spec
@@ -35,7 +35,7 @@ test' func useCases =
   forM_ useCases $ \(desc, input, expr, output) ->
     it desc $ do
       let prog = Program expr
-      (res, _) <- func (input, (prog, Nothing) :| []) (defaultDataizeContext ExGlobal prog)
+      (res, _) <- func (input, (prog, Nothing) :| []) (defaultDataizeContext ExRoot prog)
       res `shouldBe` output
 
 testDataize :: [(String, String, String, Bytes)] -> Spec
@@ -52,13 +52,13 @@ spec = do
   describe "morph" $
     test'
       morph
-      [ ("[[ D> 00- ]] => [[ D> 00- ]]", ExFormation [BiDelta (BtOne "00")], ExGlobal, ExFormation [BiDelta (BtOne "00")])
-      , ("T => T", ExTermination, ExGlobal, ExTermination)
-      , ("$ => X", ExThis, ExGlobal, ExTermination)
-      , ("Q => X", ExGlobal, ExGlobal, ExTermination)
+      [ ("[[ D> 00- ]] => [[ D> 00- ]]", ExFormation [BiDelta (BtOne "00")], ExRoot, ExFormation [BiDelta (BtOne "00")])
+      , ("T => T", ExTermination, ExRoot, ExTermination)
+      , ("$ => X", ExXi, ExRoot, ExTermination)
+      , ("Q => X", ExRoot, ExRoot, ExTermination)
       ,
         ( "Q.x (Q -> [[ x -> [[]] ]]) => [[]]"
-        , ExDispatch ExGlobal (AtLabel "x")
+        , ExDispatch ExRoot (AtLabel "x")
         , ExFormation [BiTau (AtLabel "x") (ExFormation [])]
         , ExFormation []
         )
@@ -67,18 +67,18 @@ spec = do
   describe "dataize" $
     test
       dataize'
-      [ ("[[ D> 00- ]] => 00-", ExFormation [BiDelta (BtOne "00")], ExGlobal, Just (BtOne "00"))
-      , ("T => X", ExTermination, ExGlobal, Nothing)
+      [ ("[[ D> 00- ]] => 00-", ExFormation [BiDelta (BtOne "00")], ExRoot, Just (BtOne "00"))
+      , ("T => X", ExTermination, ExRoot, Nothing)
       ,
         ( "[[ @ -> [[ D> 00-]] ]] => 00-"
         , ExFormation [BiTau AtPhi (ExFormation [BiDelta (BtOne "00"), BiVoid AtRho]), BiVoid AtRho]
-        , ExGlobal
+        , ExRoot
         , Just (BtOne "00")
         )
       ,
         ( "[[ x -> [[ D> 01- ]] ]].x => 01-"
         , ExDispatch (ExFormation [BiTau (AtLabel "x") (ExFormation [BiDelta (BtOne "01"), BiVoid AtRho]), BiVoid AtRho]) (AtLabel "x")
-        , ExGlobal
+        , ExRoot
         , Just (BtOne "01")
         )
       ,
@@ -97,14 +97,14 @@ spec = do
                                     , BiVoid AtRho
                                     ]
                                 )
-                                (BiTau (AtLabel "y") (ExFormation []))
+                                (ArTau (AtLabel "y") (ExFormation []))
                             )
                         ]
                     )
                     (AtLabel "x")
                 )
             ]
-        , ExGlobal
+        , ExRoot
         , Just (BtOne "01")
         )
       ]
@@ -113,7 +113,7 @@ spec = do
     it "resolves global dispatch from the universe Q" $ do
       prog <- parseProgramThrows "Q -> [[ x -> [[ D> 42- ]] ]]"
       expected <- parseExpressionThrows "[[ D> 42- ]]"
-      term <- execBuildTerm (defaultDataizeContext ExGlobal prog) "global" [Yaml.ArgAttribute (AtLabel "x")] substEmpty
+      term <- execBuildTerm (defaultDataizeContext ExRoot prog) "global" [Yaml.ArgAttribute (AtLabel "x")] substEmpty
       case term of
         TeExpression actual -> actual `shouldBe` expected
         _ -> expectationFailure "global() did not return an expression"

@@ -26,8 +26,8 @@ spec = describe "Tau" $ do
     seedTaus
       ( Program
           ( ExFormation
-              [ BiTau (AtLabel "a🌵0") ExGlobal
-              , BiTau (AtLabel "a🌵2") ExGlobal
+              [ BiTau (AtLabel "a🌵0") ExRoot
+              , BiTau (AtLabel "a🌵2") ExRoot
               ]
           )
       )

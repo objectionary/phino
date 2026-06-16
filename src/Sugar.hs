@@ -113,7 +113,7 @@ instance ToSalty EXPRESSION where
   toSalty EX_META_TAIL{..} = EX_META_TAIL (toSalty expr) meta
   toSalty expr = expr
 
-saltifyPrimitive :: EXPRESSION -> EXPRESSION -> EXPRESSION -> TAB -> [Binding] -> EXPRESSION
+saltifyPrimitive :: EXPRESSION -> EXPRESSION -> EXPRESSION -> TAB -> [Argument] -> EXPRESSION
 saltifyPrimitive base bytes data' tb@TAB{..} rhos =
   let next = TAB (indent + 1)
    in toSalty

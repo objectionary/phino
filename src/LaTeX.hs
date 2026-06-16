@@ -57,7 +57,7 @@ data LatexContext = LatexContext
   }
 
 defaultLatexContext :: LatexContext
-defaultLatexContext = LatexContext SWEET SINGLELINE defaultMargin False False defaultMeetPopularity defaultMeetLength ExGlobal Nothing Nothing Nothing
+defaultLatexContext = LatexContext SWEET SINGLELINE defaultMargin False False defaultMeetPopularity defaultMeetLength ExRoot Nothing Nothing Nothing
 
 defaultMeetPopularity :: Int
 defaultMeetPopularity = 50
@@ -77,13 +77,16 @@ meetInProgram (Program expr) len = meetInExpression expr
       let matched = if countNodes ex >= len then map (const ex) (matchProgram ex prog) else []
        in matched ++ case ex of
             ExDispatch ex' _ -> meetInExpression ex' prog
-            ExApplication ex' (BiTau _ arg) -> meetInExpression ex' prog ++ meetInExpression arg prog
+            ExApplication ex' arg -> meetInExpression ex' prog ++ meetInExpression (argExpr arg) prog
             ExFormation bds -> meetInBindings bds prog
             _ -> []
     meetInBindings :: [Binding] -> Program -> [Expression]
     meetInBindings [] _ = []
     meetInBindings (BiTau _ ex : bds) prog = meetInExpression ex prog ++ meetInBindings bds prog
     meetInBindings (_ : bds) prog = meetInBindings bds prog
+    argExpr :: Argument -> Expression
+    argExpr (ArTau _ ex) = ex
+    argExpr (ArAlpha _ ex) = ex
 
 {- | Here we're trying to compress sequence of programs with \phiMeet{} and \phiAgain LaTeX functions.
 We process the sequence of programs and trying to find all expressions in first program which are present
@@ -165,7 +168,7 @@ compressedRewrittens rewrittens ctx@LatexContext{..} =
    in if _compress then zip (meetInPrograms progs ctx) rules else rewrittens
 
 rewrittensToLatex :: Rewrittens' -> LatexContext -> IO String
-rewrittensToLatex (rewrittens, exceeded) ctx@LatexContext{_focus = ExGlobal} =
+rewrittensToLatex (rewrittens, exceeded) ctx@LatexContext{_focus = ExRoot} =
   pure
     ( concat
         [ preamble ctx
@@ -270,6 +273,8 @@ instance ToLaTeX META_HEAD where
   toLaTeX P = P'
   toLaTeX A = TAU'
   toLaTeX TAU = TAU'
+  toLaTeX ETA = ETA'
+  toLaTeX H = ETA'
   toLaTeX B = B'
   toLaTeX D = D'
   toLaTeX mh = mh
