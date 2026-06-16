@@ -946,9 +946,9 @@ spec = do
         [ unlines
             [ "\\begin{tabular}{rl}"
             , "\\trrule{alpha}"
-            , "  { [[ B_1, \\tau_1 -> ?, B_2 ]] ( \\tau_2 -> e ) }"
+            , "  { [[ B_1, \\tau_1 -> ?, B_2 ]] ( \\eta -> e ) }"
             , "  { [[ B_1, \\tau_1 -> ?, B_2 ]] ( \\tau_1 -> e ) }"
-            , "  { if $ \\indexof{ \\tau_2 } = \\vert \\overline{ B_1 } \\vert $ }"
+            , "  { if $ \\indexof{ \\eta } = \\vert \\overline{ B_1 } \\vert $ }"
             , "  { }"
             , "\\trrule{copy}"
             , "  { [[ B_1, \\tau -> ?, B_2 ]] ( \\tau -> k ) }"
@@ -973,7 +973,7 @@ spec = do
             , "\\trrule{miss}"
             , "  { [[ B ]] ( \\tau -> e ) }"
             , "  { T }"
-            , "  { if $ \\tau \\notin B \\;\\text{and}\\; \\tau \\notin [ ~0, ~1, \\dots ] $ }"
+            , "  { if $ \\tau \\notin B $ }"
             , "  { }"
             , "\\trrule{null}"
             , "  { [[ B_1, \\tau -> ?, B_2 ]] . \\tau }"
@@ -1157,7 +1157,7 @@ spec = do
     it "builds substitutions with conditions" $
       withStdin "{[[ x -> Q.y ]].x}" $
         testCLISucceeded
-          ["match", "--pattern=[[ !a -> Q.y, !B ]].!a", "--when=and(not(alpha(!a)),eq(length(!B),1))"]
+          ["match", "--pattern=[[ !a -> Q.y, !B ]].!a", "--when=eq(length(!B),1)"]
           ["B >> ⟦ ρ ↦ ∅ ⟧\na >> x"]
 
     it "builds with condition from file" $

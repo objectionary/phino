@@ -29,12 +29,21 @@ spec = do
 
   describe "Attribute Show instance renders AtAlpha" $
     forM_
-      [ ("zero index", AtAlpha 0, "α0")
-      , ("positive index", AtAlpha 42, "α42")
-      , ("large index", AtAlpha 999, "α999")
+      [ ("zero index", Alpha 0, "α0")
+      , ("positive index", Alpha 42, "α42")
+      , ("large index", Alpha 999, "α999")
       ]
       ( \(desc, attr, expected) ->
           it desc $ show attr `shouldBe` expected
+      )
+
+  describe "Alpha Eq instance compares same constructors" $
+    forM_
+      [ ("alphas equal", Alpha 1, Alpha 1, True)
+      , ("alphas differ", Alpha 1, Alpha 2, False)
+      ]
+      ( \(desc, lhs, rhs, expected) ->
+          it desc $ (lhs == rhs) `shouldBe` expected
       )
 
   describe "Attribute Show instance renders special attributes" $
@@ -62,8 +71,6 @@ spec = do
     forM_
       [ ("labels equal", AtLabel "x", AtLabel "x", True)
       , ("labels differ", AtLabel "x", AtLabel "y", False)
-      , ("alphas equal", AtAlpha 1, AtAlpha 1, True)
-      , ("alphas differ", AtAlpha 1, AtAlpha 2, False)
       , ("metas equal", AtMeta "a", AtMeta "a", True)
       , ("metas differ", AtMeta "a", AtMeta "b", False)
       , ("rho equals rho", AtRho, AtRho, True)
@@ -77,8 +84,7 @@ spec = do
 
   describe "Attribute Eq instance compares different constructors" $
     forM_
-      [ ("label vs alpha", AtLabel "x", AtAlpha 0, False)
-      , ("rho vs phi", AtRho, AtPhi, False)
+      [ ("rho vs phi", AtRho, AtPhi, False)
       , ("delta vs lambda", AtDelta, AtLambda, False)
       , ("meta vs label", AtMeta "x", AtLabel "x", False)
       ]
@@ -88,7 +94,7 @@ spec = do
 
   describe "Attribute Ord instance orders correctly" $
     it "sorts attributes by constructor order" $
-      let attrs = [AtMeta "z", AtDelta, AtLambda, AtRho, AtPhi, AtAlpha 1, AtLabel "a"]
+      let attrs = [AtMeta "z", AtDelta, AtLambda, AtRho, AtPhi, AtLabel "a"]
           first : _ = sort attrs
           isLabel (AtLabel _) = True
           isLabel _ = False
@@ -135,10 +141,10 @@ spec = do
       , ("delta differs", BiDelta BtEmpty, BiDelta (BtOne "00"), False)
       , ("void equals void", BiVoid AtRho, BiVoid AtRho, True)
       , ("void differs", BiVoid AtRho, BiVoid AtPhi, False)
-      , ("lambda equals lambda", BiLambda "Func", BiLambda "Func", True)
-      , ("lambda differs", BiLambda "Func", BiLambda "Other", False)
-      , ("metalambda equals", BiMetaLambda "F", BiMetaLambda "F", True)
-      , ("metalambda differs", BiMetaLambda "F", BiMetaLambda "G", False)
+      , ("lambda equals lambda", BiLambda (Function "Func"), BiLambda (Function "Func"), True)
+      , ("lambda differs", BiLambda (Function "Func"), BiLambda (Function "Other"), False)
+      , ("metalambda equals", BiLambda (FnMeta "F"), BiLambda (FnMeta "F"), True)
+      , ("metalambda differs", BiLambda (FnMeta "F"), BiLambda (FnMeta "G"), False)
       ]
       ( \(desc, lhs, rhs, expected) ->
           it desc $ (lhs == rhs) `shouldBe` expected
@@ -148,7 +154,7 @@ spec = do
     forM_
       [ ("tau vs meta", BiTau AtRho ExRoot, BiMeta "B", False)
       , ("delta vs void", BiDelta BtEmpty, BiVoid AtDelta, False)
-      , ("lambda vs metalambda", BiLambda "F", BiMetaLambda "F", False)
+      , ("lambda vs metalambda", BiLambda (Function "F"), BiLambda (FnMeta "F"), False)
       ]
       ( \(desc, lhs, rhs, expected) ->
           it desc $ (lhs == rhs) `shouldBe` expected
@@ -156,7 +162,7 @@ spec = do
 
   describe "Binding Ord instance orders correctly" $
     it "sorts bindings by constructor order" $
-      let bindings = [BiMetaLambda "Z", BiLambda "A", BiVoid AtRho, BiDelta BtEmpty, BiMeta "B", BiTau AtRho ExRoot]
+      let bindings = [BiLambda (FnMeta "Z"), BiLambda (Function "A"), BiVoid AtRho, BiDelta BtEmpty, BiMeta "B", BiTau AtRho ExRoot]
           first : _ = sort bindings
           isTau (BiTau _ _) = True
           isTau _ = False
@@ -171,7 +177,7 @@ spec = do
       , ("termination equals", ExTermination, ExTermination, True)
       , ("meta equals meta", ExMeta "e", ExMeta "e", True)
       , ("meta differs", ExMeta "e", ExMeta "f", False)
-      , ("application equals", ExApplication ExRoot (BiTau AtRho ExXi), ExApplication ExRoot (BiTau AtRho ExXi), True)
+      , ("application equals", ExApplication ExRoot (ArTau AtRho ExXi), ExApplication ExRoot (ArTau AtRho ExXi), True)
       , ("dispatch equals", ExDispatch ExRoot AtRho, ExDispatch ExRoot AtRho, True)
       , ("dispatch differs", ExDispatch ExRoot AtRho, ExDispatch ExRoot AtPhi, False)
       , ("metatail equals", ExMetaTail ExRoot "t", ExMetaTail ExRoot "t", True)
@@ -193,7 +199,7 @@ spec = do
 
   describe "Expression Ord instance orders correctly" $
     it "sorts expressions by constructor order" $
-      let exprs = [ExMetaTail ExRoot "t", ExDispatch ExRoot AtRho, ExApplication ExRoot (BiVoid AtRho), ExMeta "e", ExTermination, ExRoot, ExXi, ExFormation []]
+      let exprs = [ExMetaTail ExRoot "t", ExDispatch ExRoot AtRho, ExApplication ExRoot (ArTau AtRho ExRoot), ExMeta "e", ExTermination, ExRoot, ExXi, ExFormation []]
           first : _ = sort exprs
        in first `shouldBe` ExFormation []
 
@@ -223,14 +229,14 @@ spec = do
       , ("T", ExTermination, 1)
       , ("$", ExXi, 1)
       , ("dispatch on global", ExDispatch ExRoot (AtLabel "x"), 3)
-      , ("application with globals", ExApplication ExRoot (BiTau AtRho ExRoot), 6)
+      , ("application with globals", ExApplication ExRoot (ArTau AtRho ExRoot), 6)
       , ("nested expressions", ExFormation [BiTau AtRho ExRoot, BiTau AtPhi ExRoot], 9)
       , ("empty formation", ExFormation [], 1)
       , ("void binding", ExFormation [BiVoid AtRho], 5)
       , ("delta binding", ExFormation [BiDelta BtEmpty], 5)
-      , ("lambda binding", ExFormation [BiLambda "Func"], 5)
+      , ("lambda binding", ExFormation [BiLambda (Function "Func")], 5)
       , ("meta binding", ExFormation [BiMeta "B"], 3)
-      , ("metalambda binding", ExFormation [BiMetaLambda "F"], 5)
+      , ("metalambda binding", ExFormation [BiLambda (FnMeta "F")], 5)
       , ("meta expression", ExMeta "e", 1)
       , ("metatail expression", ExMetaTail ExRoot "t", 3)
       , ("deeply nested dispatch", ExDispatch (ExDispatch ExRoot (AtLabel "a")) (AtLabel "b"), 5)

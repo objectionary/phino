@@ -97,7 +97,7 @@ spec = do
                                     , BiVoid AtRho
                                     ]
                                 )
-                                (BiTau (AtLabel "y") (ExFormation []))
+                                (ArTau (AtLabel "y") (ExFormation []))
                             )
                         ]
                     )

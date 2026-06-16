@@ -32,27 +32,27 @@ spec = do
         )
       ,
         ( "Q.c(!a -> !e) => (!a >> x, !e >> $.y.z) => Q.c(x -> $.y.z)"
-        , ExApplication (ExDispatch ExRoot (AtLabel "c")) (BiTau (AtMeta "a") (ExMeta "e"))
+        , ExApplication (ExDispatch ExRoot (AtLabel "c")) (ArTau (AtMeta "a") (ExMeta "e"))
         , [("a", MvAttribute (AtLabel "x")), ("e", MvExpression (ExDispatch (ExDispatch ExXi (AtLabel "y")) (AtLabel "z")))]
-        , Right (ExApplication (ExDispatch ExRoot (AtLabel "c")) (BiTau (AtLabel "x") (ExDispatch (ExDispatch ExXi (AtLabel "y")) (AtLabel "z"))))
+        , Right (ExApplication (ExDispatch ExRoot (AtLabel "c")) (ArTau (AtLabel "x") (ExDispatch (ExDispatch ExXi (AtLabel "y")) (AtLabel "z"))))
         )
       ,
         ( "[[!a -> $.x, !B]] => (!a >> y, !B >> [[b -> ?, L> Func]]) => [[y -> $.x, b -> ?, L> Func]]"
         , ExFormation [BiTau (AtMeta "a") (ExDispatch ExXi (AtLabel "x")), BiMeta "B"]
-        , [("a", MvAttribute (AtLabel "y")), ("B", MvBindings [BiVoid (AtLabel "b"), BiLambda "Func"])]
+        , [("a", MvAttribute (AtLabel "y")), ("B", MvBindings [BiVoid (AtLabel "b"), BiLambda (Function "Func")])]
         , Right
             ( ExFormation
                 [ BiTau (AtLabel "y") (ExDispatch ExXi (AtLabel "x"))
                 , BiVoid (AtLabel "b")
-                , BiLambda "Func"
+                , BiLambda (Function "Func")
                 ]
             )
         )
       ,
         ( "Q * !t => (!t >> [.a, .b, (~1 -> $.x)]) => Q.a.b(~1 -> $.x)"
         , ExMetaTail ExRoot "t"
-        , [("t", MvTail [TaDispatch (AtLabel "a"), TaDispatch (AtLabel "b"), TaApplication (BiTau (AtAlpha 1) (ExDispatch ExXi (AtLabel "x")))])]
-        , Right (ExApplication (ExDispatch (ExDispatch ExRoot (AtLabel "a")) (AtLabel "b")) (BiTau (AtAlpha 1) (ExDispatch ExXi (AtLabel "x"))))
+        , [("t", MvTail [TaDispatch (AtLabel "a"), TaDispatch (AtLabel "b"), TaApplication (ArAlpha (Alpha 1) (ExDispatch ExXi (AtLabel "x")))])]
+        , Right (ExApplication (ExDispatch (ExDispatch ExRoot (AtLabel "a")) (AtLabel "b")) (ArAlpha (Alpha 1) (ExDispatch ExXi (AtLabel "x"))))
         )
       ,
         ( "Q.!a => () => X"
@@ -62,7 +62,7 @@ spec = do
         )
       ,
         ( "!e0(!a1 -> !e1, !a2 => !e2) => (!e0 >> [[]], !a1 >> x, !e1 >> Q, !a2 >> y, !e2 >> $) => [[]](x -> Q, y -> $)"
-        , ExApplication (ExApplication (ExMeta "e0") (BiTau (AtMeta "a1") (ExMeta "e1"))) (BiTau (AtMeta "a2") (ExMeta "e2"))
+        , ExApplication (ExApplication (ExMeta "e0") (ArTau (AtMeta "a1") (ExMeta "e1"))) (ArTau (AtMeta "a2") (ExMeta "e2"))
         ,
           [ ("e0", MvExpression (ExFormation []))
           , ("a1", MvAttribute (AtLabel "x"))
@@ -70,7 +70,7 @@ spec = do
           , ("a2", MvAttribute (AtLabel "y"))
           , ("e2", MvExpression ExXi)
           ]
-        , Right (ExApplication (ExApplication (ExFormation []) (BiTau (AtLabel "x") ExRoot)) (BiTau (AtLabel "y") ExXi))
+        , Right (ExApplication (ExApplication (ExFormation []) (ArTau (AtLabel "x") ExRoot)) (ArTau (AtLabel "y") ExXi))
         )
       ,
         ( "⟦!a ↦ ∅, !B⟧.!a => (!a >> t, !B >> ⟦ x ↦ ξ.t ⟧ ) => ⟦ t ↦ ∅, x ↦ ξ.t ⟧.t"

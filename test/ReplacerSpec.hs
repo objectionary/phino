@@ -47,8 +47,8 @@ spec = do
       , ("Q -> [[]] => ([], [$]) => X", Program (ExFormation []), [], [ExXi], Program (ExFormation []))
       ,
         ( "Q -> [[L> Func, D> 00-]] => ([ [[L> Func, D> 00-]] ], [Q]) => Q -> Q"
-        , Program (ExFormation [BiLambda "Func", BiDelta (BtOne "00")])
-        , [ExFormation [BiLambda "Func", BiDelta (BtOne "00")]]
+        , Program (ExFormation [BiLambda (Function "Func"), BiDelta (BtOne "00")])
+        , [ExFormation [BiLambda (Function "Func"), BiDelta (BtOne "00")]]
         , [ExRoot]
         , Program ExRoot
         )
@@ -71,7 +71,7 @@ spec = do
                     )
                     (AtLabel "t")
                 )
-                ( BiTau
+                ( ArTau
                     AtRho
                     ( ExFormation
                         [ BiTau (AtLabel "x") (ExDispatch ExXi (AtLabel "t"))
@@ -93,7 +93,7 @@ spec = do
         , Program
             ( ExApplication
                 ExTermination
-                ( BiTau
+                ( ArTau
                     AtRho
                     ( ExFormation
                         [ BiTau (AtLabel "x") (ExDispatch ExXi (AtLabel "t"))
@@ -118,18 +118,11 @@ spec = do
         , Program ExRoot
         )
       ,
-        ( "Q -> Q.α0 => ([Q.α0], [$.α1]) => Q -> $.α1"
-        , Program (ExDispatch ExRoot (AtAlpha 0))
-        , [ExDispatch ExRoot (AtAlpha 0)]
-        , [ExDispatch ExXi (AtAlpha 1)]
-        , Program (ExDispatch ExXi (AtAlpha 1))
-        )
-      ,
         ( "Q -> [[D> --]] => ([[D> --]], [[[L> Функція]]]) => Q -> [[L> Функція]]"
         , Program (ExFormation [BiDelta BtEmpty])
         , [ExFormation [BiDelta BtEmpty]]
-        , [ExFormation [BiLambda "Функція"]]
-        , Program (ExFormation [BiLambda "Функція"])
+        , [ExFormation [BiLambda (Function "Функція")]]
+        , Program (ExFormation [BiLambda (Function "Функція")])
         )
       ,
         ( "Q -> Q.プログラム => ([Q.プログラム], [$.コード]) => Q -> $.コード"
@@ -154,10 +147,10 @@ spec = do
         )
       ,
         ( "Q -> Q.a(b -> Q.c) => ([Q.a, Q.c], [$, T]) => Q -> $(b -> T)"
-        , Program (ExApplication (ExDispatch ExRoot (AtLabel "a")) (BiTau (AtLabel "b") (ExDispatch ExRoot (AtLabel "c"))))
+        , Program (ExApplication (ExDispatch ExRoot (AtLabel "a")) (ArTau (AtLabel "b") (ExDispatch ExRoot (AtLabel "c"))))
         , [ExDispatch ExRoot (AtLabel "a"), ExDispatch ExRoot (AtLabel "c")]
         , [ExXi, ExTermination]
-        , Program (ExApplication ExXi (BiTau (AtLabel "b") ExTermination))
+        , Program (ExApplication ExXi (ArTau (AtLabel "b") ExTermination))
         )
       ,
         ( "Q -> [[D> 00-01-02-]] => ([[D> 00-01-02-]], [[[D> FF-]]]) => Q -> [[D> FF-]]"
@@ -205,10 +198,10 @@ spec = do
         )
       ,
         ( "Q -> [[ ^ -> T ]](^ -> [[ ^ -> $]]).@ => [[ !B1, !a -> ?, !B2 ]] => [[ !B1, !a -> $, !B2 ]] => Q -> [[ ^ -> $ ]].@"
-        , Program (ExDispatch (ExApplication (ExFormation [BiTau AtRho ExTermination]) (BiTau AtRho (ExFormation [BiTau AtRho ExXi]))) AtPhi)
+        , Program (ExDispatch (ExApplication (ExFormation [BiTau AtRho ExTermination]) (ArTau AtRho (ExFormation [BiTau AtRho ExXi]))) AtPhi)
         , [ExFormation [BiTau AtRho ExTermination], ExFormation [BiTau AtRho ExXi]]
         , [ExFormation [BiTau AtRho ExRoot], ExFormation [BiVoid AtPhi]]
-        , Program (ExDispatch (ExApplication (ExFormation [BiTau AtRho ExRoot]) (BiTau AtRho (ExFormation [BiVoid AtPhi]))) AtPhi)
+        , Program (ExDispatch (ExApplication (ExFormation [BiTau AtRho ExRoot]) (ArTau AtRho (ExFormation [BiVoid AtPhi]))) AtPhi)
         )
       ,
         ( "Q -> [[ ]] => ([], []) => Q -> [[ ]]"
@@ -261,17 +254,17 @@ spec = do
         )
       ,
         ( "Q -> Q.a(b -> [[c -> ?]]) => ([[c -> ?]], [[c -> T]]) => Q -> Q.a(b -> [[c -> T]])"
-        , Program (ExApplication (ExDispatch ExRoot (AtLabel "a")) (BiTau (AtLabel "b") (ExFormation [BiVoid (AtLabel "c")])))
+        , Program (ExApplication (ExDispatch ExRoot (AtLabel "a")) (ArTau (AtLabel "b") (ExFormation [BiVoid (AtLabel "c")])))
         , [ExFormation [BiVoid (AtLabel "c")]]
         , [ExFormation [BiTau (AtLabel "c") ExTermination]]
-        , Program (ExApplication (ExDispatch ExRoot (AtLabel "a")) (BiTau (AtLabel "b") (ExFormation [BiTau (AtLabel "c") ExTermination])))
+        , Program (ExApplication (ExDispatch ExRoot (AtLabel "a")) (ArTau (AtLabel "b") (ExFormation [BiTau (AtLabel "c") ExTermination])))
         )
       ,
         ( "Q -> [[ L> Функція ]] => ([[ L> Функція ]], [[ L> Код ]]) => Q -> [[ L> Код ]]"
-        , Program (ExFormation [BiLambda "Функція"])
-        , [ExFormation [BiLambda "Функція"]]
-        , [ExFormation [BiLambda "Код"]]
-        , Program (ExFormation [BiLambda "Код"])
+        , Program (ExFormation [BiLambda (Function "Функція")])
+        , [ExFormation [BiLambda (Function "Функція")]]
+        , [ExFormation [BiLambda (Function "Код")]]
+        , Program (ExFormation [BiLambda (Function "Код")])
         )
       ]
 
