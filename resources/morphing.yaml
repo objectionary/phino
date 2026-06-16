@@ -3,12 +3,12 @@
 ---
 # Morphing 𝕄 — applied top-to-bottom, first matching clause wins.
 
-- name: Mprim
+- name: prim
   description: '𝕄(p) ⟿ p'
   match: 𝑝
   then: 𝑝
 
-- name: Mnmz
+- name: nmz
   description: '𝕄(e) ⟿ 𝕄(𝒩(e)) if e ∉ NF'
   match: 𝑒
   when:
@@ -18,7 +18,7 @@
     morph:
       normalize: 𝑒
 
-- name: Mlambda
+- name: lambda
   description: '𝕄(⟦𝐵1, λ ⤍ F, 𝐵2⟧ * t) ⟿ 𝕄(F(⟦𝐵1, 𝐵2⟧) * t)'
   match: '⟦𝐵1, λ ⤍ !F, 𝐵2⟧ * !t'
   where:
@@ -29,7 +29,7 @@
   then:
     morph: '𝑒 * !t'
 
-- name: Mphi
+- name: phi
   description: '𝕄(Φ.τ * t) ⟿ 𝕄(e * t) if Φ ↦ ⟦𝐵1, τ ↦ e, 𝐵2⟧'
   match: 'Φ.𝜏 * !t'
   where:
@@ -40,7 +40,7 @@
   then:
     morph: '𝑒 * !t'
 
-- name: Mstuck
+- name: stuck
   description: '𝕄(e) ⟿ ⊥ otherwise'
   match: 𝑒
   then: ⊥

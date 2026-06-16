@@ -157,33 +157,33 @@ spec = do
           "Q -> [[ bytes(data) -> [[ @ -> $.data ]], number(as-bytes) -> [[ @ -> $.as-bytes, plus(x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6) ]]"
       labels
         `shouldBe` [ "contextualize"
-                   , "Mphi"
+                   , "phi"
                    , "alpha"
                    , "copy"
                    , "dot"
                    , "copy"
                    , "alpha"
                    , "copy"
-                   , "Mlambda"
-                   , "Mphi"
+                   , "lambda"
+                   , "phi"
                    , "alpha"
                    , "copy"
-                   , "Mprim"
+                   , "prim"
                    , "contextualize"
                    , "dot"
-                   , "Mphi"
+                   , "phi"
                    , "alpha"
                    , "copy"
                    , "copy"
-                   , "Mprim"
+                   , "prim"
                    , "contextualize"
                    , "dot"
                    , "copy"
-                   , "Mprim"
+                   , "prim"
                    ]
     it "dataizes a located reference through the expected rules" $ do
       labels <- labelsOf "Q.foo.bar" "Q -> [[ foo -> [[ bar -> [[ @ -> Q.x ]] ]], x -> [[ D> 42- ]] ]]"
-      labels `shouldBe` ["contextualize", "Mphi", "Mprim"]
+      labels `shouldBe` ["contextualize", "phi", "prim"]
 
   testDataize
     [

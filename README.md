@@ -237,13 +237,13 @@ The morphing and dataization rules are printed the same way:
 ```bash
 $ phino explain --morph
 \begin{tabular}{rl}
-\trrule{Mprim}
+\trrule{prim}
   { \mathbb{M}( e ) }
   { e }
   { if $ e \in \mathcal{P} $ }
   { }
 ...
-\trrule{Mphi}
+\trrule{phi}
   { \mathbb{M}( Q . \tau * t ) }
   { \mathbb{M}( e * t ) }
   { }

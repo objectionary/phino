@@ -84,7 +84,7 @@ phiDispatch tau expr = case expr of
 -- The Morphing function 𝕄 maps objects to primitives. It is driven by the
 -- ordered rules from 'morphing.yaml': the first matching rule's 'then' outcome
 -- either stops with a primitive ('MoStop') or keeps morphing ('MoMorph'). When
--- the morphed argument is a normalization ('MaNormalize', the 'Mnmz' rule), the
+-- the morphed argument is a normalization ('MaNormalize', the 'nmz' rule), the
 -- rewriter runs and its individual steps are spliced into the chain.
 morph :: Morphed -> DataizeContext -> IO Morphed
 morph (expr, seq) ctx@DataizeContext{..} = do
