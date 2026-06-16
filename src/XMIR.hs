@@ -480,7 +480,7 @@ xmirToApplication = xmirToApplication' 0
     mkArg (Left alpha) expr = ArAlpha alpha expr
     mkArg (Right attr) expr = ArTau attr expr
     asToKey :: C.Cursor -> Int -> IO (Either Alpha Attribute)
-    asToKey cur idx
+    asToKey cur position
       | hasAttr "as" cur = do
           as <- getAttr "as" cur
           case as of
@@ -489,7 +489,7 @@ xmirToApplication = xmirToApplication' 0
               Nothing -> throwIO (InvalidXMIRFormat "The attribute started with 'α' must be followed by integer" cur)
             "ρ" -> throwIO (InvalidXMIRFormat "The 'ρ' in @as attribute is illegal in XMIR" cur)
             _ -> Right <$> toAttr as cur
-      | otherwise = pure (Left (Alpha idx))
+      | otherwise = pure (Left (Alpha position))
 
 toAttr :: String -> C.Cursor -> IO Attribute
 toAttr attr cur = case attr of

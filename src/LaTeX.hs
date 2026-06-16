@@ -85,8 +85,8 @@ meetInProgram (Program expr) len = meetInExpression expr
     meetInBindings (BiTau _ ex : bds) prog = meetInExpression ex prog ++ meetInBindings bds prog
     meetInBindings (_ : bds) prog = meetInBindings bds prog
     argExpr :: Argument -> Expression
-    argExpr (ArTau _ expr) = expr
-    argExpr (ArAlpha _ expr) = expr
+    argExpr (ArTau _ ex) = ex
+    argExpr (ArAlpha _ ex) = ex
 
 {- | Here we're trying to compress sequence of programs with \phiMeet{} and \phiAgain LaTeX functions.
 We process the sequence of programs and trying to find all expressions in first program which are present

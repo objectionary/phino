@@ -64,12 +64,12 @@ printAttribute att =
    in printAttribute' att encoding
 
 printAlpha' :: Alpha -> Encoding -> String
-printAlpha' alpha encoding = T.unpack $ render (withEncoding encoding (toCST alpha (0, NO_EOL) :: ATTRIBUTE))
+printAlpha' index encoding = T.unpack $ render (withEncoding encoding (toCST index (0, NO_EOL) :: ATTRIBUTE))
 
 printAlpha :: Alpha -> String
-printAlpha alpha =
+printAlpha index =
   let (_, encoding, _, _) = defaultPrintConfig
-   in printAlpha' alpha encoding
+   in printAlpha' index encoding
 
 printBinding' :: Binding -> PrintConfig -> String
 printBinding' bd = printExpression' (ExFormation [bd])
@@ -98,7 +98,7 @@ printTail (TaDispatch att) (_, encoding, _, _) = "." <> printAttribute' att enco
 
 printMetaValue :: MetaValue -> PrintConfig -> String
 printMetaValue (MvAttribute att) (_, encoding, _, _) = printAttribute' att encoding
-printMetaValue (MvAlpha alpha) (_, encoding, _, _) = printAlpha' alpha encoding
+printMetaValue (MvAlpha index) (_, encoding, _, _) = printAlpha' index encoding
 printMetaValue (MvExpression ex) config = printExpression' ex config
 printMetaValue (MvBytes bts) _ = printBytes bts
 printMetaValue (MvBindings bds) config = printExpression' (ExFormation bds) config
