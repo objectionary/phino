@@ -214,9 +214,9 @@ custom rule file):
 $ phino explain --normalize
 \begin{tabular}{rl}
 \trrule{alpha}
-  { [[ B_1, \tau_1 -> ?, B_2 ]] ( \tau_2 -> e ) }
+  { [[ B_1, \tau_1 -> ?, B_2 ]] ( \eta -> e ) }
   { [[ B_1, \tau_1 -> ?, B_2 ]] ( \tau_1 -> e ) }
-  { if $ \indexof{ \tau_2 } = \vert B_1 \vert $ }
+  { if $ \indexof{ \eta } = \vert \overline{ B_1 } \vert $ }
   { }
 \trrule{dc}
   { T ( \tau -> e ) }
@@ -288,7 +288,6 @@ Condition:
   = and: [Condition]     # logical AND
   | or:  [Condition]     # logical OR
   | not: Condition       # logical NOT
-  | alpha: Attribute'    # check if given attribute is alpha
   | eq:                  # compare two comparable objects
       - Comparable
       - Comparable
@@ -319,7 +318,7 @@ Comparable:              # comparable object that may be used in 'eq' condition
 
 Number:                  # comparable number
   = Integer              # just regular integer
-  | index: Attribute'    # calculate index of alpha attribute
+  | index: Alpha'        # calculate index of alpha
   | length: BiMeta'      # calculate length of bindings by given meta binding
 
 Extension:               # substitutions extension used to introduce new meta variables
@@ -378,6 +377,7 @@ capturing attributes, bindings, etc.
 This is the list of supported meta variables:
 
 * `!a` || `𝜏` - attribute
+* `!h` || `𝜂` - alpha, the positional index of an application argument
 * `!e` || `𝑒` - any expression
 * `!n` || `𝑛` - any expression that is already in normal form (behaves like
                 `!e`/`𝑒`, but only binds a sub-expression in NF, so no explicit
