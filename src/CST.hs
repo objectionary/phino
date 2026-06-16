@@ -11,7 +11,6 @@
 module CST where
 
 import AST
-import Data.Maybe (isJust)
 import qualified Data.Text as T
 import Misc
 import qualified Yaml as Y
@@ -362,7 +361,7 @@ instance ToCST Expression EXPRESSION where
         next = tabs + 1
         (ts', rs) = withoutRhosInPrimitives ex ts
         obj = ExApplication ex (head' ts')
-     in if length ts' == 1 && isJust (matchDataObject obj) && sweetCollapsible obj
+     in if length ts' == 1 && dataPrimitive obj && sweetCollapsible obj
           then applicationToPrimitive obj tabs rs
           else
             if null exs
@@ -389,6 +388,10 @@ instance ToCST Expression EXPRESSION where
     where
       primitives :: [T.Text]
       primitives = ["number", "string"]
+      dataPrimitive :: Expression -> Bool
+      dataPrimitive obj' = case matchDataObject obj' of
+        Just (label, _) -> label `elem` primitives
+        Nothing -> False
       withoutRhosInPrimitives :: Expression -> [Argument] -> ([Argument], [Argument])
       withoutRhosInPrimitives _ [] = ([], [])
       withoutRhosInPrimitives obj@(BaseObject label) bds@(rho@(ArTau AtRho _) : rest)
