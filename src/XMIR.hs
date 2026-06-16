@@ -102,7 +102,7 @@ expression (ExDispatch expr attr) ctx = do
 expression (DataNumber bytes) XmirContext{..} =
   let bts =
         object
-          [("as", printAttribute (AtAlpha 0)), ("base", "Φ.bytes")]
+          [("as", printAlpha (Alpha 0)), ("base", "Φ.bytes")]
           [object [] [NodeContent (T.pack (printBytes bytes))]]
    in pure
         ( "Φ.number"
@@ -116,7 +116,7 @@ expression (DataNumber bytes) XmirContext{..} =
 expression (DataString bytes) XmirContext{..} =
   let bts =
         object
-          [("as", printAttribute (AtAlpha 0)), ("base", "Φ.bytes")]
+          [("as", printAlpha (Alpha 0)), ("base", "Φ.bytes")]
           [object [] [NodeContent (T.pack (printBytes bytes))]]
    in pure
         ( "Φ.string"
@@ -127,16 +127,18 @@ expression (DataString bytes) XmirContext{..} =
               , bts
               ]
         )
-expression (ExApplication expr (BiTau attr texpr)) ctx = do
+expression (ExApplication expr arg) ctx = do
   (base, children) <- expression expr ctx
   (base', children') <- expression texpr ctx
-  let as = printAttribute attr
-      attrs =
+  let attrs =
         if null base'
           then [("as", as)]
           else [("as", as), ("base", base')]
   pure (base, children ++ [object attrs children'])
-expression (ExApplication (ExFormation bds) tau) _ = throwIO (UnsupportedExpression (ExApplication (ExFormation bds) tau))
+  where
+    (as, texpr) = case arg of
+      ArTau attr e -> (printAttribute attr, e)
+      ArAlpha al e -> (printAlpha al, e)
 expression expr _ = throwIO (UnsupportedExpression expr)
 
 formationBinding :: Binding -> XmirContext -> IO (Maybe Node)
@@ -151,7 +153,7 @@ formationBinding (BiTau AtPhi expr) ctx = do
   pure (Just (object [("name", show AtPhi), ("base", base)] children))
 formationBinding (BiTau AtRho _) _ = pure Nothing
 formationBinding (BiDelta bytes) _ = pure (Just (NodeContent (T.pack (printBytes bytes))))
-formationBinding (BiLambda _) _ = pure (Just (object [("name", show AtLambda)] []))
+formationBinding (BiLambda _) _ = pure (Just (object [("name", show AsLambda)] []))
 formationBinding (BiVoid AtRho) _ = pure Nothing
 formationBinding (BiVoid AtPhi) _ = pure (Just (object [("name", show AtPhi), ("base", "∅")] []))
 formationBinding (BiVoid (AtLabel label)) _ = pure (Just (object [("name", T.unpack label), ("base", "∅")] []))
@@ -205,13 +207,13 @@ programToXMIR prog@(Program expr@(ExFormation [BiTau (AtLabel _) arg, BiVoid AtR
     -- - X: list of package parts
     -- - Y: root object expression
     getPackage :: Expression -> IO ([String], Expression)
-    getPackage (ExFormation [BiTau (AtLabel label) (ExFormation [bd, BiLambda "Package", BiVoid AtRho]), BiVoid AtRho]) = do
-      (pckg, expr') <- getPackage (ExFormation [bd, BiLambda "Package", BiVoid AtRho])
+    getPackage (ExFormation [BiTau (AtLabel label) (ExFormation [bd, BiLambda (Function "Package"), BiVoid AtRho]), BiVoid AtRho]) = do
+      (pckg, expr') <- getPackage (ExFormation [bd, BiLambda (Function "Package"), BiVoid AtRho])
       pure (T.unpack label : pckg, expr')
-    getPackage (ExFormation [BiTau (AtLabel label) (ExFormation [bd, BiLambda "Package", BiVoid AtRho]), BiLambda "Package", BiVoid AtRho]) = do
-      (pckg, expr') <- getPackage (ExFormation [bd, BiLambda "Package", BiVoid AtRho])
+    getPackage (ExFormation [BiTau (AtLabel label) (ExFormation [bd, BiLambda (Function "Package"), BiVoid AtRho]), BiLambda (Function "Package"), BiVoid AtRho]) = do
+      (pckg, expr') <- getPackage (ExFormation [bd, BiLambda (Function "Package"), BiVoid AtRho])
       pure (T.unpack label : pckg, expr')
-    getPackage (ExFormation [BiTau at ex, BiLambda "Package", BiVoid AtRho]) = pure ([], ExFormation [BiTau at ex, BiVoid AtRho])
+    getPackage (ExFormation [BiTau at ex, BiLambda (Function "Package"), BiVoid AtRho]) = pure ([], ExFormation [BiTau at ex, BiVoid AtRho])
     getPackage (ExFormation [bd, BiVoid AtRho]) = pure ([], ExFormation [bd, BiVoid AtRho])
     getPackage ex = throwIO (userError (printf "Can't extract package from given expression:\n %s" (printExpression ex)))
     -- Convert root Expression to Node
@@ -378,7 +380,7 @@ xmirToPhi xmir =
               if null pckg
                 then pure (Program (ExFormation [obj, BiVoid AtRho]))
                 else
-                  let bd = foldr (\part acc -> BiTau (AtLabel (T.pack part)) (ExFormation [acc, BiLambda "Package", BiVoid AtRho])) obj pckg
+                  let bd = foldr (\part acc -> BiTau (AtLabel (T.pack part)) (ExFormation [acc, BiLambda (Function "Package"), BiVoid AtRho])) obj pckg
                    in pure (Program (ExFormation [bd, BiVoid AtRho]))
           | otherwise -> throwIO (InvalidXMIRFormat "Expected single <object> element" doc)
         _ -> throwIO (InvalidXMIRFormat "NodeElement is expected as root element" doc)
@@ -390,7 +392,7 @@ xmirToFormationBinding cur fqn
       name <- getAttr "name" cur
       bds <- mapM (`xmirToFormationBinding` (name : fqn)) (cur C.$/ C.element (toName "o")) >>= uniqueBindings'
       case name of
-        "λ" -> pure (BiLambda (T.pack (intercalate "_" ("L" : reverse fqn))))
+        "λ" -> pure (BiLambda (Function (T.pack (intercalate "_" ("L" : reverse fqn)))))
         ('α' : _) -> throwIO (InvalidXMIRFormat "Formation child @name can't start with α" cur)
         "φ" -> pure (BiTau AtPhi (ExFormation (withVoidRho bds)))
         _ -> pure (BiTau (AtLabel (T.pack name)) (ExFormation (withVoidRho bds)))
@@ -462,35 +464,37 @@ xmirToApplication = xmirToApplication' 0
             | hasAttr "base" arg && hasText arg = throwIO (InvalidXMIRFormat "It's illegal in XMIR to have @base and text() at the same time" arg)
             | not (hasAttr "base" arg) && not (hasText arg) = do
                 bds <- mapM (`xmirToFormationBinding` fqn) (arg C.$/ C.element (toName "o"))
-                as <- asToAttr arg idx
-                pure (ExApplication expr (BiTau as (ExFormation (withVoidRho bds))))
+                key <- asToKey arg idx
+                pure (ExApplication expr (mkArg key (ExFormation (withVoidRho bds))))
             | not (hasAttr "base" arg) && hasText arg = do
-                as <- asToAttr arg idx
+                key <- asToKey arg idx
                 bytes <- getText arg
-                pure (ExApplication expr (BiTau as (ExFormation [BiDelta (bytesToBts bytes), BiVoid AtRho])))
+                pure (ExApplication expr (mkArg key (ExFormation [BiDelta (bytesToBts bytes), BiVoid AtRho])))
             | otherwise = do
-                as <- asToAttr arg idx
+                key <- asToKey arg idx
                 arg' <- xmirToExpression arg fqn
-                pure (ExApplication expr (BiTau as arg'))
+                pure (ExApplication expr (mkArg key arg'))
       app' <- app
       xmirToApplication' (idx + 1) app' args fqn
 
-    asToAttr :: C.Cursor -> Int -> IO Attribute
-    asToAttr cur idx
+    mkArg :: Either Alpha Attribute -> Expression -> Argument
+    mkArg (Left a) e = ArAlpha a e
+    mkArg (Right at) e = ArTau at e
+
+    asToKey :: C.Cursor -> Int -> IO (Either Alpha Attribute)
+    asToKey cur idx
       | hasAttr "as" cur = do
           as <- getAttr "as" cur
-          attr <- toAttr as cur
-          case attr of
-            AtRho -> throwIO (InvalidXMIRFormat "The 'ρ' in @as attribute is illegal in XMIR" cur)
-            _ -> pure attr
-      | otherwise = pure (AtAlpha idx)
+          case as of
+            'α' : rest' -> case TR.readMaybe rest' :: Maybe Int of
+              Just i -> pure (Left (Alpha i))
+              Nothing -> throwIO (InvalidXMIRFormat "The attribute started with 'α' must be followed by integer" cur)
+            "ρ" -> throwIO (InvalidXMIRFormat "The 'ρ' in @as attribute is illegal in XMIR" cur)
+            _ -> Right <$> toAttr as cur
+      | otherwise = pure (Left (Alpha idx))
 
 toAttr :: String -> C.Cursor -> IO Attribute
 toAttr attr cur = case attr of
-  'α' : rest' ->
-    case TR.readMaybe rest' :: Maybe Int of
-      Just idx -> pure (AtAlpha idx)
-      Nothing -> throwIO (InvalidXMIRFormat "The attribute started with 'α' must be followed by integer" cur)
   "φ" -> pure AtPhi
   "ρ" -> pure AtRho
   ch : _

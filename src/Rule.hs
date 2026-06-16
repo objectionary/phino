@@ -106,17 +106,8 @@ _in attr binding subst _ =
         attrInBinding :: Attribute -> Binding -> Bool
         attrInBinding attr (BiTau battr _) = attr == battr
         attrInBinding attr (BiVoid battr) = attr == battr
-        attrInBinding AtLambda (BiLambda _) = True
-        attrInBinding AtDelta (BiDelta _) = True
         attrInBinding _ _ = False
     attrInBindings _ _ = False
-
-_alpha :: Attribute -> Subst -> RuleContext -> IO [Subst]
-_alpha (AtAlpha _) subst _ = pure [subst]
-_alpha (AtMeta name) (Subst mp) _ = case M.lookup name mp of
-  Just (MvAttribute (AtAlpha _)) -> pure [Subst mp]
-  _ -> pure []
-_alpha _ _ _ = pure []
 
 _eq :: Y.Comparable -> Y.Comparable -> Subst -> RuleContext -> IO [Subst]
 _eq (Y.CmpNum left) (Y.CmpNum right) subst _ = case (numToInt left subst, numToInt right subst) of
@@ -125,10 +116,10 @@ _eq (Y.CmpNum left) (Y.CmpNum right) subst _ = case (numToInt left subst, numToI
   where
     -- Convert Number to Int
     numToInt :: Y.Number -> Subst -> Maybe Int
-    numToInt (Y.Index (AtMeta meta)) (Subst mp) = case M.lookup meta mp of
-      Just (MvAttribute (AtAlpha idx)) -> Just idx
+    numToInt (Y.Index (AlMeta meta)) (Subst mp) = case M.lookup meta mp of
+      Just (MvAlpha (Alpha idx)) -> Just idx
       _ -> Nothing
-    numToInt (Y.Index (AtAlpha idx)) _ = Just idx
+    numToInt (Y.Index (Alpha idx)) _ = Just idx
     numToInt (Y.Length (BiMeta meta)) (Subst mp) = case M.lookup meta mp of
       Just (MvBindings bds) -> Just (length bds)
       _ -> Nothing
@@ -139,7 +130,6 @@ _eq (Y.CmpNum left) (Y.CmpNum right) subst _ = case (numToInt left subst, numToI
     numToInt _ _ = Nothing
     notAsset (BiDelta _) = False
     notAsset (BiLambda _) = False
-    notAsset (BiMetaLambda _) = False
     notAsset _ = True
 _eq (Y.CmpAttr left) (Y.CmpAttr right) subst _ = pure [subst | compareAttrs left right subst]
   where
@@ -190,7 +180,8 @@ _absolute expr subst _ = pure [subst | xiFree expr]
     xiFree :: Expression -> Bool
     xiFree (ExFormation _) = True
     xiFree ExRoot = True
-    xiFree (ExApplication e (BiTau _ te)) = xiFree e && xiFree te
+    xiFree (ExApplication e (ArTau _ te)) = xiFree e && xiFree te
+    xiFree (ExApplication e (ArAlpha _ te)) = xiFree e && xiFree te
     xiFree (ExDispatch e _) = xiFree e
     xiFree _ = False
 
@@ -238,9 +229,6 @@ _disjoint attrs bindings subst _ =
     presentInBinding :: Attribute -> Binding -> Bool
     presentInBinding attr (BiTau battr _) = attr == battr
     presentInBinding attr (BiVoid battr) = attr == battr
-    presentInBinding AtLambda (BiLambda _) = True
-    presentInBinding AtLambda (BiMetaLambda _) = True
-    presentInBinding AtDelta (BiDelta _) = True
     presentInBinding _ _ = False
 
 meetCondition' :: Y.Condition -> Subst -> RuleContext -> IO [Subst]
@@ -248,7 +236,6 @@ meetCondition' (Y.Or conds) = _or conds
 meetCondition' (Y.And conds) = _and conds
 meetCondition' (Y.Not cond) = _not cond
 meetCondition' (Y.In attr binding) = _in attr binding
-meetCondition' (Y.Alpha attr) = _alpha attr
 meetCondition' (Y.Eq left right) = _eq left right
 meetCondition' (Y.NF expr) = _nf expr
 meetCondition' (Y.Absolute expr) = _absolute expr
@@ -333,7 +320,7 @@ metaNamesWithPrefix prefix = nub . go
       | T.isPrefixOf prefix mt = [mt]
       | otherwise = []
     go (ExFormation bds) = concatMap goBinding bds
-    go (ExApplication e bd) = go e ++ goBinding bd
+    go (ExApplication e arg) = go e ++ goArgument arg
     go (ExDispatch e _) = go e
     go (ExMetaTail e _) = go e
     go (ExPhiMeet _ _ e) = go e
@@ -342,6 +329,9 @@ metaNamesWithPrefix prefix = nub . go
     goBinding :: Binding -> [T.Text]
     goBinding (BiTau _ e) = go e
     goBinding _ = []
+    goArgument :: Argument -> [T.Text]
+    goArgument (ArTau _ e) = go e
+    goArgument (ArAlpha _ e) = go e
 
 nfMetaNames :: Expression -> [T.Text]
 nfMetaNames = metaNamesWithPrefix "n"

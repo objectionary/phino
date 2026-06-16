@@ -52,7 +52,7 @@ formation :: [Binding] -> DataizeContext -> IO (Maybe Expression)
 formation bds ctx = do
   let (lambda, bds') = maybeLambda bds
   case lambda of
-    Just (BiLambda func) -> Just <$> atom func (ExFormation bds') ctx
+    Just (BiLambda (Function func)) -> Just <$> atom func (ExFormation bds') ctx
     _ -> pure Nothing
   where
     maybeLambda :: [Binding] -> (Maybe Binding, [Binding])

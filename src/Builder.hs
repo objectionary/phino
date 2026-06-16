@@ -24,7 +24,6 @@ where
 
 import AST
 import Control.Exception (Exception, throwIO)
-import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.Map.Strict as Map
 import Data.Text (Text)
 import qualified Data.Text as T
@@ -57,8 +56,11 @@ contextualize ExXi ex = ex
 contextualize ExTermination _ = ExTermination
 contextualize (ExFormation bds) _ = ExFormation bds
 contextualize (ExDispatch ex at) context = ExDispatch (contextualize ex context) at
-contextualize (ExApplication ex (BiTau at bexpr)) context =
-  ExApplication (contextualize ex context) (BiTau at (contextualize bexpr context))
+contextualize (ExApplication ex arg) context =
+  ExApplication (contextualize ex context) (contextualizeArg arg)
+  where
+    contextualizeArg (ArTau at bexpr) = ArTau at (contextualize bexpr context)
+    contextualizeArg (ArAlpha al bexpr) = ArAlpha al (contextualize bexpr context)
 contextualize ex _ = ex
 
 buildAttribute :: Attribute -> Subst -> Built Attribute
@@ -66,6 +68,12 @@ buildAttribute (AtMeta meta) (Subst mp) = case Map.lookup meta mp of
   Just (MvAttribute attr) -> Right attr
   _ -> Left (metaMsg meta)
 buildAttribute attr _ = Right attr
+
+buildAlpha :: Alpha -> Subst -> Built Alpha
+buildAlpha (AlMeta meta) (Subst mp) = case Map.lookup meta mp of
+  Just (MvAlpha a) -> Right a
+  _ -> Left (metaMsg meta)
+buildAlpha a _ = Right a
 
 buildBytes :: Bytes -> Subst -> Built Bytes
 buildBytes (BtMeta meta) (Subst mp) = case Map.lookup meta mp of
@@ -90,10 +98,20 @@ buildBinding (BiMeta meta) (Subst mp) = case Map.lookup meta mp of
 buildBinding (BiDelta bytes) subst = do
   bts <- buildBytes bytes subst
   Right [BiDelta bts]
-buildBinding (BiMetaLambda meta) (Subst mp) = case Map.lookup meta mp of
-  Just (MvFunction func) -> Right [BiLambda func]
+buildBinding (BiLambda (FnMeta meta)) (Subst mp) = case Map.lookup meta mp of
+  Just (MvFunction func) -> Right [BiLambda (Function func)]
   _ -> Left (metaMsg meta)
 buildBinding binding _ = Right [binding]
+
+buildArgument :: Argument -> Subst -> Built Argument
+buildArgument (ArTau attr expr) subst = do
+  attribute <- buildAttribute attr subst
+  expression <- buildExpression expr subst
+  Right (ArTau attribute expression)
+buildArgument (ArAlpha alpha expr) subst = do
+  alpha' <- buildAlpha alpha subst
+  expression <- buildExpression expr subst
+  Right (ArAlpha alpha' expression)
 
 -- Build bindings that may contain meta binding (BiMeta)
 buildBindings :: [Binding] -> Subst -> Built [Binding]
@@ -106,7 +124,7 @@ buildBindings (bd : rest) subst = do
 buildExpressionWithTails :: Expression -> [Tail] -> Subst -> Expression
 buildExpressionWithTails expr [] _ = expr
 buildExpressionWithTails ex (tl : rest) subst = case tl of
-  TaApplication taus -> buildExpressionWithTails (ExApplication ex taus) rest subst
+  TaApplication arg -> buildExpressionWithTails (ExApplication ex arg) rest subst
   TaDispatch at -> buildExpressionWithTails (ExDispatch ex at) rest subst
 
 -- Build meta expression with given substitution
@@ -115,14 +133,10 @@ buildExpression (ExDispatch ex at) subst = do
   dispatched <- buildExpression ex subst
   at' <- buildAttribute at subst
   Right (ExDispatch dispatched at')
-buildExpression (ExApplication expr (BiTau battr bexpr)) subst = do
+buildExpression (ExApplication expr arg) subst = do
   applied <- buildExpression expr subst
-  bd :| _ <- nonEmpty' =<< buildBinding (BiTau battr bexpr) subst
-  Right (ExApplication applied bd)
-  where
-    nonEmpty' :: [a] -> Built (NonEmpty a)
-    nonEmpty' [] = Left ""
-    nonEmpty' (x : xs) = Right (x :| xs)
+  arg' <- buildArgument arg subst
+  Right (ExApplication applied arg')
 buildExpression (ExFormation bds) subst = do
   bds' <- buildBindings bds subst >>= uniqueBindings
   Right (ExFormation bds')

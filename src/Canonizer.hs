@@ -12,9 +12,9 @@ import Rewriter (Rewritten)
 
 canonizeBindings :: [Binding] -> Int -> ([Binding], Int)
 canonizeBindings [] idx = ([], idx)
-canonizeBindings ((BiLambda _) : rest) idx =
+canonizeBindings ((BiLambda (Function _)) : rest) idx =
   let (bds', idx') = canonizeBindings rest (idx + 1)
-   in (BiLambda (T.pack ('F' : show idx)) : bds', idx')
+   in (BiLambda (Function (T.pack ('F' : show idx))) : bds', idx')
 canonizeBindings (BiTau attr expr : rest) idx =
   let (expr', idx') = canonizeExpression expr idx
       (bds', idx'') = canonizeBindings rest idx'
@@ -30,11 +30,19 @@ canonizeExpression (ExFormation bds) idx =
 canonizeExpression (ExDispatch expr attr) idx =
   let (expr', idx') = canonizeExpression expr idx
    in (ExDispatch expr' attr, idx')
-canonizeExpression (ExApplication expr (BiTau attr arg)) idx =
+canonizeExpression (ExApplication expr arg) idx =
   let (expr', idx') = canonizeExpression expr idx
-      (arg', idx'') = canonizeExpression arg idx'
-   in (ExApplication expr' (BiTau attr arg'), idx'')
+      (arg', idx'') = canonizeArgument arg idx'
+   in (ExApplication expr' arg', idx'')
 canonizeExpression expr idx = (expr, idx)
+
+canonizeArgument :: Argument -> Int -> (Argument, Int)
+canonizeArgument (ArTau attr expr) idx =
+  let (expr', idx') = canonizeExpression expr idx
+   in (ArTau attr expr', idx')
+canonizeArgument (ArAlpha alpha expr) idx =
+  let (expr', idx') = canonizeExpression expr idx
+   in (ArAlpha alpha expr', idx')
 
 canonize :: [Rewritten] -> [Rewritten]
 canonize [] = []
