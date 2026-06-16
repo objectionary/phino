@@ -1024,7 +1024,7 @@ spec = do
             , "  { \\mathbb{M}( e * t ) }"
             , "  { }"
             , "  { where $ e \\coloneqq lambda( [[ B_1, L> F, B_2 ]] ) $ }"
-            , "\\trrule{phi}"
+            , "\\trrule{root}"
             , "  { \\mathbb{M}( Q . \\tau * t ) }"
             , "  { \\mathbb{M}( e * t ) }"
             , "  { }"

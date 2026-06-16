@@ -65,7 +65,7 @@ formation bds ctx = do
             [bd] -> (Just bd, rest)
             _ -> (Nothing, bds)
 
--- Resolve dispatch from global object (Q.tau) for PHI Morphing rule.
+-- Resolve dispatch from global object (Q.tau) for ROOT Morphing rule.
 -- Here tau is the name of the attribute which is taken from Q
 -- and expr is expression which program refers to.
 -- If Q refers to formation which contains binding with attribute == tau -

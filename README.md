@@ -243,7 +243,7 @@ $ phino explain --morph
   { if $ e \in \mathcal{P} $ }
   { }
 ...
-\trrule{phi}
+\trrule{root}
   { \mathbb{M}( Q . \tau * t ) }
   { \mathbb{M}( e * t ) }
   { }

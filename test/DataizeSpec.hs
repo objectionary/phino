@@ -144,6 +144,15 @@ spec = do
         (null orphans)
         (expectationFailure ("Dataization emitted step labels with no defining rule or operation: " ++ show orphans))
 
+  describe "names every rule uniquely across rule sets" $
+    it "shares no rule name between morphing, dataization and normalization" $ do
+      let names =
+            map (.name) Yaml.morphingRules
+              ++ map (.name) Yaml.dataizationRules
+              ++ map (.name) Yaml.normalizationRules
+          clashes = nub (filter (\n -> length (filter (== n) names) > 1) names)
+      clashes `shouldBe` []
+
   describe "preserves the reduction label sequence" $ do
     let labelsOf loc src = do
           prog <- parseProgramThrows src
@@ -157,7 +166,7 @@ spec = do
           "Q -> [[ bytes(data) -> [[ @ -> $.data ]], number(as-bytes) -> [[ @ -> $.as-bytes, plus(x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6) ]]"
       labels
         `shouldBe` [ "contextualize"
-                   , "phi"
+                   , "root"
                    , "alpha"
                    , "copy"
                    , "dot"
@@ -165,13 +174,13 @@ spec = do
                    , "alpha"
                    , "copy"
                    , "lambda"
-                   , "phi"
+                   , "root"
                    , "alpha"
                    , "copy"
                    , "prim"
                    , "contextualize"
                    , "dot"
-                   , "phi"
+                   , "root"
                    , "alpha"
                    , "copy"
                    , "copy"
@@ -183,7 +192,7 @@ spec = do
                    ]
     it "dataizes a located reference through the expected rules" $ do
       labels <- labelsOf "Q.foo.bar" "Q -> [[ foo -> [[ bar -> [[ @ -> Q.x ]] ]], x -> [[ D> 42- ]] ]]"
-      labels `shouldBe` ["contextualize", "phi", "prim"]
+      labels `shouldBe` ["contextualize", "root", "prim"]
 
   testDataize
     [

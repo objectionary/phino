@@ -29,7 +29,7 @@
   then:
     morph: '𝑒 * !t'
 
-- name: phi
+- name: root
   description: '𝕄(Φ.τ * t) ⟿ 𝕄(e * t) if Φ ↦ ⟦𝐵1, τ ↦ e, 𝐵2⟧'
   match: 'Φ.𝜏 * !t'
   where:
