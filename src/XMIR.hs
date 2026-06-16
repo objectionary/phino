@@ -476,11 +476,9 @@ xmirToApplication = xmirToApplication' 0
                 pure (ExApplication expr (mkArg key arg'))
       app' <- app
       xmirToApplication' (idx + 1) app' args fqn
-
     mkArg :: Either Alpha Attribute -> Expression -> Argument
     mkArg (Left alpha) expr = ArAlpha alpha expr
     mkArg (Right attr) expr = ArTau attr expr
-
     asToKey :: C.Cursor -> Int -> IO (Either Alpha Attribute)
     asToKey cur idx
       | hasAttr "as" cur = do
