@@ -300,14 +300,6 @@ exMetaHead mt
   | T.isPrefixOf "p" mt = P
   | otherwise = E
 
--- The first character of an attribute meta name encodes its kind:
--- 'h'-prefixed names are alpha-constrained '𝜂' metas, everything else is an
--- ordinary '𝜏' meta.
-attrMetaHead :: T.Text -> META_HEAD
-attrMetaHead mt
-  | T.isPrefixOf "h" mt = ETA
-  | otherwise = TAU
-
 -- This class is used to convert AST to CST
 -- CST is created with sugar and unicode
 -- All further transformations must consider that
@@ -508,7 +500,8 @@ instance ToCST Attribute ATTRIBUTE where
   toCST AtRho _ = AT_RHO RHO
   toCST AtDelta _ = AT_DELTA DELTA
   toCST AtLambda _ = AT_LAMBDA LAMBDA
-  toCST (AtMeta mt) _ = AT_META (META NO_EXCL (attrMetaHead mt) (metaTail mt))
+  toCST (AtMeta mt) _ = AT_META (META NO_EXCL TAU (metaTail mt))
+  toCST (AtMetaAlpha mt) _ = AT_META (META NO_EXCL ETA (metaTail mt))
 
 instance ToCST Y.Condition CONDITION where
   toCST (Y.Not (Y.In attr binding)) _ = CO_BELONGS (attributeToCST attr) NOT_IN (ST_BINDING (bindingsToCST [binding]))

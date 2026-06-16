@@ -65,9 +65,8 @@ combineMany :: [Subst] -> [Subst] -> [Subst]
 combineMany xs xy = catMaybes [combine x y | x <- xs, y <- xy]
 
 matchAttribute :: Attribute -> Attribute -> [Subst]
-matchAttribute (AtMeta meta) tgt
-  | "h" `isPrefixOf` meta = [substSingle meta (MvAttribute tgt) | alpha tgt]
-  | otherwise = [substSingle meta (MvAttribute tgt) | not (alpha tgt)]
+matchAttribute (AtMeta meta) tgt = [substSingle meta (MvAttribute tgt) | not (alpha tgt)]
+matchAttribute (AtMetaAlpha meta) tgt = [substSingle meta (MvAttribute tgt) | alpha tgt]
 matchAttribute ptn tgt
   | ptn == tgt = [substEmpty]
   | otherwise = []

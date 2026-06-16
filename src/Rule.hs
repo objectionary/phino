@@ -113,9 +113,10 @@ _in attr binding subst _ =
 
 _alpha :: Attribute -> Subst -> RuleContext -> IO [Subst]
 _alpha (AtAlpha _) subst _ = pure [subst]
-_alpha (AtMeta name) (Subst mp) _ = case M.lookup name mp of
-  Just (MvAttribute (AtAlpha _)) -> pure [Subst mp]
-  _ -> pure []
+_alpha attr (Subst mp) _
+  | Just name <- metaName attr = case M.lookup name mp of
+      Just (MvAttribute (AtAlpha _)) -> pure [Subst mp]
+      _ -> pure []
 _alpha _ _ _ = pure []
 
 _eq :: Y.Comparable -> Y.Comparable -> Subst -> RuleContext -> IO [Subst]
@@ -125,10 +126,11 @@ _eq (Y.CmpNum left) (Y.CmpNum right) subst _ = case (numToInt left subst, numToI
   where
     -- Convert Number to Int
     numToInt :: Y.Number -> Subst -> Maybe Int
-    numToInt (Y.Index (AtMeta meta)) (Subst mp) = case M.lookup meta mp of
-      Just (MvAttribute (AtAlpha idx)) -> Just idx
-      _ -> Nothing
     numToInt (Y.Index (AtAlpha idx)) _ = Just idx
+    numToInt (Y.Index attr) (Subst mp)
+      | Just meta <- metaName attr = case M.lookup meta mp of
+          Just (MvAttribute (AtAlpha idx)) -> Just idx
+          _ -> Nothing
     numToInt (Y.Length (BiMeta meta)) (Subst mp) = case M.lookup meta mp of
       Just (MvBindings bds) -> Just (length bds)
       _ -> Nothing
@@ -144,16 +146,19 @@ _eq (Y.CmpNum left) (Y.CmpNum right) subst _ = case (numToInt left subst, numToI
 _eq (Y.CmpAttr left) (Y.CmpAttr right) subst _ = pure [subst | compareAttrs left right subst]
   where
     compareAttrs :: Attribute -> Attribute -> Subst -> Bool
-    compareAttrs (AtMeta left) (AtMeta right) (Subst mp) = case (M.lookup left mp, M.lookup right mp) of
-      (Just (MvAttribute left'), Just (MvAttribute right')) -> compareAttrs left' right' (Subst mp)
-      _ -> False
-    compareAttrs attr (AtMeta meta) (Subst mp) = case M.lookup meta mp of
-      Just (MvAttribute found) -> attr == found
-      _ -> False
-    compareAttrs (AtMeta meta) attr (Subst mp) = case M.lookup meta mp of
-      Just (MvAttribute found) -> attr == found
-      _ -> False
-    compareAttrs left right _ = right == left
+    compareAttrs left right (Subst mp)
+      | Just l <- metaName left
+      , Just r <- metaName right =
+          case (M.lookup l mp, M.lookup r mp) of
+            (Just (MvAttribute left'), Just (MvAttribute right')) -> compareAttrs left' right' (Subst mp)
+            _ -> False
+      | Just r <- metaName right = case M.lookup r mp of
+          Just (MvAttribute found) -> left == found
+          _ -> False
+      | Just l <- metaName left = case M.lookup l mp of
+          Just (MvAttribute found) -> right == found
+          _ -> False
+      | otherwise = right == left
 _eq (Y.CmpExpr left) (Y.CmpExpr right) subst _ = pure [subst | compareExprs left right subst]
   where
     compareExprs :: Expression -> Expression -> Subst -> Bool
@@ -290,7 +295,7 @@ extraSubstitutions substs extras RuleContext{..} = case extras of
                 Just subst' -> do
                   let maybeName = case Y.meta extra of
                         Y.ArgExpression (ExMeta name) -> Just name
-                        Y.ArgAttribute (AtMeta name) -> Just name
+                        Y.ArgAttribute attr | Just name <- metaName attr -> Just name
                         Y.ArgBinding (BiMeta name) -> Just name
                         Y.ArgBytes (BtMeta name) -> Just name
                         _ -> Nothing

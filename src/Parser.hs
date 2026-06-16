@@ -337,7 +337,7 @@ fullAttribute :: Parser Attribute
 fullAttribute =
   choice
     [ try attribute
-    , AtMeta <$> meta' 'h' "𝜂"
+    , AtMetaAlpha <$> meta' 'h' "𝜂"
     , do
         _ <- choice [symbol "~", symbol "α"]
         AtAlpha <$> lexeme L.decimal

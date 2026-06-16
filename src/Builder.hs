@@ -62,9 +62,10 @@ contextualize (ExApplication ex (BiTau at bexpr)) context =
 contextualize ex _ = ex
 
 buildAttribute :: Attribute -> Subst -> Built Attribute
-buildAttribute (AtMeta meta) (Subst mp) = case Map.lookup meta mp of
-  Just (MvAttribute attr) -> Right attr
-  _ -> Left (metaMsg meta)
+buildAttribute attr (Subst mp)
+  | Just meta <- metaName attr = case Map.lookup meta mp of
+      Just (MvAttribute found) -> Right found
+      _ -> Left (metaMsg meta)
 buildAttribute attr _ = Right attr
 
 buildBytes :: Bytes -> Subst -> Built Bytes

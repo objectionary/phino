@@ -53,6 +53,7 @@ data Attribute
   | AtLambda
   | AtDelta
   | AtMeta Text
+  | AtMetaAlpha Text
   deriving (Eq, Generic, Ord)
 
 instance Show Attribute where
@@ -63,6 +64,7 @@ instance Show Attribute where
   show AtDelta = "Δ"
   show AtLambda = "λ"
   show (AtMeta meta) = '!' : T.unpack meta
+  show (AtMetaAlpha meta) = '!' : T.unpack meta
 
 -- A cheap, fixed-size digest of an expression, used for fast (dirty) equality
 -- checks during loop detection. Equal expressions always produce the same
@@ -127,6 +129,7 @@ hashExpression = goExpr fnvOffset
       AtLambda -> step h 25
       AtDelta -> step h 26
       AtMeta t -> hashText (step h 27) t
+      AtMetaAlpha t -> hashText (step h 28) t
 
 -- A primitive is the termination ⊥ or a formation without a λ binding.
 primitive :: Expression -> Bool
@@ -143,6 +146,13 @@ primitive _ = False
 alpha :: Attribute -> Bool
 alpha (AtAlpha _) = True
 alpha _ = False
+
+-- The name of a meta-variable attribute — the ordinary 𝜏 meta or its
+-- alpha-only variant 𝜂 — or nothing for a concrete attribute.
+metaName :: Attribute -> Maybe Text
+metaName (AtMeta name) = Just name
+metaName (AtMetaAlpha name) = Just name
+metaName _ = Nothing
 
 countNodes :: Expression -> Int
 countNodes (ExFormation bds) = 1 + sum (map nodesInBinding bds) + length bds
