@@ -1,6 +1,10 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 # SPDX-License-Identifier: MIT
 ---
+# The application of a formation is a copy-redex, so '!e' is not in normal
+# form. Absolute means ξ-free and in normal form, so the condition must not
+# hold here.
+failure: true
 expression: '[[ x -> [[ y -> ? ]](y -> Q.z) ]]'
 pattern: '[[ x -> !e ]]'
 condition:

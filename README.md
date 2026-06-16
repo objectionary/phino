@@ -298,13 +298,13 @@ Condition:
   | nf: Expression'      # returns True if given expression in normal form
                          # which means that no more other normalization rules
                          # can be applied
-  | absolute: Expression' # returns True if given expression is absolute in
-                         # structure: it is Φ, a formation, a dispatch with an
-                         # absolute subject, or an application with an absolute
-                         # subject and argument (equivalently, no ξ leaks
-                         # outside of a formation). Combined with a normal-form
-                         # check by the '𝑘'/'!k' meta variable, which ranges
-                         # over the absolute expressions 𝒦 ⊆ 𝒩, used by Rcopy.
+  | absolute: Expression' # returns True if given expression is absolute, i.e.
+                         # ξ-free and in normal form: it is Φ, a formation, a
+                         # dispatch with a ξ-free subject, or an application with
+                         # a ξ-free subject and argument (no ξ leaks outside of a
+                         # formation) and it is in normal form. Ranges over the
+                         # absolute expressions 𝒦 ⊆ 𝒩; used by the '𝑘'/'!k' meta
+                         # variable and the Rcopy rule.
   | matches:             # returns True if given expression after dataization
       - String           # matches to given regex
       - Expression
@@ -382,10 +382,10 @@ This is the list of supported meta variables:
 * `!n` || `𝑛` - any expression that is already in normal form (behaves like
                 `!e`/`𝑒`, but only binds a sub-expression in NF, so no explicit
                 `nf:` guard is needed)
-* `!k` || `𝑘` - any expression that is absolute, i.e. absolute in structure
-                and in normal form (ranges over `𝒦 ⊆ 𝒩`); behaves like
-                `!e`/`𝑒` but only binds an absolute sub-expression, so no
-                explicit `absolute:` or `nf:` guard is needed
+* `!k` || `𝑘` - any expression that is absolute, i.e. ξ-free and in normal
+                form (ranges over `𝒦 ⊆ 𝒩`); behaves like `!e`/`𝑒` but only
+                binds an absolute sub-expression, so no explicit `absolute:`
+                or `nf:` guard is needed
 * `!B` || `𝐵` - list of bindings
 * `!d` || `δ` - bytes in meta delta binding
 * `!t` - tail after expression, a possibly empty sequence of applications

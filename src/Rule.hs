@@ -175,17 +175,16 @@ _nf (ExMeta meta) (Subst mp) ctx = case M.lookup meta mp of
   _ -> pure []
 _nf expr subst ctx = pure [subst | isNF expr ctx]
 
--- Checks the structural part of absoluteness, the ξ-free property: an
--- expression is ξ-free when it is Φ, a formation, a dispatch with a ξ-free
+-- An expression is absolute (it ranges over 𝒦 ⊆ 𝒩) when it is ξ-free and in
+-- normal form. It is ξ-free when it is Φ, a formation, a dispatch with a ξ-free
 -- subject, or an application with a ξ-free subject and argument (equivalently,
--- no ξ leaks outside of a formation). It does not enforce normal form on its
--- own; the '𝑘' meta-variable combines this structural check (applied first,
--- since it is cheap) with the normal-form check, so that 𝒦 ⊆ 𝒩.
+-- no ξ leaks outside of a formation). The ξ-free check is cheap, so it runs
+-- before the normal-form check.
 _absolute :: Expression -> Subst -> RuleContext -> IO [Subst]
 _absolute (ExMeta meta) (Subst mp) ctx = case M.lookup meta mp of
   Just (MvExpression expr) -> _absolute expr (Subst mp) ctx
   _ -> pure []
-_absolute expr subst _ = pure [subst | xiFree expr]
+_absolute expr subst ctx = pure [subst | xiFree expr && isNF expr ctx]
   where
     xiFree :: Expression -> Bool
     xiFree (ExFormation _) = True
@@ -379,10 +378,10 @@ matchExpressionBy matcher expr rule ctx =
           pure []
         else do
           absolute <- foldlM (\substs nm -> meetCondition (Y.Absolute (ExMeta nm)) substs ctx) matched (kMetaNames ptn)
-          normal <- foldlM (\substs nm -> meetCondition (Y.NF (ExMeta nm)) substs ctx) absolute (nfMetaNames ptn ++ kMetaNames ptn)
+          normal <- foldlM (\substs nm -> meetCondition (Y.NF (ExMeta nm)) substs ctx) absolute (nfMetaNames ptn)
           if null normal
             then do
-              logDebug "A '𝑛'/'𝑘' meta-variable is not in normal form, or a '𝑘' meta-variable is not absolute"
+              logDebug "A '𝑛' meta-variable is not in normal form, or a '𝑘' meta-variable is not absolute"
               pure []
             else do
               when' <- meetMaybeCondition rule.when normal ctx
