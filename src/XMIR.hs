@@ -153,7 +153,7 @@ formationBinding (BiTau AtPhi expr) ctx = do
   pure (Just (object [("name", show AtPhi), ("base", base)] children))
 formationBinding (BiTau AtRho _) _ = pure Nothing
 formationBinding (BiDelta bytes) _ = pure (Just (NodeContent (T.pack (printBytes bytes))))
-formationBinding (BiLambda _) _ = pure (Just (object [("name", show AsLambda)] []))
+formationBinding (BiLambda _) _ = pure (Just (object [("name", show AtLambda)] []))
 formationBinding (BiVoid AtRho) _ = pure Nothing
 formationBinding (BiVoid AtPhi) _ = pure (Just (object [("name", show AtPhi), ("base", "∅")] []))
 formationBinding (BiVoid (AtLabel label)) _ = pure (Just (object [("name", T.unpack label), ("base", "∅")] []))

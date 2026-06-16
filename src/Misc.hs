@@ -26,7 +26,6 @@ module Misc
   , attributesFromBindings
   , attributesFromBindings'
   , attributeFromBinding
-  , assetFromBinding
   , uniqueBindings
   , uniqueBindings'
   , validateYamlObject
@@ -142,13 +141,9 @@ pattern DataObject label bts <- (matchDataObject -> Just (label, bts))
 attributeFromBinding :: Binding -> Maybe Attribute
 attributeFromBinding (BiTau attr _) = Just attr
 attributeFromBinding (BiVoid attr) = Just attr
-attributeFromBinding _ = Nothing
-
--- Extract asset from binding
-assetFromBinding :: Binding -> Maybe Asset
-assetFromBinding (BiLambda _) = Just AsLambda
-assetFromBinding (BiDelta _) = Just AsDelta
-assetFromBinding _ = Nothing
+attributeFromBinding (BiDelta _) = Just AtDelta
+attributeFromBinding (BiLambda _) = Just AtLambda
+attributeFromBinding (BiMeta _) = Nothing
 
 -- Extract attributes from bindings
 attributesFromBindings :: [Binding] -> [Attribute]
@@ -165,26 +160,23 @@ uniqueBindings' bds = case uniqueBindings bds of
 
 -- Check if given binding list consists of unique attributes
 uniqueBindings :: [Binding] -> Either String [Binding]
-uniqueBindings bds = case duplicated bds Set.empty Set.empty of
-  Just key ->
+uniqueBindings bds = case duplicated bds Set.empty of
+  Just attr ->
     Left
       ( printf
           "Duplicated attribute '%s' found in %s"
-          key
+          (show attr)
           (intercalate ", " (map show (attributesFromBindings bds)))
       )
   _ -> Right bds
   where
-    duplicated :: [Binding] -> Set.Set Attribute -> Set.Set Asset -> Maybe String
-    duplicated [] _ _ = Nothing
-    duplicated (bd : rest) attrs assets = case (attributeFromBinding bd, assetFromBinding bd) of
-      (Just attr, _)
-        | attr `Set.member` attrs -> Just (show attr)
-        | otherwise -> duplicated rest (Set.insert attr attrs) assets
-      (_, Just asset)
-        | asset `Set.member` assets -> Just (show asset)
-        | otherwise -> duplicated rest attrs (Set.insert asset assets)
-      _ -> duplicated rest attrs assets
+    duplicated :: [Binding] -> Set.Set Attribute -> Maybe Attribute
+    duplicated [] _ = Nothing
+    duplicated (bd : rest) seen = case attributeFromBinding bd of
+      Just attr
+        | attr `Set.member` seen -> Just attr
+        | otherwise -> duplicated rest (Set.insert attr seen)
+      Nothing -> duplicated rest seen
 
 -- Add void rho binding to the end of the list of any rho binding is not present
 withVoidRho :: [Binding] -> [Binding]

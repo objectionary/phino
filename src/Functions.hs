@@ -199,7 +199,7 @@ _join :: BuildTermMethod
 _join [] _ = pure (TeBindings [])
 _join args subst = do
   bds <- buildBindings args
-  TeBindings <$> join' bds Set.empty Set.empty
+  TeBindings <$> join' bds Set.empty
   where
     buildBindings :: [Y.ExtraArgument] -> IO [Binding]
     buildBindings [] = pure []
@@ -208,25 +208,22 @@ _join args subst = do
       next <- buildBindings args'
       pure (bds ++ next)
     buildBindings _ = throwIO (userError "Function 'join' can work with bindings only")
-    join' :: [Binding] -> Set.Set Attribute -> Set.Set Asset -> IO [Binding]
-    join' [] _ _ = pure []
-    join' (bd : bds) attrs assets =
-      case (attributeFromBinding bd, assetFromBinding bd) of
-        (Just attr, _)
+    join' :: [Binding] -> Set.Set Attribute -> IO [Binding]
+    join' [] _ = pure []
+    join' (bd : bds) attrs =
+      case attributeFromBinding bd of
+        Just attr
           | Set.member attr attrs ->
-              if attr == AtRho
-                then join' bds attrs assets
+              if attr == AtRho || attr == AtDelta || attr == AtLambda
+                then join' bds attrs
                 else do
                   new <- case bd of
                     BiTau _ ex -> (`BiTau` ex) <$> freshAttr
                     BiVoid _ -> BiVoid <$> freshAttr
                     other -> pure other
-                  (new :) <$> join' bds attrs assets
-          | otherwise -> (bd :) <$> join' bds (Set.insert attr attrs) assets
-        (_, Just asset)
-          | Set.member asset assets -> join' bds attrs assets
-          | otherwise -> (bd :) <$> join' bds attrs (Set.insert asset assets)
-        _ -> (bd :) <$> join' bds attrs assets
+                  (new :) <$> join' bds attrs
+          | otherwise -> (bd :) <$> join' bds (Set.insert attr attrs)
+        Nothing -> (bd :) <$> join' bds attrs
     freshAttr :: IO Attribute
     freshAttr = do
       term <- _randomTau [] subst

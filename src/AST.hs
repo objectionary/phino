@@ -58,12 +58,9 @@ data Attribute
   = AtLabel Text
   | AtPhi
   | AtRho
+  | AtLambda
+  | AtDelta
   | AtMeta Text
-  deriving (Eq, Generic, Ord)
-
-data Asset
-  = AsLambda
-  | AsDelta
   deriving (Eq, Generic, Ord)
 
 data Function
@@ -75,15 +72,13 @@ instance Show Attribute where
   show (AtLabel label) = T.unpack label
   show AtRho = "ρ"
   show AtPhi = "φ"
+  show AtDelta = "Δ"
+  show AtLambda = "λ"
   show (AtMeta meta) = '!' : T.unpack meta
 
 instance Show Alpha where
   show (Alpha idx) = 'α' : show idx
   show (AlMeta meta) = '!' : T.unpack meta
-
-instance Show Asset where
-  show AsLambda = "λ"
-  show AsDelta = "Δ"
 
 -- A cheap, fixed-size digest of an expression, used for fast (dirty) equality
 -- checks during loop detection. Equal expressions always produce the same
@@ -135,6 +130,8 @@ hashExpression = goExpr fnvOffset
       AtLabel t -> hashText (step h 21) t
       AtPhi -> step h 23
       AtRho -> step h 24
+      AtLambda -> step h 25
+      AtDelta -> step h 26
       AtMeta t -> hashText (step h 27) t
     goArgument :: Int -> Argument -> Int
     goArgument h = \case

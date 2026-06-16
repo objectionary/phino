@@ -271,10 +271,6 @@ attributeToCST = toCST'
 alphaToCST :: Alpha -> ATTRIBUTE
 alphaToCST = toCST'
 
-keyToCST :: Either Asset Attribute -> ATTRIBUTE
-keyToCST (Left asset) = toCST' asset
-keyToCST (Right attr) = attributeToCST attr
-
 bindingsToCST :: [Binding] -> BINDING
 bindingsToCST = toCST'
 
@@ -516,25 +512,23 @@ instance ToCST Attribute ATTRIBUTE where
   toCST (AtLabel label) _ = AT_LABEL label
   toCST AtPhi _ = AT_PHI PHI
   toCST AtRho _ = AT_RHO RHO
+  toCST AtDelta _ = AT_DELTA DELTA
+  toCST AtLambda _ = AT_LAMBDA LAMBDA
   toCST (AtMeta mt) _ = AT_META (META NO_EXCL TAU (metaTail mt))
 
 instance ToCST Alpha ATTRIBUTE where
   toCST (Alpha idx) _ = AT_ALPHA ALPHA idx
   toCST (AlMeta mt) _ = AT_META (META NO_EXCL ETA (metaTail mt))
 
-instance ToCST Asset ATTRIBUTE where
-  toCST AsLambda _ = AT_LAMBDA LAMBDA
-  toCST AsDelta _ = AT_DELTA DELTA
-
 instance ToCST Y.Condition CONDITION where
-  toCST (Y.Not (Y.In attr binding)) _ = CO_BELONGS (keyToCST attr) NOT_IN (ST_BINDING (bindingsToCST [binding]))
+  toCST (Y.Not (Y.In attr binding)) _ = CO_BELONGS (attributeToCST attr) NOT_IN (ST_BINDING (bindingsToCST [binding]))
   toCST (Y.Not (Y.Eq left right)) _ = CO_COMPARE (comparableToCST left) NOT_EQUAL (comparableToCST right)
   toCST (Y.Not (Y.Primitive expr)) _ = CO_PRIMITIVE (expressionToCST expr) NOT_IN
   toCST (Y.Primitive expr) _ = CO_PRIMITIVE (expressionToCST expr) IN
   toCST (Y.Not (Y.Absolute expr)) _ = CO_ABSOLUTE (expressionToCST expr) NOT_IN
   toCST (Y.Absolute expr) _ = CO_ABSOLUTE (expressionToCST expr) IN
-  toCST (Y.Disjoint attrs groups) _ = CO_DISJOINT (map keyToCST attrs) (map (\bd -> bindingsToCST [bd]) groups)
-  toCST (Y.In attr binding) _ = CO_BELONGS (keyToCST attr) IN (ST_BINDING (bindingsToCST [binding]))
+  toCST (Y.Disjoint attrs groups) _ = CO_DISJOINT (map attributeToCST attrs) (map (\bd -> bindingsToCST [bd]) groups)
+  toCST (Y.In attr binding) _ = CO_BELONGS (attributeToCST attr) IN (ST_BINDING (bindingsToCST [binding]))
   toCST (Y.And conds) _ = case conds of
     [] -> CO_EMPTY
     _ -> CO_LOGIC (map toCST' conds) AND

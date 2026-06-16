@@ -19,7 +19,6 @@ module Builder
   , buildBytesThrows
   , contextualize
   , BuildException (..)
-  , Built
   )
 where
 

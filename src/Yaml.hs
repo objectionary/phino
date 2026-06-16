@@ -32,26 +32,19 @@ parseJSON' nm func =
     )
 
 instance FromJSON Attribute where
-  parseJSON = parseJSON' "Attribute" parseAttribute
+  parseJSON =
+    withText
+      "Attribute"
+      ( \txt -> case unpack txt of
+          "λ" -> pure AtLambda
+          "Δ" -> pure AtDelta
+          other -> case parseAttribute other of
+            Left err -> fail err
+            Right attr -> pure attr
+      )
 
 instance FromJSON Alpha where
   parseJSON = parseJSON' "Alpha" parseAlpha
-
-instance FromJSON Asset where
-  parseJSON =
-    withText
-      "Asset"
-      ( \txt -> case unpack txt of
-          "λ" -> pure AsLambda
-          "Δ" -> pure AsDelta
-          other -> fail ("expected 'λ' or 'Δ', got '" ++ other ++ "'")
-      )
-
-parseKey :: Value -> Parser (Either Asset Attribute)
-parseKey v = asum [Left <$> parseJSON v, Right <$> parseJSON v]
-
-parseKeys :: Value -> Parser [Either Asset Attribute]
-parseKeys v = mapM parseKey =<< parseJSON v
 
 instance FromJSON Bytes where
   parseJSON = parseJSON' "Bytes" parseBytes
@@ -99,7 +92,7 @@ instance FromJSON Condition where
             , do
                 vals <- v .: "disjoint"
                 case vals of
-                  [attrs_, bds_] -> Disjoint <$> parseKeys attrs_ <*> parseJSON bds_
+                  [attrs_, bds_] -> Disjoint <$> parseJSON attrs_ <*> parseJSON bds_
                   _ -> fail "'disjoint' expects exactly two arguments"
             , do
                 vals <- v .: "eq"
@@ -110,7 +103,7 @@ instance FromJSON Condition where
                 vals <- v .: "in"
                 case vals of
                   [attr_, binding_] -> do
-                    attr <- parseKey attr_
+                    attr <- parseJSON attr_
                     bd <- parseJSON binding_
                     pure (In attr bd)
                   _ -> fail "'in' expects exactly two arguments"
@@ -172,7 +165,7 @@ data Comparable
 data Condition
   = And [Condition]
   | Or [Condition]
-  | In (Either Asset Attribute) Binding
+  | In Attribute Binding
   | Not Condition
   | Eq Comparable Comparable
   | NF Expression
@@ -180,7 +173,7 @@ data Condition
   | Matches String Expression
   | PartOf Expression Binding
   | Primitive Expression
-  | Disjoint [Either Asset Attribute] [Binding]
+  | Disjoint [Attribute] [Binding]
   deriving (Eq, Generic, Show)
 
 data ExtraArgument
