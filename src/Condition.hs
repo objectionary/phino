@@ -6,6 +6,7 @@
 
 module Condition (parseCondition, parseConditionThrows) where
 
+import AST (Asset (..), Attribute)
 import Control.Exception (Exception)
 import Control.Exception.Base (throwIO)
 import Data.Void (Void)
@@ -75,6 +76,14 @@ number =
           )
     ]
 
+keyParser :: Parser (Either Asset Attribute)
+keyParser =
+  choice
+    [ symbol "λ" >> return (Left AsLambda)
+    , symbol "Δ" >> return (Left AsDelta)
+    , Right <$> _attribute phiParser
+    ]
+
 comparable :: Parser Y.Comparable
 comparable =
   choice
@@ -98,11 +107,11 @@ condition =
         return (Y.Or args)
     , do
         _ <- symbol "in" >> lparen
-        attr <- _attribute phiParser
+        key <- keyParser
         _ <- comma
         bd <- _binding phiParser
         _ <- rparen
-        return (Y.In attr bd)
+        return (Y.In key bd)
     , do
         _ <- symbol "not" >> lparen
         cond <- condition

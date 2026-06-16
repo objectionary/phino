@@ -10,7 +10,8 @@ module Rule (RuleContext (..), isNF, matchProgramWithRule, matchExpressionWithRu
 
 import AST
 import Builder
-  ( buildAttribute
+  ( Built
+  , buildAttribute
   , buildBinding
   , buildBindingThrows
   , buildExpressionThrows
@@ -27,7 +28,7 @@ import Deps (BuildTermFunc, Term (..))
 import GHC.IO (unsafePerformIO)
 import Logger (logDebug)
 import Matcher
-import Misc (btsToUnescapedStr)
+import Misc (assetFromBinding, attributeFromBinding, btsToUnescapedStr)
 import Printer
 import Regexp (match)
 import Text.Printf (printf)
@@ -93,21 +94,21 @@ _not cond subst ctx = do
   met <- meetCondition' cond subst ctx
   pure [subst | null met]
 
-_in :: Attribute -> Binding -> Subst -> RuleContext -> IO [Subst]
-_in attr binding subst _ =
-  case (buildAttribute attr subst, buildBinding binding subst) of
-    (Right attr, Right bds) -> pure [subst | attrInBindings attr bds] -- if attrInBindings attr bd then [subst] else []
+-- Resolve an in/disjoint key: a 𝜏-meta is substituted, an asset passes through.
+buildKey :: Either Asset Attribute -> Subst -> Built (Either Asset Attribute)
+buildKey (Left asset) _ = Right (Left asset)
+buildKey (Right attr) subst = Right <$> buildAttribute attr subst
+
+-- Whether a key occupies the slot of the given binding.
+keyInBinding :: Either Asset Attribute -> Binding -> Bool
+keyInBinding (Left asset) bd = assetFromBinding bd == Just asset
+keyInBinding (Right attr) bd = attributeFromBinding bd == Just attr
+
+_in :: Either Asset Attribute -> Binding -> Subst -> RuleContext -> IO [Subst]
+_in key binding subst _ =
+  case (buildKey key subst, buildBinding binding subst) of
+    (Right key', Right bds) -> pure [subst | any (keyInBinding key') bds]
     (_, _) -> pure []
-  where
-    -- Check if given attribute is present in given binding
-    attrInBindings :: Attribute -> [Binding] -> Bool
-    attrInBindings attr (bd : bds) = attrInBinding attr bd || attrInBindings attr bds
-      where
-        attrInBinding :: Attribute -> Binding -> Bool
-        attrInBinding attr (BiTau battr _) = attr == battr
-        attrInBinding attr (BiVoid battr) = attr == battr
-        attrInBinding _ _ = False
-    attrInBindings _ _ = False
 
 _eq :: Y.Comparable -> Y.Comparable -> Subst -> RuleContext -> IO [Subst]
 _eq (Y.CmpNum left) (Y.CmpNum right) subst _ = case (numToInt left subst, numToInt right subst) of
@@ -216,20 +217,13 @@ _primitive expr subst _ = pure [subst | primitive expr]
 
 -- Hold if none of the given attributes is present in the union of the
 -- bindings captured by the given binding metas.
-_disjoint :: [Attribute] -> [Binding] -> Subst -> RuleContext -> IO [Subst]
-_disjoint attrs bindings subst _ =
-  case (traverse (`buildAttribute` subst) attrs, traverse (`buildBinding` subst) bindings) of
-    (Right attrs', Right bdss) ->
+_disjoint :: [Either Asset Attribute] -> [Binding] -> Subst -> RuleContext -> IO [Subst]
+_disjoint keys bindings subst _ =
+  case (traverse (`buildKey` subst) keys, traverse (`buildBinding` subst) bindings) of
+    (Right keys', Right bdss) ->
       let bds = concat bdss
-       in pure [subst | not (any (`presentIn` bds) attrs')]
+       in pure [subst | not (any (\key -> any (keyInBinding key) bds) keys')]
     (_, _) -> pure []
-  where
-    presentIn :: Attribute -> [Binding] -> Bool
-    presentIn attr = any (presentInBinding attr)
-    presentInBinding :: Attribute -> Binding -> Bool
-    presentInBinding attr (BiTau battr _) = attr == battr
-    presentInBinding attr (BiVoid battr) = attr == battr
-    presentInBinding _ _ = False
 
 meetCondition' :: Y.Condition -> Subst -> RuleContext -> IO [Subst]
 meetCondition' (Y.Or conds) = _or conds
