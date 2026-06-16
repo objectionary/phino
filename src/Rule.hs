@@ -50,11 +50,11 @@ matchesAnyNormalizationRule expr ctx = matchesAnyNormalizationRule' expr normali
 
 -- Returns True if given expression is in the normal form
 isNF :: Expression -> RuleContext -> Bool
-isNF ExThis _ = True
-isNF ExGlobal _ = True
+isNF ExXi _ = True
+isNF ExRoot _ = True
 isNF ExTermination _ = True
-isNF (ExDispatch ExThis _) _ = True
-isNF (ExDispatch ExGlobal _) _ = True
+isNF (ExDispatch ExXi _) _ = True
+isNF (ExDispatch ExRoot _) _ = True
 isNF (ExDispatch ExTermination _) _ = False -- dd rule
 isNF (ExApplication ExTermination _) _ = False -- dc rule
 isNF (ExFormation []) _ = True
@@ -189,7 +189,7 @@ _absolute expr subst _ = pure [subst | xiFree expr]
   where
     xiFree :: Expression -> Bool
     xiFree (ExFormation _) = True
-    xiFree ExGlobal = True
+    xiFree ExRoot = True
     xiFree (ExApplication e (BiTau _ te)) = xiFree e && xiFree te
     xiFree (ExDispatch e _) = xiFree e
     xiFree _ = False

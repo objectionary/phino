@@ -50,9 +50,9 @@ number =
   choice
     [ do
         _ <- symbol "index" >> lparen
-        attr <- _attribute phiParser
+        a <- _alpha phiParser
         _ <- rparen
-        return (Y.Index attr)
+        return (Y.Index a)
     , do
         _ <- symbol "length" >> lparen
         bd <- _binding phiParser
@@ -108,11 +108,6 @@ condition =
         cond <- condition
         _ <- rparen
         return (Y.Not cond)
-    , do
-        _ <- symbol "alpha" >> lparen
-        attr <- _attribute phiParser
-        _ <- rparen
-        return (Y.Alpha attr)
     , do
         _ <- symbol "eq" >> lparen
         left <- comparable

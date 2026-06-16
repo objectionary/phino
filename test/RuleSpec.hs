@@ -61,13 +61,13 @@ spec = do
   describe "isNF determines normal form" $ do
     let ctx = RuleContext buildTerm
     forM_
-      [ ("returns true for ExThis", ExThis, True)
-      , ("returns true for ExGlobal", ExGlobal, True)
+      [ ("returns true for ExXi", ExXi, True)
+      , ("returns true for ExRoot", ExRoot, True)
       , ("returns true for ExTermination", ExTermination, True)
-      , ("returns true for dispatch on ExThis", ExDispatch ExThis (AtLabel "foo"), True)
-      , ("returns true for dispatch on ExGlobal", ExDispatch ExGlobal (AtLabel "bar"), True)
+      , ("returns true for dispatch on ExXi", ExDispatch ExXi (AtLabel "foo"), True)
+      , ("returns true for dispatch on ExRoot", ExDispatch ExRoot (AtLabel "bar"), True)
       , ("returns false for dispatch on ExTermination", ExDispatch ExTermination (AtLabel "x"), False)
-      , ("returns false for application on ExTermination", ExApplication ExTermination (BiTau (AtLabel "y") ExGlobal), False)
+      , ("returns false for application on ExTermination", ExApplication ExTermination (BiTau (AtLabel "y") ExRoot), False)
       , ("returns true for empty formation", ExFormation [], True)
       , ("returns true for formation with only delta binding", ExFormation [BiDelta (BtMany ["00", "01"])], True)
       , ("returns true for formation with only void binding", ExFormation [BiVoid (AtLabel "x")], True)

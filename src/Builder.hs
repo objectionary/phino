@@ -52,8 +52,8 @@ instance Show BuildException where
   show CouldNotBuildBytes{..} = printf "Couldn't build bytes '%s', %s" (printBytes _bts) _msg
 
 contextualize :: Expression -> Expression -> Expression
-contextualize ExGlobal _ = ExGlobal
-contextualize ExThis ex = ex
+contextualize ExRoot _ = ExRoot
+contextualize ExXi ex = ex
 contextualize ExTermination _ = ExTermination
 contextualize (ExFormation bds) _ = ExFormation bds
 contextualize (ExDispatch ex at) context = ExDispatch (contextualize ex context) at

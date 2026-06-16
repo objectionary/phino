@@ -85,8 +85,8 @@ object :: [(String, String)] -> [Node] -> Node
 object attrs children = NodeElement (element "o" attrs children)
 
 expression :: Expression -> XmirContext -> IO (String, [Node])
-expression ExThis _ = pure (printExpression ExThis, [])
-expression ExGlobal _ = pure (printExpression ExGlobal, [])
+expression ExXi _ = pure (printExpression ExXi, [])
+expression ExRoot _ = pure (printExpression ExRoot, [])
 expression (ExFormation bds) ctx = do
   nested <- nestedBindings bds ctx
   pure ("", nested)
@@ -165,7 +165,7 @@ programToXMIR prog@(Program expr@(ExFormation [BiTau (AtLabel _) arg, BiVoid AtR
   ExFormation _ -> programToXMIR'
   ExApplication _ _ -> programToXMIR'
   ExDispatch _ _ -> programToXMIR'
-  ExGlobal -> programToXMIR'
+  ExRoot -> programToXMIR'
   _ -> throwIO (UnsupportedProgram prog)
   where
     programToXMIR' :: IO Document
@@ -426,14 +426,14 @@ xmirToExpression cur fqn
                       xmirToApplication disp args' fqn
         "ξ" ->
           if null (cur C.$/ C.element (toName "o"))
-            then pure ExThis
+            then pure ExXi
             else throwIO (InvalidXMIRFormat "Application of 'ξ' is illegal in XMIR" cur)
         "Φ" ->
           if null (cur C.$/ C.element (toName "o"))
-            then pure ExGlobal
+            then pure ExRoot
             else throwIO (InvalidXMIRFormat "Application of 'Φ' is illegal in XMIR" cur)
-        'Φ' : '.' : rest -> xmirToExpression' ExGlobal "Φ" rest cur fqn
-        'ξ' : '.' : rest -> xmirToExpression' ExThis "ξ" rest cur fqn
+        'Φ' : '.' : rest -> xmirToExpression' ExRoot "Φ" rest cur fqn
+        'ξ' : '.' : rest -> xmirToExpression' ExXi "ξ" rest cur fqn
         _ -> throwIO (InvalidXMIRFormat "The @base attribute must be either ['∅'|'Φ'] or start with ['Φ.'|'ξ.'|'.']" cur)
   | otherwise = do
       bds <- mapM (`xmirToFormationBinding` fqn) (cur C.$/ C.element (toName "o")) >>= uniqueBindings'

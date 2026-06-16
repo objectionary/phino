@@ -42,6 +42,14 @@ replaceBindings (bd : bds, ptns, repls) ctx func =
   let (bds', ptns', repls') = replaceBindings (bds, ptns, repls) ctx func
    in (bd : bds', ptns', repls')
 
+replaceArgument :: ReplaceState Argument -> ReplaceContext -> ReplaceExpressionFunc' -> ReplaceState Argument
+replaceArgument (ArTau attr expr, ptns, repls) ctx func =
+  let (expr', ptns', repls') = func (expr, ptns, repls) ctx
+   in (ArTau attr expr', ptns', repls')
+replaceArgument (ArAlpha alpha expr, ptns, repls) ctx func =
+  let (expr', ptns', repls') = func (expr, ptns, repls) ctx
+   in (ArAlpha alpha expr', ptns', repls')
+
 replaceExpression' :: ReplaceExpressionFunc'
 replaceExpression' state@(expr, ptns@(ptn : _ptns), repls@(repl : _repls)) ctx =
   if expr == ptn
@@ -50,11 +58,10 @@ replaceExpression' state@(expr, ptns@(ptn : _ptns), repls@(repl : _repls)) ctx =
       ExDispatch inner attr ->
         let (expr', ptns', repls') = replaceExpression' (inner, ptns, repls) ctx
          in (ExDispatch expr' attr, ptns', repls')
-      ExApplication inner tau ->
+      ExApplication inner arg ->
         let (expr', ptns', repls') = replaceExpression' (inner, ptns, repls) ctx
-         in case replaceBindings ([tau], ptns', repls') ctx replaceExpression' of
-              ([tau'], ptns'', repls'') -> (ExApplication expr' tau', ptns'', repls'')
-              (bds', _, _) -> error $ "Expected single binding, got " ++ show (length bds')
+            (arg', ptns'', repls'') = replaceArgument (arg, ptns', repls') ctx replaceExpression'
+         in (ExApplication expr' arg', ptns'', repls'')
       ExFormation bds ->
         let (bds', ptns', repls') = replaceBindings (bds, ptns, repls) ctx replaceExpression'
          in (ExFormation bds', ptns', repls')
@@ -91,10 +98,10 @@ replaceExpressionFast' = _replaceExpressionFast 0
           ExDispatch inner attr ->
             let (expr', ptns', repls') = replaceExpressionFast' (inner, ptns, repls) ctx
              in (ExDispatch expr' attr, ptns', repls')
-          ExApplication inner (BiTau attr arg) ->
+          ExApplication inner arg ->
             let (expr', ptns', repls') = replaceExpressionFast' (inner, ptns, repls) ctx
-                (expr'', ptns'', repls'') = replaceExpressionFast' (arg, ptns', repls') ctx
-             in (ExApplication expr' (BiTau attr expr''), ptns'', repls'')
+                (arg', ptns'', repls'') = replaceArgument (arg, ptns', repls') ctx replaceExpressionFast'
+             in (ExApplication expr' arg', ptns'', repls'')
           _ -> state
 
 replaceExpression :: ReplaceExpressionFunc

@@ -57,7 +57,7 @@ data LatexContext = LatexContext
   }
 
 defaultLatexContext :: LatexContext
-defaultLatexContext = LatexContext SWEET SINGLELINE defaultMargin False False defaultMeetPopularity defaultMeetLength ExGlobal Nothing Nothing Nothing
+defaultLatexContext = LatexContext SWEET SINGLELINE defaultMargin False False defaultMeetPopularity defaultMeetLength ExRoot Nothing Nothing Nothing
 
 defaultMeetPopularity :: Int
 defaultMeetPopularity = 50
@@ -165,7 +165,7 @@ compressedRewrittens rewrittens ctx@LatexContext{..} =
    in if _compress then zip (meetInPrograms progs ctx) rules else rewrittens
 
 rewrittensToLatex :: Rewrittens' -> LatexContext -> IO String
-rewrittensToLatex (rewrittens, exceeded) ctx@LatexContext{_focus = ExGlobal} =
+rewrittensToLatex (rewrittens, exceeded) ctx@LatexContext{_focus = ExRoot} =
   pure
     ( concat
         [ preamble ctx

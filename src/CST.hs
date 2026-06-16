@@ -307,8 +307,8 @@ instance ToCST Program PROGRAM where
   toCST (Program expr) ctx = PR_SWEET LCB (toCST expr ctx) RCB NO_SPACE
 
 instance ToCST Expression EXPRESSION where
-  toCST ExGlobal _ = EX_GLOBAL Φ
-  toCST ExThis _ = EX_XI XI
+  toCST ExRoot _ = EX_GLOBAL Φ
+  toCST ExXi _ = EX_XI XI
   toCST (ExMeta mt) _ = EX_META (META NO_EXCL (exMetaHead mt) (metaTail mt))
   toCST (ExMetaTail expr mt) ctx = EX_META_TAIL (toCST expr ctx) (META EXCL TAIL (metaTail mt))
   toCST ExTermination _ = EX_TERMINATION DEAD
@@ -338,7 +338,7 @@ instance ToCST Expression EXPRESSION where
   -- their byte form `Φ.number(Φ.bytes(⟦ Δ ⤍ … ⟧))` by falling through to the
   -- generic application clause below.
   toCST (DataNumber bts) (tabs, _) | sweetNumber bts = EX_NUMBER (btsToNum bts) (TAB tabs) []
-  toCST (ExDispatch ExThis attr) ctx = EX_ATTR (toCST attr ctx)
+  toCST (ExDispatch ExXi attr) ctx = EX_ATTR (toCST attr ctx)
   toCST (ExDispatch expr attr) ctx = EX_DISPATCH (toCST expr ctx) NO_SPACE (toCST attr ctx)
   -- Since we convert AST to CST in sweet notation, here we're trying to get rid of unnecessary rho bindings
   -- in primitives (more details here: https://github.com/objectionary/phino/issues/451)

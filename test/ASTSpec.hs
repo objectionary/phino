@@ -126,9 +126,9 @@ spec = do
 
   describe "Binding Eq instance compares same constructors" $
     forM_
-      [ ("tau equals tau", BiTau AtRho ExGlobal, BiTau AtRho ExGlobal, True)
-      , ("tau differs by attr", BiTau AtRho ExGlobal, BiTau AtPhi ExGlobal, False)
-      , ("tau differs by expr", BiTau AtRho ExGlobal, BiTau AtRho ExThis, False)
+      [ ("tau equals tau", BiTau AtRho ExRoot, BiTau AtRho ExRoot, True)
+      , ("tau differs by attr", BiTau AtRho ExRoot, BiTau AtPhi ExRoot, False)
+      , ("tau differs by expr", BiTau AtRho ExRoot, BiTau AtRho ExXi, False)
       , ("meta equals meta", BiMeta "B", BiMeta "B", True)
       , ("meta differs", BiMeta "B", BiMeta "C", False)
       , ("delta equals delta", BiDelta BtEmpty, BiDelta BtEmpty, True)
@@ -146,7 +146,7 @@ spec = do
 
   describe "Binding Eq instance compares different constructors" $
     forM_
-      [ ("tau vs meta", BiTau AtRho ExGlobal, BiMeta "B", False)
+      [ ("tau vs meta", BiTau AtRho ExRoot, BiMeta "B", False)
       , ("delta vs void", BiDelta BtEmpty, BiVoid AtDelta, False)
       , ("lambda vs metalambda", BiLambda "F", BiMetaLambda "F", False)
       ]
@@ -156,7 +156,7 @@ spec = do
 
   describe "Binding Ord instance orders correctly" $
     it "sorts bindings by constructor order" $
-      let bindings = [BiMetaLambda "Z", BiLambda "A", BiVoid AtRho, BiDelta BtEmpty, BiMeta "B", BiTau AtRho ExGlobal]
+      let bindings = [BiMetaLambda "Z", BiLambda "A", BiVoid AtRho, BiDelta BtEmpty, BiMeta "B", BiTau AtRho ExRoot]
           first : _ = sort bindings
           isTau (BiTau _ _) = True
           isTau _ = False
@@ -166,16 +166,16 @@ spec = do
     forM_
       [ ("formation equals", ExFormation [], ExFormation [], True)
       , ("formation differs", ExFormation [], ExFormation [BiVoid AtRho], False)
-      , ("this equals this", ExThis, ExThis, True)
-      , ("global equals global", ExGlobal, ExGlobal, True)
+      , ("this equals this", ExXi, ExXi, True)
+      , ("global equals global", ExRoot, ExRoot, True)
       , ("termination equals", ExTermination, ExTermination, True)
       , ("meta equals meta", ExMeta "e", ExMeta "e", True)
       , ("meta differs", ExMeta "e", ExMeta "f", False)
-      , ("application equals", ExApplication ExGlobal (BiTau AtRho ExThis), ExApplication ExGlobal (BiTau AtRho ExThis), True)
-      , ("dispatch equals", ExDispatch ExGlobal AtRho, ExDispatch ExGlobal AtRho, True)
-      , ("dispatch differs", ExDispatch ExGlobal AtRho, ExDispatch ExGlobal AtPhi, False)
-      , ("metatail equals", ExMetaTail ExGlobal "t", ExMetaTail ExGlobal "t", True)
-      , ("metatail differs", ExMetaTail ExGlobal "t", ExMetaTail ExGlobal "s", False)
+      , ("application equals", ExApplication ExRoot (BiTau AtRho ExXi), ExApplication ExRoot (BiTau AtRho ExXi), True)
+      , ("dispatch equals", ExDispatch ExRoot AtRho, ExDispatch ExRoot AtRho, True)
+      , ("dispatch differs", ExDispatch ExRoot AtRho, ExDispatch ExRoot AtPhi, False)
+      , ("metatail equals", ExMetaTail ExRoot "t", ExMetaTail ExRoot "t", True)
+      , ("metatail differs", ExMetaTail ExRoot "t", ExMetaTail ExRoot "s", False)
       ]
       ( \(desc, lhs, rhs, expected) ->
           it desc $ (lhs == rhs) `shouldBe` expected
@@ -183,9 +183,9 @@ spec = do
 
   describe "Expression Eq instance compares different constructors" $
     forM_
-      [ ("formation vs this", ExFormation [], ExThis, False)
-      , ("global vs termination", ExGlobal, ExTermination, False)
-      , ("meta vs dispatch", ExMeta "e", ExDispatch ExGlobal AtRho, False)
+      [ ("formation vs this", ExFormation [], ExXi, False)
+      , ("global vs termination", ExRoot, ExTermination, False)
+      , ("meta vs dispatch", ExMeta "e", ExDispatch ExRoot AtRho, False)
       ]
       ( \(desc, lhs, rhs, expected) ->
           it desc $ (lhs == rhs) `shouldBe` expected
@@ -193,14 +193,14 @@ spec = do
 
   describe "Expression Ord instance orders correctly" $
     it "sorts expressions by constructor order" $
-      let exprs = [ExMetaTail ExGlobal "t", ExDispatch ExGlobal AtRho, ExApplication ExGlobal (BiVoid AtRho), ExMeta "e", ExTermination, ExGlobal, ExThis, ExFormation []]
+      let exprs = [ExMetaTail ExRoot "t", ExDispatch ExRoot AtRho, ExApplication ExRoot (BiVoid AtRho), ExMeta "e", ExTermination, ExRoot, ExXi, ExFormation []]
           first : _ = sort exprs
        in first `shouldBe` ExFormation []
 
   describe "Program Eq instance compares programs" $
     forM_
-      [ ("same programs equal", Program ExGlobal, Program ExGlobal, True)
-      , ("different programs differ", Program ExGlobal, Program ExThis, False)
+      [ ("same programs equal", Program ExRoot, Program ExRoot, True)
+      , ("different programs differ", Program ExRoot, Program ExXi, False)
       ]
       ( \(desc, lhs, rhs, expected) ->
           it desc $ (lhs == rhs) `shouldBe` expected
@@ -208,23 +208,23 @@ spec = do
 
   describe "Program Ord instance orders correctly" $
     it "orders programs by expression" $
-      let progs = [Program ExThis, Program ExGlobal, Program (ExFormation [])]
+      let progs = [Program ExXi, Program ExRoot, Program (ExFormation [])]
           first : _ = sort progs
        in first `shouldBe` Program (ExFormation [])
 
   describe "Program Show instance renders programs" $
     it "shows program wrapper" $
       let hasProgram str = "Program" `elem` words str
-       in show (Program ExGlobal) `shouldSatisfy` hasProgram
+       in show (Program ExRoot) `shouldSatisfy` hasProgram
 
   describe "countNodes counts ExFormation with non-tau bindings" $
     forM_
-      [ ("Q", ExGlobal, 1)
+      [ ("Q", ExRoot, 1)
       , ("T", ExTermination, 1)
-      , ("$", ExThis, 1)
-      , ("dispatch on global", ExDispatch ExGlobal (AtLabel "x"), 3)
-      , ("application with globals", ExApplication ExGlobal (BiTau AtRho ExGlobal), 6)
-      , ("nested expressions", ExFormation [BiTau AtRho ExGlobal, BiTau AtPhi ExGlobal], 9)
+      , ("$", ExXi, 1)
+      , ("dispatch on global", ExDispatch ExRoot (AtLabel "x"), 3)
+      , ("application with globals", ExApplication ExRoot (BiTau AtRho ExRoot), 6)
+      , ("nested expressions", ExFormation [BiTau AtRho ExRoot, BiTau AtPhi ExRoot], 9)
       , ("empty formation", ExFormation [], 1)
       , ("void binding", ExFormation [BiVoid AtRho], 5)
       , ("delta binding", ExFormation [BiDelta BtEmpty], 5)
@@ -232,9 +232,9 @@ spec = do
       , ("meta binding", ExFormation [BiMeta "B"], 3)
       , ("metalambda binding", ExFormation [BiMetaLambda "F"], 5)
       , ("meta expression", ExMeta "e", 1)
-      , ("metatail expression", ExMetaTail ExGlobal "t", 3)
-      , ("deeply nested dispatch", ExDispatch (ExDispatch ExGlobal (AtLabel "a")) (AtLabel "b"), 5)
-      , ("formation with dispatch inside", ExFormation [BiTau AtRho (ExDispatch ExGlobal (AtLabel "x"))], 7)
+      , ("metatail expression", ExMetaTail ExRoot "t", 3)
+      , ("deeply nested dispatch", ExDispatch (ExDispatch ExRoot (AtLabel "a")) (AtLabel "b"), 5)
+      , ("formation with dispatch inside", ExFormation [BiTau AtRho (ExDispatch ExRoot (AtLabel "x"))], 7)
       ]
       ( \(desc, expr, expected) ->
           it desc $ countNodes expr `shouldBe` expected

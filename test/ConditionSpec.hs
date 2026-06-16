@@ -5,7 +5,7 @@
 
 module ConditionSpec where
 
-import AST (Attribute (AtLabel, AtMeta), Binding (BiMeta), Expression (ExDispatch, ExGlobal, ExMeta))
+import AST (Attribute (AtLabel, AtMeta), Binding (BiMeta), Expression (ExDispatch, ExRoot, ExMeta))
 import Condition
 import Control.Monad (forM_)
 import Data.Either (isLeft, isRight)
@@ -39,7 +39,7 @@ spec = do
       , ("eq(index(z),length(!B1))", Y.Eq (Y.CmpNum (Y.Index (AtLabel "z"))) (Y.CmpNum (Y.Length (BiMeta "B1"))))
       , ("eq(index(z),domain(!B1))", Y.Eq (Y.CmpNum (Y.Index (AtLabel "z"))) (Y.CmpNum (Y.Domain (BiMeta "B1"))))
       , ("eq(!a1, !e2)", Y.Eq (Y.CmpAttr (AtMeta "a1")) (Y.CmpExpr (ExMeta "e2")))
-      , ("or(absolute(!e1), nf(Q.x))", Y.Or [Y.Absolute (ExMeta "e1"), Y.NF (ExDispatch ExGlobal (AtLabel "x"))])
+      , ("or(absolute(!e1), nf(Q.x))", Y.Or [Y.Absolute (ExMeta "e1"), Y.NF (ExDispatch ExRoot (AtLabel "x"))])
       , ("and(matches(\"hi\", !e),part-of(!e, !B))", Y.And [Y.Matches "hi" (ExMeta "e"), Y.PartOf (ExMeta "e") (BiMeta "B")])
       ]
       (\(expr, res) -> it expr (parseCondition expr `shouldBe` Right res))

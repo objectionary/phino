@@ -3,7 +3,7 @@
 
 module Main where
 
-import AST (Expression (ExGlobal))
+import AST (Expression (ExRoot))
 import Control.Exception (evaluate)
 import Control.Monad (replicateM, replicateM_)
 import Data.Time.Clock
@@ -33,7 +33,7 @@ targetBatchMs = 20.0
 rewriteCtx :: RewriteContext
 rewriteCtx =
   RewriteContext
-    ExGlobal
+    ExRoot
     100
     100
     False

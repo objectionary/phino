@@ -26,6 +26,7 @@ module Misc
   , attributesFromBindings
   , attributesFromBindings'
   , attributeFromBinding
+  , assetFromBinding
   , uniqueBindings
   , uniqueBindings'
   , validateYamlObject
@@ -78,17 +79,17 @@ instance Show FsException where
   show DirectoryDoesNotExist{..} = printf "Directory '%s' does not exist" _dir
 
 matchBaseObject :: Expression -> Maybe T.Text
-matchBaseObject (ExDispatch ExGlobal (AtLabel label)) = Just label
+matchBaseObject (ExDispatch ExRoot (AtLabel label)) = Just label
 matchBaseObject _ = Nothing
 
 pattern BaseObject :: T.Text -> Expression
 pattern BaseObject label <- (matchBaseObject -> Just label)
   where
-    BaseObject label = ExDispatch ExGlobal (AtLabel label)
+    BaseObject label = ExDispatch ExRoot (AtLabel label)
 
 -- Minimal matcher function (required for view pattern)
 matchDataObject :: Expression -> Maybe (T.Text, Bytes)
-matchDataObject (ExApplication outer (BiTau (AtAlpha 0) inner)) = case (matchOuter outer, matchInner inner) of
+matchDataObject (ExApplication outer (ArAlpha (Alpha 0) inner)) = case (matchOuter outer, matchInner inner) of
   (Just label, Just bts) -> Just (label, bts)
   _ -> Nothing
   where
@@ -100,7 +101,7 @@ matchDataObject (ExApplication outer (BiTau (AtAlpha 0) inner)) = case (matchOut
     matchInner (ExPhiAgain _ _ inner') = matchInner inner'
     matchInner inner' = matchInner' inner'
     matchInner' :: Expression -> Maybe Bytes
-    matchInner' (ExApplication bytes (BiTau (AtAlpha 0) formation)) = case (matchesBytes bytes, matchFormation formation) of
+    matchInner' (ExApplication bytes (ArAlpha (Alpha 0) formation)) = case (matchesBytes bytes, matchFormation formation) of
       (True, Just bts) -> Just bts
       _ -> Nothing
     matchInner' _ = Nothing
@@ -126,12 +127,12 @@ pattern DataObject label bts <- (matchDataObject -> Just (label, bts))
     DataObject label bts =
       ExApplication
         (BaseObject label)
-        ( BiTau
-            (AtAlpha 0)
+        ( ArAlpha
+            (Alpha 0)
             ( ExApplication
                 (BaseObject "bytes")
-                ( BiTau
-                    (AtAlpha 0)
+                ( ArAlpha
+                    (Alpha 0)
                     (ExFormation [BiDelta bts, BiVoid AtRho])
                 )
             )
@@ -140,11 +141,14 @@ pattern DataObject label bts <- (matchDataObject -> Just (label, bts))
 -- Extract attribute from binding
 attributeFromBinding :: Binding -> Maybe Attribute
 attributeFromBinding (BiTau attr _) = Just attr
-attributeFromBinding (BiDelta _) = Just AtDelta
-attributeFromBinding (BiLambda _) = Just AtLambda
 attributeFromBinding (BiVoid attr) = Just attr
-attributeFromBinding (BiMeta _) = Nothing
-attributeFromBinding (BiMetaLambda _) = Just AtLambda
+attributeFromBinding _ = Nothing
+
+-- Extract asset from binding
+assetFromBinding :: Binding -> Maybe Asset
+assetFromBinding (BiLambda _) = Just AsLambda
+assetFromBinding (BiDelta _) = Just AsDelta
+assetFromBinding _ = Nothing
 
 -- Extract attributes from bindings
 attributesFromBindings :: [Binding] -> [Attribute]
@@ -161,29 +165,26 @@ uniqueBindings' bds = case uniqueBindings bds of
 
 -- Check if given binding list consists of unique attributes
 uniqueBindings :: [Binding] -> Either String [Binding]
-uniqueBindings bds = case maybeDuplicatedAttribute bds Set.empty of
-  Just attr ->
+uniqueBindings bds = case duplicated bds Set.empty Set.empty of
+  Just key ->
     Left
       ( printf
           "Duplicated attribute '%s' found in %s"
-          (show attr)
+          key
           (intercalate ", " (map show (attributesFromBindings bds)))
       )
   _ -> Right bds
   where
-    maybeDuplicatedAttribute :: [Binding] -> Set.Set Attribute -> Maybe Attribute
-    maybeDuplicatedAttribute [] = const Nothing
-    maybeDuplicatedAttribute ((BiTau attr _) : rest) = checkAttr attr rest
-    maybeDuplicatedAttribute (BiVoid attr : rest) = checkAttr attr rest
-    maybeDuplicatedAttribute (BiLambda _ : rest) = checkAttr AtLambda rest
-    maybeDuplicatedAttribute (BiMetaLambda _ : rest) = checkAttr AtLambda rest
-    maybeDuplicatedAttribute (BiDelta _ : rest) = checkAttr AtDelta rest
-    maybeDuplicatedAttribute (BiMeta _ : rest) = maybeDuplicatedAttribute rest
-
-    checkAttr :: Attribute -> [Binding] -> Set.Set Attribute -> Maybe Attribute
-    checkAttr attr rest acc
-      | attr `Set.member` acc = Just attr
-      | otherwise = maybeDuplicatedAttribute rest (Set.insert attr acc)
+    duplicated :: [Binding] -> Set.Set Attribute -> Set.Set Asset -> Maybe String
+    duplicated [] _ _ = Nothing
+    duplicated (bd : rest) attrs assets = case (attributeFromBinding bd, assetFromBinding bd) of
+      (Just attr, _)
+        | attr `Set.member` attrs -> Just (show attr)
+        | otherwise -> duplicated rest (Set.insert attr attrs) assets
+      (_, Just asset)
+        | asset `Set.member` assets -> Just (show asset)
+        | otherwise -> duplicated rest attrs (Set.insert asset assets)
+      _ -> duplicated rest attrs assets
 
 -- Add void rho binding to the end of the list of any rho binding is not present
 withVoidRho :: [Binding] -> [Binding]
@@ -206,25 +207,29 @@ withVoidRho bds = withVoidRho' bds False
 recoverFormations :: Expression -> Expression
 recoverFormations (ExFormation bindings) = ExFormation (withVoidRho (map recoverFormations' bindings))
 recoverFormations (ExDispatch expr attr) = ExDispatch (recoverFormations expr) attr
-recoverFormations (ExApplication expr binding) = ExApplication (recoverFormations expr) (recoverFormations' binding)
+recoverFormations (ExApplication expr arg) = ExApplication (recoverFormations expr) (recoverArgument arg)
 recoverFormations expr = expr
 
 recoverFormations' :: Binding -> Binding
 recoverFormations' (BiTau attr expr) = BiTau attr (recoverFormations expr)
 recoverFormations' binding = binding
 
+recoverArgument :: Argument -> Argument
+recoverArgument (ArTau attr expr) = ArTau attr (recoverFormations expr)
+recoverArgument (ArAlpha alpha expr) = ArAlpha alpha (recoverFormations expr)
+
 -- Transform dispatch to list of attributes
--- >>> fqnToAttrs (ExDispatch (ExDispatch (ExDispatch ExGlobal (AtLabel "org")) (AtLabel "eolang")) (AtLabel "number"))
+-- >>> fqnToAttrs (ExDispatch (ExDispatch (ExDispatch ExRoot (AtLabel "org")) (AtLabel "eolang")) (AtLabel "number"))
 -- Just [org,eolang,number]
 -- >>> fqnToAttrs (ExFormation [])
 -- Nothing
--- >>> fqnToAttrs ExGlobal
+-- >>> fqnToAttrs ExRoot
 -- Just []
 fqnToAttrs :: Expression -> Maybe [Attribute]
 fqnToAttrs expr = fqnToAttrs' expr <&> reverse
   where
     fqnToAttrs' :: Expression -> Maybe [Attribute]
-    fqnToAttrs' ExGlobal = Just []
+    fqnToAttrs' ExRoot = Just []
     fqnToAttrs' (ExDispatch ex at) = fqnToAttrs' ex <&> (:) at
     fqnToAttrs' _ = Nothing
 

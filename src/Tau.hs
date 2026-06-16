@@ -53,7 +53,7 @@ mint taken idx
 
 exprLabels :: Expression -> Set Text
 exprLabels (ExFormation bds) = Set.unions (map bindingLabels bds)
-exprLabels (ExApplication expr bd) = exprLabels expr <> bindingLabels bd
+exprLabels (ExApplication expr arg) = exprLabels expr <> argumentLabels arg
 exprLabels (ExDispatch expr attr) = exprLabels expr <> attrLabel attr
 exprLabels (ExMetaTail expr _) = exprLabels expr
 exprLabels (ExPhiMeet _ _ expr) = exprLabels expr
@@ -64,6 +64,10 @@ bindingLabels :: Binding -> Set Text
 bindingLabels (BiTau attr expr) = attrLabel attr <> exprLabels expr
 bindingLabels (BiVoid attr) = attrLabel attr
 bindingLabels _ = Set.empty
+
+argumentLabels :: Argument -> Set Text
+argumentLabels (ArTau attr expr) = attrLabel attr <> exprLabels expr
+argumentLabels (ArAlpha _ expr) = exprLabels expr
 
 attrLabel :: Attribute -> Set Text
 attrLabel (AtLabel label) = Set.singleton label
