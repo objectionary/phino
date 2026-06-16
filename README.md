@@ -300,11 +300,11 @@ Condition:
                          # can be applied
   | absolute: Expression' # returns True if given expression is absolute, i.e.
                          # ξ-free and in normal form: it is Φ, a formation, a
-                         # dispatch with a ξ-free subject, or an application with
-                         # a ξ-free subject and argument (no ξ leaks outside of a
-                         # formation) and it is in normal form. Ranges over the
-                         # absolute expressions 𝒦 ⊆ 𝒩; used by the '𝑘'/'!k' meta
-                         # variable and the Rcopy rule.
+                         # dispatch with a ξ-free subject, or an application
+                         # with a ξ-free subject and argument (no ξ leaks
+                         # outside of a formation) and it is in normal form.
+                         # Ranges over the absolute expressions 𝒦 ⊆ 𝒩; used by
+                         # the '𝑘'/'!k' meta variable and the Rcopy rule.
   | matches:             # returns True if given expression after dataization
       - String           # matches to given regex
       - Expression
