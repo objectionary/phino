@@ -136,10 +136,10 @@ hashExpression = goExpr fnvOffset
     goArgument :: Int -> Argument -> Int
     goArgument h = \case
       ArTau at ex -> goExpr (goAttribute (step h 22) at) ex
-      ArAlpha al ex -> goExpr (goAlpha (step h 25) al) ex
+      ArAlpha al ex -> goExpr (goAlpha (step h 30) al) ex
     goAlpha :: Int -> Alpha -> Int
     goAlpha h = \case
-      Alpha idx -> step (step h 26) idx
+      Alpha idx -> step (step h 31) idx
       AlMeta t -> hashText (step h 28) t
     goFunction :: Int -> Function -> Int
     goFunction h = \case

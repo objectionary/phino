@@ -208,7 +208,7 @@ normalizationRules = map decodeRule $(embedDir "resources/normalize")
     decodeRule :: (FilePath, BS.ByteString) -> Rule
     decodeRule (path, bs) =
       case Yaml.decodeEither' bs of
-        Right r -> r
+        Right rule -> rule
         Left err -> error $ "YAML parse error in " ++ path ++ ": " ++ show err
 
 yamlRule :: FilePath -> IO Rule

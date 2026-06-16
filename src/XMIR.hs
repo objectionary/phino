@@ -495,6 +495,7 @@ toAttr :: String -> C.Cursor -> IO Attribute
 toAttr attr cur = case attr of
   "φ" -> pure AtPhi
   "ρ" -> pure AtRho
+  'α' : _ -> throwIO (InvalidXMIRFormat "α-index is not a valid dispatch attribute in XMIR" cur)
   ch : _
     | ch `notElem` ['a' .. 'z'] -> throwIO (InvalidXMIRFormat (printf "The attribute '%s' must start with ['a'..'z']" attr) cur)
     | '.' `elem` attr -> throwIO (InvalidXMIRFormat "Attribute can't contain dots" cur)
