@@ -41,6 +41,7 @@ docs/site
 node_modules
 node_modules/
 pipeline/*
+phino
 result
 tmp
 try-unphi
