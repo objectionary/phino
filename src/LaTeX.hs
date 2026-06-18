@@ -378,6 +378,7 @@ explainDataizeRule rule =
     dataizeOutcome :: Y.DataizeOutcome -> String
     dataizeOutcome (Y.DoDataize (Y.DaExpr expr)) = dataize (renderToLatex (expressionToCST expr) defaultLatexContext)
     dataizeOutcome (Y.DoDataize (Y.DaMorph expr)) = dataize (morph (renderToLatex (expressionToCST expr) defaultLatexContext))
+    dataizeOutcome (Y.DoDataize (Y.DaNormalize expr)) = dataize (normalize (renderToLatex (expressionToCST expr) defaultLatexContext))
     dataizeOutcome (Y.DoData bytes) = T.unpack (render (toLaTeX (toCST' bytes :: BYTES)))
     dataizeOutcome Y.DoNothing = "\\varnothing"
 

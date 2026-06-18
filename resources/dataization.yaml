@@ -1,7 +1,8 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 # SPDX-License-Identifier: MIT
 ---
-# Dataization 𝔻 — applied top-to-bottom, first matching clause wins.
+# Dataization 𝔻 — applied top-to-bottom, first matching clause wins. The input
+# is always a normal form: a non-NF expression matches no clause.
 
 - name: delta
   description: '𝔻(⟦𝐵1, Δ ⤍ δ, 𝐵2⟧) ⟿ δ'
@@ -9,7 +10,7 @@
   then: δ
 
 - name: box
-  description: '𝔻(⟦𝐵1, φ ↦ e, 𝐵2⟧) ⟿ 𝔻(𝒞(e)) if [Δ, λ] ∩ (𝐵1 ∪ 𝐵2) = ∅'
+  description: '𝔻(⟦𝐵1, φ ↦ e, 𝐵2⟧) ⟿ 𝔻(𝒩(𝒞(e))) if [Δ, λ] ∩ (𝐵1 ∪ 𝐵2) = ∅'
   match: ⟦𝐵1, φ ↦ 𝑒, 𝐵2⟧
   where:
     - meta: 𝑒1
@@ -22,19 +23,20 @@
       - [Δ, λ]
       - [𝐵1, 𝐵2]
   then:
-    dataize: 𝑒1
+    dataize:
+      normalize: 𝑒1
 
 - name: norm
-  description: '𝔻(e) ⟿ 𝔻(𝕄(e)) if e ∉ 𝒫'
-  match: 𝑒
+  description: '𝔻(n) ⟿ 𝔻(𝕄(n)) if n ∉ 𝒫'
+  match: 𝑛
   when:
     not:
-      primitive: 𝑒
+      primitive: 𝑛
   then:
     dataize:
-      morph: 𝑒
+      morph: 𝑛
 
 - name: none
-  description: '𝔻(e) ⟿ nothing otherwise'
-  match: 𝑒
+  description: '𝔻(n) ⟿ nothing otherwise'
+  match: 𝑛
   then: nothing

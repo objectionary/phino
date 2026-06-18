@@ -76,12 +76,6 @@ spec = do
         , Just (BtOne "00")
         )
       ,
-        ( "[[ x -> [[ D> 01- ]] ]].x => 01-"
-        , ExDispatch (ExFormation [BiTau (AtLabel "x") (ExFormation [BiDelta (BtOne "01"), BiVoid AtRho]), BiVoid AtRho]) (AtLabel "x")
-        , ExRoot
-        , Just (BtOne "01")
-        )
-      ,
         ( "[[ @ -> [[ x -> [[ D> 01-, y -> ? ]](y -> [[ ]]) ]].x ]] => 01-"
         , ExFormation
             [ BiTau
@@ -188,7 +182,6 @@ spec = do
                    , "contextualize"
                    , "dot"
                    , "copy"
-                   , "prim"
                    ]
     it "dataizes a located reference through the expected rules" $ do
       labels <- labelsOf "Q.foo.bar" "Q -> [[ foo -> [[ bar -> [[ @ -> Q.x ]] ]], x -> [[ D> 42- ]] ]]"
