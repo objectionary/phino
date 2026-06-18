@@ -20,7 +20,7 @@ jobs:
         ghc: ['9.6.7']
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Set up GHC
         id: setup
         uses: haskell-actions/setup@v2.11.0
