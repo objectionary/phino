@@ -489,6 +489,19 @@ To generate a local coverage report for development, run:
 make coverage
 ```
 
+To build a `phino` executable into the root of the repository, run:
+
+```bash
+make phino
+```
+
+This produces an executable `phino` (or `phino.exe` on Windows) in the
+project root, which you can run directly for quick local testing:
+
+```bash
+./phino --version
+```
+
 You will need [GHC ≥ 9.6.7][GHC] and [Cabal ≥ 3.0 (recommended)][cabal]
 or [Stack ≥ 3.0][stack] installed.
 
