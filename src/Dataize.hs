@@ -24,7 +24,7 @@ import Matcher (Subst, substEmpty)
 import Misc
 import Must (Must (..))
 import Rewriter (RewriteContext (RewriteContext), Rewritten, rewrite)
-import Rule (RuleContext (RuleContext), matchExpressionWithRule')
+import Rule (RuleContext (RuleContext), isNF, matchExpressionWithRule')
 import Text.Printf (printf)
 import Yaml (ExtraArgument (..), normalizationRules)
 import qualified Yaml as Y
@@ -81,49 +81,60 @@ phiDispatch tau expr = case expr of
       BiTau (AtLabel attr) expr' -> if attr == tau then Just expr' else boundExpr bds
       _ -> boundExpr bds
 
--- The Morphing function 𝕄 maps objects to primitives. It is driven by the
--- ordered rules from 'morphing.yaml': the first matching rule's 'then' outcome
--- either stops with a primitive ('MoStop') or keeps morphing ('MoMorph'). When
--- the morphed argument is a normalization ('MaNormalize', the 'nmz' rule), the
--- rewriter runs and its individual steps are spliced into the chain.
+-- The Morphing function 𝕄 maps a normal-form object to a primitive. The head
+-- 'expr' is judged together with its tail 'wrap' (the dispatches and
+-- applications to its right): a primitive whole stops ('prim'), a non-normal
+-- whole is normalized and re-morphed ('nmz', splicing the rewriter's steps in).
+-- On a normal-form whole the head fires — a λ-formation calls its atom
+-- ('lambda') and a global dispatch Φ.τ is resolved ('root') — re-attaching the
+-- tail before morphing on. A dispatch or application head instead pushes 𝕄 one
+-- operation deeper (𝕄(e.τ) ⟿ 𝕄(e).τ, 𝕄(e(a)) ⟿ 𝕄(e)(a)), so an atom buried
+-- under a tail fires only once that tail has filled its voids; anything else is
+-- ⊥. Threading the tail as a function is what replaces the head/tail matcher.
 morph :: Morphed -> DataizeContext -> IO Morphed
-morph (expr, seq) ctx@DataizeContext{..} = do
-  matched <- firstMatch Y.morphingRules
-  case matched of
-    Just (rule, subst) -> apply rule.then_ rule.name subst
-    Nothing -> pure (expr, seq)
+morph = morphWith id
+
+morphWith :: (Expression -> Expression) -> Morphed -> DataizeContext -> IO Morphed
+morphWith wrap (expr, seq) ctx@DataizeContext{..}
+  | primitive whole = stop "prim" whole
+  | not (isNF whole (RuleContext (execBuildTerm ctx))) = normalize
+  | otherwise = fire expr
   where
-    firstMatch :: [Y.MorphRule] -> IO (Maybe (Y.MorphRule, Subst))
-    firstMatch [] = pure Nothing
-    firstMatch (rule : rest) = do
-      substs <- matchExpressionWithRule' expr (asRule rule) (RuleContext (execBuildTerm ctx))
-      case substs of
-        (subst : _) -> pure (Just (rule, subst))
-        [] -> firstMatch rest
-    -- The M/D rules evaluate as 'match → where → when', so the rule's guard
-    -- maps onto the 'having' slot (which runs after 'where'), not 'when' (which
-    -- 'matchExpressionWithRule'' runs before 'where').
-    asRule :: Y.MorphRule -> Y.Rule
-    asRule rule = Y.Rule rule.name rule.description rule.match ExRoot Nothing rule.where_ rule.when
-    apply :: Y.MorphOutcome -> String -> Subst -> IO Morphed
-    apply (Y.MoStop result) name subst = do
-      built <- buildExpressionThrows result subst
+    whole = wrap expr
+    stop :: String -> Expression -> IO Morphed
+    stop name built = do
       seq' <- leadsTo seq name built ctx
       pure (built, seq')
-    apply (Y.MoMorph (Y.MaExpr result)) name subst = do
-      built <- buildExpressionThrows result subst
-      seq' <- leadsTo seq name built ctx
-      morph (built, seq') ctx
     -- 𝕄(𝒩(e)) delegates to the normalization rewriter and splices its
     -- individual steps (alpha, copy, dot, …) into the chain before morphing on.
-    apply (Y.MoMorph (Y.MaNormalize arg)) _ subst = do
-      built <- buildExpressionThrows arg subst
-      prog' <- withLocatedExpression _locator built _program
+    normalize :: IO Morphed
+    normalize = do
+      prog' <- withLocatedExpression _locator whole _program
       (rewrittens, _) <- rewrite prog' normalizationRules (switchContext ctx)
       let (rw :| rws) = NE.reverse rewrittens
           seq' = rw :| rws <> NE.tail seq
       expr' <- locatedExpression _locator (fst rw)
       morph (expr', seq') ctx
+    -- Fire the head rule on a normal-form whole, re-attaching the tail; a
+    -- dispatch or application head pushes 𝕄 one operation deeper.
+    fire :: Expression -> IO Morphed
+    fire (ExFormation bds) = do
+      resolved <- formation bds ctx
+      case resolved of
+        Just obj -> morphOn "lambda" (wrap obj)
+        Nothing -> pure (ExTermination, seq)
+    fire (ExDispatch ExRoot (AtLabel label)) = case phiDispatch label root of
+      Just obj -> morphOn "root" (wrap obj)
+      Nothing -> pure (ExTermination, seq)
+    fire (ExDispatch recv attr) = morphWith (wrap . (`ExDispatch` attr)) (recv, seq) ctx
+    fire (ExApplication recv arg) = morphWith (wrap . (`ExApplication` arg)) (recv, seq) ctx
+    fire _ = pure (ExTermination, seq)
+    morphOn :: String -> Expression -> IO Morphed
+    morphOn name built = do
+      seq' <- leadsTo seq name built ctx
+      morph (built, seq') ctx
+    root :: Expression
+    root = let Program e = _program in e
     switchContext :: DataizeContext -> RewriteContext
     switchContext DataizeContext{..} =
       RewriteContext

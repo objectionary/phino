@@ -1,7 +1,12 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 # SPDX-License-Identifier: MIT
 ---
-# Morphing 𝕄 — applied top-to-bottom, first matching clause wins.
+# Morphing 𝕄 — applied top-to-bottom, first matching clause wins. 𝕄 accepts
+# only normal forms; a global dispatch Φ.τ is a normal form that 'root'
+# resolves. When no clause matches, the driver pushes 𝕄 through a dispatch or
+# application — 𝕄(e.τ) ⟿ 𝕄(e).τ and 𝕄(e(a)) ⟿ 𝕄(e)(a) — to reach a λ buried
+# under it, and otherwise stops with ⊥. That push is structural (it cannot be a
+# clause here, as 𝕄(e.τ) would re-match itself), so it lives in 'Dataize.morph'.
 
 - name: prim
   description: '𝕄(p) ⟿ p'
@@ -19,28 +24,23 @@
       normalize: 𝑒
 
 - name: lambda
-  description: '𝕄(⟦𝐵1, λ ⤍ F, 𝐵2⟧ * t) ⟿ 𝕄(F(⟦𝐵1, 𝐵2⟧) * t)'
-  match: '⟦𝐵1, λ ⤍ !F, 𝐵2⟧ * !t'
+  description: '𝕄(⟦𝐵1, λ ⤍ F, 𝐵2⟧) ⟿ 𝕄(F(⟦𝐵1, 𝐵2⟧))'
+  match: '⟦𝐵1, λ ⤍ !F, 𝐵2⟧'
   where:
     - meta: 𝑒
       function: lambda
       args:
         - '⟦𝐵1, λ ⤍ !F, 𝐵2⟧'
   then:
-    morph: '𝑒 * !t'
+    morph: 𝑒
 
 - name: root
-  description: '𝕄(Φ.τ * t) ⟿ 𝕄(e * t) if Φ ↦ ⟦𝐵1, τ ↦ e, 𝐵2⟧'
-  match: 'Φ.𝜏 * !t'
+  description: '𝕄(Φ.τ) ⟿ 𝕄(e) if Φ ↦ ⟦𝐵1, τ ↦ e, 𝐵2⟧'
+  match: 'Φ.𝜏'
   where:
     - meta: 𝑒
       function: global
       args:
         - 𝜏
   then:
-    morph: '𝑒 * !t'
-
-- name: stuck
-  description: '𝕄(e) ⟿ ⊥ otherwise'
-  match: 𝑒
-  then: ⊥
+    morph: 𝑒
