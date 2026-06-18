@@ -37,6 +37,8 @@ cabal.sandbox.config
 coverage-report/
 dist
 dist-*
+/phino
+/phino.exe
 docs/site
 node_modules
 node_modules/

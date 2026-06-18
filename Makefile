@@ -3,7 +3,7 @@
 
 .ONESHELL:
 .SHELLFLAGS := -e -o pipefail -c
-.PHONY: all test hlint fourmolu coverage bench binary clean
+.PHONY: all test hlint fourmolu coverage bench binary phino clean
 
 SHELL := bash
 
@@ -73,6 +73,11 @@ binary:
 	mkdir -p dist-release
 	cp "$$(cabal list-bin phino)" dist-release/phino$(BIN_EXT)
 	strip dist-release/phino$(BIN_EXT)
+
+.SILENT:
+phino:
+	cabal build phino
+	cp "$$(cabal list-bin phino)" $(CURDIR)/phino$(BIN_EXT)
 
 .SILENT:
 clean:
