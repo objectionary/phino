@@ -81,11 +81,12 @@ phiDispatch tau expr = case expr of
       BiTau (AtLabel attr) expr' -> if attr == tau then Just expr' else boundExpr bds
       _ -> boundExpr bds
 
--- The Morphing function 𝕄 maps objects to primitives. It is driven by the
+-- The Morphing function 𝕄 maps normal forms to primitives. It is driven by the
 -- ordered rules from 'morphing.yaml': the first matching rule's 'then' outcome
 -- either stops with a primitive ('MoStop') or keeps morphing ('MoMorph'). When
--- the morphed argument is a normalization ('MaNormalize', the 'nmz' rule), the
--- rewriter runs and its individual steps are spliced into the chain.
+-- the morphed argument is a normalization ('MaNormalize', as in the 'lambda' and
+-- 'root' rules), the rewriter runs over the rule's product and its individual
+-- steps are spliced into the chain before morphing continues.
 morph :: Morphed -> DataizeContext -> IO Morphed
 morph (expr, seq) ctx@DataizeContext{..} = do
   matched <- firstMatch Y.morphingRules
@@ -114,27 +115,14 @@ morph (expr, seq) ctx@DataizeContext{..} = do
       built <- buildExpressionThrows result subst
       seq' <- leadsTo seq name built ctx
       morph (built, seq') ctx
-    -- 𝕄(𝒩(e)) delegates to the normalization rewriter and splices its
-    -- individual steps (alpha, copy, dot, …) into the chain before morphing on.
-    apply (Y.MoMorph (Y.MaNormalize arg)) _ subst = do
+    -- 𝕄(𝒩(e)) records the producing step, then delegates to the normalization
+    -- rewriter and splices its individual steps (alpha, copy, dot, …) into the
+    -- chain before morphing on the resulting normal form.
+    apply (Y.MoMorph (Y.MaNormalize arg)) name subst = do
       built <- buildExpressionThrows arg subst
-      prog' <- withLocatedExpression _locator built _program
-      (rewrittens, _) <- rewrite prog' normalizationRules (switchContext ctx)
-      let (rw :| rws) = NE.reverse rewrittens
-          seq' = rw :| rws <> NE.tail seq
-      expr' <- locatedExpression _locator (fst rw)
+      labelled <- leadsTo seq name built ctx
+      (expr', seq') <- normalized built labelled ctx
       morph (expr', seq') ctx
-    switchContext :: DataizeContext -> RewriteContext
-    switchContext DataizeContext{..} =
-      RewriteContext
-        _locator
-        _maxDepth
-        _maxCycles
-        _depthSensitive
-        _buildTerm
-        MtDisabled
-        Nothing
-        _saveStep
 
 dataize :: DataizeContext -> IO Dataized
 dataize ctx@DataizeContext{..} = do
@@ -179,6 +167,14 @@ dataize' (expr, seq) ctx = do
         built <- buildExpressionThrows arg subst
         (morphed, seq') <- morph (built, seq) ctx
         dataize' (morphed, seq') ctx
+      -- 𝔻(𝒩(e)) records the producing step (the 'box' contextualization), then
+      -- normalizes its result back to a normal form before dataizing on, so 𝔻
+      -- only ever sees normal forms.
+      Y.DoDataize (Y.DaNormalize arg) -> do
+        built <- buildExpressionThrows arg subst
+        labelled <- leadsTo seq (operation rule) built ctx
+        (normal, seq') <- normalized built labelled ctx
+        dataize' (normal, seq') ctx
     operation :: Y.DataizeRule -> String
     operation rule = case rule.where_ of
       Just (extra : _) -> Y.function extra
@@ -189,14 +185,35 @@ leadsTo ((prog, _) :| rest) rule expr DataizeContext{..} = do
   prog' <- withLocatedExpression _locator expr prog
   pure ((prog', Nothing) :| (prog, Just rule) : rest)
 
+-- Reduce 'expr' to its normal form through the normalization rewriter,
+-- splicing the individual steps (alpha, copy, dot, …) into the chain and
+-- returning the normalized expression together with the extended sequence.
+normalized :: Expression -> NonEmpty Rewritten -> DataizeContext -> IO (Expression, NonEmpty Rewritten)
+normalized expr seq ctx@DataizeContext{..} = do
+  prog' <- withLocatedExpression _locator expr _program
+  (rewrittens, _) <- rewrite prog' normalizationRules (rewriteContext ctx)
+  let (rw :| rws) = NE.reverse rewrittens
+      seq' = rw :| rws <> NE.tail seq
+  expr' <- locatedExpression _locator (fst rw)
+  pure (expr', seq')
+
+-- Switch the dataization context to a rewriting context for normalization,
+-- disabling the must-checker and breakpoints.
+rewriteContext :: DataizeContext -> RewriteContext
+rewriteContext DataizeContext{..} =
+  RewriteContext _locator _maxDepth _maxCycles _depthSensitive _buildTerm MtDisabled Nothing _saveStep
+
 -- Synthetic dataize function for internal usage inside atoms
 -- Here we modify original program from context by adding new binding
--- which refers to expression we want to dataize.
+-- which refers to expression we want to dataize. As a caller of 𝔻, it first
+-- reduces the expression to a normal form, since 𝔻 only accepts normal forms.
 _dataize :: Expression -> DataizeContext -> IO (Maybe Bytes)
 _dataize expr ctx@DataizeContext{_buildTerm = buildTerm, _program = Program (ExFormation bds)} = do
   (TeAttribute attr) <- buildTerm "random-tau" [] substEmpty
   let prog = Program (ExFormation (BiTau attr expr : bds))
-  (bts, _) <- dataize' (expr, (prog, Nothing) :| []) ctx{_program = prog}
+      ctx' = ctx{_program = prog}
+  (normal, seq) <- normalized expr ((prog, Nothing) :| []) ctx'
+  (bts, _) <- dataize' (normal, seq) ctx'
   pure bts
 _dataize _ _ = throwIO (userError "Can't call _dataize from atoms with non-formation program")
 

@@ -238,11 +238,13 @@ data DataizeOutcome
   | DoNothing
   deriving (Eq, Generic, Show)
 
--- The argument of a dataization continuation: either a plain expression
--- ('𝔻(e)') or the morphing of one ('𝔻(𝕄(e))', written '{ morph: e }').
+-- The argument of a dataization continuation: a plain expression ('𝔻(e)'),
+-- the morphing of one ('𝔻(𝕄(e))', written '{ morph: e }'), or the
+-- normalization of one ('𝔻(𝒩(e))', written '{ normalize: e }').
 data DataizeArg
   = DaExpr Expression
   | DaMorph Expression
+  | DaNormalize Expression
   deriving (Eq, Generic, Show)
 
 -- One ordered morphing rule: match the expression, build extra metas in
@@ -290,8 +292,11 @@ instance FromJSON DataizeOutcome where
 
 instance FromJSON DataizeArg where
   parseJSON (Object o) = do
-    validateYamlObject o ["morph"]
-    DaMorph <$> o .: "morph"
+    validateYamlObject o ["morph", "normalize"]
+    morphed <- o .:? "morph"
+    case morphed of
+      Just expr -> pure (DaMorph expr)
+      Nothing -> DaNormalize <$> o .: "normalize"
   parseJSON v = DaExpr <$> parseJSON v
 
 instance FromJSON MorphRule where
