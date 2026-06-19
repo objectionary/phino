@@ -81,11 +81,12 @@ phiDispatch tau expr = case expr of
       BiTau (AtLabel attr) expr' -> if attr == tau then Just expr' else boundExpr bds
       _ -> boundExpr bds
 
--- The Morphing function 𝕄 maps objects to primitives. It is driven by the
+-- The Morphing function 𝕄 maps normal forms to primitives. It is driven by the
 -- ordered rules from 'morphing.yaml': the first matching rule's 'then' outcome
 -- either stops with a primitive ('MoStop') or keeps morphing ('MoMorph'). When
--- the morphed argument is a normalization ('MaNormalize', the 'nmz' rule), the
--- rewriter runs and its individual steps are spliced into the chain.
+-- the morphed argument is a normalization ('MaNormalize', as in the 'lambda' and
+-- 'root' rules), the rewriter runs over the rule's product and its individual
+-- steps are spliced into the chain before morphing continues.
 morph :: Morphed -> DataizeContext -> IO Morphed
 morph (expr, seq) ctx@DataizeContext{..} = do
   matched <- firstMatch Y.morphingRules
@@ -266,7 +267,7 @@ _lambda ctx [ArgExpression expr] subst = do
     ExFormation bds -> do
       resolved <- formation bds ctx
       case resolved of
-        Just obj -> TeExpression . fst <$> normalized obj ((ctx._program, Nothing) :| []) ctx
+        Just obj -> pure (TeExpression obj)
         Nothing -> throwIO (userError "Function lambda() expects a formation with a λ binding")
     _ -> throwIO (userError "Function lambda() expects a formation")
 _lambda _ _ _ = throwIO (userError "Function lambda() requires exactly 1 expression argument")
