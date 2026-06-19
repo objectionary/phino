@@ -126,9 +126,8 @@ morph (expr, seq) ctx@DataizeContext{..} = do
 dataize :: DataizeContext -> IO Dataized
 dataize ctx@DataizeContext{..} = do
   expr <- locatedExpression _locator _program
-  (normal, seq) <- normalized expr ((_program, Nothing) :| []) ctx
-  (maybeBytes, seq') <- dataize' (normal, seq) ctx
-  pure (maybeBytes, reverse seq')
+  (maybeBytes, seq) <- dataize' (expr, (_program, Nothing) :| []) ctx
+  pure (maybeBytes, reverse seq)
 
 -- The Dataization function 𝔻 retrieves bytes from an expression. It is driven
 -- by the ordered rules from 'dataization.yaml': 'delta' yields the asset bytes,
@@ -196,11 +195,6 @@ normalized expr seq ctx@DataizeContext{..} = do
       seq' = rw :| rws <> NE.tail seq
   expr' <- locatedExpression _locator (fst rw)
   pure (expr', seq')
-
--- Reduce 'expr' to its normal form, discarding the intermediate steps. Used to
--- keep atom results in normal form before they re-enter morphing.
-toNormalForm :: Expression -> DataizeContext -> IO Expression
-toNormalForm expr ctx@DataizeContext{..} = fst <$> normalized expr ((_program, Nothing) :| []) ctx
 
 -- Switch the dataization context to a rewriting context for normalization,
 -- disabling the must-checker and breakpoints.
@@ -272,7 +266,7 @@ _lambda ctx [ArgExpression expr] subst = do
     ExFormation bds -> do
       resolved <- formation bds ctx
       case resolved of
-        Just obj -> TeExpression <$> toNormalForm obj ctx
+        Just obj -> TeExpression . fst <$> normalized obj ((ctx._program, Nothing) :| []) ctx
         Nothing -> throwIO (userError "Function lambda() expects a formation with a λ binding")
     _ -> throwIO (userError "Function lambda() expects a formation")
 _lambda _ _ _ = throwIO (userError "Function lambda() requires exactly 1 expression argument")
