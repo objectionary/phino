@@ -101,7 +101,12 @@ morph (expr, seq) ctx@DataizeContext{..} = do
       morph (built, seq') ctx
     -- 𝕄(𝒩(e)) records the producing step, then delegates to the normalization
     -- rewriter and splices its individual steps (alpha, copy, dot, …) into the
-    -- chain before morphing on the resulting normal form.
+    -- chain before morphing on the resulting normal form. When that reduction
+    -- reaches a fixpoint — the normalized result equals the input — the
+    -- dispatch/application cannot resolve any further, so morphing is stuck and
+    -- yields ⊥, exactly as the 'stuck' rule does. This guard is a post-reduction
+    -- check (the result is known only after 'then' and 𝒩 run) so it cannot live
+    -- in a 'when'/'having'/'where' clause, all of which run before the reduction.
     apply (Y.MoMorph (Y.MaNormalize arg)) name subst = do
       built <- buildExpressionThrows arg subst
       labelled <- leadsTo seq name built ctx
