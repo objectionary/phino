@@ -207,6 +207,8 @@ spec = do
       , "[[ x -> \"\\uD835\\uDF11\"]]"
       , "[[ x ↦ \"This plugin has \\x01\\x01\" ]]"
       , "[[ !afoo -> !e1Some, !a-BAR -> !e_123someW, !Bhi123 ]]"
+      , "[[ !B ]](𝜂 -> !e)"
+      , "[[ 𝜏 -> !e, 𝜂 -> !e, 𝐵 ]]"
       ]
       (\expr -> it expr (parseExpression expr `shouldSatisfy` isRight))
 
