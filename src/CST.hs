@@ -83,8 +83,6 @@ data META_HEAD
   | N' -- n
   | K -- 𝑘
   | K' -- k
-  | P -- 𝑝
-  | P' -- p
   | A -- a
   | TAU -- 𝜏
   | TAU' -- \tau
@@ -291,13 +289,12 @@ metaTail = T.drop 1
 
 -- The first character of an expression meta name encodes its kind:
 -- 'n'-prefixed names are normal-form-constrained '𝑛' metas, 'k'-prefixed
--- names are absolute-constrained '𝑘' metas, 'p'-prefixed names are
--- primitive-constrained '𝑝' metas, everything else is an ordinary '𝑒' meta.
+-- names are absolute-constrained '𝑘' metas, everything else is an ordinary
+-- '𝑒' meta.
 exMetaHead :: T.Text -> META_HEAD
 exMetaHead mt
   | T.isPrefixOf "n" mt = N
   | T.isPrefixOf "k" mt = K
-  | T.isPrefixOf "p" mt = P
   | otherwise = E
 
 -- This class is used to convert AST to CST

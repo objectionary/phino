@@ -1,5 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
-
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
@@ -11,7 +9,7 @@ import AST
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
 import Data.Maybe (catMaybes)
-import Data.Text (Text, isPrefixOf)
+import Data.Text (Text)
 
 -- Meta value
 -- The right part of substitution
@@ -105,9 +103,7 @@ matchBindings (pb : pbs) (tb : tbs) = combineMany (matchBinding pb tb) (matchBin
 matchBindings _ _ = []
 
 matchExpression' :: MatchExpressionFunc
-matchExpression' (ExMeta meta) tgt
-  | "p" `isPrefixOf` meta = [substSingle meta (MvExpression tgt) | primitive tgt]
-  | otherwise = [substSingle meta (MvExpression tgt)]
+matchExpression' (ExMeta meta) tgt = [substSingle meta (MvExpression tgt)]
 matchExpression' ExXi ExXi = [substEmpty]
 matchExpression' ExRoot ExRoot = [substEmpty]
 matchExpression' ExTermination ExTermination = [substEmpty]
