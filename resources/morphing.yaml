@@ -9,7 +9,7 @@
 # returned untouched and fired later by 𝔼 (the 'fire' rule of 𝔻).
 
 - name: prim
-  description: '𝕄(p) ⟿ p'
+  description: '𝕄(⟦𝐵⟧) ⟿ ⟦𝐵⟧'
   match: ⟦𝐵⟧
   then: ⟦𝐵⟧
 
