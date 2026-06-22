@@ -144,16 +144,6 @@ hashExpression = goExpr fnvOffset
       Function t -> hashText (step h 16) t
       FnMeta t -> hashText (step h 29) t
 
--- A primitive is the termination ⊥ or a formation without a λ binding.
-primitive :: Expression -> Bool
-primitive ExTermination = True
-primitive (ExFormation bds) = not (any lambda bds)
-  where
-    lambda :: Binding -> Bool
-    lambda (BiLambda _) = True
-    lambda _ = False
-primitive _ = False
-
 countNodes :: Expression -> Int
 countNodes (ExFormation bds) = 1 + sum (map nodesInBinding bds) + length bds
   where

@@ -260,9 +260,9 @@ $ phino explain --dataize
   { }
   { }
 ...
-\trrule{none}
-  { \mathbb{D}( e ) }
-  { \varnothing }
+\trrule{norm}
+  { \mathbb{D}( n ) }
+  { \mathbb{D}( \mathbb{M}( n ) ) }
   { }
   { }
 \end{tabular}

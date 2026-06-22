@@ -321,7 +321,6 @@ instance ToLaTeX CONDITION where
   toLaTeX CO_COMPARE{..} = CO_COMPARE (toLaTeX left) equal (toLaTeX right)
   toLaTeX CO_MATCHES{..} = CO_MATCHES regex (toLaTeX expr)
   toLaTeX CO_PART_OF{..} = CO_PART_OF (toLaTeX expr) (toLaTeX binding)
-  toLaTeX CO_PRIMITIVE{..} = CO_PRIMITIVE (toLaTeX expr) belongs
   toLaTeX CO_DISJOINT{..} = CO_DISJOINT (map toLaTeX attrs) (map toLaTeX groups)
   toLaTeX CO_EMPTY = CO_EMPTY
 

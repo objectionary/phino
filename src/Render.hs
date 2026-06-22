@@ -256,7 +256,6 @@ instance Render CONDITION where
   render CO_COMPARE{..} = render left <> " " <> render equal <> " " <> render right
   render CO_MATCHES{..} = "matches( " <> T.pack regex <> ", " <> render expr <> " )"
   render CO_PART_OF{..} = "part-of( " <> render expr <> ", " <> render binding <> " )"
-  render CO_PRIMITIVE{..} = render expr <> " " <> render belongs <> " \\mathcal{P}"
   render CO_DISJOINT{..} =
     "[ "
       <> T.intercalate ", " (map render attrs)

@@ -66,9 +66,9 @@ formation bds ctx = do
             [bd] -> (Just bd, rest)
             _ -> (Nothing, bds)
 
--- The Morphing function 𝕄 maps normal forms to primitives. It is driven by the
+-- The Morphing function 𝕄 maps normal forms to formations. It is driven by the
 -- ordered rules from 'morphing.yaml': the first matching rule's 'then' outcome
--- either stops with a primitive ('MoStop') or keeps morphing ('MoMorph'). When
+-- either stops at a formation ('MoStop') or keeps morphing ('MoMorph'). When
 -- the morphed argument is a normalization ('MaNormalize', as in the 'lambda' and
 -- 'root' rules), the rewriter runs over the rule's product and its individual
 -- steps are spliced into the chain before morphing continues.
@@ -138,9 +138,10 @@ dataize ctx@DataizeContext{..} = do
 
 -- The Dataization function 𝔻 retrieves bytes from an expression. It is driven
 -- by the ordered rules from 'dataization.yaml': 'delta' yields the asset bytes,
--- 'none' yields nothing, 'box' contextualizes the φ-body and keeps dataizing
--- (its step is labelled by the operation, 'contextualize'), and 'norm' reduces
--- through morphing, splicing the morphing steps into the chain.
+-- 'none' (a formation) and 'bott' (⊥) yield nothing, 'box' contextualizes the
+-- φ-body and keeps dataizing (its step is labelled by the operation,
+-- 'contextualize'), and 'norm' reduces through morphing, splicing the morphing
+-- steps into the chain.
 dataize' :: Dataizable -> DataizeContext -> IO Dataized
 dataize' (expr, seq) ctx = do
   matched <- firstMatch Y.dataizationRules

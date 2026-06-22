@@ -195,7 +195,6 @@ instance ToSalty CONDITION where
   toSalty CO_COMPARE{..} = CO_COMPARE (toSalty left) equal (toSalty right)
   toSalty CO_MATCHES{..} = CO_MATCHES regex (toSalty expr)
   toSalty CO_PART_OF{..} = CO_PART_OF (toSalty expr) (toSalty binding)
-  toSalty CO_PRIMITIVE{..} = CO_PRIMITIVE (toSalty expr) belongs
   toSalty CO_DISJOINT{..} = CO_DISJOINT attrs (map toSalty groups)
   toSalty CO_EMPTY = CO_EMPTY
 

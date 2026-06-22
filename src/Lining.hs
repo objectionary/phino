@@ -81,7 +81,6 @@ instance ToSingleLine CONDITION where
   toSingleLine CO_COMPARE{..} = CO_COMPARE (toSingleLine left) equal (toSingleLine right)
   toSingleLine CO_MATCHES{..} = CO_MATCHES regex (toSingleLine expr)
   toSingleLine CO_PART_OF{..} = CO_PART_OF (toSingleLine expr) (toSingleLine binding)
-  toSingleLine CO_PRIMITIVE{..} = CO_PRIMITIVE (toSingleLine expr) belongs
   toSingleLine CO_DISJOINT{..} = CO_DISJOINT attrs (map toSingleLine groups)
   toSingleLine CO_EMPTY = CO_EMPTY
 

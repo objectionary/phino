@@ -226,7 +226,6 @@ data CONDITION
   | CO_COMPARE {left :: COMPARABLE, equal :: EQUAL, right :: COMPARABLE}
   | CO_MATCHES {regex :: String, expr :: EXPRESSION}
   | CO_PART_OF {expr :: EXPRESSION, binding :: BINDING}
-  | CO_PRIMITIVE {expr :: EXPRESSION, belongs :: BELONGING}
   | CO_DISJOINT {attrs :: [ATTRIBUTE], groups :: [BINDING]}
   deriving (Eq, Show)
 
@@ -520,8 +519,6 @@ instance ToCST Alpha ATTRIBUTE where
 instance ToCST Y.Condition CONDITION where
   toCST (Y.Not (Y.In attr binding)) _ = CO_BELONGS (attributeToCST attr) NOT_IN (ST_BINDING (bindingsToCST [binding]))
   toCST (Y.Not (Y.Eq left right)) _ = CO_COMPARE (comparableToCST left) NOT_EQUAL (comparableToCST right)
-  toCST (Y.Not (Y.Primitive expr)) _ = CO_PRIMITIVE (expressionToCST expr) NOT_IN
-  toCST (Y.Primitive expr) _ = CO_PRIMITIVE (expressionToCST expr) IN
   toCST (Y.Not (Y.Absolute expr)) _ = CO_ABSOLUTE (expressionToCST expr) NOT_IN
   toCST (Y.Absolute expr) _ = CO_ABSOLUTE (expressionToCST expr) IN
   toCST (Y.Disjoint attrs groups) _ = CO_DISJOINT (map attributeToCST attrs) (map (\bd -> bindingsToCST [bd]) groups)
