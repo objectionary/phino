@@ -5,7 +5,7 @@
 
 module ConditionSpec where
 
-import AST (Alpha (AlMeta, Alpha), Attribute (AtLabel, AtMeta), Binding (BiMeta), Expression (ExDispatch, ExMeta, ExRoot))
+import AST (Attribute (AtLabel, AtMeta), Binding (BiMeta), Expression (ExDispatch, ExMeta, ExRoot))
 import Condition
 import Control.Monad (forM_)
 import Data.Either (isLeft, isRight)
@@ -19,7 +19,7 @@ spec = do
       [ "in (!a, !B)"
       , " not   (in (!a1,   !B))   "
       , "eq(1, 1)"
-      , "or(eq(index(~0),1),eq(length(!B),-2),eq(!e1,!e2),eq(!a1,x),eq(Q.org.eolang,[[ x -> 2 ]]))"
+      , "or(eq(!i,1),eq(length(!B),-2),eq(!e1,!e2),eq(!a1,x),eq(Q.org.eolang,[[ x -> 2 ]]))"
       , "nf([[ x -> !e ]].x)"
       , "absolute(!e1)"
       , "matches(\"hello(\\\"\\u0000)\", !e)"
@@ -32,8 +32,8 @@ spec = do
       [ ("in(!a, !B)", Y.In (AtMeta "a") (BiMeta "B"))
       , ("not(in(!a,!B))", Y.Not (Y.In (AtMeta "a") (BiMeta "B")))
       , ("eq(1,-2)", Y.Eq (Y.CmpNum (Y.Literal 1)) (Y.CmpNum (Y.Literal (-2))))
-      , ("eq(index(α0),length(!B1))", Y.Eq (Y.CmpNum (Y.Index (Alpha 0))) (Y.CmpNum (Y.Length (BiMeta "B1"))))
-      , ("eq(index(!h),domain(!B1))", Y.Eq (Y.CmpNum (Y.Index (AlMeta "h"))) (Y.CmpNum (Y.Domain (BiMeta "B1"))))
+      , ("eq(!i,length(!B1))", Y.Eq (Y.CmpNum (Y.MetaIndex "i")) (Y.CmpNum (Y.Length (BiMeta "B1"))))
+      , ("eq(!i2,domain(!B1))", Y.Eq (Y.CmpNum (Y.MetaIndex "i2")) (Y.CmpNum (Y.Domain (BiMeta "B1"))))
       , ("eq(!a1, !e2)", Y.Eq (Y.CmpAttr (AtMeta "a1")) (Y.CmpExpr (ExMeta "e2")))
       , ("or(absolute(!e1), nf(Q.x))", Y.Or [Y.Absolute (ExMeta "e1"), Y.NF (ExDispatch ExRoot (AtLabel "x"))])
       , ("and(matches(\"hi\", !e),part-of(!e, !B))", Y.And [Y.Matches "hi" (ExMeta "e"), Y.PartOf (ExMeta "e") (BiMeta "B")])

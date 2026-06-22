@@ -15,7 +15,7 @@ import Control.Applicative (asum)
 import Data.Aeson
 import qualified Data.ByteString as BS
 import Data.FileEmbed (embedDir, embedFile)
-import Data.Text (unpack)
+import Data.Text (Text, unpack)
 import Data.Yaml (Parser)
 import qualified Data.Yaml as Yaml
 import GHC.Generics (Generic)
@@ -58,15 +58,17 @@ instance FromJSON Binding where
 instance FromJSON Number where
   parseJSON v = case v of
     Object o -> do
-      validateYamlObject o ["index", "length", "domain"]
+      validateYamlObject o ["length", "domain"]
       asum
-        [ Index <$> o .: "index"
-        , Length <$> o .: "length"
+        [ Length <$> o .: "length"
         , Domain <$> o .: "domain"
         ]
     Number num -> pure (Literal (round num))
+    String txt -> case parseIndexMeta (unpack txt) of
+      Right mt -> pure (MetaIndex mt)
+      Left err -> fail err
     _ ->
-      fail "Expected a numerable expression (object or number)"
+      fail "Expected a numerable expression (object, number or index meta)"
 
 instance FromJSON Comparable where
   parseJSON v =
@@ -149,7 +151,7 @@ instance FromJSON Rule where
         }
 
 data Number
-  = Index Alpha
+  = MetaIndex Text
   | Length Binding
   | Domain Binding
   | Literal Int

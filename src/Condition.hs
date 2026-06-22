@@ -49,11 +49,6 @@ number :: Parser Y.Number
 number =
   choice
     [ do
-        _ <- symbol "index" >> lparen
-        alpha <- _alpha phiParser
-        _ <- rparen
-        return (Y.Index alpha)
-    , do
         _ <- symbol "length" >> lparen
         bd <- _binding phiParser
         _ <- rparen
@@ -63,6 +58,7 @@ number =
         bd <- _binding phiParser
         _ <- rparen
         return (Y.Domain bd)
+    , Y.MetaIndex <$> _indexMeta phiParser
     , do
         sign <- optional (choice [char '-', char '+'])
         unsigned <- lexeme L.decimal

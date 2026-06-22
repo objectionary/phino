@@ -227,6 +227,7 @@ instance ToLaTeX EXPRESSION where
 
 instance ToLaTeX ATTRIBUTE where
   toLaTeX AT_LABEL{..} = AT_LABEL (piped label)
+  toLaTeX AT_ALPHA_META{..} = AT_LABEL ("\\alpha_{" <> render (hd meta) <> rest meta <> "}")
   toLaTeX AT_META{..} = AT_META (toLaTeX meta)
   toLaTeX AT_LAMBDA{} = AT_LAMBDA LAMBDA'
   toLaTeX AT_DELTA{} = AT_DELTA DELTA'
@@ -302,7 +303,7 @@ instance ToLaTeX SET where
   toLaTeX ST_ATTRIBUTES{..} = ST_ATTRIBUTES (map toLaTeX attrs)
 
 instance ToLaTeX NUMBER where
-  toLaTeX INDEX{..} = INDEX (toLaTeX attr)
+  toLaTeX IDX_META{..} = IDX_META (toLaTeX meta)
   toLaTeX LENGTH{..} = LENGTH (toLaTeX binding)
   toLaTeX DOMAIN{..} = DOMAIN (toLaTeX binding)
   toLaTeX literal@LITERAL{} = literal

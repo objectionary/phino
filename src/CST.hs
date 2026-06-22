@@ -89,6 +89,8 @@ data META_HEAD
   | ETA -- 𝜂
   | ETA' -- \eta
   | H -- h
+  | I -- 𝑖
+  | I' -- i
   | B -- 𝐵
   | B' -- B
   | D -- δ
@@ -175,6 +177,7 @@ data EXPRESSION
 data ATTRIBUTE
   = AT_LABEL {label :: T.Text}
   | AT_ALPHA {alpha :: ALPHA, idx :: Int}
+  | AT_ALPHA_META {alpha :: ALPHA, meta :: META}
   | AT_RHO {rho :: RHO}
   | AT_PHI {phi :: PHI}
   | AT_LAMBDA {lambda :: LAMBDA}
@@ -204,7 +207,7 @@ data EQUAL
   deriving (Eq, Show)
 
 data NUMBER
-  = INDEX {attr :: ATTRIBUTE}
+  = IDX_META {meta :: META}
   | LENGTH {binding :: BINDING}
   | DOMAIN {binding :: BINDING}
   | LITERAL {num :: Int}
@@ -261,9 +264,6 @@ sweetCollapsible _ = True
 
 attributeToCST :: Attribute -> ATTRIBUTE
 attributeToCST = toCST'
-
-alphaToCST :: Alpha -> ATTRIBUTE
-alphaToCST = toCST'
 
 bindingsToCST :: [Binding] -> BINDING
 bindingsToCST = toCST'
@@ -515,6 +515,7 @@ instance ToCST Attribute ATTRIBUTE where
 instance ToCST Alpha ATTRIBUTE where
   toCST (Alpha idx) _ = AT_ALPHA ALPHA idx
   toCST (AlMeta mt) _ = AT_META (META NO_EXCL ETA (metaTail mt))
+  toCST (AlIndex mt) _ = AT_ALPHA_META ALPHA (META NO_EXCL I (metaTail mt))
 
 instance ToCST Y.Condition CONDITION where
   toCST (Y.Not (Y.In attr binding)) _ = CO_BELONGS (attributeToCST attr) NOT_IN (ST_BINDING (bindingsToCST [binding]))
@@ -541,7 +542,7 @@ instance ToCST Y.Comparable COMPARABLE where
   toCST (Y.CmpNum num) _ = CMP_NUM (numberToCST num)
 
 instance ToCST Y.Number NUMBER where
-  toCST (Y.Index alpha) _ = INDEX (alphaToCST alpha)
+  toCST (Y.MetaIndex mt) _ = IDX_META (META NO_EXCL I (metaTail mt))
   toCST (Y.Length binding) _ = LENGTH (bindingsToCST [binding])
   toCST (Y.Domain binding) _ = DOMAIN (bindingsToCST [binding])
   toCST (Y.Literal num) _ = LITERAL num

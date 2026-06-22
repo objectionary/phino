@@ -92,6 +92,7 @@ printExtraArg arg = printExtraArg' arg defaultPrintConfig
 printMetaValue :: MetaValue -> PrintConfig -> String
 printMetaValue (MvAttribute att) (_, encoding, _, _) = printAttribute' att encoding
 printMetaValue (MvAlpha index) (_, encoding, _, _) = printAlpha' index encoding
+printMetaValue (MvIndex index) _ = show index
 printMetaValue (MvExpression ex) config = printExpression' ex config
 printMetaValue (MvBytes bts) _ = printBytes bts
 printMetaValue (MvBindings bds) config = printExpression' (ExFormation bds) config

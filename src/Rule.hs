@@ -117,10 +117,9 @@ _eq (Y.CmpNum left) (Y.CmpNum right) subst _ = case (numToInt left subst, numToI
   where
     -- Convert Number to Int
     numToInt :: Y.Number -> Subst -> Maybe Int
-    numToInt (Y.Index (AlMeta meta)) (Subst mp) = case M.lookup meta mp of
-      Just (MvAlpha (Alpha idx)) -> Just idx
+    numToInt (Y.MetaIndex meta) (Subst mp) = case M.lookup meta mp of
+      Just (MvIndex idx) -> Just idx
       _ -> Nothing
-    numToInt (Y.Index (Alpha idx)) _ = Just idx
     numToInt (Y.Length (BiMeta meta)) (Subst mp) = case M.lookup meta mp of
       Just (MvBindings bds) -> Just (length bds)
       _ -> Nothing

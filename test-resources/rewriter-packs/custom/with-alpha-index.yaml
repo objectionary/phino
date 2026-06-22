@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+input: Q -> [[ x -> ? ]](~0 -> Q.y)
+output: 'Φ ↦ ⟦ x ↦ ∅ ⟧(~0 ↦ Φ)'
+rules:
+  custom:
+    - name: with-alpha-index
+      pattern: '[[ !B ]](α𝑖 ↦ !e)'
+      result: '[[ !B ]](α𝑖 ↦ Φ)'
+      when:
+        eq:
+          - 𝑖
+          - 0

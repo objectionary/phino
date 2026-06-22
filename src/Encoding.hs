@@ -70,6 +70,7 @@ instance ToASCII PAIR where
 
 instance ToASCII ATTRIBUTE where
   toASCII AT_ALPHA{..} = AT_ALPHA ALPHA' idx
+  toASCII AT_ALPHA_META{..} = AT_ALPHA_META ALPHA' (META EXCL I' (rest meta))
   toASCII AT_PHI{} = AT_PHI AT
   toASCII AT_RHO{} = AT_RHO CARET
   toASCII AT_META{meta = META{hd = ETA, ..}} = AT_META (META EXCL H rest)
@@ -81,7 +82,7 @@ instance ToASCII SET where
   toASCII ST_ATTRIBUTES{..} = ST_ATTRIBUTES (map toASCII attrs)
 
 instance ToASCII NUMBER where
-  toASCII INDEX{..} = INDEX (toASCII attr)
+  toASCII IDX_META{..} = IDX_META (META EXCL I' (rest meta))
   toASCII LENGTH{..} = LENGTH (toASCII binding)
   toASCII DOMAIN{..} = DOMAIN (toASCII binding)
   toASCII literal@LITERAL{} = literal

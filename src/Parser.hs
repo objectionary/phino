@@ -13,6 +13,7 @@ module Parser
   , parseAttribute
   , parseAttributeThrows
   , parseAlpha
+  , parseIndexMeta
   , parseNumber
   , parseNumberThrows
   , parseBinding
@@ -49,13 +50,14 @@ data ParserException
 data PhiParser = PhiParser
   { _attribute :: Parser Attribute
   , _alpha :: Parser Alpha
+  , _indexMeta :: Parser T.Text
   , _binding :: Parser Binding
   , _expression :: Parser Expression
   , _string :: Parser String
   }
 
 phiParser :: PhiParser
-phiParser = PhiParser attribute alpha binding expression quotedStr
+phiParser = PhiParser attribute alpha indexMeta binding expression quotedStr
 
 instance Show ParserException where
   show CouldNotParseProgram{..} = printf "Couldn't parse given phi program, cause: %s" message
@@ -330,15 +332,23 @@ attribute =
     ]
     <?> "attribute"
 
+-- index meta: !i, 𝑖
+indexMeta :: Parser T.Text
+indexMeta = meta' 'i' "𝑖"
+
 -- alpha
 -- 1. index: ~0, α0
--- 2. meta: !h, 𝜂
+-- 2. index meta: α𝑖, ~!i
+-- 3. meta: !h, 𝜂
 alpha :: Parser Alpha
 alpha =
   choice
     [ do
         _ <- choice [symbol "~", symbol "α"]
-        Alpha <$> lexeme L.decimal
+        choice
+          [ Alpha <$> lexeme L.decimal
+          , AlIndex <$> indexMeta
+          ]
     , AlMeta <$> meta' 'h' "𝜂"
     ]
     <?> "alpha"
@@ -498,6 +508,9 @@ parseAttribute = parse' "attribute" attribute
 
 parseAlpha :: String -> Either String Alpha
 parseAlpha = parse' "alpha" alpha
+
+parseIndexMeta :: String -> Either String T.Text
+parseIndexMeta = parse' "index meta" indexMeta
 
 parseAttributeThrows :: String -> IO Attribute
 parseAttributeThrows attr = case parseAttribute attr of

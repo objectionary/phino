@@ -123,6 +123,8 @@ instance Render META_HEAD where
   render ETA = "𝜂"
   render ETA' = "\\eta"
   render H = "h"
+  render I = "𝑖"
+  render I' = "i"
   render B = "𝐵"
   render B' = "B"
   render D = "δ"
@@ -207,6 +209,7 @@ instance Render [ATTRIBUTE] where
 instance Render ATTRIBUTE where
   render AT_LABEL{..} = render label
   render AT_ALPHA{..} = render alpha <> render idx
+  render AT_ALPHA_META{..} = render alpha <> render meta
   render AT_RHO{..} = render rho
   render AT_PHI{..} = render phi
   render AT_LAMBDA{..} = render lambda
@@ -227,7 +230,7 @@ instance Render LOGIC_OPERATOR where
   render OR = "\\;\\text{or}\\;"
 
 instance Render NUMBER where
-  render INDEX{..} = "\\indexof{ " <> render attr <> " }"
+  render IDX_META{..} = render meta
   render LENGTH{..} = "\\vert " <> render binding <> " \\vert"
   render DOMAIN{..} = "\\vert \\overline{ " <> render binding <> " } \\vert"
   render LITERAL{..} = T.pack (show num)

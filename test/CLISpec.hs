@@ -945,9 +945,9 @@ spec = do
         [ unlines
             [ "\\begin{tabular}{rl}"
             , "\\trrule{alpha}"
-            , "  { [[ B_1, \\tau_1 -> ?, B_2 ]] ( \\eta -> e ) }"
-            , "  { [[ B_1, \\tau_1 -> ?, B_2 ]] ( \\tau_1 -> e ) }"
-            , "  { if $ \\indexof{ \\eta } = \\vert \\overline{ B_1 } \\vert $ }"
+            , "  { [[ B_1, \\tau -> ?, B_2 ]] ( \\alpha_{i} -> e ) }"
+            , "  { [[ B_1, \\tau -> ?, B_2 ]] ( \\tau -> e ) }"
+            , "  { if $ i = \\vert \\overline{ B_1 } \\vert $ }"
             , "  { }"
             , "\\trrule{copy}"
             , "  { [[ B_1, \\tau -> ?, B_2 ]] ( \\tau -> k ) }"
