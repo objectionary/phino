@@ -25,7 +25,7 @@ module LaTeX
 
 import AST
 import CST
-import Data.List (intercalate, isPrefixOf, nub)
+import Data.List (intercalate, nub)
 import Data.Maybe (isJust)
 import qualified Data.Text as T
 import Encoding
@@ -361,16 +361,6 @@ explainMorphRule rule =
     morphOutcome :: Y.MorphOutcome -> String
     morphOutcome (Y.MoMorph (Y.MaExpr expr)) = morph (renderToLatex (expressionToCST expr) defaultLatexContext)
     morphOutcome (Y.MoMorph (Y.MaNormalize expr)) = morph (normalize (renderToLatex (expressionToCST expr) defaultLatexContext))
-    morphOutcome (Y.MoMorphHead tmpl) = morph (normalize (headMorph tmpl))
-      where
-        headMorph e@(ExDispatch h _) = wrap h e
-        headMorph e@(ExApplication h _) = wrap h e
-        headMorph e = latexExpr e
-        wrap h e =
-          let full = latexExpr e
-              hd = latexExpr h
-           in if hd `isPrefixOf` full then morph hd ++ drop (length hd) full else morph full
-        latexExpr e = renderToLatex (expressionToCST e) defaultLatexContext
     morphOutcome (Y.MoStop expr) = renderToLatex (expressionToCST expr) defaultLatexContext
 
 explainDataizeRule :: Y.DataizeRule -> String

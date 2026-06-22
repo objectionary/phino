@@ -28,20 +28,38 @@
 - name: dispatch
   description: '𝕄(n.τ) ⟿ 𝕄(𝒩(𝕄(n).τ))'
   match: '𝑛.𝜏'
+  where:
+    - meta: 𝑒1
+      function: morph
+      args:
+        - 𝑛
   then:
-    morph-head: '𝑛.𝜏'
+    morph:
+      normalize: '𝑒1.𝜏'
 
 - name: application
   description: '𝕄(n(τ ↦ e)) ⟿ 𝕄(𝒩(𝕄(n)(τ ↦ e)))'
   match: '𝑛(𝜏 ↦ 𝑒)'
+  where:
+    - meta: 𝑒1
+      function: morph
+      args:
+        - 𝑛
   then:
-    morph-head: '𝑛(𝜏 ↦ 𝑒)'
+    morph:
+      normalize: '𝑒1(𝜏 ↦ 𝑒)'
 
 - name: applicationa
   description: '𝕄(n(η ↦ e)) ⟿ 𝕄(𝒩(𝕄(n)(η ↦ e)))'
   match: '𝑛(𝜂 ↦ 𝑒)'
+  where:
+    - meta: 𝑒1
+      function: morph
+      args:
+        - 𝑛
   then:
-    morph-head: '𝑛(𝜂 ↦ 𝑒)'
+    morph:
+      normalize: '𝑒1(𝜂 ↦ 𝑒)'
 
 - name: root
   description: '𝕄(Φ) ⟿ 𝕄(𝒩(e)) where e := global()'

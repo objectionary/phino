@@ -17,11 +17,10 @@ import Control.Exception (throwIO)
 import Data.List (partition)
 import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as NE
-import qualified Data.Map.Strict as Map
 import qualified Data.Text as T
 import Deps (BuildTermFunc, BuildTermMethod, SaveStepFunc, Term (TeAttribute, TeExpression))
 import Locator (locatedExpression, withLocatedExpression)
-import Matcher (MetaValue (..), Subst (..), substEmpty)
+import Matcher (Subst (..), substEmpty)
 import Misc
 import Must (Must (..))
 import Rewriter (RewriteContext (RewriteContext), Rewritten, rewrite)
@@ -106,25 +105,6 @@ morph (expr, seq) ctx@DataizeContext{..} = do
     apply (Y.MoMorph (Y.MaNormalize arg)) name subst = do
       built <- buildExpressionThrows arg subst
       labelled <- leadsTo seq name built ctx
-      (expr', seq') <- normalized built labelled ctx
-      if expr' == expr
-        then pure (ExTermination, seq')
-        else morph (expr', seq') ctx
-    -- 𝕄(𝒩(𝕄(n).τ)) and 𝕄(𝒩(𝕄(n)(τ ↦ e))): morph the head sub-expression
-    -- bound to the leading meta of the template, splice its steps, re-attach the
-    -- dispatch or application, normalize, and morph on. When the round leaves the
-    -- expression unchanged the head is irreducible, so it bottoms out at ⊥.
-    apply (Y.MoMorphHead tmpl) name (Subst mp) = do
-      headMeta <- case tmpl of
-        ExDispatch (ExMeta m) _ -> pure m
-        ExApplication (ExMeta m) _ -> pure m
-        _ -> throwIO (userError "Outcome morph-head expects a dispatch or application on a meta head")
-      headExpr <- case Map.lookup headMeta mp of
-        Just (MvExpression e) -> pure e
-        _ -> throwIO (userError (printf "Head meta '%s' is not bound to an expression" (T.unpack headMeta)))
-      (morphed, seq1) <- morph (headExpr, seq) ctx
-      built <- buildExpressionThrows tmpl (Subst (Map.insert headMeta (MvExpression morphed) mp))
-      labelled <- leadsTo seq1 name built ctx
       (expr', seq') <- normalized built labelled ctx
       if expr' == expr
         then pure (ExTermination, seq')
@@ -265,6 +245,7 @@ atom func _ _ = throwIO (userError (printf "Atom '%s' does not exist" (T.unpack 
 execBuildTerm :: DataizeContext -> BuildTermFunc
 execBuildTerm ctx "lambda" = _lambda ctx
 execBuildTerm ctx "global" = _global ctx
+execBuildTerm ctx "morph" = _morph ctx
 execBuildTerm ctx func = _buildTerm ctx func
 
 _lambda :: DataizeContext -> BuildTermMethod
@@ -282,3 +263,14 @@ _lambda _ _ _ = throwIO (userError "Function lambda() requires exactly 1 express
 _global :: DataizeContext -> BuildTermMethod
 _global DataizeContext{_program = Program prog} [] _ = pure (TeExpression prog)
 _global _ _ _ = throwIO (userError "Function global() requires no arguments")
+
+-- The Morphing function 𝕄 exposed as a build-term function so a rule can morph
+-- a sub-expression in its 'where' (the 'dispatch' and 'application' rules morph
+-- the head before re-attaching it). The step chain is discarded: the producing
+-- rule splices the surrounding normalization steps itself.
+_morph :: DataizeContext -> BuildTermMethod
+_morph ctx@DataizeContext{_program = prog} [ArgExpression expr] subst = do
+  built <- buildExpressionThrows expr subst
+  (morphed, _) <- morph (built, (prog, Nothing) :| []) ctx
+  pure (TeExpression morphed)
+_morph _ _ _ = throwIO (userError "Function morph() requires exactly 1 expression argument")
