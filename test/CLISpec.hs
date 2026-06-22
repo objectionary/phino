@@ -874,6 +874,12 @@ spec = do
               ]
           ]
 
+    it "focuses a compressed sequence whose meet replaces a step root" $
+      withStdin "{[[ @ -> [[ @ -> $.c.plus( 32.0 ), c -> 25.0 ]], bytes(data) -> [[ @ -> $.data ]], number(as-bytes) -> [[ @ -> $.as-bytes, plus -> [[ x -> ?, L> L_number_plus ]] ]] ]]}" $
+        testCLISucceeded
+          ["dataize", "--output=latex", "--sweet", "--nonumber", "--compress", "--canonize", "--meet-prefix=dataization", "--sequence", "--flat", "--quiet", "--hide=Q.bytes", "--hide=Q.number", "--locator=Q.@", "--focus=Q.@", "--meet-length=5", "--meet-popularity=1"]
+          ["\\phiMeet{dataization:1}{ [[ @ -> |c| . |plus| ( 32 ), |c| -> 25 ]] } \\leadsto_{\\nameref{r:contextualize}}"]
+
     it "dataizes with --locator" $
       withStdin "{[[ ex -> [[ @ -> Q.x ]], x -> [[ D> 42- ]] ]]}" $
         testCLISucceeded ["dataize", "--locator=Q.ex"] ["42-"]
