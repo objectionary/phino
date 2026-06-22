@@ -1,5 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
-
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
@@ -11,7 +9,7 @@ import AST
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
 import Data.Maybe (catMaybes)
-import Data.Text (Text, isPrefixOf)
+import Data.Text (Text)
 
 -- Meta value
 -- The right part of substitution
@@ -22,14 +20,6 @@ data MetaValue
   | MvBindings [Binding] -- !B
   | MvFunction Text -- !F
   | MvExpression Expression -- !e
-  | MvTail [Tail] -- !t
-  deriving (Eq, Show)
-
--- Tail operation after expression
--- Dispatch or application
-data Tail
-  = TaApplication Argument -- application argument
-  | TaDispatch Attribute
   deriving (Eq, Show)
 
 -- Substitution
@@ -112,40 +102,14 @@ matchBindings ((BiMeta name) : pbs) tbs =
 matchBindings (pb : pbs) (tb : tbs) = combineMany (matchBinding pb tb) (matchBindings pbs tbs)
 matchBindings _ _ = []
 
--- Recursively go through given target expression and try to find
--- the head expression which matches to given pattern.
--- If there's one - build the list of all the tail operations after head expression.
--- The tail operations may be only dispatches or applications
-tailExpressions :: Expression -> Expression -> ([Subst], [Tail])
-tailExpressions ptn tgt = case tailExpressionsReversed ptn tgt of
-  Just (substs, tails) -> (substs, reverse tails)
-  _ -> ([], [])
-  where
-    tailExpressionsReversed :: Expression -> Expression -> Maybe ([Subst], [Tail])
-    tailExpressionsReversed ptn' tgt' = case matchExpression' ptn' tgt' of
-      [] -> case tgt' of
-        ExDispatch expr attr -> do
-          (substs, tails) <- tailExpressionsReversed ptn' expr
-          Just (substs, TaDispatch attr : tails)
-        ExApplication expr arg -> do
-          (substs, tails) <- tailExpressionsReversed ptn' expr
-          Just (substs, TaApplication arg : tails)
-        _ -> Just ([], [])
-      substs -> Just (substs, [])
-
 matchExpression' :: MatchExpressionFunc
-matchExpression' (ExMeta meta) tgt
-  | "p" `isPrefixOf` meta = [substSingle meta (MvExpression tgt) | primitive tgt]
-  | otherwise = [substSingle meta (MvExpression tgt)]
+matchExpression' (ExMeta meta) tgt = [substSingle meta (MvExpression tgt)]
 matchExpression' ExXi ExXi = [substEmpty]
 matchExpression' ExRoot ExRoot = [substEmpty]
 matchExpression' ExTermination ExTermination = [substEmpty]
 matchExpression' (ExFormation pbs) (ExFormation tbs) = matchBindings pbs tbs
 matchExpression' (ExDispatch pexp pattr) (ExDispatch texp tattr) = combineMany (matchAttribute pattr tattr) (matchExpression' pexp texp)
 matchExpression' (ExApplication pexp parg) (ExApplication texp targ) = combineMany (matchExpression' pexp texp) (matchArgument parg targ)
-matchExpression' (ExMetaTail expr meta) tgt = case tailExpressions expr tgt of
-  ([], _) -> []
-  (substs, tails) -> combineMany substs [substSingle meta (MvTail tails)]
 matchExpression' (ExPhiAgain prefix idx expr) (ExPhiAgain prefix' idx' expr')
   | prefix == prefix' && idx == idx' = matchExpression' expr expr'
   | otherwise = []

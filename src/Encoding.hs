@@ -33,9 +33,7 @@ instance ToASCII EXPRESSION where
   toASCII EX_APPLICATION_EXPRS{..} = EX_APPLICATION_EXPRS (toASCII expr) space eol tab (toASCII args) eol' tab' indent
   toASCII EX_META{meta = META{hd = N, ..}} = EX_META (META EXCL N' rest)
   toASCII EX_META{meta = META{hd = K, ..}} = EX_META (META EXCL K' rest)
-  toASCII EX_META{meta = META{hd = P, ..}} = EX_META (META EXCL P' rest)
   toASCII EX_META{..} = EX_META (META EXCL E' (rest meta))
-  toASCII EX_META_TAIL{..} = EX_META_TAIL (toASCII expr) meta
   toASCII EX_PHI_MEET{..} = EX_PHI_MEET prefix idx (toASCII expr)
   toASCII EX_PHI_AGAIN{..} = EX_PHI_AGAIN prefix idx (toASCII expr)
   toASCII expr = expr
@@ -102,7 +100,6 @@ instance ToASCII CONDITION where
   toASCII CO_COMPARE{..} = CO_COMPARE (toASCII left) equal (toASCII right)
   toASCII CO_MATCHES{..} = CO_MATCHES regex (toASCII expr)
   toASCII CO_PART_OF{..} = CO_PART_OF (toASCII expr) (toASCII binding)
-  toASCII CO_PRIMITIVE{..} = CO_PRIMITIVE (toASCII expr) belongs
   toASCII CO_DISJOINT{..} = CO_DISJOINT (map toASCII attrs) (map toASCII groups)
   toASCII CO_EMPTY = CO_EMPTY
 

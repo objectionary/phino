@@ -81,14 +81,13 @@ instance FromJSON Condition where
     withObject
       "Condition"
       ( \v -> do
-          validateYamlObject v ["and", "or", "not", "nf", "absolute", "eq", "in", "matches", "part-of", "primitive", "disjoint"]
+          validateYamlObject v ["and", "or", "not", "nf", "absolute", "eq", "in", "matches", "part-of", "disjoint"]
           asum
             [ And <$> v .: "and"
             , Or <$> v .: "or"
             , Not <$> v .: "not"
             , NF <$> v .: "nf"
             , Absolute <$> v .: "absolute"
-            , Primitive <$> v .: "primitive"
             , do
                 vals <- v .: "disjoint"
                 case vals of
@@ -172,7 +171,6 @@ data Condition
   | Absolute Expression
   | Matches String Expression
   | PartOf Expression Binding
-  | Primitive Expression
   | Disjoint [Attribute] [Binding]
   deriving (Eq, Generic, Show)
 
@@ -216,7 +214,7 @@ yamlRule = Yaml.decodeFileThrow
 
 -- The right-hand side of a morphing reduction 𝕄(match) ⟿ then.
 -- A mapping ('{ morph: arg }') keeps reducing under 𝕄; a bare expression
--- (including ⊥) is the terminal primitive result.
+-- (including ⊥) is the terminal result.
 data MorphOutcome
   = MoMorph MorphArg
   | MoStop Expression

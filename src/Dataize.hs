@@ -12,7 +12,7 @@
 module Dataize (morph, dataize, dataize', DataizeContext (..), execBuildTerm) where
 
 import AST
-import Builder (buildAttributeThrows, buildBytesThrows, buildExpressionThrows)
+import Builder (buildBytesThrows, buildExpressionThrows)
 import Control.Exception (throwIO)
 import Data.List (partition)
 import Data.List.NonEmpty (NonEmpty (..))
@@ -20,7 +20,7 @@ import qualified Data.List.NonEmpty as NE
 import qualified Data.Text as T
 import Deps (BuildTermFunc, BuildTermMethod, SaveStepFunc, Term (TeAttribute, TeExpression))
 import Locator (locatedExpression, withLocatedExpression)
-import Matcher (Subst, substEmpty)
+import Matcher (Subst (..), substEmpty)
 import Misc
 import Must (Must (..))
 import Rewriter (RewriteContext (RewriteContext), Rewritten, rewrite)
@@ -65,25 +65,9 @@ formation bds ctx = do
             [bd] -> (Just bd, rest)
             _ -> (Nothing, bds)
 
--- Resolve dispatch from global object (Q.tau) for ROOT Morphing rule.
--- Here tau is the name of the attribute which is taken from Q
--- and expr is expression which program refers to.
--- If Q refers to formation which contains binding with attribute == tau -
--- the expression from this binding is returned.
-phiDispatch :: T.Text -> Expression -> Maybe Expression
-phiDispatch tau expr = case expr of
-  ExFormation bds -> boundExpr bds
-  _ -> Nothing
-  where
-    boundExpr :: [Binding] -> Maybe Expression
-    boundExpr [] = Nothing
-    boundExpr (bd : bds) = case bd of
-      BiTau (AtLabel attr) expr' -> if attr == tau then Just expr' else boundExpr bds
-      _ -> boundExpr bds
-
--- The Morphing function 𝕄 maps normal forms to primitives. It is driven by the
+-- The Morphing function 𝕄 maps normal forms to formations. It is driven by the
 -- ordered rules from 'morphing.yaml': the first matching rule's 'then' outcome
--- either stops with a primitive ('MoStop') or keeps morphing ('MoMorph'). When
+-- either stops at a formation ('MoStop') or keeps morphing ('MoMorph'). When
 -- the morphed argument is a normalization ('MaNormalize', as in the 'lambda' and
 -- 'root' rules), the rewriter runs over the rule's product and its individual
 -- steps are spliced into the chain before morphing continues.
@@ -117,7 +101,9 @@ morph (expr, seq) ctx@DataizeContext{..} = do
       morph (built, seq') ctx
     -- 𝕄(𝒩(e)) records the producing step, then delegates to the normalization
     -- rewriter and splices its individual steps (alpha, copy, dot, …) into the
-    -- chain before morphing on the resulting normal form.
+    -- chain before morphing on the resulting normal form. Termination is the
+    -- rules' job: the 'root' rule's 'when' refuses to expand a universe that is
+    -- Φ itself, so 'stuck' yields ⊥ instead of looping.
     apply (Y.MoMorph (Y.MaNormalize arg)) name subst = do
       built <- buildExpressionThrows arg subst
       labelled <- leadsTo seq name built ctx
@@ -132,9 +118,10 @@ dataize ctx@DataizeContext{..} = do
 
 -- The Dataization function 𝔻 retrieves bytes from an expression. It is driven
 -- by the ordered rules from 'dataization.yaml': 'delta' yields the asset bytes,
--- 'none' yields nothing, 'box' contextualizes the φ-body and keeps dataizing
--- (its step is labelled by the operation, 'contextualize'), and 'norm' reduces
--- through morphing, splicing the morphing steps into the chain.
+-- 'none' (a formation) and 'bott' (⊥) yield nothing, 'box' contextualizes the
+-- φ-body and keeps dataizing (its step is labelled by the operation,
+-- 'contextualize'), and 'norm' reduces through morphing, splicing the morphing
+-- steps into the chain.
 dataize' :: Dataizable -> DataizeContext -> IO Dataized
 dataize' (expr, seq) ctx = do
   matched <- firstMatch Y.dataizationRules
@@ -258,6 +245,7 @@ atom func _ _ = throwIO (userError (printf "Atom '%s' does not exist" (T.unpack 
 execBuildTerm :: DataizeContext -> BuildTermFunc
 execBuildTerm ctx "lambda" = _lambda ctx
 execBuildTerm ctx "global" = _global ctx
+execBuildTerm ctx "morph" = _morph ctx
 execBuildTerm ctx func = _buildTerm ctx func
 
 _lambda :: DataizeContext -> BuildTermMethod
@@ -273,11 +261,16 @@ _lambda ctx [ArgExpression expr] subst = do
 _lambda _ _ _ = throwIO (userError "Function lambda() requires exactly 1 expression argument")
 
 _global :: DataizeContext -> BuildTermMethod
-_global DataizeContext{_program = Program prog} [ArgAttribute attr] subst = do
-  attr' <- buildAttributeThrows attr subst
-  case attr' of
-    AtLabel label -> case phiDispatch label prog of
-      Just expr -> pure (TeExpression expr)
-      Nothing -> throwIO (userError (printf "Universe Q has no attribute '%s'" (show attr')))
-    _ -> throwIO (userError "Function global() expects a labelled attribute")
-_global _ _ _ = throwIO (userError "Function global() requires exactly 1 attribute argument")
+_global DataizeContext{_program = Program prog} [] _ = pure (TeExpression prog)
+_global _ _ _ = throwIO (userError "Function global() requires no arguments")
+
+-- The Morphing function 𝕄 exposed as a build-term function so a rule can morph
+-- a sub-expression in its 'where' (the 'dispatch' and 'application' rules morph
+-- the head before re-attaching it). The step chain is discarded: the producing
+-- rule splices the surrounding normalization steps itself.
+_morph :: DataizeContext -> BuildTermMethod
+_morph ctx@DataizeContext{_program = prog} [ArgExpression expr] subst = do
+  built <- buildExpressionThrows expr subst
+  (morphed, _) <- morph (built, (prog, Nothing) :| []) ctx
+  pure (TeExpression morphed)
+_morph _ _ _ = throwIO (userError "Function morph() requires exactly 1 expression argument")

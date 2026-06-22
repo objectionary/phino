@@ -24,7 +24,6 @@ data Expression
   | ExApplication Expression Argument
   | ExDispatch Expression Attribute
   | ExMeta Text
-  | ExMetaTail Expression Text
   | ExPhiMeet (Maybe String) Int Expression
   | ExPhiAgain (Maybe String) Int Expression
   deriving (Eq, Ord, Show, Generic)
@@ -109,7 +108,6 @@ hashExpression = goExpr fnvOffset
       ExApplication ex arg -> goArgument (goExpr (step h 5) ex) arg
       ExDispatch ex at -> goAttribute (goExpr (step h 6) ex) at
       ExMeta t -> hashText (step h 7) t
-      ExMetaTail ex t -> hashText (goExpr (step h 8) ex) t
       ExPhiMeet ms i ex -> goExpr (hashMaybeString (step (step h 9) i) ms) ex
       ExPhiAgain ms i ex -> goExpr (hashMaybeString (step (step h 10) i) ms) ex
     goBinding :: Int -> Binding -> Int
@@ -146,16 +144,6 @@ hashExpression = goExpr fnvOffset
       Function t -> hashText (step h 16) t
       FnMeta t -> hashText (step h 29) t
 
--- A primitive is the termination ⊥ or a formation without a λ binding.
-primitive :: Expression -> Bool
-primitive ExTermination = True
-primitive (ExFormation bds) = not (any lambda bds)
-  where
-    lambda :: Binding -> Bool
-    lambda (BiLambda _) = True
-    lambda _ = False
-primitive _ = False
-
 countNodes :: Expression -> Int
 countNodes (ExFormation bds) = 1 + sum (map nodesInBinding bds) + length bds
   where
@@ -166,7 +154,6 @@ countNodes (ExFormation bds) = 1 + sum (map nodesInBinding bds) + length bds
 countNodes (ExApplication expr (ArTau _ expr')) = 4 + countNodes expr + countNodes expr'
 countNodes (ExApplication expr (ArAlpha _ expr')) = 4 + countNodes expr + countNodes expr'
 countNodes (ExDispatch expr' _) = 2 + countNodes expr'
-countNodes (ExMetaTail expr _) = 2 + countNodes expr
 countNodes (ExPhiMeet _ _ expr) = countNodes expr
 countNodes (ExPhiAgain _ _ expr) = countNodes expr
 countNodes _ = 1

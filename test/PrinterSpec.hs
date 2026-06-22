@@ -54,7 +54,6 @@ spec = do
         , "[[]]( Q )"
         )
       , ("meta expr", ExMeta "e", "!e")
-      , ("meta tail", ExMetaTail ExRoot "t", "Q * !t")
       , ("meta binding", ExFormation [BiMeta "B"], "[[ !B ]]")
       , ("meta lambda", ExFormation [BiLambda (FnMeta "F")], "[[ L> !F ]]")
       , ("meta attr tau", ExFormation [BiTau (AtMeta "a") ExXi], "[[ !a -> $ ]]")

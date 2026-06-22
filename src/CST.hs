@@ -83,8 +83,6 @@ data META_HEAD
   | N' -- n
   | K -- 𝑘
   | K' -- k
-  | P -- 𝑝
-  | P' -- p
   | A -- a
   | TAU -- 𝜏
   | TAU' -- \tau
@@ -95,7 +93,6 @@ data META_HEAD
   | B' -- B
   | D -- δ
   | D' -- \delta
-  | TAIL -- t
   | F -- F
   deriving (Eq, Show)
 
@@ -171,7 +168,6 @@ data EXPRESSION
   | EX_STRING {str :: String, tab :: TAB, rhos :: [Argument]}
   | EX_NUMBER {num :: Either Int Double, tab :: TAB, rhos :: [Argument]}
   | EX_META {meta :: META}
-  | EX_META_TAIL {expr :: EXPRESSION, meta :: META}
   | EX_PHI_MEET {prefix :: Maybe String, idx :: Int, expr :: EXPRESSION}
   | EX_PHI_AGAIN {prefix :: Maybe String, idx :: Int, expr :: EXPRESSION}
   deriving (Eq, Show)
@@ -230,7 +226,6 @@ data CONDITION
   | CO_COMPARE {left :: COMPARABLE, equal :: EQUAL, right :: COMPARABLE}
   | CO_MATCHES {regex :: String, expr :: EXPRESSION}
   | CO_PART_OF {expr :: EXPRESSION, binding :: BINDING}
-  | CO_PRIMITIVE {expr :: EXPRESSION, belongs :: BELONGING}
   | CO_DISJOINT {attrs :: [ATTRIBUTE], groups :: [BINDING]}
   deriving (Eq, Show)
 
@@ -293,13 +288,12 @@ metaTail = T.drop 1
 
 -- The first character of an expression meta name encodes its kind:
 -- 'n'-prefixed names are normal-form-constrained '𝑛' metas, 'k'-prefixed
--- names are absolute-constrained '𝑘' metas, 'p'-prefixed names are
--- primitive-constrained '𝑝' metas, everything else is an ordinary '𝑒' meta.
+-- names are absolute-constrained '𝑘' metas, everything else is an ordinary
+-- '𝑒' meta.
 exMetaHead :: T.Text -> META_HEAD
 exMetaHead mt
   | T.isPrefixOf "n" mt = N
   | T.isPrefixOf "k" mt = K
-  | T.isPrefixOf "p" mt = P
   | otherwise = E
 
 -- This class is used to convert AST to CST
@@ -315,7 +309,6 @@ instance ToCST Expression EXPRESSION where
   toCST ExRoot _ = EX_GLOBAL Φ
   toCST ExXi _ = EX_XI XI
   toCST (ExMeta mt) _ = EX_META (META NO_EXCL (exMetaHead mt) (metaTail mt))
-  toCST (ExMetaTail expr mt) ctx = EX_META_TAIL (toCST expr ctx) (META EXCL TAIL (metaTail mt))
   toCST ExTermination _ = EX_TERMINATION DEAD
   toCST (ExPhiMeet prefix idx expr) ctx = EX_PHI_MEET prefix idx (toCST expr ctx)
   toCST (ExPhiAgain prefix idx expr) ctx = EX_PHI_AGAIN prefix idx (toCST expr ctx)
@@ -526,8 +519,6 @@ instance ToCST Alpha ATTRIBUTE where
 instance ToCST Y.Condition CONDITION where
   toCST (Y.Not (Y.In attr binding)) _ = CO_BELONGS (attributeToCST attr) NOT_IN (ST_BINDING (bindingsToCST [binding]))
   toCST (Y.Not (Y.Eq left right)) _ = CO_COMPARE (comparableToCST left) NOT_EQUAL (comparableToCST right)
-  toCST (Y.Not (Y.Primitive expr)) _ = CO_PRIMITIVE (expressionToCST expr) NOT_IN
-  toCST (Y.Primitive expr) _ = CO_PRIMITIVE (expressionToCST expr) IN
   toCST (Y.Not (Y.Absolute expr)) _ = CO_ABSOLUTE (expressionToCST expr) NOT_IN
   toCST (Y.Absolute expr) _ = CO_ABSOLUTE (expressionToCST expr) IN
   toCST (Y.Disjoint attrs groups) _ = CO_DISJOINT (map attributeToCST attrs) (map (\bd -> bindingsToCST [bd]) groups)

@@ -117,8 +117,6 @@ instance Render META_HEAD where
   render N' = "n"
   render K = "𝑘"
   render K' = "k"
-  render P = "𝑝"
-  render P' = "p"
   render A = "a"
   render TAU = "𝜏"
   render TAU' = "\\tau"
@@ -129,7 +127,6 @@ instance Render META_HEAD where
   render B' = "B"
   render D = "δ"
   render D' = "\\delta"
-  render TAIL = "t"
   render F = "F"
 
 instance Render META where
@@ -201,7 +198,6 @@ instance Render EXPRESSION where
   render EX_STRING{..} = "\"" <> render str <> "\""
   render EX_NUMBER{..} = either (T.pack . show) (T.pack . show) num
   render EX_META{..} = render meta
-  render EX_META_TAIL{..} = render expr <> " * " <> render meta
   render EX_PHI_MEET{..} = "\\phiMeet{" <> maybe "" (\p -> T.pack p <> ":") prefix <> render idx <> "}{ " <> render expr <> " }"
   render EX_PHI_AGAIN{..} = "\\phiAgain{" <> maybe "" (\p -> T.pack p <> ":") prefix <> render idx <> "}"
 
@@ -260,7 +256,6 @@ instance Render CONDITION where
   render CO_COMPARE{..} = render left <> " " <> render equal <> " " <> render right
   render CO_MATCHES{..} = "matches( " <> T.pack regex <> ", " <> render expr <> " )"
   render CO_PART_OF{..} = "part-of( " <> render expr <> ", " <> render binding <> " )"
-  render CO_PRIMITIVE{..} = render expr <> " " <> render belongs <> " \\mathcal{P}"
   render CO_DISJOINT{..} =
     "[ "
       <> T.intercalate ", " (map render attrs)

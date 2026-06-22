@@ -61,8 +61,6 @@ spec = do
       , ("[[x -> !k1]]", Just (ExFormation [BiTau (AtLabel "x") (ExMeta "k1"), BiVoid AtRho]))
       , ("[[x -> !e]]", Just (ExFormation [BiTau (AtLabel "x") (ExMeta "e"), BiVoid AtRho]))
       , ("[[!a -> !e1]]", Just (ExFormation [BiTau (AtMeta "a") (ExMeta "e1")]))
-      , ("Q * !t", Just (ExMetaTail ExRoot "t"))
-      , ("[[]](x -> $) * !t1", Just (ExMetaTail (ExApplication (ExFormation [BiVoid AtRho]) (ArTau (AtLabel "x") ExXi)) "t1"))
       , ("[[D> --]]", Just (ExFormation [BiDelta BtEmpty, BiVoid AtRho]))
       , ("[[D> 1F-]]", Just (ExFormation [BiDelta (BtOne "1F"), BiVoid AtRho]))
       , ("[[\n  L> Func,\n  D> 00-\n]]", Just (ExFormation [BiLambda (Function "Func"), BiDelta (BtOne "00"), BiVoid AtRho]))
@@ -479,15 +477,6 @@ spec = do
       , ("𝑛", Just (ExMeta "n"))
       , ("𝑛1", Just (ExMeta "n1"))
       , ("𝑛.x", Just (ExDispatch (ExMeta "n") (AtLabel "x")))
-      ]
-
-  describe "parse meta tails" $
-    test
-      parseExpression
-      [ ("Q * !t", Just (ExMetaTail ExRoot "t"))
-      , ("Q.x * !t", Just (ExMetaTail (ExDispatch ExRoot (AtLabel "x")) "t"))
-      , ("[[]].y * !t0", Just (ExMetaTail (ExDispatch (ExFormation [BiVoid AtRho]) (AtLabel "y")) "t0"))
-      , ("Q * !t * !t2", Nothing)
       ]
 
   describe "parse whitespace handling" $

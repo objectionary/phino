@@ -31,7 +31,6 @@ instance ToSingleLine EXPRESSION where
   toSingleLine EX_APPLICATION_EXPRS{..} = EX_APPLICATION_EXPRS (toSingleLine expr) space NO_EOL TAB' (toSingleLine args) NO_EOL TAB' indent
   toSingleLine EX_PHI_MEET{..} = EX_PHI_MEET prefix idx (toSingleLine expr)
   toSingleLine EX_PHI_AGAIN{..} = EX_PHI_AGAIN prefix idx (toSingleLine expr)
-  toSingleLine EX_META_TAIL{..} = EX_META_TAIL (toSingleLine expr) meta
   toSingleLine expr = expr
 
 instance ToSingleLine APP_BINDING where
@@ -82,7 +81,6 @@ instance ToSingleLine CONDITION where
   toSingleLine CO_COMPARE{..} = CO_COMPARE (toSingleLine left) equal (toSingleLine right)
   toSingleLine CO_MATCHES{..} = CO_MATCHES regex (toSingleLine expr)
   toSingleLine CO_PART_OF{..} = CO_PART_OF (toSingleLine expr) (toSingleLine binding)
-  toSingleLine CO_PRIMITIVE{..} = CO_PRIMITIVE (toSingleLine expr) belongs
   toSingleLine CO_DISJOINT{..} = CO_DISJOINT attrs (map toSingleLine groups)
   toSingleLine CO_EMPTY = CO_EMPTY
 

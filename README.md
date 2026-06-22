@@ -238,16 +238,16 @@ The morphing and dataization rules are printed the same way:
 $ phino explain --morph
 \begin{tabular}{rl}
 \trrule{prim}
-  { \mathbb{M}( e ) }
-  { e }
-  { if $ e \in \mathcal{P} $ }
+  { \mathbb{M}( [[ B ]] ) }
+  { [[ B ]] }
+  { }
   { }
 ...
 \trrule{root}
-  { \mathbb{M}( Q . \tau * t ) }
-  { \mathbb{M}( e * t ) }
-  { }
-  { where $ e \coloneqq global( \tau ) $ }
+  { \mathbb{M}( Q ) }
+  { \mathbb{M}( \mathcal{N}( e ) ) }
+  { if $ e \not= Q $ }
+  { where $ e \coloneqq global(  ) $ }
 \end{tabular}
 ```
 
@@ -260,9 +260,9 @@ $ phino explain --dataize
   { }
   { }
 ...
-\trrule{none}
-  { \mathbb{D}( e ) }
-  { \varnothing }
+\trrule{norm}
+  { \mathbb{D}( n ) }
+  { \mathbb{D}( \mathbb{M}( n ) ) }
   { }
   { }
 \end{tabular}
@@ -388,8 +388,6 @@ This is the list of supported meta variables:
                 or `nf:` guard is needed
 * `!B` || `𝐵` - list of bindings
 * `!d` || `δ` - bytes in meta delta binding
-* `!t` - tail after expression, a possibly empty sequence of applications
-         and/or dispatches
 * `!F` - function name in meta lambda binding
 
 Every meta variable may also be used with an integer index, like `!B1` or `𝜏0`.

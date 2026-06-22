@@ -207,14 +207,6 @@ _partOf exp bd subst _ = do
     partOf expr (BiTau _ expr' : rest) = expr == expr' || partOf expr rest
     partOf expr (_ : rest) = partOf expr rest
 
--- A primitive is the termination ⊥ or a formation without a λ binding;
--- expression metas are resolved through the substitution first.
-_primitive :: Expression -> Subst -> RuleContext -> IO [Subst]
-_primitive (ExMeta meta) (Subst mp) ctx = case M.lookup meta mp of
-  Just (MvExpression expr) -> _primitive expr (Subst mp) ctx
-  _ -> pure []
-_primitive expr subst _ = pure [subst | primitive expr]
-
 -- Hold if none of the given attributes is present in the union of the
 -- bindings captured by the given binding metas.
 _disjoint :: [Attribute] -> [Binding] -> Subst -> RuleContext -> IO [Subst]
@@ -244,7 +236,6 @@ meetCondition' (Y.NF expr) = _nf expr
 meetCondition' (Y.Absolute expr) = _absolute expr
 meetCondition' (Y.Matches pat expr) = _matches pat expr
 meetCondition' (Y.PartOf expr bd) = _partOf expr bd
-meetCondition' (Y.Primitive expr) = _primitive expr
 meetCondition' (Y.Disjoint attrs bds) = _disjoint attrs bds
 
 -- For each substitution check if it meetCondition to given condition
@@ -325,7 +316,6 @@ metaNamesWithPrefix prefix = nub . go
     go (ExFormation bds) = concatMap goBinding bds
     go (ExApplication e arg) = go e ++ goArgument arg
     go (ExDispatch e _) = go e
-    go (ExMetaTail e _) = go e
     go (ExPhiMeet _ _ e) = go e
     go (ExPhiAgain _ _ e) = go e
     go _ = []

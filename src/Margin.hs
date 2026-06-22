@@ -36,7 +36,6 @@ instance WithMargin EXPRESSION where
   withMargin' _ num@EX_NUMBER{} = num
   withMargin' _ str@EX_STRING{} = str
   withMargin' cfg EX_DISPATCH{..} = EX_DISPATCH (withMargin' cfg expr) space attr
-  withMargin' cfg EX_META_TAIL{..} = EX_META_TAIL (withMargin' cfg expr) meta
   withMargin' cfg EX_PHI_AGAIN{..} = EX_PHI_AGAIN prefix idx (withMargin' cfg expr)
   withMargin' cfg EX_PHI_MEET{..} = EX_PHI_MEET prefix idx (withMargin' cfg expr)
   withMargin' cfg@(extra, margin) ex@EX_APPLICATION{tab = tab@(TAB indt), ..} =

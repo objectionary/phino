@@ -223,7 +223,6 @@ instance ToLaTeX EXPRESSION where
   toLaTeX EX_PHI_MEET{..} = EX_PHI_MEET prefix idx (toLaTeX expr)
   toLaTeX EX_PHI_AGAIN{..} = EX_PHI_AGAIN prefix idx (toLaTeX expr)
   toLaTeX EX_META{..} = EX_META (toLaTeX meta)
-  toLaTeX EX_META_TAIL{..} = EX_META_TAIL (toLaTeX expr) (toLaTeX meta)
   toLaTeX expr = expr
 
 instance ToLaTeX ATTRIBUTE where
@@ -270,7 +269,6 @@ instance ToLaTeX META_HEAD where
   toLaTeX E = E'
   toLaTeX N = N'
   toLaTeX K = K'
-  toLaTeX P = P'
   toLaTeX A = TAU'
   toLaTeX TAU = TAU'
   toLaTeX ETA = ETA'
@@ -323,7 +321,6 @@ instance ToLaTeX CONDITION where
   toLaTeX CO_COMPARE{..} = CO_COMPARE (toLaTeX left) equal (toLaTeX right)
   toLaTeX CO_MATCHES{..} = CO_MATCHES regex (toLaTeX expr)
   toLaTeX CO_PART_OF{..} = CO_PART_OF (toLaTeX expr) (toLaTeX binding)
-  toLaTeX CO_PRIMITIVE{..} = CO_PRIMITIVE (toLaTeX expr) belongs
   toLaTeX CO_DISJOINT{..} = CO_DISJOINT (map toLaTeX attrs) (map toLaTeX groups)
   toLaTeX CO_EMPTY = CO_EMPTY
 

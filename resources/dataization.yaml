@@ -26,17 +26,31 @@
     dataize:
       normalize: 𝑒1
 
+- name: fire
+  description: '𝔻(⟦𝐵1, λ ⤍ F, 𝐵2⟧) ⟿ 𝔻(𝒩(𝔼(⟦𝐵1, λ ⤍ F, 𝐵2⟧)))'
+  match: ⟦𝐵1, λ ⤍ !F, 𝐵2⟧
+  where:
+    - meta: 𝑒
+      function: lambda
+      args:
+        - ⟦𝐵1, λ ⤍ !F, 𝐵2⟧
+  then:
+    dataize:
+      normalize: 𝑒
+
+- name: none
+  description: '𝔻(⟦𝐵⟧) ⟿ nothing'
+  match: ⟦𝐵⟧
+  then: nothing
+
+- name: bott
+  description: '𝔻(⊥) ⟿ nothing'
+  match: ⊥
+  then: nothing
+
 - name: norm
-  description: '𝔻(n) ⟿ 𝔻(𝕄(n)) if n ∉ 𝒫'
+  description: '𝔻(n) ⟿ 𝔻(𝕄(n)) otherwise'
   match: 𝑛
-  when:
-    not:
-      primitive: 𝑛
   then:
     dataize:
       morph: 𝑛
-
-- name: none
-  description: '𝔻(n) ⟿ nothing otherwise'
-  match: 𝑛
-  then: nothing

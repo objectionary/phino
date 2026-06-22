@@ -180,8 +180,6 @@ spec = do
       , ("application equals", ExApplication ExRoot (ArTau AtRho ExXi), ExApplication ExRoot (ArTau AtRho ExXi), True)
       , ("dispatch equals", ExDispatch ExRoot AtRho, ExDispatch ExRoot AtRho, True)
       , ("dispatch differs", ExDispatch ExRoot AtRho, ExDispatch ExRoot AtPhi, False)
-      , ("metatail equals", ExMetaTail ExRoot "t", ExMetaTail ExRoot "t", True)
-      , ("metatail differs", ExMetaTail ExRoot "t", ExMetaTail ExRoot "s", False)
       ]
       ( \(desc, lhs, rhs, expected) ->
           it desc $ (lhs == rhs) `shouldBe` expected
@@ -199,7 +197,7 @@ spec = do
 
   describe "Expression Ord instance orders correctly" $
     it "sorts expressions by constructor order" $
-      let exprs = [ExMetaTail ExRoot "t", ExDispatch ExRoot AtRho, ExApplication ExRoot (ArTau AtRho ExRoot), ExMeta "e", ExTermination, ExRoot, ExXi, ExFormation []]
+      let exprs = [ExDispatch ExRoot AtRho, ExApplication ExRoot (ArTau AtRho ExRoot), ExMeta "e", ExTermination, ExRoot, ExXi, ExFormation []]
           first : _ = sort exprs
        in first `shouldBe` ExFormation []
 
@@ -238,7 +236,6 @@ spec = do
       , ("meta binding", ExFormation [BiMeta "B"], 3)
       , ("metalambda binding", ExFormation [BiLambda (FnMeta "F")], 5)
       , ("meta expression", ExMeta "e", 1)
-      , ("metatail expression", ExMetaTail ExRoot "t", 3)
       , ("deeply nested dispatch", ExDispatch (ExDispatch ExRoot (AtLabel "a")) (AtLabel "b"), 5)
       , ("formation with dispatch inside", ExFormation [BiTau AtRho (ExDispatch ExRoot (AtLabel "x"))], 7)
       ]

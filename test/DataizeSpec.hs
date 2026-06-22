@@ -57,10 +57,10 @@ spec = do
       , ("$ => X", ExXi, ExRoot, ExTermination)
       , ("Q => X", ExRoot, ExRoot, ExTermination)
       ,
-        ( "Q.x (Q -> [[ x -> [[]] ]]) => [[]]"
+        ( "Q.x (Q -> [[ x -> [[]] ]]) => [[ ρ -> Q ]]"
         , ExDispatch ExRoot (AtLabel "x")
         , ExFormation [BiTau (AtLabel "x") (ExFormation [])]
-        , ExFormation []
+        , ExFormation [BiTau AtRho (ExFormation [BiTau (AtLabel "x") (ExFormation [BiVoid AtRho]), BiVoid AtRho])]
         )
       ]
 
@@ -104,10 +104,10 @@ spec = do
       ]
 
   describe "execBuildTerm" $
-    it "resolves global dispatch from the universe Q" $ do
+    it "returns the universe Q body for global()" $ do
       prog <- parseProgramThrows "Q -> [[ x -> [[ D> 42- ]] ]]"
-      expected <- parseExpressionThrows "[[ D> 42- ]]"
-      term <- execBuildTerm (defaultDataizeContext ExRoot prog) "global" [Yaml.ArgAttribute (AtLabel "x")] substEmpty
+      expected <- parseExpressionThrows "[[ x -> [[ D> 42- ]] ]]"
+      term <- execBuildTerm (defaultDataizeContext ExRoot prog) "global" [] substEmpty
       case term of
         TeExpression actual -> actual `shouldBe` expected
         _ -> expectationFailure "global() did not return an expression"
@@ -160,24 +160,19 @@ spec = do
           "Q -> [[ bytes(data) -> [[ @ -> $.data ]], number(as-bytes) -> [[ @ -> $.as-bytes, plus(x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6) ]]"
       labels
         `shouldBe` [ "contextualize"
-                   , "root"
+                   , "applicationa"
                    , "alpha"
                    , "copy"
-                   , "dot"
-                   , "copy"
-                   , "alpha"
-                   , "copy"
+                   , "prim"
                    , "lambda"
-                   , "root"
+                   , "applicationa"
                    , "alpha"
                    , "copy"
                    , "prim"
                    , "contextualize"
                    , "dot"
-                   , "root"
-                   , "alpha"
-                   , "copy"
-                   , "copy"
+                   , "application"
+                   , "stay"
                    , "prim"
                    , "contextualize"
                    , "dot"
@@ -185,7 +180,7 @@ spec = do
                    ]
     it "dataizes a located reference through the expected rules" $ do
       labels <- labelsOf "Q.foo.bar" "Q -> [[ foo -> [[ bar -> [[ @ -> Q.x ]] ]], x -> [[ D> 42- ]] ]]"
-      labels `shouldBe` ["contextualize", "root", "prim"]
+      labels `shouldBe` ["contextualize", "dispatch", "dot", "copy", "prim"]
 
   testDataize
     [
