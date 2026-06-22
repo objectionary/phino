@@ -35,7 +35,6 @@ instance ToASCII EXPRESSION where
   toASCII EX_META{meta = META{hd = K, ..}} = EX_META (META EXCL K' rest)
   toASCII EX_META{meta = META{hd = P, ..}} = EX_META (META EXCL P' rest)
   toASCII EX_META{..} = EX_META (META EXCL E' (rest meta))
-  toASCII EX_META_TAIL{..} = EX_META_TAIL (toASCII expr) meta
   toASCII EX_PHI_MEET{..} = EX_PHI_MEET prefix idx (toASCII expr)
   toASCII EX_PHI_AGAIN{..} = EX_PHI_AGAIN prefix idx (toASCII expr)
   toASCII expr = expr

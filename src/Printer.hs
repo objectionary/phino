@@ -77,9 +77,6 @@ printBinding' bd = printExpression' (ExFormation [bd])
 printBinding :: Binding -> String
 printBinding bd = printBinding' bd defaultPrintConfig
 
-printArgument' :: Argument -> PrintConfig -> String
-printArgument' arg (_, encoding, _, _) = T.unpack $ render (withEncoding encoding (toCST arg (0, NO_EOL) :: PAIR))
-
 printBytes :: Bytes -> String
 printBytes bts = T.unpack $ render (toCST bts (0, NO_EOL) :: BYTES)
 
@@ -92,10 +89,6 @@ printExtraArg' (ArgBytes bts) _ = printBytes bts
 printExtraArg :: ExtraArgument -> String
 printExtraArg arg = printExtraArg' arg defaultPrintConfig
 
-printTail :: Tail -> PrintConfig -> String
-printTail (TaApplication arg) config = "(" <> printArgument' arg config <> ")"
-printTail (TaDispatch att) (_, encoding, _, _) = "." <> printAttribute' att encoding
-
 printMetaValue :: MetaValue -> PrintConfig -> String
 printMetaValue (MvAttribute att) (_, encoding, _, _) = printAttribute' att encoding
 printMetaValue (MvAlpha index) (_, encoding, _, _) = printAlpha' index encoding
@@ -103,7 +96,6 @@ printMetaValue (MvExpression ex) config = printExpression' ex config
 printMetaValue (MvBytes bts) _ = printBytes bts
 printMetaValue (MvBindings bds) config = printExpression' (ExFormation bds) config
 printMetaValue (MvFunction fun) _ = T.unpack fun
-printMetaValue (MvTail tails) config = intercalate "," (map (`printTail` config) tails)
 
 printSubst :: Subst -> PrintConfig -> String
 printSubst (Subst mp) config =

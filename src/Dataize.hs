@@ -12,15 +12,16 @@
 module Dataize (morph, dataize, dataize', DataizeContext (..), execBuildTerm) where
 
 import AST
-import Builder (buildAttributeThrows, buildBytesThrows, buildExpressionThrows)
+import Builder (buildBytesThrows, buildExpressionThrows)
 import Control.Exception (throwIO)
 import Data.List (partition)
 import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as NE
+import qualified Data.Map.Strict as Map
 import qualified Data.Text as T
 import Deps (BuildTermFunc, BuildTermMethod, SaveStepFunc, Term (TeAttribute, TeExpression))
 import Locator (locatedExpression, withLocatedExpression)
-import Matcher (Subst, substEmpty)
+import Matcher (MetaValue (..), Subst (..), substEmpty)
 import Misc
 import Must (Must (..))
 import Rewriter (RewriteContext (RewriteContext), Rewritten, rewrite)
@@ -65,22 +66,6 @@ formation bds ctx = do
             [bd] -> (Just bd, rest)
             _ -> (Nothing, bds)
 
--- Resolve dispatch from global object (Q.tau) for ROOT Morphing rule.
--- Here tau is the name of the attribute which is taken from Q
--- and expr is expression which program refers to.
--- If Q refers to formation which contains binding with attribute == tau -
--- the expression from this binding is returned.
-phiDispatch :: T.Text -> Expression -> Maybe Expression
-phiDispatch tau expr = case expr of
-  ExFormation bds -> boundExpr bds
-  _ -> Nothing
-  where
-    boundExpr :: [Binding] -> Maybe Expression
-    boundExpr [] = Nothing
-    boundExpr (bd : bds) = case bd of
-      BiTau (AtLabel attr) expr' -> if attr == tau then Just expr' else boundExpr bds
-      _ -> boundExpr bds
-
 -- The Morphing function 𝕄 maps normal forms to primitives. It is driven by the
 -- ordered rules from 'morphing.yaml': the first matching rule's 'then' outcome
 -- either stops with a primitive ('MoStop') or keeps morphing ('MoMorph'). When
@@ -122,7 +107,28 @@ morph (expr, seq) ctx@DataizeContext{..} = do
       built <- buildExpressionThrows arg subst
       labelled <- leadsTo seq name built ctx
       (expr', seq') <- normalized built labelled ctx
-      morph (expr', seq') ctx
+      if expr' == expr
+        then pure (ExTermination, seq')
+        else morph (expr', seq') ctx
+    -- 𝕄(𝒩(𝕄(n).τ)) and 𝕄(𝒩(𝕄(n)(τ ↦ e))): morph the head sub-expression
+    -- bound to the leading meta of the template, splice its steps, re-attach the
+    -- dispatch or application, normalize, and morph on. When the round leaves the
+    -- expression unchanged the head is irreducible, so it bottoms out at ⊥.
+    apply (Y.MoMorphHead tmpl) name (Subst mp) = do
+      headMeta <- case tmpl of
+        ExDispatch (ExMeta m) _ -> pure m
+        ExApplication (ExMeta m) _ -> pure m
+        _ -> throwIO (userError "Outcome morph-head expects a dispatch or application on a meta head")
+      headExpr <- case Map.lookup headMeta mp of
+        Just (MvExpression e) -> pure e
+        _ -> throwIO (userError (printf "Head meta '%s' is not bound to an expression" (T.unpack headMeta)))
+      (morphed, seq1) <- morph (headExpr, seq) ctx
+      built <- buildExpressionThrows tmpl (Subst (Map.insert headMeta (MvExpression morphed) mp))
+      labelled <- leadsTo seq1 name built ctx
+      (expr', seq') <- normalized built labelled ctx
+      if expr' == expr
+        then pure (ExTermination, seq')
+        else morph (expr', seq') ctx
 
 dataize :: DataizeContext -> IO Dataized
 dataize ctx@DataizeContext{..} = do
@@ -273,11 +279,5 @@ _lambda ctx [ArgExpression expr] subst = do
 _lambda _ _ _ = throwIO (userError "Function lambda() requires exactly 1 expression argument")
 
 _global :: DataizeContext -> BuildTermMethod
-_global DataizeContext{_program = Program prog} [ArgAttribute attr] subst = do
-  attr' <- buildAttributeThrows attr subst
-  case attr' of
-    AtLabel label -> case phiDispatch label prog of
-      Just expr -> pure (TeExpression expr)
-      Nothing -> throwIO (userError (printf "Universe Q has no attribute '%s'" (show attr')))
-    _ -> throwIO (userError "Function global() expects a labelled attribute")
-_global _ _ _ = throwIO (userError "Function global() requires exactly 1 attribute argument")
+_global DataizeContext{_program = Program prog} [] _ = pure (TeExpression prog)
+_global _ _ _ = throwIO (userError "Function global() requires no arguments")

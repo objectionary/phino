@@ -129,7 +129,6 @@ instance Render META_HEAD where
   render B' = "B"
   render D = "δ"
   render D' = "\\delta"
-  render TAIL = "t"
   render F = "F"
 
 instance Render META where
@@ -201,7 +200,6 @@ instance Render EXPRESSION where
   render EX_STRING{..} = "\"" <> render str <> "\""
   render EX_NUMBER{..} = either (T.pack . show) (T.pack . show) num
   render EX_META{..} = render meta
-  render EX_META_TAIL{..} = render expr <> " * " <> render meta
   render EX_PHI_MEET{..} = "\\phiMeet{" <> maybe "" (\p -> T.pack p <> ":") prefix <> render idx <> "}{ " <> render expr <> " }"
   render EX_PHI_AGAIN{..} = "\\phiAgain{" <> maybe "" (\p -> T.pack p <> ":") prefix <> render idx <> "}"
 

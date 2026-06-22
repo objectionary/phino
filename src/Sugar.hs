@@ -110,7 +110,6 @@ instance ToSalty EXPRESSION where
       rhos
   toSalty EX_PHI_MEET{..} = EX_PHI_MEET prefix idx (toSalty expr)
   toSalty EX_PHI_AGAIN{..} = EX_PHI_AGAIN prefix idx (toSalty expr)
-  toSalty EX_META_TAIL{..} = EX_META_TAIL (toSalty expr) meta
   toSalty expr = expr
 
 saltifyPrimitive :: EXPRESSION -> EXPRESSION -> EXPRESSION -> TAB -> [Argument] -> EXPRESSION

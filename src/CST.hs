@@ -95,7 +95,6 @@ data META_HEAD
   | B' -- B
   | D -- δ
   | D' -- \delta
-  | TAIL -- t
   | F -- F
   deriving (Eq, Show)
 
@@ -171,7 +170,6 @@ data EXPRESSION
   | EX_STRING {str :: String, tab :: TAB, rhos :: [Argument]}
   | EX_NUMBER {num :: Either Int Double, tab :: TAB, rhos :: [Argument]}
   | EX_META {meta :: META}
-  | EX_META_TAIL {expr :: EXPRESSION, meta :: META}
   | EX_PHI_MEET {prefix :: Maybe String, idx :: Int, expr :: EXPRESSION}
   | EX_PHI_AGAIN {prefix :: Maybe String, idx :: Int, expr :: EXPRESSION}
   deriving (Eq, Show)
@@ -315,7 +313,6 @@ instance ToCST Expression EXPRESSION where
   toCST ExRoot _ = EX_GLOBAL Φ
   toCST ExXi _ = EX_XI XI
   toCST (ExMeta mt) _ = EX_META (META NO_EXCL (exMetaHead mt) (metaTail mt))
-  toCST (ExMetaTail expr mt) ctx = EX_META_TAIL (toCST expr ctx) (META EXCL TAIL (metaTail mt))
   toCST ExTermination _ = EX_TERMINATION DEAD
   toCST (ExPhiMeet prefix idx expr) ctx = EX_PHI_MEET prefix idx (toCST expr ctx)
   toCST (ExPhiAgain prefix idx expr) ctx = EX_PHI_AGAIN prefix idx (toCST expr ctx)

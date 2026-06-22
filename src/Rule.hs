@@ -325,7 +325,6 @@ metaNamesWithPrefix prefix = nub . go
     go (ExFormation bds) = concatMap goBinding bds
     go (ExApplication e arg) = go e ++ goArgument arg
     go (ExDispatch e _) = go e
-    go (ExMetaTail e _) = go e
     go (ExPhiMeet _ _ e) = go e
     go (ExPhiAgain _ _ e) = go e
     go _ = []

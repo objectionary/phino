@@ -411,7 +411,6 @@ application = foldl ExApplication
 -- tail optional part of application
 -- 1. any head + dispatch
 -- 2. any head except $ and Q + application
--- 3. any head except meta tail + meta tail
 exTail :: Expression -> Parser Expression
 exTail expr =
   choice
@@ -438,14 +437,6 @@ exTail expr =
                     ]
                 _ <- symbol ")"
                 return (application expr bds)
-            , do
-                guard
-                  ( case expr of
-                      ExMetaTail _ _ -> False
-                      _ -> True
-                  )
-                _ <- symbol "*"
-                ExMetaTail expr <$> meta 't'
             ]
             <?> "dispatch or application"
         exTail next

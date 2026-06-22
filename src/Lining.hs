@@ -31,7 +31,6 @@ instance ToSingleLine EXPRESSION where
   toSingleLine EX_APPLICATION_EXPRS{..} = EX_APPLICATION_EXPRS (toSingleLine expr) space NO_EOL TAB' (toSingleLine args) NO_EOL TAB' indent
   toSingleLine EX_PHI_MEET{..} = EX_PHI_MEET prefix idx (toSingleLine expr)
   toSingleLine EX_PHI_AGAIN{..} = EX_PHI_AGAIN prefix idx (toSingleLine expr)
-  toSingleLine EX_META_TAIL{..} = EX_META_TAIL (toSingleLine expr) meta
   toSingleLine expr = expr
 
 instance ToSingleLine APP_BINDING where

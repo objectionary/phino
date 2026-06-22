@@ -121,12 +121,6 @@ buildBindings (bd : rest) subst = do
   bds <- buildBindings rest subst
   Right (first ++ bds)
 
-buildExpressionWithTails :: Expression -> [Tail] -> Subst -> Expression
-buildExpressionWithTails expr [] _ = expr
-buildExpressionWithTails ex (tl : rest) subst = case tl of
-  TaApplication arg -> buildExpressionWithTails (ExApplication ex arg) rest subst
-  TaDispatch at -> buildExpressionWithTails (ExDispatch ex at) rest subst
-
 -- Build meta expression with given substitution
 buildExpression :: Expression -> Subst -> Built Expression
 buildExpression (ExDispatch ex at) subst = do
@@ -147,12 +141,6 @@ buildExpression (ExMeta meta) (Subst mp) = case Map.lookup meta mp of
           ExFormation bds -> uniqueBindings bds >> res
           _ -> res
   _ -> Left (metaMsg meta)
-buildExpression (ExMetaTail expr meta) subst = do
-  let (Subst mp) = subst
-  expression <- buildExpression expr subst
-  case Map.lookup meta mp of
-    Just (MvTail tails) -> Right (buildExpressionWithTails expression tails subst)
-    _ -> Left (metaMsg meta)
 buildExpression expr _ = Right expr
 
 buildBytesThrows :: Bytes -> Subst -> IO Bytes

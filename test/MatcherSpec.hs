@@ -428,36 +428,6 @@ spec = do
             ]
         )
       ,
-        ( "Q * !t => Q.org => [(!t >> [.org])]"
-        , ExMetaTail ExRoot "t"
-        , ExDispatch ExRoot (AtLabel "x")
-        , substs [[("t", MvTail [TaDispatch (AtLabel "x")])]]
-        )
-      ,
-        ( "Q * !t => Q.org(x -> [[]]) => [(!t >> [.org, (x -> [[]])])]"
-        , ExMetaTail ExRoot "t"
-        , ExApplication (ExDispatch ExRoot (AtLabel "org")) (ArTau (AtLabel "x") (ExFormation [BiVoid AtRho]))
-        , substs [[("t", MvTail [TaDispatch (AtLabel "org"), TaApplication (ArTau (AtLabel "x") (ExFormation [BiVoid AtRho]))])]]
-        )
-      ,
-        ( "Q.x * !t => Q.x(y -> [[]]) => [(!t >> [(y -> [[]])])]"
-        , ExMetaTail (ExDispatch ExRoot (AtLabel "x")) "t"
-        , ExApplication (ExDispatch ExRoot (AtLabel "x")) (ArTau (AtLabel "y") (ExFormation [BiVoid AtRho]))
-        , substs [[("t", MvTail [TaApplication (ArTau (AtLabel "y") (ExFormation [BiVoid AtRho]))])]]
-        )
-      ,
-        ( "Q.!a * !t => Q.org.eolang(x -> [[]]) => [(!a >> org, !t >> [ .eolang, ( x -> [[ ]] ) ])]"
-        , ExMetaTail (ExDispatch ExRoot (AtMeta "a")) "t"
-        , ExApplication (ExDispatch (ExDispatch ExRoot (AtLabel "org")) (AtLabel "eolang")) (ArTau (AtLabel "x") (ExFormation [BiVoid AtRho]))
-        , substs [[("a", MvAttribute (AtLabel "org")), ("t", MvTail [TaDispatch (AtLabel "eolang"), TaApplication (ArTau (AtLabel "x") (ExFormation [BiVoid AtRho]))])]]
-        )
-      ,
-        ( "Q.x(y -> $ * !t1) * !t2 => Q.x(y -> $.q).p => [(!t1 >> [.q], !t2 >> [.p])]"
-        , ExMetaTail (ExApplication (ExDispatch ExRoot (AtLabel "x")) (ArTau (AtLabel "y") (ExMetaTail ExXi "t1"))) "t2"
-        , ExDispatch (ExApplication (ExDispatch ExRoot (AtLabel "x")) (ArTau (AtLabel "y") (ExDispatch ExXi (AtLabel "q")))) (AtLabel "p")
-        , substs [[("t1", MvTail [TaDispatch (AtLabel "q")]), ("t2", MvTail [TaDispatch (AtLabel "p")])]]
-        )
-      ,
         ( "[[!B1, !a ↦ !e1, !B2]](!a ↦ !e2) => ⟦ t ↦ ξ.k, x ↦ ξ.t, k ↦ ∅ ⟧(x ↦ ξ) => [(!B1 >> [[ t -> $.k ]], !a >> x, !B2 >> [[ k -> ? ]], !e1 >> $.t, !e2 >> $)]"
         , ExApplication (ExFormation [BiMeta "B1", BiTau (AtMeta "a") (ExMeta "e1"), BiMeta "B2"]) (ArTau (AtMeta "a") (ExMeta "e2"))
         , ExApplication

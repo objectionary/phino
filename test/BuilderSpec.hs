@@ -49,12 +49,6 @@ spec = do
             )
         )
       ,
-        ( "Q * !t => (!t >> [.a, .b, (~1 -> $.x)]) => Q.a.b(~1 -> $.x)"
-        , ExMetaTail ExRoot "t"
-        , [("t", MvTail [TaDispatch (AtLabel "a"), TaDispatch (AtLabel "b"), TaApplication (ArAlpha (Alpha 1) (ExDispatch ExXi (AtLabel "x")))])]
-        , Right (ExApplication (ExDispatch (ExDispatch ExRoot (AtLabel "a")) (AtLabel "b")) (ArAlpha (Alpha 1) (ExDispatch ExXi (AtLabel "x"))))
-        )
-      ,
         ( "Q.!a => () => X"
         , ExDispatch ExRoot (AtMeta "a")
         , []

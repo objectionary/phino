@@ -55,7 +55,6 @@ exprLabels :: Expression -> Set Text
 exprLabels (ExFormation bds) = Set.unions (map bindingLabels bds)
 exprLabels (ExApplication expr arg) = exprLabels expr <> argumentLabels arg
 exprLabels (ExDispatch expr attr) = exprLabels expr <> attrLabel attr
-exprLabels (ExMetaTail expr _) = exprLabels expr
 exprLabels (ExPhiMeet _ _ expr) = exprLabels expr
 exprLabels (ExPhiAgain _ _ expr) = exprLabels expr
 exprLabels _ = Set.empty
