@@ -62,11 +62,16 @@
       normalize: '𝑒1(𝜂 ↦ 𝑒)'
 
 - name: root
-  description: '𝕄(Φ) ⟿ 𝕄(𝒩(e)) where e := global()'
+  description: '𝕄(Φ) ⟿ 𝕄(𝒩(e)) where e := global(), unless e is Φ'
   match: Φ
   where:
     - meta: 𝑒
       function: global
+  when:
+    not:
+      eq:
+        - 𝑒
+        - Φ
   then:
     morph:
       normalize: 𝑒

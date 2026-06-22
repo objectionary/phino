@@ -246,7 +246,7 @@ $ phino explain --morph
 \trrule{root}
   { \mathbb{M}( Q ) }
   { \mathbb{M}( \mathcal{N}( e ) ) }
-  { }
+  { if $ e \not= Q $ }
   { where $ e \coloneqq global(  ) $ }
 \end{tabular}
 ```
