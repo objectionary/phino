@@ -14,13 +14,13 @@
   then: ⟦𝐵⟧
 
 - name: lambda
-  description: '𝕄(⟦𝐵1, λ ⤍ F, 𝐵2⟧.τ) ⟿ 𝕄(𝒩(𝔼(⟦𝐵1, λ ⤍ F, 𝐵2⟧).τ))'
-  match: '⟦𝐵1, λ ⤍ !F, 𝐵2⟧.𝜏'
+  description: '𝕄(⟦𝐵1, λ ⤍ 𝐹, 𝐵2⟧.τ) ⟿ 𝕄(𝒩(𝔼(⟦𝐵1, λ ⤍ 𝐹, 𝐵2⟧).τ))'
+  match: '⟦𝐵1, λ ⤍ 𝐹, 𝐵2⟧.𝜏'
   where:
     - meta: 𝑒
       function: lambda
       args:
-        - '⟦𝐵1, λ ⤍ !F, 𝐵2⟧'
+        - '⟦𝐵1, λ ⤍ 𝐹, 𝐵2⟧'
   then:
     morph:
       normalize: '𝑒.𝜏'

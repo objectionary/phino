@@ -11,7 +11,7 @@ rules:
       pattern: |
         [[ x -> !e ]]
       result: |
-        [[ x -> !e, !a -> [[ ]], ^ -> ? ]]
+        [[ x -> !e, !t -> [[ ]], ^ -> ? ]]
       where:
-        - meta: '!a'
+        - meta: '!t'
           function: random-tau

@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 # SPDX-License-Identifier: MIT
 ---
-input: Q -> [[x -> $.q, y -> Q.a]](~0 -> Q.x)
+input: Q -> [[x -> $.q, y -> Q.a]](a0 -> Q.x)
 output: |-
   Φ ↦ ⟦
     y ↦ Φ.a
@@ -9,5 +9,5 @@ output: |-
 rules:
   custom:
     - name: with-alpha-meta
-      pattern: '[[!a1 -> $.q, !B]](α𝑖 ↦ !e)'
+      pattern: '[[!t1 -> $.q, !B]](α𝑖 ↦ !e)'
       result: '[[!B]]'

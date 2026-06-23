@@ -11,8 +11,8 @@ rules:
       pattern: |
         [[ x -> !e ]]
       result: |
-        [[ x -> !e, !a -> [[ ]], ^ -> ? ]]
+        [[ x -> !e, !t -> [[ ]], ^ -> ? ]]
       where:
-        - meta: '!a'
+        - meta: '!t'
           function: tau
           args: ['!e']

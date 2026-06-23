@@ -56,11 +56,15 @@ spec = do
       , ("meta expr", ExMeta "e", "!e")
       , ("meta binding", ExFormation [BiMeta "B"], "[[ !B ]]")
       , ("meta lambda", ExFormation [BiLambda (FnMeta "F")], "[[ L> !F ]]")
-      , ("meta attr tau", ExFormation [BiTau (AtMeta "a") ExXi], "[[ !a -> $ ]]")
+      , ("meta attr tau", ExFormation [BiTau (AtMeta "t") ExXi], "[[ !t -> $ ]]")
       ]
       ( \(desc, expr, expected) ->
           it desc (printExpression' expr (SWEET, ASCII, SINGLELINE, defaultMargin) `shouldBe` expected)
       )
+
+  describe "printExpression with SWEET UNICODE renders the pretty function meta" $
+    it "meta lambda becomes 𝐹" $
+      printExpression' (ExFormation [BiLambda (FnMeta "F")]) (SWEET, UNICODE, SINGLELINE, defaultMargin) `shouldBe` "⟦ λ ⤍ 𝐹 ⟧"
 
   describe "printExpression keeps special double values in byte form so they re-parse" $
     forM_

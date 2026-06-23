@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 ---
 name: when
-pattern: 'Q.!a'
+pattern: 'Q.!t'
 result: 'Q.x'
 when:
   not:
@@ -10,10 +10,10 @@ when:
       - or:
           - and:
               - in:
-                  - '!a1'
+                  - '!t1'
                   - '!B'
               - eq:
-                  - '!a'
+                  - '!t'
                   - '^'
       - or:
           - and:

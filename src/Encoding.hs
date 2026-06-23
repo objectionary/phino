@@ -60,17 +60,20 @@ instance ToASCII APP_ARGS where
 
 instance ToASCII PAIR where
   toASCII PA_TAU{..} = PA_TAU (toASCII attr) ARROW' (toASCII expr)
+  toASCII PA_ALPHA{..} = PA_ALPHA (toASCII alpha) ARROW' (toASCII expr)
   toASCII PA_FORMATION{..} = PA_FORMATION (toASCII attr) (map toASCII voids) ARROW' (toASCII expr)
   toASCII PA_VOID{..} = PA_VOID (toASCII attr) ARROW' QUESTION
   toASCII PA_LAMBDA{..} = PA_LAMBDA' func
   toASCII PA_DELTA{..} = PA_DELTA' bytes
-  toASCII PA_META_LAMBDA{..} = PA_META_LAMBDA' meta
+  toASCII PA_META_LAMBDA{meta = META{..}} = PA_META_LAMBDA' (META EXCL F' rest)
   toASCII PA_META_DELTA{..} = PA_META_DELTA' (META EXCL D' (rest meta))
   toASCII pair = pair
 
+instance ToASCII ALPHA where
+  toASCII AL_IDX{..} = AL_IDX ALPHA' idx
+  toASCII AL_META{..} = AL_META ALPHA' (META EXCL I' (rest meta))
+
 instance ToASCII ATTRIBUTE where
-  toASCII AT_ALPHA{..} = AT_ALPHA ALPHA' idx
-  toASCII AT_ALPHA_META{..} = AT_ALPHA_META ALPHA' (META EXCL I' (rest meta))
   toASCII AT_PHI{} = AT_PHI AT
   toASCII AT_RHO{} = AT_RHO CARET
   toASCII AT_META{..} = AT_META (META EXCL A (rest meta))

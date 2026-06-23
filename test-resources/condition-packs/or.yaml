@@ -3,9 +3,9 @@
 ---
 failure: true
 expression: '[[ x -> Q.x ]]'
-pattern: '[[ x -> Q.!a ]]'
+pattern: '[[ x -> Q.!t ]]'
 condition:
   or:
-    - eq: ['!a', 'y']
-    - eq: ['!a', 'z']
-    - eq: ['!a', 'o']
+    - eq: ['!t', 'y']
+    - eq: ['!t', 'z']
+    - eq: ['!t', 'o']

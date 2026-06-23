@@ -64,7 +64,7 @@ instance FromJSON Number where
         , Domain <$> o .: "domain"
         ]
     Number num -> pure (Literal (round num))
-    String txt -> case parseIndexMeta (unpack txt) of
+    String txt -> case parseIndex (unpack txt) of
       Right mt -> pure (MetaIndex mt)
       Left err -> fail err
     _ ->

@@ -2,6 +2,6 @@
 # SPDX-License-Identifier: MIT
 ---
 expression: '[[ x -> [[ a -> "a" ]], y -> [[ a -> "b" ]] ]]'
-pattern: '[[ x -> [[ !a1 -> !e1, !B1 ]], y -> [[ !a2 -> !e2, !B2 ]] ]]'
+pattern: '[[ x -> [[ !t1 -> !e1, !B1 ]], y -> [[ !t2 -> !e2, !B2 ]] ]]'
 condition:
-  eq: ['!a1', '!a2']
+  eq: ['!t1', '!t2']

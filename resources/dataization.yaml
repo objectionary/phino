@@ -27,13 +27,13 @@
       normalize: 𝑒1
 
 - name: fire
-  description: '𝔻(⟦𝐵1, λ ⤍ F, 𝐵2⟧) ⟿ 𝔻(𝒩(𝔼(⟦𝐵1, λ ⤍ F, 𝐵2⟧)))'
-  match: ⟦𝐵1, λ ⤍ !F, 𝐵2⟧
+  description: '𝔻(⟦𝐵1, λ ⤍ 𝐹, 𝐵2⟧) ⟿ 𝔻(𝒩(𝔼(⟦𝐵1, λ ⤍ 𝐹, 𝐵2⟧)))'
+  match: ⟦𝐵1, λ ⤍ 𝐹, 𝐵2⟧
   where:
     - meta: 𝑒
       function: lambda
       args:
-        - ⟦𝐵1, λ ⤍ !F, 𝐵2⟧
+        - ⟦𝐵1, λ ⤍ 𝐹, 𝐵2⟧
   then:
     dataize:
       normalize: 𝑒

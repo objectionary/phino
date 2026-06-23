@@ -440,6 +440,17 @@ spec = do
               ]
           ]
 
+    it "rewrites an alpha-index argument as \\alpha subscript in LaTeX" $
+      withStdin "Q -> Q.foo(a1 -> Q.y)" $
+        testCLISucceeded
+          ["rewrite", "--output=latex", "--flat", "--nonumber"]
+          [ unlines
+              [ "\\begin{phiquation*}"
+              , "Q -> Q . |foo| ( \\alpha_{1} -> Q . |y| ){.}"
+              , "\\end{phiquation*}"
+              ]
+          ]
+
     it "rewrite as LaTeX with expression name" $
       withStdin "Q -> [[ x -> 5 ]]" $
         testCLISucceeded
@@ -1178,17 +1189,17 @@ spec = do
 
     it "prints one substitution" $
       withStdin "{[[ x -> Q.x ]]}" $
-        testCLISucceeded ["match", "--pattern=Q.!a"] ["a >> x"]
+        testCLISucceeded ["match", "--pattern=Q.!t"] ["t >> x"]
 
     it "prints many substitutions" $
       withStdin "{[[ x -> Q.x, y -> Q.y ]]}" $
-        testCLISucceeded ["match", "--pattern=Q.!a"] ["a >> x\n------\na >> y"]
+        testCLISucceeded ["match", "--pattern=Q.!t"] ["t >> x\n------\nt >> y"]
 
     it "builds substitutions with conditions" $
       withStdin "{[[ x -> Q.y ]].x}" $
         testCLISucceeded
-          ["match", "--pattern=[[ !a -> Q.y, !B ]].!a", "--when=eq(length(!B),1)"]
-          ["B >> ⟦ ρ ↦ ∅ ⟧\na >> x"]
+          ["match", "--pattern=[[ !t -> Q.y, !B ]].!t", "--when=eq(length(!B),1)"]
+          ["B >> ⟦ ρ ↦ ∅ ⟧\nt >> x"]
 
     it "builds with condition from file" $
       testCLISucceeded
@@ -1204,5 +1215,5 @@ spec = do
     it "fails on empty substitutions" $
       withStdin "{Q.x.y}" $
         testCLIFailed
-          ["match", "--pattern=$.!a"]
+          ["match", "--pattern=$.!t"]
           ["[ERROR]"]

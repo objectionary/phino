@@ -2,12 +2,12 @@
 # SPDX-License-Identifier: MIT
 ---
 expression: '[[ x -> Q.y ]].y'
-pattern: '[[ !B ]].!a'
+pattern: '[[ !B ]].!t'
 condition:
   and:
     - not:
         in:
-          - '!a'
+          - '!t'
           - '𝐵'
     - not:
         in:

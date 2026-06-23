@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 ---
 expression: 'Q.bar'
-pattern: 'Q.!a'
+pattern: 'Q.!t'
 condition:
   not:
-    eq: ['!a', 'foo']
+    eq: ['!t', 'foo']

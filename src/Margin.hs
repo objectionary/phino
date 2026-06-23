@@ -104,6 +104,11 @@ instance WithMargin PAIR where
         extra' = extra + lengthOf attr + lengthOf arrow + 2 -- indent + attr + arrow + 2 spaces
         pa' = PA_TAU attr arrow (withMargin' (extra', margin) expr)
      in if lengthOf single + extra <= margin then single else pa'
+  withMargin' (extra, margin) pa@PA_ALPHA{..} =
+    let single = toSingleLine pa
+        extra' = extra + lengthOf alpha + lengthOf arrow + 2 -- indent + alpha + arrow + 2 spaces
+        pa' = PA_ALPHA alpha arrow (withMargin' (extra', margin) expr)
+     in if lengthOf single + extra <= margin then single else pa'
   withMargin' (extra, margin) pa@PA_FORMATION{..} =
     let single = toSingleLine pa
         extra' = extra + lengthOf attr + lengthOf voids + lengthOf arrow + 4 -- indent + 2 braces + 2 spaces + voids

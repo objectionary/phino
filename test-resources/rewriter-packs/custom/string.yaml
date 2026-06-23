@@ -8,12 +8,12 @@ output: |-
 rules:
   custom:
     - name: string function
-      pattern: '[[ !a -> !e, !B ]]'
+      pattern: '[[ !t -> !e, !B ]]'
       result: '[[ str -> !e-str, num -> !e-num, !B ]]'
       where:
         - meta: '!e-str'
           function: string
-          args: ['!a']
+          args: ['!t']
         - meta: '!e-num'
           function: string
           args: ['!e']

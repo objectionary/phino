@@ -4,6 +4,6 @@
 rules:
   basic: ['alpha']
 input: |
-  Φ ↦ [[ D> 42-, x -> ? ]](~0 -> Q.y)
+  Φ ↦ [[ D> 42-, x -> ? ]](a0 -> Q.y)
 output: |-
   Φ ↦ ⟦ D> 42-, x ↦ ∅ ⟧(x ↦ Φ.y)
