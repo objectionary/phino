@@ -183,12 +183,12 @@ normalized expr seq ctx@DataizeContext{..} = do
       seq' = rw :| rws <> NE.tail seq
   expr' <- locatedExpression _locator (fst rw)
   pure (expr', seq')
-
--- Switch the dataization context to a rewriting context for normalization,
--- disabling the must-checker and breakpoints.
-rewriteContext :: DataizeContext -> RewriteContext
-rewriteContext DataizeContext{..} =
-  RewriteContext _locator _maxDepth _maxCycles _depthSensitive _buildTerm MtDisabled Nothing _saveStep
+  where
+    -- Switch the dataization context to a rewriting context for normalization,
+    -- disabling the must-checker and breakpoints.
+    rewriteContext :: DataizeContext -> RewriteContext
+    rewriteContext DataizeContext{..} =
+      RewriteContext _locator _maxDepth _maxCycles _depthSensitive _buildTerm MtDisabled Nothing _saveStep
 
 -- Synthetic dataize function for internal usage inside atoms
 -- Here we modify original program from context by adding new binding
