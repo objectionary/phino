@@ -689,7 +689,7 @@ _saveStep :: SaveStepFunc
 </span><a href="Rewriter.html#rewrite"><span class="hs-identifier hs-var">rewrite</span></a></span><span> </span><span class="annot"><span class="annottext">Program
 </span><a href="#local-6989586621679257542"><span class="hs-identifier hs-var">prog'</span></a></span><span> </span><span class="annot"><span class="annottext">[Rule]
 </span><a href="Yaml.html#normalizationRules"><span class="hs-identifier hs-var">normalizationRules</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">DataizeContext -&gt; RewriteContext
-</span><a href="Dataize.html#rewriteContext"><span class="hs-identifier hs-var">rewriteContext</span></a></span><span> </span><span class="annot"><span class="annottext">DataizeContext
+</span><a href="#local-6989586621679257544"><span class="hs-identifier hs-var">rewriteContext</span></a></span><span> </span><span class="annot"><span class="annottext">DataizeContext
 </span><a href="#local-6989586621679257534"><span class="hs-identifier hs-var">ctx</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-182"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679257545"><span class="annot"><span class="annottext">Rewritten
 </span><a href="#local-6989586621679257545"><span class="hs-identifier hs-var">rw</span></a></span></span><span> </span><span class="annot"><span class="hs-operator hs-type">:|</span></span><span> </span><span id="local-6989586621679257546"><span class="annot"><span class="annottext">[Rewritten]
@@ -721,12 +721,12 @@ forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expression
 </span><a href="#local-6989586621679257552"><span class="hs-identifier hs-var">expr'</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">NonEmpty Rewritten
 </span><a href="#local-6989586621679257550"><span class="hs-identifier hs-var">seq'</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-186"></span><span>
-</span><span id="line-187"></span><span class="hs-comment">-- Switch the dataization context to a rewriting context for normalization,</span><span>
-</span><span id="line-188"></span><span class="hs-comment">-- disabling the must-checker and breakpoints.</span><span>
-</span><span id="line-189"></span><span class="annot"><a href="Dataize.html#rewriteContext"><span class="hs-identifier hs-type">rewriteContext</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Dataize.html#DataizeContext"><span class="hs-identifier hs-type">DataizeContext</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Rewriter.html#RewriteContext"><span class="hs-identifier hs-type">RewriteContext</span></a></span><span>
-</span><span id="line-190"></span><span id="rewriteContext"><span class="annot"><span class="annottext">rewriteContext :: DataizeContext -&gt; RewriteContext
-</span><a href="Dataize.html#rewriteContext"><span class="hs-identifier hs-var hs-var">rewriteContext</span></a></span></span><span> </span><span class="annot"><a href="Dataize.html#DataizeContext"><span class="hs-identifier hs-type">DataizeContext</span></a></span><span class="hs-special">{</span><span id="local-6989586621679257554"><span id="local-6989586621679257555"><span id="local-6989586621679257556"><span id="local-6989586621679257557"><span id="local-6989586621679257558"><span id="local-6989586621679257559"><span id="local-6989586621679257560"><span class="annot"><span class="annottext">Bool
+</span><span id="line-186"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-187"></span><span>    </span><span class="hs-comment">-- Switch the dataization context to a rewriting context for normalization,</span><span>
+</span><span id="line-188"></span><span>    </span><span class="hs-comment">-- disabling the must-checker and breakpoints.</span><span>
+</span><span id="line-189"></span><span>    </span><span class="annot"><a href="#local-6989586621679257544"><span class="hs-identifier hs-type">rewriteContext</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Dataize.html#DataizeContext"><span class="hs-identifier hs-type">DataizeContext</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Rewriter.html#RewriteContext"><span class="hs-identifier hs-type">RewriteContext</span></a></span><span>
+</span><span id="line-190"></span><span>    </span><span id="local-6989586621679257544"><span class="annot"><span class="annottext">rewriteContext :: DataizeContext -&gt; RewriteContext
+</span><a href="#local-6989586621679257544"><span class="hs-identifier hs-var hs-var">rewriteContext</span></a></span></span><span> </span><span class="annot"><a href="Dataize.html#DataizeContext"><span class="hs-identifier hs-type">DataizeContext</span></a></span><span class="hs-special">{</span><span id="local-6989586621679257554"><span id="local-6989586621679257555"><span id="local-6989586621679257556"><span id="local-6989586621679257557"><span id="local-6989586621679257558"><span id="local-6989586621679257559"><span id="local-6989586621679257560"><span class="annot"><span class="annottext">Bool
 Int
 Expression
 Program
@@ -747,7 +747,7 @@ _depthSensitive :: Bool
 _buildTerm :: BuildTermFunc
 _saveStep :: SaveStepFunc
 </span><a href="Dataize.html#%24sel%3A_locator%3ADataizeContext"><span class="hs-glyph hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">..</span></a></span></span></span></span></span></span></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span>
-</span><span id="line-191"></span><span>  </span><span class="annot"><span class="annottext">Expression
+</span><span id="line-191"></span><span>      </span><span class="annot"><span class="annottext">Expression
 -&gt; Int
 -&gt; Int
 -&gt; Bool
