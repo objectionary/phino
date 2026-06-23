@@ -167,6 +167,17 @@ compressedRewrittens rewrittens ctx@LatexContext{..} =
   let (progs, rules) = unzip rewrittens
    in if _compress then zip (meetInPrograms progs ctx) rules else rewrittens
 
+-- Compress a sequence of focused sub-expressions the way 'compressedRewrittens'
+-- compresses whole programs: each expression is wrapped as a program so the
+-- meet machinery factors recurring sub-expressions out across the sequence.
+-- Focusing happens before this, so the meet never replaces a program root the
+-- focus must still descend through.
+compressedExpressions :: [Expression] -> LatexContext -> [Expression]
+compressedExpressions exprs ctx@LatexContext{..} =
+  if _compress then map unwrap (meetInPrograms (map Program exprs) ctx) else exprs
+  where
+    unwrap (Program expr) = expr
+
 rewrittensToLatex :: Rewrittens' -> LatexContext -> IO String
 rewrittensToLatex (rewrittens, exceeded) ctx@LatexContext{_focus = ExRoot} =
   pure
@@ -177,12 +188,12 @@ rewrittensToLatex (rewrittens, exceeded) ctx@LatexContext{_focus = ExRoot} =
         ]
     )
 rewrittensToLatex (rewrittens, exceeded) ctx@LatexContext{..} = do
-  let (progs, rules) = unzip (compressedRewrittens rewrittens ctx)
-  exprs <- mapM (locatedExpression _focus) progs
+  let (progs, rules) = unzip rewrittens
+  focused <- mapM (locatedExpression _focus) progs
   pure
     ( concat
         [ preamble ctx
-        , body (zip exprs rules) (\expr -> renderToLatex (expressionToCST expr) ctx)
+        , body (zip (compressedExpressions focused ctx) rules) (\expr -> renderToLatex (expressionToCST expr) ctx)
         , ending exceeded ctx
         ]
     )

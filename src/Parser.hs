@@ -134,7 +134,7 @@ meta' ch uni =
   choice
     [ meta ch
     , do
-        _ <- symbol uni
+        _ <- string uni
         suf <- metaSuffix
         return (T.pack (ch : suf))
     ]
