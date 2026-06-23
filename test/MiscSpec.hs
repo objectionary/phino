@@ -48,14 +48,14 @@ spec = do
         , [BiVoid AtRho, BiMeta "B", BiVoid (AtLabel "y")]
         )
       ,
-        ( "[[!a -> ?, x -> $.y]] => [[!a -> Q.x, x -> $.y]]"
-        , [BiVoid (AtMeta "a"), BiTau AtRho (ExDispatch ExTermination (AtLabel "y"))]
-        , [BiVoid (AtMeta "a"), BiTau AtRho (ExDispatch ExTermination (AtLabel "y"))]
+        ( "[[!t -> ?, x -> $.y]] => [[!t -> Q.x, x -> $.y]]"
+        , [BiVoid (AtMeta "t"), BiTau AtRho (ExDispatch ExTermination (AtLabel "y"))]
+        , [BiVoid (AtMeta "t"), BiTau AtRho (ExDispatch ExTermination (AtLabel "y"))]
         )
       ,
-        ( "[[!a -> Q.x, x -> $.y]] => [[!a -> Q.x, x -> $.y]]"
-        , [BiTau (AtMeta "a") (ExDispatch ExRoot (AtLabel "x")), BiTau AtRho (ExDispatch ExTermination (AtLabel "y"))]
-        , [BiTau (AtMeta "a") (ExDispatch ExRoot (AtLabel "x")), BiTau AtRho (ExDispatch ExTermination (AtLabel "y"))]
+        ( "[[!t -> Q.x, x -> $.y]] => [[!t -> Q.x, x -> $.y]]"
+        , [BiTau (AtMeta "t") (ExDispatch ExRoot (AtLabel "x")), BiTau AtRho (ExDispatch ExTermination (AtLabel "y"))]
+        , [BiTau (AtMeta "t") (ExDispatch ExRoot (AtLabel "x")), BiTau AtRho (ExDispatch ExTermination (AtLabel "y"))]
         )
       ]
 

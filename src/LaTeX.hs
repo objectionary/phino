@@ -238,7 +238,6 @@ instance ToLaTeX EXPRESSION where
 
 instance ToLaTeX ATTRIBUTE where
   toLaTeX AT_LABEL{..} = AT_LABEL (piped label)
-  toLaTeX AT_ALPHA_META{..} = AT_LABEL ("\\alpha_{" <> render (hd meta) <> rest meta <> "}")
   toLaTeX AT_META{..} = AT_META (toLaTeX meta)
   toLaTeX AT_LAMBDA{} = AT_LAMBDA LAMBDA'
   toLaTeX AT_DELTA{} = AT_DELTA DELTA'
@@ -265,6 +264,11 @@ instance ToLaTeX PAIR where
   toLaTeX PA_LAMBDA'{..} = PA_LAMBDA' (piped func)
   toLaTeX PA_VOID{..} = PA_VOID (toLaTeX attr) arrow void
   toLaTeX PA_TAU{..} = PA_TAU (toLaTeX attr) arrow (toLaTeX expr)
+  toLaTeX PA_ALPHA{..} =
+    let subscript = case alpha of
+          AL_IDX _ n -> render n
+          AL_META _ mt -> render (hd mt) <> rest mt
+     in PA_TAU (AT_LABEL ("\\alpha_{" <> subscript <> "}")) arrow (toLaTeX expr)
   toLaTeX PA_FORMATION{..} = PA_FORMATION (toLaTeX attr) (map toLaTeX voids) arrow (toLaTeX expr)
   toLaTeX PA_META_DELTA{..} = toLaTeX (PA_META_DELTA' meta)
   toLaTeX PA_META_DELTA'{..} = PA_META_DELTA' (toLaTeX meta)
@@ -285,6 +289,7 @@ instance ToLaTeX META_HEAD where
   toLaTeX TAU = TAU'
   toLaTeX B = B'
   toLaTeX D = D'
+  toLaTeX F = F'
   toLaTeX mh = mh
 
 instance ToLaTeX BYTES where

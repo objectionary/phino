@@ -5,7 +5,7 @@
       b -> Q.org.^.@,
       c -> $.xyz(
         q -> Q.y,
-        ~0 -> $.a.b
+        a0 -> $.a.b
       ),
       z -> [[
         L> Func,

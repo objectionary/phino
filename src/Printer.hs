@@ -64,7 +64,7 @@ printAttribute att =
    in printAttribute' att encoding
 
 printAlpha' :: Alpha -> Encoding -> String
-printAlpha' index encoding = T.unpack $ render (withEncoding encoding (toCST index (0, NO_EOL) :: ATTRIBUTE))
+printAlpha' index encoding = T.unpack $ render (withEncoding encoding (toCST index (0, NO_EOL) :: ALPHA))
 
 printAlpha :: Alpha -> String
 printAlpha index =

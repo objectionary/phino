@@ -10,12 +10,12 @@ output: |-
 rules:
   custom:
     - name: with-simple-condition
-      pattern: '[[!B]].!a'
-      result: '[[!B]].@.!a'
+      pattern: '[[!B]].!t'
+      result: '[[!B]].@.!t'
       when:
         and:
           - in:
-              - '!a'
+              - '!t'
               - '!B'
           - in:
               - 'y'

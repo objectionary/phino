@@ -3,8 +3,8 @@
 ---
 failure: true
 expression: '[[ x -> Q.y, z -> Q.z ]].foo'
-pattern: '[[ !B ]].!a'
+pattern: '[[ !B ]].!t'
 condition:
   in:
-    - '!a'
+    - '!t'
     - '!B'

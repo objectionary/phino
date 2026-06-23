@@ -330,7 +330,7 @@ ExtArgument
   = Bytes'               # !d
   | Binding'             # !B
   | Expression'          # !e
-  | Attribute'           # !a
+  | Attribute'           # !t
 ```
 
 Here's list of functions that are supported for extensions:
@@ -376,9 +376,9 @@ capturing attributes, bindings, etc.
 
 This is the list of supported meta variables:
 
-* `!a` || `𝜏` - attribute
+* `!t` || `𝜏` - attribute
 * `!i` || `𝑖` - the index of a positional (α) application argument,
-                captured by writing `α𝑖`
+                captured by writing `α𝑖` (or `a𝑖`)
 * `!e` || `𝑒` - any expression
 * `!n` || `𝑛` - any expression that is already in normal form (behaves like
                 `!e`/`𝑒`, but only binds a sub-expression in NF, so no explicit
@@ -389,9 +389,12 @@ This is the list of supported meta variables:
                 or `nf:` guard is needed
 * `!B` || `𝐵` - list of bindings
 * `!d` || `δ` - bytes in meta delta binding
-* `!F` - function name in meta lambda binding
+* `!F` || `𝐹` - function name in meta lambda binding
 
 Every meta variable may also be used with an integer index, like `!B1` or `𝜏0`.
+
+A positional (α) application argument is written as `α0`, `a0` (ASCII), or
+`α𝑖`/`a!i` when its index is captured by an `!i`/`𝑖` meta variable.
 
 Incorrect usage of meta variables in 𝜑-expression patterns leads to
 parsing errors.

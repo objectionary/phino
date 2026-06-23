@@ -14,7 +14,7 @@ import Data.Text (Text)
 -- Meta value
 -- The right part of substitution
 data MetaValue
-  = MvAttribute Attribute -- !a
+  = MvAttribute Attribute -- !t
   | MvIndex Int -- α𝑖
   | MvBytes Bytes -- !b
   | MvBindings [Binding] -- !B

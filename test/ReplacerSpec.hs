@@ -183,21 +183,21 @@ spec = do
     test
       (replaceProgramFast (ReplaceCtx 3))
       [
-        ( "Q -> [[^ -> ?, @ -> ?, D> -> ?]] => [[ !B1, !a -> ?, !B2 ]] => [[ !B1, !a -> $, !B2 ]] => Q -> [[ ^ -> $, @ -> $, D> -> $ ]]"
+        ( "Q -> [[^ -> ?, @ -> ?, D> -> ?]] => [[ !B1, !t -> ?, !B2 ]] => [[ !B1, !t -> $, !B2 ]] => Q -> [[ ^ -> $, @ -> $, D> -> $ ]]"
         , Program (ExFormation [BiVoid AtRho, BiVoid AtPhi, BiVoid AtDelta])
         , [ExFormation [BiVoid AtRho], ExFormation [BiVoid AtPhi], ExFormation [BiVoid AtDelta]]
         , [ExFormation [BiTau AtRho ExXi], ExFormation [BiTau AtPhi ExXi], ExFormation [BiTau AtDelta ExXi]]
         , Program (ExFormation [BiTau AtRho ExXi, BiTau AtPhi ExXi, BiTau AtDelta ExXi])
         )
       ,
-        ( "Q -> [[ ^ -> ? ]] => [[ !B1, !a -> ?, !B2 ]] => [[ !B1, !a -> [[ !a -> ? ]], !B2 ]] => Q -> [[ ^ -> [[ ^ -> [[ ^ -> [[ ^ -> ? ]] ]] ]] ]]"
+        ( "Q -> [[ ^ -> ? ]] => [[ !B1, !t -> ?, !B2 ]] => [[ !B1, !t -> [[ !t -> ? ]], !B2 ]] => Q -> [[ ^ -> [[ ^ -> [[ ^ -> [[ ^ -> ? ]] ]] ]] ]]"
         , Program (ExFormation [BiVoid AtRho])
         , [ExFormation [BiVoid AtRho]]
         , [ExFormation [BiTau AtRho (ExFormation [BiVoid AtRho])]]
         , Program (ExFormation [BiTau AtRho (ExFormation [BiTau AtRho (ExFormation [BiTau AtRho (ExFormation [BiVoid AtRho])])])])
         )
       ,
-        ( "Q -> [[ ^ -> T ]](^ -> [[ ^ -> $]]).@ => [[ !B1, !a -> ?, !B2 ]] => [[ !B1, !a -> $, !B2 ]] => Q -> [[ ^ -> $ ]].@"
+        ( "Q -> [[ ^ -> T ]](^ -> [[ ^ -> $]]).@ => [[ !B1, !t -> ?, !B2 ]] => [[ !B1, !t -> $, !B2 ]] => Q -> [[ ^ -> $ ]].@"
         , Program (ExDispatch (ExApplication (ExFormation [BiTau AtRho ExTermination]) (ArTau AtRho (ExFormation [BiTau AtRho ExXi]))) AtPhi)
         , [ExFormation [BiTau AtRho ExTermination], ExFormation [BiTau AtRho ExXi]]
         , [ExFormation [BiTau AtRho ExRoot], ExFormation [BiVoid AtPhi]]

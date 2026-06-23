@@ -117,7 +117,7 @@ instance Render META_HEAD where
   render N' = "n"
   render K = "𝑘"
   render K' = "k"
-  render A = "a"
+  render A = "t"
   render TAU = "𝜏"
   render TAU' = "\\tau"
   render I = "𝑖"
@@ -126,14 +126,19 @@ instance Render META_HEAD where
   render B' = "B"
   render D = "δ"
   render D' = "\\delta"
-  render F = "F"
+  render F = "𝐹"
+  render F' = "F"
 
 instance Render META where
   render META{..} = render excl <> render hd <> render rest
 
-instance Render ALPHA where
+instance Render ALPHA' where
   render ALPHA = "α"
-  render ALPHA' = "~"
+  render ALPHA' = "a"
+
+instance Render ALPHA where
+  render AL_IDX{..} = render sym <> render idx
+  render AL_META{..} = render sym <> render meta
 
 instance Render TAB where
   render TAB{..} = T.replicate indent "  "
@@ -146,6 +151,7 @@ instance Render PROGRAM where
 
 instance Render PAIR where
   render PA_TAU{..} = render attr <> render SPACE <> render arrow <> render SPACE <> render expr
+  render PA_ALPHA{..} = render alpha <> render SPACE <> render arrow <> render SPACE <> render expr
   render PA_FORMATION{voids = [], attr, arrow, expr} = render (PA_TAU attr arrow expr)
   render PA_FORMATION{..} = render attr <> "(" <> render voids <> ")" <> render SPACE <> render arrow <> render SPACE <> render expr
   render PA_LAMBDA{..} = render LAMBDA <> render SPACE <> render DASHED_ARROW <> render SPACE <> render func
@@ -205,8 +211,6 @@ instance Render [ATTRIBUTE] where
 
 instance Render ATTRIBUTE where
   render AT_LABEL{..} = render label
-  render AT_ALPHA{..} = render alpha <> render idx
-  render AT_ALPHA_META{..} = render alpha <> render meta
   render AT_RHO{..} = render rho
   render AT_PHI{..} = render phi
   render AT_LAMBDA{..} = render lambda

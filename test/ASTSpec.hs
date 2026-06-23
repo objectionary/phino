@@ -59,8 +59,8 @@ spec = do
 
   describe "Attribute Show instance renders AtMeta" $
     forM_
-      [ ("simple meta", AtMeta "a", "!a")
-      , ("long meta", AtMeta "attribute", "!attribute")
+      [ ("simple meta", AtMeta "t", "!t")
+      , ("long meta", AtMeta "tttribute", "!tttribute")
       , ("unicode meta", AtMeta "メタ", "!メタ")
       ]
       ( \(desc, attr, expected) ->
@@ -71,8 +71,8 @@ spec = do
     forM_
       [ ("labels equal", AtLabel "x", AtLabel "x", True)
       , ("labels differ", AtLabel "x", AtLabel "y", False)
-      , ("metas equal", AtMeta "a", AtMeta "a", True)
-      , ("metas differ", AtMeta "a", AtMeta "b", False)
+      , ("metas equal", AtMeta "t", AtMeta "t", True)
+      , ("metas differ", AtMeta "t", AtMeta "b", False)
       , ("rho equals rho", AtRho, AtRho, True)
       , ("phi equals phi", AtPhi, AtPhi, True)
       , ("delta equals delta", AtDelta, AtDelta, True)

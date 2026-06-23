@@ -58,7 +58,7 @@ number =
         bd <- _binding phiParser
         _ <- rparen
         return (Y.Domain bd)
-    , Y.MetaIndex <$> _indexMeta phiParser
+    , Y.MetaIndex <$> _index phiParser
     , do
         sign <- optional (choice [char '-', char '+'])
         unsigned <- lexeme L.decimal

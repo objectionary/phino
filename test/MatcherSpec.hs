@@ -42,23 +42,23 @@ spec = do
         , substs [[], []]
         )
       ,
-        ( "Q.!a => [[ @ -> Q.y, ^ -> [[ a -> Q.w ]], @ -> Q.y ]] => [(a >> y), (a >> w), (a >> y)]"
-        , ExDispatch ExRoot (AtMeta "a")
+        ( "Q.!t => [[ @ -> Q.y, ^ -> [[ a -> Q.w ]], @ -> Q.y ]] => [(t >> y), (t >> w), (t >> y)]"
+        , ExDispatch ExRoot (AtMeta "t")
         , ExFormation
             [ BiTau AtPhi (ExDispatch ExRoot (AtLabel "y"))
             , BiTau AtRho (ExFormation [BiTau (AtLabel "a") (ExDispatch ExRoot (AtLabel "w"))])
             , BiTau AtPhi (ExDispatch ExRoot (AtLabel "y"))
             ]
-        , substs [[("a", MvAttribute (AtLabel "y"))], [("a", MvAttribute (AtLabel "w"))], [("a", MvAttribute (AtLabel "y"))]]
+        , substs [[("t", MvAttribute (AtLabel "y"))], [("t", MvAttribute (AtLabel "w"))], [("t", MvAttribute (AtLabel "y"))]]
         )
       ,
-        ( "[[!a -> Q.org.!a]] => [[f -> [[x -> Q.org.x]], t -> [[y -> Q.org.y]] => [(!a >> x), (!a >> y)]"
-        , ExFormation [BiTau (AtMeta "a") (ExDispatch (ExDispatch ExRoot (AtLabel "org")) (AtMeta "a"))]
+        ( "[[!t -> Q.org.!t]] => [[f -> [[x -> Q.org.x]], t -> [[y -> Q.org.y]] => [(!t >> x), (!t >> y)]"
+        , ExFormation [BiTau (AtMeta "t") (ExDispatch (ExDispatch ExRoot (AtLabel "org")) (AtMeta "t"))]
         , ExFormation
             [ BiTau (AtLabel "f") (ExFormation [BiTau (AtLabel "x") (ExDispatch (ExDispatch ExRoot (AtLabel "org")) (AtLabel "x"))])
             , BiTau (AtLabel "t") (ExFormation [BiTau (AtLabel "y") (ExDispatch (ExDispatch ExRoot (AtLabel "org")) (AtLabel "y"))])
             ]
-        , substs [[("a", MvAttribute (AtLabel "x"))], [("a", MvAttribute (AtLabel "y"))]]
+        , substs [[("t", MvAttribute (AtLabel "x"))], [("t", MvAttribute (AtLabel "y"))]]
         )
       ,
         ( "!e => [[x -> Q]] => [(!e >> [[x -> Q]] ), (!e >> Q)]"
@@ -70,17 +70,17 @@ spec = do
             ]
         )
       ,
-        ( "!e.!a => Q.org.eolang => [(!e >> Q.org, !a >> eolang), (!e >> Q, !a >> org)]"
-        , ExDispatch (ExMeta "e") (AtMeta "a")
+        ( "!e.!t => Q.org.eolang => [(!e >> Q.org, !t >> eolang), (!e >> Q, !t >> org)]"
+        , ExDispatch (ExMeta "e") (AtMeta "t")
         , ExDispatch (ExDispatch ExRoot (AtLabel "org")) (AtLabel "eolang")
         , substs
-            [ [("e", MvExpression (ExDispatch ExRoot (AtLabel "org"))), ("a", MvAttribute (AtLabel "eolang"))]
-            , [("e", MvExpression ExRoot), ("a", MvAttribute (AtLabel "org"))]
+            [ [("e", MvExpression (ExDispatch ExRoot (AtLabel "org"))), ("t", MvAttribute (AtLabel "eolang"))]
+            , [("e", MvExpression ExRoot), ("t", MvAttribute (AtLabel "org"))]
             ]
         )
       ,
-        ( "⟦!B1, !a ↦ ∅, !B2⟧.!a => ⟦ x ↦ ξ.t, t ↦ ∅ ⟧.t(ρ ↦ ⟦ x ↦ ξ.t, t ↦ ∅ ⟧) => [(!B1 >> ⟦x ↦ ξ.t⟧, !a >> t, !B2 >> ⟦⟧ )]"
-        , ExDispatch (ExFormation [BiMeta "B1", BiVoid (AtMeta "a"), BiMeta "B2"]) (AtMeta "a")
+        ( "⟦!B1, !t ↦ ∅, !B2⟧.!t => ⟦ x ↦ ξ.t, t ↦ ∅ ⟧.t(ρ ↦ ⟦ x ↦ ξ.t, t ↦ ∅ ⟧) => [(!B1 >> ⟦x ↦ ξ.t⟧, !t >> t, !B2 >> ⟦⟧ )]"
+        , ExDispatch (ExFormation [BiMeta "B1", BiVoid (AtMeta "t"), BiMeta "B2"]) (AtMeta "t")
         , ExApplication
             ( ExDispatch
                 ( ExFormation
@@ -101,7 +101,7 @@ spec = do
         , substs
             [
               [ ("B1", MvBindings [BiTau (AtLabel "x") (ExDispatch ExXi (AtLabel "t"))])
-              , ("a", MvAttribute (AtLabel "t"))
+              , ("t", MvAttribute (AtLabel "t"))
               , ("B2", MvBindings [])
               ]
             ]
@@ -152,8 +152,8 @@ spec = do
 
   describe "matchAttribute: attribute => attribute => substitution" $
     forM_
-      [ ("!a => ^ => [(!a >> ^)]", AtMeta "a", AtRho, substs [[("a", MvAttribute AtRho)]])
-      , ("!a => @ => [(!a >> @)]", AtMeta "a", AtPhi, substs [[("a", MvAttribute AtPhi)]])
+      [ ("!t => ^ => [(!t >> ^)]", AtMeta "t", AtRho, substs [[("t", MvAttribute AtRho)]])
+      , ("!t => @ => [(!t >> @)]", AtMeta "t", AtPhi, substs [[("t", MvAttribute AtPhi)]])
       ]
       ( \(desc, ptn, tgt, expected) ->
           it desc $ matchAttribute ptn tgt `shouldBe` expected
@@ -190,10 +190,10 @@ spec = do
         , substs []
         )
       ,
-        ( "[[y -> ?, !a -> ?]] => [[y -> ?, x -> ?]] => (!a >> x)"
-        , [BiVoid (AtLabel "y"), BiVoid (AtMeta "a")]
+        ( "[[y -> ?, !t -> ?]] => [[y -> ?, x -> ?]] => (!t >> x)"
+        , [BiVoid (AtLabel "y"), BiVoid (AtMeta "t")]
         , [BiVoid (AtLabel "y"), BiVoid (AtLabel "x")]
-        , substs [[("a", MvAttribute (AtLabel "x"))]]
+        , substs [[("t", MvAttribute (AtLabel "x"))]]
         )
       ,
         ( "[[!B, x -> ?]] => [[x -> ?]] => (!B >> [[]])"
@@ -244,36 +244,36 @@ spec = do
         , substs []
         )
       ,
-        ( "[[!B, !a -> ?]] => [[x -> ?, y -> ?]] => (!a >> y, !B >> [[ x -> ? ]] )"
-        , [BiMeta "B", BiVoid (AtMeta "a")]
+        ( "[[!B, !t -> ?]] => [[x -> ?, y -> ?]] => (!t >> y, !B >> [[ x -> ? ]] )"
+        , [BiMeta "B", BiVoid (AtMeta "t")]
         , [BiVoid (AtLabel "x"), BiVoid (AtLabel "y")]
-        , substs [[("a", MvAttribute (AtLabel "y")), ("B", MvBindings [BiVoid (AtLabel "x")])]]
+        , substs [[("t", MvAttribute (AtLabel "y")), ("B", MvBindings [BiVoid (AtLabel "x")])]]
         )
       ,
-        ( "[[!B1, !a -> ?, !B2]] => [[ x -> ?, y -> ?, z -> ? ]] => [(!B1 >> [[]], !a >> x, !B2 >> [[ y -> ?, z -> ? ]]), (...), (...)]"
-        , [BiMeta "B1", BiVoid (AtMeta "a"), BiMeta "B2"]
+        ( "[[!B1, !t -> ?, !B2]] => [[ x -> ?, y -> ?, z -> ? ]] => [(!B1 >> [[]], !t >> x, !B2 >> [[ y -> ?, z -> ? ]]), (...), (...)]"
+        , [BiMeta "B1", BiVoid (AtMeta "t"), BiMeta "B2"]
         , [BiVoid (AtLabel "x"), BiVoid (AtLabel "y"), BiVoid (AtLabel "z")]
         , substs
             [
               [ ("B1", MvBindings [])
-              , ("a", MvAttribute (AtLabel "x"))
+              , ("t", MvAttribute (AtLabel "x"))
               , ("B2", MvBindings [BiVoid (AtLabel "y"), BiVoid (AtLabel "z")])
               ]
             ,
               [ ("B1", MvBindings [BiVoid (AtLabel "x")])
-              , ("a", MvAttribute (AtLabel "y"))
+              , ("t", MvAttribute (AtLabel "y"))
               , ("B2", MvBindings [BiVoid (AtLabel "z")])
               ]
             ,
               [ ("B1", MvBindings [BiVoid (AtLabel "x"), BiVoid (AtLabel "y")])
-              , ("a", MvAttribute (AtLabel "z"))
+              , ("t", MvAttribute (AtLabel "z"))
               , ("B2", MvBindings [])
               ]
             ]
         )
       ,
-        ( "[[!B1, !a1 -> ?, !B2, !a2 -> ?, !B3]] => [[ a -> ?, b -> ?, x -> ?, y -> ?, z -> ? ]] => [10 substs]"
-        , [BiMeta "B1", BiVoid (AtMeta "a1"), BiMeta "B2", BiVoid (AtMeta "a2"), BiMeta "B3"]
+        ( "[[!B1, !t1 -> ?, !B2, !t2 -> ?, !B3]] => [[ a -> ?, b -> ?, x -> ?, y -> ?, z -> ? ]] => [10 substs]"
+        , [BiMeta "B1", BiVoid (AtMeta "t1"), BiMeta "B2", BiVoid (AtMeta "t2"), BiMeta "B3"]
         ,
           [ BiVoid (AtLabel "a")
           , BiVoid (AtLabel "b")
@@ -284,72 +284,72 @@ spec = do
         , substs
             [
               [ ("B1", MvBindings [])
-              , ("a1", MvAttribute (AtLabel "a"))
+              , ("t1", MvAttribute (AtLabel "a"))
               , ("B2", MvBindings [])
-              , ("a2", MvAttribute (AtLabel "b"))
+              , ("t2", MvAttribute (AtLabel "b"))
               , ("B3", MvBindings [BiVoid (AtLabel "x"), BiVoid (AtLabel "y"), BiVoid (AtLabel "z")])
               ]
             ,
               [ ("B1", MvBindings [])
-              , ("a1", MvAttribute (AtLabel "a"))
+              , ("t1", MvAttribute (AtLabel "a"))
               , ("B2", MvBindings [BiVoid (AtLabel "b")])
-              , ("a2", MvAttribute (AtLabel "x"))
+              , ("t2", MvAttribute (AtLabel "x"))
               , ("B3", MvBindings [BiVoid (AtLabel "y"), BiVoid (AtLabel "z")])
               ]
             ,
               [ ("B1", MvBindings [])
-              , ("a1", MvAttribute (AtLabel "a"))
+              , ("t1", MvAttribute (AtLabel "a"))
               , ("B2", MvBindings [BiVoid (AtLabel "b"), BiVoid (AtLabel "x")])
-              , ("a2", MvAttribute (AtLabel "y"))
+              , ("t2", MvAttribute (AtLabel "y"))
               , ("B3", MvBindings [BiVoid (AtLabel "z")])
               ]
             ,
               [ ("B1", MvBindings [])
-              , ("a1", MvAttribute (AtLabel "a"))
+              , ("t1", MvAttribute (AtLabel "a"))
               , ("B2", MvBindings [BiVoid (AtLabel "b"), BiVoid (AtLabel "x"), BiVoid (AtLabel "y")])
-              , ("a2", MvAttribute (AtLabel "z"))
+              , ("t2", MvAttribute (AtLabel "z"))
               , ("B3", MvBindings [])
               ]
             ,
               [ ("B1", MvBindings [BiVoid (AtLabel "a")])
-              , ("a1", MvAttribute (AtLabel "b"))
+              , ("t1", MvAttribute (AtLabel "b"))
               , ("B2", MvBindings [])
-              , ("a2", MvAttribute (AtLabel "x"))
+              , ("t2", MvAttribute (AtLabel "x"))
               , ("B3", MvBindings [BiVoid (AtLabel "y"), BiVoid (AtLabel "z")])
               ]
             ,
               [ ("B1", MvBindings [BiVoid (AtLabel "a")])
-              , ("a1", MvAttribute (AtLabel "b"))
+              , ("t1", MvAttribute (AtLabel "b"))
               , ("B2", MvBindings [BiVoid (AtLabel "x")])
-              , ("a2", MvAttribute (AtLabel "y"))
+              , ("t2", MvAttribute (AtLabel "y"))
               , ("B3", MvBindings [BiVoid (AtLabel "z")])
               ]
             ,
               [ ("B1", MvBindings [BiVoid (AtLabel "a")])
-              , ("a1", MvAttribute (AtLabel "b"))
+              , ("t1", MvAttribute (AtLabel "b"))
               , ("B2", MvBindings [BiVoid (AtLabel "x"), BiVoid (AtLabel "y")])
-              , ("a2", MvAttribute (AtLabel "z"))
+              , ("t2", MvAttribute (AtLabel "z"))
               , ("B3", MvBindings [])
               ]
             ,
               [ ("B1", MvBindings [BiVoid (AtLabel "a"), BiVoid (AtLabel "b")])
-              , ("a1", MvAttribute (AtLabel "x"))
+              , ("t1", MvAttribute (AtLabel "x"))
               , ("B2", MvBindings [])
-              , ("a2", MvAttribute (AtLabel "y"))
+              , ("t2", MvAttribute (AtLabel "y"))
               , ("B3", MvBindings [BiVoid (AtLabel "z")])
               ]
             ,
               [ ("B1", MvBindings [BiVoid (AtLabel "a"), BiVoid (AtLabel "b")])
-              , ("a1", MvAttribute (AtLabel "x"))
+              , ("t1", MvAttribute (AtLabel "x"))
               , ("B2", MvBindings [BiVoid (AtLabel "y")])
-              , ("a2", MvAttribute (AtLabel "z"))
+              , ("t2", MvAttribute (AtLabel "z"))
               , ("B3", MvBindings [])
               ]
             ,
               [ ("B1", MvBindings [BiVoid (AtLabel "a"), BiVoid (AtLabel "b"), BiVoid (AtLabel "x")])
-              , ("a1", MvAttribute (AtLabel "y"))
+              , ("t1", MvAttribute (AtLabel "y"))
               , ("B2", MvBindings [])
-              , ("a2", MvAttribute (AtLabel "z"))
+              , ("t2", MvAttribute (AtLabel "z"))
               , ("B3", MvBindings [])
               ]
             ]
@@ -380,14 +380,14 @@ spec = do
         , substs [[("e1", MvExpression (ExDispatch ExRoot (AtLabel "org")))]]
         )
       ,
-        ( "!e.org.!a => $.org.x => [(!e >> $, !a >> x)]"
-        , ExDispatch (ExDispatch (ExMeta "e") (AtLabel "org")) (AtMeta "a")
+        ( "!e.org.!t => $.org.x => [(!e >> $, !t >> x)]"
+        , ExDispatch (ExDispatch (ExMeta "e") (AtLabel "org")) (AtMeta "t")
         , ExDispatch (ExDispatch ExXi (AtLabel "org")) (AtLabel "x")
-        , substs [[("e", MvExpression ExXi), ("a", MvAttribute (AtLabel "x"))]]
+        , substs [[("e", MvExpression ExXi), ("t", MvAttribute (AtLabel "x"))]]
         )
       ,
-        ( "[[!a -> !e, !B]].!a => [[x -> Q, y -> $]].x => [(!a >> x, !e >> Q, !B >> [y -> $])]"
-        , ExDispatch (ExFormation [BiTau (AtMeta "a") (ExMeta "e"), BiMeta "B"]) (AtMeta "a")
+        ( "[[!t -> !e, !B]].!t => [[x -> Q, y -> $]].x => [(!t >> x, !e >> Q, !B >> [y -> $])]"
+        , ExDispatch (ExFormation [BiTau (AtMeta "t") (ExMeta "e"), BiMeta "B"]) (AtMeta "t")
         , ExDispatch
             ( ExFormation
                 [ BiTau (AtLabel "x") ExRoot
@@ -397,15 +397,15 @@ spec = do
             (AtLabel "x")
         , substs
             [
-              [ ("a", MvAttribute (AtLabel "x"))
+              [ ("t", MvAttribute (AtLabel "x"))
               , ("e", MvExpression ExRoot)
               , ("B", MvBindings [BiTau (AtLabel "y") ExXi])
               ]
             ]
         )
       ,
-        ( "[[!B1, !a ↦ !e1, !B2]](!a ↦ !e2) => ⟦ t ↦ ξ.k, x ↦ ξ.t, k ↦ ∅ ⟧(x ↦ ξ) => [(!B1 >> [[ t -> $.k ]], !a >> x, !B2 >> [[ k -> ? ]], !e1 >> $.t, !e2 >> $)]"
-        , ExApplication (ExFormation [BiMeta "B1", BiTau (AtMeta "a") (ExMeta "e1"), BiMeta "B2"]) (ArTau (AtMeta "a") (ExMeta "e2"))
+        ( "[[!B1, !t ↦ !e1, !B2]](!t ↦ !e2) => ⟦ t ↦ ξ.k, x ↦ ξ.t, k ↦ ∅ ⟧(x ↦ ξ) => [(!B1 >> [[ t -> $.k ]], !t >> x, !B2 >> [[ k -> ? ]], !e1 >> $.t, !e2 >> $)]"
+        , ExApplication (ExFormation [BiMeta "B1", BiTau (AtMeta "t") (ExMeta "e1"), BiMeta "B2"]) (ArTau (AtMeta "t") (ExMeta "e2"))
         , ExApplication
             ( ExFormation
                 [ BiTau (AtLabel "t") (ExDispatch ExXi (AtLabel "k"))
@@ -417,7 +417,7 @@ spec = do
         , substs
             [
               [ ("B1", MvBindings [BiTau (AtLabel "t") (ExDispatch ExXi (AtLabel "k"))])
-              , ("a", MvAttribute (AtLabel "x"))
+              , ("t", MvAttribute (AtLabel "x"))
               , ("B2", MvBindings [BiVoid (AtLabel "k")])
               , ("e1", MvExpression (ExDispatch ExXi (AtLabel "t")))
               , ("e2", MvExpression ExXi)

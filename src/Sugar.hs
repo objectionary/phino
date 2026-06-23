@@ -51,7 +51,7 @@ data SugarType = SWEET | SALTY
 --  | a -> "Hey"                 | Q.number(Q.bytes([[ D> 48-65-79 ]]))                |
 --  | [[ B ]]                    | [[ B, ^ -> ? ]], if rho is absent in 'B'            |
 --  | a1(a2, a3, ...) -> [[ B ]] | a1 -> [[ a2 -> ?, a3 -> ?, ..., B ]]                |
---  | e(e0, e1, ...)             | e(~0 -> e0, ~1 -> e1, ...)                          |
+--  | e(e0, e1, ...)             | e(a0 -> e0, a1 -> e1, ...)                          |
 --  | e(a1 -> e1, a2 -> e2, ...) | e(a1 -> e1)(a2 -> e2)...                            |
 --  |----------------------------|-----------------------------------------------------|
 class ToSalty a where
@@ -89,11 +89,11 @@ instance ToSalty EXPRESSION where
       argToBinding :: APP_ARG -> TAB -> BINDING
       argToBinding APP_ARG{..} =
         BI_PAIR
-          (PA_TAU (AT_ALPHA ALPHA 0) ARROW expr)
+          (PA_ALPHA (AL_IDX ALPHA 0) ARROW expr)
           (argsToBindings args 1 tab)
       argsToBindings :: APP_ARGS -> Int -> TAB -> BINDINGS
       argsToBindings AAS_EMPTY _ tab = BDS_EMPTY tab
-      argsToBindings AAS_EXPR{..} idx tb = BDS_PAIR eol tb (PA_TAU (AT_ALPHA ALPHA idx) ARROW expr) (argsToBindings args (idx + 1) tb)
+      argsToBindings AAS_EXPR{..} idx tb = BDS_PAIR eol tb (PA_ALPHA (AL_IDX ALPHA idx) ARROW expr) (argsToBindings args (idx + 1) tb)
   toSalty EX_NUMBER{num, tab = tab@TAB{..}, rhos} =
     saltifyPrimitive
       (toCST (BaseObject "number") (indent + 1, EOL))
@@ -122,8 +122,8 @@ saltifyPrimitive base bytes data' tb@TAB{..} rhos =
             EOL
             next
             ( BI_PAIR
-                ( PA_TAU
-                    (AT_ALPHA ALPHA 0)
+                ( PA_ALPHA
+                    (AL_IDX ALPHA 0)
                     ARROW
                     ( EX_APPLICATION_EXPRS
                         bytes
@@ -159,6 +159,7 @@ instance ToSalty BINDINGS where
 
 instance ToSalty PAIR where
   toSalty PA_TAU{..} = PA_TAU attr arrow (toSalty expr)
+  toSalty PA_ALPHA{..} = PA_ALPHA alpha arrow (toSalty expr)
   toSalty PA_FORMATION{voids, attr, arrow, expr = EX_FORMATION{..}} =
     PA_TAU attr arrow (toSalty (EX_FORMATION lsb eol tab (joinToBinding voids binding) eol' tab' rsb))
     where

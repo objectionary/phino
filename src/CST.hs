@@ -83,7 +83,7 @@ data META_HEAD
   | N' -- n
   | K -- 𝑘
   | K' -- k
-  | A -- a
+  | A -- t (ASCII attribute meta)
   | TAU -- 𝜏
   | TAU' -- \tau
   | I -- 𝑖
@@ -92,7 +92,8 @@ data META_HEAD
   | B' -- B
   | D -- δ
   | D' -- \delta
-  | F -- F
+  | F -- 𝐹
+  | F' -- F
   deriving (Eq, Show)
 
 data EXCLAMATION = EXCL | NO_EXCL
@@ -107,7 +108,12 @@ data TAB
   | NO_TAB
   deriving (Eq, Show)
 
-data ALPHA = ALPHA | ALPHA'
+data ALPHA' = ALPHA | ALPHA'
+  deriving (Eq, Show)
+
+data ALPHA
+  = AL_IDX {sym :: ALPHA', idx :: Int}
+  | AL_META {sym :: ALPHA', meta :: META}
   deriving (Eq, Show)
 
 data PROGRAM
@@ -117,6 +123,7 @@ data PROGRAM
 
 data PAIR
   = PA_TAU {attr :: ATTRIBUTE, arrow :: ARROW, expr :: EXPRESSION}
+  | PA_ALPHA {alpha :: ALPHA, arrow :: ARROW, expr :: EXPRESSION}
   | PA_FORMATION {attr :: ATTRIBUTE, voids :: [ATTRIBUTE], arrow :: ARROW, expr :: EXPRESSION}
   | PA_VOID {attr :: ATTRIBUTE, arrow :: ARROW, void :: VOID}
   | PA_LAMBDA {func :: T.Text}
@@ -173,8 +180,6 @@ data EXPRESSION
 
 data ATTRIBUTE
   = AT_LABEL {label :: T.Text}
-  | AT_ALPHA {alpha :: ALPHA, idx :: Int}
-  | AT_ALPHA_META {alpha :: ALPHA, meta :: META}
   | AT_RHO {rho :: RHO}
   | AT_PHI {phi :: PHI}
   | AT_LAMBDA {lambda :: LAMBDA}
@@ -338,7 +343,7 @@ instance ToCST Expression EXPRESSION where
   -- Since we convert AST to CST in sweet notation, here we're trying to get rid of unnecessary rho bindings
   -- in primitives (more details here: https://github.com/objectionary/phino/issues/451)
   -- If we find something similar to:
-  -- `Q.number(~0 -> Q.bytes(...), ^ -> ..., ^ -> ...)`
+  -- `Q.number(a0 -> Q.bytes(...), ^ -> ..., ^ -> ...)`
   -- We remove unnecessary rho bindings and save them to EX_STRING or EX_NUMBER so they can be successfully
   -- converted to salty notation without losing information.
   -- In the end we just get CST with data primitive which is printed correctly.
@@ -404,7 +409,7 @@ instance ToCST Expression EXPRESSION where
       -- 1. deepest start expression
       -- 2. list of tau bindings which are applied to start expression
       -- 3. list of expressions which are applied to start expression with default
-      --    alpha attributes (~0 -> e1, ~1 -> e2, ...)
+      --    alpha attributes (a0 -> e1, a1 -> e2, ...)
       complexApplication :: Expression -> (Expression, [Argument], [Expression])
       complexApplication expr =
         let (expr', taus', exprs') = complexApplication' expr
@@ -476,12 +481,12 @@ instance ToCST Binding PAIR where
   toCST (BiVoid attr) ctx = PA_VOID (toCST attr ctx) ARROW EMPTY
   toCST (BiDelta bts) ctx = PA_DELTA (toCST bts ctx)
   toCST (BiLambda (Function name)) _ = PA_LAMBDA name
-  toCST (BiLambda (FnMeta mt)) _ = PA_META_LAMBDA (META EXCL F (metaTail mt))
+  toCST (BiLambda (FnMeta mt)) _ = PA_META_LAMBDA (META NO_EXCL F (metaTail mt))
   toCST (BiMeta mt) _ = error $ "BiMeta binding " ++ T.unpack mt ++ " cannot be converted to PAIR"
 
 instance ToCST Argument PAIR where
   toCST (ArTau attr exp) ctx = toCST (BiTau attr exp) ctx
-  toCST (ArAlpha alpha exp) ctx = PA_TAU (toCST alpha ctx) ARROW (toCST exp ctx)
+  toCST (ArAlpha alpha exp) ctx = PA_ALPHA (toCST alpha ctx) ARROW (toCST exp ctx)
 
 instance ToCST [Argument] BINDING where
   toCST [] (tabs, _) = BI_EMPTY (TAB tabs)
@@ -509,9 +514,9 @@ instance ToCST Attribute ATTRIBUTE where
   toCST AtLambda _ = AT_LAMBDA LAMBDA
   toCST (AtMeta mt) _ = AT_META (META NO_EXCL TAU (metaTail mt))
 
-instance ToCST Alpha ATTRIBUTE where
-  toCST (Alpha idx) _ = AT_ALPHA ALPHA idx
-  toCST (AlMeta mt) _ = AT_ALPHA_META ALPHA (META NO_EXCL I (metaTail mt))
+instance ToCST Alpha ALPHA where
+  toCST (Alpha idx) _ = AL_IDX ALPHA idx
+  toCST (AlMeta mt) _ = AL_META ALPHA (META NO_EXCL I (metaTail mt))
 
 instance ToCST Y.Condition CONDITION where
   toCST (Y.Not (Y.In attr binding)) _ = CO_BELONGS (attributeToCST attr) NOT_IN (ST_BINDING (bindingsToCST [binding]))

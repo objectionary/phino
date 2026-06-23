@@ -13,7 +13,7 @@ module Parser
   , parseAttribute
   , parseAttributeThrows
   , parseAlpha
-  , parseIndexMeta
+  , parseIndex
   , parseNumber
   , parseNumberThrows
   , parseBinding
@@ -50,14 +50,14 @@ data ParserException
 data PhiParser = PhiParser
   { _attribute :: Parser Attribute
   , _alpha :: Parser Alpha
-  , _indexMeta :: Parser T.Text
+  , _index :: Parser T.Text
   , _binding :: Parser Binding
   , _expression :: Parser Expression
   , _string :: Parser String
   }
 
 phiParser :: PhiParser
-phiParser = PhiParser attribute alpha indexMeta binding expression quotedStr
+phiParser = PhiParser attribute alpha index' binding expression quotedStr
 
 instance Show ParserException where
   show CouldNotParseProgram{..} = printf "Couldn't parse given phi program, cause: %s" message
@@ -299,7 +299,7 @@ binding =
         BiLambda . Function . T.pack <$> function
     , do
         _ <- lambda
-        BiLambda . FnMeta <$> meta 'F'
+        BiLambda . FnMeta <$> meta' 'F' "𝐹"
     ]
     <?> "binding"
 
@@ -328,23 +328,23 @@ attribute :: Parser Attribute
 attribute =
   choice
     [ void'
-    , AtMeta <$> meta' 'a' "𝜏"
+    , AtMeta <$> meta' 't' "𝜏"
     ]
     <?> "attribute"
 
 -- index meta: !i, 𝑖
-indexMeta :: Parser T.Text
-indexMeta = meta' 'i' "𝑖"
+index' :: Parser T.Text
+index' = meta' 'i' "𝑖"
 
 -- alpha
--- 1. index: ~0, α0
--- 2. meta: α𝑖, ~!i
+-- 1. index: a0, α0
+-- 2. meta: α𝑖, a!i
 alpha :: Parser Alpha
 alpha = do
-  _ <- choice [symbol "~", symbol "α"]
+  _ <- choice [symbol "a", symbol "α"]
   choice
     [ Alpha <$> lexeme L.decimal
-    , AlMeta <$> indexMeta
+    , AlMeta <$> index'
     ]
     <?> "alpha"
 
@@ -504,8 +504,8 @@ parseAttribute = parse' "attribute" attribute
 parseAlpha :: String -> Either String Alpha
 parseAlpha = parse' "alpha" alpha
 
-parseIndexMeta :: String -> Either String T.Text
-parseIndexMeta = parse' "index meta" indexMeta
+parseIndex :: String -> Either String T.Text
+parseIndex = parse' "index meta" index'
 
 parseAttributeThrows :: String -> IO Attribute
 parseAttributeThrows attr = case parseAttribute attr of
