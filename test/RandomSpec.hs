@@ -12,6 +12,7 @@ module RandomSpec where
 import Data.Char (isDigit, isHexDigit)
 import Data.Set qualified as Set
 import Random (randomString)
+import System.Timeout (timeout)
 import Test.Hspec (Spec, describe, it, shouldBe, shouldSatisfy)
 
 spec :: Spec
@@ -25,6 +26,12 @@ spec = do
     it "returns literal unchanged" $ do
       result <- randomString "hello"
       result `shouldBe` "hello"
+
+  describe "randomString called twice with the same literal pattern" $
+    it "does not loop forever on the second call" $ do
+      _ <- randomString "repeated"
+      result <- timeout 1000000 (randomString "repeated")
+      result `shouldBe` Just "repeated"
 
   describe "randomString with literal pattern containing spaces" $
     it "returns literal with spaces" $ do

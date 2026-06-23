@@ -40,6 +40,11 @@ regenerate pat set = do
       pure next
 
 randomString :: String -> IO String
-randomString pat = do
-  set <- readIORef strings
-  regenerate pat set
+randomString pat
+  | randomized pat = readIORef strings >>= regenerate pat
+  | otherwise = generate pat
+  where
+    randomized :: String -> Bool
+    randomized [] = False
+    randomized ('%' : ch : rest) = ch == 'd' || ch == 'x' || randomized rest
+    randomized (_ : rest) = randomized rest
