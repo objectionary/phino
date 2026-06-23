@@ -50,8 +50,8 @@
       normalize: '𝑒1(𝜏 ↦ 𝑒)'
 
 - name: applicationa
-  description: '𝕄(n(η ↦ e)) ⟿ 𝕄(𝒩(𝕄(n)(η ↦ e)))'
-  match: '𝑛(𝜂 ↦ 𝑒)'
+  description: '𝕄(n(α_i ↦ e)) ⟿ 𝕄(𝒩(𝕄(n)(α_i ↦ e)))'
+  match: '𝑛(α𝑖 ↦ 𝑒)'
   where:
     - meta: 𝑒1
       function: morph
@@ -59,7 +59,7 @@
         - 𝑛
   then:
     morph:
-      normalize: '𝑒1(𝜂 ↦ 𝑒)'
+      normalize: '𝑒1(α𝑖 ↦ 𝑒)'
 
 - name: root
   description: '𝕄(Φ) ⟿ 𝕄(𝒩(e)) where e := global(), unless e is Φ'

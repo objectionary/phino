@@ -86,9 +86,6 @@ data META_HEAD
   | A -- a
   | TAU -- 𝜏
   | TAU' -- \tau
-  | ETA -- 𝜂
-  | ETA' -- \eta
-  | H -- h
   | I -- 𝑖
   | I' -- i
   | B -- 𝐵
@@ -514,8 +511,7 @@ instance ToCST Attribute ATTRIBUTE where
 
 instance ToCST Alpha ATTRIBUTE where
   toCST (Alpha idx) _ = AT_ALPHA ALPHA idx
-  toCST (AlMeta mt) _ = AT_META (META NO_EXCL ETA (metaTail mt))
-  toCST (AlIndex mt) _ = AT_ALPHA_META ALPHA (META NO_EXCL I (metaTail mt))
+  toCST (AlMeta mt) _ = AT_ALPHA_META ALPHA (META NO_EXCL I (metaTail mt))
 
 instance ToCST Y.Condition CONDITION where
   toCST (Y.Not (Y.In attr binding)) _ = CO_BELONGS (attributeToCST attr) NOT_IN (ST_BINDING (bindingsToCST [binding]))

@@ -338,18 +338,13 @@ indexMeta = meta' 'i' "𝑖"
 
 -- alpha
 -- 1. index: ~0, α0
--- 2. index meta: α𝑖, ~!i
--- 3. meta: !h, 𝜂
+-- 2. meta: α𝑖, ~!i
 alpha :: Parser Alpha
-alpha =
+alpha = do
+  _ <- choice [symbol "~", symbol "α"]
   choice
-    [ do
-        _ <- choice [symbol "~", symbol "α"]
-        choice
-          [ Alpha <$> lexeme L.decimal
-          , AlIndex <$> indexMeta
-          ]
-    , AlMeta <$> meta' 'h' "𝜂"
+    [ Alpha <$> lexeme L.decimal
+    , AlMeta <$> indexMeta
     ]
     <?> "alpha"
 

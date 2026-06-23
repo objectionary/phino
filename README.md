@@ -377,8 +377,8 @@ capturing attributes, bindings, etc.
 This is the list of supported meta variables:
 
 * `!a` || `𝜏` - attribute
-* `!h` || `𝜂` - a positional (α) application argument
-* `!i` || `𝑖` - the index of a positional argument, captured by writing `α𝑖`
+* `!i` || `𝑖` - the index of a positional (α) application argument,
+                captured by writing `α𝑖`
 * `!e` || `𝑒` - any expression
 * `!n` || `𝑛` - any expression that is already in normal form (behaves like
                 `!e`/`𝑒`, but only binds a sub-expression in NF, so no explicit

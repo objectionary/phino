@@ -9,5 +9,5 @@ output: |-
 rules:
   custom:
     - name: with-alpha-meta
-      pattern: '[[!a1 -> $.q, !B]](!h2 -> !e)'
+      pattern: '[[!a1 -> $.q, !B]](α𝑖 ↦ !e)'
       result: '[[!B]]'

@@ -15,8 +15,7 @@ import Data.Text (Text)
 -- The right part of substitution
 data MetaValue
   = MvAttribute Attribute -- !a
-  | MvAlpha Alpha -- !h
-  | MvIndex Int -- 𝑖
+  | MvIndex Int -- α𝑖
   | MvBytes Bytes -- !b
   | MvBindings [Binding] -- !B
   | MvFunction Text -- !F
@@ -63,8 +62,7 @@ matchAttribute ptn tgt
   | otherwise = []
 
 matchAlpha :: Alpha -> Alpha -> [Subst]
-matchAlpha (AlMeta meta) tgt = [substSingle meta (MvAlpha tgt)]
-matchAlpha (AlIndex meta) (Alpha idx) = [substSingle meta (MvIndex idx)]
+matchAlpha (AlMeta meta) (Alpha idx) = [substSingle meta (MvIndex idx)]
 matchAlpha ptn tgt
   | ptn == tgt = [substEmpty]
   | otherwise = []

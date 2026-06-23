@@ -36,7 +36,6 @@ data Argument
 data Alpha
   = Alpha Int
   | AlMeta Text
-  | AlIndex Text
   deriving (Eq, Ord, Generic)
 
 data Binding
@@ -78,8 +77,7 @@ instance Show Attribute where
 
 instance Show Alpha where
   show (Alpha idx) = 'α' : show idx
-  show (AlMeta meta) = '!' : T.unpack meta
-  show (AlIndex meta) = 'α' : '!' : T.unpack meta
+  show (AlMeta meta) = 'α' : '!' : T.unpack meta
 
 -- A cheap, fixed-size digest of an expression, used for fast (dirty) equality
 -- checks during loop detection. Equal expressions always produce the same
@@ -141,7 +139,6 @@ hashExpression = goExpr fnvOffset
     goAlpha h = \case
       Alpha idx -> step (step h 31) idx
       AlMeta t -> hashText (step h 28) t
-      AlIndex t -> hashText (step h 32) t
     goFunction :: Int -> Function -> Int
     goFunction h = \case
       Function t -> hashText (step h 16) t
