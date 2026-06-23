@@ -17,31 +17,6 @@ import Options.Applicative
 import Paths_phino (version)
 import System.Exit (ExitCode (..), exitFailure)
 
-handler :: SomeException -> IO ()
-handler e = case fromException e of
-  Just ExitSuccess -> pure () -- prevent printing error on --version etc.
-  _ -> do
-    logError (displayException e)
-    exitFailure
-
-setLogger :: Command -> IO ()
-setLogger cmd =
-  let (level, lns) = case cmd of
-        CmdRewrite OptsRewrite{_logLevel, _logLines} -> (_logLevel, _logLines)
-        CmdDataize OptsDataize{_logLevel, _logLines} -> (_logLevel, _logLines)
-        CmdExplain OptsExplain{_logLevel, _logLines} -> (_logLevel, _logLines)
-        CmdMerge OptsMerge{_logLevel, _logLines} -> (_logLevel, _logLines)
-        CmdMatch OptsMatch{_logLevel, _logLines} -> (_logLevel, _logLines)
-   in setLogConfig level lns
-
-checkPin :: Maybe String -> IO ()
-checkPin Nothing = pure ()
-checkPin (Just expected)
-  | expected == actual = pure ()
-  | otherwise = throwIO (VersionMismatch expected actual)
-  where
-    actual = showVersion version
-
 runCLI :: [String] -> IO ()
 runCLI args = handle handler $ do
   CliArgs{_pin, _command} <- handleParseResult (execParserPure defaultPrefs parserInfo args)
@@ -53,3 +28,26 @@ runCLI args = handle handler $ do
     CmdExplain opts -> runExplain opts
     CmdMerge opts -> runMerge opts
     CmdMatch opts -> runMatch opts
+  where
+    handler :: SomeException -> IO ()
+    handler e = case fromException e of
+      Just ExitSuccess -> pure () -- prevent printing error on --version etc.
+      _ -> do
+        logError (displayException e)
+        exitFailure
+    setLogger :: Command -> IO ()
+    setLogger cmd =
+      let (level, lns) = case cmd of
+            CmdRewrite OptsRewrite{_logLevel, _logLines} -> (_logLevel, _logLines)
+            CmdDataize OptsDataize{_logLevel, _logLines} -> (_logLevel, _logLines)
+            CmdExplain OptsExplain{_logLevel, _logLines} -> (_logLevel, _logLines)
+            CmdMerge OptsMerge{_logLevel, _logLines} -> (_logLevel, _logLines)
+            CmdMatch OptsMatch{_logLevel, _logLines} -> (_logLevel, _logLines)
+       in setLogConfig level lns
+    checkPin :: Maybe String -> IO ()
+    checkPin Nothing = pure ()
+    checkPin (Just expected)
+      | expected == actual = pure ()
+      | otherwise = throwIO (VersionMismatch expected actual)
+      where
+        actual = showVersion version
