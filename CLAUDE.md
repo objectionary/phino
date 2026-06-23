@@ -93,3 +93,10 @@ BOX, NORM (dataization). All configuration is threaded through
 Most spec files load test cases from `test-resources/*-packs/*.yaml` at
 runtime via `runIO`. Each pack defines `input`/`output`/`rules`/`skip`.
 Test files map 1:1 with source modules (`RewriterSpec.hs` ↔ `Rewriter.hs`).
+
+### Style
+
+When introducing new function, put it under 'where' scope if it's possible.
+Don't use single char variables like 'a', 'b'; use more meaningful names.
+If two functions does the same but have different amount of arguments - name
+them with apostrophe: foo, foo':
