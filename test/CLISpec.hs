@@ -556,12 +556,12 @@ spec = do
           ["rewrite", "--normalize", "--sweet", "--sequence", "--output=latex", "--flat", "--compress", "--meet-prefix=foo"]
           [ unlines
               [ "\\begin{phiquation}"
-              , "\\Big\\{ [[ |x| -> ?, |y| -> |x| ]] ( |x| -> \\phiMeet{foo:1}{ [[ D> 42- ]] } ) . |y| \\Big\\} \\leadsto_{\\nameref{r:copy}}"
-              , "  \\leadsto \\Big\\{ \\phiMeet{foo:2}{ [[ |x| -> \\phiAgain{foo:1}, |y| -> |x| ]] } . |y| \\Big\\} \\leadsto_{\\nameref{r:dot}}"
-              , "  \\leadsto \\Big\\{ \\phiAgain{foo:2} . |x| ( ^ -> \\phiAgain{foo:2} ) \\Big\\} \\leadsto_{\\nameref{r:dot}}"
-              , "  \\leadsto \\Big\\{ \\phiAgain{foo:1} ( ^ -> \\phiAgain{foo:2}, ^ -> \\phiAgain{foo:2} ) \\Big\\} \\leadsto_{\\nameref{r:copy}}"
-              , "  \\leadsto \\Big\\{ [[ D> 42-, ^ -> \\phiAgain{foo:2} ]] ( ^ -> \\phiAgain{foo:2} ) \\Big\\} \\leadsto_{\\nameref{r:stay}}"
-              , "  \\leadsto \\Big\\{ [[ D> 42-, ^ -> \\phiAgain{foo:2} ]] \\Big\\}{.}"
+              , "\\Big\\{ [[ |x| -> ?, |y| -> |x| ]] ( |x| -> \\phinoMeet{foo:1}{ [[ D> 42- ]] } ) . |y| \\Big\\} \\leadsto_{\\nameref{r:copy}}"
+              , "  \\leadsto \\Big\\{ \\phinoMeet{foo:2}{ [[ |x| -> \\phinoAgain{foo:1}, |y| -> |x| ]] } . |y| \\Big\\} \\leadsto_{\\nameref{r:dot}}"
+              , "  \\leadsto \\Big\\{ \\phinoAgain{foo:2} . |x| ( ^ -> \\phinoAgain{foo:2} ) \\Big\\} \\leadsto_{\\nameref{r:dot}}"
+              , "  \\leadsto \\Big\\{ \\phinoAgain{foo:1} ( ^ -> \\phinoAgain{foo:2}, ^ -> \\phinoAgain{foo:2} ) \\Big\\} \\leadsto_{\\nameref{r:copy}}"
+              , "  \\leadsto \\Big\\{ [[ D> 42-, ^ -> \\phinoAgain{foo:2} ]] ( ^ -> \\phinoAgain{foo:2} ) \\Big\\} \\leadsto_{\\nameref{r:stay}}"
+              , "  \\leadsto \\Big\\{ [[ D> 42-, ^ -> \\phinoAgain{foo:2} ]] \\Big\\}{.}"
               , "\\end{phiquation}"
               ]
           ]
@@ -572,24 +572,24 @@ spec = do
           ["rewrite", "--normalize", "--sweet", "--sequence", "--output=latex", "--flat", "--compress"]
           [ unlines
               [ "\\begin{phiquation}"
-              , "\\Big\\{ [[ |x| -> ?, |y| -> |x| ]] ( |x| -> \\phiMeet{1}{ [[ D> 42- ]] } ) . |y| \\Big\\} \\leadsto_{\\nameref{r:copy}}"
-              , "  \\leadsto \\Big\\{ \\phiMeet{2}{ [[ |x| -> \\phiAgain{1}, |y| -> |x| ]] } . |y| \\Big\\} \\leadsto_{\\nameref{r:dot}}"
-              , "  \\leadsto \\Big\\{ \\phiAgain{2} . |x| ( ^ -> \\phiAgain{2} ) \\Big\\} \\leadsto_{\\nameref{r:dot}}"
-              , "  \\leadsto \\Big\\{ \\phiAgain{1} ( ^ -> \\phiAgain{2}, ^ -> \\phiAgain{2} ) \\Big\\} \\leadsto_{\\nameref{r:copy}}"
-              , "  \\leadsto \\Big\\{ [[ D> 42-, ^ -> \\phiAgain{2} ]] ( ^ -> \\phiAgain{2} ) \\Big\\} \\leadsto_{\\nameref{r:stay}}"
-              , "  \\leadsto \\Big\\{ [[ D> 42-, ^ -> \\phiAgain{2} ]] \\Big\\}{.}"
+              , "\\Big\\{ [[ |x| -> ?, |y| -> |x| ]] ( |x| -> \\phinoMeet{1}{ [[ D> 42- ]] } ) . |y| \\Big\\} \\leadsto_{\\nameref{r:copy}}"
+              , "  \\leadsto \\Big\\{ \\phinoMeet{2}{ [[ |x| -> \\phinoAgain{1}, |y| -> |x| ]] } . |y| \\Big\\} \\leadsto_{\\nameref{r:dot}}"
+              , "  \\leadsto \\Big\\{ \\phinoAgain{2} . |x| ( ^ -> \\phinoAgain{2} ) \\Big\\} \\leadsto_{\\nameref{r:dot}}"
+              , "  \\leadsto \\Big\\{ \\phinoAgain{1} ( ^ -> \\phinoAgain{2}, ^ -> \\phinoAgain{2} ) \\Big\\} \\leadsto_{\\nameref{r:copy}}"
+              , "  \\leadsto \\Big\\{ [[ D> 42-, ^ -> \\phinoAgain{2} ]] ( ^ -> \\phinoAgain{2} ) \\Big\\} \\leadsto_{\\nameref{r:stay}}"
+              , "  \\leadsto \\Big\\{ [[ D> 42-, ^ -> \\phinoAgain{2} ]] \\Big\\}{.}"
               , "\\end{phiquation}"
               ]
           ]
 
-    it "should not print \\phiMeet{} twice" $
+    it "should not print \\phinoMeet{} twice" $
       withStdin "{[[ ex -> [[ x -> [[ y -> ?, k -> [[ t -> 42]]  ]]( y -> [[ t -> 42 ]]) ]].i ]]}" $
         testCLISucceeded
           ["rewrite", "--normalize", "--sequence", "--flat", "--compress", "--output=latex", "--sweet"]
           [ unlines
               [ "\\begin{phiquation}"
-              , "\\Big\\{ [[ |ex| -> [[ |x| -> [[ |y| -> ?, |k| -> \\phiMeet{1}{ [[ |t| -> 42 ]] } ]] ( |y| -> \\phiAgain{1} ) ]] . |i| ]] \\Big\\} \\leadsto_{\\nameref{r:copy}}"
-              , "  \\leadsto \\Big\\{ [[ |ex| -> [[ |x| -> [[ |y| -> \\phiAgain{1}, |k| -> \\phiAgain{1} ]] ]] . |i| ]] \\Big\\} \\leadsto_{\\nameref{r:stop}}"
+              , "\\Big\\{ [[ |ex| -> [[ |x| -> [[ |y| -> ?, |k| -> \\phinoMeet{1}{ [[ |t| -> 42 ]] } ]] ( |y| -> \\phinoAgain{1} ) ]] . |i| ]] \\Big\\} \\leadsto_{\\nameref{r:copy}}"
+              , "  \\leadsto \\Big\\{ [[ |ex| -> [[ |x| -> [[ |y| -> \\phinoAgain{1}, |k| -> \\phinoAgain{1} ]] ]] . |i| ]] \\Big\\} \\leadsto_{\\nameref{r:stop}}"
               , "  \\leadsto \\Big\\{ [[ |ex| -> T ]] \\Big\\}{.}"
               , "\\end{phiquation}"
               ]
@@ -892,7 +892,7 @@ spec = do
       withStdin "{[[ @ -> [[ @ -> $.c.plus( 32.0 ), c -> 25.0 ]], bytes(data) -> [[ @ -> $.data ]], number(as-bytes) -> [[ @ -> $.as-bytes, plus -> [[ x -> ?, L> L_number_plus ]] ]] ]]}" $
         testCLISucceeded
           ["dataize", "--output=latex", "--sweet", "--nonumber", "--compress", "--canonize", "--meet-prefix=dataization", "--sequence", "--flat", "--quiet", "--hide=Q.bytes", "--hide=Q.number", "--locator=Q.@", "--focus=Q.@", "--meet-length=5", "--meet-popularity=1"]
-          ["\\phiMeet{dataization:1}{ [[ @ -> |c| . |plus| ( 32 ), |c| -> 25 ]] } \\leadsto_{\\nameref{r:contextualize}}"]
+          ["\\phinoMeet{dataization:1}{ [[ @ -> |c| . |plus| ( 32 ), |c| -> 25 ]] } \\leadsto_{\\nameref{r:contextualize}}"]
 
     it "dataizes with --locator" $
       withStdin "{[[ ex -> [[ @ -> Q.x ]], x -> [[ D> 42- ]] ]]}" $

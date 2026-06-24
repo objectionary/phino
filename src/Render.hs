@@ -203,8 +203,8 @@ instance Render EXPRESSION where
   render EX_STRING{..} = "\"" <> render str <> "\""
   render EX_NUMBER{..} = either (T.pack . show) (T.pack . show) num
   render EX_META{..} = render meta
-  render EX_PHI_MEET{..} = "\\phiMeet{" <> maybe "" (\p -> T.pack p <> ":") prefix <> render idx <> "}{ " <> render expr <> " }"
-  render EX_PHI_AGAIN{..} = "\\phiAgain{" <> maybe "" (\p -> T.pack p <> ":") prefix <> render idx <> "}"
+  render EX_PHI_MEET{..} = "\\phinoMeet{" <> maybe "" (\p -> T.pack p <> ":") prefix <> render idx <> "}{ " <> render expr <> " }"
+  render EX_PHI_AGAIN{..} = "\\phinoAgain{" <> maybe "" (\p -> T.pack p <> ":") prefix <> render idx <> "}"
 
 instance Render [ATTRIBUTE] where
   render attrs = T.intercalate ", " (map render attrs)
