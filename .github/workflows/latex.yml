@@ -24,7 +24,7 @@ jobs:
         with:
           packages: scheme-basic eolang mathtools
           texlive_version: 2026
-      - uses: actions/cache@v5
+      - uses: actions/cache@v6
         with:
           path: |
             ${{ steps.setup.outputs.ghc-path }}
@@ -47,6 +47,9 @@ jobs:
             printf '\\usepackage{mathtools}\n'
             printf '\\usepackage{eolang}\n'
             printf '\\newcommand\\ctx[2]{#1 #2}\n'
+            printf '\\newcommand\\phinoEvaluate[1]{\\mathbb{E}( #1 )}\n'
+            printf '\\newcommand\\phinoMorph[1]{\\mathbb{M}( #1 )}\n'
+            printf '\\newcommand\\phinoGlobal[1]{\\Phi( #1 )}\n'
             printf '\\newcommand\\indexof[1]{#1}\n'
             printf '\\newcommand\\isnormal[1]{#1}\n'
             printf '\\newcommand\\phinoMorphingRule[5]{#1 $#2$ $#3$ #4 #5}\n'
