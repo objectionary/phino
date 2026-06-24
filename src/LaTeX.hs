@@ -351,6 +351,7 @@ instance ToLaTeX EXTRA where
 explainRule :: Y.Rule -> String
 explainRule rule =
   trrule
+    "\\phinoNormalizationRule"
     rule.name
     (renderToLatex (expressionToCST rule.pattern) defaultLatexContext)
     (renderToLatex (expressionToCST rule.result) defaultLatexContext)
@@ -367,6 +368,7 @@ explainRule rule =
 explainMorphRule :: Y.MorphRule -> String
 explainMorphRule rule =
   trrule
+    "\\phinoMorphingRule"
     rule.name
     (morph (renderToLatex (expressionToCST rule.match) defaultLatexContext))
     (morphOutcome rule.then_)
@@ -381,6 +383,7 @@ explainMorphRule rule =
 explainDataizeRule :: Y.DataizeRule -> String
 explainDataizeRule rule =
   trrule
+    "\\phinoDataizationRule"
     rule.name
     (dataize (renderToLatex (expressionToCST rule.match) defaultLatexContext))
     (dataizeOutcome rule.then_)
@@ -394,13 +397,15 @@ explainDataizeRule rule =
     dataizeOutcome (Y.DoData bytes) = T.unpack (render (toLaTeX (toCST' bytes :: BYTES)))
     dataizeOutcome Y.DoNothing = "\\varnothing"
 
--- Render a single rule row through the shared \trrule macro: name, left-hand
--- side, right-hand side, the optional 'if' condition and 'where' extras.
-trrule :: String -> String -> String -> Maybe Y.Condition -> Maybe [Y.Extra] -> String
-trrule name lhs rhs cond extras =
+-- Render a single rule row through the given macro (one of
+-- \phinoMorphingRule, \phinoNormalizationRule, \phinoDataizationRule): name,
+-- left-hand side, right-hand side, the optional 'if' condition and 'where'
+-- extras.
+trrule :: String -> String -> String -> String -> Maybe Y.Condition -> Maybe [Y.Extra] -> String
+trrule macro name lhs rhs cond extras =
   intercalate
     "\n  "
-    [ "\\trrule{" ++ name ++ "}"
+    [ macro ++ "{" ++ name ++ "}"
     , braced lhs
     , braced rhs
     , conditionToLatex cond
