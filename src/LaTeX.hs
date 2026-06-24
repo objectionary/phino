@@ -88,11 +88,11 @@ meetInProgram (Program expr) len = meetInExpression expr
     argExpr (ArTau _ ex) = ex
     argExpr (ArAlpha _ ex) = ex
 
-{- | Here we're trying to compress sequence of programs with \phiMeet{} and \phiAgain LaTeX functions.
+{- | Here we're trying to compress sequence of programs with \phinoMeet{} and \phinoAgain LaTeX functions.
 We process the sequence of programs and trying to find all expressions in first program which are present
 in following programs. Then we find ONE expression which is the most frequently encountered.
 If it's encountered in more than specific percentage (_meetPopularity) of following programs - we replace
-it with \phiAgain{} in following programs and with \phiMeet{} in first program.
+it with \phinoAgain{} in following programs and with \phinoMeet{} in first program.
 -}
 meetInPrograms :: [Program] -> LatexContext -> [Program]
 meetInPrograms prog LatexContext{..} = meetInPrograms' prog 1

@@ -60,7 +60,7 @@ spec = do
           programToCST ast `shouldBe` cst
       )
 
-  describe "build valid CST with wrapped phiAgain{} " $ do
+  describe "build valid CST with wrapped phinoAgain{} " $ do
     let number = BaseObject "number"
         again = ExPhiAgain Nothing 1
         bts = BaseObject "bytes"

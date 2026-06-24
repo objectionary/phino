@@ -97,7 +97,7 @@ optMeetPopularity =
         )
         ( long "meet-popularity"
             <> metavar "PERCENTAGE"
-            <> help (printf "The minimum popularity of an expression in order to be suitable for \\phiMeet{}, in percentage (default: %d)" defaultMeetPopularity)
+            <> help (printf "The minimum popularity of an expression in order to be suitable for \\phinoMeet{}, in percentage (default: %d)" defaultMeetPopularity)
         )
     )
 
@@ -108,7 +108,7 @@ optMeetLength =
         (auto >>= validateIntOption (> 0) "--meet-length must be positive")
         ( long "meet-length"
             <> metavar "NODES"
-            <> help (printf "The minimum length of an expression that fits into \\phiMeet{}, in AST nodes (default: %d)" defaultMeetLength)
+            <> help (printf "The minimum length of an expression that fits into \\phinoMeet{}, in AST nodes (default: %d)" defaultMeetLength)
         )
     )
 
@@ -131,7 +131,7 @@ optLabel :: Parser (Maybe String)
 optLabel = optional (strOption (long "label" <> metavar "NAME" <> help "Name for 'label' element when rendering to LaTeX (see --output option)"))
 
 optMeetPrefix :: Parser (Maybe String)
-optMeetPrefix = optional (strOption (long "meet-prefix" <> metavar "PREFIX" <> help "Prefix to be inserted before index in \\phiMeet{} and \\phiAgain{} LaTeX functions, e.g. \\phiMeet{foo:1}"))
+optMeetPrefix = optional (strOption (long "meet-prefix" <> metavar "PREFIX" <> help "Prefix to be inserted before index in \\phinoMeet{} and \\phinoAgain{} LaTeX functions, e.g. \\phinoMeet{foo:1}"))
 
 optBreakpoint :: Parser (Maybe FilePath)
 optBreakpoint = optional (strOption (long "breakpoint" <> metavar "FILE" <> help "The name of the first unmatched rule which leads to stopping entire rewriting process and returning original program"))
@@ -219,7 +219,7 @@ optOmitComments :: Parser Bool
 optOmitComments = switch (long "omit-comments" <> help "Omit comments in XMIR output")
 
 optCompress :: Parser Bool
-optCompress = switch (long "compress" <> help "Compress expressions in LaTeX output using \\phiMeet{} and \\phiAgain{} functions")
+optCompress = switch (long "compress" <> help "Compress expressions in LaTeX output using \\phinoMeet{} and \\phinoAgain{} functions")
 
 _intermediateOptions :: String
 _intermediateOptions = intercalate ", " ["--sequence", "--steps-dir"]
