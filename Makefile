@@ -76,7 +76,7 @@ binary:
 
 .SILENT:
 phino:
-	cabal build phino
+	cabal build exe:phino
 	cp "$$(cabal list-bin phino)" $(CURDIR)/phino$(BIN_EXT)
 
 .SILENT:
