@@ -944,27 +944,24 @@ spec = do
       testCLISucceeded
         ["explain", "--rule=resources/normalize/copy.yaml"]
         [ unlines
-            [ "\\begin{tabular}{rl}"
-            , "\\phinoNormalizationRule{copy}"
+            [ "\\phinoNormalizationRule{copy}"
             , "  { [[ B_1, \\tau -> ?, B_2 ]] ( \\tau -> k ) }"
             , "  { [[ B_1, \\tau -> k, B_2 ]] }"
             , "  { }"
             , "  { }"
-            , "\\end{tabular}"
             ]
         ]
 
     it "explains multiple rules" $
       testCLISucceeded
         ["explain", "--rule=resources/normalize/copy.yaml", "--rule=resources/normalize/alpha.yaml"]
-        ["\\begin{tabular}{rl}", "\\phinoNormalizationRule{copy}", "\\phinoNormalizationRule{alpha}"]
+        ["\\phinoNormalizationRule{copy}", "\\phinoNormalizationRule{alpha}"]
 
     it "explains normalization rules" $
       testCLISucceeded
         ["explain", "--normalize"]
         [ unlines
-            [ "\\begin{tabular}{rl}"
-            , "\\phinoNormalizationRule{alpha}"
+            [ "\\phinoNormalizationRule{alpha}"
             , "  { [[ B_1, \\tau -> ?, B_2 ]] ( \\alpha_{i} -> e ) }"
             , "  { [[ B_1, \\tau -> ?, B_2 ]] ( \\tau -> e ) }"
             , "  { $ i = \\vert \\overline{ B_1 } \\vert $ }"
@@ -1024,7 +1021,6 @@ spec = do
             , "  { T }"
             , "  { $ \\tau \\notin B \\;\\text{and}\\; @ \\notin B \\;\\text{and}\\; L \\notin B $ }"
             , "  { }"
-            , "\\end{tabular}"
             ]
         ]
 
@@ -1032,8 +1028,7 @@ spec = do
       testCLISucceeded
         ["explain", "--morph"]
         [ unlines
-            [ "\\begin{tabular}{rl}"
-            , "\\phinoMorphingRule{prim}"
+            [ "\\phinoMorphingRule{prim}"
             , "  { \\mathbb{M}( [[ B ]] ) }"
             , "  { [[ B ]] }"
             , "  { }"
@@ -1068,7 +1063,6 @@ spec = do
             , "  { T }"
             , "  { }"
             , "  { }"
-            , "\\end{tabular}"
             ]
         ]
 
@@ -1076,8 +1070,7 @@ spec = do
       testCLISucceeded
         ["explain", "--dataize"]
         [ unlines
-            [ "\\begin{tabular}{rl}"
-            , "\\phinoDataizationRule{delta}"
+            [ "\\phinoDataizationRule{delta}"
             , "  { \\mathbb{D}( [[ B_1, D> \\delta, B_2 ]] ) }"
             , "  { \\delta }"
             , "  { }"
@@ -1107,7 +1100,6 @@ spec = do
             , "  { \\mathbb{D}( \\mathbb{M}( n ) ) }"
             , "  { }"
             , "  { }"
-            , "\\end{tabular}"
             ]
         ]
 
@@ -1135,8 +1127,7 @@ spec = do
             testCLISucceeded ["explain", "--normalize", printf "--target=%s" path] []
             content <- readFile path
             _ <- evaluate (length content)
-            content `shouldContain` "\\begin{tabular}{rl}"
-            content `shouldContain` "\\end{tabular}"
+            content `shouldContain` "\\phinoNormalizationRule{alpha}"
         )
 
   describe "merge" $ do
