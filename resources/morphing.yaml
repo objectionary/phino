@@ -9,9 +9,9 @@
 # returned untouched and fired later by 𝔼 (the 'fire' rule of 𝔻).
 #
 # 'lambda' and 'dispatch' are kept mutually exclusive: 'dispatch' guards its
-# head 𝑛 with 'disjoint [λ] 𝐵' (where 𝐵 are 𝑛's bindings), so a λ-bearing
-# formation routes only through 'lambda'. The two clauses are disjoint and
-# their relative order does not change behavior.
+# head 𝑛 with 'λ ∉ 𝐵' (where 𝐵 are 𝑛's bindings), so a λ-bearing formation
+# routes only through 'lambda'. The two clauses are disjoint and their
+# relative order does not change behavior.
 
 - name: prim
   description: '𝕄(⟦𝐵⟧) ⟿ ⟦𝐵⟧'
@@ -43,9 +43,10 @@
       args:
         - 𝑛
   when:
-    disjoint:
-      - [λ]
-      - [𝐵]
+    not:
+      in:
+        - λ
+        - 𝐵
   then:
     morph:
       normalize: '𝑒.𝜏'

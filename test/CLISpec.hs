@@ -1041,7 +1041,7 @@ spec = do
             , "\\phinoMorphingRule{dispatch}"
             , "  { \\mathbb{M}( n . \\tau ) }"
             , "  { \\mathbb{M}( \\phinoNormalize{ e . \\tau } ) }"
-            , "  { $ [ L ] \\cap ( B ) = \\emptyset $ }"
+            , "  { $ L \\notin B $ }"
             , "  { $ e \\coloneqq \\phinoMorph{ n } $ and $ B \\coloneqq \\phinoBindings{ n } $ }"
             , "\\phinoMorphingRule{application}"
             , "  { \\mathbb{M}( n ( \\tau -> e ) ) }"
