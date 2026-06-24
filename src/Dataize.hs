@@ -76,7 +76,7 @@ morph (expr, seq) ctx@DataizeContext{..} = do
   matched <- firstMatch Y.morphingRules
   case matched of
     Just (rule, subst) -> apply rule.then_ rule.name subst
-    Nothing -> pure (expr, seq)
+    Nothing -> throwIO (userError "no morphing rule matched")
   where
     firstMatch :: [Y.MorphRule] -> IO (Maybe (Y.MorphRule, Subst))
     firstMatch [] = pure Nothing
@@ -127,7 +127,7 @@ dataize' (expr, seq) ctx = do
   matched <- firstMatch Y.dataizationRules
   case matched of
     Just (rule, subst) -> apply rule subst
-    Nothing -> pure (Nothing, NE.toList seq)
+    Nothing -> throwIO (userError "no dataization rule matched")
   where
     firstMatch :: [Y.DataizeRule] -> IO (Maybe (Y.DataizeRule, Subst))
     firstMatch [] = pure Nothing
