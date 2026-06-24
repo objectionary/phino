@@ -428,13 +428,13 @@ conditionToLatex :: Maybe Y.Condition -> String
 conditionToLatex Nothing = "{ }"
 conditionToLatex (Just cond) = case conditionToCST cond of
   CO_EMPTY -> "{ }"
-  cond' -> braced ("if $ " <> renderToLatex cond' defaultLatexContext <> " $")
+  cond' -> braced ("$ " <> renderToLatex cond' defaultLatexContext <> " $")
 
 extraArgumentsToLatex :: Maybe [Y.Extra] -> String
 extraArgumentsToLatex Nothing = "{ }"
 extraArgumentsToLatex (Just extras) =
   let extras' = map ((`renderToLatex` defaultLatexContext) . extraToCST) extras
-   in braced ("where " <> intercalate " and " extras')
+   in braced (intercalate " and " extras')
 
 explainRules :: [Y.Rule] -> String
 explainRules = explainTabular . map explainRule
