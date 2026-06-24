@@ -245,7 +245,7 @@ $ phino explain --morph
 ...
 \phinoMorphingRule{root}
   { \mathbb{M}( Q ) }
-  { \mathbb{M}( \mathcal{N}( e ) ) }
+  { \mathbb{M}( \phinoNormalize{ e } ) }
   { $ e \not= Q $ }
   { $ e \coloneqq \phinoGlobal{  } $ }
 \end{tabular}
