@@ -247,7 +247,7 @@ $ phino explain --morph
   { \mathbb{M}( Q ) }
   { \mathbb{M}( \mathcal{N}( e ) ) }
   { if $ e \not= Q $ }
-  { where $ e \coloneqq global(  ) $ }
+  { where $ e \coloneqq \phinoGlobal{  } $ }
 \end{tabular}
 ```
 
