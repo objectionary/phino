@@ -55,7 +55,6 @@ jobs:
             printf '\\newcommand\\phinoMorphingRule[5]{#1 $#2$ $#3$ $#4$ $#5$}\n'
             printf '\\newcommand\\phinoNormalizationRule[5]{#1 $#2$ $#3$ $#4$ $#5$}\n'
             printf '\\newcommand\\phinoDataizationRule[5]{#1 $#2$ $#3$ $#4$ $#5$}\n'
-            printf '\\catcode`\\^=12\\relax\n'
             printf '\\begin{document}\n'
             "${e}" explain --normalize
             printf '{[[ x -> [[ y -> ? ]].y ]]}' | "${e}" rewrite --normalize --output=latex --sequence

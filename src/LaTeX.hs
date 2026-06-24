@@ -242,6 +242,7 @@ instance ToLaTeX ATTRIBUTE where
   toLaTeX AT_LAMBDA{} = AT_LAMBDA LAMBDA'
   toLaTeX AT_DELTA{} = AT_DELTA DELTA'
   toLaTeX AT_REST{} = AT_REST DOTS'
+  toLaTeX AT_RHO{} = AT_RHO RHO'
   toLaTeX attr = attr
 
 instance ToLaTeX APP_BINDING where

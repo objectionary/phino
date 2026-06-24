@@ -42,7 +42,7 @@ data VOID = EMPTY | QUESTION
 data PHI = PHI | AT
   deriving (Eq, Show)
 
-data RHO = RHO | CARET
+data RHO = RHO | CARET | RHO'
   deriving (Eq, Show)
 
 data DELTA = DELTA | DELTA'

@@ -67,6 +67,7 @@ instance Render PHI where
 instance Render RHO where
   render RHO = "ρ"
   render CARET = "^"
+  render RHO' = "\\rho"
 
 instance Render DELTA where
   render DELTA = "Δ"
