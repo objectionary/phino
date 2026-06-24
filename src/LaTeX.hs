@@ -242,6 +242,7 @@ instance ToLaTeX ATTRIBUTE where
   toLaTeX AT_LAMBDA{} = AT_LAMBDA LAMBDA'
   toLaTeX AT_DELTA{} = AT_DELTA DELTA'
   toLaTeX AT_REST{} = AT_REST DOTS'
+  toLaTeX AT_RHO{} = AT_RHO RHO'
   toLaTeX attr = attr
 
 instance ToLaTeX APP_BINDING where
@@ -428,7 +429,7 @@ conditionToLatex :: Maybe Y.Condition -> String
 conditionToLatex Nothing = "{ }"
 conditionToLatex (Just cond) = case conditionToCST cond of
   CO_EMPTY -> "{ }"
-  cond' -> braced ("$ " <> renderToLatex cond' defaultLatexContext <> " $")
+  cond' -> braced (renderToLatex cond' defaultLatexContext)
 
 extraArgumentsToLatex :: Maybe [Y.Extra] -> String
 extraArgumentsToLatex Nothing = "{ }"
