@@ -419,7 +419,7 @@ dataize :: String -> String
 dataize inner = "\\mathbb{D}( " ++ inner ++ " )"
 
 normalize :: String -> String
-normalize inner = "\\mathcal{N}( " ++ inner ++ " )"
+normalize inner = "\\phinoNormalize{ " ++ inner ++ " }"
 
 braced :: String -> String
 braced = printf "{ %s }"
