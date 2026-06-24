@@ -437,19 +437,10 @@ extraArgumentsToLatex (Just extras) =
    in braced ("where " <> intercalate " and " extras')
 
 explainRules :: [Y.Rule] -> String
-explainRules = explainTabular . map explainRule
+explainRules = intercalate "\n" . map explainRule
 
 explainMorphRules :: [Y.MorphRule] -> String
-explainMorphRules = explainTabular . map explainMorphRule
+explainMorphRules = intercalate "\n" . map explainMorphRule
 
 explainDataizeRules :: [Y.DataizeRule] -> String
-explainDataizeRules = explainTabular . map explainDataizeRule
-
-explainTabular :: [String] -> String
-explainTabular rows =
-  intercalate
-    "\n"
-    [ "\\begin{tabular}{rl}"
-    , intercalate "\n" rows
-    , "\\end{tabular}"
-    ]
+explainDataizeRules = intercalate "\n" . map explainDataizeRule
