@@ -210,11 +210,11 @@ forall a. [a] -&gt; [a] -&gt; [a]
 </span><a href="#local-6989586621679258118"><span class="hs-identifier hs-var">ex</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expression
 </span><a href="#local-6989586621679258118"><span class="hs-identifier hs-var">ex</span></a></span><span>
 </span><span id="line-90"></span><span>
-</span><span id="line-91"></span><span class="annot"><span class="hs-comment">{- | Here we're trying to compress sequence of programs with \phiMeet{} and \phiAgain LaTeX functions.
+</span><span id="line-91"></span><span class="annot"><span class="hs-comment">{- | Here we're trying to compress sequence of programs with \phinoMeet{} and \phinoAgain LaTeX functions.
 We process the sequence of programs and trying to find all expressions in first program which are present
 in following programs. Then we find ONE expression which is the most frequently encountered.
 If it's encountered in more than specific percentage (_meetPopularity) of following programs - we replace
-it with \phiAgain{} in following programs and with \phiMeet{} in first program.
+it with \phinoAgain{} in following programs and with \phinoMeet{} in first program.
 -}</span></span><span>
 </span><span id="line-97"></span><span class="annot"><a href="LaTeX.html#meetInPrograms"><span class="hs-identifier hs-type">meetInPrograms</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="AST.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="LaTeX.html#LatexContext"><span class="hs-identifier hs-type">LatexContext</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="AST.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span class="hs-special">]</span><span>
 </span><span id="line-98"></span><span id="meetInPrograms"><span class="annot"><span class="annottext">meetInPrograms :: [Program] -&gt; LatexContext -&gt; [Program]
