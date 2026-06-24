@@ -103,7 +103,7 @@ morph (expr, seq) ctx@DataizeContext{..} = do
     -- rewriter and splices its individual steps (alpha, copy, dot, …) into the
     -- chain before morphing on the resulting normal form. Termination is the
     -- rules' job: the 'root' rule's 'when' refuses to expand a universe that is
-    -- Φ itself, so 'stuck' yields ⊥ instead of looping.
+    -- Φ itself, so the 'globe' rule catches it and yields ⊥ instead of looping.
     apply (Y.MoMorph (Y.MaNormalize arg)) name subst = do
       built <- buildExpressionThrows arg subst
       labelled <- leadsTo seq name built ctx
