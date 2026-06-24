@@ -216,7 +216,7 @@ $ phino explain --normalize
 \phinoNormalizationRule{alpha}
   { [[ B_1, \tau -> ?, B_2 ]] ( \alpha_{i} -> e ) }
   { [[ B_1, \tau -> ?, B_2 ]] ( \tau -> e ) }
-  { if $ i = \vert \overline{ B_1 } \vert $ }
+  { $ i = \vert \overline{ B_1 } \vert $ }
   { }
 \phinoNormalizationRule{dc}
   { T ( \tau -> e ) }
@@ -227,7 +227,7 @@ $ phino explain --normalize
 \phinoNormalizationRule{stop}
   { [[ B ]] . \tau }
   { T }
-  { if $ \tau \notin B \;\text{and}\; @ \notin B \;\text{and}\; L \notin B $ }
+  { $ \tau \notin B \;\text{and}\; @ \notin B \;\text{and}\; L \notin B $ }
   { }
 \end{tabular}
 ```
@@ -246,8 +246,8 @@ $ phino explain --morph
 \phinoMorphingRule{root}
   { \mathbb{M}( Q ) }
   { \mathbb{M}( \mathcal{N}( e ) ) }
-  { if $ e \not= Q $ }
-  { where $ e \coloneqq global(  ) $ }
+  { $ e \not= Q $ }
+  { $ e \coloneqq global(  ) $ }
 \end{tabular}
 ```
 
