@@ -16,6 +16,7 @@ import Functions (buildTerm)
 import Matcher (substEmpty)
 import Parser (parseExpressionThrows, parseProgramThrows)
 import Rewriter (Rewritten)
+import Rule (RuleContext (RuleContext), matchExpressionWithRule')
 import Test.Hspec
 import Yaml qualified
 
@@ -63,6 +64,23 @@ spec = do
         , ExFormation [BiTau AtRho (ExFormation [BiTau (AtLabel "x") (ExFormation [BiVoid AtRho]), BiVoid AtRho])]
         )
       ]
+
+  -- The 'dispatch' rule is the exact complement of 'lambda': its 'when' guard
+  -- ('disjoint [λ] 𝐵') rejects a λ-bearing formation dispatch so the two
+  -- clauses are mutually exclusive and their order in 'morphing.yaml' cannot
+  -- change behavior.
+  describe "morphing 'dispatch' is disjoint from 'lambda'" $ do
+    let prog = Program ExRoot
+        rctx = RuleContext (execBuildTerm (defaultDataizeContext ExRoot prog))
+        morphRule nm = head [r | r <- Yaml.morphingRules, r.name == nm]
+        asRule r = Yaml.Rule r.name r.description r.match ExRoot Nothing r.where_ r.when
+        lambdaFormation = ExFormation [BiLambda (Function "L_dummy"), BiVoid AtRho]
+    it "does not fire on a λ-bearing formation dispatch" $ do
+      substs <- matchExpressionWithRule' (ExDispatch lambdaFormation (AtLabel "x")) (asRule (morphRule "dispatch")) rctx
+      substs `shouldBe` []
+    it "still fires on a non-λ-formation dispatch" $ do
+      substs <- matchExpressionWithRule' (ExDispatch ExXi (AtLabel "x")) (asRule (morphRule "dispatch")) rctx
+      null substs `shouldBe` False
 
   describe "dataize" $
     test

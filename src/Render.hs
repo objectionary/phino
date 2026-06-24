@@ -285,4 +285,5 @@ instance Render EXTRA where
       macro "lambda" = "\\phinoEvaluate"
       macro "morph" = "\\phinoMorph"
       macro "global" = "\\phinoGlobal"
+      macro "bindings" = "\\phinoBindings"
       macro name = "\\" <> T.pack name

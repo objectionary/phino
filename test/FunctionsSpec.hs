@@ -10,15 +10,15 @@ import Data.Map.Strict qualified as Map
 import Deps (Term (TeBindings))
 import Functions (buildTerm)
 import Logger (logDebug)
-import Matcher (MetaValue (MvBindings), Subst (Subst))
+import Matcher (MetaValue (MvBindings), Subst (Subst), substEmpty)
 import Misc (uniqueBindings')
 import Printer (printExpression)
 import Test.Hspec (Spec, describe, it, shouldBe)
 import Text.Printf (printf)
-import Yaml (ExtraArgument (ArgBinding))
+import Yaml (ExtraArgument (ArgBinding, ArgExpression))
 
 spec :: Spec
-spec = describe "Functions" $
+spec = describe "Functions" $ do
   it "contains only unique bindings after 'join'" $ do
     let first = ("B1", MvBindings [BiVoid AtRho, BiDelta BtEmpty, BiTau (AtLabel "x") ExRoot, BiVoid (AtLabel "a0")])
         second = ("B2", MvBindings [BiTau AtRho ExXi, BiLambda (Function "Func"), BiDelta (BtOne "00"), BiVoid (AtLabel "a1")])
@@ -28,3 +28,10 @@ spec = describe "Functions" $
     bds' <- uniqueBindings' bds
     logDebug (printf "Joined bindings:\n%s" (printExpression (ExFormation bds')))
     length bds' `shouldBe` 9
+  it "returns a formation's bindings with 'bindings'" $ do
+    let bds = [BiLambda (Function "Func"), BiVoid AtRho]
+    TeBindings out <- buildTerm "bindings" [ArgExpression (ExFormation bds)] substEmpty
+    out `shouldBe` bds
+  it "returns no bindings for a non-formation with 'bindings'" $ do
+    TeBindings out <- buildTerm "bindings" [ArgExpression ExXi] substEmpty
+    out `shouldBe` []

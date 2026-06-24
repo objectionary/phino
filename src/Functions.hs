@@ -44,6 +44,7 @@ buildTerm' "concat" = _concat
 buildTerm' "sed" = _sed
 buildTerm' "random-string" = _randomString
 buildTerm' "size" = _size
+buildTerm' "bindings" = _bindings
 buildTerm' "tau" = _tau
 buildTerm' "string" = _string
 buildTerm' "number" = _number
@@ -152,6 +153,20 @@ _size [Y.ArgBinding (BiMeta meta)] subst = do
   bds <- buildBindingThrows (BiMeta meta) subst
   pure (TeExpression (DataNumber (numToBts (fromIntegral (length bds)))))
 _size _ _ = throwIO (userError "Function size() requires exactly 1 meta binding")
+
+-- Return the bindings of a formation, or an empty list for any other
+-- expression. It never fails, so a rule may use it to inspect an arbitrary
+-- head (e.g. the morphing 'dispatch' rule guards against a λ-bearing formation
+-- by checking 'bindings' for a λ).
+_bindings :: BuildTermMethod
+_bindings [Y.ArgExpression expr] subst = do
+  expr' <- buildExpressionThrows expr subst
+  pure (TeBindings (formationBindings expr'))
+  where
+    formationBindings :: Expression -> [Binding]
+    formationBindings (ExFormation bds) = bds
+    formationBindings _ = []
+_bindings _ _ = throwIO (userError "Function bindings() requires exactly 1 argument as expression")
 
 _tau :: BuildTermMethod
 _tau [Y.ArgExpression expr] subst = do

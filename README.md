@@ -359,6 +359,10 @@ Here's list of functions that are supported for extensions:
   execution of `phino`.
 * `size` - accepts exactly one meta binding and returns size of it and
   `Φ.number`.
+* `bindings` - accepts exactly one expression and returns its bindings when it
+  is a formation, or an empty list otherwise. Never fails, so it can inspect an
+  arbitrary head (the morphing `dispatch` rule uses it to stay disjoint from
+  `lambda` by checking the head for a `λ` binding).
 * `tau` - accepts `Φ.string`, dataizes it and converts it to attribute.
   If dataized string can't be converted to attribute - an error is thrown.
 * `string` - accepts `Φ.string` or `Φ.number` or attribute and converts it
