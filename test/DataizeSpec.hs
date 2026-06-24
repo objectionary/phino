@@ -72,7 +72,9 @@ spec = do
   describe "morphing 'dispatch' is disjoint from 'lambda'" $ do
     let prog = Program ExRoot
         rctx = RuleContext (execBuildTerm (defaultDataizeContext ExRoot prog))
+        morphRule :: String -> Yaml.MorphRule
         morphRule nm = head [r | r <- Yaml.morphingRules, r.name == nm]
+        asRule :: Yaml.MorphRule -> Yaml.Rule
         asRule r = Yaml.Rule r.name r.description r.match ExRoot Nothing r.where_ r.when
         lambdaFormation = ExFormation [BiLambda (Function "L_dummy"), BiVoid AtRho]
     it "does not fire on a λ-bearing formation dispatch" $ do
