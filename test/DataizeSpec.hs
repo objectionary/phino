@@ -8,8 +8,9 @@ module DataizeSpec (spec) where
 
 import AST
 import Control.Monad
-import Data.List (nub)
+import Data.List (find, nub)
 import Data.List.NonEmpty (NonEmpty (..))
+import Data.Maybe (fromMaybe)
 import Dataize (DataizeContext (DataizeContext), dataize, dataize', execBuildTerm, morph)
 import Deps (Term (TeExpression), dontSaveStep)
 import Functions (buildTerm)
@@ -73,7 +74,7 @@ spec = do
     let prog = Program ExRoot
         rctx = RuleContext (execBuildTerm (defaultDataizeContext ExRoot prog))
         morphRule :: String -> Yaml.MorphRule
-        morphRule nm = head [r | r <- Yaml.morphingRules, r.name == nm]
+        morphRule nm = fromMaybe (error ("no morphing rule named " ++ nm)) (find (\r -> r.name == nm) Yaml.morphingRules)
         asRule :: Yaml.MorphRule -> Yaml.Rule
         asRule r = Yaml.Rule r.name r.description r.match ExRoot Nothing r.where_ r.when
         lambdaFormation = ExFormation [BiLambda (Function "L_dummy"), BiVoid AtRho]
