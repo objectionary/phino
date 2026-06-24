@@ -428,7 +428,7 @@ conditionToLatex :: Maybe Y.Condition -> String
 conditionToLatex Nothing = "{ }"
 conditionToLatex (Just cond) = case conditionToCST cond of
   CO_EMPTY -> "{ }"
-  cond' -> braced ("$ " <> renderToLatex cond' defaultLatexContext <> " $")
+  cond' -> braced (renderToLatex cond' defaultLatexContext)
 
 extraArgumentsToLatex :: Maybe [Y.Extra] -> String
 extraArgumentsToLatex Nothing = "{ }"
