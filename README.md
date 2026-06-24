@@ -213,18 +213,18 @@ custom rule file):
 ```bash
 $ phino explain --normalize
 \begin{tabular}{rl}
-\trrule{alpha}
+\phinoNormalizationRule{alpha}
   { [[ B_1, \tau -> ?, B_2 ]] ( \alpha_{i} -> e ) }
   { [[ B_1, \tau -> ?, B_2 ]] ( \tau -> e ) }
   { if $ i = \vert \overline{ B_1 } \vert $ }
   { }
-\trrule{dc}
+\phinoNormalizationRule{dc}
   { T ( \tau -> e ) }
   { T }
   { }
   { }
 ...
-\trrule{stop}
+\phinoNormalizationRule{stop}
   { [[ B ]] . \tau }
   { T }
   { if $ \tau \notin B \;\text{and}\; @ \notin B \;\text{and}\; L \notin B $ }
@@ -237,13 +237,13 @@ The morphing and dataization rules are printed the same way:
 ```bash
 $ phino explain --morph
 \begin{tabular}{rl}
-\trrule{prim}
+\phinoMorphingRule{prim}
   { \mathbb{M}( [[ B ]] ) }
   { [[ B ]] }
   { }
   { }
 ...
-\trrule{root}
+\phinoMorphingRule{root}
   { \mathbb{M}( Q ) }
   { \mathbb{M}( \mathcal{N}( e ) ) }
   { if $ e \not= Q $ }
@@ -254,13 +254,13 @@ $ phino explain --morph
 ```bash
 $ phino explain --dataize
 \begin{tabular}{rl}
-\trrule{delta}
+\phinoDataizationRule{delta}
   { \mathbb{D}( [[ B_1, D> δ, B_2 ]] ) }
   { δ }
   { }
   { }
 ...
-\trrule{norm}
+\phinoDataizationRule{norm}
   { \mathbb{D}( n ) }
   { \mathbb{D}( \mathbb{M}( n ) ) }
   { }
