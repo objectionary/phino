@@ -147,9 +147,9 @@ runDataize OptsDataize{..} = do
       canonize = if _canonize then C.canonize else id
       exclude = (`F.exclude` excluded)
       include = (`F.include` included)
-  (maybeBytes, chain) <- dataize (context loc prog printCtx)
+  (bytes, chain) <- dataize (context loc prog printCtx)
   when _sequence (printRewrittens printCtx (canonize $ exclude $ include chain, False) >>= putStrLn)
-  unless _quiet (putStrLn (maybe (P.printExpression ExTermination) P.printBytes maybeBytes))
+  unless _quiet (putStrLn (P.printBytes bytes))
   where
     validateOpts :: IO ()
     validateOpts = do

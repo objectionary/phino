@@ -29,7 +29,7 @@ import Text.Printf (printf)
 import Yaml (ExtraArgument (..), normalizationRules)
 import qualified Yaml as Y
 
-type Dataized = (Maybe Bytes, [Rewritten])
+type Dataized = (Bytes, [Rewritten])
 
 type Dataizable = (Expression, NonEmpty Rewritten)
 
@@ -113,15 +113,15 @@ morph (expr, seq) ctx@DataizeContext{..} = do
 dataize :: DataizeContext -> IO Dataized
 dataize ctx@DataizeContext{..} = do
   expr <- locatedExpression _locator _program
-  (maybeBytes, seq) <- dataize' (expr, (_program, Nothing) :| []) ctx
-  pure (maybeBytes, reverse seq)
+  (bytes, seq) <- dataize' (expr, (_program, Nothing) :| []) ctx
+  pure (bytes, reverse seq)
 
--- The Dataization function 𝔻 retrieves bytes from an expression. It is driven
--- by the ordered rules from 'dataization.yaml': 'delta' yields the asset bytes,
--- 'none' (a formation) and 'bott' (⊥) yield nothing, 'box' contextualizes the
--- φ-body and keeps dataizing (its step is labelled by the operation,
--- 'contextualize'), and 'norm' reduces through morphing, splicing the morphing
--- steps into the chain.
+-- The Dataization function 𝔻 retrieves bytes from an expression. It is total.
+-- It is driven by the ordered rules from 'dataization.yaml': 'delta' yields the
+-- asset bytes, 'none' (a formation) and 'bott' (⊥) yield empty bytes (--), 'box'
+-- contextualizes the φ-body and keeps dataizing (its step is labelled by the
+-- operation, 'contextualize'), and 'norm' reduces through morphing, splicing the
+-- morphing steps into the chain.
 dataize' :: Dataizable -> DataizeContext -> IO Dataized
 dataize' (expr, seq) ctx = do
   matched <- firstMatch Y.dataizationRules
@@ -142,8 +142,7 @@ dataize' (expr, seq) ctx = do
     apply rule subst = case rule.then_ of
       Y.DoData bytes -> do
         bts <- buildBytesThrows bytes subst
-        pure (Just bts, NE.toList seq)
-      Y.DoNothing -> pure (Nothing, NE.toList seq)
+        pure (bts, NE.toList seq)
       Y.DoDataize (Y.DaExpr result) -> do
         built <- buildExpressionThrows result subst
         seq' <- leadsTo seq (operation rule) built ctx
@@ -194,7 +193,7 @@ normalized expr seq ctx@DataizeContext{..} = do
 -- Here we modify original program from context by adding new binding
 -- which refers to expression we want to dataize. As a caller of 𝔻, it first
 -- reduces the expression to a normal form, since 𝔻 only accepts normal forms.
-_dataize :: Expression -> DataizeContext -> IO (Maybe Bytes)
+_dataize :: Expression -> DataizeContext -> IO Bytes
 _dataize expr ctx@DataizeContext{_buildTerm = buildTerm, _program = Program (ExFormation bds)} = do
   (TeAttribute attr) <- buildTerm "random-tau" [] substEmpty
   let prog = Program (ExFormation (BiTau attr expr : bds))
@@ -204,34 +203,31 @@ _dataize expr ctx@DataizeContext{_buildTerm = buildTerm, _program = Program (ExF
   pure bts
 _dataize _ _ = throwIO (userError "Can't call _dataize from atoms with non-formation program")
 
+-- A number atom only operates on numeric data. Empty bytes (the result of
+-- dataizing a bare formation ⟦𝐵⟧ or ⊥ now that 𝔻 is total) carry no number,
+-- so the operand is rejected and the atom yields ⊥.
+asNumber :: Bytes -> Maybe Double
+asNumber BtEmpty = Nothing
+asNumber bts = Just (either toDouble id (btsToNum bts))
+
 atom :: T.Text -> Expression -> DataizeContext -> IO Expression
 atom "L_number_plus" self ctx = do
   left <- _dataize (ExDispatch self (AtLabel "x")) ctx
   right <- _dataize (ExDispatch self AtRho) ctx
-  case (left, right) of
-    (Just left', Just right') -> do
-      let first = either toDouble id (btsToNum left')
-          second = either toDouble id (btsToNum right')
-          sum = first + second
-      pure (DataNumber (numToBts sum))
+  case (asNumber left, asNumber right) of
+    (Just first, Just second) -> pure (DataNumber (numToBts (first + second)))
     _ -> pure ExTermination
 atom "L_number_times" self ctx = do
   left <- _dataize (ExDispatch self (AtLabel "x")) ctx
   right <- _dataize (ExDispatch self AtRho) ctx
-  case (left, right) of
-    (Just left', Just right') -> do
-      let first = either toDouble id (btsToNum left')
-          second = either toDouble id (btsToNum right')
-          sum = first * second
-      pure (DataNumber (numToBts sum))
+  case (asNumber left, asNumber right) of
+    (Just first, Just second) -> pure (DataNumber (numToBts (first * second)))
     _ -> pure ExTermination
 atom "L_number_eq" self ctx = do
   x <- _dataize (ExDispatch self (AtLabel "x")) ctx
   rho <- _dataize (ExDispatch self AtRho) ctx
-  case (x, rho) of
-    (Just x', Just rho') -> do
-      let self' = either toDouble id (btsToNum rho')
-          first = either toDouble id (btsToNum x')
+  case (asNumber x, asNumber rho) of
+    (Just first, Just self') ->
       if self' == first
         then pure (DataNumber (numToBts first))
         else pure (ExDispatch self (AtLabel "y"))
