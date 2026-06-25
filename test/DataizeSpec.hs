@@ -77,7 +77,7 @@ spec = do
         morphRule :: String -> Yaml.MorphRule
         morphRule nm = fromMaybe (error ("no morphing rule named " ++ nm)) (find (\r -> r.name == nm) Yaml.morphingRules)
         asRule :: Yaml.MorphRule -> Yaml.Rule
-        asRule r = Yaml.Rule r.name r.description r.match ExRoot Nothing r.where_ r.when
+        asRule r = Yaml.Rule r.name r.label r.description r.match ExRoot r.when r.where_ Nothing
         lambdaFormation = ExFormation [BiLambda (Function "L_dummy"), BiVoid AtRho]
     it "does not fire on a λ-bearing formation dispatch" $ do
       substs <- matchExpressionWithRule' (ExDispatch lambdaFormation (AtLabel "x")) (asRule (morphRule "dispatch")) rctx
