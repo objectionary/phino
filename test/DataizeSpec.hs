@@ -7,8 +7,9 @@
 module DataizeSpec (spec) where
 
 import AST
+import Control.Exception (SomeException)
 import Control.Monad
-import Data.List (find, nub)
+import Data.List (find, isInfixOf, nub)
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.Maybe (fromMaybe)
 import Dataize (DataizeContext (DataizeContext), dataize, dataize', execBuildTerm, morph)
@@ -84,6 +85,16 @@ spec = do
     it "still fires on a non-λ-formation dispatch" $ do
       substs <- matchExpressionWithRule' (ExDispatch ExXi (AtLabel "x")) (asRule (morphRule "dispatch")) rctx
       null substs `shouldBe` False
+    -- ⟦λ ⤍ F⟧.a.b.c : 'dispatch' peels .c then .b (their heads are dispatches,
+    -- not λ-formations, so 'λ ∉ 𝐵' holds), then 'lambda' handles the base
+    -- ⟦λ ⤍ F⟧.a and fires the atom. The chain therefore routes
+    -- dispatch → dispatch → lambda; firing the undefined atom 'F' is what
+    -- raises the error, proving the base λ-formation reached 'lambda'.
+    it "drills a chained λ-formation dispatch down to the base 'lambda'" $ do
+      let base = ExFormation [BiLambda (Function "F")]
+          chain = ExDispatch (ExDispatch (ExDispatch base (AtLabel "a")) (AtLabel "b")) (AtLabel "c")
+      morph (chain, (Program ExRoot, Nothing) :| []) (defaultDataizeContext ExRoot (Program ExRoot))
+        `shouldThrow` (\e -> "Atom 'F' does not exist" `isInfixOf` show (e :: SomeException))
 
   describe "dataize" $
     test
