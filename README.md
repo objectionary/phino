@@ -255,14 +255,14 @@ $ phino explain --morph
 $ phino explain --dataize
 \begin{tabular}{rl}
 \phinoDataizationRule{delta}
-  { \mathbb{D}( [[ B_1, D> δ, B_2 ]] ) }
+  { \phinoDataize{ [[ B_1, D> δ, B_2 ]] } }
   { δ }
   { }
   { }
 ...
 \phinoDataizationRule{norm}
-  { \mathbb{D}( n ) }
-  { \mathbb{D}( \mathbb{M}( n ) ) }
+  { \phinoDataize{ n } }
+  { \phinoDataize{ \mathbb{M}( n ) } }
   { }
   { }
 \end{tabular}

@@ -418,7 +418,7 @@ morph :: String -> String
 morph inner = "\\phinoMorph{ " ++ inner ++ " }"
 
 dataize :: String -> String
-dataize inner = "\\mathbb{D}( " ++ inner ++ " )"
+dataize inner = "\\phinoDataize{ " ++ inner ++ " }"
 
 normalize :: String -> String
 normalize inner = "\\phinoNormalize{ " ++ inner ++ " }"
