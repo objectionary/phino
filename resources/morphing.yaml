@@ -2,14 +2,14 @@
 # SPDX-License-Identifier: MIT
 ---
 # Morphing 𝕄 — applied top-to-bottom, first matching clause wins. It is binary,
-# 𝕄(n, e): the first argument n is the term being morphed and the second e is the
-# fixed global universe, threaded unchanged through every recursive call and
-# substituted for Φ by the 'root' rule (Φ, rendered Q, is just the locator of e).
-# The first argument is always a normal form: a non-NF expression matches no
-# clause. 𝕄 navigates a normal form down to a formation one operation at a time,
-# resolving the universe Φ against e and peeling dispatches and applications
-# through normalization 𝒩. It never fires a bare atom: a saturated λ-formation is
-# returned untouched and fired later by 𝔼 (the 'fire' rule of 𝔻).
+# 𝕄(n, e): n is the term being morphed and e is the fixed global universe,
+# threaded unchanged through every recursive call and substituted for Φ by the
+# 'root' rule (Φ, rendered Q, is just the locator of e). The first argument is
+# always a normal form: a non-NF expression matches no clause. 𝕄 navigates a
+# normal form to a formation one operation at a time, resolving Φ against e and
+# peeling dispatches and applications through normalization 𝒩. It never fires a
+# bare atom: a saturated λ-formation is returned untouched and fired later by 𝔼
+# (the 'fire' rule of 𝔻).
 
 - name: prim
   description: '𝕄(⟦𝐵⟧, e) ⟿ ⟦𝐵⟧'
