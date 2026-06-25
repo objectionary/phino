@@ -67,7 +67,7 @@ instance Render PHI where
 instance Render RHO where
   render RHO = "ρ"
   render CARET = "^"
-  render RHO' = "\\rho"
+  render RHO' = "\\phiTerminal{\\rho}"
 
 instance Render DELTA where
   render DELTA = "Δ"
@@ -76,7 +76,7 @@ instance Render DELTA where
 instance Render XI where
   render XI = "ξ"
   render DOLLAR = "$"
-  render XI' = "\\xi{}"
+  render XI' = "\\phiTerminal{\\xi}"
 
 instance Render LAMBDA where
   render LAMBDA = "λ"

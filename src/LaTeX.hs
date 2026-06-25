@@ -270,7 +270,7 @@ instance ToLaTeX PAIR where
     let subscript = case alpha of
           AL_IDX _ n -> render n
           AL_META _ mt -> render (hd mt) <> rest mt
-     in PA_TAU (AT_LABEL ("\\alpha_{" <> subscript <> "}")) arrow (toLaTeX expr)
+     in PA_TAU (AT_LABEL ("\\phiTerminal{\\alpha_{" <> subscript <> "}}")) arrow (toLaTeX expr)
   toLaTeX PA_FORMATION{..} = PA_FORMATION (toLaTeX attr) (map toLaTeX voids) arrow (toLaTeX expr)
   toLaTeX PA_META_DELTA{..} = toLaTeX (PA_META_DELTA' meta)
   toLaTeX PA_META_DELTA'{..} = PA_META_DELTA' (toLaTeX meta)
@@ -422,7 +422,7 @@ trrule macro label name lhs rhs cond extras =
     labelArg = maybe "" (\symbol -> "[" ++ symbol ++ "]") label
 
 morph :: String -> String
-morph inner = "\\mathbb{M}( " ++ inner ++ " )"
+morph inner = "\\phinoMorph{ " ++ inner ++ " }"
 
 dataize :: String -> String
 dataize inner = "\\phinoDataize{ " ++ inner ++ " }"
