@@ -1018,7 +1018,7 @@ spec = do
             , "  { T }"
             , "  { \\tau \\not= \\rho }"
             , "  { }"
-            , "\\phinoNormalizationRule{phi}"
+            , "\\phinoNormalizationRule[\\phi]{phi}"
             , "  { [[ B ]] . \\tau }"
             , "  { [[ B ]] . @ . \\tau }"
             , "  { @ \\in B \\;\\text{and}\\; \\tau \\notin B }"
@@ -1092,7 +1092,7 @@ spec = do
       testCLISucceeded
         ["explain", "--dataize"]
         [ unlines
-            [ "\\phinoDataizationRule{delta}"
+            [ "\\phinoDataizationRule[\\Delta]{delta}"
             , "  { \\mathbb{D}( [[ B_1, D> \\delta, B_2 ]] ) }"
             , "  { \\delta }"
             , "  { }"

@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: MIT
 ---
 name: phi
+label: \phi
 pattern: ⟦𝐵⟧.𝜏
 result: ⟦𝐵⟧.φ.𝜏
 when:
