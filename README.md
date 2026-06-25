@@ -378,7 +378,7 @@ This is the list of supported meta variables:
 
 * `!t` || `𝜏` - attribute
 * `!i` || `𝑖` - the index of a positional (α) application argument,
-                captured by writing `α𝑖` (or `a𝑖`)
+                captured by writing `α𝑖` (or `~!i`)
 * `!e` || `𝑒` - any expression
 * `!n` || `𝑛` - any expression that is already in normal form (behaves like
                 `!e`/`𝑒`, but only binds a sub-expression in NF, so no explicit
@@ -393,8 +393,8 @@ This is the list of supported meta variables:
 
 Every meta variable may also be used with an integer index, like `!B1` or `𝜏0`.
 
-A positional (α) application argument is written as `α0`, `a0` (ASCII), or
-`α𝑖`/`a!i` when its index is captured by an `!i`/`𝑖` meta variable.
+A positional (α) application argument is written as `α0`, `~0` (ASCII), or
+`α𝑖`/`~!i` when its index is captured by an `!i`/`𝑖` meta variable.
 
 Incorrect usage of meta variables in 𝜑-expression patterns leads to
 parsing errors.

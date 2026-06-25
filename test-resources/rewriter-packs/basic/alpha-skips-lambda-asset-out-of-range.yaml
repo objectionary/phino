@@ -4,6 +4,6 @@
 rules:
   basic: ['alpha']
 input: |
-  Φ ↦ [[ L> Fn, x -> ? ]](a2 -> Q.y)
+  Φ ↦ [[ L> Fn, x -> ? ]](~2 -> Q.y)
 output: |-
-  Φ ↦ ⟦ L> Fn, x ↦ ∅ ⟧(a2 ↦ Φ.y)
+  Φ ↦ ⟦ L> Fn, x ↦ ∅ ⟧(~2 ↦ Φ.y)

@@ -1,8 +1,8 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 # SPDX-License-Identifier: MIT
 ---
-input: Q -> [[ x -> ? ]](a0 -> Q.y)
-output: 'Φ ↦ ⟦ x ↦ ∅ ⟧(a0 ↦ Φ)'
+input: Q -> [[ x -> ? ]](~0 -> Q.y)
+output: 'Φ ↦ ⟦ x ↦ ∅ ⟧(~0 ↦ Φ)'
 rules:
   custom:
     - name: with-alpha-index

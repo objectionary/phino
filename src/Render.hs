@@ -136,7 +136,7 @@ instance Render META where
 
 instance Render ALPHA' where
   render ALPHA = "α"
-  render ALPHA' = "a"
+  render ALPHA' = "~"
 
 instance Render ALPHA where
   render AL_IDX{..} = render sym <> render idx

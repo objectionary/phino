@@ -4,6 +4,6 @@
 rules:
   basic: ['alpha']
 input: |
-  Φ ↦ [[ q -> $.y, x -> ?, y -> [[ ]] ]](a1 -> Q.y)
+  Φ ↦ [[ q -> $.y, x -> ?, y -> [[ ]] ]](~1 -> Q.y)
 output: |-
   Φ ↦ ⟦ q -> $.y, x ↦ ∅, y -> [[ ]] ⟧(x ↦ Φ.y)

@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 # SPDX-License-Identifier: MIT
 ---
-expression: '[[ x -> Q.y ]](a0 -> Q)'
+expression: '[[ x -> Q.y ]](~0 -> Q)'
 pattern: '[[ !B ]](α𝑖 ↦ !e)'
 condition:
   eq:
