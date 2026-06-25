@@ -414,7 +414,7 @@ trrule macro name lhs rhs cond extras =
     ]
 
 morph :: String -> String
-morph inner = "\\mathbb{M}( " ++ inner ++ " )"
+morph inner = "\\phinoMorph{ " ++ inner ++ " }"
 
 dataize :: String -> String
 dataize inner = "\\mathbb{D}( " ++ inner ++ " )"
