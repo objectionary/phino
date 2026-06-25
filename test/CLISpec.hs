@@ -444,7 +444,7 @@ spec = do
           ]
 
     it "rewrites an alpha-index argument as \\alpha subscript in LaTeX" $
-      withStdin "Q -> Q.foo(a1 -> Q.y)" $
+      withStdin "Q -> Q.foo(~1 -> Q.y)" $
         testCLISucceeded
           ["rewrite", "--output=latex", "--flat", "--nonumber"]
           [ unlines

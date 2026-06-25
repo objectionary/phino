@@ -337,11 +337,11 @@ index' :: Parser T.Text
 index' = meta' 'i' "𝑖"
 
 -- alpha
--- 1. index: a0, α0
--- 2. meta: α𝑖, a!i
+-- 1. index: ~0, α0
+-- 2. meta: α𝑖, ~!i
 alpha :: Parser Alpha
 alpha = do
-  _ <- choice [symbol "a", symbol "α"]
+  _ <- choice [symbol "~", symbol "α"]
   choice
     [ Alpha <$> lexeme L.decimal
     , AlMeta <$> index'

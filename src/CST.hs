@@ -343,7 +343,7 @@ instance ToCST Expression EXPRESSION where
   -- Since we convert AST to CST in sweet notation, here we're trying to get rid of unnecessary rho bindings
   -- in primitives (more details here: https://github.com/objectionary/phino/issues/451)
   -- If we find something similar to:
-  -- `Q.number(a0 -> Q.bytes(...), ^ -> ..., ^ -> ...)`
+  -- `Q.number(~0 -> Q.bytes(...), ^ -> ..., ^ -> ...)`
   -- We remove unnecessary rho bindings and save them to EX_STRING or EX_NUMBER so they can be successfully
   -- converted to salty notation without losing information.
   -- In the end we just get CST with data primitive which is printed correctly.
@@ -409,7 +409,7 @@ instance ToCST Expression EXPRESSION where
       -- 1. deepest start expression
       -- 2. list of tau bindings which are applied to start expression
       -- 3. list of expressions which are applied to start expression with default
-      --    alpha attributes (a0 -> e1, a1 -> e2, ...)
+      --    alpha attributes (~0 -> e1, ~1 -> e2, ...)
       complexApplication :: Expression -> (Expression, [Argument], [Expression])
       complexApplication expr =
         let (expr', taus', exprs') = complexApplication' expr
