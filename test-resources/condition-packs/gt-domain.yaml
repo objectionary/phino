@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 # SPDX-License-Identifier: MIT
 ---
-expression: '[[ x -> $, w -> $ ]](a0 -> Q)'
+expression: '[[ x -> $, w -> $ ]](α0 -> Q)'
 pattern: '[[ !B ]](α𝑖 ↦ Q)'
 condition:
   gt:
