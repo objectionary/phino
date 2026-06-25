@@ -214,7 +214,7 @@ custom rule file):
 $ phino explain --normalize
 \begin{tabular}{rl}
 \phinoNormalizationRule{alpha}
-  { [[ B_1, \tau -> ?, B_2 ]] ( \alpha_{i} -> e ) }
+  { [[ B_1, \tau -> ?, B_2 ]] ( \phiTerminal{\alpha_{i}} -> e ) }
   { [[ B_1, \tau -> ?, B_2 ]] ( \tau -> e ) }
   { $ i = \vert \overline{ B_1 } \vert $ }
   { }
