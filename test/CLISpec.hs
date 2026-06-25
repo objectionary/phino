@@ -1064,7 +1064,7 @@ spec = do
             , "  { }"
             , "  { }"
             , "\\phinoMorphingRule{xi}"
-            , "  { \\mathbb{M}( $ ) }"
+            , "  { \\mathbb{M}( \\xi{} ) }"
             , "  { T }"
             , "  { }"
             , "  { }"

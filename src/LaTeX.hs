@@ -234,6 +234,7 @@ instance ToLaTeX EXPRESSION where
   toLaTeX EX_PHI_MEET{..} = EX_PHI_MEET prefix idx (toLaTeX expr)
   toLaTeX EX_PHI_AGAIN{..} = EX_PHI_AGAIN prefix idx (toLaTeX expr)
   toLaTeX EX_META{..} = EX_META (toLaTeX meta)
+  toLaTeX EX_XI{} = EX_XI XI'
   toLaTeX expr = expr
 
 instance ToLaTeX ATTRIBUTE where
