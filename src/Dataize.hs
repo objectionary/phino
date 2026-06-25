@@ -35,10 +35,11 @@ type Dataizable = (Expression, NonEmpty Rewritten)
 
 type Morphed = Dataizable
 
--- '_universe' is the fixed global universe Q, the second argument of the binary
--- morphing function 𝕄(e, Q). Unlike '_program', which the synthetic '_dataize'
--- and '_morph' helpers replace with augmented formations, '_universe' is set
--- once when the context is built and never reassigned, so Q cannot drift.
+-- '_universe' is the fixed global universe, the second argument 'e' of the binary
+-- morphing function 𝕄(n, e) (Φ, rendered Q, is just its locator). Unlike
+-- '_program', which the synthetic '_dataize' and '_morph' helpers replace with
+-- augmented formations, '_universe' is set once when the context is built and
+-- never reassigned, so the universe cannot drift.
 data DataizeContext = DataizeContext
   { _locator :: Expression
   , _program :: Program
@@ -71,14 +72,14 @@ formation bds ctx = do
             _ -> (Nothing, bds)
 
 -- The Morphing function 𝕄 maps normal forms to formations. Formally it is
--- binary, 𝕄(e, Q): besides the expression it takes the fixed global universe Q,
+-- binary, 𝕄(n, e): besides the term it takes the fixed global universe 'e',
 -- threaded immutably through 'DataizeContext._universe' (the 'root' rule reaches
 -- it via 'global()'). It is driven by the ordered rules from 'morphing.yaml':
 -- the first matching rule's 'then' outcome either stops at a formation
--- ('MoStop') or keeps morphing ('MoMorph'), always forwarding the same Q. When
--- the morphed argument is a normalization ('MaNormalize', as in the 'lambda' and
--- 'root' rules), the rewriter runs over the rule's product and its individual
--- steps are spliced into the chain before morphing continues.
+-- ('MoStop') or keeps morphing ('MoMorph'), always forwarding the same universe.
+-- When the morphed argument is a normalization ('MaNormalize', as in the
+-- 'lambda' and 'root' rules), the rewriter runs over the rule's product and its
+-- individual steps are spliced into the chain before morphing continues.
 morph :: Morphed -> DataizeContext -> IO Morphed
 morph (expr, seq) ctx@DataizeContext{..} = do
   matched <- firstMatch Y.morphingRules
@@ -202,9 +203,9 @@ normalized expr seq ctx@DataizeContext{..} = do
 -- Here we modify original program from context by adding new binding
 -- which refers to expression we want to dataize. As a caller of 𝔻, it first
 -- reduces the expression to a normal form, since 𝔻 only accepts normal forms.
--- Only the mutable '_program' is augmented; the global universe Q ('_universe')
--- is left untouched, so morphing under this context still resolves Φ to the true
--- Q rather than to this synthetic, binding-prepended formation.
+-- Only the mutable '_program' is augmented; the global universe ('_universe') is
+-- left untouched, so morphing under this context still resolves Φ to the true
+-- universe rather than to this synthetic, binding-prepended formation.
 _dataize :: Expression -> DataizeContext -> IO (Maybe Bytes)
 _dataize expr ctx@DataizeContext{_buildTerm = buildTerm, _program = Program (ExFormation bds)} = do
   (TeAttribute attr) <- buildTerm "random-tau" [] substEmpty
@@ -271,10 +272,10 @@ _lambda ctx [ArgExpression expr] subst = do
     _ -> throwIO (userError "Function lambda() expects a formation")
 _lambda _ _ _ = throwIO (userError "Function lambda() requires exactly 1 expression argument")
 
--- Resolve the global universe Q for the 'root' morphing rule. It reads the
--- immutable '_universe' field rather than the mutable '_program', so the Q that
--- 𝕄(Φ, Q) expands to is always the true global universe, even when morphing runs
--- under the augmented program installed by '_dataize'.
+-- Resolve the global universe for the 'root' morphing rule. It reads the
+-- immutable '_universe' field rather than the mutable '_program', so the
+-- universe 'e' that 𝕄(Φ, e) expands to is always the true global one, even when
+-- morphing runs under the augmented program installed by '_dataize'.
 _global :: DataizeContext -> BuildTermMethod
 _global DataizeContext{_universe = Program universe} [] _ = pure (TeExpression universe)
 _global _ _ _ = throwIO (userError "Function global() requires no arguments")
