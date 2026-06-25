@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 ---
 failure: true
-expression: '[[ x -> $, w -> $ ]](a3 -> Q)'
+expression: '[[ x -> $, w -> $ ]](α3 -> Q)'
 pattern: '[[ !B ]](α𝑖 ↦ Q)'
 condition:
   gt:
