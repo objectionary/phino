@@ -952,6 +952,18 @@ spec = do
             ]
         ]
 
+    it "explains single rule with a label" $
+      testCLISucceeded
+        ["explain", "--rule=test-resources/cli/labeled.yaml"]
+        [ unlines
+            [ "\\phinoNormalizationRule[\\lambda]{copy}"
+            , "  { [[ B_1, \\tau -> ?, B_2 ]] ( \\tau -> k ) }"
+            , "  { [[ B_1, \\tau -> k, B_2 ]] }"
+            , "  { }"
+            , "  { }"
+            ]
+        ]
+
     it "explains multiple rules" $
       testCLISucceeded
         ["explain", "--rule=resources/normalize/copy.yaml", "--rule=resources/normalize/alpha.yaml"]
@@ -1033,7 +1045,7 @@ spec = do
             , "  { [[ B ]] }"
             , "  { }"
             , "  { }"
-            , "\\phinoMorphingRule{lambda}"
+            , "\\phinoMorphingRule[\\lambda]{lambda}"
             , "  { \\mathbb{M}( [[ B_1, L> F, B_2 ]] . \\tau ) }"
             , "  { \\mathbb{M}( \\phinoNormalize{ e . \\tau } ) }"
             , "  { }"

@@ -14,6 +14,7 @@
   then: ⟦𝐵⟧
 
 - name: lambda
+  label: \lambda
   description: '𝕄(⟦𝐵1, λ ⤍ 𝐹, 𝐵2⟧.τ) ⟿ 𝕄(𝒩(𝔼(⟦𝐵1, λ ⤍ 𝐹, 𝐵2⟧).τ))'
   match: '⟦𝐵1, λ ⤍ 𝐹, 𝐵2⟧.𝜏'
   where:

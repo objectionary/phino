@@ -1,0 +1,7 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+name: copy
+label: \lambda
+pattern: ⟦ 𝐵1, 𝜏 ↦ ∅, 𝐵2 ⟧(𝜏 ↦ 𝑘)
+result: ⟦ 𝐵1, 𝜏 ↦ 𝑘, 𝐵2 ⟧
