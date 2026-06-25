@@ -238,14 +238,14 @@ The morphing and dataization rules are printed the same way:
 $ phino explain --morph
 \begin{tabular}{rl}
 \phinoMorphingRule{prim}
-  { \mathbb{M}( [[ B ]] ) }
+  { \mathbb{M}( [[ B ]], Q ) }
   { [[ B ]] }
   { }
   { }
 ...
 \phinoMorphingRule{root}
-  { \mathbb{M}( Q ) }
-  { \mathbb{M}( \phinoNormalize{ e } ) }
+  { \mathbb{M}( Q, Q ) }
+  { \mathbb{M}( \phinoNormalize{ e }, Q ) }
   { $ e \not= Q $ }
   { $ e \coloneqq \phinoGlobal{  } $ }
 \end{tabular}
@@ -262,7 +262,7 @@ $ phino explain --dataize
 ...
 \phinoDataizationRule{norm}
   { \phinoDataize{ n } }
-  { \phinoDataize{ \mathbb{M}( n ) } }
+  { \phinoDataize{ \mathbb{M}( n, Q ) } }
   { }
   { }
 \end{tabular}

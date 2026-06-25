@@ -421,8 +421,13 @@ trrule macro label name lhs rhs cond extras =
   where
     labelArg = maybe "" (\symbol -> "[" ++ symbol ++ "]") label
 
+-- 𝕄 is binary, 𝕄(e, Q), so it renders with the global universe Q as its second
+-- argument (rendered identically to the 'root' rule's Φ).
 morph :: String -> String
-morph inner = "\\phinoMorph{ " ++ inner ++ " }"
+morph inner = "\\phinoMorph{ " ++ inner ++ " }{ " ++ universe ++ " }"
+
+universe :: String
+universe = renderToLatex (expressionToCST ExRoot) defaultLatexContext
 
 dataize :: String -> String
 dataize inner = "\\phinoDataize{ " ++ inner ++ " }"

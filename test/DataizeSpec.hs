@@ -20,7 +20,7 @@ import Test.Hspec
 import Yaml qualified
 
 defaultDataizeContext :: Expression -> Program -> DataizeContext
-defaultDataizeContext loc prog = DataizeContext loc prog 25 25 False buildTerm dontSaveStep
+defaultDataizeContext loc prog = DataizeContext loc prog prog 25 25 False buildTerm dontSaveStep
 
 test :: (Eq a, Show a) => ((Expression, NonEmpty Rewritten) -> DataizeContext -> IO (Maybe a, [Rewritten])) -> [(String, Expression, Expression, Maybe a)] -> Spec
 test func useCases =

@@ -50,7 +50,7 @@
   then: nothing
 
 - name: norm
-  description: '𝔻(n) ⟿ 𝔻(𝕄(n)) otherwise'
+  description: '𝔻(n) ⟿ 𝔻(𝕄(n, Q)) otherwise'
   match: 𝑛
   then:
     dataize:
