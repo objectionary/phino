@@ -10,10 +10,9 @@ import AST
 import Control.Monad
 import Data.List (nub)
 import Data.List.NonEmpty (NonEmpty (..))
-import Dataize (DataizeContext (DataizeContext), dataize, dataize', execBuildTerm, morph)
-import Deps (Term (TeExpression), dontSaveStep)
+import Dataize (DataizeContext (DataizeContext), dataize, dataize', morph)
+import Deps (dontSaveStep)
 import Functions (buildTerm)
-import Matcher (substEmpty)
 import Parser (parseExpressionThrows, parseProgramThrows)
 import Rewriter (Rewritten)
 import Test.Hspec
@@ -102,15 +101,6 @@ spec = do
         , Just (BtOne "01")
         )
       ]
-
-  describe "execBuildTerm" $
-    it "returns the universe Q body for global()" $ do
-      prog <- parseProgramThrows "Q -> [[ x -> [[ D> 42- ]] ]]"
-      expected <- parseExpressionThrows "[[ x -> [[ D> 42- ]] ]]"
-      term <- execBuildTerm (defaultDataizeContext ExRoot prog) "global" [] substEmpty
-      case term of
-        TeExpression actual -> actual `shouldBe` expected
-        _ -> expectationFailure "global() did not return an expression"
 
   describe "labels every step with a defined rule or operation" $ do
     let funcs = maybe [] (map Yaml.function)

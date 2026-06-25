@@ -6,7 +6,7 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Rule (RuleContext (..), isNF, matchProgramWithRule, matchExpressionWithRule, matchExpressionWithRule', meetCondition) where
+module Rule (RuleContext (..), isNF, matchProgramWithRule, matchExpressionWithRule, matchExpressionWithRule', matchExpressionWithRuleSeeded', meetCondition) where
 
 import AST
 import Builder
@@ -343,19 +343,30 @@ kMetaNames :: Expression -> [T.Text]
 kMetaNames = metaNamesWithPrefix "k"
 
 matchExpressionWithRule :: Expression -> Y.Rule -> RuleContext -> IO [Subst]
-matchExpressionWithRule = matchExpressionBy matchExpression
+matchExpressionWithRule = matchExpressionBy matchExpression [substEmpty]
 
 -- Like 'matchExpressionWithRule' but matches the pattern against the whole
 -- expression only (no deep, sub-expression matching). Used by the dataization
 -- and morphing driver, where a rule applies to the entire configuration rather
 -- than to nested redexes.
 matchExpressionWithRule' :: Expression -> Y.Rule -> RuleContext -> IO [Subst]
-matchExpressionWithRule' = matchExpressionBy matchExpression'
+matchExpressionWithRule' = matchExpressionBy matchExpression' [substEmpty]
 
-matchExpressionBy :: MatchExpressionFunc -> Expression -> Y.Rule -> RuleContext -> IO [Subst]
-matchExpressionBy matcher expr rule ctx =
+-- Like 'matchExpressionWithRule'' but seeds matching with the given
+-- substitutions, letting a caller inject pre-bound meta-variables. The morphing
+-- driver passes the global universe bound to 'e', the second argument of
+-- 𝕄(n, e), so the 'root' rule reads it directly instead of through a 'global()'
+-- build-term function.
+matchExpressionWithRuleSeeded' :: [Subst] -> Expression -> Y.Rule -> RuleContext -> IO [Subst]
+matchExpressionWithRuleSeeded' = matchExpressionBy matchExpression'
+
+-- The seed substitutions are combined into every match, so a pre-bound meta in
+-- the seed is dropped only when the pattern binds the same name to a different
+-- value; rules that do not mention the name simply carry it along unused.
+matchExpressionBy :: MatchExpressionFunc -> [Subst] -> Expression -> Y.Rule -> RuleContext -> IO [Subst]
+matchExpressionBy matcher seed expr rule ctx =
   let ptn = rule.pattern
-      matched = matcher ptn expr
+      matched = combineMany seed (matcher ptn expr)
       name = rule.name
    in if null matched
         then do

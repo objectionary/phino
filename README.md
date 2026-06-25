@@ -247,7 +247,7 @@ $ phino explain --morph
   { \mathbb{M}( Q, Q ) }
   { \mathbb{M}( \phinoNormalize{ e }, Q ) }
   { $ e \not= Q $ }
-  { $ e \coloneqq \phinoGlobal{  } $ }
+  { }
 \end{tabular}
 ```
 

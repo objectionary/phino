@@ -291,5 +291,4 @@ instance Render EXTRA where
     where
       macro :: String -> Text
       macro "lambda" = "\\phinoEvaluate"
-      macro "global" = "\\phinoGlobal"
       macro name = "\\" <> T.pack name

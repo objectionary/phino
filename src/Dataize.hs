@@ -20,11 +20,11 @@ import qualified Data.List.NonEmpty as NE
 import qualified Data.Text as T
 import Deps (BuildTermFunc, BuildTermMethod, SaveStepFunc, Term (TeAttribute, TeExpression))
 import Locator (locatedExpression, withLocatedExpression)
-import Matcher (Subst (..), substEmpty)
+import Matcher (MetaValue (MvExpression), Subst (..), substEmpty, substSingle)
 import Misc
 import Must (Must (..))
 import Rewriter (RewriteContext (RewriteContext), Rewritten, rewrite)
-import Rule (RuleContext (RuleContext), matchExpressionWithRule')
+import Rule (RuleContext (RuleContext), matchExpressionWithRule', matchExpressionWithRuleSeeded')
 import Text.Printf (printf)
 import Yaml (ExtraArgument (..), normalizationRules)
 import qualified Yaml as Y
@@ -73,8 +73,9 @@ formation bds ctx = do
 
 -- The Morphing function 𝕄 maps normal forms to formations. Formally it is
 -- binary, 𝕄(n, e): besides the term it takes the fixed global universe 'e',
--- threaded immutably through 'DataizeContext._universe' (the 'root' rule reaches
--- it via 'global()'). It is driven by the ordered rules from 'morphing.yaml':
+-- threaded immutably through 'DataizeContext._universe' and seeded into the
+-- substitution as the 'e' meta the 'root' rule substitutes. It is driven by the
+-- ordered rules from 'morphing.yaml':
 -- the first matching rule's 'then' outcome either stops at a formation
 -- ('MoStop') or keeps morphing ('MoMorph'), always forwarding the same universe.
 -- When the morphed argument is a normalization ('MaNormalize', as in the
@@ -87,10 +88,16 @@ morph (expr, seq) ctx@DataizeContext{..} = do
     Just (rule, subst) -> apply rule.then_ rule.name subst
     Nothing -> throwIO (userError "no morphing rule matched")
   where
+    -- The universe Q, threaded in as the 'e' argument of 𝕄(n, e): every rule is
+    -- matched with 'e' pre-bound to the global universe, so the 'root' rule
+    -- substitutes it directly (no 'global()' call). Rules that do not mention
+    -- 'e' just carry it along unused.
+    seed :: [Subst]
+    seed = let Program universe = _universe in [substSingle "e" (MvExpression universe)]
     firstMatch :: [Y.MorphRule] -> IO (Maybe (Y.MorphRule, Subst))
     firstMatch [] = pure Nothing
     firstMatch (rule : rest) = do
-      substs <- matchExpressionWithRule' expr (asRule rule) (RuleContext (execBuildTerm ctx))
+      substs <- matchExpressionWithRuleSeeded' seed expr (asRule rule) (RuleContext (execBuildTerm ctx))
       case substs of
         (subst : _) -> pure (Just (rule, subst))
         [] -> firstMatch rest
@@ -252,11 +259,11 @@ atom func _ _ = throwIO (userError (printf "Atom '%s' does not exist" (T.unpack 
 
 -- Augment the injected, context-free term builder with the dataization and
 -- morphing operations that need the full evaluation context: 'lambda' applies
--- an atom and 'global' dispatches from the universe Q. Every other function is
--- delegated unchanged.
+-- an atom and 'morph' morphs a sub-expression. Every other function is delegated
+-- unchanged. The universe Q is no longer fetched through a 'global()' function;
+-- it is seeded into the morphing substitution as the 'e' argument of 𝕄(n, e).
 execBuildTerm :: DataizeContext -> BuildTermFunc
 execBuildTerm ctx "lambda" = _lambda ctx
-execBuildTerm ctx "global" = _global ctx
 execBuildTerm ctx "morph" = _morph ctx
 execBuildTerm ctx func = _buildTerm ctx func
 
@@ -271,14 +278,6 @@ _lambda ctx [ArgExpression expr] subst = do
         Nothing -> throwIO (userError "Function lambda() expects a formation with a λ binding")
     _ -> throwIO (userError "Function lambda() expects a formation")
 _lambda _ _ _ = throwIO (userError "Function lambda() requires exactly 1 expression argument")
-
--- Resolve the global universe for the 'root' morphing rule. It reads the
--- immutable '_universe' field rather than the mutable '_program', so the
--- universe 'e' that 𝕄(Φ, e) expands to is always the true global one, even when
--- morphing runs under the augmented program installed by '_dataize'.
-_global :: DataizeContext -> BuildTermMethod
-_global DataizeContext{_universe = Program universe} [] _ = pure (TeExpression universe)
-_global _ _ _ = throwIO (userError "Function global() requires no arguments")
 
 -- The Morphing function 𝕄 exposed as a build-term function so a rule can morph
 -- a sub-expression in its 'where' (the 'dispatch' and 'application' rules morph

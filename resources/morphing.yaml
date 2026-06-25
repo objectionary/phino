@@ -21,29 +21,29 @@
   description: '𝕄(⟦𝐵1, λ ⤍ 𝐹, 𝐵2⟧.τ, e) ⟿ 𝕄(𝒩(𝔼(⟦𝐵1, λ ⤍ 𝐹, 𝐵2⟧).τ), e)'
   match: '⟦𝐵1, λ ⤍ 𝐹, 𝐵2⟧.𝜏'
   where:
-    - meta: 𝑒
+    - meta: 𝑒1
       function: lambda
       args:
         - '⟦𝐵1, λ ⤍ 𝐹, 𝐵2⟧'
   then:
     morph:
-      normalize: '𝑒.𝜏'
+      normalize: '𝑒1.𝜏'
 
 - name: dispatch
   description: '𝕄(n.τ, e) ⟿ 𝕄(𝒩(𝕄(n, e).τ), e)'
   match: '𝑛.𝜏'
   where:
-    - meta: 𝑒
+    - meta: 𝑒1
       function: morph
       args:
         - 𝑛
   then:
     morph:
-      normalize: '𝑒.𝜏'
+      normalize: '𝑒1.𝜏'
 
 - name: application
-  description: '𝕄(n(τ ↦ a), e) ⟿ 𝕄(𝒩(𝕄(n, e)(τ ↦ a)), e)'
-  match: '𝑛(𝜏 ↦ 𝑒)'
+  description: '𝕄(n(τ ↦ e_2), e) ⟿ 𝕄(𝒩(𝕄(n, e)(τ ↦ e_2)), e)'
+  match: '𝑛(𝜏 ↦ 𝑒2)'
   where:
     - meta: 𝑒1
       function: morph
@@ -51,11 +51,11 @@
         - 𝑛
   then:
     morph:
-      normalize: '𝑒1(𝜏 ↦ 𝑒)'
+      normalize: '𝑒1(𝜏 ↦ 𝑒2)'
 
 - name: applicationa
-  description: '𝕄(n(α_i ↦ a), e) ⟿ 𝕄(𝒩(𝕄(n, e)(α_i ↦ a)), e)'
-  match: '𝑛(α𝑖 ↦ 𝑒)'
+  description: '𝕄(n(α_i ↦ e_2), e) ⟿ 𝕄(𝒩(𝕄(n, e)(α_i ↦ e_2)), e)'
+  match: '𝑛(α𝑖 ↦ 𝑒2)'
   where:
     - meta: 𝑒1
       function: morph
@@ -63,14 +63,11 @@
         - 𝑛
   then:
     morph:
-      normalize: '𝑒1(α𝑖 ↦ 𝑒)'
+      normalize: '𝑒1(α𝑖 ↦ 𝑒2)'
 
 - name: root
-  description: '𝕄(Φ, e) ⟿ 𝕄(𝒩(e), e) where e := global(), unless e is Φ'
+  description: '𝕄(Φ, e) ⟿ 𝕄(𝒩(e), e), unless e is Φ'
   match: Φ
-  where:
-    - meta: 𝑒
-      function: global
   when:
     not:
       eq:
