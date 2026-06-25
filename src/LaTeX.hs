@@ -21,6 +21,7 @@ module LaTeX
   , LatexContext (..)
   , meetInPrograms
   , meetInProgram
+  , conditionToLatex
   ) where
 
 import AST

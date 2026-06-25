@@ -1058,7 +1058,7 @@ spec = do
             , "\\phinoMorphingRule{dispatch}"
             , "  { \\phinoMorph{ n . \\tau } }"
             , "  { \\phinoMorph{ \\phinoNormalize{ e . \\tau } } }"
-            , "  { not( binding( n ) ) }"
+            , "  { \\phinoNotBinding{ n } }"
             , "  { e \\coloneqq \\phinoMorph{ n } }"
             , "\\phinoMorphingRule{application}"
             , "  { \\phinoMorph{ n ( \\tau -> e ) } }"

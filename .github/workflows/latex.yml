@@ -52,6 +52,8 @@ jobs:
             printf '\\newcommand\\phinoGlobal[1]{\\Phi( #1 )}\n'
             printf '\\newcommand\\indexof[1]{#1}\n'
             printf '\\newcommand\\isnormal[1]{#1}\n'
+            printf '\\newcommand\\phinoIsBinding[1]{#1 \\text{ is a formation}}\n'
+            printf '\\newcommand\\phinoNotBinding[1]{#1 \\text{ is not a formation}}\n'
             printf '\\newcommand\\phinoMorphingRule[6][]{\\ensuremath{#1} #2 $#3$ $#4$ $#5$ $#6$}\n'
             printf '\\newcommand\\phinoNormalizationRule[6][]{\\ensuremath{#1} #2 $#3$ $#4$ $#5$ $#6$}\n'
             printf '\\newcommand\\phinoDataizationRule[6][]{\\ensuremath{#1} #2 $#3$ $#4$ $#5$ $#6$}\n'

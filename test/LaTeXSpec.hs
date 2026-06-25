@@ -6,13 +6,15 @@ programs and rules to LaTeX format for academic documents.
 -}
 module LaTeXSpec where
 
+import AST (Expression (ExMeta))
 import Control.Monad (forM_)
-import LaTeX (meetInProgram)
+import LaTeX (conditionToLatex, meetInProgram)
 import Parser (parseExpressionThrows, parseProgramThrows)
 import Test.Hspec (Spec, describe, it, shouldBe)
+import Yaml qualified as Y
 
 spec :: Spec
-spec =
+spec = do
   describe "meet program in program" $
     forM_
       [ ("Q.x.y", "{Q.x.y}", "{[[ x -> Q.x.y ]]}", ["Q.x.y"])
@@ -28,3 +30,10 @@ spec =
           res <- traverse parseExpressionThrows exprs
           meetInProgram ptn 4 tgt `shouldBe` res
       )
+
+  describe "renders the 'binding' condition" $
+    forM_
+      [ ("binding", Y.IsBinding (ExMeta "n"), "{ \\phinoIsBinding{ n } }")
+      , ("not binding", Y.Not (Y.IsBinding (ExMeta "n")), "{ \\phinoNotBinding{ n } }")
+      ]
+      (\(desc, cond, expected) -> it desc (conditionToLatex (Just cond) `shouldBe` expected))
