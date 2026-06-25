@@ -83,7 +83,7 @@ instance FromJSON Condition where
     withObject
       "Condition"
       ( \v -> do
-          validateYamlObject v ["and", "or", "not", "nf", "absolute", "eq", "in", "matches", "part-of", "disjoint"]
+          validateYamlObject v ["and", "or", "not", "nf", "absolute", "eq", "gt", "in", "matches", "part-of", "disjoint"]
           asum
             [ And <$> v .: "and"
             , Or <$> v .: "or"
@@ -100,6 +100,11 @@ instance FromJSON Condition where
                 case vals of
                   [left_, right_] -> Eq <$> parseJSON left_ <*> parseJSON right_
                   _ -> fail "'eq' expects exactly two arguments"
+            , do
+                vals <- v .: "gt"
+                case vals of
+                  [left_, right_] -> Gt <$> parseJSON left_ <*> parseJSON right_
+                  _ -> fail "'gt' expects exactly two arguments"
             , do
                 vals <- v .: "in"
                 case vals of
@@ -169,6 +174,7 @@ data Condition
   | In Attribute Binding
   | Not Condition
   | Eq Comparable Comparable
+  | Gt Comparable Comparable
   | NF Expression
   | Absolute Expression
   | Matches String Expression

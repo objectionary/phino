@@ -206,6 +206,8 @@ data LOGIC_OPERATOR
 data EQUAL
   = EQUAL
   | NOT_EQUAL
+  | GREATER
+  | NOT_GREATER
   deriving (Eq, Show)
 
 data NUMBER
@@ -521,6 +523,7 @@ instance ToCST Alpha ALPHA where
 instance ToCST Y.Condition CONDITION where
   toCST (Y.Not (Y.In attr binding)) _ = CO_BELONGS (attributeToCST attr) NOT_IN (ST_BINDING (bindingsToCST [binding]))
   toCST (Y.Not (Y.Eq left right)) _ = CO_COMPARE (comparableToCST left) NOT_EQUAL (comparableToCST right)
+  toCST (Y.Not (Y.Gt left right)) _ = CO_COMPARE (comparableToCST left) NOT_GREATER (comparableToCST right)
   toCST (Y.Not (Y.Absolute expr)) _ = CO_ABSOLUTE (expressionToCST expr) NOT_IN
   toCST (Y.Absolute expr) _ = CO_ABSOLUTE (expressionToCST expr) IN
   toCST (Y.Disjoint attrs groups) _ = CO_DISJOINT (map attributeToCST attrs) (map (\bd -> bindingsToCST [bd]) groups)
@@ -534,6 +537,7 @@ instance ToCST Y.Condition CONDITION where
   toCST (Y.NF expr) _ = CO_NF (expressionToCST expr)
   toCST (Y.Not cond) _ = CO_NOT (conditionToCST cond)
   toCST (Y.Eq left right) _ = CO_COMPARE (comparableToCST left) EQUAL (comparableToCST right)
+  toCST (Y.Gt left right) _ = CO_COMPARE (comparableToCST left) GREATER (comparableToCST right)
   toCST (Y.Matches regex expr) _ = CO_MATCHES regex (expressionToCST expr)
   toCST (Y.PartOf expr binding) _ = CO_PART_OF (expressionToCST expr) (bindingsToCST [binding])
 
