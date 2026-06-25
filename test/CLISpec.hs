@@ -979,7 +979,7 @@ spec = do
             , "  { i = \\vert \\overline{ B_1 } \\vert }"
             , "  { }"
             , "\\phinoNormalizationRule{amiss}"
-            , "  { [[ B ]] ( \\alpha_{i} -> e ) }"
+            , "  { [[ B ]] ( \\phiTerminal{\\alpha_{i}} -> e ) }"
             , "  { T }"
             , "  { \\vert \\overline{ B } \\vert \\not> i }"
             , "  { }"
