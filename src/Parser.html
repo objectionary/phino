@@ -1350,8 +1350,8 @@ m a -&gt; String -&gt; m a
 </span><span class="hs-string">&quot;&#119894;&quot;</span></span><span>
 </span><span id="line-338"></span><span>
 </span><span id="line-339"></span><span class="hs-comment">-- alpha</span><span>
-</span><span id="line-340"></span><span class="hs-comment">-- 1. index: a0, &#945;0</span><span>
-</span><span id="line-341"></span><span class="hs-comment">-- 2. meta: &#945;&#119894;, a!i</span><span>
+</span><span id="line-340"></span><span class="hs-comment">-- 1. index: ~0, &#945;0</span><span>
+</span><span id="line-341"></span><span class="hs-comment">-- 2. meta: &#945;&#119894;, ~!i</span><span>
 </span><span id="line-342"></span><span class="annot"><a href="Parser.html#alpha"><span class="hs-identifier hs-type">alpha</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Parser.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="annot"><a href="AST.html#Alpha"><span class="hs-identifier hs-type">Alpha</span></a></span><span>
 </span><span id="line-343"></span><span id="alpha"><span class="annot"><span class="annottext">alpha :: Parser Alpha
 </span><a href="Parser.html#alpha"><span class="hs-identifier hs-var hs-var">alpha</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
@@ -1362,7 +1362,7 @@ forall (f :: * -&gt; *) (m :: * -&gt; *) a.
 f (m a) -&gt; m a
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/prsr-cmbntrs-1.3.1-35b4fd22/share/doc/html/src/Control.Applicative.Combinators.html#choice"><span class="hs-identifier hs-var">choice</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">String -&gt; Parser String
 </span><a href="Parser.html#symbol"><span class="hs-identifier hs-var">symbol</span></a></span><span> </span><span class="annot"><span class="annottext">String
-</span><span class="hs-string">&quot;a&quot;</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">String -&gt; Parser String
+</span><span class="hs-string">&quot;~&quot;</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">String -&gt; Parser String
 </span><a href="Parser.html#symbol"><span class="hs-identifier hs-var">symbol</span></a></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;&#945;&quot;</span></span><span class="hs-special">]</span><span>
 </span><span id="line-345"></span><span>  </span><span class="annot"><span class="annottext">[Parser Alpha] -&gt; Parser Alpha

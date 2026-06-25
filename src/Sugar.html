@@ -174,7 +174,7 @@ showList :: [SugarType] -&gt; ShowS
 </span><span id="line-51"></span><span class="hs-comment">--  | a -&gt; &quot;Hey&quot;                 | Q.number(Q.bytes([[ D&gt; 48-65-79 ]]))                |</span><span>
 </span><span id="line-52"></span><span class="hs-comment">--  | [[ B ]]                    | [[ B, ^ -&gt; ? ]], if rho is absent in 'B'            |</span><span>
 </span><span id="line-53"></span><span class="hs-comment">--  | a1(a2, a3, ...) -&gt; [[ B ]] | a1 -&gt; [[ a2 -&gt; ?, a3 -&gt; ?, ..., B ]]                |</span><span>
-</span><span id="line-54"></span><span class="hs-comment">--  | e(e0, e1, ...)             | e(a0 -&gt; e0, a1 -&gt; e1, ...)                          |</span><span>
+</span><span id="line-54"></span><span class="hs-comment">--  | e(e0, e1, ...)             | e(~0 -&gt; e0, ~1 -&gt; e1, ...)                          |</span><span>
 </span><span id="line-55"></span><span class="hs-comment">--  | e(a1 -&gt; e1, a2 -&gt; e2, ...) | e(a1 -&gt; e1)(a2 -&gt; e2)...                            |</span><span>
 </span><span id="line-56"></span><span class="hs-comment">--  |----------------------------|-----------------------------------------------------|</span><span>
 </span><span id="line-57"></span><span class="hs-keyword">class</span><span> </span><span id="ToSalty"><span class="annot"><a href="Sugar.html#ToSalty"><span class="hs-identifier hs-var">ToSalty</span></a></span></span><span> </span><span id="local-6989586621679250636"><span class="annot"><a href="#local-6989586621679250636"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
