@@ -5,6 +5,7 @@
 # is always a normal form: a non-NF expression matches no clause.
 
 - name: delta
+  label: \Delta
   description: '𝔻(⟦𝐵1, Δ ⤍ δ, 𝐵2⟧) ⟿ δ'
   match: ⟦𝐵1, Δ ⤍ δ, 𝐵2⟧
   then: δ

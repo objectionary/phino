@@ -354,6 +354,7 @@ explainRule :: Y.Rule -> String
 explainRule rule =
   trrule
     "\\phinoNormalizationRule"
+    rule.label
     rule.name
     (renderToLatex (expressionToCST rule.pattern) defaultLatexContext)
     (renderToLatex (expressionToCST rule.result) defaultLatexContext)
@@ -371,6 +372,7 @@ explainMorphRule :: Y.MorphRule -> String
 explainMorphRule rule =
   trrule
     "\\phinoMorphingRule"
+    rule.label
     rule.name
     (morph (renderToLatex (expressionToCST rule.match) defaultLatexContext))
     (morphOutcome rule.then_)
@@ -386,6 +388,7 @@ explainDataizeRule :: Y.DataizeRule -> String
 explainDataizeRule rule =
   trrule
     "\\phinoDataizationRule"
+    rule.label
     rule.name
     (dataize (renderToLatex (expressionToCST rule.match) defaultLatexContext))
     (dataizeOutcome rule.then_)
@@ -400,19 +403,23 @@ explainDataizeRule rule =
     dataizeOutcome Y.DoNothing = "\\varnothing"
 
 -- Render a single rule row through the given macro (one of
--- \phinoMorphingRule, \phinoNormalizationRule, \phinoDataizationRule): name,
--- left-hand side, right-hand side, the optional 'if' condition and 'where'
--- extras.
-trrule :: String -> String -> String -> String -> Maybe Y.Condition -> Maybe [Y.Extra] -> String
-trrule macro name lhs rhs cond extras =
+-- \phinoMorphingRule, \phinoNormalizationRule, \phinoDataizationRule): an
+-- optional typeset label, name, left-hand side, right-hand side, the optional
+-- 'if' condition and 'where' extras. When the label is present it becomes the
+-- macro's first optional argument ('\macro[label]{name}'); when absent the
+-- optional argument is omitted entirely ('\macro{name}').
+trrule :: String -> Maybe String -> String -> String -> String -> Maybe Y.Condition -> Maybe [Y.Extra] -> String
+trrule macro label name lhs rhs cond extras =
   intercalate
     "\n  "
-    [ macro ++ "{" ++ name ++ "}"
+    [ macro ++ labelArg ++ "{" ++ name ++ "}"
     , braced lhs
     , braced rhs
     , conditionToLatex cond
     , extraArgumentsToLatex extras
     ]
+  where
+    labelArg = maybe "" (\symbol -> "[" ++ symbol ++ "]") label
 
 morph :: String -> String
 morph inner = "\\phinoMorph{ " ++ inner ++ " }"

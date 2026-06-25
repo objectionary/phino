@@ -952,6 +952,18 @@ spec = do
             ]
         ]
 
+    it "explains single rule with a label" $
+      testCLISucceeded
+        ["explain", "--rule=test-resources/cli/labeled.yaml"]
+        [ unlines
+            [ "\\phinoNormalizationRule[\\lambda]{copy}"
+            , "  { [[ B_1, \\tau -> ?, B_2 ]] ( \\tau -> k ) }"
+            , "  { [[ B_1, \\tau -> k, B_2 ]] }"
+            , "  { }"
+            , "  { }"
+            ]
+        ]
+
     it "explains multiple rules" $
       testCLISucceeded
         ["explain", "--rule=resources/normalize/copy.yaml", "--rule=resources/normalize/alpha.yaml"]
@@ -1006,7 +1018,7 @@ spec = do
             , "  { T }"
             , "  { \\tau \\not= \\phiTerminal{\\rho} }"
             , "  { }"
-            , "\\phinoNormalizationRule{phi}"
+            , "\\phinoNormalizationRule[\\phi]{phi}"
             , "  { [[ B ]] . \\tau }"
             , "  { [[ B ]] . @ . \\tau }"
             , "  { @ \\in B \\;\\text{and}\\; \\tau \\notin B }"
@@ -1033,7 +1045,7 @@ spec = do
             , "  { [[ B ]] }"
             , "  { }"
             , "  { }"
-            , "\\phinoMorphingRule{lambda}"
+            , "\\phinoMorphingRule[\\lambda]{lambda}"
             , "  { \\phinoMorph{ [[ B_1, L> F, B_2 ]] . \\tau } }"
             , "  { \\phinoMorph{ \\phinoNormalize{ e . \\tau } } }"
             , "  { }"
@@ -1080,7 +1092,7 @@ spec = do
       testCLISucceeded
         ["explain", "--dataize"]
         [ unlines
-            [ "\\phinoDataizationRule{delta}"
+            [ "\\phinoDataizationRule[\\Delta]{delta}"
             , "  { \\phinoDataize{ [[ B_1, D> \\delta, B_2 ]] } }"
             , "  { \\delta }"
             , "  { }"
