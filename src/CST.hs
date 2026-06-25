@@ -42,13 +42,13 @@ data VOID = EMPTY | QUESTION
 data PHI = PHI | AT
   deriving (Eq, Show)
 
-data RHO = RHO | CARET
+data RHO = RHO | CARET | RHO'
   deriving (Eq, Show)
 
 data DELTA = DELTA | DELTA'
   deriving (Eq, Show)
 
-data XI = XI | DOLLAR
+data XI = XI | DOLLAR | XI'
   deriving (Eq, Show)
 
 data LAMBDA = LAMBDA | LAMBDA'
@@ -206,6 +206,8 @@ data LOGIC_OPERATOR
 data EQUAL
   = EQUAL
   | NOT_EQUAL
+  | GREATER
+  | NOT_GREATER
   deriving (Eq, Show)
 
 data NUMBER
@@ -344,7 +346,7 @@ instance ToCST Expression EXPRESSION where
   -- Since we convert AST to CST in sweet notation, here we're trying to get rid of unnecessary rho bindings
   -- in primitives (more details here: https://github.com/objectionary/phino/issues/451)
   -- If we find something similar to:
-  -- `Q.number(a0 -> Q.bytes(...), ^ -> ..., ^ -> ...)`
+  -- `Q.number(~0 -> Q.bytes(...), ^ -> ..., ^ -> ...)`
   -- We remove unnecessary rho bindings and save them to EX_STRING or EX_NUMBER so they can be successfully
   -- converted to salty notation without losing information.
   -- In the end we just get CST with data primitive which is printed correctly.
@@ -410,7 +412,7 @@ instance ToCST Expression EXPRESSION where
       -- 1. deepest start expression
       -- 2. list of tau bindings which are applied to start expression
       -- 3. list of expressions which are applied to start expression with default
-      --    alpha attributes (a0 -> e1, a1 -> e2, ...)
+      --    alpha attributes (~0 -> e1, ~1 -> e2, ...)
       complexApplication :: Expression -> (Expression, [Argument], [Expression])
       complexApplication expr =
         let (expr', taus', exprs') = complexApplication' expr
@@ -522,6 +524,7 @@ instance ToCST Alpha ALPHA where
 instance ToCST Y.Condition CONDITION where
   toCST (Y.Not (Y.In attr binding)) _ = CO_BELONGS (attributeToCST attr) NOT_IN (ST_BINDING (bindingsToCST [binding]))
   toCST (Y.Not (Y.Eq left right)) _ = CO_COMPARE (comparableToCST left) NOT_EQUAL (comparableToCST right)
+  toCST (Y.Not (Y.Gt left right)) _ = CO_COMPARE (comparableToCST left) NOT_GREATER (comparableToCST right)
   toCST (Y.Not (Y.Absolute expr)) _ = CO_ABSOLUTE (expressionToCST expr) NOT_IN
   toCST (Y.Absolute expr) _ = CO_ABSOLUTE (expressionToCST expr) IN
   toCST (Y.Disjoint attrs groups) _ = CO_DISJOINT (map attributeToCST attrs) (map (\bd -> bindingsToCST [bd]) groups)
@@ -535,6 +538,7 @@ instance ToCST Y.Condition CONDITION where
   toCST (Y.NF expr) _ = CO_NF (expressionToCST expr)
   toCST (Y.Not cond) _ = CO_NOT (conditionToCST cond)
   toCST (Y.Eq left right) _ = CO_COMPARE (comparableToCST left) EQUAL (comparableToCST right)
+  toCST (Y.Gt left right) _ = CO_COMPARE (comparableToCST left) GREATER (comparableToCST right)
   toCST (Y.Matches regex expr) _ = CO_MATCHES regex (expressionToCST expr)
   toCST (Y.PartOf expr binding) _ = CO_PART_OF (expressionToCST expr) (bindingsToCST [binding])
   toCST (Y.IsBinding expr) _ = CO_BINDING (expressionToCST expr)

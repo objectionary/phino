@@ -67,6 +67,7 @@ instance Render PHI where
 instance Render RHO where
   render RHO = "ρ"
   render CARET = "^"
+  render RHO' = "\\phiTerminal{\\rho}"
 
 instance Render DELTA where
   render DELTA = "Δ"
@@ -75,6 +76,7 @@ instance Render DELTA where
 instance Render XI where
   render XI = "ξ"
   render DOLLAR = "$"
+  render XI' = "\\phiTerminal{\\xi}"
 
 instance Render LAMBDA where
   render LAMBDA = "λ"
@@ -134,7 +136,7 @@ instance Render META where
 
 instance Render ALPHA' where
   render ALPHA = "α"
-  render ALPHA' = "a"
+  render ALPHA' = "~"
 
 instance Render ALPHA where
   render AL_IDX{..} = render sym <> render idx
@@ -244,6 +246,8 @@ instance Render COMPARABLE where
 instance Render EQUAL where
   render EQUAL = "="
   render NOT_EQUAL = "\\not="
+  render GREATER = ">"
+  render NOT_GREATER = "\\not>"
 
 instance Render CONDITION where
   render CO_BELONGS{..} = render attr <> " " <> render belongs <> " " <> render set
@@ -279,8 +283,8 @@ instance Render EXTRA_ARG where
   render ARG_BYTES{..} = render bytes
 
 instance Render EXTRA where
-  render EXTRA{func = "contextualize", args = arg : rest, ..} = "$ " <> render meta <> " \\coloneqq \\ctx{ " <> render arg <> " }{ " <> T.intercalate ", " (map render rest) <> " } $"
-  render EXTRA{..} = "$ " <> render meta <> " \\coloneqq " <> macro func <> "{ " <> T.intercalate ", " (map render args) <> " } $"
+  render EXTRA{func = "contextualize", args = arg : rest, ..} = render meta <> " \\coloneqq \\ctx{ " <> render arg <> " }{ " <> T.intercalate ", " (map render rest) <> " }"
+  render EXTRA{..} = render meta <> " \\coloneqq " <> macro func <> "{ " <> T.intercalate ", " (map render args) <> " }"
     where
       macro :: String -> Text
       macro "lambda" = "\\phinoEvaluate"

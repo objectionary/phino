@@ -76,7 +76,7 @@ morph (expr, seq) ctx@DataizeContext{..} = do
   matched <- firstMatch Y.morphingRules
   case matched of
     Just (rule, subst) -> apply rule.then_ rule.name subst
-    Nothing -> pure (expr, seq)
+    Nothing -> throwIO (userError "no morphing rule matched")
   where
     firstMatch :: [Y.MorphRule] -> IO (Maybe (Y.MorphRule, Subst))
     firstMatch [] = pure Nothing
@@ -89,7 +89,7 @@ morph (expr, seq) ctx@DataizeContext{..} = do
     -- maps onto the 'having' slot (which runs after 'where'), not 'when' (which
     -- 'matchExpressionWithRule'' runs before 'where').
     asRule :: Y.MorphRule -> Y.Rule
-    asRule rule = Y.Rule rule.name rule.description rule.match ExRoot Nothing rule.where_ rule.when
+    asRule rule = Y.Rule rule.name Nothing rule.description rule.match ExRoot Nothing rule.where_ rule.when
     apply :: Y.MorphOutcome -> String -> Subst -> IO Morphed
     apply (Y.MoStop result) name subst = do
       built <- buildExpressionThrows result subst
@@ -103,7 +103,7 @@ morph (expr, seq) ctx@DataizeContext{..} = do
     -- rewriter and splices its individual steps (alpha, copy, dot, …) into the
     -- chain before morphing on the resulting normal form. Termination is the
     -- rules' job: the 'root' rule's 'when' refuses to expand a universe that is
-    -- Φ itself, so 'stuck' yields ⊥ instead of looping.
+    -- Φ itself, so the 'globe' rule catches it and yields ⊥ instead of looping.
     apply (Y.MoMorph (Y.MaNormalize arg)) name subst = do
       built <- buildExpressionThrows arg subst
       labelled <- leadsTo seq name built ctx
@@ -127,7 +127,7 @@ dataize' (expr, seq) ctx = do
   matched <- firstMatch Y.dataizationRules
   case matched of
     Just (rule, subst) -> apply rule subst
-    Nothing -> pure (Nothing, NE.toList seq)
+    Nothing -> throwIO (userError "no dataization rule matched")
   where
     firstMatch :: [Y.DataizeRule] -> IO (Maybe (Y.DataizeRule, Subst))
     firstMatch [] = pure Nothing
@@ -137,7 +137,7 @@ dataize' (expr, seq) ctx = do
         (subst : _) -> pure (Just (rule, subst))
         [] -> firstMatch rest
     asRule :: Y.DataizeRule -> Y.Rule
-    asRule rule = Y.Rule rule.name rule.description rule.match ExRoot Nothing rule.where_ rule.when
+    asRule rule = Y.Rule rule.name Nothing rule.description rule.match ExRoot Nothing rule.where_ rule.when
     apply :: Y.DataizeRule -> Subst -> IO Dataized
     apply rule subst = case rule.then_ of
       Y.DoData bytes -> do

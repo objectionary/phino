@@ -19,6 +19,7 @@
   then: ⟦𝐵⟧
 
 - name: lambda
+  label: \lambda
   description: '𝕄(⟦𝐵1, λ ⤍ 𝐹, 𝐵2⟧.τ) ⟿ 𝕄(𝒩(𝔼(⟦𝐵1, λ ⤍ 𝐹, 𝐵2⟧).τ))'
   match: '⟦𝐵1, λ ⤍ 𝐹, 𝐵2⟧.𝜏'
   where:
@@ -84,7 +85,17 @@
     morph:
       normalize: 𝑒
 
-- name: stuck
-  description: '𝕄(n) ⟿ ⊥ otherwise'
-  match: 𝑛
+- name: dead
+  description: '𝕄(⊥) ⟿ ⊥'
+  match: ⊥
+  then: ⊥
+
+- name: xi
+  description: '𝕄(ξ) ⟿ ⊥'
+  match: ξ
+  then: ⊥
+
+- name: globe
+  description: '𝕄(Φ) ⟿ ⊥ when the universe is Φ itself'
+  match: Φ
   then: ⊥

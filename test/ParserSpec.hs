@@ -43,7 +43,7 @@ spec = do
       [ ("Q.!t", Just (ExDispatch ExRoot (AtMeta "t")))
       , ("[[]](!t1 -> $)", Just (ExApplication (ExFormation [BiVoid AtRho]) (ArTau (AtMeta "t1") ExXi)))
       ,
-        ( "[[]](a0 -> $)(a11 -> Q)"
+        ( "[[]](~0 -> $)(~11 -> Q)"
         , Just
             ( ExApplication
                 ( ExApplication
@@ -192,7 +192,7 @@ spec = do
       , "[[x() -> [[]] ]]"
       , "Q.x(y() -> [[]])"
       , "Q.x(y(q) -> [[w -> !e]])"
-      , "Q.x(a1(^,@) -> [[]])"
+      , "Q.x(~1(^,@) -> [[]])"
       , "Q.x.^.@.!t0"
       , "[[x -> y.z]]"
       , "[[x -> ^, y -> @, z -> !t]]"
@@ -225,7 +225,7 @@ spec = do
           , "Q.x(x -> ?)"
           , "Q.x(L> Func)"
           , "Q.x(D> --)"
-          , "Q.x(a1 -> ?)"
+          , "Q.x(~1 -> ?)"
           , "Q.x(L> !F)"
           , "Q.x(D> !b)"
           , "[[α0 -> Q.x]]"
@@ -235,7 +235,7 @@ spec = do
           , "Q.x(y(α1) -> [[]])"
           , "Q.x(1, 2, !B)"
           , "Q.x.α0"
-          , "Q.x(a1 -> Q.y, x -> 5, !B1)"
+          , "Q.x(~1 -> Q.y, x -> 5, !B1)"
           , "Q.x(𝐵1, 𝜏0 -> $, x -> 𝑒)"
           , "[[ x -> \"\\uD800\"]]"
           , "[[ x -> \"\\uDFFF\"]]"
@@ -349,6 +349,9 @@ spec = do
       , ("a123", Just (AtLabel "a123"))
       , ("α0", Nothing)
       , ("α42", Nothing)
+      , ("~0", Nothing)
+      , ("~1", Nothing)
+      , ("~123", Nothing)
       , ("X", Nothing)
       , ("123", Nothing)
       , ("", Nothing)
@@ -464,8 +467,9 @@ spec = do
       , ("[[]](Q, T)", Just (ExApplication (ExApplication (ExFormation [BiVoid AtRho]) (ArAlpha (Alpha 0) ExRoot)) (ArAlpha (Alpha 1) ExTermination)))
       , ("Q.x(y -> $)", Just (ExApplication (ExDispatch ExRoot (AtLabel "x")) (ArTau (AtLabel "y") ExXi)))
       , ("[[x -> ?]].x(Q)", Just (ExApplication (ExDispatch (ExFormation [BiVoid (AtLabel "x"), BiVoid AtRho]) (AtLabel "x")) (ArAlpha (Alpha 0) ExRoot)))
-      , ("[[]](a!i -> $)", Just (ExApplication (ExFormation [BiVoid AtRho]) (ArAlpha (AlMeta "i") ExXi)))
+      , ("[[]](~!i -> $)", Just (ExApplication (ExFormation [BiVoid AtRho]) (ArAlpha (AlMeta "i") ExXi)))
       , ("[[]](α𝑖 -> Q)", Just (ExApplication (ExFormation [BiVoid AtRho]) (ArAlpha (AlMeta "i") ExRoot)))
+      , ("Q.foo(a1 -> Q.y)", Just (ExApplication (ExDispatch ExRoot (AtLabel "foo")) (ArTau (AtLabel "a1") (ExDispatch ExRoot (AtLabel "y"))))) -- #875: "a"-prefixed label in argument position is a named binding, not a positional alpha
       ]
 
   describe "parse meta expressions" $

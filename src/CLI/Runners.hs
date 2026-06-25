@@ -246,4 +246,4 @@ runMatch OptsMatch{..} = do
         else putStrLn (P.printSubsts' substs (_sugarType, UNICODE, _flat, defaultMargin))
   where
     rule :: Expression -> Maybe Y.Condition -> Y.Rule
-    rule ptn cnd = Y.Rule "custom" Nothing ptn ExRoot cnd Nothing Nothing
+    rule ptn cnd = Y.Rule "custom" Nothing Nothing ptn ExRoot cnd Nothing Nothing

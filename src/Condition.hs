@@ -112,6 +112,13 @@ condition =
         _ <- rparen
         return (Y.Eq left right)
     , do
+        _ <- symbol "gt" >> lparen
+        left <- comparable
+        _ <- comma
+        right <- comparable
+        _ <- rparen
+        return (Y.Gt left right)
+    , do
         _ <- symbol "nf" >> lparen
         expr <- _expression phiParser
         _ <- rparen

@@ -110,27 +110,29 @@ _in attr binding subst _ =
         attrInBinding _ _ = False
     attrInBindings _ _ = False
 
+-- Convert a 'Number' to an 'Int' under the given substitution, resolving
+-- index metas, binding lengths and formation domains.
+numToInt :: Y.Number -> Subst -> Maybe Int
+numToInt (Y.MetaIndex meta) (Subst mp) = case M.lookup meta mp of
+  Just (MvIndex idx) -> Just idx
+  _ -> Nothing
+numToInt (Y.Length (BiMeta meta)) (Subst mp) = case M.lookup meta mp of
+  Just (MvBindings bds) -> Just (length bds)
+  _ -> Nothing
+numToInt (Y.Domain (BiMeta meta)) (Subst mp) = case M.lookup meta mp of
+  Just (MvBindings bds) -> Just (length (filter notAsset bds))
+  _ -> Nothing
+  where
+    notAsset (BiDelta _) = False
+    notAsset (BiLambda _) = False
+    notAsset _ = True
+numToInt (Y.Literal num) _ = Just num
+numToInt _ _ = Nothing
+
 _eq :: Y.Comparable -> Y.Comparable -> Subst -> RuleContext -> IO [Subst]
 _eq (Y.CmpNum left) (Y.CmpNum right) subst _ = case (numToInt left subst, numToInt right subst) of
   (Just left_, Just right_) -> pure [subst | left_ == right_]
   (_, _) -> pure []
-  where
-    -- Convert Number to Int
-    numToInt :: Y.Number -> Subst -> Maybe Int
-    numToInt (Y.MetaIndex meta) (Subst mp) = case M.lookup meta mp of
-      Just (MvIndex idx) -> Just idx
-      _ -> Nothing
-    numToInt (Y.Length (BiMeta meta)) (Subst mp) = case M.lookup meta mp of
-      Just (MvBindings bds) -> Just (length bds)
-      _ -> Nothing
-    numToInt (Y.Domain (BiMeta meta)) (Subst mp) = case M.lookup meta mp of
-      Just (MvBindings bds) -> Just (length (filter notAsset bds))
-      _ -> Nothing
-    numToInt (Y.Literal num) _ = Just num
-    numToInt _ _ = Nothing
-    notAsset (BiDelta _) = False
-    notAsset (BiLambda _) = False
-    notAsset _ = True
 _eq (Y.CmpAttr left) (Y.CmpAttr right) subst _ = pure [subst | compareAttrs left right subst]
   where
     compareAttrs :: Attribute -> Attribute -> Subst -> Bool
@@ -158,6 +160,14 @@ _eq (Y.CmpExpr left) (Y.CmpExpr right) subst _ = pure [subst | compareExprs left
       _ -> False
     compareExprs left right _ = left == right
 _eq _ _ _ _ = pure []
+
+-- Hold if the left number is strictly greater than the right one. Only
+-- numeric comparables are ordered; anything else fails to hold.
+_gt :: Y.Comparable -> Y.Comparable -> Subst -> RuleContext -> IO [Subst]
+_gt (Y.CmpNum left) (Y.CmpNum right) subst _ = case (numToInt left subst, numToInt right subst) of
+  (Just left_, Just right_) -> pure [subst | left_ > right_]
+  (_, _) -> pure []
+_gt _ _ _ _ = pure []
 
 _nf :: Expression -> Subst -> RuleContext -> IO [Subst]
 _nf (ExMeta meta) (Subst mp) ctx = case M.lookup meta mp of
@@ -243,6 +253,7 @@ meetCondition' (Y.And conds) = _and conds
 meetCondition' (Y.Not cond) = _not cond
 meetCondition' (Y.In attr binding) = _in attr binding
 meetCondition' (Y.Eq left right) = _eq left right
+meetCondition' (Y.Gt left right) = _gt left right
 meetCondition' (Y.NF expr) = _nf expr
 meetCondition' (Y.Absolute expr) = _absolute expr
 meetCondition' (Y.Matches pat expr) = _matches pat expr

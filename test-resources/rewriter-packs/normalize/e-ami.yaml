@@ -1,9 +1,8 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 # SPDX-License-Identifier: MIT
 ---
-rules:
-  basic: ['alpha']
+normalize: true
 input: |
-  Φ ↦ [[ L> Fn, x -> ? ]](~0 -> Q.y)
+  {⟦ m ↦ ⟦ x ↦ ∅ ⟧ ( α2 ↦ ⟦⟧ ) ⟧}
 output: |-
-  Φ ↦ ⟦ L> Fn, x ↦ ∅ ⟧(x ↦ Φ.y)
+  {⟦ m ↦ ⊥ ⟧}

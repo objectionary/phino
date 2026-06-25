@@ -83,7 +83,7 @@ instance FromJSON Condition where
     withObject
       "Condition"
       ( \v -> do
-          validateYamlObject v ["and", "or", "not", "nf", "absolute", "eq", "in", "matches", "part-of", "disjoint", "binding"]
+          validateYamlObject v ["and", "or", "not", "nf", "absolute", "eq", "gt", "in", "matches", "part-of", "disjoint", "binding"]
           asum
             [ And <$> v .: "and"
             , Or <$> v .: "or"
@@ -101,6 +101,11 @@ instance FromJSON Condition where
                 case vals of
                   [left_, right_] -> Eq <$> parseJSON left_ <*> parseJSON right_
                   _ -> fail "'eq' expects exactly two arguments"
+            , do
+                vals <- v .: "gt"
+                case vals of
+                  [left_, right_] -> Gt <$> parseJSON left_ <*> parseJSON right_
+                  _ -> fail "'gt' expects exactly two arguments"
             , do
                 vals <- v .: "in"
                 case vals of
@@ -170,6 +175,7 @@ data Condition
   | In Attribute Binding
   | Not Condition
   | Eq Comparable Comparable
+  | Gt Comparable Comparable
   | NF Expression
   | Absolute Expression
   | Matches String Expression
@@ -194,6 +200,7 @@ data Extra = Extra
 
 data Rule = Rule
   { name :: String
+  , label :: Maybe String
   , description :: Maybe String
   , pattern :: Expression
   , result :: Expression
@@ -253,6 +260,7 @@ data DataizeArg
 -- 'where', filter by 'when', then reduce per 'then'.
 data MorphRule = MorphRule
   { name :: String
+  , label :: Maybe String
   , description :: Maybe String
   , match :: Expression
   , where_ :: Maybe [Extra]
@@ -265,6 +273,7 @@ data MorphRule = MorphRule
 -- under 𝔻 and able to terminate with bytes or 'nothing'.
 data DataizeRule = DataizeRule
   { name :: String
+  , label :: Maybe String
   , description :: Maybe String
   , match :: Expression
   , where_ :: Maybe [Extra]
@@ -308,6 +317,7 @@ instance FromJSON MorphRule where
       ( \o ->
           MorphRule
             <$> o .: "name"
+            <*> o .:? "label"
             <*> o .:? "description"
             <*> o .: "match"
             <*> o .:? "where"
@@ -322,6 +332,7 @@ instance FromJSON DataizeRule where
       ( \o ->
           DataizeRule
             <$> o .: "name"
+            <*> o .:? "label"
             <*> o .:? "description"
             <*> o .: "match"
             <*> o .:? "where"
