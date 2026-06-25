@@ -67,10 +67,10 @@ spec = do
         )
       ]
 
-  -- The 'dispatch' rule is the exact complement of 'lambda': its 'when' guard
-  -- ('λ ∉ 𝐵') rejects a λ-bearing formation dispatch so the two clauses are
-  -- mutually exclusive and their order in 'morphing.yaml' cannot change
-  -- behavior.
+  -- 'dispatch' fires only when its head is not a formation ('not (binding 𝑛)'),
+  -- so a formation head — λ-bearing or not — is left to 'lambda'/'prim'. The
+  -- two clauses are mutually exclusive and their order in 'morphing.yaml'
+  -- cannot change behavior.
   describe "morphing 'dispatch' is disjoint from 'lambda'" $ do
     let prog = Program ExRoot
         rctx = RuleContext (execBuildTerm (defaultDataizeContext ExRoot prog))

@@ -197,6 +197,7 @@ instance ToSalty CONDITION where
   toSalty CO_MATCHES{..} = CO_MATCHES regex (toSalty expr)
   toSalty CO_PART_OF{..} = CO_PART_OF (toSalty expr) (toSalty binding)
   toSalty CO_DISJOINT{..} = CO_DISJOINT attrs (map toSalty groups)
+  toSalty CO_BINDING{..} = CO_BINDING (toSalty expr)
   toSalty CO_EMPTY = CO_EMPTY
 
 instance ToSalty EXTRA_ARG where

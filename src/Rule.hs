@@ -185,6 +185,18 @@ _absolute expr subst _ = pure [subst | xiFree expr]
     xiFree (ExDispatch e _) = xiFree e
     xiFree _ = False
 
+-- Hold when the given expression is a formation (an abstraction ⟦…⟧). A meta
+-- is resolved first, so 'binding 𝑛' inspects whatever 𝑛 is bound to.
+_isBinding :: Expression -> Subst -> RuleContext -> IO [Subst]
+_isBinding (ExMeta meta) (Subst mp) ctx = case M.lookup meta mp of
+  Just (MvExpression expr) -> _isBinding expr (Subst mp) ctx
+  _ -> pure []
+_isBinding expr subst _ = pure [subst | isFormation expr]
+  where
+    isFormation :: Expression -> Bool
+    isFormation (ExFormation _) = True
+    isFormation _ = False
+
 _matches :: String -> Expression -> Subst -> RuleContext -> IO [Subst]
 _matches pat (ExMeta meta) (Subst mp) ctx = case M.lookup meta mp of
   Just (MvExpression expr) -> _matches pat expr (Subst mp) ctx
@@ -236,6 +248,7 @@ meetCondition' (Y.Absolute expr) = _absolute expr
 meetCondition' (Y.Matches pat expr) = _matches pat expr
 meetCondition' (Y.PartOf expr bd) = _partOf expr bd
 meetCondition' (Y.Disjoint attrs bds) = _disjoint attrs bds
+meetCondition' (Y.IsBinding expr) = _isBinding expr
 
 -- For each substitution check if it meetCondition to given condition
 -- If substitution does not meet the condition - it's thrown out

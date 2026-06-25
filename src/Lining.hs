@@ -83,6 +83,7 @@ instance ToSingleLine CONDITION where
   toSingleLine CO_MATCHES{..} = CO_MATCHES regex (toSingleLine expr)
   toSingleLine CO_PART_OF{..} = CO_PART_OF (toSingleLine expr) (toSingleLine binding)
   toSingleLine CO_DISJOINT{..} = CO_DISJOINT attrs (map toSingleLine groups)
+  toSingleLine CO_BINDING{..} = CO_BINDING (toSingleLine expr)
   toSingleLine CO_EMPTY = CO_EMPTY
 
 instance ToSingleLine EXTRA_ARG where

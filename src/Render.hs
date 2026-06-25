@@ -260,6 +260,7 @@ instance Render CONDITION where
   render CO_COMPARE{..} = render left <> " " <> render equal <> " " <> render right
   render CO_MATCHES{..} = "matches( " <> T.pack regex <> ", " <> render expr <> " )"
   render CO_PART_OF{..} = "part-of( " <> render expr <> ", " <> render binding <> " )"
+  render CO_BINDING{..} = "binding( " <> render expr <> " )"
   render CO_DISJOINT{..} =
     "[ "
       <> T.intercalate ", " (map render attrs)
@@ -285,5 +286,4 @@ instance Render EXTRA where
       macro "lambda" = "\\phinoEvaluate"
       macro "morph" = "\\phinoMorph"
       macro "global" = "\\phinoGlobal"
-      macro "bindings" = "\\phinoBindings"
       macro name = "\\" <> T.pack name

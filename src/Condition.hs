@@ -135,6 +135,11 @@ condition =
         bd <- _binding phiParser
         _ <- rparen
         return (Y.PartOf expr bd)
+    , do
+        _ <- symbol "binding" >> lparen
+        expr <- _expression phiParser
+        _ <- rparen
+        return (Y.IsBinding expr)
     ]
 
 parseCondition :: String -> Either String Y.Condition

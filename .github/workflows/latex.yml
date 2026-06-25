@@ -50,7 +50,6 @@ jobs:
             printf '\\newcommand\\phinoEvaluate[1]{\\mathbb{E}( #1 )}\n'
             printf '\\newcommand\\phinoMorph[1]{\\mathbb{M}( #1 )}\n'
             printf '\\newcommand\\phinoGlobal[1]{\\Phi( #1 )}\n'
-            printf '\\newcommand\\phinoBindings[1]{\\mathcal{B}( #1 )}\n'
             printf '\\newcommand\\indexof[1]{#1}\n'
             printf '\\newcommand\\isnormal[1]{#1}\n'
             printf '\\newcommand\\phinoMorphingRule[5]{#1 $#2$ $#3$ #4 #5}\n'
