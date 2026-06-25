@@ -48,7 +48,7 @@ data RHO = RHO | CARET | RHO'
 data DELTA = DELTA | DELTA'
   deriving (Eq, Show)
 
-data XI = XI | DOLLAR
+data XI = XI | DOLLAR | XI'
   deriving (Eq, Show)
 
 data LAMBDA = LAMBDA | LAMBDA'

@@ -76,6 +76,7 @@ instance Render DELTA where
 instance Render XI where
   render XI = "ξ"
   render DOLLAR = "$"
+  render XI' = "\\xi{}"
 
 instance Render LAMBDA where
   render LAMBDA = "λ"
