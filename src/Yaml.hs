@@ -379,9 +379,9 @@ morphReduction :: MorphRule -> (Maybe [Extra], MorphOutcome)
 morphReduction rule = case producerOf (asMeta rule.nresult) rule.premises of
   Just (concl, OpMorph arg) -> case producerOf (asMeta arg) rule.premises of
     Just (normal, OpNormalize inner) ->
-      (wheres (rule.premises `without` [concl, normal]), MoMorph (MaNormalize inner))
-    _ -> (wheres (rule.premises `without` [concl]), MoMorph (MaExpr arg))
-  _ -> (wheres rule.premises, MoStop rule.nresult)
+      (extras (rule.premises `without` [concl, normal]), MoMorph (MaNormalize inner))
+    _ -> (extras (rule.premises `without` [concl]), MoMorph (MaExpr arg))
+  _ -> (extras rule.premises, MoStop rule.nresult)
 
 -- Recover the operational form of a dataization rule, mirroring
 -- 'morphReduction' but with a 'dataize(morph(_))' or 'dataize(normalize(_))'
@@ -390,11 +390,11 @@ dataizeReduction :: DataizeRule -> (Maybe [Extra], DataizeOutcome)
 dataizeReduction rule = case bytesProducer rule.dresult rule.premises of
   Just (concl, OpDataize arg) -> case producerOf (asMeta arg) rule.premises of
     Just (normal, OpNormalize inner) ->
-      (wheres (rule.premises `without` [concl, normal]), DoDataize (DaNormalize inner))
+      (extras (rule.premises `without` [concl, normal]), DoDataize (DaNormalize inner))
     Just (morphed, OpMorph inner) ->
-      (wheres (rule.premises `without` [concl, morphed]), DoDataize (DaMorph inner))
-    _ -> (wheres (rule.premises `without` [concl]), DoDataize (DaExpr arg))
-  _ -> (wheres rule.premises, DoData rule.dresult)
+      (extras (rule.premises `without` [concl, morphed]), DoDataize (DaMorph inner))
+    _ -> (extras (rule.premises `without` [concl]), DoDataize (DaExpr arg))
+  _ -> (extras rule.premises, DoData rule.dresult)
 
 -- The premise binding the named meta, with its operation, if any.
 producerOf :: Maybe Text -> [Premise] -> Maybe (Premise, Operation)
@@ -414,9 +414,9 @@ without items removed = filter (\premise -> premise.result `notElem` map (.resul
 
 -- Map the leftover side-computation premises onto 'where' extras, preserving
 -- their order so the first one names the dataization step.
-wheres :: [Premise] -> Maybe [Extra]
-wheres [] = Nothing
-wheres items = Just (map asExtra items)
+extras :: [Premise] -> Maybe [Extra]
+extras [] = Nothing
+extras items = Just (map asExtra items)
   where
     asExtra :: Premise -> Extra
     asExtra premise = case premise.operation of
