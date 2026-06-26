@@ -14,13 +14,14 @@ module Dataize (morph, dataize, dataize', DataizeContext (..), execBuildTerm) wh
 import AST
 import Builder (buildBytesThrows, buildExpressionThrows)
 import Control.Exception (throwIO)
-import Data.List (partition)
+import Control.Monad (foldM)
+import Data.List (find, partition)
 import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as NE
 import qualified Data.Text as T
-import Deps (BuildTermFunc, BuildTermMethod, SaveStepFunc, Term (TeAttribute, TeExpression))
+import Deps (BuildTermFunc, BuildTermMethod, SaveStepFunc, Term (..))
 import Locator (locatedExpression, withLocatedExpression)
-import Matcher (Subst (..), matchExpression', substEmpty)
+import Matcher (MetaValue (..), Subst (..), combine, matchExpression', substEmpty, substSingle)
 import Misc
 import Must (Must (..))
 import Rewriter (RewriteContext (RewriteContext), Rewritten, rewrite)
@@ -73,17 +74,18 @@ formation bds univ ctx = do
 -- 𝕄(n, e): besides the term 'n' it takes the universe 'e' ('univ') — a plain
 -- expression — and matches it against the rule's 'e-match' pattern (always the
 -- '𝑒' meta), which binds 'e' so the 'root' rule substitutes it. It is driven by
--- the ordered rules from 'morphing.yaml': the first matching rule's 'then'
--- outcome either stops at a formation ('MoStop') or keeps morphing ('MoMorph'),
--- always forwarding the same universe. When the morphed argument is a
--- normalization ('MaNormalize', as in the 'lambda' and 'root' rules), the
--- rewriter runs over the rule's product and its individual steps are spliced
--- into the chain before morphing continues.
+-- the ordered rules from 'morphing.yaml': the first matching rule's premises are
+-- evaluated and its conclusion 'nresult' is built, always forwarding the same
+-- universe. The 'morph' premise that produces the conclusion is the spine: when
+-- its argument comes from a 'normalize' premise, the rewriter runs over that
+-- argument and its individual steps (alpha, copy, dot, …) are spliced into the
+-- chain before morphing continues. Every other premise is a side-computation
+-- evaluated in isolation by 'sidePremise', its own steps discarded.
 morph :: Morphed -> Expression -> DataizeContext -> IO Morphed
 morph (expr, seq) univ ctx = do
   matched <- firstMatch Y.morphingRules
   case matched of
-    Just (rule, subst) -> apply (snd (Y.morphReduction rule)) rule.name subst
+    Just (rule, subst) -> reduce rule subst
     Nothing -> throwIO (userError "no morphing rule matched")
   where
     firstMatch :: [Y.MorphRule] -> IO (Maybe (Y.MorphRule, Subst))
@@ -93,30 +95,39 @@ morph (expr, seq) univ ctx = do
       case substs of
         (subst : _) -> pure (Just (rule, subst))
         [] -> firstMatch rest
-    -- The M/D rules evaluate as 'match → where → when', so the rule's guard
-    -- maps onto the 'having' slot (which runs after 'where'), not 'when' (which
-    -- 'matchExpressionWithRule'' runs before 'where').
+    -- Match the conclusion term and check the guard; premises are no longer the
+    -- matcher's business, so 'where'/'having' stay empty and the guard lives in
+    -- 'when'. Every morphing guard reads only meta-variables bound by 'match'
+    -- and 'e-match', so it holds before any premise runs.
     asRule :: Y.MorphRule -> Y.Rule
-    asRule rule = Y.Rule rule.name Nothing Nothing rule.match ExRoot Nothing (fst (Y.morphReduction rule)) rule.when
-    apply :: Y.MorphOutcome -> String -> Subst -> IO Morphed
-    apply (Y.MoStop result) name subst = do
-      built <- buildExpressionThrows result subst
-      seq' <- leadsTo seq name built ctx
-      pure (built, seq')
-    apply (Y.MoMorph (Y.MaExpr result)) name subst = do
-      built <- buildExpressionThrows result subst
-      seq' <- leadsTo seq name built ctx
-      morph (built, seq') univ ctx
-    -- 𝕄(𝒩(e)) records the producing step, then delegates to the normalization
-    -- rewriter and splices its individual steps (alpha, copy, dot, …) into the
-    -- chain before morphing on the resulting normal form. Termination is the
-    -- rules' job: the 'root' rule's 'when' refuses to expand a universe that is
-    -- Φ itself, so the 'globe' rule catches it and yields ⊥ instead of looping.
-    apply (Y.MoMorph (Y.MaNormalize arg)) name subst = do
-      built <- buildExpressionThrows arg subst
-      labelled <- leadsTo seq name built ctx
-      (expr', seq') <- normalized built labelled ctx
-      morph (expr', seq') univ ctx
+    asRule rule = Y.Rule rule.name Nothing Nothing rule.match ExRoot rule.when Nothing Nothing
+    -- Evaluate the rule's premises and build its conclusion. A literal
+    -- conclusion is terminal. Otherwise the conclusion meta is produced by a
+    -- trailing 'morph' premise (the spine); if that premise's argument is itself
+    -- bound by a 'normalize' premise, the normalization joins the spine and its
+    -- steps splice in before morphing continues.
+    reduce :: Y.MorphRule -> Subst -> IO Morphed
+    reduce rule subst = case producer rule.nresult rule.premises of
+      Nothing -> do
+        final <- sides rule.premises subst
+        built <- buildExpressionThrows rule.nresult final
+        seq' <- leadsTo seq rule.name built ctx
+        pure (built, seq')
+      Just concl@(Y.Premise _ (Y.OpMorph arg)) -> case producer arg rule.premises of
+        Just normal@(Y.Premise _ (Y.OpNormalize inner)) -> do
+          final <- sides (rule.premises `excluding` [concl, normal]) subst
+          built <- buildExpressionThrows inner final
+          labelled <- leadsTo seq rule.name built ctx
+          (normal', seq') <- normalized built labelled ctx
+          morph (normal', seq') univ ctx
+        _ -> do
+          final <- sides (rule.premises `excluding` [concl]) subst
+          built <- buildExpressionThrows arg final
+          seq' <- leadsTo seq rule.name built ctx
+          morph (built, seq') univ ctx
+      Just _ -> throwIO (userError (printf "morphing rule '%s' must conclude with a 'morph' premise" rule.name))
+    sides :: [Y.Premise] -> Subst -> IO Subst
+    sides premises subst = foldM (sidePremise univ ctx) subst premises
 
 -- Dataize the program located at '_locator'. The program's root is the universe
 -- (the 'e' argument) passed to 𝔻 and 𝕄.
@@ -131,13 +142,16 @@ dataize program@(Program univ) ctx@DataizeContext{..} = do
 -- which it forwards to 𝕄. It is driven by the ordered rules from
 -- 'dataization.yaml': 'delta' yields the asset bytes, 'none' (a formation) and
 -- 'bott' (⊥) yield empty bytes (--), 'box' contextualizes the φ-body and keeps
--- dataizing (its step is labelled by the operation, 'contextualize'), and 'norm'
--- reduces through morphing, splicing the morphing steps into the chain.
+-- dataizing (its step is labelled by its 'contextualize' side-computation), and
+-- 'norm' reduces through morphing, splicing the morphing steps into the chain.
+-- The conclusion bytes 'dresult' are produced by a trailing 'dataize' premise;
+-- when its argument is bound by a 'morph' or 'normalize' premise, that step
+-- joins the spine, otherwise the premise is an isolated side-computation.
 dataize' :: Dataizable -> Expression -> DataizeContext -> IO Dataized
 dataize' (expr, seq) univ ctx = do
   matched <- firstMatch Y.dataizationRules
   case matched of
-    Just (rule, subst) -> apply rule subst
+    Just (rule, subst) -> reduce rule subst
     Nothing -> throwIO (userError "no dataization rule matched")
   where
     firstMatch :: [Y.DataizeRule] -> IO (Maybe (Y.DataizeRule, Subst))
@@ -148,34 +162,96 @@ dataize' (expr, seq) univ ctx = do
         (subst : _) -> pure (Just (rule, subst))
         [] -> firstMatch rest
     asRule :: Y.DataizeRule -> Y.Rule
-    asRule rule = Y.Rule rule.name Nothing Nothing rule.match ExRoot Nothing (fst (Y.dataizeReduction rule)) rule.when
-    apply :: Y.DataizeRule -> Subst -> IO Dataized
-    apply rule subst = case snd (Y.dataizeReduction rule) of
-      Y.DoData bytes -> do
-        bts <- buildBytesThrows bytes subst
+    asRule rule = Y.Rule rule.name Nothing Nothing rule.match ExRoot rule.when Nothing Nothing
+    reduce :: Y.DataizeRule -> Subst -> IO Dataized
+    reduce rule subst = case bytesProducer rule.dresult rule.premises of
+      Nothing -> do
+        final <- sides rule.premises subst
+        bts <- buildBytesThrows rule.dresult final
         pure (bts, NE.toList seq)
-      Y.DoDataize (Y.DaExpr result) -> do
-        built <- buildExpressionThrows result subst
-        seq' <- leadsTo seq (operation rule) built ctx
-        dataize' (built, seq') univ ctx
-      -- 𝔻(𝕄(e)) delegates to the morphing relation, splicing its steps into
-      -- the chain before dataizing on.
-      Y.DoDataize (Y.DaMorph arg) -> do
-        built <- buildExpressionThrows arg subst
-        (morphed, seq') <- morph (built, seq) univ ctx
-        dataize' (morphed, seq') univ ctx
-      -- 𝔻(𝒩(e)) records the producing step (the 'box' contextualization), then
-      -- normalizes its result back to a normal form before dataizing on, so 𝔻
-      -- only ever sees normal forms.
-      Y.DoDataize (Y.DaNormalize arg) -> do
-        built <- buildExpressionThrows arg subst
-        labelled <- leadsTo seq (operation rule) built ctx
-        (normal, seq') <- normalized built labelled ctx
-        dataize' (normal, seq') univ ctx
-    operation :: Y.DataizeRule -> String
-    operation rule = case fst (Y.dataizeReduction rule) of
-      Just (extra : _) -> Y.function extra
-      _ -> ""
+      Just concl@(Y.Premise _ (Y.OpDataize arg)) -> case producer arg rule.premises of
+        -- 𝔻(𝒩(e)) records the producing step (the 'box' contextualization or the
+        -- 'fire' λ-application), then normalizes its result back to a normal form
+        -- before dataizing on, so 𝔻 only ever sees normal forms.
+        Just normal@(Y.Premise _ (Y.OpNormalize inner)) -> do
+          let side = rule.premises `excluding` [concl, normal]
+          final <- sides side subst
+          built <- buildExpressionThrows inner final
+          labelled <- leadsTo seq (labelOf side) built ctx
+          (normal', seq') <- normalized built labelled ctx
+          dataize' (normal', seq') univ ctx
+        -- 𝔻(𝕄(e)) delegates to the morphing relation, splicing its steps into the
+        -- chain before dataizing on.
+        Just morphed@(Y.Premise _ (Y.OpMorph inner)) -> do
+          final <- sides (rule.premises `excluding` [concl, morphed]) subst
+          built <- buildExpressionThrows inner final
+          (morphed', seq') <- morph (built, seq) univ ctx
+          dataize' (morphed', seq') univ ctx
+        _ -> do
+          let side = rule.premises `excluding` [concl]
+          final <- sides side subst
+          built <- buildExpressionThrows arg final
+          seq' <- leadsTo seq (labelOf side) built ctx
+          dataize' (built, seq') univ ctx
+      Just _ -> throwIO (userError (printf "dataization rule '%s' must conclude with a 'dataize' premise" rule.name))
+    sides :: [Y.Premise] -> Subst -> IO Subst
+    sides premises subst = foldM (sidePremise univ ctx) subst premises
+    -- A spliced dataization step is labelled by its first side-computation —
+    -- 'box' by its 'contextualize', 'fire' by its 'lambda'; with none it is blank.
+    labelOf :: [Y.Premise] -> String
+    labelOf (premise : _) = verb premise.operation
+    labelOf [] = ""
+
+-- The premise binding the given expression meta, if any. The conclusion of a
+-- morphing rule and the argument of a continuation premise are looked up here to
+-- find the premise that produces them.
+producer :: Expression -> [Y.Premise] -> Maybe Y.Premise
+producer (ExMeta name) = find (\premise -> premise.result == name)
+producer _ = const Nothing
+
+-- The premise binding the given bytes meta, if any — the dataization analogue of
+-- 'producer' for a rule's bytes conclusion.
+bytesProducer :: Bytes -> [Y.Premise] -> Maybe Y.Premise
+bytesProducer (BtMeta name) = find (\premise -> premise.result == name)
+bytesProducer _ = const Nothing
+
+-- The premises whose result meta is not bound by any of the given ones — the
+-- side-computations left once the spine premises are removed.
+excluding :: [Y.Premise] -> [Y.Premise] -> [Y.Premise]
+excluding premises removed = filter (\premise -> premise.result `notElem` map (.result) removed) premises
+
+-- Evaluate one side-computation premise — a 'morph', 'lambda' or 'contextualize'
+-- of an earlier term — in isolation, binding its result meta. These never splice
+-- steps into the trace: 'morph' and 'lambda' reduce on a fresh chain and discard
+-- it, 'contextualize' is pure.
+sidePremise :: Expression -> DataizeContext -> Subst -> Y.Premise -> IO Subst
+sidePremise univ ctx subst premise = do
+  term <- execBuildTerm univ ctx (verb premise.operation) (verbArgs premise.operation) subst
+  case combine (substSingle premise.result (metaValue term)) subst of
+    Just subst' -> pure subst'
+    Nothing -> throwIO (userError (printf "premise meta '%s' clashes with an existing binding" (T.unpack premise.result)))
+  where
+    metaValue :: Term -> MetaValue
+    metaValue (TeExpression value) = MvExpression value
+    metaValue (TeAttribute value) = MvAttribute value
+    metaValue (TeBytes value) = MvBytes value
+    metaValue (TeBindings value) = MvBindings value
+
+-- The build-term function name backing a premise operation.
+verb :: Y.Operation -> String
+verb (Y.OpMorph _) = "morph"
+verb (Y.OpNormalize _) = "normalize"
+verb (Y.OpLambda _) = "lambda"
+verb (Y.OpContextualize _ _) = "contextualize"
+verb (Y.OpDataize _) = "dataize"
+
+-- The build-term arguments backing a premise operation.
+verbArgs :: Y.Operation -> [ExtraArgument]
+verbArgs (Y.OpMorph expr) = [ArgExpression expr]
+verbArgs (Y.OpNormalize expr) = [ArgExpression expr]
+verbArgs (Y.OpLambda expr) = [ArgExpression expr]
+verbArgs (Y.OpContextualize expr context) = [ArgExpression expr, ArgExpression context]
+verbArgs (Y.OpDataize expr) = [ArgExpression expr]
 
 leadsTo :: NonEmpty Rewritten -> String -> Expression -> DataizeContext -> IO (NonEmpty Rewritten)
 leadsTo ((prog, _) :| rest) rule expr DataizeContext{..} = do

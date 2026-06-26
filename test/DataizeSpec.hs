@@ -76,7 +76,7 @@ spec = do
         morphRule :: String -> Yaml.MorphRule
         morphRule nm = fromMaybe (error ("no morphing rule named " ++ nm)) (find (\r -> r.name == nm) Yaml.morphingRules)
         asRule :: Yaml.MorphRule -> Yaml.Rule
-        asRule r = Yaml.Rule r.name Nothing Nothing r.match ExRoot Nothing (fst (Yaml.morphReduction r)) r.when
+        asRule r = Yaml.Rule r.name Nothing Nothing r.match ExRoot r.when Nothing Nothing
         lambdaFormation = ExFormation [BiLambda (Function "L_dummy"), BiVoid AtRho]
     it "does not fire on a λ-bearing formation dispatch" $ do
       substs <- matchExpressionWithRule' [substEmpty] (ExDispatch lambdaFormation (AtLabel "x")) (asRule (morphRule "dispatch")) rctx
@@ -136,13 +136,18 @@ spec = do
       ]
 
   describe "labels every step with a defined rule or operation" $ do
-    let funcs = maybe [] (map Yaml.function)
+    let verb op = case op of
+          Yaml.OpMorph _ -> "morph"
+          Yaml.OpNormalize _ -> "normalize"
+          Yaml.OpLambda _ -> "lambda"
+          Yaml.OpContextualize _ _ -> "contextualize"
+          Yaml.OpDataize _ -> "dataize"
         allowed =
           map (.name) Yaml.morphingRules
             ++ map (.name) Yaml.dataizationRules
             ++ map (.name) Yaml.normalizationRules
-            ++ concatMap (funcs . fst . Yaml.morphReduction) Yaml.morphingRules
-            ++ concatMap (funcs . fst . Yaml.dataizeReduction) Yaml.dataizationRules
+            ++ concatMap (map (verb . (.operation)) . (.premises)) Yaml.morphingRules
+            ++ concatMap (map (verb . (.operation)) . (.premises)) Yaml.dataizationRules
     it "uses no step label without a defining rule or operation" $ do
       prog <-
         parseProgramThrows
