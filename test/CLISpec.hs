@@ -867,9 +867,9 @@ spec = do
       withStdin "Q -> [[ D> 01- ]]" $
         testCLISucceeded ["dataize"] ["01-"]
 
-    it "dataizes to dead" $
+    it "dataizes empty object to empty bytes" $
       withStdin "Q -> [[ ]]" $
-        testCLISucceeded ["dataize"] ["⊥"]
+        testCLISucceeded ["dataize"] ["--"]
 
     it "dataizes with --sequence" $
       withStdin "{[[ @ -> [[ x -> [[ D> 01-, y -> ? ]](y -> [[ ]]) ]].x ]]}" $
@@ -1114,12 +1114,12 @@ spec = do
             , "  { e \\coloneqq \\phinoEvaluate{ [[ B_1, L> F, B_2 ]] } }"
             , "\\phinoDataizationRule{none}"
             , "  { \\phinoDataize{ [[ B ]] } }"
-            , "  { \\varnothing }"
+            , "  { -- }"
             , "  { }"
             , "  { }"
             , "\\phinoDataizationRule{bott}"
             , "  { \\phinoDataize{ T } }"
-            , "  { \\varnothing }"
+            , "  { -- }"
             , "  { }"
             , "  { }"
             , "\\phinoDataizationRule{norm}"

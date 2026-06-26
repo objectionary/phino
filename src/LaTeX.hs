@@ -400,7 +400,6 @@ explainDataizeRule rule =
     dataizeOutcome (Y.DoDataize (Y.DaMorph expr)) = dataize (morph (renderToLatex (expressionToCST expr) defaultLatexContext))
     dataizeOutcome (Y.DoDataize (Y.DaNormalize expr)) = dataize (normalize (renderToLatex (expressionToCST expr) defaultLatexContext))
     dataizeOutcome (Y.DoData bytes) = T.unpack (render (toLaTeX (toCST' bytes :: BYTES)))
-    dataizeOutcome Y.DoNothing = "\\varnothing"
 
 -- Render a single rule row through the given macro (one of
 -- \phinoMorphingRule, \phinoNormalizationRule, \phinoDataizationRule): an

@@ -21,7 +21,7 @@ import Yaml qualified
 defaultDataizeContext :: Expression -> Program -> DataizeContext
 defaultDataizeContext loc prog = DataizeContext loc prog prog 25 25 False buildTerm dontSaveStep
 
-test :: (Eq a, Show a) => ((Expression, NonEmpty Rewritten) -> DataizeContext -> IO (Maybe a, [Rewritten])) -> [(String, Expression, Expression, Maybe a)] -> Spec
+test :: (Eq a, Show a) => ((Expression, NonEmpty Rewritten) -> DataizeContext -> IO (a, [Rewritten])) -> [(String, Expression, Expression, a)] -> Spec
 test func useCases =
   forM_ useCases $ \(desc, input, expr, output) ->
     it desc $ do
@@ -44,7 +44,7 @@ testDataize useCases =
       prog' <- parseProgramThrows prog
       loc' <- parseExpressionThrows loc
       (value, _) <- dataize (defaultDataizeContext loc' prog')
-      value `shouldBe` Just res
+      value `shouldBe` res
 
 spec :: Spec
 spec = do
@@ -66,13 +66,14 @@ spec = do
   describe "dataize" $
     test
       dataize'
-      [ ("[[ D> 00- ]] => 00-", ExFormation [BiDelta (BtOne "00")], ExRoot, Just (BtOne "00"))
-      , ("T => X", ExTermination, ExRoot, Nothing)
+      [ ("[[ D> 00- ]] => 00-", ExFormation [BiDelta (BtOne "00")], ExRoot, BtOne "00")
+      , ("T => --", ExTermination, ExRoot, BtEmpty)
+      , ("[[ ]] => --", ExFormation [], ExRoot, BtEmpty)
       ,
         ( "[[ @ -> [[ D> 00-]] ]] => 00-"
         , ExFormation [BiTau AtPhi (ExFormation [BiDelta (BtOne "00"), BiVoid AtRho]), BiVoid AtRho]
         , ExRoot
-        , Just (BtOne "00")
+        , BtOne "00"
         )
       ,
         ( "[[ @ -> [[ x -> [[ D> 01-, y -> ? ]](y -> [[ ]]) ]].x ]] => 01-"
@@ -98,7 +99,7 @@ spec = do
                 )
             ]
         , ExRoot
-        , Just (BtOne "01")
+        , BtOne "01"
         )
       ]
 
