@@ -20,7 +20,7 @@ import qualified Data.List.NonEmpty as NE
 import qualified Data.Text as T
 import Deps (BuildTermFunc, BuildTermMethod, SaveStepFunc, Term (TeAttribute, TeExpression))
 import Locator (locatedExpression, withLocatedExpression)
-import Matcher (MetaValue (MvExpression), Subst (..), substEmpty, substSingle)
+import Matcher (Subst (..), matchExpression', substEmpty)
 import Misc
 import Must (Must (..))
 import Rewriter (RewriteContext (RewriteContext), Rewritten, rewrite)
@@ -71,13 +71,14 @@ formation bds univ ctx = do
 
 -- The Morphing function 𝕄 maps normal forms to formations. It is binary,
 -- 𝕄(n, e): besides the term 'n' it takes the universe 'e' ('univ') — a plain
--- expression — and seeds it into the substitution as the 'e' meta that the
--- 'root' rule substitutes. It is driven by the ordered rules from
--- 'morphing.yaml': the first matching rule's 'then' outcome either stops at a
--- formation ('MoStop') or keeps morphing ('MoMorph'), always forwarding the same
--- universe. When the morphed argument is a normalization ('MaNormalize', as in
--- the 'lambda' and 'root' rules), the rewriter runs over the rule's product and
--- its individual steps are spliced into the chain before morphing continues.
+-- expression — and matches it against the rule's 'e-match' pattern (always the
+-- '𝑒' meta), which binds 'e' so the 'root' rule substitutes it. It is driven by
+-- the ordered rules from 'morphing.yaml': the first matching rule's 'then'
+-- outcome either stops at a formation ('MoStop') or keeps morphing ('MoMorph'),
+-- always forwarding the same universe. When the morphed argument is a
+-- normalization ('MaNormalize', as in the 'lambda' and 'root' rules), the
+-- rewriter runs over the rule's product and its individual steps are spliced
+-- into the chain before morphing continues.
 morph :: Morphed -> Expression -> DataizeContext -> IO Morphed
 morph (expr, seq) univ ctx = do
   matched <- firstMatch Y.morphingRules
@@ -85,15 +86,10 @@ morph (expr, seq) univ ctx = do
     Just (rule, subst) -> apply (snd (Y.morphReduction rule)) rule.name subst
     Nothing -> throwIO (userError "no morphing rule matched")
   where
-    -- The universe is pre-bound to 'e' for every rule, so the 'root' rule
-    -- substitutes it directly. Rules that do not mention 'e' carry it along
-    -- unused.
-    seed :: [Subst]
-    seed = [substSingle "e" (MvExpression univ)]
     firstMatch :: [Y.MorphRule] -> IO (Maybe (Y.MorphRule, Subst))
     firstMatch [] = pure Nothing
     firstMatch (rule : rest) = do
-      substs <- matchExpressionWithRule' seed expr (asRule rule) (RuleContext (execBuildTerm univ ctx))
+      substs <- matchExpressionWithRule' (matchExpression' rule.ematch univ) expr (asRule rule) (RuleContext (execBuildTerm univ ctx))
       case substs of
         (subst : _) -> pure (Just (rule, subst))
         [] -> firstMatch rest
@@ -147,7 +143,7 @@ dataize' (expr, seq) univ ctx = do
     firstMatch :: [Y.DataizeRule] -> IO (Maybe (Y.DataizeRule, Subst))
     firstMatch [] = pure Nothing
     firstMatch (rule : rest) = do
-      substs <- matchExpressionWithRule' [substEmpty] expr (asRule rule) (RuleContext (execBuildTerm univ ctx))
+      substs <- matchExpressionWithRule' (matchExpression' rule.ematch univ) expr (asRule rule) (RuleContext (execBuildTerm univ ctx))
       case substs of
         (subst : _) -> pure (Just (rule, subst))
         [] -> firstMatch rest

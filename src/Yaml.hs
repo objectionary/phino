@@ -277,13 +277,16 @@ data Operation
   | OpDataize Expression
   deriving (Eq, Generic, Show)
 
--- One morphing rule in inference-rule form: 'match' yields 'nresult' (a premise
--- meta or a literal) provided 'when' holds and the ordered 'premises' reduce as
--- stated.
+-- One morphing rule in inference-rule form: when 'match' matches the term and
+-- 'ematch' matches the universe (binding 'e'), the rule yields 'nresult' (a
+-- premise meta or a literal) provided 'when' holds and the ordered 'premises'
+-- reduce as stated. 'ematch' is the universe-argument matcher of 𝕄(n, e), in
+-- practice always the '𝑒' meta.
 data MorphRule = MorphRule
   { name :: String
   , label :: Maybe String
   , match :: Expression
+  , ematch :: Expression
   , nresult :: Expression
   , when :: Maybe Condition
   , premises :: [Premise]
@@ -296,6 +299,7 @@ data DataizeRule = DataizeRule
   { name :: String
   , label :: Maybe String
   , match :: Expression
+  , ematch :: Expression
   , dresult :: Bytes
   , when :: Maybe Condition
   , premises :: [Premise]
@@ -347,6 +351,7 @@ instance FromJSON MorphRule where
             <$> o .: "name"
             <*> o .:? "label"
             <*> o .: "match"
+            <*> o .: "e-match"
             <*> o .: "n-result"
             <*> o .:? "when"
             <*> o .:? "premises" .!= []
@@ -361,6 +366,7 @@ instance FromJSON DataizeRule where
             <$> o .: "name"
             <*> o .:? "label"
             <*> o .: "match"
+            <*> o .: "e-match"
             <*> o .: "d-result"
             <*> o .:? "when"
             <*> o .:? "premises" .!= []

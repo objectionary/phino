@@ -6,21 +6,24 @@
 # expression that 𝕄 takes as its second argument; 𝔻 forwards it to 𝕄. The first
 # argument is always a normal form: a non-NF expression matches no clause.
 #
-# Each rule is an inference rule: 'match' yields the conclusion 'd-result' (a
-# premise bytes meta or a literal), provided 'when' holds and the ordered
-# 'premises' reduce as stated. A premise binds its 'n-result'/'d-result' to one
-# judgment — 𝔻 ('dataize'), 𝕄 ('morph'), 𝒩 ('normalize'), 𝔼 ('lambda') or
-# 𝒞 ('contextualize'). The universe e is the fixed second argument of 𝔻 and 𝕄,
-# never a result, so it is not spelled out per rule.
+# Each rule is an inference rule: when 'match' matches the term and 'e-match'
+# matches the universe (binding the meta e), the rule yields the conclusion
+# 'd-result' (a premise bytes meta or a literal), provided 'when' holds and the
+# ordered 'premises' reduce as stated. A premise binds its 'n-result'/'d-result'
+# to one judgment — 𝔻 ('dataize'), 𝕄 ('morph'), 𝒩 ('normalize'), 𝔼 ('lambda')
+# or 𝒞 ('contextualize'). 'e-match' is the universe-argument matcher of
+# 𝔻(n, e); it is always the e meta.
 
 - name: delta
   label: \Delta
   match: ⟦𝐵1, Δ ⤍ δ, 𝐵2⟧
+  e-match: 𝑒
   d-result: δ
 
 - name: box
   label: box
   match: ⟦𝐵1, φ ↦ 𝑒1, 𝐵2⟧
+  e-match: 𝑒
   d-result: δ1
   when:
     disjoint:
@@ -39,6 +42,7 @@
 - name: fire
   label: fire
   match: ⟦𝐵1, λ ⤍ 𝐹, 𝐵2⟧
+  e-match: 𝑒
   d-result: δ1
   premises:
     - n-result: 𝑛1
@@ -51,16 +55,19 @@
 - name: none
   label: none
   match: ⟦𝐵⟧
+  e-match: 𝑒
   d-result: '--'
 
 - name: bott
   label: bott
   match: ⊥
+  e-match: 𝑒
   d-result: '--'
 
 - name: norm
   label: norm
   match: 𝑛
+  e-match: 𝑒
   d-result: δ1
   premises:
     - n-result: 𝑛1

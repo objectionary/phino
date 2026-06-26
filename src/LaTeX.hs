@@ -379,7 +379,7 @@ explainMorphRule rule =
     rule.label
     rule.when
     (map premiseToLatex rule.premises)
-    (phinoMorph (renderExpr rule.match) (renderExpr rule.nresult))
+    (phinoMorph (renderExpr rule.match) (renderExpr rule.ematch) (renderExpr rule.nresult))
 
 -- Render a dataization rule as a LaTeX inference rule, with 𝔻(match, e) ⟿
 -- d-result as the conclusion below the line.
@@ -390,14 +390,15 @@ explainDataizeRule rule =
     rule.label
     rule.when
     (map premiseToLatex rule.premises)
-    (phinoDataize (renderExpr rule.match) (renderBytes rule.dresult))
+    (phinoDataize (renderExpr rule.match) (renderExpr rule.ematch) (renderBytes rule.dresult))
 
 -- One premise judgment, rendered per its operation. 𝕄 ('morph') and 𝔻
--- ('dataize') are binary and carry the universe; the rest are unary.
+-- ('dataize') are binary and carry the universe 'e' they were given; the rest
+-- are unary.
 premiseToLatex :: Y.Premise -> String
 premiseToLatex premise = case premise.operation of
-  Y.OpMorph arg -> phinoMorph (renderExpr arg) (renderExpr (ExMeta premise.result))
-  Y.OpDataize arg -> phinoDataize (renderExpr arg) (renderBytes (BtMeta premise.result))
+  Y.OpMorph arg -> phinoMorph (renderExpr arg) "e" (renderExpr (ExMeta premise.result))
+  Y.OpDataize arg -> phinoDataize (renderExpr arg) "e" (renderBytes (BtMeta premise.result))
   Y.OpNormalize arg -> phinoNormalize (renderExpr arg) (renderExpr (ExMeta premise.result))
   Y.OpLambda arg -> phinoEvaluate (renderExpr arg) (renderExpr (ExMeta premise.result))
   Y.OpContextualize arg context -> phinoContextualize (renderExpr arg) (renderExpr context) (renderExpr (ExMeta premise.result))
@@ -439,14 +440,14 @@ trrule macro label name lhs rhs cond extras =
   where
     labelArg = maybe "" (\symbol -> "[" ++ symbol ++ "]") label
 
--- 𝕄 and 𝔻 are binary, 𝕄(input, e) ⟿ output, so they render with the fixed
--- global universe e as the middle argument: \phinoMorph{ input }{ e }{ output }.
--- 𝒩, 𝔼 and 𝒞 carry no universe.
-phinoMorph :: String -> String -> String
-phinoMorph input = printf "\\phinoMorph{ %s }{ e }{ %s }" input
+-- 𝕄 and 𝔻 are binary, 𝕄(input, e) ⟿ output, so they render with the universe
+-- as the middle argument: \phinoMorph{ input }{ e }{ output }. 𝒩, 𝔼 and 𝒞 carry
+-- no universe.
+phinoMorph :: String -> String -> String -> String
+phinoMorph input univ output = printf "\\phinoMorph{ %s }{ %s }{ %s }" input univ output
 
-phinoDataize :: String -> String -> String
-phinoDataize input = printf "\\phinoDataize{ %s }{ e }{ %s }" input
+phinoDataize :: String -> String -> String -> String
+phinoDataize input univ output = printf "\\phinoDataize{ %s }{ %s }{ %s }" input univ output
 
 phinoNormalize :: String -> String -> String
 phinoNormalize input = printf "\\phinoNormalize{ %s }{ %s }" input
