@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
@@ -6,13 +8,15 @@ programs and rules to LaTeX format for academic documents.
 -}
 module LaTeXSpec where
 
+import AST (Expression (ExMeta))
 import Control.Monad (forM_)
-import LaTeX (meetInProgram)
+import LaTeX (conditionToLatex, meetInProgram)
 import Parser (parseExpressionThrows, parseProgramThrows)
 import Test.Hspec (Spec, describe, it, shouldBe)
+import Yaml qualified as Y
 
 spec :: Spec
-spec =
+spec = do
   describe "meet program in program" $
     forM_
       [ ("Q.x.y", "{Q.x.y}", "{[[ x -> Q.x.y ]]}", ["Q.x.y"])
@@ -28,3 +32,10 @@ spec =
           res <- traverse parseExpressionThrows exprs
           meetInProgram ptn 4 tgt `shouldBe` res
       )
+
+  describe "renders the 'formation' condition" $
+    forM_
+      [ ("formation", Y.IsFormation (ExMeta "n"), "{ \\phinoIsFormation{ n } }")
+      , ("not formation", Y.Not (Y.IsFormation (ExMeta "n")), "{ \\phinoNotFormation{ n } }")
+      ]
+      (\(desc, cond, expected) -> it desc (conditionToLatex (Just cond) `shouldBe` expected))

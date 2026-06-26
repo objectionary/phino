@@ -260,10 +260,12 @@ instance Render CONDITION where
       renderWrapped cond = render cond
   render CO_NF{..} = "\\isnormal{ " <> render expr <> " }"
   render CO_ABSOLUTE{..} = render expr <> " " <> render belongs <> " \\mathcal{K}"
+  render CO_NOT{condition = CO_FORMATION{..}} = "\\phinoNotFormation{ " <> render expr <> " }"
   render CO_NOT{..} = renderFunc "not" condition
   render CO_COMPARE{..} = render left <> " " <> render equal <> " " <> render right
   render CO_MATCHES{..} = "matches( " <> T.pack regex <> ", " <> render expr <> " )"
   render CO_PART_OF{..} = "part-of( " <> render expr <> ", " <> render binding <> " )"
+  render CO_FORMATION{..} = "\\phinoIsFormation{ " <> render expr <> " }"
   render CO_DISJOINT{..} =
     "[ "
       <> T.intercalate ", " (map render attrs)

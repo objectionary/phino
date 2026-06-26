@@ -25,6 +25,7 @@ spec = do
       , "absolute(!e1)"
       , "matches(\"hello(\\\"\\u0000)\", !e)"
       , "part-of ( [[ x -> 1 ]] , !B ) "
+      , "not(formation(!n))"
       ]
       (\expr -> it expr (parseCondition expr `shouldSatisfy` isRight))
 
@@ -39,6 +40,7 @@ spec = do
       , ("eq(!t1, !e2)", Y.Eq (Y.CmpAttr (AtMeta "t1")) (Y.CmpExpr (ExMeta "e2")))
       , ("or(absolute(!e1), nf(Q.x))", Y.Or [Y.Absolute (ExMeta "e1"), Y.NF (ExDispatch ExRoot (AtLabel "x"))])
       , ("and(matches(\"hi\", !e),part-of(!e, !B))", Y.And [Y.Matches "hi" (ExMeta "e"), Y.PartOf (ExMeta "e") (BiMeta "B")])
+      , ("not(formation(!n))", Y.Not (Y.IsFormation (ExMeta "n")))
       ]
       (\(expr, res) -> it expr (parseCondition expr `shouldBe` Right res))
 

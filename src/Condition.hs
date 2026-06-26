@@ -142,6 +142,11 @@ condition =
         bd <- _binding phiParser
         _ <- rparen
         return (Y.PartOf expr bd)
+    , do
+        _ <- symbol "formation" >> lparen
+        expr <- _expression phiParser
+        _ <- rparen
+        return (Y.IsFormation expr)
     ]
 
 parseCondition :: String -> Either String Y.Condition

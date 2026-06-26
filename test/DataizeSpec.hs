@@ -7,14 +7,18 @@
 module DataizeSpec (spec) where
 
 import AST
+import Control.Exception (SomeException)
 import Control.Monad
-import Data.List (nub)
+import Data.List (find, isInfixOf, nub)
 import Data.List.NonEmpty (NonEmpty (..))
-import Dataize (DataizeContext (DataizeContext), dataize, dataize', morph)
+import Data.Maybe (fromMaybe)
+import Dataize (DataizeContext (DataizeContext), dataize, dataize', execBuildTerm, morph)
 import Deps (dontSaveStep)
 import Functions (buildTerm)
+import Matcher (substEmpty)
 import Parser (parseExpressionThrows, parseProgramThrows)
 import Rewriter (Rewritten)
+import Rule (RuleContext (RuleContext), matchExpressionWithRule')
 import Test.Hspec
 import Yaml qualified
 
@@ -62,6 +66,34 @@ spec = do
         , ExFormation [BiTau AtRho (ExFormation [BiTau (AtLabel "x") (ExFormation [BiVoid AtRho]), BiVoid AtRho])]
         )
       ]
+
+  -- 'dispatch' fires only when its head is not a formation ('not (formation 𝑛)'),
+  -- so a formation head — λ-bearing or not — is left to 'lambda'/'prim'. The
+  -- two clauses are mutually exclusive and their order in 'morphing.yaml'
+  -- cannot change behavior.
+  describe "morphing 'dispatch' is disjoint from 'lambda'" $ do
+    let rctx = RuleContext (execBuildTerm ExRoot (defaultDataizeContext ExRoot))
+        morphRule :: String -> Yaml.MorphRule
+        morphRule nm = fromMaybe (error ("no morphing rule named " ++ nm)) (find (\r -> r.name == nm) Yaml.morphingRules)
+        asRule :: Yaml.MorphRule -> Yaml.Rule
+        asRule r = Yaml.Rule r.name r.label r.description r.match ExRoot r.when r.where_ Nothing
+        lambdaFormation = ExFormation [BiLambda (Function "L_dummy"), BiVoid AtRho]
+    it "does not fire on a λ-bearing formation dispatch" $ do
+      substs <- matchExpressionWithRule' [substEmpty] (ExDispatch lambdaFormation (AtLabel "x")) (asRule (morphRule "dispatch")) rctx
+      substs `shouldBe` []
+    it "still fires on a non-λ-formation dispatch" $ do
+      substs <- matchExpressionWithRule' [substEmpty] (ExDispatch ExXi (AtLabel "x")) (asRule (morphRule "dispatch")) rctx
+      null substs `shouldBe` False
+    -- ⟦λ ⤍ F⟧.a.b.c : 'dispatch' peels .c then .b (their heads are dispatches,
+    -- not λ-formations, so 'λ ∉ 𝐵' holds), then 'lambda' handles the base
+    -- ⟦λ ⤍ F⟧.a and fires the atom. The chain therefore routes
+    -- dispatch → dispatch → lambda; firing the undefined atom 'F' is what
+    -- raises the error, proving the base λ-formation reached 'lambda'.
+    it "drills a chained λ-formation dispatch down to the base 'lambda'" $ do
+      let base = ExFormation [BiLambda (Function "F")]
+          chain = ExDispatch (ExDispatch (ExDispatch base (AtLabel "a")) (AtLabel "b")) (AtLabel "c")
+      morph (chain, (Program ExRoot, Nothing) :| []) ExRoot (defaultDataizeContext ExRoot)
+        `shouldThrow` (\e -> "Atom 'F' does not exist" `isInfixOf` show (e :: SomeException))
 
   describe "dataize" $
     test

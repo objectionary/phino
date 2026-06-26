@@ -10,6 +10,11 @@
 # peeling dispatches and applications through normalization 𝒩. It never fires a
 # bare atom: a saturated λ-formation is returned untouched and fired later by 𝔼
 # (the 'fire' rule of 𝔻).
+#
+# 'lambda' and 'dispatch' are kept mutually exclusive: 'dispatch' fires only
+# when its head 𝑛 is not a formation ('not (formation 𝑛)'), so every formation
+# head — λ-bearing or not — is left to 'lambda' (and 'prim'). The two clauses
+# are disjoint and their relative order does not change behavior.
 
 - name: prim
   description: '𝕄(⟦𝐵⟧, e) ⟿ ⟦𝐵⟧'
@@ -37,6 +42,9 @@
       function: morph
       args:
         - 𝑛
+  when:
+    not:
+      formation: 𝑛
   then:
     morph:
       normalize: '𝑒1.𝜏'

@@ -83,13 +83,14 @@ instance FromJSON Condition where
     withObject
       "Condition"
       ( \v -> do
-          validateYamlObject v ["and", "or", "not", "nf", "absolute", "eq", "gt", "in", "matches", "part-of", "disjoint"]
+          validateYamlObject v ["and", "or", "not", "nf", "absolute", "eq", "gt", "in", "matches", "part-of", "disjoint", "formation"]
           asum
             [ And <$> v .: "and"
             , Or <$> v .: "or"
             , Not <$> v .: "not"
             , NF <$> v .: "nf"
             , Absolute <$> v .: "absolute"
+            , IsFormation <$> v .: "formation"
             , do
                 vals <- v .: "disjoint"
                 case vals of
@@ -180,6 +181,7 @@ data Condition
   | Matches String Expression
   | PartOf Expression Binding
   | Disjoint [Attribute] [Binding]
+  | IsFormation Expression
   deriving (Eq, Generic, Show)
 
 data ExtraArgument
