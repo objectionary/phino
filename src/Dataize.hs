@@ -24,7 +24,7 @@ import Matcher (MetaValue (MvExpression), Subst (..), substEmpty, substSingle)
 import Misc
 import Must (Must (..))
 import Rewriter (RewriteContext (RewriteContext), Rewritten, rewrite)
-import Rule (RuleContext (RuleContext), matchExpressionWithRule', matchExpressionWithRuleSeeded')
+import Rule (RuleContext (RuleContext), matchExpressionWithRule')
 import Text.Printf (printf)
 import Yaml (ExtraArgument (..), normalizationRules)
 import qualified Yaml as Y
@@ -97,7 +97,7 @@ morph (expr, seq) ctx@DataizeContext{..} = do
     firstMatch :: [Y.MorphRule] -> IO (Maybe (Y.MorphRule, Subst))
     firstMatch [] = pure Nothing
     firstMatch (rule : rest) = do
-      substs <- matchExpressionWithRuleSeeded' seed expr (asRule rule) (RuleContext (execBuildTerm ctx))
+      substs <- matchExpressionWithRule' seed expr (asRule rule) (RuleContext (execBuildTerm ctx))
       case substs of
         (subst : _) -> pure (Just (rule, subst))
         [] -> firstMatch rest
@@ -148,7 +148,7 @@ dataize' (expr, seq) ctx = do
     firstMatch :: [Y.DataizeRule] -> IO (Maybe (Y.DataizeRule, Subst))
     firstMatch [] = pure Nothing
     firstMatch (rule : rest) = do
-      substs <- matchExpressionWithRule' expr (asRule rule) (RuleContext (execBuildTerm ctx))
+      substs <- matchExpressionWithRule' [substEmpty] expr (asRule rule) (RuleContext (execBuildTerm ctx))
       case substs of
         (subst : _) -> pure (Just (rule, subst))
         [] -> firstMatch rest

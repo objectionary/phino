@@ -6,7 +6,7 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Rule (RuleContext (..), isNF, matchProgramWithRule, matchExpressionWithRule, matchExpressionWithRule', matchExpressionWithRuleSeeded', meetCondition) where
+module Rule (RuleContext (..), isNF, matchProgramWithRule, matchExpressionWithRule, matchExpressionWithRule', meetCondition) where
 
 import AST
 import Builder
@@ -348,17 +348,12 @@ matchExpressionWithRule = matchExpressionBy matchExpression [substEmpty]
 -- Like 'matchExpressionWithRule' but matches the pattern against the whole
 -- expression only (no deep, sub-expression matching). Used by the dataization
 -- and morphing driver, where a rule applies to the entire configuration rather
--- than to nested redexes.
-matchExpressionWithRule' :: Expression -> Y.Rule -> RuleContext -> IO [Subst]
-matchExpressionWithRule' = matchExpressionBy matchExpression' [substEmpty]
-
--- Like 'matchExpressionWithRule'' but seeds matching with the given
--- substitutions, letting a caller inject pre-bound meta-variables. The morphing
--- driver passes the global universe bound to 'e', the second argument of
--- 𝕄(n, e), so the 'root' rule reads it directly instead of through a 'global()'
--- build-term function.
-matchExpressionWithRuleSeeded' :: [Subst] -> Expression -> Y.Rule -> RuleContext -> IO [Subst]
-matchExpressionWithRuleSeeded' = matchExpressionBy matchExpression'
+-- than to nested redexes. The leading '[Subst]' seeds matching with pre-bound
+-- meta-variables: the morphing driver passes the global universe bound to 'e',
+-- the second argument of 𝕄(n, e), so the 'root' rule reads it directly instead
+-- of through a 'global()' build-term function. Pass '[substEmpty]' for no seed.
+matchExpressionWithRule' :: [Subst] -> Expression -> Y.Rule -> RuleContext -> IO [Subst]
+matchExpressionWithRule' = matchExpressionBy matchExpression'
 
 -- The seed substitutions are combined into every match, so a pre-bound meta in
 -- the seed is dropped only when the pattern binds the same name to a different
