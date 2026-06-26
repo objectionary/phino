@@ -1,73 +1,73 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 # SPDX-License-Identifier: MIT
 ---
-# Morphing 𝕄 — applied top-to-bottom, first matching clause wins. The input is
+# Morphing 𝕄 — applied top-to-bottom, first matching clause wins. It is binary,
+# 𝕄(n, e): n is the term being morphed and e is the fixed global universe,
+# threaded unchanged through every recursive call and substituted for Φ by the
+# 'root' rule (Φ, rendered Q, is just the locator of e). The first argument is
 # always a normal form: a non-NF expression matches no clause. 𝕄 navigates a
-# normal form down to a formation one operation at a time,
-# resolving the universe Φ and peeling dispatches and applications through
-# normalization 𝒩. It never fires a bare atom: a saturated λ-formation is
-# returned untouched and fired later by 𝔼 (the 'fire' rule of 𝔻).
+# normal form to a formation one operation at a time, resolving Φ against e and
+# peeling dispatches and applications through normalization 𝒩. It never fires a
+# bare atom: a saturated λ-formation is returned untouched and fired later by 𝔼
+# (the 'fire' rule of 𝔻).
 
 - name: prim
-  description: '𝕄(⟦𝐵⟧) ⟿ ⟦𝐵⟧'
+  description: '𝕄(⟦𝐵⟧, e) ⟿ ⟦𝐵⟧'
   match: ⟦𝐵⟧
   then: ⟦𝐵⟧
 
 - name: lambda
   label: \lambda
-  description: '𝕄(⟦𝐵1, λ ⤍ 𝐹, 𝐵2⟧.τ) ⟿ 𝕄(𝒩(𝔼(⟦𝐵1, λ ⤍ 𝐹, 𝐵2⟧).τ))'
+  description: '𝕄(⟦𝐵1, λ ⤍ 𝐹, 𝐵2⟧.τ, e) ⟿ 𝕄(𝒩(𝔼(⟦𝐵1, λ ⤍ 𝐹, 𝐵2⟧).τ), e)'
   match: '⟦𝐵1, λ ⤍ 𝐹, 𝐵2⟧.𝜏'
   where:
-    - meta: 𝑒
+    - meta: 𝑒1
       function: lambda
       args:
         - '⟦𝐵1, λ ⤍ 𝐹, 𝐵2⟧'
   then:
     morph:
-      normalize: '𝑒.𝜏'
+      normalize: '𝑒1.𝜏'
 
 - name: dispatch
-  description: '𝕄(n.τ) ⟿ 𝕄(𝒩(𝕄(n).τ))'
+  description: '𝕄(n.τ, e) ⟿ 𝕄(𝒩(𝕄(n, e).τ), e)'
   match: '𝑛.𝜏'
   where:
-    - meta: 𝑒
+    - meta: 𝑒1
       function: morph
       args:
         - 𝑛
   then:
     morph:
-      normalize: '𝑒.𝜏'
+      normalize: '𝑒1.𝜏'
 
 - name: application
-  description: '𝕄(n(τ ↦ e)) ⟿ 𝕄(𝒩(𝕄(n)(τ ↦ e)))'
-  match: '𝑛(𝜏 ↦ 𝑒)'
+  description: '𝕄(n(τ ↦ e_1), e) ⟿ 𝕄(𝒩(𝕄(n, e)(τ ↦ e_1)), e)'
+  match: '𝑛(𝜏 ↦ 𝑒1)'
   where:
-    - meta: 𝑒1
+    - meta: 𝑒2
       function: morph
       args:
         - 𝑛
   then:
     morph:
-      normalize: '𝑒1(𝜏 ↦ 𝑒)'
+      normalize: '𝑒2(𝜏 ↦ 𝑒1)'
 
 - name: applicationa
-  description: '𝕄(n(α_i ↦ e)) ⟿ 𝕄(𝒩(𝕄(n)(α_i ↦ e)))'
-  match: '𝑛(α𝑖 ↦ 𝑒)'
+  description: '𝕄(n(α_i ↦ e_1), e) ⟿ 𝕄(𝒩(𝕄(n, e)(α_i ↦ e_1)), e)'
+  match: '𝑛(α𝑖 ↦ 𝑒1)'
   where:
-    - meta: 𝑒1
+    - meta: 𝑒2
       function: morph
       args:
         - 𝑛
   then:
     morph:
-      normalize: '𝑒1(α𝑖 ↦ 𝑒)'
+      normalize: '𝑒2(α𝑖 ↦ 𝑒1)'
 
 - name: root
-  description: '𝕄(Φ) ⟿ 𝕄(𝒩(e)) where e := global(), unless e is Φ'
+  description: '𝕄(Φ, e) ⟿ 𝕄(𝒩(e), e), unless e is Φ'
   match: Φ
-  where:
-    - meta: 𝑒
-      function: global
   when:
     not:
       eq:
@@ -78,16 +78,16 @@
       normalize: 𝑒
 
 - name: dead
-  description: '𝕄(⊥) ⟿ ⊥'
+  description: '𝕄(⊥, e) ⟿ ⊥'
   match: ⊥
   then: ⊥
 
 - name: xi
-  description: '𝕄(ξ) ⟿ ⊥'
+  description: '𝕄(ξ, e) ⟿ ⊥'
   match: ξ
   then: ⊥
 
 - name: globe
-  description: '𝕄(Φ) ⟿ ⊥ when the universe is Φ itself'
+  description: '𝕄(Φ, e) ⟿ ⊥ when the universe e is Φ itself'
   match: Φ
   then: ⊥

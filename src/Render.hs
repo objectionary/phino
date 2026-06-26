@@ -283,10 +283,12 @@ instance Render EXTRA_ARG where
 
 instance Render EXTRA where
   render EXTRA{func = "contextualize", args = arg : rest, ..} = render meta <> " \\coloneqq \\ctx{ " <> render arg <> " }{ " <> T.intercalate ", " (map render rest) <> " }"
+  -- 𝕄 is binary, 𝕄(n, e), so a 'morph' extra renders with the universe
+  -- metavariable 'e' as its second argument, matching how the morphing rules
+  -- forward the universe unchanged.
+  render EXTRA{func = "morph", ..} = render meta <> " \\coloneqq \\phinoMorph{ " <> T.intercalate ", " (map render args) <> " }{ e }"
   render EXTRA{..} = render meta <> " \\coloneqq " <> macro func <> "{ " <> T.intercalate ", " (map render args) <> " }"
     where
       macro :: String -> Text
       macro "lambda" = "\\phinoEvaluate"
-      macro "morph" = "\\phinoMorph"
-      macro "global" = "\\phinoGlobal"
       macro name = "\\" <> T.pack name

@@ -343,19 +343,25 @@ kMetaNames :: Expression -> [T.Text]
 kMetaNames = metaNamesWithPrefix "k"
 
 matchExpressionWithRule :: Expression -> Y.Rule -> RuleContext -> IO [Subst]
-matchExpressionWithRule = matchExpressionBy matchExpression
+matchExpressionWithRule = matchExpressionBy matchExpression [substEmpty]
 
 -- Like 'matchExpressionWithRule' but matches the pattern against the whole
 -- expression only (no deep, sub-expression matching). Used by the dataization
 -- and morphing driver, where a rule applies to the entire configuration rather
--- than to nested redexes.
-matchExpressionWithRule' :: Expression -> Y.Rule -> RuleContext -> IO [Subst]
+-- than to nested redexes. The leading '[Subst]' seeds matching with pre-bound
+-- meta-variables: the morphing driver passes the global universe bound to 'e',
+-- the second argument of 𝕄(n, e), so the 'root' rule reads it directly instead
+-- of through a 'global()' build-term function. Pass '[substEmpty]' for no seed.
+matchExpressionWithRule' :: [Subst] -> Expression -> Y.Rule -> RuleContext -> IO [Subst]
 matchExpressionWithRule' = matchExpressionBy matchExpression'
 
-matchExpressionBy :: MatchExpressionFunc -> Expression -> Y.Rule -> RuleContext -> IO [Subst]
-matchExpressionBy matcher expr rule ctx =
+-- The seed substitutions are combined into every match, so a pre-bound meta in
+-- the seed is dropped only when the pattern binds the same name to a different
+-- value; rules that do not mention the name simply carry it along unused.
+matchExpressionBy :: MatchExpressionFunc -> [Subst] -> Expression -> Y.Rule -> RuleContext -> IO [Subst]
+matchExpressionBy matcher seed expr rule ctx =
   let ptn = rule.pattern
-      matched = matcher ptn expr
+      matched = combineMany seed (matcher ptn expr)
       name = rule.name
    in if null matched
         then do
