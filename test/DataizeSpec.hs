@@ -21,20 +21,20 @@ import Yaml qualified
 defaultDataizeContext :: Expression -> DataizeContext
 defaultDataizeContext loc = DataizeContext loc 25 25 False buildTerm dontSaveStep
 
-test :: (Eq a, Show a) => ((Expression, NonEmpty Rewritten) -> Program -> Expression -> DataizeContext -> IO (a, [Rewritten])) -> [(String, Expression, Expression, a)] -> Spec
+test :: (Eq a, Show a) => ((Expression, NonEmpty Rewritten) -> Expression -> DataizeContext -> IO (a, [Rewritten])) -> [(String, Expression, Expression, a)] -> Spec
 test func useCases =
   forM_ useCases $ \(desc, input, expr, output) ->
     it desc $ do
       let prog = Program expr
-      (res, _) <- func (input, (prog, Nothing) :| []) prog expr (defaultDataizeContext ExRoot)
+      (res, _) <- func (input, (prog, Nothing) :| []) expr (defaultDataizeContext ExRoot)
       res `shouldBe` output
 
-test' :: (Eq a, Show a) => ((Expression, NonEmpty Rewritten) -> Program -> Expression -> DataizeContext -> IO (a, NonEmpty Rewritten)) -> [(String, Expression, Expression, a)] -> Spec
+test' :: (Eq a, Show a) => ((Expression, NonEmpty Rewritten) -> Expression -> DataizeContext -> IO (a, NonEmpty Rewritten)) -> [(String, Expression, Expression, a)] -> Spec
 test' func useCases =
   forM_ useCases $ \(desc, input, expr, output) ->
     it desc $ do
       let prog = Program expr
-      (res, _) <- func (input, (prog, Nothing) :| []) prog expr (defaultDataizeContext ExRoot)
+      (res, _) <- func (input, (prog, Nothing) :| []) expr (defaultDataizeContext ExRoot)
       res `shouldBe` output
 
 testDataize :: [(String, String, String, Bytes)] -> Spec
