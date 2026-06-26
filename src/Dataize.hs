@@ -82,7 +82,7 @@ morph :: Morphed -> Expression -> DataizeContext -> IO Morphed
 morph (expr, seq) univ ctx = do
   matched <- firstMatch Y.morphingRules
   case matched of
-    Just (rule, subst) -> apply rule.then_ rule.name subst
+    Just (rule, subst) -> apply (snd (Y.morphReduction rule)) rule.name subst
     Nothing -> throwIO (userError "no morphing rule matched")
   where
     -- The universe is pre-bound to 'e' for every rule, so the 'root' rule
@@ -101,7 +101,7 @@ morph (expr, seq) univ ctx = do
     -- maps onto the 'having' slot (which runs after 'where'), not 'when' (which
     -- 'matchExpressionWithRule'' runs before 'where').
     asRule :: Y.MorphRule -> Y.Rule
-    asRule rule = Y.Rule rule.name Nothing rule.description rule.match ExRoot Nothing rule.where_ rule.when
+    asRule rule = Y.Rule rule.name Nothing Nothing rule.match ExRoot Nothing (fst (Y.morphReduction rule)) rule.when
     apply :: Y.MorphOutcome -> String -> Subst -> IO Morphed
     apply (Y.MoStop result) name subst = do
       built <- buildExpressionThrows result subst
@@ -152,9 +152,9 @@ dataize' (expr, seq) univ ctx = do
         (subst : _) -> pure (Just (rule, subst))
         [] -> firstMatch rest
     asRule :: Y.DataizeRule -> Y.Rule
-    asRule rule = Y.Rule rule.name Nothing rule.description rule.match ExRoot Nothing rule.where_ rule.when
+    asRule rule = Y.Rule rule.name Nothing Nothing rule.match ExRoot Nothing (fst (Y.dataizeReduction rule)) rule.when
     apply :: Y.DataizeRule -> Subst -> IO Dataized
-    apply rule subst = case rule.then_ of
+    apply rule subst = case snd (Y.dataizeReduction rule) of
       Y.DoData bytes -> do
         bts <- buildBytesThrows bytes subst
         pure (bts, NE.toList seq)
@@ -177,7 +177,7 @@ dataize' (expr, seq) univ ctx = do
         (normal, seq') <- normalized built labelled ctx
         dataize' (normal, seq') univ ctx
     operation :: Y.DataizeRule -> String
-    operation rule = case rule.where_ of
+    operation rule = case fst (Y.dataizeReduction rule) of
       Just (extra : _) -> Y.function extra
       _ -> ""
 

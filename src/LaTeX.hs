@@ -370,45 +370,62 @@ explainRule rule =
     joinedConditions Nothing second@(Just _) = second
     joinedConditions (Just first) (Just second) = Just (Y.And [first, second])
 
+-- Render a morphing rule as a LaTeX inference rule: each premise becomes a
+-- judgment above the line and the conclusion is 𝕄(match, e) ⟿ n-result below.
 explainMorphRule :: Y.MorphRule -> String
 explainMorphRule rule =
-  trrule
-    "\\phinoMorphingRule"
-    rule.label
+  inference
     rule.name
-    (morph (renderToLatex (expressionToCST rule.match) defaultLatexContext))
-    (morphOutcome rule.then_)
+    rule.label
     rule.when
-    rule.where_
-  where
-    morphOutcome :: Y.MorphOutcome -> String
-    morphOutcome (Y.MoMorph (Y.MaExpr expr)) = morph (renderToLatex (expressionToCST expr) defaultLatexContext)
-    morphOutcome (Y.MoMorph (Y.MaNormalize expr)) = morph (normalize (renderToLatex (expressionToCST expr) defaultLatexContext))
-    morphOutcome (Y.MoStop expr) = renderToLatex (expressionToCST expr) defaultLatexContext
+    (map premiseToLatex rule.premises)
+    (phinoMorph (renderExpr rule.match) rule.euniverse (renderExpr rule.nresult))
 
+-- Render a dataization rule as a LaTeX inference rule, with 𝔻(match, e) ⟿
+-- d-result as the conclusion below the line.
 explainDataizeRule :: Y.DataizeRule -> String
 explainDataizeRule rule =
-  trrule
-    "\\phinoDataizationRule"
-    rule.label
+  inference
     rule.name
-    (dataize (renderToLatex (expressionToCST rule.match) defaultLatexContext))
-    (dataizeOutcome rule.then_)
+    rule.label
     rule.when
-    rule.where_
-  where
-    dataizeOutcome :: Y.DataizeOutcome -> String
-    dataizeOutcome (Y.DoDataize (Y.DaExpr expr)) = dataize (renderToLatex (expressionToCST expr) defaultLatexContext)
-    dataizeOutcome (Y.DoDataize (Y.DaMorph expr)) = dataize (morph (renderToLatex (expressionToCST expr) defaultLatexContext))
-    dataizeOutcome (Y.DoDataize (Y.DaNormalize expr)) = dataize (normalize (renderToLatex (expressionToCST expr) defaultLatexContext))
-    dataizeOutcome (Y.DoData bytes) = T.unpack (render (toLaTeX (toCST' bytes :: BYTES)))
+    (map premiseToLatex rule.premises)
+    (phinoDataize (renderExpr rule.match) rule.euniverse (renderBytes rule.dresult))
 
--- Render a single rule row through the given macro (one of
--- \phinoMorphingRule, \phinoNormalizationRule, \phinoDataizationRule): an
--- optional typeset label, name, left-hand side, right-hand side, the optional
--- 'if' condition and 'where' extras. When the label is present it becomes the
--- macro's first optional argument ('\macro[label]{name}'); when absent the
--- optional argument is omitted entirely ('\macro{name}').
+-- One premise judgment, rendered per its operation. 𝕄 ('morph') and 𝔻
+-- ('dataize') are binary and carry the universe; the rest are unary.
+premiseToLatex :: Y.Premise -> String
+premiseToLatex premise = case premise.operation of
+  Y.OpMorph arg -> phinoMorph (renderExpr arg) premise.universe (renderExpr (ExMeta premise.result))
+  Y.OpDataize arg -> phinoDataize (renderExpr arg) premise.universe (renderBytes (BtMeta premise.result))
+  Y.OpNormalize arg -> phinoNormalize (renderExpr arg) (renderExpr (ExMeta premise.result))
+  Y.OpLambda arg -> phinoEvaluate (renderExpr arg) (renderExpr (ExMeta premise.result))
+  Y.OpContextualize arg context -> phinoContextualize (renderExpr arg) (renderExpr context) (renderExpr (ExMeta premise.result))
+
+-- Assemble an inference block from a name, optional label, optional side
+-- condition, the premise judgments and the conclusion judgment.
+inference :: String -> Maybe String -> Maybe Y.Condition -> [String] -> String -> String
+inference name label cond premises conclusion =
+  intercalate "\n" $
+    ["\\begin{phinoInference}", "  \\phinoName{" ++ name ++ "}"]
+      ++ maybe [] (\symbol -> ["  \\phinoLabel{" ++ symbol ++ "}"]) label
+      ++ maybe [] (\rendered -> ["  \\phinoCondition{ " ++ rendered ++ " }"]) (conditionInLatex cond)
+      ++ map (\premise -> "  \\phinoPremise{ " ++ premise ++ " }") premises
+      ++ ["  \\phinoConclusion{ " ++ conclusion ++ " }", "\\end{phinoInference}"]
+
+renderExpr :: Expression -> String
+renderExpr expr = renderToLatex (expressionToCST expr) defaultLatexContext
+
+renderBytes :: Bytes -> String
+renderBytes bytes = T.unpack (render (toLaTeX (toCST' bytes :: BYTES)))
+
+-- Render a single normalization rule row through the \phinoNormalizationRule
+-- macro: an optional typeset label, name, left-hand side, right-hand side, the
+-- optional 'if' condition and 'where' extras. When the label is present it
+-- becomes the macro's first optional argument ('\macro[label]{name}'); when
+-- absent the optional argument is omitted entirely ('\macro{name}').
+-- Morphing and dataization rules render as inference rules instead (see
+-- 'explainMorphRule' and 'explainDataizeRule').
 trrule :: String -> Maybe String -> String -> String -> String -> Maybe Y.Condition -> Maybe [Y.Extra] -> String
 trrule macro label name lhs rhs cond extras =
   intercalate
@@ -422,16 +439,32 @@ trrule macro label name lhs rhs cond extras =
   where
     labelArg = maybe "" (\symbol -> "[" ++ symbol ++ "]") label
 
--- 𝕄 is binary, 𝕄(n, e), so it renders with the universe metavariable 'e' as its
--- second argument (the morphing rules carry the universe under that meta).
-morph :: String -> String
-morph inner = "\\phinoMorph{ " ++ inner ++ " }{ e }"
+-- 𝕄 and 𝔻 are binary, so they render with the universe as a middle argument:
+-- \phinoMorph{ input }{ universe }{ output }, mirroring 𝕄(input, universe) ⟿
+-- output. 𝒩, 𝔼 and 𝒞 carry no universe.
+phinoMorph :: String -> Maybe Expression -> String -> String
+phinoMorph input univ output = printf "\\phinoMorph{ %s }{ %s }{ %s }" input (universeInLatex univ) output
 
-dataize :: String -> String
-dataize inner = "\\phinoDataize{ " ++ inner ++ " }"
+phinoDataize :: String -> Maybe Expression -> String -> String
+phinoDataize input univ output = printf "\\phinoDataize{ %s }{ %s }{ %s }" input (universeInLatex univ) output
 
-normalize :: String -> String
-normalize inner = "\\phinoNormalize{ " ++ inner ++ " }"
+phinoNormalize :: String -> String -> String
+phinoNormalize input = printf "\\phinoNormalize{ %s }{ %s }" input
+
+phinoEvaluate :: String -> String -> String
+phinoEvaluate input = printf "\\phinoEvaluate{ %s }{ %s }" input
+
+phinoContextualize :: String -> String -> String -> String
+phinoContextualize input context = printf "\\phinoContextualize{ %s }{ %s }{ %s }" input context
+
+universeInLatex :: Maybe Expression -> String
+universeInLatex = maybe "e" renderExpr
+
+conditionInLatex :: Maybe Y.Condition -> Maybe String
+conditionInLatex Nothing = Nothing
+conditionInLatex (Just cond) = case conditionToCST cond of
+  CO_EMPTY -> Nothing
+  cond' -> Just (renderToLatex cond' defaultLatexContext)
 
 braced :: String -> String
 braced = printf "{ %s }"

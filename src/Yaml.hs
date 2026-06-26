@@ -1,6 +1,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
@@ -15,6 +16,7 @@ import Control.Applicative (asum)
 import Data.Aeson
 import qualified Data.ByteString as BS
 import Data.FileEmbed (embedDir, embedFile)
+import Data.List (find)
 import Data.Text (Text, unpack)
 import Data.Yaml (Parser)
 import qualified Data.Yaml as Yaml
@@ -223,90 +225,120 @@ normalizationRules = map decodeRule $(embedDir "resources/normalize")
 yamlRule :: FilePath -> IO Rule
 yamlRule = Yaml.decodeFileThrow
 
--- The right-hand side of a morphing reduction 𝕄(match) ⟿ then.
--- A mapping ('{ morph: arg }') keeps reducing under 𝕄; a bare expression
--- (including ⊥) is the terminal result.
+-- The operational right-hand side of a morphing reduction 𝕄(match) ⟿ then.
+-- A mapping ('MoMorph') keeps reducing under 𝕄; a bare expression (including ⊥)
+-- is the terminal result. It is no longer parsed from YAML directly: rules are
+-- written in inference-rule form and 'morphReduction' recovers this shape.
 data MorphOutcome
   = MoMorph MorphArg
   | MoStop Expression
   deriving (Eq, Generic, Show)
 
 -- The argument of a morphing continuation: either a plain expression ('𝕄(e)')
--- or the normalization of one ('𝕄(𝒩(e))', written '{ normalize: e }').
+-- or the normalization of one ('𝕄(𝒩(e))').
 data MorphArg
   = MaExpr Expression
   | MaNormalize Expression
   deriving (Eq, Generic, Show)
 
--- The right-hand side of a dataization reduction 𝔻(match) ⟿ then.
--- A mapping ('{ dataize: arg }') keeps reducing under 𝔻; a bare bytes scalar
--- yields data. 𝔻 is total: every rule yields data or reduces further.
+-- The operational right-hand side of a dataization reduction 𝔻(match) ⟿ then.
+-- A mapping ('DoDataize') keeps reducing under 𝔻; a bare bytes scalar yields
+-- data. 𝔻 is total: every rule yields data or reduces further.
 data DataizeOutcome
   = DoDataize DataizeArg
   | DoData Bytes
   deriving (Eq, Generic, Show)
 
--- The argument of a dataization continuation: a plain expression ('𝔻(e)'),
--- the morphing of one ('𝔻(𝕄(e))', written '{ morph: e }'), or the
--- normalization of one ('𝔻(𝒩(e))', written '{ normalize: e }').
+-- The argument of a dataization continuation: a plain expression ('𝔻(e)'), the
+-- morphing of one ('𝔻(𝕄(e))') or the normalization of one ('𝔻(𝒩(e))').
 data DataizeArg
   = DaExpr Expression
   | DaMorph Expression
   | DaNormalize Expression
   deriving (Eq, Generic, Show)
 
--- One ordered morphing rule: match the expression, build extra metas in
--- 'where', filter by 'when', then reduce per 'then'.
+-- One premise above the inference line of a morphing or dataization rule: bind
+-- the meta named 'result' to the value of applying 'operation' to its argument,
+-- under the universe 'universe' (present for the binary judgments 𝕄 and 𝔻).
+data Premise = Premise
+  { result :: Text
+  , universe :: Maybe Expression
+  , operation :: Operation
+  }
+  deriving (Eq, Generic, Show)
+
+-- The reduction a premise performs, mirroring the build-term functions and the
+-- 𝒩 and 𝔻 reducers the engine already provides.
+data Operation
+  = OpMorph Expression
+  | OpNormalize Expression
+  | OpLambda Expression
+  | OpContextualize Expression Expression
+  | OpDataize Expression
+  deriving (Eq, Generic, Show)
+
+-- One morphing rule in inference-rule form: under universe 'euniverse', 'match'
+-- yields 'nresult' (a premise meta or a literal) provided 'when' holds and the
+-- ordered 'premises' reduce as stated.
 data MorphRule = MorphRule
   { name :: String
   , label :: Maybe String
-  , description :: Maybe String
   , match :: Expression
-  , where_ :: Maybe [Extra]
+  , euniverse :: Maybe Expression
+  , nresult :: Expression
   , when :: Maybe Condition
-  , then_ :: MorphOutcome
+  , premises :: [Premise]
   }
   deriving (Generic, Show)
 
--- One ordered dataization rule, structured like 'MorphRule' but reducing
--- under 𝔻 and terminating with bytes.
+-- One dataization rule in inference-rule form, structured like 'MorphRule' but
+-- terminating with bytes ('dresult').
 data DataizeRule = DataizeRule
   { name :: String
   , label :: Maybe String
-  , description :: Maybe String
   , match :: Expression
-  , where_ :: Maybe [Extra]
+  , euniverse :: Maybe Expression
+  , dresult :: Bytes
   , when :: Maybe Condition
-  , then_ :: DataizeOutcome
+  , premises :: [Premise]
   }
   deriving (Generic, Show)
 
-instance FromJSON MorphOutcome where
-  parseJSON (Object o) = do
-    validateYamlObject o ["morph"]
-    MoMorph <$> o .: "morph"
-  parseJSON v = MoStop <$> parseJSON v
+instance FromJSON Premise where
+  parseJSON =
+    withObject
+      "Premise"
+      (\o -> Premise <$> premiseResult o <*> o .:? "e-result" <*> premiseOperation o)
 
-instance FromJSON MorphArg where
-  parseJSON (Object o) = do
-    validateYamlObject o ["normalize"]
-    MaNormalize <$> o .: "normalize"
-  parseJSON v = MaExpr <$> parseJSON v
+-- The meta a premise binds, taken from its 'n-result' (an expression meta) or
+-- 'd-result' (a bytes meta).
+premiseResult :: Object -> Parser Text
+premiseResult o = do
+  expr <- o .:? "n-result"
+  case expr of
+    Just (ExMeta metaName) -> pure metaName
+    Just _ -> fail "'n-result' must be an expression meta"
+    Nothing -> do
+      bytes <- o .:? "d-result"
+      case bytes of
+        Just (BtMeta metaName) -> pure metaName
+        Just _ -> fail "'d-result' must be a bytes meta"
+        Nothing -> fail "a premise needs an 'n-result' or 'd-result' meta"
 
-instance FromJSON DataizeOutcome where
-  parseJSON (Object o) = do
-    validateYamlObject o ["dataize"]
-    DoDataize <$> o .: "dataize"
-  parseJSON v = DoData <$> parseJSON v
-
-instance FromJSON DataizeArg where
-  parseJSON (Object o) = do
-    validateYamlObject o ["morph", "normalize"]
-    morphed <- o .:? "morph"
-    case morphed of
-      Just expr -> pure (DaMorph expr)
-      Nothing -> DaNormalize <$> o .: "normalize"
-  parseJSON v = DaExpr <$> parseJSON v
+-- The single verb of a premise.
+premiseOperation :: Object -> Parser Operation
+premiseOperation o =
+  asum
+    [ OpMorph <$> o .: "morph"
+    , OpNormalize <$> o .: "normalize"
+    , OpLambda <$> o .: "lambda"
+    , do
+        vals <- o .: "contextualize"
+        case vals of
+          [expr, context] -> OpContextualize <$> parseJSON expr <*> parseJSON context
+          _ -> fail "'contextualize' expects exactly two arguments"
+    , OpDataize <$> o .: "dataize"
+    ]
 
 instance FromJSON MorphRule where
   parseJSON =
@@ -316,11 +348,11 @@ instance FromJSON MorphRule where
           MorphRule
             <$> o .: "name"
             <*> o .:? "label"
-            <*> o .:? "description"
             <*> o .: "match"
-            <*> o .:? "where"
+            <*> o .:? "e-result"
+            <*> o .: "n-result"
             <*> o .:? "when"
-            <*> o .: "then"
+            <*> o .:? "premises" .!= []
       )
 
 instance FromJSON DataizeRule where
@@ -331,12 +363,70 @@ instance FromJSON DataizeRule where
           DataizeRule
             <$> o .: "name"
             <*> o .:? "label"
-            <*> o .:? "description"
             <*> o .: "match"
-            <*> o .:? "where"
+            <*> o .:? "e-result"
+            <*> o .: "d-result"
             <*> o .:? "when"
-            <*> o .: "then"
+            <*> o .:? "premises" .!= []
       )
+
+-- Recover the operational ('where', 'then') form of a morphing rule from its
+-- inference-rule premises and conclusion. The conclusion meta is produced by a
+-- trailing 'morph' premise; a 'morph(normalize(_))' continuation folds the
+-- normalize and morph premises into 'then', leaving the rest as 'where'
+-- side-computations. A literal conclusion is a terminal result.
+morphReduction :: MorphRule -> (Maybe [Extra], MorphOutcome)
+morphReduction rule = case producerOf (asMeta rule.nresult) rule.premises of
+  Just (concl, OpMorph arg) -> case producerOf (asMeta arg) rule.premises of
+    Just (normal, OpNormalize inner) ->
+      (wheres (rule.premises `without` [concl, normal]), MoMorph (MaNormalize inner))
+    _ -> (wheres (rule.premises `without` [concl]), MoMorph (MaExpr arg))
+  _ -> (wheres rule.premises, MoStop rule.nresult)
+
+-- Recover the operational form of a dataization rule, mirroring
+-- 'morphReduction' but with a 'dataize(morph(_))' or 'dataize(normalize(_))'
+-- continuation and a bytes terminal.
+dataizeReduction :: DataizeRule -> (Maybe [Extra], DataizeOutcome)
+dataizeReduction rule = case bytesProducer rule.dresult rule.premises of
+  Just (concl, OpDataize arg) -> case producerOf (asMeta arg) rule.premises of
+    Just (normal, OpNormalize inner) ->
+      (wheres (rule.premises `without` [concl, normal]), DoDataize (DaNormalize inner))
+    Just (morphed, OpMorph inner) ->
+      (wheres (rule.premises `without` [concl, morphed]), DoDataize (DaMorph inner))
+    _ -> (wheres (rule.premises `without` [concl]), DoDataize (DaExpr arg))
+  _ -> (wheres rule.premises, DoData rule.dresult)
+
+-- The premise binding the named meta, with its operation, if any.
+producerOf :: Maybe Text -> [Premise] -> Maybe (Premise, Operation)
+producerOf (Just metaName) items = (\premise -> (premise, premise.operation)) <$> find (\premise -> premise.result == metaName) items
+producerOf Nothing _ = Nothing
+
+bytesProducer :: Bytes -> [Premise] -> Maybe (Premise, Operation)
+bytesProducer (BtMeta metaName) = producerOf (Just metaName)
+bytesProducer _ = const Nothing
+
+asMeta :: Expression -> Maybe Text
+asMeta (ExMeta metaName) = Just metaName
+asMeta _ = Nothing
+
+without :: [Premise] -> [Premise] -> [Premise]
+without items removed = filter (\premise -> premise.result `notElem` map (.result) removed) items
+
+-- Map the leftover side-computation premises onto 'where' extras, preserving
+-- their order so the first one names the dataization step.
+wheres :: [Premise] -> Maybe [Extra]
+wheres [] = Nothing
+wheres items = Just (map asExtra items)
+  where
+    asExtra :: Premise -> Extra
+    asExtra premise = case premise.operation of
+      OpContextualize expr context -> Extra (boundMeta premise) "contextualize" [ArgExpression expr, ArgExpression context]
+      OpMorph expr -> Extra (boundMeta premise) "morph" [ArgExpression expr]
+      OpLambda expr -> Extra (boundMeta premise) "lambda" [ArgExpression expr]
+      OpNormalize expr -> Extra (boundMeta premise) "normalize" [ArgExpression expr]
+      OpDataize expr -> Extra (boundMeta premise) "dataize" [ArgExpression expr]
+    boundMeta :: Premise -> ExtraArgument
+    boundMeta premise = ArgExpression (ExMeta premise.result)
 
 decodeRules :: (FromJSON a) => FilePath -> BS.ByteString -> [a]
 decodeRules path bs = case Yaml.decodeEither' bs of

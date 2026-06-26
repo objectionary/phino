@@ -5,55 +5,74 @@
 # binary, 𝔻(n, e): the second argument e is the global universe, the same
 # expression that 𝕄 takes as its second argument; 𝔻 forwards it to 𝕄. The first
 # argument is always a normal form: a non-NF expression matches no clause.
+#
+# Each rule is an inference rule: 'match' under universe 'e-result' yields the
+# conclusion 'd-result' (a premise bytes meta or a literal), provided 'when'
+# holds and the ordered 'premises' reduce as stated. A premise binds its
+# 'n-result'/'d-result' to one judgment — 𝔻 ('dataize'), 𝕄 ('morph'),
+# 𝒩 ('normalize'), 𝔼 ('lambda') or 𝒞 ('contextualize').
 
 - name: delta
   label: \Delta
-  description: '𝔻(⟦𝐵1, Δ ⤍ δ, 𝐵2⟧, e) ⟿ δ'
   match: ⟦𝐵1, Δ ⤍ δ, 𝐵2⟧
-  then: δ
+  e-result: 𝑒
+  d-result: δ
 
 - name: box
-  description: '𝔻(⟦𝐵1, φ ↦ e_1, 𝐵2⟧, e) ⟿ 𝔻(𝒩(𝒞(e_1)), e) if [Δ, λ]∩(𝐵1∪𝐵2) = ∅'
+  label: box
   match: ⟦𝐵1, φ ↦ 𝑒1, 𝐵2⟧
-  where:
-    - meta: 𝑒2
-      function: contextualize
-      args:
-        - 𝑒1
-        - ⟦𝐵1, φ ↦ 𝑒1, 𝐵2⟧
+  e-result: 𝑒
+  d-result: δ1
   when:
     disjoint:
       - [Δ, λ]
       - [𝐵1, 𝐵2]
-  then:
-    dataize:
-      normalize: 𝑒2
+  premises:
+    - n-result: 𝑛1
+      contextualize:
+        - 𝑒1
+        - ⟦𝐵1, φ ↦ 𝑒1, 𝐵2⟧
+    - n-result: 𝑛2
+      normalize: 𝑛1
+    - d-result: δ1
+      e-result: 𝑒
+      dataize: 𝑛2
 
 - name: fire
-  description: '𝔻(⟦𝐵1, λ ⤍ 𝐹, 𝐵2⟧, e) ⟿ 𝔻(𝒩(𝔼(⟦𝐵1, λ ⤍ 𝐹, 𝐵2⟧)), e)'
+  label: fire
   match: ⟦𝐵1, λ ⤍ 𝐹, 𝐵2⟧
-  where:
-    - meta: 𝑒1
-      function: lambda
-      args:
-        - ⟦𝐵1, λ ⤍ 𝐹, 𝐵2⟧
-  then:
-    dataize:
-      normalize: 𝑒1
+  e-result: 𝑒
+  d-result: δ1
+  premises:
+    - n-result: 𝑛1
+      lambda: ⟦𝐵1, λ ⤍ 𝐹, 𝐵2⟧
+    - n-result: 𝑛2
+      normalize: 𝑛1
+    - d-result: δ1
+      e-result: 𝑒
+      dataize: 𝑛2
 
 - name: none
-  description: '𝔻(⟦𝐵⟧, e) ⟿ --'
+  label: none
   match: ⟦𝐵⟧
-  then: '--'
+  e-result: 𝑒
+  d-result: '--'
 
 - name: bott
-  description: '𝔻(⊥, e) ⟿ --'
+  label: bott
   match: ⊥
-  then: '--'
+  e-result: 𝑒
+  d-result: '--'
 
 - name: norm
-  description: '𝔻(n, e) ⟿ 𝔻(𝕄(n, e), e) otherwise'
+  label: norm
   match: 𝑛
-  then:
-    dataize:
+  e-result: 𝑒
+  d-result: δ1
+  premises:
+    - n-result: 𝑛1
+      e-result: 𝑒
       morph: 𝑛
+    - d-result: δ1
+      e-result: 𝑒
+      dataize: 𝑛1

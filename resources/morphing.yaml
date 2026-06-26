@@ -11,91 +11,115 @@
 # bare atom: a saturated λ-formation is returned untouched and fired later by 𝔼
 # (the 'fire' rule of 𝔻).
 #
+# Each rule is an inference rule: 'match' under universe 'e-result' yields the
+# conclusion 'n-result' (a premise meta or a literal), provided 'when' holds and
+# the ordered 'premises' reduce as stated. A premise binds 'n-result' to the
+# result of one judgment — 𝕄 ('morph'), 𝒩 ('normalize') or 𝔼 ('lambda').
+#
 # 'lambda' and 'dispatch' are kept mutually exclusive: 'dispatch' fires only
 # when its head 𝑛 is not a formation ('not (formation 𝑛)'), so every formation
 # head — λ-bearing or not — is left to 'lambda' (and 'prim'). The two clauses
 # are disjoint and their relative order does not change behavior.
 
 - name: prim
-  description: '𝕄(⟦𝐵⟧, e) ⟿ ⟦𝐵⟧'
+  label: prim
   match: ⟦𝐵⟧
-  then: ⟦𝐵⟧
+  e-result: 𝑒
+  n-result: ⟦𝐵⟧
 
 - name: lambda
   label: \lambda
-  description: '𝕄(⟦𝐵1, λ ⤍ 𝐹, 𝐵2⟧.τ, e) ⟿ 𝕄(𝒩(𝔼(⟦𝐵1, λ ⤍ 𝐹, 𝐵2⟧).τ), e)'
   match: '⟦𝐵1, λ ⤍ 𝐹, 𝐵2⟧.𝜏'
-  where:
-    - meta: 𝑒1
-      function: lambda
-      args:
-        - '⟦𝐵1, λ ⤍ 𝐹, 𝐵2⟧'
-  then:
-    morph:
-      normalize: '𝑒1.𝜏'
+  e-result: 𝑒
+  n-result: 𝑛3
+  premises:
+    - n-result: 𝑛1
+      lambda: '⟦𝐵1, λ ⤍ 𝐹, 𝐵2⟧'
+    - n-result: 𝑛2
+      normalize: '𝑛1.𝜏'
+    - n-result: 𝑛3
+      e-result: 𝑒
+      morph: 𝑛2
 
 - name: dispatch
-  description: '𝕄(n.τ, e) ⟿ 𝕄(𝒩(𝕄(n, e).τ), e)'
+  label: disp
   match: '𝑛.𝜏'
-  where:
-    - meta: 𝑒1
-      function: morph
-      args:
-        - 𝑛
+  e-result: 𝑒
+  n-result: 𝑛3
   when:
     not:
       formation: 𝑛
-  then:
-    morph:
-      normalize: '𝑒1.𝜏'
+  premises:
+    - n-result: 𝑛1
+      e-result: 𝑒
+      morph: 𝑛
+    - n-result: 𝑛2
+      normalize: '𝑛1.𝜏'
+    - n-result: 𝑛3
+      e-result: 𝑒
+      morph: 𝑛2
 
 - name: application
-  description: '𝕄(n(τ ↦ e_1), e) ⟿ 𝕄(𝒩(𝕄(n, e)(τ ↦ e_1)), e)'
+  label: app
   match: '𝑛(𝜏 ↦ 𝑒1)'
-  where:
-    - meta: 𝑒2
-      function: morph
-      args:
-        - 𝑛
-  then:
-    morph:
-      normalize: '𝑒2(𝜏 ↦ 𝑒1)'
+  e-result: 𝑒
+  n-result: 𝑛3
+  premises:
+    - n-result: 𝑛1
+      e-result: 𝑒
+      morph: 𝑛
+    - n-result: 𝑛2
+      normalize: '𝑛1(𝜏 ↦ 𝑒1)'
+    - n-result: 𝑛3
+      e-result: 𝑒
+      morph: 𝑛2
 
 - name: applicationa
-  description: '𝕄(n(α_i ↦ e_1), e) ⟿ 𝕄(𝒩(𝕄(n, e)(α_i ↦ e_1)), e)'
+  label: appa
   match: '𝑛(α𝑖 ↦ 𝑒1)'
-  where:
-    - meta: 𝑒2
-      function: morph
-      args:
-        - 𝑛
-  then:
-    morph:
-      normalize: '𝑒2(α𝑖 ↦ 𝑒1)'
+  e-result: 𝑒
+  n-result: 𝑛3
+  premises:
+    - n-result: 𝑛1
+      e-result: 𝑒
+      morph: 𝑛
+    - n-result: 𝑛2
+      normalize: '𝑛1(α𝑖 ↦ 𝑒1)'
+    - n-result: 𝑛3
+      e-result: 𝑒
+      morph: 𝑛2
 
 - name: root
-  description: '𝕄(Φ, e) ⟿ 𝕄(𝒩(e), e), unless e is Φ'
+  label: root
   match: Φ
+  e-result: 𝑒
+  n-result: 𝑛2
   when:
     not:
       eq:
         - 𝑒
         - Φ
-  then:
-    morph:
+  premises:
+    - n-result: 𝑛1
       normalize: 𝑒
+    - n-result: 𝑛2
+      e-result: 𝑒
+      morph: 𝑛1
 
 - name: dead
-  description: '𝕄(⊥, e) ⟿ ⊥'
+  label: dead
   match: ⊥
-  then: ⊥
+  e-result: 𝑒
+  n-result: ⊥
 
 - name: xi
-  description: '𝕄(ξ, e) ⟿ ⊥'
+  label: xi
   match: ξ
-  then: ⊥
+  e-result: 𝑒
+  n-result: ⊥
 
 - name: globe
-  description: '𝕄(Φ, e) ⟿ ⊥ when the universe e is Φ itself'
+  label: globe
   match: Φ
-  then: ⊥
+  e-result: 𝑒
+  n-result: ⊥
