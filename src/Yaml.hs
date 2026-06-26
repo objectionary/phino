@@ -258,11 +258,11 @@ data DataizeArg
   deriving (Eq, Generic, Show)
 
 -- One premise above the inference line of a morphing or dataization rule: bind
--- the meta named 'result' to the value of applying 'operation' to its argument,
--- under the universe 'universe' (present for the binary judgments 𝕄 and 𝔻).
+-- the meta named 'result' to the value of applying 'operation' to its argument.
+-- The universe e is the fixed second argument of 𝕄 and 𝔻, not a per-premise
+-- value, so it is not recorded here.
 data Premise = Premise
   { result :: Text
-  , universe :: Maybe Expression
   , operation :: Operation
   }
   deriving (Eq, Generic, Show)
@@ -277,14 +277,13 @@ data Operation
   | OpDataize Expression
   deriving (Eq, Generic, Show)
 
--- One morphing rule in inference-rule form: under universe 'euniverse', 'match'
--- yields 'nresult' (a premise meta or a literal) provided 'when' holds and the
--- ordered 'premises' reduce as stated.
+-- One morphing rule in inference-rule form: 'match' yields 'nresult' (a premise
+-- meta or a literal) provided 'when' holds and the ordered 'premises' reduce as
+-- stated.
 data MorphRule = MorphRule
   { name :: String
   , label :: Maybe String
   , match :: Expression
-  , euniverse :: Maybe Expression
   , nresult :: Expression
   , when :: Maybe Condition
   , premises :: [Premise]
@@ -297,7 +296,6 @@ data DataizeRule = DataizeRule
   { name :: String
   , label :: Maybe String
   , match :: Expression
-  , euniverse :: Maybe Expression
   , dresult :: Bytes
   , when :: Maybe Condition
   , premises :: [Premise]
@@ -308,7 +306,7 @@ instance FromJSON Premise where
   parseJSON =
     withObject
       "Premise"
-      (\o -> Premise <$> premiseResult o <*> o .:? "e-result" <*> premiseOperation o)
+      (\o -> Premise <$> premiseResult o <*> premiseOperation o)
 
 -- The meta a premise binds, taken from its 'n-result' (an expression meta) or
 -- 'd-result' (a bytes meta).
@@ -349,7 +347,6 @@ instance FromJSON MorphRule where
             <$> o .: "name"
             <*> o .:? "label"
             <*> o .: "match"
-            <*> o .:? "e-result"
             <*> o .: "n-result"
             <*> o .:? "when"
             <*> o .:? "premises" .!= []
@@ -364,7 +361,6 @@ instance FromJSON DataizeRule where
             <$> o .: "name"
             <*> o .:? "label"
             <*> o .: "match"
-            <*> o .:? "e-result"
             <*> o .: "d-result"
             <*> o .:? "when"
             <*> o .:? "premises" .!= []

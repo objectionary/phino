@@ -11,10 +11,11 @@
 # bare atom: a saturated λ-formation is returned untouched and fired later by 𝔼
 # (the 'fire' rule of 𝔻).
 #
-# Each rule is an inference rule: 'match' under universe 'e-result' yields the
-# conclusion 'n-result' (a premise meta or a literal), provided 'when' holds and
-# the ordered 'premises' reduce as stated. A premise binds 'n-result' to the
-# result of one judgment — 𝕄 ('morph'), 𝒩 ('normalize') or 𝔼 ('lambda').
+# Each rule is an inference rule: 'match' yields the conclusion 'n-result' (a
+# premise meta or a literal), provided 'when' holds and the ordered 'premises'
+# reduce as stated. A premise binds 'n-result' to the result of one judgment —
+# 𝕄 ('morph'), 𝒩 ('normalize') or 𝔼 ('lambda'). The universe e is the fixed
+# second argument of 𝕄, never a result, so it is not spelled out per rule.
 #
 # 'lambda' and 'dispatch' are kept mutually exclusive: 'dispatch' fires only
 # when its head 𝑛 is not a formation ('not (formation 𝑛)'), so every formation
@@ -24,13 +25,11 @@
 - name: prim
   label: prim
   match: ⟦𝐵⟧
-  e-result: 𝑒
   n-result: ⟦𝐵⟧
 
 - name: lambda
   label: \lambda
   match: '⟦𝐵1, λ ⤍ 𝐹, 𝐵2⟧.𝜏'
-  e-result: 𝑒
   n-result: 𝑛3
   premises:
     - n-result: 𝑛1
@@ -38,61 +37,50 @@
     - n-result: 𝑛2
       normalize: '𝑛1.𝜏'
     - n-result: 𝑛3
-      e-result: 𝑒
       morph: 𝑛2
 
 - name: dispatch
   label: disp
   match: '𝑛.𝜏'
-  e-result: 𝑒
   n-result: 𝑛3
   when:
     not:
       formation: 𝑛
   premises:
     - n-result: 𝑛1
-      e-result: 𝑒
       morph: 𝑛
     - n-result: 𝑛2
       normalize: '𝑛1.𝜏'
     - n-result: 𝑛3
-      e-result: 𝑒
       morph: 𝑛2
 
 - name: application
   label: app
   match: '𝑛(𝜏 ↦ 𝑒1)'
-  e-result: 𝑒
   n-result: 𝑛3
   premises:
     - n-result: 𝑛1
-      e-result: 𝑒
       morph: 𝑛
     - n-result: 𝑛2
       normalize: '𝑛1(𝜏 ↦ 𝑒1)'
     - n-result: 𝑛3
-      e-result: 𝑒
       morph: 𝑛2
 
 - name: applicationa
   label: appa
   match: '𝑛(α𝑖 ↦ 𝑒1)'
-  e-result: 𝑒
   n-result: 𝑛3
   premises:
     - n-result: 𝑛1
-      e-result: 𝑒
       morph: 𝑛
     - n-result: 𝑛2
       normalize: '𝑛1(α𝑖 ↦ 𝑒1)'
     - n-result: 𝑛3
-      e-result: 𝑒
       morph: 𝑛2
 
 - name: root
   label: root
   match: Φ
-  e-result: 𝑒
   n-result: 𝑛2
   when:
     not:
@@ -103,23 +91,19 @@
     - n-result: 𝑛1
       normalize: 𝑒
     - n-result: 𝑛2
-      e-result: 𝑒
       morph: 𝑛1
 
 - name: dead
   label: dead
   match: ⊥
-  e-result: 𝑒
   n-result: ⊥
 
 - name: xi
   label: xi
   match: ξ
-  e-result: 𝑒
   n-result: ⊥
 
 - name: globe
   label: globe
   match: Φ
-  e-result: 𝑒
   n-result: ⊥

@@ -379,7 +379,7 @@ explainMorphRule rule =
     rule.label
     rule.when
     (map premiseToLatex rule.premises)
-    (phinoMorph (renderExpr rule.match) rule.euniverse (renderExpr rule.nresult))
+    (phinoMorph (renderExpr rule.match) (renderExpr rule.nresult))
 
 -- Render a dataization rule as a LaTeX inference rule, with 𝔻(match, e) ⟿
 -- d-result as the conclusion below the line.
@@ -390,14 +390,14 @@ explainDataizeRule rule =
     rule.label
     rule.when
     (map premiseToLatex rule.premises)
-    (phinoDataize (renderExpr rule.match) rule.euniverse (renderBytes rule.dresult))
+    (phinoDataize (renderExpr rule.match) (renderBytes rule.dresult))
 
 -- One premise judgment, rendered per its operation. 𝕄 ('morph') and 𝔻
 -- ('dataize') are binary and carry the universe; the rest are unary.
 premiseToLatex :: Y.Premise -> String
 premiseToLatex premise = case premise.operation of
-  Y.OpMorph arg -> phinoMorph (renderExpr arg) premise.universe (renderExpr (ExMeta premise.result))
-  Y.OpDataize arg -> phinoDataize (renderExpr arg) premise.universe (renderBytes (BtMeta premise.result))
+  Y.OpMorph arg -> phinoMorph (renderExpr arg) (renderExpr (ExMeta premise.result))
+  Y.OpDataize arg -> phinoDataize (renderExpr arg) (renderBytes (BtMeta premise.result))
   Y.OpNormalize arg -> phinoNormalize (renderExpr arg) (renderExpr (ExMeta premise.result))
   Y.OpLambda arg -> phinoEvaluate (renderExpr arg) (renderExpr (ExMeta premise.result))
   Y.OpContextualize arg context -> phinoContextualize (renderExpr arg) (renderExpr context) (renderExpr (ExMeta premise.result))
@@ -439,14 +439,14 @@ trrule macro label name lhs rhs cond extras =
   where
     labelArg = maybe "" (\symbol -> "[" ++ symbol ++ "]") label
 
--- 𝕄 and 𝔻 are binary, so they render with the universe as a middle argument:
--- \phinoMorph{ input }{ universe }{ output }, mirroring 𝕄(input, universe) ⟿
--- output. 𝒩, 𝔼 and 𝒞 carry no universe.
-phinoMorph :: String -> Maybe Expression -> String -> String
-phinoMorph input univ output = printf "\\phinoMorph{ %s }{ %s }{ %s }" input (universeInLatex univ) output
+-- 𝕄 and 𝔻 are binary, 𝕄(input, e) ⟿ output, so they render with the fixed
+-- global universe e as the middle argument: \phinoMorph{ input }{ e }{ output }.
+-- 𝒩, 𝔼 and 𝒞 carry no universe.
+phinoMorph :: String -> String -> String
+phinoMorph input = printf "\\phinoMorph{ %s }{ e }{ %s }" input
 
-phinoDataize :: String -> Maybe Expression -> String -> String
-phinoDataize input univ output = printf "\\phinoDataize{ %s }{ %s }{ %s }" input (universeInLatex univ) output
+phinoDataize :: String -> String -> String
+phinoDataize input = printf "\\phinoDataize{ %s }{ e }{ %s }" input
 
 phinoNormalize :: String -> String -> String
 phinoNormalize input = printf "\\phinoNormalize{ %s }{ %s }" input
@@ -456,9 +456,6 @@ phinoEvaluate input = printf "\\phinoEvaluate{ %s }{ %s }" input
 
 phinoContextualize :: String -> String -> String -> String
 phinoContextualize input context = printf "\\phinoContextualize{ %s }{ %s }{ %s }" input context
-
-universeInLatex :: Maybe Expression -> String
-universeInLatex = maybe "e" renderExpr
 
 conditionInLatex :: Maybe Y.Condition -> Maybe String
 conditionInLatex Nothing = Nothing
