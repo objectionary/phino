@@ -310,10 +310,10 @@ Condition:
   | part-of:             # returns True if given expression is attached to any
       - Expression'      # attribute in ginve bindings
       - BiMeta'
-  | formation: Expression' # returns True if given expression is a formation
-                         # (an abstraction ⟦…⟧); used by the morphing 'dispatch'
-                         # rule as 'not (formation 𝑛)' so a formation head is
-                         # left to 'lambda'; only a non-formation head morphs
+  | formation:           # returns True if given expression is a formation
+      Expression'        # (an abstraction ⟦…⟧); used by morphing 'dispatch'
+                         # as 'not (formation 𝑛)', so a non-formation head is
+                         # morphed and a formation head is left to 'lambda'
 
 Comparable:              # comparable object that may be used in 'eq' condition
   = Attribute'
