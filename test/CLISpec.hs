@@ -981,7 +981,7 @@ spec = do
             , "\\phinoNormalizationRule{amiss}"
             , "  { [[ B ]] ( \\phiTerminal{\\alpha_{i}} -> e ) }"
             , "  { T }"
-            , "  { \\vert \\overline{ B } \\vert \\not> i }"
+            , "  { \\vert \\overline{ B } \\vert \\leq i }"
             , "  { }"
             , "\\phinoNormalizationRule{copy}"
             , "  { [[ B_1, \\tau -> ?, B_2 ]] ( \\tau -> k ) }"

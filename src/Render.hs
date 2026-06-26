@@ -247,7 +247,7 @@ instance Render EQUAL where
   render EQUAL = "="
   render NOT_EQUAL = "\\not="
   render GREATER = ">"
-  render NOT_GREATER = "\\not>"
+  render NOT_GREATER = "\\leq"
 
 instance Render CONDITION where
   render CO_BELONGS{..} = render attr <> " " <> render belongs <> " " <> render set
