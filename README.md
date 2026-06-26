@@ -238,16 +238,16 @@ The morphing and dataization rules are printed the same way:
 $ phino explain --morph
 \begin{tabular}{rl}
 \phinoMorphingRule{prim}
-  { \mathbb{M}( [[ B ]] ) }
+  { \mathbb{M}( [[ B ]], e ) }
   { [[ B ]] }
   { }
   { }
 ...
 \phinoMorphingRule{root}
-  { \mathbb{M}( Q ) }
-  { \mathbb{M}( \phinoNormalize{ e } ) }
+  { \mathbb{M}( Q, e ) }
+  { \mathbb{M}( \phinoNormalize{ e }, e ) }
   { $ e \not= Q $ }
-  { $ e \coloneqq \phinoGlobal{  } $ }
+  { }
 \end{tabular}
 ```
 
@@ -262,7 +262,7 @@ $ phino explain --dataize
 ...
 \phinoDataizationRule{norm}
   { \phinoDataize{ n } }
-  { \phinoDataize{ \mathbb{M}( n ) } }
+  { \phinoDataize{ \mathbb{M}( n, e ) } }
   { }
   { }
 \end{tabular}
@@ -310,10 +310,10 @@ Condition:
   | part-of:             # returns True if given expression is attached to any
       - Expression'      # attribute in ginve bindings
       - BiMeta'
-  | binding: Expression' # returns True if given expression is a formation
-                         # (an abstraction ⟦…⟧); used by the morphing 'dispatch'
-                         # rule as 'not (binding 𝑛)' so a formation head is left
-                         # to 'lambda' and only a non-formation head is morphed
+  | formation: Expression' # returns True if given expression is a formation
+                           # (an abstraction ⟦…⟧); used by the morphing 'dispatch'
+                           # rule as 'not (formation 𝑛)' so a formation head is left
+                           # to 'lambda' and only a non-formation head is morphed
 
 Comparable:              # comparable object that may be used in 'eq' condition
   = Attribute'

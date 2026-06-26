@@ -83,14 +83,14 @@ instance FromJSON Condition where
     withObject
       "Condition"
       ( \v -> do
-          validateYamlObject v ["and", "or", "not", "nf", "absolute", "eq", "gt", "in", "matches", "part-of", "disjoint", "binding"]
+          validateYamlObject v ["and", "or", "not", "nf", "absolute", "eq", "gt", "in", "matches", "part-of", "disjoint", "formation"]
           asum
             [ And <$> v .: "and"
             , Or <$> v .: "or"
             , Not <$> v .: "not"
             , NF <$> v .: "nf"
             , Absolute <$> v .: "absolute"
-            , IsBinding <$> v .: "binding"
+            , IsFormation <$> v .: "formation"
             , do
                 vals <- v .: "disjoint"
                 case vals of
@@ -181,7 +181,7 @@ data Condition
   | Matches String Expression
   | PartOf Expression Binding
   | Disjoint [Attribute] [Binding]
-  | IsBinding Expression
+  | IsFormation Expression
   deriving (Eq, Generic, Show)
 
 data ExtraArgument
@@ -240,11 +240,10 @@ data MorphArg
 
 -- The right-hand side of a dataization reduction 𝔻(match) ⟿ then.
 -- A mapping ('{ dataize: arg }') keeps reducing under 𝔻; a bare bytes scalar
--- yields data; the 'nothing' keyword marks the function as undefined.
+-- yields data. 𝔻 is total: every rule yields data or reduces further.
 data DataizeOutcome
   = DoDataize DataizeArg
   | DoData Bytes
-  | DoNothing
   deriving (Eq, Generic, Show)
 
 -- The argument of a dataization continuation: a plain expression ('𝔻(e)'),
@@ -270,7 +269,7 @@ data MorphRule = MorphRule
   deriving (Generic, Show)
 
 -- One ordered dataization rule, structured like 'MorphRule' but reducing
--- under 𝔻 and able to terminate with bytes or 'nothing'.
+-- under 𝔻 and terminating with bytes.
 data DataizeRule = DataizeRule
   { name :: String
   , label :: Maybe String
@@ -298,7 +297,6 @@ instance FromJSON DataizeOutcome where
   parseJSON (Object o) = do
     validateYamlObject o ["dataize"]
     DoDataize <$> o .: "dataize"
-  parseJSON (String "nothing") = pure DoNothing
   parseJSON v = DoData <$> parseJSON v
 
 instance FromJSON DataizeArg where

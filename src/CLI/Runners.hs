@@ -147,9 +147,9 @@ runDataize OptsDataize{..} = do
       canonize = if _canonize then C.canonize else id
       exclude = (`F.exclude` excluded)
       include = (`F.include` included)
-  (maybeBytes, chain) <- dataize (context loc prog printCtx)
+  (bytes, chain) <- dataize prog (context loc printCtx)
   when _sequence (printRewrittens printCtx (canonize $ exclude $ include chain, False) >>= putStrLn)
-  unless _quiet (putStrLn (maybe (P.printExpression ExTermination) P.printBytes maybeBytes))
+  unless _quiet (putStrLn (P.printBytes bytes))
   where
     validateOpts :: IO ()
     validateOpts = do
@@ -160,8 +160,8 @@ runDataize OptsDataize{..} = do
         [(_meetPopularity, "meet-popularity"), (_meetLength, "meet-length")]
       validateXmirOptions _outputFormat [(_omitListing, "omit-listing"), (_omitComments, "omit-comments")] _focus
       when (length _show > 1) (invalidCLIArguments "The option --show can be used only once")
-    context :: Expression -> Program -> PrintProgramContext -> DataizeContext
-    context loc prog ctx = DataizeContext loc prog _maxDepth _maxCycles _depthSensitive buildTerm (saveStepFunc _stepsDir ctx)
+    context :: Expression -> PrintProgramContext -> DataizeContext
+    context loc ctx = DataizeContext loc _maxDepth _maxCycles _depthSensitive buildTerm (saveStepFunc _stepsDir ctx)
     printProgCtx :: Expression -> PrintProgramContext
     printProgCtx focus =
       PrintProgCtx

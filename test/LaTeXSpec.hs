@@ -33,9 +33,9 @@ spec = do
           meetInProgram ptn 4 tgt `shouldBe` res
       )
 
-  describe "renders the 'binding' condition" $
+  describe "renders the 'formation' condition" $
     forM_
-      [ ("binding", Y.IsBinding (ExMeta "n"), "{ \\phinoIsBinding{ n } }")
-      , ("not binding", Y.Not (Y.IsBinding (ExMeta "n")), "{ \\phinoNotBinding{ n } }")
+      [ ("formation", Y.IsFormation (ExMeta "n"), "{ \\phinoIsFormation{ n } }")
+      , ("not formation", Y.Not (Y.IsFormation (ExMeta "n")), "{ \\phinoNotFormation{ n } }")
       ]
       (\(desc, cond, expected) -> it desc (conditionToLatex (Just cond) `shouldBe` expected))

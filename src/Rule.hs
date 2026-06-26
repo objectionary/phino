@@ -197,11 +197,11 @@ _absolute expr subst _ = pure [subst | xiFree expr]
 
 -- Hold when the given expression is a formation (an abstraction ⟦…⟧). A meta
 -- is resolved first, so 'binding 𝑛' inspects whatever 𝑛 is bound to.
-_isBinding :: Expression -> Subst -> RuleContext -> IO [Subst]
-_isBinding (ExMeta meta) (Subst mp) ctx = case M.lookup meta mp of
-  Just (MvExpression expr) -> _isBinding expr (Subst mp) ctx
+_isFormation :: Expression -> Subst -> RuleContext -> IO [Subst]
+_isFormation (ExMeta meta) (Subst mp) ctx = case M.lookup meta mp of
+  Just (MvExpression expr) -> _isFormation expr (Subst mp) ctx
   _ -> pure []
-_isBinding expr subst _ = pure [subst | isFormation expr]
+_isFormation expr subst _ = pure [subst | isFormation expr]
   where
     isFormation :: Expression -> Bool
     isFormation (ExFormation _) = True
@@ -259,7 +259,7 @@ meetCondition' (Y.Absolute expr) = _absolute expr
 meetCondition' (Y.Matches pat expr) = _matches pat expr
 meetCondition' (Y.PartOf expr bd) = _partOf expr bd
 meetCondition' (Y.Disjoint attrs bds) = _disjoint attrs bds
-meetCondition' (Y.IsBinding expr) = _isBinding expr
+meetCondition' (Y.IsFormation expr) = _isFormation expr
 
 -- For each substitution check if it meetCondition to given condition
 -- If substitution does not meet the condition - it's thrown out
@@ -356,19 +356,25 @@ kMetaNames :: Expression -> [T.Text]
 kMetaNames = metaNamesWithPrefix "k"
 
 matchExpressionWithRule :: Expression -> Y.Rule -> RuleContext -> IO [Subst]
-matchExpressionWithRule = matchExpressionBy matchExpression
+matchExpressionWithRule = matchExpressionBy matchExpression [substEmpty]
 
 -- Like 'matchExpressionWithRule' but matches the pattern against the whole
 -- expression only (no deep, sub-expression matching). Used by the dataization
 -- and morphing driver, where a rule applies to the entire configuration rather
--- than to nested redexes.
-matchExpressionWithRule' :: Expression -> Y.Rule -> RuleContext -> IO [Subst]
+-- than to nested redexes. The leading '[Subst]' seeds matching with pre-bound
+-- meta-variables: the morphing driver passes the global universe bound to 'e',
+-- the second argument of 𝕄(n, e), so the 'root' rule reads it directly instead
+-- of through a 'global()' build-term function. Pass '[substEmpty]' for no seed.
+matchExpressionWithRule' :: [Subst] -> Expression -> Y.Rule -> RuleContext -> IO [Subst]
 matchExpressionWithRule' = matchExpressionBy matchExpression'
 
-matchExpressionBy :: MatchExpressionFunc -> Expression -> Y.Rule -> RuleContext -> IO [Subst]
-matchExpressionBy matcher expr rule ctx =
+-- The seed substitutions are combined into every match, so a pre-bound meta in
+-- the seed is dropped only when the pattern binds the same name to a different
+-- value; rules that do not mention the name simply carry it along unused.
+matchExpressionBy :: MatchExpressionFunc -> [Subst] -> Expression -> Y.Rule -> RuleContext -> IO [Subst]
+matchExpressionBy matcher seed expr rule ctx =
   let ptn = rule.pattern
-      matched = matcher ptn expr
+      matched = combineMany seed (matcher ptn expr)
       name = rule.name
    in if null matched
         then do

@@ -247,7 +247,7 @@ instance Render EQUAL where
   render EQUAL = "="
   render NOT_EQUAL = "\\not="
   render GREATER = ">"
-  render NOT_GREATER = "\\not>"
+  render NOT_GREATER = "\\leq"
 
 instance Render CONDITION where
   render CO_BELONGS{..} = render attr <> " " <> render belongs <> " " <> render set
@@ -260,12 +260,12 @@ instance Render CONDITION where
       renderWrapped cond = render cond
   render CO_NF{..} = "\\isnormal{ " <> render expr <> " }"
   render CO_ABSOLUTE{..} = render expr <> " " <> render belongs <> " \\mathcal{K}"
-  render CO_NOT{condition = CO_BINDING{..}} = "\\phinoNotBinding{ " <> render expr <> " }"
+  render CO_NOT{condition = CO_FORMATION{..}} = "\\phinoNotFormation{ " <> render expr <> " }"
   render CO_NOT{..} = renderFunc "not" condition
   render CO_COMPARE{..} = render left <> " " <> render equal <> " " <> render right
   render CO_MATCHES{..} = "matches( " <> T.pack regex <> ", " <> render expr <> " )"
   render CO_PART_OF{..} = "part-of( " <> render expr <> ", " <> render binding <> " )"
-  render CO_BINDING{..} = "\\phinoIsBinding{ " <> render expr <> " }"
+  render CO_FORMATION{..} = "\\phinoIsFormation{ " <> render expr <> " }"
   render CO_DISJOINT{..} =
     "[ "
       <> T.intercalate ", " (map render attrs)
@@ -285,10 +285,12 @@ instance Render EXTRA_ARG where
 
 instance Render EXTRA where
   render EXTRA{func = "contextualize", args = arg : rest, ..} = render meta <> " \\coloneqq \\ctx{ " <> render arg <> " }{ " <> T.intercalate ", " (map render rest) <> " }"
+  -- 𝕄 is binary, 𝕄(n, e), so a 'morph' extra renders with the universe
+  -- metavariable 'e' as its second argument, matching how the morphing rules
+  -- forward the universe unchanged.
+  render EXTRA{func = "morph", ..} = render meta <> " \\coloneqq \\phinoMorph{ " <> T.intercalate ", " (map render args) <> " }{ e }"
   render EXTRA{..} = render meta <> " \\coloneqq " <> macro func <> "{ " <> T.intercalate ", " (map render args) <> " }"
     where
       macro :: String -> Text
       macro "lambda" = "\\phinoEvaluate"
-      macro "morph" = "\\phinoMorph"
-      macro "global" = "\\phinoGlobal"
       macro name = "\\" <> T.pack name

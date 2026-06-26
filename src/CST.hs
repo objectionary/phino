@@ -234,7 +234,7 @@ data CONDITION
   | CO_MATCHES {regex :: String, expr :: EXPRESSION}
   | CO_PART_OF {expr :: EXPRESSION, binding :: BINDING}
   | CO_DISJOINT {attrs :: [ATTRIBUTE], groups :: [BINDING]}
-  | CO_BINDING {expr :: EXPRESSION}
+  | CO_FORMATION {expr :: EXPRESSION}
   deriving (Eq, Show)
 
 data EXTRA_ARG
@@ -541,7 +541,7 @@ instance ToCST Y.Condition CONDITION where
   toCST (Y.Gt left right) _ = CO_COMPARE (comparableToCST left) GREATER (comparableToCST right)
   toCST (Y.Matches regex expr) _ = CO_MATCHES regex (expressionToCST expr)
   toCST (Y.PartOf expr binding) _ = CO_PART_OF (expressionToCST expr) (bindingsToCST [binding])
-  toCST (Y.IsBinding expr) _ = CO_BINDING (expressionToCST expr)
+  toCST (Y.IsFormation expr) _ = CO_FORMATION (expressionToCST expr)
 
 instance ToCST Y.Comparable COMPARABLE where
   toCST (Y.CmpAttr attr) _ = CMP_ATTR (attributeToCST attr)

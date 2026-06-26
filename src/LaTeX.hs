@@ -340,7 +340,7 @@ instance ToLaTeX CONDITION where
   toLaTeX CO_MATCHES{..} = CO_MATCHES regex (toLaTeX expr)
   toLaTeX CO_PART_OF{..} = CO_PART_OF (toLaTeX expr) (toLaTeX binding)
   toLaTeX CO_DISJOINT{..} = CO_DISJOINT (map toLaTeX attrs) (map toLaTeX groups)
-  toLaTeX CO_BINDING{..} = CO_BINDING (toLaTeX expr)
+  toLaTeX CO_FORMATION{..} = CO_FORMATION (toLaTeX expr)
   toLaTeX CO_EMPTY = CO_EMPTY
 
 instance ToLaTeX EXTRA_ARG where
@@ -402,7 +402,6 @@ explainDataizeRule rule =
     dataizeOutcome (Y.DoDataize (Y.DaMorph expr)) = dataize (morph (renderToLatex (expressionToCST expr) defaultLatexContext))
     dataizeOutcome (Y.DoDataize (Y.DaNormalize expr)) = dataize (normalize (renderToLatex (expressionToCST expr) defaultLatexContext))
     dataizeOutcome (Y.DoData bytes) = T.unpack (render (toLaTeX (toCST' bytes :: BYTES)))
-    dataizeOutcome Y.DoNothing = "\\varnothing"
 
 -- Render a single rule row through the given macro (one of
 -- \phinoMorphingRule, \phinoNormalizationRule, \phinoDataizationRule): an
@@ -423,8 +422,10 @@ trrule macro label name lhs rhs cond extras =
   where
     labelArg = maybe "" (\symbol -> "[" ++ symbol ++ "]") label
 
+-- 𝕄 is binary, 𝕄(n, e), so it renders with the universe metavariable 'e' as its
+-- second argument (the morphing rules carry the universe under that meta).
 morph :: String -> String
-morph inner = "\\phinoMorph{ " ++ inner ++ " }"
+morph inner = "\\phinoMorph{ " ++ inner ++ " }{ e }"
 
 dataize :: String -> String
 dataize inner = "\\phinoDataize{ " ++ inner ++ " }"
