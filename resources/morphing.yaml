@@ -21,25 +21,25 @@
   description: '𝕄(⟦𝐵1, λ ⤍ 𝐹, 𝐵2⟧.τ, e) ⟿ 𝕄(𝒩(𝔼(⟦𝐵1, λ ⤍ 𝐹, 𝐵2⟧).τ), e)'
   match: '⟦𝐵1, λ ⤍ 𝐹, 𝐵2⟧.𝜏'
   where:
-    - meta: 𝑒2
+    - meta: 𝑒1
       function: lambda
       args:
         - '⟦𝐵1, λ ⤍ 𝐹, 𝐵2⟧'
   then:
     morph:
-      normalize: '𝑒2.𝜏'
+      normalize: '𝑒1.𝜏'
 
 - name: dispatch
   description: '𝕄(n.τ, e) ⟿ 𝕄(𝒩(𝕄(n, e).τ), e)'
   match: '𝑛.𝜏'
   where:
-    - meta: 𝑒2
+    - meta: 𝑒1
       function: morph
       args:
         - 𝑛
   then:
     morph:
-      normalize: '𝑒2.𝜏'
+      normalize: '𝑒1.𝜏'
 
 - name: application
   description: '𝕄(n(τ ↦ e_1), e) ⟿ 𝕄(𝒩(𝕄(n, e)(τ ↦ e_1)), e)'

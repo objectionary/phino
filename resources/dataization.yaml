@@ -1,56 +1,58 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 # SPDX-License-Identifier: MIT
 ---
-# Dataization 𝔻 — applied top-to-bottom, first matching clause wins. The input
-# is always a normal form: a non-NF expression matches no clause.
+# Dataization 𝔻 — applied top-to-bottom, first matching clause wins. It is
+# binary, 𝔻(n, e): the second argument e is the global universe, the same
+# expression that 𝕄 takes as its second argument; 𝔻 forwards it to 𝕄. The first
+# argument is always a normal form: a non-NF expression matches no clause.
 
 - name: delta
   label: \Delta
-  description: '𝔻(⟦𝐵1, Δ ⤍ δ, 𝐵2⟧) ⟿ δ'
+  description: '𝔻(⟦𝐵1, Δ ⤍ δ, 𝐵2⟧, e) ⟿ δ'
   match: ⟦𝐵1, Δ ⤍ δ, 𝐵2⟧
   then: δ
 
 - name: box
-  description: '𝔻(⟦𝐵1, φ ↦ e, 𝐵2⟧) ⟿ 𝔻(𝒩(𝒞(e))) if [Δ, λ] ∩ (𝐵1 ∪ 𝐵2) = ∅'
-  match: ⟦𝐵1, φ ↦ 𝑒, 𝐵2⟧
+  description: '𝔻(⟦𝐵1, φ ↦ e_1, 𝐵2⟧, e) ⟿ 𝔻(𝒩(𝒞(e_1)), e) if [Δ, λ]∩(𝐵1∪𝐵2) = ∅'
+  match: ⟦𝐵1, φ ↦ 𝑒1, 𝐵2⟧
   where:
-    - meta: 𝑒1
+    - meta: 𝑒2
       function: contextualize
       args:
-        - 𝑒
-        - ⟦𝐵1, φ ↦ 𝑒, 𝐵2⟧
+        - 𝑒1
+        - ⟦𝐵1, φ ↦ 𝑒1, 𝐵2⟧
   when:
     disjoint:
       - [Δ, λ]
       - [𝐵1, 𝐵2]
   then:
     dataize:
-      normalize: 𝑒1
+      normalize: 𝑒2
 
 - name: fire
-  description: '𝔻(⟦𝐵1, λ ⤍ 𝐹, 𝐵2⟧) ⟿ 𝔻(𝒩(𝔼(⟦𝐵1, λ ⤍ 𝐹, 𝐵2⟧)))'
+  description: '𝔻(⟦𝐵1, λ ⤍ 𝐹, 𝐵2⟧, e) ⟿ 𝔻(𝒩(𝔼(⟦𝐵1, λ ⤍ 𝐹, 𝐵2⟧)), e)'
   match: ⟦𝐵1, λ ⤍ 𝐹, 𝐵2⟧
   where:
-    - meta: 𝑒
+    - meta: 𝑒1
       function: lambda
       args:
         - ⟦𝐵1, λ ⤍ 𝐹, 𝐵2⟧
   then:
     dataize:
-      normalize: 𝑒
+      normalize: 𝑒1
 
 - name: none
-  description: '𝔻(⟦𝐵⟧) ⟿ --'
+  description: '𝔻(⟦𝐵⟧, e) ⟿ --'
   match: ⟦𝐵⟧
   then: '--'
 
 - name: bott
-  description: '𝔻(⊥) ⟿ --'
+  description: '𝔻(⊥, e) ⟿ --'
   match: ⊥
   then: '--'
 
 - name: norm
-  description: '𝔻(n) ⟿ 𝔻(𝕄(n, e)) otherwise'
+  description: '𝔻(n, e) ⟿ 𝔻(𝕄(n, e), e) otherwise'
   match: 𝑛
   then:
     dataize:
