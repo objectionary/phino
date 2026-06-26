@@ -12,7 +12,9 @@
 # ordered 'premises' reduce as stated. A premise binds its 'n-result'/'d-result'
 # to one judgment — 𝔻 ('dataize'), 𝕄 ('morph'), 𝒩 ('normalize'), 𝔼 ('lambda')
 # or 𝒞 ('contextualize'). 'e-match' is the universe-argument matcher of
-# 𝔻(n, e); it is always the e meta.
+# 𝔻(n, e); it is always the e meta. The single bytes result is named δ; derived
+# terms are 𝑛, 𝑛1, … in premise order, skipping the bare 𝑛 only when 'match'
+# already binds it.
 
 - name: delta
   label: \Delta
@@ -24,33 +26,33 @@
   label: box
   match: ⟦𝐵1, φ ↦ 𝑒1, 𝐵2⟧
   e-match: 𝑒
-  d-result: δ1
+  d-result: δ
   when:
     disjoint:
       - [Δ, λ]
       - [𝐵1, 𝐵2]
   premises:
-    - n-result: 𝑛1
+    - n-result: 𝑛
       contextualize:
         - 𝑒1
         - ⟦𝐵1, φ ↦ 𝑒1, 𝐵2⟧
-    - n-result: 𝑛2
-      normalize: 𝑛1
-    - d-result: δ1
-      dataize: 𝑛2
+    - n-result: 𝑛1
+      normalize: 𝑛
+    - d-result: δ
+      dataize: 𝑛1
 
 - name: fire
   label: fire
   match: ⟦𝐵1, λ ⤍ 𝐹, 𝐵2⟧
   e-match: 𝑒
-  d-result: δ1
+  d-result: δ
   premises:
-    - n-result: 𝑛1
+    - n-result: 𝑛
       lambda: ⟦𝐵1, λ ⤍ 𝐹, 𝐵2⟧
-    - n-result: 𝑛2
-      normalize: 𝑛1
-    - d-result: δ1
-      dataize: 𝑛2
+    - n-result: 𝑛1
+      normalize: 𝑛
+    - d-result: δ
+      dataize: 𝑛1
 
 - name: none
   label: none
@@ -68,9 +70,9 @@
   label: norm
   match: 𝑛
   e-match: 𝑒
-  d-result: δ1
+  d-result: δ
   premises:
     - n-result: 𝑛1
       morph: 𝑛
-    - d-result: δ1
+    - d-result: δ
       dataize: 𝑛1
