@@ -18,23 +18,23 @@ import Rewriter (Rewritten)
 import Test.Hspec
 import Yaml qualified
 
-defaultDataizeContext :: Expression -> Program -> DataizeContext
-defaultDataizeContext loc prog = DataizeContext loc prog prog 25 25 False buildTerm dontSaveStep
+defaultDataizeContext :: Expression -> DataizeContext
+defaultDataizeContext loc = DataizeContext loc 25 25 False buildTerm dontSaveStep
 
-test :: (Eq a, Show a) => ((Expression, NonEmpty Rewritten) -> DataizeContext -> IO (a, [Rewritten])) -> [(String, Expression, Expression, a)] -> Spec
+test :: (Eq a, Show a) => ((Expression, NonEmpty Rewritten) -> Program -> Expression -> DataizeContext -> IO (a, [Rewritten])) -> [(String, Expression, Expression, a)] -> Spec
 test func useCases =
   forM_ useCases $ \(desc, input, expr, output) ->
     it desc $ do
       let prog = Program expr
-      (res, _) <- func (input, (prog, Nothing) :| []) (defaultDataizeContext ExRoot prog)
+      (res, _) <- func (input, (prog, Nothing) :| []) prog expr (defaultDataizeContext ExRoot)
       res `shouldBe` output
 
-test' :: (Eq a, Show a) => ((Expression, NonEmpty Rewritten) -> DataizeContext -> IO (a, NonEmpty Rewritten)) -> [(String, Expression, Expression, a)] -> Spec
+test' :: (Eq a, Show a) => ((Expression, NonEmpty Rewritten) -> Program -> Expression -> DataizeContext -> IO (a, NonEmpty Rewritten)) -> [(String, Expression, Expression, a)] -> Spec
 test' func useCases =
   forM_ useCases $ \(desc, input, expr, output) ->
     it desc $ do
       let prog = Program expr
-      (res, _) <- func (input, (prog, Nothing) :| []) (defaultDataizeContext ExRoot prog)
+      (res, _) <- func (input, (prog, Nothing) :| []) prog expr (defaultDataizeContext ExRoot)
       res `shouldBe` output
 
 testDataize :: [(String, String, String, Bytes)] -> Spec
@@ -43,7 +43,7 @@ testDataize useCases =
     it name $ do
       prog' <- parseProgramThrows prog
       loc' <- parseExpressionThrows loc
-      (value, _) <- dataize (defaultDataizeContext loc' prog')
+      (value, _) <- dataize prog' (defaultDataizeContext loc')
       value `shouldBe` res
 
 spec :: Spec
@@ -123,7 +123,7 @@ spec = do
               ]
           )
       loc <- parseExpressionThrows "Q"
-      (_, chain) <- dataize (defaultDataizeContext loc prog)
+      (_, chain) <- dataize prog (defaultDataizeContext loc)
       let orphans = nub [label | (_, Just label) <- chain, label `notElem` allowed]
       unless
         (null orphans)
@@ -142,7 +142,7 @@ spec = do
     let labelsOf loc src = do
           prog <- parseProgramThrows src
           loc' <- parseExpressionThrows loc
-          (_, chain) <- dataize (defaultDataizeContext loc' prog)
+          (_, chain) <- dataize prog (defaultDataizeContext loc')
           pure [label | (_, Just label) <- chain]
     it "dataizes 5.plus(6) through the expected rules" $ do
       labels <-
