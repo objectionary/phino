@@ -206,9 +206,9 @@ d >> 68-65-6C-6C-6F
 ## Explain
 
 You can _explain_ the built-in rules by printing them in [LaTeX][latex]
-format. Pass exactly one of `--normalize`, `--morph` or `--dataize` for
-the rewriting, morphing (𝕄) or dataization (𝔻) rules (or `--rule` for a
-custom rule file):
+format. Pass exactly one of `--normalize`, `--morph`, `--dataize` or
+`--contextualize` for the rewriting, morphing (𝕄), dataization (𝔻) or
+contextualization (𝒞) rules (or `--rule` for a custom rule file):
 
 ```bash
 $ phino explain --normalize
@@ -266,6 +266,22 @@ $ phino explain --dataize
   { }
   { }
 \end{tabular}
+```
+
+```bash
+$ phino explain --contextualize
+\begin{phinoInference}
+  \phinoName{cxi}
+  \phinoLabel{xi}
+  \phinoConclusion{ \phinoContextualize{ \phiTerminal{\xi} }{ k }{ k } }
+\end{phinoInference}
+...
+\begin{phinoInference}
+  \phinoName{cdispatch}
+  \phinoLabel{disp}
+  \phinoPremise{ \phinoContextualize{ n }{ k }{ n_1 } }
+  \phinoConclusion{ \phinoContextualize{ n . \tau }{ k }{ n_1 . \tau } }
+\end{phinoInference}
 ```
 
 For more details, use `phino [COMMAND] --help` option.
