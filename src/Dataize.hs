@@ -72,8 +72,9 @@ formation bds univ ctx = do
 
 -- The Morphing function 𝕄 maps normal forms to formations. It is binary,
 -- 𝕄(n, e): besides the term 'n' it takes the universe 'e' ('univ') — a plain
--- expression — and matches it against the rule's 'e-match' pattern (always the
--- '𝑒' meta), which binds 'e' so the 'root' rule substitutes it. It is driven by
+-- expression — and matches it against the rule's 'e-match' pattern (usually the
+-- '𝑒' meta, which binds 'e' so the 'root' rule substitutes it, but a rule may
+-- pin it to a literal such as 'globe' matching Φ). It is driven by
 -- the ordered rules from 'morphing.yaml': the first matching rule's premises are
 -- evaluated and its conclusion 'nresult' is built, always forwarding the same
 -- universe. The 'morph' premise that produces the conclusion is the spine: when

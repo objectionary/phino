@@ -16,9 +16,10 @@
 # 'n-result' (a premise meta or a literal), provided 'when' holds and the
 # ordered 'premises' reduce as stated. A premise binds 'n-result' to the result
 # of one judgment — 𝕄 ('morph'), 𝒩 ('normalize') or 𝔼 ('lambda'). 'e-match' is
-# the universe-argument matcher of 𝕄(n, e); it is always the e meta. Derived
-# terms are named 𝑛, 𝑛1, … in premise order; the bare 𝑛 is skipped only when
-# 'match' already binds it.
+# the universe-argument matcher of 𝕄(n, e); usually the e meta, but a rule may
+# pin it to a literal (e.g. 'globe' fires only on 𝕄(Φ, Φ)). Derived terms are
+# named 𝑛, 𝑛1, … in premise order; the bare 𝑛 is skipped only when 'match'
+# already binds it.
 #
 # 'lambda' and 'dispatch' are kept mutually exclusive: 'dispatch' fires only
 # when its head 𝑛 is not a formation ('not (formation 𝑛)'), so every formation
@@ -117,5 +118,5 @@
 - name: globe
   label: globe
   match: Φ
-  e-match: 𝑒
+  e-match: Φ
   n-result: ⊥
