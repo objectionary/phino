@@ -139,7 +139,7 @@ spec = do
     let verb op = case op of
           Yaml.OpMorph _ -> "morph"
           Yaml.OpNormalize _ -> "normalize"
-          Yaml.OpLambda _ -> "lambda"
+          Yaml.OpEvaluate _ -> "evaluate"
           Yaml.OpContextualize _ _ -> "contextualize"
           Yaml.OpDataize _ -> "dataize"
         allowed =
@@ -192,7 +192,7 @@ spec = do
                    , "alpha"
                    , "copy"
                    , "prim"
-                   , "lambda"
+                   , "evaluate"
                    , "applicationa"
                    , "alpha"
                    , "copy"

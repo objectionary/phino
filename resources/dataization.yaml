@@ -10,7 +10,7 @@
 # matches the universe (binding the meta e), the rule yields the conclusion
 # 'd-result' (a premise bytes meta or a literal), provided 'when' holds and the
 # ordered 'premises' reduce as stated. A premise binds its 'n-result'/'d-result'
-# to one judgment — 𝔻 ('dataize'), 𝕄 ('morph'), 𝒩 ('normalize'), 𝔼 ('lambda')
+# to one judgment — 𝔻 ('dataize'), 𝕄 ('morph'), 𝒩 ('normalize'), 𝔼 ('evaluate')
 # or 𝒞 ('contextualize'). 'e-match' is the universe-argument matcher of
 # 𝔻(n, e); it is always the e meta. The single bytes result is named δ; derived
 # terms are 𝑛, 𝑛1, … in premise order, skipping the bare 𝑛 only when 'match'
@@ -48,7 +48,7 @@
   d-result: δ
   premises:
     - n-result: 𝑛
-      lambda: ⟦𝐵1, λ ⤍ 𝑓, 𝐵2⟧
+      evaluate: ⟦𝐵1, λ ⤍ 𝑓, 𝐵2⟧
     - n-result: 𝑛1
       normalize: 𝑛
     - d-result: δ
