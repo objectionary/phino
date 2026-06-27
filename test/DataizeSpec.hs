@@ -167,11 +167,12 @@ spec = do
         (expectationFailure ("Dataization emitted step labels with no defining rule or operation: " ++ show orphans))
 
   describe "names every rule uniquely across rule sets" $
-    it "shares no rule name between morphing, dataization and normalization" $ do
+    it "shares no rule name between morphing, dataization, normalization and contextualization" $ do
       let names =
             map (.name) Yaml.morphingRules
               ++ map (.name) Yaml.dataizationRules
               ++ map (.name) Yaml.normalizationRules
+              ++ map (.name) Yaml.contextualizationRules
           clashes = nub (filter (\n -> length (filter (== n) names) > 1) names)
       clashes `shouldBe` []
 

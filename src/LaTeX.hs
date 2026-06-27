@@ -12,6 +12,7 @@ module LaTeX
   ( explainRules
   , explainMorphRules
   , explainDataizeRules
+  , explainContextualizeRules
   , rewrittensToLatex
   , programToLaTeX
   , expressionToLaTeX
@@ -392,6 +393,17 @@ explainDataizeRule rule =
     (map premiseToLatex rule.premises)
     (phinoDataize (renderExpr rule.match) (renderExpr rule.ematch) (renderBytes rule.dresult))
 
+-- Render a contextualization rule as a LaTeX inference rule, with 𝒞(match, c) ⟿
+-- c-result as the conclusion below the line.
+explainContextualizeRule :: Y.ContextualizeRule -> String
+explainContextualizeRule rule =
+  inference
+    rule.name
+    rule.label
+    Nothing
+    (map premiseToLatex rule.premises)
+    (phinoContextualize (renderExpr rule.match) (renderExpr rule.cmatch) (renderExpr rule.cresult))
+
 -- One premise judgment, rendered per its operation. 𝕄 ('morph') and 𝔻
 -- ('dataize') are binary and carry the universe 'e' they were given; the rest
 -- are unary.
@@ -487,3 +499,6 @@ explainMorphRules = intercalate "\n" . map explainMorphRule
 
 explainDataizeRules :: [Y.DataizeRule] -> String
 explainDataizeRules = intercalate "\n" . map explainDataizeRule
+
+explainContextualizeRules :: [Y.ContextualizeRule] -> String
+explainContextualizeRules = intercalate "\n" . map explainContextualizeRule

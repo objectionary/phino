@@ -1155,15 +1155,62 @@ spec = do
             ]
         ]
 
+    it "explains contextualization rules" $
+      testCLISucceeded
+        ["explain", "--contextualize"]
+        [ unlines
+            [ "\\begin{phinoInference}"
+            , "  \\phinoName{cglobe}"
+            , "  \\phinoLabel{globe}"
+            , "  \\phinoConclusion{ \\phinoContextualize{ Q }{ k }{ Q } }"
+            , "\\end{phinoInference}"
+            , "\\begin{phinoInference}"
+            , "  \\phinoName{cxi}"
+            , "  \\phinoLabel{xi}"
+            , "  \\phinoConclusion{ \\phinoContextualize{ \\phiTerminal{\\xi} }{ k }{ k } }"
+            , "\\end{phinoInference}"
+            , "\\begin{phinoInference}"
+            , "  \\phinoName{cdead}"
+            , "  \\phinoLabel{dead}"
+            , "  \\phinoConclusion{ \\phinoContextualize{ T }{ k }{ T } }"
+            , "\\end{phinoInference}"
+            , "\\begin{phinoInference}"
+            , "  \\phinoName{cprim}"
+            , "  \\phinoLabel{prim}"
+            , "  \\phinoConclusion{ \\phinoContextualize{ [[ B ]] }{ k }{ [[ B ]] } }"
+            , "\\end{phinoInference}"
+            , "\\begin{phinoInference}"
+            , "  \\phinoName{cdispatch}"
+            , "  \\phinoLabel{disp}"
+            , "  \\phinoPremise{ \\phinoContextualize{ n }{ k }{ n_1 } }"
+            , "  \\phinoConclusion{ \\phinoContextualize{ n . \\tau }{ k }{ n_1 . \\tau } }"
+            , "\\end{phinoInference}"
+            , "\\begin{phinoInference}"
+            , "  \\phinoName{capplication}"
+            , "  \\phinoLabel{app}"
+            , "  \\phinoPremise{ \\phinoContextualize{ n }{ k }{ n_1 } }"
+            , "  \\phinoPremise{ \\phinoContextualize{ e_1 }{ k }{ n_2 } }"
+            , "  \\phinoConclusion{ \\phinoContextualize{ n ( \\tau -> e_1 ) }{ k }{ n_1 ( \\tau -> n_2 ) } }"
+            , "\\end{phinoInference}"
+            , "\\begin{phinoInference}"
+            , "  \\phinoName{capplicationa}"
+            , "  \\phinoLabel{appa}"
+            , "  \\phinoPremise{ \\phinoContextualize{ n }{ k }{ n_1 } }"
+            , "  \\phinoPremise{ \\phinoContextualize{ e_1 }{ k }{ n_2 } }"
+            , "  \\phinoConclusion{ \\phinoContextualize{ n ( \\phiTerminal{\\alpha_{i}} -> e_1 ) }{ k }{ n_1 ( \\phiTerminal{\\alpha_{i}} -> n_2 ) } }"
+            , "\\end{phinoInference}"
+            ]
+        ]
+
     it "fails with no rules specified" $
       testCLIFailed
         ["explain"]
-        ["Either --rule, --normalize, --morph or --dataize must be specified"]
+        ["Either --rule, --normalize, --morph, --dataize or --contextualize must be specified"]
 
     it "fails when more than one rule set is specified" $
       testCLIFailed
         ["explain", "--morph", "--dataize"]
-        ["Only one of --rule, --normalize, --morph or --dataize can be specified"]
+        ["Only one of --rule, --normalize, --morph, --dataize or --contextualize can be specified"]
 
     it "writes to target file" $
       bracket

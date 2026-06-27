@@ -1,0 +1,82 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# Contextualization 𝒞 — applied top-to-bottom, first matching clause wins. It is
+# binary, 𝒞(n, c): n is the term being contextualized and c is the context (the
+# expression that every free ξ inside n stands for). 𝒞 walks the term
+# structurally, replacing each ξ with the context c, descending through
+# dispatches and applications and stopping at formations — which introduce their
+# own scope and are returned untouched — and at the global Φ and termination ⊥.
+#
+# Each rule is an inference rule: when 'match' matches the term and 'c-match'
+# matches the context (binding the meta c), the rule yields the conclusion
+# 'c-result' (a premise meta or a literal), provided the ordered 'premises'
+# reduce as stated. A premise binds its 'n-result' to one 𝒞 ('contextualize')
+# judgment. 'c-match' is the context-argument matcher of 𝒞(n, c); it is always
+# the c meta. Derived terms are named 𝑛, 𝑛1, … in premise order; the bare 𝑛 is
+# skipped only when 'match' already binds it.
+
+- name: cglobe
+  label: globe
+  match: Φ
+  c-match: 𝑘
+  c-result: Φ
+
+- name: cxi
+  label: xi
+  match: ξ
+  c-match: 𝑘
+  c-result: 𝑘
+
+- name: cdead
+  label: dead
+  match: ⊥
+  c-match: 𝑘
+  c-result: ⊥
+
+- name: cprim
+  label: prim
+  match: ⟦𝐵⟧
+  c-match: 𝑘
+  c-result: ⟦𝐵⟧
+
+- name: cdispatch
+  label: disp
+  match: '𝑛.𝜏'
+  c-match: 𝑘
+  c-result: '𝑛1.𝜏'
+  premises:
+    - n-result: 𝑛1
+      contextualize:
+        - 𝑛
+        - 𝑘
+
+- name: capplication
+  label: app
+  match: '𝑛(𝜏 ↦ 𝑒1)'
+  c-match: 𝑘
+  c-result: '𝑛1(𝜏 ↦ 𝑛2)'
+  premises:
+    - n-result: 𝑛1
+      contextualize:
+        - 𝑛
+        - 𝑘
+    - n-result: 𝑛2
+      contextualize:
+        - 𝑒1
+        - 𝑘
+
+- name: capplicationa
+  label: appa
+  match: '𝑛(α𝑖 ↦ 𝑒1)'
+  c-match: 𝑘
+  c-result: '𝑛1(α𝑖 ↦ 𝑛2)'
+  premises:
+    - n-result: 𝑛1
+      contextualize:
+        - 𝑛
+        - 𝑘
+    - n-result: 𝑛2
+      contextualize:
+        - 𝑒1
+        - 𝑘

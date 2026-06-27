@@ -272,6 +272,20 @@ data DataizeRule = DataizeRule
   }
   deriving (Generic, Show)
 
+-- One contextualization rule in inference-rule form, structured like 'MorphRule'
+-- but binary in 𝒞(n, c): the second argument is the context 'c' ('cmatch',
+-- always the 'c' meta) rather than the universe 'e', and the conclusion is the
+-- contextualized term 'cresult'.
+data ContextualizeRule = ContextualizeRule
+  { name :: String
+  , label :: Maybe String
+  , match :: Expression
+  , cmatch :: Expression
+  , cresult :: Expression
+  , premises :: [Premise]
+  }
+  deriving (Generic, Show)
+
 instance FromJSON Premise where
   parseJSON =
     withObject
@@ -338,6 +352,20 @@ instance FromJSON DataizeRule where
             <*> o .:? "premises" .!= []
       )
 
+instance FromJSON ContextualizeRule where
+  parseJSON =
+    withObject
+      "ContextualizeRule"
+      ( \o ->
+          ContextualizeRule
+            <$> o .: "name"
+            <*> o .:? "label"
+            <*> o .: "match"
+            <*> o .: "c-match"
+            <*> o .: "c-result"
+            <*> o .:? "premises" .!= []
+      )
+
 decodeRules :: (FromJSON a) => FilePath -> BS.ByteString -> [a]
 decodeRules path bs = case Yaml.decodeEither' bs of
   Right rs -> rs
@@ -350,3 +378,7 @@ morphingRules = decodeRules "resources/morphing.yaml" $(embedFile "resources/mor
 dataizationRules :: [DataizeRule]
 {-# NOINLINE dataizationRules #-}
 dataizationRules = decodeRules "resources/dataization.yaml" $(embedFile "resources/dataization.yaml")
+
+contextualizationRules :: [ContextualizeRule]
+{-# NOINLINE contextualizationRules #-}
+contextualizationRules = decodeRules "resources/contextualization.yaml" $(embedFile "resources/contextualization.yaml")
