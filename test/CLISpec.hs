@@ -1121,7 +1121,7 @@ spec = do
             , "\\begin{phinoInference}"
             , "  \\phinoName{box}"
             , "  \\phinoLabel{box}"
-            , "  \\phinoCondition{ [ D, L ] \\cap ( B_1 \\cup B_2 ) = \\emptyset }"
+            , "  \\phinoCondition{ [ D, L ] \\cap \\lparen B_1 \\cup B_2 \\rparen = \\emptyset }"
             , "  \\phinoPremise{ \\phinoContextualize{ e_1 }{ [[ B_1, @ -> e_1, B_2 ]] }{ n } }"
             , "  \\phinoPremise{ \\phinoNormalize{ n }{ n_1 } }"
             , "  \\phinoPremise{ \\phinoDataize{ n_1 }{ e }{ \\delta } }"
