@@ -299,7 +299,7 @@ binding =
         BiLambda . Function . T.pack <$> function
     , do
         _ <- lambda
-        BiLambda . FnMeta <$> meta' 'F' "𝐹"
+        BiLambda . FnMeta <$> meta' 'F' "𝑓"
     ]
     <?> "binding"
 

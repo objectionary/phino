@@ -43,12 +43,12 @@
 
 - name: fire
   label: fire
-  match: ⟦𝐵1, λ ⤍ 𝐹, 𝐵2⟧
+  match: ⟦𝐵1, λ ⤍ 𝑓, 𝐵2⟧
   e-match: 𝑒
   d-result: δ
   premises:
     - n-result: 𝑛
-      lambda: ⟦𝐵1, λ ⤍ 𝐹, 𝐵2⟧
+      lambda: ⟦𝐵1, λ ⤍ 𝑓, 𝐵2⟧
     - n-result: 𝑛1
       normalize: 𝑛
     - d-result: δ

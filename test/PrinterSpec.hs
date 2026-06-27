@@ -63,8 +63,8 @@ spec = do
       )
 
   describe "printExpression with SWEET UNICODE renders the pretty function meta" $
-    it "meta lambda becomes 𝐹" $
-      printExpression' (ExFormation [BiLambda (FnMeta "F")]) (SWEET, UNICODE, SINGLELINE, defaultMargin) `shouldBe` "⟦ λ ⤍ 𝐹 ⟧"
+    it "meta lambda becomes 𝑓" $
+      printExpression' (ExFormation [BiLambda (FnMeta "F")]) (SWEET, UNICODE, SINGLELINE, defaultMargin) `shouldBe` "⟦ λ ⤍ 𝑓 ⟧"
 
   describe "printExpression keeps special double values in byte form so they re-parse" $
     forM_

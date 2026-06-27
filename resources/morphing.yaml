@@ -33,12 +33,12 @@
 
 - name: lambda
   label: \lambda
-  match: '⟦𝐵1, λ ⤍ 𝐹, 𝐵2⟧.𝜏'
+  match: '⟦𝐵1, λ ⤍ 𝑓, 𝐵2⟧.𝜏'
   e-match: 𝑒
   n-result: 𝑛2
   premises:
     - n-result: 𝑛
-      lambda: '⟦𝐵1, λ ⤍ 𝐹, 𝐵2⟧'
+      lambda: '⟦𝐵1, λ ⤍ 𝑓, 𝐵2⟧'
     - n-result: 𝑛1
       normalize: '𝑛.𝜏'
     - n-result: 𝑛2
