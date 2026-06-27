@@ -292,5 +292,5 @@ instance Render EXTRA where
   render EXTRA{..} = render meta <> " \\coloneqq " <> macro func <> "{ " <> T.intercalate ", " (map render args) <> " }"
     where
       macro :: String -> Text
-      macro "lambda" = "\\phinoEvaluate"
+      macro "evaluate" = "\\phinoEvaluate"
       macro name = "\\" <> T.pack name

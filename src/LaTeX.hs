@@ -400,7 +400,7 @@ premiseToLatex premise = case premise.operation of
   Y.OpMorph arg -> phinoMorph (renderExpr arg) "e" (renderExpr (ExMeta premise.result))
   Y.OpDataize arg -> phinoDataize (renderExpr arg) "e" (renderBytes (BtMeta premise.result))
   Y.OpNormalize arg -> phinoNormalize (renderExpr arg) (renderExpr (ExMeta premise.result))
-  Y.OpLambda arg -> phinoEvaluate (renderExpr arg) (renderExpr (ExMeta premise.result))
+  Y.OpEvaluate arg -> phinoEvaluate (renderExpr arg) (renderExpr (ExMeta premise.result))
   Y.OpContextualize arg context -> phinoContextualize (renderExpr arg) (renderExpr context) (renderExpr (ExMeta premise.result))
 
 -- Assemble an inference block from a name, optional label, optional side
