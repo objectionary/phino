@@ -256,26 +256,26 @@ instance Render CONDITION where
     where
       renderWrapped :: CONDITION -> Text
       renderWrapped CO_LOGIC{conditions = [cond]} = render cond
-      renderWrapped cond@CO_LOGIC{} = "( " <> render cond <> " )"
+      renderWrapped cond@CO_LOGIC{} = "\\lparen " <> render cond <> " \\rparen"
       renderWrapped cond = render cond
   render CO_NF{..} = "\\isnormal{ " <> render expr <> " }"
   render CO_ABSOLUTE{..} = render expr <> " " <> render belongs <> " \\mathcal{K}"
   render CO_NOT{condition = CO_FORMATION{..}} = "\\phinoNotFormation{ " <> render expr <> " }"
   render CO_NOT{..} = renderFunc "not" condition
   render CO_COMPARE{..} = render left <> " " <> render equal <> " " <> render right
-  render CO_MATCHES{..} = "matches( " <> T.pack regex <> ", " <> render expr <> " )"
-  render CO_PART_OF{..} = "part-of( " <> render expr <> ", " <> render binding <> " )"
+  render CO_MATCHES{..} = "matches\\lparen " <> T.pack regex <> ", " <> render expr <> " \\rparen"
+  render CO_PART_OF{..} = "part-of\\lparen " <> render expr <> ", " <> render binding <> " \\rparen"
   render CO_FORMATION{..} = "\\phinoIsFormation{ " <> render expr <> " }"
   render CO_DISJOINT{..} =
     "[ "
       <> T.intercalate ", " (map render attrs)
-      <> " ] \\cap ( "
+      <> " ] \\cap \\lparen "
       <> T.intercalate " \\cup " (map render groups)
-      <> " ) = \\emptyset"
+      <> " \\rparen = \\emptyset"
   render CO_EMPTY = ""
 
 renderFunc :: Render a => Text -> a -> Text
-renderFunc func renderable = func <> "( " <> render renderable <> " )"
+renderFunc func renderable = func <> "\\lparen " <> render renderable <> " \\rparen"
 
 instance Render EXTRA_ARG where
   render ARG_ATTR{..} = render attr
