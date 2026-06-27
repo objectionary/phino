@@ -180,6 +180,9 @@ optMorph = switch (long "morph" <> help "Explain built-in morphing rules")
 optDataize :: Parser Bool
 optDataize = switch (long "dataize" <> help "Explain built-in dataization rules")
 
+optContextualize :: Parser Bool
+optContextualize = switch (long "contextualize" <> help "Explain built-in contextualization rules")
+
 optTarget :: Parser (Maybe FilePath)
 optTarget = optional (strOption (long "target" <> short 't' <> metavar "FILE" <> help "File to save output to"))
 
@@ -234,6 +237,7 @@ explainParser =
             <*> optNormalize
             <*> optMorph
             <*> optDataize
+            <*> optContextualize
             <*> optShuffle
             <*> optTarget
         )

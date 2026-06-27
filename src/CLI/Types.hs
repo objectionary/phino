@@ -108,6 +108,7 @@ data OptsExplain = OptsExplain
   , _normalize :: Bool
   , _morph :: Bool
   , _dataize :: Bool
+  , _contextualize :: Bool
   , _shuffle :: Bool
   , _targetFile :: Maybe FilePath
   }

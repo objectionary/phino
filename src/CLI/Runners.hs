@@ -22,7 +22,7 @@ import Dataize
 import Encoding
 import qualified Filter as F
 import Functions (buildTerm)
-import LaTeX (explainDataizeRules, explainMorphRules, explainRules)
+import LaTeX (explainContextualizeRules, explainDataizeRules, explainMorphRules, explainRules)
 import Logger
 import Margin (defaultMargin)
 import Merge (merge)
@@ -189,12 +189,13 @@ runExplain OptsExplain{..} = do
     explained
       | _morph = pure (explainMorphRules Y.morphingRules)
       | _dataize = pure (explainDataizeRules Y.dataizationRules)
+      | _contextualize = pure (explainContextualizeRules Y.contextualizationRules)
       | otherwise = explainRules <$> getRules _normalize _shuffle _rules
     validateOpts :: IO ()
     validateOpts = do
-      let selected = length (filter id [not (null _rules), _normalize, _morph, _dataize])
-      when (selected == 0) (invalidCLIArguments "Either --rule, --normalize, --morph or --dataize must be specified")
-      when (selected > 1) (invalidCLIArguments "Only one of --rule, --normalize, --morph or --dataize can be specified")
+      let selected = length (filter id [not (null _rules), _normalize, _morph, _dataize, _contextualize])
+      when (selected == 0) (invalidCLIArguments "Either --rule, --normalize, --morph, --dataize or --contextualize must be specified")
+      when (selected > 1) (invalidCLIArguments "Only one of --rule, --normalize, --morph, --dataize or --contextualize can be specified")
 
 runMerge :: OptsMerge -> IO ()
 runMerge OptsMerge{..} = do
