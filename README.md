@@ -393,7 +393,7 @@ This is the list of supported meta variables:
                 or `nf:` guard is needed
 * `!B` || `𝐵` - list of bindings
 * `!d` || `δ` - bytes in meta delta binding
-* `!F` || `𝐹` - function name in meta lambda binding
+* `!F` || `𝑓` - function name in meta lambda binding
 
 Every meta variable may also be used with an integer index, like `!B1` or `𝜏0`.
 

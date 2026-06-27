@@ -128,7 +128,7 @@ instance Render META_HEAD where
   render B' = "B"
   render D = "δ"
   render D' = "\\delta"
-  render F = "𝐹"
+  render F = "𝑓"
   render F' = "F"
 
 instance Render META where

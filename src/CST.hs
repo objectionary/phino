@@ -92,7 +92,7 @@ data META_HEAD
   | B' -- B
   | D -- δ
   | D' -- \delta
-  | F -- 𝐹
+  | F -- 𝑓
   | F' -- F
   deriving (Eq, Show)
 
