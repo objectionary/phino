@@ -1104,7 +1104,7 @@ spec = do
             , "\\begin{phinoInference}"
             , "  \\phinoName{globe}"
             , "  \\phinoLabel{globe}"
-            , "  \\phinoConclusion{ \\phinoMorph{ Q }{ e }{ T } }"
+            , "  \\phinoConclusion{ \\phinoMorph{ Q }{ Q }{ T } }"
             , "\\end{phinoInference}"
             ]
         ]
