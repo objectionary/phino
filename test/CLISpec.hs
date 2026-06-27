@@ -367,8 +367,8 @@ spec = do
     it "fails when a rewriting rule uses a dataization-only function" $
       withStdin "{⟦⟧}" $
         testCLIFailed
-          ["rewrite", rule "lambda-in-rewrite.yaml"]
-          ["Function 'lambda' in rule 'uses-lambda' is available only for dataization and morphing, not for rewriting"]
+          ["rewrite", rule "evaluate-in-rewrite.yaml"]
+          ["Function 'evaluate' in rule 'uses-evaluate' is available only for dataization and morphing, not for rewriting"]
 
     it "normalizes with --normalize flag" $
       testCLISucceeded

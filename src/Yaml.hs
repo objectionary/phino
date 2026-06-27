@@ -238,7 +238,7 @@ data Premise = Premise
 data Operation
   = OpMorph Expression
   | OpNormalize Expression
-  | OpLambda Expression
+  | OpEvaluate Expression
   | OpContextualize Expression Expression
   | OpDataize Expression
   deriving (Eq, Generic, Show)
@@ -299,7 +299,7 @@ premiseOperation o =
   asum
     [ OpMorph <$> o .: "morph"
     , OpNormalize <$> o .: "normalize"
-    , OpLambda <$> o .: "lambda"
+    , OpEvaluate <$> o .: "evaluate"
     , do
         vals <- o .: "contextualize"
         case vals of

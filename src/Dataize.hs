@@ -198,7 +198,7 @@ dataize' (expr, seq) univ ctx = do
     sides :: [Y.Premise] -> Subst -> IO Subst
     sides premises subst = foldM (sidePremise univ ctx) subst premises
     -- A spliced dataization step is labelled by its first side-computation —
-    -- 'box' by its 'contextualize', 'fire' by its 'lambda'; with none it is blank.
+    -- 'box' by its 'contextualize', 'fire' by its 'evaluate'; with none it is blank.
     labelOf :: [Y.Premise] -> String
     labelOf (premise : _) = verb premise.operation
     labelOf [] = ""
@@ -221,9 +221,9 @@ bytesProducer _ = const Nothing
 excluding :: [Y.Premise] -> [Y.Premise] -> [Y.Premise]
 excluding premises removed = filter (\premise -> premise.result `notElem` map (.result) removed) premises
 
--- Evaluate one side-computation premise — a 'morph', 'lambda' or 'contextualize'
+-- Evaluate one side-computation premise — a 'morph', 'evaluate' or 'contextualize'
 -- of an earlier term — in isolation, binding its result meta. These never splice
--- steps into the trace: 'morph' and 'lambda' reduce on a fresh chain and discard
+-- steps into the trace: 'morph' and 'evaluate' reduce on a fresh chain and discard
 -- it, 'contextualize' is pure.
 sidePremise :: Expression -> DataizeContext -> Subst -> Y.Premise -> IO Subst
 sidePremise univ ctx subst premise = do
@@ -242,7 +242,7 @@ sidePremise univ ctx subst premise = do
 verb :: Y.Operation -> String
 verb (Y.OpMorph _) = "morph"
 verb (Y.OpNormalize _) = "normalize"
-verb (Y.OpLambda _) = "lambda"
+verb (Y.OpEvaluate _) = "evaluate"
 verb (Y.OpContextualize _ _) = "contextualize"
 verb (Y.OpDataize _) = "dataize"
 
@@ -250,7 +250,7 @@ verb (Y.OpDataize _) = "dataize"
 verbArgs :: Y.Operation -> [ExtraArgument]
 verbArgs (Y.OpMorph expr) = [ArgExpression expr]
 verbArgs (Y.OpNormalize expr) = [ArgExpression expr]
-verbArgs (Y.OpLambda expr) = [ArgExpression expr]
+verbArgs (Y.OpEvaluate expr) = [ArgExpression expr]
 verbArgs (Y.OpContextualize expr context) = [ArgExpression expr, ArgExpression context]
 verbArgs (Y.OpDataize expr) = [ArgExpression expr]
 
@@ -328,25 +328,25 @@ atom "L_number_eq" self univ ctx = do
 atom func _ _ _ = throwIO (userError (printf "Atom '%s' does not exist" (T.unpack func)))
 
 -- Augment the injected, context-free term builder with the dataization and
--- morphing operations that need the universe: 'lambda' applies an atom and
+-- morphing operations that need the universe: 'evaluate' applies an atom and
 -- 'morph' morphs a sub-expression. Both receive the universe 'univ'. Every other
 -- function is delegated unchanged.
 execBuildTerm :: Expression -> DataizeContext -> BuildTermFunc
-execBuildTerm univ ctx "lambda" = _lambda univ ctx
+execBuildTerm univ ctx "evaluate" = _evaluate univ ctx
 execBuildTerm univ ctx "morph" = _morph univ ctx
 execBuildTerm _ ctx func = _buildTerm ctx func
 
-_lambda :: Expression -> DataizeContext -> BuildTermMethod
-_lambda univ ctx [ArgExpression expr] subst = do
+_evaluate :: Expression -> DataizeContext -> BuildTermMethod
+_evaluate univ ctx [ArgExpression expr] subst = do
   form <- buildExpressionThrows expr subst
   case form of
     ExFormation bds -> do
       resolved <- formation bds univ ctx
       case resolved of
         Just obj -> pure (TeExpression obj)
-        Nothing -> throwIO (userError "Function lambda() expects a formation with a λ binding")
-    _ -> throwIO (userError "Function lambda() expects a formation")
-_lambda _ _ _ _ = throwIO (userError "Function lambda() requires exactly 1 expression argument")
+        Nothing -> throwIO (userError "Function evaluate() expects a formation with a λ binding")
+    _ -> throwIO (userError "Function evaluate() expects a formation")
+_evaluate _ _ _ _ = throwIO (userError "Function evaluate() requires exactly 1 expression argument")
 
 -- The Morphing function 𝕄 exposed as a build-term function so a rule can morph
 -- a sub-expression in its 'where' (the 'dispatch' and 'application' rules morph
