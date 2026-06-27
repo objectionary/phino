@@ -707,7 +707,7 @@ forall (t :: * -&gt; *) (m :: * -&gt; *) b a.
 </span><a href="#local-6989586621679258862"><span class="hs-identifier hs-var">subst</span></a></span><span> </span><span class="annot"><span class="annottext">[Premise]
 </span><a href="#local-6989586621679258861"><span class="hs-identifier hs-var">premises</span></a></span><span>
 </span><span id="line-199"></span><span>    </span><span class="hs-comment">-- A spliced dataization step is labelled by its first side-computation &#8212;</span><span>
-</span><span id="line-200"></span><span>    </span><span class="hs-comment">-- 'box' by its 'contextualize', 'fire' by its 'lambda'; with none it is blank.</span><span>
+</span><span id="line-200"></span><span>    </span><span class="hs-comment">-- 'box' by its 'contextualize', 'fire' by its 'evaluate'; with none it is blank.</span><span>
 </span><span id="line-201"></span><span>    </span><span class="annot"><a href="#local-6989586621679258847"><span class="hs-identifier hs-type">labelOf</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Yaml.html#Premise"><span class="hs-identifier hs-type">Y.Premise</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
 </span><span id="line-202"></span><span>    </span><span id="local-6989586621679258847"><span class="annot"><span class="annottext">labelOf :: [Premise] -&gt; String
 </span><a href="#local-6989586621679258847"><span class="hs-identifier hs-var hs-var">labelOf</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679258863"><span class="annot"><span class="annottext">Premise
@@ -777,9 +777,9 @@ forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
 </span><a href="#local-6989586621679258873"><span class="hs-identifier hs-var">removed</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[Premise]
 </span><a href="#local-6989586621679258872"><span class="hs-identifier hs-var">premises</span></a></span><span>
 </span><span id="line-222"></span><span>
-</span><span id="line-223"></span><span class="hs-comment">-- Evaluate one side-computation premise &#8212; a 'morph', 'lambda' or 'contextualize'</span><span>
+</span><span id="line-223"></span><span class="hs-comment">-- Evaluate one side-computation premise &#8212; a 'morph', 'evaluate' or 'contextualize'</span><span>
 </span><span id="line-224"></span><span class="hs-comment">-- of an earlier term &#8212; in isolation, binding its result meta. These never splice</span><span>
-</span><span id="line-225"></span><span class="hs-comment">-- steps into the trace: 'morph' and 'lambda' reduce on a fresh chain and discard</span><span>
+</span><span id="line-225"></span><span class="hs-comment">-- steps into the trace: 'morph' and 'evaluate' reduce on a fresh chain and discard</span><span>
 </span><span id="line-226"></span><span class="hs-comment">-- it, 'contextualize' is pure.</span><span>
 </span><span id="line-227"></span><span class="annot"><a href="Dataize.html#sidePremise"><span class="hs-identifier hs-type">sidePremise</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Dataize.html#DataizeContext"><span class="hs-identifier hs-type">DataizeContext</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Matcher.html#Subst"><span class="hs-identifier hs-type">Subst</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Yaml.html#Premise"><span class="hs-identifier hs-type">Y.Premise</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="annot"><a href="Matcher.html#Subst"><span class="hs-identifier hs-type">Subst</span></a></span><span>
 </span><span id="line-228"></span><span id="sidePremise"><span class="annot"><span class="annottext">sidePremise :: Expression -&gt; DataizeContext -&gt; Subst -&gt; Premise -&gt; IO Subst
@@ -850,9 +850,9 @@ forall r. PrintfType r =&gt; String -&gt; r
 </span><span id="line-243"></span><span class="annot"><a href="Dataize.html#verb"><span class="hs-identifier hs-var">verb</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Yaml.html#OpNormalize"><span class="hs-identifier hs-type">Y.OpNormalize</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
 </span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;normalize&quot;</span></span><span>
-</span><span id="line-244"></span><span class="annot"><a href="Dataize.html#verb"><span class="hs-identifier hs-var">verb</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Yaml.html#OpLambda"><span class="hs-identifier hs-type">Y.OpLambda</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
+</span><span id="line-244"></span><span class="annot"><a href="Dataize.html#verb"><span class="hs-identifier hs-var">verb</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Yaml.html#OpEvaluate"><span class="hs-identifier hs-type">Y.OpEvaluate</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
 </span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String
-</span><span class="hs-string">&quot;lambda&quot;</span></span><span>
+</span><span class="hs-string">&quot;evaluate&quot;</span></span><span>
 </span><span id="line-245"></span><span class="annot"><a href="Dataize.html#verb"><span class="hs-identifier hs-var">verb</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Yaml.html#OpContextualize"><span class="hs-identifier hs-type">Y.OpContextualize</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
 </span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">Expression
 </span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String
@@ -872,7 +872,7 @@ forall r. PrintfType r =&gt; String -&gt; r
 </span><a href="#local-6989586621679258901"><span class="hs-identifier hs-var">expr</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Expression -&gt; ExtraArgument
 </span><a href="Yaml.html#ArgExpression"><span class="hs-identifier hs-var">ArgExpression</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
 </span><a href="#local-6989586621679258901"><span class="hs-identifier hs-var">expr</span></a></span><span class="hs-special">]</span><span>
-</span><span id="line-252"></span><span class="annot"><a href="Dataize.html#verbArgs"><span class="hs-identifier hs-var">verbArgs</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Yaml.html#OpLambda"><span class="hs-identifier hs-type">Y.OpLambda</span></a></span><span> </span><span id="local-6989586621679258902"><span class="annot"><span class="annottext">Expression
+</span><span id="line-252"></span><span class="annot"><a href="Dataize.html#verbArgs"><span class="hs-identifier hs-var">verbArgs</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Yaml.html#OpEvaluate"><span class="hs-identifier hs-type">Y.OpEvaluate</span></a></span><span> </span><span id="local-6989586621679258902"><span class="annot"><span class="annottext">Expression
 </span><a href="#local-6989586621679258902"><span class="hs-identifier hs-var">expr</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Expression -&gt; ExtraArgument
 </span><a href="Yaml.html#ArgExpression"><span class="hs-identifier hs-var">ArgExpression</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
 </span><a href="#local-6989586621679258902"><span class="hs-identifier hs-var">expr</span></a></span><span class="hs-special">]</span><span>
@@ -1309,7 +1309,7 @@ forall r. PrintfType r =&gt; String -&gt; r
 </span><a href="#local-6989586621679258994"><span class="hs-identifier hs-var">func</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
 </span><span id="line-328"></span><span>
 </span><span id="line-329"></span><span class="hs-comment">-- Augment the injected, context-free term builder with the dataization and</span><span>
-</span><span id="line-330"></span><span class="hs-comment">-- morphing operations that need the universe: 'lambda' applies an atom and</span><span>
+</span><span id="line-330"></span><span class="hs-comment">-- morphing operations that need the universe: 'evaluate' applies an atom and</span><span>
 </span><span id="line-331"></span><span class="hs-comment">-- 'morph' morphs a sub-expression. Both receive the universe 'univ'. Every other</span><span>
 </span><span id="line-332"></span><span class="hs-comment">-- function is delegated unchanged.</span><span>
 </span><span id="line-333"></span><span class="annot"><a href="Dataize.html#execBuildTerm"><span class="hs-identifier hs-type">execBuildTerm</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Dataize.html#DataizeContext"><span class="hs-identifier hs-type">DataizeContext</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Deps.html#BuildTermFunc"><span class="hs-identifier hs-type">BuildTermFunc</span></a></span><span>
@@ -1317,8 +1317,8 @@ forall r. PrintfType r =&gt; String -&gt; r
 </span><a href="Dataize.html#execBuildTerm"><span class="hs-identifier hs-var hs-var">execBuildTerm</span></a></span></span><span> </span><span id="local-6989586621679258995"><span class="annot"><span class="annottext">Expression
 </span><a href="#local-6989586621679258995"><span class="hs-identifier hs-var">univ</span></a></span></span><span> </span><span id="local-6989586621679258996"><span class="annot"><span class="annottext">DataizeContext
 </span><a href="#local-6989586621679258996"><span class="hs-identifier hs-var">ctx</span></a></span></span><span> </span><span class="annot"><span class="annottext">String
-</span><span class="hs-string">&quot;lambda&quot;</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expression -&gt; DataizeContext -&gt; BuildTermMethod
-</span><a href="Dataize.html#_lambda"><span class="hs-identifier hs-var">_lambda</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
+</span><span class="hs-string">&quot;evaluate&quot;</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expression -&gt; DataizeContext -&gt; BuildTermMethod
+</span><a href="Dataize.html#_evaluate"><span class="hs-identifier hs-var">_evaluate</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
 </span><a href="#local-6989586621679258995"><span class="hs-identifier hs-var">univ</span></a></span><span> </span><span class="annot"><span class="annottext">DataizeContext
 </span><a href="#local-6989586621679258996"><span class="hs-identifier hs-var">ctx</span></a></span><span>
 </span><span id="line-335"></span><span class="annot"><a href="Dataize.html#execBuildTerm"><span class="hs-identifier hs-var">execBuildTerm</span></a></span><span> </span><span id="local-6989586621679258998"><span class="annot"><span class="annottext">Expression
@@ -1336,9 +1336,9 @@ forall r. PrintfType r =&gt; String -&gt; r
 </span><a href="#local-6989586621679259001"><span class="hs-identifier hs-var">ctx</span></a></span><span> </span><span class="annot"><span class="annottext">String
 </span><a href="#local-6989586621679259002"><span class="hs-identifier hs-var">func</span></a></span><span>
 </span><span id="line-337"></span><span>
-</span><span id="line-338"></span><span class="annot"><a href="Dataize.html#_lambda"><span class="hs-identifier hs-type">_lambda</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Dataize.html#DataizeContext"><span class="hs-identifier hs-type">DataizeContext</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Deps.html#BuildTermMethod"><span class="hs-identifier hs-type">BuildTermMethod</span></a></span><span>
-</span><span id="line-339"></span><span id="_lambda"><span class="annot"><span class="annottext">_lambda :: Expression -&gt; DataizeContext -&gt; BuildTermMethod
-</span><a href="Dataize.html#_lambda"><span class="hs-identifier hs-var hs-var">_lambda</span></a></span></span><span> </span><span id="local-6989586621679259003"><span class="annot"><span class="annottext">Expression
+</span><span id="line-338"></span><span class="annot"><a href="Dataize.html#_evaluate"><span class="hs-identifier hs-type">_evaluate</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Dataize.html#DataizeContext"><span class="hs-identifier hs-type">DataizeContext</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Deps.html#BuildTermMethod"><span class="hs-identifier hs-type">BuildTermMethod</span></a></span><span>
+</span><span id="line-339"></span><span id="_evaluate"><span class="annot"><span class="annottext">_evaluate :: Expression -&gt; DataizeContext -&gt; BuildTermMethod
+</span><a href="Dataize.html#_evaluate"><span class="hs-identifier hs-var hs-var">_evaluate</span></a></span></span><span> </span><span id="local-6989586621679259003"><span class="annot"><span class="annottext">Expression
 </span><a href="#local-6989586621679259003"><span class="hs-identifier hs-var">univ</span></a></span></span><span> </span><span id="local-6989586621679259004"><span class="annot"><span class="annottext">DataizeContext
 </span><a href="#local-6989586621679259004"><span class="hs-identifier hs-var">ctx</span></a></span></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Yaml.html#ArgExpression"><span class="hs-identifier hs-type">ArgExpression</span></a></span><span> </span><span id="local-6989586621679259005"><span class="annot"><span class="annottext">Expression
 </span><a href="#local-6989586621679259005"><span class="hs-identifier hs-var">expr</span></a></span></span><span class="hs-special">]</span><span> </span><span id="local-6989586621679259006"><span class="annot"><span class="annottext">Subst
@@ -1372,14 +1372,14 @@ forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 forall e a. Exception e =&gt; e -&gt; IO a
 </span><span class="hs-identifier hs-var">throwIO</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String -&gt; IOError
 </span><span class="hs-identifier hs-var">userError</span></span><span> </span><span class="annot"><span class="annottext">String
-</span><span class="hs-string">&quot;Function lambda() expects a formation with a &#955; binding&quot;</span></span><span class="hs-special">)</span><span>
+</span><span class="hs-string">&quot;Function evaluate() expects a formation with a &#955; binding&quot;</span></span><span class="hs-special">)</span><span>
 </span><span id="line-347"></span><span>    </span><span class="annot"><span class="annottext">Expression
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">IOError -&gt; IO Term
 forall e a. Exception e =&gt; e -&gt; IO a
 </span><span class="hs-identifier hs-var">throwIO</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String -&gt; IOError
 </span><span class="hs-identifier hs-var">userError</span></span><span> </span><span class="annot"><span class="annottext">String
-</span><span class="hs-string">&quot;Function lambda() expects a formation&quot;</span></span><span class="hs-special">)</span><span>
-</span><span id="line-348"></span><span class="annot"><a href="Dataize.html#_lambda"><span class="hs-identifier hs-var">_lambda</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
+</span><span class="hs-string">&quot;Function evaluate() expects a formation&quot;</span></span><span class="hs-special">)</span><span>
+</span><span id="line-348"></span><span class="annot"><a href="Dataize.html#_evaluate"><span class="hs-identifier hs-var">_evaluate</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
 </span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">DataizeContext
 </span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">[ExtraArgument]
 </span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">Subst
@@ -1387,7 +1387,7 @@ forall e a. Exception e =&gt; e -&gt; IO a
 forall e a. Exception e =&gt; e -&gt; IO a
 </span><span class="hs-identifier hs-var">throwIO</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String -&gt; IOError
 </span><span class="hs-identifier hs-var">userError</span></span><span> </span><span class="annot"><span class="annottext">String
-</span><span class="hs-string">&quot;Function lambda() requires exactly 1 expression argument&quot;</span></span><span class="hs-special">)</span><span>
+</span><span class="hs-string">&quot;Function evaluate() requires exactly 1 expression argument&quot;</span></span><span class="hs-special">)</span><span>
 </span><span id="line-349"></span><span>
 </span><span id="line-350"></span><span class="hs-comment">-- The Morphing function &#120132; exposed as a build-term function so a rule can morph</span><span>
 </span><span id="line-351"></span><span class="hs-comment">-- a sub-expression in its 'where' (the 'dispatch' and 'application' rules morph</span><span>
