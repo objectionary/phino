@@ -23,7 +23,6 @@
   d-result: δ
 
 - name: box
-  label: box
   match: ⟦𝐵1, φ ↦ 𝑒1, 𝐵2⟧
   e-match: 𝑒
   d-result: δ
@@ -42,7 +41,6 @@
       dataize: 𝑛1
 
 - name: fire
-  label: fire
   match: ⟦𝐵1, λ ⤍ 𝑓, 𝐵2⟧
   e-match: 𝑒
   d-result: δ
@@ -55,7 +53,6 @@
       dataize: 𝑛1
 
 - name: none
-  label: none
   match: ⟦𝐵⟧
   e-match: 𝑒
   d-result: '--'
@@ -65,13 +62,11 @@
       - [𝐵]
 
 - name: bott
-  label: bott
   match: ⊥
   e-match: 𝑒
   d-result: '--'
 
 - name: norm
-  label: norm
   match: 𝑛
   e-match: 𝑒
   d-result: δ
