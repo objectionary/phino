@@ -15,6 +15,14 @@
 # 𝔻(n, e); it is always the e meta. The single bytes result is named δ; derived
 # terms are 𝑛, 𝑛1, … in premise order, skipping the bare 𝑛 only when 'match'
 # already binds it.
+#
+# The clauses are disjoint, so their relative order does not change behavior.
+# 'norm' matches the bare meta 𝑛, which unifies with any expression, so it is
+# guarded to fire only when 𝑛 is neither a formation ('not (formation 𝑛)',
+# carving out 'delta', 'box', 'fire' and 'none') nor the termination ⊥
+# ('not (𝑛 = ⊥)', carving out 'bott'). Without the guard 'norm' would behave
+# correctly only by being declared last; with it the clauses no longer rely on
+# their order.
 
 - name: delta
   label: \Delta
@@ -70,6 +78,14 @@
   match: 𝑛
   e-match: 𝑒
   d-result: δ
+  when:
+    and:
+      - not:
+          formation: 𝑛
+      - not:
+          eq:
+            - 𝑛
+            - ⊥
   premises:
     - n-result: 𝑛1
       morph: 𝑛
