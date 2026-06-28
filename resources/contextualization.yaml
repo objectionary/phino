@@ -17,31 +17,26 @@
 # skipped only when 'match' already binds it.
 
 - name: cglobe
-  label: globe
   match: Φ
   c-match: 𝑘
   c-result: Φ
 
 - name: cxi
-  label: xi
   match: ξ
   c-match: 𝑘
   c-result: 𝑘
 
 - name: cdead
-  label: dead
   match: ⊥
   c-match: 𝑘
   c-result: ⊥
 
 - name: cprim
-  label: prim
   match: ⟦𝐵⟧
   c-match: 𝑘
   c-result: ⟦𝐵⟧
 
 - name: cdispatch
-  label: disp
   match: '𝑛.𝜏'
   c-match: 𝑘
   c-result: '𝑛1.𝜏'
@@ -52,7 +47,6 @@
         - 𝑘
 
 - name: capplication
-  label: app
   match: '𝑛(𝜏 ↦ 𝑒1)'
   c-match: 𝑘
   c-result: '𝑛1(𝜏 ↦ 𝑛2)'
@@ -67,7 +61,6 @@
         - 𝑘
 
 - name: capplicationa
-  label: appa
   match: '𝑛(α𝑖 ↦ 𝑒1)'
   c-match: 𝑘
   c-result: '𝑛1(α𝑖 ↦ 𝑛2)'

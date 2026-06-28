@@ -272,13 +272,11 @@ $ phino explain --dataize
 $ phino explain --contextualize
 \begin{phinoInference}
   \phinoName{cxi}
-  \phinoLabel{xi}
   \phinoConclusion{ \phinoContextualize{ \phiTerminal{\xi} }{ k }{ k } }
 \end{phinoInference}
 ...
 \begin{phinoInference}
   \phinoName{cdispatch}
-  \phinoLabel{disp}
   \phinoPremise{ \phinoContextualize{ n }{ k }{ n_1 } }
   \phinoConclusion{ \phinoContextualize{ n . \tau }{ k }{ n_1 . \tau } }
 \end{phinoInference}

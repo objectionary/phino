@@ -1,14 +1,12 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 # SPDX-License-Identifier: MIT
 ---
-# Morphing 𝕄 — applied top-to-bottom, first matching clause wins; with the
-# '--shuffle' flag the clauses are shuffled before each step instead. The
-# clauses are order-independent (the overlaps were removed in #856 and #860),
-# so the shuffle never changes the result; it only surfaces a re-introduced
-# overlap as a flaky failure. It is binary,
-# 𝕄(n, e): n is the term being morphed and e is the fixed global universe,
-# threaded unchanged through every recursive call and substituted for Φ by the
-# 'root' rule (Φ, rendered Q, is just the locator of e). The first argument is
+# Morphing 𝕄 — applied top-to-bottom, first matching clause wins. It is ternary,
+# 𝕄(n, e, s): n is the morphed term, e is the fixed global universe and s is
+# the mutable state. The universe is threaded unchanged through every recursive
+# call and substituted for Φ by the 'root' rule (Φ, rendered Q, is just the
+# locator of e); the state is threaded too and the new state returned. Only the
+# 'lambda' rule changes it, by firing an atom through 𝔼. The first argument is
 # always a normal form: a non-NF expression matches no clause. 𝕄 navigates a
 # normal form to a formation one operation at a time, resolving Φ against e and
 # peeling dispatches and applications through normalization 𝒩. It never fires a
@@ -31,7 +29,6 @@
 # are disjoint and their relative order does not change behavior.
 
 - name: prim
-  label: prim
   match: ⟦𝐵⟧
   e-match: 𝑒
   n-result: ⟦𝐵⟧
@@ -92,7 +89,6 @@
       morph: 𝑛2
 
 - name: root
-  label: root
   match: Φ
   e-match: 𝑒
   n-result: 𝑛1
@@ -108,19 +104,16 @@
       morph: 𝑛
 
 - name: dead
-  label: dead
   match: ⊥
   e-match: 𝑒
   n-result: ⊥
 
 - name: xi
-  label: xi
   match: ξ
   e-match: 𝑒
   n-result: ⊥
 
 - name: globe
-  label: globe
   match: Φ
   e-match: Φ
   n-result: ⊥
