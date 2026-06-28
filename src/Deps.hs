@@ -25,6 +25,20 @@ data Term
 
 type BuildTermMethod = [ExtraArgument] -> Subst -> IO Term
 
+-- The state 𝑠 threaded through the Morphing 𝕄(n, e, s), Dataization 𝔻(n, e, s)
+-- and Evaluation 𝔼(b, s) functions. The calculus does not yet fix what a state
+-- is, so it is a plain string for now. Unlike the universe 𝑒, which is immutable
+-- and threaded unchanged, the state is mutable: 𝔼 takes a state 𝑠1 and returns a
+-- new one 𝑠2, and 𝕄/𝔻 propagate that change to their callers. Only the rules
+-- that fire an atom — 'lambda' (morphing) and 'fire' (dataization) — can change
+-- the state; every other rule threads it through untouched.
+type State = String
+
+-- Like 'BuildTermMethod', but it also takes the incoming state and returns the
+-- new state alongside the term. Lives here next to 'BuildTermMethod' so the two
+-- stay together.
+type BuildTermMethodS = [ExtraArgument] -> Subst -> IO (Term, State)
+
 type BuildTermFunc = String -> BuildTermMethod
 
 type SaveStepFunc = Program -> Int -> IO ()

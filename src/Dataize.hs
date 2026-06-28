@@ -19,7 +19,7 @@ import Data.List (find, partition)
 import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as NE
 import qualified Data.Text as T
-import Deps (BuildTermFunc, SaveStepFunc, Term (..))
+import Deps (BuildTermFunc, BuildTermMethodS, SaveStepFunc, State, Term (..))
 import Locator (locatedExpression, withLocatedExpression)
 import Matcher (MetaValue (..), Subst (..), combine, matchExpression', substEmpty, substSingle)
 import Misc
@@ -36,16 +36,8 @@ type Dataizable = (Expression, NonEmpty Rewritten)
 
 type Morphed = Dataizable
 
--- The state 𝑠 threaded through the Morphing 𝕄(n, e, s), Dataization 𝔻(n, e, s)
--- and Evaluation 𝔼(b, s) functions. The calculus does not yet fix what a state
--- is, so it is a plain string for now. Unlike the universe 𝑒, which is immutable
--- and threaded unchanged, the state is mutable: 𝔼 takes a state 𝑠1 and returns a
--- new one 𝑠2, and 𝕄/𝔻 propagate that change to their callers. Only the rules
--- that fire an atom — 'lambda' (morphing) and 'fire' (dataization) — can change
--- the state; every other rule threads it through untouched.
-type State = String
-
--- The initial, empty state used when dataization starts.
+-- The initial, empty state used when dataization starts. The 'State' type itself
+-- lives in 'Deps' next to 'BuildTermMethod'.
 emptyState :: State
 emptyState = ""
 
@@ -337,26 +329,26 @@ asNumber bts = Just (either toDouble id (btsToNum bts))
 
 atom :: T.Text -> Expression -> Expression -> State -> DataizeContext -> IO (Expression, State)
 atom "L_number_plus" self univ state ctx = do
-  (left, state1) <- _dataize (ExDispatch self (AtLabel "x")) univ state ctx
-  (right, state2) <- _dataize (ExDispatch self AtRho) univ state1 ctx
+  (left, lstate) <- _dataize (ExDispatch self (AtLabel "x")) univ state ctx
+  (right, rstate) <- _dataize (ExDispatch self AtRho) univ lstate ctx
   case (asNumber left, asNumber right) of
-    (Just first, Just second) -> pure (DataNumber (numToBts (first + second)), state2)
-    _ -> pure (ExTermination, state2)
+    (Just first, Just second) -> pure (DataNumber (numToBts (first + second)), rstate)
+    _ -> pure (ExTermination, rstate)
 atom "L_number_times" self univ state ctx = do
-  (left, state1) <- _dataize (ExDispatch self (AtLabel "x")) univ state ctx
-  (right, state2) <- _dataize (ExDispatch self AtRho) univ state1 ctx
+  (left, lstate) <- _dataize (ExDispatch self (AtLabel "x")) univ state ctx
+  (right, rstate) <- _dataize (ExDispatch self AtRho) univ lstate ctx
   case (asNumber left, asNumber right) of
-    (Just first, Just second) -> pure (DataNumber (numToBts (first * second)), state2)
-    _ -> pure (ExTermination, state2)
+    (Just first, Just second) -> pure (DataNumber (numToBts (first * second)), rstate)
+    _ -> pure (ExTermination, rstate)
 atom "L_number_eq" self univ state ctx = do
-  (x, state1) <- _dataize (ExDispatch self (AtLabel "x")) univ state ctx
-  (rho, state2) <- _dataize (ExDispatch self AtRho) univ state1 ctx
+  (x, lstate) <- _dataize (ExDispatch self (AtLabel "x")) univ state ctx
+  (rho, rstate) <- _dataize (ExDispatch self AtRho) univ lstate ctx
   case (asNumber x, asNumber rho) of
     (Just first, Just self') ->
       if self' == first
-        then pure (DataNumber (numToBts first), state2)
-        else pure (ExDispatch self (AtLabel "y"), state2)
-    _ -> pure (ExTermination, state2)
+        then pure (DataNumber (numToBts first), rstate)
+        else pure (ExDispatch self (AtLabel "y"), rstate)
+    _ -> pure (ExTermination, rstate)
 atom func _ _ _ _ = throwIO (userError (printf "Atom '%s' does not exist" (T.unpack func)))
 
 -- Augment the injected, context-free term builder with the dataization and
@@ -396,7 +388,3 @@ _morph univ ctx state [ArgExpression expr] subst = do
   ((morphed, _), state') <- morph (built, (Program univ, Nothing) :| []) univ state ctx
   pure (TeExpression morphed, state')
 _morph _ _ _ _ _ = throwIO (userError "Function morph() requires exactly 1 expression argument")
-
--- A state-threading build-term method: like 'BuildTermMethod' but it also takes
--- the incoming state and returns the new state alongside the term.
-type BuildTermMethodS = [ExtraArgument] -> Subst -> IO (Term, State)
