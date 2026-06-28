@@ -52,6 +52,7 @@ data DataizeContext = DataizeContext
   , _maxDepth :: Int
   , _maxCycles :: Int
   , _depthSensitive :: Bool
+  , _shuffle :: Bool
   , _buildTerm :: BuildTermFunc
   , _saveStep :: SaveStepFunc
   }
@@ -151,17 +152,24 @@ dataize program@(Program univ) ctx@DataizeContext{..} = do
 -- The Dataization function 𝔻 retrieves bytes from an expression. It is total and
 -- ternary, 𝔻(n, e, s): besides the term 'n' it takes the universe 'e' ('univ'),
 -- which it forwards to 𝕄, and the mutable state 's', returning the bytes together
--- with the new state. It is driven by the ordered rules from
--- 'dataization.yaml': 'delta' yields the asset bytes, 'none' (a formation) and
--- 'bott' (⊥) yield empty bytes (--), 'box' contextualizes the φ-body and keeps
--- dataizing (its step is labelled by its 'contextualize' side-computation), and
--- 'norm' reduces through morphing, splicing the morphing steps into the chain.
+-- with the new state. Its rules come from 'dataization.yaml': 'delta' yields the
+-- asset bytes, 'none' (a formation) and 'bott' (⊥) yield empty bytes (--),
+-- 'box' contextualizes the φ-body and keeps dataizing (its step is labelled by
+-- its 'contextualize' side-computation), and 'norm' reduces through morphing,
+-- splicing the morphing steps into the chain. The clauses are disjoint (see
+-- #902, #905), so their declaration order must not be load-bearing; when
+-- '_shuffle' is on (the '--shuffle' flag) the rules are shuffled before the
+-- 'firstMatch' walk to exercise that invariant — mirroring normalization's
+-- "apply until they stop matching". A genuinely order-independent step stays
+-- deterministic; a hidden overlap surfaces as a nondeterministic failure rather
+-- than staying silently green.
 -- The conclusion bytes 'dresult' are produced by a trailing 'dataize' premise;
 -- when its argument is bound by a 'morph' or 'normalize' premise, that step
 -- joins the spine, otherwise the premise is an isolated side-computation.
 dataize' :: Dataizable -> Expression -> State -> DataizeContext -> IO (Dataized, State)
 dataize' (expr, seq) univ state ctx = do
-  matched <- firstMatch Y.dataizationRules
+  rules <- if ctx._shuffle then shuffle Y.dataizationRules else pure Y.dataizationRules
+  matched <- firstMatch rules
   case matched of
     Just (rule, subst) -> reduce rule subst
     Nothing -> throwIO (userError "no dataization rule matched")
