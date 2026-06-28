@@ -246,7 +246,7 @@ data Operation
 -- One morphing rule in inference-rule form: when 'match' matches the term and
 -- 'ematch' matches the universe (binding 'e'), the rule yields 'nresult' (a
 -- premise meta or a literal) provided 'when' holds and the ordered 'premises'
--- reduce as stated. 'ematch' is the universe-argument matcher of 𝕄(n, e), in
+-- reduce as stated. 'ematch' is the universe-argument matcher of 𝕄(n, e, s), in
 -- practice always the '𝑒' meta.
 data MorphRule = MorphRule
   { name :: String
