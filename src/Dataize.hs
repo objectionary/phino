@@ -140,17 +140,23 @@ dataize program@(Program univ) ctx@DataizeContext{..} = do
 
 -- The Dataization function 𝔻 retrieves bytes from an expression. It is total and
 -- binary, 𝔻(n, e): besides the term 'n' it takes the universe 'e' ('univ'),
--- which it forwards to 𝕄. It is driven by the ordered rules from
--- 'dataization.yaml': 'delta' yields the asset bytes, 'none' (a formation) and
--- 'bott' (⊥) yield empty bytes (--), 'box' contextualizes the φ-body and keeps
--- dataizing (its step is labelled by its 'contextualize' side-computation), and
--- 'norm' reduces through morphing, splicing the morphing steps into the chain.
+-- which it forwards to 𝕄. Its rules come from 'dataization.yaml': 'delta' yields
+-- the asset bytes, 'none' (a formation) and 'bott' (⊥) yield empty bytes (--),
+-- 'box' contextualizes the φ-body and keeps dataizing (its step is labelled by
+-- its 'contextualize' side-computation), and 'norm' reduces through morphing,
+-- splicing the morphing steps into the chain. The clauses are disjoint (see
+-- #902, #905), so their declaration order must not be load-bearing; the rules
+-- are 'shuffle'd before the 'firstMatch' walk to exercise that invariant —
+-- mirroring normalization's "apply until they stop matching". A genuinely
+-- order-independent step stays deterministic; a hidden overlap surfaces as a
+-- nondeterministic failure rather than staying silently green.
 -- The conclusion bytes 'dresult' are produced by a trailing 'dataize' premise;
 -- when its argument is bound by a 'morph' or 'normalize' premise, that step
 -- joins the spine, otherwise the premise is an isolated side-computation.
 dataize' :: Dataizable -> Expression -> DataizeContext -> IO Dataized
 dataize' (expr, seq) univ ctx = do
-  matched <- firstMatch Y.dataizationRules
+  shuffled <- shuffle Y.dataizationRules
+  matched <- firstMatch shuffled
   case matched of
     Just (rule, subst) -> reduce rule subst
     Nothing -> throwIO (userError "no dataization rule matched")
