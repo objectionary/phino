@@ -9,7 +9,7 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Dataize (morph, dataize, dataize', DataizeContext (..), execBuildTerm) where
+module Dataize (morph, dataize, dataize', DataizeContext (..), State, emptyState, execBuildTerm) where
 
 import AST
 import Builder (buildBytesThrows, buildExpressionThrows)
@@ -19,7 +19,7 @@ import Data.List (find, partition)
 import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as NE
 import qualified Data.Text as T
-import Deps (BuildTermFunc, BuildTermMethod, SaveStepFunc, Term (..))
+import Deps (BuildTermFunc, BuildTermMethodS, SaveStepFunc, State, Term (..))
 import Locator (locatedExpression, withLocatedExpression)
 import Matcher (MetaValue (..), Subst (..), combine, matchExpression', substEmpty, substSingle)
 import Misc
@@ -36,11 +36,17 @@ type Dataizable = (Expression, NonEmpty Rewritten)
 
 type Morphed = Dataizable
 
+-- The initial, empty state used when dataization starts. The 'State' type itself
+-- lives in 'Deps' next to 'BuildTermMethod'.
+emptyState :: State
+emptyState = ""
+
 -- The evaluation context carries only configuration. Nothing global is fixed
--- here: the universe (the second argument 'e' of 𝕄(n, e) and 𝔻(n, e)) is a plain
--- expression threaded as an argument to 'dataize'', 'morph' and on to the atoms.
--- The working program needed for normalization is taken from the head of the
--- step chain, so no 'Program' is threaded around.
+-- here: the universe (the second argument 'e' of 𝕄(n, e, s) and 𝔻(n, e, s)) is a
+-- plain expression threaded as an argument to 'dataize'', 'morph' and on to the
+-- atoms, and the state 's' is threaded the same way (see 'State'). The working
+-- program needed for normalization is taken from the head of the step chain, so
+-- no 'Program' is threaded around.
 data DataizeContext = DataizeContext
   { _locator :: Expression
   , _maxDepth :: Int
@@ -54,11 +60,11 @@ data DataizeContext = DataizeContext
 -- Resolve formation for LAMBDA Morphing rule.
 -- If formation contains λ binding, the called atom result is returned. The
 -- universe 'univ' is forwarded to the atom.
-formation :: [Binding] -> Expression -> DataizeContext -> IO (Maybe Expression)
-formation bds univ ctx = do
+formation :: [Binding] -> Expression -> State -> DataizeContext -> IO (Maybe (Expression, State))
+formation bds univ state ctx = do
   let (lambda, bds') = maybeLambda bds
   case lambda of
-    Just (BiLambda (Function func)) -> Just <$> atom func (ExFormation bds') univ ctx
+    Just (BiLambda (Function func)) -> Just <$> atom func (ExFormation bds') univ state ctx
     _ -> pure Nothing
   where
     maybeLambda :: [Binding] -> (Maybe Binding, [Binding])
@@ -71,11 +77,13 @@ formation bds univ ctx = do
             [bd] -> (Just bd, rest)
             _ -> (Nothing, bds)
 
--- The Morphing function 𝕄 maps normal forms to formations. It is binary,
--- 𝕄(n, e): besides the term 'n' it takes the universe 'e' ('univ') — a plain
--- expression — and matches it against the rule's 'e-match' pattern (usually the
--- '𝑒' meta, which binds 'e' so the 'root' rule substitutes it, but a rule may
--- pin it to a literal such as 'globe' matching Φ). It is driven by
+-- The Morphing function 𝕄 maps normal forms to formations. It is ternary,
+-- 𝕄(n, e, s): besides the term 'n' it takes the universe 'e' ('univ') — a plain
+-- expression — and the mutable state 's', returning the morphed term together
+-- with the new state. The universe is matched against the rule's 'e-match'
+-- pattern (usually the '𝑒' meta, which binds 'e' so the 'root' rule substitutes
+-- it, but a rule may pin it to a literal such as 'globe' matching Φ). It is
+-- driven by
 -- the ordered rules from 'morphing.yaml': the first matching rule's premises are
 -- evaluated and its conclusion 'nresult' is built, always forwarding the same
 -- universe. The 'morph' premise that produces the conclusion is the spine: when
@@ -83,8 +91,8 @@ formation bds univ ctx = do
 -- argument and its individual steps (alpha, copy, dot, …) are spliced into the
 -- chain before morphing continues. Every other premise is a side-computation
 -- evaluated in isolation by 'sidePremise', its own steps discarded.
-morph :: Morphed -> Expression -> DataizeContext -> IO Morphed
-morph (expr, seq) univ ctx = do
+morph :: Morphed -> Expression -> State -> DataizeContext -> IO (Morphed, State)
+morph (expr, seq) univ state ctx = do
   matched <- firstMatch Y.morphingRules
   case matched of
     Just (rule, subst) -> reduce rule subst
@@ -108,41 +116,44 @@ morph (expr, seq) univ ctx = do
     -- trailing 'morph' premise (the spine); if that premise's argument is itself
     -- bound by a 'normalize' premise, the normalization joins the spine and its
     -- steps splice in before morphing continues.
-    reduce :: Y.MorphRule -> Subst -> IO Morphed
+    reduce :: Y.MorphRule -> Subst -> IO (Morphed, State)
     reduce rule subst = case producer rule.nresult rule.premises of
       Nothing -> do
-        final <- sides rule.premises subst
+        (final, state') <- sides rule.premises subst
         built <- buildExpressionThrows rule.nresult final
         seq' <- leadsTo seq rule.name built ctx
-        pure (built, seq')
+        pure ((built, seq'), state')
       Just concl@(Y.Premise _ (Y.OpMorph arg)) -> case producer arg rule.premises of
         Just normal@(Y.Premise _ (Y.OpNormalize inner)) -> do
-          final <- sides (rule.premises `excluding` [concl, normal]) subst
+          (final, state') <- sides (rule.premises `excluding` [concl, normal]) subst
           built <- buildExpressionThrows inner final
           labelled <- leadsTo seq rule.name built ctx
           (normal', seq') <- normalized built labelled ctx
-          morph (normal', seq') univ ctx
+          morph (normal', seq') univ state' ctx
         _ -> do
-          final <- sides (rule.premises `excluding` [concl]) subst
+          (final, state') <- sides (rule.premises `excluding` [concl]) subst
           built <- buildExpressionThrows arg final
           seq' <- leadsTo seq rule.name built ctx
-          morph (built, seq') univ ctx
+          morph (built, seq') univ state' ctx
       Just _ -> throwIO (userError (printf "morphing rule '%s' must conclude with a 'morph' premise" rule.name))
-    sides :: [Y.Premise] -> Subst -> IO Subst
-    sides premises subst = foldM (sidePremise univ ctx) subst premises
+    sides :: [Y.Premise] -> Subst -> IO (Subst, State)
+    sides premises subst = foldM (sidePremise univ ctx) (subst, state) premises
 
 -- Dataize the program located at '_locator'. The program's root is the universe
 -- (the 'e' argument) passed to 𝔻 and 𝕄.
 dataize :: Program -> DataizeContext -> IO Dataized
 dataize program@(Program univ) ctx@DataizeContext{..} = do
   expr <- locatedExpression _locator program
-  (bytes, seq) <- dataize' (expr, (program, Nothing) :| []) univ ctx
+  -- Dataization starts from the empty state; the final state is not yet
+  -- consumed by any caller, so it is discarded here.
+  ((bytes, seq), _state) <- dataize' (expr, (program, Nothing) :| []) univ emptyState ctx
   pure (bytes, reverse seq)
 
 -- The Dataization function 𝔻 retrieves bytes from an expression. It is total and
--- binary, 𝔻(n, e): besides the term 'n' it takes the universe 'e' ('univ'),
--- which it forwards to 𝕄. Its rules come from 'dataization.yaml': 'delta' yields
--- the asset bytes, 'none' (a formation) and 'bott' (⊥) yield empty bytes (--),
+-- ternary, 𝔻(n, e, s): besides the term 'n' it takes the universe 'e' ('univ'),
+-- which it forwards to 𝕄, and the mutable state 's', returning the bytes together
+-- with the new state. Its rules come from 'dataization.yaml': 'delta' yields the
+-- asset bytes, 'none' (a formation) and 'bott' (⊥) yield empty bytes (--),
 -- 'box' contextualizes the φ-body and keeps dataizing (its step is labelled by
 -- its 'contextualize' side-computation), and 'norm' reduces through morphing,
 -- splicing the morphing steps into the chain. The clauses are disjoint (see
@@ -155,8 +166,8 @@ dataize program@(Program univ) ctx@DataizeContext{..} = do
 -- The conclusion bytes 'dresult' are produced by a trailing 'dataize' premise;
 -- when its argument is bound by a 'morph' or 'normalize' premise, that step
 -- joins the spine, otherwise the premise is an isolated side-computation.
-dataize' :: Dataizable -> Expression -> DataizeContext -> IO Dataized
-dataize' (expr, seq) univ ctx = do
+dataize' :: Dataizable -> Expression -> State -> DataizeContext -> IO (Dataized, State)
+dataize' (expr, seq) univ state ctx = do
   rules <- if ctx._shuffle then shuffle Y.dataizationRules else pure Y.dataizationRules
   matched <- firstMatch rules
   case matched of
@@ -172,39 +183,39 @@ dataize' (expr, seq) univ ctx = do
         [] -> firstMatch rest
     asRule :: Y.DataizeRule -> Y.Rule
     asRule rule = Y.Rule rule.name Nothing Nothing rule.match ExRoot rule.when Nothing Nothing
-    reduce :: Y.DataizeRule -> Subst -> IO Dataized
+    reduce :: Y.DataizeRule -> Subst -> IO (Dataized, State)
     reduce rule subst = case bytesProducer rule.dresult rule.premises of
       Nothing -> do
-        final <- sides rule.premises subst
+        (final, state') <- sides rule.premises subst
         bts <- buildBytesThrows rule.dresult final
-        pure (bts, NE.toList seq)
+        pure ((bts, NE.toList seq), state')
       Just concl@(Y.Premise _ (Y.OpDataize arg)) -> case producer arg rule.premises of
         -- 𝔻(𝒩(e)) records the producing step (the 'box' contextualization or the
         -- 'fire' λ-application), then normalizes its result back to a normal form
         -- before dataizing on, so 𝔻 only ever sees normal forms.
         Just normal@(Y.Premise _ (Y.OpNormalize inner)) -> do
           let side = rule.premises `excluding` [concl, normal]
-          final <- sides side subst
+          (final, state') <- sides side subst
           built <- buildExpressionThrows inner final
           labelled <- leadsTo seq (labelOf side) built ctx
           (normal', seq') <- normalized built labelled ctx
-          dataize' (normal', seq') univ ctx
+          dataize' (normal', seq') univ state' ctx
         -- 𝔻(𝕄(e)) delegates to the morphing relation, splicing its steps into the
         -- chain before dataizing on.
         Just morphed@(Y.Premise _ (Y.OpMorph inner)) -> do
-          final <- sides (rule.premises `excluding` [concl, morphed]) subst
+          (final, state') <- sides (rule.premises `excluding` [concl, morphed]) subst
           built <- buildExpressionThrows inner final
-          (morphed', seq') <- morph (built, seq) univ ctx
-          dataize' (morphed', seq') univ ctx
+          ((morphed', seq'), state'') <- morph (built, seq) univ state' ctx
+          dataize' (morphed', seq') univ state'' ctx
         _ -> do
           let side = rule.premises `excluding` [concl]
-          final <- sides side subst
+          (final, state') <- sides side subst
           built <- buildExpressionThrows arg final
           seq' <- leadsTo seq (labelOf side) built ctx
-          dataize' (built, seq') univ ctx
+          dataize' (built, seq') univ state' ctx
       Just _ -> throwIO (userError (printf "dataization rule '%s' must conclude with a 'dataize' premise" rule.name))
-    sides :: [Y.Premise] -> Subst -> IO Subst
-    sides premises subst = foldM (sidePremise univ ctx) subst premises
+    sides :: [Y.Premise] -> Subst -> IO (Subst, State)
+    sides premises subst = foldM (sidePremise univ ctx) (subst, state) premises
     -- A spliced dataization step is labelled by its first side-computation —
     -- 'box' by its 'contextualize', 'fire' by its 'evaluate'; with none it is blank.
     labelOf :: [Y.Premise] -> String
@@ -232,14 +243,27 @@ excluding premises removed = filter (\premise -> premise.result `notElem` map (.
 -- Evaluate one side-computation premise — a 'morph', 'evaluate' or 'contextualize'
 -- of an earlier term — in isolation, binding its result meta. These never splice
 -- steps into the trace: 'morph' and 'evaluate' reduce on a fresh chain and discard
--- it, 'contextualize' is pure.
-sidePremise :: Expression -> DataizeContext -> Subst -> Y.Premise -> IO Subst
-sidePremise univ ctx subst premise = do
-  term <- execBuildTerm univ ctx (verb premise.operation) (verbArgs premise.operation) subst
+-- it, 'contextualize' is pure. The state is threaded through: 'evaluate' (the
+-- 𝔼 of the 'lambda' and 'fire' rules) takes the incoming state 𝑠1 and yields a
+-- new one 𝑠2, 'morph' propagates whatever its sub-reduction produced, and every
+-- other operation leaves the state untouched.
+sidePremise :: Expression -> DataizeContext -> (Subst, State) -> Y.Premise -> IO (Subst, State)
+sidePremise univ ctx (subst, state) premise = do
+  (term, state') <- runOperation
   case combine (substSingle premise.result (metaValue term)) subst of
-    Just subst' -> pure subst'
+    Just subst' -> pure (subst', state')
     Nothing -> throwIO (userError (printf "premise meta '%s' clashes with an existing binding" (T.unpack premise.result)))
   where
+    -- The 𝔼 ('evaluate') and 𝕄 ('morph') operations can change the state, so they
+    -- go through their state-aware builders; every other operation is stateless
+    -- and the incoming state is returned unchanged.
+    runOperation :: IO (Term, State)
+    runOperation = case premise.operation of
+      Y.OpEvaluate expr -> _evaluate univ ctx state [ArgExpression expr] subst
+      Y.OpMorph expr -> _morph univ ctx state [ArgExpression expr] subst
+      operation -> do
+        term <- execBuildTerm univ ctx (verb operation) (verbArgs operation) subst
+        pure (term, state)
     metaValue :: Term -> MetaValue
     metaValue (TeExpression value) = MvExpression value
     metaValue (TeAttribute value) = MvAttribute value
@@ -294,14 +318,14 @@ normalized expr seq ctx@DataizeContext{..} = do
 -- forms. The universe 'univ' itself is forwarded unchanged, so morphing Φ under
 -- this context still resolves to the true universe rather than to this
 -- synthetic, binding-prepended formation.
-_dataize :: Expression -> Expression -> DataizeContext -> IO Bytes
-_dataize expr univ ctx@DataizeContext{_buildTerm = buildTerm} = case univ of
+_dataize :: Expression -> Expression -> State -> DataizeContext -> IO (Bytes, State)
+_dataize expr univ state ctx@DataizeContext{_buildTerm = buildTerm} = case univ of
   ExFormation bds -> do
     (TeAttribute attr) <- buildTerm "random-tau" [] substEmpty
     let prog = Program (ExFormation (BiTau attr expr : bds))
     (normal, seq) <- normalized expr ((prog, Nothing) :| []) ctx
-    (bts, _) <- dataize' (normal, seq) univ ctx
-    pure bts
+    ((bts, _), state') <- dataize' (normal, seq) univ state ctx
+    pure (bts, state')
   _ -> throwIO (userError "Can't call _dataize from atoms with non-formation universe")
 
 -- A number atom only operates on numeric data. Empty bytes (the result of
@@ -311,58 +335,64 @@ asNumber :: Bytes -> Maybe Double
 asNumber BtEmpty = Nothing
 asNumber bts = Just (either toDouble id (btsToNum bts))
 
-atom :: T.Text -> Expression -> Expression -> DataizeContext -> IO Expression
-atom "L_number_plus" self univ ctx = do
-  left <- _dataize (ExDispatch self (AtLabel "x")) univ ctx
-  right <- _dataize (ExDispatch self AtRho) univ ctx
+atom :: T.Text -> Expression -> Expression -> State -> DataizeContext -> IO (Expression, State)
+atom "L_number_plus" self univ state ctx = do
+  (left, lstate) <- _dataize (ExDispatch self (AtLabel "x")) univ state ctx
+  (right, rstate) <- _dataize (ExDispatch self AtRho) univ lstate ctx
   case (asNumber left, asNumber right) of
-    (Just first, Just second) -> pure (DataNumber (numToBts (first + second)))
-    _ -> pure ExTermination
-atom "L_number_times" self univ ctx = do
-  left <- _dataize (ExDispatch self (AtLabel "x")) univ ctx
-  right <- _dataize (ExDispatch self AtRho) univ ctx
+    (Just first, Just second) -> pure (DataNumber (numToBts (first + second)), rstate)
+    _ -> pure (ExTermination, rstate)
+atom "L_number_times" self univ state ctx = do
+  (left, lstate) <- _dataize (ExDispatch self (AtLabel "x")) univ state ctx
+  (right, rstate) <- _dataize (ExDispatch self AtRho) univ lstate ctx
   case (asNumber left, asNumber right) of
-    (Just first, Just second) -> pure (DataNumber (numToBts (first * second)))
-    _ -> pure ExTermination
-atom "L_number_eq" self univ ctx = do
-  x <- _dataize (ExDispatch self (AtLabel "x")) univ ctx
-  rho <- _dataize (ExDispatch self AtRho) univ ctx
+    (Just first, Just second) -> pure (DataNumber (numToBts (first * second)), rstate)
+    _ -> pure (ExTermination, rstate)
+atom "L_number_eq" self univ state ctx = do
+  (x, lstate) <- _dataize (ExDispatch self (AtLabel "x")) univ state ctx
+  (rho, rstate) <- _dataize (ExDispatch self AtRho) univ lstate ctx
   case (asNumber x, asNumber rho) of
     (Just first, Just self') ->
       if self' == first
-        then pure (DataNumber (numToBts first))
-        else pure (ExDispatch self (AtLabel "y"))
-    _ -> pure ExTermination
-atom func _ _ _ = throwIO (userError (printf "Atom '%s' does not exist" (T.unpack func)))
+        then pure (DataNumber (numToBts first), rstate)
+        else pure (ExDispatch self (AtLabel "y"), rstate)
+    _ -> pure (ExTermination, rstate)
+atom func _ _ _ _ = throwIO (userError (printf "Atom '%s' does not exist" (T.unpack func)))
 
 -- Augment the injected, context-free term builder with the dataization and
 -- morphing operations that need the universe: 'evaluate' applies an atom and
 -- 'morph' morphs a sub-expression. Both receive the universe 'univ'. Every other
--- function is delegated unchanged.
+-- function is delegated unchanged. This is the matcher's condition path (guards
+-- in 'when'/'having'), which has no state to thread, so 𝔼 ('evaluate') and 𝕄
+-- ('morph') run here on a fresh, empty state whose result is discarded; the
+-- state-threading callers in 'sidePremise' use '_evaluate' and '_morph' directly.
 execBuildTerm :: Expression -> DataizeContext -> BuildTermFunc
-execBuildTerm univ ctx "evaluate" = _evaluate univ ctx
-execBuildTerm univ ctx "morph" = _morph univ ctx
+execBuildTerm univ ctx "evaluate" = \args subst -> fst <$> _evaluate univ ctx emptyState args subst
+execBuildTerm univ ctx "morph" = \args subst -> fst <$> _morph univ ctx emptyState args subst
 execBuildTerm _ ctx func = _buildTerm ctx func
 
-_evaluate :: Expression -> DataizeContext -> BuildTermMethod
-_evaluate univ ctx [ArgExpression expr] subst = do
+-- The Evaluation function 𝔼(b, s): it fires the λ atom of a formation 'b' under
+-- the incoming state 𝑠 and returns the atom's result together with the new state.
+_evaluate :: Expression -> DataizeContext -> State -> BuildTermMethodS
+_evaluate univ ctx state [ArgExpression expr] subst = do
   form <- buildExpressionThrows expr subst
   case form of
     ExFormation bds -> do
-      resolved <- formation bds univ ctx
+      resolved <- formation bds univ state ctx
       case resolved of
-        Just obj -> pure (TeExpression obj)
+        Just (obj, state') -> pure (TeExpression obj, state')
         Nothing -> throwIO (userError "Function evaluate() expects a formation with a λ binding")
     _ -> throwIO (userError "Function evaluate() expects a formation")
-_evaluate _ _ _ _ = throwIO (userError "Function evaluate() requires exactly 1 expression argument")
+_evaluate _ _ _ _ _ = throwIO (userError "Function evaluate() requires exactly 1 expression argument")
 
 -- The Morphing function 𝕄 exposed as a build-term function so a rule can morph
 -- a sub-expression in its 'where' (the 'dispatch' and 'application' rules morph
 -- the head before re-attaching it). The step chain is discarded: the producing
--- rule splices the surrounding normalization steps itself.
-_morph :: Expression -> DataizeContext -> BuildTermMethod
-_morph univ ctx [ArgExpression expr] subst = do
+-- rule splices the surrounding normalization steps itself. The state is threaded
+-- through and the new state returned alongside the morphed term.
+_morph :: Expression -> DataizeContext -> State -> BuildTermMethodS
+_morph univ ctx state [ArgExpression expr] subst = do
   built <- buildExpressionThrows expr subst
-  (morphed, _) <- morph (built, (Program univ, Nothing) :| []) univ ctx
-  pure (TeExpression morphed)
-_morph _ _ _ _ = throwIO (userError "Function morph() requires exactly 1 expression argument")
+  ((morphed, _), state') <- morph (built, (Program univ, Nothing) :| []) univ state ctx
+  pure (TeExpression morphed, state')
+_morph _ _ _ _ _ = throwIO (userError "Function morph() requires exactly 1 expression argument")
