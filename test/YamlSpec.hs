@@ -6,9 +6,9 @@ module YamlSpec where
 import Control.Exception (Exception (displayException), SomeException)
 import Control.Monad
 import Data.List (isInfixOf)
-import qualified Data.Text as T
+import Data.Text qualified as T
 import Data.Text.Encoding (encodeUtf8)
-import qualified Data.Yaml as Yaml
+import Data.Yaml qualified as Yaml
 import Misc
 import System.FilePath
 import Test.Hspec (Spec, describe, it, runIO, shouldReturn, shouldSatisfy, shouldThrow)
