@@ -56,6 +56,15 @@ jobs:
             printf '\\newcommand\\phinoMorphingRule[6][]{\\ensuremath{#1} #2 $#3$ $#4$ $#5$ $#6$}\n'
             printf '\\newcommand\\phinoNormalizationRule[6][]{\\ensuremath{#1} #2 $#3$ $#4$ $#5$ $#6$}\n'
             printf '\\newcommand\\phinoDataizationRule[6][]{\\ensuremath{#1} #2 $#3$ $#4$ $#5$ $#6$}\n'
+            printf '\\newcommand\\phinoNormalize[2]{#1 \\mapsto #2}\n'
+            printf '\\newcommand\\phinoContextualize[3]{\\mathcal{C}( #1, #2 ) \\to #3}\n'
+            printf '\\newcommand\\phinoDataize[3]{\\mathbb{D}( #1, #2 ) \\to #3}\n'
+            printf '\\newcommand\\phinoName[1]{#1}\n'
+            printf '\\newcommand\\phinoLabel[1]{$#1$}\n'
+            printf '\\newcommand\\phinoCondition[1]{$#1$}\n'
+            printf '\\newcommand\\phinoPremise[1]{$#1$}\n'
+            printf '\\newcommand\\phinoConclusion[1]{$#1$}\n'
+            printf '\\newenvironment{phinoInference}{}{\\par}\n'
             printf '\\begin{document}\n'
             "${e}" explain --normalize
             printf '{[[ x -> [[ y -> ? ]].y ]]}' | "${e}" rewrite --normalize --output=latex --sequence
