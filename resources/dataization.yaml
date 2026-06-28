@@ -59,6 +59,10 @@
   match: ⟦𝐵⟧
   e-match: 𝑒
   d-result: '--'
+  when:
+    disjoint:
+      - [Δ, λ, φ]
+      - [𝐵]
 
 - name: bott
   label: bott
