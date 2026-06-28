@@ -2,9 +2,11 @@
 # SPDX-License-Identifier: MIT
 ---
 # Dataization 𝔻 — applied top-to-bottom, first matching clause wins. It is
-# binary, 𝔻(n, e): the second argument e is the global universe, the same
-# expression that 𝕄 takes as its second argument; 𝔻 forwards it to 𝕄. The first
-# argument is always a normal form: a non-NF expression matches no clause.
+# ternary, 𝔻(n, e, s): the second argument e is the global universe, the same
+# expression that 𝕄 takes as its second argument (𝔻 forwards it to 𝕄), and the
+# third argument s is the mutable state, threaded through and returned possibly
+# changed. Only the 'fire' rule changes it, by firing an atom through 𝔼. The
+# first argument is always a normal form: a non-NF expression matches no clause.
 #
 # Each rule is an inference rule: when 'match' matches the term and 'e-match'
 # matches the universe (binding the meta e), the rule yields the conclusion

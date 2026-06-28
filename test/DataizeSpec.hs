@@ -12,7 +12,7 @@ import Control.Monad
 import Data.List (find, isInfixOf, nub)
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.Maybe (fromMaybe)
-import Dataize (DataizeContext (DataizeContext), dataize, dataize', execBuildTerm, morph)
+import Dataize (DataizeContext (DataizeContext), dataize, dataize', emptyState, execBuildTerm, morph)
 import Deps (dontSaveStep)
 import Functions (buildTerm)
 import Matcher (substEmpty)
@@ -25,20 +25,20 @@ import Yaml qualified
 defaultDataizeContext :: Expression -> DataizeContext
 defaultDataizeContext loc = DataizeContext loc 25 25 False buildTerm dontSaveStep
 
-test :: (Eq a, Show a) => ((Expression, NonEmpty Rewritten) -> Expression -> DataizeContext -> IO (a, [Rewritten])) -> [(String, Expression, Expression, a)] -> Spec
+test :: (Eq a, Show a) => ((Expression, NonEmpty Rewritten) -> Expression -> String -> DataizeContext -> IO ((a, [Rewritten]), String)) -> [(String, Expression, Expression, a)] -> Spec
 test func useCases =
   forM_ useCases $ \(desc, input, expr, output) ->
     it desc $ do
       let prog = Program expr
-      (res, _) <- func (input, (prog, Nothing) :| []) expr (defaultDataizeContext ExRoot)
+      ((res, _), _) <- func (input, (prog, Nothing) :| []) expr emptyState (defaultDataizeContext ExRoot)
       res `shouldBe` output
 
-test' :: (Eq a, Show a) => ((Expression, NonEmpty Rewritten) -> Expression -> DataizeContext -> IO (a, NonEmpty Rewritten)) -> [(String, Expression, Expression, a)] -> Spec
+test' :: (Eq a, Show a) => ((Expression, NonEmpty Rewritten) -> Expression -> String -> DataizeContext -> IO ((a, NonEmpty Rewritten), String)) -> [(String, Expression, Expression, a)] -> Spec
 test' func useCases =
   forM_ useCases $ \(desc, input, expr, output) ->
     it desc $ do
       let prog = Program expr
-      (res, _) <- func (input, (prog, Nothing) :| []) expr (defaultDataizeContext ExRoot)
+      ((res, _), _) <- func (input, (prog, Nothing) :| []) expr emptyState (defaultDataizeContext ExRoot)
       res `shouldBe` output
 
 testDataize :: [(String, String, String, Bytes)] -> Spec
@@ -92,7 +92,7 @@ spec = do
     it "drills a chained λ-formation dispatch down to the base 'lambda'" $ do
       let base = ExFormation [BiLambda (Function "F")]
           chain = ExDispatch (ExDispatch (ExDispatch base (AtLabel "a")) (AtLabel "b")) (AtLabel "c")
-      morph (chain, (Program ExRoot, Nothing) :| []) ExRoot (defaultDataizeContext ExRoot)
+      morph (chain, (Program ExRoot, Nothing) :| []) ExRoot emptyState (defaultDataizeContext ExRoot)
         `shouldThrow` (\e -> "Atom 'F' does not exist" `isInfixOf` show (e :: SomeException))
 
   describe "dataize" $
