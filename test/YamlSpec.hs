@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedRecordDot #-}
+
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
@@ -5,14 +7,15 @@ module YamlSpec where
 
 import Control.Exception (Exception (displayException), SomeException)
 import Control.Monad
-import Data.List (isInfixOf)
+import Data.List (isInfixOf, nub, (\\))
+import Data.Maybe (fromMaybe)
 import Data.Text qualified as T
 import Data.Text.Encoding (encodeUtf8)
 import Data.Yaml qualified as Yaml
 import Misc
 import System.FilePath
-import Test.Hspec (Spec, describe, it, runIO, shouldReturn, shouldSatisfy, shouldThrow)
-import Yaml (ContextualizeRule, DataizeRule, MorphRule, yamlRule)
+import Test.Hspec (Spec, describe, it, runIO, shouldBe, shouldReturn, shouldSatisfy, shouldThrow)
+import Yaml (ContextualizeRule, DataizeRule, MorphRule, contextualizationRules, dataizationRules, morphingRules, yamlRule)
 
 spec :: Spec
 spec = do
@@ -56,3 +59,16 @@ spec = do
     it "in a contextualization rule" $
       (decodeYaml "name: cxi\nlabel: cxi\nmatch: ξ\nc-match: 𝑘\nc-result: 𝑘" :: Either Yaml.ParseException ContextualizeRule)
         `shouldSatisfy` failsAsRedundant
+
+  describe "keeps effective labels unique across rule sets" $
+    -- The effective label of a rule is its 'label' when present, else its
+    -- 'name'. 'explain' typesets that label as the rule's token, so two rules
+    -- sharing an effective label become indistinguishable. Collect every
+    -- effective label from the three embedded rule sets and assert no repeats.
+    it "across morphing, dataization and contextualization rules" $ do
+      let effective rule = fromMaybe rule.name rule.label
+          labels =
+            map effective morphingRules
+              ++ map effective dataizationRules
+              ++ map effective contextualizationRules
+      (labels \\ nub labels) `shouldBe` []
