@@ -1149,6 +1149,7 @@ spec = do
             , "\\begin{phinoInference}"
             , "  \\phinoName{norm}"
             , "  \\phinoLabel{norm}"
+            , "  \\phinoCondition{ \\phinoNotFormation{ n } \\;\\text{and}\\; n \\not= T }"
             , "  \\phinoPremise{ \\phinoMorph{ n }{ e }{ n_1 } }"
             , "  \\phinoPremise{ \\phinoDataize{ n_1 }{ e }{ \\delta } }"
             , "  \\phinoConclusion{ \\phinoDataize{ n }{ e }{ \\delta } }"
