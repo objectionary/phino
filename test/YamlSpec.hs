@@ -69,7 +69,7 @@ spec = do
     it "across morphing, dataization and contextualization rules" $ do
       let labels :: [String]
           labels =
-            map (\MorphRule {name, label} -> fromMaybe name label) morphingRules
-              ++ map (\DataizeRule {name, label} -> fromMaybe name label) dataizationRules
-              ++ map (\ContextualizeRule {name, label} -> fromMaybe name label) contextualizationRules
+            map (\MorphRule{name, label} -> fromMaybe name label) morphingRules
+              ++ map (\DataizeRule{name, label} -> fromMaybe name label) dataizationRules
+              ++ map (\ContextualizeRule{name, label} -> fromMaybe name label) contextualizationRules
       (labels \\ nub labels) `shouldBe` []
