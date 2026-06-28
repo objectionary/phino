@@ -46,6 +46,7 @@ data DataizeContext = DataizeContext
   , _maxDepth :: Int
   , _maxCycles :: Int
   , _depthSensitive :: Bool
+  , _shuffle :: Bool
   , _buildTerm :: BuildTermFunc
   , _saveStep :: SaveStepFunc
   }
@@ -75,21 +76,22 @@ formation bds univ ctx = do
 -- expression — and matches it against the rule's 'e-match' pattern (usually the
 -- '𝑒' meta, which binds 'e' so the 'root' rule substitutes it, but a rule may
 -- pin it to a literal such as 'globe' matching Φ). The rules from 'morphing.yaml'
--- are shuffled before the 'firstMatch' walk, so the matching rule is chosen among
--- the candidates in a random order: every morphing rule is meant to be
--- order-independent (issues #856 and #860 removed the known overlaps), so the
--- shuffle leaves behavior unchanged while surfacing any newly-introduced overlap
--- as a nondeterministic failure instead of a silently order-dependent green
--- suite. The matching rule's premises are evaluated and its conclusion 'nresult'
--- is built, always forwarding the same universe. The 'morph' premise that
--- produces the conclusion is the spine: when
+-- are normally walked in declaration order, but with '_shuffle' on (the
+-- '--shuffle' CLI flag) they are shuffled before the 'firstMatch' walk so the
+-- matching rule is chosen among the candidates in a random order: every morphing
+-- rule is meant to be order-independent (issues #856 and #860 removed the known
+-- overlaps), so the shuffle leaves behavior unchanged while surfacing any
+-- newly-introduced overlap as a nondeterministic failure instead of a silently
+-- order-dependent green suite. The matching rule's premises are evaluated and its
+-- conclusion 'nresult' is built, always forwarding the same universe. The 'morph'
+-- premise that produces the conclusion is the spine: when
 -- its argument comes from a 'normalize' premise, the rewriter runs over that
 -- argument and its individual steps (alpha, copy, dot, …) are spliced into the
 -- chain before morphing continues. Every other premise is a side-computation
 -- evaluated in isolation by 'sidePremise', its own steps discarded.
 morph :: Morphed -> Expression -> DataizeContext -> IO Morphed
 morph (expr, seq) univ ctx = do
-  rules <- shuffle Y.morphingRules
+  rules <- if ctx._shuffle then shuffle Y.morphingRules else pure Y.morphingRules
   matched <- firstMatch rules
   case matched of
     Just (rule, subst) -> reduce rule subst

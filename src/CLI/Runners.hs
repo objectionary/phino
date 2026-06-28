@@ -161,7 +161,7 @@ runDataize OptsDataize{..} = do
       validateXmirOptions _outputFormat [(_omitListing, "omit-listing"), (_omitComments, "omit-comments")] _focus
       when (length _show > 1) (invalidCLIArguments "The option --show can be used only once")
     context :: Expression -> PrintProgramContext -> DataizeContext
-    context loc ctx = DataizeContext loc _maxDepth _maxCycles _depthSensitive buildTerm (saveStepFunc _stepsDir ctx)
+    context loc ctx = DataizeContext loc _maxDepth _maxCycles _depthSensitive _shuffle buildTerm (saveStepFunc _stepsDir ctx)
     printProgCtx :: Expression -> PrintProgramContext
     printProgCtx focus =
       PrintProgCtx

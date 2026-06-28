@@ -23,7 +23,12 @@ import Test.Hspec
 import Yaml qualified
 
 defaultDataizeContext :: Expression -> DataizeContext
-defaultDataizeContext loc = DataizeContext loc 25 25 False buildTerm dontSaveStep
+defaultDataizeContext loc = DataizeContext loc 25 25 False False buildTerm dontSaveStep
+
+-- Like 'defaultDataizeContext' but with '_shuffle' on, so 'morph' walks the
+-- morphing rules in a random order on every step.
+shufflingDataizeContext :: Expression -> DataizeContext
+shufflingDataizeContext loc = DataizeContext loc 25 25 False True buildTerm dontSaveStep
 
 test :: (Eq a, Show a) => ((Expression, NonEmpty Rewritten) -> Expression -> DataizeContext -> IO (a, [Rewritten])) -> [(String, Expression, Expression, a)] -> Spec
 test func useCases =
@@ -66,6 +71,33 @@ spec = do
         , ExFormation [BiTau AtRho (ExFormation [BiTau (AtLabel "x") (ExFormation [BiVoid AtRho]), BiVoid AtRho])]
         )
       ]
+
+  -- With '--shuffle' on, 'morph' walks the morphing rules in a random order on
+  -- every step. Every clause is order-independent (the known overlaps were
+  -- removed in #856 and #860), so the outcome must never depend on that order:
+  -- morphing each input many times under a shuffling context yields exactly the
+  -- formation the fixed declaration order does, proving the rules may be applied
+  -- in any order with the same result. Were a hidden overlap re-introduced, some
+  -- of these random orders would disagree and 'nub' would collect more than the
+  -- single expected form.
+  describe "morphing is order-independent under --shuffle" $ do
+    let cases =
+          [ ("a byte formation", ExFormation [BiDelta (BtOne "00")], ExRoot, ExFormation [BiDelta (BtOne "00")])
+          , ("termination", ExTermination, ExRoot, ExTermination)
+          , ("xi", ExXi, ExRoot, ExTermination)
+          , ("the global object", ExRoot, ExRoot, ExTermination)
+          ,
+            ( "a dispatch over a formation"
+            , ExDispatch ExRoot (AtLabel "x")
+            , ExFormation [BiTau (AtLabel "x") (ExFormation [])]
+            , ExFormation [BiTau AtRho (ExFormation [BiTau (AtLabel "x") (ExFormation [BiVoid AtRho]), BiVoid AtRho])]
+            )
+          ]
+    forM_ cases $ \(desc, input, univ, expected) ->
+      it ("morphs " ++ desc ++ " to the same form across 100 random rule orders") $ do
+        let prog = Program univ
+        results <- replicateM 100 (fst <$> morph (input, (prog, Nothing) :| []) univ (shufflingDataizeContext ExRoot))
+        nub results `shouldBe` [expected]
 
   -- 'dispatch' fires only when its head is not a formation ('not (formation 𝑛)'),
   -- so a formation head — λ-bearing or not — is left to 'lambda'/'prim'. The
