@@ -1138,6 +1138,7 @@ spec = do
             , "\\begin{phinoInference}"
             , "  \\phinoName{none}"
             , "  \\phinoLabel{none}"
+            , "  \\phinoCondition{ [ D, L, @ ] \\cap \\lparen B \\rparen = \\emptyset }"
             , "  \\phinoConclusion{ \\phinoDataize{ [[ B ]] }{ e }{ -- } }"
             , "\\end{phinoInference}"
             , "\\begin{phinoInference}"
