@@ -66,7 +66,8 @@ spec = do
     -- sharing an effective label become indistinguishable. Collect every
     -- effective label from the three embedded rule sets and assert no repeats.
     it "across morphing, dataization and contextualization rules" $ do
-      let labels =
+      let labels :: [String]
+          labels =
             map (\rule -> fromMaybe rule.name rule.label) morphingRules
               ++ map (\rule -> fromMaybe rule.name rule.label) dataizationRules
               ++ map (\rule -> fromMaybe rule.name rule.label) contextualizationRules
