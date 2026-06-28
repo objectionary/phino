@@ -95,6 +95,27 @@ spec = do
       morph (chain, (Program ExRoot, Nothing) :| []) ExRoot (defaultDataizeContext ExRoot)
         `shouldThrow` (\e -> "Atom 'F' does not exist" `isInfixOf` show (e :: SomeException))
 
+  -- 'norm' matches the bare meta 𝑛, which unifies with any expression, so it is
+  -- guarded to fire only when 𝑛 is neither a formation ('not (formation 𝑛)',
+  -- left to 'delta'/'box'/'fire'/'none') nor the termination ⊥ ('not (𝑛 = ⊥)',
+  -- left to 'bott'). The dataization clauses are therefore disjoint and their
+  -- order in 'dataization.yaml' cannot change behavior.
+  describe "dataization 'norm' is disjoint from the specific clauses" $ do
+    let rctx = RuleContext (execBuildTerm ExRoot (defaultDataizeContext ExRoot))
+        dataizeRule :: String -> Yaml.DataizeRule
+        dataizeRule nm = fromMaybe (error ("no dataization rule named " ++ nm)) (find (\r -> r.name == nm) Yaml.dataizationRules)
+        asRule :: Yaml.DataizeRule -> Yaml.Rule
+        asRule r = Yaml.Rule r.name Nothing Nothing r.match ExRoot r.when Nothing Nothing
+    it "does not fire on a formation" $ do
+      substs <- matchExpressionWithRule' [substEmpty] (ExFormation [BiDelta (BtOne "00")]) (asRule (dataizeRule "norm")) rctx
+      substs `shouldBe` []
+    it "does not fire on the termination ⊥" $ do
+      substs <- matchExpressionWithRule' [substEmpty] ExTermination (asRule (dataizeRule "norm")) rctx
+      substs `shouldBe` []
+    it "still fires on a non-formation, non-termination normal form" $ do
+      substs <- matchExpressionWithRule' [substEmpty] (ExDispatch ExXi (AtLabel "x")) (asRule (dataizeRule "norm")) rctx
+      null substs `shouldBe` False
+
   describe "dataize" $
     test
       dataize'
