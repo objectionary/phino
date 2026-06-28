@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 ---
 # Morphing 𝕄 — applied top-to-bottom, first matching clause wins. It is ternary,
-# 𝕄(n, e, s): n is the term being morphed, e is the fixed global universe and s is
+# 𝕄(n, e, s): n is the morphed term, e is the fixed global universe and s is
 # the mutable state. The universe is threaded unchanged through every recursive
 # call and substituted for Φ by the 'root' rule (Φ, rendered Q, is just the
 # locator of e); the state is threaded too and the new state returned. Only the
