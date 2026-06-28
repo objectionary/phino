@@ -213,21 +213,20 @@ contextualization (𝒞) rules (or `--rule` for a custom rule file):
 ```bash
 $ phino explain --normalize
 \begin{phinoInference}
-  \phinoName{alpha}
-  \phinoCondition{ i = \vert \overline{ B_1 } \vert }
-  \phinoConclusion{ \phinoNormalize{ [[ B_1, \tau -> ?, B_2 ]] ( \phiTerminal{\alpha_{i}} -> e ) }{ [[ B_1, \tau -> ?, B_2 ]] ( \tau -> e ) } }
+  \phinoName{dd}
+  \phinoConclusion{ \phinoNormalize{ T . \tau }{ T } }
 \end{phinoInference}
 ...
 \begin{phinoInference}
   \phinoName{dot}
   \phinoPremise{ \phinoContextualize{ n }{ [[ B_1, \tau -> n, B_2 ]] }{ e } }
-  \phinoConclusion{ \phinoNormalize{ [[ B_1, \tau -> n, B_2 ]] . \tau }{ e ( \phiTerminal{\rho} -> [[ B_1, \tau -> n, B_2 ]] ) } }
+  \phinoConclusion{ \phinoNormalize{ [[ B_1, \tau -> n, B_2 ]] . \tau }{ ... } }
 \end{phinoInference}
 ...
 \begin{phinoInference}
-  \phinoName{stop}
-  \phinoCondition{ \tau \notin B \;\text{and}\; @ \notin B \;\text{and}\; L \notin B }
-  \phinoConclusion{ \phinoNormalize{ [[ B ]] . \tau }{ T } }
+  \phinoName{miss}
+  \phinoCondition{ \tau \notin B }
+  \phinoConclusion{ \phinoNormalize{ [[ B ]] ( \tau -> e ) }{ T } }
 \end{phinoInference}
 ```
 
