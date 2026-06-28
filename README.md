@@ -212,24 +212,23 @@ contextualization (𝒞) rules (or `--rule` for a custom rule file):
 
 ```bash
 $ phino explain --normalize
-\begin{tabular}{rl}
-\phinoNormalizationRule{alpha}
-  { [[ B_1, \tau -> ?, B_2 ]] ( \phiTerminal{\alpha_{i}} -> e ) }
-  { [[ B_1, \tau -> ?, B_2 ]] ( \tau -> e ) }
-  { $ i = \vert \overline{ B_1 } \vert $ }
-  { }
-\phinoNormalizationRule{dc}
-  { T ( \tau -> e ) }
-  { T }
-  { }
-  { }
+\begin{phinoInference}
+  \phinoName{alpha}
+  \phinoCondition{ i = \vert \overline{ B_1 } \vert }
+  \phinoConclusion{ \phinoNormalize{ [[ B_1, \tau -> ?, B_2 ]] ( \phiTerminal{\alpha_{i}} -> e ) }{ [[ B_1, \tau -> ?, B_2 ]] ( \tau -> e ) } }
+\end{phinoInference}
 ...
-\phinoNormalizationRule{stop}
-  { [[ B ]] . \tau }
-  { T }
-  { $ \tau \notin B \;\text{and}\; @ \notin B \;\text{and}\; L \notin B $ }
-  { }
-\end{tabular}
+\begin{phinoInference}
+  \phinoName{dot}
+  \phinoPremise{ \phinoContextualize{ n }{ [[ B_1, \tau -> n, B_2 ]] }{ e } }
+  \phinoConclusion{ \phinoNormalize{ [[ B_1, \tau -> n, B_2 ]] . \tau }{ e ( \phiTerminal{\rho} -> [[ B_1, \tau -> n, B_2 ]] ) } }
+\end{phinoInference}
+...
+\begin{phinoInference}
+  \phinoName{stop}
+  \phinoCondition{ \tau \notin B \;\text{and}\; @ \notin B \;\text{and}\; L \notin B }
+  \phinoConclusion{ \phinoNormalize{ [[ B ]] . \tau }{ T } }
+\end{phinoInference}
 ```
 
 The morphing and dataization rules are printed the same way:

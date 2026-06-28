@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 ---
 name: miss
-pattern: ⟦𝐵⟧(𝜏 ↦ 𝑒)
+match: ⟦𝐵⟧(𝜏 ↦ 𝑒)
 result: ⊥
 when:
   not:

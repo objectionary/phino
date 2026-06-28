@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 ---
 name: over
-pattern: ⟦𝐵1, 𝜏 ↦ 𝑒1, 𝐵2⟧(𝜏 ↦ 𝑒2)
+match: ⟦𝐵1, 𝜏 ↦ 𝑒1, 𝐵2⟧(𝜏 ↦ 𝑒2)
 result: ⊥
 when:
   not:

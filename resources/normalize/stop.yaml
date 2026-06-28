@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 ---
 name: stop
-pattern: ⟦𝐵⟧.𝜏
+match: ⟦𝐵⟧.𝜏
 result: ⊥
 when:
   and:

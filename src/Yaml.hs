@@ -147,14 +147,51 @@ instance FromJSON Extra where
             <*> o .:? "args" .!= []
       )
 
+-- A normalization (or user-supplied rewriting) rule. Two surface schemas decode
+-- into this one type: the premise-conclusion schema shared with 𝕄/𝒞/𝔻 ('match'
+-- plus 'premises') and the legacy schema ('pattern' plus 'where'). The legacy
+-- keys stay accepted so existing '--rule' files and test packs keep working; the
+-- new keys desugar into the same internal fields, so the rewriting engine is
+-- untouched.
 instance FromJSON Rule where
   parseJSON =
-    genericParseJSON
-      defaultOptions
-        { fieldLabelModifier = \case
-            "where_" -> "where"
-            other -> other
-        }
+    withObject
+      "Rule"
+      ( \o -> do
+          ruleName <- o .: "name"
+          Rule ruleName
+            <$> o .:? "label"
+            <*> o .:? "description"
+            <*> rulePattern o
+            <*> o .: "result"
+            <*> o .:? "when"
+            <*> ruleExtensions o
+            <*> o .:? "having"
+      )
+
+-- The matched term, taken from 'match' (premise-conclusion schema) or the legacy
+-- 'pattern' key. Exactly one must be present.
+rulePattern :: Object -> Parser Expression
+rulePattern o = do
+  match' <- o .:? "match"
+  pattern' <- o .:? "pattern"
+  case (match', pattern') of
+    (Just expr, Nothing) -> pure expr
+    (Nothing, Just expr) -> pure expr
+    (Just _, Just _) -> fail "a rule has both 'match' and 'pattern'; keep only one"
+    (Nothing, Nothing) -> fail "a rule needs a 'match' (or the legacy 'pattern')"
+
+-- The rule's extensions, taken from 'premises' (premise-conclusion schema,
+-- desugared into the build-term extras the engine already runs) or the legacy
+-- 'where' key. At most one may be present.
+ruleExtensions :: Object -> Parser (Maybe [Extra])
+ruleExtensions o = do
+  premises' <- o .:? "premises"
+  where' <- o .:? "where"
+  case (premises', where') of
+    (Just prems, Nothing) -> pure (Just (map premiseToExtra prems))
+    (Nothing, w) -> pure w
+    (Just _, Just _) -> fail "a rule has both 'premises' and 'where'; keep only one"
 
 data Number
   = MetaIndex Text
@@ -321,6 +358,36 @@ premiseOperation o =
           _ -> fail "'contextualize' expects exactly two arguments"
     , OpDataize <$> o .: "dataize"
     ]
+
+-- Desugar a premise into the build-term extension the rewriting engine runs: the
+-- premise's operation becomes a 'where' call to the matching build-term function,
+-- binding the premise's result meta. This lets a normalization rule be written in
+-- the premise-conclusion schema while the engine keeps consuming 'where' extras,
+-- so the migration touches the schema and not the rewriting engine.
+premiseToExtra :: Premise -> Extra
+premiseToExtra (Premise res op) = Extra (metaArgument res op) (verb op) (verbArgs op)
+  where
+    -- A 'dataize' premise binds a bytes meta ('d-result'); every other operation
+    -- binds an expression meta ('n-result').
+    metaArgument :: Text -> Operation -> ExtraArgument
+    metaArgument metaText (OpDataize _) = ArgBytes (BtMeta metaText)
+    metaArgument metaText _ = ArgExpression (ExMeta metaText)
+
+-- The build-term function name backing a premise operation.
+verb :: Operation -> String
+verb (OpMorph _) = "morph"
+verb (OpNormalize _) = "normalize"
+verb (OpEvaluate _) = "evaluate"
+verb (OpContextualize _ _) = "contextualize"
+verb (OpDataize _) = "dataize"
+
+-- The build-term arguments backing a premise operation.
+verbArgs :: Operation -> [ExtraArgument]
+verbArgs (OpMorph expr) = [ArgExpression expr]
+verbArgs (OpNormalize expr) = [ArgExpression expr]
+verbArgs (OpEvaluate expr) = [ArgExpression expr]
+verbArgs (OpContextualize expr context) = [ArgExpression expr, ArgExpression context]
+verbArgs (OpDataize expr) = [ArgExpression expr]
 
 -- Parse the optional 'label', rejecting one that merely repeats the rule's
 -- 'name'. A label equal to the name typesets the same token across two macros
