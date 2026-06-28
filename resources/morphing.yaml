@@ -3,8 +3,8 @@
 ---
 # Morphing 𝕄 — the clauses are shuffled before each step and the first matching
 # clause wins; since every clause is order-independent (the known overlaps were
-# removed in #856 and #860), the shuffle never changes the result and only acts
-# as a guard that surfaces any re-introduced overlap as a flaky failure. It is binary,
+# removed in #856 and #860), the shuffle never changes the result and only
+# surfaces any re-introduced overlap as a flaky failure. It is binary,
 # 𝕄(n, e): n is the term being morphed and e is the fixed global universe,
 # threaded unchanged through every recursive call and substituted for Φ by the
 # 'root' rule (Φ, rendered Q, is just the locator of e). The first argument is
