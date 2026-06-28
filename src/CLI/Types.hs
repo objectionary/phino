@@ -83,6 +83,7 @@ data OptsDataize = OptsDataize
   , _sequence :: Bool
   , _canonize :: Bool
   , _depthSensitive :: Bool
+  , _shuffle :: Bool
   , _quiet :: Bool
   , _compress :: Bool
   , _maxDepth :: Int

@@ -46,6 +46,7 @@ data DataizeContext = DataizeContext
   , _maxDepth :: Int
   , _maxCycles :: Int
   , _depthSensitive :: Bool
+  , _shuffle :: Bool
   , _buildTerm :: BuildTermFunc
   , _saveStep :: SaveStepFunc
   }
@@ -145,18 +146,19 @@ dataize program@(Program univ) ctx@DataizeContext{..} = do
 -- 'box' contextualizes the φ-body and keeps dataizing (its step is labelled by
 -- its 'contextualize' side-computation), and 'norm' reduces through morphing,
 -- splicing the morphing steps into the chain. The clauses are disjoint (see
--- #902, #905), so their declaration order must not be load-bearing; the rules
--- are 'shuffle'd before the 'firstMatch' walk to exercise that invariant —
--- mirroring normalization's "apply until they stop matching". A genuinely
--- order-independent step stays deterministic; a hidden overlap surfaces as a
--- nondeterministic failure rather than staying silently green.
+-- #902, #905), so their declaration order must not be load-bearing; when
+-- '_shuffle' is on (the '--shuffle' flag) the rules are shuffled before the
+-- 'firstMatch' walk to exercise that invariant — mirroring normalization's
+-- "apply until they stop matching". A genuinely order-independent step stays
+-- deterministic; a hidden overlap surfaces as a nondeterministic failure rather
+-- than staying silently green.
 -- The conclusion bytes 'dresult' are produced by a trailing 'dataize' premise;
 -- when its argument is bound by a 'morph' or 'normalize' premise, that step
 -- joins the spine, otherwise the premise is an isolated side-computation.
 dataize' :: Dataizable -> Expression -> DataizeContext -> IO Dataized
 dataize' (expr, seq) univ ctx = do
-  shuffled <- shuffle Y.dataizationRules
-  matched <- firstMatch shuffled
+  rules <- if ctx._shuffle then shuffle Y.dataizationRules else pure Y.dataizationRules
+  matched <- firstMatch rules
   case matched of
     Just (rule, subst) -> reduce rule subst
     Nothing -> throwIO (userError "no dataization rule matched")

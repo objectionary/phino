@@ -22,8 +22,11 @@ import Rule (RuleContext (RuleContext), matchExpressionWithRule')
 import Test.Hspec
 import Yaml qualified
 
+-- Shuffle is enabled so the suite exercises the order-independence of the
+-- dataization rules (#909): a hidden overlap surfaces as a nondeterministic
+-- failure instead of staying silently green.
 defaultDataizeContext :: Expression -> DataizeContext
-defaultDataizeContext loc = DataizeContext loc 25 25 False buildTerm dontSaveStep
+defaultDataizeContext loc = DataizeContext loc 25 25 False True buildTerm dontSaveStep
 
 test :: (Eq a, Show a) => ((Expression, NonEmpty Rewritten) -> Expression -> DataizeContext -> IO (a, [Rewritten])) -> [(String, Expression, Expression, a)] -> Spec
 test func useCases =

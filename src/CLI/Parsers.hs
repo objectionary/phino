@@ -258,6 +258,7 @@ dataizeParser =
             <*> optSequence
             <*> optCanonize
             <*> optDepthSensitive
+            <*> optShuffle
             <*> switch (long "quiet" <> help "Don't print the result of dataization")
             <*> optCompress
             <*> optMaxDepth
