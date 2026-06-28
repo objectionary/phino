@@ -1,4 +1,5 @@
-{-# LANGUAGE OverloadedRecordDot #-}
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE NamedFieldPuns #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
@@ -15,7 +16,7 @@ import Data.Yaml qualified as Yaml
 import Misc
 import System.FilePath
 import Test.Hspec (Spec, describe, it, runIO, shouldBe, shouldReturn, shouldSatisfy, shouldThrow)
-import Yaml (ContextualizeRule, DataizeRule, MorphRule, contextualizationRules, dataizationRules, morphingRules, yamlRule)
+import Yaml (ContextualizeRule (..), DataizeRule (..), MorphRule (..), contextualizationRules, dataizationRules, morphingRules, yamlRule)
 
 spec :: Spec
 spec = do
@@ -68,7 +69,7 @@ spec = do
     it "across morphing, dataization and contextualization rules" $ do
       let labels :: [String]
           labels =
-            map (\rule -> fromMaybe rule.name rule.label) morphingRules
-              ++ map (\rule -> fromMaybe rule.name rule.label) dataizationRules
-              ++ map (\rule -> fromMaybe rule.name rule.label) contextualizationRules
+            map (\MorphRule {name, label} -> fromMaybe name label) morphingRules
+              ++ map (\DataizeRule {name, label} -> fromMaybe name label) dataizationRules
+              ++ map (\ContextualizeRule {name, label} -> fromMaybe name label) contextualizationRules
       (labels \\ nub labels) `shouldBe` []
