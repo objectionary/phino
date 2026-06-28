@@ -27,7 +27,6 @@
 # are disjoint and their relative order does not change behavior.
 
 - name: prim
-  label: prim
   match: ⟦𝐵⟧
   e-match: 𝑒
   n-result: ⟦𝐵⟧
@@ -88,7 +87,6 @@
       morph: 𝑛2
 
 - name: root
-  label: root
   match: Φ
   e-match: 𝑒
   n-result: 𝑛1
@@ -104,19 +102,16 @@
       morph: 𝑛
 
 - name: dead
-  label: dead
   match: ⊥
   e-match: 𝑒
   n-result: ⊥
 
 - name: xi
-  label: xi
   match: ξ
   e-match: 𝑒
   n-result: ⊥
 
 - name: globe
-  label: globe
   match: Φ
   e-match: Φ
   n-result: ⊥

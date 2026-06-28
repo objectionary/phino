@@ -322,14 +322,25 @@ premiseOperation o =
     , OpDataize <$> o .: "dataize"
     ]
 
+-- Parse the optional 'label', rejecting one that merely repeats the rule's
+-- 'name'. A label equal to the name typesets the same token across two macros
+-- and adds nothing, so it is forbidden: 'label' is meant to carry a symbol that
+-- differs from the plain name (for example '\lambda' or 'disp').
+parseLabel :: String -> Object -> Parser (Maybe String)
+parseLabel ruleName o = do
+  label' <- o .:? "label"
+  if label' == Just ruleName
+    then fail $ "'label' is redundant when it equals 'name' (" ++ ruleName ++ "); drop it"
+    else pure label'
+
 instance FromJSON MorphRule where
   parseJSON =
     withObject
       "MorphRule"
-      ( \o ->
-          MorphRule
-            <$> o .: "name"
-            <*> o .:? "label"
+      ( \o -> do
+          ruleName <- o .: "name"
+          MorphRule ruleName
+            <$> parseLabel ruleName o
             <*> o .: "match"
             <*> o .: "e-match"
             <*> o .: "n-result"
@@ -341,10 +352,10 @@ instance FromJSON DataizeRule where
   parseJSON =
     withObject
       "DataizeRule"
-      ( \o ->
-          DataizeRule
-            <$> o .: "name"
-            <*> o .:? "label"
+      ( \o -> do
+          ruleName <- o .: "name"
+          DataizeRule ruleName
+            <$> parseLabel ruleName o
             <*> o .: "match"
             <*> o .: "e-match"
             <*> o .: "d-result"
@@ -356,10 +367,10 @@ instance FromJSON ContextualizeRule where
   parseJSON =
     withObject
       "ContextualizeRule"
-      ( \o ->
-          ContextualizeRule
-            <$> o .: "name"
-            <*> o .:? "label"
+      ( \o -> do
+          ruleName <- o .: "name"
+          ContextualizeRule ruleName
+            <$> parseLabel ruleName o
             <*> o .: "match"
             <*> o .: "c-match"
             <*> o .: "c-result"
