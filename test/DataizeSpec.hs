@@ -70,11 +70,11 @@ spec = do
         )
       ]
 
-  -- 'dispatch' fires only when its head is not a formation ('not (formation 𝑛)'),
-  -- so a formation head — λ-bearing or not — is left to 'lambda'/'prim'. The
+  -- 'md' fires only when its head is not a formation ('not (formation 𝑛)'),
+  -- so a formation head — λ-bearing or not — is left to 'ml'/'mf'. The
   -- two clauses are mutually exclusive and their order in 'morphing.yaml'
   -- cannot change behavior.
-  describe "morphing 'dispatch' is disjoint from 'lambda'" $ do
+  describe "morphing 'md' is disjoint from 'ml'" $ do
     let rctx = RuleContext (execBuildTerm ExRoot (defaultDataizeContext ExRoot))
         morphRule :: String -> Yaml.MorphRule
         morphRule nm = fromMaybe (error ("no morphing rule named " ++ nm)) (find (\r -> r.name == nm) Yaml.morphingRules)
@@ -82,17 +82,17 @@ spec = do
         asRule r = Yaml.Rule r.name Nothing Nothing r.match ExRoot r.when Nothing Nothing
         lambdaFormation = ExFormation [BiLambda (Function "L_dummy"), BiVoid AtRho]
     it "does not fire on a λ-bearing formation dispatch" $ do
-      substs <- matchExpressionWithRule' [substEmpty] (ExDispatch lambdaFormation (AtLabel "x")) (asRule (morphRule "dispatch")) rctx
+      substs <- matchExpressionWithRule' [substEmpty] (ExDispatch lambdaFormation (AtLabel "x")) (asRule (morphRule "md")) rctx
       substs `shouldBe` []
     it "still fires on a non-λ-formation dispatch" $ do
-      substs <- matchExpressionWithRule' [substEmpty] (ExDispatch ExXi (AtLabel "x")) (asRule (morphRule "dispatch")) rctx
+      substs <- matchExpressionWithRule' [substEmpty] (ExDispatch ExXi (AtLabel "x")) (asRule (morphRule "md")) rctx
       null substs `shouldBe` False
-    -- ⟦λ ⤍ F⟧.a.b.c : 'dispatch' peels .c then .b (their heads are dispatches,
-    -- not λ-formations, so 'λ ∉ 𝐵' holds), then 'lambda' handles the base
+    -- ⟦λ ⤍ F⟧.a.b.c : 'md' peels .c then .b (their heads are dispatches,
+    -- not λ-formations, so 'λ ∉ 𝐵' holds), then 'ml' handles the base
     -- ⟦λ ⤍ F⟧.a and fires the atom. The chain therefore routes
-    -- dispatch → dispatch → lambda; firing the undefined atom 'F' is what
-    -- raises the error, proving the base λ-formation reached 'lambda'.
-    it "drills a chained λ-formation dispatch down to the base 'lambda'" $ do
+    -- md → md → ml; firing the undefined atom 'F' is what
+    -- raises the error, proving the base λ-formation reached 'ml'.
+    it "drills a chained λ-formation dispatch down to the base 'ml'" $ do
       let base = ExFormation [BiLambda (Function "F")]
           chain = ExDispatch (ExDispatch (ExDispatch base (AtLabel "a")) (AtLabel "b")) (AtLabel "c")
       morph (chain, (Program ExRoot, Nothing) :| []) ExRoot emptyState (defaultDataizeContext ExRoot)
@@ -213,27 +213,27 @@ spec = do
           "Q -> [[ bytes(data) -> [[ @ -> $.data ]], number(as-bytes) -> [[ @ -> $.as-bytes, plus(x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6) ]]"
       labels
         `shouldBe` [ "contextualize"
-                   , "applicationa"
+                   , "maa"
                    , "alpha"
                    , "copy"
-                   , "prim"
+                   , "mf"
                    , "evaluate"
-                   , "applicationa"
+                   , "maa"
                    , "alpha"
                    , "copy"
-                   , "prim"
+                   , "mf"
                    , "contextualize"
                    , "dot"
-                   , "application"
+                   , "ma"
                    , "stay"
-                   , "prim"
+                   , "mf"
                    , "contextualize"
                    , "dot"
                    , "copy"
                    ]
     it "dataizes a located reference through the expected rules" $ do
       labels <- labelsOf "Q.foo.bar" "Q -> [[ foo -> [[ bar -> [[ @ -> Q.x ]] ]], x -> [[ D> 42- ]] ]]"
-      labels `shouldBe` ["contextualize", "dispatch", "dot", "copy", "prim"]
+      labels `shouldBe` ["contextualize", "md", "dot", "copy", "mf"]
 
   testDataize
     [

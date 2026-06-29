@@ -82,7 +82,7 @@ formation bds univ state ctx = do
 -- expression — and the mutable state 's', returning the morphed term together
 -- with the new state. The universe is matched against the rule's 'e-match'
 -- pattern (usually the '𝑒' meta, which binds 'e' so the 'root' rule substitutes
--- it, but a rule may pin it to a literal such as 'globe' matching Φ). It is
+-- it, but a rule may pin it to a literal such as 'mg' matching Φ). It is
 -- driven by
 -- the ordered rules from 'morphing.yaml': the first matching rule's premises are
 -- evaluated and its conclusion 'nresult' is built, always forwarding the same
@@ -244,7 +244,7 @@ excluding premises removed = filter (\premise -> premise.result `notElem` map (.
 -- of an earlier term — in isolation, binding its result meta. These never splice
 -- steps into the trace: 'morph' and 'evaluate' reduce on a fresh chain and discard
 -- it, 'contextualize' is pure. The state is threaded through: 'evaluate' (the
--- 𝔼 of the 'lambda' and 'fire' rules) takes the incoming state 𝑠1 and yields a
+-- 𝔼 of the 'ml' and 'fire' rules) takes the incoming state 𝑠1 and yields a
 -- new one 𝑠2, 'morph' propagates whatever its sub-reduction produced, and every
 -- other operation leaves the state untouched.
 sidePremise :: Expression -> DataizeContext -> (Subst, State) -> Y.Premise -> IO (Subst, State)
@@ -386,7 +386,7 @@ _evaluate univ ctx state [ArgExpression expr] subst = do
 _evaluate _ _ _ _ _ = throwIO (userError "Function evaluate() requires exactly 1 expression argument")
 
 -- The Morphing function 𝕄 exposed as a build-term function so a rule can morph
--- a sub-expression in its 'where' (the 'dispatch' and 'application' rules morph
+-- a sub-expression in its 'where' (the 'md' and 'ma' rules morph
 -- the head before re-attaching it). The step chain is discarded: the producing
 -- rule splices the surrounding normalization steps itself. The state is threaded
 -- through and the new state returned alongside the morphed term.

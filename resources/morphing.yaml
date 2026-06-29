@@ -6,7 +6,7 @@
 # the mutable state. The universe is threaded unchanged through every recursive
 # call and substituted for Φ by the 'root' rule (Φ, rendered Q, is just the
 # locator of e); the state is threaded too and the new state returned. Only the
-# 'lambda' rule changes it, by firing an atom through 𝔼. The first argument is
+# 'ml' rule changes it, by firing an atom through 𝔼. The first argument is
 # always a normal form: a non-NF expression matches no clause. 𝕄 navigates a
 # normal form to a formation one operation at a time, resolving Φ against e and
 # peeling dispatches and applications through normalization 𝒩. It never fires a
@@ -19,21 +19,21 @@
 # ordered 'premises' reduce as stated. A premise binds 'n-result' to the result
 # of one judgment — 𝕄 ('morph'), 𝒩 ('normalize') or 𝔼 ('evaluate'). 'e-match' is
 # the universe-argument matcher of 𝕄(n, e); usually the e meta, but a rule may
-# pin it to a literal (e.g. 'globe' fires only on 𝕄(Φ, Φ)). Derived terms are
+# pin it to a literal (e.g. 'mg' fires only on 𝕄(Φ, Φ)). Derived terms are
 # named 𝑛, 𝑛1, … in premise order; the bare 𝑛 is skipped only when 'match'
 # already binds it.
 #
-# 'lambda' and 'dispatch' are kept mutually exclusive: 'dispatch' fires only
+# 'ml' and 'md' are kept mutually exclusive: 'md' fires only
 # when its head 𝑛 is not a formation ('not (formation 𝑛)'), so every formation
-# head — λ-bearing or not — is left to 'lambda' (and 'prim'). The two clauses
+# head — λ-bearing or not — is left to 'ml' (and 'mf'). The two clauses
 # are disjoint and their relative order does not change behavior.
 
-- name: prim
+- name: mf
   match: ⟦𝐵⟧
   e-match: 𝑒
   n-result: ⟦𝐵⟧
 
-- name: lambda
+- name: ml
   match: '⟦𝐵1, λ ⤍ 𝑓, 𝐵2⟧.𝜏'
   e-match: 𝑒
   n-result: 𝑛2
@@ -45,7 +45,7 @@
     - n-result: 𝑛2
       morph: 𝑛1
 
-- name: dispatch
+- name: md
   match: '𝑛.𝜏'
   e-match: 𝑒
   n-result: 𝑛3
@@ -60,7 +60,7 @@
     - n-result: 𝑛3
       morph: 𝑛2
 
-- name: application
+- name: ma
   match: '𝑛(𝜏 ↦ 𝑒1)'
   e-match: 𝑒
   n-result: 𝑛3
@@ -72,7 +72,7 @@
     - n-result: 𝑛3
       morph: 𝑛2
 
-- name: applicationa
+- name: maa
   match: '𝑛(α𝑖 ↦ 𝑒1)'
   e-match: 𝑒
   n-result: 𝑛3
@@ -109,7 +109,7 @@
   e-match: 𝑒
   n-result: ⊥
 
-- name: globe
+- name: mg
   match: Φ
   e-match: Φ
   n-result: ⊥
