@@ -10,6 +10,7 @@ module ParserSpec where
 import AST
 import Control.Monad (forM_)
 import Data.Either (isLeft, isRight)
+import Files (allPathsIn)
 import Misc
 import Parser
 import System.FilePath (takeBaseName)

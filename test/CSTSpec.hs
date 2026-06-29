@@ -14,6 +14,7 @@ import Data.Aeson
 import Data.Text qualified as T
 import Data.Yaml qualified as Yaml
 import Encoding (Encoding (ASCII), withEncoding)
+import Files (allPathsIn)
 import GHC.Generics (Generic)
 import Lining (LineFormat (SINGLELINE), withLineFormat)
 import Margin (defaultMargin, withMargin)

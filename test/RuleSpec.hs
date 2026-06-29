@@ -11,10 +11,10 @@ import AST (Argument (..), Attribute (..), Binding (..), Bytes (..), Expression 
 import Control.Monad
 import Data.Aeson
 import Data.Yaml qualified as Y
+import Files (allPathsIn)
 import Functions (buildTerm)
 import GHC.Generics
 import Matcher
-import Misc
 import Printer (printSubsts)
 import Rule (RuleContext (RuleContext), isNF, meetCondition)
 import System.FilePath

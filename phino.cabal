@@ -48,6 +48,7 @@ library
     Dataize
     Deps
     Encoding
+    Files
     Filter
     Functions
     LaTeX

@@ -1,7 +1,5 @@
-{-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE PatternSynonyms #-}
-{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ViewPatterns #-}
 {-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
 
@@ -12,8 +10,6 @@
 module Misc
   ( withVoidRho
   , recoverFormations
-  , allPathsIn
-  , ensuredFile
   , shuffle
   , toDouble
   , fqnToAttrs
@@ -48,8 +44,6 @@ import qualified Data.Vector.Mutable as M
 -- import Printer (printExpression)
 
 import Data.Functor ((<&>))
-import System.Directory (doesDirectoryExist, doesFileExist, listDirectory)
-import System.FilePath ((</>))
 import System.Random.Stateful
 import Text.Printf (printf)
 
@@ -57,15 +51,6 @@ import Text.Printf (printf)
 orThrow :: (Exception e) => (String -> e) -> Either String a -> IO a
 orThrow _ (Right value) = pure value
 orThrow asException (Left err) = throwIO (asException err)
-
-data FsException
-  = FileDoesNotExist {_file :: FilePath}
-  | DirectoryDoesNotExist {_dir :: FilePath}
-  deriving (Exception)
-
-instance Show FsException where
-  show FileDoesNotExist{..} = printf "File '%s' does not exist" _file
-  show DirectoryDoesNotExist{..} = printf "Directory '%s' does not exist" _dir
 
 matchBaseObject :: Expression -> Maybe T.Text
 matchBaseObject (ExDispatch ExRoot (AtLabel label)) = Just label
@@ -214,28 +199,6 @@ fqnToAttrs expr = fqnToAttrs' expr <&> reverse
     fqnToAttrs' ExRoot = Just []
     fqnToAttrs' (ExDispatch ex at) = fqnToAttrs' ex <&> (:) at
     fqnToAttrs' _ = Nothing
-
-ensuredFile :: FilePath -> IO FilePath
-ensuredFile pth = do
-  exists <- doesFileExist pth
-  if exists then pure pth else throwIO (FileDoesNotExist pth)
-
--- Recursively collect all file paths in provided directory
-allPathsIn :: FilePath -> IO [FilePath]
-allPathsIn dir = do
-  exists <- doesDirectoryExist dir
-  names <- if exists then listDirectory dir else throwIO (DirectoryDoesNotExist dir)
-  let nested = map (dir </>) names
-  paths <-
-    forM
-      nested
-      ( \path -> do
-          isDir <- doesDirectoryExist path
-          if isDir
-            then allPathsIn path
-            else return [path]
-      )
-  return (concat paths)
 
 -- >>> toDouble 5
 -- 5.0
