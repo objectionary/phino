@@ -31,7 +31,9 @@ validateYamlObject v keys
   | null present = fail (printf "Unknown condition type '%s', expected one of: %s" (show current) (show keys))
   | otherwise = pure ()
   where
+    present :: [Key.Key]
     present = filter (`KeyMap.member` v) (map Key.fromString keys)
+    current :: [Key.Key]
     current = KeyMap.keys v
 
 parseJSON' :: String -> (String -> Either String a) -> Value -> Parser a

@@ -46,6 +46,7 @@ btsToWord8 (BtMeta mt) = error $ "Cannot convert meta bytes to Word8; " ++ T.unp
 hexByte :: String -> Word8
 hexByte [hi, lo] = (nibble hi `shiftL` 4) .|. nibble lo
   where
+    nibble :: Char -> Word8
     nibble c
       | isDigit c = fromIntegral (ord c - ord '0')
       | c >= 'A' && c <= 'F' = fromIntegral (ord c - ord 'A' + 10)
@@ -65,6 +66,7 @@ word8ToBytes bts = BtMany (map toHex bts)
 toHex :: Word8 -> String
 toHex w = [digit (w `shiftR` 4), digit (w .&. 0x0F)]
   where
+    digit :: Word8 -> Char
     digit n
       | n < 10 = chr (fromIntegral n + ord '0')
       | otherwise = chr (fromIntegral n + ord 'A' - 10)
@@ -177,6 +179,7 @@ btsToStr bytes = escapeStr (btsToUnescapedStr bytes)
     escapeStr :: String -> String
     escapeStr = concatMap escapeChar
       where
+        escapeChar :: Char -> String
         escapeChar '"' = "\\\""
         escapeChar '\\' = "\\\\"
         escapeChar '\n' = "\\n"
