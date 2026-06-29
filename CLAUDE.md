@@ -97,6 +97,8 @@ Test files map 1:1 with source modules (`RewriterSpec.hs` ↔ `Rewriter.hs`).
 ### Style
 
 When introducing new function, put it under 'where' scope if it's possible.
+Always declare an explicit type signature for every function, including
+helpers under 'where'.
 Don't use single char variables like 'a', 'b'; use more meaningful names.
 If two functions does the same but have different amount of arguments - name
 them with apostrophe: foo, foo':
