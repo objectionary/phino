@@ -471,19 +471,19 @@ renderBytes bytes = T.unpack (render (toLaTeX (toCST' bytes :: BYTES)))
 -- universe as the middle argument: \phinoMorph{ input }{ e }{ output }. 𝒩 and 𝒞
 -- carry no universe.
 phinoMorph :: String -> String -> String -> String
-phinoMorph input univ output = printf "\\phinoMorph{ %s }{ %s }{ %s }" input univ output
+phinoMorph = printf "\\phinoMorph{ %s }{ %s }{ %s }"
 
 phinoDataize :: String -> String -> String -> String
-phinoDataize input univ output = printf "\\phinoDataize{ %s }{ %s }{ %s }" input univ output
+phinoDataize = printf "\\phinoDataize{ %s }{ %s }{ %s }"
 
 phinoNormalize :: String -> String -> String
-phinoNormalize input = printf "\\phinoNormalize{ %s }{ %s }" input
+phinoNormalize = printf "\\phinoNormalize{ %s }{ %s }"
 
 phinoEvaluate :: String -> String -> String -> String
-phinoEvaluate input univ output = printf "\\phinoEvaluate{ %s }{ %s }{ %s }" input univ output
+phinoEvaluate = printf "\\phinoEvaluate{ %s }{ %s }{ %s }"
 
 phinoContextualize :: String -> String -> String -> String
-phinoContextualize input context = printf "\\phinoContextualize{ %s }{ %s }{ %s }" input context
+phinoContextualize = printf "\\phinoContextualize{ %s }{ %s }{ %s }"
 
 conditionInLatex :: Maybe Y.Condition -> Maybe String
 conditionInLatex Nothing = Nothing
