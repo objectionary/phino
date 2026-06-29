@@ -1051,6 +1051,7 @@ spec = do
             , "\\end{phinoInference}"
             , "\\begin{phinoInference}"
             , "  \\phinoName{ml}"
+            , "  \\phinoLabel{\\lambda}"
             , "  \\phinoPremise{ \\phinoEvaluate{ [[ B_1, L> F, B_2 ]] }{ n } }"
             , "  \\phinoPremise{ \\phinoNormalize{ n . \\tau }{ n_1 } }"
             , "  \\phinoPremise{ \\phinoMorph{ n_1 }{ e }{ n_2 } }"

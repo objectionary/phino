@@ -34,6 +34,7 @@
   n-result: ⟦𝐵⟧
 
 - name: ml
+  label: \lambda
   match: '⟦𝐵1, λ ⤍ 𝑓, 𝐵2⟧.𝜏'
   e-match: 𝑒
   n-result: 𝑛2
