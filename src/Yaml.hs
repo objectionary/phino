@@ -238,7 +238,7 @@ data Premise = Premise
 data Operation
   = OpMorph Expression
   | OpNormalize Expression
-  | OpEvaluate Expression
+  | OpEvaluate Expression Expression
   | OpContextualize Expression Expression
   | OpDataize Expression
   deriving (Eq, Generic, Show)
@@ -313,7 +313,11 @@ premiseOperation o =
   asum
     [ OpMorph <$> o .: "morph"
     , OpNormalize <$> o .: "normalize"
-    , OpEvaluate <$> o .: "evaluate"
+    , do
+        vals <- o .: "evaluate"
+        case vals of
+          [expr, universe] -> OpEvaluate <$> parseJSON expr <*> parseJSON universe
+          _ -> fail "'evaluate' expects exactly two arguments"
     , do
         vals <- o .: "contextualize"
         case vals of

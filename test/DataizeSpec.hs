@@ -163,7 +163,7 @@ spec = do
     let verb op = case op of
           Yaml.OpMorph _ -> "morph"
           Yaml.OpNormalize _ -> "normalize"
-          Yaml.OpEvaluate _ -> "evaluate"
+          Yaml.OpEvaluate _ _ -> "evaluate"
           Yaml.OpContextualize _ _ -> "contextualize"
           Yaml.OpDataize _ -> "dataize"
         allowed =

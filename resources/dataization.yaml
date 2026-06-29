@@ -56,7 +56,9 @@
   d-result: δ
   premises:
     - n-result: 𝑛
-      evaluate: ⟦𝐵1, λ ⤍ 𝑓, 𝐵2⟧
+      evaluate:
+        - ⟦𝐵1, λ ⤍ 𝑓, 𝐵2⟧
+        - 𝑒
     - n-result: 𝑛1
       normalize: 𝑛
     - d-result: δ
