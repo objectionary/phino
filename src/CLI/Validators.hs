@@ -22,12 +22,12 @@ validatedDispatches :: String -> [String] -> IO [Expression]
 validatedDispatches opt = traverse (parseExpressionThrows >=> asDispatch)
   where
     asDispatch :: Expression -> IO Expression
-    asDispatch expr = asDispatch' expr
+    asDispatch expr = go expr
       where
-        asDispatch' :: Expression -> IO Expression
-        asDispatch' ex@ExRoot = pure ex
-        asDispatch' disp@(ExDispatch ex _) = asDispatch' ex >> pure disp
-        asDispatch' _ =
+        go :: Expression -> IO Expression
+        go ex@ExRoot = pure ex
+        go disp@(ExDispatch ex _) = go ex >> pure disp
+        go _ =
           invalidCLIArguments
             ( printf
                 "Only dispatch expression started with Φ (or Q) can be used in --%s, but given: %s"
@@ -41,6 +41,7 @@ validateLatexOptions LATEX _ _ _ = pure ()
 validateLatexOptions _ bools strings ints = do
   let (bools', opts) = unzip bools
       msg = "The --%s option can stay together with --output=latex only"
+      callback :: (Maybe a, String) -> IO ()
       callback (maybe', opt) = when (isJust maybe') (invalidCLIArguments (printf msg opt))
   validateBoolOpts (zip bools' (map (printf msg) opts))
   forM_ strings callback

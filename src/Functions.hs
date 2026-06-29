@@ -200,7 +200,7 @@ _join :: BuildTermMethod
 _join [] _ = pure (TeBindings [])
 _join args subst = do
   bds <- buildBindings args
-  TeBindings <$> join' bds Set.empty
+  TeBindings <$> go bds Set.empty
   where
     buildBindings :: [Y.ExtraArgument] -> IO [Binding]
     buildBindings [] = pure []
@@ -208,23 +208,23 @@ _join args subst = do
       bds <- buildBindingThrows bd subst
       next <- buildBindings args'
       pure (bds ++ next)
-    buildBindings _ = throwIO (userError "Function 'join' can work with bindings only")
-    join' :: [Binding] -> Set.Set Attribute -> IO [Binding]
-    join' [] _ = pure []
-    join' (bd : bds) attrs =
+    buildBindings _ = throwIO (userError "Function 'go can work with bindings only")
+    go :: [Binding] -> Set.Set Attribute -> IO [Binding]
+    go [] _ = pure []
+    go (bd : bds) attrs =
       case attributeFromBinding bd of
         Just attr
           | Set.member attr attrs ->
               if attr == AtRho || attr == AtDelta || attr == AtLambda
-                then join' bds attrs
+                then go bds attrs
                 else do
                   new <- case bd of
                     BiTau _ ex -> (`BiTau` ex) <$> freshAttr
                     BiVoid _ -> BiVoid <$> freshAttr
                     other -> pure other
-                  (new :) <$> join' bds attrs
-          | otherwise -> (bd :) <$> join' bds (Set.insert attr attrs)
-        Nothing -> (bd :) <$> join' bds attrs
+                  (new :) <$> go bds attrs
+          | otherwise -> (bd :) <$> go bds (Set.insert attr attrs)
+        Nothing -> (bd :) <$> go bds attrs
     freshAttr :: IO Attribute
     freshAttr = do
       term <- _randomTau [] subst

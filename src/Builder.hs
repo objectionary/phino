@@ -136,10 +136,9 @@ buildExpression (ExFormation bds) subst = do
   Right (ExFormation bds')
 buildExpression (ExMeta meta) (Subst mp) = case Map.lookup meta mp of
   Just (MvExpression expr) ->
-    let res = Right expr
-     in case expr of
-          ExFormation bds -> uniqueBindings bds >> res
-          _ -> res
+    case expr of
+      ExFormation bds -> uniqueBindings bds >> Right expr
+      _ -> Right expr
   _ -> Left (metaMsg meta)
 buildExpression expr _ = Right expr
 

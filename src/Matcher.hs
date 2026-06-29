@@ -42,15 +42,15 @@ substSingle key value = Subst (Map.singleton key value)
 -- Combine two substitutions into a single one
 -- Fails if values by the same keys are not equal
 combine :: Subst -> Subst -> Maybe Subst
-combine (Subst a) (Subst b) = combine' (Map.toList b) a
+combine (Subst a) (Subst b) = go (Map.toList b) a
   where
-    combine' :: [(Text, MetaValue)] -> Map Text MetaValue -> Maybe Subst
-    combine' [] acc = Just (Subst acc)
-    combine' ((key, value) : rest) acc = case Map.lookup key acc of
+    go :: [(Text, MetaValue)] -> Map Text MetaValue -> Maybe Subst
+    go [] acc = Just (Subst acc)
+    go ((key, value) : rest) acc = case Map.lookup key acc of
       Just found
-        | found == value -> combine' rest acc
+        | found == value -> go rest acc
         | otherwise -> Nothing
-      Nothing -> combine' rest (Map.insert key value acc)
+      Nothing -> go rest (Map.insert key value acc)
 
 combineMany :: [Subst] -> [Subst] -> [Subst]
 combineMany xs xy = catMaybes [combine x y | x <- xs, y <- xy]

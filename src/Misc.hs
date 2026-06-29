@@ -72,18 +72,18 @@ uniqueBindings bds = case duplicated bds Set.empty of
 
 -- Add void rho binding to the end of the list of any rho binding is not present
 withVoidRho :: [Binding] -> [Binding]
-withVoidRho bds = withVoidRho' bds False
+withVoidRho bds = go bds False
   where
-    withVoidRho' :: [Binding] -> Bool -> [Binding]
-    withVoidRho' [] hasRho = [BiVoid AtRho | not hasRho]
-    withVoidRho' (bd : rest) hasRho =
+    go :: [Binding] -> Bool -> [Binding]
+    go [] hasRho = [BiVoid AtRho | not hasRho]
+    go (bd : rest) hasRho =
       case bd of
         BiMeta _ -> bd : rest
         BiVoid (AtMeta _) -> bd : rest
         BiTau (AtMeta _) _ -> bd : rest
-        BiVoid AtRho -> bd : withVoidRho' rest True
-        BiTau AtRho _ -> bd : withVoidRho' rest True
-        _ -> bd : withVoidRho' rest hasRho
+        BiVoid AtRho -> bd : go rest True
+        BiTau AtRho _ -> bd : go rest True
+        _ -> bd : go rest hasRho
 
 -- Recursively ensure all formations have a BiVoid AtRho binding (ρ ↦ ∅).
 -- Fixes in-memory ExFormation [] to ExFormation [BiVoid AtRho] after rewriting,
@@ -110,12 +110,12 @@ recoverArgument (ArAlpha alpha expr) = ArAlpha alpha (recoverFormations expr)
 -- >>> fqnToAttrs ExRoot
 -- Just []
 fqnToAttrs :: Expression -> Maybe [Attribute]
-fqnToAttrs expr = fqnToAttrs' expr <&> reverse
+fqnToAttrs expr = go expr <&> reverse
   where
-    fqnToAttrs' :: Expression -> Maybe [Attribute]
-    fqnToAttrs' ExRoot = Just []
-    fqnToAttrs' (ExDispatch ex at) = fqnToAttrs' ex <&> (:) at
-    fqnToAttrs' _ = Nothing
+    go :: Expression -> Maybe [Attribute]
+    go ExRoot = Just []
+    go (ExDispatch ex at) = go ex <&> (:) at
+    go _ = Nothing
 
 -- >>> toDouble 5
 -- 5.0

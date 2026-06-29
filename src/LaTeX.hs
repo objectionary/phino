@@ -97,12 +97,12 @@ If it's encountered in more than specific percentage (_meetPopularity) of follow
 it with \phinoAgain{} in following programs and with \phinoMeet{} in first program.
 -}
 meetInPrograms :: [Program] -> LatexContext -> [Program]
-meetInPrograms prog LatexContext{..} = meetInPrograms' prog 1
+meetInPrograms prog LatexContext{..} = go prog 1
   where
-    meetInPrograms' :: [Program] -> Int -> [Program]
-    meetInPrograms' [] _ = []
-    meetInPrograms' [program] _ = [program]
-    meetInPrograms' (first : rest) idx =
+    go :: [Program] -> Int -> [Program]
+    go [] _ = []
+    go [program] _ = [program]
+    go (first : rest) idx =
       let met = map (meetInProgram first _meetLength) rest
           unique = nub (concat met)
           (frequent, _) =
@@ -115,7 +115,7 @@ meetInPrograms prog LatexContext{..} = meetInPrograms' prog 1
               )
               (Nothing, 0)
               unique
-          next = first : meetInPrograms' rest idx
+          next = first : go rest idx
        in case frequent of
             Just expr ->
               case matchProgram expr first of
@@ -126,7 +126,7 @@ meetInPrograms prog LatexContext{..} = meetInPrograms' prog 1
                       rest' = zipWith (\prgm exprs -> replaceProgram (prgm, exprs, map (const (ExPhiAgain _meetPrefix idx)) exprs)) rest met'
                       found = filter (not . null) met'
                    in if length met' > 1 && toDouble (length found) / toDouble (length met') >= popularity
-                        then program' : meetInPrograms' rest' (idx + 1)
+                        then program' : go rest' (idx + 1)
                         else next
                 [] -> next
             _ -> next
