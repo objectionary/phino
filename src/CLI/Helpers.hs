@@ -114,7 +114,7 @@ getRules normalize shuffle rules = do
 -- work only for dataization and morphing, never for plain rewriting.
 validateRewriteRule :: Y.Rule -> IO Y.Rule
 validateRewriteRule rule =
-  let used = maybe [] (map Y.function) rule.where_
+  let used = maybe [] (map Y.function) rule.premises
    in case filter (`elem` execFunctions) used of
         [] -> pure rule
         (fn : _) ->

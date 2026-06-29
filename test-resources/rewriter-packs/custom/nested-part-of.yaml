@@ -11,7 +11,7 @@ output: |-
 rules:
   custom:
     - name: nested part of
-      pattern: '[[ x -> Q.y, !B ]]'
+      match: '[[ x -> Q.y, !B ]]'
       result: '[[ x -> Q.y, z -> [[ w -> [[ q -> "foo" ]] ]], !B]]'
       when:
         not:

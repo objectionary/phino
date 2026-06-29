@@ -8,10 +8,10 @@ output: |-
 rules:
   custom:
     - name: append fresh tau
-      pattern: |
+      match: |
         [[ x -> !e ]]
       result: |
         [[ x -> !e, !t -> [[ ]], ^ -> ? ]]
-      where:
+      premises:
         - meta: '!t'
           function: random-tau

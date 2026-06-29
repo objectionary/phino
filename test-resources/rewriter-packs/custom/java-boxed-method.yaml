@@ -43,7 +43,7 @@ output: |-
 rules:
   custom:
     - name: java boxed method
-      pattern: |
+      match: |
         ⟦
           φ ↦ Φ.jeo.opcode.invokeinterface,
           𝜏-stream-class ↦ 𝑒-stream-class,

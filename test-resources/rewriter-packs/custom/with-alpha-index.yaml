@@ -6,7 +6,7 @@ output: 'Φ ↦ ⟦ x ↦ ∅ ⟧(~0 ↦ Φ)'
 rules:
   custom:
     - name: with-alpha-index
-      pattern: '[[ !B ]](α𝑖 ↦ !e)'
+      match: '[[ !B ]](α𝑖 ↦ !e)'
       result: '[[ !B ]](α𝑖 ↦ Φ)'
       when:
         eq:

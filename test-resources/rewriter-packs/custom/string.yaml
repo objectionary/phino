@@ -8,9 +8,9 @@ output: |-
 rules:
   custom:
     - name: string function
-      pattern: '[[ !t -> !e, !B ]]'
+      match: '[[ !t -> !e, !B ]]'
       result: '[[ str -> !e-str, num -> !e-num, !B ]]'
-      where:
+      premises:
         - meta: '!e-str'
           function: string
           args: ['!t']

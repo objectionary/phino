@@ -2,5 +2,5 @@
 # SPDX-License-Identifier: MIT
 ---
 name: foo
-pattern: ⟦ x ↦ "foo", 𝐵1 ⟧
+match: ⟦ x ↦ "foo", 𝐵1 ⟧
 result: ⟦ x ↦ "bar", 𝐵1 ⟧

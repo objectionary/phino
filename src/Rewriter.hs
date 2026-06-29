@@ -163,7 +163,7 @@ rewrite' state (rule : rest) iteration ctx@RewriteContext{..} = do
     _rewrite :: RewriteState -> Int -> IO RewriteState
     _rewrite (_rewrittens@((program, _) :| _), _unique, _) _count =
       let ruleName = rule.name
-          ptn = rule.pattern
+          ptn = rule.match
           res = rule.result
        in if _count - 1 == _maxDepth
             then do

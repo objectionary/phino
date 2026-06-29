@@ -19,9 +19,9 @@ output: |-
 rules:
   custom:
     - name: concat from expression
-      pattern: '[[ x -> !e1, y -> !e2, z -> !e10, w -> !e11 ]]'
+      match: '[[ x -> !e1, y -> !e2, z -> !e10, w -> !e11 ]]'
       result: '[[ x -> !e3, y -> !e4, z -> !e20, w -> !e21, o -> !e5 ]]'
-      where:
+      premises:
         - meta: '!e3'
           function: sed
           args: ['!e1', '"s/\\s+//g"']

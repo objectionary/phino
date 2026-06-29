@@ -9,7 +9,7 @@ output: |-
 rules:
   custom:
     - name: custom
-      pattern: '[[ x -> !e ]]'
+      match: '[[ x -> !e ]]'
       result: '[[ x -> "hi" ]]'
       when:
         matches: ['hello', '!e']

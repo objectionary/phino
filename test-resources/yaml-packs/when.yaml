@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 ---
 name: when
-pattern: 'Q.!t'
+match: 'Q.!t'
 result: 'Q.x'
 when:
   not:

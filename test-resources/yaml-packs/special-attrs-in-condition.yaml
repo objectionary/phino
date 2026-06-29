@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 ---
 name: special-attrs-in-condition
-pattern: 'Q'
+match: 'Q'
 result: 'Q'
 when:
   or:

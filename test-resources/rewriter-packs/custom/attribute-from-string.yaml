@@ -8,11 +8,11 @@ output: |-
 rules:
   custom:
     - name: attribute from string
-      pattern: |
+      match: |
         [[ x -> !e ]]
       result: |
         [[ x -> !e, !t -> [[ ]], ^ -> ? ]]
-      where:
+      premises:
         - meta: '!t'
           function: tau
           args: ['!e']

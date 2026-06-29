@@ -373,7 +373,7 @@ matchExpressionWithRule' = matchExpressionBy matchExpression'
 -- value; rules that do not mention the name simply carry it along unused.
 matchExpressionBy :: MatchExpressionFunc -> [Subst] -> Expression -> Y.Rule -> RuleContext -> IO [Subst]
 matchExpressionBy matcher seed expr rule ctx =
-  let ptn = rule.pattern
+  let ptn = rule.match
       matched = combineMany seed (matcher ptn expr)
       name = rule.name
    in if null matched
@@ -398,7 +398,7 @@ matchExpressionBy matcher seed expr rule ctx =
                   pure []
                 else do
                   logDebug (printf "Rule %s" name)
-                  extended <- extraSubstitutions when' rule.where_ ctx
+                  extended <- extraSubstitutions when' rule.premises ctx
                   if null extended
                     then do
                       logDebug "Substitution is empty after extending, maybe some metas are duplicated"

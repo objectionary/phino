@@ -367,8 +367,8 @@ explainRule rule =
     rule.name
     rule.label
     (joinedConditions rule.when rule.having)
-    (maybe [] (map extraToLatex) rule.where_)
-    (phinoNormalize (renderExpr rule.pattern) (renderExpr rule.result))
+    (maybe [] (map extraToLatex) rule.premises)
+    (phinoNormalize (renderExpr rule.match) (renderExpr rule.result))
   where
     -- Join two maybe conditions into single one using Y.And if at least one is just.
     joinedConditions :: Maybe Y.Condition -> Maybe Y.Condition -> Maybe Y.Condition
@@ -384,7 +384,9 @@ explainRule rule =
 extraToLatex :: Y.Extra -> String
 extraToLatex extra = fromMaybe assignment judgment
   where
+    assignment :: String
     assignment = renderToLatex (extraToCST extra) defaultLatexContext
+    judgment :: Maybe String
     judgment = do
       name <- metaName (Y.meta extra)
       case (Y.function extra, Y.args extra) of

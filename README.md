@@ -108,7 +108,7 @@ similar to regular expressions):
 
 ```yaml
 name: My custom rule
-pattern: Δ ⤍ !d
+match: Δ ⤍ !d
 result: Δ ⤍ 62-79-65
 ```
 
@@ -290,11 +290,11 @@ apostrophe, like `Attribute'` are built types from 𝜑-program [AST](src/AST.hs
 ```bnfc
 Rule:
   name: String
-  pattern: String
+  match: String
   result: String
-  when: Condition?       # predicate, works with substitutions before extension
-  where: [Extension]?    # substitution extensions
-  having: Condition?     # predicate, works with substitutions after extension
+  when: Condition?       # predicate, works with substitutions before premises
+  premises: [Premise]?   # build-term premises evaluated before the result
+  having: Condition?     # predicate, works with substitutions after premises
 
 Condition:
   = and: [Condition]     # logical AND
@@ -337,7 +337,7 @@ Number:                  # comparable number
   | IndexMeta'           # 𝑖 (or !i), the index captured by an α𝑖 argument
   | length: BiMeta'      # calculate length of bindings by given meta binding
 
-Extension:               # substitutions extension used to introduce new meta variables
+Premise:                 # build-term premise used to introduce new meta variables
   meta: [ExtArgument]    # new introduced meta variable
   function: String       # name of the function
   args: [ExtArgument]    # arguments of the function
@@ -349,7 +349,7 @@ ExtArgument
   | Attribute'           # !t
 ```
 
-Here's list of functions that are supported for extensions:
+Here's list of functions that are supported for premises:
 
 * `contextualize` - function of two arguments, that rewrites given expression
   depending on provided context according to the contextualization

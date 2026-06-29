@@ -5,9 +5,9 @@
 # context and is therefore only available to dataization/morphing rules.
 # It is used to test that 'rewrite' rejects such rules at load time.
 name: uses-evaluate
-pattern: '!e'
+match: '!e'
 result: '!e1'
-where:
+premises:
   - meta: '!e1'
     function: evaluate
     args:

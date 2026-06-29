@@ -11,7 +11,7 @@
 module Yaml where
 
 import AST
-import Control.Applicative (asum)
+import Control.Applicative (asum, (<|>))
 import Data.Aeson
 import qualified Data.ByteString as BS
 import Data.FileEmbed (embedDir, embedFile)
@@ -147,12 +147,11 @@ instance FromJSON Extra where
             <*> o .:? "args" .!= []
       )
 
--- A normalization (or user-supplied rewriting) rule. Two surface schemas decode
--- into this one type: the premise-conclusion schema shared with 𝕄/𝒞/𝔻 ('match'
--- plus 'premises') and the legacy schema ('pattern' plus 'where'). The legacy
--- keys stay accepted so existing '--rule' files and test packs keep working; the
--- new keys desugar into the same internal fields, so the rewriting engine is
--- untouched.
+-- A normalization (or user-supplied rewriting) rule in the premise-conclusion
+-- schema shared with 𝕄/𝒞/𝔻: 'match' is the matched term, 'result' the rewritten
+-- one, 'when'/'having' the side conditions and 'premises' the ordered build-term
+-- premises evaluated before the result is built. Every premise reduces to a
+-- build-term extension the engine runs (see 'rulePremises').
 instance FromJSON Rule where
   parseJSON =
     withObject
@@ -162,36 +161,29 @@ instance FromJSON Rule where
           Rule ruleName
             <$> o .:? "label"
             <*> o .:? "description"
-            <*> rulePattern o
+            <*> o .: "match"
             <*> o .: "result"
             <*> o .:? "when"
-            <*> ruleExtensions o
+            <*> rulePremises o
             <*> o .:? "having"
       )
 
--- The matched term, taken from 'match' (premise-conclusion schema) or the legacy
--- 'pattern' key. Exactly one must be present.
-rulePattern :: Object -> Parser Expression
-rulePattern o = do
-  match' <- o .:? "match"
-  pattern' <- o .:? "pattern"
-  case (match', pattern') of
-    (Just expr, Nothing) -> pure expr
-    (Nothing, Just expr) -> pure expr
-    (Just _, Just _) -> fail "a rule has both 'match' and 'pattern'; keep only one"
-    (Nothing, Nothing) -> fail "a rule needs a 'match' (or the legacy 'pattern')"
+-- The rule's premises. Each premise is either a reduction judgment keyed by its
+-- verb ('contextualize', 'morph', 'normalize', 'evaluate', 'dataize'), which
+-- desugars through 'premiseToExtra', or a general build-term call given as
+-- 'meta'/'function'/'args'. Both forms reduce to the 'Extra' the rewriting
+-- engine already consumes, so the engine is untouched.
+rulePremises :: Object -> Parser (Maybe [Extra])
+rulePremises o = do
+  items <- o .:? "premises"
+  traverse (traverse parsePremise) items
 
--- The rule's extensions, taken from 'premises' (premise-conclusion schema,
--- desugared into the build-term extras the engine already runs) or the legacy
--- 'where' key. At most one may be present.
-ruleExtensions :: Object -> Parser (Maybe [Extra])
-ruleExtensions o = do
-  premises' <- o .:? "premises"
-  where' <- o .:? "where"
-  case (premises', where') of
-    (Just prems, Nothing) -> pure (Just (map premiseToExtra prems))
-    (Nothing, w) -> pure w
-    (Just _, Just _) -> fail "a rule has both 'premises' and 'where'; keep only one"
+-- Parse a single premise, trying the reduction-judgment form first and falling
+-- back to the general build-term form. The two are disjoint: a judgment carries
+-- an 'n-result'/'d-result' meta and a verb key, a build-term call carries
+-- 'meta'/'function', so neither matches the other's object.
+parsePremise :: Value -> Parser Extra
+parsePremise value = (premiseToExtra <$> parseJSON value) <|> parseJSON value
 
 data Number
   = MetaIndex Text
@@ -239,10 +231,10 @@ data Rule = Rule
   { name :: String
   , label :: Maybe String
   , description :: Maybe String
-  , pattern :: Expression
+  , match :: Expression
   , result :: Expression
   , when :: Maybe Condition
-  , where_ :: Maybe [Extra]
+  , premises :: Maybe [Extra]
   , having :: Maybe Condition
   }
   deriving (Generic, Show)
@@ -363,11 +355,11 @@ premiseOperation o =
     , OpDataize <$> o .: "dataize"
     ]
 
--- Desugar a premise into the build-term extension the rewriting engine runs: the
--- premise's operation becomes a 'where' call to the matching build-term function,
--- binding the premise's result meta. This lets a normalization rule be written in
--- the premise-conclusion schema while the engine keeps consuming 'where' extras,
--- so the migration touches the schema and not the rewriting engine.
+-- Desugar a reduction-judgment premise into the build-term extension the
+-- rewriting engine runs: the premise's operation becomes a call to the matching
+-- build-term function, binding the premise's result meta. This lets a rule be
+-- written in the premise-conclusion schema while the engine keeps consuming the
+-- same 'Extra', so the migration touches the schema and not the rewriting engine.
 premiseToExtra :: Premise -> Extra
 premiseToExtra (Premise res op) = Extra (metaArgument res op) (verb op) (verbArgs op)
   where

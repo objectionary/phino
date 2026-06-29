@@ -9,7 +9,7 @@ output: |-
 rules:
   custom:
     - name: with-eq-condition
-      pattern: '[[!t1 -> $.q, !t2 -> !e, !B]]'
+      match: '[[!t1 -> $.q, !t2 -> !e, !B]]'
       result: '[[!t2 -> !e, !B]]'
       when:
         and:

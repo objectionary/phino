@@ -9,9 +9,9 @@ output: |-
 rules:
   custom:
     - name: sum
-      pattern: '[[ x -> !e1, y -> !e2 ]]'
+      match: '[[ x -> !e1, y -> !e2 ]]'
       result: '[[ z -> !e3 ]]'
-      where:
+      premises:
         - meta: '!e3'
           function: sum
           args:
