@@ -275,7 +275,7 @@ data Premise = Premise
 data Operation
   = OpMorph Expression
   | OpNormalize Expression
-  | OpEvaluate Expression
+  | OpEvaluate Expression Expression
   | OpContextualize Expression Expression
   | OpDataize Expression
   deriving (Eq, Generic, Show)
@@ -350,7 +350,11 @@ premiseOperation o =
   asum
     [ OpMorph <$> o .: "morph"
     , OpNormalize <$> o .: "normalize"
-    , OpEvaluate <$> o .: "evaluate"
+    , do
+        vals <- o .: "evaluate"
+        case vals of
+          [expr, universe] -> OpEvaluate <$> parseJSON expr <*> parseJSON universe
+          _ -> fail "'evaluate' expects exactly two arguments"
     , do
         vals <- o .: "contextualize"
         case vals of
@@ -377,7 +381,7 @@ premiseToExtra (Premise res op) = Extra (metaArgument res op) (verb op) (verbArg
 verb :: Operation -> String
 verb (OpMorph _) = "morph"
 verb (OpNormalize _) = "normalize"
-verb (OpEvaluate _) = "evaluate"
+verb (OpEvaluate _ _) = "evaluate"
 verb (OpContextualize _ _) = "contextualize"
 verb (OpDataize _) = "dataize"
 
@@ -385,7 +389,7 @@ verb (OpDataize _) = "dataize"
 verbArgs :: Operation -> [ExtraArgument]
 verbArgs (OpMorph expr) = [ArgExpression expr]
 verbArgs (OpNormalize expr) = [ArgExpression expr]
-verbArgs (OpEvaluate expr) = [ArgExpression expr]
+verbArgs (OpEvaluate expr universe) = [ArgExpression expr, ArgExpression universe]
 verbArgs (OpContextualize expr context) = [ArgExpression expr, ArgExpression context]
 verbArgs (OpDataize expr) = [ArgExpression expr]
 

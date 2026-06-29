@@ -30,7 +30,7 @@ type BuildTermMethod = [ExtraArgument] -> Subst -> IO Term
 -- is, so it is a plain string for now. Unlike the universe 𝑒, which is immutable
 -- and threaded unchanged, the state is mutable: 𝔼 takes a state 𝑠1 and returns a
 -- new one 𝑠2, and 𝕄/𝔻 propagate that change to their callers. Only the rules
--- that fire an atom — 'lambda' (morphing) and 'fire' (dataization) — can change
+-- that fire an atom — 'ml' (morphing) and 'fire' (dataization) — can change
 -- the state; every other rule threads it through untouched.
 type State = String
 

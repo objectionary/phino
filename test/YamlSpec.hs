@@ -55,7 +55,7 @@ spec = do
       (decodeYaml "name: prim\nlabel: prim\nmatch: ⟦𝐵⟧\ne-match: 𝑒\nn-result: ⟦𝐵⟧" :: Either Yaml.ParseException MorphRule)
         `shouldSatisfy` failsAsRedundant
     it "in a dataization rule" $
-      (decodeYaml "name: bott\nlabel: bott\nmatch: ⊥\ne-match: 𝑒\nd-result: '--'" :: Either Yaml.ParseException DataizeRule)
+      (decodeYaml "name: end\nlabel: end\nmatch: ⊥\ne-match: 𝑒\nd-result: '--'" :: Either Yaml.ParseException DataizeRule)
         `shouldSatisfy` failsAsRedundant
     it "in a contextualization rule" $
       (decodeYaml "name: cxi\nlabel: cxi\nmatch: ξ\nc-match: 𝑘\nc-result: 𝑘" :: Either Yaml.ParseException ContextualizeRule)
