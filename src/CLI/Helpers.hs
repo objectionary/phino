@@ -21,9 +21,9 @@ import Functions (execFunctions)
 import LaTeX (LatexContext (..), defaultMeetLength, defaultMeetPopularity, expressionToLaTeX, programToLaTeX, rewrittensToLatex)
 import Locator (locatedExpression)
 import Logger
-import qualified Misc as M
 import Parser (parseProgramThrows)
 import qualified Printer as P
+import qualified Random as R
 import Rewriter (Rewrittens')
 import System.IO (getContents')
 import Text.Printf (printf)
@@ -107,7 +107,7 @@ getRules normalize shuffle rules = do
   if shuffle
     then do
       logDebug "The --shuffle option is provided, rules are used in random order"
-      M.shuffle ordered
+      R.shuffle ordered
     else pure ordered
 
 -- Pass a user-supplied rewriting rule through unchanged, or fail fast if it

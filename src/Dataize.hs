@@ -25,6 +25,7 @@ import Locator (locatedExpression, withLocatedExpression)
 import Matcher (MetaValue (..), Subst (..), combine, matchExpression', substEmpty, substSingle)
 import Misc
 import Must (Must (..))
+import Random (shuffle)
 import Rewriter (RewriteContext (RewriteContext), Rewritten, rewrite)
 import Rule (RuleContext (RuleContext), matchExpressionWithRule')
 import Text.Printf (printf)
