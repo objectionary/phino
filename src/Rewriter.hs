@@ -104,8 +104,7 @@ buildAndReplace' :: ToReplace -> ReplaceExpressionFunc -> IO Expression
 buildAndReplace' (expr, ptn, res, substs) func = do
   ptns <- buildExpressionsThrows ptn substs
   repls <- buildExpressionsThrows res substs
-  let repls' = map const repls
-  pure (func (expr, ptns, repls'))
+  pure (func (expr, ptns, map const repls))
 
 -- If pattern and replacement are appropriate for fast replacing - does it.
 -- Pattern and replacement expressions can be used in fast replacing only if
