@@ -27,7 +27,6 @@ common warnings
     -Wincomplete-record-updates
     -Wincomplete-uni-patterns
     -Wmissing-home-modules
-    -Wmissing-local-signatures
     -Wmissing-signatures
     -Wpartial-fields
     -Wredundant-constraints
