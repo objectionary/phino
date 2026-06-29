@@ -34,7 +34,6 @@
   n-result: ⟦𝐵⟧
 
 - name: lambda
-  label: \lambda
   match: '⟦𝐵1, λ ⤍ 𝑓, 𝐵2⟧.𝜏'
   e-match: 𝑒
   n-result: 𝑛2
@@ -47,7 +46,6 @@
       morph: 𝑛1
 
 - name: dispatch
-  label: disp
   match: '𝑛.𝜏'
   e-match: 𝑒
   n-result: 𝑛3
@@ -63,7 +61,6 @@
       morph: 𝑛2
 
 - name: application
-  label: app
   match: '𝑛(𝜏 ↦ 𝑒1)'
   e-match: 𝑒
   n-result: 𝑛3
@@ -76,7 +73,6 @@
       morph: 𝑛2
 
 - name: applicationa
-  label: appa
   match: '𝑛(α𝑖 ↦ 𝑒1)'
   e-match: 𝑒
   n-result: 𝑛3
