@@ -360,6 +360,12 @@ premiseOperation o =
 -- build-term function, binding the premise's result meta. This lets a rule be
 -- written in the premise-conclusion schema while the engine keeps consuming the
 -- same 'Extra', so the migration touches the schema and not the rewriting engine.
+-- @todo #912:60min Unify the two premise representations and drop this bridge.
+--  Normalization and user rules carry premises as 'Extra' (a 'function' plus
+--  'args'), while the 𝕄/𝒞/𝔻 rules carry them as the typed 'Operation'/'Premise';
+--  this function bridges the verb-form into 'Extra' so the rewriting engine keeps
+--  consuming a single shape. Once the engine consumes 'Premise' directly, this
+--  desugaring and the 'Extra'/'ExtraArgument' representation can be removed.
 premiseToExtra :: Premise -> Extra
 premiseToExtra (Premise res op) = Extra (metaArgument res op) (verb op) (verbArgs op)
   where
