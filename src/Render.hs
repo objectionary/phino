@@ -285,10 +285,11 @@ instance Render EXTRA_ARG where
 
 instance Render EXTRA where
   render EXTRA{func = "contextualize", args = arg : rest, ..} = render meta <> " \\coloneqq \\ctx{ " <> render arg <> " }{ " <> T.intercalate ", " (map render rest) <> " }"
-  -- 𝕄 is binary, 𝕄(n, e), so a 'morph' extra renders with the universe
-  -- metavariable 'e' as its second argument, matching how the morphing rules
-  -- forward the universe unchanged.
-  render EXTRA{func = "morph", ..} = render meta <> " \\coloneqq \\phinoMorph{ " <> T.intercalate ", " (map render args) <> " }{ e }"
+  -- 𝕄 carries the universe and threads a state, 𝕄(n, e, s_1), so a 'morph' extra
+  -- renders with the universe metavariable 'e' and the incoming state 's_1' as its
+  -- trailing arguments. This is a one-off application binding only 'meta', so the
+  -- returned state is dropped (the engine discards it too, see 'execBuildTerm').
+  render EXTRA{func = "morph", ..} = render meta <> " \\coloneqq \\phinoMorph{ " <> T.intercalate ", " (map render args) <> " }{ e }{ s_1 }"
   render EXTRA{..} = render meta <> " \\coloneqq " <> macro func <> "{ " <> T.intercalate ", " (map render args) <> " }"
     where
       macro :: String -> Text
