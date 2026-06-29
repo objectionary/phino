@@ -372,7 +372,8 @@ explainRule rule =
     joinedConditions (Just first) (Just second) = Just (Y.And [first, second])
 
 -- Render a morphing rule as a LaTeX inference rule: each premise becomes a
--- judgment above the line and the conclusion is 𝕄(match, e) ⟿ n-result below.
+-- judgment above the line and the conclusion is 𝕄(match, e, s) ⟿ ⟨n-result, s⟩
+-- below.
 explainMorphRule :: Y.MorphRule -> String
 explainMorphRule rule =
   inference
@@ -381,10 +382,10 @@ explainMorphRule rule =
     rule.label
     rule.when
     (map premiseToLatex rule.premises)
-    (phinoMorph (renderExpr rule.match) (renderExpr rule.ematch) (renderExpr rule.nresult))
+    (phinoMorph (renderExpr rule.match) (renderExpr rule.ematch) "s" (renderExpr rule.nresult))
 
--- Render a dataization rule as a LaTeX inference rule, with 𝔻(match, e) ⟿
--- d-result as the conclusion below the line.
+-- Render a dataization rule as a LaTeX inference rule, with 𝔻(match, e, s) ⟿
+-- ⟨d-result, s⟩ as the conclusion below the line.
 explainDataizeRule :: Y.DataizeRule -> String
 explainDataizeRule rule =
   inference
@@ -393,7 +394,7 @@ explainDataizeRule rule =
     rule.label
     rule.when
     (map premiseToLatex rule.premises)
-    (phinoDataize (renderExpr rule.match) (renderExpr rule.ematch) (renderBytes rule.dresult))
+    (phinoDataize (renderExpr rule.match) (renderExpr rule.ematch) "s" (renderBytes rule.dresult))
 
 -- Render a contextualization rule as a LaTeX inference rule, with 𝒞(match, c) ⟿
 -- c-result as the conclusion below the line.
@@ -408,14 +409,14 @@ explainContextualizeRule rule =
     (phinoContextualize (renderExpr rule.match) (renderExpr rule.cmatch) (renderExpr rule.cresult))
 
 -- One premise judgment, rendered per its operation. 𝕄 ('morph'), 𝔻
--- ('dataize') and 𝔼 ('evaluate') carry the universe 'e' they were given; the
--- rest are unary.
+-- ('dataize') and 𝔼 ('evaluate') carry the universe 'e' they were given and
+-- thread the state 's'; the rest are unary.
 premiseToLatex :: Y.Premise -> String
 premiseToLatex premise = case premise.operation of
-  Y.OpMorph arg -> phinoMorph (renderExpr arg) "e" (renderExpr (ExMeta premise.result))
-  Y.OpDataize arg -> phinoDataize (renderExpr arg) "e" (renderBytes (BtMeta premise.result))
+  Y.OpMorph arg -> phinoMorph (renderExpr arg) "e" "s" (renderExpr (ExMeta premise.result))
+  Y.OpDataize arg -> phinoDataize (renderExpr arg) "e" "s" (renderBytes (BtMeta premise.result))
   Y.OpNormalize arg -> phinoNormalize (renderExpr arg) (renderExpr (ExMeta premise.result))
-  Y.OpEvaluate arg universe -> phinoEvaluate (renderExpr arg) (renderExpr universe) (renderExpr (ExMeta premise.result))
+  Y.OpEvaluate arg universe -> phinoEvaluate (renderExpr arg) (renderExpr universe) "s" (renderExpr (ExMeta premise.result))
   Y.OpContextualize arg context -> phinoContextualize (renderExpr arg) (renderExpr context) (renderExpr (ExMeta premise.result))
 
 -- Assemble an inference block from a name, optional label, optional side
@@ -455,20 +456,26 @@ trrule macro label name lhs rhs cond extras =
   where
     labelArg = maybe "" (\symbol -> "[" ++ symbol ++ "]") label
 
--- 𝕄, 𝔻 and 𝔼 carry the universe, 𝕄(input, e) ⟿ output, so they render with the
--- universe as the middle argument: \phinoMorph{ input }{ e }{ output }. 𝒩 and 𝒞
--- carry no universe.
-phinoMorph :: String -> String -> String -> String
-phinoMorph input univ output = printf "\\phinoMorph{ %s }{ %s }{ %s }" input univ output
+-- 𝕄, 𝔻 and 𝔼 carry the universe and thread a state, 𝕄(input, e, s) ⟿
+-- ⟨output, s⟩, so they render with the universe and state as the middle
+-- arguments and a paired conclusion: \phinoMorph{ input }{ e }{ s }{ ⟨output, s⟩ }.
+-- 𝒩 and 𝒞 carry neither universe nor state.
+phinoMorph :: String -> String -> String -> String -> String
+phinoMorph input univ state output = printf "\\phinoMorph{ %s }{ %s }{ %s }{ %s }" input univ state (paired output state)
 
-phinoDataize :: String -> String -> String -> String
-phinoDataize input univ output = printf "\\phinoDataize{ %s }{ %s }{ %s }" input univ output
+phinoDataize :: String -> String -> String -> String -> String
+phinoDataize input univ state output = printf "\\phinoDataize{ %s }{ %s }{ %s }{ %s }" input univ state (paired output state)
 
 phinoNormalize :: String -> String -> String
 phinoNormalize input = printf "\\phinoNormalize{ %s }{ %s }" input
 
-phinoEvaluate :: String -> String -> String -> String
-phinoEvaluate input univ output = printf "\\phinoEvaluate{ %s }{ %s }{ %s }" input univ output
+phinoEvaluate :: String -> String -> String -> String -> String
+phinoEvaluate input univ state output = printf "\\phinoEvaluate{ %s }{ %s }{ %s }{ %s }" input univ state (paired output state)
+
+-- The state-passing functions 𝕄, 𝔻 and 𝔼 return a pair ⟨output, state⟩, the
+-- new value alongside the threaded state.
+paired :: String -> String -> String
+paired output state = printf "\\langle %s, %s \\rangle" output state
 
 phinoContextualize :: String -> String -> String -> String
 phinoContextualize input context = printf "\\phinoContextualize{ %s }{ %s }{ %s }" input context
