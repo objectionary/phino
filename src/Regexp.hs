@@ -44,6 +44,7 @@ extractGroups regex input = do
 substituteGroups :: B.ByteString -> [B.ByteString] -> B.ByteString
 substituteGroups rep groups = B.concat (go (B.unpack rep))
   where
+    go :: String -> [B.ByteString]
     go [] = []
     go ('$' : rest) =
       let (digits, afterDigits) = span isDigit rest
@@ -54,6 +55,7 @@ substituteGroups rep groups = B.concat (go (B.unpack rep))
                   val = fromMaybe (B.pack ('$' : digits)) (safeIndex idx groups)
                in val : go afterDigits
     go (c : rest) = B.singleton c : go rest
+    safeIndex :: Int -> [B.ByteString] -> Maybe B.ByteString
     safeIndex i xs
       | i >= 0 && i < length xs = Just (xs !! i)
       | otherwise = Nothing
@@ -75,6 +77,7 @@ replaceFirst regex rep input = do
 replaceAll :: R.Regex -> B.ByteString -> B.ByteString -> IO B.ByteString
 replaceAll regex rep input = go input B.empty
   where
+    go :: B.ByteString -> B.ByteString -> IO B.ByteString
     go bs acc = do
       result <- R.execute regex bs
       case result of

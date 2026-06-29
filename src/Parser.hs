@@ -146,6 +146,7 @@ byte = do
   s <- hexDigitChar >>= upperHex
   return [f, s]
   where
+    upperHex :: Char -> Parser Char
     upperHex ch
       | isDigit ch || ('A' <= ch && ch <= 'F') = return ch
       | otherwise = fail ("expected 0-9 or A-F, got " ++ show ch)
