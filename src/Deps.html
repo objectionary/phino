@@ -30,7 +30,7 @@
 </span><span id="line-30"></span><span class="hs-comment">-- is, so it is a plain string for now. Unlike the universe &#119890;, which is immutable</span><span>
 </span><span id="line-31"></span><span class="hs-comment">-- and threaded unchanged, the state is mutable: &#120124; takes a state &#119904;1 and returns a</span><span>
 </span><span id="line-32"></span><span class="hs-comment">-- new one &#119904;2, and &#120132;/&#120123; propagate that change to their callers. Only the rules</span><span>
-</span><span id="line-33"></span><span class="hs-comment">-- that fire an atom &#8212; 'lambda' (morphing) and 'fire' (dataization) &#8212; can change</span><span>
+</span><span id="line-33"></span><span class="hs-comment">-- that fire an atom &#8212; 'ml' (morphing) and 'fire' (dataization) &#8212; can change</span><span>
 </span><span id="line-34"></span><span class="hs-comment">-- the state; every other rule threads it through untouched.</span><span>
 </span><span id="line-35"></span><span class="hs-keyword">type</span><span> </span><span id="State"><span class="annot"><a href="Deps.html#State"><span class="hs-identifier hs-var">State</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
 </span><span id="line-36"></span><span>

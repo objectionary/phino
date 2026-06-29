@@ -157,7 +157,7 @@ forall a. Maybe a
 </span><span id="line-82"></span><span class="hs-comment">-- expression &#8212; and the mutable state 's', returning the morphed term together</span><span>
 </span><span id="line-83"></span><span class="hs-comment">-- with the new state. The universe is matched against the rule's 'e-match'</span><span>
 </span><span id="line-84"></span><span class="hs-comment">-- pattern (usually the '&#119890;' meta, which binds 'e' so the 'root' rule substitutes</span><span>
-</span><span id="line-85"></span><span class="hs-comment">-- it, but a rule may pin it to a literal such as 'globe' matching &#934;). It is</span><span>
+</span><span id="line-85"></span><span class="hs-comment">-- it, but a rule may pin it to a literal such as 'mg' matching &#934;). It is</span><span>
 </span><span id="line-86"></span><span class="hs-comment">-- driven by</span><span>
 </span><span id="line-87"></span><span class="hs-comment">-- the ordered rules from 'morphing.yaml': the first matching rule's premises are</span><span>
 </span><span id="line-88"></span><span class="hs-comment">-- evaluated and its conclusion 'nresult' is built, always forwarding the same</span><span>
@@ -483,7 +483,7 @@ forall a. [a] -&gt; [a]
 </span><span id="line-153"></span><span class="hs-comment">-- ternary, &#120123;(n, e, s): besides the term 'n' it takes the universe 'e' ('univ'),</span><span>
 </span><span id="line-154"></span><span class="hs-comment">-- which it forwards to &#120132;, and the mutable state 's', returning the bytes together</span><span>
 </span><span id="line-155"></span><span class="hs-comment">-- with the new state. Its rules come from 'dataization.yaml': 'delta' yields the</span><span>
-</span><span id="line-156"></span><span class="hs-comment">-- asset bytes, 'none' (a formation) and 'bott' (&#8869;) yield empty bytes (--),</span><span>
+</span><span id="line-156"></span><span class="hs-comment">-- asset bytes, 'none' (a formation) and 'end' (&#8869;) yield empty bytes (--),</span><span>
 </span><span id="line-157"></span><span class="hs-comment">-- 'box' contextualizes the &#966;-body and keeps dataizing (its step is labelled by</span><span>
 </span><span id="line-158"></span><span class="hs-comment">-- its 'contextualize' side-computation), and 'norm' reduces through morphing,</span><span>
 </span><span id="line-159"></span><span class="hs-comment">-- splicing the morphing steps into the chain. The clauses are disjoint (see</span><span>
@@ -867,7 +867,7 @@ forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
 </span><span id="line-244"></span><span class="hs-comment">-- of an earlier term &#8212; in isolation, binding its result meta. These never splice</span><span>
 </span><span id="line-245"></span><span class="hs-comment">-- steps into the trace: 'morph' and 'evaluate' reduce on a fresh chain and discard</span><span>
 </span><span id="line-246"></span><span class="hs-comment">-- it, 'contextualize' is pure. The state is threaded through: 'evaluate' (the</span><span>
-</span><span id="line-247"></span><span class="hs-comment">-- &#120124; of the 'lambda' and 'fire' rules) takes the incoming state &#119904;1 and yields a</span><span>
+</span><span id="line-247"></span><span class="hs-comment">-- &#120124; of the 'ml' and 'fire' rules) takes the incoming state &#119904;1 and yields a</span><span>
 </span><span id="line-248"></span><span class="hs-comment">-- new one &#119904;2, 'morph' propagates whatever its sub-reduction produced, and every</span><span>
 </span><span id="line-249"></span><span class="hs-comment">-- other operation leaves the state untouched.</span><span>
 </span><span id="line-250"></span><span class="annot"><a href="Dataize.html#sidePremise"><span class="hs-identifier hs-type">sidePremise</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Dataize.html#DataizeContext"><span class="hs-identifier hs-type">DataizeContext</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Matcher.html#Subst"><span class="hs-identifier hs-type">Subst</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Deps.html#State"><span class="hs-identifier hs-type">State</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Yaml.html#Premise"><span class="hs-identifier hs-type">Y.Premise</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Matcher.html#Subst"><span class="hs-identifier hs-type">Subst</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Deps.html#State"><span class="hs-identifier hs-type">State</span></a></span><span class="hs-special">)</span><span>
@@ -1600,7 +1600,7 @@ forall e a. Exception e =&gt; e -&gt; IO a
 </span><span class="hs-string">&quot;Function evaluate() requires exactly 1 expression argument&quot;</span></span><span class="hs-special">)</span><span>
 </span><span id="line-387"></span><span>
 </span><span id="line-388"></span><span class="hs-comment">-- The Morphing function &#120132; exposed as a build-term function so a rule can morph</span><span>
-</span><span id="line-389"></span><span class="hs-comment">-- a sub-expression in its 'where' (the 'dispatch' and 'application' rules morph</span><span>
+</span><span id="line-389"></span><span class="hs-comment">-- a sub-expression in its 'where' (the 'md' and 'ma' rules morph</span><span>
 </span><span id="line-390"></span><span class="hs-comment">-- the head before re-attaching it). The step chain is discarded: the producing</span><span>
 </span><span id="line-391"></span><span class="hs-comment">-- rule splices the surrounding normalization steps itself. The state is threaded</span><span>
 </span><span id="line-392"></span><span class="hs-comment">-- through and the new state returned alongside the morphed term.</span><span>
