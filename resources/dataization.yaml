@@ -27,6 +27,7 @@
 # their order.
 
 - name: delta
+  label: \Delta
   match: ⟦𝐵1, Δ ⤍ δ, 𝐵2⟧
   e-match: 𝑒
   d-result: δ

@@ -1107,6 +1107,7 @@ spec = do
         [ unlines
             [ "\\begin{phinoInference}"
             , "  \\phinoName{delta}"
+            , "  \\phinoLabel{\\Delta}"
             , "  \\phinoConclusion{ \\phinoDataize{ [[ B_1, D> \\delta, B_2 ]] }{ e }{ \\delta } }"
             , "\\end{phinoInference}"
             , "\\begin{phinoInference}"
