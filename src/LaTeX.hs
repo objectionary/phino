@@ -229,9 +229,7 @@ instance ToLaTeX PROGRAM where
 instance ToLaTeX EXPRESSION where
   toLaTeX EX_ATTR{..} = EX_ATTR (toLaTeX attr)
   toLaTeX EX_FORMATION{..} = EX_FORMATION lsb eol tab (toLaTeX binding) eol' tab' rsb
-  toLaTeX EX_APPLICATION{..} = EX_APPLICATION (toLaTeX expr) SPACE eol tab (toLaTeX tau) eol' tab' indent
-  toLaTeX EX_APPLICATION_TAUS{..} = EX_APPLICATION_TAUS (toLaTeX expr) SPACE eol tab (toLaTeX taus) eol' tab' indent
-  toLaTeX EX_APPLICATION_EXPRS{..} = EX_APPLICATION_EXPRS (toLaTeX expr) SPACE eol tab (toLaTeX args) eol' tab' indent
+  toLaTeX EX_APPLICATION{..} = EX_APPLICATION (toLaTeX expr) SPACE eol tab (toLaTeX argument) eol' tab' indent
   toLaTeX EX_DISPATCH{..} = EX_DISPATCH (toLaTeX expr) SPACE (toLaTeX attr)
   toLaTeX EX_PHI_MEET{..} = EX_PHI_MEET prefix idx (toLaTeX expr)
   toLaTeX EX_PHI_AGAIN{..} = EX_PHI_AGAIN prefix idx (toLaTeX expr)
@@ -299,6 +297,11 @@ instance ToLaTeX META_HEAD where
 instance ToLaTeX BYTES where
   toLaTeX (BT_META meta) = BT_META (toLaTeX meta)
   toLaTeX bts = bts
+
+instance ToLaTeX APP_ARGUMENT where
+  toLaTeX (AA_TAU tau) = AA_TAU (toLaTeX tau)
+  toLaTeX (AA_TAUS taus) = AA_TAUS (toLaTeX taus)
+  toLaTeX (AA_EXPRS args) = AA_EXPRS (toLaTeX args)
 
 instance ToLaTeX APP_ARG where
   toLaTeX APP_ARG{..} = APP_ARG (toLaTeX expr) (toLaTeX args)

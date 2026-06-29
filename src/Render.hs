@@ -182,6 +182,11 @@ instance Render BINDING where
   render BI_PAIR{..} = render pair <> render bindings
   render BI_META{..} = render meta <> render bindings
 
+instance Render APP_ARGUMENT where
+  render (AA_TAU tau) = render tau
+  render (AA_TAUS taus) = render taus
+  render (AA_EXPRS args) = render args
+
 instance Render APP_ARG where
   render APP_ARG{..} = render expr <> render args
 
@@ -199,9 +204,7 @@ instance Render EXPRESSION where
   render EX_TERMINATION{..} = render termination
   render EX_FORMATION{..} = render lsb <> render eol <> render tab <> render binding <> render eol' <> render tab' <> render rsb
   render EX_DISPATCH{..} = render expr <> render space <> "." <> render space <> render attr
-  render EX_APPLICATION{..} = render expr <> render space <> "(" <> render eol <> render tab <> render tau <> render eol' <> render tab' <> ")"
-  render EX_APPLICATION_TAUS{..} = render expr <> render space <> "(" <> render eol <> render tab <> render taus <> render eol' <> render tab' <> ")"
-  render EX_APPLICATION_EXPRS{..} = render expr <> render space <> "(" <> render eol <> render tab <> render args <> render eol' <> render tab' <> ")"
+  render EX_APPLICATION{..} = render expr <> render space <> "(" <> render eol <> render tab <> render argument <> render eol' <> render tab' <> ")"
   render EX_STRING{..} = "\"" <> render str <> "\""
   render EX_NUMBER{..} = either (T.pack . show) (T.pack . show) num
   render EX_META{..} = render meta
