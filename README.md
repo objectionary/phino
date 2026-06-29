@@ -276,7 +276,7 @@ $ phino explain --contextualize
 \end{phinoInference}
 ...
 \begin{phinoInference}
-  \phinoName{cdispatch}
+  \phinoName{cd}
   \phinoPremise{ \phinoContextualize{ n }{ k }{ n_1 } }
   \phinoConclusion{ \phinoContextualize{ n . \tau }{ k }{ n_1 . \tau } }
 \end{phinoInference}

@@ -16,7 +16,7 @@
 # the c meta. Derived terms are named 𝑛, 𝑛1, … in premise order; the bare 𝑛 is
 # skipped only when 'match' already binds it.
 
-- name: cglobe
+- name: cg
   match: Φ
   c-match: 𝑘
   c-result: Φ
@@ -26,17 +26,17 @@
   c-match: 𝑘
   c-result: 𝑘
 
-- name: cdead
+- name: ct
   match: ⊥
   c-match: 𝑘
   c-result: ⊥
 
-- name: cprim
+- name: cf
   match: ⟦𝐵⟧
   c-match: 𝑘
   c-result: ⟦𝐵⟧
 
-- name: cdispatch
+- name: cd
   match: '𝑛.𝜏'
   c-match: 𝑘
   c-result: '𝑛1.𝜏'
@@ -46,7 +46,7 @@
         - 𝑛
         - 𝑘
 
-- name: capplication
+- name: ca
   match: '𝑛(𝜏 ↦ 𝑒1)'
   c-match: 𝑘
   c-result: '𝑛1(𝜏 ↦ 𝑛2)'
@@ -60,7 +60,7 @@
         - 𝑒1
         - 𝑘
 
-- name: capplicationa
+- name: caa
   match: '𝑛(α𝑖 ↦ 𝑒1)'
   c-match: 𝑘
   c-result: '𝑛1(α𝑖 ↦ 𝑛2)'
