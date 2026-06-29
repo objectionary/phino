@@ -484,25 +484,21 @@ trrule macro label name lhs rhs cond extras =
 
 -- 𝕄, 𝔻 and 𝔼 carry the universe and thread the state from 'sIn' to a new
 -- 'sOut', 𝕄(input, e, sIn) ⟿ ⟨output, sOut⟩, so they render with the universe
--- and incoming state as the middle arguments and a paired conclusion:
--- \phinoMorph{ input }{ e }{ sIn }{ ⟨output, sOut⟩ }. 𝒩 and 𝒞 carry neither
+-- and incoming state as the middle arguments and the new term and outgoing
+-- state as the last two arguments:
+-- \phinoMorph{ input }{ e }{ sIn }{ output }{ sOut }. 𝒩 and 𝒞 carry neither
 -- universe nor state.
 phinoMorph :: String -> String -> String -> String -> String -> String
-phinoMorph input univ sIn sOut output = printf "\\phinoMorph{ %s }{ %s }{ %s }{ %s }" input univ sIn (paired output sOut)
+phinoMorph input univ sIn sOut output = printf "\\phinoMorph{ %s }{ %s }{ %s }{ %s }{ %s }" input univ sIn output sOut
 
 phinoDataize :: String -> String -> String -> String -> String -> String
-phinoDataize input univ sIn sOut output = printf "\\phinoDataize{ %s }{ %s }{ %s }{ %s }" input univ sIn (paired output sOut)
+phinoDataize input univ sIn sOut output = printf "\\phinoDataize{ %s }{ %s }{ %s }{ %s }{ %s }" input univ sIn output sOut
 
 phinoNormalize :: String -> String -> String
 phinoNormalize input = printf "\\phinoNormalize{ %s }{ %s }" input
 
 phinoEvaluate :: String -> String -> String -> String -> String -> String
-phinoEvaluate input univ sIn sOut output = printf "\\phinoEvaluate{ %s }{ %s }{ %s }{ %s }" input univ sIn (paired output sOut)
-
--- The state-passing functions 𝕄, 𝔻 and 𝔼 return a pair ⟨output, state⟩, the
--- new value alongside the threaded state.
-paired :: String -> String -> String
-paired output state = printf "\\langle %s, %s \\rangle" output state
+phinoEvaluate input univ sIn sOut output = printf "\\phinoEvaluate{ %s }{ %s }{ %s }{ %s }{ %s }" input univ sIn output sOut
 
 phinoContextualize :: String -> String -> String -> String
 phinoContextualize input context = printf "\\phinoContextualize{ %s }{ %s }{ %s }" input context
