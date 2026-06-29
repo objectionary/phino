@@ -13,7 +13,6 @@ module CST where
 import AST
 import Bytes (btsToNum, btsToStr)
 import qualified Data.Text as T
-import Misc
 import qualified Yaml as Y
 
 data LCB = LCB | BIG_LCB

@@ -1,5 +1,4 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE PatternSynonyms #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
@@ -15,7 +14,6 @@ import Control.Monad (forM_)
 import Encoding (Encoding (..))
 import Lining (LineFormat (..))
 import Margin (defaultMargin)
-import Misc (pattern DataNumber)
 import Parser (parseExpression)
 import Printer
 import Sugar (SugarType (..))

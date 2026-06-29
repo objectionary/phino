@@ -1,7 +1,6 @@
 {-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
 
@@ -13,7 +12,7 @@ module Sugar (toSalty, withSugarType, SugarType (..), ToSalty) where
 import AST
 import Bytes (numToBts, strToBts)
 import CST
-import Misc (toDouble, pattern BaseObject)
+import Misc (toDouble)
 
 withSugarType :: (ToSalty a) => SugarType -> a -> a
 withSugarType SWEET node = node

@@ -18,7 +18,6 @@ import Files (allPathsIn)
 import GHC.Generics (Generic)
 import Lining (LineFormat (SINGLELINE), withLineFormat)
 import Margin (defaultMargin, withMargin)
-import Misc
 import Parser (parseProgramThrows)
 import Render (Render (render))
 import Sugar
