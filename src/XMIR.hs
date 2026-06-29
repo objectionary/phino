@@ -20,6 +20,7 @@ module XMIR
 where
 
 import AST
+import Bytes (btsToNum, btsToStr, bytesToBts)
 import Control.Exception (Exception (displayException), throwIO)
 import Data.Bifunctor (bimap)
 import Data.Foldable (foldlM)

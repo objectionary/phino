@@ -24,6 +24,7 @@ module Parser
 where
 
 import AST
+import Bytes (numToBts, strToBts)
 import Control.Exception (Exception)
 import Control.Monad (guard)
 import Data.Char (isAsciiLower, isDigit)

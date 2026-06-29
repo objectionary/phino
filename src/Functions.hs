@@ -7,6 +7,7 @@ module Functions (buildTerm, execFunctions) where
 
 import AST
 import Builder
+import Bytes (btsToNum, btsToUnescapedStr, numToBts, strToBts)
 import Control.Exception (throwIO)
 import Control.Monad (when)
 import qualified Data.ByteString.Char8 as B

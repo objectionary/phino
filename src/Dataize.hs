@@ -13,6 +13,7 @@ module Dataize (morph, dataize, dataize', DataizeContext (..), State, emptyState
 
 import AST
 import Builder (buildBytesThrows, buildExpressionThrows)
+import Bytes (btsToNum, numToBts)
 import Control.Exception (throwIO)
 import Control.Monad (foldM)
 import Data.List (find, partition)

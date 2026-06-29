@@ -11,8 +11,9 @@
 module Sugar (toSalty, withSugarType, SugarType (..), ToSalty) where
 
 import AST
+import Bytes (numToBts, strToBts)
 import CST
-import Misc (numToBts, strToBts, toDouble, pattern BaseObject)
+import Misc (toDouble, pattern BaseObject)
 
 withSugarType :: (ToSalty a) => SugarType -> a -> a
 withSugarType SWEET node = node

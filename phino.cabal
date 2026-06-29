@@ -35,6 +35,7 @@ library
   exposed-modules:
     AST
     Builder
+    Bytes
     Canonizer
     CLI
     CLI.Helpers
