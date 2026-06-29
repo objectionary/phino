@@ -376,6 +376,7 @@ explainRule rule =
 explainMorphRule :: Y.MorphRule -> String
 explainMorphRule rule =
   inference
+    "phinoMorphingInference"
     rule.name
     rule.label
     rule.when
@@ -387,6 +388,7 @@ explainMorphRule rule =
 explainDataizeRule :: Y.DataizeRule -> String
 explainDataizeRule rule =
   inference
+    "phinoDataizationInference"
     rule.name
     rule.label
     rule.when
@@ -398,33 +400,34 @@ explainDataizeRule rule =
 explainContextualizeRule :: Y.ContextualizeRule -> String
 explainContextualizeRule rule =
   inference
+    "phinoContextualizationInference"
     rule.name
     rule.label
     Nothing
     (map premiseToLatex rule.premises)
     (phinoContextualize (renderExpr rule.match) (renderExpr rule.cmatch) (renderExpr rule.cresult))
 
--- One premise judgment, rendered per its operation. 𝕄 ('morph') and 𝔻
--- ('dataize') are binary and carry the universe 'e' they were given; the rest
--- are unary.
+-- One premise judgment, rendered per its operation. 𝕄 ('morph'), 𝔻
+-- ('dataize') and 𝔼 ('evaluate') carry the universe 'e' they were given; the
+-- rest are unary.
 premiseToLatex :: Y.Premise -> String
 premiseToLatex premise = case premise.operation of
   Y.OpMorph arg -> phinoMorph (renderExpr arg) "e" (renderExpr (ExMeta premise.result))
   Y.OpDataize arg -> phinoDataize (renderExpr arg) "e" (renderBytes (BtMeta premise.result))
   Y.OpNormalize arg -> phinoNormalize (renderExpr arg) (renderExpr (ExMeta premise.result))
-  Y.OpEvaluate arg -> phinoEvaluate (renderExpr arg) (renderExpr (ExMeta premise.result))
+  Y.OpEvaluate arg universe -> phinoEvaluate (renderExpr arg) (renderExpr universe) (renderExpr (ExMeta premise.result))
   Y.OpContextualize arg context -> phinoContextualize (renderExpr arg) (renderExpr context) (renderExpr (ExMeta premise.result))
 
 -- Assemble an inference block from a name, optional label, optional side
 -- condition, the premise judgments and the conclusion judgment.
-inference :: String -> Maybe String -> Maybe Y.Condition -> [String] -> String -> String
-inference name label cond premises conclusion =
+inference :: String -> String -> Maybe String -> Maybe Y.Condition -> [String] -> String -> String
+inference env name label cond premises conclusion =
   intercalate "\n" $
-    ["\\begin{phinoInference}", "  \\phinoName{" ++ name ++ "}"]
+    ["\\begin{" ++ env ++ "}", "  \\phinoName{" ++ name ++ "}"]
       ++ maybe [] (\symbol -> ["  \\phinoLabel{" ++ symbol ++ "}"]) label
       ++ maybe [] (\rendered -> ["  \\phinoCondition{ " ++ rendered ++ " }"]) (conditionInLatex cond)
       ++ map (\premise -> "  \\phinoPremise{ " ++ premise ++ " }") premises
-      ++ ["  \\phinoConclusion{ " ++ conclusion ++ " }", "\\end{phinoInference}"]
+      ++ ["  \\phinoConclusion{ " ++ conclusion ++ " }", "\\end{" ++ env ++ "}"]
 
 renderExpr :: Expression -> String
 renderExpr expr = renderToLatex (expressionToCST expr) defaultLatexContext
@@ -452,9 +455,9 @@ trrule macro label name lhs rhs cond extras =
   where
     labelArg = maybe "" (\symbol -> "[" ++ symbol ++ "]") label
 
--- 𝕄 and 𝔻 are binary, 𝕄(input, e) ⟿ output, so they render with the universe
--- as the middle argument: \phinoMorph{ input }{ e }{ output }. 𝒩, 𝔼 and 𝒞 carry
--- no universe.
+-- 𝕄, 𝔻 and 𝔼 carry the universe, 𝕄(input, e) ⟿ output, so they render with the
+-- universe as the middle argument: \phinoMorph{ input }{ e }{ output }. 𝒩 and 𝒞
+-- carry no universe.
 phinoMorph :: String -> String -> String -> String
 phinoMorph input univ output = printf "\\phinoMorph{ %s }{ %s }{ %s }" input univ output
 
@@ -464,8 +467,8 @@ phinoDataize input univ output = printf "\\phinoDataize{ %s }{ %s }{ %s }" input
 phinoNormalize :: String -> String -> String
 phinoNormalize input = printf "\\phinoNormalize{ %s }{ %s }" input
 
-phinoEvaluate :: String -> String -> String
-phinoEvaluate input = printf "\\phinoEvaluate{ %s }{ %s }" input
+phinoEvaluate :: String -> String -> String -> String
+phinoEvaluate input univ output = printf "\\phinoEvaluate{ %s }{ %s }{ %s }" input univ output
 
 phinoContextualize :: String -> String -> String -> String
 phinoContextualize input context = printf "\\phinoContextualize{ %s }{ %s }{ %s }" input context

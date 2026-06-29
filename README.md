@@ -237,7 +237,7 @@ The morphing and dataization rules are printed the same way:
 ```bash
 $ phino explain --morph
 \begin{tabular}{rl}
-\phinoMorphingRule{prim}
+\phinoMorphingRule{mf}
   { \mathbb{M}( [[ B ]], e ) }
   { [[ B ]] }
   { }
@@ -270,16 +270,16 @@ $ phino explain --dataize
 
 ```bash
 $ phino explain --contextualize
-\begin{phinoInference}
+\begin{phinoContextualizationInference}
   \phinoName{cxi}
   \phinoConclusion{ \phinoContextualize{ \phiTerminal{\xi} }{ k }{ k } }
-\end{phinoInference}
+\end{phinoContextualizationInference}
 ...
-\begin{phinoInference}
-  \phinoName{cdispatch}
+\begin{phinoContextualizationInference}
+  \phinoName{cd}
   \phinoPremise{ \phinoContextualize{ n }{ k }{ n_1 } }
   \phinoConclusion{ \phinoContextualize{ n . \tau }{ k }{ n_1 . \tau } }
-\end{phinoInference}
+\end{phinoContextualizationInference}
 ```
 
 For more details, use `phino [COMMAND] --help` option.
@@ -325,9 +325,9 @@ Condition:
       - Expression'      # attribute in ginve bindings
       - BiMeta'
   | formation:           # returns True if given expression is a formation
-      Expression'        # (an abstraction ⟦…⟧); used by morphing 'dispatch'
+      Expression'        # (an abstraction ⟦…⟧); used by morphing 'md'
                          # as 'not (formation 𝑛)', so a non-formation head is
-                         # morphed and a formation head is left to 'lambda'
+                         # morphed and a formation head is left to 'ml'
 
 Comparable:              # comparable object that may be used in 'eq' condition
   = Attribute'
