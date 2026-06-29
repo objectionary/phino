@@ -23,12 +23,12 @@ module Builder
 where
 
 import AST
-import Control.Exception (Exception, throwIO)
+import Control.Exception (Exception)
 import qualified Data.Map.Strict as Map
 import Data.Text (Text)
 import qualified Data.Text as T
 import Matcher
-import Misc (uniqueBindings)
+import Misc (orThrow, uniqueBindings)
 import Printer
 import Text.Printf (printf)
 
@@ -144,24 +144,16 @@ buildExpression (ExMeta meta) (Subst mp) = case Map.lookup meta mp of
 buildExpression expr _ = Right expr
 
 buildBytesThrows :: Bytes -> Subst -> IO Bytes
-buildBytesThrows bytes subst = case buildBytes bytes subst of
-  Right bts -> pure bts
-  Left msg -> throwIO (CouldNotBuildBytes bytes msg)
+buildBytesThrows bytes subst = orThrow (CouldNotBuildBytes bytes) (buildBytes bytes subst)
 
 buildBindingThrows :: Binding -> Subst -> IO [Binding]
-buildBindingThrows bd subst = case buildBinding bd subst of
-  Right bds -> pure bds
-  Left msg -> throwIO (CouldNotBuildBinding bd msg)
+buildBindingThrows bd subst = orThrow (CouldNotBuildBinding bd) (buildBinding bd subst)
 
 buildAttributeThrows :: Attribute -> Subst -> IO Attribute
-buildAttributeThrows attr subst = case buildAttribute attr subst of
-  Right attr' -> pure attr'
-  Left msg -> throwIO (CouldNotBuildAttribute attr msg)
+buildAttributeThrows attr subst = orThrow (CouldNotBuildAttribute attr) (buildAttribute attr subst)
 
 buildExpressionThrows :: Expression -> Subst -> IO Expression
-buildExpressionThrows expr subst = case buildExpression expr subst of
-  Right built -> pure built
-  Left msg -> throwIO (CouldNotBuildExpression expr msg)
+buildExpressionThrows expr subst = orThrow (CouldNotBuildExpression expr) (buildExpression expr subst)
 
 -- Build a several expression from one expression and several substitutions
 buildExpressionsThrows :: Expression -> [Subst] -> IO [Expression]

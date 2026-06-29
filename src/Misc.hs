@@ -28,6 +28,7 @@ module Misc
   , attributeFromBinding
   , uniqueBindings
   , uniqueBindings'
+  , orThrow
   , validateYamlObject
   , matchDataObject
   , pattern DataObject
@@ -67,6 +68,11 @@ import System.Directory (doesDirectoryExist, doesFileExist, listDirectory)
 import System.FilePath ((</>))
 import System.Random.Stateful
 import Text.Printf (printf)
+
+-- Unwrap a pure 'Either String' in IO, throwing the built exception on 'Left'
+orThrow :: (Exception e) => (String -> e) -> Either String a -> IO a
+orThrow _ (Right value) = pure value
+orThrow asException (Left err) = throwIO (asException err)
 
 data FsException
   = FileDoesNotExist {_file :: FilePath}
