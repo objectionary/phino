@@ -153,7 +153,7 @@ dataize program@(Program univ) ctx@DataizeContext{..} = do
 -- ternary, 𝔻(n, e, s): besides the term 'n' it takes the universe 'e' ('univ'),
 -- which it forwards to 𝕄, and the mutable state 's', returning the bytes together
 -- with the new state. Its rules come from 'dataization.yaml': 'delta' yields the
--- asset bytes, 'none' (a formation) and 'bott' (⊥) yield empty bytes (--),
+-- asset bytes, 'none' (a formation) and 'end' (⊥) yield empty bytes (--),
 -- 'box' contextualizes the φ-body and keeps dataizing (its step is labelled by
 -- its 'contextualize' side-computation), and 'norm' reduces through morphing,
 -- splicing the morphing steps into the chain. The clauses are disjoint (see

@@ -1129,7 +1129,7 @@ spec = do
             , "  \\phinoConclusion{ \\phinoDataize{ [[ B ]] }{ e }{ -- } }"
             , "\\end{phinoInference}"
             , "\\begin{phinoInference}"
-            , "  \\phinoName{bott}"
+            , "  \\phinoName{end}"
             , "  \\phinoConclusion{ \\phinoDataize{ T }{ e }{ -- } }"
             , "\\end{phinoInference}"
             , "\\begin{phinoInference}"

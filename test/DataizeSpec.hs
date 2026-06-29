@@ -101,7 +101,7 @@ spec = do
   -- 'norm' matches the bare meta 𝑛, which unifies with any expression, so it is
   -- guarded to fire only when 𝑛 is neither a formation ('not (formation 𝑛)',
   -- left to 'delta'/'box'/'fire'/'none') nor the termination ⊥ ('not (𝑛 = ⊥)',
-  -- left to 'bott'). The dataization clauses are therefore disjoint and their
+  -- left to 'end'). The dataization clauses are therefore disjoint and their
   -- order in 'dataization.yaml' cannot change behavior.
   describe "dataization 'norm' is disjoint from the specific clauses" $ do
     let rctx = RuleContext (execBuildTerm ExRoot (defaultDataizeContext ExRoot))

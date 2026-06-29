@@ -22,7 +22,7 @@
 # 'norm' matches the bare meta 𝑛, which unifies with any expression, so it is
 # guarded to fire only when 𝑛 is neither a formation ('not (formation 𝑛)',
 # carving out 'delta', 'box', 'fire' and 'none') nor the termination ⊥
-# ('not (𝑛 = ⊥)', carving out 'bott'). Without the guard 'norm' would behave
+# ('not (𝑛 = ⊥)', carving out 'end'). Without the guard 'norm' would behave
 # correctly only by being declared last; with it the clauses no longer rely on
 # their order.
 
@@ -70,7 +70,7 @@
       - [Δ, λ, φ]
       - [𝐵]
 
-- name: bott
+- name: end
   match: ⊥
   e-match: 𝑒
   d-result: '--'
