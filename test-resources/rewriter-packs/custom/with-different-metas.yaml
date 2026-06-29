@@ -9,9 +9,9 @@ output: |-
 rules:
   custom:
     - name: concat with metas
-      pattern: '[[ x -> !e_hello, y -> 𝑒-world, 𝐵-x ]]'
+      match: '[[ x -> !e_hello, y -> 𝑒-world, 𝐵-x ]]'
       result: '[[ z -> !e_hello_world, 𝐵-x ]]'
-      where:
+      premises:
         - meta: '!d-space'
           function: dataize
           args: ['" "']

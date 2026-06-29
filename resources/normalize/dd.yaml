@@ -2,5 +2,5 @@
 # SPDX-License-Identifier: MIT
 ---
 name: dd
-pattern: ⊥.𝜏
+match: ⊥.𝜏
 result: ⊥

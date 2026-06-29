@@ -3,7 +3,7 @@
 ---
 name: phi
 label: \phi
-pattern: ⟦𝐵⟧.𝜏
+match: ⟦𝐵⟧.𝜏
 result: ⟦𝐵⟧.φ.𝜏
 when:
   and:

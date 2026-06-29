@@ -15,12 +15,12 @@ output: |
 rules:
   custom:
     - name: remove void
-      pattern: |
+      match: |
         [[ !B1, !t -> ?, !B2 ]]
       result: |
         [[ !B1, !B2 ]]
     - name: empty to filled
-      pattern: |
+      match: |
         [[ ]]
       result: |
         [[ x -> Q ]]

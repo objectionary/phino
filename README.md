@@ -108,7 +108,7 @@ similar to regular expressions):
 
 ```yaml
 name: My custom rule
-pattern: Δ ⤍ !d
+match: Δ ⤍ !d
 result: Δ ⤍ 62-79-65
 ```
 
@@ -212,24 +212,22 @@ contextualization (𝒞) rules (or `--rule` for a custom rule file):
 
 ```bash
 $ phino explain --normalize
-\begin{tabular}{rl}
-\phinoNormalizationRule{alpha}
-  { [[ B_1, \tau -> ?, B_2 ]] ( \phiTerminal{\alpha_{i}} -> e ) }
-  { [[ B_1, \tau -> ?, B_2 ]] ( \tau -> e ) }
-  { $ i = \vert \overline{ B_1 } \vert $ }
-  { }
-\phinoNormalizationRule{dc}
-  { T ( \tau -> e ) }
-  { T }
-  { }
-  { }
+\begin{phinoNormalizationInference}
+  \phinoName{dd}
+  \phinoConclusion{ \phinoNormalize{ T . \tau }{ T } }
+\end{phinoNormalizationInference}
 ...
-\phinoNormalizationRule{stop}
-  { [[ B ]] . \tau }
-  { T }
-  { $ \tau \notin B \;\text{and}\; @ \notin B \;\text{and}\; L \notin B $ }
-  { }
-\end{tabular}
+\begin{phinoNormalizationInference}
+  \phinoName{dot}
+  \phinoPremise{ \phinoContextualize{ n }{ [[ B_1, \tau -> n, B_2 ]] }{ e } }
+  \phinoConclusion{ \phinoNormalize{ [[ B_1, \tau -> n, B_2 ]] . \tau }{ ... } }
+\end{phinoNormalizationInference}
+...
+\begin{phinoNormalizationInference}
+  \phinoName{miss}
+  \phinoCondition{ \tau \notin B }
+  \phinoConclusion{ \phinoNormalize{ [[ B ]] ( \tau -> e ) }{ T } }
+\end{phinoNormalizationInference}
 ```
 
 The morphing and dataization rules are printed the same way:
@@ -292,11 +290,11 @@ apostrophe, like `Attribute'` are built types from 𝜑-program [AST](src/AST.hs
 ```bnfc
 Rule:
   name: String
-  pattern: String
+  match: String
   result: String
-  when: Condition?       # predicate, works with substitutions before extension
-  where: [Extension]?    # substitution extensions
-  having: Condition?     # predicate, works with substitutions after extension
+  when: Condition?       # predicate, works with substitutions before premises
+  premises: [Premise]?   # build-term premises evaluated before the result
+  having: Condition?     # predicate, works with substitutions after premises
 
 Condition:
   = and: [Condition]     # logical AND
@@ -339,7 +337,7 @@ Number:                  # comparable number
   | IndexMeta'           # 𝑖 (or !i), the index captured by an α𝑖 argument
   | length: BiMeta'      # calculate length of bindings by given meta binding
 
-Extension:               # substitutions extension used to introduce new meta variables
+Premise:                 # build-term premise used to introduce new meta variables
   meta: [ExtArgument]    # new introduced meta variable
   function: String       # name of the function
   args: [ExtArgument]    # arguments of the function
@@ -351,7 +349,7 @@ ExtArgument
   | Attribute'           # !t
 ```
 
-Here's list of functions that are supported for extensions:
+Here's list of functions that are supported for premises:
 
 * `contextualize` - function of two arguments, that rewrites given expression
   depending on provided context according to the contextualization

@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 ---
 name: two-condition-objects
-pattern: 'Q'
+match: 'Q'
 result: 'Q'
 when:
   eq: [1]

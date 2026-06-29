@@ -11,7 +11,7 @@
 module Yaml where
 
 import AST
-import Control.Applicative (asum)
+import Control.Applicative (asum, (<|>))
 import Data.Aeson
 import qualified Data.ByteString as BS
 import Data.FileEmbed (embedDir, embedFile)
@@ -147,14 +147,43 @@ instance FromJSON Extra where
             <*> o .:? "args" .!= []
       )
 
+-- A normalization (or user-supplied rewriting) rule in the premise-conclusion
+-- schema shared with 𝕄/𝒞/𝔻: 'match' is the matched term, 'result' the rewritten
+-- one, 'when'/'having' the side conditions and 'premises' the ordered build-term
+-- premises evaluated before the result is built. Every premise reduces to a
+-- build-term extension the engine runs (see 'rulePremises').
 instance FromJSON Rule where
   parseJSON =
-    genericParseJSON
-      defaultOptions
-        { fieldLabelModifier = \case
-            "where_" -> "where"
-            other -> other
-        }
+    withObject
+      "Rule"
+      ( \o -> do
+          ruleName <- o .: "name"
+          Rule ruleName
+            <$> o .:? "label"
+            <*> o .:? "description"
+            <*> o .: "match"
+            <*> o .: "result"
+            <*> o .:? "when"
+            <*> rulePremises o
+            <*> o .:? "having"
+      )
+
+-- The rule's premises. Each premise is either a reduction judgment keyed by its
+-- verb ('contextualize', 'morph', 'normalize', 'evaluate', 'dataize'), which
+-- desugars through 'premiseToExtra', or a general build-term call given as
+-- 'meta'/'function'/'args'. Both forms reduce to the 'Extra' the rewriting
+-- engine already consumes, so the engine is untouched.
+rulePremises :: Object -> Parser (Maybe [Extra])
+rulePremises o = do
+  items <- o .:? "premises"
+  traverse (traverse parsePremise) items
+
+-- Parse a single premise, trying the reduction-judgment form first and falling
+-- back to the general build-term form. The two are disjoint: a judgment carries
+-- an 'n-result'/'d-result' meta and a verb key, a build-term call carries
+-- 'meta'/'function', so neither matches the other's object.
+parsePremise :: Value -> Parser Extra
+parsePremise value = (premiseToExtra <$> parseJSON value) <|> parseJSON value
 
 data Number
   = MetaIndex Text
@@ -202,10 +231,10 @@ data Rule = Rule
   { name :: String
   , label :: Maybe String
   , description :: Maybe String
-  , pattern :: Expression
+  , match :: Expression
   , result :: Expression
   , when :: Maybe Condition
-  , where_ :: Maybe [Extra]
+  , premises :: Maybe [Extra]
   , having :: Maybe Condition
   }
   deriving (Generic, Show)
@@ -325,6 +354,42 @@ premiseOperation o =
           _ -> fail "'contextualize' expects exactly two arguments"
     , OpDataize <$> o .: "dataize"
     ]
+
+-- Desugar a reduction-judgment premise into the build-term extension the
+-- rewriting engine runs: the premise's operation becomes a call to the matching
+-- build-term function, binding the premise's result meta. This lets a rule be
+-- written in the premise-conclusion schema while the engine keeps consuming the
+-- same 'Extra', so the migration touches the schema and not the rewriting engine.
+-- @todo #912:60min Unify the two premise representations and drop this bridge.
+--  Normalization and user rules carry premises as 'Extra' (a 'function' plus
+--  'args'), while the 𝕄/𝒞/𝔻 rules carry them as the typed 'Operation'/'Premise';
+--  this function bridges the verb-form into 'Extra' so the rewriting engine keeps
+--  consuming a single shape. Once the engine consumes 'Premise' directly, this
+--  desugaring and the 'Extra'/'ExtraArgument' representation can be removed.
+premiseToExtra :: Premise -> Extra
+premiseToExtra (Premise res op) = Extra (metaArgument res op) (verb op) (verbArgs op)
+  where
+    -- A 'dataize' premise binds a bytes meta ('d-result'); every other operation
+    -- binds an expression meta ('n-result').
+    metaArgument :: Text -> Operation -> ExtraArgument
+    metaArgument metaText (OpDataize _) = ArgBytes (BtMeta metaText)
+    metaArgument metaText _ = ArgExpression (ExMeta metaText)
+
+-- The build-term function name backing a premise operation.
+verb :: Operation -> String
+verb (OpMorph _) = "morph"
+verb (OpNormalize _) = "normalize"
+verb (OpEvaluate _ _) = "evaluate"
+verb (OpContextualize _ _) = "contextualize"
+verb (OpDataize _) = "dataize"
+
+-- The build-term arguments backing a premise operation.
+verbArgs :: Operation -> [ExtraArgument]
+verbArgs (OpMorph expr) = [ArgExpression expr]
+verbArgs (OpNormalize expr) = [ArgExpression expr]
+verbArgs (OpEvaluate expr universe) = [ArgExpression expr, ArgExpression universe]
+verbArgs (OpContextualize expr context) = [ArgExpression expr, ArgExpression context]
+verbArgs (OpDataize expr) = [ArgExpression expr]
 
 -- Parse the optional 'label', rejecting one that merely repeats the rule's
 -- 'name'. A label equal to the name typesets the same token across two macros

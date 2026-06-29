@@ -11,9 +11,9 @@ output: |-
 rules:
   custom:
     - name: part-of-after
-      pattern: '[[ x -> Q.y, !B ]]'
+      match: '[[ x -> Q.y, !B ]]'
       result: '[[ x -> Q.y, z -> !e, !B ]]'
-      where:
+      premises:
         - meta: '!e'
           function: concat
           args: ['"hello "', '"world"']

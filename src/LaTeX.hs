@@ -28,7 +28,7 @@ module LaTeX
 import AST
 import CST
 import Data.List (intercalate, nub)
-import Data.Maybe (isJust)
+import Data.Maybe (fromMaybe, isJust)
 import qualified Data.Text as T
 import Encoding
 import Lining
@@ -353,16 +353,22 @@ instance ToLaTeX EXTRA_ARG where
 instance ToLaTeX EXTRA where
   toLaTeX EXTRA{..} = EXTRA (toLaTeX meta) func (map toLaTeX args)
 
+-- Render a normalization rule as a LaTeX inference rule, the same shape used for
+-- 𝕄/𝒞/𝔻: its 'when'/'having' guards become the side condition above the line,
+-- its 'where' extensions become premise judgments (so 'dot''s 'contextualize'
+-- shows as 𝒞(n, formation) ⟿ e), and the conclusion is the one-step rewrite
+-- 𝒩(match) ⟿ result. The relation is carried by '\phinoNormalize', the same
+-- macro the 𝒩 premises of the other systems use, so the layout is shared without
+-- inventing a separate relation symbol.
 explainRule :: Y.Rule -> String
 explainRule rule =
-  trrule
-    "\\phinoNormalizationRule"
-    rule.label
+  inference
+    "phinoNormalizationInference"
     rule.name
-    (renderToLatex (expressionToCST rule.pattern) defaultLatexContext)
-    (renderToLatex (expressionToCST rule.result) defaultLatexContext)
+    rule.label
     (joinedConditions rule.when rule.having)
-    rule.where_
+    (maybe [] (map extraToLatex) rule.premises)
+    (phinoNormalize (renderExpr rule.match) (renderExpr rule.result))
   where
     -- Join two maybe conditions into single one using Y.And if at least one is just.
     joinedConditions :: Maybe Y.Condition -> Maybe Y.Condition -> Maybe Y.Condition
@@ -370,6 +376,32 @@ explainRule rule =
     joinedConditions first@(Just _) Nothing = first
     joinedConditions Nothing second@(Just _) = second
     joinedConditions (Just first) (Just second) = Just (Y.And [first, second])
+
+-- Render a 'where' extension as a premise judgment. The five reduction verbs
+-- render through their inference-rule macros; any other build-term function
+-- (a user rule's 'sed', 'concat', …) keeps the 'meta ≔ func(args)' assignment
+-- form, since it has no inference-rule reading.
+extraToLatex :: Y.Extra -> String
+extraToLatex extra = fromMaybe assignment judgment
+  where
+    assignment :: String
+    assignment = renderToLatex (extraToCST extra) defaultLatexContext
+    judgment :: Maybe String
+    judgment = do
+      name <- metaName (Y.meta extra)
+      case (Y.function extra, Y.args extra) of
+        ("contextualize", [Y.ArgExpression arg, Y.ArgExpression context]) ->
+          Just (phinoContextualize (renderExpr arg) (renderExpr context) name)
+        ("morph", [Y.ArgExpression arg]) -> Just (phinoMorph (renderExpr arg) "e" name)
+        ("dataize", [Y.ArgExpression arg]) -> Just (phinoDataize (renderExpr arg) "e" name)
+        ("normalize", [Y.ArgExpression arg]) -> Just (phinoNormalize (renderExpr arg) name)
+        ("evaluate", [Y.ArgExpression arg, Y.ArgExpression universe]) ->
+          Just (phinoEvaluate (renderExpr arg) (renderExpr universe) name)
+        _ -> Nothing
+    metaName :: Y.ExtraArgument -> Maybe String
+    metaName (Y.ArgExpression expr) = Just (renderExpr expr)
+    metaName (Y.ArgBytes bytes) = Just (renderBytes bytes)
+    metaName _ = Nothing
 
 -- Render a morphing rule as a LaTeX inference rule: each premise becomes a
 -- judgment above the line and the conclusion is 𝕄(match, e) ⟿ n-result below.
@@ -435,43 +467,23 @@ renderExpr expr = renderToLatex (expressionToCST expr) defaultLatexContext
 renderBytes :: Bytes -> String
 renderBytes bytes = T.unpack (render (toLaTeX (toCST' bytes :: BYTES)))
 
--- Render a single normalization rule row through the \phinoNormalizationRule
--- macro: an optional typeset label, name, left-hand side, right-hand side, the
--- optional 'if' condition and 'where' extras. When the label is present it
--- becomes the macro's first optional argument ('\macro[label]{name}'); when
--- absent the optional argument is omitted entirely ('\macro{name}').
--- Morphing and dataization rules render as inference rules instead (see
--- 'explainMorphRule' and 'explainDataizeRule').
-trrule :: String -> Maybe String -> String -> String -> String -> Maybe Y.Condition -> Maybe [Y.Extra] -> String
-trrule macro label name lhs rhs cond extras =
-  intercalate
-    "\n  "
-    [ macro ++ labelArg ++ "{" ++ name ++ "}"
-    , braced lhs
-    , braced rhs
-    , conditionToLatex cond
-    , extraArgumentsToLatex extras
-    ]
-  where
-    labelArg = maybe "" (\symbol -> "[" ++ symbol ++ "]") label
-
 -- 𝕄, 𝔻 and 𝔼 carry the universe, 𝕄(input, e) ⟿ output, so they render with the
 -- universe as the middle argument: \phinoMorph{ input }{ e }{ output }. 𝒩 and 𝒞
 -- carry no universe.
 phinoMorph :: String -> String -> String -> String
-phinoMorph input univ output = printf "\\phinoMorph{ %s }{ %s }{ %s }" input univ output
+phinoMorph = printf "\\phinoMorph{ %s }{ %s }{ %s }"
 
 phinoDataize :: String -> String -> String -> String
-phinoDataize input univ output = printf "\\phinoDataize{ %s }{ %s }{ %s }" input univ output
+phinoDataize = printf "\\phinoDataize{ %s }{ %s }{ %s }"
 
 phinoNormalize :: String -> String -> String
-phinoNormalize input = printf "\\phinoNormalize{ %s }{ %s }" input
+phinoNormalize = printf "\\phinoNormalize{ %s }{ %s }"
 
 phinoEvaluate :: String -> String -> String -> String
-phinoEvaluate input univ output = printf "\\phinoEvaluate{ %s }{ %s }{ %s }" input univ output
+phinoEvaluate = printf "\\phinoEvaluate{ %s }{ %s }{ %s }"
 
 phinoContextualize :: String -> String -> String -> String
-phinoContextualize input context = printf "\\phinoContextualize{ %s }{ %s }{ %s }" input context
+phinoContextualize = printf "\\phinoContextualize{ %s }{ %s }{ %s }"
 
 conditionInLatex :: Maybe Y.Condition -> Maybe String
 conditionInLatex Nothing = Nothing
@@ -487,12 +499,6 @@ conditionToLatex Nothing = "{ }"
 conditionToLatex (Just cond) = case conditionToCST cond of
   CO_EMPTY -> "{ }"
   cond' -> braced (renderToLatex cond' defaultLatexContext)
-
-extraArgumentsToLatex :: Maybe [Y.Extra] -> String
-extraArgumentsToLatex Nothing = "{ }"
-extraArgumentsToLatex (Just extras) =
-  let extras' = map ((`renderToLatex` defaultLatexContext) . extraToCST) extras
-   in braced (intercalate " and " extras')
 
 explainRules :: [Y.Rule] -> String
 explainRules = intercalate "\n" . map explainRule

@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 ---
 name: amiss
-pattern: ⟦𝐵⟧(α𝑖 ↦ 𝑒)
+match: ⟦𝐵⟧(α𝑖 ↦ 𝑒)
 result: ⊥
 when:
   not:

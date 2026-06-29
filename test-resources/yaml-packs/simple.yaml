@@ -2,5 +2,5 @@
 # SPDX-License-Identifier: MIT
 ---
 name: simple
-pattern: 'Q'
+match: 'Q'
 result: 'Q'

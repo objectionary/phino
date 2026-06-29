@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 ---
 name: wrong-condition-name
-pattern: 'Q'
+match: 'Q'
 result: 'Q'
 when:
   eqx: [1]

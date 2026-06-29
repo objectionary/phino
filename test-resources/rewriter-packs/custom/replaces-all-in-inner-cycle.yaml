@@ -14,12 +14,12 @@ output: |
 rules:
   custom:
     - name: tau to void
-      pattern: |
+      match: |
         [[ !B1, !t -> !e, !B2 ]]
       result: |
         [[ !B1, !t -> ?, !B2 ]]
     - name: voids to empty
-      pattern: |
+      match: |
         [[ !t1 -> ?, !t2 -> ?, !t3 -> ?, ^ -> ? ]]
       result: |
         [[ ]]

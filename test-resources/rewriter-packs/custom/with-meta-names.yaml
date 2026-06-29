@@ -16,7 +16,7 @@ output: '{⟦⟧}'
 rules:
   custom:
     - name: custom
-      pattern: |
+      match: |
         ⟦
           𝜏1 ↦ ⟦
             a ↦ 𝑒-x,

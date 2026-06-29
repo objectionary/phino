@@ -2,5 +2,5 @@
 # SPDX-License-Identifier: MIT
 ---
 name: dca
-pattern: ⊥(α𝑖 ↦ 𝑒)
+match: ⊥(α𝑖 ↦ 𝑒)
 result: ⊥

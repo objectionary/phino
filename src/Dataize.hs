@@ -27,7 +27,7 @@ import Must (Must (..))
 import Rewriter (RewriteContext (RewriteContext), Rewritten, rewrite)
 import Rule (RuleContext (RuleContext), matchExpressionWithRule')
 import Text.Printf (printf)
-import Yaml (ExtraArgument (..), normalizationRules)
+import Yaml (ExtraArgument (..), normalizationRules, verb, verbArgs)
 import qualified Yaml as Y
 
 type Dataized = (Bytes, [Rewritten])
@@ -269,22 +269,6 @@ sidePremise univ ctx (subst, state) premise = do
     metaValue (TeAttribute value) = MvAttribute value
     metaValue (TeBytes value) = MvBytes value
     metaValue (TeBindings value) = MvBindings value
-
--- The build-term function name backing a premise operation.
-verb :: Y.Operation -> String
-verb (Y.OpMorph _) = "morph"
-verb (Y.OpNormalize _) = "normalize"
-verb (Y.OpEvaluate _ _) = "evaluate"
-verb (Y.OpContextualize _ _) = "contextualize"
-verb (Y.OpDataize _) = "dataize"
-
--- The build-term arguments backing a premise operation.
-verbArgs :: Y.Operation -> [ExtraArgument]
-verbArgs (Y.OpMorph expr) = [ArgExpression expr]
-verbArgs (Y.OpNormalize expr) = [ArgExpression expr]
-verbArgs (Y.OpEvaluate expr universe) = [ArgExpression expr, ArgExpression universe]
-verbArgs (Y.OpContextualize expr context) = [ArgExpression expr, ArgExpression context]
-verbArgs (Y.OpDataize expr) = [ArgExpression expr]
 
 leadsTo :: NonEmpty Rewritten -> String -> Expression -> DataizeContext -> IO (NonEmpty Rewritten)
 leadsTo ((prog, _) :| rest) rule expr DataizeContext{..} = do

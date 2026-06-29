@@ -10,9 +10,9 @@
 # with "0". Here we get back to program we started from and rewriting should
 # fail on this step.
 name: first
-pattern: ⟦ x -> !e ⟧
+match: ⟦ x -> !e ⟧
 result: Q.x(y -> !e1)
-where:
+premises:
   - meta: '!e1'
     function: sed
     args:

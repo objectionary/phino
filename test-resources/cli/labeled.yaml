@@ -3,5 +3,5 @@
 ---
 name: copy
 label: \lambda
-pattern: ⟦ 𝐵1, 𝜏 ↦ ∅, 𝐵2 ⟧(𝜏 ↦ 𝑘)
+match: ⟦ 𝐵1, 𝜏 ↦ ∅, 𝐵2 ⟧(𝜏 ↦ 𝑘)
 result: ⟦ 𝐵1, 𝜏 ↦ 𝑘, 𝐵2 ⟧

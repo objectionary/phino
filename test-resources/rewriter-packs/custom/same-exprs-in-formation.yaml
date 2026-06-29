@@ -7,5 +7,5 @@ output: |-
 rules:
   custom:
     - name: same-exrs
-      pattern: 'Q'
+      match: 'Q'
       result: '$'

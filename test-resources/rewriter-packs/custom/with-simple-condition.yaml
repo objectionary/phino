@@ -10,7 +10,7 @@ output: |-
 rules:
   custom:
     - name: with-simple-condition
-      pattern: '[[!B]].!t'
+      match: '[[!B]].!t'
       result: '[[!B]].@.!t'
       when:
         and:

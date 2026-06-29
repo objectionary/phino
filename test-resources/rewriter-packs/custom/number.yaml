@@ -10,9 +10,9 @@ output: |-
 rules:
   custom:
     - name: number
-      pattern: '[[ x -> !e1, y -> !e2 ]]'
+      match: '[[ x -> !e1, y -> !e2 ]]'
       result: '[[ x -> !e11, y -> !e22 ]]'
-      where:
+      premises:
         - meta: '!e11'
           function: number
           args: ['!e1']

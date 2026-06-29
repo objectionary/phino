@@ -18,9 +18,9 @@ output: |-
 rules:
   custom:
     - name: sed with slashes
-      pattern: '[[ x -> !e1, y -> !e2, z -> !e3, w -> !e4 ]]'
+      match: '[[ x -> !e1, y -> !e2, z -> !e3, w -> !e4 ]]'
       result: '[[ x -> !e11, y -> !e22, z -> !e33, w -> !e44 ]]'
-      where:
+      premises:
         - meta: '!e11'
           function: sed
           args:
