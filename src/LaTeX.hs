@@ -376,6 +376,7 @@ explainRule rule =
 explainMorphRule :: Y.MorphRule -> String
 explainMorphRule rule =
   inference
+    "phinoMorphingInference"
     rule.name
     rule.label
     rule.when
@@ -387,6 +388,7 @@ explainMorphRule rule =
 explainDataizeRule :: Y.DataizeRule -> String
 explainDataizeRule rule =
   inference
+    "phinoDataizationInference"
     rule.name
     rule.label
     rule.when
@@ -398,6 +400,7 @@ explainDataizeRule rule =
 explainContextualizeRule :: Y.ContextualizeRule -> String
 explainContextualizeRule rule =
   inference
+    "phinoContextualizationInference"
     rule.name
     rule.label
     Nothing
@@ -417,14 +420,14 @@ premiseToLatex premise = case premise.operation of
 
 -- Assemble an inference block from a name, optional label, optional side
 -- condition, the premise judgments and the conclusion judgment.
-inference :: String -> Maybe String -> Maybe Y.Condition -> [String] -> String -> String
-inference name label cond premises conclusion =
+inference :: String -> String -> Maybe String -> Maybe Y.Condition -> [String] -> String -> String
+inference env name label cond premises conclusion =
   intercalate "\n" $
-    ["\\begin{phinoInference}", "  \\phinoName{" ++ name ++ "}"]
+    ["\\begin{" ++ env ++ "}", "  \\phinoName{" ++ name ++ "}"]
       ++ maybe [] (\symbol -> ["  \\phinoLabel{" ++ symbol ++ "}"]) label
       ++ maybe [] (\rendered -> ["  \\phinoCondition{ " ++ rendered ++ " }"]) (conditionInLatex cond)
       ++ map (\premise -> "  \\phinoPremise{ " ++ premise ++ " }") premises
-      ++ ["  \\phinoConclusion{ " ++ conclusion ++ " }", "\\end{phinoInference}"]
+      ++ ["  \\phinoConclusion{ " ++ conclusion ++ " }", "\\end{" ++ env ++ "}"]
 
 renderExpr :: Expression -> String
 renderExpr expr = renderToLatex (expressionToCST expr) defaultLatexContext
