@@ -102,3 +102,6 @@ helpers under 'where'.
 Don't use single char variables like 'a', 'b'; use more meaningful names.
 If two functions does the same but have different amount of arguments - name
 them with apostrophe: foo, foo':
+Name an internal, 'where'-bound recursive worker 'go' (or 'goThing' when
+several coexist in one scope); reserve the apostrophe variant for genuine
+sibling functions, not hidden loops.
