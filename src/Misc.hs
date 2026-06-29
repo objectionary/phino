@@ -18,7 +18,6 @@ module Misc
   , uniqueBindings
   , uniqueBindings'
   , orThrow
-  , validateYamlObject
   , matchDataObject
   , pattern DataObject
   , pattern DataString
@@ -29,10 +28,6 @@ where
 
 import AST
 import Control.Exception
-import Control.Monad
-import Data.Aeson (Object)
-import qualified Data.Aeson.Key as Key
-import qualified Data.Aeson.KeyMap as KeyMap
 import Data.List (intercalate)
 import Data.Maybe (catMaybes)
 import qualified Data.Set as Set
@@ -200,14 +195,3 @@ fqnToAttrs expr = fqnToAttrs' expr <&> reverse
 -- 5.0
 toDouble :: Int -> Double
 toDouble = fromIntegral
-
-validateYamlObject :: (MonadFail a) => Object -> [String] -> a ()
-validateYamlObject v keys = do
-  let present = filter (`KeyMap.member` v) (map Key.fromString keys)
-      current = KeyMap.keys v
-  when
-    (length current > 1)
-    (fail ("Exactly one condition type is expected, when multiple condition types specified: " ++ show current))
-  when
-    (null present)
-    (fail (printf "Unknown condition type '%s', expected one of: %s" (show current) (show keys)))
