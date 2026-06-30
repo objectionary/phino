@@ -297,7 +297,7 @@ instance ToLaTeX META_HEAD where
   toLaTeX mh = mh
 
 instance ToLaTeX BYTES where
-  toLaTeX (BT_META meta) = BT_PIPED (BT_META (toLaTeX meta))
+  toLaTeX (BT_META meta) = BT_META (toLaTeX meta)
   toLaTeX bts = BT_PIPED bts
 
 instance ToLaTeX APP_ARG where
