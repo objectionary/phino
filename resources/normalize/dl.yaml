@@ -2,13 +2,13 @@
 # SPDX-License-Identifier: MIT
 ---
 name: dl
-pattern: ⟦𝐵⟧
+pattern: ⟦𝐵1, λ ⤍ 𝑓, 𝐵2⟧
 result: ⊥
 when:
-  and:
+  or:
     - in:
         - Δ
-        - 𝐵
+        - 𝐵1
     - in:
-        - λ
-        - 𝐵
+        - Δ
+        - 𝐵2

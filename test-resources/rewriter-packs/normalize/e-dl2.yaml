@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# 'dl' must terminate regardless of the order of the Δ and λ bindings, so
+# this mirrors 'e-dl' with λ placed before Δ.
+normalize: true
+input: |
+  {⟦ m ↦ ⟦ λ ⤍ Fn, Δ ⤍ 42- ⟧ ⟧}
+output: |-
+  {⟦ m ↦ ⊥ ⟧}
