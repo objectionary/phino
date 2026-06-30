@@ -74,6 +74,7 @@ data BYTES
   | BT_ONE String
   | BT_MANY [String]
   | BT_META META
+  | BT_PIPED BYTES -- bytes wrapped in vertical pipes, as the eolang LaTeX package expects
   deriving (Eq, Show)
 
 data META_HEAD
