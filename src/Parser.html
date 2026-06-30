@@ -46,7 +46,7 @@
 </span><span id="line-45"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="CouldNotParseExpression"><span class="annot"><a href="Parser.html#CouldNotParseExpression"><span class="hs-identifier hs-var">CouldNotParseExpression</span></a></span></span><span> </span><span class="hs-special">{</span><span id="message"><span class="annot"><a href="Parser.html#message"><span class="hs-identifier hs-var">message</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span class="hs-special">}</span><span>
 </span><span id="line-46"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="CouldNotParseAttribute"><span class="annot"><a href="Parser.html#CouldNotParseAttribute"><span class="hs-identifier hs-var">CouldNotParseAttribute</span></a></span></span><span> </span><span class="hs-special">{</span><span id="message"><span class="annot"><a href="Parser.html#message"><span class="hs-identifier hs-var">message</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span class="hs-special">}</span><span>
 </span><span id="line-47"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="CouldNotParseNumber"><span class="annot"><a href="Parser.html#CouldNotParseNumber"><span class="hs-identifier hs-var">CouldNotParseNumber</span></a></span></span><span> </span><span class="hs-special">{</span><span id="message"><span class="annot"><a href="Parser.html#message"><span class="hs-identifier hs-var">message</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span class="hs-special">}</span><span>
-</span><span id="line-48"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679248888"><span id="local-6989586621679248891"><span id="local-6989586621679248894"><span class="annot"><span class="annottext">Show ParserException
+</span><span id="line-48"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679248911"><span id="local-6989586621679248914"><span id="local-6989586621679248917"><span class="annot"><span class="annottext">Show ParserException
 Typeable ParserException
 (Typeable ParserException, Show ParserException) =&gt;
 (ParserException -&gt; SomeException)
@@ -100,40 +100,40 @@ displayException :: ParserException -&gt; String
 </span><a href="Parser.html#expression"><span class="hs-identifier hs-var">expression</span></a></span><span> </span><span class="annot"><span class="annottext">Parser String
 </span><a href="Parser.html#quotedStr"><span class="hs-identifier hs-var">quotedStr</span></a></span><span>
 </span><span id="line-61"></span><span>
-</span><span id="line-62"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679248911"><span id="local-6989586621679248915"><span class="annot"><span class="hs-identifier hs-type">Show</span></span><span> </span><span class="annot"><a href="Parser.html#ParserException"><span class="hs-identifier hs-type">ParserException</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-63"></span><span>  </span><span id="local-6989586621679248929"><span class="annot"><span class="annottext">show :: ParserException -&gt; String
-</span><a href="#local-6989586621679248929"><span class="hs-identifier hs-var hs-var hs-var hs-var">show</span></a></span></span><span> </span><span class="annot"><a href="Parser.html#CouldNotParseProgram"><span class="hs-identifier hs-type">CouldNotParseProgram</span></a></span><span class="hs-special">{</span><span id="local-6989586621679248931"><span class="annot"><span class="annottext">String
+</span><span id="line-62"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679248934"><span id="local-6989586621679248938"><span class="annot"><span class="hs-identifier hs-type">Show</span></span><span> </span><span class="annot"><a href="Parser.html#ParserException"><span class="hs-identifier hs-type">ParserException</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-63"></span><span>  </span><span id="local-6989586621679248952"><span class="annot"><span class="annottext">show :: ParserException -&gt; String
+</span><a href="#local-6989586621679248952"><span class="hs-identifier hs-var hs-var hs-var hs-var">show</span></a></span></span><span> </span><span class="annot"><a href="Parser.html#CouldNotParseProgram"><span class="hs-identifier hs-type">CouldNotParseProgram</span></a></span><span class="hs-special">{</span><span id="local-6989586621679248954"><span class="annot"><span class="annottext">String
 message :: ParserException -&gt; String
 message :: String
 </span><a href="Parser.html#message"><span class="hs-glyph hs-var hs-var">..</span></a></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; ShowS
 forall r. PrintfType r =&gt; String -&gt; r
 </span><span class="hs-identifier hs-var">printf</span></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;Couldn't parse given phi program, cause: %s&quot;</span></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679248931"><span class="hs-identifier hs-var">message</span></a></span><span>
-</span><span id="line-64"></span><span>  </span><span class="annot"><span class="hs-identifier hs-var">show</span></span><span> </span><span class="annot"><a href="Parser.html#CouldNotParseExpression"><span class="hs-identifier hs-type">CouldNotParseExpression</span></a></span><span class="hs-special">{</span><span id="local-6989586621679248932"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679248954"><span class="hs-identifier hs-var">message</span></a></span><span>
+</span><span id="line-64"></span><span>  </span><span class="annot"><span class="hs-identifier hs-var">show</span></span><span> </span><span class="annot"><a href="Parser.html#CouldNotParseExpression"><span class="hs-identifier hs-type">CouldNotParseExpression</span></a></span><span class="hs-special">{</span><span id="local-6989586621679248955"><span class="annot"><span class="annottext">String
 message :: ParserException -&gt; String
 message :: String
 </span><a href="Parser.html#message"><span class="hs-glyph hs-var hs-var">..</span></a></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; ShowS
 forall r. PrintfType r =&gt; String -&gt; r
 </span><span class="hs-identifier hs-var">printf</span></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;Couldn't parse given phi expression, cause: %s&quot;</span></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679248932"><span class="hs-identifier hs-var">message</span></a></span><span>
-</span><span id="line-65"></span><span>  </span><span class="annot"><span class="hs-identifier hs-var">show</span></span><span> </span><span class="annot"><a href="Parser.html#CouldNotParseAttribute"><span class="hs-identifier hs-type">CouldNotParseAttribute</span></a></span><span class="hs-special">{</span><span id="local-6989586621679248933"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679248955"><span class="hs-identifier hs-var">message</span></a></span><span>
+</span><span id="line-65"></span><span>  </span><span class="annot"><span class="hs-identifier hs-var">show</span></span><span> </span><span class="annot"><a href="Parser.html#CouldNotParseAttribute"><span class="hs-identifier hs-type">CouldNotParseAttribute</span></a></span><span class="hs-special">{</span><span id="local-6989586621679248956"><span class="annot"><span class="annottext">String
 message :: ParserException -&gt; String
 message :: String
 </span><a href="Parser.html#message"><span class="hs-glyph hs-var hs-var">..</span></a></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; ShowS
 forall r. PrintfType r =&gt; String -&gt; r
 </span><span class="hs-identifier hs-var">printf</span></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;Couldn't parse given attribute, cause: %s&quot;</span></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679248933"><span class="hs-identifier hs-var">message</span></a></span><span>
-</span><span id="line-66"></span><span>  </span><span class="annot"><span class="hs-identifier hs-var">show</span></span><span> </span><span class="annot"><a href="Parser.html#CouldNotParseNumber"><span class="hs-identifier hs-type">CouldNotParseNumber</span></a></span><span class="hs-special">{</span><span id="local-6989586621679248934"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679248956"><span class="hs-identifier hs-var">message</span></a></span><span>
+</span><span id="line-66"></span><span>  </span><span class="annot"><span class="hs-identifier hs-var">show</span></span><span> </span><span class="annot"><a href="Parser.html#CouldNotParseNumber"><span class="hs-identifier hs-type">CouldNotParseNumber</span></a></span><span class="hs-special">{</span><span id="local-6989586621679248957"><span class="annot"><span class="annottext">String
 message :: ParserException -&gt; String
 message :: String
 </span><a href="Parser.html#message"><span class="hs-glyph hs-var hs-var">..</span></a></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; ShowS
 forall r. PrintfType r =&gt; String -&gt; r
 </span><span class="hs-identifier hs-var">printf</span></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;Couldn't parse given number to '&#934;.number', cause: %s&quot;</span></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679248934"><span class="hs-identifier hs-var">message</span></a></span><span>
+</span><a href="#local-6989586621679248957"><span class="hs-identifier hs-var">message</span></a></span><span>
 </span><span id="line-67"></span><span>
 </span><span id="line-68"></span><span class="hs-comment">-- White space consumer</span><span>
 </span><span id="line-69"></span><span class="annot"><a href="Parser.html#whiteSpace"><span class="hs-identifier hs-type">whiteSpace</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Parser.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
@@ -155,7 +155,7 @@ forall (f :: * -&gt; *) a. Alternative f =&gt; f a
 </span><span class="hs-identifier hs-var">empty</span></span><span>
 </span><span id="line-71"></span><span>
 </span><span id="line-72"></span><span class="hs-comment">-- Lexeme that ignores white spaces after</span><span>
-</span><span id="line-73"></span><span id="local-6989586621679248387"><span class="annot"><a href="Parser.html#lexeme"><span class="hs-identifier hs-type">lexeme</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Parser.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679248387"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Parser.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679248387"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-73"></span><span id="local-6989586621679248410"><span class="annot"><a href="Parser.html#lexeme"><span class="hs-identifier hs-type">lexeme</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Parser.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679248410"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Parser.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679248410"><span class="hs-identifier hs-type">a</span></a></span></span><span>
 </span><span id="line-74"></span><span id="lexeme"><span class="annot"><span class="annottext">lexeme :: forall a. Parser a -&gt; Parser a
 </span><a href="Parser.html#lexeme"><span class="hs-identifier hs-var hs-var">lexeme</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Parser ()
 -&gt; ParsecT Void String Identity a -&gt; ParsecT Void String Identity a
@@ -182,16 +182,16 @@ forall a. Parser a -&gt; Parser a
 </span><a href="Parser.html#lexeme"><span class="hs-identifier hs-var">lexeme</span></a></span><span> </span><span class="annot"><span class="annottext">(Parser Text -&gt; Parser Text) -&gt; Parser Text -&gt; Parser Text
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-83"></span><span>  </span><span id="local-6989586621679248945"><span class="annot"><span class="annottext">Char
-</span><a href="#local-6989586621679248945"><span class="hs-identifier hs-var">first</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">[Token String] -&gt; ParsecT Void String Identity (Token String)
+</span><span id="line-83"></span><span>  </span><span id="local-6989586621679248968"><span class="annot"><span class="annottext">Char
+</span><a href="#local-6989586621679248968"><span class="hs-identifier hs-var">first</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">[Token String] -&gt; ParsecT Void String Identity (Token String)
 forall (f :: * -&gt; *) e s (m :: * -&gt; *).
 (Foldable f, MonadParsec e s m) =&gt;
 f (Token s) -&gt; m (Token s)
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/mgprsc-9.8.1-d0e806a4/share/doc/html/src/Text.Megaparsec.html#oneOf"><span class="hs-identifier hs-var">oneOf</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Char
 </span><span class="hs-char">'a'</span></span><span> </span><span class="hs-glyph">..</span><span> </span><span class="annot"><span class="annottext">Char
 </span><span class="hs-char">'z'</span></span><span class="hs-special">]</span><span>
-</span><span id="line-84"></span><span>  </span><span id="local-6989586621679248947"><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679248947"><span class="hs-identifier hs-var">rest</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">ParsecT Void String Identity Char -&gt; Parser String
+</span><span id="line-84"></span><span>  </span><span id="local-6989586621679248970"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679248970"><span class="hs-identifier hs-var">rest</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">ParsecT Void String Identity Char -&gt; Parser String
 forall (m :: * -&gt; *) a. MonadPlus m =&gt; m a -&gt; m [a]
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/prsr-cmbntrs-1.3.1-35b4fd22/share/doc/html/src/Control.Monad.Combinators.html#many"><span class="hs-identifier hs-var">many</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Token String -&gt; Bool)
 -&gt; ParsecT Void String Identity (Token String)
@@ -214,10 +214,10 @@ forall a. a -&gt; ParsecT Void String Identity a
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String -&gt; Text
 </span><span class="hs-identifier hs-var">T.pack</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Char
-</span><a href="#local-6989586621679248945"><span class="hs-identifier hs-var">first</span></a></span><span> </span><span class="annot"><span class="annottext">Char -&gt; ShowS
+</span><a href="#local-6989586621679248968"><span class="hs-identifier hs-var">first</span></a></span><span> </span><span class="annot"><span class="annottext">Char -&gt; ShowS
 forall a. a -&gt; [a] -&gt; [a]
 </span><span class="hs-glyph hs-var">:</span></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679248947"><span class="hs-identifier hs-var">rest</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679248970"><span class="hs-identifier hs-var">rest</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
 </span><span id="line-86"></span><span>
 </span><span id="line-87"></span><span class="annot"><a href="Parser.html#function"><span class="hs-identifier hs-type">function</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Parser.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
 </span><span id="line-88"></span><span id="function"><span class="annot"><span class="annottext">function :: Parser String
@@ -226,16 +226,16 @@ forall a. Parser a -&gt; Parser a
 </span><a href="Parser.html#lexeme"><span class="hs-identifier hs-var">lexeme</span></a></span><span> </span><span class="annot"><span class="annottext">(Parser String -&gt; Parser String) -&gt; Parser String -&gt; Parser String
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-89"></span><span>  </span><span id="local-6989586621679248954"><span class="annot"><span class="annottext">Char
-</span><a href="#local-6989586621679248954"><span class="hs-identifier hs-var">first</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">[Token String] -&gt; ParsecT Void String Identity (Token String)
+</span><span id="line-89"></span><span>  </span><span id="local-6989586621679248977"><span class="annot"><span class="annottext">Char
+</span><a href="#local-6989586621679248977"><span class="hs-identifier hs-var">first</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">[Token String] -&gt; ParsecT Void String Identity (Token String)
 forall (f :: * -&gt; *) e s (m :: * -&gt; *).
 (Foldable f, MonadParsec e s m) =&gt;
 f (Token s) -&gt; m (Token s)
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/mgprsc-9.8.1-d0e806a4/share/doc/html/src/Text.Megaparsec.html#oneOf"><span class="hs-identifier hs-var">oneOf</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Char
 </span><span class="hs-char">'A'</span></span><span> </span><span class="hs-glyph">..</span><span> </span><span class="annot"><span class="annottext">Char
 </span><span class="hs-char">'Z'</span></span><span class="hs-special">]</span><span>
-</span><span id="line-90"></span><span>  </span><span id="local-6989586621679248955"><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679248955"><span class="hs-identifier hs-var">rest</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span>
+</span><span id="line-90"></span><span>  </span><span id="local-6989586621679248978"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679248978"><span class="hs-identifier hs-var">rest</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span>
 </span><span id="line-91"></span><span>    </span><span class="annot"><span class="annottext">ParsecT Void String Identity Char -&gt; Parser String
 forall (m :: * -&gt; *) a. MonadPlus m =&gt; m a -&gt; m [a]
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/prsr-cmbntrs-1.3.1-35b4fd22/share/doc/html/src/Control.Monad.Combinators.html#many"><span class="hs-identifier hs-var">many</span></a></span><span>
@@ -245,24 +245,24 @@ forall e s (m :: * -&gt; *).
 MonadParsec e s m =&gt;
 (Token s -&gt; Bool) -&gt; m (Token s)
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/mgprsc-9.8.1-d0e806a4/share/doc/html/src/Text.Megaparsec.html#satisfy"><span class="hs-identifier hs-var">satisfy</span></a></span><span>
-</span><span id="line-93"></span><span>          </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span id="local-6989586621679248956"><span class="annot"><span class="annottext">Token String
-</span><a href="#local-6989586621679248956"><span class="hs-identifier hs-var">ch</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Char -&gt; Bool
+</span><span id="line-93"></span><span>          </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span id="local-6989586621679248979"><span class="annot"><span class="annottext">Token String
+</span><a href="#local-6989586621679248979"><span class="hs-identifier hs-var">ch</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Char -&gt; Bool
 </span><span class="hs-identifier hs-var">isDigit</span></span><span> </span><span class="annot"><span class="annottext">Char
 Token String
-</span><a href="#local-6989586621679248956"><span class="hs-identifier hs-var">ch</span></a></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
+</span><a href="#local-6989586621679248979"><span class="hs-identifier hs-var">ch</span></a></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
 </span><span class="hs-operator hs-var">||</span></span><span> </span><span class="annot"><span class="annottext">Char -&gt; Bool
 </span><span class="hs-identifier hs-var">isAsciiLower</span></span><span> </span><span class="annot"><span class="annottext">Char
 Token String
-</span><a href="#local-6989586621679248956"><span class="hs-identifier hs-var">ch</span></a></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
+</span><a href="#local-6989586621679248979"><span class="hs-identifier hs-var">ch</span></a></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
 </span><span class="hs-operator hs-var">||</span></span><span> </span><span class="annot"><span class="annottext">Char
 Token String
-</span><a href="#local-6989586621679248956"><span class="hs-identifier hs-var">ch</span></a></span><span> </span><span class="annot"><span class="annottext">Char -&gt; Char -&gt; Bool
+</span><a href="#local-6989586621679248979"><span class="hs-identifier hs-var">ch</span></a></span><span> </span><span class="annot"><span class="annottext">Char -&gt; Char -&gt; Bool
 forall a. Eq a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">Char
 </span><span class="hs-char">'_'</span></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
 </span><span class="hs-operator hs-var">||</span></span><span> </span><span class="annot"><span class="annottext">Char
 Token String
-</span><a href="#local-6989586621679248956"><span class="hs-identifier hs-var">ch</span></a></span><span> </span><span class="annot"><span class="annottext">Char -&gt; Char -&gt; Bool
+</span><a href="#local-6989586621679248979"><span class="hs-identifier hs-var">ch</span></a></span><span> </span><span class="annot"><span class="annottext">Char -&gt; Char -&gt; Bool
 forall a. Eq a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">Char
 </span><span class="hs-char">'&#966;'</span></span><span class="hs-special">)</span><span>
@@ -278,10 +278,10 @@ m a -&gt; String -&gt; m a
 forall a. a -&gt; ParsecT Void String Identity a
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Char
-</span><a href="#local-6989586621679248954"><span class="hs-identifier hs-var">first</span></a></span><span> </span><span class="annot"><span class="annottext">Char -&gt; ShowS
+</span><a href="#local-6989586621679248977"><span class="hs-identifier hs-var">first</span></a></span><span> </span><span class="annot"><span class="annottext">Char -&gt; ShowS
 forall a. a -&gt; [a] -&gt; [a]
 </span><span class="hs-glyph hs-var">:</span></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679248955"><span class="hs-identifier hs-var">rest</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679248978"><span class="hs-identifier hs-var">rest</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-97"></span><span>
 </span><span id="line-98"></span><span class="annot"><a href="Parser.html#delta"><span class="hs-identifier hs-type">delta</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Parser.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
 </span><span id="line-99"></span><span id="delta"><span class="annot"><span class="annottext">delta :: Parser String
@@ -394,8 +394,8 @@ m a -&gt; String -&gt; m a
 </span><span id="line-124"></span><span class="hs-comment">-- Meta variable names are packed to Text once here; all AST meta fields are Text</span><span>
 </span><span id="line-125"></span><span class="annot"><a href="Parser.html#meta"><span class="hs-identifier hs-type">meta</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Char</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Parser.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">T.Text</span></span><span>
 </span><span id="line-126"></span><span id="meta"><span class="annot"><span class="annottext">meta :: Char -&gt; Parser Text
-</span><a href="Parser.html#meta"><span class="hs-identifier hs-var hs-var">meta</span></a></span></span><span> </span><span id="local-6989586621679248966"><span class="annot"><span class="annottext">Char
-</span><a href="#local-6989586621679248966"><span class="hs-identifier hs-var">ch</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><a href="Parser.html#meta"><span class="hs-identifier hs-var hs-var">meta</span></a></span></span><span> </span><span id="local-6989586621679248989"><span class="annot"><span class="annottext">Char
+</span><a href="#local-6989586621679248989"><span class="hs-identifier hs-var">ch</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
 </span><span id="line-127"></span><span>  </span><span class="annot"><span class="annottext">Char
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Token String -&gt; ParsecT Void String Identity (Token String)
 forall e s (m :: * -&gt; *).
@@ -404,32 +404,32 @@ Token s -&gt; m (Token s)
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/mgprsc-9.8.1-d0e806a4/share/doc/html/src/Text.Megaparsec.Char.html#char"><span class="hs-identifier hs-var">char</span></a></span><span> </span><span class="annot"><span class="annottext">Char
 Token String
 </span><span class="hs-char">'!'</span></span><span>
-</span><span id="line-128"></span><span>  </span><span id="local-6989586621679248968"><span class="annot"><span class="annottext">Char
-</span><a href="#local-6989586621679248968"><span class="hs-identifier hs-var">c</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Token String -&gt; ParsecT Void String Identity (Token String)
+</span><span id="line-128"></span><span>  </span><span id="local-6989586621679248991"><span class="annot"><span class="annottext">Char
+</span><a href="#local-6989586621679248991"><span class="hs-identifier hs-var">c</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Token String -&gt; ParsecT Void String Identity (Token String)
 forall e s (m :: * -&gt; *).
 (MonadParsec e s m, Token s ~ Char) =&gt;
 Token s -&gt; m (Token s)
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/mgprsc-9.8.1-d0e806a4/share/doc/html/src/Text.Megaparsec.Char.html#char"><span class="hs-identifier hs-var">char</span></a></span><span> </span><span class="annot"><span class="annottext">Char
 Token String
-</span><a href="#local-6989586621679248966"><span class="hs-identifier hs-var">ch</span></a></span><span>
-</span><span id="line-129"></span><span>  </span><span id="local-6989586621679248969"><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679248969"><span class="hs-identifier hs-var">suf</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Parser String
+</span><a href="#local-6989586621679248989"><span class="hs-identifier hs-var">ch</span></a></span><span>
+</span><span id="line-129"></span><span>  </span><span id="local-6989586621679248992"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679248992"><span class="hs-identifier hs-var">suf</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Parser String
 </span><a href="Parser.html#metaSuffix"><span class="hs-identifier hs-var">metaSuffix</span></a></span><span>
 </span><span id="line-130"></span><span>  </span><span class="annot"><span class="annottext">Text -&gt; Parser Text
 forall a. a -&gt; ParsecT Void String Identity a
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String -&gt; Text
 </span><span class="hs-identifier hs-var">T.pack</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Char
-</span><a href="#local-6989586621679248968"><span class="hs-identifier hs-var">c</span></a></span><span> </span><span class="annot"><span class="annottext">Char -&gt; ShowS
+</span><a href="#local-6989586621679248991"><span class="hs-identifier hs-var">c</span></a></span><span> </span><span class="annot"><span class="annottext">Char -&gt; ShowS
 forall a. a -&gt; [a] -&gt; [a]
 </span><span class="hs-glyph hs-var">:</span></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679248969"><span class="hs-identifier hs-var">suf</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679248992"><span class="hs-identifier hs-var">suf</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
 </span><span id="line-131"></span><span>
 </span><span id="line-132"></span><span class="annot"><a href="Parser.html#meta%27"><span class="hs-identifier hs-type">meta'</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Char</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Parser.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">T.Text</span></span><span>
 </span><span id="line-133"></span><span id="meta%27"><span class="annot"><span class="annottext">meta' :: Char -&gt; String -&gt; Parser Text
-</span><a href="Parser.html#meta%27"><span class="hs-identifier hs-var hs-var">meta'</span></a></span></span><span> </span><span id="local-6989586621679248971"><span class="annot"><span class="annottext">Char
-</span><a href="#local-6989586621679248971"><span class="hs-identifier hs-var">ch</span></a></span></span><span> </span><span id="local-6989586621679248972"><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679248972"><span class="hs-identifier hs-var">uni</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><a href="Parser.html#meta%27"><span class="hs-identifier hs-var hs-var">meta'</span></a></span></span><span> </span><span id="local-6989586621679248994"><span class="annot"><span class="annottext">Char
+</span><a href="#local-6989586621679248994"><span class="hs-identifier hs-var">ch</span></a></span></span><span> </span><span id="local-6989586621679248995"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679248995"><span class="hs-identifier hs-var">uni</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-134"></span><span>  </span><span class="annot"><span class="annottext">[Parser Text] -&gt; Parser Text
 forall (f :: * -&gt; *) (m :: * -&gt; *) a.
 (Foldable f, Alternative m) =&gt;
@@ -437,7 +437,7 @@ f (m a) -&gt; m a
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/prsr-cmbntrs-1.3.1-35b4fd22/share/doc/html/src/Control.Applicative.Combinators.html#choice"><span class="hs-identifier hs-var">choice</span></a></span><span>
 </span><span id="line-135"></span><span>    </span><span class="hs-special">[</span><span> </span><span class="annot"><span class="annottext">Char -&gt; Parser Text
 </span><a href="Parser.html#meta"><span class="hs-identifier hs-var">meta</span></a></span><span> </span><span class="annot"><span class="annottext">Char
-</span><a href="#local-6989586621679248971"><span class="hs-identifier hs-var">ch</span></a></span><span>
+</span><a href="#local-6989586621679248994"><span class="hs-identifier hs-var">ch</span></a></span><span>
 </span><span id="line-136"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="hs-keyword">do</span><span>
 </span><span id="line-137"></span><span>        </span><span class="annot"><span class="annottext">Tokens String
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Tokens String -&gt; ParsecT Void String Identity (Tokens String)
@@ -446,26 +446,26 @@ MonadParsec e s m =&gt;
 Tokens s -&gt; m (Tokens s)
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/mgprsc-9.8.1-d0e806a4/share/doc/html/src/Text.Megaparsec.Common.html#string"><span class="hs-identifier hs-var">string</span></a></span><span> </span><span class="annot"><span class="annottext">String
 Tokens String
-</span><a href="#local-6989586621679248972"><span class="hs-identifier hs-var">uni</span></a></span><span>
-</span><span id="line-138"></span><span>        </span><span id="local-6989586621679248974"><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679248974"><span class="hs-identifier hs-var">suf</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Parser String
+</span><a href="#local-6989586621679248995"><span class="hs-identifier hs-var">uni</span></a></span><span>
+</span><span id="line-138"></span><span>        </span><span id="local-6989586621679248997"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679248997"><span class="hs-identifier hs-var">suf</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Parser String
 </span><a href="Parser.html#metaSuffix"><span class="hs-identifier hs-var">metaSuffix</span></a></span><span>
 </span><span id="line-139"></span><span>        </span><span class="annot"><span class="annottext">Text -&gt; Parser Text
 forall a. a -&gt; ParsecT Void String Identity a
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String -&gt; Text
 </span><span class="hs-identifier hs-var">T.pack</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Char
-</span><a href="#local-6989586621679248971"><span class="hs-identifier hs-var">ch</span></a></span><span> </span><span class="annot"><span class="annottext">Char -&gt; ShowS
+</span><a href="#local-6989586621679248994"><span class="hs-identifier hs-var">ch</span></a></span><span> </span><span class="annot"><span class="annottext">Char -&gt; ShowS
 forall a. a -&gt; [a] -&gt; [a]
 </span><span class="hs-glyph hs-var">:</span></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679248974"><span class="hs-identifier hs-var">suf</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679248997"><span class="hs-identifier hs-var">suf</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
 </span><span id="line-140"></span><span>    </span><span class="hs-special">]</span><span>
 </span><span id="line-141"></span><span>
 </span><span id="line-142"></span><span class="annot"><a href="Parser.html#byte"><span class="hs-identifier hs-type">byte</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Parser.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
 </span><span id="line-143"></span><span id="byte"><span class="annot"><span class="annottext">byte :: Parser String
 </span><a href="Parser.html#byte"><span class="hs-identifier hs-var hs-var">byte</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-144"></span><span>  </span><span id="local-6989586621679248976"><span class="annot"><span class="annottext">Char
-</span><a href="#local-6989586621679248976"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">ParsecT Void String Identity Char
+</span><span id="line-144"></span><span>  </span><span id="local-6989586621679248999"><span class="annot"><span class="annottext">Char
+</span><a href="#local-6989586621679248999"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">ParsecT Void String Identity Char
 ParsecT Void String Identity (Token String)
 forall e s (m :: * -&gt; *).
 (MonadParsec e s m, Token s ~ Char) =&gt;
@@ -480,9 +480,9 @@ ParsecT Void String Identity a
 forall (m :: * -&gt; *) a b. Monad m =&gt; m a -&gt; (a -&gt; m b) -&gt; m b
 </span><span class="hs-operator hs-var">&gt;&gt;=</span></span><span> </span><span class="annot"><span class="annottext">Char -&gt; ParsecT Void String Identity Char
 forall {m :: * -&gt; *}. MonadFail m =&gt; Char -&gt; m Char
-</span><a href="#local-6989586621679248978"><span class="hs-identifier hs-var">upperHex</span></a></span><span>
-</span><span id="line-145"></span><span>  </span><span id="local-6989586621679248979"><span class="annot"><span class="annottext">Char
-</span><a href="#local-6989586621679248979"><span class="hs-identifier hs-var">s</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">ParsecT Void String Identity Char
+</span><a href="#local-6989586621679249001"><span class="hs-identifier hs-var">upperHex</span></a></span><span>
+</span><span id="line-145"></span><span>  </span><span id="local-6989586621679249002"><span class="annot"><span class="annottext">Char
+</span><a href="#local-6989586621679249002"><span class="hs-identifier hs-var">s</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">ParsecT Void String Identity Char
 ParsecT Void String Identity (Token String)
 forall e s (m :: * -&gt; *).
 (MonadParsec e s m, Token s ~ Char) =&gt;
@@ -497,34 +497,34 @@ ParsecT Void String Identity a
 forall (m :: * -&gt; *) a b. Monad m =&gt; m a -&gt; (a -&gt; m b) -&gt; m b
 </span><span class="hs-operator hs-var">&gt;&gt;=</span></span><span> </span><span class="annot"><span class="annottext">Char -&gt; ParsecT Void String Identity Char
 forall {m :: * -&gt; *}. MonadFail m =&gt; Char -&gt; m Char
-</span><a href="#local-6989586621679248978"><span class="hs-identifier hs-var">upperHex</span></a></span><span>
+</span><a href="#local-6989586621679249001"><span class="hs-identifier hs-var">upperHex</span></a></span><span>
 </span><span id="line-146"></span><span>  </span><span class="annot"><span class="annottext">String -&gt; Parser String
 forall a. a -&gt; ParsecT Void String Identity a
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Char
-</span><a href="#local-6989586621679248976"><span class="hs-identifier hs-var">f</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Char
-</span><a href="#local-6989586621679248979"><span class="hs-identifier hs-var">s</span></a></span><span class="hs-special">]</span><span>
+</span><a href="#local-6989586621679248999"><span class="hs-identifier hs-var">f</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Char
+</span><a href="#local-6989586621679249002"><span class="hs-identifier hs-var">s</span></a></span><span class="hs-special">]</span><span>
 </span><span id="line-147"></span><span>  </span><span class="hs-keyword">where</span><span>
-</span><span id="line-148"></span><span>    </span><span id="local-6989586621679248978"><span class="annot"><span class="annottext">upperHex :: Char -&gt; m Char
-</span><a href="#local-6989586621679248978"><span class="hs-identifier hs-var hs-var">upperHex</span></a></span></span><span> </span><span id="local-6989586621679248998"><span class="annot"><span class="annottext">Char
-</span><a href="#local-6989586621679248998"><span class="hs-identifier hs-var">ch</span></a></span></span><span>
+</span><span id="line-148"></span><span>    </span><span id="local-6989586621679249001"><span class="annot"><span class="annottext">upperHex :: Char -&gt; m Char
+</span><a href="#local-6989586621679249001"><span class="hs-identifier hs-var hs-var">upperHex</span></a></span></span><span> </span><span id="local-6989586621679249021"><span class="annot"><span class="annottext">Char
+</span><a href="#local-6989586621679249021"><span class="hs-identifier hs-var">ch</span></a></span></span><span>
 </span><span id="line-149"></span><span>      </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Char -&gt; Bool
 </span><span class="hs-identifier hs-var">isDigit</span></span><span> </span><span class="annot"><span class="annottext">Char
-</span><a href="#local-6989586621679248998"><span class="hs-identifier hs-var">ch</span></a></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
+</span><a href="#local-6989586621679249021"><span class="hs-identifier hs-var">ch</span></a></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
 </span><span class="hs-operator hs-var">||</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Char
 </span><span class="hs-char">'A'</span></span><span> </span><span class="annot"><span class="annottext">Char -&gt; Char -&gt; Bool
 forall a. Ord a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">&lt;=</span></span><span> </span><span class="annot"><span class="annottext">Char
-</span><a href="#local-6989586621679248998"><span class="hs-identifier hs-var">ch</span></a></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
+</span><a href="#local-6989586621679249021"><span class="hs-identifier hs-var">ch</span></a></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
 </span><span class="hs-operator hs-var">&amp;&amp;</span></span><span> </span><span class="annot"><span class="annottext">Char
-</span><a href="#local-6989586621679248998"><span class="hs-identifier hs-var">ch</span></a></span><span> </span><span class="annot"><span class="annottext">Char -&gt; Char -&gt; Bool
+</span><a href="#local-6989586621679249021"><span class="hs-identifier hs-var">ch</span></a></span><span> </span><span class="annot"><span class="annottext">Char -&gt; Char -&gt; Bool
 forall a. Ord a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">&lt;=</span></span><span> </span><span class="annot"><span class="annottext">Char
 </span><span class="hs-char">'F'</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Char -&gt; m Char
 forall a. a -&gt; m a
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Char
-</span><a href="#local-6989586621679248998"><span class="hs-identifier hs-var">ch</span></a></span><span>
+</span><a href="#local-6989586621679249021"><span class="hs-identifier hs-var">ch</span></a></span><span>
 </span><span id="line-150"></span><span>      </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
 </span><span class="hs-identifier hs-var">otherwise</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; m Char
 forall a. String -&gt; m a
@@ -535,7 +535,7 @@ forall a. [a] -&gt; [a] -&gt; [a]
 </span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">Char -&gt; String
 forall a. Show a =&gt; a -&gt; String
 </span><span class="hs-identifier hs-var">show</span></span><span> </span><span class="annot"><span class="annottext">Char
-</span><a href="#local-6989586621679248998"><span class="hs-identifier hs-var">ch</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679249021"><span class="hs-identifier hs-var">ch</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-151"></span><span>
 </span><span id="line-152"></span><span class="hs-comment">-- bytes</span><span>
 </span><span id="line-153"></span><span class="hs-comment">-- 0. meta: !b</span><span>
@@ -578,11 +578,11 @@ forall e s (m :: * -&gt; *) a. MonadParsec e s m =&gt; m a -&gt; m a
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/mgprsc-9.8.1-d0e806a4/share/doc/html/src/Text.Megaparsec.Class.html#try"><span class="hs-identifier hs-var">try</span></a></span><span> </span><span class="annot"><span class="annottext">(Parser Bytes -&gt; Parser Bytes) -&gt; Parser Bytes -&gt; Parser Bytes
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-164"></span><span>            </span><span id="local-6989586621679249006"><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679249006"><span class="hs-identifier hs-var">first</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Parser String
+</span><span id="line-164"></span><span>            </span><span id="local-6989586621679249029"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679249029"><span class="hs-identifier hs-var">first</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Parser String
 </span><a href="Parser.html#byte"><span class="hs-identifier hs-var">byte</span></a></span><span>
-</span><span id="line-165"></span><span>            </span><span id="local-6989586621679249007"><span class="annot"><span class="annottext">[String]
-</span><a href="#local-6989586621679249007"><span class="hs-identifier hs-var">rest</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Parser String -&gt; ParsecT Void String Identity [String]
+</span><span id="line-165"></span><span>            </span><span id="local-6989586621679249030"><span class="annot"><span class="annottext">[String]
+</span><a href="#local-6989586621679249030"><span class="hs-identifier hs-var">rest</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Parser String -&gt; ParsecT Void String Identity [String]
 forall (m :: * -&gt; *) a. MonadPlus m =&gt; m a -&gt; m [a]
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/prsr-cmbntrs-1.3.1-35b4fd22/share/doc/html/src/Control.Monad.Combinators.html#some"><span class="hs-identifier hs-var">some</span></a></span><span> </span><span class="annot"><span class="annottext">(Parser String -&gt; ParsecT Void String Identity [String])
 -&gt; Parser String -&gt; ParsecT Void String Identity [String]
@@ -603,13 +603,13 @@ forall a. a -&gt; ParsecT Void String Identity a
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[String] -&gt; Bytes
 </span><a href="AST.html#BtMany"><span class="hs-identifier hs-var">BtMany</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679249006"><span class="hs-identifier hs-var">first</span></a></span><span> </span><span class="annot"><span class="annottext">String -&gt; [String] -&gt; [String]
+</span><a href="#local-6989586621679249029"><span class="hs-identifier hs-var">first</span></a></span><span> </span><span class="annot"><span class="annottext">String -&gt; [String] -&gt; [String]
 forall a. a -&gt; [a] -&gt; [a]
 </span><span class="hs-glyph hs-var">:</span></span><span> </span><span class="annot"><span class="annottext">[String]
-</span><a href="#local-6989586621679249007"><span class="hs-identifier hs-var">rest</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679249030"><span class="hs-identifier hs-var">rest</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
 </span><span id="line-169"></span><span>        </span><span class="hs-special">,</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-170"></span><span>            </span><span id="local-6989586621679249010"><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679249010"><span class="hs-identifier hs-var">bte</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Parser String
+</span><span id="line-170"></span><span>            </span><span id="local-6989586621679249033"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679249033"><span class="hs-identifier hs-var">bte</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Parser String
 </span><a href="Parser.html#byte"><span class="hs-identifier hs-var">byte</span></a></span><span>
 </span><span id="line-171"></span><span>            </span><span class="annot"><span class="annottext">Char
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Token String -&gt; ParsecT Void String Identity (Token String)
@@ -624,7 +624,7 @@ forall a. a -&gt; ParsecT Void String Identity a
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String -&gt; Bytes
 </span><a href="AST.html#BtOne"><span class="hs-identifier hs-var">BtOne</span></a></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679249010"><span class="hs-identifier hs-var">bte</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679249033"><span class="hs-identifier hs-var">bte</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-173"></span><span>        </span><span class="hs-special">]</span><span>
 </span><span id="line-174"></span><span>        </span><span class="annot"><span class="annottext">Parser Bytes -&gt; String -&gt; Parser Bytes
 forall e s (m :: * -&gt; *) a.
@@ -637,8 +637,8 @@ m a -&gt; String -&gt; m a
 </span><span id="line-177"></span><span class="annot"><a href="Parser.html#number"><span class="hs-identifier hs-type">number</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Parser.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span>
 </span><span id="line-178"></span><span id="number"><span class="annot"><span class="annottext">number :: Parser Expression
 </span><a href="Parser.html#number"><span class="hs-identifier hs-var hs-var">number</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-179"></span><span>  </span><span id="local-6989586621679249013"><span class="annot"><span class="annottext">Maybe Char
-</span><a href="#local-6989586621679249013"><span class="hs-identifier hs-var">sign</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">ParsecT Void String Identity Char
+</span><span id="line-179"></span><span>  </span><span id="local-6989586621679249036"><span class="annot"><span class="annottext">Maybe Char
+</span><a href="#local-6989586621679249036"><span class="hs-identifier hs-var">sign</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">ParsecT Void String Identity Char
 -&gt; ParsecT Void String Identity (Maybe Char)
 forall (f :: * -&gt; *) a. Alternative f =&gt; f a -&gt; f (Maybe a)
 </span><span class="hs-identifier hs-var">optional</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[ParsecT Void String Identity Char]
@@ -659,8 +659,8 @@ Token s -&gt; m (Token s)
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/mgprsc-9.8.1-d0e806a4/share/doc/html/src/Text.Megaparsec.Char.html#char"><span class="hs-identifier hs-var">char</span></a></span><span> </span><span class="annot"><span class="annottext">Char
 Token String
 </span><span class="hs-char">'+'</span></span><span class="hs-special">]</span><span class="hs-special">)</span><span>
-</span><span id="line-180"></span><span>  </span><span id="local-6989586621679249015"><span class="annot"><span class="annottext">Scientific
-</span><a href="#local-6989586621679249015"><span class="hs-identifier hs-var">unsigned</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Parser Scientific -&gt; Parser Scientific
+</span><span id="line-180"></span><span>  </span><span id="local-6989586621679249038"><span class="annot"><span class="annottext">Scientific
+</span><a href="#local-6989586621679249038"><span class="hs-identifier hs-var">unsigned</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Parser Scientific -&gt; Parser Scientific
 forall a. Parser a -&gt; Parser a
 </span><a href="Parser.html#lexeme"><span class="hs-identifier hs-var">lexeme</span></a></span><span> </span><span class="annot"><span class="annottext">Parser Scientific
 forall e s (m :: * -&gt; *).
@@ -676,7 +676,7 @@ forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span id="line-183"></span><span>        </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="annottext">Double -&gt; Bytes
 </span><a href="Misc.html#numToBts"><span class="hs-identifier hs-var">numToBts</span></a></span><span>
 </span><span id="line-184"></span><span>            </span><span class="hs-special">(</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Maybe Char
-</span><a href="#local-6989586621679249013"><span class="hs-identifier hs-var">sign</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><a href="#local-6989586621679249036"><span class="hs-identifier hs-var">sign</span></a></span><span> </span><span class="hs-keyword">of</span><span>
 </span><span id="line-185"></span><span>                </span><span class="hs-comment">-- Negate the Double rather than the Scientific so that a zero</span><span>
 </span><span id="line-186"></span><span>                </span><span class="hs-comment">-- literal preserves its sign: Scientific has no negative zero,</span><span>
 </span><span id="line-187"></span><span>                </span><span class="hs-comment">-- but negate on Double yields -0.0, a distinct IEEE-754 value.</span><span>
@@ -686,12 +686,12 @@ forall a. Num a =&gt; a -&gt; a
 </span><span class="hs-identifier hs-var">negate</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Scientific -&gt; Double
 forall a. RealFloat a =&gt; Scientific -&gt; a
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/scntfc-0.3.8.1-f16a547a/share/doc/html/src/Data.Scientific.html#toRealFloat"><span class="hs-identifier hs-var">toRealFloat</span></a></span><span> </span><span class="annot"><span class="annottext">Scientific
-</span><a href="#local-6989586621679249015"><span class="hs-identifier hs-var">unsigned</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679249038"><span class="hs-identifier hs-var">unsigned</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-189"></span><span>                </span><span class="annot"><span class="annottext">Maybe Char
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Scientific -&gt; Double
 forall a. RealFloat a =&gt; Scientific -&gt; a
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/scntfc-0.3.8.1-f16a547a/share/doc/html/src/Data.Scientific.html#toRealFloat"><span class="hs-identifier hs-var">toRealFloat</span></a></span><span> </span><span class="annot"><span class="annottext">Scientific
-</span><a href="#local-6989586621679249015"><span class="hs-identifier hs-var">unsigned</span></a></span><span>
+</span><a href="#local-6989586621679249038"><span class="hs-identifier hs-var">unsigned</span></a></span><span>
 </span><span id="line-190"></span><span>            </span><span class="hs-special">)</span><span>
 </span><span id="line-191"></span><span>        </span><span class="hs-special">)</span><span>
 </span><span id="line-192"></span><span>    </span><span class="hs-special">)</span><span>
@@ -718,7 +718,7 @@ forall (f :: * -&gt; *) (m :: * -&gt; *) a.
 (Foldable f, Alternative m) =&gt;
 f (m a) -&gt; m a
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/prsr-cmbntrs-1.3.1-35b4fd22/share/doc/html/src/Control.Applicative.Combinators.html#choice"><span class="hs-identifier hs-var">choice</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">ParsecT Void String Identity Char
-</span><a href="#local-6989586621679249020"><span class="hs-identifier hs-var">escapedChar</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">[Token String] -&gt; ParsecT Void String Identity (Token String)
+</span><a href="#local-6989586621679249043"><span class="hs-identifier hs-var">escapedChar</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">[Token String] -&gt; ParsecT Void String Identity (Token String)
 forall (f :: * -&gt; *) e s (m :: * -&gt; *).
 (Foldable f, MonadParsec e s m) =&gt;
 f (Token s) -&gt; m (Token s)
@@ -732,9 +732,9 @@ Token s -&gt; m (Token s)
 Token String
 </span><span class="hs-char">'&quot;'</span></span><span class="hs-special">)</span><span>
 </span><span id="line-196"></span><span>  </span><span class="hs-keyword">where</span><span>
-</span><span id="line-197"></span><span>    </span><span class="annot"><a href="#local-6989586621679249020"><span class="hs-identifier hs-type">escapedChar</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Parser.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Char</span></span><span>
-</span><span id="line-198"></span><span>    </span><span id="local-6989586621679249020"><span class="annot"><span class="annottext">escapedChar :: ParsecT Void String Identity Char
-</span><a href="#local-6989586621679249020"><span class="hs-identifier hs-var hs-var">escapedChar</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-197"></span><span>    </span><span class="annot"><a href="#local-6989586621679249043"><span class="hs-identifier hs-type">escapedChar</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Parser.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Char</span></span><span>
+</span><span id="line-198"></span><span>    </span><span id="local-6989586621679249043"><span class="annot"><span class="annottext">escapedChar :: ParsecT Void String Identity Char
+</span><a href="#local-6989586621679249043"><span class="hs-identifier hs-var hs-var">escapedChar</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
 </span><span id="line-199"></span><span>      </span><span class="annot"><span class="annottext">Char
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Token String -&gt; ParsecT Void String Identity (Token String)
 forall e s (m :: * -&gt; *).
@@ -743,8 +743,8 @@ Token s -&gt; m (Token s)
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/mgprsc-9.8.1-d0e806a4/share/doc/html/src/Text.Megaparsec.Char.html#char"><span class="hs-identifier hs-var">char</span></a></span><span> </span><span class="annot"><span class="annottext">Char
 Token String
 </span><span class="hs-char">'\\'</span></span><span>
-</span><span id="line-200"></span><span>      </span><span id="local-6989586621679249022"><span class="annot"><span class="annottext">Char
-</span><a href="#local-6989586621679249022"><span class="hs-identifier hs-var">c</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">[Token String] -&gt; ParsecT Void String Identity (Token String)
+</span><span id="line-200"></span><span>      </span><span id="local-6989586621679249045"><span class="annot"><span class="annottext">Char
+</span><a href="#local-6989586621679249045"><span class="hs-identifier hs-var">c</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">[Token String] -&gt; ParsecT Void String Identity (Token String)
 forall (f :: * -&gt; *) e s (m :: * -&gt; *).
 (Foldable f, MonadParsec e s m) =&gt;
 f (Token s) -&gt; m (Token s)
@@ -759,7 +759,7 @@ f (Token s) -&gt; m (Token s)
 </span><span class="hs-char">'u'</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Char
 </span><span class="hs-char">'x'</span></span><span class="hs-special">]</span><span>
 </span><span id="line-201"></span><span>      </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Char
-</span><a href="#local-6989586621679249022"><span class="hs-identifier hs-var">c</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><a href="#local-6989586621679249045"><span class="hs-identifier hs-var">c</span></a></span><span> </span><span class="hs-keyword">of</span><span>
 </span><span id="line-202"></span><span>        </span><span class="annot"><span class="annottext">Char
 </span><span class="hs-char">'\\'</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Char -&gt; ParsecT Void String Identity Char
 forall a. a -&gt; ParsecT Void String Identity a
@@ -804,10 +804,10 @@ forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-char">'\f'</span></span><span>
 </span><span id="line-209"></span><span>        </span><span class="annot"><span class="annottext">Char
 </span><span class="hs-char">'u'</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">ParsecT Void String Identity Char
-</span><a href="#local-6989586621679249023"><span class="hs-identifier hs-var">unicodeEscape</span></a></span><span>
+</span><a href="#local-6989586621679249046"><span class="hs-identifier hs-var">unicodeEscape</span></a></span><span>
 </span><span id="line-210"></span><span>        </span><span class="annot"><span class="annottext">Char
 </span><span class="hs-char">'x'</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">ParsecT Void String Identity Char
-</span><a href="#local-6989586621679249024"><span class="hs-identifier hs-var">hexEscape</span></a></span><span>
+</span><a href="#local-6989586621679249047"><span class="hs-identifier hs-var">hexEscape</span></a></span><span>
 </span><span id="line-211"></span><span>        </span><span class="annot"><span class="annottext">Char
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; ParsecT Void String Identity Char
 forall a. String -&gt; ParsecT Void String Identity a
@@ -816,12 +816,12 @@ forall (m :: * -&gt; *) a. MonadFail m =&gt; String -&gt; m a
 </span><span class="hs-string">&quot;Unknown escape: \\&quot;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; ShowS
 forall a. [a] -&gt; [a] -&gt; [a]
 </span><span class="hs-operator hs-var">++</span></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Char
-</span><a href="#local-6989586621679249022"><span class="hs-identifier hs-var">c</span></a></span><span class="hs-special">]</span><span class="hs-special">)</span><span>
-</span><span id="line-212"></span><span>    </span><span class="annot"><a href="#local-6989586621679249023"><span class="hs-identifier hs-type">unicodeEscape</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Parser.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Char</span></span><span>
-</span><span id="line-213"></span><span>    </span><span id="local-6989586621679249023"><span class="annot"><span class="annottext">unicodeEscape :: ParsecT Void String Identity Char
-</span><a href="#local-6989586621679249023"><span class="hs-identifier hs-var hs-var">unicodeEscape</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-214"></span><span>      </span><span id="local-6989586621679249025"><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679249025"><span class="hs-identifier hs-var">hexDigits</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Int -&gt; ParsecT Void String Identity Char -&gt; Parser String
+</span><a href="#local-6989586621679249045"><span class="hs-identifier hs-var">c</span></a></span><span class="hs-special">]</span><span class="hs-special">)</span><span>
+</span><span id="line-212"></span><span>    </span><span class="annot"><a href="#local-6989586621679249046"><span class="hs-identifier hs-type">unicodeEscape</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Parser.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Char</span></span><span>
+</span><span id="line-213"></span><span>    </span><span id="local-6989586621679249046"><span class="annot"><span class="annottext">unicodeEscape :: ParsecT Void String Identity Char
+</span><a href="#local-6989586621679249046"><span class="hs-identifier hs-var hs-var">unicodeEscape</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-214"></span><span>      </span><span id="local-6989586621679249048"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679249048"><span class="hs-identifier hs-var">hexDigits</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Int -&gt; ParsecT Void String Identity Char -&gt; Parser String
 forall (m :: * -&gt; *) a. Monad m =&gt; Int -&gt; m a -&gt; m [a]
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/prsr-cmbntrs-1.3.1-35b4fd22/share/doc/html/src/Control.Monad.Combinators.html#count"><span class="hs-identifier hs-var">count</span></a></span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">4</span></span><span> </span><span class="annot"><span class="annottext">ParsecT Void String Identity Char
@@ -833,17 +833,17 @@ m (Token s)
 </span><span id="line-215"></span><span>      </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">ReadS Int
 forall a. (Eq a, Num a) =&gt; ReadS a
 </span><span class="hs-identifier hs-var">readHex</span></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679249025"><span class="hs-identifier hs-var">hexDigits</span></a></span><span> </span><span class="hs-keyword">of</span><span>
-</span><span id="line-216"></span><span>        </span><span class="hs-special">[</span><span class="hs-special">(</span><span id="local-6989586621679249028"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679249028"><span class="hs-identifier hs-var">n</span></a></span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679249048"><span class="hs-identifier hs-var">hexDigits</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-216"></span><span>        </span><span class="hs-special">[</span><span class="hs-special">(</span><span id="local-6989586621679249051"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679249051"><span class="hs-identifier hs-var">n</span></a></span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;&quot;</span></span><span class="hs-special">)</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span>
 </span><span id="line-217"></span><span>          </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679249028"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
+</span><a href="#local-6989586621679249051"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
 forall a. Ord a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">&gt;=</span></span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">0xD800</span></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
 </span><span class="hs-operator hs-var">&amp;&amp;</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679249028"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
+</span><a href="#local-6989586621679249051"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
 forall a. Ord a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">&lt;=</span></span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">0xDBFF</span></span><span>
@@ -857,8 +857,8 @@ Tokens s -&gt; m (Tokens s)
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/mgprsc-9.8.1-d0e806a4/share/doc/html/src/Text.Megaparsec.Common.html#string"><span class="hs-identifier hs-var">string</span></a></span><span> </span><span class="annot"><span class="annottext">String
 Tokens String
 </span><span class="hs-string">&quot;\\u&quot;</span></span><span>
-</span><span id="line-221"></span><span>                </span><span id="local-6989586621679249029"><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679249029"><span class="hs-identifier hs-var">lowHexDigits</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Int -&gt; ParsecT Void String Identity Char -&gt; Parser String
+</span><span id="line-221"></span><span>                </span><span id="local-6989586621679249052"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679249052"><span class="hs-identifier hs-var">lowHexDigits</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Int -&gt; ParsecT Void String Identity Char -&gt; Parser String
 forall (m :: * -&gt; *) a. Monad m =&gt; Int -&gt; m a -&gt; m [a]
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/prsr-cmbntrs-1.3.1-35b4fd22/share/doc/html/src/Control.Monad.Combinators.html#count"><span class="hs-identifier hs-var">count</span></a></span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">4</span></span><span> </span><span class="annot"><span class="annottext">ParsecT Void String Identity Char
@@ -870,28 +870,28 @@ m (Token s)
 </span><span id="line-222"></span><span>                </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">ReadS Int
 forall a. (Eq a, Num a) =&gt; ReadS a
 </span><span class="hs-identifier hs-var">readHex</span></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679249029"><span class="hs-identifier hs-var">lowHexDigits</span></a></span><span> </span><span class="hs-keyword">of</span><span>
-</span><span id="line-223"></span><span>                  </span><span class="hs-special">[</span><span class="hs-special">(</span><span id="local-6989586621679249030"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679249030"><span class="hs-identifier hs-var">low</span></a></span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679249052"><span class="hs-identifier hs-var">lowHexDigits</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-223"></span><span>                  </span><span class="hs-special">[</span><span class="hs-special">(</span><span id="local-6989586621679249053"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679249053"><span class="hs-identifier hs-var">low</span></a></span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;&quot;</span></span><span class="hs-special">)</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span>
 </span><span id="line-224"></span><span>                    </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679249030"><span class="hs-identifier hs-var">low</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
+</span><a href="#local-6989586621679249053"><span class="hs-identifier hs-var">low</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
 forall a. Ord a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">&gt;=</span></span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">0xDC00</span></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
 </span><span class="hs-operator hs-var">&amp;&amp;</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679249030"><span class="hs-identifier hs-var">low</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
+</span><a href="#local-6989586621679249053"><span class="hs-identifier hs-var">low</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
 forall a. Ord a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">&lt;=</span></span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">0xDFFF</span></span><span>
 </span><span id="line-225"></span><span>                      </span><span class="hs-keyword">then</span><span> </span><span class="hs-keyword">do</span><span>
 </span><span id="line-226"></span><span>                        </span><span class="hs-comment">-- Valid surrogate pair, combine them</span><span>
-</span><span id="line-227"></span><span>                        </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679249040"><span class="annot"><span class="annottext">codePoint :: Int
-</span><a href="#local-6989586621679249040"><span class="hs-identifier hs-var hs-var">codePoint</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int
+</span><span id="line-227"></span><span>                        </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679249063"><span class="annot"><span class="annottext">codePoint :: Int
+</span><a href="#local-6989586621679249063"><span class="hs-identifier hs-var hs-var">codePoint</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">0x10000</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
 forall a. Num a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">+</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679249028"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+</span><a href="#local-6989586621679249051"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
 forall a. Num a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-glyph hs-var">-</span></span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">0xD800</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
@@ -900,7 +900,7 @@ forall a. Num a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-number">0x400</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
 forall a. Num a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">+</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679249030"><span class="hs-identifier hs-var">low</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+</span><a href="#local-6989586621679249053"><span class="hs-identifier hs-var">low</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
 forall a. Num a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-glyph hs-var">-</span></span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">0xDC00</span></span><span class="hs-special">)</span><span>
@@ -909,7 +909,7 @@ forall a. a -&gt; ParsecT Void String Identity a
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; Char
 </span><span class="hs-identifier hs-var">chr</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679249040"><span class="hs-identifier hs-var">codePoint</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679249063"><span class="hs-identifier hs-var">codePoint</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-229"></span><span>                      </span><span class="hs-keyword">else</span><span> </span><span class="annot"><span class="annottext">String -&gt; ParsecT Void String Identity Char
 forall a. String -&gt; ParsecT Void String Identity a
 forall (m :: * -&gt; *) a. MonadFail m =&gt; String -&gt; m a
@@ -917,7 +917,7 @@ forall (m :: * -&gt; *) a. MonadFail m =&gt; String -&gt; m a
 </span><span class="hs-string">&quot;Invalid low surrogate: \\u&quot;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; ShowS
 forall a. [a] -&gt; [a] -&gt; [a]
 </span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679249029"><span class="hs-identifier hs-var">lowHexDigits</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679249052"><span class="hs-identifier hs-var">lowHexDigits</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-230"></span><span>                  </span><span class="annot"><span class="annottext">[(Int, String)]
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; ParsecT Void String Identity Char
 forall a. String -&gt; ParsecT Void String Identity a
@@ -926,15 +926,15 @@ forall (m :: * -&gt; *) a. MonadFail m =&gt; String -&gt; m a
 </span><span class="hs-string">&quot;Invalid low surrogate hex: \\u&quot;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; ShowS
 forall a. [a] -&gt; [a] -&gt; [a]
 </span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679249029"><span class="hs-identifier hs-var">lowHexDigits</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679249052"><span class="hs-identifier hs-var">lowHexDigits</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-231"></span><span>            </span><span class="hs-keyword">else</span><span>
 </span><span id="line-232"></span><span>              </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679249028"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
+</span><a href="#local-6989586621679249051"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
 forall a. Ord a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">&gt;=</span></span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">0xDC00</span></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
 </span><span class="hs-operator hs-var">&amp;&amp;</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679249028"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
+</span><a href="#local-6989586621679249051"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
 forall a. Ord a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">&lt;=</span></span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">0xDFFF</span></span><span>
@@ -945,15 +945,15 @@ forall (m :: * -&gt; *) a. MonadFail m =&gt; String -&gt; m a
 </span><span class="hs-string">&quot;Unexpected low surrogate: \\u&quot;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; ShowS
 forall a. [a] -&gt; [a] -&gt; [a]
 </span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679249025"><span class="hs-identifier hs-var">hexDigits</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679249048"><span class="hs-identifier hs-var">hexDigits</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-234"></span><span>                </span><span class="hs-keyword">else</span><span>
 </span><span id="line-235"></span><span>                  </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679249028"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
+</span><a href="#local-6989586621679249051"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
 forall a. Ord a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">&gt;=</span></span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">0</span></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
 </span><span class="hs-operator hs-var">&amp;&amp;</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679249028"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
+</span><a href="#local-6989586621679249051"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
 forall a. Ord a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">&lt;=</span></span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">0x10FFFF</span></span><span>
@@ -962,7 +962,7 @@ forall a. a -&gt; ParsecT Void String Identity a
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; Char
 </span><span class="hs-identifier hs-var">chr</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679249028"><span class="hs-identifier hs-var">n</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679249051"><span class="hs-identifier hs-var">n</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-237"></span><span>                    </span><span class="hs-keyword">else</span><span> </span><span class="annot"><span class="annottext">String -&gt; ParsecT Void String Identity Char
 forall a. String -&gt; ParsecT Void String Identity a
 forall (m :: * -&gt; *) a. MonadFail m =&gt; String -&gt; m a
@@ -970,7 +970,7 @@ forall (m :: * -&gt; *) a. MonadFail m =&gt; String -&gt; m a
 </span><span class="hs-string">&quot;Invalid Unicode code point: \\u&quot;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; ShowS
 forall a. [a] -&gt; [a] -&gt; [a]
 </span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679249025"><span class="hs-identifier hs-var">hexDigits</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679249048"><span class="hs-identifier hs-var">hexDigits</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-238"></span><span>        </span><span class="annot"><span class="annottext">[(Int, String)]
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; ParsecT Void String Identity Char
 forall a. String -&gt; ParsecT Void String Identity a
@@ -979,12 +979,12 @@ forall (m :: * -&gt; *) a. MonadFail m =&gt; String -&gt; m a
 </span><span class="hs-string">&quot;Invalid Unicode escape: \\u&quot;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; ShowS
 forall a. [a] -&gt; [a] -&gt; [a]
 </span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679249025"><span class="hs-identifier hs-var">hexDigits</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-239"></span><span>    </span><span class="annot"><a href="#local-6989586621679249024"><span class="hs-identifier hs-type">hexEscape</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Parser.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Char</span></span><span>
-</span><span id="line-240"></span><span>    </span><span id="local-6989586621679249024"><span class="annot"><span class="annottext">hexEscape :: ParsecT Void String Identity Char
-</span><a href="#local-6989586621679249024"><span class="hs-identifier hs-var hs-var">hexEscape</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-241"></span><span>      </span><span id="local-6989586621679249044"><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679249044"><span class="hs-identifier hs-var">digits</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Int -&gt; ParsecT Void String Identity Char -&gt; Parser String
+</span><a href="#local-6989586621679249048"><span class="hs-identifier hs-var">hexDigits</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-239"></span><span>    </span><span class="annot"><a href="#local-6989586621679249047"><span class="hs-identifier hs-type">hexEscape</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Parser.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Char</span></span><span>
+</span><span id="line-240"></span><span>    </span><span id="local-6989586621679249047"><span class="annot"><span class="annottext">hexEscape :: ParsecT Void String Identity Char
+</span><a href="#local-6989586621679249047"><span class="hs-identifier hs-var hs-var">hexEscape</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-241"></span><span>      </span><span id="local-6989586621679249067"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679249067"><span class="hs-identifier hs-var">digits</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Int -&gt; ParsecT Void String Identity Char -&gt; Parser String
 forall (m :: * -&gt; *) a. Monad m =&gt; Int -&gt; m a -&gt; m [a]
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/prsr-cmbntrs-1.3.1-35b4fd22/share/doc/html/src/Control.Monad.Combinators.html#count"><span class="hs-identifier hs-var">count</span></a></span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">2</span></span><span> </span><span class="annot"><span class="annottext">ParsecT Void String Identity Char
@@ -996,15 +996,15 @@ m (Token s)
 </span><span id="line-242"></span><span>      </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">ReadS Int
 forall a. (Eq a, Num a) =&gt; ReadS a
 </span><span class="hs-identifier hs-var">readHex</span></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679249044"><span class="hs-identifier hs-var">digits</span></a></span><span> </span><span class="hs-keyword">of</span><span>
-</span><span id="line-243"></span><span>        </span><span class="hs-special">[</span><span class="hs-special">(</span><span id="local-6989586621679249045"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679249045"><span class="hs-identifier hs-var">n</span></a></span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679249067"><span class="hs-identifier hs-var">digits</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-243"></span><span>        </span><span class="hs-special">[</span><span class="hs-special">(</span><span id="local-6989586621679249068"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679249068"><span class="hs-identifier hs-var">n</span></a></span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;&quot;</span></span><span class="hs-special">)</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Char -&gt; ParsecT Void String Identity Char
 forall a. a -&gt; ParsecT Void String Identity a
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; Char
 </span><span class="hs-identifier hs-var">chr</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679249045"><span class="hs-identifier hs-var">n</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679249068"><span class="hs-identifier hs-var">n</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-244"></span><span>        </span><span class="annot"><span class="annottext">[(Int, String)]
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; ParsecT Void String Identity Char
 forall a. String -&gt; ParsecT Void String Identity a
@@ -1013,7 +1013,7 @@ forall (m :: * -&gt; *) a. MonadFail m =&gt; String -&gt; m a
 </span><span class="hs-string">&quot;Invalid hex escape: \\x&quot;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; ShowS
 forall a. [a] -&gt; [a] -&gt; [a]
 </span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679249044"><span class="hs-identifier hs-var">digits</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679249067"><span class="hs-identifier hs-var">digits</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-245"></span><span>
 </span><span id="line-246"></span><span class="annot"><a href="Parser.html#tauValue"><span class="hs-identifier hs-type">tauValue</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Parser.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span>
 </span><span id="line-247"></span><span id="tauValue"><span class="annot"><span class="annottext">tauValue :: Parser Expression
@@ -1040,8 +1040,8 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">String -&gt; Parser String
 </span><a href="Parser.html#symbol"><span class="hs-identifier hs-var">symbol</span></a></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;(&quot;</span></span><span>
-</span><span id="line-254"></span><span>        </span><span id="local-6989586621679249047"><span class="annot"><span class="annottext">[Binding]
-</span><a href="#local-6989586621679249047"><span class="hs-identifier hs-var">voids</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span>
+</span><span id="line-254"></span><span>        </span><span id="local-6989586621679249070"><span class="annot"><span class="annottext">[Binding]
+</span><a href="#local-6989586621679249070"><span class="hs-identifier hs-var">voids</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span>
 </span><span id="line-255"></span><span>          </span><span class="annot"><span class="annottext">[ParsecT Void String Identity [Binding]]
 -&gt; ParsecT Void String Identity [Binding]
 forall (f :: * -&gt; *) (m :: * -&gt; *) a.
@@ -1049,7 +1049,7 @@ forall (f :: * -&gt; *) (m :: * -&gt; *) a.
 f (m a) -&gt; m a
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/prsr-cmbntrs-1.3.1-35b4fd22/share/doc/html/src/Control.Applicative.Combinators.html#choice"><span class="hs-identifier hs-var">choice</span></a></span><span>
 </span><span id="line-256"></span><span>            </span><span class="hs-special">[</span><span> </span><span class="annot"><span class="annottext">Parser String
-</span><a href="#local-6989586621679249048"><span class="hs-identifier hs-var">rb</span></a></span><span> </span><span class="annot"><span class="annottext">Parser String
+</span><a href="#local-6989586621679249071"><span class="hs-identifier hs-var">rb</span></a></span><span> </span><span class="annot"><span class="annottext">Parser String
 -&gt; ParsecT Void String Identity [Binding]
 -&gt; ParsecT Void String Identity [Binding]
 forall a b.
@@ -1061,8 +1061,8 @@ forall a. a -&gt; ParsecT Void String Identity a
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span>
 </span><span id="line-257"></span><span>            </span><span class="hs-special">,</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-258"></span><span>                </span><span id="local-6989586621679249049"><span class="annot"><span class="annottext">[Binding]
-</span><a href="#local-6989586621679249049"><span class="hs-identifier hs-var">voids'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">(Attribute -&gt; Binding) -&gt; [Attribute] -&gt; [Binding]
+</span><span id="line-258"></span><span>                </span><span id="local-6989586621679249072"><span class="annot"><span class="annottext">[Binding]
+</span><a href="#local-6989586621679249072"><span class="hs-identifier hs-var">voids'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">(Attribute -&gt; Binding) -&gt; [Attribute] -&gt; [Binding]
 forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
 </span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="annot"><span class="annottext">Attribute -&gt; Binding
 </span><a href="AST.html#BiVoid"><span class="hs-identifier hs-var">BiVoid</span></a></span><span> </span><span class="annot"><span class="annottext">([Attribute] -&gt; [Binding])
@@ -1077,7 +1077,7 @@ forall (m :: * -&gt; *) a end. MonadPlus m =&gt; m a -&gt; m end -&gt; m [a]
 </span><a href="Parser.html#symbol"><span class="hs-identifier hs-var">symbol</span></a></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;,&quot;</span></span><span>
 </span><span id="line-259"></span><span>                </span><span class="annot"><span class="annottext">Parser String
-</span><a href="#local-6989586621679249048"><span class="hs-identifier hs-var">rb</span></a></span><span> </span><span class="annot"><span class="annottext">Parser String
+</span><a href="#local-6989586621679249071"><span class="hs-identifier hs-var">rb</span></a></span><span> </span><span class="annot"><span class="annottext">Parser String
 -&gt; ParsecT Void String Identity [Binding]
 -&gt; ParsecT Void String Identity [Binding]
 forall a b.
@@ -1088,46 +1088,46 @@ forall (m :: * -&gt; *) a b. Monad m =&gt; m a -&gt; m b -&gt; m b
 forall a. a -&gt; ParsecT Void String Identity a
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">[Binding]
-</span><a href="#local-6989586621679249049"><span class="hs-identifier hs-var">voids'</span></a></span><span>
+</span><a href="#local-6989586621679249072"><span class="hs-identifier hs-var">voids'</span></a></span><span>
 </span><span id="line-260"></span><span>            </span><span class="hs-special">]</span><span>
 </span><span id="line-261"></span><span>        </span><span class="annot"><span class="annottext">String
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Parser String
 </span><a href="Parser.html#arrow"><span class="hs-identifier hs-var">arrow</span></a></span><span>
-</span><span id="line-262"></span><span>        </span><span id="local-6989586621679249053"><span class="annot"><span class="annottext">[Binding]
-</span><a href="#local-6989586621679249053"><span class="hs-identifier hs-var">bs</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">ParsecT Void String Identity [Binding]
+</span><span id="line-262"></span><span>        </span><span id="local-6989586621679249076"><span class="annot"><span class="annottext">[Binding]
+</span><a href="#local-6989586621679249076"><span class="hs-identifier hs-var">bs</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">ParsecT Void String Identity [Binding]
 </span><a href="Parser.html#formationBindings"><span class="hs-identifier hs-var">formationBindings</span></a></span><span>
-</span><span id="line-263"></span><span>        </span><span id="local-6989586621679249055"><span class="annot"><span class="annottext">[Binding]
-</span><a href="#local-6989586621679249055"><span class="hs-identifier hs-var">bds</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">[Binding] -&gt; ParsecT Void String Identity [Binding]
+</span><span id="line-263"></span><span>        </span><span id="local-6989586621679249078"><span class="annot"><span class="annottext">[Binding]
+</span><a href="#local-6989586621679249078"><span class="hs-identifier hs-var">bds</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">[Binding] -&gt; ParsecT Void String Identity [Binding]
 </span><a href="Parser.html#validatedBindings"><span class="hs-identifier hs-var">validatedBindings</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[Binding]
-</span><a href="#local-6989586621679249047"><span class="hs-identifier hs-var">voids</span></a></span><span> </span><span class="annot"><span class="annottext">[Binding] -&gt; [Binding] -&gt; [Binding]
+</span><a href="#local-6989586621679249070"><span class="hs-identifier hs-var">voids</span></a></span><span> </span><span class="annot"><span class="annottext">[Binding] -&gt; [Binding] -&gt; [Binding]
 forall a. [a] -&gt; [a] -&gt; [a]
 </span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">[Binding]
-</span><a href="#local-6989586621679249053"><span class="hs-identifier hs-var">bs</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679249076"><span class="hs-identifier hs-var">bs</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-264"></span><span>        </span><span class="annot"><span class="annottext">Expression -&gt; Parser Expression
 forall a. a -&gt; ParsecT Void String Identity a
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[Binding] -&gt; Expression
 </span><a href="AST.html#ExFormation"><span class="hs-identifier hs-var">ExFormation</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[Binding] -&gt; [Binding]
 </span><a href="Misc.html#withVoidRho"><span class="hs-identifier hs-var">withVoidRho</span></a></span><span> </span><span class="annot"><span class="annottext">[Binding]
-</span><a href="#local-6989586621679249055"><span class="hs-identifier hs-var">bds</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679249078"><span class="hs-identifier hs-var">bds</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
 </span><span id="line-265"></span><span>    </span><span class="hs-special">]</span><span>
 </span><span id="line-266"></span><span>  </span><span class="hs-keyword">where</span><span>
-</span><span id="line-267"></span><span>    </span><span class="annot"><a href="#local-6989586621679249048"><span class="hs-identifier hs-type">rb</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Parser.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
-</span><span id="line-268"></span><span>    </span><span id="local-6989586621679249048"><span class="annot"><span class="annottext">rb :: Parser String
-</span><a href="#local-6989586621679249048"><span class="hs-identifier hs-var hs-var">rb</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; Parser String
+</span><span id="line-267"></span><span>    </span><span class="annot"><a href="#local-6989586621679249071"><span class="hs-identifier hs-type">rb</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Parser.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
+</span><span id="line-268"></span><span>    </span><span id="local-6989586621679249071"><span class="annot"><span class="annottext">rb :: Parser String
+</span><a href="#local-6989586621679249071"><span class="hs-identifier hs-var hs-var">rb</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; Parser String
 </span><a href="Parser.html#symbol"><span class="hs-identifier hs-var">symbol</span></a></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;)&quot;</span></span><span>
 </span><span id="line-269"></span><span>
 </span><span id="line-270"></span><span class="annot"><a href="Parser.html#tauBinding"><span class="hs-identifier hs-type">tauBinding</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Parser.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="annot"><a href="AST.html#Attribute"><span class="hs-identifier hs-type">Attribute</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Parser.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="annot"><a href="AST.html#Binding"><span class="hs-identifier hs-type">Binding</span></a></span><span>
 </span><span id="line-271"></span><span id="tauBinding"><span class="annot"><span class="annottext">tauBinding :: Parser Attribute -&gt; Parser Binding
-</span><a href="Parser.html#tauBinding"><span class="hs-identifier hs-var hs-var">tauBinding</span></a></span></span><span> </span><span id="local-6989586621679249060"><span class="annot"><span class="annottext">Parser Attribute
-</span><a href="#local-6989586621679249060"><span class="hs-identifier hs-var">attr</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Attribute -&gt; Expression -&gt; Binding
+</span><a href="Parser.html#tauBinding"><span class="hs-identifier hs-var hs-var">tauBinding</span></a></span></span><span> </span><span id="local-6989586621679249083"><span class="annot"><span class="annottext">Parser Attribute
+</span><a href="#local-6989586621679249083"><span class="hs-identifier hs-var">attr</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Attribute -&gt; Expression -&gt; Binding
 </span><a href="AST.html#BiTau"><span class="hs-identifier hs-var">BiTau</span></a></span><span> </span><span class="annot"><span class="annottext">(Attribute -&gt; Expression -&gt; Binding)
 -&gt; Parser Attribute
 -&gt; ParsecT Void String Identity (Expression -&gt; Binding)
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser Attribute
-</span><a href="#local-6989586621679249060"><span class="hs-identifier hs-var">attr</span></a></span><span> </span><span class="annot"><span class="annottext">ParsecT Void String Identity (Expression -&gt; Binding)
+</span><a href="#local-6989586621679249083"><span class="hs-identifier hs-var">attr</span></a></span><span> </span><span class="annot"><span class="annottext">ParsecT Void String Identity (Expression -&gt; Binding)
 -&gt; Parser Expression -&gt; Parser Binding
 forall a b.
 ParsecT Void String Identity (a -&gt; b)
@@ -1175,8 +1175,8 @@ forall e s (m :: * -&gt; *) a. MonadParsec e s m =&gt; m a -&gt; m a
 -&gt; Parser Binding -&gt; Parser Binding
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-289"></span><span>        </span><span id="local-6989586621679249064"><span class="annot"><span class="annottext">Attribute
-</span><a href="#local-6989586621679249064"><span class="hs-identifier hs-var">attr</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Parser Attribute
+</span><span id="line-289"></span><span>        </span><span id="local-6989586621679249087"><span class="annot"><span class="annottext">Attribute
+</span><a href="#local-6989586621679249087"><span class="hs-identifier hs-var">attr</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Parser Attribute
 </span><a href="Parser.html#attribute"><span class="hs-identifier hs-var">attribute</span></a></span><span>
 </span><span id="line-290"></span><span>        </span><span class="annot"><span class="annottext">String
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Parser String
@@ -1196,7 +1196,7 @@ forall a. a -&gt; ParsecT Void String Identity a
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Attribute -&gt; Binding
 </span><a href="AST.html#BiVoid"><span class="hs-identifier hs-var">BiVoid</span></a></span><span> </span><span class="annot"><span class="annottext">Attribute
-</span><a href="#local-6989586621679249064"><span class="hs-identifier hs-var">attr</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679249087"><span class="hs-identifier hs-var">attr</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-293"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Parser Binding -&gt; Parser Binding
 forall a. Parser a -&gt; Parser a
 forall e s (m :: * -&gt; *) a. MonadParsec e s m =&gt; m a -&gt; m a
@@ -1446,22 +1446,22 @@ m a -&gt; String -&gt; m a
 </span><span id="line-361"></span><span>
 </span><span id="line-362"></span><span class="annot"><a href="Parser.html#validatedBindings"><span class="hs-identifier hs-type">validatedBindings</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="AST.html#Binding"><span class="hs-identifier hs-type">Binding</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Parser.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="AST.html#Binding"><span class="hs-identifier hs-type">Binding</span></a></span><span class="hs-special">]</span><span>
 </span><span id="line-363"></span><span id="validatedBindings"><span class="annot"><span class="annottext">validatedBindings :: [Binding] -&gt; ParsecT Void String Identity [Binding]
-</span><a href="Parser.html#validatedBindings"><span class="hs-identifier hs-var hs-var">validatedBindings</span></a></span></span><span> </span><span id="local-6989586621679249080"><span class="annot"><span class="annottext">[Binding]
-</span><a href="#local-6989586621679249080"><span class="hs-identifier hs-var">bds</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">[Binding] -&gt; Either String [Binding]
+</span><a href="Parser.html#validatedBindings"><span class="hs-identifier hs-var hs-var">validatedBindings</span></a></span></span><span> </span><span id="local-6989586621679249103"><span class="annot"><span class="annottext">[Binding]
+</span><a href="#local-6989586621679249103"><span class="hs-identifier hs-var">bds</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">[Binding] -&gt; Either String [Binding]
 </span><a href="Misc.html#uniqueBindings"><span class="hs-identifier hs-var">uniqueBindings</span></a></span><span> </span><span class="annot"><span class="annottext">[Binding]
-</span><a href="#local-6989586621679249080"><span class="hs-identifier hs-var">bds</span></a></span><span> </span><span class="hs-keyword">of</span><span>
-</span><span id="line-364"></span><span>  </span><span class="annot"><span class="hs-identifier hs-type">Left</span></span><span> </span><span id="local-6989586621679249082"><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679249082"><span class="hs-identifier hs-var">msg</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; ParsecT Void String Identity [Binding]
+</span><a href="#local-6989586621679249103"><span class="hs-identifier hs-var">bds</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-364"></span><span>  </span><span class="annot"><span class="hs-identifier hs-type">Left</span></span><span> </span><span id="local-6989586621679249105"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679249105"><span class="hs-identifier hs-var">msg</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; ParsecT Void String Identity [Binding]
 forall a. String -&gt; ParsecT Void String Identity a
 forall (m :: * -&gt; *) a. MonadFail m =&gt; String -&gt; m a
 </span><span class="hs-identifier hs-var">fail</span></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679249082"><span class="hs-identifier hs-var">msg</span></a></span><span>
-</span><span id="line-365"></span><span>  </span><span class="annot"><span class="hs-identifier hs-type">Right</span></span><span> </span><span id="local-6989586621679249083"><span class="annot"><span class="annottext">[Binding]
-</span><a href="#local-6989586621679249083"><span class="hs-identifier hs-var">bds'</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">[Binding] -&gt; ParsecT Void String Identity [Binding]
+</span><a href="#local-6989586621679249105"><span class="hs-identifier hs-var">msg</span></a></span><span>
+</span><span id="line-365"></span><span>  </span><span class="annot"><span class="hs-identifier hs-type">Right</span></span><span> </span><span id="local-6989586621679249106"><span class="annot"><span class="annottext">[Binding]
+</span><a href="#local-6989586621679249106"><span class="hs-identifier hs-var">bds'</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">[Binding] -&gt; ParsecT Void String Identity [Binding]
 forall a. a -&gt; ParsecT Void String Identity a
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">[Binding]
-</span><a href="#local-6989586621679249083"><span class="hs-identifier hs-var">bds'</span></a></span><span>
+</span><a href="#local-6989586621679249106"><span class="hs-identifier hs-var">bds'</span></a></span><span>
 </span><span id="line-366"></span><span>
 </span><span id="line-367"></span><span class="hs-comment">-- formation</span><span>
 </span><span id="line-368"></span><span class="annot"><a href="Parser.html#formationBindings"><span class="hs-identifier hs-type">formationBindings</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Parser.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="AST.html#Binding"><span class="hs-identifier hs-type">Binding</span></a></span><span class="hs-special">]</span><span>
@@ -1484,7 +1484,7 @@ forall (f :: * -&gt; *) (m :: * -&gt; *) a.
 f (m a) -&gt; m a
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/prsr-cmbntrs-1.3.1-35b4fd22/share/doc/html/src/Control.Applicative.Combinators.html#choice"><span class="hs-identifier hs-var">choice</span></a></span><span>
 </span><span id="line-372"></span><span>    </span><span class="hs-special">[</span><span> </span><span class="annot"><span class="annottext">Parser String
-</span><a href="#local-6989586621679249084"><span class="hs-identifier hs-var">rsb</span></a></span><span> </span><span class="annot"><span class="annottext">Parser String
+</span><a href="#local-6989586621679249107"><span class="hs-identifier hs-var">rsb</span></a></span><span> </span><span class="annot"><span class="annottext">Parser String
 -&gt; ParsecT Void String Identity [Binding]
 -&gt; ParsecT Void String Identity [Binding]
 forall a b.
@@ -1496,8 +1496,8 @@ forall a. a -&gt; ParsecT Void String Identity a
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span>
 </span><span id="line-373"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-374"></span><span>        </span><span id="local-6989586621679249085"><span class="annot"><span class="annottext">[Binding]
-</span><a href="#local-6989586621679249085"><span class="hs-identifier hs-var">bs</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Parser Binding
+</span><span id="line-374"></span><span>        </span><span id="local-6989586621679249108"><span class="annot"><span class="annottext">[Binding]
+</span><a href="#local-6989586621679249108"><span class="hs-identifier hs-var">bs</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Parser Binding
 </span><a href="Parser.html#binding"><span class="hs-identifier hs-var">binding</span></a></span><span> </span><span class="annot"><span class="annottext">Parser Binding
 -&gt; Parser String -&gt; ParsecT Void String Identity [Binding]
 forall (m :: * -&gt; *) a end. MonadPlus m =&gt; m a -&gt; m end -&gt; m [a]
@@ -1505,7 +1505,7 @@ forall (m :: * -&gt; *) a end. MonadPlus m =&gt; m a -&gt; m end -&gt; m [a]
 </span><a href="Parser.html#symbol"><span class="hs-identifier hs-var">symbol</span></a></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;,&quot;</span></span><span>
 </span><span id="line-375"></span><span>        </span><span class="annot"><span class="annottext">Parser String
-</span><a href="#local-6989586621679249084"><span class="hs-identifier hs-var">rsb</span></a></span><span> </span><span class="annot"><span class="annottext">Parser String
+</span><a href="#local-6989586621679249107"><span class="hs-identifier hs-var">rsb</span></a></span><span> </span><span class="annot"><span class="annottext">Parser String
 -&gt; ParsecT Void String Identity [Binding]
 -&gt; ParsecT Void String Identity [Binding]
 forall a b.
@@ -1516,12 +1516,12 @@ forall (m :: * -&gt; *) a b. Monad m =&gt; m a -&gt; m b -&gt; m b
 forall a. a -&gt; ParsecT Void String Identity a
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">[Binding]
-</span><a href="#local-6989586621679249085"><span class="hs-identifier hs-var">bs</span></a></span><span>
+</span><a href="#local-6989586621679249108"><span class="hs-identifier hs-var">bs</span></a></span><span>
 </span><span id="line-376"></span><span>    </span><span class="hs-special">]</span><span>
 </span><span id="line-377"></span><span>  </span><span class="hs-keyword">where</span><span>
-</span><span id="line-378"></span><span>    </span><span class="annot"><a href="#local-6989586621679249084"><span class="hs-identifier hs-type">rsb</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Parser.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
-</span><span id="line-379"></span><span>    </span><span id="local-6989586621679249084"><span class="annot"><span class="annottext">rsb :: Parser String
-</span><a href="#local-6989586621679249084"><span class="hs-identifier hs-var hs-var">rsb</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Parser String] -&gt; Parser String
+</span><span id="line-378"></span><span>    </span><span class="annot"><a href="#local-6989586621679249107"><span class="hs-identifier hs-type">rsb</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Parser.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
+</span><span id="line-379"></span><span>    </span><span id="local-6989586621679249107"><span class="annot"><span class="annottext">rsb :: Parser String
+</span><a href="#local-6989586621679249107"><span class="hs-identifier hs-var hs-var">rsb</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Parser String] -&gt; Parser String
 forall (f :: * -&gt; *) (m :: * -&gt; *) a.
 (Foldable f, Alternative m) =&gt;
 f (m a) -&gt; m a
@@ -1547,8 +1547,8 @@ forall (f :: * -&gt; *) (m :: * -&gt; *) a.
 f (m a) -&gt; m a
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/prsr-cmbntrs-1.3.1-35b4fd22/share/doc/html/src/Control.Applicative.Combinators.html#choice"><span class="hs-identifier hs-var">choice</span></a></span><span>
 </span><span id="line-391"></span><span>    </span><span class="hs-special">[</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-392"></span><span>        </span><span id="local-6989586621679249087"><span class="annot"><span class="annottext">[Binding]
-</span><a href="#local-6989586621679249087"><span class="hs-identifier hs-var">bs</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">ParsecT Void String Identity [Binding]
+</span><span id="line-392"></span><span>        </span><span id="local-6989586621679249110"><span class="annot"><span class="annottext">[Binding]
+</span><a href="#local-6989586621679249110"><span class="hs-identifier hs-var">bs</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">ParsecT Void String Identity [Binding]
 </span><a href="Parser.html#formationBindings"><span class="hs-identifier hs-var">formationBindings</span></a></span><span> </span><span class="annot"><span class="annottext">ParsecT Void String Identity [Binding]
 -&gt; ([Binding] -&gt; ParsecT Void String Identity [Binding])
 -&gt; ParsecT Void String Identity [Binding]
@@ -1565,7 +1565,7 @@ forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[Binding] -&gt; Expression
 </span><a href="AST.html#ExFormation"><span class="hs-identifier hs-var">ExFormation</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[Binding] -&gt; [Binding]
 </span><a href="Misc.html#withVoidRho"><span class="hs-identifier hs-var">withVoidRho</span></a></span><span> </span><span class="annot"><span class="annottext">[Binding]
-</span><a href="#local-6989586621679249087"><span class="hs-identifier hs-var">bs</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679249110"><span class="hs-identifier hs-var">bs</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
 </span><span id="line-394"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="hs-keyword">do</span><span>
 </span><span id="line-395"></span><span>        </span><span class="annot"><span class="annottext">String
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">[Parser String] -&gt; Parser String
@@ -1679,16 +1679,16 @@ Foldable t =&gt;
 </span><span id="line-417"></span><span class="hs-comment">-- 2. any head except $ and Q + application</span><span>
 </span><span id="line-418"></span><span class="annot"><a href="Parser.html#exTail"><span class="hs-identifier hs-type">exTail</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Parser.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span>
 </span><span id="line-419"></span><span id="exTail"><span class="annot"><span class="annottext">exTail :: Expression -&gt; Parser Expression
-</span><a href="Parser.html#exTail"><span class="hs-identifier hs-var hs-var">exTail</span></a></span></span><span> </span><span id="local-6989586621679249099"><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679249099"><span class="hs-identifier hs-var">expr</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><a href="Parser.html#exTail"><span class="hs-identifier hs-var hs-var">exTail</span></a></span></span><span> </span><span id="local-6989586621679249122"><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679249122"><span class="hs-identifier hs-var">expr</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-420"></span><span>  </span><span class="annot"><span class="annottext">[Parser Expression] -&gt; Parser Expression
 forall (f :: * -&gt; *) (m :: * -&gt; *) a.
 (Foldable f, Alternative m) =&gt;
 f (m a) -&gt; m a
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/prsr-cmbntrs-1.3.1-35b4fd22/share/doc/html/src/Control.Applicative.Combinators.html#choice"><span class="hs-identifier hs-var">choice</span></a></span><span>
 </span><span id="line-421"></span><span>    </span><span class="hs-special">[</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-422"></span><span>        </span><span id="local-6989586621679249100"><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679249100"><span class="hs-identifier hs-var">next</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span>
+</span><span id="line-422"></span><span>        </span><span id="local-6989586621679249123"><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679249123"><span class="hs-identifier hs-var">next</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span>
 </span><span id="line-423"></span><span>          </span><span class="annot"><span class="annottext">[Parser Expression] -&gt; Parser Expression
 forall (f :: * -&gt; *) (m :: * -&gt; *) a.
 (Foldable f, Alternative m) =&gt;
@@ -1701,7 +1701,7 @@ f (m a) -&gt; m a
 </span><span class="hs-string">&quot;.&quot;</span></span><span>
 </span><span id="line-426"></span><span>                </span><span class="annot"><span class="annottext">Expression -&gt; Attribute -&gt; Expression
 </span><a href="AST.html#ExDispatch"><span class="hs-identifier hs-var">ExDispatch</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679249099"><span class="hs-identifier hs-var">expr</span></a></span><span> </span><span class="annot"><span class="annottext">(Attribute -&gt; Expression) -&gt; Parser Attribute -&gt; Parser Expression
+</span><a href="#local-6989586621679249122"><span class="hs-identifier hs-var">expr</span></a></span><span> </span><span class="annot"><span class="annottext">(Attribute -&gt; Expression) -&gt; Parser Attribute -&gt; Parser Expression
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser Attribute
 </span><a href="Parser.html#attribute"><span class="hs-identifier hs-var">attribute</span></a></span><span>
@@ -1710,7 +1710,7 @@ forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 forall (f :: * -&gt; *). Alternative f =&gt; Bool -&gt; f ()
 </span><span class="hs-identifier hs-var">guard</span></span><span>
 </span><span id="line-429"></span><span>                  </span><span class="hs-special">(</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679249099"><span class="hs-identifier hs-var">expr</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><a href="#local-6989586621679249122"><span class="hs-identifier hs-var">expr</span></a></span><span> </span><span class="hs-keyword">of</span><span>
 </span><span id="line-430"></span><span>                      </span><span class="annot"><span class="annottext">Expression
 </span><a href="AST.html#ExXi"><span class="hs-identifier hs-var">ExXi</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Bool
 </span><span class="hs-identifier hs-var">False</span></span><span>
@@ -1725,8 +1725,8 @@ forall (f :: * -&gt; *). Alternative f =&gt; Bool -&gt; f ()
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">String -&gt; Parser String
 </span><a href="Parser.html#symbol"><span class="hs-identifier hs-var">symbol</span></a></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;(&quot;</span></span><span>
-</span><span id="line-435"></span><span>                </span><span id="local-6989586621679249101"><span class="annot"><span class="annottext">[Argument]
-</span><a href="#local-6989586621679249101"><span class="hs-identifier hs-var">bds</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span>
+</span><span id="line-435"></span><span>                </span><span id="local-6989586621679249124"><span class="annot"><span class="annottext">[Argument]
+</span><a href="#local-6989586621679249124"><span class="hs-identifier hs-var">bds</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span>
 </span><span id="line-436"></span><span>                  </span><span class="annot"><span class="annottext">[ParsecT Void String Identity [Argument]]
 -&gt; ParsecT Void String Identity [Argument]
 forall (f :: * -&gt; *) (m :: * -&gt; *) a.
@@ -1750,8 +1750,8 @@ forall (m :: * -&gt; *) a end. MonadPlus m =&gt; m a -&gt; m end -&gt; m [a]
 </span><a href="Parser.html#symbol"><span class="hs-identifier hs-var">symbol</span></a></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;,&quot;</span></span><span>
 </span><span id="line-438"></span><span>                    </span><span class="hs-special">,</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-439"></span><span>                        </span><span id="local-6989586621679249102"><span class="annot"><span class="annottext">[Expression]
-</span><a href="#local-6989586621679249102"><span class="hs-identifier hs-var">exprs</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Parser Expression
+</span><span id="line-439"></span><span>                        </span><span id="local-6989586621679249125"><span class="annot"><span class="annottext">[Expression]
+</span><a href="#local-6989586621679249125"><span class="hs-identifier hs-var">exprs</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Parser Expression
 </span><a href="Parser.html#expression"><span class="hs-identifier hs-var">expression</span></a></span><span> </span><span class="annot"><span class="annottext">Parser Expression
 -&gt; Parser String -&gt; ParsecT Void String Identity [Expression]
 forall (m :: * -&gt; *) a end. MonadPlus m =&gt; m a -&gt; m end -&gt; m [a]
@@ -1771,7 +1771,7 @@ forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
 </span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Alpha
 </span><a href="AST.html#Alpha"><span class="hs-identifier hs-var">Alpha</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">0</span></span><span> </span><span class="hs-glyph">..</span><span class="hs-special">]</span><span> </span><span class="annot"><span class="annottext">[Expression]
-</span><a href="#local-6989586621679249102"><span class="hs-identifier hs-var">exprs</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679249125"><span class="hs-identifier hs-var">exprs</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-441"></span><span>                    </span><span class="hs-special">]</span><span>
 </span><span id="line-442"></span><span>                </span><span class="annot"><span class="annottext">String
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">String -&gt; Parser String
@@ -1782,8 +1782,8 @@ forall a. a -&gt; ParsecT Void String Identity a
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expression -&gt; [Argument] -&gt; Expression
 </span><a href="Parser.html#application"><span class="hs-identifier hs-var">application</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679249099"><span class="hs-identifier hs-var">expr</span></a></span><span> </span><span class="annot"><span class="annottext">[Argument]
-</span><a href="#local-6989586621679249101"><span class="hs-identifier hs-var">bds</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679249122"><span class="hs-identifier hs-var">expr</span></a></span><span> </span><span class="annot"><span class="annottext">[Argument]
+</span><a href="#local-6989586621679249124"><span class="hs-identifier hs-var">bds</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-444"></span><span>            </span><span class="hs-special">]</span><span>
 </span><span id="line-445"></span><span>            </span><span class="annot"><span class="annottext">Parser Expression -&gt; String -&gt; Parser Expression
 forall e s (m :: * -&gt; *) a.
@@ -1793,23 +1793,23 @@ m a -&gt; String -&gt; m a
 </span><span class="hs-string">&quot;dispatch or application&quot;</span></span><span>
 </span><span id="line-446"></span><span>        </span><span class="annot"><span class="annottext">Expression -&gt; Parser Expression
 </span><a href="Parser.html#exTail"><span class="hs-identifier hs-var">exTail</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679249100"><span class="hs-identifier hs-var">next</span></a></span><span>
+</span><a href="#local-6989586621679249123"><span class="hs-identifier hs-var">next</span></a></span><span>
 </span><span id="line-447"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Expression -&gt; Parser Expression
 forall a. a -&gt; ParsecT Void String Identity a
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679249099"><span class="hs-identifier hs-var">expr</span></a></span><span>
+</span><a href="#local-6989586621679249122"><span class="hs-identifier hs-var">expr</span></a></span><span>
 </span><span id="line-448"></span><span>    </span><span class="hs-special">]</span><span>
 </span><span id="line-449"></span><span>
 </span><span id="line-450"></span><span class="annot"><a href="Parser.html#expression"><span class="hs-identifier hs-type">expression</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Parser.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span>
 </span><span id="line-451"></span><span id="expression"><span class="annot"><span class="annottext">expression :: Parser Expression
 </span><a href="Parser.html#expression"><span class="hs-identifier hs-var hs-var">expression</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-452"></span><span>  </span><span id="local-6989586621679249104"><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679249104"><span class="hs-identifier hs-var">expr</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Parser Expression
+</span><span id="line-452"></span><span>  </span><span id="local-6989586621679249127"><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679249127"><span class="hs-identifier hs-var">expr</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Parser Expression
 </span><a href="Parser.html#exHead"><span class="hs-identifier hs-var">exHead</span></a></span><span>
 </span><span id="line-453"></span><span>  </span><span class="annot"><span class="annottext">Expression -&gt; Parser Expression
 </span><a href="Parser.html#exTail"><span class="hs-identifier hs-var">exTail</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679249104"><span class="hs-identifier hs-var">expr</span></a></span><span>
+</span><a href="#local-6989586621679249127"><span class="hs-identifier hs-var">expr</span></a></span><span>
 </span><span id="line-454"></span><span>
 </span><span id="line-455"></span><span class="annot"><a href="Parser.html#program"><span class="hs-identifier hs-type">program</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Parser.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="annot"><a href="AST.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span>
 </span><span id="line-456"></span><span id="program"><span class="annot"><span class="annottext">program :: Parser Program
@@ -1824,8 +1824,8 @@ f (m a) -&gt; m a
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">String -&gt; Parser String
 </span><a href="Parser.html#symbol"><span class="hs-identifier hs-var">symbol</span></a></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;{&quot;</span></span><span>
-</span><span id="line-460"></span><span>        </span><span id="local-6989586621679249106"><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679249106"><span class="hs-identifier hs-var">prog</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Expression -&gt; Program
+</span><span id="line-460"></span><span>        </span><span id="local-6989586621679249129"><span class="annot"><span class="annottext">Program
+</span><a href="#local-6989586621679249129"><span class="hs-identifier hs-var">prog</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Expression -&gt; Program
 </span><a href="AST.html#Program"><span class="hs-identifier hs-var">Program</span></a></span><span> </span><span class="annot"><span class="annottext">(Expression -&gt; Program) -&gt; Parser Expression -&gt; Parser Program
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser Expression
@@ -1838,7 +1838,7 @@ forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 forall a. a -&gt; ParsecT Void String Identity a
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679249106"><span class="hs-identifier hs-var">prog</span></a></span><span>
+</span><a href="#local-6989586621679249129"><span class="hs-identifier hs-var">prog</span></a></span><span>
 </span><span id="line-463"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="hs-keyword">do</span><span>
 </span><span id="line-464"></span><span>        </span><span class="annot"><span class="annottext">String
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Parser String
@@ -1860,14 +1860,14 @@ m a -&gt; String -&gt; m a
 </span><span class="hs-string">&quot;program&quot;</span></span><span>
 </span><span id="line-469"></span><span>
 </span><span id="line-470"></span><span class="hs-comment">-- Entry point</span><span>
-</span><span id="line-471"></span><span id="local-6989586621679248484"><span class="annot"><a href="Parser.html#parse%27"><span class="hs-identifier hs-type">parse'</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Parser.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679248484"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Either</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="annot"><a href="#local-6989586621679248484"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-471"></span><span id="local-6989586621679248507"><span class="annot"><a href="Parser.html#parse%27"><span class="hs-identifier hs-type">parse'</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Parser.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679248507"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Either</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="annot"><a href="#local-6989586621679248507"><span class="hs-identifier hs-type">a</span></a></span></span><span>
 </span><span id="line-472"></span><span id="parse%27"><span class="annot"><span class="annottext">parse' :: forall a. String -&gt; Parser a -&gt; String -&gt; Either String a
-</span><a href="Parser.html#parse%27"><span class="hs-identifier hs-var hs-var">parse'</span></a></span></span><span> </span><span id="local-6989586621679249115"><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679249115"><span class="hs-identifier hs-var">name</span></a></span></span><span> </span><span id="local-6989586621679249116"><span class="annot"><span class="annottext">Parser a
-</span><a href="#local-6989586621679249116"><span class="hs-identifier hs-var">parser</span></a></span></span><span> </span><span id="local-6989586621679249117"><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679249117"><span class="hs-identifier hs-var">input</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-473"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679249126"><span class="annot"><span class="annottext">parsed :: Either (ParseErrorBundle String Void) a
-</span><a href="#local-6989586621679249126"><span class="hs-identifier hs-var hs-var">parsed</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><a href="Parser.html#parse%27"><span class="hs-identifier hs-var hs-var">parse'</span></a></span></span><span> </span><span id="local-6989586621679249138"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679249138"><span class="hs-identifier hs-var">name</span></a></span></span><span> </span><span id="local-6989586621679249139"><span class="annot"><span class="annottext">Parser a
+</span><a href="#local-6989586621679249139"><span class="hs-identifier hs-var">parser</span></a></span></span><span> </span><span id="local-6989586621679249140"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679249140"><span class="hs-identifier hs-var">input</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-473"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679249149"><span class="annot"><span class="annottext">parsed :: Either (ParseErrorBundle String Void) a
+</span><a href="#local-6989586621679249149"><span class="hs-identifier hs-var hs-var">parsed</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-474"></span><span>        </span><span class="annot"><span class="annottext">Parser a
 -&gt; String -&gt; String -&gt; Either (ParseErrorBundle String Void) a
 forall e s a.
@@ -1877,9 +1877,9 @@ Parsec e s a -&gt; String -&gt; s -&gt; Either (ParseErrorBundle s e) a
 </span><span id="line-476"></span><span>              </span><span class="annot"><span class="annottext">()
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Parser ()
 </span><a href="Parser.html#whiteSpace"><span class="hs-identifier hs-var">whiteSpace</span></a></span><span>
-</span><span id="line-477"></span><span>              </span><span id="local-6989586621679249128"><span class="annot"><span class="annottext">a
-</span><a href="#local-6989586621679249128"><span class="hs-identifier hs-var">p</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Parser a
-</span><a href="#local-6989586621679249116"><span class="hs-identifier hs-var">parser</span></a></span><span>
+</span><span id="line-477"></span><span>              </span><span id="local-6989586621679249151"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679249151"><span class="hs-identifier hs-var">p</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Parser a
+</span><a href="#local-6989586621679249139"><span class="hs-identifier hs-var">parser</span></a></span><span>
 </span><span id="line-478"></span><span>              </span><span class="annot"><span class="annottext">()
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Parser ()
 forall e s (m :: * -&gt; *). MonadParsec e s m =&gt; m ()
@@ -1888,28 +1888,28 @@ forall e s (m :: * -&gt; *). MonadParsec e s m =&gt; m ()
 forall a. a -&gt; ParsecT Void String Identity a
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">a
-</span><a href="#local-6989586621679249128"><span class="hs-identifier hs-var">p</span></a></span><span>
+</span><a href="#local-6989586621679249151"><span class="hs-identifier hs-var">p</span></a></span><span>
 </span><span id="line-480"></span><span>          </span><span class="hs-special">)</span><span>
 </span><span id="line-481"></span><span>          </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679249115"><span class="hs-identifier hs-var">name</span></a></span><span>
+</span><a href="#local-6989586621679249138"><span class="hs-identifier hs-var">name</span></a></span><span>
 </span><span id="line-482"></span><span>          </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679249117"><span class="hs-identifier hs-var">input</span></a></span><span>
+</span><a href="#local-6989586621679249140"><span class="hs-identifier hs-var">input</span></a></span><span>
 </span><span id="line-483"></span><span>  </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Either (ParseErrorBundle String Void) a
-</span><a href="#local-6989586621679249126"><span class="hs-identifier hs-var">parsed</span></a></span><span> </span><span class="hs-keyword">of</span><span>
-</span><span id="line-484"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">Right</span></span><span> </span><span id="local-6989586621679249130"><span class="annot"><span class="annottext">a
-</span><a href="#local-6989586621679249130"><span class="hs-identifier hs-var">parsed'</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">a -&gt; Either String a
+</span><a href="#local-6989586621679249149"><span class="hs-identifier hs-var">parsed</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-484"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">Right</span></span><span> </span><span id="local-6989586621679249153"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679249153"><span class="hs-identifier hs-var">parsed'</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">a -&gt; Either String a
 forall a b. b -&gt; Either a b
 </span><span class="hs-identifier hs-var">Right</span></span><span> </span><span class="annot"><span class="annottext">a
-</span><a href="#local-6989586621679249130"><span class="hs-identifier hs-var">parsed'</span></a></span><span>
-</span><span id="line-485"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">Left</span></span><span> </span><span id="local-6989586621679249131"><span class="annot"><span class="annottext">ParseErrorBundle String Void
-</span><a href="#local-6989586621679249131"><span class="hs-identifier hs-var">err</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; Either String a
+</span><a href="#local-6989586621679249153"><span class="hs-identifier hs-var">parsed'</span></a></span><span>
+</span><span id="line-485"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">Left</span></span><span> </span><span id="local-6989586621679249154"><span class="annot"><span class="annottext">ParseErrorBundle String Void
+</span><a href="#local-6989586621679249154"><span class="hs-identifier hs-var">err</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; Either String a
 forall a b. a -&gt; Either a b
 </span><span class="hs-identifier hs-var">Left</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">ParseErrorBundle String Void -&gt; String
 forall s e.
 (VisualStream s, TraversableStream s, ShowErrorComponent e) =&gt;
 ParseErrorBundle s e -&gt; String
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/mgprsc-9.8.1-d0e806a4/share/doc/html/src/Text.Megaparsec.Error.html#errorBundlePretty"><span class="hs-identifier hs-var">errorBundlePretty</span></a></span><span> </span><span class="annot"><span class="annottext">ParseErrorBundle String Void
-</span><a href="#local-6989586621679249131"><span class="hs-identifier hs-var">err</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679249154"><span class="hs-identifier hs-var">err</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-486"></span><span>
 </span><span id="line-487"></span><span class="annot"><a href="Parser.html#parseBytes"><span class="hs-identifier hs-type">parseBytes</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Either</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="annot"><a href="AST.html#Bytes"><span class="hs-identifier hs-type">Bytes</span></a></span><span>
 </span><span id="line-488"></span><span id="parseBytes"><span class="annot"><span class="annottext">parseBytes :: String -&gt; Either String Bytes
@@ -1937,22 +1937,22 @@ forall a. String -&gt; Parser a -&gt; String -&gt; Either String a
 </span><span id="line-495"></span><span>
 </span><span id="line-496"></span><span class="annot"><a href="Parser.html#parseNumberThrows"><span class="hs-identifier hs-type">parseNumberThrows</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span>
 </span><span id="line-497"></span><span id="parseNumberThrows"><span class="annot"><span class="annottext">parseNumberThrows :: String -&gt; IO Expression
-</span><a href="Parser.html#parseNumberThrows"><span class="hs-identifier hs-var hs-var">parseNumberThrows</span></a></span></span><span> </span><span id="local-6989586621679249133"><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679249133"><span class="hs-identifier hs-var">num</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">String -&gt; Either String Expression
+</span><a href="Parser.html#parseNumberThrows"><span class="hs-identifier hs-var hs-var">parseNumberThrows</span></a></span></span><span> </span><span id="local-6989586621679249156"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679249156"><span class="hs-identifier hs-var">num</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">String -&gt; Either String Expression
 </span><a href="Parser.html#parseNumber"><span class="hs-identifier hs-var">parseNumber</span></a></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679249133"><span class="hs-identifier hs-var">num</span></a></span><span> </span><span class="hs-keyword">of</span><span>
-</span><span id="line-498"></span><span>  </span><span class="annot"><span class="hs-identifier hs-type">Right</span></span><span> </span><span id="local-6989586621679249134"><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679249134"><span class="hs-identifier hs-var">num'</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expression -&gt; IO Expression
+</span><a href="#local-6989586621679249156"><span class="hs-identifier hs-var">num</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-498"></span><span>  </span><span class="annot"><span class="hs-identifier hs-type">Right</span></span><span> </span><span id="local-6989586621679249157"><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679249157"><span class="hs-identifier hs-var">num'</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expression -&gt; IO Expression
 forall a. a -&gt; IO a
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679249134"><span class="hs-identifier hs-var">num'</span></a></span><span>
-</span><span id="line-499"></span><span>  </span><span class="annot"><span class="hs-identifier hs-type">Left</span></span><span> </span><span id="local-6989586621679249135"><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679249135"><span class="hs-identifier hs-var">err</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">ParserException -&gt; IO Expression
+</span><a href="#local-6989586621679249157"><span class="hs-identifier hs-var">num'</span></a></span><span>
+</span><span id="line-499"></span><span>  </span><span class="annot"><span class="hs-identifier hs-type">Left</span></span><span> </span><span id="local-6989586621679249158"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679249158"><span class="hs-identifier hs-var">err</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">ParserException -&gt; IO Expression
 forall e a. Exception e =&gt; e -&gt; IO a
 </span><span class="hs-identifier hs-var">throwIO</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String -&gt; ParserException
 </span><a href="Parser.html#CouldNotParseNumber"><span class="hs-identifier hs-var">CouldNotParseNumber</span></a></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679249135"><span class="hs-identifier hs-var">err</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679249158"><span class="hs-identifier hs-var">err</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-500"></span><span>
 </span><span id="line-501"></span><span class="annot"><a href="Parser.html#parseAttribute"><span class="hs-identifier hs-type">parseAttribute</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Either</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="annot"><a href="AST.html#Attribute"><span class="hs-identifier hs-type">Attribute</span></a></span><span>
 </span><span id="line-502"></span><span id="parseAttribute"><span class="annot"><span class="annottext">parseAttribute :: String -&gt; Either String Attribute
@@ -1980,22 +1980,22 @@ forall a. String -&gt; Parser a -&gt; String -&gt; Either String a
 </span><span id="line-509"></span><span>
 </span><span id="line-510"></span><span class="annot"><a href="Parser.html#parseAttributeThrows"><span class="hs-identifier hs-type">parseAttributeThrows</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="annot"><a href="AST.html#Attribute"><span class="hs-identifier hs-type">Attribute</span></a></span><span>
 </span><span id="line-511"></span><span id="parseAttributeThrows"><span class="annot"><span class="annottext">parseAttributeThrows :: String -&gt; IO Attribute
-</span><a href="Parser.html#parseAttributeThrows"><span class="hs-identifier hs-var hs-var">parseAttributeThrows</span></a></span></span><span> </span><span id="local-6989586621679249136"><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679249136"><span class="hs-identifier hs-var">attr</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">String -&gt; Either String Attribute
+</span><a href="Parser.html#parseAttributeThrows"><span class="hs-identifier hs-var hs-var">parseAttributeThrows</span></a></span></span><span> </span><span id="local-6989586621679249159"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679249159"><span class="hs-identifier hs-var">attr</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">String -&gt; Either String Attribute
 </span><a href="Parser.html#parseAttribute"><span class="hs-identifier hs-var">parseAttribute</span></a></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679249136"><span class="hs-identifier hs-var">attr</span></a></span><span> </span><span class="hs-keyword">of</span><span>
-</span><span id="line-512"></span><span>  </span><span class="annot"><span class="hs-identifier hs-type">Right</span></span><span> </span><span id="local-6989586621679249137"><span class="annot"><span class="annottext">Attribute
-</span><a href="#local-6989586621679249137"><span class="hs-identifier hs-var">attr'</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Attribute -&gt; IO Attribute
+</span><a href="#local-6989586621679249159"><span class="hs-identifier hs-var">attr</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-512"></span><span>  </span><span class="annot"><span class="hs-identifier hs-type">Right</span></span><span> </span><span id="local-6989586621679249160"><span class="annot"><span class="annottext">Attribute
+</span><a href="#local-6989586621679249160"><span class="hs-identifier hs-var">attr'</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Attribute -&gt; IO Attribute
 forall a. a -&gt; IO a
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">Attribute
-</span><a href="#local-6989586621679249137"><span class="hs-identifier hs-var">attr'</span></a></span><span>
-</span><span id="line-513"></span><span>  </span><span class="annot"><span class="hs-identifier hs-type">Left</span></span><span> </span><span id="local-6989586621679249138"><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679249138"><span class="hs-identifier hs-var">err</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">ParserException -&gt; IO Attribute
+</span><a href="#local-6989586621679249160"><span class="hs-identifier hs-var">attr'</span></a></span><span>
+</span><span id="line-513"></span><span>  </span><span class="annot"><span class="hs-identifier hs-type">Left</span></span><span> </span><span id="local-6989586621679249161"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679249161"><span class="hs-identifier hs-var">err</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">ParserException -&gt; IO Attribute
 forall e a. Exception e =&gt; e -&gt; IO a
 </span><span class="hs-identifier hs-var">throwIO</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String -&gt; ParserException
 </span><a href="Parser.html#CouldNotParseAttribute"><span class="hs-identifier hs-var">CouldNotParseAttribute</span></a></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679249138"><span class="hs-identifier hs-var">err</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679249161"><span class="hs-identifier hs-var">err</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-514"></span><span>
 </span><span id="line-515"></span><span class="annot"><a href="Parser.html#parseExpression"><span class="hs-identifier hs-type">parseExpression</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Either</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span>
 </span><span id="line-516"></span><span id="parseExpression"><span class="annot"><span class="annottext">parseExpression :: String -&gt; Either String Expression
@@ -2007,22 +2007,22 @@ forall a. String -&gt; Parser a -&gt; String -&gt; Either String a
 </span><span id="line-517"></span><span>
 </span><span id="line-518"></span><span class="annot"><a href="Parser.html#parseExpressionThrows"><span class="hs-identifier hs-type">parseExpressionThrows</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span>
 </span><span id="line-519"></span><span id="parseExpressionThrows"><span class="annot"><span class="annottext">parseExpressionThrows :: String -&gt; IO Expression
-</span><a href="Parser.html#parseExpressionThrows"><span class="hs-identifier hs-var hs-var">parseExpressionThrows</span></a></span></span><span> </span><span id="local-6989586621679249139"><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679249139"><span class="hs-identifier hs-var">ex</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">String -&gt; Either String Expression
+</span><a href="Parser.html#parseExpressionThrows"><span class="hs-identifier hs-var hs-var">parseExpressionThrows</span></a></span></span><span> </span><span id="local-6989586621679249162"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679249162"><span class="hs-identifier hs-var">ex</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">String -&gt; Either String Expression
 </span><a href="Parser.html#parseExpression"><span class="hs-identifier hs-var">parseExpression</span></a></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679249139"><span class="hs-identifier hs-var">ex</span></a></span><span> </span><span class="hs-keyword">of</span><span>
-</span><span id="line-520"></span><span>  </span><span class="annot"><span class="hs-identifier hs-type">Right</span></span><span> </span><span id="local-6989586621679249140"><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679249140"><span class="hs-identifier hs-var">expr</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expression -&gt; IO Expression
+</span><a href="#local-6989586621679249162"><span class="hs-identifier hs-var">ex</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-520"></span><span>  </span><span class="annot"><span class="hs-identifier hs-type">Right</span></span><span> </span><span id="local-6989586621679249163"><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679249163"><span class="hs-identifier hs-var">expr</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expression -&gt; IO Expression
 forall a. a -&gt; IO a
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679249140"><span class="hs-identifier hs-var">expr</span></a></span><span>
-</span><span id="line-521"></span><span>  </span><span class="annot"><span class="hs-identifier hs-type">Left</span></span><span> </span><span id="local-6989586621679249141"><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679249141"><span class="hs-identifier hs-var">err</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">ParserException -&gt; IO Expression
+</span><a href="#local-6989586621679249163"><span class="hs-identifier hs-var">expr</span></a></span><span>
+</span><span id="line-521"></span><span>  </span><span class="annot"><span class="hs-identifier hs-type">Left</span></span><span> </span><span id="local-6989586621679249164"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679249164"><span class="hs-identifier hs-var">err</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">ParserException -&gt; IO Expression
 forall e a. Exception e =&gt; e -&gt; IO a
 </span><span class="hs-identifier hs-var">throwIO</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String -&gt; ParserException
 </span><a href="Parser.html#CouldNotParseExpression"><span class="hs-identifier hs-var">CouldNotParseExpression</span></a></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679249141"><span class="hs-identifier hs-var">err</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679249164"><span class="hs-identifier hs-var">err</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-522"></span><span>
 </span><span id="line-523"></span><span class="annot"><a href="Parser.html#parseProgram"><span class="hs-identifier hs-type">parseProgram</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Either</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="annot"><a href="AST.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span>
 </span><span id="line-524"></span><span id="parseProgram"><span class="annot"><span class="annottext">parseProgram :: String -&gt; Either String Program
@@ -2034,20 +2034,20 @@ forall a. String -&gt; Parser a -&gt; String -&gt; Either String a
 </span><span id="line-525"></span><span>
 </span><span id="line-526"></span><span class="annot"><a href="Parser.html#parseProgramThrows"><span class="hs-identifier hs-type">parseProgramThrows</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="annot"><a href="AST.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span>
 </span><span id="line-527"></span><span id="parseProgramThrows"><span class="annot"><span class="annottext">parseProgramThrows :: String -&gt; IO Program
-</span><a href="Parser.html#parseProgramThrows"><span class="hs-identifier hs-var hs-var">parseProgramThrows</span></a></span></span><span> </span><span id="local-6989586621679249142"><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679249142"><span class="hs-identifier hs-var">prg</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">String -&gt; Either String Program
+</span><a href="Parser.html#parseProgramThrows"><span class="hs-identifier hs-var hs-var">parseProgramThrows</span></a></span></span><span> </span><span id="local-6989586621679249165"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679249165"><span class="hs-identifier hs-var">prg</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">String -&gt; Either String Program
 </span><a href="Parser.html#parseProgram"><span class="hs-identifier hs-var">parseProgram</span></a></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679249142"><span class="hs-identifier hs-var">prg</span></a></span><span> </span><span class="hs-keyword">of</span><span>
-</span><span id="line-528"></span><span>  </span><span class="annot"><span class="hs-identifier hs-type">Right</span></span><span> </span><span id="local-6989586621679249143"><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679249143"><span class="hs-identifier hs-var">prog</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Program -&gt; IO Program
+</span><a href="#local-6989586621679249165"><span class="hs-identifier hs-var">prg</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-528"></span><span>  </span><span class="annot"><span class="hs-identifier hs-type">Right</span></span><span> </span><span id="local-6989586621679249166"><span class="annot"><span class="annottext">Program
+</span><a href="#local-6989586621679249166"><span class="hs-identifier hs-var">prog</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Program -&gt; IO Program
 forall a. a -&gt; IO a
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679249143"><span class="hs-identifier hs-var">prog</span></a></span><span>
-</span><span id="line-529"></span><span>  </span><span class="annot"><span class="hs-identifier hs-type">Left</span></span><span> </span><span id="local-6989586621679249144"><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679249144"><span class="hs-identifier hs-var">err</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">ParserException -&gt; IO Program
+</span><a href="#local-6989586621679249166"><span class="hs-identifier hs-var">prog</span></a></span><span>
+</span><span id="line-529"></span><span>  </span><span class="annot"><span class="hs-identifier hs-type">Left</span></span><span> </span><span id="local-6989586621679249167"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679249167"><span class="hs-identifier hs-var">err</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">ParserException -&gt; IO Program
 forall e a. Exception e =&gt; e -&gt; IO a
 </span><span class="hs-identifier hs-var">throwIO</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String -&gt; ParserException
 </span><a href="Parser.html#CouldNotParseProgram"><span class="hs-identifier hs-var">CouldNotParseProgram</span></a></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679249144"><span class="hs-identifier hs-var">err</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679249167"><span class="hs-identifier hs-var">err</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-530"></span></pre></body></html>
