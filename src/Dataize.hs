@@ -161,7 +161,8 @@ dataize program@(Program univ) ctx@DataizeContext{..} = do
 -- ternary, 𝔻(n, e, s): besides the term 'n' it takes the universe 'e' ('univ'),
 -- which it forwards to 𝕄, and the mutable state 's', returning the bytes together
 -- with the new state. Its rules come from 'dataization.yaml': 'delta' yields the
--- asset bytes, 'none' (a formation) and 'end' (⊥) yield empty bytes (--),
+-- asset bytes, 'end' (⊥) yields empty bytes (--) and 'none' (a formation with no
+-- Δ/λ/φ) delegates to 'end' by dataizing ⊥,
 -- 'box' contextualizes the φ-body and keeps dataizing (its step is labelled by
 -- its 'contextualize' side-computation), and 'norm' reduces through morphing,
 -- splicing the morphing steps into the chain. The clauses are disjoint (see
@@ -215,11 +216,14 @@ dataize' (expr, seq) univ state ctx = do
           built <- buildExpressionThrows inner final
           ((morphed', seq'), state'') <- morph (built, seq) univ state' ctx
           dataize' (morphed', seq') univ state'' ctx
+        -- 𝔻(⊥) (the 'none' rule) hands a literal term straight to 𝔻 with no
+        -- producing side-computation, so the transition to that term is labelled
+        -- by the conclusion's own verb ('dataize') rather than a side premise.
         _ -> do
           let side = rule.premises `excluding` [concl]
           (final, state') <- sides side subst
           built <- buildExpressionThrows arg final
-          seq' <- leadsTo seq (labelOf side) built ctx
+          seq' <- leadsTo seq (labelOr (verb concl.operation) side) built ctx
           dataize' (built, seq') univ state' ctx
       Just _ -> throwIO (userError (printf "dataization rule '%s' must conclude with a 'dataize' premise" rule.name))
     sides :: [Y.Premise] -> Subst -> IO (Subst, State)
@@ -229,6 +233,11 @@ dataize' (expr, seq) univ state ctx = do
     labelOf :: [Y.Premise] -> String
     labelOf (premise : _) = verb premise.operation
     labelOf [] = ""
+    -- As 'labelOf', but falls back to the given label when there is no
+    -- side-computation to name the step (the 'none' rule's 𝔻(⊥) premise).
+    labelOr :: String -> [Y.Premise] -> String
+    labelOr _ premises@(_ : _) = labelOf premises
+    labelOr fallback [] = fallback
 
 -- The premise binding the given expression meta, if any. The conclusion of a
 -- morphing rule and the argument of a continuation premise are looked up here to
