@@ -227,7 +227,7 @@ instance Render BELONGING where
 
 instance Render SET where
   render ST_BINDING{..} = render binding
-  render ST_ATTRIBUTES{..} = "[ " <> T.intercalate ", " (map render attrs) <> " ]"
+  render ST_ATTRIBUTES{..} = "[ " <> T.intercalate " \\char44{} " (map render attrs) <> " ]"
 
 instance Render LOGIC_OPERATOR where
   render AND = "\\;\\text{and}\\;"
@@ -269,7 +269,7 @@ instance Render CONDITION where
   render CO_FORMATION{..} = "\\phinoIsFormation{ " <> render expr <> " }"
   render CO_DISJOINT{..} =
     "[ "
-      <> T.intercalate ", " (map render attrs)
+      <> T.intercalate " \\char44{} " (map render attrs)
       <> " ] \\cap \\lparen "
       <> T.intercalate " \\cup " (map render groups)
       <> " \\rparen = \\emptyset"
