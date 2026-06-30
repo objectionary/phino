@@ -273,9 +273,13 @@ instance Render CONDITION where
   render CO_DISJOINT{..} =
     "[ "
       <> T.intercalate " \\char44{} " (map render attrs)
-      <> " ] \\cap \\lparen "
-      <> T.intercalate " \\cup " (map render groups)
-      <> " \\rparen = \\emptyset"
+      <> " ] \\cap "
+      <> renderGroups groups
+      <> " = \\emptyset"
+    where
+      renderGroups :: [BINDING] -> Text
+      renderGroups [group] = render group
+      renderGroups gs = "\\lparen " <> T.intercalate " \\cup " (map render gs) <> " \\rparen"
   render CO_EMPTY = ""
 
 renderFunc :: Render a => Text -> a -> Text

@@ -1132,7 +1132,7 @@ spec = do
             , "\\end{phinoDataizationInference}"
             , "\\begin{phinoDataizationInference}"
             , "  \\phinoName{none}"
-            , "  \\phinoCondition{ [ D \\char44{} L \\char44{} @ ] \\cap \\lparen B \\rparen = \\emptyset }"
+            , "  \\phinoCondition{ [ D \\char44{} L \\char44{} @ ] \\cap B = \\emptyset }"
             , "  \\phinoPremise{ \\phinoDataize{ T }{ e }{ s_1 }{ \\delta }{ s_2 } }"
             , "  \\phinoConclusion{ \\phinoDataize{ [[ B ]] }{ e }{ s_1 }{ \\delta }{ s_2 } }"
             , "\\end{phinoDataizationInference}"
