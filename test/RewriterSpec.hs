@@ -15,9 +15,9 @@ import Data.Char (isSpace)
 import Data.List.NonEmpty qualified as NE
 import Data.Yaml qualified as Yaml
 import Deps (dontSaveStep)
+import Files (allPathsIn, ensuredFile)
 import Functions (buildTerm)
 import GHC.Generics
-import Misc (allPathsIn, ensuredFile)
 import Must (Must (..))
 import Parser (parseProgramThrows)
 import Printer (printProgram)

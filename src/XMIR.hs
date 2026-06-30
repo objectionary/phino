@@ -20,6 +20,7 @@ module XMIR
 where
 
 import AST
+import Bytes (btsToNum, btsToStr, bytesToBts)
 import Control.Exception (Exception (displayException), throwIO)
 import Data.Bifunctor (bimap)
 import Data.Foldable (foldlM)
@@ -356,9 +357,7 @@ parseXMIR xmir = case parseText def (TL.pack xmir) of
   Left err -> Left (displayException err)
 
 parseXMIRThrows :: String -> IO Document
-parseXMIRThrows xmir = case parseXMIR xmir of
-  Right doc -> pure doc
-  Left err -> throwIO (CouldNotParseXMIR err)
+parseXMIRThrows xmir = orThrow CouldNotParseXMIR (parseXMIR xmir)
 
 xmirToPhi :: Document -> IO Program
 xmirToPhi xmir =

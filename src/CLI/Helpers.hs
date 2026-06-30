@@ -16,13 +16,14 @@ import Data.List (intercalate)
 import Data.Maybe
 import Deps (SaveStepFunc, saveStep)
 import Encoding
+import Files (ensuredFile)
 import Functions (execFunctions)
 import LaTeX (LatexContext (..), defaultMeetLength, defaultMeetPopularity, expressionToLaTeX, programToLaTeX, rewrittensToLatex)
 import Locator (locatedExpression)
 import Logger
-import qualified Misc as M
 import Parser (parseProgramThrows)
 import qualified Printer as P
+import qualified Random as R
 import Rewriter (Rewrittens')
 import System.IO (getContents')
 import Text.Printf (printf)
@@ -50,7 +51,7 @@ readInput :: Maybe FilePath -> IO String
 readInput inputFile' = case inputFile' of
   Just pth -> do
     logDebug (printf "Reading from file: '%s'" pth)
-    readFile =<< M.ensuredFile pth
+    readFile =<< ensuredFile pth
   Nothing -> do
     logDebug "Reading from stdin"
     getContents' `catch` (\(e :: SomeException) -> throwIO (CouldNotReadFromStdin (show e)))
@@ -101,12 +102,12 @@ getRules normalize shuffle rules = do
             pure []
           else do
             logDebug (printf "Using rules from files: [%s]" (intercalate ", " rules))
-            yamls <- mapM M.ensuredFile rules
+            yamls <- mapM ensuredFile rules
             mapM (Y.yamlRule >=> validateRewriteRule) yamls
   if shuffle
     then do
       logDebug "The --shuffle option is provided, rules are used in random order"
-      M.shuffle ordered
+      R.shuffle ordered
     else pure ordered
 
 -- Pass a user-supplied rewriting rule through unchanged, or fail fast if it

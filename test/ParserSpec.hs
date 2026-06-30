@@ -10,7 +10,7 @@ module ParserSpec where
 import AST
 import Control.Monad (forM_)
 import Data.Either (isLeft, isRight)
-import Misc
+import Files (allPathsIn)
 import Parser
 import System.FilePath (takeBaseName)
 import Test.Hspec (Example (Arg), Expectation, Spec, SpecWith, anyException, describe, it, runIO, shouldBe, shouldReturn, shouldSatisfy, shouldThrow)

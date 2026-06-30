@@ -1,5 +1,8 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE PatternSynonyms #-}
+{-# LANGUAGE ViewPatterns #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
@@ -157,3 +160,63 @@ countNodes (ExDispatch expr' _) = 2 + countNodes expr'
 countNodes (ExPhiMeet _ _ expr) = countNodes expr
 countNodes (ExPhiAgain _ _ expr) = countNodes expr
 countNodes _ = 1
+
+matchBaseObject :: Expression -> Maybe T.Text
+matchBaseObject (ExDispatch ExRoot (AtLabel label)) = Just label
+matchBaseObject _ = Nothing
+
+pattern BaseObject :: T.Text -> Expression
+pattern BaseObject label <- (matchBaseObject -> Just label)
+  where
+    BaseObject label = ExDispatch ExRoot (AtLabel label)
+
+-- Minimal matcher function (required for view pattern)
+matchDataObject :: Expression -> Maybe (T.Text, Bytes)
+matchDataObject (ExApplication outer (ArAlpha (Alpha 0) inner)) = case (matchOuter outer, matchInner inner) of
+  (Just label, Just bts) -> Just (label, bts)
+  _ -> Nothing
+  where
+    matchOuter :: Expression -> Maybe T.Text
+    matchOuter (BaseObject label) = Just label
+    matchOuter (ExPhiAgain _ _ (BaseObject label)) = Just label
+    matchOuter _ = Nothing
+    matchInner :: Expression -> Maybe Bytes
+    matchInner (ExPhiAgain _ _ inner') = matchInner inner'
+    matchInner inner' = matchInner' inner'
+    matchInner' :: Expression -> Maybe Bytes
+    matchInner' (ExApplication bytes (ArAlpha (Alpha 0) formation)) = case (matchesBytes bytes, matchFormation formation) of
+      (True, Just bts) -> Just bts
+      _ -> Nothing
+    matchInner' _ = Nothing
+    matchesBytes :: Expression -> Bool
+    matchesBytes (BaseObject "bytes") = True
+    matchesBytes (ExPhiAgain _ _ (BaseObject "bytes")) = True
+    matchesBytes _ = False
+    matchFormation :: Expression -> Maybe Bytes
+    matchFormation (ExFormation [BiDelta bts, BiVoid AtRho]) = Just bts
+    matchFormation (ExPhiAgain _ _ (ExFormation [BiDelta bts, BiVoid AtRho])) = Just bts
+    matchFormation _ = Nothing
+matchDataObject _ = Nothing
+
+pattern DataString :: Bytes -> Expression
+pattern DataString bts = DataObject "string" bts
+
+pattern DataNumber :: Bytes -> Expression
+pattern DataNumber bts = DataObject "number" bts
+
+pattern DataObject :: T.Text -> Bytes -> Expression
+pattern DataObject label bts <- (matchDataObject -> Just (label, bts))
+  where
+    DataObject label bts =
+      ExApplication
+        (BaseObject label)
+        ( ArAlpha
+            (Alpha 0)
+            ( ExApplication
+                (BaseObject "bytes")
+                ( ArAlpha
+                    (Alpha 0)
+                    (ExFormation [BiDelta bts, BiVoid AtRho])
+                )
+            )
+        )

@@ -1,141 +1,33 @@
-{-# LANGUAGE DeriveAnyClass #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE PatternSynonyms #-}
-{-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE ViewPatterns #-}
-{-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
-
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
 -- This module provides commonly used helper functions for other modules
 module Misc
-  ( numToBts
-  , strToBts
-  , bytesToBts
-  , btsToStr
-  , btsToNum
-  , withVoidRho
+  ( withVoidRho
   , recoverFormations
-  , allPathsIn
-  , ensuredFile
-  , shuffle
   , toDouble
-  , btsToUnescapedStr
   , fqnToAttrs
   , attributesFromBindings
   , attributesFromBindings'
   , attributeFromBinding
   , uniqueBindings
   , uniqueBindings'
-  , validateYamlObject
-  , matchDataObject
-  , pattern DataObject
-  , pattern DataString
-  , pattern DataNumber
-  , pattern BaseObject
+  , orThrow
   )
 where
 
 import AST
 import Control.Exception
-import Control.Monad
-import Data.Aeson (Object)
-import qualified Data.Aeson.Key as Key
-import qualified Data.Aeson.KeyMap as KeyMap
-import Data.Binary.IEEE754
-import Data.Bits (Bits (shiftL, shiftR), (.&.), (.|.))
-import qualified Data.ByteString as B
-import Data.ByteString.Builder (toLazyByteString, word64BE)
-import Data.ByteString.Lazy (unpack)
-import qualified Data.ByteString.Lazy.UTF8 as U
-import Data.Char (chr, isDigit, isPrint, ord)
+import Data.Functor ((<&>))
 import Data.List (intercalate)
 import Data.Maybe (catMaybes)
 import qualified Data.Set as Set
-import qualified Data.Text as T
-import qualified Data.Text.Encoding as T
-import qualified Data.Vector as V
-import qualified Data.Vector.Mutable as M
-import Data.Word (Word64, Word8)
-import Numeric (readHex)
-
--- import Printer (printExpression)
-
-import Data.Functor ((<&>))
-import System.Directory (doesDirectoryExist, doesFileExist, listDirectory)
-import System.FilePath ((</>))
-import System.Random.Stateful
 import Text.Printf (printf)
 
-data FsException
-  = FileDoesNotExist {_file :: FilePath}
-  | DirectoryDoesNotExist {_dir :: FilePath}
-  deriving (Exception)
-
-instance Show FsException where
-  show FileDoesNotExist{..} = printf "File '%s' does not exist" _file
-  show DirectoryDoesNotExist{..} = printf "Directory '%s' does not exist" _dir
-
-matchBaseObject :: Expression -> Maybe T.Text
-matchBaseObject (ExDispatch ExRoot (AtLabel label)) = Just label
-matchBaseObject _ = Nothing
-
-pattern BaseObject :: T.Text -> Expression
-pattern BaseObject label <- (matchBaseObject -> Just label)
-  where
-    BaseObject label = ExDispatch ExRoot (AtLabel label)
-
--- Minimal matcher function (required for view pattern)
-matchDataObject :: Expression -> Maybe (T.Text, Bytes)
-matchDataObject (ExApplication outer (ArAlpha (Alpha 0) inner)) = case (matchOuter outer, matchInner inner) of
-  (Just label, Just bts) -> Just (label, bts)
-  _ -> Nothing
-  where
-    matchOuter :: Expression -> Maybe T.Text
-    matchOuter (BaseObject label) = Just label
-    matchOuter (ExPhiAgain _ _ (BaseObject label)) = Just label
-    matchOuter _ = Nothing
-    matchInner :: Expression -> Maybe Bytes
-    matchInner (ExPhiAgain _ _ inner') = matchInner inner'
-    matchInner inner' = matchInner' inner'
-    matchInner' :: Expression -> Maybe Bytes
-    matchInner' (ExApplication bytes (ArAlpha (Alpha 0) formation)) = case (matchesBytes bytes, matchFormation formation) of
-      (True, Just bts) -> Just bts
-      _ -> Nothing
-    matchInner' _ = Nothing
-    matchesBytes :: Expression -> Bool
-    matchesBytes (BaseObject "bytes") = True
-    matchesBytes (ExPhiAgain _ _ (BaseObject "bytes")) = True
-    matchesBytes _ = False
-    matchFormation :: Expression -> Maybe Bytes
-    matchFormation (ExFormation [BiDelta bts, BiVoid AtRho]) = Just bts
-    matchFormation (ExPhiAgain _ _ (ExFormation [BiDelta bts, BiVoid AtRho])) = Just bts
-    matchFormation _ = Nothing
-matchDataObject _ = Nothing
-
-pattern DataString :: Bytes -> Expression
-pattern DataString bts = DataObject "string" bts
-
-pattern DataNumber :: Bytes -> Expression
-pattern DataNumber bts = DataObject "number" bts
-
-pattern DataObject :: T.Text -> Bytes -> Expression
-pattern DataObject label bts <- (matchDataObject -> Just (label, bts))
-  where
-    DataObject label bts =
-      ExApplication
-        (BaseObject label)
-        ( ArAlpha
-            (Alpha 0)
-            ( ExApplication
-                (BaseObject "bytes")
-                ( ArAlpha
-                    (Alpha 0)
-                    (ExFormation [BiDelta bts, BiVoid AtRho])
-                )
-            )
-        )
+-- Unwrap a pure 'Either String' in IO, throwing the built exception on 'Left'
+orThrow :: (Exception e) => (String -> e) -> Either String a -> IO a
+orThrow _ (Right value) = pure value
+orThrow asException (Left err) = throwIO (asException err)
 
 -- Extract attribute from binding
 attributeFromBinding :: Binding -> Maybe Attribute
@@ -180,18 +72,18 @@ uniqueBindings bds = case duplicated bds Set.empty of
 
 -- Add void rho binding to the end of the list of any rho binding is not present
 withVoidRho :: [Binding] -> [Binding]
-withVoidRho bds = withVoidRho' bds False
+withVoidRho bds = go bds False
   where
-    withVoidRho' :: [Binding] -> Bool -> [Binding]
-    withVoidRho' [] hasRho = [BiVoid AtRho | not hasRho]
-    withVoidRho' (bd : rest) hasRho =
+    go :: [Binding] -> Bool -> [Binding]
+    go [] hasRho = [BiVoid AtRho | not hasRho]
+    go (bd : rest) hasRho =
       case bd of
         BiMeta _ -> bd : rest
         BiVoid (AtMeta _) -> bd : rest
         BiTau (AtMeta _) _ -> bd : rest
-        BiVoid AtRho -> bd : withVoidRho' rest True
-        BiTau AtRho _ -> bd : withVoidRho' rest True
-        _ -> bd : withVoidRho' rest hasRho
+        BiVoid AtRho -> bd : go rest True
+        BiTau AtRho _ -> bd : go rest True
+        _ -> bd : go rest hasRho
 
 -- Recursively ensure all formations have a BiVoid AtRho binding (ρ ↦ ∅).
 -- Fixes in-memory ExFormation [] to ExFormation [BiVoid AtRho] after rewriting,
@@ -218,229 +110,14 @@ recoverArgument (ArAlpha alpha expr) = ArAlpha alpha (recoverFormations expr)
 -- >>> fqnToAttrs ExRoot
 -- Just []
 fqnToAttrs :: Expression -> Maybe [Attribute]
-fqnToAttrs expr = fqnToAttrs' expr <&> reverse
+fqnToAttrs expr = go expr <&> reverse
   where
-    fqnToAttrs' :: Expression -> Maybe [Attribute]
-    fqnToAttrs' ExRoot = Just []
-    fqnToAttrs' (ExDispatch ex at) = fqnToAttrs' ex <&> (:) at
-    fqnToAttrs' _ = Nothing
-
-ensuredFile :: FilePath -> IO FilePath
-ensuredFile pth = do
-  exists <- doesFileExist pth
-  if exists then pure pth else throwIO (FileDoesNotExist pth)
-
--- Recursively collect all file paths in provided directory
-allPathsIn :: FilePath -> IO [FilePath]
-allPathsIn dir = do
-  exists <- doesDirectoryExist dir
-  names <- if exists then listDirectory dir else throwIO (DirectoryDoesNotExist dir)
-  let nested = map (dir </>) names
-  paths <-
-    forM
-      nested
-      ( \path -> do
-          isDir <- doesDirectoryExist path
-          if isDir
-            then allPathsIn path
-            else return [path]
-      )
-  return (concat paths)
+    go :: Expression -> Maybe [Attribute]
+    go ExRoot = Just []
+    go (ExDispatch ex at) = go ex <&> (:) at
+    go _ = Nothing
 
 -- >>> toDouble 5
 -- 5.0
 toDouble :: Int -> Double
 toDouble = fromIntegral
-
--- >>> btsToWord8 BtEmpty
--- []
--- >>> btsToWord8 (BtOne "01")
--- [1]
--- >>> btsToWord8 (BtMany [])
--- []
--- >>> btsToWord8 (BtMany ["40", "14", "00", "00", "00", "00", "00", "00"])
--- [64,20,0,0,0,0,0,0]
-btsToWord8 :: Bytes -> [Word8]
-btsToWord8 BtEmpty = []
-btsToWord8 (BtOne bt) = [hexByte bt]
-btsToWord8 (BtMany bts) = map hexByte bts
-btsToWord8 (BtMeta mt) = error $ "Cannot convert meta bytes to Word8; " ++ T.unpack mt
-
-hexByte :: String -> Word8
-hexByte [hi, lo] = (nibble hi `shiftL` 4) .|. nibble lo
-  where
-    nibble c
-      | isDigit c = fromIntegral (ord c - ord '0')
-      | c >= 'A' && c <= 'F' = fromIntegral (ord c - ord 'A' + 10)
-      | c >= 'a' && c <= 'f' = fromIntegral (ord c - ord 'a' + 10)
-      | otherwise = error ("Invalid hex digit: " ++ [c])
-hexByte bt = case readHex bt of
-  [(hex, "")] -> fromIntegral (hex :: Integer)
-  _ -> error $ "Invalid hex byte; " ++ bt
-
--- >>> word8ToBytes [64, 20, 0]
--- BtMany ["40","14","00"]
-word8ToBytes :: [Word8] -> Bytes
-word8ToBytes [] = BtEmpty
-word8ToBytes [w8] = BtOne (toHex w8)
-word8ToBytes bts = BtMany (map toHex bts)
-
-toHex :: Word8 -> String
-toHex w = [digit (w `shiftR` 4), digit (w .&. 0x0F)]
-  where
-    digit n
-      | n < 10 = chr (fromIntegral n + ord '0')
-      | otherwise = chr (fromIntegral n + ord 'A' - 10)
-
--- Convert Bytes back to Double
--- >>> btsToNum (BtMany ["40", "14", "00", "00", "00", "00", "00", "00"])
--- Left 5
--- >>> btsToNum (BtMany ["BF", "D0", "00", "00", "00", "00", "00", "00"])
--- Right (-0.25)
--- >>> btsToNum (BtMany ["40", "45", "00", "00", "00", "00", "00", "00"])
--- Left 42
--- >>> btsToNum (BtMany ["40", "45"])
--- Expected 8 bytes for conversion, got 2
--- >>> btsToNum (BtMany ["7F", "F8", "00", "00", "00", "00", "00", "00"])
--- Right NaN
--- >>> btsToNum (BtMany ["7F", "F0", "00", "00", "00", "00", "00", "00"])
--- Right Infinity
--- >>> btsToNum (BtMany ["FF", "F0", "00", "00", "00", "00", "00", "00"])
--- Right (-Infinity)
--- >>> btsToNum (BtMany ["80", "00", "00", "00", "00", "00", "00", "00"])
--- Right (-0.0)
-btsToNum :: Bytes -> Either Int Double
-btsToNum hx =
-  let bytes = btsToWord8 hx
-   in if length bytes /= 8
-        then error $ "Expected 8 bytes for conversion, got " ++ show (length bytes)
-        else
-          let word = toWord64BE bytes
-              val = wordToDouble word
-           in if isNaN val || isInfinite val || isNegativeZero val
-                then Right val
-                else case properFraction val of
-                  (n, 0.0) -> Left n
-                  _ -> Right val
-  where
-    toWord64BE :: [Word8] -> Word64
-    toWord64BE [a, b, c, d, e, f, g, h] =
-      fromIntegral a `shiftL` 56
-        .|. fromIntegral b `shiftL` 48
-        .|. fromIntegral c `shiftL` 40
-        .|. fromIntegral d `shiftL` 32
-        .|. fromIntegral e `shiftL` 24
-        .|. fromIntegral f `shiftL` 16
-        .|. fromIntegral g `shiftL` 8
-        .|. fromIntegral h
-    toWord64BE _ = error "Expected 8 bytes for Double"
-
--- >>> numToBts 0.0
--- BtMany ["00","00","00","00","00","00","00","00"]
--- >>> numToBts 42
--- BtMany ["40","45","00","00","00","00","00","00"]
--- >>> numToBts (-0.25)
--- BtMany ["BF","D0","00","00","00","00","00","00"]
--- >>> numToBts 5
--- BtMany ["40","14","00","00","00","00","00","00"]
-numToBts :: Double -> Bytes
-numToBts num = word8ToBytes (unpack (toLazyByteString (word64BE (doubleToWord num))))
-
--- >>> strToBts "hello"
--- BtMany ["68","65","6C","6C","6F"]
--- >>> strToBts "world"
--- BtMany ["77","6F","72","6C","64"]
--- >>> strToBts ""
--- BtEmpty
--- >>> strToBts "h"
--- BtOne "68"
--- >>> strToBts "h\""
--- BtMany ["68","22"]
--- >>> strToBts "\x01\x01"
--- BtMany ["01","01"]
--- >>> strToBts "Hey"
--- BtMany ["48","65","79"]
-strToBts :: String -> Bytes
-strToBts "" = BtEmpty
-strToBts [ch] = word8ToBytes (unpack (U.fromString [ch]))
-strToBts str = word8ToBytes (unpack (U.fromString str))
-
--- >>> bytesToBts "--"
--- BtEmpty
--- >>> bytesToBts "77-6F"
--- BtMany ["77","6F"]
--- >>> bytesToBts "01-"
--- BtOne "01"
-bytesToBts :: String -> Bytes
-bytesToBts "--" = BtEmpty
-bytesToBts str =
-  if length str == 3 && last str == '-'
-    then BtOne (init str)
-    else BtMany (map T.unpack (T.splitOn "-" (T.pack str)))
-
--- Convert hex string like "68-65-6C-6C-6F" to "hello"
--- >>> btsToStr (BtMany ["68", "65", "6C", "6C", "6F"])
--- "hello"
--- >>> btsToStr (BtOne "68")
--- "h"
--- >>> btsToStr (BtOne "35")
--- "5"
--- >>> btsToStr (BtMany ["77", "6F", "72", "6C", "64"])
--- "world"
--- >>> btsToStr BtEmpty
--- ""
--- >>> btsToStr (BtMany ["68", "22"])
--- "h\\\""
--- >>> btsToStr (BtMany ["01", "02"])
--- "\\x01\\x02"
-btsToStr :: Bytes -> String
-btsToStr BtEmpty = ""
-btsToStr bytes = escapeStr (btsToUnescapedStr bytes)
-  where
-    escapeStr :: String -> String
-    escapeStr = concatMap escapeChar
-      where
-        escapeChar '"' = "\\\""
-        escapeChar '\\' = "\\\\"
-        escapeChar '\n' = "\\n"
-        escapeChar '\t' = "\\t"
-        escapeChar c
-          | isPrint c && c /= '\\' && c /= '"' = [c]
-          | otherwise = printf "\\x%02x" (ord c)
-
--- >>> btsToUnescapedStr (BtMany ["01", "02"])
--- "\SOH\STX"
--- >>> btsToUnescapedStr (BtMany ["77", "6F", "72", "6C", "64"])
--- "world"
--- >>> btsToUnescapedStr (BtMany ["68", "22"])
--- "h\""
--- >>> btsToUnescapedStr (BtOne "35")
--- "5"
-btsToUnescapedStr :: Bytes -> String
-btsToUnescapedStr bytes = T.unpack (T.decodeUtf8 (B.pack (btsToWord8 bytes)))
-
--- Fast Fisher-Yates with mutable vectors.
--- The function is generated by ChatGPT and claimed as
--- fastest approach comparing to usage IOArray.
--- >>> shuffle [1..20]
--- [7,15,5,18,13,19,3,11,20,2,1,8,14,16,17,12,9,10,6,4]
-shuffle :: [a] -> IO [a]
-shuffle xs = do
-  gen <- newIOGenM =<< newStdGen
-  let n = length xs
-  v <- V.thaw (V.fromList xs) -- Mutable copy
-  forM_ [n - 1, n - 2 .. 1] $ \i -> do
-    j <- uniformRM (0, i) gen
-    M.swap v i j
-  V.toList <$> V.freeze v
-
-validateYamlObject :: (MonadFail a) => Object -> [String] -> a ()
-validateYamlObject v keys = do
-  let present = filter (`KeyMap.member` v) (map Key.fromString keys)
-      current = KeyMap.keys v
-  when
-    (length current > 1)
-    (fail ("Exactly one condition type is expected, when multiple condition types specified: " ++ show current))
-  when
-    (null present)
-    (fail (printf "Unknown condition type '%s', expected one of: %s" (show current) (show keys)))

@@ -1,7 +1,6 @@
 {-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
 
@@ -11,8 +10,9 @@
 module Sugar (toSalty, withSugarType, SugarType (..), ToSalty) where
 
 import AST
+import Bytes (numToBts, strToBts)
 import CST
-import Misc (numToBts, strToBts, toDouble, pattern BaseObject)
+import Misc (toDouble)
 
 withSugarType :: (ToSalty a) => SugarType -> a -> a
 withSugarType SWEET node = node
@@ -66,8 +66,8 @@ instance ToSalty EXPRESSION where
   toSalty EX_DISPATCH{..} = EX_DISPATCH (toSalty expr) space attr
   toSalty EX_FORMATION{lsb, binding = bd@BI_EMPTY{}, rsb} = EX_FORMATION lsb NO_EOL TAB' (toSalty (bdWithVoidRho bd)) NO_EOL TAB' rsb
   toSalty EX_FORMATION{..} = EX_FORMATION lsb eol tab (toSalty (bdWithVoidRho binding)) eol' tab' rsb
-  toSalty EX_APPLICATION{..} = EX_APPLICATION (toSalty expr) space EOL (TAB indent) (toSalty tau) EOL (TAB (indent - 1)) indent
-  toSalty EX_APPLICATION_TAUS{..} =
+  toSalty EX_APPLICATION{argument = AA_TAU tau, ..} = EX_APPLICATION (toSalty expr) space EOL (TAB indent) (AA_TAU (toSalty tau)) EOL (TAB (indent - 1)) indent
+  toSalty EX_APPLICATION{argument = AA_TAUS taus, ..} =
     foldl
       toApplication
       expr
@@ -75,7 +75,7 @@ instance ToSalty EXPRESSION where
     where
       toApplication :: EXPRESSION -> PAIR -> EXPRESSION
       toApplication exp pair =
-        EX_APPLICATION (toSalty exp) space EOL (TAB indent) (APP_BINDING (toSalty pair)) EOL (TAB (indent - 1)) indent
+        EX_APPLICATION (toSalty exp) space EOL (TAB indent) (AA_TAU (APP_BINDING (toSalty pair))) EOL (TAB (indent - 1)) indent
       tauToPairs :: BINDING -> [PAIR]
       tauToPairs BI_PAIR{..} = pair : tausToPairs bindings
       tauToPairs BI_EMPTY{} = []
@@ -84,7 +84,7 @@ instance ToSalty EXPRESSION where
       tausToPairs BDS_EMPTY{} = []
       tausToPairs BDS_PAIR{..} = pair : tausToPairs bindings
       tausToPairs (BDS_META _ _ mt _) = error $ "BDS_META " ++ show mt ++ " unexpected in tausToPairs"
-  toSalty EX_APPLICATION_EXPRS{..} = toSalty (EX_APPLICATION_TAUS expr space EOL (TAB indent) (argToBinding args tab) EOL (TAB (indent - 1)) indent)
+  toSalty EX_APPLICATION{argument = AA_EXPRS args, ..} = toSalty (EX_APPLICATION expr space EOL (TAB indent) (AA_TAUS (argToBinding args tab)) EOL (TAB (indent - 1)) indent)
     where
       argToBinding :: APP_ARG -> TAB -> BINDING
       argToBinding APP_ARG{..} =
@@ -116,28 +116,30 @@ saltifyPrimitive :: EXPRESSION -> EXPRESSION -> EXPRESSION -> TAB -> [Argument] 
 saltifyPrimitive base bytes data' tb@TAB{..} rhos =
   let next = TAB (indent + 1)
    in toSalty
-        ( EX_APPLICATION_TAUS
+        ( EX_APPLICATION
             base
             NO_SPACE
             EOL
             next
-            ( BI_PAIR
-                ( PA_ALPHA
-                    (AL_IDX ALPHA 0)
-                    ARROW
-                    ( EX_APPLICATION_EXPRS
-                        bytes
-                        NO_SPACE
-                        EOL
-                        (TAB (indent + 2))
-                        (APP_ARG data' AAS_EMPTY)
-                        EOL
-                        next
-                        (indent + 2)
+            ( AA_TAUS
+                ( BI_PAIR
+                    ( PA_ALPHA
+                        (AL_IDX ALPHA 0)
+                        ARROW
+                        ( EX_APPLICATION
+                            bytes
+                            NO_SPACE
+                            EOL
+                            (TAB (indent + 2))
+                            (AA_EXPRS (APP_ARG data' AAS_EMPTY))
+                            EOL
+                            next
+                            (indent + 2)
+                        )
                     )
+                    (toCST rhos (indent + 1, EOL))
+                    next
                 )
-                (toCST rhos (indent + 1, EOL))
-                next
             )
             EOL
             tb

@@ -28,9 +28,7 @@ instance ToASCII EXPRESSION where
   toASCII EX_TERMINATION{} = EX_TERMINATION T
   toASCII EX_FORMATION{..} = EX_FORMATION LSB' eol tab (toASCII binding) eol' tab' RSB'
   toASCII EX_DISPATCH{..} = EX_DISPATCH (toASCII expr) space (toASCII attr)
-  toASCII EX_APPLICATION{..} = EX_APPLICATION (toASCII expr) space eol tab (toASCII tau) eol' tab' indent
-  toASCII EX_APPLICATION_TAUS{..} = EX_APPLICATION_TAUS (toASCII expr) space eol tab (toASCII taus) eol' tab' indent
-  toASCII EX_APPLICATION_EXPRS{..} = EX_APPLICATION_EXPRS (toASCII expr) space eol tab (toASCII args) eol' tab' indent
+  toASCII EX_APPLICATION{..} = EX_APPLICATION (toASCII expr) space eol tab (toASCII argument) eol' tab' indent
   toASCII EX_META{meta = META{hd = N, ..}} = EX_META (META EXCL N' rest)
   toASCII EX_META{meta = META{hd = K, ..}} = EX_META (META EXCL K' rest)
   toASCII EX_META{..} = EX_META (META EXCL E' (rest meta))
@@ -50,6 +48,11 @@ instance ToASCII BINDINGS where
   toASCII BDS_PAIR{..} = BDS_PAIR eol tab (toASCII pair) (toASCII bindings)
   toASCII BDS_META{..} = BDS_META eol tab (META EXCL B' (rest meta)) (toASCII bindings)
   toASCII bds = bds
+
+instance ToASCII APP_ARGUMENT where
+  toASCII (AA_TAU tau) = AA_TAU (toASCII tau)
+  toASCII (AA_TAUS taus) = AA_TAUS (toASCII taus)
+  toASCII (AA_EXPRS args) = AA_EXPRS (toASCII args)
 
 instance ToASCII APP_ARG where
   toASCII APP_ARG{..} = APP_ARG (toASCII expr) (toASCII args)

@@ -24,7 +24,8 @@ module Parser
 where
 
 import AST
-import Control.Exception (Exception, throwIO)
+import Bytes (numToBts, strToBts)
+import Control.Exception (Exception)
 import Control.Monad (guard)
 import Data.Char (isAsciiLower, isDigit)
 import Data.Scientific (toRealFloat)
@@ -145,6 +146,7 @@ byte = do
   s <- hexDigitChar >>= upperHex
   return [f, s]
   where
+    upperHex :: Char -> Parser Char
     upperHex ch
       | isDigit ch || ('A' <= ch && ch <= 'F') = return ch
       | otherwise = fail ("expected 0-9 or A-F, got " ++ show ch)
@@ -494,9 +496,7 @@ parseNumber :: String -> Either String Expression
 parseNumber = parse' "number" number
 
 parseNumberThrows :: String -> IO Expression
-parseNumberThrows num = case parseNumber num of
-  Right num' -> pure num'
-  Left err -> throwIO (CouldNotParseNumber err)
+parseNumberThrows num = orThrow CouldNotParseNumber (parseNumber num)
 
 parseAttribute :: String -> Either String Attribute
 parseAttribute = parse' "attribute" attribute
@@ -508,22 +508,16 @@ parseIndex :: String -> Either String T.Text
 parseIndex = parse' "index meta" index'
 
 parseAttributeThrows :: String -> IO Attribute
-parseAttributeThrows attr = case parseAttribute attr of
-  Right attr' -> pure attr'
-  Left err -> throwIO (CouldNotParseAttribute err)
+parseAttributeThrows attr = orThrow CouldNotParseAttribute (parseAttribute attr)
 
 parseExpression :: String -> Either String Expression
 parseExpression = parse' "expression" expression
 
 parseExpressionThrows :: String -> IO Expression
-parseExpressionThrows ex = case parseExpression ex of
-  Right expr -> pure expr
-  Left err -> throwIO (CouldNotParseExpression err)
+parseExpressionThrows ex = orThrow CouldNotParseExpression (parseExpression ex)
 
 parseProgram :: String -> Either String Program
 parseProgram = parse' "program" program
 
 parseProgramThrows :: String -> IO Program
-parseProgramThrows prg = case parseProgram prg of
-  Right prog -> pure prog
-  Left err -> throwIO (CouldNotParseProgram err)
+parseProgramThrows prg = orThrow CouldNotParseProgram (parseProgram prg)

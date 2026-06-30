@@ -15,8 +15,8 @@ import Data.Char (isDigit)
 import Data.List (intercalate)
 import Data.Text qualified as T
 import Data.Yaml qualified as Yaml
+import Files (allPathsIn)
 import GHC.Generics (Generic)
-import Misc (allPathsIn)
 import Parser (parseExpressionThrows, parseProgramThrows)
 import System.FilePath (makeRelative)
 import Test.Hspec (Spec, anyException, describe, expectationFailure, it, runIO, shouldBe, shouldThrow)

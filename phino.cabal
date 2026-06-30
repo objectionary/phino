@@ -27,6 +27,7 @@ common warnings
     -Wincomplete-record-updates
     -Wincomplete-uni-patterns
     -Wmissing-home-modules
+    -Wmissing-signatures
     -Wpartial-fields
     -Wredundant-constraints
 
@@ -35,6 +36,7 @@ library
   exposed-modules:
     AST
     Builder
+    Bytes
     Canonizer
     CLI
     CLI.Helpers
@@ -47,6 +49,7 @@ library
     Dataize
     Deps
     Encoding
+    Files
     Filter
     Functions
     LaTeX

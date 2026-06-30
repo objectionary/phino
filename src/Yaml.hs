@@ -13,14 +13,28 @@ module Yaml where
 import AST
 import Control.Applicative (asum)
 import Data.Aeson
+import qualified Data.Aeson.Key as Key
+import qualified Data.Aeson.KeyMap as KeyMap
 import qualified Data.ByteString as BS
 import Data.FileEmbed (embedDir, embedFile)
 import Data.Text (Text, unpack)
 import Data.Yaml (Parser)
 import qualified Data.Yaml as Yaml
 import GHC.Generics (Generic)
-import Misc (validateYamlObject)
 import Parser
+import Text.Printf (printf)
+
+-- Fail unless the object names exactly one of the expected keys
+validateYamlObject :: (MonadFail a) => Object -> [String] -> a ()
+validateYamlObject v keys
+  | length current > 1 = fail ("Exactly one condition type is expected, when multiple condition types specified: " ++ show current)
+  | null present = fail (printf "Unknown condition type '%s', expected one of: %s" (show current) (show keys))
+  | otherwise = pure ()
+  where
+    present :: [Key.Key]
+    present = filter (`KeyMap.member` v) (map Key.fromString keys)
+    current :: [Key.Key]
+    current = KeyMap.keys v
 
 parseJSON' :: String -> (String -> Either String a) -> Value -> Parser a
 parseJSON' nm func =

@@ -97,12 +97,12 @@ If it's encountered in more than specific percentage (_meetPopularity) of follow
 it with \phinoAgain{} in following programs and with \phinoMeet{} in first program.
 -}
 meetInPrograms :: [Program] -> LatexContext -> [Program]
-meetInPrograms prog LatexContext{..} = meetInPrograms' prog 1
+meetInPrograms prog LatexContext{..} = go prog 1
   where
-    meetInPrograms' :: [Program] -> Int -> [Program]
-    meetInPrograms' [] _ = []
-    meetInPrograms' [program] _ = [program]
-    meetInPrograms' (first : rest) idx =
+    go :: [Program] -> Int -> [Program]
+    go [] _ = []
+    go [program] _ = [program]
+    go (first : rest) idx =
       let met = map (meetInProgram first _meetLength) rest
           unique = nub (concat met)
           (frequent, _) =
@@ -115,7 +115,7 @@ meetInPrograms prog LatexContext{..} = meetInPrograms' prog 1
               )
               (Nothing, 0)
               unique
-          next = first : meetInPrograms' rest idx
+          next = first : go rest idx
        in case frequent of
             Just expr ->
               case matchProgram expr first of
@@ -126,7 +126,7 @@ meetInPrograms prog LatexContext{..} = meetInPrograms' prog 1
                       rest' = zipWith (\prgm exprs -> replaceProgram (prgm, exprs, map (const (ExPhiAgain _meetPrefix idx)) exprs)) rest met'
                       found = filter (not . null) met'
                    in if length met' > 1 && toDouble (length found) / toDouble (length met') >= popularity
-                        then program' : meetInPrograms' rest' (idx + 1)
+                        then program' : go rest' (idx + 1)
                         else next
                 [] -> next
             _ -> next
@@ -229,9 +229,7 @@ instance ToLaTeX PROGRAM where
 instance ToLaTeX EXPRESSION where
   toLaTeX EX_ATTR{..} = EX_ATTR (toLaTeX attr)
   toLaTeX EX_FORMATION{..} = EX_FORMATION lsb eol tab (toLaTeX binding) eol' tab' rsb
-  toLaTeX EX_APPLICATION{..} = EX_APPLICATION (toLaTeX expr) SPACE eol tab (toLaTeX tau) eol' tab' indent
-  toLaTeX EX_APPLICATION_TAUS{..} = EX_APPLICATION_TAUS (toLaTeX expr) SPACE eol tab (toLaTeX taus) eol' tab' indent
-  toLaTeX EX_APPLICATION_EXPRS{..} = EX_APPLICATION_EXPRS (toLaTeX expr) SPACE eol tab (toLaTeX args) eol' tab' indent
+  toLaTeX EX_APPLICATION{..} = EX_APPLICATION (toLaTeX expr) SPACE eol tab (toLaTeX argument) eol' tab' indent
   toLaTeX EX_DISPATCH{..} = EX_DISPATCH (toLaTeX expr) SPACE (toLaTeX attr)
   toLaTeX EX_PHI_MEET{..} = EX_PHI_MEET prefix idx (toLaTeX expr)
   toLaTeX EX_PHI_AGAIN{..} = EX_PHI_AGAIN prefix idx (toLaTeX expr)
@@ -299,6 +297,11 @@ instance ToLaTeX META_HEAD where
 instance ToLaTeX BYTES where
   toLaTeX (BT_META meta) = BT_META (toLaTeX meta)
   toLaTeX bts = BT_PIPED bts
+
+instance ToLaTeX APP_ARGUMENT where
+  toLaTeX (AA_TAU tau) = AA_TAU (toLaTeX tau)
+  toLaTeX (AA_TAUS taus) = AA_TAUS (toLaTeX taus)
+  toLaTeX (AA_EXPRS args) = AA_EXPRS (toLaTeX args)
 
 instance ToLaTeX APP_ARG where
   toLaTeX APP_ARG{..} = APP_ARG (toLaTeX expr) (toLaTeX args)

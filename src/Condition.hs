@@ -7,8 +7,8 @@
 module Condition (parseCondition, parseConditionThrows) where
 
 import Control.Exception (Exception)
-import Control.Exception.Base (throwIO)
 import Data.Void (Void)
+import Misc (orThrow)
 import Parser (PhiParser (..), phiParser)
 import Text.Megaparsec
 import Text.Megaparsec.Char
@@ -166,6 +166,4 @@ parseCondition input = do
     Left err -> Left (errorBundlePretty err)
 
 parseConditionThrows :: String -> IO Y.Condition
-parseConditionThrows cnd = case parseCondition cnd of
-  Right cond -> pure cond
-  Left err -> throwIO (CouldNotParseCondition err)
+parseConditionThrows cnd = orThrow CouldNotParseCondition (parseCondition cnd)

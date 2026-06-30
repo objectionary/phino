@@ -11,8 +11,8 @@
 module CST where
 
 import AST
+import Bytes (btsToNum, btsToStr)
 import qualified Data.Text as T
-import Misc
 import qualified Yaml as Y
 
 data LCB = LCB | BIG_LCB
@@ -162,6 +162,13 @@ data APP_ARGS
   | AAS_EMPTY
   deriving (Eq, Show)
 
+-- The argument carried by an application, in one of three sugar shapes
+data APP_ARGUMENT
+  = AA_TAU APP_BINDING -- e(a1 -> e1)
+  | AA_TAUS BINDING -- e(a1 -> e1)(a2 -> e2)(...)
+  | AA_EXPRS APP_ARG -- e(e1, e2, ...)
+  deriving (Eq, Show)
+
 data EXPRESSION
   = EX_GLOBAL {global :: GLOBAL}
   | EX_XI {xi :: XI}
@@ -169,9 +176,7 @@ data EXPRESSION
   | EX_TERMINATION {termination :: TERMINATION}
   | EX_FORMATION {lsb :: LSB, eol :: EOL, tab :: TAB, binding :: BINDING, eol' :: EOL, tab' :: TAB, rsb :: RSB}
   | EX_DISPATCH {expr :: EXPRESSION, space :: SPACE, attr :: ATTRIBUTE}
-  | EX_APPLICATION {expr :: EXPRESSION, space :: SPACE, eol :: EOL, tab :: TAB, tau :: APP_BINDING, eol' :: EOL, tab' :: TAB, indent :: Int} -- e(a1 -> e1)
-  | EX_APPLICATION_TAUS {expr :: EXPRESSION, space :: SPACE, eol :: EOL, tab :: TAB, taus :: BINDING, eol' :: EOL, tab' :: TAB, indent :: Int} -- e(a1 -> e1)(a2 -> e2)(...)
-  | EX_APPLICATION_EXPRS {expr :: EXPRESSION, space :: SPACE, eol :: EOL, tab :: TAB, args :: APP_ARG, eol' :: EOL, tab' :: TAB, indent :: Int} -- e(e1, e2, ...)
+  | EX_APPLICATION {expr :: EXPRESSION, space :: SPACE, eol :: EOL, tab :: TAB, argument :: APP_ARGUMENT, eol' :: EOL, tab' :: TAB, indent :: Int} -- e(...)
   | EX_STRING {str :: String, tab :: TAB, rhos :: [Argument]}
   | EX_NUMBER {num :: Either Int Double, tab :: TAB, rhos :: [Argument]}
   | EX_META {meta :: META}
@@ -365,22 +370,22 @@ instance ToCST Expression EXPRESSION where
           else
             if null exs
               then
-                EX_APPLICATION_TAUS
+                EX_APPLICATION
                   ex'
                   NO_SPACE
                   eol
                   (TAB next)
-                  (toCST ts (next, eol) :: BINDING)
+                  (AA_TAUS (toCST ts (next, eol) :: BINDING))
                   eol
                   (TAB tabs)
                   next
               else
-                EX_APPLICATION_EXPRS
+                EX_APPLICATION
                   ex'
                   NO_SPACE
                   eol
                   (TAB next)
-                  (toCST exs (next, eol))
+                  (AA_EXPRS (toCST exs (next, eol)))
                   eol
                   (TAB tabs)
                   next

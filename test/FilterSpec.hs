@@ -15,11 +15,11 @@ import Control.Monad (forM_, when)
 import Data.Aeson
 import Data.Yaml qualified as Yaml
 import Encoding (Encoding (UNICODE))
+import Files (allPathsIn)
 import Filter qualified as F
 import GHC.Generics (Generic)
 import Lining (LineFormat (MULTILINE))
 import Margin (defaultMargin)
-import Misc
 import Parser (parseExpressionThrows, parseProgramThrows)
 import Printer (printProgram')
 import Sugar (SugarType (SALTY))

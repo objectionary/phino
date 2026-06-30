@@ -15,6 +15,7 @@ import Builder
   , buildBindingThrows
   , buildExpressionThrows
   )
+import Bytes (btsToUnescapedStr)
 import Control.Exception.Base (SomeException, try)
 import Control.Monad (when)
 import qualified Data.ByteString.Char8 as B
@@ -27,7 +28,6 @@ import Deps (BuildTermFunc, Term (..))
 import GHC.IO (unsafePerformIO)
 import Logger (logDebug)
 import Matcher
-import Misc (btsToUnescapedStr)
 import Printer
 import Regexp (match)
 import Text.Printf (printf)

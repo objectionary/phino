@@ -43,38 +43,19 @@ instance WithMargin EXPRESSION where
         main = withMargin' cfg expr
         singleMain = toSingleLine main
         extra' = T.length (last (T.lines (render main))) + 4 -- 2 spaces + 2 braces around argument
-        arg = withMargin' (indt, margin) tau
-        singleArg = toSingleLine arg
+        arg' = withMargin' (indt, margin) argument
+        singleArg = toSingleLine arg'
      in if
           | lengthOf single + extra <= margin -> single
-          | lengthOf singleMain + extra <= margin -> EX_APPLICATION singleMain space EOL tab arg EOL tab' indent
+          | lengthOf singleMain + extra <= margin -> EX_APPLICATION singleMain space EOL tab arg' EOL tab' indent
           | lengthOf singleArg + extra' <= margin -> EX_APPLICATION main space NO_EOL TAB' singleArg NO_EOL TAB' indent
-          | otherwise -> EX_APPLICATION main space EOL tab arg EOL tab' indent
-  withMargin' cfg@(extra, margin) ex@EX_APPLICATION_EXPRS{tab = tab@(TAB indt), ..} =
-    let single = toSingleLine ex
-        main = withMargin' cfg expr
-        singleMain = toSingleLine main
-        extra' = T.length (last (T.lines (render main))) + 4 -- 2 spaces + 2 braces around arguments
-        exprs = withMargin' (indt, margin) args
-        singleExprs = toSingleLine exprs
-     in if
-          | lengthOf single + extra <= margin -> single
-          | lengthOf singleMain + extra <= margin -> EX_APPLICATION_EXPRS singleMain space EOL tab exprs EOL tab' indent
-          | lengthOf singleExprs + extra' <= margin -> EX_APPLICATION_EXPRS main space NO_EOL TAB' singleExprs NO_EOL TAB' indent
-          | otherwise -> EX_APPLICATION_EXPRS main space EOL tab exprs EOL tab' indent
-  withMargin' cfg@(extra, margin) ex@EX_APPLICATION_TAUS{tab = tab@(TAB indt), ..} =
-    let single = toSingleLine ex
-        main = withMargin' cfg expr
-        singleMain = toSingleLine main
-        extra' = T.length (last (T.lines (render main))) + 4 -- 2 spaces + 2 braces around arguments
-        taus' = withMargin' (indt, margin) taus
-        singleTaus = toSingleLine taus'
-     in if
-          | lengthOf single + extra <= margin -> single
-          | lengthOf singleMain + extra <= margin -> EX_APPLICATION_TAUS singleMain space EOL tab taus' EOL tab' indent
-          | lengthOf singleTaus + extra' <= margin -> EX_APPLICATION_TAUS main space NO_EOL TAB' singleTaus NO_EOL TAB' indent
-          | otherwise -> EX_APPLICATION_TAUS main space EOL tab taus' EOL tab' indent
+          | otherwise -> EX_APPLICATION main space EOL tab arg' EOL tab' indent
   withMargin' _ ex = ex
+
+instance WithMargin APP_ARGUMENT where
+  withMargin' cfg (AA_TAU tau) = AA_TAU (withMargin' cfg tau)
+  withMargin' cfg (AA_TAUS taus) = AA_TAUS (withMargin' cfg taus)
+  withMargin' cfg (AA_EXPRS args) = AA_EXPRS (withMargin' cfg args)
 
 instance WithMargin APP_BINDING where
   withMargin' cfg APP_BINDING{..} = APP_BINDING (withMargin' cfg pair)

@@ -13,7 +13,7 @@ import Data.Maybe (fromMaybe)
 import Data.Text qualified as T
 import Data.Text.Encoding (encodeUtf8)
 import Data.Yaml qualified as Yaml
-import Misc
+import Files (allPathsIn)
 import System.FilePath
 import Test.Hspec (Spec, describe, it, runIO, shouldBe, shouldReturn, shouldSatisfy, shouldThrow)
 import Yaml (ContextualizeRule (..), DataizeRule (..), MorphRule (..), contextualizationRules, dataizationRules, morphingRules, yamlRule)
