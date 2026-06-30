@@ -46,7 +46,7 @@ jobs:
             printf '\\documentclass{article}\n'
             printf '\\usepackage{mathtools}\n'
             printf '\\usepackage{eolang}\n'
-            printf '\\newcommand\\ctx[2]{#1 #2}\n'
+            printf '\\newcommand\\phinoContextualize[3]{#1 #2 #3}\n'
             printf '\\newcommand\\phinoEvaluate[1]{\\mathbb{E}( #1 )}\n'
             printf '\\newcommand\\phinoMorph[3]{\\mathbb{M}( #1, #2, #3 )}\n'
             printf '\\newcommand\\indexof[1]{#1}\n'
