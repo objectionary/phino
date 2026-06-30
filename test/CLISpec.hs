@@ -1101,7 +1101,8 @@ spec = do
             , "\\end{phinoMorphingInference}"
             , "\\begin{phinoMorphingInference}"
             , "  \\phinoName{mg}"
-            , "  \\phinoConclusion{ \\phinoMorph{ Q }{ Q }{ s }{ T }{ s } }"
+            , "  \\phinoPremise{ \\phinoMorph{ T }{ e }{ s_1 }{ n }{ s_2 } }"
+            , "  \\phinoConclusion{ \\phinoMorph{ Q }{ Q }{ s_1 }{ n }{ s_2 } }"
             , "\\end{phinoMorphingInference}"
             ]
         ]
