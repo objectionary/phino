@@ -284,7 +284,7 @@ instance Render EXTRA_ARG where
   render ARG_BYTES{..} = render bytes
 
 instance Render EXTRA where
-  render EXTRA{func = "contextualize", args = arg : rest, ..} = render meta <> " \\coloneqq \\ctx{ " <> render arg <> " }{ " <> T.intercalate ", " (map render rest) <> " }"
+  render EXTRA{func = "contextualize", args = arg : rest, ..} = "\\phinoContextualize{ " <> render arg <> " }{ " <> T.intercalate ", " (map render rest) <> " }{ " <> render meta <> " }"
   -- 𝕄 carries the universe and threads a state, 𝕄(n, e, s_1), so a 'morph' extra
   -- renders with the universe metavariable 'e' and the incoming state 's_1' as its
   -- trailing arguments. This is a one-off application binding only 'meta', so the
