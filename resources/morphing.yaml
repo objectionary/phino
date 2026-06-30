@@ -110,7 +110,10 @@
 - name: xi
   match: ξ
   e-match: 𝑒
-  n-result: ⊥
+  n-result: 𝑛
+  premises:
+    - n-result: 𝑛
+      morph: ⊥
 
 - name: mg
   match: Φ
