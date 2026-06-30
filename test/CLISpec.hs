@@ -1007,7 +1007,7 @@ spec = do
             , "  { [[ B_1, \\tau -> n, B_2 ]] . \\tau }"
             , "  { e ( \\phiTerminal{\\rho} -> [[ B_1, \\tau -> n, B_2 ]] ) }"
             , "  { }"
-            , "  { e \\coloneqq \\ctx{ n }{ [[ B_1, \\tau -> n, B_2 ]] } }"
+            , "  { \\phinoContextualize{ n }{ [[ B_1, \\tau -> n, B_2 ]] }{ e } }"
             , "\\phinoNormalizationRule{miss}"
             , "  { [[ B ]] ( \\tau -> e ) }"
             , "  { T }"
