@@ -107,6 +107,7 @@ instance Render BYTES where
   render (BT_ONE bte) = render bte <> "-"
   render (BT_MANY bts) = T.intercalate "-" (map render bts)
   render (BT_META mt) = render mt
+  render (BT_PIPED bts) = "|" <> render bts <> "|"
 
 instance Render EXCLAMATION where
   render EXCL = "!"
