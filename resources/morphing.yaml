@@ -118,4 +118,7 @@
 - name: mg
   match: Φ
   e-match: Φ
-  n-result: ⊥
+  n-result: 𝑛
+  premises:
+    - n-result: 𝑛
+      morph: ⊥
