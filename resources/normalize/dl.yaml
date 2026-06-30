@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+name: dl
+pattern: ⟦𝐵⟧
+result: ⊥
+when:
+  and:
+    - in:
+        - Δ
+        - 𝐵
+    - in:
+        - λ
+        - 𝐵
