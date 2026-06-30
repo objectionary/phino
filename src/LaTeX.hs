@@ -382,7 +382,7 @@ explainMorphRule rule =
     rule.label
     rule.when
     premises
-    (phinoMorph (renderExpr rule.match) (renderExpr rule.ematch) (stateName 1) (stateName final) (renderExpr rule.nresult))
+    (phinoMorph (renderExpr rule.match) (renderExpr rule.ematch) (conclusionStateName final 1) (conclusionStateName final final) (renderExpr rule.nresult))
   where
     (premises, final) = premisesToLatex rule.premises
 
@@ -397,7 +397,7 @@ explainDataizeRule rule =
     rule.label
     rule.when
     premises
-    (phinoDataize (renderExpr rule.match) (renderExpr rule.ematch) (stateName 1) (stateName final) (renderBytes rule.dresult))
+    (phinoDataize (renderExpr rule.match) (renderExpr rule.ematch) (conclusionStateName final 1) (conclusionStateName final final) (renderBytes rule.dresult))
   where
     (premises, final) = premisesToLatex rule.premises
 
@@ -418,6 +418,16 @@ explainContextualizeRule rule =
 -- n/n_1 convention used for terms.
 stateName :: Int -> String
 stateName n = "s_" ++ show n
+
+-- The state name for a rule's conclusion. The subscript exists only to
+-- distinguish the several states threaded through a rule's premises; when a
+-- rule threads a single state ('final' == 1) it carries no information, so the
+-- conclusion drops it and renders a bare 's'. Otherwise it keeps the
+-- subscripted form (s_1 … s_final) shared with the premises.
+conclusionStateName :: Int -> Int -> String
+conclusionStateName final index
+  | final == 1 = "s"
+  | otherwise = stateName index
 
 -- Render a rule's premises in order, threading the state through them. The rule
 -- starts in state s_1; each state-changing premise (𝕄, 𝔻, 𝔼) consumes the
