@@ -67,11 +67,14 @@
 - name: none
   match: ⟦𝐵⟧
   e-match: 𝑒
-  d-result: '--'
+  d-result: δ
   when:
     disjoint:
       - [Δ, λ, φ]
       - [𝐵]
+  premises:
+    - d-result: δ
+      dataize: ⊥
 
 - name: end
   match: ⊥

@@ -261,6 +261,12 @@ spec = do
     it "dataizes a located reference through the expected rules" $ do
       labels <- labelsOf "Q.foo.bar" "Q -> [[ foo -> [[ bar -> [[ @ -> Q.x ]] ]], x -> [[ D> 42- ]] ]]"
       labels `shouldBe` ["contextualize", "md", "dot", "copy", "mf"]
+    -- The 'none' rule no longer emits '--' itself: it delegates to 'end' by
+    -- dataizing ⊥, so the empty formation reduces through one labelled 'dataize'
+    -- step (𝔻(⟦⟧) → 𝔻(⊥)) before 'end' yields the empty bytes (#942).
+    it "dataizes an empty formation by delegating to end" $ do
+      labels <- labelsOf "Q" "Q -> [[ ]]"
+      labels `shouldBe` ["dataize"]
 
   testDataize
     [
