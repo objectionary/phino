@@ -68,6 +68,15 @@ spec = do
         , ExFormation [BiTau (AtLabel "x") (ExFormation [])]
         , ExFormation [BiTau AtRho (ExFormation [BiTau (AtLabel "x") (ExFormation [BiVoid AtRho]), BiVoid AtRho])]
         )
+      , -- A void slot fed a non-absolute argument can never be filled, so 'copy'
+        -- cannot fire and the application is a stuck normal form. Before #959,
+        -- 'ma' re-morphed this identical term forever; now the 'mad' axiom
+        -- morphs it straight to ⊥, keeping 𝕄 total.
+        ( "[[ x -> ? ]](x -> $.foo) => T"
+        , ExApplication (ExFormation [BiVoid (AtLabel "x")]) (ArTau (AtLabel "x") (ExDispatch ExXi (AtLabel "foo")))
+        , ExRoot
+        , ExTermination
+        )
       ]
 
   -- 'defaultDataizeContext' runs with '_shuffle' on, so 'morph' walks the
@@ -197,6 +206,13 @@ spec = do
                   `shouldThrow` (\e -> "terminator" `isInfixOf` show (e :: SomeException))
     failsOn "throws on ⊥ instead of mapping it to empty bytes" ExTermination
     failsOn "throws on a data-less formation, which dataizes ⊥" (ExFormation [])
+    -- A void slot fed a non-absolute argument morphs to ⊥ via 'mad' (#959) and
+    -- then fails through the same terminator path. The regression is that this
+    -- test terminates at all: before the fix 'ma' re-morphed the stuck term
+    -- forever and dataization never returned.
+    failsOn
+      "throws on a void slot fed a non-absolute argument instead of looping forever"
+      (ExApplication (ExFormation [BiVoid (AtLabel "x")]) (ArTau (AtLabel "x") (ExDispatch ExXi (AtLabel "foo"))))
 
   describe "labels every step with a defined rule or operation" $ do
     let verb op = case op of
