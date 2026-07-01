@@ -363,7 +363,7 @@ matchExpressionWithRule = matchExpressionBy matchExpression [substEmpty]
 -- and morphing driver, where a rule applies to the entire configuration rather
 -- than to nested redexes. The leading '[Subst]' seeds matching with pre-bound
 -- meta-variables: the morphing driver passes the global universe bound to 'e',
--- the second argument of 𝕄(n, e), so the 'root' rule reads it directly instead
+-- the second argument of 𝕄(n, e), so the 'universe' rule reads it directly instead
 -- of through a 'global()' build-term function. Pass '[substEmpty]' for no seed.
 matchExpressionWithRule' :: [Subst] -> Expression -> Y.Rule -> RuleContext -> IO [Subst]
 matchExpressionWithRule' = matchExpressionBy matchExpression'
