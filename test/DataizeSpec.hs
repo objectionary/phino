@@ -72,6 +72,7 @@ spec = do
         -- cannot fire and the application is a stuck normal form. Before #959,
         -- 'ma' re-morphed this identical term forever; now the 'mad' axiom
         -- morphs it straight to ⊥, keeping 𝕄 total.
+
         ( "[[ x -> ? ]](x -> $.foo) => T"
         , ExApplication (ExFormation [BiVoid (AtLabel "x")]) (ArTau (AtLabel "x") (ExDispatch ExXi (AtLabel "foo")))
         , ExRoot
