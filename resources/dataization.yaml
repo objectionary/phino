@@ -22,9 +22,11 @@
 # 'norm' matches the bare meta 𝑛, which unifies with any expression, so it is
 # guarded to fire only when 𝑛 is neither a formation ('not (formation 𝑛)',
 # carving out 'delta', 'box', 'fire' and 'none') nor the termination ⊥
-# ('not (𝑛 = ⊥)', carving out 'end'). Without the guard 'norm' would behave
-# correctly only by being declared last; with it the clauses no longer rely on
-# their order.
+# ('not (𝑛 = ⊥)'). 𝔻 is partial: ⊥ (the terminator T) signals an error and
+# lies outside its domain, so it deliberately matches no clause and dataization
+# stops there — there is no 'end' rule mapping ⊥ to empty bytes (see #955).
+# Without the guard 'norm' would behave correctly only by being declared last;
+# with it the clauses no longer rely on their order.
 
 - name: delta
   label: \Delta
@@ -75,11 +77,6 @@
   premises:
     - d-result: δ
       dataize: ⊥
-
-- name: end
-  match: ⊥
-  e-match: 𝑒
-  d-result: '--'
 
 - name: norm
   match: 𝑛

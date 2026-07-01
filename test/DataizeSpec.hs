@@ -127,9 +127,10 @@ spec = do
 
   -- 'norm' matches the bare meta 𝑛, which unifies with any expression, so it is
   -- guarded to fire only when 𝑛 is neither a formation ('not (formation 𝑛)',
-  -- left to 'delta'/'box'/'fire'/'none') nor the termination ⊥ ('not (𝑛 = ⊥)',
-  -- left to 'end'). The dataization clauses are therefore disjoint and their
-  -- order in 'dataization.yaml' cannot change behavior.
+  -- left to 'delta'/'box'/'fire'/'none') nor the termination ⊥ ('not (𝑛 = ⊥)').
+  -- 𝔻 is partial: ⊥ matches no clause and lands on the unmatched-term error
+  -- (#955). The dataization clauses are therefore disjoint and their order in
+  -- 'dataization.yaml' cannot change behavior.
   describe "dataization 'norm' is disjoint from the specific clauses" $ do
     let rctx = RuleContext (execBuildTerm ExRoot (defaultDataizeContext ExRoot))
         dataizeRule :: String -> Yaml.DataizeRule
@@ -150,8 +151,6 @@ spec = do
     test
       dataize'
       [ ("[[ D> 00- ]] => 00-", ExFormation [BiDelta (BtOne "00")], ExRoot, BtOne "00")
-      , ("T => --", ExTermination, ExRoot, BtEmpty)
-      , ("[[ ]] => --", ExFormation [], ExRoot, BtEmpty)
       ,
         ( "[[ @ -> [[ D> 00-]] ]] => 00-"
         , ExFormation [BiTau AtPhi (ExFormation [BiDelta (BtOne "00"), BiVoid AtRho]), BiVoid AtRho]
@@ -185,6 +184,19 @@ spec = do
         , BtOne "01"
         )
       ]
+
+  -- 𝔻 is partial (#955): the terminator ⊥ signals an error and lies outside its
+  -- domain, so it matches no dataization clause and 𝔻 stops there instead of
+  -- yielding empty bytes. A data-less formation ⟦⟧ ('none') dataizes ⊥, so it
+  -- fails through the very same path — it has nothing to dataize.
+  describe "fails to dataize the terminator" $ do
+    let failsOn desc input =
+          it desc $
+            let prog = Program ExRoot
+             in dataize' (input, (prog, Nothing) :| []) ExRoot emptyState (defaultDataizeContext ExRoot)
+                  `shouldThrow` (\e -> "terminator" `isInfixOf` show (e :: SomeException))
+    failsOn "throws on ⊥ instead of mapping it to empty bytes" ExTermination
+    failsOn "throws on a data-less formation, which dataizes ⊥" (ExFormation [])
 
   describe "labels every step with a defined rule or operation" $ do
     let verb op = case op of
@@ -261,12 +273,14 @@ spec = do
     it "dataizes a located reference through the expected rules" $ do
       labels <- labelsOf "Q.foo.bar" "Q -> [[ foo -> [[ bar -> [[ @ -> Q.x ]] ]], x -> [[ D> 42- ]] ]]"
       labels `shouldBe` ["contextualize", "md", "dot", "copy", "mf"]
-    -- The 'none' rule no longer emits '--' itself: it delegates to 'end' by
-    -- dataizing ⊥, so the empty formation reduces through one labelled 'dataize'
-    -- step (𝔻(⟦⟧) → 𝔻(⊥)) before 'end' yields the empty bytes (#942).
-    it "dataizes an empty formation by delegating to end" $ do
-      labels <- labelsOf "Q" "Q -> [[ ]]"
-      labels `shouldBe` ["dataize"]
+    -- The 'none' rule dataizes ⊥ (𝔻(⟦⟧) → 𝔻(⊥)), which matches no clause now
+    -- that there is no 'end' rule, so an empty formation reduces through one
+    -- labelled 'dataize' step and then fails: it has nothing to dataize (#955).
+    it "fails to dataize an empty formation, which dataizes ⊥" $ do
+      prog <- parseProgramThrows "Q -> [[ ]]"
+      loc <- parseExpressionThrows "Q"
+      dataize prog (defaultDataizeContext loc)
+        `shouldThrow` (\e -> "terminator" `isInfixOf` show (e :: SomeException))
 
   testDataize
     [

@@ -867,9 +867,9 @@ spec = do
       withStdin "Q -> [[ D> 01- ]]" $
         testCLISucceeded ["dataize"] ["01-"]
 
-    it "dataizes empty object to empty bytes" $
+    it "fails to dataize an empty object, which dataizes the terminator ⊥" $
       withStdin "Q -> [[ ]]" $
-        testCLISucceeded ["dataize"] ["--"]
+        testCLIFailed ["dataize"] ["terminator ⊥"]
 
     it "dataizes with --sequence" $
       withStdin "{[[ @ -> [[ x -> [[ D> 01-, y -> ? ]](y -> [[ ]]) ]].x ]]}" $
@@ -1138,10 +1138,6 @@ spec = do
             , "  \\phinoCondition{ [ D \\char44{} L \\char44{} @ ] \\cap B = \\emptyset }"
             , "  \\phinoPremise{ \\phinoDataize{ T }{ e }{ s_1 }{ \\delta }{ s_2 } }"
             , "  \\phinoConclusion{ \\phinoDataize{ [[ B ]] }{ e }{ s_1 }{ \\delta }{ s_2 } }"
-            , "\\end{phinoDataizationInference}"
-            , "\\begin{phinoDataizationInference}"
-            , "  \\phinoName{end}"
-            , "  \\phinoConclusion{ \\phinoDataize{ T }{ e }{ s }{ |--| }{ s } }"
             , "\\end{phinoDataizationInference}"
             , "\\begin{phinoDataizationInference}"
             , "  \\phinoName{norm}"

@@ -157,12 +157,15 @@ dataize program@(Program univ) ctx@DataizeContext{..} = do
   ((bytes, seq), _state) <- dataize' (expr, (program, Nothing) :| []) univ emptyState ctx
   pure (bytes, reverse seq)
 
--- The Dataization function 𝔻 retrieves bytes from an expression. It is total and
--- ternary, 𝔻(n, e, s): besides the term 'n' it takes the universe 'e' ('univ'),
+-- The Dataization function 𝔻 retrieves bytes from an expression. It is partial
+-- and ternary, 𝔻(n, e, s): besides the term 'n' it takes the universe 'e' ('univ'),
 -- which it forwards to 𝕄, and the mutable state 's', returning the bytes together
 -- with the new state. Its rules come from 'dataization.yaml': 'delta' yields the
--- asset bytes, 'end' (⊥) yields empty bytes (--) and 'none' (a formation with no
--- Δ/λ/φ) delegates to 'end' by dataizing ⊥,
+-- asset bytes and 'none' (a formation with no Δ/λ/φ) has nothing to dataize, so
+-- it dataizes ⊥. The terminator ⊥ signals an error and lies outside 𝔻's domain,
+-- so it matches no clause (there is no 'end' rule mapping it to empty bytes) and
+-- dataization stops there; a data-less formation therefore fails through the
+-- same path (see #955).
 -- 'box' contextualizes the φ-body and keeps dataizing (its step is labelled by
 -- its 'contextualize' side-computation), and 'norm' reduces through morphing,
 -- splicing the morphing steps into the chain. The clauses are disjoint (see
@@ -181,8 +184,15 @@ dataize' (expr, seq) univ state ctx = do
   matched <- firstMatch rules
   case matched of
     Just (rule, subst) -> reduce rule subst
-    Nothing -> throwIO (userError "no dataization rule matched")
+    Nothing -> throwIO (userError (unmatched expr))
   where
+    -- 𝔻 is partial: the terminator ⊥ signals an error and lies outside its
+    -- domain (see #955), so it matches no clause and lands here. Name it in the
+    -- message rather than reporting the generic "no dataization rule matched",
+    -- which would otherwise hide that the computation reached a dead end.
+    unmatched :: Expression -> String
+    unmatched ExTermination = "dataization reached the terminator ⊥, which signals an error and cannot be dataized"
+    unmatched _ = "no dataization rule matched"
     firstMatch :: [Y.DataizeRule] -> IO (Maybe (Y.DataizeRule, Subst))
     firstMatch [] = pure Nothing
     firstMatch (rule : rest) = do
@@ -345,9 +355,9 @@ _dataize expr univ state ctx@DataizeContext{_buildTerm = buildTerm} = case univ 
     pure (bts, state')
   _ -> throwIO (userError "Can't call _dataize from atoms with non-formation universe")
 
--- A number atom only operates on numeric data. Empty bytes (the result of
--- dataizing a bare formation ⟦𝐵⟧ or ⊥ now that 𝔻 is total) carry no number,
--- so the operand is rejected and the atom yields ⊥.
+-- A number atom only operates on numeric data. Empty bytes — a genuine
+-- zero-length byte array ⟦Δ ⤍ --⟧ — carry no number, so the operand is rejected
+-- and the atom yields ⊥.
 asNumber :: Bytes -> Maybe Double
 asNumber BtEmpty = Nothing
 asNumber bts = Just (either toDouble id (btsToNum bts))
