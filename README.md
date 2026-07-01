@@ -243,7 +243,7 @@ $ phino explain --morph
   { }
   { }
 ...
-\phinoMorphingRule{root}
+\phinoMorphingRule{universe}
   { \mathbb{M}( Q, e ) }
   { \mathbb{M}( \phinoNormalize{ e }, e ) }
   { $ e \not= Q $ }

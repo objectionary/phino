@@ -83,7 +83,7 @@ formation bds univ state ctx = do
 -- 𝕄(n, e, s): besides the term 'n' it takes the universe 'e' ('univ') — a plain
 -- expression — and the mutable state 's', returning the morphed term together
 -- with the new state. The universe is matched against the rule's 'e-match'
--- pattern (usually the '𝑒' meta, which binds 'e' so the 'root' rule substitutes
+-- pattern (usually the '𝑒' meta, which binds 'e' so the 'universe' rule substitutes
 -- it, but a rule may pin it to a literal such as 'mg' matching Φ). Its rules
 -- come from 'morphing.yaml': the first matching rule's premises are evaluated and
 -- its conclusion 'nresult' is built, always forwarding the same universe. The
