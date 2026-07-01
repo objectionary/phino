@@ -263,7 +263,8 @@ instance Render CONDITION where
       renderWrapped cond@CO_LOGIC{} = "\\lparen " <> render cond <> " \\rparen"
       renderWrapped cond = render cond
   render CO_NF{..} = "\\isnormal{ " <> render expr <> " }"
-  render CO_ABSOLUTE{..} = render expr <> " " <> render belongs <> " \\mathcal{K}"
+  render CO_ABSOLUTE{belongs = NOT_IN, ..} = "\\phinoNotAbsolute{ " <> render expr <> " }"
+  render CO_ABSOLUTE{..} = "\\phinoAbsolute{ " <> render expr <> " }"
   render CO_NOT{condition = CO_FORMATION{..}} = "\\phinoNotFormation{ " <> render expr <> " }"
   render CO_NOT{..} = renderFunc "not" condition
   render CO_COMPARE{..} = render left <> " " <> render equal <> " " <> render right

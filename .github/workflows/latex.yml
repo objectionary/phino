@@ -53,6 +53,8 @@ jobs:
             printf '\\newcommand\\isnormal[1]{#1}\n'
             printf '\\newcommand\\phinoIsFormation[1]{#1 \\text{ is a formation}}\n'
             printf '\\newcommand\\phinoNotFormation[1]{#1 \\text{ is not a formation}}\n'
+            printf '\\newcommand\\phinoAbsolute[1]{#1 \\in \\mathcal{K}}\n'
+            printf '\\newcommand\\phinoNotAbsolute[1]{#1 \\notin \\mathcal{K}}\n'
             printf '\\newcommand\\phinoMorphingRule[6][]{\\ensuremath{#1} #2 $#3$ $#4$ $#5$ $#6$}\n'
             printf '\\newcommand\\phinoNormalizationRule[6][]{\\ensuremath{#1} #2 $#3$ $#4$ $#5$ $#6$}\n'
             printf '\\newcommand\\phinoDataizationRule[6][]{\\ensuremath{#1} #2 $#3$ $#4$ $#5$ $#6$}\n'
