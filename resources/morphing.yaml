@@ -28,17 +28,18 @@
 # head — λ-bearing or not — is left to 'ml' (and 'mf'). The two clauses
 # are disjoint and their relative order does not change behavior.
 #
-# 'ma'/'maa' and 'mad'/'maad' partition application-headed normal forms on the
-# argument's absoluteness (#959). Both pairs pin the argument to a normal-form
-# meta, so the split is total over the normal forms 𝕄 actually sees: 'ma'/'maa'
-# take a '𝑘' argument — absolute (xi-free) and in normal form — and recurse by
-# re-normalizing the application; 'mad'/'maad' take an '𝑛' argument (normal form)
-# that is 'not (absolute 𝑛1)' and yield ⊥ with no recursion. A non-absolute
-# argument can never fill a slot, so ⊥ is the correct outcome and morphing stays
-# total: exactly one of the four fires, and the ⊥ axioms add no regress. Without
-# them, a void slot receiving a non-absolute argument (e.g. ⟦ x ↦ ∅ ⟧( x ↦ ξ.foo ))
-# had no terminating derivation — 'copy' cannot fire on a non-absolute argument,
-# so 'ma' re-morphed the identical stuck term forever.
+# 'ma'/'maa' and 'mad'/'maad' partition application-headed normal forms on
+# the argument's absoluteness (#959). Both pairs pin the argument to a
+# normal-form meta, so the split is total over the normal forms 𝕄 actually
+# sees: 'ma'/'maa' take a '𝑘' argument — absolute (xi-free) and in normal
+# form — and recurse by re-normalizing the application; 'mad'/'maad' take an
+# '𝑛' argument (a normal form) that is 'not (absolute 𝑛1)' and yield ⊥ with
+# no recursion. A non-absolute argument can never fill a slot, so ⊥ is the
+# correct outcome and morphing stays total: exactly one of the four fires,
+# and the ⊥ axioms add no regress. Without them, a void slot receiving a
+# non-absolute argument — e.g. ⟦ x ↦ ∅ ⟧( x ↦ ξ.foo ) — had no terminating
+# derivation: 'copy' cannot fire on a non-absolute argument, so 'ma'
+# re-morphed the identical stuck term forever.
 
 - name: mf
   match: ⟦𝐵⟧
