@@ -1,0 +1,15 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+name: overa
+pattern: ⟦𝐵1, 𝜏 ↦ 𝑒1, 𝐵2⟧(α𝑖 ↦ 𝑒2)
+result: ⊥
+when:
+  and:
+    - eq:
+        - 𝑖
+        - domain: 𝐵1
+    - not:
+        eq:
+          - 𝜏
+          - ρ
