@@ -14,8 +14,8 @@ expression: |
 result: |-
   ⟦
     x ↦ Φ.number(
-      α0 ↦ Φ.bytes(
-        α0 ↦ ⟦
+      as-bytes ↦ Φ.bytes(
+        data ↦ ⟦
           Δ ⤍ 3F-F0-00-00-00-00-00-00,
           ρ ↦ ∅
         ⟧
@@ -26,8 +26,8 @@ result: |-
       ρ ↦ ⟦ ρ ↦ ∅ ⟧
     ),
     y ↦ Φ.string(
-      α0 ↦ Φ.bytes(
-        α0 ↦ ⟦
+      as-bytes ↦ Φ.bytes(
+        data ↦ ⟦
           Δ ⤍ 48-65-79,
           ρ ↦ ∅
         ⟧

@@ -11,8 +11,8 @@ output: |-
   ⟦
     foo ↦ ⟦
       x ↦ Φ.number(
-        α0 ↦ Φ.bytes(
-          α0 ↦ ⟦ Δ ⤍ 41-EF-FF-FF-FF-E0-00-00 ⟧
+        as-bytes ↦ Φ.bytes(
+          data ↦ ⟦ Δ ⤍ 41-EF-FF-FF-FF-E0-00-00 ⟧
         )
       )
     ⟧
