@@ -1,4 +1,4 @@
-{⟦
+⟦
   j$kafka ↦ ⟦
     j$server ↦ ⟦
       j$KafkaRequestHandler ↦ ⟦
@@ -15,4 +15,4 @@
     ⟧,
     λ ⤍ Package
   ⟧
-⟧}
+⟧

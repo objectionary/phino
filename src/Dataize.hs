@@ -47,8 +47,8 @@ emptyState = ""
 -- here: the universe (the second argument 'e' of 𝕄(n, e, s) and 𝔻(n, e, s)) is a
 -- plain expression threaded as an argument to 'dataize'', 'morph' and on to the
 -- atoms, and the state 's' is threaded the same way (see 'State'). The working
--- program needed for normalization is taken from the head of the step chain, so
--- no 'Program' is threaded around.
+-- expression needed for normalization is taken from the head of the step chain,
+-- so no separate wrapper type is threaded around.
 data DataizeContext = DataizeContext
   { _locator :: Expression
   , _maxDepth :: Int
@@ -147,14 +147,15 @@ morph (expr, seq) univ state ctx = do
     sides :: [Y.Premise] -> Subst -> IO (Subst, State)
     sides premises subst = foldM (sidePremise univ ctx) (subst, state) premises
 
--- Dataize the program located at '_locator'. The program's root is the universe
--- (the 'e' argument) passed to 𝔻 and 𝕄.
-dataize :: Program -> DataizeContext -> IO Dataized
-dataize program@(Program univ) ctx@DataizeContext{..} = do
-  expr <- locatedExpression _locator program
+-- Dataize the expression located at '_locator'. The whole input expression is
+-- itself the universe Q (the 'e' argument) threaded through 𝔻 and 𝕄, so it is
+-- passed both as the located target and as the universe.
+dataize :: Expression -> DataizeContext -> IO Dataized
+dataize universe ctx@DataizeContext{..} = do
+  expr <- locatedExpression _locator universe
   -- Dataization starts from the empty state; the final state is not yet
   -- consumed by any caller, so it is discarded here.
-  ((bytes, seq), _state) <- dataize' (expr, (program, Nothing) :| []) univ emptyState ctx
+  ((bytes, seq), _state) <- dataize' (expr, (universe, Nothing) :| []) universe emptyState ctx
   pure (bytes, reverse seq)
 
 -- The Dataization function 𝔻 retrieves bytes from an expression. It is partial
@@ -314,19 +315,19 @@ verbArgs (Y.OpContextualize expr context) = [ArgExpression expr, ArgExpression c
 verbArgs (Y.OpDataize expr) = [ArgExpression expr]
 
 leadsTo :: NonEmpty Rewritten -> String -> Expression -> DataizeContext -> IO (NonEmpty Rewritten)
-leadsTo ((prog, _) :| rest) rule expr DataizeContext{..} = do
-  prog' <- withLocatedExpression _locator expr prog
-  pure ((prog', Nothing) :| (prog, Just rule) : rest)
+leadsTo ((current, _) :| rest) rule expr DataizeContext{..} = do
+  updated <- withLocatedExpression _locator expr current
+  pure ((updated, Nothing) :| (current, Just rule) : rest)
 
 -- Reduce 'expr' to its normal form through the normalization rewriter, embedding
--- it at '_locator' into the working program taken from the head of the step
+-- it at '_locator' into the working expression taken from the head of the step
 -- chain so the rewriter sees the surrounding context. Splices the individual
 -- steps (alpha, copy, dot, …) into the chain and returns the normalized
 -- expression together with the extended sequence.
 normalized :: Expression -> NonEmpty Rewritten -> DataizeContext -> IO (Expression, NonEmpty Rewritten)
 normalized expr seq ctx@DataizeContext{..} = do
-  prog' <- withLocatedExpression _locator expr (fst (NE.head seq))
-  (rewrittens, _) <- rewrite prog' normalizationRules (rewriteContext ctx)
+  whole <- withLocatedExpression _locator expr (fst (NE.head seq))
+  (rewrittens, _) <- rewrite whole normalizationRules (rewriteContext ctx)
   let (rw :| rws) = NE.reverse rewrittens
       seq' = rw :| rws <> NE.tail seq
   expr' <- locatedExpression _locator (fst rw)
@@ -340,7 +341,7 @@ normalized expr seq ctx@DataizeContext{..} = do
 
 -- Synthetic dataize function for internal usage inside atoms. Here we modify the
 -- universe by adding a new binding which refers to the expression we want to
--- dataize, building a local working program to reduce within. As a caller of 𝔻,
+-- dataize, building a local working expression to reduce within. As a caller of 𝔻,
 -- it first reduces the expression to a normal form, since 𝔻 only accepts normal
 -- forms. The universe 'univ' itself is forwarded unchanged, so morphing Φ under
 -- this context still resolves to the true universe rather than to this
@@ -349,8 +350,8 @@ _dataize :: Expression -> Expression -> State -> DataizeContext -> IO (Bytes, St
 _dataize expr univ state ctx@DataizeContext{_buildTerm = buildTerm} = case univ of
   ExFormation bds -> do
     (TeAttribute attr) <- buildTerm "random-tau" [] substEmpty
-    let prog = Program (ExFormation (BiTau attr expr : bds))
-    (normal, seq) <- normalized expr ((prog, Nothing) :| []) ctx
+    let synthetic = ExFormation (BiTau attr expr : bds)
+    (normal, seq) <- normalized expr ((synthetic, Nothing) :| []) ctx
     ((bts, _), state') <- dataize' (normal, seq) univ state ctx
     pure (bts, state')
   _ -> throwIO (userError "Can't call _dataize from atoms with non-formation universe")
@@ -425,6 +426,6 @@ _evaluate _ _ _ _ = throwIO (userError "Function evaluate() requires exactly 2 e
 _morph :: Expression -> DataizeContext -> State -> BuildTermMethodS
 _morph univ ctx state [ArgExpression expr] subst = do
   built <- buildExpressionThrows expr subst
-  ((morphed, _), state') <- morph (built, (Program univ, Nothing) :| []) univ state ctx
+  ((morphed, _), state') <- morph (built, (univ, Nothing) :| []) univ state ctx
   pure (TeExpression morphed, state')
 _morph _ _ _ _ _ = throwIO (userError "Function morph() requires exactly 1 expression argument")

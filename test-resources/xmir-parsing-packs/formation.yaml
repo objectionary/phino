@@ -8,4 +8,4 @@ xmir: |
       <o name="y" base="ξ"/>
     </o>
   </object>
-phi: '{[[ app -> [[ x -> Q, y -> $ ]] ]]}'
+phi: '[[ app -> [[ x -> Q, y -> $ ]] ]]'

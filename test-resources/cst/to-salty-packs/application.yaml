@@ -2,10 +2,10 @@
 # SPDX-License-Identifier: MIT
 # yamllint disable rule:line-length
 ---
-program: |
-  {[[ x -> Q.y(z -> "hey", b -> 1) ]]}
+expression: |
+  [[ x -> Q.y(z -> "hey", b -> 1) ]]
 result: |-
-  Φ ↦ ⟦
+  ⟦
     x ↦ Φ.y(
       z ↦ Φ.string(
         α0 ↦ Φ.bytes(

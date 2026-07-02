@@ -17,10 +17,6 @@ withEncoding ASCII node = toASCII node
 class ToASCII a where
   toASCII :: a -> a
 
-instance ToASCII PROGRAM where
-  toASCII PR_SALTY{..} = PR_SALTY Q ARROW' (toASCII expr)
-  toASCII PR_SWEET{..} = PR_SWEET lcb (toASCII expr) rcb space
-
 instance ToASCII EXPRESSION where
   toASCII EX_GLOBAL{} = EX_GLOBAL Q
   toASCII EX_XI{} = EX_XI DOLLAR

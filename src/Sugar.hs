@@ -45,7 +45,6 @@ data SugarType = SWEET | SALTY
 --  |----------------------------|-----------------------------------------------------|
 --  | sugar                      | verbose version                                     |
 --  |----------------------------|-----------------------------------------------------|
---  | {e}                        | Q -> e                                              |
 --  | a1 -> a2                   | a1 ↦ $.a2                                           |
 --  | a -> 42                    | Q.number(Q.bytes([[ D> 40-45-00-00-00-00-00-00 ]])) |
 --  | a -> "Hey"                 | Q.number(Q.bytes([[ D> 48-65-79 ]]))                |
@@ -56,10 +55,6 @@ data SugarType = SWEET | SALTY
 --  |----------------------------|-----------------------------------------------------|
 class ToSalty a where
   toSalty :: a -> a
-
-instance ToSalty PROGRAM where
-  toSalty PR_SWEET{..} = PR_SALTY Φ ARROW (toSalty expr)
-  toSalty prog = prog
 
 instance ToSalty EXPRESSION where
   toSalty EX_ATTR{..} = EX_DISPATCH (EX_XI XI) NO_SPACE attr

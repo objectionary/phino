@@ -4,6 +4,6 @@
 rules:
   basic: ['miss']
 input: |
-  Φ ↦ ⟦ ⟧ (t ↦ ξ)
+  ⟦ ⟧ (t ↦ ξ)
 output: |-
-  Φ ↦ ⊥
+  ⊥

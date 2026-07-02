@@ -2,14 +2,14 @@
 # SPDX-License-Identifier: MIT
 ---
 input: |
-  Q -> [[
+  [[
     x -> "  he llo  ",
     y -> "1234567891011",
     z -> "Hello, 2025, 2026",
     w -> "hi (jeff)"
   ]]
 output: |-
-  Φ ↦ ⟦
+  ⟦
     x ↦ "hello",
     y ↦ "11!",
     z ↦ "Hello, 2025!, 2026!",

@@ -1,10 +1,10 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 # SPDX-License-Identifier: MIT
 ---
-program: |
-  {[[
+expression: |
+  [[
     org -> [[ eolang -> [[ number -> [[]], bytes -> [[ ]] ]] ]], some -> Q
-  ]]}
+  ]]
 hidden: ['Q.org']
 shown: []
-result: '{[[ some -> Q ]]}'
+result: '[[ some -> Q ]]'

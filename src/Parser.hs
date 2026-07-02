@@ -4,11 +4,9 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
--- The goal of the module is to parse given phi program to AST
+-- The goal of the module is to parse given phi expression to AST
 module Parser
-  ( parseProgram
-  , parseProgramThrows
-  , parseExpression
+  ( parseExpression
   , parseExpressionThrows
   , parseAttribute
   , parseAttributeThrows
@@ -42,8 +40,7 @@ import Text.Printf (printf)
 type Parser = Parsec Void String
 
 data ParserException
-  = CouldNotParseProgram {message :: String}
-  | CouldNotParseExpression {message :: String}
+  = CouldNotParseExpression {message :: String}
   | CouldNotParseAttribute {message :: String}
   | CouldNotParseNumber {message :: String}
   deriving (Exception)
@@ -61,7 +58,6 @@ phiParser :: PhiParser
 phiParser = PhiParser attribute alpha index' binding expression quotedStr
 
 instance Show ParserException where
-  show CouldNotParseProgram{..} = printf "Couldn't parse given phi program, cause: %s" message
   show CouldNotParseExpression{..} = printf "Couldn't parse given phi expression, cause: %s" message
   show CouldNotParseAttribute{..} = printf "Couldn't parse given attribute, cause: %s" message
   show CouldNotParseNumber{..} = printf "Couldn't parse given number to 'Φ.number', cause: %s" message
@@ -454,21 +450,6 @@ expression = do
   expr <- exHead
   exTail expr
 
-program :: Parser Program
-program =
-  choice
-    [ do
-        _ <- symbol "{"
-        prog <- Program <$> expression
-        _ <- symbol "}"
-        return prog
-    , do
-        _ <- global
-        _ <- arrow
-        Program <$> expression
-    ]
-    <?> "program"
-
 -- Entry point
 parse' :: String -> Parser a -> String -> Either String a
 parse' name parser input = do
@@ -515,9 +496,3 @@ parseExpression = parse' "expression" expression
 
 parseExpressionThrows :: String -> IO Expression
 parseExpressionThrows ex = orThrow CouldNotParseExpression (parseExpression ex)
-
-parseProgram :: String -> Either String Program
-parseProgram = parse' "program" program
-
-parseProgramThrows :: String -> IO Program
-parseProgramThrows prg = orThrow CouldNotParseProgram (parseProgram prg)

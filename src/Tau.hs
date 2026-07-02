@@ -27,10 +27,10 @@ taus :: IORef (Set Text, Int)
 {-# NOINLINE taus #-}
 taus = unsafePerformIO (newIORef (Set.empty, 0))
 
--- Scan the program once and seed the avoid-set with every attribute label it
+-- Scan the expression once and seed the avoid-set with every attribute label it
 -- contains, resetting the cursor back to the start.
-seedTaus :: Program -> IO ()
-seedTaus (Program expr) = writeIORef taus (exprLabels expr, 0)
+seedTaus :: Expression -> IO ()
+seedTaus expr = writeIORef taus (exprLabels expr, 0)
 
 -- Mint a fresh, deterministic 𝜏-label that collides with no taken name,
 -- advancing the cursor past taken indices and recording the new name so it is

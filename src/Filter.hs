@@ -7,11 +7,11 @@ import AST
 import Misc
 import Rewriter
 
-exclude' :: Program -> [Expression] -> Program
-exclude' prog [] = prog
-exclude' prog@(Program ex@(ExFormation _)) (fqn : remaining) = case fqnToAttrs fqn of
-  Just fqn' -> exclude' (Program (excludedFormation ex fqn')) remaining
-  _ -> prog
+exclude' :: Expression -> [Expression] -> Expression
+exclude' expr [] = expr
+exclude' expr@(ExFormation _) (fqn : remaining) = case fqnToAttrs fqn of
+  Just fqn' -> exclude' (excludedFormation expr fqn') remaining
+  _ -> expr
   where
     excludedFormation :: Expression -> [Attribute] -> Expression
     excludedFormation (ExFormation bindings) [at] = ExFormation [bd | bd <- bindings, attributeFromBinding bd /= Just at]
@@ -24,19 +24,19 @@ exclude' prog@(Program ex@(ExFormation _)) (fqn : remaining) = case fqnToAttrs f
           | otherwise = bd : excludedBindings bs as
         excludedBindings (bd : bs) as = bd : excludedBindings bs as
     excludedFormation e _ = e
-exclude' prog _ = prog
+exclude' expr _ = expr
 
 exclude :: [Rewritten] -> [Expression] -> [Rewritten]
 exclude [] _ = []
 exclude rs [] = rs
-exclude ((program, maybeRule) : rest) exprs = (exclude' program exprs, maybeRule) : exclude rest exprs
+exclude ((expr, maybeRule) : rest) exprs = (exclude' expr exprs, maybeRule) : exclude rest exprs
 
-include' :: Program -> Expression -> Program
-include' (Program ex@(ExFormation _)) fqn =
-  let def = Program (ExFormation [BiVoid AtRho])
+include' :: Expression -> Expression -> Expression
+include' ex@(ExFormation _) fqn =
+  let def = ExFormation [BiVoid AtRho]
    in case fqnToAttrs fqn of
         Just fqn' -> case includedFormation ex fqn' of
-          Just e -> Program e
+          Just e -> e
           _ -> def
         _ -> def
   where
@@ -52,9 +52,9 @@ include' (Program ex@(ExFormation _)) fqn =
           | otherwise = includedBindings bs as
         includedBindings _ _ = Nothing
     includedFormation _ _ = Nothing
-include' _ _ = Program (ExFormation [BiVoid AtRho])
+include' _ _ = ExFormation [BiVoid AtRho]
 
 include :: [Rewritten] -> [Expression] -> [Rewritten]
 include [] _ = []
 include rs [] = rs
-include ((program, maybeRule) : rest) (expr : _) = (include' program expr, maybeRule) : include rest [expr]
+include ((expr, maybeRule) : rest) (fqn : _) = (include' expr fqn, maybeRule) : include rest [fqn]

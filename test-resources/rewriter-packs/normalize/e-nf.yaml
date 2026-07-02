@@ -3,6 +3,6 @@
 ---
 normalize: true
 input: |
-  {⟦ x ↦ ⟦ t ↦ Φ.x ⟧ ⟧}
+  ⟦ x ↦ ⟦ t ↦ Φ.x ⟧ ⟧
 output: |-
-  {⟦ x ↦ ⟦ t ↦ Φ.x ⟧ ⟧}
+  ⟦ x ↦ ⟦ t ↦ Φ.x ⟧ ⟧

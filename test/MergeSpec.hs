@@ -3,7 +3,6 @@
 
 module MergeSpec where
 
-import AST
 import Control.Monad (forM_)
 import Data.List (intercalate)
 import Merge (merge)
@@ -12,7 +11,7 @@ import Test.Hspec (Spec, anyException, describe, it, shouldBe, shouldThrow)
 
 spec :: Spec
 spec = do
-  describe "merge programs" $
+  describe "merge expressions" $
     forM_
       [
         ( ["[[ x -> 1 ]]", "[[ y -> 2 ]]"]
@@ -44,9 +43,9 @@ spec = do
         )
       ]
       ( \(exprs, res) -> it res $ do
-          progs <- mapM (fmap Program . parseExpressionThrows) exprs
-          merged <- merge progs
-          res' <- fmap Program (parseExpressionThrows res)
+          parsed <- mapM parseExpressionThrows exprs
+          merged <- merge parsed
+          res' <- parseExpressionThrows res
           merged `shouldBe` res'
       )
 
@@ -57,6 +56,6 @@ spec = do
       , ["[[ x -> [[ y -> Q ]] ]]", "[[ x -> [[ y -> $ ]] ]]"]
       ]
       ( \exprs -> it (intercalate " and " exprs) $ do
-          progs <- mapM (fmap Program . parseExpressionThrows) exprs
-          merge progs `shouldThrow` anyException
+          parsed <- mapM parseExpressionThrows exprs
+          merge parsed `shouldThrow` anyException
       )

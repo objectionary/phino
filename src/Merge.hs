@@ -9,25 +9,25 @@ import AST
 import Control.Exception.Base (Exception, throwIO)
 import Data.Functor ((<&>))
 import Misc
-import Printer (printExpression, printProgram)
+import Printer (printExpression)
 import Text.Printf (printf)
 
 data MergeException
-  = WrongProgramFormat Program
+  = WrongExpressionFormat Expression
   | CanNotMergeBinding Binding Binding
-  | EmptyProgramList
+  | EmptyExpressionList
   deriving (Exception)
 
 instance Show MergeException where
-  show (WrongProgramFormat prog) =
+  show (WrongExpressionFormat expr) =
     printf
-      "Invalid program format, only programs with top level formations are supported for 'merge' command, given:\n%s"
-      (printProgram prog)
+      "Invalid expression format, only expressions with top level formations are supported for 'merge' command, given:\n%s"
+      (printExpression expr)
   show (CanNotMergeBinding first second) =
     printf
       "Can't merge two bindings, conflict found:\n%s"
       (printExpression (ExFormation [first, second]))
-  show EmptyProgramList = "Nothing to merge: provide at least one program"
+  show EmptyExpressionList = "Nothing to merge: provide at least one expression"
 
 mergeBinding :: Binding -> Binding -> IO Binding
 mergeBinding first@(BiTau a (ExFormation xs)) second@(BiTau b (ExFormation ys))
@@ -47,14 +47,14 @@ mergeBindings xs ys = do
   ws <- mapM (uncurry mergeBinding) collisions
   pure (xs' <> ys' <> ws)
 
-merge' :: [Program] -> IO Program
-merge' [] = throwIO EmptyProgramList
-merge' [p@(Program (ExFormation _))] = pure p
-merge' (Program (ExFormation bindings) : rest) = do
-  Program (ExFormation bds') <- merge' rest
+merge' :: [Expression] -> IO Expression
+merge' [] = throwIO EmptyExpressionList
+merge' [p@(ExFormation _)] = pure p
+merge' (ExFormation bindings : rest) = do
+  ExFormation bds' <- merge' rest
   merged <- mergeBindings bds' bindings
-  pure (Program (ExFormation merged))
-merge' (prog : _) = throwIO (WrongProgramFormat prog)
+  pure (ExFormation merged)
+merge' (expr : _) = throwIO (WrongExpressionFormat expr)
 
-merge :: [Program] -> IO Program
-merge progs = merge' (reverse progs)
+merge :: [Expression] -> IO Expression
+merge exprs = merge' (reverse exprs)

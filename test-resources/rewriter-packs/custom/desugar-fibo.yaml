@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 ---
 input: |
-  {⟦
+  ⟦
     eo ↦ ⟦
       example ↦ ⟦
         fibonacci(n) ↦ ⟦
@@ -17,9 +17,9 @@ input: |
       ⟧,
       λ ⤍ Package
     ⟧
-  ⟧}
+  ⟧
 output: |-
-  Φ ↦ ⟦
+  ⟦
     eo ↦ ⟦
       example ↦ ⟦
         fibonacci ↦ ⟦

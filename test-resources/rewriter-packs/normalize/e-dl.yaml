@@ -3,6 +3,6 @@
 ---
 normalize: true
 input: |
-  {⟦ m ↦ ⟦ Δ ⤍ 42-, λ ⤍ Fn ⟧ ⟧}
+  ⟦ m ↦ ⟦ Δ ⤍ 42-, λ ⤍ Fn ⟧ ⟧
 output: |-
-  {⟦ m ↦ ⊥ ⟧}
+  ⟦ m ↦ ⊥ ⟧

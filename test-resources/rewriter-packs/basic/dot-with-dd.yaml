@@ -4,6 +4,6 @@
 rules:
   basic: ['dot']
 input: |
-  Φ ↦ [[ t -> ⊥.z ]].t
+  [[ t -> ⊥.z ]].t
 output: |-
-  Φ ↦ [[ t -> ⊥.z ]].t
+  [[ t -> ⊥.z ]].t

@@ -13,8 +13,8 @@ import Functions (buildTerm)
 import Lining (LineFormat (MULTILINE, SINGLELINE))
 import Margin (defaultMargin)
 import Must (Must (MtDisabled))
-import Parser (parseProgramThrows)
-import Printer (printProgram')
+import Parser (parseExpressionThrows)
+import Printer (printExpression')
 import Rewriter (RewriteContext (RewriteContext), rewrite)
 import Sugar (SugarType (SALTY, SWEET))
 import Text.Printf (printf)
@@ -87,16 +87,16 @@ main :: IO ()
 main = do
   src <- readFile "benchmark/tmp/native.phi"
   xsrc <- readFile "benchmark/tmp/Native.xmir"
-  prog <- parseProgramThrows src
-  runBench "parse/phi" (parseProgramThrows src)
+  expr <- parseExpressionThrows src
+  runBench "parse/phi" (parseExpressionThrows src)
   runBench "parse/xmir" (parseXMIRThrows xsrc >>= xmirToPhi)
-  runBench "rewrite/normalize" (rewrite prog normalizationRules rewriteCtx)
+  runBench "rewrite/normalize" (rewrite expr normalizationRules rewriteCtx)
   runBench
     "print/sweet/multiline"
-    (evaluate (length (printProgram' prog (SWEET, UNICODE, MULTILINE, defaultMargin))))
+    (evaluate (length (printExpression' expr (SWEET, UNICODE, MULTILINE, defaultMargin))))
   runBench
     "print/sweet/flat"
-    (evaluate (length (printProgram' prog (SWEET, UNICODE, SINGLELINE, defaultMargin))))
+    (evaluate (length (printExpression' expr (SWEET, UNICODE, SINGLELINE, defaultMargin))))
   runBench
     "print/salty/multiline"
-    (evaluate (length (printProgram' prog (SALTY, UNICODE, MULTILINE, defaultMargin))))
+    (evaluate (length (printExpression' expr (SALTY, UNICODE, MULTILINE, defaultMargin))))

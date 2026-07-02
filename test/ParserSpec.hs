@@ -28,13 +28,13 @@ test function useCases =
 
 spec :: Spec
 spec = do
-  describe "parse program" $
+  describe "parse expression" $
     test
-      parseProgram
-      [ ("Q -> [[]]", Just (Program (ExFormation [BiVoid AtRho])))
-      , ("Q -> T(x -> Q)", Just (Program (ExApplication ExTermination (ArTau (AtLabel "x") ExRoot))))
-      , ("Q -> Q.org.eolang", Just (Program (ExDispatch (ExDispatch ExRoot (AtLabel "org")) (AtLabel "eolang"))))
-      , ("Q -> [[x -> $, y -> ?]]", Just (Program (ExFormation [BiTau (AtLabel "x") ExXi, BiVoid (AtLabel "y"), BiVoid AtRho])))
+      parseExpression
+      [ ("[[]]", Just (ExFormation [BiVoid AtRho]))
+      , ("T(x -> Q)", Just (ExApplication ExTermination (ArTau (AtLabel "x") ExRoot)))
+      , ("Q.org.eolang", Just (ExDispatch (ExDispatch ExRoot (AtLabel "org")) (AtLabel "eolang")))
+      , ("[[x -> $, y -> ?]]", Just (ExFormation [BiTau (AtLabel "x") ExXi, BiVoid (AtLabel "y"), BiVoid AtRho]))
       ]
 
   describe "parse expression" $
@@ -252,7 +252,7 @@ spec = do
       packs
       ( \pack -> do
           content <- runIO (readFile pack)
-          it (takeBaseName pack) (parseProgram content `shouldSatisfy` isRight)
+          it (takeBaseName pack) (parseExpression content `shouldSatisfy` isRight)
       )
 
   describe "process typo packs" $ do
@@ -261,7 +261,7 @@ spec = do
       packs
       ( \pack -> do
           content <- runIO (readFile pack)
-          it (takeBaseName pack) (parseProgram content `shouldSatisfy` isLeft)
+          it (takeBaseName pack) (parseExpression content `shouldSatisfy` isLeft)
       )
 
   describe "parse bytes" $
@@ -381,11 +381,11 @@ spec = do
       , ("", Nothing)
       ]
 
-  describe "parseProgramThrows" $ do
-    it "returns program on valid input" $
-      parseProgramThrows "Q -> T" `shouldReturn` Program ExTermination
+  describe "parseExpressionThrows" $ do
+    it "returns expression on valid input" $
+      parseExpressionThrows "T" `shouldReturn` ExTermination
     it "throws on invalid input" $
-      parseProgramThrows "invalid program ]][[" `shouldThrow` anyException
+      parseExpressionThrows "invalid expression ]][[" `shouldThrow` anyException
 
   describe "parseExpressionThrows" $ do
     it "returns expression on valid input" $

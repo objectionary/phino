@@ -10,4 +10,4 @@ xmir: |
       </o>
     </o>
   </object>
-phi: '{[[ app -> [[ x -> [[ void -> ?, L> L_app_x ]] ]] ]]}'
+phi: '[[ app -> [[ x -> [[ void -> ?, L> L_app_x ]] ]] ]]'

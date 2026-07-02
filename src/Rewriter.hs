@@ -32,23 +32,23 @@ import qualified Yaml as Y
 
 type RewriteState = (NonEmpty Rewritten, Seen, Bool)
 
--- Loop-detection store. It maps a cheap fixed-size digest of a program (see
+-- Loop-detection store. It maps a cheap fixed-size digest of an expression (see
 -- 'hashExpression') to the full expressions that produced that digest. A
 -- digest collision is resolved by a slow, exact structural (==) comparison,
 -- so loops are still detected soundly while the common (no collision) case
--- stays O(1) on the digest instead of O(programSize) per lookup/insert.
+-- stays O(1) on the digest instead of O(expressionSize) per lookup/insert.
 type Seen = Map.Map Int [Expression]
 
--- Has this exact program been seen before? The digest lookup is fast; the
+-- Has this exact expression been seen before? The digest lookup is fast; the
 -- (==) check runs only on a digest match, guarding against hash collisions.
 seenMember :: Int -> Expression -> Seen -> Bool
 seenMember digest expr seen = maybe False (elem expr) (Map.lookup digest seen)
 
--- Remember a program under its digest, keeping any earlier collisions.
+-- Remember an expression under its digest, keeping any earlier collisions.
 seenInsert :: Int -> Expression -> Seen -> Seen
 seenInsert digest expr = Map.insertWith (++) digest [expr]
 
-type Rewritten = (Program, Maybe String)
+type Rewritten = (Expression, Maybe String)
 
 type Rewrittens = (NonEmpty Rewritten, Bool)
 
@@ -146,11 +146,11 @@ tryBuildAndReplaceFast state@(expr, ExFormation _pbds@(pbd : pbds), ExFormation 
 tryBuildAndReplaceFast state _ = buildAndReplace' state replaceExpression
 
 -- The function returns tuple (X, Y, Z) where
--- - X is sequence of programs;
--- - Y is Set of unique programs after each rule application. It allows to stop the rewriting if we're getting
---   into loop and get back to program which we've already got before
+-- - X is sequence of expressions;
+-- - Y is Set of unique expressions after each rule application. It allows to stop the rewriting if we're getting
+--   into loop and get back to an expression which we've already got before
 -- - Z is boolean flag which tells us if we reach breakpoint. If unmatched rule is equal to breakpoint rule - entire
---   rewriting must be stopped and original program must be returned
+--   rewriting must be stopped and original expression must be returned
 rewrite' :: RewriteState -> [Y.Rule] -> Int -> RewriteContext -> IO RewriteState
 rewrite' state [] _ _ = pure state
 rewrite' state (rule : rest) iteration ctx@RewriteContext{..} = do
@@ -160,7 +160,7 @@ rewrite' state (rule : rest) iteration ctx@RewriteContext{..} = do
     _ -> rewrite' state' rest iteration ctx
   where
     _rewrite :: RewriteState -> Int -> IO RewriteState
-    _rewrite (_rewrittens@((program, _) :| _), _unique, _) _count =
+    _rewrite (_rewrittens@((current, _) :| _), _unique, _) _count =
       let ruleName = rule.name
           ptn = rule.pattern
           res = rule.result
@@ -172,7 +172,7 @@ rewrite' state (rule : rest) iteration ctx@RewriteContext{..} = do
                 else pure (_rewrittens, _unique, False)
             else do
               logDebug (printf "Starting rewriting cycle for rule '%s': %d out of %d" ruleName _count _maxDepth)
-              expression <- locatedExpression _locator program
+              expression <- locatedExpression _locator current
               R.matchExpressionWithRule expression rule (RuleContext _buildTerm) >>= \case
                 [] -> do
                   logDebug (printf "Rule '%s' does not match, rewriting is stopped" ruleName)
@@ -201,23 +201,23 @@ rewrite' state (rule : rest) iteration ctx@RewriteContext{..} = do
                                     (countNodes expr)
                                     (printExpression expr)
                                 )
-                              prog <- withLocatedExpression _locator expr program
-                              _saveStep prog (((iteration - 1) * _maxDepth) + _count)
-                              _rewrite (leadsTo prog, seenInsert digest expr _unique, False) (_count + 1)
+                              updated <- withLocatedExpression _locator expr current
+                              _saveStep updated (((iteration - 1) * _maxDepth) + _count)
+                              _rewrite (leadsTo updated, seenInsert digest expr _unique, False) (_count + 1)
       where
-        leadsTo :: Program -> NonEmpty Rewritten
-        leadsTo _prog =
-          let (program, _) :| rest = _rewrittens
-           in (_prog, Nothing) :| (program, Just rule.name) : rest
+        leadsTo :: Expression -> NonEmpty Rewritten
+        leadsTo next =
+          let (head', _) :| rest = _rewrittens
+           in (next, Nothing) :| (head', Just rule.name) : rest
 
--- Rewrite program by provided locator from RewriteContext
-rewrite :: Program -> [Y.Rule] -> RewriteContext -> IO Rewrittens
-rewrite prog rules ctx@RewriteContext{..} = do
-  (rewrittens, exceeded) <- _rewrite ((prog, Nothing) :| [], Map.empty, False) 0
+-- Rewrite the expression by provided locator from RewriteContext
+rewrite :: Expression -> [Y.Rule] -> RewriteContext -> IO Rewrittens
+rewrite expr rules ctx@RewriteContext{..} = do
+  (rewrittens, exceeded) <- _rewrite ((expr, Nothing) :| [], Map.empty, False) 0
   pure (NE.reverse rewrittens, exceeded)
   where
     _rewrite :: RewriteState -> Int -> IO Rewrittens
-    _rewrite state@(rewrittens@((program, _) :| _), _, _) count
+    _rewrite state@(rewrittens@((current, _) :| _), _, _) count
       | not (inRange _must count) && count > 0 && exceedsUpperBound _must count = throwIO (MustStopBefore _must count)
       | count == _maxCycles = do
           logDebug (printf "Max amount of rewriting cycles for all rules (%d) has been reached, rewriting is stopped" _maxCycles)
@@ -227,9 +227,9 @@ rewrite prog rules ctx@RewriteContext{..} = do
       | otherwise = do
           logDebug (printf "Starting rewriting cycle for all rules: %d out of %d" count _maxCycles)
           rewrite' state rules count ctx >>= \case
-            (_, _, True) -> pure ((prog, Nothing) :| [], False) -- breakpoint, return original program
-            state'@(rewrittens'@((program', _) :| _), _, False) ->
-              if program' == program
+            (_, _, True) -> pure ((expr, Nothing) :| [], False) -- breakpoint, return original expression
+            state'@(rewrittens'@((current', _) :| _), _, False) ->
+              if current' == current
                 then do
                   logDebug "Rewriting is stopped since it has no effect"
                   if not (inRange _must count)

@@ -51,7 +51,7 @@ optRule :: Parser [FilePath]
 optRule = many (strOption (long "rule" <> metavar "[FILE]" <> help "Path to custom rule"))
 
 optInputFormat :: Parser IOFormat
-optInputFormat = option (parseIOFormat "input") (long "input" <> metavar "FORMAT" <> help "Program input format (phi, xmir)" <> value PHI <> showDefault)
+optInputFormat = option (parseIOFormat "input") (long "input" <> metavar "FORMAT" <> help "Expression input format (phi, xmir)" <> value PHI <> showDefault)
 
 parseIOFormat :: String -> ReadM IOFormat
 parseIOFormat type' = eitherReader $ \format -> case (map toLower format, type') of
@@ -64,7 +64,7 @@ optOutputFormat :: Parser IOFormat
 optOutputFormat =
   option
     (parseIOFormat "output")
-    (long "output" <> metavar "FORMAT" <> help (printf "Result and intermediate (see %s option(s)) programs output format (phi, xmir, latex)" _intermediateOptions) <> value PHI <> showDefault)
+    (long "output" <> metavar "FORMAT" <> help (printf "Result and intermediate (see %s option(s)) expressions output format (phi, xmir, latex)" _intermediateOptions) <> value PHI <> showDefault)
 
 argInputFile :: Parser (Maybe FilePath)
 argInputFile = optional (argument str (metavar "FILE" <> help "Path to input file"))
@@ -85,7 +85,7 @@ optMargin :: Parser Int
 optMargin =
   option
     (auto >>= validateIntOption (> 0) "--margin must be positive")
-    (long "margin" <> help "The maximum right margin for the printed 𝜑-programs or 𝜑-expressions" <> value defaultMargin <> showDefault)
+    (long "margin" <> help "The maximum right margin for the printed 𝜑-expressions" <> value defaultMargin <> showDefault)
 
 optMeetPopularity :: Parser (Maybe Int)
 optMeetPopularity =
@@ -119,7 +119,7 @@ optNonumber :: Parser Bool
 optNonumber = switch (long "nonumber" <> help "Turn off equation auto numbering in LaTeX rendering (see --output option)")
 
 optSequence :: Parser Bool
-optSequence = switch (long "sequence" <> help "Result output contains all intermediate 𝜑-programs concatenated with EOL")
+optSequence = switch (long "sequence" <> help "Result output contains all intermediate 𝜑-expressions concatenated with EOL")
 
 optCanonize :: Parser Bool
 optCanonize = switch (long "canonize" <> help "Rename all functions attached to λ binding with F1, F2, etc.")
@@ -134,7 +134,7 @@ optMeetPrefix :: Parser (Maybe String)
 optMeetPrefix = optional (strOption (long "meet-prefix" <> metavar "PREFIX" <> help "Prefix to be inserted before index in \\phinoMeet{} and \\phinoAgain{} LaTeX functions, e.g. \\phinoMeet{foo:1}"))
 
 optBreakpoint :: Parser (Maybe FilePath)
-optBreakpoint = optional (strOption (long "breakpoint" <> metavar "FILE" <> help "The name of the first unmatched rule which leads to stopping entire rewriting process and returning original program"))
+optBreakpoint = optional (strOption (long "breakpoint" <> metavar "FILE" <> help "The name of the first unmatched rule which leads to stopping entire rewriting process and returning original expression"))
 
 optHide :: Parser [String]
 optHide =
@@ -142,7 +142,7 @@ optHide =
     ( strOption
         ( long "hide"
             <> metavar "FQN"
-            <> help "Location of object to exclude from result and intermediate programs after rewriting. Must be a valid dispatch expression; e.g. Q.org.eolang"
+            <> help "Location of object to exclude from result and intermediate expressions after rewriting. Must be a valid dispatch expression; e.g. Q.org.eolang"
         )
     )
 
@@ -153,7 +153,7 @@ optShow =
         ( long "show"
             <> metavar "FQN"
             <> help
-              "Location of object to include to result and intermediate programs after rewriting. \
+              "Location of object to include to result and intermediate expressions after rewriting. \
               \Must be a valid dispatch expression; e.g. Q.org.eolang. Unlike --hide, can be used only once"
         )
     )
@@ -166,7 +166,7 @@ optFocus =
   strOption
     ( long "focus"
         <> metavar "FQN"
-        <> help "Location of only object to be printed in entire program. Must be a valid dispatch expression; e.g. Q.foo.bar"
+        <> help "Location of only object to be printed in entire expression. Must be a valid dispatch expression; e.g. Q.foo.bar"
         <> value "Q"
         <> showDefault
     )
@@ -193,16 +193,16 @@ optShuffle :: Parser Bool
 optShuffle = switch (long "shuffle" <> help "Shuffle rules before applying")
 
 optSugar :: Parser SugarType
-optSugar = flag SALTY SWEET (long "sweet" <> help (printf "Print result and intermediate (see %s option(s)) 𝜑-programs using syntax sugar" _intermediateOptions))
+optSugar = flag SALTY SWEET (long "sweet" <> help (printf "Print result and intermediate (see %s option(s)) 𝜑-expressions using syntax sugar" _intermediateOptions))
 
 optSugar' :: Parser SugarType
-optSugar' = flag SALTY SWEET (long "sweet" <> help "Print result 𝜑-program using syntax sugar")
+optSugar' = flag SALTY SWEET (long "sweet" <> help "Print result 𝜑-expression using syntax sugar")
 
 optLineFormat :: Parser LineFormat
-optLineFormat = flag MULTILINE SINGLELINE (long "flat" <> help (printf "Print result and intermediate (see %s option(s)) 𝜑-programs in one line" _intermediateOptions))
+optLineFormat = flag MULTILINE SINGLELINE (long "flat" <> help (printf "Print result and intermediate (see %s option(s)) 𝜑-expressions in one line" _intermediateOptions))
 
 optLineFormat' :: Parser LineFormat
-optLineFormat' = flag MULTILINE SINGLELINE (long "flat" <> help "Print result 𝜑-program in one line")
+optLineFormat' = flag MULTILINE SINGLELINE (long "flat" <> help "Print result 𝜑-expression in one line")
 
 optMust :: Parser Must
 optMust =
@@ -216,7 +216,7 @@ optMust =
     )
 
 optOmitListing :: Parser Bool
-optOmitListing = switch (long "omit-listing" <> help "Omit full program listing in XMIR output")
+optOmitListing = switch (long "omit-listing" <> help "Omit full expression listing in XMIR output")
 
 optOmitComments :: Parser Bool
 optOmitComments = switch (long "omit-comments" <> help "Omit comments in XMIR output")
@@ -325,7 +325,7 @@ mergeParser =
             <$> optLogLevel
             <*> optLogLines
             <*> optInputFormat
-            <*> option (parseIOFormat "output") (long "output" <> metavar "FORMAT" <> help (printf "Result program output format (phi, xmir, latex)") <> value PHI <> showDefault)
+            <*> option (parseIOFormat "output") (long "output" <> metavar "FORMAT" <> help (printf "Result expression output format (phi, xmir, latex)") <> value PHI <> showDefault)
             <*> optSugar'
             <*> optLineFormat'
             <*> optOmitListing
@@ -351,11 +351,11 @@ matchParser =
 commandParser :: Parser Command
 commandParser =
   hsubparser
-    ( command "rewrite" (info rewriteParser (progDesc "Rewrite the 𝜑-program"))
-        <> command "dataize" (info dataizeParser (progDesc "Dataize the 𝜑-program"))
+    ( command "rewrite" (info rewriteParser (progDesc "Rewrite the 𝜑-expression"))
+        <> command "dataize" (info dataizeParser (progDesc "Dataize the 𝜑-expression"))
         <> command "explain" (info explainParser (progDesc "Explain rules in LaTeX format"))
-        <> command "merge" (info mergeParser (progDesc "Merge 𝜑-programs into single one by merging their top level formations"))
-        <> command "match" (info matchParser (progDesc "Match 𝜑-program against provided pattern and build matched substitutions"))
+        <> command "merge" (info mergeParser (progDesc "Merge 𝜑-expressions into single one by merging their top level formations"))
+        <> command "match" (info matchParser (progDesc "Match 𝜑-expression against provided pattern and build matched substitutions"))
     )
 
 optPin :: Parser (Maybe String)

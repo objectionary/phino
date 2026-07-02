@@ -3,7 +3,7 @@
 ---
 repeat: 10
 input: |
-  {⟦
+  ⟦
     φ ↦ Φ.jeo.method,
     body ↦ ⟦
       φ ↦ Φ.jeo.seq.of2,
@@ -23,9 +23,9 @@ input: |
       ⟧
     ⟧,
     name ↦ "main"
-  ⟧}
+  ⟧
 output: |-
-  {⟦
+  ⟦
     φ ↦ Φ.jeo.method,
     body ↦ ⟦
       φ ↦ Φ.jeo.seq.of2,
@@ -39,7 +39,7 @@ output: |-
       ⟧
     ⟧,
     name ↦ "main"
-  ⟧}
+  ⟧
 rules:
   custom:
     - name: java boxed method

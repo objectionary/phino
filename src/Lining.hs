@@ -18,10 +18,6 @@ data LineFormat = SINGLELINE | MULTILINE
 class ToSingleLine a where
   toSingleLine :: a -> a
 
-instance ToSingleLine PROGRAM where
-  toSingleLine PR_SALTY{..} = PR_SALTY global arrow (toSingleLine expr)
-  toSingleLine PR_SWEET{..} = PR_SWEET lcb (toSingleLine expr) rcb space
-
 instance ToSingleLine EXPRESSION where
   toSingleLine EX_FORMATION{lsb, binding = bd@BI_EMPTY{}, rsb} = EX_FORMATION lsb NO_EOL NO_TAB bd NO_EOL NO_TAB rsb
   toSingleLine EX_FORMATION{..} = EX_FORMATION lsb NO_EOL TAB' (toSingleLine binding) NO_EOL TAB' rsb

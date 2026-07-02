@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 ---
 input: |
-  Q -> [[
+  [[
     x -> [[
       y -> 1,
       z -> 2,
@@ -10,7 +10,7 @@ input: |
     ]]
   ]]
 output: |-
-  Φ ↦ ⟦
+  ⟦
     x ↦ 4
   ⟧
 rules:

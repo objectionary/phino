@@ -80,35 +80,35 @@ spec = do
             parseExpression printed `shouldBe` Right expr
       )
 
-  describe "printProgram with default config" $
+  describe "printExpression with default config" $
     forM_
-      [ ("empty formation", Program (ExFormation [BiVoid AtRho]), "{⟦⟧}")
-      , ("dispatch", Program (ExDispatch ExRoot (AtLabel "org")), "{Φ.org}")
+      [ ("empty formation", ExFormation [BiVoid AtRho], "⟦⟧")
+      , ("dispatch", ExDispatch ExRoot (AtLabel "org"), "Φ.org")
       ]
-      ( \(desc, prog, expected) ->
-          it desc (printProgram prog `shouldBe` expected)
+      ( \(desc, expr, expected) ->
+          it desc (printExpression expr `shouldBe` expected)
       )
 
-  describe "printProgram in salty does not inject a duplicate void rho when rho is already present" $
+  describe "printExpression in salty does not inject a duplicate void rho when rho is already present" $
     forM_
       [
         ( "rho bound to an empty formation"
-        , Program (ExFormation [BiTau AtRho (ExFormation [BiVoid AtRho])])
-        , "Φ ↦ ⟦ ρ ↦ ⟦ ρ ↦ ∅ ⟧ ⟧"
+        , ExFormation [BiTau AtRho (ExFormation [BiVoid AtRho])]
+        , "⟦ ρ ↦ ⟦ ρ ↦ ∅ ⟧ ⟧"
         )
       ,
         ( "rho bound to a non empty formation"
-        , Program (ExFormation [BiTau AtRho (ExFormation [BiVoid (AtLabel "名前"), BiVoid AtRho])])
-        , "Φ ↦ ⟦ ρ ↦ ⟦ 名前 ↦ ∅, ρ ↦ ∅ ⟧ ⟧"
+        , ExFormation [BiTau AtRho (ExFormation [BiVoid (AtLabel "名前"), BiVoid AtRho])]
+        , "⟦ ρ ↦ ⟦ 名前 ↦ ∅, ρ ↦ ∅ ⟧ ⟧"
         )
       ,
         ( "rho binding placed after another binding"
-        , Program (ExFormation [BiTau (AtLabel "café") ExRoot, BiTau AtRho (ExFormation [BiVoid AtRho])])
-        , "Φ ↦ ⟦ café ↦ Φ, ρ ↦ ⟦ ρ ↦ ∅ ⟧ ⟧"
+        , ExFormation [BiTau (AtLabel "café") ExRoot, BiTau AtRho (ExFormation [BiVoid AtRho])]
+        , "⟦ café ↦ Φ, ρ ↦ ⟦ ρ ↦ ∅ ⟧ ⟧"
         )
       ]
-      ( \(desc, prog, expected) ->
-          it desc (printProgram' prog (SALTY, UNICODE, SINGLELINE, defaultMargin) `shouldBe` expected)
+      ( \(desc, expr, expected) ->
+          it desc (printExpression' expr (SALTY, UNICODE, SINGLELINE, defaultMargin) `shouldBe` expected)
       )
 
   describe "printAttribute with default encoding" $

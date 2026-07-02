@@ -4,6 +4,6 @@
 rules:
   basic: ['stop']
 input: |
-  Φ ↦ ⟦ x ↦ ξ.t ⟧.z
+  ⟦ x ↦ ξ.t ⟧.z
 output: |-
-  Φ ↦ ⊥
+  ⊥

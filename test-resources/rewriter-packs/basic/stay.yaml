@@ -4,9 +4,9 @@
 rules:
   basic: ['stay']
 input: |
-  Φ ↦ ⟦ x ↦ ⟦⟧, ρ ↦ ⟦ t ↦ Φ.number ⟧ ⟧ (ρ ↦ ⟦ w ↦ Φ.string ⟧)
+  ⟦ x ↦ ⟦⟧, ρ ↦ ⟦ t ↦ Φ.number ⟧ ⟧ (ρ ↦ ⟦ w ↦ Φ.string ⟧)
 output: |-
-  Φ ↦ ⟦
+  ⟦
     x ↦ ⟦⟧,
     ρ ↦ ⟦
       t ↦ Φ.number

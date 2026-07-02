@@ -56,7 +56,7 @@ components: `library` (`src/`), executable `phino` (`app/`), test suite
 ### Two-phase rendering pipeline
 
 `AST -> CST -> Text`. `AST.hs` holds the semantic tree (`Expression`,
-`Binding`, `Attribute`, `Bytes`, `Program`). `CST.hs` holds the formatting
+`Binding`, `Attribute`, `Bytes`). `CST.hs` holds the formatting
 tree (every token is a typed constructor). The `Render` typeclass converts
 CST to `Text`. This keeps layout concerns out of the semantic layer.
 

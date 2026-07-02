@@ -1,4 +1,4 @@
-{⟦
+⟦
   all-the-basics -> [[
     no-xi ↦ a.b(c ↦ d).c,
     no-xi-in-formation ↦ ⟦
@@ -42,4 +42,4 @@
     with-void-phi-sweet(φ) ↦ ⟦⟧,
     with-void-phi-salty ↦ ⟦ φ ↦ ∅ ⟧
   ]]
-⟧}
+⟧

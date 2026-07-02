@@ -15,4 +15,4 @@ xmir: |
       </o>
     </o>
   </object>
-phi: '{[[ app -> [[ x -> Q.number([[ D> 00-00-00-01 ]]).plus(arg -> Q.number([[ D> 00-00-00-02 ]])) ]] ]]}'
+phi: '[[ app -> [[ x -> Q.number([[ D> 00-00-00-01 ]]).plus(arg -> Q.number([[ D> 00-00-00-02 ]])) ]] ]]'

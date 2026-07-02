@@ -46,4 +46,4 @@ canonizeArgument (ArAlpha alpha expr) idx =
 
 canonize :: [Rewritten] -> [Rewritten]
 canonize [] = []
-canonize ((Program expr, maybeRule) : rest) = (Program (fst (canonizeExpression expr 1)), maybeRule) : canonize rest
+canonize ((expr, maybeRule) : rest) = (fst (canonizeExpression expr 1), maybeRule) : canonize rest

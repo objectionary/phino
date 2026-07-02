@@ -19,8 +19,8 @@ import Files (allPathsIn, ensuredFile)
 import Functions (buildTerm)
 import GHC.Generics
 import Must (Must (..))
-import Parser (parseProgramThrows)
-import Printer (printProgram)
+import Parser (parseExpressionThrows)
+import Printer (printExpression)
 import Rewriter (RewriteContext (RewriteContext), rewrite)
 import System.FilePath (makeRelative, replaceExtension, (</>))
 import Tau (seedTaus)
@@ -84,8 +84,8 @@ spec =
           case skip pack of
             Just True -> pending
             _ -> do
-              prog <- parseProgramThrows (input pack)
-              seedTaus prog
+              expr <- parseExpressionThrows (input pack)
+              seedTaus expr
               rules' <- case rules pack of
                 Just _rules -> case custom _rules of
                   Just custom' -> pure custom'
@@ -104,7 +104,7 @@ spec =
                     else pure []
               (rewrittens, _) <-
                 rewrite
-                  prog
+                  expr
                   rules'
                   ( RewriteContext
                       ExRoot
@@ -116,13 +116,13 @@ spec =
                       Nothing
                       dontSaveStep
                   )
-              let (program, _) = NE.last rewrittens
-              result' <- parseProgramThrows (output pack)
-              unless (program == result') $
+              let (rewritten, _) = NE.last rewrittens
+              result' <- parseExpressionThrows (output pack)
+              unless (rewritten == result') $
                 expectationFailure
-                  ( "Wrong rewritten program. Expected:\n"
-                      ++ printProgram result'
+                  ( "Wrong rewritten expression. Expected:\n"
+                      ++ printExpression result'
                       ++ "\nGot:\n"
-                      ++ printProgram program
+                      ++ printExpression rewritten
                   )
       )

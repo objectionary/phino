@@ -2,9 +2,9 @@
 # SPDX-License-Identifier: MIT
 ---
 input: |
-  {⟦ x -> "foo" ⟧}
+  ⟦ x -> "foo" ⟧
 output: |-
-  {⟦ x -> "foo", foo -> ⟦⟧ ⟧}
+  ⟦ x -> "foo", foo -> ⟦⟧ ⟧
 rules:
   custom:
     - name: attribute from string

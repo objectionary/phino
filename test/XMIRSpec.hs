@@ -8,7 +8,6 @@
 
 module XMIRSpec where
 
-import AST
 import Control.Monad (forM_, unless)
 import Data.Aeson
 import Data.Char (isDigit)
@@ -17,12 +16,12 @@ import Data.Text qualified as T
 import Data.Yaml qualified as Yaml
 import Files (allPathsIn)
 import GHC.Generics (Generic)
-import Parser (parseExpressionThrows, parseProgramThrows)
+import Parser (parseExpressionThrows)
 import System.FilePath (makeRelative)
 import Test.Hspec (Spec, anyException, describe, expectationFailure, it, runIO, shouldBe, shouldThrow)
 import Text.XML (Document (..), Element (..))
 import Text.XML.Cursor qualified as C
-import XMIR (defaultXmirContext, parseXMIRThrows, printXMIR, programToXMIR, toName, xmirToPhi)
+import XMIR (defaultXmirContext, expressionToXMIR, parseXMIRThrows, printXMIR, toName, xmirToPhi)
 
 data ParsePack = ParsePack
   { failure :: Maybe Bool
@@ -202,7 +201,7 @@ spec = do
             Just True -> xmir' `shouldThrow` anyException
             _ -> do
               xmir'' <- xmir'
-              phi'' <- parseProgramThrows phi'
+              phi'' <- parseExpressionThrows phi'
               xmir'' `shouldBe` phi''
       )
 
@@ -219,7 +218,7 @@ spec = do
       ]
       ( \phi' -> it phi' $ do
           expr <- parseExpressionThrows phi'
-          programToXMIR (Program expr) defaultXmirContext `shouldThrow` anyException
+          expressionToXMIR expr defaultXmirContext `shouldThrow` anyException
       )
 
   describe "XMIR printing packs" $ do
@@ -231,8 +230,8 @@ spec = do
           it (makeRelative resources pth) $ do
             pack <- printPack pth
             let PrintPack{phi = phi', xpaths = xpaths'} = pack
-            prog <- parseProgramThrows phi'
-            xmir' <- programToXMIR prog defaultXmirContext
+            expr <- parseExpressionThrows phi'
+            xmir' <- expressionToXMIR expr defaultXmirContext
             let failed = filter (not . matches xmir') xpaths'
             unless
               (null failed)

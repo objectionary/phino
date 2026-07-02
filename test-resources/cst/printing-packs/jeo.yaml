@@ -2,8 +2,8 @@
 # SPDX-License-Identifier: MIT
 # yamllint disable rule:line-length
 ---
-program: |
-  {[[
+expression: |
+  [[
     x -> Q.x(Φ.jeo.opcode.lconst_0(
       9
     ),
@@ -26,9 +26,9 @@ program: |
         ⟧
       )
     ))
-  ]]}
+  ]]
 result: |-
-  {⟦
+  ⟦
     x ↦ Φ.x(
       Φ.jeo.opcode.lconst_0( 9 ),
       Φ.jeo.opcode.lstore( 55, 1 ),
@@ -36,4 +36,4 @@ result: |-
       Φ.jeo.opcode.istore( 54, 3 ),
       Φ.jeo.label( Φ.bytes( ⟦ Δ ⤍ 4C-31-32-38-34-34-34-35-32-36-37 ⟧ ) )
     )
-  ⟧}
+  ⟧

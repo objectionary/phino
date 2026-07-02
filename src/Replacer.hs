@@ -4,15 +4,12 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
--- The goal of the module is to traverse though the Program with replacing
+-- The goal of the module is to traverse through the expression with replacing
 -- pattern sub expression with target expressions
 module Replacer
-  ( replaceProgram
-  , replaceProgramFast
-  , replaceExpression
+  ( replaceExpression
   , replaceExpressionFast
   , ReplaceContext (..)
-  , ReplaceProgramFunc
   , ReplaceExpressionFunc
   )
 where
@@ -23,8 +20,6 @@ import Data.List (isPrefixOf)
 type ReplaceState a = (a, [Expression], [Expression -> Expression])
 
 type ReplaceExpressionFunc' = ReplaceState Expression -> ReplaceContext -> ReplaceState Expression
-
-type ReplaceProgramFunc = ReplaceState Program -> Program
 
 type ReplaceExpressionFunc = ReplaceState Expression -> Expression
 
@@ -113,9 +108,3 @@ replaceExpressionFast :: ReplaceContext -> ReplaceExpressionFunc
 replaceExpressionFast ctx state =
   let (expr, _, _) = replaceExpressionFast' state ctx
    in expr
-
-replaceProgram :: ReplaceProgramFunc
-replaceProgram (Program expr, ptns, repls) = Program (replaceExpression (expr, ptns, repls))
-
-replaceProgramFast :: ReplaceContext -> ReplaceProgramFunc
-replaceProgramFast ctx (Program expr, ptns, repls) = Program (replaceExpressionFast ctx (expr, ptns, repls))

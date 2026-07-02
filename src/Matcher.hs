@@ -140,6 +140,3 @@ matchExpressionDeep ptn tgt =
 
 matchExpression :: MatchExpressionFunc
 matchExpression = matchExpressionDeep
-
-matchProgram :: Expression -> Program -> [Subst]
-matchProgram ptn (Program expr) = matchExpression ptn expr

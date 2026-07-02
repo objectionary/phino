@@ -4,9 +4,9 @@
 rules:
   basic: ['stop']
 input: |
-  Φ ↦ ⟦ x ↦ ξ.t, λ ⤍ Hello ⟧.z
+  ⟦ x ↦ ξ.t, λ ⤍ Hello ⟧.z
 output: |-
-  Φ ↦ ⟦
+  ⟦
     x ↦ ξ.t,
     λ ⤍ Hello
   ⟧.z

@@ -7,7 +7,7 @@
 -- SPDX-License-Identifier: MIT
 
 module XMIR
-  ( programToXMIR
+  ( expressionToXMIR
   , printXMIR
   , toName
   , parseXMIR
@@ -45,14 +45,14 @@ import qualified Text.XML.Cursor as C
 data XmirContext = XmirContext
   { _omitListing :: Bool
   , _omitComments :: Bool
-  , _listing :: Program -> String
+  , _listing :: Expression -> String
   }
 
 defaultXmirContext :: XmirContext
 defaultXmirContext = XmirContext True True (const "")
 
 data XMIRException
-  = UnsupportedProgram Program
+  = UnsupportedTopExpression Expression
   | UnsupportedExpression Expression
   | UnsupportedBinding Binding
   | CouldNotParseXMIR String
@@ -60,7 +60,7 @@ data XMIRException
   deriving (Exception)
 
 instance Show XMIRException where
-  show (UnsupportedProgram prog) = printf "XMIR does not support such program:\n%s" (printProgram prog)
+  show (UnsupportedTopExpression expr) = printf "XMIR does not support such top-level expression:\n%s" (printExpression expr)
   show (UnsupportedExpression expr) = printf "XMIR does not support such expression:\n%s" (printExpression expr)
   show (UnsupportedBinding bd) = printf "XMIR does not support such bindings: %s" (printBinding bd)
   show (CouldNotParseXMIR msg) = printf "Couldn't parse given XMIR, cause: %s" msg
@@ -163,20 +163,20 @@ formationBinding binding _ = throwIO (UnsupportedBinding binding)
 nestedBindings :: [Binding] -> XmirContext -> IO [Node]
 nestedBindings bds ctx = catMaybes <$> mapM (`formationBinding` ctx) bds
 
-programToXMIR :: Program -> XmirContext -> IO Document
-programToXMIR prog@(Program expr@(ExFormation [BiTau (AtLabel _) arg, BiVoid AtRho])) ctx@XmirContext{..} = case arg of
-  ExFormation _ -> programToXMIR'
-  ExApplication _ _ -> programToXMIR'
-  ExDispatch _ _ -> programToXMIR'
-  ExRoot -> programToXMIR'
-  _ -> throwIO (UnsupportedProgram prog)
+expressionToXMIR :: Expression -> XmirContext -> IO Document
+expressionToXMIR expr@(ExFormation [BiTau (AtLabel _) arg, BiVoid AtRho]) ctx@XmirContext{..} = case arg of
+  ExFormation _ -> expressionToXMIR'
+  ExApplication _ _ -> expressionToXMIR'
+  ExDispatch _ _ -> expressionToXMIR'
+  ExRoot -> expressionToXMIR'
+  _ -> throwIO (UnsupportedTopExpression expr)
   where
-    programToXMIR' :: IO Document
-    programToXMIR' = do
+    expressionToXMIR' :: IO Document
+    expressionToXMIR' = do
       (pckg, expr') <- getPackage expr
       root <- rootExpression expr' ctx
       now <- getCurrentTime
-      let text = _listing prog
+      let text = _listing expr
           listing =
             if _omitListing
               then show (length (lines text)) ++ " line(s)"
@@ -256,7 +256,7 @@ programToXMIR prog@(Program expr@(ExFormation [BiTau (AtLabel _) arg, BiVoid AtR
           fractional = realToFrac posix - fromInteger (floor posix)
           nanos = floor (fractional * 1_000_000_000) :: Int
        in base ++ "." ++ printf "%09d" nanos ++ "Z"
-programToXMIR prog _ = throwIO (UnsupportedProgram prog)
+expressionToXMIR expr _ = throwIO (UnsupportedTopExpression expr)
 
 escapeXML :: String -> String
 escapeXML = concatMap escapeChar
@@ -359,7 +359,7 @@ parseXMIR xmir = case parseText def (TL.pack xmir) of
 parseXMIRThrows :: String -> IO Document
 parseXMIRThrows xmir = orThrow CouldNotParseXMIR (parseXMIR xmir)
 
-xmirToPhi :: Document -> IO Program
+xmirToPhi :: Document -> IO Expression
 xmirToPhi xmir =
   let doc = C.fromDocument xmir
    in case C.node doc of
@@ -377,10 +377,10 @@ xmirToPhi xmir =
                     , t <- T.splitOn "." tail'
                     ]
               if null pckg
-                then pure (Program (ExFormation [obj, BiVoid AtRho]))
+                then pure (ExFormation [obj, BiVoid AtRho])
                 else
                   let bd = foldr (\part acc -> BiTau (AtLabel (T.pack part)) (ExFormation [acc, BiLambda (Function "Package"), BiVoid AtRho])) obj pckg
-                   in pure (Program (ExFormation [bd, BiVoid AtRho]))
+                   in pure (ExFormation [bd, BiVoid AtRho])
           | otherwise -> throwIO (InvalidXMIRFormat "Expected single <object> element" doc)
         _ -> throwIO (InvalidXMIRFormat "NodeElement is expected as root element" doc)
 

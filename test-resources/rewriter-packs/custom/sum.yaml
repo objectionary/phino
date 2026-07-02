@@ -1,9 +1,9 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 # SPDX-License-Identifier: MIT
 ---
-input: Q -> [[ x -> 5, y -> 6 ]]
+input: '[[ x -> 5, y -> 6 ]]'
 output: |-
-  Φ ↦ ⟦
+  ⟦
     z -> 12
   ⟧
 rules:

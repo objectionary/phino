@@ -18,16 +18,16 @@ import Deps (SaveStepFunc, saveStep)
 import Encoding
 import Files (ensuredFile)
 import Functions (execFunctions)
-import LaTeX (LatexContext (..), defaultMeetLength, defaultMeetPopularity, expressionToLaTeX, programToLaTeX, rewrittensToLatex)
+import LaTeX (LatexContext (..), defaultMeetLength, defaultMeetPopularity, expressionToLaTeX, rewrittensToLatex)
 import Locator (locatedExpression)
 import Logger
-import Parser (parseProgramThrows)
+import Parser (parseExpressionThrows)
 import qualified Printer as P
 import qualified Random as R
 import Rewriter (Rewrittens')
 import System.IO (getContents')
 import Text.Printf (printf)
-import XMIR (parseXMIRThrows, printXMIR, programToXMIR, xmirToPhi)
+import XMIR (expressionToXMIR, parseXMIRThrows, printXMIR, xmirToPhi)
 import Yaml (normalizationRules)
 import qualified Yaml as Y
 
@@ -38,8 +38,8 @@ justMeetLength :: Maybe Int -> Int
 justMeetLength = fromMaybe defaultMeetLength
 
 -- Prepare saveStepFunc
-saveStepFunc :: Maybe FilePath -> PrintProgramContext -> SaveStepFunc
-saveStepFunc stepsDir ctx@PrintProgCtx{..} = saveStep stepsDir ioToExt (printProgram ctx)
+saveStepFunc :: Maybe FilePath -> PrintContext -> SaveStepFunc
+saveStepFunc stepsDir ctx@PrintCtx{..} = saveStep stepsDir ioToExt (printInFormat ctx)
   where
     ioToExt :: String
     ioToExt
@@ -56,34 +56,33 @@ readInput inputFile' = case inputFile' of
     logDebug "Reading from stdin"
     getContents' `catch` (\(e :: SomeException) -> throwIO (CouldNotReadFromStdin (show e)))
 
--- Parse program from String input depending on input IO format
-parseProgram :: String -> IOFormat -> IO Program
-parseProgram phi PHI = parseProgramThrows phi
-parseProgram xmir XMIR = parseXMIRThrows xmir >>= xmirToPhi
-parseProgram _ LATEX = invalidCLIArguments "LaTeX cannot be used as input format"
+-- Parse expression from String input depending on input IO format
+parseInput :: String -> IOFormat -> IO Expression
+parseInput phi PHI = parseExpressionThrows phi
+parseInput xmir XMIR = parseXMIRThrows xmir >>= xmirToPhi
+parseInput _ LATEX = invalidCLIArguments "LaTeX cannot be used as input format"
 
-printRewrittens :: PrintProgramContext -> Rewrittens' -> IO String
-printRewrittens ctx@PrintProgCtx{..} rewrittens@(chain, _)
+printRewrittens :: PrintContext -> Rewrittens' -> IO String
+printRewrittens ctx@PrintCtx{..} rewrittens@(chain, _)
   | _outputFormat == LATEX && _sequence = rewrittensToLatex rewrittens (printCtxToLatexCtx ctx)
-  | _focus == ExRoot = mapM (printProgram ctx . fst) chain <&> intercalate "\n"
-  | otherwise = mapM (\(prog, _) -> locatedExpression _focus prog >>= printExpression ctx) chain <&> intercalate "\n"
+  | _focus == ExRoot = mapM (printInFormat ctx . fst) chain <&> intercalate "\n"
+  | otherwise = mapM (\(expr, _) -> locatedExpression _focus expr >>= printExpression ctx) chain <&> intercalate "\n"
 
-printExpression :: PrintProgramContext -> Expression -> IO String
-printExpression ctx@PrintProgCtx{..} ex = case _outputFormat of
+printExpression :: PrintContext -> Expression -> IO String
+printExpression ctx@PrintCtx{..} ex = case _outputFormat of
   PHI -> pure (P.printExpression' ex (_sugar, UNICODE, _line, _margin))
   XMIR -> throwIO CouldNotPrintExpressionInXMIR
   LATEX -> pure (expressionToLaTeX ex (printCtxToLatexCtx ctx))
 
--- Convert
--- Convert program to corresponding String format
-printProgram :: PrintProgramContext -> Program -> IO String
-printProgram ctx@PrintProgCtx{..} prog = case _outputFormat of
-  PHI -> pure (P.printProgram' prog (_sugar, UNICODE, _line, _margin))
-  XMIR -> programToXMIR prog _xmirCtx <&> printXMIR
-  LATEX -> pure (programToLaTeX prog (printCtxToLatexCtx ctx))
+-- Convert an expression to its corresponding String format
+printInFormat :: PrintContext -> Expression -> IO String
+printInFormat ctx@PrintCtx{..} expr = case _outputFormat of
+  PHI -> pure (P.printExpression' expr (_sugar, UNICODE, _line, _margin))
+  XMIR -> expressionToXMIR expr _xmirCtx <&> printXMIR
+  LATEX -> pure (expressionToLaTeX expr (printCtxToLatexCtx ctx))
 
-printCtxToLatexCtx :: PrintProgramContext -> LatexContext
-printCtxToLatexCtx PrintProgCtx{..} =
+printCtxToLatexCtx :: PrintContext -> LatexContext
+printCtxToLatexCtx PrintCtx{..} =
   LatexContext _sugar _line _margin _nonumber _compress _meetPopularity _meetLength _focus _expression _label _meetPrefix
 
 -- Get rules for rewriting depending on provided flags

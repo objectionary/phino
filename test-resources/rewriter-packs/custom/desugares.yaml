@@ -2,13 +2,13 @@
 # SPDX-License-Identifier: MIT
 ---
 input: |
-  {[[
+  [[
     foo ↦ ⟦
       x -> 4294967295
     ⟧
-  ]]}
+  ]]
 output: |-
-  Φ ↦ ⟦
+  ⟦
     foo ↦ ⟦
       x ↦ Φ.number(
         α0 ↦ Φ.bytes(

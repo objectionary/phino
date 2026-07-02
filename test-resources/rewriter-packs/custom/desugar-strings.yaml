@@ -2,15 +2,15 @@
 # SPDX-License-Identifier: MIT
 ---
 input: |
-  {⟦
+  ⟦
     str -> "hello",
     ch -> "h",
     uni -> "\u0001\u0002",
     empty -> "",
     new-line -> "h\ne"
-  ⟧}
+  ⟧
 output: |-
-  Φ ↦ ⟦
+  ⟦
     str ↦ Φ.string(
       α0 ↦ Φ.bytes(
         α0 ↦ ⟦ Δ ⤍ 68-65-6C-6C-6F ⟧

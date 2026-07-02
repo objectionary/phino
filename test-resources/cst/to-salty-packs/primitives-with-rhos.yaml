@@ -2,17 +2,17 @@
 # SPDX-License-Identifier: MIT
 # yamllint disable rule:line-length
 ---
-program: |
-  {[[
+expression: |
+  [[
     x -> Q.number(
       ~0 -> Q.bytes([[D> 3F-F0-00-00-00-00-00-00]]), ^ -> Q.x, ^ -> [[ ]]
     ),
     y -> Q.string(
       ~0 -> Q.bytes([[D> 48-65-79]]), ^ -> $.x
     )
-  ]]}
+  ]]
 result: |-
-  Φ ↦ ⟦
+  ⟦
     x ↦ Φ.number(
       α0 ↦ Φ.bytes(
         α0 ↦ ⟦

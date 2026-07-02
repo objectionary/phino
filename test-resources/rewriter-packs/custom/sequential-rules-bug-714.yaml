@@ -9,9 +9,9 @@
 repeat: 5
 must: 1
 input: |
-  {[[ x -> ? ]]}
+  [[ x -> ? ]]
 output: |
-  {[[ x -> Q ]]}
+  [[ x -> Q ]]
 rules:
   custom:
     - name: remove void

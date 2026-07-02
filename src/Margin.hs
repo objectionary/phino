@@ -21,12 +21,6 @@ withMargin margin = withMargin' (0, margin)
 class WithMargin a where
   withMargin' :: (Int, Int) -> a -> a
 
-instance WithMargin PROGRAM where
-  withMargin' (_, margin) PR_SWEET{..} = PR_SWEET lcb (withMargin' (2, margin) expr) rcb space
-  withMargin' (_, margin) PR_SALTY{..} =
-    let before = lengthOf global + lengthOf arrow + 2 -- 'Q -> '
-     in PR_SALTY global arrow (withMargin' (before, margin) expr)
-
 instance WithMargin EXPRESSION where
   withMargin' _ ex@EX_FORMATION{binding = BI_EMPTY{}} = ex
   withMargin' (extra, margin) ex@EX_FORMATION{tab = tab@(TAB indent), ..} =

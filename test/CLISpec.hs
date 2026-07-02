@@ -120,25 +120,25 @@ spec = do
 
   describe "--pin" $ do
     it "succeeds when --pin matches actual version" $
-      withStdin "Q -> [[ ]]" $
+      withStdin "[[ ]]" $
         testCLISucceeded
           ["--pin=" ++ showVersion version, "rewrite", "--sweet"]
-          ["{⟦⟧}"]
+          ["⟦⟧"]
 
     it "fails when --pin doesn't match actual version" $
-      withStdin "Q -> [[ ]]" $
+      withStdin "[[ ]]" $
         testCLIFailed
           ["--pin=9.9.9.9", "rewrite"]
           ["Version mismatch: --pin requires '9.9.9.9', but this is phino " ++ showVersion version]
 
     it "fails when --pin is empty" $
-      withStdin "Q -> [[ ]]" $
+      withStdin "[[ ]]" $
         testCLIFailed
           ["--pin=", "rewrite"]
           ["Version mismatch: --pin requires ''"]
 
   it "prints debug info with --log-level=DEBUG" $
-    withStdin "{[[]]}" $
+    withStdin "[[]]" $
       testCLISucceeded ["rewrite", "--log-level=DEBUG"] ["[DEBUG]:"]
 
   describe "rewriting" $ do
@@ -162,51 +162,51 @@ spec = do
             ["--max-depth must be positive"]
 
       it "with --normalize and --must=1" $
-        withStdin "{[[ x -> [[ y -> 5 ]].y ]].x}" $
+        withStdin "[[ x -> [[ y -> 5 ]].y ]].x" $
           testCLIFailed
             ["rewrite", "--max-cycles=2", "--max-depth=1", "--normalize", "--must=1"]
             ["it's expected rewriting cycles to be in range [1], but rewriting has already reached 2"]
 
       it "when --in-place is used without input file" $
-        withStdin "Q -> [[ ]]" $
+        withStdin "[[ ]]" $
           testCLIFailed
             ["rewrite", "--in-place"]
             ["--in-place requires an input file"]
 
       it "when --in-place is used with --target" $
         withTempFile "inplaceXXXXXX.phi" $ \(path, h) -> do
-          hPutStr h "Q -> [[ ]]"
+          hPutStr h "[[ ]]"
           hClose h
           testCLIFailed
             ["rewrite", "--in-place", "--target=output.phi", path]
             ["--in-place and --target cannot be used together"]
 
       it "when --update is used without --target" $
-        withStdin "Q -> [[ ]]" $
+        withStdin "[[ ]]" $
           testCLIFailed
             ["rewrite", "--update"]
             ["--update requires --target"]
 
       it "when --update is used without an input file" $
-        withStdin "Q -> [[ ]]" $
+        withStdin "[[ ]]" $
           testCLIFailed
             ["rewrite", "--update", "--target=output.phi"]
             ["--update requires an input file"]
 
       it "when --update is used with --in-place" $
-        withStdin "Q -> [[ ]]" $
+        withStdin "[[ ]]" $
           testCLIFailed
             ["rewrite", "--update", "--in-place", "input.phi"]
             ["--update and --in-place cannot be used together"]
 
       it "with --depth-sensitive" $
-        withStdin "Q -> [[ x -> \"x\"]]" $
+        withStdin "[[ x -> \"x\"]]" $
           testCLIFailed
             ["rewrite", "--depth-sensitive", "--max-depth=1", "--max-cycles=1", rule "infinite.yaml"]
             ["[ERROR]: With option --depth-sensitive it's expected rewriting iterations amount does not reach the limit: --max-depth=1"]
 
       it "with looping rules" $
-        withStdin "Q -> [[ x -> \"0\" ]]" $
+        withStdin "[[ x -> \"0\" ]]" $
           testCLIFailed
             ["rewrite", rule "first.yaml", rule "second.yaml", "--max-depth=1", "--max-cycles=3"]
             ["it seems rewriting is looping"]
@@ -219,7 +219,7 @@ spec = do
       it "with wrong attribute and valid error message" $
         testCLIFailed
           ["rewrite", resource "with-$this-attribute.phi"]
-          [ "[ERROR]: Couldn't parse given phi program, cause:"
+          [ "[ERROR]: Couldn't parse given phi expression, cause:"
           , "unexpected"
           ]
 
@@ -334,13 +334,13 @@ spec = do
     it "prints help" $
       testCLISucceeded
         ["rewrite", "--help"]
-        ["Rewrite the 𝜑-program"]
+        ["Rewrite the 𝜑-expression"]
 
     it "saves steps to dir with --steps-dir" $ do
       let dir = "test-steps-temp"
       dirExists <- doesDirectoryExist dir
       when dirExists (removeDirectoryRecursive dir)
-      withStdin "Q -> [[ x -> \"hello\"]]" $ do
+      withStdin "[[ x -> \"hello\"]]" $ do
         testCLISucceeded
           ["rewrite", rule "infinite.yaml", "--max-cycles=2", "--max-depth=2", "--steps-dir=" ++ dir, "--sweet"]
           ["hello_hi_hi"]
@@ -354,18 +354,18 @@ spec = do
     it "desugares without any rules flag from file" $
       testCLISucceeded
         ["rewrite", resource "desugar.phi"]
-        ["Φ ↦ ⟦ foo ↦ ξ.x, ρ ↦ ∅ ⟧"]
+        ["⟦ foo ↦ ξ.x, ρ ↦ ∅ ⟧"]
 
     it "desugares with without any rules flag from stdin" $
-      withStdin "{[[foo ↦ x]]}" $
-        testCLISucceeded ["rewrite"] ["Φ ↦ ⟦ foo ↦ ξ.x, ρ ↦ ∅ ⟧"]
+      withStdin "[[foo ↦ x]]" $
+        testCLISucceeded ["rewrite"] ["⟦ foo ↦ ξ.x, ρ ↦ ∅ ⟧"]
 
     it "rewrites with single rule" $
-      withStdin "{T(x -> Q.y)}" $
-        testCLISucceeded ["rewrite", "--rule=resources/normalize/dc.yaml"] ["Φ ↦ ⊥"]
+      withStdin "T(x -> Q.y)" $
+        testCLISucceeded ["rewrite", "--rule=resources/normalize/dc.yaml"] ["⊥"]
 
     it "fails when a rewriting rule uses a dataization-only function" $
-      withStdin "{⟦⟧}" $
+      withStdin "⟦⟧" $
         testCLIFailed
           ["rewrite", rule "evaluate-in-rewrite.yaml"]
           ["Function 'evaluate' in rule 'uses-evaluate' is available only for dataization and morphing, not for rewriting"]
@@ -374,7 +374,7 @@ spec = do
       testCLISucceeded
         ["rewrite", "--normalize", resource "normalize.phi", "--margin=25"]
         [ unlines
-            [ "Φ ↦ ⟦"
+            [ "⟦"
             , "  x ↦ ⟦"
             , "    ρ ↦ ⟦"
             , "      y ↦ ⟦ ρ ↦ ∅ ⟧,"
@@ -387,11 +387,11 @@ spec = do
         ]
 
     it "normalizes from stdin" $
-      withStdin "Φ ↦ ⟦ a ↦ ⟦ b ↦ ∅ ⟧ (b ↦ [[ ]]) ⟧" $
+      withStdin "⟦ a ↦ ⟦ b ↦ ∅ ⟧ (b ↦ [[ ]]) ⟧" $
         testCLISucceeded
           ["rewrite", "--normalize", "--margin=20"]
           [ unlines
-              [ "Φ ↦ ⟦"
+              [ "⟦"
               , "  a ↦ ⟦"
               , "    b ↦ ⟦ ρ ↦ ∅ ⟧,"
               , "    ρ ↦ ∅"
@@ -402,24 +402,24 @@ spec = do
           ]
 
     it "rewrites with --sweet flag" $
-      withStdin "Q -> [[ x -> 5]]" $
+      withStdin "[[ x -> 5]]" $
         testCLISucceeded
           ["rewrite", "--sweet"]
-          ["{⟦ x ↦ 5 ⟧}"]
+          ["⟦ x ↦ 5 ⟧"]
 
     it "rewrites as XMIR" $
-      withStdin "Q -> [[ x -> Q.y ]]" $
+      withStdin "[[ x -> Q.y ]]" $
         testCLISucceeded
           ["rewrite", "--output=xmir"]
           ["<?xml version=\"1.0\" encoding=\"UTF-8\"?>", "<object", "  <o base=\"Φ.y\" name=\"x\"/>"]
 
     it "rewrites as LaTeX" $
-      withStdin "Q -> [[ x_o -> Q.z(y -> 5), q$ -> T, w -> $, ^ -> Q, @ -> 1, y -> \"H$@^M\", L> Fu_nc ]]" $
+      withStdin "[[ x_o -> Q.z(y -> 5), q$ -> T, w -> $, ^ -> Q, @ -> 1, y -> \"H$@^M\", L> Fu_nc ]]" $
         testCLISucceeded
           ["rewrite", "--output=latex", "--sweet"]
           [ unlines
               [ "\\begin{phiquation}"
-              , "\\Big\\{ [["
+              , "[["
               , "  |x\\char95{}o| -> Q . |z| ( |y| -> 5 ),"
               , "  |q\\char36{}| -> T,"
               , "  |w| -> \\phiTerminal{\\xi},"
@@ -427,51 +427,51 @@ spec = do
               , "  @ -> 1,"
               , "  |y| -> \"H$@^M\","
               , "  L> |Fu\\char95{}nc|"
-              , "]] \\Big\\}{.}"
+              , "]]{.}"
               , "\\end{phiquation}"
               ]
           ]
 
     it "rewrites as LaTeX without numeration" $
-      withStdin "Q -> [[ x -> 5 ]]" $
+      withStdin "[[ x -> 5 ]]" $
         testCLISucceeded
           ["rewrite", "--output=latex", "--sweet", "--nonumber", "--flat"]
           [ unlines
               [ "\\begin{phiquation*}"
-              , "\\Big\\{ [[ |x| -> 5 ]] \\Big\\}{.}"
+              , "[[ |x| -> 5 ]]{.}"
               , "\\end{phiquation*}"
               ]
           ]
 
     it "rewrites an alpha-index argument as \\alpha subscript in LaTeX" $
-      withStdin "Q -> Q.foo(~1 -> Q.y)" $
+      withStdin "Q.foo(~1 -> Q.y)" $
         testCLISucceeded
           ["rewrite", "--output=latex", "--flat", "--nonumber"]
           [ unlines
               [ "\\begin{phiquation*}"
-              , "Q -> Q . |foo| ( \\phiTerminal{\\alpha_{1}} -> Q . |y| ){.}"
+              , "Q . |foo| ( \\phiTerminal{\\alpha_{1}} -> Q . |y| ){.}"
               , "\\end{phiquation*}"
               ]
           ]
 
     it "rewrite as LaTeX with expression name" $
-      withStdin "Q -> [[ x -> 5 ]]" $
+      withStdin "[[ x -> 5 ]]" $
         testCLISucceeded
           ["rewrite", "--output=latex", "--sweet", "--flat", "--expression=foo"]
           [ unlines
               [ "\\begin{phiquation}"
-              , "\\phiExpression{foo} \\Big\\{ [[ |x| -> 5 ]] \\Big\\}{.}"
+              , "\\phiExpression{foo} [[ |x| -> 5 ]]{.}"
               , "\\end{phiquation}"
               ]
           ]
 
     it "rewrite as LaTeX with label name" $
-      withStdin "Q -> [[ x -> 5 ]]" $
+      withStdin "[[ x -> 5 ]]" $
         testCLISucceeded
           ["rewrite", "--output=latex", "--sweet", "--flat", "--label=foo"]
           [ unlines
               [ "\\begin{phiquation}\n\\label{foo}"
-              , "\\Big\\{ [[ |x| -> 5 ]] \\Big\\}{.}"
+              , "[[ |x| -> 5 ]]{.}"
               , "\\end{phiquation}"
               ]
           ]
@@ -480,7 +480,7 @@ spec = do
       withStdin "<object><o name=\"app\"><o name=\"x\" base=\"Φ.number\"/></o></object>" $
         testCLISucceeded
           ["rewrite", "--input=xmir", "--sweet"]
-          ["{⟦ app ↦ ⟦ x ↦ Φ.number ⟧ ⟧}"]
+          ["⟦ app ↦ ⟦ x ↦ Φ.number ⟧ ⟧"]
 
     it "rewrites and prints with XMIR as input and output" $
       withStdin
@@ -498,19 +498,19 @@ spec = do
         )
 
     it "rewrites as XMIR with omit-listing flag" $
-      withStdin "Q -> [[ x -> Q.y ]]" $
+      withStdin "[[ x -> Q.y ]]" $
         testCLISucceeded
           ["rewrite", "--output=xmir", "--omit-listing"]
           ["<?xml version=\"1.0\" encoding=\"UTF-8\"?>", "<object", "<listing>1 line(s)</listing>", "  <o base=\"Φ.y\" name=\"x\"/>"]
 
     it "does not fail on exactly 1 rewriting" $
-      withStdin "{⟦ t ↦ ⟦ x ↦ \"foo\" ⟧ ⟧}" $
+      withStdin "⟦ t ↦ ⟦ x ↦ \"foo\" ⟧ ⟧" $
         testCLISucceeded
           ["rewrite", rule "simple.yaml", "--must=1", "--sweet"]
           ["x ↦ \"bar\""]
 
-    it "prints many programs with --sequence" $
-      withStdin "{[[ x -> \"foo\" ]]}" $
+    it "prints many expressions with --sequence" $
+      withStdin "[[ x -> \"foo\" ]]" $
         testCLISucceeded
           [ "rewrite"
           , rule "first.yaml"
@@ -522,14 +522,14 @@ spec = do
           , "--flat"
           ]
           [ unlines
-              [ "{⟦ x ↦ \"foo\" ⟧}"
-              , "{Φ.x( y ↦ \"foo\" )}"
-              , "{⟦ x ↦ \"foo\" ⟧}"
+              [ "⟦ x ↦ \"foo\" ⟧"
+              , "Φ.x( y ↦ \"foo\" )"
+              , "⟦ x ↦ \"foo\" ⟧"
               ]
           ]
 
     it "prints only one latex preamble with --sequence" $
-      withStdin "{[[ x -> \"foo\" ]]}" $
+      withStdin "[[ x -> \"foo\" ]]" $
         testCLISucceeded
           [ "rewrite"
           , rule "first.yaml"
@@ -543,86 +543,86 @@ spec = do
           ]
           [ unlines
               [ "\\begin{phiquation}"
-              , "\\Big\\{ [[ |x| -> \"foo\" ]] \\Big\\} \\leadsto_{\\nameref{r:first}}"
-              , "  \\leadsto \\Big\\{ Q . |x| ( |y| -> \"foo\" ) \\Big\\} \\leadsto_{\\nameref{r:second}}"
-              , "  \\leadsto \\Big\\{ [[ |x| -> \"foo\" ]] \\Big\\}{.}"
+              , "[[ |x| -> \"foo\" ]] \\leadsto_{\\nameref{r:first}}"
+              , "  \\leadsto Q . |x| ( |y| -> \"foo\" ) \\leadsto_{\\nameref{r:second}}"
+              , "  \\leadsto [[ |x| -> \"foo\" ]]{.}"
               , "\\end{phiquation}"
               ]
           ]
 
     it "prints meet prefix with --meet-prefix=foo in LaTeX" $
-      withStdin "{[[ x -> ?, y -> $.x ]](x -> [[ D> 42- ]]).y}" $
+      withStdin "[[ x -> ?, y -> $.x ]](x -> [[ D> 42- ]]).y" $
         testCLISucceeded
           ["rewrite", "--normalize", "--sweet", "--sequence", "--output=latex", "--flat", "--compress", "--meet-prefix=foo"]
           [ unlines
               [ "\\begin{phiquation}"
-              , "\\Big\\{ [[ |x| -> ?, |y| -> |x| ]] ( |x| -> \\phinoMeet{foo:1}{ [[ D> |42-| ]] } ) . |y| \\Big\\} \\leadsto_{\\nameref{r:copy}}"
-              , "  \\leadsto \\Big\\{ \\phinoMeet{foo:2}{ [[ |x| -> \\phinoAgain{foo:1}, |y| -> |x| ]] } . |y| \\Big\\} \\leadsto_{\\nameref{r:dot}}"
-              , "  \\leadsto \\Big\\{ \\phinoAgain{foo:2} . |x| ( \\phiTerminal{\\rho} -> \\phinoAgain{foo:2} ) \\Big\\} \\leadsto_{\\nameref{r:dot}}"
-              , "  \\leadsto \\Big\\{ \\phinoAgain{foo:1} ( \\phiTerminal{\\rho} -> \\phinoAgain{foo:2}, \\phiTerminal{\\rho} -> \\phinoAgain{foo:2} ) \\Big\\} \\leadsto_{\\nameref{r:copy}}"
-              , "  \\leadsto \\Big\\{ [[ D> |42-|, \\phiTerminal{\\rho} -> \\phinoAgain{foo:2} ]] ( \\phiTerminal{\\rho} -> \\phinoAgain{foo:2} ) \\Big\\} \\leadsto_{\\nameref{r:stay}}"
-              , "  \\leadsto \\Big\\{ [[ D> |42-|, \\phiTerminal{\\rho} -> \\phinoAgain{foo:2} ]] \\Big\\}{.}"
+              , "[[ |x| -> ?, |y| -> |x| ]] ( |x| -> \\phinoMeet{foo:1}{ [[ D> |42-| ]] } ) . |y| \\leadsto_{\\nameref{r:copy}}"
+              , "  \\leadsto \\phinoMeet{foo:2}{ [[ |x| -> \\phinoAgain{foo:1}, |y| -> |x| ]] } . |y| \\leadsto_{\\nameref{r:dot}}"
+              , "  \\leadsto \\phinoAgain{foo:2} . |x| ( \\phiTerminal{\\rho} -> \\phinoAgain{foo:2} ) \\leadsto_{\\nameref{r:dot}}"
+              , "  \\leadsto \\phinoAgain{foo:1} ( \\phiTerminal{\\rho} -> \\phinoAgain{foo:2}, \\phiTerminal{\\rho} -> \\phinoAgain{foo:2} ) \\leadsto_{\\nameref{r:copy}}"
+              , "  \\leadsto [[ D> |42-|, \\phiTerminal{\\rho} -> \\phinoAgain{foo:2} ]] ( \\phiTerminal{\\rho} -> \\phinoAgain{foo:2} ) \\leadsto_{\\nameref{r:stay}}"
+              , "  \\leadsto [[ D> |42-|, \\phiTerminal{\\rho} -> \\phinoAgain{foo:2} ]]{.}"
               , "\\end{phiquation}"
               ]
           ]
 
     it "prints with compressed expressions in LaTeX" $
-      withStdin "{[[ x -> ?, y -> $.x ]](x -> [[ D> 42- ]]).y}" $
+      withStdin "[[ x -> ?, y -> $.x ]](x -> [[ D> 42- ]]).y" $
         testCLISucceeded
           ["rewrite", "--normalize", "--sweet", "--sequence", "--output=latex", "--flat", "--compress"]
           [ unlines
               [ "\\begin{phiquation}"
-              , "\\Big\\{ [[ |x| -> ?, |y| -> |x| ]] ( |x| -> \\phinoMeet{1}{ [[ D> |42-| ]] } ) . |y| \\Big\\} \\leadsto_{\\nameref{r:copy}}"
-              , "  \\leadsto \\Big\\{ \\phinoMeet{2}{ [[ |x| -> \\phinoAgain{1}, |y| -> |x| ]] } . |y| \\Big\\} \\leadsto_{\\nameref{r:dot}}"
-              , "  \\leadsto \\Big\\{ \\phinoAgain{2} . |x| ( \\phiTerminal{\\rho} -> \\phinoAgain{2} ) \\Big\\} \\leadsto_{\\nameref{r:dot}}"
-              , "  \\leadsto \\Big\\{ \\phinoAgain{1} ( \\phiTerminal{\\rho} -> \\phinoAgain{2}, \\phiTerminal{\\rho} -> \\phinoAgain{2} ) \\Big\\} \\leadsto_{\\nameref{r:copy}}"
-              , "  \\leadsto \\Big\\{ [[ D> |42-|, \\phiTerminal{\\rho} -> \\phinoAgain{2} ]] ( \\phiTerminal{\\rho} -> \\phinoAgain{2} ) \\Big\\} \\leadsto_{\\nameref{r:stay}}"
-              , "  \\leadsto \\Big\\{ [[ D> |42-|, \\phiTerminal{\\rho} -> \\phinoAgain{2} ]] \\Big\\}{.}"
+              , "[[ |x| -> ?, |y| -> |x| ]] ( |x| -> \\phinoMeet{1}{ [[ D> |42-| ]] } ) . |y| \\leadsto_{\\nameref{r:copy}}"
+              , "  \\leadsto \\phinoMeet{2}{ [[ |x| -> \\phinoAgain{1}, |y| -> |x| ]] } . |y| \\leadsto_{\\nameref{r:dot}}"
+              , "  \\leadsto \\phinoAgain{2} . |x| ( \\phiTerminal{\\rho} -> \\phinoAgain{2} ) \\leadsto_{\\nameref{r:dot}}"
+              , "  \\leadsto \\phinoAgain{1} ( \\phiTerminal{\\rho} -> \\phinoAgain{2}, \\phiTerminal{\\rho} -> \\phinoAgain{2} ) \\leadsto_{\\nameref{r:copy}}"
+              , "  \\leadsto [[ D> |42-|, \\phiTerminal{\\rho} -> \\phinoAgain{2} ]] ( \\phiTerminal{\\rho} -> \\phinoAgain{2} ) \\leadsto_{\\nameref{r:stay}}"
+              , "  \\leadsto [[ D> |42-|, \\phiTerminal{\\rho} -> \\phinoAgain{2} ]]{.}"
               , "\\end{phiquation}"
               ]
           ]
 
     it "should not print \\phinoMeet{} twice" $
-      withStdin "{[[ ex -> [[ x -> [[ y -> ?, k -> [[ t -> 42]]  ]]( y -> [[ t -> 42 ]]) ]].i ]]}" $
+      withStdin "[[ ex -> [[ x -> [[ y -> ?, k -> [[ t -> 42]]  ]]( y -> [[ t -> 42 ]]) ]].i ]]" $
         testCLISucceeded
           ["rewrite", "--normalize", "--sequence", "--flat", "--compress", "--output=latex", "--sweet"]
           [ unlines
               [ "\\begin{phiquation}"
-              , "\\Big\\{ [[ |ex| -> [[ |x| -> [[ |y| -> ?, |k| -> \\phinoMeet{1}{ [[ |t| -> 42 ]] } ]] ( |y| -> \\phinoAgain{1} ) ]] . |i| ]] \\Big\\} \\leadsto_{\\nameref{r:copy}}"
-              , "  \\leadsto \\Big\\{ [[ |ex| -> [[ |x| -> [[ |y| -> \\phinoAgain{1}, |k| -> \\phinoAgain{1} ]] ]] . |i| ]] \\Big\\} \\leadsto_{\\nameref{r:stop}}"
-              , "  \\leadsto \\Big\\{ [[ |ex| -> T ]] \\Big\\}{.}"
+              , "[[ |ex| -> [[ |x| -> [[ |y| -> ?, |k| -> \\phinoMeet{1}{ [[ |t| -> 42 ]] } ]] ( |y| -> \\phinoAgain{1} ) ]] . |i| ]] \\leadsto_{\\nameref{r:copy}}"
+              , "  \\leadsto [[ |ex| -> [[ |x| -> [[ |y| -> \\phinoAgain{1}, |k| -> \\phinoAgain{1} ]] ]] . |i| ]] \\leadsto_{\\nameref{r:stop}}"
+              , "  \\leadsto [[ |ex| -> T ]]{.}"
               , "\\end{phiquation}"
               ]
           ]
 
     it "should not meet expression with high --meet-popularity" $
-      withStdin "{[[ ex -> [[ x -> [[ y -> ?, k -> [[ t -> 42]]  ]]( y -> [[ t -> 42 ]]) ]].i ]]}" $
+      withStdin "[[ ex -> [[ x -> [[ y -> ?, k -> [[ t -> 42]]  ]]( y -> [[ t -> 42 ]]) ]].i ]]" $
         testCLISucceeded
           ["rewrite", "--normalize", "--sequence", "--flat", "--compress", "--output=latex", "--sweet", "--meet-popularity=70"]
           [ unlines
               [ "\\begin{phiquation}"
-              , "\\Big\\{ [[ |ex| -> [[ |x| -> [[ |y| -> ?, |k| -> [[ |t| -> 42 ]] ]] ( |y| -> [[ |t| -> 42 ]] ) ]] . |i| ]] \\Big\\} \\leadsto_{\\nameref{r:copy}}"
-              , "  \\leadsto \\Big\\{ [[ |ex| -> [[ |x| -> [[ |y| -> [[ |t| -> 42 ]], |k| -> [[ |t| -> 42 ]] ]] ]] . |i| ]] \\Big\\} \\leadsto_{\\nameref{r:stop}}"
-              , "  \\leadsto \\Big\\{ [[ |ex| -> T ]] \\Big\\}{.}"
+              , "[[ |ex| -> [[ |x| -> [[ |y| -> ?, |k| -> [[ |t| -> 42 ]] ]] ( |y| -> [[ |t| -> 42 ]] ) ]] . |i| ]] \\leadsto_{\\nameref{r:copy}}"
+              , "  \\leadsto [[ |ex| -> [[ |x| -> [[ |y| -> [[ |t| -> 42 ]], |k| -> [[ |t| -> 42 ]] ]] ]] . |i| ]] \\leadsto_{\\nameref{r:stop}}"
+              , "  \\leadsto [[ |ex| -> T ]]{.}"
               , "\\end{phiquation}"
               ]
           ]
 
     it "meets with --meet-length=32" $
-      withStdin "{[[ ex -> [[ x -> [[ y -> ?, k -> [[ t -> 42]]  ]]( y -> [[ t -> 42 ]]) ]].i ]]}" $
+      withStdin "[[ ex -> [[ x -> [[ y -> ?, k -> [[ t -> 42]]  ]]( y -> [[ t -> 42 ]]) ]].i ]]" $
         testCLISucceeded
           ["rewrite", "--normalize", "--sequence", "--flat", "--compress", "--output=latex", "--sweet", "--meet-length=32"]
           [ unlines
               [ "\\begin{phiquation}"
-              , "\\Big\\{ [[ |ex| -> [[ |x| -> [[ |y| -> ?, |k| -> [[ |t| -> 42 ]] ]] ( |y| -> [[ |t| -> 42 ]] ) ]] . |i| ]] \\Big\\} \\leadsto_{\\nameref{r:copy}}"
-              , "  \\leadsto \\Big\\{ [[ |ex| -> [[ |x| -> [[ |y| -> [[ |t| -> 42 ]], |k| -> [[ |t| -> 42 ]] ]] ]] . |i| ]] \\Big\\} \\leadsto_{\\nameref{r:stop}}"
-              , "  \\leadsto \\Big\\{ [[ |ex| -> T ]] \\Big\\}{.}"
+              , "[[ |ex| -> [[ |x| -> [[ |y| -> ?, |k| -> [[ |t| -> 42 ]] ]] ( |y| -> [[ |t| -> 42 ]] ) ]] . |i| ]] \\leadsto_{\\nameref{r:copy}}"
+              , "  \\leadsto [[ |ex| -> [[ |x| -> [[ |y| -> [[ |t| -> 42 ]], |k| -> [[ |t| -> 42 ]] ]] ]] . |i| ]] \\leadsto_{\\nameref{r:stop}}"
+              , "  \\leadsto [[ |ex| -> T ]]{.}"
               , "\\end{phiquation}"
               ]
           ]
 
     it "focuses expression in latex with sequence" $
-      withStdin "{[[ ex -> [[ x -> [[ y -> ?, k -> [[ t -> 42]]  ]]( y -> [[ t -> 42 ]]) ]].i ]]}" $
+      withStdin "[[ ex -> [[ x -> [[ y -> ?, k -> [[ t -> 42]]  ]]( y -> [[ t -> 42 ]]) ]].i ]]" $
         testCLISucceeded
           ["rewrite", "--normalize", "--sequence", "--flat", "--output=latex", "--sweet", "--focus=Q.ex"]
           [ unlines
@@ -635,7 +635,7 @@ spec = do
           ]
 
     it "focuses expression in latex without sequence" $
-      withStdin "{[[ ex -> [[ x -> [[ y -> ?, k -> [[ t -> 42]]  ]]( y -> [[ t -> 42 ]]) ]].i ]]}" $
+      withStdin "[[ ex -> [[ x -> [[ y -> ?, k -> [[ t -> 42]]  ]]( y -> [[ t -> 42 ]]) ]].i ]]" $
         testCLISucceeded
           ["rewrite", "--normalize", "--flat", "--output=latex", "--sweet", "--focus=Q.ex"]
           [ unlines
@@ -646,26 +646,26 @@ spec = do
           ]
 
     it "shows exceeding of limits in latex" $
-      withStdin "{[[ x -> $.y, y -> $.x ]].x}" $
+      withStdin "[[ x -> $.y, y -> $.x ]].x" $
         testCLISucceeded
           ["rewrite", "--normalize", "--flat", "--sequence", "--output=latex", "--sweet", "--max-depth=1", "--max-cycles=1"]
           [ unlines
               [ "\\begin{phiquation}"
-              , "\\Big\\{ [[ |x| -> |y|, |y| -> |x| ]] . |x| \\Big\\} \\leadsto_{\\nameref{r:dot}}"
-              , "  \\leadsto \\Big\\{ [[ |x| -> |y|, |y| -> |x| ]] . |y| ( \\phiTerminal{\\rho} -> [[ |x| -> |y|, |y| -> |x| ]] ) \\Big\\} \\leadsto"
+              , "[[ |x| -> |y|, |y| -> |x| ]] . |x| \\leadsto_{\\nameref{r:dot}}"
+              , "  \\leadsto [[ |x| -> |y|, |y| -> |x| ]] . |y| ( \\phiTerminal{\\rho} -> [[ |x| -> |y|, |y| -> |x| ]] ) \\leadsto"
               , "  \\leadsto \\dots"
               , "\\end{phiquation}"
               ]
           ]
 
     it "focuses expression in phi without sequence" $
-      withStdin "{[[ ex -> [[ x -> [[ y -> ?, k -> [[ t -> 42]]  ]]( y -> [[ t -> 42 ]]) ]].i ]]}" $
+      withStdin "[[ ex -> [[ x -> [[ y -> ?, k -> [[ t -> 42]]  ]]( y -> [[ t -> 42 ]]) ]].i ]]" $
         testCLISucceeded
           ["rewrite", "--normalize", "--flat", "--output=phi", "--sweet", "--focus=Q.ex"]
           ["⊥"]
 
     it "focuses expression in phi with sequence" $
-      withStdin "{[[ ex -> [[ x -> [[ y -> ?, k -> [[ t -> 42]]  ]]( y -> [[ t -> 42 ]]) ]].i ]]}" $
+      withStdin "[[ ex -> [[ x -> [[ y -> ?, k -> [[ t -> 42]]  ]]( y -> [[ t -> 42 ]]) ]].i ]]" $
         testCLISucceeded
           ["rewrite", "--normalize", "--sequence", "--flat", "--output=phi", "--sweet", "--focus=Q.ex"]
           [ unlines
@@ -676,91 +676,91 @@ spec = do
           ]
 
     it "prints input as listing in XMIR" $
-      withStdin "{[[ app -> [[]] ]]}" $
+      withStdin "[[ app -> [[]] ]]" $
         testCLISucceeded
           ["rewrite", "--output=xmir", "--omit-comments", "--sweet", "--flat"]
-          ["  <listing>{[[ app -> [[]] ]]}</listing>"]
+          ["  <listing>[[ app -> [[]] ]]</listing>"]
 
-    it "print program in listing in XMIRs with --sequence" $
-      withStdin "{[[ x -> \"foo\" ]]}" $
+    it "print expression in listing in XMIRs with --sequence" $
+      withStdin "[[ x -> \"foo\" ]]" $
         testCLISucceeded
           ["rewrite", "--output=xmir", "--omit-comments", "--sweet", "--flat", "--sequence", rule "simple.yaml"]
-          ["  <listing>{⟦ x ↦ \"foo\" ⟧}</listing>", "  <listing>{⟦ x ↦ \"bar\" ⟧}</listing>"]
+          ["  <listing>⟦ x ↦ \"foo\" ⟧</listing>", "  <listing>⟦ x ↦ \"bar\" ⟧</listing>"]
 
     describe "must range tests" $ do
       describe "fails" $ do
         it "when cycles exceed range ..1" $
-          withStdin "Q -> [[ x -> [[ y -> 5 ]].y ]].x" $
+          withStdin "[[ x -> [[ y -> 5 ]].y ]].x" $
             testCLIFailed
               ["rewrite", "--max-depth=1", "--max-cycles=2", "--normalize", "--must=..1"]
               ["it's expected rewriting cycles to be in range [..1], but rewriting has already reached 2"]
 
         it "when cycles below range 2.." $
-          withStdin "{⟦ t ↦ ⟦ x ↦ \"foo\" ⟧ ⟧}" $
+          withStdin "⟦ t ↦ ⟦ x ↦ \"foo\" ⟧ ⟧" $
             testCLIFailed
               ["rewrite", rule "simple.yaml", "--must=2.."]
               ["it's expected rewriting cycles to be in range [2..], but rewriting stopped after 1"]
 
         it "with invalid range 5..3" $
-          withStdin "Q -> [[ ]]" $
+          withStdin "[[ ]]" $
             testCLIFailed
               ["rewrite", "--must=5..3"]
               ["cannot parse value `5..3'"]
 
         it "with negative in range -1..5" $
-          withStdin "Q -> [[ ]]" $
+          withStdin "[[ ]]" $
             testCLIFailed
               ["rewrite", "--must=-1..5"]
               ["cannot parse value `-1..5'"]
 
         it "with malformed range syntax" $
-          withStdin "Q -> [[ ]]" $
+          withStdin "[[ ]]" $
             testCLIFailed
               ["rewrite", "--must=3...5"]
               ["cannot parse value `3...5'"]
 
       it "accepts range ..5 (0 to 5 cycles)" $
-        withStdin "Q -> [[ ]]" $
-          testCLISucceeded ["rewrite", "--must=..5", "--sweet"] ["{⟦⟧}"]
+        withStdin "[[ ]]" $
+          testCLISucceeded ["rewrite", "--must=..5", "--sweet"] ["⟦⟧"]
 
       it "accepts range 0..0 (exactly 0 cycles)" $
-        withStdin "Q -> [[ ]]" $
-          testCLISucceeded ["rewrite", "--must=0..0", "--sweet"] ["{⟦⟧}"]
+        withStdin "[[ ]]" $
+          testCLISucceeded ["rewrite", "--must=0..0", "--sweet"] ["⟦⟧"]
 
       it "accepts range 1..1 (exactly 1 cycle)" $
-        withStdin "{⟦ t ↦ ⟦ x ↦ \"foo\" ⟧ ⟧}" $
+        withStdin "⟦ t ↦ ⟦ x ↦ \"foo\" ⟧ ⟧" $
           testCLISucceeded
             ["rewrite", rule "simple.yaml", "--must=1..1", "--sweet"]
             ["x ↦ \"bar\""]
 
       it "accepts range 1..3 when 1 cycle happens" $
-        withStdin "{⟦ t ↦ ⟦ x ↦ \"foo\" ⟧ ⟧}" $
+        withStdin "⟦ t ↦ ⟦ x ↦ \"foo\" ⟧ ⟧" $
           testCLISucceeded
             ["rewrite", rule "simple.yaml", "--must=1..3", "--sweet"]
             ["x ↦ \"bar\""]
 
       it "accepts range 0.. (0 or more)" $
-        withStdin "Q -> [[ ]]" $
-          testCLISucceeded ["rewrite", "--must=0..", "--sweet"] ["{⟦⟧}"]
+        withStdin "[[ ]]" $
+          testCLISucceeded ["rewrite", "--must=0..", "--sweet"] ["⟦⟧"]
 
     it "prints to target file" $
-      withStdin "Q -> [[ ]]" $
+      withStdin "[[ ]]" $
         withTempFile "targetXXXXXX.tmp" $ \(path, h) -> do
           hClose h
           testCLISucceeded ["rewrite", "--sweet", printf "--target=%s" path] []
           content <- readFile path
-          content `shouldBe` "{⟦⟧}"
+          content `shouldBe` "⟦⟧"
 
     it "modifies file in-place" $
       withTempFile "inplaceXXXXXX.phi" $ \(path, h) -> do
-        hPutStr h "Q -> [[ x -> \"foo\" ]]"
+        hPutStr h "[[ x -> \"foo\" ]]"
         hClose h
         testCLISucceeded ["rewrite", rule "simple.yaml", "--in-place", "--sweet", path] []
         content <- readFile path
-        content `shouldBe` "{⟦ x ↦ \"bar\" ⟧}"
+        content `shouldBe` "⟦ x ↦ \"bar\" ⟧"
 
     it "skips rewriting with --update when target is newer than source" $
-      withTempFileContent "src-XXXXXX.phi" "Q -> [[ x -> \"foo\" ]]" $ \src ->
+      withTempFileContent "src-XXXXXX.phi" "[[ x -> \"foo\" ]]" $ \src ->
         withTempFileContent "tgt-XXXXXX.phi" "ORIGINAL" $ \tgt -> do
           now <- getCurrentTime
           setModificationTime src (addUTCTime (-60) now)
@@ -772,7 +772,7 @@ spec = do
           content `shouldBe` "ORIGINAL"
 
     it "rewrites with --update when source is newer than target" $
-      withTempFileContent "src-XXXXXX.phi" "Q -> [[ x -> \"foo\" ]]" $ \src ->
+      withTempFileContent "src-XXXXXX.phi" "[[ x -> \"foo\" ]]" $ \src ->
         withTempFileContent "tgt-XXXXXX.phi" "ORIGINAL" $ \tgt -> do
           now <- getCurrentTime
           setModificationTime tgt (addUTCTime (-60) now)
@@ -781,54 +781,54 @@ spec = do
             ["rewrite", rule "simple.yaml", "--update", "--sweet", "--target=" ++ tgt, src]
             []
           content <- readFile tgt
-          content `shouldBe` "{⟦ x ↦ \"bar\" ⟧}"
+          content `shouldBe` "⟦ x ↦ \"bar\" ⟧"
 
     it "rewrites with cycles" $
-      withStdin "Q -> [[ x -> \"x\" ]]" $
+      withStdin "[[ x -> \"x\" ]]" $
         testCLISucceeded
           ["rewrite", "--sweet", rule "infinite.yaml", "--max-depth=1", "--max-cycles=2"]
-          ["{⟦ x ↦ \"x_hi_hi\" ⟧}"]
+          ["⟦ x ↦ \"x_hi_hi\" ⟧"]
 
     it "hides default package" $
-      withStdin "{[[ org -> [[ eolang -> [[ number -> [[]] ]]]], x -> 42 ]]}" $
+      withStdin "[[ org -> [[ eolang -> [[ number -> [[]] ]]]], x -> 42 ]]" $
         testCLISucceeded
           ["rewrite", "--sweet", "--flat", "--hide=Q.org"]
-          ["{⟦ x ↦ 42 ⟧}"]
+          ["⟦ x ↦ 42 ⟧"]
 
     it "hides several FQNs" $
-      withStdin "{[[ org -> [[ eolang -> Q.x, yegor256 -> Q.y ]], x -> 42 ]]}" $
+      withStdin "[[ org -> [[ eolang -> Q.x, yegor256 -> Q.y ]], x -> 42 ]]" $
         testCLISucceeded
           ["rewrite", "--sweet", "--flat", "--hide=Q.org.eolang", "--hide=Q.org.yegor256"]
-          ["{⟦ org ↦ ⟦⟧, x ↦ 42 ⟧}"]
+          ["⟦ org ↦ ⟦⟧, x ↦ 42 ⟧"]
 
     it "shows and hides" $
-      withStdin "{[[ org -> [[ eolang -> Q.x, yegor256 -> Q.y ]], x -> 42 ]]}" $
+      withStdin "[[ org -> [[ eolang -> Q.x, yegor256 -> Q.y ]], x -> 42 ]]" $
         testCLISucceeded
           ["rewrite", "--sweet", "--flat", "--show=Q.org", "--hide=Q.org.eolang"]
-          ["{⟦ org ↦ ⟦ yegor256 ↦ Φ.y ⟧ ⟧}"]
+          ["⟦ org ↦ ⟦ yegor256 ↦ Φ.y ⟧ ⟧"]
 
     it "prints in line with --flat" $
-      withStdin "Q -> [[ x -> 5, y -> \"hey\", z -> [[ w -> [[ ]] ]] ]]" $
+      withStdin "[[ x -> 5, y -> \"hey\", z -> [[ w -> [[ ]] ]] ]]" $
         testCLISucceeded
           ["rewrite", "--sweet", "--flat"]
-          ["{⟦ x ↦ 5, y ↦ \"hey\", z ↦ ⟦ w ↦ ⟦⟧ ⟧ ⟧}"]
+          ["⟦ x ↦ 5, y ↦ \"hey\", z ↦ ⟦ w ↦ ⟦⟧ ⟧ ⟧"]
 
     it "removes unnecessary rho bindings in primitive applications" $
       withStdin
         ( unlines
-            [ "{[["
+            [ "[["
             , "  z -> [[ x -> [[ t -> 42 ]].t ]].x,"
             , "  org -> [[ eolang -> [[ bytes -> [[ data -> ? ]], number -> [[ as-bytes -> ? ]] ]] ]]"
-            , "]]}"
+            , "]]"
             ]
         )
         ( testCLISucceeded
             ["rewrite", "--sweet", "--normalize", "--flat"]
-            ["{⟦ z ↦ 42, org ↦ ⟦ eolang ↦ ⟦ bytes(data) ↦ ⟦⟧, number(as-bytes) ↦ ⟦⟧ ⟧ ⟧ ⟧}"]
+            ["⟦ z ↦ 42, org ↦ ⟦ eolang ↦ ⟦ bytes(data) ↦ ⟦⟧, number(as-bytes) ↦ ⟦⟧ ⟧ ⟧ ⟧"]
         )
 
     it "reduces log message" $
-      withStdin "{[[ x -> [[ y -> ? ]](y -> 5) ]]}" $
+      withStdin "[[ x -> [[ y -> ? ]](y -> 5) ]]" $
         testCLISucceeded
           ["rewrite", "--log-level=debug", "--log-lines=1", "--normalize"]
           [ intercalate
@@ -838,68 +838,68 @@ spec = do
               ]
           ]
 
-    it "canonizes program" $
-      withStdin "{[[ x -> [[ y -> [[ L> Func ]].q, z -> Q.x(a -> [[ w -> [[ L> Atom ]], L> Hello ]]) ]], L> Package ]]}" $
+    it "canonizes expression" $
+      withStdin "[[ x -> [[ y -> [[ L> Func ]].q, z -> Q.x(a -> [[ w -> [[ L> Atom ]], L> Hello ]]) ]], L> Package ]]" $
         testCLISucceeded
           ["rewrite", "--canonize", "--sweet", "--flat"]
-          ["{⟦ x ↦ ⟦ y ↦ ⟦ λ ⤍ F1 ⟧.q, z ↦ Φ.x( a ↦ ⟦ w ↦ ⟦ λ ⤍ F2 ⟧, λ ⤍ F3 ⟧ ) ⟧, λ ⤍ F4 ⟧}"]
+          ["⟦ x ↦ ⟦ y ↦ ⟦ λ ⤍ F1 ⟧.q, z ↦ Φ.x( a ↦ ⟦ w ↦ ⟦ λ ⤍ F2 ⟧, λ ⤍ F3 ⟧ ) ⟧, λ ⤍ F4 ⟧"]
 
     it "rewrites by locator" $
-      withStdin "{[[ ex -> [[ x -> [[ y -> 5 ]].y ]], abc -> [[ x -> ? ]](x -> 5) ]]}" $
+      withStdin "[[ ex -> [[ x -> [[ y -> 5 ]].y ]], abc -> [[ x -> ? ]](x -> 5) ]]" $
         testCLISucceeded
           ["rewrite", "--sweet", "--flat", "--locator=Q.ex", "--normalize"]
-          ["{⟦ ex ↦ ⟦ x ↦ 5 ⟧, abc ↦ ⟦ x ↦ ∅ ⟧( x ↦ 5 ) ⟧}"]
+          ["⟦ ex ↦ ⟦ x ↦ 5 ⟧, abc ↦ ⟦ x ↦ ∅ ⟧( x ↦ 5 ) ⟧"]
 
-    it "returns original program on --breakpoint" $
-      withStdin "{[[ x -> ?, y -> $.x ]](x -> [[ D> 42- ]]).y}" $
+    it "returns original expression on --breakpoint" $
+      withStdin "[[ x -> ?, y -> $.x ]](x -> [[ D> 42- ]]).y" $
         testCLISucceeded
           ["rewrite", "--sweet", "--flat", "--normalize", "--breakpoint=stop", "--log-level=debug"]
           [ "Applied 'copy' (30 nodes -> 25 nodes)"
           , "Rule 'stop' is a breakpoint, dropping down all the previous rewritings..."
-          , "{⟦ x ↦ ∅, y ↦ x ⟧( x ↦ ⟦ Δ ⤍ 42- ⟧ ).y}"
+          , "⟦ x ↦ ∅, y ↦ x ⟧( x ↦ ⟦ Δ ⤍ 42- ⟧ ).y"
           ]
 
   describe "dataize" $ do
     it "prints help" $
-      testCLISucceeded ["dataize", "--help"] ["Dataize the 𝜑-program"]
+      testCLISucceeded ["dataize", "--help"] ["Dataize the 𝜑-expression"]
 
-    it "dataizes simple program" $
-      withStdin "Q -> [[ D> 01- ]]" $
+    it "dataizes simple expression" $
+      withStdin "[[ D> 01- ]]" $
         testCLISucceeded ["dataize"] ["01-"]
 
     it "fails to dataize an empty object, which dataizes the terminator ⊥" $
-      withStdin "Q -> [[ ]]" $
+      withStdin "[[ ]]" $
         testCLIFailed ["dataize"] ["terminator ⊥"]
 
     it "dataizes with --sequence" $
-      withStdin "{[[ @ -> [[ x -> [[ D> 01-, y -> ? ]](y -> [[ ]]) ]].x ]]}" $
+      withStdin "[[ @ -> [[ x -> [[ D> 01-, y -> ? ]](y -> [[ ]]) ]].x ]]" $
         testCLISucceeded
           ["dataize", "--sequence", "--output=latex", "--flat", "--sweet"]
           [ intercalate
               "\n"
               [ "\\begin{phiquation}"
-              , "\\Big\\{ [[ @ -> [[ |x| -> [[ D> |01-|, |y| -> ? ]] ( |y| -> [[]] ) ]] . |x| ]] \\Big\\} \\leadsto_{\\nameref{r:contextualize}}"
-              , "  \\leadsto \\Big\\{ [[ |x| -> [[ D> |01-|, |y| -> ? ]] ( |y| -> [[]] ) ]] . |x| \\Big\\} \\leadsto_{\\nameref{r:copy}}"
-              , "  \\leadsto \\Big\\{ [[ |x| -> [[ D> |01-|, |y| -> [[]] ]] ]] . |x| \\Big\\} \\leadsto_{\\nameref{r:dot}}"
-              , "  \\leadsto \\Big\\{ [[ D> |01-|, |y| -> [[]] ]] ( \\phiTerminal{\\rho} -> [[ |x| -> [[ D> |01-|, |y| -> [[]] ]] ]] ) \\Big\\} \\leadsto_{\\nameref{r:copy}}"
-              , "  \\leadsto \\Big\\{ [[ D> |01-|, |y| -> [[]], \\phiTerminal{\\rho} -> [[ |x| -> [[ D> |01-|, |y| -> [[]] ]] ]] ]] \\Big\\}{.}"
+              , "[[ @ -> [[ |x| -> [[ D> |01-|, |y| -> ? ]] ( |y| -> [[]] ) ]] . |x| ]] \\leadsto_{\\nameref{r:contextualize}}"
+              , "  \\leadsto [[ |x| -> [[ D> |01-|, |y| -> ? ]] ( |y| -> [[]] ) ]] . |x| \\leadsto_{\\nameref{r:copy}}"
+              , "  \\leadsto [[ |x| -> [[ D> |01-|, |y| -> [[]] ]] ]] . |x| \\leadsto_{\\nameref{r:dot}}"
+              , "  \\leadsto [[ D> |01-|, |y| -> [[]] ]] ( \\phiTerminal{\\rho} -> [[ |x| -> [[ D> |01-|, |y| -> [[]] ]] ]] ) \\leadsto_{\\nameref{r:copy}}"
+              , "  \\leadsto [[ D> |01-|, |y| -> [[]], \\phiTerminal{\\rho} -> [[ |x| -> [[ D> |01-|, |y| -> [[]] ]] ]] ]]{.}"
               , "\\end{phiquation}"
               , "01-"
               ]
           ]
 
     it "focuses a compressed sequence whose meet replaces a step root" $
-      withStdin "{[[ @ -> [[ @ -> $.c.plus( 32.0 ), c -> 25.0 ]], bytes(data) -> [[ @ -> $.data ]], number(as-bytes) -> [[ @ -> $.as-bytes, plus -> [[ x -> ?, L> L_number_plus ]] ]] ]]}" $
+      withStdin "[[ @ -> [[ @ -> $.c.plus( 32.0 ), c -> 25.0 ]], bytes(data) -> [[ @ -> $.data ]], number(as-bytes) -> [[ @ -> $.as-bytes, plus -> [[ x -> ?, L> L_number_plus ]] ]] ]]" $
         testCLISucceeded
           ["dataize", "--output=latex", "--sweet", "--nonumber", "--compress", "--canonize", "--meet-prefix=dataization", "--sequence", "--flat", "--quiet", "--hide=Q.bytes", "--hide=Q.number", "--locator=Q.@", "--focus=Q.@", "--meet-length=5", "--meet-popularity=1"]
           ["\\phinoMeet{dataization:1}{ [[ @ -> |c| . |plus| ( 32 ), |c| -> 25 ]] } \\leadsto_{\\nameref{r:contextualize}}"]
 
     it "dataizes with --locator" $
-      withStdin "{[[ ex -> [[ @ -> Q.x ]], x -> [[ D> 42- ]] ]]}" $
+      withStdin "[[ ex -> [[ @ -> Q.x ]], x -> [[ D> 42- ]] ]]" $
         testCLISucceeded ["dataize", "--locator=Q.ex"] ["42-"]
 
     it "does not print bytes with --quiet" $
-      withStdin "Q -> [[ D> 01- ]]" $
+      withStdin "[[ D> 01- ]]" $
         testCLISucceeded ["dataize", "--quiet"] []
 
     describe "fails" $ do
@@ -1234,16 +1234,16 @@ spec = do
         )
 
   describe "merge" $ do
-    it "merges single program" $
+    it "merges single expression" $
       testCLISucceeded
         ["merge", resource "desugar.phi", "--sweet", "--flat"]
-        ["{⟦ foo ↦ x ⟧}"]
+        ["⟦ foo ↦ x ⟧"]
 
-    it "merges EO programs" $
+    it "merges EO expressions" $
       testCLISucceeded
         ["merge", "--sweet", resource "number.phi", resource "bytes.phi", resource "string.phi", "--margin=25"]
         [ unlines
-            [ "{⟦"
+            [ "⟦"
             , "  org ↦ ⟦"
             , "    eolang ↦ ⟦"
             , "      number(φ) ↦ ⟦⟧,"
@@ -1253,47 +1253,47 @@ spec = do
             , "    ⟧,"
             , "    λ ⤍ Package"
             , "  ⟧"
-            , "⟧}"
+            , "⟧"
             ]
         ]
 
     it "fails on merging non formations" $
       testCLIFailed
         ["merge", resource "dispatch.phi", resource "number.phi"]
-        ["Invalid program format, only programs with top level formations are supported for 'merge' command"]
+        ["Invalid expression format, only expressions with top level formations are supported for 'merge' command"]
 
     it "fails on merging conflicted bindings" $
       testCLIFailed
         ["merge", resource "foo.phi", resource "desugar.phi"]
         ["Can't merge two bindings, conflict found"]
 
-    it "fails on merging empty list of programs" $
+    it "fails on merging empty list of expressions" $
       testCLIFailed
         ["merge"]
         ["At least one input file must be specified for 'merge' command"]
 
   describe "match" $ do
     it "takes from stdin" $
-      withStdin "{[[]]}" $
+      withStdin "[[]]" $
         testCLISucceeded ["match", "--log-level=debug"] ["[DEBUG]"]
 
     it "takes from file" $
       testCLISucceeded ["match", "test-resources/cli/foo.phi", "--log-level=debug"] ["[DEBUG]"]
 
     it "does not print substitutions without pattern" $
-      withStdin "{[[]]}" $
+      withStdin "[[]]" $
         testCLISucceeded ["match", "--log-level=debug"] ["[DEBUG]: The --pattern is not provided, no substitutions are built"]
 
     it "prints one substitution" $
-      withStdin "{[[ x -> Q.x ]]}" $
+      withStdin "[[ x -> Q.x ]]" $
         testCLISucceeded ["match", "--pattern=Q.!t"] ["t >> x"]
 
     it "prints many substitutions" $
-      withStdin "{[[ x -> Q.x, y -> Q.y ]]}" $
+      withStdin "[[ x -> Q.x, y -> Q.y ]]" $
         testCLISucceeded ["match", "--pattern=Q.!t"] ["t >> x\n------\nt >> y"]
 
     it "builds substitutions with conditions" $
-      withStdin "{[[ x -> Q.y ]].x}" $
+      withStdin "[[ x -> Q.y ]].x" $
         testCLISucceeded
           ["match", "--pattern=[[ !t -> Q.y, !B ]].!t", "--when=eq(length(!B),1)"]
           ["B >> ⟦ ρ ↦ ∅ ⟧\nt >> x"]
@@ -1304,13 +1304,13 @@ spec = do
         ["B >> ⟦ foo ↦ Φ.org.eolang.x, ρ ↦ ∅ ⟧"]
 
     it "fails on parsing --when condition" $
-      withStdin "{[[]]}" $
+      withStdin "[[]]" $
         testCLIFailed
           ["match", "--pattern=[[!B]]", "--when=hello"]
           ["[ERROR]: Couldn't parse given condition"]
 
     it "fails on empty substitutions" $
-      withStdin "{Q.x.y}" $
+      withStdin "Q.x.y" $
         testCLIFailed
           ["match", "--pattern=$.!t"]
           ["[ERROR]"]
