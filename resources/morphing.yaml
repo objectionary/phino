@@ -33,10 +33,12 @@
 # normal-form meta, so the split is total over the normal forms 𝕄 actually
 # sees: 'ma'/'maa' take a '𝑘' argument — absolute (xi-free) and in normal
 # form — and recurse by re-normalizing the application; 'mad'/'maad' take an
-# '𝑛' argument (a normal form) that is 'not (absolute 𝑛1)' and yield ⊥ with
-# no recursion. A non-absolute argument can never fill a slot, so ⊥ is the
-# correct outcome and morphing stays total: exactly one of the four fires,
-# and the ⊥ axioms add no regress. Without them, a void slot receiving a
+# '𝑛' argument (a normal form) that is 'not (absolute 𝑛1)' and yield ⊥
+# through a single 'morph: ⊥' premise, which terminates at once via the
+# 'dead' axiom (𝕄(⊥, e, s) → (⊥, s)) — no recursion. A non-absolute argument
+# can never fill a slot, so ⊥ is the correct outcome and morphing stays
+# total: exactly one of the four fires, and these ⊥ premises add no regress.
+# Without them, a void slot receiving a
 # non-absolute argument — e.g. ⟦ x ↦ ∅ ⟧( x ↦ ξ.foo ) — had no terminating
 # derivation: 'copy' cannot fire on a non-absolute argument, so 'ma'
 # re-morphed the identical stuck term forever.
@@ -103,18 +105,24 @@
 - name: mad
   match: '𝑛(𝜏 ↦ 𝑛1)'
   e-match: 𝑒
-  n-result: ⊥
+  n-result: 𝑛2
   when:
     not:
       absolute: 𝑛1
+  premises:
+    - n-result: 𝑛2
+      morph: ⊥
 
 - name: maad
   match: '𝑛(α𝑖 ↦ 𝑛1)'
   e-match: 𝑒
-  n-result: ⊥
+  n-result: 𝑛2
   when:
     not:
       absolute: 𝑛1
+  premises:
+    - n-result: 𝑛2
+      morph: ⊥
 
 - name: universe
   label: \Phi
