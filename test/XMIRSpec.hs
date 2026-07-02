@@ -8,7 +8,6 @@
 
 module XMIRSpec where
 
-import AST
 import Control.Monad (forM_, unless)
 import Data.Aeson
 import Data.Char (isDigit)
@@ -219,7 +218,7 @@ spec = do
       ]
       ( \phi' -> it phi' $ do
           expr <- parseExpressionThrows phi'
-          programToXMIR (Program expr) defaultXmirContext `shouldThrow` anyException
+          programToXMIR expr defaultXmirContext `shouldThrow` anyException
       )
 
   describe "XMIR printing packs" $ do

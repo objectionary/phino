@@ -7,10 +7,10 @@ import AST
 import Misc
 import Rewriter
 
-exclude' :: Program -> [Expression] -> Program
+exclude' :: Expression -> [Expression] -> Expression
 exclude' prog [] = prog
-exclude' prog@(Program ex@(ExFormation _)) (fqn : remaining) = case fqnToAttrs fqn of
-  Just fqn' -> exclude' (Program (excludedFormation ex fqn')) remaining
+exclude' prog@(ExFormation _) (fqn : remaining) = case fqnToAttrs fqn of
+  Just fqn' -> exclude' (excludedFormation prog fqn') remaining
   _ -> prog
   where
     excludedFormation :: Expression -> [Attribute] -> Expression
@@ -31,12 +31,12 @@ exclude [] _ = []
 exclude rs [] = rs
 exclude ((program, maybeRule) : rest) exprs = (exclude' program exprs, maybeRule) : exclude rest exprs
 
-include' :: Program -> Expression -> Program
-include' (Program ex@(ExFormation _)) fqn =
-  let def = Program (ExFormation [BiVoid AtRho])
+include' :: Expression -> Expression -> Expression
+include' ex@(ExFormation _) fqn =
+  let def = ExFormation [BiVoid AtRho]
    in case fqnToAttrs fqn of
         Just fqn' -> case includedFormation ex fqn' of
-          Just e -> Program e
+          Just e -> e
           _ -> def
         _ -> def
   where
@@ -52,7 +52,7 @@ include' (Program ex@(ExFormation _)) fqn =
           | otherwise = includedBindings bs as
         includedBindings _ _ = Nothing
     includedFormation _ _ = Nothing
-include' _ _ = Program (ExFormation [BiVoid AtRho])
+include' _ _ = ExFormation [BiVoid AtRho]
 
 include :: [Rewritten] -> [Expression] -> [Rewritten]
 include [] _ = []

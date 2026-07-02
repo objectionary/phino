@@ -43,11 +43,11 @@ defaultPrintConfig = (SWEET, UNICODE, MULTILINE, defaultMargin)
 logPrintConfig :: (SugarType, Encoding, LineFormat, Int)
 logPrintConfig = (SWEET, UNICODE, SINGLELINE, defaultMargin)
 
-printProgram' :: Program -> PrintConfig -> String
-printProgram' prog (sugar, encoding, line, margin) = T.unpack $ render (withLineFormat line $ withMargin margin $ withEncoding encoding $ withSugarType sugar $ programToCST prog)
+printProgram' :: Expression -> PrintConfig -> String
+printProgram' = printExpression'
 
-printProgram :: Program -> String
-printProgram prog = printProgram' prog defaultPrintConfig
+printProgram :: Expression -> String
+printProgram = printExpression
 
 printExpression' :: Expression -> PrintConfig -> String
 printExpression' ex (sugar, encoding, line, margin) = T.unpack $ render (withLineFormat line $ withMargin margin $ withEncoding encoding $ withSugarType sugar $ expressionToCST ex)

@@ -45,14 +45,14 @@ import qualified Text.XML.Cursor as C
 data XmirContext = XmirContext
   { _omitListing :: Bool
   , _omitComments :: Bool
-  , _listing :: Program -> String
+  , _listing :: Expression -> String
   }
 
 defaultXmirContext :: XmirContext
 defaultXmirContext = XmirContext True True (const "")
 
 data XMIRException
-  = UnsupportedProgram Program
+  = UnsupportedProgram Expression
   | UnsupportedExpression Expression
   | UnsupportedBinding Binding
   | CouldNotParseXMIR String
@@ -163,8 +163,8 @@ formationBinding binding _ = throwIO (UnsupportedBinding binding)
 nestedBindings :: [Binding] -> XmirContext -> IO [Node]
 nestedBindings bds ctx = catMaybes <$> mapM (`formationBinding` ctx) bds
 
-programToXMIR :: Program -> XmirContext -> IO Document
-programToXMIR prog@(Program expr@(ExFormation [BiTau (AtLabel _) arg, BiVoid AtRho])) ctx@XmirContext{..} = case arg of
+programToXMIR :: Expression -> XmirContext -> IO Document
+programToXMIR prog@(ExFormation [BiTau (AtLabel _) arg, BiVoid AtRho]) ctx@XmirContext{..} = case arg of
   ExFormation _ -> programToXMIR'
   ExApplication _ _ -> programToXMIR'
   ExDispatch _ _ -> programToXMIR'
@@ -173,7 +173,7 @@ programToXMIR prog@(Program expr@(ExFormation [BiTau (AtLabel _) arg, BiVoid AtR
   where
     programToXMIR' :: IO Document
     programToXMIR' = do
-      (pckg, expr') <- getPackage expr
+      (pckg, expr') <- getPackage prog
       root <- rootExpression expr' ctx
       now <- getCurrentTime
       let text = _listing prog
@@ -359,7 +359,7 @@ parseXMIR xmir = case parseText def (TL.pack xmir) of
 parseXMIRThrows :: String -> IO Document
 parseXMIRThrows xmir = orThrow CouldNotParseXMIR (parseXMIR xmir)
 
-xmirToPhi :: Document -> IO Program
+xmirToPhi :: Document -> IO Expression
 xmirToPhi xmir =
   let doc = C.fromDocument xmir
    in case C.node doc of
@@ -377,10 +377,10 @@ xmirToPhi xmir =
                     , t <- T.splitOn "." tail'
                     ]
               if null pckg
-                then pure (Program (ExFormation [obj, BiVoid AtRho]))
+                then pure (ExFormation [obj, BiVoid AtRho])
                 else
                   let bd = foldr (\part acc -> BiTau (AtLabel (T.pack part)) (ExFormation [acc, BiLambda (Function "Package"), BiVoid AtRho])) obj pckg
-                   in pure (Program (ExFormation [bd, BiVoid AtRho]))
+                   in pure (ExFormation [bd, BiVoid AtRho])
           | otherwise -> throwIO (InvalidXMIRFormat "Expected single <object> element" doc)
         _ -> throwIO (InvalidXMIRFormat "NodeElement is expected as root element" doc)
 

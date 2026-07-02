@@ -147,14 +147,15 @@ morph (expr, seq) univ state ctx = do
     sides :: [Y.Premise] -> Subst -> IO (Subst, State)
     sides premises subst = foldM (sidePremise univ ctx) (subst, state) premises
 
--- Dataize the program located at '_locator'. The program's root is the universe
--- (the 'e' argument) passed to 𝔻 and 𝕄.
-dataize :: Program -> DataizeContext -> IO Dataized
-dataize program@(Program univ) ctx@DataizeContext{..} = do
+-- Dataize the expression located at '_locator'. The whole input expression is
+-- itself the universe Q (the 'e' argument) threaded through 𝔻 and 𝕄, so it is
+-- passed both as the located target and as the universe.
+dataize :: Expression -> DataizeContext -> IO Dataized
+dataize program ctx@DataizeContext{..} = do
   expr <- locatedExpression _locator program
   -- Dataization starts from the empty state; the final state is not yet
   -- consumed by any caller, so it is discarded here.
-  ((bytes, seq), _state) <- dataize' (expr, (program, Nothing) :| []) univ emptyState ctx
+  ((bytes, seq), _state) <- dataize' (expr, (program, Nothing) :| []) program emptyState ctx
   pure (bytes, reverse seq)
 
 -- The Dataization function 𝔻 retrieves bytes from an expression. It is partial
@@ -349,7 +350,7 @@ _dataize :: Expression -> Expression -> State -> DataizeContext -> IO (Bytes, St
 _dataize expr univ state ctx@DataizeContext{_buildTerm = buildTerm} = case univ of
   ExFormation bds -> do
     (TeAttribute attr) <- buildTerm "random-tau" [] substEmpty
-    let prog = Program (ExFormation (BiTau attr expr : bds))
+    let prog = ExFormation (BiTau attr expr : bds)
     (normal, seq) <- normalized expr ((prog, Nothing) :| []) ctx
     ((bts, _), state') <- dataize' (normal, seq) univ state ctx
     pure (bts, state')
@@ -425,6 +426,6 @@ _evaluate _ _ _ _ = throwIO (userError "Function evaluate() requires exactly 2 e
 _morph :: Expression -> DataizeContext -> State -> BuildTermMethodS
 _morph univ ctx state [ArgExpression expr] subst = do
   built <- buildExpressionThrows expr subst
-  ((morphed, _), state') <- morph (built, (Program univ, Nothing) :| []) univ state ctx
+  ((morphed, _), state') <- morph (built, (univ, Nothing) :| []) univ state ctx
   pure (TeExpression morphed, state')
 _morph _ _ _ _ _ = throwIO (userError "Function morph() requires exactly 1 expression argument")

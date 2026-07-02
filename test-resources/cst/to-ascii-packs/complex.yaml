@@ -3,7 +3,7 @@
 # yamllint disable rule:line-length
 ---
 program: |
-  {⟦
+  ⟦
     number ↦ ⟦
       a ↦ ∅,
       b ↦ Φ.org.ρ.φ,
@@ -18,13 +18,13 @@ program: |
       ⟧,
       error ↦ ⊥
     ⟧
-  ⟧}
+  ⟧
 result: |-
-  {[[
+  [[
     number(a) -> [[
       b -> Q.org.^.@,
       c -> xyz( q -> Q.y, ~0 -> a.b ),
       z -> [[ L> Func, D> 00-, def -> Q.txt.sprintf ]],
       error -> T
     ]]
-  ]]}
+  ]]

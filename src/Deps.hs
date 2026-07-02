@@ -41,9 +41,9 @@ type BuildTermMethodS = [ExtraArgument] -> Subst -> IO (Term, State)
 
 type BuildTermFunc = String -> BuildTermMethod
 
-type SaveStepFunc = Program -> Int -> IO ()
+type SaveStepFunc = Expression -> Int -> IO ()
 
-saveStep :: Maybe FilePath -> String -> (Program -> IO String) -> SaveStepFunc
+saveStep :: Maybe FilePath -> String -> (Expression -> IO String) -> SaveStepFunc
 saveStep Nothing _ _ _ _ = pure ()
 saveStep (Just dir) ext render prog step = do
   createDirectoryIfMissing True dir

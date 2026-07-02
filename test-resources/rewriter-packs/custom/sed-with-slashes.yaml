@@ -2,14 +2,14 @@
 # SPDX-License-Identifier: MIT
 ---
 input: |
-  Q -> [[
+  [[
     x -> "java/lang/Boolean",
     y -> "()Ljava/lang/String;",
     z -> "(Ljava/lang/String)Ljava/lang/Boolean",
     w -> "java/lang/Integer"
   ]]
 output: |-
-  Φ ↦ ⟦
+  ⟦
     x ↦ "java/lang/Integer",
     y ↦ "invokevirtual",
     z ↦ "invokestatic",

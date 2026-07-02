@@ -4,6 +4,6 @@
 rules:
   basic: ['dot']
 input: |
-  Φ ↦ ⟦ a ↦ ξ ⟧.a
+  ⟦ a ↦ ξ ⟧.a
 output: |-
-  Φ ↦ ⟦ a ↦ ξ ⟧ (ρ ↦ ⟦ a ↦ ξ ⟧)
+  ⟦ a ↦ ξ ⟧ (ρ ↦ ⟦ a ↦ ξ ⟧)

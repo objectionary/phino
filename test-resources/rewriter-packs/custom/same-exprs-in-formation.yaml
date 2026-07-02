@@ -1,9 +1,9 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 # SPDX-License-Identifier: MIT
 ---
-input: '{[[ x -> Q, ^ -> Q ]]}'
+input: '[[ x -> Q, ^ -> Q ]]'
 output: |-
-  Φ ↦ [[ x -> $, ^ -> $ ]]
+  [[ x -> $, ^ -> $ ]]
 rules:
   custom:
     - name: same-exrs

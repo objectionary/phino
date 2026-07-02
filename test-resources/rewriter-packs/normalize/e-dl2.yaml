@@ -5,6 +5,6 @@
 # this mirrors 'e-dl' with λ placed before Δ.
 normalize: true
 input: |
-  {⟦ m ↦ ⟦ λ ⤍ Fn, Δ ⤍ 42- ⟧ ⟧}
+  ⟦ m ↦ ⟦ λ ⤍ Fn, Δ ⤍ 42- ⟧ ⟧
 output: |-
-  {⟦ m ↦ ⊥ ⟧}
+  ⟦ m ↦ ⊥ ⟧

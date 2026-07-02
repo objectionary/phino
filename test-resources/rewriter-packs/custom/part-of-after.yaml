@@ -2,9 +2,9 @@
 # SPDX-License-Identifier: MIT
 ---
 repeat: 10
-input: Q -> [[ x -> Q.y ]]
+input: '[[ x -> Q.y ]]'
 output: |-
-  Φ ↦ ⟦
+  ⟦
     x ↦ Φ.y,
     z -> "hello world"
   ⟧

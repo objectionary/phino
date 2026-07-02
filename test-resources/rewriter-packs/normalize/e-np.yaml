@@ -3,6 +3,6 @@
 ---
 normalize: true
 input: |
-  {⟦ x ↦ ξ.t, λ ⤍ Fn ⟧}
+  ⟦ x ↦ ξ.t, λ ⤍ Fn ⟧
 output: |-
-  {⟦ x ↦ ξ.t, λ ⤍ Fn ⟧}
+  ⟦ x ↦ ξ.t, λ ⤍ Fn ⟧

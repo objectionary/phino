@@ -7,4 +7,4 @@ xmir: |
       <o name="x" base="Φ.org.eolang"/>
     </o>
   </object>
-phi: '{[[ app -> [[ x -> Q.org.eolang ]] ]]}'
+phi: '[[ app -> [[ x -> Q.org.eolang ]] ]]'

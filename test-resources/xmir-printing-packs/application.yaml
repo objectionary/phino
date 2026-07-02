@@ -3,7 +3,7 @@
 # yamllint disable rule:line-length
 ---
 phi: |
-  Q -> [[
+  [[
     foo -> [[
       @ -> $.^.z,
       bar -> Q.y(5, "foo")

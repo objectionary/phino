@@ -1,9 +1,9 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 # SPDX-License-Identifier: MIT
 ---
-input: '{[[x -> Q.y]].z}'
+input: '[[x -> Q.y]].z'
 output: |-
-  Φ ↦ Φ.z
+  Φ.z
 rules:
   custom:
     - name: negative-condition

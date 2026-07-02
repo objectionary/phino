@@ -3,9 +3,9 @@
 # yamllint disable rule:line-length
 ---
 program: |
-  {[[ x -> 1, z -> [[ ]] ]]}
+  [[ x -> 1, z -> [[ ]] ]]
 result: |-
-  Φ ↦ ⟦
+  ⟦
     x ↦ Φ.number(
       α0 ↦ Φ.bytes(
         α0 ↦ ⟦

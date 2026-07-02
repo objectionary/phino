@@ -13,7 +13,7 @@ import Printer (printExpression, printProgram)
 import Text.Printf (printf)
 
 data MergeException
-  = WrongProgramFormat Program
+  = WrongProgramFormat Expression
   | CanNotMergeBinding Binding Binding
   | EmptyProgramList
   deriving (Exception)
@@ -47,14 +47,14 @@ mergeBindings xs ys = do
   ws <- mapM (uncurry mergeBinding) collisions
   pure (xs' <> ys' <> ws)
 
-merge' :: [Program] -> IO Program
+merge' :: [Expression] -> IO Expression
 merge' [] = throwIO EmptyProgramList
-merge' [p@(Program (ExFormation _))] = pure p
-merge' (Program (ExFormation bindings) : rest) = do
-  Program (ExFormation bds') <- merge' rest
+merge' [p@(ExFormation _)] = pure p
+merge' (ExFormation bindings : rest) = do
+  ExFormation bds' <- merge' rest
   merged <- mergeBindings bds' bindings
-  pure (Program (ExFormation merged))
+  pure (ExFormation merged)
 merge' (prog : _) = throwIO (WrongProgramFormat prog)
 
-merge :: [Program] -> IO Program
+merge :: [Expression] -> IO Expression
 merge progs = merge' (reverse progs)

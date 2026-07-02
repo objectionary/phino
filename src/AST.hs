@@ -16,9 +16,6 @@ import Data.Text (Text)
 import qualified Data.Text as T
 import GHC.Generics (Generic)
 
-newtype Program = Program Expression
-  deriving (Eq, Ord, Show)
-
 data Expression
   = ExFormation [Binding]
   | ExXi

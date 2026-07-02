@@ -57,7 +57,7 @@ readInput inputFile' = case inputFile' of
     getContents' `catch` (\(e :: SomeException) -> throwIO (CouldNotReadFromStdin (show e)))
 
 -- Parse program from String input depending on input IO format
-parseProgram :: String -> IOFormat -> IO Program
+parseProgram :: String -> IOFormat -> IO Expression
 parseProgram phi PHI = parseProgramThrows phi
 parseProgram xmir XMIR = parseXMIRThrows xmir >>= xmirToPhi
 parseProgram _ LATEX = invalidCLIArguments "LaTeX cannot be used as input format"
@@ -76,7 +76,7 @@ printExpression ctx@PrintProgCtx{..} ex = case _outputFormat of
 
 -- Convert
 -- Convert program to corresponding String format
-printProgram :: PrintProgramContext -> Program -> IO String
+printProgram :: PrintProgramContext -> Expression -> IO String
 printProgram ctx@PrintProgCtx{..} prog = case _outputFormat of
   PHI -> pure (P.printProgram' prog (_sugar, UNICODE, _line, _margin))
   XMIR -> programToXMIR prog _xmirCtx <&> printXMIR

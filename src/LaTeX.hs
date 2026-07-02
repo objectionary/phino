@@ -67,10 +67,10 @@ defaultMeetPopularity = 50
 defaultMeetLength :: Int
 defaultMeetLength = 8
 
-meetInProgram :: Program -> Int -> Program -> [Expression]
-meetInProgram (Program expr) len = meetInExpression expr
+meetInProgram :: Expression -> Int -> Expression -> [Expression]
+meetInProgram expr len = meetInExpression expr
   where
-    meetInExpression :: Expression -> Program -> [Expression]
+    meetInExpression :: Expression -> Expression -> [Expression]
     meetInExpression (DataString _) _ = []
     meetInExpression (DataNumber _) _ = []
     meetInExpression (ExPhiMeet{}) _ = []
@@ -82,7 +82,7 @@ meetInProgram (Program expr) len = meetInExpression expr
             ExApplication ex' arg -> meetInExpression ex' prog ++ meetInExpression (argExpr arg) prog
             ExFormation bds -> meetInBindings bds prog
             _ -> []
-    meetInBindings :: [Binding] -> Program -> [Expression]
+    meetInBindings :: [Binding] -> Expression -> [Expression]
     meetInBindings [] _ = []
     meetInBindings (BiTau _ ex : bds) prog = meetInExpression ex prog ++ meetInBindings bds prog
     meetInBindings (_ : bds) prog = meetInBindings bds prog
@@ -96,10 +96,10 @@ in following programs. Then we find ONE expression which is the most frequently 
 If it's encountered in more than specific percentage (_meetPopularity) of following programs - we replace
 it with \phinoAgain{} in following programs and with \phinoMeet{} in first program.
 -}
-meetInPrograms :: [Program] -> LatexContext -> [Program]
+meetInPrograms :: [Expression] -> LatexContext -> [Expression]
 meetInPrograms prog LatexContext{..} = go prog 1
   where
-    go :: [Program] -> Int -> [Program]
+    go :: [Expression] -> Int -> [Expression]
     go [] _ = []
     go [program] _ = [program]
     go (first : rest) idx =
@@ -176,16 +176,14 @@ compressedRewrittens rewrittens ctx@LatexContext{..} =
 -- focus must still descend through.
 compressedExpressions :: [Expression] -> LatexContext -> [Expression]
 compressedExpressions exprs ctx@LatexContext{..} =
-  if _compress then map unwrap (meetInPrograms (map Program exprs) ctx) else exprs
-  where
-    unwrap (Program expr) = expr
+  if _compress then meetInPrograms exprs ctx else exprs
 
 rewrittensToLatex :: Rewrittens' -> LatexContext -> IO String
 rewrittensToLatex (rewrittens, exceeded) ctx@LatexContext{_focus = ExRoot} =
   pure
     ( concat
         [ preamble ctx
-        , body (compressedRewrittens rewrittens ctx) (\prog -> renderToLatex (programToCST prog) ctx)
+        , body (compressedRewrittens rewrittens ctx) (\prog -> renderToLatex (expressionToCST prog) ctx)
         , ending exceeded ctx
         ]
     )
@@ -200,11 +198,11 @@ rewrittensToLatex (rewrittens, exceeded) ctx@LatexContext{..} = do
         ]
     )
 
-programToLaTeX :: Program -> LatexContext -> String
+programToLaTeX :: Expression -> LatexContext -> String
 programToLaTeX prog ctx =
   concat
     [ preamble ctx
-    , renderToLatex (programToCST prog) ctx
+    , renderToLatex (expressionToCST prog) ctx
     , ending False ctx
     ]
 
@@ -221,10 +219,6 @@ piped str = "|" <> toLaTeX str <> "|"
 
 class ToLaTeX a where
   toLaTeX :: a -> a
-
-instance ToLaTeX PROGRAM where
-  toLaTeX PR_SWEET{..} = PR_SWEET BIG_LCB (toLaTeX expr) BIG_RCB SPACE
-  toLaTeX PR_SALTY{..} = PR_SALTY global arrow (toLaTeX expr)
 
 instance ToLaTeX EXPRESSION where
   toLaTeX EX_ATTR{..} = EX_ATTR (toLaTeX attr)

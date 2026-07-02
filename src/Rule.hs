@@ -408,5 +408,5 @@ matchExpressionBy matcher seed expr rule ctx =
                       when (null met) (logDebug "The 'having' condition wasn't met")
                       pure met
 
-matchProgramWithRule :: Program -> Y.Rule -> RuleContext -> IO [Subst]
-matchProgramWithRule (Program expr) = matchExpressionWithRule expr
+matchProgramWithRule :: Expression -> Y.Rule -> RuleContext -> IO [Subst]
+matchProgramWithRule = matchExpressionWithRule

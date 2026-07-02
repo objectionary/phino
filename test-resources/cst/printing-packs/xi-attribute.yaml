@@ -3,6 +3,6 @@
 # yamllint disable rule:line-length
 ---
 program: |
-  {[[ x -> y ]]}
+  [[ x -> y ]]
 result: |-
-  {⟦ x ↦ y ⟧}
+  ⟦ x ↦ y ⟧

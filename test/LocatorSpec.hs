@@ -13,9 +13,9 @@ spec :: Spec
 spec = do
   describe "located expression" $
     forM_
-      [ ("{[[ x -> [[ y -> [[ z -> ? ]] ]] ]]}", "Q.x.y", "[[ z -> ? ]]")
-      , ("{[[ x -> ?, y -> [[ z -> ?, w -> [[ a -> $.x ]] ]], z -> ? ]]}", "Q.y.w.a", "$.x")
-      , ("{[[ x -> ?, y -> ? ]]}", "Q", "[[ x -> ?, y -> ? ]]")
+      [ ("[[ x -> [[ y -> [[ z -> ? ]] ]] ]]", "Q.x.y", "[[ z -> ? ]]")
+      , ("[[ x -> ?, y -> [[ z -> ?, w -> [[ a -> $.x ]] ]], z -> ? ]]", "Q.y.w.a", "$.x")
+      , ("[[ x -> ?, y -> ? ]]", "Q", "[[ x -> ?, y -> ? ]]")
       ]
       ( \(prog, locator, res) -> it (intercalate " => " [prog, locator, res]) $ do
           prog' <- parseProgramThrows prog
@@ -27,9 +27,9 @@ spec = do
 
   describe "with located expression" $
     forM_
-      [ ("{[[ x -> $ ]]}", "Q.x", "[[ y -> ? ]]", "{[[ x -> [[ y -> ? ]] ]]}")
-      , ("{[[ x -> ?, y -> [[ x -> ?, y -> [[ ]] ]] ]]}", "Q.y.y", "Q.x.y", "{[[ x -> ?, y -> [[ x -> ?, y -> Q.x.y ]] ]]}")
-      , ("{[[ x -> [[ y -> [[ z -> [[ w -> ? ]] ]] ]] ]]}", "Q.x.y", "$.a(x -> [[]])", "{[[ x -> [[ y -> $.a(x -> [[]]) ]] ]]}")
+      [ ("[[ x -> $ ]]", "Q.x", "[[ y -> ? ]]", "[[ x -> [[ y -> ? ]] ]]")
+      , ("[[ x -> ?, y -> [[ x -> ?, y -> [[ ]] ]] ]]", "Q.y.y", "Q.x.y", "[[ x -> ?, y -> [[ x -> ?, y -> Q.x.y ]] ]]")
+      , ("[[ x -> [[ y -> [[ z -> [[ w -> ? ]] ]] ]] ]]", "Q.x.y", "$.a(x -> [[]])", "[[ x -> [[ y -> $.a(x -> [[]]) ]] ]]")
       ]
       ( \(prog, locator, expr, res) -> it (intercalate " => " [prog, locator, expr, res]) $ do
           prog' <- parseProgramThrows prog

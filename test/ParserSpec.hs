@@ -31,10 +31,10 @@ spec = do
   describe "parse program" $
     test
       parseProgram
-      [ ("Q -> [[]]", Just (Program (ExFormation [BiVoid AtRho])))
-      , ("Q -> T(x -> Q)", Just (Program (ExApplication ExTermination (ArTau (AtLabel "x") ExRoot))))
-      , ("Q -> Q.org.eolang", Just (Program (ExDispatch (ExDispatch ExRoot (AtLabel "org")) (AtLabel "eolang"))))
-      , ("Q -> [[x -> $, y -> ?]]", Just (Program (ExFormation [BiTau (AtLabel "x") ExXi, BiVoid (AtLabel "y"), BiVoid AtRho])))
+      [ ("[[]]", Just (ExFormation [BiVoid AtRho]))
+      , ("T(x -> Q)", Just (ExApplication ExTermination (ArTau (AtLabel "x") ExRoot)))
+      , ("Q.org.eolang", Just (ExDispatch (ExDispatch ExRoot (AtLabel "org")) (AtLabel "eolang")))
+      , ("[[x -> $, y -> ?]]", Just (ExFormation [BiTau (AtLabel "x") ExXi, BiVoid (AtLabel "y"), BiVoid AtRho]))
       ]
 
   describe "parse expression" $
@@ -383,7 +383,7 @@ spec = do
 
   describe "parseProgramThrows" $ do
     it "returns program on valid input" $
-      parseProgramThrows "Q -> T" `shouldReturn` Program ExTermination
+      parseProgramThrows "T" `shouldReturn` ExTermination
     it "throws on invalid input" $
       parseProgramThrows "invalid program ]][[" `shouldThrow` anyException
 

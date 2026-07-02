@@ -23,7 +23,7 @@ First, you write a simple [𝜑-calculus](https://www.eolang.org) program
 in the `hello.phi` file:
 
 ```text
-Φ ↦ ⟦ φ ↦ ⟦ Δ ⤍ 68-65-6C-6C-6F ⟧, t ↦ ξ.k, k ↦ ⟦⟧ ⟧
+⟦ φ ↦ ⟦ Δ ⤍ 68-65-6C-6C-6F ⟧, t ↦ ξ.k, k ↦ ⟦⟧ ⟧
 ```
 
 ## Installation
@@ -116,7 +116,7 @@ Then, rewrite:
 
 ```bash
 $ phino rewrite --rule=my-rule.yml hello.phi
-Φ ↦ ⟦ φ ↦ ⟦ Δ ⤍ 62-79-65 ⟧, t ↦ ξ.k, k ↦ ⟦⟧ ⟧
+⟦ φ ↦ ⟦ Δ ⤍ 62-79-65 ⟧, t ↦ ξ.k, k ↦ ⟦⟧ ⟧
 ```
 
 If you want to use many rules, just use `--rule` as many times as you need:
@@ -135,8 +135,8 @@ phino rewrite --normalize hello.phi
 If no input file is provided, the 𝜑-expression is taken from `stdin`:
 
 ```bash
-$ echo 'Φ ↦ ⟦ φ ↦ ⟦ Δ ⤍ 68-65-6C-6C-6F ⟧ ⟧' | phino rewrite --rule=my-rule.yml
-Φ ↦ ⟦ φ ↦ ⟦ Δ ⤍ 62-79-65 ⟧ ⟧
+$ echo '⟦ φ ↦ ⟦ Δ ⤍ 68-65-6C-6C-6F ⟧ ⟧' | phino rewrite --rule=my-rule.yml
+⟦ φ ↦ ⟦ Δ ⤍ 62-79-65 ⟧ ⟧
 ```
 
 You're able to pass [`XMIR`][xmir] as input. Use `--input=xmir` and `phino`
@@ -152,8 +152,8 @@ syntax sugar. The `rewrite` command also allows you to desugar the expression
 and print it in canonical syntax:
 
 ```bash
-$ echo 'Q -> [[ @ -> Q.io.stdout("hello") ]]' | phino rewrite
-Φ ↦ ⟦
+$ echo '[[ @ -> Q.io.stdout("hello") ]]' | phino rewrite
+⟦
   φ ↦ Φ.io.stdout(
     α0 ↦ Φ.string(
       α0 ↦ Φ.bytes(
@@ -171,25 +171,25 @@ top level formations:
 
 ```bash
 $ cat bytes.phi
-{⟦ bytes(data) ↦ ⟦ φ ↦ data ⟧ ⟧}
+⟦ bytes(data) ↦ ⟦ φ ↦ data ⟧ ⟧
 $ cat number.phi
-{⟦
+⟦
   number(as-bytes) ↦ ⟦
     φ ↦ as-bytes,
     plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧
   ⟧
-⟧}
+⟧
 $ cat minus.phi
-{⟦ number ↦ ⟦ minus(x) ↦ ⟦ λ ⤍ L_number_minus ⟧ ⟧ ⟧}
+⟦ number ↦ ⟦ minus(x) ↦ ⟦ λ ⤍ L_number_minus ⟧ ⟧ ⟧
 $ phino merge bytes.phi number.phi minus.phi --sweet
-{⟦
+⟦
   bytes(data) ↦ ⟦ φ ↦ data ⟧,
   number(as-bytes) ↦ ⟦
     φ ↦ as-bytes,
     plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧,
     minus(x) ↦ ⟦ λ ⤍ L_number_minus ⟧
   ⟧
-⟧}
+⟧
 ```
 
 ## Match

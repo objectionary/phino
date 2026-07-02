@@ -2,9 +2,9 @@
 # SPDX-License-Identifier: MIT
 ---
 input: |
-  Q -> [[ attr -> 55 ]]
+  [[ attr -> 55 ]]
 output: |-
-  Φ ↦ ⟦ str ↦ "attr", num -> "55" ⟧
+  ⟦ str ↦ "attr", num -> "55" ⟧
 rules:
   custom:
     - name: string function

@@ -16,4 +16,4 @@ xmir: |
       </o>
     </o>
   </object>
-phi: '{[[ app -> [[ x -> Q.org.eolang(α0 -> Q.x)(α1 -> Q.y.plus)(arg -> [[ y -> $ ]]) ]] ]]}'
+phi: '[[ app -> [[ x -> Q.org.eolang(α0 -> Q.x)(α1 -> Q.y.plus)(arg -> [[ y -> $ ]]) ]] ]]'

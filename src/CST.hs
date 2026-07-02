@@ -117,11 +117,6 @@ data ALPHA
   | AL_META {sym :: ALPHA', meta :: META}
   deriving (Eq, Show)
 
-data PROGRAM
-  = PR_SWEET {lcb :: LCB, expr :: EXPRESSION, rcb :: RCB, space :: SPACE}
-  | PR_SALTY {global :: GLOBAL, arrow :: ARROW, expr :: EXPRESSION}
-  deriving (Eq, Show)
-
 data PAIR
   = PA_TAU {attr :: ATTRIBUTE, arrow :: ARROW, expr :: EXPRESSION}
   | PA_ALPHA {alpha :: ALPHA, arrow :: ARROW, expr :: EXPRESSION}
@@ -253,9 +248,6 @@ data EXTRA_ARG
 data EXTRA = EXTRA {meta :: EXTRA_ARG, func :: String, args :: [EXTRA_ARG]}
   deriving (Eq, Show)
 
-programToCST :: Program -> PROGRAM
-programToCST = toCST'
-
 expressionToCST :: Expression -> EXPRESSION
 expressionToCST = toCST'
 
@@ -312,9 +304,6 @@ exMetaHead mt
 -- All further transformations must consider that
 class ToCST a b where
   toCST :: a -> (Int, EOL) -> b
-
-instance ToCST Program PROGRAM where
-  toCST (Program expr) ctx = PR_SWEET LCB (toCST expr ctx) RCB NO_SPACE
 
 instance ToCST Expression EXPRESSION where
   toCST ExRoot _ = EX_GLOBAL Φ

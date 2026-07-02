@@ -454,21 +454,6 @@ expression = do
   expr <- exHead
   exTail expr
 
-program :: Parser Program
-program =
-  choice
-    [ do
-        _ <- symbol "{"
-        prog <- Program <$> expression
-        _ <- symbol "}"
-        return prog
-    , do
-        _ <- global
-        _ <- arrow
-        Program <$> expression
-    ]
-    <?> "program"
-
 -- Entry point
 parse' :: String -> Parser a -> String -> Either String a
 parse' name parser input = do
@@ -516,8 +501,8 @@ parseExpression = parse' "expression" expression
 parseExpressionThrows :: String -> IO Expression
 parseExpressionThrows ex = orThrow CouldNotParseExpression (parseExpression ex)
 
-parseProgram :: String -> Either String Program
-parseProgram = parse' "program" program
+parseProgram :: String -> Either String Expression
+parseProgram = parse' "program" expression
 
-parseProgramThrows :: String -> IO Program
+parseProgramThrows :: String -> IO Expression
 parseProgramThrows prg = orThrow CouldNotParseProgram (parseProgram prg)

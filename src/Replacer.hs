@@ -24,7 +24,7 @@ type ReplaceState a = (a, [Expression], [Expression -> Expression])
 
 type ReplaceExpressionFunc' = ReplaceState Expression -> ReplaceContext -> ReplaceState Expression
 
-type ReplaceProgramFunc = ReplaceState Program -> Program
+type ReplaceProgramFunc = ReplaceState Expression -> Expression
 
 type ReplaceExpressionFunc = ReplaceState Expression -> Expression
 
@@ -115,7 +115,7 @@ replaceExpressionFast ctx state =
    in expr
 
 replaceProgram :: ReplaceProgramFunc
-replaceProgram (Program expr, ptns, repls) = Program (replaceExpression (expr, ptns, repls))
+replaceProgram = replaceExpression
 
 replaceProgramFast :: ReplaceContext -> ReplaceProgramFunc
-replaceProgramFast ctx (Program expr, ptns, repls) = Program (replaceExpressionFast ctx (expr, ptns, repls))
+replaceProgramFast = replaceExpressionFast

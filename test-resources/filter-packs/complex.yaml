@@ -2,9 +2,9 @@
 # SPDX-License-Identifier: MIT
 ---
 program: |
-  {[[
+  [[
     org -> [[ eolang -> [[ number -> [[]], bytes -> [[ ]] ]] ]], some -> Q
-  ]]}
+  ]]
 hidden: ['Q.org']
 shown: []
-result: '{[[ some -> Q ]]}'
+result: '[[ some -> Q ]]'

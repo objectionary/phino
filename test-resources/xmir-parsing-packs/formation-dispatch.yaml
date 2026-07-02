@@ -11,4 +11,4 @@ xmir: |
       </o>
     </o>
   </object>
-phi: '{[[ app -> [[ x -> [[ plus -> Q.number ]].plus ]] ]]}'
+phi: '[[ app -> [[ x -> [[ plus -> Q.number ]].plus ]] ]]'

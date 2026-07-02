@@ -32,7 +32,7 @@ test :: (Eq a, Show a) => ((Expression, NonEmpty Rewritten) -> Expression -> Str
 test func useCases =
   forM_ useCases $ \(desc, input, expr, output) ->
     it desc $ do
-      let prog = Program expr
+      let prog = expr
       ((res, _), _) <- func (input, (prog, Nothing) :| []) expr emptyState (defaultDataizeContext ExRoot)
       res `shouldBe` output
 
@@ -40,7 +40,7 @@ test' :: (Eq a, Show a) => ((Expression, NonEmpty Rewritten) -> Expression -> St
 test' func useCases =
   forM_ useCases $ \(desc, input, expr, output) ->
     it desc $ do
-      let prog = Program expr
+      let prog = expr
       ((res, _), _) <- func (input, (prog, Nothing) :| []) expr emptyState (defaultDataizeContext ExRoot)
       res `shouldBe` output
 
@@ -103,7 +103,7 @@ spec = do
           ]
     forM_ cases $ \(desc, input, univ, expected) ->
       it ("morphs " ++ desc ++ " to the same form across 100 random rule orders") $ do
-        let prog = Program univ
+        let prog = univ
         results <- replicateM 100 (fst . fst <$> morph (input, (prog, Nothing) :| []) univ emptyState (defaultDataizeContext ExRoot))
         nub results `shouldBe` [expected]
 
@@ -132,7 +132,7 @@ spec = do
     it "drills a chained λ-formation dispatch down to the base 'ml'" $ do
       let base = ExFormation [BiLambda (Function "F")]
           chain = ExDispatch (ExDispatch (ExDispatch base (AtLabel "a")) (AtLabel "b")) (AtLabel "c")
-      morph (chain, (Program ExRoot, Nothing) :| []) ExRoot emptyState (defaultDataizeContext ExRoot)
+      morph (chain, (ExRoot, Nothing) :| []) ExRoot emptyState (defaultDataizeContext ExRoot)
         `shouldThrow` (\e -> "Atom 'F' does not exist" `isInfixOf` show (e :: SomeException))
 
   -- 'norm' matches the bare meta 𝑛, which unifies with any expression, so it is
@@ -202,7 +202,7 @@ spec = do
   describe "fails to dataize the terminator" $ do
     let failsOn desc input =
           it desc $
-            let prog = Program ExRoot
+            let prog = ExRoot
              in dataize' (input, (prog, Nothing) :| []) ExRoot emptyState (defaultDataizeContext ExRoot)
                   `shouldThrow` (\e -> "terminator" `isInfixOf` show (e :: SomeException))
     failsOn "throws on ⊥ instead of mapping it to empty bytes" ExTermination
@@ -232,7 +232,7 @@ spec = do
       prog <-
         parseProgramThrows
           ( unlines
-              [ "Q -> [["
+              [ "[["
               , "  bytes(data) -> [[ @ -> $.data ]],"
               , "  number(as-bytes) -> [[ @ -> $.as-bytes, plus(x) -> [[ L> L_number_plus ]] ]],"
               , "  @ -> 5.plus(6)"
@@ -266,7 +266,7 @@ spec = do
       labels <-
         labelsOf
           "Q"
-          "Q -> [[ bytes(data) -> [[ @ -> $.data ]], number(as-bytes) -> [[ @ -> $.as-bytes, plus(x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6) ]]"
+          "[[ bytes(data) -> [[ @ -> $.data ]], number(as-bytes) -> [[ @ -> $.as-bytes, plus(x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6) ]]"
       labels
         `shouldBe` [ "contextualize"
                    , "maa"
@@ -288,13 +288,13 @@ spec = do
                    , "copy"
                    ]
     it "dataizes a located reference through the expected rules" $ do
-      labels <- labelsOf "Q.foo.bar" "Q -> [[ foo -> [[ bar -> [[ @ -> Q.x ]] ]], x -> [[ D> 42- ]] ]]"
+      labels <- labelsOf "Q.foo.bar" "[[ foo -> [[ bar -> [[ @ -> Q.x ]] ]], x -> [[ D> 42- ]] ]]"
       labels `shouldBe` ["contextualize", "md", "dot", "copy", "mf"]
     -- The 'none' rule dataizes ⊥ (𝔻(⟦⟧) → 𝔻(⊥)), which matches no clause now
     -- that there is no 'end' rule, so an empty formation reduces through one
     -- labelled 'dataize' step and then fails: it has nothing to dataize (#955).
     it "fails to dataize an empty formation, which dataizes ⊥" $ do
-      prog <- parseProgramThrows "Q -> [[ ]]"
+      prog <- parseProgramThrows "[[ ]]"
       loc <- parseExpressionThrows "Q"
       dataize prog (defaultDataizeContext loc)
         `shouldThrow` (\e -> "terminator" `isInfixOf` show (e :: SomeException))
@@ -304,7 +304,7 @@ spec = do
       ( "5.plus(6)"
       , "Q"
       , unlines
-          [ "Q -> [["
+          [ "[["
           , "  bytes(data) -> [["
           , "    @ -> $.data"
           , "  ]],"
@@ -321,7 +321,7 @@ spec = do
       ( "Fahrenheit"
       , "Q"
       , unlines
-          [ "Q -> [["
+          [ "[["
           , "  bytes -> [["
           , "    data -> ?,"
           , "    @ -> $.data"
@@ -342,7 +342,7 @@ spec = do
       ( "Factorial"
       , "Q"
       , unlines
-          [ "Q -> [["
+          [ "[["
           , "  bytes -> [["
           , "    data -> ?,"
           , "    @ -> $.data"
@@ -370,7 +370,7 @@ spec = do
       ( "Located"
       , "Q.foo.bar"
       , unlines
-          [ "Q -> [["
+          [ "[["
           , "  foo -> [["
           , "    bar -> [["
           , "      @ -> Q.x"
@@ -385,7 +385,7 @@ spec = do
       ( "Five"
       , "Q.x"
       , unlines
-          [ "Q -> [["
+          [ "[["
           , "  number(as-bytes) -> [[ @ -> as-bytes ]],"
           , "  bytes(data) -> [[ @ -> data ]],"
           , "  x -> 5"

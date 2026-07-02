@@ -3,9 +3,9 @@
 # yamllint disable rule:line-length
 ---
 program: |
-  {[[ x -> y ]]}
+  [[ x -> y ]]
 result: |-
-  Φ ↦ ⟦
+  ⟦
     x ↦ ξ.y,
     ρ ↦ ∅
   ⟧

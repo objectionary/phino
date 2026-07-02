@@ -1,9 +1,9 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 # SPDX-License-Identifier: MIT
 ---
-input: Q -> [[x -> $.q, z -> Q.a]]
+input: '[[x -> $.q, z -> Q.a]]'
 output: |-
-  Φ ↦ ⟦
+  ⟦
     z ↦ Φ.a
   ⟧
 rules:

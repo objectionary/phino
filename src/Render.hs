@@ -148,10 +148,6 @@ instance Render TAB where
   render TAB' = " "
   render NO_TAB = ""
 
-instance Render PROGRAM where
-  render PR_SWEET{..} = render lcb <> render space <> render expr <> render space <> render rcb
-  render PR_SALTY{..} = render global <> render SPACE <> render arrow <> render SPACE <> render expr
-
 instance Render PAIR where
   render PA_TAU{..} = render attr <> render SPACE <> render arrow <> render SPACE <> render expr
   render PA_ALPHA{..} = render alpha <> render SPACE <> render arrow <> render SPACE <> render expr

@@ -2,11 +2,11 @@
 # SPDX-License-Identifier: MIT
 ---
 input: |
-  Q -> [[
+  [[
     x -> "1"
   ]]
 output: |-
-  Φ ↦ ⟦
+  ⟦
     x ↦ "6"
   ⟧
 rules:

@@ -3,7 +3,7 @@
 # yamllint disable rule:line-length
 ---
 program: |
-  {[[
+  [[
     x -> Q.y(
       z -> "hey",
       b -> 1
@@ -12,6 +12,6 @@ program: |
         q -> [[ ^ -> Q.a ]]
       ]]
     )
-  ]]}
+  ]]
 result: |-
-  {⟦ x ↦ Φ.y( z ↦ "hey", b ↦ 1 ).z( a ↦ ⟦ q ↦ ⟦ ρ ↦ Φ.a ⟧ ⟧ ) ⟧}
+  ⟦ x ↦ Φ.y( z ↦ "hey", b ↦ 1 ).z( a ↦ ⟦ q ↦ ⟦ ρ ↦ Φ.a ⟧ ⟧ ) ⟧

@@ -3,12 +3,12 @@
 # yamllint disable rule:line-length
 ---
 program: |
-  {⟦
+  ⟦
     x ↦ Φ.foo(
       x ↦ Φ.k
     ).bar(
       x ↦ Φ.k
     )
-  ⟧}
+  ⟧
 result: |-
-  {⟦ x ↦ Φ.foo( x ↦ Φ.k ).bar( x ↦ Φ.k ) ⟧}
+  ⟦ x ↦ Φ.foo( x ↦ Φ.k ).bar( x ↦ Φ.k ) ⟧

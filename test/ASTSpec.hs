@@ -201,26 +201,6 @@ spec = do
           first : _ = sort exprs
        in first `shouldBe` ExFormation []
 
-  describe "Program Eq instance compares programs" $
-    forM_
-      [ ("same programs equal", Program ExRoot, Program ExRoot, True)
-      , ("different programs differ", Program ExRoot, Program ExXi, False)
-      ]
-      ( \(desc, lhs, rhs, expected) ->
-          it desc $ (lhs == rhs) `shouldBe` expected
-      )
-
-  describe "Program Ord instance orders correctly" $
-    it "orders programs by expression" $
-      let progs = [Program ExXi, Program ExRoot, Program (ExFormation [])]
-          first : _ = sort progs
-       in first `shouldBe` Program (ExFormation [])
-
-  describe "Program Show instance renders programs" $
-    it "shows program wrapper" $
-      let hasProgram str = "Program" `elem` words str
-       in show (Program ExRoot) `shouldSatisfy` hasProgram
-
   describe "countNodes counts ExFormation with non-tau bindings" $
     forM_
       [ ("Q", ExRoot, 1)

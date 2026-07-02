@@ -37,27 +37,22 @@ spec :: Spec
 spec = do
   describe "builds valid CST" $
     forM_
-      [ ("Q -> Q", PR_SWEET LCB (EX_GLOBAL Φ) RCB NO_SPACE)
+      [ ("Q", EX_GLOBAL Φ)
       ,
-        ( "{[[ x -> Q.y ]]}"
-        , PR_SWEET
-            LCB
-            ( EX_FORMATION
-                LSB
-                EOL
-                (TAB 1)
-                (BI_PAIR (PA_TAU (AT_LABEL "x") ARROW (EX_DISPATCH (EX_GLOBAL Φ) NO_SPACE (AT_LABEL "y"))) (BDS_EMPTY (TAB 1)) (TAB 1))
-                EOL
-                (TAB 0)
-                RSB
-            )
-            RCB
-            NO_SPACE
+        ( "[[ x -> Q.y ]]"
+        , EX_FORMATION
+            LSB
+            EOL
+            (TAB 1)
+            (BI_PAIR (PA_TAU (AT_LABEL "x") ARROW (EX_DISPATCH (EX_GLOBAL Φ) NO_SPACE (AT_LABEL "y"))) (BDS_EMPTY (TAB 1)) (TAB 1))
+            EOL
+            (TAB 0)
+            RSB
         )
       ]
       ( \(prog, cst) -> it prog $ do
           ast <- parseProgramThrows prog
-          programToCST ast `shouldBe` cst
+          expressionToCST ast `shouldBe` cst
       )
 
   describe "build valid CST with wrapped phinoAgain{} " $ do
@@ -88,7 +83,7 @@ spec = do
       ( \pth -> it (makeRelative resources pth) $ do
           pack <- cstPack pth
           prog <- parseProgramThrows (program pack)
-          render (withMargin defaultMargin (programToCST prog)) `shouldBe` result pack
+          render (withMargin defaultMargin (expressionToCST prog)) `shouldBe` result pack
       )
 
   describe "converts to salty CST" $ do
@@ -99,7 +94,7 @@ spec = do
       ( \pth -> it (makeRelative resources pth) $ do
           pack <- cstPack pth
           prog <- parseProgramThrows (program pack)
-          let cst = programToCST prog
+          let cst = expressionToCST prog
               salty = toSalty cst
           render salty `shouldBe` result pack
       )
@@ -112,7 +107,7 @@ spec = do
       ( \pth -> it (makeRelative resources pth) $ do
           pack <- cstPack pth
           prog <- parseProgramThrows (program pack)
-          let cst = programToCST prog
+          let cst = expressionToCST prog
               ascii = withMargin defaultMargin (withEncoding ASCII cst)
           render ascii `shouldBe` result pack
       )
@@ -125,7 +120,7 @@ spec = do
       ( \pth -> it (makeRelative resources pth) $ do
           pack <- cstPack pth
           prog <- parseProgramThrows (program pack)
-          let cst = programToCST prog
+          let cst = expressionToCST prog
               ascii = withLineFormat SINGLELINE cst
           render ascii `shouldBe` result pack
       )

@@ -7,7 +7,7 @@
 
 module RuleSpec where
 
-import AST (Argument (..), Attribute (..), Binding (..), Bytes (..), Expression (..), Function (..), Program (Program))
+import AST (Argument (..), Attribute (..), Binding (..), Bytes (..), Expression (..), Function (..))
 import Control.Monad
 import Data.Aeson
 import Data.Yaml qualified as Y
@@ -38,7 +38,7 @@ spec = do
       packs
       ( \pth -> it (makeRelative resources pth) $ do
           pack <- Y.decodeFileThrow pth :: IO ConditionPack
-          let prog = Program (expression pack)
+          let prog = expression pack
           let matched = matchProgram (pattern pack) prog
           unless (matched /= []) (expectationFailure "List of matched substitutions is empty which is not expected")
           met <- meetCondition (condition pack) matched (RuleContext buildTerm)

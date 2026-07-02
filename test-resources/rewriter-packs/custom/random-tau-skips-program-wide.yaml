@@ -6,12 +6,12 @@
 # already owns 'a🌵0' and 'a🌵1', so the freshly minted label for 'target'
 # must be 'a🌵2'.
 input: |
-  Q -> [[
+  [[
     used -> [[ a🌵0 -> ⟦⟧, a🌵1 -> ⟦⟧ ]],
     target -> [[ x -> "foo" ]]
   ]]
 output: |-
-  Q -> [[
+  [[
     used -> [[ a🌵0 -> ⟦⟧, a🌵1 -> ⟦⟧ ]],
     target -> [[ x -> "foo", a🌵2 -> ⟦⟧ ]]
   ]]

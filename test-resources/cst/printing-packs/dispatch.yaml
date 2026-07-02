@@ -3,6 +3,6 @@
 # yamllint disable rule:line-length
 ---
 program: |
-  Q -> Q.org.bar.baz
+  Q.org.bar.baz
 result: |-
-  {Φ.org.bar.baz}
+  Φ.org.bar.baz

@@ -3,6 +3,6 @@
 # yamllint disable rule:line-length
 ---
 program: |
-  Q -> Q
+  Q
 result: |-
-  {Φ}
+  Φ

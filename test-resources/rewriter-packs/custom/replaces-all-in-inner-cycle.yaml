@@ -4,13 +4,13 @@
 repeat: 3
 must: 1
 input: |
-  {[[
+  [[
     x -> "hello",
     y -> "world",
     z -> "!"
-  ]]}
+  ]]
 output: |
-  {[[ ]]}
+  [[ ]]
 rules:
   custom:
     - name: tau to void

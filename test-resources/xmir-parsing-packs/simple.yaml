@@ -8,4 +8,4 @@ xmir: |
   >
     <o name="app"/>
   </object>
-phi: '{[[ app -> [[]] ]]}'
+phi: '[[ app -> [[]] ]]'

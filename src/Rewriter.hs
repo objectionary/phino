@@ -48,7 +48,7 @@ seenMember digest expr seen = maybe False (elem expr) (Map.lookup digest seen)
 seenInsert :: Int -> Expression -> Seen -> Seen
 seenInsert digest expr = Map.insertWith (++) digest [expr]
 
-type Rewritten = (Program, Maybe String)
+type Rewritten = (Expression, Maybe String)
 
 type Rewrittens = (NonEmpty Rewritten, Bool)
 
@@ -205,13 +205,13 @@ rewrite' state (rule : rest) iteration ctx@RewriteContext{..} = do
                               _saveStep prog (((iteration - 1) * _maxDepth) + _count)
                               _rewrite (leadsTo prog, seenInsert digest expr _unique, False) (_count + 1)
       where
-        leadsTo :: Program -> NonEmpty Rewritten
+        leadsTo :: Expression -> NonEmpty Rewritten
         leadsTo _prog =
           let (program, _) :| rest = _rewrittens
            in (_prog, Nothing) :| (program, Just rule.name) : rest
 
 -- Rewrite program by provided locator from RewriteContext
-rewrite :: Program -> [Y.Rule] -> RewriteContext -> IO Rewrittens
+rewrite :: Expression -> [Y.Rule] -> RewriteContext -> IO Rewrittens
 rewrite prog rules ctx@RewriteContext{..} = do
   (rewrittens, exceeded) <- _rewrite ((prog, Nothing) :| [], Map.empty, False) 0
   pure (NE.reverse rewrittens, exceeded)

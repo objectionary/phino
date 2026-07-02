@@ -3,9 +3,9 @@
 # yamllint disable rule:line-length
 ---
 program: |
-  {[[ x -> Q.y(1, 2) ]]}
+  [[ x -> Q.y(1, 2) ]]
 result: |-
-  Φ ↦ ⟦
+  ⟦
     x ↦ Φ.y(
       α0 ↦ Φ.number(
         α0 ↦ Φ.bytes(

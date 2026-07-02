@@ -16,7 +16,7 @@ xmir: |
     </o>
   </object>
 phi: |
-  {[[
+  [[
     org -> [[
       eolang -> [[
         app -> [[
@@ -26,4 +26,4 @@ phi: |
       ]],
       L> Package
     ]]
-  ]]}
+  ]]

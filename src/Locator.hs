@@ -25,9 +25,9 @@ instance Show LocatorException where
       (printExpression fqn)
   show CanNotFindObjectByLocator{..} = printf "Can't find object by locator: '%s'" (printExpression fqn)
 
-locatedExpression :: Expression -> Program -> IO Expression
-locatedExpression ExRoot (Program expr) = pure expr
-locatedExpression locator (Program expr) = case fqnToAttrs locator of
+locatedExpression :: Expression -> Expression -> IO Expression
+locatedExpression ExRoot expr = pure expr
+locatedExpression locator expr = case fqnToAttrs locator of
   Just attrs -> locatedExpression' expr attrs
   _ -> invalidLocator locator
   where
@@ -41,10 +41,10 @@ locatedExpression locator (Program expr) = case fqnToAttrs locator of
       _ -> cantFindBy locator
     locatedExpression' _ _ = cantFindBy locator
 
-withLocatedExpression :: Expression -> Expression -> Program -> IO Program
-withLocatedExpression ExRoot tgt _ = pure (Program tgt)
-withLocatedExpression locator target (Program expr) = case fqnToAttrs locator of
-  Just attrs -> Program <$> withLocatedExpression' expr attrs
+withLocatedExpression :: Expression -> Expression -> Expression -> IO Expression
+withLocatedExpression ExRoot tgt _ = pure tgt
+withLocatedExpression locator target expr = case fqnToAttrs locator of
+  Just attrs -> withLocatedExpression' expr attrs
   _ -> invalidLocator locator
   where
     withLocatedExpression' :: Expression -> [Attribute] -> IO Expression

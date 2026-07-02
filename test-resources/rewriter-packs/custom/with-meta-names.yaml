@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 ---
 input: |-
-  {⟦
+  ⟦
     i1 ↦ ⟦
       a ↦ "foo",
       b ↦ "bar-1"
@@ -11,8 +11,8 @@ input: |-
       a ↦ "foo",
       b ↦ "bar-2"
     ⟧
-  ⟧}
-output: '{⟦⟧}'
+  ⟧
+output: '⟦⟧'
 rules:
   custom:
     - name: custom
