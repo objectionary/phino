@@ -123,15 +123,21 @@ saltifyPrimitive base bytes data' tb@TAB{..} rhos =
             next
             ( AA_TAUS
                 ( BI_PAIR
-                    ( PA_ALPHA
-                        (AL_IDX ALPHA 0)
+                    ( PA_TAU
+                        (AT_LABEL "as-bytes")
                         ARROW
                         ( EX_APPLICATION
                             bytes
                             NO_SPACE
                             EOL
                             (TAB (indent + 2))
-                            (AA_EXPRS (APP_ARG data' AAS_EMPTY))
+                            ( AA_TAUS
+                                ( BI_PAIR
+                                    (PA_TAU (AT_LABEL "data") ARROW data')
+                                    (BDS_EMPTY (TAB (indent + 2)))
+                                    (TAB (indent + 2))
+                                )
+                            )
                             EOL
                             next
                             (indent + 2)

@@ -171,11 +171,25 @@ pattern BaseObject label <- (matchBaseObject -> Just label)
     BaseObject label = ExDispatch ExRoot (AtLabel label)
 
 -- Minimal matcher function (required for view pattern)
+--
+-- The primitive→bytes binding is named 'as-bytes' and the bytes→payload
+-- binding is named 'data' (jeo-maven-plugin 0.15.3+, following phi-calculus
+-- dropping positional attributes). The legacy positional α0 form is still
+-- recognized so XMIR produced by older jeo versions keeps sugaring back.
 matchDataObject :: Expression -> Maybe (T.Text, Bytes)
-matchDataObject (ExApplication outer (ArAlpha (Alpha 0) inner)) = case (matchOuter outer, matchInner inner) of
-  (Just label, Just bts) -> Just (label, bts)
-  _ -> Nothing
+matchDataObject (ExApplication outer arg)
+  | Just inner <- asBytesArg arg = case (matchOuter outer, matchInner inner) of
+      (Just label, Just bts) -> Just (label, bts)
+      _ -> Nothing
   where
+    asBytesArg :: Argument -> Maybe Expression
+    asBytesArg (ArTau (AtLabel "as-bytes") inner) = Just inner
+    asBytesArg (ArAlpha (Alpha 0) inner) = Just inner
+    asBytesArg _ = Nothing
+    dataArg :: Argument -> Maybe Expression
+    dataArg (ArTau (AtLabel "data") formation) = Just formation
+    dataArg (ArAlpha (Alpha 0) formation) = Just formation
+    dataArg _ = Nothing
     matchOuter :: Expression -> Maybe T.Text
     matchOuter (BaseObject label) = Just label
     matchOuter (ExPhiAgain _ _ (BaseObject label)) = Just label
@@ -184,9 +198,10 @@ matchDataObject (ExApplication outer (ArAlpha (Alpha 0) inner)) = case (matchOut
     matchInner (ExPhiAgain _ _ inner') = matchInner inner'
     matchInner inner' = matchInner' inner'
     matchInner' :: Expression -> Maybe Bytes
-    matchInner' (ExApplication bytes (ArAlpha (Alpha 0) formation)) = case (matchesBytes bytes, matchFormation formation) of
-      (True, Just bts) -> Just bts
-      _ -> Nothing
+    matchInner' (ExApplication bytes arg')
+      | Just formation <- dataArg arg' = case (matchesBytes bytes, matchFormation formation) of
+          (True, Just bts) -> Just bts
+          _ -> Nothing
     matchInner' _ = Nothing
     matchesBytes :: Expression -> Bool
     matchesBytes (BaseObject "bytes") = True
@@ -210,12 +225,12 @@ pattern DataObject label bts <- (matchDataObject -> Just (label, bts))
     DataObject label bts =
       ExApplication
         (BaseObject label)
-        ( ArAlpha
-            (Alpha 0)
+        ( ArTau
+            (AtLabel "as-bytes")
             ( ExApplication
                 (BaseObject "bytes")
-                ( ArAlpha
-                    (Alpha 0)
+                ( ArTau
+                    (AtLabel "data")
                     (ExFormation [BiDelta bts, BiVoid AtRho])
                 )
             )
