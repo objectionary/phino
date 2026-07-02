@@ -19,11 +19,11 @@ SPDX-License-Identifier: MIT
 This is a command-line normalizer, rewriter, and dataizer
 of [𝜑-calculus](https://www.eolang.org) expressions.
 
-First, you write a simple [𝜑-calculus](https://www.eolang.org) program
+First, you write a simple [𝜑-calculus](https://www.eolang.org) expression
 in the `hello.phi` file:
 
 ```text
-Φ ↦ ⟦ φ ↦ ⟦ Δ ⤍ 68-65-6C-6C-6F ⟧, t ↦ ξ.k, k ↦ ⟦⟧ ⟧
+⟦ φ ↦ ⟦ Δ ⤍ 68-65-6C-6C-6F ⟧, t ↦ ξ.k, k ↦ ⟦⟧ ⟧
 ```
 
 ## Installation
@@ -93,7 +93,7 @@ phino --pin=0.0.0.67 dataize hello.phi
 
 ## Dataize
 
-Then, you dataize the program:
+Then, you dataize the expression:
 
 ```bash
 $ phino dataize hello.phi
@@ -116,7 +116,7 @@ Then, rewrite:
 
 ```bash
 $ phino rewrite --rule=my-rule.yml hello.phi
-Φ ↦ ⟦ φ ↦ ⟦ Δ ⤍ 62-79-65 ⟧, t ↦ ξ.k, k ↦ ⟦⟧ ⟧
+⟦ φ ↦ ⟦ Δ ⤍ 62-79-65 ⟧, t ↦ ξ.k, k ↦ ⟦⟧ ⟧
 ```
 
 If you want to use many rules, just use `--rule` as many times as you need:
@@ -135,8 +135,8 @@ phino rewrite --normalize hello.phi
 If no input file is provided, the 𝜑-expression is taken from `stdin`:
 
 ```bash
-$ echo 'Φ ↦ ⟦ φ ↦ ⟦ Δ ⤍ 68-65-6C-6C-6F ⟧ ⟧' | phino rewrite --rule=my-rule.yml
-Φ ↦ ⟦ φ ↦ ⟦ Δ ⤍ 62-79-65 ⟧ ⟧
+$ echo '⟦ φ ↦ ⟦ Δ ⤍ 68-65-6C-6C-6F ⟧ ⟧' | phino rewrite --rule=my-rule.yml
+⟦ φ ↦ ⟦ Δ ⤍ 62-79-65 ⟧ ⟧
 ```
 
 You're able to pass [`XMIR`][xmir] as input. Use `--input=xmir` and `phino`
@@ -152,8 +152,8 @@ syntax sugar. The `rewrite` command also allows you to desugar the expression
 and print it in canonical syntax:
 
 ```bash
-$ echo 'Q -> [[ @ -> Q.io.stdout("hello") ]]' | phino rewrite
-Φ ↦ ⟦
+$ echo '[[ @ -> Q.io.stdout("hello") ]]' | phino rewrite
+⟦
   φ ↦ Φ.io.stdout(
     α0 ↦ Φ.string(
       α0 ↦ Φ.bytes(
@@ -166,35 +166,35 @@ $ echo 'Q -> [[ @ -> Q.io.stdout("hello") ]]' | phino rewrite
 
 ## Merge
 
-You can merge several 𝜑-programs into a single one by merging their
+You can merge several 𝜑-expressions into a single one by merging their
 top level formations:
 
 ```bash
 $ cat bytes.phi
-{⟦ bytes(data) ↦ ⟦ φ ↦ data ⟧ ⟧}
+⟦ bytes(data) ↦ ⟦ φ ↦ data ⟧ ⟧
 $ cat number.phi
-{⟦
+⟦
   number(as-bytes) ↦ ⟦
     φ ↦ as-bytes,
     plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧
   ⟧
-⟧}
+⟧
 $ cat minus.phi
-{⟦ number ↦ ⟦ minus(x) ↦ ⟦ λ ⤍ L_number_minus ⟧ ⟧ ⟧}
+⟦ number ↦ ⟦ minus(x) ↦ ⟦ λ ⤍ L_number_minus ⟧ ⟧ ⟧
 $ phino merge bytes.phi number.phi minus.phi --sweet
-{⟦
+⟦
   bytes(data) ↦ ⟦ φ ↦ data ⟧,
   number(as-bytes) ↦ ⟦
     φ ↦ as-bytes,
     plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧,
     minus(x) ↦ ⟦ λ ⤍ L_number_minus ⟧
   ⟧
-⟧}
+⟧
 ```
 
 ## Match
 
-You can test the 𝜑-program matches against the [rule](#rule-structure)
+You can test the 𝜑-expression matches against the [rule](#rule-structure)
 pattern. The result output contains matched substitutions:
 
 ```bash
@@ -287,7 +287,7 @@ For more details, use `phino [COMMAND] --help` option.
 ## Rule structure
 
 This is BNF-like yaml rule structure. Here types ended with
-apostrophe, like `Attribute'` are built types from 𝜑-program [AST](src/AST.hs)
+apostrophe, like `Attribute'` are built types from 𝜑-expression [AST](src/AST.hs)
 
 ```bnfc
 Rule:
