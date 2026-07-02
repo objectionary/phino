@@ -38,8 +38,8 @@ spec = do
       packs
       ( \pth -> it (makeRelative resources pth) $ do
           pack <- Y.decodeFileThrow pth :: IO ConditionPack
-          let prog = expression pack
-          let matched = matchExpression (pattern pack) prog
+          let expr = expression pack
+          let matched = matchExpression (pattern pack) expr
           unless (matched /= []) (expectationFailure "List of matched substitutions is empty which is not expected")
           met <- meetCondition (condition pack) matched (RuleContext buildTerm)
           case failure pack of

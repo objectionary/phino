@@ -84,8 +84,8 @@ spec =
           case skip pack of
             Just True -> pending
             _ -> do
-              prog <- parseExpressionThrows (input pack)
-              seedTaus prog
+              expr <- parseExpressionThrows (input pack)
+              seedTaus expr
               rules' <- case rules pack of
                 Just _rules -> case custom _rules of
                   Just custom' -> pure custom'
@@ -104,7 +104,7 @@ spec =
                     else pure []
               (rewrittens, _) <-
                 rewrite
-                  prog
+                  expr
                   rules'
                   ( RewriteContext
                       ExRoot
@@ -116,13 +116,13 @@ spec =
                       Nothing
                       dontSaveStep
                   )
-              let (program, _) = NE.last rewrittens
+              let (rewritten, _) = NE.last rewrittens
               result' <- parseExpressionThrows (output pack)
-              unless (program == result') $
+              unless (rewritten == result') $
                 expectationFailure
-                  ( "Wrong rewritten program. Expected:\n"
+                  ( "Wrong rewritten expression. Expected:\n"
                       ++ printExpression result'
                       ++ "\nGot:\n"
-                      ++ printExpression program
+                      ++ printExpression rewritten
                   )
       )

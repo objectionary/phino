@@ -14,14 +14,13 @@ module LaTeX
   , explainDataizeRules
   , explainContextualizeRules
   , rewrittensToLatex
-  , programToLaTeX
   , expressionToLaTeX
   , defaultLatexContext
   , defaultMeetLength
   , defaultMeetPopularity
   , LatexContext (..)
-  , meetInPrograms
-  , meetInProgram
+  , meetInExpressions
+  , meetInExpression
   , conditionToLatex
   ) where
 
@@ -67,43 +66,43 @@ defaultMeetPopularity = 50
 defaultMeetLength :: Int
 defaultMeetLength = 8
 
-meetInProgram :: Expression -> Int -> Expression -> [Expression]
-meetInProgram expr len = meetInExpression expr
+meetInExpression :: Expression -> Int -> Expression -> [Expression]
+meetInExpression expr len = meetIn expr
   where
-    meetInExpression :: Expression -> Expression -> [Expression]
-    meetInExpression (DataString _) _ = []
-    meetInExpression (DataNumber _) _ = []
-    meetInExpression (ExPhiMeet{}) _ = []
-    meetInExpression (ExPhiAgain{}) _ = []
-    meetInExpression ex prog =
-      let matched = if countNodes ex >= len then map (const ex) (matchExpression ex prog) else []
+    meetIn :: Expression -> Expression -> [Expression]
+    meetIn (DataString _) _ = []
+    meetIn (DataNumber _) _ = []
+    meetIn (ExPhiMeet{}) _ = []
+    meetIn (ExPhiAgain{}) _ = []
+    meetIn ex target =
+      let matched = if countNodes ex >= len then map (const ex) (matchExpression ex target) else []
        in matched ++ case ex of
-            ExDispatch ex' _ -> meetInExpression ex' prog
-            ExApplication ex' arg -> meetInExpression ex' prog ++ meetInExpression (argExpr arg) prog
-            ExFormation bds -> meetInBindings bds prog
+            ExDispatch ex' _ -> meetIn ex' target
+            ExApplication ex' arg -> meetIn ex' target ++ meetIn (argExpr arg) target
+            ExFormation bds -> meetInBindings bds target
             _ -> []
     meetInBindings :: [Binding] -> Expression -> [Expression]
     meetInBindings [] _ = []
-    meetInBindings (BiTau _ ex : bds) prog = meetInExpression ex prog ++ meetInBindings bds prog
-    meetInBindings (_ : bds) prog = meetInBindings bds prog
+    meetInBindings (BiTau _ ex : bds) target = meetIn ex target ++ meetInBindings bds target
+    meetInBindings (_ : bds) target = meetInBindings bds target
     argExpr :: Argument -> Expression
     argExpr (ArTau _ ex) = ex
     argExpr (ArAlpha _ ex) = ex
 
-{- | Here we're trying to compress sequence of programs with \phinoMeet{} and \phinoAgain LaTeX functions.
-We process the sequence of programs and trying to find all expressions in first program which are present
-in following programs. Then we find ONE expression which is the most frequently encountered.
-If it's encountered in more than specific percentage (_meetPopularity) of following programs - we replace
-it with \phinoAgain{} in following programs and with \phinoMeet{} in first program.
+{- | Here we're trying to compress a sequence of expressions with \phinoMeet{} and \phinoAgain LaTeX functions.
+We process the sequence of expressions and trying to find all sub-expressions in the first expression which are present
+in the following expressions. Then we find ONE expression which is the most frequently encountered.
+If it's encountered in more than specific percentage (_meetPopularity) of the following expressions - we replace
+it with \phinoAgain{} in the following expressions and with \phinoMeet{} in the first expression.
 -}
-meetInPrograms :: [Expression] -> LatexContext -> [Expression]
-meetInPrograms prog LatexContext{..} = go prog 1
+meetInExpressions :: [Expression] -> LatexContext -> [Expression]
+meetInExpressions exprs LatexContext{..} = go exprs 1
   where
     go :: [Expression] -> Int -> [Expression]
     go [] _ = []
-    go [program] _ = [program]
+    go [single] _ = [single]
     go (first : rest) idx =
-      let met = map (meetInProgram first _meetLength) rest
+      let met = map (meetInExpression first _meetLength) rest
           unique = nub (concat met)
           (frequent, _) =
             foldl
@@ -121,12 +120,12 @@ meetInPrograms prog LatexContext{..} = go prog 1
               case matchExpression expr first of
                 (_ : substs) ->
                   let met' = map (filter (== expr)) met
-                      program = replaceExpression (first, [expr], [ExPhiMeet _meetPrefix idx])
-                      program' = replaceExpression (program, map (const expr) substs, map (const (ExPhiAgain _meetPrefix idx)) substs)
-                      rest' = zipWith (\prgm exprs -> replaceExpression (prgm, exprs, map (const (ExPhiAgain _meetPrefix idx)) exprs)) rest met'
+                      withMeet = replaceExpression (first, [expr], [ExPhiMeet _meetPrefix idx])
+                      withAgain = replaceExpression (withMeet, map (const expr) substs, map (const (ExPhiAgain _meetPrefix idx)) substs)
+                      rest' = zipWith (\other exprs' -> replaceExpression (other, exprs', map (const (ExPhiAgain _meetPrefix idx)) exprs')) rest met'
                       found = filter (not . null) met'
                    in if length met' > 1 && toDouble (length found) / toDouble (length met') >= popularity
-                        then program' : go rest' (idx + 1)
+                        then withAgain : go rest' (idx + 1)
                         else next
                 [] -> next
             _ -> next
@@ -166,30 +165,29 @@ ending False ctx = printf "{.}\n\\end{%s}" (phiquation ctx)
 
 compressedRewrittens :: [Rewritten] -> LatexContext -> [Rewritten]
 compressedRewrittens rewrittens ctx@LatexContext{..} =
-  let (progs, rules) = unzip rewrittens
-   in if _compress then zip (meetInPrograms progs ctx) rules else rewrittens
+  let (exprs, rules) = unzip rewrittens
+   in if _compress then zip (meetInExpressions exprs ctx) rules else rewrittens
 
 -- Compress a sequence of focused sub-expressions the way 'compressedRewrittens'
--- compresses whole programs: each expression is wrapped as a program so the
--- meet machinery factors recurring sub-expressions out across the sequence.
--- Focusing happens before this, so the meet never replaces a program root the
--- focus must still descend through.
+-- compresses whole expressions: the meet machinery factors recurring
+-- sub-expressions out across the sequence. Focusing happens before this, so the
+-- meet never replaces a root the focus must still descend through.
 compressedExpressions :: [Expression] -> LatexContext -> [Expression]
 compressedExpressions exprs ctx@LatexContext{..} =
-  if _compress then meetInPrograms exprs ctx else exprs
+  if _compress then meetInExpressions exprs ctx else exprs
 
 rewrittensToLatex :: Rewrittens' -> LatexContext -> IO String
 rewrittensToLatex (rewrittens, exceeded) ctx@LatexContext{_focus = ExRoot} =
   pure
     ( concat
         [ preamble ctx
-        , body (compressedRewrittens rewrittens ctx) (\prog -> renderToLatex (expressionToCST prog) ctx)
+        , body (compressedRewrittens rewrittens ctx) (\expr -> renderToLatex (expressionToCST expr) ctx)
         , ending exceeded ctx
         ]
     )
 rewrittensToLatex (rewrittens, exceeded) ctx@LatexContext{..} = do
-  let (progs, rules) = unzip rewrittens
-  focused <- mapM (locatedExpression _focus) progs
+  let (exprs, rules) = unzip rewrittens
+  focused <- mapM (locatedExpression _focus) exprs
   pure
     ( concat
         [ preamble ctx
@@ -197,14 +195,6 @@ rewrittensToLatex (rewrittens, exceeded) ctx@LatexContext{..} = do
         , ending exceeded ctx
         ]
     )
-
-programToLaTeX :: Expression -> LatexContext -> String
-programToLaTeX prog ctx =
-  concat
-    [ preamble ctx
-    , renderToLatex (expressionToCST prog) ctx
-    , ending False ctx
-    ]
 
 expressionToLaTeX :: Expression -> LatexContext -> String
 expressionToLaTeX ex ctx =

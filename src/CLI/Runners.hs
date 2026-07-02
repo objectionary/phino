@@ -48,23 +48,23 @@ runRewrite OptsRewrite{..} = do
   rules <- getRules _normalize _shuffle _rules
   validateBreakpoint _breakpoint rules
   input <- readInput _inputFile
-  program <- parseProgram input _inputFormat
-  seedTaus program
+  expr <- parseInput input _inputFormat
+  seedTaus expr
   logDebug (printf "Amount of rewriting cycles across all the rules: %d, per rule: %d" _maxCycles _maxDepth)
   let listing = case (rules, _inputFormat, _outputFormat) of
         ([], XMIR, XMIR) -> (\_ -> escapeXML input)
         ([], _, _) -> const input
-        (_, _, _) -> (\prog -> P.printExpression' prog (_sugarType, UNICODE, _flat, _margin))
+        (_, _, _) -> (\rewritten -> P.printExpression' rewritten (_sugarType, UNICODE, _flat, _margin))
       xmirCtx = XmirContext _omitListing _omitComments listing
-      printCtx = printProgCtx xmirCtx foc
+      printCtx = toPrintCtx xmirCtx foc
       canonize = if _canonize then C.canonize else id
       exclude = (`F.exclude` excluded)
       include = (`F.include` included)
-  (rewrittens, exceeded) <- rewrite program rules (context loc printCtx)
+  (rewrittens, exceeded) <- rewrite expr rules (context loc printCtx)
   let rewrittens' = canonize $ exclude $ include (if _sequence then NE.toList rewrittens else [NE.last rewrittens])
-  logDebug (printf "Printing rewritten 𝜑-program as %s" (show _outputFormat))
-  progs <- printRewrittens printCtx (rewrittens', exceeded)
-  output _targetFile progs
+  logDebug (printf "Printing rewritten 𝜑-expression as %s" (show _outputFormat))
+  exprs <- printRewrittens printCtx (rewrittens', exceeded)
+  output _targetFile exprs
   where
     validateOpts :: IO ()
     validateOpts = do
@@ -99,25 +99,25 @@ runRewrite OptsRewrite{..} = do
             (rule `elem` names)
             (invalidCLIArguments (printf "The rule '%s' provided in '--breakpoint' option is absent across given rewriting rules: %s" rule (intercalate ", " names)))
     output :: Maybe FilePath -> String -> IO ()
-    output target prog = case (_inPlace, target, _inputFile) of
+    output target expr = case (_inPlace, target, _inputFile) of
       (True, _, Just file) -> do
         logDebug (printf "The option '--in-place' is specified, writing back to '%s'..." file)
-        writeFile file prog
+        writeFile file expr
         logDebug (printf "The file '%s' was modified in-place" file)
       (True, _, Nothing) ->
         error "The option --in-place requires an input file"
       (False, Just file, _) -> do
         logDebug (printf "The option '--target' is specified, printing to '%s'..." file)
-        writeFile file prog
+        writeFile file expr
         logDebug (printf "The command result was saved in '%s'" file)
       (False, Nothing, _) -> do
         logDebug "The option '--target' is not specified, printing to console..."
-        putStrLn prog
-    context :: Expression -> PrintProgramContext -> RewriteContext
+        putStrLn expr
+    context :: Expression -> PrintContext -> RewriteContext
     context loc ctx = RewriteContext loc _maxDepth _maxCycles _depthSensitive buildTerm _must _breakpoint (saveStepFunc _stepsDir ctx)
-    printProgCtx :: XmirContext -> Expression -> PrintProgramContext
-    printProgCtx xmirCtx focus =
-      PrintProgCtx
+    toPrintCtx :: XmirContext -> Expression -> PrintContext
+    toPrintCtx xmirCtx focus =
+      PrintCtx
         _sugarType
         _flat
         _margin
@@ -141,13 +141,13 @@ runDataize OptsDataize{..} = do
   [loc] <- validatedDispatches "locator" [_locator]
   [foc] <- validatedDispatches "focus" [_focus]
   input <- readInput _inputFile
-  prog <- parseProgram input _inputFormat
-  seedTaus prog
-  let printCtx = printProgCtx foc
+  expr <- parseInput input _inputFormat
+  seedTaus expr
+  let printCtx = toPrintCtx foc
       canonize = if _canonize then C.canonize else id
       exclude = (`F.exclude` excluded)
       include = (`F.include` included)
-  (bytes, chain) <- dataize prog (context loc printCtx)
+  (bytes, chain) <- dataize expr (context loc printCtx)
   when _sequence (printRewrittens printCtx (canonize $ exclude $ include chain, False) >>= putStrLn)
   unless _quiet (putStrLn (P.printBytes bytes))
   where
@@ -160,11 +160,11 @@ runDataize OptsDataize{..} = do
         [(_meetPopularity, "meet-popularity"), (_meetLength, "meet-length")]
       validateXmirOptions _outputFormat [(_omitListing, "omit-listing"), (_omitComments, "omit-comments")] _focus
       when (length _show > 1) (invalidCLIArguments "The option --show can be used only once")
-    context :: Expression -> PrintProgramContext -> DataizeContext
+    context :: Expression -> PrintContext -> DataizeContext
     context loc ctx = DataizeContext loc _maxDepth _maxCycles _depthSensitive _shuffle buildTerm (saveStepFunc _stepsDir ctx)
-    printProgCtx :: Expression -> PrintProgramContext
-    printProgCtx focus =
-      PrintProgCtx
+    toPrintCtx :: Expression -> PrintContext
+    toPrintCtx focus =
+      PrintCtx
         _sugarType
         _flat
         _margin
@@ -201,21 +201,21 @@ runMerge :: OptsMerge -> IO ()
 runMerge OptsMerge{..} = do
   validateOpts
   inputs' <- traverse (readInput . Just) _inputs
-  progs <- traverse (`parseProgram` _inputFormat) inputs'
-  prog <- merge progs
-  let listing = const (P.printExpression' prog (_sugarType, UNICODE, _flat, _margin))
+  exprs <- traverse (`parseInput` _inputFormat) inputs'
+  expr <- merge exprs
+  let listing = const (P.printExpression' expr (_sugarType, UNICODE, _flat, _margin))
       xmirCtx = XmirContext _omitListing _omitComments listing
-      printCtx = printProgCtx xmirCtx
-  prog' <- printProgram printCtx prog
-  printOut _targetFile prog'
+      printCtx = toPrintCtx xmirCtx
+  expr' <- printInFormat printCtx expr
+  printOut _targetFile expr'
   where
     validateOpts :: IO ()
     validateOpts = do
       when (null _inputs) (throwIO (InvalidCLIArguments "At least one input file must be specified for 'merge' command"))
       validateXmirOptions _outputFormat [(_omitListing, "omit-listing"), (_omitComments, "omit-comments")] "Q"
-    printProgCtx :: XmirContext -> PrintProgramContext
-    printProgCtx xmirCtx =
-      PrintProgCtx
+    toPrintCtx :: XmirContext -> PrintContext
+    toPrintCtx xmirCtx =
+      PrintCtx
         _sugarType
         _flat
         _margin
@@ -234,14 +234,14 @@ runMerge OptsMerge{..} = do
 runMatch :: OptsMatch -> IO ()
 runMatch OptsMatch{..} = do
   input <- readInput _inputFile
-  prog <- parseProgram input PHI
-  seedTaus prog
+  expr <- parseInput input PHI
+  seedTaus expr
   if isNothing _pattern
     then logDebug "The --pattern is not provided, no substitutions are built"
     else do
       ptn <- parseExpressionThrows (fromJust _pattern)
       condition <- traverse parseConditionThrows _when
-      substs <- matchExpressionWithRule prog (rule ptn condition) (RuleContext buildTerm)
+      substs <- matchExpressionWithRule expr (rule ptn condition) (RuleContext buildTerm)
       if null substs
         then throwIO EmptySubstsOnMatch
         else putStrLn (P.printSubsts' substs (_sugarType, UNICODE, _flat, defaultMargin))

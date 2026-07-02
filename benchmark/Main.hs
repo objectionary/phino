@@ -87,16 +87,16 @@ main :: IO ()
 main = do
   src <- readFile "benchmark/tmp/native.phi"
   xsrc <- readFile "benchmark/tmp/Native.xmir"
-  prog <- parseExpressionThrows src
+  expr <- parseExpressionThrows src
   runBench "parse/phi" (parseExpressionThrows src)
   runBench "parse/xmir" (parseXMIRThrows xsrc >>= xmirToPhi)
-  runBench "rewrite/normalize" (rewrite prog normalizationRules rewriteCtx)
+  runBench "rewrite/normalize" (rewrite expr normalizationRules rewriteCtx)
   runBench
     "print/sweet/multiline"
-    (evaluate (length (printExpression' prog (SWEET, UNICODE, MULTILINE, defaultMargin))))
+    (evaluate (length (printExpression' expr (SWEET, UNICODE, MULTILINE, defaultMargin))))
   runBench
     "print/sweet/flat"
-    (evaluate (length (printExpression' prog (SWEET, UNICODE, SINGLELINE, defaultMargin))))
+    (evaluate (length (printExpression' expr (SWEET, UNICODE, SINGLELINE, defaultMargin))))
   runBench
     "print/salty/multiline"
-    (evaluate (length (printExpression' prog (SALTY, UNICODE, MULTILINE, defaultMargin))))
+    (evaluate (length (printExpression' expr (SALTY, UNICODE, MULTILINE, defaultMargin))))

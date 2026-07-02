@@ -4,20 +4,20 @@
 -- SPDX-License-Identifier: MIT
 
 {- | Tests for the LaTeX module that provides conversion of phi-calculus
-programs and rules to LaTeX format for academic documents.
+expressions and rules to LaTeX format for academic documents.
 -}
 module LaTeXSpec where
 
 import AST (Expression (ExMeta))
 import Control.Monad (forM_)
-import LaTeX (conditionToLatex, meetInProgram)
+import LaTeX (conditionToLatex, meetInExpression)
 import Parser (parseExpressionThrows)
 import Test.Hspec (Spec, describe, it, shouldBe)
 import Yaml qualified as Y
 
 spec :: Spec
 spec = do
-  describe "meet program in program" $
+  describe "meet expression in expression" $
     forM_
       [ ("Q.x.y", "Q.x.y", "[[ x -> Q.x.y ]]", ["Q.x.y"])
       , ("Q.x.y twice", "Q.x.y", "[[ x -> Q.x.y, y -> Q.x.y.z ]]", ["Q.x.y", "Q.x.y"])
@@ -30,7 +30,7 @@ spec = do
           ptn <- parseExpressionThrows first
           tgt <- parseExpressionThrows second
           res <- traverse parseExpressionThrows exprs
-          meetInProgram ptn 4 tgt `shouldBe` res
+          meetInExpression ptn 4 tgt `shouldBe` res
       )
 
   describe "renders the 'formation' condition" $

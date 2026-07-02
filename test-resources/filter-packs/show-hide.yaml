@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 ---
 # yamllint disable rule:line-length
-program: '[[ org -> [[ eolang -> [[ number -> [[ ]], bytes -> [[ ]], string -> [[ ]] ]] ]], xyz -> [[ ]] ]]'
+expression: '[[ org -> [[ eolang -> [[ number -> [[ ]], bytes -> [[ ]], string -> [[ ]] ]] ]], xyz -> [[ ]] ]]'
 shown: ['Q.org.eolang']
 hidden: ['Q.org.eolang.bytes', 'Q.org.eolang.string']
 result: '[[ org -> [[ eolang -> [[ number -> [[ ]] ]] ]] ]]'

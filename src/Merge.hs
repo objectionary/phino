@@ -13,21 +13,21 @@ import Printer (printExpression)
 import Text.Printf (printf)
 
 data MergeException
-  = WrongProgramFormat Expression
+  = WrongExpressionFormat Expression
   | CanNotMergeBinding Binding Binding
-  | EmptyProgramList
+  | EmptyExpressionList
   deriving (Exception)
 
 instance Show MergeException where
-  show (WrongProgramFormat prog) =
+  show (WrongExpressionFormat expr) =
     printf
-      "Invalid program format, only programs with top level formations are supported for 'merge' command, given:\n%s"
-      (printExpression prog)
+      "Invalid expression format, only expressions with top level formations are supported for 'merge' command, given:\n%s"
+      (printExpression expr)
   show (CanNotMergeBinding first second) =
     printf
       "Can't merge two bindings, conflict found:\n%s"
       (printExpression (ExFormation [first, second]))
-  show EmptyProgramList = "Nothing to merge: provide at least one program"
+  show EmptyExpressionList = "Nothing to merge: provide at least one expression"
 
 mergeBinding :: Binding -> Binding -> IO Binding
 mergeBinding first@(BiTau a (ExFormation xs)) second@(BiTau b (ExFormation ys))
@@ -48,13 +48,13 @@ mergeBindings xs ys = do
   pure (xs' <> ys' <> ws)
 
 merge' :: [Expression] -> IO Expression
-merge' [] = throwIO EmptyProgramList
+merge' [] = throwIO EmptyExpressionList
 merge' [p@(ExFormation _)] = pure p
 merge' (ExFormation bindings : rest) = do
   ExFormation bds' <- merge' rest
   merged <- mergeBindings bds' bindings
   pure (ExFormation merged)
-merge' (prog : _) = throwIO (WrongProgramFormat prog)
+merge' (expr : _) = throwIO (WrongExpressionFormat expr)
 
 merge :: [Expression] -> IO Expression
-merge progs = merge' (reverse progs)
+merge exprs = merge' (reverse exprs)

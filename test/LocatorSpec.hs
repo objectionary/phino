@@ -17,11 +17,11 @@ spec = do
       , ("[[ x -> ?, y -> [[ z -> ?, w -> [[ a -> $.x ]] ]], z -> ? ]]", "Q.y.w.a", "$.x")
       , ("[[ x -> ?, y -> ? ]]", "Q", "[[ x -> ?, y -> ? ]]")
       ]
-      ( \(prog, locator, res) -> it (intercalate " => " [prog, locator, res]) $ do
-          prog' <- parseExpressionThrows prog
+      ( \(expr, locator, res) -> it (intercalate " => " [expr, locator, res]) $ do
+          expr' <- parseExpressionThrows expr
           locator' <- parseExpressionThrows locator
           res' <- parseExpressionThrows res
-          located <- locatedExpression locator' prog'
+          located <- locatedExpression locator' expr'
           located `shouldBe` res'
       )
 
@@ -31,11 +31,11 @@ spec = do
       , ("[[ x -> ?, y -> [[ x -> ?, y -> [[ ]] ]] ]]", "Q.y.y", "Q.x.y", "[[ x -> ?, y -> [[ x -> ?, y -> Q.x.y ]] ]]")
       , ("[[ x -> [[ y -> [[ z -> [[ w -> ? ]] ]] ]] ]]", "Q.x.y", "$.a(x -> [[]])", "[[ x -> [[ y -> $.a(x -> [[]]) ]] ]]")
       ]
-      ( \(prog, locator, expr, res) -> it (intercalate " => " [prog, locator, expr, res]) $ do
-          prog' <- parseExpressionThrows prog
+      ( \(input, locator, expr, res) -> it (intercalate " => " [input, locator, expr, res]) $ do
+          input' <- parseExpressionThrows input
           locator' <- parseExpressionThrows locator
           expr' <- parseExpressionThrows expr
           res' <- parseExpressionThrows res
-          loc <- withLocatedExpression locator' expr' prog'
+          loc <- withLocatedExpression locator' expr' input'
           loc `shouldBe` res'
       )

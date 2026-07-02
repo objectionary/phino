@@ -25,7 +25,7 @@ import System.FilePath
 import Test.Hspec
 
 data CSTPack = CSTPack
-  { program :: String
+  { expression :: String
   , result :: T.Text
   }
   deriving (Generic, Show, FromJSON)
@@ -50,8 +50,8 @@ spec = do
             RSB
         )
       ]
-      ( \(prog, cst) -> it prog $ do
-          ast <- parseExpressionThrows prog
+      ( \(desc, cst) -> it desc $ do
+          ast <- parseExpressionThrows desc
           expressionToCST ast `shouldBe` cst
       )
 
@@ -82,8 +82,8 @@ spec = do
       packs
       ( \pth -> it (makeRelative resources pth) $ do
           pack <- cstPack pth
-          prog <- parseExpressionThrows (program pack)
-          render (withMargin defaultMargin (expressionToCST prog)) `shouldBe` result pack
+          parsed <- parseExpressionThrows (expression pack)
+          render (withMargin defaultMargin (expressionToCST parsed)) `shouldBe` result pack
       )
 
   describe "converts to salty CST" $ do
@@ -93,8 +93,8 @@ spec = do
       packs
       ( \pth -> it (makeRelative resources pth) $ do
           pack <- cstPack pth
-          prog <- parseExpressionThrows (program pack)
-          let cst = expressionToCST prog
+          parsed <- parseExpressionThrows (expression pack)
+          let cst = expressionToCST parsed
               salty = toSalty cst
           render salty `shouldBe` result pack
       )
@@ -106,8 +106,8 @@ spec = do
       packs
       ( \pth -> it (makeRelative resources pth) $ do
           pack <- cstPack pth
-          prog <- parseExpressionThrows (program pack)
-          let cst = expressionToCST prog
+          parsed <- parseExpressionThrows (expression pack)
+          let cst = expressionToCST parsed
               ascii = withMargin defaultMargin (withEncoding ASCII cst)
           render ascii `shouldBe` result pack
       )
@@ -119,8 +119,8 @@ spec = do
       packs
       ( \pth -> it (makeRelative resources pth) $ do
           pack <- cstPack pth
-          prog <- parseExpressionThrows (program pack)
-          let cst = expressionToCST prog
+          parsed <- parseExpressionThrows (expression pack)
+          let cst = expressionToCST parsed
               ascii = withLineFormat SINGLELINE cst
           render ascii `shouldBe` result pack
       )

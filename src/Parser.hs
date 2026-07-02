@@ -4,7 +4,7 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
--- The goal of the module is to parse given phi program to AST
+-- The goal of the module is to parse given phi expression to AST
 module Parser
   ( parseExpression
   , parseExpressionThrows

@@ -4,7 +4,7 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
--- The goal of the module is to traverse though the Program with replacing
+-- The goal of the module is to traverse through the expression with replacing
 -- pattern sub expression with target expressions
 module Replacer
   ( replaceExpression

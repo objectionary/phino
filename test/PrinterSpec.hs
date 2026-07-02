@@ -85,8 +85,8 @@ spec = do
       [ ("empty formation", ExFormation [BiVoid AtRho], "⟦⟧")
       , ("dispatch", ExDispatch ExRoot (AtLabel "org"), "Φ.org")
       ]
-      ( \(desc, prog, expected) ->
-          it desc (printExpression prog `shouldBe` expected)
+      ( \(desc, expr, expected) ->
+          it desc (printExpression expr `shouldBe` expected)
       )
 
   describe "printExpression in salty does not inject a duplicate void rho when rho is already present" $
@@ -107,8 +107,8 @@ spec = do
         , "⟦ café ↦ Φ, ρ ↦ ⟦ ρ ↦ ∅ ⟧ ⟧"
         )
       ]
-      ( \(desc, prog, expected) ->
-          it desc (printExpression' prog (SALTY, UNICODE, SINGLELINE, defaultMargin) `shouldBe` expected)
+      ( \(desc, expr, expected) ->
+          it desc (printExpression' expr (SALTY, UNICODE, SINGLELINE, defaultMargin) `shouldBe` expected)
       )
 
   describe "printAttribute with default encoding" $

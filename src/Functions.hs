@@ -26,7 +26,7 @@ import Text.Printf (printf)
 import qualified Yaml as Y
 
 -- Names of build-term functions that need the full evaluation context
--- (program plus atom evaluation) and are therefore provided only by
+-- (expression plus atom evaluation) and are therefore provided only by
 -- 'Dataize.execBuildTerm', not by 'buildTerm'. They are available while
 -- executing dataization and morphing rules, but not rewriting rules.
 execFunctions :: [String]

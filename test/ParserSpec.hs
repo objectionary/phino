@@ -28,7 +28,7 @@ test function useCases =
 
 spec :: Spec
 spec = do
-  describe "parse program" $
+  describe "parse expression" $
     test
       parseExpression
       [ ("[[]]", Just (ExFormation [BiVoid AtRho]))
@@ -382,10 +382,10 @@ spec = do
       ]
 
   describe "parseExpressionThrows" $ do
-    it "returns program on valid input" $
+    it "returns expression on valid input" $
       parseExpressionThrows "T" `shouldReturn` ExTermination
     it "throws on invalid input" $
-      parseExpressionThrows "invalid program ]][[" `shouldThrow` anyException
+      parseExpressionThrows "invalid expression ]][[" `shouldThrow` anyException
 
   describe "parseExpressionThrows" $ do
     it "returns expression on valid input" $

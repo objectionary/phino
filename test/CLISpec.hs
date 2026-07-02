@@ -334,7 +334,7 @@ spec = do
     it "prints help" $
       testCLISucceeded
         ["rewrite", "--help"]
-        ["Rewrite the 𝜑-program"]
+        ["Rewrite the 𝜑-expression"]
 
     it "saves steps to dir with --steps-dir" $ do
       let dir = "test-steps-temp"
@@ -509,7 +509,7 @@ spec = do
           ["rewrite", rule "simple.yaml", "--must=1", "--sweet"]
           ["x ↦ \"bar\""]
 
-    it "prints many programs with --sequence" $
+    it "prints many expressions with --sequence" $
       withStdin "[[ x -> \"foo\" ]]" $
         testCLISucceeded
           [ "rewrite"
@@ -681,7 +681,7 @@ spec = do
           ["rewrite", "--output=xmir", "--omit-comments", "--sweet", "--flat"]
           ["  <listing>[[ app -> [[]] ]]</listing>"]
 
-    it "print program in listing in XMIRs with --sequence" $
+    it "print expression in listing in XMIRs with --sequence" $
       withStdin "[[ x -> \"foo\" ]]" $
         testCLISucceeded
           ["rewrite", "--output=xmir", "--omit-comments", "--sweet", "--flat", "--sequence", rule "simple.yaml"]
@@ -838,7 +838,7 @@ spec = do
               ]
           ]
 
-    it "canonizes program" $
+    it "canonizes expression" $
       withStdin "[[ x -> [[ y -> [[ L> Func ]].q, z -> Q.x(a -> [[ w -> [[ L> Atom ]], L> Hello ]]) ]], L> Package ]]" $
         testCLISucceeded
           ["rewrite", "--canonize", "--sweet", "--flat"]
@@ -850,7 +850,7 @@ spec = do
           ["rewrite", "--sweet", "--flat", "--locator=Q.ex", "--normalize"]
           ["⟦ ex ↦ ⟦ x ↦ 5 ⟧, abc ↦ ⟦ x ↦ ∅ ⟧( x ↦ 5 ) ⟧"]
 
-    it "returns original program on --breakpoint" $
+    it "returns original expression on --breakpoint" $
       withStdin "[[ x -> ?, y -> $.x ]](x -> [[ D> 42- ]]).y" $
         testCLISucceeded
           ["rewrite", "--sweet", "--flat", "--normalize", "--breakpoint=stop", "--log-level=debug"]
@@ -861,9 +861,9 @@ spec = do
 
   describe "dataize" $ do
     it "prints help" $
-      testCLISucceeded ["dataize", "--help"] ["Dataize the 𝜑-program"]
+      testCLISucceeded ["dataize", "--help"] ["Dataize the 𝜑-expression"]
 
-    it "dataizes simple program" $
+    it "dataizes simple expression" $
       withStdin "[[ D> 01- ]]" $
         testCLISucceeded ["dataize"] ["01-"]
 
@@ -1232,12 +1232,12 @@ spec = do
         )
 
   describe "merge" $ do
-    it "merges single program" $
+    it "merges single expression" $
       testCLISucceeded
         ["merge", resource "desugar.phi", "--sweet", "--flat"]
         ["⟦ foo ↦ x ⟧"]
 
-    it "merges EO programs" $
+    it "merges EO expressions" $
       testCLISucceeded
         ["merge", "--sweet", resource "number.phi", resource "bytes.phi", resource "string.phi", "--margin=25"]
         [ unlines
@@ -1258,14 +1258,14 @@ spec = do
     it "fails on merging non formations" $
       testCLIFailed
         ["merge", resource "dispatch.phi", resource "number.phi"]
-        ["Invalid program format, only programs with top level formations are supported for 'merge' command"]
+        ["Invalid expression format, only expressions with top level formations are supported for 'merge' command"]
 
     it "fails on merging conflicted bindings" $
       testCLIFailed
         ["merge", resource "foo.phi", resource "desugar.phi"]
         ["Can't merge two bindings, conflict found"]
 
-    it "fails on merging empty list of programs" $
+    it "fails on merging empty list of expressions" $
       testCLIFailed
         ["merge"]
         ["At least one input file must be specified for 'merge' command"]

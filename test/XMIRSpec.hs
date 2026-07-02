@@ -230,8 +230,8 @@ spec = do
           it (makeRelative resources pth) $ do
             pack <- printPack pth
             let PrintPack{phi = phi', xpaths = xpaths'} = pack
-            prog <- parseExpressionThrows phi'
-            xmir' <- expressionToXMIR prog defaultXmirContext
+            expr <- parseExpressionThrows phi'
+            xmir' <- expressionToXMIR expr defaultXmirContext
             let failed = filter (not . matches xmir') xpaths'
             unless
               (null failed)

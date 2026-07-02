@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 # yamllint disable rule:line-length
 ---
-program: |
+expression: |
   Q.org.bar.baz
 result: |-
   Φ.org.bar.baz

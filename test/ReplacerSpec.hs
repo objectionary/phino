@@ -12,12 +12,12 @@ import Test.Hspec (Example (Arg), Expectation, Spec, SpecWith, describe, it, sho
 
 test :: ReplaceExpressionFunc -> [(String, Expression, [Expression], [Expression], Expression)] -> SpecWith (Arg Expectation)
 test function useCases =
-  forM_ useCases $ \(desc, prog, ptns, repls, res) ->
-    it desc $ function (prog, ptns, map const repls) `shouldBe` res
+  forM_ useCases $ \(desc, expr, ptns, repls, res) ->
+    it desc $ function (expr, ptns, map const repls) `shouldBe` res
 
 spec :: Spec
 spec = do
-  describe "replace program: Program => ([Expression], [Expression]) => Program" $
+  describe "replace expression: ([Expression], [Expression]) => Expression" $
     test
       replaceExpression
       [
@@ -171,7 +171,7 @@ spec = do
         )
       ]
 
-  describe "replace program fast: Program => ([Expression], [Expression]) => Program" $
+  describe "replace expression fast: ([Expression], [Expression]) => Expression" $
     test
       (replaceExpressionFast (ReplaceCtx 3))
       [
@@ -260,7 +260,7 @@ spec = do
         )
       ]
 
-  describe "replace program fast with depth 0" $
+  describe "replace expression fast with depth 0" $
     test
       (replaceExpressionFast (ReplaceCtx 0))
       [
@@ -272,7 +272,7 @@ spec = do
         )
       ]
 
-  describe "replace program fast with depth 1" $
+  describe "replace expression fast with depth 1" $
     test
       (replaceExpressionFast (ReplaceCtx 1))
       [

@@ -19,7 +19,7 @@ SPDX-License-Identifier: MIT
 This is a command-line normalizer, rewriter, and dataizer
 of [𝜑-calculus](https://www.eolang.org) expressions.
 
-First, you write a simple [𝜑-calculus](https://www.eolang.org) program
+First, you write a simple [𝜑-calculus](https://www.eolang.org) expression
 in the `hello.phi` file:
 
 ```text
@@ -93,7 +93,7 @@ phino --pin=0.0.0.67 dataize hello.phi
 
 ## Dataize
 
-Then, you dataize the program:
+Then, you dataize the expression:
 
 ```bash
 $ phino dataize hello.phi
@@ -166,7 +166,7 @@ $ echo '[[ @ -> Q.io.stdout("hello") ]]' | phino rewrite
 
 ## Merge
 
-You can merge several 𝜑-programs into a single one by merging their
+You can merge several 𝜑-expressions into a single one by merging their
 top level formations:
 
 ```bash
@@ -194,7 +194,7 @@ $ phino merge bytes.phi number.phi minus.phi --sweet
 
 ## Match
 
-You can test the 𝜑-program matches against the [rule](#rule-structure)
+You can test the 𝜑-expression matches against the [rule](#rule-structure)
 pattern. The result output contains matched substitutions:
 
 ```bash
@@ -287,7 +287,7 @@ For more details, use `phino [COMMAND] --help` option.
 ## Rule structure
 
 This is BNF-like yaml rule structure. Here types ended with
-apostrophe, like `Attribute'` are built types from 𝜑-program [AST](src/AST.hs)
+apostrophe, like `Attribute'` are built types from 𝜑-expression [AST](src/AST.hs)
 
 ```bnfc
 Rule:

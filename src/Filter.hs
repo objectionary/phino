@@ -8,10 +8,10 @@ import Misc
 import Rewriter
 
 exclude' :: Expression -> [Expression] -> Expression
-exclude' prog [] = prog
-exclude' prog@(ExFormation _) (fqn : remaining) = case fqnToAttrs fqn of
-  Just fqn' -> exclude' (excludedFormation prog fqn') remaining
-  _ -> prog
+exclude' expr [] = expr
+exclude' expr@(ExFormation _) (fqn : remaining) = case fqnToAttrs fqn of
+  Just fqn' -> exclude' (excludedFormation expr fqn') remaining
+  _ -> expr
   where
     excludedFormation :: Expression -> [Attribute] -> Expression
     excludedFormation (ExFormation bindings) [at] = ExFormation [bd | bd <- bindings, attributeFromBinding bd /= Just at]
@@ -24,12 +24,12 @@ exclude' prog@(ExFormation _) (fqn : remaining) = case fqnToAttrs fqn of
           | otherwise = bd : excludedBindings bs as
         excludedBindings (bd : bs) as = bd : excludedBindings bs as
     excludedFormation e _ = e
-exclude' prog _ = prog
+exclude' expr _ = expr
 
 exclude :: [Rewritten] -> [Expression] -> [Rewritten]
 exclude [] _ = []
 exclude rs [] = rs
-exclude ((program, maybeRule) : rest) exprs = (exclude' program exprs, maybeRule) : exclude rest exprs
+exclude ((expr, maybeRule) : rest) exprs = (exclude' expr exprs, maybeRule) : exclude rest exprs
 
 include' :: Expression -> Expression -> Expression
 include' ex@(ExFormation _) fqn =
@@ -57,4 +57,4 @@ include' _ _ = ExFormation [BiVoid AtRho]
 include :: [Rewritten] -> [Expression] -> [Rewritten]
 include [] _ = []
 include rs [] = rs
-include ((program, maybeRule) : rest) (expr : _) = (include' program expr, maybeRule) : include rest [expr]
+include ((expr, maybeRule) : rest) (fqn : _) = (include' expr fqn, maybeRule) : include rest [fqn]

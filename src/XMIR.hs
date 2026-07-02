@@ -52,7 +52,7 @@ defaultXmirContext :: XmirContext
 defaultXmirContext = XmirContext True True (const "")
 
 data XMIRException
-  = UnsupportedProgram Expression
+  = UnsupportedTopExpression Expression
   | UnsupportedExpression Expression
   | UnsupportedBinding Binding
   | CouldNotParseXMIR String
@@ -60,7 +60,7 @@ data XMIRException
   deriving (Exception)
 
 instance Show XMIRException where
-  show (UnsupportedProgram prog) = printf "XMIR does not support such program:\n%s" (printExpression prog)
+  show (UnsupportedTopExpression expr) = printf "XMIR does not support such top-level expression:\n%s" (printExpression expr)
   show (UnsupportedExpression expr) = printf "XMIR does not support such expression:\n%s" (printExpression expr)
   show (UnsupportedBinding bd) = printf "XMIR does not support such bindings: %s" (printBinding bd)
   show (CouldNotParseXMIR msg) = printf "Couldn't parse given XMIR, cause: %s" msg
@@ -164,19 +164,19 @@ nestedBindings :: [Binding] -> XmirContext -> IO [Node]
 nestedBindings bds ctx = catMaybes <$> mapM (`formationBinding` ctx) bds
 
 expressionToXMIR :: Expression -> XmirContext -> IO Document
-expressionToXMIR prog@(ExFormation [BiTau (AtLabel _) arg, BiVoid AtRho]) ctx@XmirContext{..} = case arg of
+expressionToXMIR expr@(ExFormation [BiTau (AtLabel _) arg, BiVoid AtRho]) ctx@XmirContext{..} = case arg of
   ExFormation _ -> expressionToXMIR'
   ExApplication _ _ -> expressionToXMIR'
   ExDispatch _ _ -> expressionToXMIR'
   ExRoot -> expressionToXMIR'
-  _ -> throwIO (UnsupportedProgram prog)
+  _ -> throwIO (UnsupportedTopExpression expr)
   where
     expressionToXMIR' :: IO Document
     expressionToXMIR' = do
-      (pckg, expr') <- getPackage prog
+      (pckg, expr') <- getPackage expr
       root <- rootExpression expr' ctx
       now <- getCurrentTime
-      let text = _listing prog
+      let text = _listing expr
           listing =
             if _omitListing
               then show (length (lines text)) ++ " line(s)"
@@ -256,7 +256,7 @@ expressionToXMIR prog@(ExFormation [BiTau (AtLabel _) arg, BiVoid AtRho]) ctx@Xm
           fractional = realToFrac posix - fromInteger (floor posix)
           nanos = floor (fractional * 1_000_000_000) :: Int
        in base ++ "." ++ printf "%09d" nanos ++ "Z"
-expressionToXMIR prog _ = throwIO (UnsupportedProgram prog)
+expressionToXMIR expr _ = throwIO (UnsupportedTopExpression expr)
 
 escapeXML :: String -> String
 escapeXML = concatMap escapeChar

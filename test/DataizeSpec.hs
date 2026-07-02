@@ -32,25 +32,23 @@ test :: (Eq a, Show a) => ((Expression, NonEmpty Rewritten) -> Expression -> Str
 test func useCases =
   forM_ useCases $ \(desc, input, expr, output) ->
     it desc $ do
-      let prog = expr
-      ((res, _), _) <- func (input, (prog, Nothing) :| []) expr emptyState (defaultDataizeContext ExRoot)
+      ((res, _), _) <- func (input, (expr, Nothing) :| []) expr emptyState (defaultDataizeContext ExRoot)
       res `shouldBe` output
 
 test' :: (Eq a, Show a) => ((Expression, NonEmpty Rewritten) -> Expression -> String -> DataizeContext -> IO ((a, NonEmpty Rewritten), String)) -> [(String, Expression, Expression, a)] -> Spec
 test' func useCases =
   forM_ useCases $ \(desc, input, expr, output) ->
     it desc $ do
-      let prog = expr
-      ((res, _), _) <- func (input, (prog, Nothing) :| []) expr emptyState (defaultDataizeContext ExRoot)
+      ((res, _), _) <- func (input, (expr, Nothing) :| []) expr emptyState (defaultDataizeContext ExRoot)
       res `shouldBe` output
 
 testDataize :: [(String, String, String, Bytes)] -> Spec
 testDataize useCases =
-  forM_ useCases $ \(name, loc, prog, res) ->
+  forM_ useCases $ \(name, loc, src, res) ->
     it name $ do
-      prog' <- parseExpressionThrows prog
+      expr <- parseExpressionThrows src
       loc' <- parseExpressionThrows loc
-      (value, _) <- dataize prog' (defaultDataizeContext loc')
+      (value, _) <- dataize expr (defaultDataizeContext loc')
       value `shouldBe` res
 
 spec :: Spec
@@ -103,8 +101,7 @@ spec = do
           ]
     forM_ cases $ \(desc, input, univ, expected) ->
       it ("morphs " ++ desc ++ " to the same form across 100 random rule orders") $ do
-        let prog = univ
-        results <- replicateM 100 (fst . fst <$> morph (input, (prog, Nothing) :| []) univ emptyState (defaultDataizeContext ExRoot))
+        results <- replicateM 100 (fst . fst <$> morph (input, (univ, Nothing) :| []) univ emptyState (defaultDataizeContext ExRoot))
         nub results `shouldBe` [expected]
 
   -- 'md' fires only when its head is not a formation ('not (formation 𝑛)'),
@@ -202,9 +199,8 @@ spec = do
   describe "fails to dataize the terminator" $ do
     let failsOn desc input =
           it desc $
-            let prog = ExRoot
-             in dataize' (input, (prog, Nothing) :| []) ExRoot emptyState (defaultDataizeContext ExRoot)
-                  `shouldThrow` (\e -> "terminator" `isInfixOf` show (e :: SomeException))
+            dataize' (input, (ExRoot, Nothing) :| []) ExRoot emptyState (defaultDataizeContext ExRoot)
+              `shouldThrow` (\e -> "terminator" `isInfixOf` show (e :: SomeException))
     failsOn "throws on ⊥ instead of mapping it to empty bytes" ExTermination
     failsOn "throws on a data-less formation, which dataizes ⊥" (ExFormation [])
     -- A void slot fed a non-absolute argument morphs to ⊥ via 'mad' (#959) and
@@ -229,7 +225,7 @@ spec = do
             ++ concatMap (map (verb . (.operation)) . (.premises)) Yaml.morphingRules
             ++ concatMap (map (verb . (.operation)) . (.premises)) Yaml.dataizationRules
     it "uses no step label without a defining rule or operation" $ do
-      prog <-
+      expr <-
         parseExpressionThrows
           ( unlines
               [ "[["
@@ -240,7 +236,7 @@ spec = do
               ]
           )
       loc <- parseExpressionThrows "Q"
-      (_, chain) <- dataize prog (defaultDataizeContext loc)
+      (_, chain) <- dataize expr (defaultDataizeContext loc)
       let orphans = nub [label | (_, Just label) <- chain, label `notElem` allowed]
       unless
         (null orphans)
@@ -258,9 +254,9 @@ spec = do
 
   describe "preserves the reduction label sequence" $ do
     let labelsOf loc src = do
-          prog <- parseExpressionThrows src
+          expr <- parseExpressionThrows src
           loc' <- parseExpressionThrows loc
-          (_, chain) <- dataize prog (defaultDataizeContext loc')
+          (_, chain) <- dataize expr (defaultDataizeContext loc')
           pure [label | (_, Just label) <- chain]
     it "dataizes 5.plus(6) through the expected rules" $ do
       labels <-
@@ -294,9 +290,9 @@ spec = do
     -- that there is no 'end' rule, so an empty formation reduces through one
     -- labelled 'dataize' step and then fails: it has nothing to dataize (#955).
     it "fails to dataize an empty formation, which dataizes ⊥" $ do
-      prog <- parseExpressionThrows "[[ ]]"
+      expr <- parseExpressionThrows "[[ ]]"
       loc <- parseExpressionThrows "Q"
-      dataize prog (defaultDataizeContext loc)
+      dataize expr (defaultDataizeContext loc)
         `shouldThrow` (\e -> "terminator" `isInfixOf` show (e :: SomeException))
 
   testDataize

@@ -7,7 +7,7 @@
 -- SPDX-License-Identifier: MIT
 
 {- | Tests for the Filter module that provides include and exclude
-functions for filtering phi-calculus programs by FQN expressions.
+functions for filtering phi-calculus expressions by FQN expressions.
 -}
 module FilterSpec where
 
@@ -27,7 +27,7 @@ import System.FilePath
 import Test.Hspec
 
 data YamlPack = YamlPack
-  { program :: String
+  { expression :: String
   , shown :: [String]
   , hidden :: [String]
   , result :: String
@@ -45,20 +45,20 @@ spec = describe "filter packs" $ do
     packs
     ( \pth -> it (makeRelative resources pth) $ do
         YamlPack{..} <- yamlPack pth
-        prog <- parseExpressionThrows program
+        expr <- parseExpressionThrows expression
         included <- traverse parseExpressionThrows shown
         excluded <- traverse parseExpressionThrows hidden
         res <- parseExpressionThrows result
-        let [(prog', _)] = F.exclude (F.include [(prog, Nothing)] included) excluded
+        let [(expr', _)] = F.exclude (F.include [(expr, Nothing)] included) excluded
             cfg = (SALTY, UNICODE, MULTILINE, defaultMargin)
-        prog' `shouldBe` res
+        expr' `shouldBe` res
         when
-          (prog' /= res)
+          (expr' /= res)
           ( expectationFailure
               ( "Expected:\n"
                   ++ printExpression' res cfg
                   ++ "\nbut got:\n"
-                  ++ printExpression' prog' cfg
+                  ++ printExpression' expr' cfg
               )
           )
     )

@@ -7,7 +7,7 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
--- This module represents AST tree for parsed phi-calculus program
+-- This module represents AST tree for parsed phi-calculus expression
 module AST where
 
 import Data.Bits (xor)

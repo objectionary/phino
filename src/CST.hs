@@ -7,7 +7,7 @@
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
--- This module represents concrete syntax tree for phi-calculus program
+-- This module represents concrete syntax tree for phi-calculus expression
 module CST where
 
 import AST

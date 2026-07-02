@@ -45,10 +45,10 @@ type SaveStepFunc = Expression -> Int -> IO ()
 
 saveStep :: Maybe FilePath -> String -> (Expression -> IO String) -> SaveStepFunc
 saveStep Nothing _ _ _ _ = pure ()
-saveStep (Just dir) ext render prog step = do
+saveStep (Just dir) ext render expr step = do
   createDirectoryIfMissing True dir
   let path = dir </> printf "%05d.%s" step ext
-  content <- render prog
+  content <- render expr
   writeFile path content
   logDebug (printf "Saved step '%d' to '%s'" step path)
 

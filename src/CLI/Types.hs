@@ -15,7 +15,7 @@ import Sugar (SugarType)
 import Text.Printf (printf)
 import XMIR (XmirContext)
 
-data PrintProgramContext = PrintProgCtx
+data PrintContext = PrintCtx
   { _sugar :: SugarType
   , _line :: LineFormat
   , _margin :: Int
@@ -44,8 +44,8 @@ data CmdException
 instance Show CmdException where
   show (InvalidCLIArguments msg) = printf "Invalid set of arguments: %s" msg
   show (CouldNotReadFromStdin msg) = printf "Could not read input from stdin\nReason: %s" msg
-  show CouldNotDataize = "Could not dataize given program"
-  show CouldNotPrintExpressionInXMIR = "Could not print expression with --output=xmir, only program printing is allowed"
+  show CouldNotDataize = "Could not dataize given expression"
+  show CouldNotPrintExpressionInXMIR = "Could not print expression with --output=xmir, only expression printing is allowed"
   show EmptySubstsOnMatch = "Provided pattern was not matched, no substitutions are built"
   show (VersionMismatch expected actual) =
     printf "Version mismatch: --pin requires '%s', but this is phino %s" expected actual

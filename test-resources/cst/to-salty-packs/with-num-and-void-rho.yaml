@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 # yamllint disable rule:line-length
 ---
-program: |
+expression: |
   [[ x -> 1, z -> [[ ]] ]]
 result: |-
   ⟦
