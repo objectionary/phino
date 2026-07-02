@@ -7,12 +7,9 @@
 -- The goal of the module is to traverse though the Program with replacing
 -- pattern sub expression with target expressions
 module Replacer
-  ( replaceProgram
-  , replaceProgramFast
-  , replaceExpression
+  ( replaceExpression
   , replaceExpressionFast
   , ReplaceContext (..)
-  , ReplaceProgramFunc
   , ReplaceExpressionFunc
   )
 where
@@ -23,8 +20,6 @@ import Data.List (isPrefixOf)
 type ReplaceState a = (a, [Expression], [Expression -> Expression])
 
 type ReplaceExpressionFunc' = ReplaceState Expression -> ReplaceContext -> ReplaceState Expression
-
-type ReplaceProgramFunc = ReplaceState Expression -> Expression
 
 type ReplaceExpressionFunc = ReplaceState Expression -> Expression
 
@@ -113,9 +108,3 @@ replaceExpressionFast :: ReplaceContext -> ReplaceExpressionFunc
 replaceExpressionFast ctx state =
   let (expr, _, _) = replaceExpressionFast' state ctx
    in expr
-
-replaceProgram :: ReplaceProgramFunc
-replaceProgram = replaceExpression
-
-replaceProgramFast :: ReplaceContext -> ReplaceProgramFunc
-replaceProgramFast = replaceExpressionFast

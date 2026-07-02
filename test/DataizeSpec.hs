@@ -16,7 +16,7 @@ import Dataize (DataizeContext (DataizeContext), dataize, dataize', emptyState, 
 import Deps (dontSaveStep)
 import Functions (buildTerm)
 import Matcher (substEmpty)
-import Parser (parseExpressionThrows, parseProgramThrows)
+import Parser (parseExpressionThrows)
 import Rewriter (Rewritten)
 import Rule (RuleContext (RuleContext), matchExpressionWithRule')
 import Test.Hspec
@@ -48,7 +48,7 @@ testDataize :: [(String, String, String, Bytes)] -> Spec
 testDataize useCases =
   forM_ useCases $ \(name, loc, prog, res) ->
     it name $ do
-      prog' <- parseProgramThrows prog
+      prog' <- parseExpressionThrows prog
       loc' <- parseExpressionThrows loc
       (value, _) <- dataize prog' (defaultDataizeContext loc')
       value `shouldBe` res
@@ -230,7 +230,7 @@ spec = do
             ++ concatMap (map (verb . (.operation)) . (.premises)) Yaml.dataizationRules
     it "uses no step label without a defining rule or operation" $ do
       prog <-
-        parseProgramThrows
+        parseExpressionThrows
           ( unlines
               [ "[["
               , "  bytes(data) -> [[ @ -> $.data ]],"
@@ -258,7 +258,7 @@ spec = do
 
   describe "preserves the reduction label sequence" $ do
     let labelsOf loc src = do
-          prog <- parseProgramThrows src
+          prog <- parseExpressionThrows src
           loc' <- parseExpressionThrows loc
           (_, chain) <- dataize prog (defaultDataizeContext loc')
           pure [label | (_, Just label) <- chain]
@@ -294,7 +294,7 @@ spec = do
     -- that there is no 'end' rule, so an empty formation reduces through one
     -- labelled 'dataize' step and then fails: it has nothing to dataize (#955).
     it "fails to dataize an empty formation, which dataizes ⊥" $ do
-      prog <- parseProgramThrows "[[ ]]"
+      prog <- parseExpressionThrows "[[ ]]"
       loc <- parseExpressionThrows "Q"
       dataize prog (defaultDataizeContext loc)
         `shouldThrow` (\e -> "terminator" `isInfixOf` show (e :: SomeException))

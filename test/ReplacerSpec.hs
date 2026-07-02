@@ -10,7 +10,7 @@ import Control.Monad (forM_)
 import Replacer
 import Test.Hspec (Example (Arg), Expectation, Spec, SpecWith, describe, it, shouldBe)
 
-test :: ReplaceProgramFunc -> [(String, Expression, [Expression], [Expression], Expression)] -> SpecWith (Arg Expectation)
+test :: ReplaceExpressionFunc -> [(String, Expression, [Expression], [Expression], Expression)] -> SpecWith (Arg Expectation)
 test function useCases =
   forM_ useCases $ \(desc, prog, ptns, repls, res) ->
     it desc $ function (prog, ptns, map const repls) `shouldBe` res
@@ -19,7 +19,7 @@ spec :: Spec
 spec = do
   describe "replace program: Program => ([Expression], [Expression]) => Program" $
     test
-      replaceProgram
+      replaceExpression
       [
         ( "Q -> Q.y.x => ([Q.y], [$]) => Q -> $.x"
         , ExDispatch (ExDispatch ExRoot (AtLabel "y")) (AtLabel "x")
@@ -173,7 +173,7 @@ spec = do
 
   describe "replace program fast: Program => ([Expression], [Expression]) => Program" $
     test
-      (replaceProgramFast (ReplaceCtx 3))
+      (replaceExpressionFast (ReplaceCtx 3))
       [
         ( "Q -> [[^ -> ?, @ -> ?, D> -> ?]] => [[ !B1, !t -> ?, !B2 ]] => [[ !B1, !t -> $, !B2 ]] => Q -> [[ ^ -> $, @ -> $, D> -> $ ]]"
         , ExFormation [BiVoid AtRho, BiVoid AtPhi, BiVoid AtDelta]
@@ -262,7 +262,7 @@ spec = do
 
   describe "replace program fast with depth 0" $
     test
-      (replaceProgramFast (ReplaceCtx 0))
+      (replaceExpressionFast (ReplaceCtx 0))
       [
         ( "Q -> [[a -> ?]] => ([[a -> ?]], [[a -> $]]) => Q -> [[a -> ?]]"
         , ExFormation [BiVoid (AtLabel "a")]
@@ -274,7 +274,7 @@ spec = do
 
   describe "replace program fast with depth 1" $
     test
-      (replaceProgramFast (ReplaceCtx 1))
+      (replaceExpressionFast (ReplaceCtx 1))
       [
         ( "Q -> [[ ^ -> ? ]] => [[ ^ -> ? ]] => [[ ^ -> [[ ^ -> ? ]] ]] => Q -> [[ ^ -> [[ ^ -> ? ]] ]]"
         , ExFormation [BiVoid AtRho]

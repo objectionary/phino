@@ -6,7 +6,7 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Rule (RuleContext (..), isNF, matchProgramWithRule, matchExpressionWithRule, matchExpressionWithRule', meetCondition) where
+module Rule (RuleContext (..), isNF, matchExpressionWithRule, matchExpressionWithRule', meetCondition) where
 
 import AST
 import Builder
@@ -407,6 +407,3 @@ matchExpressionBy matcher seed expr rule ctx =
                       met <- meetMaybeCondition rule.having extended ctx
                       when (null met) (logDebug "The 'having' condition wasn't met")
                       pure met
-
-matchProgramWithRule :: Expression -> Y.Rule -> RuleContext -> IO [Subst]
-matchProgramWithRule = matchExpressionWithRule

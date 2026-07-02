@@ -29,7 +29,7 @@ import Merge (merge)
 import Parser (parseExpressionThrows)
 import qualified Printer as P
 import Rewriter
-import Rule (RuleContext (..), matchProgramWithRule)
+import Rule (RuleContext (..), matchExpressionWithRule)
 import System.Directory (doesFileExist, getModificationTime)
 import System.Exit (exitSuccess)
 import Tau (seedTaus)
@@ -54,7 +54,7 @@ runRewrite OptsRewrite{..} = do
   let listing = case (rules, _inputFormat, _outputFormat) of
         ([], XMIR, XMIR) -> (\_ -> escapeXML input)
         ([], _, _) -> const input
-        (_, _, _) -> (\prog -> P.printProgram' prog (_sugarType, UNICODE, _flat, _margin))
+        (_, _, _) -> (\prog -> P.printExpression' prog (_sugarType, UNICODE, _flat, _margin))
       xmirCtx = XmirContext _omitListing _omitComments listing
       printCtx = printProgCtx xmirCtx foc
       canonize = if _canonize then C.canonize else id
@@ -203,7 +203,7 @@ runMerge OptsMerge{..} = do
   inputs' <- traverse (readInput . Just) _inputs
   progs <- traverse (`parseProgram` _inputFormat) inputs'
   prog <- merge progs
-  let listing = const (P.printProgram' prog (_sugarType, UNICODE, _flat, _margin))
+  let listing = const (P.printExpression' prog (_sugarType, UNICODE, _flat, _margin))
       xmirCtx = XmirContext _omitListing _omitComments listing
       printCtx = printProgCtx xmirCtx
   prog' <- printProgram printCtx prog
@@ -241,7 +241,7 @@ runMatch OptsMatch{..} = do
     else do
       ptn <- parseExpressionThrows (fromJust _pattern)
       condition <- traverse parseConditionThrows _when
-      substs <- matchProgramWithRule prog (rule ptn condition) (RuleContext buildTerm)
+      substs <- matchExpressionWithRule prog (rule ptn condition) (RuleContext buildTerm)
       if null substs
         then throwIO EmptySubstsOnMatch
         else putStrLn (P.printSubsts' substs (_sugarType, UNICODE, _flat, defaultMargin))

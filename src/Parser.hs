@@ -6,9 +6,7 @@
 
 -- The goal of the module is to parse given phi program to AST
 module Parser
-  ( parseProgram
-  , parseProgramThrows
-  , parseExpression
+  ( parseExpression
   , parseExpressionThrows
   , parseAttribute
   , parseAttributeThrows
@@ -42,8 +40,7 @@ import Text.Printf (printf)
 type Parser = Parsec Void String
 
 data ParserException
-  = CouldNotParseProgram {message :: String}
-  | CouldNotParseExpression {message :: String}
+  = CouldNotParseExpression {message :: String}
   | CouldNotParseAttribute {message :: String}
   | CouldNotParseNumber {message :: String}
   deriving (Exception)
@@ -61,7 +58,6 @@ phiParser :: PhiParser
 phiParser = PhiParser attribute alpha index' binding expression quotedStr
 
 instance Show ParserException where
-  show CouldNotParseProgram{..} = printf "Couldn't parse given phi program, cause: %s" message
   show CouldNotParseExpression{..} = printf "Couldn't parse given phi expression, cause: %s" message
   show CouldNotParseAttribute{..} = printf "Couldn't parse given attribute, cause: %s" message
   show CouldNotParseNumber{..} = printf "Couldn't parse given number to 'Φ.number', cause: %s" message
@@ -500,9 +496,3 @@ parseExpression = parse' "expression" expression
 
 parseExpressionThrows :: String -> IO Expression
 parseExpressionThrows ex = orThrow CouldNotParseExpression (parseExpression ex)
-
-parseProgram :: String -> Either String Expression
-parseProgram = parse' "program" expression
-
-parseProgramThrows :: String -> IO Expression
-parseProgramThrows prg = orThrow CouldNotParseProgram (parseProgram prg)

@@ -37,7 +37,7 @@ import Margin (WithMargin, defaultMargin, withMargin)
 import Matcher
 import Misc
 import Render (Render (render))
-import Replacer (replaceProgram)
+import Replacer (replaceExpression)
 import Rewriter (Rewritten, Rewrittens')
 import Sugar (SugarType (SWEET), ToSalty, withSugarType)
 import Text.Printf (printf)
@@ -76,7 +76,7 @@ meetInProgram expr len = meetInExpression expr
     meetInExpression (ExPhiMeet{}) _ = []
     meetInExpression (ExPhiAgain{}) _ = []
     meetInExpression ex prog =
-      let matched = if countNodes ex >= len then map (const ex) (matchProgram ex prog) else []
+      let matched = if countNodes ex >= len then map (const ex) (matchExpression ex prog) else []
        in matched ++ case ex of
             ExDispatch ex' _ -> meetInExpression ex' prog
             ExApplication ex' arg -> meetInExpression ex' prog ++ meetInExpression (argExpr arg) prog
@@ -118,12 +118,12 @@ meetInPrograms prog LatexContext{..} = go prog 1
           next = first : go rest idx
        in case frequent of
             Just expr ->
-              case matchProgram expr first of
+              case matchExpression expr first of
                 (_ : substs) ->
                   let met' = map (filter (== expr)) met
-                      program = replaceProgram (first, [expr], [ExPhiMeet _meetPrefix idx])
-                      program' = replaceProgram (program, map (const expr) substs, map (const (ExPhiAgain _meetPrefix idx)) substs)
-                      rest' = zipWith (\prgm exprs -> replaceProgram (prgm, exprs, map (const (ExPhiAgain _meetPrefix idx)) exprs)) rest met'
+                      program = replaceExpression (first, [expr], [ExPhiMeet _meetPrefix idx])
+                      program' = replaceExpression (program, map (const expr) substs, map (const (ExPhiAgain _meetPrefix idx)) substs)
+                      rest' = zipWith (\prgm exprs -> replaceExpression (prgm, exprs, map (const (ExPhiAgain _meetPrefix idx)) exprs)) rest met'
                       found = filter (not . null) met'
                    in if length met' > 1 && toDouble (length found) / toDouble (length met') >= popularity
                         then program' : go rest' (idx + 1)

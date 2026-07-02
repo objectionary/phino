@@ -18,7 +18,7 @@ import Files (allPathsIn)
 import GHC.Generics (Generic)
 import Lining (LineFormat (SINGLELINE), withLineFormat)
 import Margin (defaultMargin, withMargin)
-import Parser (parseProgramThrows)
+import Parser (parseExpressionThrows)
 import Render (Render (render))
 import Sugar
 import System.FilePath
@@ -51,7 +51,7 @@ spec = do
         )
       ]
       ( \(prog, cst) -> it prog $ do
-          ast <- parseProgramThrows prog
+          ast <- parseExpressionThrows prog
           expressionToCST ast `shouldBe` cst
       )
 
@@ -82,7 +82,7 @@ spec = do
       packs
       ( \pth -> it (makeRelative resources pth) $ do
           pack <- cstPack pth
-          prog <- parseProgramThrows (program pack)
+          prog <- parseExpressionThrows (program pack)
           render (withMargin defaultMargin (expressionToCST prog)) `shouldBe` result pack
       )
 
@@ -93,7 +93,7 @@ spec = do
       packs
       ( \pth -> it (makeRelative resources pth) $ do
           pack <- cstPack pth
-          prog <- parseProgramThrows (program pack)
+          prog <- parseExpressionThrows (program pack)
           let cst = expressionToCST prog
               salty = toSalty cst
           render salty `shouldBe` result pack
@@ -106,7 +106,7 @@ spec = do
       packs
       ( \pth -> it (makeRelative resources pth) $ do
           pack <- cstPack pth
-          prog <- parseProgramThrows (program pack)
+          prog <- parseExpressionThrows (program pack)
           let cst = expressionToCST prog
               ascii = withMargin defaultMargin (withEncoding ASCII cst)
           render ascii `shouldBe` result pack
@@ -119,7 +119,7 @@ spec = do
       packs
       ( \pth -> it (makeRelative resources pth) $ do
           pack <- cstPack pth
-          prog <- parseProgramThrows (program pack)
+          prog <- parseExpressionThrows (program pack)
           let cst = expressionToCST prog
               ascii = withLineFormat SINGLELINE cst
           render ascii `shouldBe` result pack

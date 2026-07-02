@@ -11,7 +11,7 @@ module LaTeXSpec where
 import AST (Expression (ExMeta))
 import Control.Monad (forM_)
 import LaTeX (conditionToLatex, meetInProgram)
-import Parser (parseExpressionThrows, parseProgramThrows)
+import Parser (parseExpressionThrows)
 import Test.Hspec (Spec, describe, it, shouldBe)
 import Yaml qualified as Y
 
@@ -27,8 +27,8 @@ spec = do
       , ("Missed [[ t -> 42 ]]", "⟦ ex ↦ ⟦ x ↦ ⟦ t ↦ 42 ⟧.t ⟧.x ⟧", "⟦ ex ↦ 42 ⟧", [])
       ]
       ( \(desc, first, second, exprs) -> it desc $ do
-          ptn <- parseProgramThrows first
-          tgt <- parseProgramThrows second
+          ptn <- parseExpressionThrows first
+          tgt <- parseExpressionThrows second
           res <- traverse parseExpressionThrows exprs
           meetInProgram ptn 4 tgt `shouldBe` res
       )

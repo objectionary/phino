@@ -9,7 +9,7 @@ import AST
 import Control.Exception.Base (Exception, throwIO)
 import Data.Functor ((<&>))
 import Misc
-import Printer (printExpression, printProgram)
+import Printer (printExpression)
 import Text.Printf (printf)
 
 data MergeException
@@ -22,7 +22,7 @@ instance Show MergeException where
   show (WrongProgramFormat prog) =
     printf
       "Invalid program format, only programs with top level formations are supported for 'merge' command, given:\n%s"
-      (printProgram prog)
+      (printExpression prog)
   show (CanNotMergeBinding first second) =
     printf
       "Can't merge two bindings, conflict found:\n%s"

@@ -5,9 +5,7 @@
 -- SPDX-License-Identifier: MIT
 
 module Printer
-  ( printProgram
-  , printProgram'
-  , printExpression
+  ( printExpression
   , printExpression'
   , printAttribute
   , printAlpha
@@ -42,12 +40,6 @@ defaultPrintConfig = (SWEET, UNICODE, MULTILINE, defaultMargin)
 
 logPrintConfig :: (SugarType, Encoding, LineFormat, Int)
 logPrintConfig = (SWEET, UNICODE, SINGLELINE, defaultMargin)
-
-printProgram' :: Expression -> PrintConfig -> String
-printProgram' = printExpression'
-
-printProgram :: Expression -> String
-printProgram = printExpression
 
 printExpression' :: Expression -> PrintConfig -> String
 printExpression' ex (sugar, encoding, line, margin) = T.unpack $ render (withLineFormat line $ withMargin margin $ withEncoding encoding $ withSugarType sugar $ expressionToCST ex)

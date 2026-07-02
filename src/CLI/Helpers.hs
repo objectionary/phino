@@ -21,13 +21,13 @@ import Functions (execFunctions)
 import LaTeX (LatexContext (..), defaultMeetLength, defaultMeetPopularity, expressionToLaTeX, programToLaTeX, rewrittensToLatex)
 import Locator (locatedExpression)
 import Logger
-import Parser (parseProgramThrows)
+import Parser (parseExpressionThrows)
 import qualified Printer as P
 import qualified Random as R
 import Rewriter (Rewrittens')
 import System.IO (getContents')
 import Text.Printf (printf)
-import XMIR (parseXMIRThrows, printXMIR, programToXMIR, xmirToPhi)
+import XMIR (expressionToXMIR, parseXMIRThrows, printXMIR, xmirToPhi)
 import Yaml (normalizationRules)
 import qualified Yaml as Y
 
@@ -58,7 +58,7 @@ readInput inputFile' = case inputFile' of
 
 -- Parse program from String input depending on input IO format
 parseProgram :: String -> IOFormat -> IO Expression
-parseProgram phi PHI = parseProgramThrows phi
+parseProgram phi PHI = parseExpressionThrows phi
 parseProgram xmir XMIR = parseXMIRThrows xmir >>= xmirToPhi
 parseProgram _ LATEX = invalidCLIArguments "LaTeX cannot be used as input format"
 
@@ -78,8 +78,8 @@ printExpression ctx@PrintProgCtx{..} ex = case _outputFormat of
 -- Convert program to corresponding String format
 printProgram :: PrintProgramContext -> Expression -> IO String
 printProgram ctx@PrintProgCtx{..} prog = case _outputFormat of
-  PHI -> pure (P.printProgram' prog (_sugar, UNICODE, _line, _margin))
-  XMIR -> programToXMIR prog _xmirCtx <&> printXMIR
+  PHI -> pure (P.printExpression' prog (_sugar, UNICODE, _line, _margin))
+  XMIR -> expressionToXMIR prog _xmirCtx <&> printXMIR
   LATEX -> pure (programToLaTeX prog (printCtxToLatexCtx ctx))
 
 printCtxToLatexCtx :: PrintProgramContext -> LatexContext

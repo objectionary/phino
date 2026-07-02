@@ -80,16 +80,16 @@ spec = do
             parseExpression printed `shouldBe` Right expr
       )
 
-  describe "printProgram with default config" $
+  describe "printExpression with default config" $
     forM_
       [ ("empty formation", ExFormation [BiVoid AtRho], "⟦⟧")
       , ("dispatch", ExDispatch ExRoot (AtLabel "org"), "Φ.org")
       ]
       ( \(desc, prog, expected) ->
-          it desc (printProgram prog `shouldBe` expected)
+          it desc (printExpression prog `shouldBe` expected)
       )
 
-  describe "printProgram in salty does not inject a duplicate void rho when rho is already present" $
+  describe "printExpression in salty does not inject a duplicate void rho when rho is already present" $
     forM_
       [
         ( "rho bound to an empty formation"
@@ -108,7 +108,7 @@ spec = do
         )
       ]
       ( \(desc, prog, expected) ->
-          it desc (printProgram' prog (SALTY, UNICODE, SINGLELINE, defaultMargin) `shouldBe` expected)
+          it desc (printExpression' prog (SALTY, UNICODE, SINGLELINE, defaultMargin) `shouldBe` expected)
       )
 
   describe "printAttribute with default encoding" $

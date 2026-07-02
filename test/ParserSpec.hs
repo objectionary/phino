@@ -30,7 +30,7 @@ spec :: Spec
 spec = do
   describe "parse program" $
     test
-      parseProgram
+      parseExpression
       [ ("[[]]", Just (ExFormation [BiVoid AtRho]))
       , ("T(x -> Q)", Just (ExApplication ExTermination (ArTau (AtLabel "x") ExRoot)))
       , ("Q.org.eolang", Just (ExDispatch (ExDispatch ExRoot (AtLabel "org")) (AtLabel "eolang")))
@@ -252,7 +252,7 @@ spec = do
       packs
       ( \pack -> do
           content <- runIO (readFile pack)
-          it (takeBaseName pack) (parseProgram content `shouldSatisfy` isRight)
+          it (takeBaseName pack) (parseExpression content `shouldSatisfy` isRight)
       )
 
   describe "process typo packs" $ do
@@ -261,7 +261,7 @@ spec = do
       packs
       ( \pack -> do
           content <- runIO (readFile pack)
-          it (takeBaseName pack) (parseProgram content `shouldSatisfy` isLeft)
+          it (takeBaseName pack) (parseExpression content `shouldSatisfy` isLeft)
       )
 
   describe "parse bytes" $
@@ -381,11 +381,11 @@ spec = do
       , ("", Nothing)
       ]
 
-  describe "parseProgramThrows" $ do
+  describe "parseExpressionThrows" $ do
     it "returns program on valid input" $
-      parseProgramThrows "T" `shouldReturn` ExTermination
+      parseExpressionThrows "T" `shouldReturn` ExTermination
     it "throws on invalid input" $
-      parseProgramThrows "invalid program ]][[" `shouldThrow` anyException
+      parseExpressionThrows "invalid program ]][[" `shouldThrow` anyException
 
   describe "parseExpressionThrows" $ do
     it "returns expression on valid input" $

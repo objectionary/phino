@@ -219,7 +219,7 @@ spec = do
       it "with wrong attribute and valid error message" $
         testCLIFailed
           ["rewrite", resource "with-$this-attribute.phi"]
-          [ "[ERROR]: Couldn't parse given phi program, cause:"
+          [ "[ERROR]: Couldn't parse given phi expression, cause:"
           , "unexpected"
           ]
 

@@ -7,7 +7,7 @@
 -- SPDX-License-Identifier: MIT
 
 module XMIR
-  ( programToXMIR
+  ( expressionToXMIR
   , printXMIR
   , toName
   , parseXMIR
@@ -60,7 +60,7 @@ data XMIRException
   deriving (Exception)
 
 instance Show XMIRException where
-  show (UnsupportedProgram prog) = printf "XMIR does not support such program:\n%s" (printProgram prog)
+  show (UnsupportedProgram prog) = printf "XMIR does not support such program:\n%s" (printExpression prog)
   show (UnsupportedExpression expr) = printf "XMIR does not support such expression:\n%s" (printExpression expr)
   show (UnsupportedBinding bd) = printf "XMIR does not support such bindings: %s" (printBinding bd)
   show (CouldNotParseXMIR msg) = printf "Couldn't parse given XMIR, cause: %s" msg
@@ -163,16 +163,16 @@ formationBinding binding _ = throwIO (UnsupportedBinding binding)
 nestedBindings :: [Binding] -> XmirContext -> IO [Node]
 nestedBindings bds ctx = catMaybes <$> mapM (`formationBinding` ctx) bds
 
-programToXMIR :: Expression -> XmirContext -> IO Document
-programToXMIR prog@(ExFormation [BiTau (AtLabel _) arg, BiVoid AtRho]) ctx@XmirContext{..} = case arg of
-  ExFormation _ -> programToXMIR'
-  ExApplication _ _ -> programToXMIR'
-  ExDispatch _ _ -> programToXMIR'
-  ExRoot -> programToXMIR'
+expressionToXMIR :: Expression -> XmirContext -> IO Document
+expressionToXMIR prog@(ExFormation [BiTau (AtLabel _) arg, BiVoid AtRho]) ctx@XmirContext{..} = case arg of
+  ExFormation _ -> expressionToXMIR'
+  ExApplication _ _ -> expressionToXMIR'
+  ExDispatch _ _ -> expressionToXMIR'
+  ExRoot -> expressionToXMIR'
   _ -> throwIO (UnsupportedProgram prog)
   where
-    programToXMIR' :: IO Document
-    programToXMIR' = do
+    expressionToXMIR' :: IO Document
+    expressionToXMIR' = do
       (pckg, expr') <- getPackage prog
       root <- rootExpression expr' ctx
       now <- getCurrentTime
@@ -256,7 +256,7 @@ programToXMIR prog@(ExFormation [BiTau (AtLabel _) arg, BiVoid AtRho]) ctx@XmirC
           fractional = realToFrac posix - fromInteger (floor posix)
           nanos = floor (fractional * 1_000_000_000) :: Int
        in base ++ "." ++ printf "%09d" nanos ++ "Z"
-programToXMIR prog _ = throwIO (UnsupportedProgram prog)
+expressionToXMIR prog _ = throwIO (UnsupportedProgram prog)
 
 escapeXML :: String -> String
 escapeXML = concatMap escapeChar
