@@ -26,6 +26,7 @@ module LaTeX
 
 import AST
 import CST
+import Canonizer (canonize, canonizeExpr)
 import Data.List (intercalate, nub)
 import Data.Maybe (isJust)
 import qualified Data.Text as T
@@ -49,6 +50,7 @@ data LatexContext = LatexContext
   , _margin :: Int
   , _nonumber :: Bool
   , _compress :: Bool
+  , _canonize :: Bool
   , _meetPopularity :: Int
   , _meetLength :: Int
   , _focus :: Expression
@@ -58,7 +60,7 @@ data LatexContext = LatexContext
   }
 
 defaultLatexContext :: LatexContext
-defaultLatexContext = LatexContext SWEET SINGLELINE defaultMargin False False defaultMeetPopularity defaultMeetLength ExRoot Nothing Nothing Nothing
+defaultLatexContext = LatexContext SWEET SINGLELINE defaultMargin False False False defaultMeetPopularity defaultMeetLength ExRoot Nothing Nothing Nothing
 
 defaultMeetPopularity :: Int
 defaultMeetPopularity = 50
@@ -168,6 +170,21 @@ compressedRewrittens rewrittens ctx@LatexContext{..} =
   let (exprs, rules) = unzip rewrittens
    in if _compress then zip (meetInExpressions exprs ctx) rules else rewrittens
 
+-- Canonization runs after the meet compression, never before it: 'canonize'
+-- renumbers λ bindings by traversal position and restarts the counter for every
+-- expression, so the same logical lambda ends up with a different 'Fn' in
+-- different steps. Feeding those unstable names to the meet pass (which compares
+-- sub-expressions by structural equality) would stop identical sub-expressions
+-- from ever matching. So the meet pass sees the original names first, and only
+-- its output is canonized.
+canonizedRewrittens :: [Rewritten] -> LatexContext -> [Rewritten]
+canonizedRewrittens rewrittens LatexContext{_canonize = shouldCanonize} =
+  if shouldCanonize then canonize rewrittens else rewrittens
+
+canonizedExpressions :: [Expression] -> LatexContext -> [Expression]
+canonizedExpressions exprs LatexContext{_canonize = shouldCanonize} =
+  if shouldCanonize then map canonizeExpr exprs else exprs
+
 -- Compress a sequence of focused sub-expressions the way 'compressedRewrittens'
 -- compresses whole expressions: the meet machinery factors recurring
 -- sub-expressions out across the sequence. Focusing happens before this, so the
@@ -181,7 +198,7 @@ rewrittensToLatex (rewrittens, exceeded) ctx@LatexContext{_focus = ExRoot} =
   pure
     ( concat
         [ preamble ctx
-        , body (compressedRewrittens rewrittens ctx) (\expr -> renderToLatex (expressionToCST expr) ctx)
+        , body (canonizedRewrittens (compressedRewrittens rewrittens ctx) ctx) (\expr -> renderToLatex (expressionToCST expr) ctx)
         , ending exceeded ctx
         ]
     )
@@ -191,7 +208,7 @@ rewrittensToLatex (rewrittens, exceeded) ctx@LatexContext{..} = do
   pure
     ( concat
         [ preamble ctx
-        , body (zip (compressedExpressions focused ctx) rules) (\expr -> renderToLatex (expressionToCST expr) ctx)
+        , body (zip (canonizedExpressions (compressedExpressions focused ctx) ctx) rules) (\expr -> renderToLatex (expressionToCST expr) ctx)
         , ending exceeded ctx
         ]
     )

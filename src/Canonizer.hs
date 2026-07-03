@@ -4,7 +4,7 @@
 -- Canonization is the process of replacing function names attrached to
 -- lambda bindings with numbered identifiers started from 'F'
 -- like 'F1', 'F2', etc.
-module Canonizer (canonize) where
+module Canonizer (canonize, canonizeExpr) where
 
 import AST
 import qualified Data.Text as T
@@ -34,6 +34,12 @@ canonizeExpression (ExApplication expr arg) idx =
   let (expr', idx') = canonizeExpression expr idx
       (arg', idx'') = canonizeArgument arg idx'
    in (ExApplication expr' arg', idx'')
+canonizeExpression (ExPhiMeet prefix num expr) idx =
+  let (expr', idx') = canonizeExpression expr idx
+   in (ExPhiMeet prefix num expr', idx')
+canonizeExpression (ExPhiAgain prefix num expr) idx =
+  let (expr', idx') = canonizeExpression expr idx
+   in (ExPhiAgain prefix num expr', idx')
 canonizeExpression expr idx = (expr, idx)
 
 canonizeArgument :: Argument -> Int -> (Argument, Int)
@@ -44,6 +50,11 @@ canonizeArgument (ArAlpha alpha expr) idx =
   let (expr', idx') = canonizeExpression expr idx
    in (ArAlpha alpha expr', idx')
 
+-- Canonize a single expression, restarting the 'F' counter from 1 so the
+-- numbering is local to that expression.
+canonizeExpr :: Expression -> Expression
+canonizeExpr expr = fst (canonizeExpression expr 1)
+
 canonize :: [Rewritten] -> [Rewritten]
 canonize [] = []
-canonize ((expr, maybeRule) : rest) = (fst (canonizeExpression expr 1), maybeRule) : canonize rest
+canonize ((expr, maybeRule) : rest) = (canonizeExpr expr, maybeRule) : canonize rest
