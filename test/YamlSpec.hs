@@ -16,7 +16,7 @@ import Data.Yaml qualified as Yaml
 import Files (allPathsIn)
 import System.FilePath
 import Test.Hspec (Spec, describe, it, runIO, shouldBe, shouldReturn, shouldSatisfy, shouldThrow)
-import Yaml (ContextualizeRule (..), DataizeRule (..), MorphRule (..), contextualizationRules, dataizationRules, morphingRules, yamlRule)
+import Yaml (ContextualizeRule (..), DataizeRule (..), MorphRule (..), Operation (..), Premise (..), contextualizationRules, dataizationRules, morphingRules, yamlRule)
 
 spec :: Spec
 spec = do
@@ -73,3 +73,36 @@ spec = do
               ++ map (\DataizeRule{name, label} -> fromMaybe name label) dataizationRules
               ++ map (\ContextualizeRule{name, label} -> fromMaybe name label) contextualizationRules
       (labels \\ nub labels) `shouldBe` []
+
+  describe "reserves 𝑛-family metas for normal forms" $
+    -- 𝒞 ('contextualize') and 𝔼 ('evaluate') return an expression that is not
+    -- necessarily a normal form — that is why a 'normalize' premise follows
+    -- them — so binding their result to an 𝑛-reserved meta (internal prefix
+    -- "n") in a morphing or dataization rule conflates the calculus's 'e'
+    -- (expression) with 'n' (normal form). Such a slip is notational, not
+    -- functional (the meta name is only a substitution-map key), so it is easy
+    -- to miss by eye; flag it automatically instead. Contextualization is
+    -- excluded on purpose: its 𝒞-valued results are the point and its header
+    -- reserves nothing (see #971).
+    it "no contextualize/evaluate premise in a morphing or dataization rule binds an 𝑛-reserved meta" $ do
+      let expressionValued :: Operation -> Bool
+          expressionValued OpContextualize{} = True
+          expressionValued OpEvaluate{} = True
+          expressionValued _ = False
+          verbOf :: Operation -> String
+          verbOf OpContextualize{} = "contextualize"
+          verbOf OpEvaluate{} = "evaluate"
+          verbOf _ = "?"
+          premisesOf :: [(String, [Premise])]
+          premisesOf =
+            map (\MorphRule{name, premises} -> (name, premises)) morphingRules
+              ++ map (\DataizeRule{name, premises} -> (name, premises)) dataizationRules
+          offenders :: [String]
+          offenders =
+            [ ruleName ++ ": " ++ verbOf operation ++ " result '" ++ T.unpack result ++ "'"
+            | (ruleName, premises) <- premisesOf
+            , Premise{result, operation} <- premises
+            , expressionValued operation
+            , T.isPrefixOf (T.pack "n") result
+            ]
+      offenders `shouldBe` []

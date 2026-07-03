@@ -14,9 +14,13 @@
 # ordered 'premises' reduce as stated. A premise binds its 'n-result'/'d-result'
 # to one judgment — 𝔻 ('dataize'), 𝕄 ('morph'), 𝒩 ('normalize'), 𝔼 ('evaluate')
 # or 𝒞 ('contextualize'). 'e-match' is the universe-argument matcher of
-# 𝔻(n, e); it is always the e meta. The single bytes result is named δ; derived
-# terms are 𝑛, 𝑛1, … in premise order, skipping the bare 𝑛 only when 'match'
-# already binds it.
+# 𝔻(n, e); it is always the e meta. The single bytes result is named δ. A
+# normal-form-valued result (𝕄 'morph', 𝒩 'normalize') is named 𝑛, 𝑛1, … in
+# premise order, skipping the bare 𝑛 only when 'match' already binds it; an
+# expression-valued result (𝒞 'contextualize', 𝔼 'evaluate') is not a normal
+# form — that is why a 'normalize' premise follows it — so it takes an 𝑒-family
+# name (𝑒1, 𝑒2, …, the next index free of 'match', 𝑒 itself being the universe)
+# rather than an 𝑛 name reserved for normal forms.
 #
 # The clauses are disjoint, so their relative order does not change behavior.
 # 'norm' matches the bare meta 𝑛, which unifies with any expression, so it is
@@ -43,12 +47,12 @@
       - [Δ, λ]
       - [𝐵1, 𝐵2]
   premises:
-    - n-result: 𝑛
+    - n-result: 𝑒2
       contextualize:
         - 𝑒1
         - ⟦𝐵1, φ ↦ 𝑒1, 𝐵2⟧
     - n-result: 𝑛1
-      normalize: 𝑛
+      normalize: 𝑒2
     - d-result: δ
       dataize: 𝑛1
 
@@ -57,12 +61,12 @@
   e-match: 𝑒
   d-result: δ
   premises:
-    - n-result: 𝑛
+    - n-result: 𝑒1
       evaluate:
         - ⟦𝐵1, λ ⤍ 𝑓, 𝐵2⟧
         - 𝑒
     - n-result: 𝑛1
-      normalize: 𝑛
+      normalize: 𝑒1
     - d-result: δ
       dataize: 𝑛1
 
