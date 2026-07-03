@@ -7,6 +7,10 @@
 # structurally, replacing each ξ with the context c, descending through
 # dispatches and applications and stopping at formations — which introduce their
 # own scope and are returned untouched — and at the global Φ and termination ⊥.
+# The context c is supplied by the caller: DOT dispatching 𝜏 on a formation
+# passes that formation WITHOUT the dispatched binding (⟦𝐵1, 𝐵2⟧), so a
+# self-referential ξ resolves to an object that lacks 𝜏 and collapses to ⊥
+# rather than re-deriving the dispatch and diverging.
 #
 # Each rule is an inference rule: when 'match' matches the term and 'c-match'
 # matches the context (binding the meta c), the rule yields the conclusion

@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# Mutually self-referential attributes (a via ξ.b, b via ξ.a) also used to
+# diverge in DOT (see #967); each self-ξ now dispatches on a formation without
+# the dispatched attribute and collapses to ⊥, so normalization terminates.
+normalize: true
+input: |
+  ⟦ a ↦ ξ.b, b ↦ ξ.a ⟧.a
+output: |-
+  ⊥
