@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# A self-referential object dispatched on its own attribute used to loop
+# forever in DOT (see #967); now the dispatched attribute is excluded from the
+# contextualization context, so the self-ξ collapses to ⊥ and normalization
+# terminates.
+normalize: true
+input: |
+  ⟦ a ↦ ξ.a ⟧.a
+output: |-
+  ⊥

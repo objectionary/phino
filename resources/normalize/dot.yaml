@@ -1,6 +1,15 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 # SPDX-License-Identifier: MIT
 ---
+# Dispatch 𝜏 on a formation: contextualize the dispatched body 𝑛 and decorate
+# it with the whole formation as ρ. The contextualization context is the
+# formation WITHOUT the dispatched binding — ⟦𝐵1, 𝐵2⟧, not ⟦𝐵1, 𝜏 ↦ 𝑛, 𝐵2⟧ —
+# so a self-referential ξ inside 𝑛 (as in ⟦ a ↦ ξ ⟧.a or ⟦ a ↦ ξ.a ⟧.a) no
+# longer sees 𝜏. Such a self-reference then dispatches on a formation that
+# lacks 𝜏 and collapses to ⊥ via stop/null/dd instead of rebuilding the same
+# ⟦…, 𝜏 ↦ 𝑛, …⟧.𝜏 term and looping forever. ρ on line 'result' still binds the
+# full formation, so sibling and φ-decoration references stay intact — only the
+# self-ξ path narrows, keeping normalization (near-)total.
 name: dot
 pattern: ⟦𝐵1, 𝜏 ↦ 𝑛, 𝐵2⟧.𝜏
 result: 𝑒(ρ ↦ ⟦𝐵1, 𝜏 ↦ 𝑛, 𝐵2⟧)
@@ -9,4 +18,4 @@ where:
     function: contextualize
     args:
       - 𝑛
-      - ⟦𝐵1, 𝜏 ↦ 𝑛, 𝐵2⟧
+      - ⟦𝐵1, 𝐵2⟧
