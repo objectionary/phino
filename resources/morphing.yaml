@@ -63,6 +63,30 @@
     - n-result: 𝑛2
       morph: 𝑛1
 
+- name: mphi
+  label: \phi
+  match: ⟦𝐵⟧.𝜏
+  e-match: 𝑒
+  n-result: 𝑛1
+  when:
+    and:
+      - in:
+          - φ
+          - 𝐵
+      - not:
+          in:
+            - 𝜏
+            - 𝐵
+      - not:
+          in:
+            - λ
+            - 𝐵
+  premises:
+    - n-result: 𝑛
+      normalize: ⟦𝐵⟧.φ.𝜏
+    - n-result: 𝑛1
+      morph: 𝑛
+
 - name: md
   match: '𝑛.𝜏'
   e-match: 𝑒

@@ -1,8 +1,18 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 # SPDX-License-Identifier: MIT
 ---
+# PHI is no longer a normalization rule (#973): resolving an inherited
+# attribute through the φ decoration is a semantic step, so it now lives in
+# morphing 𝕄. Dispatching the absent 't' therefore no longer expands via
+# '.φ.t'; normalization reaches a stuck normal form with the datum intact and
+# leaves the φ-decorated dispatch for 𝕄 to follow.
 normalize: true
 input: |
   ⟦ m ↦ ⟦ x ↦ ξ.t, φ ↦ ⟦ t ↦ ⟦⟧ ⟧ ⟧.x ⟧
 output: |-
-  ⟦ m ↦ ⟦ ρ ↦ ⟦ t ↦ ⟦⟧, ρ ↦ ⟦ φ ↦ ⟦ t ↦ ⟦⟧ ⟧ ⟧ ⟧ ⟧ ⟧
+  ⟦
+    m ↦ ⟦ φ ↦ ⟦ t ↦ ⟦ ρ ↦ ∅ ⟧, ρ ↦ ∅ ⟧, ρ ↦ ∅ ⟧.t(
+      ρ ↦ ⟦ x ↦ ξ.t, φ ↦ ⟦ t ↦ ⟦ ρ ↦ ∅ ⟧, ρ ↦ ∅ ⟧, ρ ↦ ∅ ⟧
+    ),
+    ρ ↦ ∅
+  ⟧

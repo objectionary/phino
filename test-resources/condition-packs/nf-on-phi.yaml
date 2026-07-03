@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# PHI left normalization for morphing (#973), so dispatching an absent
+# attribute on a φ-decorated formation no longer reduces under 𝒩 — it is now a
+# stuck normal form. (Before #973 the PHI rule could fire on '!e', so it was
+# not a normal form; this pack was 'not-nf-on-phi'.)
+expression: '[[ x -> [[ @ -> [[ ]] ]].y  ]]'
+pattern: '[[ x -> !e ]]'
+condition:
+  nf: '!e'
