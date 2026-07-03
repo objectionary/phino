@@ -7,7 +7,7 @@
 # so a self-referential ξ inside 𝑛 (as in ⟦ a ↦ ξ ⟧.a or ⟦ a ↦ ξ.a ⟧.a) no
 # longer sees 𝜏. Such a self-reference then dispatches on a formation that
 # lacks 𝜏 and collapses to ⊥ via stop/null/dd instead of rebuilding the same
-# …, 𝜏 ↦ 𝑛, ….𝜏 term and looping forever. ρ on line 'result' still binds the
+# ⟦…, 𝜏 ↦ 𝑛, …⟧.𝜏 term and looping forever. ρ on line 'result' still binds the
 # full formation, so sibling and φ-decoration references stay intact — only the
 # self-ξ path narrows, keeping normalization (near-)total.
 name: dot
