@@ -11,7 +11,6 @@ import AST
 import CLI.Helpers
 import CLI.Types
 import CLI.Validators
-import qualified Canonizer as C
 import Condition (parseConditionThrows)
 import Control.Exception
 import Control.Monad (unless, when)
@@ -57,11 +56,10 @@ runRewrite OptsRewrite{..} = do
         (_, _, _) -> (\rewritten -> P.printExpression' rewritten (_sugarType, UNICODE, _flat, _margin))
       xmirCtx = XmirContext _omitListing _omitComments listing
       printCtx = toPrintCtx xmirCtx foc
-      canonize = if _canonize then C.canonize else id
       exclude = (`F.exclude` excluded)
       include = (`F.include` included)
   (rewrittens, exceeded) <- rewrite expr rules (context loc printCtx)
-  let rewrittens' = canonize $ exclude $ include (if _sequence then NE.toList rewrittens else [NE.last rewrittens])
+  let rewrittens' = exclude $ include (if _sequence then NE.toList rewrittens else [NE.last rewrittens])
   logDebug (printf "Printing rewritten 𝜑-expression as %s" (show _outputFormat))
   exprs <- printRewrittens printCtx (rewrittens', exceeded)
   output _targetFile exprs
@@ -124,6 +122,7 @@ runRewrite OptsRewrite{..} = do
         xmirCtx
         _nonumber
         _compress
+        _canonize
         _sequence
         (justMeetPopularity _meetPopularity)
         (justMeetLength _meetLength)
@@ -144,11 +143,10 @@ runDataize OptsDataize{..} = do
   expr <- parseInput input _inputFormat
   seedTaus expr
   let printCtx = toPrintCtx foc
-      canonize = if _canonize then C.canonize else id
       exclude = (`F.exclude` excluded)
       include = (`F.include` included)
   (bytes, chain) <- dataize expr (context loc printCtx)
-  when _sequence (printRewrittens printCtx (canonize $ exclude $ include chain, False) >>= putStrLn)
+  when _sequence (printRewrittens printCtx (exclude $ include chain, False) >>= putStrLn)
   unless _quiet (putStrLn (P.printBytes bytes))
   where
     validateOpts :: IO ()
@@ -171,6 +169,7 @@ runDataize OptsDataize{..} = do
         defaultXmirContext
         _nonumber
         _compress
+        _canonize
         _sequence
         (justMeetPopularity _meetPopularity)
         (justMeetLength _meetLength)
@@ -220,6 +219,7 @@ runMerge OptsMerge{..} = do
         _flat
         _margin
         xmirCtx
+        False
         False
         False
         False

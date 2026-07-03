@@ -22,6 +22,7 @@ data PrintContext = PrintCtx
   , _xmirCtx :: XmirContext
   , _nonumber :: Bool
   , _compress :: Bool
+  , _canonize :: Bool
   , _sequence :: Bool
   , _meetPopularity :: Int
   , _meetLength :: Int

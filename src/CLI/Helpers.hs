@@ -9,6 +9,7 @@ module CLI.Helpers where
 import AST
 import CLI.Types
 import CLI.Validators (invalidCLIArguments)
+import Canonizer (canonize)
 import Control.Exception
 import Control.Monad ((>=>))
 import Data.Functor ((<&>))
@@ -24,7 +25,7 @@ import Logger
 import Parser (parseExpressionThrows)
 import qualified Printer as P
 import qualified Random as R
-import Rewriter (Rewrittens')
+import Rewriter (Rewritten, Rewrittens')
 import System.IO (getContents')
 import Text.Printf (printf)
 import XMIR (expressionToXMIR, parseXMIRThrows, printXMIR, xmirToPhi)
@@ -62,11 +63,17 @@ parseInput phi PHI = parseExpressionThrows phi
 parseInput xmir XMIR = parseXMIRThrows xmir >>= xmirToPhi
 parseInput _ LATEX = invalidCLIArguments "LaTeX cannot be used as input format"
 
+-- The LaTeX sequence path canonizes inside 'rewrittensToLatex', after the meet
+-- compression (see 'canonizedRewrittens' there); the remaining formats have no
+-- meet pass, so canonization happens here right before rendering.
 printRewrittens :: PrintContext -> Rewrittens' -> IO String
 printRewrittens ctx@PrintCtx{..} rewrittens@(chain, _)
   | _outputFormat == LATEX && _sequence = rewrittensToLatex rewrittens (printCtxToLatexCtx ctx)
-  | _focus == ExRoot = mapM (printInFormat ctx . fst) chain <&> intercalate "\n"
-  | otherwise = mapM (\(expr, _) -> locatedExpression _focus expr >>= printExpression ctx) chain <&> intercalate "\n"
+  | _focus == ExRoot = mapM (printInFormat ctx . fst) (canonized chain) <&> intercalate "\n"
+  | otherwise = mapM (\(expr, _) -> locatedExpression _focus expr >>= printExpression ctx) (canonized chain) <&> intercalate "\n"
+  where
+    canonized :: [Rewritten] -> [Rewritten]
+    canonized = if _canonize then canonize else id
 
 printExpression :: PrintContext -> Expression -> IO String
 printExpression ctx@PrintCtx{..} ex = case _outputFormat of
@@ -83,7 +90,7 @@ printInFormat ctx@PrintCtx{..} expr = case _outputFormat of
 
 printCtxToLatexCtx :: PrintContext -> LatexContext
 printCtxToLatexCtx PrintCtx{..} =
-  LatexContext _sugar _line _margin _nonumber _compress _meetPopularity _meetLength _focus _expression _label _meetPrefix
+  LatexContext _sugar _line _margin _nonumber _compress _canonize _meetPopularity _meetLength _focus _expression _label _meetPrefix
 
 -- Get rules for rewriting depending on provided flags
 getRules :: Bool -> Bool -> [FilePath] -> IO [Y.Rule]
