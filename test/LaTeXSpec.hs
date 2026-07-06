@@ -13,7 +13,7 @@ import Control.Monad (forM_)
 import Data.Text qualified as T
 import LaTeX (LatexContext (..), conditionToLatex, defaultLatexContext, meetInExpression, meetInExpressions)
 import Parser (parseExpressionThrows)
-import Test.Hspec (Spec, describe, it, shouldBe)
+import Test.Hspec (Spec, describe, expectationFailure, it, shouldBe)
 import Yaml qualified as Y
 
 spec :: Spec
@@ -45,8 +45,9 @@ spec = do
           step lastAttr = "[[ r -> [[ p -> Q.a ]], s -> [[ q -> Q.b ]], tag -> Q." <> lastAttr <> " ]]"
       exprs <- traverse parseExpressionThrows [step "one", step "two", step "three"]
       let ctx = defaultLatexContext{_compress = True, _meetLength = 6, _meetPopularity = 1}
-          firstStep = head (meetInExpressions exprs ctx)
-      T.count "ExPhiMeet" (T.pack (show firstStep)) `shouldBe` 2
+      case meetInExpressions exprs ctx of
+        (firstStep : _) -> T.count "ExPhiMeet" (T.pack (show firstStep)) `shouldBe` 2
+        [] -> expectationFailure "meetInExpressions returned no expressions"
 
   describe "renders the 'formation' condition" $
     forM_
