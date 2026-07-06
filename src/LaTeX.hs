@@ -93,9 +93,13 @@ meetInExpression expr len = meetIn expr
 
 {- | Here we're trying to compress a sequence of expressions with \phinoMeet{} and \phinoAgain LaTeX functions.
 We process the sequence of expressions and trying to find all sub-expressions in the first expression which are present
-in the following expressions. Then we find ONE expression which is the most frequently encountered.
+in the following expressions. Then we find the one which is the most frequently encountered.
 If it's encountered in more than specific percentage (_meetPopularity) of the following expressions - we replace
 it with \phinoAgain{} in the following expressions and with \phinoMeet{} in the first expression.
+We then keep re-scanning that same first expression for further meets: the parts already factored out become
+\phinoMeet{}/\phinoAgain{}, which the scanner skips, so each pass yields strictly fewer candidates and the loop
+terminates. This lets a single step host several \phinoMeet{}s when it carries several independent recurring
+sub-expressions, rather than only the single most frequent one.
 -}
 meetInExpressions :: [Expression] -> LatexContext -> [Expression]
 meetInExpressions exprs LatexContext{..} = go exprs 1
@@ -127,7 +131,7 @@ meetInExpressions exprs LatexContext{..} = go exprs 1
                       rest' = zipWith (\other exprs' -> replaceExpression (other, exprs', map (const (ExPhiAgain _meetPrefix idx)) exprs')) rest met'
                       found = filter (not . null) met'
                    in if length met' > 1 && toDouble (length found) / toDouble (length met') >= popularity
-                        then withAgain : go rest' (idx + 1)
+                        then go (withAgain : rest') (idx + 1)
                         else next
                 [] -> next
             _ -> next

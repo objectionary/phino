@@ -10,7 +10,8 @@ module LaTeXSpec where
 
 import AST (Expression (ExMeta))
 import Control.Monad (forM_)
-import LaTeX (conditionToLatex, meetInExpression)
+import Data.Text qualified as T
+import LaTeX (LatexContext (..), conditionToLatex, defaultLatexContext, meetInExpression, meetInExpressions)
 import Parser (parseExpressionThrows)
 import Test.Hspec (Spec, describe, it, shouldBe)
 import Yaml qualified as Y
@@ -32,6 +33,20 @@ spec = do
           res <- traverse parseExpressionThrows exprs
           meetInExpression ptn 4 tgt `shouldBe` res
       )
+
+  describe "meets several sub-expressions in a single step" $
+    -- A step routinely carries several independent recurring sub-expressions.
+    -- The first step here holds two distinct recurring formations
+    -- ([[ p -> Q.a ]] and [[ q -> Q.b ]]); both must be factored, so the first
+    -- rendered step ends up with two \phinoMeet{}s, not just the single most
+    -- frequent one (see #976).
+    it "factors every recurring sub-expression, not only one" $ do
+      let step :: String -> String
+          step lastAttr = "[[ r -> [[ p -> Q.a ]], s -> [[ q -> Q.b ]], tag -> Q." <> lastAttr <> " ]]"
+      exprs <- traverse parseExpressionThrows [step "one", step "two", step "three"]
+      let ctx = defaultLatexContext{_compress = True, _meetLength = 6, _meetPopularity = 1}
+          firstStep = head (meetInExpressions exprs ctx)
+      T.count "ExPhiMeet" (T.pack (show firstStep)) `shouldBe` 2
 
   describe "renders the 'formation' condition" $
     forM_
