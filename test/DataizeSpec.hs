@@ -388,4 +388,16 @@ spec = do
           ]
       , BtMany ["40", "14", "00", "00", "00", "00", "00", "00"]
       )
+    , -- Dispatching an absent attribute on a φ-decorated formation now resolves
+      -- the inherited attribute through morphing 'mphi' (#973): PHI used to be a
+      -- normalization rule, but following the decoration is a semantic 𝕄 step,
+      -- so it moved into 'morphing.yaml'. Here '.t' is missing from the outer
+      -- formation, so 𝕄 walks the '@' decoration to the parent that defines 't'
+      -- and dataizes its datum.
+
+      ( "InheritedThroughPhi"
+      , "Q"
+      , "[[ @ -> [[ t -> [[ D> 2A- ]] ]] ]].t"
+      , BtOne "2A"
+      )
     ]
