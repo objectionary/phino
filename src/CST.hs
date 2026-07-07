@@ -177,6 +177,7 @@ data EXPRESSION
   | EX_META {meta :: META}
   | EX_PHI_MEET {prefix :: Maybe String, idx :: Int, expr :: EXPRESSION}
   | EX_PHI_AGAIN {prefix :: Maybe String, idx :: Int, expr :: EXPRESSION}
+  | EX_BYTES {bytes :: BYTES} -- bare data 𝛿, a rendering-only terminal chain node (see #980)
   deriving (Eq, Show)
 
 data ATTRIBUTE
@@ -318,6 +319,7 @@ instance ToCST Expression EXPRESSION where
   toCST ExXi _ = EX_XI XI
   toCST (ExMeta mt) _ = EX_META (META NO_EXCL (exMetaHead mt) (metaTail mt))
   toCST ExTermination _ = EX_TERMINATION DEAD
+  toCST (ExBytes bts) ctx = EX_BYTES (toCST bts ctx)
   toCST (ExPhiMeet prefix idx expr) ctx = EX_PHI_MEET prefix idx (toCST expr ctx)
   toCST (ExPhiAgain prefix idx expr) ctx = EX_PHI_AGAIN prefix idx (toCST expr ctx)
   toCST (ExFormation [BiVoid AtRho]) ctx = toCST (ExFormation []) ctx

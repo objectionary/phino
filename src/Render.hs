@@ -207,6 +207,7 @@ instance Render EXPRESSION where
   render EX_META{..} = render meta
   render EX_PHI_MEET{..} = "\\phinoMeet{" <> maybe "" (\p -> T.pack p <> ":") prefix <> render idx <> "}{ " <> render expr <> " }"
   render EX_PHI_AGAIN{..} = "\\phinoAgain{" <> maybe "" (\p -> T.pack p <> ":") prefix <> render idx <> "}"
+  render EX_BYTES{..} = render bytes
 
 instance Render [ATTRIBUTE] where
   render attrs = T.intercalate ", " (map render attrs)

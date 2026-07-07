@@ -281,10 +281,11 @@ spec = do
                    , "contextualize"
                    , "dot"
                    , "copy"
+                   , "delta"
                    ]
     it "dataizes a located reference through the expected rules" $ do
       labels <- labelsOf "Q.foo.bar" "[[ foo -> [[ bar -> [[ @ -> Q.x ]] ]], x -> [[ D> 42- ]] ]]"
-      labels `shouldBe` ["contextualize", "md", "dot", "copy", "mf"]
+      labels `shouldBe` ["contextualize", "md", "dot", "copy", "mf", "delta"]
     -- The 'none' rule dataizes ⊥ (𝔻(⟦⟧) → 𝔻(⊥)), which matches no clause now
     -- that there is no 'end' rule, so an empty formation reduces through one
     -- labelled 'dataize' step and then fails: it has nothing to dataize (#955).

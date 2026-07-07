@@ -208,7 +208,8 @@ dataize' (expr, seq) univ state ctx = do
       Nothing -> do
         (final, state') <- sides rule.premises subst
         bts <- buildBytesThrows rule.dresult final
-        pure ((bts, NE.toList seq), state')
+        seq' <- leadsTo seq rule.name (ExBytes bts) ctx
+        pure ((bts, NE.toList seq'), state')
       Just concl@(Y.Premise _ (Y.OpDataize arg)) -> case producer arg rule.premises of
         -- 𝔻(𝒩(e)) records the producing step (the 'box' contextualization or the
         -- 'fire' λ-application), then normalizes its result back to a normal form
