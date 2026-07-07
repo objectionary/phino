@@ -1,7 +1,7 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
--- Canonization is the process of replacing function names attrached to
+-- Canonization is the process of replacing function names attached to
 -- lambda bindings with numbered identifiers prefixed with 'Fn'
 -- like 'Fn1', 'Fn2', etc.
 module Canonizer (canonize, canonizeExpr) where
