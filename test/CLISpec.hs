@@ -1070,7 +1070,7 @@ spec = do
             , "\\end{phinoMorphingInference}"
             , "\\begin{phinoMorphingInference}"
             , "  \\phinoName{mphi}"
-            , "  \\phinoLabel{\\phi}"
+            , "  \\phinoLabel{\\varphi}"
             , "  \\phinoCondition{ @ \\in B \\;\\text{and}\\; \\tau \\notin B \\;\\text{and}\\; L \\notin B }"
             , "  \\phinoPremise{ \\phinoNormalize{ [[ B ]] . @ . \\tau }{ n } }"
             , "  \\phinoPremise{ \\phinoMorph{ n }{ e }{ s_1 }{ n_1 }{ s_2 } }"
