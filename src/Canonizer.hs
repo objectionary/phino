@@ -2,8 +2,8 @@
 -- SPDX-License-Identifier: MIT
 
 -- Canonization is the process of replacing function names attrached to
--- lambda bindings with numbered identifiers started from 'F'
--- like 'F1', 'F2', etc.
+-- lambda bindings with numbered identifiers prefixed with 'Fn'
+-- like 'Fn1', 'Fn2', etc.
 module Canonizer (canonize, canonizeExpr) where
 
 import AST
@@ -14,7 +14,7 @@ canonizeBindings :: [Binding] -> Int -> ([Binding], Int)
 canonizeBindings [] idx = ([], idx)
 canonizeBindings ((BiLambda (Function _)) : rest) idx =
   let (bds', idx') = canonizeBindings rest (idx + 1)
-   in (BiLambda (Function (T.pack ('F' : show idx))) : bds', idx')
+   in (BiLambda (Function (T.pack ("Fn" <> show idx))) : bds', idx')
 canonizeBindings (BiTau attr expr : rest) idx =
   let (expr', idx') = canonizeExpression expr idx
       (bds', idx'') = canonizeBindings rest idx'
@@ -50,7 +50,7 @@ canonizeArgument (ArAlpha alpha expr) idx =
   let (expr', idx') = canonizeExpression expr idx
    in (ArAlpha alpha expr', idx')
 
--- Canonize a single expression, restarting the 'F' counter from 1 so the
+-- Canonize a single expression, restarting the 'Fn' counter from 1 so the
 -- numbering is local to that expression.
 canonizeExpr :: Expression -> Expression
 canonizeExpr expr = fst (canonizeExpression expr 1)
