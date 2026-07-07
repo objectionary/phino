@@ -80,6 +80,17 @@ spec = do
             parseExpression printed `shouldBe` Right expr
       )
 
+  describe "printExpression keeps a compressed meet atomic under a narrow margin" $
+    -- A \phinoMeet is a single \overbracket visual unit, so its body must stay
+    -- on one line even when the surrounding margin forces the outer formation to
+    -- wrap. A newline inside the braced argument would raise "! Missing }
+    -- inserted" in an aligned/gathered LaTeX context (see #978).
+    it "renders the meet body on a single line even when the margin wraps its parent" $ do
+      let body = ExFormation [BiTau (AtLabel "alpha") ExRoot, BiTau (AtLabel "beta") ExRoot, BiTau (AtLabel "gamma") ExRoot]
+          expr = ExFormation [BiTau (AtLabel "x") (ExPhiMeet Nothing 5 body)]
+          printed = printExpression' expr (SWEET, UNICODE, MULTILINE, 30)
+      printed `shouldContain` "\\phinoMeet{5}{ ⟦ alpha ↦ Φ, beta ↦ Φ, gamma ↦ Φ ⟧ }"
+
   describe "printExpression with default config" $
     forM_
       [ ("empty formation", ExFormation [BiVoid AtRho], "⟦⟧")
