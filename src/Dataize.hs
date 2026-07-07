@@ -205,11 +205,6 @@ dataize' (expr, seq) univ state ctx = do
     asRule rule = Y.Rule rule.name Nothing Nothing rule.match ExRoot rule.when Nothing Nothing
     reduce :: Y.DataizeRule -> Subst -> IO (Dataized, State)
     reduce rule subst = case bytesProducer rule.dresult rule.premises of
-      -- The bytes result is a literal or a matched meta with no producing
-      -- premise — the 'delta' rule that extracts the bare data 𝛿. Record that
-      -- extraction as the final chain step so '--sequence' terminates at 𝛿
-      -- (rendered through the 'ExBytes' node) rather than at the data object it
-      -- was pulled out of (see #980).
       Nothing -> do
         (final, state') <- sides rule.premises subst
         bts <- buildBytesThrows rule.dresult final

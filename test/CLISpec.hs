@@ -889,10 +889,6 @@ spec = do
               ]
           ]
 
-    -- The delta extraction is part of the derivation, so '--sequence' ends the
-    -- chain at the bare data 𝛿 even under '--quiet', which only governs the
-    -- separate bare-data console print (see #980, #480). Before the fix the
-    -- equation terminated at the data object and '--quiet' dropped 𝛿 entirely.
     it "keeps the delta step in --sequence under --quiet" $
       withStdin "[[ D> 01- ]]" $
         testCLISucceeded
