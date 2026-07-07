@@ -51,18 +51,12 @@ spec = do
         (firstStep : _) -> T.count "ExPhiMeet" (T.pack (show firstStep)) `shouldBe` 2
         [] -> expectationFailure "meetInExpressions returned no expressions"
 
-  describe "indents wrapped continuation steps in a --sequence" $
-    -- Regression test for #981. Every step after the first is joined onto a
-    -- two-space '\leadsto' line, so it is laid out from base tab 1 rather than
-    -- column 0. A multi-line continuation step must then nest its members one
-    -- level below the '\leadsto' word and align its closing bracket with it;
-    -- before the fix the members shared the '\leadsto' indent and the closing
-    -- bracket landed at column 0, left of its own opening bracket.
-    it "nests members below \\leadsto and aligns the closing bracket" $ do
-      firstStep <- parseExpressionThrows "[[ x -> Q.y ]]"
-      secondStep <- parseExpressionThrows "[[ a -> Q.b, c -> Q.d ]]"
+  describe "indents wrapped continuation steps in a --sequence (#981)" $
+    it "nests a wrapped step's members below its two-space \\leadsto line and aligns the closing bracket with it, rather than laying the step out from column 0" $ do
+      start <- parseExpressionThrows "[[ x -> Q.y ]]"
+      wrapped <- parseExpressionThrows "[[ a -> Q.b, c -> Q.d ]]"
       let ctx = defaultLatexContext{_line = MULTILINE, _margin = 20}
-      latex <- rewrittensToLatex ([(firstStep, Just "first"), (secondStep, Just "second")], False) ctx
+      latex <- rewrittensToLatex ([(start, Just "first"), (wrapped, Just "second")], False) ctx
       latex
         `shouldContain` intercalate
           "\n"
