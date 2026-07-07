@@ -882,11 +882,34 @@ spec = do
               , "  \\leadsto [[ |x| -> [[ D> |01-|, |y| -> ? ]] ( |y| -> [[]] ) ]] . |x| \\leadsto_{\\nameref{r:copy}}"
               , "  \\leadsto [[ |x| -> [[ D> |01-|, |y| -> [[]] ]] ]] . |x| \\leadsto_{\\nameref{r:dot}}"
               , "  \\leadsto [[ D> |01-|, |y| -> [[]] ]] ( \\phiTerminal{\\rho} -> [[ |x| -> [[ D> |01-|, |y| -> [[]] ]] ]] ) \\leadsto_{\\nameref{r:copy}}"
-              , "  \\leadsto [[ D> |01-|, |y| -> [[]], \\phiTerminal{\\rho} -> [[ |x| -> [[ D> |01-|, |y| -> [[]] ]] ]] ]]{.}"
+              , "  \\leadsto [[ D> |01-|, |y| -> [[]], \\phiTerminal{\\rho} -> [[ |x| -> [[ D> |01-|, |y| -> [[]] ]] ]] ]] \\leadsto_{\\nameref{r:delta}}"
+              , "  \\leadsto |01-|{.}"
               , "\\end{phiquation}"
               , "01-"
               ]
           ]
+
+    -- The delta extraction is part of the derivation, so '--sequence' ends the
+    -- chain at the bare data 𝛿 even under '--quiet', which only governs the
+    -- separate bare-data console print (see #980, #480). Before the fix the
+    -- equation terminated at the data object and '--quiet' dropped 𝛿 entirely.
+    it "keeps the delta step in --sequence under --quiet" $
+      withStdin "[[ D> 01- ]]" $
+        testCLISucceeded
+          ["dataize", "--sequence", "--quiet", "--output=latex", "--flat", "--sweet"]
+          [ intercalate
+              "\n"
+              [ "[[ D> |01-| ]] \\leadsto_{\\nameref{r:delta}}"
+              , "  \\leadsto |01-|{.}"
+              , "\\end{phiquation}"
+              ]
+          ]
+
+    it "ends the phi --sequence at the bare data" $
+      withStdin "[[ D> 01- ]]" $
+        testCLISucceeded
+          ["dataize", "--sequence", "--quiet", "--flat", "--sweet"]
+          ["⟦ Δ ⤍ 01- ⟧\n01-"]
 
     it "focuses a compressed sequence whose meet replaces a step root" $
       withStdin "[[ @ -> [[ @ -> $.c.plus( 32.0 ), c -> 25.0 ]], bytes(data) -> [[ @ -> $.data ]], number(as-bytes) -> [[ @ -> $.as-bytes, plus -> [[ x -> ?, L> L_number_plus ]] ]] ]]" $

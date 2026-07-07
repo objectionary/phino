@@ -26,6 +26,13 @@ data Expression
   | ExMeta Text
   | ExPhiMeet (Maybe String) Int Expression
   | ExPhiAgain (Maybe String) Int Expression
+  | {- | Bare data 𝛿 — the raw bytes extracted by the 'delta' dataization rule.
+    It is not a phi-calculus term but a rendering-only chain node, so a
+    '--sequence' derivation can terminate at the data itself rather than at
+    the data object it was pulled out of (see #980). It never flows into the
+    matcher, builder or the dataization relation.
+    -}
+    ExBytes Bytes
   deriving (Eq, Ord, Show, Generic)
 
 data Argument
@@ -110,6 +117,7 @@ hashExpression = goExpr fnvOffset
       ExMeta t -> hashText (step h 7) t
       ExPhiMeet ms i ex -> goExpr (hashMaybeString (step (step h 9) i) ms) ex
       ExPhiAgain ms i ex -> goExpr (hashMaybeString (step (step h 10) i) ms) ex
+      ExBytes bts -> goBytes (step h 8) bts
     goBinding :: Int -> Binding -> Int
     goBinding h = \case
       BiTau at ex -> goExpr (goAttribute (step h 11) at) ex
