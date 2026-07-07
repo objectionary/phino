@@ -43,7 +43,7 @@ jobs:
           cabal update
           make binary
       - name: Upload phino binary to Amazon S3
-        uses: aws-actions/configure-aws-credentials@v6.2.1
+        uses: aws-actions/configure-aws-credentials@v6.2.2
         with:
           aws-access-key-id: ${{ secrets.S3_KEY }}
           aws-secret-access-key: ${{ secrets.S3_SECRET }}
