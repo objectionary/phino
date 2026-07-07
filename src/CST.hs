@@ -251,6 +251,14 @@ data EXTRA = EXTRA {meta :: EXTRA_ARG, func :: String, args :: [EXTRA_ARG]}
 expressionToCST :: Expression -> EXPRESSION
 expressionToCST = toCST'
 
+-- Like 'expressionToCST', but lays the expression out from a given base tab
+-- instead of column 0. Used when an expression sits on an already-indented
+-- line (e.g. a '\leadsto' continuation step in the LaTeX --sequence output),
+-- so its wrapped member lines nest one level below that line and its closing
+-- bracket aligns with the opening one.
+expressionToCSTFrom :: Int -> Expression -> EXPRESSION
+expressionToCSTFrom tabs expr = toCST expr (tabs, EOL)
+
 -- A number can be rendered with the sweet numeric literal only when it is
 -- finite. NaN and the infinities have no such literal — and the bare `show`
 -- tokens (`NaN`, `Infinity`, `-Infinity`) would collide with object/function

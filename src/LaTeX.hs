@@ -153,17 +153,27 @@ preamble ctx@LatexContext{..} =
     , maybe "" (printf "\\phiExpression{%s} ") _expression
     ]
 
-body :: [(a, Maybe String)] -> (a -> String) -> String
+-- Join the rendered steps with '\leadsto'. Every step after the first carries
+-- the two-space '\leadsto' indent, so it is rendered from base tab 1 rather
+-- than 0 (via 'baseTab'); this keeps a wrapped multi-line step's members nested
+-- one level below its '\leadsto [[' line and its closing bracket aligned with
+-- that line. The first step has no '\leadsto' prefix and stays at base tab 0.
+body :: [(a, Maybe String)] -> (Int -> a -> String) -> String
 body printed toLatex =
   intercalate
     "\n  \\leadsto "
-    ( map
-        ( \(item, maybeName) ->
-            let item' = toLatex item
+    ( zipWith
+        ( \idx (item, maybeName) ->
+            let item' = toLatex (baseTab idx) item
              in maybe item' (printf "%s \\leadsto_{\\nameref{r:%s}}" item') maybeName
         )
+        [0 ..]
         printed
     )
+  where
+    baseTab :: Int -> Int
+    baseTab 0 = 0
+    baseTab _ = 1
 
 ending :: Bool -> LatexContext -> String
 ending True ctx = printf " \\leadsto\n  \\leadsto \\dots\n\\end{%s}" (phiquation ctx)
@@ -202,7 +212,7 @@ rewrittensToLatex (rewrittens, exceeded) ctx@LatexContext{_focus = ExRoot} =
   pure
     ( concat
         [ preamble ctx
-        , body (canonizedRewrittens (compressedRewrittens rewrittens ctx) ctx) (\expr -> renderToLatex (expressionToCST expr) ctx)
+        , body (canonizedRewrittens (compressedRewrittens rewrittens ctx) ctx) (\tabs expr -> renderToLatex (expressionToCSTFrom tabs expr) ctx)
         , ending exceeded ctx
         ]
     )
@@ -212,7 +222,7 @@ rewrittensToLatex (rewrittens, exceeded) ctx@LatexContext{..} = do
   pure
     ( concat
         [ preamble ctx
-        , body (zip (canonizedExpressions (compressedExpressions focused ctx) ctx) rules) (\expr -> renderToLatex (expressionToCST expr) ctx)
+        , body (zip (canonizedExpressions (compressedExpressions focused ctx) ctx) rules) (\tabs expr -> renderToLatex (expressionToCSTFrom tabs expr) ctx)
         , ending exceeded ctx
         ]
     )
