@@ -10,10 +10,12 @@ module LaTeXSpec where
 
 import AST (Expression (ExMeta))
 import Control.Monad (forM_)
+import Data.List (intercalate)
 import Data.Text qualified as T
-import LaTeX (LatexContext (..), conditionToLatex, defaultLatexContext, meetInExpression, meetInExpressions)
+import LaTeX (LatexContext (..), conditionToLatex, defaultLatexContext, meetInExpression, meetInExpressions, rewrittensToLatex)
+import Lining (LineFormat (MULTILINE))
 import Parser (parseExpressionThrows)
-import Test.Hspec (Spec, describe, expectationFailure, it, shouldBe)
+import Test.Hspec (Spec, describe, expectationFailure, it, shouldBe, shouldContain)
 import Yaml qualified as Y
 
 spec :: Spec
@@ -48,6 +50,21 @@ spec = do
       case meetInExpressions exprs ctx of
         (firstStep : _) -> T.count "ExPhiMeet" (T.pack (show firstStep)) `shouldBe` 2
         [] -> expectationFailure "meetInExpressions returned no expressions"
+
+  describe "indents wrapped continuation steps in a --sequence (#981)" $
+    it "nests a wrapped step's members below its two-space \\leadsto line and aligns the closing bracket with it, rather than laying the step out from column 0" $ do
+      start <- parseExpressionThrows "[[ x -> Q.y ]]"
+      wrapped <- parseExpressionThrows "[[ a -> Q.b, c -> Q.d ]]"
+      let ctx = defaultLatexContext{_line = MULTILINE, _margin = 20}
+      latex <- rewrittensToLatex ([(start, Just "first"), (wrapped, Just "second")], False) ctx
+      latex
+        `shouldContain` intercalate
+          "\n"
+          [ "  \\leadsto [["
+          , "    |a| -> Q . |b|,"
+          , "    |c| -> Q . |d|"
+          , "  ]] \\leadsto_{\\nameref{r:second}}"
+          ]
 
   describe "renders the 'formation' condition" $
     forM_
