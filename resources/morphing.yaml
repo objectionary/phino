@@ -67,7 +67,7 @@
       morph: 𝑛1
 
 - name: mphi
-  label: \phi
+  label: \varphi
   match: ⟦𝐵⟧.𝜏
   e-match: 𝑒
   n-result: 𝑛1
