@@ -19,12 +19,11 @@
 # ordered 'premises' reduce as stated. A premise binds 'n-result' to the result
 # of one judgment — 𝕄 ('morph'), 𝒩 ('normalize') or 𝔼 ('evaluate'). 'e-match' is
 # the universe-argument matcher of 𝕄(n, e); usually the e meta, but a rule may
-# pin it to a literal (e.g. 'mg' fires only on 𝕄(Φ, Φ)). A normal-form-valued
-# result (𝕄 'morph', 𝒩 'normalize') is named 𝑛, 𝑛1, … in premise order, the bare
-# 𝑛 skipped only when 'match' already binds it; an expression-valued result (𝔼
-# 'evaluate') is not a normal form — that is why a 'normalize' premise follows
-# it — so it takes an 𝑒-family name (𝑒1, 𝑒2, …, the next index free of 'match',
-# 𝑒 itself being the universe) rather than an 𝑛 name reserved for normal forms.
+# pin it to a literal (e.g. 'mg' fires only on 𝕄(Φ, Φ)). Every judgment here is
+# normal-form-valued (𝕄 'morph', 𝒩 'normalize', 𝔼 'evaluate' — 𝔼 normalizes its
+# atom's result internally), so results are named 𝑛, 𝑛1, … in premise order, the
+# bare 𝑛 skipped only when 'match' already binds it; the 𝑒-family stays reserved
+# for the universe 𝑒 itself.
 #
 # 'ml' and 'md' are kept mutually exclusive: 'md' fires only
 # when its head 𝑛 is not a formation ('not (formation 𝑛)'), so every formation
@@ -55,16 +54,16 @@
   label: \lambda
   match: '⟦𝐵1, λ ⤍ 𝑓, 𝐵2⟧.𝜏'
   e-match: 𝑒
-  n-result: 𝑛2
+  n-result: 𝑛3
   premises:
-    - n-result: 𝑒1
+    - n-result: 𝑛1
       evaluate:
         - '⟦𝐵1, λ ⤍ 𝑓, 𝐵2⟧'
         - 𝑒
-    - n-result: 𝑛1
-      normalize: '𝑒1.𝜏'
     - n-result: 𝑛2
-      morph: 𝑛1
+      normalize: '𝑛1.𝜏'
+    - n-result: 𝑛3
+      morph: 𝑛2
 
 - name: mphi
   label: \varphi
