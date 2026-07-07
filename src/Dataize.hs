@@ -211,9 +211,9 @@ dataize' (expr, seq) univ state ctx = do
         seq' <- leadsTo seq rule.name (ExBytes bts) ctx
         pure ((bts, NE.toList seq'), state')
       Just concl@(Y.Premise _ (Y.OpDataize arg)) -> case producer arg rule.premises of
-        -- 𝔻(𝒩(e)) records the producing step (the 'box' contextualization or the
-        -- 'fire' λ-application), then normalizes its result back to a normal form
-        -- before dataizing on, so 𝔻 only ever sees normal forms.
+        -- 𝔻(𝒩(e)) records the producing step (the 'box' contextualization),
+        -- then normalizes its result back to a normal form before dataizing on,
+        -- so 𝔻 only ever sees normal forms.
         Just normal@(Y.Premise _ (Y.OpNormalize inner)) -> do
           let side = rule.premises `excluding` [concl, normal]
           (final, state') <- sides side subst
@@ -228,9 +228,12 @@ dataize' (expr, seq) univ state ctx = do
           built <- buildExpressionThrows inner final
           ((morphed', seq'), state'') <- morph (built, seq) univ state' ctx
           dataize' (morphed', seq') univ state'' ctx
-        -- 𝔻(⊥) (the 'none' rule) hands a literal term straight to 𝔻 with no
-        -- producing side-computation, so the transition to that term is labelled
-        -- by the conclusion's own verb ('dataize') rather than a side premise.
+        -- The dataize argument is produced with no 'normalize'/'morph' spine to
+        -- splice: 'fire' by its 'evaluate' side-computation (𝔼 now yields a
+        -- normal form itself, so no follow-up 'normalize' is needed) and 'none'
+        -- by handing the literal ⊥ straight to 𝔻. The transition is labelled by
+        -- the side-computation ('evaluate') when there is one, else by the
+        -- conclusion's own verb ('dataize' for 𝔻(⊥)).
         _ -> do
           let side = rule.premises `excluding` [concl]
           (final, state') <- sides side subst
@@ -402,10 +405,12 @@ execBuildTerm univ ctx "morph" = \args subst -> fst <$> _morph univ ctx emptySta
 execBuildTerm _ ctx func = _buildTerm ctx func
 
 -- The Evaluation function 𝔼(b, e, s): it fires the λ atom of a formation 'b'
--- against the global universe 'e', under the incoming state 𝑠, and returns the
--- atom's result together with the new state. The universe is now passed
--- explicitly as the second argument (rather than threaded behind the scenes),
--- matching how the morphing 𝕄 and dataization 𝔻 functions carry it.
+-- against the global universe 'e', under the incoming state 𝑠, normalizes the
+-- atom's raw result 𝒩(e₁) = n, and returns that normal form together with the
+-- new state. Normalizing here makes 𝔼's codomain 𝓝 (as its type demands), so
+-- callers ('fire', 'ml') need no follow-up 'normalize' premise. The universe is
+-- passed explicitly as the second argument (rather than threaded behind the
+-- scenes), matching how the morphing 𝕄 and dataization 𝔻 functions carry it.
 _evaluate :: DataizeContext -> State -> BuildTermMethodS
 _evaluate ctx state [ArgExpression expr, ArgExpression universe] subst = do
   form <- buildExpressionThrows expr subst
@@ -414,7 +419,9 @@ _evaluate ctx state [ArgExpression expr, ArgExpression universe] subst = do
     ExFormation bds -> do
       resolved <- formation bds univ state ctx
       case resolved of
-        Just (obj, state') -> pure (TeExpression obj, state')
+        Just (obj, state') -> do
+          (normal, _) <- normalized obj ((univ, Nothing) :| []) ctx
+          pure (TeExpression normal, state')
         Nothing -> throwIO (userError "Function evaluate() expects a formation with a λ binding")
     _ -> throwIO (userError "Function evaluate() expects a formation")
 _evaluate _ _ _ _ = throwIO (userError "Function evaluate() requires exactly 2 expression arguments")

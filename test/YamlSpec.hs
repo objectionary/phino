@@ -75,23 +75,22 @@ spec = do
       (labels \\ nub labels) `shouldBe` []
 
   describe "reserves 𝑛-family metas for normal forms" $
-    -- 𝒞 ('contextualize') and 𝔼 ('evaluate') return an expression that is not
-    -- necessarily a normal form — that is why a 'normalize' premise follows
-    -- them — so binding their result to an 𝑛-reserved meta (internal prefix
-    -- "n") in a morphing or dataization rule conflates the calculus's 'e'
-    -- (expression) with 'n' (normal form). Such a slip is notational, not
-    -- functional (the meta name is only a substitution-map key), so it is easy
-    -- to miss by eye; flag it automatically instead. Contextualization is
-    -- excluded on purpose: its 𝒞-valued results are the point and its header
-    -- reserves nothing (see #971).
-    it "no contextualize/evaluate premise in a morphing or dataization rule binds an 𝑛-reserved meta" $ do
+    -- 𝒞 ('contextualize') returns an expression that is not necessarily a normal
+    -- form — that is why a 'normalize' premise follows it — so binding its result
+    -- to an 𝑛-reserved meta (internal prefix "n") in a morphing or dataization
+    -- rule conflates the calculus's 'e' (expression) with 'n' (normal form). Such
+    -- a slip is notational, not functional (the meta name is only a
+    -- substitution-map key), so it is easy to miss by eye; flag it automatically
+    -- instead. 𝔼 ('evaluate') is excluded on purpose (partially reverting #971):
+    -- it normalizes its atom's result internally, so its codomain is 𝓝 and an
+    -- 𝑛-family result is exactly right (see #990). Contextualization keeps being
+    -- flagged: its 𝒞-valued results are non-normal (see #971).
+    it "no contextualize premise in a morphing or dataization rule binds an 𝑛-reserved meta" $ do
       let expressionValued :: Operation -> Bool
           expressionValued OpContextualize{} = True
-          expressionValued OpEvaluate{} = True
           expressionValued _ = False
           verbOf :: Operation -> String
           verbOf OpContextualize{} = "contextualize"
-          verbOf OpEvaluate{} = "evaluate"
           verbOf _ = "?"
           premisesOf :: [(String, [Premise])]
           premisesOf =
