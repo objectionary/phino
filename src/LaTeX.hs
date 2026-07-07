@@ -465,7 +465,7 @@ premiseToLatex universe index premise = case premise.operation of
   Y.OpMorph arg -> (phinoMorph (renderExpr arg) universe (stateName index) (stateName (index + 1)) (renderExpr (ExMeta premise.result)), index + 1)
   Y.OpDataize arg -> (phinoDataize (renderExpr arg) universe (stateName index) (stateName (index + 1)) (renderBytes (BtMeta premise.result)), index + 1)
   Y.OpNormalize arg -> (phinoNormalize (renderExpr arg) (renderExpr (ExMeta premise.result)), index)
-  Y.OpEvaluate arg universe -> (phinoEvaluate (renderExpr arg) (renderExpr universe) (stateName index) (stateName (index + 1)) (renderExpr (ExMeta premise.result)), index + 1)
+  Y.OpEvaluate arg evalUniverse -> (phinoEvaluate (renderExpr arg) (renderExpr evalUniverse) (stateName index) (stateName (index + 1)) (renderExpr (ExMeta premise.result)), index + 1)
   Y.OpContextualize arg context -> (phinoContextualize (renderExpr arg) (renderExpr context) (renderExpr (ExMeta premise.result)), index)
 
 -- Assemble an inference block from a name, optional label, optional side
