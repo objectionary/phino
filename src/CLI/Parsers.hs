@@ -122,7 +122,7 @@ optSequence :: Parser Bool
 optSequence = switch (long "sequence" <> help "Result output contains all intermediate 𝜑-expressions concatenated with EOL")
 
 optCanonize :: Parser Bool
-optCanonize = switch (long "canonize" <> help "Rename all functions attached to λ binding with F1, F2, etc.")
+optCanonize = switch (long "canonize" <> help "Rename all functions attached to λ binding with Fn1, Fn2, etc.")
 
 optExpression :: Parser (Maybe String)
 optExpression = optional (strOption (long "expression" <> metavar "NAME" <> help "Name for 'phiExpression' element when rendering to LaTeX (see --output option)"))
