@@ -132,6 +132,14 @@ to normalize expressions:
 phino rewrite --normalize hello.phi
 ```
 
+Some rules mint fresh synthetic names via the `random-string` built-in. To
+keep the output reproducible across runs, `phino` seeds the random generator
+deterministically with `0` by default. Use `--seed` to pick a different seed:
+
+```bash
+phino rewrite --seed=42 --rule=my-rule.yml hello.phi
+```
+
 If no input file is provided, the 𝜑-expression is taken from `stdin`:
 
 ```bash

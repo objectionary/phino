@@ -85,6 +85,7 @@ data OptsDataize = OptsDataize
   , _canonize :: Bool
   , _depthSensitive :: Bool
   , _shuffle :: Bool
+  , _seed :: Int
   , _quiet :: Bool
   , _compress :: Bool
   , _maxDepth :: Int
@@ -125,6 +126,7 @@ data OptsRewrite = OptsRewrite
   , _must :: Must
   , _normalize :: Bool
   , _shuffle :: Bool
+  , _seed :: Int
   , _omitListing :: Bool
   , _omitComments :: Bool
   , _depthSensitive :: Bool
@@ -172,6 +174,7 @@ data OptsMatch = OptsMatch
   , _logLines :: Int
   , _sugarType :: SugarType
   , _flat :: LineFormat
+  , _seed :: Int
   , _pattern :: Maybe String
   , _when :: Maybe String
   , _inputFile :: Maybe FilePath

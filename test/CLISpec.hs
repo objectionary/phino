@@ -334,7 +334,24 @@ spec = do
     it "prints help" $
       testCLISucceeded
         ["rewrite", "--help"]
-        ["Rewrite the 𝜑-expression"]
+        ["Rewrite the 𝜑-expression", "--seed SEED"]
+
+    it "accepts --seed flag" $
+      withStdin "[[ x -> 5 ]]" $
+        testCLISucceeded
+          ["rewrite", "--seed=42", "--sweet"]
+          ["⟦ x ↦ 5 ⟧"]
+
+    it "defaults --seed to 0 in help" $
+      testCLISucceeded
+        ["rewrite", "--help"]
+        ["default: 0"]
+
+    it "fails with a non-integer --seed" $
+      withStdin "[[ ]]" $
+        testCLIFailed
+          ["rewrite", "--seed=abc"]
+          ["[ERROR]"]
 
     it "saves steps to dir with --steps-dir" $ do
       let dir = "test-steps-temp"
@@ -867,6 +884,10 @@ spec = do
       withStdin "[[ D> 01- ]]" $
         testCLISucceeded ["dataize"] ["01-"]
 
+    it "accepts --seed flag" $
+      withStdin "[[ D> 01- ]]" $
+        testCLISucceeded ["dataize", "--seed=7"] ["01-"]
+
     it "fails to dataize an empty object, which dataizes the terminator ⊥" $
       withStdin "[[ ]]" $
         testCLIFailed ["dataize"] ["terminator ⊥"]
@@ -1314,6 +1335,10 @@ spec = do
     it "prints one substitution" $
       withStdin "[[ x -> Q.x ]]" $
         testCLISucceeded ["match", "--pattern=Q.!t"] ["t >> x"]
+
+    it "accepts --seed flag" $
+      withStdin "[[ x -> Q.x ]]" $
+        testCLISucceeded ["match", "--seed=3", "--pattern=Q.!t"] ["t >> x"]
 
     it "prints many substitutions" $
       withStdin "[[ x -> Q.x, y -> Q.y ]]" $
