@@ -192,6 +192,17 @@ optStepsDir = optional (strOption (long "steps-dir" <> metavar "FILE" <> help "D
 optShuffle :: Parser Bool
 optShuffle = switch (long "shuffle" <> help "Shuffle rules before applying")
 
+optSeed :: Parser Int
+optSeed =
+  option
+    auto
+    ( long "seed"
+        <> metavar "SEED"
+        <> help "Seed for the random generator that mints fresh synthetic names, making output reproducible across runs"
+        <> value 0
+        <> showDefault
+    )
+
 optSugar :: Parser SugarType
 optSugar = flag SALTY SWEET (long "sweet" <> help (printf "Print result and intermediate (see %s option(s)) 𝜑-expressions using syntax sugar" _intermediateOptions))
 
@@ -259,6 +270,7 @@ dataizeParser =
             <*> optCanonize
             <*> optDepthSensitive
             <*> optShuffle
+            <*> optSeed
             <*> switch (long "quiet" <> help "Don't print the result of dataization")
             <*> optCompress
             <*> optMaxDepth
@@ -290,6 +302,7 @@ rewriteParser =
             <*> optMust
             <*> optNormalize
             <*> optShuffle
+            <*> optSeed
             <*> optOmitListing
             <*> optOmitComments
             <*> optDepthSensitive
@@ -343,6 +356,7 @@ matchParser =
             <*> optLogLines
             <*> optSugar
             <*> optLineFormat
+            <*> optSeed
             <*> optional (strOption (long "pattern" <> metavar "EXPRESSION" <> help "Pattern expression to match against"))
             <*> optional (strOption (long "when" <> metavar "CONDITION" <> help "Predicate for matched substitutions"))
             <*> argInputFile

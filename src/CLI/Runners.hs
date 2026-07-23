@@ -31,6 +31,7 @@ import Rewriter
 import Rule (RuleContext (..), matchExpressionWithRule)
 import System.Directory (doesFileExist, getModificationTime)
 import System.Exit (exitSuccess)
+import System.Random (mkStdGen, setStdGen)
 import Tau (seedTaus)
 import Text.Printf (printf)
 import XMIR
@@ -48,6 +49,7 @@ runRewrite OptsRewrite{..} = do
   validateBreakpoint _breakpoint rules
   input <- readInput _inputFile
   expr <- parseInput input _inputFormat
+  setStdGen (mkStdGen _seed)
   seedTaus expr
   logDebug (printf "Amount of rewriting cycles across all the rules: %d, per rule: %d" _maxCycles _maxDepth)
   let listing = case (rules, _inputFormat, _outputFormat) of
@@ -141,6 +143,7 @@ runDataize OptsDataize{..} = do
   [foc] <- validatedDispatches "focus" [_focus]
   input <- readInput _inputFile
   expr <- parseInput input _inputFormat
+  setStdGen (mkStdGen _seed)
   seedTaus expr
   let printCtx = toPrintCtx foc
       exclude = (`F.exclude` excluded)
@@ -235,6 +238,7 @@ runMatch :: OptsMatch -> IO ()
 runMatch OptsMatch{..} = do
   input <- readInput _inputFile
   expr <- parseInput input PHI
+  setStdGen (mkStdGen _seed)
   seedTaus expr
   if isNothing _pattern
     then logDebug "The --pattern is not provided, no substitutions are built"
