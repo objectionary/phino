@@ -151,6 +151,24 @@ spec = do
         , ExFormation [BiTau (AtLabel "a") (ExDispatch ExXi AtRho)]
         , "⟦ a ↦ ξ.ρ ⟧"
         )
+      ,
+        ( "an application whose only argument is rho collapses to its callee"
+        , SWEET
+        , ExApplication (ExDispatch ExRoot (AtLabel "x")) (ArTau AtRho (ExFormation [BiVoid AtRho]))
+        , "Φ.x"
+        )
+      ,
+        ( "the same collapse happens on the salty path, without leftover parens"
+        , SALTY
+        , ExApplication (ExDispatch ExRoot (AtLabel "x")) (ArTau AtRho (ExFormation [BiVoid AtRho]))
+        , "Φ.x"
+        )
+      ,
+        ( "an application keeps its other arguments and drops only rho"
+        , SWEET
+        , ExApplication (ExApplication (ExDispatch ExRoot (AtLabel "e")) (ArTau (AtLabel "a") ExRoot)) (ArTau AtRho ExXi)
+        , "Φ.e( a ↦ Φ )"
+        )
       ]
       ( \(desc, sugar, expr, expected) ->
           it desc (printExpressionHidingRho' expr (sugar, UNICODE, SINGLELINE, defaultMargin) `shouldBe` expected)

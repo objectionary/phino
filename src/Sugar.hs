@@ -43,9 +43,10 @@ data SugarType = SWEET | SALTY
 -- Drop every ρ binding (ρ ↦ ∅, ρ ↦ e and ρ(…) ↦ e) from a rendered CST, the
 -- effect of the '--hide-rho' switch. It runs after 'withSugarType', so it also
 -- removes the ρ ↦ ∅ that 'bdWithVoidRho' re-inserts into every formation on the
--- SALTY path. Only formation bindings are stripped: dispatches such as ξ.ρ and
--- application arguments are left untouched, and a formation left empty by the
--- strip collapses to the compact '⟦⟧' layout.
+-- SALTY path. Both formation bindings and application arguments are stripped;
+-- dispatches such as ξ.ρ are left untouched. A formation left empty by the
+-- strip collapses to the compact '⟦⟧' layout, and an application left with no
+-- argument collapses to its bare callee (no leftover 'e()').
 withoutRho :: EXPRESSION -> EXPRESSION
 withoutRho = goExpr
   where
@@ -54,7 +55,9 @@ withoutRho = goExpr
       empty@BI_EMPTY{} -> EX_FORMATION lsb NO_EOL NO_TAB empty NO_EOL NO_TAB rsb
       binding' -> EX_FORMATION lsb eol tab binding' eol' tab' rsb
     goExpr EX_DISPATCH{..} = EX_DISPATCH (goExpr expr) space attr
-    goExpr EX_APPLICATION{..} = EX_APPLICATION (goExpr expr) space eol tab (goArgument argument) eol' tab' indent
+    goExpr EX_APPLICATION{..} = case goArgument argument of
+      Nothing -> goExpr expr
+      Just argument' -> EX_APPLICATION (goExpr expr) space eol tab argument' eol' tab' indent
     goExpr EX_PHI_MEET{..} = EX_PHI_MEET prefix idx (goExpr expr)
     goExpr EX_PHI_AGAIN{..} = EX_PHI_AGAIN prefix idx (goExpr expr)
     goExpr expr = expr
@@ -77,22 +80,30 @@ withoutRho = goExpr
     promote tab (BDS_EMPTY _) = BI_EMPTY tab
     promote tab (BDS_PAIR _ _ pair bindings) = BI_PAIR pair bindings tab
     promote tab (BDS_META _ _ meta bindings) = BI_META meta bindings tab
-    -- Application arguments keep their ρ (bdWithVoidRho never adds one there);
-    -- only recurse into the expressions they carry.
-    goArgument :: APP_ARGUMENT -> APP_ARGUMENT
-    goArgument (AA_TAU binding) = AA_TAU (goAppBinding binding)
-    goArgument (AA_TAUS binding) = AA_TAUS (goArgBinding binding)
-    goArgument (AA_EXPRS args) = AA_EXPRS (goAppArg args)
-    goAppBinding :: APP_BINDING -> APP_BINDING
-    goAppBinding APP_BINDING{..} = APP_BINDING (goPair pair)
+    -- Application arguments: drop the ρ pairs too, the way 'goBinding' does for
+    -- formations. 'Nothing' means nothing survived the strip, so 'goExpr'
+    -- collapses the whole application to its bare callee instead of leaving an
+    -- empty 'e()'. Positional arguments ('AA_EXPRS') carry no ρ, so they stay.
+    goArgument :: APP_ARGUMENT -> Maybe APP_ARGUMENT
+    goArgument (AA_TAU (APP_BINDING pair))
+      | isRho pair = Nothing
+      | otherwise = Just (AA_TAU (APP_BINDING (goPair pair)))
+    goArgument (AA_TAUS binding) = case goArgBinding binding of
+      BI_EMPTY{} -> Nothing
+      binding' -> Just (AA_TAUS binding')
+    goArgument (AA_EXPRS args) = Just (AA_EXPRS (goAppArg args))
     goArgBinding :: BINDING -> BINDING
     goArgBinding empty@BI_EMPTY{} = empty
     goArgBinding BI_META{..} = BI_META meta (goArgBindings bindings) tab
-    goArgBinding BI_PAIR{..} = BI_PAIR (goPair pair) (goArgBindings bindings) tab
+    goArgBinding BI_PAIR{..}
+      | isRho pair = promote tab (goArgBindings bindings)
+      | otherwise = BI_PAIR (goPair pair) (goArgBindings bindings) tab
     goArgBindings :: BINDINGS -> BINDINGS
     goArgBindings empty@BDS_EMPTY{} = empty
     goArgBindings BDS_META{..} = BDS_META eol tab meta (goArgBindings bindings)
-    goArgBindings BDS_PAIR{..} = BDS_PAIR eol tab (goPair pair) (goArgBindings bindings)
+    goArgBindings BDS_PAIR{..}
+      | isRho pair = goArgBindings bindings
+      | otherwise = BDS_PAIR eol tab (goPair pair) (goArgBindings bindings)
     goAppArg :: APP_ARG -> APP_ARG
     goAppArg APP_ARG{..} = APP_ARG (goExpr expr) (goAppArgs args)
     goAppArgs :: APP_ARGS -> APP_ARGS
