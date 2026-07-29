@@ -82,15 +82,19 @@ label' = lexeme $ do
   return (T.pack (first : rest))
 
 function :: Parser String
-function = lexeme $ do
-  first <- oneOf ['A' .. 'Z']
-  rest <-
-    many
-      ( satisfy
-          (\ch -> isDigit ch || isAsciiLower ch || ch == '_' || ch == 'φ')
-          <?> "allowed character in function name"
-      )
-  return (first : rest)
+function =
+  lexeme
+    ( do
+        first <- oneOf ['A' .. 'Z']
+        rest <-
+          many
+            ( satisfy
+                (\ch -> isDigit ch || isAsciiLower ch || ch == '_' || ch == 'φ')
+                <?> "allowed character in function name"
+            )
+        return (first : rest)
+    )
+    <?> "function name"
 
 delta :: Parser String
 delta =
@@ -244,7 +248,7 @@ quotedStr = char '"' >> manyTill (choice [escapedChar, noneOf ['\\', '"']]) (cha
 tauValue :: Parser Expression
 tauValue =
   choice
-    [ try $ do
+    [ do
         _ <- arrow
         expression
     , do
@@ -265,41 +269,42 @@ tauValue =
     rb :: Parser String
     rb = symbol ")"
 
-tauBinding :: Parser Attribute -> Parser Binding
-tauBinding attr = BiTau <$> attr <*> tauValue
-
 metaBinding :: Parser Binding
 metaBinding = BiMeta <$> meta' 'B' "𝐵"
 
 -- binding
--- 1. tau
--- 2. void
--- 3. delta
--- 4. meta delta
--- 5. meta
--- 6. lambda
--- 7. meta lambda
+-- 1. delta
+-- 2. meta delta
+-- 3. meta
+-- 4. lambda
+-- 5. meta lambda
+-- 6. void
+-- 7. tau
+--
+-- Every alternative commits as soon as the token that tells it apart from its
+-- siblings is consumed, so a failure deeper in the binding keeps its own
+-- position instead of being rewound to the beginning of the binding.
 binding :: Parser Binding
 binding =
   choice
-    [ try (tauBinding attribute)
-    , try $ do
-        attr <- attribute
-        _ <- arrow
-        _ <- choice [symbol "?", symbol "∅"]
-        return (BiVoid attr)
-    , try $ do
-        _ <- delta
+    [ do
+        _ <- try delta
         BiDelta <$> bytes
     , try metaBinding
-    , try $ do
-        _ <- lambda
-        BiLambda . Function . T.pack <$> function
     , do
-        _ <- lambda
-        BiLambda . FnMeta <$> meta' 'F' "𝑓"
+        _ <- try lambda
+        BiLambda <$> choice [Function . T.pack <$> function, FnMeta <$> meta' 'F' "𝑓"]
+    , do
+        attr <- attribute
+        choice
+          [ try blank >> return (BiVoid attr)
+          , BiTau attr <$> tauValue
+          ]
     ]
     <?> "binding"
+  where
+    blank :: Parser String
+    blank = arrow >> choice [symbol "?", symbol "∅"]
 
 -- inlined void attribute
 -- 1. label
@@ -352,7 +357,7 @@ alpha = do
 argument :: Parser Argument
 argument =
   choice
-    [ try (ArAlpha <$> alpha <*> tauValue)
+    [ ArAlpha <$> try alpha <*> tauValue
     , ArTau <$> attribute <*> tauValue
     ]
     <?> "argument"
