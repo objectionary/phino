@@ -137,6 +137,25 @@ spec = do
           ["--pin=", "rewrite"]
           ["Version mismatch: --pin requires ''"]
 
+  describe "--hide-rho" $ do
+    it "drops every rho binding from the default salty output" $
+      withStdin "[[ foo -> [[ x -> [[ ]], ^ -> $.y ]], y -> [[ ]] ]]" $
+        testCLISucceeded
+          ["rewrite", "--flat", "--hide-rho"]
+          ["⟦ foo ↦ ⟦ x ↦ ⟦⟧ ⟧, y ↦ ⟦⟧ ⟧"]
+
+    it "also drops the rho that --sweet leaves behind" $
+      withStdin "[[ foo -> [[ x -> [[ ]], ^ -> $.y ]], y -> [[ ]] ]]" $
+        testCLISucceeded
+          ["rewrite", "--flat", "--sweet", "--hide-rho"]
+          ["⟦ foo ↦ ⟦ x ↦ ⟦⟧ ⟧, y ↦ ⟦⟧ ⟧"]
+
+    it "keeps sweet numeric literals intact" $
+      withStdin "[[ a -> 42 ]]" $
+        testCLISucceeded
+          ["rewrite", "--flat", "--sweet", "--hide-rho"]
+          ["⟦ a ↦ 42 ⟧"]
+
   it "prints debug info with --log-level=DEBUG" $
     withStdin "[[]]" $
       testCLISucceeded ["rewrite", "--log-level=DEBUG"] ["[DEBUG]:"]

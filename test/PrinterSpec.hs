@@ -122,6 +122,46 @@ spec = do
           it desc (printExpression' expr (SALTY, UNICODE, SINGLELINE, defaultMargin) `shouldBe` expected)
       )
 
+  describe "printExpressionHidingRho strips every rho binding for --hide-rho" $ do
+    let issueExpr =
+          ExFormation
+            [ BiTau
+                (AtLabel "foo")
+                ( ExFormation
+                    [ BiTau (AtLabel "x") (ExFormation [BiVoid AtRho])
+                    , BiTau AtRho (ExDispatch ExXi (AtLabel "y"))
+                    ]
+                )
+            , BiTau (AtLabel "y") (ExFormation [BiVoid AtRho])
+            , BiVoid AtRho
+            ]
+    forM_
+      [ ("salty clears both void and dispatch-valued rho", SALTY, issueExpr, "⟦ foo ↦ ⟦ x ↦ ⟦⟧ ⟧, y ↦ ⟦⟧ ⟧")
+      , ("sweet also drops the rho that --sweet keeps", SWEET, issueExpr, "⟦ foo ↦ ⟦ x ↦ ⟦⟧ ⟧, y ↦ ⟦⟧ ⟧")
+      ,
+        ( "a rho bound to an expression is removed"
+        , SWEET
+        , ExFormation [BiTau (AtLabel "a") ExRoot, BiTau AtRho (ExDispatch ExXi (AtLabel "y"))]
+        , "⟦ a ↦ Φ ⟧"
+        )
+      , ("a formation holding only rho collapses to empty", SALTY, ExFormation [BiVoid AtRho], "⟦⟧")
+      ,
+        ( "a ξ.ρ dispatch value is left untouched"
+        , SALTY
+        , ExFormation [BiTau (AtLabel "a") (ExDispatch ExXi AtRho)]
+        , "⟦ a ↦ ξ.ρ ⟧"
+        )
+      ]
+      ( \(desc, sugar, expr, expected) ->
+          it desc (printExpressionHidingRho' expr (sugar, UNICODE, SINGLELINE, defaultMargin) `shouldBe` expected)
+      )
+
+  describe "printExpressionHidingRho keeps primitives that carry no visible rho" $
+    it "renders a sweet numeric literal exactly as printExpression' does" $ do
+      let number = DataNumber (BtMany ["40", "45", "00", "00", "00", "00", "00", "00"])
+          config = (SWEET, UNICODE, SINGLELINE, defaultMargin)
+      printExpressionHidingRho' number config `shouldBe` printExpression' number config
+
   describe "printAttribute with default encoding" $
     forM_
       [ ("label", AtLabel "attr", "attr")

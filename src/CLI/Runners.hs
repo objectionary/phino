@@ -119,6 +119,7 @@ runRewrite OptsRewrite{..} = do
     toPrintCtx xmirCtx focus =
       PrintCtx
         _sugarType
+        _hideRho
         _flat
         _margin
         xmirCtx
@@ -168,6 +169,7 @@ runDataize OptsDataize{..} = do
     toPrintCtx focus =
       PrintCtx
         _sugarType
+        _hideRho
         _flat
         _margin
         defaultXmirContext
@@ -221,6 +223,7 @@ runMerge OptsMerge{..} = do
     toPrintCtx xmirCtx =
       PrintCtx
         _sugarType
+        False
         _flat
         _margin
         xmirCtx

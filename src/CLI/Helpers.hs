@@ -92,16 +92,21 @@ printRewrittens ctx@PrintCtx{..} rewrittens@(chain, _)
 
 printExpression :: PrintContext -> Expression -> IO String
 printExpression ctx@PrintCtx{..} ex = case _outputFormat of
-  PHI -> pure (P.printExpression' ex (_sugar, UNICODE, _line, _margin))
+  PHI -> pure (printPhi ctx ex)
   XMIR -> throwIO CouldNotPrintExpressionInXMIR
   LATEX -> pure (expressionToLaTeX ex (printCtxToLatexCtx ctx))
 
 -- Convert an expression to its corresponding String format
 printInFormat :: PrintContext -> Expression -> IO String
 printInFormat ctx@PrintCtx{..} expr = case _outputFormat of
-  PHI -> pure (P.printExpression' expr (_sugar, UNICODE, _line, _margin))
+  PHI -> pure (printPhi ctx expr)
   XMIR -> expressionToXMIR expr _xmirCtx <&> printXMIR
   LATEX -> pure (expressionToLaTeX expr (printCtxToLatexCtx ctx))
+
+-- Render an expression as PHI, dropping every ρ binding when '--hide-rho' is set.
+printPhi :: PrintContext -> Expression -> String
+printPhi PrintCtx{..} expr =
+  (if _hideRho then P.printExpressionHidingRho' else P.printExpression') expr (_sugar, UNICODE, _line, _margin)
 
 printCtxToLatexCtx :: PrintContext -> LatexContext
 printCtxToLatexCtx PrintCtx{..} =
