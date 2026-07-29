@@ -121,6 +121,13 @@ optNonumber = switch (long "nonumber" <> help "Turn off equation auto numbering 
 optSequence :: Parser Bool
 optSequence = switch (long "sequence" <> help "Result output contains all intermediate 𝜑-expressions concatenated with EOL")
 
+optHeaders :: Parser Bool
+optHeaders =
+  switch
+    ( long "headers"
+        <> help "Prefix every intermediate step (see --sequence) with a header line: step number, the rule that produced it, and AST node count before and after that rule"
+    )
+
 optCanonize :: Parser Bool
 optCanonize = switch (long "canonize" <> help "Rename all functions attached to λ binding with Fn1, Fn2, etc.")
 
@@ -267,6 +274,7 @@ dataizeParser =
             <*> optOmitComments
             <*> optNonumber
             <*> optSequence
+            <*> optHeaders
             <*> optCanonize
             <*> optDepthSensitive
             <*> optShuffle
@@ -310,6 +318,7 @@ rewriteParser =
             <*> switch (long "in-place" <> help "Edit file in-place instead of printing to output")
             <*> switch (long "update" <> help "Skip rewriting if --target file is newer than the input file")
             <*> optSequence
+            <*> optHeaders
             <*> optCanonize
             <*> optCompress
             <*> optMaxDepth

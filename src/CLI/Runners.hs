@@ -126,6 +126,7 @@ runRewrite OptsRewrite{..} = do
         _compress
         _canonize
         _sequence
+        _headers
         (justMeetPopularity _meetPopularity)
         (justMeetLength _meetLength)
         focus
@@ -174,6 +175,7 @@ runDataize OptsDataize{..} = do
         _compress
         _canonize
         _sequence
+        _headers
         (justMeetPopularity _meetPopularity)
         (justMeetLength _meetLength)
         focus
@@ -222,6 +224,7 @@ runMerge OptsMerge{..} = do
         _flat
         _margin
         xmirCtx
+        False
         False
         False
         False

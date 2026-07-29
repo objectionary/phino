@@ -38,7 +38,7 @@ import Matcher
 import Misc
 import Render (Render (render))
 import Replacer (replaceExpression)
-import Rewriter (Rewritten, Rewrittens')
+import Rewriter (Rewritten, Rewrittens', stepHeaders)
 import Sugar (SugarType (SWEET), ToSalty, withSugarType)
 import Text.Printf (printf)
 import Text.Read (readMaybe)
@@ -57,10 +57,11 @@ data LatexContext = LatexContext
   , _expression :: Maybe String
   , _label :: Maybe String
   , _meetPrefix :: Maybe String
+  , _headers :: Bool
   }
 
 defaultLatexContext :: LatexContext
-defaultLatexContext = LatexContext SWEET SINGLELINE defaultMargin False False False defaultMeetPopularity defaultMeetLength ExRoot Nothing Nothing Nothing
+defaultLatexContext = LatexContext SWEET SINGLELINE defaultMargin False False False defaultMeetPopularity defaultMeetLength ExRoot Nothing Nothing Nothing False
 
 defaultMeetPopularity :: Int
 defaultMeetPopularity = 50
@@ -158,22 +159,38 @@ preamble ctx@LatexContext{..} =
 -- than 0 (via 'baseTab'); this keeps a wrapped multi-line step's members nested
 -- one level below its '\leadsto [[' line and its closing bracket aligned with
 -- that line. The first step has no '\leadsto' prefix and stays at base tab 0.
-body :: [(a, Maybe String)] -> (Int -> a -> String) -> String
-body printed toLatex =
+-- Each step is prefixed with the matching entry from 'comments', which is
+-- either empty or a '% ...'-commented header line ending in a newline (see
+-- 'stepComments'), so headers stay on their own line above the equation.
+body :: [String] -> [(a, Maybe String)] -> (Int -> a -> String) -> String
+body comments printed toLatex =
   intercalate
-    "\n  \\leadsto "
-    ( zipWith
-        ( \idx (item, maybeName) ->
+    "\n"
+    ( zipWith3
+        ( \idx comment (item, maybeName) ->
             let item' = toLatex (baseTab idx) item
-             in maybe item' (printf "%s \\leadsto_{\\nameref{r:%s}}" item') maybeName
+                leadsto = if idx == 0 then item' else "  \\leadsto " ++ item'
+             in comment ++ maybe leadsto (printf "%s \\leadsto_{\\nameref{r:%s}}" leadsto) maybeName
         )
         [0 ..]
+        comments
         printed
     )
   where
     baseTab :: Int -> Int
     baseTab 0 = 0
     baseTab _ = 1
+
+-- LaTeX comment header lines for each step (see 'stepHeaders' in "Rewriter"),
+-- or empty strings when '--headers' is off. A '%' starts a LaTeX comment, so
+-- the header documents the '--sequence' chain without affecting the rendered
+-- equation. Each comment ends in a newline so the following step starts on a
+-- fresh line.
+stepComments :: [Rewritten] -> LatexContext -> [String]
+stepComments rewrittens LatexContext{_headers = enabled} =
+  if enabled
+    then map (printf "%% %s\n") (stepHeaders rewrittens)
+    else map (const "") rewrittens
 
 ending :: Bool -> LatexContext -> String
 ending True ctx = printf " \\leadsto\n  \\leadsto \\dots\n\\end{%s}" (phiquation ctx)
@@ -212,7 +229,7 @@ rewrittensToLatex (rewrittens, exceeded) ctx@LatexContext{_focus = ExRoot} =
   pure
     ( concat
         [ preamble ctx
-        , body (canonizedRewrittens (compressedRewrittens rewrittens ctx) ctx) (\tabs expr -> renderToLatex (expressionToCSTFrom tabs expr) ctx)
+        , body (stepComments rewrittens ctx) (canonizedRewrittens (compressedRewrittens rewrittens ctx) ctx) (\tabs expr -> renderToLatex (expressionToCSTFrom tabs expr) ctx)
         , ending exceeded ctx
         ]
     )
@@ -222,7 +239,7 @@ rewrittensToLatex (rewrittens, exceeded) ctx@LatexContext{..} = do
   pure
     ( concat
         [ preamble ctx
-        , body (zip (canonizedExpressions (compressedExpressions focused ctx) ctx) rules) (\tabs expr -> renderToLatex (expressionToCSTFrom tabs expr) ctx)
+        , body (stepComments rewrittens ctx) (zip (canonizedExpressions (compressedExpressions focused ctx) ctx) rules) (\tabs expr -> renderToLatex (expressionToCSTFrom tabs expr) ctx)
         , ending exceeded ctx
         ]
     )

@@ -24,6 +24,7 @@ data PrintContext = PrintCtx
   , _compress :: Bool
   , _canonize :: Bool
   , _sequence :: Bool
+  , _headers :: Bool
   , _meetPopularity :: Int
   , _meetLength :: Int
   , _focus :: Expression
@@ -82,6 +83,7 @@ data OptsDataize = OptsDataize
   , _omitComments :: Bool
   , _nonumber :: Bool
   , _sequence :: Bool
+  , _headers :: Bool
   , _canonize :: Bool
   , _depthSensitive :: Bool
   , _shuffle :: Bool
@@ -134,6 +136,7 @@ data OptsRewrite = OptsRewrite
   , _inPlace :: Bool
   , _update :: Bool
   , _sequence :: Bool
+  , _headers :: Bool
   , _canonize :: Bool
   , _compress :: Bool
   , _maxDepth :: Int

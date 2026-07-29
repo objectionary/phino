@@ -25,7 +25,7 @@ import Logger
 import Parser (parseExpressionThrows)
 import qualified Printer as P
 import qualified Random as R
-import Rewriter (Rewritten, Rewrittens')
+import Rewriter (Rewritten, Rewrittens', stepHeaders)
 import System.IO (getContents')
 import Text.Printf (printf)
 import XMIR (expressionToXMIR, parseXMIRThrows, printXMIR, xmirToPhi)
@@ -69,11 +69,26 @@ parseInput _ LATEX = invalidCLIArguments "LaTeX cannot be used as input format"
 printRewrittens :: PrintContext -> Rewrittens' -> IO String
 printRewrittens ctx@PrintCtx{..} rewrittens@(chain, _)
   | _outputFormat == LATEX && _sequence = rewrittensToLatex rewrittens (printCtxToLatexCtx ctx)
-  | _focus == ExRoot = mapM (printInFormat ctx . fst) (canonized chain) <&> intercalate "\n"
-  | otherwise = mapM (\(expr, _) -> locatedExpression _focus expr >>= printExpression ctx) (canonized chain) <&> intercalate "\n"
+  | otherwise = withHeaders <$> mapM render (canonized chain)
   where
+    render :: Rewritten -> IO String
+    render (expr, _)
+      | _focus == ExRoot = printInFormat ctx expr
+      | otherwise = locatedExpression _focus expr >>= printExpression ctx
     canonized :: [Rewritten] -> [Rewritten]
     canonized = if _canonize then canonize else id
+    -- Prefix every step with an empty line and its header (see 'stepHeaders')
+    -- when '--headers' is on. Headers, like the other intermediate-output
+    -- flags, are meaningful only together with '--sequence'. Node counts come
+    -- from the original 'chain', not the canonized one, since canonization
+    -- only renames functions and never changes the AST size.
+    withHeaders :: [String] -> String
+    withHeaders rendered
+      | _headers && _sequence = intercalate "\n" (zipWith prefixed (stepHeaders chain) rendered)
+      | otherwise = intercalate "\n" rendered
+      where
+        prefixed :: String -> String -> String
+        prefixed = printf "\n%s\n%s"
 
 printExpression :: PrintContext -> Expression -> IO String
 printExpression ctx@PrintCtx{..} ex = case _outputFormat of
@@ -90,7 +105,7 @@ printInFormat ctx@PrintCtx{..} expr = case _outputFormat of
 
 printCtxToLatexCtx :: PrintContext -> LatexContext
 printCtxToLatexCtx PrintCtx{..} =
-  LatexContext _sugar _line _margin _nonumber _compress _canonize _meetPopularity _meetLength _focus _expression _label _meetPrefix
+  LatexContext _sugar _line _margin _nonumber _compress _canonize _meetPopularity _meetLength _focus _expression _label _meetPrefix _headers
 
 -- Get rules for rewriting depending on provided flags
 getRules :: Bool -> Bool -> [FilePath] -> IO [Y.Rule]
