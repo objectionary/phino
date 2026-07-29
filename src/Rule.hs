@@ -176,11 +176,13 @@ _nf (ExMeta meta) (Subst mp) ctx = case M.lookup meta mp of
 _nf expr subst ctx = pure [subst | isNF expr ctx]
 
 -- An expression is xi-free when it contains no ξ outside of a formation: it is
--- Φ, a formation, a dispatch with a xi-free subject, or an application with a
--- xi-free subject and argument. Together with a normal-form check this is what
--- makes an expression absolute (𝒦 ⊆ 𝒩); the '𝑘' meta-variable applies this
--- xi-free check first (cheap, structural, rules out the ξ-recursion the
--- normal-form check could loop on) and the normal-form check second.
+-- Φ, ⊥, a formation, a dispatch with a xi-free subject, or an application with
+-- a xi-free subject and argument. ⊥ holds no ξ to capture, so it is xi-free
+-- (and 'isNF ⊥ = True' already), which lets the copy rule accept a ⊥ argument.
+-- Together with a normal-form check this is what makes an expression absolute
+-- (𝒦 ⊆ 𝒩); the '𝑘' meta-variable applies this xi-free check first (cheap,
+-- structural, rules out the ξ-recursion the normal-form check could loop on)
+-- and the normal-form check second.
 _absolute :: Expression -> Subst -> RuleContext -> IO [Subst]
 _absolute (ExMeta meta) (Subst mp) ctx = case M.lookup meta mp of
   Just (MvExpression expr) -> _absolute expr (Subst mp) ctx
@@ -190,6 +192,7 @@ _absolute expr subst _ = pure [subst | xiFree expr]
     xiFree :: Expression -> Bool
     xiFree (ExFormation _) = True
     xiFree ExRoot = True
+    xiFree ExTermination = True
     xiFree (ExApplication e (ArTau _ te)) = xiFree e && xiFree te
     xiFree (ExApplication e (ArAlpha _ te)) = xiFree e && xiFree te
     xiFree (ExDispatch e _) = xiFree e
