@@ -10,6 +10,7 @@ module ParserSpec where
 import AST
 import Control.Monad (forM_)
 import Data.Either (isLeft, isRight)
+import Data.List (isInfixOf)
 import Files (allPathsIn)
 import Parser
 import System.FilePath (takeBaseName)
@@ -25,6 +26,15 @@ test function useCases =
     it ipt $ case res of
       Just right -> function ipt `shouldBe` Right right
       _ -> function ipt `shouldSatisfy` isLeft
+
+fails ::
+  (Show a) =>
+  (String -> Either String a) ->
+  [(String, String)] ->
+  SpecWith (Arg Expectation)
+fails function useCases =
+  forM_ useCases $ \(ipt, fragment) ->
+    it ipt (function ipt `shouldSatisfy` either (isInfixOf fragment) (const False))
 
 spec :: Spec
 spec = do
@@ -245,6 +255,25 @@ spec = do
           , "⟦ k ↦ ⟦ Δ ⤍ 42-, Δ ⤍ 55- ⟧ ⟧"
           ]
       )
+
+  describe "points at the typo instead of the beginning of the binding" $
+    fails
+      parseExpression
+      [ ("[[ D> x ]]", "expression:1:7:")
+      , ("[[ L> 42 ]]", "expression:1:7:")
+      , ("⟦ a ↦ Φ.foo() ⟧", "expression:1:13:")
+      , ("[[ x -> ]]", "expression:1:9:")
+      , ("[[ x -> Q.y(] ]]", "expression:1:13:")
+      , ("[[ y -> 5, x -> Q.z(} ]]", "expression:1:21:")
+      ]
+
+  describe "tells what a binding prefix may be followed by" $
+    fails
+      parseExpression
+      [ ("[[ D> x ]]", "expecting bytes")
+      , ("[[ L> 42 ]]", "function name")
+      , ("[[ x -> ]]", "expecting '?', '∅', or expression head")
+      ]
 
   describe "parse packs" $ do
     packs <- runIO (allPathsIn "test-resources/parser-packs")
