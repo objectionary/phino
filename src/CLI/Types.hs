@@ -17,6 +17,7 @@ import XMIR (XmirContext)
 
 data PrintContext = PrintCtx
   { _sugar :: SugarType
+  , _hideRho :: Bool
   , _line :: LineFormat
   , _margin :: Int
   , _xmirCtx :: XmirContext
@@ -77,6 +78,7 @@ data OptsDataize = OptsDataize
   , _inputFormat :: IOFormat
   , _outputFormat :: IOFormat
   , _sugarType :: SugarType
+  , _hideRho :: Bool
   , _flat :: LineFormat
   , _omitListing :: Bool
   , _omitComments :: Bool
@@ -122,6 +124,7 @@ data OptsRewrite = OptsRewrite
   , _inputFormat :: IOFormat
   , _outputFormat :: IOFormat
   , _sugarType :: SugarType
+  , _hideRho :: Bool
   , _flat :: LineFormat
   , _must :: Must
   , _normalize :: Bool

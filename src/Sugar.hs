@@ -7,7 +7,7 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Sugar (toSalty, withSugarType, SugarType (..), ToSalty) where
+module Sugar (toSalty, withSugarType, withoutRho, SugarType (..), ToSalty) where
 
 import AST
 import Bytes (numToBts, strToBts)
@@ -39,6 +39,75 @@ bdWithVoidRho bd@BI_META{} = bd
 
 data SugarType = SWEET | SALTY
   deriving (Eq, Show)
+
+-- Drop every ρ binding (ρ ↦ ∅, ρ ↦ e and ρ(…) ↦ e) from a rendered CST, the
+-- effect of the '--hide-rho' switch. It runs after 'withSugarType', so it also
+-- removes the ρ ↦ ∅ that 'bdWithVoidRho' re-inserts into every formation on the
+-- SALTY path. Only formation bindings are stripped: dispatches such as ξ.ρ and
+-- application arguments are left untouched, and a formation left empty by the
+-- strip collapses to the compact '⟦⟧' layout.
+withoutRho :: EXPRESSION -> EXPRESSION
+withoutRho = goExpr
+  where
+    goExpr :: EXPRESSION -> EXPRESSION
+    goExpr EX_FORMATION{..} = case goBinding binding of
+      empty@BI_EMPTY{} -> EX_FORMATION lsb NO_EOL NO_TAB empty NO_EOL NO_TAB rsb
+      binding' -> EX_FORMATION lsb eol tab binding' eol' tab' rsb
+    goExpr EX_DISPATCH{..} = EX_DISPATCH (goExpr expr) space attr
+    goExpr EX_APPLICATION{..} = EX_APPLICATION (goExpr expr) space eol tab (goArgument argument) eol' tab' indent
+    goExpr EX_PHI_MEET{..} = EX_PHI_MEET prefix idx (goExpr expr)
+    goExpr EX_PHI_AGAIN{..} = EX_PHI_AGAIN prefix idx (goExpr expr)
+    goExpr expr = expr
+    -- Formation bindings: drop the ρ pairs, recurse into whatever remains.
+    goBinding :: BINDING -> BINDING
+    goBinding empty@BI_EMPTY{} = empty
+    goBinding BI_META{..} = BI_META meta (goBindings bindings) tab
+    goBinding BI_PAIR{..}
+      | isRho pair = promote tab (goBindings bindings)
+      | otherwise = BI_PAIR (goPair pair) (goBindings bindings) tab
+    goBindings :: BINDINGS -> BINDINGS
+    goBindings empty@BDS_EMPTY{} = empty
+    goBindings BDS_META{..} = BDS_META eol tab meta (goBindings bindings)
+    goBindings BDS_PAIR{..}
+      | isRho pair = goBindings bindings
+      | otherwise = BDS_PAIR eol tab (goPair pair) (goBindings bindings)
+    -- Turn the tail chain back into a head binding once its leading pair was
+    -- dropped; the promoted pair is already stripped and recursed by 'goBindings'.
+    promote :: TAB -> BINDINGS -> BINDING
+    promote tab (BDS_EMPTY _) = BI_EMPTY tab
+    promote tab (BDS_PAIR _ _ pair bindings) = BI_PAIR pair bindings tab
+    promote tab (BDS_META _ _ meta bindings) = BI_META meta bindings tab
+    -- Application arguments keep their ρ (bdWithVoidRho never adds one there);
+    -- only recurse into the expressions they carry.
+    goArgument :: APP_ARGUMENT -> APP_ARGUMENT
+    goArgument (AA_TAU binding) = AA_TAU (goAppBinding binding)
+    goArgument (AA_TAUS binding) = AA_TAUS (goArgBinding binding)
+    goArgument (AA_EXPRS args) = AA_EXPRS (goAppArg args)
+    goAppBinding :: APP_BINDING -> APP_BINDING
+    goAppBinding APP_BINDING{..} = APP_BINDING (goPair pair)
+    goArgBinding :: BINDING -> BINDING
+    goArgBinding empty@BI_EMPTY{} = empty
+    goArgBinding BI_META{..} = BI_META meta (goArgBindings bindings) tab
+    goArgBinding BI_PAIR{..} = BI_PAIR (goPair pair) (goArgBindings bindings) tab
+    goArgBindings :: BINDINGS -> BINDINGS
+    goArgBindings empty@BDS_EMPTY{} = empty
+    goArgBindings BDS_META{..} = BDS_META eol tab meta (goArgBindings bindings)
+    goArgBindings BDS_PAIR{..} = BDS_PAIR eol tab (goPair pair) (goArgBindings bindings)
+    goAppArg :: APP_ARG -> APP_ARG
+    goAppArg APP_ARG{..} = APP_ARG (goExpr expr) (goAppArgs args)
+    goAppArgs :: APP_ARGS -> APP_ARGS
+    goAppArgs AAS_EMPTY = AAS_EMPTY
+    goAppArgs AAS_EXPR{..} = AAS_EXPR eol tab (goExpr expr) (goAppArgs args)
+    goPair :: PAIR -> PAIR
+    goPair PA_TAU{..} = PA_TAU attr arrow (goExpr expr)
+    goPair PA_ALPHA{..} = PA_ALPHA alpha arrow (goExpr expr)
+    goPair PA_FORMATION{..} = PA_FORMATION attr voids arrow (goExpr expr)
+    goPair pair = pair
+    isRho :: PAIR -> Bool
+    isRho PA_VOID{attr = AT_RHO _} = True
+    isRho PA_TAU{attr = AT_RHO _} = True
+    isRho PA_FORMATION{attr = AT_RHO _} = True
+    isRho _ = False
 
 -- By default CST is generated with all possible syntax sugar
 -- The main purpose of this class is to get rid of syntax sugar

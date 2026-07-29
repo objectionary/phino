@@ -206,6 +206,9 @@ optSeed =
 optSugar :: Parser SugarType
 optSugar = flag SALTY SWEET (long "sweet" <> help (printf "Print result and intermediate (see %s option(s)) 𝜑-expressions using syntax sugar" _intermediateOptions))
 
+optHideRho :: Parser Bool
+optHideRho = switch (long "hide-rho" <> help "Remove every ρ binding from result and intermediate 𝜑-expressions for cleaner output")
+
 optSugar' :: Parser SugarType
 optSugar' = flag SALTY SWEET (long "sweet" <> help "Print result 𝜑-expression using syntax sugar")
 
@@ -262,6 +265,7 @@ dataizeParser =
             <*> optInputFormat
             <*> optOutputFormat
             <*> optSugar
+            <*> optHideRho
             <*> optLineFormat
             <*> optOmitListing
             <*> optOmitComments
@@ -298,6 +302,7 @@ rewriteParser =
             <*> optInputFormat
             <*> optOutputFormat
             <*> optSugar
+            <*> optHideRho
             <*> optLineFormat
             <*> optMust
             <*> optNormalize

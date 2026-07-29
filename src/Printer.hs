@@ -7,6 +7,7 @@
 module Printer
   ( printExpression
   , printExpression'
+  , printExpressionHidingRho'
   , printAttribute
   , printAlpha
   , printBinding
@@ -42,7 +43,18 @@ logPrintConfig :: (SugarType, Encoding, LineFormat, Int)
 logPrintConfig = (SWEET, UNICODE, SINGLELINE, defaultMargin)
 
 printExpression' :: Expression -> PrintConfig -> String
-printExpression' ex (sugar, encoding, line, margin) = T.unpack $ render (withLineFormat line $ withMargin margin $ withEncoding encoding $ withSugarType sugar $ expressionToCST ex)
+printExpression' = printExpressionWith id
+
+-- Like 'printExpression'', but drops every ρ binding from the rendered
+-- expression (the '--hide-rho' switch). See 'withoutRho'.
+printExpressionHidingRho' :: Expression -> PrintConfig -> String
+printExpressionHidingRho' = printExpressionWith withoutRho
+
+-- Shared rendering pipeline with a hook applied to the sugared CST, right
+-- before encoding and margin wrapping.
+printExpressionWith :: (EXPRESSION -> EXPRESSION) -> Expression -> PrintConfig -> String
+printExpressionWith hide ex (sugar, encoding, line, margin) =
+  T.unpack $ render (withLineFormat line $ withMargin margin $ withEncoding encoding $ hide $ withSugarType sugar $ expressionToCST ex)
 
 printExpression :: Expression -> String
 printExpression ex = printExpression' ex defaultPrintConfig
