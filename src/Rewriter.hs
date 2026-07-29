@@ -9,7 +9,7 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Rewriter (rewrite, RewriteContext (..), Rewritten, Rewrittens, Rewrittens') where
+module Rewriter (rewrite, RewriteContext (..), Rewritten, Rewrittens, Rewrittens', stepHeaders) where
 
 import AST
 import Builder
@@ -17,6 +17,7 @@ import Control.Exception (Exception, throwIO)
 import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as NE
 import qualified Data.Map.Strict as Map
+import Data.Maybe (fromMaybe)
 import Deps
 import Locator (locatedExpression, withLocatedExpression)
 import Logger (logDebug)
@@ -53,6 +54,27 @@ type Rewritten = (Expression, Maybe String)
 type Rewrittens = (NonEmpty Rewritten, Bool)
 
 type Rewrittens' = ([Rewritten], Bool)
+
+-- Build a header line for every step of a rewriting chain. The chain is
+-- '[(e0, Just r0), ..., (en, Nothing)]', where 'ri' is the rule applied to 'ei'
+-- to produce 'e(i+1)' (see 'leadsTo'). A step's header names the rule that
+-- produced its expression, together with the AST node counts before and after
+-- that rule, e.g. "=== Step #4, Rule 'STOP', 32t -> 43t". The very first step is
+-- the input, which no rule produced, so it carries only its number:
+-- "=== Step #1". The 'N nodes -> M nodes' pair matches the debug log emitted
+-- while rewriting.
+stepHeaders :: [Rewritten] -> [String]
+stepHeaders chain = zipWith3 header [1 ..] chain (Nothing : map Just chain)
+  where
+    header :: Int -> Rewritten -> Maybe Rewritten -> String
+    header step _ Nothing = printf "=== Step #%d" step
+    header step (current, _) (Just (before, rule)) =
+      printf
+        "=== Step #%d, Rule '%s', %dt -> %dt"
+        step
+        (fromMaybe "?" rule)
+        (countNodes before)
+        (countNodes current)
 
 type ToReplace = (Expression, Expression, Expression, [Subst])
 

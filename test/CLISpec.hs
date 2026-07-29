@@ -545,6 +545,65 @@ spec = do
               ]
           ]
 
+    it "prefixes every step with a header when --headers is on" $
+      withStdin "[[ x -> \"foo\" ]]" $
+        testCLISucceeded
+          [ "rewrite"
+          , rule "first.yaml"
+          , rule "second.yaml"
+          , "--max-depth=1"
+          , "--max-cycles=2"
+          , "--sequence"
+          , "--headers"
+          , "--sweet"
+          , "--flat"
+          ]
+          [ intercalate
+              "\n"
+              [ ""
+              , "=== Step #1"
+              , "⟦ x ↦ \"foo\" ⟧"
+              , ""
+              , "=== Step #2, Rule 'first', 31t -> 30t"
+              , "Φ.x( y ↦ \"foo\" )"
+              , ""
+              , "=== Step #3, Rule 'second', 30t -> 31t"
+              , "⟦ x ↦ \"foo\" ⟧"
+              ]
+          ]
+
+    it "ignores --headers without --sequence" $
+      withStdin "[[ x -> \"foo\" ]]" $
+        testCLISucceeded
+          ["rewrite", rule "simple.yaml", "--headers", "--sweet", "--flat"]
+          ["⟦ x ↦ \"bar\" ⟧"]
+
+    it "emits step headers as LaTeX comments with --headers" $
+      withStdin "[[ x -> \"foo\" ]]" $
+        testCLISucceeded
+          [ "rewrite"
+          , rule "first.yaml"
+          , rule "second.yaml"
+          , "--max-depth=1"
+          , "--max-cycles=2"
+          , "--sequence"
+          , "--headers"
+          , "--sweet"
+          , "--flat"
+          , "--output=latex"
+          ]
+          [ unlines
+              [ "\\begin{phiquation}"
+              , "% === Step #1"
+              , "[[ |x| -> \"foo\" ]] \\leadsto_{\\nameref{r:first}}"
+              , "% === Step #2, Rule 'first', 31t -> 30t"
+              , "  \\leadsto Q . |x| ( |y| -> \"foo\" ) \\leadsto_{\\nameref{r:second}}"
+              , "% === Step #3, Rule 'second', 30t -> 31t"
+              , "  \\leadsto [[ |x| -> \"foo\" ]]{.}"
+              , "\\end{phiquation}"
+              ]
+          ]
+
     it "prints only one latex preamble with --sequence" $
       withStdin "[[ x -> \"foo\" ]]" $
         testCLISucceeded
