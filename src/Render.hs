@@ -264,6 +264,9 @@ instance Render CONDITION where
   render CO_ABSOLUTE{..} = "\\phinoAbsolute{ " <> render expr <> " }"
   render CO_NOT{condition = CO_FORMATION{..}} = "\\phinoNotFormation{ " <> render expr <> " }"
   render CO_NOT{..} = renderFunc "not" condition
+    where
+      renderFunc :: Render a => Text -> a -> Text
+      renderFunc func renderable = func <> "\\lparen " <> render renderable <> " \\rparen"
   render CO_COMPARE{..} = render left <> " " <> render equal <> " " <> render right
   render CO_MATCHES{..} = "matches\\lparen " <> T.pack regex <> ", " <> render expr <> " \\rparen"
   render CO_PART_OF{..} = "part-of\\lparen " <> render expr <> ", " <> render binding <> " \\rparen"
@@ -279,9 +282,6 @@ instance Render CONDITION where
       renderGroups [group] = render group
       renderGroups gs = "\\lparen " <> T.intercalate " \\cup " (map render gs) <> " \\rparen"
   render CO_EMPTY = ""
-
-renderFunc :: Render a => Text -> a -> Text
-renderFunc func renderable = func <> "\\lparen " <> render renderable <> " \\rparen"
 
 instance Render EXTRA_ARG where
   render ARG_ATTR{..} = render attr

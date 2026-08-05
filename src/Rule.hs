@@ -352,12 +352,6 @@ metaNamesWithPrefix prefix = nub . go
     goArgument (ArTau _ expr) = go expr
     goArgument (ArAlpha _ expr) = go expr
 
-nfMetaNames :: Expression -> [T.Text]
-nfMetaNames = metaNamesWithPrefix "n"
-
-kMetaNames :: Expression -> [T.Text]
-kMetaNames = metaNamesWithPrefix "k"
-
 matchExpressionWithRule :: Expression -> Y.Rule -> RuleContext -> IO [Subst]
 matchExpressionWithRule = matchExpressionBy matchExpression [substEmpty]
 
@@ -410,3 +404,9 @@ matchExpressionBy matcher seed expr rule ctx =
                       met <- meetMaybeCondition rule.having extended ctx
                       when (null met) (logDebug "The 'having' condition wasn't met")
                       pure met
+  where
+    nfMetaNames :: Expression -> [T.Text]
+    nfMetaNames = metaNamesWithPrefix "n"
+
+    kMetaNames :: Expression -> [T.Text]
+    kMetaNames = metaNamesWithPrefix "k"
