@@ -13,6 +13,8 @@ concurrency:
 env:
   GHC_VERSION: '9.8.4'
   CABAL_VERSION: '3.12.1.0'
+  BENCH_ROUNDS: '5'
+  BENCH_THRESHOLD: '0.20'
 jobs:
   regression-check:
     timeout-minutes: 90
@@ -45,41 +47,48 @@ jobs:
           key: ubuntu-m2-${{ hashFiles('benchmark/.mvn/wrapper/maven-wrapper.properties') }}
           restore-keys: ubuntu-m2-
       - run: cabal update
-      - name: Generate frozen fixture from merge-base
+      - name: Build bench and frozen fixture at merge-base
         run: |
           set -e
           git checkout ${{ github.event.pull_request.base.sha }}
-          cabal build all
+          cabal build all --enable-benchmarks
           phino_dir=$(dirname "$(cabal list-bin phino)")
           PATH="$phino_dir:$PATH" make benchmark/tmp/native.phi
           cp benchmark/tmp/native.phi /tmp/native.phi
           cp benchmark/tmp/Native.xmir /tmp/Native.xmir
-      - name: Bench at merge-base
-        run: |
-          set -e
-          cabal bench --enable-benchmarks 2>&1 | tee /tmp/base.out
-      - name: Restore fixture at PR head
+          cp "$(cabal list-bin bench --enable-benchmarks)" /tmp/bench-base
+      - name: Build bench at PR head
         run: |
           set -e
           git checkout ${{ github.event.pull_request.head.sha }}
+          cabal build all --enable-benchmarks
+          cp "$(cabal list-bin bench --enable-benchmarks)" /tmp/bench-head
           mkdir -p benchmark/tmp
           cp /tmp/native.phi benchmark/tmp/native.phi
           cp /tmp/Native.xmir benchmark/tmp/Native.xmir
-      - name: Bench at PR head
+      - name: Bench both builds interleaved
         run: |
           set -e
-          cabal bench --enable-benchmarks 2>&1 | tee /tmp/head.out
+          : > /tmp/base.out
+          : > /tmp/head.out
+          for round in $(seq 1 "$BENCH_ROUNDS"); do
+            echo "round $round of $BENCH_ROUNDS"
+            if [ $((round % 2)) -eq 0 ]; then
+              /tmp/bench-head >> /tmp/head.out
+              /tmp/bench-base >> /tmp/base.out
+            else
+              /tmp/bench-base >> /tmp/base.out
+              /tmp/bench-head >> /tmp/head.out
+            fi
+          done
       - name: Save PR number
         run: echo "${{ github.event.number }}" > /tmp/pr-number
-      - name: Compare and gate
-        id: compare
+      - name: Compare
         run: |
-          set +e
-          .github/scripts/bench-compare.sh /tmp/base.out /tmp/head.out 0.20 > /tmp/benchmark-comment.md
-          status=$?
+          set -e
+          .github/scripts/bench-compare.sh /tmp/base.out /tmp/head.out "$BENCH_THRESHOLD" > /tmp/benchmark-comment.md
           cat /tmp/benchmark-comment.md
           cat /tmp/benchmark-comment.md >> "$GITHUB_STEP_SUMMARY"
-          exit "$status"
       - name: Upload PR number
         if: always()
         uses: actions/upload-artifact@v7
