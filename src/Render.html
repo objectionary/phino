@@ -1578,10 +1578,28 @@ $sel:condition:CO_EMPTY :: CONDITION -&gt; CONDITION
 condition :: CONDITION
 </span><a href="CST.html#%24sel%3Acondition%3ACO_EMPTY"><span class="hs-glyph hs-var hs-var">..</span></a></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Text -&gt; CONDITION -&gt; Text
 forall a. Render a =&gt; Text -&gt; a -&gt; Text
-</span><a href="Render.html#renderFunc"><span class="hs-identifier hs-var">renderFunc</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679251081"><span class="hs-identifier hs-var">renderFunc</span></a></span><span> </span><span class="annot"><span class="annottext">Text
 </span><span class="hs-string">&quot;not&quot;</span></span><span> </span><span class="annot"><span class="annottext">CONDITION
 </span><a href="#local-6989586621679251080"><span class="hs-identifier hs-var">condition</span></a></span><span>
-</span><span id="line-267"></span><span>  </span><span class="annot"><a href="Render.html#render"><span class="hs-identifier hs-var">render</span></a></span><span> </span><span class="annot"><a href="CST.html#CO_COMPARE"><span class="hs-identifier hs-type">CO_COMPARE</span></a></span><span class="hs-special">{</span><span id="local-6989586621679251083"><span id="local-6989586621679251084"><span id="local-6989586621679251085"><span class="annot"><span class="annottext">COMPARABLE
+</span><span id="line-267"></span><span>    </span><span class="hs-keyword">where</span><span>
+</span><span id="line-268"></span><span>      </span><span id="local-6989586621679250147"><span class="annot"><a href="#local-6989586621679251081"><span class="hs-identifier hs-type">renderFunc</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Render.html#Render"><span class="hs-identifier hs-type">Render</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679250147"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679250147"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text</span></span></span><span>
+</span><span id="line-269"></span><span>      </span><span id="local-6989586621679251081"><span class="annot"><span class="annottext">renderFunc :: forall a. Render a =&gt; Text -&gt; a -&gt; Text
+</span><a href="#local-6989586621679251081"><span class="hs-identifier hs-var hs-var">renderFunc</span></a></span></span><span> </span><span id="local-6989586621679251089"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679251089"><span class="hs-identifier hs-var">func</span></a></span></span><span> </span><span id="local-6989586621679251090"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679251090"><span class="hs-identifier hs-var">renderable</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679251089"><span class="hs-identifier hs-var">func</span></a></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;\\lparen &quot;</span></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">a -&gt; Text
+forall a. Render a =&gt; a -&gt; Text
+</span><a href="Render.html#render"><span class="hs-identifier hs-var">render</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679251090"><span class="hs-identifier hs-var">renderable</span></a></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot; \\rparen&quot;</span></span><span>
+</span><span id="line-270"></span><span>  </span><span class="annot"><a href="Render.html#render"><span class="hs-identifier hs-var">render</span></a></span><span> </span><span class="annot"><a href="CST.html#CO_COMPARE"><span class="hs-identifier hs-type">CO_COMPARE</span></a></span><span class="hs-special">{</span><span id="local-6989586621679251092"><span id="local-6989586621679251093"><span id="local-6989586621679251094"><span class="annot"><span class="annottext">COMPARABLE
 EQUAL
 left :: COMPARABLE
 equal :: EQUAL
@@ -1589,10 +1607,10 @@ right :: COMPARABLE
 $sel:left:CO_EMPTY :: CONDITION -&gt; COMPARABLE
 $sel:equal:CO_EMPTY :: CONDITION -&gt; EQUAL
 $sel:right:CO_EMPTY :: CONDITION -&gt; COMPARABLE
-</span><a href="#local-6989586621679251083"><span class="hs-glyph hs-var hs-var hs-var hs-var hs-var hs-var">..</span></a></span></span></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">COMPARABLE -&gt; Text
+</span><a href="#local-6989586621679251092"><span class="hs-glyph hs-var hs-var hs-var hs-var hs-var hs-var">..</span></a></span></span></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">COMPARABLE -&gt; Text
 forall a. Render a =&gt; a -&gt; Text
 </span><a href="Render.html#render"><span class="hs-identifier hs-var">render</span></a></span><span> </span><span class="annot"><span class="annottext">COMPARABLE
-</span><a href="#local-6989586621679251083"><span class="hs-identifier hs-var">left</span></a></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
+</span><a href="#local-6989586621679251092"><span class="hs-identifier hs-var">left</span></a></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Text
 </span><span class="hs-string">&quot; &quot;</span></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
@@ -1600,7 +1618,7 @@ forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">EQUAL -&gt; Text
 forall a. Render a =&gt; a -&gt; Text
 </span><a href="Render.html#render"><span class="hs-identifier hs-var">render</span></a></span><span> </span><span class="annot"><span class="annottext">EQUAL
-</span><a href="#local-6989586621679251084"><span class="hs-identifier hs-var">equal</span></a></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
+</span><a href="#local-6989586621679251093"><span class="hs-identifier hs-var">equal</span></a></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Text
 </span><span class="hs-string">&quot; &quot;</span></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
@@ -1608,8 +1626,8 @@ forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">COMPARABLE -&gt; Text
 forall a. Render a =&gt; a -&gt; Text
 </span><a href="Render.html#render"><span class="hs-identifier hs-var">render</span></a></span><span> </span><span class="annot"><span class="annottext">COMPARABLE
-</span><a href="#local-6989586621679251085"><span class="hs-identifier hs-var">right</span></a></span><span>
-</span><span id="line-268"></span><span>  </span><span class="annot"><a href="Render.html#render"><span class="hs-identifier hs-var">render</span></a></span><span> </span><span class="annot"><a href="CST.html#CO_MATCHES"><span class="hs-identifier hs-type">CO_MATCHES</span></a></span><span class="hs-special">{</span><span id="local-6989586621679251090"><span id="local-6989586621679251091"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679251094"><span class="hs-identifier hs-var">right</span></a></span><span>
+</span><span id="line-271"></span><span>  </span><span class="annot"><a href="Render.html#render"><span class="hs-identifier hs-var">render</span></a></span><span> </span><span class="annot"><a href="CST.html#CO_MATCHES"><span class="hs-identifier hs-type">CO_MATCHES</span></a></span><span class="hs-special">{</span><span id="local-6989586621679251099"><span id="local-6989586621679251100"><span class="annot"><span class="annottext">String
 EXPRESSION
 $sel:expr:CO_EMPTY :: CONDITION -&gt; EXPRESSION
 regex :: String
@@ -1620,7 +1638,7 @@ $sel:regex:CO_EMPTY :: CONDITION -&gt; String
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; Text
 </span><span class="hs-identifier hs-var">T.pack</span></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679251090"><span class="hs-identifier hs-var">regex</span></a></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
+</span><a href="#local-6989586621679251099"><span class="hs-identifier hs-var">regex</span></a></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Text
 </span><span class="hs-string">&quot;, &quot;</span></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
@@ -1628,11 +1646,11 @@ forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">EXPRESSION -&gt; Text
 forall a. Render a =&gt; a -&gt; Text
 </span><a href="Render.html#render"><span class="hs-identifier hs-var">render</span></a></span><span> </span><span class="annot"><span class="annottext">EXPRESSION
-</span><a href="#local-6989586621679251091"><span class="hs-identifier hs-var">expr</span></a></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
+</span><a href="#local-6989586621679251100"><span class="hs-identifier hs-var">expr</span></a></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Text
 </span><span class="hs-string">&quot; \\rparen&quot;</span></span><span>
-</span><span id="line-269"></span><span>  </span><span class="annot"><a href="Render.html#render"><span class="hs-identifier hs-var">render</span></a></span><span> </span><span class="annot"><a href="CST.html#CO_PART_OF"><span class="hs-identifier hs-type">CO_PART_OF</span></a></span><span class="hs-special">{</span><span id="local-6989586621679251094"><span id="local-6989586621679251095"><span class="annot"><span class="annottext">EXPRESSION
+</span><span id="line-272"></span><span>  </span><span class="annot"><a href="Render.html#render"><span class="hs-identifier hs-var">render</span></a></span><span> </span><span class="annot"><a href="CST.html#CO_PART_OF"><span class="hs-identifier hs-type">CO_PART_OF</span></a></span><span class="hs-special">{</span><span id="local-6989586621679251103"><span id="local-6989586621679251104"><span class="annot"><span class="annottext">EXPRESSION
 BINDING
 $sel:expr:CO_EMPTY :: CONDITION -&gt; EXPRESSION
 expr :: EXPRESSION
@@ -1644,7 +1662,7 @@ forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">EXPRESSION -&gt; Text
 forall a. Render a =&gt; a -&gt; Text
 </span><a href="Render.html#render"><span class="hs-identifier hs-var">render</span></a></span><span> </span><span class="annot"><span class="annottext">EXPRESSION
-</span><a href="#local-6989586621679251094"><span class="hs-identifier hs-var">expr</span></a></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
+</span><a href="#local-6989586621679251103"><span class="hs-identifier hs-var">expr</span></a></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Text
 </span><span class="hs-string">&quot;, &quot;</span></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
@@ -1652,11 +1670,11 @@ forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">BINDING -&gt; Text
 forall a. Render a =&gt; a -&gt; Text
 </span><a href="Render.html#render"><span class="hs-identifier hs-var">render</span></a></span><span> </span><span class="annot"><span class="annottext">BINDING
-</span><a href="#local-6989586621679251095"><span class="hs-identifier hs-var">binding</span></a></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
+</span><a href="#local-6989586621679251104"><span class="hs-identifier hs-var">binding</span></a></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Text
 </span><span class="hs-string">&quot; \\rparen&quot;</span></span><span>
-</span><span id="line-270"></span><span>  </span><span class="annot"><a href="Render.html#render"><span class="hs-identifier hs-var">render</span></a></span><span> </span><span class="annot"><a href="CST.html#CO_FORMATION"><span class="hs-identifier hs-type">CO_FORMATION</span></a></span><span class="hs-special">{</span><span id="local-6989586621679251097"><span class="annot"><span class="annottext">EXPRESSION
+</span><span id="line-273"></span><span>  </span><span class="annot"><a href="Render.html#render"><span class="hs-identifier hs-var">render</span></a></span><span> </span><span class="annot"><a href="CST.html#CO_FORMATION"><span class="hs-identifier hs-type">CO_FORMATION</span></a></span><span class="hs-special">{</span><span id="local-6989586621679251106"><span class="annot"><span class="annottext">EXPRESSION
 $sel:expr:CO_EMPTY :: CONDITION -&gt; EXPRESSION
 expr :: EXPRESSION
 </span><a href="CST.html#%24sel%3Aexpr%3ACO_EMPTY"><span class="hs-glyph hs-var hs-var">..</span></a></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Text
@@ -1665,20 +1683,20 @@ forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">EXPRESSION -&gt; Text
 forall a. Render a =&gt; a -&gt; Text
 </span><a href="Render.html#render"><span class="hs-identifier hs-var">render</span></a></span><span> </span><span class="annot"><span class="annottext">EXPRESSION
-</span><a href="#local-6989586621679251097"><span class="hs-identifier hs-var">expr</span></a></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
+</span><a href="#local-6989586621679251106"><span class="hs-identifier hs-var">expr</span></a></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Text
 </span><span class="hs-string">&quot; }&quot;</span></span><span>
-</span><span id="line-271"></span><span>  </span><span class="annot"><a href="Render.html#render"><span class="hs-identifier hs-var">render</span></a></span><span> </span><span class="annot"><a href="CST.html#CO_DISJOINT"><span class="hs-identifier hs-type">CO_DISJOINT</span></a></span><span class="hs-special">{</span><span id="local-6989586621679251099"><span id="local-6989586621679251100"><span class="annot"><span class="annottext">[ATTRIBUTE]
+</span><span id="line-274"></span><span>  </span><span class="annot"><a href="Render.html#render"><span class="hs-identifier hs-var">render</span></a></span><span> </span><span class="annot"><a href="CST.html#CO_DISJOINT"><span class="hs-identifier hs-type">CO_DISJOINT</span></a></span><span class="hs-special">{</span><span id="local-6989586621679251108"><span id="local-6989586621679251109"><span class="annot"><span class="annottext">[ATTRIBUTE]
 [BINDING]
 attrs :: [ATTRIBUTE]
 groups :: [BINDING]
 $sel:attrs:CO_EMPTY :: CONDITION -&gt; [ATTRIBUTE]
 $sel:groups:CO_EMPTY :: CONDITION -&gt; [BINDING]
-</span><a href="#local-6989586621679251099"><span class="hs-glyph hs-var hs-var hs-var hs-var">..</span></a></span></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span>
-</span><span id="line-272"></span><span>    </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679251108"><span class="hs-glyph hs-var hs-var hs-var hs-var">..</span></a></span></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-275"></span><span>    </span><span class="annot"><span class="annottext">Text
 </span><span class="hs-string">&quot;[ &quot;</span></span><span>
-</span><span id="line-273"></span><span>      </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
+</span><span id="line-276"></span><span>      </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Text -&gt; [Text] -&gt; Text
 </span><span class="hs-identifier hs-var">T.intercalate</span></span><span> </span><span class="annot"><span class="annottext">Text
@@ -1687,30 +1705,30 @@ forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
 </span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="annot"><span class="annottext">ATTRIBUTE -&gt; Text
 forall a. Render a =&gt; a -&gt; Text
 </span><a href="Render.html#render"><span class="hs-identifier hs-var">render</span></a></span><span> </span><span class="annot"><span class="annottext">[ATTRIBUTE]
-</span><a href="#local-6989586621679251099"><span class="hs-identifier hs-var">attrs</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-274"></span><span>      </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
+</span><a href="#local-6989586621679251108"><span class="hs-identifier hs-var">attrs</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-277"></span><span>      </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Text
 </span><span class="hs-string">&quot; ] \\cap &quot;</span></span><span>
-</span><span id="line-275"></span><span>      </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
+</span><span id="line-278"></span><span>      </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">[BINDING] -&gt; Text
-</span><a href="#local-6989586621679251103"><span class="hs-identifier hs-var">renderGroups</span></a></span><span> </span><span class="annot"><span class="annottext">[BINDING]
-</span><a href="#local-6989586621679251100"><span class="hs-identifier hs-var">groups</span></a></span><span>
-</span><span id="line-276"></span><span>      </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
+</span><a href="#local-6989586621679251112"><span class="hs-identifier hs-var">renderGroups</span></a></span><span> </span><span class="annot"><span class="annottext">[BINDING]
+</span><a href="#local-6989586621679251109"><span class="hs-identifier hs-var">groups</span></a></span><span>
+</span><span id="line-279"></span><span>      </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Text
 </span><span class="hs-string">&quot; = \\emptyset&quot;</span></span><span>
-</span><span id="line-277"></span><span>    </span><span class="hs-keyword">where</span><span>
-</span><span id="line-278"></span><span>      </span><span class="annot"><a href="#local-6989586621679251103"><span class="hs-identifier hs-type">renderGroups</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="CST.html#BINDING"><span class="hs-identifier hs-type">BINDING</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span>
-</span><span id="line-279"></span><span>      </span><span id="local-6989586621679251103"><span class="annot"><span class="annottext">renderGroups :: [BINDING] -&gt; Text
-</span><a href="#local-6989586621679251103"><span class="hs-identifier hs-var hs-var">renderGroups</span></a></span></span><span> </span><span class="hs-special">[</span><span id="local-6989586621679251104"><span class="annot"><span class="annottext">BINDING
-</span><a href="#local-6989586621679251104"><span class="hs-identifier hs-var">group</span></a></span></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">BINDING -&gt; Text
+</span><span id="line-280"></span><span>    </span><span class="hs-keyword">where</span><span>
+</span><span id="line-281"></span><span>      </span><span class="annot"><a href="#local-6989586621679251112"><span class="hs-identifier hs-type">renderGroups</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="CST.html#BINDING"><span class="hs-identifier hs-type">BINDING</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span>
+</span><span id="line-282"></span><span>      </span><span id="local-6989586621679251112"><span class="annot"><span class="annottext">renderGroups :: [BINDING] -&gt; Text
+</span><a href="#local-6989586621679251112"><span class="hs-identifier hs-var hs-var">renderGroups</span></a></span></span><span> </span><span class="hs-special">[</span><span id="local-6989586621679251113"><span class="annot"><span class="annottext">BINDING
+</span><a href="#local-6989586621679251113"><span class="hs-identifier hs-var">group</span></a></span></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">BINDING -&gt; Text
 forall a. Render a =&gt; a -&gt; Text
 </span><a href="Render.html#render"><span class="hs-identifier hs-var">render</span></a></span><span> </span><span class="annot"><span class="annottext">BINDING
-</span><a href="#local-6989586621679251104"><span class="hs-identifier hs-var">group</span></a></span><span>
-</span><span id="line-280"></span><span>      </span><span class="annot"><a href="#local-6989586621679251103"><span class="hs-identifier hs-var">renderGroups</span></a></span><span> </span><span id="local-6989586621679251105"><span class="annot"><span class="annottext">[BINDING]
-</span><a href="#local-6989586621679251105"><span class="hs-identifier hs-var">gs</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679251113"><span class="hs-identifier hs-var">group</span></a></span><span>
+</span><span id="line-283"></span><span>      </span><span class="annot"><a href="#local-6989586621679251112"><span class="hs-identifier hs-var">renderGroups</span></a></span><span> </span><span id="local-6989586621679251114"><span class="annot"><span class="annottext">[BINDING]
+</span><a href="#local-6989586621679251114"><span class="hs-identifier hs-var">gs</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Text
 </span><span class="hs-string">&quot;\\lparen &quot;</span></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Text -&gt; [Text] -&gt; Text
@@ -1720,31 +1738,13 @@ forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
 </span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="annot"><span class="annottext">BINDING -&gt; Text
 forall a. Render a =&gt; a -&gt; Text
 </span><a href="Render.html#render"><span class="hs-identifier hs-var">render</span></a></span><span> </span><span class="annot"><span class="annottext">[BINDING]
-</span><a href="#local-6989586621679251105"><span class="hs-identifier hs-var">gs</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
+</span><a href="#local-6989586621679251114"><span class="hs-identifier hs-var">gs</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Text
 </span><span class="hs-string">&quot; \\rparen&quot;</span></span><span>
-</span><span id="line-281"></span><span>  </span><span class="annot"><a href="Render.html#render"><span class="hs-identifier hs-var">render</span></a></span><span> </span><span class="annot"><span class="annottext">CONDITION
+</span><span id="line-284"></span><span>  </span><span class="annot"><a href="Render.html#render"><span class="hs-identifier hs-var">render</span></a></span><span> </span><span class="annot"><span class="annottext">CONDITION
 </span><a href="CST.html#CO_EMPTY"><span class="hs-identifier hs-var">CO_EMPTY</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Text
 </span><span class="hs-string">&quot;&quot;</span></span><span>
-</span><span id="line-282"></span><span>
-</span><span id="line-283"></span><span id="local-6989586621679250147"><span class="annot"><a href="Render.html#renderFunc"><span class="hs-identifier hs-type">renderFunc</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Render.html#Render"><span class="hs-identifier hs-type">Render</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679250147"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679250147"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text</span></span></span><span>
-</span><span id="line-284"></span><span id="renderFunc"><span class="annot"><span class="annottext">renderFunc :: forall a. Render a =&gt; Text -&gt; a -&gt; Text
-</span><a href="Render.html#renderFunc"><span class="hs-identifier hs-var hs-var">renderFunc</span></a></span></span><span> </span><span id="local-6989586621679251114"><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621679251114"><span class="hs-identifier hs-var">func</span></a></span></span><span> </span><span id="local-6989586621679251115"><span class="annot"><span class="annottext">a
-</span><a href="#local-6989586621679251115"><span class="hs-identifier hs-var">renderable</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621679251114"><span class="hs-identifier hs-var">func</span></a></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
-forall a. Semigroup a =&gt; a -&gt; a -&gt; a
-</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Text
-</span><span class="hs-string">&quot;\\lparen &quot;</span></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
-forall a. Semigroup a =&gt; a -&gt; a -&gt; a
-</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">a -&gt; Text
-forall a. Render a =&gt; a -&gt; Text
-</span><a href="Render.html#render"><span class="hs-identifier hs-var">render</span></a></span><span> </span><span class="annot"><span class="annottext">a
-</span><a href="#local-6989586621679251115"><span class="hs-identifier hs-var">renderable</span></a></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
-forall a. Semigroup a =&gt; a -&gt; a -&gt; a
-</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Text
-</span><span class="hs-string">&quot; \\rparen&quot;</span></span><span>
 </span><span id="line-285"></span><span>
 </span><span id="line-286"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Render.html#Render"><span class="hs-identifier hs-type">Render</span></a></span><span> </span><span class="annot"><a href="CST.html#EXTRA_ARG"><span class="hs-identifier hs-type">EXTRA_ARG</span></a></span><span> </span><span class="hs-keyword">where</span><span>
 </span><span id="line-287"></span><span>  </span><span id="local-6989586621679251122"><span class="annot"><span class="annottext">render :: EXTRA_ARG -&gt; Text
