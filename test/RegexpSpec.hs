@@ -248,3 +248,13 @@ spec = do
       regex <- R.compile (B.pack "\\bword\\b")
       result <- R.replaceAll regex (B.pack "WORD") (B.pack "word in a word")
       result `shouldBe` B.pack "WORD in a WORD"
+
+    it "terminates on an empty-match pattern (anchored ^)" $ do
+      regex <- R.compile (B.pack "^")
+      result <- R.replaceAll regex (B.pack "X") (B.pack "hello")
+      result `shouldBe` B.pack "XhXeXlXlXoX"
+
+    it "terminates on an empty regex pattern" $ do
+      regex <- R.compile B.empty
+      result <- R.replaceAll regex (B.pack "X") (B.pack "hello")
+      result `shouldBe` B.pack "XhXeXlXlXoX"
