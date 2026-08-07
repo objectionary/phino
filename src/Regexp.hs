@@ -89,4 +89,10 @@ replaceAll regex rep input = go input B.empty
               (_, rest2) = B.splitAt len rest1
           groups <- extractGroups regex bs
           let replacement = substituteGroups rep groups
-          go rest2 (B.concat [acc, before, replacement])
+          if len == 0
+            then
+              let next = B.take 1 rest2
+               in if B.null next
+                    then return $ B.concat [acc, before, replacement]
+                    else go (B.drop 1 rest2) (B.concat [acc, before, replacement, next])
+            else go rest2 (B.concat [acc, before, replacement])
