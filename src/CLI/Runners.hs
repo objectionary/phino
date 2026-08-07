@@ -45,11 +45,11 @@ runRewrite OptsRewrite{..} = do
   included <- validatedDispatches "show" _show
   [loc] <- validatedDispatches "locator" [_locator]
   [foc] <- validatedDispatches "focus" [_focus]
+  setStdGen (mkStdGen _seed)
   rules <- getRules _normalize _shuffle _rules
   validateBreakpoint _breakpoint rules
   input <- readInput _inputFile
   expr <- parseInput input _inputFormat
-  setStdGen (mkStdGen _seed)
   seedTaus expr
   logDebug (printf "Amount of rewriting cycles across all the rules: %d, per rule: %d" _maxCycles _maxDepth)
   let listing = case (rules, _inputFormat, _outputFormat) of
