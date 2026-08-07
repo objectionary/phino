@@ -366,6 +366,11 @@ spec = do
         ["rewrite", "--help"]
         ["default: 0"]
 
+    it "reproduces the same shuffle order for the same --seed" $ do
+      (firstRun, _) <- withStdin "[[ x -> Q.y ]]" $ withStdout (runCLI ["rewrite", "--normalize", "--shuffle", "--seed=42", "--sweet"])
+      (secondRun, _) <- withStdin "[[ x -> Q.y ]]" $ withStdout (runCLI ["rewrite", "--normalize", "--shuffle", "--seed=42", "--sweet"])
+      firstRun `shouldBe` secondRun
+
     it "fails with a non-integer --seed" $
       withStdin "[[ ]]" $
         testCLIFailed
