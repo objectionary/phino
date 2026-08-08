@@ -34,7 +34,7 @@ instance Read Must where
               hiPart = if null hiStr then Nothing else readMaybe hiStr
            in case (loPart, hiPart, null loStr, null hiStr) of
                 (Nothing, Nothing, False, False) -> [] -- Invalid range: non-numeric values
-                (Nothing, Nothing, True, True) -> [] -- Invalid range: empty range '..'
+                (Nothing, Nothing, True, True) -> [(MtRange Nothing Nothing, "")] -- Empty range '..' round-trips
                 (Nothing, Just hi, True, False) ->
                   [(MtRange Nothing (Just hi), "") | hi >= 0]
                 (Just lo, Nothing, False, True) ->
