@@ -406,6 +406,12 @@ spec = do
           ["rewrite", rule "evaluate-in-rewrite.yaml"]
           ["Function 'evaluate' in rule 'uses-evaluate' is available only for dataization and morphing, not for rewriting"]
 
+    it "names the join function in the error message" $
+      withStdin "⟦⟧" $
+        testCLIFailed
+          ["rewrite", rule "join-broken.yaml"]
+          ["Function join() can work with bindings only"]
+
     it "normalizes with --normalize flag" $
       testCLISucceeded
         ["rewrite", "--normalize", resource "normalize.phi", "--margin=25"]

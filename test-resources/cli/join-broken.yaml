@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# This rule passes a non-binding argument to the 'join' where-function.
+# It is used to test that the error message names the 'join' function
+# correctly (it used to say "'go" instead of "join()").
+name: uses-join-on-non-binding
+pattern: '!e'
+result: '!e1'
+where:
+  - meta: '!e1'
+    function: join
+    args:
+      - 'some-text'
