@@ -100,6 +100,18 @@ spec = do
         [substSingle "e1" (MvExpression (ExDispatch ExRoot (AtLabel "x")))]
         `shouldThrow` anyException
 
+  describe "contextualize" $ do
+    it "replaces a xi expression with the context" $
+      contextualize ExXi (ExFormation [BiVoid AtRho]) `shouldBe` ExFormation [BiVoid AtRho]
+    it "keeps a root expression untouched" $
+      contextualize ExRoot (ExFormation [BiVoid AtRho]) `shouldBe` ExRoot
+    it "keeps an empty formation untouched" $
+      contextualize (ExFormation [BiVoid AtRho]) (ExFormation [BiVoid AtRho, BiVoid AtRho])
+        `shouldBe` ExFormation [BiVoid AtRho]
+    it "recurses into a dispatch application" $
+      contextualize (ExDispatch ExXi (AtLabel "z")) (ExFormation [BiVoid AtRho])
+        `shouldBe` ExDispatch (ExFormation [BiVoid AtRho]) (AtLabel "z")
+
   describe "build with duplicate attributes in bindings" $ do
     it "build binding with duplicates" $
       buildBinding (BiMeta "B") (substSingle "B" (MvBindings [BiVoid AtRho, BiVoid AtRho])) `shouldSatisfy` isLeft
