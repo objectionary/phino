@@ -60,7 +60,8 @@ runRewrite OptsRewrite{..} = do
       printCtx = toPrintCtx xmirCtx foc
       exclude = (`F.exclude` excluded)
       include = (`F.include` included)
-  (rewrittens, exceeded) <- rewrite expr rules (context loc printCtx)
+  save <- saveStepFunc _stepsDir printCtx
+  (rewrittens, exceeded) <- rewrite expr rules (RewriteContext loc _maxDepth _maxCycles _depthSensitive buildTerm _must _breakpoint save)
   let rewrittens' = exclude $ include (if _sequence then NE.toList rewrittens else [NE.last rewrittens])
   logDebug (printf "Printing rewritten 𝜑-expression as %s" (show _outputFormat))
   exprs <- printRewrittens printCtx (rewrittens', exceeded)
@@ -113,8 +114,6 @@ runRewrite OptsRewrite{..} = do
       (False, Nothing, _) -> do
         logDebug "The option '--target' is not specified, printing to console..."
         putStrLn expr
-    context :: Expression -> PrintContext -> RewriteContext
-    context loc ctx = RewriteContext loc _maxDepth _maxCycles _depthSensitive buildTerm _must _breakpoint (saveStepFunc _stepsDir ctx)
     toPrintCtx :: XmirContext -> Expression -> PrintContext
     toPrintCtx xmirCtx focus =
       PrintCtx
@@ -150,7 +149,8 @@ runDataize OptsDataize{..} = do
   let printCtx = toPrintCtx foc
       exclude = (`F.exclude` excluded)
       include = (`F.include` included)
-  (bytes, chain) <- dataize expr (context loc printCtx)
+  save <- saveStepFunc _stepsDir printCtx
+  (bytes, chain) <- dataize expr (DataizeContext loc _maxDepth _maxCycles _depthSensitive _shuffle buildTerm save)
   when _sequence (printRewrittens printCtx (exclude $ include chain, False) >>= putStrLn)
   unless _quiet (putStrLn (P.printBytes bytes))
   where
@@ -163,8 +163,6 @@ runDataize OptsDataize{..} = do
         [(_meetPopularity, "meet-popularity"), (_meetLength, "meet-length")]
       validateXmirOptions _outputFormat [(_omitListing, "omit-listing"), (_omitComments, "omit-comments")] _focus
       when (length _show > 1) (invalidCLIArguments "The option --show can be used only once")
-    context :: Expression -> PrintContext -> DataizeContext
-    context loc ctx = DataizeContext loc _maxDepth _maxCycles _depthSensitive _shuffle buildTerm (saveStepFunc _stepsDir ctx)
     toPrintCtx :: Expression -> PrintContext
     toPrintCtx focus =
       PrintCtx

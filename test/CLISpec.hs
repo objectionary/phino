@@ -9,7 +9,7 @@ module CLISpec (spec) where
 import CLI (runCLI)
 import Control.Exception
 import Control.Monad (forM_, unless, when)
-import Data.List (intercalate, isInfixOf)
+import Data.List (intercalate, isInfixOf, sort)
 import Data.Time.Clock (addUTCTime, getCurrentTime)
 import Data.Time.Clock.POSIX (getPOSIXTime)
 import Data.Version (showVersion)
@@ -385,6 +385,22 @@ spec = do
         length files `shouldBe` 4
         (`shouldBe` True) <$> doesFileExist (dir ++ "/00001.phi")
         (`shouldBe` True) <$> doesFileExist (dir ++ "/00003.phi")
+        removeDirectoryRecursive dir
+
+    it "saves dataize steps to dir with --steps-dir" $ do
+      let dir = "test-steps-temp-dataize"
+      dirExists <- doesDirectoryExist dir
+      when dirExists (removeDirectoryRecursive dir)
+      withStdin "[[ bytes(data) -> [[ @ -> $.data ]], number(as-bytes) -> [[ @ -> $.as-bytes, plus(x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6) ]]" $ do
+        testCLISucceeded
+          ["dataize", "--steps-dir=" ++ dir, "--sweet"]
+          ["40-26"]
+        (`shouldBe` True) <$> doesDirectoryExist dir
+        files <- listDirectory dir
+        let steps = sort files
+        (length steps `shouldBe`) 38
+        (`shouldBe` True) <$> doesFileExist (dir ++ "/00001.phi")
+        (`shouldBe` True) <$> doesFileExist (dir ++ "/00038.phi")
         removeDirectoryRecursive dir
 
     it "desugares without any rules flag from file" $

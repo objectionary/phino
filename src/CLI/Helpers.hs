@@ -13,6 +13,7 @@ import Canonizer (canonize)
 import Control.Exception
 import Control.Monad ((>=>))
 import Data.Functor ((<&>))
+import Data.IORef
 import Data.List (intercalate)
 import Data.Maybe
 import Deps (SaveStepFunc, saveStep)
@@ -39,13 +40,19 @@ justMeetLength :: Maybe Int -> Int
 justMeetLength = fromMaybe defaultMeetLength
 
 -- Prepare saveStepFunc
-saveStepFunc :: Maybe FilePath -> PrintContext -> SaveStepFunc
-saveStepFunc stepsDir ctx@PrintCtx{..} = saveStep stepsDir ioToExt (printInFormat ctx)
-  where
-    ioToExt :: String
-    ioToExt
-      | _outputFormat == LATEX = "tex"
-      | otherwise = show _outputFormat
+saveStepFunc :: Maybe FilePath -> PrintContext -> IO SaveStepFunc
+saveStepFunc stepsDir ctx@PrintCtx{..} = do
+  counter <- newIORef (0 :: Int)
+  let ioToExt :: String
+      ioToExt
+        | _outputFormat == LATEX = "tex"
+        | otherwise = show _outputFormat
+      render = printInFormat ctx
+      save :: SaveStepFunc
+      save expr _ = do
+        step <- atomicModifyIORef' counter (\value -> (value + 1, value + 1))
+        saveStep stepsDir ioToExt render expr step
+  pure save
 
 -- Read input from file or stdin
 readInput :: Maybe FilePath -> IO String
