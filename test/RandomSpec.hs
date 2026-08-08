@@ -44,10 +44,10 @@ spec = do
       result `shouldSatisfy` all isDigit
 
   describe "randomString with %d pattern length" $
-    it "generates 1-4 digit number" $ do
+    it "generates a fixed 4-digit number" $ do
       result <- randomString "%d"
       let len = length result
-      len `shouldSatisfy` (\l -> l >= 1 && l <= 4)
+      len `shouldBe` 4
 
   describe "randomString with %x pattern" $
     it "generates hex digits" $ do

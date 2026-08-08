@@ -13,6 +13,7 @@ import qualified Data.Vector.Mutable as M
 import GHC.IO (unsafePerformIO)
 import System.Random (newStdGen, randomRIO)
 import System.Random.Stateful (newIOGenM, uniformRM)
+import Text.Printf (printf)
 
 strings :: IORef (Set String)
 {-# NOINLINE strings #-}
@@ -25,7 +26,7 @@ generate ('%' : ch : rest) = do
     'x' -> replicateM 8 $ do
       v <- randomRIO (0, 15)
       pure (intToDigit v)
-    'd' -> show <$> randomRIO (0 :: Int, 9999)
+    'd' -> printf "%04d" <$> randomRIO (0 :: Int, 9999)
     _ -> pure ['%', ch]
   next <- generate rest
   pure (rep ++ next)
