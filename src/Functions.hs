@@ -208,7 +208,7 @@ _join args subst = do
       bds <- buildBindingThrows bd subst
       next <- buildBindings args'
       pure (bds ++ next)
-    buildBindings _ = throwIO (userError "Function 'go can work with bindings only")
+    buildBindings _ = throwIO (userError "Function join() can work with bindings only")
     go :: [Binding] -> Set.Set Attribute -> IO [Binding]
     go [] _ = pure []
     go (bd : bds) attrs =
