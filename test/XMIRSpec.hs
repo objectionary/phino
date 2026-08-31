@@ -237,3 +237,10 @@ spec = do
               (null failed)
               (expectationFailure ("Failed xpaths:\n - " ++ intercalate "\n - " failed ++ "\nXMIR is:\n" ++ printXMIR xmir'))
       )
+
+  describe "XMIR round-trip" $
+    it "keeps λ function name and bound ρ" $ do
+      expr <- parseExpressionThrows "[[ k -> [[ x -> ?, L> Lorg_eolang_number_plus, ^ -> [[ y -> ? ]] ]] ]]"
+      xmir' <- expressionToXMIR expr defaultXmirContext
+      back <- xmirToPhi xmir'
+      back `shouldBe` expr
