@@ -143,22 +143,25 @@ expression (ExApplication expr arg) ctx = do
 expression expr _ = throwIO (UnsupportedExpression expr)
 
 formationBinding :: Binding -> XmirContext -> IO (Maybe Node)
-formationBinding (BiTau (AtLabel label) (ExFormation bds)) ctx = do
-  inners <- nestedBindings bds ctx
-  pure (Just (object [("name", T.unpack label)] inners))
-formationBinding (BiTau (AtLabel label) expr) ctx = do
-  (base, children) <- expression expr ctx
-  pure (Just (object [("name", T.unpack label), ("base", base)] children))
+formationBinding (BiTau (AtLabel label) expr) ctx = Just <$> namedBinding (T.unpack label) expr ctx
+formationBinding (BiTau AtRho expr) ctx = Just <$> namedBinding (show AtRho) expr ctx
 formationBinding (BiTau AtPhi expr) ctx = do
   (base, children) <- expression expr ctx
   pure (Just (object [("name", show AtPhi), ("base", base)] children))
-formationBinding (BiTau AtRho _) _ = pure Nothing
 formationBinding (BiDelta bytes) _ = pure (Just (NodeContent (T.pack (printBytes bytes))))
-formationBinding (BiLambda _) _ = pure (Just (object [("name", show AtLambda)] []))
+formationBinding (BiLambda (Function name)) _ = pure (Just (object [("name", show AtLambda)] [NodeContent name]))
 formationBinding (BiVoid AtRho) _ = pure Nothing
 formationBinding (BiVoid AtPhi) _ = pure (Just (object [("name", show AtPhi), ("base", "∅")] []))
 formationBinding (BiVoid (AtLabel label)) _ = pure (Just (object [("name", T.unpack label), ("base", "∅")] []))
 formationBinding binding _ = throwIO (UnsupportedBinding binding)
+
+-- Render a bound attribute as a named element: a formation nests its bindings
+-- right inside it, while any other expression is carried by the @base attribute
+namedBinding :: String -> Expression -> XmirContext -> IO Node
+namedBinding name (ExFormation bds) ctx = object [("name", name)] <$> nestedBindings bds ctx
+namedBinding name expr ctx = do
+  (base, children) <- expression expr ctx
+  pure (object [("name", name), ("base", base)] children)
 
 nestedBindings :: [Binding] -> XmirContext -> IO [Node]
 nestedBindings bds ctx = catMaybes <$> mapM (`formationBinding` ctx) bds
@@ -391,15 +394,17 @@ xmirToFormationBinding cur fqn
       name <- getAttr "name" cur
       bds <- mapM (`xmirToFormationBinding` (name : fqn)) (cur C.$/ C.element (toName "o")) >>= uniqueBindings'
       case name of
-        "λ" -> pure (BiLambda (Function (T.pack (intercalate "_" ("L" : reverse fqn)))))
+        "λ" -> BiLambda . Function <$> lambdaFunction
         ('α' : _) -> throwIO (InvalidXMIRFormat "Formation child @name can't start with α" cur)
         "φ" -> pure (BiTau AtPhi (ExFormation (withVoidRho bds)))
+        "ρ" -> pure (BiTau AtRho (ExFormation (withVoidRho bds)))
         _ -> pure (BiTau (AtLabel (T.pack name)) (ExFormation (withVoidRho bds)))
   | otherwise = do
       name <- getAttr "name" cur
       base <- getAttr "base" cur
       attr <- case name of
         "φ" -> pure AtPhi
+        "ρ" -> pure AtRho
         ('α' : _) -> throwIO (InvalidXMIRFormat "Formation child @name can't start with α" cur)
         _ -> pure (AtLabel (T.pack name))
       case base of
@@ -407,6 +412,14 @@ xmirToFormationBinding cur fqn
         _ -> do
           expr <- xmirToExpression cur fqn
           pure (BiTau attr expr)
+  where
+    -- The λ function name is carried by the text of the marker element. XMIR
+    -- coming from elsewhere holds no name, so fall back to the position in the
+    -- tree, which is the only hint left
+    lambdaFunction :: IO T.Text
+    lambdaFunction
+      | hasText cur = T.strip . T.pack <$> getText cur
+      | otherwise = pure (T.pack (intercalate "_" ("L" : reverse fqn)))
 
 xmirToExpression :: C.Cursor -> [String] -> IO Expression
 xmirToExpression cur fqn

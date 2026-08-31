@@ -1,0 +1,18 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+# yamllint disable rule:line-length
+---
+phi: |
+  [[
+    k -> [[
+      x -> ?,
+      L> Lorg_eolang_number_plus,
+      ^ -> [[
+        y -> ?
+      ]]
+    ]]
+  ]]
+xpaths:
+  - '/object/o[@name="k"]/o[@name="λ"]'
+  - '/object/o[@name="k"][o="Lorg_eolang_number_plus"]'
+  - '/object/o[@name="k"]/o[@name="ρ"]/o[@name="y" and @base="∅"]'
