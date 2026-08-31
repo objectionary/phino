@@ -2,6 +2,7 @@
 {-# LANGUAGE NumericUnderscores #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
@@ -30,10 +31,11 @@ import Data.Maybe (catMaybes)
 import qualified Data.Text as T
 import qualified Data.Text.Lazy as TL
 import qualified Data.Text.Lazy.Builder as TB
-import Data.Time (UTCTime, getCurrentTime)
+import Data.Time (UTCTime, diffUTCTime, getCurrentTime)
 import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds)
 import Data.Time.Format (defaultTimeLocale, formatTime)
 import Data.Version (showVersion)
+import Development.GitRev (gitHash)
 import Misc
 import Paths_phino (version)
 import Printer
@@ -47,6 +49,12 @@ data XmirContext = XmirContext
   , _omitComments :: Bool
   , _listing :: Expression -> String
   }
+
+-- The 7-character Git SHA of the phino build that produced the document,
+-- matching the XMIR schema pattern [0-9a-f]{7}. When built outside a git
+-- checkout gitrev yields "UNKNOWN", which the schema allows us to omit.
+gitRevision :: String
+gitRevision = take 7 $(gitHash)
 
 defaultXmirContext :: XmirContext
 defaultXmirContext = XmirContext True True (const "")
@@ -176,6 +184,7 @@ expressionToXMIR expr@(ExFormation [BiTau (AtLabel _) arg, BiVoid AtRho]) ctx@Xm
   where
     expressionToXMIR' :: IO Document
     expressionToXMIR' = do
+      started <- getCurrentTime
       (pckg, expr') <- getPackage expr
       root <- rootExpression expr' ctx
       now <- getCurrentTime
@@ -186,20 +195,25 @@ expressionToXMIR expr@(ExFormation [BiTau (AtLabel _) arg, BiVoid AtRho]) ctx@Xm
               else text
           listing' = NodeElement (element "listing" [] [NodeContent (T.pack listing)])
           metas = metasWithPackage (intercalate "." pckg)
+          ms :: Int
+          ms = round (diffUTCTime now started * 1000)
+          revisionAttr = [("revision", gitRevision) | gitRevision /= "UNKNOWN"]
+          attrs =
+            [ ("author", "phino")
+            , ("dob", formatTime defaultTimeLocale "%Y-%m-%dT%H:%M:%S" now)
+            , ("ms", show ms)
+            , ("time", time now)
+            , ("version", showVersion version)
+            , ("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance")
+            , ("xsi:noNamespaceSchemaLocation", "https://raw.githubusercontent.com/objectionary/eo/refs/heads/gh-pages/XMIR.xsd")
+            ]
+              <> revisionAttr
       pure
         ( Document
             (Prologue [] Nothing [])
             ( element
                 "object"
-                [ ("author", "phino")
-                , ("dob", formatTime defaultTimeLocale "%Y-%m-%dT%H:%M:%S" now)
-                , ("ms", "0")
-                , ("revision", "1234567")
-                , ("time", time now)
-                , ("version", showVersion version)
-                , ("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance")
-                , ("xsi:noNamespaceSchemaLocation", "https://raw.githubusercontent.com/objectionary/eo/refs/heads/gh-pages/XMIR.xsd")
-                ]
+                attrs
                 ( if null pckg
                     then [listing', root]
                     else [listing', metas, root]
