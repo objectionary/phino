@@ -51,6 +51,66 @@ testDataize useCases =
       (value, _) <- dataize expr (defaultDataizeContext loc')
       value `shouldBe` res
 
+-- The 12 primitive λ-atoms every EO data operation reduces to, declared the way
+-- 'number.eo' and 'bytes.eo' declare them, so a case below only has to spell the
+-- expression under φ. Alongside them stand the objects the atoms hand results
+-- to: 'string' carries the 'cant-slice' complaint, while 'true' and 'false' fill
+-- in for the real bool objects, since the single byte an EO bool dataizes to is
+-- all these cases assert.
+primitives :: String -> String
+primitives src =
+  unlines
+    [ "[["
+    , "  bytes -> [["
+    , "    data -> ?,"
+    , "    @ -> $.data,"
+    , "    and -> [[ b -> ?, L> L_bytes_and ]],"
+    , "    or -> [[ b -> ?, L> L_bytes_or ]],"
+    , "    not -> [[ L> L_bytes_not ]],"
+    , "    concat -> [[ b -> ?, L> L_bytes_concat ]],"
+    , "    eq -> [[ b -> ?, L> L_bytes_eq ]],"
+    , "    size -> [[ L> L_bytes_size ]],"
+    , "    right -> [[ x -> ?, L> L_bytes_right ]],"
+    , "    slice -> [[ start -> ?, len -> ?, cant-slice -> ?, L> L_bytes_slice ]]"
+    , "  ]],"
+    , "  number -> [["
+    , "    as-bytes -> ?,"
+    , "    @ -> $.as-bytes,"
+    , "    plus -> [[ x -> ?, L> L_number_plus ]],"
+    , "    times -> [[ x -> ?, L> L_number_times ]],"
+    , "    div -> [[ x -> ?, L> L_number_div ]],"
+    , "    gt -> [[ x -> ?, L> L_number_gt ]]"
+    , "  ]],"
+    , "  string -> [[ as-bytes -> ?, @ -> $.as-bytes ]],"
+    , "  true -> [[ @ -> [[ D> 01- ]] ]],"
+    , "  false -> [[ @ -> [[ D> 00- ]] ]],"
+    , "  @ -> " ++ src
+    , "]]"
+    ]
+
+-- Wrap a hex literal into the bytes object that EO source spells as a bare '20-1F'
+raw :: String -> String
+raw bts = "Q.bytes( data -> [[ D> " ++ bts ++ " ]] )"
+
+testAtom :: [(String, String, Bytes)] -> Spec
+testAtom useCases =
+  forM_ useCases $ \(name, src, res) ->
+    it name $ do
+      expr <- parseExpressionThrows (primitives src)
+      loc <- parseExpressionThrows "Q"
+      (value, _) <- dataize expr (defaultDataizeContext loc)
+      value `shouldBe` res
+
+-- An atom with no answer yields ⊥, which stops the whole dataization
+testStuckAtom :: [(String, String)] -> Spec
+testStuckAtom useCases =
+  forM_ useCases $ \(name, src) ->
+    it name $ do
+      expr <- parseExpressionThrows (primitives src)
+      loc <- parseExpressionThrows "Q"
+      dataize expr (defaultDataizeContext loc)
+        `shouldThrow` (\e -> "terminator" `isInfixOf` show (e :: SomeException))
+
 spec :: Spec
 spec = do
   describe "morph" $
@@ -402,3 +462,68 @@ spec = do
       , BtOne "2A"
       )
     ]
+
+  describe "atoms" $ do
+    testAtom
+      [ ("divides a positive dividend", "256.div( 16 )", BtMany ["40", "30", "00", "00", "00", "00", "00", "00"])
+      , ("divides by zero into infinity", "2.div( 0 )", BtMany ["7F", "F0", "00", "00", "00", "00", "00", "00"])
+      , ("tells 1000 is greater than 200", "1000.gt( 200 )", BtOne "01")
+      , ("tells 42 is not greater than 42.5", "42.gt( 42.5 )", BtOne "00")
+      , ("tells zero is greater than a negative", "0.gt( -5 )", BtOne "01")
+      ,
+        ( "conjoins two long bytes"
+        , raw "02-EF-D4-05-5E-78-3A" ++ ".and( " ++ raw "12-33-C1-B5-5E-71-55" ++ " )"
+        , BtMany ["02", "23", "C0", "05", "5E", "70", "10"]
+        )
+      ,
+        ( "disjoins negative bytes with one"
+        , raw "FF-FF-FF-FF-00-00-00-00" ++ ".or( " ++ raw "00-00-00-00-00-00-00-01" ++ " )"
+        , BtMany ["FF", "FF", "FF", "FF", "00", "00", "00", "01"]
+        )
+      , ("inverts bytes", raw "CA-FE-BE-BE" ++ ".not", BtMany ["35", "01", "41", "41"])
+      ,
+        ( "concats two long bytes"
+        , raw "02-EF-D4-05-5E-78-3A" ++ ".concat( " ++ raw "12-33-C1-B5-5E-71-55" ++ " )"
+        , BtMany ["02", "EF", "D4", "05", "5E", "78", "3A", "12", "33", "C1", "B5", "5E", "71", "55"]
+        )
+      ,
+        ( "concats bytes with empty ones"
+        , raw "05-5E-78" ++ ".concat( " ++ raw "--" ++ " )"
+        , BtMany ["05", "5E", "78"]
+        )
+      , ("counts the size of bytes", raw "F1-20-5F-EC-B5-90-32" ++ ".size", BtMany ["40", "1C", "00", "00", "00", "00", "00", "00"])
+      , ("tells equal bytes are equal", raw "CA-FE" ++ ".eq( " ++ raw "CA-FE" ++ " )", BtOne "01")
+      , ("tells different bytes are not equal", raw "CA-FE" ++ ".eq( " ++ raw "CA-FF" ++ " )", BtOne "00")
+      , ("takes a part of bytes", raw "20-1F-EE-B5-90" ++ ".slice( 1, 3 )", BtMany ["1F", "EE", "B5"])
+      ,
+        ( "shifts right an even negative"
+        , raw "C0-43-00-00-00-00-00-00" ++ ".right( 1 )"
+        , BtMany ["60", "21", "80", "00", "00", "00", "00", "00"]
+        )
+      ,
+        ( "shifts right minus one"
+        , raw "BF-F0-00-00-00-00-00-00" ++ ".right( 4 )"
+        , BtMany ["0B", "FF", "00", "00", "00", "00", "00", "00"]
+        )
+      ,
+        ( "shifts right by the integer minimum"
+        , raw "BF-F0-00-00-00-00-00-00" ++ ".right( -2147483648 )"
+        , BtMany ["00", "00", "00", "00", "00", "00", "00", "00"]
+        )
+      ,
+        ( "recovers from an out-of-bounds slice"
+        , raw "20-1F-EE-B5-90" ++ ".slice( 3, 10, [[ message -> ?, @ -> \"recovered\" ]] )"
+        , BtMany ["72", "65", "63", "6F", "76", "65", "72", "65", "64"]
+        )
+      ,
+        ( "recovers from a slice whose start plus length overflows"
+        , raw "20-1F-EE-B5-90" ++ ".slice( 2000000000, 2000000000, [[ message -> ?, @ -> \"recovered\" ]] )"
+        , BtMany ["72", "65", "63", "6F", "76", "65", "72", "65", "64"]
+        )
+      ]
+    testStuckAtom
+      [ ("cannot conjoin bytes of different lengths", raw "20-1F" ++ ".and( " ++ raw "CA-FE-BE" ++ " )")
+      , ("cannot disjoin bytes of different lengths", raw "20-1F" ++ ".or( " ++ raw "CA-FE-BE" ++ " )")
+      , ("cannot slice from an offset beyond the int range", raw "20-1F-EE-B5-90" ++ ".slice( 3000000000, 1 )")
+      , ("cannot slice a negative length", raw "20-1F-EE-B5-90" ++ ".slice( 1, -1 )")
+      ]

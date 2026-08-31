@@ -4,7 +4,9 @@
 -- SPDX-License-Identifier: MIT
 
 -- This module is a codec between 'Bytes' and the values they encode:
--- IEEE-754 doubles, UTF-8 strings and raw hex.
+-- IEEE-754 doubles, UTF-8 strings and raw hex. It also owns the byte-array
+-- operations that EO's 'bytes' atoms are built on, since only this module knows
+-- how a 'Bytes' maps onto the octets underneath it.
 module Bytes
   ( numToBts
   , strToBts
@@ -12,12 +14,20 @@ module Bytes
   , btsToStr
   , btsToNum
   , btsToUnescapedStr
+  , btsAnd
+  , btsOr
+  , btsNot
+  , btsConcat
+  , btsEqual
+  , btsSize
+  , btsSlice
+  , btsShift
   )
 where
 
 import AST
 import Data.Binary.IEEE754
-import Data.Bits (Bits (shiftL, shiftR), (.&.), (.|.))
+import Data.Bits (Bits (complement, shiftL, shiftR), (.&.), (.|.))
 import qualified Data.ByteString as B
 import Data.ByteString.Builder (toLazyByteString, word64BE)
 import Data.ByteString.Lazy (unpack)
@@ -198,3 +208,116 @@ btsToStr bytes = escapeStr (btsToUnescapedStr bytes)
 -- "5"
 btsToUnescapedStr :: Bytes -> String
 btsToUnescapedStr bytes = T.unpack (T.decodeUtf8 (B.pack (btsToWord8 bytes)))
+
+-- Bitwise conjunction of two byte arrays, byte by byte. EO's 'BytesRaw.and'
+-- refuses operands of different lengths, so there is nothing to yield for them
+-- >>> btsAnd (BtMany ["02", "EF"]) (BtMany ["12", "33"])
+-- Just (BtMany ["02","23"])
+-- >>> btsAnd (BtOne "20") (BtMany ["CA", "FE"])
+-- Nothing
+btsAnd :: Bytes -> Bytes -> Maybe Bytes
+btsAnd = zipBytes (.&.)
+
+-- Bitwise disjunction of two byte arrays, under the same length rule as 'btsAnd'
+-- >>> btsOr (BtMany ["02", "EF"]) (BtMany ["12", "33"])
+-- Just (BtMany ["12","FF"])
+btsOr :: Bytes -> Bytes -> Maybe Bytes
+btsOr = zipBytes (.|.)
+
+zipBytes :: (Word8 -> Word8 -> Word8) -> Bytes -> Bytes -> Maybe Bytes
+zipBytes op left right
+  | length lefts /= length rights = Nothing
+  | otherwise = Just (word8ToBytes (zipWith op lefts rights))
+  where
+    lefts :: [Word8]
+    lefts = btsToWord8 left
+    rights :: [Word8]
+    rights = btsToWord8 right
+
+-- Bitwise negation of every byte
+-- >>> btsNot (BtMany ["CA", "FE", "BE", "BE"])
+-- BtMany ["35","01","41","41"]
+btsNot :: Bytes -> Bytes
+btsNot = word8ToBytes . map complement . btsToWord8
+
+-- >>> btsConcat (BtMany ["05", "5E"]) BtEmpty
+-- BtMany ["05","5E"]
+-- >>> btsConcat BtEmpty BtEmpty
+-- BtEmpty
+btsConcat :: Bytes -> Bytes -> Bytes
+btsConcat left right = word8ToBytes (btsToWord8 left ++ btsToWord8 right)
+
+-- EO's 'bytes.eq' compares the two arrays octet by octet, so two spellings of
+-- the same single byte are equal even though their constructors differ
+-- >>> btsEqual (BtOne "01") (BtMany ["01"])
+-- True
+btsEqual :: Bytes -> Bytes -> Bool
+btsEqual left right = btsToWord8 left == btsToWord8 right
+
+-- >>> btsSize (BtMany ["F1", "20", "5F"])
+-- 3
+btsSize :: Bytes -> Int
+btsSize = length . btsToWord8
+
+-- Take 'len' bytes starting at 'start'. A window reaching past the end of the
+-- array has no answer, which is the case EO's 'cant-slice' fallback exists for
+-- >>> btsSlice 1 3 (BtMany ["20", "1F", "EE", "B5", "90"])
+-- Just (BtMany ["1F","EE","B5"])
+-- >>> btsSlice 3 10 (BtMany ["20", "1F", "EE", "B5", "90"])
+-- Nothing
+btsSlice :: Int -> Int -> Bytes -> Maybe Bytes
+btsSlice start len bts
+  | start < 0 || len < 0 || start + len > length octets = Nothing
+  | otherwise = Just (word8ToBytes (take len (drop start octets)))
+  where
+    octets :: [Word8]
+    octets = btsToWord8 bts
+
+-- Shift a byte array right by 'bits' bit positions, or left when 'bits' is
+-- negative, the way EO's 'BytesRaw.shift' does it. The array keeps its length:
+-- bits pushed past either end are dropped and the vacated positions read zero
+-- >>> btsShift 1 (BtMany ["C0", "43", "00"])
+-- BtMany ["60","21","80"]
+-- >>> btsShift (-2147483648) (BtMany ["BF", "F0"])
+-- BtMany ["00","00"]
+btsShift :: Int -> Bytes -> Bytes
+btsShift bits bts
+  | bits < 0 = word8ToBytes (map leftwards indices)
+  | otherwise = word8ToBytes (map rightwards indices)
+  where
+    octets :: [Word8]
+    octets = btsToWord8 bts
+    size :: Int
+    size = length octets
+    indices :: [Int]
+    indices = [0 .. size - 1]
+    modulo :: Int
+    modulo = abs bits `mod` 8
+    offset :: Int
+    offset = abs bits `div` 8
+    octet :: Int -> Word8
+    octet index = octets !! index
+    rightwards :: Int -> Word8
+    rightwards index
+      | source < 0 = 0
+      | source > 0 = shifted .|. ((octet (source - 1) `shiftL` (8 - modulo)) .&. carry)
+      | otherwise = shifted
+      where
+        source :: Int
+        source = index - offset
+        shifted :: Word8
+        shifted = octet source `shiftR` modulo
+        carry :: Word8
+        carry = 0xFF `shiftL` (8 - modulo)
+    leftwards :: Int -> Word8
+    leftwards index
+      | source >= size = 0
+      | source + 1 < size = shifted .|. ((octet (source + 1) `shiftR` (8 - modulo)) .&. carry)
+      | otherwise = shifted
+      where
+        source :: Int
+        source = index + offset
+        shifted :: Word8
+        shifted = octet source `shiftL` modulo
+        carry :: Word8
+        carry = (0x01 `shiftL` modulo) - 1
