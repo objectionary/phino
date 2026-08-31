@@ -368,8 +368,15 @@ spec = do
 
     it "reproduces the same shuffle order for the same --seed" $ do
       let args =
-            [ "rewrite", "--shuffle", "--seed=42", "--sweet", "--sequence", "--max-depth=1", "--max-cycles=1"
-            , rule "swap-a.yaml", rule "swap-b.yaml"
+            [ "rewrite"
+            , "--shuffle"
+            , "--seed=42"
+            , "--sweet"
+            , "--sequence"
+            , "--max-depth=1"
+            , "--max-cycles=1"
+            , rule "swap-a.yaml"
+            , rule "swap-b.yaml"
             ]
       (firstRun, _) <- withStdin "[[ x -> 5 ]]" $ withStdout (runCLI args)
       (secondRun, _) <- withStdin "[[ x -> 5 ]]" $ withStdout (runCLI args)
