@@ -121,9 +121,9 @@ spec = do
           it desc $ (readMaybe input :: Maybe Must) `shouldBe` expected
       )
 
-  describe "Read instance rejects empty range" $
-    it "fails on dots only" $
-      (readMaybe ".." :: Maybe Must) `shouldBe` Nothing
+  describe "Read instance parses empty range" $
+    it "round-trips dots only" $
+      (readMaybe ".." :: Maybe Must) `shouldBe` Just (MtRange Nothing Nothing)
 
   describe "Read instance rejects invalid range with negative minimum" $
     it "fails on negative min" $
