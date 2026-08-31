@@ -49,9 +49,9 @@ saveStepFunc stepsDir ctx@PrintCtx{..} = do
         | otherwise = show _outputFormat
       render = printInFormat ctx
       save :: SaveStepFunc
-      save expr _ = do
+      save expr = do
         step <- atomicModifyIORef' counter (\value -> (value + 1, value + 1))
-        saveStep stepsDir ioToExt render expr step
+        saveStep stepsDir ioToExt render step expr
   pure save
 
 -- Read input from file or stdin

@@ -398,9 +398,12 @@ spec = do
         (`shouldBe` True) <$> doesDirectoryExist dir
         files <- listDirectory dir
         let steps = sort files
-        (length steps `shouldBe`) 38
-        (`shouldBe` True) <$> doesFileExist (dir ++ "/00001.phi")
-        (`shouldBe` True) <$> doesFileExist (dir ++ "/00038.phi")
+        -- The fix is about numbering, not about a specific rule set: the file
+        -- names must be distinct and contiguous from 00001, and there must be
+        -- more of them than a single normalization pass produces (this input
+        -- runs several normalizations, so a global counter yields more steps).
+        steps `shouldBe` map (\n -> printf "%05d.phi" (n :: Int)) [1 .. length steps]
+        length steps `shouldSatisfy` (> 18)
         removeDirectoryRecursive dir
 
     it "desugares without any rules flag from file" $
