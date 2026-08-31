@@ -112,29 +112,32 @@ printCtxToLatexCtx :: PrintContext -> LatexContext
 printCtxToLatexCtx PrintCtx{..} =
   LatexContext _sugar _line _margin _nonumber _compress _canonize _meetPopularity _meetLength _focus _expression _label _meetPrefix _headers
 
--- Get rules for rewriting depending on provided flags
+-- Get rules for rewriting depending on provided flags. Both flags may be given
+-- together, in which case the user rules follow the built-in ones
 getRules :: Bool -> Bool -> [FilePath] -> IO [Y.Rule]
 getRules normalize shuffle rules = do
-  ordered <-
-    if normalize
-      then do
-        let rules' = normalizationRules
-        logDebug (printf "The --normalize option is provided, %d built-it normalization rules are used" (length rules'))
-        pure rules'
-      else
-        if null rules
-          then do
-            logDebug "No --rule and no --normalize options are provided, no rules are used"
-            pure []
-          else do
-            logDebug (printf "Using rules from files: [%s]" (intercalate ", " rules))
-            yamls <- mapM ensuredFile rules
-            mapM (Y.yamlRule >=> validateRewriteRule) yamls
+  ordered <- (++) <$> builtin <*> custom
   if shuffle
     then do
       logDebug "The --shuffle option is provided, rules are used in random order"
       R.shuffle ordered
     else pure ordered
+  where
+    builtin :: IO [Y.Rule]
+    builtin
+      | normalize = do
+          logDebug (printf "The --normalize option is provided, %d built-it normalization rules are used" (length normalizationRules))
+          pure normalizationRules
+      | otherwise = pure []
+    custom :: IO [Y.Rule]
+    custom
+      | null rules = do
+          logDebug "No --rule option is provided, no user rules are used"
+          pure []
+      | otherwise = do
+          logDebug (printf "Using rules from files: [%s]" (intercalate ", " rules))
+          yamls <- mapM ensuredFile rules
+          mapM (Y.yamlRule >=> validateRewriteRule) yamls
 
 -- Pass a user-supplied rewriting rule through unchanged, or fail fast if it
 -- references a build-term function which needs the dataization context: those

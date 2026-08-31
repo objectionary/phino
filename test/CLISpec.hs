@@ -428,6 +428,12 @@ spec = do
             ]
         ]
 
+    it "normalizes and applies --rule at the same time" $
+      withStdin "⟦ k ↦ ⟦ m ↦ ⟦ Δ ⤍ 01- ⟧ ⟧.m, j ↦ ⟦ λ ⤍ Marker ⟧ ⟧" $
+        testCLISucceeded
+          ["rewrite", "--normalize", rule "marker.yaml", "--sweet"]
+          ["⟦ k ↦ ⟦ Δ ⤍ 01-, ρ ↦ ⟦ m ↦ ⟦ Δ ⤍ 01- ⟧ ⟧ ⟧, j ↦ ⟦ Δ ⤍ FF- ⟧ ⟧"]
+
     it "normalizes from stdin" $
       withStdin "⟦ a ↦ ⟦ b ↦ ∅ ⟧ (b ↦ [[ ]]) ⟧" $
         testCLISucceeded
