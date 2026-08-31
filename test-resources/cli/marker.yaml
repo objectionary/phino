@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# This rule turns a λ-marked formation into data. It is used to check that
+# --rule is honoured together with --normalize, since none of the built-in
+# normalization rules touches a λ binding.
+name: marker
+pattern: ⟦ λ ⤍ Marker ⟧
+result: ⟦ Δ ⤍ FF- ⟧

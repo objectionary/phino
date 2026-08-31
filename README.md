@@ -132,6 +132,13 @@ to normalize expressions:
 phino rewrite --normalize hello.phi
 ```
 
+Both flags may be combined, so that your own rules are applied
+alongside the built-in ones, in a single rewriting session:
+
+```bash
+phino rewrite --normalize --rule=my-rule.yaml hello.phi
+```
+
 Some rules mint fresh synthetic names via the `random-string` built-in. To
 keep the output reproducible across runs, `phino` seeds the random generator
 deterministically with `0` by default. Use `--seed` to pick a different seed:
