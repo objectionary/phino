@@ -1,0 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+name: swap-b
+pattern: ⟦ x -> !e ⟧
+result: Q.b(!e)
