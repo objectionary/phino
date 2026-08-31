@@ -13,9 +13,10 @@ module Dataize (morph, dataize, dataize', DataizeContext (..), State, emptyState
 
 import AST
 import Builder (buildBytesThrows, buildExpressionThrows)
-import Bytes (btsToNum, numToBts)
+import Bytes (btsAnd, btsConcat, btsEqual, btsNot, btsOr, btsShift, btsSize, btsSlice, btsToNum, numToBts, strToBts)
 import Control.Exception (throwIO)
 import Control.Monad (foldM)
+import Data.Int (Int32)
 import Data.List (find, partition)
 import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as NE
@@ -367,6 +368,29 @@ asNumber :: Bytes -> Maybe Double
 asNumber BtEmpty = Nothing
 asNumber bts = Just (either toDouble id (btsToNum bts))
 
+-- An operand that EO reads as a Java 'int' — a shift distance or a slice bound.
+-- 'Expect.at(…).that(Integer)' turns down anything but a whole number inside the
+-- 32-bit range, and so does this, leaving the atom with ⊥
+asInt :: Bytes -> Maybe Int
+asInt bts
+  | btsSize bts /= 8 = Nothing
+  | otherwise = case btsToNum bts of
+      Left num | num >= fromIntegral (minBound :: Int32) && num <= fromIntegral (maxBound :: Int32) -> Just num
+      _ -> Nothing
+
+-- An atom whose EO signature ends in '/Q.bool' hands back one of the two bool
+-- objects of the universe, exactly what 'Data.ToPhi(boolean)' does in the runtime
+boolean :: Bool -> Expression
+boolean True = BaseObject "true"
+boolean False = BaseObject "false"
+
+-- Both bitwise atoms take ρ and 'b' and reject operands of different lengths
+bitwise :: (Bytes -> Bytes -> Maybe Bytes) -> Expression -> Expression -> State -> DataizeContext -> IO (Expression, State)
+bitwise op self univ state ctx = do
+  (b, bstate) <- _dataize (ExDispatch self (AtLabel "b")) univ state ctx
+  (rho, rstate) <- _dataize (ExDispatch self AtRho) univ bstate ctx
+  pure (maybe ExTermination dataBytes (op rho b), rstate)
+
 atom :: T.Text -> Expression -> Expression -> State -> DataizeContext -> IO (Expression, State)
 atom "L_number_plus" self univ state ctx = do
   (left, lstate) <- _dataize (ExDispatch self (AtLabel "x")) univ state ctx
@@ -389,6 +413,58 @@ atom "L_number_eq" self univ state ctx = do
         then pure (DataNumber (numToBts first), rstate)
         else pure (ExDispatch self (AtLabel "y"), rstate)
     _ -> pure (ExTermination, rstate)
+atom "L_number_div" self univ state ctx = do
+  (x, xstate) <- _dataize (ExDispatch self (AtLabel "x")) univ state ctx
+  (rho, rstate) <- _dataize (ExDispatch self AtRho) univ xstate ctx
+  case (asNumber x, asNumber rho) of
+    (Just divisor, Just dividend) -> pure (DataNumber (numToBts (dividend / divisor)), rstate)
+    _ -> pure (ExTermination, rstate)
+atom "L_number_gt" self univ state ctx = do
+  (x, xstate) <- _dataize (ExDispatch self (AtLabel "x")) univ state ctx
+  (rho, rstate) <- _dataize (ExDispatch self AtRho) univ xstate ctx
+  case (asNumber x, asNumber rho) of
+    (Just threshold, Just value) -> pure (boolean (value > threshold), rstate)
+    _ -> pure (ExTermination, rstate)
+atom "L_bytes_and" self univ state ctx = bitwise btsAnd self univ state ctx
+atom "L_bytes_or" self univ state ctx = bitwise btsOr self univ state ctx
+atom "L_bytes_not" self univ state ctx = do
+  (rho, rstate) <- _dataize (ExDispatch self AtRho) univ state ctx
+  pure (dataBytes (btsNot rho), rstate)
+atom "L_bytes_concat" self univ state ctx = do
+  (b, bstate) <- _dataize (ExDispatch self (AtLabel "b")) univ state ctx
+  (rho, rstate) <- _dataize (ExDispatch self AtRho) univ bstate ctx
+  pure (dataBytes (btsConcat rho b), rstate)
+atom "L_bytes_eq" self univ state ctx = do
+  (b, bstate) <- _dataize (ExDispatch self (AtLabel "b")) univ state ctx
+  (rho, rstate) <- _dataize (ExDispatch self AtRho) univ bstate ctx
+  pure (boolean (btsEqual rho b), rstate)
+atom "L_bytes_size" self univ state ctx = do
+  (rho, rstate) <- _dataize (ExDispatch self AtRho) univ state ctx
+  pure (DataNumber (numToBts (fromIntegral (btsSize rho))), rstate)
+atom "L_bytes_right" self univ state ctx = do
+  (x, xstate) <- _dataize (ExDispatch self (AtLabel "x")) univ state ctx
+  (rho, rstate) <- _dataize (ExDispatch self AtRho) univ xstate ctx
+  case asInt x of
+    Just bits -> pure (dataBytes (btsShift bits rho), rstate)
+    Nothing -> pure (ExTermination, rstate)
+atom "L_bytes_slice" self univ state ctx = do
+  (start, sstate) <- _dataize (ExDispatch self (AtLabel "start")) univ state ctx
+  (len, lstate) <- _dataize (ExDispatch self (AtLabel "len")) univ sstate ctx
+  (rho, rstate) <- _dataize (ExDispatch self AtRho) univ lstate ctx
+  case (asInt start, asInt len) of
+    (Just from, Just count)
+      | from >= 0 && count >= 0 ->
+          pure (maybe (cantSlice from count (btsSize rho)) dataBytes (btsSlice from count rho), rstate)
+    _ -> pure (ExTermination, rstate)
+  where
+    -- A window past the end of the array does not stop EO: it copies the
+    -- 'cant-slice' fallback, applies the complaint to it and lets the caller
+    -- decide. A caller that left 'cant-slice' unbound gets ⊥ out of the dispatch
+    cantSlice :: Int -> Int -> Int -> Expression
+    cantSlice from count size =
+      ExApplication
+        (ExDispatch self (AtLabel "cant-slice"))
+        (ArAlpha (Alpha 0) (DataString (strToBts (printf "cannot slice '%d' bytes from offset '%d' of bytes of size %d" count from size))))
 atom func _ _ _ _ = throwIO (userError (printf "Atom '%s' does not exist" (T.unpack func)))
 
 -- Augment the injected, context-free term builder with the dataization and

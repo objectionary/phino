@@ -228,15 +228,12 @@ pattern DataObject :: T.Text -> Bytes -> Expression
 pattern DataObject label bts <- (matchDataObject -> Just (label, bts))
   where
     DataObject label bts =
-      ExApplication
-        (BaseObject label)
-        ( ArTau
-            (AtLabel "as-bytes")
-            ( ExApplication
-                (BaseObject "bytes")
-                ( ArTau
-                    (AtLabel "data")
-                    (ExFormation [BiDelta bts, BiVoid AtRho])
-                )
-            )
-        )
+      ExApplication (BaseObject label) (ArTau (AtLabel "as-bytes") (dataBytes bts))
+
+-- The bytes object Φ.bytes(data ↦ ⟦ Δ ⤍ …, ρ ↦ ∅ ⟧) — what a 'bytes' atom
+-- yields and what a 'DataObject' carries under its 'as-bytes' argument
+dataBytes :: Bytes -> Expression
+dataBytes bts =
+  ExApplication
+    (BaseObject "bytes")
+    (ArTau (AtLabel "data") (ExFormation [BiDelta bts, BiVoid AtRho]))
