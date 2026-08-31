@@ -191,7 +191,8 @@ expressionToXMIR expr@(ExFormation [BiTau (AtLabel _) arg, BiVoid AtRho]) ctx@Xm
             (Prologue [] Nothing [])
             ( element
                 "object"
-                [ ("dob", formatTime defaultTimeLocale "%Y-%m-%dT%H:%M:%S" now)
+                [ ("author", "phino")
+                , ("dob", formatTime defaultTimeLocale "%Y-%m-%dT%H:%M:%S" now)
                 , ("ms", "0")
                 , ("revision", "1234567")
                 , ("time", time now)
