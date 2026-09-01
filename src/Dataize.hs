@@ -1,3 +1,5 @@
+{-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedRecordDot #-}
@@ -9,12 +11,12 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Dataize (morph, dataize, dataize', DataizeContext (..), State, emptyState, execBuildTerm) where
+module Dataize (morph, dataize, dataize', DataizeContext (..), Steps (..), State, emptyState, execBuildTerm) where
 
 import AST
 import Builder (buildBytesThrows, buildExpressionThrows)
 import Bytes (btsAnd, btsConcat, btsEqual, btsNot, btsOr, btsShift, btsSize, btsSlice, btsToNum, numToBts, strToBts)
-import Control.Exception (throwIO)
+import Control.Exception (Exception, throwIO)
 import Control.Monad (foldM)
 import Data.Int (Int32)
 import Data.List (find, partition)
@@ -44,21 +46,55 @@ type Morphed = Dataizable
 emptyState :: State
 emptyState = ""
 
--- The evaluation context carries only configuration. Nothing global is fixed
--- here: the universe (the second argument 'e' of 𝕄(n, e, s) and 𝔻(n, e, s)) is a
--- plain expression threaded as an argument to 'dataize'', 'morph' and on to the
--- atoms, and the state 's' is threaded the same way (see 'State'). The working
--- expression needed for normalization is taken from the head of the step chain,
--- so no separate wrapper type is threaded around.
+-- How many steps of the 𝕄/𝔻 recursion a single derivation may take ('_limit',
+-- the '--max-steps' option) and how many of them the derivation reaching this
+-- point has already taken ('_spent'). 𝕄 and 𝔻 recurse into each other, into the
+-- premises of their own rules and into the atoms they fire, so a budget local to
+-- one of those chains is reset by the next nested call and bounds nothing (see
+-- #1052). This one rides in the context instead, which every path — the spine,
+-- the side-premises, '_dataize' and '_morph' — already carries, so it counts the
+-- whole derivation from its root.
+data Steps = Steps
+  { _limit :: Int
+  , _spent :: Int
+  }
+
+-- The evaluation context carries the configuration plus the step budget spent so
+-- far. Nothing global is fixed here: the universe (the second argument 'e' of
+-- 𝕄(n, e, s) and 𝔻(n, e, s)) is a plain expression threaded as an argument to
+-- 'dataize'', 'morph' and on to the atoms, and the state 's' is threaded the same
+-- way (see 'State'). The working expression needed for normalization is taken
+-- from the head of the step chain, so no separate wrapper type is threaded
+-- around.
 data DataizeContext = DataizeContext
   { _locator :: Expression
   , _maxDepth :: Int
   , _maxCycles :: Int
+  , _steps :: Steps
   , _depthSensitive :: Bool
   , _shuffle :: Bool
   , _buildTerm :: BuildTermFunc
   , _saveStep :: SaveStepFunc
   }
+
+newtype DataizeException = OutOfSteps Int
+  deriving anyclass (Exception)
+
+instance Show DataizeException where
+  show (OutOfSteps limit) =
+    printf "Dataization did not finish before reaching the limit of steps: --max-steps=%d" limit
+
+-- Charge one step of the 𝕄/𝔻 recursion to the budget, refusing to descend once
+-- it is gone. '--max-cycles' and '--max-depth' bound only the normalization run
+-- inside a single step, so before this the recursion itself was unbounded and a
+-- term that never reduces to bytes kept 𝕄 and 𝔻 calling each other forever
+-- (#1052). Rewriting hands back whatever it has reached when it runs out of
+-- cycles; 𝔻 has no partial answer to give, so an exhausted budget always throws,
+-- with or without '--depth-sensitive'.
+deeper :: DataizeContext -> IO DataizeContext
+deeper ctx@DataizeContext{_steps = Steps limit spent}
+  | spent >= limit = throwIO (OutOfSteps limit)
+  | otherwise = pure ctx{_steps = Steps limit (spent + 1)}
 
 -- Resolve formation for LAMBDA Morphing rule.
 -- If formation contains λ binding, the called atom result is returned. The
@@ -100,20 +136,21 @@ formation bds univ state ctx = do
 -- chain before morphing continues. Every other premise is a side-computation
 -- evaluated in isolation by 'sidePremise', its own steps discarded.
 morph :: Morphed -> Expression -> State -> DataizeContext -> IO (Morphed, State)
-morph (expr, seq) univ state ctx = do
+morph (expr, seq) univ state caller = do
+  ctx <- deeper caller
   rules <- if ctx._shuffle then shuffle Y.morphingRules else pure Y.morphingRules
-  matched <- firstMatch rules
+  matched <- firstMatch ctx rules
   case matched of
-    Just (rule, subst) -> reduce rule subst
+    Just (rule, subst) -> reduce ctx rule subst
     Nothing -> throwIO (userError "no morphing rule matched")
   where
-    firstMatch :: [Y.MorphRule] -> IO (Maybe (Y.MorphRule, Subst))
-    firstMatch [] = pure Nothing
-    firstMatch (rule : rest) = do
+    firstMatch :: DataizeContext -> [Y.MorphRule] -> IO (Maybe (Y.MorphRule, Subst))
+    firstMatch _ [] = pure Nothing
+    firstMatch ctx (rule : rest) = do
       substs <- matchExpressionWithRule' (matchExpression' rule.ematch univ) expr (asRule rule) (RuleContext (execBuildTerm univ ctx))
       case substs of
         (subst : _) -> pure (Just (rule, subst))
-        [] -> firstMatch rest
+        [] -> firstMatch ctx rest
     -- Match the conclusion term and check the guard; premises are no longer the
     -- matcher's business, so 'where'/'having' stay empty and the guard lives in
     -- 'when'. Every morphing guard reads only meta-variables bound by 'match'
@@ -125,28 +162,28 @@ morph (expr, seq) univ state ctx = do
     -- trailing 'morph' premise (the spine); if that premise's argument is itself
     -- bound by a 'normalize' premise, the normalization joins the spine and its
     -- steps splice in before morphing continues.
-    reduce :: Y.MorphRule -> Subst -> IO (Morphed, State)
-    reduce rule subst = case producer rule.nresult rule.premises of
+    reduce :: DataizeContext -> Y.MorphRule -> Subst -> IO (Morphed, State)
+    reduce ctx rule subst = case producer rule.nresult rule.premises of
       Nothing -> do
-        (final, state') <- sides rule.premises subst
+        (final, state') <- sides ctx rule.premises subst
         built <- buildExpressionThrows rule.nresult final
         seq' <- leadsTo seq rule.name built ctx
         pure ((built, seq'), state')
       Just concl@(Y.Premise _ (Y.OpMorph arg)) -> case producer arg rule.premises of
         Just normal@(Y.Premise _ (Y.OpNormalize inner)) -> do
-          (final, state') <- sides (rule.premises `excluding` [concl, normal]) subst
+          (final, state') <- sides ctx (rule.premises `excluding` [concl, normal]) subst
           built <- buildExpressionThrows inner final
           labelled <- leadsTo seq rule.name built ctx
           (normal', seq') <- normalized built labelled ctx
           morph (normal', seq') univ state' ctx
         _ -> do
-          (final, state') <- sides (rule.premises `excluding` [concl]) subst
+          (final, state') <- sides ctx (rule.premises `excluding` [concl]) subst
           built <- buildExpressionThrows arg final
           seq' <- leadsTo seq rule.name built ctx
           morph (built, seq') univ state' ctx
       Just _ -> throwIO (userError (printf "morphing rule '%s' must conclude with a 'morph' premise" rule.name))
-    sides :: [Y.Premise] -> Subst -> IO (Subst, State)
-    sides premises subst = foldM (sidePremise univ ctx) (subst, state) premises
+    sides :: DataizeContext -> [Y.Premise] -> Subst -> IO (Subst, State)
+    sides ctx premises subst = foldM (sidePremise univ ctx) (subst, state) premises
 
 -- Dataize the expression located at '_locator'. The whole input expression is
 -- itself the universe Q (the 'e' argument) threaded through 𝔻 and 𝕄, so it is
@@ -181,11 +218,12 @@ dataize universe ctx@DataizeContext{..} = do
 -- when its argument is bound by a 'morph' or 'normalize' premise, that step
 -- joins the spine, otherwise the premise is an isolated side-computation.
 dataize' :: Dataizable -> Expression -> State -> DataizeContext -> IO (Dataized, State)
-dataize' (expr, seq) univ state ctx = do
+dataize' (expr, seq) univ state caller = do
+  ctx <- deeper caller
   rules <- if ctx._shuffle then shuffle Y.dataizationRules else pure Y.dataizationRules
-  matched <- firstMatch rules
+  matched <- firstMatch ctx rules
   case matched of
-    Just (rule, subst) -> reduce rule subst
+    Just (rule, subst) -> reduce ctx rule subst
     Nothing -> throwIO (userError (unmatched expr))
   where
     -- 𝔻 is partial: the terminator ⊥ signals an error and lies outside its
@@ -195,19 +233,19 @@ dataize' (expr, seq) univ state ctx = do
     unmatched :: Expression -> String
     unmatched ExTermination = "dataization reached the terminator ⊥, which signals an error and cannot be dataized"
     unmatched _ = "no dataization rule matched"
-    firstMatch :: [Y.DataizeRule] -> IO (Maybe (Y.DataizeRule, Subst))
-    firstMatch [] = pure Nothing
-    firstMatch (rule : rest) = do
+    firstMatch :: DataizeContext -> [Y.DataizeRule] -> IO (Maybe (Y.DataizeRule, Subst))
+    firstMatch _ [] = pure Nothing
+    firstMatch ctx (rule : rest) = do
       substs <- matchExpressionWithRule' (matchExpression' rule.ematch univ) expr (asRule rule) (RuleContext (execBuildTerm univ ctx))
       case substs of
         (subst : _) -> pure (Just (rule, subst))
-        [] -> firstMatch rest
+        [] -> firstMatch ctx rest
     asRule :: Y.DataizeRule -> Y.Rule
     asRule rule = Y.Rule rule.name Nothing Nothing rule.match ExRoot rule.when Nothing Nothing
-    reduce :: Y.DataizeRule -> Subst -> IO (Dataized, State)
-    reduce rule subst = case bytesProducer rule.dresult rule.premises of
+    reduce :: DataizeContext -> Y.DataizeRule -> Subst -> IO (Dataized, State)
+    reduce ctx rule subst = case bytesProducer rule.dresult rule.premises of
       Nothing -> do
-        (final, state') <- sides rule.premises subst
+        (final, state') <- sides ctx rule.premises subst
         bts <- buildBytesThrows rule.dresult final
         seq' <- leadsTo seq rule.name (ExBytes bts) ctx
         pure ((bts, NE.toList seq'), state')
@@ -217,7 +255,7 @@ dataize' (expr, seq) univ state ctx = do
         -- so 𝔻 only ever sees normal forms.
         Just normal@(Y.Premise _ (Y.OpNormalize inner)) -> do
           let side = rule.premises `excluding` [concl, normal]
-          (final, state') <- sides side subst
+          (final, state') <- sides ctx side subst
           built <- buildExpressionThrows inner final
           labelled <- leadsTo seq (labelOf side) built ctx
           (normal', seq') <- normalized built labelled ctx
@@ -225,7 +263,7 @@ dataize' (expr, seq) univ state ctx = do
         -- 𝔻(𝕄(e)) delegates to the morphing relation, splicing its steps into the
         -- chain before dataizing on.
         Just morphed@(Y.Premise _ (Y.OpMorph inner)) -> do
-          (final, state') <- sides (rule.premises `excluding` [concl, morphed]) subst
+          (final, state') <- sides ctx (rule.premises `excluding` [concl, morphed]) subst
           built <- buildExpressionThrows inner final
           ((morphed', seq'), state'') <- morph (built, seq) univ state' ctx
           dataize' (morphed', seq') univ state'' ctx
@@ -237,13 +275,13 @@ dataize' (expr, seq) univ state ctx = do
         -- conclusion's own verb ('dataize' for 𝔻(⊥)).
         _ -> do
           let side = rule.premises `excluding` [concl]
-          (final, state') <- sides side subst
+          (final, state') <- sides ctx side subst
           built <- buildExpressionThrows arg final
           seq' <- leadsTo seq (labelOr (verb concl.operation) side) built ctx
           dataize' (built, seq') univ state' ctx
       Just _ -> throwIO (userError (printf "dataization rule '%s' must conclude with a 'dataize' premise" rule.name))
-    sides :: [Y.Premise] -> Subst -> IO (Subst, State)
-    sides premises subst = foldM (sidePremise univ ctx) (subst, state) premises
+    sides :: DataizeContext -> [Y.Premise] -> Subst -> IO (Subst, State)
+    sides ctx premises subst = foldM (sidePremise univ ctx) (subst, state) premises
     -- A spliced dataization step is labelled by its first side-computation —
     -- 'box' by its 'contextualize', 'fire' by its 'evaluate'; with none it is blank.
     labelOf :: [Y.Premise] -> String

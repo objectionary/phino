@@ -94,6 +94,7 @@ data OptsDataize = OptsDataize
   , _compress :: Bool
   , _maxDepth :: Int
   , _maxCycles :: Int
+  , _maxSteps :: Int
   , _margin :: Int
   , _meetPopularity :: Maybe Int
   , _meetLength :: Maybe Int
