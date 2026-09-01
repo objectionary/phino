@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+xmir: |
+  <object>
+    <o name="app">
+      <o name="k">
+        <o name="a">01-02</o>
+        <o name="ρ">03-04</o>
+      </o>
+    </o>
+  </object>
+phi: '[[ app -> [[ k -> [[ a -> [[ D> 01-02 ]], ^ -> [[ D> 03-04 ]] ]] ]] ]]'

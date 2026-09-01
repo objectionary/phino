@@ -393,13 +393,12 @@ xmirToFormationBinding cur fqn
   | not (hasAttr "name" cur) = throwIO (InvalidXMIRFormat "Formation children must have @name attribute" cur)
   | not (hasAttr "base" cur) = do
       name <- getAttr "name" cur
-      bds <- mapM (`xmirToFormationBinding` (name : fqn)) (cur C.$/ C.element (toName "o")) >>= uniqueBindings'
       case name of
         "λ" -> BiLambda . Function <$> lambdaFunction
         ('α' : _) -> throwIO (InvalidXMIRFormat "Formation child @name can't start with α" cur)
-        "φ" -> pure (BiTau AtPhi (ExFormation (withVoidRho bds)))
-        "ρ" -> pure (BiTau AtRho (ExFormation (withVoidRho bds)))
-        _ -> pure (BiTau (AtLabel (T.pack name)) (ExFormation (withVoidRho bds)))
+        "φ" -> BiTau AtPhi <$> formation name
+        "ρ" -> BiTau AtRho <$> formation name
+        _ -> BiTau (AtLabel (T.pack name)) <$> formation name
   | otherwise = do
       name <- getAttr "name" cur
       base <- getAttr "base" cur
@@ -419,8 +418,18 @@ xmirToFormationBinding cur fqn
     -- tree, which is the only hint left
     lambdaFunction :: IO T.Text
     lambdaFunction
-      | hasText cur = T.strip . T.pack <$> getText cur
+      | hasText cur = T.pack <$> content
       | otherwise = pure (T.pack (intercalate "_" ("L" : reverse fqn)))
+    -- A formation keeps its Δ data in the text content of the element, the way
+    -- the printer emits a Δ binding, while the rest of the bindings are nested
+    -- as child elements
+    formation :: String -> IO Expression
+    formation name = do
+      nested <- mapM (`xmirToFormationBinding` (name : fqn)) (cur C.$/ C.element (toName "o"))
+      bds <- if hasText cur then (\bytes -> BiDelta (bytesToBts bytes) : nested) <$> content else pure nested
+      ExFormation . withVoidRho <$> uniqueBindings' bds
+    content :: IO String
+    content = T.unpack . T.strip . T.pack <$> getText cur
 
 xmirToExpression :: C.Cursor -> [String] -> IO Expression
 xmirToExpression cur fqn
