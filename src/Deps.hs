@@ -10,10 +10,13 @@
 module Deps where
 
 import AST
+import Data.List (intercalate)
+import qualified Data.Text as T
 import Logger (logDebug)
 import Matcher
 import System.Directory (createDirectoryIfMissing)
 import System.FilePath
+import System.IO (IOMode (AppendMode), hPutStrLn, hSetEncoding, utf8, withFile)
 import Text.Printf (printf)
 import Yaml
 
@@ -54,3 +57,30 @@ saveStep (Just dir) ext render step expr = do
 
 dontSaveStep :: SaveStepFunc
 dontSaveStep = saveStep Nothing "" (\_ -> pure "") 0
+
+-- One firing of an atom, the way the Evaluation function 𝔼 sees it: the name of
+-- the λ function, the formation it fired against with the λ binding removed, and
+-- the term it produced.
+data Evaluation = Evaluation
+  { _function :: T.Text
+  , _arguments :: Expression
+  , _result :: Expression
+  }
+
+type SaveEvalFunc = Evaluation -> IO ()
+
+-- Append one evaluation to the protocol file as a single tab-separated line:
+-- the λ function name, its argument formation and its result. Both expressions
+-- are rendered by the caller, which flattens them, so a record never spills over
+-- more than one line. The encoding is pinned to UTF-8 rather than taken from the
+-- locale, since the file is read back by other programs.
+saveEval :: FilePath -> (Expression -> IO String) -> SaveEvalFunc
+saveEval file render (Evaluation func bindings outcome) = do
+  rendered <- mapM render [bindings, outcome]
+  withFile file AppendMode $ \handle -> do
+    hSetEncoding handle utf8
+    hPutStrLn handle (intercalate "\t" (T.unpack func : rendered))
+  logDebug (printf "Saved evaluation of '%s' to '%s'" (T.unpack func) file)
+
+dontSaveEval :: SaveEvalFunc
+dontSaveEval _ = pure ()

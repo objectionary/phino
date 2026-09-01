@@ -16,17 +16,20 @@ import Data.Functor ((<&>))
 import Data.IORef
 import Data.List (intercalate)
 import Data.Maybe
-import Deps (SaveStepFunc, saveStep)
+import Deps (SaveEvalFunc, SaveStepFunc, dontSaveEval, saveEval, saveStep)
 import Encoding
 import Files (ensuredFile)
 import Functions (execFunctions)
-import LaTeX (LatexContext (..), defaultMeetLength, defaultMeetPopularity, expressionToLaTeX, rewrittensToLatex)
+import LaTeX (LatexContext (LatexContext), defaultMeetLength, defaultMeetPopularity, expressionToLaTeX, rewrittensToLatex)
+import Lining (LineFormat (SINGLELINE))
 import Locator (locatedExpression)
 import Logger
 import Parser (parseExpressionThrows)
 import qualified Printer as P
 import qualified Random as R
 import Rewriter (Rewritten, Rewrittens', stepHeaders)
+import System.Directory (createDirectoryIfMissing)
+import System.FilePath (takeDirectory)
 import System.IO (getContents')
 import Text.Printf (printf)
 import XMIR (expressionToXMIR, parseXMIRThrows, printXMIR, xmirToPhi)
@@ -53,6 +56,19 @@ saveStepFunc stepsDir ctx@PrintCtx{..} = do
         step <- atomicModifyIORef' counter (\value -> (value + 1, value + 1))
         saveStep stepsDir ioToExt render step expr
   pure save
+
+-- Prepare saveEvalFunc. The file is truncated up front, so that it always holds
+-- the firings of exactly one run: a caller reading it back never picks up
+-- records left over from the previous run, even when this run fires no atom at
+-- all. Every record is flattened into a single line, whatever '--flat' says
+-- about the main output, since the file is a line-per-firing protocol.
+saveEvalFunc :: Maybe FilePath -> PrintContext -> IO SaveEvalFunc
+saveEvalFunc Nothing _ = pure dontSaveEval
+saveEvalFunc (Just file) ctx = do
+  createDirectoryIfMissing True (takeDirectory file)
+  writeFile file ""
+  logDebug (printf "The option '--evaluations' is specified, atom firings will be recorded in '%s'" file)
+  pure (saveEval file (printExpression ctx{_line = SINGLELINE}))
 
 -- Read input from file or stdin
 readInput :: Maybe FilePath -> IO String

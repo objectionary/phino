@@ -100,6 +100,28 @@ $ phino dataize hello.phi
 68-65-6C-6C-6F
 ```
 
+Every atom fired on the way to the bytes may be recorded in a machine-readable
+protocol, with the `--evaluations` option. One firing is one line of three
+tab-separated fields: the name of the λ function, the formation it was applied
+to, and the expression it returned:
+
+```bash
+$ cat sum.phi
+⟦
+  bytes(data) ↦ ⟦ φ ↦ data ⟧,
+  number(as-bytes) ↦ ⟦ φ ↦ as-bytes, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧,
+  φ ↦ 5.plus( 6 )
+⟧
+$ phino dataize --evaluations=atoms.tsv --quiet --sweet --hide-rho sum.phi
+$ cat -T atoms.tsv
+L_number_plus^I⟦ x ↦ 6 ⟧^I11
+```
+
+Records follow the syntax of the other options, such as `--sweet` and
+`--hide-rho`, but always stay on one line. The file is truncated at the
+beginning of every run, and `--output=phi` is the only output format it
+works with, since one record must fit into one line.
+
 ## Rewrite
 
 You can rewrite this expression with the help of [rules](#rule-structure)
