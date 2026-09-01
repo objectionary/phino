@@ -153,6 +153,15 @@ spec = do
       result <- randomString "%x"
       result `shouldSatisfy` all (\c -> isHexDigit c && (isDigit c || c `elem` "abcdef"))
 
+  describe "randomString retries on a collision" $
+    it "still returns fresh, unique 4-digit numbers well past the birthday bound of a 10000-value space" $ do
+      -- Forces at least one regenerate retry (Set.member match) with
+      -- overwhelming probability, without exhausting the whole space
+      -- (which would loop forever).
+      results <- mapM (const (randomString "%d")) [1 :: Int .. 2000]
+      let unique = Set.fromList results
+      Set.size unique `shouldBe` 2000
+
 wordsBy :: (Char -> Bool) -> String -> [String]
 wordsBy predicate str = case dropWhile predicate str of
   "" -> []
