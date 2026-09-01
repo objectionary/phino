@@ -28,36 +28,28 @@ spec = do
       let expr =
             ExFormation
               [ BiLambda (Function "First")
-              ,
-                ( BiTau
-                    (AtLabel "child")
-                    (ExFormation [BiLambda (Function "Second")])
-                )
-              ,
-                ( BiTau
-                    (AtLabel "app")
-                    ( ExApplication
-                        (ExFormation [BiLambda (Function "Third")])
-                        (ArTau (AtLabel "y") ExRoot)
-                    )
-                )
+              , BiTau
+                  (AtLabel "child")
+                  (ExFormation [BiLambda (Function "Second")])
+              , BiTau
+                  (AtLabel "app")
+                  ( ExApplication
+                      (ExFormation [BiLambda (Function "Third")])
+                      (ArTau (AtLabel "y") ExRoot)
+                  )
               ]
           expected =
             ExFormation
               [ BiLambda (Function "Fn1")
-              ,
-                ( BiTau
-                    (AtLabel "child")
-                    (ExFormation [BiLambda (Function "Fn2")])
-                )
-              ,
-                ( BiTau
-                    (AtLabel "app")
-                    ( ExApplication
-                        (ExFormation [BiLambda (Function "Fn3")])
-                        (ArTau (AtLabel "y") ExRoot)
-                    )
-                )
+              , BiTau
+                  (AtLabel "child")
+                  (ExFormation [BiLambda (Function "Fn2")])
+              , BiTau
+                  (AtLabel "app")
+                  ( ExApplication
+                      (ExFormation [BiLambda (Function "Fn3")])
+                      (ArTau (AtLabel "y") ExRoot)
+                  )
               ]
       canonizeExpr expr `shouldBe` expected
 

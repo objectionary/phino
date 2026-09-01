@@ -48,7 +48,7 @@ spec = do
     it "positive infinity" $
       btsToNum (numToBts (1 / 0)) `shouldSatisfy` either (const False) (\num -> isInfinite num && num > 0)
     it "negative infinity" $
-      btsToNum (numToBts (-1 / 0)) `shouldSatisfy` either (const False) (\num -> isInfinite num && num < 0)
+      btsToNum (numToBts (-(1 / 0))) `shouldSatisfy` either (const False) (\num -> isInfinite num && num < 0)
     it "negative zero" $
       btsToNum (numToBts (-0.0)) `shouldSatisfy` either (const False) isNegativeZero
 

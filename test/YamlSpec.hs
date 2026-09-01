@@ -6,6 +6,7 @@
 
 module YamlSpec where
 
+import AST (Expression (ExRoot))
 import Control.Exception (Exception (displayException), SomeException)
 import Control.Monad
 import Data.Either (isLeft)
@@ -17,7 +18,6 @@ import Data.Yaml qualified as Yaml
 import Files (allPathsIn)
 import System.FilePath
 import Test.Hspec (Spec, describe, expectationFailure, it, runIO, shouldBe, shouldReturn, shouldSatisfy, shouldThrow)
-import AST (Expression (ExRoot))
 import Yaml (Condition (..), ContextualizeRule (..), DataizeRule (..), MorphRule (..), Operation (..), Premise (..), contextualizationRules, dataizationRules, morphingRules, yamlRule)
 
 decodeYaml' :: (Yaml.FromJSON a) => String -> Either Yaml.ParseException a

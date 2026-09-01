@@ -16,7 +16,7 @@ import System.FilePath ((</>))
 import Test.Hspec (Spec, describe, it, shouldBe, shouldSatisfy)
 
 withScratchDir :: (FilePath -> IO a) -> IO a
-withScratchDir action =
+withScratchDir =
   bracket
     ( do
         tmp <- getTemporaryDirectory
@@ -26,7 +26,6 @@ withScratchDir action =
         pure dir
     )
     removeDirectoryRecursive
-    action
 
 spec :: Spec
 spec = do

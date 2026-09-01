@@ -11,7 +11,7 @@ module PrinterSpec where
 
 import AST
 import Control.Monad (forM_)
-import qualified Data.Map.Strict as Map
+import Data.Map.Strict qualified as Map
 import Encoding (Encoding (..))
 import Lining (LineFormat (..))
 import Margin (defaultMargin)

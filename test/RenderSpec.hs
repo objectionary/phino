@@ -7,7 +7,7 @@ module RenderSpec (spec) where
 
 import CST
 import Control.Monad (forM_)
-import qualified Data.Text as T
+import Data.Text qualified as T
 import Render (Render (render))
 import Test.Hspec
 

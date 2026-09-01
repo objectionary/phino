@@ -5,6 +5,7 @@ module DepsSpec where
 
 import AST (Expression (ExRoot))
 import Control.Exception (bracket)
+import Control.Monad (when)
 import Data.Time.Clock.POSIX (getPOSIXTime)
 import Deps (dontSaveStep, saveStep)
 import Logger (LogLevel (DEBUG, ERROR), setLogConfig)
@@ -20,7 +21,7 @@ import System.IO.Silently (hSilence)
 import Test.Hspec (Spec, describe, it, shouldBe)
 
 withScratchDir :: (FilePath -> IO a) -> IO a
-withScratchDir action =
+withScratchDir =
   bracket
     ( do
         tmp <- getTemporaryDirectory
@@ -29,17 +30,17 @@ withScratchDir action =
     )
     ( \dir -> do
         exists <- doesDirectoryExist dir
-        if exists then removeDirectoryRecursive dir else pure ()
+        when exists (removeDirectoryRecursive dir)
     )
-    action
 
 spec :: Spec
 spec = do
   describe "dontSaveStep" $
-    it "is a no-op that never touches the filesystem" $ withScratchDir $ \dir -> do
-      dontSaveStep ExRoot
-      exists <- doesDirectoryExist dir
-      exists `shouldBe` False
+    it "is a no-op that never touches the filesystem" $
+      withScratchDir $ \dir -> do
+        dontSaveStep ExRoot
+        exists <- doesDirectoryExist dir
+        exists `shouldBe` False
 
   describe "saveStep" $ do
     it "creates the directory if missing, writes the rendered step and logs it" $ withScratchDir $ \dir -> do
