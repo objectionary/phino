@@ -80,6 +80,14 @@ withTempFileContent pattern content action =
     hClose h
     action path
 
+readUtf8 :: FilePath -> IO String
+readUtf8 path =
+  withFile path ReadMode $ \stream -> do
+    hSetEncoding stream utf8
+    content <- hGetContents stream
+    _ <- evaluate (length content)
+    pure content
+
 testCLI' :: [String] -> [String] -> Either ExitCode () -> Expectation
 testCLI' args outputs exit = do
   (out, result) <- withStdout (try (runCLI args) :: IO (Either ExitCode ()))
@@ -1151,6 +1159,60 @@ spec = do
     it "does not print bytes with --quiet" $
       withStdin "[[ D> 01- ]]" $
         testCLISucceeded ["dataize", "--quiet"] []
+
+    describe "--evaluations" $ do
+      it "writes one tab-separated record per fired atom" $
+        withTempFile "evaluationsXXXXXX.txt" $ \(path, stream) -> do
+          hClose stream
+          withStdin "[[ bytes(data) -> [[ @ -> $.data ]], number(as-bytes) -> [[ @ -> $.as-bytes, plus(x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6) ]]" $
+            testCLISucceeded ["dataize", "--evaluations=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
+          records <- readUtf8 path
+          records `shouldBe` "L_number_plus\t⟦ x ↦ 6 ⟧\t11\n"
+
+      it "writes a record for every firing" $
+        withTempFile "evaluationsXXXXXX.txt" $ \(path, stream) -> do
+          hClose stream
+          withStdin "[[ bytes(data) -> [[ @ -> $.data ]], number(as-bytes) -> [[ @ -> $.as-bytes, plus(x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6).plus(7) ]]" $
+            testCLISucceeded ["dataize", "--evaluations=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
+          records <- readUtf8 path
+          lines records `shouldBe` ["L_number_plus\t⟦ x ↦ 6 ⟧\t11", "L_number_plus\t⟦ x ↦ 7 ⟧\t18"]
+
+      it "writes records in canonical syntax without --sweet" $
+        withTempFile "evaluationsXXXXXX.txt" $ \(path, stream) -> do
+          hClose stream
+          withStdin "[[ bytes(data) -> [[ @ -> $.data ]], number(as-bytes) -> [[ @ -> $.as-bytes, plus(x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6) ]]" $
+            testCLISucceeded ["dataize", "--evaluations=" ++ path, "--quiet", "--hide-rho"] []
+          records <- readUtf8 path
+          records `shouldEndWith` "\tΦ.number( as-bytes ↦ Φ.bytes( data ↦ ⟦ Δ ⤍ 40-26-00-00-00-00-00-00 ⟧ ) )\n"
+
+      it "keeps the records of a run that fails" $
+        withTempFile "evaluationsXXXXXX.txt" $ \(path, stream) -> do
+          hClose stream
+          withStdin "[[ bytes(data) -> [[ @ -> $.data ]], number(as-bytes) -> [[ @ -> $.as-bytes, plus(x) -> [[ L> L_number_plus ]], nope -> [[ L> L_number_nope ]] ]], @ -> 5.plus(6).nope ]]" $
+            testCLIFailed
+              ["dataize", "--evaluations=" ++ path, "--quiet", "--sweet", "--hide-rho"]
+              ["Atom 'L_number_nope' does not exist"]
+          records <- readUtf8 path
+          records `shouldBe` "L_number_plus\t⟦ x ↦ 6 ⟧\t11\n"
+
+      it "truncates the records left over from the previous run" $
+        withTempFileContent "evaluationsXXXXXX.txt" "L_number_gt\t[[ ]]\t01-\n" $ \path -> do
+          withStdin "[[ D> 01- ]]" $
+            testCLISucceeded ["dataize", "--evaluations=" ++ path, "--quiet"] []
+          records <- readUtf8 path
+          records `shouldBe` ""
+
+      it "fails with --output=xmir" $
+        withStdin "[[ D> 01- ]]" $
+          testCLIFailed
+            ["dataize", "--evaluations=evaluations.txt", "--output=xmir"]
+            ["The --evaluations option can stay together with --output=phi only"]
+
+      it "fails with --output=latex" $
+        withStdin "[[ D> 01- ]]" $
+          testCLIFailed
+            ["dataize", "--evaluations=evaluations.txt", "--output=latex"]
+            ["The --evaluations option can stay together with --output=phi only"]
 
     describe "fails" $ do
       it "with --output != latex and --nonumber" $

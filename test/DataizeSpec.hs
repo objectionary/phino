@@ -13,7 +13,7 @@ import Data.List (find, isInfixOf, nub)
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.Maybe (fromMaybe)
 import Dataize (DataizeContext (..), Steps (..), dataize, dataize', emptyState, execBuildTerm, morph)
-import Deps (dontSaveStep)
+import Deps (dontSaveEval, dontSaveStep)
 import Functions (buildTerm)
 import Matcher (substEmpty)
 import Parser (parseExpressionThrows)
@@ -27,7 +27,7 @@ import Yaml qualified
 -- dataization rules (#909): a hidden overlap surfaces as a nondeterministic
 -- failure instead of staying silently green.
 defaultDataizeContext :: Expression -> DataizeContext
-defaultDataizeContext loc = DataizeContext loc 25 25 (Steps 250 0) False True buildTerm dontSaveStep
+defaultDataizeContext loc = DataizeContext loc 25 25 (Steps 250 0) False True buildTerm dontSaveStep dontSaveEval
 
 test :: (Eq a, Show a) => ((Expression, NonEmpty Rewritten) -> Expression -> String -> DataizeContext -> IO ((a, [Rewritten]), String)) -> [(String, Expression, Expression, a)] -> Spec
 test func useCases =
@@ -237,7 +237,7 @@ spec = do
   describe "DataizeContext and Steps expose their fields" $
     it "reads back every field through its derived accessor" $ do
       let steps = Steps 250 3
-          ctx = DataizeContext ExRoot 25 25 steps False True buildTerm dontSaveStep
+          ctx = DataizeContext ExRoot 25 25 steps False True buildTerm dontSaveStep dontSaveEval
       (_limit steps, _spent steps) `shouldBe` (250, 3)
       (_limit (_steps ctx), _spent (_steps ctx)) `shouldBe` (250, 3)
       ( _locator ctx
@@ -393,7 +393,7 @@ spec = do
   describe "stops a dataization that never reaches bytes" $
     it "fails on the step limit instead of morphing forever" $ do
       expr <- parseExpressionThrows "⟦ @ ↦ ⟦ λ ⤍ L_number_div, ρ ↦ ⟦ Δ ⤍ 40-45-00-00-00-00-00-00 ⟧, x ↦ ⟦ Δ ⤍ 40-00-00-00-00-00-00-00 ⟧ ⟧ ⟧"
-      dataize expr (DataizeContext ExRoot 25 25 (Steps 40 0) False True buildTerm dontSaveStep)
+      dataize expr (DataizeContext ExRoot 25 25 (Steps 40 0) False True buildTerm dontSaveStep dontSaveEval)
         `shouldThrow` (\e -> "--max-steps=40" `isInfixOf` show (e :: SomeException))
 
   -- '_maxDepth'/'_maxCycles' bound the normalization rewriter that a 'box' or
@@ -405,19 +405,19 @@ spec = do
     let boxed = "[[ @ -> [[ D> 00- ]] ]]"
     it "throws once --max-cycles is exhausted with --depth-sensitive" $ do
       expr <- parseExpressionThrows boxed
-      dataize expr (DataizeContext ExRoot 25 0 (Steps 250 0) True True buildTerm dontSaveStep)
+      dataize expr (DataizeContext ExRoot 25 0 (Steps 250 0) True True buildTerm dontSaveStep dontSaveEval)
         `shouldThrow` (\e -> "--max-cycles=0" `isInfixOf` show (e :: SomeException))
     it "throws once --max-depth is exhausted with --depth-sensitive" $ do
       expr <- parseExpressionThrows boxed
-      dataize expr (DataizeContext ExRoot 0 25 (Steps 250 0) True True buildTerm dontSaveStep)
+      dataize expr (DataizeContext ExRoot 0 25 (Steps 250 0) True True buildTerm dontSaveStep dontSaveEval)
         `shouldThrow` (\e -> "--max-depth=0" `isInfixOf` show (e :: SomeException))
     it "does not throw without --depth-sensitive even once --max-cycles is exhausted" $ do
       expr <- parseExpressionThrows boxed
-      (value, _) <- dataize expr (DataizeContext ExRoot 25 0 (Steps 250 0) False True buildTerm dontSaveStep)
+      (value, _) <- dataize expr (DataizeContext ExRoot 25 0 (Steps 250 0) False True buildTerm dontSaveStep dontSaveEval)
       value `shouldBe` BtOne "00"
     it "does not throw without --depth-sensitive even once --max-depth is exhausted" $ do
       expr <- parseExpressionThrows boxed
-      (value, _) <- dataize expr (DataizeContext ExRoot 0 25 (Steps 250 0) False True buildTerm dontSaveStep)
+      (value, _) <- dataize expr (DataizeContext ExRoot 0 25 (Steps 250 0) False True buildTerm dontSaveStep dontSaveEval)
       value `shouldBe` BtOne "00"
 
   describe "labels every step with a defined rule or operation" $ do

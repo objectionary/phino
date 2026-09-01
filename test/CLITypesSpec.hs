@@ -105,6 +105,7 @@ spec = do
               , _label = Just "label"
               , _meetPrefix = Just "prefix"
               , _stepsDir = Just "steps"
+              , _evaluations = Just "evaluations.jsonl"
               , _inputFile = Just "input.phi"
               }
       opts._logLevel `shouldBe` DEBUG
@@ -139,6 +140,7 @@ spec = do
       opts._label `shouldBe` Just "label"
       opts._meetPrefix `shouldBe` Just "prefix"
       opts._stepsDir `shouldBe` Just "steps"
+      opts._evaluations `shouldBe` Just "evaluations.jsonl"
       opts._inputFile `shouldBe` Just "input.phi"
 
   describe "OptsExplain field accessors" $

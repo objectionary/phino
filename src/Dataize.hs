@@ -23,7 +23,7 @@ import Data.List (find, partition)
 import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as NE
 import qualified Data.Text as T
-import Deps (BuildTermFunc, BuildTermMethodS, SaveStepFunc, State, Term (..))
+import Deps (BuildTermFunc, BuildTermMethodS, Evaluation (..), SaveEvalFunc, SaveStepFunc, State, Term (..))
 import Locator (locatedExpression, withLocatedExpression)
 import Matcher (MetaValue (..), Subst (..), combine, matchExpression', substEmpty, substSingle)
 import Misc
@@ -78,6 +78,7 @@ data DataizeContext = DataizeContext
   , _shuffle :: Bool
   , _buildTerm :: BuildTermFunc
   , _saveStep :: SaveStepFunc
+  , _saveEval :: SaveEvalFunc
   }
 
 newtype DataizeException = OutOfSteps Int
@@ -100,13 +101,19 @@ deeper ctx@DataizeContext{_steps = Steps limit spent}
   | otherwise = pure ctx{_steps = Steps limit (spent + 1)}
 
 -- Resolve formation for LAMBDA Morphing rule.
--- If formation contains λ binding, the called atom result is returned. The
--- universe 'univ' is forwarded to the atom.
-formation :: [Binding] -> Expression -> State -> DataizeContext -> IO (Maybe (Expression, State))
+-- If formation contains λ binding, the called atom result is returned, together
+-- with the name of the fired function and the formation the atom fired against,
+-- since 𝔼 has to report all three. This is not the report itself: its '_result'
+-- is the atom's raw answer, while the one 𝔼 reports carries the normal form of
+-- that answer, which is what 𝔼 hands back to its caller.
+-- The universe 'univ' is forwarded to the atom.
+formation :: [Binding] -> Expression -> State -> DataizeContext -> IO (Maybe (Evaluation, State))
 formation bds univ state ctx = do
   let (lambda, bds') = maybeLambda bds
   case lambda of
-    Just (BiLambda (Function func)) -> Just <$> atom func (ExFormation bds') univ state ctx
+    Just (BiLambda (Function func)) -> do
+      (obj, state') <- atom func (ExFormation bds') univ state ctx
+      pure (Just (Evaluation func (ExFormation bds') obj, state'))
     _ -> pure Nothing
   where
     maybeLambda :: [Binding] -> (Maybe Binding, [Binding])
@@ -528,6 +535,11 @@ execBuildTerm _ ctx func = _buildTerm ctx func
 -- callers ('fire', 'ml') need no follow-up 'normalize' premise. The universe is
 -- passed explicitly as the second argument (rather than threaded behind the
 -- scenes), matching how the morphing 𝕄 and dataization 𝔻 functions carry it.
+-- Every firing is reported to '_saveEval', which the '--evaluations' option
+-- turns into one record per line. The reported result is the normal form 𝔼
+-- returns, never the atom's raw answer, so the protocol and the caller see the
+-- same term. A nested firing — an atom that dataizes its own arguments —
+-- completes first, so it is reported before the firing that triggered it.
 _evaluate :: DataizeContext -> State -> BuildTermMethodS
 _evaluate ctx state [ArgExpression expr, ArgExpression universe] subst = do
   form <- buildExpressionThrows expr subst
@@ -536,8 +548,9 @@ _evaluate ctx state [ArgExpression expr, ArgExpression universe] subst = do
     ExFormation bds -> do
       resolved <- formation bds univ state ctx
       case resolved of
-        Just (obj, state') -> do
-          (normal, _) <- normalized obj ((univ, Nothing) :| []) ctx
+        Just (fired, state') -> do
+          (normal, _) <- normalized fired._result ((univ, Nothing) :| []) ctx
+          ctx._saveEval (Evaluation fired._function fired._arguments normal)
           pure (TeExpression normal, state')
         Nothing -> throwIO (userError "Function evaluate() expects a formation with a λ binding")
     _ -> throwIO (userError "Function evaluate() expects a formation")
