@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+failure: true
+xmir: |
+  <object>
+    <o name="app">
+      <o name="x" base="Φ">
+        <o base="∅"/>
+      </o>
+    </o>
+  </object>
+phi: ''

@@ -16,9 +16,9 @@ import Functions (buildTerm)
 import GHC.Generics
 import Matcher
 import Printer (printSubsts)
-import Rule (RuleContext (RuleContext), isNF, meetCondition)
+import Rule (RuleContext (RuleContext), isNF, matchExpressionWithRule, meetCondition)
 import System.FilePath
-import Test.Hspec (Spec, describe, expectationFailure, it, runIO, shouldBe)
+import Test.Hspec (Spec, describe, expectationFailure, it, runIO, shouldBe, shouldSatisfy)
 import Yaml qualified
 
 data ConditionPack = ConditionPack
@@ -77,3 +77,83 @@ spec = do
       , ("returns false for a formation with a tau binding matching a normalization rule", ExFormation [BiTau (AtLabel "x") (ExDispatch ExTermination (AtLabel "y"))], False)
       ]
       (\(desc, expr, expected) -> it desc $ isNF expr ctx `shouldBe` expected)
+
+  describe "extends substitutions via a 'where' rule extension" $ do
+    let ctx :: RuleContext
+        ctx = RuleContext buildTerm
+
+    it "binds a fresh meta from a bindings-list built by join()" $ do
+      let expr :: Expression
+          expr = ExFormation [BiTau (AtLabel "x") ExRoot, BiVoid AtRho]
+          rule :: Yaml.Rule
+          rule =
+            Yaml.Rule
+              "extra-join-test"
+              Nothing
+              Nothing
+              (ExFormation [BiMeta "B"])
+              (ExMeta "B")
+              Nothing
+              (Just [Yaml.Extra (Yaml.ArgBinding (BiMeta "J")) "join" [Yaml.ArgBinding (BiMeta "B")]])
+              Nothing
+      matched <- matchExpressionWithRule expr rule ctx
+      matched `shouldSatisfy` (not . null)
+
+    it "drops a substitution once an earlier extension fails to name a meta" $ do
+      let expr :: Expression
+          expr = ExRoot
+          rule :: Yaml.Rule
+          rule =
+            Yaml.Rule
+              "extra-cascade-test"
+              Nothing
+              Nothing
+              (ExMeta "e")
+              (ExMeta "e")
+              Nothing
+              ( Just
+                  [ Yaml.Extra (Yaml.ArgExpression ExRoot) "random-tau" []
+                  , Yaml.Extra (Yaml.ArgAttribute (AtMeta "J")) "random-tau" []
+                  ]
+              )
+              Nothing
+      matched <- matchExpressionWithRule expr rule ctx
+      matched `shouldBe` []
+
+  describe "collects 'n'/'k' meta names through φ-meet and φ-again markers" $ do
+    let ctx :: RuleContext
+        ctx = RuleContext buildTerm
+
+    it "finds an 'n' meta nested inside a φ-meet marker" $ do
+      let expr :: Expression
+          expr = ExFormation [BiTau (AtLabel "x") (ExPhiMeet Nothing 0 ExRoot), BiVoid AtRho]
+          rule :: Yaml.Rule
+          rule =
+            Yaml.Rule
+              "phimeet-n-test"
+              Nothing
+              Nothing
+              (ExFormation [BiTau (AtLabel "x") (ExPhiMeet Nothing 0 (ExMeta "n1")), BiVoid AtRho])
+              (ExMeta "n1")
+              Nothing
+              Nothing
+              Nothing
+      matched <- matchExpressionWithRule expr rule ctx
+      matched `shouldSatisfy` (not . null)
+
+    it "finds an 'n' meta nested inside a φ-again marker" $ do
+      let expr :: Expression
+          expr = ExFormation [BiTau (AtLabel "x") (ExPhiAgain Nothing 0 ExRoot), BiVoid AtRho]
+          rule :: Yaml.Rule
+          rule =
+            Yaml.Rule
+              "phiagain-n-test"
+              Nothing
+              Nothing
+              (ExFormation [BiTau (AtLabel "x") (ExPhiAgain Nothing 0 (ExMeta "n2")), BiVoid AtRho])
+              (ExMeta "n2")
+              Nothing
+              Nothing
+              Nothing
+      matched <- matchExpressionWithRule expr rule ctx
+      matched `shouldSatisfy` (not . null)

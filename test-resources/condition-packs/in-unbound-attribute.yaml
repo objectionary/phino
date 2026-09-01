@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+expression: '[[ x -> Q.y, z -> Q.z ]].foo'
+pattern: '[[ !B ]].!t'
+condition:
+  not:
+    in:
+      - '!tUnbound'
+      - '!B'
