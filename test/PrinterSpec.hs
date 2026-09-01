@@ -11,9 +11,11 @@ module PrinterSpec where
 
 import AST
 import Control.Monad (forM_)
+import qualified Data.Map.Strict as Map
 import Encoding (Encoding (..))
 import Lining (LineFormat (..))
 import Margin (defaultMargin)
+import Matcher (MetaValue (..), Subst (Subst))
 import Parser (parseExpression)
 import Printer
 import Sugar (SugarType (..))
@@ -187,13 +189,15 @@ spec = do
       , ("φ", AtPhi, "φ")
       , ("λ", AtLambda, "λ")
       , ("Δ", AtDelta, "Δ")
+      , ("meta", AtMeta "t", "𝜏")
       ]
       ( \(desc, attr, expected) ->
           it desc (printAttribute attr `shouldBe` expected)
       )
 
-  describe "printAlpha with default encoding" $
+  describe "printAlpha with default encoding" $ do
     it "α42" (printAlpha (Alpha 42) `shouldBe` "α42")
+    it "meta alpha" (printAlpha (AlMeta "i") `shouldBe` "α𝑖")
 
   describe "printBinding renders as formation" $
     forM_
@@ -201,6 +205,7 @@ spec = do
       , ("void binding", BiVoid (AtLabel "y"), "y ↦ ∅")
       , ("delta binding", BiDelta (BtOne "00"), "Δ ⤍ 00-")
       , ("lambda binding", BiLambda (Function "Func"), "λ ⤍ Func")
+      , ("meta binding", BiMeta "B", "𝐵")
       ]
       ( \(desc, bd, expected) ->
           it desc (printBinding bd `shouldContain` expected)
@@ -211,6 +216,7 @@ spec = do
       [ ("empty bytes", BtEmpty, "--")
       , ("single byte", BtOne "1F", "1F-")
       , ("multiple bytes", BtMany ["00", "01", "02"], "00-01-02")
+      , ("meta bytes", BtMeta "D", "δ")
       ]
       ( \(desc, bts, expected) ->
           it desc (printBytes bts `shouldBe` expected)
@@ -226,3 +232,51 @@ spec = do
       ( \(desc, arg, expected) ->
           it desc (printExtraArg arg `shouldContain` expected)
       )
+
+  describe "printSubsts renders every MetaValue constructor" $
+    forM_
+      [ ("MvAttribute", Subst (Map.singleton "t" (MvAttribute (AtLabel "x"))), "t >> x")
+      , ("MvIndex", Subst (Map.singleton "i" (MvIndex 3)), "i >> 3")
+      , ("MvExpression", Subst (Map.singleton "e" (MvExpression ExRoot)), "e >> Φ")
+      , ("MvBytes", Subst (Map.singleton "b" (MvBytes (BtOne "1F"))), "b >> 1F-")
+      , ("MvBindings", Subst (Map.singleton "bnd" (MvBindings [BiVoid (AtLabel "y")])), "bnd >> ⟦ y ↦ ∅ ⟧")
+      , ("MvFunction", Subst (Map.singleton "f" (MvFunction "func")), "f >> func")
+      ]
+      ( \(desc, subst, expected) ->
+          it desc (printSubsts [subst] `shouldBe` expected)
+      )
+
+  describe "printSubsts renders every key of a multi-entry substitution" $
+    it
+      "keys are sorted and each is on its own line"
+      (printSubsts [Subst (Map.fromList [("a", MvIndex 1), ("b", MvIndex 2)])] `shouldBe` "a >> 1\nb >> 2")
+
+  describe "printSubsts separates multiple substitutions with a dashed line" $
+    it
+      "two substitutions"
+      (printSubsts [Subst (Map.singleton "a" (MvIndex 1)), Subst (Map.singleton "b" (MvIndex 2))] `shouldBe` "a >> 1\n------\nb >> 2")
+
+  describe "printSubsts' on an empty substitution list" $
+    it "renders the dashed placeholder" (printSubsts' [] (SWEET, UNICODE, SINGLELINE, defaultMargin) `shouldBe` "------")
+
+  describe "printSubsts' picks the encoding from its PrintConfig for an attribute meta value" $
+    it "ASCII rho" (printSubsts' [Subst (Map.singleton "t" (MvAttribute AtRho))] (SWEET, ASCII, SINGLELINE, defaultMargin) `shouldBe` "t >> ^")
+
+  describe "printExpressionHidingRho strips rho at every nesting depth" $
+    it "three nested formations, each with its own rho" $ do
+      let deep =
+            ExFormation
+              [ BiTau
+                  (AtLabel "a")
+                  ( ExFormation
+                      [ BiTau (AtLabel "b") (ExFormation [BiVoid AtRho])
+                      , BiTau AtRho ExXi
+                      ]
+                  )
+              , BiTau AtRho ExRoot
+              ]
+      printExpressionHidingRho' deep (SWEET, UNICODE, SINGLELINE, defaultMargin) `shouldBe` "⟦ a ↦ ⟦ b ↦ ⟦⟧ ⟧ ⟧"
+
+  describe "logPrintConfig" $
+    it "is a fixed SWEET/UNICODE/SINGLELINE config at the default margin" $
+      logPrintConfig `shouldBe` (SWEET, UNICODE, SINGLELINE, defaultMargin)

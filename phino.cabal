@@ -150,10 +150,12 @@ test-suite spec
     PrinterSpec
     RandomSpec
     RegexpSpec
+    RenderSpec
     ReplacerSpec
     RewriterSpec
     RuleSpec
     Spec
+    SugarSpec
     TauSpec
     XMIRSpec
     YamlSpec
