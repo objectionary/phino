@@ -238,9 +238,21 @@ spec = do
               (expectationFailure ("Failed xpaths:\n - " ++ intercalate "\n - " failed ++ "\nXMIR is:\n" ++ printXMIR xmir'))
       )
 
-  describe "XMIR round-trip" $
+  describe "XMIR round-trip" $ do
     it "keeps λ function name and bound ρ" $ do
       expr <- parseExpressionThrows "[[ k -> [[ x -> ?, L> Lorg_eolang_number_plus, ^ -> [[ y -> ? ]] ]] ]]"
+      xmir' <- expressionToXMIR expr defaultXmirContext
+      back <- xmirToPhi xmir'
+      back `shouldBe` expr
+
+    it "keeps Δ data bound to a named attribute" $ do
+      expr <- parseExpressionThrows "[[ k -> [[ a -> [[ D> 01-02 ]], ^ -> [[ D> 03-04 ]] ]] ]]"
+      xmir' <- expressionToXMIR expr defaultXmirContext
+      back <- xmirToPhi xmir'
+      back `shouldBe` expr
+
+    it "keeps Δ data in a dispatched formation" $ do
+      expr <- parseExpressionThrows "[[ k -> [[ D> 01-02 ]].plus ]]"
       xmir' <- expressionToXMIR expr defaultXmirContext
       back <- xmirToPhi xmir'
       back `shouldBe` expr
