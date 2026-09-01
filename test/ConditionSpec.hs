@@ -7,9 +7,11 @@ module ConditionSpec where
 
 import AST (Attribute (AtLabel, AtMeta), Binding (BiMeta), Expression (ExDispatch, ExMeta, ExRoot))
 import Condition
+import Control.Exception (SomeException)
 import Control.Monad (forM_)
 import Data.Either (isLeft, isRight)
-import Test.Hspec (Spec, describe, it, shouldBe, shouldSatisfy)
+import Data.List (isInfixOf)
+import Test.Hspec (Spec, describe, it, shouldBe, shouldSatisfy, shouldThrow)
 import Yaml qualified as Y
 
 spec :: Spec
@@ -51,3 +53,8 @@ spec = do
       , "or(or(), or())"
       ]
       (\expr -> it expr (parseCondition expr `shouldSatisfy` isLeft))
+
+  describe "parseConditionThrows" $
+    it "throws with a descriptive message on unparsable input" $
+      parseConditionThrows "some()"
+        `shouldThrow` (\exc -> "Couldn't parse given condition" `isInfixOf` show (exc :: SomeException))

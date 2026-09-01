@@ -9,9 +9,11 @@
 module RewriterSpec where
 
 import AST (Expression (ExRoot))
+import Control.Exception (SomeException)
 import Control.Monad (forM_, unless)
 import Data.Aeson
 import Data.Char (isSpace)
+import Data.List (isInfixOf)
 import Data.List.NonEmpty qualified as NE
 import Data.Yaml qualified as Yaml
 import Deps (dontSaveStep)
@@ -24,7 +26,7 @@ import Printer (printExpression)
 import Rewriter (RewriteContext (RewriteContext), rewrite)
 import System.FilePath (makeRelative, replaceExtension, (</>))
 import Tau (seedTaus)
-import Test.Hspec (Spec, describe, expectationFailure, it, pending, runIO)
+import Test.Hspec (Spec, describe, expectationFailure, it, pending, runIO, shouldBe, shouldThrow)
 import Yaml (normalizationRules)
 import Yaml qualified as Y
 
@@ -61,7 +63,21 @@ noSpaces :: String -> String
 noSpaces = filter (not . isSpace)
 
 spec :: Spec
-spec =
+spec = do
+  describe "--max-cycles and --max-depth limits" $ do
+    it "throws with --depth-sensitive once --max-cycles is reached" $
+      rewrite ExRoot [] (RewriteContext ExRoot 5 0 True buildTerm MtDisabled Nothing dontSaveStep)
+        `shouldThrow` (\exc -> "--max-cycles=0" `isInfixOf` show (exc :: SomeException))
+    it "stops silently without --depth-sensitive once --max-cycles is reached" $ do
+      (_, exceeded) <- rewrite ExRoot [] (RewriteContext ExRoot 5 0 False buildTerm MtDisabled Nothing dontSaveStep)
+      exceeded `shouldBe` True
+    it "throws with --depth-sensitive once --max-depth is reached for a rule" $
+      rewrite ExRoot normalizationRules (RewriteContext ExRoot 0 5 True buildTerm MtDisabled Nothing dontSaveStep)
+        `shouldThrow` (\exc -> "--max-depth=0" `isInfixOf` show (exc :: SomeException))
+    it "does not throw without --depth-sensitive once --max-depth is reached for a rule" $ do
+      (rewrittens, _) <- rewrite ExRoot normalizationRules (RewriteContext ExRoot 0 5 False buildTerm MtDisabled Nothing dontSaveStep)
+      fst (NE.last rewrittens) `shouldBe` ExRoot
+
   describe "rewrite packs" $ do
     let resources = "test-resources/rewriter-packs"
     packs <- runIO (allPathsIn resources)

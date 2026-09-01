@@ -73,5 +73,7 @@ spec = do
       , ("returns true for formation with only void binding", ExFormation [BiVoid (AtLabel "x")], True)
       , ("returns true for formation with only lambda binding", ExFormation [BiLambda (Function "Func")], True)
       , ("returns true for formation with delta void and lambda", ExFormation [BiDelta (BtOne "FF"), BiVoid (AtLabel "y"), BiLambda (Function "G")], True)
+      , ("returns true for a formation with a tau binding whose expression is already normal", ExFormation [BiTau (AtLabel "x") ExRoot], True)
+      , ("returns false for a formation with a tau binding matching a normalization rule", ExFormation [BiTau (AtLabel "x") (ExDispatch ExTermination (AtLabel "y"))], False)
       ]
       (\(desc, expr, expected) -> it desc $ isNF expr ctx `shouldBe` expected)

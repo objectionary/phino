@@ -136,7 +136,31 @@ spec = do
         , ExRoot
         , ExTermination
         )
+      , -- Same as above but through the alpha-argument sibling 'maad' instead of
+        -- 'mad': a void slot fed a non-absolute alpha-indexed argument also
+        -- morphs straight to ⊥.
+
+        ( "[[ ^ -> ? ]](α0 -> $.foo) => T"
+        , ExApplication (ExFormation [BiVoid AtRho]) (ArAlpha (Alpha 0) (ExDispatch ExXi (AtLabel "foo")))
+        , ExRoot
+        , ExTermination
+        )
+      , -- 'universe' fires only when the universe 'e' differs from Φ itself
+        -- ('not (eq(e, Φ))'); it then normalizes and re-morphs that universe.
+        -- Here the universe is a plain formation, already a normal form, so
+        -- re-morphing it lands straight on 'mf' and returns it unchanged.
+
+        ( "Q => [[]] (a universe distinct from Φ) => [[]]"
+        , ExRoot
+        , ExFormation []
+        , ExFormation []
+        )
       ]
+
+  describe "morph fails on a term no morphing clause matches" $
+    it "throws instead of silently looping" $
+      morph (ExPhiMeet Nothing 0 ExRoot, (ExRoot, Nothing) :| []) ExRoot emptyState (defaultDataizeContext ExRoot)
+        `shouldThrow` (\e -> "no morphing rule matched" `isInfixOf` show (e :: SomeException))
 
   -- 'defaultDataizeContext' runs with '_shuffle' on, so 'morph' walks the
   -- morphing rules in a random order on every step. Every clause is
@@ -282,6 +306,30 @@ spec = do
       expr <- parseExpressionThrows "⟦ @ ↦ ⟦ λ ⤍ L_number_div, ρ ↦ ⟦ Δ ⤍ 40-45-00-00-00-00-00-00 ⟧, x ↦ ⟦ Δ ⤍ 40-00-00-00-00-00-00-00 ⟧ ⟧ ⟧"
       dataize expr (DataizeContext ExRoot 25 25 (Steps 40 0) False True buildTerm dontSaveStep)
         `shouldThrow` (\e -> "--max-steps=40" `isInfixOf` show (e :: SomeException))
+
+  -- '_maxDepth'/'_maxCycles' bound the normalization rewriter that a 'box' or
+  -- 'norm' dataization step splices in (see 'normalized'); with
+  -- '_depthSensitive' on, exhausting either one propagates the very same
+  -- exception the rewriter itself throws, and with it off the limit is
+  -- absorbed silently, so dataization still reaches an answer.
+  describe "DataizeContext's --max-depth/--max-cycles reach into the normalization it splices in" $ do
+    let boxed = "[[ @ -> [[ D> 00- ]] ]]"
+    it "throws once --max-cycles is exhausted with --depth-sensitive" $ do
+      expr <- parseExpressionThrows boxed
+      dataize expr (DataizeContext ExRoot 25 0 (Steps 250 0) True True buildTerm dontSaveStep)
+        `shouldThrow` (\e -> "--max-cycles=0" `isInfixOf` show (e :: SomeException))
+    it "throws once --max-depth is exhausted with --depth-sensitive" $ do
+      expr <- parseExpressionThrows boxed
+      dataize expr (DataizeContext ExRoot 0 25 (Steps 250 0) True True buildTerm dontSaveStep)
+        `shouldThrow` (\e -> "--max-depth=0" `isInfixOf` show (e :: SomeException))
+    it "does not throw without --depth-sensitive even once --max-cycles is exhausted" $ do
+      expr <- parseExpressionThrows boxed
+      (value, _) <- dataize expr (DataizeContext ExRoot 25 0 (Steps 250 0) False True buildTerm dontSaveStep)
+      value `shouldBe` BtOne "00"
+    it "does not throw without --depth-sensitive even once --max-depth is exhausted" $ do
+      expr <- parseExpressionThrows boxed
+      (value, _) <- dataize expr (DataizeContext ExRoot 0 25 (Steps 250 0) False True buildTerm dontSaveStep)
+      value `shouldBe` BtOne "00"
 
   describe "labels every step with a defined rule or operation" $ do
     let verb op = case op of

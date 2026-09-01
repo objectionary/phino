@@ -7,8 +7,10 @@ module BuilderSpec where
 
 import AST
 import Builder
+import Control.Exception (SomeException)
 import Control.Monad
 import Data.Either (isLeft)
+import Data.List (isInfixOf)
 import Data.Map.Strict qualified as Map
 import Data.Text qualified as T
 import Matcher
@@ -83,6 +85,18 @@ spec = do
                 (AtLabel "t")
             )
         )
+      ,
+        ( "Q.c(α!i -> !e) => (!i >> 2, !e >> $) => Q.c(α2 -> $)"
+        , ExApplication (ExDispatch ExRoot (AtLabel "c")) (ArAlpha (AlMeta "i") (ExMeta "e"))
+        , [("i", MvIndex 2), ("e", MvExpression ExXi)]
+        , Right (ExApplication (ExDispatch ExRoot (AtLabel "c")) (ArAlpha (Alpha 2) ExXi))
+        )
+      ,
+        ( "Q.c(α!i -> Q) => () => X"
+        , ExApplication (ExDispatch ExRoot (AtLabel "c")) (ArAlpha (AlMeta "i") ExRoot)
+        , []
+        , Left "meta 'i' is either does not exist or refers to an inappropriate term"
+        )
       ]
 
   describe "buildExpressions" $ do
@@ -111,6 +125,51 @@ spec = do
     it "recurses into a dispatch application" $
       contextualize (ExDispatch ExXi (AtLabel "z")) (ExFormation [BiVoid AtRho])
         `shouldBe` ExDispatch (ExFormation [BiVoid AtRho]) (AtLabel "z")
+    it "keeps a termination untouched" $
+      contextualize ExTermination (ExFormation [BiVoid AtRho]) `shouldBe` ExTermination
+    it "recurses into both sides of an application with a tau argument" $
+      contextualize
+        (ExApplication ExXi (ArTau (AtLabel "x") ExXi))
+        (ExFormation [BiVoid AtRho])
+        `shouldBe` ExApplication (ExFormation [BiVoid AtRho]) (ArTau (AtLabel "x") (ExFormation [BiVoid AtRho]))
+    it "recurses into both sides of an application with an alpha argument" $
+      contextualize
+        (ExApplication ExXi (ArAlpha (Alpha 0) ExXi))
+        (ExFormation [BiVoid AtRho])
+        `shouldBe` ExApplication (ExFormation [BiVoid AtRho]) (ArAlpha (Alpha 0) (ExFormation [BiVoid AtRho]))
+    it "leaves any other expression untouched" $
+      contextualize (ExMeta "e") (ExFormation [BiVoid AtRho]) `shouldBe` ExMeta "e"
+
+  describe "buildBinding: lambda and delta bindings from metas" $ do
+    it "builds a lambda binding from a bound function meta" $
+      buildBinding (BiLambda (FnMeta "f")) (substSingle "f" (MvFunction "Func"))
+        `shouldBe` Right [BiLambda (Function "Func")]
+    it "fails to build a lambda binding from an unbound function meta" $
+      buildBinding (BiLambda (FnMeta "f")) substEmpty
+        `shouldBe` Left "meta 'f' is either does not exist or refers to an inappropriate term"
+    it "builds a delta binding from a bound bytes meta" $
+      buildBinding (BiDelta (BtMeta "b")) (substSingle "b" (MvBytes (BtOne "00")))
+        `shouldBe` Right [BiDelta (BtOne "00")]
+    it "fails to build a delta binding from an unbound bytes meta" $
+      buildBinding (BiDelta (BtMeta "b")) substEmpty
+        `shouldBe` Left "meta 'b' is either does not exist or refers to an inappropriate term"
+    it "fails to build a meta binding that is unbound" $
+      buildBinding (BiMeta "B") substEmpty
+        `shouldBe` Left "meta 'B' is either does not exist or refers to an inappropriate term"
+
+  describe "the throwing builders report a descriptive message" $ do
+    it "buildBytesThrows names the bytes it could not build" $
+      buildBytesThrows (BtMeta "b") substEmpty
+        `shouldThrow` (\exc -> "Couldn't build bytes" `isInfixOf` show (exc :: SomeException))
+    it "buildBindingThrows names the binding it could not build" $
+      buildBindingThrows (BiMeta "B") substEmpty
+        `shouldThrow` (\exc -> "Couldn't build binding" `isInfixOf` show (exc :: SomeException))
+    it "buildAttributeThrows names the attribute it could not build" $
+      buildAttributeThrows (AtMeta "t") substEmpty
+        `shouldThrow` (\exc -> "Couldn't build attribute" `isInfixOf` show (exc :: SomeException))
+    it "buildExpressionThrows names the expression it could not build" $
+      buildExpressionThrows (ExMeta "e") substEmpty
+        `shouldThrow` (\exc -> "Couldn't build expression" `isInfixOf` show (exc :: SomeException))
 
   describe "build with duplicate attributes in bindings" $ do
     it "build binding with duplicates" $
