@@ -250,3 +250,9 @@ spec = do
       xmir' <- expressionToXMIR expr defaultXmirContext
       back <- xmirToPhi xmir'
       back `shouldBe` expr
+
+    it "keeps Δ data in a dispatched formation" $ do
+      expr <- parseExpressionThrows "[[ k -> [[ D> 01-02 ]].plus ]]"
+      xmir' <- expressionToXMIR expr defaultXmirContext
+      back <- xmirToPhi xmir'
+      back `shouldBe` expr

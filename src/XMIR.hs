@@ -396,9 +396,9 @@ xmirToFormationBinding cur fqn
       case name of
         "λ" -> BiLambda . Function <$> lambdaFunction
         ('α' : _) -> throwIO (InvalidXMIRFormat "Formation child @name can't start with α" cur)
-        "φ" -> BiTau AtPhi <$> formation name
-        "ρ" -> BiTau AtRho <$> formation name
-        _ -> BiTau (AtLabel (T.pack name)) <$> formation name
+        "φ" -> BiTau AtPhi <$> xmirToFormation cur (name : fqn)
+        "ρ" -> BiTau AtRho <$> xmirToFormation cur (name : fqn)
+        _ -> BiTau (AtLabel (T.pack name)) <$> xmirToFormation cur (name : fqn)
   | otherwise = do
       name <- getAttr "name" cur
       base <- getAttr "base" cur
@@ -418,18 +418,20 @@ xmirToFormationBinding cur fqn
     -- tree, which is the only hint left
     lambdaFunction :: IO T.Text
     lambdaFunction
-      | hasText cur = T.pack <$> content
+      | hasText cur = T.strip . T.pack <$> getText cur
       | otherwise = pure (T.pack (intercalate "_" ("L" : reverse fqn)))
-    -- A formation keeps its Δ data in the text content of the element, the way
-    -- the printer emits a Δ binding, while the rest of the bindings are nested
-    -- as child elements
-    formation :: String -> IO Expression
-    formation name = do
-      nested <- mapM (`xmirToFormationBinding` (name : fqn)) (cur C.$/ C.element (toName "o"))
-      bds <- if hasText cur then (\bytes -> BiDelta (bytesToBts bytes) : nested) <$> content else pure nested
-      ExFormation . withVoidRho <$> uniqueBindings' bds
-    content :: IO String
-    content = T.unpack . T.strip . T.pack <$> getText cur
+
+-- A formation keeps its Δ data in the text content of its own element, the way
+-- the printer emits a Δ binding, while the rest of the bindings live in the
+-- nested <o> elements
+xmirToFormation :: C.Cursor -> [String] -> IO Expression
+xmirToFormation cur fqn = do
+  nested <- mapM (`xmirToFormationBinding` fqn) (cur C.$/ C.element (toName "o"))
+  bds <- if hasText cur then (: nested) <$> delta else pure nested
+  ExFormation . withVoidRho <$> uniqueBindings' bds
+  where
+    delta :: IO Binding
+    delta = BiDelta . bytesToBts . T.unpack . T.strip . T.pack <$> getText cur
 
 xmirToExpression :: C.Cursor -> [String] -> IO Expression
 xmirToExpression cur fqn
@@ -459,9 +461,7 @@ xmirToExpression cur fqn
         'Φ' : '.' : rest -> xmirToExpression' ExRoot "Φ" rest cur fqn
         'ξ' : '.' : rest -> xmirToExpression' ExXi "ξ" rest cur fqn
         _ -> throwIO (InvalidXMIRFormat "The @base attribute must be either ['∅'|'Φ'] or start with ['Φ.'|'ξ.'|'.']" cur)
-  | otherwise = do
-      bds <- mapM (`xmirToFormationBinding` fqn) (cur C.$/ C.element (toName "o")) >>= uniqueBindings'
-      pure (ExFormation (withVoidRho bds))
+  | otherwise = xmirToFormation cur fqn
   where
     xmirToExpression' :: Expression -> String -> String -> C.Cursor -> [String] -> IO Expression
     xmirToExpression' start symbol rst c names =
