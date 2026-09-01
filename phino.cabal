@@ -129,6 +129,7 @@ test-suite spec
     CanonizerSpec
     CLIHelpersSpec
     CLISpec
+    CLITypesSpec
     ConditionSpec
     CSTSpec
     DataizeSpec

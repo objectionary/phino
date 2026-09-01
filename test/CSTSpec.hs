@@ -1,5 +1,7 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
@@ -254,3 +256,445 @@ spec = do
             , ARG_BYTES (BT_ONE "1F")
             ]
       )
+
+  -- This codebase always destructures CST nodes via RecordWildCards/pattern
+  -- matching, never by calling a field's named accessor directly, and never
+  -- calls '==' or 'show' on a bare CST node either. HPC instruments every
+  -- derived accessor, and every derived Eq/Show instance, as its own
+  -- top-level declaration, so those stay uncovered by the line-based
+  -- coverage metric no matter how many tests render or pattern-match CST
+  -- trees. The tests below call every accessor by name (via record-dot
+  -- syntax, since these types share many field names and a bare call like
+  -- 'tab node' stays ambiguous even with DuplicateRecordFields) and invoke
+  -- 'show'/'==' on one value of every node type to close that gap.
+  describe "CST token derived instances" $
+    it "derives Eq and Show for every simple token type" $ do
+      shouldShowAndEqSelf "LCB" LCB
+      shouldShowAndEqSelf "BIG_LCB" BIG_LCB
+      shouldShowAndEqSelf "RCB" RCB
+      shouldShowAndEqSelf "BIG_RCB" BIG_RCB
+      shouldShowAndEqSelf "LSB" LSB
+      shouldShowAndEqSelf "LSB'" LSB'
+      shouldShowAndEqSelf "RSB" RSB
+      shouldShowAndEqSelf "RSB'" RSB'
+      shouldShowAndEqSelf "COMMA" COMMA
+      shouldShowAndEqSelf "NO_COMMA" NO_COMMA
+      shouldShowAndEqSelf "ARROW" ARROW
+      shouldShowAndEqSelf "ARROW'" ARROW'
+      shouldShowAndEqSelf "DASHED_ARROW" DASHED_ARROW
+      shouldShowAndEqSelf "EMPTY" EMPTY
+      shouldShowAndEqSelf "QUESTION" QUESTION
+      shouldShowAndEqSelf "PHI" PHI
+      shouldShowAndEqSelf "AT" AT
+      shouldShowAndEqSelf "RHO" RHO
+      shouldShowAndEqSelf "CARET" CARET
+      shouldShowAndEqSelf "RHO'" RHO'
+      shouldShowAndEqSelf "DELTA" DELTA
+      shouldShowAndEqSelf "DELTA'" DELTA'
+      shouldShowAndEqSelf "XI" XI
+      shouldShowAndEqSelf "DOLLAR" DOLLAR
+      shouldShowAndEqSelf "XI'" XI'
+      shouldShowAndEqSelf "LAMBDA" LAMBDA
+      shouldShowAndEqSelf "LAMBDA'" LAMBDA'
+      shouldShowAndEqSelf "Q" Q
+      shouldShowAndEqSelf "DEAD" DEAD
+      shouldShowAndEqSelf "T" T
+      shouldShowAndEqSelf "SPACE" SPACE
+      shouldShowAndEqSelf "NO_SPACE" NO_SPACE
+      shouldShowAndEqSelf "EOL" EOL
+      shouldShowAndEqSelf "NO_EOL" NO_EOL
+      shouldShowAndEqSelf "DOTS" DOTS
+      shouldShowAndEqSelf "DOTS'" DOTS'
+      shouldShowAndEqSelf "BT_EMPTY" BT_EMPTY
+      shouldShowAndEqSelf "E" E
+      shouldShowAndEqSelf "EXCL" EXCL
+      shouldShowAndEqSelf "NO_EXCL" NO_EXCL
+      shouldShowAndEqSelf "IN" IN
+      shouldShowAndEqSelf "NOT_IN" NOT_IN
+      shouldShowAndEqSelf "AND" AND
+      shouldShowAndEqSelf "OR" OR
+      shouldShowAndEqSelf "EQUAL" EQUAL
+      shouldShowAndEqSelf "NOT_EQUAL" NOT_EQUAL
+      shouldShowAndEqSelf "GREATER" GREATER
+      shouldShowAndEqSelf "NOT_GREATER" NOT_GREATER
+
+  describe "META field accessors" $
+    it "exposes every META field via its accessor" $ do
+      let metaVal = META{excl = EXCL, hd = TAU, rest = "x"}
+      metaVal.excl `shouldBe` EXCL
+      metaVal.hd `shouldBe` TAU
+      metaVal.rest `shouldBe` "x"
+      shouldShowAndEqSelf "META" metaVal
+
+  describe "TAB field accessors" $
+    it "exposes every TAB field via its accessor" $ do
+      let tabVal = TAB{indent = 3}
+      tabVal.indent `shouldBe` 3
+      shouldShowAndEqSelf "TAB" tabVal
+      shouldShowAndEqSelf "TAB'" TAB'
+      shouldShowAndEqSelf "NO_TAB" NO_TAB
+
+  describe "ALPHA field accessors" $
+    it "exposes every ALPHA field via its accessor" $ do
+      let idxAlpha = AL_IDX{sym = ALPHA, idx = 2}
+          metaAlpha = AL_META{sym = ALPHA', meta = META EXCL TAU "x"}
+      idxAlpha.sym `shouldBe` ALPHA
+      idxAlpha.idx `shouldBe` 2
+      metaAlpha.sym `shouldBe` ALPHA'
+      metaAlpha.meta `shouldBe` META EXCL TAU "x"
+      shouldShowAndEqSelf "AL_IDX" idxAlpha
+      shouldShowAndEqSelf "AL_META" metaAlpha
+
+  describe "PAIR field accessors" $
+    it "exposes every PAIR constructor's fields via their accessors" $ do
+      let attrLabel = AT_LABEL "x"
+          exprGlobal = EX_GLOBAL Φ
+          metaVal = META EXCL TAU "x"
+          pairTau = PA_TAU{attr = attrLabel, arrow = ARROW, expr = exprGlobal}
+          pairAlpha = PA_ALPHA{alpha = AL_IDX ALPHA 0, arrow = ARROW, expr = exprGlobal}
+          pairFormation = PA_FORMATION{attr = attrLabel, voids = [AT_RHO RHO], arrow = ARROW, expr = exprGlobal}
+          pairVoid = PA_VOID{attr = attrLabel, arrow = ARROW, void = EMPTY}
+          pairLambda = PA_LAMBDA{func = "fn"}
+          pairLambda' = PA_LAMBDA'{func = "fn"}
+          pairMetaLambda = PA_META_LAMBDA{meta = metaVal}
+          pairMetaLambda' = PA_META_LAMBDA'{meta = metaVal}
+          pairDelta = PA_DELTA{bytes = BT_ONE "40"}
+          pairDelta' = PA_DELTA'{bytes = BT_ONE "40"}
+          pairMetaDelta = PA_META_DELTA{meta = metaVal}
+          pairMetaDelta' = PA_META_DELTA'{meta = metaVal}
+      pairTau.attr `shouldBe` attrLabel
+      pairTau.arrow `shouldBe` ARROW
+      pairTau.expr `shouldBe` exprGlobal
+      pairAlpha.alpha `shouldBe` AL_IDX ALPHA 0
+      pairAlpha.arrow `shouldBe` ARROW
+      pairAlpha.expr `shouldBe` exprGlobal
+      pairFormation.attr `shouldBe` attrLabel
+      pairFormation.voids `shouldBe` [AT_RHO RHO]
+      pairFormation.arrow `shouldBe` ARROW
+      pairFormation.expr `shouldBe` exprGlobal
+      pairVoid.attr `shouldBe` attrLabel
+      pairVoid.arrow `shouldBe` ARROW
+      pairVoid.void `shouldBe` EMPTY
+      pairLambda.func `shouldBe` "fn"
+      pairLambda'.func `shouldBe` "fn"
+      pairMetaLambda.meta `shouldBe` metaVal
+      pairMetaLambda'.meta `shouldBe` metaVal
+      pairDelta.bytes `shouldBe` BT_ONE "40"
+      pairDelta'.bytes `shouldBe` BT_ONE "40"
+      pairMetaDelta.meta `shouldBe` metaVal
+      pairMetaDelta'.meta `shouldBe` metaVal
+      shouldShowAndEqSelf "PA_TAU" pairTau
+      shouldShowAndEqSelf "PA_ALPHA" pairAlpha
+      shouldShowAndEqSelf "PA_FORMATION" pairFormation
+      shouldShowAndEqSelf "PA_VOID" pairVoid
+      shouldShowAndEqSelf "PA_LAMBDA" pairLambda
+      shouldShowAndEqSelf "PA_LAMBDA'" pairLambda'
+      shouldShowAndEqSelf "PA_META_LAMBDA" pairMetaLambda
+      shouldShowAndEqSelf "PA_META_LAMBDA'" pairMetaLambda'
+      shouldShowAndEqSelf "PA_DELTA" pairDelta
+      shouldShowAndEqSelf "PA_DELTA'" pairDelta'
+      shouldShowAndEqSelf "PA_META_DELTA" pairMetaDelta
+      shouldShowAndEqSelf "PA_META_DELTA'" pairMetaDelta'
+
+  describe "APP_BINDING field accessors" $
+    it "exposes every APP_BINDING field via its accessor" $ do
+      let pairTau = PA_TAU{attr = AT_LABEL "x", arrow = ARROW, expr = EX_GLOBAL Φ}
+          appBinding = APP_BINDING{pair = pairTau}
+      appBinding.pair `shouldBe` pairTau
+      shouldShowAndEqSelf "APP_BINDING" appBinding
+
+  describe "BINDING field accessors" $
+    it "exposes every BINDING constructor's fields via their accessors" $ do
+      let pairTau = PA_TAU{attr = AT_LABEL "x", arrow = ARROW, expr = EX_GLOBAL Φ}
+          metaVal = META EXCL TAU "x"
+          bindingsEmpty = BDS_EMPTY{tab = TAB 0}
+          biPair = BI_PAIR{pair = pairTau, bindings = bindingsEmpty, tab = TAB 1}
+          biMeta = BI_META{meta = metaVal, bindings = bindingsEmpty, tab = TAB 1}
+      biPair.pair `shouldBe` pairTau
+      biPair.bindings `shouldBe` bindingsEmpty
+      biPair.tab `shouldBe` TAB 1
+      biMeta.meta `shouldBe` metaVal
+      biMeta.bindings `shouldBe` bindingsEmpty
+      biMeta.tab `shouldBe` TAB 1
+      shouldShowAndEqSelf "BI_PAIR" biPair
+      shouldShowAndEqSelf "BI_META" biMeta
+
+  describe "BINDINGS field accessors" $
+    it "exposes every BINDINGS constructor's fields via their accessors" $ do
+      let pairTau = PA_TAU{attr = AT_LABEL "x", arrow = ARROW, expr = EX_GLOBAL Φ}
+          metaVal = META EXCL TAU "x"
+          bindingsEmpty = BDS_EMPTY{tab = TAB 0}
+          bdsPair = BDS_PAIR{eol = EOL, tab = TAB 1, pair = pairTau, bindings = bindingsEmpty}
+          bdsMeta = BDS_META{eol = EOL, tab = TAB 1, meta = metaVal, bindings = bindingsEmpty}
+      bdsPair.eol `shouldBe` EOL
+      bdsPair.tab `shouldBe` TAB 1
+      bdsPair.pair `shouldBe` pairTau
+      bdsPair.bindings `shouldBe` bindingsEmpty
+      bdsMeta.eol `shouldBe` EOL
+      bdsMeta.tab `shouldBe` TAB 1
+      bdsMeta.meta `shouldBe` metaVal
+      bdsMeta.bindings `shouldBe` bindingsEmpty
+      shouldShowAndEqSelf "BDS_PAIR" bdsPair
+      shouldShowAndEqSelf "BDS_META" bdsMeta
+
+  describe "APP_ARG field accessors" $
+    it "exposes every APP_ARG field via its accessor" $ do
+      let exprGlobal = EX_GLOBAL Φ
+          appArgsEmpty = AAS_EMPTY
+          appArg = APP_ARG{expr = exprGlobal, args = appArgsEmpty}
+      appArg.expr `shouldBe` exprGlobal
+      appArg.args `shouldBe` appArgsEmpty
+      shouldShowAndEqSelf "APP_ARG" appArg
+
+  describe "APP_ARGS field accessors" $
+    it "exposes every APP_ARGS constructor's fields via their accessors" $ do
+      let exprGlobal = EX_GLOBAL Φ
+          appArgsEmpty = AAS_EMPTY
+          appArgsExpr = AAS_EXPR{eol = EOL, tab = TAB 1, expr = exprGlobal, args = appArgsEmpty}
+      appArgsExpr.eol `shouldBe` EOL
+      appArgsExpr.tab `shouldBe` TAB 1
+      appArgsExpr.expr `shouldBe` exprGlobal
+      appArgsExpr.args `shouldBe` appArgsEmpty
+      shouldShowAndEqSelf "AAS_EXPR" appArgsExpr
+
+  describe "APP_ARGUMENT derived instances" $
+    it "derives Eq and Show for every APP_ARGUMENT constructor" $ do
+      let pairTau = PA_TAU{attr = AT_LABEL "x", arrow = ARROW, expr = EX_GLOBAL Φ}
+      shouldShowAndEqSelf "AA_TAU" (AA_TAU (APP_BINDING pairTau))
+      shouldShowAndEqSelf "AA_TAUS" (AA_TAUS (BI_EMPTY (TAB 0)))
+      shouldShowAndEqSelf "AA_EXPRS" (AA_EXPRS (APP_ARG (EX_GLOBAL Φ) AAS_EMPTY))
+
+  describe "EXPRESSION field accessors" $
+    it "exposes every EXPRESSION constructor's fields via their accessors" $ do
+      let attrLabel = AT_LABEL "x"
+          bindingEmpty = BI_EMPTY{tab = TAB 1}
+          metaVal = META EXCL TAU "x"
+          argumentVal = AA_EXPRS (APP_ARG (EX_GLOBAL Φ) AAS_EMPTY)
+          exGlobal = EX_GLOBAL{global = Φ}
+          exXi = EX_XI{xi = XI}
+          exAttr = EX_ATTR{attr = attrLabel}
+          exTermination = EX_TERMINATION{termination = DEAD}
+          exFormation =
+            EX_FORMATION
+              { lsb = LSB
+              , eol = EOL
+              , tab = TAB 1
+              , binding = bindingEmpty
+              , eol' = EOL
+              , tab' = TAB 0
+              , rsb = RSB
+              }
+          exDispatch = EX_DISPATCH{expr = exGlobal, space = NO_SPACE, attr = attrLabel}
+          exApplication =
+            EX_APPLICATION
+              { expr = exGlobal
+              , space = NO_SPACE
+              , eol = EOL
+              , tab = TAB 1
+              , argument = argumentVal
+              , eol' = EOL
+              , tab' = TAB 0
+              , indent = 1
+              }
+          exString = EX_STRING{str = "hi", tab = TAB 0, rhos = []}
+          exNumber = EX_NUMBER{num = Left 5, tab = TAB 0, rhos = []}
+          exMeta = EX_META{meta = metaVal}
+          exPhiMeet = EX_PHI_MEET{prefix = Just "p", idx = 1, expr = exGlobal}
+          exBytes = EX_BYTES{bytes = BT_ONE "40"}
+      exGlobal.global `shouldBe` Φ
+      exXi.xi `shouldBe` XI
+      exAttr.attr `shouldBe` attrLabel
+      exTermination.termination `shouldBe` DEAD
+      exFormation.lsb `shouldBe` LSB
+      exFormation.eol `shouldBe` EOL
+      exFormation.tab `shouldBe` TAB 1
+      exFormation.binding `shouldBe` bindingEmpty
+      exFormation.eol' `shouldBe` EOL
+      exFormation.tab' `shouldBe` TAB 0
+      exFormation.rsb `shouldBe` RSB
+      exDispatch.expr `shouldBe` exGlobal
+      exDispatch.space `shouldBe` NO_SPACE
+      exDispatch.attr `shouldBe` attrLabel
+      exApplication.expr `shouldBe` exGlobal
+      exApplication.space `shouldBe` NO_SPACE
+      exApplication.eol `shouldBe` EOL
+      exApplication.tab `shouldBe` TAB 1
+      exApplication.argument `shouldBe` argumentVal
+      exApplication.eol' `shouldBe` EOL
+      exApplication.tab' `shouldBe` TAB 0
+      exApplication.indent `shouldBe` 1
+      exString.str `shouldBe` "hi"
+      exString.tab `shouldBe` TAB 0
+      exString.rhos `shouldBe` []
+      exNumber.num `shouldBe` Left 5
+      exNumber.tab `shouldBe` TAB 0
+      exNumber.rhos `shouldBe` []
+      exMeta.meta `shouldBe` metaVal
+      exPhiMeet.prefix `shouldBe` Just "p"
+      exPhiMeet.idx `shouldBe` 1
+      exPhiMeet.expr `shouldBe` exGlobal
+      exBytes.bytes `shouldBe` BT_ONE "40"
+      shouldShowAndEqSelf "EX_GLOBAL" exGlobal
+      shouldShowAndEqSelf "EX_XI" exXi
+      shouldShowAndEqSelf "EX_ATTR" exAttr
+      shouldShowAndEqSelf "EX_TERMINATION" exTermination
+      shouldShowAndEqSelf "EX_FORMATION" exFormation
+      shouldShowAndEqSelf "EX_DISPATCH" exDispatch
+      shouldShowAndEqSelf "EX_APPLICATION" exApplication
+      shouldShowAndEqSelf "EX_STRING" exString
+      shouldShowAndEqSelf "EX_NUMBER" exNumber
+      shouldShowAndEqSelf "EX_META" exMeta
+      shouldShowAndEqSelf "EX_PHI_MEET" exPhiMeet
+      shouldShowAndEqSelf "EX_BYTES" exBytes
+
+  describe "ATTRIBUTE field accessors" $
+    it "exposes every ATTRIBUTE constructor's fields via their accessors" $ do
+      let metaVal = META EXCL TAU "x"
+          atLabel = AT_LABEL{label = "x"}
+          atRho = AT_RHO{rho = RHO}
+          atPhi = AT_PHI{phi = PHI}
+          atLambda = AT_LAMBDA{lambda = LAMBDA}
+          atDelta = AT_DELTA{delta = DELTA}
+          atMeta = AT_META{meta = metaVal}
+          atRest = AT_REST{dots = DOTS}
+      atLabel.label `shouldBe` "x"
+      atRho.rho `shouldBe` RHO
+      atPhi.phi `shouldBe` PHI
+      atLambda.lambda `shouldBe` LAMBDA
+      atDelta.delta `shouldBe` DELTA
+      atMeta.meta `shouldBe` metaVal
+      atRest.dots `shouldBe` DOTS
+      shouldShowAndEqSelf "AT_LABEL" atLabel
+      shouldShowAndEqSelf "AT_RHO" atRho
+      shouldShowAndEqSelf "AT_PHI" atPhi
+      shouldShowAndEqSelf "AT_LAMBDA" atLambda
+      shouldShowAndEqSelf "AT_DELTA" atDelta
+      shouldShowAndEqSelf "AT_META" atMeta
+      shouldShowAndEqSelf "AT_REST" atRest
+
+  describe "BELONGING derived instances" $
+    it "derives Eq and Show for every BELONGING constructor" $ do
+      shouldShowAndEqSelf "IN" IN
+      shouldShowAndEqSelf "NOT_IN" NOT_IN
+
+  describe "SET field accessors" $
+    it "exposes every SET constructor's fields via their accessors" $ do
+      let bindingEmpty = BI_EMPTY{tab = TAB 0}
+          stBinding = ST_BINDING{binding = bindingEmpty}
+          stAttributes = ST_ATTRIBUTES{attrs = [AT_LABEL "x"]}
+      stBinding.binding `shouldBe` bindingEmpty
+      stAttributes.attrs `shouldBe` [AT_LABEL "x"]
+      shouldShowAndEqSelf "ST_BINDING" stBinding
+      shouldShowAndEqSelf "ST_ATTRIBUTES" stAttributes
+
+  describe "LOGIC_OPERATOR derived instances" $
+    it "derives Eq and Show for every LOGIC_OPERATOR constructor" $ do
+      shouldShowAndEqSelf "AND" AND
+      shouldShowAndEqSelf "OR" OR
+
+  describe "EQUAL derived instances" $
+    it "derives Eq and Show for every EQUAL constructor" $ do
+      shouldShowAndEqSelf "EQUAL" EQUAL
+      shouldShowAndEqSelf "NOT_EQUAL" NOT_EQUAL
+      shouldShowAndEqSelf "GREATER" GREATER
+      shouldShowAndEqSelf "NOT_GREATER" NOT_GREATER
+
+  describe "NUMBER field accessors" $
+    it "exposes every NUMBER constructor's fields via their accessors" $ do
+      let metaVal = META EXCL TAU "x"
+          bindingEmpty = BI_EMPTY{tab = TAB 0}
+          idxMeta = IDX_META{meta = metaVal}
+          lengthVal = LENGTH{binding = bindingEmpty}
+          literalVal = LITERAL{num = 5}
+      idxMeta.meta `shouldBe` metaVal
+      lengthVal.binding `shouldBe` bindingEmpty
+      literalVal.num `shouldBe` 5
+      shouldShowAndEqSelf "IDX_META" idxMeta
+      shouldShowAndEqSelf "LENGTH" lengthVal
+      shouldShowAndEqSelf "LITERAL" literalVal
+
+  describe "COMPARABLE field accessors" $
+    it "exposes every COMPARABLE constructor's fields via their accessors" $ do
+      let attrLabel = AT_LABEL "x"
+          exprGlobal = EX_GLOBAL Φ
+          cmpAttr = CMP_ATTR{attr = attrLabel}
+          cmpExpr = CMP_EXPR{expr = exprGlobal}
+          cmpNum = CMP_NUM{num = LITERAL 5}
+      cmpAttr.attr `shouldBe` attrLabel
+      cmpExpr.expr `shouldBe` exprGlobal
+      cmpNum.num `shouldBe` LITERAL 5
+      shouldShowAndEqSelf "CMP_ATTR" cmpAttr
+      shouldShowAndEqSelf "CMP_EXPR" cmpExpr
+      shouldShowAndEqSelf "CMP_NUM" cmpNum
+
+  describe "CONDITION field accessors" $
+    it "exposes every CONDITION constructor's fields via their accessors" $ do
+      let attrLabel = AT_LABEL "x"
+          exprGlobal = EX_GLOBAL Φ
+          bindingEmpty = BI_EMPTY{tab = TAB 0}
+          cmpAttr = CMP_ATTR attrLabel
+          coBelongs = CO_BELONGS{attr = attrLabel, belongs = IN, set = ST_BINDING bindingEmpty}
+          coLogic = CO_LOGIC{conditions = [CO_EMPTY], operator = AND}
+          coNf = CO_NF{expr = exprGlobal}
+          coNot = CO_NOT{condition = CO_EMPTY}
+          coCompare = CO_COMPARE{left = cmpAttr, equal = EQUAL, right = cmpAttr}
+          coMatches = CO_MATCHES{regex = "x*", expr = exprGlobal}
+          coPartOf = CO_PART_OF{expr = exprGlobal, binding = bindingEmpty}
+          coDisjoint = CO_DISJOINT{attrs = [attrLabel], groups = [bindingEmpty]}
+      coBelongs.attr `shouldBe` attrLabel
+      coBelongs.belongs `shouldBe` IN
+      coBelongs.set `shouldBe` ST_BINDING bindingEmpty
+      coLogic.conditions `shouldBe` [CO_EMPTY]
+      coLogic.operator `shouldBe` AND
+      coNf.expr `shouldBe` exprGlobal
+      coNot.condition `shouldBe` CO_EMPTY
+      coCompare.left `shouldBe` cmpAttr
+      coCompare.equal `shouldBe` EQUAL
+      coCompare.right `shouldBe` cmpAttr
+      coMatches.regex `shouldBe` "x*"
+      coMatches.expr `shouldBe` exprGlobal
+      coPartOf.expr `shouldBe` exprGlobal
+      coPartOf.binding `shouldBe` bindingEmpty
+      coDisjoint.attrs `shouldBe` [attrLabel]
+      coDisjoint.groups `shouldBe` [bindingEmpty]
+      shouldShowAndEqSelf "CO_BELONGS" coBelongs
+      shouldShowAndEqSelf "CO_LOGIC" coLogic
+      shouldShowAndEqSelf "CO_NF" coNf
+      shouldShowAndEqSelf "CO_NOT" coNot
+      shouldShowAndEqSelf "CO_COMPARE" coCompare
+      shouldShowAndEqSelf "CO_MATCHES" coMatches
+      shouldShowAndEqSelf "CO_PART_OF" coPartOf
+      shouldShowAndEqSelf "CO_DISJOINT" coDisjoint
+
+  describe "EXTRA_ARG field accessors" $
+    it "exposes every EXTRA_ARG constructor's fields via their accessors" $ do
+      let attrLabel = AT_LABEL "x"
+          exprGlobal = EX_GLOBAL Φ
+          bindingEmpty = BI_EMPTY{tab = TAB 0}
+          argExpr = ARG_EXPR{expr = exprGlobal}
+          argAttr = ARG_ATTR{attr = attrLabel}
+          argBinding = ARG_BINDING{binding = bindingEmpty}
+          argBytes = ARG_BYTES{bytes = BT_ONE "40"}
+      argExpr.expr `shouldBe` exprGlobal
+      argAttr.attr `shouldBe` attrLabel
+      argBinding.binding `shouldBe` bindingEmpty
+      argBytes.bytes `shouldBe` BT_ONE "40"
+      shouldShowAndEqSelf "ARG_EXPR" argExpr
+      shouldShowAndEqSelf "ARG_ATTR" argAttr
+      shouldShowAndEqSelf "ARG_BINDING" argBinding
+      shouldShowAndEqSelf "ARG_BYTES" argBytes
+
+  describe "EXTRA field accessors" $
+    it "exposes every EXTRA field via its accessor" $ do
+      let exprGlobal = EX_GLOBAL Φ
+          extraArgExpr = ARG_EXPR exprGlobal
+          extra = EXTRA{meta = extraArgExpr, func = "fn", args = [extraArgExpr]}
+      extra.meta `shouldBe` extraArgExpr
+      extra.func `shouldBe` "fn"
+      extra.args `shouldBe` [extraArgExpr]
+      shouldShowAndEqSelf "EXTRA" extra
+  where
+    shouldShowAndEqSelf :: (Eq node, Show node) => String -> node -> Expectation
+    shouldShowAndEqSelf expectedName node = do
+      show node `shouldContain` expectedName
+      node `shouldBe` node
