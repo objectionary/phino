@@ -169,6 +169,20 @@ spec = do
         , [ExXi, ExTermination, ExRoot]
         , ExXi
         )
+      ,
+        ( "Q -> Q.a(α0 -> Q.c) => ([Q.a, Q.c], [$, T]) => Q -> $(α0 -> T)"
+        , ExApplication (ExDispatch ExRoot (AtLabel "a")) (ArAlpha (Alpha 0) (ExDispatch ExRoot (AtLabel "c")))
+        , [ExDispatch ExRoot (AtLabel "a"), ExDispatch ExRoot (AtLabel "c")]
+        , [ExXi, ExTermination]
+        , ExApplication ExXi (ArAlpha (Alpha 0) ExTermination)
+        )
+      ,
+        ( "Q -> Q.x => ([Q.x], []) => Q -> Q.x (replacements exhausted before patterns)"
+        , ExDispatch ExRoot (AtLabel "x")
+        , [ExDispatch ExRoot (AtLabel "x")]
+        , []
+        , ExDispatch ExRoot (AtLabel "x")
+        )
       ]
 
   describe "replace expression fast: ([Expression], [Expression]) => Expression" $
@@ -257,6 +271,20 @@ spec = do
         , [ExFormation [BiLambda (Function "Функція")]]
         , [ExFormation [BiLambda (Function "Код")]]
         , ExFormation [BiLambda (Function "Код")]
+        )
+      ,
+        ( "Q -> Q.a(α0 -> [[c -> ?]]) => ([[c -> ?]], [[c -> T]]) => Q -> Q.a(α0 -> [[c -> T]])"
+        , ExApplication (ExDispatch ExRoot (AtLabel "a")) (ArAlpha (Alpha 0) (ExFormation [BiVoid (AtLabel "c")]))
+        , [ExFormation [BiVoid (AtLabel "c")]]
+        , [ExFormation [BiTau (AtLabel "c") ExTermination]]
+        , ExApplication (ExDispatch ExRoot (AtLabel "a")) (ArAlpha (Alpha 0) (ExFormation [BiTau (AtLabel "c") ExTermination]))
+        )
+      ,
+        ( "Q -> [[a -> ?]] => ([[a -> ?]], []) => Q -> [[a -> ?]] (replacements exhausted before patterns)"
+        , ExFormation [BiVoid (AtLabel "a")]
+        , [ExFormation [BiVoid (AtLabel "a")]]
+        , []
+        , ExFormation [BiVoid (AtLabel "a")]
         )
       ]
 

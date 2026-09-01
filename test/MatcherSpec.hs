@@ -168,6 +168,53 @@ spec = do
           it desc $ matchAlpha ptn tgt `shouldBe` expected
       )
 
+  describe "matchFunction: function => function => substitution" $
+    forM_
+      [ ("!f => Func => [(!f >> Func)]", FnMeta "f", Function "Func", substs [[("f", MvFunction "Func")]])
+      , ("Func => Func => [()]", Function "Func", Function "Func", substs [[]])
+      , ("Func => Other => []", Function "Func", Function "Other", substs [])
+      ]
+      ( \(desc, ptn, tgt, expected) ->
+          it desc $ matchFunction ptn tgt `shouldBe` expected
+      )
+
+  describe "matchExpression': phi-meet/phi-again nodes" $
+    forM_
+      [
+        ( "PhiMeet(same prefix/idx) matches its inner expression"
+        , ExPhiMeet (Just "p") 1 ExRoot
+        , ExPhiMeet (Just "p") 1 ExRoot
+        , substs [[]]
+        )
+      ,
+        ( "PhiMeet with different idx does not match"
+        , ExPhiMeet (Just "p") 1 ExRoot
+        , ExPhiMeet (Just "p") 2 ExRoot
+        , substs []
+        )
+      ,
+        ( "PhiMeet with different prefix does not match"
+        , ExPhiMeet (Just "p") 1 ExRoot
+        , ExPhiMeet (Just "q") 1 ExRoot
+        , substs []
+        )
+      ,
+        ( "PhiAgain(same prefix/idx) matches its inner expression"
+        , ExPhiAgain Nothing 0 ExXi
+        , ExPhiAgain Nothing 0 ExXi
+        , substs [[]]
+        )
+      ,
+        ( "PhiAgain with different idx does not match"
+        , ExPhiAgain Nothing 0 ExXi
+        , ExPhiAgain Nothing 1 ExXi
+        , substs []
+        )
+      ]
+      ( \(desc, ptn, tgt, expected) ->
+          it desc $ matchExpression' ptn tgt `shouldBe` expected
+      )
+
   describe "matchBindings: [binding] => [binding] => substitution" $
     test
       matchBindings

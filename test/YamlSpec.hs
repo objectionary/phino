@@ -8,6 +8,7 @@ module YamlSpec where
 
 import Control.Exception (Exception (displayException), SomeException)
 import Control.Monad
+import Data.Either (isLeft)
 import Data.List (isInfixOf, nub, (\\))
 import Data.Maybe (fromMaybe)
 import Data.Text qualified as T
@@ -15,8 +16,12 @@ import Data.Text.Encoding (encodeUtf8)
 import Data.Yaml qualified as Yaml
 import Files (allPathsIn)
 import System.FilePath
-import Test.Hspec (Spec, describe, it, runIO, shouldBe, shouldReturn, shouldSatisfy, shouldThrow)
-import Yaml (ContextualizeRule (..), DataizeRule (..), MorphRule (..), Operation (..), Premise (..), contextualizationRules, dataizationRules, morphingRules, yamlRule)
+import Test.Hspec (Spec, describe, expectationFailure, it, runIO, shouldBe, shouldReturn, shouldSatisfy, shouldThrow)
+import AST (Expression (ExRoot))
+import Yaml (Condition (..), ContextualizeRule (..), DataizeRule (..), MorphRule (..), Operation (..), Premise (..), contextualizationRules, dataizationRules, morphingRules, yamlRule)
+
+decodeYaml' :: (Yaml.FromJSON a) => String -> Either Yaml.ParseException a
+decodeYaml' = Yaml.decodeEither' . encodeUtf8 . T.pack
 
 spec :: Spec
 spec = do
@@ -105,3 +110,50 @@ spec = do
             , T.isPrefixOf (T.pack "n") result
             ]
       offenders `shouldBe` []
+
+  describe "parses a 'formation' condition" $
+    it "decodes 'formation: <expr>' into IsFormation" $
+      case (decodeYaml' "formation: 'Q'" :: Either Yaml.ParseException Condition) of
+        Right cond -> cond `shouldBe` IsFormation ExRoot
+        Left err -> expectationFailure (Yaml.prettyPrintParseException err)
+
+  describe "rejects a condition object naming no known key" $
+    it "fails with 'Unknown condition type'" $
+      case (decodeYaml' "{}" :: Either Yaml.ParseException Condition) of
+        Left err -> "Unknown condition type" `isInfixOf` Yaml.prettyPrintParseException err `shouldBe` True
+        Right _ -> expectationFailure "expected decoding to fail"
+
+  describe "rejects a condition whose arguments count is wrong" $ do
+    -- 'asum' discards each branch's specific failure message once every
+    -- branch has failed, so only the overall Left/Right outcome (not the
+    -- message text) is observable from here; each case still exercises the
+    -- condition's own "expects exactly two arguments" guard internally.
+    it "'eq' with a single argument" $
+      (decodeYaml' "eq: [1]" :: Either Yaml.ParseException Condition) `shouldSatisfy` isLeft
+    it "'gt' with a single argument" $
+      (decodeYaml' "gt: [1]" :: Either Yaml.ParseException Condition) `shouldSatisfy` isLeft
+    it "'in' with a single argument" $
+      (decodeYaml' "in: ['!t']" :: Either Yaml.ParseException Condition) `shouldSatisfy` isLeft
+    it "'matches' with a single argument" $
+      (decodeYaml' "matches: ['hi']" :: Either Yaml.ParseException Condition) `shouldSatisfy` isLeft
+    it "'part-of' with a single argument" $
+      (decodeYaml' "part-of: ['!e']" :: Either Yaml.ParseException Condition) `shouldSatisfy` isLeft
+    it "'disjoint' with a single argument" $
+      (decodeYaml' "disjoint: [[]]" :: Either Yaml.ParseException Condition) `shouldSatisfy` isLeft
+
+  describe "rejects a malformed premise" $ do
+    it "fails when neither 'n-result' nor 'd-result' is present" $
+      (decodeYaml' "morph: 𝑛" :: Either Yaml.ParseException Premise)
+        `shouldSatisfy` isLeft
+    it "fails when 'n-result' is not an expression meta" $
+      (decodeYaml' "n-result: Q\nmorph: 𝑛" :: Either Yaml.ParseException Premise)
+        `shouldSatisfy` isLeft
+    it "fails when 'd-result' is not a bytes meta" $
+      (decodeYaml' "d-result: '--'\ndataize: 𝑛" :: Either Yaml.ParseException Premise)
+        `shouldSatisfy` isLeft
+    it "fails when 'evaluate' does not take exactly two arguments" $
+      (decodeYaml' "n-result: 𝑛\nevaluate: [𝑛]" :: Either Yaml.ParseException Premise)
+        `shouldSatisfy` isLeft
+    it "fails when 'contextualize' does not take exactly two arguments" $
+      (decodeYaml' "n-result: 𝑛\ncontextualize: [𝑛]" :: Either Yaml.ParseException Premise)
+        `shouldSatisfy` isLeft
