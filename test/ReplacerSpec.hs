@@ -183,6 +183,20 @@ spec = do
         , []
         , ExDispatch ExRoot (AtLabel "x")
         )
+      ,
+        ( "Q -> [[a -> Q, b -> $]] => ([Q, $], [T]) => Q -> [[a -> T, b -> $]] (repls run out mid-bindings)"
+        , ExFormation [BiTau (AtLabel "a") ExRoot, BiTau (AtLabel "b") ExXi]
+        , [ExRoot, ExXi]
+        , [ExTermination]
+        , ExFormation [BiTau (AtLabel "a") ExTermination, BiTau (AtLabel "b") ExXi]
+        )
+      ,
+        ( "Q -> [[D> --, b -> Q]] => ([Q], [$]) => Q -> [[D> --, b -> $]] (non-tau binding passed through)"
+        , ExFormation [BiDelta BtEmpty, BiTau (AtLabel "b") ExRoot]
+        , [ExRoot]
+        , [ExXi]
+        , ExFormation [BiDelta BtEmpty, BiTau (AtLabel "b") ExXi]
+        )
       ]
 
   describe "replace expression fast: ([Expression], [Expression]) => Expression" $
@@ -309,5 +323,12 @@ spec = do
         , [ExFormation [BiVoid AtRho]]
         , [ExFormation [BiTau AtRho (ExFormation [BiVoid AtRho])]]
         , ExFormation [BiTau AtRho (ExFormation [BiVoid AtRho])]
+        )
+      ,
+        ( "Q -> [[a -> ?]] => ([[ ]], [[z -> Q]]) => Q -> [[z -> Q]] (empty pattern formation wholesale-replaces bindings)"
+        , ExFormation [BiVoid (AtLabel "a")]
+        , [ExFormation []]
+        , [ExFormation [BiTau (AtLabel "z") ExRoot]]
+        , ExFormation [BiTau (AtLabel "z") ExRoot]
         )
       ]

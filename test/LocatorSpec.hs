@@ -6,16 +6,27 @@
 module LocatorSpec where
 
 import AST (Attribute (AtLabel), Binding (BiTau, BiVoid), Expression (ExFormation, ExRoot, ExXi))
-import Control.Exception (SomeException, try)
+import Control.Exception (SomeException, displayException, try)
 import Control.Monad (forM_)
 import Data.List (intercalate)
 import Locator (locatedExpression, withLocatedExpression)
 import Parser (parseExpressionThrows)
-import Test.Hspec (Spec, describe, it, shouldBe, shouldSatisfy)
+import Printer (printExpression)
+import Test.Hspec (Spec, anyException, describe, expectationFailure, it, shouldBe, shouldSatisfy, shouldThrow)
+import Text.Printf (printf)
 
 isLeft :: Either e a -> Bool
 isLeft (Left _) = True
 isLeft (Right _) = False
+
+invalidLocatorMessage :: Expression -> String
+invalidLocatorMessage locator =
+  printf
+    "Invalid locator is provided. 'Q' or dispatch started with 'Q' expected, but got: '%s'"
+    (printExpression locator)
+
+canNotFindObjectMessage :: Expression -> String
+canNotFindObjectMessage locator = printf "Can't find object by locator: '%s'" (printExpression locator)
 
 spec :: Spec
 spec = do
@@ -50,6 +61,12 @@ spec = do
       result <- try (locatedExpression locator' expr') :: IO (Either SomeException Expression)
       result `shouldSatisfy` isLeft
 
+    it "fails with CanNotFindObjectByLocator when an intermediate (non-final) attribute is missing" $ do
+      expr' <- parseExpressionThrows "[[ w -> ? ]]"
+      locator' <- parseExpressionThrows "Q.x.y.z"
+      result <- try (locatedExpression locator' expr') :: IO (Either SomeException Expression)
+      result `shouldSatisfy` isLeft
+
     it "fails with CanNotFindObjectByLocator when the chain runs into a non-formation" $ do
       expr' <- parseExpressionThrows "[[ x -> $ ]]"
       locator' <- parseExpressionThrows "Q.x.y"
@@ -61,6 +78,37 @@ spec = do
       locator' <- parseExpressionThrows "$.x"
       result <- try (locatedExpression locator' expr') :: IO (Either SomeException Expression)
       result `shouldSatisfy` isLeft
+
+    it "throws InvalidLocatorProvided with the exact message for a non-dispatch-chain locator expression" $ do
+      expr' <- parseExpressionThrows "[[ x -> ? ]]"
+      locatedExpression ExXi expr' `shouldThrow` anyException
+      result <- try (locatedExpression ExXi expr') :: IO (Either SomeException Expression)
+      case result of
+        Left err -> do
+          show err `shouldBe` invalidLocatorMessage ExXi
+          displayException err `shouldBe` invalidLocatorMessage ExXi
+        Right _ -> expectationFailure "expected locatedExpression to throw"
+
+    it "throws InvalidLocatorProvided when the locator is a bare formation, not a dispatch chain" $ do
+      expr' <- parseExpressionThrows "[[ x -> ? ]]"
+      let locator' = ExFormation []
+      locatedExpression locator' expr' `shouldThrow` anyException
+      result <- try (locatedExpression locator' expr') :: IO (Either SomeException Expression)
+      case result of
+        Left err -> do
+          show err `shouldBe` invalidLocatorMessage locator'
+          displayException err `shouldBe` invalidLocatorMessage locator'
+        Right _ -> expectationFailure "expected locatedExpression to throw"
+
+    it "throws CanNotFindObjectByLocator with the exact message for a missing attribute" $ do
+      expr' <- parseExpressionThrows "[[ x -> ? ]]"
+      locator' <- parseExpressionThrows "Q.y"
+      result <- try (locatedExpression locator' expr') :: IO (Either SomeException Expression)
+      case result of
+        Left err -> do
+          show err `shouldBe` canNotFindObjectMessage locator'
+          displayException err `shouldBe` canNotFindObjectMessage locator'
+        Right _ -> expectationFailure "expected locatedExpression to throw"
 
   describe "with located expression" $ do
     forM_
@@ -104,6 +152,14 @@ spec = do
       loc <- withLocatedExpression locator' expr' input'
       loc `shouldBe` res'
 
+    it "passes a non-tau, non-void binding through unchanged before replacing the match" $ do
+      input' <- parseExpressionThrows "[[ L> Func, y -> $ ]]"
+      locator' <- parseExpressionThrows "Q.y"
+      expr' <- parseExpressionThrows "5"
+      res' <- parseExpressionThrows "[[ L> Func, y -> 5 ]]"
+      loc <- withLocatedExpression locator' expr' input'
+      loc `shouldBe` res'
+
     it "passes non-matching bindings through before replacing the single-attr match" $ do
       input' <- parseExpressionThrows "[[ x -> ?, y -> $ ]]"
       locator' <- parseExpressionThrows "Q.y"
@@ -139,3 +195,37 @@ spec = do
       expr' <- parseExpressionThrows "5"
       result <- try (withLocatedExpression locator' expr' input') :: IO (Either SomeException Expression)
       result `shouldSatisfy` isLeft
+
+    it "throws InvalidLocatorProvided with the exact message for a non-dispatch-chain locator expression" $ do
+      input' <- parseExpressionThrows "[[ x -> ? ]]"
+      expr' <- parseExpressionThrows "5"
+      withLocatedExpression ExXi expr' input' `shouldThrow` anyException
+      result <- try (withLocatedExpression ExXi expr' input') :: IO (Either SomeException Expression)
+      case result of
+        Left err -> do
+          show err `shouldBe` invalidLocatorMessage ExXi
+          displayException err `shouldBe` invalidLocatorMessage ExXi
+        Right _ -> expectationFailure "expected withLocatedExpression to throw"
+
+    it "throws InvalidLocatorProvided when the locator is a bare formation, not a dispatch chain" $ do
+      input' <- parseExpressionThrows "[[ x -> ? ]]"
+      expr' <- parseExpressionThrows "5"
+      let locator' = ExFormation []
+      withLocatedExpression locator' expr' input' `shouldThrow` anyException
+      result <- try (withLocatedExpression locator' expr' input') :: IO (Either SomeException Expression)
+      case result of
+        Left err -> do
+          show err `shouldBe` invalidLocatorMessage locator'
+          displayException err `shouldBe` invalidLocatorMessage locator'
+        Right _ -> expectationFailure "expected withLocatedExpression to throw"
+
+    it "throws CanNotFindObjectByLocator with the exact message for a missing attribute" $ do
+      input' <- parseExpressionThrows "[[ x -> ? ]]"
+      locator' <- parseExpressionThrows "Q.y"
+      expr' <- parseExpressionThrows "5"
+      result <- try (withLocatedExpression locator' expr' input') :: IO (Either SomeException Expression)
+      case result of
+        Left err -> do
+          show err `shouldBe` canNotFindObjectMessage locator'
+          displayException err `shouldBe` canNotFindObjectMessage locator'
+        Right _ -> expectationFailure "expected withLocatedExpression to throw"

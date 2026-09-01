@@ -127,6 +127,7 @@ test-suite spec
     BuilderSpec
     BytesSpec
     CanonizerSpec
+    CLIHelpersSpec
     CLISpec
     ConditionSpec
     CSTSpec
