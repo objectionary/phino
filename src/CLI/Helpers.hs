@@ -30,7 +30,7 @@ import qualified Random as R
 import Rewriter (Rewritten, Rewrittens', stepHeaders)
 import System.Directory (createDirectoryIfMissing)
 import System.FilePath (takeDirectory)
-import System.IO (getContents')
+import System.IO (Handle, IOMode (WriteMode), getContents', hClose, hSetEncoding, openFile, utf8)
 import Text.Printf (printf)
 import XMIR (expressionToXMIR, parseXMIRThrows, printXMIR, xmirToPhi)
 import Yaml (normalizationRules)
@@ -57,18 +57,32 @@ saveStepFunc stepsDir ctx@PrintCtx{..} = do
         saveStep stepsDir ioToExt render step expr
   pure save
 
--- Prepare saveEvalFunc. The file is truncated up front, so that it always holds
--- the firings of exactly one run: a caller reading it back never picks up
--- records left over from the previous run, even when this run fires no atom at
--- all. Every record is flattened into a single line, whatever '--flat' says
--- about the main output, since the file is a line-per-firing protocol.
-saveEvalFunc :: Maybe FilePath -> PrintContext -> IO SaveEvalFunc
-saveEvalFunc Nothing _ = pure dontSaveEval
-saveEvalFunc (Just file) ctx = do
+-- Run the action with a function recording atom firings, holding the protocol
+-- file open for the whole run. Opening it for writing truncates it, so that it
+-- always holds the firings of exactly one run: a caller reading it back never
+-- picks up records left over from the previous run, even when this run fires no
+-- atom at all. The handle is closed on the way out, failure included, so the
+-- last records reach the disk even when dataization gives up. Every record is
+-- flattened into a single line, whatever '--flat' says about the main output,
+-- since the file is a line-per-firing protocol. The encoding is pinned to UTF-8
+-- rather than taken from the locale, since the file is read back by other
+-- programs.
+withEvalFunc :: Maybe FilePath -> PrintContext -> (SaveEvalFunc -> IO a) -> IO a
+withEvalFunc Nothing _ action = action dontSaveEval
+withEvalFunc (Just file) ctx action = do
   createDirectoryIfMissing True (takeDirectory file)
-  writeFile file ""
   logDebug (printf "The option '--evaluations' is specified, atom firings will be recorded in '%s'" file)
-  pure (saveEval file (printExpression ctx{_line = SINGLELINE}))
+  bracket opened hClose $ \protocol ->
+    action (saveEval protocol (printExpression ctx{_line = SINGLELINE}))
+  where
+    -- 'withFile' would do the same, except that it annotates whatever the action
+    -- throws with the name of the file, and a dataization failure has to reach
+    -- the user as it is
+    opened :: IO Handle
+    opened = do
+      protocol <- openFile file WriteMode
+      hSetEncoding protocol utf8
+      pure protocol
 
 -- Read input from file or stdin
 readInput :: Maybe FilePath -> IO String

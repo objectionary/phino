@@ -1118,6 +1118,16 @@ spec = do
           records <- readUtf8 path
           records `shouldEndWith` "\tΦ.number( as-bytes ↦ Φ.bytes( data ↦ ⟦ Δ ⤍ 40-26-00-00-00-00-00-00 ⟧ ) )\n"
 
+      it "keeps the records of a run that fails" $
+        withTempFile "evaluationsXXXXXX.txt" $ \(path, stream) -> do
+          hClose stream
+          withStdin "[[ bytes(data) -> [[ @ -> $.data ]], number(as-bytes) -> [[ @ -> $.as-bytes, plus(x) -> [[ L> L_number_plus ]], nope -> [[ L> L_number_nope ]] ]], @ -> 5.plus(6).nope ]]" $
+            testCLIFailed
+              ["dataize", "--evaluations=" ++ path, "--quiet", "--sweet", "--hide-rho"]
+              ["Atom 'L_number_nope' does not exist"]
+          records <- readUtf8 path
+          records `shouldBe` "L_number_plus\t⟦ x ↦ 6 ⟧\t11\n"
+
       it "truncates the records left over from the previous run" $
         withTempFileContent "evaluationsXXXXXX.txt" "L_number_gt\t[[ ]]\t01-\n" $ \path -> do
           withStdin "[[ D> 01- ]]" $

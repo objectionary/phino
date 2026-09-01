@@ -16,7 +16,7 @@ import Logger (logDebug)
 import Matcher
 import System.Directory (createDirectoryIfMissing)
 import System.FilePath
-import System.IO (IOMode (AppendMode), hPutStrLn, hSetEncoding, utf8, withFile)
+import System.IO (Handle, hPutStrLn)
 import Text.Printf (printf)
 import Yaml
 
@@ -69,18 +69,16 @@ data Evaluation = Evaluation
 
 type SaveEvalFunc = Evaluation -> IO ()
 
--- Append one evaluation to the protocol file as a single tab-separated line:
--- the λ function name, its argument formation and its result. Both expressions
--- are rendered by the caller, which flattens them, so a record never spills over
--- more than one line. The encoding is pinned to UTF-8 rather than taken from the
--- locale, since the file is read back by other programs.
-saveEval :: FilePath -> (Expression -> IO String) -> SaveEvalFunc
-saveEval file render (Evaluation func bindings outcome) = do
+-- Append one evaluation to the protocol as a single tab-separated line: the λ
+-- function name, its argument formation and its result. Both expressions are
+-- rendered by the caller, which flattens them, so a record never spills over
+-- more than one line. The handle stays open for the whole run, since a run may
+-- fire thousands of atoms and reopening the file for each of them buys nothing.
+saveEval :: Handle -> (Expression -> IO String) -> SaveEvalFunc
+saveEval handle render (Evaluation func bindings outcome) = do
   rendered <- mapM render [bindings, outcome]
-  withFile file AppendMode $ \handle -> do
-    hSetEncoding handle utf8
-    hPutStrLn handle (intercalate "\t" (T.unpack func : rendered))
-  logDebug (printf "Saved evaluation of '%s' to '%s'" (T.unpack func) file)
+  hPutStrLn handle (intercalate "\t" (T.unpack func : rendered))
+  logDebug (printf "Saved the evaluation of '%s'" (T.unpack func))
 
 dontSaveEval :: SaveEvalFunc
 dontSaveEval _ = pure ()

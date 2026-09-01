@@ -150,8 +150,9 @@ runDataize OptsDataize{..} = do
       exclude = (`F.exclude` excluded)
       include = (`F.include` included)
   save <- saveStepFunc _stepsDir printCtx
-  evals <- saveEvalFunc _evaluations printCtx
-  (bytes, chain) <- dataize expr (DataizeContext loc _maxDepth _maxCycles (Steps _maxSteps 0) _depthSensitive _shuffle buildTerm save evals)
+  (bytes, chain) <-
+    withEvalFunc _evaluations printCtx $
+      dataize expr . DataizeContext loc _maxDepth _maxCycles (Steps _maxSteps 0) _depthSensitive _shuffle buildTerm save
   when _sequence (printRewrittens printCtx (exclude $ include chain, False) >>= putStrLn)
   unless _quiet (putStrLn (P.printBytes bytes))
   where

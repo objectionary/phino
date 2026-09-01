@@ -103,8 +103,9 @@ deeper ctx@DataizeContext{_steps = Steps limit spent}
 -- Resolve formation for LAMBDA Morphing rule.
 -- If formation contains λ binding, the called atom result is returned, together
 -- with the name of the fired function and the formation the atom fired against,
--- so that 𝔼 can report the firing to the outside world. The '_result' of that
--- report is the atom's raw answer, which 𝔼 normalizes before handing it back.
+-- since 𝔼 has to report all three. This is not the report itself: its '_result'
+-- is the atom's raw answer, while the one 𝔼 reports carries the normal form of
+-- that answer, which is what 𝔼 hands back to its caller.
 -- The universe 'univ' is forwarded to the atom.
 formation :: [Binding] -> Expression -> State -> DataizeContext -> IO (Maybe (Evaluation, State))
 formation bds univ state ctx = do
@@ -535,9 +536,10 @@ execBuildTerm _ ctx func = _buildTerm ctx func
 -- passed explicitly as the second argument (rather than threaded behind the
 -- scenes), matching how the morphing 𝕄 and dataization 𝔻 functions carry it.
 -- Every firing is reported to '_saveEval', which the '--evaluations' option
--- turns into one record per line. A nested firing — an atom that dataizes its
--- own arguments — completes first, so it is reported before the firing that
--- triggered it.
+-- turns into one record per line. The reported result is the normal form 𝔼
+-- returns, never the atom's raw answer, so the protocol and the caller see the
+-- same term. A nested firing — an atom that dataizes its own arguments —
+-- completes first, so it is reported before the firing that triggered it.
 _evaluate :: DataizeContext -> State -> BuildTermMethodS
 _evaluate ctx state [ArgExpression expr, ArgExpression universe] subst = do
   form <- buildExpressionThrows expr subst
