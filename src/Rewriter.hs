@@ -224,7 +224,7 @@ rewrite' state (rule : rest) iteration ctx@RewriteContext{..} = do
                                     (printExpression expr)
                                 )
                               updated <- withLocatedExpression _locator expr current
-                              _saveStep updated (((iteration - 1) * _maxDepth) + _count)
+                              _saveStep updated
                               _rewrite (leadsTo updated, seenInsert digest expr _unique, False) (_count + 1)
       where
         leadsTo :: Expression -> NonEmpty Rewritten

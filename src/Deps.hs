@@ -41,11 +41,11 @@ type BuildTermMethodS = [ExtraArgument] -> Subst -> IO (Term, State)
 
 type BuildTermFunc = String -> BuildTermMethod
 
-type SaveStepFunc = Expression -> Int -> IO ()
+type SaveStepFunc = Expression -> IO ()
 
-saveStep :: Maybe FilePath -> String -> (Expression -> IO String) -> SaveStepFunc
+saveStep :: Maybe FilePath -> String -> (Expression -> IO String) -> Int -> SaveStepFunc
 saveStep Nothing _ _ _ _ = pure ()
-saveStep (Just dir) ext render expr step = do
+saveStep (Just dir) ext render step expr = do
   createDirectoryIfMissing True dir
   let path = dir </> printf "%05d.%s" step ext
   content <- render expr
@@ -53,4 +53,4 @@ saveStep (Just dir) ext render expr step = do
   logDebug (printf "Saved step '%d' to '%s'" step path)
 
 dontSaveStep :: SaveStepFunc
-dontSaveStep = saveStep Nothing "" (\_ -> pure "")
+dontSaveStep = saveStep Nothing "" (\_ -> pure "") 0
