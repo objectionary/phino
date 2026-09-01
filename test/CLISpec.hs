@@ -448,6 +448,21 @@ spec = do
         length steps `shouldSatisfy` (> 18)
         removeDirectoryRecursive dir
 
+    it "saves steps with a .tex extension when --output=latex is used with --steps-dir" $ do
+      let dir = "test-steps-temp-latex"
+      dirExists <- doesDirectoryExist dir
+      when dirExists (removeDirectoryRecursive dir)
+      withStdin "[[ x -> \"hello\"]]" $ do
+        testCLISucceeded
+          ["rewrite", rule "infinite.yaml", "--max-cycles=2", "--max-depth=2", "--steps-dir=" ++ dir, "--output=latex", "--sweet"]
+          ["\\begin{phiquation}"]
+        (`shouldBe` True) <$> doesDirectoryExist dir
+        files <- listDirectory dir
+        length files `shouldBe` 4
+        (`shouldBe` True) <$> doesFileExist (dir ++ "/00001.tex")
+        (`shouldBe` True) <$> doesFileExist (dir ++ "/00003.tex")
+        removeDirectoryRecursive dir
+
     it "desugares without any rules flag from file" $
       testCLISucceeded
         ["rewrite", resource "desugar.phi"]

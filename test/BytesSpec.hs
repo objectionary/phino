@@ -22,8 +22,9 @@ import Bytes
   , numToBts
   , strToBts
   )
+import Control.Exception (evaluate)
 import Control.Monad (forM_)
-import Test.Hspec (Spec, describe, it, shouldBe, shouldSatisfy)
+import Test.Hspec (Spec, anyErrorCall, describe, it, shouldBe, shouldSatisfy, shouldThrow)
 
 spec :: Spec
 spec = do
@@ -51,6 +52,10 @@ spec = do
       btsToNum (numToBts (-(1 / 0))) `shouldSatisfy` either (const False) (\num -> isInfinite num && num < 0)
     it "negative zero" $
       btsToNum (numToBts (-0.0)) `shouldSatisfy` either (const False) isNegativeZero
+
+  describe "btsToNum with a byte array that is not 8 bytes long" $
+    it "errors out" $
+      evaluate (btsToNum (BtMany ["40", "45"])) `shouldThrow` anyErrorCall
 
   describe "strToBts" $
     forM_
@@ -144,6 +149,20 @@ spec = do
       ( \(desc, bts, size) ->
           it desc $ btsSize bts `shouldBe` size
       )
+
+  describe "btsSize on meta bytes" $
+    it "errors out since meta bytes cannot be converted to actual bytes" $
+      evaluate (btsSize (BtMeta "alpha")) `shouldThrow` anyErrorCall
+
+  describe "hex byte decoding" $ do
+    it "accepts lowercase hex digits the same way as uppercase ones" $
+      btsEqual (BtOne "bf") (BtOne "BF") `shouldBe` True
+    it "decodes a single hex character via the fallback numeric reader" $
+      btsEqual (BtOne "5") (BtOne "05") `shouldBe` True
+    it "errors out on a hex digit that isn't 0-9, a-f or A-F" $
+      evaluate (btsToUnescapedStr (BtOne "G1")) `shouldThrow` anyErrorCall
+    it "errors out when the fallback numeric reader can't parse the byte at all" $
+      evaluate (btsToUnescapedStr (BtOne "")) `shouldThrow` anyErrorCall
 
   describe "btsSlice" $ do
     it "in range" $
