@@ -81,6 +81,12 @@ optMaxCycles =
     (auto >>= validateIntOption (> 0) "--max-cycles must be positive")
     (long "max-cycles" <> metavar "CYCLES" <> help "Maximum number of rewriting cycles across all rules" <> value 25 <> showDefault)
 
+optMaxSteps :: Parser Int
+optMaxSteps =
+  option
+    (auto >>= validateIntOption (> 0) "--max-steps must be positive")
+    (long "max-steps" <> metavar "STEPS" <> help "Maximum number of nested morphing and dataization steps" <> value 1000 <> showDefault)
+
 optMargin :: Parser Int
 optMargin =
   option
@@ -287,6 +293,7 @@ dataizeParser =
             <*> optCompress
             <*> optMaxDepth
             <*> optMaxCycles
+            <*> optMaxSteps
             <*> optMargin
             <*> optMeetPopularity
             <*> optMeetLength

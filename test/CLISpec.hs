@@ -1017,6 +1017,18 @@ spec = do
       withStdin "[[ ]]" $
         testCLIFailed ["dataize"] ["terminator ⊥"]
 
+    it "fails with negative --max-steps" $
+      withStdin "[[ D> 01- ]]" $
+        testCLIFailed ["dataize", "--max-steps=-1"] ["--max-steps must be positive"]
+
+    -- The 𝕄/𝔻 recursion used to be unbounded, so this division kept morphing
+    -- forever and no option could stop it (#1052)
+    it "fails on --max-steps instead of morphing forever" $
+      withStdin "⟦ @ ↦ ⟦ λ ⤍ L_number_div, ρ ↦ ⟦ Δ ⤍ 40-45-00-00-00-00-00-00 ⟧, x ↦ ⟦ Δ ⤍ 40-00-00-00-00-00-00-00 ⟧ ⟧ ⟧" $
+        testCLIFailed
+          ["dataize", "--max-steps=40"]
+          ["[ERROR]: Dataization did not finish before reaching the limit of steps: --max-steps=40"]
+
     it "dataizes with --sequence" $
       withStdin "[[ @ -> [[ x -> [[ D> 01-, y -> ? ]](y -> [[ ]]) ]].x ]]" $
         testCLISucceeded
