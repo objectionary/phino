@@ -151,30 +151,30 @@ $sel:_inputFile:OptsRewrite :: OptsRewrite -&gt; Maybe FilePath
 </span><a href="CLI.Validators.html#validatedDispatches"><span class="hs-identifier hs-var">validatedDispatches</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath
 </span><span class="hs-string">&quot;focus&quot;</span></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">FilePath
 </span><a href="#local-6989586621679264800"><span class="hs-identifier hs-var">_focus</span></a></span><span class="hs-special">]</span><span>
-</span><span id="line-48"></span><span>  </span><span id="local-6989586621679264853"><span class="annot"><span class="annottext">[Rule]
+</span><span id="line-48"></span><span>  </span><span class="annot"><span class="annottext">StdGen -&gt; IO ()
+forall (m :: * -&gt; *). MonadIO m =&gt; StdGen -&gt; m ()
+</span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/rndm-1.3.1-8de42cdc/share/doc/html/src/System.Random.html#setStdGen"><span class="hs-identifier hs-var">setStdGen</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; StdGen
+</span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/rndm-1.3.1-8de42cdc/share/doc/html/src/System.Random.Internal.html#mkStdGen"><span class="hs-identifier hs-var">mkStdGen</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679264780"><span class="hs-identifier hs-var">_seed</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-49"></span><span>  </span><span id="local-6989586621679264853"><span class="annot"><span class="annottext">[Rule]
 </span><a href="#local-6989586621679264853"><span class="hs-identifier hs-var">rules</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; [FilePath] -&gt; IO [Rule]
 </span><a href="CLI.Helpers.html#getRules"><span class="hs-identifier hs-var">getRules</span></a></span><span> </span><span class="annot"><span class="annottext">Bool
 </span><a href="#local-6989586621679264778"><span class="hs-identifier hs-var">_normalize</span></a></span><span> </span><span class="annot"><span class="annottext">Bool
 </span><a href="#local-6989586621679264779"><span class="hs-identifier hs-var">_shuffle</span></a></span><span> </span><span class="annot"><span class="annottext">[FilePath]
 </span><a href="#local-6989586621679264796"><span class="hs-identifier hs-var">_rules</span></a></span><span>
-</span><span id="line-49"></span><span>  </span><span class="annot"><span class="annottext">Maybe FilePath -&gt; [Rule] -&gt; IO ()
+</span><span id="line-50"></span><span>  </span><span class="annot"><span class="annottext">Maybe FilePath -&gt; [Rule] -&gt; IO ()
 </span><a href="#local-6989586621679264855"><span class="hs-identifier hs-var">validateBreakpoint</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe FilePath
 </span><a href="#local-6989586621679264804"><span class="hs-identifier hs-var">_breakpoint</span></a></span><span> </span><span class="annot"><span class="annottext">[Rule]
 </span><a href="#local-6989586621679264853"><span class="hs-identifier hs-var">rules</span></a></span><span>
-</span><span id="line-50"></span><span>  </span><span id="local-6989586621679264856"><span class="annot"><span class="annottext">FilePath
+</span><span id="line-51"></span><span>  </span><span id="local-6989586621679264856"><span class="annot"><span class="annottext">FilePath
 </span><a href="#local-6989586621679264856"><span class="hs-identifier hs-var">input</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Maybe FilePath -&gt; IO FilePath
 </span><a href="CLI.Helpers.html#readInput"><span class="hs-identifier hs-var">readInput</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe FilePath
 </span><a href="#local-6989586621679264807"><span class="hs-identifier hs-var">_inputFile</span></a></span><span>
-</span><span id="line-51"></span><span>  </span><span id="local-6989586621679264858"><span class="annot"><span class="annottext">Expression
+</span><span id="line-52"></span><span>  </span><span id="local-6989586621679264858"><span class="annot"><span class="annottext">Expression
 </span><a href="#local-6989586621679264858"><span class="hs-identifier hs-var">expr</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; IOFormat -&gt; IO Expression
 </span><a href="CLI.Helpers.html#parseInput"><span class="hs-identifier hs-var">parseInput</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath
 </span><a href="#local-6989586621679264856"><span class="hs-identifier hs-var">input</span></a></span><span> </span><span class="annot"><span class="annottext">IOFormat
 </span><a href="#local-6989586621679264772"><span class="hs-identifier hs-var">_inputFormat</span></a></span><span>
-</span><span id="line-52"></span><span>  </span><span class="annot"><span class="annottext">StdGen -&gt; IO ()
-forall (m :: * -&gt; *). MonadIO m =&gt; StdGen -&gt; m ()
-</span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/rndm-1.3.1-8de42cdc/share/doc/html/src/System.Random.html#setStdGen"><span class="hs-identifier hs-var">setStdGen</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; StdGen
-</span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/rndm-1.3.1-8de42cdc/share/doc/html/src/System.Random.Internal.html#mkStdGen"><span class="hs-identifier hs-var">mkStdGen</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679264780"><span class="hs-identifier hs-var">_seed</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-53"></span><span>  </span><span class="annot"><span class="annottext">Expression -&gt; IO ()
 </span><a href="Tau.html#seedTaus"><span class="hs-identifier hs-var">seedTaus</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
 </span><a href="#local-6989586621679264858"><span class="hs-identifier hs-var">expr</span></a></span><span>
