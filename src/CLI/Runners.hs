@@ -150,7 +150,9 @@ runDataize OptsDataize{..} = do
       exclude = (`F.exclude` excluded)
       include = (`F.include` included)
   save <- saveStepFunc _stepsDir printCtx
-  (bytes, chain) <- dataize expr (DataizeContext loc _maxDepth _maxCycles (Steps _maxSteps 0) _depthSensitive _shuffle buildTerm save)
+  (bytes, chain) <-
+    withEvalFunc _evaluations printCtx $
+      dataize expr . DataizeContext loc _maxDepth _maxCycles (Steps _maxSteps 0) _depthSensitive _shuffle buildTerm save
   when _sequence (printRewrittens printCtx (exclude $ include chain, False) >>= putStrLn)
   unless _quiet (putStrLn (P.printBytes bytes))
   where
@@ -163,6 +165,9 @@ runDataize OptsDataize{..} = do
         [(_meetPopularity, "meet-popularity"), (_meetLength, "meet-length")]
       validateXmirOptions _outputFormat [(_omitListing, "omit-listing"), (_omitComments, "omit-comments")] _focus
       when (length _show > 1) (invalidCLIArguments "The option --show can be used only once")
+      when
+        (isJust _evaluations && _outputFormat /= PHI)
+        (invalidCLIArguments "The --evaluations option can stay together with --output=phi only, since one record must fit into one line")
     toPrintCtx :: Expression -> PrintContext
     toPrintCtx focus =
       PrintCtx

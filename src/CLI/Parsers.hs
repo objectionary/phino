@@ -202,6 +202,9 @@ optTarget = optional (strOption (long "target" <> short 't' <> metavar "FILE" <>
 optStepsDir :: Parser (Maybe FilePath)
 optStepsDir = optional (strOption (long "steps-dir" <> metavar "FILE" <> help "Directory to save intermediate steps during rewriting/dataizing"))
 
+optEvaluations :: Parser (Maybe FilePath)
+optEvaluations = optional (strOption (long "evaluations" <> metavar "FILE" <> help "File to record every atom fired during dataizing, as one tab-separated line per firing: the λ function name, its argument formation and its result (requires --output=phi)"))
+
 optShuffle :: Parser Bool
 optShuffle = switch (long "shuffle" <> help "Shuffle rules before applying")
 
@@ -305,6 +308,7 @@ dataizeParser =
             <*> optLabel
             <*> optMeetPrefix
             <*> optStepsDir
+            <*> optEvaluations
             <*> argInputFile
         )
 

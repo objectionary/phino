@@ -10,10 +10,13 @@
 module Deps where
 
 import AST
+import Data.List (intercalate)
+import qualified Data.Text as T
 import Logger (logDebug)
 import Matcher
 import System.Directory (createDirectoryIfMissing)
 import System.FilePath
+import System.IO (Handle, hPutStrLn)
 import Text.Printf (printf)
 import Yaml
 
@@ -54,3 +57,28 @@ saveStep (Just dir) ext render step expr = do
 
 dontSaveStep :: SaveStepFunc
 dontSaveStep = saveStep Nothing "" (\_ -> pure "") 0
+
+-- One firing of an atom, the way the Evaluation function 𝔼 sees it: the name of
+-- the λ function, the formation it fired against with the λ binding removed, and
+-- the term it produced.
+data Evaluation = Evaluation
+  { _function :: T.Text
+  , _arguments :: Expression
+  , _result :: Expression
+  }
+
+type SaveEvalFunc = Evaluation -> IO ()
+
+-- Append one evaluation to the protocol as a single tab-separated line: the λ
+-- function name, its argument formation and its result. Both expressions are
+-- rendered by the caller, which flattens them, so a record never spills over
+-- more than one line. The handle stays open for the whole run, since a run may
+-- fire thousands of atoms and reopening the file for each of them buys nothing.
+saveEval :: Handle -> (Expression -> IO String) -> SaveEvalFunc
+saveEval handle render (Evaluation func bindings outcome) = do
+  rendered <- mapM render [bindings, outcome]
+  hPutStrLn handle (intercalate "\t" (T.unpack func : rendered))
+  logDebug (printf "Saved the evaluation of '%s'" (T.unpack func))
+
+dontSaveEval :: SaveEvalFunc
+dontSaveEval _ = pure ()

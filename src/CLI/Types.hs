@@ -106,6 +106,7 @@ data OptsDataize = OptsDataize
   , _label :: Maybe String
   , _meetPrefix :: Maybe String
   , _stepsDir :: Maybe FilePath
+  , _evaluations :: Maybe FilePath
   , _inputFile :: Maybe FilePath
   }
 
