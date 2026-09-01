@@ -12,8 +12,8 @@ module ASTSpec where
 
 import AST
 import Control.Monad (forM_)
-import Data.List (sort)
-import Test.Hspec (Spec, describe, it, shouldBe, shouldSatisfy)
+import Data.List (nub, sort)
+import Test.Hspec (Spec, describe, it, shouldBe, shouldNotBe, shouldSatisfy)
 
 spec :: Spec
 spec = do
@@ -218,7 +218,204 @@ spec = do
       , ("meta expression", ExMeta "e", 1)
       , ("deeply nested dispatch", ExDispatch (ExDispatch ExRoot (AtLabel "a")) (AtLabel "b"), 5)
       , ("formation with dispatch inside", ExFormation [BiTau AtRho (ExDispatch ExRoot (AtLabel "x"))], 7)
+      , ("application with tau argument", ExApplication ExRoot (ArTau AtRho ExRoot), 6)
+      , ("application with alpha argument", ExApplication ExRoot (ArAlpha (Alpha 0) ExRoot), 6)
+      , ("phi-meet wraps its inner count", ExPhiMeet Nothing 1 (ExDispatch ExRoot (AtLabel "x")), 3)
+      , ("phi-meet with label wraps its inner count", ExPhiMeet (Just "m") 2 ExRoot, 1)
+      , ("phi-again wraps its inner count", ExPhiAgain Nothing 1 (ExDispatch ExRoot (AtLabel "x")), 3)
+      , ("phi-again with label wraps its inner count", ExPhiAgain (Just "m") 2 ExRoot, 1)
+      , ("bare bytes falls into the catch-all", ExBytes BtEmpty, 1)
       ]
       ( \(desc, expr, expected) ->
           it desc $ countNodes expr `shouldBe` expected
       )
+
+  describe "hashExpression" $ do
+    it "produces equal hashes for equal expressions" $
+      forM_
+        [ ExFormation [BiTau AtRho ExRoot, BiVoid AtPhi, BiDelta (BtOne "FF"), BiLambda (Function "Func"), BiMeta "M"]
+        , ExApplication ExRoot (ArTau AtRho ExXi)
+        , ExApplication ExRoot (ArAlpha (Alpha 3) ExXi)
+        , ExApplication ExRoot (ArAlpha (AlMeta "A") ExXi)
+        , ExDispatch ExRoot (AtLabel "x")
+        , ExMeta "e"
+        , ExPhiMeet (Just "m") 2 ExRoot
+        , ExPhiMeet Nothing 2 ExRoot
+        , ExPhiAgain (Just "m") 2 ExRoot
+        , ExPhiAgain Nothing 2 ExRoot
+        , ExBytes (BtMany ["00", "FF"])
+        , ExBytes (BtMeta "b")
+        ]
+        (\expr -> hashExpression expr `shouldBe` hashExpression expr)
+
+    it "hashes every Expression/Binding/Bytes/Attribute/Argument/Alpha/Function constructor without collisions" $
+      let exprs =
+            [ ExFormation []
+            , ExFormation [BiTau AtRho ExRoot]
+            , ExFormation [BiVoid AtPhi]
+            , ExFormation [BiDelta BtEmpty]
+            , ExFormation [BiDelta (BtOne "FF")]
+            , ExFormation [BiDelta (BtMany ["00", "01"])]
+            , ExFormation [BiDelta (BtMeta "b")]
+            , ExFormation [BiLambda (Function "Func")]
+            , ExFormation [BiLambda (FnMeta "F")]
+            , ExFormation [BiMeta "M"]
+            , ExXi
+            , ExRoot
+            , ExTermination
+            , ExApplication ExRoot (ArTau AtRho ExXi)
+            , ExApplication ExRoot (ArAlpha (Alpha 3) ExXi)
+            , ExApplication ExRoot (ArAlpha (AlMeta "A") ExXi)
+            , ExDispatch ExRoot (AtLabel "x")
+            , ExDispatch ExRoot AtPhi
+            , ExDispatch ExRoot AtRho
+            , ExDispatch ExRoot AtLambda
+            , ExDispatch ExRoot AtDelta
+            , ExDispatch ExRoot (AtMeta "m")
+            , ExMeta "e"
+            , ExMeta "f"
+            , ExPhiMeet (Just "m") 2 ExRoot
+            , ExPhiMeet Nothing 2 ExRoot
+            , ExPhiMeet Nothing 3 ExRoot
+            , ExPhiAgain (Just "m") 2 ExRoot
+            , ExPhiAgain Nothing 2 ExRoot
+            , ExPhiAgain Nothing 3 ExRoot
+            , ExBytes BtEmpty
+            , ExBytes (BtOne "FF")
+            , ExBytes (BtMany ["00", "FF"])
+            , ExBytes (BtMeta "b")
+            ]
+          hashes = map hashExpression exprs
+       in nub hashes `shouldBe` hashes
+
+    it "produces different hashes for a couple of hand-picked distinct expressions" $ do
+      hashExpression ExRoot `shouldNotBe` hashExpression ExXi
+      hashExpression (ExDispatch ExRoot (AtLabel "x")) `shouldNotBe` hashExpression (ExDispatch ExRoot (AtLabel "y"))
+
+  describe "BaseObject pattern" $ do
+    it "constructs a Q-dispatch expression" $
+      BaseObject "bytes" `shouldBe` ExDispatch ExRoot (AtLabel "bytes")
+
+    it "matches a Q-dispatch expression, extracting the label" $
+      let matched = case ExDispatch ExRoot (AtLabel "number") of
+            BaseObject label -> Just label
+            _ -> Nothing
+       in matched `shouldBe` Just "number"
+
+    it "does not match a non-Q-dispatch expression" $
+      let matched = case ExDispatch ExXi (AtLabel "number") of
+            BaseObject label -> Just label
+            _ -> Nothing
+       in matched `shouldBe` Nothing
+
+  describe "dataBytes" $
+    it "builds the bytes-object formation carrying the given bytes" $
+      dataBytes (BtOne "48")
+        `shouldBe` ExApplication
+          (ExDispatch ExRoot (AtLabel "bytes"))
+          (ArTau (AtLabel "data") (ExFormation [BiDelta (BtOne "48"), BiVoid AtRho]))
+
+  describe "DataObject/DataString/DataNumber pattern" $ do
+    it "constructs the named, unwrapped as-bytes form" $
+      DataString (BtOne "48")
+        `shouldBe` ExApplication
+          (ExDispatch ExRoot (AtLabel "string"))
+          (ArTau (AtLabel "as-bytes") (dataBytes (BtOne "48")))
+
+    it "matches the named, unwrapped form" $
+      let expr = ExApplication (ExDispatch ExRoot (AtLabel "string")) (ArTau (AtLabel "as-bytes") (dataBytes (BtOne "48")))
+          matched = case expr of
+            DataString bts -> Just bts
+            _ -> Nothing
+       in matched `shouldBe` Just (BtOne "48")
+
+    it "matches the named form with a phi-again-wrapped outer object" $
+      let expr =
+            ExApplication
+              (ExPhiAgain Nothing 1 (ExDispatch ExRoot (AtLabel "string")))
+              (ArTau (AtLabel "as-bytes") (dataBytes (BtOne "48")))
+          matched = case expr of
+            DataString bts -> Just bts
+            _ -> Nothing
+       in matched `shouldBe` Just (BtOne "48")
+
+    it "matches the named form with a phi-again-wrapped inner bytes formation" $
+      let expr =
+            ExApplication
+              (ExDispatch ExRoot (AtLabel "number"))
+              ( ArTau
+                  (AtLabel "as-bytes")
+                  ( ExApplication
+                      (ExDispatch ExRoot (AtLabel "bytes"))
+                      (ArTau (AtLabel "data") (ExPhiAgain Nothing 1 (ExFormation [BiDelta (BtOne "05"), BiVoid AtRho])))
+                  )
+              )
+          matched = case expr of
+            DataNumber bts -> Just bts
+            _ -> Nothing
+       in matched `shouldBe` Just (BtOne "05")
+
+    it "matches the legacy positional (alpha0) form on both layers" $
+      let expr =
+            ExApplication
+              (ExDispatch ExRoot (AtLabel "number"))
+              ( ArAlpha
+                  (Alpha 0)
+                  ( ExApplication
+                      (ExDispatch ExRoot (AtLabel "bytes"))
+                      (ArAlpha (Alpha 0) (ExFormation [BiDelta (BtOne "05"), BiVoid AtRho]))
+                  )
+              )
+          matched = case expr of
+            DataNumber bts -> Just bts
+            _ -> Nothing
+       in matched `shouldBe` Just (BtOne "05")
+
+    it "does not match when the outer object is not a base object (matchOuter fails)" $
+      let expr =
+            ExApplication
+              ExRoot
+              (ArTau (AtLabel "as-bytes") (dataBytes (BtOne "48")))
+          matched = case expr of
+            DataObject label bts -> Just (label, bts)
+            _ -> Nothing
+       in matched `shouldBe` Nothing
+
+    it "does not match when the inner object is not an application (matchInner fails)" $
+      let expr = ExApplication (ExDispatch ExRoot (AtLabel "string")) (ArTau (AtLabel "as-bytes") ExRoot)
+          matched = case expr of
+            DataObject label bts -> Just (label, bts)
+            _ -> Nothing
+       in matched `shouldBe` Nothing
+
+    it "does not match when the inner base object is not 'bytes' (matchesBytes fails)" $
+      let expr =
+            ExApplication
+              (ExDispatch ExRoot (AtLabel "string"))
+              ( ArTau
+                  (AtLabel "as-bytes")
+                  ( ExApplication
+                      (ExDispatch ExRoot (AtLabel "other"))
+                      (ArTau (AtLabel "data") (ExFormation [BiDelta (BtOne "48"), BiVoid AtRho]))
+                  )
+              )
+          matched = case expr of
+            DataObject label bts -> Just (label, bts)
+            _ -> Nothing
+       in matched `shouldBe` Nothing
+
+    it "does not match when the bytes formation has the wrong shape (matchFormation fails)" $
+      let expr =
+            ExApplication
+              (ExDispatch ExRoot (AtLabel "string"))
+              ( ArTau
+                  (AtLabel "as-bytes")
+                  ( ExApplication
+                      (ExDispatch ExRoot (AtLabel "bytes"))
+                      (ArTau (AtLabel "data") (ExFormation [BiDelta (BtOne "48")]))
+                  )
+              )
+          matched = case expr of
+            DataObject label bts -> Just (label, bts)
+            _ -> Nothing
+       in matched `shouldBe` Nothing

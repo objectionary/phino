@@ -8,7 +8,7 @@ module MustSpec where
 
 import Control.Monad (forM_)
 import Must (Must (..), exceedsUpperBound, inRange, validateMust)
-import Test.Hspec (Spec, describe, it, shouldBe, shouldSatisfy)
+import Test.Hspec (Spec, describe, it, shouldBe)
 import Text.Read (readMaybe)
 
 spec :: Spec
@@ -300,19 +300,33 @@ spec = do
 
   describe "validateMust with inverted MtRange" $
     it "returns error message" $
-      validateMust (MtRange (Just 10) (Just 5)) `shouldSatisfy` present
+      validateMust (MtRange (Just 10) (Just 5))
+        `shouldBe` Just "--must range invalid: minimum (10) is greater than maximum (5)"
 
   describe "validateMust with zero MtExact" $
     it "returns error for zero" $
-      validateMust (MtExact 0) `shouldSatisfy` present
+      validateMust (MtExact 0) `shouldBe` Just "--must exact value must be positive"
+
+  describe "validateMust with negative MtExact" $
+    it "returns error for a negative exact value" $
+      validateMust (MtExact (-3)) `shouldBe` Just "--must exact value must be positive"
 
   describe "validateMust with negative minimum in range" $
     it "returns error for negative min" $
-      validateMust (MtRange (Just (-1)) (Just 5)) `shouldSatisfy` present
+      validateMust (MtRange (Just (-1)) (Just 5)) `shouldBe` Just "--must minimum must be non-negative"
 
   describe "validateMust with negative maximum in range" $
     it "returns error for negative max" $
-      validateMust (MtRange (Just 0) (Just (-1))) `shouldSatisfy` present
-  where
-    present (Just _) = True
-    present Nothing = False
+      validateMust (MtRange (Just 0) (Just (-1))) `shouldBe` Just "--must maximum must be non-negative"
+
+  describe "Read instance rejects a range with more than one '..' separator" $
+    it "fails when the second dot is not adjacent to the first" $
+      (readMaybe "3.4..5" :: Maybe Must) `shouldBe` Nothing
+
+  describe "Read instance rejects a maximum-only range with a negative bound" $
+    it "fails on negative max with empty min" $
+      (readMaybe "..-5" :: Maybe Must) `shouldBe` Nothing
+
+  describe "Read instance rejects a minimum-only range with a negative bound" $
+    it "fails on negative min with empty max" $
+      (readMaybe "-5.." :: Maybe Must) `shouldBe` Nothing

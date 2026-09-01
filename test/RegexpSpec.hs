@@ -6,9 +6,11 @@ matching and replacement using PCRE.
 -}
 module RegexpSpec where
 
+import Control.Exception (SomeException, displayException, try)
 import Data.ByteString.Char8 qualified as B
+import Data.List (isInfixOf)
 import Regexp qualified as R
-import Test.Hspec (Spec, anyException, describe, it, shouldBe, shouldReturn, shouldThrow)
+import Test.Hspec (Spec, anyException, describe, it, shouldBe, shouldReturn, shouldSatisfy, shouldThrow)
 
 spec :: Spec
 spec = do
@@ -20,6 +22,12 @@ spec = do
 
     it "throws on invalid pattern" $
       R.compile (B.pack "[invalid") `shouldThrow` anyException
+
+    it "throws with the underlying PCRE error embedded in the message" $ do
+      result <- try (R.compile (B.pack "[invalid") >> pure ()) :: IO (Either SomeException ())
+      case result of
+        Left exc -> displayException exc `shouldSatisfy` isInfixOf "Regex compilation failed:"
+        Right () -> fail "expected R.compile to fail"
 
     it "compiles pattern with groups" $ do
       _ <- R.compile (B.pack "(a)(b)(c)")
@@ -98,7 +106,7 @@ spec = do
     it "handles optional group that did not match" $ do
       regex <- R.compile (B.pack "(a)(b)?")
       groups <- R.extractGroups regex (B.pack "a")
-      length groups `shouldBe` 3
+      groups `shouldBe` [B.pack "a", B.pack "a", B.empty]
 
     it "extracts multiple groups" $ do
       regex <- R.compile (B.pack "(x)(y)(z)")

@@ -7,6 +7,7 @@
 module CLISpec (spec) where
 
 import CLI (runCLI)
+import CLI.Types (CmdException (..), IOFormat (..))
 import Control.Exception
 import Control.Monad (forM_, unless, when)
 import Data.List (intercalate, isInfixOf, sort)
@@ -160,6 +161,19 @@ spec = do
     withStdin "[[]]" $
       testCLISucceeded ["rewrite", "--log-level=DEBUG"] ["[DEBUG]:"]
 
+  describe "--log-level accepts every named level" $
+    forM_
+      ["ERROR", "ERR", "error", "NONE", "none"]
+      ( \flagValue ->
+          it ("--log-level=" ++ flagValue) $
+            withStdin "[[]]" $
+              testCLISucceeded ["rewrite", "--log-level=" ++ flagValue] ["⟧"]
+      )
+
+  it "fails on an unrecognized --log-level value" $
+    withStdin "[[]]" $
+      testCLIFailed ["rewrite", "--log-level=verbose"] ["unknown log-level: verbose"]
+
   describe "rewriting" $ do
     describe "fails" $ do
       it "with --input=latex" $
@@ -179,6 +193,18 @@ spec = do
           testCLIFailed
             ["rewrite", "--max-depth=-1"]
             ["--max-depth must be positive"]
+
+      it "with zero --max-cycles" $
+        withStdin "" $
+          testCLIFailed
+            ["rewrite", "--max-cycles=0"]
+            ["--max-cycles must be positive"]
+
+      it "with zero --meet-length" $
+        withStdin "" $
+          testCLIFailed
+            ["rewrite", "--output=latex", "--meet-length=0"]
+            ["--meet-length must be positive"]
 
       it "with --normalize and --must=1" $
         withStdin "[[ x -> [[ y -> 5 ]].y ]].x" $
@@ -913,6 +939,32 @@ spec = do
           content <- readFile tgt
           content `shouldBe` "ORIGINAL"
 
+    it "logs the skip reason at debug level when --update finds a newer target" $
+      withTempFileContent "src-XXXXXX.phi" "[[ x -> \"foo\" ]]" $ \src ->
+        withTempFileContent "tgt-XXXXXX.phi" "ORIGINAL" $ \tgt -> do
+          now <- getCurrentTime
+          setModificationTime src (addUTCTime (-60) now)
+          setModificationTime tgt now
+          testCLISucceeded
+            ["rewrite", rule "simple.yaml", "--update", "--sweet", "--log-level=DEBUG", "--target=" ++ tgt, src]
+            ["is newer than source", "skipping rewriting (--update)"]
+
+    it "logs progress at debug level when printing to --target" $
+      withStdin "[[ ]]" $
+        withTempFile "targetXXXXXX.tmp" $ \(path, h) -> do
+          hClose h
+          testCLISucceeded
+            ["rewrite", "--sweet", "--log-level=DEBUG", printf "--target=%s" path]
+            ["The option '--target' is specified, printing to", "The command result was saved in"]
+
+    it "logs progress at debug level when modifying a file in-place" $
+      withTempFile "inplaceXXXXXX.phi" $ \(path, h) -> do
+        hPutStr h "[[ x -> \"foo\" ]]"
+        hClose h
+        testCLISucceeded
+          ["rewrite", rule "simple.yaml", "--in-place", "--sweet", "--log-level=DEBUG", path]
+          ["The option '--in-place' is specified, writing back to", "was modified in-place"]
+
     it "rewrites with --update when source is newer than target" $
       withTempFileContent "src-XXXXXX.phi" "[[ x -> \"foo\" ]]" $ \src ->
         withTempFileContent "tgt-XXXXXX.phi" "ORIGINAL" $ \tgt -> do
@@ -1122,7 +1174,34 @@ spec = do
             ["dataize", "--hide=Q.x(Q.y)"]
             ["[ERROR]: Invalid set of arguments: Only dispatch expression", "but given: Φ.x( Φ.y )"]
 
+      it "with wrong --show option" $
+        withStdin "" $
+          testCLIFailed
+            ["dataize", "--show=Q.x(Q.y)"]
+            ["[ERROR]:", "Only dispatch expression started with Φ (or Q) can be used in --show"]
+
+      it "with wrong --locator option" $
+        withStdin "" $
+          testCLIFailed
+            ["dataize", "--locator=Q.x(Q.y)"]
+            ["[ERROR]:", "Only dispatch expression started with Φ (or Q) can be used in --locator"]
+
+      it "with wrong --focus option" $
+        withStdin "" $
+          testCLIFailed
+            ["dataize", "--focus=Q.x(Q.y)"]
+            ["[ERROR]:", "Only dispatch expression started with Φ (or Q) can be used in --focus"]
+
+    it "accepts --depth-sensitive" $
+      withStdin "[[ D> 01- ]]" $
+        testCLISucceeded ["dataize", "--depth-sensitive"] ["01-"]
+
   describe "explain" $ do
+    it "prints help" $
+      testCLISucceeded
+        ["explain", "--help"]
+        ["Explain built-in morphing rules", "Explain built-in dataization rules", "Explain built-in contextualization rules"]
+
     it "explains single rule" $
       testCLISucceeded
         ["explain", "--rule=resources/normalize/copy.yaml"]
@@ -1419,6 +1498,9 @@ spec = do
         )
 
   describe "merge" $ do
+    it "prints help" $
+      testCLISucceeded ["merge", "--help"] ["Paths to input files"]
+
     it "merges single expression" $
       testCLISucceeded
         ["merge", resource "desugar.phi", "--sweet", "--flat"]
@@ -1458,6 +1540,11 @@ spec = do
         ["At least one input file must be specified for 'merge' command"]
 
   describe "match" $ do
+    it "prints help" $
+      testCLISucceeded
+        ["match", "--help"]
+        ["Pattern expression to match against", "Predicate for matched substitutions"]
+
     it "takes from stdin" $
       withStdin "[[]]" $
         testCLISucceeded ["match", "--log-level=debug"] ["[DEBUG]"]
@@ -1503,3 +1590,37 @@ spec = do
         testCLIFailed
           ["match", "--pattern=$.!t"]
           ["[ERROR]"]
+
+  describe "CmdException Show instance" $
+    forM_
+      [ ("InvalidCLIArguments", InvalidCLIArguments "bad flag", "Invalid set of arguments: bad flag")
+      , ("CouldNotReadFromStdin", CouldNotReadFromStdin "broken pipe", "Could not read input from stdin\nReason: broken pipe")
+      , ("CouldNotDataize", CouldNotDataize, "Could not dataize given expression")
+      ,
+        ( "CouldNotPrintExpressionInXMIR"
+        , CouldNotPrintExpressionInXMIR
+        , "Could not print expression with --output=xmir, only expression printing is allowed"
+        )
+      , ("EmptySubstsOnMatch", EmptySubstsOnMatch, "Provided pattern was not matched, no substitutions are built")
+      ,
+        ( "VersionMismatch"
+        , VersionMismatch "1.2.3" "4.5.6"
+        , "Version mismatch: --pin requires '1.2.3', but this is phino 4.5.6"
+        )
+      ]
+      ( \(desc, exception, expected) ->
+          it (desc ++ " renders its message") $ do
+            show exception `shouldBe` expected
+            displayException exception `shouldBe` expected
+      )
+
+  describe "IOFormat Show instance" $
+    forM_
+      [ ("XMIR", XMIR, "xmir")
+      , ("PHI", PHI, "phi")
+      , ("LATEX", LATEX, "latex")
+      ]
+      ( \(desc, format, expected) ->
+          it (desc ++ " renders as " ++ expected) $
+            show format `shouldBe` expected
+      )

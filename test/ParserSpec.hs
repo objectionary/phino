@@ -8,13 +8,15 @@
 module ParserSpec where
 
 import AST
+import Control.Exception (SomeException, displayException, try)
 import Control.Monad (forM_)
 import Data.Either (isLeft, isRight)
 import Data.List (isInfixOf)
 import Files (allPathsIn)
 import Parser
 import System.FilePath (takeBaseName)
-import Test.Hspec (Example (Arg), Expectation, Spec, SpecWith, anyException, describe, it, runIO, shouldBe, shouldReturn, shouldSatisfy, shouldThrow)
+import Test.Hspec (Example (Arg), Expectation, Spec, SpecWith, anyException, describe, it, runIO, shouldBe, shouldReturn, shouldSatisfy, shouldStartWith, shouldThrow)
+import Text.Megaparsec (parseMaybe)
 
 test ::
   (Eq a, Show a) =>
@@ -527,3 +529,87 @@ spec = do
       , "  [[  x  ->  Q  ]]  "
       ]
       (\expr -> it expr (parseExpression expr `shouldSatisfy` isRight))
+
+  describe "parse unicode meta-k expression" $
+    test
+      parseExpression
+      [ ("𝑘", Just (ExMeta "k"))
+      , ("𝑘1", Just (ExMeta "k1"))
+      , ("𝑘.x", Just (ExDispatch (ExMeta "k") (AtLabel "x")))
+      ]
+
+  describe "ParserException Show instance" $ do
+    it "renders CouldNotParseExpression via parseExpressionThrows, embedding the megaparsec cause" $ do
+      result <- try (parseExpressionThrows "invalid expression ]][[") :: IO (Either SomeException Expression)
+      case result of
+        Left exc -> do
+          let rendered = displayException exc
+          rendered `shouldStartWith` "Couldn't parse given phi expression, cause:"
+          rendered `shouldSatisfy` isInfixOf "expression:1:"
+        Right _ -> fail "expected parseExpressionThrows to fail"
+
+    it "renders CouldNotParseAttribute via parseAttributeThrows, embedding the megaparsec cause" $ do
+      result <- try (parseAttributeThrows "123invalid") :: IO (Either SomeException Attribute)
+      case result of
+        Left exc -> do
+          let rendered = displayException exc
+          rendered `shouldStartWith` "Couldn't parse given attribute, cause:"
+          rendered `shouldSatisfy` isInfixOf "attribute:1:"
+        Right _ -> fail "expected parseAttributeThrows to fail"
+
+    it "renders CouldNotParseNumber via parseNumberThrows, embedding the megaparsec cause" $ do
+      result <- try (parseNumberThrows "notanumber") :: IO (Either SomeException Expression)
+      case result of
+        Left exc -> do
+          let rendered = displayException exc
+          rendered `shouldStartWith` "Couldn't parse given number to 'Φ.number', cause:"
+          rendered `shouldSatisfy` isInfixOf "number:1:"
+        Right _ -> fail "expected parseNumberThrows to fail"
+
+  describe "phiParser record" $ do
+    it "exposes an _alpha field parsing an alpha directly" $
+      parseMaybe (_alpha phiParser) "~3" `shouldBe` Just (Alpha 3)
+
+    it "exposes an _attribute field parsing an attribute directly" $
+      parseMaybe (_attribute phiParser) "foo" `shouldBe` Just (AtLabel "foo")
+
+    it "exposes an _index field parsing an index meta directly" $
+      parseMaybe (_index phiParser) "!i0" `shouldBe` Just "i0"
+
+    it "exposes a _binding field parsing a binding directly" $
+      parseMaybe (_binding phiParser) "x -> $" `shouldBe` Just (BiTau (AtLabel "x") ExXi)
+
+    it "exposes an _expression field parsing an expression directly" $
+      parseMaybe (_expression phiParser) "Q.x" `shouldBe` Just (ExDispatch ExRoot (AtLabel "x"))
+
+    it "exposes a _string field parsing a quoted string directly" $
+      parseMaybe (_string phiParser) "\"hi\"" `shouldBe` Just "hi"
+
+  describe "parse bytes rejects a lowercase hex digit" $
+    fails
+      parseBytes
+      [ ("0a-", "expected 0-9 or A-F")
+      , ("a0-", "expected 0-9 or A-F")
+      ]
+
+  describe "parseBinding error is tagged with its entry point name" $
+    fails parseBinding [("L>", "binding:1:")]
+
+  describe "parseNumber error is tagged with its entry point name" $
+    fails parseNumber [("abc", "number:1:")]
+
+  describe "parseAttribute error is tagged with its entry point name" $
+    fails parseAttribute [("123", "attribute:1:")]
+
+  describe "parseAlpha error is tagged with its entry point name" $
+    fails parseAlpha [("bogus", "alpha:1:")]
+
+  describe "parseIndex error is tagged with its entry point name" $
+    fails parseIndex [("bogus", "index meta:1:")]
+
+  describe "surrogate escape failures embed their specific cause" $
+    fails
+      parseExpression
+      [ ("[[ x -> \"\\uD835\\u0041\"]]", "Invalid low surrogate:")
+      , ("[[ x -> \"\\uDFFF\"]]", "Unexpected low surrogate:")
+      ]
