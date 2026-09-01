@@ -275,8 +275,8 @@ spec = do
   -- single step, so the 𝕄/𝔻 recursion itself was unbounded: this division, whose
   -- λ-atom keeps re-firing on a term that never reduces to bytes, sent 'morph'
   -- through md → ma → universe → mf → mphi → ml forever and no CLI option could
-  -- stop it (#1052). '--max-steps' counts every step of that recursion and fails
-  -- once the budget is gone.
+  -- stop it (#1052). '--max-steps' bounds that recursion and fails once the
+  -- budget is gone.
   describe "stops a dataization that never reaches bytes" $
     it "fails on the step limit instead of morphing forever" $ do
       expr <- parseExpressionThrows "⟦ @ ↦ ⟦ λ ⤍ L_number_div, ρ ↦ ⟦ Δ ⤍ 40-45-00-00-00-00-00-00 ⟧, x ↦ ⟦ Δ ⤍ 40-00-00-00-00-00-00-00 ⟧ ⟧ ⟧"

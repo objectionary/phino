@@ -46,14 +46,17 @@ type Morphed = Dataizable
 emptyState :: State
 emptyState = ""
 
--- How many steps of the 𝕄/𝔻 recursion a single derivation may take ('_limit',
--- the '--max-steps' option) and how many of them the derivation reaching this
+-- How many steps of the 𝕄/𝔻 recursion one branch of a derivation may take
+-- ('_limit', the '--max-steps' option) and how many the branch reaching this
 -- point has already taken ('_spent'). 𝕄 and 𝔻 recurse into each other, into the
 -- premises of their own rules and into the atoms they fire, so a budget local to
 -- one of those chains is reset by the next nested call and bounds nothing (see
--- #1052). This one rides in the context instead, which every path — the spine,
--- the side-premises, '_dataize' and '_morph' — already carries, so it counts the
--- whole derivation from its root.
+-- #1052). This one rides in the context that every such path — the spine, the
+-- side-premises, '_dataize' and '_morph' — already carries, so a nested call
+-- inherits the count of the call that made it. It bounds depth, not total work:
+-- a premise passes its count down but not back, so siblings each descend from
+-- the same '_spent'. Bounding every branch is enough to terminate, since a rule
+-- has finitely many premises.
 data Steps = Steps
   { _limit :: Int
   , _spent :: Int
