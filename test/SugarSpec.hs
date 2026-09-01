@@ -206,6 +206,34 @@ spec = do
       )
 
     it
+      "EX_FORMATION with a meta tail (no head rho) leaves the meta tail untouched"
+      ( toSalty
+          ( EX_FORMATION
+              LSB
+              EOL
+              (TAB 1)
+              (BI_PAIR (PA_TAU (AT_LABEL "x") ARROW xiExpr) (BDS_META EOL (TAB 1) (META NO_EXCL B "X") (BDS_EMPTY (TAB 1))) (TAB 1))
+              EOL
+              (TAB 0)
+              RSB
+          )
+          `shouldBe` EX_FORMATION
+            LSB
+            EOL
+            (TAB 1)
+            (BI_PAIR (PA_TAU (AT_LABEL "x") ARROW xiExpr) (BDS_META EOL (TAB 1) (META NO_EXCL B "X") (BDS_EMPTY (TAB 1))) (TAB 1))
+            EOL
+            (TAB 0)
+            RSB
+      )
+
+    it
+      "EX_APPLICATION with an empty AA_TAUS binding collapses to its bare callee"
+      ( toSalty (EX_APPLICATION rootDotX NO_SPACE EOL (TAB 1) (AA_TAUS (BI_EMPTY (TAB 1))) EOL (TAB 0) 1)
+          `shouldBe` rootDotX
+      )
+
+    it
       "EX_PHI_MEET recurses into its wrapped expression"
       (toSalty (EX_PHI_MEET Nothing 3 (EX_ATTR (AT_LABEL "x"))) `shouldBe` EX_PHI_MEET Nothing 3 (EX_DISPATCH (EX_XI XI) NO_SPACE (AT_LABEL "x")))
 
@@ -516,6 +544,21 @@ spec = do
     it
       "a xi.rho dispatch value is left untouched (only bindings and app arguments are stripped)"
       (withoutRho (EX_DISPATCH xiExpr NO_SPACE (AT_RHO RHO)) `shouldBe` EX_DISPATCH xiExpr NO_SPACE (AT_RHO RHO))
+    it
+      "a phi-meet wrapper recurses into its wrapped expression via goExpr"
+      ( withoutRho (EX_PHI_MEET Nothing 2 (EX_FORMATION LSB EOL (TAB 1) (BI_PAIR (PA_VOID (AT_RHO RHO) ARROW EMPTY) (BDS_EMPTY (TAB 1)) (TAB 1)) EOL (TAB 0) RSB))
+          `shouldBe` EX_PHI_MEET Nothing 2 (EX_FORMATION LSB NO_EOL NO_TAB (BI_EMPTY (TAB 1)) NO_EOL NO_TAB RSB)
+      )
+    it
+      "a phi-again wrapper recurses into its wrapped expression via goExpr"
+      ( withoutRho (EX_PHI_AGAIN (Just "a") 1 (EX_FORMATION LSB EOL (TAB 1) (BI_PAIR (PA_VOID (AT_RHO RHO) ARROW EMPTY) (BDS_EMPTY (TAB 1)) (TAB 1)) EOL (TAB 0) RSB))
+          `shouldBe` EX_PHI_AGAIN (Just "a") 1 (EX_FORMATION LSB NO_EOL NO_TAB (BI_EMPTY (TAB 1)) NO_EOL NO_TAB RSB)
+      )
+    it
+      "a lambda pair is not rho and is kept via the goPair catch-all"
+      ( withoutRho (EX_FORMATION LSB EOL (TAB 1) (BI_PAIR (PA_LAMBDA "some.func") (BDS_EMPTY (TAB 1)) (TAB 1)) EOL (TAB 0) RSB)
+          `shouldBe` EX_FORMATION LSB EOL (TAB 1) (BI_PAIR (PA_LAMBDA "some.func") (BDS_EMPTY (TAB 1)) (TAB 1)) EOL (TAB 0) RSB
+      )
 
   describe "full pipeline round trips, SWEET vs SALTY" $ do
     let config :: SugarType -> (SugarType, Encoding, LineFormat, Int)

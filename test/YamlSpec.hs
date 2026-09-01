@@ -6,7 +6,7 @@
 
 module YamlSpec where
 
-import AST (Expression (ExRoot))
+import AST (Alpha, Attribute, Binding, Bytes, Expression (ExRoot))
 import Control.Exception (Exception (displayException), SomeException)
 import Control.Monad
 import Data.Either (isLeft)
@@ -18,7 +18,7 @@ import Data.Yaml qualified as Yaml
 import Files (allPathsIn)
 import System.FilePath
 import Test.Hspec (Spec, describe, expectationFailure, it, runIO, shouldBe, shouldReturn, shouldSatisfy, shouldThrow)
-import Yaml (Condition (..), ContextualizeRule (..), DataizeRule (..), MorphRule (..), Operation (..), Premise (..), contextualizationRules, dataizationRules, morphingRules, yamlRule)
+import Yaml (Condition (..), ContextualizeRule (..), DataizeRule (..), MorphRule (..), Number, Operation (..), Premise (..), contextualizationRules, dataizationRules, morphingRules, yamlRule)
 
 decodeYaml' :: (Yaml.FromJSON a) => String -> Either Yaml.ParseException a
 decodeYaml' = Yaml.decodeEither' . encodeUtf8 . T.pack
@@ -157,3 +157,21 @@ spec = do
     it "fails when 'contextualize' does not take exactly two arguments" $
       (decodeYaml' "n-result: 𝑛\ncontextualize: [𝑛]" :: Either Yaml.ParseException Premise)
         `shouldSatisfy` isLeft
+
+  describe "rejects a numerable expression that is neither an object, a number nor an index meta" $
+    it "fails on a bare boolean" $
+      (decodeYaml' "true" :: Either Yaml.ParseException Number) `shouldSatisfy` isLeft
+
+  describe "rejects malformed embedded 𝜑-syntax" $ do
+    it "an index meta that does not parse" $
+      (decodeYaml' "'bogus'" :: Either Yaml.ParseException Number) `shouldSatisfy` isLeft
+    it "an attribute that does not parse" $
+      (decodeYaml' "'123'" :: Either Yaml.ParseException Attribute) `shouldSatisfy` isLeft
+    it "an alpha that does not parse" $
+      (decodeYaml' "'bogus'" :: Either Yaml.ParseException Alpha) `shouldSatisfy` isLeft
+    it "bytes that do not parse" $
+      (decodeYaml' "'0a-'" :: Either Yaml.ParseException Bytes) `shouldSatisfy` isLeft
+    it "an expression that does not parse" $
+      (decodeYaml' "'L>'" :: Either Yaml.ParseException Expression) `shouldSatisfy` isLeft
+    it "a binding that does not parse" $
+      (decodeYaml' "'L>'" :: Either Yaml.ParseException Binding) `shouldSatisfy` isLeft
