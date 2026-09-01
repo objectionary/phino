@@ -1539,6 +1539,11 @@ spec = do
         ["merge"]
         ["At least one input file must be specified for 'merge' command"]
 
+    it "merges and prints as XMIR, with the listing rendered from the merged expression" $
+      testCLISucceeded
+        ["merge", resource "desugar.phi", "--output=xmir"]
+        ["<?xml version=\"1.0\" encoding=\"UTF-8\"?>", "<listing>⟦ foo ↦ ξ.x, ρ ↦ ∅ ⟧</listing>", "<o base=\"ξ.x\" name=\"foo\"/>"]
+
   describe "match" $ do
     it "prints help" $
       testCLISucceeded
