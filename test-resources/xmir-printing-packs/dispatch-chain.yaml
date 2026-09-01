@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+# yamllint disable rule:line-length
+---
+phi: |
+  [[
+    x -> [[ plus -> Q.number ]].plus.foo
+  ]]
+xpaths:
+  - '/object/o[@name="x" and @base=".foo"]/o[@base=".plus"]/o/o[@name="plus" and @base="Φ.number"]'

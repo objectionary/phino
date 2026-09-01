@@ -8,6 +8,8 @@
 
 module XMIRSpec where
 
+import AST (Attribute (AtLabel, AtRho), Binding (BiMeta, BiTau, BiVoid), Expression (ExFormation))
+import Control.Exception (SomeException, displayException, try)
 import Control.Monad (forM_, unless)
 import Data.Aeson
 import Data.Char (isDigit)
@@ -18,7 +20,7 @@ import Files (allPathsIn)
 import GHC.Generics (Generic)
 import Parser (parseExpressionThrows)
 import System.FilePath (makeRelative)
-import Test.Hspec (Spec, anyException, describe, expectationFailure, it, runIO, shouldBe, shouldThrow)
+import Test.Hspec (Spec, anyException, describe, expectationFailure, it, runIO, shouldBe, shouldContain, shouldThrow)
 import Text.XML (Document (..), Element (..))
 import Text.XML.Cursor qualified as C
 import XMIR (defaultXmirContext, expressionToXMIR, parseXMIRThrows, printXMIR, toName, xmirToPhi)
@@ -256,3 +258,46 @@ spec = do
       xmir' <- expressionToXMIR expr defaultXmirContext
       back <- xmirToPhi xmir'
       back `shouldBe` expr
+
+    it "keeps a bare 'Q' bound to a named attribute" $ do
+      expr <- parseExpressionThrows "[[ x -> Q ]]"
+      xmir' <- expressionToXMIR expr defaultXmirContext
+      back <- xmirToPhi xmir'
+      back `shouldBe` expr
+
+  describe "XMIR exception messages" $ do
+    it "explains an unsupported top-level expression" $ do
+      expr <- parseExpressionThrows "[[ x -> $ ]]"
+      result <- try (expressionToXMIR expr defaultXmirContext) :: IO (Either SomeException Document)
+      case result of
+        Left err -> displayException err `shouldContain` "XMIR does not support such top-level expression"
+        Right _ -> expectationFailure "expected an exception"
+
+    it "explains an unsupported nested expression" $ do
+      expr <- parseExpressionThrows "[[ x -> [[ y -> T ]] ]]"
+      result <- try (expressionToXMIR expr defaultXmirContext) :: IO (Either SomeException Document)
+      case result of
+        Left err -> displayException err `shouldContain` "XMIR does not support such expression"
+        Right _ -> expectationFailure "expected an exception"
+
+    it "explains an unsupported binding" $ do
+      let expr = ExFormation [BiTau (AtLabel "x") (ExFormation [BiMeta "n", BiVoid AtRho]), BiVoid AtRho]
+      result <- try (expressionToXMIR expr defaultXmirContext) :: IO (Either SomeException Document)
+      case result of
+        Left err -> displayException err `shouldContain` "XMIR does not support such bindings"
+        Right _ -> expectationFailure "expected an exception"
+
+    it "explains a parse failure" $ do
+      result <- try (parseXMIRThrows "not-xml-at-all <<<") :: IO (Either SomeException Document)
+      case result of
+        Left err -> displayException err `shouldContain` "Couldn't parse given XMIR"
+        Right _ -> expectationFailure "expected an exception"
+
+    it "explains an invalid XMIR structure, including the offending element" $ do
+      doc <- parseXMIRThrows "<object><o name=\"app\"><o/></o></object>"
+      result <- try (xmirToPhi doc) :: IO (Either SomeException Expression)
+      case result of
+        Left err -> do
+          displayException err `shouldContain` "Couldn't traverse though given XMIR"
+          displayException err `shouldContain` "XMIR:"
+        Right _ -> expectationFailure "expected an exception"
