@@ -187,6 +187,48 @@ spec = do
     it
       "bindingsToCST on a single binding"
       (bindingsToCST [BiVoid (AtLabel "y")] `shouldBe` BI_PAIR (PA_VOID (AT_LABEL "y") ARROW EMPTY) (BDS_EMPTY (TAB 0)) (TAB 0))
+    it
+      "bindingsToCST on a meta binding collapses the whole list to BI_META"
+      (bindingsToCST [BiMeta "B"] `shouldBe` BI_META (META NO_EXCL B "") (BDS_EMPTY (TAB 0)) (TAB 0))
+    it
+      "bindingsToCST on a delta binding"
+      (bindingsToCST [BiDelta (BtOne "01")] `shouldBe` BI_PAIR (PA_DELTA (BT_ONE "01")) (BDS_EMPTY (TAB 0)) (TAB 0))
+    it
+      "bindingsToCST recurses into a meta binding that is not the head"
+      ( bindingsToCST [BiVoid (AtLabel "x"), BiMeta "B"]
+          `shouldBe` BI_PAIR
+            (PA_VOID (AT_LABEL "x") ARROW EMPTY)
+            (BDS_META EOL (TAB 0) (META NO_EXCL B "") (BDS_EMPTY (TAB 0)))
+            (TAB 0)
+      )
+
+  describe "expressionToCST on formation and dispatch edge cases" $ do
+    it
+      "a single void rho binding collapses to the same CST as an empty formation"
+      (expressionToCST (ExFormation [BiVoid AtRho]) `shouldBe` expressionToCST (ExFormation []))
+    it
+      "dispatch on Xi becomes a bare attribute"
+      (expressionToCST (ExDispatch ExXi (AtLabel "foo")) `shouldBe` EX_ATTR (AT_LABEL "foo"))
+
+  describe "expressionToCST on non-primitive applications" $ do
+    it
+      "an application with only named (tau) arguments and no primitive base"
+      ( expressionToCST
+          ( ExApplication
+              (ExApplication (ExDispatch ExRoot (AtLabel "bar")) (ArTau (AtLabel "x") ExRoot))
+              (ArTau (AtLabel "y") ExXi)
+          )
+          `shouldSatisfy` isApplicationWithTaus
+      )
+    it
+      "an application with positional (alpha) arguments and no primitive base"
+      ( expressionToCST
+          ( ExApplication
+              (ExApplication (ExDispatch ExRoot (AtLabel "bar")) (ArAlpha (Alpha 0) ExRoot))
+              (ArAlpha (Alpha 1) ExXi)
+          )
+          `shouldSatisfy` isApplicationWithExprs
+      )
 
   describe "conditionToCST on every Y.Condition constructor" $ do
     let voidYBinding :: BINDING
@@ -698,3 +740,9 @@ spec = do
     shouldShowAndEqSelf expectedName node = do
       show node `shouldContain` expectedName
       node `shouldBe` node
+    isApplicationWithTaus :: EXPRESSION -> Bool
+    isApplicationWithTaus EX_APPLICATION{argument = AA_TAUS{}} = True
+    isApplicationWithTaus _ = False
+    isApplicationWithExprs :: EXPRESSION -> Bool
+    isApplicationWithExprs EX_APPLICATION{argument = AA_EXPRS{}} = True
+    isApplicationWithExprs _ = False
