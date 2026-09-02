@@ -97,35 +97,49 @@ spec = do
       (\(desc, cond, expected) -> it desc (conditionToLatex (Just cond) `shouldBe` expected))
 
   describe "expressionToLaTeX" $ do
-    it "renders '\\phiquation*' (unnumbered) when '_nonumber' is set" $ do
-      expr <- parseExpressionThrows "[[ x -> Q.y ]]"
-      expressionToLaTeX expr defaultLatexContext{_nonumber = True}
-        `shouldBe` "\\begin{phiquation*}\n[[ |x| -> Q . |y| ]]{.}\n\\end{phiquation*}"
-
-    it "renders a '\\label{}' when '_label' is set" $ do
-      expr <- parseExpressionThrows "[[ x -> Q.y ]]"
-      expressionToLaTeX expr defaultLatexContext{_label = Just "eq:one"}
-        `shouldBe` "\\begin{phiquation}\n\\label{eq:one}\n[[ |x| -> Q . |y| ]]{.}\n\\end{phiquation}"
-
-    it "renders a '\\phiExpression{}' prefix when '_expression' is set" $ do
-      expr <- parseExpressionThrows "[[ x -> Q.y ]]"
-      expressionToLaTeX expr defaultLatexContext{_expression = Just "e"}
-        `shouldBe` "\\begin{phiquation}\n\\phiExpression{e} [[ |x| -> Q . |y| ]]{.}\n\\end{phiquation}"
+    forM_
+      [
+        ( "renders '\\phiquation*' (unnumbered) when '_nonumber' is set"
+        , \ctx -> ctx{_nonumber = True}
+        , "\\begin{phiquation*}\n[[ |x| -> Q . |y| ]]{.}\n\\end{phiquation*}"
+        )
+      ,
+        ( "renders a '\\label{}' when '_label' is set"
+        , \ctx -> ctx{_label = Just "eq:one"}
+        , "\\begin{phiquation}\n\\label{eq:one}\n[[ |x| -> Q . |y| ]]{.}\n\\end{phiquation}"
+        )
+      ,
+        ( "renders a '\\phiExpression{}' prefix when '_expression' is set"
+        , \ctx -> ctx{_expression = Just "e"}
+        , "\\begin{phiquation}\n\\phiExpression{e} [[ |x| -> Q . |y| ]]{.}\n\\end{phiquation}"
+        )
+      ]
+      ( \(desc, adjustContext, expected) -> it desc $ do
+          expr <- parseExpressionThrows "[[ x -> Q.y ]]"
+          expressionToLaTeX expr (adjustContext defaultLatexContext) `shouldBe` expected
+      )
 
     it "escapes '@' and '^' in an attribute label, same as '$' and '_'" $ do
       let weird = ExFormation [BiTau (AtLabel "a@b^c") ExRoot, BiVoid AtRho]
       expressionToLaTeX weird defaultLatexContext
         `shouldBe` "\\begin{phiquation}\n[[ |a\\char64{}b\\char94{}c| -> Q ]]{.}\n\\end{phiquation}"
 
-    it "renders a \\phinoMeet{} marker with its prefix" $ do
-      inner <- parseExpressionThrows "Q.y"
-      expressionToLaTeX (ExPhiMeet (Just "pfx") 2 inner) defaultLatexContext
-        `shouldBe` "\\begin{phiquation}\n\\phinoMeet{pfx:2}{ Q . |y| }{.}\n\\end{phiquation}"
-
-    it "renders a \\phinoAgain{} marker without a prefix" $ do
-      inner <- parseExpressionThrows "Q.y"
-      expressionToLaTeX (ExPhiAgain Nothing 3 inner) defaultLatexContext
-        `shouldBe` "\\begin{phiquation}\n\\phinoAgain{3}{.}\n\\end{phiquation}"
+    forM_
+      [
+        ( "renders a \\phinoMeet{} marker with its prefix"
+        , ExPhiMeet (Just "pfx") 2
+        , "\\begin{phiquation}\n\\phinoMeet{pfx:2}{ Q . |y| }{.}\n\\end{phiquation}"
+        )
+      ,
+        ( "renders a \\phinoAgain{} marker without a prefix"
+        , ExPhiAgain Nothing 3
+        , "\\begin{phiquation}\n\\phinoAgain{3}{.}\n\\end{phiquation}"
+        )
+      ]
+      ( \(desc, wrapInner, expected) -> it desc $ do
+          inner <- parseExpressionThrows "Q.y"
+          expressionToLaTeX (wrapInner inner) defaultLatexContext `shouldBe` expected
+      )
 
   describe "rewrittensToLatex" $ do
     it "renders the ellipsis ending when the chain exceeded its bound" $ do
@@ -213,84 +227,82 @@ spec = do
         (firstStep : _) -> T.count "ExPhiMeet" (T.pack (show firstStep)) `shouldBe` 1
         [] -> expectationFailure "meetInExpressions returned no expressions"
 
-  describe "explainRules" $ do
-    it "renders a rule's label, combined 'when'/'having' condition and 'where' extras" $ do
-      let rule =
-            Y.Rule
-              { name = "myrule"
-              , label = Just "disp"
-              , description = Nothing
-              , pattern = ExMeta "n"
-              , result = ExMeta "n"
-              , when = Just (Y.NF (ExMeta "n"))
-              , having = Just (Y.IsFormation (ExMeta "n"))
-              , where_ =
-                  Just
-                    [ Y.Extra
-                        { meta = Y.ArgAttribute AtRho
-                        , function = "foo"
-                        , args = [Y.ArgExpression (ExMeta "n"), Y.ArgBinding (BiVoid AtRho), Y.ArgBytes (BtOne "01-02")]
-                        }
-                    , Y.Extra
-                        { meta = Y.ArgAttribute AtPhi
-                        , function = "bar"
-                        , args = [Y.ArgExpression (ExMeta "n")]
-                        }
-                    ]
-              }
-      explainRules [rule]
-        `shouldBe` intercalate
-          "\n  "
+  describe "explainRules" $
+    forM_
+      [
+        ( "renders a rule's label, combined 'when'/'having' condition and 'where' extras"
+        , Y.Rule
+            { name = "myrule"
+            , label = Just "disp"
+            , description = Nothing
+            , pattern = ExMeta "n"
+            , result = ExMeta "n"
+            , when = Just (Y.NF (ExMeta "n"))
+            , having = Just (Y.IsFormation (ExMeta "n"))
+            , where_ =
+                Just
+                  [ Y.Extra
+                      { meta = Y.ArgAttribute AtRho
+                      , function = "foo"
+                      , args = [Y.ArgExpression (ExMeta "n"), Y.ArgBinding (BiVoid AtRho), Y.ArgBytes (BtOne "01-02")]
+                      }
+                  , Y.Extra
+                      { meta = Y.ArgAttribute AtPhi
+                      , function = "bar"
+                      , args = [Y.ArgExpression (ExMeta "n")]
+                      }
+                  ]
+            }
+        ,
           [ "\\phinoNormalizationRule[disp]{myrule}"
           , "{ n }"
           , "{ n }"
           , "{ \\isnormal{ n } \\;\\text{and}\\; \\phinoIsFormation{ n } }"
           , "{ \\phiTerminal{\\rho} \\coloneqq \\foo{ n, \\phiTerminal{\\rho} -> ?, 01-02- } and @ \\coloneqq \\bar{ n } }"
           ]
-
-    it "omits the label and the 'if'/'where' clauses when they are absent" $ do
-      let rule =
-            Y.Rule
-              { name = "myrule2"
-              , label = Nothing
-              , description = Nothing
-              , pattern = ExMeta "n"
-              , result = ExMeta "n"
-              , when = Nothing
-              , having = Nothing
-              , where_ = Nothing
-              }
-      explainRules [rule]
-        `shouldBe` intercalate
-          "\n  "
+        )
+      ,
+        ( "omits the label and the 'if'/'where' clauses when they are absent"
+        , Y.Rule
+            { name = "myrule2"
+            , label = Nothing
+            , description = Nothing
+            , pattern = ExMeta "n"
+            , result = ExMeta "n"
+            , when = Nothing
+            , having = Nothing
+            , where_ = Nothing
+            }
+        ,
           [ "\\phinoNormalizationRule{myrule2}"
           , "{ n }"
           , "{ n }"
           , "{ }"
           , "{ }"
           ]
-
-    it "keeps just the 'having' condition when 'when' is absent" $ do
-      let rule =
-            Y.Rule
-              { name = "myrule3"
-              , label = Nothing
-              , description = Nothing
-              , pattern = ExMeta "n"
-              , result = ExMeta "n"
-              , when = Nothing
-              , having = Just (Y.IsFormation (ExMeta "n"))
-              , where_ = Nothing
-              }
-      explainRules [rule]
-        `shouldBe` intercalate
-          "\n  "
+        )
+      ,
+        ( "keeps just the 'having' condition when 'when' is absent"
+        , Y.Rule
+            { name = "myrule3"
+            , label = Nothing
+            , description = Nothing
+            , pattern = ExMeta "n"
+            , result = ExMeta "n"
+            , when = Nothing
+            , having = Just (Y.IsFormation (ExMeta "n"))
+            , where_ = Nothing
+            }
+        ,
           [ "\\phinoNormalizationRule{myrule3}"
           , "{ n }"
           , "{ n }"
           , "{ \\phinoIsFormation{ n } }"
           , "{ }"
           ]
+        )
+      ]
+      (\(desc, rule, expectedLines) -> it desc (explainRules [rule] `shouldBe` intercalate "\n  " expectedLines))
 
   describe "explainMorphRules" $
     it "threads the state through every premise operation (morph, normalize, evaluate, contextualize, dataize)" $ do

@@ -82,32 +82,33 @@ spec = do
     it "recurses into the pair" $
       toASCII (APP_BINDING (PA_TAU (AT_PHI PHI) ARROW leafExpr)) `shouldBe` APP_BINDING (PA_TAU (AT_PHI AT) ARROW' leafExprASCII)
 
-  describe "toASCII on BINDING" $ do
-    it "recurses through BI_PAIR" $ toASCII biPair `shouldBe` biPairASCII
+  describe "toASCII on BINDING" $
+    forM_
+      [ ("recurses through BI_PAIR", toASCII biPair, biPairASCII)
+      ,
+        ( "recurses through BI_META, forcing the meta head to B'"
+        , toASCII (BI_META (META NO_EXCL B "X") (BDS_EMPTY (TAB 1)) (TAB 1))
+        , BI_META (META EXCL B' "X") (BDS_EMPTY (TAB 1)) (TAB 1)
+        )
+      , ("leaves BI_EMPTY untouched", toASCII (BI_EMPTY (TAB 1)), BI_EMPTY (TAB 1))
+      ]
+      (\(desc, actual, expected) -> it desc (actual `shouldBe` expected))
 
-    it "recurses through BI_META, forcing the meta head to B'" $ do
-      let biMeta = BI_META (META NO_EXCL B "X") (BDS_EMPTY (TAB 1)) (TAB 1)
-          expected = BI_META (META EXCL B' "X") (BDS_EMPTY (TAB 1)) (TAB 1)
-      toASCII biMeta `shouldBe` expected
-
-    it "leaves BI_EMPTY untouched" $ do
-      let biEmpty = BI_EMPTY (TAB 1)
-      toASCII biEmpty `shouldBe` biEmpty
-
-  describe "toASCII on BINDINGS" $ do
-    it "recurses through BDS_PAIR" $ do
-      let bdsPair = BDS_PAIR EOL (TAB 1) (PA_TAU (AT_PHI PHI) ARROW leafExpr) (BDS_EMPTY (TAB 1))
-          expected = BDS_PAIR EOL (TAB 1) (PA_TAU (AT_PHI AT) ARROW' leafExprASCII) (BDS_EMPTY (TAB 1))
-      toASCII bdsPair `shouldBe` expected
-
-    it "recurses through BDS_META, forcing the meta head to B'" $ do
-      let bdsMeta = BDS_META EOL (TAB 1) (META NO_EXCL B "X") (BDS_EMPTY (TAB 1))
-          expected = BDS_META EOL (TAB 1) (META EXCL B' "X") (BDS_EMPTY (TAB 1))
-      toASCII bdsMeta `shouldBe` expected
-
-    it "leaves BDS_EMPTY untouched" $ do
-      let bdsEmpty = BDS_EMPTY (TAB 1)
-      toASCII bdsEmpty `shouldBe` bdsEmpty
+  describe "toASCII on BINDINGS" $
+    forM_
+      [
+        ( "recurses through BDS_PAIR"
+        , toASCII (BDS_PAIR EOL (TAB 1) (PA_TAU (AT_PHI PHI) ARROW leafExpr) (BDS_EMPTY (TAB 1)))
+        , BDS_PAIR EOL (TAB 1) (PA_TAU (AT_PHI AT) ARROW' leafExprASCII) (BDS_EMPTY (TAB 1))
+        )
+      ,
+        ( "recurses through BDS_META, forcing the meta head to B'"
+        , toASCII (BDS_META EOL (TAB 1) (META NO_EXCL B "X") (BDS_EMPTY (TAB 1)))
+        , BDS_META EOL (TAB 1) (META EXCL B' "X") (BDS_EMPTY (TAB 1))
+        )
+      , ("leaves BDS_EMPTY untouched", toASCII (BDS_EMPTY (TAB 1)), BDS_EMPTY (TAB 1))
+      ]
+      (\(desc, actual, expected) -> it desc (actual `shouldBe` expected))
 
   describe "toASCII on APP_ARGUMENT" $
     forM_
@@ -130,13 +131,18 @@ spec = do
       toASCII (APP_ARG leafExpr (AAS_EXPR EOL (TAB 1) leafExpr AAS_EMPTY))
         `shouldBe` APP_ARG leafExprASCII (AAS_EXPR EOL (TAB 1) leafExprASCII AAS_EMPTY)
 
-  describe "toASCII on APP_ARGS" $ do
-    it "recurses through AAS_EXPR" $
-      toASCII (AAS_EXPR EOL (TAB 1) leafExpr AAS_EMPTY) `shouldBe` AAS_EXPR EOL (TAB 1) leafExprASCII AAS_EMPTY
-    it "leaves AAS_EMPTY untouched" $
-      toASCII AAS_EMPTY `shouldBe` AAS_EMPTY
+  describe "toASCII on APP_ARGS" $
+    forM_
+      [
+        ( "recurses through AAS_EXPR"
+        , toASCII (AAS_EXPR EOL (TAB 1) leafExpr AAS_EMPTY)
+        , AAS_EXPR EOL (TAB 1) leafExprASCII AAS_EMPTY
+        )
+      , ("leaves AAS_EMPTY untouched", toASCII AAS_EMPTY, AAS_EMPTY)
+      ]
+      (\(desc, actual, expected) -> it desc (actual `shouldBe` expected))
 
-  describe "toASCII on PAIR" $ do
+  describe "toASCII on PAIR" $
     forM_
       [
         ( "recurses through PA_TAU, forcing the arrow to ARROW'"
@@ -170,34 +176,43 @@ spec = do
         , toASCII (PA_META_DELTA (META NO_EXCL D "dl"))
         , PA_META_DELTA' (META EXCL D' "dl")
         )
+      , ("leaves an already-ASCII PA_LAMBDA' untouched", toASCII (PA_LAMBDA' "Func"), PA_LAMBDA' "Func")
+      , ("leaves an already-ASCII PA_DELTA' untouched", toASCII (PA_DELTA' BT_EMPTY), PA_DELTA' BT_EMPTY)
       ]
       (\(desc, actual, expected) -> it desc (actual `shouldBe` expected))
 
-    it "leaves already-ASCII pairs untouched" $ do
-      toASCII (PA_LAMBDA' "Func") `shouldBe` PA_LAMBDA' "Func"
-      toASCII (PA_DELTA' BT_EMPTY) `shouldBe` PA_DELTA' BT_EMPTY
+  describe "toASCII on ALPHA" $
+    forM_
+      [ ("recurses through AL_IDX", toASCII (AL_IDX ALPHA 7), AL_IDX ALPHA' 7)
+      ,
+        ( "recurses through AL_META"
+        , toASCII (AL_META ALPHA (META NO_EXCL I "abc"))
+        , AL_META ALPHA' (META EXCL I' "abc")
+        )
+      ]
+      (\(desc, actual, expected) -> it desc (actual `shouldBe` expected))
 
-  describe "toASCII on ALPHA" $ do
-    it "recurses through AL_IDX" $ toASCII (AL_IDX ALPHA 7) `shouldBe` AL_IDX ALPHA' 7
-    it "recurses through AL_META" $ toASCII (AL_META ALPHA (META NO_EXCL I "abc")) `shouldBe` AL_META ALPHA' (META EXCL I' "abc")
-
-  describe "toASCII on ATTRIBUTE" $ do
+  describe "toASCII on ATTRIBUTE" $
     forM_
       [ ("AT_PHI becomes AT", toASCII (AT_PHI PHI), AT_PHI AT)
       , ("AT_RHO becomes CARET", toASCII (AT_RHO RHO), AT_RHO CARET)
       , ("AT_META forces the head to A", toASCII (AT_META (META NO_EXCL TAU "abc")), AT_META (META EXCL A "abc"))
+      , ("leaves AT_LABEL untouched", toASCII (AT_LABEL "x"), AT_LABEL "x")
+      , ("leaves AT_LAMBDA untouched", toASCII (AT_LAMBDA LAMBDA), AT_LAMBDA LAMBDA)
+      , ("leaves AT_DELTA untouched", toASCII (AT_DELTA DELTA), AT_DELTA DELTA)
       ]
       (\(desc, actual, expected) -> it desc (actual `shouldBe` expected))
 
-    it "leaves every other attribute untouched" $ do
-      toASCII (AT_LABEL "x") `shouldBe` AT_LABEL "x"
-      toASCII (AT_LAMBDA LAMBDA) `shouldBe` AT_LAMBDA LAMBDA
-      toASCII (AT_DELTA DELTA) `shouldBe` AT_DELTA DELTA
-
-  describe "toASCII on SET" $ do
-    it "recurses through ST_BINDING" $ toASCII (ST_BINDING biPair) `shouldBe` ST_BINDING biPairASCII
-    it "maps toASCII over ST_ATTRIBUTES" $
-      toASCII (ST_ATTRIBUTES [AT_PHI PHI, AT_RHO RHO]) `shouldBe` ST_ATTRIBUTES [AT_PHI AT, AT_RHO CARET]
+  describe "toASCII on SET" $
+    forM_
+      [ ("recurses through ST_BINDING", toASCII (ST_BINDING biPair), ST_BINDING biPairASCII)
+      ,
+        ( "maps toASCII over ST_ATTRIBUTES"
+        , toASCII (ST_ATTRIBUTES [AT_PHI PHI, AT_RHO RHO])
+        , ST_ATTRIBUTES [AT_PHI AT, AT_RHO CARET]
+        )
+      ]
+      (\(desc, actual, expected) -> it desc (actual `shouldBe` expected))
 
   describe "toASCII on NUMBER" $
     forM_

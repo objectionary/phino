@@ -195,9 +195,12 @@ spec = do
           it desc (printAttribute attr `shouldBe` expected)
       )
 
-  describe "printAlpha with default encoding" $ do
-    it "α42" (printAlpha (Alpha 42) `shouldBe` "α42")
-    it "meta alpha" (printAlpha (AlMeta "i") `shouldBe` "α𝑖")
+  describe "printAlpha with default encoding" $
+    forM_
+      [ ("α42", Alpha 42, "α42")
+      , ("meta alpha", AlMeta "i", "α𝑖")
+      ]
+      (\(desc, alpha, expected) -> it desc (printAlpha alpha `shouldBe` expected))
 
   describe "printBinding renders as formation" $
     forM_
@@ -233,34 +236,37 @@ spec = do
           it desc (printExtraArg arg `shouldContain` expected)
       )
 
-  describe "printSubsts renders every MetaValue constructor" $
+  describe "printSubsts and printSubsts' render substitutions" $
     forM_
-      [ ("MvAttribute", Subst (Map.singleton "t" (MvAttribute (AtLabel "x"))), "t >> x")
-      , ("MvIndex", Subst (Map.singleton "i" (MvIndex 3)), "i >> 3")
-      , ("MvExpression", Subst (Map.singleton "e" (MvExpression ExRoot)), "e >> Φ")
-      , ("MvBytes", Subst (Map.singleton "b" (MvBytes (BtOne "1F"))), "b >> 1F-")
-      , ("MvBindings", Subst (Map.singleton "bnd" (MvBindings [BiVoid (AtLabel "y")])), "bnd >> ⟦ y ↦ ∅ ⟧")
-      , ("MvFunction", Subst (Map.singleton "f" (MvFunction "func")), "f >> func")
+      [ ("MvAttribute", [Subst (Map.singleton "t" (MvAttribute (AtLabel "x")))], (SWEET, UNICODE, MULTILINE, defaultMargin), "t >> x")
+      , ("MvIndex", [Subst (Map.singleton "i" (MvIndex 3))], (SWEET, UNICODE, MULTILINE, defaultMargin), "i >> 3")
+      , ("MvExpression", [Subst (Map.singleton "e" (MvExpression ExRoot))], (SWEET, UNICODE, MULTILINE, defaultMargin), "e >> Φ")
+      , ("MvBytes", [Subst (Map.singleton "b" (MvBytes (BtOne "1F")))], (SWEET, UNICODE, MULTILINE, defaultMargin), "b >> 1F-")
+      , ("MvBindings", [Subst (Map.singleton "bnd" (MvBindings [BiVoid (AtLabel "y")]))], (SWEET, UNICODE, MULTILINE, defaultMargin), "bnd >> ⟦ y ↦ ∅ ⟧")
+      , ("MvFunction", [Subst (Map.singleton "f" (MvFunction "func"))], (SWEET, UNICODE, MULTILINE, defaultMargin), "f >> func")
+      ,
+        ( "keys of a multi-entry substitution are sorted and each is on its own line"
+        , [Subst (Map.fromList [("a", MvIndex 1), ("b", MvIndex 2)])]
+        , (SWEET, UNICODE, MULTILINE, defaultMargin)
+        , "a >> 1\nb >> 2"
+        )
+      ,
+        ( "multiple substitutions are separated with a dashed line"
+        , [Subst (Map.singleton "a" (MvIndex 1)), Subst (Map.singleton "b" (MvIndex 2))]
+        , (SWEET, UNICODE, MULTILINE, defaultMargin)
+        , "a >> 1\n------\nb >> 2"
+        )
+      , ("an empty substitution list renders the dashed placeholder", [], (SWEET, UNICODE, SINGLELINE, defaultMargin), "------")
+      ,
+        ( "picks the encoding from its PrintConfig for an attribute meta value (ASCII rho)"
+        , [Subst (Map.singleton "t" (MvAttribute AtRho))]
+        , (SWEET, ASCII, SINGLELINE, defaultMargin)
+        , "t >> ^"
+        )
       ]
-      ( \(desc, subst, expected) ->
-          it desc (printSubsts [subst] `shouldBe` expected)
+      ( \(desc, substs, config, expected) ->
+          it desc (printSubsts' substs config `shouldBe` expected)
       )
-
-  describe "printSubsts renders every key of a multi-entry substitution" $
-    it
-      "keys are sorted and each is on its own line"
-      (printSubsts [Subst (Map.fromList [("a", MvIndex 1), ("b", MvIndex 2)])] `shouldBe` "a >> 1\nb >> 2")
-
-  describe "printSubsts separates multiple substitutions with a dashed line" $
-    it
-      "two substitutions"
-      (printSubsts [Subst (Map.singleton "a" (MvIndex 1)), Subst (Map.singleton "b" (MvIndex 2))] `shouldBe` "a >> 1\n------\nb >> 2")
-
-  describe "printSubsts' on an empty substitution list" $
-    it "renders the dashed placeholder" (printSubsts' [] (SWEET, UNICODE, SINGLELINE, defaultMargin) `shouldBe` "------")
-
-  describe "printSubsts' picks the encoding from its PrintConfig for an attribute meta value" $
-    it "ASCII rho" (printSubsts' [Subst (Map.singleton "t" (MvAttribute AtRho))] (SWEET, ASCII, SINGLELINE, defaultMargin) `shouldBe` "t >> ^")
 
   describe "printExpressionHidingRho strips rho at every nesting depth" $
     it "three nested formations, each with its own rho" $ do

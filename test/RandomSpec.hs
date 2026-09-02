@@ -32,26 +32,14 @@ spec = do
       result <- timeout 1000000 (randomString "repeated")
       result `shouldBe` Just "repeated"
 
-  describe "randomString with %d pattern" $
-    it "generates numeric digits" $ do
-      result <- randomString "%d"
-      result `shouldSatisfy` all isDigit
-
-  describe "randomString with %d pattern length" $
-    it "generates a fixed 4-digit number" $ do
-      result <- randomString "%d"
-      let len = length result
-      len `shouldBe` 4
-
-  describe "randomString with %x pattern" $
-    it "generates hex digits" $ do
-      result <- randomString "%x"
-      result `shouldSatisfy` all isHexDigit
-
-  describe "randomString with %x pattern length" $
-    it "generates exactly 8 hex chars" $ do
-      result <- randomString "%x"
-      length result `shouldBe` 8
+  describe "randomString with %d/%x patterns" $
+    forM_
+      [ ("generates numeric digits", "%d", all isDigit)
+      , ("generates a fixed 4-digit number", "%d", \result -> length result == 4)
+      , ("generates hex digits", "%x", all isHexDigit)
+      , ("generates exactly 8 hex chars", "%x", \result -> length result == 8)
+      ]
+      (\(desc, pattern, predicate) -> it desc (randomString pattern >>= (`shouldSatisfy` predicate)))
 
   describe "randomString passes through a pattern with no recognized specials" $
     forM_
@@ -60,20 +48,13 @@ spec = do
       ]
       (\(desc, literal) -> it desc $ randomString literal >>= (`shouldBe` literal))
 
-  describe "randomString with prefix and %d" $
-    it "combines prefix with digits" $ do
-      result <- randomString "id_%d"
-      result `shouldSatisfy` (\s -> take 3 s == "id_")
-
-  describe "randomString with suffix and %d" $
-    it "combines digits with suffix" $ do
-      result <- randomString "%d_end"
-      result `shouldSatisfy` (\s -> drop (length s - 4) s == "_end")
-
-  describe "randomString with prefix and %x" $
-    it "combines prefix with hex" $ do
-      result <- randomString "hex_%x"
-      result `shouldSatisfy` (\s -> take 4 s == "hex_" && length s == 12)
+  describe "randomString with a prefix or suffix around %d/%x" $
+    forM_
+      [ ("combines prefix with digits", "id_%d", \s -> take 3 s == "id_")
+      , ("combines digits with suffix", "%d_end", \s -> drop (length s - 4) s == "_end")
+      , ("combines prefix with hex", "hex_%x", \s -> take 4 s == "hex_" && length s == 12)
+      ]
+      (\(desc, pattern, predicate) -> it desc (randomString pattern >>= (`shouldSatisfy` predicate)))
 
   describe "randomString with suffix and %x" $
     it "combines hex with suffix" $ do

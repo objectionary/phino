@@ -16,10 +16,17 @@ import Test.Hspec (Spec, anyException, describe, it, shouldBe, shouldReturn, sho
 spec :: Spec
 spec = do
   describe "compile" $ do
-    it "compiles a valid pattern" $ do
-      _ <- R.compile (B.pack "foo")
-      matched <- R.match (B.pack "foo") (B.pack "foobar")
-      matched `shouldBe` True
+    forM_
+      [ ("compiles a valid pattern", "foo", "foobar")
+      , ("compiles pattern with groups", "(a)(b)(c)", "abc")
+      , ("compiles pattern with unicode", "кирилиця", "текст кирилиця тут")
+      , ("compiles empty pattern", "", "anything")
+      ]
+      ( \(desc, pattern, input) -> it desc $ do
+          _ <- R.compile (B.pack pattern)
+          matched <- R.match (B.pack pattern) (B.pack input)
+          matched `shouldBe` True
+      )
 
     it "throws on invalid pattern" $
       R.compile (B.pack "[invalid") `shouldThrow` anyException
@@ -29,21 +36,6 @@ spec = do
       case result of
         Left exc -> displayException exc `shouldSatisfy` isInfixOf "Regex compilation failed:"
         Right () -> fail "expected R.compile to fail"
-
-    it "compiles pattern with groups" $ do
-      _ <- R.compile (B.pack "(a)(b)(c)")
-      matched <- R.match (B.pack "(a)(b)(c)") (B.pack "abc")
-      matched `shouldBe` True
-
-    it "compiles pattern with unicode" $ do
-      _ <- R.compile (B.pack "кирилиця")
-      matched <- R.match (B.pack "кирилиця") (B.pack "текст кирилиця тут")
-      matched `shouldBe` True
-
-    it "compiles empty pattern" $ do
-      _ <- R.compile B.empty
-      matched <- R.match B.empty (B.pack "anything")
-      matched `shouldBe` True
 
   describe "match" $
     forM_
@@ -64,36 +56,20 @@ spec = do
       ]
       (\(desc, pattern, input, expected) -> it desc $ R.match (B.pack pattern) (B.pack input) `shouldReturn` expected)
 
-  describe "extractGroups" $ do
-    it "extracts groups from pattern with capturing groups" $ do
-      regex <- R.compile (B.pack "(\\w+)@(\\w+)")
-      groups <- R.extractGroups regex (B.pack "user@domain")
-      groups `shouldBe` [B.pack "user@domain", B.pack "user", B.pack "domain"]
-
-    it "returns empty list when no match" $ do
-      regex <- R.compile (B.pack "(foo)")
-      groups <- R.extractGroups regex (B.pack "bar")
-      groups `shouldBe` []
-
-    it "extracts nested groups" $ do
-      regex <- R.compile (B.pack "((a)(b))")
-      groups <- R.extractGroups regex (B.pack "ab")
-      groups `shouldBe` [B.pack "ab", B.pack "ab", B.pack "a", B.pack "b"]
-
-    it "handles optional group that did not match" $ do
-      regex <- R.compile (B.pack "(a)(b)?")
-      groups <- R.extractGroups regex (B.pack "a")
-      groups `shouldBe` [B.pack "a", B.pack "a", B.empty]
-
-    it "extracts multiple groups" $ do
-      regex <- R.compile (B.pack "(x)(y)(z)")
-      groups <- R.extractGroups regex (B.pack "prefix xyz suffix")
-      groups `shouldBe` [B.pack "xyz", B.pack "x", B.pack "y", B.pack "z"]
-
-    it "handles pattern without groups" $ do
-      regex <- R.compile (B.pack "test")
-      groups <- R.extractGroups regex (B.pack "this is a test")
-      groups `shouldBe` [B.pack "test"]
+  describe "extractGroups" $
+    forM_
+      [ ("extracts groups from pattern with capturing groups", "(\\w+)@(\\w+)", "user@domain", ["user@domain", "user", "domain"])
+      , ("returns empty list when no match", "(foo)", "bar", [])
+      , ("extracts nested groups", "((a)(b))", "ab", ["ab", "ab", "a", "b"])
+      , ("handles optional group that did not match", "(a)(b)?", "a", ["a", "a", ""])
+      , ("extracts multiple groups", "(x)(y)(z)", "prefix xyz suffix", ["xyz", "x", "y", "z"])
+      , ("handles pattern without groups", "test", "this is a test", ["test"])
+      ]
+      ( \(desc, pattern, input, expected) -> it desc $ do
+          regex <- R.compile (B.pack pattern)
+          groups <- R.extractGroups regex (B.pack input)
+          groups `shouldBe` map B.pack expected
+      )
 
   describe "substituteGroups" $
     forM_
@@ -114,109 +90,47 @@ spec = do
           it desc $ R.substituteGroups (B.pack template) (map B.pack groups) `shouldBe` B.pack expected
       )
 
-  describe "replaceFirst" $ do
-    it "replaces first occurrence" $ do
-      regex <- R.compile (B.pack "cat")
-      result <- R.replaceFirst regex (B.pack "dog") (B.pack "cat and cat")
-      result `shouldBe` B.pack "dog and cat"
+  describe "replaceFirst" $
+    forM_
+      [ ("replaces first occurrence", "cat", "dog", "cat and cat", "dog and cat")
+      , ("returns input when no match", "xyz", "abc", "hello world", "hello world")
+      , ("replaces with empty string", "remove", "", "please remove this", "please  this")
+      , ("replaces at start of string", "^start", "begin", "start here", "begin here")
+      , ("replaces at end of string", "end$", "finish", "the end", "the finish")
+      ,
+        ( "uses captured groups in replacement"
+        , "(\\w+)@(\\w+)"
+        , "[$1 AT $2]"
+        , "email: test@example here"
+        , "email: [test AT example] here"
+        )
+      , ("handles unicode pattern and replacement", "古い", "新しい", "これは古いです", "これは新しいです")
+      , ("handles empty input", "x", "y", "", "")
+      , ("replaces entire string when pattern matches all", "^.*$", "replaced", "original", "replaced")
+      ]
+      ( \(desc, pattern, replacement, input, expected) -> it desc $ do
+          regex <- R.compile (B.pack pattern)
+          result <- R.replaceFirst regex (B.pack replacement) (B.pack input)
+          result `shouldBe` B.pack expected
+      )
 
-    it "returns input when no match" $ do
-      regex <- R.compile (B.pack "xyz")
-      result <- R.replaceFirst regex (B.pack "abc") (B.pack "hello world")
-      result `shouldBe` B.pack "hello world"
-
-    it "replaces with empty string" $ do
-      regex <- R.compile (B.pack "remove")
-      result <- R.replaceFirst regex B.empty (B.pack "please remove this")
-      result `shouldBe` B.pack "please  this"
-
-    it "replaces at start of string" $ do
-      regex <- R.compile (B.pack "^start")
-      result <- R.replaceFirst regex (B.pack "begin") (B.pack "start here")
-      result `shouldBe` B.pack "begin here"
-
-    it "replaces at end of string" $ do
-      regex <- R.compile (B.pack "end$")
-      result <- R.replaceFirst regex (B.pack "finish") (B.pack "the end")
-      result `shouldBe` B.pack "the finish"
-
-    it "uses captured groups in replacement" $ do
-      regex <- R.compile (B.pack "(\\w+)@(\\w+)")
-      result <- R.replaceFirst regex (B.pack "[$1 AT $2]") (B.pack "email: test@example here")
-      result `shouldBe` B.pack "email: [test AT example] here"
-
-    it "handles unicode pattern and replacement" $ do
-      regex <- R.compile (B.pack "古い")
-      result <- R.replaceFirst regex (B.pack "新しい") (B.pack "これは古いです")
-      result `shouldBe` B.pack "これは新しいです"
-
-    it "handles empty input" $ do
-      regex <- R.compile (B.pack "x")
-      result <- R.replaceFirst regex (B.pack "y") B.empty
-      result `shouldBe` B.empty
-
-    it "replaces entire string when pattern matches all" $ do
-      regex <- R.compile (B.pack "^.*$")
-      result <- R.replaceFirst regex (B.pack "replaced") (B.pack "original")
-      result `shouldBe` B.pack "replaced"
-
-  describe "replaceAll" $ do
-    it "replaces all occurrences" $ do
-      regex <- R.compile (B.pack "a")
-      result <- R.replaceAll regex (B.pack "X") (B.pack "banana")
-      result `shouldBe` B.pack "bXnXnX"
-
-    it "returns input when no match" $ do
-      regex <- R.compile (B.pack "xyz")
-      result <- R.replaceAll regex (B.pack "abc") (B.pack "hello world")
-      result `shouldBe` B.pack "hello world"
-
-    it "replaces consecutive matches" $ do
-      regex <- R.compile (B.pack "o")
-      result <- R.replaceAll regex (B.pack "0") (B.pack "oooo")
-      result `shouldBe` B.pack "0000"
-
-    it "replaces with captured groups" $ do
-      regex <- R.compile (B.pack "(\\d+)")
-      result <- R.replaceAll regex (B.pack "[$1]") (B.pack "a1b2c3")
-      result `shouldBe` B.pack "a[1]b[2]c[3]"
-
-    it "handles empty replacement" $ do
-      regex <- R.compile (B.pack "x")
-      result <- R.replaceAll regex B.empty (B.pack "axbxcx")
-      result `shouldBe` B.pack "abc"
-
-    it "handles empty input" $ do
-      regex <- R.compile (B.pack "x")
-      result <- R.replaceAll regex (B.pack "y") B.empty
-      result `shouldBe` B.empty
-
-    it "handles unicode input and pattern" $ do
-      regex <- R.compile (B.pack "кіт")
-      result <- R.replaceAll regex (B.pack "пес") (B.pack "кіт і кіт")
-      result `shouldBe` B.pack "пес і пес"
-
-    it "replaces overlapping potential matches correctly" $ do
-      regex <- R.compile (B.pack "aa")
-      result <- R.replaceAll regex (B.pack "X") (B.pack "aaaa")
-      result `shouldBe` B.pack "XX"
-
-    it "handles single character replacement" $ do
-      regex <- R.compile (B.pack ".")
-      result <- R.replaceAll regex (B.pack "*") (B.pack "abc")
-      result `shouldBe` B.pack "***"
-
-    it "handles word boundary" $ do
-      regex <- R.compile (B.pack "\\bword\\b")
-      result <- R.replaceAll regex (B.pack "WORD") (B.pack "word in a word")
-      result `shouldBe` B.pack "WORD in a WORD"
-
-    it "terminates on an empty-match pattern (anchored ^)" $ do
-      regex <- R.compile (B.pack "^")
-      result <- R.replaceAll regex (B.pack "X") (B.pack "hello")
-      result `shouldBe` B.pack "XhXeXlXlXoX"
-
-    it "terminates on an empty regex pattern" $ do
-      regex <- R.compile B.empty
-      result <- R.replaceAll regex (B.pack "X") (B.pack "hello")
-      result `shouldBe` B.pack "XhXeXlXlXoX"
+  describe "replaceAll" $
+    forM_
+      [ ("replaces all occurrences", "a", "X", "banana", "bXnXnX")
+      , ("returns input when no match", "xyz", "abc", "hello world", "hello world")
+      , ("replaces consecutive matches", "o", "0", "oooo", "0000")
+      , ("replaces with captured groups", "(\\d+)", "[$1]", "a1b2c3", "a[1]b[2]c[3]")
+      , ("handles empty replacement", "x", "", "axbxcx", "abc")
+      , ("handles empty input", "x", "y", "", "")
+      , ("handles unicode input and pattern", "кіт", "пес", "кіт і кіт", "пес і пес")
+      , ("replaces overlapping potential matches correctly", "aa", "X", "aaaa", "XX")
+      , ("handles single character replacement", ".", "*", "abc", "***")
+      , ("handles word boundary", "\\bword\\b", "WORD", "word in a word", "WORD in a WORD")
+      , ("terminates on an empty-match pattern (anchored ^)", "^", "X", "hello", "XhXeXlXlXoX")
+      , ("terminates on an empty regex pattern", "", "X", "hello", "XhXeXlXlXoX")
+      ]
+      ( \(desc, pattern, replacement, input, expected) -> it desc $ do
+          regex <- R.compile (B.pack pattern)
+          result <- R.replaceAll regex (B.pack replacement) (B.pack input)
+          result `shouldBe` B.pack expected
+      )

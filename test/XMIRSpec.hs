@@ -10,7 +10,7 @@ module XMIRSpec where
 
 import AST (Attribute (AtLabel, AtRho), Binding (BiMeta, BiTau, BiVoid), Expression (ExFormation))
 import Control.Exception (SomeException, displayException, try)
-import Control.Monad (forM_, unless)
+import Control.Monad (forM_, unless, void)
 import Data.Aeson
 import Data.Char (isDigit)
 import Data.List (intercalate)
@@ -245,67 +245,61 @@ spec = do
               (expectationFailure ("Failed xpaths:\n - " ++ intercalate "\n - " failed ++ "\nXMIR is:\n" ++ printXMIR xmir'))
       )
 
-  describe "XMIR round-trip" $ do
-    it "keeps λ function name and bound ρ" $ do
-      expr <- parseExpressionThrows "[[ k -> [[ x -> ?, L> Lorg_eolang_number_plus, ^ -> [[ y -> ? ]] ]] ]]"
-      xmir' <- expressionToXMIR expr defaultXmirContext
-      back <- xmirToPhi xmir'
-      back `shouldBe` expr
+  describe "XMIR round-trip" $
+    forM_
+      [ ("keeps λ function name and bound ρ", "[[ k -> [[ x -> ?, L> Lorg_eolang_number_plus, ^ -> [[ y -> ? ]] ]] ]]")
+      , ("keeps Δ data bound to a named attribute", "[[ k -> [[ a -> [[ D> 01-02 ]], ^ -> [[ D> 03-04 ]] ]] ]]")
+      , ("keeps Δ data in a dispatched formation", "[[ k -> [[ D> 01-02 ]].plus ]]")
+      , ("keeps a bare 'Q' bound to a named attribute", "[[ x -> Q ]]")
+      ]
+      ( \(desc, source) -> it desc $ do
+          expr <- parseExpressionThrows source
+          xmir' <- expressionToXMIR expr defaultXmirContext
+          back <- xmirToPhi xmir'
+          back `shouldBe` expr
+      )
 
-    it "keeps Δ data bound to a named attribute" $ do
-      expr <- parseExpressionThrows "[[ k -> [[ a -> [[ D> 01-02 ]], ^ -> [[ D> 03-04 ]] ]] ]]"
-      xmir' <- expressionToXMIR expr defaultXmirContext
-      back <- xmirToPhi xmir'
-      back `shouldBe` expr
-
-    it "keeps Δ data in a dispatched formation" $ do
-      expr <- parseExpressionThrows "[[ k -> [[ D> 01-02 ]].plus ]]"
-      xmir' <- expressionToXMIR expr defaultXmirContext
-      back <- xmirToPhi xmir'
-      back `shouldBe` expr
-
-    it "keeps a bare 'Q' bound to a named attribute" $ do
-      expr <- parseExpressionThrows "[[ x -> Q ]]"
-      xmir' <- expressionToXMIR expr defaultXmirContext
-      back <- xmirToPhi xmir'
-      back `shouldBe` expr
-
-  describe "XMIR exception messages" $ do
-    it "explains an unsupported top-level expression" $ do
-      expr <- parseExpressionThrows "[[ x -> $ ]]"
-      result <- try (expressionToXMIR expr defaultXmirContext) :: IO (Either SomeException Document)
-      case result of
-        Left err -> displayException err `shouldContain` "XMIR does not support such top-level expression"
-        Right _ -> expectationFailure "expected an exception"
-
-    it "explains an unsupported nested expression" $ do
-      expr <- parseExpressionThrows "[[ x -> [[ y -> T ]] ]]"
-      result <- try (expressionToXMIR expr defaultXmirContext) :: IO (Either SomeException Document)
-      case result of
-        Left err -> displayException err `shouldContain` "XMIR does not support such expression"
-        Right _ -> expectationFailure "expected an exception"
-
-    it "explains an unsupported binding" $ do
-      let expr = ExFormation [BiTau (AtLabel "x") (ExFormation [BiMeta "n", BiVoid AtRho]), BiVoid AtRho]
-      result <- try (expressionToXMIR expr defaultXmirContext) :: IO (Either SomeException Document)
-      case result of
-        Left err -> displayException err `shouldContain` "XMIR does not support such bindings"
-        Right _ -> expectationFailure "expected an exception"
-
-    it "explains a parse failure" $ do
-      result <- try (parseXMIRThrows "not-xml-at-all <<<") :: IO (Either SomeException Document)
-      case result of
-        Left err -> displayException err `shouldContain` "Couldn't parse given XMIR"
-        Right _ -> expectationFailure "expected an exception"
-
-    it "explains an invalid XMIR structure, including the offending element" $ do
-      doc <- parseXMIRThrows "<object><o name=\"app\"><o/></o></object>"
-      result <- try (xmirToPhi doc) :: IO (Either SomeException Expression)
-      case result of
-        Left err -> do
-          displayException err `shouldContain` "Couldn't traverse though given XMIR"
-          displayException err `shouldContain` "XMIR:"
-        Right _ -> expectationFailure "expected an exception"
+  describe "XMIR exception messages" $
+    forM_
+      [
+        ( "explains an unsupported top-level expression"
+        , do
+            expr <- parseExpressionThrows "[[ x -> $ ]]"
+            try (void (expressionToXMIR expr defaultXmirContext)) :: IO (Either SomeException ())
+        , ["XMIR does not support such top-level expression"]
+        )
+      ,
+        ( "explains an unsupported nested expression"
+        , do
+            expr <- parseExpressionThrows "[[ x -> [[ y -> T ]] ]]"
+            try (void (expressionToXMIR expr defaultXmirContext)) :: IO (Either SomeException ())
+        , ["XMIR does not support such expression"]
+        )
+      ,
+        ( "explains an unsupported binding"
+        , try (void (expressionToXMIR (ExFormation [BiTau (AtLabel "x") (ExFormation [BiMeta "n", BiVoid AtRho]), BiVoid AtRho]) defaultXmirContext)) ::
+            IO (Either SomeException ())
+        , ["XMIR does not support such bindings"]
+        )
+      ,
+        ( "explains a parse failure"
+        , try (void (parseXMIRThrows "not-xml-at-all <<<")) :: IO (Either SomeException ())
+        , ["Couldn't parse given XMIR"]
+        )
+      ,
+        ( "explains an invalid XMIR structure, including the offending element"
+        , do
+            doc <- parseXMIRThrows "<object><o name=\"app\"><o/></o></object>"
+            try (void (xmirToPhi doc)) :: IO (Either SomeException ())
+        , ["Couldn't traverse though given XMIR", "XMIR:"]
+        )
+      ]
+      ( \(desc, action, messages) -> it desc $ do
+          result <- action
+          case result of
+            Left err -> mapM_ (displayException err `shouldContain`) messages
+            Right () -> expectationFailure "expected an exception"
+      )
 
   describe "escapeXML" $
     it "escapes an apostrophe alongside the other reserved characters" $
