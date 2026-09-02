@@ -202,8 +202,8 @@ optTarget = optional (strOption (long "target" <> short 't' <> metavar "FILE" <>
 optStepsDir :: Parser (Maybe FilePath)
 optStepsDir = optional (strOption (long "steps-dir" <> metavar "FILE" <> help "Directory to save intermediate steps during rewriting/dataizing"))
 
-optParkStuck :: Parser Bool
-optParkStuck = switch (long "park-stuck" <> help "Don't fail on an atom that cannot fire (its λ function is unknown, or an input of it reaches such an atom): leave the application in place, keep evaluating the rest and print the residual 𝜑-expression instead of bytes")
+optPartial :: Parser Bool
+optPartial = switch (long "partial" <> help "Partial evaluation: compute what the known inputs decide and, instead of failing on an atom that cannot fire (its λ function is unknown, or an input of it reaches such an atom), leave it in place and print the residual 𝜑-program instead of bytes")
 
 optEvaluations :: Parser (Maybe FilePath)
 optEvaluations = optional (strOption (long "evaluations" <> metavar "FILE" <> help "File to record every atom fired during dataizing, as one tab-separated line per firing: the λ function name, its argument formation and its result (requires --output=phi)"))
@@ -296,7 +296,7 @@ dataizeParser =
             <*> optShuffle
             <*> optSeed
             <*> switch (long "quiet" <> help "Don't print the result of dataization")
-            <*> optParkStuck
+            <*> optPartial
             <*> optCompress
             <*> optMaxDepth
             <*> optMaxCycles

@@ -104,13 +104,13 @@ testAtom useCases =
       (value, _) <- dataize expr (defaultDataizeContext loc)
       value `shouldBe` Dataized res
 
--- Dataize under '--park-stuck', collecting every report 𝔼 makes on the way,
--- in the order it makes them
-parked :: String -> IO ((Outcome, [Rewritten]), [Evaluation])
-parked src = do
+-- Dataize under '--partial', collecting every report 𝔼 makes on the way, in
+-- the order it makes them
+partially :: String -> IO ((Outcome, [Rewritten]), [Evaluation])
+partially src = do
   expr <- parseExpressionThrows (primitives src)
   reports <- newIORef []
-  let ctx = (defaultDataizeContext ExRoot){_parkStuck = True, _saveEval = \report -> modifyIORef' reports (report :)}
+  let ctx = (defaultDataizeContext ExRoot){_partial = True, _saveEval = \report -> modifyIORef' reports (report :)}
   result <- dataize expr ctx
   collected <- readIORef reports
   pure (result, reverse collected)
@@ -407,11 +407,11 @@ spec = do
 
   -- An atom phino does not know — a placeholder such as ⟦ λ ⤍ Sym_arg_0 ⟧
   -- standing in for a data input (#1060) — fails the run, and so does a known
-  -- atom whose input reaches one. Under '_parkStuck' the run ends on the residue
+  -- atom whose input reaches one. Under '_partial' the run ends on the residue
   -- instead: the working expression the spine had reached, with the stuck
   -- application intact and everything the calculus demanded before it already
   -- evaluated, while 𝔼 reports each parked site with no result.
-  describe "parks an atom that cannot fire (--park-stuck)" $ do
+  describe "partially evaluates around an atom that cannot fire (--partial)" $ do
     -- the parser gives every formation its void ρ
     let placeholder = ExFormation [BiLambda (Function "Sym_arg_0"), BiVoid AtRho]
     it "fails on it without the flag, naming the unknown atom" $ do
@@ -419,39 +419,39 @@ spec = do
       dataize expr (defaultDataizeContext ExRoot)
         `shouldThrow` (\e -> "Atom 'Sym_arg_0' does not exist" `isInfixOf` show (e :: SomeException))
     it "leaves the saturated application of the known atom in place, the placeholder inside it" $ do
-      ((outcome, _), _) <- parked "2.times(3).plus([[ L> Sym_arg_0 ]])"
+      ((outcome, _), _) <- partially "2.times(3).plus([[ L> Sym_arg_0 ]])"
       case outcome of
-        Parked (ExFormation bds) -> do
+        Residual (ExFormation bds) -> do
           bds `shouldContain` [BiLambda (Function "L_number_plus")]
           bds `shouldContain` [BiTau (AtLabel "x") placeholder]
-        other -> expectationFailure ("expected a parked formation, got " ++ show other)
+        other -> expectationFailure ("expected a residual formation, got " ++ show other)
     it "keeps what was evaluated before the stuck site in the residue" $ do
-      ((outcome, _), _) <- parked "2.times(3).plus([[ L> Sym_arg_0 ]])"
+      ((outcome, _), _) <- partially "2.times(3).plus([[ L> Sym_arg_0 ]])"
       case outcome of
-        Parked (ExFormation bds) -> do
+        Residual (ExFormation bds) -> do
           let rho = [value | BiTau AtRho value <- bds]
           length rho `shouldBe` 1
           -- 2 × 3 = 6.0, whose IEEE 754 bytes are 40-18-00-00-00-00-00-00
           show rho `shouldContain` show (BtMany ["40", "18", "00", "00", "00", "00", "00", "00"])
           -- the times application is gone: ρ is the number it produced, its 'as-bytes' bound
           [() | ExFormation inner <- rho, BiTau (AtLabel "as-bytes") _ <- inner] `shouldBe` [()]
-        other -> expectationFailure ("expected a parked formation, got " ++ show other)
-    it "reports the firing that succeeded with its result and every parked site without one" $ do
-      (_, reports) <- parked "2.times(3).plus([[ L> Sym_arg_0 ]])"
+        other -> expectationFailure ("expected a residual formation, got " ++ show other)
+    it "reports the firing that succeeded with its result and every stuck site without one" $ do
+      (_, reports) <- partially "2.times(3).plus([[ L> Sym_arg_0 ]])"
       map (._function) reports `shouldBe` ["L_number_times", "Sym_arg_0", "L_number_plus"]
       map (isJust . (._result)) reports `shouldBe` [True, False, False]
-    it "parks an unknown atom dataized directly" $ do
-      ((outcome, chain), reports) <- parked "[[ L> Sym_arg_0 ]]"
-      outcome `shouldBe` Parked placeholder
+    it "leaves an unknown atom dataized directly as the whole residue" $ do
+      ((outcome, chain), reports) <- partially "[[ L> Sym_arg_0 ]]"
+      outcome `shouldBe` Residual placeholder
       map (._function) reports `shouldBe` ["Sym_arg_0"]
       map fst chain `shouldEndWith` [placeholder]
     it "still reaches bytes when nothing is stuck" $ do
-      ((outcome, _), reports) <- parked "2.times(3)"
+      ((outcome, _), reports) <- partially "2.times(3)"
       outcome `shouldBe` Dataized (BtMany ["40", "18", "00", "00", "00", "00", "00", "00"])
       map (._function) reports `shouldBe` ["L_number_times"]
     it "stops on the terminator ⊥ as before, since a wrong operand is not a stuck atom" $ do
       expr <- parseExpressionThrows (primitives (raw "20-1F" ++ ".and( " ++ raw "CA-FE-BE" ++ " )"))
-      dataize expr ((defaultDataizeContext ExRoot){_parkStuck = True})
+      dataize expr ((defaultDataizeContext ExRoot){_partial = True})
         `shouldThrow` (\e -> "terminator" `isInfixOf` show (e :: SomeException))
 
   -- '_maxDepth'/'_maxCycles' bound the normalization rewriter that a 'box' or

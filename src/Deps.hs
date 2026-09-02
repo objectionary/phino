@@ -62,8 +62,8 @@ dontSaveStep = saveStep Nothing "" (\_ -> pure "") 0
 -- One firing of an atom, the way the Evaluation function 𝔼 sees it: the name of
 -- the λ function, the formation it fired against with the λ binding removed, and
 -- the term it produced. A firing that got stuck — the atom is unknown, or one of
--- its inputs reached such an atom — and was parked in place (see '--park-stuck')
--- has no result.
+-- its inputs reached such an atom — and survived in the residual program of a
+-- partial evaluation (see '--partial') has no result.
 data Evaluation = Evaluation
   { _function :: T.Text
   , _arguments :: Expression

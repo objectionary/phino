@@ -152,17 +152,17 @@ runDataize OptsDataize{..} = do
   save <- saveStepFunc _stepsDir printCtx
   (outcome, chain) <-
     withEvalFunc _evaluations printCtx $
-      dataize expr . DataizeContext loc _maxDepth _maxCycles (Steps _maxSteps 0) _depthSensitive _shuffle _parkStuck buildTerm save
+      dataize expr . DataizeContext loc _maxDepth _maxCycles (Steps _maxSteps 0) _depthSensitive _shuffle _partial buildTerm save
   when _sequence (printRewrittens printCtx (exclude $ include chain, False) >>= putStrLn)
   unless _quiet (printOutcome printCtx outcome >>= putStrLn)
   where
-    -- The bytes the run reached or, when '--park-stuck' let it end on an atom
-    -- that could not fire, the residual expression, rendered like a rewriting
+    -- The bytes the run reached or, when '--partial' let it end on an atom
+    -- that could not fire, the residual program, rendered like a rewriting
     -- result: in the output format, narrowed to '--focus'.
     printOutcome :: PrintContext -> Outcome -> IO String
     printOutcome _ (Dataized bytes) = pure (P.printBytes bytes)
-    printOutcome ctx (Parked residue) = do
-      logDebug "Dataization got stuck on an atom that cannot fire, printing the residual expression (--park-stuck)"
+    printOutcome ctx (Residual residue) = do
+      logDebug "Dataization got stuck on an atom that cannot fire, printing the residual program (--partial)"
       printFocused ctx residue
     validateOpts :: IO ()
     validateOpts = do

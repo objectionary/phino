@@ -75,7 +75,7 @@ data DataizeContext = DataizeContext
   , _steps :: Steps
   , _depthSensitive :: Bool
   , _shuffle :: Bool
-  , _parkStuck :: Bool
+  , _partial :: Bool
   , _buildTerm :: BuildTermFunc
   , _saveStep :: SaveStepFunc
   , _saveEval :: SaveEvalFunc
@@ -90,8 +90,8 @@ data DataizeException
   | -- A 'Stuck' caught by a frame of the 𝕄/𝔻 spine, together with the
     -- derivation that frame had reached (see 'parking'). The head of the chain
     -- is the working expression with the stuck application left intact and
-    -- everything reduced before it already in place: the residue that
-    -- '_parkStuck' turns into the 'Parked' outcome.
+    -- everything reduced before it already in place: the residual program that
+    -- '_partial' turns into the 'Residual' outcome.
     StuckAt T.Text (NonEmpty Rewritten)
   deriving anyclass (Exception)
 
@@ -101,11 +101,12 @@ instance Show DataizeException where
   show (Stuck func) = printf "Atom '%s' does not exist" (T.unpack func)
   show (StuckAt func _) = show (Stuck func)
 
--- What a run of 𝔻 ends with: the bytes it reached or, under '_parkStuck', the
--- residual expression it got stuck on, the stuck atom parked in place.
+-- What a run of 𝔻 ends with: the bytes it reached or, under '_partial', the
+-- residual program: what the known inputs decided is computed, the stuck atom
+-- and everything depending on it survive in place.
 data Outcome
   = Dataized Bytes
-  | Parked Expression
+  | Residual Expression
   deriving stock (Eq, Show)
 
 -- Charge one step of the 𝕄/𝔻 recursion to the budget, refusing to descend once
@@ -234,9 +235,10 @@ morph (expr, seq) univ state caller = do
 -- Dataize the expression located at '_locator'. The whole input expression is
 -- itself the universe Q (the 'e' argument) threaded through 𝔻 and 𝕄, so it is
 -- passed both as the located target and as the universe. An atom that cannot
--- fire fails the run, unless '_parkStuck' is on: then the run ends on the
--- residue the spine had reached (see 'StuckAt'), with the stuck application
--- parked in it as a normal-form subterm, and the chain of steps that led there.
+-- fire fails the run, unless '_partial' is on: dataization is then a partial
+-- evaluation, and the run ends on the residual program the spine had reached
+-- (see 'StuckAt'), with the stuck application parked in it as a normal-form
+-- subterm, and the chain of steps that led there.
 dataize :: Expression -> DataizeContext -> IO (Outcome, [Rewritten])
 dataize universe ctx@DataizeContext{..} = do
   expr <- locatedExpression _locator universe
@@ -245,7 +247,7 @@ dataize universe ctx@DataizeContext{..} = do
   result <- try (dataize' (expr, (universe, Nothing) :| []) universe emptyState ctx)
   case result of
     Right ((bytes, seq), _state) -> pure (Dataized bytes, reverse seq)
-    Left (StuckAt _ seq) | _parkStuck -> pure (Parked (fst (NE.head seq)), reverse (NE.toList seq))
+    Left (StuckAt _ seq) | _partial -> pure (Residual (fst (NE.head seq)), reverse (NE.toList seq))
     Left failure -> throwIO (failure :: DataizeException)
 
 -- The Dataization function 𝔻 retrieves bytes from an expression. It is partial
@@ -584,8 +586,8 @@ execBuildTerm _ ctx func = _buildTerm ctx func
 -- returns, never the atom's raw answer, so the protocol and the caller see the
 -- same term. A nested firing — an atom that dataizes its own arguments —
 -- completes first, so it is reported before the firing that triggered it. A
--- firing that gets stuck is reported too, with no result, when the run parks
--- stuck atoms instead of failing on them ('_parkStuck'): the site is what the
+-- firing that gets stuck is reported too, with no result, when the run is a
+-- partial evaluation rather than a failure ('_partial'): the site is what the
 -- caller wants to learn then, and the nested order holds, since the unknown
 -- atom is reported before the known one whose input reached it. The report is
 -- made before the signal goes on to the spine, where 'parking' attaches the
@@ -606,7 +608,7 @@ _evaluate ctx state [ArgExpression expr, ArgExpression universe] subst = do
   where
     parked :: T.Text -> Expression -> DataizeException -> IO a
     parked func args failure@(Stuck _) = do
-      when ctx._parkStuck (ctx._saveEval (Evaluation func args Nothing))
+      when ctx._partial (ctx._saveEval (Evaluation func args Nothing))
       throwIO failure
     parked _ _ failure = throwIO failure
 _evaluate _ _ _ _ = throwIO (userError "Function evaluate() requires exactly 2 expression arguments")
