@@ -39,19 +39,19 @@ spec = do
           it desc $ numToBts num `shouldBe` bts
       )
 
-  describe "numToBts/btsToNum round trip" $ do
-    it "normal integer" $ btsToNum (numToBts 42) `shouldBe` Left 42
-    it "normal fraction" $ btsToNum (numToBts 3.5) `shouldBe` Right 3.5
-    it "zero" $ btsToNum (numToBts 0.0) `shouldBe` Left 0
-    it "negative integer" $ btsToNum (numToBts (-2)) `shouldBe` Left (-2)
-    it "negative fraction" $ btsToNum (numToBts (-0.25)) `shouldBe` Right (-0.25)
-    it "NaN" $ btsToNum (numToBts (0 / 0)) `shouldSatisfy` either (const False) isNaN
-    it "positive infinity" $
-      btsToNum (numToBts (1 / 0)) `shouldSatisfy` either (const False) (\num -> isInfinite num && num > 0)
-    it "negative infinity" $
-      btsToNum (numToBts (-(1 / 0))) `shouldSatisfy` either (const False) (\num -> isInfinite num && num < 0)
-    it "negative zero" $
-      btsToNum (numToBts (-0.0)) `shouldSatisfy` either (const False) isNegativeZero
+  describe "numToBts/btsToNum round trip" $
+    forM_
+      [ ("normal integer", 42, (== Left 42))
+      , ("normal fraction", 3.5, (== Right 3.5))
+      , ("zero", 0.0, (== Left 0))
+      , ("negative integer", -2, (== Left (-2)))
+      , ("negative fraction", -0.25, (== Right (-0.25)))
+      , ("NaN", 0 / 0, either (const False) isNaN)
+      , ("positive infinity", 1 / 0, either (const False) (\num -> isInfinite num && num > 0))
+      , ("negative infinity", -(1 / 0), either (const False) (\num -> isInfinite num && num < 0))
+      , ("negative zero", -0.0, either (const False) isNegativeZero)
+      ]
+      (\(desc, num, predicate) -> it desc (btsToNum (numToBts num) `shouldSatisfy` predicate))
 
   describe "btsToNum with a byte array that is not 8 bytes long" $
     it "errors out" $
@@ -109,17 +109,22 @@ spec = do
           it desc $ bytesToBts str `shouldBe` bts
       )
 
-  describe "btsAnd" $ do
-    it "matching lengths" $
-      btsAnd (BtMany ["02", "EF"]) (BtMany ["12", "33"]) `shouldBe` Just (BtMany ["02", "23"])
-    it "mismatched lengths" $
-      btsAnd (BtOne "20") (BtMany ["CA", "FE"]) `shouldBe` Nothing
-
-  describe "btsOr" $ do
-    it "matching lengths" $
-      btsOr (BtMany ["02", "EF"]) (BtMany ["12", "33"]) `shouldBe` Just (BtMany ["12", "FF"])
-    it "mismatched lengths" $
-      btsOr (BtOne "20") (BtMany ["CA", "FE"]) `shouldBe` Nothing
+  describe "btsAnd and btsOr" $
+    forM_
+      [
+        ( "btsAnd: matching lengths"
+        , btsAnd (BtMany ["02", "EF"]) (BtMany ["12", "33"])
+        , Just (BtMany ["02", "23"])
+        )
+      , ("btsAnd: mismatched lengths", btsAnd (BtOne "20") (BtMany ["CA", "FE"]), Nothing)
+      ,
+        ( "btsOr: matching lengths"
+        , btsOr (BtMany ["02", "EF"]) (BtMany ["12", "33"])
+        , Just (BtMany ["12", "FF"])
+        )
+      , ("btsOr: mismatched lengths", btsOr (BtOne "20") (BtMany ["CA", "FE"]), Nothing)
+      ]
+      (\(desc, actual, expected) -> it desc (actual `shouldBe` expected))
 
   describe "btsNot" $
     it "negates every byte" $
@@ -154,36 +159,59 @@ spec = do
     it "errors out since meta bytes cannot be converted to actual bytes" $
       evaluate (btsSize (BtMeta "alpha")) `shouldThrow` anyErrorCall
 
-  describe "hex byte decoding" $ do
-    it "accepts lowercase hex digits the same way as uppercase ones" $
-      btsEqual (BtOne "bf") (BtOne "BF") `shouldBe` True
-    it "decodes a single hex character via the fallback numeric reader" $
-      btsEqual (BtOne "5") (BtOne "05") `shouldBe` True
-    it "errors out on a hex digit that isn't 0-9, a-f or A-F" $
-      evaluate (btsToUnescapedStr (BtOne "G1")) `shouldThrow` anyErrorCall
-    it "errors out when the fallback numeric reader can't parse the byte at all" $
-      evaluate (btsToUnescapedStr (BtOne "")) `shouldThrow` anyErrorCall
+  describe "hex byte decoding" $
+    forM_
+      [
+        ( "accepts lowercase hex digits the same way as uppercase ones"
+        , btsEqual (BtOne "bf") (BtOne "BF") `shouldBe` True
+        )
+      ,
+        ( "decodes a single hex character via the fallback numeric reader"
+        , btsEqual (BtOne "5") (BtOne "05") `shouldBe` True
+        )
+      ,
+        ( "errors out on a hex digit that isn't 0-9, a-f or A-F"
+        , evaluate (btsToUnescapedStr (BtOne "G1")) `shouldThrow` anyErrorCall
+        )
+      ,
+        ( "errors out when the fallback numeric reader can't parse the byte at all"
+        , evaluate (btsToUnescapedStr (BtOne "")) `shouldThrow` anyErrorCall
+        )
+      ]
+      (uncurry it)
 
-  describe "btsSlice" $ do
-    it "in range" $
-      btsSlice 1 3 (BtMany ["20", "1F", "EE", "B5", "90"]) `shouldBe` Just (BtMany ["1F", "EE", "B5"])
-    it "out of range" $
-      btsSlice 3 10 (BtMany ["20", "1F", "EE", "B5", "90"]) `shouldBe` Nothing
-    it "negative start" $
-      btsSlice (-1) 2 (BtMany ["20", "1F", "EE"]) `shouldBe` Nothing
-    it "zero length slice" $
-      btsSlice 0 0 (BtMany ["20", "1F"]) `shouldBe` Just BtEmpty
+  describe "btsSlice" $
+    forM_
+      [
+        ( "in range"
+        , btsSlice 1 3 (BtMany ["20", "1F", "EE", "B5", "90"])
+        , Just (BtMany ["1F", "EE", "B5"])
+        )
+      , ("out of range", btsSlice 3 10 (BtMany ["20", "1F", "EE", "B5", "90"]), Nothing)
+      , ("negative start", btsSlice (-1) 2 (BtMany ["20", "1F", "EE"]), Nothing)
+      , ("zero length slice", btsSlice 0 0 (BtMany ["20", "1F"]), Just BtEmpty)
+      ]
+      (\(desc, actual, expected) -> it desc (actual `shouldBe` expected))
 
-  describe "btsShift" $ do
-    it "positive shift crossing a bit boundary" $
-      btsShift 1 (BtMany ["C0", "43", "00"]) `shouldBe` BtMany ["60", "21", "80"]
-    it "negative shift crossing a bit boundary" $
-      btsShift (-1) (BtMany ["01", "80"]) `shouldBe` BtMany ["03", "00"]
-    it "shift by zero is identity" $
-      btsShift 0 (BtMany ["FF", "00"]) `shouldBe` BtMany ["FF", "00"]
-    it "positive shift crossing a byte boundary" $
-      btsShift 8 (BtMany ["01", "02", "03"]) `shouldBe` BtMany ["00", "01", "02"]
-    it "negative shift crossing a byte boundary" $
-      btsShift (-8) (BtMany ["01", "02", "03"]) `shouldBe` BtMany ["02", "03", "00"]
-    it "large negative shift empties out" $
-      btsShift (-2147483648) (BtMany ["BF", "F0"]) `shouldBe` BtMany ["00", "00"]
+  describe "btsShift" $
+    forM_
+      [
+        ( "positive shift crossing a bit boundary"
+        , btsShift 1 (BtMany ["C0", "43", "00"])
+        , BtMany ["60", "21", "80"]
+        )
+      , ("negative shift crossing a bit boundary", btsShift (-1) (BtMany ["01", "80"]), BtMany ["03", "00"])
+      , ("shift by zero is identity", btsShift 0 (BtMany ["FF", "00"]), BtMany ["FF", "00"])
+      ,
+        ( "positive shift crossing a byte boundary"
+        , btsShift 8 (BtMany ["01", "02", "03"])
+        , BtMany ["00", "01", "02"]
+        )
+      ,
+        ( "negative shift crossing a byte boundary"
+        , btsShift (-8) (BtMany ["01", "02", "03"])
+        , BtMany ["02", "03", "00"]
+        )
+      , ("large negative shift empties out", btsShift (-2147483648) (BtMany ["BF", "F0"]), BtMany ["00", "00"])
+      ]
+      (\(desc, actual, expected) -> it desc (actual `shouldBe` expected))

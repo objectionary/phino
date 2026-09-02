@@ -62,27 +62,31 @@ spec = do
           merge parsed `shouldThrow` anyException
       )
 
-  describe "merge exception messages" $ do
-    it "EmptyExpressionList explains there is nothing to merge" $ do
-      result <- try (merge []) :: IO (Either SomeException Expression)
-      case result of
-        Left err -> show err `shouldContain` "Nothing to merge: provide at least one expression"
-        Right _ -> fail "expected merge [] to throw"
-
-    it "WrongExpressionFormat renders the offending non-formation expression" $ do
-      parsed <- parseExpressionThrows "Q"
-      result <- try (merge [parsed]) :: IO (Either SomeException Expression)
-      case result of
-        Left err -> show err `shouldContain` "Invalid expression format"
-        Right _ -> fail "expected merge [Q] to throw"
-
-    it "CanNotMergeBinding renders both conflicting bindings" $ do
-      first <- parseExpressionThrows "[[ x -> 1 ]]"
-      second <- parseExpressionThrows "[[ x -> 2 ]]"
-      result <- try (merge [first, second]) :: IO (Either SomeException Expression)
-      case result of
-        Left err -> show err `shouldContain` "Can't merge two bindings, conflict found"
-        Right _ -> fail "expected merge to throw on conflicting bindings"
+  describe "merge exception messages" $
+    forM_
+      [
+        ( "EmptyExpressionList explains there is nothing to merge"
+        , []
+        , "Nothing to merge: provide at least one expression"
+        )
+      ,
+        ( "WrongExpressionFormat renders the offending non-formation expression"
+        , ["Q"]
+        , "Invalid expression format"
+        )
+      ,
+        ( "CanNotMergeBinding renders both conflicting bindings"
+        , ["[[ x -> 1 ]]", "[[ x -> 2 ]]"]
+        , "Can't merge two bindings, conflict found"
+        )
+      ]
+      ( \(desc, exprs, message) -> it desc $ do
+          parsed <- mapM parseExpressionThrows exprs
+          result <- try (merge parsed) :: IO (Either SomeException Expression)
+          case result of
+            Left err -> show err `shouldContain` message
+            Right _ -> fail ("expected merge to throw for: " ++ desc)
+      )
 
   describe "merge of a single expression" $
     it "returns that expression unchanged" $ do

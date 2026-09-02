@@ -4,6 +4,7 @@
 module FilesSpec where
 
 import Control.Exception (bracket, try)
+import Control.Monad (forM_, void)
 import Data.List (sort)
 import Data.Time.Clock.POSIX (getPOSIXTime)
 import Files (FsException (..), allPathsIn, ensuredFile)
@@ -14,6 +15,10 @@ import System.Directory
   )
 import System.FilePath ((</>))
 import Test.Hspec (Spec, describe, it, shouldBe, shouldSatisfy)
+
+exceptionPath :: FsException -> FilePath
+exceptionPath (FileDoesNotExist file) = file
+exceptionPath (DirectoryDoesNotExist directory) = directory
 
 withScratchDir :: (FilePath -> IO a) -> IO a
 withScratchDir =
@@ -29,21 +34,12 @@ withScratchDir =
 
 spec :: Spec
 spec = do
-  describe "ensuredFile" $ do
-    it "returns the path of an existing file" $ withScratchDir $ \dir -> do
-      let path = dir </> "existing.txt"
-      writeFile path "content"
-      ensuredFile path >>= (`shouldBe` path)
-
-    it "throws FileDoesNotExist for a missing file" $ withScratchDir $ \dir -> do
-      let path = dir </> "missing.txt"
-      result <- try (ensuredFile path) :: IO (Either FsException FilePath)
-      case result of
-        Left (FileDoesNotExist file) -> file `shouldBe` path
-        _ -> fail "expected FileDoesNotExist to be thrown"
-
-    it "shows a readable message for FileDoesNotExist" $
-      show (FileDoesNotExist "/no/such/file") `shouldBe` "File '/no/such/file' does not exist"
+  describe "ensuredFile" $
+    it "returns the path of an existing file" $
+      withScratchDir $ \dir -> do
+        let path = dir </> "existing.txt"
+        writeFile path "content"
+        ensuredFile path >>= (`shouldBe` path)
 
   describe "allPathsIn" $ do
     it "collects every leaf file path recursively" $ withScratchDir $ \dir -> do
@@ -64,16 +60,32 @@ spec = do
       paths <- allPathsIn dir
       paths `shouldBe` []
 
-    it "throws DirectoryDoesNotExist for a missing directory" $ withScratchDir $ \dir -> do
-      let missing = dir </> "does-not-exist"
-      result <- try (allPathsIn missing) :: IO (Either FsException [FilePath])
-      case result of
-        Left (DirectoryDoesNotExist directory) -> directory `shouldBe` missing
-        _ -> fail "expected DirectoryDoesNotExist to be thrown"
+  describe "FsException" $ do
+    forM_
+      [ ("throws FileDoesNotExist for a missing file", "missing.txt", void . ensuredFile)
+      , ("throws DirectoryDoesNotExist for a missing directory", "does-not-exist", void . allPathsIn)
+      ]
+      ( \(desc, name, action) -> it desc $ withScratchDir $ \dir -> do
+          let path = dir </> name
+          result <- try (action path) :: IO (Either FsException ())
+          case result of
+            Left exc -> exceptionPath exc `shouldBe` path
+            _ -> fail "expected an FsException to be thrown"
+      )
 
-    it "shows a readable message for DirectoryDoesNotExist" $
-      show (DirectoryDoesNotExist "/no/such/dir") `shouldBe` "Directory '/no/such/dir' does not exist"
+    forM_
+      [
+        ( "shows a readable message for FileDoesNotExist"
+        , FileDoesNotExist "/no/such/file"
+        , "File '/no/such/file' does not exist"
+        )
+      ,
+        ( "shows a readable message for DirectoryDoesNotExist"
+        , DirectoryDoesNotExist "/no/such/dir"
+        , "Directory '/no/such/dir' does not exist"
+        )
+      ]
+      (\(desc, exc, message) -> it desc (show exc `shouldBe` message))
 
-  describe "these exceptions are Show instances" $
     it "FsException values can be inspected without throwing" $
       show (FileDoesNotExist "x") `shouldSatisfy` (not . null)

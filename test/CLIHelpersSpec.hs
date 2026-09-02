@@ -15,6 +15,7 @@ import AST (Expression (ExRoot))
 import CLI.Helpers (parseInput, printExpression)
 import CLI.Types (IOFormat (LATEX, PHI, XMIR), PrintContext (PrintCtx))
 import Control.Exception (SomeException, try)
+import Control.Monad (forM_)
 import Lining (LineFormat (MULTILINE))
 import Sugar (SugarType (SWEET))
 import Test.Hspec (Spec, describe, it, shouldSatisfy)
@@ -36,11 +37,16 @@ spec = do
       result <- try (parseInput "whatever" LATEX) :: IO (Either SomeException Expression)
       result `shouldSatisfy` isLeft
 
-  describe "printExpression" $ do
-    it "fails when asked to print with --output=xmir (only --output=phi/latex are supported here)" $ do
-      result <- try (printExpression (testPrintContext XMIR) ExRoot) :: IO (Either SomeException String)
-      result `shouldSatisfy` isLeft
-
-    it "succeeds when --output=phi is used" $ do
-      result <- try (printExpression (testPrintContext PHI) ExRoot) :: IO (Either SomeException String)
-      result `shouldSatisfy` not . isLeft
+  describe "printExpression" $
+    forM_
+      [
+        ( "fails when asked to print with --output=xmir (only --output=phi/latex are supported here)"
+        , XMIR
+        , isLeft
+        )
+      , ("succeeds when --output=phi is used", PHI, not . isLeft)
+      ]
+      ( \(desc, format, predicate) -> it desc $ do
+          result <- try (printExpression (testPrintContext format) ExRoot) :: IO (Either SomeException String)
+          result `shouldSatisfy` predicate
+      )

@@ -114,62 +114,100 @@ spec = do
         [substSingle "e1" (MvExpression (ExDispatch ExRoot (AtLabel "x")))]
         `shouldThrow` anyException
 
-  describe "contextualize" $ do
-    it "replaces a xi expression with the context" $
-      contextualize ExXi (ExFormation [BiVoid AtRho]) `shouldBe` ExFormation [BiVoid AtRho]
-    it "keeps a root expression untouched" $
-      contextualize ExRoot (ExFormation [BiVoid AtRho]) `shouldBe` ExRoot
-    it "keeps an empty formation untouched" $
-      contextualize (ExFormation [BiVoid AtRho]) (ExFormation [BiVoid AtRho, BiVoid AtRho])
-        `shouldBe` ExFormation [BiVoid AtRho]
-    it "recurses into a dispatch application" $
-      contextualize (ExDispatch ExXi (AtLabel "z")) (ExFormation [BiVoid AtRho])
-        `shouldBe` ExDispatch (ExFormation [BiVoid AtRho]) (AtLabel "z")
-    it "keeps a termination untouched" $
-      contextualize ExTermination (ExFormation [BiVoid AtRho]) `shouldBe` ExTermination
-    it "recurses into both sides of an application with a tau argument" $
-      contextualize
-        (ExApplication ExXi (ArTau (AtLabel "x") ExXi))
-        (ExFormation [BiVoid AtRho])
-        `shouldBe` ExApplication (ExFormation [BiVoid AtRho]) (ArTau (AtLabel "x") (ExFormation [BiVoid AtRho]))
-    it "recurses into both sides of an application with an alpha argument" $
-      contextualize
-        (ExApplication ExXi (ArAlpha (Alpha 0) ExXi))
-        (ExFormation [BiVoid AtRho])
-        `shouldBe` ExApplication (ExFormation [BiVoid AtRho]) (ArAlpha (Alpha 0) (ExFormation [BiVoid AtRho]))
-    it "leaves any other expression untouched" $
-      contextualize (ExMeta "e") (ExFormation [BiVoid AtRho]) `shouldBe` ExMeta "e"
+  describe "contextualize" $
+    let commonContext :: Expression
+        commonContext = ExFormation [BiVoid AtRho]
+     in forM_
+          [ ("replaces a xi expression with the context", ExXi, commonContext, commonContext)
+          , ("keeps a root expression untouched", ExRoot, commonContext, ExRoot)
+          ,
+            ( "keeps an empty formation untouched"
+            , ExFormation [BiVoid AtRho]
+            , ExFormation [BiVoid AtRho, BiVoid AtRho]
+            , ExFormation [BiVoid AtRho]
+            )
+          ,
+            ( "recurses into a dispatch application"
+            , ExDispatch ExXi (AtLabel "z")
+            , commonContext
+            , ExDispatch commonContext (AtLabel "z")
+            )
+          , ("keeps a termination untouched", ExTermination, commonContext, ExTermination)
+          ,
+            ( "recurses into both sides of an application with a tau argument"
+            , ExApplication ExXi (ArTau (AtLabel "x") ExXi)
+            , commonContext
+            , ExApplication commonContext (ArTau (AtLabel "x") commonContext)
+            )
+          ,
+            ( "recurses into both sides of an application with an alpha argument"
+            , ExApplication ExXi (ArAlpha (Alpha 0) ExXi)
+            , commonContext
+            , ExApplication commonContext (ArAlpha (Alpha 0) commonContext)
+            )
+          , ("leaves any other expression untouched", ExMeta "e", commonContext, ExMeta "e")
+          ]
+          (\(desc, expr, context, expected) -> it desc (contextualize expr context `shouldBe` expected))
 
-  describe "buildBinding: lambda and delta bindings from metas" $ do
-    it "builds a lambda binding from a bound function meta" $
-      buildBinding (BiLambda (FnMeta "f")) (substSingle "f" (MvFunction "Func"))
-        `shouldBe` Right [BiLambda (Function "Func")]
-    it "fails to build a lambda binding from an unbound function meta" $
-      buildBinding (BiLambda (FnMeta "f")) substEmpty
-        `shouldBe` Left "meta 'f' is either does not exist or refers to an inappropriate term"
-    it "builds a delta binding from a bound bytes meta" $
-      buildBinding (BiDelta (BtMeta "b")) (substSingle "b" (MvBytes (BtOne "00")))
-        `shouldBe` Right [BiDelta (BtOne "00")]
-    it "fails to build a delta binding from an unbound bytes meta" $
-      buildBinding (BiDelta (BtMeta "b")) substEmpty
-        `shouldBe` Left "meta 'b' is either does not exist or refers to an inappropriate term"
-    it "fails to build a meta binding that is unbound" $
-      buildBinding (BiMeta "B") substEmpty
-        `shouldBe` Left "meta 'B' is either does not exist or refers to an inappropriate term"
+  describe "buildBinding: lambda and delta bindings from metas" $
+    forM_
+      [
+        ( "builds a lambda binding from a bound function meta"
+        , BiLambda (FnMeta "f")
+        , substSingle "f" (MvFunction "Func")
+        , Right [BiLambda (Function "Func")]
+        )
+      ,
+        ( "fails to build a lambda binding from an unbound function meta"
+        , BiLambda (FnMeta "f")
+        , substEmpty
+        , Left "meta 'f' is either does not exist or refers to an inappropriate term"
+        )
+      ,
+        ( "builds a delta binding from a bound bytes meta"
+        , BiDelta (BtMeta "b")
+        , substSingle "b" (MvBytes (BtOne "00"))
+        , Right [BiDelta (BtOne "00")]
+        )
+      ,
+        ( "fails to build a delta binding from an unbound bytes meta"
+        , BiDelta (BtMeta "b")
+        , substEmpty
+        , Left "meta 'b' is either does not exist or refers to an inappropriate term"
+        )
+      ,
+        ( "fails to build a meta binding that is unbound"
+        , BiMeta "B"
+        , substEmpty
+        , Left "meta 'B' is either does not exist or refers to an inappropriate term"
+        )
+      ]
+      (\(desc, binding, subst, expected) -> it desc (buildBinding binding subst `shouldBe` expected))
 
-  describe "the throwing builders report a descriptive message" $ do
-    it "buildBytesThrows names the bytes it could not build" $
-      buildBytesThrows (BtMeta "b") substEmpty
-        `shouldThrow` (\exc -> "Couldn't build bytes" `isInfixOf` show (exc :: SomeException))
-    it "buildBindingThrows names the binding it could not build" $
-      buildBindingThrows (BiMeta "B") substEmpty
-        `shouldThrow` (\exc -> "Couldn't build binding" `isInfixOf` show (exc :: SomeException))
-    it "buildAttributeThrows names the attribute it could not build" $
-      buildAttributeThrows (AtMeta "t") substEmpty
-        `shouldThrow` (\exc -> "Couldn't build attribute" `isInfixOf` show (exc :: SomeException))
-    it "buildExpressionThrows names the expression it could not build" $
-      buildExpressionThrows (ExMeta "e") substEmpty
-        `shouldThrow` (\exc -> "Couldn't build expression" `isInfixOf` show (exc :: SomeException))
+  describe "the throwing builders report a descriptive message" $
+    forM_
+      [
+        ( "buildBytesThrows names the bytes it could not build"
+        , void (buildBytesThrows (BtMeta "b") substEmpty)
+        , "Couldn't build bytes"
+        )
+      ,
+        ( "buildBindingThrows names the binding it could not build"
+        , void (buildBindingThrows (BiMeta "B") substEmpty)
+        , "Couldn't build binding"
+        )
+      ,
+        ( "buildAttributeThrows names the attribute it could not build"
+        , void (buildAttributeThrows (AtMeta "t") substEmpty)
+        , "Couldn't build attribute"
+        )
+      ,
+        ( "buildExpressionThrows names the expression it could not build"
+        , void (buildExpressionThrows (ExMeta "e") substEmpty)
+        , "Couldn't build expression"
+        )
+      ]
+      (\(desc, action, message) -> it desc (action `shouldThrow` (\exc -> message `isInfixOf` show (exc :: SomeException))))
 
   describe "build with duplicate attributes in bindings" $ do
     it "build binding with duplicates" $
