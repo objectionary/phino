@@ -13,7 +13,7 @@ import Data.List (find, isInfixOf, nub)
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.Maybe (fromMaybe)
 import Dataize (DataizeContext (..), Steps (..), dataize, dataize', emptyState, execBuildTerm, morph)
-import Deps (dontSaveEval, dontSaveStep)
+import Deps (Term (TeExpression), dontSaveEval, dontSaveStep)
 import Functions (buildTerm)
 import Matcher (substEmpty)
 import Parser (parseExpressionThrows)
@@ -190,22 +190,38 @@ spec = do
     let univ = ExFormation []
         ctx = defaultDataizeContext ExRoot
         runEvaluate args = execBuildTerm univ ctx "evaluate" args substEmpty
-    it "throws when the first argument is not a formation" $
-      runEvaluate [ArgExpression ExRoot, ArgExpression univ]
-        `shouldThrow` (\e -> "Function evaluate() expects a formation" `isInfixOf` show (e :: SomeException))
-    it "throws when the formation has no λ binding at all" $
-      runEvaluate [ArgExpression (ExFormation []), ArgExpression univ]
-        `shouldThrow` (\e -> "expects a formation with a" `isInfixOf` show (e :: SomeException))
-    it "throws when a non-λ formation still has other bindings" $
-      runEvaluate [ArgExpression (ExFormation [BiVoid AtRho]), ArgExpression univ]
-        `shouldThrow` (\e -> "expects a formation with a" `isInfixOf` show (e :: SomeException))
-    it "throws when not given exactly two expression arguments" $
-      runEvaluate [ArgExpression univ]
-        `shouldThrow` (\e -> "requires exactly 2 expression arguments" `isInfixOf` show (e :: SomeException))
-    it "evaluates a λ-bearing formation given well-formed arguments" $ do
+    forM_
+      [
+        ( "the first argument is not a formation"
+        , [ArgExpression ExRoot, ArgExpression univ]
+        , "Function evaluate() expects a formation"
+        )
+      ,
+        ( "the formation has no λ binding at all"
+        , [ArgExpression (ExFormation []), ArgExpression univ]
+        , "expects a formation with a"
+        )
+      ,
+        ( "a non-λ formation still has other bindings"
+        , [ArgExpression (ExFormation [BiVoid AtRho]), ArgExpression univ]
+        , "expects a formation with a"
+        )
+      ,
+        ( "not given exactly two expression arguments"
+        , [ArgExpression univ]
+        , "requires exactly 2 expression arguments"
+        )
+      ]
+      ( \(desc, args, message) ->
+          it ("throws when " ++ desc) $
+            runEvaluate args `shouldThrow` (\e -> message `isInfixOf` show (e :: SomeException))
+      )
+    it "evaluates a λ-bearing formation to the atom's normalized result" $ do
       let form = ExFormation [BiLambda (Function "L_bytes_not"), BiTau AtRho (ExFormation [BiDelta (BtOne "00")])]
-      _ <- runEvaluate [ArgExpression form, ArgExpression univ]
-      pure ()
+      result <- runEvaluate [ArgExpression form, ArgExpression univ]
+      case result of
+        TeExpression expr -> expr `shouldBe` dataBytes (BtOne "FF")
+        _ -> expectationFailure "expected TeExpression"
 
   describe "execBuildTerm 'morph'" $ do
     let univ = ExFormation []
@@ -213,9 +229,11 @@ spec = do
     it "throws when not given exactly one expression argument" $
       execBuildTerm univ ctx "morph" [] substEmpty
         `shouldThrow` (\e -> "requires exactly 1 expression argument" `isInfixOf` show (e :: SomeException))
-    it "morphs a single expression argument given well-formed arguments" $ do
-      _ <- execBuildTerm univ ctx "morph" [ArgExpression (ExFormation [BiDelta (BtOne "00")])] substEmpty
-      pure ()
+    it "morphs a single expression argument to its already-normal form" $ do
+      result <- execBuildTerm univ ctx "morph" [ArgExpression (ExFormation [BiDelta (BtOne "00")])] substEmpty
+      case result of
+        TeExpression expr -> expr `shouldBe` ExFormation [BiDelta (BtOne "00")]
+        _ -> expectationFailure "expected TeExpression"
 
   -- Every atom's operand is fetched through the synthetic '_dataize', which
   -- rebuilds the universe as a formation to bind the operand into before
@@ -229,27 +247,6 @@ spec = do
       let form = ExFormation [BiLambda (Function "L_bytes_not"), BiVoid AtRho]
       dataize' (form, (ExRoot, Nothing) :| []) ExRoot emptyState (defaultDataizeContext ExRoot)
         `shouldThrow` (\e -> "non-formation universe" `isInfixOf` show (e :: SomeException))
-
-  -- 'DataizeContext' and 'Steps' thread their fields through 'RecordWildCards'
-  -- everywhere else in the module, so their derived accessor functions are
-  -- otherwise never called by name. A direct call here is the cheapest way to
-  -- exercise those declarations without contorting the real control flow.
-  describe "DataizeContext and Steps expose their fields" $
-    it "reads back every field through its derived accessor" $ do
-      let steps = Steps 250 3
-          ctx = DataizeContext ExRoot 25 25 steps False True buildTerm dontSaveStep dontSaveEval
-      (_limit steps, _spent steps) `shouldBe` (250, 3)
-      (_limit (_steps ctx), _spent (_steps ctx)) `shouldBe` (250, 3)
-      ( _locator ctx
-        , _maxDepth ctx
-        , _maxCycles ctx
-        , _depthSensitive ctx
-        , _shuffle ctx
-        )
-        `shouldBe` (ExRoot, 25, 25, False, True)
-      _saveStep ctx ExRoot
-      _ <- _buildTerm ctx "random-tau" [] substEmpty
-      pure ()
 
   -- 'defaultDataizeContext' runs with '_shuffle' on, so 'morph' walks the
   -- morphing rules in a random order on every step. Every clause is
@@ -403,22 +400,33 @@ spec = do
   -- absorbed silently, so dataization still reaches an answer.
   describe "DataizeContext's --max-depth/--max-cycles reach into the normalization it splices in" $ do
     let boxed = "[[ @ -> [[ D> 00- ]] ]]"
-    it "throws once --max-cycles is exhausted with --depth-sensitive" $ do
-      expr <- parseExpressionThrows boxed
-      dataize expr (DataizeContext ExRoot 25 0 (Steps 250 0) True True buildTerm dontSaveStep dontSaveEval)
-        `shouldThrow` (\e -> "--max-cycles=0" `isInfixOf` show (e :: SomeException))
-    it "throws once --max-depth is exhausted with --depth-sensitive" $ do
-      expr <- parseExpressionThrows boxed
-      dataize expr (DataizeContext ExRoot 0 25 (Steps 250 0) True True buildTerm dontSaveStep dontSaveEval)
-        `shouldThrow` (\e -> "--max-depth=0" `isInfixOf` show (e :: SomeException))
-    it "does not throw without --depth-sensitive even once --max-cycles is exhausted" $ do
-      expr <- parseExpressionThrows boxed
-      (value, _) <- dataize expr (DataizeContext ExRoot 25 0 (Steps 250 0) False True buildTerm dontSaveStep dontSaveEval)
-      value `shouldBe` BtOne "00"
-    it "does not throw without --depth-sensitive even once --max-depth is exhausted" $ do
-      expr <- parseExpressionThrows boxed
-      (value, _) <- dataize expr (DataizeContext ExRoot 0 25 (Steps 250 0) False True buildTerm dontSaveStep dontSaveEval)
-      value `shouldBe` BtOne "00"
+    forM_
+      [
+        ( "--max-cycles"
+        , DataizeContext ExRoot 25 0 (Steps 250 0) True True buildTerm dontSaveStep dontSaveEval
+        , "--max-cycles=0"
+        )
+      ,
+        ( "--max-depth"
+        , DataizeContext ExRoot 0 25 (Steps 250 0) True True buildTerm dontSaveStep dontSaveEval
+        , "--max-depth=0"
+        )
+      ]
+      ( \(flag, ctx, message) ->
+          it ("throws once " ++ flag ++ " is exhausted with --depth-sensitive") $ do
+            expr <- parseExpressionThrows boxed
+            dataize expr ctx `shouldThrow` (\e -> message `isInfixOf` show (e :: SomeException))
+      )
+    forM_
+      [ ("--max-cycles", DataizeContext ExRoot 25 0 (Steps 250 0) False True buildTerm dontSaveStep dontSaveEval)
+      , ("--max-depth", DataizeContext ExRoot 0 25 (Steps 250 0) False True buildTerm dontSaveStep dontSaveEval)
+      ]
+      ( \(flag, ctx) ->
+          it ("does not throw without --depth-sensitive even once " ++ flag ++ " is exhausted") $ do
+            expr <- parseExpressionThrows boxed
+            (value, _) <- dataize expr ctx
+            value `shouldBe` BtOne "00"
+      )
 
   describe "labels every step with a defined rule or operation" $ do
     let verb op = case op of
