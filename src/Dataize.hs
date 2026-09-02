@@ -587,7 +587,9 @@ execBuildTerm _ ctx func = _buildTerm ctx func
 -- firing that gets stuck is reported too, with no result, when the run parks
 -- stuck atoms instead of failing on them ('_parkStuck'): the site is what the
 -- caller wants to learn then, and the nested order holds, since the unknown
--- atom is reported before the known one whose input reached it.
+-- atom is reported before the known one whose input reached it. The report is
+-- made before the signal goes on to the spine, where 'parking' attaches the
+-- derivation to it.
 _evaluate :: DataizeContext -> State -> BuildTermMethodS
 _evaluate ctx state [ArgExpression expr, ArgExpression universe] subst = do
   form <- buildExpressionThrows expr subst
@@ -602,8 +604,6 @@ _evaluate ctx state [ArgExpression expr, ArgExpression universe] subst = do
       Nothing -> throwIO (userError "Function evaluate() expects a formation with a λ binding")
     _ -> throwIO (userError "Function evaluate() expects a formation")
   where
-    -- Report the firing that got stuck before letting the signal go on to the
-    -- spine, where 'parking' attaches the derivation to it
     parked :: T.Text -> Expression -> DataizeException -> IO a
     parked func args failure@(Stuck _) = do
       when ctx._parkStuck (ctx._saveEval (Evaluation func args Nothing))

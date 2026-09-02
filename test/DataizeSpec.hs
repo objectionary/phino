@@ -9,7 +9,7 @@ module DataizeSpec (spec) where
 import AST
 import Control.Exception (SomeException)
 import Control.Monad
-import Data.IORef (modifyIORef, newIORef, readIORef)
+import Data.IORef (modifyIORef', newIORef, readIORef)
 import Data.List (find, isInfixOf, nub)
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.Maybe (fromMaybe, isJust)
@@ -110,7 +110,7 @@ parked :: String -> IO ((Outcome, [Rewritten]), [Evaluation])
 parked src = do
   expr <- parseExpressionThrows (primitives src)
   reports <- newIORef []
-  let ctx = (defaultDataizeContext ExRoot){_parkStuck = True, _saveEval = \report -> modifyIORef reports (report :)}
+  let ctx = (defaultDataizeContext ExRoot){_parkStuck = True, _saveEval = \report -> modifyIORef' reports (report :)}
   result <- dataize expr ctx
   collected <- readIORef reports
   pure (result, reverse collected)
