@@ -7,15 +7,16 @@
 module CLISpec (spec) where
 
 import CLI (runCLI)
+import CLI.Types (CmdException (..), IOFormat (..))
 import Control.Exception
-import Control.Monad (forM_, unless, when)
+import Control.Monad (forM_, unless)
 import Data.List (intercalate, isInfixOf, sort)
 import Data.Time.Clock (addUTCTime, getCurrentTime)
 import Data.Time.Clock.POSIX (getPOSIXTime)
 import Data.Version (showVersion)
 import GHC.IO.Handle
 import Paths_phino (version)
-import System.Directory (createDirectoryIfMissing, doesDirectoryExist, doesFileExist, getTemporaryDirectory, listDirectory, removeDirectoryRecursive, removeFile, setModificationTime)
+import System.Directory (createDirectoryIfMissing, doesDirectoryExist, doesFileExist, getTemporaryDirectory, listDirectory, removeDirectoryRecursive, removeFile, removePathForcibly, setModificationTime)
 import System.Exit (ExitCode (ExitFailure))
 import System.FilePath ((</>))
 import System.IO
@@ -79,6 +80,16 @@ withTempFileContent pattern content action =
     hClose h
     action path
 
+-- A fresh, uniquely-named directory under the system temp directory, removed
+-- afterwards even when the action throws (an assertion failure included), so a
+-- red run never leaves it behind for the next run to depend on.
+withTempDirectory :: String -> (FilePath -> IO a) -> IO a
+withTempDirectory prefix action = do
+  tmp <- getTemporaryDirectory
+  stamp <- getPOSIXTime
+  let dir = tmp </> (prefix ++ "-" ++ show (round (stamp * 1000000) :: Integer))
+  bracket (pure dir) removePathForcibly action
+
 readUtf8 :: FilePath -> IO String
 readUtf8 path =
   withFile path ReadMode $ \stream -> do
@@ -126,79 +137,86 @@ spec = do
       ["--help"]
       ["Phino - CLI Manipulator of 𝜑-Calculus Expressions", "Usage:"]
 
-  describe "--pin" $ do
-    it "succeeds when --pin matches actual version" $
-      withStdin "[[ ]]" $
-        testCLISucceeded
-          ["--pin=" ++ showVersion version, "rewrite", "--sweet"]
-          ["⟦⟧"]
+  describe "--pin" $
+    forM_
+      [
+        ( "succeeds when --pin matches actual version"
+        , ["--pin=" ++ showVersion version, "rewrite", "--sweet"]
+        , testCLISucceeded
+        , ["⟦⟧"]
+        )
+      ,
+        ( "fails when --pin doesn't match actual version"
+        , ["--pin=9.9.9.9", "rewrite"]
+        , testCLIFailed
+        , ["Version mismatch: --pin requires '9.9.9.9', but this is phino " ++ showVersion version]
+        )
+      ,
+        ( "fails when --pin is empty"
+        , ["--pin=", "rewrite"]
+        , testCLIFailed
+        , ["Version mismatch: --pin requires ''"]
+        )
+      ]
+      (\(desc, args, test, expected) -> it desc (withStdin "[[ ]]" (test args expected)))
 
-    it "fails when --pin doesn't match actual version" $
-      withStdin "[[ ]]" $
-        testCLIFailed
-          ["--pin=9.9.9.9", "rewrite"]
-          ["Version mismatch: --pin requires '9.9.9.9', but this is phino " ++ showVersion version]
-
-    it "fails when --pin is empty" $
-      withStdin "[[ ]]" $
-        testCLIFailed
-          ["--pin=", "rewrite"]
-          ["Version mismatch: --pin requires ''"]
-
-  describe "--hide-rho" $ do
-    it "drops every rho binding from the default salty output" $
-      withStdin "[[ foo -> [[ x -> [[ ]], ^ -> $.y ]], y -> [[ ]] ]]" $
-        testCLISucceeded
-          ["rewrite", "--flat", "--hide-rho"]
-          ["⟦ foo ↦ ⟦ x ↦ ⟦⟧ ⟧, y ↦ ⟦⟧ ⟧"]
-
-    it "also drops the rho that --sweet leaves behind" $
-      withStdin "[[ foo -> [[ x -> [[ ]], ^ -> $.y ]], y -> [[ ]] ]]" $
-        testCLISucceeded
-          ["rewrite", "--flat", "--sweet", "--hide-rho"]
-          ["⟦ foo ↦ ⟦ x ↦ ⟦⟧ ⟧, y ↦ ⟦⟧ ⟧"]
-
-    it "keeps sweet numeric literals intact" $
-      withStdin "[[ a -> 42 ]]" $
-        testCLISucceeded
-          ["rewrite", "--flat", "--sweet", "--hide-rho"]
-          ["⟦ a ↦ 42 ⟧"]
+  describe "--hide-rho" $
+    forM_
+      [
+        ( "drops every rho binding from the default salty output"
+        , "[[ foo -> [[ x -> [[ ]], ^ -> $.y ]], y -> [[ ]] ]]"
+        , ["rewrite", "--flat", "--hide-rho"]
+        , ["⟦ foo ↦ ⟦ x ↦ ⟦⟧ ⟧, y ↦ ⟦⟧ ⟧"]
+        )
+      ,
+        ( "also drops the rho that --sweet leaves behind"
+        , "[[ foo -> [[ x -> [[ ]], ^ -> $.y ]], y -> [[ ]] ]]"
+        , ["rewrite", "--flat", "--sweet", "--hide-rho"]
+        , ["⟦ foo ↦ ⟦ x ↦ ⟦⟧ ⟧, y ↦ ⟦⟧ ⟧"]
+        )
+      ,
+        ( "keeps sweet numeric literals intact"
+        , "[[ a -> 42 ]]"
+        , ["rewrite", "--flat", "--sweet", "--hide-rho"]
+        , ["⟦ a ↦ 42 ⟧"]
+        )
+      ]
+      (\(desc, input, args, expected) -> it desc (withStdin input (testCLISucceeded args expected)))
 
   it "prints debug info with --log-level=DEBUG" $
     withStdin "[[]]" $
       testCLISucceeded ["rewrite", "--log-level=DEBUG"] ["[DEBUG]:"]
 
+  describe "--log-level accepts every named level" $
+    forM_
+      ["ERROR", "ERR", "error", "NONE", "none"]
+      ( \flagValue ->
+          it ("--log-level=" ++ flagValue) $
+            withStdin "[[]]" $
+              testCLISucceeded ["rewrite", "--log-level=" ++ flagValue] ["⟧"]
+      )
+
+  it "fails on an unrecognized --log-level value" $
+    withStdin "[[]]" $
+      testCLIFailed ["rewrite", "--log-level=verbose"] ["unknown log-level: verbose"]
+
   describe "rewriting" $ do
     describe "fails" $ do
-      it "with --input=latex" $
-        withStdin "" $
-          testCLIFailed
-            ["rewrite", "--input=latex"]
-            ["The value 'latex' can't be used for '--input' option"]
-
-      it "with negative --log-lines" $
-        withStdin "" $
-          testCLIFailed
-            ["rewrite", "--log-lines=-2"]
-            ["--log-lines must be >= -1"]
-
-      it "with negative --max-depth" $
-        withStdin "" $
-          testCLIFailed
-            ["rewrite", "--max-depth=-1"]
-            ["--max-depth must be positive"]
-
-      it "with --normalize and --must=1" $
-        withStdin "[[ x -> [[ y -> 5 ]].y ]].x" $
-          testCLIFailed
-            ["rewrite", "--max-cycles=2", "--max-depth=1", "--normalize", "--must=1"]
-            ["it's expected rewriting cycles to be in range [1], but rewriting has already reached 2"]
-
-      it "when --in-place is used without input file" $
-        withStdin "[[ ]]" $
-          testCLIFailed
-            ["rewrite", "--in-place"]
-            ["--in-place requires an input file"]
+      forM_
+        [ ("with --input=latex", "", ["rewrite", "--input=latex"], ["The value 'latex' can't be used for '--input' option"])
+        , ("with negative --log-lines", "", ["rewrite", "--log-lines=-2"], ["--log-lines must be >= -1"])
+        , ("with negative --max-depth", "", ["rewrite", "--max-depth=-1"], ["--max-depth must be positive"])
+        , ("with zero --max-cycles", "", ["rewrite", "--max-cycles=0"], ["--max-cycles must be positive"])
+        , ("with zero --meet-length", "", ["rewrite", "--output=latex", "--meet-length=0"], ["--meet-length must be positive"])
+        ,
+          ( "with --normalize and --must=1"
+          , "[[ x -> [[ y -> 5 ]].y ]].x"
+          , ["rewrite", "--max-cycles=2", "--max-depth=1", "--normalize", "--must=1"]
+          , ["it's expected rewriting cycles to be in range [1], but rewriting has already reached 2"]
+          )
+        , ("when --in-place is used without input file", "[[ ]]", ["rewrite", "--in-place"], ["--in-place requires an input file"])
+        ]
+        (\(desc, input, args, expected) -> it desc (withStdin input (testCLIFailed args expected)))
 
       it "when --in-place is used with --target" $
         withTempFile "inplaceXXXXXX.phi" $ \(path, h) -> do
@@ -208,35 +226,34 @@ spec = do
             ["rewrite", "--in-place", "--target=output.phi", path]
             ["--in-place and --target cannot be used together"]
 
-      it "when --update is used without --target" $
-        withStdin "[[ ]]" $
-          testCLIFailed
-            ["rewrite", "--update"]
-            ["--update requires --target"]
-
-      it "when --update is used without an input file" $
-        withStdin "[[ ]]" $
-          testCLIFailed
-            ["rewrite", "--update", "--target=output.phi"]
-            ["--update requires an input file"]
-
-      it "when --update is used with --in-place" $
-        withStdin "[[ ]]" $
-          testCLIFailed
-            ["rewrite", "--update", "--in-place", "input.phi"]
-            ["--update and --in-place cannot be used together"]
-
-      it "with --depth-sensitive" $
-        withStdin "[[ x -> \"x\"]]" $
-          testCLIFailed
-            ["rewrite", "--depth-sensitive", "--max-depth=1", "--max-cycles=1", rule "infinite.yaml"]
-            ["[ERROR]: With option --depth-sensitive it's expected rewriting iterations amount does not reach the limit: --max-depth=1"]
-
-      it "with looping rules" $
-        withStdin "[[ x -> \"0\" ]]" $
-          testCLIFailed
-            ["rewrite", rule "first.yaml", rule "second.yaml", "--max-depth=1", "--max-cycles=3"]
-            ["it seems rewriting is looping"]
+      forM_
+        [ ("when --update is used without --target", "[[ ]]", ["rewrite", "--update"], ["--update requires --target"])
+        ,
+          ( "when --update is used without an input file"
+          , "[[ ]]"
+          , ["rewrite", "--update", "--target=output.phi"]
+          , ["--update requires an input file"]
+          )
+        ,
+          ( "when --update is used with --in-place"
+          , "[[ ]]"
+          , ["rewrite", "--update", "--in-place", "input.phi"]
+          , ["--update and --in-place cannot be used together"]
+          )
+        ,
+          ( "with --depth-sensitive"
+          , "[[ x -> \"x\"]]"
+          , ["rewrite", "--depth-sensitive", "--max-depth=1", "--max-cycles=1", rule "infinite.yaml"]
+          , ["[ERROR]: With option --depth-sensitive it's expected rewriting iterations amount does not reach the limit: --max-depth=1"]
+          )
+        ,
+          ( "with looping rules"
+          , "[[ x -> \"0\" ]]"
+          , ["rewrite", rule "first.yaml", rule "second.yaml", "--max-depth=1", "--max-cycles=3"]
+          , ["it seems rewriting is looping"]
+          )
+        ]
+        (\(desc, input, args, expected) -> it desc (withStdin input (testCLIFailed args expected)))
 
       -- Only assert the stable parts of the parse error: phino's envelope and
       -- that megaparsec reports an 'unexpected' token. The exact line:column and
@@ -250,113 +267,63 @@ spec = do
           , "unexpected"
           ]
 
-      it "with --output != latex and --nonumber" $
-        withStdin "" $
-          testCLIFailed
-            ["rewrite", "--nonumber", "--output=xmir"]
-            ["The --nonumber option can stay together with --output=latex only"]
-
-      it "with --omit-listing and --output != xmir" $
-        withStdin "" $
-          testCLIFailed
-            ["rewrite", "--omit-listing", "--output=phi"]
-            ["--omit-listing"]
-
-      it "with --omit-comments and --output != xmir" $
-        withStdin "" $
-          testCLIFailed
-            ["rewrite", "--omit-comments", "--output=phi"]
-            ["--omit-comments"]
-
-      it "with --expression and --output != latex" $
-        withStdin "" $
-          testCLIFailed
-            ["rewrite", "--expression=foo", "--output=phi"]
-            ["--expression option can stay together with --output=latex only"]
-
-      it "with --label and --output != latex" $
-        withStdin "" $
-          testCLIFailed
-            ["rewrite", "--label=foo", "--output=phi"]
-            ["--label option can stay together with --output=latex only"]
-
-      it "with --compress and --output != latex" $
-        withStdin "" $
-          testCLIFailed
-            ["rewrite", "--compress", "--output=phi"]
-            ["--compress option can stay together with --output=latex only"]
-
-      it "with --meet-prefix and --output != latex" $
-        withStdin "" $
-          testCLIFailed
-            ["rewrite", "--meet-prefix=foo", "--output=phi"]
-            ["--meet-prefix option can stay together with --output=latex only"]
-
-      it "with wrong --hide option" $
-        withStdin "" $
-          testCLIFailed
-            ["rewrite", "--hide=Q.x(Q.y)"]
-            ["[ERROR]: Invalid set of arguments: Only dispatch expression", "but given: Φ.x( Φ.y )"]
-
-      it "with many --show options" $
-        withStdin "" $
-          testCLIFailed
-            ["rewrite", "--show=Q.x.y", "--show=hello"]
-            ["The option --show can be used only once"]
-
-      it "with wrong --show option" $
-        withStdin "" $
-          testCLIFailed
-            ["rewrite", "--show=Q.x(Q.y)"]
-            ["[ERROR]:", "Only dispatch expression started with Φ (or Q) can be used in --show"]
-
-      it "with --meet-popularity < 0" $
-        withStdin "" $
-          testCLIFailed
-            ["rewrite", "--meet-popularity=-1"]
-            ["[ERROR]:", "--meet-popularity must be positive"]
-
-      it "with --meet-popularity > 100" $
-        withStdin "" $
-          testCLIFailed
-            ["rewrite", "--meet-popularity=102"]
-            ["[ERROR]:", "--meet-popularity must be <= 100"]
-
-      it "with --meet-popularity and output != latex" $
-        withStdin "" $
-          testCLIFailed
-            ["rewrite", "--meet-popularity=51", "--output=phi"]
-            ["[ERROR]:", "--meet-popularity option can stay together with --output=latex only"]
-
-      it "with --meet-length and output != latex" $
-        withStdin "" $
-          testCLIFailed
-            ["rewrite", "--meet-length=4", "--output=phi"]
-            ["[ERROR]:", "--meet-length option can stay together with --output=latex only"]
-
-      it "with non-dispatch --focus" $
-        withStdin "" $
-          testCLIFailed
-            ["rewrite", "--focus=Q.x(Q.y)"]
-            ["[ERROR]"]
-
-      it "with --focus!=Q and --output=XMIR" $
-        withStdin "" $
-          testCLIFailed
-            ["rewrite", "--focus=Q.x", "--output=xmir"]
-            ["[ERROR]"]
-
-      it "with --margin < 0" $
-        withStdin "" $
-          testCLIFailed
-            ["rewrite", "--margin=-1"]
-            ["[ERROR]"]
-
-      it "with --breakpoint which does not exist across the rules" $
-        withStdin "" $
-          testCLIFailed
-            ["rewrite", "--breakpoint=hello", "--normalize"]
-            ["[ERROR]"]
+      forM_
+        [
+          ( "with --output != latex and --nonumber"
+          , ["rewrite", "--nonumber", "--output=xmir"]
+          , ["The --nonumber option can stay together with --output=latex only"]
+          )
+        , ("with --omit-listing and --output != xmir", ["rewrite", "--omit-listing", "--output=phi"], ["--omit-listing"])
+        , ("with --omit-comments and --output != xmir", ["rewrite", "--omit-comments", "--output=phi"], ["--omit-comments"])
+        ,
+          ( "with --expression and --output != latex"
+          , ["rewrite", "--expression=foo", "--output=phi"]
+          , ["--expression option can stay together with --output=latex only"]
+          )
+        ,
+          ( "with --label and --output != latex"
+          , ["rewrite", "--label=foo", "--output=phi"]
+          , ["--label option can stay together with --output=latex only"]
+          )
+        ,
+          ( "with --compress and --output != latex"
+          , ["rewrite", "--compress", "--output=phi"]
+          , ["--compress option can stay together with --output=latex only"]
+          )
+        ,
+          ( "with --meet-prefix and --output != latex"
+          , ["rewrite", "--meet-prefix=foo", "--output=phi"]
+          , ["--meet-prefix option can stay together with --output=latex only"]
+          )
+        ,
+          ( "with wrong --hide option"
+          , ["rewrite", "--hide=Q.x(Q.y)"]
+          , ["[ERROR]: Invalid set of arguments: Only dispatch expression", "but given: Φ.x( Φ.y )"]
+          )
+        , ("with many --show options", ["rewrite", "--show=Q.x.y", "--show=hello"], ["The option --show can be used only once"])
+        ,
+          ( "with wrong --show option"
+          , ["rewrite", "--show=Q.x(Q.y)"]
+          , ["[ERROR]:", "Only dispatch expression started with Φ (or Q) can be used in --show"]
+          )
+        , ("with --meet-popularity < 0", ["rewrite", "--meet-popularity=-1"], ["[ERROR]:", "--meet-popularity must be positive"])
+        , ("with --meet-popularity > 100", ["rewrite", "--meet-popularity=102"], ["[ERROR]:", "--meet-popularity must be <= 100"])
+        ,
+          ( "with --meet-popularity and output != latex"
+          , ["rewrite", "--meet-popularity=51", "--output=phi"]
+          , ["[ERROR]:", "--meet-popularity option can stay together with --output=latex only"]
+          )
+        ,
+          ( "with --meet-length and output != latex"
+          , ["rewrite", "--meet-length=4", "--output=phi"]
+          , ["[ERROR]:", "--meet-length option can stay together with --output=latex only"]
+          )
+        , ("with non-dispatch --focus", ["rewrite", "--focus=Q.x(Q.y)"], ["[ERROR]"])
+        , ("with --focus!=Q and --output=XMIR", ["rewrite", "--focus=Q.x", "--output=xmir"], ["[ERROR]"])
+        , ("with --margin < 0", ["rewrite", "--margin=-1"], ["[ERROR]"])
+        , ("with --breakpoint which does not exist across the rules", ["rewrite", "--breakpoint=hello", "--normalize"], ["[ERROR]"])
+        ]
+        (\(desc, args, expected) -> it desc (withStdin "" (testCLIFailed args expected)))
 
     it "prints help" $
       testCLISucceeded
@@ -396,39 +363,45 @@ spec = do
           ["rewrite", "--seed=abc"]
           ["[ERROR]"]
 
-    it "saves steps to dir with --steps-dir" $ do
-      let dir = "test-steps-temp"
-      dirExists <- doesDirectoryExist dir
-      when dirExists (removeDirectoryRecursive dir)
-      withStdin "[[ x -> \"hello\"]]" $ do
-        testCLISucceeded
-          ["rewrite", rule "infinite.yaml", "--max-cycles=2", "--max-depth=2", "--steps-dir=" ++ dir, "--sweet"]
-          ["hello_hi_hi"]
-        (`shouldBe` True) <$> doesDirectoryExist dir
-        files <- listDirectory dir
-        length files `shouldBe` 4
-        (`shouldBe` True) <$> doesFileExist (dir ++ "/00001.phi")
-        (`shouldBe` True) <$> doesFileExist (dir ++ "/00003.phi")
-        removeDirectoryRecursive dir
+    it "saves steps to dir with --steps-dir" $
+      withTempDirectory "phino-steps" $ \dir ->
+        withStdin "[[ x -> \"hello\"]]" $ do
+          testCLISucceeded
+            ["rewrite", rule "infinite.yaml", "--max-cycles=2", "--max-depth=2", "--steps-dir=" ++ dir, "--sweet"]
+            ["hello_hi_hi"]
+          doesDirectoryExist dir `shouldReturn` True
+          files <- listDirectory dir
+          length files `shouldBe` 4
+          doesFileExist (dir ++ "/00001.phi") `shouldReturn` True
+          doesFileExist (dir ++ "/00003.phi") `shouldReturn` True
 
-    it "saves dataize steps to dir with --steps-dir" $ do
-      let dir = "test-steps-temp-dataize"
-      dirExists <- doesDirectoryExist dir
-      when dirExists (removeDirectoryRecursive dir)
-      withStdin "[[ bytes(data) -> [[ @ -> $.data ]], number(as-bytes) -> [[ @ -> $.as-bytes, plus(x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6) ]]" $ do
-        testCLISucceeded
-          ["dataize", "--steps-dir=" ++ dir, "--sweet"]
-          ["40-26"]
-        (`shouldBe` True) <$> doesDirectoryExist dir
-        files <- listDirectory dir
-        let steps = sort files
-        -- The fix is about numbering, not about a specific rule set: the file
-        -- names must be distinct and contiguous from 00001, and there must be
-        -- more of them than a single normalization pass produces (this input
-        -- runs several normalizations, so a global counter yields more steps).
-        steps `shouldBe` map (\n -> printf "%05d.phi" (n :: Int)) [1 .. length steps]
-        length steps `shouldSatisfy` (> 18)
-        removeDirectoryRecursive dir
+    it "saves dataize steps to dir with --steps-dir" $
+      withTempDirectory "phino-steps-dataize" $ \dir ->
+        withStdin "[[ bytes(data) -> [[ @ -> $.data ]], number(as-bytes) -> [[ @ -> $.as-bytes, plus(x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6) ]]" $ do
+          testCLISucceeded
+            ["dataize", "--steps-dir=" ++ dir, "--sweet"]
+            ["40-26"]
+          doesDirectoryExist dir `shouldReturn` True
+          files <- listDirectory dir
+          let steps = sort files
+          -- The fix is about numbering, not about a specific rule set: the file
+          -- names must be distinct and contiguous from 00001, and there must be
+          -- more of them than a single normalization pass produces (this input
+          -- runs several normalizations, so a global counter yields more steps).
+          steps `shouldBe` map (\n -> printf "%05d.phi" (n :: Int)) [1 .. length steps]
+          length steps `shouldSatisfy` (> 18)
+
+    it "saves steps with a .tex extension when --output=latex is used with --steps-dir" $
+      withTempDirectory "phino-steps-latex" $ \dir ->
+        withStdin "[[ x -> \"hello\"]]" $ do
+          testCLISucceeded
+            ["rewrite", rule "infinite.yaml", "--max-cycles=2", "--max-depth=2", "--steps-dir=" ++ dir, "--output=latex", "--sweet"]
+            ["\\begin{phiquation}"]
+          doesDirectoryExist dir `shouldReturn` True
+          files <- listDirectory dir
+          length files `shouldBe` 4
+          doesFileExist (dir ++ "/00001.tex") `shouldReturn` True
+          doesFileExist (dir ++ "/00003.tex") `shouldReturn` True
 
     it "desugares without any rules flag from file" $
       testCLISucceeded
@@ -921,6 +894,32 @@ spec = do
           content <- readFile tgt
           content `shouldBe` "ORIGINAL"
 
+    it "logs the skip reason at debug level when --update finds a newer target" $
+      withTempFileContent "src-XXXXXX.phi" "[[ x -> \"foo\" ]]" $ \src ->
+        withTempFileContent "tgt-XXXXXX.phi" "ORIGINAL" $ \tgt -> do
+          now <- getCurrentTime
+          setModificationTime src (addUTCTime (-60) now)
+          setModificationTime tgt now
+          testCLISucceeded
+            ["rewrite", rule "simple.yaml", "--update", "--sweet", "--log-level=DEBUG", "--target=" ++ tgt, src]
+            ["is newer than source", "skipping rewriting (--update)"]
+
+    it "logs progress at debug level when printing to --target" $
+      withStdin "[[ ]]" $
+        withTempFile "targetXXXXXX.tmp" $ \(path, h) -> do
+          hClose h
+          testCLISucceeded
+            ["rewrite", "--sweet", "--log-level=DEBUG", printf "--target=%s" path]
+            ["The option '--target' is specified, printing to", "The command result was saved in"]
+
+    it "logs progress at debug level when modifying a file in-place" $
+      withTempFile "inplaceXXXXXX.phi" $ \(path, h) -> do
+        hPutStr h "[[ x -> \"foo\" ]]"
+        hClose h
+        testCLISucceeded
+          ["rewrite", rule "simple.yaml", "--in-place", "--sweet", "--log-level=DEBUG", path]
+          ["The option '--in-place' is specified, writing back to", "was modified in-place"]
+
     it "rewrites with --update when source is newer than target" $
       withTempFileContent "src-XXXXXX.phi" "[[ x -> \"foo\" ]]" $ \src ->
         withTempFileContent "tgt-XXXXXX.phi" "ORIGINAL" $ \tgt -> do
@@ -1184,7 +1183,34 @@ spec = do
             ["dataize", "--hide=Q.x(Q.y)"]
             ["[ERROR]: Invalid set of arguments: Only dispatch expression", "but given: Φ.x( Φ.y )"]
 
+      it "with wrong --show option" $
+        withStdin "" $
+          testCLIFailed
+            ["dataize", "--show=Q.x(Q.y)"]
+            ["[ERROR]:", "Only dispatch expression started with Φ (or Q) can be used in --show"]
+
+      it "with wrong --locator option" $
+        withStdin "" $
+          testCLIFailed
+            ["dataize", "--locator=Q.x(Q.y)"]
+            ["[ERROR]:", "Only dispatch expression started with Φ (or Q) can be used in --locator"]
+
+      it "with wrong --focus option" $
+        withStdin "" $
+          testCLIFailed
+            ["dataize", "--focus=Q.x(Q.y)"]
+            ["[ERROR]:", "Only dispatch expression started with Φ (or Q) can be used in --focus"]
+
+    it "accepts --depth-sensitive" $
+      withStdin "[[ D> 01- ]]" $
+        testCLISucceeded ["dataize", "--depth-sensitive"] ["01-"]
+
   describe "explain" $ do
+    it "prints help" $
+      testCLISucceeded
+        ["explain", "--help"]
+        ["Explain built-in morphing rules", "Explain built-in dataization rules", "Explain built-in contextualization rules"]
+
     it "explains single rule" $
       testCLISucceeded
         ["explain", "--rule=resources/normalize/copy.yaml"]
@@ -1481,6 +1507,9 @@ spec = do
         )
 
   describe "merge" $ do
+    it "prints help" $
+      testCLISucceeded ["merge", "--help"] ["Paths to input files"]
+
     it "merges single expression" $
       testCLISucceeded
         ["merge", resource "desugar.phi", "--sweet", "--flat"]
@@ -1519,7 +1548,17 @@ spec = do
         ["merge"]
         ["At least one input file must be specified for 'merge' command"]
 
+    it "merges and prints as XMIR, with the listing rendered from the merged expression" $
+      testCLISucceeded
+        ["merge", resource "desugar.phi", "--output=xmir"]
+        ["<?xml version=\"1.0\" encoding=\"UTF-8\"?>", "<listing>⟦ foo ↦ ξ.x, ρ ↦ ∅ ⟧</listing>", "<o base=\"ξ.x\" name=\"foo\"/>"]
+
   describe "match" $ do
+    it "prints help" $
+      testCLISucceeded
+        ["match", "--help"]
+        ["Pattern expression to match against", "Predicate for matched substitutions"]
+
     it "takes from stdin" $
       withStdin "[[]]" $
         testCLISucceeded ["match", "--log-level=debug"] ["[DEBUG]"]
@@ -1565,3 +1604,37 @@ spec = do
         testCLIFailed
           ["match", "--pattern=$.!t"]
           ["[ERROR]"]
+
+  describe "CmdException Show instance" $
+    forM_
+      [ ("InvalidCLIArguments", InvalidCLIArguments "bad flag", "Invalid set of arguments: bad flag")
+      , ("CouldNotReadFromStdin", CouldNotReadFromStdin "broken pipe", "Could not read input from stdin\nReason: broken pipe")
+      , ("CouldNotDataize", CouldNotDataize, "Could not dataize given expression")
+      ,
+        ( "CouldNotPrintExpressionInXMIR"
+        , CouldNotPrintExpressionInXMIR
+        , "Could not print expression with --output=xmir, only expression printing is allowed"
+        )
+      , ("EmptySubstsOnMatch", EmptySubstsOnMatch, "Provided pattern was not matched, no substitutions are built")
+      ,
+        ( "VersionMismatch"
+        , VersionMismatch "1.2.3" "4.5.6"
+        , "Version mismatch: --pin requires '1.2.3', but this is phino 4.5.6"
+        )
+      ]
+      ( \(desc, exception, expected) ->
+          it (desc ++ " renders its message") $ do
+            show exception `shouldBe` expected
+            displayException exception `shouldBe` expected
+      )
+
+  describe "IOFormat Show instance" $
+    forM_
+      [ ("XMIR", XMIR, "xmir")
+      , ("PHI", PHI, "phi")
+      , ("LATEX", LATEX, "latex")
+      ]
+      ( \(desc, format, expected) ->
+          it (desc ++ " renders as " ++ expected) $
+            show format `shouldBe` expected
+      )

@@ -9,9 +9,11 @@
 module RewriterSpec where
 
 import AST (Expression (ExRoot))
+import Control.Exception (SomeException)
 import Control.Monad (forM_, unless)
 import Data.Aeson
 import Data.Char (isSpace)
+import Data.List (isInfixOf)
 import Data.List.NonEmpty qualified as NE
 import Data.Yaml qualified as Yaml
 import Deps (dontSaveStep)
@@ -24,7 +26,7 @@ import Printer (printExpression)
 import Rewriter (RewriteContext (RewriteContext), rewrite)
 import System.FilePath (makeRelative, replaceExtension, (</>))
 import Tau (seedTaus)
-import Test.Hspec (Spec, describe, expectationFailure, it, pending, runIO)
+import Test.Hspec (Spec, describe, expectationFailure, it, pending, runIO, shouldSatisfy, shouldThrow)
 import Yaml (normalizationRules)
 import Yaml qualified as Y
 
@@ -61,7 +63,43 @@ noSpaces :: String -> String
 noSpaces = filter (not . isSpace)
 
 spec :: Spec
-spec =
+spec = do
+  describe "--max-cycles and --max-depth limits" $
+    forM_
+      [
+        ( "throws with --depth-sensitive once --max-cycles is reached"
+        , []
+        , (5, 0, True)
+        , Left "--max-cycles=0"
+        )
+      ,
+        ( "stops silently without --depth-sensitive once --max-cycles is reached"
+        , []
+        , (5, 0, False)
+        , Right snd
+        )
+      ,
+        ( "throws with --depth-sensitive once --max-depth is reached for a rule"
+        , normalizationRules
+        , (0, 5, True)
+        , Left "--max-depth=0"
+        )
+      ,
+        ( "does not throw without --depth-sensitive once --max-depth is reached for a rule"
+        , normalizationRules
+        , (0, 5, False)
+        , Right (\(rewrittens, _) -> fst (NE.last rewrittens) == ExRoot)
+        )
+      ]
+      ( \(desc, rewriteRules, (maxDepth, maxCycles, depthSensitive), expected) -> it desc $ do
+          let action = rewrite ExRoot rewriteRules (RewriteContext ExRoot maxDepth maxCycles depthSensitive buildTerm MtDisabled Nothing dontSaveStep)
+          case expected of
+            Left fragment -> action `shouldThrow` (\exc -> fragment `isInfixOf` show (exc :: SomeException))
+            Right predicate -> do
+              result <- action
+              result `shouldSatisfy` predicate
+      )
+
   describe "rewrite packs" $ do
     let resources = "test-resources/rewriter-packs"
     packs <- runIO (allPathsIn resources)

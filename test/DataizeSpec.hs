@@ -12,14 +12,15 @@ import Control.Monad
 import Data.List (find, isInfixOf, nub)
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.Maybe (fromMaybe)
-import Dataize (DataizeContext (DataizeContext), Steps (Steps), dataize, dataize', emptyState, execBuildTerm, morph)
-import Deps (dontSaveEval, dontSaveStep)
+import Dataize (DataizeContext (..), Steps (..), dataize, dataize', emptyState, execBuildTerm, morph)
+import Deps (Term (TeExpression), dontSaveEval, dontSaveStep)
 import Functions (buildTerm)
 import Matcher (substEmpty)
 import Parser (parseExpressionThrows)
 import Rewriter (Rewritten)
 import Rule (RuleContext (RuleContext), matchExpressionWithRule')
 import Test.Hspec
+import Yaml (ExtraArgument (..))
 import Yaml qualified
 
 -- Shuffle is enabled so the suite exercises the order-independence of the
@@ -79,7 +80,8 @@ primitives src =
     , "    plus -> [[ x -> ?, L> L_number_plus ]],"
     , "    times -> [[ x -> ?, L> L_number_times ]],"
     , "    div -> [[ x -> ?, L> L_number_div ]],"
-    , "    gt -> [[ x -> ?, L> L_number_gt ]]"
+    , "    gt -> [[ x -> ?, L> L_number_gt ]],"
+    , "    eq -> [[ x -> ?, y -> ?, L> L_number_eq ]]"
     , "  ]],"
     , "  string -> [[ as-bytes -> ?, @ -> $.as-bytes ]],"
     , "  true -> [[ @ -> [[ D> 01- ]] ]],"
@@ -136,7 +138,115 @@ spec = do
         , ExRoot
         , ExTermination
         )
+      , -- Same as above but through the alpha-argument sibling 'maad' instead of
+        -- 'mad': a void slot fed a non-absolute alpha-indexed argument also
+        -- morphs straight to ⊥.
+
+        ( "[[ ^ -> ? ]](α0 -> $.foo) => T"
+        , ExApplication (ExFormation [BiVoid AtRho]) (ArAlpha (Alpha 0) (ExDispatch ExXi (AtLabel "foo")))
+        , ExRoot
+        , ExTermination
+        )
+      , -- 'universe' fires only when the universe 'e' differs from Φ itself
+        -- ('not (eq(e, Φ))'); it then normalizes and re-morphs that universe.
+        -- Here the universe is a plain formation, already a normal form, so
+        -- re-morphing it lands straight on 'mf' and returns it unchanged.
+
+        ( "Q => [[]] (a universe distinct from Φ) => [[]]"
+        , ExRoot
+        , ExFormation []
+        , ExFormation []
+        )
       ]
+
+  -- 𝕄's first argument is always a normal form reachable through normalization,
+  -- and every such normal form is covered by some morphing clause (an axiom
+  -- like 'mf'/'dead'/'xi'/'universe'/'mg' or a recursive rule), so the "no rule
+  -- matched" fallback never fires along any real derivation. It is still total
+  -- code, reachable by calling 'morph' directly (bypassing normalization) on a
+  -- raw meta 𝑛, an AST node the matcher never binds to any concrete pattern.
+  describe "morph fails when no morphing rule matches the term" $
+    it "throws instead of looping when handed a bare, unmatched meta" $
+      morph (ExMeta "unbound", (ExRoot, Nothing) :| []) ExRoot emptyState (defaultDataizeContext ExRoot)
+        `shouldThrow` (\e -> "no morphing rule matched" `isInfixOf` show (e :: SomeException))
+
+  -- Symmetric to the morphing fallback above: every normal form 𝔻 actually
+  -- receives is covered by 'delta'/'box'/'fire'/'none' (formations) or 'norm'
+  -- (everything else, disjoint from ⊥ and formations), so this fallback is
+  -- unreachable through the public 'dataize'/'dataize'' entry points on any
+  -- term produced by normalization. A raw meta again reaches it directly,
+  -- proving the fallback itself is live code, not dead weight.
+  describe "dataize' fails when no dataization rule matches the term" $
+    it "throws instead of treating the unmatched meta as ⊥" $
+      dataize' (ExMeta "unbound", (ExRoot, Nothing) :| []) ExRoot emptyState (defaultDataizeContext ExRoot)
+        `shouldThrow` (\e -> "no dataization rule matched" `isInfixOf` show (e :: SomeException))
+
+  -- 'execBuildTerm's "evaluate" and "morph" cases expose 𝔼 and 𝕄 to the
+  -- matcher's condition path (guards in 'when'/'having'). No built-in rule's
+  -- guard actually calls either function, so these error paths — reachable only
+  -- by malformed arguments — are exercised here directly through the exported
+  -- 'execBuildTerm', the same way the matcher would call it.
+  describe "execBuildTerm 'evaluate'" $ do
+    let univ = ExFormation []
+        ctx = defaultDataizeContext ExRoot
+        runEvaluate args = execBuildTerm univ ctx "evaluate" args substEmpty
+    forM_
+      [
+        ( "the first argument is not a formation"
+        , [ArgExpression ExRoot, ArgExpression univ]
+        , "Function evaluate() expects a formation"
+        )
+      ,
+        ( "the formation has no λ binding at all"
+        , [ArgExpression (ExFormation []), ArgExpression univ]
+        , "expects a formation with a"
+        )
+      ,
+        ( "a non-λ formation still has other bindings"
+        , [ArgExpression (ExFormation [BiVoid AtRho]), ArgExpression univ]
+        , "expects a formation with a"
+        )
+      ,
+        ( "not given exactly two expression arguments"
+        , [ArgExpression univ]
+        , "requires exactly 2 expression arguments"
+        )
+      ]
+      ( \(desc, args, message) ->
+          it ("throws when " ++ desc) $
+            runEvaluate args `shouldThrow` (\e -> message `isInfixOf` show (e :: SomeException))
+      )
+    it "evaluates a λ-bearing formation to the atom's normalized result" $ do
+      let form = ExFormation [BiLambda (Function "L_bytes_not"), BiTau AtRho (ExFormation [BiDelta (BtOne "00")])]
+      result <- runEvaluate [ArgExpression form, ArgExpression univ]
+      case result of
+        TeExpression expr -> expr `shouldBe` dataBytes (BtOne "FF")
+        _ -> expectationFailure "expected TeExpression"
+
+  describe "execBuildTerm 'morph'" $ do
+    let univ = ExFormation []
+        ctx = defaultDataizeContext ExRoot
+    it "throws when not given exactly one expression argument" $
+      execBuildTerm univ ctx "morph" [] substEmpty
+        `shouldThrow` (\e -> "requires exactly 1 expression argument" `isInfixOf` show (e :: SomeException))
+    it "morphs a single expression argument to its already-normal form" $ do
+      result <- execBuildTerm univ ctx "morph" [ArgExpression (ExFormation [BiDelta (BtOne "00")])] substEmpty
+      case result of
+        TeExpression expr -> expr `shouldBe` ExFormation [BiDelta (BtOne "00")]
+        _ -> expectationFailure "expected TeExpression"
+
+  -- Every atom's operand is fetched through the synthetic '_dataize', which
+  -- rebuilds the universe as a formation to bind the operand into before
+  -- reducing it. A universe that is not itself a formation can never arise
+  -- from the public 'dataize' entry point (its own universe argument doubles
+  -- as the located root of a real program, always a formation), but 'dataize''
+  -- lets a test drive an atom-bearing term against one directly, proving the
+  -- guard fires instead of the atom looping or crashing some other way.
+  describe "atoms refuse to run under a non-formation universe" $
+    it "fails fast instead of dispatching against a non-formation universe" $ do
+      let form = ExFormation [BiLambda (Function "L_bytes_not"), BiVoid AtRho]
+      dataize' (form, (ExRoot, Nothing) :| []) ExRoot emptyState (defaultDataizeContext ExRoot)
+        `shouldThrow` (\e -> "non-formation universe" `isInfixOf` show (e :: SomeException))
 
   -- 'defaultDataizeContext' runs with '_shuffle' on, so 'morph' walks the
   -- morphing rules in a random order on every step. Every clause is
@@ -282,6 +392,41 @@ spec = do
       expr <- parseExpressionThrows "⟦ @ ↦ ⟦ λ ⤍ L_number_div, ρ ↦ ⟦ Δ ⤍ 40-45-00-00-00-00-00-00 ⟧, x ↦ ⟦ Δ ⤍ 40-00-00-00-00-00-00-00 ⟧ ⟧ ⟧"
       dataize expr (DataizeContext ExRoot 25 25 (Steps 40 0) False True buildTerm dontSaveStep dontSaveEval)
         `shouldThrow` (\e -> "--max-steps=40" `isInfixOf` show (e :: SomeException))
+
+  -- '_maxDepth'/'_maxCycles' bound the normalization rewriter that a 'box' or
+  -- 'norm' dataization step splices in (see 'normalized'); with
+  -- '_depthSensitive' on, exhausting either one propagates the very same
+  -- exception the rewriter itself throws, and with it off the limit is
+  -- absorbed silently, so dataization still reaches an answer.
+  describe "DataizeContext's --max-depth/--max-cycles reach into the normalization it splices in" $ do
+    let boxed = "[[ @ -> [[ D> 00- ]] ]]"
+    forM_
+      [
+        ( "--max-cycles"
+        , DataizeContext ExRoot 25 0 (Steps 250 0) True True buildTerm dontSaveStep dontSaveEval
+        , "--max-cycles=0"
+        )
+      ,
+        ( "--max-depth"
+        , DataizeContext ExRoot 0 25 (Steps 250 0) True True buildTerm dontSaveStep dontSaveEval
+        , "--max-depth=0"
+        )
+      ]
+      ( \(flag, ctx, message) ->
+          it ("throws once " ++ flag ++ " is exhausted with --depth-sensitive") $ do
+            expr <- parseExpressionThrows boxed
+            dataize expr ctx `shouldThrow` (\e -> message `isInfixOf` show (e :: SomeException))
+      )
+    forM_
+      [ ("--max-cycles", DataizeContext ExRoot 25 0 (Steps 250 0) False True buildTerm dontSaveStep dontSaveEval)
+      , ("--max-depth", DataizeContext ExRoot 0 25 (Steps 250 0) False True buildTerm dontSaveStep dontSaveEval)
+      ]
+      ( \(flag, ctx) ->
+          it ("does not throw without --depth-sensitive even once " ++ flag ++ " is exhausted") $ do
+            expr <- parseExpressionThrows boxed
+            (value, _) <- dataize expr ctx
+            value `shouldBe` BtOne "00"
+      )
 
   describe "labels every step with a defined rule or operation" $ do
     let verb op = case op of
@@ -538,4 +683,15 @@ spec = do
       , ("cannot disjoin bytes of different lengths", raw "20-1F" ++ ".or( " ++ raw "CA-FE-BE" ++ " )")
       , ("cannot slice from an offset beyond the int range", raw "20-1F-EE-B5-90" ++ ".slice( 3000000000, 1 )")
       , ("cannot slice a negative length", raw "20-1F-EE-B5-90" ++ ".slice( 1, -1 )")
+      , -- A number atom rejects an operand that carries no number (empty bytes),
+        -- yielding ⊥ rather than a result; dataizing ⊥ then fails through the
+        -- terminator path, exactly like the bytes-atom cases above.
+        ("cannot add a non-numeric operand", "5.plus( " ++ raw "--" ++ " )")
+      , ("cannot multiply by a non-numeric operand", "5.times( " ++ raw "--" ++ " )")
+      , ("cannot divide by a non-numeric divisor", "5.div( " ++ raw "--" ++ " )")
+      , ("cannot compare against a non-numeric threshold", "5.gt( " ++ raw "--" ++ " )")
+      , ("cannot test equality against a non-numeric operand", "5.eq( " ++ raw "--" ++ ", 6 )")
+      , -- 'right' rejects a shift distance that is not a plain 8-byte integer;
+        -- empty bytes carry no such integer, so the shift atom is stuck too.
+        ("cannot shift right by a non-integer distance", raw "C0-43-00-00-00-00-00-00" ++ ".right( " ++ raw "--" ++ " )")
       ]

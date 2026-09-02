@@ -8,19 +8,12 @@ module MatcherSpec where
 import AST
 import Control.Monad (forM_)
 import Data.Map.Strict qualified as Map
-import Data.Maybe (fromMaybe)
 import Data.Text qualified as T
 import Matcher
 import Test.Hspec (Example (Arg), Expectation, Spec, SpecWith, describe, it, shouldBe)
 
 substs :: [[(T.Text, MetaValue)]] -> [Subst]
 substs = map (Subst . Map.fromList)
-
-maybeCombined :: Subst -> Subst -> Subst
-maybeCombined first second =
-  fromMaybe
-    (error "combine returned Nothing")
-    (combine first second)
 
 test ::
   (a -> a -> [Subst]) ->
@@ -166,6 +159,53 @@ spec = do
       ]
       ( \(desc, ptn, tgt, expected) ->
           it desc $ matchAlpha ptn tgt `shouldBe` expected
+      )
+
+  describe "matchFunction: function => function => substitution" $
+    forM_
+      [ ("!f => Func => [(!f >> Func)]", FnMeta "f", Function "Func", substs [[("f", MvFunction "Func")]])
+      , ("Func => Func => [()]", Function "Func", Function "Func", substs [[]])
+      , ("Func => Other => []", Function "Func", Function "Other", substs [])
+      ]
+      ( \(desc, ptn, tgt, expected) ->
+          it desc $ matchFunction ptn tgt `shouldBe` expected
+      )
+
+  describe "matchExpression': phi-meet/phi-again nodes" $
+    forM_
+      [
+        ( "PhiMeet(same prefix/idx) matches its inner expression"
+        , ExPhiMeet (Just "p") 1 ExRoot
+        , ExPhiMeet (Just "p") 1 ExRoot
+        , substs [[]]
+        )
+      ,
+        ( "PhiMeet with different idx does not match"
+        , ExPhiMeet (Just "p") 1 ExRoot
+        , ExPhiMeet (Just "p") 2 ExRoot
+        , substs []
+        )
+      ,
+        ( "PhiMeet with different prefix does not match"
+        , ExPhiMeet (Just "p") 1 ExRoot
+        , ExPhiMeet (Just "q") 1 ExRoot
+        , substs []
+        )
+      ,
+        ( "PhiAgain(same prefix/idx) matches its inner expression"
+        , ExPhiAgain Nothing 0 ExXi
+        , ExPhiAgain Nothing 0 ExXi
+        , substs [[]]
+        )
+      ,
+        ( "PhiAgain with different idx does not match"
+        , ExPhiAgain Nothing 0 ExXi
+        , ExPhiAgain Nothing 1 ExXi
+        , substs []
+        )
+      ]
+      ( \(desc, ptn, tgt, expected) ->
+          it desc $ matchExpression' ptn tgt `shouldBe` expected
       )
 
   describe "matchBindings: [binding] => [binding] => substitution" $
@@ -426,42 +466,34 @@ spec = do
         )
       ]
 
-  describe "combine" $ do
-    it "combines empty substitutions" $
-      combine substEmpty substEmpty `shouldBe` Just substEmpty
-    it "combines two empty substs from list" $
-      combine (Subst Map.empty) (Subst Map.empty) `shouldBe` Just substEmpty
-    it "combines empty subst with single one" $ do
-      let Subst joined = maybeCombined substEmpty (Subst (Map.singleton "at" (MvAttribute AtPhi)))
-      Map.lookup "at" joined `shouldBe` Just (MvAttribute AtPhi)
-    it "combines two different subst" $ do
-      let Subst joined =
-            maybeCombined
-              (Subst (Map.singleton "first" (MvAttribute AtPhi)))
-              (Subst (Map.singleton "second" (MvBytes (BtOne "00"))))
-      Map.lookup "first" joined `shouldBe` Just (MvAttribute AtPhi)
-      Map.lookup "second" joined `shouldBe` Just (MvBytes (BtOne "00"))
-    it "leave values in the same substs" $ do
-      let rho = MvAttribute AtRho
-          first =
-            Subst
-              ( Map.fromList
-                  [ ("first", rho)
-                  , ("second", MvAttribute AtPhi)
-                  ]
-              )
-          second = Subst (Map.singleton "first" rho)
-          Subst joined = maybeCombined first second
-      Map.lookup "first" joined `shouldBe` Just (MvAttribute AtRho)
-    it "returns Nothing if values are different" $
-      combine (Subst (Map.singleton "x" (MvAttribute AtPhi))) (Subst (Map.singleton "x" (MvAttribute AtRho))) `shouldBe` Nothing
-    it "clears all the values" $ do
-      let first =
-            Subst
-              ( Map.fromList
-                  [ ("x", MvAttribute AtRho)
-                  , ("y", MvBytes (BtOne "1F"))
-                  ]
-              )
-          second = Subst (Map.singleton "x" (MvAttribute AtPhi))
-      combine first second `shouldBe` Nothing
+  describe "combine" $
+    forM_
+      [ ("combines two empty substitutions", substEmpty, substEmpty, Just substEmpty)
+      , ("combines two empty substs built directly from an empty map", Subst Map.empty, Subst Map.empty, Just substEmpty)
+      ,
+        ( "combines an empty subst with a single-entry one"
+        , substEmpty
+        , Subst (Map.singleton "at" (MvAttribute AtPhi))
+        , Just (Subst (Map.singleton "at" (MvAttribute AtPhi)))
+        )
+      ,
+        ( "combines two substs with disjoint keys"
+        , Subst (Map.singleton "first" (MvAttribute AtPhi))
+        , Subst (Map.singleton "second" (MvBytes (BtOne "00")))
+        , Just (Subst (Map.fromList [("first", MvAttribute AtPhi), ("second", MvBytes (BtOne "00"))]))
+        )
+      ,
+        ( "keeps a shared key when both substs agree on its value"
+        , Subst (Map.fromList [("first", MvAttribute AtRho), ("second", MvAttribute AtPhi)])
+        , Subst (Map.singleton "first" (MvAttribute AtRho))
+        , Just (Subst (Map.fromList [("first", MvAttribute AtRho), ("second", MvAttribute AtPhi)]))
+        )
+      , ("returns Nothing when a shared key disagrees", Subst (Map.singleton "x" (MvAttribute AtPhi)), Subst (Map.singleton "x" (MvAttribute AtRho)), Nothing)
+      ,
+        ( "returns Nothing for the whole merge when any key conflicts"
+        , Subst (Map.fromList [("x", MvAttribute AtRho), ("y", MvBytes (BtOne "1F"))])
+        , Subst (Map.singleton "x" (MvAttribute AtPhi))
+        , Nothing
+        )
+      ]
+      (\(desc, first, second, expected) -> it desc (combine first second `shouldBe` expected))

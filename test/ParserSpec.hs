@@ -8,13 +8,15 @@
 module ParserSpec where
 
 import AST
+import Control.Exception (SomeException, displayException, try)
 import Control.Monad (forM_)
 import Data.Either (isLeft, isRight)
 import Data.List (isInfixOf)
 import Files (allPathsIn)
 import Parser
 import System.FilePath (takeBaseName)
-import Test.Hspec (Example (Arg), Expectation, Spec, SpecWith, anyException, describe, it, runIO, shouldBe, shouldReturn, shouldSatisfy, shouldThrow)
+import Test.Hspec (Example (Arg), Expectation, Spec, SpecWith, anyException, describe, it, runIO, shouldBe, shouldReturn, shouldSatisfy, shouldStartWith, shouldThrow)
+import Text.Megaparsec (parseMaybe)
 
 test ::
   (Eq a, Show a) =>
@@ -36,6 +38,16 @@ fails function useCases =
   forM_ useCases $ \(ipt, fragment) ->
     it ipt (function ipt `shouldSatisfy` either (isInfixOf fragment) (const False))
 
+tryAny :: IO a -> IO (Either SomeException a)
+tryAny = try
+
+renderFailure :: IO a -> IO String
+renderFailure action = do
+  result <- tryAny action
+  case result of
+    Left exc -> pure (displayException exc)
+    Right _ -> fail "expected the parser action to fail"
+
 spec :: Spec
 spec = do
   describe "parse expression" $
@@ -45,12 +57,7 @@ spec = do
       , ("T(x -> Q)", Just (ExApplication ExTermination (ArTau (AtLabel "x") ExRoot)))
       , ("Q.org.eolang", Just (ExDispatch (ExDispatch ExRoot (AtLabel "org")) (AtLabel "eolang")))
       , ("[[x -> $, y -> ?]]", Just (ExFormation [BiTau (AtLabel "x") ExXi, BiVoid (AtLabel "y"), BiVoid AtRho]))
-      ]
-
-  describe "parse expression" $
-    test
-      parseExpression
-      [ ("Q.!t", Just (ExDispatch ExRoot (AtMeta "t")))
+      , ("Q.!t", Just (ExDispatch ExRoot (AtMeta "t")))
       , ("[[]](!t1 -> $)", Just (ExApplication (ExFormation [BiVoid AtRho]) (ArTau (AtMeta "t1") ExXi)))
       ,
         ( "[[]](~0 -> $)(~11 -> Q)"
@@ -410,32 +417,37 @@ spec = do
       , ("", Nothing)
       ]
 
-  describe "parseExpressionThrows" $ do
-    it "returns expression on valid input" $
-      parseExpressionThrows "T" `shouldReturn` ExTermination
-    it "throws on invalid input" $
-      parseExpressionThrows "invalid expression ]][[" `shouldThrow` anyException
+  describe "parseExpressionThrows" $
+    forM_
+      [ ("returns expression on valid input 'T'", "T", Just ExTermination)
+      , ("throws on invalid input 'invalid expression ]][['", "invalid expression ]][[", Nothing)
+      , ("returns expression on valid input 'Q.x'", "Q.x", Just (ExDispatch ExRoot (AtLabel "x")))
+      , ("throws on invalid input '[[invalid'", "[[invalid", Nothing)
+      ]
+      ( \(desc, input, expected) -> it desc $ case expected of
+          Just result -> parseExpressionThrows input `shouldReturn` result
+          Nothing -> parseExpressionThrows input `shouldThrow` anyException
+      )
 
-  describe "parseExpressionThrows" $ do
-    it "returns expression on valid input" $
-      parseExpressionThrows "Q.x" `shouldReturn` ExDispatch ExRoot (AtLabel "x")
-    it "throws on invalid input" $
-      parseExpressionThrows "[[invalid" `shouldThrow` anyException
+  describe "parseAttributeThrows" $
+    forM_
+      [ ("returns attribute on valid input", "foo", Just (AtLabel "foo"))
+      , ("throws on invalid input", "123invalid", Nothing)
+      ]
+      ( \(desc, input, expected) -> it desc $ case expected of
+          Just result -> parseAttributeThrows input `shouldReturn` result
+          Nothing -> parseAttributeThrows input `shouldThrow` anyException
+      )
 
-  describe "parseAttributeThrows" $ do
-    it "returns attribute on valid input" $
-      parseAttributeThrows "foo" `shouldReturn` AtLabel "foo"
-    it "throws on invalid input" $
-      parseAttributeThrows "123invalid" `shouldThrow` anyException
-
-  describe "parseNumberThrows" $ do
-    it "returns number on valid input" $ do
-      result <- parseNumberThrows "42"
-      case result of
-        DataNumber _ -> return ()
-        _ -> fail "expected DataNumber"
-    it "throws on invalid input" $
-      parseNumberThrows "notanumber" `shouldThrow` anyException
+  describe "parseNumberThrows" $
+    forM_
+      [ ("returns number on valid input", "42", Just (DataNumber (BtMany ["40", "45", "00", "00", "00", "00", "00", "00"])))
+      , ("throws on invalid input", "notanumber", Nothing)
+      ]
+      ( \(desc, input, expected) -> it desc $ case expected of
+          Just result -> parseNumberThrows input `shouldReturn` result
+          Nothing -> parseNumberThrows input `shouldThrow` anyException
+      )
 
   describe "parse string escapes" $
     test
@@ -527,3 +539,73 @@ spec = do
       , "  [[  x  ->  Q  ]]  "
       ]
       (\expr -> it expr (parseExpression expr `shouldSatisfy` isRight))
+
+  describe "parse unicode meta-k expression" $
+    test
+      parseExpression
+      [ ("𝑘", Just (ExMeta "k"))
+      , ("𝑘1", Just (ExMeta "k1"))
+      , ("𝑘.x", Just (ExDispatch (ExMeta "k") (AtLabel "x")))
+      ]
+
+  describe "ParserException Show instance" $
+    forM_
+      [
+        ( "renders CouldNotParseExpression via parseExpressionThrows, embedding the megaparsec cause"
+        , renderFailure (parseExpressionThrows "invalid expression ]][[")
+        , "Couldn't parse given phi expression, cause:"
+        , "expression:1:"
+        )
+      ,
+        ( "renders CouldNotParseAttribute via parseAttributeThrows, embedding the megaparsec cause"
+        , renderFailure (parseAttributeThrows "123invalid")
+        , "Couldn't parse given attribute, cause:"
+        , "attribute:1:"
+        )
+      ,
+        ( "renders CouldNotParseNumber via parseNumberThrows, embedding the megaparsec cause"
+        , renderFailure (parseNumberThrows "notanumber")
+        , "Couldn't parse given number to 'Φ.number', cause:"
+        , "number:1:"
+        )
+      ]
+      ( \(desc, action, prefix, fragment) -> it desc $ do
+          rendered <- action
+          rendered `shouldStartWith` prefix
+          rendered `shouldSatisfy` isInfixOf fragment
+      )
+
+  describe "phiParser record" $
+    forM_
+      [ ("exposes an _alpha field parsing an alpha directly", parseMaybe (_alpha phiParser) "~3" `shouldBe` Just (Alpha 3))
+      , ("exposes an _attribute field parsing an attribute directly", parseMaybe (_attribute phiParser) "foo" `shouldBe` Just (AtLabel "foo"))
+      , ("exposes an _index field parsing an index meta directly", parseMaybe (_index phiParser) "!i0" `shouldBe` Just "i0")
+      , ("exposes a _binding field parsing a binding directly", parseMaybe (_binding phiParser) "x -> $" `shouldBe` Just (BiTau (AtLabel "x") ExXi))
+      , ("exposes an _expression field parsing an expression directly", parseMaybe (_expression phiParser) "Q.x" `shouldBe` Just (ExDispatch ExRoot (AtLabel "x")))
+      , ("exposes a _string field parsing a quoted string directly", parseMaybe (_string phiParser) "\"hi\"" `shouldBe` Just "hi")
+      ]
+      (uncurry it)
+
+  describe "parse bytes rejects a lowercase hex digit" $
+    fails
+      parseBytes
+      [ ("0a-", "expected 0-9 or A-F")
+      , ("a0-", "expected 0-9 or A-F")
+      ]
+
+  describe "parser errors are tagged with their entry point name" $
+    forM_
+      [ ("parseBinding error is tagged with its entry point name", parseBinding "L>" `shouldSatisfy` either (isInfixOf "binding:1:") (const False))
+      , ("parseNumber error is tagged with its entry point name", parseNumber "abc" `shouldSatisfy` either (isInfixOf "number:1:") (const False))
+      , ("parseAttribute error is tagged with its entry point name", parseAttribute "123" `shouldSatisfy` either (isInfixOf "attribute:1:") (const False))
+      , ("parseAlpha error is tagged with its entry point name", parseAlpha "bogus" `shouldSatisfy` either (isInfixOf "alpha:1:") (const False))
+      , ("parseIndex error is tagged with its entry point name", parseIndex "bogus" `shouldSatisfy` either (isInfixOf "index meta:1:") (const False))
+      ]
+      (uncurry it)
+
+  describe "surrogate escape failures embed their specific cause" $
+    fails
+      parseExpression
+      [ ("[[ x -> \"\\uD835\\u0041\"]]", "Invalid low surrogate:")
+      , ("[[ x -> \"\\uDFFF\"]]", "Unexpected low surrogate:")
+      ]

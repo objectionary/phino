@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+expression: '[[ x -> [[ a -> "a" ]] ]]'
+pattern: '[[ x -> [[ !t1 -> !e1, !B1 ]] ]]'
+condition:
+  not:
+    eq: ['!t1', '!tX']

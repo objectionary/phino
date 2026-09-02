@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+expression: '[[ x -> "Hello" ]]'
+pattern: '[[ x -> !e ]]'
+condition:
+  not:
+    eq:
+      - foo
+      - '"Hello"'

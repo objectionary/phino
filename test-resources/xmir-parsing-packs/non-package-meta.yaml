@@ -1,0 +1,15 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+xmir: |
+  <object>
+    <metas>
+      <meta>
+        <head>other</head>
+        <tail>value</tail>
+        <part>value</part>
+      </meta>
+    </metas>
+    <o name="app"/>
+  </object>
+phi: '[[ app -> [[]] ]]'

@@ -11,9 +11,11 @@ module PrinterSpec where
 
 import AST
 import Control.Monad (forM_)
+import Data.Map.Strict qualified as Map
 import Encoding (Encoding (..))
 import Lining (LineFormat (..))
 import Margin (defaultMargin)
+import Matcher (MetaValue (..), Subst (Subst))
 import Parser (parseExpression)
 import Printer
 import Sugar (SugarType (..))
@@ -187,13 +189,18 @@ spec = do
       , ("φ", AtPhi, "φ")
       , ("λ", AtLambda, "λ")
       , ("Δ", AtDelta, "Δ")
+      , ("meta", AtMeta "t", "𝜏")
       ]
       ( \(desc, attr, expected) ->
           it desc (printAttribute attr `shouldBe` expected)
       )
 
   describe "printAlpha with default encoding" $
-    it "α42" (printAlpha (Alpha 42) `shouldBe` "α42")
+    forM_
+      [ ("α42", Alpha 42, "α42")
+      , ("meta alpha", AlMeta "i", "α𝑖")
+      ]
+      (\(desc, alpha, expected) -> it desc (printAlpha alpha `shouldBe` expected))
 
   describe "printBinding renders as formation" $
     forM_
@@ -201,6 +208,7 @@ spec = do
       , ("void binding", BiVoid (AtLabel "y"), "y ↦ ∅")
       , ("delta binding", BiDelta (BtOne "00"), "Δ ⤍ 00-")
       , ("lambda binding", BiLambda (Function "Func"), "λ ⤍ Func")
+      , ("meta binding", BiMeta "B", "𝐵")
       ]
       ( \(desc, bd, expected) ->
           it desc (printBinding bd `shouldContain` expected)
@@ -211,6 +219,7 @@ spec = do
       [ ("empty bytes", BtEmpty, "--")
       , ("single byte", BtOne "1F", "1F-")
       , ("multiple bytes", BtMany ["00", "01", "02"], "00-01-02")
+      , ("meta bytes", BtMeta "D", "δ")
       ]
       ( \(desc, bts, expected) ->
           it desc (printBytes bts `shouldBe` expected)
@@ -226,3 +235,54 @@ spec = do
       ( \(desc, arg, expected) ->
           it desc (printExtraArg arg `shouldContain` expected)
       )
+
+  describe "printSubsts and printSubsts' render substitutions" $
+    forM_
+      [ ("MvAttribute", [Subst (Map.singleton "t" (MvAttribute (AtLabel "x")))], (SWEET, UNICODE, MULTILINE, defaultMargin), "t >> x")
+      , ("MvIndex", [Subst (Map.singleton "i" (MvIndex 3))], (SWEET, UNICODE, MULTILINE, defaultMargin), "i >> 3")
+      , ("MvExpression", [Subst (Map.singleton "e" (MvExpression ExRoot))], (SWEET, UNICODE, MULTILINE, defaultMargin), "e >> Φ")
+      , ("MvBytes", [Subst (Map.singleton "b" (MvBytes (BtOne "1F")))], (SWEET, UNICODE, MULTILINE, defaultMargin), "b >> 1F-")
+      , ("MvBindings", [Subst (Map.singleton "bnd" (MvBindings [BiVoid (AtLabel "y")]))], (SWEET, UNICODE, MULTILINE, defaultMargin), "bnd >> ⟦ y ↦ ∅ ⟧")
+      , ("MvFunction", [Subst (Map.singleton "f" (MvFunction "func"))], (SWEET, UNICODE, MULTILINE, defaultMargin), "f >> func")
+      ,
+        ( "keys of a multi-entry substitution are sorted and each is on its own line"
+        , [Subst (Map.fromList [("a", MvIndex 1), ("b", MvIndex 2)])]
+        , (SWEET, UNICODE, MULTILINE, defaultMargin)
+        , "a >> 1\nb >> 2"
+        )
+      ,
+        ( "multiple substitutions are separated with a dashed line"
+        , [Subst (Map.singleton "a" (MvIndex 1)), Subst (Map.singleton "b" (MvIndex 2))]
+        , (SWEET, UNICODE, MULTILINE, defaultMargin)
+        , "a >> 1\n------\nb >> 2"
+        )
+      , ("an empty substitution list renders the dashed placeholder", [], (SWEET, UNICODE, SINGLELINE, defaultMargin), "------")
+      ,
+        ( "picks the encoding from its PrintConfig for an attribute meta value (ASCII rho)"
+        , [Subst (Map.singleton "t" (MvAttribute AtRho))]
+        , (SWEET, ASCII, SINGLELINE, defaultMargin)
+        , "t >> ^"
+        )
+      ]
+      ( \(desc, substs, config, expected) ->
+          it desc (printSubsts' substs config `shouldBe` expected)
+      )
+
+  describe "printExpressionHidingRho strips rho at every nesting depth" $
+    it "three nested formations, each with its own rho" $ do
+      let deep =
+            ExFormation
+              [ BiTau
+                  (AtLabel "a")
+                  ( ExFormation
+                      [ BiTau (AtLabel "b") (ExFormation [BiVoid AtRho])
+                      , BiTau AtRho ExXi
+                      ]
+                  )
+              , BiTau AtRho ExRoot
+              ]
+      printExpressionHidingRho' deep (SWEET, UNICODE, SINGLELINE, defaultMargin) `shouldBe` "⟦ a ↦ ⟦ b ↦ ⟦⟧ ⟧ ⟧"
+
+  describe "logPrintConfig" $
+    it "is a fixed SWEET/UNICODE/SINGLELINE config at the default margin" $
+      logPrintConfig `shouldBe` (SWEET, UNICODE, SINGLELINE, defaultMargin)

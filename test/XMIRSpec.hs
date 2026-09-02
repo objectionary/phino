@@ -8,20 +8,23 @@
 
 module XMIRSpec where
 
-import Control.Monad (forM_, unless)
+import AST (Attribute (AtLabel, AtRho), Binding (BiMeta, BiTau, BiVoid), Expression (ExFormation))
+import Control.Exception (SomeException, displayException, try)
+import Control.Monad (forM_, unless, void)
 import Data.Aeson
 import Data.Char (isDigit)
 import Data.List (intercalate)
+import Data.Map qualified as M
 import Data.Text qualified as T
 import Data.Yaml qualified as Yaml
 import Files (allPathsIn)
 import GHC.Generics (Generic)
 import Parser (parseExpressionThrows)
 import System.FilePath (makeRelative)
-import Test.Hspec (Spec, anyException, describe, expectationFailure, it, runIO, shouldBe, shouldThrow)
-import Text.XML (Document (..), Element (..))
+import Test.Hspec (Spec, anyException, describe, expectationFailure, it, runIO, shouldBe, shouldContain, shouldThrow)
+import Text.XML (Document (..), Element (..), Node (NodeElement), Prologue (..))
 import Text.XML.Cursor qualified as C
-import XMIR (defaultXmirContext, expressionToXMIR, parseXMIRThrows, printXMIR, toName, xmirToPhi)
+import XMIR (XmirContext (XmirContext), defaultXmirContext, escapeXML, expressionToXMIR, parseXMIRThrows, printXMIR, toName, xmirToPhi)
 
 data ParsePack = ParsePack
   { failure :: Maybe Bool
@@ -215,6 +218,10 @@ spec = do
       , "\"Hello\""
       , "Q"
       , "$"
+      , "[[ x -> T ]]"
+      , "[[ top -> [[ x -> T ]] ]]"
+      , "[[ x -> [[ !t1 -> 5 ]] ]]"
+      , "[[ org -> [[ z -> ?, L> Package ]] ]]"
       ]
       ( \phi' -> it phi' $ do
           expr <- parseExpressionThrows phi'
@@ -238,21 +245,156 @@ spec = do
               (expectationFailure ("Failed xpaths:\n - " ++ intercalate "\n - " failed ++ "\nXMIR is:\n" ++ printXMIR xmir'))
       )
 
-  describe "XMIR round-trip" $ do
-    it "keeps λ function name and bound ρ" $ do
-      expr <- parseExpressionThrows "[[ k -> [[ x -> ?, L> Lorg_eolang_number_plus, ^ -> [[ y -> ? ]] ]] ]]"
-      xmir' <- expressionToXMIR expr defaultXmirContext
-      back <- xmirToPhi xmir'
-      back `shouldBe` expr
+  describe "XMIR round-trip" $
+    forM_
+      [ ("keeps λ function name and bound ρ", "[[ k -> [[ x -> ?, L> Lorg_eolang_number_plus, ^ -> [[ y -> ? ]] ]] ]]")
+      , ("keeps Δ data bound to a named attribute", "[[ k -> [[ a -> [[ D> 01-02 ]], ^ -> [[ D> 03-04 ]] ]] ]]")
+      , ("keeps Δ data in a dispatched formation", "[[ k -> [[ D> 01-02 ]].plus ]]")
+      , ("keeps a bare 'Q' bound to a named attribute", "[[ x -> Q ]]")
+      ]
+      ( \(desc, source) -> it desc $ do
+          expr <- parseExpressionThrows source
+          xmir' <- expressionToXMIR expr defaultXmirContext
+          back <- xmirToPhi xmir'
+          back `shouldBe` expr
+      )
 
-    it "keeps Δ data bound to a named attribute" $ do
-      expr <- parseExpressionThrows "[[ k -> [[ a -> [[ D> 01-02 ]], ^ -> [[ D> 03-04 ]] ]] ]]"
-      xmir' <- expressionToXMIR expr defaultXmirContext
-      back <- xmirToPhi xmir'
-      back `shouldBe` expr
+  describe "XMIR exception messages" $
+    forM_
+      [
+        ( "explains an unsupported top-level expression"
+        , do
+            expr <- parseExpressionThrows "[[ x -> $ ]]"
+            try (void (expressionToXMIR expr defaultXmirContext)) :: IO (Either SomeException ())
+        , ["XMIR does not support such top-level expression"]
+        )
+      ,
+        ( "explains an unsupported nested expression"
+        , do
+            expr <- parseExpressionThrows "[[ x -> [[ y -> T ]] ]]"
+            try (void (expressionToXMIR expr defaultXmirContext)) :: IO (Either SomeException ())
+        , ["XMIR does not support such expression"]
+        )
+      ,
+        ( "explains an unsupported binding"
+        , try (void (expressionToXMIR (ExFormation [BiTau (AtLabel "x") (ExFormation [BiMeta "n", BiVoid AtRho]), BiVoid AtRho]) defaultXmirContext)) ::
+            IO (Either SomeException ())
+        , ["XMIR does not support such bindings"]
+        )
+      ,
+        ( "explains a parse failure"
+        , try (void (parseXMIRThrows "not-xml-at-all <<<")) :: IO (Either SomeException ())
+        , ["Couldn't parse given XMIR"]
+        )
+      ,
+        ( "explains an invalid XMIR structure, including the offending element"
+        , do
+            doc <- parseXMIRThrows "<object><o name=\"app\"><o/></o></object>"
+            try (void (xmirToPhi doc)) :: IO (Either SomeException ())
+        , ["Couldn't traverse though given XMIR", "XMIR:"]
+        )
+      ]
+      ( \(desc, action, messages) -> it desc $ do
+          result <- action
+          case result of
+            Left err -> mapM_ (displayException err `shouldContain`) messages
+            Right () -> expectationFailure "expected an exception"
+      )
 
-    it "keeps Δ data in a dispatched formation" $ do
-      expr <- parseExpressionThrows "[[ k -> [[ D> 01-02 ]].plus ]]"
+  describe "escapeXML" $
+    it "escapes an apostrophe alongside the other reserved characters" $
+      escapeXML "it's a & <b> \"quote\"" `shouldBe` "it&apos;s a &amp; &lt;b&gt; &quot;quote&quot;"
+
+  describe "XMIR document structure" $ do
+    it "produces an empty prologue and epilogue" $ do
+      expr <- parseExpressionThrows "[[ x -> 5 ]]"
+      Document prologue _ epilogue <- expressionToXMIR expr defaultXmirContext
+      prologue `shouldBe` Prologue [] Nothing []
+      epilogue `shouldBe` []
+
+    it "renders package metas with empty attributes and a matching part" $ do
+      expr <- parseExpressionThrows "[[ org -> [[ eolang -> [[ foo -> [[ x -> 5 ]], L> Package ]], L> Package ]] ]]"
       xmir' <- expressionToXMIR expr defaultXmirContext
-      back <- xmirToPhi xmir'
-      back `shouldBe` expr
+      let root = C.fromDocument xmir'
+      case root C.$/ C.element (toName "metas") of
+        [metasCur] -> case C.node metasCur of
+          NodeElement metasEl -> elementAttributes metasEl `shouldBe` M.empty
+          _ -> expectationFailure "expected <metas> to be an element"
+        _ -> expectationFailure "expected exactly one <metas> element"
+      case root C.$/ C.element (toName "metas") C.&/ C.element (toName "meta") of
+        [metaCur] -> case C.node metaCur of
+          NodeElement metaEl -> elementAttributes metaEl `shouldBe` M.empty
+          _ -> expectationFailure "expected <meta> to be an element"
+        _ -> expectationFailure "expected exactly one <meta> element"
+      let parts = root C.$/ C.element (toName "metas") C.&/ C.element (toName "meta") C.&/ C.element (toName "part") C.&/ C.content
+      parts `shouldBe` ["org.eolang"]
+
+  describe "XMIR comments" $ do
+    let commentedContext :: XmirContext
+        commentedContext = XmirContext True False (const "")
+
+    it "includes a decimal comment for a number when comments aren't omitted" $ do
+      expr <- parseExpressionThrows "[[ x -> 5 ]]"
+      xmir' <- expressionToXMIR expr commentedContext
+      printXMIR xmir' `shouldContain` "<!-- 5 -->"
+
+    it "includes a quoted comment for a string when comments aren't omitted" $ do
+      expr <- parseExpressionThrows "[[ x -> \"foo\" ]]"
+      xmir' <- expressionToXMIR expr commentedContext
+      printXMIR xmir' `shouldContain` "<!-- \"foo\" -->"
+
+  describe "XMIR printing edge cases" $ do
+    it "wraps a chained dispatch on a formation literal with a @base attribute" $ do
+      expr <- parseExpressionThrows "[[ x -> [[ y -> 5 ]].plus.minus ]]"
+      xmir' <- expressionToXMIR expr defaultXmirContext
+      let root = C.fromDocument xmir'
+          xCur = root C.$/ C.element (toName "o")
+          outer = filter (\cur -> C.attribute (toName "base") cur == [".minus"]) xCur
+          inner =
+            concatMap
+              (filter (\cur -> C.attribute (toName "base") cur == [".plus"]) . (C.$/ C.element (toName "o")))
+              xCur
+      length outer `shouldBe` 1
+      length inner `shouldBe` 1
+
+    it "renders a void φ binding as a nested formation" $ do
+      expr <- parseExpressionThrows "[[ x -> [[ @ -> ? ]] ]]"
+      xmir' <- expressionToXMIR expr defaultXmirContext
+      let root = C.fromDocument xmir'
+          nested = root C.$/ C.element (toName "o") C.&/ C.element (toName "o")
+          phiVoid =
+            filter
+              (\cur -> C.attribute (toName "name") cur == ["φ"] && C.attribute (toName "base") cur == ["∅"])
+              nested
+      length phiVoid `shouldBe` 1
+
+    it "renders a bare global reference as the top-level value" $ do
+      expr <- parseExpressionThrows "[[ x -> Q ]]"
+      xmir' <- expressionToXMIR expr defaultXmirContext
+      let root = C.fromDocument xmir'
+          xCur = filter (\cur -> C.attribute (toName "base") cur == ["Φ"]) (root C.$/ C.element (toName "o"))
+      length xCur `shouldBe` 1
+
+    it "omits @base when an application argument is a bare formation" $ do
+      expr <- parseExpressionThrows "[[ foo -> Q.bar(x -> 5, α1 -> [[ z -> ? ]]) ]]"
+      xmir' <- expressionToXMIR expr defaultXmirContext
+      let root = C.fromDocument xmir'
+          args = root C.$/ C.element (toName "o") C.&/ C.element (toName "o")
+          namedArg = filter (\cur -> C.attribute (toName "as") cur == ["x"]) args
+          formationArg = filter (\cur -> C.attribute (toName "as") cur == ["α1"]) args
+      case namedArg of
+        [argCur] -> C.attribute (toName "base") argCur `shouldBe` ["Φ.number"]
+        _ -> expectationFailure "expected exactly one 'x' argument"
+      case formationArg of
+        [argCur] -> C.attribute (toName "base") argCur `shouldBe` []
+        _ -> expectationFailure "expected exactly one α1 argument"
+
+  describe "XMIR malformed input containing a processing instruction" $
+    it "embeds a processing instruction verbatim when rendering the offending element" $ do
+      doc <-
+        parseXMIRThrows
+          "<object><o name=\"x\" base=\"∅\"/><?a-pi some-data?><o name=\"y\" base=\"∅\"/></object>"
+      result <- try (xmirToPhi doc) :: IO (Either SomeException Expression)
+      case result of
+        Left exc -> displayException exc `shouldContain` "Couldn't traverse though given XMIR"
+        Right _ -> expectationFailure "expected an exception"

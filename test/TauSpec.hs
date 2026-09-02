@@ -6,7 +6,7 @@
 module TauSpec where
 
 import AST
-import Control.Monad (replicateM)
+import Control.Monad (forM_, replicateM)
 import Tau (freshTau, seedTaus)
 import Test.Hspec (Spec, describe, it, shouldBe)
 
@@ -31,3 +31,12 @@ spec = describe "Tau" $ do
       )
     names <- replicateM 2 freshTau
     names `shouldBe` ["a🌵1", "a🌵3"]
+  forM_
+    [ ("scans labels through an ExPhiMeet wrapper", ExPhiMeet Nothing 1)
+    , ("scans labels through an ExPhiAgain wrapper", ExPhiAgain Nothing 1)
+    ]
+    ( \(desc, wrap) -> it desc $ do
+        seedTaus (wrap (ExFormation [BiTau (AtLabel "a🌵0") ExRoot]))
+        name <- freshTau
+        name `shouldBe` "a🌵1"
+    )

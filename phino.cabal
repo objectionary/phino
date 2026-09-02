@@ -125,14 +125,24 @@ test-suite spec
   other-modules:
     ASTSpec
     BuilderSpec
+    BytesSpec
+    CanonizerSpec
+    CLIHelpersSpec
     CLISpec
+    CLITypesSpec
     ConditionSpec
     CSTSpec
     DataizeSpec
+    DepsSpec
+    EncodingSpec
+    FilesSpec
     FilterSpec
     FunctionsSpec
     LaTeXSpec
+    LiningSpec
     LocatorSpec
+    LoggerSpec
+    MarginSpec
     MatcherSpec
     MergeSpec
     MiscSpec
@@ -142,10 +152,12 @@ test-suite spec
     PrinterSpec
     RandomSpec
     RegexpSpec
+    RenderSpec
     ReplacerSpec
     RewriterSpec
     RuleSpec
     Spec
+    SugarSpec
     TauSpec
     XMIRSpec
     YamlSpec
