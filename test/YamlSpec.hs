@@ -17,11 +17,16 @@ import Data.Text.Encoding (encodeUtf8)
 import Data.Yaml qualified as Yaml
 import Files (allPathsIn)
 import System.FilePath
-import Test.Hspec (Spec, describe, expectationFailure, it, runIO, shouldBe, shouldReturn, shouldSatisfy, shouldThrow)
+import Test.Hspec (Spec, describe, expectationFailure, it, runIO, shouldBe, shouldSatisfy, shouldThrow)
 import Yaml (Condition (..), ContextualizeRule (..), DataizeRule (..), MorphRule (..), Number, Operation (..), Premise (..), contextualizationRules, dataizationRules, morphingRules, yamlRule)
 
 decodeYaml' :: (Yaml.FromJSON a) => String -> Either Yaml.ParseException a
 decodeYaml' = Yaml.decodeEither' . encodeUtf8 . T.pack
+
+failsAsRedundant :: Either Yaml.ParseException a -> Bool
+failsAsRedundant decoded = case decoded of
+  Left err -> "redundant" `isInfixOf` Yaml.prettyPrintParseException err
+  Right _ -> False
 
 spec :: Spec
 spec = do
@@ -30,10 +35,7 @@ spec = do
     packs <- runIO (allPathsIn resources)
     forM_
       packs
-      ( \pth -> it (makeRelative resources pth) $ do
-          _ <- yamlRule pth
-          pure () `shouldReturn` ()
-      )
+      (\pth -> it (makeRelative resources pth) (void (yamlRule pth)))
 
   describe "fails on yaml typos" $ do
     let resources = "test-resources/yaml-typos"
@@ -50,21 +52,24 @@ spec = do
               )
       )
 
-  describe "rejects a label that equals the name" $ do
-    let failsAsRedundant decoded = case decoded of
-          Left err -> "redundant" `isInfixOf` Yaml.prettyPrintParseException err
-          Right _ -> False
-        decodeYaml :: (Yaml.FromJSON a) => String -> Either Yaml.ParseException a
-        decodeYaml = Yaml.decodeEither' . encodeUtf8 . T.pack
-    it "in a morphing rule" $
-      (decodeYaml "name: prim\nlabel: prim\nmatch: ⟦𝐵⟧\ne-match: 𝑒\nn-result: ⟦𝐵⟧" :: Either Yaml.ParseException MorphRule)
-        `shouldSatisfy` failsAsRedundant
-    it "in a dataization rule" $
-      (decodeYaml "name: end\nlabel: end\nmatch: ⊥\ne-match: 𝑒\nd-result: '--'" :: Either Yaml.ParseException DataizeRule)
-        `shouldSatisfy` failsAsRedundant
-    it "in a contextualization rule" $
-      (decodeYaml "name: cxi\nlabel: cxi\nmatch: ξ\nc-match: 𝑘\nc-result: 𝑘" :: Either Yaml.ParseException ContextualizeRule)
-        `shouldSatisfy` failsAsRedundant
+  describe "rejects malformed rule content" $ do
+    let primYaml = "name: prim\nlabel: prim\nmatch: ⟦𝐵⟧\ne-match: 𝑒\nn-result: ⟦𝐵⟧"
+        endYaml = "name: end\nlabel: end\nmatch: ⊥\ne-match: 𝑒\nd-result: '--'"
+        cxiYaml = "name: cxi\nlabel: cxi\nmatch: ξ\nc-match: 𝑘\nc-result: 𝑘"
+    forM_
+      [ ("a label that equals the name in a morphing rule", primYaml, failsAsRedundant (decodeYaml' primYaml :: Either Yaml.ParseException MorphRule))
+      , ("a label that equals the name in a dataization rule", endYaml, failsAsRedundant (decodeYaml' endYaml :: Either Yaml.ParseException DataizeRule))
+      , ("a label that equals the name in a contextualization rule", cxiYaml, failsAsRedundant (decodeYaml' cxiYaml :: Either Yaml.ParseException ContextualizeRule))
+      , ("a malformed embedded 𝜑-syntax: an index meta that does not parse", "'bogus'", isLeft (decodeYaml' "'bogus'" :: Either Yaml.ParseException Number))
+      , ("a malformed embedded 𝜑-syntax: an attribute that does not parse", "'123'", isLeft (decodeYaml' "'123'" :: Either Yaml.ParseException Attribute))
+      , ("a malformed embedded 𝜑-syntax: an alpha that does not parse", "'bogus'", isLeft (decodeYaml' "'bogus'" :: Either Yaml.ParseException Alpha))
+      , ("a malformed embedded 𝜑-syntax: bytes that do not parse", "'0a-'", isLeft (decodeYaml' "'0a-'" :: Either Yaml.ParseException Bytes))
+      , ("a malformed embedded 𝜑-syntax: an expression that does not parse", "'L>'", isLeft (decodeYaml' "'L>'" :: Either Yaml.ParseException Expression))
+      , ("a malformed embedded 𝜑-syntax: a binding that does not parse", "'L>'", isLeft (decodeYaml' "'L>'" :: Either Yaml.ParseException Binding))
+      ]
+      ( \(desc, yaml, valid) ->
+          it ("rejects " ++ desc) (unless valid (expectationFailure ("expected rejection for: " ++ yaml)))
+      )
 
   describe "keeps effective labels unique across rule sets" $
     -- The effective label of a rule is its 'label' when present, else its
@@ -123,55 +128,31 @@ spec = do
         Left err -> "Unknown condition type" `isInfixOf` Yaml.prettyPrintParseException err `shouldBe` True
         Right _ -> expectationFailure "expected decoding to fail"
 
-  describe "rejects a condition whose arguments count is wrong" $ do
+  describe "rejects a condition whose arguments count is wrong" $
     -- 'asum' discards each branch's specific failure message once every
     -- branch has failed, so only the overall Left/Right outcome (not the
     -- message text) is observable from here; each case still exercises the
     -- condition's own "expects exactly two arguments" guard internally.
-    it "'eq' with a single argument" $
-      (decodeYaml' "eq: [1]" :: Either Yaml.ParseException Condition) `shouldSatisfy` isLeft
-    it "'gt' with a single argument" $
-      (decodeYaml' "gt: [1]" :: Either Yaml.ParseException Condition) `shouldSatisfy` isLeft
-    it "'in' with a single argument" $
-      (decodeYaml' "in: ['!t']" :: Either Yaml.ParseException Condition) `shouldSatisfy` isLeft
-    it "'matches' with a single argument" $
-      (decodeYaml' "matches: ['hi']" :: Either Yaml.ParseException Condition) `shouldSatisfy` isLeft
-    it "'part-of' with a single argument" $
-      (decodeYaml' "part-of: ['!e']" :: Either Yaml.ParseException Condition) `shouldSatisfy` isLeft
-    it "'disjoint' with a single argument" $
-      (decodeYaml' "disjoint: [[]]" :: Either Yaml.ParseException Condition) `shouldSatisfy` isLeft
+    forM_
+      [ ("'eq' with a single argument", "eq: [1]")
+      , ("'gt' with a single argument", "gt: [1]")
+      , ("'in' with a single argument", "in: ['!t']")
+      , ("'matches' with a single argument", "matches: ['hi']")
+      , ("'part-of' with a single argument", "part-of: ['!e']")
+      , ("'disjoint' with a single argument", "disjoint: [[]]")
+      ]
+      (\(desc, yaml) -> it desc ((decodeYaml' yaml :: Either Yaml.ParseException Condition) `shouldSatisfy` isLeft))
 
-  describe "rejects a malformed premise" $ do
-    it "fails when neither 'n-result' nor 'd-result' is present" $
-      (decodeYaml' "morph: 𝑛" :: Either Yaml.ParseException Premise)
-        `shouldSatisfy` isLeft
-    it "fails when 'n-result' is not an expression meta" $
-      (decodeYaml' "n-result: Q\nmorph: 𝑛" :: Either Yaml.ParseException Premise)
-        `shouldSatisfy` isLeft
-    it "fails when 'd-result' is not a bytes meta" $
-      (decodeYaml' "d-result: '--'\ndataize: 𝑛" :: Either Yaml.ParseException Premise)
-        `shouldSatisfy` isLeft
-    it "fails when 'evaluate' does not take exactly two arguments" $
-      (decodeYaml' "n-result: 𝑛\nevaluate: [𝑛]" :: Either Yaml.ParseException Premise)
-        `shouldSatisfy` isLeft
-    it "fails when 'contextualize' does not take exactly two arguments" $
-      (decodeYaml' "n-result: 𝑛\ncontextualize: [𝑛]" :: Either Yaml.ParseException Premise)
-        `shouldSatisfy` isLeft
+  describe "rejects a malformed premise" $
+    forM_
+      [ ("fails when neither 'n-result' nor 'd-result' is present", "morph: 𝑛")
+      , ("fails when 'n-result' is not an expression meta", "n-result: Q\nmorph: 𝑛")
+      , ("fails when 'd-result' is not a bytes meta", "d-result: '--'\ndataize: 𝑛")
+      , ("fails when 'evaluate' does not take exactly two arguments", "n-result: 𝑛\nevaluate: [𝑛]")
+      , ("fails when 'contextualize' does not take exactly two arguments", "n-result: 𝑛\ncontextualize: [𝑛]")
+      ]
+      (\(desc, yaml) -> it desc ((decodeYaml' yaml :: Either Yaml.ParseException Premise) `shouldSatisfy` isLeft))
 
   describe "rejects a numerable expression that is neither an object, a number nor an index meta" $
     it "fails on a bare boolean" $
       (decodeYaml' "true" :: Either Yaml.ParseException Number) `shouldSatisfy` isLeft
-
-  describe "rejects malformed embedded 𝜑-syntax" $ do
-    it "an index meta that does not parse" $
-      (decodeYaml' "'bogus'" :: Either Yaml.ParseException Number) `shouldSatisfy` isLeft
-    it "an attribute that does not parse" $
-      (decodeYaml' "'123'" :: Either Yaml.ParseException Attribute) `shouldSatisfy` isLeft
-    it "an alpha that does not parse" $
-      (decodeYaml' "'bogus'" :: Either Yaml.ParseException Alpha) `shouldSatisfy` isLeft
-    it "bytes that do not parse" $
-      (decodeYaml' "'0a-'" :: Either Yaml.ParseException Bytes) `shouldSatisfy` isLeft
-    it "an expression that does not parse" $
-      (decodeYaml' "'L>'" :: Either Yaml.ParseException Expression) `shouldSatisfy` isLeft
-    it "a binding that does not parse" $
-      (decodeYaml' "'L>'" :: Either Yaml.ParseException Binding) `shouldSatisfy` isLeft

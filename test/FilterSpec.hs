@@ -12,18 +12,13 @@ functions for filtering phi-calculus expressions by FQN expressions.
 module FilterSpec where
 
 import AST (Expression (ExRoot))
-import Control.Monad (forM_, when)
+import Control.Monad (forM_)
 import Data.Aeson
 import Data.Yaml qualified as Yaml
-import Encoding (Encoding (UNICODE))
 import Files (allPathsIn)
 import Filter qualified as F
 import GHC.Generics (Generic)
-import Lining (LineFormat (MULTILINE))
-import Margin (defaultMargin)
 import Parser (parseExpressionThrows)
-import Printer (printExpression')
-import Sugar (SugarType (SALTY))
 import System.FilePath
 import Test.Hspec
 
@@ -52,17 +47,7 @@ spec = do
           excluded <- traverse parseExpressionThrows hidden
           res <- parseExpressionThrows result
           let [(expr', _)] = F.exclude (F.include [(expr, Nothing)] included) excluded
-              cfg = (SALTY, UNICODE, MULTILINE, defaultMargin)
           expr' `shouldBe` res
-          when
-            (expr' /= res)
-            ( expectationFailure
-                ( "Expected:\n"
-                    ++ printExpression' res cfg
-                    ++ "\nbut got:\n"
-                    ++ printExpression' expr' cfg
-                )
-            )
       )
 
   describe "direct unit tests" $ do
@@ -89,26 +74,18 @@ spec = do
         map snd excluded `shouldBe` [Just "rule-a", Just "rule-b"]
 
     describe "include" $ do
-      it "falls back to the default hidden formation when the fqn is not a Q-dispatch chain" $ do
-        expr <- parseExpressionThrows "[[ x -> ? ]]"
-        badFqn <- parseExpressionThrows "$.x"
-        defaultHidden <- parseExpressionThrows "[[ ]]"
-        let [(expr', _)] = F.include [(expr, Nothing)] [badFqn]
-        expr' `shouldBe` defaultHidden
-
-      it "falls back to the default hidden formation when nothing matches the fqn" $ do
-        expr <- parseExpressionThrows "[[ x -> ? ]]"
-        fqn <- parseExpressionThrows "Q.absent"
-        defaultHidden <- parseExpressionThrows "[[ ]]"
-        let [(expr', _)] = F.include [(expr, Nothing)] [fqn]
-        expr' `shouldBe` defaultHidden
-
-      it "falls back to the default hidden formation for a non-formation expression" $ do
-        expr <- parseExpressionThrows "Q.x"
-        fqn <- parseExpressionThrows "Q.y"
-        defaultHidden <- parseExpressionThrows "[[ ]]"
-        let [(expr', _)] = F.include [(expr, Nothing)] [fqn]
-        expr' `shouldBe` defaultHidden
+      forM_
+        [ ("falls back to the default hidden formation when the fqn is not a Q-dispatch chain", "[[ x -> ? ]]", "$.x")
+        , ("falls back to the default hidden formation when nothing matches the fqn", "[[ x -> ? ]]", "Q.absent")
+        , ("falls back to the default hidden formation for a non-formation expression", "Q.x", "Q.y")
+        ]
+        ( \(desc, exprText, fqnText) -> it desc $ do
+            expr <- parseExpressionThrows exprText
+            fqn <- parseExpressionThrows fqnText
+            defaultHidden <- parseExpressionThrows "[[ ]]"
+            let [(expr', _)] = F.include [(expr, Nothing)] [fqn]
+            expr' `shouldBe` defaultHidden
+        )
 
       it "recurses over a multi-element rewrite list, pinning every element to the first fqn" $ do
         first' <- parseExpressionThrows "[[ x -> ?, y -> ? ]]"
