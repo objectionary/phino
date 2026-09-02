@@ -6,10 +6,13 @@ module LoggerSpec where
 import Logger (LogLevel (..), logDebug, logError, setLogConfig)
 import System.IO (stderr)
 import System.IO.Silently (hCapture_)
-import Test.Hspec (Spec, describe, it, shouldBe)
+import Test.Hspec (Spec, after_, describe, it, shouldBe)
 
+-- setLogConfig mutates a global IORef, so every example resets it afterwards
+-- to the module's own default; otherwise the last example to run here would
+-- leak its log level/line-limit into whichever spec runs next.
 spec :: Spec
-spec = do
+spec = after_ (setLogConfig ERROR 25) $ do
   describe "logDebug" $ do
     it "prints when the level allows debug messages" $ do
       setLogConfig DEBUG 25
