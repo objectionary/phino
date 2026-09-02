@@ -3,6 +3,7 @@
 
 module LoggerSpec where
 
+import Control.Monad (forM_)
 import Logger (LogLevel (..), logDebug, logError, setLogConfig)
 import System.IO (stderr)
 import System.IO.Silently (hCapture_)
@@ -13,54 +14,48 @@ import Test.Hspec (Spec, after_, describe, it, shouldBe)
 -- leak its log level/line-limit into whichever spec runs next.
 spec :: Spec
 spec = after_ (setLogConfig ERROR 25) $ do
-  describe "logDebug" $ do
-    it "prints when the level allows debug messages" $ do
-      setLogConfig DEBUG 25
-      captured <- hCapture_ [stderr] (logDebug "hello")
-      captured `shouldBe` "[DEBUG]: hello\n"
+  describe "logDebug" $
+    forM_
+      [ ("prints when the level allows debug messages", DEBUG, 25, "hello", "[DEBUG]: hello\n")
+      , ("is suppressed when the configured level is above debug", ERROR, 25, "hello", "")
+      , ("is suppressed when the line limit is zero", DEBUG, 0, "hello", "")
+      ,
+        ( "truncates a message with more lines than the configured limit"
+        , DEBUG
+        , 2
+        , "line1\nline2\nline3\nline4"
+        , "[DEBUG]: line1\nline2\n---| log is limited by --log-lines=2 option |---\n"
+        )
+      ,
+        ( "does not truncate a message with no more lines than the configured limit"
+        , DEBUG
+        , 3
+        , "line1\nline2"
+        , "[DEBUG]: line1\nline2\n"
+        )
+      ,
+        ( "prints the whole message unlimited when lines is -1, however many lines"
+        , DEBUG
+        , -1
+        , "line1\nline2\nline3\nline4\nline5"
+        , "[DEBUG]: line1\nline2\nline3\nline4\nline5\n"
+        )
+      ]
+      ( \(desc, level, lineLimit, message, expected) -> it desc $ do
+          setLogConfig level lineLimit
+          captured <- hCapture_ [stderr] (logDebug message)
+          captured `shouldBe` expected
+      )
 
-    it "is suppressed when the configured level is above debug" $ do
-      setLogConfig ERROR 25
-      captured <- hCapture_ [stderr] (logDebug "hello")
-      captured `shouldBe` ""
-
-    it "is suppressed when the line limit is zero" $ do
-      setLogConfig DEBUG 0
-      captured <- hCapture_ [stderr] (logDebug "hello")
-      captured `shouldBe` ""
-
-    it "truncates a message with more lines than the configured limit" $ do
-      setLogConfig DEBUG 2
-      captured <- hCapture_ [stderr] (logDebug "line1\nline2\nline3\nline4")
-      captured `shouldBe` "[DEBUG]: line1\nline2\n---| log is limited by --log-lines=2 option |---\n"
-
-    it "does not truncate a message with no more lines than the configured limit" $ do
-      setLogConfig DEBUG 3
-      captured <- hCapture_ [stderr] (logDebug "line1\nline2")
-      captured `shouldBe` "[DEBUG]: line1\nline2\n"
-
-    it "prints the whole message unlimited when lines is -1, however many lines" $ do
-      setLogConfig DEBUG (-1)
-      captured <- hCapture_ [stderr] (logDebug "line1\nline2\nline3\nline4\nline5")
-      captured `shouldBe` "[DEBUG]: line1\nline2\nline3\nline4\nline5\n"
-
-  describe "logError" $ do
-    it "prints when the level allows error messages" $ do
-      setLogConfig ERROR 25
-      captured <- hCapture_ [stderr] (logError "oops")
-      captured `shouldBe` "[ERROR]: oops\n"
-
-    it "prints at the debug level too, since error is more severe" $ do
-      setLogConfig DEBUG 25
-      captured <- hCapture_ [stderr] (logError "oops")
-      captured `shouldBe` "[ERROR]: oops\n"
-
-    it "is suppressed when the configured level is NONE" $ do
-      setLogConfig NONE 25
-      captured <- hCapture_ [stderr] (logError "oops")
-      captured `shouldBe` ""
-
-    it "is suppressed when the line limit is zero" $ do
-      setLogConfig ERROR 0
-      captured <- hCapture_ [stderr] (logError "oops")
-      captured `shouldBe` ""
+  describe "logError" $
+    forM_
+      [ ("prints when the level allows error messages", ERROR, 25, "[ERROR]: oops\n")
+      , ("prints at the debug level too, since error is more severe", DEBUG, 25, "[ERROR]: oops\n")
+      , ("is suppressed when the configured level is NONE", NONE, 25, "")
+      , ("is suppressed when the line limit is zero", ERROR, 0, "")
+      ]
+      ( \(desc, level, lineLimit, expected) -> it desc $ do
+          setLogConfig level lineLimit
+          captured <- hCapture_ [stderr] (logError "oops")
+          captured `shouldBe` expected
+      )

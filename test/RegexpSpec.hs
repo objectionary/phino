@@ -7,7 +7,7 @@ matching and replacement using PCRE.
 module RegexpSpec where
 
 import Control.Exception (SomeException, displayException, try)
-import Control.Monad (void)
+import Control.Monad (forM_, void)
 import Data.ByteString.Char8 qualified as B
 import Data.List (isInfixOf)
 import Regexp qualified as R
@@ -45,48 +45,24 @@ spec = do
       matched <- R.match B.empty (B.pack "anything")
       matched `shouldBe` True
 
-  describe "match" $ do
-    it "returns true when pattern matches" $
-      R.match (B.pack "hello") (B.pack "hello world") `shouldReturn` True
-
-    it "returns false when pattern does not match" $
-      R.match (B.pack "goodbye") (B.pack "hello world") `shouldReturn` False
-
-    it "returns true for partial match" $
-      R.match (B.pack "wor") (B.pack "hello world") `shouldReturn` True
-
-    it "returns true for match at start" $
-      R.match (B.pack "^hello") (B.pack "hello world") `shouldReturn` True
-
-    it "returns false for anchored pattern not at start" $
-      R.match (B.pack "^world") (B.pack "hello world") `shouldReturn` False
-
-    it "returns true for match at end" $
-      R.match (B.pack "world$") (B.pack "hello world") `shouldReturn` True
-
-    it "returns true with empty input and empty pattern" $
-      R.match B.empty B.empty `shouldReturn` True
-
-    it "returns true with non-empty input and empty pattern" $
-      R.match B.empty (B.pack "text") `shouldReturn` True
-
-    it "returns false with empty input and non-empty pattern" $
-      R.match (B.pack "text") B.empty `shouldReturn` False
-
-    it "handles special regex characters" $
-      R.match (B.pack "a\\.b") (B.pack "a.b") `shouldReturn` True
-
-    it "handles character class" $
-      R.match (B.pack "[0-9]+") (B.pack "abc123def") `shouldReturn` True
-
-    it "handles alternation" $
-      R.match (B.pack "cat|dog") (B.pack "I have a dog") `shouldReturn` True
-
-    it "handles unicode input" $
-      R.match (B.pack "日本語") (B.pack "これは日本語です") `shouldReturn` True
-
-    it "handles case sensitive match" $
-      R.match (B.pack "Hello") (B.pack "hello") `shouldReturn` False
+  describe "match" $
+    forM_
+      [ ("returns true when pattern matches", "hello", "hello world", True)
+      , ("returns false when pattern does not match", "goodbye", "hello world", False)
+      , ("returns true for partial match", "wor", "hello world", True)
+      , ("returns true for match at start", "^hello", "hello world", True)
+      , ("returns false for anchored pattern not at start", "^world", "hello world", False)
+      , ("returns true for match at end", "world$", "hello world", True)
+      , ("returns true with empty input and empty pattern", "", "", True)
+      , ("returns true with non-empty input and empty pattern", "", "text", True)
+      , ("returns false with empty input and non-empty pattern", "text", "", False)
+      , ("handles special regex characters", "a\\.b", "a.b", True)
+      , ("handles character class", "[0-9]+", "abc123def", True)
+      , ("handles alternation", "cat|dog", "I have a dog", True)
+      , ("handles unicode input", "日本語", "これは日本語です", True)
+      , ("handles case sensitive match", "Hello", "hello", False)
+      ]
+      (\(desc, pattern, input, expected) -> it desc $ R.match (B.pack pattern) (B.pack input) `shouldReturn` expected)
 
   describe "extractGroups" $ do
     it "extracts groups from pattern with capturing groups" $ do
@@ -119,47 +95,24 @@ spec = do
       groups <- R.extractGroups regex (B.pack "this is a test")
       groups `shouldBe` [B.pack "test"]
 
-  describe "substituteGroups" $ do
-    it "substitutes group zero" $
-      R.substituteGroups (B.pack "[$0]") [B.pack "match"] `shouldBe` B.pack "[match]"
-
-    it "substitutes multiple groups" $
-      R.substituteGroups (B.pack "$1-$2") [B.pack "full", B.pack "a", B.pack "b"]
-        `shouldBe` B.pack "a-b"
-
-    it "keeps dollar sign when no digits follow" $
-      R.substituteGroups (B.pack "$ test") [B.pack "x"] `shouldBe` B.pack "$ test"
-
-    it "keeps original reference for out of bounds index" $
-      R.substituteGroups (B.pack "$9") [B.pack "only"] `shouldBe` B.pack "$9"
-
-    it "handles replacement without group references" $
-      R.substituteGroups (B.pack "plain") [B.pack "x"] `shouldBe` B.pack "plain"
-
-    it "handles empty replacement" $
-      R.substituteGroups B.empty [B.pack "x"] `shouldBe` B.empty
-
-    it "handles empty groups list with reference" $
-      R.substituteGroups (B.pack "$0") [] `shouldBe` B.pack "$0"
-
-    it "handles multi-digit group reference" $
-      R.substituteGroups (B.pack "$12") (replicate 13 (B.pack "x"))
-        `shouldBe` B.pack "x"
-
-    it "handles consecutive group references" $
-      R.substituteGroups (B.pack "$0$1$2") [B.pack "a", B.pack "b", B.pack "c"]
-        `shouldBe` B.pack "abc"
-
-    it "handles unicode in replacement" $
-      R.substituteGroups (B.pack "結果: $1") [B.pack "all", B.pack "データ"]
-        `shouldBe` B.pack "結果: データ"
-
-    it "handles dollar at end of string" $
-      R.substituteGroups (B.pack "test$") [B.pack "x"] `shouldBe` B.pack "test$"
-
-    it "handles double dollar" $
-      R.substituteGroups (B.pack "$$1") [B.pack "x", B.pack "y"]
-        `shouldBe` B.pack "$y"
+  describe "substituteGroups" $
+    forM_
+      [ ("substitutes group zero", "[$0]", ["match"], "[match]")
+      , ("substitutes multiple groups", "$1-$2", ["full", "a", "b"], "a-b")
+      , ("keeps dollar sign when no digits follow", "$ test", ["x"], "$ test")
+      , ("keeps original reference for out of bounds index", "$9", ["only"], "$9")
+      , ("handles replacement without group references", "plain", ["x"], "plain")
+      , ("handles empty replacement", "", ["x"], "")
+      , ("handles empty groups list with reference", "$0", [], "$0")
+      , ("handles multi-digit group reference", "$12", replicate 13 "x", "x")
+      , ("handles consecutive group references", "$0$1$2", ["a", "b", "c"], "abc")
+      , ("handles unicode in replacement", "結果: $1", ["all", "データ"], "結果: データ")
+      , ("handles dollar at end of string", "test$", ["x"], "test$")
+      , ("handles double dollar", "$$1", ["x", "y"], "$y")
+      ]
+      ( \(desc, template, groups, expected) ->
+          it desc $ R.substituteGroups (B.pack template) (map B.pack groups) `shouldBe` B.pack expected
+      )
 
   describe "replaceFirst" $ do
     it "replaces first occurrence" $ do

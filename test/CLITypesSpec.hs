@@ -9,6 +9,7 @@ module CLITypesSpec (spec) where
 
 import AST (Expression (ExRoot))
 import CLI.Types
+import Control.Monad (forM_)
 import Lining (LineFormat (MULTILINE, SINGLELINE))
 import Logger (LogLevel (DEBUG))
 import Must (Must (MtExact))
@@ -318,26 +319,37 @@ spec = do
         CmdMatch _ -> pure ()
         _ -> expectationFailure "expected CmdMatch"
 
-  describe "Show CmdException" $ do
-    it "shows InvalidCLIArguments" $
-      show (InvalidCLIArguments "bad args") `shouldBe` "Invalid set of arguments: bad args"
-    it "shows CouldNotReadFromStdin" $
-      show (CouldNotReadFromStdin "reason") `shouldBe` "Could not read input from stdin\nReason: reason"
-    it "shows CouldNotDataize" $
-      show CouldNotDataize `shouldBe` "Could not dataize given expression"
-    it "shows CouldNotPrintExpressionInXMIR" $
-      show CouldNotPrintExpressionInXMIR
-        `shouldBe` "Could not print expression with --output=xmir, only expression printing is allowed"
-    it "shows EmptySubstsOnMatch" $
-      show EmptySubstsOnMatch `shouldBe` "Provided pattern was not matched, no substitutions are built"
-    it "shows VersionMismatch" $
-      show (VersionMismatch "1.0.0" "2.0.0")
-        `shouldBe` "Version mismatch: --pin requires '1.0.0', but this is phino 2.0.0"
+  describe "Show CmdException" $
+    forM_
+      [ ("InvalidCLIArguments", show (InvalidCLIArguments "bad args"), "Invalid set of arguments: bad args")
+      ,
+        ( "CouldNotReadFromStdin"
+        , show (CouldNotReadFromStdin "reason")
+        , "Could not read input from stdin\nReason: reason"
+        )
+      , ("CouldNotDataize", show CouldNotDataize, "Could not dataize given expression")
+      ,
+        ( "CouldNotPrintExpressionInXMIR"
+        , show CouldNotPrintExpressionInXMIR
+        , "Could not print expression with --output=xmir, only expression printing is allowed"
+        )
+      ,
+        ( "EmptySubstsOnMatch"
+        , show EmptySubstsOnMatch
+        , "Provided pattern was not matched, no substitutions are built"
+        )
+      ,
+        ( "VersionMismatch"
+        , show (VersionMismatch "1.0.0" "2.0.0")
+        , "Version mismatch: --pin requires '1.0.0', but this is phino 2.0.0"
+        )
+      ]
+      (\(name, actual, expected) -> it ("shows " ++ name) (actual `shouldBe` expected))
 
-  describe "Show IOFormat" $ do
-    it "shows XMIR" $
-      show XMIR `shouldBe` "xmir"
-    it "shows PHI" $
-      show PHI `shouldBe` "phi"
-    it "shows LATEX" $
-      show LATEX `shouldBe` "latex"
+  describe "Show IOFormat" $
+    forM_
+      [ (XMIR, "xmir")
+      , (PHI, "phi")
+      , (LATEX, "latex")
+      ]
+      (\(format, expected) -> it ("shows " ++ show format) (show format `shouldBe` expected))
