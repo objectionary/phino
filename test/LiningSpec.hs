@@ -30,28 +30,27 @@ expectedBiPair = BI_PAIR (PA_TAU (AT_LABEL "x") ARROW leafExpr) (BDS_PAIR NO_EOL
 spec :: Spec
 spec = do
   describe "toSingleLine on EXPRESSION" $ do
-    it "collapses a multiline formation into one line" $
-      toSingleLine multilineFormation `shouldBe` singlelineFormation
-
-    it "keeps the BI_EMPTY special case, only touching the outer tabs" $ do
-      let emptyFormation = EX_FORMATION LSB EOL (TAB 1) (BI_EMPTY (TAB 1)) EOL (TAB 0) RSB
-          expected = EX_FORMATION LSB NO_EOL NO_TAB (BI_EMPTY (TAB 1)) NO_EOL NO_TAB RSB
-      toSingleLine emptyFormation `shouldBe` expected
-
-    it "recurses through EX_DISPATCH" $
-      toSingleLine (EX_DISPATCH multilineFormation NO_SPACE (AT_LABEL "y"))
-        `shouldBe` EX_DISPATCH singlelineFormation NO_SPACE (AT_LABEL "y")
-
-    it "recurses through EX_APPLICATION" $ do
-      let app = EX_APPLICATION multilineFormation NO_SPACE EOL (TAB 1) (AA_TAUS biPair) EOL (TAB 0) 1
-          expected = EX_APPLICATION singlelineFormation NO_SPACE NO_EOL TAB' (AA_TAUS expectedBiPair) NO_EOL TAB' 1
-      toSingleLine app `shouldBe` expected
-
-    it "recurses through EX_PHI_MEET" $
-      toSingleLine (EX_PHI_MEET (Just "p") 3 multilineFormation) `shouldBe` EX_PHI_MEET (Just "p") 3 singlelineFormation
-
-    it "recurses through EX_PHI_AGAIN" $
-      toSingleLine (EX_PHI_AGAIN Nothing 4 multilineFormation) `shouldBe` EX_PHI_AGAIN Nothing 4 singlelineFormation
+    forM_
+      [ ("collapses a multiline formation into one line", multilineFormation, singlelineFormation)
+      ,
+        ( "keeps the BI_EMPTY special case, only touching the outer tabs"
+        , EX_FORMATION LSB EOL (TAB 1) (BI_EMPTY (TAB 1)) EOL (TAB 0) RSB
+        , EX_FORMATION LSB NO_EOL NO_TAB (BI_EMPTY (TAB 1)) NO_EOL NO_TAB RSB
+        )
+      ,
+        ( "recurses through EX_DISPATCH"
+        , EX_DISPATCH multilineFormation NO_SPACE (AT_LABEL "y")
+        , EX_DISPATCH singlelineFormation NO_SPACE (AT_LABEL "y")
+        )
+      ,
+        ( "recurses through EX_APPLICATION"
+        , EX_APPLICATION multilineFormation NO_SPACE EOL (TAB 1) (AA_TAUS biPair) EOL (TAB 0) 1
+        , EX_APPLICATION singlelineFormation NO_SPACE NO_EOL TAB' (AA_TAUS expectedBiPair) NO_EOL TAB' 1
+        )
+      , ("recurses through EX_PHI_MEET", EX_PHI_MEET (Just "p") 3 multilineFormation, EX_PHI_MEET (Just "p") 3 singlelineFormation)
+      , ("recurses through EX_PHI_AGAIN", EX_PHI_AGAIN Nothing 4 multilineFormation, EX_PHI_AGAIN Nothing 4 singlelineFormation)
+      ]
+      (\(desc, node, expected) -> it desc (toSingleLine node `shouldBe` expected))
 
     it "leaves every other constructor untouched" $
       forM_
@@ -66,66 +65,75 @@ spec = do
         ]
         (\node -> toSingleLine node `shouldBe` node)
 
-  describe "toSingleLine on BINDING" $ do
-    it "recurses through BI_PAIR, forcing TAB'" $
-      toSingleLine biPair `shouldBe` expectedBiPair
+  describe "toSingleLine on BINDING" $
+    forM_
+      [ ("recurses through BI_PAIR, forcing TAB'", biPair, expectedBiPair)
+      ,
+        ( "recurses through BI_META, keeping the meta untouched"
+        , BI_META (META NO_EXCL B "X") (BDS_EMPTY (TAB 1)) (TAB 1)
+        , BI_META (META NO_EXCL B "X") (BDS_EMPTY (TAB 1)) TAB'
+        )
+      , ("leaves BI_EMPTY untouched", BI_EMPTY (TAB 1), BI_EMPTY (TAB 1))
+      ]
+      (\(desc, node, expected) -> it desc (toSingleLine node `shouldBe` expected))
 
-    it "recurses through BI_META, keeping the meta untouched" $ do
-      let biMeta = BI_META (META NO_EXCL B "X") (BDS_EMPTY (TAB 1)) (TAB 1)
-          expected = BI_META (META NO_EXCL B "X") (BDS_EMPTY (TAB 1)) TAB'
-      toSingleLine biMeta `shouldBe` expected
+  describe "toSingleLine on BINDINGS" $
+    forM_
+      [
+        ( "recurses through BDS_PAIR, forcing TAB'"
+        , BDS_PAIR EOL (TAB 1) (PA_TAU (AT_LABEL "x") ARROW leafExpr) (BDS_EMPTY (TAB 1))
+        , BDS_PAIR NO_EOL TAB' (PA_TAU (AT_LABEL "x") ARROW leafExpr) (BDS_EMPTY (TAB 1))
+        )
+      ,
+        ( "recurses through BDS_META, keeping the meta untouched"
+        , BDS_META EOL (TAB 1) (META NO_EXCL B "X") (BDS_EMPTY (TAB 1))
+        , BDS_META NO_EOL TAB' (META NO_EXCL B "X") (BDS_EMPTY (TAB 1))
+        )
+      , ("leaves BDS_EMPTY untouched", BDS_EMPTY (TAB 1), BDS_EMPTY (TAB 1))
+      ]
+      (\(desc, node, expected) -> it desc (toSingleLine node `shouldBe` expected))
 
-    it "leaves BI_EMPTY untouched" $ do
-      let biEmpty = BI_EMPTY (TAB 1)
-      toSingleLine biEmpty `shouldBe` biEmpty
-
-  describe "toSingleLine on BINDINGS" $ do
-    it "recurses through BDS_PAIR, forcing TAB'" $ do
-      let bdsPair = BDS_PAIR EOL (TAB 1) (PA_TAU (AT_LABEL "x") ARROW leafExpr) (BDS_EMPTY (TAB 1))
-          expected = BDS_PAIR NO_EOL TAB' (PA_TAU (AT_LABEL "x") ARROW leafExpr) (BDS_EMPTY (TAB 1))
-      toSingleLine bdsPair `shouldBe` expected
-
-    it "recurses through BDS_META, keeping the meta untouched" $ do
-      let bdsMeta = BDS_META EOL (TAB 1) (META NO_EXCL B "X") (BDS_EMPTY (TAB 1))
-          expected = BDS_META NO_EOL TAB' (META NO_EXCL B "X") (BDS_EMPTY (TAB 1))
-      toSingleLine bdsMeta `shouldBe` expected
-
-    it "leaves BDS_EMPTY untouched" $ do
-      let bdsEmpty = BDS_EMPTY (TAB 1)
-      toSingleLine bdsEmpty `shouldBe` bdsEmpty
-
-  describe "toSingleLine on PAIR" $ do
-    it "recurses through PA_TAU" $
-      toSingleLine (PA_TAU (AT_LABEL "x") ARROW multilineFormation) `shouldBe` PA_TAU (AT_LABEL "x") ARROW singlelineFormation
-
-    it "recurses through PA_ALPHA" $
-      toSingleLine (PA_ALPHA (AL_IDX ALPHA 0) ARROW multilineFormation)
-        `shouldBe` PA_ALPHA (AL_IDX ALPHA 0) ARROW singlelineFormation
-
-    it "recurses through PA_FORMATION" $
-      toSingleLine (PA_FORMATION (AT_LABEL "x") [AT_RHO RHO] ARROW multilineFormation)
-        `shouldBe` PA_FORMATION (AT_LABEL "x") [AT_RHO RHO] ARROW singlelineFormation
-
-    it "leaves every other constructor untouched" $ do
-      let paVoid = PA_VOID (AT_LABEL "x") ARROW EMPTY
-      toSingleLine paVoid `shouldBe` paVoid
+  describe "toSingleLine on PAIR" $
+    forM_
+      [
+        ( "recurses through PA_TAU"
+        , PA_TAU (AT_LABEL "x") ARROW multilineFormation
+        , PA_TAU (AT_LABEL "x") ARROW singlelineFormation
+        )
+      ,
+        ( "recurses through PA_ALPHA"
+        , PA_ALPHA (AL_IDX ALPHA 0) ARROW multilineFormation
+        , PA_ALPHA (AL_IDX ALPHA 0) ARROW singlelineFormation
+        )
+      ,
+        ( "recurses through PA_FORMATION"
+        , PA_FORMATION (AT_LABEL "x") [AT_RHO RHO] ARROW multilineFormation
+        , PA_FORMATION (AT_LABEL "x") [AT_RHO RHO] ARROW singlelineFormation
+        )
+      , ("leaves every other constructor untouched", PA_VOID (AT_LABEL "x") ARROW EMPTY, PA_VOID (AT_LABEL "x") ARROW EMPTY)
+      ]
+      (\(desc, node, expected) -> it desc (toSingleLine node `shouldBe` expected))
 
   describe "toSingleLine on APP_BINDING" $
     it "recurses into the pair" $
       toSingleLine (APP_BINDING (PA_TAU (AT_LABEL "x") ARROW multilineFormation))
         `shouldBe` APP_BINDING (PA_TAU (AT_LABEL "x") ARROW singlelineFormation)
 
-  describe "toSingleLine on APP_ARGUMENT" $ do
-    it "recurses through AA_TAU" $
-      toSingleLine (AA_TAU (APP_BINDING (PA_TAU (AT_LABEL "x") ARROW multilineFormation)))
-        `shouldBe` AA_TAU (APP_BINDING (PA_TAU (AT_LABEL "x") ARROW singlelineFormation))
-
-    it "recurses through AA_TAUS" $
-      toSingleLine (AA_TAUS biPair) `shouldBe` AA_TAUS expectedBiPair
-
-    it "recurses through AA_EXPRS" $
-      toSingleLine (AA_EXPRS (APP_ARG multilineFormation AAS_EMPTY))
-        `shouldBe` AA_EXPRS (APP_ARG singlelineFormation AAS_EMPTY)
+  describe "toSingleLine on APP_ARGUMENT" $
+    forM_
+      [
+        ( "recurses through AA_TAU"
+        , AA_TAU (APP_BINDING (PA_TAU (AT_LABEL "x") ARROW multilineFormation))
+        , AA_TAU (APP_BINDING (PA_TAU (AT_LABEL "x") ARROW singlelineFormation))
+        )
+      , ("recurses through AA_TAUS", AA_TAUS biPair, AA_TAUS expectedBiPair)
+      ,
+        ( "recurses through AA_EXPRS"
+        , AA_EXPRS (APP_ARG multilineFormation AAS_EMPTY)
+        , AA_EXPRS (APP_ARG singlelineFormation AAS_EMPTY)
+        )
+      ]
+      (\(desc, node, expected) -> it desc (toSingleLine node `shouldBe` expected))
 
   describe "toSingleLine on APP_ARG" $
     it "recurses through both fields" $ do
@@ -133,28 +141,30 @@ spec = do
           expected = APP_ARG singlelineFormation (AAS_EXPR NO_EOL TAB' leafExpr AAS_EMPTY)
       toSingleLine appArg `shouldBe` expected
 
-  describe "toSingleLine on APP_ARGS" $ do
-    it "recurses through AAS_EXPR" $
-      toSingleLine (AAS_EXPR EOL (TAB 1) multilineFormation AAS_EMPTY)
-        `shouldBe` AAS_EXPR NO_EOL TAB' singlelineFormation AAS_EMPTY
+  describe "toSingleLine on APP_ARGS" $
+    forM_
+      [
+        ( "recurses through AAS_EXPR"
+        , AAS_EXPR EOL (TAB 1) multilineFormation AAS_EMPTY
+        , AAS_EXPR NO_EOL TAB' singlelineFormation AAS_EMPTY
+        )
+      , ("leaves AAS_EMPTY untouched", AAS_EMPTY, AAS_EMPTY)
+      ]
+      (\(desc, node, expected) -> it desc (toSingleLine node `shouldBe` expected))
 
-    it "leaves AAS_EMPTY untouched" $
-      toSingleLine AAS_EMPTY `shouldBe` AAS_EMPTY
-
-  describe "toSingleLine on SET" $ do
-    it "recurses through ST_BINDING" $
-      toSingleLine (ST_BINDING biPair) `shouldBe` ST_BINDING expectedBiPair
-
-    it "leaves ST_ATTRIBUTES untouched" $ do
-      let stAttrs = ST_ATTRIBUTES [AT_LABEL "x"]
-      toSingleLine stAttrs `shouldBe` stAttrs
+  describe "toSingleLine on SET" $
+    forM_
+      [ ("recurses through ST_BINDING", ST_BINDING biPair, ST_BINDING expectedBiPair)
+      , ("leaves ST_ATTRIBUTES untouched", ST_ATTRIBUTES [AT_LABEL "x"], ST_ATTRIBUTES [AT_LABEL "x"])
+      ]
+      (\(desc, node, expected) -> it desc (toSingleLine node `shouldBe` expected))
 
   describe "toSingleLine on NUMBER" $ do
-    it "recurses through LENGTH" $
-      toSingleLine (LENGTH biPair) `shouldBe` LENGTH expectedBiPair
-
-    it "recurses through DOMAIN" $
-      toSingleLine (DOMAIN biPair) `shouldBe` DOMAIN expectedBiPair
+    forM_
+      [ ("recurses through LENGTH", LENGTH biPair, LENGTH expectedBiPair)
+      , ("recurses through DOMAIN", DOMAIN biPair, DOMAIN expectedBiPair)
+      ]
+      (\(desc, node, expected) -> it desc (toSingleLine node `shouldBe` expected))
 
     it "leaves IDX_META and LITERAL untouched" $ do
       let idxMeta = IDX_META (META NO_EXCL I "x")
@@ -162,69 +172,52 @@ spec = do
       toSingleLine idxMeta `shouldBe` idxMeta
       toSingleLine literalNum `shouldBe` literalNum
 
-  describe "toSingleLine on COMPARABLE" $ do
-    it "leaves CMP_ATTR untouched" $ do
-      let cmpAttr = CMP_ATTR (AT_LABEL "x")
-      toSingleLine cmpAttr `shouldBe` cmpAttr
-
-    it "recurses through CMP_EXPR" $
-      toSingleLine (CMP_EXPR multilineFormation) `shouldBe` CMP_EXPR singlelineFormation
-
-    it "recurses through CMP_NUM" $
-      toSingleLine (CMP_NUM (LENGTH biPair)) `shouldBe` CMP_NUM (LENGTH expectedBiPair)
+  describe "toSingleLine on COMPARABLE" $
+    forM_
+      [ ("leaves CMP_ATTR untouched", CMP_ATTR (AT_LABEL "x"), CMP_ATTR (AT_LABEL "x"))
+      , ("recurses through CMP_EXPR", CMP_EXPR multilineFormation, CMP_EXPR singlelineFormation)
+      , ("recurses through CMP_NUM", CMP_NUM (LENGTH biPair), CMP_NUM (LENGTH expectedBiPair))
+      ]
+      (\(desc, node, expected) -> it desc (toSingleLine node `shouldBe` expected))
 
   describe "toSingleLine on CONDITION" $ do
     let stBinding = ST_BINDING biPair
         coBelongs = CO_BELONGS (AT_LABEL "x") IN stBinding
-    it "recurses through CO_BELONGS" $
-      toSingleLine coBelongs `shouldBe` CO_BELONGS (AT_LABEL "x") IN (ST_BINDING expectedBiPair)
+    forM_
+      [ ("recurses through CO_BELONGS", coBelongs, CO_BELONGS (AT_LABEL "x") IN (ST_BINDING expectedBiPair))
+      ,
+        ( "recurses through every condition in CO_LOGIC"
+        , CO_LOGIC [coBelongs, CO_EMPTY] AND
+        , CO_LOGIC [CO_BELONGS (AT_LABEL "x") IN (ST_BINDING expectedBiPair), CO_EMPTY] AND
+        )
+      , ("recurses through CO_NF", CO_NF multilineFormation, CO_NF singlelineFormation)
+      , ("recurses through CO_ABSOLUTE", CO_ABSOLUTE multilineFormation IN, CO_ABSOLUTE singlelineFormation IN)
+      , ("recurses through CO_NOT", CO_NOT coBelongs, CO_NOT (CO_BELONGS (AT_LABEL "x") IN (ST_BINDING expectedBiPair)))
+      ,
+        ( "recurses through CO_COMPARE"
+        , CO_COMPARE (CMP_ATTR (AT_LABEL "x")) EQUAL (CMP_EXPR multilineFormation)
+        , CO_COMPARE (CMP_ATTR (AT_LABEL "x")) EQUAL (CMP_EXPR singlelineFormation)
+        )
+      , ("recurses through CO_MATCHES", CO_MATCHES "abc" multilineFormation, CO_MATCHES "abc" singlelineFormation)
+      , ("recurses through CO_PART_OF", CO_PART_OF multilineFormation biPair, CO_PART_OF singlelineFormation expectedBiPair)
+      ,
+        ( "recurses through every group in CO_DISJOINT"
+        , CO_DISJOINT [AT_LABEL "x"] [biPair]
+        , CO_DISJOINT [AT_LABEL "x"] [expectedBiPair]
+        )
+      , ("recurses through CO_FORMATION", CO_FORMATION multilineFormation, CO_FORMATION singlelineFormation)
+      , ("leaves CO_EMPTY untouched", CO_EMPTY, CO_EMPTY)
+      ]
+      (\(desc, node, expected) -> it desc (toSingleLine node `shouldBe` expected))
 
-    it "recurses through every condition in CO_LOGIC" $
-      toSingleLine (CO_LOGIC [coBelongs, CO_EMPTY] AND)
-        `shouldBe` CO_LOGIC [CO_BELONGS (AT_LABEL "x") IN (ST_BINDING expectedBiPair), CO_EMPTY] AND
-
-    it "recurses through CO_NF" $
-      toSingleLine (CO_NF multilineFormation) `shouldBe` CO_NF singlelineFormation
-
-    it "recurses through CO_ABSOLUTE" $
-      toSingleLine (CO_ABSOLUTE multilineFormation IN) `shouldBe` CO_ABSOLUTE singlelineFormation IN
-
-    it "recurses through CO_NOT" $
-      toSingleLine (CO_NOT coBelongs) `shouldBe` CO_NOT (CO_BELONGS (AT_LABEL "x") IN (ST_BINDING expectedBiPair))
-
-    it "recurses through CO_COMPARE" $
-      toSingleLine (CO_COMPARE (CMP_ATTR (AT_LABEL "x")) EQUAL (CMP_EXPR multilineFormation))
-        `shouldBe` CO_COMPARE (CMP_ATTR (AT_LABEL "x")) EQUAL (CMP_EXPR singlelineFormation)
-
-    it "recurses through CO_MATCHES" $
-      toSingleLine (CO_MATCHES "abc" multilineFormation) `shouldBe` CO_MATCHES "abc" singlelineFormation
-
-    it "recurses through CO_PART_OF" $
-      toSingleLine (CO_PART_OF multilineFormation biPair) `shouldBe` CO_PART_OF singlelineFormation expectedBiPair
-
-    it "recurses through every group in CO_DISJOINT" $
-      toSingleLine (CO_DISJOINT [AT_LABEL "x"] [biPair]) `shouldBe` CO_DISJOINT [AT_LABEL "x"] [expectedBiPair]
-
-    it "recurses through CO_FORMATION" $
-      toSingleLine (CO_FORMATION multilineFormation) `shouldBe` CO_FORMATION singlelineFormation
-
-    it "leaves CO_EMPTY untouched" $
-      toSingleLine CO_EMPTY `shouldBe` CO_EMPTY
-
-  describe "toSingleLine on EXTRA_ARG" $ do
-    it "recurses through ARG_EXPR" $
-      toSingleLine (ARG_EXPR multilineFormation) `shouldBe` ARG_EXPR singlelineFormation
-
-    it "recurses through ARG_BINDING" $
-      toSingleLine (ARG_BINDING biPair) `shouldBe` ARG_BINDING expectedBiPair
-
-    it "leaves ARG_ATTR untouched" $ do
-      let argAttr = ARG_ATTR (AT_LABEL "x")
-      toSingleLine argAttr `shouldBe` argAttr
-
-    it "leaves ARG_BYTES untouched" $ do
-      let argBytes = ARG_BYTES BT_EMPTY
-      toSingleLine argBytes `shouldBe` argBytes
+  describe "toSingleLine on EXTRA_ARG" $
+    forM_
+      [ ("recurses through ARG_EXPR", ARG_EXPR multilineFormation, ARG_EXPR singlelineFormation)
+      , ("recurses through ARG_BINDING", ARG_BINDING biPair, ARG_BINDING expectedBiPair)
+      , ("leaves ARG_ATTR untouched", ARG_ATTR (AT_LABEL "x"), ARG_ATTR (AT_LABEL "x"))
+      , ("leaves ARG_BYTES untouched", ARG_BYTES BT_EMPTY, ARG_BYTES BT_EMPTY)
+      ]
+      (\(desc, node, expected) -> it desc (toSingleLine node `shouldBe` expected))
 
   describe "toSingleLine on EXTRA" $
     it "recurses through meta and every arg, keeping func untouched" $ do

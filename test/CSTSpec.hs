@@ -140,17 +140,31 @@ spec = do
           (TAB 2)
           RSB
 
-  describe "sweetNumber" $ do
-    it "is true for a finite integral value" (sweetNumber (BtMany ["40", "45", "00", "00", "00", "00", "00", "00"]) `shouldBe` True)
-    it "is true for a finite fractional value" (sweetNumber (BtMany ["BF", "D0", "00", "00", "00", "00", "00", "00"]) `shouldBe` True)
-    it "is false for NaN" (sweetNumber (BtMany ["7F", "F8", "00", "00", "00", "00", "00", "00"]) `shouldBe` False)
-    it "is false for positive infinity" (sweetNumber (BtMany ["7F", "F0", "00", "00", "00", "00", "00", "00"]) `shouldBe` False)
-    it "is false for negative infinity" (sweetNumber (BtMany ["FF", "F0", "00", "00", "00", "00", "00", "00"]) `shouldBe` False)
+  describe "sweetNumber" $
+    forM_
+      [ ("is true for a finite integral value", BtMany ["40", "45", "00", "00", "00", "00", "00", "00"], True)
+      , ("is true for a finite fractional value", BtMany ["BF", "D0", "00", "00", "00", "00", "00", "00"], True)
+      , ("is false for NaN", BtMany ["7F", "F8", "00", "00", "00", "00", "00", "00"], False)
+      , ("is false for positive infinity", BtMany ["7F", "F0", "00", "00", "00", "00", "00", "00"], False)
+      , ("is false for negative infinity", BtMany ["FF", "F0", "00", "00", "00", "00", "00", "00"], False)
+      ]
+      (\(desc, bts, expected) -> it desc (sweetNumber bts `shouldBe` expected))
 
-  describe "sweetCollapsible" $ do
-    it "delegates to sweetNumber for a data number" (sweetCollapsible (DataNumber (BtMany ["7F", "F8", "00", "00", "00", "00", "00", "00"])) `shouldBe` False)
-    it "is true for a data number with a sweet literal" (sweetCollapsible (DataNumber (BtMany ["40", "45", "00", "00", "00", "00", "00", "00"])) `shouldBe` True)
-    it "is true for any other expression" (sweetCollapsible ExXi `shouldBe` True)
+  describe "sweetCollapsible" $
+    forM_
+      [
+        ( "delegates to sweetNumber for a data number"
+        , DataNumber (BtMany ["7F", "F8", "00", "00", "00", "00", "00", "00"])
+        , False
+        )
+      ,
+        ( "is true for a data number with a sweet literal"
+        , DataNumber (BtMany ["40", "45", "00", "00", "00", "00", "00", "00"])
+        , True
+        )
+      , ("is true for any other expression", ExXi, True)
+      ]
+      (\(desc, expressionValue, expected) -> it desc (sweetCollapsible expressionValue `shouldBe` expected))
 
   describe "metaTail drops the leading kind character" $
     forM_
@@ -168,39 +182,51 @@ spec = do
       ]
       (\(desc, metaName, expected) -> it desc (exMetaHead metaName `shouldBe` expected))
 
-  describe "expressionToCST on rendering-only and meta nodes" $ do
-    it "ExBytes becomes a bare EX_BYTES chain node" (expressionToCST (ExBytes (BtOne "1F")) `shouldBe` EX_BYTES (BT_ONE "1F"))
-    it "an n-prefixed ExMeta becomes a normal-form meta" (expressionToCST (ExMeta "nX") `shouldBe` EX_META (META NO_EXCL N "X"))
-    it "a k-prefixed ExMeta becomes an absolute meta" (expressionToCST (ExMeta "kX") `shouldBe` EX_META (META NO_EXCL K "X"))
-    it "any other ExMeta becomes an ordinary meta" (expressionToCST (ExMeta "eX") `shouldBe` EX_META (META NO_EXCL E "X"))
-    it
-      "ExPhiMeet keeps its prefix"
-      (expressionToCST (ExPhiMeet (Just "p") 3 ExXi) `shouldBe` EX_PHI_MEET (Just "p") 3 (EX_XI XI))
-    it
-      "ExPhiAgain keeps its prefix"
-      (expressionToCST (ExPhiAgain (Just "p") 3 ExXi) `shouldBe` EX_PHI_AGAIN (Just "p") 3 (EX_XI XI))
+  describe "expressionToCST on rendering-only and meta nodes" $
+    forM_
+      [ ("ExBytes becomes a bare EX_BYTES chain node", ExBytes (BtOne "1F"), EX_BYTES (BT_ONE "1F"))
+      , ("an n-prefixed ExMeta becomes a normal-form meta", ExMeta "nX", EX_META (META NO_EXCL N "X"))
+      , ("a k-prefixed ExMeta becomes an absolute meta", ExMeta "kX", EX_META (META NO_EXCL K "X"))
+      , ("any other ExMeta becomes an ordinary meta", ExMeta "eX", EX_META (META NO_EXCL E "X"))
+      , ("ExPhiMeet keeps its prefix", ExPhiMeet (Just "p") 3 ExXi, EX_PHI_MEET (Just "p") 3 (EX_XI XI))
+      , ("ExPhiAgain keeps its prefix", ExPhiAgain (Just "p") 3 ExXi, EX_PHI_AGAIN (Just "p") 3 (EX_XI XI))
+      ]
+      (\(desc, expressionValue, expected) -> it desc (expressionToCST expressionValue `shouldBe` expected))
 
   describe "attributeToCST and bindingsToCST" $ do
-    it "attributeToCST on a label" (attributeToCST (AtLabel "x") `shouldBe` AT_LABEL "x")
-    it "attributeToCST on rho" (attributeToCST AtRho `shouldBe` AT_RHO RHO)
-    it "bindingsToCST on an empty list" (bindingsToCST [] `shouldBe` BI_EMPTY (TAB 0))
-    it
-      "bindingsToCST on a single binding"
-      (bindingsToCST [BiVoid (AtLabel "y")] `shouldBe` BI_PAIR (PA_VOID (AT_LABEL "y") ARROW EMPTY) (BDS_EMPTY (TAB 0)) (TAB 0))
-    it
-      "bindingsToCST on a meta binding collapses the whole list to BI_META"
-      (bindingsToCST [BiMeta "B"] `shouldBe` BI_META (META NO_EXCL B "") (BDS_EMPTY (TAB 0)) (TAB 0))
-    it
-      "bindingsToCST on a delta binding"
-      (bindingsToCST [BiDelta (BtOne "01")] `shouldBe` BI_PAIR (PA_DELTA (BT_ONE "01")) (BDS_EMPTY (TAB 0)) (TAB 0))
-    it
-      "bindingsToCST recurses into a meta binding that is not the head"
-      ( bindingsToCST [BiVoid (AtLabel "x"), BiMeta "B"]
-          `shouldBe` BI_PAIR
+    forM_
+      [ ("attributeToCST on a label", AtLabel "x", AT_LABEL "x")
+      , ("attributeToCST on rho", AtRho, AT_RHO RHO)
+      ]
+      (\(desc, attribute, expected) -> it desc (attributeToCST attribute `shouldBe` expected))
+
+    forM_
+      [ ("bindingsToCST on an empty list", [], BI_EMPTY (TAB 0))
+      ,
+        ( "bindingsToCST on a single binding"
+        , [BiVoid (AtLabel "y")]
+        , BI_PAIR (PA_VOID (AT_LABEL "y") ARROW EMPTY) (BDS_EMPTY (TAB 0)) (TAB 0)
+        )
+      ,
+        ( "bindingsToCST on a meta binding collapses the whole list to BI_META"
+        , [BiMeta "B"]
+        , BI_META (META NO_EXCL B "") (BDS_EMPTY (TAB 0)) (TAB 0)
+        )
+      ,
+        ( "bindingsToCST on a delta binding"
+        , [BiDelta (BtOne "01")]
+        , BI_PAIR (PA_DELTA (BT_ONE "01")) (BDS_EMPTY (TAB 0)) (TAB 0)
+        )
+      ,
+        ( "bindingsToCST recurses into a meta binding that is not the head"
+        , [BiVoid (AtLabel "x"), BiMeta "B"]
+        , BI_PAIR
             (PA_VOID (AT_LABEL "x") ARROW EMPTY)
             (BDS_META EOL (TAB 0) (META NO_EXCL B "") (BDS_EMPTY (TAB 0)))
             (TAB 0)
-      )
+        )
+      ]
+      (\(desc, bindingsList, expected) -> it desc (bindingsToCST bindingsList `shouldBe` expected))
 
   describe "expressionToCST on formation and dispatch edge cases" $ do
     it
@@ -233,57 +259,76 @@ spec = do
   describe "conditionToCST on every Y.Condition constructor" $ do
     let voidYBinding :: BINDING
         voidYBinding = BI_PAIR (PA_VOID (AT_LABEL "y") ARROW EMPTY) (BDS_EMPTY (TAB 0)) (TAB 0)
-    it
-      "In"
-      (conditionToCST (Y.In (AtLabel "x") (BiVoid (AtLabel "y"))) `shouldBe` CO_BELONGS (AT_LABEL "x") IN (ST_BINDING voidYBinding))
-    it
-      "Not (In ...) flips the belonging"
-      (conditionToCST (Y.Not (Y.In (AtLabel "x") (BiVoid (AtLabel "y")))) `shouldBe` CO_BELONGS (AT_LABEL "x") NOT_IN (ST_BINDING voidYBinding))
-    it
-      "Eq"
-      (conditionToCST (Y.Eq (Y.CmpAttr (AtLabel "x")) (Y.CmpNum (Y.Literal 3))) `shouldBe` CO_COMPARE (CMP_ATTR (AT_LABEL "x")) EQUAL (CMP_NUM (LITERAL 3)))
-    it
-      "Not (Eq ...) becomes a not-equal comparison"
-      (conditionToCST (Y.Not (Y.Eq (Y.CmpAttr (AtLabel "x")) (Y.CmpNum (Y.Literal 3)))) `shouldBe` CO_COMPARE (CMP_ATTR (AT_LABEL "x")) NOT_EQUAL (CMP_NUM (LITERAL 3)))
-    it
-      "Gt"
-      (conditionToCST (Y.Gt (Y.CmpAttr (AtLabel "x")) (Y.CmpNum (Y.Literal 3))) `shouldBe` CO_COMPARE (CMP_ATTR (AT_LABEL "x")) GREATER (CMP_NUM (LITERAL 3)))
-    it
-      "Not (Gt ...) becomes a not-greater comparison"
-      (conditionToCST (Y.Not (Y.Gt (Y.CmpAttr (AtLabel "x")) (Y.CmpNum (Y.Literal 3)))) `shouldBe` CO_COMPARE (CMP_ATTR (AT_LABEL "x")) NOT_GREATER (CMP_NUM (LITERAL 3)))
-    it "Absolute" (conditionToCST (Y.Absolute ExXi) `shouldBe` CO_ABSOLUTE (EX_XI XI) IN)
-    it
-      "Not (Absolute ...) flips membership"
-      (conditionToCST (Y.Not (Y.Absolute ExXi)) `shouldBe` CO_ABSOLUTE (EX_XI XI) NOT_IN)
-    it
-      "Disjoint"
-      (conditionToCST (Y.Disjoint [AtLabel "a"] [BiVoid (AtLabel "y")]) `shouldBe` CO_DISJOINT [AT_LABEL "a"] [voidYBinding])
-    it "And on an empty list collapses to CO_EMPTY" (conditionToCST (Y.And []) `shouldBe` CO_EMPTY)
-    it "And on a non-empty list wraps every condition" (conditionToCST (Y.And [Y.NF ExXi]) `shouldBe` CO_LOGIC [CO_NF (EX_XI XI)] AND)
-    it "Or on an empty list collapses to CO_EMPTY" (conditionToCST (Y.Or []) `shouldBe` CO_EMPTY)
-    it "Or on a non-empty list wraps every condition" (conditionToCST (Y.Or [Y.NF ExXi]) `shouldBe` CO_LOGIC [CO_NF (EX_XI XI)] OR)
-    it "NF" (conditionToCST (Y.NF ExXi) `shouldBe` CO_NF (EX_XI XI))
-    it
-      "Not on any other condition falls back to a generic negation"
-      (conditionToCST (Y.Not (Y.NF ExXi)) `shouldBe` CO_NOT (CO_NF (EX_XI XI)))
-    it "Matches" (conditionToCST (Y.Matches "abc" ExXi) `shouldBe` CO_MATCHES "abc" (EX_XI XI))
-    it "PartOf" (conditionToCST (Y.PartOf ExXi (BiVoid (AtLabel "y"))) `shouldBe` CO_PART_OF (EX_XI XI) voidYBinding)
-    it "IsFormation" (conditionToCST (Y.IsFormation ExXi) `shouldBe` CO_FORMATION (EX_XI XI))
+    forM_
+      [ ("In", Y.In (AtLabel "x") (BiVoid (AtLabel "y")), CO_BELONGS (AT_LABEL "x") IN (ST_BINDING voidYBinding))
+      ,
+        ( "Not (In ...) flips the belonging"
+        , Y.Not (Y.In (AtLabel "x") (BiVoid (AtLabel "y")))
+        , CO_BELONGS (AT_LABEL "x") NOT_IN (ST_BINDING voidYBinding)
+        )
+      ,
+        ( "Eq"
+        , Y.Eq (Y.CmpAttr (AtLabel "x")) (Y.CmpNum (Y.Literal 3))
+        , CO_COMPARE (CMP_ATTR (AT_LABEL "x")) EQUAL (CMP_NUM (LITERAL 3))
+        )
+      ,
+        ( "Not (Eq ...) becomes a not-equal comparison"
+        , Y.Not (Y.Eq (Y.CmpAttr (AtLabel "x")) (Y.CmpNum (Y.Literal 3)))
+        , CO_COMPARE (CMP_ATTR (AT_LABEL "x")) NOT_EQUAL (CMP_NUM (LITERAL 3))
+        )
+      ,
+        ( "Gt"
+        , Y.Gt (Y.CmpAttr (AtLabel "x")) (Y.CmpNum (Y.Literal 3))
+        , CO_COMPARE (CMP_ATTR (AT_LABEL "x")) GREATER (CMP_NUM (LITERAL 3))
+        )
+      ,
+        ( "Not (Gt ...) becomes a not-greater comparison"
+        , Y.Not (Y.Gt (Y.CmpAttr (AtLabel "x")) (Y.CmpNum (Y.Literal 3)))
+        , CO_COMPARE (CMP_ATTR (AT_LABEL "x")) NOT_GREATER (CMP_NUM (LITERAL 3))
+        )
+      , ("Absolute", Y.Absolute ExXi, CO_ABSOLUTE (EX_XI XI) IN)
+      , ("Not (Absolute ...) flips membership", Y.Not (Y.Absolute ExXi), CO_ABSOLUTE (EX_XI XI) NOT_IN)
+      , ("Disjoint", Y.Disjoint [AtLabel "a"] [BiVoid (AtLabel "y")], CO_DISJOINT [AT_LABEL "a"] [voidYBinding])
+      , ("And on an empty list collapses to CO_EMPTY", Y.And [], CO_EMPTY)
+      , ("And on a non-empty list wraps every condition", Y.And [Y.NF ExXi], CO_LOGIC [CO_NF (EX_XI XI)] AND)
+      , ("Or on an empty list collapses to CO_EMPTY", Y.Or [], CO_EMPTY)
+      , ("Or on a non-empty list wraps every condition", Y.Or [Y.NF ExXi], CO_LOGIC [CO_NF (EX_XI XI)] OR)
+      , ("NF", Y.NF ExXi, CO_NF (EX_XI XI))
+      ,
+        ( "Not on any other condition falls back to a generic negation"
+        , Y.Not (Y.NF ExXi)
+        , CO_NOT (CO_NF (EX_XI XI))
+        )
+      , ("Matches", Y.Matches "abc" ExXi, CO_MATCHES "abc" (EX_XI XI))
+      , ("PartOf", Y.PartOf ExXi (BiVoid (AtLabel "y")), CO_PART_OF (EX_XI XI) voidYBinding)
+      , ("IsFormation", Y.IsFormation ExXi, CO_FORMATION (EX_XI XI))
+      ]
+      (\(desc, yamlCondition, expected) -> it desc (conditionToCST yamlCondition `shouldBe` expected))
 
-  describe "comparableToCST on every Y.Comparable constructor" $ do
-    it "CmpAttr" (comparableToCST (Y.CmpAttr (AtLabel "x")) `shouldBe` CMP_ATTR (AT_LABEL "x"))
-    it "CmpExpr" (comparableToCST (Y.CmpExpr ExXi) `shouldBe` CMP_EXPR (EX_XI XI))
-    it "CmpNum" (comparableToCST (Y.CmpNum (Y.Literal 3)) `shouldBe` CMP_NUM (LITERAL 3))
+  describe "comparableToCST on every Y.Comparable constructor" $
+    forM_
+      [ ("CmpAttr", Y.CmpAttr (AtLabel "x"), CMP_ATTR (AT_LABEL "x"))
+      , ("CmpExpr", Y.CmpExpr ExXi, CMP_EXPR (EX_XI XI))
+      , ("CmpNum", Y.CmpNum (Y.Literal 3), CMP_NUM (LITERAL 3))
+      ]
+      (\(desc, comparable, expected) -> it desc (comparableToCST comparable `shouldBe` expected))
 
-  describe "numberToCST on every Y.Number constructor" $ do
-    it "MetaIndex" (numberToCST (Y.MetaIndex "i1") `shouldBe` IDX_META (META NO_EXCL I "1"))
-    it
-      "Length"
-      (numberToCST (Y.Length (BiVoid (AtLabel "y"))) `shouldBe` LENGTH (BI_PAIR (PA_VOID (AT_LABEL "y") ARROW EMPTY) (BDS_EMPTY (TAB 0)) (TAB 0)))
-    it
-      "Domain"
-      (numberToCST (Y.Domain (BiVoid (AtLabel "y"))) `shouldBe` DOMAIN (BI_PAIR (PA_VOID (AT_LABEL "y") ARROW EMPTY) (BDS_EMPTY (TAB 0)) (TAB 0)))
-    it "Literal" (numberToCST (Y.Literal 5) `shouldBe` LITERAL 5)
+  describe "numberToCST on every Y.Number constructor" $
+    forM_
+      [ ("MetaIndex", Y.MetaIndex "i1", IDX_META (META NO_EXCL I "1"))
+      ,
+        ( "Length"
+        , Y.Length (BiVoid (AtLabel "y"))
+        , LENGTH (BI_PAIR (PA_VOID (AT_LABEL "y") ARROW EMPTY) (BDS_EMPTY (TAB 0)) (TAB 0))
+        )
+      ,
+        ( "Domain"
+        , Y.Domain (BiVoid (AtLabel "y"))
+        , DOMAIN (BI_PAIR (PA_VOID (AT_LABEL "y") ARROW EMPTY) (BDS_EMPTY (TAB 0)) (TAB 0))
+        )
+      , ("Literal", Y.Literal 5, LITERAL 5)
+      ]
+      (\(desc, number, expected) -> it desc (numberToCST number `shouldBe` expected))
 
   describe "extraToCST on every Y.ExtraArgument constructor" $
     it
@@ -310,55 +355,57 @@ spec = do
   -- 'tab node' stays ambiguous even with DuplicateRecordFields) and invoke
   -- 'show'/'==' on one value of every node type to close that gap.
   describe "CST token derived instances" $
-    it "derives Eq and Show for every simple token type" $ do
-      shouldShowAndEqSelf "LCB" LCB
-      shouldShowAndEqSelf "BIG_LCB" BIG_LCB
-      shouldShowAndEqSelf "RCB" RCB
-      shouldShowAndEqSelf "BIG_RCB" BIG_RCB
-      shouldShowAndEqSelf "LSB" LSB
-      shouldShowAndEqSelf "LSB'" LSB'
-      shouldShowAndEqSelf "RSB" RSB
-      shouldShowAndEqSelf "RSB'" RSB'
-      shouldShowAndEqSelf "COMMA" COMMA
-      shouldShowAndEqSelf "NO_COMMA" NO_COMMA
-      shouldShowAndEqSelf "ARROW" ARROW
-      shouldShowAndEqSelf "ARROW'" ARROW'
-      shouldShowAndEqSelf "DASHED_ARROW" DASHED_ARROW
-      shouldShowAndEqSelf "EMPTY" EMPTY
-      shouldShowAndEqSelf "QUESTION" QUESTION
-      shouldShowAndEqSelf "PHI" PHI
-      shouldShowAndEqSelf "AT" AT
-      shouldShowAndEqSelf "RHO" RHO
-      shouldShowAndEqSelf "CARET" CARET
-      shouldShowAndEqSelf "RHO'" RHO'
-      shouldShowAndEqSelf "DELTA" DELTA
-      shouldShowAndEqSelf "DELTA'" DELTA'
-      shouldShowAndEqSelf "XI" XI
-      shouldShowAndEqSelf "DOLLAR" DOLLAR
-      shouldShowAndEqSelf "XI'" XI'
-      shouldShowAndEqSelf "LAMBDA" LAMBDA
-      shouldShowAndEqSelf "LAMBDA'" LAMBDA'
-      shouldShowAndEqSelf "Q" Q
-      shouldShowAndEqSelf "DEAD" DEAD
-      shouldShowAndEqSelf "T" T
-      shouldShowAndEqSelf "SPACE" SPACE
-      shouldShowAndEqSelf "NO_SPACE" NO_SPACE
-      shouldShowAndEqSelf "EOL" EOL
-      shouldShowAndEqSelf "NO_EOL" NO_EOL
-      shouldShowAndEqSelf "DOTS" DOTS
-      shouldShowAndEqSelf "DOTS'" DOTS'
-      shouldShowAndEqSelf "BT_EMPTY" BT_EMPTY
-      shouldShowAndEqSelf "E" E
-      shouldShowAndEqSelf "EXCL" EXCL
-      shouldShowAndEqSelf "NO_EXCL" NO_EXCL
-      shouldShowAndEqSelf "IN" IN
-      shouldShowAndEqSelf "NOT_IN" NOT_IN
-      shouldShowAndEqSelf "AND" AND
-      shouldShowAndEqSelf "OR" OR
-      shouldShowAndEqSelf "EQUAL" EQUAL
-      shouldShowAndEqSelf "NOT_EQUAL" NOT_EQUAL
-      shouldShowAndEqSelf "GREATER" GREATER
-      shouldShowAndEqSelf "NOT_GREATER" NOT_GREATER
+    forM_
+      [ ("LCB", shouldShowAndEqSelf "LCB" LCB)
+      , ("BIG_LCB", shouldShowAndEqSelf "BIG_LCB" BIG_LCB)
+      , ("RCB", shouldShowAndEqSelf "RCB" RCB)
+      , ("BIG_RCB", shouldShowAndEqSelf "BIG_RCB" BIG_RCB)
+      , ("LSB", shouldShowAndEqSelf "LSB" LSB)
+      , ("LSB'", shouldShowAndEqSelf "LSB'" LSB')
+      , ("RSB", shouldShowAndEqSelf "RSB" RSB)
+      , ("RSB'", shouldShowAndEqSelf "RSB'" RSB')
+      , ("COMMA", shouldShowAndEqSelf "COMMA" COMMA)
+      , ("NO_COMMA", shouldShowAndEqSelf "NO_COMMA" NO_COMMA)
+      , ("ARROW", shouldShowAndEqSelf "ARROW" ARROW)
+      , ("ARROW'", shouldShowAndEqSelf "ARROW'" ARROW')
+      , ("DASHED_ARROW", shouldShowAndEqSelf "DASHED_ARROW" DASHED_ARROW)
+      , ("EMPTY", shouldShowAndEqSelf "EMPTY" EMPTY)
+      , ("QUESTION", shouldShowAndEqSelf "QUESTION" QUESTION)
+      , ("PHI", shouldShowAndEqSelf "PHI" PHI)
+      , ("AT", shouldShowAndEqSelf "AT" AT)
+      , ("RHO", shouldShowAndEqSelf "RHO" RHO)
+      , ("CARET", shouldShowAndEqSelf "CARET" CARET)
+      , ("RHO'", shouldShowAndEqSelf "RHO'" RHO')
+      , ("DELTA", shouldShowAndEqSelf "DELTA" DELTA)
+      , ("DELTA'", shouldShowAndEqSelf "DELTA'" DELTA')
+      , ("XI", shouldShowAndEqSelf "XI" XI)
+      , ("DOLLAR", shouldShowAndEqSelf "DOLLAR" DOLLAR)
+      , ("XI'", shouldShowAndEqSelf "XI'" XI')
+      , ("LAMBDA", shouldShowAndEqSelf "LAMBDA" LAMBDA)
+      , ("LAMBDA'", shouldShowAndEqSelf "LAMBDA'" LAMBDA')
+      , ("Q", shouldShowAndEqSelf "Q" Q)
+      , ("DEAD", shouldShowAndEqSelf "DEAD" DEAD)
+      , ("T", shouldShowAndEqSelf "T" T)
+      , ("SPACE", shouldShowAndEqSelf "SPACE" SPACE)
+      , ("NO_SPACE", shouldShowAndEqSelf "NO_SPACE" NO_SPACE)
+      , ("EOL", shouldShowAndEqSelf "EOL" EOL)
+      , ("NO_EOL", shouldShowAndEqSelf "NO_EOL" NO_EOL)
+      , ("DOTS", shouldShowAndEqSelf "DOTS" DOTS)
+      , ("DOTS'", shouldShowAndEqSelf "DOTS'" DOTS')
+      , ("BT_EMPTY", shouldShowAndEqSelf "BT_EMPTY" BT_EMPTY)
+      , ("E", shouldShowAndEqSelf "E" E)
+      , ("EXCL", shouldShowAndEqSelf "EXCL" EXCL)
+      , ("NO_EXCL", shouldShowAndEqSelf "NO_EXCL" NO_EXCL)
+      , ("IN", shouldShowAndEqSelf "IN" IN)
+      , ("NOT_IN", shouldShowAndEqSelf "NOT_IN" NOT_IN)
+      , ("AND", shouldShowAndEqSelf "AND" AND)
+      , ("OR", shouldShowAndEqSelf "OR" OR)
+      , ("EQUAL", shouldShowAndEqSelf "EQUAL" EQUAL)
+      , ("NOT_EQUAL", shouldShowAndEqSelf "NOT_EQUAL" NOT_EQUAL)
+      , ("GREATER", shouldShowAndEqSelf "GREATER" GREATER)
+      , ("NOT_GREATER", shouldShowAndEqSelf "NOT_GREATER" NOT_GREATER)
+      ]
+      (uncurry it)
 
   describe "META field accessors" $
     it "exposes every META field via its accessor" $ do
