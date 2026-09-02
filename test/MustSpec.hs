@@ -13,320 +13,120 @@ import Text.Read (readMaybe)
 
 spec :: Spec
 spec = do
-  describe "Show instance renders MtDisabled" $
-    it "displays zero" $
-      show MtDisabled `shouldBe` "0"
-
-  describe "Show instance renders MtExact" $
+  describe "Show instance" $
     forM_
-      [ ("positive integer", MtExact 42, "42")
-      , ("large integer", MtExact 999999, "999999")
-      , ("one", MtExact 1, "1")
+      [ ("displays a disabled must as zero", MtDisabled, "0")
+      , ("displays a positive exact value", MtExact 42, "42")
+      , ("displays a large exact value", MtExact 999999, "999999")
+      , ("displays an exact value of one", MtExact 1, "1")
+      , ("displays a range with both bounds", MtRange (Just 1) (Just 5), "1..5")
+      , ("displays a range with equal bounds", MtRange (Just 3) (Just 3), "3..3")
+      , ("displays a large range", MtRange (Just 0) (Just 1000), "0..1000")
+      , ("displays a range with only a minimum", MtRange (Just 5) Nothing, "5..")
+      , ("displays a range with only a zero minimum", MtRange (Just 0) Nothing, "0..")
+      , ("displays a range with only a maximum", MtRange Nothing (Just 10), "..10")
+      , ("displays a range with only a zero maximum", MtRange Nothing (Just 0), "..0")
+      , ("displays a range with no bounds", MtRange Nothing Nothing, "..")
       ]
-      ( \(desc, must, expected) ->
-          it desc $ show must `shouldBe` expected
-      )
+      (\(desc, must, expected) -> it desc (show must `shouldBe` expected))
 
-  describe "Show instance renders MtRange with both bounds" $
+  describe "Read instance" $
     forM_
-      [ ("small range", MtRange (Just 1) (Just 5), "1..5")
-      , ("same bounds", MtRange (Just 3) (Just 3), "3..3")
-      , ("large range", MtRange (Just 0) (Just 1000), "0..1000")
+      [ ("parses zero as MtDisabled", "0", Just MtDisabled)
+      , ("parses a single-digit exact value", "5", Just (MtExact 5))
+      , ("parses a multi-digit exact value", "123", Just (MtExact 123))
+      , ("parses a large exact value", "999999", Just (MtExact 999999))
+      , ("rejects a negative exact value", "-1", Nothing)
+      , ("rejects a large negative exact value", "-999", Nothing)
+      , ("rejects alphabetic input", "abc", Nothing)
+      , ("rejects mixed alphanumeric input", "12abc", Nothing)
+      , ("rejects empty input", "", Nothing)
+      , ("rejects unicode input", "日本語", Nothing)
+      , ("parses a simple range", "1..5", Just (MtRange (Just 1) (Just 5)))
+      , ("parses a range with equal bounds", "3..3", Just (MtRange (Just 3) (Just 3)))
+      , ("parses a range with a zero start", "0..10", Just (MtRange (Just 0) (Just 10)))
+      , ("parses a minimum-only range", "5..", Just (MtRange (Just 5) Nothing))
+      , ("parses a minimum-only range with a zero minimum", "0..", Just (MtRange (Just 0) Nothing))
+      , ("parses a maximum-only range", "..10", Just (MtRange Nothing (Just 10)))
+      , ("parses a maximum-only range with a zero maximum", "..0", Just (MtRange Nothing (Just 0)))
+      , ("round-trips an empty range with dots only", "..", Just (MtRange Nothing Nothing))
+      , ("rejects a range with a negative minimum", "-1..5", Nothing)
+      , ("rejects a range with a negative maximum", "1..-5", Nothing)
+      , ("rejects an inverted range where min exceeds max", "10..5", Nothing)
+      , ("rejects a range with an alphabetic minimum", "abc..5", Nothing)
+      , ("rejects a range with an alphabetic maximum", "5..abc", Nothing)
+      , ("rejects a range with both parts alphabetic", "abc..xyz", Nothing)
+      , ("rejects a range with more than one '..' separator", "3.4..5", Nothing)
+      , ("rejects a maximum-only range with a negative bound", "..-5", Nothing)
+      , ("rejects a minimum-only range with a negative bound", "-5..", Nothing)
       ]
-      ( \(desc, must, expected) ->
-          it desc $ show must `shouldBe` expected
-      )
+      (\(desc, input, expected) -> it desc ((readMaybe input :: Maybe Must) `shouldBe` expected))
 
-  describe "Show instance renders MtRange with only minimum" $
+  describe "Eq instance" $
     forM_
-      [ ("minimum only", MtRange (Just 5) Nothing, "5..")
-      , ("zero minimum", MtRange (Just 0) Nothing, "0..")
+      [ ("MtDisabled equals itself", MtDisabled, MtDisabled, True)
+      , ("equal MtExact values are equal", MtExact 5, MtExact 5, True)
+      , ("different MtExact values are not equal", MtExact 5, MtExact 10, False)
+      , ("equal MtRange values are equal", MtRange (Just 1) (Just 5), MtRange (Just 1) (Just 5), True)
+      , ("MtRange values with different minimums are not equal", MtRange (Just 1) (Just 5), MtRange (Just 2) (Just 5), False)
+      , ("MtRange values with different maximums are not equal", MtRange (Just 1) (Just 5), MtRange (Just 1) (Just 6), False)
+      , ("MtDisabled is not equal to MtExact", MtDisabled, MtExact 0, False)
+      , ("MtExact is not equal to MtRange", MtExact 5, MtRange (Just 5) (Just 5), False)
       ]
-      ( \(desc, must, expected) ->
-          it desc $ show must `shouldBe` expected
-      )
+      (\(desc, lhs, rhs, expected) -> it desc ((lhs == rhs) `shouldBe` expected))
 
-  describe "Show instance renders MtRange with only maximum" $
+  describe "inRange" $
     forM_
-      [ ("maximum only", MtRange Nothing (Just 10), "..10")
-      , ("zero maximum", MtRange Nothing (Just 0), "..0")
+      [ ("MtDisabled accepts zero", MtDisabled, 0, True)
+      , ("MtDisabled accepts a large positive value", MtDisabled, 999999, True)
+      , ("MtDisabled accepts a negative value", MtDisabled, -42, True)
+      , ("MtExact accepts the exact value", MtExact 5, 5, True)
+      , ("MtExact rejects a value below it", MtExact 5, 4, False)
+      , ("MtExact rejects a value above it", MtExact 5, 6, False)
+      , ("MtRange accepts a value within bounds", MtRange (Just 1) (Just 10), 5, True)
+      , ("MtRange accepts the minimum bound", MtRange (Just 1) (Just 10), 1, True)
+      , ("MtRange accepts the maximum bound", MtRange (Just 1) (Just 10), 10, True)
+      , ("MtRange rejects a value below the minimum", MtRange (Just 5) (Just 10), 4, False)
+      , ("MtRange rejects a value above the maximum", MtRange (Just 1) (Just 5), 6, False)
+      , ("a minimum-only range accepts the minimum", MtRange (Just 5) Nothing, 5, True)
+      , ("a minimum-only range accepts a value above the minimum", MtRange (Just 5) Nothing, 100, True)
+      , ("a minimum-only range rejects a value below the minimum", MtRange (Just 5) Nothing, 4, False)
+      , ("a maximum-only range accepts the maximum", MtRange Nothing (Just 10), 10, True)
+      , ("a maximum-only range accepts a value below the maximum", MtRange Nothing (Just 10), 0, True)
+      , ("a maximum-only range rejects a value above the maximum", MtRange Nothing (Just 10), 11, False)
+      , ("an unbounded range accepts zero", MtRange Nothing Nothing, 0, True)
+      , ("an unbounded range accepts a large positive value", MtRange Nothing Nothing, 999999, True)
+      , ("an unbounded range accepts a negative value", MtRange Nothing Nothing, -42, True)
       ]
-      ( \(desc, must, expected) ->
-          it desc $ show must `shouldBe` expected
-      )
+      (\(desc, must, value, expected) -> it desc (inRange must value `shouldBe` expected))
 
-  describe "Show instance renders MtRange with no bounds" $
-    it "displays empty range" $
-      show (MtRange Nothing Nothing) `shouldBe` ".."
-
-  describe "Read instance parses zero as MtDisabled" $
-    it "parses disabled" $
-      (readMaybe "0" :: Maybe Must) `shouldBe` Just MtDisabled
-
-  describe "Read instance parses positive integers as MtExact" $
+  describe "exceedsUpperBound" $
     forM_
-      [ ("single digit", "5", Just (MtExact 5))
-      , ("multi digit", "123", Just (MtExact 123))
-      , ("large number", "999999", Just (MtExact 999999))
+      [ ("MtDisabled never exceeds for zero", MtDisabled, 0, False)
+      , ("MtDisabled never exceeds for a large positive value", MtDisabled, 999999, False)
+      , ("MtExact at the bound does not exceed", MtExact 5, 5, False)
+      , ("MtExact below the bound does not exceed", MtExact 5, 4, False)
+      , ("MtExact above the bound exceeds", MtExact 5, 6, True)
+      , ("MtRange at the maximum does not exceed", MtRange (Just 0) (Just 10), 10, False)
+      , ("MtRange below the maximum does not exceed", MtRange (Just 0) (Just 10), 5, False)
+      , ("MtRange above the maximum exceeds", MtRange (Just 0) (Just 10), 11, True)
+      , ("a maximum-less MtRange never exceeds for zero", MtRange (Just 0) Nothing, 0, False)
+      , ("a maximum-less MtRange never exceeds for a large positive value", MtRange (Just 0) Nothing, 999999, False)
       ]
-      ( \(desc, input, expected) ->
-          it desc $ (readMaybe input :: Maybe Must) `shouldBe` expected
-      )
+      (\(desc, must, value, expected) -> it desc (exceedsUpperBound must value `shouldBe` expected))
 
-  describe "Read instance rejects negative integers" $
+  describe "validateMust" $
     forM_
-      [ ("negative one", "-1")
-      , ("negative large", "-999")
+      [ ("MtDisabled is always valid", MtDisabled, Nothing)
+      , ("a positive MtExact is valid", MtExact 5, Nothing)
+      , ("a range with both bounds is valid", MtRange (Just 1) (Just 10), Nothing)
+      , ("a minimum-only range is valid", MtRange (Just 5) Nothing, Nothing)
+      , ("a maximum-only range is valid", MtRange Nothing (Just 10), Nothing)
+      , ("an unbounded range is valid", MtRange Nothing Nothing, Nothing)
+      , ("an inverted range is rejected", MtRange (Just 10) (Just 5), Just "--must range invalid: minimum (10) is greater than maximum (5)")
+      , ("a zero MtExact is rejected", MtExact 0, Just "--must exact value must be positive")
+      , ("a negative MtExact is rejected", MtExact (-3), Just "--must exact value must be positive")
+      , ("a negative minimum is rejected", MtRange (Just (-1)) (Just 5), Just "--must minimum must be non-negative")
+      , ("a negative maximum is rejected", MtRange (Just 0) (Just (-1)), Just "--must maximum must be non-negative")
       ]
-      ( \(desc, input) ->
-          it desc $ (readMaybe input :: Maybe Must) `shouldBe` Nothing
-      )
-
-  describe "Read instance rejects non-numeric input" $
-    forM_
-      [ ("alphabetic", "abc")
-      , ("mixed", "12abc")
-      , ("empty", "")
-      , ("unicode", "日本語")
-      ]
-      ( \(desc, input) ->
-          it desc $ (readMaybe input :: Maybe Must) `shouldBe` Nothing
-      )
-
-  describe "Read instance parses full range" $
-    forM_
-      [ ("simple range", "1..5", Just (MtRange (Just 1) (Just 5)))
-      , ("same bounds", "3..3", Just (MtRange (Just 3) (Just 3)))
-      , ("zero start", "0..10", Just (MtRange (Just 0) (Just 10)))
-      ]
-      ( \(desc, input, expected) ->
-          it desc $ (readMaybe input :: Maybe Must) `shouldBe` expected
-      )
-
-  describe "Read instance parses minimum-only range" $
-    forM_
-      [ ("with minimum", "5..", Just (MtRange (Just 5) Nothing))
-      , ("zero minimum", "0..", Just (MtRange (Just 0) Nothing))
-      ]
-      ( \(desc, input, expected) ->
-          it desc $ (readMaybe input :: Maybe Must) `shouldBe` expected
-      )
-
-  describe "Read instance parses maximum-only range" $
-    forM_
-      [ ("with maximum", "..10", Just (MtRange Nothing (Just 10)))
-      , ("zero maximum", "..0", Just (MtRange Nothing (Just 0)))
-      ]
-      ( \(desc, input, expected) ->
-          it desc $ (readMaybe input :: Maybe Must) `shouldBe` expected
-      )
-
-  describe "Read instance parses empty range" $
-    it "round-trips dots only" $
-      (readMaybe ".." :: Maybe Must) `shouldBe` Just (MtRange Nothing Nothing)
-
-  describe "Read instance rejects invalid range with negative minimum" $
-    it "fails on negative min" $
-      (readMaybe "-1..5" :: Maybe Must) `shouldBe` Nothing
-
-  describe "Read instance rejects invalid range with negative maximum" $
-    it "fails on negative max" $
-      (readMaybe "1..-5" :: Maybe Must) `shouldBe` Nothing
-
-  describe "Read instance rejects range where min exceeds max" $
-    it "fails on inverted range" $
-      (readMaybe "10..5" :: Maybe Must) `shouldBe` Nothing
-
-  describe "Read instance rejects non-numeric range parts" $
-    forM_
-      [ ("alphabetic min", "abc..5")
-      , ("alphabetic max", "5..abc")
-      , ("both alphabetic", "abc..xyz")
-      ]
-      ( \(desc, input) ->
-          it desc $ (readMaybe input :: Maybe Must) `shouldBe` Nothing
-      )
-
-  describe "Eq instance compares MtDisabled" $
-    it "equals itself" $
-      MtDisabled == MtDisabled `shouldBe` True
-
-  describe "Eq instance compares MtExact" $
-    forM_
-      [ ("same values equal", MtExact 5, MtExact 5, True)
-      , ("different values not equal", MtExact 5, MtExact 10, False)
-      ]
-      ( \(desc, lhs, rhs, expected) ->
-          it desc $ (lhs == rhs) `shouldBe` expected
-      )
-
-  describe "Eq instance compares MtRange" $
-    forM_
-      [ ("same ranges equal", MtRange (Just 1) (Just 5), MtRange (Just 1) (Just 5), True)
-      , ("different min not equal", MtRange (Just 1) (Just 5), MtRange (Just 2) (Just 5), False)
-      , ("different max not equal", MtRange (Just 1) (Just 5), MtRange (Just 1) (Just 6), False)
-      ]
-      ( \(desc, lhs, rhs, expected) ->
-          it desc $ (lhs == rhs) `shouldBe` expected
-      )
-
-  describe "Eq instance compares different types" $
-    forM_
-      [ ("disabled vs exact", MtDisabled, MtExact 0, False)
-      , ("exact vs range", MtExact 5, MtRange (Just 5) (Just 5), False)
-      ]
-      ( \(desc, lhs, rhs, expected) ->
-          it desc $ (lhs == rhs) `shouldBe` expected
-      )
-
-  describe "inRange with MtDisabled accepts any value" $
-    forM_
-      [ ("zero", 0)
-      , ("large positive", 999999)
-      , ("negative", -42)
-      ]
-      ( \(desc, val) ->
-          it desc $ inRange MtDisabled val `shouldBe` True
-      )
-
-  describe "inRange with MtExact checks equality" $
-    forM_
-      [ ("exact match", MtExact 5, 5, True)
-      , ("below exact", MtExact 5, 4, False)
-      , ("above exact", MtExact 5, 6, False)
-      ]
-      ( \(desc, must, val, expected) ->
-          it desc $ inRange must val `shouldBe` expected
-      )
-
-  describe "inRange with MtRange checks bounds" $
-    forM_
-      [ ("within range", MtRange (Just 1) (Just 10), 5, True)
-      , ("at minimum", MtRange (Just 1) (Just 10), 1, True)
-      , ("at maximum", MtRange (Just 1) (Just 10), 10, True)
-      , ("below minimum", MtRange (Just 5) (Just 10), 4, False)
-      , ("above maximum", MtRange (Just 1) (Just 5), 6, False)
-      ]
-      ( \(desc, must, val, expected) ->
-          it desc $ inRange must val `shouldBe` expected
-      )
-
-  describe "inRange with minimum-only range" $
-    forM_
-      [ ("at minimum", MtRange (Just 5) Nothing, 5, True)
-      , ("above minimum", MtRange (Just 5) Nothing, 100, True)
-      , ("below minimum", MtRange (Just 5) Nothing, 4, False)
-      ]
-      ( \(desc, must, val, expected) ->
-          it desc $ inRange must val `shouldBe` expected
-      )
-
-  describe "inRange with maximum-only range" $
-    forM_
-      [ ("at maximum", MtRange Nothing (Just 10), 10, True)
-      , ("below maximum", MtRange Nothing (Just 10), 0, True)
-      , ("above maximum", MtRange Nothing (Just 10), 11, False)
-      ]
-      ( \(desc, must, val, expected) ->
-          it desc $ inRange must val `shouldBe` expected
-      )
-
-  describe "inRange with unbounded range" $
-    forM_
-      [ ("zero", 0)
-      , ("large positive", 999999)
-      , ("negative", -42)
-      ]
-      ( \(desc, val) ->
-          it desc $ inRange (MtRange Nothing Nothing) val `shouldBe` True
-      )
-
-  describe "exceedsUpperBound with MtDisabled" $
-    forM_
-      [ ("zero", 0)
-      , ("large positive", 999999)
-      ]
-      ( \(desc, val) ->
-          it desc $ exceedsUpperBound MtDisabled val `shouldBe` False
-      )
-
-  describe "exceedsUpperBound with MtExact" $
-    forM_
-      [ ("at bound", MtExact 5, 5, False)
-      , ("below bound", MtExact 5, 4, False)
-      , ("above bound", MtExact 5, 6, True)
-      ]
-      ( \(desc, must, val, expected) ->
-          it desc $ exceedsUpperBound must val `shouldBe` expected
-      )
-
-  describe "exceedsUpperBound with MtRange with maximum" $
-    forM_
-      [ ("at maximum", MtRange (Just 0) (Just 10), 10, False)
-      , ("below maximum", MtRange (Just 0) (Just 10), 5, False)
-      , ("above maximum", MtRange (Just 0) (Just 10), 11, True)
-      ]
-      ( \(desc, must, val, expected) ->
-          it desc $ exceedsUpperBound must val `shouldBe` expected
-      )
-
-  describe "exceedsUpperBound with MtRange without maximum" $
-    forM_
-      [ ("zero", 0)
-      , ("large positive", 999999)
-      ]
-      ( \(desc, val) ->
-          it desc $ exceedsUpperBound (MtRange (Just 0) Nothing) val `shouldBe` False
-      )
-
-  describe "validateMust with MtDisabled" $
-    it "returns nothing" $
-      validateMust MtDisabled `shouldBe` Nothing
-
-  describe "validateMust with valid MtExact" $
-    it "returns nothing for positive" $
-      validateMust (MtExact 5) `shouldBe` Nothing
-
-  describe "validateMust with valid MtRange" $
-    forM_
-      [ ("both bounds", MtRange (Just 1) (Just 10))
-      , ("minimum only", MtRange (Just 5) Nothing)
-      , ("maximum only", MtRange Nothing (Just 10))
-      , ("no bounds", MtRange Nothing Nothing)
-      ]
-      ( \(desc, must) ->
-          it desc $ validateMust must `shouldBe` Nothing
-      )
-
-  describe "validateMust with inverted MtRange" $
-    it "returns error message" $
-      validateMust (MtRange (Just 10) (Just 5))
-        `shouldBe` Just "--must range invalid: minimum (10) is greater than maximum (5)"
-
-  describe "validateMust with zero MtExact" $
-    it "returns error for zero" $
-      validateMust (MtExact 0) `shouldBe` Just "--must exact value must be positive"
-
-  describe "validateMust with negative MtExact" $
-    it "returns error for a negative exact value" $
-      validateMust (MtExact (-3)) `shouldBe` Just "--must exact value must be positive"
-
-  describe "validateMust with negative minimum in range" $
-    it "returns error for negative min" $
-      validateMust (MtRange (Just (-1)) (Just 5)) `shouldBe` Just "--must minimum must be non-negative"
-
-  describe "validateMust with negative maximum in range" $
-    it "returns error for negative max" $
-      validateMust (MtRange (Just 0) (Just (-1))) `shouldBe` Just "--must maximum must be non-negative"
-
-  describe "Read instance rejects a range with more than one '..' separator" $
-    it "fails when the second dot is not adjacent to the first" $
-      (readMaybe "3.4..5" :: Maybe Must) `shouldBe` Nothing
-
-  describe "Read instance rejects a maximum-only range with a negative bound" $
-    it "fails on negative max with empty min" $
-      (readMaybe "..-5" :: Maybe Must) `shouldBe` Nothing
-
-  describe "Read instance rejects a minimum-only range with a negative bound" $
-    it "fails on negative min with empty max" $
-      (readMaybe "-5.." :: Maybe Must) `shouldBe` Nothing
+      (\(desc, must, expected) -> it desc (validateMust must `shouldBe` expected))
