@@ -26,7 +26,7 @@ import Printer (printExpression)
 import Rewriter (RewriteContext (RewriteContext), rewrite)
 import System.FilePath (makeRelative, replaceExtension, (</>))
 import Tau (seedTaus)
-import Test.Hspec (Spec, describe, expectationFailure, it, pending, runIO, shouldBe, shouldThrow)
+import Test.Hspec (Spec, describe, expectationFailure, it, pending, runIO, shouldSatisfy, shouldThrow)
 import Yaml (normalizationRules)
 import Yaml qualified as Y
 
@@ -64,19 +64,41 @@ noSpaces = filter (not . isSpace)
 
 spec :: Spec
 spec = do
-  describe "--max-cycles and --max-depth limits" $ do
-    it "throws with --depth-sensitive once --max-cycles is reached" $
-      rewrite ExRoot [] (RewriteContext ExRoot 5 0 True buildTerm MtDisabled Nothing dontSaveStep)
-        `shouldThrow` (\exc -> "--max-cycles=0" `isInfixOf` show (exc :: SomeException))
-    it "stops silently without --depth-sensitive once --max-cycles is reached" $ do
-      (_, exceeded) <- rewrite ExRoot [] (RewriteContext ExRoot 5 0 False buildTerm MtDisabled Nothing dontSaveStep)
-      exceeded `shouldBe` True
-    it "throws with --depth-sensitive once --max-depth is reached for a rule" $
-      rewrite ExRoot normalizationRules (RewriteContext ExRoot 0 5 True buildTerm MtDisabled Nothing dontSaveStep)
-        `shouldThrow` (\exc -> "--max-depth=0" `isInfixOf` show (exc :: SomeException))
-    it "does not throw without --depth-sensitive once --max-depth is reached for a rule" $ do
-      (rewrittens, _) <- rewrite ExRoot normalizationRules (RewriteContext ExRoot 0 5 False buildTerm MtDisabled Nothing dontSaveStep)
-      fst (NE.last rewrittens) `shouldBe` ExRoot
+  describe "--max-cycles and --max-depth limits" $
+    forM_
+      [
+        ( "throws with --depth-sensitive once --max-cycles is reached"
+        , []
+        , (5, 0, True)
+        , Left "--max-cycles=0"
+        )
+      ,
+        ( "stops silently without --depth-sensitive once --max-cycles is reached"
+        , []
+        , (5, 0, False)
+        , Right snd
+        )
+      ,
+        ( "throws with --depth-sensitive once --max-depth is reached for a rule"
+        , normalizationRules
+        , (0, 5, True)
+        , Left "--max-depth=0"
+        )
+      ,
+        ( "does not throw without --depth-sensitive once --max-depth is reached for a rule"
+        , normalizationRules
+        , (0, 5, False)
+        , Right (\(rewrittens, _) -> fst (NE.last rewrittens) == ExRoot)
+        )
+      ]
+      ( \(desc, rewriteRules, (maxDepth, maxCycles, depthSensitive), expected) -> it desc $ do
+          let action = rewrite ExRoot rewriteRules (RewriteContext ExRoot maxDepth maxCycles depthSensitive buildTerm MtDisabled Nothing dontSaveStep)
+          case expected of
+            Left fragment -> action `shouldThrow` (\exc -> fragment `isInfixOf` show (exc :: SomeException))
+            Right predicate -> do
+              result <- action
+              result `shouldSatisfy` predicate
+      )
 
   describe "rewrite packs" $ do
     let resources = "test-resources/rewriter-packs"
