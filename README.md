@@ -134,7 +134,11 @@ residual expression is printed in place of the bytes:
 $ cat stuck.phi
 ⟦
   bytes(data) ↦ ⟦ φ ↦ data ⟧,
-  number(as-bytes) ↦ ⟦ φ ↦ as-bytes, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧ ⟧,
+  number(as-bytes) ↦ ⟦
+    φ ↦ as-bytes,
+    plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧,
+    times(x) ↦ ⟦ λ ⤍ L_number_times ⟧
+  ⟧,
   φ ↦ 2.times(3).plus(⟦ λ ⤍ Sym_arg_0 ⟧)
 ⟧
 $ phino dataize --park-stuck --sweet --hide-rho stuck.phi
@@ -148,7 +152,8 @@ the first two fields only, since there is no result to report; the inner
 stuck atom comes first, then the known atom whose input reached it:
 
 ```bash
-$ phino dataize --park-stuck --evaluations=atoms.tsv --quiet --sweet --hide-rho stuck.phi
+$ phino dataize --park-stuck --evaluations=atoms.tsv --quiet \
+    --sweet --hide-rho stuck.phi
 $ cat -T atoms.tsv
 L_number_times^I⟦ x ↦ 3 ⟧^I6
 Sym_arg_0^I⟦⟧

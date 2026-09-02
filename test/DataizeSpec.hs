@@ -9,10 +9,10 @@ module DataizeSpec (spec) where
 import AST
 import Control.Exception (SomeException)
 import Control.Monad
+import Data.IORef (modifyIORef, newIORef, readIORef)
 import Data.List (find, isInfixOf, nub)
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.Maybe (fromMaybe, isJust)
-import Data.IORef (modifyIORef, newIORef, readIORef)
 import Dataize (DataizeContext (..), Outcome (..), Steps (..), dataize, dataize', emptyState, execBuildTerm, morph)
 import Deps (Evaluation (..), Term (TeExpression), dontSaveEval, dontSaveStep)
 import Functions (buildTerm)
