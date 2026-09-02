@@ -150,12 +150,20 @@ runDataize OptsDataize{..} = do
       exclude = (`F.exclude` excluded)
       include = (`F.include` included)
   save <- saveStepFunc _stepsDir printCtx
-  (bytes, chain) <-
+  (outcome, chain) <-
     withEvalFunc _evaluations printCtx $
-      dataize expr . DataizeContext loc _maxDepth _maxCycles (Steps _maxSteps 0) _depthSensitive _shuffle buildTerm save
+      dataize expr . DataizeContext loc _maxDepth _maxCycles (Steps _maxSteps 0) _depthSensitive _shuffle _parkStuck buildTerm save
   when _sequence (printRewrittens printCtx (exclude $ include chain, False) >>= putStrLn)
-  unless _quiet (putStrLn (P.printBytes bytes))
+  unless _quiet (printOutcome printCtx outcome >>= putStrLn)
   where
+    -- The bytes the run reached or, when '--park-stuck' let it end on an atom
+    -- that could not fire, the residual expression, rendered like a rewriting
+    -- result: in the output format, narrowed to '--focus'.
+    printOutcome :: PrintContext -> Outcome -> IO String
+    printOutcome _ (Dataized bytes) = pure (P.printBytes bytes)
+    printOutcome ctx (Parked residue) = do
+      logDebug "Dataization got stuck on an atom that cannot fire, printing the residual expression (--park-stuck)"
+      printFocused ctx residue
     validateOpts :: IO ()
     validateOpts = do
       validateLatexOptions

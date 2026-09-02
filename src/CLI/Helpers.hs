@@ -106,12 +106,8 @@ parseInput _ LATEX = invalidCLIArguments "LaTeX cannot be used as input format"
 printRewrittens :: PrintContext -> Rewrittens' -> IO String
 printRewrittens ctx@PrintCtx{..} rewrittens@(chain, _)
   | _outputFormat == LATEX && _sequence = rewrittensToLatex rewrittens (printCtxToLatexCtx ctx)
-  | otherwise = withHeaders <$> mapM render (canonized chain)
+  | otherwise = withHeaders <$> mapM (printFocused ctx . fst) (canonized chain)
   where
-    render :: Rewritten -> IO String
-    render (expr, _)
-      | _focus == ExRoot = printInFormat ctx expr
-      | otherwise = locatedExpression _focus expr >>= printExpression ctx
     canonized :: [Rewritten] -> [Rewritten]
     canonized = if _canonize then canonize else id
     -- Prefix every step with an empty line and its header (see 'stepHeaders')
@@ -126,6 +122,13 @@ printRewrittens ctx@PrintCtx{..} rewrittens@(chain, _)
       where
         prefixed :: String -> String -> String
         prefixed = printf "\n%s\n%s"
+
+-- Render one expression in the output format, narrowed to the '--focus'
+-- sub-expression when one is given.
+printFocused :: PrintContext -> Expression -> IO String
+printFocused ctx@PrintCtx{..} expr
+  | _focus == ExRoot = printInFormat ctx expr
+  | otherwise = locatedExpression _focus expr >>= printExpression ctx
 
 printExpression :: PrintContext -> Expression -> IO String
 printExpression ctx@PrintCtx{..} ex = case _outputFormat of

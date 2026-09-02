@@ -1146,6 +1146,53 @@ spec = do
             ["dataize", "--evaluations=evaluations.txt", "--output=latex"]
             ["The --evaluations option can stay together with --output=phi only"]
 
+    -- A placeholder formation ⟦ λ ⤍ Sym_arg_0 ⟧ standing in for a data input
+    -- names an atom phino cannot fire; the run used to die on it, discarding
+    -- what it had already evaluated (#1060)
+    describe "--park-stuck" $ do
+      let stuck = "[[ bytes(data) -> [[ @ -> $.data ]], number(as-bytes) -> [[ @ -> $.as-bytes, plus(x) -> [[ L> L_number_plus ]], times(x) -> [[ L> L_number_times ]] ]], @ -> 2.times(3).plus([[ L> Sym_arg_0 ]]) ]]"
+      it "fails on an atom that cannot fire without the flag" $
+        withStdin stuck $
+          testCLIFailed ["dataize", "--sweet", "--hide-rho"] ["Atom 'Sym_arg_0' does not exist"]
+
+      it "prints the residue with the stuck application intact and exits successfully" $
+        withStdin stuck $
+          testCLISucceeded
+            ["dataize", "--park-stuck", "--sweet", "--hide-rho"]
+            ["⟦ x ↦ ⟦ λ ⤍ Sym_arg_0 ⟧, λ ⤍ L_number_plus ⟧"]
+
+      it "keeps what was evaluated before the stuck site in the residue" $
+        withStdin stuck $
+          testCLISucceeded
+            ["dataize", "--park-stuck", "--sweet"]
+            ["as-bytes ↦ Φ.bytes( data ↦ ⟦ Δ ⤍ 40-18-00-00-00-00-00-00 ⟧ )"]
+
+      it "records every parked site in --evaluations with no result" $
+        withTempFile "evaluationsXXXXXX.txt" $ \(path, stream) -> do
+          hClose stream
+          withStdin stuck $
+            testCLISucceeded ["dataize", "--park-stuck", "--evaluations=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
+          records <- readUtf8 path
+          lines records
+            `shouldBe` [ "L_number_times\t⟦ x ↦ 3 ⟧\t6"
+                       , "Sym_arg_0\t⟦⟧"
+                       , "L_number_plus\t⟦ x ↦ ⟦ λ ⤍ Sym_arg_0 ⟧ ⟧"
+                       ]
+
+      it "still prints bytes when nothing gets stuck" $
+        withStdin "[[ bytes(data) -> [[ @ -> $.data ]], number(as-bytes) -> [[ @ -> $.as-bytes, plus(x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6) ]]" $
+          testCLISucceeded ["dataize", "--park-stuck"] ["40-26-00-00-00-00-00-00"]
+
+      it "prints the chain of steps ending in the residue with --sequence" $
+        withStdin stuck $
+          testCLISucceeded
+            ["dataize", "--park-stuck", "--sequence", "--sweet", "--hide-rho", "--flat"]
+            ["2.times( 3 ).plus( ⟦ λ ⤍ Sym_arg_0 ⟧ )", "⟦ x ↦ ⟦ λ ⤍ Sym_arg_0 ⟧, λ ⤍ L_number_plus ⟧"]
+
+      it "still stops on the terminator ⊥, since a wrong operand is not a stuck atom" $
+        withStdin "[[ ]]" $
+          testCLIFailed ["dataize", "--park-stuck"] ["terminator ⊥"]
+
     describe "fails" $ do
       it "with --output != latex and --nonumber" $
         withStdin "" $

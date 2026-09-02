@@ -1,7 +1,6 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE DuplicateRecordFields #-}
-{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
@@ -11,13 +10,13 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Dataize (morph, dataize, dataize', DataizeContext (..), Steps (..), State, emptyState, execBuildTerm) where
+module Dataize (morph, dataize, dataize', DataizeContext (..), DataizeException (..), Outcome (..), Steps (..), State, emptyState, execBuildTerm) where
 
 import AST
 import Builder (buildBytesThrows, buildExpressionThrows)
 import Bytes (btsAnd, btsConcat, btsEqual, btsNot, btsOr, btsShift, btsSize, btsSlice, btsToNum, numToBts, strToBts)
-import Control.Exception (Exception, throwIO)
-import Control.Monad (foldM)
+import Control.Exception (Exception, catch, throwIO, try)
+import Control.Monad (foldM, when)
 import Data.Int (Int32)
 import Data.List (find, partition)
 import Data.List.NonEmpty (NonEmpty (..))
@@ -76,17 +75,38 @@ data DataizeContext = DataizeContext
   , _steps :: Steps
   , _depthSensitive :: Bool
   , _shuffle :: Bool
+  , _parkStuck :: Bool
   , _buildTerm :: BuildTermFunc
   , _saveStep :: SaveStepFunc
   , _saveEval :: SaveEvalFunc
   }
 
-newtype DataizeException = OutOfSteps Int
+data DataizeException
+  = OutOfSteps Int
+  | -- An atom could not fire: 'atom' does not know its λ function, or the
+    -- dataization of one of its inputs met an atom it does not know. The name
+    -- is that of the innermost unknown atom, the one 𝔼 actually failed on.
+    Stuck T.Text
+  | -- A 'Stuck' caught by a frame of the 𝕄/𝔻 spine, together with the
+    -- derivation that frame had reached (see 'parking'). The head of the chain
+    -- is the working expression with the stuck application left intact and
+    -- everything reduced before it already in place: the residue that
+    -- '_parkStuck' turns into the 'Parked' outcome.
+    StuckAt T.Text (NonEmpty Rewritten)
   deriving anyclass (Exception)
 
 instance Show DataizeException where
   show (OutOfSteps limit) =
     printf "Dataization did not finish before reaching the limit of steps: --max-steps=%d" limit
+  show (Stuck func) = printf "Atom '%s' does not exist" (T.unpack func)
+  show (StuckAt func _) = show (Stuck func)
+
+-- What a run of 𝔻 ends with: the bytes it reached or, under '_parkStuck', the
+-- residual expression it got stuck on, the stuck atom parked in place.
+data Outcome
+  = Dataized Bytes
+  | Parked Expression
+  deriving stock (Eq, Show)
 
 -- Charge one step of the 𝕄/𝔻 recursion to the budget, refusing to descend once
 -- it is gone. '--max-cycles' and '--max-depth' bound only the normalization run
@@ -100,31 +120,46 @@ deeper ctx@DataizeContext{_steps = Steps limit spent}
   | spent >= limit = throwIO (OutOfSteps limit)
   | otherwise = pure ctx{_steps = Steps limit (spent + 1)}
 
--- Resolve formation for LAMBDA Morphing rule.
--- If formation contains λ binding, the called atom result is returned, together
--- with the name of the fired function and the formation the atom fired against,
--- since 𝔼 has to report all three. This is not the report itself: its '_result'
--- is the atom's raw answer, while the one 𝔼 reports carries the normal form of
--- that answer, which is what 𝔼 hands back to its caller.
--- The universe 'univ' is forwarded to the atom.
-formation :: [Binding] -> Expression -> State -> DataizeContext -> IO (Maybe (Evaluation, State))
-formation bds univ state ctx = do
-  let (lambda, bds') = maybeLambda bds
-  case lambda of
-    Just (BiLambda (Function func)) -> do
-      (obj, state') <- atom func (ExFormation bds') univ state ctx
-      pure (Just (Evaluation func (ExFormation bds') obj, state'))
-    _ -> pure Nothing
+-- Split the λ binding off a formation for the LAMBDA morphing rule: the name of
+-- the atom to fire and the formation it fires against, the λ binding removed —
+-- the two things 𝔼 reports besides the result. A formation with no λ binding,
+-- or with more than one, has nothing to fire.
+lambda :: [Binding] -> Maybe (T.Text, Expression)
+lambda bds = case partition isLambda bds of
+  ([BiLambda (Function func)], rest) -> Just (func, ExFormation rest)
+  _ -> Nothing
   where
-    maybeLambda :: [Binding] -> (Maybe Binding, [Binding])
-    maybeLambda = maybeBinding (\case BiLambda _ -> True; _ -> False)
-    maybeBinding :: (Binding -> Bool) -> [Binding] -> (Maybe Binding, [Binding])
-    maybeBinding _ [] = (Nothing, [])
-    maybeBinding func bds =
-      let (found, rest) = partition func bds
-       in case found of
-            [bd] -> (Just bd, rest)
-            _ -> (Nothing, bds)
+    isLambda :: Binding -> Bool
+    isLambda (BiLambda _) = True
+    isLambda _ = False
+
+-- Run one frame of the 𝕄/𝔻 spine, attaching its derivation to a stuck atom
+-- escaping it. 'Stuck' is raised deep inside an atom, which knows nothing about
+-- the chain, so the innermost spine frame it reaches is the one to record where
+-- the derivation stopped: the head of that frame's chain is the working
+-- expression with the stuck application intact and everything reduced before
+-- it already in place. Outer frames see 'StuckAt' and let it pass, since their
+-- chains are prefixes of that one; a side-computation running on a chain of its
+-- own strips the chain off again (see 'unparked') before the signal reaches
+-- the spine.
+parking :: NonEmpty Rewritten -> IO a -> IO a
+parking seq action = action `catch` rethrow
+  where
+    rethrow :: DataizeException -> IO a
+    rethrow (Stuck func) = throwIO (StuckAt func seq)
+    rethrow failure = throwIO failure
+
+-- Strip the derivation off a stuck atom escaping a side-computation that ran
+-- on a chain of its own — an atom dataizing its input through '_dataize', or a
+-- 'morph' premise through '_morph'. That chain is not the spine's, so it is
+-- dropped and the spine frame around the side-computation attaches its own
+-- (see 'parking').
+unparked :: IO a -> IO a
+unparked action = action `catch` rethrow
+  where
+    rethrow :: DataizeException -> IO a
+    rethrow (StuckAt func _) = throwIO (Stuck func)
+    rethrow failure = throwIO failure
 
 -- The Morphing function 𝕄 maps normal forms to formations. It is ternary,
 -- 𝕄(n, e, s): besides the term 'n' it takes the universe 'e' ('univ') — a plain
@@ -148,11 +183,12 @@ formation bds univ state ctx = do
 morph :: Morphed -> Expression -> State -> DataizeContext -> IO (Morphed, State)
 morph (expr, seq) univ state caller = do
   ctx <- deeper caller
-  rules <- if ctx._shuffle then shuffle Y.morphingRules else pure Y.morphingRules
-  matched <- firstMatch ctx rules
-  case matched of
-    Just (rule, subst) -> reduce ctx rule subst
-    Nothing -> throwIO (userError "no morphing rule matched")
+  parking seq $ do
+    rules <- if ctx._shuffle then shuffle Y.morphingRules else pure Y.morphingRules
+    matched <- firstMatch ctx rules
+    case matched of
+      Just (rule, subst) -> reduce ctx rule subst
+      Nothing -> throwIO (userError "no morphing rule matched")
   where
     firstMatch :: DataizeContext -> [Y.MorphRule] -> IO (Maybe (Y.MorphRule, Subst))
     firstMatch _ [] = pure Nothing
@@ -197,14 +233,20 @@ morph (expr, seq) univ state caller = do
 
 -- Dataize the expression located at '_locator'. The whole input expression is
 -- itself the universe Q (the 'e' argument) threaded through 𝔻 and 𝕄, so it is
--- passed both as the located target and as the universe.
-dataize :: Expression -> DataizeContext -> IO Dataized
+-- passed both as the located target and as the universe. An atom that cannot
+-- fire fails the run, unless '_parkStuck' is on: then the run ends on the
+-- residue the spine had reached (see 'StuckAt'), with the stuck application
+-- parked in it as a normal-form subterm, and the chain of steps that led there.
+dataize :: Expression -> DataizeContext -> IO (Outcome, [Rewritten])
 dataize universe ctx@DataizeContext{..} = do
   expr <- locatedExpression _locator universe
   -- Dataization starts from the empty state; the final state is not yet
   -- consumed by any caller, so it is discarded here.
-  ((bytes, seq), _state) <- dataize' (expr, (universe, Nothing) :| []) universe emptyState ctx
-  pure (bytes, reverse seq)
+  result <- try (dataize' (expr, (universe, Nothing) :| []) universe emptyState ctx)
+  case result of
+    Right ((bytes, seq), _state) -> pure (Dataized bytes, reverse seq)
+    Left (StuckAt _ seq) | _parkStuck -> pure (Parked (fst (NE.head seq)), reverse (NE.toList seq))
+    Left failure -> throwIO (failure :: DataizeException)
 
 -- The Dataization function 𝔻 retrieves bytes from an expression. It is partial
 -- and ternary, 𝔻(n, e, s): besides the term 'n' it takes the universe 'e' ('univ'),
@@ -230,11 +272,12 @@ dataize universe ctx@DataizeContext{..} = do
 dataize' :: Dataizable -> Expression -> State -> DataizeContext -> IO (Dataized, State)
 dataize' (expr, seq) univ state caller = do
   ctx <- deeper caller
-  rules <- if ctx._shuffle then shuffle Y.dataizationRules else pure Y.dataizationRules
-  matched <- firstMatch ctx rules
-  case matched of
-    Just (rule, subst) -> reduce ctx rule subst
-    Nothing -> throwIO (userError (unmatched expr))
+  parking seq $ do
+    rules <- if ctx._shuffle then shuffle Y.dataizationRules else pure Y.dataizationRules
+    matched <- firstMatch ctx rules
+    case matched of
+      Just (rule, subst) -> reduce ctx rule subst
+      Nothing -> throwIO (userError (unmatched expr))
   where
     -- 𝔻 is partial: the terminator ⊥ signals an error and lies outside its
     -- domain (see #955), so it matches no clause and lands here. Name it in the
@@ -398,10 +441,11 @@ normalized expr seq ctx@DataizeContext{..} = do
 -- it first reduces the expression to a normal form, since 𝔻 only accepts normal
 -- forms. The universe 'univ' itself is forwarded unchanged, so morphing Φ under
 -- this context still resolves to the true universe rather than to this
--- synthetic, binding-prepended formation.
+-- synthetic, binding-prepended formation. The chain is the synthetic one, so a
+-- stuck atom met on the way leaves without it (see 'unparked').
 _dataize :: Expression -> Expression -> State -> DataizeContext -> IO (Bytes, State)
 _dataize expr univ state ctx@DataizeContext{_buildTerm = buildTerm} = case univ of
-  ExFormation bds -> do
+  ExFormation bds -> unparked $ do
     (TeAttribute attr) <- buildTerm "random-tau" [] substEmpty
     let synthetic = ExFormation (BiTau attr expr : bds)
     (normal, seq) <- normalized expr ((synthetic, Nothing) :| []) ctx
@@ -513,7 +557,7 @@ atom "L_bytes_slice" self univ state ctx = do
       ExApplication
         (ExDispatch self (AtLabel "cant-slice"))
         (ArAlpha (Alpha 0) (DataString (strToBts (printf "cannot slice '%d' bytes from offset '%d' of bytes of size %d" count from size))))
-atom func _ _ _ _ = throwIO (userError (printf "Atom '%s' does not exist" (T.unpack func)))
+atom func _ _ _ _ = throwIO (Stuck func)
 
 -- Augment the injected, context-free term builder with the dataization and
 -- morphing operations that need the universe: 'evaluate' applies an atom and
@@ -539,30 +583,42 @@ execBuildTerm _ ctx func = _buildTerm ctx func
 -- turns into one record per line. The reported result is the normal form 𝔼
 -- returns, never the atom's raw answer, so the protocol and the caller see the
 -- same term. A nested firing — an atom that dataizes its own arguments —
--- completes first, so it is reported before the firing that triggered it.
+-- completes first, so it is reported before the firing that triggered it. A
+-- firing that gets stuck is reported too, with no result, when the run parks
+-- stuck atoms instead of failing on them ('_parkStuck'): the site is what the
+-- caller wants to learn then, and the nested order holds, since the unknown
+-- atom is reported before the known one whose input reached it.
 _evaluate :: DataizeContext -> State -> BuildTermMethodS
 _evaluate ctx state [ArgExpression expr, ArgExpression universe] subst = do
   form <- buildExpressionThrows expr subst
   univ <- buildExpressionThrows universe subst
   case form of
-    ExFormation bds -> do
-      resolved <- formation bds univ state ctx
-      case resolved of
-        Just (fired, state') -> do
-          (normal, _) <- normalized fired._result ((univ, Nothing) :| []) ctx
-          ctx._saveEval (Evaluation fired._function fired._arguments normal)
-          pure (TeExpression normal, state')
-        Nothing -> throwIO (userError "Function evaluate() expects a formation with a λ binding")
+    ExFormation bds -> case lambda bds of
+      Just (func, args) -> do
+        (raw, state') <- atom func args univ state ctx `catch` parked func args
+        (normal, _) <- normalized raw ((univ, Nothing) :| []) ctx
+        ctx._saveEval (Evaluation func args (Just normal))
+        pure (TeExpression normal, state')
+      Nothing -> throwIO (userError "Function evaluate() expects a formation with a λ binding")
     _ -> throwIO (userError "Function evaluate() expects a formation")
+  where
+    -- Report the firing that got stuck before letting the signal go on to the
+    -- spine, where 'parking' attaches the derivation to it
+    parked :: T.Text -> Expression -> DataizeException -> IO a
+    parked func args failure@(Stuck _) = do
+      when ctx._parkStuck (ctx._saveEval (Evaluation func args Nothing))
+      throwIO failure
+    parked _ _ failure = throwIO failure
 _evaluate _ _ _ _ = throwIO (userError "Function evaluate() requires exactly 2 expression arguments")
 
 -- The Morphing function 𝕄 exposed as a build-term function so a rule can morph
 -- a sub-expression in its 'where' (the 'md' and 'ma' rules morph
 -- the head before re-attaching it). The step chain is discarded: the producing
--- rule splices the surrounding normalization steps itself. The state is threaded
--- through and the new state returned alongside the morphed term.
+-- rule splices the surrounding normalization steps itself, and a stuck atom met
+-- on the way leaves without it (see 'unparked'). The state is threaded through
+-- and the new state returned alongside the morphed term.
 _morph :: Expression -> DataizeContext -> State -> BuildTermMethodS
-_morph univ ctx state [ArgExpression expr] subst = do
+_morph univ ctx state [ArgExpression expr] subst = unparked $ do
   built <- buildExpressionThrows expr subst
   ((morphed, _), state') <- morph (built, (univ, Nothing) :| []) univ state ctx
   pure (TeExpression morphed, state')
