@@ -122,6 +122,50 @@ Records follow the syntax of the other options, such as `--sweet` and
 beginning of every run, and `--output=phi` is the only output format it
 works with, since one record must fit into one line.
 
+An atom that cannot fire fails the run: its λ function is unknown to phino,
+or one of its inputs reaches such an atom. This is what happens when a
+data input is replaced on purpose by a placeholder formation, such as
+`⟦ λ ⤍ Sym_arg_0 ⟧`. With `--partial`, dataization becomes partial
+evaluation instead: what the known inputs decide is computed, the rest
+survives as the residual program, which is printed in place of the bytes,
+and the run ends successfully:
+
+```bash
+$ cat partial.phi
+⟦
+  bytes(data) ↦ ⟦ φ ↦ data ⟧,
+  number(as-bytes) ↦ ⟦
+    φ ↦ as-bytes,
+    plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧,
+    times(x) ↦ ⟦ λ ⤍ L_number_times ⟧
+  ⟧,
+  φ ↦ 2.times(3).plus(⟦ λ ⤍ Sym_arg_0 ⟧)
+⟧
+$ phino dataize --partial --sweet --hide-rho partial.phi
+⟦ x ↦ ⟦ λ ⤍ Sym_arg_0 ⟧, λ ⤍ L_number_plus ⟧
+```
+
+Here `2.times(3)` was decided by literals, so it was computed (its result,
+`6`, sits in the hidden `ρ` of the residual program), while `plus` waits
+for an `x` no atom can produce, so it stays in place as a normal-form
+subterm. Each such stuck site also lands in the `--evaluations` file, as a
+record with the first two fields only, since there is no result to report;
+the inner stuck atom comes first, then the known atom whose input reached
+it:
+
+```bash
+$ phino dataize --partial --evaluations=atoms.tsv --quiet \
+    --sweet --hide-rho partial.phi
+$ cat -T atoms.tsv
+L_number_times^I⟦ x ↦ 3 ⟧^I6
+Sym_arg_0^I⟦⟧
+L_number_plus^I⟦ x ↦ ⟦ λ ⤍ Sym_arg_0 ⟧ ⟧
+```
+
+Evaluation stays demand-driven, as the calculus prescribes: an argument
+that nothing asked for before the run got stuck is left as it is in the
+residual program, for the next iteration.
+
 ## Rewrite
 
 You can rewrite this expression with the help of [rules](#rule-structure)
