@@ -9,7 +9,7 @@ module CLISpec (spec) where
 import CLI (runCLI)
 import CLI.Types (CmdException (..), IOFormat (..))
 import Control.Exception
-import Control.Monad (forM_, unless, when)
+import Control.Monad (forM_, unless)
 import Data.Char (isDigit)
 import Data.List (intercalate, isInfixOf, isPrefixOf, sort)
 import Data.Time.Clock (addUTCTime, getCurrentTime)
