@@ -9,11 +9,12 @@ module DataizeSpec (spec) where
 import AST
 import Control.Exception (SomeException)
 import Control.Monad
+import Data.IORef (modifyIORef', newIORef, readIORef)
 import Data.List (find, isInfixOf, nub)
 import Data.List.NonEmpty (NonEmpty (..))
-import Data.Maybe (fromMaybe)
-import Dataize (DataizeContext (..), Steps (..), dataize, dataize', emptyState, execBuildTerm, morph)
-import Deps (Term (TeExpression), dontSaveEval, dontSaveStep)
+import Data.Maybe (fromMaybe, isJust)
+import Dataize (DataizeContext (..), Outcome (..), Steps (..), dataize, dataize', emptyState, execBuildTerm, morph)
+import Deps (Evaluation (..), Term (TeExpression), dontSaveEval, dontSaveStep)
 import Functions (buildTerm)
 import Matcher (substEmpty)
 import Parser (parseExpressionThrows)
@@ -27,7 +28,7 @@ import Yaml qualified
 -- dataization rules (#909): a hidden overlap surfaces as a nondeterministic
 -- failure instead of staying silently green.
 defaultDataizeContext :: Expression -> DataizeContext
-defaultDataizeContext loc = DataizeContext loc 25 25 (Steps 250 0) False True buildTerm dontSaveStep dontSaveEval
+defaultDataizeContext loc = DataizeContext loc 25 25 (Steps 250 0) False True False buildTerm dontSaveStep dontSaveEval
 
 test :: (Eq a, Show a) => ((Expression, NonEmpty Rewritten) -> Expression -> String -> DataizeContext -> IO ((a, [Rewritten]), String)) -> [(String, Expression, Expression, a)] -> Spec
 test func useCases =
@@ -50,7 +51,7 @@ testDataize useCases =
       expr <- parseExpressionThrows src
       loc' <- parseExpressionThrows loc
       (value, _) <- dataize expr (defaultDataizeContext loc')
-      value `shouldBe` res
+      value `shouldBe` Dataized res
 
 -- The 12 primitive λ-atoms every EO data operation reduces to, declared the way
 -- 'number.eo' and 'bytes.eo' declare them, so a case below only has to spell the
@@ -101,7 +102,18 @@ testAtom useCases =
       expr <- parseExpressionThrows (primitives src)
       loc <- parseExpressionThrows "Q"
       (value, _) <- dataize expr (defaultDataizeContext loc)
-      value `shouldBe` res
+      value `shouldBe` Dataized res
+
+-- Dataize under '--partial', collecting every report 𝔼 makes on the way, in
+-- the order it makes them
+partially :: String -> IO ((Outcome, [Rewritten]), [Evaluation])
+partially src = do
+  expr <- parseExpressionThrows (primitives src)
+  reports <- newIORef []
+  let ctx = (defaultDataizeContext ExRoot){_partial = True, _saveEval = \report -> modifyIORef' reports (report :)}
+  result <- dataize expr ctx
+  collected <- readIORef reports
+  pure (result, reverse collected)
 
 -- An atom with no answer yields ⊥, which stops the whole dataization
 testStuckAtom :: [(String, String)] -> Spec
@@ -390,8 +402,57 @@ spec = do
   describe "stops a dataization that never reaches bytes" $
     it "fails on the step limit instead of morphing forever" $ do
       expr <- parseExpressionThrows "⟦ @ ↦ ⟦ λ ⤍ L_number_div, ρ ↦ ⟦ Δ ⤍ 40-45-00-00-00-00-00-00 ⟧, x ↦ ⟦ Δ ⤍ 40-00-00-00-00-00-00-00 ⟧ ⟧ ⟧"
-      dataize expr (DataizeContext ExRoot 25 25 (Steps 40 0) False True buildTerm dontSaveStep dontSaveEval)
+      dataize expr (DataizeContext ExRoot 25 25 (Steps 40 0) False True False buildTerm dontSaveStep dontSaveEval)
         `shouldThrow` (\e -> "--max-steps=40" `isInfixOf` show (e :: SomeException))
+
+  -- An atom phino does not know — a placeholder such as ⟦ λ ⤍ Sym_arg_0 ⟧
+  -- standing in for a data input (#1060) — fails the run, and so does a known
+  -- atom whose input reaches one. Under '_partial' the run ends on the residue
+  -- instead: the working expression the spine had reached, with the stuck
+  -- application intact and everything the calculus demanded before it already
+  -- evaluated, while 𝔼 reports each parked site with no result.
+  describe "partially evaluates around an atom that cannot fire (--partial)" $ do
+    -- the parser gives every formation its void ρ
+    let placeholder = ExFormation [BiLambda (Function "Sym_arg_0"), BiVoid AtRho]
+    it "fails on it without the flag, naming the unknown atom" $ do
+      expr <- parseExpressionThrows (primitives "2.times(3).plus([[ L> Sym_arg_0 ]])")
+      dataize expr (defaultDataizeContext ExRoot)
+        `shouldThrow` (\e -> "Atom 'Sym_arg_0' does not exist" `isInfixOf` show (e :: SomeException))
+    it "leaves the saturated application of the known atom in place, the placeholder inside it" $ do
+      ((outcome, _), _) <- partially "2.times(3).plus([[ L> Sym_arg_0 ]])"
+      case outcome of
+        Residual (ExFormation bds) -> do
+          bds `shouldContain` [BiLambda (Function "L_number_plus")]
+          bds `shouldContain` [BiTau (AtLabel "x") placeholder]
+        other -> expectationFailure ("expected a residual formation, got " ++ show other)
+    it "keeps what was evaluated before the stuck site in the residue" $ do
+      ((outcome, _), _) <- partially "2.times(3).plus([[ L> Sym_arg_0 ]])"
+      case outcome of
+        Residual (ExFormation bds) -> do
+          let rho = [value | BiTau AtRho value <- bds]
+          length rho `shouldBe` 1
+          -- 2 × 3 = 6.0, whose IEEE 754 bytes are 40-18-00-00-00-00-00-00
+          show rho `shouldContain` show (BtMany ["40", "18", "00", "00", "00", "00", "00", "00"])
+          -- the times application is gone: ρ is the number it produced, its 'as-bytes' bound
+          [() | ExFormation inner <- rho, BiTau (AtLabel "as-bytes") _ <- inner] `shouldBe` [()]
+        other -> expectationFailure ("expected a residual formation, got " ++ show other)
+    it "reports the firing that succeeded with its result and every stuck site without one" $ do
+      (_, reports) <- partially "2.times(3).plus([[ L> Sym_arg_0 ]])"
+      map (._function) reports `shouldBe` ["L_number_times", "Sym_arg_0", "L_number_plus"]
+      map (isJust . (._result)) reports `shouldBe` [True, False, False]
+    it "leaves an unknown atom dataized directly as the whole residue" $ do
+      ((outcome, chain), reports) <- partially "[[ L> Sym_arg_0 ]]"
+      outcome `shouldBe` Residual placeholder
+      map (._function) reports `shouldBe` ["Sym_arg_0"]
+      map fst chain `shouldEndWith` [placeholder]
+    it "still reaches bytes when nothing is stuck" $ do
+      ((outcome, _), reports) <- partially "2.times(3)"
+      outcome `shouldBe` Dataized (BtMany ["40", "18", "00", "00", "00", "00", "00", "00"])
+      map (._function) reports `shouldBe` ["L_number_times"]
+    it "stops on the terminator ⊥ as before, since a wrong operand is not a stuck atom" $ do
+      expr <- parseExpressionThrows (primitives (raw "20-1F" ++ ".and( " ++ raw "CA-FE-BE" ++ " )"))
+      dataize expr ((defaultDataizeContext ExRoot){_partial = True})
+        `shouldThrow` (\e -> "terminator" `isInfixOf` show (e :: SomeException))
 
   -- '_maxDepth'/'_maxCycles' bound the normalization rewriter that a 'box' or
   -- 'norm' dataization step splices in (see 'normalized'); with
@@ -403,12 +464,12 @@ spec = do
     forM_
       [
         ( "--max-cycles"
-        , DataizeContext ExRoot 25 0 (Steps 250 0) True True buildTerm dontSaveStep dontSaveEval
+        , DataizeContext ExRoot 25 0 (Steps 250 0) True True False buildTerm dontSaveStep dontSaveEval
         , "--max-cycles=0"
         )
       ,
         ( "--max-depth"
-        , DataizeContext ExRoot 0 25 (Steps 250 0) True True buildTerm dontSaveStep dontSaveEval
+        , DataizeContext ExRoot 0 25 (Steps 250 0) True True False buildTerm dontSaveStep dontSaveEval
         , "--max-depth=0"
         )
       ]
@@ -418,14 +479,14 @@ spec = do
             dataize expr ctx `shouldThrow` (\e -> message `isInfixOf` show (e :: SomeException))
       )
     forM_
-      [ ("--max-cycles", DataizeContext ExRoot 25 0 (Steps 250 0) False True buildTerm dontSaveStep dontSaveEval)
-      , ("--max-depth", DataizeContext ExRoot 0 25 (Steps 250 0) False True buildTerm dontSaveStep dontSaveEval)
+      [ ("--max-cycles", DataizeContext ExRoot 25 0 (Steps 250 0) False True False buildTerm dontSaveStep dontSaveEval)
+      , ("--max-depth", DataizeContext ExRoot 0 25 (Steps 250 0) False True False buildTerm dontSaveStep dontSaveEval)
       ]
       ( \(flag, ctx) ->
           it ("does not throw without --depth-sensitive even once " ++ flag ++ " is exhausted") $ do
             expr <- parseExpressionThrows boxed
             (value, _) <- dataize expr ctx
-            value `shouldBe` BtOne "00"
+            value `shouldBe` Dataized (BtOne "00")
       )
 
   describe "labels every step with a defined rule or operation" $ do

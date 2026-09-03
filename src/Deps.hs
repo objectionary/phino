@@ -11,6 +11,7 @@ module Deps where
 
 import AST
 import Data.List (intercalate)
+import Data.Maybe (maybeToList)
 import qualified Data.Text as T
 import Logger (logDebug)
 import Matcher
@@ -60,23 +61,26 @@ dontSaveStep = saveStep Nothing "" (\_ -> pure "") 0
 
 -- One firing of an atom, the way the Evaluation function 𝔼 sees it: the name of
 -- the λ function, the formation it fired against with the λ binding removed, and
--- the term it produced.
+-- the term it produced. A firing that got stuck — the atom is unknown, or one of
+-- its inputs reached such an atom — and survived in the residual program of a
+-- partial evaluation (see '--partial') has no result.
 data Evaluation = Evaluation
   { _function :: T.Text
   , _arguments :: Expression
-  , _result :: Expression
+  , _result :: Maybe Expression
   }
 
 type SaveEvalFunc = Evaluation -> IO ()
 
 -- Append one evaluation to the protocol as a single tab-separated line: the λ
--- function name, its argument formation and its result. Both expressions are
+-- function name, its argument formation and its result; a parked firing has no
+-- result, so its record stops after the second field. The expressions are
 -- rendered by the caller, which flattens them, so a record never spills over
 -- more than one line. The handle stays open for the whole run, since a run may
 -- fire thousands of atoms and reopening the file for each of them buys nothing.
 saveEval :: Handle -> (Expression -> IO String) -> SaveEvalFunc
 saveEval handle render (Evaluation func bindings outcome) = do
-  rendered <- mapM render [bindings, outcome]
+  rendered <- mapM render (bindings : maybeToList outcome)
   hPutStrLn handle (intercalate "\t" (T.unpack func : rendered))
   logDebug (printf "Saved the evaluation of '%s'" (T.unpack func))
 
