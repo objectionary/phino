@@ -6,6 +6,7 @@
 module SugarSpec (spec) where
 
 import AST
+import Bytes (NonFinite (..))
 import CST
 import Control.Monad (forM_)
 import Encoding (Encoding (UNICODE))
@@ -216,6 +217,21 @@ spec = do
         ( "EX_NUMBER preserves an extra rho argument carried alongside the primitive"
         , EX_NUMBER (Left 42) (TAB 1) [ArTau AtRho (ExDispatch ExXi (AtLabel "y"))]
         , "Φ.number(\n    as-bytes ↦ Φ.bytes(\n      data ↦ ⟦\n        Δ ⤍ 40-45-00-00-00-00-00-00,\n        ρ ↦ ∅\n      ⟧\n    )\n  )(\n    ρ ↦ ξ.y\n  )"
+        )
+      ,
+        ( "EX_NONFINITE nan expands into the Q.number(Q.bytes(...)) form"
+        , EX_NONFINITE Φ NfNan (TAB 1) []
+        , "Φ.number(\n    as-bytes ↦ Φ.bytes(\n      data ↦ ⟦\n        Δ ⤍ 7F-F8-00-00-00-00-00-00,\n        ρ ↦ ∅\n      ⟧\n    )\n  )"
+        )
+      ,
+        ( "EX_NONFINITE pinf expands into the Q.number(Q.bytes(...)) form"
+        , EX_NONFINITE Φ NfPinf (TAB 1) []
+        , "Φ.number(\n    as-bytes ↦ Φ.bytes(\n      data ↦ ⟦\n        Δ ⤍ 7F-F0-00-00-00-00-00-00,\n        ρ ↦ ∅\n      ⟧\n    )\n  )"
+        )
+      ,
+        ( "EX_NONFINITE ninf keeps an extra rho argument carried alongside the primitive"
+        , EX_NONFINITE Φ NfNinf (TAB 1) [ArTau AtRho (ExDispatch ExXi (AtLabel "y"))]
+        , "Φ.number(\n    as-bytes ↦ Φ.bytes(\n      data ↦ ⟦\n        Δ ⤍ FF-F0-00-00-00-00-00-00,\n        ρ ↦ ∅\n      ⟧\n    )\n  )(\n    ρ ↦ ξ.y\n  )"
         )
       ,
         ( "EX_STRING expands into the Q.string(Q.bytes(...)) form"

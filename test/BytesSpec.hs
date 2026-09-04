@@ -7,7 +7,8 @@ module BytesSpec where
 
 import AST
 import Bytes
-  ( btsAnd
+  ( NonFinite (..)
+  , btsAnd
   , btsConcat
   , btsEqual
   , btsNot
@@ -15,16 +16,22 @@ import Bytes
   , btsShift
   , btsSize
   , btsSlice
+  , btsToNonFinite
   , btsToNum
   , btsToStr
   , btsToUnescapedStr
   , bytesToBts
+  , nonFiniteBts
+  , nonFiniteName
+  , nonFiniteOf
+  , nonFinites
   , numToBts
   , strToBts
   , unescapeStr
   )
 import Control.Exception (evaluate)
 import Control.Monad (forM_)
+import Data.Text qualified as T
 import Test.Hspec (Spec, anyErrorCall, describe, it, shouldBe, shouldSatisfy, shouldThrow)
 
 spec :: Spec
@@ -53,6 +60,42 @@ spec = do
       , ("negative zero", -0.0, either (const False) isNegativeZero)
       ]
       (\(desc, num, predicate) -> it desc (btsToNum (numToBts num) `shouldSatisfy` predicate))
+
+  describe "nonFiniteBts and btsToNonFinite round trip" $
+    forM_
+      nonFinites
+      (\value -> it (T.unpack (nonFiniteName value)) (btsToNonFinite (nonFiniteBts value) `shouldBe` Just value))
+
+  describe "btsToNonFinite tells the named patterns from every other one" $
+    forM_
+      [ ("a finite integral value", BtMany ["40", "45", "00", "00", "00", "00", "00", "00"], Nothing)
+      , ("a NaN carrying a payload", BtMany ["7F", "F8", "00", "00", "00", "00", "00", "01"], Nothing)
+      , ("the negative quiet NaN", BtMany ["FF", "F8", "00", "00", "00", "00", "00", "00"], Nothing)
+      , ("a byte array of the wrong size", BtOne "7F", Nothing)
+      , ("meta bytes", BtMeta "d", Nothing)
+      , ("NaN", BtMany ["7F", "F8", "00", "00", "00", "00", "00", "00"], Just NfNan)
+      , ("positive infinity", BtMany ["7F", "F0", "00", "00", "00", "00", "00", "00"], Just NfPinf)
+      , ("negative infinity", BtMany ["FF", "F0", "00", "00", "00", "00", "00", "00"], Just NfNinf)
+      ]
+      (\(desc, bts, expected) -> it desc (btsToNonFinite bts `shouldBe` expected))
+
+  describe "nonFiniteOf reads back the name the printer gives" $
+    forM_
+      [ ("nan", Just NfNan)
+      , ("pinf", Just NfPinf)
+      , ("ninf", Just NfNinf)
+      , ("number", Nothing)
+      , ("", Nothing)
+      ]
+      (\(name, expected) -> it (T.unpack name) (nonFiniteOf name `shouldBe` expected))
+
+  describe "btsToNum on the named non-finite patterns" $
+    forM_
+      [ ("NaN", NfNan, either (const False) isNaN)
+      , ("positive infinity", NfPinf, either (const False) (\num -> isInfinite num && num > 0))
+      , ("negative infinity", NfNinf, either (const False) (\num -> isInfinite num && num < 0))
+      ]
+      (\(desc, value, predicate) -> it desc (btsToNum (nonFiniteBts value) `shouldSatisfy` predicate))
 
   describe "btsToNum with a byte array that is not 8 bytes long" $
     it "errors out" $

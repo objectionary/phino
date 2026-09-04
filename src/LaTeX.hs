@@ -25,6 +25,7 @@ module LaTeX
   ) where
 
 import AST
+import Bytes (nonFiniteName)
 import CST
 import Canonizer (canonize, canonizeExpr)
 import Data.List (intercalate, nub)
@@ -267,6 +268,9 @@ instance ToLaTeX EXPRESSION where
   toLaTeX EX_PHI_AGAIN{..} = EX_PHI_AGAIN prefix idx (toLaTeX expr)
   toLaTeX EX_META{..} = EX_META (toLaTeX meta)
   toLaTeX EX_XI{} = EX_XI XI'
+  -- A non-finite double is printed as a dispatch off the root, so it becomes
+  -- one here too, with its name piped the way any other label is (see #1065)
+  toLaTeX EX_NONFINITE{..} = EX_DISPATCH (EX_GLOBAL global) SPACE (toLaTeX (AT_LABEL (nonFiniteName nonfinite)))
   toLaTeX EX_BYTES{..} = EX_BYTES (toLaTeX bytes)
   toLaTeX expr = expr
 

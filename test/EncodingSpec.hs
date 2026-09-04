@@ -5,6 +5,7 @@
 
 module EncodingSpec where
 
+import Bytes (NonFinite (..))
 import CST
 import Control.Monad (forM_)
 import Encoding (Encoding (..), toASCII, withEncoding)
@@ -59,6 +60,11 @@ spec = do
         ( "EX_META with any other head becomes E'"
         , toASCII (EX_META (META NO_EXCL E "abc"))
         , EX_META (META EXCL E' "abc")
+        )
+      ,
+        ( "EX_NONFINITE switches the root to its ASCII spelling"
+        , toASCII (EX_NONFINITE Φ NfNan (TAB 1) [])
+        , EX_NONFINITE Q NfNan (TAB 1) []
         )
       ,
         ( "EX_PHI_MEET recurses into its expression"

@@ -66,11 +66,31 @@ spec = do
     it "meta lambda becomes 𝑓" $
       printExpression' (ExFormation [BiLambda (FnMeta "F")]) (SWEET, UNICODE, SINGLELINE, defaultMargin) `shouldBe` "⟦ λ ⤍ 𝑓 ⟧"
 
-  describe "printExpression keeps special double values in byte form so they re-parse" $
+  describe "printExpression names the non-finite doubles instead of spelling their bytes" $
     forM_
-      [ ("NaN", BtMany ["7F", "F8", "00", "00", "00", "00", "00", "00"])
-      , ("positive infinity", BtMany ["7F", "F0", "00", "00", "00", "00", "00", "00"])
-      , ("negative infinity", BtMany ["FF", "F0", "00", "00", "00", "00", "00", "00"])
+      [ ("NaN", BtMany ["7F", "F8", "00", "00", "00", "00", "00", "00"], "Q.nan", "Φ.nan")
+      , ("positive infinity", BtMany ["7F", "F0", "00", "00", "00", "00", "00", "00"], "Q.pinf", "Φ.pinf")
+      , ("negative infinity", BtMany ["FF", "F0", "00", "00", "00", "00", "00", "00"], "Q.ninf", "Φ.ninf")
+      ]
+      ( \(desc, bts, ascii, unicode) ->
+          it desc $ do
+            let expr = DataNumber bts
+                printed = printExpression' expr (SWEET, ASCII, SINGLELINE, defaultMargin)
+            printed `shouldBe` ascii
+            printExpression' expr (SWEET, UNICODE, SINGLELINE, defaultMargin) `shouldBe` unicode
+            -- the name is read back into the very same number
+            parseExpression printed `shouldBe` Right expr
+            -- and --salty expands it back into the byte form
+            let salty = printExpression' expr (SALTY, ASCII, SINGLELINE, defaultMargin)
+            salty `shouldContain` "Q.number("
+            salty `shouldContain` "Q.bytes("
+            salty `shouldContain` printBytes bts
+      )
+
+  describe "printExpression keeps a non-finite double without a name in byte form" $
+    forM_
+      [ ("a NaN carrying a payload", BtMany ["7F", "F8", "00", "00", "00", "00", "00", "01"])
+      , ("the negative quiet NaN", BtMany ["FF", "F8", "00", "00", "00", "00", "00", "00"])
       ]
       ( \(desc, bts) ->
           it desc $ do

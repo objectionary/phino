@@ -119,6 +119,11 @@ spec = do
           expressionToLaTeX expr (adjustContext defaultLatexContext) `shouldBe` expected
       )
 
+    it "renders a non-finite double as a piped dispatch off the root" $ do
+      nan <- parseExpressionThrows "[[ x -> Q.number(Q.bytes([[ D> 7F-F8-00-00-00-00-00-00 ]])) ]]"
+      expressionToLaTeX nan defaultLatexContext
+        `shouldBe` "\\begin{phiquation}\n[[ |x| -> Q . |nan| ]]{.}\n\\end{phiquation}"
+
     it "escapes '@' and '^' in an attribute label, same as '$' and '_'" $ do
       let weird = ExFormation [BiTau (AtLabel "a@b^c") ExRoot, BiVoid AtRho]
       expressionToLaTeX weird defaultLatexContext

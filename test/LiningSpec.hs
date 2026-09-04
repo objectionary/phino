@@ -5,6 +5,7 @@
 
 module LiningSpec where
 
+import Bytes (NonFinite (..))
 import CST
 import Control.Monad (forM_)
 import Lining (LineFormat (..), toSingleLine, withLineFormat)
@@ -60,6 +61,7 @@ spec = do
         , EX_TERMINATION DEAD
         , EX_STRING "hi" (TAB 2) []
         , EX_NUMBER (Left 5) (TAB 2) []
+        , EX_NONFINITE Φ NfNan (TAB 2) []
         , EX_META (META NO_EXCL E "x")
         , EX_BYTES BT_EMPTY
         ]

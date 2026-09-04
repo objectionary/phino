@@ -25,6 +25,7 @@ instance ToASCII EXPRESSION where
   toASCII EX_FORMATION{..} = EX_FORMATION LSB' eol tab (toASCII binding) eol' tab' RSB'
   toASCII EX_DISPATCH{..} = EX_DISPATCH (toASCII expr) space (toASCII attr)
   toASCII EX_APPLICATION{..} = EX_APPLICATION (toASCII expr) space eol tab (toASCII argument) eol' tab' indent
+  toASCII EX_NONFINITE{..} = EX_NONFINITE Q nonfinite tab rhos
   toASCII EX_META{meta = META{hd = N, ..}} = EX_META (META EXCL N' rest)
   toASCII EX_META{meta = META{hd = K, ..}} = EX_META (META EXCL K' rest)
   toASCII EX_META{..} = EX_META (META EXCL E' (rest meta))

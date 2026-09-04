@@ -1,0 +1,40 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+# yamllint disable rule:line-length
+---
+expression: |
+  [[
+    nan -> Q.nan,
+    pinf -> Q.pinf,
+    ninf -> Q.number(~0 -> Q.bytes([[D> FF-F0-00-00-00-00-00-00]]), ^ -> Q.x)
+  ]]
+result: |-
+  ⟦
+    nan ↦ Φ.number(
+      as-bytes ↦ Φ.bytes(
+        data ↦ ⟦
+          Δ ⤍ 7F-F8-00-00-00-00-00-00,
+          ρ ↦ ∅
+        ⟧
+      )
+    ),
+    pinf ↦ Φ.number(
+      as-bytes ↦ Φ.bytes(
+        data ↦ ⟦
+          Δ ⤍ 7F-F0-00-00-00-00-00-00,
+          ρ ↦ ∅
+        ⟧
+      )
+    ),
+    ninf ↦ Φ.number(
+      as-bytes ↦ Φ.bytes(
+        data ↦ ⟦
+          Δ ⤍ FF-F0-00-00-00-00-00-00,
+          ρ ↦ ∅
+        ⟧
+      )
+    )(
+      ρ ↦ Φ.x
+    ),
+    ρ ↦ ∅
+  ⟧
