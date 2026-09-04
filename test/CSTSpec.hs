@@ -10,6 +10,7 @@
 module CSTSpec (spec) where
 
 import AST
+import Bytes (NonFinite (..))
 import CST
 import Control.Monad (forM_)
 import Data.Aeson
@@ -144,9 +145,11 @@ spec = do
     forM_
       [ ("is true for a finite integral value", BtMany ["40", "45", "00", "00", "00", "00", "00", "00"], True)
       , ("is true for a finite fractional value", BtMany ["BF", "D0", "00", "00", "00", "00", "00", "00"], True)
-      , ("is false for NaN", BtMany ["7F", "F8", "00", "00", "00", "00", "00", "00"], False)
-      , ("is false for positive infinity", BtMany ["7F", "F0", "00", "00", "00", "00", "00", "00"], False)
-      , ("is false for negative infinity", BtMany ["FF", "F0", "00", "00", "00", "00", "00", "00"], False)
+      , ("is true for NaN", BtMany ["7F", "F8", "00", "00", "00", "00", "00", "00"], True)
+      , ("is true for positive infinity", BtMany ["7F", "F0", "00", "00", "00", "00", "00", "00"], True)
+      , ("is true for negative infinity", BtMany ["FF", "F0", "00", "00", "00", "00", "00", "00"], True)
+      , ("is false for a NaN carrying a payload", BtMany ["7F", "F8", "00", "00", "00", "00", "00", "01"], False)
+      , ("is false for the negative quiet NaN", BtMany ["FF", "F8", "00", "00", "00", "00", "00", "00"], False)
       ]
       (\(desc, bts, expected) -> it desc (sweetNumber bts `shouldBe` expected))
 
@@ -154,7 +157,7 @@ spec = do
     forM_
       [
         ( "delegates to sweetNumber for a data number"
-        , DataNumber (BtMany ["7F", "F8", "00", "00", "00", "00", "00", "00"])
+        , DataNumber (BtMany ["7F", "F8", "00", "00", "00", "00", "00", "01"])
         , False
         )
       ,
@@ -181,6 +184,24 @@ spec = do
       , ("a name with neither prefix also becomes ordinary", "tx", E)
       ]
       (\(desc, metaName, expected) -> it desc (exMetaHead metaName `shouldBe` expected))
+
+  describe "expressionToCST on the non-finite doubles" $
+    forM_
+      [ ("NaN becomes Φ.nan", BtMany ["7F", "F8", "00", "00", "00", "00", "00", "00"], NfNan)
+      , ("positive infinity becomes Φ.pinf", BtMany ["7F", "F0", "00", "00", "00", "00", "00", "00"], NfPinf)
+      , ("negative infinity becomes Φ.ninf", BtMany ["FF", "F0", "00", "00", "00", "00", "00", "00"], NfNinf)
+      ]
+      ( \(desc, bts, value) ->
+          it desc (expressionToCST (DataNumber bts) `shouldBe` EX_NONFINITE Φ value (TAB 0) [])
+      )
+
+  describe "expressionToCST keeps a non-canonical non-finite double in byte form" $
+    it "leaves a NaN carrying a payload as an application" $ do
+      let payloaded = DataNumber (BtMany ["7F", "F8", "00", "00", "00", "00", "00", "01"])
+          isApplication :: EXPRESSION -> Bool
+          isApplication EX_APPLICATION{} = True
+          isApplication _ = False
+      expressionToCST payloaded `shouldSatisfy` isApplication
 
   describe "expressionToCST on rendering-only and meta nodes" $
     forM_
@@ -587,6 +608,7 @@ spec = do
               }
           exString = EX_STRING{str = "hi", tab = TAB 0, rhos = []}
           exNumber = EX_NUMBER{num = Left 5, tab = TAB 0, rhos = []}
+          exNonFinite = EX_NONFINITE{global = Φ, nonfinite = NfNan, tab = TAB 0, rhos = []}
           exMeta = EX_META{meta = metaVal}
           exPhiMeet = EX_PHI_MEET{prefix = Just "p", idx = 1, expr = exGlobal}
           exBytes = EX_BYTES{bytes = BT_ONE "40"}
@@ -618,6 +640,10 @@ spec = do
       exNumber.num `shouldBe` Left 5
       exNumber.tab `shouldBe` TAB 0
       exNumber.rhos `shouldBe` []
+      exNonFinite.global `shouldBe` Φ
+      exNonFinite.nonfinite `shouldBe` NfNan
+      exNonFinite.tab `shouldBe` TAB 0
+      exNonFinite.rhos `shouldBe` []
       exMeta.meta `shouldBe` metaVal
       exPhiMeet.prefix `shouldBe` Just "p"
       exPhiMeet.idx `shouldBe` 1
@@ -632,6 +658,7 @@ spec = do
       shouldShowAndEqSelf "EX_APPLICATION" exApplication
       shouldShowAndEqSelf "EX_STRING" exString
       shouldShowAndEqSelf "EX_NUMBER" exNumber
+      shouldShowAndEqSelf "EX_NONFINITE" exNonFinite
       shouldShowAndEqSelf "EX_META" exMeta
       shouldShowAndEqSelf "EX_PHI_MEET" exPhiMeet
       shouldShowAndEqSelf "EX_BYTES" exBytes

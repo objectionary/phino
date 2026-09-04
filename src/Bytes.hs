@@ -23,6 +23,12 @@ module Bytes
   , btsSize
   , btsSlice
   , btsShift
+  , nonFinites
+  , nonFiniteName
+  , nonFiniteBts
+  , btsToNonFinite
+  , nonFiniteOf
+  , NonFinite (..)
   )
 where
 
@@ -34,6 +40,7 @@ import Data.ByteString.Builder (toLazyByteString, word64BE)
 import Data.ByteString.Lazy (unpack)
 import qualified Data.ByteString.Lazy.UTF8 as U
 import Data.Char (chr, isDigit, isPrint, ord)
+import Data.List (find)
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
 import Data.Word (Word64, Word8)
@@ -135,6 +142,58 @@ btsToNum hx =
 -- BtMany ["40","14","00","00","00","00","00","00"]
 numToBts :: Double -> Bytes
 numToBts num = word8ToBytes (unpack (toLazyByteString (word64BE (doubleToWord num))))
+
+-- The three IEEE-754 doubles that are not finite numbers. None of them has a
+-- numeric literal to be written with, so the printer spells each one as a
+-- dispatch off the root — 'Φ.nan', 'Φ.pinf', 'Φ.ninf' — and the parser reads
+-- those names back into the very bytes they stand for (see #1065)
+data NonFinite = NfNan | NfPinf | NfNinf
+  deriving (Eq, Show)
+
+-- All the non-finite doubles, in the order they are documented in
+nonFinites :: [NonFinite]
+nonFinites = [NfNan, NfPinf, NfNinf]
+
+-- The attribute name the value is dispatched on
+-- >>> nonFiniteName NfPinf
+-- "pinf"
+nonFiniteName :: NonFinite -> T.Text
+nonFiniteName NfNan = "nan"
+nonFiniteName NfPinf = "pinf"
+nonFiniteName NfNinf = "ninf"
+
+-- The canonical byte form of a non-finite double. The patterns are spelled out
+-- instead of being derived from '0 / 0' and '1 / 0' because the sign bit and
+-- the payload of a computed NaN are platform-dependent, while the printer and
+-- the parser have to agree on one exact pattern
+-- >>> nonFiniteBts NfNan
+-- BtMany ["7F","F8","00","00","00","00","00","00"]
+nonFiniteBts :: NonFinite -> Bytes
+nonFiniteBts NfNan = BtMany ["7F", "F8", "00", "00", "00", "00", "00", "00"]
+nonFiniteBts NfPinf = BtMany ["7F", "F0", "00", "00", "00", "00", "00", "00"]
+nonFiniteBts NfNinf = BtMany ["FF", "F0", "00", "00", "00", "00", "00", "00"]
+
+-- Which non-finite double the given bytes encode, if they encode one at all.
+-- Only the three canonical patterns qualify: a NaN carrying a payload, or the
+-- negative quiet NaN, has no name of its own and keeps its byte form, so that
+-- printing never drops a bit
+-- >>> btsToNonFinite (BtMany ["FF", "F0", "00", "00", "00", "00", "00", "00"])
+-- Just NfNinf
+-- >>> btsToNonFinite (BtMany ["40", "45", "00", "00", "00", "00", "00", "00"])
+-- Nothing
+-- >>> btsToNonFinite (BtMany ["7F", "F8", "00", "00", "00", "00", "00", "01"])
+-- Nothing
+btsToNonFinite :: Bytes -> Maybe NonFinite
+btsToNonFinite (BtMeta _) = Nothing
+btsToNonFinite bts = find (btsEqual bts . nonFiniteBts) nonFinites
+
+-- The non-finite double the given name stands for, if it names one at all
+-- >>> nonFiniteOf "ninf"
+-- Just NfNinf
+-- >>> nonFiniteOf "number"
+-- Nothing
+nonFiniteOf :: T.Text -> Maybe NonFinite
+nonFiniteOf name = find ((== name) . nonFiniteName) nonFinites
 
 -- >>> strToBts "hello"
 -- BtMany ["68","65","6C","6C","6F"]

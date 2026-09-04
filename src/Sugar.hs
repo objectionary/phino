@@ -10,7 +10,7 @@
 module Sugar (toSalty, withSugarType, withoutRho, SugarType (..), ToSalty) where
 
 import AST
-import Bytes (numToBts, strToBts, unescapeStr)
+import Bytes (nonFiniteBts, numToBts, strToBts, unescapeStr)
 import CST
 import Misc (toDouble)
 
@@ -127,6 +127,7 @@ withoutRho = goExpr
 --  |----------------------------|-----------------------------------------------------|
 --  | a1 -> a2                   | a1 ↦ $.a2                                           |
 --  | a -> 42                    | Q.number(Q.bytes([[ D> 40-45-00-00-00-00-00-00 ]])) |
+--  | a -> Q.nan                 | Q.number(Q.bytes([[ D> 7F-F8-00-00-00-00-00-00 ]])) |
 --  | a -> "Hey"                 | Q.number(Q.bytes([[ D> 48-65-79 ]]))                |
 --  | [[ B ]]                    | [[ B, ^ -> ? ]], if rho is absent in 'B'            |
 --  | a1(a2, a3, ...) -> [[ B ]] | a1 -> [[ a2 -> ?, a3 -> ?, ..., B ]]                |
@@ -174,6 +175,13 @@ instance ToSalty EXPRESSION where
       (toCST (BaseObject "number") (indent + 1, EOL))
       (toCST (BaseObject "bytes") (indent + 2, EOL))
       (toCST (ExFormation [BiDelta (numToBts (either toDouble id num))]) (indent + 2, EOL))
+      tab
+      rhos
+  toSalty EX_NONFINITE{nonfinite, tab = tab@TAB{..}, rhos} =
+    saltifyPrimitive
+      (toCST (BaseObject "number") (indent + 1, EOL))
+      (toCST (BaseObject "bytes") (indent + 2, EOL))
+      (toCST (ExFormation [BiDelta (nonFiniteBts nonfinite)]) (indent + 2, EOL))
       tab
       rhos
   toSalty EX_STRING{str, tab = tab@TAB{..}, rhos} =

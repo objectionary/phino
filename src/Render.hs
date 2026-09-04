@@ -8,6 +8,7 @@
 
 module Render where
 
+import Bytes (nonFiniteName)
 import CST
 import Data.Text (Text)
 import qualified Data.Text as T
@@ -204,6 +205,7 @@ instance Render EXPRESSION where
   render EX_APPLICATION{..} = render expr <> render space <> "(" <> render eol <> render tab <> render argument <> render eol' <> render tab' <> ")"
   render EX_STRING{..} = "\"" <> render str <> "\""
   render EX_NUMBER{..} = either (T.pack . show) (T.pack . show) num
+  render EX_NONFINITE{..} = render global <> "." <> nonFiniteName nonfinite
   render EX_META{..} = render meta
   render EX_PHI_MEET{..} = "\\phinoMeet{" <> maybe "" (\p -> T.pack p <> ":") prefix <> render idx <> "}{ " <> render expr <> " }"
   render EX_PHI_AGAIN{..} = "\\phinoAgain{" <> maybe "" (\p -> T.pack p <> ":") prefix <> render idx <> "}"

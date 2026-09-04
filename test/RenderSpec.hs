@@ -5,6 +5,7 @@
 
 module RenderSpec (spec) where
 
+import Bytes (NonFinite (..))
 import CST
 import Control.Monad (forM_)
 import Data.Text qualified as T
@@ -215,6 +216,9 @@ spec = do
       , ("EX_STRING", EX_STRING "hi" (TAB 0) [], "\"hi\"")
       , ("EX_NUMBER integer", EX_NUMBER (Left 42) (TAB 0) [], "42")
       , ("EX_NUMBER double", EX_NUMBER (Right 3.5) (TAB 0) [], "3.5")
+      , ("EX_NONFINITE nan", EX_NONFINITE Φ NfNan (TAB 0) [], "Φ.nan")
+      , ("EX_NONFINITE pinf", EX_NONFINITE Φ NfPinf (TAB 0) [], "Φ.pinf")
+      , ("EX_NONFINITE ninf ascii", EX_NONFINITE Q NfNinf (TAB 0) [], "Q.ninf")
       , ("EX_META", EX_META (META NO_EXCL E "x"), "𝑒x")
       , ("EX_PHI_MEET without prefix", EX_PHI_MEET Nothing 5 xiExpr, "\\phinoMeet{5}{ ξ }")
       , ("EX_PHI_MEET with prefix", EX_PHI_MEET (Just "p") 5 xiExpr, "\\phinoMeet{p:5}{ ξ }")

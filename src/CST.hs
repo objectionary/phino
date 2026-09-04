@@ -11,7 +11,8 @@
 module CST where
 
 import AST
-import Bytes (btsToNum, btsToStr)
+import Bytes (NonFinite, btsToNonFinite, btsToNum, btsToStr)
+import Data.Maybe (isJust)
 import qualified Data.Text as T
 import qualified Yaml as Y
 
@@ -174,6 +175,7 @@ data EXPRESSION
   | EX_APPLICATION {expr :: EXPRESSION, space :: SPACE, eol :: EOL, tab :: TAB, argument :: APP_ARGUMENT, eol' :: EOL, tab' :: TAB, indent :: Int} -- e(...)
   | EX_STRING {str :: String, tab :: TAB, rhos :: [Argument]}
   | EX_NUMBER {num :: Either Int Double, tab :: TAB, rhos :: [Argument]}
+  | EX_NONFINITE {global :: GLOBAL, nonfinite :: NonFinite, tab :: TAB, rhos :: [Argument]} -- Φ.nan, Φ.pinf and Φ.ninf (see #1065)
   | EX_META {meta :: META}
   | EX_PHI_MEET {prefix :: Maybe String, idx :: Int, expr :: EXPRESSION}
   | EX_PHI_AGAIN {prefix :: Maybe String, idx :: Int, expr :: EXPRESSION}
@@ -260,14 +262,17 @@ expressionToCST = toCST'
 expressionToCSTFrom :: Int -> Expression -> EXPRESSION
 expressionToCSTFrom tabs expr = toCST expr (tabs, EOL)
 
--- A number can be rendered with the sweet numeric literal only when it is
--- finite. NaN and the infinities have no such literal — and the bare `show`
--- tokens (`NaN`, `Infinity`, `-Infinity`) would collide with object/function
--- names — so they are kept in their byte form instead.
+-- A number can be rendered in sweet form when it is either finite, and so has
+-- a numeric literal, or one of the three canonical non-finite doubles, which
+-- get the root dispatches `Φ.nan`, `Φ.pinf` and `Φ.ninf` instead (the bare
+-- `show` tokens `NaN`, `Infinity` and `-Infinity` would collide with
+-- object/function names, hence the dispatch — see #1065). Any other non-finite
+-- pattern, such as a NaN carrying a payload, is kept in its byte form so that
+-- no bit of it is lost.
 sweetNumber :: Bytes -> Bool
 sweetNumber bts = case btsToNum bts of
-  Right d -> not (isNaN d || isInfinite d)
-  Left _ -> True
+  Right dbl | isNaN dbl || isInfinite dbl -> isJust (btsToNonFinite bts)
+  _ -> True
 
 -- Whether a data object may be collapsed into its sweet literal form.
 sweetCollapsible :: Expression -> Bool
@@ -341,10 +346,11 @@ instance ToCST Expression EXPRESSION where
       withoutLastVoidRho [BiVoid AtRho] = []
       withoutLastVoidRho (bd : bds') = bd : withoutLastVoidRho bds'
   toCST (DataString bts) (tabs, _) = EX_STRING (btsToStr bts) (TAB tabs) []
-  -- NaN and the infinities have no sweet numeric literal (and printing the bare
-  -- `show` tokens would collide with object/function names), so they are left in
-  -- their byte form `Φ.number(Φ.bytes(⟦ Δ ⤍ … ⟧))` by falling through to the
-  -- generic application clause below.
+  -- The three canonical non-finite doubles have no sweet numeric literal, so
+  -- they become the root dispatches `Φ.nan`, `Φ.pinf` and `Φ.ninf`. Any other
+  -- non-finite pattern is left in its byte form `Φ.number(Φ.bytes(⟦ Δ ⤍ … ⟧))`
+  -- by falling through to the generic application clause below.
+  toCST (DataNumber bts) (tabs, _) | Just nonfinite <- btsToNonFinite bts = EX_NONFINITE Φ nonfinite (TAB tabs) []
   toCST (DataNumber bts) (tabs, _) | sweetNumber bts = EX_NUMBER (btsToNum bts) (TAB tabs) []
   toCST (ExDispatch ExXi attr) ctx = EX_ATTR (toCST attr ctx)
   toCST (ExDispatch expr attr) ctx = EX_DISPATCH (toCST expr ctx) NO_SPACE (toCST attr ctx)
@@ -409,9 +415,11 @@ instance ToCST Expression EXPRESSION where
         | otherwise = (bds, [])
       withoutRhosInPrimitives _ bds = (bds, [])
       applicationToPrimitive :: Expression -> Int -> [Argument] -> EXPRESSION
-      applicationToPrimitive (DataNumber bts) tabs = EX_NUMBER (btsToNum bts) (TAB tabs)
-      applicationToPrimitive (DataString bts) tabs = EX_STRING (btsToStr bts) (TAB tabs)
-      applicationToPrimitive _ _ = error "applicationToPrimitive expects DataNumber or DataString"
+      applicationToPrimitive (DataNumber bts) tabs rhos = case btsToNonFinite bts of
+        Just nonfinite -> EX_NONFINITE Φ nonfinite (TAB tabs) rhos
+        Nothing -> EX_NUMBER (btsToNum bts) (TAB tabs) rhos
+      applicationToPrimitive (DataString bts) tabs rhos = EX_STRING (btsToStr bts) (TAB tabs) rhos
+      applicationToPrimitive _ _ _ = error "applicationToPrimitive expects DataNumber or DataString"
       -- Here we unroll nested application sequence into flat structure
       -- The returned tuple consists of:
       -- 1. deepest start expression

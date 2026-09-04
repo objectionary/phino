@@ -22,7 +22,7 @@ module Parser
 where
 
 import AST
-import Bytes (numToBts, strToBts)
+import Bytes (nonFiniteBts, nonFiniteOf, numToBts, strToBts)
 import Control.Exception (Exception)
 import Control.Monad (guard)
 import Data.Char (isAsciiLower, isDigit)
@@ -192,6 +192,26 @@ number = do
             )
         )
     )
+
+-- An expression head that starts with the root: either one of the three
+-- non-finite doubles named off it — `Φ.nan`, `Φ.pinf` and `Φ.ninf`, read back
+-- into the very 'DataNumber' the sweet printer collapsed, which keeps
+-- print-then-parse idempotent (see #1065) — or the root itself. The label after
+-- the root is parsed once, here, so an ordinary dispatch such as `Φ.number`
+-- costs no more than it did before the three names existed; an attribute the
+-- label parser rejects (ρ, φ, a meta) is left to 'exTail', as is any further
+-- dispatch or application
+root :: Parser Expression
+root = do
+  _ <- global
+  option ExRoot (try labelled)
+  where
+    labelled :: Parser Expression
+    labelled = do
+      _ <- symbol "."
+      named <$> label'
+    named :: T.Text -> Expression
+    named name = maybe (ExDispatch ExRoot (AtLabel name)) (DataNumber . nonFiniteBts) (nonFiniteOf name)
 
 quotedStr :: Parser String
 quotedStr = char '"' >> manyTill (choice [escapedChar, noneOf ['\\', '"']]) (char '"')
@@ -384,7 +404,7 @@ formationBindings = do
 -- head part of expression
 -- 1. formation
 -- 2. this
--- 3. global
+-- 3. global, or an attribute or non-finite double named off it
 -- 4. termination
 -- 5. meta expression
 -- 6. full attribute -> sugar for $.attr
@@ -397,9 +417,7 @@ exHead =
     , do
         _ <- choice [symbol "$", symbol "ξ"]
         return ExXi
-    , do
-        _ <- global
-        return ExRoot
+    , root
     , do
         _ <- choice [symbol "T", symbol "⊥"]
         return ExTermination
