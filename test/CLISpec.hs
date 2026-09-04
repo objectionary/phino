@@ -412,6 +412,10 @@ spec = do
       withStdin "[[foo ↦ x]]" $
         testCLISucceeded ["rewrite"] ["⟦ foo ↦ ξ.x, ρ ↦ ∅ ⟧"]
 
+    it "keeps the bytes of a string intact while desugaring it" $
+      withStdin "⟦ φ ↦ Φ.string(as-bytes ↦ Φ.bytes(data ↦ ⟦ Δ ⤍ 65-0A-65, ρ ↦ ∅ ⟧)), ρ ↦ ∅ ⟧" $
+        testCLISucceeded ["rewrite", "--flat"] ["Δ ⤍ 65-0A-65"]
+
     it "rewrites with single rule" $
       withStdin "T(x -> Q.y)" $
         testCLISucceeded ["rewrite", "--rule=resources/normalize/dc.yaml"] ["⊥"]

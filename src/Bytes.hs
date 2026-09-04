@@ -12,6 +12,7 @@ module Bytes
   , strToBts
   , bytesToBts
   , btsToStr
+  , unescapeStr
   , btsToNum
   , btsToUnescapedStr
   , btsAnd
@@ -197,6 +198,39 @@ btsToStr bytes = escapeStr (btsToUnescapedStr bytes)
         escapeChar c
           | isPrint c && c /= '\\' && c /= '"' = [c]
           | otherwise = printf "\\x%02x" (ord c)
+
+-- The inverse of the escaping that 'btsToStr' applies, so that a sweet string
+-- literal can be turned back into the very bytes it was printed from. A
+-- backslash that starts no escape 'btsToStr' can produce is kept as it stands,
+-- together with the character behind it
+-- >>> unescapeStr "hello"
+-- "hello"
+-- >>> unescapeStr "h\\\""
+-- "h\""
+-- >>> unescapeStr "e\\ne"
+-- "e\ne"
+-- >>> unescapeStr "\\\\"
+-- "\\"
+-- >>> unescapeStr "\\t"
+-- "\t"
+-- >>> unescapeStr "\\x01"
+-- "\SOH"
+unescapeStr :: String -> String
+unescapeStr = go
+  where
+    go :: String -> String
+    go "" = ""
+    go ('\\' : 'x' : high : low : rest)
+      | Just code <- hexPair high low = chr code : go rest
+    go ('\\' : escaped : rest)
+      | Just unescaped <- lookup escaped escapes = unescaped : go rest
+    go (char : rest) = char : go rest
+    hexPair :: Char -> Char -> Maybe Int
+    hexPair high low = case readHex [high, low] of
+      [(code, "")] -> Just code
+      _ -> Nothing
+    escapes :: [(Char, Char)]
+    escapes = [('"', '"'), ('\\', '\\'), ('n', '\n'), ('t', '\t')]
 
 -- >>> btsToUnescapedStr (BtMany ["01", "02"])
 -- "\SOH\STX"

@@ -21,6 +21,7 @@ import Bytes
   , bytesToBts
   , numToBts
   , strToBts
+  , unescapeStr
   )
 import Control.Exception (evaluate)
 import Control.Monad (forM_)
@@ -86,6 +87,40 @@ spec = do
       ]
       ( \(desc, bts, str) ->
           it desc $ btsToStr bts `shouldBe` str
+      )
+
+  describe "unescapeStr" $
+    forM_
+      [ ("empty", "", "")
+      , ("nothing to unescape", "hello", "hello")
+      , ("double quote", "h\\\"", "h\"")
+      , ("backslash", "\\\\", "\\")
+      , ("newline", "e\\ne", "e\ne")
+      , ("tab", "\\t", "\t")
+      , ("hex escape", "\\x01", "\SOH")
+      , ("uppercase hex escape", "\\xFF", "\255")
+      , ("backslash before an escape", "\\\\n", "\\n")
+      , ("unknown escape is kept as it stands", "\\q", "\\q")
+      , ("trailing backslash is kept", "a\\", "a\\")
+      , ("truncated hex escape is kept", "\\x0", "\\x0")
+      ]
+      ( \(desc, escaped, unescaped) ->
+          it desc $ unescapeStr escaped `shouldBe` unescaped
+      )
+
+  describe "btsToStr/unescapeStr round trip" $
+    forM_
+      [ ("empty", BtEmpty)
+      , ("plain word", BtMany ["68", "65", "6C", "6C", "6F"])
+      , ("double quote", BtOne "22")
+      , ("backslash", BtOne "5C")
+      , ("newline", BtOne "0A")
+      , ("tab", BtOne "09")
+      , ("non-printable", BtMany ["01", "02"])
+      , ("text around a newline", BtMany ["65", "0A", "65"])
+      ]
+      ( \(desc, bts) ->
+          it desc $ strToBts (unescapeStr (btsToStr bts)) `shouldBe` bts
       )
 
   describe "btsToUnescapedStr" $

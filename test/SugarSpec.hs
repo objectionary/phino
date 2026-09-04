@@ -222,6 +222,21 @@ spec = do
         , EX_STRING "hi" (TAB 1) []
         , "Φ.string(\n    as-bytes ↦ Φ.bytes(\n      data ↦ ⟦\n        Δ ⤍ 68-69,\n        ρ ↦ ∅\n      ⟧\n    )\n  )"
         )
+      ,
+        ( "EX_STRING unescapes a newline instead of taking its escape literally"
+        , EX_STRING "e\\ne" (TAB 1) []
+        , "Φ.string(\n    as-bytes ↦ Φ.bytes(\n      data ↦ ⟦\n        Δ ⤍ 65-0A-65,\n        ρ ↦ ∅\n      ⟧\n    )\n  )"
+        )
+      ,
+        ( "EX_STRING unescapes a quote and a backslash into single bytes"
+        , EX_STRING "\\\"\\\\" (TAB 1) []
+        , "Φ.string(\n    as-bytes ↦ Φ.bytes(\n      data ↦ ⟦\n        Δ ⤍ 22-5C,\n        ρ ↦ ∅\n      ⟧\n    )\n  )"
+        )
+      ,
+        ( "EX_STRING unescapes a hex escape back into its byte"
+        , EX_STRING "\\x01" (TAB 1) []
+        , "Φ.string(\n    as-bytes ↦ Φ.bytes(\n      data ↦ ⟦\n        Δ ⤍ 01-,\n        ρ ↦ ∅\n      ⟧\n    )\n  )"
+        )
       ]
       (\(desc, sweetExpr, expected) -> it desc (render (toSalty sweetExpr) `shouldBe` expected))
 
