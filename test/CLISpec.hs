@@ -10,7 +10,8 @@ import CLI (runCLI)
 import CLI.Types (CmdException (..), IOFormat (..))
 import Control.Exception
 import Control.Monad (forM_, unless)
-import Data.List (intercalate, isInfixOf, sort)
+import Data.Char (isDigit)
+import Data.List (intercalate, isInfixOf, isPrefixOf, sort)
 import Data.Time.Clock (addUTCTime, getCurrentTime)
 import Data.Time.Clock.POSIX (getPOSIXTime)
 import Data.Version (showVersion)
@@ -480,6 +481,25 @@ spec = do
         testCLISucceeded
           ["rewrite", "--output=xmir"]
           ["<?xml version=\"1.0\" encoding=\"UTF-8\"?>", "<object", "  <o base=\"Φ.y\" name=\"x\"/>"]
+
+    it "emits a real revision and ms in XMIR" $ do
+      (output, _) <- withStdin "[[ x -> Q.y ]]" $ withStdout (runCLI ["rewrite", "--output=xmir"])
+      let attrValue :: String -> String -> String
+          attrValue name text =
+            let needle = name ++ "=\""
+                breakOn :: String -> Maybe String
+                breakOn haystack
+                  | needle `isPrefixOf` haystack = Just (drop (length needle) haystack)
+                  | null haystack = Nothing
+                  | otherwise = breakOn (drop 1 haystack)
+             in case breakOn text of
+                  Just afterNeedle -> takeWhile (/= '"') afterNeedle
+                  Nothing -> ""
+          revision = attrValue "revision" output
+          ms = attrValue "ms" output
+      revision `shouldSatisfy` (\sha -> length sha == 7 && all (`elem` "0123456789abcdef") sha)
+      revision `shouldNotBe` "1234567"
+      ms `shouldSatisfy` (all isDigit)
 
     it "rewrites as LaTeX" $
       withStdin "[[ x_o -> Q.z(y -> 5), q$ -> T, w -> $, ^ -> Q, @ -> 1, y -> \"H$@^M\", L> Fu_nc ]]" $
