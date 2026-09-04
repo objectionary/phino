@@ -10,7 +10,7 @@
 module Sugar (toSalty, withSugarType, withoutRho, SugarType (..), ToSalty) where
 
 import AST
-import Bytes (numToBts, strToBts)
+import Bytes (numToBts, strToBts, unescapeStr)
 import CST
 import Misc (toDouble)
 
@@ -180,7 +180,7 @@ instance ToSalty EXPRESSION where
     saltifyPrimitive
       (toCST (BaseObject "string") (indent + 1, EOL))
       (toCST (BaseObject "bytes") (indent + 2, EOL))
-      (toCST (ExFormation [BiDelta (strToBts str)]) (indent + 2, EOL))
+      (toCST (ExFormation [BiDelta (strToBts (unescapeStr str))]) (indent + 2, EOL))
       tab
       rhos
   toSalty EX_PHI_MEET{..} = EX_PHI_MEET prefix idx (toSalty expr)
