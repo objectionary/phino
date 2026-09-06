@@ -255,8 +255,6 @@ runMatch :: OptsMatch -> IO ()
 runMatch OptsMatch{..} = do
   input <- readInput _inputFile
   expr <- parseInput input PHI
-  setStdGen (mkStdGen _seed)
-  seedTaus expr
   if isNothing _pattern
     then logDebug "The --pattern is not provided, no substitutions are built"
     else do

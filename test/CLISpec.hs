@@ -1625,9 +1625,9 @@ spec = do
       withStdin "[[ x -> Q.x ]]" $
         testCLISucceeded ["match", "--pattern=Q.!t"] ["t >> x"]
 
-    it "accepts --seed flag" $
+    it "does not accept a --seed flag (matching has nothing random)" $
       withStdin "[[ x -> Q.x ]]" $
-        testCLISucceeded ["match", "--seed=3", "--pattern=Q.!t"] ["t >> x"]
+        testCLIFailed ["match", "--seed=3", "--pattern=Q.!t"] ["Invalid option `--seed=3'"]
 
     it "prints many substitutions" $
       withStdin "[[ x -> Q.x, y -> Q.y ]]" $

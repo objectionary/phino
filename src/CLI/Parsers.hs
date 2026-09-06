@@ -385,7 +385,6 @@ matchParser =
             <*> optLogLines
             <*> optSugar
             <*> optLineFormat
-            <*> optSeed
             <*> optional (strOption (long "pattern" <> metavar "EXPRESSION" <> help "Pattern expression to match against"))
             <*> optional (strOption (long "when" <> metavar "CONDITION" <> help "Predicate for matched substitutions"))
             <*> argInputFile
