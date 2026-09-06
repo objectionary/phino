@@ -156,3 +156,19 @@ spec = do
   describe "rejects a numerable expression that is neither an object, a number nor an index meta" $
     it "fails on a bare boolean" $
       (decodeYaml' "true" :: Either Yaml.ParseException Number) `shouldSatisfy` isLeft
+
+  describe "parses a literal number" $
+    it "accepts a whole number" $
+      (decodeYaml' "5" :: Either Yaml.ParseException Number) `shouldSatisfy` (not . isLeft)
+
+  describe "rejects a fractional literal number" $
+    it "fails on a fraction instead of silently rounding it" $
+      (decodeYaml' "2.5" :: Either Yaml.ParseException Number) `shouldSatisfy` isLeft
+
+  describe "rejects an empty 'and' condition" $
+    it "fails on 'and: []'" $
+      (decodeYaml' "and: []" :: Either Yaml.ParseException Condition) `shouldSatisfy` isLeft
+
+  describe "rejects an empty 'or' condition" $
+    it "fails on 'or: []'" $
+      (decodeYaml' "or: []" :: Either Yaml.ParseException Condition) `shouldSatisfy` isLeft
