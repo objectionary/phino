@@ -87,7 +87,7 @@ spec = do
             expr' `shouldBe` defaultHidden
         )
 
-      it "recurses over a multi-element rewrite list, pinning every element to the first fqn" $ do
+      it "recurses over a multi-element rewrite list, pinning every element to the fqns" $ do
         first' <- parseExpressionThrows "[[ x -> ?, y -> ? ]]"
         second' <- parseExpressionThrows "[[ x -> ?, y -> ? ]]"
         fqn <- parseExpressionThrows "Q.x"
@@ -95,3 +95,11 @@ spec = do
         let included = F.include [(first', Just "rule-a"), (second', Just "rule-b")] [fqn, ExRoot]
         map fst included `shouldBe` [expected, expected]
         map snd included `shouldBe` [Just "rule-a", Just "rule-b"]
+
+      it "keeps every matching fqn, not only the first one" $ do
+        expr <- parseExpressionThrows "[[ x -> ?, y -> ? ]]"
+        firstFqn <- parseExpressionThrows "Q.x"
+        secondFqn <- parseExpressionThrows "Q.y"
+        expected <- parseExpressionThrows "[[ x -> ?, y -> ? ]]"
+        let [(expr', _)] = F.include [(expr, Nothing)] [firstFqn, secondFqn]
+        expr' `shouldBe` expected

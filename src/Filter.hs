@@ -4,6 +4,7 @@
 module Filter (include, exclude) where
 
 import AST
+import Data.Maybe (mapMaybe)
 import Misc
 import Rewriter
 
@@ -31,15 +32,22 @@ exclude [] _ = []
 exclude rs [] = rs
 exclude ((expr, maybeRule) : rest) exprs = (exclude' expr exprs, maybeRule) : exclude rest exprs
 
-include' :: Expression -> Expression -> Expression
-include' ex@(ExFormation _) fqn =
-  let def = ExFormation [BiVoid AtRho]
-   in case fqnToAttrs fqn of
-        Just fqn' -> case includedFormation ex fqn' of
-          Just e -> e
-          _ -> def
-        _ -> def
+include' :: Expression -> [Expression] -> Expression
+include' expr fqns = case mapMaybe pick fqns of
+  [] -> ExFormation [BiVoid AtRho]
+  forms -> mergeForms forms
   where
+    def :: Expression
+    def = ExFormation [BiVoid AtRho]
+    pick :: Expression -> Maybe Expression
+    pick fqn = do
+      attrs <- fqnToAttrs fqn
+      includedFormation expr attrs
+    mergeForms :: [Expression] -> Expression
+    mergeForms forms =
+      let bds = concat [bs | ExFormation bs <- forms]
+          bds' = filter (\bd -> attributeFromBinding bd /= Just AtRho) bds
+       in ExFormation (withVoidRho bds')
     includedFormation :: Expression -> [Attribute] -> Maybe Expression
     includedFormation (ExFormation bindings) [at] =
       let bs = [bd | bd <- bindings, attributeFromBinding bd == Just at]
@@ -52,9 +60,8 @@ include' ex@(ExFormation _) fqn =
           | otherwise = includedBindings bs as
         includedBindings _ _ = Nothing
     includedFormation _ _ = Nothing
-include' _ _ = ExFormation [BiVoid AtRho]
 
 include :: [Rewritten] -> [Expression] -> [Rewritten]
 include [] _ = []
 include rs [] = rs
-include ((expr, maybeRule) : rest) (fqn : _) = (include' expr fqn, maybeRule) : include rest [fqn]
+include ((expr, maybeRule) : rest) exprs = (include' expr exprs, maybeRule) : include rest exprs
