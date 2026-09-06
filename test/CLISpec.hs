@@ -306,6 +306,7 @@ spec = do
           , ["rewrite", "--show=Q.x(Q.y)"]
           , ["[ERROR]:", "Only dispatch expression started with Φ (or Q) can be used in --show"]
           )
+        , ("with --show overlapping --hide", ["rewrite", "--show=Q.x", "--hide=Q.x"], ["[ERROR]:", "The --show locator 'Φ.x' is also listed in --hide"])
         , ("with --meet-popularity < 0", ["rewrite", "--meet-popularity=-1"], ["[ERROR]:", "--meet-popularity must be positive"])
         , ("with --meet-popularity > 100", ["rewrite", "--meet-popularity=102"], ["[ERROR]:", "--meet-popularity must be <= 100"])
         ,

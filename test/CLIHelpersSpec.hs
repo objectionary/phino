@@ -12,13 +12,13 @@
 module CLIHelpersSpec (spec) where
 
 import AST (Expression (ExRoot))
-import CLI.Helpers (parseInput, printExpression)
+import CLI.Helpers (getRules, parseInput, printExpression)
 import CLI.Types (IOFormat (LATEX, PHI, XMIR), PrintContext (PrintCtx))
 import Control.Exception (SomeException, try)
 import Control.Monad (forM_)
 import Lining (LineFormat (MULTILINE))
 import Sugar (SugarType (SWEET))
-import Test.Hspec (Spec, describe, it, shouldSatisfy)
+import Test.Hspec (Spec, describe, it, shouldBe, shouldSatisfy)
 import XMIR (defaultXmirContext)
 
 isLeft :: Either e a -> Bool
@@ -50,3 +50,8 @@ spec = do
           result <- try (printExpression (testPrintContext format) ExRoot) :: IO (Either SomeException String)
           result `shouldSatisfy` predicate
       )
+
+  describe "getRules" $
+    it "deduplicates the same --rule file listed twice" $ do
+      rules <- getRules False False ["test-resources/cli/simple.yaml", "test-resources/cli/simple.yaml"]
+      length rules `shouldBe` 1
