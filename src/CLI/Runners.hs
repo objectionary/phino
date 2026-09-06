@@ -54,8 +54,8 @@ runRewrite OptsRewrite{..} = do
   logDebug (printf "Amount of rewriting cycles across all the rules: %d, per rule: %d" _maxCycles _maxDepth)
   let listing = case (rules, _inputFormat, _outputFormat) of
         ([], XMIR, XMIR) -> (\_ -> escapeXML input)
-        ([], _, _) -> const input
-        (_, _, _) -> (\rewritten -> P.printExpression' rewritten (_sugarType, UNICODE, _flat, _margin))
+        ([], _, _) -> (\_ -> escapeXMLText input)
+        (_, _, _) -> (\rewritten -> escapeXMLText (P.printExpression' rewritten (_sugarType, UNICODE, _flat, _margin)))
       xmirCtx = XmirContext _omitListing _omitComments listing
       printCtx = toPrintCtx xmirCtx foc
       exclude = (`F.exclude` excluded)
@@ -220,7 +220,7 @@ runMerge OptsMerge{..} = do
   inputs' <- traverse (readInput . Just) _inputs
   exprs <- traverse (`parseInput` _inputFormat) inputs'
   expr <- merge exprs
-  let listing = const (P.printExpression' expr (_sugarType, UNICODE, _flat, _margin))
+  let listing = const (escapeXMLText (P.printExpression' expr (_sugarType, UNICODE, _flat, _margin)))
       xmirCtx = XmirContext _omitListing _omitComments listing
       printCtx = toPrintCtx xmirCtx
   expr' <- printInFormat printCtx expr

@@ -15,6 +15,7 @@ module XMIR
   , xmirToPhi
   , defaultXmirContext
   , escapeXML
+  , escapeXMLText
   , XmirContext (XmirContext)
   )
 where
@@ -273,6 +274,17 @@ escapeXML = concatMap escapeChar
     escapeChar '\'' = "&apos;"
     escapeChar ch = [ch]
 
+-- Escape just the characters that are mandatory in XML text content ('&' and
+-- '<'); '>' and the quotes are optional there and staying literal keeps the
+-- content readable, e.g. the '->' arrow inside a <listing>.
+escapeXMLText :: String -> String
+escapeXMLText = concatMap escapeChar
+  where
+    escapeChar :: Char -> String
+    escapeChar '&' = "&amp;"
+    escapeChar '<' = "&lt;"
+    escapeChar ch = [ch]
+
 -- Add indentation (2 spaces per level).
 indent :: Int -> TB.Builder
 indent n = TB.fromText (T.replicate n (T.pack "  "))
@@ -322,7 +334,7 @@ printElement indentLevel (Element name attrs nodes) eol
   where
     attrsText =
       mconcat
-        [ TB.fromString " " <> TB.fromText (nameLocalName k) <> TB.fromString "=\"" <> TB.fromText v <> TB.fromString "\""
+        [ TB.fromString " " <> TB.fromText (nameLocalName k) <> TB.fromString "=\"" <> TB.fromText (T.pack (escapeXML (T.unpack v))) <> TB.fromString "\""
         | (k, v) <- M.toList attrs
         ]
 

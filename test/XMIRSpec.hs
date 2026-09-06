@@ -21,7 +21,7 @@ import Files (allPathsIn)
 import GHC.Generics (Generic)
 import Parser (parseExpressionThrows)
 import System.FilePath (makeRelative)
-import Test.Hspec (Spec, anyException, describe, expectationFailure, it, runIO, shouldBe, shouldContain, shouldThrow)
+import Test.Hspec (Spec, anyException, describe, expectationFailure, it, runIO, shouldBe, shouldContain, shouldReturn, shouldThrow)
 import Text.XML (Document (..), Element (..), Node (NodeElement), Prologue (..))
 import Text.XML.Cursor qualified as C
 import XMIR (XmirContext (XmirContext), defaultXmirContext, escapeXML, expressionToXMIR, parseXMIRThrows, printXMIR, toName, xmirToPhi)
@@ -388,6 +388,13 @@ spec = do
       case formationArg of
         [argCur] -> C.attribute (toName "base") argCur `shouldBe` []
         _ -> expectationFailure "expected exactly one α1 argument"
+
+    it "escapes XML special characters in attribute values" $ do
+      expr <- parseExpressionThrows "[[ a&b -> \"<quoted>\" ]]"
+      xmir' <- expressionToXMIR expr defaultXmirContext
+      let out = printXMIR xmir'
+      out `shouldContain` "name=\"a&amp;b\""
+      xmirToPhi xmir' `shouldReturn` expr
 
   describe "XMIR malformed input containing a processing instruction" $
     it "embeds a processing instruction verbatim when rendering the offending element" $ do
