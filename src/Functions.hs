@@ -7,7 +7,7 @@ module Functions (buildTerm, execFunctions) where
 
 import AST
 import Builder
-import Bytes (btsToNum, btsToUnescapedStr, numToBts, strToBts)
+import Bytes (btsSize, btsToNum, btsToUnescapedStr, numToBts, strToBts)
 import Control.Exception (throwIO)
 import Control.Monad (when)
 import qualified Data.ByteString.Char8 as B
@@ -63,7 +63,11 @@ argToString :: Y.ExtraArgument -> Subst -> IO String
 argToString arg subst = argToBytes arg subst <&> btsToUnescapedStr
 
 argToNumber :: Y.ExtraArgument -> Subst -> IO Double
-argToNumber arg subst = argToBytes arg subst <&> either toDouble id . btsToNum
+argToNumber arg subst = do
+  bts <- argToBytes arg subst
+  case btsSize bts of
+    8 -> pure (either toDouble id (btsToNum bts))
+    _ -> throwIO (userError (printf "Expected 8 bytes for a number, got %d" (btsSize bts)))
 
 _contextualize :: BuildTermMethod
 _contextualize [Y.ArgExpression expr, Y.ArgExpression context] subst = do

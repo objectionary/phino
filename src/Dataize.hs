@@ -457,10 +457,12 @@ _dataize expr univ state ctx@DataizeContext{_buildTerm = buildTerm} = case univ 
 
 -- A number atom only operates on numeric data. Empty bytes — a genuine
 -- zero-length byte array ⟦Δ ⤍ --⟧ — carry no number, so the operand is rejected
--- and the atom yields ⊥.
+-- and the atom yields ⊥. So does any byte array whose length is not 8: 'btsToNum'
+-- throws on such arrays, so the size is checked up front, exactly like 'asInt'.
 asNumber :: Bytes -> Maybe Double
-asNumber BtEmpty = Nothing
-asNumber bts = Just (either toDouble id (btsToNum bts))
+asNumber bts
+  | btsSize bts /= 8 = Nothing
+  | otherwise = Just (either toDouble id (btsToNum bts))
 
 -- An operand that EO reads as a Java 'int' — a shift distance or a slice bound.
 -- 'Expect.at(…).that(Integer)' turns down anything but a whole number inside the

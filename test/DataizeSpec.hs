@@ -752,6 +752,14 @@ spec = do
       , ("cannot divide by a non-numeric divisor", "5.div( " ++ raw "--" ++ " )")
       , ("cannot compare against a non-numeric threshold", "5.gt( " ++ raw "--" ++ " )")
       , ("cannot test equality against a non-numeric operand", "5.eq( " ++ raw "--" ++ ", 6 )")
+      , -- A number atom also rejects a non-empty operand whose byte array is not
+        -- 8 bytes long (e.g. 2 or 5 bytes): such an array carries no number, and
+        -- the atom must yield ⊥ instead of crashing on 'btsToNum' (issue #1072).
+        ("cannot add a 5-byte operand", "5.plus( " ++ raw "68-65-6C-6C-6F" ++ " )")
+      , ("cannot multiply by a 2-byte operand", "5.times( " ++ raw "20-1F" ++ " )")
+      , ("cannot divide by a 3-byte divisor", "5.div( " ++ raw "CA-FE-BE" ++ " )")
+      , ("cannot compare against a 4-byte threshold", "5.gt( " ++ raw "FF-FF-FF-FF" ++ " )")
+      , ("cannot test equality against a 6-byte operand", "5.eq( " ++ raw "CA-FE-BE-20-1F-EE" ++ ", 6 )")
       , -- 'right' rejects a shift distance that is not a plain 8-byte integer;
         -- empty bytes carry no such integer, so the shift atom is stuck too.
         ("cannot shift right by a non-integer distance", raw "C0-43-00-00-00-00-00-00" ++ ".right( " ++ raw "--" ++ " )")
