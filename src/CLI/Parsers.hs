@@ -272,6 +272,7 @@ explainParser =
             <*> optDataize
             <*> optContextualize
             <*> optShuffle
+            <*> optSeed
             <*> optTarget
         )
 

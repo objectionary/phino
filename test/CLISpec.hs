@@ -1291,6 +1291,23 @@ spec = do
         ["explain", "--rule=resources/normalize/copy.yaml", "--rule=resources/normalize/alpha.yaml"]
         ["\\phinoNormalizationRule{copy}", "\\phinoNormalizationRule{alpha}"]
 
+    it "reproduces the same shuffle order for the same --seed" $ do
+      let args =
+            [ "explain"
+            , "--shuffle"
+            , "--seed=42"
+            , rule "swap-a.yaml"
+            , rule "swap-b.yaml"
+            ]
+      (firstRun, _) <- withStdout (runCLI args)
+      (secondRun, _) <- withStdout (runCLI args)
+      firstRun `shouldBe` secondRun
+
+    it "accepts --seed flag" $
+      testCLISucceeded
+        ["explain", "--seed=7", "--normalize"]
+        ["\\phinoNormalizationRule{alpha}"]
+
     it "explains normalization rules" $
       testCLISucceeded
         ["explain", "--normalize"]

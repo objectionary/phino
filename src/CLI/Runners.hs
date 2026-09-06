@@ -199,6 +199,7 @@ runDataize OptsDataize{..} = do
 
 runExplain :: OptsExplain -> IO ()
 runExplain OptsExplain{..} = do
+  setStdGen (mkStdGen _seed)
   validateOpts
   explained >>= printOut _targetFile
   where
