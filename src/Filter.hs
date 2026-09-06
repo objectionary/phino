@@ -34,7 +34,7 @@ exclude ((expr, maybeRule) : rest) exprs = (exclude' expr exprs, maybeRule) : ex
 
 include' :: Expression -> [Expression] -> Expression
 include' expr fqns = case mapMaybe pick fqns of
-  [] -> ExFormation [BiVoid AtRho]
+  [] -> def
   forms -> mergeForms forms
   where
     def :: Expression
