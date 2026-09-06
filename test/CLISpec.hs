@@ -215,6 +215,12 @@ spec = do
           , ["it's expected rewriting cycles to be in range [1], but rewriting has already reached 2"]
           )
         , ("when --in-place is used without input file", "[[ ]]", ["rewrite", "--in-place"], ["--in-place requires an input file"])
+        ,
+          ( "with --output=xmir on a non-top-level expression"
+          , "⟦ x ↦ 1, ρ ↦ 2 ⟧"
+          , ["rewrite", "--output=xmir"]
+          , ["[ERROR]:", "its top level must be a single binding followed by ρ ↦ ∅"]
+          )
         ]
         (\(desc, input, args, expected) -> it desc (withStdin input (testCLIFailed args expected)))
 
