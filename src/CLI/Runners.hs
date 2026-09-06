@@ -27,6 +27,7 @@ import Margin (defaultMargin)
 import Merge (merge)
 import Parser (parseExpressionThrows)
 import qualified Printer as P
+import qualified Random as R
 import Rewriter
 import Rule (RuleContext (..), matchExpressionWithRule)
 import System.Directory (doesFileExist, getModificationTime)
@@ -204,15 +205,20 @@ runExplain OptsExplain{..} = do
   where
     explained :: IO String
     explained
-      | _morph = pure (explainMorphRules Y.morphingRules)
-      | _dataize = pure (explainDataizeRules Y.dataizationRules)
-      | _contextualize = pure (explainContextualizeRules Y.contextualizationRules)
+      | _morph = explainMorphRules <$> shuffled Y.morphingRules
+      | _dataize = explainDataizeRules <$> shuffled Y.dataizationRules
+      | _contextualize = explainContextualizeRules <$> shuffled Y.contextualizationRules
       | otherwise = explainRules <$> getRules _normalize _shuffle _rules
+    shuffled :: [a] -> IO [a]
+    shuffled xs
+      | _shuffle = R.shuffle xs
+      | otherwise = pure xs
     validateOpts :: IO ()
     validateOpts = do
-      let selected = length (filter id [not (null _rules), _normalize, _morph, _dataize, _contextualize])
-      when (selected == 0) (invalidCLIArguments "Either --rule, --normalize, --morph, --dataize or --contextualize must be specified")
-      when (selected > 1) (invalidCLIArguments "Only one of --rule, --normalize, --morph, --dataize or --contextualize can be specified")
+      let selected = length (filter id [_morph, _dataize, _contextualize])
+      when (selected == 0 && null _rules && not _normalize) (invalidCLIArguments "Either --rule, --normalize, --morph, --dataize or --contextualize must be specified")
+      when (selected > 1) (invalidCLIArguments "Only one of --morph, --dataize or --contextualize can be specified")
+      when (selected == 1 && not (null _rules)) (invalidCLIArguments "The --rule option cannot be used together with --morph, --dataize or --contextualize")
 
 runMerge :: OptsMerge -> IO ()
 runMerge OptsMerge{..} = do
