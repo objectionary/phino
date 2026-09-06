@@ -10,16 +10,32 @@ module CLI (runCLI) where
 import CLI.Parsers
 import CLI.Runners
 import CLI.Types
-import Control.Exception.Base (Exception (displayException), SomeException, fromException, handle, throwIO)
+import Control.Exception.Base (SomeException, fromException, handle, throwIO)
 import Data.Version (showVersion)
 import Logger
 import Options.Applicative
 import Paths_phino (version)
-import System.Exit (ExitCode (..), exitFailure)
+import System.Exit (ExitCode (..), exitFailure, exitWith)
+import System.IO (hPutStrLn, stderr)
 
 runCLI :: [String] -> IO ()
 runCLI args = handle handler $ do
-  CliArgs{_pin, _command} <- handleParseResult (execParserPure defaultPrefs parserInfo args)
+  let parsed = execParserPure defaultPrefs parserInfo args
+  CliArgs{_pin, _command} <- case parsed of
+    Success opts -> pure opts
+    Failure failure -> do
+      let (msg, code) = renderFailure failure "phino"
+      case code of
+        ExitSuccess -> do
+          putStrLn msg -- --version/--help output as-is
+          exitWith code
+        _ -> do
+          -- Keep the full optparse message (including the Usage/synopsis
+          -- block that follows a parse error), but without the GHC
+          -- HasCallStack backtrace; prefix just the first line with [ERROR]:.
+          hPutStrLn stderr (prefixFirstLine "[ERROR]: " msg)
+          exitWith code
+    CompletionInvoked _ -> handleParseResult parsed
   checkPin _pin
   setLogger _command
   case _command of
@@ -30,11 +46,15 @@ runCLI args = handle handler $ do
     CmdMerge opts -> runMerge opts
     CmdMatch opts -> runMatch opts
   where
+    prefixFirstLine :: String -> String -> String
+    prefixFirstLine _ "" = "Failure"
+    prefixFirstLine prefix msg = prefix ++ msg
     handler :: SomeException -> IO ()
     handler e = case fromException e of
       Just ExitSuccess -> pure () -- prevent printing error on --version etc.
+      Just (ExitFailure _) -> exitFailure -- already logged by the Failure branch above
       _ -> do
-        logError (displayException e)
+        logError (show e)
         exitFailure
     setLogger :: Command -> IO ()
     setLogger cmd =
