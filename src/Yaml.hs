@@ -77,7 +77,9 @@ instance FromJSON Number where
         [ Length <$> o .: "length"
         , Domain <$> o .: "domain"
         ]
-    Number num -> pure (Literal (round num))
+    Number num
+      | toRational (round num :: Integer) == toRational num -> pure (Literal (round num))
+      | otherwise -> fail (printf "Expected an integer, got a fractional number %s" (show num))
     String txt -> case parseIndex (unpack txt) of
       Right mt -> pure (MetaIndex mt)
       Left err -> fail err
@@ -99,8 +101,16 @@ instance FromJSON Condition where
       ( \v -> do
           validateYamlObject v ["and", "or", "not", "nf", "absolute", "eq", "gt", "in", "matches", "part-of", "disjoint", "formation"]
           asum
-            [ And <$> v .: "and"
-            , Or <$> v .: "or"
+            [ do
+                conds <- v .: "and"
+                if null conds
+                  then fail "The 'and' condition requires at least one element"
+                  else pure (And conds)
+            , do
+                conds <- v .: "or"
+                if null conds
+                  then fail "The 'or' condition requires at least one element"
+                  else pure (Or conds)
             , Not <$> v .: "not"
             , NF <$> v .: "nf"
             , Absolute <$> v .: "absolute"
