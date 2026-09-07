@@ -71,6 +71,7 @@ runRewrite OptsRewrite{..} = do
     validateOpts = do
       when (_inPlace && isNothing _inputFile) (invalidCLIArguments "The option --in-place requires an input file")
       when (_inPlace && isJust _targetFile) (invalidCLIArguments "The options --in-place and --target cannot be used together")
+      when (_inPlace && _outputFormat /= PHI) (invalidCLIArguments "The option --in-place can only be used together with --output=phi")
       when (_update && _inPlace) (invalidCLIArguments "The options --update and --in-place cannot be used together")
       when (_update && isNothing _targetFile) (invalidCLIArguments "The option --update requires --target")
       when (_update && isNothing _inputFile) (invalidCLIArguments "The option --update requires an input file")

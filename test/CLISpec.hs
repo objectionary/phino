@@ -226,6 +226,14 @@ spec = do
             ["rewrite", "--in-place", "--target=output.phi", path]
             ["--in-place and --target cannot be used together"]
 
+      it "fails when --in-place is used with a non-phi output format" $
+        withTempFile "inplaceXXXXXX.phi" $ \(path, h) -> do
+          hPutStr h "[[ ]]"
+          hClose h
+          testCLIFailed
+            ["rewrite", "--in-place", "--output=latex", path]
+            ["--in-place can only be used together with --output=phi"]
+
       forM_
         [ ("when --update is used without --target", "[[ ]]", ["rewrite", "--update"], ["--update requires --target"])
         ,
