@@ -1564,7 +1564,17 @@ spec = do
     it "fails when more than one rule set is specified" $
       testCLIFailed
         ["explain", "--morph", "--dataize"]
-        ["Only one of --rule, --normalize, --morph, --dataize or --contextualize can be specified"]
+        ["Only one of --morph, --dataize or --contextualize can be specified"]
+
+    it "allows --normalize together with --rule" $
+      testCLISucceeded
+        ["explain", "--normalize", "--rule=resources/normalize/copy.yaml"]
+        ["\\phinoNormalizationRule{copy}"]
+
+    it "allows --shuffle together with --morph" $
+      testCLISucceeded
+        ["explain", "--morph", "--shuffle"]
+        ["\\begin{phinoMorphingInference}"]
 
     it "writes to target file" $
       bracket
