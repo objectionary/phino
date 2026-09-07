@@ -487,6 +487,14 @@ bitwise op self univ state ctx = do
   (rho, rstate) <- _dataize (ExDispatch self AtRho) univ bstate ctx
   pure (maybe ExTermination dataBytes (op rho b), rstate)
 
+-- The 12 primitive λ-atoms every EO data operation reduces to. phino mirrors
+-- EO's set exactly: bytes {and, concat, eq, not, or, right, size, slice} and
+-- number {div, gt, plus, times}. There is deliberately no 'L_number_eq': EO's
+-- 'number.eq' (eo-runtime/src/main/eo/number/eq.eo) is pure EO — a formation
+-- composing 'is-nan', 'or', 'and' and 'L_bytes_eq', with no λ of its own — so
+-- nothing is left for a phino atom to implement. Names like 'L_bool_if' or
+-- 'L_string_slice' must stay unimplemented too: the EO lowering declares them
+-- precisely so that '--partial' parks on them and renders the call to Java.
 atom :: T.Text -> Expression -> Expression -> State -> DataizeContext -> IO (Expression, State)
 atom "L_number_plus" self univ state ctx = do
   (left, lstate) <- _dataize (ExDispatch self (AtLabel "x")) univ state ctx
@@ -499,15 +507,6 @@ atom "L_number_times" self univ state ctx = do
   (right, rstate) <- _dataize (ExDispatch self AtRho) univ lstate ctx
   case (asNumber left, asNumber right) of
     (Just first, Just second) -> pure (DataNumber (numToBts (first * second)), rstate)
-    _ -> pure (ExTermination, rstate)
-atom "L_number_eq" self univ state ctx = do
-  (x, lstate) <- _dataize (ExDispatch self (AtLabel "x")) univ state ctx
-  (rho, rstate) <- _dataize (ExDispatch self AtRho) univ lstate ctx
-  case (asNumber x, asNumber rho) of
-    (Just first, Just self') ->
-      if self' == first
-        then pure (DataNumber (numToBts first), rstate)
-        else pure (ExDispatch self (AtLabel "y"), rstate)
     _ -> pure (ExTermination, rstate)
 atom "L_number_div" self univ state ctx = do
   (x, xstate) <- _dataize (ExDispatch self (AtLabel "x")) univ state ctx
