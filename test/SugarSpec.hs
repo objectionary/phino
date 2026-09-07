@@ -364,6 +364,30 @@ spec = do
                 RSB
             )
         )
+      ,
+        ( "PA_FORMATION with void params and a meta tail carries the meta binding through"
+        , PA_FORMATION
+            (AT_LABEL "x")
+            [AT_LABEL "a"]
+            ARROW
+            (EX_FORMATION LSB EOL (TAB 2) (BI_META (META NO_EXCL B "B") (BDS_EMPTY (TAB 2)) (TAB 2)) EOL (TAB 1) RSB)
+        , PA_TAU
+            (AT_LABEL "x")
+            ARROW
+            ( EX_FORMATION
+                LSB
+                EOL
+                (TAB 2)
+                ( BI_PAIR
+                    (PA_VOID (AT_LABEL "a") ARROW EMPTY)
+                    (BDS_META EOL (TAB 2) (META NO_EXCL B "B") (BDS_EMPTY (TAB 2)))
+                    (TAB 2)
+                )
+                EOL
+                (TAB 1)
+                RSB
+            )
+        )
       , ("default clause leaves a PA_VOID pair untouched", PA_VOID (AT_LABEL "x") ARROW QUESTION, PA_VOID (AT_LABEL "x") ARROW QUESTION)
       ]
       (\(desc, sweet, salty) -> it desc (toSalty sweet `shouldBe` salty))

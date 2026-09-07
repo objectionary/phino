@@ -260,7 +260,7 @@ instance ToSalty PAIR where
       joinToBindings :: [ATTRIBUTE] -> BINDING -> BINDINGS
       joinToBindings [] BI_EMPTY{..} = BDS_EMPTY tab
       joinToBindings [] BI_PAIR{..} = BDS_PAIR eol tab pair bindings
-      joinToBindings [] BI_META{} = error "BI_META unexpected in joinToBindings"
+      joinToBindings [] BI_META{..} = BDS_META eol tab meta bindings
       joinToBindings (attr : rest) bd = BDS_PAIR eol tab (PA_VOID attr arrow EMPTY) (joinToBindings rest bd)
   toSalty pair = pair
 
