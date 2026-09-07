@@ -120,6 +120,7 @@ data OptsExplain = OptsExplain
   , _dataize :: Bool
   , _contextualize :: Bool
   , _shuffle :: Bool
+  , _seed :: Int
   , _targetFile :: Maybe FilePath
   }
 
