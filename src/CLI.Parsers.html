@@ -19,22 +19,22 @@
 </span><span id="line-19"></span><span>
 </span><span id="line-20"></span><span class="annot"><a href="CLI.Parsers.html#validateIntOption"><span class="hs-identifier hs-type">validateIntOption</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/ptprs-pplctv-0.19.0.0-800394bc/share/doc/html/src/Options.Applicative.Types.html#ReadM"><span class="hs-identifier hs-type">ReadM</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span>
 </span><span id="line-21"></span><span id="validateIntOption"><span class="annot"><span class="annottext">validateIntOption :: (Int -&gt; Bool) -&gt; String -&gt; Int -&gt; ReadM Int
-</span><a href="CLI.Parsers.html#validateIntOption"><span class="hs-identifier hs-var hs-var">validateIntOption</span></a></span></span><span> </span><span id="local-6989586621679270070"><span class="annot"><span class="annottext">Int -&gt; Bool
-</span><a href="#local-6989586621679270070"><span class="hs-identifier hs-var">cmp</span></a></span></span><span> </span><span id="local-6989586621679270071"><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679270071"><span class="hs-identifier hs-var">msg</span></a></span></span><span> </span><span id="local-6989586621679270072"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679270072"><span class="hs-identifier hs-var">num</span></a></span></span><span>
+</span><a href="CLI.Parsers.html#validateIntOption"><span class="hs-identifier hs-var hs-var">validateIntOption</span></a></span></span><span> </span><span id="local-6989586621679270114"><span class="annot"><span class="annottext">Int -&gt; Bool
+</span><a href="#local-6989586621679270114"><span class="hs-identifier hs-var">cmp</span></a></span></span><span> </span><span id="local-6989586621679270115"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679270115"><span class="hs-identifier hs-var">msg</span></a></span></span><span> </span><span id="local-6989586621679270116"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679270116"><span class="hs-identifier hs-var">num</span></a></span></span><span>
 </span><span id="line-22"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Bool
-</span><a href="#local-6989586621679270070"><span class="hs-identifier hs-var">cmp</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679270072"><span class="hs-identifier hs-var">num</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; ReadM Int
+</span><a href="#local-6989586621679270114"><span class="hs-identifier hs-var">cmp</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679270116"><span class="hs-identifier hs-var">num</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; ReadM Int
 forall a. a -&gt; ReadM a
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679270072"><span class="hs-identifier hs-var">num</span></a></span><span>
+</span><a href="#local-6989586621679270116"><span class="hs-identifier hs-var">num</span></a></span><span>
 </span><span id="line-23"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
 </span><span class="hs-identifier hs-var">otherwise</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; ReadM Int
 forall a. String -&gt; ReadM a
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/ptprs-pplctv-0.19.0.0-800394bc/share/doc/html/src/Options.Applicative.Types.html#readerError"><span class="hs-identifier hs-var">readerError</span></a></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679270071"><span class="hs-identifier hs-var">msg</span></a></span><span>
+</span><a href="#local-6989586621679270115"><span class="hs-identifier hs-var">msg</span></a></span><span>
 </span><span id="line-24"></span><span>
 </span><span id="line-25"></span><span class="annot"><a href="CLI.Parsers.html#optLogLevel"><span class="hs-identifier hs-type">optLogLevel</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/ptprs-pplctv-0.19.0.0-800394bc/share/doc/html/src/Options.Applicative.Types.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="annot"><a href="Logger.html#LogLevel"><span class="hs-identifier hs-type">LogLevel</span></a></span><span>
 </span><span id="line-26"></span><span id="optLogLevel"><span class="annot"><span class="annottext">optLogLevel :: Parser LogLevel
@@ -43,7 +43,7 @@ forall a. String -&gt; ReadM a
 forall a. ReadM a -&gt; Mod OptionFields a -&gt; Parser a
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/ptprs-pplctv-0.19.0.0-800394bc/share/doc/html/src/Options.Applicative.Builder.html#option"><span class="hs-identifier hs-var">option</span></a></span><span>
 </span><span id="line-28"></span><span>    </span><span class="annot"><span class="annottext">ReadM LogLevel
-</span><a href="#local-6989586621679270076"><span class="hs-identifier hs-var">parseLogLevel</span></a></span><span>
+</span><a href="#local-6989586621679270120"><span class="hs-identifier hs-var">parseLogLevel</span></a></span><span>
 </span><span id="line-29"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="annottext">String -&gt; Mod OptionFields LogLevel
 forall (f :: * -&gt; *) a. HasName f =&gt; String -&gt; Mod f a
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/ptprs-pplctv-0.19.0.0-800394bc/share/doc/html/src/Options.Applicative.Builder.html#long"><span class="hs-identifier hs-var">long</span></a></span><span> </span><span class="annot"><span class="annottext">String
@@ -92,19 +92,19 @@ forall a (f :: * -&gt; *). Show a =&gt; Mod f a
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/ptprs-pplctv-0.19.0.0-800394bc/share/doc/html/src/Options.Applicative.Builder.html#showDefault"><span class="hs-identifier hs-var">showDefault</span></a></span><span>
 </span><span id="line-34"></span><span>    </span><span class="hs-special">)</span><span>
 </span><span id="line-35"></span><span>  </span><span class="hs-keyword">where</span><span>
-</span><span id="line-36"></span><span>    </span><span class="annot"><a href="#local-6989586621679270076"><span class="hs-identifier hs-type">parseLogLevel</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/ptprs-pplctv-0.19.0.0-800394bc/share/doc/html/src/Options.Applicative.Types.html#ReadM"><span class="hs-identifier hs-type">ReadM</span></a></span><span> </span><span class="annot"><a href="Logger.html#LogLevel"><span class="hs-identifier hs-type">LogLevel</span></a></span><span>
-</span><span id="line-37"></span><span>    </span><span id="local-6989586621679270076"><span class="annot"><span class="annottext">parseLogLevel :: ReadM LogLevel
-</span><a href="#local-6989586621679270076"><span class="hs-identifier hs-var hs-var">parseLogLevel</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(String -&gt; Either String LogLevel) -&gt; ReadM LogLevel
+</span><span id="line-36"></span><span>    </span><span class="annot"><a href="#local-6989586621679270120"><span class="hs-identifier hs-type">parseLogLevel</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/ptprs-pplctv-0.19.0.0-800394bc/share/doc/html/src/Options.Applicative.Types.html#ReadM"><span class="hs-identifier hs-type">ReadM</span></a></span><span> </span><span class="annot"><a href="Logger.html#LogLevel"><span class="hs-identifier hs-type">LogLevel</span></a></span><span>
+</span><span id="line-37"></span><span>    </span><span id="local-6989586621679270120"><span class="annot"><span class="annottext">parseLogLevel :: ReadM LogLevel
+</span><a href="#local-6989586621679270120"><span class="hs-identifier hs-var hs-var">parseLogLevel</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(String -&gt; Either String LogLevel) -&gt; ReadM LogLevel
 forall a. (String -&gt; Either String a) -&gt; ReadM a
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/ptprs-pplctv-0.19.0.0-800394bc/share/doc/html/src/Options.Applicative.Builder.html#eitherReader"><span class="hs-identifier hs-var">eitherReader</span></a></span><span> </span><span class="annot"><span class="annottext">((String -&gt; Either String LogLevel) -&gt; ReadM LogLevel)
 -&gt; (String -&gt; Either String LogLevel) -&gt; ReadM LogLevel
 forall a b. (a -&gt; b) -&gt; a -&gt; b
-</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679270087"><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679270087"><span class="hs-identifier hs-var">lvl</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">(Char -&gt; Char) -&gt; String -&gt; String
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679270131"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679270131"><span class="hs-identifier hs-var">lvl</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">(Char -&gt; Char) -&gt; String -&gt; String
 forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
 </span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="annot"><span class="annottext">Char -&gt; Char
 </span><span class="hs-identifier hs-var">toUpper</span></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679270087"><span class="hs-identifier hs-var">lvl</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><a href="#local-6989586621679270131"><span class="hs-identifier hs-var">lvl</span></a></span><span> </span><span class="hs-keyword">of</span><span>
 </span><span id="line-38"></span><span>      </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;DEBUG&quot;</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">LogLevel -&gt; Either String LogLevel
 forall a b. b -&gt; Either a b
@@ -135,7 +135,7 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-string">&quot;unknown log-level: &quot;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679270087"><span class="hs-identifier hs-var">lvl</span></a></span><span>
+</span><a href="#local-6989586621679270131"><span class="hs-identifier hs-var">lvl</span></a></span><span>
 </span><span id="line-43"></span><span>
 </span><span id="line-44"></span><span class="annot"><a href="CLI.Parsers.html#optLogLines"><span class="hs-identifier hs-type">optLogLines</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/ptprs-pplctv-0.19.0.0-800394bc/share/doc/html/src/Options.Applicative.Types.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span>
 </span><span id="line-45"></span><span id="optLogLines"><span class="annot"><span class="annottext">optLogLines :: Parser Int
@@ -242,19 +242,19 @@ forall a (f :: * -&gt; *). Show a =&gt; Mod f a
 </span><span id="line-55"></span><span>
 </span><span id="line-56"></span><span class="annot"><a href="CLI.Parsers.html#parseIOFormat"><span class="hs-identifier hs-type">parseIOFormat</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/ptprs-pplctv-0.19.0.0-800394bc/share/doc/html/src/Options.Applicative.Types.html#ReadM"><span class="hs-identifier hs-type">ReadM</span></a></span><span> </span><span class="annot"><a href="CLI.Types.html#IOFormat"><span class="hs-identifier hs-type">IOFormat</span></a></span><span>
 </span><span id="line-57"></span><span id="parseIOFormat"><span class="annot"><span class="annottext">parseIOFormat :: String -&gt; ReadM IOFormat
-</span><a href="CLI.Parsers.html#parseIOFormat"><span class="hs-identifier hs-var hs-var">parseIOFormat</span></a></span></span><span> </span><span id="local-6989586621679270097"><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679270097"><span class="hs-identifier hs-var">type'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(String -&gt; Either String IOFormat) -&gt; ReadM IOFormat
+</span><a href="CLI.Parsers.html#parseIOFormat"><span class="hs-identifier hs-var hs-var">parseIOFormat</span></a></span></span><span> </span><span id="local-6989586621679270141"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679270141"><span class="hs-identifier hs-var">type'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(String -&gt; Either String IOFormat) -&gt; ReadM IOFormat
 forall a. (String -&gt; Either String a) -&gt; ReadM a
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/ptprs-pplctv-0.19.0.0-800394bc/share/doc/html/src/Options.Applicative.Builder.html#eitherReader"><span class="hs-identifier hs-var">eitherReader</span></a></span><span> </span><span class="annot"><span class="annottext">((String -&gt; Either String IOFormat) -&gt; ReadM IOFormat)
 -&gt; (String -&gt; Either String IOFormat) -&gt; ReadM IOFormat
 forall a b. (a -&gt; b) -&gt; a -&gt; b
-</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679270098"><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679270098"><span class="hs-identifier hs-var">format</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Char -&gt; Char) -&gt; String -&gt; String
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679270142"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679270142"><span class="hs-identifier hs-var">format</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Char -&gt; Char) -&gt; String -&gt; String
 forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
 </span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="annot"><span class="annottext">Char -&gt; Char
 </span><span class="hs-identifier hs-var">toLower</span></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679270098"><span class="hs-identifier hs-var">format</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679270097"><span class="hs-identifier hs-var">type'</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">of</span><span>
+</span><a href="#local-6989586621679270142"><span class="hs-identifier hs-var">format</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679270141"><span class="hs-identifier hs-var">type'</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">of</span><span>
 </span><span id="line-58"></span><span>  </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;xmir&quot;</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">IOFormat -&gt; Either String IOFormat
@@ -280,8 +280,8 @@ forall a b. a -&gt; Either a b
 forall r. PrintfType r =&gt; String -&gt; r
 </span><span class="hs-identifier hs-var">printf</span></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;The value '%s' can't be used for '--%s' option, use --help to check possible values&quot;</span></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679270098"><span class="hs-identifier hs-var">format</span></a></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679270097"><span class="hs-identifier hs-var">type'</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679270142"><span class="hs-identifier hs-var">format</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679270141"><span class="hs-identifier hs-var">type'</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-62"></span><span>
 </span><span id="line-63"></span><span class="annot"><a href="CLI.Parsers.html#optOutputFormat"><span class="hs-identifier hs-type">optOutputFormat</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/ptprs-pplctv-0.19.0.0-800394bc/share/doc/html/src/Options.Applicative.Types.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="annot"><a href="CLI.Types.html#IOFormat"><span class="hs-identifier hs-type">IOFormat</span></a></span><span>
 </span><span id="line-64"></span><span id="optOutputFormat"><span class="annot"><span class="annottext">optOutputFormat :: Parser IOFormat
@@ -1304,6 +1304,7 @@ forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 -&gt; Bool
 -&gt; Bool
 -&gt; Bool
+-&gt; Int
 -&gt; Maybe String
 -&gt; OptsExplain
 </span><a href="CLI.Types.html#OptsExplain"><span class="hs-identifier hs-var">OptsExplain</span></a></span><span>
@@ -1315,6 +1316,7 @@ forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
  -&gt; Bool
  -&gt; Bool
  -&gt; Bool
+ -&gt; Int
  -&gt; Maybe String
  -&gt; OptsExplain)
 -&gt; Parser LogLevel
@@ -1326,6 +1328,7 @@ forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
       -&gt; Bool
       -&gt; Bool
       -&gt; Bool
+      -&gt; Int
       -&gt; Maybe String
       -&gt; OptsExplain)
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
@@ -1339,6 +1342,7 @@ forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
    -&gt; Bool
    -&gt; Bool
    -&gt; Bool
+   -&gt; Int
    -&gt; Maybe String
    -&gt; OptsExplain)
 -&gt; Parser Int
@@ -1349,6 +1353,7 @@ forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
       -&gt; Bool
       -&gt; Bool
       -&gt; Bool
+      -&gt; Int
       -&gt; Maybe String
       -&gt; OptsExplain)
 forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
@@ -1362,67 +1367,90 @@ forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f
    -&gt; Bool
    -&gt; Bool
    -&gt; Bool
+   -&gt; Int
    -&gt; Maybe String
    -&gt; OptsExplain)
 -&gt; Parser [String]
 -&gt; Parser
      (Bool
-      -&gt; Bool -&gt; Bool -&gt; Bool -&gt; Bool -&gt; Maybe String -&gt; OptsExplain)
+      -&gt; Bool
+      -&gt; Bool
+      -&gt; Bool
+      -&gt; Bool
+      -&gt; Int
+      -&gt; Maybe String
+      -&gt; OptsExplain)
 forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser [String]
 </span><a href="CLI.Parsers.html#optRule"><span class="hs-identifier hs-var">optRule</span></a></span><span>
 </span><span id="line-270"></span><span>            </span><span class="annot"><span class="annottext">Parser
   (Bool
-   -&gt; Bool -&gt; Bool -&gt; Bool -&gt; Bool -&gt; Maybe String -&gt; OptsExplain)
+   -&gt; Bool
+   -&gt; Bool
+   -&gt; Bool
+   -&gt; Bool
+   -&gt; Int
+   -&gt; Maybe String
+   -&gt; OptsExplain)
 -&gt; Parser Bool
 -&gt; Parser
-     (Bool -&gt; Bool -&gt; Bool -&gt; Bool -&gt; Maybe String -&gt; OptsExplain)
+     (Bool
+      -&gt; Bool -&gt; Bool -&gt; Bool -&gt; Int -&gt; Maybe String -&gt; OptsExplain)
 forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser Bool
 </span><a href="CLI.Parsers.html#optNormalize"><span class="hs-identifier hs-var">optNormalize</span></a></span><span>
 </span><span id="line-271"></span><span>            </span><span class="annot"><span class="annottext">Parser
-  (Bool -&gt; Bool -&gt; Bool -&gt; Bool -&gt; Maybe String -&gt; OptsExplain)
+  (Bool
+   -&gt; Bool -&gt; Bool -&gt; Bool -&gt; Int -&gt; Maybe String -&gt; OptsExplain)
 -&gt; Parser Bool
--&gt; Parser (Bool -&gt; Bool -&gt; Bool -&gt; Maybe String -&gt; OptsExplain)
+-&gt; Parser
+     (Bool -&gt; Bool -&gt; Bool -&gt; Int -&gt; Maybe String -&gt; OptsExplain)
 forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser Bool
 </span><a href="CLI.Parsers.html#optMorph"><span class="hs-identifier hs-var">optMorph</span></a></span><span>
-</span><span id="line-272"></span><span>            </span><span class="annot"><span class="annottext">Parser (Bool -&gt; Bool -&gt; Bool -&gt; Maybe String -&gt; OptsExplain)
+</span><span id="line-272"></span><span>            </span><span class="annot"><span class="annottext">Parser (Bool -&gt; Bool -&gt; Bool -&gt; Int -&gt; Maybe String -&gt; OptsExplain)
 -&gt; Parser Bool
--&gt; Parser (Bool -&gt; Bool -&gt; Maybe String -&gt; OptsExplain)
+-&gt; Parser (Bool -&gt; Bool -&gt; Int -&gt; Maybe String -&gt; OptsExplain)
 forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser Bool
 </span><a href="CLI.Parsers.html#optDataize"><span class="hs-identifier hs-var">optDataize</span></a></span><span>
-</span><span id="line-273"></span><span>            </span><span class="annot"><span class="annottext">Parser (Bool -&gt; Bool -&gt; Maybe String -&gt; OptsExplain)
--&gt; Parser Bool -&gt; Parser (Bool -&gt; Maybe String -&gt; OptsExplain)
+</span><span id="line-273"></span><span>            </span><span class="annot"><span class="annottext">Parser (Bool -&gt; Bool -&gt; Int -&gt; Maybe String -&gt; OptsExplain)
+-&gt; Parser Bool
+-&gt; Parser (Bool -&gt; Int -&gt; Maybe String -&gt; OptsExplain)
 forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser Bool
 </span><a href="CLI.Parsers.html#optContextualize"><span class="hs-identifier hs-var">optContextualize</span></a></span><span>
-</span><span id="line-274"></span><span>            </span><span class="annot"><span class="annottext">Parser (Bool -&gt; Maybe String -&gt; OptsExplain)
--&gt; Parser Bool -&gt; Parser (Maybe String -&gt; OptsExplain)
+</span><span id="line-274"></span><span>            </span><span class="annot"><span class="annottext">Parser (Bool -&gt; Int -&gt; Maybe String -&gt; OptsExplain)
+-&gt; Parser Bool -&gt; Parser (Int -&gt; Maybe String -&gt; OptsExplain)
 forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser Bool
 </span><a href="CLI.Parsers.html#optShuffle"><span class="hs-identifier hs-var">optShuffle</span></a></span><span>
-</span><span id="line-275"></span><span>            </span><span class="annot"><span class="annottext">Parser (Maybe String -&gt; OptsExplain)
+</span><span id="line-275"></span><span>            </span><span class="annot"><span class="annottext">Parser (Int -&gt; Maybe String -&gt; OptsExplain)
+-&gt; Parser Int -&gt; Parser (Maybe String -&gt; OptsExplain)
+forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
+forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser Int
+</span><a href="CLI.Parsers.html#optSeed"><span class="hs-identifier hs-var">optSeed</span></a></span><span>
+</span><span id="line-276"></span><span>            </span><span class="annot"><span class="annottext">Parser (Maybe String -&gt; OptsExplain)
 -&gt; Parser (Maybe String) -&gt; Parser OptsExplain
 forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser (Maybe String)
 </span><a href="CLI.Parsers.html#optTarget"><span class="hs-identifier hs-var">optTarget</span></a></span><span>
-</span><span id="line-276"></span><span>        </span><span class="hs-special">)</span><span>
-</span><span id="line-277"></span><span>
-</span><span id="line-278"></span><span class="annot"><a href="CLI.Parsers.html#dataizeParser"><span class="hs-identifier hs-type">dataizeParser</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/ptprs-pplctv-0.19.0.0-800394bc/share/doc/html/src/Options.Applicative.Types.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="annot"><a href="CLI.Types.html#Command"><span class="hs-identifier hs-type">Command</span></a></span><span>
-</span><span id="line-279"></span><span id="dataizeParser"><span class="annot"><span class="annottext">dataizeParser :: Parser Command
+</span><span id="line-277"></span><span>        </span><span class="hs-special">)</span><span>
+</span><span id="line-278"></span><span>
+</span><span id="line-279"></span><span class="annot"><a href="CLI.Parsers.html#dataizeParser"><span class="hs-identifier hs-type">dataizeParser</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/ptprs-pplctv-0.19.0.0-800394bc/share/doc/html/src/Options.Applicative.Types.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="annot"><a href="CLI.Types.html#Command"><span class="hs-identifier hs-type">Command</span></a></span><span>
+</span><span id="line-280"></span><span id="dataizeParser"><span class="annot"><span class="annottext">dataizeParser :: Parser Command
 </span><a href="CLI.Parsers.html#dataizeParser"><span class="hs-identifier hs-var hs-var">dataizeParser</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
-</span><span id="line-280"></span><span>  </span><span class="annot"><span class="annottext">OptsDataize -&gt; Command
+</span><span id="line-281"></span><span>  </span><span class="annot"><span class="annottext">OptsDataize -&gt; Command
 </span><a href="CLI.Types.html#CmdDataize"><span class="hs-identifier hs-var">CmdDataize</span></a></span><span>
-</span><span id="line-281"></span><span>    </span><span class="annot"><span class="annottext">(OptsDataize -&gt; Command) -&gt; Parser OptsDataize -&gt; Parser Command
+</span><span id="line-282"></span><span>    </span><span class="annot"><span class="annottext">(OptsDataize -&gt; Command) -&gt; Parser OptsDataize -&gt; Parser Command
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="annottext">LogLevel
 -&gt; Int
@@ -1461,7 +1489,7 @@ forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 -&gt; Maybe String
 -&gt; OptsDataize
 </span><a href="CLI.Types.html#OptsDataize"><span class="hs-identifier hs-var">OptsDataize</span></a></span><span>
-</span><span id="line-282"></span><span>            </span><span class="annot"><span class="annottext">(LogLevel
+</span><span id="line-283"></span><span>            </span><span class="annot"><span class="annottext">(LogLevel
  -&gt; Int
  -&gt; IOFormat
  -&gt; IOFormat
@@ -1537,7 +1565,7 @@ forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser LogLevel
 </span><a href="CLI.Parsers.html#optLogLevel"><span class="hs-identifier hs-var">optLogLevel</span></a></span><span>
-</span><span id="line-283"></span><span>            </span><span class="annot"><span class="annottext">Parser
+</span><span id="line-284"></span><span>            </span><span class="annot"><span class="annottext">Parser
   (Int
    -&gt; IOFormat
    -&gt; IOFormat
@@ -1613,7 +1641,7 @@ forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser Int
 </span><a href="CLI.Parsers.html#optLogLines"><span class="hs-identifier hs-var">optLogLines</span></a></span><span>
-</span><span id="line-284"></span><span>            </span><span class="annot"><span class="annottext">Parser
+</span><span id="line-285"></span><span>            </span><span class="annot"><span class="annottext">Parser
   (IOFormat
    -&gt; IOFormat
    -&gt; SugarType
@@ -1687,7 +1715,7 @@ forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser IOFormat
 </span><a href="CLI.Parsers.html#optInputFormat"><span class="hs-identifier hs-var">optInputFormat</span></a></span><span>
-</span><span id="line-285"></span><span>            </span><span class="annot"><span class="annottext">Parser
+</span><span id="line-286"></span><span>            </span><span class="annot"><span class="annottext">Parser
   (IOFormat
    -&gt; SugarType
    -&gt; Bool
@@ -1759,7 +1787,7 @@ forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser IOFormat
 </span><a href="CLI.Parsers.html#optOutputFormat"><span class="hs-identifier hs-var">optOutputFormat</span></a></span><span>
-</span><span id="line-286"></span><span>            </span><span class="annot"><span class="annottext">Parser
+</span><span id="line-287"></span><span>            </span><span class="annot"><span class="annottext">Parser
   (SugarType
    -&gt; Bool
    -&gt; LineFormat
@@ -1829,7 +1857,7 @@ forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser SugarType
 </span><a href="CLI.Parsers.html#optSugar"><span class="hs-identifier hs-var">optSugar</span></a></span><span>
-</span><span id="line-287"></span><span>            </span><span class="annot"><span class="annottext">Parser
+</span><span id="line-288"></span><span>            </span><span class="annot"><span class="annottext">Parser
   (Bool
    -&gt; LineFormat
    -&gt; Bool
@@ -1897,7 +1925,7 @@ forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser Bool
 </span><a href="CLI.Parsers.html#optHideRho"><span class="hs-identifier hs-var">optHideRho</span></a></span><span>
-</span><span id="line-288"></span><span>            </span><span class="annot"><span class="annottext">Parser
+</span><span id="line-289"></span><span>            </span><span class="annot"><span class="annottext">Parser
   (LineFormat
    -&gt; Bool
    -&gt; Bool
@@ -1963,7 +1991,7 @@ forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser LineFormat
 </span><a href="CLI.Parsers.html#optLineFormat"><span class="hs-identifier hs-var">optLineFormat</span></a></span><span>
-</span><span id="line-289"></span><span>            </span><span class="annot"><span class="annottext">Parser
+</span><span id="line-290"></span><span>            </span><span class="annot"><span class="annottext">Parser
   (Bool
    -&gt; Bool
    -&gt; Bool
@@ -2027,7 +2055,7 @@ forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser Bool
 </span><a href="CLI.Parsers.html#optOmitListing"><span class="hs-identifier hs-var">optOmitListing</span></a></span><span>
-</span><span id="line-290"></span><span>            </span><span class="annot"><span class="annottext">Parser
+</span><span id="line-291"></span><span>            </span><span class="annot"><span class="annottext">Parser
   (Bool
    -&gt; Bool
    -&gt; Bool
@@ -2089,7 +2117,7 @@ forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser Bool
 </span><a href="CLI.Parsers.html#optOmitComments"><span class="hs-identifier hs-var">optOmitComments</span></a></span><span>
-</span><span id="line-291"></span><span>            </span><span class="annot"><span class="annottext">Parser
+</span><span id="line-292"></span><span>            </span><span class="annot"><span class="annottext">Parser
   (Bool
    -&gt; Bool
    -&gt; Bool
@@ -2149,7 +2177,7 @@ forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser Bool
 </span><a href="CLI.Parsers.html#optNonumber"><span class="hs-identifier hs-var">optNonumber</span></a></span><span>
-</span><span id="line-292"></span><span>            </span><span class="annot"><span class="annottext">Parser
+</span><span id="line-293"></span><span>            </span><span class="annot"><span class="annottext">Parser
   (Bool
    -&gt; Bool
    -&gt; Bool
@@ -2207,7 +2235,7 @@ forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser Bool
 </span><a href="CLI.Parsers.html#optSequence"><span class="hs-identifier hs-var">optSequence</span></a></span><span>
-</span><span id="line-293"></span><span>            </span><span class="annot"><span class="annottext">Parser
+</span><span id="line-294"></span><span>            </span><span class="annot"><span class="annottext">Parser
   (Bool
    -&gt; Bool
    -&gt; Bool
@@ -2263,7 +2291,7 @@ forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser Bool
 </span><a href="CLI.Parsers.html#optHeaders"><span class="hs-identifier hs-var">optHeaders</span></a></span><span>
-</span><span id="line-294"></span><span>            </span><span class="annot"><span class="annottext">Parser
+</span><span id="line-295"></span><span>            </span><span class="annot"><span class="annottext">Parser
   (Bool
    -&gt; Bool
    -&gt; Bool
@@ -2317,7 +2345,7 @@ forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser Bool
 </span><a href="CLI.Parsers.html#optCanonize"><span class="hs-identifier hs-var">optCanonize</span></a></span><span>
-</span><span id="line-295"></span><span>            </span><span class="annot"><span class="annottext">Parser
+</span><span id="line-296"></span><span>            </span><span class="annot"><span class="annottext">Parser
   (Bool
    -&gt; Bool
    -&gt; Int
@@ -2369,7 +2397,7 @@ forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser Bool
 </span><a href="CLI.Parsers.html#optDepthSensitive"><span class="hs-identifier hs-var">optDepthSensitive</span></a></span><span>
-</span><span id="line-296"></span><span>            </span><span class="annot"><span class="annottext">Parser
+</span><span id="line-297"></span><span>            </span><span class="annot"><span class="annottext">Parser
   (Bool
    -&gt; Int
    -&gt; Bool
@@ -2419,7 +2447,7 @@ forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser Bool
 </span><a href="CLI.Parsers.html#optShuffle"><span class="hs-identifier hs-var">optShuffle</span></a></span><span>
-</span><span id="line-297"></span><span>            </span><span class="annot"><span class="annottext">Parser
+</span><span id="line-298"></span><span>            </span><span class="annot"><span class="annottext">Parser
   (Int
    -&gt; Bool
    -&gt; Bool
@@ -2467,7 +2495,7 @@ forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser Int
 </span><a href="CLI.Parsers.html#optSeed"><span class="hs-identifier hs-var">optSeed</span></a></span><span>
-</span><span id="line-298"></span><span>            </span><span class="annot"><span class="annottext">Parser
+</span><span id="line-299"></span><span>            </span><span class="annot"><span class="annottext">Parser
   (Bool
    -&gt; Bool
    -&gt; Bool
@@ -2521,7 +2549,7 @@ forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 forall (f :: * -&gt; *) a. String -&gt; Mod f a
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/ptprs-pplctv-0.19.0.0-800394bc/share/doc/html/src/Options.Applicative.Builder.html#help"><span class="hs-identifier hs-var">help</span></a></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;Don't print the result of dataization&quot;</span></span><span class="hs-special">)</span><span>
-</span><span id="line-299"></span><span>            </span><span class="annot"><span class="annottext">Parser
+</span><span id="line-300"></span><span>            </span><span class="annot"><span class="annottext">Parser
   (Bool
    -&gt; Bool
    -&gt; Int
@@ -2565,7 +2593,7 @@ forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser Bool
 </span><a href="CLI.Parsers.html#optPartial"><span class="hs-identifier hs-var">optPartial</span></a></span><span>
-</span><span id="line-300"></span><span>            </span><span class="annot"><span class="annottext">Parser
+</span><span id="line-301"></span><span>            </span><span class="annot"><span class="annottext">Parser
   (Bool
    -&gt; Int
    -&gt; Int
@@ -2607,7 +2635,7 @@ forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser Bool
 </span><a href="CLI.Parsers.html#optCompress"><span class="hs-identifier hs-var">optCompress</span></a></span><span>
-</span><span id="line-301"></span><span>            </span><span class="annot"><span class="annottext">Parser
+</span><span id="line-302"></span><span>            </span><span class="annot"><span class="annottext">Parser
   (Int
    -&gt; Int
    -&gt; Int
@@ -2647,7 +2675,7 @@ forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser Int
 </span><a href="CLI.Parsers.html#optMaxDepth"><span class="hs-identifier hs-var">optMaxDepth</span></a></span><span>
-</span><span id="line-302"></span><span>            </span><span class="annot"><span class="annottext">Parser
+</span><span id="line-303"></span><span>            </span><span class="annot"><span class="annottext">Parser
   (Int
    -&gt; Int
    -&gt; Int
@@ -2685,7 +2713,7 @@ forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser Int
 </span><a href="CLI.Parsers.html#optMaxCycles"><span class="hs-identifier hs-var">optMaxCycles</span></a></span><span>
-</span><span id="line-303"></span><span>            </span><span class="annot"><span class="annottext">Parser
+</span><span id="line-304"></span><span>            </span><span class="annot"><span class="annottext">Parser
   (Int
    -&gt; Int
    -&gt; Maybe Int
@@ -2721,7 +2749,7 @@ forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser Int
 </span><a href="CLI.Parsers.html#optMaxSteps"><span class="hs-identifier hs-var">optMaxSteps</span></a></span><span>
-</span><span id="line-304"></span><span>            </span><span class="annot"><span class="annottext">Parser
+</span><span id="line-305"></span><span>            </span><span class="annot"><span class="annottext">Parser
   (Int
    -&gt; Maybe Int
    -&gt; Maybe Int
@@ -2755,7 +2783,7 @@ forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser Int
 </span><a href="CLI.Parsers.html#optMargin"><span class="hs-identifier hs-var">optMargin</span></a></span><span>
-</span><span id="line-305"></span><span>            </span><span class="annot"><span class="annottext">Parser
+</span><span id="line-306"></span><span>            </span><span class="annot"><span class="annottext">Parser
   (Maybe Int
    -&gt; Maybe Int
    -&gt; [String]
@@ -2787,7 +2815,7 @@ forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser (Maybe Int)
 </span><a href="CLI.Parsers.html#optMeetPopularity"><span class="hs-identifier hs-var">optMeetPopularity</span></a></span><span>
-</span><span id="line-306"></span><span>            </span><span class="annot"><span class="annottext">Parser
+</span><span id="line-307"></span><span>            </span><span class="annot"><span class="annottext">Parser
   (Maybe Int
    -&gt; [String]
    -&gt; [String]
@@ -2817,7 +2845,7 @@ forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser (Maybe Int)
 </span><a href="CLI.Parsers.html#optMeetLength"><span class="hs-identifier hs-var">optMeetLength</span></a></span><span>
-</span><span id="line-307"></span><span>            </span><span class="annot"><span class="annottext">Parser
+</span><span id="line-308"></span><span>            </span><span class="annot"><span class="annottext">Parser
   ([String]
    -&gt; [String]
    -&gt; String
@@ -2845,7 +2873,7 @@ forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser [String]
 </span><a href="CLI.Parsers.html#optHide"><span class="hs-identifier hs-var">optHide</span></a></span><span>
-</span><span id="line-308"></span><span>            </span><span class="annot"><span class="annottext">Parser
+</span><span id="line-309"></span><span>            </span><span class="annot"><span class="annottext">Parser
   ([String]
    -&gt; String
    -&gt; String
@@ -2871,7 +2899,7 @@ forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser [String]
 </span><a href="CLI.Parsers.html#optShow"><span class="hs-identifier hs-var">optShow</span></a></span><span>
-</span><span id="line-309"></span><span>            </span><span class="annot"><span class="annottext">Parser
+</span><span id="line-310"></span><span>            </span><span class="annot"><span class="annottext">Parser
   (String
    -&gt; String
    -&gt; Maybe String
@@ -2895,7 +2923,7 @@ forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser String
 </span><a href="CLI.Parsers.html#optLocator"><span class="hs-identifier hs-var">optLocator</span></a></span><span>
-</span><span id="line-310"></span><span>            </span><span class="annot"><span class="annottext">Parser
+</span><span id="line-311"></span><span>            </span><span class="annot"><span class="annottext">Parser
   (String
    -&gt; Maybe String
    -&gt; Maybe String
@@ -2917,7 +2945,7 @@ forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser String
 </span><a href="CLI.Parsers.html#optFocus"><span class="hs-identifier hs-var">optFocus</span></a></span><span>
-</span><span id="line-311"></span><span>            </span><span class="annot"><span class="annottext">Parser
+</span><span id="line-312"></span><span>            </span><span class="annot"><span class="annottext">Parser
   (Maybe String
    -&gt; Maybe String
    -&gt; Maybe String
@@ -2937,7 +2965,7 @@ forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser (Maybe String)
 </span><a href="CLI.Parsers.html#optExpression"><span class="hs-identifier hs-var">optExpression</span></a></span><span>
-</span><span id="line-312"></span><span>            </span><span class="annot"><span class="annottext">Parser
+</span><span id="line-313"></span><span>            </span><span class="annot"><span class="annottext">Parser
   (Maybe String
    -&gt; Maybe String
    -&gt; Maybe String
@@ -2952,7 +2980,7 @@ forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser (Maybe String)
 </span><a href="CLI.Parsers.html#optLabel"><span class="hs-identifier hs-var">optLabel</span></a></span><span>
-</span><span id="line-313"></span><span>            </span><span class="annot"><span class="annottext">Parser
+</span><span id="line-314"></span><span>            </span><span class="annot"><span class="annottext">Parser
   (Maybe String
    -&gt; Maybe String -&gt; Maybe String -&gt; Maybe String -&gt; OptsDataize)
 -&gt; Parser (Maybe String)
@@ -2962,7 +2990,7 @@ forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser (Maybe String)
 </span><a href="CLI.Parsers.html#optMeetPrefix"><span class="hs-identifier hs-var">optMeetPrefix</span></a></span><span>
-</span><span id="line-314"></span><span>            </span><span class="annot"><span class="annottext">Parser
+</span><span id="line-315"></span><span>            </span><span class="annot"><span class="annottext">Parser
   (Maybe String -&gt; Maybe String -&gt; Maybe String -&gt; OptsDataize)
 -&gt; Parser (Maybe String)
 -&gt; Parser (Maybe String -&gt; Maybe String -&gt; OptsDataize)
@@ -2970,26 +2998,26 @@ forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser (Maybe String)
 </span><a href="CLI.Parsers.html#optStepsDir"><span class="hs-identifier hs-var">optStepsDir</span></a></span><span>
-</span><span id="line-315"></span><span>            </span><span class="annot"><span class="annottext">Parser (Maybe String -&gt; Maybe String -&gt; OptsDataize)
+</span><span id="line-316"></span><span>            </span><span class="annot"><span class="annottext">Parser (Maybe String -&gt; Maybe String -&gt; OptsDataize)
 -&gt; Parser (Maybe String) -&gt; Parser (Maybe String -&gt; OptsDataize)
 forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser (Maybe String)
 </span><a href="CLI.Parsers.html#optEvaluations"><span class="hs-identifier hs-var">optEvaluations</span></a></span><span>
-</span><span id="line-316"></span><span>            </span><span class="annot"><span class="annottext">Parser (Maybe String -&gt; OptsDataize)
+</span><span id="line-317"></span><span>            </span><span class="annot"><span class="annottext">Parser (Maybe String -&gt; OptsDataize)
 -&gt; Parser (Maybe String) -&gt; Parser OptsDataize
 forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser (Maybe String)
 </span><a href="CLI.Parsers.html#argInputFile"><span class="hs-identifier hs-var">argInputFile</span></a></span><span>
-</span><span id="line-317"></span><span>        </span><span class="hs-special">)</span><span>
-</span><span id="line-318"></span><span>
-</span><span id="line-319"></span><span class="annot"><a href="CLI.Parsers.html#rewriteParser"><span class="hs-identifier hs-type">rewriteParser</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/ptprs-pplctv-0.19.0.0-800394bc/share/doc/html/src/Options.Applicative.Types.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="annot"><a href="CLI.Types.html#Command"><span class="hs-identifier hs-type">Command</span></a></span><span>
-</span><span id="line-320"></span><span id="rewriteParser"><span class="annot"><span class="annottext">rewriteParser :: Parser Command
+</span><span id="line-318"></span><span>        </span><span class="hs-special">)</span><span>
+</span><span id="line-319"></span><span>
+</span><span id="line-320"></span><span class="annot"><a href="CLI.Parsers.html#rewriteParser"><span class="hs-identifier hs-type">rewriteParser</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/ptprs-pplctv-0.19.0.0-800394bc/share/doc/html/src/Options.Applicative.Types.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="annot"><a href="CLI.Types.html#Command"><span class="hs-identifier hs-type">Command</span></a></span><span>
+</span><span id="line-321"></span><span id="rewriteParser"><span class="annot"><span class="annottext">rewriteParser :: Parser Command
 </span><a href="CLI.Parsers.html#rewriteParser"><span class="hs-identifier hs-var hs-var">rewriteParser</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
-</span><span id="line-321"></span><span>  </span><span class="annot"><span class="annottext">OptsRewrite -&gt; Command
+</span><span id="line-322"></span><span>  </span><span class="annot"><span class="annottext">OptsRewrite -&gt; Command
 </span><a href="CLI.Types.html#CmdRewrite"><span class="hs-identifier hs-var">CmdRewrite</span></a></span><span>
-</span><span id="line-322"></span><span>    </span><span class="annot"><span class="annottext">(OptsRewrite -&gt; Command) -&gt; Parser OptsRewrite -&gt; Parser Command
+</span><span id="line-323"></span><span>    </span><span class="annot"><span class="annottext">(OptsRewrite -&gt; Command) -&gt; Parser OptsRewrite -&gt; Parser Command
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="annottext">LogLevel
 -&gt; Int
@@ -3031,7 +3059,7 @@ forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 -&gt; Maybe String
 -&gt; OptsRewrite
 </span><a href="CLI.Types.html#OptsRewrite"><span class="hs-identifier hs-var">OptsRewrite</span></a></span><span>
-</span><span id="line-323"></span><span>            </span><span class="annot"><span class="annottext">(LogLevel
+</span><span id="line-324"></span><span>            </span><span class="annot"><span class="annottext">(LogLevel
  -&gt; Int
  -&gt; IOFormat
  -&gt; IOFormat
@@ -3113,7 +3141,7 @@ forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser LogLevel
 </span><a href="CLI.Parsers.html#optLogLevel"><span class="hs-identifier hs-var">optLogLevel</span></a></span><span>
-</span><span id="line-324"></span><span>            </span><span class="annot"><span class="annottext">Parser
+</span><span id="line-325"></span><span>            </span><span class="annot"><span class="annottext">Parser
   (Int
    -&gt; IOFormat
    -&gt; IOFormat
@@ -3195,7 +3223,7 @@ forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser Int
 </span><a href="CLI.Parsers.html#optLogLines"><span class="hs-identifier hs-var">optLogLines</span></a></span><span>
-</span><span id="line-325"></span><span>            </span><span class="annot"><span class="annottext">Parser
+</span><span id="line-326"></span><span>            </span><span class="annot"><span class="annottext">Parser
   (IOFormat
    -&gt; IOFormat
    -&gt; SugarType
@@ -3275,7 +3303,7 @@ forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser IOFormat
 </span><a href="CLI.Parsers.html#optInputFormat"><span class="hs-identifier hs-var">optInputFormat</span></a></span><span>
-</span><span id="line-326"></span><span>            </span><span class="annot"><span class="annottext">Parser
+</span><span id="line-327"></span><span>            </span><span class="annot"><span class="annottext">Parser
   (IOFormat
    -&gt; SugarType
    -&gt; Bool
@@ -3353,7 +3381,7 @@ forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser IOFormat
 </span><a href="CLI.Parsers.html#optOutputFormat"><span class="hs-identifier hs-var">optOutputFormat</span></a></span><span>
-</span><span id="line-327"></span><span>            </span><span class="annot"><span class="annottext">Parser
+</span><span id="line-328"></span><span>            </span><span class="annot"><span class="annottext">Parser
   (SugarType
    -&gt; Bool
    -&gt; LineFormat
@@ -3429,7 +3457,7 @@ forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser SugarType
 </span><a href="CLI.Parsers.html#optSugar"><span class="hs-identifier hs-var">optSugar</span></a></span><span>
-</span><span id="line-328"></span><span>            </span><span class="annot"><span class="annottext">Parser
+</span><span id="line-329"></span><span>            </span><span class="annot"><span class="annottext">Parser
   (Bool
    -&gt; LineFormat
    -&gt; Must
@@ -3503,7 +3531,7 @@ forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser Bool
 </span><a href="CLI.Parsers.html#optHideRho"><span class="hs-identifier hs-var">optHideRho</span></a></span><span>
-</span><span id="line-329"></span><span>            </span><span class="annot"><span class="annottext">Parser
+</span><span id="line-330"></span><span>            </span><span class="annot"><span class="annottext">Parser
   (LineFormat
    -&gt; Must
    -&gt; Bool
@@ -3575,7 +3603,7 @@ forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser LineFormat
 </span><a href="CLI.Parsers.html#optLineFormat"><span class="hs-identifier hs-var">optLineFormat</span></a></span><span>
-</span><span id="line-330"></span><span>            </span><span class="annot"><span class="annottext">Parser
+</span><span id="line-331"></span><span>            </span><span class="annot"><span class="annottext">Parser
   (Must
    -&gt; Bool
    -&gt; Bool
@@ -3645,7 +3673,7 @@ forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser Must
 </span><a href="CLI.Parsers.html#optMust"><span class="hs-identifier hs-var">optMust</span></a></span><span>
-</span><span id="line-331"></span><span>            </span><span class="annot"><span class="annottext">Parser
+</span><span id="line-332"></span><span>            </span><span class="annot"><span class="annottext">Parser
   (Bool
    -&gt; Bool
    -&gt; Int
@@ -3713,7 +3741,7 @@ forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser Bool
 </span><a href="CLI.Parsers.html#optNormalize"><span class="hs-identifier hs-var">optNormalize</span></a></span><span>
-</span><span id="line-332"></span><span>            </span><span class="annot"><span class="annottext">Parser
+</span><span id="line-333"></span><span>            </span><span class="annot"><span class="annottext">Parser
   (Bool
    -&gt; Int
    -&gt; Bool
@@ -3779,7 +3807,7 @@ forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser Bool
 </span><a href="CLI.Parsers.html#optShuffle"><span class="hs-identifier hs-var">optShuffle</span></a></span><span>
-</span><span id="line-333"></span><span>            </span><span class="annot"><span class="annottext">Parser
+</span><span id="line-334"></span><span>            </span><span class="annot"><span class="annottext">Parser
   (Int
    -&gt; Bool
    -&gt; Bool
@@ -3843,7 +3871,7 @@ forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser Int
 </span><a href="CLI.Parsers.html#optSeed"><span class="hs-identifier hs-var">optSeed</span></a></span><span>
-</span><span id="line-334"></span><span>            </span><span class="annot"><span class="annottext">Parser
+</span><span id="line-335"></span><span>            </span><span class="annot"><span class="annottext">Parser
   (Bool
    -&gt; Bool
    -&gt; Bool
@@ -3905,7 +3933,7 @@ forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser Bool
 </span><a href="CLI.Parsers.html#optOmitListing"><span class="hs-identifier hs-var">optOmitListing</span></a></span><span>
-</span><span id="line-335"></span><span>            </span><span class="annot"><span class="annottext">Parser
+</span><span id="line-336"></span><span>            </span><span class="annot"><span class="annottext">Parser
   (Bool
    -&gt; Bool
    -&gt; Bool
@@ -3965,7 +3993,7 @@ forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser Bool
 </span><a href="CLI.Parsers.html#optOmitComments"><span class="hs-identifier hs-var">optOmitComments</span></a></span><span>
-</span><span id="line-336"></span><span>            </span><span class="annot"><span class="annottext">Parser
+</span><span id="line-337"></span><span>            </span><span class="annot"><span class="annottext">Parser
   (Bool
    -&gt; Bool
    -&gt; Bool
@@ -4023,7 +4051,7 @@ forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser Bool
 </span><a href="CLI.Parsers.html#optDepthSensitive"><span class="hs-identifier hs-var">optDepthSensitive</span></a></span><span>
-</span><span id="line-337"></span><span>            </span><span class="annot"><span class="annottext">Parser
+</span><span id="line-338"></span><span>            </span><span class="annot"><span class="annottext">Parser
   (Bool
    -&gt; Bool
    -&gt; Bool
@@ -4079,7 +4107,7 @@ forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser Bool
 </span><a href="CLI.Parsers.html#optNonumber"><span class="hs-identifier hs-var">optNonumber</span></a></span><span>
-</span><span id="line-338"></span><span>            </span><span class="annot"><span class="annottext">Parser
+</span><span id="line-339"></span><span>            </span><span class="annot"><span class="annottext">Parser
   (Bool
    -&gt; Bool
    -&gt; Bool
@@ -4141,7 +4169,7 @@ forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 forall (f :: * -&gt; *) a. String -&gt; Mod f a
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/ptprs-pplctv-0.19.0.0-800394bc/share/doc/html/src/Options.Applicative.Builder.html#help"><span class="hs-identifier hs-var">help</span></a></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;Edit file in-place instead of printing to output&quot;</span></span><span class="hs-special">)</span><span>
-</span><span id="line-339"></span><span>            </span><span class="annot"><span class="annottext">Parser
+</span><span id="line-340"></span><span>            </span><span class="annot"><span class="annottext">Parser
   (Bool
    -&gt; Bool
    -&gt; Bool
@@ -4201,7 +4229,7 @@ forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 forall (f :: * -&gt; *) a. String -&gt; Mod f a
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/ptprs-pplctv-0.19.0.0-800394bc/share/doc/html/src/Options.Applicative.Builder.html#help"><span class="hs-identifier hs-var">help</span></a></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;Skip rewriting if --target file is newer than the input file&quot;</span></span><span class="hs-special">)</span><span>
-</span><span id="line-340"></span><span>            </span><span class="annot"><span class="annottext">Parser
+</span><span id="line-341"></span><span>            </span><span class="annot"><span class="annottext">Parser
   (Bool
    -&gt; Bool
    -&gt; Bool
@@ -4251,7 +4279,7 @@ forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser Bool
 </span><a href="CLI.Parsers.html#optSequence"><span class="hs-identifier hs-var">optSequence</span></a></span><span>
-</span><span id="line-341"></span><span>            </span><span class="annot"><span class="annottext">Parser
+</span><span id="line-342"></span><span>            </span><span class="annot"><span class="annottext">Parser
   (Bool
    -&gt; Bool
    -&gt; Bool
@@ -4299,7 +4327,7 @@ forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser Bool
 </span><a href="CLI.Parsers.html#optHeaders"><span class="hs-identifier hs-var">optHeaders</span></a></span><span>
-</span><span id="line-342"></span><span>            </span><span class="annot"><span class="annottext">Parser
+</span><span id="line-343"></span><span>            </span><span class="annot"><span class="annottext">Parser
   (Bool
    -&gt; Bool
    -&gt; Int
@@ -4345,7 +4373,7 @@ forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser Bool
 </span><a href="CLI.Parsers.html#optCanonize"><span class="hs-identifier hs-var">optCanonize</span></a></span><span>
-</span><span id="line-343"></span><span>            </span><span class="annot"><span class="annottext">Parser
+</span><span id="line-344"></span><span>            </span><span class="annot"><span class="annottext">Parser
   (Bool
    -&gt; Int
    -&gt; Int
@@ -4389,7 +4417,7 @@ forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser Bool
 </span><a href="CLI.Parsers.html#optCompress"><span class="hs-identifier hs-var">optCompress</span></a></span><span>
-</span><span id="line-344"></span><span>            </span><span class="annot"><span class="annottext">Parser
+</span><span id="line-345"></span><span>            </span><span class="annot"><span class="annottext">Parser
   (Int
    -&gt; Int
    -&gt; Int
@@ -4431,7 +4459,7 @@ forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser Int
 </span><a href="CLI.Parsers.html#optMaxDepth"><span class="hs-identifier hs-var">optMaxDepth</span></a></span><span>
-</span><span id="line-345"></span><span>            </span><span class="annot"><span class="annottext">Parser
+</span><span id="line-346"></span><span>            </span><span class="annot"><span class="annottext">Parser
   (Int
    -&gt; Int
    -&gt; Maybe Int
@@ -4471,7 +4499,7 @@ forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser Int
 </span><a href="CLI.Parsers.html#optMaxCycles"><span class="hs-identifier hs-var">optMaxCycles</span></a></span><span>
-</span><span id="line-346"></span><span>            </span><span class="annot"><span class="annottext">Parser
+</span><span id="line-347"></span><span>            </span><span class="annot"><span class="annottext">Parser
   (Int
    -&gt; Maybe Int
    -&gt; Maybe Int
@@ -4509,7 +4537,7 @@ forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser Int
 </span><a href="CLI.Parsers.html#optMargin"><span class="hs-identifier hs-var">optMargin</span></a></span><span>
-</span><span id="line-347"></span><span>            </span><span class="annot"><span class="annottext">Parser
+</span><span id="line-348"></span><span>            </span><span class="annot"><span class="annottext">Parser
   (Maybe Int
    -&gt; Maybe Int
    -&gt; [String]
@@ -4545,7 +4573,7 @@ forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser (Maybe Int)
 </span><a href="CLI.Parsers.html#optMeetPopularity"><span class="hs-identifier hs-var">optMeetPopularity</span></a></span><span>
-</span><span id="line-348"></span><span>            </span><span class="annot"><span class="annottext">Parser
+</span><span id="line-349"></span><span>            </span><span class="annot"><span class="annottext">Parser
   (Maybe Int
    -&gt; [String]
    -&gt; [String]
@@ -4579,7 +4607,7 @@ forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser (Maybe Int)
 </span><a href="CLI.Parsers.html#optMeetLength"><span class="hs-identifier hs-var">optMeetLength</span></a></span><span>
-</span><span id="line-349"></span><span>            </span><span class="annot"><span class="annottext">Parser
+</span><span id="line-350"></span><span>            </span><span class="annot"><span class="annottext">Parser
   ([String]
    -&gt; [String]
    -&gt; [String]
@@ -4611,7 +4639,7 @@ forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser [String]
 </span><a href="CLI.Parsers.html#optRule"><span class="hs-identifier hs-var">optRule</span></a></span><span>
-</span><span id="line-350"></span><span>            </span><span class="annot"><span class="annottext">Parser
+</span><span id="line-351"></span><span>            </span><span class="annot"><span class="annottext">Parser
   ([String]
    -&gt; [String]
    -&gt; String
@@ -4641,7 +4669,7 @@ forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser [String]
 </span><a href="CLI.Parsers.html#optHide"><span class="hs-identifier hs-var">optHide</span></a></span><span>
-</span><span id="line-351"></span><span>            </span><span class="annot"><span class="annottext">Parser
+</span><span id="line-352"></span><span>            </span><span class="annot"><span class="annottext">Parser
   ([String]
    -&gt; String
    -&gt; String
@@ -4669,7 +4697,7 @@ forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser [String]
 </span><a href="CLI.Parsers.html#optShow"><span class="hs-identifier hs-var">optShow</span></a></span><span>
-</span><span id="line-352"></span><span>            </span><span class="annot"><span class="annottext">Parser
+</span><span id="line-353"></span><span>            </span><span class="annot"><span class="annottext">Parser
   (String
    -&gt; String
    -&gt; Maybe String
@@ -4695,7 +4723,7 @@ forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser String
 </span><a href="CLI.Parsers.html#optLocator"><span class="hs-identifier hs-var">optLocator</span></a></span><span>
-</span><span id="line-353"></span><span>            </span><span class="annot"><span class="annottext">Parser
+</span><span id="line-354"></span><span>            </span><span class="annot"><span class="annottext">Parser
   (String
    -&gt; Maybe String
    -&gt; Maybe String
@@ -4719,7 +4747,7 @@ forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser String
 </span><a href="CLI.Parsers.html#optFocus"><span class="hs-identifier hs-var">optFocus</span></a></span><span>
-</span><span id="line-354"></span><span>            </span><span class="annot"><span class="annottext">Parser
+</span><span id="line-355"></span><span>            </span><span class="annot"><span class="annottext">Parser
   (Maybe String
    -&gt; Maybe String
    -&gt; Maybe String
@@ -4741,7 +4769,7 @@ forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser (Maybe String)
 </span><a href="CLI.Parsers.html#optExpression"><span class="hs-identifier hs-var">optExpression</span></a></span><span>
-</span><span id="line-355"></span><span>            </span><span class="annot"><span class="annottext">Parser
+</span><span id="line-356"></span><span>            </span><span class="annot"><span class="annottext">Parser
   (Maybe String
    -&gt; Maybe String
    -&gt; Maybe String
@@ -4761,7 +4789,7 @@ forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser (Maybe String)
 </span><a href="CLI.Parsers.html#optLabel"><span class="hs-identifier hs-var">optLabel</span></a></span><span>
-</span><span id="line-356"></span><span>            </span><span class="annot"><span class="annottext">Parser
+</span><span id="line-357"></span><span>            </span><span class="annot"><span class="annottext">Parser
   (Maybe String
    -&gt; Maybe String
    -&gt; Maybe String
@@ -4776,7 +4804,7 @@ forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser (Maybe String)
 </span><a href="CLI.Parsers.html#optMeetPrefix"><span class="hs-identifier hs-var">optMeetPrefix</span></a></span><span>
-</span><span id="line-357"></span><span>            </span><span class="annot"><span class="annottext">Parser
+</span><span id="line-358"></span><span>            </span><span class="annot"><span class="annottext">Parser
   (Maybe String
    -&gt; Maybe String -&gt; Maybe String -&gt; Maybe String -&gt; OptsRewrite)
 -&gt; Parser (Maybe String)
@@ -4786,7 +4814,7 @@ forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser (Maybe String)
 </span><a href="CLI.Parsers.html#optBreakpoint"><span class="hs-identifier hs-var">optBreakpoint</span></a></span><span>
-</span><span id="line-358"></span><span>            </span><span class="annot"><span class="annottext">Parser
+</span><span id="line-359"></span><span>            </span><span class="annot"><span class="annottext">Parser
   (Maybe String -&gt; Maybe String -&gt; Maybe String -&gt; OptsRewrite)
 -&gt; Parser (Maybe String)
 -&gt; Parser (Maybe String -&gt; Maybe String -&gt; OptsRewrite)
@@ -4794,26 +4822,26 @@ forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser (Maybe String)
 </span><a href="CLI.Parsers.html#optTarget"><span class="hs-identifier hs-var">optTarget</span></a></span><span>
-</span><span id="line-359"></span><span>            </span><span class="annot"><span class="annottext">Parser (Maybe String -&gt; Maybe String -&gt; OptsRewrite)
+</span><span id="line-360"></span><span>            </span><span class="annot"><span class="annottext">Parser (Maybe String -&gt; Maybe String -&gt; OptsRewrite)
 -&gt; Parser (Maybe String) -&gt; Parser (Maybe String -&gt; OptsRewrite)
 forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser (Maybe String)
 </span><a href="CLI.Parsers.html#optStepsDir"><span class="hs-identifier hs-var">optStepsDir</span></a></span><span>
-</span><span id="line-360"></span><span>            </span><span class="annot"><span class="annottext">Parser (Maybe String -&gt; OptsRewrite)
+</span><span id="line-361"></span><span>            </span><span class="annot"><span class="annottext">Parser (Maybe String -&gt; OptsRewrite)
 -&gt; Parser (Maybe String) -&gt; Parser OptsRewrite
 forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser (Maybe String)
 </span><a href="CLI.Parsers.html#argInputFile"><span class="hs-identifier hs-var">argInputFile</span></a></span><span>
-</span><span id="line-361"></span><span>        </span><span class="hs-special">)</span><span>
-</span><span id="line-362"></span><span>
-</span><span id="line-363"></span><span class="annot"><a href="CLI.Parsers.html#mergeParser"><span class="hs-identifier hs-type">mergeParser</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/ptprs-pplctv-0.19.0.0-800394bc/share/doc/html/src/Options.Applicative.Types.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="annot"><a href="CLI.Types.html#Command"><span class="hs-identifier hs-type">Command</span></a></span><span>
-</span><span id="line-364"></span><span id="mergeParser"><span class="annot"><span class="annottext">mergeParser :: Parser Command
+</span><span id="line-362"></span><span>        </span><span class="hs-special">)</span><span>
+</span><span id="line-363"></span><span>
+</span><span id="line-364"></span><span class="annot"><a href="CLI.Parsers.html#mergeParser"><span class="hs-identifier hs-type">mergeParser</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/ptprs-pplctv-0.19.0.0-800394bc/share/doc/html/src/Options.Applicative.Types.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="annot"><a href="CLI.Types.html#Command"><span class="hs-identifier hs-type">Command</span></a></span><span>
+</span><span id="line-365"></span><span id="mergeParser"><span class="annot"><span class="annottext">mergeParser :: Parser Command
 </span><a href="CLI.Parsers.html#mergeParser"><span class="hs-identifier hs-var hs-var">mergeParser</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
-</span><span id="line-365"></span><span>  </span><span class="annot"><span class="annottext">OptsMerge -&gt; Command
+</span><span id="line-366"></span><span>  </span><span class="annot"><span class="annottext">OptsMerge -&gt; Command
 </span><a href="CLI.Types.html#CmdMerge"><span class="hs-identifier hs-var">CmdMerge</span></a></span><span>
-</span><span id="line-366"></span><span>    </span><span class="annot"><span class="annottext">(OptsMerge -&gt; Command) -&gt; Parser OptsMerge -&gt; Parser Command
+</span><span id="line-367"></span><span>    </span><span class="annot"><span class="annottext">(OptsMerge -&gt; Command) -&gt; Parser OptsMerge -&gt; Parser Command
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="annottext">LogLevel
 -&gt; Int
@@ -4828,7 +4856,7 @@ forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 -&gt; [String]
 -&gt; OptsMerge
 </span><a href="CLI.Types.html#OptsMerge"><span class="hs-identifier hs-var">OptsMerge</span></a></span><span>
-</span><span id="line-367"></span><span>            </span><span class="annot"><span class="annottext">(LogLevel
+</span><span id="line-368"></span><span>            </span><span class="annot"><span class="annottext">(LogLevel
  -&gt; Int
  -&gt; IOFormat
  -&gt; IOFormat
@@ -4856,7 +4884,7 @@ forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser LogLevel
 </span><a href="CLI.Parsers.html#optLogLevel"><span class="hs-identifier hs-var">optLogLevel</span></a></span><span>
-</span><span id="line-368"></span><span>            </span><span class="annot"><span class="annottext">Parser
+</span><span id="line-369"></span><span>            </span><span class="annot"><span class="annottext">Parser
   (Int
    -&gt; IOFormat
    -&gt; IOFormat
@@ -4884,7 +4912,7 @@ forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser Int
 </span><a href="CLI.Parsers.html#optLogLines"><span class="hs-identifier hs-var">optLogLines</span></a></span><span>
-</span><span id="line-369"></span><span>            </span><span class="annot"><span class="annottext">Parser
+</span><span id="line-370"></span><span>            </span><span class="annot"><span class="annottext">Parser
   (IOFormat
    -&gt; IOFormat
    -&gt; SugarType
@@ -4910,7 +4938,7 @@ forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser IOFormat
 </span><a href="CLI.Parsers.html#optInputFormat"><span class="hs-identifier hs-var">optInputFormat</span></a></span><span>
-</span><span id="line-370"></span><span>            </span><span class="annot"><span class="annottext">Parser
+</span><span id="line-371"></span><span>            </span><span class="annot"><span class="annottext">Parser
   (IOFormat
    -&gt; SugarType
    -&gt; LineFormat
@@ -4965,7 +4993,7 @@ forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Mod OptionFields IOFormat
 forall a (f :: * -&gt; *). Show a =&gt; Mod f a
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/ptprs-pplctv-0.19.0.0-800394bc/share/doc/html/src/Options.Applicative.Builder.html#showDefault"><span class="hs-identifier hs-var">showDefault</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-371"></span><span>            </span><span class="annot"><span class="annottext">Parser
+</span><span id="line-372"></span><span>            </span><span class="annot"><span class="annottext">Parser
   (SugarType
    -&gt; LineFormat
    -&gt; Bool
@@ -4982,7 +5010,7 @@ forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser SugarType
 </span><a href="CLI.Parsers.html#optSugar%27"><span class="hs-identifier hs-var">optSugar'</span></a></span><span>
-</span><span id="line-372"></span><span>            </span><span class="annot"><span class="annottext">Parser
+</span><span id="line-373"></span><span>            </span><span class="annot"><span class="annottext">Parser
   (LineFormat
    -&gt; Bool -&gt; Bool -&gt; Int -&gt; Maybe String -&gt; [String] -&gt; OptsMerge)
 -&gt; Parser LineFormat
@@ -4992,7 +5020,7 @@ forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser LineFormat
 </span><a href="CLI.Parsers.html#optLineFormat%27"><span class="hs-identifier hs-var">optLineFormat'</span></a></span><span>
-</span><span id="line-373"></span><span>            </span><span class="annot"><span class="annottext">Parser
+</span><span id="line-374"></span><span>            </span><span class="annot"><span class="annottext">Parser
   (Bool -&gt; Bool -&gt; Int -&gt; Maybe String -&gt; [String] -&gt; OptsMerge)
 -&gt; Parser Bool
 -&gt; Parser (Bool -&gt; Int -&gt; Maybe String -&gt; [String] -&gt; OptsMerge)
@@ -5000,26 +5028,26 @@ forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser Bool
 </span><a href="CLI.Parsers.html#optOmitListing"><span class="hs-identifier hs-var">optOmitListing</span></a></span><span>
-</span><span id="line-374"></span><span>            </span><span class="annot"><span class="annottext">Parser (Bool -&gt; Int -&gt; Maybe String -&gt; [String] -&gt; OptsMerge)
+</span><span id="line-375"></span><span>            </span><span class="annot"><span class="annottext">Parser (Bool -&gt; Int -&gt; Maybe String -&gt; [String] -&gt; OptsMerge)
 -&gt; Parser Bool
 -&gt; Parser (Int -&gt; Maybe String -&gt; [String] -&gt; OptsMerge)
 forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser Bool
 </span><a href="CLI.Parsers.html#optOmitComments"><span class="hs-identifier hs-var">optOmitComments</span></a></span><span>
-</span><span id="line-375"></span><span>            </span><span class="annot"><span class="annottext">Parser (Int -&gt; Maybe String -&gt; [String] -&gt; OptsMerge)
+</span><span id="line-376"></span><span>            </span><span class="annot"><span class="annottext">Parser (Int -&gt; Maybe String -&gt; [String] -&gt; OptsMerge)
 -&gt; Parser Int -&gt; Parser (Maybe String -&gt; [String] -&gt; OptsMerge)
 forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser Int
 </span><a href="CLI.Parsers.html#optMargin"><span class="hs-identifier hs-var">optMargin</span></a></span><span>
-</span><span id="line-376"></span><span>            </span><span class="annot"><span class="annottext">Parser (Maybe String -&gt; [String] -&gt; OptsMerge)
+</span><span id="line-377"></span><span>            </span><span class="annot"><span class="annottext">Parser (Maybe String -&gt; [String] -&gt; OptsMerge)
 -&gt; Parser (Maybe String) -&gt; Parser ([String] -&gt; OptsMerge)
 forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser (Maybe String)
 </span><a href="CLI.Parsers.html#optTarget"><span class="hs-identifier hs-var">optTarget</span></a></span><span>
-</span><span id="line-377"></span><span>            </span><span class="annot"><span class="annottext">Parser ([String] -&gt; OptsMerge)
+</span><span id="line-378"></span><span>            </span><span class="annot"><span class="annottext">Parser ([String] -&gt; OptsMerge)
 -&gt; Parser [String] -&gt; Parser OptsMerge
 forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
@@ -5040,14 +5068,14 @@ forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 forall (f :: * -&gt; *) a. String -&gt; Mod f a
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/ptprs-pplctv-0.19.0.0-800394bc/share/doc/html/src/Options.Applicative.Builder.html#help"><span class="hs-identifier hs-var">help</span></a></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;Paths to input files&quot;</span></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
-</span><span id="line-378"></span><span>        </span><span class="hs-special">)</span><span>
-</span><span id="line-379"></span><span>
-</span><span id="line-380"></span><span class="annot"><a href="CLI.Parsers.html#matchParser"><span class="hs-identifier hs-type">matchParser</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/ptprs-pplctv-0.19.0.0-800394bc/share/doc/html/src/Options.Applicative.Types.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="annot"><a href="CLI.Types.html#Command"><span class="hs-identifier hs-type">Command</span></a></span><span>
-</span><span id="line-381"></span><span id="matchParser"><span class="annot"><span class="annottext">matchParser :: Parser Command
+</span><span id="line-379"></span><span>        </span><span class="hs-special">)</span><span>
+</span><span id="line-380"></span><span>
+</span><span id="line-381"></span><span class="annot"><a href="CLI.Parsers.html#matchParser"><span class="hs-identifier hs-type">matchParser</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/ptprs-pplctv-0.19.0.0-800394bc/share/doc/html/src/Options.Applicative.Types.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="annot"><a href="CLI.Types.html#Command"><span class="hs-identifier hs-type">Command</span></a></span><span>
+</span><span id="line-382"></span><span id="matchParser"><span class="annot"><span class="annottext">matchParser :: Parser Command
 </span><a href="CLI.Parsers.html#matchParser"><span class="hs-identifier hs-var hs-var">matchParser</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
-</span><span id="line-382"></span><span>  </span><span class="annot"><span class="annottext">OptsMatch -&gt; Command
+</span><span id="line-383"></span><span>  </span><span class="annot"><span class="annottext">OptsMatch -&gt; Command
 </span><a href="CLI.Types.html#CmdMatch"><span class="hs-identifier hs-var">CmdMatch</span></a></span><span>
-</span><span id="line-383"></span><span>    </span><span class="annot"><span class="annottext">(OptsMatch -&gt; Command) -&gt; Parser OptsMatch -&gt; Parser Command
+</span><span id="line-384"></span><span>    </span><span class="annot"><span class="annottext">(OptsMatch -&gt; Command) -&gt; Parser OptsMatch -&gt; Parser Command
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="annottext">LogLevel
 -&gt; Int
@@ -5059,7 +5087,7 @@ forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 -&gt; Maybe String
 -&gt; OptsMatch
 </span><a href="CLI.Types.html#OptsMatch"><span class="hs-identifier hs-var">OptsMatch</span></a></span><span>
-</span><span id="line-384"></span><span>            </span><span class="annot"><span class="annottext">(LogLevel
+</span><span id="line-385"></span><span>            </span><span class="annot"><span class="annottext">(LogLevel
  -&gt; Int
  -&gt; SugarType
  -&gt; LineFormat
@@ -5081,7 +5109,7 @@ forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser LogLevel
 </span><a href="CLI.Parsers.html#optLogLevel"><span class="hs-identifier hs-var">optLogLevel</span></a></span><span>
-</span><span id="line-385"></span><span>            </span><span class="annot"><span class="annottext">Parser
+</span><span id="line-386"></span><span>            </span><span class="annot"><span class="annottext">Parser
   (Int
    -&gt; SugarType
    -&gt; LineFormat
@@ -5103,7 +5131,7 @@ forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser Int
 </span><a href="CLI.Parsers.html#optLogLines"><span class="hs-identifier hs-var">optLogLines</span></a></span><span>
-</span><span id="line-386"></span><span>            </span><span class="annot"><span class="annottext">Parser
+</span><span id="line-387"></span><span>            </span><span class="annot"><span class="annottext">Parser
   (SugarType
    -&gt; LineFormat
    -&gt; Int
@@ -5123,7 +5151,7 @@ forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser SugarType
 </span><a href="CLI.Parsers.html#optSugar"><span class="hs-identifier hs-var">optSugar</span></a></span><span>
-</span><span id="line-387"></span><span>            </span><span class="annot"><span class="annottext">Parser
+</span><span id="line-388"></span><span>            </span><span class="annot"><span class="annottext">Parser
   (LineFormat
    -&gt; Int
    -&gt; Maybe String
@@ -5137,7 +5165,7 @@ forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser LineFormat
 </span><a href="CLI.Parsers.html#optLineFormat"><span class="hs-identifier hs-var">optLineFormat</span></a></span><span>
-</span><span id="line-388"></span><span>            </span><span class="annot"><span class="annottext">Parser
+</span><span id="line-389"></span><span>            </span><span class="annot"><span class="annottext">Parser
   (Int -&gt; Maybe String -&gt; Maybe String -&gt; Maybe String -&gt; OptsMatch)
 -&gt; Parser Int
 -&gt; Parser
@@ -5146,7 +5174,7 @@ forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser Int
 </span><a href="CLI.Parsers.html#optSeed"><span class="hs-identifier hs-var">optSeed</span></a></span><span>
-</span><span id="line-389"></span><span>            </span><span class="annot"><span class="annottext">Parser (Maybe String -&gt; Maybe String -&gt; Maybe String -&gt; OptsMatch)
+</span><span id="line-390"></span><span>            </span><span class="annot"><span class="annottext">Parser (Maybe String -&gt; Maybe String -&gt; Maybe String -&gt; OptsMatch)
 -&gt; Parser (Maybe String)
 -&gt; Parser (Maybe String -&gt; Maybe String -&gt; OptsMatch)
 forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
@@ -5171,7 +5199,7 @@ forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 forall (f :: * -&gt; *) a. String -&gt; Mod f a
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/ptprs-pplctv-0.19.0.0-800394bc/share/doc/html/src/Options.Applicative.Builder.html#help"><span class="hs-identifier hs-var">help</span></a></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;Pattern expression to match against&quot;</span></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
-</span><span id="line-390"></span><span>            </span><span class="annot"><span class="annottext">Parser (Maybe String -&gt; Maybe String -&gt; OptsMatch)
+</span><span id="line-391"></span><span>            </span><span class="annot"><span class="annottext">Parser (Maybe String -&gt; Maybe String -&gt; OptsMatch)
 -&gt; Parser (Maybe String) -&gt; Parser (Maybe String -&gt; OptsMatch)
 forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
@@ -5195,21 +5223,21 @@ forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 forall (f :: * -&gt; *) a. String -&gt; Mod f a
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/ptprs-pplctv-0.19.0.0-800394bc/share/doc/html/src/Options.Applicative.Builder.html#help"><span class="hs-identifier hs-var">help</span></a></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;Predicate for matched substitutions&quot;</span></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
-</span><span id="line-391"></span><span>            </span><span class="annot"><span class="annottext">Parser (Maybe String -&gt; OptsMatch)
+</span><span id="line-392"></span><span>            </span><span class="annot"><span class="annottext">Parser (Maybe String -&gt; OptsMatch)
 -&gt; Parser (Maybe String) -&gt; Parser OptsMatch
 forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser (Maybe String)
 </span><a href="CLI.Parsers.html#argInputFile"><span class="hs-identifier hs-var">argInputFile</span></a></span><span>
-</span><span id="line-392"></span><span>        </span><span class="hs-special">)</span><span>
-</span><span id="line-393"></span><span>
-</span><span id="line-394"></span><span class="annot"><a href="CLI.Parsers.html#commandParser"><span class="hs-identifier hs-type">commandParser</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/ptprs-pplctv-0.19.0.0-800394bc/share/doc/html/src/Options.Applicative.Types.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="annot"><a href="CLI.Types.html#Command"><span class="hs-identifier hs-type">Command</span></a></span><span>
-</span><span id="line-395"></span><span id="commandParser"><span class="annot"><span class="annottext">commandParser :: Parser Command
+</span><span id="line-393"></span><span>        </span><span class="hs-special">)</span><span>
+</span><span id="line-394"></span><span>
+</span><span id="line-395"></span><span class="annot"><a href="CLI.Parsers.html#commandParser"><span class="hs-identifier hs-type">commandParser</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/ptprs-pplctv-0.19.0.0-800394bc/share/doc/html/src/Options.Applicative.Types.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="annot"><a href="CLI.Types.html#Command"><span class="hs-identifier hs-type">Command</span></a></span><span>
+</span><span id="line-396"></span><span id="commandParser"><span class="annot"><span class="annottext">commandParser :: Parser Command
 </span><a href="CLI.Parsers.html#commandParser"><span class="hs-identifier hs-var hs-var">commandParser</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
-</span><span id="line-396"></span><span>  </span><span class="annot"><span class="annottext">Mod CommandFields Command -&gt; Parser Command
+</span><span id="line-397"></span><span>  </span><span class="annot"><span class="annottext">Mod CommandFields Command -&gt; Parser Command
 forall a. Mod CommandFields a -&gt; Parser a
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/ptprs-pplctv-0.19.0.0-800394bc/share/doc/html/src/Options.Applicative.Extra.html#hsubparser"><span class="hs-identifier hs-var">hsubparser</span></a></span><span>
-</span><span id="line-397"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="annottext">String -&gt; ParserInfo Command -&gt; Mod CommandFields Command
+</span><span id="line-398"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="annottext">String -&gt; ParserInfo Command -&gt; Mod CommandFields Command
 forall a. String -&gt; ParserInfo a -&gt; Mod CommandFields a
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/ptprs-pplctv-0.19.0.0-800394bc/share/doc/html/src/Options.Applicative.Builder.html#command"><span class="hs-identifier hs-var">command</span></a></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;rewrite&quot;</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Parser Command -&gt; InfoMod Command -&gt; ParserInfo Command
@@ -5219,7 +5247,7 @@ forall a. Parser a -&gt; InfoMod a -&gt; ParserInfo a
 forall a. String -&gt; InfoMod a
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/ptprs-pplctv-0.19.0.0-800394bc/share/doc/html/src/Options.Applicative.Builder.html#progDesc"><span class="hs-identifier hs-var">progDesc</span></a></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;Rewrite the &#120593;-expression&quot;</span></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
-</span><span id="line-398"></span><span>        </span><span class="annot"><span class="annottext">Mod CommandFields Command
+</span><span id="line-399"></span><span>        </span><span class="annot"><span class="annottext">Mod CommandFields Command
 -&gt; Mod CommandFields Command -&gt; Mod CommandFields Command
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; ParserInfo Command -&gt; Mod CommandFields Command
@@ -5232,7 +5260,7 @@ forall a. Parser a -&gt; InfoMod a -&gt; ParserInfo a
 forall a. String -&gt; InfoMod a
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/ptprs-pplctv-0.19.0.0-800394bc/share/doc/html/src/Options.Applicative.Builder.html#progDesc"><span class="hs-identifier hs-var">progDesc</span></a></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;Dataize the &#120593;-expression&quot;</span></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
-</span><span id="line-399"></span><span>        </span><span class="annot"><span class="annottext">Mod CommandFields Command
+</span><span id="line-400"></span><span>        </span><span class="annot"><span class="annottext">Mod CommandFields Command
 -&gt; Mod CommandFields Command -&gt; Mod CommandFields Command
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; ParserInfo Command -&gt; Mod CommandFields Command
@@ -5245,7 +5273,7 @@ forall a. Parser a -&gt; InfoMod a -&gt; ParserInfo a
 forall a. String -&gt; InfoMod a
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/ptprs-pplctv-0.19.0.0-800394bc/share/doc/html/src/Options.Applicative.Builder.html#progDesc"><span class="hs-identifier hs-var">progDesc</span></a></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;Explain rules in LaTeX format&quot;</span></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
-</span><span id="line-400"></span><span>        </span><span class="annot"><span class="annottext">Mod CommandFields Command
+</span><span id="line-401"></span><span>        </span><span class="annot"><span class="annottext">Mod CommandFields Command
 -&gt; Mod CommandFields Command -&gt; Mod CommandFields Command
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; ParserInfo Command -&gt; Mod CommandFields Command
@@ -5258,7 +5286,7 @@ forall a. Parser a -&gt; InfoMod a -&gt; ParserInfo a
 forall a. String -&gt; InfoMod a
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/ptprs-pplctv-0.19.0.0-800394bc/share/doc/html/src/Options.Applicative.Builder.html#progDesc"><span class="hs-identifier hs-var">progDesc</span></a></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;Merge &#120593;-expressions into single one by merging their top level formations&quot;</span></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
-</span><span id="line-401"></span><span>        </span><span class="annot"><span class="annottext">Mod CommandFields Command
+</span><span id="line-402"></span><span>        </span><span class="annot"><span class="annottext">Mod CommandFields Command
 -&gt; Mod CommandFields Command -&gt; Mod CommandFields Command
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; ParserInfo Command -&gt; Mod CommandFields Command
@@ -5271,40 +5299,40 @@ forall a. Parser a -&gt; InfoMod a -&gt; ParserInfo a
 forall a. String -&gt; InfoMod a
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/ptprs-pplctv-0.19.0.0-800394bc/share/doc/html/src/Options.Applicative.Builder.html#progDesc"><span class="hs-identifier hs-var">progDesc</span></a></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;Match &#120593;-expression against provided pattern and build matched substitutions&quot;</span></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
-</span><span id="line-402"></span><span>    </span><span class="hs-special">)</span><span>
-</span><span id="line-403"></span><span>
-</span><span id="line-404"></span><span class="annot"><a href="CLI.Parsers.html#optPin"><span class="hs-identifier hs-type">optPin</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/ptprs-pplctv-0.19.0.0-800394bc/share/doc/html/src/Options.Applicative.Types.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span class="hs-special">)</span><span>
-</span><span id="line-405"></span><span id="optPin"><span class="annot"><span class="annottext">optPin :: Parser (Maybe String)
+</span><span id="line-403"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-404"></span><span>
+</span><span id="line-405"></span><span class="annot"><a href="CLI.Parsers.html#optPin"><span class="hs-identifier hs-type">optPin</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/ptprs-pplctv-0.19.0.0-800394bc/share/doc/html/src/Options.Applicative.Types.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span class="hs-special">)</span><span>
+</span><span id="line-406"></span><span id="optPin"><span class="annot"><span class="annottext">optPin :: Parser (Maybe String)
 </span><a href="CLI.Parsers.html#optPin"><span class="hs-identifier hs-var hs-var">optPin</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
-</span><span id="line-406"></span><span>  </span><span class="annot"><span class="annottext">Parser String -&gt; Parser (Maybe String)
+</span><span id="line-407"></span><span>  </span><span class="annot"><span class="annottext">Parser String -&gt; Parser (Maybe String)
 forall (f :: * -&gt; *) a. Alternative f =&gt; f a -&gt; f (Maybe a)
 </span><span class="hs-identifier hs-var">optional</span></span><span>
-</span><span id="line-407"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="annottext">Mod OptionFields String -&gt; Parser String
+</span><span id="line-408"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="annottext">Mod OptionFields String -&gt; Parser String
 forall s. IsString s =&gt; Mod OptionFields s -&gt; Parser s
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/ptprs-pplctv-0.19.0.0-800394bc/share/doc/html/src/Options.Applicative.Builder.html#strOption"><span class="hs-identifier hs-var">strOption</span></a></span><span>
-</span><span id="line-408"></span><span>        </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="annottext">String -&gt; Mod OptionFields String
+</span><span id="line-409"></span><span>        </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="annottext">String -&gt; Mod OptionFields String
 forall (f :: * -&gt; *) a. HasName f =&gt; String -&gt; Mod f a
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/ptprs-pplctv-0.19.0.0-800394bc/share/doc/html/src/Options.Applicative.Builder.html#long"><span class="hs-identifier hs-var">long</span></a></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;pin&quot;</span></span><span>
-</span><span id="line-409"></span><span>            </span><span class="annot"><span class="annottext">Mod OptionFields String
+</span><span id="line-410"></span><span>            </span><span class="annot"><span class="annottext">Mod OptionFields String
 -&gt; Mod OptionFields String -&gt; Mod OptionFields String
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; Mod OptionFields String
 forall (f :: * -&gt; *) a. HasMetavar f =&gt; String -&gt; Mod f a
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/ptprs-pplctv-0.19.0.0-800394bc/share/doc/html/src/Options.Applicative.Builder.html#metavar"><span class="hs-identifier hs-var">metavar</span></a></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;VERSION&quot;</span></span><span>
-</span><span id="line-410"></span><span>            </span><span class="annot"><span class="annottext">Mod OptionFields String
+</span><span id="line-411"></span><span>            </span><span class="annot"><span class="annottext">Mod OptionFields String
 -&gt; Mod OptionFields String -&gt; Mod OptionFields String
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; Mod OptionFields String
 forall (f :: * -&gt; *) a. String -&gt; Mod f a
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/ptprs-pplctv-0.19.0.0-800394bc/share/doc/html/src/Options.Applicative.Builder.html#help"><span class="hs-identifier hs-var">help</span></a></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;Fail if this version doesn't match the version of phino&quot;</span></span><span>
-</span><span id="line-411"></span><span>        </span><span class="hs-special">)</span><span>
-</span><span id="line-412"></span><span>    </span><span class="hs-special">)</span><span>
-</span><span id="line-413"></span><span>
-</span><span id="line-414"></span><span class="annot"><a href="CLI.Parsers.html#cliArgsParser"><span class="hs-identifier hs-type">cliArgsParser</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/ptprs-pplctv-0.19.0.0-800394bc/share/doc/html/src/Options.Applicative.Types.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="annot"><a href="CLI.Types.html#CliArgs"><span class="hs-identifier hs-type">CliArgs</span></a></span><span>
-</span><span id="line-415"></span><span id="cliArgsParser"><span class="annot"><span class="annottext">cliArgsParser :: Parser CliArgs
+</span><span id="line-412"></span><span>        </span><span class="hs-special">)</span><span>
+</span><span id="line-413"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-414"></span><span>
+</span><span id="line-415"></span><span class="annot"><a href="CLI.Parsers.html#cliArgsParser"><span class="hs-identifier hs-type">cliArgsParser</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/ptprs-pplctv-0.19.0.0-800394bc/share/doc/html/src/Options.Applicative.Types.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="annot"><a href="CLI.Types.html#CliArgs"><span class="hs-identifier hs-type">CliArgs</span></a></span><span>
+</span><span id="line-416"></span><span id="cliArgsParser"><span class="annot"><span class="annottext">cliArgsParser :: Parser CliArgs
 </span><a href="CLI.Parsers.html#cliArgsParser"><span class="hs-identifier hs-var hs-var">cliArgsParser</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Maybe String -&gt; Command -&gt; CliArgs
 </span><a href="CLI.Types.html#CliArgs"><span class="hs-identifier hs-var">CliArgs</span></a></span><span> </span><span class="annot"><span class="annottext">(Maybe String -&gt; Command -&gt; CliArgs)
 -&gt; Parser (Maybe String) -&gt; Parser (Command -&gt; CliArgs)
@@ -5315,14 +5343,14 @@ forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser Command
 </span><a href="CLI.Parsers.html#commandParser"><span class="hs-identifier hs-var">commandParser</span></a></span><span>
-</span><span id="line-416"></span><span>
-</span><span id="line-417"></span><span class="annot"><a href="CLI.Parsers.html#parserInfo"><span class="hs-identifier hs-type">parserInfo</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/ptprs-pplctv-0.19.0.0-800394bc/share/doc/html/src/Options.Applicative.Types.html#ParserInfo"><span class="hs-identifier hs-type">ParserInfo</span></a></span><span> </span><span class="annot"><a href="CLI.Types.html#CliArgs"><span class="hs-identifier hs-type">CliArgs</span></a></span><span>
-</span><span id="line-418"></span><span id="parserInfo"><span class="annot"><span class="annottext">parserInfo :: ParserInfo CliArgs
+</span><span id="line-417"></span><span>
+</span><span id="line-418"></span><span class="annot"><a href="CLI.Parsers.html#parserInfo"><span class="hs-identifier hs-type">parserInfo</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/ptprs-pplctv-0.19.0.0-800394bc/share/doc/html/src/Options.Applicative.Types.html#ParserInfo"><span class="hs-identifier hs-type">ParserInfo</span></a></span><span> </span><span class="annot"><a href="CLI.Types.html#CliArgs"><span class="hs-identifier hs-type">CliArgs</span></a></span><span>
+</span><span id="line-419"></span><span id="parserInfo"><span class="annot"><span class="annottext">parserInfo :: ParserInfo CliArgs
 </span><a href="CLI.Parsers.html#parserInfo"><span class="hs-identifier hs-var hs-var">parserInfo</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
-</span><span id="line-419"></span><span>  </span><span class="annot"><span class="annottext">Parser CliArgs -&gt; InfoMod CliArgs -&gt; ParserInfo CliArgs
+</span><span id="line-420"></span><span>  </span><span class="annot"><span class="annottext">Parser CliArgs -&gt; InfoMod CliArgs -&gt; ParserInfo CliArgs
 forall a. Parser a -&gt; InfoMod a -&gt; ParserInfo a
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/ptprs-pplctv-0.19.0.0-800394bc/share/doc/html/src/Options.Applicative.Builder.html#info"><span class="hs-identifier hs-var">info</span></a></span><span>
-</span><span id="line-420"></span><span>    </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Parser CliArgs
+</span><span id="line-421"></span><span>    </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Parser CliArgs
 </span><a href="CLI.Parsers.html#cliArgsParser"><span class="hs-identifier hs-var">cliArgsParser</span></a></span><span> </span><span class="annot"><span class="annottext">Parser CliArgs -&gt; Parser (CliArgs -&gt; CliArgs) -&gt; Parser CliArgs
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f a -&gt; f (a -&gt; b) -&gt; f b
 </span><span class="hs-operator hs-var">&lt;**&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser (CliArgs -&gt; CliArgs)
@@ -5334,7 +5362,7 @@ forall a. String -&gt; Parser (a -&gt; a)
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/ptprs-pplctv-0.19.0.0-800394bc/share/doc/html/src/Options.Applicative.Extra.html#simpleVersioner"><span class="hs-identifier hs-var">simpleVersioner</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Version -&gt; String
 </span><span class="hs-identifier hs-var">showVersion</span></span><span> </span><span class="annot"><span class="annottext">Version
 </span><a href="Paths_phino.html#version"><span class="hs-identifier hs-var">version</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
-</span><span id="line-421"></span><span>    </span><span class="hs-special">(</span><span class="annot"><span class="annottext">InfoMod CliArgs
+</span><span id="line-422"></span><span>    </span><span class="hs-special">(</span><span class="annot"><span class="annottext">InfoMod CliArgs
 forall a. InfoMod a
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/ptprs-pplctv-0.19.0.0-800394bc/share/doc/html/src/Options.Applicative.Builder.html#fullDesc"><span class="hs-identifier hs-var">fullDesc</span></a></span><span> </span><span class="annot"><span class="annottext">InfoMod CliArgs -&gt; InfoMod CliArgs -&gt; InfoMod CliArgs
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
@@ -5342,4 +5370,4 @@ forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 forall a. String -&gt; InfoMod a
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/ptprs-pplctv-0.19.0.0-800394bc/share/doc/html/src/Options.Applicative.Builder.html#header"><span class="hs-identifier hs-var">header</span></a></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;Phino - CLI Manipulator of &#120593;-Calculus Expressions&quot;</span></span><span class="hs-special">)</span><span>
-</span><span id="line-422"></span></pre></body></html>
+</span><span id="line-423"></span></pre></body></html>
