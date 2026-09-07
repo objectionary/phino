@@ -184,7 +184,6 @@ data OptsMatch = OptsMatch
   , _logLines :: Int
   , _sugarType :: SugarType
   , _flat :: LineFormat
-  , _seed :: Int
   , _pattern :: Maybe String
   , _when :: Maybe String
   , _inputFile :: Maybe FilePath
