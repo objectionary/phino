@@ -14,20 +14,20 @@
 </span><span id="line-14"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Printer.html"><span class="hs-identifier">Printer</span></a></span><span>
 </span><span id="line-15"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Text.Printf</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">printf</span></span><span class="hs-special">)</span><span>
 </span><span id="line-16"></span><span>
-</span><span id="line-17"></span><span id="local-6989586621679268713"><span class="annot"><a href="CLI.Validators.html#invalidCLIArguments"><span class="hs-identifier hs-type">invalidCLIArguments</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="annot"><a href="#local-6989586621679268713"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-17"></span><span id="local-6989586621679507771"><span class="annot"><a href="CLI.Validators.html#invalidCLIArguments"><span class="hs-identifier hs-type">invalidCLIArguments</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="annot"><a href="#local-6989586621679507771"><span class="hs-identifier hs-type">a</span></a></span></span><span>
 </span><span id="line-18"></span><span id="invalidCLIArguments"><span class="annot"><span class="annottext">invalidCLIArguments :: forall a. String -&gt; IO a
-</span><a href="CLI.Validators.html#invalidCLIArguments"><span class="hs-identifier hs-var hs-var">invalidCLIArguments</span></a></span></span><span> </span><span id="local-6989586621679268819"><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679268819"><span class="hs-identifier hs-var">msg</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">CmdException -&gt; IO a
+</span><a href="CLI.Validators.html#invalidCLIArguments"><span class="hs-identifier hs-var hs-var">invalidCLIArguments</span></a></span></span><span> </span><span id="local-6989586621679507877"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679507877"><span class="hs-identifier hs-var">msg</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">CmdException -&gt; IO a
 forall e a. Exception e =&gt; e -&gt; IO a
 </span><span class="hs-identifier hs-var">throwIO</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String -&gt; CmdException
 </span><a href="CLI.Types.html#InvalidCLIArguments"><span class="hs-identifier hs-var">InvalidCLIArguments</span></a></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679268819"><span class="hs-identifier hs-var">msg</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679507877"><span class="hs-identifier hs-var">msg</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-19"></span><span>
 </span><span id="line-20"></span><span class="hs-comment">-- Validate given expressions as valid dispatches</span><span>
 </span><span id="line-21"></span><span class="annot"><a href="CLI.Validators.html#validatedDispatches"><span class="hs-identifier hs-type">validatedDispatches</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span class="hs-special">]</span><span>
 </span><span id="line-22"></span><span id="validatedDispatches"><span class="annot"><span class="annottext">validatedDispatches :: String -&gt; [String] -&gt; IO [Expression]
-</span><a href="CLI.Validators.html#validatedDispatches"><span class="hs-identifier hs-var hs-var">validatedDispatches</span></a></span></span><span> </span><span id="local-6989586621679268823"><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679268823"><span class="hs-identifier hs-var">opt</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(String -&gt; IO Expression) -&gt; [String] -&gt; IO [Expression]
+</span><a href="CLI.Validators.html#validatedDispatches"><span class="hs-identifier hs-var hs-var">validatedDispatches</span></a></span></span><span> </span><span id="local-6989586621679507881"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679507881"><span class="hs-identifier hs-var">opt</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(String -&gt; IO Expression) -&gt; [String] -&gt; IO [Expression]
 forall (t :: * -&gt; *) (f :: * -&gt; *) a b.
 (Traversable t, Applicative f) =&gt;
 (a -&gt; f b) -&gt; t a -&gt; f (t b)
@@ -41,38 +41,38 @@ forall (m :: * -&gt; *) a b c.
 Monad m =&gt;
 (a -&gt; m b) -&gt; (b -&gt; m c) -&gt; a -&gt; m c
 </span><span class="hs-operator hs-var">&gt;=&gt;</span></span><span> </span><span class="annot"><span class="annottext">Expression -&gt; IO Expression
-</span><a href="#local-6989586621679268825"><span class="hs-identifier hs-var">asDispatch</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679507883"><span class="hs-identifier hs-var">asDispatch</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-23"></span><span>  </span><span class="hs-keyword">where</span><span>
-</span><span id="line-24"></span><span>    </span><span class="annot"><a href="#local-6989586621679268825"><span class="hs-identifier hs-type">asDispatch</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span>
-</span><span id="line-25"></span><span>    </span><span id="local-6989586621679268825"><span class="annot"><span class="annottext">asDispatch :: Expression -&gt; IO Expression
-</span><a href="#local-6989586621679268825"><span class="hs-identifier hs-var hs-var">asDispatch</span></a></span></span><span> </span><span id="local-6989586621679268826"><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679268826"><span class="hs-identifier hs-var">expr</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expression -&gt; IO Expression
-</span><a href="#local-6989586621679268827"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679268826"><span class="hs-identifier hs-var">expr</span></a></span><span>
+</span><span id="line-24"></span><span>    </span><span class="annot"><a href="#local-6989586621679507883"><span class="hs-identifier hs-type">asDispatch</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span>
+</span><span id="line-25"></span><span>    </span><span id="local-6989586621679507883"><span class="annot"><span class="annottext">asDispatch :: Expression -&gt; IO Expression
+</span><a href="#local-6989586621679507883"><span class="hs-identifier hs-var hs-var">asDispatch</span></a></span></span><span> </span><span id="local-6989586621679507884"><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679507884"><span class="hs-identifier hs-var">expr</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expression -&gt; IO Expression
+</span><a href="#local-6989586621679507885"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679507884"><span class="hs-identifier hs-var">expr</span></a></span><span>
 </span><span id="line-26"></span><span>      </span><span class="hs-keyword">where</span><span>
-</span><span id="line-27"></span><span>        </span><span class="annot"><a href="#local-6989586621679268827"><span class="hs-identifier hs-type">go</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span>
-</span><span id="line-28"></span><span>        </span><span id="local-6989586621679268827"><span class="annot"><span class="annottext">go :: Expression -&gt; IO Expression
-</span><a href="#local-6989586621679268827"><span class="hs-identifier hs-var hs-var">go</span></a></span></span><span> </span><span id="local-6989586621679268828"><span class="annot"><span class="annottext">ex :: Expression
-</span><a href="#local-6989586621679268828"><span class="hs-identifier hs-var">ex</span></a></span></span><span class="hs-glyph">@</span><span class="annot"><span class="annottext">Expression
+</span><span id="line-27"></span><span>        </span><span class="annot"><a href="#local-6989586621679507885"><span class="hs-identifier hs-type">go</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span>
+</span><span id="line-28"></span><span>        </span><span id="local-6989586621679507885"><span class="annot"><span class="annottext">go :: Expression -&gt; IO Expression
+</span><a href="#local-6989586621679507885"><span class="hs-identifier hs-var hs-var">go</span></a></span></span><span> </span><span id="local-6989586621679507886"><span class="annot"><span class="annottext">ex :: Expression
+</span><a href="#local-6989586621679507886"><span class="hs-identifier hs-var">ex</span></a></span></span><span class="hs-glyph">@</span><span class="annot"><span class="annottext">Expression
 </span><a href="AST.html#ExRoot"><span class="hs-identifier hs-var">ExRoot</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expression -&gt; IO Expression
 forall a. a -&gt; IO a
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679268828"><span class="hs-identifier hs-var">ex</span></a></span><span>
-</span><span id="line-29"></span><span>        </span><span class="annot"><a href="#local-6989586621679268827"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span id="local-6989586621679268830"><span class="annot"><span class="annottext">disp :: Expression
-</span><a href="#local-6989586621679268830"><span class="hs-identifier hs-var">disp</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="AST.html#ExDispatch"><span class="hs-identifier hs-type">ExDispatch</span></a></span><span> </span><span id="local-6989586621679268832"><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679268832"><span class="hs-identifier hs-var">ex</span></a></span></span><span> </span><span class="annot"><span class="annottext">Attribute
+</span><a href="#local-6989586621679507886"><span class="hs-identifier hs-var">ex</span></a></span><span>
+</span><span id="line-29"></span><span>        </span><span class="annot"><a href="#local-6989586621679507885"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span id="local-6989586621679507888"><span class="annot"><span class="annottext">disp :: Expression
+</span><a href="#local-6989586621679507888"><span class="hs-identifier hs-var">disp</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="AST.html#ExDispatch"><span class="hs-identifier hs-type">ExDispatch</span></a></span><span> </span><span id="local-6989586621679507890"><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679507890"><span class="hs-identifier hs-var">ex</span></a></span></span><span> </span><span class="annot"><span class="annottext">Attribute
 </span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expression -&gt; IO Expression
-</span><a href="#local-6989586621679268827"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679268832"><span class="hs-identifier hs-var">ex</span></a></span><span> </span><span class="annot"><span class="annottext">IO Expression -&gt; IO Expression -&gt; IO Expression
+</span><a href="#local-6989586621679507885"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679507890"><span class="hs-identifier hs-var">ex</span></a></span><span> </span><span class="annot"><span class="annottext">IO Expression -&gt; IO Expression -&gt; IO Expression
 forall a b. IO a -&gt; IO b -&gt; IO b
 forall (m :: * -&gt; *) a b. Monad m =&gt; m a -&gt; m b -&gt; m b
 </span><span class="hs-operator hs-var">&gt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Expression -&gt; IO Expression
 forall a. a -&gt; IO a
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679268830"><span class="hs-identifier hs-var">disp</span></a></span><span>
-</span><span id="line-30"></span><span>        </span><span class="annot"><a href="#local-6989586621679268827"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679507888"><span class="hs-identifier hs-var">disp</span></a></span><span>
+</span><span id="line-30"></span><span>        </span><span class="annot"><a href="#local-6989586621679507885"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-31"></span><span>          </span><span class="annot"><span class="annottext">String -&gt; IO Expression
 forall a. String -&gt; IO a
@@ -83,10 +83,10 @@ forall r. PrintfType r =&gt; String -&gt; r
 </span><span id="line-33"></span><span>                </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;Only dispatch expression started with &#934; (or Q) can be used in --%s, but given: %s&quot;</span></span><span>
 </span><span id="line-34"></span><span>                </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679268823"><span class="hs-identifier hs-var">opt</span></a></span><span>
+</span><a href="#local-6989586621679507881"><span class="hs-identifier hs-var">opt</span></a></span><span>
 </span><span id="line-35"></span><span>                </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expression -&gt; PrintConfig -&gt; String
 </span><a href="Printer.html#printExpression%27"><span class="hs-identifier hs-var">printExpression'</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679268826"><span class="hs-identifier hs-var">expr</span></a></span><span> </span><span class="annot"><span class="annottext">PrintConfig
+</span><a href="#local-6989586621679507884"><span class="hs-identifier hs-var">expr</span></a></span><span> </span><span class="annot"><span class="annottext">PrintConfig
 </span><a href="Printer.html#logPrintConfig"><span class="hs-identifier hs-var">logPrintConfig</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-36"></span><span>            </span><span class="hs-special">)</span><span>
 </span><span id="line-37"></span><span>
@@ -95,38 +95,38 @@ forall r. PrintfType r =&gt; String -&gt; r
 </span><span id="line-40"></span><span class="hs-comment">-- --show was meant to keep.</span><span>
 </span><span id="line-41"></span><span class="annot"><a href="CLI.Validators.html#validateNoOverlap"><span class="hs-identifier hs-type">validateNoOverlap</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
 </span><span id="line-42"></span><span id="validateNoOverlap"><span class="annot"><span class="annottext">validateNoOverlap :: String -&gt; [Expression] -&gt; String -&gt; [Expression] -&gt; IO ()
-</span><a href="CLI.Validators.html#validateNoOverlap"><span class="hs-identifier hs-var hs-var">validateNoOverlap</span></a></span></span><span> </span><span id="local-6989586621679268836"><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679268836"><span class="hs-identifier hs-var">showOpt</span></a></span></span><span> </span><span id="local-6989586621679268837"><span class="annot"><span class="annottext">[Expression]
-</span><a href="#local-6989586621679268837"><span class="hs-identifier hs-var">shown</span></a></span></span><span> </span><span id="local-6989586621679268838"><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679268838"><span class="hs-identifier hs-var">hideOpt</span></a></span></span><span> </span><span id="local-6989586621679268839"><span class="annot"><span class="annottext">[Expression]
-</span><a href="#local-6989586621679268839"><span class="hs-identifier hs-var">hidden</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><a href="CLI.Validators.html#validateNoOverlap"><span class="hs-identifier hs-var hs-var">validateNoOverlap</span></a></span></span><span> </span><span id="local-6989586621679507894"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679507894"><span class="hs-identifier hs-var">showOpt</span></a></span></span><span> </span><span id="local-6989586621679507895"><span class="annot"><span class="annottext">[Expression]
+</span><a href="#local-6989586621679507895"><span class="hs-identifier hs-var">shown</span></a></span></span><span> </span><span id="local-6989586621679507896"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679507896"><span class="hs-identifier hs-var">hideOpt</span></a></span></span><span> </span><span id="local-6989586621679507897"><span class="annot"><span class="annottext">[Expression]
+</span><a href="#local-6989586621679507897"><span class="hs-identifier hs-var">hidden</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-43"></span><span>  </span><span class="annot"><span class="annottext">[Expression] -&gt; (Expression -&gt; IO ()) -&gt; IO ()
 forall (t :: * -&gt; *) (f :: * -&gt; *) a b.
 (Foldable t, Applicative f) =&gt;
 t a -&gt; (a -&gt; f b) -&gt; f ()
 </span><span class="hs-identifier hs-var">for_</span></span><span> </span><span class="annot"><span class="annottext">[Expression]
-</span><a href="#local-6989586621679268837"><span class="hs-identifier hs-var">shown</span></a></span><span> </span><span class="annot"><span class="annottext">((Expression -&gt; IO ()) -&gt; IO ()) -&gt; (Expression -&gt; IO ()) -&gt; IO ()
+</span><a href="#local-6989586621679507895"><span class="hs-identifier hs-var">shown</span></a></span><span> </span><span class="annot"><span class="annottext">((Expression -&gt; IO ()) -&gt; IO ()) -&gt; (Expression -&gt; IO ()) -&gt; IO ()
 forall a b. (a -&gt; b) -&gt; a -&gt; b
-</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679268840"><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679268840"><span class="hs-identifier hs-var">shown'</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679507898"><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679507898"><span class="hs-identifier hs-var">shown'</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
 </span><span id="line-44"></span><span>    </span><span class="annot"><span class="annottext">[Expression] -&gt; (Expression -&gt; IO ()) -&gt; IO ()
 forall (t :: * -&gt; *) (f :: * -&gt; *) a b.
 (Foldable t, Applicative f) =&gt;
 t a -&gt; (a -&gt; f b) -&gt; f ()
 </span><span class="hs-identifier hs-var">for_</span></span><span> </span><span class="annot"><span class="annottext">[Expression]
-</span><a href="#local-6989586621679268839"><span class="hs-identifier hs-var">hidden</span></a></span><span> </span><span class="annot"><span class="annottext">((Expression -&gt; IO ()) -&gt; IO ()) -&gt; (Expression -&gt; IO ()) -&gt; IO ()
+</span><a href="#local-6989586621679507897"><span class="hs-identifier hs-var">hidden</span></a></span><span> </span><span class="annot"><span class="annottext">((Expression -&gt; IO ()) -&gt; IO ()) -&gt; (Expression -&gt; IO ()) -&gt; IO ()
 forall a b. (a -&gt; b) -&gt; a -&gt; b
-</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679268841"><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679268841"><span class="hs-identifier hs-var">hidden'</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679507899"><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679507899"><span class="hs-identifier hs-var">hidden'</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
 </span><span id="line-45"></span><span>      </span><span class="annot"><span class="annottext">Bool -&gt; IO () -&gt; IO ()
 forall (f :: * -&gt; *). Applicative f =&gt; Bool -&gt; f () -&gt; f ()
 </span><span class="hs-identifier hs-var">when</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expression -&gt; String
 </span><a href="Printer.html#printExpression"><span class="hs-identifier hs-var">printExpression</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679268840"><span class="hs-identifier hs-var">shown'</span></a></span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; Bool
+</span><a href="#local-6989586621679507898"><span class="hs-identifier hs-var">shown'</span></a></span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; Bool
 forall a. Eq a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">Expression -&gt; String
 </span><a href="Printer.html#printExpression"><span class="hs-identifier hs-var">printExpression</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679268841"><span class="hs-identifier hs-var">hidden'</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(IO () -&gt; IO ()) -&gt; IO () -&gt; IO ()
+</span><a href="#local-6989586621679507899"><span class="hs-identifier hs-var">hidden'</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(IO () -&gt; IO ()) -&gt; IO () -&gt; IO ()
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span>
 </span><span id="line-46"></span><span>        </span><span class="annot"><span class="annottext">String -&gt; IO ()
@@ -138,12 +138,12 @@ forall r. PrintfType r =&gt; String -&gt; r
 </span><span id="line-48"></span><span>              </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;The --%s locator '%s' is also listed in --%s, which would hide it from the result&quot;</span></span><span>
 </span><span id="line-49"></span><span>              </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679268836"><span class="hs-identifier hs-var">showOpt</span></a></span><span>
+</span><a href="#local-6989586621679507894"><span class="hs-identifier hs-var">showOpt</span></a></span><span>
 </span><span id="line-50"></span><span>              </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expression -&gt; String
 </span><a href="Printer.html#printExpression"><span class="hs-identifier hs-var">printExpression</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679268840"><span class="hs-identifier hs-var">shown'</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679507898"><span class="hs-identifier hs-var">shown'</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-51"></span><span>              </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679268838"><span class="hs-identifier hs-var">hideOpt</span></a></span><span>
+</span><a href="#local-6989586621679507896"><span class="hs-identifier hs-var">hideOpt</span></a></span><span>
 </span><span id="line-52"></span><span>          </span><span class="hs-special">)</span><span>
 </span><span id="line-53"></span><span>
 </span><span id="line-54"></span><span class="hs-comment">-- Validate LaTeX options</span><span>
@@ -162,75 +162,75 @@ forall a. a -&gt; IO a
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
 </span><span id="line-57"></span><span class="annot"><a href="CLI.Validators.html#validateLatexOptions"><span class="hs-identifier hs-var">validateLatexOptions</span></a></span><span> </span><span class="annot"><span class="annottext">IOFormat
-</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679268845"><span class="annot"><span class="annottext">[(Bool, String)]
-</span><a href="#local-6989586621679268845"><span class="hs-identifier hs-var">bools</span></a></span></span><span> </span><span id="local-6989586621679268846"><span class="annot"><span class="annottext">[(Maybe String, String)]
-</span><a href="#local-6989586621679268846"><span class="hs-identifier hs-var">strings</span></a></span></span><span> </span><span id="local-6989586621679268847"><span class="annot"><span class="annottext">[(Maybe Int, String)]
-</span><a href="#local-6989586621679268847"><span class="hs-identifier hs-var">ints</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-58"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679268848"><span class="annot"><span class="annottext">[Bool]
-</span><a href="#local-6989586621679268848"><span class="hs-identifier hs-var">bools'</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679268849"><span class="annot"><span class="annottext">[String]
-</span><a href="#local-6989586621679268849"><span class="hs-identifier hs-var">opts</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[(Bool, String)] -&gt; ([Bool], [String])
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679507903"><span class="annot"><span class="annottext">[(Bool, String)]
+</span><a href="#local-6989586621679507903"><span class="hs-identifier hs-var">bools</span></a></span></span><span> </span><span id="local-6989586621679507904"><span class="annot"><span class="annottext">[(Maybe String, String)]
+</span><a href="#local-6989586621679507904"><span class="hs-identifier hs-var">strings</span></a></span></span><span> </span><span id="local-6989586621679507905"><span class="annot"><span class="annottext">[(Maybe Int, String)]
+</span><a href="#local-6989586621679507905"><span class="hs-identifier hs-var">ints</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-58"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679507906"><span class="annot"><span class="annottext">[Bool]
+</span><a href="#local-6989586621679507906"><span class="hs-identifier hs-var">bools'</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679507907"><span class="annot"><span class="annottext">[String]
+</span><a href="#local-6989586621679507907"><span class="hs-identifier hs-var">opts</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[(Bool, String)] -&gt; ([Bool], [String])
 forall a b. [(a, b)] -&gt; ([a], [b])
 </span><span class="hs-identifier hs-var">unzip</span></span><span> </span><span class="annot"><span class="annottext">[(Bool, String)]
-</span><a href="#local-6989586621679268845"><span class="hs-identifier hs-var">bools</span></a></span><span>
-</span><span id="line-59"></span><span>      </span><span id="local-6989586621679268851"><span class="annot"><span class="annottext">msg :: String
-</span><a href="#local-6989586621679268851"><span class="hs-identifier hs-var hs-var">msg</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679507903"><span class="hs-identifier hs-var">bools</span></a></span><span>
+</span><span id="line-59"></span><span>      </span><span id="local-6989586621679507909"><span class="annot"><span class="annottext">msg :: String
+</span><a href="#local-6989586621679507909"><span class="hs-identifier hs-var hs-var">msg</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;The --%s option can stay together with --output=latex only&quot;</span></span><span>
-</span><span id="line-60"></span><span>      </span><span id="local-6989586621679268748"><span class="annot"><a href="#local-6989586621679268852"><span class="hs-identifier hs-type">callback</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><a href="#local-6989586621679268748"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span><span>
-</span><span id="line-61"></span><span>      </span><span id="local-6989586621679268852"><span class="annot"><span class="annottext">callback :: forall a. (Maybe a, String) -&gt; IO ()
-</span><a href="#local-6989586621679268852"><span class="hs-identifier hs-var hs-var">callback</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679268855"><span class="annot"><span class="annottext">Maybe a
-</span><a href="#local-6989586621679268855"><span class="hs-identifier hs-var">maybe'</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679268856"><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679268856"><span class="hs-identifier hs-var">opt</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool -&gt; IO () -&gt; IO ()
+</span><span id="line-60"></span><span>      </span><span id="local-6989586621679507806"><span class="annot"><a href="#local-6989586621679507910"><span class="hs-identifier hs-type">callback</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><a href="#local-6989586621679507806"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span><span>
+</span><span id="line-61"></span><span>      </span><span id="local-6989586621679507910"><span class="annot"><span class="annottext">callback :: forall a. (Maybe a, String) -&gt; IO ()
+</span><a href="#local-6989586621679507910"><span class="hs-identifier hs-var hs-var">callback</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679507913"><span class="annot"><span class="annottext">Maybe a
+</span><a href="#local-6989586621679507913"><span class="hs-identifier hs-var">maybe'</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679507914"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679507914"><span class="hs-identifier hs-var">opt</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool -&gt; IO () -&gt; IO ()
 forall (f :: * -&gt; *). Applicative f =&gt; Bool -&gt; f () -&gt; f ()
 </span><span class="hs-identifier hs-var">when</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Maybe a -&gt; Bool
 forall a. Maybe a -&gt; Bool
 </span><span class="hs-identifier hs-var">isJust</span></span><span> </span><span class="annot"><span class="annottext">Maybe a
-</span><a href="#local-6989586621679268855"><span class="hs-identifier hs-var">maybe'</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String -&gt; IO ()
+</span><a href="#local-6989586621679507913"><span class="hs-identifier hs-var">maybe'</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String -&gt; IO ()
 forall a. String -&gt; IO a
 </span><a href="CLI.Validators.html#invalidCLIArguments"><span class="hs-identifier hs-var">invalidCLIArguments</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
 forall r. PrintfType r =&gt; String -&gt; r
 </span><span class="hs-identifier hs-var">printf</span></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679268851"><span class="hs-identifier hs-var">msg</span></a></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679268856"><span class="hs-identifier hs-var">opt</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679507909"><span class="hs-identifier hs-var">msg</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679507914"><span class="hs-identifier hs-var">opt</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
 </span><span id="line-62"></span><span>  </span><span class="annot"><span class="annottext">[(Bool, String)] -&gt; IO ()
 </span><a href="CLI.Validators.html#validateBoolOpts"><span class="hs-identifier hs-var">validateBoolOpts</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[Bool] -&gt; [String] -&gt; [(Bool, String)]
 forall a b. [a] -&gt; [b] -&gt; [(a, b)]
 </span><span class="hs-identifier hs-var">zip</span></span><span> </span><span class="annot"><span class="annottext">[Bool]
-</span><a href="#local-6989586621679268848"><span class="hs-identifier hs-var">bools'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(String -&gt; String) -&gt; [String] -&gt; [String]
+</span><a href="#local-6989586621679507906"><span class="hs-identifier hs-var">bools'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(String -&gt; String) -&gt; [String] -&gt; [String]
 forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
 </span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
 forall r. PrintfType r =&gt; String -&gt; r
 </span><span class="hs-identifier hs-var">printf</span></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679268851"><span class="hs-identifier hs-var">msg</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[String]
-</span><a href="#local-6989586621679268849"><span class="hs-identifier hs-var">opts</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679507909"><span class="hs-identifier hs-var">msg</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[String]
+</span><a href="#local-6989586621679507907"><span class="hs-identifier hs-var">opts</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
 </span><span id="line-63"></span><span>  </span><span class="annot"><span class="annottext">[(Maybe String, String)]
 -&gt; ((Maybe String, String) -&gt; IO ()) -&gt; IO ()
 forall (t :: * -&gt; *) (m :: * -&gt; *) a b.
 (Foldable t, Monad m) =&gt;
 t a -&gt; (a -&gt; m b) -&gt; m ()
 </span><span class="hs-identifier hs-var">forM_</span></span><span> </span><span class="annot"><span class="annottext">[(Maybe String, String)]
-</span><a href="#local-6989586621679268846"><span class="hs-identifier hs-var">strings</span></a></span><span> </span><span class="annot"><span class="annottext">(Maybe String, String) -&gt; IO ()
+</span><a href="#local-6989586621679507904"><span class="hs-identifier hs-var">strings</span></a></span><span> </span><span class="annot"><span class="annottext">(Maybe String, String) -&gt; IO ()
 forall a. (Maybe a, String) -&gt; IO ()
-</span><a href="#local-6989586621679268852"><span class="hs-identifier hs-var">callback</span></a></span><span>
+</span><a href="#local-6989586621679507910"><span class="hs-identifier hs-var">callback</span></a></span><span>
 </span><span id="line-64"></span><span>  </span><span class="annot"><span class="annottext">[(Maybe Int, String)] -&gt; ((Maybe Int, String) -&gt; IO ()) -&gt; IO ()
 forall (t :: * -&gt; *) (m :: * -&gt; *) a b.
 (Foldable t, Monad m) =&gt;
 t a -&gt; (a -&gt; m b) -&gt; m ()
 </span><span class="hs-identifier hs-var">forM_</span></span><span> </span><span class="annot"><span class="annottext">[(Maybe Int, String)]
-</span><a href="#local-6989586621679268847"><span class="hs-identifier hs-var">ints</span></a></span><span> </span><span class="annot"><span class="annottext">(Maybe Int, String) -&gt; IO ()
+</span><a href="#local-6989586621679507905"><span class="hs-identifier hs-var">ints</span></a></span><span> </span><span class="annot"><span class="annottext">(Maybe Int, String) -&gt; IO ()
 forall a. (Maybe a, String) -&gt; IO ()
-</span><a href="#local-6989586621679268852"><span class="hs-identifier hs-var">callback</span></a></span><span>
+</span><a href="#local-6989586621679507910"><span class="hs-identifier hs-var">callback</span></a></span><span>
 </span><span id="line-65"></span><span>
 </span><span id="line-66"></span><span class="hs-comment">-- Validate 'must' option</span><span>
 </span><span id="line-67"></span><span class="annot"><a href="CLI.Validators.html#validateMust%27"><span class="hs-identifier hs-type">validateMust'</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Must.html#Must"><span class="hs-identifier hs-type">Must</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
 </span><span id="line-68"></span><span id="validateMust%27"><span class="annot"><span class="annottext">validateMust' :: Must -&gt; IO ()
-</span><a href="CLI.Validators.html#validateMust%27"><span class="hs-identifier hs-var hs-var">validateMust'</span></a></span></span><span> </span><span id="local-6989586621679268859"><span class="annot"><span class="annottext">Must
-</span><a href="#local-6989586621679268859"><span class="hs-identifier hs-var">must</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Maybe String -&gt; (String -&gt; IO Any) -&gt; IO ()
+</span><a href="CLI.Validators.html#validateMust%27"><span class="hs-identifier hs-var hs-var">validateMust'</span></a></span></span><span> </span><span id="local-6989586621679507917"><span class="annot"><span class="annottext">Must
+</span><a href="#local-6989586621679507917"><span class="hs-identifier hs-var">must</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Maybe String -&gt; (String -&gt; IO Any) -&gt; IO ()
 forall (t :: * -&gt; *) (f :: * -&gt; *) a b.
 (Foldable t, Applicative f) =&gt;
 t a -&gt; (a -&gt; f b) -&gt; f ()
 </span><span class="hs-identifier hs-var">for_</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Must -&gt; Maybe String
 </span><a href="Must.html#validateMust"><span class="hs-identifier hs-var">validateMust</span></a></span><span> </span><span class="annot"><span class="annottext">Must
-</span><a href="#local-6989586621679268859"><span class="hs-identifier hs-var">must</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">String -&gt; IO Any
+</span><a href="#local-6989586621679507917"><span class="hs-identifier hs-var">must</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">String -&gt; IO Any
 forall a. String -&gt; IO a
 </span><a href="CLI.Validators.html#invalidCLIArguments"><span class="hs-identifier hs-var">invalidCLIArguments</span></a></span><span>
 </span><span id="line-69"></span><span>
@@ -239,11 +239,11 @@ forall a. String -&gt; IO a
 </span><span id="line-72"></span><span id="validateXmirOptions"><span class="annot"><span class="annottext">validateXmirOptions :: IOFormat -&gt; [(Bool, String)] -&gt; String -&gt; IO ()
 </span><a href="CLI.Validators.html#validateXmirOptions"><span class="hs-identifier hs-var hs-var">validateXmirOptions</span></a></span></span><span> </span><span class="annot"><span class="annottext">IOFormat
 </span><a href="CLI.Types.html#XMIR"><span class="hs-identifier hs-var">XMIR</span></a></span><span> </span><span class="annot"><span class="annottext">[(Bool, String)]
-</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679268863"><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679268863"><span class="hs-identifier hs-var">focus</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool -&gt; IO () -&gt; IO ()
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679507921"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679507921"><span class="hs-identifier hs-var">focus</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool -&gt; IO () -&gt; IO ()
 forall (f :: * -&gt; *). Applicative f =&gt; Bool -&gt; f () -&gt; f ()
 </span><span class="hs-identifier hs-var">when</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679268863"><span class="hs-identifier hs-var">focus</span></a></span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; Bool
+</span><a href="#local-6989586621679507921"><span class="hs-identifier hs-var">focus</span></a></span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; Bool
 forall a. Eq a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">/=</span></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;Q&quot;</span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String -&gt; IO ()
@@ -251,26 +251,26 @@ forall a. String -&gt; IO a
 </span><a href="CLI.Validators.html#invalidCLIArguments"><span class="hs-identifier hs-var">invalidCLIArguments</span></a></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;Only --focus=Q is allowed to be used with --output=xmir&quot;</span></span><span class="hs-special">)</span><span>
 </span><span id="line-73"></span><span class="annot"><a href="CLI.Validators.html#validateXmirOptions"><span class="hs-identifier hs-var">validateXmirOptions</span></a></span><span> </span><span class="annot"><span class="annottext">IOFormat
-</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679268865"><span class="annot"><span class="annottext">[(Bool, String)]
-</span><a href="#local-6989586621679268865"><span class="hs-identifier hs-var">bools</span></a></span></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679507923"><span class="annot"><span class="annottext">[(Bool, String)]
+</span><a href="#local-6989586621679507923"><span class="hs-identifier hs-var">bools</span></a></span></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span>
-</span><span id="line-74"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679268866"><span class="annot"><span class="annottext">[Bool]
-</span><a href="#local-6989586621679268866"><span class="hs-identifier hs-var">bools'</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679268867"><span class="annot"><span class="annottext">[String]
-</span><a href="#local-6989586621679268867"><span class="hs-identifier hs-var">opts</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[(Bool, String)] -&gt; ([Bool], [String])
+</span><span id="line-74"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679507924"><span class="annot"><span class="annottext">[Bool]
+</span><a href="#local-6989586621679507924"><span class="hs-identifier hs-var">bools'</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679507925"><span class="annot"><span class="annottext">[String]
+</span><a href="#local-6989586621679507925"><span class="hs-identifier hs-var">opts</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[(Bool, String)] -&gt; ([Bool], [String])
 forall a b. [(a, b)] -&gt; ([a], [b])
 </span><span class="hs-identifier hs-var">unzip</span></span><span> </span><span class="annot"><span class="annottext">[(Bool, String)]
-</span><a href="#local-6989586621679268865"><span class="hs-identifier hs-var">bools</span></a></span><span>
+</span><a href="#local-6989586621679507923"><span class="hs-identifier hs-var">bools</span></a></span><span>
 </span><span id="line-75"></span><span>   </span><span class="hs-keyword">in</span><span> </span><span class="annot"><span class="annottext">[(Bool, String)] -&gt; IO ()
 </span><a href="CLI.Validators.html#validateBoolOpts"><span class="hs-identifier hs-var">validateBoolOpts</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[Bool] -&gt; [String] -&gt; [(Bool, String)]
 forall a b. [a] -&gt; [b] -&gt; [(a, b)]
 </span><span class="hs-identifier hs-var">zip</span></span><span> </span><span class="annot"><span class="annottext">[Bool]
-</span><a href="#local-6989586621679268866"><span class="hs-identifier hs-var">bools'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(String -&gt; String) -&gt; [String] -&gt; [String]
+</span><a href="#local-6989586621679507924"><span class="hs-identifier hs-var">bools'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(String -&gt; String) -&gt; [String] -&gt; [String]
 forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
 </span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
 forall r. PrintfType r =&gt; String -&gt; r
 </span><span class="hs-identifier hs-var">printf</span></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;The --%s can be used only with --output=xmir&quot;</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[String]
-</span><a href="#local-6989586621679268867"><span class="hs-identifier hs-var">opts</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679507925"><span class="hs-identifier hs-var">opts</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
 </span><span id="line-76"></span><span>
 </span><span id="line-77"></span><span class="hs-comment">-- Check that an expression is printable as XMIR: its top level must be a</span><span>
 </span><span id="line-78"></span><span class="hs-comment">-- single binding followed by &#961; &#8614; &#8709; (the shape 'expressionToXMIR' accepts).</span><span>
@@ -286,8 +286,8 @@ forall a. a -&gt; IO a
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
 </span><span id="line-83"></span><span class="annot"><a href="CLI.Validators.html#validateXmirTopLevel"><span class="hs-identifier hs-var">validateXmirTopLevel</span></a></span><span> </span><span class="annot"><span class="annottext">IOFormat
-</span><a href="CLI.Types.html#XMIR"><span class="hs-identifier hs-var">XMIR</span></a></span><span> </span><span id="local-6989586621679268872"><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679268872"><span class="hs-identifier hs-var">expr</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><a href="CLI.Types.html#XMIR"><span class="hs-identifier hs-var">XMIR</span></a></span><span> </span><span id="local-6989586621679507930"><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679507930"><span class="hs-identifier hs-var">expr</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-84"></span><span>  </span><span class="annot"><span class="annottext">String -&gt; IO ()
 forall a. String -&gt; IO a
 </span><a href="CLI.Validators.html#invalidCLIArguments"><span class="hs-identifier hs-var">invalidCLIArguments</span></a></span><span>
@@ -298,7 +298,7 @@ forall r. PrintfType r =&gt; String -&gt; r
 </span><span class="hs-string">&quot;Expression cannot be printed with --output=xmir: its top level must be a single binding followed by &#961; &#8614; &#8709;, but got: %s&quot;</span></span><span>
 </span><span id="line-87"></span><span>        </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expression -&gt; String
 </span><a href="Printer.html#printExpression"><span class="hs-identifier hs-var">printExpression</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679268872"><span class="hs-identifier hs-var">expr</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679507930"><span class="hs-identifier hs-var">expr</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-88"></span><span>    </span><span class="hs-special">)</span><span>
 </span><span id="line-89"></span><span class="annot"><a href="CLI.Validators.html#validateXmirTopLevel"><span class="hs-identifier hs-var">validateXmirTopLevel</span></a></span><span> </span><span class="annot"><span class="annottext">IOFormat
 </span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">Expression
@@ -309,19 +309,19 @@ forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span id="line-90"></span><span>
 </span><span id="line-91"></span><span class="annot"><a href="CLI.Validators.html#validateBoolOpts"><span class="hs-identifier hs-type">validateBoolOpts</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span class="hs-special">)</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
 </span><span id="line-92"></span><span id="validateBoolOpts"><span class="annot"><span class="annottext">validateBoolOpts :: [(Bool, String)] -&gt; IO ()
-</span><a href="CLI.Validators.html#validateBoolOpts"><span class="hs-identifier hs-var hs-var">validateBoolOpts</span></a></span></span><span> </span><span id="local-6989586621679268873"><span class="annot"><span class="annottext">[(Bool, String)]
-</span><a href="#local-6989586621679268873"><span class="hs-identifier hs-var">bools</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[(Bool, String)] -&gt; ((Bool, String) -&gt; IO ()) -&gt; IO ()
+</span><a href="CLI.Validators.html#validateBoolOpts"><span class="hs-identifier hs-var hs-var">validateBoolOpts</span></a></span></span><span> </span><span id="local-6989586621679507931"><span class="annot"><span class="annottext">[(Bool, String)]
+</span><a href="#local-6989586621679507931"><span class="hs-identifier hs-var">bools</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[(Bool, String)] -&gt; ((Bool, String) -&gt; IO ()) -&gt; IO ()
 forall (t :: * -&gt; *) (m :: * -&gt; *) a b.
 (Foldable t, Monad m) =&gt;
 t a -&gt; (a -&gt; m b) -&gt; m ()
 </span><span class="hs-identifier hs-var">forM_</span></span><span> </span><span class="annot"><span class="annottext">[(Bool, String)]
-</span><a href="#local-6989586621679268873"><span class="hs-identifier hs-var">bools</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span class="hs-special">(</span><span id="local-6989586621679268874"><span class="annot"><span class="annottext">Bool
-</span><a href="#local-6989586621679268874"><span class="hs-identifier hs-var">bool</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679268875"><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679268875"><span class="hs-identifier hs-var">msg</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Bool -&gt; IO () -&gt; IO ()
+</span><a href="#local-6989586621679507931"><span class="hs-identifier hs-var">bools</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span class="hs-special">(</span><span id="local-6989586621679507932"><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679507932"><span class="hs-identifier hs-var">bool</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679507933"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679507933"><span class="hs-identifier hs-var">msg</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Bool -&gt; IO () -&gt; IO ()
 forall (f :: * -&gt; *). Applicative f =&gt; Bool -&gt; f () -&gt; f ()
 </span><span class="hs-identifier hs-var">when</span></span><span> </span><span class="annot"><span class="annottext">Bool
-</span><a href="#local-6989586621679268874"><span class="hs-identifier hs-var">bool</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String -&gt; IO ()
+</span><a href="#local-6989586621679507932"><span class="hs-identifier hs-var">bool</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String -&gt; IO ()
 forall a. String -&gt; IO a
 </span><a href="CLI.Validators.html#invalidCLIArguments"><span class="hs-identifier hs-var">invalidCLIArguments</span></a></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679268875"><span class="hs-identifier hs-var">msg</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679507933"><span class="hs-identifier hs-var">msg</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
 </span><span id="line-93"></span></pre></body></html>
