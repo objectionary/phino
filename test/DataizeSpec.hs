@@ -57,10 +57,12 @@ testDataize useCases =
 
 -- The 12 primitive λ-atoms every EO data operation reduces to, declared the way
 -- 'number.eo' and 'bytes.eo' declare them, so a case below only has to spell the
--- expression under φ. Alongside them stand the objects the atoms hand results
--- to: 'string' carries the 'cant-slice' complaint, while 'true' and 'false' fill
--- in for the real bool objects, since the single byte an EO bool dataizes to is
--- all these cases assert. Those bytes are EO's own: 'true.eo' asserts
+-- expression under φ. 'number.eq' is the one operation with no atom of its own:
+-- EO spells it out of 'L_bytes_eq' (eq.eo), so the fixture composes it the same
+-- way. Alongside them stand the objects the atoms hand results to: 'string'
+-- carries the 'cant-slice' complaint, while 'true' and 'false' fill in for the
+-- real bool objects, since the single byte an EO bool dataizes to is all these
+-- cases assert. Those bytes are EO's own: 'true.eo' asserts
 -- 'true.as-bytes.eq FF-' and 'bool.eo' branches 'if' over 'FF-' and '00-', so a
 -- universe copied from here starts with a bool an EO program recognizes.
 primitives :: String -> String
@@ -86,7 +88,7 @@ primitives src =
     , "    times -> [[ x -> ?, L> L_number_times ]],"
     , "    div -> [[ x -> ?, L> L_number_div ]],"
     , "    gt -> [[ x -> ?, L> L_number_gt ]],"
-    , "    eq -> [[ x -> ?, y -> ?, L> L_number_eq ]]"
+    , "    eq -> [[ x -> ?, @ -> $.^.as-bytes.eq( x.as-bytes ) ]]"
     , "  ]],"
     , "  string -> [[ as-bytes -> ?, @ -> $.as-bytes ]],"
     , "  true -> [[ @ -> [[ D> FF- ]] ]],"
@@ -109,14 +111,13 @@ testAtom useCases =
       value `shouldBe` Dataized res
 
 -- What a catalogue entry claims about the object an atom answers, next to the
--- firings that hold the claim to account. 'Atoms' ties only the names to the
--- engine automatically, so the forma is the field a behaviour change silently
--- falsifies: an atom that starts answering a bool where it answered a number
--- (#1074) leaves its entry describing a phino that no longer exists. Changing
--- such an atom therefore reddens these cases, and getting them green again
--- means moving the entry with it. They live here, beside the 'primitives'
--- universe the atoms fire in, rather than in 'AtomsSpec', which has no
--- universe to fire them in.
+-- firings that hold the claim to account. An atom that is dropped or added is
+-- caught by the name equality in 'AtomsSpec', but one that keeps its name and
+-- changes what it answers is not: that would leave the entry describing a
+-- phino which no longer exists, with nothing red. Such a change reddens these
+-- cases instead, and getting them green again means moving the entry with it.
+-- They live here, beside the 'primitives' universe the atoms fire in, rather
+-- than in 'AtomsSpec', which has no universe to fire them in.
 testForma :: [(T.Text, T.Text, [(String, String, Bytes)])] -> Spec
 testForma useCases =
   forM_ useCases $ \(atom, forma, firings) ->
@@ -645,6 +646,7 @@ spec = do
           [ "[["
           , "  bytes -> [["
           , "    data -> ?,"
+          , "    eq -> [[ b -> ?, L> L_bytes_eq ]],"
           , "    @ -> $.data"
           , "  ]],"
           , "  number -> [["
@@ -652,11 +654,13 @@ spec = do
           , "    @ -> $.as-bytes,"
           , "    times -> [[ x -> ?, L> L_number_times ]],"
           , "    plus -> [[ x -> ?, L> L_number_plus ]],"
-          , "    eq -> [[ x -> ?, y -> ?, L> L_number_eq ]]"
+          , "    eq -> [[ x -> ?, @ -> $.^.as-bytes.eq( x.as-bytes ) ]]"
           , "  ]],"
+          , "  true -> [[ if -> [[ t -> ?, f -> ?, @ -> t ]] ]],"
+          , "  false -> [[ if -> [[ t -> ?, f -> ?, @ -> f ]] ]],"
           , "  fac -> [["
           , "    x -> ?,"
-          , "    @ -> $.x.eq("
+          , "    @ -> $.x.eq( 1 ).if("
           , "      1,"
           , "      $.x.times($.^.fac($.x.plus(-1)))"
           , "    )"
@@ -714,6 +718,10 @@ spec = do
       , ("tells 1000 is greater than 200", "1000.gt( 200 )", BtOne "FF")
       , ("tells 42 is not greater than 42.5", "42.gt( 42.5 )", BtOne "00")
       , ("tells zero is greater than a negative", "0.gt( -5 )", BtOne "FF")
+      , ("tells 5 equals 5", "5.eq( 5 )", BtOne "FF")
+      , ("tells 5 is not equal to 6", "5.eq( 6 )", BtOne "00")
+      , ("adds two numbers", "5.plus( 6 )", BtMany ["40", "26", "00", "00", "00", "00", "00", "00"])
+      , ("multiplies two numbers", "5.times( 6 )", BtMany ["40", "3E", "00", "00", "00", "00", "00", "00"])
       ,
         ( "conjoins two long bytes"
         , raw "02-EF-D4-05-5E-78-3A" ++ ".and( " ++ raw "12-33-C1-B5-5E-71-55" ++ " )"
@@ -777,7 +785,6 @@ spec = do
       , ("cannot multiply by a non-numeric operand", "5.times( " ++ raw "--" ++ " )")
       , ("cannot divide by a non-numeric divisor", "5.div( " ++ raw "--" ++ " )")
       , ("cannot compare against a non-numeric threshold", "5.gt( " ++ raw "--" ++ " )")
-      , ("cannot test equality against a non-numeric operand", "5.eq( " ++ raw "--" ++ ", 6 )")
       , -- A number atom also rejects a non-empty operand whose byte array is not
         -- 8 bytes long (e.g. 2 or 5 bytes): such an array carries no number, and
         -- the atom must yield ⊥ instead of crashing on 'btsToNum' (issue #1072).
@@ -785,7 +792,6 @@ spec = do
       , ("cannot multiply by a 2-byte operand", "5.times( " ++ raw "20-1F" ++ " )")
       , ("cannot divide by a 3-byte divisor", "5.div( " ++ raw "CA-FE-BE" ++ " )")
       , ("cannot compare against a 4-byte threshold", "5.gt( " ++ raw "FF-FF-FF-FF" ++ " )")
-      , ("cannot test equality against a 6-byte operand", "5.eq( " ++ raw "CA-FE-BE-20-1F-EE" ++ ", 6 )")
       , -- 'right' rejects a shift distance that is not a plain 8-byte integer;
         -- empty bytes carry no such integer, so the shift atom is stuck too.
         ("cannot shift right by a non-integer distance", raw "C0-43-00-00-00-00-00-00" ++ ".right( " ++ raw "--" ++ " )")
@@ -815,22 +821,6 @@ spec = do
             ( "answers the cant-slice of the caller for a window past the end of ρ"
             , raw "20-1F-EE-B5-90" ++ ".slice( 3, 10, [[ message -> ?, @ -> \"recovered\" ]] )"
             , BtMany ["72", "65", "63", "6F", "76", "65", "72", "65", "64"]
-            )
-          ]
-        )
-      ,
-        ( "L_number_eq"
-        , "Φ.number, or the forma of y"
-        ,
-          [
-            ( "answers ρ itself, a number, when the operands are equal"
-            , "5.eq( 5 )"
-            , BtMany ["40", "14", "00", "00", "00", "00", "00", "00"]
-            )
-          ,
-            ( "answers the y of the formation when they are not"
-            , "5.eq( 6, 7 )"
-            , BtMany ["40", "1C", "00", "00", "00", "00", "00", "00"]
             )
           ]
         )

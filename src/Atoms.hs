@@ -109,13 +109,6 @@ atoms =
       , _semantics = "ρ divided by x; ⊥ unless both operands are 8-byte numbers."
       }
   , Atom
-      { _name = "L_number_eq"
-      , _labels = ["x", "y"]
-      , _rho = True
-      , _forma = "Φ.number, or the forma of y"
-      , _semantics = "ρ itself when it equals x, otherwise the y of the formation; ⊥ unless both operands are 8-byte numbers."
-      }
-  , Atom
       { _name = "L_number_gt"
       , _labels = ["x"]
       , _rho = True

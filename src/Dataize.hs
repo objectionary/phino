@@ -486,10 +486,18 @@ boolean False = BaseObject "false"
 type Firing = Expression -> Expression -> State -> DataizeContext -> IO (Expression, State)
 
 -- Every λ function phino implements, paired with its implementation, in
--- alphabetical order. This table is the only place where a name becomes known:
--- 'atom' reports every other one as 'Stuck'. 'Atoms.atoms' catalogues the same
--- names for the 'atoms' command, and 'AtomsSpec' keeps the two lists from
--- drifting apart.
+-- alphabetical order. phino mirrors EO's set exactly: bytes {and, concat, eq,
+-- not, or, right, size, slice} and number {div, gt, plus, times}. There is
+-- deliberately no 'L_number_eq': EO's 'number.eq'
+-- (eo-runtime/src/main/eo/number/eq.eo) is pure EO — a formation composing
+-- 'is-nan', 'or', 'and' and 'L_bytes_eq', with no λ of its own — so nothing is
+-- left for a phino atom to implement. Names like 'L_bool_if' or
+-- 'L_string_slice' must stay unimplemented too: the EO lowering declares them
+-- precisely so that '--partial' parks on them and renders the call to Java.
+--
+-- This table is the only place where a name becomes known: 'atom' reports
+-- every other one as 'Stuck'. 'Atoms.atoms' catalogues the same names for the
+-- 'atoms' command, and 'AtomsSpec' keeps the two lists from drifting apart.
 implementations :: [(T.Text, Firing)]
 implementations =
   [ ("L_bytes_and", bitwise btsAnd)
@@ -501,7 +509,6 @@ implementations =
   , ("L_bytes_size", bytesSize)
   , ("L_bytes_slice", bytesSlice)
   , ("L_number_div", numberDiv)
-  , ("L_number_eq", numberEq)
   , ("L_number_gt", numberGt)
   , ("L_number_plus", numberPlus)
   , ("L_number_times", numberTimes)
@@ -526,16 +533,6 @@ implementations =
       (right, rstate) <- _dataize (ExDispatch self AtRho) univ lstate ctx
       case (asNumber left, asNumber right) of
         (Just first, Just second) -> pure (DataNumber (numToBts (first * second)), rstate)
-        _ -> pure (ExTermination, rstate)
-    numberEq :: Firing
-    numberEq self univ state ctx = do
-      (x, lstate) <- _dataize (ExDispatch self (AtLabel "x")) univ state ctx
-      (rho, rstate) <- _dataize (ExDispatch self AtRho) univ lstate ctx
-      case (asNumber x, asNumber rho) of
-        (Just first, Just self') ->
-          if self' == first
-            then pure (DataNumber (numToBts first), rstate)
-            else pure (ExDispatch self (AtLabel "y"), rstate)
         _ -> pure (ExTermination, rstate)
     numberDiv :: Firing
     numberDiv self univ state ctx = do

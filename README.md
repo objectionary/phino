@@ -395,7 +395,6 @@ L_bytes_right
 L_bytes_size
 L_bytes_slice
 L_number_div
-L_number_eq
 L_number_gt
 L_number_plus
 L_number_times
