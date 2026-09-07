@@ -166,6 +166,17 @@ Evaluation stays demand-driven, as the calculus prescribes: an argument
 that nothing asked for before the run got stuck is left as it is in the
 residual program, for the next iteration.
 
+The nested morphing and dataization recursion is bounded by the
+`--max-steps` option (default `1000`): when the budget is exhausted, the run
+fails with `Dataization did not finish before reaching the limit of steps`.
+This guards against non-terminating terms, which used to loop forever before
+the bound was introduced:
+
+```bash
+$ phino dataize --max-steps=50 problem.phi
+[ERROR]: Dataization did not finish before reaching the limit of steps: --max-steps=50
+```
+
 ## Rewrite
 
 You can rewrite this expression with the help of [rules](#rule-structure)
@@ -409,6 +420,12 @@ Condition:
       Expression'        # (an abstraction ⟦…⟧); used by morphing 'md'
                          # as 'not (formation 𝑛)', so a non-formation head is
                          # morphed and a formation head is left to 'ml'
+  | gt:                  # returns True if the first comparable object is
+      - Comparable       # greater than the second one
+      - Comparable
+  | disjoint:            # returns True if none of the given attributes exists
+      - [Attribute']     # in the given bindings
+      - Binding'
 
 Comparable:              # comparable object that may be used in 'eq' condition
   = Attribute'
@@ -419,6 +436,8 @@ Number:                  # comparable number
   = Integer              # just regular integer
   | IndexMeta'           # 𝑖 (or !i), the index captured by an α𝑖 argument
   | length: BiMeta'      # calculate length of bindings by given meta binding
+  | domain: BiMeta'      # calculate number of unique attributes in given
+                         # meta binding (excluding 'assets')
 
 Extension:               # substitutions extension used to introduce new meta variables
   meta: [ExtArgument]    # new introduced meta variable
