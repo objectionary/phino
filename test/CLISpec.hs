@@ -1692,6 +1692,33 @@ spec = do
           ["match", "--pattern=$.!t"]
           ["[ERROR]"]
 
+  describe "atoms" $ do
+    it "prints help" $
+      testCLISucceeded ["atoms", "--help"] ["Print the λ functions", "--json"]
+
+    it "is listed among the commands of the global help" $
+      testCLISucceeded ["--help"] ["atoms"]
+
+    it "prints one λ function per line" $
+      testCLISucceeded ["atoms"] ["L_number_plus\nL_number_times"]
+
+    it "prints the details of every λ function with --json" $
+      testCLISucceeded
+        ["atoms", "--json"]
+        [ "\"name\": \"L_bytes_slice\""
+        , "\"labels\": [\"start\", \"len\", \"cant-slice\"]"
+        , "\"rho\": true"
+        , "\"forma\": \"Φ.bytes\""
+        ]
+
+    it "prints to target file" $
+      withTempFile "atomsXXXXXX.json" $ \(path, h) -> do
+        hClose h
+        testCLISucceeded ["atoms", "--json", printf "--target=%s" path] []
+        content <- readFile path
+        _ <- evaluate (length content)
+        content `shouldContain` "\"name\": \"L_number_plus\""
+
   describe "CmdException Show instance" $
     forM_
       [ ("InvalidCLIArguments", InvalidCLIArguments "bad flag", "Invalid set of arguments: bad flag")

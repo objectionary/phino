@@ -59,6 +59,7 @@ data Command
   | CmdExplain OptsExplain
   | CmdMerge OptsMerge
   | CmdMatch OptsMatch
+  | CmdAtoms OptsAtoms
 
 data CliArgs = CliArgs
   { _pin :: Maybe String
@@ -187,4 +188,11 @@ data OptsMatch = OptsMatch
   , _pattern :: Maybe String
   , _when :: Maybe String
   , _inputFile :: Maybe FilePath
+  }
+
+data OptsAtoms = OptsAtoms
+  { _logLevel :: LogLevel
+  , _logLines :: Int
+  , _json :: Bool
+  , _targetFile :: Maybe FilePath
   }

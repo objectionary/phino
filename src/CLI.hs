@@ -28,6 +28,7 @@ runCLI args = handle handler $ do
     CmdExplain opts -> runExplain opts
     CmdMerge opts -> runMerge opts
     CmdMatch opts -> runMatch opts
+    CmdAtoms opts -> runAtoms opts
   where
     handler :: SomeException -> IO ()
     handler e = case fromException e of
@@ -43,6 +44,7 @@ runCLI args = handle handler $ do
             CmdExplain OptsExplain{_logLevel, _logLines} -> (_logLevel, _logLines)
             CmdMerge OptsMerge{_logLevel, _logLines} -> (_logLevel, _logLines)
             CmdMatch OptsMatch{_logLevel, _logLines} -> (_logLevel, _logLines)
+            CmdAtoms OptsAtoms{_logLevel, _logLines} -> (_logLevel, _logLines)
        in setLogConfig level lns
     checkPin :: Maybe String -> IO ()
     checkPin Nothing = pure ()

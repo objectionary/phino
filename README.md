@@ -376,6 +376,59 @@ $ phino explain --contextualize
 
 For more details, use `phino [COMMAND] --help` option.
 
+## Atoms
+
+A λ binding names a function that `phino` has to implement itself. When it
+doesn't, the run fails with `Atom 'L_foo' does not exist`, unless `--partial`
+parks on it — and a build may well rely on either answer. The `atoms` command
+prints the names this version implements, one per line, so that no one has to
+find them out by dataizing a universe around every single name:
+
+```bash
+$ phino atoms
+L_bytes_and
+L_bytes_concat
+L_bytes_eq
+L_bytes_not
+L_bytes_or
+L_bytes_right
+L_bytes_size
+L_bytes_slice
+L_number_div
+L_number_eq
+L_number_gt
+L_number_plus
+L_number_times
+```
+
+With `--json`, every function comes with its details: the labels it reads off
+the formation it fires against, whether it reads `ρ`, the forma of the object
+it answers, and a one-line statement of its semantics. A build may diff this
+against its own table of names and fail when the two drift apart:
+
+```bash
+$ phino atoms --json
+[
+  {
+    "name": "L_bytes_and",
+    "labels": ["b"],
+    "rho": true,
+    "forma": "Φ.bytes",
+    "semantics": "Bitwise AND of ρ and b; ⊥ when the two byte arrays differ in size."
+  },
+...
+  {
+    "name": "L_number_plus",
+    "labels": ["x"],
+    "rho": true,
+    "forma": "Φ.number",
+    "semantics": "The sum of ρ and x; ⊥ unless both operands are 8-byte numbers."
+  }
+]
+```
+
+Both forms are printed to the console, or to the file given by `--target`.
+
 ## Rule structure
 
 This is BNF-like yaml rule structure. Here types ended with

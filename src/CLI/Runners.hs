@@ -8,6 +8,7 @@
 module CLI.Runners where
 
 import AST
+import Atoms (printAtoms, printAtomsInJSON)
 import CLI.Helpers
 import CLI.Types
 import CLI.Validators
@@ -277,3 +278,10 @@ runMatch OptsMatch{..} = do
   where
     rule :: Expression -> Maybe Y.Condition -> Y.Rule
     rule ptn cnd = Y.Rule "custom" Nothing Nothing ptn ExRoot cnd Nothing Nothing
+
+-- Print the λ functions this build implements: one bare name per line, or a
+-- JSON object per function with the details, so that a build may check its own
+-- table of names against the binary. Nothing is read and nothing is dataized,
+-- since the catalogue is the binary describing itself.
+runAtoms :: OptsAtoms -> IO ()
+runAtoms OptsAtoms{..} = printOut _targetFile (if _json then printAtomsInJSON else printAtoms)

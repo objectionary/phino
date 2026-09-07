@@ -248,6 +248,9 @@ optMust =
         <> showDefaultWith show
     )
 
+optJson :: Parser Bool
+optJson = switch (long "json" <> help "Print every λ function as a JSON object with its details, instead of one bare name per line")
+
 optOmitListing :: Parser Bool
 optOmitListing = switch (long "omit-listing" <> help "Omit full expression listing in XMIR output")
 
@@ -391,6 +394,16 @@ matchParser =
             <*> argInputFile
         )
 
+atomsParser :: Parser Command
+atomsParser =
+  CmdAtoms
+    <$> ( OptsAtoms
+            <$> optLogLevel
+            <*> optLogLines
+            <*> optJson
+            <*> optTarget
+        )
+
 commandParser :: Parser Command
 commandParser =
   hsubparser
@@ -399,6 +412,7 @@ commandParser =
         <> command "explain" (info explainParser (progDesc "Explain rules in LaTeX format"))
         <> command "merge" (info mergeParser (progDesc "Merge 𝜑-expressions into single one by merging their top level formations"))
         <> command "match" (info matchParser (progDesc "Match 𝜑-expression against provided pattern and build matched substitutions"))
+        <> command "atoms" (info atomsParser (progDesc "Print the λ functions (atoms) this version of phino implements"))
     )
 
 optPin :: Parser (Maybe String)

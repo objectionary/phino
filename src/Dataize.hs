@@ -10,7 +10,7 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Dataize (morph, dataize, dataize', DataizeContext (..), DataizeException (..), Outcome (..), Steps (..), State, emptyState, execBuildTerm) where
+module Dataize (morph, dataize, dataize', DataizeContext (..), DataizeException (..), Outcome (..), Steps (..), State, emptyState, execBuildTerm, implementedAtoms) where
 
 import AST
 import Builder (buildBytesThrows, buildExpressionThrows)
@@ -480,88 +480,134 @@ boolean :: Bool -> Expression
 boolean True = BaseObject "true"
 boolean False = BaseObject "false"
 
--- Both bitwise atoms take ρ and 'b' and reject operands of different lengths
-bitwise :: (Bytes -> Bytes -> Maybe Bytes) -> Expression -> Expression -> State -> DataizeContext -> IO (Expression, State)
-bitwise op self univ state ctx = do
-  (b, bstate) <- _dataize (ExDispatch self (AtLabel "b")) univ state ctx
-  (rho, rstate) <- _dataize (ExDispatch self AtRho) univ bstate ctx
-  pure (maybe ExTermination dataBytes (op rho b), rstate)
+-- One λ function's implementation: it is handed the formation it fires
+-- against, the universe, the threaded state and the context, and answers the
+-- raw result together with the state it reached
+type Firing = Expression -> Expression -> State -> DataizeContext -> IO (Expression, State)
 
-atom :: T.Text -> Expression -> Expression -> State -> DataizeContext -> IO (Expression, State)
-atom "L_number_plus" self univ state ctx = do
-  (left, lstate) <- _dataize (ExDispatch self (AtLabel "x")) univ state ctx
-  (right, rstate) <- _dataize (ExDispatch self AtRho) univ lstate ctx
-  case (asNumber left, asNumber right) of
-    (Just first, Just second) -> pure (DataNumber (numToBts (first + second)), rstate)
-    _ -> pure (ExTermination, rstate)
-atom "L_number_times" self univ state ctx = do
-  (left, lstate) <- _dataize (ExDispatch self (AtLabel "x")) univ state ctx
-  (right, rstate) <- _dataize (ExDispatch self AtRho) univ lstate ctx
-  case (asNumber left, asNumber right) of
-    (Just first, Just second) -> pure (DataNumber (numToBts (first * second)), rstate)
-    _ -> pure (ExTermination, rstate)
-atom "L_number_eq" self univ state ctx = do
-  (x, lstate) <- _dataize (ExDispatch self (AtLabel "x")) univ state ctx
-  (rho, rstate) <- _dataize (ExDispatch self AtRho) univ lstate ctx
-  case (asNumber x, asNumber rho) of
-    (Just first, Just self') ->
-      if self' == first
-        then pure (DataNumber (numToBts first), rstate)
-        else pure (ExDispatch self (AtLabel "y"), rstate)
-    _ -> pure (ExTermination, rstate)
-atom "L_number_div" self univ state ctx = do
-  (x, xstate) <- _dataize (ExDispatch self (AtLabel "x")) univ state ctx
-  (rho, rstate) <- _dataize (ExDispatch self AtRho) univ xstate ctx
-  case (asNumber x, asNumber rho) of
-    (Just divisor, Just dividend) -> pure (DataNumber (numToBts (dividend / divisor)), rstate)
-    _ -> pure (ExTermination, rstate)
-atom "L_number_gt" self univ state ctx = do
-  (x, xstate) <- _dataize (ExDispatch self (AtLabel "x")) univ state ctx
-  (rho, rstate) <- _dataize (ExDispatch self AtRho) univ xstate ctx
-  case (asNumber x, asNumber rho) of
-    (Just threshold, Just value) -> pure (boolean (value > threshold), rstate)
-    _ -> pure (ExTermination, rstate)
-atom "L_bytes_and" self univ state ctx = bitwise btsAnd self univ state ctx
-atom "L_bytes_or" self univ state ctx = bitwise btsOr self univ state ctx
-atom "L_bytes_not" self univ state ctx = do
-  (rho, rstate) <- _dataize (ExDispatch self AtRho) univ state ctx
-  pure (dataBytes (btsNot rho), rstate)
-atom "L_bytes_concat" self univ state ctx = do
-  (b, bstate) <- _dataize (ExDispatch self (AtLabel "b")) univ state ctx
-  (rho, rstate) <- _dataize (ExDispatch self AtRho) univ bstate ctx
-  pure (dataBytes (btsConcat rho b), rstate)
-atom "L_bytes_eq" self univ state ctx = do
-  (b, bstate) <- _dataize (ExDispatch self (AtLabel "b")) univ state ctx
-  (rho, rstate) <- _dataize (ExDispatch self AtRho) univ bstate ctx
-  pure (boolean (btsEqual rho b), rstate)
-atom "L_bytes_size" self univ state ctx = do
-  (rho, rstate) <- _dataize (ExDispatch self AtRho) univ state ctx
-  pure (DataNumber (numToBts (fromIntegral (btsSize rho))), rstate)
-atom "L_bytes_right" self univ state ctx = do
-  (x, xstate) <- _dataize (ExDispatch self (AtLabel "x")) univ state ctx
-  (rho, rstate) <- _dataize (ExDispatch self AtRho) univ xstate ctx
-  case asInt x of
-    Just bits -> pure (dataBytes (btsShift bits rho), rstate)
-    Nothing -> pure (ExTermination, rstate)
-atom "L_bytes_slice" self univ state ctx = do
-  (start, sstate) <- _dataize (ExDispatch self (AtLabel "start")) univ state ctx
-  (len, lstate) <- _dataize (ExDispatch self (AtLabel "len")) univ sstate ctx
-  (rho, rstate) <- _dataize (ExDispatch self AtRho) univ lstate ctx
-  case (asInt start, asInt len) of
-    (Just from, Just count)
-      | from >= 0 && count >= 0 ->
-          pure (maybe (cantSlice from count (btsSize rho)) dataBytes (btsSlice from count rho), rstate)
-    _ -> pure (ExTermination, rstate)
+-- Every λ function phino implements, paired with its implementation, in
+-- alphabetical order. This table is the only place where a name becomes known:
+-- 'atom' reports every other one as 'Stuck'. 'Atoms.atoms' catalogues the same
+-- names for the 'atoms' command, and 'AtomsSpec' keeps the two lists from
+-- drifting apart.
+implementations :: [(T.Text, Firing)]
+implementations =
+  [ ("L_bytes_and", bitwise btsAnd)
+  , ("L_bytes_concat", bytesConcat)
+  , ("L_bytes_eq", bytesEq)
+  , ("L_bytes_not", bytesNot)
+  , ("L_bytes_or", bitwise btsOr)
+  , ("L_bytes_right", bytesRight)
+  , ("L_bytes_size", bytesSize)
+  , ("L_bytes_slice", bytesSlice)
+  , ("L_number_div", numberDiv)
+  , ("L_number_eq", numberEq)
+  , ("L_number_gt", numberGt)
+  , ("L_number_plus", numberPlus)
+  , ("L_number_times", numberTimes)
+  ]
   where
+    -- Both bitwise atoms take ρ and 'b' and reject operands of different lengths
+    bitwise :: (Bytes -> Bytes -> Maybe Bytes) -> Firing
+    bitwise op self univ state ctx = do
+      (b, bstate) <- _dataize (ExDispatch self (AtLabel "b")) univ state ctx
+      (rho, rstate) <- _dataize (ExDispatch self AtRho) univ bstate ctx
+      pure (maybe ExTermination dataBytes (op rho b), rstate)
+    numberPlus :: Firing
+    numberPlus self univ state ctx = do
+      (left, lstate) <- _dataize (ExDispatch self (AtLabel "x")) univ state ctx
+      (right, rstate) <- _dataize (ExDispatch self AtRho) univ lstate ctx
+      case (asNumber left, asNumber right) of
+        (Just first, Just second) -> pure (DataNumber (numToBts (first + second)), rstate)
+        _ -> pure (ExTermination, rstate)
+    numberTimes :: Firing
+    numberTimes self univ state ctx = do
+      (left, lstate) <- _dataize (ExDispatch self (AtLabel "x")) univ state ctx
+      (right, rstate) <- _dataize (ExDispatch self AtRho) univ lstate ctx
+      case (asNumber left, asNumber right) of
+        (Just first, Just second) -> pure (DataNumber (numToBts (first * second)), rstate)
+        _ -> pure (ExTermination, rstate)
+    numberEq :: Firing
+    numberEq self univ state ctx = do
+      (x, lstate) <- _dataize (ExDispatch self (AtLabel "x")) univ state ctx
+      (rho, rstate) <- _dataize (ExDispatch self AtRho) univ lstate ctx
+      case (asNumber x, asNumber rho) of
+        (Just first, Just self') ->
+          if self' == first
+            then pure (DataNumber (numToBts first), rstate)
+            else pure (ExDispatch self (AtLabel "y"), rstate)
+        _ -> pure (ExTermination, rstate)
+    numberDiv :: Firing
+    numberDiv self univ state ctx = do
+      (x, xstate) <- _dataize (ExDispatch self (AtLabel "x")) univ state ctx
+      (rho, rstate) <- _dataize (ExDispatch self AtRho) univ xstate ctx
+      case (asNumber x, asNumber rho) of
+        (Just divisor, Just dividend) -> pure (DataNumber (numToBts (dividend / divisor)), rstate)
+        _ -> pure (ExTermination, rstate)
+    numberGt :: Firing
+    numberGt self univ state ctx = do
+      (x, xstate) <- _dataize (ExDispatch self (AtLabel "x")) univ state ctx
+      (rho, rstate) <- _dataize (ExDispatch self AtRho) univ xstate ctx
+      case (asNumber x, asNumber rho) of
+        (Just threshold, Just value) -> pure (boolean (value > threshold), rstate)
+        _ -> pure (ExTermination, rstate)
+    bytesNot :: Firing
+    bytesNot self univ state ctx = do
+      (rho, rstate) <- _dataize (ExDispatch self AtRho) univ state ctx
+      pure (dataBytes (btsNot rho), rstate)
+    bytesConcat :: Firing
+    bytesConcat self univ state ctx = do
+      (b, bstate) <- _dataize (ExDispatch self (AtLabel "b")) univ state ctx
+      (rho, rstate) <- _dataize (ExDispatch self AtRho) univ bstate ctx
+      pure (dataBytes (btsConcat rho b), rstate)
+    bytesEq :: Firing
+    bytesEq self univ state ctx = do
+      (b, bstate) <- _dataize (ExDispatch self (AtLabel "b")) univ state ctx
+      (rho, rstate) <- _dataize (ExDispatch self AtRho) univ bstate ctx
+      pure (boolean (btsEqual rho b), rstate)
+    bytesSize :: Firing
+    bytesSize self univ state ctx = do
+      (rho, rstate) <- _dataize (ExDispatch self AtRho) univ state ctx
+      pure (DataNumber (numToBts (fromIntegral (btsSize rho))), rstate)
+    bytesRight :: Firing
+    bytesRight self univ state ctx = do
+      (x, xstate) <- _dataize (ExDispatch self (AtLabel "x")) univ state ctx
+      (rho, rstate) <- _dataize (ExDispatch self AtRho) univ xstate ctx
+      case asInt x of
+        Just bits -> pure (dataBytes (btsShift bits rho), rstate)
+        Nothing -> pure (ExTermination, rstate)
+    bytesSlice :: Firing
+    bytesSlice self univ state ctx = do
+      (start, sstate) <- _dataize (ExDispatch self (AtLabel "start")) univ state ctx
+      (len, lstate) <- _dataize (ExDispatch self (AtLabel "len")) univ sstate ctx
+      (rho, rstate) <- _dataize (ExDispatch self AtRho) univ lstate ctx
+      case (asInt start, asInt len) of
+        (Just from, Just count)
+          | from >= 0 && count >= 0 ->
+              pure (maybe (cantSlice self from count (btsSize rho)) dataBytes (btsSlice from count rho), rstate)
+        _ -> pure (ExTermination, rstate)
     -- A window past the end of the array does not stop EO: it copies the
     -- 'cant-slice' fallback, applies the complaint to it and lets the caller
     -- decide. A caller that left 'cant-slice' unbound gets ⊥ out of the dispatch
-    cantSlice :: Int -> Int -> Int -> Expression
-    cantSlice from count size =
+    cantSlice :: Expression -> Int -> Int -> Int -> Expression
+    cantSlice self from count size =
       ExApplication
         (ExDispatch self (AtLabel "cant-slice"))
         (ArAlpha (Alpha 0) (DataString (strToBts (printf "cannot slice '%d' bytes from offset '%d' of bytes of size %d" count from size))))
-atom func _ _ _ _ = throwIO (Stuck func)
+
+-- The names of the λ functions phino implements, in the order of
+-- 'implementations'. The 'atoms' command reports them, so that a caller may
+-- check its own table of names against the binary instead of dataizing a
+-- universe around every single name.
+implementedAtoms :: [T.Text]
+implementedAtoms = map fst implementations
+
+-- Fire the λ function of the given name against the formation, or refuse to,
+-- when no implementation carries that name
+atom :: T.Text -> Firing
+atom func self univ state ctx = case lookup func implementations of
+  Just fire -> fire self univ state ctx
+  Nothing -> throwIO (Stuck func)
 
 -- Augment the injected, context-free term builder with the dataization and
 -- morphing operations that need the universe: 'evaluate' applies an atom and
