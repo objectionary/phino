@@ -35,6 +35,22 @@ validatedDispatches opt = traverse (parseExpressionThrows >=> asDispatch)
                 (printExpression' expr logPrintConfig)
             )
 
+-- Reject a --show locator that is also hidden via --hide: 'exclude' runs over
+-- the result of 'include', so an overlap would silently wipe the very subtree
+-- --show was meant to keep.
+validateNoOverlap :: String -> [Expression] -> String -> [Expression] -> IO ()
+validateNoOverlap showOpt shown hideOpt hidden =
+  for_ shown $ \shown' ->
+    for_ hidden $ \hidden' ->
+      when (printExpression shown' == printExpression hidden') $
+        invalidCLIArguments
+          ( printf
+              "The --%s locator '%s' is also listed in --%s, which would hide it from the result"
+              showOpt
+              (printExpression shown')
+              hideOpt
+          )
+
 -- Validate LaTeX options
 validateLatexOptions :: IOFormat -> [(Bool, String)] -> [(Maybe String, String)] -> [(Maybe Int, String)] -> IO ()
 validateLatexOptions LATEX _ _ _ = pure ()

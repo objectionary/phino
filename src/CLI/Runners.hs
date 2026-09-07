@@ -45,6 +45,7 @@ runRewrite OptsRewrite{..} = do
   included <- validatedDispatches "show" _show
   [loc] <- validatedDispatches "locator" [_locator]
   [foc] <- validatedDispatches "focus" [_focus]
+  validateNoOverlap "show" included "hide" excluded
   setStdGen (mkStdGen _seed)
   rules <- getRules _normalize _shuffle _rules
   validateBreakpoint _breakpoint rules
@@ -143,6 +144,7 @@ runDataize OptsDataize{..} = do
   included <- validatedDispatches "show" _show
   [loc] <- validatedDispatches "locator" [_locator]
   [foc] <- validatedDispatches "focus" [_focus]
+  validateNoOverlap "show" included "hide" excluded
   input <- readInput _inputFile
   expr <- parseInput input _inputFormat
   setStdGen (mkStdGen _seed)

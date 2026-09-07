@@ -14,7 +14,7 @@ import Control.Exception
 import Control.Monad ((>=>))
 import Data.Functor ((<&>))
 import Data.IORef
-import Data.List (intercalate)
+import Data.List (intercalate, nub)
 import Data.Maybe
 import Deps (SaveEvalFunc, SaveStepFunc, dontSaveEval, saveEval, saveStep)
 import Encoding
@@ -176,7 +176,7 @@ getRules normalize shuffle rules = do
           pure []
       | otherwise = do
           logDebug (printf "Using rules from files: [%s]" (intercalate ", " rules))
-          yamls <- mapM ensuredFile rules
+          yamls <- mapM ensuredFile (nub rules)
           mapM (Y.yamlRule >=> validateRewriteRule) yamls
 
 -- Pass a user-supplied rewriting rule through unchanged, or fail fast if it
