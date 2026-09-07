@@ -3,6 +3,7 @@
 
 module Random (randomString, shuffle) where
 
+import Control.Exception (throwIO)
 import Control.Monad (forM_, replicateM)
 import Data.Char (intToDigit)
 import Data.IORef (IORef, modifyIORef', newIORef, readIORef)
@@ -34,14 +35,28 @@ generate (ch : rest) = do
   rest' <- generate rest
   pure (ch : rest')
 
+-- The 'strings' set grows monotonically over a process, so a pattern with a
+-- bounded space (e.g. '%d', which has exactly 10,000 values) eventually gets
+-- exhausted. Trying again forever would hang, so the search gives up after a
+-- bounded number of attempts and reports the collision space instead. The
+-- limit is well above the largest realistic space (10,000) so that finding the
+-- last free value of a nearly-full space still succeeds with overwhelming
+-- probability: (9999/10000)^100000 ≈ 4.5e-5.
+maxAttempts :: Int
+maxAttempts = 100000
+
 regenerate :: String -> Set String -> IO String
-regenerate pat set = do
-  next <- generate pat
-  if next `Set.member` set
-    then regenerate pat set
-    else do
-      modifyIORef' strings (Set.insert next)
-      pure next
+regenerate pat set = go maxAttempts
+  where
+    go :: Int -> IO String
+    go 0 = throwIO (userError (printf "randomString() cannot produce a unique value for pattern '%s': the value space is exhausted" pat))
+    go attempts = do
+      next <- generate pat
+      if next `Set.member` set
+        then go (attempts - 1)
+        else do
+          modifyIORef' strings (Set.insert next)
+          pure next
 
 randomString :: String -> IO String
 randomString pat
