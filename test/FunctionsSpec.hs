@@ -206,6 +206,12 @@ spec = describe "Functions" $ do
       , ("number fails on an expression that is not a string", "number", [ArgExpression (DataNumber (numToBts 1))], "expects expression to be 'Φ.string'")
       , ("number fails on the wrong number of arguments", "number", [], "number() requires exactly 1 argument")
       ,
+        ( "sum fails on a byte array that is not 8 bytes long"
+        , "sum"
+        , [ArgExpression (DataNumber (BtMany ["68", "65", "6C", "6C", "6F"]))]
+        , "Expected 8 bytes for a number, got 5"
+        )
+      ,
         ( "an unsupported function name fails with a descriptive message"
         , "no-such-function"
         , []
