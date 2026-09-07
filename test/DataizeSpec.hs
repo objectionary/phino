@@ -58,7 +58,9 @@ testDataize useCases =
 -- expression under φ. Alongside them stand the objects the atoms hand results
 -- to: 'string' carries the 'cant-slice' complaint, while 'true' and 'false' fill
 -- in for the real bool objects, since the single byte an EO bool dataizes to is
--- all these cases assert.
+-- all these cases assert. Those bytes are EO's own: 'true.eo' asserts
+-- 'true.as-bytes.eq FF-' and 'bool.eo' branches 'if' over 'FF-' and '00-', so a
+-- universe copied from here starts with a bool an EO program recognizes.
 primitives :: String -> String
 primitives src =
   unlines
@@ -85,7 +87,7 @@ primitives src =
     , "    eq -> [[ x -> ?, y -> ?, L> L_number_eq ]]"
     , "  ]],"
     , "  string -> [[ as-bytes -> ?, @ -> $.as-bytes ]],"
-    , "  true -> [[ @ -> [[ D> 01- ]] ]],"
+    , "  true -> [[ @ -> [[ D> FF- ]] ]],"
     , "  false -> [[ @ -> [[ D> 00- ]] ]],"
     , "  @ -> " ++ src
     , "]]"
@@ -685,9 +687,9 @@ spec = do
     testAtom
       [ ("divides a positive dividend", "256.div( 16 )", BtMany ["40", "30", "00", "00", "00", "00", "00", "00"])
       , ("divides by zero into infinity", "2.div( 0 )", BtMany ["7F", "F0", "00", "00", "00", "00", "00", "00"])
-      , ("tells 1000 is greater than 200", "1000.gt( 200 )", BtOne "01")
+      , ("tells 1000 is greater than 200", "1000.gt( 200 )", BtOne "FF")
       , ("tells 42 is not greater than 42.5", "42.gt( 42.5 )", BtOne "00")
-      , ("tells zero is greater than a negative", "0.gt( -5 )", BtOne "01")
+      , ("tells zero is greater than a negative", "0.gt( -5 )", BtOne "FF")
       ,
         ( "conjoins two long bytes"
         , raw "02-EF-D4-05-5E-78-3A" ++ ".and( " ++ raw "12-33-C1-B5-5E-71-55" ++ " )"
@@ -710,7 +712,7 @@ spec = do
         , BtMany ["05", "5E", "78"]
         )
       , ("counts the size of bytes", raw "F1-20-5F-EC-B5-90-32" ++ ".size", BtMany ["40", "1C", "00", "00", "00", "00", "00", "00"])
-      , ("tells equal bytes are equal", raw "CA-FE" ++ ".eq( " ++ raw "CA-FE" ++ " )", BtOne "01")
+      , ("tells equal bytes are equal", raw "CA-FE" ++ ".eq( " ++ raw "CA-FE" ++ " )", BtOne "FF")
       , ("tells different bytes are not equal", raw "CA-FE" ++ ".eq( " ++ raw "CA-FF" ++ " )", BtOne "00")
       , ("takes a part of bytes", raw "20-1F-EE-B5-90" ++ ".slice( 1, 3 )", BtMany ["1F", "EE", "B5"])
       ,

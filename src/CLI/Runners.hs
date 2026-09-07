@@ -53,6 +53,7 @@ runRewrite OptsRewrite{..} = do
   validateBreakpoint _breakpoint rules
   input <- readInput _inputFile
   expr <- parseInput input _inputFormat
+  validateXmirTopLevel _outputFormat expr
   seedTaus expr
   logDebug (printf "Amount of rewriting cycles across all the rules: %d, per rule: %d" _maxCycles _maxDepth)
   let listing = case (rules, _inputFormat, _outputFormat) of
@@ -231,6 +232,7 @@ runMerge OptsMerge{..} = do
   inputs' <- traverse (readInput . Just) _inputs
   exprs <- traverse (`parseInput` _inputFormat) inputs'
   expr <- merge exprs
+  validateXmirTopLevel _outputFormat expr
   let listing = const (escapeXMLText (P.printExpression' expr (_sugarType, UNICODE, _flat, _margin)))
       xmirCtx = XmirContext _omitListing _omitComments listing
       printCtx = toPrintCtx xmirCtx

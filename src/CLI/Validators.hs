@@ -74,5 +74,19 @@ validateXmirOptions _ bools _ =
   let (bools', opts) = unzip bools
    in validateBoolOpts (zip bools' (map (printf "The --%s can be used only with --output=xmir") opts))
 
+-- Check that an expression is printable as XMIR: its top level must be a
+-- single binding followed by ρ ↦ ∅ (the shape 'expressionToXMIR' accepts).
+-- Called right after parsing, so a bad shape fails before any rewriting or
+-- dataization work instead of at print time (issue #1082).
+validateXmirTopLevel :: IOFormat -> Expression -> IO ()
+validateXmirTopLevel XMIR (ExFormation [_, BiVoid AtRho]) = pure ()
+validateXmirTopLevel XMIR expr =
+  invalidCLIArguments
+    ( printf
+        "Expression cannot be printed with --output=xmir: its top level must be a single binding followed by ρ ↦ ∅, but got: %s"
+        (printExpression expr)
+    )
+validateXmirTopLevel _ _ = pure ()
+
 validateBoolOpts :: [(Bool, String)] -> IO ()
 validateBoolOpts bools = forM_ bools (\(bool, msg) -> when bool (invalidCLIArguments msg))
