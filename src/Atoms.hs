@@ -8,9 +8,15 @@
 -- "Atom 'L_foo' does not exist", unless '--partial' parks on it. Both answers
 -- are legitimate states for a caller to depend on, so the catalogue is printed
 -- by the 'atoms' command, letting a build check its own table of names against
--- the binary instead of probing one name at a time. The names here are exactly
--- the ones 'Dataize.implementedAtoms' fires, and 'AtomsSpec' keeps the two
--- from drifting apart.
+-- the binary instead of probing one name at a time.
+--
+-- Only the names are tied to the engine automatically: they are exactly the
+-- ones 'Dataize.implementedAtoms' fires, and 'AtomsSpec' fails when the two
+-- lists drift apart. Every other field — the labels, ρ, the forma and the
+-- semantics — is a promise checked by hand against 'Dataize.implementations',
+-- so an atom whose behaviour changes has to have its entry moved with it, in
+-- the same commit. 'AtomsSpec' pins the entries most likely to drift by
+-- dataizing the atom they describe.
 module Atoms (Atom (..), atoms, printAtoms, printAtomsInJSON) where
 
 import Data.Aeson.Text (encodeToLazyText)
@@ -27,7 +33,7 @@ data Atom = Atom
   , _rho :: Bool
   -- ^ Whether the function reads ρ of that formation
   , _forma :: Text
-  -- ^ The forma of the object the function answers
+  -- ^ The forma of every object the function can answer, ⊥ aside
   , _semantics :: Text
   -- ^ One-line statement of what the function computes
   }
@@ -35,7 +41,8 @@ data Atom = Atom
 
 -- Every λ function phino implements, in alphabetical order. An operand the
 -- atom cannot read leaves it with ⊥ (termination), which the 'semantics' line
--- of each entry spells out.
+-- of each entry spells out. An atom that answers off more than one path names
+-- every forma it can answer, not just the one its happy path takes.
 atoms :: [Atom]
 atoms =
   [ Atom
@@ -56,7 +63,7 @@ atoms =
       { _name = "L_bytes_eq"
       , _labels = ["b"]
       , _rho = True
-      , _forma = "Φ.bool"
+      , _forma = "Φ.true or Φ.false"
       , _semantics = "Φ.true when ρ and b are the same byte array octet by octet, Φ.false otherwise."
       }
   , Atom
@@ -91,7 +98,7 @@ atoms =
       { _name = "L_bytes_slice"
       , _labels = ["start", "len", "cant-slice"]
       , _rho = True
-      , _forma = "Φ.bytes"
+      , _forma = "Φ.bytes, or the forma of cant-slice"
       , _semantics = "The len bytes of ρ starting at offset start; a window reaching past the end of ρ applies cant-slice to a complaint string instead; ⊥ unless start and len are non-negative whole numbers within the 32-bit range."
       }
   , Atom
@@ -112,7 +119,7 @@ atoms =
       { _name = "L_number_gt"
       , _labels = ["x"]
       , _rho = True
-      , _forma = "Φ.bool"
+      , _forma = "Φ.true or Φ.false"
       , _semantics = "Φ.true when ρ is greater than x, Φ.false otherwise; ⊥ unless both operands are 8-byte numbers."
       }
   , Atom

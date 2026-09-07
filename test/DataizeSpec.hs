@@ -7,12 +7,14 @@
 module DataizeSpec (spec) where
 
 import AST
+import Atoms qualified
 import Control.Exception (SomeException)
 import Control.Monad
 import Data.IORef (modifyIORef', newIORef, readIORef)
 import Data.List (find, isInfixOf, nub)
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.Maybe (fromMaybe, isJust)
+import Data.Text qualified as T
 import Dataize (DataizeContext (..), Outcome (..), Steps (..), dataize, dataize', emptyState, execBuildTerm, morph)
 import Deps (Evaluation (..), Term (TeExpression), dontSaveEval, dontSaveStep)
 import Functions (buildTerm)
@@ -105,6 +107,28 @@ testAtom useCases =
       loc <- parseExpressionThrows "Q"
       (value, _) <- dataize expr (defaultDataizeContext loc)
       value `shouldBe` Dataized res
+
+-- What a catalogue entry claims about the object an atom answers, next to the
+-- firings that hold the claim to account. 'Atoms' ties only the names to the
+-- engine automatically, so the forma is the field a behaviour change silently
+-- falsifies: an atom that starts answering a bool where it answered a number
+-- (#1074) leaves its entry describing a phino that no longer exists. Changing
+-- such an atom therefore reddens these cases, and getting them green again
+-- means moving the entry with it. They live here, beside the 'primitives'
+-- universe the atoms fire in, rather than in 'AtomsSpec', which has no
+-- universe to fire them in.
+testForma :: [(T.Text, T.Text, [(String, String, Bytes)])] -> Spec
+testForma useCases =
+  forM_ useCases $ \(atom, forma, firings) ->
+    describe (T.unpack atom) $ do
+      it "is catalogued with the forma these firings answer" $
+        map Atoms._forma (filter ((== atom) . Atoms._name) Atoms.atoms) `shouldBe` [forma]
+      forM_ firings $ \(desc, src, res) ->
+        it desc $ do
+          expr <- parseExpressionThrows (primitives src)
+          loc <- parseExpressionThrows "Q"
+          (value, _) <- dataize expr (defaultDataizeContext loc)
+          value `shouldBe` Dataized res
 
 -- Dataize under '--partial', collecting every report 𝔼 makes on the way, in
 -- the order it makes them
@@ -765,4 +789,49 @@ spec = do
       , -- 'right' rejects a shift distance that is not a plain 8-byte integer;
         -- empty bytes carry no such integer, so the shift atom is stuck too.
         ("cannot shift right by a non-integer distance", raw "C0-43-00-00-00-00-00-00" ++ ".right( " ++ raw "--" ++ " )")
+      ]
+
+  describe "catalogue" $
+    testForma
+      [
+        ( "L_number_gt"
+        , "Φ.true or Φ.false"
+        ,
+          [ ("answers the true object of the universe", "1000.gt( 200 )", BtOne "FF")
+          , ("answers the false object of the universe", "42.gt( 42.5 )", BtOne "00")
+          ]
+        )
+      ,
+        ( "L_bytes_eq"
+        , "Φ.true or Φ.false"
+        , [("answers the true object of the universe", raw "CA-FE" ++ ".eq( " ++ raw "CA-FE" ++ " )", BtOne "FF")]
+        )
+      ,
+        ( "L_bytes_slice"
+        , "Φ.bytes, or the forma of cant-slice"
+        ,
+          [ ("answers bytes for a window inside ρ", raw "20-1F-EE-B5-90" ++ ".slice( 1, 3 )", BtMany ["1F", "EE", "B5"])
+          ,
+            ( "answers the cant-slice of the caller for a window past the end of ρ"
+            , raw "20-1F-EE-B5-90" ++ ".slice( 3, 10, [[ message -> ?, @ -> \"recovered\" ]] )"
+            , BtMany ["72", "65", "63", "6F", "76", "65", "72", "65", "64"]
+            )
+          ]
+        )
+      ,
+        ( "L_number_eq"
+        , "Φ.number, or the forma of y"
+        ,
+          [
+            ( "answers ρ itself, a number, when the operands are equal"
+            , "5.eq( 5 )"
+            , BtMany ["40", "14", "00", "00", "00", "00", "00", "00"]
+            )
+          ,
+            ( "answers the y of the formation when they are not"
+            , "5.eq( 6, 7 )"
+            , BtMany ["40", "1C", "00", "00", "00", "00", "00", "00"]
+            )
+          ]
+        )
       ]
