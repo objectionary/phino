@@ -126,6 +126,8 @@ spec = do
       , ("escapes newline", BtOne "0A", "\\n")
       , ("escapes tab", BtOne "09", "\\t")
       , ("escapes non-printable", BtOne "01", "\\x01")
+      , ("escapes a non-printable above U+00FF as \\u", BtMany ["61", "E2", "80", "A8", "7A"], "a\\u2028z")
+      , ("keeps a printable emoji above U+FFFF as is", BtMany ["F0", "9F", "98", "80"], "\x1F600")
       , ("mixed printable and quote", BtMany ["61", "22", "62"], "a\\\"b")
       ]
       ( \(desc, bts, str) ->
@@ -146,6 +148,9 @@ spec = do
       , ("unknown escape is kept as it stands", "\\q", "\\q")
       , ("trailing backslash is kept", "a\\", "a\\")
       , ("truncated hex escape is kept", "\\x0", "\\x0")
+      , ("unicode escape", "a\\u2028z", "a\x2028z")
+      , ("uppercase unicode escape", "\\u2028", "\x2028")
+      , ("surrogate pair", "\\uD83D\\uDE00", "\x1F600")
       ]
       ( \(desc, escaped, unescaped) ->
           it desc $ unescapeStr escaped `shouldBe` unescaped
@@ -161,6 +166,9 @@ spec = do
       , ("tab", BtOne "09")
       , ("non-printable", BtMany ["01", "02"])
       , ("text around a newline", BtMany ["65", "0A", "65"])
+      , ("text around a line separator", BtMany ["61", "E2", "80", "A8", "7A"])
+      , ("text around a paragraph separator", BtMany ["61", "E2", "80", "A9", "7A"])
+      , ("emoji above U+FFFF", BtMany ["F0", "9F", "98", "80"])
       ]
       ( \(desc, bts) ->
           it desc $ strToBts (unescapeStr (btsToStr bts)) `shouldBe` bts

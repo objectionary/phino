@@ -256,7 +256,15 @@ btsToStr bytes = escapeStr (btsToUnescapedStr bytes)
         escapeChar '\t' = "\\t"
         escapeChar c
           | isPrint c && c /= '\\' && c /= '"' = [c]
-          | otherwise = printf "\\x%02x" (ord c)
+          | ord c <= 0xFF = printf "\\x%02x" (ord c)
+          | ord c <= 0xFFFF = printf "\\u%04x" (ord c)
+          | otherwise = surrogates (ord c)
+        surrogates :: Int -> String
+        surrogates code =
+          let rest = code - 0x10000
+              high = 0xD800 + rest `div` 0x400
+              low = 0xDC00 + rest `mod` 0x400
+           in printf "\\u%04x\\u%04x" high low
 
 -- The inverse of the escaping that 'btsToStr' applies, so that a sweet string
 -- literal can be turned back into the very bytes it was printed from. A
@@ -279,11 +287,28 @@ unescapeStr = go
   where
     go :: String -> String
     go "" = ""
+    go ('\\' : 'u' : digits) = goUnicode digits
     go ('\\' : 'x' : high : low : rest)
       | Just code <- hexPair high low = chr code : go rest
     go ('\\' : escaped : rest)
       | Just unescaped <- lookup escaped escapes = unescaped : go rest
     go (char : rest) = char : go rest
+    goUnicode :: String -> String
+    goUnicode (h1 : h2 : h3 : h4 : rest)
+      | Just code <- hexQuad h1 h2 h3 h4 =
+          if code >= 0xD800 && code <= 0xDBFF
+            then case rest of
+              ('\\' : 'u' : l1 : l2 : l3 : l4 : rest')
+                | Just low <- hexQuad l1 l2 l3 l4
+                , low >= 0xDC00 && low <= 0xDFFF ->
+                    chr (0x10000 + (code - 0xD800) * 0x400 + (low - 0xDC00)) : go rest'
+              _ -> chr code : go rest
+            else chr code : go rest
+    goUnicode rest = go rest
+    hexQuad :: Char -> Char -> Char -> Char -> Maybe Int
+    hexQuad a b c d = case readHex [a, b, c, d] of
+      [(code, "")] -> Just code
+      _ -> Nothing
     hexPair :: Char -> Char -> Maybe Int
     hexPair high low = case readHex [high, low] of
       [(code, "")] -> Just code
