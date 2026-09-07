@@ -3,21 +3,22 @@
 </span><span id="line-3"></span><span>
 </span><span id="line-4"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Random</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Random.html#randomString"><span class="hs-identifier">randomString</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Random.html#shuffle"><span class="hs-identifier">shuffle</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
 </span><span id="line-5"></span><span>
-</span><span id="line-6"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Monad</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">forM_</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">replicateM</span></span><span class="hs-special">)</span><span>
-</span><span id="line-7"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Char</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">intToDigit</span></span><span class="hs-special">)</span><span>
-</span><span id="line-8"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.IORef</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">IORef</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">modifyIORef'</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">newIORef</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">readIORef</span></span><span class="hs-special">)</span><span>
-</span><span id="line-9"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Set</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">Set</span></span><span class="hs-special">)</span><span>
-</span><span id="line-10"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><span class="hs-identifier">Data.Set</span></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Set</span></span><span>
-</span><span id="line-11"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/vctr-0.13.2.0-f6badc0f/share/doc/html/src/Data.Vector.html"><span class="hs-identifier">Data.Vector</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">V</span></span><span>
-</span><span id="line-12"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/vctr-0.13.2.0-f6badc0f/share/doc/html/src/Data.Vector.Mutable.html"><span class="hs-identifier">Data.Vector.Mutable</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">M</span></span><span>
-</span><span id="line-13"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">GHC.IO</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">unsafePerformIO</span></span><span class="hs-special">)</span><span>
-</span><span id="line-14"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/rndm-1.3.1-8de42cdc/share/doc/html/src/System.Random.html"><span class="hs-identifier">System.Random</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/rndm-1.3.1-8de42cdc/share/doc/html/src/System.Random.html#newStdGen"><span class="hs-identifier">newStdGen</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/rndm-1.3.1-8de42cdc/share/doc/html/src/System.Random.html#randomRIO"><span class="hs-identifier">randomRIO</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-15"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/rndm-1.3.1-8de42cdc/share/doc/html/src/System.Random.Stateful.html"><span class="hs-identifier">System.Random.Stateful</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/rndm-1.3.1-8de42cdc/share/doc/html/src/System.Random.Stateful.html#newIOGenM"><span class="hs-identifier">newIOGenM</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/rndm-1.3.1-8de42cdc/share/doc/html/src/System.Random.Internal.html#uniformRM"><span class="hs-identifier">uniformRM</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-16"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Text.Printf</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">printf</span></span><span class="hs-special">)</span><span>
-</span><span id="line-17"></span><span>
-</span><span id="line-18"></span><span class="annot"><a href="Random.html#strings"><span class="hs-identifier hs-type">strings</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IORef</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Set</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span class="hs-special">)</span><span>
-</span><span id="line-19"></span><span class="hs-pragma">{-# NOINLINE</span><span> </span><span class="annot"><a href="Random.html#strings"><span class="hs-pragma hs-type">strings</span></a></span><span> </span><span class="hs-pragma">#-}</span><span>
-</span><span id="line-20"></span><span id="strings"><span class="annot"><span class="annottext">strings :: IORef (Set [Char])
+</span><span id="line-6"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Exception</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">throwIO</span></span><span class="hs-special">)</span><span>
+</span><span id="line-7"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Monad</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">forM_</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">replicateM</span></span><span class="hs-special">)</span><span>
+</span><span id="line-8"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Char</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">intToDigit</span></span><span class="hs-special">)</span><span>
+</span><span id="line-9"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.IORef</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">IORef</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">modifyIORef'</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">newIORef</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">readIORef</span></span><span class="hs-special">)</span><span>
+</span><span id="line-10"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Set</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">Set</span></span><span class="hs-special">)</span><span>
+</span><span id="line-11"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><span class="hs-identifier">Data.Set</span></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Set</span></span><span>
+</span><span id="line-12"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/vctr-0.13.2.0-f6badc0f/share/doc/html/src/Data.Vector.html"><span class="hs-identifier">Data.Vector</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">V</span></span><span>
+</span><span id="line-13"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/vctr-0.13.2.0-f6badc0f/share/doc/html/src/Data.Vector.Mutable.html"><span class="hs-identifier">Data.Vector.Mutable</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">M</span></span><span>
+</span><span id="line-14"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">GHC.IO</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">unsafePerformIO</span></span><span class="hs-special">)</span><span>
+</span><span id="line-15"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/rndm-1.3.1-8de42cdc/share/doc/html/src/System.Random.html"><span class="hs-identifier">System.Random</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/rndm-1.3.1-8de42cdc/share/doc/html/src/System.Random.html#newStdGen"><span class="hs-identifier">newStdGen</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/rndm-1.3.1-8de42cdc/share/doc/html/src/System.Random.html#randomRIO"><span class="hs-identifier">randomRIO</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-16"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/rndm-1.3.1-8de42cdc/share/doc/html/src/System.Random.Stateful.html"><span class="hs-identifier">System.Random.Stateful</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/rndm-1.3.1-8de42cdc/share/doc/html/src/System.Random.Stateful.html#newIOGenM"><span class="hs-identifier">newIOGenM</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/rndm-1.3.1-8de42cdc/share/doc/html/src/System.Random.Internal.html#uniformRM"><span class="hs-identifier">uniformRM</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-17"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Text.Printf</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">printf</span></span><span class="hs-special">)</span><span>
+</span><span id="line-18"></span><span>
+</span><span id="line-19"></span><span class="annot"><a href="Random.html#strings"><span class="hs-identifier hs-type">strings</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IORef</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Set</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span class="hs-special">)</span><span>
+</span><span id="line-20"></span><span class="hs-pragma">{-# NOINLINE</span><span> </span><span class="annot"><a href="Random.html#strings"><span class="hs-pragma hs-type">strings</span></a></span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-21"></span><span id="strings"><span class="annot"><span class="annottext">strings :: IORef (Set [Char])
 </span><a href="Random.html#strings"><span class="hs-identifier hs-var hs-var">strings</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">IO (IORef (Set [Char])) -&gt; IORef (Set [Char])
 forall a. IO a -&gt; a
 </span><span class="hs-identifier hs-var">unsafePerformIO</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Set [Char] -&gt; IO (IORef (Set [Char]))
@@ -25,40 +26,40 @@ forall a. a -&gt; IO (IORef a)
 </span><span class="hs-identifier hs-var">newIORef</span></span><span> </span><span class="annot"><span class="annottext">Set [Char]
 forall a. Set a
 </span><span class="hs-identifier hs-var">Set.empty</span></span><span class="hs-special">)</span><span>
-</span><span id="line-21"></span><span>
-</span><span id="line-22"></span><span class="annot"><a href="Random.html#generate"><span class="hs-identifier hs-type">generate</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
-</span><span id="line-23"></span><span id="generate"><span class="annot"><span class="annottext">generate :: [Char] -&gt; IO [Char]
+</span><span id="line-22"></span><span>
+</span><span id="line-23"></span><span class="annot"><a href="Random.html#generate"><span class="hs-identifier hs-type">generate</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
+</span><span id="line-24"></span><span id="generate"><span class="annot"><span class="annottext">generate :: [Char] -&gt; IO [Char]
 </span><a href="Random.html#generate"><span class="hs-identifier hs-var hs-var">generate</span></a></span></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; IO [Char]
 forall a. a -&gt; IO a
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span>
-</span><span id="line-24"></span><span class="annot"><a href="Random.html#generate"><span class="hs-identifier hs-var">generate</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Char
-</span><span class="hs-char">'%'</span></span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621679259761"><span class="annot"><span class="annottext">Char
-</span><a href="#local-6989586621679259761"><span class="hs-identifier hs-var">ch</span></a></span></span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621679259762"><span class="annot"><span class="annottext">[Char]
-</span><a href="#local-6989586621679259762"><span class="hs-identifier hs-var">rest</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-25"></span><span>  </span><span id="local-6989586621679259763"><span class="annot"><span class="annottext">[Char]
-</span><a href="#local-6989586621679259763"><span class="hs-identifier hs-var">rep</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Char
-</span><a href="#local-6989586621679259761"><span class="hs-identifier hs-var">ch</span></a></span><span> </span><span class="hs-keyword">of</span><span>
-</span><span id="line-26"></span><span>    </span><span class="annot"><span class="annottext">Char
+</span><span id="line-25"></span><span class="annot"><a href="Random.html#generate"><span class="hs-identifier hs-var">generate</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Char
+</span><span class="hs-char">'%'</span></span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621679259826"><span class="annot"><span class="annottext">Char
+</span><a href="#local-6989586621679259826"><span class="hs-identifier hs-var">ch</span></a></span></span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621679259827"><span class="annot"><span class="annottext">[Char]
+</span><a href="#local-6989586621679259827"><span class="hs-identifier hs-var">rest</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-26"></span><span>  </span><span id="local-6989586621679259828"><span class="annot"><span class="annottext">[Char]
+</span><a href="#local-6989586621679259828"><span class="hs-identifier hs-var">rep</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Char
+</span><a href="#local-6989586621679259826"><span class="hs-identifier hs-var">ch</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-27"></span><span>    </span><span class="annot"><span class="annottext">Char
 </span><span class="hs-char">'x'</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Int -&gt; IO Char -&gt; IO [Char]
 forall (m :: * -&gt; *) a. Applicative m =&gt; Int -&gt; m a -&gt; m [a]
 </span><span class="hs-identifier hs-var">replicateM</span></span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">8</span></span><span> </span><span class="annot"><span class="annottext">(IO Char -&gt; IO [Char]) -&gt; IO Char -&gt; IO [Char]
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-27"></span><span>      </span><span id="local-6989586621679259764"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679259764"><span class="hs-identifier hs-var">v</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">(Int, Int) -&gt; IO Int
+</span><span id="line-28"></span><span>      </span><span id="local-6989586621679259829"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679259829"><span class="hs-identifier hs-var">v</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">(Int, Int) -&gt; IO Int
 forall a (m :: * -&gt; *). (Random a, MonadIO m) =&gt; (a, a) -&gt; m a
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/rndm-1.3.1-8de42cdc/share/doc/html/src/System.Random.html#randomRIO"><span class="hs-identifier hs-var">randomRIO</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">0</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">15</span></span><span class="hs-special">)</span><span>
-</span><span id="line-28"></span><span>      </span><span class="annot"><span class="annottext">Char -&gt; IO Char
+</span><span id="line-29"></span><span>      </span><span class="annot"><span class="annottext">Char -&gt; IO Char
 forall a. a -&gt; IO a
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; Char
 </span><span class="hs-identifier hs-var">intToDigit</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679259764"><span class="hs-identifier hs-var">v</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-29"></span><span>    </span><span class="annot"><span class="annottext">Char
+</span><a href="#local-6989586621679259829"><span class="hs-identifier hs-var">v</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-30"></span><span>    </span><span class="annot"><span class="annottext">Char
 </span><span class="hs-char">'d'</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; Int -&gt; [Char]
 forall r. PrintfType r =&gt; [Char] -&gt; r
 </span><span class="hs-identifier hs-var">printf</span></span><span> </span><span class="annot"><span class="annottext">[Char]
@@ -69,80 +70,110 @@ forall a (m :: * -&gt; *). (Random a, MonadIO m) =&gt; (a, a) -&gt; m a
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/rndm-1.3.1-8de42cdc/share/doc/html/src/System.Random.html#randomRIO"><span class="hs-identifier hs-var">randomRIO</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">0</span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">9999</span></span><span class="hs-special">)</span><span>
-</span><span id="line-30"></span><span>    </span><span class="annot"><span class="annottext">Char
+</span><span id="line-31"></span><span>    </span><span class="annot"><span class="annottext">Char
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; IO [Char]
 forall a. a -&gt; IO a
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Char
 </span><span class="hs-char">'%'</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Char
-</span><a href="#local-6989586621679259761"><span class="hs-identifier hs-var">ch</span></a></span><span class="hs-special">]</span><span>
-</span><span id="line-31"></span><span>  </span><span id="local-6989586621679259766"><span class="annot"><span class="annottext">[Char]
-</span><a href="#local-6989586621679259766"><span class="hs-identifier hs-var">next</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; IO [Char]
+</span><a href="#local-6989586621679259826"><span class="hs-identifier hs-var">ch</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-32"></span><span>  </span><span id="local-6989586621679259831"><span class="annot"><span class="annottext">[Char]
+</span><a href="#local-6989586621679259831"><span class="hs-identifier hs-var">next</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; IO [Char]
 </span><a href="Random.html#generate"><span class="hs-identifier hs-var">generate</span></a></span><span> </span><span class="annot"><span class="annottext">[Char]
-</span><a href="#local-6989586621679259762"><span class="hs-identifier hs-var">rest</span></a></span><span>
-</span><span id="line-32"></span><span>  </span><span class="annot"><span class="annottext">[Char] -&gt; IO [Char]
+</span><a href="#local-6989586621679259827"><span class="hs-identifier hs-var">rest</span></a></span><span>
+</span><span id="line-33"></span><span>  </span><span class="annot"><span class="annottext">[Char] -&gt; IO [Char]
 forall a. a -&gt; IO a
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[Char]
-</span><a href="#local-6989586621679259763"><span class="hs-identifier hs-var">rep</span></a></span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; [Char] -&gt; [Char]
+</span><a href="#local-6989586621679259828"><span class="hs-identifier hs-var">rep</span></a></span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; [Char] -&gt; [Char]
 forall a. [a] -&gt; [a] -&gt; [a]
 </span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">[Char]
-</span><a href="#local-6989586621679259766"><span class="hs-identifier hs-var">next</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-33"></span><span class="annot"><a href="Random.html#generate"><span class="hs-identifier hs-var">generate</span></a></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679259767"><span class="annot"><span class="annottext">Char
-</span><a href="#local-6989586621679259767"><span class="hs-identifier hs-var">ch</span></a></span></span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621679259768"><span class="annot"><span class="annottext">[Char]
-</span><a href="#local-6989586621679259768"><span class="hs-identifier hs-var">rest</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-34"></span><span>  </span><span id="local-6989586621679259769"><span class="annot"><span class="annottext">[Char]
-</span><a href="#local-6989586621679259769"><span class="hs-identifier hs-var">rest'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; IO [Char]
+</span><a href="#local-6989586621679259831"><span class="hs-identifier hs-var">next</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-34"></span><span class="annot"><a href="Random.html#generate"><span class="hs-identifier hs-var">generate</span></a></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679259832"><span class="annot"><span class="annottext">Char
+</span><a href="#local-6989586621679259832"><span class="hs-identifier hs-var">ch</span></a></span></span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621679259833"><span class="annot"><span class="annottext">[Char]
+</span><a href="#local-6989586621679259833"><span class="hs-identifier hs-var">rest</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-35"></span><span>  </span><span id="local-6989586621679259834"><span class="annot"><span class="annottext">[Char]
+</span><a href="#local-6989586621679259834"><span class="hs-identifier hs-var">rest'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; IO [Char]
 </span><a href="Random.html#generate"><span class="hs-identifier hs-var">generate</span></a></span><span> </span><span class="annot"><span class="annottext">[Char]
-</span><a href="#local-6989586621679259768"><span class="hs-identifier hs-var">rest</span></a></span><span>
-</span><span id="line-35"></span><span>  </span><span class="annot"><span class="annottext">[Char] -&gt; IO [Char]
+</span><a href="#local-6989586621679259833"><span class="hs-identifier hs-var">rest</span></a></span><span>
+</span><span id="line-36"></span><span>  </span><span class="annot"><span class="annottext">[Char] -&gt; IO [Char]
 forall a. a -&gt; IO a
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Char
-</span><a href="#local-6989586621679259767"><span class="hs-identifier hs-var">ch</span></a></span><span> </span><span class="annot"><span class="annottext">Char -&gt; [Char] -&gt; [Char]
+</span><a href="#local-6989586621679259832"><span class="hs-identifier hs-var">ch</span></a></span><span> </span><span class="annot"><span class="annottext">Char -&gt; [Char] -&gt; [Char]
 forall a. a -&gt; [a] -&gt; [a]
 </span><span class="hs-glyph hs-var">:</span></span><span> </span><span class="annot"><span class="annottext">[Char]
-</span><a href="#local-6989586621679259769"><span class="hs-identifier hs-var">rest'</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-36"></span><span>
-</span><span id="line-37"></span><span class="annot"><a href="Random.html#regenerate"><span class="hs-identifier hs-type">regenerate</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Set</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
-</span><span id="line-38"></span><span id="regenerate"><span class="annot"><span class="annottext">regenerate :: [Char] -&gt; Set [Char] -&gt; IO [Char]
-</span><a href="Random.html#regenerate"><span class="hs-identifier hs-var hs-var">regenerate</span></a></span></span><span> </span><span id="local-6989586621679259771"><span class="annot"><span class="annottext">[Char]
-</span><a href="#local-6989586621679259771"><span class="hs-identifier hs-var">pat</span></a></span></span><span> </span><span id="local-6989586621679259772"><span class="annot"><span class="annottext">Set [Char]
-</span><a href="#local-6989586621679259772"><span class="hs-identifier hs-var">set</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-39"></span><span>  </span><span id="local-6989586621679259773"><span class="annot"><span class="annottext">[Char]
-</span><a href="#local-6989586621679259773"><span class="hs-identifier hs-var">next</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; IO [Char]
+</span><a href="#local-6989586621679259834"><span class="hs-identifier hs-var">rest'</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-37"></span><span>
+</span><span id="line-38"></span><span class="hs-comment">-- The 'strings' set grows monotonically over a process, so a pattern with a</span><span>
+</span><span id="line-39"></span><span class="hs-comment">-- bounded space (e.g. '%d', which has exactly 10,000 values) eventually gets</span><span>
+</span><span id="line-40"></span><span class="hs-comment">-- exhausted. Trying again forever would hang, so the search gives up after a</span><span>
+</span><span id="line-41"></span><span class="hs-comment">-- bounded number of attempts and reports the collision space instead. The</span><span>
+</span><span id="line-42"></span><span class="hs-comment">-- limit is well above the largest realistic space (10,000) so that finding the</span><span>
+</span><span id="line-43"></span><span class="hs-comment">-- last free value of a nearly-full space still succeeds with overwhelming</span><span>
+</span><span id="line-44"></span><span class="hs-comment">-- probability: (9999/10000)^100000 &#8776; 4.5e-5.</span><span>
+</span><span id="line-45"></span><span class="annot"><a href="Random.html#maxAttempts"><span class="hs-identifier hs-type">maxAttempts</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span>
+</span><span id="line-46"></span><span id="maxAttempts"><span class="annot"><span class="annottext">maxAttempts :: Int
+</span><a href="Random.html#maxAttempts"><span class="hs-identifier hs-var hs-var">maxAttempts</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">100000</span></span><span>
+</span><span id="line-47"></span><span>
+</span><span id="line-48"></span><span class="annot"><a href="Random.html#regenerate"><span class="hs-identifier hs-type">regenerate</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Set</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
+</span><span id="line-49"></span><span id="regenerate"><span class="annot"><span class="annottext">regenerate :: [Char] -&gt; Set [Char] -&gt; IO [Char]
+</span><a href="Random.html#regenerate"><span class="hs-identifier hs-var hs-var">regenerate</span></a></span></span><span> </span><span id="local-6989586621679259837"><span class="annot"><span class="annottext">[Char]
+</span><a href="#local-6989586621679259837"><span class="hs-identifier hs-var">pat</span></a></span></span><span> </span><span id="local-6989586621679259838"><span class="annot"><span class="annottext">Set [Char]
+</span><a href="#local-6989586621679259838"><span class="hs-identifier hs-var">set</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; IO [Char]
+</span><a href="#local-6989586621679259839"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="Random.html#maxAttempts"><span class="hs-identifier hs-var">maxAttempts</span></a></span><span>
+</span><span id="line-50"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-51"></span><span>    </span><span class="annot"><a href="#local-6989586621679259839"><span class="hs-identifier hs-type">go</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
+</span><span id="line-52"></span><span>    </span><span id="local-6989586621679259839"><span class="annot"><span class="annottext">go :: Int -&gt; IO [Char]
+</span><a href="#local-6989586621679259839"><span class="hs-identifier hs-var hs-var">go</span></a></span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">0</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">IOError -&gt; IO [Char]
+forall e a. Exception e =&gt; e -&gt; IO a
+</span><span class="hs-identifier hs-var">throwIO</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[Char] -&gt; IOError
+</span><span class="hs-identifier hs-var">userError</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[Char] -&gt; [Char] -&gt; [Char]
+forall r. PrintfType r =&gt; [Char] -&gt; r
+</span><span class="hs-identifier hs-var">printf</span></span><span> </span><span class="annot"><span class="annottext">[Char]
+</span><span class="hs-string">&quot;randomString() cannot produce a unique value for pattern '%s': the value space is exhausted&quot;</span></span><span> </span><span class="annot"><span class="annottext">[Char]
+</span><a href="#local-6989586621679259837"><span class="hs-identifier hs-var">pat</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-53"></span><span>    </span><span class="annot"><a href="#local-6989586621679259839"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span id="local-6989586621679259841"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679259841"><span class="hs-identifier hs-var">attempts</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-54"></span><span>      </span><span id="local-6989586621679259842"><span class="annot"><span class="annottext">[Char]
+</span><a href="#local-6989586621679259842"><span class="hs-identifier hs-var">next</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; IO [Char]
 </span><a href="Random.html#generate"><span class="hs-identifier hs-var">generate</span></a></span><span> </span><span class="annot"><span class="annottext">[Char]
-</span><a href="#local-6989586621679259771"><span class="hs-identifier hs-var">pat</span></a></span><span>
-</span><span id="line-40"></span><span>  </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">[Char]
-</span><a href="#local-6989586621679259773"><span class="hs-identifier hs-var">next</span></a></span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; Set [Char] -&gt; Bool
+</span><a href="#local-6989586621679259837"><span class="hs-identifier hs-var">pat</span></a></span><span>
+</span><span id="line-55"></span><span>      </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">[Char]
+</span><a href="#local-6989586621679259842"><span class="hs-identifier hs-var">next</span></a></span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; Set [Char] -&gt; Bool
 forall a. Ord a =&gt; a -&gt; Set a -&gt; Bool
 </span><span class="hs-operator hs-var">`Set.member`</span></span><span> </span><span class="annot"><span class="annottext">Set [Char]
-</span><a href="#local-6989586621679259772"><span class="hs-identifier hs-var">set</span></a></span><span>
-</span><span id="line-41"></span><span>    </span><span class="hs-keyword">then</span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; Set [Char] -&gt; IO [Char]
-</span><a href="Random.html#regenerate"><span class="hs-identifier hs-var">regenerate</span></a></span><span> </span><span class="annot"><span class="annottext">[Char]
-</span><a href="#local-6989586621679259771"><span class="hs-identifier hs-var">pat</span></a></span><span> </span><span class="annot"><span class="annottext">Set [Char]
-</span><a href="#local-6989586621679259772"><span class="hs-identifier hs-var">set</span></a></span><span>
-</span><span id="line-42"></span><span>    </span><span class="hs-keyword">else</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-43"></span><span>      </span><span class="annot"><span class="annottext">IORef (Set [Char]) -&gt; (Set [Char] -&gt; Set [Char]) -&gt; IO ()
+</span><a href="#local-6989586621679259838"><span class="hs-identifier hs-var">set</span></a></span><span>
+</span><span id="line-56"></span><span>        </span><span class="hs-keyword">then</span><span> </span><span class="annot"><span class="annottext">Int -&gt; IO [Char]
+</span><a href="#local-6989586621679259839"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679259841"><span class="hs-identifier hs-var">attempts</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-glyph hs-var">-</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">1</span></span><span class="hs-special">)</span><span>
+</span><span id="line-57"></span><span>        </span><span class="hs-keyword">else</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-58"></span><span>          </span><span class="annot"><span class="annottext">IORef (Set [Char]) -&gt; (Set [Char] -&gt; Set [Char]) -&gt; IO ()
 forall a. IORef a -&gt; (a -&gt; a) -&gt; IO ()
 </span><span class="hs-identifier hs-var">modifyIORef'</span></span><span> </span><span class="annot"><span class="annottext">IORef (Set [Char])
 </span><a href="Random.html#strings"><span class="hs-identifier hs-var">strings</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[Char] -&gt; Set [Char] -&gt; Set [Char]
 forall a. Ord a =&gt; a -&gt; Set a -&gt; Set a
 </span><span class="hs-identifier hs-var">Set.insert</span></span><span> </span><span class="annot"><span class="annottext">[Char]
-</span><a href="#local-6989586621679259773"><span class="hs-identifier hs-var">next</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-44"></span><span>      </span><span class="annot"><span class="annottext">[Char] -&gt; IO [Char]
+</span><a href="#local-6989586621679259842"><span class="hs-identifier hs-var">next</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-59"></span><span>          </span><span class="annot"><span class="annottext">[Char] -&gt; IO [Char]
 forall a. a -&gt; IO a
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">[Char]
-</span><a href="#local-6989586621679259773"><span class="hs-identifier hs-var">next</span></a></span><span>
-</span><span id="line-45"></span><span>
-</span><span id="line-46"></span><span class="annot"><a href="Random.html#randomString"><span class="hs-identifier hs-type">randomString</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
-</span><span id="line-47"></span><span id="randomString"><span class="annot"><span class="annottext">randomString :: [Char] -&gt; IO [Char]
-</span><a href="Random.html#randomString"><span class="hs-identifier hs-var hs-var">randomString</span></a></span></span><span> </span><span id="local-6989586621679259776"><span class="annot"><span class="annottext">[Char]
-</span><a href="#local-6989586621679259776"><span class="hs-identifier hs-var">pat</span></a></span></span><span>
-</span><span id="line-48"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; Bool
-</span><a href="#local-6989586621679259777"><span class="hs-identifier hs-var">randomized</span></a></span><span> </span><span class="annot"><span class="annottext">[Char]
-</span><a href="#local-6989586621679259776"><span class="hs-identifier hs-var">pat</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">IORef (Set [Char]) -&gt; IO (Set [Char])
+</span><a href="#local-6989586621679259842"><span class="hs-identifier hs-var">next</span></a></span><span>
+</span><span id="line-60"></span><span>
+</span><span id="line-61"></span><span class="annot"><a href="Random.html#randomString"><span class="hs-identifier hs-type">randomString</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
+</span><span id="line-62"></span><span id="randomString"><span class="annot"><span class="annottext">randomString :: [Char] -&gt; IO [Char]
+</span><a href="Random.html#randomString"><span class="hs-identifier hs-var hs-var">randomString</span></a></span></span><span> </span><span id="local-6989586621679259845"><span class="annot"><span class="annottext">[Char]
+</span><a href="#local-6989586621679259845"><span class="hs-identifier hs-var">pat</span></a></span></span><span>
+</span><span id="line-63"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; Bool
+</span><a href="#local-6989586621679259846"><span class="hs-identifier hs-var">randomized</span></a></span><span> </span><span class="annot"><span class="annottext">[Char]
+</span><a href="#local-6989586621679259845"><span class="hs-identifier hs-var">pat</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">IORef (Set [Char]) -&gt; IO (Set [Char])
 forall a. IORef a -&gt; IO a
 </span><span class="hs-identifier hs-var">readIORef</span></span><span> </span><span class="annot"><span class="annottext">IORef (Set [Char])
 </span><a href="Random.html#strings"><span class="hs-identifier hs-var">strings</span></a></span><span> </span><span class="annot"><span class="annottext">IO (Set [Char]) -&gt; (Set [Char] -&gt; IO [Char]) -&gt; IO [Char]
@@ -150,107 +181,107 @@ forall a b. IO a -&gt; (a -&gt; IO b) -&gt; IO b
 forall (m :: * -&gt; *) a b. Monad m =&gt; m a -&gt; (a -&gt; m b) -&gt; m b
 </span><span class="hs-operator hs-var">&gt;&gt;=</span></span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; Set [Char] -&gt; IO [Char]
 </span><a href="Random.html#regenerate"><span class="hs-identifier hs-var">regenerate</span></a></span><span> </span><span class="annot"><span class="annottext">[Char]
-</span><a href="#local-6989586621679259776"><span class="hs-identifier hs-var">pat</span></a></span><span>
-</span><span id="line-49"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679259845"><span class="hs-identifier hs-var">pat</span></a></span><span>
+</span><span id="line-64"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
 </span><span class="hs-identifier hs-var">otherwise</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; IO [Char]
 </span><a href="Random.html#generate"><span class="hs-identifier hs-var">generate</span></a></span><span> </span><span class="annot"><span class="annottext">[Char]
-</span><a href="#local-6989586621679259776"><span class="hs-identifier hs-var">pat</span></a></span><span>
-</span><span id="line-50"></span><span>  </span><span class="hs-keyword">where</span><span>
-</span><span id="line-51"></span><span>    </span><span class="annot"><a href="#local-6989586621679259777"><span class="hs-identifier hs-type">randomized</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span>
-</span><span id="line-52"></span><span>    </span><span id="local-6989586621679259777"><span class="annot"><span class="annottext">randomized :: [Char] -&gt; Bool
-</span><a href="#local-6989586621679259777"><span class="hs-identifier hs-var hs-var">randomized</span></a></span></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679259845"><span class="hs-identifier hs-var">pat</span></a></span><span>
+</span><span id="line-65"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-66"></span><span>    </span><span class="annot"><a href="#local-6989586621679259846"><span class="hs-identifier hs-type">randomized</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span>
+</span><span id="line-67"></span><span>    </span><span id="local-6989586621679259846"><span class="annot"><span class="annottext">randomized :: [Char] -&gt; Bool
+</span><a href="#local-6989586621679259846"><span class="hs-identifier hs-var hs-var">randomized</span></a></span></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool
 </span><span class="hs-identifier hs-var">False</span></span><span>
-</span><span id="line-53"></span><span>    </span><span class="annot"><a href="#local-6989586621679259777"><span class="hs-identifier hs-var">randomized</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Char
-</span><span class="hs-char">'%'</span></span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621679259778"><span class="annot"><span class="annottext">Char
-</span><a href="#local-6989586621679259778"><span class="hs-identifier hs-var">ch</span></a></span></span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621679259779"><span class="annot"><span class="annottext">[Char]
-</span><a href="#local-6989586621679259779"><span class="hs-identifier hs-var">rest</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Char
-</span><a href="#local-6989586621679259778"><span class="hs-identifier hs-var">ch</span></a></span><span> </span><span class="annot"><span class="annottext">Char -&gt; Char -&gt; Bool
+</span><span id="line-68"></span><span>    </span><span class="annot"><a href="#local-6989586621679259846"><span class="hs-identifier hs-var">randomized</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Char
+</span><span class="hs-char">'%'</span></span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621679259847"><span class="annot"><span class="annottext">Char
+</span><a href="#local-6989586621679259847"><span class="hs-identifier hs-var">ch</span></a></span></span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621679259848"><span class="annot"><span class="annottext">[Char]
+</span><a href="#local-6989586621679259848"><span class="hs-identifier hs-var">rest</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Char
+</span><a href="#local-6989586621679259847"><span class="hs-identifier hs-var">ch</span></a></span><span> </span><span class="annot"><span class="annottext">Char -&gt; Char -&gt; Bool
 forall a. Eq a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">Char
 </span><span class="hs-char">'d'</span></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
 </span><span class="hs-operator hs-var">||</span></span><span> </span><span class="annot"><span class="annottext">Char
-</span><a href="#local-6989586621679259778"><span class="hs-identifier hs-var">ch</span></a></span><span> </span><span class="annot"><span class="annottext">Char -&gt; Char -&gt; Bool
+</span><a href="#local-6989586621679259847"><span class="hs-identifier hs-var">ch</span></a></span><span> </span><span class="annot"><span class="annottext">Char -&gt; Char -&gt; Bool
 forall a. Eq a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">Char
 </span><span class="hs-char">'x'</span></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
 </span><span class="hs-operator hs-var">||</span></span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; Bool
-</span><a href="#local-6989586621679259777"><span class="hs-identifier hs-var">randomized</span></a></span><span> </span><span class="annot"><span class="annottext">[Char]
-</span><a href="#local-6989586621679259779"><span class="hs-identifier hs-var">rest</span></a></span><span>
-</span><span id="line-54"></span><span>    </span><span class="annot"><a href="#local-6989586621679259777"><span class="hs-identifier hs-var">randomized</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Char
-</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621679259781"><span class="annot"><span class="annottext">[Char]
-</span><a href="#local-6989586621679259781"><span class="hs-identifier hs-var">rest</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; Bool
-</span><a href="#local-6989586621679259777"><span class="hs-identifier hs-var">randomized</span></a></span><span> </span><span class="annot"><span class="annottext">[Char]
-</span><a href="#local-6989586621679259781"><span class="hs-identifier hs-var">rest</span></a></span><span>
-</span><span id="line-55"></span><span>
-</span><span id="line-56"></span><span class="hs-comment">-- Fast Fisher-Yates with mutable vectors.</span><span>
-</span><span id="line-57"></span><span class="hs-comment">-- The function is generated by ChatGPT and claimed as</span><span>
-</span><span id="line-58"></span><span class="hs-comment">-- fastest approach comparing to usage IOArray.</span><span>
-</span><span id="line-59"></span><span class="hs-comment">-- &gt;&gt;&gt; shuffle [1..20]</span><span>
-</span><span id="line-60"></span><span class="hs-comment">-- [7,15,5,18,13,19,3,11,20,2,1,8,14,16,17,12,9,10,6,4]</span><span>
-</span><span id="line-61"></span><span id="local-6989586621679259663"><span class="annot"><a href="Random.html#shuffle"><span class="hs-identifier hs-type">shuffle</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621679259663"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621679259663"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">]</span></span><span>
-</span><span id="line-62"></span><span id="shuffle"><span class="annot"><span class="annottext">shuffle :: forall a. [a] -&gt; IO [a]
-</span><a href="Random.html#shuffle"><span class="hs-identifier hs-var hs-var">shuffle</span></a></span></span><span> </span><span id="local-6989586621679259811"><span class="annot"><span class="annottext">[a]
-</span><a href="#local-6989586621679259811"><span class="hs-identifier hs-var">xs</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-63"></span><span>  </span><span id="local-6989586621679259812"><span class="annot"><span class="annottext">IOGenM StdGen
-</span><a href="#local-6989586621679259812"><span class="hs-identifier hs-var">gen</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">StdGen -&gt; IO (IOGenM StdGen)
+</span><a href="#local-6989586621679259846"><span class="hs-identifier hs-var">randomized</span></a></span><span> </span><span class="annot"><span class="annottext">[Char]
+</span><a href="#local-6989586621679259848"><span class="hs-identifier hs-var">rest</span></a></span><span>
+</span><span id="line-69"></span><span>    </span><span class="annot"><a href="#local-6989586621679259846"><span class="hs-identifier hs-var">randomized</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Char
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621679259850"><span class="annot"><span class="annottext">[Char]
+</span><a href="#local-6989586621679259850"><span class="hs-identifier hs-var">rest</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; Bool
+</span><a href="#local-6989586621679259846"><span class="hs-identifier hs-var">randomized</span></a></span><span> </span><span class="annot"><span class="annottext">[Char]
+</span><a href="#local-6989586621679259850"><span class="hs-identifier hs-var">rest</span></a></span><span>
+</span><span id="line-70"></span><span>
+</span><span id="line-71"></span><span class="hs-comment">-- Fast Fisher-Yates with mutable vectors.</span><span>
+</span><span id="line-72"></span><span class="hs-comment">-- The function is generated by ChatGPT and claimed as</span><span>
+</span><span id="line-73"></span><span class="hs-comment">-- fastest approach comparing to usage IOArray.</span><span>
+</span><span id="line-74"></span><span class="hs-comment">-- &gt;&gt;&gt; shuffle [1..20]</span><span>
+</span><span id="line-75"></span><span class="hs-comment">-- [7,15,5,18,13,19,3,11,20,2,1,8,14,16,17,12,9,10,6,4]</span><span>
+</span><span id="line-76"></span><span id="local-6989586621679259718"><span class="annot"><a href="Random.html#shuffle"><span class="hs-identifier hs-type">shuffle</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621679259718"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621679259718"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">]</span></span><span>
+</span><span id="line-77"></span><span id="shuffle"><span class="annot"><span class="annottext">shuffle :: forall a. [a] -&gt; IO [a]
+</span><a href="Random.html#shuffle"><span class="hs-identifier hs-var hs-var">shuffle</span></a></span></span><span> </span><span id="local-6989586621679259880"><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621679259880"><span class="hs-identifier hs-var">xs</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-78"></span><span>  </span><span id="local-6989586621679259881"><span class="annot"><span class="annottext">IOGenM StdGen
+</span><a href="#local-6989586621679259881"><span class="hs-identifier hs-var">gen</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">StdGen -&gt; IO (IOGenM StdGen)
 forall (m :: * -&gt; *) g. MonadIO m =&gt; g -&gt; m (IOGenM g)
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/rndm-1.3.1-8de42cdc/share/doc/html/src/System.Random.Stateful.html#newIOGenM"><span class="hs-identifier hs-var">newIOGenM</span></a></span><span> </span><span class="annot"><span class="annottext">(StdGen -&gt; IO (IOGenM StdGen)) -&gt; IO StdGen -&gt; IO (IOGenM StdGen)
 forall (m :: * -&gt; *) a b. Monad m =&gt; (a -&gt; m b) -&gt; m a -&gt; m b
 </span><span class="hs-operator hs-var">=&lt;&lt;</span></span><span> </span><span class="annot"><span class="annottext">IO StdGen
 forall (m :: * -&gt; *). MonadIO m =&gt; m StdGen
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/rndm-1.3.1-8de42cdc/share/doc/html/src/System.Random.html#newStdGen"><span class="hs-identifier hs-var">newStdGen</span></a></span><span>
-</span><span id="line-64"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679259815"><span class="annot"><span class="annottext">n :: Int
-</span><a href="#local-6989586621679259815"><span class="hs-identifier hs-var hs-var">n</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[a] -&gt; Int
+</span><span id="line-79"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679259884"><span class="annot"><span class="annottext">n :: Int
+</span><a href="#local-6989586621679259884"><span class="hs-identifier hs-var hs-var">n</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[a] -&gt; Int
 forall a. [a] -&gt; Int
 forall (t :: * -&gt; *) a. Foldable t =&gt; t a -&gt; Int
 </span><span class="hs-identifier hs-var">length</span></span><span> </span><span class="annot"><span class="annottext">[a]
-</span><a href="#local-6989586621679259811"><span class="hs-identifier hs-var">xs</span></a></span><span>
-</span><span id="line-65"></span><span>  </span><span id="local-6989586621679259817"><span class="annot"><span class="annottext">MVector RealWorld a
-</span><a href="#local-6989586621679259817"><span class="hs-identifier hs-var">v</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Vector a -&gt; IO (MVector (PrimState IO) a)
+</span><a href="#local-6989586621679259880"><span class="hs-identifier hs-var">xs</span></a></span><span>
+</span><span id="line-80"></span><span>  </span><span id="local-6989586621679259886"><span class="annot"><span class="annottext">MVector RealWorld a
+</span><a href="#local-6989586621679259886"><span class="hs-identifier hs-var">v</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Vector a -&gt; IO (MVector (PrimState IO) a)
 forall (m :: * -&gt; *) a.
 PrimMonad m =&gt;
 Vector a -&gt; m (MVector (PrimState m) a)
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/vctr-0.13.2.0-f6badc0f/share/doc/html/src/Data.Vector.html#thaw"><span class="hs-identifier hs-var">V.thaw</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[a] -&gt; Vector a
 forall a. [a] -&gt; Vector a
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/vctr-0.13.2.0-f6badc0f/share/doc/html/src/Data.Vector.html#fromList"><span class="hs-identifier hs-var">V.fromList</span></a></span><span> </span><span class="annot"><span class="annottext">[a]
-</span><a href="#local-6989586621679259811"><span class="hs-identifier hs-var">xs</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-comment">-- Mutable copy</span><span>
-</span><span id="line-66"></span><span>  </span><span class="annot"><span class="annottext">[Int] -&gt; (Int -&gt; IO ()) -&gt; IO ()
+</span><a href="#local-6989586621679259880"><span class="hs-identifier hs-var">xs</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-comment">-- Mutable copy</span><span>
+</span><span id="line-81"></span><span>  </span><span class="annot"><span class="annottext">[Int] -&gt; (Int -&gt; IO ()) -&gt; IO ()
 forall (t :: * -&gt; *) (m :: * -&gt; *) a b.
 (Foldable t, Monad m) =&gt;
 t a -&gt; (a -&gt; m b) -&gt; m ()
 </span><span class="hs-identifier hs-var">forM_</span></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679259815"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+</span><a href="#local-6989586621679259884"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
 forall a. Num a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-glyph hs-var">-</span></span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">1</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679259815"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+</span><a href="#local-6989586621679259884"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
 forall a. Num a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-glyph hs-var">-</span></span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">2</span></span><span> </span><span class="hs-glyph">..</span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">1</span></span><span class="hs-special">]</span><span> </span><span class="annot"><span class="annottext">((Int -&gt; IO ()) -&gt; IO ()) -&gt; (Int -&gt; IO ()) -&gt; IO ()
 forall a b. (a -&gt; b) -&gt; a -&gt; b
-</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679259820"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679259820"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-67"></span><span>    </span><span id="local-6989586621679259821"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679259821"><span class="hs-identifier hs-var">j</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">(Int, Int) -&gt; IOGenM StdGen -&gt; IO Int
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679259889"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679259889"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-82"></span><span>    </span><span id="local-6989586621679259890"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679259890"><span class="hs-identifier hs-var">j</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">(Int, Int) -&gt; IOGenM StdGen -&gt; IO Int
 forall a g (m :: * -&gt; *).
 (UniformRange a, StatefulGen g m) =&gt;
 (a, a) -&gt; g -&gt; m a
 forall g (m :: * -&gt; *). StatefulGen g m =&gt; (Int, Int) -&gt; g -&gt; m Int
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/rndm-1.3.1-8de42cdc/share/doc/html/src/System.Random.Internal.html#uniformRM"><span class="hs-identifier hs-var">uniformRM</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">0</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679259820"><span class="hs-identifier hs-var">i</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">IOGenM StdGen
-</span><a href="#local-6989586621679259812"><span class="hs-identifier hs-var">gen</span></a></span><span>
-</span><span id="line-68"></span><span>    </span><span class="annot"><span class="annottext">MVector (PrimState IO) a -&gt; Int -&gt; Int -&gt; IO ()
+</span><a href="#local-6989586621679259889"><span class="hs-identifier hs-var">i</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">IOGenM StdGen
+</span><a href="#local-6989586621679259881"><span class="hs-identifier hs-var">gen</span></a></span><span>
+</span><span id="line-83"></span><span>    </span><span class="annot"><span class="annottext">MVector (PrimState IO) a -&gt; Int -&gt; Int -&gt; IO ()
 forall (m :: * -&gt; *) a.
 PrimMonad m =&gt;
 MVector (PrimState m) a -&gt; Int -&gt; Int -&gt; m ()
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/vctr-0.13.2.0-f6badc0f/share/doc/html/src/Data.Vector.Mutable.html#swap"><span class="hs-identifier hs-var">M.swap</span></a></span><span> </span><span class="annot"><span class="annottext">MVector RealWorld a
 MVector (PrimState IO) a
-</span><a href="#local-6989586621679259817"><span class="hs-identifier hs-var">v</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679259820"><span class="hs-identifier hs-var">i</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679259821"><span class="hs-identifier hs-var">j</span></a></span><span>
-</span><span id="line-69"></span><span>  </span><span class="annot"><span class="annottext">Vector a -&gt; [a]
+</span><a href="#local-6989586621679259886"><span class="hs-identifier hs-var">v</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679259889"><span class="hs-identifier hs-var">i</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679259890"><span class="hs-identifier hs-var">j</span></a></span><span>
+</span><span id="line-84"></span><span>  </span><span class="annot"><span class="annottext">Vector a -&gt; [a]
 forall a. Vector a -&gt; [a]
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/vctr-0.13.2.0-f6badc0f/share/doc/html/src/Data.Vector.html#toList"><span class="hs-identifier hs-var">V.toList</span></a></span><span> </span><span class="annot"><span class="annottext">(Vector a -&gt; [a]) -&gt; IO (Vector a) -&gt; IO [a]
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
@@ -260,5 +291,5 @@ PrimMonad m =&gt;
 MVector (PrimState m) a -&gt; m (Vector a)
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/vctr-0.13.2.0-f6badc0f/share/doc/html/src/Data.Vector.html#freeze"><span class="hs-identifier hs-var">V.freeze</span></a></span><span> </span><span class="annot"><span class="annottext">MVector RealWorld a
 MVector (PrimState IO) a
-</span><a href="#local-6989586621679259817"><span class="hs-identifier hs-var">v</span></a></span><span>
-</span><span id="line-70"></span></pre></body></html>
+</span><a href="#local-6989586621679259886"><span class="hs-identifier hs-var">v</span></a></span><span>
+</span><span id="line-85"></span></pre></body></html>
