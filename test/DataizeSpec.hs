@@ -7,14 +7,16 @@
 module DataizeSpec (spec) where
 
 import AST
+import Atoms (Registry, emptyRegistry)
 import Control.Exception (SomeException)
 import Control.Monad
 import Data.IORef (modifyIORef', newIORef, readIORef)
 import Data.List (find, isInfixOf, nub)
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.Maybe (fromMaybe, isJust)
-import Dataize (DataizeContext (..), Outcome (..), Steps (..), dataize, dataize', emptyState, execBuildTerm, morph, morph')
+import Dataize (DataizeContext (..), Outcome (..), Steps (..), dataize, dataize', emptyState, execBuildTerm, insideUniverse, morph, morph')
 import Deps (Evaluation (..), Term (TeExpression), dontSaveEval, dontSaveStep)
+import Fixtures (fixtureRegistry, withNode)
 import Functions (buildTerm)
 import Matcher (substEmpty)
 import Parser (parseExpressionThrows)
@@ -26,9 +28,15 @@ import Yaml qualified
 
 -- Shuffle is enabled so the suite exercises the order-independence of the
 -- dataization rules (#909): a hidden overlap surfaces as a nondeterministic
--- failure instead of staying silently green.
+-- failure instead of staying silently green. The registry of λ functions is
+-- empty, since phino implements none of them: a case that needs an atom to
+-- answer brings the fixture registry in through 'withAtoms'.
 defaultDataizeContext :: Expression -> DataizeContext
-defaultDataizeContext loc = DataizeContext loc 25 25 (Steps 250 0) False True False buildTerm dontSaveStep dontSaveEval
+defaultDataizeContext loc = DataizeContext loc 25 25 (Steps 250 0) False True False emptyRegistry buildTerm dontSaveStep dontSaveEval
+
+-- The same context with the fixture λ functions registered (see 'Fixtures').
+withAtoms :: Registry -> DataizeContext -> DataizeContext
+withAtoms registry ctx = ctx{_atoms = registry}
 
 test :: (Eq a, Show a) => ((Expression, NonEmpty Rewritten) -> Expression -> String -> DataizeContext -> IO ((a, [Rewritten]), String)) -> [(String, Expression, Expression, a)] -> Spec
 test func useCases =
@@ -63,18 +71,18 @@ testMorph useCases =
       (morphed, _) <- morph expr (defaultDataizeContext loc')
       morphed `shouldBe` expected
 
--- The 12 primitive λ-atoms every EO data operation reduces to, declared the way
--- 'number.eo' and 'bytes.eo' declare them, so a case below only has to spell the
--- The 12 primitive λ-atoms every EO data operation reduces to, declared the way
--- 'number.eo' and 'bytes.eo' declare them, so a case below only has to spell the
--- expression under φ. 'number.eq' is the one operation with no atom of its own:
--- EO spells it out of 'L_bytes_eq' (eq.eo), so the fixture composes it the same
--- way. Alongside them stand the objects the atoms hand results to: 'string'
--- carries the 'cant-slice' complaint, while 'true' and 'false' fill in for the
--- real bool objects, since the single byte an EO bool dataizes to is all these
--- cases assert. Those bytes are EO's own: 'true.eo' asserts
+-- The EO objects the fixture λ functions answer for, declared the way
+-- 'number.eo' and 'bytes.eo' declare them, so a case below only has to spell
+-- the expression under φ. 'number.eq' is the one operation with no atom of its
+-- own: EO spells it out of 'L_bytes_eq' (eq.eo), so the fixture composes it the
+-- same way. Alongside them stand the objects the atoms hand results to: 'string'
+-- carries what a byte-array complaint would say, while 'true' and 'false' fill
+-- in for the real bool objects, since the single byte an EO bool dataizes to is
+-- all these cases assert. Those bytes are EO's own: 'true.eo' asserts
 -- 'true.as-bytes.eq FF-' and 'bool.eo' branches 'if' over 'FF-' and '00-', so a
 -- universe copied from here starts with a bool an EO program recognizes.
+-- 'number.nope' is declared and left out of the registry on purpose: it is the
+-- λ function that cannot fire, the one '--partial' parks on.
 primitives :: String -> String
 primitives src =
   unlines
@@ -82,14 +90,8 @@ primitives src =
     , "  bytes -> [["
     , "    data -> ?,"
     , "    @ -> $.data,"
-    , "    and -> [[ b -> ?, L> L_bytes_and ]],"
-    , "    or -> [[ b -> ?, L> L_bytes_or ]],"
     , "    not -> [[ L> L_bytes_not ]],"
-    , "    concat -> [[ b -> ?, L> L_bytes_concat ]],"
-    , "    eq -> [[ b -> ?, L> L_bytes_eq ]],"
-    , "    size -> [[ L> L_bytes_size ]],"
-    , "    right -> [[ x -> ?, L> L_bytes_right ]],"
-    , "    slice -> [[ start -> ?, len -> ?, cant-slice -> ?, L> L_bytes_slice ]]"
+    , "    eq -> [[ b -> ?, L> L_bytes_eq ]]"
     , "  ]],"
     , "  number -> [["
     , "    as-bytes -> ?,"
@@ -98,7 +100,8 @@ primitives src =
     , "    times -> [[ x -> ?, L> L_number_times ]],"
     , "    div -> [[ x -> ?, L> L_number_div ]],"
     , "    gt -> [[ x -> ?, L> L_number_gt ]],"
-    , "    eq -> [[ x -> ?, @ -> $.^.as-bytes.eq( x.as-bytes ) ]]"
+    , "    eq -> [[ x -> ?, @ -> $.^.as-bytes.eq( x.as-bytes ) ]],"
+    , "    nope -> [[ L> L_number_nope ]]"
     , "  ]],"
     , "  string -> [[ as-bytes -> ?, @ -> $.as-bytes ]],"
     , "  true -> [[ @ -> [[ D> FF- ]] ]],"
@@ -111,38 +114,51 @@ primitives src =
 raw :: String -> String
 raw bts = "Q.bytes( data -> [[ D> " ++ bts ++ " ]] )"
 
-testAtom :: [(String, String, Bytes)] -> Spec
-testAtom useCases =
+-- Dataize an expression against the fixture universe, with the fixture λ
+-- functions registered. Every such case runs an external script, so it is
+-- pending where 'node' is not installed.
+testAtom :: Registry -> [(String, String, Bytes)] -> Spec
+testAtom registry useCases =
   forM_ useCases $ \(name, src, res) ->
-    it name $ do
-      expr <- parseExpressionThrows (primitives src)
-      loc <- parseExpressionThrows "Q"
-      (value, _) <- dataize expr (defaultDataizeContext loc)
-      value `shouldBe` Dataized res
+    it name $
+      withNode $ do
+        expr <- parseExpressionThrows (primitives src)
+        loc <- parseExpressionThrows "Q"
+        (value, _) <- dataize expr (withAtoms registry (defaultDataizeContext loc))
+        value `shouldBe` Dataized res
 
 -- Dataize under '--partial', collecting every report 𝔼 makes on the way, in
 -- the order it makes them
-partially :: String -> IO ((Outcome, [Rewritten]), [Evaluation])
-partially src = do
+partially :: Registry -> String -> IO ((Outcome, [Rewritten]), [Evaluation])
+partially registry src = do
   expr <- parseExpressionThrows (primitives src)
   reports <- newIORef []
-  let ctx = (defaultDataizeContext ExRoot){_partial = True, _saveEval = \report -> modifyIORef' reports (report :)}
+  let ctx =
+        (withAtoms registry (defaultDataizeContext ExRoot))
+          { _partial = True
+          , _saveEval = \report -> modifyIORef' reports (report :)
+          }
   result <- dataize expr ctx
   collected <- readIORef reports
   pure (result, reverse collected)
 
 -- An atom with no answer yields ⊥, which stops the whole dataization
-testStuckAtom :: [(String, String)] -> Spec
-testStuckAtom useCases =
+testStuckAtom :: Registry -> [(String, String)] -> Spec
+testStuckAtom registry useCases =
   forM_ useCases $ \(name, src) ->
-    it name $ do
-      expr <- parseExpressionThrows (primitives src)
-      loc <- parseExpressionThrows "Q"
-      dataize expr (defaultDataizeContext loc)
-        `shouldThrow` (\e -> "terminator" `isInfixOf` show (e :: SomeException))
+    it name $
+      withNode $ do
+        expr <- parseExpressionThrows (primitives src)
+        loc <- parseExpressionThrows "Q"
+        dataize expr (withAtoms registry (defaultDataizeContext loc))
+          `shouldThrow` (\e -> "terminator" `isInfixOf` show (e :: SomeException))
 
 spec :: Spec
 spec = do
+  -- Every λ function a case may fire comes from the fixture registry, read
+  -- once here: phino carries none of its own (see 'Fixtures').
+  registry <- runIO fixtureRegistry
+
   -- The top-level 𝕄 entry point, the one the 'morph' command runs: it locates
   -- the subterm, threads the whole input expression as the universe and hands
   -- back the morphed expression together with the chain that led to it (#1114).
@@ -253,7 +269,7 @@ spec = do
   -- 'execBuildTerm', the same way the matcher would call it.
   describe "execBuildTerm 'evaluate'" $ do
     let univ = ExFormation []
-        ctx = defaultDataizeContext ExRoot
+        ctx = withAtoms registry (defaultDataizeContext ExRoot)
         runEvaluate args = execBuildTerm univ ctx "evaluate" args substEmpty
     forM_
       [
@@ -281,12 +297,13 @@ spec = do
           it ("throws when " ++ desc) $
             runEvaluate args `shouldThrow` (\e -> message `isInfixOf` show (e :: SomeException))
       )
-    it "evaluates a λ-bearing formation to the atom's normalized result" $ do
-      let form = ExFormation [BiLambda (Function "L_bytes_not"), BiTau AtRho (ExFormation [BiDelta (BtOne "00")])]
-      result <- runEvaluate [ArgExpression form, ArgExpression univ]
-      case result of
-        TeExpression expr -> expr `shouldBe` dataBytes (BtOne "FF")
-        _ -> expectationFailure "expected TeExpression"
+    it "evaluates a λ-bearing formation to the atom's normalized result" $
+      withNode $ do
+        let form = ExFormation [BiLambda (Function "L_bytes_not"), BiTau AtRho (ExFormation [BiDelta (BtOne "00")])]
+        result <- runEvaluate [ArgExpression form, ArgExpression univ]
+        case result of
+          TeExpression expr -> expr `shouldBe` dataBytes (BtOne "FF")
+          _ -> expectationFailure "expected TeExpression"
 
   describe "execBuildTerm 'morph'" $ do
     let univ = ExFormation []
@@ -300,18 +317,32 @@ spec = do
         TeExpression expr -> expr `shouldBe` ExFormation [BiDelta (BtOne "00")]
         _ -> expectationFailure "expected TeExpression"
 
-  -- Every atom's operand is fetched through the synthetic '_dataize', which
-  -- rebuilds the universe as a formation to bind the operand into before
-  -- reducing it. A universe that is not itself a formation can never arise
-  -- from the public 'dataize' entry point (its own universe argument doubles
-  -- as the located root of a real program, always a formation), but 'dataize''
-  -- lets a test drive an atom-bearing term against one directly, proving the
-  -- guard fires instead of the atom looping or crashing some other way.
-  describe "atoms refuse to run under a non-formation universe" $
-    it "fails fast instead of dispatching against a non-formation universe" $ do
-      let form = ExFormation [BiLambda (Function "L_bytes_not"), BiVoid AtRho]
-      dataize' (form, (ExRoot, Nothing) :| []) ExRoot emptyState (defaultDataizeContext ExRoot)
-        `shouldThrow` (\e -> "non-formation universe" `isInfixOf` show (e :: SomeException))
+  -- An expression that is not part of the program — the operand an atom script
+  -- asks phino to reduce — is bound to a synthetic attribute of the universe and
+  -- that attribute is what 𝔻 is aimed at. This is what the '--inside' option
+  -- runs, and what phino did internally while the atoms still lived in the
+  -- binary.
+  describe "insideUniverse" $ do
+    let universe = "[[ y -> [[ D> 02- ]] ]]"
+        reduced src = do
+          univ <- parseExpressionThrows universe
+          target <- parseExpressionThrows src
+          (extended, ctx) <- insideUniverse target univ (defaultDataizeContext ExRoot)
+          fst <$> dataize extended ctx
+    it "reduces an expression the program does not contain" $ do
+      value <- reduced "Q.y"
+      value `shouldBe` Dataized (BtOne "02")
+    -- 𝔻 accepts normal forms only, and a dispatch off a formation is not one:
+    -- 'dot' still applies to it. So the expression is normalized first, which
+    -- is the whole reason an atom script cannot simply splice it into the
+    -- universe itself.
+    it "normalizes what it is handed before 𝔻 sees it" $ do
+      value <- reduced "[[ x -> [[ D> 01- ]] ]].x"
+      value `shouldBe` Dataized (BtOne "01")
+    it "refuses a universe which is not a formation" $ do
+      target <- parseExpressionThrows "Q.y"
+      insideUniverse target ExRoot (defaultDataizeContext ExRoot)
+        `shouldThrow` (\e -> "not a formation" `isInfixOf` show (e :: SomeException))
 
   -- 'defaultDataizeContext' runs with '_shuffle' on, so 'morph'' walks the
   -- morphing rules in a random order on every step. Every clause is
@@ -453,76 +484,79 @@ spec = do
   -- stop it (#1052). '--max-steps' bounds that recursion and fails once the
   -- budget is gone.
   describe "stops a dataization that never reaches bytes" $
-    it "fails on the step limit instead of morphing forever" $ do
-      expr <- parseExpressionThrows "⟦ @ ↦ ⟦ λ ⤍ L_number_div, ρ ↦ ⟦ Δ ⤍ 40-45-00-00-00-00-00-00 ⟧, x ↦ ⟦ Δ ⤍ 40-00-00-00-00-00-00-00 ⟧ ⟧ ⟧"
-      dataize expr (DataizeContext ExRoot 25 25 (Steps 40 0) False True False buildTerm dontSaveStep dontSaveEval)
-        `shouldThrow` (\e -> "--max-steps=40" `isInfixOf` show (e :: SomeException))
+    it "fails on the step limit instead of morphing forever" $
+      withNode $ do
+        expr <- parseExpressionThrows "⟦ @ ↦ ⟦ λ ⤍ L_number_div, ρ ↦ ⟦ Δ ⤍ 40-45-00-00-00-00-00-00 ⟧, x ↦ ⟦ Δ ⤍ 40-00-00-00-00-00-00-00 ⟧ ⟧ ⟧"
+        dataize expr (DataizeContext ExRoot 25 25 (Steps 40 0) False True False registry buildTerm dontSaveStep dontSaveEval)
+          `shouldThrow` (\e -> "--max-steps=40" `isInfixOf` show (e :: SomeException))
 
-  -- An atom phino does not know — a placeholder such as ⟦ λ ⤍ Sym_arg_0 ⟧
-  -- standing in for a data input (#1060) — fails the run, and so does a known
-  -- atom whose input reaches one. Under '_partial' the run ends on the residue
+  -- An atom phino does not know — a name the '--atoms' registry does not carry,
+  -- such as the placeholder ⟦ λ ⤍ Sym_arg_0 ⟧ standing in for a data input
+  -- (#1060) — fails the run. Under '_partial' the run ends on the residue
   -- instead: the working expression the spine had reached, with the stuck
   -- application intact and everything the calculus demanded before it already
-  -- evaluated, while 𝔼 reports each parked site with no result.
+  -- evaluated, while 𝔼 reports each parked site with no result. Since the atoms
+  -- moved out of the binary, an operand that cannot be reduced is the script's
+  -- own business, so what parks here is the unregistered λ function alone.
   describe "partially evaluates around an atom that cannot fire (--partial)" $ do
     -- the parser gives every formation its void ρ
     let placeholder = ExFormation [BiLambda (Function "Sym_arg_0"), BiVoid AtRho]
-    it "fails on it without the flag, naming the unknown atom" $ do
-      expr <- parseExpressionThrows (primitives "2.times(3).plus([[ L> Sym_arg_0 ]])")
-      dataize expr (defaultDataizeContext ExRoot)
-        `shouldThrow` (\e -> "Atom 'Sym_arg_0' does not exist" `isInfixOf` show (e :: SomeException))
-    it "leaves the saturated application of the known atom in place, the placeholder inside it" $ do
-      ((outcome, _), _) <- partially "2.times(3).plus([[ L> Sym_arg_0 ]])"
-      case outcome of
-        Residual (ExFormation bds) -> do
-          bds `shouldContain` [BiLambda (Function "L_number_plus")]
-          bds `shouldContain` [BiTau (AtLabel "x") placeholder]
-        other -> expectationFailure ("expected a residual formation, got " ++ show other)
-    it "keeps what was evaluated before the stuck site in the residue" $ do
-      ((outcome, _), _) <- partially "2.times(3).plus([[ L> Sym_arg_0 ]])"
-      case outcome of
-        Residual (ExFormation bds) -> do
-          let rho = [value | BiTau AtRho value <- bds]
-          length rho `shouldBe` 1
-          -- 2 × 3 = 6.0, whose IEEE 754 bytes are 40-18-00-00-00-00-00-00
-          show rho `shouldContain` show (BtMany ["40", "18", "00", "00", "00", "00", "00", "00"])
-          -- the times application is gone: ρ is the number it produced, its 'as-bytes' bound
-          [() | ExFormation inner <- rho, BiTau (AtLabel "as-bytes") _ <- inner] `shouldBe` [()]
-        other -> expectationFailure ("expected a residual formation, got " ++ show other)
-    it "reports the firing that succeeded with its result and every stuck site without one" $ do
-      (_, reports) <- partially "2.times(3).plus([[ L> Sym_arg_0 ]])"
-      map (._function) reports `shouldBe` ["L_number_times", "Sym_arg_0", "L_number_plus"]
-      map (isJust . (._result)) reports `shouldBe` [True, False, False]
-    it "leaves an unknown atom dataized directly as the whole residue" $ do
-      ((outcome, chain), reports) <- partially "[[ L> Sym_arg_0 ]]"
-      outcome `shouldBe` Residual placeholder
-      map (._function) reports `shouldBe` ["Sym_arg_0"]
-      map fst chain `shouldEndWith` [placeholder]
-    it "still reaches bytes when nothing is stuck" $ do
-      ((outcome, _), reports) <- partially "2.times(3)"
-      outcome `shouldBe` Dataized (BtMany ["40", "18", "00", "00", "00", "00", "00", "00"])
-      map (._function) reports `shouldBe` ["L_number_times"]
-    it "stops on the terminator ⊥ as before, since a wrong operand is not a stuck atom" $ do
-      expr <- parseExpressionThrows (primitives (raw "20-1F" ++ ".and( " ++ raw "CA-FE-BE" ++ " )"))
-      dataize expr ((defaultDataizeContext ExRoot){_partial = True})
-        `shouldThrow` (\e -> "terminator" `isInfixOf` show (e :: SomeException))
+    it "fails on it without the flag, naming the unknown atom" $
+      withNode $ do
+        expr <- parseExpressionThrows (primitives "2.times(3).nope")
+        dataize expr (withAtoms registry (defaultDataizeContext ExRoot))
+          `shouldThrow` (\e -> "Atom 'L_number_nope' does not exist" `isInfixOf` show (e :: SomeException))
+    it "leaves the application of the unregistered atom in place" $
+      withNode $ do
+        ((outcome, _), _) <- partially registry "2.times(3).nope"
+        case outcome of
+          Residual (ExFormation bds) -> bds `shouldContain` [BiLambda (Function "L_number_nope")]
+          other -> expectationFailure ("expected a residual formation, got " ++ show other)
+    it "keeps what was evaluated before the stuck site in the residue" $
+      withNode $ do
+        ((outcome, _), _) <- partially registry "2.times(3).nope"
+        case outcome of
+          Residual (ExFormation bds) -> do
+            let rho = [value | BiTau AtRho value <- bds]
+            length rho `shouldBe` 1
+            -- 2 × 3 = 6.0, whose IEEE 754 bytes are 40-18-00-00-00-00-00-00
+            show rho `shouldContain` show (BtMany ["40", "18", "00", "00", "00", "00", "00", "00"])
+            -- the times application is gone: ρ is the number it produced, its 'as-bytes' bound
+            [() | ExFormation inner <- rho, BiTau (AtLabel "as-bytes") _ <- inner] `shouldBe` [()]
+          other -> expectationFailure ("expected a residual formation, got " ++ show other)
+    it "reports the firing that succeeded with its result and the stuck site without one" $
+      withNode $ do
+        (_, reports) <- partially registry "2.times(3).nope"
+        map (._function) reports `shouldBe` ["L_number_times", "L_number_nope"]
+        map (isJust . (._result)) reports `shouldBe` [True, False]
+    it "leaves an unknown atom dataized directly as the whole residue" $
+      withNode $ do
+        ((outcome, chain), reports) <- partially registry "[[ L> Sym_arg_0 ]]"
+        outcome `shouldBe` Residual placeholder
+        map (._function) reports `shouldBe` ["Sym_arg_0"]
+        map fst chain `shouldEndWith` [placeholder]
+    it "still reaches bytes when nothing is stuck" $
+      withNode $ do
+        ((outcome, _), reports) <- partially registry "2.times(3)"
+        outcome `shouldBe` Dataized (BtMany ["40", "18", "00", "00", "00", "00", "00", "00"])
+        map (._function) reports `shouldBe` ["L_number_times"]
+    it "stops on the terminator ⊥ as before, since a wrong operand is not a stuck atom" $
+      withNode $ do
+        expr <- parseExpressionThrows (primitives ("5.plus( " ++ raw "--" ++ " )"))
+        dataize expr ((withAtoms registry (defaultDataizeContext ExRoot)){_partial = True})
+          `shouldThrow` (\e -> "terminator" `isInfixOf` show (e :: SomeException))
 
-  -- '_maxDepth'/'_maxCycles' bound the normalization rewriter that a 'box' or
-  -- 'norm' dataization step splices in (see 'normalized'); with
-  -- '_depthSensitive' on, exhausting either one propagates the very same
-  -- exception the rewriter itself throws, and with it off the limit is
-  -- absorbed silently, so dataization still reaches an answer.
   describe "DataizeContext's --max-depth/--max-cycles reach into the normalization it splices in" $ do
     let boxed = "[[ @ -> [[ D> 00- ]] ]]"
     forM_
       [
         ( "--max-cycles"
-        , DataizeContext ExRoot 25 0 (Steps 250 0) True True False buildTerm dontSaveStep dontSaveEval
+        , DataizeContext ExRoot 25 0 (Steps 250 0) True True False emptyRegistry buildTerm dontSaveStep dontSaveEval
         , "--max-cycles=0"
         )
       ,
         ( "--max-depth"
-        , DataizeContext ExRoot 0 25 (Steps 250 0) True True False buildTerm dontSaveStep dontSaveEval
+        , DataizeContext ExRoot 0 25 (Steps 250 0) True True False emptyRegistry buildTerm dontSaveStep dontSaveEval
         , "--max-depth=0"
         )
       ]
@@ -532,8 +566,8 @@ spec = do
             dataize expr ctx `shouldThrow` (\e -> message `isInfixOf` show (e :: SomeException))
       )
     forM_
-      [ ("--max-cycles", DataizeContext ExRoot 25 0 (Steps 250 0) False True False buildTerm dontSaveStep dontSaveEval)
-      , ("--max-depth", DataizeContext ExRoot 0 25 (Steps 250 0) False True False buildTerm dontSaveStep dontSaveEval)
+      [ ("--max-cycles", DataizeContext ExRoot 25 0 (Steps 250 0) False True False emptyRegistry buildTerm dontSaveStep dontSaveEval)
+      , ("--max-depth", DataizeContext ExRoot 0 25 (Steps 250 0) False True False emptyRegistry buildTerm dontSaveStep dontSaveEval)
       ]
       ( \(flag, ctx) ->
           it ("does not throw without --depth-sensitive even once " ++ flag ++ " is exhausted") $ do
@@ -555,23 +589,15 @@ spec = do
             ++ map (.name) Yaml.normalizationRules
             ++ concatMap (map (verb . (.operation)) . (.premises)) Yaml.morphingRules
             ++ concatMap (map (verb . (.operation)) . (.premises)) Yaml.dataizationRules
-    it "uses no step label without a defining rule or operation" $ do
-      expr <-
-        parseExpressionThrows
-          ( unlines
-              [ "[["
-              , "  bytes(data) -> [[ @ -> $.data ]],"
-              , "  number(as-bytes) -> [[ @ -> $.as-bytes, plus(x) -> [[ L> L_number_plus ]] ]],"
-              , "  @ -> 5.plus(6)"
-              , "]]"
-              ]
-          )
-      loc <- parseExpressionThrows "Q"
-      (_, chain) <- dataize expr (defaultDataizeContext loc)
-      let orphans = nub [label | (_, Just label) <- chain, label `notElem` allowed]
-      unless
-        (null orphans)
-        (expectationFailure ("Dataization emitted step labels with no defining rule or operation: " ++ show orphans))
+    it "uses no step label without a defining rule or operation" $
+      withNode $ do
+        expr <- parseExpressionThrows (primitives "5.plus(6)")
+        loc <- parseExpressionThrows "Q"
+        (_, chain) <- dataize expr (withAtoms registry (defaultDataizeContext loc))
+        let orphans = nub [label | (_, Just label) <- chain, label `notElem` allowed]
+        unless
+          (null orphans)
+          (expectationFailure ("Dataization emitted step labels with no defining rule or operation: " ++ show orphans))
 
   describe "names every rule uniquely across rule sets" $
     it "shares no rule name between morphing, dataization, normalization and contextualization" $ do
@@ -587,33 +613,34 @@ spec = do
     let labelsOf loc src = do
           expr <- parseExpressionThrows src
           loc' <- parseExpressionThrows loc
-          (_, chain) <- dataize expr (defaultDataizeContext loc')
+          (_, chain) <- dataize expr (withAtoms registry (defaultDataizeContext loc'))
           pure [label | (_, Just label) <- chain]
-    it "dataizes 5.plus(6) through the expected rules" $ do
-      labels <-
-        labelsOf
-          "Q"
-          "[[ bytes(data) -> [[ @ -> $.data ]], number(as-bytes) -> [[ @ -> $.as-bytes, plus(x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6) ]]"
-      labels
-        `shouldBe` [ "contextualize"
-                   , "maa"
-                   , "alpha"
-                   , "copy"
-                   , "mf"
-                   , "evaluate"
-                   , "ma"
-                   , "copy"
-                   , "mf"
-                   , "contextualize"
-                   , "dot"
-                   , "ma"
-                   , "stay"
-                   , "mf"
-                   , "contextualize"
-                   , "dot"
-                   , "copy"
-                   , "delta"
-                   ]
+    it "dataizes 5.plus(6) through the expected rules" $
+      withNode $ do
+        labels <-
+          labelsOf
+            "Q"
+            "[[ bytes(data) -> [[ @ -> $.data ]], number(as-bytes) -> [[ @ -> $.as-bytes, plus(x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6) ]]"
+        labels
+          `shouldBe` [ "contextualize"
+                     , "maa"
+                     , "alpha"
+                     , "copy"
+                     , "mf"
+                     , "evaluate"
+                     , "ma"
+                     , "copy"
+                     , "mf"
+                     , "contextualize"
+                     , "dot"
+                     , "ma"
+                     , "stay"
+                     , "mf"
+                     , "contextualize"
+                     , "dot"
+                     , "copy"
+                     , "delta"
+                     ]
     it "dataizes a located reference through the expected rules" $ do
       labels <- labelsOf "Q.foo.bar" "[[ foo -> [[ bar -> [[ @ -> Q.x ]] ]], x -> [[ D> 42- ]] ]]"
       labels `shouldBe` ["contextualize", "md", "dot", "copy", "mf", "delta"]
@@ -626,77 +653,10 @@ spec = do
       dataize expr (defaultDataizeContext loc)
         `shouldThrow` (\e -> "terminator" `isInfixOf` show (e :: SomeException))
 
+  -- Every case below reaches its bytes without firing an atom, so none of them
+  -- needs the registry: what they exercise is the calculus itself.
   testDataize
     [
-      ( "5.plus(6)"
-      , "Q"
-      , unlines
-          [ "[["
-          , "  bytes(data) -> [["
-          , "    @ -> $.data"
-          , "  ]],"
-          , "  number(as-bytes) -> [["
-          , "    @ -> $.as-bytes,"
-          , "    plus(x) -> [[ L> L_number_plus ]]"
-          , "  ]],"
-          , "  @ -> 5.plus(6)"
-          , "]]"
-          ]
-      , BtMany ["40", "26", "00", "00", "00", "00", "00", "00"]
-      )
-    ,
-      ( "Fahrenheit"
-      , "Q"
-      , unlines
-          [ "[["
-          , "  bytes -> [["
-          , "    data -> ?,"
-          , "    @ -> $.data"
-          , "  ]],"
-          , "  number -> [["
-          , "    as-bytes -> ?,"
-          , "    @ -> $.as-bytes,"
-          , "    plus -> [[ x -> ?, L> L_number_plus ]],"
-          , "    times -> [[ x -> ?, L> L_number_times ]]"
-          , "  ]],"
-          , "  @ -> $.c.times(1.8).plus(32),"
-          , "  c -> 25"
-          , "]]"
-          ]
-      , BtMany ["40", "53", "40", "00", "00", "00", "00", "00"]
-      )
-    ,
-      ( "Factorial"
-      , "Q"
-      , unlines
-          [ "[["
-          , "  bytes -> [["
-          , "    data -> ?,"
-          , "    eq -> [[ b -> ?, L> L_bytes_eq ]],"
-          , "    @ -> $.data"
-          , "  ]],"
-          , "  number -> [["
-          , "    as-bytes -> ?,"
-          , "    @ -> $.as-bytes,"
-          , "    times -> [[ x -> ?, L> L_number_times ]],"
-          , "    plus -> [[ x -> ?, L> L_number_plus ]],"
-          , "    eq -> [[ x -> ?, @ -> $.^.as-bytes.eq( x.as-bytes ) ]]"
-          , "  ]],"
-          , "  true -> [[ if -> [[ t -> ?, f -> ?, @ -> t ]] ]],"
-          , "  false -> [[ if -> [[ t -> ?, f -> ?, @ -> f ]] ]],"
-          , "  fac -> [["
-          , "    x -> ?,"
-          , "    @ -> $.x.eq( 1 ).if("
-          , "      1,"
-          , "      $.x.times($.^.fac($.x.plus(-1)))"
-          , "    )"
-          , "  ]],"
-          , "  @ -> $.fac(3)"
-          , "]]"
-          ]
-      , BtMany ["40", "18", "00", "00", "00", "00", "00", "00"]
-      )
-    ,
       ( "Located"
       , "Q.foo.bar"
       , unlines
@@ -737,88 +697,81 @@ spec = do
       )
     ]
 
-  describe "atoms" $ do
+  -- Which λ functions exist is no longer phino's business: the registry given
+  -- with '--atoms' decides, and each one runs as an external script (see
+  -- 'Atoms'). What the cases below assert is that the answer of such a script
+  -- lands in the derivation exactly where a built-in atom's answer used to: 𝔼
+  -- normalizes it and 𝔻 carries on. The λ functions themselves are the fixture
+  -- ones (see 'Fixtures'), and 'number.eq' is composed out of 'L_bytes_eq' the
+  -- way 'eq.eo' composes it, so the EO-level composition is exercised too.
+  describe "atoms come from the registry" $ do
     testAtom
-      [ ("divides a positive dividend", "256.div( 16 )", BtMany ["40", "30", "00", "00", "00", "00", "00", "00"])
+      registry
+      [ ("adds two numbers", "5.plus( 6 )", BtMany ["40", "26", "00", "00", "00", "00", "00", "00"])
+      , ("multiplies two numbers", "5.times( 6 )", BtMany ["40", "3E", "00", "00", "00", "00", "00", "00"])
+      , -- Two firings in a row: 'ml' reduces the head of the second dispatch,
+        -- which fires the first atom, before the second one is handed its own
+        -- formation to fire against
+        ("fires twice down a chain of dispatches", "5.plus( 6 ).plus( 7 )", BtMany ["40", "32", "00", "00", "00", "00", "00", "00"])
+      , ("divides a positive dividend", "256.div( 16 )", BtMany ["40", "30", "00", "00", "00", "00", "00", "00"])
       , ("divides by zero into infinity", "2.div( 0 )", BtMany ["7F", "F0", "00", "00", "00", "00", "00", "00"])
       , ("tells 1000 is greater than 200", "1000.gt( 200 )", BtOne "FF")
       , ("tells 42 is not greater than 42.5", "42.gt( 42.5 )", BtOne "00")
       , ("tells zero is greater than a negative", "0.gt( -5 )", BtOne "FF")
       , ("tells 5 equals 5", "5.eq( 5 )", BtOne "FF")
       , ("tells 5 is not equal to 6", "5.eq( 6 )", BtOne "00")
-      , ("adds two numbers", "5.plus( 6 )", BtMany ["40", "26", "00", "00", "00", "00", "00", "00"])
-      , ("multiplies two numbers", "5.times( 6 )", BtMany ["40", "3E", "00", "00", "00", "00", "00", "00"])
-      ,
-        ( "conjoins two long bytes"
-        , raw "02-EF-D4-05-5E-78-3A" ++ ".and( " ++ raw "12-33-C1-B5-5E-71-55" ++ " )"
-        , BtMany ["02", "23", "C0", "05", "5E", "70", "10"]
-        )
-      ,
-        ( "disjoins negative bytes with one"
-        , raw "FF-FF-FF-FF-00-00-00-00" ++ ".or( " ++ raw "00-00-00-00-00-00-00-01" ++ " )"
-        , BtMany ["FF", "FF", "FF", "FF", "00", "00", "00", "01"]
-        )
       , ("inverts bytes", raw "CA-FE-BE-BE" ++ ".not", BtMany ["35", "01", "41", "41"])
-      ,
-        ( "concats two long bytes"
-        , raw "02-EF-D4-05-5E-78-3A" ++ ".concat( " ++ raw "12-33-C1-B5-5E-71-55" ++ " )"
-        , BtMany ["02", "EF", "D4", "05", "5E", "78", "3A", "12", "33", "C1", "B5", "5E", "71", "55"]
-        )
-      ,
-        ( "concats bytes with empty ones"
-        , raw "05-5E-78" ++ ".concat( " ++ raw "--" ++ " )"
-        , BtMany ["05", "5E", "78"]
-        )
-      , ("counts the size of bytes", raw "F1-20-5F-EC-B5-90-32" ++ ".size", BtMany ["40", "1C", "00", "00", "00", "00", "00", "00"])
       , ("tells equal bytes are equal", raw "CA-FE" ++ ".eq( " ++ raw "CA-FE" ++ " )", BtOne "FF")
       , ("tells different bytes are not equal", raw "CA-FE" ++ ".eq( " ++ raw "CA-FF" ++ " )", BtOne "00")
-      , ("takes a part of bytes", raw "20-1F-EE-B5-90" ++ ".slice( 1, 3 )", BtMany ["1F", "EE", "B5"])
-      ,
-        ( "shifts right an even negative"
-        , raw "C0-43-00-00-00-00-00-00" ++ ".right( 1 )"
-        , BtMany ["60", "21", "80", "00", "00", "00", "00", "00"]
-        )
-      ,
-        ( "shifts right minus one"
-        , raw "BF-F0-00-00-00-00-00-00" ++ ".right( 4 )"
-        , BtMany ["0B", "FF", "00", "00", "00", "00", "00", "00"]
-        )
-      ,
-        ( "shifts right by the integer minimum"
-        , raw "BF-F0-00-00-00-00-00-00" ++ ".right( -2147483648 )"
-        , BtMany ["00", "00", "00", "00", "00", "00", "00", "00"]
-        )
-      ,
-        ( "recovers from an out-of-bounds slice"
-        , raw "20-1F-EE-B5-90" ++ ".slice( 3, 10, [[ message -> ?, @ -> \"recovered\" ]] )"
-        , BtMany ["72", "65", "63", "6F", "76", "65", "72", "65", "64"]
-        )
-      ,
-        ( "recovers from a slice whose start plus length overflows"
-        , raw "20-1F-EE-B5-90" ++ ".slice( 2000000000, 2000000000, [[ message -> ?, @ -> \"recovered\" ]] )"
-        , BtMany ["72", "65", "63", "6F", "76", "65", "72", "65", "64"]
-        )
       ]
+
+    -- A whole program, not a single operation: every atom on the way is an
+    -- external script and the run still lands on the bytes EO's own
+    -- 'Fahrenheit' example lands on
+    it "dataizes a program whose every operation is an external atom" $
+      withNode $ do
+        expr <-
+          parseExpressionThrows
+            ( unlines
+                [ "[["
+                , "  bytes -> [["
+                , "    data -> ?,"
+                , "    @ -> $.data"
+                , "  ]],"
+                , "  number -> [["
+                , "    as-bytes -> ?,"
+                , "    @ -> $.as-bytes,"
+                , "    plus -> [[ x -> ?, L> L_number_plus ]],"
+                , "    times -> [[ x -> ?, L> L_number_times ]]"
+                , "  ]],"
+                , "  @ -> $.c.times(1.8).plus(32),"
+                , "  c -> 25"
+                , "]]"
+                ]
+            )
+        loc <- parseExpressionThrows "Q"
+        (value, _) <- dataize expr (withAtoms registry (defaultDataizeContext loc))
+        value `shouldBe` Dataized (BtMany ["40", "53", "40", "00", "00", "00", "00", "00"])
+
+    -- A name the registry does not carry has no λ function at all: 𝔼 gets
+    -- stuck on it, which is the only behaviour phino itself is left with
+    it "gets stuck on a λ function the registry does not carry" $ do
+      expr <- parseExpressionThrows (primitives "5.nope")
+      loc <- parseExpressionThrows "Q"
+      dataize expr (withAtoms registry (defaultDataizeContext loc))
+        `shouldThrow` (\e -> "Atom 'L_number_nope' does not exist" `isInfixOf` show (e :: SomeException))
+
+    -- An operand carrying no number is what an EO number atom answers ⊥ to, and
+    -- dataizing ⊥ fails through the terminator path. The judgment is the
+    -- script's now, so what these cases prove is that a ⊥ coming back from a
+    -- script stops 𝔻 exactly as a built-in ⊥ used to.
     testStuckAtom
-      [ ("cannot conjoin bytes of different lengths", raw "20-1F" ++ ".and( " ++ raw "CA-FE-BE" ++ " )")
-      , ("cannot disjoin bytes of different lengths", raw "20-1F" ++ ".or( " ++ raw "CA-FE-BE" ++ " )")
-      , ("cannot slice from an offset beyond the int range", raw "20-1F-EE-B5-90" ++ ".slice( 3000000000, 1 )")
-      , ("cannot slice a negative length", raw "20-1F-EE-B5-90" ++ ".slice( 1, -1 )")
-      , -- A number atom rejects an operand that carries no number (empty bytes),
-        -- yielding ⊥ rather than a result; dataizing ⊥ then fails through the
-        -- terminator path, exactly like the bytes-atom cases above.
-        ("cannot add a non-numeric operand", "5.plus( " ++ raw "--" ++ " )")
+      registry
+      [ ("cannot add a non-numeric operand", "5.plus( " ++ raw "--" ++ " )")
       , ("cannot multiply by a non-numeric operand", "5.times( " ++ raw "--" ++ " )")
       , ("cannot divide by a non-numeric divisor", "5.div( " ++ raw "--" ++ " )")
       , ("cannot compare against a non-numeric threshold", "5.gt( " ++ raw "--" ++ " )")
-      , -- A number atom also rejects a non-empty operand whose byte array is not
-        -- 8 bytes long (e.g. 2 or 5 bytes): such an array carries no number, and
-        -- the atom must yield ⊥ instead of crashing on 'btsToNum' (issue #1072).
+      , -- A byte array whose length is not 8 carries no number either (#1072)
         ("cannot add a 5-byte operand", "5.plus( " ++ raw "68-65-6C-6C-6F" ++ " )")
       , ("cannot multiply by a 2-byte operand", "5.times( " ++ raw "20-1F" ++ " )")
-      , ("cannot divide by a 3-byte divisor", "5.div( " ++ raw "CA-FE-BE" ++ " )")
-      , ("cannot compare against a 4-byte threshold", "5.gt( " ++ raw "FF-FF-FF-FF" ++ " )")
-      , -- 'right' rejects a shift distance that is not a plain 8-byte integer;
-        -- empty bytes carry no such integer, so the shift atom is stuck too.
-        ("cannot shift right by a non-integer distance", raw "C0-43-00-00-00-00-00-00" ++ ".right( " ++ raw "--" ++ " )")
       ]

@@ -145,6 +145,7 @@ runRewrite OptsRewrite{..} = do
 runDataize :: OptsDataize -> IO ()
 runDataize OptsDataize{..} = do
   validateOpts
+  atoms <- registryOf _atoms
   excluded <- validatedDispatches "hide" _hide
   included <- validatedDispatches "show" _show
   [loc] <- validatedDispatches "locator" [_locator]
@@ -159,8 +160,10 @@ runDataize OptsDataize{..} = do
       include = (`F.include` included)
   save <- saveStepFunc _stepsDir printCtx
   (outcome, chain) <-
-    withEvalFunc _evaluations printCtx $
-      dataize expr . DataizeContext loc _maxDepth _maxCycles (Steps _maxSteps 0) _depthSensitive _shuffle _partial buildTerm save
+    withEvalFunc _evaluations printCtx $ \record -> do
+      let ctx = DataizeContext loc _maxDepth _maxCycles (Steps _maxSteps 0) _depthSensitive _shuffle _partial atoms buildTerm save record
+      (universe, aiming) <- aimed _inside expr ctx
+      dataize universe aiming
   when _sequence (printRewrittens printCtx (exclude $ include chain, False) >>= putStrLn)
   unless _quiet (printOutcome printCtx outcome >>= putStrLn)
   where
@@ -184,6 +187,9 @@ runDataize OptsDataize{..} = do
       when
         (isJust _evaluations && _outputFormat /= PHI)
         (invalidCLIArguments "The --evaluations option can stay together with --output=phi only, since one record must fit into one line")
+      when
+        (isJust _inside && _locator /= "Q")
+        (invalidCLIArguments "The options --inside and --locator cannot be used together, since --inside aims the run at the binding it mints")
     toPrintCtx :: Expression -> PrintContext
     toPrintCtx focus =
       PrintCtx
@@ -214,6 +220,7 @@ runDataize OptsDataize{..} = do
 runMorph :: OptsMorph -> IO ()
 runMorph OptsMorph{..} = do
   validateOpts
+  atoms <- registryOf _atoms
   excluded <- validatedDispatches "hide" _hide
   included <- validatedDispatches "show" _show
   [loc] <- validatedDispatches "locator" [_locator]
@@ -228,8 +235,10 @@ runMorph OptsMorph{..} = do
       include = (`F.include` included)
   save <- saveStepFunc _stepsDir printCtx
   (morphed, chain) <-
-    withEvalFunc _evaluations printCtx $
-      morph expr . DataizeContext loc _maxDepth _maxCycles (Steps _maxSteps 0) _depthSensitive _shuffle _partial buildTerm save
+    withEvalFunc _evaluations printCtx $ \record -> do
+      let ctx = DataizeContext loc _maxDepth _maxCycles (Steps _maxSteps 0) _depthSensitive _shuffle _partial atoms buildTerm save record
+      (universe, aiming) <- aimed _inside expr ctx
+      morph universe aiming
   when _sequence (printRewrittens printCtx (exclude $ include chain, False) >>= putStrLn)
   unless _quiet (printFocused printCtx morphed >>= putStrLn)
   where
@@ -245,6 +254,9 @@ runMorph OptsMorph{..} = do
       when
         (isJust _evaluations && _outputFormat /= PHI)
         (invalidCLIArguments "The --evaluations option can stay together with --output=phi only, since one record must fit into one line")
+      when
+        (isJust _inside && _locator /= "Q")
+        (invalidCLIArguments "The options --inside and --locator cannot be used together, since --inside aims the run at the binding it mints")
     toPrintCtx :: Expression -> PrintContext
     toPrintCtx focus =
       PrintCtx

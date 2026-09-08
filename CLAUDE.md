@@ -75,6 +75,17 @@ Matching (`Matcher.hs`) produces `[Subst]` — a list of
 `Map Text MetaValue` — and conditions filter that list. `Builder.hs` then
 applies a substitution to a result template.
 
+### Atoms live outside the binary
+
+`phino` implements no λ function. `Atoms.hs` reads a JSON registry of them
+(the `--atoms` option) and fires each one as a POSIX process under the
+interpreter its `rt` names, feeding it the formation and the universe as JSON
+on stdin and reading the 𝜑-expression it answers with back from stdout. A λ
+name the registry does not carry gets stuck, which is what `--partial` parks
+on. Because a script cannot reduce its own operands, it asks `phino` for them
+with `--inside`, which binds an expression to a synthetic attribute of the
+universe and aims the run at it (`insideUniverse` in `Dataize.hs`).
+
 ### Dependency inversion for circular imports
 
 `Deps.hs` exists solely to break the cycle

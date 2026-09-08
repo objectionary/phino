@@ -10,14 +10,13 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Dataize (morph, morph', dataize, dataize', DataizeContext (..), DataizeException (..), Outcome (..), Steps (..), State, emptyState, execBuildTerm) where
+module Dataize (morph, morph', dataize, dataize', insideUniverse, DataizeContext (..), DataizeException (..), Outcome (..), Steps (..), State, emptyState, execBuildTerm) where
 
 import AST
+import Atoms (Registry, fireAtom, registeredAtom)
 import Builder (buildBytesThrows, buildExpressionThrows)
-import Bytes (btsAnd, btsConcat, btsEqual, btsNot, btsOr, btsShift, btsSize, btsSlice, btsToNum, numToBts, strToBts)
 import Control.Exception (Exception, catch, throwIO, try)
 import Control.Monad (foldM, when)
-import Data.Int (Int32)
 import Data.List (find, partition)
 import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as NE
@@ -25,7 +24,6 @@ import qualified Data.Text as T
 import Deps (BuildTermFunc, BuildTermMethodS, Evaluation (..), SaveEvalFunc, SaveStepFunc, State, Term (..))
 import Locator (locatedExpression, withLocatedExpression)
 import Matcher (MetaValue (..), Subst (..), combine, matchExpression', substEmpty, substSingle)
-import Misc
 import Must (Must (..))
 import Random (shuffle)
 import Rewriter (RewriteContext (RewriteContext), Rewritten, rewrite)
@@ -76,6 +74,7 @@ data DataizeContext = DataizeContext
   , _depthSensitive :: Bool
   , _shuffle :: Bool
   , _partial :: Bool
+  , _atoms :: Registry
   , _buildTerm :: BuildTermFunc
   , _saveStep :: SaveStepFunc
   , _saveEval :: SaveEvalFunc
@@ -83,9 +82,10 @@ data DataizeContext = DataizeContext
 
 data DataizeException
   = OutOfSteps Int
-  | -- An atom could not fire: 'atom' does not know its λ function, or the
-    -- dataization of one of its inputs met an atom it does not know. The name
-    -- is that of the innermost unknown atom, the one 𝔼 actually failed on.
+  | -- An atom could not fire: the '--atoms' registry carries no λ function of
+    -- that name, so there is nothing to run. The name is that of the atom 𝔼
+    -- actually failed on, which for a chain of dispatches is the innermost one,
+    -- since 'ml' reduces a head before the atom above it fires.
     Stuck T.Text
   | -- A 'Stuck' caught by a frame of the 𝕄/𝔻 spine, together with the
     -- derivation that frame had reached (see 'parking'). The head of the chain
@@ -461,130 +461,43 @@ normalized expr seq ctx@DataizeContext{..} = do
     rewriteContext DataizeContext{..} =
       RewriteContext _locator _maxDepth _maxCycles _depthSensitive _buildTerm MtDisabled Nothing _saveStep
 
--- Synthetic dataize function for internal usage inside atoms. Here we modify the
--- universe by adding a new binding which refers to the expression we want to
--- dataize, building a local working expression to reduce within. As a caller of 𝔻,
--- it first reduces the expression to a normal form, since 𝔻 only accepts normal
--- forms. The universe 'univ' itself is forwarded unchanged, so morphing Φ under
--- this context still resolves to the true universe rather than to this
--- synthetic, binding-prepended formation. The chain is the synthetic one, so a
--- stuck atom met on the way leaves without it (see 'unparked').
-_dataize :: Expression -> Expression -> State -> DataizeContext -> IO (Bytes, State)
-_dataize expr univ state ctx@DataizeContext{_buildTerm = buildTerm} = case univ of
-  ExFormation bds -> unparked $ do
+-- Bind 'expr' to a synthetic attribute of the universe and reduce it to a
+-- normal form there, handing back the extended universe together with the
+-- locator that aims at the binding. This is the trick phino has always played
+-- to reduce a sub-expression that is not part of the program — an atom's
+-- operand, while the atoms still lived in the binary — and it is now the
+-- contract of the '--inside' option, so an atom script asking phino to reduce
+-- a part of the formation it was given does not have to splice it into the text
+-- of the universe by hand. 𝔻 and 𝕄 accept normal forms only and an expression
+-- handed in from outside is not necessarily one (a dispatch off a formation,
+-- '⟦ x ↦ 6, ρ ↦ 5 ⟧.x', is not), so it is normalized against the extended
+-- universe before either judgment sees it. The context comes back aimed at that
+-- binding, so the caller hands the extended universe and the context it got
+-- straight to 'dataize' or 'morph'.
+insideUniverse :: Expression -> Expression -> DataizeContext -> IO (Expression, DataizeContext)
+insideUniverse expr univ ctx@DataizeContext{_buildTerm = buildTerm} = case univ of
+  ExFormation bds -> do
     (TeAttribute attr) <- buildTerm "random-tau" [] substEmpty
-    let synthetic = ExFormation (BiTau attr expr : bds)
-    (normal, seq) <- normalized expr ((synthetic, Nothing) :| []) ctx
-    ((bts, _), state') <- dataize' (normal, seq) univ state ctx
-    pure (bts, state')
-  _ -> throwIO (userError "Can't call _dataize from atoms with non-formation universe")
+    let aiming = ctx{_locator = ExDispatch ExRoot attr}
+        synthetic = ExFormation (BiTau attr expr : bds)
+    (normal, _) <- normalized expr ((synthetic, Nothing) :| []) aiming
+    pure (ExFormation (BiTau attr normal : bds), aiming)
+  _ -> throwIO (userError "Can't reduce an expression inside a universe which is not a formation")
 
--- A number atom only operates on numeric data. Empty bytes — a genuine
--- zero-length byte array ⟦Δ ⤍ --⟧ — carry no number, so the operand is rejected
--- and the atom yields ⊥. So does any byte array whose length is not 8: 'btsToNum'
--- throws on such arrays, so the size is checked up front, exactly like 'asInt'.
-asNumber :: Bytes -> Maybe Double
-asNumber bts
-  | btsSize bts /= 8 = Nothing
-  | otherwise = Just (either toDouble id (btsToNum bts))
-
--- An operand that EO reads as a Java 'int' — a shift distance or a slice bound.
--- 'Expect.at(…).that(Integer)' turns down anything but a whole number inside the
--- 32-bit range, and so does this, leaving the atom with ⊥
-asInt :: Bytes -> Maybe Int
-asInt bts
-  | btsSize bts /= 8 = Nothing
-  | otherwise = case btsToNum bts of
-      Left num | num >= fromIntegral (minBound :: Int32) && num <= fromIntegral (maxBound :: Int32) -> Just num
-      _ -> Nothing
-
--- An atom whose EO signature ends in '/Q.bool' hands back one of the two bool
--- objects of the universe, exactly what 'Data.ToPhi(boolean)' does in the runtime
-boolean :: Bool -> Expression
-boolean True = BaseObject "true"
-boolean False = BaseObject "false"
-
--- Both bitwise atoms take ρ and 'b' and reject operands of different lengths
-bitwise :: (Bytes -> Bytes -> Maybe Bytes) -> Expression -> Expression -> State -> DataizeContext -> IO (Expression, State)
-bitwise op self univ state ctx = do
-  (b, bstate) <- _dataize (ExDispatch self (AtLabel "b")) univ state ctx
-  (rho, rstate) <- _dataize (ExDispatch self AtRho) univ bstate ctx
-  pure (maybe ExTermination dataBytes (op rho b), rstate)
-
--- The 12 primitive λ-atoms every EO data operation reduces to. phino mirrors
--- EO's set exactly: bytes {and, concat, eq, not, or, right, size, slice} and
--- number {div, gt, plus, times}. There is deliberately no 'L_number_eq': EO's
--- 'number.eq' (eo-runtime/src/main/eo/number/eq.eo) is pure EO — a formation
--- composing 'is-nan', 'or', 'and' and 'L_bytes_eq', with no λ of its own — so
--- nothing is left for a phino atom to implement. Names like 'L_bool_if' or
--- 'L_string_slice' must stay unimplemented too: the EO lowering declares them
--- precisely so that '--partial' parks on them and renders the call to Java.
+-- phino implements no λ function of its own. Which atoms exist is a property of
+-- the object model being dataized, not of the calculus, so they come from the
+-- '--atoms' registry and run as external scripts (see 'Atoms'). A name the
+-- registry does not carry has no λ function to fire at all, and 𝔼 gets stuck on
+-- it — the one behaviour left here. The script is handed the formation 'self'
+-- (its λ binding already removed, so it may dispatch on it) and the universe
+-- 'univ'; the state 𝑠 is not part of that contract yet, so it is threaded
+-- through untouched.
 atom :: T.Text -> Expression -> Expression -> State -> DataizeContext -> IO (Expression, State)
-atom "L_number_plus" self univ state ctx = do
-  (left, lstate) <- _dataize (ExDispatch self (AtLabel "x")) univ state ctx
-  (right, rstate) <- _dataize (ExDispatch self AtRho) univ lstate ctx
-  case (asNumber left, asNumber right) of
-    (Just first, Just second) -> pure (DataNumber (numToBts (first + second)), rstate)
-    _ -> pure (ExTermination, rstate)
-atom "L_number_times" self univ state ctx = do
-  (left, lstate) <- _dataize (ExDispatch self (AtLabel "x")) univ state ctx
-  (right, rstate) <- _dataize (ExDispatch self AtRho) univ lstate ctx
-  case (asNumber left, asNumber right) of
-    (Just first, Just second) -> pure (DataNumber (numToBts (first * second)), rstate)
-    _ -> pure (ExTermination, rstate)
-atom "L_number_div" self univ state ctx = do
-  (x, xstate) <- _dataize (ExDispatch self (AtLabel "x")) univ state ctx
-  (rho, rstate) <- _dataize (ExDispatch self AtRho) univ xstate ctx
-  case (asNumber x, asNumber rho) of
-    (Just divisor, Just dividend) -> pure (DataNumber (numToBts (dividend / divisor)), rstate)
-    _ -> pure (ExTermination, rstate)
-atom "L_number_gt" self univ state ctx = do
-  (x, xstate) <- _dataize (ExDispatch self (AtLabel "x")) univ state ctx
-  (rho, rstate) <- _dataize (ExDispatch self AtRho) univ xstate ctx
-  case (asNumber x, asNumber rho) of
-    (Just threshold, Just value) -> pure (boolean (value > threshold), rstate)
-    _ -> pure (ExTermination, rstate)
-atom "L_bytes_and" self univ state ctx = bitwise btsAnd self univ state ctx
-atom "L_bytes_or" self univ state ctx = bitwise btsOr self univ state ctx
-atom "L_bytes_not" self univ state ctx = do
-  (rho, rstate) <- _dataize (ExDispatch self AtRho) univ state ctx
-  pure (dataBytes (btsNot rho), rstate)
-atom "L_bytes_concat" self univ state ctx = do
-  (b, bstate) <- _dataize (ExDispatch self (AtLabel "b")) univ state ctx
-  (rho, rstate) <- _dataize (ExDispatch self AtRho) univ bstate ctx
-  pure (dataBytes (btsConcat rho b), rstate)
-atom "L_bytes_eq" self univ state ctx = do
-  (b, bstate) <- _dataize (ExDispatch self (AtLabel "b")) univ state ctx
-  (rho, rstate) <- _dataize (ExDispatch self AtRho) univ bstate ctx
-  pure (boolean (btsEqual rho b), rstate)
-atom "L_bytes_size" self univ state ctx = do
-  (rho, rstate) <- _dataize (ExDispatch self AtRho) univ state ctx
-  pure (DataNumber (numToBts (fromIntegral (btsSize rho))), rstate)
-atom "L_bytes_right" self univ state ctx = do
-  (x, xstate) <- _dataize (ExDispatch self (AtLabel "x")) univ state ctx
-  (rho, rstate) <- _dataize (ExDispatch self AtRho) univ xstate ctx
-  case asInt x of
-    Just bits -> pure (dataBytes (btsShift bits rho), rstate)
-    Nothing -> pure (ExTermination, rstate)
-atom "L_bytes_slice" self univ state ctx = do
-  (start, sstate) <- _dataize (ExDispatch self (AtLabel "start")) univ state ctx
-  (len, lstate) <- _dataize (ExDispatch self (AtLabel "len")) univ sstate ctx
-  (rho, rstate) <- _dataize (ExDispatch self AtRho) univ lstate ctx
-  case (asInt start, asInt len) of
-    (Just from, Just count)
-      | from >= 0 && count >= 0 ->
-          pure (maybe (cantSlice from count (btsSize rho)) dataBytes (btsSlice from count rho), rstate)
-    _ -> pure (ExTermination, rstate)
-  where
-    -- A window past the end of the array does not stop EO: it copies the
-    -- 'cant-slice' fallback, applies the complaint to it and lets the caller
-    -- decide. A caller that left 'cant-slice' unbound gets ⊥ out of the dispatch
-    cantSlice :: Int -> Int -> Int -> Expression
-    cantSlice from count size =
-      ExApplication
-        (ExDispatch self (AtLabel "cant-slice"))
-        (ArAlpha (Alpha 0) (DataString (strToBts (printf "cannot slice '%d' bytes from offset '%d' of bytes of size %d" count from size))))
-atom func _ _ _ _ = throwIO (Stuck func)
+atom func self univ state ctx = case registeredAtom ctx._atoms func of
+  Nothing -> throwIO (Stuck func)
+  Just registered -> do
+    raw <- fireAtom func registered self univ
+    pure (raw, state)
 
 -- Augment the injected, context-free term builder with the dataization and
 -- morphing operations that need the universe: 'evaluate' applies an atom and
@@ -609,14 +522,12 @@ execBuildTerm _ ctx func = _buildTerm ctx func
 -- Every firing is reported to '_saveEval', which the '--evaluations' option
 -- turns into one record per line. The reported result is the normal form 𝔼
 -- returns, never the atom's raw answer, so the protocol and the caller see the
--- same term. A nested firing — an atom that dataizes its own arguments —
--- completes first, so it is reported before the firing that triggered it. A
+-- same term. Firings are reported in the order they complete, so the atom of a
+-- head reduced by 'ml' is reported before the one dispatched on its result. A
 -- firing that gets stuck is reported too, with no result, when the run is a
 -- partial evaluation rather than a failure ('_partial'): the site is what the
--- caller wants to learn then, and the nested order holds, since the unknown
--- atom is reported before the known one whose input reached it. The report is
--- made before the signal goes on to the spine, where 'parking' attaches the
--- derivation to it.
+-- caller wants to learn then. The report is made before the signal goes on to
+-- the spine, where 'parking' attaches the derivation to it.
 _evaluate :: DataizeContext -> State -> BuildTermMethodS
 _evaluate ctx state [ArgExpression expr, ArgExpression universe] subst = do
   form <- buildExpressionThrows expr subst
