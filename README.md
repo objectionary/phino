@@ -115,9 +115,9 @@ registry given with `--atoms`, keyed by λ name:
 }
 ```
 
-The `rt` field names the executable the `script` is run under. Only `node` is
-supported for now; a registry naming any other runtime is refused when the file
-is read, before dataization starts.
+The `rt` field names the interpreter the `script` is run under. Only `node` is
+supported for now; a registry naming any other interpreter is refused when the
+file is read, before dataization starts.
 
 When 𝔼 reaches a λ function the registry carries, `phino` writes its `script`
 to a temporary file and runs it as a POSIX process under that interpreter, with
@@ -127,9 +127,31 @@ the λ name as the first command-line argument:
 node /tmp/phino-atom-4f2a.js L_number_plus
 ```
 
-The name matters: one script may be registered under several λ names and branch
-on it, which is where `node` puts it — `process.argv[2]`. The script is then
-fed one JSON object on `stdin`:
+An atom that is already a program needs no interpreter and no staging. Such an
+entry says `exec` and gives a `path` instead of a `script`:
+
+```json
+{
+  "L_number_plus": {
+    "rt": "exec",
+    "path": "/opt/eo/atoms/number-plus"
+  }
+}
+```
+
+`phino` spawns that file directly, as the executable binary it is, with the λ
+name as its first command-line argument:
+
+```text
+/opt/eo/atoms/number-plus L_number_plus
+```
+
+A `path` that names no file, or a file nobody may run, is refused where the
+registry is read, together with the unknown runtimes.
+
+The name matters: one program may be registered under several λ names and
+branch on it, which is where `node` puts it — `process.argv[2]`. The program is
+then fed one JSON object on `stdin`:
 
 ```json
 {
@@ -156,7 +178,7 @@ The `n` field is the 𝜑-expression the atom answers with, in any syntax
 and hands it to 𝔼 as the atom's raw result, normalizing it exactly as it
 normalizes anything else, so `--evaluations`, `--partial` and `--max-steps`
 keep working unchanged. A non-zero exit, output that is not JSON, a missing
-`n` or an `n` that does not parse fails the run, with the script's own
+`n` or an `n` that does not parse fails the run, with the program's own
 `stderr` in the message.
 
 A λ name the registry does not carry has no λ function at all, so 𝔼 gets stuck
