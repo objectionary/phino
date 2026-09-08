@@ -67,6 +67,7 @@ import Data.Aeson.Decoding.Tokens (TkRecord (TkPair, TkRecordEnd, TkRecordErr), 
 import qualified Data.Aeson.Key as Key
 import Data.Aeson.Types (JSONPathElement (Key), parseEither, (<?>))
 import qualified Data.ByteString as BS
+import qualified Data.ByteString.Char8 as BC
 import qualified Data.ByteString.Lazy as BSL
 import Data.List (find, intercalate)
 import Data.Map.Strict (Map)
@@ -395,7 +396,7 @@ asked func running@Running{..} form univ pushed = do
       request = lined (object ["id" .= number, "λ" .= func, "𝑏" .= rendered form])
   logDebug (printf "Asking atom '%s' as request %d" (T.unpack func) number)
   said (if _told == Just univ then request else universe <> request)
-  reply <- BS.hGetLine _output `catch` hungUp
+  reply <- BC.hGetLine _output `catch` hungUp
   answer <- replied number reply
   pure (running{_told = Just univ, _requests = number}, answer)
   where
