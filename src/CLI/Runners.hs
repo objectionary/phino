@@ -8,6 +8,7 @@
 module CLI.Runners where
 
 import AST
+import Atoms (closeRegistry)
 import CLI.Helpers
 import CLI.Types
 import CLI.Validators
@@ -160,10 +161,15 @@ runDataize OptsDataize{..} = do
       include = (`F.include` included)
   save <- saveStepFunc _stepsDir printCtx
   (outcome, chain) <-
-    withEvalFunc _evaluations printCtx $ \record -> do
-      let ctx = DataizeContext loc _maxDepth _maxCycles (Steps _maxSteps 0) _depthSensitive _shuffle _partial atoms buildTerm save record
-      (universe, aiming) <- aimed _inside expr ctx
-      dataize universe aiming
+    withEvalFunc
+      _evaluations
+      printCtx
+      ( \record -> do
+          let ctx = DataizeContext loc _maxDepth _maxCycles (Steps _maxSteps 0) _depthSensitive _shuffle _partial atoms buildTerm save record
+          (universe, aiming) <- aimed _inside expr ctx
+          dataize universe aiming
+      )
+      `finally` closeRegistry atoms
   when _sequence (printRewrittens printCtx (exclude $ include chain, False) >>= putStrLn)
   unless _quiet (printOutcome printCtx outcome >>= putStrLn)
   where
@@ -235,10 +241,15 @@ runMorph OptsMorph{..} = do
       include = (`F.include` included)
   save <- saveStepFunc _stepsDir printCtx
   (morphed, chain) <-
-    withEvalFunc _evaluations printCtx $ \record -> do
-      let ctx = DataizeContext loc _maxDepth _maxCycles (Steps _maxSteps 0) _depthSensitive _shuffle _partial atoms buildTerm save record
-      (universe, aiming) <- aimed _inside expr ctx
-      morph universe aiming
+    withEvalFunc
+      _evaluations
+      printCtx
+      ( \record -> do
+          let ctx = DataizeContext loc _maxDepth _maxCycles (Steps _maxSteps 0) _depthSensitive _shuffle _partial atoms buildTerm save record
+          (universe, aiming) <- aimed _inside expr ctx
+          morph universe aiming
+      )
+      `finally` closeRegistry atoms
   when _sequence (printRewrittens printCtx (exclude $ include chain, False) >>= putStrLn)
   unless _quiet (printFocused printCtx morphed >>= putStrLn)
   where
