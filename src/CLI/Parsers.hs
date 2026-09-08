@@ -216,7 +216,7 @@ optAtoms =
             <> metavar "FILE"
             <> help
               ( printf
-                  "Path to the JSON registry of λ functions this run may fire, mapping each name to the runtime that runs it (%s) and the script it runs"
+                  "Path to the JSON registry of λ functions this run may fire, mapping each name to the runtime that runs it (%s) and the script or the executable it runs"
                   (intercalate ", " runtimeNames)
               )
         )

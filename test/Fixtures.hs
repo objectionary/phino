@@ -45,7 +45,7 @@ fixtureScript = decodeUtf8 <$> BS.readFile "test-resources/atoms/primitives.js"
 fixtureRegistry :: IO Registry
 fixtureRegistry = do
   script <- fixtureScript
-  pure (Map.fromList [(name, Atom RtNode script) | name <- fixtureAtoms])
+  pure (Map.fromList [(name, Scripted RtNode script) | name <- fixtureAtoms])
 
 -- The same registry as the JSON file '--atoms' reads, in a temporary file
 -- removed afterwards, for the specs that go through the command line.
