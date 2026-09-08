@@ -14,7 +14,7 @@ output: |-
 rules:
   custom:
     - name: with-complex-condition
-      pattern: '[[ !t -> [[!B1]], !B2, ρ ↦ ∅ ]].!t'
+      pattern: '[[ !t1 -> [[!B1]], !B2, ρ ↦ ∅ ]].!t1'
       result: '[[ !B1, !B2 ]]'
       when:
         and:

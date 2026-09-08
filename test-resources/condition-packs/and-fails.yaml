@@ -3,7 +3,7 @@
 ---
 failure: true
 expression: '[[ x -> Q.y ]]'
-pattern: '[[ !t1 -> Q.!t2, !B ]]'
+pattern: '[[ !t1 -> Q.!t2, !B1 ]]'
 condition:
   and:
     - eq: ['!t1', 'x']

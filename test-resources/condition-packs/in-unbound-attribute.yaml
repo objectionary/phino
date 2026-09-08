@@ -2,9 +2,9 @@
 # SPDX-License-Identifier: MIT
 ---
 expression: '[[ x -> Q.y, z -> Q.z ]].foo'
-pattern: '[[ !B ]].!t'
+pattern: '[[ !B1 ]].!t1'
 condition:
   not:
     in:
       - '!tUnbound'
-      - '!B'
+      - '!B1'

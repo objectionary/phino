@@ -16,6 +16,14 @@ import Data.Text (Text)
 import qualified Data.Text as T
 import GHC.Generics (Generic)
 
+-- An anonymous meta-variable, written bare — 𝜏, 𝐵, 𝑒, 𝑛, 𝑘, δ, 𝑓 or 𝑖 with
+-- no index after it. It matches whatever term stands in its place and no rule
+-- can name it afterwards, so it is known only by the kind it was written as
+-- ('t', 'B', 'e', 'n', 'k', 'd', 'F', 'i') and by the offset it was written
+-- at, which tells it apart from every other anonymous meta of the same term.
+data Slot = Slot Text Int
+  deriving (Eq, Ord, Show)
+
 data Expression
   = ExFormation [Binding]
   | ExXi
@@ -24,6 +32,7 @@ data Expression
   | ExApplication Expression Argument
   | ExDispatch Expression Attribute
   | ExMeta Text
+  | ExAny Slot
   | ExPhiMeet (Maybe String) Int Expression
   | ExPhiAgain (Maybe String) Int Expression
   | {- | Bare data 𝛿 — the raw bytes extracted by the 'delta' dataization rule.
@@ -43,6 +52,7 @@ data Argument
 data Alpha
   = Alpha Int
   | AlMeta Text
+  | AlAny Slot
   deriving (Eq, Ord, Generic)
 
 data Binding
@@ -51,6 +61,7 @@ data Binding
   | BiDelta Bytes
   | BiLambda Function
   | BiMeta Text
+  | BiAny Slot
   deriving (Eq, Ord, Show, Generic)
 
 data Bytes
@@ -58,6 +69,7 @@ data Bytes
   | BtOne String
   | BtMany [String]
   | BtMeta Text
+  | BtAny Slot
   deriving (Eq, Ord, Show, Generic)
 
 data Attribute
@@ -67,11 +79,13 @@ data Attribute
   | AtLambda
   | AtDelta
   | AtMeta Text
+  | AtAny Slot
   deriving (Eq, Generic, Ord)
 
 data Function
   = Function Text
   | FnMeta Text
+  | FnAny Slot
   deriving (Eq, Generic, Show, Ord)
 
 instance Show Attribute where
@@ -81,10 +95,12 @@ instance Show Attribute where
   show AtDelta = "Δ"
   show AtLambda = "λ"
   show (AtMeta meta) = '!' : T.unpack meta
+  show (AtAny (Slot kind _)) = '!' : T.unpack kind
 
 instance Show Alpha where
   show (Alpha idx) = 'α' : show idx
   show (AlMeta meta) = 'α' : '!' : T.unpack meta
+  show (AlAny (Slot kind _)) = 'α' : '!' : T.unpack kind
 
 -- A cheap, fixed-size digest of an expression, used for fast (dirty) equality
 -- checks during loop detection. Equal expressions always produce the same
@@ -103,6 +119,8 @@ hashExpression = goExpr fnvOffset
     hashText = T.foldl' (\h c -> step h (fromEnum c))
     hashString :: Int -> String -> Int
     hashString = foldl' (\h c -> step h (fromEnum c))
+    goSlot :: Int -> Slot -> Int
+    goSlot h (Slot kind idx) = step (hashText h kind) idx
     hashMaybeString :: Int -> Maybe String -> Int
     hashMaybeString h Nothing = step h 0
     hashMaybeString h (Just s) = hashString (step h 1) s
@@ -115,6 +133,7 @@ hashExpression = goExpr fnvOffset
       ExApplication ex arg -> goArgument (goExpr (step h 5) ex) arg
       ExDispatch ex at -> goAttribute (goExpr (step h 6) ex) at
       ExMeta t -> hashText (step h 7) t
+      ExAny slot -> goSlot (step h 32) slot
       ExPhiMeet ms i ex -> goExpr (hashMaybeString (step (step h 9) i) ms) ex
       ExPhiAgain ms i ex -> goExpr (hashMaybeString (step (step h 10) i) ms) ex
       ExBytes bts -> goBytes (step h 8) bts
@@ -125,12 +144,14 @@ hashExpression = goExpr fnvOffset
       BiVoid at -> goAttribute (step h 13) at
       BiLambda fn -> goFunction (step h 14) fn
       BiMeta t -> hashText (step h 15) t
+      BiAny slot -> goSlot (step h 33) slot
     goBytes :: Int -> Bytes -> Int
     goBytes h = \case
       BtEmpty -> step h 17
       BtOne s -> hashString (step h 18) s
       BtMany ss -> foldl' hashString (step h 19) ss
       BtMeta t -> hashText (step h 20) t
+      BtAny slot -> goSlot (step h 34) slot
     goAttribute :: Int -> Attribute -> Int
     goAttribute h = \case
       AtLabel t -> hashText (step h 21) t
@@ -139,6 +160,7 @@ hashExpression = goExpr fnvOffset
       AtLambda -> step h 25
       AtDelta -> step h 26
       AtMeta t -> hashText (step h 27) t
+      AtAny slot -> goSlot (step h 35) slot
     goArgument :: Int -> Argument -> Int
     goArgument h = \case
       ArTau at ex -> goExpr (goAttribute (step h 22) at) ex
@@ -147,10 +169,12 @@ hashExpression = goExpr fnvOffset
     goAlpha h = \case
       Alpha idx -> step (step h 31) idx
       AlMeta t -> hashText (step h 28) t
+      AlAny slot -> goSlot (step h 36) slot
     goFunction :: Int -> Function -> Int
     goFunction h = \case
       Function t -> hashText (step h 16) t
       FnMeta t -> hashText (step h 29) t
+      FnAny slot -> goSlot (step h 37) slot
 
 countNodes :: Expression -> Int
 countNodes (ExFormation bds) = 1 + sum (map nodesInBinding bds) + length bds
@@ -158,6 +182,7 @@ countNodes (ExFormation bds) = 1 + sum (map nodesInBinding bds) + length bds
     nodesInBinding :: Binding -> Int
     nodesInBinding (BiTau _ expr) = countNodes expr + 2
     nodesInBinding (BiMeta _) = 1
+    nodesInBinding (BiAny _) = 1
     nodesInBinding _ = 3
 countNodes (ExApplication expr (ArTau _ expr')) = 4 + countNodes expr + countNodes expr'
 countNodes (ExApplication expr (ArAlpha _ expr')) = 4 + countNodes expr + countNodes expr'

@@ -3,6 +3,6 @@
 ---
 failure: true
 expression: '[[ x -> [[ y -> Q ]] ]]'
-pattern: '[[ x -> !e ]]'
+pattern: '[[ x -> !e1 ]]'
 condition:
   formation: '!eX'

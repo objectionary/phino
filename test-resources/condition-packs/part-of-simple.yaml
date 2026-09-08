@@ -2,6 +2,6 @@
 # SPDX-License-Identifier: MIT
 ---
 expression: '[[ x -> Q.y, z -> Q.y ]]'
-pattern: '[[ x -> !e, !B ]]'
+pattern: '[[ x -> !e1, !B1 ]]'
 condition:
-  part-of: ['!e', '!B']
+  part-of: ['!e1', '!B1']

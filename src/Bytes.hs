@@ -60,6 +60,7 @@ btsToWord8 BtEmpty = []
 btsToWord8 (BtOne bt) = [hexByte bt]
 btsToWord8 (BtMany bts) = map hexByte bts
 btsToWord8 (BtMeta mt) = error $ "Cannot convert meta bytes to Word8; " ++ T.unpack mt
+btsToWord8 (BtAny _) = error "Cannot convert anonymous meta bytes to Word8"
 
 hexByte :: String -> Word8
 hexByte [hi, lo] = (nibble hi `shiftL` 4) .|. nibble lo
@@ -185,6 +186,7 @@ nonFiniteBts NfNinf = BtMany ["FF", "F0", "00", "00", "00", "00", "00", "00"]
 -- Nothing
 btsToNonFinite :: Bytes -> Maybe NonFinite
 btsToNonFinite (BtMeta _) = Nothing
+btsToNonFinite (BtAny _) = Nothing
 btsToNonFinite bts = find (btsEqual bts . nonFiniteBts) nonFinites
 
 -- The non-finite double the given name stands for, if it names one at all

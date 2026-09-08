@@ -19,7 +19,7 @@ import Test.Hspec (Example (Arg), Expectation, Spec, SpecWith, anyException, des
 test :: (Show a, Eq a) => (a -> Subst -> Either String a) -> [(String, a, [(T.Text, MetaValue)], Either String a)] -> SpecWith (Arg Expectation)
 test function useCases =
   forM_ useCases $ \(desc, expr, mp, res) ->
-    it desc $ function expr (Subst (Map.fromList mp)) `shouldBe` res
+    it desc $ function expr (Subst (Map.mapKeys Named (Map.fromList mp))) `shouldBe` res
 
 spec :: Spec
 spec = do
@@ -208,6 +208,38 @@ spec = do
         )
       ]
       (\(desc, action, message) -> it desc (action `shouldThrow` (\exc -> message `isInfixOf` show (exc :: SomeException))))
+
+  describe "builds an anonymous meta only from the pattern that bound it" $ do
+    -- An anonymous slot is a key of the very substitution its own pattern
+    -- produced, which is how a fired pattern is rebuilt for replacement. Asked
+    -- for it under any other substitution, the builder says plainly that the
+    -- meta has no name to be referenced by, rather than inventing a term.
+    forM_
+      [
+        ( "buildExpression rebuilds an anonymous expression from its own slot"
+        , buildExpression (ExAny (Slot "e" 7)) (substSlot (Slot "e" 7) (MvExpression ExRoot))
+        , Right ExRoot
+        )
+      ,
+        ( "buildExpression refuses an anonymous expression bound by another pattern"
+        , buildExpression (ExAny (Slot "e" 7)) (substSlot (Slot "e" 9) (MvExpression ExRoot))
+        , Left "anonymous meta '!e' cannot be referenced"
+        )
+      ]
+      (\(desc, built, expected) -> it desc (built `shouldBe` expected))
+    forM_
+      [
+        ( "buildAttribute rebuilds an anonymous attribute from its own slot"
+        , buildAttribute (AtAny (Slot "t" 2)) (substSlot (Slot "t" 2) (MvAttribute AtPhi))
+        , Right AtPhi
+        )
+      ,
+        ( "buildAttribute refuses an anonymous attribute bound by another pattern"
+        , buildAttribute (AtAny (Slot "t" 2)) substEmpty
+        , Left "anonymous meta '!t' cannot be referenced"
+        )
+      ]
+      (\(desc, built, expected) -> it desc (built `shouldBe` expected))
 
   describe "build with duplicate attributes in bindings" $ do
     it "build binding with duplicates" $

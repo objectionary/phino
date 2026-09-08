@@ -36,6 +36,7 @@ attributeFromBinding (BiVoid attr) = Just attr
 attributeFromBinding (BiDelta _) = Just AtDelta
 attributeFromBinding (BiLambda _) = Just AtLambda
 attributeFromBinding (BiMeta _) = Nothing
+attributeFromBinding (BiAny _) = Nothing
 
 -- Extract attributes from bindings
 attributesFromBindings :: [Binding] -> [Attribute]
@@ -79,8 +80,11 @@ withVoidRho bds = go bds False
     go (bd : rest) hasRho =
       case bd of
         BiMeta _ -> bd : rest
+        BiAny _ -> bd : rest
         BiVoid (AtMeta _) -> bd : rest
+        BiVoid (AtAny _) -> bd : rest
         BiTau (AtMeta _) _ -> bd : rest
+        BiTau (AtAny _) _ -> bd : rest
         BiVoid AtRho -> bd : go rest True
         BiTau AtRho _ -> bd : go rest True
         _ -> bd : go rest hasRho

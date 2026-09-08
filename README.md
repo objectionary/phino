@@ -550,7 +550,29 @@ This is the list of supported meta variables:
 * `!d` || `δ` - bytes in meta delta binding
 * `!F` || `𝑓` - function name in meta lambda binding
 
-Every meta variable may also be used with an integer index, like `!B1` or `𝜏0`.
+A meta variable carries a suffix, like `!B1` or `𝜏0`, to name what it
+captured, so that the `result`, `when`, `where` and `having` of a rule can
+read it back.
+
+Written bare, with no suffix at all, a meta variable is anonymous: it matches
+whatever term stands in its place, every occurrence on its own, and binds no
+name. Two anonymous metas of one kind are therefore two different captures,
+which is what lets a pattern ask for any two attributes without inventing
+names for them:
+
+```yaml
+name: two-attributes
+pattern: '⟦ 𝜏 ↦ 𝑒, 𝜏 ↦ 𝑒 ⟧'
+result: '⟦ x ↦ ⟦ Δ ⤍ 2A- ⟧ ⟧'
+```
+
+Spelled with suffixes, that pattern would read `⟦ 𝜏1 ↦ 𝑒1, 𝜏2 ↦ 𝑒2 ⟧` and
+name four captures the result never mentions, while `⟦ 𝜏1 ↦ 𝑒1, 𝜏1 ↦ 𝑒1 ⟧`
+would be rejected as a duplicated attribute.
+
+Nothing can refer to an anonymous meta, since it has no name to be referred to
+by. Writing one outside a `pattern` (or the `match`, `e-match` and `c-match` of
+an inference rule) is a mistake in the rule and is reported as the rule loads.
 
 A positional (α) application argument is written as `α0`, `~0` (ASCII), or
 `α𝑖`/`~!i` when its index is captured by an `!i`/`𝑖` meta variable.

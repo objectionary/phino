@@ -17,63 +17,65 @@
 # 'c-result' (a premise meta or a literal), provided the ordered 'premises'
 # reduce as stated. A premise binds its 'n-result' to one 𝒞 ('contextualize')
 # judgment. 'c-match' is the context-argument matcher of 𝒞(n, c); it is always
-# the c meta. Derived terms are named 𝑛, 𝑛1, … in premise order; the bare 𝑛 is
-# skipped only when 'match' already binds it.
+# the 𝑘0 meta. Derived terms are named 𝑛1, 𝑛2, … in premise order; the term 𝒞 is
+# handed is 𝑛0, leaving that numbering to the premises alone. A meta the rule
+# never reads back is written bare: it matches whatever stands in its place,
+# binds nothing and cannot be referenced.
 
 - name: cg
   match: Φ
-  c-match: 𝑘
+  c-match: 𝑘0
   c-result: Φ
 
 - name: cxi
   match: ξ
-  c-match: 𝑘
-  c-result: 𝑘
+  c-match: 𝑘0
+  c-result: 𝑘0
 
 - name: ct
   match: ⊥
-  c-match: 𝑘
+  c-match: 𝑘0
   c-result: ⊥
 
 - name: cf
-  match: ⟦𝐵⟧
-  c-match: 𝑘
-  c-result: ⟦𝐵⟧
+  match: ⟦𝐵0⟧
+  c-match: 𝑘0
+  c-result: ⟦𝐵0⟧
 
 - name: cd
-  match: '𝑛.𝜏'
-  c-match: 𝑘
-  c-result: '𝑛1.𝜏'
+  match: '𝑛0.𝜏0'
+  c-match: 𝑘0
+  c-result: '𝑛1.𝜏0'
   premises:
     - n-result: 𝑛1
       contextualize:
-        - 𝑛
-        - 𝑘
+        - 𝑛0
+        - 𝑘0
 
 - name: ca
-  match: '𝑛(𝜏 ↦ 𝑒1)'
-  c-match: 𝑘
-  c-result: '𝑛1(𝜏 ↦ 𝑛2)'
+  match: '𝑛0(𝜏0 ↦ 𝑒1)'
+  c-match: 𝑘0
+  c-result: '𝑛1(𝜏0 ↦ 𝑛2)'
   premises:
     - n-result: 𝑛1
       contextualize:
-        - 𝑛
-        - 𝑘
+        - 𝑛0
+        - 𝑘0
     - n-result: 𝑛2
       contextualize:
         - 𝑒1
-        - 𝑘
+        - 𝑘0
 
 - name: caa
-  match: '𝑛(α𝑖 ↦ 𝑒1)'
-  c-match: 𝑘
-  c-result: '𝑛1(α𝑖 ↦ 𝑛2)'
+  match: '𝑛0(α𝑖0 ↦ 𝑒1)'
+  c-match: 𝑘0
+  c-result: '𝑛1(α𝑖0 ↦ 𝑛2)'
   premises:
     - n-result: 𝑛1
       contextualize:
-        - 𝑛
-        - 𝑘
+        - 𝑛0
+        - 𝑘0
     - n-result: 𝑛2
       contextualize:
         - 𝑒1
-        - 𝑘
+        - 𝑘0

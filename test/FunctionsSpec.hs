@@ -14,7 +14,7 @@ import Data.Map.Strict qualified as Map
 import Deps (Term (TeAttribute, TeBindings, TeBytes, TeExpression))
 import Functions (buildTerm)
 import Logger (logDebug)
-import Matcher (MetaValue (MvBindings), Subst (Subst), substEmpty)
+import Matcher (Meta (Named), MetaValue (MvBindings), Subst (Subst), substEmpty)
 import Misc (uniqueBindings')
 import Printer (printExpression)
 import Test.Hspec (Expectation, Spec, describe, it, shouldBe, shouldThrow)
@@ -44,9 +44,9 @@ spec :: Spec
 spec = describe "Functions" $ do
   describe "join" $ do
     it "contains only unique bindings after 'join'" $ do
-      let first = ("B1", MvBindings [BiVoid AtRho, BiDelta BtEmpty, BiTau (AtLabel "x") ExRoot, BiVoid (AtLabel "a0")])
-          second = ("B2", MvBindings [BiTau AtRho ExXi, BiLambda (Function "Func"), BiDelta (BtOne "00"), BiVoid (AtLabel "a1")])
-          third = ("B3", MvBindings [BiLambda (Function "Some"), BiTau (AtLabel "y") ExXi, BiTau (AtLabel "x") ExXi, BiVoid (AtLabel "a0")])
+      let first = (Named "B1", MvBindings [BiVoid AtRho, BiDelta BtEmpty, BiTau (AtLabel "x") ExRoot, BiVoid (AtLabel "a0")])
+          second = (Named "B2", MvBindings [BiTau AtRho ExXi, BiLambda (Function "Func"), BiDelta (BtOne "00"), BiVoid (AtLabel "a1")])
+          third = (Named "B3", MvBindings [BiLambda (Function "Some"), BiTau (AtLabel "y") ExXi, BiTau (AtLabel "x") ExXi, BiVoid (AtLabel "a0")])
           subst = Subst (Map.fromList [first, second, third])
       TeBindings bds <- buildTerm "join" [ArgBinding (BiMeta "B1"), ArgBinding (BiMeta "B2"), ArgBinding (BiMeta "B3")] subst
       bds' <- uniqueBindings' bds
@@ -54,8 +54,8 @@ spec = describe "Functions" $ do
       length bds' `shouldBe` 9
 
     it "renames a duplicate tau binding (not rho/delta/lambda) instead of dropping it" $ do
-      let first = ("B1", MvBindings [BiTau (AtLabel "x") ExRoot])
-          second = ("B2", MvBindings [BiTau (AtLabel "x") ExXi])
+      let first = (Named "B1", MvBindings [BiTau (AtLabel "x") ExRoot])
+          second = (Named "B2", MvBindings [BiTau (AtLabel "x") ExXi])
           subst = Subst (Map.fromList [first, second])
       TeBindings bds <- buildTerm "join" [ArgBinding (BiMeta "B1"), ArgBinding (BiMeta "B2")] subst
       length bds `shouldBe` 2
@@ -86,7 +86,7 @@ spec = describe "Functions" $ do
 
   describe "size" $
     it "counts the bindings bound to a meta" $ do
-      let subst = Subst (Map.singleton "B" (MvBindings [BiVoid AtRho, BiVoid (AtLabel "x")]))
+      let subst = Subst (Map.singleton (Named "B") (MvBindings [BiVoid AtRho, BiVoid (AtLabel "x")]))
       term <- buildTerm "size" [ArgBinding (BiMeta "B")] subst
       expectExpression term (DataNumber (numToBts 2))
 

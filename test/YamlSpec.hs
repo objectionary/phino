@@ -18,15 +18,18 @@ import Data.Yaml qualified as Yaml
 import Files (allPathsIn)
 import System.FilePath
 import Test.Hspec (Spec, describe, expectationFailure, it, runIO, shouldBe, shouldSatisfy, shouldThrow)
-import Yaml (Condition (..), ContextualizeRule (..), DataizeRule (..), MorphRule (..), Number, Operation (..), Premise (..), contextualizationRules, dataizationRules, morphingRules, yamlRule)
+import Yaml (Condition (..), ContextualizeRule (..), DataizeRule (..), MorphRule (..), Number, Operation (..), Premise (..), Rule, contextualizationRules, dataizationRules, morphingRules, yamlRule)
 
 decodeYaml' :: (Yaml.FromJSON a) => String -> Either Yaml.ParseException a
 decodeYaml' = Yaml.decodeEither' . encodeUtf8 . T.pack
 
-failsAsRedundant :: Either Yaml.ParseException a -> Bool
-failsAsRedundant decoded = case decoded of
-  Left err -> "redundant" `isInfixOf` Yaml.prettyPrintParseException err
+failsWith :: String -> Either Yaml.ParseException a -> Bool
+failsWith fragment decoded = case decoded of
+  Left err -> fragment `isInfixOf` Yaml.prettyPrintParseException err
   Right _ -> False
+
+failsAsRedundant :: Either Yaml.ParseException a -> Bool
+failsAsRedundant = failsWith "redundant"
 
 spec :: Spec
 spec = do
@@ -70,6 +73,67 @@ spec = do
       ( \(desc, yaml, valid) ->
           it ("rejects " ++ desc) (unless valid (expectationFailure ("expected rejection for: " ++ yaml)))
       )
+
+  describe "rejects an anonymous meta outside a pattern" $ do
+    -- An anonymous meta is bound by the pattern it stands in and forgotten as
+    -- soon as that pattern matches, so no other part of a rule has a name to
+    -- read it back by. Writing one there is a mistake in the rule, caught as
+    -- the rule loads rather than left to surface as a silent non-match.
+    let rewriting :: String -> String
+        rewriting field = "name: foo\npattern: '⟦ 𝜏1 ↦ 𝑒1 ⟧'\n" ++ field
+        inferring :: String -> String
+        inferring field = "name: foo\nmatch: '⟦ 𝜏1 ↦ 𝑒1 ⟧'\n" ++ field
+    forM_
+      [
+        ( "in 'result' of a rewriting rule"
+        , failsWith
+            "anonymous meta '!e' cannot be referenced in 'result' of rule 'foo'"
+            (decodeYaml' (rewriting "result: '𝑒'") :: Either Yaml.ParseException Rule)
+        )
+      ,
+        ( "in 'when' of a rewriting rule"
+        , failsWith
+            "anonymous meta '!t' cannot be referenced in 'when' of rule 'foo'"
+            (decodeYaml' (rewriting "result: '⟦ ⟧'\nwhen:\n  in: ['𝜏', '!B1']") :: Either Yaml.ParseException Rule)
+        )
+      ,
+        ( "in 'where' of a rewriting rule"
+        , failsWith
+            "anonymous meta '!e' cannot be referenced in 'where' of rule 'foo'"
+            (decodeYaml' (rewriting "result: '⟦ ⟧'\nwhere:\n  - meta: '!t1'\n    function: concat\n    args: ['𝑒']") :: Either Yaml.ParseException Rule)
+        )
+      ,
+        ( "in 'having' of a rewriting rule"
+        , failsWith
+            "anonymous meta '!e' cannot be referenced in 'having' of rule 'foo'"
+            (decodeYaml' (rewriting "result: '⟦ ⟧'\nhaving:\n  formation: '𝑒'") :: Either Yaml.ParseException Rule)
+        )
+      ,
+        ( "in 'n-result' of a morphing rule"
+        , failsWith
+            "anonymous meta '!n' cannot be referenced in 'n-result' of rule 'foo'"
+            (decodeYaml' (inferring "e-match: 𝑒0\nn-result: '𝑛'") :: Either Yaml.ParseException MorphRule)
+        )
+      ,
+        ( "in a premise of a morphing rule"
+        , failsWith
+            "anonymous meta '!e' cannot be referenced in 'premises' of rule 'foo'"
+            (decodeYaml' (inferring "e-match: 𝑒0\nn-result: 𝑛1\npremises:\n  - n-result: 𝑛1\n    normalize: '𝑒'") :: Either Yaml.ParseException MorphRule)
+        )
+      ,
+        ( "in 'd-result' of a dataization rule"
+        , failsWith
+            "anonymous meta '!d' cannot be referenced in 'd-result' of rule 'foo'"
+            (decodeYaml' (inferring "e-match: 𝑒0\nd-result: 'δ'") :: Either Yaml.ParseException DataizeRule)
+        )
+      ,
+        ( "in 'c-result' of a contextualization rule"
+        , failsWith
+            "anonymous meta '!k' cannot be referenced in 'c-result' of rule 'foo'"
+            (decodeYaml' (inferring "c-match: 𝑘0\nc-result: '𝑘'") :: Either Yaml.ParseException ContextualizeRule)
+        )
+      ]
+      (\(desc, rejected) -> it ("rejects an anonymous meta " ++ desc) (rejected `shouldBe` True))
 
   describe "keeps effective labels unique across rule sets" $
     -- The effective label of a rule is its 'label' when present, else its

@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# An anonymous meta stands for a whole run of bindings just as a named one
+# does, and two of them in one pattern split the target independently. Here
+# the rule only cares that some binding sits between two runs it never reads
+# back, so neither run is given a name.
+input: '⟦ a ↦ Φ, b ↦ Φ.z, c ↦ ξ.a ⟧'
+output: '⟦ found ↦ Φ ⟧'
+rules:
+  custom:
+    - name: anonymous-binding-run
+      pattern: '⟦ 𝐵, b ↦ 𝑒, 𝐵 ⟧'
+      result: '⟦ found ↦ Φ ⟧'

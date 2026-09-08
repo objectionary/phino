@@ -9,8 +9,8 @@ output: |-
 rules:
   custom:
     - name: with-eq-condition
-      pattern: '[[!t1 -> $.q, !t2 -> !e, !B]]'
-      result: '[[!t2 -> !e, !B]]'
+      pattern: '[[!t1 -> $.q, !t2 -> !e1, !B1]]'
+      result: '[[!t2 -> !e1, !B1]]'
       when:
         and:
           - eq:

@@ -11,12 +11,12 @@ output: |-
 rules:
   custom:
     - name: part-of-after
-      pattern: '[[ x -> Q.y, !B ]]'
-      result: '[[ x -> Q.y, z -> !e, !B ]]'
+      pattern: '[[ x -> Q.y, !B1 ]]'
+      result: '[[ x -> Q.y, z -> !e1, !B1 ]]'
       where:
-        - meta: '!e'
+        - meta: '!e1'
           function: concat
           args: ['"hello "', '"world"']
       having:
         not:
-          part-of: ['!e', '!B']
+          part-of: ['!e1', '!B1']

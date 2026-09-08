@@ -1,0 +1,15 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# A meta written without an index is anonymous: it matches whatever term
+# stands in its place, and every occurrence matches on its own. The rule below
+# is the one from #218 — it needs two attributes and two expressions but names
+# none of them, which spelled with indexes would be rejected as a duplicated
+# attribute.
+input: '⟦ a ↦ Φ, ρ ↦ Φ.z ⟧'
+output: '⟦ x ↦ ⟦ Δ ⤍ 2A- ⟧ ⟧'
+rules:
+  custom:
+    - name: anonymous-metas
+      pattern: '⟦ 𝜏 ↦ 𝑒, 𝜏 ↦ 𝑒 ⟧'
+      result: '⟦ x ↦ ⟦ Δ ⤍ 2A- ⟧ ⟧'

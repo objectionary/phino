@@ -9,9 +9,9 @@ rules:
   custom:
     - name: append fresh tau
       pattern: |
-        [[ x -> !e ]]
+        [[ x -> !e1 ]]
       result: |
-        [[ x -> !e, !t -> [[ ]], ^ -> ? ]]
+        [[ x -> !e1, !t1 -> [[ ]], ^ -> ? ]]
       where:
-        - meta: '!t'
+        - meta: '!t1'
           function: random-tau

@@ -22,9 +22,17 @@ data MetaValue
   | MvExpression Expression -- !e
   deriving (Eq, Show)
 
+-- The left-hand side of a substitution: a meta-variable the rule author named
+-- and may reference from a result, or an anonymous slot that only the pattern
+-- it was written in can address
+data Meta
+  = Named Text
+  | Anon Slot
+  deriving (Eq, Ord, Show)
+
 -- Substitution
--- Shows the match of meta name to meta value
-newtype Subst = Subst (Map Text MetaValue)
+-- Shows the match of meta variable to meta value
+newtype Subst = Subst (Map Meta MetaValue)
   deriving (Eq, Show)
 
 -- A way to match a pattern expression against a target expression, yielding
@@ -37,14 +45,18 @@ substEmpty = Subst Map.empty
 
 -- Singleton substitution with one (key -> value) pair
 substSingle :: Text -> MetaValue -> Subst
-substSingle key value = Subst (Map.singleton key value)
+substSingle key value = Subst (Map.singleton (Named key) value)
+
+-- Singleton substitution binding one anonymous slot
+substSlot :: Slot -> MetaValue -> Subst
+substSlot slot value = Subst (Map.singleton (Anon slot) value)
 
 -- Combine two substitutions into a single one
 -- Fails if values by the same keys are not equal
 combine :: Subst -> Subst -> Maybe Subst
 combine (Subst a) (Subst b) = go (Map.toList b) a
   where
-    go :: [(Text, MetaValue)] -> Map Text MetaValue -> Maybe Subst
+    go :: [(Meta, MetaValue)] -> Map Meta MetaValue -> Maybe Subst
     go [] acc = Just (Subst acc)
     go ((key, value) : rest) acc = case Map.lookup key acc of
       Just found
@@ -57,18 +69,21 @@ combineMany xs xy = catMaybes [combine x y | x <- xs, y <- xy]
 
 matchAttribute :: Attribute -> Attribute -> [Subst]
 matchAttribute (AtMeta meta) tgt = [substSingle meta (MvAttribute tgt)]
+matchAttribute (AtAny slot) tgt = [substSlot slot (MvAttribute tgt)]
 matchAttribute ptn tgt
   | ptn == tgt = [substEmpty]
   | otherwise = []
 
 matchAlpha :: Alpha -> Alpha -> [Subst]
 matchAlpha (AlMeta meta) (Alpha idx) = [substSingle meta (MvIndex idx)]
+matchAlpha (AlAny slot) (Alpha idx) = [substSlot slot (MvIndex idx)]
 matchAlpha ptn tgt
   | ptn == tgt = [substEmpty]
   | otherwise = []
 
 matchFunction :: Function -> Function -> [Subst]
 matchFunction (FnMeta meta) (Function name) = [substSingle meta (MvFunction name)]
+matchFunction (FnAny slot) (Function name) = [substSlot slot (MvFunction name)]
 matchFunction ptn tgt
   | ptn == tgt = [substEmpty]
   | otherwise = []
@@ -76,6 +91,7 @@ matchFunction ptn tgt
 matchBinding :: Binding -> Binding -> [Subst]
 matchBinding (BiVoid pattr) (BiVoid tattr) = matchAttribute pattr tattr
 matchBinding (BiDelta (BtMeta meta)) (BiDelta tdata) = [substSingle meta (MvBytes tdata)]
+matchBinding (BiDelta (BtAny slot)) (BiDelta tdata) = [substSlot slot (MvBytes tdata)]
 matchBinding (BiDelta pdata) (BiDelta tdata)
   | pdata == tdata = [substEmpty]
   | otherwise = []
@@ -92,18 +108,24 @@ matchArgument _ _ = []
 matchBindings :: [Binding] -> [Binding] -> [Subst]
 matchBindings [] [] = [substEmpty]
 matchBindings [] _ = []
-matchBindings ((BiMeta name) : pbs) tbs =
-  let splits = [splitAt idx tbs | idx <- [0 .. length tbs]]
-   in catMaybes
-        [ combine (substSingle name (MvBindings before)) subst
-        | (before, after) <- splits
-        , subst <- matchBindings pbs after
-        ]
+matchBindings ((BiMeta name) : pbs) tbs = matchBindingsMeta (substSingle name) pbs tbs
+matchBindings ((BiAny slot) : pbs) tbs = matchBindingsMeta (substSlot slot) pbs tbs
 matchBindings (pb : pbs) (tb : tbs) = combineMany (matchBinding pb tb) (matchBindings pbs tbs)
 matchBindings _ _ = []
 
+-- A meta binding stands for any leading run of the target bindings, so every
+-- way of splitting the target into that run and the rest is tried.
+matchBindingsMeta :: (MetaValue -> Subst) -> [Binding] -> [Binding] -> [Subst]
+matchBindingsMeta bind pbs tbs =
+  catMaybes
+    [ combine (bind (MvBindings before)) subst
+    | (before, after) <- [splitAt idx tbs | idx <- [0 .. length tbs]]
+    , subst <- matchBindings pbs after
+    ]
+
 matchExpression' :: MatchExpressionFunc
 matchExpression' (ExMeta meta) tgt = [substSingle meta (MvExpression tgt)]
+matchExpression' (ExAny slot) tgt = [substSlot slot (MvExpression tgt)]
 matchExpression' ExXi ExXi = [substEmpty]
 matchExpression' ExRoot ExRoot = [substEmpty]
 matchExpression' ExTermination ExTermination = [substEmpty]

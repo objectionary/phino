@@ -13,7 +13,7 @@ import Matcher
 import Test.Hspec (Example (Arg), Expectation, Spec, SpecWith, describe, it, shouldBe)
 
 substs :: [[(T.Text, MetaValue)]] -> [Subst]
-substs = map (Subst . Map.fromList)
+substs = map (Subst . Map.mapKeys Named . Map.fromList)
 
 test ::
   (a -> a -> [Subst]) ->
@@ -466,6 +466,44 @@ spec = do
         )
       ]
 
+  describe "matches an anonymous meta independently at every occurrence" $
+    -- Two anonymous metas of one kind sit at different offsets, so they are
+    -- different keys and bind different terms. That is what lets a pattern say
+    -- "any two attributes" without inventing a name for either of them (#218).
+    forM_
+      [
+        ( "[[ !t -> !e, !t -> !e ]] => [[ a -> Q, b -> $ ]] => both bindings bind their own slots"
+        , ExFormation
+            [ BiTau (AtAny (Slot "t" 1)) (ExAny (Slot "e" 2))
+            , BiTau (AtAny (Slot "t" 3)) (ExAny (Slot "e" 4))
+            ]
+        , ExFormation
+            [ BiTau (AtLabel "a") ExRoot
+            , BiTau (AtLabel "b") ExXi
+            ]
+        ,
+          [ Subst
+              ( Map.fromList
+                  [ (Anon (Slot "t" 1), MvAttribute (AtLabel "a"))
+                  , (Anon (Slot "e" 2), MvExpression ExRoot)
+                  , (Anon (Slot "t" 3), MvAttribute (AtLabel "b"))
+                  , (Anon (Slot "e" 4), MvExpression ExXi)
+                  ]
+              )
+          ]
+        )
+      ,
+        ( "[[ !t -> Q, !t -> Q ]] => [[ a -> Q ]] => no match, since one binding cannot fill two slots"
+        , ExFormation
+            [ BiTau (AtAny (Slot "t" 1)) ExRoot
+            , BiTau (AtAny (Slot "t" 3)) ExRoot
+            ]
+        , ExFormation [BiTau (AtLabel "a") ExRoot]
+        , []
+        )
+      ]
+      (\(desc, ptn, tgt, expected) -> it desc (matchExpression ptn tgt `shouldBe` expected))
+
   describe "combine" $
     forM_
       [ ("combines two empty substitutions", substEmpty, substEmpty, Just substEmpty)
@@ -473,26 +511,26 @@ spec = do
       ,
         ( "combines an empty subst with a single-entry one"
         , substEmpty
-        , Subst (Map.singleton "at" (MvAttribute AtPhi))
-        , Just (Subst (Map.singleton "at" (MvAttribute AtPhi)))
+        , Subst (Map.singleton (Named "at") (MvAttribute AtPhi))
+        , Just (Subst (Map.singleton (Named "at") (MvAttribute AtPhi)))
         )
       ,
         ( "combines two substs with disjoint keys"
-        , Subst (Map.singleton "first" (MvAttribute AtPhi))
-        , Subst (Map.singleton "second" (MvBytes (BtOne "00")))
-        , Just (Subst (Map.fromList [("first", MvAttribute AtPhi), ("second", MvBytes (BtOne "00"))]))
+        , Subst (Map.singleton (Named "first") (MvAttribute AtPhi))
+        , Subst (Map.singleton (Named "second") (MvBytes (BtOne "00")))
+        , Just (Subst (Map.fromList [(Named "first", MvAttribute AtPhi), (Named "second", MvBytes (BtOne "00"))]))
         )
       ,
         ( "keeps a shared key when both substs agree on its value"
-        , Subst (Map.fromList [("first", MvAttribute AtRho), ("second", MvAttribute AtPhi)])
-        , Subst (Map.singleton "first" (MvAttribute AtRho))
-        , Just (Subst (Map.fromList [("first", MvAttribute AtRho), ("second", MvAttribute AtPhi)]))
+        , Subst (Map.fromList [(Named "first", MvAttribute AtRho), (Named "second", MvAttribute AtPhi)])
+        , Subst (Map.singleton (Named "first") (MvAttribute AtRho))
+        , Just (Subst (Map.fromList [(Named "first", MvAttribute AtRho), (Named "second", MvAttribute AtPhi)]))
         )
-      , ("returns Nothing when a shared key disagrees", Subst (Map.singleton "x" (MvAttribute AtPhi)), Subst (Map.singleton "x" (MvAttribute AtRho)), Nothing)
+      , ("returns Nothing when a shared key disagrees", Subst (Map.singleton (Named "x") (MvAttribute AtPhi)), Subst (Map.singleton (Named "x") (MvAttribute AtRho)), Nothing)
       ,
         ( "returns Nothing for the whole merge when any key conflicts"
-        , Subst (Map.fromList [("x", MvAttribute AtRho), ("y", MvBytes (BtOne "1F"))])
-        , Subst (Map.singleton "x" (MvAttribute AtPhi))
+        , Subst (Map.fromList [(Named "x", MvAttribute AtRho), (Named "y", MvBytes (BtOne "1F"))])
+        , Subst (Map.singleton (Named "x") (MvAttribute AtPhi))
         , Nothing
         )
       ]

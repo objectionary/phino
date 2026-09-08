@@ -303,6 +303,11 @@ toCST' = (`toCST` (0, EOL))
 metaTail :: T.Text -> T.Text
 metaTail = T.drop 1
 
+-- An anonymous meta renders as the bare sigil it was written with: it carries
+-- no suffix, and needs none, since nothing on the page refers back to it.
+anyMeta :: META_HEAD -> META
+anyMeta hd' = META NO_EXCL hd' T.empty
+
 -- The first character of an expression meta name encodes its kind:
 -- 'n'-prefixed names are normal-form-constrained '𝑛' metas, 'k'-prefixed
 -- names are absolute-constrained '𝑘' metas, everything else is an ordinary
@@ -323,6 +328,7 @@ instance ToCST Expression EXPRESSION where
   toCST ExRoot _ = EX_GLOBAL Φ
   toCST ExXi _ = EX_XI XI
   toCST (ExMeta mt) _ = EX_META (META NO_EXCL (exMetaHead mt) (metaTail mt))
+  toCST (ExAny (Slot kind _)) _ = EX_META (anyMeta (exMetaHead kind))
   toCST ExTermination _ = EX_TERMINATION DEAD
   toCST (ExBytes bts) ctx = EX_BYTES (toCST bts ctx)
   toCST (ExPhiMeet prefix idx expr) ctx = EX_PHI_MEET prefix idx (toCST expr ctx)
@@ -467,11 +473,13 @@ instance ToCST [Expression] APP_ARGS where
 instance ToCST [Binding] BINDING where
   toCST [] (tabs, _) = BI_EMPTY (TAB tabs)
   toCST (BiMeta mt : bds) ctx@(tabs, _) = BI_META (META NO_EXCL B (metaTail mt)) (toCST bds ctx) (TAB tabs)
+  toCST (BiAny _ : bds) ctx@(tabs, _) = BI_META (anyMeta B) (toCST bds ctx) (TAB tabs)
   toCST (bd : bds) ctx@(tabs, _) = BI_PAIR (toCST bd ctx) (toCST bds ctx) (TAB tabs)
 
 instance ToCST [Binding] BINDINGS where
   toCST [] (tabs, _) = BDS_EMPTY (TAB tabs)
   toCST (BiMeta mt : bds) ctx@(tabs, eol) = BDS_META eol (TAB tabs) (META NO_EXCL B (metaTail mt)) (toCST bds ctx)
+  toCST (BiAny _ : bds) ctx@(tabs, eol) = BDS_META eol (TAB tabs) (anyMeta B) (toCST bds ctx)
   toCST (bd : bds) ctx@(tabs, eol) = BDS_PAIR eol (TAB tabs) (toCST bd ctx) (toCST bds ctx)
 
 instance ToCST Binding PAIR where
@@ -498,7 +506,9 @@ instance ToCST Binding PAIR where
   toCST (BiDelta bts) ctx = PA_DELTA (toCST bts ctx)
   toCST (BiLambda (Function name)) _ = PA_LAMBDA name
   toCST (BiLambda (FnMeta mt)) _ = PA_META_LAMBDA (META NO_EXCL F (metaTail mt))
+  toCST (BiLambda (FnAny _)) _ = PA_META_LAMBDA (anyMeta F)
   toCST (BiMeta mt) _ = error $ "BiMeta binding " ++ T.unpack mt ++ " cannot be converted to PAIR"
+  toCST (BiAny _) _ = error "An anonymous meta binding cannot be converted to PAIR"
 
 instance ToCST Argument PAIR where
   toCST (ArTau attr exp) ctx = toCST (BiTau attr exp) ctx
@@ -521,6 +531,7 @@ instance ToCST Bytes BYTES where
   toCST (BtOne byte) _ = BT_ONE byte
   toCST (BtMany bts) _ = BT_MANY bts
   toCST (BtMeta mt) _ = BT_META (META NO_EXCL D (metaTail mt))
+  toCST (BtAny _) _ = BT_META (anyMeta D)
 
 instance ToCST Attribute ATTRIBUTE where
   toCST (AtLabel label) _ = AT_LABEL label
@@ -529,10 +540,12 @@ instance ToCST Attribute ATTRIBUTE where
   toCST AtDelta _ = AT_DELTA DELTA
   toCST AtLambda _ = AT_LAMBDA LAMBDA
   toCST (AtMeta mt) _ = AT_META (META NO_EXCL TAU (metaTail mt))
+  toCST (AtAny _) _ = AT_META (anyMeta TAU)
 
 instance ToCST Alpha ALPHA where
   toCST (Alpha idx) _ = AL_IDX ALPHA idx
   toCST (AlMeta mt) _ = AL_META ALPHA (META NO_EXCL I (metaTail mt))
+  toCST (AlAny _) _ = AL_META ALPHA (anyMeta I)
 
 instance ToCST Y.Condition CONDITION where
   toCST (Y.Not (Y.In attr binding)) _ = CO_BELONGS (attributeToCST attr) NOT_IN (ST_BINDING (bindingsToCST [binding]))
@@ -563,6 +576,7 @@ instance ToCST Y.Comparable COMPARABLE where
 
 instance ToCST Y.Number NUMBER where
   toCST (Y.MetaIndex mt) _ = IDX_META (META NO_EXCL I (metaTail mt))
+  toCST (Y.AnyIndex _) _ = IDX_META (anyMeta I)
   toCST (Y.Length binding) _ = LENGTH (bindingsToCST [binding])
   toCST (Y.Domain binding) _ = DOMAIN (bindingsToCST [binding])
   toCST (Y.Literal num) _ = LITERAL num

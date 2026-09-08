@@ -42,6 +42,11 @@ data BuildException
 metaMsg :: Text -> String
 metaMsg = printf "meta '%s' is either does not exist or refers to an inappropriate term" . T.unpack
 
+-- An anonymous meta is bound only within the very pattern that matched it, so
+-- a lookup that misses means the term being built is not that pattern
+slotMsg :: Slot -> String
+slotMsg (Slot kind _) = printf "anonymous meta '!%s' cannot be referenced" (T.unpack kind)
+
 type Built a = Either String a
 
 instance Show BuildException where
@@ -64,21 +69,30 @@ contextualize (ExApplication ex arg) context =
 contextualize ex _ = ex
 
 buildAttribute :: Attribute -> Subst -> Built Attribute
-buildAttribute (AtMeta meta) (Subst mp) = case Map.lookup meta mp of
+buildAttribute (AtMeta meta) (Subst mp) = case Map.lookup (Named meta) mp of
   Just (MvAttribute attr) -> Right attr
   _ -> Left (metaMsg meta)
+buildAttribute (AtAny slot) (Subst mp) = case Map.lookup (Anon slot) mp of
+  Just (MvAttribute attr) -> Right attr
+  _ -> Left (slotMsg slot)
 buildAttribute attr _ = Right attr
 
 buildAlpha :: Alpha -> Subst -> Built Alpha
-buildAlpha (AlMeta meta) (Subst mp) = case Map.lookup meta mp of
+buildAlpha (AlMeta meta) (Subst mp) = case Map.lookup (Named meta) mp of
   Just (MvIndex idx) -> Right (Alpha idx)
   _ -> Left (metaMsg meta)
+buildAlpha (AlAny slot) (Subst mp) = case Map.lookup (Anon slot) mp of
+  Just (MvIndex idx) -> Right (Alpha idx)
+  _ -> Left (slotMsg slot)
 buildAlpha a _ = Right a
 
 buildBytes :: Bytes -> Subst -> Built Bytes
-buildBytes (BtMeta meta) (Subst mp) = case Map.lookup meta mp of
+buildBytes (BtMeta meta) (Subst mp) = case Map.lookup (Named meta) mp of
   Just (MvBytes bytes) -> Right bytes
   _ -> Left (metaMsg meta)
+buildBytes (BtAny slot) (Subst mp) = case Map.lookup (Anon slot) mp of
+  Just (MvBytes bytes) -> Right bytes
+  _ -> Left (slotMsg slot)
 buildBytes bts _ = Right bts
 
 -- Build binding
@@ -92,15 +106,21 @@ buildBinding (BiTau attr expr) subst = do
 buildBinding (BiVoid attr) subst = do
   attribute <- buildAttribute attr subst
   Right [BiVoid attribute]
-buildBinding (BiMeta meta) (Subst mp) = case Map.lookup meta mp of
+buildBinding (BiMeta meta) (Subst mp) = case Map.lookup (Named meta) mp of
   Just (MvBindings bds) -> uniqueBindings bds
   _ -> Left (metaMsg meta)
+buildBinding (BiAny slot) (Subst mp) = case Map.lookup (Anon slot) mp of
+  Just (MvBindings bds) -> uniqueBindings bds
+  _ -> Left (slotMsg slot)
 buildBinding (BiDelta bytes) subst = do
   bts <- buildBytes bytes subst
   Right [BiDelta bts]
-buildBinding (BiLambda (FnMeta meta)) (Subst mp) = case Map.lookup meta mp of
+buildBinding (BiLambda (FnMeta meta)) (Subst mp) = case Map.lookup (Named meta) mp of
   Just (MvFunction func) -> Right [BiLambda (Function func)]
   _ -> Left (metaMsg meta)
+buildBinding (BiLambda (FnAny slot)) (Subst mp) = case Map.lookup (Anon slot) mp of
+  Just (MvFunction func) -> Right [BiLambda (Function func)]
+  _ -> Left (slotMsg slot)
 buildBinding binding _ = Right [binding]
 
 buildArgument :: Argument -> Subst -> Built Argument
@@ -121,6 +141,12 @@ buildBindings (bd : rest) subst = do
   bds <- buildBindings rest subst
   Right (first ++ bds)
 
+-- The bindings of a formation a meta was bound to are checked once more here,
+-- since a substitution may bring two of them together under one attribute.
+unique :: Expression -> Built Expression
+unique (ExFormation bds) = uniqueBindings bds >> Right (ExFormation bds)
+unique expr = Right expr
+
 -- Build meta expression with given substitution
 buildExpression :: Expression -> Subst -> Built Expression
 buildExpression (ExDispatch ex at) subst = do
@@ -134,12 +160,12 @@ buildExpression (ExApplication expr arg) subst = do
 buildExpression (ExFormation bds) subst = do
   bds' <- buildBindings bds subst >>= uniqueBindings
   Right (ExFormation bds')
-buildExpression (ExMeta meta) (Subst mp) = case Map.lookup meta mp of
-  Just (MvExpression expr) ->
-    case expr of
-      ExFormation bds -> uniqueBindings bds >> Right expr
-      _ -> Right expr
+buildExpression (ExMeta meta) (Subst mp) = case Map.lookup (Named meta) mp of
+  Just (MvExpression expr) -> unique expr
   _ -> Left (metaMsg meta)
+buildExpression (ExAny slot) (Subst mp) = case Map.lookup (Anon slot) mp of
+  Just (MvExpression expr) -> unique expr
+  _ -> Left (slotMsg slot)
 buildExpression expr _ = Right expr
 
 buildBytesThrows :: Bytes -> Subst -> IO Bytes

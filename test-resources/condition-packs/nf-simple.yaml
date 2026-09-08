@@ -2,6 +2,6 @@
 # SPDX-License-Identifier: MIT
 ---
 expression: 'Q.x'
-pattern: '!e.!t'
+pattern: '!e1.!t1'
 condition:
-  nf: '!e'
+  nf: '!e1'

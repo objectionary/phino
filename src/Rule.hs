@@ -113,13 +113,13 @@ _in attr binding subst _ =
 -- Convert a 'Number' to an 'Int' under the given substitution, resolving
 -- index metas, binding lengths and formation domains.
 numToInt :: Y.Number -> Subst -> Maybe Int
-numToInt (Y.MetaIndex meta) (Subst mp) = case M.lookup meta mp of
+numToInt (Y.MetaIndex meta) (Subst mp) = case M.lookup (Named meta) mp of
   Just (MvIndex idx) -> Just idx
   _ -> Nothing
-numToInt (Y.Length (BiMeta meta)) (Subst mp) = case M.lookup meta mp of
+numToInt (Y.Length (BiMeta meta)) (Subst mp) = case M.lookup (Named meta) mp of
   Just (MvBindings bds) -> Just (length bds)
   _ -> Nothing
-numToInt (Y.Domain (BiMeta meta)) (Subst mp) = case M.lookup meta mp of
+numToInt (Y.Domain (BiMeta meta)) (Subst mp) = case M.lookup (Named meta) mp of
   Just (MvBindings bds) -> Just (length (filter notAsset bds))
   _ -> Nothing
   where
@@ -136,26 +136,26 @@ _eq (Y.CmpNum left) (Y.CmpNum right) subst _ = case (numToInt left subst, numToI
 _eq (Y.CmpAttr left) (Y.CmpAttr right) subst _ = pure [subst | compareAttrs left right subst]
   where
     compareAttrs :: Attribute -> Attribute -> Subst -> Bool
-    compareAttrs (AtMeta left) (AtMeta right) (Subst mp) = case (M.lookup left mp, M.lookup right mp) of
+    compareAttrs (AtMeta left) (AtMeta right) (Subst mp) = case (M.lookup (Named left) mp, M.lookup (Named right) mp) of
       (Just (MvAttribute left'), Just (MvAttribute right')) -> compareAttrs left' right' (Subst mp)
       _ -> False
-    compareAttrs attr (AtMeta meta) (Subst mp) = case M.lookup meta mp of
+    compareAttrs attr (AtMeta meta) (Subst mp) = case M.lookup (Named meta) mp of
       Just (MvAttribute found) -> attr == found
       _ -> False
-    compareAttrs (AtMeta meta) attr (Subst mp) = case M.lookup meta mp of
+    compareAttrs (AtMeta meta) attr (Subst mp) = case M.lookup (Named meta) mp of
       Just (MvAttribute found) -> attr == found
       _ -> False
     compareAttrs left right _ = right == left
 _eq (Y.CmpExpr left) (Y.CmpExpr right) subst _ = pure [subst | compareExprs left right subst]
   where
     compareExprs :: Expression -> Expression -> Subst -> Bool
-    compareExprs (ExMeta left) (ExMeta right) (Subst mp) = case (M.lookup left mp, M.lookup right mp) of
+    compareExprs (ExMeta left) (ExMeta right) (Subst mp) = case (M.lookup (Named left) mp, M.lookup (Named right) mp) of
       (Just (MvExpression left'), Just (MvExpression right')) -> compareExprs left' right' (Subst mp)
       _ -> False
-    compareExprs expr (ExMeta meta) (Subst mp) = case M.lookup meta mp of
+    compareExprs expr (ExMeta meta) (Subst mp) = case M.lookup (Named meta) mp of
       Just (MvExpression found) -> expr == found
       _ -> False
-    compareExprs (ExMeta meta) expr (Subst mp) = case M.lookup meta mp of
+    compareExprs (ExMeta meta) expr (Subst mp) = case M.lookup (Named meta) mp of
       Just (MvExpression found) -> expr == found
       _ -> False
     compareExprs left right _ = left == right
@@ -170,7 +170,10 @@ _gt (Y.CmpNum left) (Y.CmpNum right) subst _ = case (numToInt left subst, numToI
 _gt _ _ _ _ = pure []
 
 _nf :: Expression -> Subst -> RuleContext -> IO [Subst]
-_nf (ExMeta meta) (Subst mp) ctx = case M.lookup meta mp of
+_nf (ExMeta meta) (Subst mp) ctx = case M.lookup (Named meta) mp of
+  Just (MvExpression expr) -> _nf expr (Subst mp) ctx
+  _ -> pure []
+_nf (ExAny slot) (Subst mp) ctx = case M.lookup (Anon slot) mp of
   Just (MvExpression expr) -> _nf expr (Subst mp) ctx
   _ -> pure []
 _nf expr subst ctx = pure [subst | isNF expr ctx]
@@ -184,7 +187,10 @@ _nf expr subst ctx = pure [subst | isNF expr ctx]
 -- structural, rules out the ξ-recursion the normal-form check could loop on)
 -- and the normal-form check second.
 _absolute :: Expression -> Subst -> RuleContext -> IO [Subst]
-_absolute (ExMeta meta) (Subst mp) ctx = case M.lookup meta mp of
+_absolute (ExMeta meta) (Subst mp) ctx = case M.lookup (Named meta) mp of
+  Just (MvExpression expr) -> _absolute expr (Subst mp) ctx
+  _ -> pure []
+_absolute (ExAny slot) (Subst mp) ctx = case M.lookup (Anon slot) mp of
   Just (MvExpression expr) -> _absolute expr (Subst mp) ctx
   _ -> pure []
 _absolute expr subst _ = pure [subst | xiFree expr]
@@ -201,7 +207,7 @@ _absolute expr subst _ = pure [subst | xiFree expr]
 -- Hold when the given expression is a formation (an abstraction ⟦…⟧). A meta
 -- is resolved first, so 'binding 𝑛' inspects whatever 𝑛 is bound to.
 _isFormation :: Expression -> Subst -> RuleContext -> IO [Subst]
-_isFormation (ExMeta meta) (Subst mp) ctx = case M.lookup meta mp of
+_isFormation (ExMeta meta) (Subst mp) ctx = case M.lookup (Named meta) mp of
   Just (MvExpression expr) -> _isFormation expr (Subst mp) ctx
   _ -> pure []
 _isFormation expr subst _ = pure [subst | isFormation expr]
@@ -211,7 +217,7 @@ _isFormation expr subst _ = pure [subst | isFormation expr]
     isFormation _ = False
 
 _matches :: String -> Expression -> Subst -> RuleContext -> IO [Subst]
-_matches pat (ExMeta meta) (Subst mp) ctx = case M.lookup meta mp of
+_matches pat (ExMeta meta) (Subst mp) ctx = case M.lookup (Named meta) mp of
   Just (MvExpression expr) -> _matches pat expr (Subst mp) ctx
   _ -> pure []
 _matches pat expr subst ctx = do
@@ -328,16 +334,21 @@ extraSubstitutions substs extras RuleContext{..} = case extras of
     logDebug "Extra substitutions have been built"
     pure (catMaybes res)
 
--- Collect the names of constrained expression meta-variables with the given
+-- Collect the constrained expression meta-variables with the given
 -- one-character prefix used in a pattern. Each kind ('𝑛'/'!n' normal-form,
 -- '𝑘'/'!k' absolute) lives in its own 'n'-/'k'-prefixed key-space, so a
--- pattern may freely mix them with plain '𝑒' captures.
-metaNamesWithPrefix :: T.Text -> Expression -> [T.Text]
-metaNamesWithPrefix prefix = nub . go
+-- pattern may freely mix them with plain '𝑒' captures. An anonymous meta
+-- carries the same prefix as the sigil it was written with, so a bare '𝑛' is
+-- held to the normal form just as '𝑛1' is.
+metasWithPrefix :: T.Text -> Expression -> [Expression]
+metasWithPrefix prefix = nub . go
   where
-    go :: Expression -> [T.Text]
-    go (ExMeta mt)
-      | T.isPrefixOf prefix mt = [mt]
+    go :: Expression -> [Expression]
+    go expr@(ExMeta mt)
+      | T.isPrefixOf prefix mt = [expr]
+      | otherwise = []
+    go expr@(ExAny (Slot kind _))
+      | T.isPrefixOf prefix kind = [expr]
       | otherwise = []
     go (ExFormation bds) = concatMap goBinding bds
     go (ExApplication e arg) = go e ++ goArgument arg
@@ -345,10 +356,10 @@ metaNamesWithPrefix prefix = nub . go
     go (ExPhiMeet _ _ e) = go e
     go (ExPhiAgain _ _ e) = go e
     go _ = []
-    goBinding :: Binding -> [T.Text]
+    goBinding :: Binding -> [Expression]
     goBinding (BiTau _ e) = go e
     goBinding _ = []
-    goArgument :: Argument -> [T.Text]
+    goArgument :: Argument -> [Expression]
     goArgument (ArTau _ expr) = go expr
     goArgument (ArAlpha _ expr) = go expr
 
@@ -381,8 +392,8 @@ matchExpressionBy matcher seed expr rule ctx =
           -- A '𝑘' meta-variable is absolute (𝒦 ⊆ 𝒩): check it is xi-free first
           -- (cheap, structural), then fold its name into the same normal-form
           -- check used for '𝑛' metas, so 'isNF' is applied in a single place.
-          inXiFree <- foldlM (\substs nm -> meetCondition (Y.Absolute (ExMeta nm)) substs ctx) matched (kMetaNames ptn)
-          inNf <- foldlM (\substs nm -> meetCondition (Y.NF (ExMeta nm)) substs ctx) inXiFree (nfMetaNames ptn ++ kMetaNames ptn)
+          inXiFree <- foldlM (\substs mt -> meetCondition (Y.Absolute mt) substs ctx) matched (kMetas ptn)
+          inNf <- foldlM (\substs mt -> meetCondition (Y.NF mt) substs ctx) inXiFree (nfMetas ptn ++ kMetas ptn)
           if null inNf
             then do
               logDebug "A '𝑛'/'𝑘' meta-variable is not in normal form, or a '𝑘' meta-variable is not xi-free"
@@ -405,8 +416,8 @@ matchExpressionBy matcher seed expr rule ctx =
                       when (null met) (logDebug "The 'having' condition wasn't met")
                       pure met
   where
-    nfMetaNames :: Expression -> [T.Text]
-    nfMetaNames = metaNamesWithPrefix "n"
+    nfMetas :: Expression -> [Expression]
+    nfMetas = metasWithPrefix "n"
 
-    kMetaNames :: Expression -> [T.Text]
-    kMetaNames = metaNamesWithPrefix "k"
+    kMetas :: Expression -> [Expression]
+    kMetas = metasWithPrefix "k"
