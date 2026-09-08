@@ -10,17 +10,18 @@ import AST
 import Atoms (Atom (..), Runtime (RtNode), emptyRegistry, fireAtom, readRegistry, registeredAtom)
 import Control.Exception (SomeException, bracket)
 import Control.Monad (forM_)
+import Data.Aeson (encode, object, (.=))
 import Data.ByteString qualified as BS
+import Data.ByteString.Lazy qualified as BSL
 import Data.List (isInfixOf)
 import Data.Text qualified as T
-import Data.Text.Encoding (encodeUtf8)
+import Data.Text.Encoding (decodeUtf8, encodeUtf8)
 import Fixtures (withNode)
 import Parser (parseExpressionThrows)
 import System.Directory (getPermissions, getTemporaryDirectory, removePathForcibly, setOwnerExecutable, setPermissions)
 import System.IO (Handle, hClose, openBinaryTempFile)
 import System.Info (os)
 import Test.Hspec
-import Text.Printf (printf)
 
 -- A registry file holding the given content, removed afterwards
 withRegistry :: T.Text -> (FilePath -> IO a) -> IO a
@@ -62,9 +63,12 @@ withShell expectation
   | os == "mingw32" = pendingWith "no POSIX shell script is executable on Windows"
   | otherwise = expectation
 
--- The registry of one executable λ function, naming the given file
+-- The registry of one executable λ function, naming the given file. The path
+-- goes through JSON encoding rather than into the text by hand, since a
+-- Windows one spells its separators with the escape character of JSON
 executing :: FilePath -> T.Text
-executing file = T.pack (printf "{\"L_answer\": {\"rt\": \"exec\", \"path\": \"%s\"}}" file)
+executing file =
+  decodeUtf8 (BSL.toStrict (encode (object ["L_answer" .= object ["rt" .= ("exec" :: T.Text), "path" .= file]])))
 
 -- Fire the λ function 'L_answer' out of the given atom, against a formation
 -- binding 'x' inside a universe binding 'y'
