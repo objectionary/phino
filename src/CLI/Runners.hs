@@ -14,9 +14,11 @@ import CLI.Validators
 import Condition (parseConditionThrows)
 import Control.Exception
 import Control.Monad (unless, when)
+import Data.Foldable (traverse_)
 import Data.List (intercalate)
 import qualified Data.List.NonEmpty as NE
 import Data.Maybe (fromJust, isJust, isNothing)
+import qualified Data.Text as T
 import Dataize
 import Encoding
 import qualified Filter as F
@@ -30,6 +32,7 @@ import qualified Printer as P
 import qualified Random as R
 import Rewriter
 import Rule (RuleContext (..), matchExpressionWithRule)
+import Slots (anonymous)
 import System.Directory (doesFileExist, getModificationTime)
 import System.Exit (exitSuccess)
 import System.Random (mkStdGen, setStdGen)
@@ -333,6 +336,7 @@ runMatch OptsMatch{..} = do
     else do
       ptn <- parseExpressionThrows (fromJust _pattern)
       condition <- traverse parseConditionThrows _when
+      traverse_ (throwIO . AnonymousMetaInCondition . T.unpack) (anonymous condition)
       substs <- matchExpressionWithRule expr (rule ptn condition) (RuleContext buildTerm)
       if null substs
         then throwIO EmptySubstsOnMatch

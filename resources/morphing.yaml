@@ -18,24 +18,26 @@
 # 'n-result' (a premise meta or a literal), provided 'when' holds and the
 # ordered 'premises' reduce as stated. A premise binds 'n-result' to the result
 # of one judgment — 𝕄 ('morph'), 𝒩 ('normalize') or 𝔼 ('evaluate'). 'e-match' is
-# the universe-argument matcher of 𝕄(n, e); usually the e meta, but a rule may
+# the universe-argument matcher of 𝕄(n, e); usually the 𝑒0 meta, but a rule may
 # pin it to a literal (e.g. 'mg' fires only on 𝕄(Φ, Φ)). Every judgment here is
 # normal-form-valued (𝕄 'morph', 𝒩 'normalize', 𝔼 'evaluate' — 𝔼 normalizes its
-# atom's result internally), so results are named 𝑛, 𝑛1, … in premise order, the
-# bare 𝑛 skipped only when 'match' already binds it; the 𝑒-family stays reserved
-# for the universe 𝑒 itself.
+# atom's result internally), so premise results are named 𝑛1, 𝑛2, … in premise
+# order. The term a rule morphs is 𝑛0 and its universe 𝑒0, leaving that
+# numbering to the premises alone; the 𝑒-family stays reserved for the universe.
+# A meta the rule never reads back is written bare (see 'mad'): it matches
+# whatever stands in its place, binds nothing and cannot be referenced.
 #
 # 'ml' and 'md' are kept mutually exclusive: 'md' fires only
-# when its head 𝑛 is not a formation ('not (formation 𝑛)'), so every formation
+# when its head 𝑛0 is not a formation ('not (formation 𝑛0)'), so every formation
 # head — λ-bearing or not — is left to 'ml' (and 'mf'). The two clauses
 # are disjoint and their relative order does not change behavior.
 #
 # 'ma'/'maa' and 'mad'/'maad' partition application-headed normal forms on
 # the argument's absoluteness (#959). Both pairs pin the argument to a
 # normal-form meta, so the split is total over the normal forms 𝕄 actually
-# sees: 'ma'/'maa' take a '𝑘' argument — absolute (xi-free) and in normal
+# sees: 'ma'/'maa' take a '𝑘1' argument — absolute (xi-free) and in normal
 # form — and recurse by re-normalizing the application; 'mad'/'maad' take an
-# '𝑛' argument (a normal form) that is 'not (absolute 𝑛1)' and yield ⊥
+# '𝑛1' argument (a normal form) that is 'not (absolute 𝑛1)' and yield ⊥
 # through a single 'morph: ⊥' premise, which terminates at once via the
 # 'dead' axiom (𝕄(⊥, e, s) → (⊥, s)) — no recursion. A non-absolute argument
 # can never fill a slot, so ⊥ is the correct outcome and morphing stays
@@ -46,91 +48,91 @@
 # re-morphed the identical stuck term forever.
 
 - name: mf
-  match: ⟦𝐵⟧
-  e-match: 𝑒
-  n-result: ⟦𝐵⟧
+  match: ⟦𝐵0⟧
+  e-match: 𝑒0
+  n-result: ⟦𝐵0⟧
 
 - name: ml
   label: \lambda
-  match: '⟦𝐵1, λ ⤍ 𝑓, 𝐵2⟧.𝜏'
-  e-match: 𝑒
+  match: '⟦𝐵1, λ ⤍ 𝑓0, 𝐵2⟧.𝜏0'
+  e-match: 𝑒0
   n-result: 𝑛3
   premises:
     - n-result: 𝑛1
       evaluate:
-        - '⟦𝐵1, λ ⤍ 𝑓, 𝐵2⟧'
-        - 𝑒
+        - '⟦𝐵1, λ ⤍ 𝑓0, 𝐵2⟧'
+        - 𝑒0
     - n-result: 𝑛2
-      normalize: '𝑛1.𝜏'
+      normalize: '𝑛1.𝜏0'
     - n-result: 𝑛3
       morph: 𝑛2
 
 - name: mphi
   label: \varphi
-  match: ⟦𝐵⟧.𝜏
-  e-match: 𝑒
-  n-result: 𝑛1
+  match: ⟦𝐵0⟧.𝜏0
+  e-match: 𝑒0
+  n-result: 𝑛2
   when:
     and:
       - in:
           - φ
-          - 𝐵
+          - 𝐵0
       - not:
           in:
-            - 𝜏
-            - 𝐵
+            - 𝜏0
+            - 𝐵0
       - not:
           in:
             - λ
-            - 𝐵
+            - 𝐵0
   premises:
-    - n-result: 𝑛
-      normalize: ⟦𝐵⟧.φ.𝜏
     - n-result: 𝑛1
-      morph: 𝑛
+      normalize: ⟦𝐵0⟧.φ.𝜏0
+    - n-result: 𝑛2
+      morph: 𝑛1
 
 - name: md
-  match: '𝑛.𝜏'
-  e-match: 𝑒
+  match: '𝑛0.𝜏0'
+  e-match: 𝑒0
   n-result: 𝑛3
   when:
     not:
-      formation: 𝑛
+      formation: 𝑛0
   premises:
     - n-result: 𝑛1
-      morph: 𝑛
+      morph: 𝑛0
     - n-result: 𝑛2
-      normalize: '𝑛1.𝜏'
+      normalize: '𝑛1.𝜏0'
     - n-result: 𝑛3
       morph: 𝑛2
 
 - name: ma
-  match: '𝑛(𝜏 ↦ 𝑘1)'
-  e-match: 𝑒
+  match: '𝑛0(𝜏0 ↦ 𝑘1)'
+  e-match: 𝑒0
   n-result: 𝑛3
   premises:
     - n-result: 𝑛1
-      morph: 𝑛
+      morph: 𝑛0
     - n-result: 𝑛2
-      normalize: '𝑛1(𝜏 ↦ 𝑘1)'
+      normalize: '𝑛1(𝜏0 ↦ 𝑘1)'
     - n-result: 𝑛3
       morph: 𝑛2
 
 - name: maa
-  match: '𝑛(α𝑖 ↦ 𝑘1)'
-  e-match: 𝑒
+  match: '𝑛0(α𝑖0 ↦ 𝑘1)'
+  e-match: 𝑒0
   n-result: 𝑛3
   premises:
     - n-result: 𝑛1
-      morph: 𝑛
+      morph: 𝑛0
     - n-result: 𝑛2
-      normalize: '𝑛1(α𝑖 ↦ 𝑘1)'
+      normalize: '𝑛1(α𝑖0 ↦ 𝑘1)'
     - n-result: 𝑛3
       morph: 𝑛2
 
 - name: mad
   match: '𝑛(𝜏 ↦ 𝑛1)'
-  e-match: 𝑒
+  e-match: 𝑒0
   n-result: 𝑛2
   when:
     not:
@@ -141,7 +143,7 @@
 
 - name: maad
   match: '𝑛(α𝑖 ↦ 𝑛1)'
-  e-match: 𝑒
+  e-match: 𝑒0
   n-result: 𝑛2
   when:
     not:
@@ -153,36 +155,36 @@
 - name: universe
   label: \Phi
   match: Φ
-  e-match: 𝑒
-  n-result: 𝑛1
+  e-match: 𝑒0
+  n-result: 𝑛2
   when:
     not:
       eq:
-        - 𝑒
+        - 𝑒0
         - Φ
   premises:
-    - n-result: 𝑛
-      normalize: 𝑒
     - n-result: 𝑛1
-      morph: 𝑛
+      normalize: 𝑒0
+    - n-result: 𝑛2
+      morph: 𝑛1
 
 - name: dead
   match: ⊥
-  e-match: 𝑒
+  e-match: 𝑒0
   n-result: ⊥
 
 - name: xi
   match: ξ
-  e-match: 𝑒
-  n-result: 𝑛
+  e-match: 𝑒0
+  n-result: 𝑛1
   premises:
-    - n-result: 𝑛
+    - n-result: 𝑛1
       morph: ⊥
 
 - name: mg
   match: Φ
   e-match: Φ
-  n-result: 𝑛
+  n-result: 𝑛1
   premises:
-    - n-result: 𝑛
+    - n-result: 𝑛1
       morph: ⊥

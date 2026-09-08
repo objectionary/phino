@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 ---
 expression: '[[ x -> [[ ]] ]]'
-pattern: '[[ x -> !e ]]'
+pattern: '[[ x -> !e1 ]]'
 condition:
   not:
     disjoint:

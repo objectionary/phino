@@ -19,6 +19,6 @@ rules:
   custom:
     - name: tau to void
       pattern: |
-        [[ !B1, !t -> !e, !B2 ]]
+        [[ !B1, !t1 -> !e1, !B2 ]]
       result: |
-        [[ !B1, !t -> ?, !B2 ]]
+        [[ !B1, !t1 -> ?, !B2 ]]

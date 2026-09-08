@@ -48,14 +48,14 @@ data ParserException
 data PhiParser = PhiParser
   { _attribute :: Parser Attribute
   , _alpha :: Parser Alpha
-  , _index :: Parser T.Text
+  , _index :: Parser (Either Slot T.Text)
   , _binding :: Parser Binding
   , _expression :: Parser Expression
   , _string :: Parser String
   }
 
 phiParser :: PhiParser
-phiParser = PhiParser attribute alpha index' binding expression quotedStr
+phiParser = PhiParser attribute alpha indexVar binding expression quotedStr
 
 instance Show ParserException where
   show CouldNotParseExpression{..} = printf "Couldn't parse given phi expression, cause: %s" message
@@ -122,23 +122,24 @@ global = choice [symbol "Q", symbol "Φ"]
 metaSuffix :: Parser String
 metaSuffix = lexeme (many (oneOf ('_' : '-' : ['0' .. '9'] ++ ['a' .. 'z'] ++ ['A' .. 'Z']) <?> "meta suffix"))
 
--- Meta variable names are packed to Text once here; all AST meta fields are Text
-meta :: Char -> Parser T.Text
-meta ch = do
-  _ <- char '!'
-  c <- char ch
-  suf <- metaSuffix
-  return (T.pack (c : suf))
-
-meta' :: Char -> String -> Parser T.Text
-meta' ch uni =
-  choice
-    [ meta ch
-    , do
-        _ <- string uni
-        suf <- metaSuffix
-        return (T.pack (ch : suf))
-    ]
+-- A meta-variable, written either in ASCII ('!t') or in Unicode ('𝜏'). The
+-- suffix tells the two kinds apart: with one the variable is named and a rule
+-- may reference it from its result, without one it is an anonymous slot
+-- pinned to the offset it starts at, unique within the parsed term. Named
+-- variables are packed to Text once here; all AST meta fields are Text.
+metaVar :: Char -> String -> Parser (Either Slot T.Text)
+metaVar ch uni = do
+  offset <- getOffset
+  suf <-
+    choice
+      [ char '!' >> char ch >> metaSuffix
+      , string uni >> metaSuffix
+      ]
+  return
+    ( if null suf
+        then Left (Slot (T.singleton ch) offset)
+        else Right (T.pack (ch : suf))
+    )
 
 byte :: Parser String
 byte = do
@@ -160,7 +161,7 @@ bytes :: Parser Bytes
 bytes =
   lexeme
     ( choice
-        [ BtMeta <$> meta' 'd' "δ"
+        [ either BtAny BtMeta <$> metaVar 'd' "δ"
         , symbol "--" >> return BtEmpty
         , try $ do
             first <- byte
@@ -290,7 +291,7 @@ tauValue =
     rb = symbol ")"
 
 metaBinding :: Parser Binding
-metaBinding = BiMeta <$> meta' 'B' "𝐵"
+metaBinding = either BiAny BiMeta <$> metaVar 'B' "𝐵"
 
 -- binding
 -- 1. delta
@@ -313,7 +314,7 @@ binding =
     , try metaBinding
     , do
         _ <- try lambda
-        BiLambda <$> choice [Function . T.pack <$> function, FnMeta <$> meta' 'F' "𝑓"]
+        BiLambda <$> choice [Function . T.pack <$> function, either FnAny FnMeta <$> metaVar 'F' "𝑓"]
     , do
         attr <- attribute
         choice
@@ -351,13 +352,13 @@ attribute :: Parser Attribute
 attribute =
   choice
     [ void'
-    , AtMeta <$> meta' 't' "𝜏"
+    , either AtAny AtMeta <$> metaVar 't' "𝜏"
     ]
     <?> "attribute"
 
 -- index meta: !i, 𝑖
-index' :: Parser T.Text
-index' = meta' 'i' "𝑖"
+indexVar :: Parser (Either Slot T.Text)
+indexVar = metaVar 'i' "𝑖"
 
 -- alpha
 -- 1. index: ~0, α0
@@ -367,7 +368,7 @@ alpha = do
   _ <- choice [symbol "~", symbol "α"]
   choice
     [ Alpha <$> lexeme L.decimal
-    , AlMeta <$> index'
+    , either AlAny AlMeta <$> indexVar
     ]
     <?> "alpha"
 
@@ -423,9 +424,9 @@ exHead =
         return ExTermination
     , number
     , lexeme (DataString . strToBts <$> quotedStr)
-    , try (ExMeta <$> meta' 'e' "𝑒")
-    , try (ExMeta <$> meta' 'n' "𝑛")
-    , try (ExMeta <$> meta' 'k' "𝑘")
+    , try (either ExAny ExMeta <$> metaVar 'e' "𝑒")
+    , try (either ExAny ExMeta <$> metaVar 'n' "𝑛")
+    , try (either ExAny ExMeta <$> metaVar 'k' "𝑘")
     , ExDispatch ExXi <$> attribute
     ]
     <?> "expression head"
@@ -508,8 +509,8 @@ parseAttribute = parse' "attribute" attribute
 parseAlpha :: String -> Either String Alpha
 parseAlpha = parse' "alpha" alpha
 
-parseIndex :: String -> Either String T.Text
-parseIndex = parse' "index meta" index'
+parseIndex :: String -> Either String (Either Slot T.Text)
+parseIndex = parse' "index meta" indexVar
 
 parseAttributeThrows :: String -> IO Attribute
 parseAttributeThrows attr = orThrow CouldNotParseAttribute (parseAttribute attr)

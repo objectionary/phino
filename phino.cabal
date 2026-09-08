@@ -69,6 +69,7 @@ library
     Replacer
     Rewriter
     Rule
+    Slots
     Sugar
     Tau
     XMIR

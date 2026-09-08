@@ -2,10 +2,10 @@
 # SPDX-License-Identifier: MIT
 ---
 name: amiss
-pattern: ⟦𝐵⟧(α𝑖 ↦ 𝑒)
+pattern: ⟦𝐵1⟧(α𝑖1 ↦ 𝑒)
 result: ⊥
 when:
   not:
     gt:
-      - domain: 𝐵
-      - 𝑖
+      - domain: 𝐵1
+      - 𝑖1

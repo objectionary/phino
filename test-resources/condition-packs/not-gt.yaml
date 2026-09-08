@@ -3,8 +3,8 @@
 ---
 failure: true
 expression: '[[ x -> $, w -> $ ]](α3 -> Q)'
-pattern: '[[ !B ]](α𝑖 ↦ Q)'
+pattern: '[[ !B1 ]](α𝑖1 ↦ Q)'
 condition:
   gt:
-    - domain: '!B'
-    - '𝑖'
+    - domain: '!B1'
+    - '𝑖1'

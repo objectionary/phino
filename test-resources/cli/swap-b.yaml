@@ -2,5 +2,5 @@
 # SPDX-License-Identifier: MIT
 ---
 name: swap-b
-pattern: ⟦ x -> !e ⟧
-result: Q.b(!e)
+pattern: ⟦ x -> !e1 ⟧
+result: Q.b(!e1)

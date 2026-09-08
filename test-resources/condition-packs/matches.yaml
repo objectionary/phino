@@ -2,6 +2,6 @@
 # SPDX-License-Identifier: MIT
 ---
 expression: '[[ k -> [[ x -> "Hello world ()" ]] ]]'
-pattern: '[[ !t -> !e, !B ]]'
+pattern: '[[ !t1 -> !e1, !B1 ]]'
 condition:
-  matches: ['Hello world \(\)', '!e']
+  matches: ['Hello world \(\)', '!e1']

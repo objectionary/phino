@@ -3,7 +3,7 @@
 ---
 failure: true
 expression: '[[ D> 00-01, x -> [[ ]], b -> [[ ]] ]]'
-pattern: '[[ !B1, x -> !e, !B2 ]]'
+pattern: '[[ !B1, x -> !e1, !B2 ]]'
 condition:
   disjoint:
     - [Δ, λ]

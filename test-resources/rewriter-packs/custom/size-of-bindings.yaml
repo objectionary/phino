@@ -16,9 +16,9 @@ output: |-
 rules:
   custom:
     - name: size of bindings
-      pattern: '[[ x -> [[ !B ]] ]]'
-      result: '[[ x -> !e ]]'
+      pattern: '[[ x -> [[ !B1 ]] ]]'
+      result: '[[ x -> !e1 ]]'
       where:
-        - meta: '!e'
+        - meta: '!e1'
           function: size
-          args: ['!B']
+          args: ['!B1']

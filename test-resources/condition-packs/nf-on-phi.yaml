@@ -3,9 +3,9 @@
 ---
 # PHI left normalization for morphing (#973), so dispatching an absent
 # attribute on a φ-decorated formation no longer reduces under 𝒩 — it is now a
-# stuck normal form. (Before #973 the PHI rule could fire on '!e', so it was
+# stuck normal form. (Before #973 the PHI rule could fire on '!e1', so it was
 # not a normal form; this pack was 'not-nf-on-phi'.)
 expression: '[[ x -> [[ @ -> [[ ]] ]].y  ]]'
-pattern: '[[ x -> !e ]]'
+pattern: '[[ x -> !e1 ]]'
 condition:
-  nf: '!e'
+  nf: '!e1'

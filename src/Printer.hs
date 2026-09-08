@@ -101,11 +101,19 @@ printMetaValue (MvBytes bts) _ = printBytes bts
 printMetaValue (MvBindings bds) config = printExpression' (ExFormation bds) config
 printMetaValue (MvFunction fun) _ = T.unpack fun
 
+-- An anonymous slot is reported under the bare sigil it was written with,
+-- just as a named meta is reported under its name. Two slots of one kind
+-- therefore share a line label while keeping their own values, which is all
+-- the report can say about a variable no rule may refer back to.
+printMeta :: Meta -> String
+printMeta (Named name) = T.unpack name
+printMeta (Anon (Slot kind _)) = T.unpack kind
+
 printSubst :: Subst -> PrintConfig -> String
 printSubst (Subst mp) config =
   intercalate
     "\n"
-    (map (\(key, value) -> T.unpack key <> " >> " <> printMetaValue value config) (Map.toList mp))
+    (map (\(key, value) -> printMeta key <> " >> " <> printMetaValue value config) (Map.toList mp))
 
 printSubsts' :: [Subst] -> PrintConfig -> String
 printSubsts' [] _ = "------"

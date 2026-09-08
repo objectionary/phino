@@ -2,10 +2,10 @@
 # SPDX-License-Identifier: MIT
 ---
 name: over
-pattern: ⟦𝐵1, 𝜏 ↦ 𝑒1, 𝐵2⟧(𝜏 ↦ 𝑒2)
+pattern: ⟦𝐵1, 𝜏1 ↦ 𝑒1, 𝐵2⟧(𝜏1 ↦ 𝑒2)
 result: ⊥
 when:
   not:
     eq:
-      - 𝜏
+      - 𝜏1
       - ρ

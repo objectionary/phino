@@ -1,6 +1,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
@@ -22,6 +23,7 @@ import Data.Yaml (Parser)
 import qualified Data.Yaml as Yaml
 import GHC.Generics (Generic)
 import Parser
+import Slots
 import Text.Printf (printf)
 
 -- Fail unless the object names exactly one of the expected keys
@@ -81,7 +83,8 @@ instance FromJSON Number where
       | toRational (round num :: Integer) == toRational num -> pure (Literal (round num))
       | otherwise -> fail (printf "Expected an integer, got a fractional number %s" (show num))
     String txt -> case parseIndex (unpack txt) of
-      Right mt -> pure (MetaIndex mt)
+      Right (Right mt) -> pure (MetaIndex mt)
+      Right (Left slot) -> pure (AnyIndex slot)
       Left err -> fail err
     _ ->
       fail "Expected a numerable expression (object, number or index meta)"
@@ -172,16 +175,24 @@ instance FromJSON Extra where
       )
 
 instance FromJSON Rule where
-  parseJSON =
-    genericParseJSON
-      defaultOptions
-        { fieldLabelModifier = \case
-            "where_" -> "where"
-            other -> other
-        }
+  parseJSON value = do
+    rule <-
+      genericParseJSON
+        defaultOptions
+          { fieldLabelModifier = \case
+              "where_" -> "where"
+              other -> other
+          }
+        value
+    referenceless rule.name "result" rule.result
+    referenceless rule.name "when" rule.when
+    referenceless rule.name "where" rule.where_
+    referenceless rule.name "having" rule.having
+    pure rule
 
 data Number
   = MetaIndex Text
+  | AnyIndex Slot
   | Length Binding
   | Domain Binding
   | Literal Int
@@ -233,6 +244,68 @@ data Rule = Rule
   , having :: Maybe Condition
   }
   deriving (Generic, Show)
+
+instance Slots Condition where
+  slots (And conds) = slots conds
+  slots (Or conds) = slots conds
+  slots (Not cond) = slots cond
+  slots (In attr bd) = slots attr ++ slots bd
+  slots (Eq left right) = slots left ++ slots right
+  slots (Gt left right) = slots left ++ slots right
+  slots (NF expr) = slots expr
+  slots (Absolute expr) = slots expr
+  slots (Matches _ expr) = slots expr
+  slots (PartOf expr bd) = slots expr ++ slots bd
+  slots (Disjoint attrs bds) = slots attrs ++ slots bds
+  slots (IsFormation expr) = slots expr
+
+instance Slots Comparable where
+  slots (CmpAttr attr) = slots attr
+  slots (CmpNum num) = slots num
+  slots (CmpExpr expr) = slots expr
+
+instance Slots Number where
+  slots (AnyIndex slot) = [slot]
+  slots (Length bd) = slots bd
+  slots (Domain bd) = slots bd
+  slots (MetaIndex _) = []
+  slots (Literal _) = []
+
+instance Slots ExtraArgument where
+  slots (ArgAttribute attr) = slots attr
+  slots (ArgExpression expr) = slots expr
+  slots (ArgBinding bd) = slots bd
+  slots (ArgBytes bts) = slots bts
+
+instance Slots Extra where
+  slots extra = slots extra.meta ++ slots extra.args
+
+instance Slots Premise where
+  slots premise = slots premise.operation
+
+instance Slots Operation where
+  slots (OpMorph expr) = slots expr
+  slots (OpNormalize expr) = slots expr
+  slots (OpEvaluate expr universe) = slots expr ++ slots universe
+  slots (OpContextualize expr context) = slots expr ++ slots context
+  slots (OpDataize expr) = slots expr
+
+-- An anonymous meta-variable is bound by the pattern it stands in and is
+-- forgotten as soon as that pattern matches, so it has no name for any other
+-- part of a rule to read it back by. Writing one outside the pattern is
+-- therefore a mistake in the rule, not a term to be resolved later, and the
+-- rule is rejected as it loads.
+referenceless :: (MonadFail m, Slots a) => String -> String -> a -> m ()
+referenceless rule field term = case anonymous term of
+  Nothing -> pure ()
+  Just kind ->
+    fail
+      ( printf
+          "anonymous meta '!%s' cannot be referenced in '%s' of rule '%s'"
+          (unpack kind)
+          field
+          rule
+      )
 
 normalizationRules :: [Rule]
 {-# NOINLINE normalizationRules #-}
@@ -323,11 +396,13 @@ premiseResult o = do
   expr <- o .:? "n-result"
   case expr of
     Just (ExMeta metaName) -> pure metaName
+    Just (ExAny _) -> fail "an anonymous 'n-result' meta cannot be referenced"
     Just _ -> fail "'n-result' must be an expression meta"
     Nothing -> do
       bytes <- o .:? "d-result"
       case bytes of
         Just (BtMeta metaName) -> pure metaName
+        Just (BtAny _) -> fail "an anonymous 'd-result' meta cannot be referenced"
         Just _ -> fail "'d-result' must be a bytes meta"
         Nothing -> fail "a premise needs an 'n-result' or 'd-result' meta"
 
@@ -367,13 +442,18 @@ instance FromJSON MorphRule where
       "MorphRule"
       ( \o -> do
           ruleName <- o .: "name"
-          MorphRule ruleName
-            <$> parseLabel ruleName o
-            <*> o .: "match"
-            <*> o .: "e-match"
-            <*> o .: "n-result"
-            <*> o .:? "when"
-            <*> o .:? "premises" .!= []
+          rule <-
+            MorphRule ruleName
+              <$> parseLabel ruleName o
+              <*> o .: "match"
+              <*> o .: "e-match"
+              <*> o .: "n-result"
+              <*> o .:? "when"
+              <*> o .:? "premises" .!= []
+          referenceless ruleName "n-result" rule.nresult
+          referenceless ruleName "when" rule.when
+          referenceless ruleName "premises" rule.premises
+          pure rule
       )
 
 instance FromJSON DataizeRule where
@@ -382,13 +462,18 @@ instance FromJSON DataizeRule where
       "DataizeRule"
       ( \o -> do
           ruleName <- o .: "name"
-          DataizeRule ruleName
-            <$> parseLabel ruleName o
-            <*> o .: "match"
-            <*> o .: "e-match"
-            <*> o .: "d-result"
-            <*> o .:? "when"
-            <*> o .:? "premises" .!= []
+          rule <-
+            DataizeRule ruleName
+              <$> parseLabel ruleName o
+              <*> o .: "match"
+              <*> o .: "e-match"
+              <*> o .: "d-result"
+              <*> o .:? "when"
+              <*> o .:? "premises" .!= []
+          referenceless ruleName "d-result" rule.dresult
+          referenceless ruleName "when" rule.when
+          referenceless ruleName "premises" rule.premises
+          pure rule
       )
 
 instance FromJSON ContextualizeRule where
@@ -397,12 +482,16 @@ instance FromJSON ContextualizeRule where
       "ContextualizeRule"
       ( \o -> do
           ruleName <- o .: "name"
-          ContextualizeRule ruleName
-            <$> parseLabel ruleName o
-            <*> o .: "match"
-            <*> o .: "c-match"
-            <*> o .: "c-result"
-            <*> o .:? "premises" .!= []
+          rule <-
+            ContextualizeRule ruleName
+              <$> parseLabel ruleName o
+              <*> o .: "match"
+              <*> o .: "c-match"
+              <*> o .: "c-result"
+              <*> o .:? "premises" .!= []
+          referenceless ruleName "c-result" rule.cresult
+          referenceless ruleName "premises" rule.premises
+          pure rule
       )
 
 decodeRules :: (FromJSON a) => FilePath -> BS.ByteString -> [a]

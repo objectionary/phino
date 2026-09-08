@@ -27,22 +27,22 @@ spec = do
       , "absolute(!e1)"
       , "matches(\"hello(\\\"\\u0000)\", !e)"
       , "part-of ( [[ x -> 1 ]] , !B ) "
-      , "not(formation(!n))"
+      , "not(formation(!n1))"
       ]
       (\expr -> it expr (parseCondition expr `shouldSatisfy` isRight))
 
   describe "parses correctly" $
     forM_
-      [ ("in(!t, !B)", Y.In (AtMeta "t") (BiMeta "B"))
-      , ("not(in(!t,!B))", Y.Not (Y.In (AtMeta "t") (BiMeta "B")))
+      [ ("in(!t1, !B1)", Y.In (AtMeta "t1") (BiMeta "B1"))
+      , ("not(in(!t1,!B1))", Y.Not (Y.In (AtMeta "t1") (BiMeta "B1")))
       , ("eq(1,-2)", Y.Eq (Y.CmpNum (Y.Literal 1)) (Y.CmpNum (Y.Literal (-2))))
-      , ("eq(!i,length(!B1))", Y.Eq (Y.CmpNum (Y.MetaIndex "i")) (Y.CmpNum (Y.Length (BiMeta "B1"))))
+      , ("eq(!i1,length(!B1))", Y.Eq (Y.CmpNum (Y.MetaIndex "i1")) (Y.CmpNum (Y.Length (BiMeta "B1"))))
       , ("eq(!i2,domain(!B1))", Y.Eq (Y.CmpNum (Y.MetaIndex "i2")) (Y.CmpNum (Y.Domain (BiMeta "B1"))))
-      , ("gt(domain(!B1),!i)", Y.Gt (Y.CmpNum (Y.Domain (BiMeta "B1"))) (Y.CmpNum (Y.MetaIndex "i")))
+      , ("gt(domain(!B1),!i1)", Y.Gt (Y.CmpNum (Y.Domain (BiMeta "B1"))) (Y.CmpNum (Y.MetaIndex "i1")))
       , ("eq(!t1, !e2)", Y.Eq (Y.CmpAttr (AtMeta "t1")) (Y.CmpExpr (ExMeta "e2")))
       , ("or(absolute(!e1), nf(Q.x))", Y.Or [Y.Absolute (ExMeta "e1"), Y.NF (ExDispatch ExRoot (AtLabel "x"))])
-      , ("and(matches(\"hi\", !e),part-of(!e, !B))", Y.And [Y.Matches "hi" (ExMeta "e"), Y.PartOf (ExMeta "e") (BiMeta "B")])
-      , ("not(formation(!n))", Y.Not (Y.IsFormation (ExMeta "n")))
+      , ("and(matches(\"hi\", !e1),part-of(!e1, !B1))", Y.And [Y.Matches "hi" (ExMeta "e1"), Y.PartOf (ExMeta "e1") (BiMeta "B1")])
+      , ("not(formation(!n1))", Y.Not (Y.IsFormation (ExMeta "n1")))
       ]
       (\(expr, res) -> it expr (parseCondition expr `shouldBe` Right res))
 

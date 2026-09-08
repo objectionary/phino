@@ -41,6 +41,7 @@ data CmdException
   | CouldNotDataize
   | CouldNotPrintExpressionInXMIR
   | EmptySubstsOnMatch
+  | AnonymousMetaInCondition String
   | VersionMismatch String String
   deriving (Exception)
 
@@ -50,6 +51,8 @@ instance Show CmdException where
   show CouldNotDataize = "Could not dataize given expression"
   show CouldNotPrintExpressionInXMIR = "Could not print expression with --output=xmir, only expression printing is allowed"
   show EmptySubstsOnMatch = "Provided pattern was not matched, no substitutions are built"
+  show (AnonymousMetaInCondition kind) =
+    printf "Anonymous meta '!%s' cannot be referenced in --when, only a named one can" kind
   show (VersionMismatch expected actual) =
     printf "Version mismatch: --pin requires '%s', but this is phino %s" expected actual
 

@@ -14,19 +14,21 @@
 # ordered 'premises' reduce as stated. A premise binds its 'n-result'/'d-result'
 # to one judgment — 𝔻 ('dataize'), 𝕄 ('morph'), 𝒩 ('normalize'), 𝔼 ('evaluate')
 # or 𝒞 ('contextualize'). 'e-match' is the universe-argument matcher of
-# 𝔻(n, e); it is always the e meta. The single bytes result is named δ. A
+# 𝔻(n, e); it is always the 𝑒0 meta. The single bytes result is named δ0. A
 # normal-form-valued result (𝕄 'morph', 𝒩 'normalize', 𝔼 'evaluate') is named
-# 𝑛, 𝑛1, … in premise order, skipping the bare 𝑛 only when 'match' already binds
-# it; an expression-valued result (𝒞 'contextualize') is not a normal form —
-# that is why a 'normalize' premise follows it — so it takes an 𝑒-family name
-# (𝑒1, 𝑒2, …, the next index free of 'match', 𝑒 itself being the universe)
-# rather than an 𝑛 name reserved for normal forms.
+# 𝑛1, 𝑛2, … in premise order; the term 𝔻 is handed is 𝑛0, leaving that
+# numbering to the premises alone. An expression-valued result (𝒞
+# 'contextualize') is not a normal form — that is why a 'normalize' premise
+# follows it — so it takes an 𝑒-family name (𝑒1, 𝑒2, …, the next index free of
+# 'match', 𝑒0 itself being the universe) rather than an 𝑛 name reserved for
+# normal forms. A meta the rule never reads back is written bare: it matches
+# whatever stands in its place, binds nothing and cannot be referenced.
 #
 # The clauses are disjoint, so their relative order does not change behavior.
-# 'norm' matches the bare meta 𝑛, which unifies with any expression, so it is
-# guarded to fire only when 𝑛 is neither a formation ('not (formation 𝑛)',
+# 'norm' matches the lone meta 𝑛0, which unifies with any expression, so it is
+# guarded to fire only when 𝑛0 is neither a formation ('not (formation 𝑛0)',
 # carving out 'delta', 'box', 'fire' and 'none') nor the termination ⊥
-# ('not (𝑛 = ⊥)'). 𝔻 is partial: ⊥ (the terminator T) signals an error and
+# ('not (𝑛0 = ⊥)'). 𝔻 is partial: ⊥ (the terminator T) signals an error and
 # lies outside its domain, so it deliberately matches no clause and dataization
 # stops there — there is no 'end' rule mapping ⊥ to empty bytes (see #955).
 # Without the guard 'norm' would behave correctly only by being declared last;
@@ -34,14 +36,14 @@
 
 - name: delta
   label: \Delta
-  match: ⟦𝐵1, Δ ⤍ δ, 𝐵2⟧
-  e-match: 𝑒
-  d-result: δ
+  match: ⟦𝐵1, Δ ⤍ δ0, 𝐵2⟧
+  e-match: 𝑒0
+  d-result: δ0
 
 - name: box
   match: ⟦𝐵1, φ ↦ 𝑒1, 𝐵2⟧
-  e-match: 𝑒
-  d-result: δ
+  e-match: 𝑒0
+  d-result: δ0
   when:
     disjoint:
       - [Δ, λ]
@@ -53,47 +55,47 @@
         - ⟦𝐵1, φ ↦ 𝑒1, 𝐵2⟧
     - n-result: 𝑛1
       normalize: 𝑒2
-    - d-result: δ
+    - d-result: δ0
       dataize: 𝑛1
 
 - name: fire
-  match: ⟦𝐵1, λ ⤍ 𝑓, 𝐵2⟧
-  e-match: 𝑒
-  d-result: δ
+  match: ⟦𝐵1, λ ⤍ 𝑓0, 𝐵2⟧
+  e-match: 𝑒0
+  d-result: δ0
   premises:
     - n-result: 𝑛1
       evaluate:
-        - ⟦𝐵1, λ ⤍ 𝑓, 𝐵2⟧
-        - 𝑒
-    - d-result: δ
+        - ⟦𝐵1, λ ⤍ 𝑓0, 𝐵2⟧
+        - 𝑒0
+    - d-result: δ0
       dataize: 𝑛1
 
 - name: none
-  match: ⟦𝐵⟧
-  e-match: 𝑒
-  d-result: δ
+  match: ⟦𝐵0⟧
+  e-match: 𝑒0
+  d-result: δ0
   when:
     disjoint:
       - [Δ, λ, φ]
-      - [𝐵]
+      - [𝐵0]
   premises:
-    - d-result: δ
+    - d-result: δ0
       dataize: ⊥
 
 - name: norm
-  match: 𝑛
-  e-match: 𝑒
-  d-result: δ
+  match: 𝑛0
+  e-match: 𝑒0
+  d-result: δ0
   when:
     and:
       - not:
-          formation: 𝑛
+          formation: 𝑛0
       - not:
           eq:
-            - 𝑛
+            - 𝑛0
             - ⊥
   premises:
     - n-result: 𝑛1
-      morph: 𝑛
-    - d-result: δ
+      morph: 𝑛0
+    - d-result: δ0
       dataize: 𝑛1

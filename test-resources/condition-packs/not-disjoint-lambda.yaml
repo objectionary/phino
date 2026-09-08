@@ -3,7 +3,7 @@
 ---
 failure: true
 expression: '[[ a -> [[ ]], x -> [[ ]], L> Foo ]]'
-pattern: '[[ !B1, x -> !e, !B2 ]]'
+pattern: '[[ !B1, x -> !e1, !B2 ]]'
 condition:
   disjoint:
     - [Δ, λ]

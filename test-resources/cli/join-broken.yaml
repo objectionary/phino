@@ -5,7 +5,7 @@
 # It is used to test that the error message names the 'join' function
 # correctly (it used to say "'go" instead of "join()").
 name: uses-join-on-non-binding
-pattern: '!e'
+pattern: '!e2'
 result: '!e1'
 where:
   - meta: '!e1'

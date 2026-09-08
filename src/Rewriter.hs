@@ -163,6 +163,7 @@ tryBuildAndReplaceFast state@(expr, ExFormation _pbds@(pbd : pbds), ExFormation 
     isMetaBinding :: Binding -> Bool
     isMetaBinding = \case
       BiMeta _ -> True
+      BiAny _ -> True
       _ -> False
     hasMetaBindings = foldl (\acc bd -> acc || isMetaBinding bd) False
 tryBuildAndReplaceFast state _ = buildAndReplace' state replaceExpression

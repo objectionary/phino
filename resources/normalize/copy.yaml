@@ -2,5 +2,5 @@
 # SPDX-License-Identifier: MIT
 ---
 name: copy
-pattern: ⟦ 𝐵1, 𝜏 ↦ ∅, 𝐵2 ⟧(𝜏 ↦ 𝑘)
-result: ⟦ 𝐵1, 𝜏 ↦ 𝑘, 𝐵2 ⟧
+pattern: ⟦ 𝐵1, 𝜏1 ↦ ∅, 𝐵2 ⟧(𝜏1 ↦ 𝑘1)
+result: ⟦ 𝐵1, 𝜏1 ↦ 𝑘1, 𝐵2 ⟧
