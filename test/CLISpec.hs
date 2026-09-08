@@ -1304,7 +1304,7 @@ spec = do
 
     it "hands the top formation back untouched under the default locator" $
       withStdin "[[ D> 01- ]]" $
-        testCLISucceeded ["morph", "--flat"] ["⟦ Δ ⤍ 01- ⟧"]
+        testCLISucceeded ["morph", "--flat", "--hide-rho"] ["⟦ Δ ⤍ 01- ⟧"]
 
     it "stops at the bare saturated λ-formation" $
       withStdin chained $
@@ -1334,11 +1334,21 @@ spec = do
       withStdin "[[ x -> $ ]]" $
         testCLIFailed ["dataize", "--locator=Q.x"] ["terminator ⊥"]
 
+    -- The chain carries the spine: the morphing rules that reduced the term
+    -- ('maa', then the terminal 'mf') with the normalization steps they spliced
+    -- in ('alpha', 'copy'). The 'ml' firing of the inner call is not there by
+    -- design — it happens in a side premise, which reduces on a chain of its
+    -- own and discards it
     it "prints the chain of morphing steps with --sequence" $
       withStdin chained $
         testCLISucceeded
           ["morph", "--locator=Q.@", "--sequence", "--headers", "--sweet", "--hide-rho", "--flat"]
-          ["mf", "ml", "⟦ x ↦ 7, λ ⤍ L_number_plus ⟧"]
+          [ "Rule 'maa'"
+          , "Rule 'alpha'"
+          , "Rule 'copy'"
+          , "Rule 'mf'"
+          , "⟦ x ↦ 7, λ ⤍ L_number_plus ⟧"
+          ]
 
     it "does not print the result with --quiet" $
       withStdin "[[ D> 01- ]]" $
@@ -1364,13 +1374,23 @@ spec = do
 
     it "accepts --seed, --shuffle and --depth-sensitive" $
       withStdin "[[ D> 01- ]]" $
-        testCLISucceeded ["morph", "--seed=7", "--shuffle", "--depth-sensitive", "--flat"] ["⟦ Δ ⤍ 01- ⟧"]
+        testCLISucceeded ["morph", "--seed=7", "--shuffle", "--depth-sensitive", "--flat", "--hide-rho"] ["⟦ Δ ⤍ 01- ⟧"]
 
-    it "fails on --max-steps instead of morphing forever" $
+    -- The division 𝔻 cannot finish, whatever '--max-steps' it is given (#1052),
+    -- is no work at all for 𝕄: the term is already a formation, so 'mf' hands
+    -- it back and the atom is never fired
+    it "returns the λ-formation dataize cannot finish on" $
       withStdin "⟦ @ ↦ ⟦ λ ⤍ L_number_div, ρ ↦ ⟦ Δ ⤍ 40-45-00-00-00-00-00-00 ⟧, x ↦ ⟦ Δ ⤍ 40-00-00-00-00-00-00-00 ⟧ ⟧ ⟧" $
+        testCLISucceeded
+          ["morph", "--locator=Q.@", "--max-steps=40", "--flat", "--hide-rho"]
+          ["⟦ λ ⤍ L_number_div"]
+
+    -- '--max-steps' bounds the 𝕄 recursion just as it bounds the 𝕄/𝔻 one
+    it "fails once the --max-steps budget is spent" $
+      withStdin chained $
         testCLIFailed
-          ["morph", "--locator=Q.@", "--max-steps=40"]
-          ["[ERROR]: Dataization did not finish before reaching the limit of steps: --max-steps=40"]
+          ["morph", "--locator=Q.@", "--max-steps=3"]
+          ["[ERROR]: Dataization did not finish before reaching the limit of steps: --max-steps=3"]
 
     -- 𝕄 never fires a bare λ-formation, so only the atoms sitting under a
     -- dispatch ('ml') can get stuck; '--partial' parks them exactly as under 𝔻
