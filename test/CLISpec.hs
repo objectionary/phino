@@ -12,10 +12,11 @@ import Control.Exception
 import Control.Monad (forM_, unless)
 import Data.Char (isDigit)
 import Data.List (intercalate, isInfixOf, isPrefixOf, sort)
+import Data.Text qualified as T
 import Data.Time.Clock (addUTCTime, getCurrentTime)
 import Data.Time.Clock.POSIX (getPOSIXTime)
 import Data.Version (showVersion)
-import Fixtures (withFixtureRegistry, withNode)
+import Fixtures (withFixtureRegistry, withNode, withServing, withShell)
 import GHC.IO.Handle
 import Paths_phino (version)
 import System.Directory (createDirectoryIfMissing, doesDirectoryExist, doesFileExist, getTemporaryDirectory, listDirectory, removeDirectoryRecursive, removeFile, removePathForcibly, setModificationTime)
@@ -398,6 +399,16 @@ spec = do
           length files `shouldBe` 4
           doesFileExist (dir ++ "/00001.phi") `shouldReturn` True
           doesFileExist (dir ++ "/00003.phi") `shouldReturn` True
+
+    -- A served atom is asked over the streams of one resident program that
+    -- 'phino' starts on the first fire and stops when the run is over, so the
+    -- whole of it goes through the command line here: registry, program and
+    -- the bytes it answers with
+    it "dataizes with an atom served by a resident program" $
+      withShell $
+        withServing (T.pack "printf '{\"id\": %s, \"𝑛\": \"⟦ Δ ⤍ 2A- ⟧\"}\\n' \"$id\"") $ \registry ->
+          withStdin "⟦ @ ↦ ⟦ λ ⤍ L_answer ⟧ ⟧" $
+            testCLISucceeded ["dataize", "--atoms=" ++ registry] ["2A-"]
 
     it "saves dataize steps to dir with --steps-dir" $
       withAtoms $ \atoms ->

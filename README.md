@@ -184,6 +184,52 @@ keep working unchanged. A non-zero exit, output that is not JSON, a missing
 A λ name the registry does not carry has no λ function at all, so 𝔼 gets stuck
 on it. Without `--atoms` the registry is empty and every atom gets stuck.
 
+Both `node` and `exec` spawn one process per fire, which is where a program
+that is slow to start — a JVM, say — spends most of the run. Such a program
+is registered with `serve` instead, and `phino` starts it once, on the first
+fire, and keeps it for the rest of the run:
+
+```json
+{
+  "L_number_plus": {
+    "rt": "serve",
+    "path": "/opt/eo/atoms/resident"
+  },
+  "L_number_times": {
+    "rt": "serve",
+    "path": "/opt/eo/atoms/resident"
+  }
+}
+```
+
+Every λ name registered on the same `path` is served by the same process, so
+there is one of it, however many atoms it stands for. Its `path` is checked
+where the registry is read, like the one of an `exec` entry. The program is
+started with no arguments and talked to over `stdin` and `stdout`, one JSON
+object per line, in the letters of the evaluation rule of the
+[𝜑-calculus paper](https://github.com/objectionary/calculus-paper),
+𝔼(𝑏, 𝑒, 𝑠) = 𝑛, where 𝑏 is the formation, 𝑒 the universe and 𝑛 the normal
+form the atom answers with:
+
+```text
+{"𝑒": "⟦ bytes ↦ … ⟧"}
+{"id": 1, "λ": "L_number_plus", "𝑏": "⟦ x ↦ …, ρ ↦ … ⟧"}
+{"id": 1, "𝑛": "Φ.number( … )"}
+```
+
+The first two lines are `phino`'s, the third is the program's. The universe Φ
+goes under `𝑒`, in a line of its own, before the first request and again only
+when a fire comes with a different universe; the program keeps the last one it
+was told. Every fire is then one request with an `id`, the λ name under `λ` —
+one program serves several names, so it is told which one fires — and the
+formation under `𝑏`, and one reply carrying the same `id` and the
+𝜑-expression under `𝑛`. Both payloads are the same canonical 𝜑-calculus a
+one-shot program gets, and the answer is parsed the same way. A reply that is
+not JSON, carries no `𝑛`, answers another `id`, or a program that closes its
+`stdout` fails the run, with the program's `stderr` in the message. When the
+run is over, whatever it ended with, `phino` closes the program's `stdin`,
+which is its cue to quit, and terminates it if it has not quit within a second.
+
 ### Reducing the operands of an atom
 
 A script gets at the parts of `b` by calling `phino` again, so no API has to be

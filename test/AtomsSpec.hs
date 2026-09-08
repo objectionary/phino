@@ -7,21 +7,23 @@
 module AtomsSpec (spec) where
 
 import AST
-import Atoms (Atom (..), Runtime (RtNode), emptyRegistry, fireAtom, readRegistry, registeredAtom)
-import Control.Exception (SomeException, bracket)
+import Atoms (Atom (..), Registry, Runtime (RtNode), Session (_program), closeRegistry, emptyRegistry, fireAtom, readRegistry, registeredAtom)
+import Control.Exception (SomeException, bracket, finally)
 import Control.Monad (forM_)
-import Data.Aeson (encode, object, (.=))
+import Data.Aeson (Value, encode, object, (.=))
+import Data.Aeson.Key qualified as Key
 import Data.ByteString qualified as BS
 import Data.ByteString.Lazy qualified as BSL
 import Data.List (isInfixOf)
 import Data.Text qualified as T
 import Data.Text.Encoding (decodeUtf8, encodeUtf8)
-import Fixtures (withNode)
+import Fixtures (resident, withExecutable, withNode, withRegistryOf, withScript, withShell)
 import Parser (parseExpressionThrows)
-import System.Directory (getPermissions, getTemporaryDirectory, removePathForcibly, setOwnerExecutable, setPermissions)
+import System.Directory (doesFileExist, getTemporaryDirectory, removePathForcibly)
+import System.FilePath ((</>))
 import System.IO (Handle, hClose, openBinaryTempFile)
-import System.Info (os)
 import Test.Hspec
+import Text.Printf (printf)
 
 -- A registry file holding the given content, removed afterwards
 withRegistry :: T.Text -> (FilePath -> IO a) -> IO a
@@ -35,40 +37,39 @@ withRegistry content action = do
     discarded :: (FilePath, Handle) -> IO ()
     discarded (path, handle) = hClose handle >> removePathForcibly path
 
--- A file in the temporary directory holding the given POSIX shell script,
--- removed afterwards
-withScript :: T.Text -> (FilePath -> IO a) -> IO a
-withScript script action = do
-  dir <- getTemporaryDirectory
-  bracket (openBinaryTempFile dir "phino-exec-.sh") discarded $ \(path, handle) -> do
-    BS.hPut handle (encodeUtf8 (T.unlines ["#!/bin/sh", script]))
-    hClose handle
-    action path
-  where
-    discarded :: (FilePath, Handle) -> IO ()
-    discarded (path, handle) = hClose handle >> removePathForcibly path
-
--- The same file, executable, which is what an 'exec' atom names and phino
--- never stages itself
-withExecutable :: T.Text -> (FilePath -> IO a) -> IO a
-withExecutable script action = withScript script $ \path -> do
-  permissions <- getPermissions path
-  setPermissions path (setOwnerExecutable True permissions)
-  action path
-
--- A POSIX shell script is executable nowhere on Windows, so a case that needs
--- one is pending there rather than red
-withShell :: Expectation -> Expectation
-withShell expectation
-  | os == "mingw32" = pendingWith "no POSIX shell script is executable on Windows"
-  | otherwise = expectation
-
 -- The registry of one executable λ function, naming the given file. The path
 -- goes through JSON encoding rather than into the text by hand, since a
 -- Windows one spells its separators with the escape character of JSON
 executing :: FilePath -> T.Text
-executing file =
-  decodeUtf8 (BSL.toStrict (encode (object ["L_answer" .= object ["rt" .= ("exec" :: T.Text), "path" .= file]])))
+executing file = decodeUtf8 (BSL.toStrict (encode (serving "exec" ["L_answer"] file)))
+
+-- The registry of the given λ functions all served by, or executed as, the
+-- given file
+serving :: T.Text -> [T.Text] -> FilePath -> Value
+serving runtime names file = object [Key.fromText name .= object ["rt" .= runtime, "path" .= file] | name <- names]
+
+-- The λ functions of the registry read from a file naming a resident program
+-- built of the given per-request snippet (see 'resident'), stopped afterwards,
+-- so that no spec leaves a shell behind
+withServed :: [T.Text] -> T.Text -> (Registry -> IO a) -> IO a
+withServed names snippet action =
+  withExecutable (resident snippet) $ \file ->
+    withRegistryOf (serving "serve" names file) $ \path -> do
+      registry <- readRegistry path
+      action registry `finally` closeRegistry registry
+
+-- Fire the given λ function out of the registry, against the same formation
+-- and universe 'fired' uses, unless a different universe is given
+firedFrom :: Registry -> T.Text -> String -> IO Expression
+firedFrom registry func universe = do
+  form <- parseExpressionThrows "⟦ x ↦ ⟦ Δ ⤍ 01- ⟧ ⟧"
+  univ <- parseExpressionThrows universe
+  maybe (fail (printf "'%s' is not registered" (T.unpack func))) (\atom -> fireAtom func atom form univ) (registeredAtom registry func)
+
+-- The path a served λ function is served from, if it is one
+servedFrom :: Maybe Atom -> Maybe FilePath
+servedFrom (Just (Served session)) = Just (_program session)
+servedFrom _ = Nothing
 
 -- Fire the λ function 'L_answer' out of the given atom, against a formation
 -- binding 'x' inside a universe binding 'y'
@@ -93,6 +94,27 @@ executes script expected = withShell $
     answer <- fired (Executable file)
     wanted <- parseExpressionThrows expected
     answer `shouldBe` wanted
+
+-- The same, for an atom served by a resident program built of the given
+-- per-request snippet
+serves :: T.Text -> String -> Expectation
+serves snippet expected = withShell $
+  withServed ["L_answer"] snippet $ \registry -> do
+    answer <- firedFrom registry "L_answer" "⟦ y ↦ ⟦ Δ ⤍ 02- ⟧ ⟧"
+    wanted <- parseExpressionThrows expected
+    answer `shouldBe` wanted
+
+-- A firing of a served atom that has to fail, with the reason naming the given
+-- fragments
+refuses :: T.Text -> [String] -> Expectation
+refuses snippet fragments = withShell $
+  withServed ["L_answer"] snippet $ \registry ->
+    firedFrom registry "L_answer" "⟦ y ↦ ⟦ Δ ⤍ 02- ⟧ ⟧"
+      `shouldThrow` (\failure -> all (`isInfixOf` show (failure :: SomeException)) fragments)
+
+-- The reply of a resident program answering the request with the given bytes
+replying :: T.Text -> T.Text
+replying bytes = "printf '{\"id\": %s, \"𝑛\": \"⟦ Δ ⤍ %s ⟧\"}\\n' \"$id\" \"" <> bytes <> "\""
 
 -- A firing that has to fail, with the reason naming the given fragments
 fails :: T.Text -> [String] -> Expectation
@@ -123,6 +145,13 @@ spec = do
           withRegistry (executing file) $ \path -> do
             registry <- readRegistry path
             registeredAtom registry "L_answer" `shouldBe` Just (Executable file)
+
+    it "reads a served λ function as the file it is served from" $
+      withShell $
+        withExecutable "" $ \file ->
+          withRegistryOf (serving "serve" ["L_answer"] file) $ \path -> do
+            registry <- readRegistry path
+            servedFrom (registeredAtom registry "L_answer") `shouldBe` Just file
 
     it "leaves a name the file does not carry unregistered" $
       withRegistry "{\"L_answer\": {\"rt\": \"node\", \"script\": \"say(1)\"}}" $ \path -> do
@@ -158,6 +187,16 @@ spec = do
         , ["L_answer", "no-such-atom", "there is no such file"]
         )
       ,
+        ( "a served entry carries no path"
+        , "{\"L_answer\": {\"rt\": \"serve\"}}"
+        , ["path"]
+        )
+      ,
+        ( "the served file is not there"
+        , "{\"L_answer\": {\"rt\": \"serve\", \"path\": \"no-such-atom\"}}"
+        , ["L_answer", "no-such-atom", "there is no such file"]
+        )
+      ,
         ( "the file is not JSON at all"
         , "L_answer: js"
         , ["cannot be read"]
@@ -179,6 +218,12 @@ spec = do
     it "fails when the file of an executable λ function cannot be run" $
       withScript "" $ \file ->
         withRegistry (executing file) $ \path ->
+          readRegistry path
+            `shouldThrow` (\failure -> "not executable" `isInfixOf` show (failure :: SomeException))
+
+    it "fails when the file of a served λ function cannot be run" $
+      withScript "" $ \file ->
+        withRegistryOf (serving "serve" ["L_answer"] file) $ \path ->
           readRegistry path
             `shouldThrow` (\failure -> "not executable" `isInfixOf` show (failure :: SomeException))
 
@@ -240,3 +285,90 @@ spec = do
       executes
         "case \"$(cat)\" in *'x ↦'*) echo '{\"n\": \"⟦ Δ ⤍ FF- ⟧\"}';; *) echo '{\"n\": \"⟦ Δ ⤍ 00- ⟧\"}';; esac"
         "⟦ Δ ⤍ FF- ⟧"
+
+    -- A served atom is asked over the streams of a program that stays for the
+    -- run, one line per fire, so the program speaks another protocol than a
+    -- one-shot one: the letters of the evaluation rule of the calculus
+    it "hands back the 𝜑-expression the resident program wrote under '𝑛'" $
+      serves (replying "2A-") "⟦ Δ ⤍ 2A- ⟧"
+
+    it "keeps one resident program across the fires" $
+      withShell $
+        withServed ["L_answer"] (replying "0$n-") $ \registry -> do
+          _ <- firedFrom registry "L_answer" "⟦ y ↦ ⟦ Δ ⤍ 02- ⟧ ⟧"
+          second <- firedFrom registry "L_answer" "⟦ y ↦ ⟦ Δ ⤍ 02- ⟧ ⟧"
+          wanted <- parseExpressionThrows "⟦ Δ ⤍ 02- ⟧"
+          second `shouldBe` wanted
+
+    -- One file may be registered under several λ names, and it is one program
+    -- that serves them all, not one per name
+    it "serves every λ name registered on the same file from one program" $
+      withShell $
+        withServed ["L_answer", "L_other"] (replying "0$n-") $ \registry -> do
+          _ <- firedFrom registry "L_answer" "⟦ y ↦ ⟦ Δ ⤍ 02- ⟧ ⟧"
+          second <- firedFrom registry "L_other" "⟦ y ↦ ⟦ Δ ⤍ 02- ⟧ ⟧"
+          wanted <- parseExpressionThrows "⟦ Δ ⤍ 02- ⟧"
+          second `shouldBe` wanted
+
+    it "tells the resident program the universe under '𝑒' before the first request" $
+      serves (replying "0$e-") "⟦ Δ ⤍ 01- ⟧"
+
+    it "does not tell the resident program a universe it was told already" $
+      withShell $
+        withServed ["L_answer"] (replying "0$e-") $ \registry -> do
+          _ <- firedFrom registry "L_answer" "⟦ y ↦ ⟦ Δ ⤍ 02- ⟧ ⟧"
+          second <- firedFrom registry "L_answer" "⟦ y ↦ ⟦ Δ ⤍ 02- ⟧ ⟧"
+          wanted <- parseExpressionThrows "⟦ Δ ⤍ 01- ⟧"
+          second `shouldBe` wanted
+
+    it "tells the resident program the universe again when it changes" $
+      withShell $
+        withServed ["L_answer"] (replying "0$e-") $ \registry -> do
+          _ <- firedFrom registry "L_answer" "⟦ y ↦ ⟦ Δ ⤍ 02- ⟧ ⟧"
+          second <- firedFrom registry "L_answer" "⟦ z ↦ ⟦ Δ ⤍ 03- ⟧ ⟧"
+          wanted <- parseExpressionThrows "⟦ Δ ⤍ 02- ⟧"
+          second `shouldBe` wanted
+
+    it "names the λ function being fired under 'λ' in the request" $
+      serves
+        ("case \"$line\" in *'\"λ\":\"L_answer\"'*) " <> replying "FF-" <> ";; *) " <> replying "00-" <> ";; esac")
+        "⟦ Δ ⤍ FF- ⟧"
+
+    it "carries the formation under '𝑏' in the request" $
+      serves
+        ("case \"$line\" in *'x ↦'*) " <> replying "FF-" <> ";; *) " <> replying "00-" <> ";; esac")
+        "⟦ Δ ⤍ FF- ⟧"
+
+    it "fails when the resident program answers another request" $
+      refuses "printf '{\"id\": 99, \"𝑛\": \"⟦ Δ ⤍ 2A- ⟧\"}\\n'" ["L_answer", "request 99"]
+
+    it "fails with the resident program's own complaint when it quits non-zero" $
+      refuses "echo 'no idea what to do' >&2; exit 4" ["L_answer", "exit code 4", "no idea what to do"]
+
+    it "fails when the resident program quits without answering" $
+      refuses "exit 0" ["L_answer", "without answering"]
+
+    it "fails when the resident program writes something other than JSON" $
+      refuses "echo almost" ["L_answer", "almost"]
+
+    it "fails when the resident program writes JSON with no '𝑛' in it" $
+      refuses "printf '{\"id\": %s, \"m\": \"⟦ ⟧\"}\\n' \"$id\"" ["L_answer", "𝑛"]
+
+    it "fails when what the resident program put under '𝑛' is not a 𝜑-expression" $
+      refuses "printf '{\"id\": %s, \"𝑛\": \"⟦ ⟧⟧\"}\\n' \"$id\"" ["L_answer"]
+
+  describe "closeRegistry" $ do
+    -- The program is told to quit by its stdin closing, which its read loop
+    -- notices, so it gets to run whatever it does on exit
+    it "stops the resident program the registry has started" $
+      withShell $ do
+        dir <- getTemporaryDirectory
+        let mark = dir </> "phino-resident-quit"
+        removePathForcibly mark
+        withServed ["L_answer"] ("trap 'touch " <> T.pack mark <> "' EXIT; " <> replying "2A-") $ \registry -> do
+          _ <- firedFrom registry "L_answer" "⟦ y ↦ ⟦ Δ ⤍ 02- ⟧ ⟧"
+          closeRegistry registry
+          doesFileExist mark `shouldReturn` True
+
+    it "leaves a registry that started no program alone" $
+      closeRegistry emptyRegistry `shouldReturn` ()
