@@ -100,6 +100,117 @@ $ phino dataize hello.phi
 68-65-6C-6C-6F
 ```
 
+### Atoms
+
+Which λ functions exist is a property of the object model being dataized, not
+of the calculus, so `phino` implements none of them. They come from a JSON
+registry given with `--atoms`, keyed by λ name:
+
+```json
+{
+  "L_number_plus": {
+    "rt": "node",
+    "script": "const fs = require('fs'); ..."
+  }
+}
+```
+
+The `rt` field names the executable the `script` is run under. Only `node` is
+supported for now; a registry naming any other runtime is refused when the file
+is read, before dataization starts.
+
+When 𝔼 reaches a λ function the registry carries, `phino` writes its `script`
+to a temporary file and runs it as a POSIX process under that interpreter, with
+the λ name as the first command-line argument:
+
+```text
+node /tmp/phino-atom-4f2a.js L_number_plus
+```
+
+The name matters: one script may be registered under several λ names and branch
+on it, which is where `node` puts it — `process.argv[2]`. The script is then
+fed one JSON object on `stdin`:
+
+```json
+{
+  "b": "⟦ x ↦ Φ.number( as-bytes ↦ … ), ρ ↦ ⟦ … ⟧ ⟧",
+  "s": "⟦ bytes ↦ ⟦ … ⟧, number ↦ ⟦ … ⟧, φ ↦ … ⟧"
+}
+```
+
+Here `b` is the formation being evaluated, with its λ binding removed so that
+the script may dispatch on it, and `s` is the universe Φ. Both are canonical
+𝜑-calculus on a single line — no syntax sugar, whatever `--sweet` says about
+the output of the run — so a script never has to know about `phino`'s sugar in
+order to find a datum: every byte array is spelled out as a Δ binding.
+
+The script writes one JSON object to `stdout`:
+
+```json
+{ "n": "11" }
+```
+
+The `n` field is the 𝜑-expression the atom answers with, in any syntax
+`phino`'s parser reads — syntax sugar included, so the `11` above and the
+`Φ.number( … )` it stands for are the same answer. `phino` parses it back
+and hands it to 𝔼 as the atom's raw result, normalizing it exactly as it
+normalizes anything else, so `--evaluations`, `--partial` and `--max-steps`
+keep working unchanged. A non-zero exit, output that is not JSON, a missing
+`n` or an `n` that does not parse fails the run, with the script's own
+`stderr` in the message.
+
+A λ name the registry does not carry has no λ function at all, so 𝔼 gets stuck
+on it. Without `--atoms` the registry is empty and every atom gets stuck.
+
+### Reducing the operands of an atom
+
+A script gets at the parts of `b` by calling `phino` again, so no API has to be
+exposed for it. The `--inside` option is how it asks: the expression it names
+is bound to a fresh synthetic attribute of the input expression, which the run
+takes as the universe, normalized there, and then dataized. This is the same
+trick `phino` plays internally whenever it has to reduce a sub-expression the
+program does not contain:
+
+```bash
+$ phino dataize --atoms=atoms.json --inside='5.plus( 6 )' universe.phi
+40-26-00-00-00-00-00-00
+```
+
+Here `universe.phi` is the 𝜑-program the atom is being fired inside — the very
+text the script was handed as `s`, which it feeds back on `stdin`.
+
+So a `L_number_plus` that reduces its own operands reads like this:
+
+```js
+const fs = require('fs');
+const { execFileSync } = require('child_process');
+const atom = process.argv[2];
+if (atom !== 'L_number_plus') {
+  throw new Error(`unsupported atom ${atom}`);
+}
+const { b, s } = JSON.parse(fs.readFileSync(0, 'utf8'));
+const dataized = (expr) => execFileSync(
+  'phino',
+  ['dataize', '--atoms=atoms.json', `--inside=${expr}`],
+  { input: s, encoding: 'utf8' }
+).trim();
+const number = (expr) => Buffer.from(dataized(expr).replace(/-/g, ''), 'hex').readDoubleBE(0);
+const sum = Buffer.alloc(8);
+sum.writeDoubleBE(number(`${b}.ρ`) + number(`${b}.x`));
+const hex = [...sum]
+  .map((octet) => octet.toString(16).toUpperCase().padStart(2, '0'))
+  .join('-');
+process.stdout.write(JSON.stringify({
+  n: `Φ.number( as-bytes ↦ Φ.bytes( data ↦ ⟦ Δ ⤍ ${hex} ⟧ ) )`
+}));
+```
+
+The `--inside` option cannot be combined with `--locator`, since it aims the
+run at the binding it mints itself. Both `dataize` and `morph` take `--atoms`
+and `--inside`.
+
+### Recording what fired
+
 Every atom fired on the way to the bytes may be recorded in a machine-readable
 protocol, with the `--evaluations` option. One firing is one line of three
 tab-separated fields: the name of the λ function, the formation it was applied
@@ -112,7 +223,8 @@ $ cat sum.phi
   number(as-bytes) ↦ ⟦ φ ↦ as-bytes, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧,
   φ ↦ 5.plus( 6 )
 ⟧
-$ phino dataize --evaluations=atoms.tsv --quiet --sweet --hide-rho sum.phi
+$ phino dataize --atoms=atoms.json --evaluations=atoms.tsv --quiet \
+    --sweet --hide-rho sum.phi
 $ cat -T atoms.tsv
 L_number_plus^I⟦ x ↦ 6 ⟧^I11
 ```
@@ -122,13 +234,15 @@ Records follow the syntax of the other options, such as `--sweet` and
 beginning of every run, and `--output=phi` is the only output format it
 works with, since one record must fit into one line.
 
-An atom that cannot fire fails the run: its λ function is unknown to phino,
-or one of its inputs reaches such an atom. This is what happens when a
-data input is replaced on purpose by a placeholder formation, such as
-`⟦ λ ⤍ Sym_arg_0 ⟧`. With `--partial`, dataization becomes partial
-evaluation instead: what the known inputs decide is computed, the rest
-survives as the residual program, which is printed in place of the bytes,
-and the run ends successfully:
+### Partial evaluation
+
+An atom that cannot fire fails the run: its λ function is not in the registry
+given with `--atoms`. This is what happens when an operation is deliberately
+left unimplemented — a data input replaced by a placeholder formation such as
+`⟦ λ ⤍ Sym_arg_0 ⟧`, or an operation whose answer is not known yet. With
+`--partial`, dataization becomes partial evaluation instead: what the known
+inputs decide is computed, the rest survives as the residual program, which is
+printed in place of the bytes, and the run ends successfully:
 
 ```bash
 $ cat partial.phi
@@ -137,29 +251,29 @@ $ cat partial.phi
   number(as-bytes) ↦ ⟦
     φ ↦ as-bytes,
     plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧,
-    times(x) ↦ ⟦ λ ⤍ L_number_times ⟧
+    times(x) ↦ ⟦ λ ⤍ L_number_times ⟧,
+    as-bool ↦ ⟦ λ ⤍ L_number_as_bool ⟧
   ⟧,
-  φ ↦ 2.times(3).plus(⟦ λ ⤍ Sym_arg_0 ⟧)
+  φ ↦ 2.times( 3 ).plus( 4 ).as-bool
 ⟧
-$ phino dataize --partial --sweet --hide-rho partial.phi
-⟦ x ↦ ⟦ λ ⤍ Sym_arg_0 ⟧, λ ⤍ L_number_plus ⟧
+$ phino dataize --atoms=atoms.json --partial --sweet --hide-rho partial.phi
+⟦ λ ⤍ L_number_as_bool ⟧
 ```
 
-Here `2.times(3)` was decided by literals, so it was computed (its result,
-`6`, sits in the hidden `ρ` of the residual program), while `plus` waits
-for an `x` no atom can produce, so it stays in place as a normal-form
-subterm. Each such stuck site also lands in the `--evaluations` file, as a
-record with the first two fields only, since there is no result to report;
-the inner stuck atom comes first, then the known atom whose input reached
-it:
+Here `2.times( 3 ).plus( 4 )` was decided by the atoms the registry carries, so
+it was computed (its result, `10`, sits in the hidden `ρ` of the residual
+program), while `as-bool` names a λ function no script answers for, so it stays
+in place as a normal-form subterm. Each such stuck site also lands in the
+`--evaluations` file, as a record with the first two fields only, since there is
+no result to report:
 
 ```bash
-$ phino dataize --partial --evaluations=atoms.tsv --quiet \
+$ phino dataize --atoms=atoms.json --partial --evaluations=atoms.tsv --quiet \
     --sweet --hide-rho partial.phi
 $ cat -T atoms.tsv
 L_number_times^I⟦ x ↦ 3 ⟧^I6
-Sym_arg_0^I⟦⟧
-L_number_plus^I⟦ x ↦ ⟦ λ ⤍ Sym_arg_0 ⟧ ⟧
+L_number_plus^I⟦ x ↦ 4 ⟧^I10
+L_number_as_bool^I⟦⟧
 ```
 
 Evaluation stays demand-driven, as the calculus prescribes: an argument
@@ -193,9 +307,9 @@ $ cat two.phi
   number(as-bytes) ↦ ⟦ φ ↦ as-bytes, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧,
   φ ↦ 5.plus( 6 ).plus( 7 )
 ⟧
-$ phino dataize --sweet --hide-rho two.phi
+$ phino dataize --atoms=atoms.json --sweet --hide-rho two.phi
 40-32-00-00-00-00-00-00
-$ phino morph --locator=Q.φ --sweet --hide-rho two.phi
+$ phino morph --atoms=atoms.json --locator=Q.φ --sweet --hide-rho two.phi
 ⟦ x ↦ 7, λ ⤍ L_number_plus ⟧
 ```
 
@@ -214,9 +328,9 @@ $ phino morph --locator=Q.x <<< '⟦ x ↦ ξ ⟧'
 ⊥
 ```
 
-The whole `dataize` option surface applies unchanged — `--sequence`,
-`--headers`, `--steps-dir`, `--evaluations`, `--partial`, `--max-steps`,
-`--shuffle`/`--seed`, `--output`, `--focus` and the rest.
+The whole `dataize` option surface applies unchanged — `--atoms`, `--inside`,
+`--sequence`, `--headers`, `--steps-dir`, `--evaluations`, `--partial`,
+`--max-steps`, `--shuffle`/`--seed`, `--output`, `--focus` and the rest.
 
 ## Rewrite
 
