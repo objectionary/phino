@@ -56,7 +56,7 @@ import Printer (printExpression')
 import Sugar (SugarType (SALTY))
 import System.Directory (getTemporaryDirectory, removePathForcibly)
 import System.Exit (ExitCode (ExitFailure, ExitSuccess))
-import System.IO (Handle, IOMode (ReadMode, WriteMode), hClose, hSetBinaryMode, openBinaryTempFile, withBinaryFile)
+import System.IO (Handle, IOMode (WriteMode), hClose, hSetBinaryMode, openBinaryTempFile, withBinaryFile)
 import System.Process (CreateProcess (std_err, std_in, std_out), ProcessHandle, StdStream (CreatePipe, UseHandle), createProcess, proc, waitForProcess)
 import Text.Printf (printf)
 
@@ -168,45 +168,54 @@ readRegistry path = do
 fireAtom :: T.Text -> Atom -> Expression -> Expression -> IO Expression
 fireAtom func Atom{..} form univ =
   withTemp (printf "phino-atom-.%s" (extension _runtime)) (encodeUtf8 _script) $ \script ->
-    withTemp "phino-atom-.json" (payload form univ) $ \input ->
-      withTemp "phino-atom-.err" "" $ \errors -> do
-        logDebug (printf "Firing atom '%s' as '%s %s %s'" (T.unpack func) (interpreter _runtime) script (T.unpack func))
-        (status, answer) <- executed script input errors
-        complaint <- readErrors errors
-        unless (null complaint) (logDebug (printf "Atom '%s' wrote to stderr: %s" (T.unpack func) complaint))
-        case status of
-          ExitFailure code -> throwIO (AtomBroke func code complaint)
-          ExitSuccess -> answered answer
+    withTemp "phino-atom-.err" "" $ \errors -> do
+      logDebug (printf "Firing atom '%s' as '%s %s %s'" (T.unpack func) (interpreter _runtime) script (T.unpack func))
+      (status, answer) <- executed script errors
+      complaint <- readErrors errors
+      unless (null complaint) (logDebug (printf "Atom '%s' wrote to stderr: %s" (T.unpack func) complaint))
+      case status of
+        ExitFailure code -> throwIO (AtomBroke func code complaint)
+        ExitSuccess -> answered answer
   where
-    -- Run the interpreter with stdin and stderr wired to files, so only stdout
-    -- is a pipe and neither side can ever block waiting for the other to drain
-    -- one. Both streams are bytes: a 𝜑 expression carries characters no
-    -- single-byte locale can spell, so nothing here is left to the locale.
-    executed :: FilePath -> FilePath -> FilePath -> IO (ExitCode, BS.ByteString)
-    executed script input errors =
-      withBinaryFile input ReadMode $ \stdin' ->
-        withBinaryFile errors WriteMode $ \stderr' -> do
-          (stdout', process) <- spawned script stdin' stderr'
-          hSetBinaryMode stdout' True
-          answer <- BS.hGetContents stdout'
-          status <- waitForProcess process
-          pure (status, answer)
-    spawned :: FilePath -> Handle -> Handle -> IO (Handle, ProcessHandle)
-    spawned script stdin' stderr' = do
+    -- Run the interpreter with its input and its output on pipes and its
+    -- complaints in a file. The input is written and closed before the output is
+    -- read, so the parent never has two streams to drain at once — which would
+    -- need threads to be safe — and the script's own stderr, which may be
+    -- anything at all, cannot fill a pipe nobody is reading. Every stream is
+    -- bytes: a 𝜑 expression carries characters no single-byte locale can spell,
+    -- so nothing is left to the locale.
+    executed :: FilePath -> FilePath -> IO (ExitCode, BS.ByteString)
+    executed script errors =
+      withBinaryFile errors WriteMode $ \stderr' -> do
+        (stdin', stdout', process) <- spawned script stderr'
+        hSetBinaryMode stdin' True
+        hSetBinaryMode stdout' True
+        -- A script that dies before reading its input leaves this write with
+        -- nobody to drain it. The failure worth reporting is the one the script
+        -- made, so a broken pipe is swallowed here and the exit status decides.
+        BS.hPut stdin' (payload form univ) `catch` unheard
+        hClose stdin' `catch` unheard
+        answer <- BS.hGetContents stdout'
+        status <- waitForProcess process
+        pure (status, answer)
+    spawned :: FilePath -> Handle -> IO (Handle, Handle, ProcessHandle)
+    spawned script stderr' = do
       spawn <- createProcess started `catch` missing
       case spawn of
-        (_, Just stdout', _, process) -> pure (stdout', process)
-        _ -> throwIO (AtomMute func "" "the interpreter gave phino no stdout to read")
+        (Just stdin', Just stdout', _, process) -> pure (stdin', stdout', process)
+        _ -> throwIO (AtomMute func "" "the interpreter gave phino no streams to talk over")
       where
         started :: CreateProcess
         started =
           (proc (interpreter _runtime) [script, T.unpack func])
-            { std_in = UseHandle stdin'
+            { std_in = CreatePipe
             , std_out = CreatePipe
             , std_err = UseHandle stderr'
             }
     missing :: IOError -> IO a
     missing failure = throwIO (NoRuntime func (interpreter _runtime) (show failure))
+    unheard :: IOError -> IO ()
+    unheard _ = pure ()
     -- Whatever the script complained about, decoded leniently: the stream is
     -- the script's, so it may hold anything at all.
     readErrors :: FilePath -> IO String
