@@ -25,6 +25,7 @@ runCLI args = handle handler $ do
   case _command of
     CmdRewrite opts -> runRewrite opts
     CmdDataize opts -> runDataize opts
+    CmdMorph opts -> runMorph opts
     CmdExplain opts -> runExplain opts
     CmdMerge opts -> runMerge opts
     CmdMatch opts -> runMatch opts
@@ -40,6 +41,7 @@ runCLI args = handle handler $ do
       let (level, lns) = case cmd of
             CmdRewrite OptsRewrite{_logLevel, _logLines} -> (_logLevel, _logLines)
             CmdDataize OptsDataize{_logLevel, _logLines} -> (_logLevel, _logLines)
+            CmdMorph OptsMorph{_logLevel, _logLines} -> (_logLevel, _logLines)
             CmdExplain OptsExplain{_logLevel, _logLines} -> (_logLevel, _logLines)
             CmdMerge OptsMerge{_logLevel, _logLines} -> (_logLevel, _logLines)
             CmdMatch OptsMatch{_logLevel, _logLines} -> (_logLevel, _logLines)

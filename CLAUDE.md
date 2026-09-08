@@ -48,9 +48,9 @@ via `benchmark/mvnw`.
 components: `library` (`src/`), executable `phino` (`app/`), test suite
 `spec` (`test/`), benchmark suite `bench` (`benchmark/`).
 
-### Five CLI commands
+### Six CLI commands
 
-`rewrite` | `dataize` | `explain` | `merge` | `match` — all wired in
+`rewrite` | `dataize` | `morph` | `explain` | `merge` | `match` — all wired in
 `src/CLI/Runners.hs`, parsed in `src/CLI/Parsers.hs`.
 
 ### Two-phase rendering pipeline
@@ -86,7 +86,11 @@ type alias.
 `Dataize.hs` implements the formal Morphing (M) and Dataization (D)
 functions with named rules: PRIM, NMZ, LAMBDA, PHI (morphing) and DELTA,
 BOX, NORM (dataization). All configuration is threaded through
-`DataizeContext` and `RewriteContext` records — no global state.
+`DataizeContext` and `RewriteContext` records — no global state. Each
+function has a top-level wrapper that locates the subterm and starts the
+chain (`morph`, `dataize`) and a recursive worker the rules drive
+(`morph'`, `dataize'`); the `morph` and `dataize` commands enter through
+the wrappers.
 
 ### Test pattern: YAML packs
 

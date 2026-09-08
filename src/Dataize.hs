@@ -10,7 +10,7 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Dataize (morph, dataize, dataize', DataizeContext (..), DataizeException (..), Outcome (..), Steps (..), State, emptyState, execBuildTerm) where
+module Dataize (morph, morph', dataize, dataize', DataizeContext (..), DataizeException (..), Outcome (..), Steps (..), State, emptyState, execBuildTerm) where
 
 import AST
 import Builder (buildBytesThrows, buildExpressionThrows)
@@ -64,7 +64,7 @@ data Steps = Steps
 -- The evaluation context carries the configuration plus the step budget spent so
 -- far. Nothing global is fixed here: the universe (the second argument 'e' of
 -- 𝕄(n, e, s) and 𝔻(n, e, s)) is a plain expression threaded as an argument to
--- 'dataize'', 'morph' and on to the atoms, and the state 's' is threaded the same
+-- 'dataize'', 'morph'' and on to the atoms, and the state 's' is threaded the same
 -- way (see 'State'). The working expression needed for normalization is taken
 -- from the head of the step chain, so no separate wrapper type is threaded
 -- around.
@@ -181,8 +181,8 @@ unparked action = action `catch` rethrow
 -- argument and its individual steps (alpha, copy, dot, …) are spliced into the
 -- chain before morphing continues. Every other premise is a side-computation
 -- evaluated in isolation by 'sidePremise', its own steps discarded.
-morph :: Morphed -> Expression -> State -> DataizeContext -> IO (Morphed, State)
-morph (expr, seq) univ state caller = do
+morph' :: Morphed -> Expression -> State -> DataizeContext -> IO (Morphed, State)
+morph' (expr, seq) univ state caller = do
   ctx <- deeper caller
   parking seq $ do
     rules <- if ctx._shuffle then shuffle Y.morphingRules else pure Y.morphingRules
@@ -222,15 +222,39 @@ morph (expr, seq) univ state caller = do
           built <- buildExpressionThrows inner final
           labelled <- leadsTo seq rule.name built ctx
           (normal', seq') <- normalized built labelled ctx
-          morph (normal', seq') univ state' ctx
+          morph' (normal', seq') univ state' ctx
         _ -> do
           (final, state') <- sides ctx (rule.premises `excluding` [concl]) subst
           built <- buildExpressionThrows arg final
           seq' <- leadsTo seq rule.name built ctx
-          morph (built, seq') univ state' ctx
+          morph' (built, seq') univ state' ctx
       Just _ -> throwIO (userError (printf "morphing rule '%s' must conclude with a 'morph' premise" rule.name))
     sides :: DataizeContext -> [Y.Premise] -> Subst -> IO (Subst, State)
     sides ctx premises subst = foldM (sidePremise univ ctx) (subst, state) premises
+
+-- Morph the expression located at '_locator' — 𝕄 asked on its own, the way
+-- 'dataize' asks 𝔻. The whole input expression is itself the universe Φ (the 'e'
+-- argument) threaded through 𝕄, so it is passed both as the located target and
+-- as the universe; the default locator Q therefore morphs the top formation,
+-- which 'mf' hands back unchanged, and '_locator' is how one aims 𝕄 at a
+-- subterm. Unlike 𝔻, 𝕄 is total: it stops at the first formation it reaches
+-- ('mf') and never demands bytes, and where no formation is reachable it answers
+-- with the terminator ⊥ ('dead', 'xi', 'mg', 'mad', 'maad') rather than failing.
+-- Only the atoms 'ml' fires can still get stuck, and '_partial' parks them just
+-- as it does under 𝔻: the answer is then the residual subterm the spine had
+-- reached, taken from '_locator' of its working expression.
+morph :: Expression -> DataizeContext -> IO (Expression, [Rewritten])
+morph universe ctx@DataizeContext{..} = do
+  expr <- locatedExpression _locator universe
+  -- Morphing starts from the empty state; the final state is not yet
+  -- consumed by any caller, so it is discarded here.
+  result <- try (morph' (expr, (universe, Nothing) :| []) universe emptyState ctx)
+  case result of
+    Right ((morphed, seq), _state) -> pure (morphed, reverse (NE.toList seq))
+    Left (StuckAt _ seq) | _partial -> do
+      residue <- locatedExpression _locator (fst (NE.head seq))
+      pure (residue, reverse (NE.toList seq))
+    Left failure -> throwIO (failure :: DataizeException)
 
 -- Dataize the expression located at '_locator'. The whole input expression is
 -- itself the universe Q (the 'e' argument) threaded through 𝔻 and 𝕄, so it is
@@ -320,7 +344,7 @@ dataize' (expr, seq) univ state caller = do
         Just morphed@(Y.Premise _ (Y.OpMorph inner)) -> do
           (final, state') <- sides ctx (rule.premises `excluding` [concl, morphed]) subst
           built <- buildExpressionThrows inner final
-          ((morphed', seq'), state'') <- morph (built, seq) univ state' ctx
+          ((morphed', seq'), state'') <- morph' (built, seq) univ state' ctx
           dataize' (morphed', seq') univ state'' ctx
         -- The dataize argument is produced with no 'normalize'/'morph' spine to
         -- splice: 'fire' by its 'evaluate' side-computation (𝔼 now yields a
@@ -623,6 +647,6 @@ _evaluate _ _ _ _ = throwIO (userError "Function evaluate() requires exactly 2 e
 _morph :: Expression -> DataizeContext -> State -> BuildTermMethodS
 _morph univ ctx state [ArgExpression expr] subst = unparked $ do
   built <- buildExpressionThrows expr subst
-  ((morphed, _), state') <- morph (built, (univ, Nothing) :| []) univ state ctx
+  ((morphed, _), state') <- morph' (built, (univ, Nothing) :| []) univ state ctx
   pure (TeExpression morphed, state')
 _morph _ _ _ _ _ = throwIO (userError "Function morph() requires exactly 1 expression argument")

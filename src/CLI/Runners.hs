@@ -202,6 +202,67 @@ runDataize OptsDataize{..} = do
         _meetPrefix
         _outputFormat
 
+-- Run 𝕄 on its own, the way 'runDataize' runs 𝔻. The whole option surface of
+-- 'dataize' applies unchanged, since the two commands differ only in the
+-- judgment they run; what differs here is the answer printed: 𝕄 is total and
+-- always hands back a 𝜑-expression — a formation, or the terminator ⊥ where no
+-- formation is reachable — so there are no bytes to print and no failure to
+-- report where 𝔻 would give up.
+runMorph :: OptsMorph -> IO ()
+runMorph OptsMorph{..} = do
+  validateOpts
+  excluded <- validatedDispatches "hide" _hide
+  included <- validatedDispatches "show" _show
+  [loc] <- validatedDispatches "locator" [_locator]
+  [foc] <- validatedDispatches "focus" [_focus]
+  validateNoOverlap "show" included "hide" excluded
+  input <- readInput _inputFile
+  expr <- parseInput input _inputFormat
+  setStdGen (mkStdGen _seed)
+  seedTaus expr
+  let printCtx = toPrintCtx foc
+      exclude = (`F.exclude` excluded)
+      include = (`F.include` included)
+  save <- saveStepFunc _stepsDir printCtx
+  (morphed, chain) <-
+    withEvalFunc _evaluations printCtx $
+      morph expr . DataizeContext loc _maxDepth _maxCycles (Steps _maxSteps 0) _depthSensitive _shuffle _partial buildTerm save
+  when _sequence (printRewrittens printCtx (exclude $ include chain, False) >>= putStrLn)
+  unless _quiet (printFocused printCtx morphed >>= putStrLn)
+  where
+    validateOpts :: IO ()
+    validateOpts = do
+      validateLatexOptions
+        _outputFormat
+        [(_nonumber, "nonumber"), (_compress, "compress")]
+        [(_expression, "expression"), (_label, "label"), (_meetPrefix, "meet-prefix")]
+        [(_meetPopularity, "meet-popularity"), (_meetLength, "meet-length")]
+      validateXmirOptions _outputFormat [(_omitListing, "omit-listing"), (_omitComments, "omit-comments")] _focus
+      when (length _show > 1) (invalidCLIArguments "The option --show can be used only once")
+      when
+        (isJust _evaluations && _outputFormat /= PHI)
+        (invalidCLIArguments "The --evaluations option can stay together with --output=phi only, since one record must fit into one line")
+    toPrintCtx :: Expression -> PrintContext
+    toPrintCtx focus =
+      PrintCtx
+        _sugarType
+        _hideRho
+        _flat
+        _margin
+        defaultXmirContext
+        _nonumber
+        _compress
+        _canonize
+        _sequence
+        _headers
+        (justMeetPopularity _meetPopularity)
+        (justMeetLength _meetLength)
+        focus
+        _expression
+        _label
+        _meetPrefix
+        _outputFormat
+
 runExplain :: OptsExplain -> IO ()
 runExplain OptsExplain{..} = do
   setStdGen (mkStdGen _seed)

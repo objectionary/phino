@@ -1291,6 +1291,146 @@ spec = do
       withStdin "[[ D> 01- ]]" $
         testCLISucceeded ["dataize", "--depth-sensitive"] ["01-"]
 
+  -- 𝕄 was reachable only from inside 𝔻, through the 'norm' rule of the
+  -- dataization relation, so there was no way to ask phino for 𝕄(n, Φ) on its
+  -- own (#1114)
+  describe "morph" $ do
+    -- Two chained atom calls: the inner one fires under 'ml', because '.plus'
+    -- is dispatched on its result, while the outer application is saturated but
+    -- bare, so 'mf' hands it back and firing it is 𝔻's job
+    let chained = "[[ bytes(data) -> [[ @ -> $.data ]], number(as-bytes) -> [[ @ -> $.as-bytes, plus(x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6).plus(7) ]]"
+    it "prints help" $
+      testCLISucceeded ["morph", "--help"] ["Morph the 𝜑-expression"]
+
+    it "hands the top formation back untouched under the default locator" $
+      withStdin "[[ D> 01- ]]" $
+        testCLISucceeded ["morph", "--flat", "--hide-rho"] ["⟦ Δ ⤍ 01- ⟧"]
+
+    it "stops at the bare saturated λ-formation" $
+      withStdin chained $
+        testCLISucceeded
+          ["morph", "--locator=Q.@", "--sweet", "--hide-rho", "--flat"]
+          ["⟦ x ↦ 7, λ ⤍ L_number_plus ⟧"]
+
+    -- The same term under 𝔻, which insists on bytes and fires what 𝕄 left bare
+    it "leaves to dataize the firing that takes the same term to bytes" $
+      withStdin chained $
+        testCLISucceeded ["dataize"] ["40-32-00-00-00-00-00-00"]
+
+    -- 'mf' hands a formation back as it is, so '--locator' is how one aims 𝕄 at
+    -- a subterm worth navigating: here it resolves Φ against the universe and
+    -- peels the dispatch through 𝒩
+    it "morphs the subterm --locator aims at" $
+      withStdin "[[ ex -> Q.x, x -> [[ D> 42- ]] ]]" $
+        testCLISucceeded ["morph", "--locator=Q.ex", "--flat", "--hide-rho"] ["⟦ Δ ⤍ 42- ⟧"]
+
+    -- 𝕄 is total and 𝔻 is not: where the derivation dies, 𝕄 answers ⊥ ('xi'
+    -- here) and the run succeeds, while 𝔻 has no bytes to give and fails
+    it "prints ⊥ instead of failing the run" $
+      withStdin "[[ x -> $ ]]" $
+        testCLISucceeded ["morph", "--locator=Q.x"] ["⊥"]
+
+    it "fails to dataize what it morphs to ⊥" $
+      withStdin "[[ x -> $ ]]" $
+        testCLIFailed ["dataize", "--locator=Q.x"] ["terminator ⊥"]
+
+    -- The chain carries the spine: the morphing rules that reduced the term
+    -- ('maa', then the terminal 'mf') with the normalization steps they spliced
+    -- in ('alpha', 'copy'). The 'ml' firing of the inner call is not there by
+    -- design — it happens in a side premise, which reduces on a chain of its
+    -- own and discards it
+    it "prints the chain of morphing steps with --sequence" $
+      withStdin chained $
+        testCLISucceeded
+          ["morph", "--locator=Q.@", "--sequence", "--headers", "--sweet", "--hide-rho", "--flat"]
+          [ "Rule 'maa'"
+          , "Rule 'alpha'"
+          , "Rule 'copy'"
+          , "Rule 'mf'"
+          , "⟦ x ↦ 7, λ ⤍ L_number_plus ⟧"
+          ]
+
+    it "does not print the result with --quiet" $
+      withStdin "[[ D> 01- ]]" $
+        testCLISucceeded ["morph", "--quiet"] []
+
+    it "records the atoms it fires with --evaluations" $
+      withTempFile "evaluationsXXXXXX.txt" $ \(path, stream) -> do
+        hClose stream
+        withStdin chained $
+          testCLISucceeded ["morph", "--locator=Q.@", "--evaluations=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
+        records <- readUtf8 path
+        lines records `shouldBe` ["L_number_plus\t⟦ x ↦ 6 ⟧\t11"]
+
+    it "saves morphing steps to dir with --steps-dir" $
+      withTempDirectory "phino-steps-morph" $ \dir ->
+        withStdin chained $ do
+          testCLISucceeded
+            ["morph", "--locator=Q.@", "--steps-dir=" ++ dir, "--sweet", "--hide-rho", "--flat"]
+            ["⟦ x ↦ 7, λ ⤍ L_number_plus ⟧"]
+          steps <- sort <$> listDirectory dir
+          steps `shouldBe` map (\n -> printf "%05d.phi" (n :: Int)) [1 .. length steps]
+          length steps `shouldSatisfy` (> 0)
+
+    it "accepts --seed, --shuffle and --depth-sensitive" $
+      withStdin "[[ D> 01- ]]" $
+        testCLISucceeded ["morph", "--seed=7", "--shuffle", "--depth-sensitive", "--flat", "--hide-rho"] ["⟦ Δ ⤍ 01- ⟧"]
+
+    -- The division 𝔻 cannot finish, whatever '--max-steps' it is given (#1052),
+    -- is no work at all for 𝕄: the term is already a formation, so 'mf' hands
+    -- it back and the atom is never fired
+    it "returns the λ-formation dataize cannot finish on" $
+      withStdin "⟦ @ ↦ ⟦ λ ⤍ L_number_div, ρ ↦ ⟦ Δ ⤍ 40-45-00-00-00-00-00-00 ⟧, x ↦ ⟦ Δ ⤍ 40-00-00-00-00-00-00-00 ⟧ ⟧ ⟧" $
+        testCLISucceeded
+          ["morph", "--locator=Q.@", "--max-steps=40", "--flat", "--hide-rho"]
+          ["⟦ λ ⤍ L_number_div"]
+
+    -- '--max-steps' bounds the 𝕄 recursion just as it bounds the 𝕄/𝔻 one
+    it "fails once the --max-steps budget is spent" $
+      withStdin chained $
+        testCLIFailed
+          ["morph", "--locator=Q.@", "--max-steps=3"]
+          ["[ERROR]: Dataization did not finish before reaching the limit of steps: --max-steps=3"]
+
+    -- 𝕄 never fires a bare λ-formation, so only the atoms sitting under a
+    -- dispatch ('ml') can get stuck; '--partial' parks them exactly as under 𝔻
+    describe "--partial" $ do
+      let stuck = "[[ @ -> [[ L> Sym_arg_0 ]].foo ]]"
+      it "fails on an atom that cannot fire without the flag" $
+        withStdin stuck $
+          testCLIFailed ["morph", "--locator=Q.@"] ["Atom 'Sym_arg_0' does not exist"]
+
+      it "prints the residue with the stuck application intact and exits successfully" $
+        withStdin stuck $
+          testCLISucceeded
+            ["morph", "--locator=Q.@", "--partial", "--flat", "--hide-rho"]
+            ["⟦ λ ⤍ Sym_arg_0 ⟧.foo"]
+
+    describe "fails" $ do
+      it "with --output != latex and --nonumber" $
+        withStdin "" $
+          testCLIFailed
+            ["morph", "--nonumber", "--output=xmir"]
+            ["The --nonumber option can stay together with --output=latex only"]
+
+      it "with --evaluations and --output != phi" $
+        withStdin "[[ D> 01- ]]" $
+          testCLIFailed
+            ["morph", "--evaluations=evaluations.txt", "--output=latex"]
+            ["The --evaluations option can stay together with --output=phi only"]
+
+      it "with --show used more than once" $
+        withStdin "" $
+          testCLIFailed
+            ["morph", "--show=Q.a", "--show=Q.b"]
+            ["The option --show can be used only once"]
+
+      it "with wrong --locator option" $
+        withStdin "" $
+          testCLIFailed
+            ["morph", "--locator=Q.x(Q.y)"]
+            ["[ERROR]:", "Only dispatch expression started with Φ (or Q) can be used in --locator"]
+
   describe "explain" $ do
     it "prints help" $
       testCLISucceeded
