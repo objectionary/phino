@@ -177,6 +177,47 @@ $ phino dataize --max-steps=50 problem.phi
 [ERROR]: Dataization did not finish before reaching the limit of steps: --max-steps=50
 ```
 
+## Morph
+
+Dataization insists on bytes. Morphing 𝕄 asks a different question: evaluate
+as far as the object model allows, without demanding data. It resolves Φ
+against the universe, peels dispatches and applications through
+normalization, fires whichever atoms sit under a dispatch, and stops at the
+first formation it reaches, handing that formation back untouched. The
+`morph` command runs 𝕄 on its own:
+
+```bash
+$ cat two.phi
+⟦
+  bytes(data) ↦ ⟦ φ ↦ data ⟧,
+  number(as-bytes) ↦ ⟦ φ ↦ as-bytes, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧,
+  φ ↦ 5.plus( 6 ).plus( 7 )
+⟧
+$ phino dataize --sweet --hide-rho two.phi
+40-32-00-00-00-00-00-00
+$ phino morph --locator=Q.φ --sweet --hide-rho two.phi
+⟦ x ↦ 7, λ ⤍ L_number_plus ⟧
+```
+
+The inner `5.plus( 6 )` fires, because `.plus` is dispatched on its result,
+and `11` lands in the `ρ` hidden by `--hide-rho`. The outer application is
+saturated but bare, so 𝕄 returns it and is finished; firing it is
+dataization's job and takes `dataize` on to `18`.
+
+The default locator `Q` morphs the whole top formation, which 𝕄 returns
+unchanged, so `--locator` is how one aims 𝕄 at a subterm, exactly as in
+`dataize`. Unlike 𝔻, 𝕄 is total: where no formation is reachable the answer
+is the terminator `⊥`, printed rather than reported as a failed run:
+
+```bash
+$ phino morph --locator=Q.x <<< '⟦ x ↦ ξ ⟧'
+⊥
+```
+
+The whole `dataize` option surface applies unchanged — `--sequence`,
+`--headers`, `--steps-dir`, `--evaluations`, `--partial`, `--max-steps`,
+`--shuffle`/`--seed`, `--output`, `--focus` and the rest.
+
 ## Rewrite
 
 You can rewrite this expression with the help of [rules](#rule-structure)

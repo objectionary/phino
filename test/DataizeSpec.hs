@@ -13,7 +13,7 @@ import Data.IORef (modifyIORef', newIORef, readIORef)
 import Data.List (find, isInfixOf, nub)
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.Maybe (fromMaybe, isJust)
-import Dataize (DataizeContext (..), Outcome (..), Steps (..), dataize, dataize', emptyState, execBuildTerm, morph)
+import Dataize (DataizeContext (..), Outcome (..), Steps (..), dataize, dataize', emptyState, execBuildTerm, morph, morph')
 import Deps (Evaluation (..), Term (TeExpression), dontSaveEval, dontSaveStep)
 import Functions (buildTerm)
 import Matcher (substEmpty)
@@ -52,6 +52,16 @@ testDataize useCases =
       loc' <- parseExpressionThrows loc
       (value, _) <- dataize expr (defaultDataizeContext loc')
       value `shouldBe` Dataized res
+
+testMorph :: [(String, String, String, String)] -> Spec
+testMorph useCases =
+  forM_ useCases $ \(name, loc, src, res) ->
+    it name $ do
+      expr <- parseExpressionThrows src
+      loc' <- parseExpressionThrows loc
+      expected <- parseExpressionThrows res
+      (morphed, _) <- morph expr (defaultDataizeContext loc')
+      morphed `shouldBe` expected
 
 -- The 12 primitive λ-atoms every EO data operation reduces to, declared the way
 -- 'number.eo' and 'bytes.eo' declare them, so a case below only has to spell the
@@ -133,9 +143,46 @@ testStuckAtom useCases =
 
 spec :: Spec
 spec = do
-  describe "morph" $
+  -- The top-level 𝕄 entry point, the one the 'morph' command runs: it locates
+  -- the subterm, threads the whole input expression as the universe and hands
+  -- back the morphed expression together with the chain that led to it (#1114).
+  describe "morph" $ do
+    testMorph
+      [ ("hands the top formation back untouched under the Q locator", "Q", "[[ D> 00- ]]", "[[ D> 00- ]]")
+      , -- 𝕄 is total where 𝔻 is not: the 'xi' axiom morphs ξ to ⊥, so the run
+        -- ends with an answer rather than with a failure
+        ("answers ⊥ where no formation is reachable", "Q.x", "[[ x -> $ ]]", "T")
+      ]
+
+    -- The chain runs oldest step first and carries the rule that produced the
+    -- step after it, exactly as 'dataize' reports its own, so '--sequence'
+    -- prints both the same way
+    it "reports the chain of steps oldest first" $ do
+      expr <- parseExpressionThrows "[[ D> 00- ]]"
+      (morphed, chain) <- morph expr (defaultDataizeContext ExRoot)
+      morphed `shouldBe` expr
+      map snd chain `shouldBe` [Just "mf", Nothing]
+      map fst chain `shouldBe` [expr, expr]
+
+    -- 𝕄 never fires a bare λ-formation, so only an atom sitting under a
+    -- dispatch (the 'ml' rule) can get stuck
+    describe "a stuck atom under 'ml'" $ do
+      let stuck :: IO (Expression, Expression)
+          stuck = (,) <$> parseExpressionThrows "[[ x -> [[ L> Sym_arg_0 ]].foo ]]" <*> parseExpressionThrows "Q.x"
+      it "fails the run without '_partial'" $ do
+        (expr, loc) <- stuck
+        morph expr (defaultDataizeContext loc)
+          `shouldThrow` (\e -> "Atom 'Sym_arg_0' does not exist" `isInfixOf` show (e :: SomeException))
+
+      it "is parked in the residue under '_partial'" $ do
+        (expr, loc) <- stuck
+        expected <- parseExpressionThrows "[[ L> Sym_arg_0 ]].foo"
+        (residue, _) <- morph expr (defaultDataizeContext loc){_partial = True}
+        residue `shouldBe` expected
+
+  describe "morph'" $
     test'
-      morph
+      morph'
       [ ("[[ D> 00- ]] => [[ D> 00- ]]", ExFormation [BiDelta (BtOne "00")], ExRoot, ExFormation [BiDelta (BtOne "00")])
       , ("T => T", ExTermination, ExRoot, ExTermination)
       , ("$ => X", ExXi, ExRoot, ExTermination)
@@ -181,11 +228,11 @@ spec = do
   -- and every such normal form is covered by some morphing clause (an axiom
   -- like 'mf'/'dead'/'xi'/'universe'/'mg' or a recursive rule), so the "no rule
   -- matched" fallback never fires along any real derivation. It is still total
-  -- code, reachable by calling 'morph' directly (bypassing normalization) on a
+  -- code, reachable by calling 'morph'' directly (bypassing normalization) on a
   -- raw meta 𝑛, an AST node the matcher never binds to any concrete pattern.
-  describe "morph fails when no morphing rule matches the term" $
+  describe "morph' fails when no morphing rule matches the term" $
     it "throws instead of looping when handed a bare, unmatched meta" $
-      morph (ExMeta "unbound", (ExRoot, Nothing) :| []) ExRoot emptyState (defaultDataizeContext ExRoot)
+      morph' (ExMeta "unbound", (ExRoot, Nothing) :| []) ExRoot emptyState (defaultDataizeContext ExRoot)
         `shouldThrow` (\e -> "no morphing rule matched" `isInfixOf` show (e :: SomeException))
 
   -- Symmetric to the morphing fallback above: every normal form 𝔻 actually
@@ -266,7 +313,7 @@ spec = do
       dataize' (form, (ExRoot, Nothing) :| []) ExRoot emptyState (defaultDataizeContext ExRoot)
         `shouldThrow` (\e -> "non-formation universe" `isInfixOf` show (e :: SomeException))
 
-  -- 'defaultDataizeContext' runs with '_shuffle' on, so 'morph' walks the
+  -- 'defaultDataizeContext' runs with '_shuffle' on, so 'morph'' walks the
   -- morphing rules in a random order on every step. Every clause is
   -- order-independent (the known overlaps were removed in #856 and #860), so the
   -- outcome must never depend on that order: morphing each input many times under
@@ -289,7 +336,7 @@ spec = do
           ]
     forM_ cases $ \(desc, input, univ, expected) ->
       it ("morphs " ++ desc ++ " to the same form across 100 random rule orders") $ do
-        results <- replicateM 100 (fst . fst <$> morph (input, (univ, Nothing) :| []) univ emptyState (defaultDataizeContext ExRoot))
+        results <- replicateM 100 (fst . fst <$> morph' (input, (univ, Nothing) :| []) univ emptyState (defaultDataizeContext ExRoot))
         nub results `shouldBe` [expected]
 
   -- 'md' fires only when its head is not a formation ('not (formation 𝑛)'),
@@ -317,7 +364,7 @@ spec = do
     it "drills a chained λ-formation dispatch down to the base 'ml'" $ do
       let base = ExFormation [BiLambda (Function "F")]
           chain = ExDispatch (ExDispatch (ExDispatch base (AtLabel "a")) (AtLabel "b")) (AtLabel "c")
-      morph (chain, (ExRoot, Nothing) :| []) ExRoot emptyState (defaultDataizeContext ExRoot)
+      morph' (chain, (ExRoot, Nothing) :| []) ExRoot emptyState (defaultDataizeContext ExRoot)
         `shouldThrow` (\e -> "Atom 'F' does not exist" `isInfixOf` show (e :: SomeException))
 
   -- 'norm' matches the bare meta 𝑛, which unifies with any expression, so it is
@@ -401,7 +448,7 @@ spec = do
 
   -- '--max-cycles' and '--max-depth' reach only the normalization run inside a
   -- single step, so the 𝕄/𝔻 recursion itself was unbounded: this division, whose
-  -- λ-atom keeps re-firing on a term that never reduces to bytes, sent 'morph'
+  -- λ-atom keeps re-firing on a term that never reduces to bytes, sent 'morph''
   -- through md → ma → universe → mf → mphi → ml forever and no CLI option could
   -- stop it (#1052). '--max-steps' bounds that recursion and fails once the
   -- budget is gone.

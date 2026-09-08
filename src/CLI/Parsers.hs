@@ -172,7 +172,7 @@ optShow =
     )
 
 optLocator :: Parser String
-optLocator = strOption (long "locator" <> metavar "FQN" <> help "Location of object to dataize. Must be a valid dispatch expression; e.g. Q.foo.bar" <> value "Q" <> showDefault)
+optLocator = strOption (long "locator" <> metavar "FQN" <> help "Location of object to rewrite, dataize or morph. Must be a valid dispatch expression; e.g. Q.foo.bar" <> value "Q" <> showDefault)
 
 optFocus :: Parser String
 optFocus =
@@ -203,7 +203,7 @@ optStepsDir :: Parser (Maybe FilePath)
 optStepsDir = optional (strOption (long "steps-dir" <> metavar "FILE" <> help "Directory to save intermediate steps during rewriting/dataizing"))
 
 optPartial :: Parser Bool
-optPartial = switch (long "partial" <> help "Partial evaluation: compute what the known inputs decide and, instead of failing on an atom that cannot fire (its λ function is unknown, or an input of it reaches such an atom), leave it in place and print the residual 𝜑-program instead of bytes")
+optPartial = switch (long "partial" <> help "Partial evaluation: compute what the known inputs decide and, instead of failing on an atom that cannot fire (its λ function is unknown, or an input of it reaches such an atom), leave it in place and print the residual 𝜑-program")
 
 optEvaluations :: Parser (Maybe FilePath)
 optEvaluations = optional (strOption (long "evaluations" <> metavar "FILE" <> help "File to record every atom fired during dataizing, as one tab-separated line per firing: the λ function name, its argument formation and its result (requires --output=phi)"))
@@ -317,6 +317,47 @@ dataizeParser =
             <*> argInputFile
         )
 
+morphParser :: Parser Command
+morphParser =
+  CmdMorph
+    <$> ( OptsMorph
+            <$> optLogLevel
+            <*> optLogLines
+            <*> optInputFormat
+            <*> optOutputFormat
+            <*> optSugar
+            <*> optHideRho
+            <*> optLineFormat
+            <*> optOmitListing
+            <*> optOmitComments
+            <*> optNonumber
+            <*> optSequence
+            <*> optHeaders
+            <*> optCanonize
+            <*> optDepthSensitive
+            <*> optShuffle
+            <*> optSeed
+            <*> switch (long "quiet" <> help "Don't print the result of morphing")
+            <*> optPartial
+            <*> optCompress
+            <*> optMaxDepth
+            <*> optMaxCycles
+            <*> optMaxSteps
+            <*> optMargin
+            <*> optMeetPopularity
+            <*> optMeetLength
+            <*> optHide
+            <*> optShow
+            <*> optLocator
+            <*> optFocus
+            <*> optExpression
+            <*> optLabel
+            <*> optMeetPrefix
+            <*> optStepsDir
+            <*> optEvaluations
+            <*> argInputFile
+        )
+
 rewriteParser :: Parser Command
 rewriteParser =
   CmdRewrite
@@ -396,6 +437,7 @@ commandParser =
   hsubparser
     ( command "rewrite" (info rewriteParser (progDesc "Rewrite the 𝜑-expression"))
         <> command "dataize" (info dataizeParser (progDesc "Dataize the 𝜑-expression"))
+        <> command "morph" (info morphParser (progDesc "Morph the 𝜑-expression"))
         <> command "explain" (info explainParser (progDesc "Explain rules in LaTeX format"))
         <> command "merge" (info mergeParser (progDesc "Merge 𝜑-expressions into single one by merging their top level formations"))
         <> command "match" (info matchParser (progDesc "Match 𝜑-expression against provided pattern and build matched substitutions"))

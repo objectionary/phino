@@ -56,6 +56,7 @@ instance Show CmdException where
 data Command
   = CmdRewrite OptsRewrite
   | CmdDataize OptsDataize
+  | CmdMorph OptsMorph
   | CmdExplain OptsExplain
   | CmdMerge OptsMerge
   | CmdMatch OptsMatch
@@ -74,6 +75,48 @@ instance Show IOFormat where
   show LATEX = "latex"
 
 data OptsDataize = OptsDataize
+  { _logLevel :: LogLevel
+  , _logLines :: Int
+  , _inputFormat :: IOFormat
+  , _outputFormat :: IOFormat
+  , _sugarType :: SugarType
+  , _hideRho :: Bool
+  , _flat :: LineFormat
+  , _omitListing :: Bool
+  , _omitComments :: Bool
+  , _nonumber :: Bool
+  , _sequence :: Bool
+  , _headers :: Bool
+  , _canonize :: Bool
+  , _depthSensitive :: Bool
+  , _shuffle :: Bool
+  , _seed :: Int
+  , _quiet :: Bool
+  , _partial :: Bool
+  , _compress :: Bool
+  , _maxDepth :: Int
+  , _maxCycles :: Int
+  , _maxSteps :: Int
+  , _margin :: Int
+  , _meetPopularity :: Maybe Int
+  , _meetLength :: Maybe Int
+  , _hide :: [String]
+  , _show :: [String]
+  , _locator :: String
+  , _focus :: String
+  , _expression :: Maybe String
+  , _label :: Maybe String
+  , _meetPrefix :: Maybe String
+  , _stepsDir :: Maybe FilePath
+  , _evaluations :: Maybe FilePath
+  , _inputFile :: Maybe FilePath
+  }
+
+-- The option surface of 'morph' is that of 'dataize': the two commands read the
+-- same input, aim the same '_locator' at the same subterm and print through the
+-- same formatting flags, differing only in the judgment they run — 𝕄, which
+-- stops at the first formation it reaches, against 𝔻, which insists on bytes.
+data OptsMorph = OptsMorph
   { _logLevel :: LogLevel
   , _logLines :: Int
   , _inputFormat :: IOFormat
