@@ -6,9 +6,9 @@
 -- The λ functions the specs fire. phino implements none of them, so a spec that
 -- needs an atom to answer brings its own: one JavaScript fixture,
 -- 'test-resources/atoms/primitives.js', registered under every name in
--- 'fixtureAtoms' and branching on the one it is handed as its first
--- command-line argument, or a POSIX shell script written for the occasion,
--- either run once per fire or kept resident for the run.
+-- 'fixtureAtoms' and branching on the one each request names under 'λ', or a
+-- POSIX shell script written for the occasion, either run once per fire or
+-- kept resident for the run.
 module Fixtures
   ( fixtureAtoms
   , fixtureRegistry
@@ -20,10 +20,11 @@ module Fixtures
   , withScript
   , withServing
   , withShell
+  , withTemp
   )
 where
 
-import Atoms (Atom (..), Registry, Runtime (RtNode))
+import Atoms (Atom (..), Program (..), Registry, Runtime (RtNode))
 import Control.Exception (bracket)
 import Data.Aeson (Value, encode, object, (.=))
 import Data.Aeson.Key qualified as Key
@@ -59,7 +60,7 @@ fixtureScript = decodeUtf8 <$> BS.readFile "test-resources/atoms/primitives.js"
 fixtureRegistry :: IO Registry
 fixtureRegistry = do
   script <- fixtureScript
-  pure (Map.fromList [(name, Scripted RtNode script) | name <- fixtureAtoms])
+  pure (Map.fromList [(name, Transient (Scripted RtNode script)) | name <- fixtureAtoms])
 
 -- The same registry as the JSON file '--atoms' reads, in a temporary file
 -- removed afterwards, for the specs that go through the command line.
@@ -105,19 +106,20 @@ withExecutable script action = withScript script $ \path -> do
   setPermissions path (setOwnerExecutable True permissions)
   action path
 
--- The registry of one served λ function, 'L_answer', as the JSON file
--- '--atoms' reads, together with the resident program it names: a POSIX shell
--- script built of the given per-request snippet (see 'resident'). Both files
--- are removed afterwards.
+-- The registry of one λ function, 'L_answer', kept for the run, as the JSON
+-- file '--atoms' reads, together with the resident program it names: a POSIX
+-- shell script built of the given per-request snippet (see 'resident'). Both
+-- files are removed afterwards.
 withServing :: T.Text -> (FilePath -> IO a) -> IO a
 withServing snippet action =
   withExecutable (resident snippet) $ \program ->
-    withRegistryOf (object ["L_answer" .= object ["rt" .= ("serve" :: T.Text), "path" .= program]]) action
+    withRegistryOf (object ["L_answer" .= object ["rt" .= ("exec" :: T.Text), "path" .= program, "serve" .= True]]) action
 
--- A resident program as a POSIX shell script: it reads phino's lines until its
--- stdin closes, counts the universes it is told in 'e', and runs the given
--- snippet for every request, with the request in 'line', its number in 'id'
--- and how many requests it has seen so far in 'n'.
+-- A program as a POSIX shell script that reads phino's lines until its stdin
+-- closes, so it serves started once per fire and kept for the run alike: it
+-- counts the universes it is told in 'e' and runs the given snippet for every
+-- request, with the request in 'line', its number in 'id' and how many
+-- requests it has seen so far in 'n'.
 resident :: T.Text -> T.Text
 resident snippet =
   T.unlines

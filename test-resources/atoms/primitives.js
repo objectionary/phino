@@ -2,10 +2,14 @@
 // SPDX-License-Identifier: MIT
 
 // The λ functions phino's own tests fire. phino implements none of them: it
-// writes this script to a temporary file, runs it under 'node' with the name of
-// the λ function as the first argument, feeds it the formation being evaluated
-// ('b') and the universe Φ ('s') on stdin as JSON, and reads the 𝜑-expression
-// to use as the atom's raw result back from stdout, under 'n'.
+// writes this script to a temporary file, runs it under 'node' and talks to it
+// over stdin and stdout, one JSON object per line, in the letters of the
+// evaluation rule of the calculus: the universe Φ under '𝑒', then a request
+// with an 'id', the name of the λ function under 'λ' and the formation being
+// evaluated under '𝑏', which this script answers with a line carrying the same
+// 'id' and, under '𝑛', the 𝜑-expression to use as the atom's raw result. The
+// lines are read as they come and answered as they come, so the script serves
+// just as well started once per fire as kept for the run with 'serve'.
 //
 // This is a fixture, not a runtime: it goes just far enough to let the specs
 // reduce arithmetic and byte comparisons. Both payloads arrive as canonical
@@ -16,16 +20,13 @@
 
 'use strict';
 
-const fs = require('fs');
-
-const atom = process.argv[2];
-const { b } = JSON.parse(fs.readFileSync(0, 'utf8'));
+const readline = require('readline');
 
 const OPENING = '⟦(';
 const CLOSING = '⟧)';
 
 // The 𝜑 text bound to the attribute 'name' by the formation 'b'.
-function bound(name) {
+function bound(b, name) {
   const head = name + ' ↦ ';
   let depth = 0;
   for (let index = 0; index < b.length; index += 1) {
@@ -35,7 +36,7 @@ function bound(name) {
     } else if (CLOSING.includes(char)) {
       depth -= 1;
     } else if (depth === 1 && b.startsWith(head, index) && ' ,⟦'.includes(b[index - 1])) {
-      return bindingValue(index + head.length);
+      return bindingValue(b, index + head.length);
     }
   }
   return null;
@@ -43,7 +44,7 @@ function bound(name) {
 
 // The 𝜑 text of one binding's value: everything up to the comma or the closing
 // bracket that ends it.
-function bindingValue(start) {
+function bindingValue(b, start) {
   let depth = 0;
   let text = '';
   for (let index = start; index < b.length; index += 1) {
@@ -120,32 +121,33 @@ function asBool(yes) {
 
 // A number atom with an operand carrying no number yields the terminator ⊥,
 // the way every EO number atom does.
-function arithmetic(operation) {
-  const left = number(bound('x'));
-  const right = number(bound('ρ'));
+function arithmetic(b, operation) {
+  const left = number(bound(b, 'x'));
+  const right = number(bound(b, 'ρ'));
   return Number.isNaN(left) || Number.isNaN(right) ? '⊥' : asNumber(operation(left, right));
 }
 
-function answer() {
+// The 𝜑-expression the λ function 'atom' answers with for the formation 'b'.
+function answer(atom, b) {
   switch (atom) {
     case 'L_number_plus':
-      return arithmetic((x, rho) => rho + x);
+      return arithmetic(b, (x, rho) => rho + x);
     case 'L_number_times':
-      return arithmetic((x, rho) => rho * x);
+      return arithmetic(b, (x, rho) => rho * x);
     case 'L_number_div':
-      return arithmetic((x, rho) => rho / x);
+      return arithmetic(b, (x, rho) => rho / x);
     case 'L_number_gt': {
-      const left = number(bound('x'));
-      const right = number(bound('ρ'));
+      const left = number(bound(b, 'x'));
+      const right = number(bound(b, 'ρ'));
       return Number.isNaN(left) || Number.isNaN(right) ? '⊥' : asBool(right > left);
     }
     case 'L_bytes_eq': {
-      const left = bytes(bound('b'));
-      const right = bytes(bound('ρ'));
+      const left = bytes(bound(b, 'b'));
+      const right = bytes(bound(b, 'ρ'));
       return left === null || right === null ? '⊥' : asBool(left.equals(right));
     }
     case 'L_bytes_not': {
-      const raw = bytes(bound('ρ'));
+      const raw = bytes(bound(b, 'ρ'));
       return raw === null ? '⊥' : asBytes(Buffer.from([...raw].map((octet) => ~octet & 0xff)));
     }
     default:
@@ -153,4 +155,11 @@ function answer() {
   }
 }
 
-process.stdout.write(JSON.stringify({ n: answer() }));
+// The universe under '𝑒' is not needed here, since no operand is dataized, so
+// its line is read and let go; every request is answered on the spot.
+readline.createInterface({ input: process.stdin }).on('line', (line) => {
+  const message = JSON.parse(line);
+  if ('id' in message) {
+    process.stdout.write(`${JSON.stringify({ id: message.id, '𝑛': answer(message['λ'], message['𝑏']) })}\n`);
+  }
+});
