@@ -3,6 +3,7 @@
 
 module CLI.Parsers where
 
+import Atoms (runtimeNames)
 import CLI.Types
 import Data.Char (toLower, toUpper)
 import Data.List (intercalate)
@@ -203,7 +204,41 @@ optStepsDir :: Parser (Maybe FilePath)
 optStepsDir = optional (strOption (long "steps-dir" <> metavar "FILE" <> help "Directory to save intermediate steps during rewriting/dataizing"))
 
 optPartial :: Parser Bool
-optPartial = switch (long "partial" <> help "Partial evaluation: compute what the known inputs decide and, instead of failing on an atom that cannot fire (its λ function is unknown, or an input of it reaches such an atom), leave it in place and print the residual 𝜑-program")
+optPartial = switch (long "partial" <> help "Partial evaluation: compute what the known inputs decide and, instead of failing on an atom that cannot fire (its λ function is not in the --atoms registry), leave it in place and print the residual 𝜑-program")
+
+-- Which λ functions this run may fire. phino implements none of them itself
+-- (see 'Atoms'), so without this option every atom a program names gets stuck.
+optAtoms :: Parser (Maybe FilePath)
+optAtoms =
+  optional
+    ( strOption
+        ( long "atoms"
+            <> metavar "FILE"
+            <> help
+              ( printf
+                  "Path to the JSON registry of λ functions this run may fire, mapping each name to the runtime that runs it (%s) and the script it runs"
+                  (intercalate ", " runtimeNames)
+              )
+        )
+    )
+
+-- The external face of the trick phino plays internally to reduce a
+-- sub-expression against a universe: prepend a synthetic binding holding it to
+-- that universe and aim the locator at the binding. An atom script needs it to
+-- reduce the parts of the formation it was given, so it does not have to splice
+-- them into the text of the universe by hand.
+optInside :: Parser (Maybe String)
+optInside =
+  optional
+    ( strOption
+        ( long "inside"
+            <> metavar "EXPRESSION"
+            <> help
+              "The 𝜑-expression to dataize or morph inside the input expression, which is taken as the universe \
+              \Φ: a synthetic binding holding it is prepended to the universe and the locator is aimed at that \
+              \binding. Cannot be used together with --locator"
+        )
+    )
 
 optEvaluations :: Parser (Maybe FilePath)
 optEvaluations = optional (strOption (long "evaluations" <> metavar "FILE" <> help "File to record every atom fired during dataizing, as one tab-separated line per firing: the λ function name, its argument formation and its result (requires --output=phi)"))
@@ -312,8 +347,10 @@ dataizeParser =
             <*> optExpression
             <*> optLabel
             <*> optMeetPrefix
+            <*> optInside
             <*> optStepsDir
             <*> optEvaluations
+            <*> optAtoms
             <*> argInputFile
         )
 
@@ -353,8 +390,10 @@ morphParser =
             <*> optExpression
             <*> optLabel
             <*> optMeetPrefix
+            <*> optInside
             <*> optStepsDir
             <*> optEvaluations
+            <*> optAtoms
             <*> argInputFile
         )
 

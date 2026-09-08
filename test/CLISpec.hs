@@ -15,6 +15,7 @@ import Data.List (intercalate, isInfixOf, isPrefixOf, sort)
 import Data.Time.Clock (addUTCTime, getCurrentTime)
 import Data.Time.Clock.POSIX (getPOSIXTime)
 import Data.Version (showVersion)
+import Fixtures (withFixtureRegistry, withNode)
 import GHC.IO.Handle
 import Paths_phino (version)
 import System.Directory (createDirectoryIfMissing, doesDirectoryExist, doesFileExist, getTemporaryDirectory, listDirectory, removeDirectoryRecursive, removeFile, removePathForcibly, setModificationTime)
@@ -118,6 +119,13 @@ testCLI' args outputs exit = do
 
 testCLISucceeded :: [String] -> [String] -> Expectation
 testCLISucceeded args outputs = testCLI' args outputs (Right ())
+
+-- phino implements no λ function of its own, so a case that needs an atom to
+-- fire brings the fixture registry in and hands its path to the command as
+-- '--atoms' (see 'Fixtures'). Every such atom runs under 'node', so the case is
+-- pending where 'node' is not installed.
+withAtoms :: (String -> Expectation) -> Expectation
+withAtoms action = withNode (withFixtureRegistry (action . ("--atoms=" ++)))
 
 testCLIFailed :: [String] -> [String] -> Expectation
 testCLIFailed args outputs = testCLI' args outputs (Left (ExitFailure 1))
@@ -392,20 +400,21 @@ spec = do
           doesFileExist (dir ++ "/00003.phi") `shouldReturn` True
 
     it "saves dataize steps to dir with --steps-dir" $
-      withTempDirectory "phino-steps-dataize" $ \dir ->
-        withStdin "[[ bytes(data) -> [[ @ -> $.data ]], number(as-bytes) -> [[ @ -> $.as-bytes, plus(x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6) ]]" $ do
-          testCLISucceeded
-            ["dataize", "--steps-dir=" ++ dir, "--sweet"]
-            ["40-26"]
-          doesDirectoryExist dir `shouldReturn` True
-          files <- listDirectory dir
-          let steps = sort files
-          -- The fix is about numbering, not about a specific rule set: the file
-          -- names must be distinct and contiguous from 00001, and there must be
-          -- more of them than a single normalization pass produces (this input
-          -- runs several normalizations, so a global counter yields more steps).
-          steps `shouldBe` map (\n -> printf "%05d.phi" (n :: Int)) [1 .. length steps]
-          length steps `shouldSatisfy` (> 18)
+      withAtoms $ \atoms ->
+        withTempDirectory "phino-steps-dataize" $ \dir ->
+          withStdin "[[ bytes(data) -> [[ @ -> $.data ]], number(as-bytes) -> [[ @ -> $.as-bytes, plus(x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6).plus(7) ]]" $ do
+            testCLISucceeded
+              ["dataize", atoms, "--steps-dir=" ++ dir, "--sweet"]
+              ["40-32"]
+            doesDirectoryExist dir `shouldReturn` True
+            files <- listDirectory dir
+            let steps = sort files
+            -- The fix is about numbering, not about a specific rule set: the file
+            -- names must be distinct and contiguous from 00001, and there must be
+            -- more of them than a single normalization pass produces (this input
+            -- runs several normalizations, so a global counter yields more steps).
+            steps `shouldBe` map (\n -> printf "%05d.phi" (n :: Int)) [1 .. length steps]
+            length steps `shouldSatisfy` (> 18)
 
     it "saves steps with a .tex extension when --output=latex is used with --steps-dir" $
       withTempDirectory "phino-steps-latex" $ \dir ->
@@ -1070,10 +1079,11 @@ spec = do
     -- The 𝕄/𝔻 recursion used to be unbounded, so this division kept morphing
     -- forever and no option could stop it (#1052)
     it "fails on --max-steps instead of morphing forever" $
-      withStdin "⟦ @ ↦ ⟦ λ ⤍ L_number_div, ρ ↦ ⟦ Δ ⤍ 40-45-00-00-00-00-00-00 ⟧, x ↦ ⟦ Δ ⤍ 40-00-00-00-00-00-00-00 ⟧ ⟧ ⟧" $
-        testCLIFailed
-          ["dataize", "--max-steps=40"]
-          ["[ERROR]: Dataization did not finish before reaching the limit of steps: --max-steps=40"]
+      withAtoms $ \atoms ->
+        withStdin "⟦ @ ↦ ⟦ λ ⤍ L_number_div, ρ ↦ ⟦ Δ ⤍ 40-45-00-00-00-00-00-00 ⟧, x ↦ ⟦ Δ ⤍ 40-00-00-00-00-00-00-00 ⟧ ⟧ ⟧" $
+          testCLIFailed
+            ["dataize", atoms, "--max-steps=40"]
+            ["[ERROR]: Dataization did not finish before reaching the limit of steps: --max-steps=40"]
 
     it "dataizes with --sequence" $
       withStdin "[[ @ -> [[ x -> [[ D> 01-, y -> ? ]](y -> [[ ]]) ]].x ]]" $
@@ -1112,16 +1122,18 @@ spec = do
           ["⟦ Δ ⤍ 01- ⟧\n01-"]
 
     it "focuses a compressed sequence whose meet replaces a step root" $
-      withStdin "[[ @ -> [[ @ -> $.c.plus( 32.0 ), c -> 25.0 ]], bytes(data) -> [[ @ -> $.data ]], number(as-bytes) -> [[ @ -> $.as-bytes, plus -> [[ x -> ?, L> L_number_plus ]] ]] ]]" $
-        testCLISucceeded
-          ["dataize", "--output=latex", "--sweet", "--nonumber", "--compress", "--canonize", "--meet-prefix=dataization", "--sequence", "--flat", "--quiet", "--hide=Q.bytes", "--hide=Q.number", "--locator=Q.@", "--focus=Q.@", "--meet-length=5", "--meet-popularity=1"]
-          ["\\phinoMeet{dataization:1}{ [[ @ -> |c| . |plus| ( 32 ), |c| -> 25 ]] } \\leadsto_{\\nameref{r:contextualize}}"]
+      withAtoms $ \atoms ->
+        withStdin "[[ @ -> [[ @ -> $.c.plus( 32.0 ), c -> 25.0 ]], bytes(data) -> [[ @ -> $.data ]], number(as-bytes) -> [[ @ -> $.as-bytes, plus -> [[ x -> ?, L> L_number_plus ]] ]] ]]" $
+          testCLISucceeded
+            ["dataize", atoms, "--output=latex", "--sweet", "--nonumber", "--compress", "--canonize", "--meet-prefix=dataization", "--sequence", "--flat", "--quiet", "--hide=Q.bytes", "--hide=Q.number", "--locator=Q.@", "--focus=Q.@", "--meet-length=5", "--meet-popularity=1"]
+            ["\\phinoMeet{dataization:1}{ [[ @ -> |c| . |plus| ( 32 ), |c| -> 25 ]] } \\leadsto_{\\nameref{r:contextualize}}"]
 
     it "compresses a canonized whole-expression sequence into a meet" $
-      withStdin "[[ @ -> [[ @ -> $.c.plus( 32.0 ), c -> 25.0 ]], bytes(data) -> [[ @ -> $.data ]], number(as-bytes) -> [[ @ -> $.as-bytes, plus -> [[ x -> ?, L> L_number_plus ]] ]] ]]" $
-        testCLISucceeded
-          ["dataize", "--output=latex", "--sweet", "--nonumber", "--compress", "--canonize", "--meet-prefix=dataization", "--sequence", "--flat", "--quiet", "--meet-length=5", "--meet-popularity=1"]
-          ["\\phinoMeet{dataization:1}"]
+      withAtoms $ \atoms ->
+        withStdin "[[ @ -> [[ @ -> $.c.plus( 32.0 ), c -> 25.0 ]], bytes(data) -> [[ @ -> $.data ]], number(as-bytes) -> [[ @ -> $.as-bytes, plus -> [[ x -> ?, L> L_number_plus ]] ]] ]]" $
+          testCLISucceeded
+            ["dataize", atoms, "--output=latex", "--sweet", "--nonumber", "--compress", "--canonize", "--meet-prefix=dataization", "--sequence", "--flat", "--quiet", "--meet-length=5", "--meet-popularity=1"]
+            ["\\phinoMeet{dataization:1}"]
 
     it "dataizes with --locator" $
       withStdin "[[ ex -> [[ @ -> Q.x ]], x -> [[ D> 42- ]] ]]" $
@@ -1133,38 +1145,42 @@ spec = do
 
     describe "--evaluations" $ do
       it "writes one tab-separated record per fired atom" $
-        withTempFile "evaluationsXXXXXX.txt" $ \(path, stream) -> do
-          hClose stream
-          withStdin "[[ bytes(data) -> [[ @ -> $.data ]], number(as-bytes) -> [[ @ -> $.as-bytes, plus(x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6) ]]" $
-            testCLISucceeded ["dataize", "--evaluations=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
-          records <- readUtf8 path
-          records `shouldBe` "L_number_plus\t⟦ x ↦ 6 ⟧\t11\n"
+        withAtoms $ \atoms ->
+          withTempFile "evaluationsXXXXXX.txt" $ \(path, stream) -> do
+            hClose stream
+            withStdin "[[ bytes(data) -> [[ @ -> $.data ]], number(as-bytes) -> [[ @ -> $.as-bytes, plus(x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6) ]]" $
+              testCLISucceeded ["dataize", atoms, "--evaluations=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
+            records <- readUtf8 path
+            records `shouldBe` "L_number_plus\t⟦ x ↦ 6 ⟧\t11\n"
 
       it "writes a record for every firing" $
-        withTempFile "evaluationsXXXXXX.txt" $ \(path, stream) -> do
-          hClose stream
-          withStdin "[[ bytes(data) -> [[ @ -> $.data ]], number(as-bytes) -> [[ @ -> $.as-bytes, plus(x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6).plus(7) ]]" $
-            testCLISucceeded ["dataize", "--evaluations=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
-          records <- readUtf8 path
-          lines records `shouldBe` ["L_number_plus\t⟦ x ↦ 6 ⟧\t11", "L_number_plus\t⟦ x ↦ 7 ⟧\t18"]
+        withAtoms $ \atoms ->
+          withTempFile "evaluationsXXXXXX.txt" $ \(path, stream) -> do
+            hClose stream
+            withStdin "[[ bytes(data) -> [[ @ -> $.data ]], number(as-bytes) -> [[ @ -> $.as-bytes, plus(x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6).plus(7) ]]" $
+              testCLISucceeded ["dataize", atoms, "--evaluations=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
+            records <- readUtf8 path
+            lines records `shouldBe` ["L_number_plus\t⟦ x ↦ 6 ⟧\t11", "L_number_plus\t⟦ x ↦ 7 ⟧\t18"]
 
       it "writes records in canonical syntax without --sweet" $
-        withTempFile "evaluationsXXXXXX.txt" $ \(path, stream) -> do
-          hClose stream
-          withStdin "[[ bytes(data) -> [[ @ -> $.data ]], number(as-bytes) -> [[ @ -> $.as-bytes, plus(x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6) ]]" $
-            testCLISucceeded ["dataize", "--evaluations=" ++ path, "--quiet", "--hide-rho"] []
-          records <- readUtf8 path
-          records `shouldEndWith` "\tΦ.number( as-bytes ↦ Φ.bytes( data ↦ ⟦ Δ ⤍ 40-26-00-00-00-00-00-00 ⟧ ) )\n"
+        withAtoms $ \atoms ->
+          withTempFile "evaluationsXXXXXX.txt" $ \(path, stream) -> do
+            hClose stream
+            withStdin "[[ bytes(data) -> [[ @ -> $.data ]], number(as-bytes) -> [[ @ -> $.as-bytes, plus(x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6) ]]" $
+              testCLISucceeded ["dataize", atoms, "--evaluations=" ++ path, "--quiet", "--hide-rho"] []
+            records <- readUtf8 path
+            records `shouldEndWith` "\tΦ.number( as-bytes ↦ Φ.bytes( data ↦ ⟦ Δ ⤍ 40-26-00-00-00-00-00-00 ⟧ ) )\n"
 
       it "keeps the records of a run that fails" $
-        withTempFile "evaluationsXXXXXX.txt" $ \(path, stream) -> do
-          hClose stream
-          withStdin "[[ bytes(data) -> [[ @ -> $.data ]], number(as-bytes) -> [[ @ -> $.as-bytes, plus(x) -> [[ L> L_number_plus ]], nope -> [[ L> L_number_nope ]] ]], @ -> 5.plus(6).nope ]]" $
-            testCLIFailed
-              ["dataize", "--evaluations=" ++ path, "--quiet", "--sweet", "--hide-rho"]
-              ["Atom 'L_number_nope' does not exist"]
-          records <- readUtf8 path
-          records `shouldBe` "L_number_plus\t⟦ x ↦ 6 ⟧\t11\n"
+        withAtoms $ \atoms ->
+          withTempFile "evaluationsXXXXXX.txt" $ \(path, stream) -> do
+            hClose stream
+            withStdin "[[ bytes(data) -> [[ @ -> $.data ]], number(as-bytes) -> [[ @ -> $.as-bytes, plus(x) -> [[ L> L_number_plus ]], nope -> [[ L> L_number_nope ]] ]], @ -> 5.plus(6).nope ]]" $
+              testCLIFailed
+                ["dataize", atoms, "--evaluations=" ++ path, "--quiet", "--sweet", "--hide-rho"]
+                ["Atom 'L_number_nope' does not exist"]
+            records <- readUtf8 path
+            records `shouldBe` "L_number_plus\t⟦ x ↦ 6 ⟧\t11\n"
 
       it "truncates the records left over from the previous run" $
         withTempFileContent "evaluationsXXXXXX.txt" "L_number_gt\t[[ ]]\t01-\n" $ \path -> do
@@ -1185,52 +1201,116 @@ spec = do
             ["dataize", "--evaluations=evaluations.txt", "--output=latex"]
             ["The --evaluations option can stay together with --output=phi only"]
 
-    -- A placeholder formation ⟦ λ ⤍ Sym_arg_0 ⟧ standing in for a data input
-    -- names an atom phino cannot fire; the run used to die on it, discarding
-    -- what it had already evaluated (#1060)
+    -- A λ function the '--atoms' registry does not carry cannot fire — a
+    -- placeholder such as ⟦ λ ⤍ Sym_arg_0 ⟧ standing in for a data input, or
+    -- an operation the caller left out of its registry on purpose. The run used
+    -- to die on it, discarding what it had already evaluated (#1060)
     describe "--partial" $ do
-      let stuck = "[[ bytes(data) -> [[ @ -> $.data ]], number(as-bytes) -> [[ @ -> $.as-bytes, plus(x) -> [[ L> L_number_plus ]], times(x) -> [[ L> L_number_times ]] ]], @ -> 2.times(3).plus([[ L> Sym_arg_0 ]]) ]]"
+      let stuck = "[[ bytes(data) -> [[ @ -> $.data ]], number(as-bytes) -> [[ @ -> $.as-bytes, times(x) -> [[ L> L_number_times ]], nope -> [[ L> L_number_nope ]] ]], @ -> 2.times(3).nope ]]"
       it "fails on an atom that cannot fire without the flag" $
-        withStdin stuck $
-          testCLIFailed ["dataize", "--sweet", "--hide-rho"] ["Atom 'Sym_arg_0' does not exist"]
+        withAtoms $ \atoms ->
+          withStdin stuck $
+            testCLIFailed ["dataize", atoms, "--sweet", "--hide-rho"] ["Atom 'L_number_nope' does not exist"]
 
       it "prints the residue with the stuck application intact and exits successfully" $
-        withStdin stuck $
-          testCLISucceeded
-            ["dataize", "--partial", "--sweet", "--hide-rho"]
-            ["⟦ x ↦ ⟦ λ ⤍ Sym_arg_0 ⟧, λ ⤍ L_number_plus ⟧"]
+        withAtoms $ \atoms ->
+          withStdin stuck $
+            testCLISucceeded
+              ["dataize", atoms, "--partial", "--sweet", "--hide-rho"]
+              ["⟦ λ ⤍ L_number_nope ⟧"]
 
       it "keeps what was evaluated before the stuck site in the residue" $
-        withStdin stuck $
-          testCLISucceeded
-            ["dataize", "--partial", "--sweet"]
-            ["as-bytes ↦ Φ.bytes( data ↦ ⟦ Δ ⤍ 40-18-00-00-00-00-00-00 ⟧ )"]
+        withAtoms $ \atoms ->
+          withStdin stuck $
+            testCLISucceeded
+              ["dataize", atoms, "--partial", "--sweet"]
+              ["as-bytes ↦ Φ.bytes( data ↦ ⟦ Δ ⤍ 40-18-00-00-00-00-00-00 ⟧ )"]
 
       it "records every stuck site in --evaluations with no result" $
-        withTempFile "evaluationsXXXXXX.txt" $ \(path, stream) -> do
-          hClose stream
-          withStdin stuck $
-            testCLISucceeded ["dataize", "--partial", "--evaluations=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
-          records <- readUtf8 path
-          lines records
-            `shouldBe` [ "L_number_times\t⟦ x ↦ 3 ⟧\t6"
-                       , "Sym_arg_0\t⟦⟧"
-                       , "L_number_plus\t⟦ x ↦ ⟦ λ ⤍ Sym_arg_0 ⟧ ⟧"
-                       ]
+        withAtoms $ \atoms ->
+          withTempFile "evaluationsXXXXXX.txt" $ \(path, stream) -> do
+            hClose stream
+            withStdin stuck $
+              testCLISucceeded ["dataize", atoms, "--partial", "--evaluations=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
+            records <- readUtf8 path
+            lines records
+              `shouldBe` [ "L_number_times\t⟦ x ↦ 3 ⟧\t6"
+                         , "L_number_nope\t⟦⟧"
+                         ]
 
       it "still prints bytes when nothing gets stuck" $
-        withStdin "[[ bytes(data) -> [[ @ -> $.data ]], number(as-bytes) -> [[ @ -> $.as-bytes, plus(x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6) ]]" $
-          testCLISucceeded ["dataize", "--partial"] ["40-26-00-00-00-00-00-00"]
+        withAtoms $ \atoms ->
+          withStdin "[[ bytes(data) -> [[ @ -> $.data ]], number(as-bytes) -> [[ @ -> $.as-bytes, plus(x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6) ]]" $
+            testCLISucceeded ["dataize", atoms, "--partial"] ["40-26-00-00-00-00-00-00"]
 
       it "prints the chain of steps ending in the residue with --sequence" $
-        withStdin stuck $
-          testCLISucceeded
-            ["dataize", "--partial", "--sequence", "--sweet", "--hide-rho", "--flat"]
-            ["2.times( 3 ).plus( ⟦ λ ⤍ Sym_arg_0 ⟧ )", "⟦ x ↦ ⟦ λ ⤍ Sym_arg_0 ⟧, λ ⤍ L_number_plus ⟧"]
+        withAtoms $ \atoms ->
+          withStdin stuck $
+            testCLISucceeded
+              ["dataize", atoms, "--partial", "--sequence", "--sweet", "--hide-rho", "--flat"]
+              ["2.times( 3 ).nope", "⟦ λ ⤍ L_number_nope ⟧"]
 
       it "still stops on the terminator ⊥, since a wrong operand is not a stuck atom" $
         withStdin "[[ ]]" $
           testCLIFailed ["dataize", "--partial"] ["terminator ⊥"]
+
+    -- Which λ functions exist is not phino's business any more: the registry
+    -- given with '--atoms' decides, and phino carries none of its own
+    describe "--atoms" $ do
+      let sum' = "[[ bytes(data) -> [[ @ -> $.data ]], number(as-bytes) -> [[ @ -> $.as-bytes, plus(x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6) ]]"
+      it "fires the λ function the registry carries" $
+        withAtoms $ \atoms ->
+          withStdin sum' $
+            testCLISucceeded ["dataize", atoms] ["40-26-00-00-00-00-00-00"]
+
+      it "gets stuck on every atom when it is not given" $
+        withStdin sum' $
+          testCLIFailed ["dataize"] ["Atom 'L_number_plus' does not exist"]
+
+      it "fails when the registry file is not there" $
+        withStdin sum' $
+          testCLIFailed ["dataize", "--atoms=no-such-registry.json"] ["no-such-registry.json"]
+
+      -- An unknown runtime is refused where the registry is read, which is
+      -- before the input is even parsed, rather than when an atom of it fires
+      it "fails on a runtime phino cannot run, before dataizing anything" $
+        withTempFileContent "atomsXXXXXX.json" "{\"L_number_plus\": {\"rt\": \"ruby\", \"script\": \"puts 1\"}}" $ \path ->
+          withStdin sum' $
+            testCLIFailed ["dataize", "--atoms=" ++ path] ["unknown runtime 'ruby'"]
+
+      it "fails on a registry that is not JSON" $
+        withTempFileContent "atomsXXXXXX.json" "L_number_plus: js" $ \path ->
+          withStdin sum' $
+            testCLIFailed ["dataize", "--atoms=" ++ path] ["cannot be read"]
+
+    -- An atom script cannot reduce the operands it was handed by itself, so it
+    -- asks phino for them: '--inside' binds an expression to a synthetic
+    -- attribute of the universe and aims the run at it
+    describe "--inside" $ do
+      let universe = "[[ bytes(data) -> [[ @ -> $.data ]], number(as-bytes) -> [[ @ -> $.as-bytes, plus(x) -> [[ L> L_number_plus ]] ]], @ -> [[ D> 01- ]] ]]"
+      it "dataizes an expression the input does not contain" $
+        withAtoms $ \atoms ->
+          withStdin universe $
+            testCLISucceeded ["dataize", atoms, "--inside=5.plus( 6 )"] ["40-26-00-00-00-00-00-00"]
+
+      -- The expression is normalized first, so a dispatch off a formation — the
+      -- very shape a script asks about, '⟦ x ↦ 6, ρ ↦ 5 ⟧.x' — reduces too
+      it "normalizes what it is handed before dataizing it" $
+        withStdin universe $
+          testCLISucceeded ["dataize", "--inside=[[ x -> [[ D> 2A- ]] ]].x"] ["2A-"]
+
+      it "morphs inside the universe just as it dataizes inside it" $
+        withAtoms $ \atoms ->
+          withStdin universe $
+            testCLISucceeded ["morph", atoms, "--inside=5.plus( 6 )", "--sweet", "--hide-rho", "--flat"] ["⟦ x ↦ 6, λ ⤍ L_number_plus ⟧"]
+
+      it "cannot be used together with --locator" $
+        withStdin universe $
+          testCLIFailed ["dataize", "--inside=Q.@", "--locator=Q.@"] ["--inside and --locator cannot be used together"]
+
+      it "fails when the input expression is not a formation" $
+        withStdin "Q.x" $
+          testCLIFailed ["dataize", "--inside=Q.x"] ["--inside requires the input expression to be a formation"]
 
     describe "fails" $ do
       it "with --output != latex and --nonumber" $
@@ -1307,15 +1387,17 @@ spec = do
         testCLISucceeded ["morph", "--flat", "--hide-rho"] ["⟦ Δ ⤍ 01- ⟧"]
 
     it "stops at the bare saturated λ-formation" $
-      withStdin chained $
-        testCLISucceeded
-          ["morph", "--locator=Q.@", "--sweet", "--hide-rho", "--flat"]
-          ["⟦ x ↦ 7, λ ⤍ L_number_plus ⟧"]
+      withAtoms $ \atoms ->
+        withStdin chained $
+          testCLISucceeded
+            ["morph", atoms, "--locator=Q.@", "--sweet", "--hide-rho", "--flat"]
+            ["⟦ x ↦ 7, λ ⤍ L_number_plus ⟧"]
 
     -- The same term under 𝔻, which insists on bytes and fires what 𝕄 left bare
     it "leaves to dataize the firing that takes the same term to bytes" $
-      withStdin chained $
-        testCLISucceeded ["dataize"] ["40-32-00-00-00-00-00-00"]
+      withAtoms $ \atoms ->
+        withStdin chained $
+          testCLISucceeded ["dataize", atoms] ["40-32-00-00-00-00-00-00"]
 
     -- 'mf' hands a formation back as it is, so '--locator' is how one aims 𝕄 at
     -- a subterm worth navigating: here it resolves Φ against the universe and
@@ -1340,37 +1422,40 @@ spec = do
     -- design — it happens in a side premise, which reduces on a chain of its
     -- own and discards it
     it "prints the chain of morphing steps with --sequence" $
-      withStdin chained $
-        testCLISucceeded
-          ["morph", "--locator=Q.@", "--sequence", "--headers", "--sweet", "--hide-rho", "--flat"]
-          [ "Rule 'maa'"
-          , "Rule 'alpha'"
-          , "Rule 'copy'"
-          , "Rule 'mf'"
-          , "⟦ x ↦ 7, λ ⤍ L_number_plus ⟧"
-          ]
+      withAtoms $ \atoms ->
+        withStdin chained $
+          testCLISucceeded
+            ["morph", atoms, "--locator=Q.@", "--sequence", "--headers", "--sweet", "--hide-rho", "--flat"]
+            [ "Rule 'maa'"
+            , "Rule 'alpha'"
+            , "Rule 'copy'"
+            , "Rule 'mf'"
+            , "⟦ x ↦ 7, λ ⤍ L_number_plus ⟧"
+            ]
 
     it "does not print the result with --quiet" $
       withStdin "[[ D> 01- ]]" $
         testCLISucceeded ["morph", "--quiet"] []
 
     it "records the atoms it fires with --evaluations" $
-      withTempFile "evaluationsXXXXXX.txt" $ \(path, stream) -> do
-        hClose stream
-        withStdin chained $
-          testCLISucceeded ["morph", "--locator=Q.@", "--evaluations=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
-        records <- readUtf8 path
-        lines records `shouldBe` ["L_number_plus\t⟦ x ↦ 6 ⟧\t11"]
+      withAtoms $ \atoms ->
+        withTempFile "evaluationsXXXXXX.txt" $ \(path, stream) -> do
+          hClose stream
+          withStdin chained $
+            testCLISucceeded ["morph", atoms, "--locator=Q.@", "--evaluations=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
+          records <- readUtf8 path
+          lines records `shouldBe` ["L_number_plus\t⟦ x ↦ 6 ⟧\t11"]
 
     it "saves morphing steps to dir with --steps-dir" $
-      withTempDirectory "phino-steps-morph" $ \dir ->
-        withStdin chained $ do
-          testCLISucceeded
-            ["morph", "--locator=Q.@", "--steps-dir=" ++ dir, "--sweet", "--hide-rho", "--flat"]
-            ["⟦ x ↦ 7, λ ⤍ L_number_plus ⟧"]
-          steps <- sort <$> listDirectory dir
-          steps `shouldBe` map (\n -> printf "%05d.phi" (n :: Int)) [1 .. length steps]
-          length steps `shouldSatisfy` (> 0)
+      withAtoms $ \atoms ->
+        withTempDirectory "phino-steps-morph" $ \dir ->
+          withStdin chained $ do
+            testCLISucceeded
+              ["morph", atoms, "--locator=Q.@", "--steps-dir=" ++ dir, "--sweet", "--hide-rho", "--flat"]
+              ["⟦ x ↦ 7, λ ⤍ L_number_plus ⟧"]
+            steps <- sort <$> listDirectory dir
+            steps `shouldBe` map (\n -> printf "%05d.phi" (n :: Int)) [1 .. length steps]
+            length steps `shouldSatisfy` (> 0)
 
     it "accepts --seed, --shuffle and --depth-sensitive" $
       withStdin "[[ D> 01- ]]" $

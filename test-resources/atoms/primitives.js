@@ -1,0 +1,156 @@
+// SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+// SPDX-License-Identifier: MIT
+
+// The λ functions phino's own tests fire. phino implements none of them: it
+// writes this script to a temporary file, runs it under 'node' with the name of
+// the λ function as the first argument, feeds it the formation being evaluated
+// ('b') and the universe Φ ('s') on stdin as JSON, and reads the 𝜑-expression
+// to use as the atom's raw result back from stdout, under 'n'.
+//
+// This is a fixture, not a runtime: it goes just far enough to let the specs
+// reduce arithmetic and byte comparisons. Both payloads arrive as canonical
+// 𝜑-calculus, so every datum spells its bytes out as a Δ binding and the first
+// one inside an operand is the operand's own. An operand that is not an
+// already-reduced datum is not dataized here: a real runtime would ask phino
+// for it, with 'phino dataize --inside=...'.
+
+'use strict';
+
+const fs = require('fs');
+
+const atom = process.argv[2];
+const { b } = JSON.parse(fs.readFileSync(0, 'utf8'));
+
+const OPENING = '⟦(';
+const CLOSING = '⟧)';
+
+// The 𝜑 text bound to the attribute 'name' by the formation 'b'.
+function bound(name) {
+  const head = name + ' ↦ ';
+  let depth = 0;
+  for (let index = 0; index < b.length; index += 1) {
+    const char = b[index];
+    if (OPENING.includes(char)) {
+      depth += 1;
+    } else if (CLOSING.includes(char)) {
+      depth -= 1;
+    } else if (depth === 1 && b.startsWith(head, index) && ' ,⟦'.includes(b[index - 1])) {
+      return value(index + head.length);
+    }
+  }
+  return null;
+}
+
+// The 𝜑 text of one binding's value: everything up to the comma or the closing
+// bracket that ends it.
+function value(start) {
+  let depth = 0;
+  let text = '';
+  for (let index = start; index < b.length; index += 1) {
+    const char = b[index];
+    if (OPENING.includes(char)) {
+      depth += 1;
+    } else if (CLOSING.includes(char)) {
+      if (depth === 0) {
+        break;
+      }
+      depth -= 1;
+    } else if (char === ',' && depth === 0) {
+      break;
+    }
+    text += char;
+  }
+  return text.trim();
+}
+
+// Every shape an already-reduced datum reaches this script in: a literal
+// argument, a copy of the 'number', 'string' or 'bytes' object bound to ρ, or a
+// bare byte formation. The bytes are what follows.
+const DATA = [
+  'Φ.number( as-bytes ↦ Φ.bytes( data ↦ ⟦ Δ ⤍ ',
+  'Φ.string( as-bytes ↦ Φ.bytes( data ↦ ⟦ Δ ⤍ ',
+  'Φ.bytes( data ↦ ⟦ Δ ⤍ ',
+  '⟦ as-bytes ↦ Φ.bytes( data ↦ ⟦ Δ ⤍ ',
+  '⟦ data ↦ ⟦ Δ ⤍ ',
+  '⟦ Δ ⤍ ',
+];
+
+// The bytes of an already-reduced datum, or nothing at all when the operand is
+// not one: this fixture never guesses at an operand that still has to be
+// dataized, since dataizing it is a phino run of its own.
+function bytes(expr) {
+  const shape = expr === null ? undefined : DATA.find((prefix) => expr.startsWith(prefix));
+  if (shape === undefined) {
+    return null;
+  }
+  const found = /^([0-9A-F-]+)/.exec(expr.slice(shape.length));
+  return found === null ? null : Buffer.from(found[1].replace(/-/g, ''), 'hex');
+}
+
+// The double a datum carries. A byte array of any other length carries no
+// number at all, exactly as 'Expect.at(…).that(Number)' insists in EO.
+function number(expr) {
+  const raw = bytes(expr);
+  return raw !== null && raw.length === 8 ? raw.readDoubleBE(0) : NaN;
+}
+
+// A byte array the way 𝜑-calculus spells one: '--' when it is empty, 'FF-'
+// when it holds a single octet, '20-1F' when it holds more.
+function hex(raw) {
+  if (raw.length === 0) {
+    return '--';
+  }
+  const octets = [...raw].map((octet) => octet.toString(16).toUpperCase().padStart(2, '0'));
+  return octets.length === 1 ? `${octets[0]}-` : octets.join('-');
+}
+
+function asBytes(raw) {
+  return `Φ.bytes( data ↦ ⟦ Δ ⤍ ${hex(raw)} ⟧ )`;
+}
+
+function asNumber(value_) {
+  const raw = Buffer.alloc(8);
+  raw.writeDoubleBE(value_, 0);
+  return `Φ.number( as-bytes ↦ ${asBytes(raw)} )`;
+}
+
+function asBool(yes) {
+  return yes ? 'Φ.true' : 'Φ.false';
+}
+
+// A number atom with an operand carrying no number yields the terminator ⊥,
+// the way every EO number atom does.
+function arithmetic(operation) {
+  const left = number(bound('x'));
+  const right = number(bound('ρ'));
+  return Number.isNaN(left) || Number.isNaN(right) ? '⊥' : asNumber(operation(left, right));
+}
+
+function answer() {
+  switch (atom) {
+    case 'L_number_plus':
+      return arithmetic((x, rho) => rho + x);
+    case 'L_number_times':
+      return arithmetic((x, rho) => rho * x);
+    case 'L_number_div':
+      return arithmetic((x, rho) => rho / x);
+    case 'L_number_gt': {
+      const left = number(bound('x'));
+      const right = number(bound('ρ'));
+      return Number.isNaN(left) || Number.isNaN(right) ? '⊥' : asBool(right > left);
+    }
+    case 'L_bytes_eq': {
+      const left = bytes(bound('b'));
+      const right = bytes(bound('ρ'));
+      return left === null || right === null ? '⊥' : asBool(left.equals(right));
+    }
+    case 'L_bytes_not': {
+      const raw = bytes(bound('ρ'));
+      return raw === null ? '⊥' : asBytes(Buffer.from([...raw].map((octet) => ~octet & 0xff)));
+    }
+    default:
+      throw new Error(`the fixture implements no atom named '${atom}'`);
+  }
+}
+
+process.stdout.write(JSON.stringify({ n: answer() }));

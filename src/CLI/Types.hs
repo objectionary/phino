@@ -107,8 +107,10 @@ data OptsDataize = OptsDataize
   , _expression :: Maybe String
   , _label :: Maybe String
   , _meetPrefix :: Maybe String
+  , _inside :: Maybe String
   , _stepsDir :: Maybe FilePath
   , _evaluations :: Maybe FilePath
+  , _atoms :: Maybe FilePath
   , _inputFile :: Maybe FilePath
   }
 
@@ -149,8 +151,10 @@ data OptsMorph = OptsMorph
   , _expression :: Maybe String
   , _label :: Maybe String
   , _meetPrefix :: Maybe String
+  , _inside :: Maybe String
   , _stepsDir :: Maybe FilePath
   , _evaluations :: Maybe FilePath
+  , _atoms :: Maybe FilePath
   , _inputFile :: Maybe FilePath
   }
 

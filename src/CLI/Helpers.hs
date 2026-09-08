@@ -7,6 +7,7 @@
 module CLI.Helpers where
 
 import AST
+import Atoms (Registry, emptyRegistry, readRegistry)
 import CLI.Types
 import CLI.Validators (invalidCLIArguments)
 import Canonizer (canonize)
@@ -16,6 +17,7 @@ import Data.Functor ((<&>))
 import Data.IORef
 import Data.List (intercalate, nub)
 import Data.Maybe
+import Dataize (DataizeContext, insideUniverse)
 import Deps (SaveEvalFunc, SaveStepFunc, dontSaveEval, saveEval, saveStep)
 import Encoding
 import Files (ensuredFile)
@@ -83,6 +85,34 @@ withEvalFunc (Just file) ctx action = do
       protocol <- openFile file WriteMode
       hSetEncoding protocol utf8
       pure protocol
+
+-- The λ functions this run may fire. phino implements none of them, so without
+-- '--atoms' the registry is empty and every atom a program names gets stuck —
+-- which is exactly what '--partial' parks on. The file is read here, before
+-- anything is parsed or dataized, so an unknown runtime or a malformed registry
+-- fails the run up front rather than half-way through a derivation.
+registryOf :: Maybe FilePath -> IO Registry
+registryOf Nothing = do
+  logDebug "The option '--atoms' is not specified, no λ function can be fired"
+  pure emptyRegistry
+registryOf (Just file) = do
+  logDebug (printf "The option '--atoms' is specified, reading the λ functions from '%s'" file)
+  ensuredFile file >>= readRegistry
+
+-- Aim the run at the '--inside' expression instead of at '--locator': the
+-- expression is bound to a synthetic attribute prepended to the input
+-- expression, which the run takes as the universe, and the locator becomes that
+-- attribute (see 'insideUniverse'). Without the option nothing moves and the
+-- context is handed back as it came.
+aimed :: Maybe String -> Expression -> DataizeContext -> IO (Expression, DataizeContext)
+aimed Nothing expr ctx = pure (expr, ctx)
+aimed (Just src) expr@(ExFormation _) ctx = do
+  target <- parseExpressionThrows src
+  logDebug (printf "The option '--inside' is specified, reducing '%s' inside the given universe" (P.printExpression target))
+  insideUniverse target expr ctx
+aimed (Just _) expr _ =
+  invalidCLIArguments
+    (printf "The option --inside requires the input expression to be a formation, but given: %s" (P.printExpression expr))
 
 -- Read input from file or stdin
 readInput :: Maybe FilePath -> IO String
