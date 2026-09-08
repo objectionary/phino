@@ -104,13 +104,13 @@ $ phino dataize hello.phi
 
 Which λ functions exist is a property of the object model being dataized, not
 of the calculus, so `phino` implements none of them. They come from a JSON
-registry given with `--atoms`, keyed by λ name:
+registry given with `--atoms`, keyed by regular expressions over λ names:
 
 ```json
 {
   "L_number_plus": {
     "rt": "node",
-    "script": "const fs = require('fs'); ..."
+    "script": "const readline = require('readline'); ..."
   }
 }
 ```
@@ -120,11 +120,10 @@ supported for now; a registry naming any other interpreter is refused when the
 file is read, before dataization starts.
 
 When 𝔼 reaches a λ function the registry carries, `phino` writes its `script`
-to a temporary file and runs it as a POSIX process under that interpreter, with
-the λ name as the first command-line argument:
+to a temporary file and runs it as a POSIX process under that interpreter:
 
 ```text
-node /tmp/phino-atom-4f2a.js L_number_plus
+node /tmp/phino-atom-4f2a.js
 ```
 
 An atom that is already a program needs no interpreter and no staging. Such an
@@ -139,59 +138,94 @@ entry says `exec` and gives a `path` instead of a `script`:
 }
 ```
 
-`phino` spawns that file directly, as the executable binary it is, with the λ
-name as its first command-line argument:
+`phino` spawns that file directly, as the executable binary it is, with no
+arguments. A `path` that names no file, or a file nobody may run, is refused
+where the registry is read, together with the unknown runtimes.
+
+Whichever way it is run, the program is talked to over `stdin` and `stdout`,
+one JSON object per line, in the letters of the evaluation rule of the
+[𝜑-calculus paper](https://github.com/objectionary/calculus-paper),
+𝔼(𝑏, 𝑒, 𝑠) = 𝑛, where 𝑏 is the formation, 𝑒 the universe and 𝑛 the normal
+form the atom answers with:
 
 ```text
-/opt/eo/atoms/number-plus L_number_plus
+{"𝑒": "⟦ bytes ↦ ⟦ … ⟧, number ↦ ⟦ … ⟧, φ ↦ … ⟧"}
+{"id": 1, "λ": "L_number_plus", "𝑏": "⟦ x ↦ Φ.number( … ), ρ ↦ ⟦ … ⟧ ⟧"}
+{"id": 1, "𝑛": "11"}
 ```
 
-A `path` that names no file, or a file nobody may run, is refused where the
-registry is read, together with the unknown runtimes.
+The first two lines are `phino`'s, the third is the program's. The universe Φ
+goes under `𝑒`, in a line of its own, before the first request. Then comes the
+request: an `id`, the λ name under `λ` — one program may be registered under
+several names and branch on it — and, under `𝑏`, the formation being
+evaluated, with its λ binding removed. Both payloads are canonical 𝜑-calculus
+on a single line — no syntax sugar, whatever `--sweet` says about the output of
+the run — so a program never has to know about `phino`'s sugar in order to find
+a datum: every byte array is spelled out as a Δ binding.
 
-The name matters: one program may be registered under several λ names and
-branch on it, which is where `node` puts it — `process.argv[2]`. The program is
-then fed one JSON object on `stdin`:
+The program answers with one line carrying the same `id` and, under `𝑛`, the
+𝜑-expression the atom answers with, in any syntax `phino`'s parser reads —
+syntax sugar included, so the `11` above and the `Φ.number( … )` it stands for
+are the same answer. `phino` parses it back and hands it to 𝔼 as the atom's
+raw result, normalizing it exactly as it normalizes anything else, so
+`--evaluations`, `--partial` and `--max-steps` keep working unchanged.
+
+A program started for the fire is asked one request, always `id` 1, and its
+`stdin` is closed behind it, so it may read its input whole or line by line, as
+it pleases. It is waited for once it has answered, and a non-zero exit fails
+the run. So does a reply that is not JSON, carries no `𝑛`, answers another
+`id`, or an `𝑛` that does not parse, or a program that quits without
+answering — always with the program's own `stderr` in the message.
+
+Each key of the registry is a regular expression, and it must match the whole
+λ name, so a plain name such as `L_number_plus` means that one atom and nothing
+else, while `L_number_.*` stands for every atom of `number`. When 𝔼 reaches a
+λ function, the keys are tried top to bottom, in the order the file lists them,
+and the first one that matches is the entry fired, so a key placed above
+another hides whatever the two have in common. A key that is not a regular
+expression is refused where the registry is read.
+
+A λ name no key matches has no λ function at all, so 𝔼 gets stuck on it.
+Without `--atoms` the registry is empty and every atom gets stuck.
+
+One process per fire is where a program that is slow to start — a JVM, say —
+spends most of the run. An entry saying `serve` has `phino` start its program
+once, on the first fire, and keep it for the rest of the run, whether it is a
+`script` or a `path`. Together with a key that matches many names, this is how
+one program stands for a whole object model without being spelled once per
+atom:
 
 ```json
 {
-  "b": "⟦ x ↦ Φ.number( as-bytes ↦ … ), ρ ↦ ⟦ … ⟧ ⟧",
-  "s": "⟦ bytes ↦ ⟦ … ⟧, number ↦ ⟦ … ⟧, φ ↦ … ⟧"
+  "L_bytes_eq": {
+    "rt": "node",
+    "script": "const readline = require('readline'); ..."
+  },
+  ".*": {
+    "rt": "exec",
+    "path": "/opt/eo/atoms/resident",
+    "serve": true
+  }
 }
 ```
 
-Here `b` is the formation being evaluated, with its λ binding removed so that
-the script may dispatch on it, and `s` is the universe Φ. Both are canonical
-𝜑-calculus on a single line — no syntax sugar, whatever `--sweet` says about
-the output of the run — so a script never has to know about `phino`'s sugar in
-order to find a datum: every byte array is spelled out as a Δ binding.
-
-The script writes one JSON object to `stdout`:
-
-```json
-{ "n": "11" }
-```
-
-The `n` field is the 𝜑-expression the atom answers with, in any syntax
-`phino`'s parser reads — syntax sugar included, so the `11` above and the
-`Φ.number( … )` it stands for are the same answer. `phino` parses it back
-and hands it to 𝔼 as the atom's raw result, normalizing it exactly as it
-normalizes anything else, so `--evaluations`, `--partial` and `--max-steps`
-keep working unchanged. A non-zero exit, output that is not JSON, a missing
-`n` or an `n` that does not parse fails the run, with the program's own
-`stderr` in the message.
-
-A λ name the registry does not carry has no λ function at all, so 𝔼 gets stuck
-on it. Without `--atoms` the registry is empty and every atom gets stuck.
+Every λ name registered on the same program, under one key or under several,
+is served by the same process, so there is one of it, however many atoms it
+stands for. The lines are the same:
+the program reads request after request off its `stdin`, each with the next
+`id`, and answers each in turn. The universe is told again only when a fire
+comes with a different one; the program keeps the last one it was told. When
+the run is over, whatever it ended with, `phino` closes the program's `stdin`,
+which is its cue to quit, and terminates it if it has not quit within a second.
 
 ### Reducing the operands of an atom
 
-A script gets at the parts of `b` by calling `phino` again, so no API has to be
-exposed for it. The `--inside` option is how it asks: the expression it names
-is bound to a fresh synthetic attribute of the input expression, which the run
-takes as the universe, normalized there, and then dataized. This is the same
-trick `phino` plays internally whenever it has to reduce a sub-expression the
-program does not contain:
+A program gets at the parts of `𝑏` by calling `phino` again, so no API has to
+be exposed for it. The `--inside` option is how it asks: the expression it
+names is bound to a fresh synthetic attribute of the input expression, which
+the run takes as the universe, normalized there, and then dataized. This is the
+same trick `phino` plays internally whenever it has to reduce a sub-expression
+the program does not contain:
 
 ```bash
 $ phino dataize --atoms=atoms.json --inside='5.plus( 6 )' universe.phi
@@ -199,33 +233,49 @@ $ phino dataize --atoms=atoms.json --inside='5.plus( 6 )' universe.phi
 ```
 
 Here `universe.phi` is the 𝜑-program the atom is being fired inside — the very
-text the script was handed as `s`, which it feeds back on `stdin`.
+text the program was told under `𝑒`, which it feeds back on `stdin`.
 
 So a `L_number_plus` that reduces its own operands reads like this:
 
 ```js
-const fs = require('fs');
+const readline = require('readline');
 const { execFileSync } = require('child_process');
-const atom = process.argv[2];
-if (atom !== 'L_number_plus') {
-  throw new Error(`unsupported atom ${atom}`);
-}
-const { b, s } = JSON.parse(fs.readFileSync(0, 'utf8'));
+let universe;
 const dataized = (expr) => execFileSync(
   'phino',
   ['dataize', '--atoms=atoms.json', `--inside=${expr}`],
-  { input: s, encoding: 'utf8' }
+  { input: universe, encoding: 'utf8' }
 ).trim();
-const number = (expr) => Buffer.from(dataized(expr).replace(/-/g, ''), 'hex').readDoubleBE(0);
-const sum = Buffer.alloc(8);
-sum.writeDoubleBE(number(`${b}.ρ`) + number(`${b}.x`));
-const hex = [...sum]
-  .map((octet) => octet.toString(16).toUpperCase().padStart(2, '0'))
-  .join('-');
-process.stdout.write(JSON.stringify({
-  n: `Φ.number( as-bytes ↦ Φ.bytes( data ↦ ⟦ Δ ⤍ ${hex} ⟧ ) )`
-}));
+const number = (expr) => Buffer
+  .from(dataized(expr).replace(/-/g, ''), 'hex')
+  .readDoubleBE(0);
+const hex = (value) => {
+  const bytes = Buffer.alloc(8);
+  bytes.writeDoubleBE(value);
+  return [...bytes]
+    .map((octet) => octet.toString(16).toUpperCase().padStart(2, '0'))
+    .join('-');
+};
+readline.createInterface({ input: process.stdin }).on('line', (line) => {
+  const message = JSON.parse(line);
+  if ('𝑒' in message) {
+    universe = message['𝑒'];
+    return;
+  }
+  if (message['λ'] !== 'L_number_plus') {
+    throw new Error(`unsupported atom ${message['λ']}`);
+  }
+  const b = message['𝑏'];
+  const sum = hex(number(`${b}.ρ`) + number(`${b}.x`));
+  process.stdout.write(`${JSON.stringify({
+    id: message.id,
+    '𝑛': `Φ.number( as-bytes ↦ Φ.bytes( data ↦ ⟦ Δ ⤍ ${sum} ⟧ ) )`,
+  })}\n`);
+});
 ```
+
+Written this way, reading until its `stdin` closes, the same program runs once
+per fire and serves the whole run alike; only the registry entry decides.
 
 The `--inside` option cannot be combined with `--locator`, since it aims the
 run at the binding it mints itself. Both `dataize` and `morph` take `--atoms`
