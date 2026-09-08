@@ -9,10 +9,10 @@ module AtomsSpec (spec) where
 import AST
 import Atoms (Atom (..), Runtime (RtJs), emptyRegistry, fireAtom, readRegistry, registeredAtom)
 import Control.Exception (SomeException, bracket)
-import qualified Data.ByteString as BS
 import Control.Monad (forM_)
+import Data.ByteString qualified as BS
 import Data.List (isInfixOf)
-import qualified Data.Text as T
+import Data.Text qualified as T
 import Data.Text.Encoding (encodeUtf8)
 import Fixtures (withNode)
 import Parser (parseExpressionThrows)

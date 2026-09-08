@@ -13,12 +13,12 @@ module Fixtures (fixtureAtoms, fixtureRegistry, withFixtureRegistry, withNode) w
 import Atoms (Atom (..), Registry, Runtime (RtJs))
 import Control.Exception (bracket)
 import Data.Aeson (encode, object, (.=))
-import qualified Data.Aeson.Key as Key
-import qualified Data.ByteString as BS
-import qualified Data.ByteString.Lazy as BSL
-import qualified Data.Map.Strict as Map
+import Data.Aeson.Key qualified as Key
+import Data.ByteString qualified as BS
+import Data.ByteString.Lazy qualified as BSL
+import Data.Map.Strict qualified as Map
 import Data.Maybe (isNothing)
-import qualified Data.Text as T
+import Data.Text qualified as T
 import Data.Text.Encoding (decodeUtf8)
 import System.Directory (findExecutable, getTemporaryDirectory, removePathForcibly)
 import System.IO (Handle, hClose, openBinaryTempFile)
