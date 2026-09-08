@@ -109,6 +109,18 @@ spec = do
             (decodeYaml' (rewriting "result: '⟦ ⟧'\nhaving:\n  formation: '𝑒'") :: Either Yaml.ParseException Rule)
         )
       ,
+        ( "as a bare index meta in 'when' of a rewriting rule"
+        , failsWith
+            "anonymous meta '!i' cannot be referenced in 'when' of rule 'foo'"
+            (decodeYaml' (rewriting "result: '⟦ ⟧'\nwhen:\n  eq: ['𝑖', 1]") :: Either Yaml.ParseException Rule)
+        )
+      ,
+        ( "inside an 'nf' condition of a rewriting rule"
+        , failsWith
+            "anonymous meta '!e' cannot be referenced in 'when' of rule 'foo'"
+            (decodeYaml' (rewriting "result: '⟦ ⟧'\nwhen:\n  nf: '𝑒'") :: Either Yaml.ParseException Rule)
+        )
+      ,
         ( "in 'n-result' of a morphing rule"
         , failsWith
             "anonymous meta '!n' cannot be referenced in 'n-result' of rule 'foo'"
@@ -121,10 +133,34 @@ spec = do
             (decodeYaml' (inferring "e-match: 𝑒0\nn-result: 𝑛1\npremises:\n  - n-result: 𝑛1\n    normalize: '𝑒'") :: Either Yaml.ParseException MorphRule)
         )
       ,
+        ( "in 'when' of a morphing rule"
+        , failsWith
+            "anonymous meta '!e' cannot be referenced in 'when' of rule 'foo'"
+            (decodeYaml' (inferring "e-match: 𝑒0\nn-result: 𝑛1\nwhen:\n  formation: '𝑒'") :: Either Yaml.ParseException MorphRule)
+        )
+      ,
         ( "in 'd-result' of a dataization rule"
         , failsWith
             "anonymous meta '!d' cannot be referenced in 'd-result' of rule 'foo'"
             (decodeYaml' (inferring "e-match: 𝑒0\nd-result: 'δ'") :: Either Yaml.ParseException DataizeRule)
+        )
+      ,
+        ( "in 'when' of a dataization rule"
+        , failsWith
+            "anonymous meta '!e' cannot be referenced in 'when' of rule 'foo'"
+            (decodeYaml' (inferring "e-match: 𝑒0\nd-result: δ0\nwhen:\n  formation: '𝑒'") :: Either Yaml.ParseException DataizeRule)
+        )
+      ,
+        ( "in a premise of a dataization rule"
+        , failsWith
+            "anonymous meta '!e' cannot be referenced in 'premises' of rule 'foo'"
+            (decodeYaml' (inferring "e-match: 𝑒0\nd-result: δ0\npremises:\n  - d-result: δ0\n    dataize: '𝑒'") :: Either Yaml.ParseException DataizeRule)
+        )
+      ,
+        ( "in a premise of a contextualization rule"
+        , failsWith
+            "anonymous meta '!e' cannot be referenced in 'premises' of rule 'foo'"
+            (decodeYaml' (inferring "c-match: 𝑘0\nc-result: 𝑛1\npremises:\n  - n-result: 𝑛1\n    normalize: '𝑒'") :: Either Yaml.ParseException ContextualizeRule)
         )
       ,
         ( "in 'c-result' of a contextualization rule"
