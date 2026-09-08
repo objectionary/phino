@@ -9,20 +9,22 @@
 -- Which λ functions exist is a property of the object model being dataized,
 -- not of the calculus. phino therefore implements none of them: it reads a
 -- registry of them from a JSON file given with '--atoms' and fires each one as
--- a POSIX process. The registry maps a λ name to the runtime that runs its
--- script, or to 'exec' and the path of a file that runs on its own, and says
--- with 'serve' whether the program is to be started once and kept for the run:
+-- a POSIX process. Each key of the registry is a regular expression over λ
+-- names, tried top to bottom, and the first one matching the whole name of the
+-- atom being fired wins; its entry names the runtime that runs a script, or
+-- 'exec' and the path of a file that runs on its own, and says with 'serve'
+-- whether the program is to be started once and kept for the run:
 --
 -- > {
 -- >   "L_bytes_eq": {
 -- >     "rt": "node",
--- >     "script": "const fs = require('fs'); ..."
+-- >     "script": "const readline = require('readline'); ..."
 -- >   },
 -- >   "L_number_plus": {
 -- >     "rt": "exec",
 -- >     "path": "/opt/eo/atoms/number-plus"
 -- >   },
--- >   "L_number_times": {
+-- >   ".*": {
 -- >     "rt": "exec",
 -- >     "path": "/opt/eo/atoms/resident",
 -- >     "serve": true
@@ -35,9 +37,8 @@
 -- 'λ' and the formation under '𝑏', answered by a line with the same 'id' and
 -- the 𝜑-expression under '𝑛'.
 --
--- A name absent from the registry has no λ function at all: 𝔼 gets stuck on
--- it, exactly as it does for a name no one ever declared (see 'Stuck' in
--- 'Dataize').
+-- A name no key matches has no λ function at all: 𝔼 gets stuck on it, exactly
+-- as it does for a name no one ever declared (see 'Stuck' in 'Dataize').
 module Atoms
   ( Atom (..)
   , AtomException (..)
@@ -60,6 +61,11 @@ import Control.Exception (Exception, SomeException, catch, onException, throwIO,
 import Control.Monad (foldM, unless)
 import Data.Aeson (FromJSON (parseJSON), eitherDecodeStrict', object, withObject, withText, (.!=), (.:), (.:?), (.=))
 import qualified Data.Aeson as A
+import Data.Aeson.Decoding (toEitherValue)
+import Data.Aeson.Decoding.ByteString (bsToTokens)
+import Data.Aeson.Decoding.Tokens (TkRecord (TkPair, TkRecordEnd, TkRecordErr), Tokens (TkErr, TkRecordOpen))
+import qualified Data.Aeson.Key as Key
+import Data.Aeson.Types (JSONPathElement (Key), parseEither, (<?>))
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as BSL
 import Data.List (find, intercalate)
@@ -80,6 +86,8 @@ import System.IO (Handle, hClose, hFlush, hSetBinaryMode, openBinaryTempFile)
 import System.Process (CreateProcess (std_err, std_in, std_out), ProcessHandle, StdStream (CreatePipe, UseHandle), createProcess, proc, terminateProcess, waitForProcess)
 import System.Timeout (timeout)
 import Text.Printf (printf)
+import Text.Regex.PCRE (matchTest)
+import Text.Regex.PCRE.ByteString (Regex, compUTF8, compile, execBlank)
 
 -- The interpreter a script is run under, named after the executable itself:
 -- only 'node' for now. A registry naming any other runtime is rejected when it
@@ -142,8 +150,13 @@ data Running = Running
 -- it is to be kept for the run.
 data Entry = Entry Program Bool
 
--- Every λ function phino may fire, keyed by name.
-type Registry = Map T.Text Atom
+-- Every λ function phino may fire, in the order the registry file lists them:
+-- each key of the file, a regular expression over λ names, paired with the
+-- atom its entry describes. A lookup tries them top to bottom and the first
+-- key matching the whole name wins, so one entry may stand for many atoms,
+-- while a plain name, being a regular expression matching itself, keeps
+-- meaning that one atom.
+newtype Registry = Registry [(Regex, Atom)]
 
 data AtomException
   = -- The '--atoms' file is not a JSON registry of λ functions.
@@ -225,30 +238,54 @@ instance FromJSON Reply where
 -- No λ function at all: every atom gets stuck. This is what a run without
 -- '--atoms' fires against.
 emptyRegistry :: Registry
-emptyRegistry = Map.empty
+emptyRegistry = Registry []
 
--- The λ function registered under this name, if any.
+-- The λ function of the first key that matches the whole name, if any.
 registeredAtom :: Registry -> T.Text -> Maybe Atom
-registeredAtom registry func = Map.lookup func registry
+registeredAtom (Registry rules) func = snd <$> find (\(pattern, _) -> matchTest pattern (encodeUtf8 func)) rules
 
--- Read the registry of λ functions from a JSON file. An unknown runtime, a
--- missing 'script', a 'path' that names no executable file or malformed JSON
--- fails here, before any dataization starts. The entries that are to keep the
--- same program are given one session between them, so that one resident
--- process answers for every λ name it is registered under.
+-- Read the registry of λ functions from a JSON file. A key that is no regular
+-- expression, an unknown runtime, a missing 'script', a 'path' that names no
+-- executable file or malformed JSON fails here, before any dataization starts.
+-- The entries that are to keep the same program are given one session between
+-- them, so that one resident process answers for every key it is registered
+-- under.
 readRegistry :: FilePath -> IO Registry
 readRegistry path = do
   content <- BS.readFile path `catch` unreadable
-  case eitherDecodeStrict' content of
-    Left failure -> throwIO (BrokenRegistry path failure)
-    Right entries -> do
-      mapM_ (uncurry runnable) (Map.toList entries)
-      (registry, _) <- foldM admitted (Map.empty, Map.empty) (Map.toList entries)
-      logDebug (printf "Loaded %d atom(s) from '%s'" (Map.size registry) path)
-      pure registry
+  entries <- either (throwIO . BrokenRegistry path) pure (listed content)
+  mapM_ (uncurry runnable) entries
+  (rules, _) <- foldM admitted ([], Map.empty) entries
+  logDebug (printf "Loaded %d atom(s) from '%s'" (length rules) path)
+  pure (Registry (reverse rules))
   where
     unreadable :: IOError -> IO BS.ByteString
     unreadable failure = throwIO (BrokenRegistry path (show failure))
+    -- The entries of the file in the order it lists them, which is the order
+    -- the keys are tried in and which the object aeson would decode the file
+    -- to forgets, so the file is walked token by token instead.
+    listed :: BS.ByteString -> Either String [(T.Text, Entry)]
+    listed content = case bsToTokens content of
+      TkRecordOpen record -> paired record
+      TkErr failure -> Left failure
+      _ -> Left "the file is not a JSON object"
+    paired :: TkRecord BS.ByteString String -> Either String [(T.Text, Entry)]
+    paired (TkPair key tokens) = do
+      (value, rest) <- toEitherValue tokens
+      entry <- parseEither (\raw -> parseJSON raw <?> Key key) value
+      ((Key.toText key, entry) :) <$> paired rest
+    paired (TkRecordEnd rest)
+      | BS.all (`BS.elem` " \t\r\n") rest = Right []
+      | otherwise = Left "there is more in the file than the JSON object"
+    paired (TkRecordErr failure) = Left failure
+    -- The key as the regular expression it is, made to match the whole name,
+    -- so that a plain name means that one atom and not every name it is a
+    -- part of.
+    compiled :: T.Text -> IO Regex
+    compiled key = compile compUTF8 execBlank (encodeUtf8 ("^(?:" <> key <> ")$")) >>= either broken pure
+      where
+        broken :: (a, String) -> IO Regex
+        broken (_, failure) = throwIO (BrokenRegistry path (printf "the key '%s' is not a regular expression: %s" (T.unpack key) failure))
     -- The file of an executable atom is the only thing phino knows about it,
     -- and it staged none of it, so the file is looked at here, while the
     -- registry is being read, rather than half-way through a program that
@@ -260,20 +297,25 @@ readRegistry path = do
       allowed <- executable <$> getPermissions file
       unless allowed (throwIO (NoRuntime func file "the file is not executable"))
     runnable _ _ = pure ()
-    -- Turn an entry into the atom phino fires, sharing a session between the
-    -- entries that are to keep the same program.
-    admitted :: (Registry, Map Program Session) -> (T.Text, Entry) -> IO (Registry, Map Program Session)
-    admitted (registry, sessions) (func, Entry program False) = pure (Map.insert func (Transient program) registry, sessions)
-    admitted (registry, sessions) (func, Entry program True) = do
+    -- Turn an entry into the atom phino fires, keyed by its pattern and, when
+    -- it is to keep its program, sharing a session with the entries keeping
+    -- the same one; the rules come out newest first.
+    admitted :: ([(Regex, Atom)], Map Program Session) -> (T.Text, Entry) -> IO ([(Regex, Atom)], Map Program Session)
+    admitted (rules, sessions) (key, Entry program serve) = do
+      pattern <- compiled key
+      (atom, kept) <- if serve then resident program sessions else pure (Transient program, sessions)
+      pure ((pattern, atom) : rules, kept)
+    resident :: Program -> Map Program Session -> IO (Atom, Map Program Session)
+    resident program sessions = do
       session <- maybe (Session program <$> newMVar Nothing) pure (Map.lookup program sessions)
-      pure (Map.insert func (Resident session) registry, Map.insert program session sessions)
+      pure (Resident session, Map.insert program session sessions)
 
 -- Stop every resident program the registry has started: its stdin is closed,
 -- which is its cue to quit, and a program that has not quit within a second is
 -- terminated. The runners call this when the run is over, whatever it ended
 -- with, so that no process outlives the phino that started it.
 closeRegistry :: Registry -> IO ()
-closeRegistry registry = mapM_ dismissed (Map.elems registry)
+closeRegistry (Registry rules) = mapM_ (dismissed . snd) rules
   where
     dismissed :: Atom -> IO ()
     dismissed (Resident Session{..}) = modifyMVar_ _running (maybe (pure Nothing) (\running -> Nothing <$ stopped briefly running))

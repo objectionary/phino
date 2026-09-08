@@ -13,8 +13,10 @@ import Control.Monad (forM_)
 import Data.Aeson (Value, object, (.=))
 import Data.Aeson.Key qualified as Key
 import Data.Aeson.Types (Pair)
+import Data.ByteString qualified as BS
 import Data.List (isInfixOf)
 import Data.Text qualified as T
+import Data.Text.Encoding (encodeUtf8)
 import Fixtures (resident, withExecutable, withNode, withRegistryOf, withScript, withShell, withTemp)
 import Parser (parseExpressionThrows)
 import System.Directory (doesFileExist, getTemporaryDirectory, removePathForcibly)
@@ -39,6 +41,11 @@ scripted script = ["rt" .= ("node" :: T.Text), "script" .= script]
 -- The same entry, kept for the run
 served :: [Pair] -> [Pair]
 served fields = ("serve" .= True) : fields
+
+-- The text of a registry of node scripts under the given keys, in exactly the
+-- order given, which 'registryOf' cannot promise
+ordered :: [(T.Text, T.Text)] -> BS.ByteString
+ordered entries = encodeUtf8 ("{" <> T.intercalate ", " ["\"" <> key <> "\": {\"rt\": \"node\", \"script\": \"" <> script <> "\"}" | (key, script) <- entries] <> "}")
 
 -- The λ functions of the given registry, read from a file, with every program
 -- it has started stopped afterwards, so that no spec leaves a process behind
@@ -196,6 +203,33 @@ spec = do
         registry <- readRegistry path
         registeredAtom registry "L_bytes_eq" `shouldBe` Nothing
 
+    -- A key is a regular expression, so one entry may stand for a whole family
+    -- of atoms and the same program need not be spelled once per name
+    it "matches a λ name against the key as a regular expression" $
+      withRegistryOf (registryOf ["L_number_.*"] (scripted "say(1)")) $ \path -> do
+        registry <- readRegistry path
+        registeredAtom registry "L_number_plus" `shouldBe` Just (Transient (Scripted RtNode "say(1)"))
+
+    -- A plain name is a regular expression too, and it means that one atom,
+    -- not every atom whose name it is a part of
+    it "matches the key against the whole λ name" $
+      withRegistryOf (registryOf ["L_number"] (scripted "say(1)")) $ \path -> do
+        registry <- readRegistry path
+        registeredAtom registry "L_number_plus" `shouldBe` Nothing
+
+    -- The keys are tried in the order the file lists them, so a catch-all
+    -- placed first hides everything below it, and the file is written by hand
+    -- here because 'object' does not keep the order of its keys
+    it "fires the first key top to bottom that matches" $
+      withTemp "phino-atoms-.json" (ordered [(".*", "say(1)"), ("L_answer", "say(2)")]) $ \path -> do
+        registry <- readRegistry path
+        registeredAtom registry "L_answer" `shouldBe` Just (Transient (Scripted RtNode "say(1)"))
+
+    it "reaches a later key when the earlier ones do not match" $
+      withTemp "phino-atoms-.json" (ordered [("L_other", "say(1)"), (".*", "say(2)")]) $ \path -> do
+        registry <- readRegistry path
+        registeredAtom registry "L_answer" `shouldBe` Just (Transient (Scripted RtNode "say(2)"))
+
     -- A malformed entry is refused where the file is read, which is before any
     -- dataization starts, rather than at the moment an atom of it would fire
     forM_
@@ -246,6 +280,21 @@ spec = do
       withTemp "phino-atoms-.json" "L_answer: js" $ \path ->
         readRegistry path
           `shouldThrow` (\failure -> "cannot be read" `isInfixOf` show (failure :: SomeException))
+
+    it "fails when a key is not a regular expression" $
+      withRegistryOf (registryOf ["L_(answer"] (scripted "say(1)")) $ \path ->
+        readRegistry path
+          `shouldThrow` (\failure -> all (`isInfixOf` show (failure :: SomeException)) ["L_(answer", "regular expression"])
+
+    it "fails when the file is a JSON array" $
+      withTemp "phino-atoms-.json" "[]" $ \path ->
+        readRegistry path
+          `shouldThrow` (\failure -> all (`isInfixOf` show (failure :: SomeException)) ["cannot be read", "object"])
+
+    it "fails when there is more in the file than the JSON object" $
+      withTemp "phino-atoms-.json" "{} {}" $ \path ->
+        readRegistry path
+          `shouldThrow` (\failure -> all (`isInfixOf` show (failure :: SomeException)) ["cannot be read", "more in the file"])
 
     it "fails when the file is not there" $
       readRegistry "no-such-registry.json"
@@ -367,6 +416,16 @@ spec = do
     it "serves every λ name registered on the same file from one program" $
       withShell $
         withServed ["L_answer", "L_other"] (replying "0$n-") $ \registry -> do
+          _ <- firedFrom registry "L_answer" "⟦ y ↦ ⟦ Δ ⤍ 02- ⟧ ⟧"
+          second <- firedFrom registry "L_other" "⟦ y ↦ ⟦ Δ ⤍ 02- ⟧ ⟧"
+          wanted <- parseExpressionThrows "⟦ Δ ⤍ 02- ⟧"
+          second `shouldBe` wanted
+
+    -- One key matching many names is the way to have one program serve them
+    -- all without spelling it once per name
+    it "serves every λ name one key matches from one program" $
+      withShell $
+        withServed [".*"] (replying "0$n-") $ \registry -> do
           _ <- firedFrom registry "L_answer" "⟦ y ↦ ⟦ Δ ⤍ 02- ⟧ ⟧"
           second <- firedFrom registry "L_other" "⟦ y ↦ ⟦ Δ ⤍ 02- ⟧ ⟧"
           wanted <- parseExpressionThrows "⟦ Δ ⤍ 02- ⟧"

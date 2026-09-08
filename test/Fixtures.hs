@@ -24,13 +24,12 @@ module Fixtures
   )
 where
 
-import Atoms (Atom (..), Program (..), Registry, Runtime (RtNode))
+import Atoms (Registry, readRegistry)
 import Control.Exception (bracket)
 import Data.Aeson (Value, encode, object, (.=))
 import Data.Aeson.Key qualified as Key
 import Data.ByteString qualified as BS
 import Data.ByteString.Lazy qualified as BSL
-import Data.Map.Strict qualified as Map
 import Data.Maybe (isNothing)
 import Data.Text qualified as T
 import Data.Text.Encoding (decodeUtf8, encodeUtf8)
@@ -56,11 +55,10 @@ fixtureAtoms =
 fixtureScript :: IO T.Text
 fixtureScript = decodeUtf8 <$> BS.readFile "test-resources/atoms/primitives.js"
 
--- The registry the specs that drive 'Dataize' directly run against.
+-- The registry the specs that drive 'Dataize' directly run against: the same
+-- file '--atoms' reads, read once and gone.
 fixtureRegistry :: IO Registry
-fixtureRegistry = do
-  script <- fixtureScript
-  pure (Map.fromList [(name, Transient (Scripted RtNode script)) | name <- fixtureAtoms])
+fixtureRegistry = withFixtureRegistry readRegistry
 
 -- The same registry as the JSON file '--atoms' reads, in a temporary file
 -- removed afterwards, for the specs that go through the command line.

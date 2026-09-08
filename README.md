@@ -104,7 +104,7 @@ $ phino dataize hello.phi
 
 Which λ functions exist is a property of the object model being dataized, not
 of the calculus, so `phino` implements none of them. They come from a JSON
-registry given with `--atoms`, keyed by λ name:
+registry given with `--atoms`, keyed by regular expressions over λ names:
 
 ```json
 {
@@ -177,22 +177,31 @@ the run. So does a reply that is not JSON, carries no `𝑛`, answers another
 `id`, or an `𝑛` that does not parse, or a program that quits without
 answering — always with the program's own `stderr` in the message.
 
-A λ name the registry does not carry has no λ function at all, so 𝔼 gets stuck
-on it. Without `--atoms` the registry is empty and every atom gets stuck.
+Each key of the registry is a regular expression, and it must match the whole
+λ name, so a plain name such as `L_number_plus` means that one atom and nothing
+else, while `L_number_.*` stands for every atom of `number`. When 𝔼 reaches a
+λ function, the keys are tried top to bottom, in the order the file lists them,
+and the first one that matches is the entry fired, so a key placed above
+another hides whatever the two have in common. A key that is not a regular
+expression is refused where the registry is read.
+
+A λ name no key matches has no λ function at all, so 𝔼 gets stuck on it.
+Without `--atoms` the registry is empty and every atom gets stuck.
 
 One process per fire is where a program that is slow to start — a JVM, say —
 spends most of the run. An entry saying `serve` has `phino` start its program
 once, on the first fire, and keep it for the rest of the run, whether it is a
-`script` or a `path`:
+`script` or a `path`. Together with a key that matches many names, this is how
+one program stands for a whole object model without being spelled once per
+atom:
 
 ```json
 {
-  "L_number_plus": {
-    "rt": "exec",
-    "path": "/opt/eo/atoms/resident",
-    "serve": true
+  "L_bytes_eq": {
+    "rt": "node",
+    "script": "const readline = require('readline'); ..."
   },
-  "L_number_times": {
+  ".*": {
     "rt": "exec",
     "path": "/opt/eo/atoms/resident",
     "serve": true
@@ -200,8 +209,9 @@ once, on the first fire, and keep it for the rest of the run, whether it is a
 }
 ```
 
-Every λ name registered on the same program is served by the same process, so
-there is one of it, however many atoms it stands for. The lines are the same:
+Every λ name registered on the same program, under one key or under several,
+is served by the same process, so there is one of it, however many atoms it
+stands for. The lines are the same:
 the program reads request after request off its `stdin`, each with the next
 `id`, and answers each in turn. The universe is told again only when a fire
 comes with a different one; the program keeps the last one it was told. When
