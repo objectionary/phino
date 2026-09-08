@@ -10,7 +10,7 @@
 -- command-line argument.
 module Fixtures (fixtureAtoms, fixtureRegistry, withFixtureRegistry, withNode) where
 
-import Atoms (Atom (..), Registry, Runtime (RtJs))
+import Atoms (Atom (..), Registry, Runtime (RtNode))
 import Control.Exception (bracket)
 import Data.Aeson (encode, object, (.=))
 import Data.Aeson.Key qualified as Key
@@ -45,7 +45,7 @@ fixtureScript = decodeUtf8 <$> BS.readFile "test-resources/atoms/primitives.js"
 fixtureRegistry :: IO Registry
 fixtureRegistry = do
   script <- fixtureScript
-  pure (Map.fromList [(name, Atom RtJs script) | name <- fixtureAtoms])
+  pure (Map.fromList [(name, Atom RtNode script) | name <- fixtureAtoms])
 
 -- The same registry as the JSON file '--atoms' reads, in a temporary file
 -- removed afterwards, for the specs that go through the command line.
@@ -58,7 +58,7 @@ withFixtureRegistry action = do
     hClose handle
     action path
   where
-    entry script = object ["rt" .= ("js" :: T.Text), "script" .= script]
+    entry script = object ["rt" .= ("node" :: T.Text), "script" .= script]
     discarded :: (FilePath, Handle) -> IO ()
     discarded (path, handle) = hClose handle >> removePathForcibly path
 

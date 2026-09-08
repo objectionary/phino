@@ -14,7 +14,7 @@
 --
 -- > {
 -- >   "L_bytes_eq": {
--- >     "rt": "js",
+-- >     "rt": "node",
 -- >     "script": "const fs = require('fs'); ..."
 -- >   }
 -- > }
@@ -60,11 +60,11 @@ import System.IO (Handle, IOMode (WriteMode), hClose, hSetBinaryMode, openBinary
 import System.Process (CreateProcess (std_err, std_in, std_out), ProcessHandle, StdStream (CreatePipe, UseHandle), createProcess, proc, waitForProcess)
 import Text.Printf (printf)
 
--- The interpreter a script is written for. Only JavaScript for now, meaning
--- 'node'. A registry naming any other runtime is rejected when it is read,
--- before dataization starts, so a run never gets half-way through a program to
--- discover that one of its atoms cannot be run at all.
-data Runtime = RtJs
+-- The interpreter a script is run under, named after the executable itself:
+-- only 'node' for now. A registry naming any other runtime is rejected when it
+-- is read, before dataization starts, so a run never gets half-way through a
+-- program to discover that one of its atoms cannot be run at all.
+data Runtime = RtNode
   deriving stock (Eq, Show)
 
 -- One entry of the registry: the runtime and the source of the script.
@@ -101,20 +101,21 @@ instance Show AtomException where
 
 -- The name a registry spells a runtime with.
 runtimeName :: Runtime -> String
-runtimeName RtJs = "js"
+runtimeName RtNode = "node"
 
 -- The POSIX executable the scripts of a runtime are run under.
 interpreter :: Runtime -> String
-interpreter RtJs = "node"
+interpreter RtNode = "node"
 
 -- The extension the script of a runtime is written to disk with, so the
--- interpreter recognizes the file for what it is.
+-- interpreter recognizes the file for what it is. This is the language, not the
+-- runtime: 'node' loads a file only if it is named '.js'.
 extension :: Runtime -> String
-extension RtJs = "js"
+extension RtNode = "js"
 
 -- Every runtime phino can run, in the order the '--atoms' help lists them.
 runtimes :: [Runtime]
-runtimes = [RtJs]
+runtimes = [RtNode]
 
 runtimeNames :: [String]
 runtimeNames = map runtimeName runtimes

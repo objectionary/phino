@@ -7,7 +7,7 @@
 module AtomsSpec (spec) where
 
 import AST
-import Atoms (Atom (..), Runtime (RtJs), emptyRegistry, fireAtom, readRegistry, registeredAtom)
+import Atoms (Atom (..), Runtime (RtNode), emptyRegistry, fireAtom, readRegistry, registeredAtom)
 import Control.Exception (SomeException, bracket)
 import Control.Monad (forM_)
 import Data.ByteString qualified as BS
@@ -38,7 +38,7 @@ fired :: T.Text -> IO Expression
 fired script = do
   form <- parseExpressionThrows "⟦ x ↦ ⟦ Δ ⤍ 01- ⟧ ⟧"
   univ <- parseExpressionThrows "⟦ y ↦ ⟦ Δ ⤍ 02- ⟧ ⟧"
-  fireAtom "L_answer" (Atom RtJs script) form univ
+  fireAtom "L_answer" (Atom RtNode script) form univ
 
 -- What the script wrote under 'n' has to come back parsed, so a case asserting
 -- on it says which expression it expects in 𝜑 rather than in constructors
@@ -65,12 +65,12 @@ spec = do
 
   describe "readRegistry" $ do
     it "reads a λ function together with its runtime and script" $
-      withRegistry "{\"L_answer\": {\"rt\": \"js\", \"script\": \"say(1)\"}}" $ \path -> do
+      withRegistry "{\"L_answer\": {\"rt\": \"node\", \"script\": \"say(1)\"}}" $ \path -> do
         registry <- readRegistry path
-        registeredAtom registry "L_answer" `shouldBe` Just (Atom RtJs "say(1)")
+        registeredAtom registry "L_answer" `shouldBe` Just (Atom RtNode "say(1)")
 
     it "leaves a name the file does not carry unregistered" $
-      withRegistry "{\"L_answer\": {\"rt\": \"js\", \"script\": \"say(1)\"}}" $ \path -> do
+      withRegistry "{\"L_answer\": {\"rt\": \"node\", \"script\": \"say(1)\"}}" $ \path -> do
         registry <- readRegistry path
         registeredAtom registry "L_bytes_eq" `shouldBe` Nothing
 
@@ -80,11 +80,11 @@ spec = do
       [
         ( "the runtime is not one phino can run"
         , "{\"L_answer\": {\"rt\": \"ruby\", \"script\": \"say(1)\"}}"
-        , ["unknown runtime 'ruby'", "js"]
+        , ["unknown runtime 'ruby'", "node"]
         )
       ,
         ( "an entry carries no script"
-        , "{\"L_answer\": {\"rt\": \"js\"}}"
+        , "{\"L_answer\": {\"rt\": \"node\"}}"
         , ["script"]
         )
       ,

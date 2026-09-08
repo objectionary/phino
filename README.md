@@ -109,15 +109,15 @@ registry given with `--atoms`, keyed by λ name:
 ```json
 {
   "L_number_plus": {
-    "rt": "js",
+    "rt": "node",
     "script": "const fs = require('fs'); ..."
   }
 }
 ```
 
-The `rt` field names the interpreter the `script` is written for. Only `js` is
-supported for now, meaning `node`; a registry naming any other runtime is
-refused when the file is read, before dataization starts.
+The `rt` field names the executable the `script` is run under. Only `node` is
+supported for now; a registry naming any other runtime is refused when the file
+is read, before dataization starts.
 
 When 𝔼 reaches a λ function the registry carries, `phino` writes its `script`
 to a temporary file and runs it as a POSIX process under that interpreter, with
