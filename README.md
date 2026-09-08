@@ -166,15 +166,18 @@ on it. Without `--atoms` the registry is empty and every atom gets stuck.
 
 A script gets at the parts of `b` by calling `phino` again, so no API has to be
 exposed for it. The `--inside` option is how it asks: the expression it names
-is bound to a fresh synthetic attribute of the universe taken from the input,
-normalized there, and then dataized. This is the same trick `phino` plays
-internally whenever it has to reduce a sub-expression the program does not
-contain:
+is bound to a fresh synthetic attribute of the input expression, which the run
+takes as the universe, normalized there, and then dataized. This is the same
+trick `phino` plays internally whenever it has to reduce a sub-expression the
+program does not contain:
 
 ```bash
 $ phino dataize --atoms=atoms.json --inside='5.plus( 6 )' universe.phi
 40-26-00-00-00-00-00-00
 ```
+
+Here `universe.phi` is the 𝜑-program the atom is being fired inside — the very
+text the script was handed as `s`, which it feeds back on `stdin`.
 
 So a `L_number_plus` that reduces its own operands reads like this:
 

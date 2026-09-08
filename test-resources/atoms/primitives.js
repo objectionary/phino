@@ -35,7 +35,7 @@ function bound(name) {
     } else if (CLOSING.includes(char)) {
       depth -= 1;
     } else if (depth === 1 && b.startsWith(head, index) && ' ,⟦'.includes(b[index - 1])) {
-      return value(index + head.length);
+      return bindingValue(index + head.length);
     }
   }
   return null;
@@ -43,7 +43,7 @@ function bound(name) {
 
 // The 𝜑 text of one binding's value: everything up to the comma or the closing
 // bracket that ends it.
-function value(start) {
+function bindingValue(start) {
   let depth = 0;
   let text = '';
   for (let index = start; index < b.length; index += 1) {
@@ -108,9 +108,9 @@ function asBytes(raw) {
   return `Φ.bytes( data ↦ ⟦ Δ ⤍ ${hex(raw)} ⟧ )`;
 }
 
-function asNumber(value_) {
+function asNumber(value) {
   const raw = Buffer.alloc(8);
-  raw.writeDoubleBE(value_, 0);
+  raw.writeDoubleBE(value, 0);
   return `Φ.number( as-bytes ↦ ${asBytes(raw)} )`;
 }
 
