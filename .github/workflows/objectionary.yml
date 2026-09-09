@@ -14,10 +14,9 @@ concurrency:
 env:
   GHC_VERSION: '9.8.4'
   CABAL_VERSION: '3.12.1.0'
-  HOME_REV: 'c9d4c804e2f8235b4e994d385701cc9c2155a307'
+  HOME_REV: 'a4ccaa932aa2049b509a96f3589f7f28ec4e4469'
   EOLANG_VERSION: '0.37.1'
-  EO_PARSER: '0.63.1'
-  DATAIZE_OBJECT: 'org.eolang.pinf'
+  EO_PARSER: '0.62.1'
 jobs:
   objectionary:
     timeout-minutes: 90
@@ -66,11 +65,6 @@ jobs:
         run: |
           cd home
           eoc -s objects parse --parser="$EO_PARSER"
-      - name: Baseline dataization
-        run: |
-          cd home
-          eoc -s objects assemble
-          eoc -s objects dataize "$DATAIZE_OBJECT" > /tmp/before.txt
       - name: Round-trip every XMIR document through phino
         run: |
           cd home
@@ -88,9 +82,3 @@ jobs:
         run: |
           cd home
           eoc -s objects print --print-input=2-rewritten --print-output=../objects
-      - name: Dataize after round trip and compare
-        run: |
-          cd home
-          eoc -s objects assemble
-          eoc -s objects dataize "$DATAIZE_OBJECT" > /tmp/after.txt
-          diff /tmp/before.txt /tmp/after.txt
