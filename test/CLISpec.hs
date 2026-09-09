@@ -1644,7 +1644,7 @@ spec = do
             [ "\\phinoNormalizationRule{alpha}"
             , "  { [[ B_1, \\tau_1 -> ?, B_2 ]] ( \\phiTerminal{\\alpha_{i1}} -> e_1 ) }"
             , "  { [[ B_1, \\tau_1 -> ?, B_2 ]] ( \\tau_1 -> e_1 ) }"
-            , "  { i_1 = \\vert \\overline{ B_1 } \\vert }"
+            , "  { i_1 = \\vert \\overline{ B_1 } \\vert \\;\\text{and}\\; \\tau_1 \\not= \\phiTerminal{\\rho} }"
             , "  { }"
             , "\\phinoNormalizationRule{amiss}"
             , "  { [[ B_1 ]] ( \\phiTerminal{\\alpha_{i1}} -> e ) }"
