@@ -150,6 +150,8 @@ spec = do
       , ("is true for negative infinity", BtMany ["FF", "F0", "00", "00", "00", "00", "00", "00"], True)
       , ("is false for a NaN carrying a payload", BtMany ["7F", "F8", "00", "00", "00", "00", "00", "01"], False)
       , ("is false for the negative quiet NaN", BtMany ["FF", "F8", "00", "00", "00", "00", "00", "00"], False)
+      , ("is false for fewer than eight bytes", BtOne "21", False)
+      , ("is false for empty bytes", BtEmpty, False)
       ]
       (\(desc, bts, expected) -> it desc (sweetNumber bts `shouldBe` expected))
 
