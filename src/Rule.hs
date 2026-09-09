@@ -126,6 +126,7 @@ numToInt (Y.Domain (BiMeta meta)) (Subst mp) = case M.lookup (Named meta) mp of
     notAsset (BiDelta _) = False
     notAsset (BiLambda _) = False
     notAsset (BiVoid AtRho) = False
+    notAsset (BiTau AtRho _) = False
     notAsset _ = True
 numToInt (Y.Literal num) _ = Just num
 numToInt _ _ = Nothing
