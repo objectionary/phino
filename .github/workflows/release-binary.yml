@@ -20,6 +20,18 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+      - name: Remove pre-installed ghcup (ubuntu-24.04)
+        # The ubuntu-24.04 image ships its own ghcup in /usr/local/.ghcup.
+        # It stays ahead of the /home/runner/.ghcup that haskell-actions/setup
+        # installs, so `ghc` and `cabal` resolve to stale binaries that do not
+        # carry the requested versions ('The version ... is not installed'),
+        # and the leg fails while the other four legs pass. The image ghcup is
+        # dead anyway once setup prepends its own bin to PATH; only one ghcup
+        # may win, see https://github.com/objectionary/phino/issues/1141
+        if: matrix.os == 'ubuntu-24.04'
+        shell: bash
+        run: |
+          sudo rm -rf /usr/local/.ghcup
       - name: Set up GHC and Cabal
         uses: haskell-actions/setup@v2.12.0
         with:
