@@ -22,7 +22,7 @@ module XMIR
 where
 
 import AST
-import Bytes (btsSize, btsToNum, btsToStr, bytesToBts)
+import Bytes (btsIsUtf8, btsSize, btsToNum, btsToStr, bytesToBts)
 import Control.Exception (Exception (displayException), throwIO)
 import Data.Bifunctor (bimap)
 import Data.Foldable (foldlM)
@@ -131,7 +131,7 @@ expression (DataString bytes) XmirContext{..} =
           [object [("as", "data")] [NodeContent (T.pack (printBytes bytes))]]
    in pure
         ( "Φ.string"
-        , if _omitComments
+        , if _omitComments || not (btsIsUtf8 bytes)
             then [bts]
             else
               [ NodeComment (T.pack ('"' : btsToStr bytes ++ "\""))

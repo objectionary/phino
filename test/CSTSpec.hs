@@ -155,6 +155,17 @@ spec = do
       ]
       (\(desc, bts, expected) -> it desc (sweetNumber bts `shouldBe` expected))
 
+  describe "sweetString" $
+    forM_
+      [ ("is true for a valid ASCII datum", BtMany ["77", "6F", "72", "6C", "64"], True)
+      , ("is true for a valid multi-byte datum", BtMany ["D0", "B0"], True)
+      , ("is true for empty bytes", BtEmpty, True)
+      , ("is false for a lone continuation byte", BtOne "A0", False)
+      , ("is false for a truncated surrogate sequence", BtMany ["F0", "90", "80", "41"], False)
+      , ("is false for a lone 0xFE byte", BtOne "FE", False)
+      ]
+      (\(desc, bts, expected) -> it desc (sweetString bts `shouldBe` expected))
+
   describe "sweetCollapsible" $
     forM_
       [

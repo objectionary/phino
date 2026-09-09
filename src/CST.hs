@@ -11,7 +11,7 @@
 module CST where
 
 import AST
-import Bytes (NonFinite, btsSize, btsToNonFinite, btsToNum, btsToStr)
+import Bytes (NonFinite, btsIsUtf8, btsSize, btsToNonFinite, btsToNum, btsToStr)
 import Data.Maybe (isJust)
 import qualified Data.Text as T
 import qualified Yaml as Y
@@ -276,9 +276,17 @@ sweetNumber bts = case btsToNum bts of
   Right dbl | isNaN dbl || isInfinite dbl -> isJust (btsToNonFinite bts)
   _ -> True
 
+-- A string can be rendered as a literal only when its bytes decode as UTF-8.
+-- An arbitrary byte array is a legal datum and nothing promises it decodes, so
+-- a malformed one is kept in its byte form, exactly as a payload NaN is kept
+-- today (see #1138).
+sweetString :: Bytes -> Bool
+sweetString = btsIsUtf8
+
 -- Whether a data object may be collapsed into its sweet literal form.
 sweetCollapsible :: Expression -> Bool
 sweetCollapsible (DataNumber bts) = sweetNumber bts
+sweetCollapsible (DataString bts) = sweetString bts
 sweetCollapsible _ = True
 
 attributeToCST :: Attribute -> ATTRIBUTE
@@ -353,7 +361,7 @@ instance ToCST Expression EXPRESSION where
       withoutLastVoidRho [] = []
       withoutLastVoidRho [BiVoid AtRho] = []
       withoutLastVoidRho (bd : bds') = bd : withoutLastVoidRho bds'
-  toCST (DataString bts) (tabs, _) = EX_STRING (btsToStr bts) (TAB tabs) []
+  toCST (DataString bts) (tabs, _) | sweetString bts = EX_STRING (btsToStr bts) (TAB tabs) []
   -- The three canonical non-finite doubles have no sweet numeric literal, so
   -- they become the root dispatches `Φ.nan`, `Φ.pinf` and `Φ.ninf`. Any other
   -- non-finite pattern is left in its byte form `Φ.number(Φ.bytes(⟦ Δ ⤍ … ⟧))`
