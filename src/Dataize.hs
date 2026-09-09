@@ -14,12 +14,13 @@ module Dataize (morph, morph', dataize, dataize', insideUniverse, DataizeContext
 
 import AST
 import Atoms (Registry, fireAtom, registeredAtom)
-import Builder (buildBytesThrows, buildExpressionThrows)
+import Builder (buildBytesThrows, buildExpressionThrows, contextualize)
 import Control.Exception (Exception, catch, throwIO, try)
 import Control.Monad (foldM, when)
 import Data.List (find, partition)
 import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as NE
+import Data.Maybe (fromMaybe)
 import qualified Data.Text as T
 import Deps (BuildTermFunc, BuildTermMethodS, Evaluation (..), SaveEvalFunc, SaveStepFunc, State, Term (..))
 import Locator (locatedExpression, withLocatedExpression)
@@ -74,6 +75,7 @@ data DataizeContext = DataizeContext
   , _depthSensitive :: Bool
   , _shuffle :: Bool
   , _partial :: Bool
+  , _deep :: Bool
   , _atoms :: Registry
   , _buildTerm :: BuildTermFunc
   , _saveStep :: SaveStepFunc
@@ -133,6 +135,23 @@ lambda bds = case partition isLambda bds of
     isLambda :: Binding -> Bool
     isLambda (BiLambda _) = True
     isLambda _ = False
+
+-- The same as 'lambda', but only for a formation that is saturated: one with no
+-- void binding left in it. A void is an argument the program has not given yet,
+-- so such a formation is a method waiting to be applied rather than an
+-- application waiting to be computed, and firing it would hand the atom a ∅
+-- where it expects a value. 𝔻 needs no such guard, since it fires only what
+-- dataization demands and nothing demands a method; the deep walk meets every
+-- one a program declares — the method table of the object model above all — so
+-- it asks first (see 'deepened').
+saturated :: [Binding] -> Maybe (T.Text, Expression)
+saturated bds = case lambda bds of
+  Just (func, ExFormation rest) | all filled rest -> Just (func, ExFormation rest)
+  _ -> Nothing
+  where
+    filled :: Binding -> Bool
+    filled (BiVoid _) = False
+    filled _ = True
 
 -- Run one frame of the 𝕄/𝔻 spine, attaching its derivation to a stuck atom
 -- escaping it. 'Stuck' is raised deep inside an atom, which knows nothing about
@@ -242,19 +261,157 @@ morph' (expr, seq) univ state caller = do
 -- with the terminator ⊥ ('dead', 'xi', 'mg', 'mad', 'maad') rather than failing.
 -- Only the atoms 'ml' fires can still get stuck, and '_partial' parks them just
 -- as it does under 𝔻: the answer is then the residual subterm the spine had
--- reached, taken from '_locator' of its working expression.
+-- reached, taken from '_locator' of its working expression. Stopping at the
+-- first formation leaves everything that formation holds as it was written,
+-- which is what '_deep' walks into before the answer is handed back (see
+-- 'deepened').
 morph :: Expression -> DataizeContext -> IO (Expression, [Rewritten])
 morph universe ctx@DataizeContext{..} = do
   expr <- locatedExpression _locator universe
-  -- Morphing starts from the empty state; the final state is not yet
-  -- consumed by any caller, so it is discarded here.
   result <- try (morph' (expr, (universe, Nothing) :| []) universe emptyState ctx)
   case result of
-    Right ((morphed, seq), _state) -> pure (morphed, reverse (NE.toList seq))
+    Right ((morphed, seq), state) -> walked morphed seq state
     Left (StuckAt _ seq) | _partial -> do
       residue <- locatedExpression _locator (fst (NE.head seq))
-      pure (residue, reverse (NE.toList seq))
+      walked residue seq emptyState
     Left failure -> throwIO (failure :: DataizeException)
+  where
+    -- The answer 𝕄 reached, walked by '_deep' before it is handed back (see
+    -- 'deepened'), and the chain that led to both. The walk joins the chain as
+    -- one step named 'deep', so '--sequence' ends on the term the command
+    -- prints. Morphing starts from the empty state and the state the walk ends
+    -- on goes the way 𝕄's own goes: no caller consumes it yet.
+    walked :: Expression -> NonEmpty Rewritten -> State -> IO (Expression, [Rewritten])
+    walked morphed seq state
+      | not _deep = pure (morphed, reverse (NE.toList seq))
+      | otherwise = do
+          (deep, _) <- deepened morphed universe state ctx
+          seq' <- leadsTo seq "deep" deep ctx
+          pure (deep, reverse (NE.toList seq'))
+
+-- Walk what 𝕄 answered with, entering everything it left as it was written —
+-- the mechanism behind '--deep' ('_deep'). 𝕄 navigates a term to the first
+-- formation it reaches and 'mf' hands that formation back with its bindings
+-- untouched, since firing a bare λ is 𝔻's business; 𝔻 in turn follows the one
+-- path dataization demands and ends in bytes. A part of a program that nothing
+-- demands — the argument of an atom that cannot fire, for one — is therefore
+-- reduced by neither, and the object structure is lost to the one that does
+-- reduce it (#1124). This walk demands nothing either. It asks 𝕄 about every
+-- sub-expression and, where 𝕄 lands on a formation whose λ the registry
+-- serves, fires it and asks 𝕄 about the answer again (see 'fired'). A
+-- sub-expression on whose way an atom fired is replaced by the answer of the
+-- last firing; where none fired it stays as it was written and only its own
+-- parts are walked, so the calls the registry does not serve keep their names
+-- and what comes back is still the same program, reduced as far as the
+-- registry allows. Every entry is charged to the '--max-steps' budget, which
+-- is what bounds the walk.
+deepened :: Expression -> Expression -> State -> DataizeContext -> IO (Expression, State)
+deepened expr univ = go ExXi expr
+  where
+    -- A term as it was written, together with what its free ξ stands for: the
+    -- formation the walk entered it from, without the binding it came from,
+    -- exactly the context the 'dot' rule hands a dispatched body. At the top
+    -- there is no such formation, so ξ stands for itself and contextualization
+    -- leaves the term alone.
+    go :: Expression -> Expression -> State -> DataizeContext -> IO (Expression, State)
+    go context term state' caller = do
+      ctx' <- deeper caller
+      answer <- fired (contextualize term context) univ state' ctx'
+      maybe (parts context term state' ctx') pure answer
+    -- The parts of a term nothing fired on, walked one by one and put back
+    -- where they were, so the term keeps the shape it was written in.
+    parts :: Expression -> Expression -> State -> DataizeContext -> IO (Expression, State)
+    parts _ (ExFormation bds) state' caller = do
+      (entered, state'') <- bindings bds bds state' caller
+      pure (ExFormation entered, state'')
+    parts context (ExDispatch target attr) state' caller = do
+      (entered, state'') <- go context target state' caller
+      pure (ExDispatch entered attr, state'')
+    parts context (ExApplication target arg) state' caller = do
+      (entered, state'') <- go context target state' caller
+      (applied, state''') <- argument context arg state'' caller
+      pure (ExApplication entered applied, state''')
+    parts _ term state' _ = pure (term, state')
+    -- Walk the bindings of a formation left to right, threading the state
+    -- through them. Only what the formation itself holds is entered: ρ names
+    -- the object around it rather than one inside it, and a void, Δ or λ
+    -- binding carries no term to walk at all.
+    bindings :: [Binding] -> [Binding] -> State -> DataizeContext -> IO ([Binding], State)
+    bindings _ [] state' _ = pure ([], state')
+    bindings whole (BiTau attr body : rest) state' caller
+      | attr /= AtRho = do
+          (entered, state'') <- go (scope attr whole) body state' caller
+          (others, state''') <- bindings whole rest state'' caller
+          pure (BiTau attr entered : others, state''')
+    bindings whole (bd : rest) state' caller = do
+      (others, state'') <- bindings whole rest state' caller
+      pure (bd : others, state'')
+    -- The context a binding's body is entered in: the formation without that
+    -- binding, the very context 'dot' contextualizes a dispatched body in, so
+    -- a body reaching back at itself through ξ collapses instead of looping.
+    scope :: Attribute -> [Binding] -> Expression
+    scope attr bds = ExFormation (filter (not . named) bds)
+      where
+        named :: Binding -> Bool
+        named (BiTau attr' _) = attr' == attr
+        named _ = False
+    -- Both sides of an application stand in the same context: the term it
+    -- applies is walked by the caller and the argument it binds is walked here.
+    argument :: Expression -> Argument -> State -> DataizeContext -> IO (Argument, State)
+    argument context (ArTau attr arg) state' caller = do
+      (entered, state'') <- go context arg state' caller
+      pure (ArTau attr entered, state'')
+    argument context (ArAlpha alpha arg) state' caller = do
+      (entered, state'') <- go context arg state' caller
+      pure (ArAlpha alpha entered, state'')
+
+-- Ask 𝕄 about a term and fire the λ of the formation it reaches, as long as
+-- the registry serves it, asking 𝕄 about every answer again: what comes back
+-- is the answer of the last firing, or nothing at all where no atom fired. This
+-- is the firing 'ml' makes without the dispatch that makes 'ml' make it — the
+-- one 𝕄 leaves to 𝔻 — except in what it hands back: the atom's raw answer, not
+-- the normal form 𝔼 makes of it, since the deep walk stands that answer back
+-- into the program, where a normal form would spell the whole object out in
+-- place of the name the program called it by. A λ the registry does not carry
+-- is left alone rather than fired and got stuck on, so what phino cannot
+-- compute stays as it was written with or without '_partial'; an atom that
+-- cannot fire deeper on the spine still fails the run, exactly as it does
+-- under 𝕄 alone, and '_partial' parks it. A formation still waiting for its
+-- arguments is left alone too (see 'saturated').
+fired :: Expression -> Expression -> State -> DataizeContext -> IO (Maybe (Expression, State))
+fired term univ state caller = do
+  ctx <- deeper caller
+  morphed <- try (reduced ctx)
+  case morphed of
+    Right (ExFormation bds, state') -> maybe (pure Nothing) (evaluated ctx state') (saturated bds)
+    Right _ -> pure Nothing
+    Left failure -> parked failure
+  where
+    -- 𝕄 takes normal forms only and a term taken from the program as it was
+    -- written is not necessarily one, so it is normalized against the universe
+    -- first, exactly as '--inside' normalizes what it is handed. Both chains
+    -- are dropped: the walk is not the spine and reports one step of its own
+    -- (see 'morph'), so a stuck atom leaves without a derivation ('unparked').
+    reduced :: DataizeContext -> IO (Expression, State)
+    reduced ctx = unparked $ do
+      (normal, _) <- normalized term ((univ, Nothing) :| []) ctx
+      ((morphed, _), state') <- morph' (normal, (univ, Nothing) :| []) univ state ctx
+      pure (morphed, state')
+    -- Fire the λ of the formation 𝕄 reached and go on from its answer, keeping
+    -- the answer of the last firing. The firing is reported to '_saveEval' like
+    -- every other one, with the term the caller is given, so the protocol and
+    -- the program agree on what the atom answered.
+    evaluated :: DataizeContext -> State -> (T.Text, Expression) -> IO (Maybe (Expression, State))
+    evaluated ctx state' (func, self) = case registeredAtom ctx._atoms func of
+      Nothing -> pure Nothing
+      Just registered -> do
+        answer <- fireAtom func registered self univ
+        ctx._saveEval (Evaluation func self (Just answer))
+        again <- fired answer univ state' ctx
+        pure (Just (fromMaybe (answer, state') again))
+    parked :: DataizeException -> IO (Maybe a)
+    parked (Stuck _) | caller._partial = pure Nothing
+    parked failure = throwIO failure
 
 -- Dataize the expression located at '_locator'. The whole input expression is
 -- itself the universe Q (the 'e' argument) threaded through 𝔻 and 𝕄, so it is

@@ -32,7 +32,7 @@ import Yaml qualified
 -- empty, since phino implements none of them: a case that needs an atom to
 -- answer brings the fixture registry in through 'withAtoms'.
 defaultDataizeContext :: Expression -> DataizeContext
-defaultDataizeContext loc = DataizeContext loc 25 25 (Steps 250 0) False True False emptyRegistry buildTerm dontSaveStep dontSaveEval
+defaultDataizeContext loc = DataizeContext loc 25 25 (Steps 250 0) False True False False emptyRegistry buildTerm dontSaveStep dontSaveEval
 
 -- The same context with the fixture λ functions registered (see 'Fixtures').
 withAtoms :: Registry -> DataizeContext -> DataizeContext
@@ -70,6 +70,20 @@ testMorph useCases =
       expected <- parseExpressionThrows res
       (morphed, _) <- morph expr (defaultDataizeContext loc')
       morphed `shouldBe` expected
+
+-- The same as 'testMorph', with the deep walk on ('_deep') and the fixture λ
+-- functions registered, since a case that reduces anything has to fire one: it
+-- is pending where 'node' is not installed.
+testDeep :: Registry -> [(String, String, String, String)] -> Spec
+testDeep registry useCases =
+  forM_ useCases $ \(name, loc, src, res) ->
+    it name $
+      withNode $ do
+        expr <- parseExpressionThrows src
+        loc' <- parseExpressionThrows loc
+        expected <- parseExpressionThrows res
+        (morphed, _) <- morph expr (withAtoms registry (defaultDataizeContext loc')){_deep = True}
+        morphed `shouldBe` expected
 
 -- The EO objects the fixture λ functions answer for, declared the way
 -- 'number.eo' and 'bytes.eo' declare them, so a case below only has to spell
@@ -195,6 +209,78 @@ spec = do
         expected <- parseExpressionThrows "[[ L> Sym_arg_0 ]].foo"
         (residue, _) <- morph expr (defaultDataizeContext loc){_partial = True}
         residue `shouldBe` expected
+
+  -- 𝕄 stops at the first formation 'mf' hands back and leaves its bindings as
+  -- they were written, since firing a bare λ is 𝔻's business, so a program
+  -- whose parts nothing demands is never reduced (#1124). The deep walk
+  -- ('_deep') enters every binding and finishes what 'mf' left, while what no
+  -- atom touched keeps the shape it was written in and the answer stays a
+  -- program.
+  describe "morph with '_deep'" $ do
+    testDeep
+      registry
+      [
+        ( "stands the answer of the λ that 'mf' left bare in its place"
+        , "Q.@"
+        , primitives "[[ x -> 5.plus( 6 ) ]]"
+        , "[[ x -> Q.number( as-bytes -> Q.bytes( data -> [[ D> 40-26-00-00-00-00-00-00 ]] ) ) ]]"
+        )
+      ,
+        ( "keeps the answer of the last atom fired along one chain of them"
+        , "Q.@"
+        , primitives "[[ x -> 5.plus( 6 ).plus( 7 ) ]]"
+        , "[[ x -> Q.number( as-bytes -> Q.bytes( data -> [[ D> 40-32-00-00-00-00-00-00 ]] ) ) ]]"
+        )
+      ,
+        ( "resolves the ξ of a binding against the formation that holds it"
+        , "Q.@"
+        , primitives "[[ n -> 5, x -> $.n.plus( 6 ) ]]"
+        , "[[ n -> 5, x -> Q.number( as-bytes -> Q.bytes( data -> [[ D> 40-26-00-00-00-00-00-00 ]] ) ) ]]"
+        )
+      , -- The registry carries no 'L_number_nope', so there is nothing to fire
+        -- and the binding keeps the name it was written under
+
+        ( "leaves the λ the registry does not serve as it was written"
+        , "Q.@"
+        , primitives "[[ x -> 5.nope ]]"
+        , "[[ x -> 5.nope ]]"
+        )
+      , -- A λ-formation whose bindings are still void is a method waiting to be
+        -- applied, not an application waiting to be computed: nothing demands
+        -- one, so 𝔻 never meets one, while the walk meets every one the object
+        -- model declares. Both the void ρ of 'not' and the void 'b' of 'eq'
+        -- keep their atoms unfired here.
+
+        ( "leaves a λ-formation still waiting for its arguments alone"
+        , "Q.bytes"
+        , primitives "[[ ]]"
+        , "[[ data -> ?, @ -> $.data, not -> [[ L> L_bytes_not ]], eq -> [[ b -> ?, L> L_bytes_eq ]] ]]"
+        )
+      , -- Nothing demands the argument of an atom that cannot fire, so 𝔻 never
+        -- reaches it; the walk does, and the atom around it stays in place
+
+        ( "walks into the argument of an atom it cannot fire"
+        , "Q.@"
+        , primitives "[[ x -> [[ y -> ?, L> L_bar ]]( y -> 6.plus( 7 ) ) ]]"
+        , "[[ x -> [[ y -> ?, L> L_bar ]]( y -> Q.number( as-bytes -> Q.bytes( data -> [[ D> 40-2A-00-00-00-00-00-00 ]] ) ) ) ]]"
+        )
+      ]
+
+    -- An atom deeper on a binding's spine gets stuck exactly as it does under
+    -- 𝕄 alone: the run fails, unless '_partial' parks it, and then the binding
+    -- stays as it was written and the walk goes on
+    describe "a stuck atom on the spine of a binding" $ do
+      let stuck :: IO Expression
+          stuck = parseExpressionThrows "[[ x -> [[ L> Sym_arg_0 ]].foo ]]"
+      it "fails the run without '_partial'" $ do
+        expr <- stuck
+        morph expr (defaultDataizeContext ExRoot){_deep = True}
+          `shouldThrow` (\e -> "Atom 'Sym_arg_0' does not exist" `isInfixOf` show (e :: SomeException))
+
+      it "leaves the binding as it was written under '_partial'" $ do
+        expr <- stuck
+        (morphed, _) <- morph expr (defaultDataizeContext ExRoot){_deep = True, _partial = True}
+        morphed `shouldBe` expr
 
   describe "morph'" $
     test'
@@ -487,7 +573,7 @@ spec = do
     it "fails on the step limit instead of morphing forever" $
       withNode $ do
         expr <- parseExpressionThrows "⟦ @ ↦ ⟦ λ ⤍ L_number_div, ρ ↦ ⟦ Δ ⤍ 40-45-00-00-00-00-00-00 ⟧, x ↦ ⟦ Δ ⤍ 40-00-00-00-00-00-00-00 ⟧ ⟧ ⟧"
-        dataize expr (DataizeContext ExRoot 25 25 (Steps 40 0) False True False registry buildTerm dontSaveStep dontSaveEval)
+        dataize expr (DataizeContext ExRoot 25 25 (Steps 40 0) False True False False registry buildTerm dontSaveStep dontSaveEval)
           `shouldThrow` (\e -> "--max-steps=40" `isInfixOf` show (e :: SomeException))
 
   -- An atom phino does not know — a name the '--atoms' registry does not carry,
@@ -551,12 +637,12 @@ spec = do
     forM_
       [
         ( "--max-cycles"
-        , DataizeContext ExRoot 25 0 (Steps 250 0) True True False emptyRegistry buildTerm dontSaveStep dontSaveEval
+        , DataizeContext ExRoot 25 0 (Steps 250 0) True True False False emptyRegistry buildTerm dontSaveStep dontSaveEval
         , "--max-cycles=0"
         )
       ,
         ( "--max-depth"
-        , DataizeContext ExRoot 0 25 (Steps 250 0) True True False emptyRegistry buildTerm dontSaveStep dontSaveEval
+        , DataizeContext ExRoot 0 25 (Steps 250 0) True True False False emptyRegistry buildTerm dontSaveStep dontSaveEval
         , "--max-depth=0"
         )
       ]
@@ -566,8 +652,8 @@ spec = do
             dataize expr ctx `shouldThrow` (\e -> message `isInfixOf` show (e :: SomeException))
       )
     forM_
-      [ ("--max-cycles", DataizeContext ExRoot 25 0 (Steps 250 0) False True False emptyRegistry buildTerm dontSaveStep dontSaveEval)
-      , ("--max-depth", DataizeContext ExRoot 0 25 (Steps 250 0) False True False emptyRegistry buildTerm dontSaveStep dontSaveEval)
+      [ ("--max-cycles", DataizeContext ExRoot 25 0 (Steps 250 0) False True False False emptyRegistry buildTerm dontSaveStep dontSaveEval)
+      , ("--max-depth", DataizeContext ExRoot 0 25 (Steps 250 0) False True False False emptyRegistry buildTerm dontSaveStep dontSaveEval)
       ]
       ( \(flag, ctx) ->
           it ("does not throw without --depth-sensitive even once " ++ flag ++ " is exhausted") $ do
