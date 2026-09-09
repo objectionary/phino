@@ -485,10 +485,7 @@ xmirToExpression cur fqn
           if null (cur C.$/ C.element (toName "o"))
             then pure ExRoot
             else throwIO (InvalidXMIRFormat "Application of 'Φ' is illegal in XMIR" cur)
-        "⊥" ->
-          if null (cur C.$/ C.element (toName "o"))
-            then pure ExTermination
-            else throwIO (InvalidXMIRFormat "Application of '⊥' is illegal in XMIR" cur)
+        "⊥" -> xmirToApplication ExTermination (cur C.$/ C.element (toName "o")) fqn
         'Φ' : '.' : rest -> xmirToExpression' ExRoot "Φ" rest cur fqn
         'ξ' : '.' : rest -> xmirToExpression' ExXi "ξ" rest cur fqn
         _ -> throwIO (InvalidXMIRFormat "The @base attribute must be either ['∅'|'Φ'] or start with ['Φ.'|'ξ.'|'.']" cur)
