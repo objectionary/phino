@@ -250,6 +250,18 @@ spec = do
             ["rewrite", "--in-place", "--output=latex", path]
             ["--in-place can only be used together with --output=phi"]
 
+      it "does not leak a HasCallStack backtrace into errors" $ do
+        (out, _) <- withStdout (try (runCLI ["rewrite", "--in-place"]) :: IO (Either ExitCode ()))
+        out `shouldNotContain` "HasCallStack backtrace"
+        out `shouldNotContain` "ExitFailure 1"
+        out `shouldContain` "[ERROR]:"
+
+      it "prints optparse errors once, without a backtrace" $ do
+        (out, _) <- withStdout (try (runCLI ["rewrite", "--badopt"]) :: IO (Either ExitCode ()))
+        out `shouldNotContain` "HasCallStack backtrace"
+        out `shouldNotContain` "ExitFailure 1"
+        out `shouldContain` "[ERROR]:"
+
       forM_
         [ ("when --update is used without --target", "[[ ]]", ["rewrite", "--update"], ["--update requires --target"])
         ,
