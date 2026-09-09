@@ -217,6 +217,7 @@ matchDataObject (ExApplication outer arg)
     asBytesArg (ArAlpha (Alpha 0) inner) = Just inner
     asBytesArg _ = Nothing
     dataArg :: Argument -> Maybe Expression
+    dataArg (ArTau AtPhi formation) = Just formation
     dataArg (ArTau (AtLabel "data") formation) = Just formation
     dataArg (ArAlpha (Alpha 0) formation) = Just formation
     dataArg _ = Nothing
@@ -255,10 +256,13 @@ pattern DataObject label bts <- (matchDataObject -> Just (label, bts))
     DataObject label bts =
       ExApplication (BaseObject label) (ArTau (AtLabel "as-bytes") (dataBytes bts))
 
--- The bytes object Φ.bytes(data ↦ ⟦ Δ ⤍ …, ρ ↦ ∅ ⟧) — what a 'bytes' atom
--- yields and what a 'DataObject' carries under its 'as-bytes' argument
+-- The bytes object Φ.bytes(φ ↦ ⟦ Δ ⤍ …, ρ ↦ ∅ ⟧) — what a 'bytes' atom
+-- yields and what a 'DataObject' carries under its 'as-bytes' argument.
+-- The payload is bound to 'φ', the void that the real 'bytes' object
+-- declares ([@] > bytes), so that every dispatch on the literal can bind
+-- (see #1142)
 dataBytes :: Bytes -> Expression
 dataBytes bts =
   ExApplication
     (BaseObject "bytes")
-    (ArTau (AtLabel "data") (ExFormation [BiDelta bts, BiVoid AtRho]))
+    (ArTau AtPhi (ExFormation [BiDelta bts, BiVoid AtRho]))

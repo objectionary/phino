@@ -13,27 +13,27 @@ output: |-
   ⟦
     str ↦ Φ.string(
       as-bytes ↦ Φ.bytes(
-        data ↦ ⟦ Δ ⤍ 68-65-6C-6C-6F ⟧
+        φ ↦ ⟦ Δ ⤍ 68-65-6C-6C-6F ⟧
       )
     ),
     ch ↦ Φ.string(
       as-bytes ↦ Φ.bytes(
-        data ↦ ⟦ Δ ⤍ 68- ⟧
+        φ ↦ ⟦ Δ ⤍ 68- ⟧
       )
     ),
     uni ↦ Φ.string(
       as-bytes ↦ Φ.bytes(
-        data ↦ ⟦ Δ ⤍ 01-02 ⟧
+        φ ↦ ⟦ Δ ⤍ 01-02 ⟧
       )
     ),
     empty ↦ Φ.string(
       as-bytes ↦ Φ.bytes(
-        data ↦ ⟦ Δ ⤍ -- ⟧
+        φ ↦ ⟦ Δ ⤍ -- ⟧
       )
     ),
     new-line ↦ Φ.string(
       as-bytes ↦ Φ.bytes(
-        data ↦ ⟦ Δ ⤍ 68-0A-65 ⟧
+        φ ↦ ⟦ Δ ⤍ 68-0A-65 ⟧
       )
     )
   ⟧

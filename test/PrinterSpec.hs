@@ -19,7 +19,7 @@ import Matcher (Meta (Named), MetaValue (..), Subst (Subst))
 import Parser (parseExpression)
 import Printer
 import Sugar (SugarType (..))
-import Test.Hspec (Spec, describe, it, shouldBe, shouldContain)
+import Test.Hspec (Spec, describe, it, shouldBe, shouldContain, shouldNotContain)
 import Yaml (ExtraArgument (..))
 
 spec :: Spec
@@ -130,6 +130,21 @@ spec = do
             printed `shouldContain` "bytes"
             parseExpression printed `shouldBe` Right expr
       )
+
+  describe "printExpression binds a datum payload to φ in salty notation (#1142)" $
+    it "names the bytes payload φ (the void the real bytes declares), not data" $ do
+      let number =
+            printExpression'
+              (DataNumber (BtMany ["40", "45", "00", "00", "00", "00", "00", "00"]))
+              (SALTY, UNICODE, SINGLELINE, defaultMargin)
+          str =
+            printExpression'
+              (DataString (BtMany ["68", "69"]))
+              (SALTY, UNICODE, SINGLELINE, defaultMargin)
+      number `shouldContain` "φ ↦"
+      number `shouldNotContain` "data ↦"
+      str `shouldContain` "φ ↦"
+      str `shouldNotContain` "data ↦"
 
   describe "printExpression keeps a compressed meet atomic under a narrow margin" $
     -- A \phinoMeet is a single \overbracket visual unit, so its body must stay

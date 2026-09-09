@@ -15,7 +15,7 @@ result: |-
   ⟦
     x ↦ Φ.number(
       as-bytes ↦ Φ.bytes(
-        data ↦ ⟦
+        φ ↦ ⟦
           Δ ⤍ 3F-F0-00-00-00-00-00-00,
           ρ ↦ ∅
         ⟧
@@ -27,7 +27,7 @@ result: |-
     ),
     y ↦ Φ.string(
       as-bytes ↦ Φ.bytes(
-        data ↦ ⟦
+        φ ↦ ⟦
           Δ ⤍ 48-65-79,
           ρ ↦ ∅
         ⟧

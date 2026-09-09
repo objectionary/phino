@@ -12,7 +12,7 @@ output: |-
     foo ↦ ⟦
       x ↦ Φ.number(
         as-bytes ↦ Φ.bytes(
-          data ↦ ⟦ Δ ⤍ 41-EF-FF-FF-FF-E0-00-00 ⟧
+          φ ↦ ⟦ Δ ⤍ 41-EF-FF-FF-FF-E0-00-00 ⟧
         )
       )
     ⟧
