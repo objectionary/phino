@@ -9,11 +9,7 @@ when:
     - eq:
         - 𝑖1
         - domain: 𝐵1
-    - or:
-        - not:
-            eq:
-              - 𝜏1
-              - ρ
-        - gt:
-            - length: 𝐵1
-            - 0
+    - not:
+        eq:
+          - 𝜏1
+          - ρ
