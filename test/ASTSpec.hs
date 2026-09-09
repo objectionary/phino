@@ -296,7 +296,7 @@ spec = do
       dataBytes (BtOne "48")
         `shouldBe` ExApplication
           (ExDispatch ExRoot (AtLabel "bytes"))
-          (ArTau (AtLabel "data") (ExFormation [BiDelta (BtOne "48"), BiVoid AtRho]))
+          (ArTau AtPhi (ExFormation [BiDelta (BtOne "48"), BiVoid AtRho]))
 
   describe "DataObject/DataString/DataNumber pattern" $ do
     it "constructs the named, unwrapped as-bytes form" $
@@ -371,7 +371,7 @@ spec = do
                 (AtLabel "as-bytes")
                 ( ExApplication
                     (ExDispatch ExRoot (AtLabel "other"))
-                    (ArTau (AtLabel "data") (ExFormation [BiDelta (BtOne "48"), BiVoid AtRho]))
+                    (ArTau AtPhi (ExFormation [BiDelta (BtOne "48"), BiVoid AtRho]))
                 )
             )
         )

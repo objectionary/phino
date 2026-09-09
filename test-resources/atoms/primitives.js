@@ -66,14 +66,21 @@ function bindingValue(b, start) {
 
 // Every shape an already-reduced datum reaches this script in: a literal
 // argument, a copy of the 'number', 'string' or 'bytes' object bound to ρ, or a
-// bare byte formation. The bytes are what follows.
+// bare byte formation. The bytes are what follows. Since #1142 the payload of
+// a datum is named φ (the void the real 'bytes' object declares), so the φ
+// shapes come first; the legacy 'data' shapes stay for inputs jeo wrote.
 const DATA = [
+  'Φ.number( as-bytes ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ ',
+  'Φ.string( as-bytes ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ ',
+  'Φ.bytes( φ ↦ ⟦ Δ ⤍ ',
+  '⟦ as-bytes ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ ',
+  '⟦ φ ↦ ⟦ Δ ⤍ ',
+  '⟦ Δ ⤍ ',
   'Φ.number( as-bytes ↦ Φ.bytes( data ↦ ⟦ Δ ⤍ ',
   'Φ.string( as-bytes ↦ Φ.bytes( data ↦ ⟦ Δ ⤍ ',
   'Φ.bytes( data ↦ ⟦ Δ ⤍ ',
   '⟦ as-bytes ↦ Φ.bytes( data ↦ ⟦ Δ ⤍ ',
   '⟦ data ↦ ⟦ Δ ⤍ ',
-  '⟦ Δ ⤍ ',
 ];
 
 // The bytes of an already-reduced datum, or nothing at all when the operand is
@@ -106,7 +113,7 @@ function hex(raw) {
 }
 
 function asBytes(raw) {
-  return `Φ.bytes( data ↦ ⟦ Δ ⤍ ${hex(raw)} ⟧ )`;
+  return `Φ.bytes( φ ↦ ⟦ Δ ⤍ ${hex(raw)} ⟧ )`;
 }
 
 function asNumber(value) {

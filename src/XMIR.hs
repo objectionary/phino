@@ -114,7 +114,7 @@ expression (DataNumber bytes) XmirContext{..} =
   let bts =
         object
           [("as", "as-bytes"), ("base", "Φ.bytes")]
-          [object [("as", "data")] [NodeContent (T.pack (printBytes bytes))]]
+          [object [("as", "φ")] [NodeContent (T.pack (printBytes bytes))]]
    in pure
         ( "Φ.number"
         , if _omitComments || btsSize bytes /= 8
@@ -128,7 +128,7 @@ expression (DataString bytes) XmirContext{..} =
   let bts =
         object
           [("as", "as-bytes"), ("base", "Φ.bytes")]
-          [object [("as", "data")] [NodeContent (T.pack (printBytes bytes))]]
+          [object [("as", "φ")] [NodeContent (T.pack (printBytes bytes))]]
    in pure
         ( "Φ.string"
         , if _omitComments || not (btsIsUtf8 bytes)

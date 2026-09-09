@@ -216,7 +216,7 @@ saltifyPrimitive base bytes data' tb@TAB{..} rhos =
                             (TAB (indent + 2))
                             ( AA_TAUS
                                 ( BI_PAIR
-                                    (PA_TAU (AT_LABEL "data") ARROW data')
+                                    (PA_TAU (AT_PHI PHI) ARROW data')
                                     (BDS_EMPTY (TAB (indent + 2)))
                                     (TAB (indent + 2))
                                 )

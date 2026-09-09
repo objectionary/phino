@@ -102,8 +102,7 @@ primitives src =
   unlines
     [ "[["
     , "  bytes -> [["
-    , "    data -> ?,"
-    , "    @ -> $.data,"
+    , "    φ -> ?,"
     , "    not -> [[ L> L_bytes_not ]],"
     , "    eq -> [[ b -> ?, L> L_bytes_eq ]]"
     , "  ]],"
@@ -126,7 +125,7 @@ primitives src =
 
 -- Wrap a hex literal into the bytes object that EO source spells as a bare '20-1F'
 raw :: String -> String
-raw bts = "Q.bytes( data -> [[ D> " ++ bts ++ " ]] )"
+raw bts = "Φ.bytes( φ ↦ ⟦ Δ ⤍ " ++ bts ++ " ⟧ )"
 
 -- Dataize an expression against the fixture universe, with the fixture λ
 -- functions registered. Every such case runs an external script, so it is
@@ -223,19 +222,19 @@ spec = do
         ( "stands the answer of the λ that 'mf' left bare in its place"
         , "Q.@"
         , primitives "[[ x -> 5.plus( 6 ) ]]"
-        , "[[ x -> Q.number( as-bytes -> Q.bytes( data -> [[ D> 40-26-00-00-00-00-00-00 ]] ) ) ]]"
+        , "[[ x -> Q.number( as-bytes -> Φ.bytes( φ ↦ ⟦ Δ ⤍ 40-26-00-00-00-00-00-00 ⟧ ) ) ]]"
         )
       ,
         ( "keeps the answer of the last atom fired along one chain of them"
         , "Q.@"
         , primitives "[[ x -> 5.plus( 6 ).plus( 7 ) ]]"
-        , "[[ x -> Q.number( as-bytes -> Q.bytes( data -> [[ D> 40-32-00-00-00-00-00-00 ]] ) ) ]]"
+        , "[[ x -> Q.number( as-bytes -> Φ.bytes( φ ↦ ⟦ Δ ⤍ 40-32-00-00-00-00-00-00 ⟧ ) ) ]]"
         )
       ,
         ( "resolves the ξ of a binding against the formation that holds it"
         , "Q.@"
         , primitives "[[ n -> 5, x -> $.n.plus( 6 ) ]]"
-        , "[[ n -> 5, x -> Q.number( as-bytes -> Q.bytes( data -> [[ D> 40-26-00-00-00-00-00-00 ]] ) ) ]]"
+        , "[[ n -> 5, x -> Q.number( as-bytes -> Φ.bytes( φ ↦ ⟦ Δ ⤍ 40-26-00-00-00-00-00-00 ⟧ ) ) ]]"
         )
       , -- The registry carries no 'L_number_nope', so there is nothing to fire
         -- and the binding keeps the name it was written under
@@ -254,7 +253,7 @@ spec = do
         ( "leaves a λ-formation still waiting for its arguments alone"
         , "Q.bytes"
         , primitives "[[ ]]"
-        , "[[ data -> ?, @ -> $.data, not -> [[ L> L_bytes_not ]], eq -> [[ b -> ?, L> L_bytes_eq ]] ]]"
+        , "[[ φ -> ?, not -> [[ L> L_bytes_not ]], eq -> [[ b -> ?, L> L_bytes_eq ]] ]]"
         )
       , -- Nothing demands the argument of an atom that cannot fire, so 𝔻 never
         -- reaches it; the walk does, and the atom around it stays in place
@@ -262,7 +261,7 @@ spec = do
         ( "walks into the argument of an atom it cannot fire"
         , "Q.@"
         , primitives "[[ x -> [[ y -> ?, L> L_bar ]]( y -> 6.plus( 7 ) ) ]]"
-        , "[[ x -> [[ y -> ?, L> L_bar ]]( y -> Q.number( as-bytes -> Q.bytes( data -> [[ D> 40-2A-00-00-00-00-00-00 ]] ) ) ) ]]"
+        , "[[ x -> [[ y -> ?, L> L_bar ]]( y -> Q.number( as-bytes -> Φ.bytes( φ ↦ ⟦ Δ ⤍ 40-2A-00-00-00-00-00-00 ⟧ ) ) ) ]]"
         )
       ]
 
@@ -706,7 +705,7 @@ spec = do
         labels <-
           labelsOf
             "Q"
-            "[[ bytes(data) -> [[ @ -> $.data ]], number(as-bytes) -> [[ @ -> $.as-bytes, plus(x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6) ]]"
+            "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(as-bytes) -> [[ @ -> $.as-bytes, plus(x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6) ]]"
         labels
           `shouldBe` [ "contextualize"
                      , "maa"
@@ -723,8 +722,6 @@ spec = do
                      , "stay"
                      , "mf"
                      , "contextualize"
-                     , "dot"
-                     , "copy"
                      , "delta"
                      ]
     it "dataizes a located reference through the expected rules" $ do
@@ -763,7 +760,7 @@ spec = do
       , unlines
           [ "[["
           , "  number(as-bytes) -> [[ @ -> as-bytes ]],"
-          , "  bytes(data) -> [[ @ -> data ]],"
+          , "  bytes ↦ ⟦ φ ↦ ∅ ⟧,"
           , "  x -> 5"
           , "]]"
           ]
@@ -821,8 +818,7 @@ spec = do
             ( unlines
                 [ "[["
                 , "  bytes -> [["
-                , "    data -> ?,"
-                , "    @ -> $.data"
+                , "    φ -> ?"
                 , "  ]],"
                 , "  number -> [["
                 , "    as-bytes -> ?,"

@@ -9,7 +9,7 @@ result: |-
     x ↦ Φ.y(
       z ↦ Φ.string(
         as-bytes ↦ Φ.bytes(
-          data ↦ ⟦
+          φ ↦ ⟦
             Δ ⤍ 68-65-79,
             ρ ↦ ∅
           ⟧
@@ -18,7 +18,7 @@ result: |-
     )(
       b ↦ Φ.number(
         as-bytes ↦ Φ.bytes(
-          data ↦ ⟦
+          φ ↦ ⟦
             Δ ⤍ 3F-F0-00-00-00-00-00-00,
             ρ ↦ ∅
           ⟧
