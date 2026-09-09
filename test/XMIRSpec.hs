@@ -219,7 +219,6 @@ spec = do
       , "Q"
       , "$"
       , "[[ x -> T ]]"
-      , "[[ top -> [[ x -> T ]] ]]"
       , "[[ x -> [[ !t1 -> 5 ]] ]]"
       , "[[ org -> [[ z -> ?, L> Package ]] ]]"
       ]
@@ -271,7 +270,7 @@ spec = do
       ,
         ( "explains an unsupported nested expression"
         , do
-            expr <- parseExpressionThrows "[[ x -> [[ y -> T ]] ]]"
+            expr <- parseExpressionThrows "[[ x -> [[ y -> !e1 ]] ]]"
             try (void (expressionToXMIR expr defaultXmirContext)) :: IO (Either SomeException ())
         , ["XMIR does not support such expression"]
         )
