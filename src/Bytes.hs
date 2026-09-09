@@ -15,6 +15,7 @@ module Bytes
   , unescapeStr
   , btsToNum
   , btsToUnescapedStr
+  , btsIsUtf8
   , btsAnd
   , btsOr
   , btsNot
@@ -328,6 +329,22 @@ unescapeStr = go
 -- "5"
 btsToUnescapedStr :: Bytes -> String
 btsToUnescapedStr bytes = T.unpack (T.decodeUtf8 (B.pack (btsToWord8 bytes)))
+
+-- Whether the byte array is valid UTF-8. The string-side counterpart of the
+-- eight-byte check on numbers: a short or malformed datum is legal, and the
+-- printer keeps it in its byte form instead of aborting with an uncaught
+-- 'decodeUtf8' exception (see #1138).
+-- >>> btsIsUtf8 (BtMany ["77", "6F", "72", "6C", "64"])
+-- True
+-- >>> btsIsUtf8 (BtMany ["F0", "90", "80", "41"])
+-- False
+-- >>> btsIsUtf8 (BtOne "FE")
+-- False
+btsIsUtf8 :: Bytes -> Bool
+btsIsUtf8 bytes =
+  case T.decodeUtf8' (B.pack (btsToWord8 bytes)) of
+    Left _ -> False
+    Right _ -> True
 
 -- Bitwise conjunction of two byte arrays, byte by byte. EO's 'BytesRaw.and'
 -- refuses operands of different lengths, so there is nothing to yield for them
