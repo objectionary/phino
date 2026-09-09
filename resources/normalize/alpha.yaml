@@ -5,6 +5,15 @@ name: alpha
 pattern: ⟦𝐵1, 𝜏1 ↦ ∅, 𝐵2⟧(α𝑖1 ↦ 𝑒1)
 result: ⟦𝐵1, 𝜏1 ↦ ∅, 𝐵2⟧(𝜏1 ↦ 𝑒1)
 when:
-  eq:
-    - 𝑖1
-    - domain: 𝐵1
+  and:
+    - eq:
+        - 𝑖1
+        - domain: 𝐵1
+    - or:
+        - not:
+            eq:
+              - 𝜏1
+              - ρ
+        - gt:
+            - length: 𝐵1
+            - 0
