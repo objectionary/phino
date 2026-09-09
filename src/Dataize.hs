@@ -316,8 +316,9 @@ deepened expr univ = go ExXi expr
     go :: Expression -> Expression -> State -> DataizeContext -> IO (Expression, State)
     go context term state' caller = do
       ctx' <- deeper caller
-      answer <- fired (contextualize term context) univ state' ctx'
-      maybe (parts context term state' ctx') pure answer
+      (walked, walkedState) <- parts context term state' caller
+      answer <- fired (contextualize walked context) univ walkedState ctx'
+      maybe (pure (walked, walkedState)) pure answer
     -- The parts of a term nothing fired on, walked one by one and put back
     -- where they were, so the term keeps the shape it was written in.
     parts :: Expression -> Expression -> State -> DataizeContext -> IO (Expression, State)
