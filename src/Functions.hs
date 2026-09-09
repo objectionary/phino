@@ -169,7 +169,10 @@ _string :: BuildTermMethod
 _string [Y.ArgExpression expr] subst = do
   expr' <- buildExpressionThrows expr subst
   str <- case expr' of
-    DataNumber bts -> pure (DataString (strToBts (either show show (btsToNum bts))))
+    DataNumber bts
+      | btsSize bts /= 8 ->
+          throwIO (userError (printf "Expected 8 bytes for a number, got %d" (btsSize bts)))
+      | otherwise -> pure (DataString (strToBts (either show show (btsToNum bts))))
     DataString bts -> pure (DataString bts)
     ex ->
       throwIO

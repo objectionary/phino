@@ -102,6 +102,20 @@ spec = do
             parseExpression printed `shouldBe` Right expr
       )
 
+  describe "printExpression keeps a number with fewer than eight bytes in byte form" $
+    forM_
+      [ ("one byte", BtOne "21")
+      , ("three bytes", BtMany ["00", "01", "02"])
+      ]
+      ( \(desc, bts) ->
+          it desc $ do
+            let expr = DataNumber bts
+                printed = printExpression' expr (SWEET, ASCII, SINGLELINE, defaultMargin)
+            printed `shouldContain` "number"
+            printed `shouldContain` "bytes"
+            parseExpression printed `shouldBe` Right expr
+      )
+
   describe "printExpression keeps a compressed meet atomic under a narrow margin" $
     -- A \phinoMeet is a single \overbracket visual unit, so its body must stay
     -- on one line even when the surrounding margin forces the outer formation to

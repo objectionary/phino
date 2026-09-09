@@ -11,7 +11,7 @@
 module CST where
 
 import AST
-import Bytes (NonFinite, btsToNonFinite, btsToNum, btsToStr)
+import Bytes (NonFinite, btsSize, btsToNonFinite, btsToNum, btsToStr)
 import Data.Maybe (isJust)
 import qualified Data.Text as T
 import qualified Yaml as Y
@@ -270,6 +270,8 @@ expressionToCSTFrom tabs expr = toCST expr (tabs, EOL)
 -- pattern, such as a NaN carrying a payload, is kept in its byte form so that
 -- no bit of it is lost.
 sweetNumber :: Bytes -> Bool
+sweetNumber bts
+  | btsSize bts /= 8 = False
 sweetNumber bts = case btsToNum bts of
   Right dbl | isNaN dbl || isInfinite dbl -> isJust (btsToNonFinite bts)
   _ -> True
