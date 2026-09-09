@@ -140,6 +140,7 @@ data OptsMorph = OptsMorph
   , _seed :: Int
   , _quiet :: Bool
   , _partial :: Bool
+  , _deep :: Bool
   , _compress :: Bool
   , _maxDepth :: Int
   , _maxCycles :: Int

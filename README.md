@@ -404,6 +404,60 @@ The whole `dataize` option surface applies unchanged — `--atoms`, `--inside`,
 `--sequence`, `--headers`, `--steps-dir`, `--evaluations`, `--partial`,
 `--max-steps`, `--shuffle`/`--seed`, `--output`, `--focus` and the rest.
 
+### Deep morphing
+
+𝕄 stops at the first formation it reaches and hands its bindings back as they
+were written, since firing a bare λ is dataization's job, and `dataize`
+follows the one path dataization demands and ends in bytes. What a program
+holds but nothing demands — the argument of an atom the registry does not
+serve, for one — is therefore reduced by neither. The `--deep` flag enters it:
+
+```bash
+$ cat gap.phi
+⟦
+  bytes(data) ↦ ⟦ φ ↦ ξ.data ⟧,
+  number(as-bytes) ↦ ⟦ φ ↦ ξ.as-bytes, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧ ⟧,
+  bar(x) ↦ ⟦ λ ⤍ L_bar ⟧,
+  demo ↦ ⟦ foo ↦ ⟦ n ↦ 3, φ ↦ Φ.bar( ξ.n.times( 5 ).times( 7 ) ) ⟧ ⟧
+⟧
+$ phino morph --atoms=atoms.json --inside='Q.demo.foo' \
+    --sweet --hide-rho gap.phi
+⟦ n ↦ 3, φ ↦ Φ.bar( n.times( 5 ).times( 7 ) ) ⟧
+$ phino morph --deep --atoms=atoms.json --inside='Q.demo.foo' \
+    --sweet --hide-rho gap.phi
+⟦ n ↦ 3, φ ↦ Φ.bar( 105 ) ⟧
+```
+
+Every binding of the formation is entered, recursively. 𝕄 is asked about the
+term standing there and, where it lands on a saturated formation whose λ the
+registry serves, that λ is fired and 𝕄 is asked about the answer again. A term
+on whose way an atom fired is replaced by the answer of the last firing, which
+is the 𝜑-program the atom wrote rather than the normal form of it, so `105`
+stands where the arithmetic stood. A term no atom touched stays exactly as it
+was written and only its own parts are walked, so `Φ.bar` keeps its name and
+what comes back is still the same program, reduced as far as the registry
+allows. The step joins the chain under the name `deep`, so `--sequence` shows
+it, and `--max-steps` bounds the walk.
+
+Two things are left alone. A λ the registry does not serve is not fired at
+all, so `--deep` stays as total as 𝕄 itself and needs no `--partial`; an atom
+that gets stuck deeper on a spine still fails the run, and `--partial` parks
+it, leaving that term as it was written. A formation still holding a void
+binding is not fired either: the void is an argument the program has not given
+yet, so `times(x) ↦ ⟦ λ ⤍ L_number_times ⟧` is a method waiting to be applied,
+not an application waiting to be computed. Walking the whole program therefore
+folds what it can and leaves the object model as it was declared:
+
+```bash
+$ phino morph --deep --atoms=atoms.json --sweet --hide-rho gap.phi
+⟦
+  bytes(data) ↦ ⟦ φ ↦ data ⟧,
+  number(as-bytes) ↦ ⟦ φ ↦ as-bytes, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧ ⟧,
+  bar(x) ↦ ⟦ λ ⤍ L_bar ⟧,
+  demo ↦ ⟦ foo ↦ ⟦ n ↦ 3, φ ↦ Φ.bar( 105 ) ⟧ ⟧
+⟧
+```
+
 ## Rewrite
 
 You can rewrite this expression with the help of [rules](#rule-structure)

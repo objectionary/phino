@@ -1502,6 +1502,64 @@ spec = do
             ["morph", "--locator=Q.@", "--partial", "--flat", "--hide-rho"]
             ["⟦ λ ⤍ Sym_arg_0 ⟧.foo"]
 
+    -- 𝕄 stops at the first formation and hands its bindings back as they were
+    -- written, so a program whose parts nothing demands is never reduced;
+    -- '--deep' enters every binding and finishes what 'mf' left, while what no
+    -- atom touched keeps its name and the answer stays a program (#1124)
+    describe "--deep" $ do
+      let program =
+            "[[ bytes(data) -> [[ @ -> $.data ]], \
+            \number(as-bytes) -> [[ @ -> $.as-bytes, times(x) -> [[ L> L_number_times ]] ]], \
+            \bar(x) -> [[ L> L_bar ]], \
+            \demo -> [[ foo -> [[ n -> 3, @ -> Q.bar( $.n.times( 5 ).times( 7 ) ) ]] ]] ]]"
+      it "answers the formation as it was written without the flag" $
+        withAtoms $ \atoms ->
+          withStdin program $
+            testCLISucceeded
+              ["morph", atoms, "--inside=Q.demo.foo", "--sweet", "--hide-rho", "--flat"]
+              ["⟦ n ↦ 3, φ ↦ Φ.bar( n.times( 5 ).times( 7 ) ) ⟧"]
+
+      -- 'L_bar' is not in the registry, so the call to it stays as written and
+      -- keeps its name, while the arithmetic in the argument nothing demands
+      -- folds into the number it makes
+      it "reduces every binding it can and leaves the rest in place" $
+        withAtoms $ \atoms ->
+          withStdin program $
+            testCLISucceeded
+              ["morph", atoms, "--deep", "--inside=Q.demo.foo", "--sweet", "--hide-rho", "--flat"]
+              ["⟦ n ↦ 3, φ ↦ Φ.bar( 105 ) ⟧"]
+
+      -- The same term the run above stops at as a bare λ-formation: 'mf' leaves
+      -- it to 𝔻, and the walk fires it instead of demanding bytes
+      it "fires the bare saturated λ-formation mf hands back" $
+        withAtoms $ \atoms ->
+          withStdin chained $
+            testCLISucceeded
+              ["morph", atoms, "--deep", "--locator=Q.@", "--sweet", "--hide-rho", "--flat"]
+              ["18"]
+
+      -- The default locator walks the whole program: the method table of the
+      -- object model keeps every one of its λ-formations, since not one of them
+      -- is saturated, while the one place that can be computed is
+      it "keeps the object model intact while it folds the program" $
+        withAtoms $ \atoms ->
+          withStdin program $
+            testCLISucceeded
+              ["morph", atoms, "--deep", "--sweet", "--hide-rho", "--flat"]
+              [ "number(as-bytes) ↦ ⟦ φ ↦ as-bytes, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧ ⟧"
+              , "demo ↦ ⟦ foo ↦ ⟦ n ↦ 3, φ ↦ Φ.bar( 105 ) ⟧ ⟧"
+              ]
+
+      it "keeps a binding whose spine got stuck with --partial" $
+        withStdin "[[ x -> [[ L> Sym_arg_0 ]].foo ]]" $
+          testCLISucceeded
+            ["morph", "--deep", "--partial", "--sweet", "--hide-rho", "--flat"]
+            ["⟦ x ↦ ⟦ λ ⤍ Sym_arg_0 ⟧.foo ⟧"]
+
+      it "fails on that same spine without --partial" $
+        withStdin "[[ x -> [[ L> Sym_arg_0 ]].foo ]]" $
+          testCLIFailed ["morph", "--deep"] ["Atom 'Sym_arg_0' does not exist"]
+
     describe "fails" $ do
       it "with --output != latex and --nonumber" $
         withStdin "" $

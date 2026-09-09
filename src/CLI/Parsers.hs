@@ -206,6 +206,12 @@ optStepsDir = optional (strOption (long "steps-dir" <> metavar "FILE" <> help "D
 optPartial :: Parser Bool
 optPartial = switch (long "partial" <> help "Partial evaluation: compute what the known inputs decide and, instead of failing on an atom that cannot fire (its λ function is not in the --atoms registry), leave it in place and print the residual 𝜑-program")
 
+-- 𝕄 stops at the first formation it reaches and hands its bindings back as
+-- they were written, so what a program holds but nothing demands is never
+-- reduced. This walks into them (see 'deepened').
+optDeep :: Parser Bool
+optDeep = switch (long "deep" <> help "Don't stop at the first formation: enter its bindings too, recursively, firing every λ function the --atoms registry serves and standing its answer in the place of what it computed, while everything else stays as it was written")
+
 -- Which λ functions this run may fire. phino implements none of them itself
 -- (see 'Atoms'), so without this option every atom a program names gets stuck.
 optAtoms :: Parser (Maybe FilePath)
@@ -376,6 +382,7 @@ morphParser =
             <*> optSeed
             <*> switch (long "quiet" <> help "Don't print the result of morphing")
             <*> optPartial
+            <*> optDeep
             <*> optCompress
             <*> optMaxDepth
             <*> optMaxCycles
