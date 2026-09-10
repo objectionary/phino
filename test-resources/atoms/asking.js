@@ -4,12 +4,15 @@
 // The λ function 'L_number_plus', answered by a program that reduces nothing
 // itself. An operand arrives as it was written, so 'Φ.number( … ).plus( … )'
 // reaches this script whole, and getting the number out of it is dataization,
-// which is phino's business and not a script's. So the script asks: it writes a
-// line of its own, an 'id' it minted and the 𝜑-expression under 'ask', and
-// phino answers it with that 'id' and the bytes under '𝑛'. Before the channel
-// carried questions, a script had to splice the operand into the text of the
-// universe and run a whole phino of its own on it.
-//
+// which is phino's business and not a script's. So the script asks, naming
+// rather than quoting: a line of its own with an 'id' it minted, the 'of' of
+// the request being served and the 'attr' of the operand it wants, with
+// 'reduce' asking phino to dataize it. Such a question is served from the
+// receiver phino already holds for that request, in lean text without the ρ
+// chain (#1165), and answered with that 'id' and the bytes under '𝑛' — where
+// quoting the receiver in an 'ask' used to make the next question twice as
+// big as the last.
+
 // Every request is a coroutine, so a question suspends the request that asked
 // it rather than the script: serving a question fires atoms of its own, and one
 // of them may well be this very atom, whose request arrives while the question
@@ -42,10 +45,12 @@ function hex(value) {
 
 // The λ function itself: every 𝜑-expression it yields is a question, and what
 // comes back is the answer phino reduced, so both operands arrive as bytes
-// however deeply they were written.
-function* plus(b) {
-  const rho = number(yield `${b}.ρ`);
-  const x = number(yield `${b}.x`);
+// however deeply they were written. The operands are named by reference: 'of'
+// is the request being served, 'attr' the attribute of its receiver, and
+// 'reduce' says phino should dataize the value rather than hand the node over.
+function* plus(request) {
+  const rho = number(yield { of: request, attr: 'ρ', reduce: true });
+  const x = number(yield { of: request, attr: 'x', reduce: true });
   return Number.isNaN(rho) || Number.isNaN(x)
     ? '⊥'
     : `Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ ${hex(rho + x)} ⟧ ) )`;
@@ -71,13 +76,13 @@ function advance(atom, id, answer) {
   }
   minted += 1;
   open.set(minted, { atom, id });
-  said({ id: minted, ask: step.value });
+  said({ id: minted, ...step.value });
 }
 
 readline.createInterface({ input: process.stdin }).on('line', (line) => {
   const message = JSON.parse(line);
   if ('λ' in message) {
-    advance(plus(message['𝑏']), message.id, undefined);
+    advance(plus(message.id), message.id, undefined);
   } else if ('𝑛' in message) {
     const waiting = open.get(message.id);
     open.delete(message.id);
