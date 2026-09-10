@@ -228,7 +228,7 @@ spec = do
         ( "fires the atom nested in the argument of the atom it fires"
         , "Q.@"
         , primitives "[[ x -> 5.plus( 6.plus( 7 ) ) ]]"
-        , "[[ x -> Q.number( as-bytes -> Q.bytes( data -> [[ D> 40-32-00-00-00-00-00-00 ]] ) ) ]]"
+        , "[[ x -> Q.number( as-bytes -> Φ.bytes( φ ↦ ⟦ Δ ⤍ 40-32-00-00-00-00-00-00 ⟧ ) ) ]]"
         )
       ,
         ( "keeps the answer of the last atom fired along one chain of them"
