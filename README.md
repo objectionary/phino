@@ -173,9 +173,10 @@ raw result, normalizing it exactly as it normalizes anything else, so
 A program started for the fire is asked one request, always `id` 1, and its
 `stdin` is closed behind it, so it may read its input whole or line by line, as
 it pleases. It is waited for once it has answered, and a non-zero exit fails
-the run. So does a reply that is not JSON, carries no `𝑛`, answers another
-`id`, or an `𝑛` that does not parse, or a program that quits without
-answering — always with the program's own `stderr` in the message.
+the run. So does a reply that is not JSON, carries neither `𝑛` nor `ask` (the
+next section is about `ask`), answers another `id`, or an `𝑛` that does not
+parse, or a program that quits without answering — always with the program's
+own `stderr` in the message.
 
 Each key of the registry is a regular expression, and it must match the whole
 λ name, so a plain name such as `L_number_plus` means that one atom and nothing
@@ -220,34 +221,54 @@ which is its cue to quit, and terminates it if it has not quit within a second.
 
 ### Reducing the operands of an atom
 
-A program gets at the parts of `𝑏` by calling `phino` again, so no API has to
-be exposed for it. The `--inside` option is how it asks: the expression it
-names is bound to a fresh synthetic attribute of the input expression, which
-the run takes as the universe, normalized there, and then dataized. This is the
-same trick `phino` plays internally whenever it has to reduce a sub-expression
-the program does not contain:
+An operand reaches a program as it was written: `5.plus( 6.plus( 7 ) )` fires
+`L_number_plus` with `x ↦ Φ.number( … ).plus( … )`, and getting a number out of
+that is dataization, which is `phino`'s business and not a program's. So the
+program asks. It writes a line of its own, an `id` it mints and, under `ask`,
+the 𝜑-expression it wants reduced, and `phino` answers with that `id` and the
+result under `𝑛`:
 
-```bash
-$ phino dataize --atoms=atoms.json --inside='5.plus( 6 )' universe.phi
-40-26-00-00-00-00-00-00
+```text
+{"𝑒": "⟦ bytes ↦ ⟦ … ⟧, number ↦ ⟦ … ⟧, φ ↦ … ⟧"}
+{"id": 1, "λ": "L_number_plus", "𝑏": "⟦ x ↦ Φ.number( … ).plus( … ), ρ ↦ … ⟧"}
+{"id": 7, "ask": "⟦ x ↦ Φ.number( … ).plus( … ), ρ ↦ … ⟧.ρ"}
+{"id": 7, "𝑛": "⟦ Δ ⤍ 40-14-00-00-00-00-00-00 ⟧"}
+{"id": 8, "ask": "⟦ x ↦ Φ.number( … ).plus( … ), ρ ↦ … ⟧.x"}
+{"id": 8, "𝑛": "⟦ Δ ⤍ 40-2A-00-00-00-00-00-00 ⟧"}
+{"id": 1, "𝑛": "Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 40-32-00-00-00-00-00-00 ⟧ ) )"}
 ```
 
-Here `universe.phi` is the 𝜑-program the atom is being fired inside — the very
-text the program was told under `𝑒`, which it feeds back on `stdin`.
+The universe, the request and the two answers are `phino`'s; the two questions
+and the last line are the program's. A question mints an `id` of its own,
+which `phino` echoes, so a program may keep several of them open and still
+tell the answers apart.
 
-So a `L_number_plus` that reduces its own operands reads like this:
+`phino` serves a question by binding the expression to a fresh synthetic
+attribute of the universe, normalizing it there and dataizing it — the same
+trick `--inside` plays — so the answer is a byte formation and the program
+reads its `Δ`; where an atom on the way cannot fire and `--partial` parks it,
+the answer is the residual program instead.
+
+Serving a question re-enters the evaluator, so a question may cost a fire of
+the very atom that asked it. That request arrives while the question is still
+open, which is why a program that asks reads on instead of waiting for one
+line. The step budget of the run, `--max-steps`, bounds the nesting.
+
+Only a program kept for the run may ask. `phino` closes the `stdin` of a
+program started for the fire behind its request, since such a program may read
+its input whole before it answers, so there is nothing left to answer a
+question over, and one that asks anyway fails the fire.
+
+So a `serve` entry of `L_number_plus` that has `phino` reduce its operands
+reads like this:
 
 ```js
 const readline = require('readline');
-const { execFileSync } = require('child_process');
-let universe;
-const dataized = (expr) => execFileSync(
-  'phino',
-  ['dataize', '--atoms=atoms.json', `--inside=${expr}`],
-  { input: universe, encoding: 'utf8' }
-).trim();
-const number = (expr) => Buffer
-  .from(dataized(expr).replace(/-/g, ''), 'hex')
+const open = new Map();
+let minted = 0;
+const said = (message) => process.stdout.write(`${JSON.stringify(message)}\n`);
+const number = (answer) => Buffer
+  .from(/Δ ⤍ ([0-9A-F-]+)/.exec(answer)[1].replace(/-/g, ''), 'hex')
   .readDoubleBE(0);
 const hex = (value) => {
   const bytes = Buffer.alloc(8);
@@ -256,26 +277,51 @@ const hex = (value) => {
     .map((octet) => octet.toString(16).toUpperCase().padStart(2, '0'))
     .join('-');
 };
-readline.createInterface({ input: process.stdin }).on('line', (line) => {
-  const message = JSON.parse(line);
-  if ('𝑒' in message) {
-    universe = message['𝑒'];
+function* plus(b) {
+  const rho = number(yield `${b}.ρ`);
+  const x = number(yield `${b}.x`);
+  return `Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ ${hex(rho + x)} ⟧ ) )`;
+}
+const advance = (atom, id, answer) => {
+  const step = atom.next(answer);
+  if (step.done) {
+    said({ id, '𝑛': step.value });
     return;
   }
-  if (message['λ'] !== 'L_number_plus') {
-    throw new Error(`unsupported atom ${message['λ']}`);
+  minted += 1;
+  open.set(minted, { atom, id });
+  said({ id: minted, ask: step.value });
+};
+readline.createInterface({ input: process.stdin }).on('line', (line) => {
+  const message = JSON.parse(line);
+  if ('λ' in message) {
+    advance(plus(message['𝑏']), message.id, undefined);
+  } else if ('𝑛' in message) {
+    const waiting = open.get(message.id);
+    open.delete(message.id);
+    advance(waiting.atom, waiting.id, message['𝑛']);
   }
-  const b = message['𝑏'];
-  const sum = hex(number(`${b}.ρ`) + number(`${b}.x`));
-  process.stdout.write(`${JSON.stringify({
-    id: message.id,
-    '𝑛': `Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ ${sum} ⟧ ) )`,
-  })}\n`);
 });
 ```
 
-Written this way, reading until its `stdin` closes, the same program runs once
-per fire and serves the whole run alike; only the registry entry decides.
+Every request is a coroutine there, so a question suspends the request that
+asked it rather than the program: whatever `phino` says next, the answer or
+another request, is served on the spot.
+
+A program may run a `phino` of its own instead of asking, and the `--inside`
+option is how it does that: the expression it names is bound to a fresh
+synthetic attribute of the input expression, which the run takes as the
+universe, normalized there, and then dataized.
+
+```bash
+$ phino dataize --atoms=atoms.json --inside='5.plus( 6 )' universe.phi
+40-26-00-00-00-00-00-00
+```
+
+Here `universe.phi` is the 𝜑-program the atom is being fired inside — the very
+text the program was told under `𝑒`, which it feeds back on `stdin`. That costs
+a process and a re-parse of the whole universe per operand, which is what the
+`ask` line is for.
 
 The `--inside` option cannot be combined with `--locator`, since it aims the
 run at the binding it mints itself. Both `dataize` and `morph` take `--atoms`

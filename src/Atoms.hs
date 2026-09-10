@@ -37,12 +37,23 @@
 -- 'λ' and the formation under '𝑏', answered by a line with the same 'id' and
 -- the 𝜑-expression under '𝑛'.
 --
+-- The channel carries questions as well as answers. An operand reaches a
+-- program unreduced, since reducing it may take the very atom being fired, so
+-- instead of running a phino of its own on the universe with the operand
+-- spliced into its text, a program writes a line of its own: an 'id' it minted
+-- and, under 'ask', the 𝜑-expression it wants reduced. phino reduces it by
+-- re-entering its own evaluator and answers with that 'id' and the reduced
+-- expression under '𝑛'. Only a program kept for the run may ask: the stdin of
+-- one started for the fire is closed behind its request, so there is nothing
+-- left to answer it over.
+--
 -- A name no key matches has no λ function at all: 𝔼 gets stuck on it, exactly
 -- as it does for a name no one ever declared (see 'Stuck' in 'Dataize').
 module Atoms
   ( Atom (..)
   , AtomException (..)
   , Program (..)
+  , ReduceFunc
   , Registry
   , Runtime (..)
   , Session (_program)
@@ -57,7 +68,7 @@ where
 
 import AST
 import Control.Concurrent.MVar (MVar, modifyMVar, modifyMVar_, newMVar)
-import Control.Exception (Exception, SomeException, catch, onException, throwIO, try)
+import Control.Exception (Exception, catch, onException, throwIO)
 import Control.Monad (foldM, unless)
 import Data.Aeson (FromJSON (parseJSON), eitherDecodeStrict', object, withObject, withText, (.!=), (.:), (.:?), (.=))
 import qualified Data.Aeson as A
@@ -69,6 +80,7 @@ import Data.Aeson.Types (JSONPathElement (Key), parseEither, (<?>))
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Char8 as BC
 import qualified Data.ByteString.Lazy as BSL
+import Data.IORef (IORef, atomicModifyIORef', newIORef, readIORef, writeIORef)
 import Data.List (find, intercalate)
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
@@ -136,16 +148,33 @@ instance Show Session where
 -- A program while it runs: its streams, the file its complaints go to, the
 -- file its script is staged in, if it is a script, the universe it was told
 -- last, so it is told again only when the universe changes, and how many
--- requests it has been asked, which numbers the next one.
+-- requests it has been asked, which numbers the next one. The last two are
+-- mutable, since a fire may nest: serving a question of the program takes an
+-- evaluator that fires atoms of its own, and the one it reaches may be this
+-- very program, asked again over these very handles while its question is
+-- still open.
 data Running = Running
   { _input :: Handle
   , _output :: Handle
   , _process :: ProcessHandle
   , _complaints :: FilePath
   , _staged :: Maybe FilePath
-  , _told :: Maybe Expression
-  , _requests :: Int
+  , _told :: IORef (Maybe Expression)
+  , _requests :: IORef Int
   }
+
+-- What is left of the channel to a program once its request is pushed through:
+-- the stdin of a program started for the fire is closed behind the request,
+-- since the program may read its input whole before it answers, so nothing
+-- more can be said to it; the stdin of one kept for the run is flushed and
+-- stays open, so its questions can be answered.
+data Channel = Closed | Open
+
+-- How phino reduces a 𝜑-expression a program asks about. Only the caller of
+-- 'fireAtom' can do it, since it alone holds the universe to reduce inside and
+-- the context to reduce under, so it hands the way down (see 'reduction' in
+-- 'Dataize').
+type ReduceFunc = Expression -> IO Expression
 
 -- One entry of the registry, as the file spells it: the program and whether
 -- it is to be kept for the run.
@@ -168,8 +197,8 @@ data AtomException
   | -- The program exited with a non-zero status; the message carries its stderr.
     AtomBroke T.Text Int String
   | -- The program said nothing phino can use: its reply is not a JSON object,
-    -- carries no 𝜑-expression, answers another request, or the 𝜑-expression
-    -- does not parse.
+    -- carries no 𝜑-expression, answers another request, asks a question phino
+    -- has no channel left to answer, or the 𝜑-expression does not parse.
     AtomMute T.Text String String
   deriving anyclass (Exception)
 
@@ -226,15 +255,24 @@ instance FromJSON Program where
 instance FromJSON Entry where
   parseJSON value = Entry <$> parseJSON value <*> withObject "atom" (\entry -> entry .:? "serve" .!= False) value
 
--- What a program writes back for one request: the 'id' of the request it
--- answers and, under '𝑛', the 𝜑-expression the atom answers with.
-data Reply = Reply Int T.Text
+-- What a program writes back: the answer to the request it was asked, the
+-- 𝜑-expression under '𝑛', or a question of its own, the 𝜑-expression under
+-- 'ask' that it needs reduced before it can answer. An answer echoes the 'id'
+-- of the request it answers, a question mints an 'id' of its own, which phino
+-- echoes back.
+data Said
+  = Answer Int T.Text
+  | Question Int T.Text
 
-instance FromJSON Reply where
-  parseJSON = withObject "reply" $ \reply -> do
-    number <- reply .: "id"
-    raw <- reply .:? "𝑛"
-    maybe (fail "there is no '𝑛' in it") (pure . Reply number) raw
+instance FromJSON Said where
+  parseJSON = withObject "reply" $ \said -> do
+    number <- said .: "id"
+    answer <- said .:? "𝑛"
+    question <- said .:? "ask"
+    case (answer, question) of
+      (Just raw, _) -> pure (Answer number raw)
+      (Nothing, Just raw) -> pure (Question number raw)
+      (Nothing, Nothing) -> fail "there is neither '𝑛' nor 'ask' in it"
 
 -- No λ function at all: every atom gets stuck. This is what a run without
 -- '--atoms' fires against.
@@ -322,28 +360,28 @@ closeRegistry (Registry rules) = mapM_ (dismissed . snd) rules
     dismissed (Resident Session{..}) = modifyMVar_ _running (maybe (pure Nothing) (\running -> Nothing <$ stopped briefly running))
     dismissed _ = pure ()
 
--- Fire the λ function 'func' by asking its program. A transient program is
--- started for the fire and waited for once it has answered, so that its exit
--- status has its say; a resident one is started on the first fire and stays
--- for the run, kept whatever the fire ended with, so that 'closeRegistry'
--- finds it. Whichever way, the 𝜑-expression the program answers with becomes
--- the atom's raw result, which 𝔼 normalizes exactly as it normalized the
--- answer of a built-in one.
-fireAtom :: T.Text -> Atom -> Expression -> Expression -> IO Expression
-fireAtom func (Transient program) form univ = do
+-- Fire the λ function 'func' by asking its program, reducing with 'reduce'
+-- whatever the program asks about on the way. A transient program is started
+-- for the fire and waited for once it has answered, so that its exit status
+-- has its say; a resident one is started on the first fire and stays for the
+-- run, whatever the fire ended with, so that 'closeRegistry' finds it. The
+-- session is let go of before the program is spoken to, since serving a
+-- question may fire the same atom again and a fire waiting for the session it
+-- is already inside would wait forever. Whichever way, the 𝜑-expression the
+-- program answers with becomes the atom's raw result, which 𝔼 normalizes
+-- exactly as it normalized the answer of a built-in one.
+fireAtom :: T.Text -> Atom -> Expression -> Expression -> ReduceFunc -> IO Expression
+fireAtom func (Transient program) form univ reduce = do
   running <- started func program
-  (_, answer) <- asked func running form univ hClose `onException` stopped patiently running
+  answer <- asked func running form univ Closed reduce `onException` stopped patiently running
   (status, complaint) <- stopped patiently running
   unless (null complaint) (logDebug (printf "Atom '%s' wrote to stderr: %s" (T.unpack func) complaint))
   case status of
     ExitFailure code -> throwIO (AtomBroke func code complaint)
     ExitSuccess -> pure answer
-fireAtom func (Resident Session{..}) form univ = do
-  outcome <- modifyMVar _running $ \current -> do
-    running <- maybe (started func _program) pure current
-    attempt <- try (asked func running form univ hFlush) :: IO (Either SomeException (Running, Expression))
-    pure (Just (either (const running) fst attempt), snd <$> attempt)
-  either throwIO pure outcome
+fireAtom func (Resident Session{..}) form univ reduce = do
+  running <- modifyMVar _running (\current -> (\kept -> (Just kept, kept)) <$> maybe (started func _program) pure current)
+  asked func running form univ Open reduce
 
 -- Start the program, with its input and its output on pipes and its complaints
 -- in a file that lives as long as the process does: a script is staged in a
@@ -358,7 +396,7 @@ started func program = do
   (executable, arguments, staged) <- commanded dir
   logDebug (printf "Starting atom '%s' as '%s'" (T.unpack func) (unwords (executable : arguments)))
   (input, output, process) <- spawned executable arguments handle `onException` discarded complaints staged
-  pure (Running input output process complaints staged Nothing 0)
+  Running input output process complaints staged <$> newIORef Nothing <*> newIORef 0
   where
     -- The command line the program is started with, and the file staged for
     -- it, if it is a script.
@@ -383,28 +421,58 @@ started func program = do
     missing executable failure = throwIO (NoRuntime func executable (show failure))
 
 -- Ask the running program to fire the λ function: it is told the universe,
--- unless it was told already, then the request, and its reply is read back.
--- How the request is pushed through is the caller's: a transient program has
--- its stdin closed behind it, since it may read its input whole before it
--- answers, a resident one has it flushed, since it reads on. A reply that is
--- not JSON, carries no '𝑛', answers another request, or a program that hangs
--- up fails the fire, with the program's stderr in the message.
-asked :: T.Text -> Running -> Expression -> Expression -> (Handle -> IO ()) -> IO (Running, Expression)
-asked func running@Running{..} form univ pushed = do
-  let number = _requests + 1
-      universe = lined (object ["𝑒" .= rendered univ])
-      request = lined (object ["id" .= number, "λ" .= func, "𝑏" .= rendered form])
+-- unless it was told already, then the request, and its lines are read back
+-- until it answers. A line carrying '𝑛' with the 'id' of the request is the
+-- answer; a line carrying 'ask' is a question of the program's own, which
+-- phino reduces and replies to before it goes on reading. What is left of the
+-- channel is the caller's: a transient program has its stdin closed behind the
+-- request, since it may read its input whole before it answers, a resident one
+-- has it flushed, since it reads on. A reply that is not JSON, carries neither
+-- '𝑛' nor 'ask', answers another request, or a program that hangs up fails the
+-- fire, with the program's stderr in the message.
+asked :: T.Text -> Running -> Expression -> Expression -> Channel -> ReduceFunc -> IO Expression
+asked func Running{..} form univ channel reduce = do
+  number <- atomicModifyIORef' _requests (\spent -> (spent + 1, spent + 1))
+  told <- readIORef _told
   logDebug (printf "Asking atom '%s' as request %d" (T.unpack func) number)
-  said (if _told == Just univ then request else universe <> request)
-  reply <- BC.hGetLine _output `catch` hungUp
-  answer <- replied number reply
-  pure (running{_told = Just univ, _requests = number}, answer)
+  said (if told == Just univ then request number else universe <> request number)
+  writeIORef _told (Just univ)
+  heard number
   where
+    universe :: BS.ByteString
+    universe = lined (object ["𝑒" .= rendered univ])
+    request :: Int -> BS.ByteString
+    request number = lined (object ["id" .= number, "λ" .= func, "𝑏" .= rendered form])
+    -- Read the program's lines until it answers the request phino asked,
+    -- serving every question it asks on the way.
+    heard :: Int -> IO Expression
+    heard number = do
+      reply <- BC.hGetLine _output `catch` hungUp
+      case eitherDecodeStrict' reply of
+        Left failure -> throwIO (AtomMute func (spoken reply) failure)
+        Right (Answer echoed raw)
+          | echoed /= number -> throwIO (AtomMute func (spoken reply) (printf "it answers request %d, while phino asked request %d" echoed number))
+          | otherwise -> either (throwIO . AtomMute func (T.unpack raw)) pure (parseExpression (T.unpack raw))
+        Right (Question minted raw) -> served minted raw >> heard number
+    -- Reduce the 𝜑-expression the program asks about and say it back under
+    -- '𝑛', with the 'id' the question minted. A program started for the fire
+    -- has nothing to be answered over, since phino closed its stdin behind the
+    -- request, so its question fails the fire instead of hanging it.
+    served :: Int -> T.Text -> IO ()
+    served minted raw = case channel of
+      Closed -> throwIO (AtomMute func (T.unpack raw) "it asks phino to reduce an expression, while its stdin is closed, since its entry does not say 'serve'")
+      Open -> do
+        logDebug (printf "Atom '%s' asks phino to reduce '%s' as question %d" (T.unpack func) (T.unpack raw) minted)
+        target <- either (unreadable raw) pure (parseExpression (T.unpack raw))
+        answer <- reduce target
+        said (lined (object ["id" .= minted, "𝑛" .= rendered answer]))
+    unreadable :: T.Text -> String -> IO a
+    unreadable raw failure = throwIO (AtomMute func (T.unpack raw) (printf "it asks phino to reduce an expression that does not parse: %s" failure))
     -- A program that has died leaves the write with nobody to drain it. The
     -- failure worth reporting is the one the program made, so a broken pipe is
     -- swallowed here and the read that follows finds out.
     said :: BS.ByteString -> IO ()
-    said content = (BS.hPut _input content >> pushed _input) `catch` unheard
+    said content = (BS.hPut _input content >> pushed channel _input) `catch` unheard
     -- The program closed its stdout instead of answering: if it has quit with
     -- a failure, that is the failure; otherwise it went mute.
     hungUp :: IOError -> IO BS.ByteString
@@ -415,16 +483,13 @@ asked func running@Running{..} form univ pushed = do
         Just (ExitFailure code) -> throwIO (AtomBroke func code complaint)
         Just ExitSuccess -> throwIO (AtomMute func "" (unwords ("the program quit without answering" : [complaint | not (null complaint)])))
         Nothing -> throwIO (AtomMute func "" (unwords ("the program closed its stdout without answering" : [complaint | not (null complaint)])))
-    -- Parse what the program said back: a JSON object answering this very
-    -- request, with the raw 𝜑-expression under '𝑛'.
-    replied :: Int -> BS.ByteString -> IO Expression
-    replied number reply = case eitherDecodeStrict' reply of
-      Left failure -> throwIO (AtomMute func (spoken reply) failure)
-      Right (Reply echoed raw)
-        | echoed /= number -> throwIO (AtomMute func (spoken reply) (printf "it answers request %d, while phino asked request %d" echoed number))
-        | otherwise -> case parseExpression (T.unpack raw) of
-            Left failure -> throwIO (AtomMute func (T.unpack raw) failure)
-            Right expr -> pure expr
+
+-- Push the request through the channel: closing the stdin of a program started
+-- for the fire is the cue a program reading its input whole waits for, while a
+-- program kept for the run reads on and needs no more than a flush.
+pushed :: Channel -> Handle -> IO ()
+pushed Closed = hClose
+pushed Open = hFlush
 
 -- Hang up on the program: close its stdin, which is its cue to quit, wait for
 -- it the given way and remove the files it was given, its complaints read

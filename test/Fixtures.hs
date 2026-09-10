@@ -6,13 +6,15 @@
 -- The λ functions the specs fire. phino implements none of them, so a spec that
 -- needs an atom to answer brings its own: one JavaScript fixture,
 -- 'test-resources/atoms/primitives.js', registered under every name in
--- 'fixtureAtoms' and branching on the one each request names under 'λ', or a
--- POSIX shell script written for the occasion, either run once per fire or
--- kept resident for the run.
+-- 'fixtureAtoms' and branching on the one each request names under 'λ',
+-- another, 'test-resources/atoms/asking.js', which reduces nothing itself and
+-- asks phino for its operands, or a POSIX shell script written for the
+-- occasion, either run once per fire or kept resident for the run.
 module Fixtures
   ( fixtureAtoms
   , fixtureRegistry
   , resident
+  , withAskingRegistry
   , withExecutable
   , withFixtureRegistry
   , withNode
@@ -50,10 +52,10 @@ fixtureAtoms =
   , "L_bytes_not"
   ]
 
--- The fixture script itself, read as UTF-8 rather than through the locale,
--- since it spells 𝜑 expressions.
-fixtureScript :: IO T.Text
-fixtureScript = decodeUtf8 <$> BS.readFile "test-resources/atoms/primitives.js"
+-- One of the fixture scripts, read as UTF-8 rather than through the locale,
+-- since they spell 𝜑 expressions.
+fixtureScript :: FilePath -> IO T.Text
+fixtureScript name = decodeUtf8 <$> BS.readFile ("test-resources/atoms/" ++ name)
 
 -- The registry the specs that drive 'Dataize' directly run against: the same
 -- file '--atoms' reads, read once and gone.
@@ -64,11 +66,23 @@ fixtureRegistry = withFixtureRegistry readRegistry
 -- removed afterwards, for the specs that go through the command line.
 withFixtureRegistry :: (FilePath -> IO a) -> IO a
 withFixtureRegistry action = do
-  script <- fixtureScript
+  script <- fixtureScript "primitives.js"
   withRegistryOf (object [Key.fromText name .= entry script | name <- fixtureAtoms]) action
   where
     entry :: T.Text -> Value
     entry script = object ["rt" .= ("node" :: T.Text), "script" .= script]
+
+-- The registry of the one λ function the asking fixture answers,
+-- 'L_number_plus', kept for the run, as the JSON file '--atoms' reads: a
+-- program may ask phino to reduce an operand only while its stdin is open, and
+-- phino closes the stdin of a program started for the fire behind its request.
+withAskingRegistry :: (FilePath -> IO a) -> IO a
+withAskingRegistry action = do
+  script <- fixtureScript "asking.js"
+  withRegistryOf (object ["L_number_plus" .= entry script]) action
+  where
+    entry :: T.Text -> Value
+    entry script = object ["rt" .= ("node" :: T.Text), "script" .= script, "serve" .= True]
 
 -- The given JSON, as the registry file '--atoms' reads, in a temporary file
 -- removed afterwards.

@@ -16,7 +16,7 @@ import Data.Text qualified as T
 import Data.Time.Clock (addUTCTime, getCurrentTime)
 import Data.Time.Clock.POSIX (getPOSIXTime)
 import Data.Version (showVersion)
-import Fixtures (withFixtureRegistry, withNode, withServing, withShell)
+import Fixtures (withAskingRegistry, withFixtureRegistry, withNode, withServing, withShell)
 import GHC.IO.Handle
 import Paths_phino (version)
 import System.Directory (createDirectoryIfMissing, doesDirectoryExist, doesFileExist, getTemporaryDirectory, listDirectory, removeDirectoryRecursive, removeFile, removePathForcibly, setModificationTime)
@@ -127,6 +127,11 @@ testCLISucceeded args outputs = testCLI' args outputs (Right ())
 -- pending where 'node' is not installed.
 withAtoms :: (String -> Expectation) -> Expectation
 withAtoms action = withNode (withFixtureRegistry (action . ("--atoms=" ++)))
+
+-- The same, for the fixture that reduces no operand of its own and asks phino
+-- for every one of them instead (see 'Fixtures')
+withAsking :: (String -> Expectation) -> Expectation
+withAsking action = withNode (withAskingRegistry (action . ("--atoms=" ++)))
 
 testCLIFailed :: [String] -> [String] -> Expectation
 testCLIFailed args outputs = testCLI' args outputs (Left (ExitFailure 1))
@@ -1330,6 +1335,16 @@ spec = do
         withTempFileContent "atomsXXXXXX.json" "L_number_plus: js" $ \path ->
           withStdin sum' $
             testCLIFailed ["dataize", "--atoms=" ++ path] ["cannot be read"]
+
+      -- An operand reaches an atom as it was written, so 'x' arrives here as
+      -- '6.plus( 7 )': a program that needs it reduced asks phino for it over
+      -- the very channel it answers on, and serving that question costs
+      -- another fire of the same program, which arrives while the question is
+      -- still open
+      it "reduces the operand a program asks it about" $
+        withAsking $ \atoms ->
+          withStdin "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6.plus(7)) ]]" $
+            testCLISucceeded ["dataize", atoms] ["40-32-00-00-00-00-00-00"]
 
     -- An atom script cannot reduce the operands it was handed by itself, so it
     -- asks phino for them: '--inside' binds an expression to a synthetic
