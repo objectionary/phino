@@ -173,10 +173,10 @@ raw result, normalizing it exactly as it normalizes anything else, so
 A program started for the fire is asked one request, always `id` 1, and its
 `stdin` is closed behind it, so it may read its input whole or line by line, as
 it pleases. It is waited for once it has answered, and a non-zero exit fails
-the run. So does a reply that is not JSON, carries neither `𝑛` nor `ask` (the
-next section is about `ask`), answers another `id`, or an `𝑛` that does not
-parse, or a program that quits without answering — always with the program's
-own `stderr` in the message.
+the run. So does a reply that is not JSON, carries neither `𝑛`, nor `ask`, nor
+`of` with `attr` (the next section is about the questions), answers another
+`id`, or an `𝑛` that does not parse, or a program that quits without answering
+— always with the program's own `stderr` in the message.
 
 Each key of the registry is a regular expression, and it must match the whole
 λ name, so a plain name such as `L_number_plus` means that one atom and nothing
@@ -224,16 +224,18 @@ which is its cue to quit, and terminates it if it has not quit within a second.
 An operand reaches a program as it was written: `5.plus( 6.plus( 7 ) )` fires
 `L_number_plus` with `x ↦ Φ.number( … ).plus( … )`, and getting a number out of
 that is dataization, which is `phino`'s business and not a program's. So the
-program asks. It writes a line of its own, an `id` it mints and, under `ask`,
-the 𝜑-expression it wants reduced, and `phino` answers with that `id` and the
-result under `𝑛`:
+program asks, and it may ask by name. A line of its own carries an `id` it
+mints and the `of` of the request being served, plus one of that receiver's
+attributes under `attr`; `phino` answers with that `id` and the result under
+`𝑛`, taking the value straight out of the receiver it still holds for the
+request — neither side ever re-prints or re-parses it:
 
 ```text
 {"𝑒": "⟦ bytes ↦ ⟦ … ⟧, number ↦ ⟦ … ⟧, φ ↦ … ⟧"}
-{"id": 1, "λ": "L_number_plus", "𝑏": "⟦ x ↦ Φ.number( … ).plus( … ), ρ ↦ … ⟧"}
-{"id": 7, "ask": "⟦ x ↦ Φ.number( … ).plus( … ), ρ ↦ … ⟧.ρ"}
+{"id": 1, "λ": "L_number_plus", "𝑏": "⟦ x ↦ Φ.number( … ).plus( … ) ⟧"}
+{"id": 7, "of": 1, "attr": "ρ", "reduce": true}
 {"id": 7, "𝑛": "⟦ Δ ⤍ 40-14-00-00-00-00-00-00 ⟧"}
-{"id": 8, "ask": "⟦ x ↦ Φ.number( … ).plus( … ), ρ ↦ … ⟧.x"}
+{"id": 8, "of": 1, "attr": "x", "reduce": true}
 {"id": 8, "𝑛": "⟦ Δ ⤍ 40-2A-00-00-00-00-00-00 ⟧"}
 {"id": 1, "𝑛": "Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 40-32-00-00-00-00-00-00 ⟧ ) )"}
 ```
@@ -241,13 +243,25 @@ result under `𝑛`:
 The universe, the request and the two answers are `phino`'s; the two questions
 and the last line are the program's. A question mints an `id` of its own,
 which `phino` echoes, so a program may keep several of them open and still
-tell the answers apart.
+tell the answers apart. Without `reduce` — or with it saying `false` — the
+answer is the node the attribute carries, as it was written; with `"reduce":
+true` it is the dataization of that node. A question about an `of` whose
+request is no longer in flight, or an `attr` the receiver does not carry,
+fails the fire.
 
-`phino` serves a question by binding the expression to a fresh synthetic
-attribute of the universe, normalizing it there and dataizing it — the same
-trick `--inside` plays — so the answer is a byte formation and the program
-reads its `Δ`; where an atom on the way cannot fire and `--partial` parks it,
-the answer is the residual program instead.
+The other way to ask quotes the 𝜑-expression itself, under `ask`; `phino`
+serves such a question by binding it to a fresh synthetic attribute of the
+universe, normalizing it there and dataizing it — the same trick `--inside`
+plays — so the answer is a byte formation and the program reads its `Δ`; where
+an atom on the way cannot fire and `--partial` parks it, the answer is the
+residual program instead. A quoted question is fine for terms the program
+assembled itself; a question that quotes a receiver is not, because the
+receiver carries its `ρ` and the receiver of that carries its own, all the way
+to the universe: three levels of nesting turn a question of a few hundred
+bytes into one of megabytes. A program kept for the run therefore gets a lean
+`𝑏`, and every answer `phino` sends it is lean too: canonical 𝜑-calculus
+without any ρ chain, because such a program can always ask for what the chain
+holds — by name, cheaply, or by `ask`.
 
 Serving a question re-enters the evaluator, so a question may cost a fire of
 the very atom that asked it. That request arrives while the question is still
@@ -257,7 +271,9 @@ line. The step budget of the run, `--max-steps`, bounds the nesting.
 Only a program kept for the run may ask. `phino` closes the `stdin` of a
 program started for the fire behind its request, since such a program may read
 its input whole before it answers, so there is nothing left to answer a
-question over, and one that asks anyway fails the fire.
+question over, and one that asks anyway fails the fire — which is also why the
+lean `𝑏` is tied to `serve` and not to a flag of its own: a program that is
+handed the whole receiver cannot ask for what it left out.
 
 So a `serve` entry of `L_number_plus` that has `phino` reduce its operands
 reads like this:
@@ -277,9 +293,9 @@ const hex = (value) => {
     .map((octet) => octet.toString(16).toUpperCase().padStart(2, '0'))
     .join('-');
 };
-function* plus(b) {
-  const rho = number(yield `${b}.ρ`);
-  const x = number(yield `${b}.x`);
+function* plus(request) {
+  const rho = number(yield {of: request, attr: 'ρ', reduce: true});
+  const x = number(yield {of: request, attr: 'x', reduce: true});
   return `Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ ${hex(rho + x)} ⟧ ) )`;
 }
 const advance = (atom, id, answer) => {
@@ -290,12 +306,12 @@ const advance = (atom, id, answer) => {
   }
   minted += 1;
   open.set(minted, { atom, id });
-  said({ id: minted, ask: step.value });
+  said({ id: minted, ...step.value });
 };
 readline.createInterface({ input: process.stdin }).on('line', (line) => {
   const message = JSON.parse(line);
   if ('λ' in message) {
-    advance(plus(message['𝑏']), message.id, undefined);
+    advance(plus(message.id), message.id, undefined);
   } else if ('𝑛' in message) {
     const waiting = open.get(message.id);
     open.delete(message.id);

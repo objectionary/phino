@@ -187,6 +187,24 @@ asking expr pattern =
     , "esac"
     ]
 
+-- A resident program that names an operand instead of quoting a receiver
+-- (#1165): it asks phino for the given 'attr' of the in-flight request 'of',
+-- reduced when the second argument says so, under the question 'id' 7, then
+-- answers its own request with 'FF-' when what phino said back matches the
+-- given shell pattern and with '00-' when it does not
+referring :: Int -> T.Text -> Bool -> T.Text -> T.Text
+referring request attr doReduce pattern =
+  T.unlines
+    [ "printf '{\"id\": 7, \"of\": " <> T.pack (show request) <> ", \"attr\": \"" <> attr <> "\"" <> reduce <> "}\\n'"
+    , "IFS= read -r reply"
+    , "case \"$reply\" in"
+    , "  " <> pattern <> ") " <> replying "FF-" <> ";;"
+    , "  *) " <> replying "00-" <> ";;"
+    , "esac"
+    ]
+  where
+    reduce = if doReduce then ", \"reduce\": true" else ""
+
 -- A resident program whose question phino cannot answer without firing the
 -- same program again: it asks, then serves every request phino sends while its
 -- question is open, and answers its own request once the answer to the
@@ -551,6 +569,58 @@ spec = do
     -- is nothing left to answer a question of its own over
     it "fails when a script started for the fire asks a question" $
       fails "process.stdout.write(JSON.stringify({id: 7, ask: 'Q.x'}))" ["L_answer", "serve"]
+
+    -- A question of 'of' and 'attr' is served from the receiver phino holds
+    -- for that in-flight request, so the node is handed over without either
+    -- side quoting or re-parsing it (#1165)
+    it "hands the node of a named attribute to a program that asks for it by reference" $
+      serves (referring 1 "x" False "*01-*") "⟦ Δ ⤍ FF- ⟧"
+
+    -- The same naming, with 'reduce': the value is dataized the way an 'ask'
+    -- is, which is what the answer of the question is made of
+    it "dataizes the named attribute when the question says 'reduce'" $
+      serves (referring 1 "x" True "*2A-*") "⟦ Δ ⤍ FF- ⟧"
+
+    -- What gets reduced for a by-reference question is the value the attribute
+    -- carries, not a re-parse of anything quoted
+    it "reduces the very node the attribute carries when the question asks to" $
+      withShell $
+        withServed ["L_answer"] (referring 1 "x" True "*2A-*") $ \registry -> do
+          seen <- newIORef Nothing
+          _ <- firedFrom' registry "L_answer" "⟦ y ↦ ⟦ Δ ⤍ 02- ⟧ ⟧" (recording seen)
+          wanted <- parseExpressionThrows "⟦ Δ ⤍ 01- ⟧"
+          readIORef seen `shouldReturn` Just wanted
+
+    -- A receiver is of no use to the channel once its request has been
+    -- answered, and a question may not dig out of it after that
+    it "fails a question about a request that is no longer in flight" $
+      refuses (referring 2 "x" False "*2A-*") ["L_answer", "no in-flight request 2"]
+
+    it "fails a question about an attribute the receiver does not carry" $
+      refuses (referring 1 "z" False "*2A-*") ["L_answer", "carries no attribute 'z'"]
+
+    -- A program kept for the run is served a lean '𝑏', with no ρ chain: the
+    -- chain climbs to the universe and compounds every question that quotes
+    -- its receiver, and whatever the lean text leaves out this program can
+    -- ask for, which a transient one cannot (#1165)
+    it "tells the resident program the receiver without its ρ chain" $
+      serves
+        ( T.unlines
+            [ "case \"$line\" in"
+            , "  *'ρ ↦'*) " <> replying "FF-" <> ";;"
+            , "  *) " <> replying "00-" <> ";;"
+            , "esac"
+            ]
+        )
+        "⟦ Δ ⤍ 00- ⟧"
+
+    -- A program started for the fire cannot ask, so its '𝑏' keeps the whole
+    -- receiver, ρ and all — the lean channel is tied to 'serve', not to a new
+    -- flag
+    it "keeps the whole receiver in the '𝑏' of a program started for the fire" $
+      answers
+        (scripting "/\\u03c1 \\u21a6/.test(request['𝑏']) ? '⟦ Δ ⤍ FF- ⟧' : '⟦ Δ ⤍ 00- ⟧'")
+        "⟦ Δ ⤍ FF- ⟧"
 
   describe "closeRegistry" $ do
     -- The program is told to quit by its stdin closing, which its read loop

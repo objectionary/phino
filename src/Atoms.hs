@@ -47,6 +47,20 @@
 -- one started for the fire is closed behind its request, so there is nothing
 -- left to answer it over.
 --
+-- A kept program may also ask by reference, naming an operand instead of
+-- quoting it: 'of' carries the 'id' of a request still in flight, 'attr' the
+-- canonical name of an attribute of the receiver that request was made of, and
+-- the optional 'reduce' says whether to hand the node over as it is (false,
+-- by default) or to dataize it the way 'ask' does. phino serves such a
+-- question from the formation it already holds for that request, so neither
+-- side ever re-prints a receiver the other side has in hand (#1165).
+--
+-- The whole 𝜑-text on the channel is the currency of programs started for one
+-- fire: a kept one, able to ask for whatever the text left out, is served a
+-- lean one — '𝑏' and every answer carry no ρ chain, since that chain climbs
+-- to Φ and, through questions quoting earlier questions, compounds the
+-- message by the depth of the ask (#1165).
+--
 -- A name no key matches has no λ function at all: 𝔼 gets stuck on it, exactly
 -- as it does for a name no one ever declared (see 'Stuck' in 'Dataize').
 module Atoms
@@ -80,7 +94,8 @@ import Data.Aeson.Types (JSONPathElement (Key), parseEither, (<?>))
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Char8 as BC
 import qualified Data.ByteString.Lazy as BSL
-import Data.IORef (IORef, atomicModifyIORef', newIORef, readIORef, writeIORef)
+import Data.IORef (IORef, atomicModifyIORef', modifyIORef', newIORef, readIORef, writeIORef)
+import qualified Data.IntMap.Strict as IM
 import Data.List (find, intercalate)
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
@@ -91,7 +106,7 @@ import Lining (LineFormat (SINGLELINE))
 import Logger (logDebug)
 import Margin (defaultMargin)
 import Parser (parseExpression)
-import Printer (printExpression')
+import Printer (printAttribute, printExpression', printExpressionHidingRho')
 import Sugar (SugarType (SALTY))
 import System.Directory (doesFileExist, executable, getPermissions, getTemporaryDirectory, removePathForcibly)
 import System.Exit (ExitCode (ExitFailure, ExitSuccess))
@@ -147,12 +162,13 @@ instance Show Session where
 
 -- A program while it runs: its streams, the file its complaints go to, the
 -- file its script is staged in, if it is a script, the universe it was told
--- last, so it is told again only when the universe changes, and how many
--- requests it has been asked, which numbers the next one. The last two are
--- mutable, since a fire may nest: serving a question of the program takes an
--- evaluator that fires atoms of its own, and the one it reaches may be this
--- very program, asked again over these very handles while its question is
--- still open.
+-- last, so it is told again only when the universe changes, how many
+-- requests it has been asked, which numbers the next one, and the receivers
+-- of the requests still in flight, which by-reference questions name instead
+-- of quoting (#1165). The last three are mutable, since a fire may nest:
+-- serving a question of the program takes an evaluator that fires atoms of
+-- its own, and the one it reaches may be this very program, asked again over
+-- these very handles while its question is still open.
 data Running = Running
   { _input :: Handle
   , _output :: Handle
@@ -161,6 +177,7 @@ data Running = Running
   , _staged :: Maybe FilePath
   , _told :: IORef (Maybe Expression)
   , _requests :: IORef Int
+  , _forms :: IORef (IM.IntMap Expression)
   }
 
 -- What is left of the channel to a program once its request is pushed through:
@@ -256,13 +273,17 @@ instance FromJSON Entry where
   parseJSON value = Entry <$> parseJSON value <*> withObject "atom" (\entry -> entry .:? "serve" .!= False) value
 
 -- What a program writes back: the answer to the request it was asked, the
--- 𝜑-expression under '𝑛', or a question of its own, the 𝜑-expression under
--- 'ask' that it needs reduced before it can answer. An answer echoes the 'id'
+-- 𝜑-expression under '𝑛', a question of its own, the 𝜑-expression under
+-- 'ask' that it needs reduced before it can answer, or a question by
+-- reference, naming an in-flight request under 'of' and one of the receiver's
+-- attributes under 'attr', with 'reduce' deciding whether the answer is the
+-- node as it is held or its dataization (#1165). An answer echoes the 'id'
 -- of the request it answers, a question mints an 'id' of its own, which phino
 -- echoes back.
 data Said
   = Answer Int T.Text
   | Question Int T.Text
+  | Reference Int Int T.Text Bool
 
 instance FromJSON Said where
   parseJSON = withObject "reply" $ \said -> do
@@ -272,7 +293,13 @@ instance FromJSON Said where
     case (answer, question) of
       (Just raw, _) -> pure (Answer number raw)
       (Nothing, Just raw) -> pure (Question number raw)
-      (Nothing, Nothing) -> fail "there is neither '𝑛' nor 'ask' in it"
+      _ -> do
+        request <- said .:? "of"
+        attr <- said .:? "attr"
+        reduced <- said .:? "reduce" .!= False
+        case (request, attr) of
+          (Just req, Just name) -> pure (Reference number req name reduced)
+          _ -> fail "there is neither '𝑛', nor 'ask', nor 'of' with 'attr' in it"
 
 -- No λ function at all: every atom gets stuck. This is what a run without
 -- '--atoms' fires against.
@@ -396,7 +423,7 @@ started func program = do
   (executable, arguments, staged) <- commanded dir
   logDebug (printf "Starting atom '%s' as '%s'" (T.unpack func) (unwords (executable : arguments)))
   (input, output, process) <- spawned executable arguments handle `onException` discarded complaints staged
-  Running input output process complaints staged <$> newIORef Nothing <*> newIORef 0
+  Running input output process complaints staged <$> newIORef Nothing <*> newIORef 0 <*> newIORef IM.empty
   where
     -- The command line the program is started with, and the file staged for
     -- it, if it is a script.
@@ -433,16 +460,33 @@ started func program = do
 asked :: T.Text -> Running -> Expression -> Expression -> Channel -> ReduceFunc -> IO Expression
 asked func Running{..} form univ channel reduce = do
   number <- atomicModifyIORef' _requests (\spent -> (spent + 1, spent + 1))
+  modifyIORef' _forms (IM.insert number form)
   told <- readIORef _told
   logDebug (printf "Asking atom '%s' as request %d" (T.unpack func) number)
   said (if told == Just univ then request number else universe <> request number)
   writeIORef _told (Just univ)
-  heard number
+  heard number `onException` forget number
   where
     universe :: BS.ByteString
-    universe = lined (object ["𝑒" .= rendered univ])
+    universe = lined (object ["𝑒" .= spelled univ])
     request :: Int -> BS.ByteString
-    request number = lined (object ["id" .= number, "λ" .= func, "𝑏" .= rendered form])
+    request number = lined (object ["id" .= number, "λ" .= func, "𝑏" .= spelled form])
+    -- Everything phino says to a program kept for the run is spelled without
+    -- the ρ chain: such a program can ask for what the chain holds, by value
+    -- with 'ask' or by reference with 'of' and 'attr', so quoting it into
+    -- every message only makes the next question bigger (#1165). A program
+    -- started for the fire has no channel to ask over and keeps getting the
+    -- whole receiver, ρ and all.
+    spelled :: Expression -> T.Text
+    spelled = case channel of
+      Open -> lean
+      Closed -> rendered
+    lean :: Expression -> T.Text
+    lean expr = T.pack (printExpressionHidingRho' expr (SALTY, UNICODE, SINGLELINE, defaultMargin))
+    -- The receiver of a request is of no use to the channel once the request
+    -- has been answered.
+    forget :: Int -> IO ()
+    forget = modifyIORef' _forms . IM.delete
     -- Read the program's lines until it answers the request phino asked,
     -- serving every question it asks on the way.
     heard :: Int -> IO Expression
@@ -452,8 +496,45 @@ asked func Running{..} form univ channel reduce = do
         Left failure -> throwIO (AtomMute func (spoken reply) failure)
         Right (Answer echoed raw)
           | echoed /= number -> throwIO (AtomMute func (spoken reply) (printf "it answers request %d, while phino asked request %d" echoed number))
-          | otherwise -> either (throwIO . AtomMute func (T.unpack raw)) pure (parseExpression (T.unpack raw))
+          | otherwise -> forget number >> either (throwIO . AtomMute func (T.unpack raw)) pure (parseExpression (T.unpack raw))
         Right (Question minted raw) -> served minted raw >> heard number
+        Right (Reference minted req name doReduce) -> referenced minted req name doReduce >> heard number
+    -- The by-reference sibling of 'served': the question names an in-flight
+    -- request and one attribute of its receiver, and phino answers from the
+    -- formation it still holds for that request, without either side
+    -- re-printing or re-parsing a receiver. 'reduce' says whether to dataize
+    -- what the attribute carries, as 'ask' does, or to hand the node over as
+    -- it is (#1165).
+    referenced :: Int -> Int -> T.Text -> Bool -> IO ()
+    referenced minted req name doReduce = do
+      spoken' <- describe
+      case spoken' of
+        Left failure -> throwIO (AtomMute func described failure)
+        Right value -> do
+          logDebug (printf "Atom '%s' asks phino for '%s' of request %d%s as question %d" (T.unpack func) (T.unpack name) req (if doReduce then ", reduced," else ", as it is," :: String) minted)
+          answer <- if doReduce then reduce value else pure value
+          said (lined (object ["id" .= minted, "𝑛" .= spelled answer]))
+      where
+        described :: String
+        described = printf "{'of':%d,'attr':'%s'}" req (T.unpack name)
+        describe :: IO (Either String Expression)
+        describe = do
+          forms <- readIORef _forms
+          pure $ case IM.lookup req forms of
+            Nothing -> Left (printf "there is no in-flight request %d to take '%s' from" req (T.unpack name))
+            Just form' -> case attributeValue name form' of
+              Nothing -> Left (printf "the receiver of request %d carries no attribute '%s'" req (T.unpack name))
+              Just value -> Right value
+    attributeValue :: T.Text -> Expression -> Maybe Expression
+    attributeValue name (ExFormation bds) = go bds
+      where
+        go :: [Binding] -> Maybe Expression
+        go [] = Nothing
+        go (BiTau attr value : rest)
+          | T.pack (printAttribute attr) == name = Just value
+          | otherwise = go rest
+        go (_ : rest) = go rest
+    attributeValue _ _ = Nothing
     -- Reduce the 𝜑-expression the program asks about and say it back under
     -- '𝑛', with the 'id' the question minted. A program started for the fire
     -- has nothing to be answered over, since phino closed its stdin behind the
@@ -465,7 +546,7 @@ asked func Running{..} form univ channel reduce = do
         logDebug (printf "Atom '%s' asks phino to reduce '%s' as question %d" (T.unpack func) (T.unpack raw) minted)
         target <- either (unreadable raw) pure (parseExpression (T.unpack raw))
         answer <- reduce target
-        said (lined (object ["id" .= minted, "𝑛" .= rendered answer]))
+        said (lined (object ["id" .= minted, "𝑛" .= spelled answer]))
     unreadable :: T.Text -> String -> IO a
     unreadable raw failure = throwIO (AtomMute func (T.unpack raw) (printf "it asks phino to reduce an expression that does not parse: %s" failure))
     -- A program that has died leaves the write with nobody to drain it. The
