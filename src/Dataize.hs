@@ -13,7 +13,7 @@
 module Dataize (morph, morph', dataize, dataize', insideUniverse, DataizeContext (..), DataizeException (..), Outcome (..), Steps (..), State, emptyState, execBuildTerm) where
 
 import AST
-import Atoms (Registry, fireAtom, registeredAtom)
+import Atoms (ReduceFunc, Registry, fireAtom, registeredAtom)
 import Builder (buildBytesThrows, buildExpressionThrows, contextualize)
 import Control.Exception (Exception, catch, throwIO, try)
 import Control.Monad (foldM, when)
@@ -406,7 +406,7 @@ fired term univ state caller = do
     evaluated ctx state' (func, self) = case registeredAtom ctx._atoms func of
       Nothing -> pure Nothing
       Just registered -> do
-        answer <- fireAtom func registered self univ
+        answer <- fireAtom func registered self univ (reduction univ ctx)
         ctx._saveEval (Evaluation func self (Just answer))
         again <- fired answer univ state' ctx
         pure (Just (fromMaybe (answer, state') again))
@@ -642,6 +642,26 @@ insideUniverse expr univ ctx@DataizeContext{_buildTerm = buildTerm} = case univ 
     pure (ExFormation (BiTau attr normal : bds), aiming)
   _ -> throwIO (userError "Can't reduce an expression inside a universe which is not a formation")
 
+-- What phino answers a program that asks it to reduce a 𝜑-expression (see
+-- 'ReduceFunc' in 'Atoms'): the expression is bound to a synthetic attribute
+-- of the universe and dataized there, exactly the way the '--inside' option
+-- does it, so the bytes come back as a Δ formation — or, where an atom on the
+-- way could not fire and '_partial' parked it, the residual program instead.
+-- An operand reaches a program unreduced, since reducing it may take the very
+-- atom being fired, and before the channel carried questions the program had
+-- no way to ask: it had to splice the operand into the text of the universe
+-- and run a phino of its own on it (see #1160). The context is the one the
+-- fire descended with, so the step budget of the run bounds the nesting.
+reduction :: Expression -> DataizeContext -> ReduceFunc
+reduction univ ctx expr = do
+  (universe, aiming) <- insideUniverse expr univ ctx
+  (outcome, _) <- dataize universe aiming
+  pure (reduced outcome)
+  where
+    reduced :: Outcome -> Expression
+    reduced (Dataized bytes) = ExFormation [BiDelta bytes]
+    reduced (Residual residue) = residue
+
 -- phino implements no λ function of its own. Which atoms exist is a property of
 -- the object model being dataized, not of the calculus, so they come from the
 -- '--atoms' registry and run as external scripts (see 'Atoms'). A name the
@@ -654,7 +674,7 @@ atom :: T.Text -> Expression -> Expression -> State -> DataizeContext -> IO (Exp
 atom func self univ state ctx = case registeredAtom ctx._atoms func of
   Nothing -> throwIO (Stuck func)
   Just registered -> do
-    raw <- fireAtom func registered self univ
+    raw <- fireAtom func registered self univ (reduction univ ctx)
     pure (raw, state)
 
 -- Augment the injected, context-free term builder with the dataization and

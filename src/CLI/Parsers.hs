@@ -230,9 +230,10 @@ optAtoms =
 
 -- The external face of the trick phino plays internally to reduce a
 -- sub-expression against a universe: prepend a synthetic binding holding it to
--- that universe and aim the locator at the binding. An atom script needs it to
--- reduce the parts of the formation it was given, so it does not have to splice
--- them into the text of the universe by hand.
+-- that universe and aim the locator at the binding. An atom script started for
+-- the fire needs it to reduce the parts of the formation it was given, so it
+-- does not have to splice them into the text of the universe by hand; one kept
+-- for the run asks phino over the channel it answers on instead (see 'Atoms').
 optInside :: Parser (Maybe String)
 optInside =
   optional

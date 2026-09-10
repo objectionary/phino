@@ -7,13 +7,14 @@
 module AtomsSpec (spec) where
 
 import AST
-import Atoms (Atom (..), Program (..), Registry, Runtime (RtNode), Session (_program), closeRegistry, emptyRegistry, fireAtom, readRegistry, registeredAtom)
+import Atoms (Atom (..), Program (..), ReduceFunc, Registry, Runtime (RtNode), Session (_program), closeRegistry, emptyRegistry, fireAtom, readRegistry, registeredAtom)
 import Control.Exception (SomeException, finally)
 import Control.Monad (forM_)
 import Data.Aeson (Value, object, (.=))
 import Data.Aeson.Key qualified as Key
 import Data.Aeson.Types (Pair)
 import Data.ByteString qualified as BS
+import Data.IORef (IORef, newIORef, readIORef, writeIORef)
 import Data.List (isInfixOf)
 import Data.Text qualified as T
 import Data.Text.Encoding (encodeUtf8)
@@ -62,13 +63,28 @@ withServed names snippet action =
   withExecutable (resident snippet) $ \file ->
     withRegistered (registryOf names (served (executing file))) action
 
+-- What phino answers a program that asks it to reduce an expression: reducing
+-- one is 'Dataize's business and not this module's, so every question is
+-- answered here with the same bytes
+reducing :: ReduceFunc
+reducing _ = parseExpressionThrows "⟦ Δ ⤍ 2A- ⟧"
+
+-- The same, keeping the expression it was asked about, so a case may assert on
+-- what reached phino
+recording :: IORef (Maybe Expression) -> ReduceFunc
+recording seen expr = writeIORef seen (Just expr) >> reducing expr
+
 -- Fire the given λ function out of the registry, against the same formation
 -- 'fired' uses, inside the given universe
 firedFrom :: Registry -> T.Text -> String -> IO Expression
-firedFrom registry func universe = do
+firedFrom registry func universe = firedFrom' registry func universe reducing
+
+-- The same, with phino reducing whatever the program asks about the given way
+firedFrom' :: Registry -> T.Text -> String -> ReduceFunc -> IO Expression
+firedFrom' registry func universe reduce = do
   form <- parseExpressionThrows "⟦ x ↦ ⟦ Δ ⤍ 01- ⟧ ⟧"
   univ <- parseExpressionThrows universe
-  maybe (fail (printf "'%s' is not registered" (T.unpack func))) (\atom -> fireAtom func atom form univ) (registeredAtom registry func)
+  maybe (fail (printf "'%s' is not registered" (T.unpack func))) (\atom -> fireAtom func atom form univ reduce) (registeredAtom registry func)
 
 -- Fire the λ function 'L_answer' out of the given atom, against a formation
 -- binding 'x' inside a universe binding 'y'
@@ -76,7 +92,7 @@ fired :: Atom -> IO Expression
 fired atom = do
   form <- parseExpressionThrows "⟦ x ↦ ⟦ Δ ⤍ 01- ⟧ ⟧"
   univ <- parseExpressionThrows "⟦ y ↦ ⟦ Δ ⤍ 02- ⟧ ⟧"
-  fireAtom "L_answer" atom form univ
+  fireAtom "L_answer" atom form univ reducing
 
 -- The program a λ function is kept for the run with, if it is kept at all
 kept :: Maybe Atom -> Maybe Program
@@ -155,6 +171,41 @@ refuses snippet fragments = withShell $
 -- The reply of a resident program answering the request with the given bytes
 replying :: T.Text -> T.Text
 replying bytes = "printf '{\"id\": %s, \"𝑛\": \"⟦ Δ ⤍ %s ⟧\"}\\n' \"$id\" \"" <> bytes <> "\""
+
+-- A resident program that cannot answer its request before phino reduces
+-- something for it: it asks about the given 𝜑-expression under the question
+-- 'id' 7, then answers with 'FF-' when what phino said back matches the given
+-- shell pattern and with '00-' when it does not
+asking :: T.Text -> T.Text -> T.Text
+asking expr pattern =
+  T.unlines
+    [ "printf '{\"id\": 7, \"ask\": \"" <> expr <> "\"}\\n'"
+    , "IFS= read -r reply"
+    , "case \"$reply\" in"
+    , "  " <> pattern <> ") " <> replying "FF-" <> ";;"
+    , "  *) " <> replying "00-" <> ";;"
+    , "esac"
+    ]
+
+-- A resident program whose question phino cannot answer without firing the
+-- same program again: it asks, then serves every request phino sends while its
+-- question is open, and answers its own request once the answer to the
+-- question arrives, telling phino whether that answer carried '2A-'
+nesting :: T.Text
+nesting =
+  T.unlines
+    [ "printf '{\"id\": 7, \"ask\": \"Q.x\"}\\n'"
+    , "while IFS= read -r reply; do"
+    , "  case \"$reply\" in"
+    , "    *'\"λ\"'*) printf '{\"id\": %s, \"𝑛\": \"⟦ Δ ⤍ 2A- ⟧\"}\\n' \"$(printf '%s' \"$reply\" | sed 's/.*\"id\":\\([0-9]*\\).*/\\1/')\";;"
+    , "    *) break;;"
+    , "  esac"
+    , "done"
+    , "case \"$reply\" in"
+    , "  *'2A-'*) " <> replying "FF-" <> ";;"
+    , "  *) " <> replying "00-" <> ";;"
+    , "esac"
+    ]
 
 spec :: Spec
 spec = do
@@ -461,6 +512,45 @@ spec = do
 
     it "fails when the resident program writes something other than JSON" $
       refuses "echo almost" ["L_answer", "almost"]
+
+    -- An operand reaches a program unreduced, since reducing it may take the
+    -- very atom being fired, so the program asks phino for it over the channel
+    -- it answers on, instead of running a phino of its own
+    it "answers the question a resident program asks with what phino reduced" $
+      serves (asking "Q.x" "*'2A-'*") "⟦ Δ ⤍ FF- ⟧"
+
+    -- A question mints an 'id' of its own, which phino echoes, so a program
+    -- that has several of them open tells the answers apart
+    it "echoes in its answer the 'id' the question minted" $
+      serves (asking "Q.x" "*'\"id\":7'*") "⟦ Δ ⤍ FF- ⟧"
+
+    it "hands the 𝜑-expression of the question over to be reduced" $
+      withShell $
+        withServed ["L_answer"] (asking "⟦ z ↦ ⟦ Δ ⤍ 03- ⟧ ⟧" "*'2A-'*") $ \registry -> do
+          seen <- newIORef Nothing
+          _ <- firedFrom' registry "L_answer" "⟦ y ↦ ⟦ Δ ⤍ 02- ⟧ ⟧" (recording seen)
+          wanted <- parseExpressionThrows "⟦ z ↦ ⟦ Δ ⤍ 03- ⟧ ⟧"
+          readIORef seen `shouldReturn` Just wanted
+
+    -- Serving a question re-enters the evaluator, which fires atoms of its
+    -- own, and one of them may be the very atom that asked: that request
+    -- reaches the same program, over the same handles, while its question is
+    -- still open
+    it "fires the same program again while its question is open" $
+      withShell $
+        withServed ["L_answer"] nesting $ \registry -> do
+          answer <- firedFrom' registry "L_answer" "⟦ y ↦ ⟦ Δ ⤍ 02- ⟧ ⟧" (const (firedFrom registry "L_answer" "⟦ y ↦ ⟦ Δ ⤍ 02- ⟧ ⟧"))
+          wanted <- parseExpressionThrows "⟦ Δ ⤍ FF- ⟧"
+          answer `shouldBe` wanted
+
+    it "fails when what a resident program asks about is not a 𝜑-expression" $
+      refuses "printf '{\"id\": 7, \"ask\": \"⟦ ⟧⟧\"}\\n'" ["L_answer", "does not parse"]
+
+    -- The stdin of a program started for the fire is closed behind its
+    -- request, since it may read its input whole before it answers, so there
+    -- is nothing left to answer a question of its own over
+    it "fails when a script started for the fire asks a question" $
+      fails "process.stdout.write(JSON.stringify({id: 7, ask: 'Q.x'}))" ["L_answer", "serve"]
 
   describe "closeRegistry" $ do
     -- The program is told to quit by its stdin closing, which its read loop
