@@ -136,6 +136,26 @@ withAsking action = withNode (withAskingRegistry (action . ("--atoms=" ++)))
 withLoopingAsk :: (String -> Expectation) -> Expectation
 withLoopingAsk action = withNode (withLoopingAskRegistry (action . ("--atoms=" ++)))
 
+-- A resident program that cannot answer its request before phino reduces
+-- 'Q.nope' for it, a dispatch on an atom the registry does not carry and
+-- '--partial' parks: it answers 'FF-' when phino said the parked node back
+-- alone and '00-' when the answer carried the whole universe that node was
+-- reduced inside, which the other atom of the universe is named in
+parking :: T.Text
+parking =
+  T.pack $
+    unlines
+      [ "printf '{\"id\": 7, \"ask\": \"Q.nope\"}\\n'"
+      , "IFS= read -r reply"
+      , "case \"$reply\" in"
+      , "  *L_answer*) " ++ answering "00-" ++ ";;"
+      , "  *) " ++ answering "FF-" ++ ";;"
+      , "esac"
+      ]
+  where
+    answering :: String -> String
+    answering bytes = "printf '{\"id\": %s, \"𝑛\": \"⟦ Δ ⤍ " ++ bytes ++ " ⟧\"}\\n' \"$id\""
+
 testCLIFailed :: [String] -> [String] -> Expectation
 testCLIFailed args outputs = testCLI' args outputs (Left (ExitFailure 1))
 
@@ -1370,6 +1390,17 @@ spec = do
             testCLISucceeded
               ["dataize", atoms, "--partial", "--max-steps=200"]
               ["2A-"]
+
+      -- A question is answered with the node the program asked about, and
+      -- never with the universe that node was reduced inside: a parked
+      -- question used to hand the residue back whole, so a program reading a
+      -- seventeen-byte node paid for a print of the entire universe, once per
+      -- question (#1167)
+      it "answers a parked question with the node alone" $
+        withShell $
+          withServing parking $ \registry ->
+            withStdin "⟦ nope ↦ ⟦ λ ⤍ L_nope ⟧, φ ↦ ⟦ λ ⤍ L_answer ⟧ ⟧" $
+              testCLISucceeded ["dataize", "--atoms=" ++ registry, "--partial"] ["FF-"]
 
       -- Without '--partial' the exhausted budget fails the run through a
       -- question just as it fails it anywhere else (#1052's message)
