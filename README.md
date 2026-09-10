@@ -269,7 +269,7 @@ readline.createInterface({ input: process.stdin }).on('line', (line) => {
   const sum = hex(number(`${b}.ρ`) + number(`${b}.x`));
   process.stdout.write(`${JSON.stringify({
     id: message.id,
-    '𝑛': `Φ.number( as-bytes ↦ Φ.bytes( data ↦ ⟦ Δ ⤍ ${sum} ⟧ ) )`,
+    '𝑛': `Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ ${sum} ⟧ ) )`,
   })}\n`);
 });
 ```
@@ -291,8 +291,8 @@ to, and the expression it returned:
 ```bash
 $ cat sum.phi
 ⟦
-  bytes(data) ↦ ⟦ φ ↦ data ⟧,
-  number(as-bytes) ↦ ⟦ φ ↦ as-bytes, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧,
+  bytes ↦ ⟦ φ ↦ ∅ ⟧,
+  number ↦ ⟦ φ ↦ ∅, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧,
   φ ↦ 5.plus( 6 )
 ⟧
 $ phino dataize --atoms=atoms.json --evaluations=atoms.tsv --quiet \
@@ -319,9 +319,9 @@ printed in place of the bytes, and the run ends successfully:
 ```bash
 $ cat partial.phi
 ⟦
-  bytes(data) ↦ ⟦ φ ↦ data ⟧,
-  number(as-bytes) ↦ ⟦
-    φ ↦ as-bytes,
+  bytes ↦ ⟦ φ ↦ ∅ ⟧,
+  number ↦ ⟦
+    φ ↦ ∅,
     plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧,
     times(x) ↦ ⟦ λ ⤍ L_number_times ⟧,
     as-bool ↦ ⟦ λ ⤍ L_number_as_bool ⟧
@@ -375,8 +375,8 @@ first formation it reaches, handing that formation back untouched. The
 ```bash
 $ cat two.phi
 ⟦
-  bytes(data) ↦ ⟦ φ ↦ data ⟧,
-  number(as-bytes) ↦ ⟦ φ ↦ as-bytes, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧,
+  bytes ↦ ⟦ φ ↦ ∅ ⟧,
+  number ↦ ⟦ φ ↦ ∅, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧,
   φ ↦ 5.plus( 6 ).plus( 7 )
 ⟧
 $ phino dataize --atoms=atoms.json --sweet --hide-rho two.phi
@@ -415,8 +415,8 @@ serve, for one — is therefore reduced by neither. The `--deep` flag enters it:
 ```bash
 $ cat gap.phi
 ⟦
-  bytes(data) ↦ ⟦ φ ↦ ξ.data ⟧,
-  number(as-bytes) ↦ ⟦ φ ↦ ξ.as-bytes, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧ ⟧,
+  bytes ↦ ⟦ φ ↦ ∅ ⟧,
+  number ↦ ⟦ φ ↦ ∅, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧ ⟧,
   bar(x) ↦ ⟦ λ ⤍ L_bar ⟧,
   demo ↦ ⟦ foo ↦ ⟦ n ↦ 3, φ ↦ Φ.bar( ξ.n.times( 5 ).times( 7 ) ) ⟧ ⟧
 ⟧
@@ -451,8 +451,8 @@ folds what it can and leaves the object model as it was declared:
 ```bash
 $ phino morph --deep --atoms=atoms.json --sweet --hide-rho gap.phi
 ⟦
-  bytes(data) ↦ ⟦ φ ↦ data ⟧,
-  number(as-bytes) ↦ ⟦ φ ↦ as-bytes, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧ ⟧,
+  bytes(φ) ↦ ⟦⟧,
+  number(φ) ↦ ⟦ times(x) ↦ ⟦ λ ⤍ L_number_times ⟧ ⟧,
   bar(x) ↦ ⟦ λ ⤍ L_bar ⟧,
   demo ↦ ⟦ foo ↦ ⟦ n ↦ 3, φ ↦ Φ.bar( 105 ) ⟧ ⟧
 ⟧
@@ -528,12 +528,9 @@ and print it in canonical syntax:
 $ echo '[[ @ -> Q.io.stdout("hello") ]]' | phino rewrite
 ⟦
   φ ↦ Φ.io.stdout(
-    α0 ↦ Φ.string(
-      α0 ↦ Φ.bytes(
-        α0 ↦ ⟦ Δ ⤍ 68-65-6C-6C-6F ⟧
-      )
-    )
-  )
+    α0 ↦ Φ.string( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 68-65-6C-6C-6F, ρ ↦ ∅ ⟧ ) )
+  ),
+  ρ ↦ ∅
 ⟧
 ```
 
@@ -544,11 +541,11 @@ top level formations:
 
 ```bash
 $ cat bytes.phi
-⟦ bytes(data) ↦ ⟦ φ ↦ data ⟧ ⟧
+⟦ bytes ↦ ⟦ φ ↦ ∅ ⟧ ⟧
 $ cat number.phi
 ⟦
-  number(as-bytes) ↦ ⟦
-    φ ↦ as-bytes,
+  number ↦ ⟦
+    φ ↦ ∅,
     plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧
   ⟧
 ⟧
@@ -556,9 +553,8 @@ $ cat minus.phi
 ⟦ number ↦ ⟦ minus(x) ↦ ⟦ λ ⤍ L_number_minus ⟧ ⟧ ⟧
 $ phino merge bytes.phi number.phi minus.phi --sweet
 ⟦
-  bytes(data) ↦ ⟦ φ ↦ data ⟧,
-  number(as-bytes) ↦ ⟦
-    φ ↦ as-bytes,
+  bytes(φ) ↦ ⟦⟧,
+  number(φ) ↦ ⟦
     plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧,
     minus(x) ↦ ⟦ λ ⤍ L_number_minus ⟧
   ⟧

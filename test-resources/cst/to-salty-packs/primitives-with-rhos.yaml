@@ -14,7 +14,7 @@ expression: |
 result: |-
   ⟦
     x ↦ Φ.number(
-      as-bytes ↦ Φ.bytes(
+      φ ↦ Φ.bytes(
         φ ↦ ⟦
           Δ ⤍ 3F-F0-00-00-00-00-00-00,
           ρ ↦ ∅
@@ -26,7 +26,7 @@ result: |-
       ρ ↦ ⟦ ρ ↦ ∅ ⟧
     ),
     y ↦ Φ.string(
-      as-bytes ↦ Φ.bytes(
+      φ ↦ Φ.bytes(
         φ ↦ ⟦
           Δ ⤍ 48-65-79,
           ρ ↦ ∅

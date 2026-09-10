@@ -425,7 +425,7 @@ spec = do
     it "saves dataize steps to dir with --steps-dir" $
       withAtoms $ \atoms ->
         withTempDirectory "phino-steps-dataize" $ \dir ->
-          withStdin "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(as-bytes) -> [[ @ -> $.as-bytes, plus(x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6).plus(7) ]]" $ do
+          withStdin "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6).plus(7) ]]" $ do
             testCLISucceeded
               ["dataize", atoms, "--steps-dir=" ++ dir, "--sweet"]
               ["40-32"]
@@ -1146,14 +1146,14 @@ spec = do
 
     it "focuses a compressed sequence whose meet replaces a step root" $
       withAtoms $ \atoms ->
-        withStdin "[[ @ -> [[ @ -> $.c.plus( 32.0 ), c -> 25.0 ]], bytes ↦ ⟦ φ ↦ ∅ ⟧, number(as-bytes) -> [[ @ -> $.as-bytes, plus -> [[ x -> ?, L> L_number_plus ]] ]] ]]" $
+        withStdin "[[ @ -> [[ @ -> $.c.plus( 32.0 ), c -> 25.0 ]], bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus -> [[ x -> ?, L> L_number_plus ]] ]] ]]" $
           testCLISucceeded
             ["dataize", atoms, "--output=latex", "--sweet", "--nonumber", "--compress", "--canonize", "--meet-prefix=dataization", "--sequence", "--flat", "--quiet", "--hide=Q.bytes", "--hide=Q.number", "--locator=Q.@", "--focus=Q.@", "--meet-length=5", "--meet-popularity=1"]
             ["\\phinoMeet{dataization:1}{ [[ @ -> |c| . |plus| ( 32 ), |c| -> 25 ]] } \\leadsto_{\\nameref{r:contextualize}}"]
 
     it "compresses a canonized whole-expression sequence into a meet" $
       withAtoms $ \atoms ->
-        withStdin "[[ @ -> [[ @ -> $.c.plus( 32.0 ), c -> 25.0 ]], bytes ↦ ⟦ φ ↦ ∅ ⟧, number(as-bytes) -> [[ @ -> $.as-bytes, plus -> [[ x -> ?, L> L_number_plus ]] ]] ]]" $
+        withStdin "[[ @ -> [[ @ -> $.c.plus( 32.0 ), c -> 25.0 ]], bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus -> [[ x -> ?, L> L_number_plus ]] ]] ]]" $
           testCLISucceeded
             ["dataize", atoms, "--output=latex", "--sweet", "--nonumber", "--compress", "--canonize", "--meet-prefix=dataization", "--sequence", "--flat", "--quiet", "--meet-length=5", "--meet-popularity=1"]
             ["\\phinoMeet{dataization:1}"]
@@ -1171,7 +1171,7 @@ spec = do
         withAtoms $ \atoms ->
           withTempFile "evaluationsXXXXXX.txt" $ \(path, stream) -> do
             hClose stream
-            withStdin "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(as-bytes) -> [[ @ -> $.as-bytes, plus(x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6) ]]" $
+            withStdin "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6) ]]" $
               testCLISucceeded ["dataize", atoms, "--evaluations=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
             records <- readUtf8 path
             records `shouldBe` "L_number_plus\t⟦ x ↦ 6 ⟧\t11\n"
@@ -1180,7 +1180,7 @@ spec = do
         withAtoms $ \atoms ->
           withTempFile "evaluationsXXXXXX.txt" $ \(path, stream) -> do
             hClose stream
-            withStdin "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(as-bytes) -> [[ @ -> $.as-bytes, plus(x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6).plus(7) ]]" $
+            withStdin "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6).plus(7) ]]" $
               testCLISucceeded ["dataize", atoms, "--evaluations=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
             records <- readUtf8 path
             lines records `shouldBe` ["L_number_plus\t⟦ x ↦ 6 ⟧\t11", "L_number_plus\t⟦ x ↦ 7 ⟧\t18"]
@@ -1189,16 +1189,16 @@ spec = do
         withAtoms $ \atoms ->
           withTempFile "evaluationsXXXXXX.txt" $ \(path, stream) -> do
             hClose stream
-            withStdin "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(as-bytes) -> [[ @ -> $.as-bytes, plus(x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6) ]]" $
+            withStdin "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6) ]]" $
               testCLISucceeded ["dataize", atoms, "--evaluations=" ++ path, "--quiet", "--hide-rho"] []
             records <- readUtf8 path
-            records `shouldEndWith` "\tΦ.number( as-bytes ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 40-26-00-00-00-00-00-00 ⟧ ) )\n"
+            records `shouldEndWith` "\tΦ.number( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 40-26-00-00-00-00-00-00 ⟧ ) )\n"
 
       it "keeps the records of a run that fails" $
         withAtoms $ \atoms ->
           withTempFile "evaluationsXXXXXX.txt" $ \(path, stream) -> do
             hClose stream
-            withStdin "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(as-bytes) -> [[ @ -> $.as-bytes, plus(x) -> [[ L> L_number_plus ]], nope -> [[ L> L_number_nope ]] ]], @ -> 5.plus(6).nope ]]" $
+            withStdin "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(x) -> [[ L> L_number_plus ]], nope -> [[ L> L_number_nope ]] ]], @ -> 5.plus(6).nope ]]" $
               testCLIFailed
                 ["dataize", atoms, "--evaluations=" ++ path, "--quiet", "--sweet", "--hide-rho"]
                 ["Atom 'L_number_nope' does not exist"]
@@ -1229,7 +1229,7 @@ spec = do
     -- an operation the caller left out of its registry on purpose. The run used
     -- to die on it, discarding what it had already evaluated (#1060)
     describe "--partial" $ do
-      let stuck = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(as-bytes) -> [[ @ -> $.as-bytes, times(x) -> [[ L> L_number_times ]], nope -> [[ L> L_number_nope ]] ]], @ -> 2.times(3).nope ]]"
+      let stuck = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ times(x) -> [[ L> L_number_times ]], nope -> [[ L> L_number_nope ]] ]], @ -> 2.times(3).nope ]]"
       it "fails on an atom that cannot fire without the flag" $
         withAtoms $ \atoms ->
           withStdin stuck $
@@ -1247,7 +1247,7 @@ spec = do
           withStdin stuck $
             testCLISucceeded
               ["dataize", atoms, "--partial", "--sweet"]
-              ["as-bytes ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 40-18-00-00-00-00-00-00 ⟧ )"]
+              ["φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 40-18-00-00-00-00-00-00 ⟧ )"]
 
       it "records every stuck site in --evaluations with no result" $
         withAtoms $ \atoms ->
@@ -1263,7 +1263,7 @@ spec = do
 
       it "still prints bytes when nothing gets stuck" $
         withAtoms $ \atoms ->
-          withStdin "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(as-bytes) -> [[ @ -> $.as-bytes, plus(x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6) ]]" $
+          withStdin "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6) ]]" $
             testCLISucceeded ["dataize", atoms, "--partial"] ["40-26-00-00-00-00-00-00"]
 
       it "prints the chain of steps ending in the residue with --sequence" $
@@ -1280,7 +1280,7 @@ spec = do
     -- Which λ functions exist is not phino's business any more: the registry
     -- given with '--atoms' decides, and phino carries none of its own
     describe "--atoms" $ do
-      let sum' = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(as-bytes) -> [[ @ -> $.as-bytes, plus(x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6) ]]"
+      let sum' = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6) ]]"
       it "fires the λ function the registry carries" $
         withAtoms $ \atoms ->
           withStdin sum' $
@@ -1310,7 +1310,7 @@ spec = do
     -- asks phino for them: '--inside' binds an expression to a synthetic
     -- attribute of the universe and aims the run at it
     describe "--inside" $ do
-      let universe = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(as-bytes) -> [[ @ -> $.as-bytes, plus(x) -> [[ L> L_number_plus ]] ]], @ -> [[ D> 01- ]] ]]"
+      let universe = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(x) -> [[ L> L_number_plus ]] ]], @ -> [[ D> 01- ]] ]]"
       it "dataizes an expression the input does not contain" $
         withAtoms $ \atoms ->
           withStdin universe $
@@ -1401,7 +1401,7 @@ spec = do
     -- Two chained atom calls: the inner one fires under 'ml', because '.plus'
     -- is dispatched on its result, while the outer application is saturated but
     -- bare, so 'mf' hands it back and firing it is 𝔻's job
-    let chained = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(as-bytes) -> [[ @ -> $.as-bytes, plus(x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6).plus(7) ]]"
+    let chained = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6).plus(7) ]]"
     it "prints help" $
       testCLISucceeded ["morph", "--help"] ["Morph the 𝜑-expression"]
 
@@ -1521,7 +1521,7 @@ spec = do
     describe "--deep" $ do
       let program =
             "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, \
-            \number(as-bytes) -> [[ @ -> $.as-bytes, times(x) -> [[ L> L_number_times ]] ]], \
+            \number(φ) -> [[ times(x) -> [[ L> L_number_times ]] ]], \
             \bar(x) -> [[ L> L_bar ]], \
             \demo -> [[ foo -> [[ n -> 3, @ -> Q.bar( $.n.times( 5 ).times( 7 ) ) ]] ]] ]]"
       it "answers the formation as it was written without the flag" $
@@ -1558,7 +1558,7 @@ spec = do
           withStdin program $
             testCLISucceeded
               ["morph", atoms, "--deep", "--sweet", "--hide-rho", "--flat"]
-              [ "number(as-bytes) ↦ ⟦ φ ↦ as-bytes, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧ ⟧"
+              [ "number(φ) ↦ ⟦ times(x) ↦ ⟦ λ ⤍ L_number_times ⟧ ⟧"
               , "demo ↦ ⟦ foo ↦ ⟦ n ↦ 3, φ ↦ Φ.bar( 105 ) ⟧ ⟧"
               ]
 

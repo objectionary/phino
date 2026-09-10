@@ -12,5 +12,5 @@ phi: |
   ]]
 xpaths:
   - '/object/o[@name="x" and @base="Φ.number"]'
-  - '/object/o/o[@as="as-bytes" and @base="Φ.bytes"]'
+  - '/object/o/o[@as="φ" and @base="Φ.bytes"]'
   - '/object/o/o/o[@as="φ"]'

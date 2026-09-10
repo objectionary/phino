@@ -107,8 +107,8 @@ primitives src =
     , "    eq -> [[ b -> ?, L> L_bytes_eq ]]"
     , "  ]],"
     , "  number -> [["
-    , "    as-bytes -> ?,"
-    , "    @ -> $.as-bytes,"
+    , "    φ -> ?,"
+    , "    as-bytes -> $.φ,"
     , "    plus -> [[ x -> ?, L> L_number_plus ]],"
     , "    times -> [[ x -> ?, L> L_number_times ]],"
     , "    div -> [[ x -> ?, L> L_number_div ]],"
@@ -116,7 +116,7 @@ primitives src =
     , "    eq -> [[ x -> ?, @ -> $.^.as-bytes.eq( x.as-bytes ) ]],"
     , "    nope -> [[ L> L_number_nope ]]"
     , "  ]],"
-    , "  string -> [[ as-bytes -> ?, @ -> $.as-bytes ]],"
+    , "  string -> [[ φ -> ?, as-bytes -> $.φ ]],"
     , "  true -> [[ @ -> [[ D> FF- ]] ]],"
     , "  false -> [[ @ -> [[ D> 00- ]] ]],"
     , "  @ -> " ++ src
@@ -222,25 +222,25 @@ spec = do
         ( "stands the answer of the λ that 'mf' left bare in its place"
         , "Q.@"
         , primitives "[[ x -> 5.plus( 6 ) ]]"
-        , "[[ x -> Q.number( as-bytes -> Φ.bytes( φ ↦ ⟦ Δ ⤍ 40-26-00-00-00-00-00-00 ⟧ ) ) ]]"
+        , "[[ x -> Q.number( φ -> Φ.bytes( φ ↦ ⟦ Δ ⤍ 40-26-00-00-00-00-00-00 ⟧ ) ) ]]"
         )
       ,
         ( "fires the atom nested in the argument of the atom it fires"
         , "Q.@"
         , primitives "[[ x -> 5.plus( 6.plus( 7 ) ) ]]"
-        , "[[ x -> Q.number( as-bytes -> Φ.bytes( φ ↦ ⟦ Δ ⤍ 40-32-00-00-00-00-00-00 ⟧ ) ) ]]"
+        , "[[ x -> Q.number( φ -> Φ.bytes( φ ↦ ⟦ Δ ⤍ 40-32-00-00-00-00-00-00 ⟧ ) ) ]]"
         )
       ,
         ( "keeps the answer of the last atom fired along one chain of them"
         , "Q.@"
         , primitives "[[ x -> 5.plus( 6 ).plus( 7 ) ]]"
-        , "[[ x -> Q.number( as-bytes -> Φ.bytes( φ ↦ ⟦ Δ ⤍ 40-32-00-00-00-00-00-00 ⟧ ) ) ]]"
+        , "[[ x -> Q.number( φ -> Φ.bytes( φ ↦ ⟦ Δ ⤍ 40-32-00-00-00-00-00-00 ⟧ ) ) ]]"
         )
       ,
         ( "resolves the ξ of a binding against the formation that holds it"
         , "Q.@"
         , primitives "[[ n -> 5, x -> $.n.plus( 6 ) ]]"
-        , "[[ n -> 5, x -> Q.number( as-bytes -> Φ.bytes( φ ↦ ⟦ Δ ⤍ 40-26-00-00-00-00-00-00 ⟧ ) ) ]]"
+        , "[[ n -> 5, x -> Q.number( φ -> Φ.bytes( φ ↦ ⟦ Δ ⤍ 40-26-00-00-00-00-00-00 ⟧ ) ) ]]"
         )
       , -- The registry carries no 'L_number_nope', so there is nothing to fire
         -- and the binding keeps the name it was written under
@@ -267,7 +267,7 @@ spec = do
         ( "walks into the argument of an atom it cannot fire"
         , "Q.@"
         , primitives "[[ x -> [[ y -> ?, L> L_bar ]]( y -> 6.plus( 7 ) ) ]]"
-        , "[[ x -> [[ y -> ?, L> L_bar ]]( y -> Q.number( as-bytes -> Φ.bytes( φ ↦ ⟦ Δ ⤍ 40-2A-00-00-00-00-00-00 ⟧ ) ) ) ]]"
+        , "[[ x -> [[ y -> ?, L> L_bar ]]( y -> Q.number( φ -> Φ.bytes( φ ↦ ⟦ Δ ⤍ 40-2A-00-00-00-00-00-00 ⟧ ) ) ) ]]"
         )
       ]
 
@@ -711,7 +711,7 @@ spec = do
         labels <-
           labelsOf
             "Q"
-            "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(as-bytes) -> [[ @ -> $.as-bytes, plus(x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6) ]]"
+            "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6) ]]"
         labels
           `shouldBe` [ "contextualize"
                      , "maa"
@@ -723,9 +723,8 @@ spec = do
                      , "copy"
                      , "mf"
                      , "contextualize"
-                     , "dot"
                      , "ma"
-                     , "stay"
+                     , "copy"
                      , "mf"
                      , "contextualize"
                      , "delta"
@@ -765,7 +764,7 @@ spec = do
       , "Q.x"
       , unlines
           [ "[["
-          , "  number(as-bytes) -> [[ @ -> as-bytes ]],"
+          , "  number ↦ ⟦ φ ↦ ∅ ⟧,"
           , "  bytes ↦ ⟦ φ ↦ ∅ ⟧,"
           , "  x -> 5"
           , "]]"
@@ -827,8 +826,8 @@ spec = do
                 , "    φ -> ?"
                 , "  ]],"
                 , "  number -> [["
-                , "    as-bytes -> ?,"
-                , "    @ -> $.as-bytes,"
+                , "    φ -> ?,"
+                , "    as-bytes -> $.φ,"
                 , "    plus -> [[ x -> ?, L> L_number_plus ]],"
                 , "    times -> [[ x -> ?, L> L_number_times ]]"
                 , "  ]],"

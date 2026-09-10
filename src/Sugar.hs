@@ -207,7 +207,7 @@ saltifyPrimitive base bytes data' tb@TAB{..} rhos =
             ( AA_TAUS
                 ( BI_PAIR
                     ( PA_TAU
-                        (AT_LABEL "as-bytes")
+                        (AT_PHI PHI)
                         ARROW
                         ( EX_APPLICATION
                             bytes

@@ -146,6 +146,19 @@ spec = do
       str `shouldContain` "φ ↦"
       str `shouldNotContain` "data ↦"
 
+  describe "printExpression binds a datum to the φ of number and string (#1155)" $
+    it "names the outer literal argument φ (their only void), not as-bytes" $ do
+      let number =
+            printExpression'
+              (DataNumber (BtMany ["40", "45", "00", "00", "00", "00", "00", "00"]))
+              (SALTY, UNICODE, SINGLELINE, defaultMargin)
+          str =
+            printExpression'
+              (DataString (BtMany ["68", "69"]))
+              (SALTY, UNICODE, SINGLELINE, defaultMargin)
+      number `shouldNotContain` "as-bytes"
+      str `shouldNotContain` "as-bytes"
+
   describe "printExpression keeps a compressed meet atomic under a narrow margin" $
     -- A \phinoMeet is a single \overbracket visual unit, so its body must stay
     -- on one line even when the surrounding margin forces the outer formation to
