@@ -299,7 +299,8 @@ spec = do
         , BtMany ["02", "03", "00"]
         )
       , ("large negative shift empties out", btsShift (-2147483648) (BtMany ["BF", "F0"]), BtMany ["00", "00"])
-      , ( "minimum Int shift empties out"
+      ,
+        ( "minimum Int shift empties out"
         , btsShift (minBound :: Int) (BtMany ["BF", "F0"])
         , BtMany ["00", "00"]
         )
