@@ -1108,6 +1108,15 @@ spec = do
             ["dataize", atoms, "--max-steps=40"]
             ["[ERROR]: Dataization did not finish before reaching the limit of steps: --max-steps=40"]
 
+    -- Under '--partial' the same term does not fail: the spent budget is a
+    -- stuck site too, and the run ends on the residual the spine reached (#1078)
+    it "parks --max-steps on a residual with --partial" $
+      withAtoms $ \atoms ->
+        withStdin "⟦ @ ↦ ⟦ λ ⤍ L_number_div, ρ ↦ ⟦ Δ ⤍ 40-45-00-00-00-00-00-00 ⟧, x ↦ ⟦ Δ ⤍ 40-00-00-00-00-00-00-00 ⟧ ⟧ ⟧" $
+          testCLISucceeded
+            ["dataize", atoms, "--max-steps=40", "--partial", "--flat"]
+            ["Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 40-35-00-00-00-00-00-00"]
+
     it "dataizes with --sequence" $
       withStdin "[[ @ -> [[ x -> [[ D> 01-, y -> ? ]](y -> [[ ]]) ]].x ]]" $
         testCLISucceeded
@@ -1515,6 +1524,14 @@ spec = do
         testCLIFailed
           ["morph", "--locator=Q.@", "--max-steps=3"]
           ["[ERROR]: Dataization did not finish before reaching the limit of steps: --max-steps=3"]
+
+    -- '--partial' parks a spent 𝕄 budget the same way it parks a stuck atom:
+    -- the answer is the term the walk had reached, dispatch intact (#1078)
+    it "parks the spent budget as a residual with --partial" $
+      withStdin "⟦ φ ↦ 5.gt(Φ.nan) ⟧" $
+        testCLISucceeded
+          ["morph", "--locator=Q.@", "--max-steps=10", "--partial", "--flat", "--hide-rho", "--sweet"]
+          ["5.gt( Φ.nan )"]
 
     -- 𝕄 never fires a bare λ-formation, so only the atoms sitting under a
     -- dispatch ('ml') can get stuck; '--partial' parks them exactly as under 𝔻

@@ -95,11 +95,17 @@ data DataizeException
     -- everything reduced before it already in place: the residual program that
     -- '_partial' turns into the 'Residual' outcome.
     StuckAt T.Text (NonEmpty Rewritten)
+  | -- An 'OutOfSteps' caught by a spine frame, carrying that frame's derivation
+    -- just like 'StuckAt': a term that never reduces is a stuck site too, so
+    -- '_partial' parks it and hands back the residual instead of failing hard
+    -- (#1078)
+    OutOfStepsAt Int (NonEmpty Rewritten)
   deriving anyclass (Exception)
 
 instance Show DataizeException where
   show (OutOfSteps limit) =
     printf "Dataization did not finish before reaching the limit of steps: --max-steps=%d" limit
+  show (OutOfStepsAt limit _) = show (OutOfSteps limit)
   show (Stuck func) = printf "Atom '%s' does not exist" (T.unpack func)
   show (StuckAt func _) = show (Stuck func)
 
@@ -153,20 +159,23 @@ saturated bds = case lambda bds of
     filled (BiVoid _) = False
     filled _ = True
 
--- Run one frame of the 𝕄/𝔻 spine, attaching its derivation to a stuck atom
--- escaping it. 'Stuck' is raised deep inside an atom, which knows nothing about
--- the chain, so the innermost spine frame it reaches is the one to record where
--- the derivation stopped: the head of that frame's chain is the working
--- expression with the stuck application intact and everything reduced before
--- it already in place. Outer frames see 'StuckAt' and let it pass, since their
--- chains are prefixes of that one; a side-computation running on a chain of its
--- own strips the chain off again (see 'unparked') before the signal reaches
--- the spine.
+-- Run one frame of the 𝕄/𝔻 spine, attaching its derivation to a stuck atom or
+-- an exhausted budget escaping it. 'Stuck' is raised deep inside an atom, which
+-- knows nothing about the chain, so the innermost spine frame it reaches is the
+-- one to record where the derivation stopped: the head of that frame's chain is
+-- the working expression with the stuck application intact and everything
+-- reduced before it already in place. The same holds for 'OutOfSteps': a term
+-- cycling through the universe is no more a failure of the chain than a missing
+-- atom is, and under '_partial' it deserves the same parked residual (#1078).
+-- Outer frames see the '…At' signals and let them pass, since their chains are
+-- prefixes of that one; a side-computation running on a chain of its own strips
+-- the chain off again (see 'unparked') before the signal reaches the spine.
 parking :: NonEmpty Rewritten -> IO a -> IO a
 parking seq action = action `catch` rethrow
   where
     rethrow :: DataizeException -> IO a
     rethrow (Stuck func) = throwIO (StuckAt func seq)
+    rethrow (OutOfSteps limit) = throwIO (OutOfStepsAt limit seq)
     rethrow failure = throwIO failure
 
 -- Strip the derivation off a stuck atom escaping a side-computation that ran
@@ -179,6 +188,7 @@ unparked action = action `catch` rethrow
   where
     rethrow :: DataizeException -> IO a
     rethrow (StuckAt func _) = throwIO (Stuck func)
+    rethrow (OutOfStepsAt limit _) = throwIO (OutOfSteps limit)
     rethrow failure = throwIO failure
 
 -- The Morphing function 𝕄 maps normal forms to formations. It is ternary,
@@ -272,6 +282,9 @@ morph universe ctx@DataizeContext{..} = do
   case result of
     Right ((morphed, seq), state) -> walked morphed seq state
     Left (StuckAt _ seq) | _partial -> do
+      residue <- locatedExpression _locator (fst (NE.head seq))
+      walked residue seq emptyState
+    Left (OutOfStepsAt _ seq) | _partial -> do
       residue <- locatedExpression _locator (fst (NE.head seq))
       walked residue seq emptyState
     Left failure -> throwIO (failure :: DataizeException)
@@ -430,6 +443,7 @@ dataize universe ctx@DataizeContext{..} = do
   case result of
     Right ((bytes, seq), _state) -> pure (Dataized bytes, reverse seq)
     Left (StuckAt _ seq) | _partial -> pure (Residual (fst (NE.head seq)), reverse (NE.toList seq))
+    Left (OutOfStepsAt _ seq) | _partial -> pure (Residual (fst (NE.head seq)), reverse (NE.toList seq))
     Left failure -> throwIO (failure :: DataizeException)
 
 -- The Dataization function 𝔻 retrieves bytes from an expression. It is partial

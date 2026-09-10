@@ -574,12 +574,23 @@ spec = do
   -- through md → ma → universe → mf → mphi → ml forever and no CLI option could
   -- stop it (#1052). '--max-steps' bounds that recursion and fails once the
   -- budget is gone.
-  describe "stops a dataization that never reaches bytes" $
+  describe "stops a dataization that never reaches bytes" $ do
     it "fails on the step limit instead of morphing forever" $
       withNode $ do
         expr <- parseExpressionThrows "⟦ @ ↦ ⟦ λ ⤍ L_number_div, ρ ↦ ⟦ Δ ⤍ 40-45-00-00-00-00-00-00 ⟧, x ↦ ⟦ Δ ⤍ 40-00-00-00-00-00-00-00 ⟧ ⟧ ⟧"
         dataize expr (DataizeContext ExRoot 25 25 (Steps 40 0) False True False False registry buildTerm dontSaveStep dontSaveEval)
           `shouldThrow` (\e -> "--max-steps=40" `isInfixOf` show (e :: SomeException))
+
+    -- A budget spent on a cycle is a stuck site just as an atom that cannot
+    -- fire is: under '_partial' the run ends on the residual the spine had
+    -- reached instead of failing hard (#1078)
+    it "parks the step limit as a residual with --partial" $
+      withNode $ do
+        expr <- parseExpressionThrows "⟦ @ ↦ ⟦ λ ⤍ L_number_div, ρ ↦ ⟦ Δ ⤍ 40-45-00-00-00-00-00-00 ⟧, x ↦ ⟦ Δ ⤍ 40-00-00-00-00-00-00-00 ⟧ ⟧ ⟧"
+        (outcome, _) <- dataize expr (DataizeContext ExRoot 25 25 (Steps 40 0) False True True False registry buildTerm dontSaveStep dontSaveEval)
+        case outcome of
+          Residual _ -> pure ()
+          Dataized bts -> expectationFailure ("expected a residual, dataized to " ++ show bts)
 
   -- An atom phino does not know — a name the '--atoms' registry does not carry,
   -- such as the placeholder ⟦ λ ⤍ Sym_arg_0 ⟧ standing in for a data input
