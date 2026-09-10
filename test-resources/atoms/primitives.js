@@ -66,13 +66,17 @@ function bindingValue(b, start) {
 
 // Every shape an already-reduced datum reaches this script in: a literal
 // argument, a copy of the 'number', 'string' or 'bytes' object bound to ρ, or a
-// bare byte formation. The bytes are what follows. Since #1142 the payload of
-// a datum is named φ (the void the real 'bytes' object declares), so the φ
-// shapes come first; the legacy 'data' shapes stay for inputs jeo wrote.
+// bare byte formation. The bytes are what follows. Since #1155 both bindings
+// of a datum are named φ (the only void the real 'number' and 'string' declare,
+// objectionary/eo#8620), so the φ shapes come first; the legacy 'as-bytes' and
+// 'data' shapes stay for inputs jeo wrote.
 const DATA = [
+  'Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ ',
+  'Φ.string( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ ',
   'Φ.number( as-bytes ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ ',
   'Φ.string( as-bytes ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ ',
   'Φ.bytes( φ ↦ ⟦ Δ ⤍ ',
+  '⟦ φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ ',
   '⟦ as-bytes ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ ',
   '⟦ φ ↦ ⟦ Δ ⤍ ',
   '⟦ Δ ⤍ ',
@@ -119,7 +123,7 @@ function asBytes(raw) {
 function asNumber(value) {
   const raw = Buffer.alloc(8);
   raw.writeDoubleBE(value, 0);
-  return `Φ.number( as-bytes ↦ ${asBytes(raw)} )`;
+  return `Φ.number( φ ↦ ${asBytes(raw)} )`;
 }
 
 function asBool(yes) {

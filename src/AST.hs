@@ -202,10 +202,11 @@ pattern BaseObject label <- (matchBaseObject -> Just label)
 
 -- Minimal matcher function (required for view pattern)
 --
--- The primitive→bytes binding is named 'as-bytes' and the bytes→payload
--- binding is named 'data' (jeo-maven-plugin 0.15.3+, following phi-calculus
--- dropping positional attributes). The legacy positional α0 form is still
--- recognized so XMIR produced by older jeo versions keeps sugaring back.
+-- The real 'number' and 'string' of eo-runtime declare '[@]' as their only
+-- void (objectionary/eo#8620), so both primitive→bytes and bytes→payload
+-- bindings are printed as 'φ' (#1155). The reader still accepts the legacy
+-- names 'as-bytes'/'data' and the positional α0 form so XMIR produced by
+-- older jeo versions keeps sugaring back.
 matchDataObject :: Expression -> Maybe (T.Text, Bytes)
 matchDataObject (ExApplication outer arg)
   | Just inner <- asBytesArg arg = case (matchOuter outer, matchInner inner) of
@@ -213,6 +214,7 @@ matchDataObject (ExApplication outer arg)
       _ -> Nothing
   where
     asBytesArg :: Argument -> Maybe Expression
+    asBytesArg (ArTau AtPhi inner) = Just inner
     asBytesArg (ArTau (AtLabel "as-bytes") inner) = Just inner
     asBytesArg (ArAlpha (Alpha 0) inner) = Just inner
     asBytesArg _ = Nothing
@@ -254,13 +256,13 @@ pattern DataObject :: T.Text -> Bytes -> Expression
 pattern DataObject label bts <- (matchDataObject -> Just (label, bts))
   where
     DataObject label bts =
-      ExApplication (BaseObject label) (ArTau (AtLabel "as-bytes") (dataBytes bts))
+      ExApplication (BaseObject label) (ArTau AtPhi (dataBytes bts))
 
 -- The bytes object Φ.bytes(φ ↦ ⟦ Δ ⤍ …, ρ ↦ ∅ ⟧) — what a 'bytes' atom
--- yields and what a 'DataObject' carries under its 'as-bytes' argument.
--- The payload is bound to 'φ', the void that the real 'bytes' object
--- declares ([@] > bytes), so that every dispatch on the literal can bind
--- (see #1142)
+-- yields and what a 'DataObject' carries under its 'φ' argument.
+-- Both bindings are named 'φ', the void that the real 'bytes', 'number'
+-- and 'string' objects declare ([@] > bytes, objectionary/eo#8620), so
+-- that every dispatch on the literal can bind (see #1142 and #1155)
 dataBytes :: Bytes -> Expression
 dataBytes bts =
   ExApplication

@@ -113,7 +113,7 @@ expression (ExDispatch expr attr) ctx = do
 expression (DataNumber bytes) XmirContext{..} =
   let bts =
         object
-          [("as", "as-bytes"), ("base", "Φ.bytes")]
+          [("as", "φ"), ("base", "Φ.bytes")]
           [object [("as", "φ")] [NodeContent (T.pack (printBytes bytes))]]
    in pure
         ( "Φ.number"
@@ -127,7 +127,7 @@ expression (DataNumber bytes) XmirContext{..} =
 expression (DataString bytes) XmirContext{..} =
   let bts =
         object
-          [("as", "as-bytes"), ("base", "Φ.bytes")]
+          [("as", "φ"), ("base", "Φ.bytes")]
           [object [("as", "φ")] [NodeContent (T.pack (printBytes bytes))]]
    in pure
         ( "Φ.string"

@@ -146,6 +146,21 @@ spec = do
       str `shouldContain` "φ ↦"
       str `shouldNotContain` "data ↦"
 
+  describe "printExpression binds a datum to φ at both levels in salty notation (#1155)" $
+    it "names the primitive→bytes binding φ (the only void number and string declare), not as-bytes" $ do
+      let number =
+            printExpression'
+              (DataNumber (BtMany ["40", "45", "00", "00", "00", "00", "00", "00"]))
+              (SALTY, UNICODE, SINGLELINE, defaultMargin)
+          str =
+            printExpression'
+              (DataString (BtMany ["68", "69"]))
+              (SALTY, UNICODE, SINGLELINE, defaultMargin)
+      number `shouldContain` "Φ.number( φ ↦ Φ.bytes("
+      number `shouldNotContain` "as-bytes"
+      str `shouldContain` "Φ.string( φ ↦ Φ.bytes("
+      str `shouldNotContain` "as-bytes"
+
   describe "printExpression keeps a compressed meet atomic under a narrow margin" $
     -- A \phinoMeet is a single \overbracket visual unit, so its body must stay
     -- on one line even when the surrounding margin forces the outer formation to

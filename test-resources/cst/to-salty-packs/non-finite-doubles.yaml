@@ -11,7 +11,7 @@ expression: |
 result: |-
   ⟦
     nan ↦ Φ.number(
-      as-bytes ↦ Φ.bytes(
+      φ ↦ Φ.bytes(
         φ ↦ ⟦
           Δ ⤍ 7F-F8-00-00-00-00-00-00,
           ρ ↦ ∅
@@ -19,7 +19,7 @@ result: |-
       )
     ),
     pinf ↦ Φ.number(
-      as-bytes ↦ Φ.bytes(
+      φ ↦ Φ.bytes(
         φ ↦ ⟦
           Δ ⤍ 7F-F0-00-00-00-00-00-00,
           ρ ↦ ∅
@@ -27,7 +27,7 @@ result: |-
       )
     ),
     ninf ↦ Φ.number(
-      as-bytes ↦ Φ.bytes(
+      φ ↦ Φ.bytes(
         φ ↦ ⟦
           Δ ⤍ FF-F0-00-00-00-00-00-00,
           ρ ↦ ∅

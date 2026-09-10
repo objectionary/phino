@@ -4,13 +4,13 @@
 ---
 # jeo-maven-plugin versions before 0.15.3 emit the as-bytes/data pair of a
 # primitive data object positionally (α0) instead of by name; 'matchDataObject'
-# in AST.hs still recognizes that legacy form, so it must print exactly like
-# the modern named form.
+# in AST.hs still recognizes that legacy form, so it prints like the modern
+# one: both voids bound as φ (#1155, objectionary/eo#8620).
 phi: |
   [[
     x -> Q.number(~0 -> Q.bytes(~0 -> [[ D> 40-14-00-00-00-00-00-00 ]]))
   ]]
 xpaths:
   - '/object/o[@name="x" and @base="Φ.number"]'
-  - '/object/o/o[@as="as-bytes" and @base="Φ.bytes"]'
+  - '/object/o/o[@as="φ" and @base="Φ.bytes"]'
   - '/object/o/o/o[@as="φ"]'
