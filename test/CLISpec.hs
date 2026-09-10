@@ -16,7 +16,7 @@ import Data.Text qualified as T
 import Data.Time.Clock (addUTCTime, getCurrentTime)
 import Data.Time.Clock.POSIX (getPOSIXTime)
 import Data.Version (showVersion)
-import Fixtures (withAskingRegistry, withFixtureRegistry, withNode, withServing, withShell)
+import Fixtures (withAskingRegistry, withFixtureRegistry, withLoopingAskRegistry, withNode, withServing, withShell)
 import GHC.IO.Handle
 import Paths_phino (version)
 import System.Directory (createDirectoryIfMissing, doesDirectoryExist, doesFileExist, getTemporaryDirectory, listDirectory, removeDirectoryRecursive, removeFile, removePathForcibly, setModificationTime)
@@ -132,6 +132,9 @@ withAtoms action = withNode (withFixtureRegistry (action . ("--atoms=" ++)))
 -- for every one of them instead (see 'Fixtures')
 withAsking :: (String -> Expectation) -> Expectation
 withAsking action = withNode (withAskingRegistry (action . ("--atoms=" ++)))
+
+withLoopingAsk :: (String -> Expectation) -> Expectation
+withLoopingAsk action = withNode (withLoopingAskRegistry (action . ("--atoms=" ++)))
 
 testCLIFailed :: [String] -> [String] -> Expectation
 testCLIFailed args outputs = testCLI' args outputs (Left (ExitFailure 1))
@@ -1345,6 +1348,26 @@ spec = do
         withAsking $ \atoms ->
           withStdin "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6.plus(7)) ]]" $
             testCLISucceeded ["dataize", atoms] ["40-32-00-00-00-00-00-00"]
+
+      -- A question about a term the universe cannot finish reducing does not
+      -- kill a '--partial' run: phino parks the cycle the question walks into
+      -- and answers with the residual, so the program still replies and the
+      -- bytes arrive (#1078, over the ask channel of #1160)
+      it "answers a looping question with a parked residual under --partial" $
+        withLoopingAsk $ \atoms ->
+          withStdin "⟦ bytes ↦ ⟦ φ ↦ ∅ ⟧, number ↦ ⟦ φ ↦ ∅, gt(x) ↦ ⟦ λ ⤍ L_number_gt ⟧ ⟧, φ ↦ 5.gt(1) ⟧" $
+            testCLISucceeded
+              ["dataize", atoms, "--partial", "--max-steps=200"]
+              ["2A-"]
+
+      -- Without '--partial' the exhausted budget fails the run through a
+      -- question just as it fails it anywhere else (#1052's message)
+      it "fails a looping question without --partial" $
+        withLoopingAsk $ \atoms ->
+          withStdin "⟦ bytes ↦ ⟦ φ ↦ ∅ ⟧, number ↦ ⟦ φ ↦ ∅, gt(x) ↦ ⟦ λ ⤍ L_number_gt ⟧ ⟧, φ ↦ 5.gt(1) ⟧" $
+            testCLIFailed
+              ["dataize", atoms, "--max-steps=200"]
+              ["--max-steps=200"]
 
     -- An atom script cannot reduce the operands it was handed by itself, so it
     -- asks phino for them: '--inside' binds an expression to a synthetic
