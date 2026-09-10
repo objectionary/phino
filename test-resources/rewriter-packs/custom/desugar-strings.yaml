@@ -12,27 +12,27 @@ input: |
 output: |-
   ⟦
     str ↦ Φ.string(
-      as-bytes ↦ Φ.bytes(
+      φ ↦ Φ.bytes(
         φ ↦ ⟦ Δ ⤍ 68-65-6C-6C-6F ⟧
       )
     ),
     ch ↦ Φ.string(
-      as-bytes ↦ Φ.bytes(
+      φ ↦ Φ.bytes(
         φ ↦ ⟦ Δ ⤍ 68- ⟧
       )
     ),
     uni ↦ Φ.string(
-      as-bytes ↦ Φ.bytes(
+      φ ↦ Φ.bytes(
         φ ↦ ⟦ Δ ⤍ 01-02 ⟧
       )
     ),
     empty ↦ Φ.string(
-      as-bytes ↦ Φ.bytes(
+      φ ↦ Φ.bytes(
         φ ↦ ⟦ Δ ⤍ -- ⟧
       )
     ),
     new-line ↦ Φ.string(
-      as-bytes ↦ Φ.bytes(
+      φ ↦ Φ.bytes(
         φ ↦ ⟦ Δ ⤍ 68-0A-65 ⟧
       )
     )

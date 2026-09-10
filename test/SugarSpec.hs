@@ -211,47 +211,47 @@ spec = do
       ,
         ( "EX_NUMBER with no extra rho expands into the Q.number(Q.bytes(...)) form"
         , EX_NUMBER (Left 42) (TAB 1) []
-        , "Φ.number(\n    as-bytes ↦ Φ.bytes(\n      φ ↦ ⟦\n        Δ ⤍ 40-45-00-00-00-00-00-00,\n        ρ ↦ ∅\n      ⟧\n    )\n  )"
+        , "Φ.number(\n    φ ↦ Φ.bytes(\n      φ ↦ ⟦\n        Δ ⤍ 40-45-00-00-00-00-00-00,\n        ρ ↦ ∅\n      ⟧\n    )\n  )"
         )
       ,
         ( "EX_NUMBER preserves an extra rho argument carried alongside the primitive"
         , EX_NUMBER (Left 42) (TAB 1) [ArTau AtRho (ExDispatch ExXi (AtLabel "y"))]
-        , "Φ.number(\n    as-bytes ↦ Φ.bytes(\n      φ ↦ ⟦\n        Δ ⤍ 40-45-00-00-00-00-00-00,\n        ρ ↦ ∅\n      ⟧\n    )\n  )(\n    ρ ↦ ξ.y\n  )"
+        , "Φ.number(\n    φ ↦ Φ.bytes(\n      φ ↦ ⟦\n        Δ ⤍ 40-45-00-00-00-00-00-00,\n        ρ ↦ ∅\n      ⟧\n    )\n  )(\n    ρ ↦ ξ.y\n  )"
         )
       ,
         ( "EX_NONFINITE nan expands into the Q.number(Q.bytes(...)) form"
         , EX_NONFINITE Φ NfNan (TAB 1) []
-        , "Φ.number(\n    as-bytes ↦ Φ.bytes(\n      φ ↦ ⟦\n        Δ ⤍ 7F-F8-00-00-00-00-00-00,\n        ρ ↦ ∅\n      ⟧\n    )\n  )"
+        , "Φ.number(\n    φ ↦ Φ.bytes(\n      φ ↦ ⟦\n        Δ ⤍ 7F-F8-00-00-00-00-00-00,\n        ρ ↦ ∅\n      ⟧\n    )\n  )"
         )
       ,
         ( "EX_NONFINITE pinf expands into the Q.number(Q.bytes(...)) form"
         , EX_NONFINITE Φ NfPinf (TAB 1) []
-        , "Φ.number(\n    as-bytes ↦ Φ.bytes(\n      φ ↦ ⟦\n        Δ ⤍ 7F-F0-00-00-00-00-00-00,\n        ρ ↦ ∅\n      ⟧\n    )\n  )"
+        , "Φ.number(\n    φ ↦ Φ.bytes(\n      φ ↦ ⟦\n        Δ ⤍ 7F-F0-00-00-00-00-00-00,\n        ρ ↦ ∅\n      ⟧\n    )\n  )"
         )
       ,
         ( "EX_NONFINITE ninf keeps an extra rho argument carried alongside the primitive"
         , EX_NONFINITE Φ NfNinf (TAB 1) [ArTau AtRho (ExDispatch ExXi (AtLabel "y"))]
-        , "Φ.number(\n    as-bytes ↦ Φ.bytes(\n      φ ↦ ⟦\n        Δ ⤍ FF-F0-00-00-00-00-00-00,\n        ρ ↦ ∅\n      ⟧\n    )\n  )(\n    ρ ↦ ξ.y\n  )"
+        , "Φ.number(\n    φ ↦ Φ.bytes(\n      φ ↦ ⟦\n        Δ ⤍ FF-F0-00-00-00-00-00-00,\n        ρ ↦ ∅\n      ⟧\n    )\n  )(\n    ρ ↦ ξ.y\n  )"
         )
       ,
         ( "EX_STRING expands into the Q.string(Q.bytes(...)) form"
         , EX_STRING "hi" (TAB 1) []
-        , "Φ.string(\n    as-bytes ↦ Φ.bytes(\n      φ ↦ ⟦\n        Δ ⤍ 68-69,\n        ρ ↦ ∅\n      ⟧\n    )\n  )"
+        , "Φ.string(\n    φ ↦ Φ.bytes(\n      φ ↦ ⟦\n        Δ ⤍ 68-69,\n        ρ ↦ ∅\n      ⟧\n    )\n  )"
         )
       ,
         ( "EX_STRING unescapes a newline instead of taking its escape literally"
         , EX_STRING "e\\ne" (TAB 1) []
-        , "Φ.string(\n    as-bytes ↦ Φ.bytes(\n      φ ↦ ⟦\n        Δ ⤍ 65-0A-65,\n        ρ ↦ ∅\n      ⟧\n    )\n  )"
+        , "Φ.string(\n    φ ↦ Φ.bytes(\n      φ ↦ ⟦\n        Δ ⤍ 65-0A-65,\n        ρ ↦ ∅\n      ⟧\n    )\n  )"
         )
       ,
         ( "EX_STRING unescapes a quote and a backslash into single bytes"
         , EX_STRING "\\\"\\\\" (TAB 1) []
-        , "Φ.string(\n    as-bytes ↦ Φ.bytes(\n      φ ↦ ⟦\n        Δ ⤍ 22-5C,\n        ρ ↦ ∅\n      ⟧\n    )\n  )"
+        , "Φ.string(\n    φ ↦ Φ.bytes(\n      φ ↦ ⟦\n        Δ ⤍ 22-5C,\n        ρ ↦ ∅\n      ⟧\n    )\n  )"
         )
       ,
         ( "EX_STRING unescapes a hex escape back into its byte"
         , EX_STRING "\\x01" (TAB 1) []
-        , "Φ.string(\n    as-bytes ↦ Φ.bytes(\n      φ ↦ ⟦\n        Δ ⤍ 01-,\n        ρ ↦ ∅\n      ⟧\n    )\n  )"
+        , "Φ.string(\n    φ ↦ Φ.bytes(\n      φ ↦ ⟦\n        Δ ⤍ 01-,\n        ρ ↦ ∅\n      ⟧\n    )\n  )"
         )
       ]
       (\(desc, sweetExpr, expected) -> it desc (render (toSalty sweetExpr) `shouldBe` expected))
@@ -628,13 +628,13 @@ spec = do
       $ do
         let number = DataNumber (BtMany ["40", "45", "00", "00", "00", "00", "00", "00"])
         printExpression' number (config SWEET) `shouldBe` "42"
-        printExpression' number (config SALTY) `shouldBe` "Φ.number( as-bytes ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 40-45-00-00-00-00-00-00, ρ ↦ ∅ ⟧ ) )"
+        printExpression' number (config SALTY) `shouldBe` "Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 40-45-00-00-00-00-00-00, ρ ↦ ∅ ⟧ ) )"
     it
       "a sweet string literal expands into Q.string(Q.bytes(...)) when salted"
       $ do
         let string = DataString (BtMany ["68", "69"])
         printExpression' string (config SWEET) `shouldBe` "\"hi\""
-        printExpression' string (config SALTY) `shouldBe` "Φ.string( as-bytes ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 68-69, ρ ↦ ∅ ⟧ ) )"
+        printExpression' string (config SALTY) `shouldBe` "Φ.string( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 68-69, ρ ↦ ∅ ⟧ ) )"
     it
       "an application with multiple positional arguments sugars/salts between e(e0, e1) and e(α0 ↦ e0)(α1 ↦ e1)"
       $ do

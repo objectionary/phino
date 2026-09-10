@@ -202,10 +202,10 @@ pattern BaseObject label <- (matchBaseObject -> Just label)
 
 -- Minimal matcher function (required for view pattern)
 --
--- The primitive→bytes binding is named 'as-bytes' and the bytes→payload
--- binding is named 'data' (jeo-maven-plugin 0.15.3+, following phi-calculus
--- dropping positional attributes). The legacy positional α0 form is still
--- recognized so XMIR produced by older jeo versions keeps sugaring back.
+-- Both bindings of a literal are named φ, the only void that the real
+-- 'number', 'string' and 'bytes' declare ([@] > number, see #1155). The
+-- legacy 'as-bytes', 'data' and positional α0 forms are still recognized
+-- so XMIR produced by older jeo versions keeps sugaring back.
 matchDataObject :: Expression -> Maybe (T.Text, Bytes)
 matchDataObject (ExApplication outer arg)
   | Just inner <- asBytesArg arg = case (matchOuter outer, matchInner inner) of
@@ -213,6 +213,7 @@ matchDataObject (ExApplication outer arg)
       _ -> Nothing
   where
     asBytesArg :: Argument -> Maybe Expression
+    asBytesArg (ArTau AtPhi inner) = Just inner
     asBytesArg (ArTau (AtLabel "as-bytes") inner) = Just inner
     asBytesArg (ArAlpha (Alpha 0) inner) = Just inner
     asBytesArg _ = Nothing
@@ -254,10 +255,10 @@ pattern DataObject :: T.Text -> Bytes -> Expression
 pattern DataObject label bts <- (matchDataObject -> Just (label, bts))
   where
     DataObject label bts =
-      ExApplication (BaseObject label) (ArTau (AtLabel "as-bytes") (dataBytes bts))
+      ExApplication (BaseObject label) (ArTau AtPhi (dataBytes bts))
 
 -- The bytes object Φ.bytes(φ ↦ ⟦ Δ ⤍ …, ρ ↦ ∅ ⟧) — what a 'bytes' atom
--- yields and what a 'DataObject' carries under its 'as-bytes' argument.
+-- yields and what a 'DataObject' carries under its φ argument.
 -- The payload is bound to 'φ', the void that the real 'bytes' object
 -- declares ([@] > bytes), so that every dispatch on the literal can bind
 -- (see #1142)

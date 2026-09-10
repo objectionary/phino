@@ -299,15 +299,20 @@ spec = do
           (ArTau AtPhi (ExFormation [BiDelta (BtOne "48"), BiVoid AtRho]))
 
   describe "DataObject/DataString/DataNumber pattern" $ do
-    it "constructs the named, unwrapped as-bytes form" $
+    it "constructs the phi-named, unwrapped form" $
       DataString (BtOne "48")
         `shouldBe` ExApplication
           (ExDispatch ExRoot (AtLabel "string"))
-          (ArTau (AtLabel "as-bytes") (dataBytes (BtOne "48")))
+          (ArTau AtPhi (dataBytes (BtOne "48")))
 
     forM_
       [
-        ( "matches the named, unwrapped form"
+        ( "matches the phi-named, unwrapped form"
+        , ExApplication (ExDispatch ExRoot (AtLabel "string")) (ArTau AtPhi (dataBytes (BtOne "48")))
+        , Just (BtOne "48")
+        )
+      ,
+        ( "matches the legacy as-bytes name on the outer binding"
         , ExApplication (ExDispatch ExRoot (AtLabel "string")) (ArTau (AtLabel "as-bytes") (dataBytes (BtOne "48")))
         , Just (BtOne "48")
         )
