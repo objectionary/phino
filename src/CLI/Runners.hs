@@ -63,7 +63,7 @@ runRewrite OptsRewrite{..} = do
         ([], XMIR, XMIR) -> (\_ -> escapeXML input)
         ([], _, _) -> (\_ -> escapeXMLText input)
         (_, _, _) -> (\rewritten -> escapeXMLText (P.printExpression' rewritten (_sugarType, UNICODE, _flat, _margin)))
-      xmirCtx = XmirContext _omitListing _omitComments listing
+      xmirCtx = XmirContext _omitListing _omitComments _hideRho listing
       printCtx = toPrintCtx xmirCtx foc
       exclude = (`F.exclude` excluded)
       include = (`F.include` included)
@@ -205,7 +205,7 @@ runDataize OptsDataize{..} = do
         _hideRho
         _flat
         _margin
-        defaultXmirContext
+        (XmirContext _omitListing _omitComments _hideRho listing)
         _nonumber
         _compress
         _canonize
@@ -218,6 +218,11 @@ runDataize OptsDataize{..} = do
         _label
         _meetPrefix
         _outputFormat
+    -- The listing of a dataization result is the 𝜑 text of the printed
+    -- expression, the way 'rewrite' does it; the omit flags and '--hide-rho'
+    -- reach the XMIR writer through this context (#1076)
+    listing :: Expression -> String
+    listing e = escapeXMLText (P.printExpression' e (_sugarType, UNICODE, _flat, _margin))
 
 -- Run 𝕄 on its own, the way 'runDataize' runs 𝔻. The whole option surface of
 -- 'dataize' applies unchanged, since the two commands differ only in the
@@ -277,7 +282,7 @@ runMorph OptsMorph{..} = do
         _hideRho
         _flat
         _margin
-        defaultXmirContext
+        (XmirContext _omitListing _omitComments _hideRho listing)
         _nonumber
         _compress
         _canonize
@@ -290,6 +295,11 @@ runMorph OptsMorph{..} = do
         _label
         _meetPrefix
         _outputFormat
+    -- The listing of a dataization result is the 𝜑 text of the printed
+    -- expression, the way 'rewrite' does it; the omit flags and '--hide-rho'
+    -- reach the XMIR writer through this context (#1076)
+    listing :: Expression -> String
+    listing e = escapeXMLText (P.printExpression' e (_sugarType, UNICODE, _flat, _margin))
 
 runExplain :: OptsExplain -> IO ()
 runExplain OptsExplain{..} = do
@@ -322,7 +332,7 @@ runMerge OptsMerge{..} = do
   expr <- merge exprs
   validateXmirTopLevel _outputFormat expr
   let listing = const (escapeXMLText (P.printExpression' expr (_sugarType, UNICODE, _flat, _margin)))
-      xmirCtx = XmirContext _omitListing _omitComments listing
+      xmirCtx = XmirContext _omitListing _omitComments False listing
       printCtx = toPrintCtx xmirCtx
   expr' <- printInFormat printCtx expr
   printOut _targetFile expr'

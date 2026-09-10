@@ -1266,6 +1266,22 @@ spec = do
           withStdin "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6) ]]" $
             testCLISucceeded ["dataize", atoms, "--partial"] ["40-26-00-00-00-00-00-00"]
 
+      -- The residual is an arbitrary formation, and a multi-binding <object>
+      -- is exactly what XMIR now carries: one <o> per binding (#1076)
+      it "prints the residual to XMIR, with its real listing by default" $
+        withAtoms $ \atoms ->
+          withStdin stuck $
+            testCLISucceeded
+              ["dataize", atoms, "--partial", "--output=xmir"]
+              ["<o name=\"λ\">L_number_nope</o>", "<o name=\"ρ\">", "<listing>⟦"]
+
+      it "honors --hide-rho and --omit-listing when printing the residual to XMIR" $
+        withAtoms $ \atoms ->
+          withStdin stuck $
+            testCLISucceeded
+              ["dataize", atoms, "--partial", "--output=xmir", "--hide-rho", "--omit-listing"]
+              ["<o name=\"λ\">L_number_nope</o>", "line(s)</listing>"]
+
       it "prints the chain of steps ending in the residue with --sequence" $
         withAtoms $ \atoms ->
           withStdin stuck $

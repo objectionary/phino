@@ -21,7 +21,7 @@ import Files (allPathsIn)
 import GHC.Generics (Generic)
 import Parser (parseExpressionThrows)
 import System.FilePath (makeRelative)
-import Test.Hspec (Spec, anyException, describe, expectationFailure, it, runIO, shouldBe, shouldContain, shouldReturn, shouldThrow)
+import Test.Hspec (Spec, anyException, describe, expectationFailure, it, runIO, shouldBe, shouldContain, shouldNotContain, shouldReturn, shouldThrow)
 import Text.XML (Document (..), Element (..), Node (NodeElement), Prologue (..))
 import Text.XML.Cursor qualified as C
 import XMIR (XmirContext (XmirContext), defaultXmirContext, escapeXML, expressionToXMIR, parseXMIRThrows, printXMIR, toName, xmirToPhi)
@@ -208,12 +208,34 @@ spec = do
               xmir'' `shouldBe` phi''
       )
 
+  -- A '--partial' residual tops in an arbitrary formation: several bindings,
+  -- voids, a bound ρ. Such a top now prints to XMIR and reads back whole (#1076)
+  describe "round-trips non-program tops as XMIR (#1076)" $
+    forM_
+      [ "[[ x -> ? ]]"
+      , "[[ ^ -> 5 ]]"
+      , "[[ x -> 4, L> L_number_plus, ^ -> [[ y -> 5 ]] ]]"
+      ]
+      ( \phi' -> it phi' $ do
+          expr <- parseExpressionThrows phi'
+          doc <- expressionToXMIR expr defaultXmirContext
+          doc' <- parseXMIRThrows (printXMIR doc)
+          back <- xmirToPhi doc'
+          back `shouldBe` expr
+      )
+
+  describe "--hide-rho in XMIR" $
+    it "drops every bound ρ from the printed document" $ do
+      expr <- parseExpressionThrows "[[ x -> 4, ^ -> [[ y -> 5 ]] ]]"
+      doc <- expressionToXMIR expr (XmirContext True False True (const ""))
+      let printed = printXMIR doc
+      printed `shouldContain` "name=\"x\""
+      printed `shouldNotContain` "name=\"ρ\""
+
   describe "prohibit to convert to XMIR" $
     forM_
       [ "[[ ]]"
       , "T"
-      , "[[ x -> ? ]]"
-      , "[[ ^ -> 5 ]]"
       , "Q.x.y.z"
       , "\"Hello\""
       , "Q"
@@ -330,7 +352,7 @@ spec = do
 
   describe "XMIR comments" $ do
     let commentedContext :: XmirContext
-        commentedContext = XmirContext True False (const "")
+        commentedContext = XmirContext True False False (const "")
 
     it "includes a decimal comment for a number when comments aren't omitted" $ do
       expr <- parseExpressionThrows "[[ x -> 5 ]]"
