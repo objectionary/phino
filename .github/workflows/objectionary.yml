@@ -82,3 +82,16 @@ jobs:
         run: |
           cd home
           eoc -s objects print --print-input=2-rewritten --print-output=../objects
+      - name: Validate a dataization residual against the XMIR schema
+        run: |
+          set -e
+          curl -sL -o /tmp/XMIR.xsd https://raw.githubusercontent.com/objectionary/eo/refs/heads/gh-pages/XMIR.xsd
+          cat > /tmp/stuck.phi <<'PHI'
+          ⟦
+            bytes ↦ ⟦ φ ↦ ∅ ⟧,
+            number ↦ ⟦ φ ↦ ∅, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧,
+            φ ↦ 5.plus(6)
+          ⟧
+          PHI
+          phino dataize --partial --output=xmir /tmp/stuck.phi > /tmp/residual.xml
+          xmllint --noout --schema /tmp/XMIR.xsd /tmp/residual.xml

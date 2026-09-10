@@ -194,9 +194,9 @@ expressionToXMIR expr@(ExFormation [BiTau (AtLabel _) arg, BiVoid AtRho]) ctx = 
   ExRoot -> programToXMIR expr ctx
   _ -> throwIO (UnsupportedTopExpression expr)
 -- The top of a '--partial' residual and the result of 'merge' are arbitrary
--- formations: several τ/λ bindings, voids and a bound ρ. Every binding such a
--- formation carries becomes a child of <object>; 'xmirToPhi' reads the list
--- back (#1076)
+-- formations: several τ/λ bindings, voids and a bound ρ. The schema allows a
+-- single <o> under <object>, so the formation goes beneath one attribute-free
+-- <o> whose children are its bindings; 'xmirToPhi' reads that shape back (#1076)
 expressionToXMIR expr@(ExFormation bds) ctx =
   documentWith ctx [] expr rootNodes
   where
@@ -204,7 +204,7 @@ expressionToXMIR expr@(ExFormation bds) ctx =
     rootNodes = do
       roots <- nestedBindings bds ctx
       unless (any isElement roots) (throwIO (UnsupportedTopExpression expr))
-      pure roots
+      pure [object [] roots]
     isElement :: Node -> Bool
     isElement (NodeElement _) = True
     isElement _ = False
@@ -441,11 +441,9 @@ xmirToPhi xmir =
         NodeElement el
           | nameLocalName (elementName el) == "object" -> do
               unless (null (strayNodes doc)) (throwIO (InvalidXMIRFormat "No processing instructions or bare text are allowed in <object>" doc))
-              bds <- case doc C.$/ C.element (toName "o") of
-                [] -> throwIO (InvalidXMIRFormat "Expected at least one <o> element in <object>" doc)
-                -- A residual document (printed by '--partial', #1076) carries
-                -- one <o> per binding of the stuck formation, so read them all
-                os -> uniqueBindings' =<< mapM (`xmirToFormationBinding` []) os
+              o <- case doc C.$/ C.element (toName "o") of
+                [single] -> pure single
+                _ -> throwIO (InvalidXMIRFormat "Expected single <o> element in <object>" doc)
               let pckg =
                     [ T.unpack t
                     | meta <- doc C.$/ C.element (toName "metas") C.&/ C.element (toName "meta")
@@ -454,15 +452,29 @@ xmirToPhi xmir =
                     , tail' <- meta C.$/ C.element (toName "tail") C.&/ C.content
                     , t <- T.splitOn "." tail'
                     ]
-              if null pckg
-                then pure (ExFormation (withVoidRho bds))
-                else case bds of
-                  [obj] ->
-                    let bd = foldr (\part acc -> BiTau (AtLabel (T.pack part)) (ExFormation [acc, BiLambda (Function "Package"), BiVoid AtRho])) obj pckg
-                     in pure (ExFormation [bd, BiVoid AtRho])
-                  _ -> throwIO (InvalidXMIRFormat "A <object> with <metas> package must hold a single <o>" doc)
+              -- An attribute-free <o> is a residual formation printed by
+              -- '--partial': its children are the bindings themselves (#1076)
+              if bareRoot o
+                then
+                  if null pckg
+                    then xmirToFormation o []
+                    else throwIO (InvalidXMIRFormat "A <object> with <metas> package must hold a named <o>" doc)
+                else
+                  if null pckg
+                    then do
+                      bd <- xmirToFormationBinding o []
+                      pure (ExFormation (withVoidRho [bd]))
+                    else do
+                      obj <- xmirToFormationBinding o []
+                      let bd = foldr (\part acc -> BiTau (AtLabel (T.pack part)) (ExFormation [acc, BiLambda (Function "Package"), BiVoid AtRho])) obj pckg
+                      pure (ExFormation [bd, BiVoid AtRho])
           | otherwise -> throwIO (InvalidXMIRFormat "Expected single <object> element" doc)
         _ -> throwIO (InvalidXMIRFormat "NodeElement is expected as root element" doc)
+
+-- The single <o> of a residual document carries no attributes of its own:
+-- it is the formation, not one of its bindings (#1076)
+bareRoot :: C.Cursor -> Bool
+bareRoot o = not (any (`hasAttr` o) ["name", "base", "as"])
 
 xmirToFormationBinding :: C.Cursor -> [String] -> IO Binding
 xmirToFormationBinding cur fqn

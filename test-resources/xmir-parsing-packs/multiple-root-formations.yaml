@@ -1,12 +1,14 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 # SPDX-License-Identifier: MIT
 ---
-# A <object> may carry several <o> children: that is how a '--partial'
-# residual and any multi-binding formation are printed (#1076). Two bare
-# name-only <o> read back as bindings to empty formations.
+# <object> allows at most one direct <o> (XMIR.xsd, objectionary/eo#8548
+# consumers validate against it), so two sibling roots are malformed. A
+# residual formation (see #1076) is printed under ONE attribute-free <o>,
+# not as several roots.
+failure: true
 xmir: |
   <object>
     <o name="app"/>
     <o name="other"/>
   </object>
-phi: '[[ app -> [[]], other -> [[]] ]]'
+phi: ''
