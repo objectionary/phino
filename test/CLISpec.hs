@@ -1063,6 +1063,17 @@ spec = do
               ]
           ]
 
+    -- 'matches' inside 'when' raises while dataizing a formation: the
+    -- substitution is still dropped (the policy #1079 questions), but the
+    -- reason surfaces in the debug log instead of vanishing
+    it "reports a condition that raised while being evaluated" $
+      withStdin "[[ x -> [[ y -> ∅ ]] ]]" $
+        testCLISucceeded
+          ["rewrite", rule "raising-condition.yaml", "--log-level=debug", "--flat"]
+          [ "raised and was treated as not met: user error (Only data objects and bytes are supported"
+          , "⟦ x ↦ ⟦ y ↦ ∅, ρ ↦ ∅ ⟧, ρ ↦ ∅ ⟧"
+          ]
+
     it "canonizes expression" $
       withStdin "[[ x -> [[ y -> [[ L> Func ]].q, z -> Q.x(a -> [[ w -> [[ L> Atom ]], L> Hello ]]) ]], L> Package ]]" $
         testCLISucceeded

@@ -16,6 +16,7 @@ import Builder
   , buildExpressionThrows
   )
 import Bytes (btsToUnescapedStr)
+import Control.Exception (Exception (displayException))
 import Control.Exception.Base (SomeException, try)
 import Control.Monad (when)
 import qualified Data.ByteString.Char8 as B
@@ -285,7 +286,13 @@ meetCondition cond (subst : rest) ctx = do
       case first of
         [] -> pure next
         sbt : _ -> pure (sbt : next)
-    Left _ -> meetCondition cond rest ctx
+    -- A condition that raises is treated as not met: that is the policy
+    -- #1079 questions, and it stays until the maintainers answer. The
+    -- silence on top of it is nobody's friend — say what raised, at debug
+    -- level, so a broken 'when'/'having' can be found with --log-level=debug
+    Left err -> do
+      logDebug (printf "Condition %s raised and was treated as not met: %s" (show cond) (displayException err))
+      meetCondition cond rest ctx
 
 meetMaybeCondition :: Maybe Y.Condition -> [Subst] -> RuleContext -> IO [Subst]
 meetMaybeCondition Nothing substs _ = pure substs
