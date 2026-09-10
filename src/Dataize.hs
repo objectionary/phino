@@ -660,7 +660,12 @@ insideUniverse expr univ ctx@DataizeContext{_buildTerm = buildTerm} = case univ 
 -- 'ReduceFunc' in 'Atoms'): the expression is bound to a synthetic attribute
 -- of the universe and dataized there, exactly the way the '--inside' option
 -- does it, so the bytes come back as a Δ formation — or, where an atom on the
--- way could not fire and '_partial' parked it, the residual program instead.
+-- way could not fire and '_partial' parked it, the node the question named,
+-- taken out of the residue at the synthetic attribute. The residue is the whole
+-- synthetic universe, and answering with it hands the program a print of the
+-- universe per question, thousands of bytes around the one node it asked about
+-- (#1167); nothing is lost by trimming it, since the rest of that residue is
+-- the universe the program was already told under '𝑒'.
 -- An operand reaches a program unreduced, since reducing it may take the very
 -- atom being fired, and before the channel carried questions the program had
 -- no way to ask: it had to splice the operand into the text of the universe
@@ -670,11 +675,11 @@ reduction :: Expression -> DataizeContext -> ReduceFunc
 reduction univ ctx expr = do
   (universe, aiming) <- insideUniverse expr univ ctx
   (outcome, _) <- dataize universe aiming
-  pure (reduced outcome)
+  reduced aiming._locator outcome
   where
-    reduced :: Outcome -> Expression
-    reduced (Dataized bytes) = ExFormation [BiDelta bytes]
-    reduced (Residual residue) = residue
+    reduced :: Expression -> Outcome -> IO Expression
+    reduced _ (Dataized bytes) = pure (ExFormation [BiDelta bytes])
+    reduced locator (Residual residue) = locatedExpression locator residue
 
 -- phino implements no λ function of its own. Which atoms exist is a property of
 -- the object model being dataized, not of the calculus, so they come from the
