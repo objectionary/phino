@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# 'matches' dataizes its argument, and dataization of a formation (what
+# '!e1' is bound to in the test input) raises inside the condition. The
+# substitution must still be dropped (the policy #1079 questions), but the
+# raise must be visible in the debug log (#1079).
+name: raising-condition
+pattern: '[[ x -> !e1 ]]'
+result: '[[ x -> "hi" ]]'
+when:
+  matches: ['hello', '!e1']
