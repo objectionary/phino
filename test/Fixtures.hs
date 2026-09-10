@@ -8,8 +8,10 @@
 -- 'test-resources/atoms/primitives.js', registered under every name in
 -- 'fixtureAtoms' and branching on the one each request names under 'λ',
 -- another, 'test-resources/atoms/asking.js', which reduces nothing itself and
--- asks phino for its operands, or a POSIX shell script written for the
--- occasion, either run once per fire or kept resident for the run.
+-- asks phino for its operands, a third, 'test-resources/atoms/asking-loops.js',
+-- which asks a question that never stops cycling, or a POSIX shell script
+-- written for the occasion, either run once per fire or kept resident for the
+-- run.
 module Fixtures
   ( fixtureAtoms
   , fixtureRegistry
@@ -17,6 +19,7 @@ module Fixtures
   , withAskingRegistry
   , withExecutable
   , withFixtureRegistry
+  , withLoopingAskRegistry
   , withNode
   , withRegistryOf
   , withScript
@@ -80,6 +83,17 @@ withAskingRegistry :: (FilePath -> IO a) -> IO a
 withAskingRegistry action = do
   script <- fixtureScript "asking.js"
   withRegistryOf (object ["L_number_plus" .= entry script]) action
+  where
+    entry :: T.Text -> Value
+    entry script = object ["rt" .= ("node" :: T.Text), "script" .= script, "serve" .= True]
+
+-- The registry of the resident program that asks about a term the universe
+-- never finishes reducing: under '--partial' phino must park the looping
+-- question and hand the residual back rather than fail the run (#1078)
+withLoopingAskRegistry :: (FilePath -> IO a) -> IO a
+withLoopingAskRegistry action = do
+  script <- fixtureScript "asking-loops.js"
+  withRegistryOf (object ["L_number_gt" .= entry script]) action
   where
     entry :: T.Text -> Value
     entry script = object ["rt" .= ("node" :: T.Text), "script" .= script, "serve" .= True]
