@@ -24,6 +24,7 @@ where
 import AST
 import Bytes (btsIsUtf8, btsSize, btsToNum, btsToStr, bytesToBts)
 import Control.Exception (Exception (displayException), throwIO)
+import Control.Monad (unless)
 import Data.Bifunctor (bimap)
 import Data.Foldable (foldlM)
 import Data.List (intercalate)
@@ -48,6 +49,7 @@ import qualified Text.XML.Cursor as C
 data XmirContext = XmirContext
   { _omitListing :: Bool
   , _omitComments :: Bool
+  , _hideRho :: Bool
   , _listing :: Expression -> String
   }
 
@@ -58,7 +60,7 @@ gitRevision :: String
 gitRevision = take 7 $(gitHash)
 
 defaultXmirContext :: XmirContext
-defaultXmirContext = XmirContext True True (const "")
+defaultXmirContext = XmirContext True True False (const "")
 
 data XMIRException
   = UnsupportedTopExpression Expression
@@ -173,56 +175,48 @@ namedBinding name expr ctx = do
   (base, children) <- expression expr ctx
   pure (object [("name", name), ("base", base)] children)
 
+-- Render a formation's bindings as child nodes, honoring '--hide-rho' by
+-- dropping every bound ρ before it reaches the nodes (#1076)
 nestedBindings :: [Binding] -> XmirContext -> IO [Node]
-nestedBindings bds ctx = catMaybes <$> mapM (`formationBinding` ctx) bds
+nestedBindings bds ctx@XmirContext{..} = catMaybes <$> mapM (`formationBinding` ctx) bds'
+  where
+    bds' :: [Binding]
+    bds' = if _hideRho then filter (not . isRho) bds else bds
+    isRho :: Binding -> Bool
+    isRho (BiTau AtRho _) = True
+    isRho _ = False
 
 expressionToXMIR :: Expression -> XmirContext -> IO Document
-expressionToXMIR expr@(ExFormation [BiTau (AtLabel _) arg, BiVoid AtRho]) ctx@XmirContext{..} = case arg of
-  ExFormation _ -> expressionToXMIR'
-  ExApplication _ _ -> expressionToXMIR'
-  ExDispatch _ _ -> expressionToXMIR'
-  ExRoot -> expressionToXMIR'
+expressionToXMIR expr@(ExFormation [BiTau (AtLabel _) arg, BiVoid AtRho]) ctx = case arg of
+  ExFormation _ -> programToXMIR expr ctx
+  ExApplication _ _ -> programToXMIR expr ctx
+  ExDispatch _ _ -> programToXMIR expr ctx
+  ExRoot -> programToXMIR expr ctx
   _ -> throwIO (UnsupportedTopExpression expr)
+-- The top of a '--partial' residual and the result of 'merge' are arbitrary
+-- formations: several τ/λ bindings, voids and a bound ρ. Every binding such a
+-- formation carries becomes a child of <object>; 'xmirToPhi' reads the list
+-- back (#1076)
+expressionToXMIR expr@(ExFormation bds) ctx =
+  documentWith ctx [] expr rootNodes
   where
-    expressionToXMIR' :: IO Document
-    expressionToXMIR' = do
-      started <- getCurrentTime
-      (pckg, expr') <- getPackage expr
-      root <- rootExpression expr' ctx
-      now <- getCurrentTime
-      let text = _listing expr
-          listing =
-            if _omitListing
-              then show (length (lines text)) ++ " line(s)"
-              else text
-          listing' = NodeElement (element "listing" [] [NodeContent (T.pack listing)])
-          metas = metasWithPackage (intercalate "." pckg)
-          ms :: Int
-          ms = round (diffUTCTime now started * 1000)
-          revisionAttr = [("revision", gitRevision) | gitRevision /= "UNKNOWN"]
-          attrs =
-            [ ("author", "phino")
-            , ("dob", formatTime defaultTimeLocale "%Y-%m-%dT%H:%M:%S" now)
-            , ("ms", show ms)
-            , ("time", time now)
-            , ("version", showVersion version)
-            , ("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance")
-            , ("xsi:noNamespaceSchemaLocation", "https://raw.githubusercontent.com/objectionary/eo/refs/heads/gh-pages/XMIR.xsd")
-            ]
-              <> revisionAttr
-      pure
-        ( Document
-            (Prologue [] Nothing [])
-            ( element
-                "object"
-                attrs
-                ( if null pckg
-                    then [listing', root]
-                    else [listing', metas, root]
-                )
-            )
-            []
-        )
+    rootNodes :: IO [Node]
+    rootNodes = do
+      roots <- nestedBindings bds ctx
+      unless (any isElement roots) (throwIO (UnsupportedTopExpression expr))
+      pure roots
+    isElement :: Node -> Bool
+    isElement (NodeElement _) = True
+    isElement _ = False
+expressionToXMIR expr _ = throwIO (UnsupportedTopExpression expr)
+
+-- A program document: the package spine is peeled off the top level into
+-- <metas> and the single binding left becomes the root <o> element
+programToXMIR :: Expression -> XmirContext -> IO Document
+programToXMIR expr ctx = do
+  (pckg, expr') <- getPackage expr
+  documentWith ctx pckg expr (rootNodes expr' ctx)
+  where
     -- Extract package from given expression
     -- The function returns tuple (X, Y), where
     -- - X: list of package parts
@@ -237,12 +231,51 @@ expressionToXMIR expr@(ExFormation [BiTau (AtLabel _) arg, BiVoid AtRho]) ctx@Xm
     getPackage (ExFormation [BiTau at ex, BiLambda (Function "Package"), BiVoid AtRho]) = pure ([], ExFormation [BiTau at ex, BiVoid AtRho])
     getPackage (ExFormation [bd, BiVoid AtRho]) = pure ([], ExFormation [bd, BiVoid AtRho])
     getPackage ex = throwIO (userError (printf "Can't extract package from given expression:\n %s" (printExpression ex)))
-    -- Convert root Expression to Node
-    rootExpression :: Expression -> XmirContext -> IO Node
-    rootExpression (ExFormation [bd, BiVoid AtRho]) c = do
-      [bd'] <- nestedBindings [bd] c
-      pure bd'
-    rootExpression ex _ = throwIO (UnsupportedExpression ex)
+    rootNodes :: Expression -> XmirContext -> IO [Node]
+    rootNodes (ExFormation [bd, BiVoid AtRho]) c = nestedBindings [bd] c
+    rootNodes ex _ = throwIO (UnsupportedExpression ex)
+
+-- Assemble the <object> document: timing attributes, the listing, <metas>
+-- when the expression carries a package, and the root nodes below them
+documentWith :: XmirContext -> [String] -> Expression -> IO [Node] -> IO Document
+documentWith XmirContext{..} pckg expr rootsIO = do
+  started <- getCurrentTime
+  roots <- rootsIO
+  now <- getCurrentTime
+  let text = _listing expr
+      listing =
+        if _omitListing
+          then show (length (lines text)) ++ " line(s)"
+          else text
+      listing' = NodeElement (element "listing" [] [NodeContent (T.pack listing)])
+      metas = metasWithPackage (intercalate "." pckg)
+      ms :: Int
+      ms = round (diffUTCTime now started * 1000)
+      revisionAttr = [("revision", gitRevision) | gitRevision /= "UNKNOWN"]
+      attrs =
+        [ ("author", "phino")
+        , ("dob", formatTime defaultTimeLocale "%Y-%m-%dT%H:%M:%S" now)
+        , ("ms", show ms)
+        , ("time", time now)
+        , ("version", showVersion version)
+        , ("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance")
+        , ("xsi:noNamespaceSchemaLocation", "https://raw.githubusercontent.com/objectionary/eo/refs/heads/gh-pages/XMIR.xsd")
+        ]
+          <> revisionAttr
+  pure
+    ( Document
+        (Prologue [] Nothing [])
+        ( element
+            "object"
+            attrs
+            ( if null pckg
+                then [listing'] <> roots
+                else [listing', metas] <> roots
+            )
+        )
+        []
+    )
+  where
     -- Returns metas Node with package:
     -- <metas>
     --   <meta>
@@ -252,7 +285,7 @@ expressionToXMIR expr@(ExFormation [BiTau (AtLabel _) arg, BiVoid AtRho]) ctx@Xm
     --   </meta>
     -- </metas>
     metasWithPackage :: String -> Node
-    metasWithPackage pckg =
+    metasWithPackage package =
       NodeElement
         ( element
             "metas"
@@ -262,21 +295,20 @@ expressionToXMIR expr@(ExFormation [BiTau (AtLabel _) arg, BiVoid AtRho]) ctx@Xm
                     "meta"
                     []
                     [ NodeElement (element "head" [] [NodeContent (T.pack "package")])
-                    , NodeElement (element "tail" [] [NodeContent (T.pack pckg)])
-                    , NodeElement (element "part" [] [NodeContent (T.pack pckg)])
+                    , NodeElement (element "tail" [] [NodeContent (T.pack package)])
+                    , NodeElement (element "part" [] [NodeContent (T.pack package)])
                     ]
                 )
             ]
         )
     time :: UTCTime -> String
-    time now =
-      let base = formatTime defaultTimeLocale "%Y-%m-%dT%H:%M:%S" now
-          posix = utcTimeToPOSIXSeconds now
+    time stamp =
+      let base = formatTime defaultTimeLocale "%Y-%m-%dT%H:%M:%S" stamp
+          posix = utcTimeToPOSIXSeconds stamp
           fractional :: Double
           fractional = realToFrac posix - fromInteger (floor posix)
           nanos = floor (fractional * 1_000_000_000) :: Int
        in base ++ "." ++ printf "%09d" nanos ++ "Z"
-expressionToXMIR expr _ = throwIO (UnsupportedTopExpression expr)
 
 escapeXML :: String -> String
 escapeXML = concatMap escapeChar
@@ -390,15 +422,30 @@ parseXMIR xmir = case parseText def (TL.pack xmir) of
 parseXMIRThrows :: String -> IO Document
 parseXMIRThrows xmir = orThrow CouldNotParseXMIR (parseXMIR xmir)
 
+-- Children of <object> that no document may carry: processing instructions
+-- and bare text. Comments, the listing and the <o> bindings are legitimate;
+-- anything else makes the element unrenderable back to 𝜑, so the reader
+-- rejects the document whole (the cursor is shown by the error verbatim)
+strayNodes :: C.Cursor -> [Node]
+strayNodes doc = filter bad (map C.node (C.child doc))
+  where
+    bad :: Node -> Bool
+    bad (NodeInstruction _) = True
+    bad (NodeContent t) = not (T.null (T.strip t))
+    bad _ = False
+
 xmirToPhi :: Document -> IO Expression
 xmirToPhi xmir =
   let doc = C.fromDocument xmir
    in case C.node doc of
         NodeElement el
           | nameLocalName (elementName el) == "object" -> do
-              obj <- case doc C.$/ C.element (toName "o") of
-                [o] -> xmirToFormationBinding o []
-                _ -> throwIO (InvalidXMIRFormat "Expected single <o> element in <object>" doc)
+              unless (null (strayNodes doc)) (throwIO (InvalidXMIRFormat "No processing instructions or bare text are allowed in <object>" doc))
+              bds <- case doc C.$/ C.element (toName "o") of
+                [] -> throwIO (InvalidXMIRFormat "Expected at least one <o> element in <object>" doc)
+                -- A residual document (printed by '--partial', #1076) carries
+                -- one <o> per binding of the stuck formation, so read them all
+                os -> uniqueBindings' =<< mapM (`xmirToFormationBinding` []) os
               let pckg =
                     [ T.unpack t
                     | meta <- doc C.$/ C.element (toName "metas") C.&/ C.element (toName "meta")
@@ -408,10 +455,12 @@ xmirToPhi xmir =
                     , t <- T.splitOn "." tail'
                     ]
               if null pckg
-                then pure (ExFormation [obj, BiVoid AtRho])
-                else
-                  let bd = foldr (\part acc -> BiTau (AtLabel (T.pack part)) (ExFormation [acc, BiLambda (Function "Package"), BiVoid AtRho])) obj pckg
-                   in pure (ExFormation [bd, BiVoid AtRho])
+                then pure (ExFormation (withVoidRho bds))
+                else case bds of
+                  [obj] ->
+                    let bd = foldr (\part acc -> BiTau (AtLabel (T.pack part)) (ExFormation [acc, BiLambda (Function "Package"), BiVoid AtRho])) obj pckg
+                     in pure (ExFormation [bd, BiVoid AtRho])
+                  _ -> throwIO (InvalidXMIRFormat "A <object> with <metas> package must hold a single <o>" doc)
           | otherwise -> throwIO (InvalidXMIRFormat "Expected single <object> element" doc)
         _ -> throwIO (InvalidXMIRFormat "NodeElement is expected as root element" doc)
 
