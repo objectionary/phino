@@ -272,6 +272,7 @@ spec = do
       , ("keeps Δ data bound to a named attribute", "[[ k -> [[ a -> [[ D> 01-02 ]], ^ -> [[ D> 03-04 ]] ]] ]]")
       , ("keeps Δ data in a dispatched formation", "[[ k -> [[ D> 01-02 ]].plus ]]")
       , ("keeps a bare 'Q' bound to a named attribute", "[[ x -> Q ]]")
+      , ("keeps a formation bound to φ", "[[ k -> [[ @ -> [[ L> S8 ]] ]] ]]")
       ]
       ( \(desc, source) -> it desc $ do
           expr <- parseExpressionThrows source
@@ -388,6 +389,15 @@ spec = do
               (\cur -> C.attribute (toName "name") cur == ["φ"] && C.attribute (toName "base") cur == ["∅"])
               nested
       length phiVoid `shouldBe` 1
+
+    it "renders a formation bound to φ without an empty @base (#1189)" $ do
+      expr <- parseExpressionThrows "[[ x -> [[ @ -> [[ L> S8 ]] ]] ]]"
+      xmir' <- expressionToXMIR expr defaultXmirContext
+      let phis =
+            filter
+              (\cur -> C.attribute (toName "name") cur == ["φ"] && null (C.attribute (toName "base") cur))
+              (C.fromDocument xmir' C.$/ C.element (toName "o") C.&/ C.element (toName "o"))
+      length phis `shouldBe` 1
 
     it "renders a bare global reference as the top-level value" $ do
       expr <- parseExpressionThrows "[[ x -> Q ]]"

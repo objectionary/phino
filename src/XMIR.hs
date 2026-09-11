@@ -157,9 +157,7 @@ expression expr _ = throwIO (UnsupportedExpression expr)
 formationBinding :: Binding -> XmirContext -> IO (Maybe Node)
 formationBinding (BiTau (AtLabel label) expr) ctx = Just <$> namedBinding (T.unpack label) expr ctx
 formationBinding (BiTau AtRho expr) ctx = Just <$> namedBinding (show AtRho) expr ctx
-formationBinding (BiTau AtPhi expr) ctx = do
-  (base, children) <- expression expr ctx
-  pure (Just (object [("name", show AtPhi), ("base", base)] children))
+formationBinding (BiTau AtPhi expr) ctx = Just <$> namedBinding (show AtPhi) expr ctx
 formationBinding (BiDelta bytes) _ = pure (Just (NodeContent (T.pack (printBytes bytes))))
 formationBinding (BiLambda (Function name)) _ = pure (Just (object [("name", show AtLambda)] [NodeContent name]))
 formationBinding (BiVoid AtRho) _ = pure Nothing
