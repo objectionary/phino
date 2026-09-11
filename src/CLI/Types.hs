@@ -228,6 +228,7 @@ data OptsMerge = OptsMerge
   , _margin :: Int
   , _targetFile :: Maybe FilePath
   , _inputs :: [FilePath]
+  , _seed :: Int
   }
 
 data OptsMatch = OptsMatch
@@ -238,4 +239,5 @@ data OptsMatch = OptsMatch
   , _pattern :: Maybe String
   , _when :: Maybe String
   , _inputFile :: Maybe FilePath
+  , _seed :: Int
   }

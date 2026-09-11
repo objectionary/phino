@@ -464,6 +464,7 @@ mergeParser =
             <*> optMargin
             <*> optTarget
             <*> many (argument str (metavar "[FILE]" <> help "Paths to input files"))
+            <*> optSeed
         )
 
 matchParser :: Parser Command
@@ -477,6 +478,7 @@ matchParser =
             <*> optional (strOption (long "pattern" <> metavar "EXPRESSION" <> help "Pattern expression to match against"))
             <*> optional (strOption (long "when" <> metavar "CONDITION" <> help "Predicate for matched substitutions"))
             <*> argInputFile
+            <*> optSeed
         )
 
 commandParser :: Parser Command

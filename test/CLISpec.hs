@@ -2085,6 +2085,18 @@ spec = do
         ["merge", resource "desugar.phi", "--output=xmir"]
         ["<?xml version=\"1.0\" encoding=\"UTF-8\"?>", "<listing>⟦ foo ↦ ξ.x, ρ ↦ ∅ ⟧</listing>", "<o base=\"ξ.x\" name=\"foo\"/>"]
 
+    it "reproduces the same output for the same --seed" $ do
+      let args =
+            [ "merge"
+            , "--seed=42"
+            , "--sweet"
+            , resource "number.phi"
+            , resource "bytes.phi"
+            ]
+      (firstRun, _) <- withStdout (runCLI args)
+      (secondRun, _) <- withStdout (runCLI args)
+      firstRun `shouldBe` secondRun
+
   describe "match" $ do
     it "prints help" $
       testCLISucceeded
@@ -2102,13 +2114,22 @@ spec = do
       withStdin "[[]]" $
         testCLISucceeded ["match", "--log-level=debug"] ["[DEBUG]: The --pattern is not provided, no substitutions are built"]
 
-    it "prints one substitution" $
-      withStdin "[[ x -> Q.x ]]" $
-        testCLISucceeded ["match", "--pattern=Q.!t"] ["t >> x"]
-
-    it "does not accept a --seed flag (matching has nothing random)" $
-      withStdin "[[ x -> Q.x ]]" $
-        testCLIFailed ["match", "--seed=3", "--pattern=Q.!t"] ["Invalid option `--seed=3'"]
+    it "reproduces the same output for the same --seed" $ do
+      dir <- getTemporaryDirectory
+      let file = dir ++ "/phino-match-seed-test.phi"
+      writeFile file "[[ x -> Q.x, y -> Q.y, z -> Q.z ]]"
+      let args =
+            [ "match"
+            , "--seed=42"
+            , "--sweet"
+            , "--flat"
+            , "--pattern=Q.!t"
+            , file
+            ]
+      (firstRun, _) <- withStdout (runCLI args)
+      (secondRun, _) <- withStdout (runCLI args)
+      firstRun `shouldBe` secondRun
+      removeFile file
 
     it "prints many substitutions" $
       withStdin "[[ x -> Q.x, y -> Q.y ]]" $

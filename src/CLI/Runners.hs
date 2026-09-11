@@ -328,6 +328,7 @@ runMerge :: OptsMerge -> IO ()
 runMerge OptsMerge{..} = do
   validateOpts
   inputs' <- traverse (readInput . Just) _inputs
+  setStdGen (mkStdGen _seed)
   exprs <- traverse (`parseInput` _inputFormat) inputs'
   expr <- merge exprs
   validateXmirTopLevel _outputFormat expr
@@ -364,6 +365,7 @@ runMerge OptsMerge{..} = do
 
 runMatch :: OptsMatch -> IO ()
 runMatch OptsMatch{..} = do
+  setStdGen (mkStdGen _seed)
   input <- readInput _inputFile
   expr <- parseInput input PHI
   if isNothing _pattern
