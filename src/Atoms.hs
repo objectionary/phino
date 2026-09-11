@@ -506,35 +506,37 @@ asked func Running{..} form univ channel reduce = do
     -- what the attribute carries, as 'ask' does, or to hand the node over as
     -- it is (#1165).
     referenced :: Int -> Int -> T.Text -> Bool -> IO ()
-    referenced minted req name doReduce = do
-      spoken' <- describe
-      case spoken' of
-        Left failure -> throwIO (AtomMute func described failure)
-        Right value -> do
-          logDebug (printf "Atom '%s' asks phino for '%s' of request %d%s as question %d" (T.unpack func) (T.unpack name) req (if doReduce then ", reduced," else ", as it is," :: String) minted)
-          answer <- if doReduce then reduce value else pure value
-          said (lined (object ["id" .= minted, "𝑛" .= spelled answer]))
+    referenced minted req attrName doReduce = case channel of
+      Closed -> throwIO (AtomMute func described "it asks phino for an attribute of a previous request, while its stdin is closed, since its entry does not say 'serve'")
+      Open -> do
+        spoken' <- describe
+        case spoken' of
+          Left failure -> throwIO (AtomMute func described failure)
+          Right value -> do
+            logDebug (printf "Atom '%s' asks phino for '%s' of request %d%s as question %d" (T.unpack func) (T.unpack attrName) req (if doReduce then ", reduced," else ", as it is," :: String) minted)
+            answer <- if doReduce then reduce value else pure value
+            said (lined (object ["id" .= minted, "𝑛" .= spelled answer]))
       where
         described :: String
-        described = printf "{'of':%d,'attr':'%s'}" req (T.unpack name)
+        described = printf "{'of':%d,'attr':'%s'}" req (T.unpack attrName)
         describe :: IO (Either String Expression)
         describe = do
           forms <- readIORef _forms
           pure $ case IM.lookup req forms of
-            Nothing -> Left (printf "there is no in-flight request %d to take '%s' from" req (T.unpack name))
-            Just form' -> case attributeValue name form' of
-              Nothing -> Left (printf "the receiver of request %d carries no attribute '%s'" req (T.unpack name))
+            Nothing -> Left (printf "there is no in-flight request %d to take '%s' from" req (T.unpack attrName))
+            Just form' -> case attributeValue attrName form' of
+              Nothing -> Left (printf "the receiver of request %d carries no attribute '%s'" req (T.unpack attrName))
               Just value -> Right value
-    attributeValue :: T.Text -> Expression -> Maybe Expression
-    attributeValue name (ExFormation bds) = go bds
-      where
-        go :: [Binding] -> Maybe Expression
-        go [] = Nothing
-        go (BiTau attr value : rest)
-          | T.pack (printAttribute attr) == name = Just value
-          | otherwise = go rest
-        go (_ : rest) = go rest
-    attributeValue _ _ = Nothing
+        attributeValue :: T.Text -> Expression -> Maybe Expression
+        attributeValue name (ExFormation bds) = go bds
+          where
+            go :: [Binding] -> Maybe Expression
+            go [] = Nothing
+            go (BiTau attr value : rest)
+              | T.pack (printAttribute attr) == name = Just value
+              | otherwise = go rest
+            go (_ : rest) = go rest
+        attributeValue _ _ = Nothing
     -- Reduce the 𝜑-expression the program asks about and say it back under
     -- '𝑛', with the 'id' the question minted. A program started for the fire
     -- has nothing to be answered over, since phino closed its stdin behind the
