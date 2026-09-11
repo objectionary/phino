@@ -432,8 +432,7 @@ started func program = do
       Executable file -> pure (file, [], Nothing)
       Scripted runtime script -> do
         (path, handle) <- openBinaryTempFile dir (printf "phino-atom-.%s" (extension runtime))
-        BS.hPut handle (encodeUtf8 script)
-        hClose handle
+        BS.hPut handle (encodeUtf8 script) >> hClose handle `onException` removePathForcibly path
         pure (interpreter runtime, [path], Just path)
     spawned :: String -> [String] -> Handle -> IO (Handle, Handle, ProcessHandle)
     spawned executable arguments stderr' = do
