@@ -419,9 +419,12 @@ btsSlice start len bts
 -- BtMany ["00","00"]
 btsShift :: Int -> Bytes -> Bytes
 btsShift bits bts
+  | magnitude >= toInteger size * 8 = word8ToBytes (replicate size 0)
   | bits < 0 = word8ToBytes (map leftwards indices)
   | otherwise = word8ToBytes (map rightwards indices)
   where
+    magnitude :: Integer
+    magnitude = abs (toInteger bits)
     octets :: [Word8]
     octets = btsToWord8 bts
     size :: Int
@@ -429,9 +432,9 @@ btsShift bits bts
     indices :: [Int]
     indices = [0 .. size - 1]
     modulo :: Int
-    modulo = abs bits `mod` 8
+    modulo = fromInteger (magnitude `mod` 8)
     offset :: Int
-    offset = abs bits `div` 8
+    offset = fromInteger (magnitude `div` 8)
     octet :: Int -> Word8
     octet index = octets !! index
     rightwards :: Int -> Word8
