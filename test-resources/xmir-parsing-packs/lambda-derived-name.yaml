@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+xmir: |
+  <object>
+    <o name="foo">
+      <o name="l🌵ab12">
+        <o base="∅" name="v0"/>
+        <o name="λ"/>
+      </o>
+    </o>
+  </object>
+phi: '[[ foo -> [[ l🌵ab12 -> [[ v0 -> ?, L> L_foo_l_ab12 ]] ]] ]]'
