@@ -319,18 +319,18 @@ morph universe ctx@DataizeContext{..} = do
 -- registry allows. Every entry is charged to the '--max-steps' budget, which
 -- is what bounds the walk.
 deepened :: Expression -> Expression -> State -> DataizeContext -> IO (Expression, State)
-deepened expr univ = go ExXi expr
+deepened expr univ = go Nothing ExXi expr
   where
     -- A term as it was written, together with what its free ξ stands for: the
     -- formation the walk entered it from, without the binding it came from,
     -- exactly the context the 'dot' rule hands a dispatched body. At the top
     -- there is no such formation, so ξ stands for itself and contextualization
     -- leaves the term alone.
-    go :: Expression -> Expression -> State -> DataizeContext -> IO (Expression, State)
-    go context term state' caller = do
+    go :: Maybe Attribute -> Expression -> Expression -> State -> DataizeContext -> IO (Expression, State)
+    go dispatched context term state' caller = do
       ctx' <- deeper caller
       (walked, walkedState) <- parts context term state' caller
-      answer <- fired (contextualize walked context) univ walkedState ctx'
+      answer <- fired dispatched (contextualize walked context) univ walkedState ctx'
       maybe (pure (walked, walkedState)) pure answer
     -- The parts of a term nothing fired on, walked one by one and put back
     -- where they were, so the term keeps the shape it was written in.
@@ -339,10 +339,10 @@ deepened expr univ = go ExXi expr
       (entered, state'') <- bindings bds bds state' caller
       pure (ExFormation entered, state'')
     parts context (ExDispatch target attr) state' caller = do
-      (entered, state'') <- go context target state' caller
+      (entered, state'') <- go (Just attr) context target state' caller
       pure (ExDispatch entered attr, state'')
     parts context (ExApplication target arg) state' caller = do
-      (entered, state'') <- go context target state' caller
+      (entered, state'') <- go Nothing context target state' caller
       (applied, state''') <- argument context arg state'' caller
       pure (ExApplication entered applied, state''')
     parts _ term state' _ = pure (term, state')
@@ -354,7 +354,7 @@ deepened expr univ = go ExXi expr
     bindings _ [] state' _ = pure ([], state')
     bindings whole (BiTau attr body : rest) state' caller
       | attr /= AtRho = do
-          (entered, state'') <- go (scope attr whole) body state' caller
+          (entered, state'') <- go Nothing (scope attr whole) body state' caller
           (others, state''') <- bindings whole rest state'' caller
           pure (BiTau attr entered : others, state''')
     bindings whole (bd : rest) state' caller = do
@@ -373,10 +373,10 @@ deepened expr univ = go ExXi expr
     -- applies is walked by the caller and the argument it binds is walked here.
     argument :: Expression -> Argument -> State -> DataizeContext -> IO (Argument, State)
     argument context (ArTau attr arg) state' caller = do
-      (entered, state'') <- go context arg state' caller
+      (entered, state'') <- go Nothing context arg state' caller
       pure (ArTau attr entered, state'')
     argument context (ArAlpha alpha arg) state' caller = do
-      (entered, state'') <- go context arg state' caller
+      (entered, state'') <- go Nothing context arg state' caller
       pure (ArAlpha alpha entered, state'')
 
 -- Ask 𝕄 about a term and fire the λ of the formation it reaches, as long as
@@ -391,16 +391,31 @@ deepened expr univ = go ExXi expr
 -- compute stays as it was written with or without '_partial'; an atom that
 -- cannot fire deeper on the spine still fails the run, exactly as it does
 -- under 𝕄 alone, and '_partial' parks it. A formation still waiting for its
--- arguments is left alone too (see 'saturated').
-fired :: Expression -> Expression -> State -> DataizeContext -> IO (Maybe (Expression, State))
-fired term univ state caller = do
+-- arguments is left alone too (see 'saturated'). A term standing as the target
+-- of a dispatch is where 'ml' has its say: the λ is fired only where the
+-- dispatched attribute is none of the formation's own (see 'demanded').
+fired :: Maybe Attribute -> Expression -> Expression -> State -> DataizeContext -> IO (Maybe (Expression, State))
+fired dispatched term univ state caller = do
   ctx <- deeper caller
   morphed <- try (reduced ctx)
   case morphed of
-    Right (ExFormation bds, state') -> maybe (pure Nothing) (evaluated ctx state') (saturated bds)
+    Right (ExFormation bds, state')
+      | demanded bds -> maybe (pure Nothing) (evaluated ctx state') (saturated bds)
     Right _ -> pure Nothing
     Left failure -> parked failure
   where
+    -- Whether the dispatch the term stands under demands the λ of the formation
+    -- 𝕄 reached. 'ml' fires that λ only where the dispatched attribute is none
+    -- of the formation's own, since 'dot' resolves the dispatch before 'ml' is
+    -- ever reached, and a walk firing it first answers a formation the dispatch
+    -- no longer fits (#1187). A term standing anywhere else is demanded by
+    -- nothing and the walk fires what 'mf' left bare, as it always has.
+    demanded :: [Binding] -> Bool
+    demanded bds = not (any bound bds)
+      where
+        bound :: Binding -> Bool
+        bound (BiTau attr _) = Just attr == dispatched
+        bound _ = False
     -- 𝕄 takes normal forms only and a term taken from the program as it was
     -- written is not necessarily one, so it is normalized against the universe
     -- first, exactly as '--inside' normalizes what it is handed. Both chains
@@ -421,7 +436,7 @@ fired term univ state caller = do
       Just registered -> do
         answer <- fireAtom func registered self univ (reduction univ ctx)
         ctx._saveEval (Evaluation func self (Just answer))
-        again <- fired answer univ state' ctx
+        again <- fired dispatched answer univ state' ctx
         pure (Just (fromMaybe (answer, state') again))
     parked :: DataizeException -> IO (Maybe a)
     parked (Stuck _) | caller._partial = pure Nothing
