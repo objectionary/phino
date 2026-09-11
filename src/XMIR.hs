@@ -26,6 +26,7 @@ import Bytes (btsIsUtf8, btsSize, btsToNum, btsToStr, bytesToBts)
 import Control.Exception (Exception (displayException), throwIO)
 import Control.Monad (unless)
 import Data.Bifunctor (bimap)
+import Data.Char (isAsciiLower, isDigit)
 import Data.Foldable (foldlM)
 import Data.List (intercalate)
 import qualified Data.Map as M
@@ -505,7 +506,12 @@ xmirToFormationBinding cur fqn
     lambdaFunction :: IO T.Text
     lambdaFunction
       | hasText cur = T.strip . T.pack <$> getText cur
-      | otherwise = pure (T.pack (intercalate "_" ("L" : reverse fqn)))
+      | otherwise = pure (T.pack (intercalate "_" ("L" : map (map spell) (reverse fqn))))
+    -- A binding label admits nearly any character, while 'function' admits a
+    -- digit, an ASCII lowercase letter, '_' and 'φ' only, so everything else
+    -- folds into '_' and the derived name stays readable back (#1188)
+    spell :: Char -> Char
+    spell ch = if isDigit ch || isAsciiLower ch || ch == '_' || ch == 'φ' then ch else '_'
 
 -- A formation keeps its Δ data in the text content of its own element, the way
 -- the printer emits a Δ binding, while the rest of the bindings live in the

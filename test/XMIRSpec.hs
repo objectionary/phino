@@ -20,6 +20,7 @@ import Data.Yaml qualified as Yaml
 import Files (allPathsIn)
 import GHC.Generics (Generic)
 import Parser (parseExpressionThrows)
+import Printer (printExpression)
 import System.FilePath (makeRelative)
 import Test.Hspec (Spec, anyException, describe, expectationFailure, it, runIO, shouldBe, shouldContain, shouldNotContain, shouldReturn, shouldThrow)
 import Text.XML (Document (..), Element (..), Node (NodeElement), Prologue (..))
@@ -223,6 +224,14 @@ spec = do
           back <- xmirToPhi doc'
           back `shouldBe` expr
       )
+
+  -- A λ marker with no text is named after the enclosing bindings, whose
+  -- labels admit characters the 'function' parser refuses (#1188)
+  describe "derived λ function name" $
+    it "spells itself in the alphabet the parser accepts" $ do
+      doc <- parseXMIRThrows "<object><o name=\"foo\"><o name=\"l🌵ab12\"><o base=\"∅\" name=\"v0\"/><o name=\"λ\"/></o></o></object>"
+      expr <- xmirToPhi doc
+      parseExpressionThrows (printExpression expr) `shouldReturn` expr
 
   describe "--hide-rho in XMIR" $
     it "drops every bound ρ from the printed document" $ do
