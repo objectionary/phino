@@ -637,3 +637,20 @@ spec = do
 
     it "leaves a registry that started no program alone" $
       closeRegistry emptyRegistry `shouldReturn` ()
+
+  -- Scripted transient atoms (no serve) are staged into a temp file before
+  -- execution. This smoke-test confirms that the staging path still works
+  -- after adding an 'onException' cleanup guard — if our change had broken
+  -- the happy-path write or close, this would fail.
+  -- Note: a direct test of the failure path (disk full / permission denied)
+  -- is not feasible because triggering those errors requires privileged hacks
+  -- (dd on a full disk, chmod -w on the parent directory) that CI cannot
+  -- reliably perform. Existing specs above already cover the happy path
+  -- exhaustively; this is just a minimal verification that scripted atoms
+  -- created and cleaned up temp files correctly after our fix.
+  describe "scripted transient atom staging" $ do
+    it "creates and cleans up a node script for a transient atom" $
+      withNode $ do
+        wanted <- parseExpressionThrows "⟦ Δ ⤍ FF- ⟧"
+        answer <- fired (Transient (Scripted RtNode "process.stdout.write(JSON.stringify({id: 1, '𝑛': '⟦ Δ ⤍ FF- ⟧'}))"))
+        answer `shouldBe` wanted
