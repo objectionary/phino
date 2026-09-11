@@ -7,7 +7,7 @@
 module DataizeSpec (spec) where
 
 import AST
-import Atoms (Registry, emptyRegistry)
+import Atoms (Registry, emptyRegistry, readRegistry)
 import Control.Exception (SomeException)
 import Control.Monad
 import Data.IORef (modifyIORef', newIORef, readIORef)
@@ -16,7 +16,7 @@ import Data.List.NonEmpty (NonEmpty (..))
 import Data.Maybe (fromMaybe, isJust)
 import Dataize (DataizeContext (..), Outcome (..), Steps (..), dataize, dataize', emptyState, execBuildTerm, insideUniverse, morph, morph')
 import Deps (Evaluation (..), Term (TeExpression), dontSaveEval, dontSaveStep)
-import Fixtures (fixtureRegistry, withNode)
+import Fixtures (fixtureRegistry, withNode, withServing, withShell)
 import Functions (buildTerm)
 import Matcher (substEmpty)
 import Parser (parseExpressionThrows)
@@ -286,6 +286,18 @@ spec = do
         expr <- stuck
         (morphed, _) <- morph expr (defaultDataizeContext ExRoot){_deep = True, _partial = True}
         morphed `shouldBe` expr
+
+    -- The walk enters a dispatch through its target and fires the box it finds
+    -- there before 𝕄 is ever asked about the dispatch, while 'ml' demands that
+    -- λ only where the dispatched attribute is none of the box's own (#1187)
+    describe "a dispatch naming an attribute of the formation it stands on" $
+      it "cannot fire the λ the dispatch does not demand" $
+        withShell $
+          withServing "printf '{\"id\": %s, \"𝑛\": \"⟦ Δ ⤍ FF- ⟧\"}\\n' \"$id\"" $ \path -> do
+            box <- readRegistry path
+            world <- parseExpressionThrows "[[ foo -> [[ f -> [[ a -> ?, @ -> $.a, L> L_answer ]] ]], x -> Q.foo.f( a -> [[ D> 01- ]] ).@ ]]"
+            (morphed, _) <- morph world (withAtoms box (defaultDataizeContext ExRoot)){_deep = True}
+            morphed `shouldBe` world
 
   describe "morph'" $
     test'
