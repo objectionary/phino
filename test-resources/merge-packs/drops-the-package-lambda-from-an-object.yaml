@@ -2,5 +2,11 @@
 # SPDX-License-Identifier: MIT
 ---
 left: '[[ bytes -> [[ @ -> ?, ^ -> ? ]] ]]'
-right: '[[ bytes -> [[ as-bytes -> [[ ^ -> ?, @ -> $.^ ]], L> Package, ^ -> ? ]] ]]'
-result: '[[ bytes -> [[ @ -> ?, as-bytes -> [[ ^ -> ?, @ -> $.^ ]], ^ -> ? ]] ]]'
+right: |
+  [[ bytes -> [[
+    as-bytes -> [[ ^ -> ?, @ -> $.^ ]], L> Package, ^ -> ?
+  ]] ]]
+result: |
+  [[ bytes -> [[
+    @ -> ?, as-bytes -> [[ ^ -> ?, @ -> $.^ ]], ^ -> ?
+  ]] ]]
