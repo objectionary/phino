@@ -659,6 +659,36 @@ spec = do
     it "fails a question whose dotted path runs into a void attribute" $
       refusesAt "⟦ v ↦ ∅ ⟧" (referring 1 "v.length" False "*2A-*") ["L_answer", "carries no attribute 'v.length'"]
 
+    -- An argument of an application binds an attribute the way a τ binding of
+    -- a formation does, so a path walks into one just the same: a marker a
+    -- program built itself and put in a void is read back as written, since
+    -- dataizing the object around it would fire the λ inside it (#1212)
+    it "reaches an attribute an argument of an application binds" $
+      servesAt
+        "⟦ x ↦ Φ.bool( if ↦ ⟦ guard ↦ ⟦ λ ⤍ S1 ⟧ ⟧ ) ⟧"
+        (referring 1 "x.if.guard" False "*'\"λ\":\"S1\"'*")
+        "⟦ Δ ⤍ FF- ⟧"
+
+    it "walks past the arguments of an application the path does not name" $
+      servesAt
+        "⟦ x ↦ Φ.tuple( length ↦ ⟦ Δ ⤍ 01- ⟧, head ↦ ⟦ Δ ⤍ 02- ⟧ ) ⟧"
+        (referring 1 "x.length" False "*'\"Δ\":\"01-\"'*")
+        "⟦ Δ ⤍ FF- ⟧"
+
+    it "walks past a positional argument of an application" $
+      servesAt
+        "⟦ x ↦ ⟦ y ↦ ⟦ Δ ⤍ 04- ⟧ ⟧( α0 ↦ ⟦ Δ ⤍ 05- ⟧ ) ⟧"
+        (referring 1 "x.y" False "*'\"Δ\":\"04-\"'*")
+        "⟦ Δ ⤍ FF- ⟧"
+
+    -- What an application binds an attribute to is what the attribute is,
+    -- whatever the formation under it still says about it
+    it "takes the argument of an application over the void it fills" $
+      servesAt
+        "⟦ x ↦ ⟦ y ↦ ∅ ⟧( y ↦ ⟦ Δ ⤍ 03- ⟧ ) ⟧"
+        (referring 1 "x.y" False "*'\"Δ\":\"03-\"'*")
+        "⟦ Δ ⤍ FF- ⟧"
+
     -- 𝜑-calculus types nothing nominally, so the forma of a typed literal
     -- lives in the name it is dispatched off Φ by and nowhere else: an answer
     -- that is an application spells that name, the way a formation spells its

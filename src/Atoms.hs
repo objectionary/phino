@@ -55,7 +55,9 @@
 -- question from the formation it already holds for that request, so neither
 -- side ever re-prints a receiver the other side has in hand (#1165). The
 -- 'attr' may go deeper than one name: 'ρ.length' is a path down the receiver,
--- read left to right, since phino holds the whole of it anyway (#1207).
+-- read left to right, since phino holds the whole of it anyway (#1207). It
+-- walks applications as well as formations, an argument being as much a
+-- binding as a τ inside a formation (#1212).
 --
 -- Whichever way it was asked, an answer says what the node under '𝑛' carries,
 -- so that no program keeps a 𝜑 reader of its own to tell a datum from a stuck
@@ -550,30 +552,39 @@ asked func Running{..} form univ channel reduce = do
               Nothing -> Left (printf "the receiver of request %d carries no attribute '%s'" req (T.unpack attrName))
               Just held -> Right held
         -- Walk the dotted path of 'attr' down the receiver: every segment but
-        -- the last has to name a formation to go on into, and the last one is
-        -- what the question is about. An attribute bound to nothing at all
-        -- carries nothing to descend into, so a path through a void one names
-        -- no attribute (#1207).
+        -- the last has to name a formation or an application to go on into,
+        -- and the last one is what the question is about. An attribute bound
+        -- to nothing at all carries nothing to descend into, so a path through
+        -- a void one names no attribute (#1207).
         descended :: Expression -> Maybe Held
         descended form' = foldM deeper (Bound form') (T.splitOn "." attrName)
         deeper :: Held -> T.Text -> Maybe Held
         deeper (Bound expr) name = attributeValue name expr
         deeper Void _ = Nothing
+        -- An argument of an application binds an attribute the way a τ
+        -- binding of a formation does, and it is the outer of the two, so it
+        -- is what the attribute is whatever the formation under it still says
+        -- about it. A positional argument names nothing, so the walk goes past
+        -- it into what the application applies to (#1212).
         attributeValue :: T.Text -> Expression -> Maybe Held
         attributeValue name (ExFormation bds) = go bds
           where
             go :: [Binding] -> Maybe Held
             go [] = Nothing
             go (BiTau attr value : rest)
-              | named attr = Just (Bound value)
+              | named name attr = Just (Bound value)
               | otherwise = go rest
             go (BiVoid attr : rest)
-              | named attr = Just Void
+              | named name attr = Just Void
               | otherwise = go rest
             go (_ : rest) = go rest
-            named :: Attribute -> Bool
-            named attr = T.pack (printAttribute attr) == name
+        attributeValue name (ExApplication applied (ArTau attr value))
+          | named name attr = Just (Bound value)
+          | otherwise = attributeValue name applied
+        attributeValue name (ExApplication applied _) = attributeValue name applied
         attributeValue _ _ = Nothing
+        named :: T.Text -> Attribute -> Bool
+        named name attr = T.pack (printAttribute attr) == name
     -- Reduce the 𝜑-expression the program asks about and say it back under
     -- '𝑛', with the 'id' the question minted. A program started for the fire
     -- has nothing to be answered over, since phino closed its stdin behind the
