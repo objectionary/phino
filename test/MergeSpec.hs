@@ -1,103 +1,77 @@
+{-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE RecordWildCards #-}
+
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
+{- | Tests for the Merge module that unites a few top level formations
+into a single one.
+-}
 module MergeSpec where
 
 import AST (Expression)
 import Control.Exception (SomeException, try)
 import Control.Monad (forM_)
-import Data.List (intercalate)
+import Data.Aeson
+import Data.Yaml qualified as Yaml
+import Files (allPathsIn)
+import GHC.Generics (Generic)
 import Merge (merge)
 import Parser (parseExpressionThrows)
-import Test.Hspec (Spec, anyException, describe, it, shouldBe, shouldContain, shouldThrow)
+import Printer (printExpression)
+import System.FilePath
+import Test.Hspec
+import Text.Printf (printf)
+
+data YamlPack = YamlPack
+  { left :: String
+  , right :: String
+  , result :: Maybe String
+  , fails :: Maybe String
+  }
+  deriving (Generic, Show, FromJSON)
+
+yamlPack :: FilePath -> IO YamlPack
+yamlPack = Yaml.decodeFileThrow
 
 spec :: Spec
 spec = do
-  describe "merge expressions" $
+  describe "merge packs" $ do
+    let resources = "test-resources/merge-packs"
+    packs <- runIO (allPathsIn resources)
     forM_
-      [
-        ( ["[[ x -> 1 ]]", "[[ y -> 2 ]]"]
-        , "[[ x -> 1, y -> 2 ]]"
-        )
-      ,
-        ( ["[[ x -> [[ y -> 1 ]] ]]", "[[ x -> [[ z -> 2 ]] ]]"]
-        , "[[ x -> [[ y -> 1, z -> 2 ]] ]]"
-        )
-      ,
-        ( ["[[ x -> 1 ]]", "[[ x -> 1]]"]
-        , "[[ x -> 1]]"
-        )
-      ,
-        ( ["[[ org -> [[ eolang -> [[ number -> [[ ]] ]] ]] ]]", "[[ org -> [[ eolang -> [[ bytes -> [[ ]] ]] ]] ]]"]
-        , "[[ org -> [[ eolang -> [[ number -> [[ ]], bytes -> [[ ]] ]] ]] ]]"
-        )
-      ,
-        ( ["[[ x -> 1 ]]", "[[ y -> 2 ]]", "[[ z -> 3 ]]"]
-        , "[[ x -> 1, y -> 2, z -> 3 ]]"
-        )
-      ,
-        ( ["[[ x -> ? ]]", "[[ x -> ? ]]"]
-        , "[[ x -> ? ]]"
-        )
-      ,
-        ( ["[[ D> 42-, x -> [[ ]] ]]", "[[ D> 42-, y -> [[ ]] ]]"]
-        , "[[ x -> [[ ]], y -> [[ ]], D> 42- ]]"
-        )
-      ,
-        ( ["[[ bytes -> [[ @ -> ?, ^ -> ? ]] ]]", "[[ bytes -> [[ as-bytes -> [[ ^ -> ?, @ -> $.^ ]], L> Package, ^ -> ? ]] ]]"]
-        , "[[ bytes -> [[ @ -> ?, as-bytes -> [[ ^ -> ?, @ -> $.^ ]], ^ -> ? ]] ]]"
-        )
-      ,
-        ( ["[[ org -> [[ number -> [[ ]], L> Package, ^ -> ? ]] ]]", "[[ org -> [[ text -> [[ ]], L> Package, ^ -> ? ]] ]]"]
-        , "[[ org -> [[ number -> [[ ]], text -> [[ ]], L> Package, ^ -> ? ]] ]]"
-        )
-      ]
-      ( \(exprs, res) -> it res $ do
-          parsed <- mapM parseExpressionThrows exprs
-          merged <- merge parsed
-          res' <- parseExpressionThrows res
-          merged `shouldBe` res'
+      packs
+      ( \pth -> it (makeRelative resources pth) $ do
+          YamlPack{..} <- yamlPack pth
+          parsed <- mapM parseExpressionThrows [left, right]
+          case (result, fails) of
+            (Just expected, Nothing) -> do
+              merged <- merge parsed
+              expected' <- parseExpressionThrows expected
+              merged `shouldBe` expected'
+            (Nothing, Just message) -> do
+              thrown <- try (merge parsed) :: IO (Either SomeException Expression)
+              case thrown of
+                Left err -> show err `shouldContain` message
+                Right merged -> expectationFailure (printf "Merge united the sides into %s, while the pack expects it to fail" (printExpression merged))
+            _ -> expectationFailure "The pack holds neither a single 'result' nor a single 'fails'"
       )
 
-  describe "fails to merge" $
-    forM_
-      [ ["Q", "$"]
-      , ["[[ x -> 1]]", "[[ x -> 2 ]]"]
-      , ["[[ x -> [[ y -> Q ]] ]]", "[[ x -> [[ y -> $ ]] ]]"]
-      ]
-      ( \exprs -> it (intercalate " and " exprs) $ do
-          parsed <- mapM parseExpressionThrows exprs
-          merge parsed `shouldThrow` anyException
-      )
+  describe "merges a list of any length" $ do
+    it "unites three formations into one" $ do
+      parsed <- mapM parseExpressionThrows ["[[ x -> 1 ]]", "[[ y -> 2 ]]", "[[ z -> 3 ]]"]
+      merged <- merge parsed
+      expected <- parseExpressionThrows "[[ x -> 1, y -> 2, z -> 3 ]]"
+      merged `shouldBe` expected
 
-  describe "merge exception messages" $
-    forM_
-      [
-        ( "EmptyExpressionList explains there is nothing to merge"
-        , []
-        , "Nothing to merge: provide at least one expression"
-        )
-      ,
-        ( "WrongExpressionFormat renders the offending non-formation expression"
-        , ["Q"]
-        , "Invalid expression format"
-        )
-      ,
-        ( "CanNotMergeBinding renders both conflicting bindings"
-        , ["[[ x -> 1 ]]", "[[ x -> 2 ]]"]
-        , "Can't merge two bindings, conflict found"
-        )
-      ]
-      ( \(desc, exprs, message) -> it desc $ do
-          parsed <- mapM parseExpressionThrows exprs
-          result <- try (merge parsed) :: IO (Either SomeException Expression)
-          case result of
-            Left err -> show err `shouldContain` message
-            Right _ -> fail ("expected merge to throw for: " ++ desc)
-      )
-
-  describe "merge of a single expression" $
-    it "returns that expression unchanged" $ do
+    it "returns a lonely formation untouched" $ do
       parsed <- parseExpressionThrows "[[ x -> 1 ]]"
       merged <- merge [parsed]
       merged `shouldBe` parsed
+
+    it "dont accept an empty list of expressions" $ do
+      thrown <- try (merge []) :: IO (Either SomeException Expression)
+      case thrown of
+        Left err -> show err `shouldContain` "Nothing to merge: provide at least one expression"
+        Right merged -> expectationFailure (printf "Merge answered %s, while an empty list has nothing to unite" (printExpression merged))

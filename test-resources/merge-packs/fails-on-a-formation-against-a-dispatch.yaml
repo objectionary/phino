@@ -1,0 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+left: '[[ x -> [[ ]] ]]'
+right: '[[ x -> Q ]]'
+fails: "Can't merge two bindings, conflict found"
