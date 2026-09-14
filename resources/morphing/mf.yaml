@@ -1,0 +1,7 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+name: mf
+match: ⟦𝐵0⟧
+e-match: 𝑒0
+n-result: ⟦𝐵0⟧

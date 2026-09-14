@@ -17,7 +17,7 @@ import Data.Aeson
 import qualified Data.Aeson.Key as Key
 import qualified Data.Aeson.KeyMap as KeyMap
 import qualified Data.ByteString as BS
-import Data.FileEmbed (embedDir, embedFile)
+import Data.FileEmbed (embedDir)
 import Data.Text (Text, unpack)
 import Data.Yaml (Parser)
 import qualified Data.Yaml as Yaml
@@ -307,15 +307,17 @@ referenceless rule field term = case anonymous term of
           rule
       )
 
+-- Decode one rule out of the file that carries it, naming that file when its
+-- YAML is broken. A rule set is a directory 'embedDir' embeds wholesale, one
+-- rule per file, the file named after the rule it carries.
+decodeRule :: (FromJSON a) => (FilePath, BS.ByteString) -> a
+decodeRule (path, bs) = case Yaml.decodeEither' bs of
+  Right rule -> rule
+  Left err -> error $ "YAML parse error in " ++ path ++ ": " ++ show err
+
 normalizationRules :: [Rule]
 {-# NOINLINE normalizationRules #-}
 normalizationRules = map decodeRule $(embedDir "resources/normalize")
-  where
-    decodeRule :: (FilePath, BS.ByteString) -> Rule
-    decodeRule (path, bs) =
-      case Yaml.decodeEither' bs of
-        Right rule -> rule
-        Left err -> error $ "YAML parse error in " ++ path ++ ": " ++ show err
 
 yamlRule :: FilePath -> IO Rule
 yamlRule = Yaml.decodeFileThrow
@@ -494,19 +496,14 @@ instance FromJSON ContextualizeRule where
           pure rule
       )
 
-decodeRules :: (FromJSON a) => FilePath -> BS.ByteString -> [a]
-decodeRules path bs = case Yaml.decodeEither' bs of
-  Right rs -> rs
-  Left err -> error $ "YAML parse error in " ++ path ++ ": " ++ show err
-
 morphingRules :: [MorphRule]
 {-# NOINLINE morphingRules #-}
-morphingRules = decodeRules "resources/morphing.yaml" $(embedFile "resources/morphing.yaml")
+morphingRules = map decodeRule $(embedDir "resources/morphing")
 
 dataizationRules :: [DataizeRule]
 {-# NOINLINE dataizationRules #-}
-dataizationRules = decodeRules "resources/dataization.yaml" $(embedFile "resources/dataization.yaml")
+dataizationRules = map decodeRule $(embedDir "resources/dataization")
 
 contextualizationRules :: [ContextualizeRule]
 {-# NOINLINE contextualizationRules #-}
-contextualizationRules = decodeRules "resources/contextualization.yaml" $(embedFile "resources/contextualization.yaml")
+contextualizationRules = map decodeRule $(embedDir "resources/contextualization")

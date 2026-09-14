@@ -10,7 +10,7 @@ import AST (Alpha, Attribute, Binding, Bytes, Expression (ExRoot))
 import Control.Exception (Exception (displayException), SomeException)
 import Control.Monad
 import Data.Either (isLeft)
-import Data.List (isInfixOf, nub, (\\))
+import Data.List (isInfixOf, nub, sort, (\\))
 import Data.Maybe (fromMaybe)
 import Data.Text qualified as T
 import Data.Text.Encoding (encodeUtf8)
@@ -183,6 +183,24 @@ spec = do
               ++ map (\DataizeRule{name, label} -> fromMaybe name label) dataizationRules
               ++ map (\ContextualizeRule{name, label} -> fromMaybe name label) contextualizationRules
       (labels \\ nub labels) `shouldBe` []
+
+  describe "keeps one rule per file in every rule directory" $ do
+    -- Each judgment lives in its own directory, one YAML per rule, embedded
+    -- wholesale by 'embedDir', which sorts by path. The clauses of a judgment
+    -- are disjoint, so nothing orders them and a file is named after the rule
+    -- it carries and nothing else. Compare the directory listing against the
+    -- embedded rule set, position by position.
+    let named :: FilePath -> IO [String]
+        named dir = map takeBaseName . sort . filter ((== ".yaml") . takeExtension) <$> allPathsIn dir
+    morphed <- runIO (named "resources/morphing")
+    dataized <- runIO (named "resources/dataization")
+    contextualized <- runIO (named "resources/contextualization")
+    it "names one morphing file after every morphing rule" $
+      morphed `shouldBe` map (\MorphRule{name} -> name) morphingRules
+    it "names one dataization file after every dataization rule" $
+      dataized `shouldBe` map (\DataizeRule{name} -> name) dataizationRules
+    it "names one contextualization file after every contextualization rule" $
+      contextualized `shouldBe` map (\ContextualizeRule{name} -> name) contextualizationRules
 
   describe "reserves 𝑛-family metas for normal forms" $
     -- 𝒞 ('contextualize') returns an expression that is not necessarily a normal

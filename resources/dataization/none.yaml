@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+name: none
+match: ⟦𝐵0⟧
+e-match: 𝑒0
+d-result: δ0
+when:
+  disjoint:
+    - [Δ, λ, φ]
+    - [𝐵0]
+premises:
+  - d-result: δ0
+    dataize: ⊥

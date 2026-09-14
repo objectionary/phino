@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+name: fire
+match: ⟦𝐵1, λ ⤍ 𝑓0, 𝐵2⟧
+e-match: 𝑒0
+d-result: δ0
+premises:
+  - n-result: 𝑛1
+    evaluate:
+      - ⟦𝐵1, λ ⤍ 𝑓0, 𝐵2⟧
+      - 𝑒0
+  - d-result: δ0
+    dataize: 𝑛1
