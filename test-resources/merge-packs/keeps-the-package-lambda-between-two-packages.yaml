@@ -1,0 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+left: '[[ org -> [[ number -> [[ ]], L> Package, ^ -> ? ]] ]]'
+right: '[[ org -> [[ text -> [[ ]], L> Package, ^ -> ? ]] ]]'
+result: '[[ org -> [[ number -> [[ ]], text -> [[ ]], L> Package, ^ -> ? ]] ]]'

@@ -1,0 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+left: '[[ a -> 1, k -> [[ p -> 1 ]] ]]'
+right: '[[ b -> 2, k -> [[ q -> 2 ]] ]]'
+result: '[[ a -> 1, b -> 2, k -> [[ p -> 1, q -> 2 ]] ]]'

@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
@@ -45,7 +46,17 @@ mergeBindings xs ys = do
       ys' = [y | y <- ys, attributeFromBinding y `notElem` as]
       collisions = [(x, y) | x <- xs, y <- ys, attributeFromBinding x == attributeFromBinding y]
   ws <- mapM (uncurry mergeBinding) collisions
-  pure (xs' <> ys' <> ws)
+  pure (unmarked (xs' <> ys' <> ws))
+  where
+    -- A 'Package' λ marks a pure path segment; when only one side carries it,
+    -- the other side is a real object and the marker goes away (#1197)
+    unmarked :: [Binding] -> [Binding]
+    unmarked bindings
+      | any marker xs == any marker ys = bindings
+      | otherwise = filter (not . marker) bindings
+    marker :: Binding -> Bool
+    marker (BiLambda (Function "Package")) = True
+    marker _ = False
 
 merge' :: [Expression] -> IO Expression
 merge' [] = throwIO EmptyExpressionList

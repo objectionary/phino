@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+left: '[[ bytes -> [[ @ -> ?, ^ -> ? ]] ]]'
+right: |
+  [[ bytes -> [[
+    as-bytes -> [[ ^ -> ?, @ -> $.^ ]], L> Package, ^ -> ?
+  ]] ]]
+result: |
+  [[ bytes -> [[
+    @ -> ?, as-bytes -> [[ ^ -> ?, @ -> $.^ ]], ^ -> ?
+  ]] ]]
