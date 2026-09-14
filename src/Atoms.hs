@@ -63,6 +63,10 @@
 -- with a λ binding the name of the function it is stuck on under 'λ'. An
 -- attribute bound to nothing at all is a fact about the receiver and not a
 -- failure of the question, so it is answered with '∅' and no node (#1206).
+-- An answer that is not a formation but an application says under 'Φ.' the
+-- chain it is dispatched off Φ by — 'number' for 'Φ.number( φ ↦ … )' — since
+-- 𝜑-calculus types nothing nominally and that name is the only place the
+-- forma of a typed literal lives (#1210).
 -- A line of phino's is a request when it carries '𝑏' and an answer when it
 -- does not, since an answer may carry a 'λ' of its own.
 --
@@ -583,19 +587,36 @@ asked func Running{..} form univ channel reduce = do
         reduce target >>= said . answered minted
     -- The answer to a question, as the line the program reads it off: the 'id'
     -- the question minted, the node under '𝑛' and, next to it, what the node
-    -- carries — its byte array under 'Δ', the λ name it is stuck on under 'λ'
-    -- — so that telling a datum from a stuck atom takes no 𝜑 reader of the
-    -- program's own (#1206).
+    -- carries — its byte array under 'Δ', the λ name it is stuck on under 'λ',
+    -- the chain it is dispatched off Φ by under 'Φ.' — so that telling a datum
+    -- from a stuck atom, or a typed literal from either, takes no 𝜑 reader of
+    -- the program's own (#1206, #1210).
     answered :: Int -> Expression -> BS.ByteString
     answered minted answer = lined (object (["id" .= minted, "𝑛" .= spelled answer] ++ carried answer))
       where
         carried :: Expression -> [Pair]
         carried (ExFormation bds) = mapMaybe fact bds
-        carried _ = []
+        carried expr = maybe [] (\forma -> ["Φ." .= forma]) (dispatched expr)
         fact :: Binding -> Maybe Pair
         fact (BiDelta bytes) = Just ("Δ" .= printBytes bytes)
         fact (BiLambda (Function name)) = Just ("λ" .= name)
         fact _ = Nothing
+        -- The chain the answer is dispatched off Φ by, once the arguments
+        -- applied to it are stripped: 'number' for 'Φ.number( φ ↦ … )', 'true'
+        -- for 'Φ.true', 'org.eolang.tuple' for a chain that deep. 𝜑-calculus
+        -- types nothing nominally, so that name is the only place the forma of
+        -- a typed literal lives. A chain with an application inside it, such as
+        -- 'Φ.number( … ).plus( … )', dispatches off a term phino would have to
+        -- dataize to name, so it names no forma and nothing is said (#1210).
+        dispatched :: Expression -> Maybe T.Text
+        dispatched (ExApplication applied _) = dispatched applied
+        dispatched expr = case chain expr of
+          Just names@(_ : _) -> Just (T.intercalate "." names)
+          _ -> Nothing
+        chain :: Expression -> Maybe [T.Text]
+        chain ExRoot = Just []
+        chain (ExDispatch applied attr) = (++ [T.pack (printAttribute attr)]) <$> chain applied
+        chain _ = Nothing
     unreadable :: T.Text -> String -> IO a
     unreadable raw failure = throwIO (AtomMute func (T.unpack raw) (printf "it asks phino to reduce an expression that does not parse: %s" failure))
     -- A program that has died leaves the write with nobody to drain it. The
