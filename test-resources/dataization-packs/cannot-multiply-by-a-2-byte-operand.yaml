@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# The same too-short operand under another atom.
+model: true
+atoms: true
+input: '5.times( Φ.bytes( φ ↦ ⟦ Δ ⤍ 20-1F ⟧ ) )'
+fails: 'terminator'

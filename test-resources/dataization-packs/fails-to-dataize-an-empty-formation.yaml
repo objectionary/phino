@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# The 'none' rule dataizes ⊥ (𝔻(⟦⟧) → 𝔻(⊥)), which matches no clause now that
+# there is no 'end' rule, so an empty formation reduces through one labelled
+# 'dataize' step and then fails: it has nothing to dataize (#955).
+input: '[[ ]]'
+fails: 'terminator'

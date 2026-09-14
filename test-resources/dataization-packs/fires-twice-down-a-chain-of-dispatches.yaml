@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# Two firings in a row: 'ml' reduces the head of the second dispatch, which
+# fires the first atom, before the second one is handed its own formation to
+# fire against.
+model: true
+atoms: true
+input: '5.plus( 6 ).plus( 7 )'
+result: '40-32-00-00-00-00-00-00'

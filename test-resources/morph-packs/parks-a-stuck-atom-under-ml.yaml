@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# The same atom under '_partial': the run ends on the residue the spine had
+# reached instead of failing.
+location: 'Q.x'
+partial: true
+input: '[[ x -> [[ L> Sym_arg_0 ]].foo ]]'
+result: '[[ L> Sym_arg_0 ]].foo'

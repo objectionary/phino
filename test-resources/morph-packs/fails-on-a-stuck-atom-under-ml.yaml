@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# 𝕄 never fires a bare λ-formation, so only an atom sitting under a dispatch
+# (the 'ml' rule) can get stuck, and without '_partial' it fails the run.
+location: 'Q.x'
+input: '[[ x -> [[ L> Sym_arg_0 ]].foo ]]'
+fails: "Atom 'Sym_arg_0' does not exist"

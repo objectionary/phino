@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# A divisor carrying no number leaves the division nothing to answer.
+model: true
+atoms: true
+input: '5.div( Φ.bytes( φ ↦ ⟦ Δ ⤍ -- ⟧ ) )'
+fails: 'terminator'

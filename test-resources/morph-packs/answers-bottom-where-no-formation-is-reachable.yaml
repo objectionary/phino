@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# 𝕄 is total where 𝔻 is not: the 'xi' axiom morphs ξ to ⊥, so the run ends
+# with an answer rather than with a failure.
+location: 'Q.x'
+input: '[[ x -> $ ]]'
+result: 'T'

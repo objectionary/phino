@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# A number is sugar for an application of 'Q.number', so the object model has
+# to declare 'number' and 'bytes' before 5 means anything.
+location: 'Q.x'
+input: |
+  [[
+    number ↦ ⟦ φ ↦ ∅ ⟧,
+    bytes ↦ ⟦ φ ↦ ∅ ⟧,
+    x -> 5
+  ]]
+result: '40-14-00-00-00-00-00-00'

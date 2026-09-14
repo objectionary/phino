@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# An operand carrying no number is what an EO number atom answers ⊥ to, and
+# dataizing ⊥ fails through the terminator path. The judgment is the script's,
+# so what this proves is that a ⊥ coming back from a script stops 𝔻 exactly as
+# a built-in ⊥ used to.
+model: true
+atoms: true
+input: '5.plus( Φ.bytes( φ ↦ ⟦ Δ ⤍ -- ⟧ ) )'
+fails: 'terminator'
