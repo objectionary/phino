@@ -17,7 +17,6 @@ import Data.Functor ((<&>))
 import Data.IORef
 import Data.List (intercalate, nub)
 import Data.Maybe
-import Dataize (DataizeContext, insideUniverse)
 import Deps (SaveEvalFunc, SaveStepFunc, dontSaveEval, saveEval, saveStep)
 import Encoding
 import Files (ensuredFile)
@@ -26,6 +25,7 @@ import LaTeX (LatexContext (LatexContext), defaultMeetLength, defaultMeetPopular
 import Lining (LineFormat (SINGLELINE))
 import Locator (locatedExpression)
 import Logger
+import Morph (ReduceContext, insideUniverse)
 import Parser (parseExpressionThrows)
 import qualified Printer as P
 import qualified Random as R
@@ -104,7 +104,7 @@ registryOf (Just file) = do
 -- expression, which the run takes as the universe, and the locator becomes that
 -- attribute (see 'insideUniverse'). Without the option nothing moves and the
 -- context is handed back as it came.
-aimed :: Maybe String -> Expression -> DataizeContext -> IO (Expression, DataizeContext)
+aimed :: Maybe String -> Expression -> ReduceContext -> IO (Expression, ReduceContext)
 aimed Nothing expr ctx = pure (expr, ctx)
 aimed (Just src) expr@(ExFormation _) ctx = do
   target <- parseExpressionThrows src

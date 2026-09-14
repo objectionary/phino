@@ -28,6 +28,7 @@ import LaTeX (explainContextualizeRules, explainDataizeRules, explainMorphRules,
 import Logger
 import Margin (defaultMargin)
 import Merge (merge)
+import Morph
 import Parser (parseExpressionThrows)
 import qualified Printer as P
 import qualified Random as R
@@ -167,7 +168,7 @@ runDataize OptsDataize{..} = do
       ( \record -> do
           -- The deep walk belongs to 𝕄 alone (the '--deep' of 'morph'), since 𝔻
           -- reduces what dataization demands and ends in bytes, so it is off here.
-          let ctx = DataizeContext loc _maxDepth _maxCycles (Steps _maxSteps 0) _depthSensitive _shuffle _partial False atoms buildTerm save record
+          let ctx = ReduceContext loc _maxDepth _maxCycles (Steps _maxSteps 0) _depthSensitive _shuffle _partial False atoms buildTerm reduction save record
           (universe, aiming) <- aimed _inside expr ctx
           dataize universe aiming
       )
@@ -252,7 +253,7 @@ runMorph OptsMorph{..} = do
       _evaluations
       printCtx
       ( \record -> do
-          let ctx = DataizeContext loc _maxDepth _maxCycles (Steps _maxSteps 0) _depthSensitive _shuffle _partial _deep atoms buildTerm save record
+          let ctx = ReduceContext loc _maxDepth _maxCycles (Steps _maxSteps 0) _depthSensitive _shuffle _partial _deep atoms buildTerm reduction save record
           (universe, aiming) <- aimed _inside expr ctx
           morph universe aiming
       )

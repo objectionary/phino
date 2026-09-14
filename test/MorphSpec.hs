@@ -1,0 +1,349 @@
+{-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE OverloadedRecordDot #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards #-}
+
+-- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+-- SPDX-License-Identifier: MIT
+
+module MorphSpec (spec) where
+
+import AST
+import Atoms (Registry, emptyRegistry, readRegistry)
+import Control.Exception (SomeException)
+import Control.Monad
+import Data.Aeson (FromJSON)
+import Data.List (find, isInfixOf, nub)
+import Data.List.NonEmpty (NonEmpty (..))
+import Data.Maybe (fromMaybe)
+import Data.Yaml qualified as Decode
+import Dataize (Outcome (..), dataize)
+import Deps (Term (TeExpression))
+import Files (allPathsIn)
+import Fixtures (defaultReduceContext, fixtureRegistry, primitives, withAtoms, withNode, withServing, withShell)
+import GHC.Generics (Generic)
+import Matcher (substEmpty)
+import Morph (ReduceContext (..), emptyState, execBuildTerm, insideUniverse, morph, morph')
+import Parser (parseExpressionThrows)
+import Rewriter (Rewritten)
+import Rule (RuleContext (RuleContext), matchExpressionWithRule')
+import System.FilePath (makeRelative)
+import Test.Hspec
+import Yaml (ExtraArgument (..))
+import Yaml qualified
+
+test' :: (Eq a, Show a) => ((Expression, NonEmpty Rewritten) -> Expression -> String -> ReduceContext -> IO ((a, NonEmpty Rewritten), String)) -> [(String, Expression, Expression, a)] -> Spec
+test' func useCases =
+  forM_ useCases $ \(desc, input, expr, output) ->
+    it desc $ do
+      ((res, _), _) <- func (input, (expr, Nothing) :| []) expr emptyState (defaultReduceContext ExRoot)
+      res `shouldBe` output
+
+testMorph :: [(String, String, String, String)] -> Spec
+testMorph useCases =
+  forM_ useCases $ \(name, loc, src, res) ->
+    it name $ do
+      expr <- parseExpressionThrows src
+      loc' <- parseExpressionThrows loc
+      expected <- parseExpressionThrows res
+      (morphed, _) <- morph expr (defaultReduceContext loc')
+      morphed `shouldBe` expected
+
+-- One case of the deep walk, as a pack of 'test-resources/morph-deep-packs'
+-- spells it: the program under 'input', wrapped in the fixture object model
+-- where 'model' says so and run against the fixture λ functions where 'atoms'
+-- does, entered at 'location' and answering either the program under 'result'
+-- or the failure under 'fails'.
+data DeepPack = DeepPack
+  { location :: Maybe String
+  , input :: String
+  , model :: Maybe Bool
+  , atoms :: Maybe Bool
+  , partial :: Maybe Bool
+  , result :: Maybe String
+  , fails :: Maybe String
+  }
+  deriving (Generic, Show, FromJSON)
+
+-- Walk one such pack with '_deep' on and check what it answers. A pack that
+-- registers the fixture λ functions fires one under 'node', so it is pending
+-- where 'node' is not installed.
+testDeep :: Registry -> FilePath -> Expectation
+testDeep registry pth = do
+  DeepPack{..} <- Decode.decodeFileThrow pth
+  expr <- parseExpressionThrows (if model == Just True then primitives input else input)
+  loc <- parseExpressionThrows (fromMaybe "Q" location)
+  let ctx =
+        (defaultReduceContext loc)
+          { _deep = True
+          , _partial = partial == Just True
+          , _atoms = if atoms == Just True then registry else emptyRegistry
+          }
+      checked :: Expectation
+      checked = case (result, fails) of
+        (Just res, Nothing) -> do
+          expected <- parseExpressionThrows res
+          (morphed, _) <- morph expr ctx
+          morphed `shouldBe` expected
+        (Nothing, Just message) ->
+          morph expr ctx `shouldThrow` (\err -> message `isInfixOf` show (err :: SomeException))
+        _ -> expectationFailure "The pack holds neither a single 'result' nor a single 'fails'"
+  if atoms == Just True then withNode checked else checked
+
+spec :: Spec
+spec = do
+  -- Every λ function a case may fire comes from the fixture registry, read
+  -- once here: phino carries none of its own (see 'Fixtures').
+  registry <- runIO fixtureRegistry
+
+  -- The top-level 𝕄 entry point, the one the 'morph' command runs: it locates
+  -- the subterm, threads the whole input expression as the universe and hands
+  -- back the morphed expression together with the chain that led to it (#1114).
+  describe "morph" $ do
+    testMorph
+      [ ("hands the top formation back untouched under the Q locator", "Q", "[[ D> 00- ]]", "[[ D> 00- ]]")
+      , -- 𝕄 is total where 𝔻 is not: the 'xi' axiom morphs ξ to ⊥, so the run
+        -- ends with an answer rather than with a failure
+        ("answers ⊥ where no formation is reachable", "Q.x", "[[ x -> $ ]]", "T")
+      ]
+
+    -- The chain runs oldest step first and carries the rule that produced the
+    -- step after it, exactly as 'dataize' reports its own, so '--sequence'
+    -- prints both the same way
+    it "reports the chain of steps oldest first" $ do
+      expr <- parseExpressionThrows "[[ D> 00- ]]"
+      (morphed, chain) <- morph expr (defaultReduceContext ExRoot)
+      morphed `shouldBe` expr
+      map snd chain `shouldBe` [Just "mf", Nothing]
+      map fst chain `shouldBe` [expr, expr]
+
+    -- 𝕄 never fires a bare λ-formation, so only an atom sitting under a
+    -- dispatch (the 'ml' rule) can get stuck
+    describe "a stuck atom under 'ml'" $ do
+      let stuck :: IO (Expression, Expression)
+          stuck = (,) <$> parseExpressionThrows "[[ x -> [[ L> Sym_arg_0 ]].foo ]]" <*> parseExpressionThrows "Q.x"
+      it "fails the run without '_partial'" $ do
+        (expr, loc) <- stuck
+        morph expr (defaultReduceContext loc)
+          `shouldThrow` (\e -> "Atom 'Sym_arg_0' does not exist" `isInfixOf` show (e :: SomeException))
+
+      it "is parked in the residue under '_partial'" $ do
+        (expr, loc) <- stuck
+        expected <- parseExpressionThrows "[[ L> Sym_arg_0 ]].foo"
+        (residue, _) <- morph expr (defaultReduceContext loc){_partial = True}
+        residue `shouldBe` expected
+
+  -- 𝕄 stops at the first formation 'mf' hands back and leaves its bindings as
+  -- they were written, since firing a bare λ is 𝔻's business, so a program
+  -- whose parts nothing demands is never reduced (#1124). The deep walk
+  -- ('_deep') enters every binding and finishes what 'mf' left, while what no
+  -- atom touched keeps the shape it was written in and the answer stays a
+  -- program.
+  describe "morph with '_deep'" $ do
+    let resources = "test-resources/morph-deep-packs"
+    packs <- runIO (allPathsIn resources)
+    forM_ packs (\pth -> it (makeRelative resources pth) (testDeep registry pth))
+
+    -- The walk enters a dispatch through its target and fires the box it finds
+    -- there before 𝕄 is ever asked about the dispatch, while 'ml' demands that
+    -- λ only where the dispatched attribute is none of the box's own (#1187)
+    describe "a dispatch naming an attribute of the formation it stands on" $
+      it "cannot fire the λ the dispatch does not demand" $
+        withShell $
+          withServing "printf '{\"id\": %s, \"𝑛\": \"⟦ Δ ⤍ FF- ⟧\"}\\n' \"$id\"" $ \path -> do
+            box <- readRegistry path
+            world <- parseExpressionThrows "[[ foo -> [[ f -> [[ a -> ?, @ -> $.a, L> L_answer ]] ]], x -> Q.foo.f( a -> [[ D> 01- ]] ).@ ]]"
+            (morphed, _) <- morph world (withAtoms box (defaultReduceContext ExRoot)){_deep = True}
+            morphed `shouldBe` world
+
+  describe "morph'" $
+    test'
+      morph'
+      [ ("[[ D> 00- ]] => [[ D> 00- ]]", ExFormation [BiDelta (BtOne "00")], ExRoot, ExFormation [BiDelta (BtOne "00")])
+      , ("T => T", ExTermination, ExRoot, ExTermination)
+      , ("$ => X", ExXi, ExRoot, ExTermination)
+      , ("Q => X", ExRoot, ExRoot, ExTermination)
+      ,
+        ( "Q.x (Q -> [[ x -> [[]] ]]) => [[ ρ -> Q ]]"
+        , ExDispatch ExRoot (AtLabel "x")
+        , ExFormation [BiTau (AtLabel "x") (ExFormation [])]
+        , ExFormation [BiTau AtRho (ExFormation [BiTau (AtLabel "x") (ExFormation [BiVoid AtRho]), BiVoid AtRho])]
+        )
+      , -- A void slot fed a non-absolute argument can never be filled, so 'copy'
+        -- cannot fire and the application is a stuck normal form. Before #959,
+        -- 'ma' re-morphed this identical term forever; now the 'mad' axiom
+        -- morphs it straight to ⊥, keeping 𝕄 total.
+
+        ( "[[ x -> ? ]](x -> $.foo) => T"
+        , ExApplication (ExFormation [BiVoid (AtLabel "x")]) (ArTau (AtLabel "x") (ExDispatch ExXi (AtLabel "foo")))
+        , ExRoot
+        , ExTermination
+        )
+      , -- Same as above but through the alpha-argument sibling 'maad' instead of
+        -- 'mad': a void slot fed a non-absolute alpha-indexed argument also
+        -- morphs straight to ⊥.
+
+        ( "[[ ^ -> ? ]](α0 -> $.foo) => T"
+        , ExApplication (ExFormation [BiVoid AtRho]) (ArAlpha (Alpha 0) (ExDispatch ExXi (AtLabel "foo")))
+        , ExRoot
+        , ExTermination
+        )
+      , -- 'universe' fires only when the universe 'e' differs from Φ itself
+        -- ('not (eq(e, Φ))'); it then normalizes and re-morphs that universe.
+        -- Here the universe is a plain formation, already a normal form, so
+        -- re-morphing it lands straight on 'mf' and returns it unchanged.
+
+        ( "Q => [[]] (a universe distinct from Φ) => [[]]"
+        , ExRoot
+        , ExFormation []
+        , ExFormation []
+        )
+      ]
+
+  -- 𝕄's first argument is always a normal form reachable through normalization,
+  -- and every such normal form is covered by some morphing clause (an axiom
+  -- like 'mf'/'dead'/'xi'/'universe'/'mg' or a recursive rule), so the "no rule
+  -- matched" fallback never fires along any real derivation. It is still total
+  -- code, reachable by calling 'morph'' directly (bypassing normalization) on a
+  -- raw meta 𝑛, an AST node the matcher never binds to any concrete pattern.
+  describe "morph' fails when no morphing rule matches the term" $
+    it "throws instead of looping when handed a bare, unmatched meta" $
+      morph' (ExMeta "unbound", (ExRoot, Nothing) :| []) ExRoot emptyState (defaultReduceContext ExRoot)
+        `shouldThrow` (\e -> "no morphing rule matched" `isInfixOf` show (e :: SomeException))
+
+  -- 'execBuildTerm's "evaluate" and "morph" cases expose 𝔼 and 𝕄 to the
+  -- matcher's condition path (guards in 'when'/'having'). No built-in rule's
+  -- guard actually calls either function, so these error paths — reachable only
+  -- by malformed arguments — are exercised here directly through the exported
+  -- 'execBuildTerm', the same way the matcher would call it.
+  describe "execBuildTerm 'evaluate'" $ do
+    let univ = ExFormation []
+        ctx = withAtoms registry (defaultReduceContext ExRoot)
+        runEvaluate args = execBuildTerm univ ctx "evaluate" args substEmpty
+    forM_
+      [
+        ( "the first argument is not a formation"
+        , [ArgExpression ExRoot, ArgExpression univ]
+        , "Function evaluate() expects a formation"
+        )
+      ,
+        ( "the formation has no λ binding at all"
+        , [ArgExpression (ExFormation []), ArgExpression univ]
+        , "expects a formation with a"
+        )
+      ,
+        ( "a non-λ formation still has other bindings"
+        , [ArgExpression (ExFormation [BiVoid AtRho]), ArgExpression univ]
+        , "expects a formation with a"
+        )
+      ,
+        ( "not given exactly two expression arguments"
+        , [ArgExpression univ]
+        , "requires exactly 2 expression arguments"
+        )
+      ]
+      ( \(desc, args, message) ->
+          it ("throws when " ++ desc) $
+            runEvaluate args `shouldThrow` (\e -> message `isInfixOf` show (e :: SomeException))
+      )
+    it "evaluates a λ-bearing formation to the atom's normalized result" $
+      withNode $ do
+        let form = ExFormation [BiLambda (Function "L_bytes_not"), BiTau AtRho (ExFormation [BiDelta (BtOne "00")])]
+        result <- runEvaluate [ArgExpression form, ArgExpression univ]
+        case result of
+          TeExpression expr -> expr `shouldBe` dataBytes (BtOne "FF")
+          _ -> expectationFailure "expected TeExpression"
+
+  describe "execBuildTerm 'morph'" $ do
+    let univ = ExFormation []
+        ctx = defaultReduceContext ExRoot
+    it "throws when not given exactly one expression argument" $
+      execBuildTerm univ ctx "morph" [] substEmpty
+        `shouldThrow` (\e -> "requires exactly 1 expression argument" `isInfixOf` show (e :: SomeException))
+    it "morphs a single expression argument to its already-normal form" $ do
+      result <- execBuildTerm univ ctx "morph" [ArgExpression (ExFormation [BiDelta (BtOne "00")])] substEmpty
+      case result of
+        TeExpression expr -> expr `shouldBe` ExFormation [BiDelta (BtOne "00")]
+        _ -> expectationFailure "expected TeExpression"
+
+  -- An expression that is not part of the program — the operand an atom script
+  -- asks phino to reduce — is bound to a synthetic attribute of the universe and
+  -- that attribute is what 𝔻 is aimed at. This is what the '--inside' option
+  -- runs, and what phino did internally while the atoms still lived in the
+  -- binary.
+  describe "insideUniverse" $ do
+    let universe = "[[ y -> [[ D> 02- ]] ]]"
+        reduced src = do
+          univ <- parseExpressionThrows universe
+          target <- parseExpressionThrows src
+          (extended, ctx) <- insideUniverse target univ (defaultReduceContext ExRoot)
+          fst <$> dataize extended ctx
+    it "reduces an expression the program does not contain" $ do
+      value <- reduced "Q.y"
+      value `shouldBe` Dataized (BtOne "02")
+    -- 𝔻 accepts normal forms only, and a dispatch off a formation is not one:
+    -- 'dot' still applies to it. So the expression is normalized first, which
+    -- is the whole reason an atom script cannot simply splice it into the
+    -- universe itself.
+    it "normalizes what it is handed before 𝔻 sees it" $ do
+      value <- reduced "[[ x -> [[ D> 01- ]] ]].x"
+      value `shouldBe` Dataized (BtOne "01")
+    it "refuses a universe which is not a formation" $ do
+      target <- parseExpressionThrows "Q.y"
+      insideUniverse target ExRoot (defaultReduceContext ExRoot)
+        `shouldThrow` (\e -> "not a formation" `isInfixOf` show (e :: SomeException))
+
+  -- 'defaultReduceContext' runs with '_shuffle' on, so 'morph'' walks the
+  -- morphing rules in a random order on every step. Every clause is
+  -- order-independent (the known overlaps were removed in #856 and #860), so the
+  -- outcome must never depend on that order: morphing each input many times under
+  -- a shuffling context yields exactly the formation the fixed declaration order
+  -- does, proving the rules may be applied in any order with the same result.
+  -- Were a hidden overlap re-introduced, some of these random orders would
+  -- disagree and 'nub' would collect more than the single expected form.
+  describe "morphing is order-independent under --shuffle" $ do
+    let cases =
+          [ ("a byte formation", ExFormation [BiDelta (BtOne "00")], ExRoot, ExFormation [BiDelta (BtOne "00")])
+          , ("termination", ExTermination, ExRoot, ExTermination)
+          , ("xi", ExXi, ExRoot, ExTermination)
+          , ("the global object", ExRoot, ExRoot, ExTermination)
+          ,
+            ( "a dispatch over a formation"
+            , ExDispatch ExRoot (AtLabel "x")
+            , ExFormation [BiTau (AtLabel "x") (ExFormation [])]
+            , ExFormation [BiTau AtRho (ExFormation [BiTau (AtLabel "x") (ExFormation [BiVoid AtRho]), BiVoid AtRho])]
+            )
+          ]
+    forM_ cases $ \(desc, input, univ, expected) ->
+      it ("morphs " ++ desc ++ " to the same form across 100 random rule orders") $ do
+        results <- replicateM 100 (fst . fst <$> morph' (input, (univ, Nothing) :| []) univ emptyState (defaultReduceContext ExRoot))
+        nub results `shouldBe` [expected]
+
+  -- 'md' fires only when its head is not a formation ('not (formation 𝑛)'),
+  -- so a formation head — λ-bearing or not — is left to 'ml'/'mf'. The
+  -- two clauses are mutually exclusive and their order in 'resources/morphing'
+  -- cannot change behavior.
+  describe "morphing 'md' is disjoint from 'ml'" $ do
+    let rctx = RuleContext (execBuildTerm ExRoot (defaultReduceContext ExRoot))
+        morphRule :: String -> Yaml.MorphRule
+        morphRule nm = fromMaybe (error ("no morphing rule named " ++ nm)) (find (\r -> r.name == nm) Yaml.morphingRules)
+        asRule :: Yaml.MorphRule -> Yaml.Rule
+        asRule r = Yaml.Rule r.name Nothing Nothing r.match ExRoot r.when Nothing Nothing
+        lambdaFormation = ExFormation [BiLambda (Function "L_dummy"), BiVoid AtRho]
+    it "does not fire on a λ-bearing formation dispatch" $ do
+      substs <- matchExpressionWithRule' [substEmpty] (ExDispatch lambdaFormation (AtLabel "x")) (asRule (morphRule "md")) rctx
+      substs `shouldBe` []
+    it "still fires on a non-λ-formation dispatch" $ do
+      substs <- matchExpressionWithRule' [substEmpty] (ExDispatch ExXi (AtLabel "x")) (asRule (morphRule "md")) rctx
+      null substs `shouldBe` False
+    -- ⟦λ ⤍ F⟧.a.b.c : 'md' peels .c then .b (their heads are dispatches,
+    -- not λ-formations, so 'λ ∉ 𝐵' holds), then 'ml' handles the base
+    -- ⟦λ ⤍ F⟧.a and fires the atom. The chain therefore routes
+    -- md → md → ml; firing the undefined atom 'F' is what
+    -- raises the error, proving the base λ-formation reached 'ml'.
+    it "drills a chained λ-formation dispatch down to the base 'ml'" $ do
+      let base = ExFormation [BiLambda (Function "F")]
+          chain = ExDispatch (ExDispatch (ExDispatch base (AtLabel "a")) (AtLabel "b")) (AtLabel "c")
+      morph' (chain, (ExRoot, Nothing) :| []) ExRoot emptyState (defaultReduceContext ExRoot)
+        `shouldThrow` (\e -> "Atom 'F' does not exist" `isInfixOf` show (e :: SomeException))
