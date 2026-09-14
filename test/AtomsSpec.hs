@@ -659,6 +659,39 @@ spec = do
     it "fails a question whose dotted path runs into a void attribute" $
       refusesAt "⟦ v ↦ ∅ ⟧" (referring 1 "v.length" False "*2A-*") ["L_answer", "carries no attribute 'v.length'"]
 
+    -- 𝜑-calculus types nothing nominally, so the forma of a typed literal
+    -- lives in the name it is dispatched off Φ by and nowhere else: an answer
+    -- that is an application spells that name, the way a formation spells its
+    -- Δ and its λ (#1210)
+    it "says under 'Φ.' the forma a typed literal is dispatched by" $
+      servesAt
+        "⟦ x ↦ Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 40-08-00-00-00-00-00-00 ⟧ ) ) ⟧"
+        (referring 1 "x" False "*'\"Φ.\":\"number\"'*")
+        "⟦ Δ ⤍ FF- ⟧"
+
+    it "says under 'Φ.' the forma of an object taking no argument at all" $
+      servesAt "⟦ x ↦ Φ.true ⟧" (referring 1 "x" False "*'\"Φ.\":\"true\"'*") "⟦ Δ ⤍ FF- ⟧"
+
+    it "says under 'Φ.' the forma of an object taking several arguments" $
+      servesAt
+        "⟦ x ↦ Φ.tuple( length ↦ ⟦ Δ ⤍ 01- ⟧, head ↦ ⟦ Δ ⤍ 02- ⟧, tail ↦ ⟦ Δ ⤍ 03- ⟧ ) ⟧"
+        (referring 1 "x" False "*'\"Φ.\":\"tuple\"'*")
+        "⟦ Δ ⤍ FF- ⟧"
+
+    it "says under 'Φ.' the whole chain a forma is spelled by" $
+      servesAt
+        "⟦ x ↦ Φ.org.eolang.number( φ ↦ ⟦ Δ ⤍ 01- ⟧ ) ⟧"
+        (referring 1 "x" False "*'\"Φ.\":\"org.eolang.number\"'*")
+        "⟦ Δ ⤍ FF- ⟧"
+
+    -- A chain with an application inside it names no forma, since what it
+    -- dispatches off is a term phino would have to dataize to know
+    it "stays silent about an answer whose chain has an application inside it" $
+      servesAt
+        "⟦ x ↦ Φ.number( φ ↦ ⟦ Δ ⤍ 01- ⟧ ).plus( y ↦ ⟦ Δ ⤍ 02- ⟧ ) ⟧"
+        (referring 1 "x" False "*'\"Φ.\":'*")
+        "⟦ Δ ⤍ 00- ⟧"
+
     -- A program kept for the run is served a lean '𝑏', with no ρ chain: the
     -- chain climbs to the universe and compounds every question that quotes
     -- its receiver, and whatever the lean text leaves out this program can

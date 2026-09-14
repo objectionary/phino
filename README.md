@@ -274,6 +274,23 @@ stuck atom by reading the JSON and never has to parse 𝜑. Mind the `λ` there:
 line of `phino`'s is a request when it carries `𝑏` and an answer when it does
 not.
 
+An answer that is an application rather than a formation says under `Φ.` the
+chain it is dispatched off Φ by:
+
+```text
+{"id": 9, "of": 1, "attr": "x"}
+{"id": 9, "𝑛": "Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 40-08-… ⟧ ) )", "Φ.": "number"}
+```
+
+That name is the only place the forma of a typed literal lives, since
+𝜑-calculus types nothing nominally: `Φ.true` says `true`,
+`Φ.tuple( length ↦ …, head ↦ …, tail ↦ … )` says `tuple`, and a chain spelled
+in full says `org.eolang.number`. Dataize the same operand instead and the
+forma is gone, because `Δ` is all that is left of a number taken apart. A
+chain with an application inside it, such as `Φ.number( … ).plus( … )`,
+dispatches off a term `phino` would have to dataize to name, so it names no
+forma and nothing is said.
+
 The other way to ask quotes the 𝜑-expression itself, under `ask`; `phino`
 serves such a question by binding it to a fresh synthetic attribute of the
 universe, normalizing it there and dataizing it — the same trick `--inside`
