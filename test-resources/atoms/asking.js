@@ -9,9 +9,9 @@
 // the request being served and the 'attr' of the operand it wants, with
 // 'reduce' asking phino to dataize it. Such a question is served from the
 // receiver phino already holds for that request, in lean text without the ρ
-// chain (#1165), and answered with that 'id' and the bytes under '𝑛' — where
-// quoting the receiver in an 'ask' used to make the next question twice as
-// big as the last.
+// chain (#1165), and answered with that 'id', the node under '𝑛' and its byte
+// array under 'Δ' (#1206) — where quoting the receiver in an 'ask' used to
+// make the next question twice as big as the last.
 
 // Every request is a coroutine, so a question suspends the request that asked
 // it rather than the script: serving a question fires atoms of its own, and one
@@ -22,11 +22,11 @@
 
 const readline = require('readline');
 
-// The bytes phino answered a question with, which is always a byte formation,
-// since a question is served by dataizing what it asks about.
+// The bytes phino answered a question with, which the answer spells under 'Δ'
+// whenever the node it carries is a byte formation, so this script reads no 𝜑
+// at all (#1206).
 function bytes(answer) {
-  const found = /Δ ⤍ ([0-9A-F-]+)/.exec(answer);
-  return found === null ? Buffer.alloc(0) : Buffer.from(found[1].replace(/-/g, ''), 'hex');
+  return 'Δ' in answer ? Buffer.from(answer['Δ'].replace(/-/g, ''), 'hex') : Buffer.alloc(0);
 }
 
 // The double a byte array carries, or no number at all when it is not eight
@@ -81,11 +81,11 @@ function advance(atom, id, answer) {
 
 readline.createInterface({ input: process.stdin }).on('line', (line) => {
   const message = JSON.parse(line);
-  if ('λ' in message) {
+  if ('𝑏' in message) {
     advance(plus(message.id), message.id, undefined);
-  } else if ('𝑛' in message) {
+  } else if (open.has(message.id)) {
     const waiting = open.get(message.id);
     open.delete(message.id);
-    advance(waiting.atom, waiting.id, message['𝑛']);
+    advance(waiting.atom, waiting.id, message);
   }
 });

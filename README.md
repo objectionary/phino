@@ -234,9 +234,9 @@ request — neither side ever re-prints or re-parses it:
 {"𝑒": "⟦ bytes ↦ ⟦ … ⟧, number ↦ ⟦ … ⟧, φ ↦ … ⟧"}
 {"id": 1, "λ": "L_number_plus", "𝑏": "⟦ x ↦ Φ.number( … ).plus( … ) ⟧"}
 {"id": 7, "of": 1, "attr": "ρ", "reduce": true}
-{"id": 7, "𝑛": "⟦ Δ ⤍ 40-14-00-00-00-00-00-00 ⟧"}
+{"id": 7, "𝑛": "⟦ Δ ⤍ 40-14-00-00-00-00-00-00 ⟧", "Δ": "40-14-00-00-00-00-00-00"}
 {"id": 8, "of": 1, "attr": "x", "reduce": true}
-{"id": 8, "𝑛": "⟦ Δ ⤍ 40-2A-00-00-00-00-00-00 ⟧"}
+{"id": 8, "𝑛": "⟦ Δ ⤍ 40-2A-00-00-00-00-00-00 ⟧", "Δ": "40-2A-00-00-00-00-00-00"}
 {"id": 1, "𝑛": "Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 40-32-00-00-00-00-00-00 ⟧ ) )"}
 ```
 
@@ -247,7 +247,17 @@ tell the answers apart. Without `reduce` — or with it saying `false` — the
 answer is the node the attribute carries, as it was written; with `"reduce":
 true` it is the dataization of that node. A question about an `of` whose
 request is no longer in flight, or an `attr` the receiver does not carry,
-fails the fire.
+fails the fire. An `attr` bound to nothing at all does not: a void attribute
+is a fact about the receiver, and the answer is `{"id": 7, "∅": true}`, with
+no node in it, so a program may ask whether an operand is bound.
+
+What the answered node is, `phino` says next to it, because the shape of an
+answer is `phino`'s knowledge and not the program's. A formation carrying a Δ
+binding carries its byte array under `Δ`, and one carrying a λ binding the name
+of the function it is stuck on under `λ`, so a program tells a datum from a
+stuck atom by reading the JSON and never has to parse 𝜑. Mind the `λ` there: a
+line of `phino`'s is a request when it carries `𝑏` and an answer when it does
+not.
 
 The other way to ask quotes the 𝜑-expression itself, under `ask`; `phino`
 serves such a question by binding it to a fresh synthetic attribute of the
@@ -284,7 +294,7 @@ const open = new Map();
 let minted = 0;
 const said = (message) => process.stdout.write(`${JSON.stringify(message)}\n`);
 const number = (answer) => Buffer
-  .from(/Δ ⤍ ([0-9A-F-]+)/.exec(answer)[1].replace(/-/g, ''), 'hex')
+  .from(answer['Δ'].replace(/-/g, ''), 'hex')
   .readDoubleBE(0);
 const hex = (value) => {
   const bytes = Buffer.alloc(8);
@@ -310,12 +320,12 @@ const advance = (atom, id, answer) => {
 };
 readline.createInterface({ input: process.stdin }).on('line', (line) => {
   const message = JSON.parse(line);
-  if ('λ' in message) {
+  if ('𝑏' in message) {
     advance(plus(message.id), message.id, undefined);
-  } else if ('𝑛' in message) {
+  } else if (open.has(message.id)) {
     const waiting = open.get(message.id);
     open.delete(message.id);
-    advance(waiting.atom, waiting.id, message['𝑛']);
+    advance(waiting.atom, waiting.id, message);
   }
 });
 ```
