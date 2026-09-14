@@ -260,11 +260,15 @@ carries in its own name:
 {"id": 9, "𝑛": "⟦ Δ ⤍ 40-08-00-00-00-00-00-00 ⟧", "Δ": "40-08-00-00-00-00-00-00"}
 ```
 
-Every segment but the last has to name a formation to go on into, and
-`reduce` applies to the node the path ends at. A segment the formation does
-not carry, or one that runs into a void attribute, fails the fire the same
-way a missing `attr` does. `phino` holds the receiver whole, so there is no
-depth a program has to re-parse an answer to reach.
+Every segment but the last has to name a formation or an application to go on
+into, and `reduce` applies to the node the path ends at. An argument binds an
+attribute the way a τ binding does, so `x.if.guard` reaches the `guard` of
+`x ↦ Φ.bool( if ↦ ⟦ guard ↦ … ⟧ )`, and it binds it from the outside, so an
+argument wins over the void it fills. A positional argument names nothing and
+the walk goes past it. A segment nothing carries, or one that runs into a void
+attribute, fails the fire the same way a missing `attr` does. `phino` holds the
+receiver whole, so there is no depth a program has to re-parse an answer to
+reach.
 
 What the answered node is, `phino` says next to it, because the shape of an
 answer is `phino`'s knowledge and not the program's. A formation carrying a Δ
