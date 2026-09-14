@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# Dispatching an absent attribute on a φ-decorated formation resolves the
+# inherited attribute through morphing 'mphi' (#973): PHI used to be a
+# normalization rule, but following the decoration is a semantic 𝕄 step, so it
+# moved into 'resources/morphing'. Here '.t' is missing from the outer
+# formation, so 𝕄 walks the '@' decoration to the parent that defines 't' and
+# dataizes its datum.
+input: '[[ @ -> [[ t -> [[ D> 2A- ]] ]] ]].t'
+result: '2A-'

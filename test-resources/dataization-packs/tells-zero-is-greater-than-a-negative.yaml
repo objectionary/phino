@@ -1,0 +1,7 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+model: true
+atoms: true
+input: '0.gt( -5 )'
+result: 'FF-'

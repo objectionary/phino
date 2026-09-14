@@ -40,22 +40,12 @@ test' func useCases =
       ((res, _), _) <- func (input, (expr, Nothing) :| []) expr emptyState (defaultReduceContext ExRoot)
       res `shouldBe` output
 
-testMorph :: [(String, String, String, String)] -> Spec
-testMorph useCases =
-  forM_ useCases $ \(name, loc, src, res) ->
-    it name $ do
-      expr <- parseExpressionThrows src
-      loc' <- parseExpressionThrows loc
-      expected <- parseExpressionThrows res
-      (morphed, _) <- morph expr (defaultReduceContext loc')
-      morphed `shouldBe` expected
-
--- One case of the deep walk, as a pack of 'test-resources/morph-deep-packs'
--- spells it: the program under 'input', wrapped in the fixture object model
--- where 'model' says so and run against the fixture λ functions where 'atoms'
--- does, entered at 'location' and answering either the program under 'result'
--- or the failure under 'fails'.
-data DeepPack = DeepPack
+-- One case of 𝕄, as a pack of 'test-resources/morph-packs' — or, for the deep
+-- walk, of 'test-resources/morph-deep-packs' — spells it: the program under
+-- 'input', wrapped in the fixture object model where 'model' says so and run
+-- against the fixture λ functions where 'atoms' does, entered at 'location' and
+-- answering either the program under 'result' or the failure under 'fails'.
+data MorphPack = MorphPack
   { location :: Maybe String
   , input :: String
   , model :: Maybe Bool
@@ -66,17 +56,18 @@ data DeepPack = DeepPack
   }
   deriving (Generic, Show, FromJSON)
 
--- Walk one such pack with '_deep' on and check what it answers. A pack that
--- registers the fixture λ functions fires one under 'node', so it is pending
--- where 'node' is not installed.
-testDeep :: Registry -> FilePath -> Expectation
-testDeep registry pth = do
-  DeepPack{..} <- Decode.decodeFileThrow pth
+-- Morph one such pack and check what it answers, walking every binding where
+-- 'deep' says so, since that is what tells the two pack directories apart. A
+-- pack that registers the fixture λ functions fires one under 'node', so it is
+-- pending where 'node' is not installed.
+testMorph :: Registry -> Bool -> FilePath -> Expectation
+testMorph registry deep pth = do
+  MorphPack{..} <- Decode.decodeFileThrow pth
   expr <- parseExpressionThrows (if model == Just True then primitives input else input)
   loc <- parseExpressionThrows (fromMaybe "Q" location)
   let ctx =
         (defaultReduceContext loc)
-          { _deep = True
+          { _deep = deep
           , _partial = partial == Just True
           , _atoms = if atoms == Just True then registry else emptyRegistry
           }
@@ -101,12 +92,9 @@ spec = do
   -- the subterm, threads the whole input expression as the universe and hands
   -- back the morphed expression together with the chain that led to it (#1114).
   describe "morph" $ do
-    testMorph
-      [ ("hands the top formation back untouched under the Q locator", "Q", "[[ D> 00- ]]", "[[ D> 00- ]]")
-      , -- 𝕄 is total where 𝔻 is not: the 'xi' axiom morphs ξ to ⊥, so the run
-        -- ends with an answer rather than with a failure
-        ("answers ⊥ where no formation is reachable", "Q.x", "[[ x -> $ ]]", "T")
-      ]
+    let resources = "test-resources/morph-packs"
+    packs <- runIO (allPathsIn resources)
+    forM_ packs (\pth -> it (makeRelative resources pth) (testMorph registry False pth))
 
     -- The chain runs oldest step first and carries the rule that produced the
     -- step after it, exactly as 'dataize' reports its own, so '--sequence'
@@ -118,22 +106,6 @@ spec = do
       map snd chain `shouldBe` [Just "mf", Nothing]
       map fst chain `shouldBe` [expr, expr]
 
-    -- 𝕄 never fires a bare λ-formation, so only an atom sitting under a
-    -- dispatch (the 'ml' rule) can get stuck
-    describe "a stuck atom under 'ml'" $ do
-      let stuck :: IO (Expression, Expression)
-          stuck = (,) <$> parseExpressionThrows "[[ x -> [[ L> Sym_arg_0 ]].foo ]]" <*> parseExpressionThrows "Q.x"
-      it "fails the run without '_partial'" $ do
-        (expr, loc) <- stuck
-        morph expr (defaultReduceContext loc)
-          `shouldThrow` (\e -> "Atom 'Sym_arg_0' does not exist" `isInfixOf` show (e :: SomeException))
-
-      it "is parked in the residue under '_partial'" $ do
-        (expr, loc) <- stuck
-        expected <- parseExpressionThrows "[[ L> Sym_arg_0 ]].foo"
-        (residue, _) <- morph expr (defaultReduceContext loc){_partial = True}
-        residue `shouldBe` expected
-
   -- 𝕄 stops at the first formation 'mf' hands back and leaves its bindings as
   -- they were written, since firing a bare λ is 𝔻's business, so a program
   -- whose parts nothing demands is never reduced (#1124). The deep walk
@@ -143,7 +115,7 @@ spec = do
   describe "morph with '_deep'" $ do
     let resources = "test-resources/morph-deep-packs"
     packs <- runIO (allPathsIn resources)
-    forM_ packs (\pth -> it (makeRelative resources pth) (testDeep registry pth))
+    forM_ packs (\pth -> it (makeRelative resources pth) (testMorph registry True pth))
 
     -- The walk enters a dispatch through its target and fires the box it finds
     -- there before 𝕄 is ever asked about the dispatch, while 'ml' demands that

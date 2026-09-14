@@ -1,5 +1,8 @@
+{-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
@@ -10,19 +13,24 @@ import AST
 import Atoms (Registry, emptyRegistry)
 import Control.Exception (SomeException)
 import Control.Monad
+import Data.Aeson (FromJSON)
 import Data.IORef (modifyIORef', newIORef, readIORef)
 import Data.List (find, isInfixOf, nub)
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.Maybe (fromMaybe, isJust)
+import Data.Yaml qualified as Decode
 import Dataize (Outcome (..), dataize, dataize', reduction)
 import Deps (Evaluation (..), dontSaveEval, dontSaveStep)
+import Files (allPathsIn)
 import Fixtures (defaultReduceContext, fixtureRegistry, primitives, withAtoms, withNode)
 import Functions (buildTerm)
+import GHC.Generics (Generic)
 import Matcher (substEmpty)
 import Morph (ReduceContext (..), Steps (..), emptyState, execBuildTerm)
-import Parser (parseExpressionThrows)
+import Parser (parseBytes, parseExpressionThrows)
 import Rewriter (Rewritten)
 import Rule (RuleContext (RuleContext), matchExpressionWithRule')
+import System.FilePath (makeRelative)
 import Test.Hspec
 import Yaml qualified
 
@@ -33,31 +41,40 @@ test func useCases =
       ((res, _), _) <- func (input, (expr, Nothing) :| []) expr emptyState (defaultReduceContext ExRoot)
       res `shouldBe` output
 
-testDataize :: [(String, String, String, Bytes)] -> Spec
-testDataize useCases =
-  forM_ useCases $ \(name, loc, src, res) ->
-    it name $ do
-      expr <- parseExpressionThrows src
-      loc' <- parseExpressionThrows loc
-      (value, _) <- dataize expr (defaultReduceContext loc')
-      value `shouldBe` Dataized res
+-- One case of 𝔻, as a pack of 'test-resources/dataization-packs' spells it: the
+-- program under 'input', wrapped in the fixture object model where 'model' says
+-- so and run against the fixture λ functions where 'atoms' does, entered at
+-- 'location' and answering either the bytes under 'result' or the failure under
+-- 'fails'.
+data DataizePack = DataizePack
+  { location :: Maybe String
+  , input :: String
+  , model :: Maybe Bool
+  , atoms :: Maybe Bool
+  , result :: Maybe String
+  , fails :: Maybe String
+  }
+  deriving (Generic, Show, FromJSON)
 
--- Wrap a hex literal into the bytes object that EO source spells as a bare '20-1F'
-raw :: String -> String
-raw bts = "Φ.bytes( φ ↦ ⟦ Δ ⤍ " ++ bts ++ " ⟧ )"
-
--- Dataize an expression against the fixture universe, with the fixture λ
--- functions registered. Every such case runs an external script, so it is
--- pending where 'node' is not installed.
-testAtom :: Registry -> [(String, String, Bytes)] -> Spec
-testAtom registry useCases =
-  forM_ useCases $ \(name, src, res) ->
-    it name $
-      withNode $ do
-        expr <- parseExpressionThrows (primitives src)
-        loc <- parseExpressionThrows "Q"
-        (value, _) <- dataize expr (withAtoms registry (defaultReduceContext loc))
-        value `shouldBe` Dataized res
+-- Dataize one such pack and check what it answers. A pack that registers the
+-- fixture λ functions runs an external script, so it is pending where 'node' is
+-- not installed.
+testDataize :: Registry -> FilePath -> Expectation
+testDataize registry pth = do
+  DataizePack{..} <- Decode.decodeFileThrow pth
+  expr <- parseExpressionThrows (if model == Just True then primitives input else input)
+  loc <- parseExpressionThrows (fromMaybe "Q" location)
+  let ctx = (defaultReduceContext loc){_atoms = if atoms == Just True then registry else emptyRegistry}
+      checked :: Expectation
+      checked = case (result, fails) of
+        (Just res, Nothing) -> do
+          bts <- either (fail . ("cannot read the expected bytes: " ++)) pure (parseBytes res)
+          (value, _) <- dataize expr ctx
+          value `shouldBe` Dataized bts
+        (Nothing, Just message) ->
+          dataize expr ctx `shouldThrow` (\err -> message `isInfixOf` show (err :: SomeException))
+        _ -> expectationFailure "The pack holds neither a single 'result' nor a single 'fails'"
+  if atoms == Just True then withNode checked else checked
 
 -- Dataize under '--partial', collecting every report 𝔼 makes on the way, in
 -- the order it makes them
@@ -73,17 +90,6 @@ partially registry src = do
   result <- dataize expr ctx
   collected <- readIORef reports
   pure (result, reverse collected)
-
--- An atom with no answer yields ⊥, which stops the whole dataization
-testStuckAtom :: Registry -> [(String, String)] -> Spec
-testStuckAtom registry useCases =
-  forM_ useCases $ \(name, src) ->
-    it name $
-      withNode $ do
-        expr <- parseExpressionThrows (primitives src)
-        loc <- parseExpressionThrows "Q"
-        dataize expr (withAtoms registry (defaultReduceContext loc))
-          `shouldThrow` (\e -> "terminator" `isInfixOf` show (e :: SomeException))
 
 spec :: Spec
 spec = do
@@ -124,7 +130,23 @@ spec = do
       substs <- matchExpressionWithRule' [substEmpty] (ExDispatch ExXi (AtLabel "x")) (asRule (dataizeRule "norm")) rctx
       null substs `shouldBe` False
 
-  describe "dataize" $
+  -- Most cases of 𝔻 are four plain values — the program, where the run enters
+  -- it, which λ functions answer it and what it must dataize to — so they are
+  -- packs of 'test-resources/dataization-packs' rather than Haskell (#1201).
+  -- Which λ functions exist is no longer phino's business: the registry given
+  -- with '--atoms' decides, and each one runs as an external script (see
+  -- 'Atoms'). What a pack with 'atoms' on asserts is that the answer of such a
+  -- script lands in the derivation exactly where a built-in atom's answer used
+  -- to: 𝔼 normalizes it and 𝔻 carries on. The λ functions themselves are the
+  -- fixture ones (see 'Fixtures'), and 'number.eq' is composed out of
+  -- 'L_bytes_eq' the way 'eq.eo' composes it, so the EO-level composition is
+  -- exercised too.
+  describe "dataize" $ do
+    let resources = "test-resources/dataization-packs"
+    packs <- runIO (allPathsIn resources)
+    forM_ packs (\pth -> it (makeRelative resources pth) (testDataize registry pth))
+
+  describe "dataize'" $
     test
       dataize'
       [ ("[[ D> 00- ]] => 00-", ExFormation [BiDelta (BtOne "00")], ExRoot, BtOne "00")
@@ -257,7 +279,7 @@ spec = do
         map (._function) reports `shouldBe` ["L_number_times"]
     it "stops on the terminator ⊥ as before, since a wrong operand is not a stuck atom" $
       withNode $ do
-        expr <- parseExpressionThrows (primitives ("5.plus( " ++ raw "--" ++ " )"))
+        expr <- parseExpressionThrows (primitives "5.plus( Φ.bytes( φ ↦ ⟦ Δ ⤍ -- ⟧ ) )")
         dataize expr ((withAtoms registry (defaultReduceContext ExRoot)){_partial = True})
           `shouldThrow` (\e -> "terminator" `isInfixOf` show (e :: SomeException))
 
@@ -356,133 +378,3 @@ spec = do
     it "dataizes a located reference through the expected rules" $ do
       labels <- labelsOf "Q.foo.bar" "[[ foo -> [[ bar -> [[ @ -> Q.x ]] ]], x -> [[ D> 42- ]] ]]"
       labels `shouldBe` ["contextualize", "md", "dot", "copy", "mf", "delta"]
-    -- The 'none' rule dataizes ⊥ (𝔻(⟦⟧) → 𝔻(⊥)), which matches no clause now
-    -- that there is no 'end' rule, so an empty formation reduces through one
-    -- labelled 'dataize' step and then fails: it has nothing to dataize (#955).
-    it "fails to dataize an empty formation, which dataizes ⊥" $ do
-      expr <- parseExpressionThrows "[[ ]]"
-      loc <- parseExpressionThrows "Q"
-      dataize expr (defaultReduceContext loc)
-        `shouldThrow` (\e -> "terminator" `isInfixOf` show (e :: SomeException))
-
-  -- Every case below reaches its bytes without firing an atom, so none of them
-  -- needs the registry: what they exercise is the calculus itself.
-  testDataize
-    [
-      ( "Located"
-      , "Q.foo.bar"
-      , unlines
-          [ "[["
-          , "  foo -> [["
-          , "    bar -> [["
-          , "      @ -> Q.x"
-          , "    ]]"
-          , "  ]],"
-          , "  x -> [[ D> 42- ]]"
-          , "]]"
-          ]
-      , BtOne "42"
-      )
-    ,
-      ( "Five"
-      , "Q.x"
-      , unlines
-          [ "[["
-          , "  number ↦ ⟦ φ ↦ ∅ ⟧,"
-          , "  bytes ↦ ⟦ φ ↦ ∅ ⟧,"
-          , "  x -> 5"
-          , "]]"
-          ]
-      , BtMany ["40", "14", "00", "00", "00", "00", "00", "00"]
-      )
-    , -- Dispatching an absent attribute on a φ-decorated formation now resolves
-      -- the inherited attribute through morphing 'mphi' (#973): PHI used to be a
-      -- normalization rule, but following the decoration is a semantic 𝕄 step,
-      -- so it moved into 'resources/morphing'. Here '.t' is missing from the outer
-      -- formation, so 𝕄 walks the '@' decoration to the parent that defines 't'
-      -- and dataizes its datum.
-
-      ( "InheritedThroughPhi"
-      , "Q"
-      , "[[ @ -> [[ t -> [[ D> 2A- ]] ]] ]].t"
-      , BtOne "2A"
-      )
-    ]
-
-  -- Which λ functions exist is no longer phino's business: the registry given
-  -- with '--atoms' decides, and each one runs as an external script (see
-  -- 'Atoms'). What the cases below assert is that the answer of such a script
-  -- lands in the derivation exactly where a built-in atom's answer used to: 𝔼
-  -- normalizes it and 𝔻 carries on. The λ functions themselves are the fixture
-  -- ones (see 'Fixtures'), and 'number.eq' is composed out of 'L_bytes_eq' the
-  -- way 'eq.eo' composes it, so the EO-level composition is exercised too.
-  describe "atoms come from the registry" $ do
-    testAtom
-      registry
-      [ ("adds two numbers", "5.plus( 6 )", BtMany ["40", "26", "00", "00", "00", "00", "00", "00"])
-      , ("multiplies two numbers", "5.times( 6 )", BtMany ["40", "3E", "00", "00", "00", "00", "00", "00"])
-      , -- Two firings in a row: 'ml' reduces the head of the second dispatch,
-        -- which fires the first atom, before the second one is handed its own
-        -- formation to fire against
-        ("fires twice down a chain of dispatches", "5.plus( 6 ).plus( 7 )", BtMany ["40", "32", "00", "00", "00", "00", "00", "00"])
-      , ("divides a positive dividend", "256.div( 16 )", BtMany ["40", "30", "00", "00", "00", "00", "00", "00"])
-      , ("divides by zero into infinity", "2.div( 0 )", BtMany ["7F", "F0", "00", "00", "00", "00", "00", "00"])
-      , ("tells 1000 is greater than 200", "1000.gt( 200 )", BtOne "FF")
-      , ("tells 42 is not greater than 42.5", "42.gt( 42.5 )", BtOne "00")
-      , ("tells zero is greater than a negative", "0.gt( -5 )", BtOne "FF")
-      , ("tells 5 equals 5", "5.eq( 5 )", BtOne "FF")
-      , ("tells 5 is not equal to 6", "5.eq( 6 )", BtOne "00")
-      , ("inverts bytes", raw "CA-FE-BE-BE" ++ ".not", BtMany ["35", "01", "41", "41"])
-      , ("tells equal bytes are equal", raw "CA-FE" ++ ".eq( " ++ raw "CA-FE" ++ " )", BtOne "FF")
-      , ("tells different bytes are not equal", raw "CA-FE" ++ ".eq( " ++ raw "CA-FF" ++ " )", BtOne "00")
-      ]
-
-    -- A whole program, not a single operation: every atom on the way is an
-    -- external script and the run still lands on the bytes EO's own
-    -- 'Fahrenheit' example lands on
-    it "dataizes a program whose every operation is an external atom" $
-      withNode $ do
-        expr <-
-          parseExpressionThrows
-            ( unlines
-                [ "[["
-                , "  bytes -> [["
-                , "    φ -> ?"
-                , "  ]],"
-                , "  number -> [["
-                , "    φ -> ?,"
-                , "    as-bytes -> $.φ,"
-                , "    plus -> [[ x -> ?, L> L_number_plus ]],"
-                , "    times -> [[ x -> ?, L> L_number_times ]]"
-                , "  ]],"
-                , "  @ -> $.c.times(1.8).plus(32),"
-                , "  c -> 25"
-                , "]]"
-                ]
-            )
-        loc <- parseExpressionThrows "Q"
-        (value, _) <- dataize expr (withAtoms registry (defaultReduceContext loc))
-        value `shouldBe` Dataized (BtMany ["40", "53", "40", "00", "00", "00", "00", "00"])
-
-    -- A name the registry does not carry has no λ function at all: 𝔼 gets
-    -- stuck on it, which is the only behaviour phino itself is left with
-    it "gets stuck on a λ function the registry does not carry" $ do
-      expr <- parseExpressionThrows (primitives "5.nope")
-      loc <- parseExpressionThrows "Q"
-      dataize expr (withAtoms registry (defaultReduceContext loc))
-        `shouldThrow` (\e -> "Atom 'L_number_nope' does not exist" `isInfixOf` show (e :: SomeException))
-
-    -- An operand carrying no number is what an EO number atom answers ⊥ to, and
-    -- dataizing ⊥ fails through the terminator path. The judgment is the
-    -- script's now, so what these cases prove is that a ⊥ coming back from a
-    -- script stops 𝔻 exactly as a built-in ⊥ used to.
-    testStuckAtom
-      registry
-      [ ("cannot add a non-numeric operand", "5.plus( " ++ raw "--" ++ " )")
-      , ("cannot multiply by a non-numeric operand", "5.times( " ++ raw "--" ++ " )")
-      , ("cannot divide by a non-numeric divisor", "5.div( " ++ raw "--" ++ " )")
-      , ("cannot compare against a non-numeric threshold", "5.gt( " ++ raw "--" ++ " )")
-      , -- A byte array whose length is not 8 carries no number either (#1072)
-        ("cannot add a 5-byte operand", "5.plus( " ++ raw "68-65-6C-6C-6F" ++ " )")
-      , ("cannot multiply by a 2-byte operand", "5.times( " ++ raw "20-1F" ++ " )")
-      ]

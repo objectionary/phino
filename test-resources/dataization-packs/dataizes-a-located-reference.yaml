@@ -1,0 +1,16 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# The run enters the program where the locator points, follows the reference
+# it finds there and dataizes what it lands on.
+location: 'Q.foo.bar'
+input: |
+  [[
+    foo -> [[
+      bar -> [[
+        @ -> Q.x
+      ]]
+    ]],
+    x -> [[ D> 42- ]]
+  ]]
+result: '42-'
