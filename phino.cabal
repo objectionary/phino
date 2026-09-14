@@ -61,6 +61,7 @@ library
     Matcher
     Merge
     Misc
+    Morph
     Must
     Parser
     Printer
@@ -152,6 +153,7 @@ test-suite spec
     MatcherSpec
     MergeSpec
     MiscSpec
+    MorphSpec
     MustSpec
     ParserSpec
     Paths_phino

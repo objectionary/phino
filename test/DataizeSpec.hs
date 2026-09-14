@@ -1,8 +1,5 @@
-{-# LANGUAGE DeriveAnyClass #-}
-{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
@@ -10,54 +7,30 @@
 module DataizeSpec (spec) where
 
 import AST
-import Atoms (Registry, emptyRegistry, readRegistry)
+import Atoms (Registry, emptyRegistry)
 import Control.Exception (SomeException)
 import Control.Monad
-import Data.Aeson (FromJSON)
 import Data.IORef (modifyIORef', newIORef, readIORef)
 import Data.List (find, isInfixOf, nub)
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.Maybe (fromMaybe, isJust)
-import Data.Yaml qualified as Decode
-import Dataize (DataizeContext (..), Outcome (..), Steps (..), dataize, dataize', emptyState, execBuildTerm, insideUniverse, morph, morph')
-import Deps (Evaluation (..), Term (TeExpression), dontSaveEval, dontSaveStep)
-import Files (allPathsIn)
-import Fixtures (fixtureRegistry, withNode, withServing, withShell)
+import Dataize (Outcome (..), dataize, dataize', reduction)
+import Deps (Evaluation (..), dontSaveEval, dontSaveStep)
+import Fixtures (defaultReduceContext, fixtureRegistry, primitives, withAtoms, withNode)
 import Functions (buildTerm)
-import GHC.Generics (Generic)
 import Matcher (substEmpty)
+import Morph (ReduceContext (..), Steps (..), emptyState, execBuildTerm)
 import Parser (parseExpressionThrows)
 import Rewriter (Rewritten)
 import Rule (RuleContext (RuleContext), matchExpressionWithRule')
-import System.FilePath (makeRelative)
 import Test.Hspec
-import Yaml (ExtraArgument (..))
 import Yaml qualified
 
--- Shuffle is enabled so the suite exercises the order-independence of the
--- dataization rules (#909): a hidden overlap surfaces as a nondeterministic
--- failure instead of staying silently green. The registry of λ functions is
--- empty, since phino implements none of them: a case that needs an atom to
--- answer brings the fixture registry in through 'withAtoms'.
-defaultDataizeContext :: Expression -> DataizeContext
-defaultDataizeContext loc = DataizeContext loc 25 25 (Steps 250 0) False True False False emptyRegistry buildTerm dontSaveStep dontSaveEval
-
--- The same context with the fixture λ functions registered (see 'Fixtures').
-withAtoms :: Registry -> DataizeContext -> DataizeContext
-withAtoms registry ctx = ctx{_atoms = registry}
-
-test :: (Eq a, Show a) => ((Expression, NonEmpty Rewritten) -> Expression -> String -> DataizeContext -> IO ((a, [Rewritten]), String)) -> [(String, Expression, Expression, a)] -> Spec
+test :: (Eq a, Show a) => ((Expression, NonEmpty Rewritten) -> Expression -> String -> ReduceContext -> IO ((a, [Rewritten]), String)) -> [(String, Expression, Expression, a)] -> Spec
 test func useCases =
   forM_ useCases $ \(desc, input, expr, output) ->
     it desc $ do
-      ((res, _), _) <- func (input, (expr, Nothing) :| []) expr emptyState (defaultDataizeContext ExRoot)
-      res `shouldBe` output
-
-test' :: (Eq a, Show a) => ((Expression, NonEmpty Rewritten) -> Expression -> String -> DataizeContext -> IO ((a, NonEmpty Rewritten), String)) -> [(String, Expression, Expression, a)] -> Spec
-test' func useCases =
-  forM_ useCases $ \(desc, input, expr, output) ->
-    it desc $ do
-      ((res, _), _) <- func (input, (expr, Nothing) :| []) expr emptyState (defaultDataizeContext ExRoot)
+      ((res, _), _) <- func (input, (expr, Nothing) :| []) expr emptyState (defaultReduceContext ExRoot)
       res `shouldBe` output
 
 testDataize :: [(String, String, String, Bytes)] -> Spec
@@ -66,97 +39,8 @@ testDataize useCases =
     it name $ do
       expr <- parseExpressionThrows src
       loc' <- parseExpressionThrows loc
-      (value, _) <- dataize expr (defaultDataizeContext loc')
+      (value, _) <- dataize expr (defaultReduceContext loc')
       value `shouldBe` Dataized res
-
-testMorph :: [(String, String, String, String)] -> Spec
-testMorph useCases =
-  forM_ useCases $ \(name, loc, src, res) ->
-    it name $ do
-      expr <- parseExpressionThrows src
-      loc' <- parseExpressionThrows loc
-      expected <- parseExpressionThrows res
-      (morphed, _) <- morph expr (defaultDataizeContext loc')
-      morphed `shouldBe` expected
-
--- One case of the deep walk, as a pack of 'test-resources/morph-deep-packs'
--- spells it: the program under 'input', wrapped in the fixture object model
--- where 'model' says so and run against the fixture λ functions where 'atoms'
--- does, entered at 'location' and answering either the program under 'result'
--- or the failure under 'fails'.
-data DeepPack = DeepPack
-  { location :: Maybe String
-  , input :: String
-  , model :: Maybe Bool
-  , atoms :: Maybe Bool
-  , partial :: Maybe Bool
-  , result :: Maybe String
-  , fails :: Maybe String
-  }
-  deriving (Generic, Show, FromJSON)
-
--- Walk one such pack with '_deep' on and check what it answers. A pack that
--- registers the fixture λ functions fires one under 'node', so it is pending
--- where 'node' is not installed.
-testDeep :: Registry -> FilePath -> Expectation
-testDeep registry pth = do
-  DeepPack{..} <- Decode.decodeFileThrow pth
-  expr <- parseExpressionThrows (if model == Just True then primitives input else input)
-  loc <- parseExpressionThrows (fromMaybe "Q" location)
-  let ctx =
-        (defaultDataizeContext loc)
-          { _deep = True
-          , _partial = partial == Just True
-          , _atoms = if atoms == Just True then registry else emptyRegistry
-          }
-      checked :: Expectation
-      checked = case (result, fails) of
-        (Just res, Nothing) -> do
-          expected <- parseExpressionThrows res
-          (morphed, _) <- morph expr ctx
-          morphed `shouldBe` expected
-        (Nothing, Just message) ->
-          morph expr ctx `shouldThrow` (\err -> message `isInfixOf` show (err :: SomeException))
-        _ -> expectationFailure "The pack holds neither a single 'result' nor a single 'fails'"
-  if atoms == Just True then withNode checked else checked
-
--- The EO objects the fixture λ functions answer for, declared the way
--- 'number.eo' and 'bytes.eo' declare them, so a case below only has to spell
--- the expression under φ. 'number.eq' is the one operation with no atom of its
--- own: EO spells it out of 'L_bytes_eq' (eq.eo), so the fixture composes it the
--- same way. Alongside them stand the objects the atoms hand results to: 'string'
--- carries what a byte-array complaint would say, while 'true' and 'false' fill
--- in for the real bool objects, since the single byte an EO bool dataizes to is
--- all these cases assert. Those bytes are EO's own: 'true.eo' asserts
--- 'true.as-bytes.eq FF-' and 'bool.eo' branches 'if' over 'FF-' and '00-', so a
--- universe copied from here starts with a bool an EO program recognizes.
--- 'number.nope' is declared and left out of the registry on purpose: it is the
--- λ function that cannot fire, the one '--partial' parks on.
-primitives :: String -> String
-primitives src =
-  unlines
-    [ "[["
-    , "  bytes -> [["
-    , "    φ -> ?,"
-    , "    not -> [[ L> L_bytes_not ]],"
-    , "    eq -> [[ b -> ?, L> L_bytes_eq ]]"
-    , "  ]],"
-    , "  number -> [["
-    , "    φ -> ?,"
-    , "    as-bytes -> $.φ,"
-    , "    plus -> [[ x -> ?, L> L_number_plus ]],"
-    , "    times -> [[ x -> ?, L> L_number_times ]],"
-    , "    div -> [[ x -> ?, L> L_number_div ]],"
-    , "    gt -> [[ x -> ?, L> L_number_gt ]],"
-    , "    eq -> [[ x -> ?, @ -> $.^.as-bytes.eq( x.as-bytes ) ]],"
-    , "    nope -> [[ L> L_number_nope ]]"
-    , "  ]],"
-    , "  string -> [[ φ -> ?, as-bytes -> $.φ ]],"
-    , "  true -> [[ @ -> [[ D> FF- ]] ]],"
-    , "  false -> [[ @ -> [[ D> 00- ]] ]],"
-    , "  @ -> " ++ src
-    , "]]"
-    ]
 
 -- Wrap a hex literal into the bytes object that EO source spells as a bare '20-1F'
 raw :: String -> String
@@ -172,7 +56,7 @@ testAtom registry useCases =
       withNode $ do
         expr <- parseExpressionThrows (primitives src)
         loc <- parseExpressionThrows "Q"
-        (value, _) <- dataize expr (withAtoms registry (defaultDataizeContext loc))
+        (value, _) <- dataize expr (withAtoms registry (defaultReduceContext loc))
         value `shouldBe` Dataized res
 
 -- Dataize under '--partial', collecting every report 𝔼 makes on the way, in
@@ -182,7 +66,7 @@ partially registry src = do
   expr <- parseExpressionThrows (primitives src)
   reports <- newIORef []
   let ctx =
-        (withAtoms registry (defaultDataizeContext ExRoot))
+        (withAtoms registry (defaultReduceContext ExRoot))
           { _partial = True
           , _saveEval = \report -> modifyIORef' reports (report :)
           }
@@ -198,7 +82,7 @@ testStuckAtom registry useCases =
       withNode $ do
         expr <- parseExpressionThrows (primitives src)
         loc <- parseExpressionThrows "Q"
-        dataize expr (withAtoms registry (defaultDataizeContext loc))
+        dataize expr (withAtoms registry (defaultReduceContext loc))
           `shouldThrow` (\e -> "terminator" `isInfixOf` show (e :: SomeException))
 
 spec :: Spec
@@ -206,121 +90,6 @@ spec = do
   -- Every λ function a case may fire comes from the fixture registry, read
   -- once here: phino carries none of its own (see 'Fixtures').
   registry <- runIO fixtureRegistry
-
-  -- The top-level 𝕄 entry point, the one the 'morph' command runs: it locates
-  -- the subterm, threads the whole input expression as the universe and hands
-  -- back the morphed expression together with the chain that led to it (#1114).
-  describe "morph" $ do
-    testMorph
-      [ ("hands the top formation back untouched under the Q locator", "Q", "[[ D> 00- ]]", "[[ D> 00- ]]")
-      , -- 𝕄 is total where 𝔻 is not: the 'xi' axiom morphs ξ to ⊥, so the run
-        -- ends with an answer rather than with a failure
-        ("answers ⊥ where no formation is reachable", "Q.x", "[[ x -> $ ]]", "T")
-      ]
-
-    -- The chain runs oldest step first and carries the rule that produced the
-    -- step after it, exactly as 'dataize' reports its own, so '--sequence'
-    -- prints both the same way
-    it "reports the chain of steps oldest first" $ do
-      expr <- parseExpressionThrows "[[ D> 00- ]]"
-      (morphed, chain) <- morph expr (defaultDataizeContext ExRoot)
-      morphed `shouldBe` expr
-      map snd chain `shouldBe` [Just "mf", Nothing]
-      map fst chain `shouldBe` [expr, expr]
-
-    -- 𝕄 never fires a bare λ-formation, so only an atom sitting under a
-    -- dispatch (the 'ml' rule) can get stuck
-    describe "a stuck atom under 'ml'" $ do
-      let stuck :: IO (Expression, Expression)
-          stuck = (,) <$> parseExpressionThrows "[[ x -> [[ L> Sym_arg_0 ]].foo ]]" <*> parseExpressionThrows "Q.x"
-      it "fails the run without '_partial'" $ do
-        (expr, loc) <- stuck
-        morph expr (defaultDataizeContext loc)
-          `shouldThrow` (\e -> "Atom 'Sym_arg_0' does not exist" `isInfixOf` show (e :: SomeException))
-
-      it "is parked in the residue under '_partial'" $ do
-        (expr, loc) <- stuck
-        expected <- parseExpressionThrows "[[ L> Sym_arg_0 ]].foo"
-        (residue, _) <- morph expr (defaultDataizeContext loc){_partial = True}
-        residue `shouldBe` expected
-
-  -- 𝕄 stops at the first formation 'mf' hands back and leaves its bindings as
-  -- they were written, since firing a bare λ is 𝔻's business, so a program
-  -- whose parts nothing demands is never reduced (#1124). The deep walk
-  -- ('_deep') enters every binding and finishes what 'mf' left, while what no
-  -- atom touched keeps the shape it was written in and the answer stays a
-  -- program.
-  describe "morph with '_deep'" $ do
-    let resources = "test-resources/morph-deep-packs"
-    packs <- runIO (allPathsIn resources)
-    forM_ packs (\pth -> it (makeRelative resources pth) (testDeep registry pth))
-
-    -- The walk enters a dispatch through its target and fires the box it finds
-    -- there before 𝕄 is ever asked about the dispatch, while 'ml' demands that
-    -- λ only where the dispatched attribute is none of the box's own (#1187)
-    describe "a dispatch naming an attribute of the formation it stands on" $
-      it "cannot fire the λ the dispatch does not demand" $
-        withShell $
-          withServing "printf '{\"id\": %s, \"𝑛\": \"⟦ Δ ⤍ FF- ⟧\"}\\n' \"$id\"" $ \path -> do
-            box <- readRegistry path
-            world <- parseExpressionThrows "[[ foo -> [[ f -> [[ a -> ?, @ -> $.a, L> L_answer ]] ]], x -> Q.foo.f( a -> [[ D> 01- ]] ).@ ]]"
-            (morphed, _) <- morph world (withAtoms box (defaultDataizeContext ExRoot)){_deep = True}
-            morphed `shouldBe` world
-
-  describe "morph'" $
-    test'
-      morph'
-      [ ("[[ D> 00- ]] => [[ D> 00- ]]", ExFormation [BiDelta (BtOne "00")], ExRoot, ExFormation [BiDelta (BtOne "00")])
-      , ("T => T", ExTermination, ExRoot, ExTermination)
-      , ("$ => X", ExXi, ExRoot, ExTermination)
-      , ("Q => X", ExRoot, ExRoot, ExTermination)
-      ,
-        ( "Q.x (Q -> [[ x -> [[]] ]]) => [[ ρ -> Q ]]"
-        , ExDispatch ExRoot (AtLabel "x")
-        , ExFormation [BiTau (AtLabel "x") (ExFormation [])]
-        , ExFormation [BiTau AtRho (ExFormation [BiTau (AtLabel "x") (ExFormation [BiVoid AtRho]), BiVoid AtRho])]
-        )
-      , -- A void slot fed a non-absolute argument can never be filled, so 'copy'
-        -- cannot fire and the application is a stuck normal form. Before #959,
-        -- 'ma' re-morphed this identical term forever; now the 'mad' axiom
-        -- morphs it straight to ⊥, keeping 𝕄 total.
-
-        ( "[[ x -> ? ]](x -> $.foo) => T"
-        , ExApplication (ExFormation [BiVoid (AtLabel "x")]) (ArTau (AtLabel "x") (ExDispatch ExXi (AtLabel "foo")))
-        , ExRoot
-        , ExTermination
-        )
-      , -- Same as above but through the alpha-argument sibling 'maad' instead of
-        -- 'mad': a void slot fed a non-absolute alpha-indexed argument also
-        -- morphs straight to ⊥.
-
-        ( "[[ ^ -> ? ]](α0 -> $.foo) => T"
-        , ExApplication (ExFormation [BiVoid AtRho]) (ArAlpha (Alpha 0) (ExDispatch ExXi (AtLabel "foo")))
-        , ExRoot
-        , ExTermination
-        )
-      , -- 'universe' fires only when the universe 'e' differs from Φ itself
-        -- ('not (eq(e, Φ))'); it then normalizes and re-morphs that universe.
-        -- Here the universe is a plain formation, already a normal form, so
-        -- re-morphing it lands straight on 'mf' and returns it unchanged.
-
-        ( "Q => [[]] (a universe distinct from Φ) => [[]]"
-        , ExRoot
-        , ExFormation []
-        , ExFormation []
-        )
-      ]
-
-  -- 𝕄's first argument is always a normal form reachable through normalization,
-  -- and every such normal form is covered by some morphing clause (an axiom
-  -- like 'mf'/'dead'/'xi'/'universe'/'mg' or a recursive rule), so the "no rule
-  -- matched" fallback never fires along any real derivation. It is still total
-  -- code, reachable by calling 'morph'' directly (bypassing normalization) on a
-  -- raw meta 𝑛, an AST node the matcher never binds to any concrete pattern.
-  describe "morph' fails when no morphing rule matches the term" $
-    it "throws instead of looping when handed a bare, unmatched meta" $
-      morph' (ExMeta "unbound", (ExRoot, Nothing) :| []) ExRoot emptyState (defaultDataizeContext ExRoot)
-        `shouldThrow` (\e -> "no morphing rule matched" `isInfixOf` show (e :: SomeException))
 
   -- Symmetric to the morphing fallback above: every normal form 𝔻 actually
   -- receives is covered by 'delta'/'box'/'fire'/'none' (formations) or 'norm'
@@ -330,153 +99,17 @@ spec = do
   -- proving the fallback itself is live code, not dead weight.
   describe "dataize' fails when no dataization rule matches the term" $
     it "throws instead of treating the unmatched meta as ⊥" $
-      dataize' (ExMeta "unbound", (ExRoot, Nothing) :| []) ExRoot emptyState (defaultDataizeContext ExRoot)
+      dataize' (ExMeta "unbound", (ExRoot, Nothing) :| []) ExRoot emptyState (defaultReduceContext ExRoot)
         `shouldThrow` (\e -> "no dataization rule matched" `isInfixOf` show (e :: SomeException))
-
-  -- 'execBuildTerm's "evaluate" and "morph" cases expose 𝔼 and 𝕄 to the
-  -- matcher's condition path (guards in 'when'/'having'). No built-in rule's
-  -- guard actually calls either function, so these error paths — reachable only
-  -- by malformed arguments — are exercised here directly through the exported
-  -- 'execBuildTerm', the same way the matcher would call it.
-  describe "execBuildTerm 'evaluate'" $ do
-    let univ = ExFormation []
-        ctx = withAtoms registry (defaultDataizeContext ExRoot)
-        runEvaluate args = execBuildTerm univ ctx "evaluate" args substEmpty
-    forM_
-      [
-        ( "the first argument is not a formation"
-        , [ArgExpression ExRoot, ArgExpression univ]
-        , "Function evaluate() expects a formation"
-        )
-      ,
-        ( "the formation has no λ binding at all"
-        , [ArgExpression (ExFormation []), ArgExpression univ]
-        , "expects a formation with a"
-        )
-      ,
-        ( "a non-λ formation still has other bindings"
-        , [ArgExpression (ExFormation [BiVoid AtRho]), ArgExpression univ]
-        , "expects a formation with a"
-        )
-      ,
-        ( "not given exactly two expression arguments"
-        , [ArgExpression univ]
-        , "requires exactly 2 expression arguments"
-        )
-      ]
-      ( \(desc, args, message) ->
-          it ("throws when " ++ desc) $
-            runEvaluate args `shouldThrow` (\e -> message `isInfixOf` show (e :: SomeException))
-      )
-    it "evaluates a λ-bearing formation to the atom's normalized result" $
-      withNode $ do
-        let form = ExFormation [BiLambda (Function "L_bytes_not"), BiTau AtRho (ExFormation [BiDelta (BtOne "00")])]
-        result <- runEvaluate [ArgExpression form, ArgExpression univ]
-        case result of
-          TeExpression expr -> expr `shouldBe` dataBytes (BtOne "FF")
-          _ -> expectationFailure "expected TeExpression"
-
-  describe "execBuildTerm 'morph'" $ do
-    let univ = ExFormation []
-        ctx = defaultDataizeContext ExRoot
-    it "throws when not given exactly one expression argument" $
-      execBuildTerm univ ctx "morph" [] substEmpty
-        `shouldThrow` (\e -> "requires exactly 1 expression argument" `isInfixOf` show (e :: SomeException))
-    it "morphs a single expression argument to its already-normal form" $ do
-      result <- execBuildTerm univ ctx "morph" [ArgExpression (ExFormation [BiDelta (BtOne "00")])] substEmpty
-      case result of
-        TeExpression expr -> expr `shouldBe` ExFormation [BiDelta (BtOne "00")]
-        _ -> expectationFailure "expected TeExpression"
-
-  -- An expression that is not part of the program — the operand an atom script
-  -- asks phino to reduce — is bound to a synthetic attribute of the universe and
-  -- that attribute is what 𝔻 is aimed at. This is what the '--inside' option
-  -- runs, and what phino did internally while the atoms still lived in the
-  -- binary.
-  describe "insideUniverse" $ do
-    let universe = "[[ y -> [[ D> 02- ]] ]]"
-        reduced src = do
-          univ <- parseExpressionThrows universe
-          target <- parseExpressionThrows src
-          (extended, ctx) <- insideUniverse target univ (defaultDataizeContext ExRoot)
-          fst <$> dataize extended ctx
-    it "reduces an expression the program does not contain" $ do
-      value <- reduced "Q.y"
-      value `shouldBe` Dataized (BtOne "02")
-    -- 𝔻 accepts normal forms only, and a dispatch off a formation is not one:
-    -- 'dot' still applies to it. So the expression is normalized first, which
-    -- is the whole reason an atom script cannot simply splice it into the
-    -- universe itself.
-    it "normalizes what it is handed before 𝔻 sees it" $ do
-      value <- reduced "[[ x -> [[ D> 01- ]] ]].x"
-      value `shouldBe` Dataized (BtOne "01")
-    it "refuses a universe which is not a formation" $ do
-      target <- parseExpressionThrows "Q.y"
-      insideUniverse target ExRoot (defaultDataizeContext ExRoot)
-        `shouldThrow` (\e -> "not a formation" `isInfixOf` show (e :: SomeException))
-
-  -- 'defaultDataizeContext' runs with '_shuffle' on, so 'morph'' walks the
-  -- morphing rules in a random order on every step. Every clause is
-  -- order-independent (the known overlaps were removed in #856 and #860), so the
-  -- outcome must never depend on that order: morphing each input many times under
-  -- a shuffling context yields exactly the formation the fixed declaration order
-  -- does, proving the rules may be applied in any order with the same result.
-  -- Were a hidden overlap re-introduced, some of these random orders would
-  -- disagree and 'nub' would collect more than the single expected form.
-  describe "morphing is order-independent under --shuffle" $ do
-    let cases =
-          [ ("a byte formation", ExFormation [BiDelta (BtOne "00")], ExRoot, ExFormation [BiDelta (BtOne "00")])
-          , ("termination", ExTermination, ExRoot, ExTermination)
-          , ("xi", ExXi, ExRoot, ExTermination)
-          , ("the global object", ExRoot, ExRoot, ExTermination)
-          ,
-            ( "a dispatch over a formation"
-            , ExDispatch ExRoot (AtLabel "x")
-            , ExFormation [BiTau (AtLabel "x") (ExFormation [])]
-            , ExFormation [BiTau AtRho (ExFormation [BiTau (AtLabel "x") (ExFormation [BiVoid AtRho]), BiVoid AtRho])]
-            )
-          ]
-    forM_ cases $ \(desc, input, univ, expected) ->
-      it ("morphs " ++ desc ++ " to the same form across 100 random rule orders") $ do
-        results <- replicateM 100 (fst . fst <$> morph' (input, (univ, Nothing) :| []) univ emptyState (defaultDataizeContext ExRoot))
-        nub results `shouldBe` [expected]
-
-  -- 'md' fires only when its head is not a formation ('not (formation 𝑛)'),
-  -- so a formation head — λ-bearing or not — is left to 'ml'/'mf'. The
-  -- two clauses are mutually exclusive and their order in 'morphing.yaml'
-  -- cannot change behavior.
-  describe "morphing 'md' is disjoint from 'ml'" $ do
-    let rctx = RuleContext (execBuildTerm ExRoot (defaultDataizeContext ExRoot))
-        morphRule :: String -> Yaml.MorphRule
-        morphRule nm = fromMaybe (error ("no morphing rule named " ++ nm)) (find (\r -> r.name == nm) Yaml.morphingRules)
-        asRule :: Yaml.MorphRule -> Yaml.Rule
-        asRule r = Yaml.Rule r.name Nothing Nothing r.match ExRoot r.when Nothing Nothing
-        lambdaFormation = ExFormation [BiLambda (Function "L_dummy"), BiVoid AtRho]
-    it "does not fire on a λ-bearing formation dispatch" $ do
-      substs <- matchExpressionWithRule' [substEmpty] (ExDispatch lambdaFormation (AtLabel "x")) (asRule (morphRule "md")) rctx
-      substs `shouldBe` []
-    it "still fires on a non-λ-formation dispatch" $ do
-      substs <- matchExpressionWithRule' [substEmpty] (ExDispatch ExXi (AtLabel "x")) (asRule (morphRule "md")) rctx
-      null substs `shouldBe` False
-    -- ⟦λ ⤍ F⟧.a.b.c : 'md' peels .c then .b (their heads are dispatches,
-    -- not λ-formations, so 'λ ∉ 𝐵' holds), then 'ml' handles the base
-    -- ⟦λ ⤍ F⟧.a and fires the atom. The chain therefore routes
-    -- md → md → ml; firing the undefined atom 'F' is what
-    -- raises the error, proving the base λ-formation reached 'ml'.
-    it "drills a chained λ-formation dispatch down to the base 'ml'" $ do
-      let base = ExFormation [BiLambda (Function "F")]
-          chain = ExDispatch (ExDispatch (ExDispatch base (AtLabel "a")) (AtLabel "b")) (AtLabel "c")
-      morph' (chain, (ExRoot, Nothing) :| []) ExRoot emptyState (defaultDataizeContext ExRoot)
-        `shouldThrow` (\e -> "Atom 'F' does not exist" `isInfixOf` show (e :: SomeException))
 
   -- 'norm' matches the bare meta 𝑛, which unifies with any expression, so it is
   -- guarded to fire only when 𝑛 is neither a formation ('not (formation 𝑛)',
   -- left to 'delta'/'box'/'fire'/'none') nor the termination ⊥ ('not (𝑛 = ⊥)').
   -- 𝔻 is partial: ⊥ matches no clause and lands on the unmatched-term error
   -- (#955). The dataization clauses are therefore disjoint and their order in
-  -- 'dataization.yaml' cannot change behavior.
+  -- 'resources/dataization' cannot change behavior.
   describe "dataization 'norm' is disjoint from the specific clauses" $ do
-    let rctx = RuleContext (execBuildTerm ExRoot (defaultDataizeContext ExRoot))
+    let rctx = RuleContext (execBuildTerm ExRoot (defaultReduceContext ExRoot))
         dataizeRule :: String -> Yaml.DataizeRule
         dataizeRule nm = fromMaybe (error ("no dataization rule named " ++ nm)) (find (\r -> r.name == nm) Yaml.dataizationRules)
         asRule :: Yaml.DataizeRule -> Yaml.Rule
@@ -536,7 +169,7 @@ spec = do
   describe "fails to dataize the terminator" $ do
     let failsOn desc input =
           it desc $
-            dataize' (input, (ExRoot, Nothing) :| []) ExRoot emptyState (defaultDataizeContext ExRoot)
+            dataize' (input, (ExRoot, Nothing) :| []) ExRoot emptyState (defaultReduceContext ExRoot)
               `shouldThrow` (\e -> "terminator" `isInfixOf` show (e :: SomeException))
     failsOn "throws on ⊥ instead of mapping it to empty bytes" ExTermination
     failsOn "throws on a data-less formation, which dataizes ⊥" (ExFormation [])
@@ -558,7 +191,7 @@ spec = do
     it "fails on the step limit instead of morphing forever" $
       withNode $ do
         expr <- parseExpressionThrows "⟦ @ ↦ ⟦ λ ⤍ L_number_div, ρ ↦ ⟦ Δ ⤍ 40-45-00-00-00-00-00-00 ⟧, x ↦ ⟦ Δ ⤍ 40-00-00-00-00-00-00-00 ⟧ ⟧ ⟧"
-        dataize expr (DataizeContext ExRoot 25 25 (Steps 40 0) False True False False registry buildTerm dontSaveStep dontSaveEval)
+        dataize expr (ReduceContext ExRoot 25 25 (Steps 40 0) False True False False registry buildTerm reduction dontSaveStep dontSaveEval)
           `shouldThrow` (\e -> "--max-steps=40" `isInfixOf` show (e :: SomeException))
 
     -- A budget spent on a cycle is a stuck site just as an atom that cannot
@@ -567,7 +200,7 @@ spec = do
     it "parks the step limit as a residual with --partial" $
       withNode $ do
         expr <- parseExpressionThrows "⟦ @ ↦ ⟦ λ ⤍ L_number_div, ρ ↦ ⟦ Δ ⤍ 40-45-00-00-00-00-00-00 ⟧, x ↦ ⟦ Δ ⤍ 40-00-00-00-00-00-00-00 ⟧ ⟧ ⟧"
-        (outcome, _) <- dataize expr (DataizeContext ExRoot 25 25 (Steps 40 0) False True True False registry buildTerm dontSaveStep dontSaveEval)
+        (outcome, _) <- dataize expr (ReduceContext ExRoot 25 25 (Steps 40 0) False True True False registry buildTerm reduction dontSaveStep dontSaveEval)
         case outcome of
           Residual _ -> pure ()
           Dataized bts -> expectationFailure ("expected a residual, dataized to " ++ show bts)
@@ -586,7 +219,7 @@ spec = do
     it "fails on it without the flag, naming the unknown atom" $
       withNode $ do
         expr <- parseExpressionThrows (primitives "2.times(3).nope")
-        dataize expr (withAtoms registry (defaultDataizeContext ExRoot))
+        dataize expr (withAtoms registry (defaultReduceContext ExRoot))
           `shouldThrow` (\e -> "Atom 'L_number_nope' does not exist" `isInfixOf` show (e :: SomeException))
     it "leaves the application of the unregistered atom in place" $
       withNode $ do
@@ -625,20 +258,20 @@ spec = do
     it "stops on the terminator ⊥ as before, since a wrong operand is not a stuck atom" $
       withNode $ do
         expr <- parseExpressionThrows (primitives ("5.plus( " ++ raw "--" ++ " )"))
-        dataize expr ((withAtoms registry (defaultDataizeContext ExRoot)){_partial = True})
+        dataize expr ((withAtoms registry (defaultReduceContext ExRoot)){_partial = True})
           `shouldThrow` (\e -> "terminator" `isInfixOf` show (e :: SomeException))
 
-  describe "DataizeContext's --max-depth/--max-cycles reach into the normalization it splices in" $ do
+  describe "ReduceContext's --max-depth/--max-cycles reach into the normalization it splices in" $ do
     let boxed = "[[ @ -> [[ D> 00- ]] ]]"
     forM_
       [
         ( "--max-cycles"
-        , DataizeContext ExRoot 25 0 (Steps 250 0) True True False False emptyRegistry buildTerm dontSaveStep dontSaveEval
+        , ReduceContext ExRoot 25 0 (Steps 250 0) True True False False emptyRegistry buildTerm reduction dontSaveStep dontSaveEval
         , "--max-cycles=0"
         )
       ,
         ( "--max-depth"
-        , DataizeContext ExRoot 0 25 (Steps 250 0) True True False False emptyRegistry buildTerm dontSaveStep dontSaveEval
+        , ReduceContext ExRoot 0 25 (Steps 250 0) True True False False emptyRegistry buildTerm reduction dontSaveStep dontSaveEval
         , "--max-depth=0"
         )
       ]
@@ -648,8 +281,8 @@ spec = do
             dataize expr ctx `shouldThrow` (\e -> message `isInfixOf` show (e :: SomeException))
       )
     forM_
-      [ ("--max-cycles", DataizeContext ExRoot 25 0 (Steps 250 0) False True False False emptyRegistry buildTerm dontSaveStep dontSaveEval)
-      , ("--max-depth", DataizeContext ExRoot 0 25 (Steps 250 0) False True False False emptyRegistry buildTerm dontSaveStep dontSaveEval)
+      [ ("--max-cycles", ReduceContext ExRoot 25 0 (Steps 250 0) False True False False emptyRegistry buildTerm reduction dontSaveStep dontSaveEval)
+      , ("--max-depth", ReduceContext ExRoot 0 25 (Steps 250 0) False True False False emptyRegistry buildTerm reduction dontSaveStep dontSaveEval)
       ]
       ( \(flag, ctx) ->
           it ("does not throw without --depth-sensitive even once " ++ flag ++ " is exhausted") $ do
@@ -675,7 +308,7 @@ spec = do
       withNode $ do
         expr <- parseExpressionThrows (primitives "5.plus(6)")
         loc <- parseExpressionThrows "Q"
-        (_, chain) <- dataize expr (withAtoms registry (defaultDataizeContext loc))
+        (_, chain) <- dataize expr (withAtoms registry (defaultReduceContext loc))
         let orphans = nub [label | (_, Just label) <- chain, label `notElem` allowed]
         unless
           (null orphans)
@@ -695,7 +328,7 @@ spec = do
     let labelsOf loc src = do
           expr <- parseExpressionThrows src
           loc' <- parseExpressionThrows loc
-          (_, chain) <- dataize expr (withAtoms registry (defaultDataizeContext loc'))
+          (_, chain) <- dataize expr (withAtoms registry (defaultReduceContext loc'))
           pure [label | (_, Just label) <- chain]
     it "dataizes 5.plus(6) through the expected rules" $
       withNode $ do
@@ -729,7 +362,7 @@ spec = do
     it "fails to dataize an empty formation, which dataizes ⊥" $ do
       expr <- parseExpressionThrows "[[ ]]"
       loc <- parseExpressionThrows "Q"
-      dataize expr (defaultDataizeContext loc)
+      dataize expr (defaultReduceContext loc)
         `shouldThrow` (\e -> "terminator" `isInfixOf` show (e :: SomeException))
 
   -- Every case below reaches its bytes without firing an atom, so none of them
@@ -765,7 +398,7 @@ spec = do
     , -- Dispatching an absent attribute on a φ-decorated formation now resolves
       -- the inherited attribute through morphing 'mphi' (#973): PHI used to be a
       -- normalization rule, but following the decoration is a semantic 𝕄 step,
-      -- so it moved into 'morphing.yaml'. Here '.t' is missing from the outer
+      -- so it moved into 'resources/morphing'. Here '.t' is missing from the outer
       -- formation, so 𝕄 walks the '@' decoration to the parent that defines 't'
       -- and dataizes its datum.
 
@@ -828,7 +461,7 @@ spec = do
                 ]
             )
         loc <- parseExpressionThrows "Q"
-        (value, _) <- dataize expr (withAtoms registry (defaultDataizeContext loc))
+        (value, _) <- dataize expr (withAtoms registry (defaultReduceContext loc))
         value `shouldBe` Dataized (BtMany ["40", "53", "40", "00", "00", "00", "00", "00"])
 
     -- A name the registry does not carry has no λ function at all: 𝔼 gets
@@ -836,7 +469,7 @@ spec = do
     it "gets stuck on a λ function the registry does not carry" $ do
       expr <- parseExpressionThrows (primitives "5.nope")
       loc <- parseExpressionThrows "Q"
-      dataize expr (withAtoms registry (defaultDataizeContext loc))
+      dataize expr (withAtoms registry (defaultReduceContext loc))
         `shouldThrow` (\e -> "Atom 'L_number_nope' does not exist" `isInfixOf` show (e :: SomeException))
 
     -- An operand carrying no number is what an EO number atom answers ⊥ to, and

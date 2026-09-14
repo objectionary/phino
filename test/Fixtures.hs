@@ -13,10 +13,13 @@
 -- written for the occasion, either run once per fire or kept resident for the
 -- run.
 module Fixtures
-  ( fixtureAtoms
+  ( defaultReduceContext
+  , fixtureAtoms
   , fixtureRegistry
+  , primitives
   , resident
   , withAskingRegistry
+  , withAtoms
   , withExecutable
   , withFixtureRegistry
   , withLoopingAskRegistry
@@ -29,7 +32,8 @@ module Fixtures
   )
 where
 
-import Atoms (Registry, readRegistry)
+import AST (Expression)
+import Atoms (Registry, emptyRegistry, readRegistry)
 import Control.Exception (bracket)
 import Data.Aeson (Value, encode, object, (.=))
 import Data.Aeson.Key qualified as Key
@@ -38,10 +42,65 @@ import Data.ByteString.Lazy qualified as BSL
 import Data.Maybe (isNothing)
 import Data.Text qualified as T
 import Data.Text.Encoding (decodeUtf8, encodeUtf8)
+import Dataize (reduction)
+import Deps (dontSaveEval, dontSaveStep)
+import Functions (buildTerm)
+import Morph (ReduceContext (..), Steps (..))
 import System.Directory (findExecutable, getPermissions, getTemporaryDirectory, removePathForcibly, setOwnerExecutable, setPermissions)
 import System.IO (Handle, hClose, openBinaryTempFile)
 import System.Info (os)
 import Test.Hspec (Expectation, pendingWith)
+
+-- The context every reduction of a spec starts from. Shuffle is enabled so the
+-- suite exercises the order-independence of the morphing and dataization rules
+-- (#909): a hidden overlap surfaces as a nondeterministic failure instead of
+-- staying silently green. The registry of λ functions is empty, since phino
+-- implements none of them: a case that needs an atom to answer brings the
+-- fixture registry in through 'withAtoms'.
+defaultReduceContext :: Expression -> ReduceContext
+defaultReduceContext loc = ReduceContext loc 25 25 (Steps 250 0) False True False False emptyRegistry buildTerm reduction dontSaveStep dontSaveEval
+
+-- The same context with the fixture λ functions registered
+withAtoms :: Registry -> ReduceContext -> ReduceContext
+withAtoms registry ctx = ctx{_atoms = registry}
+
+-- The EO objects the fixture λ functions answer for, declared the way
+-- 'number.eo' and 'bytes.eo' declare them, so a case only has to spell the
+-- expression under φ. 'number.eq' is the one operation with no atom of its
+-- own: EO spells it out of 'L_bytes_eq' (eq.eo), so the fixture composes it the
+-- same way. Alongside them stand the objects the atoms hand results to: 'string'
+-- carries what a byte-array complaint would say, while 'true' and 'false' fill
+-- in for the real bool objects, since the single byte an EO bool dataizes to is
+-- all these cases assert. Those bytes are EO's own: 'true.eo' asserts
+-- 'true.as-bytes.eq FF-' and 'bool.eo' branches 'if' over 'FF-' and '00-', so a
+-- universe copied from here starts with a bool an EO program recognizes.
+-- 'number.nope' is declared and left out of the registry on purpose: it is the
+-- λ function that cannot fire, the one '--partial' parks on.
+primitives :: String -> String
+primitives src =
+  unlines
+    [ "[["
+    , "  bytes -> [["
+    , "    φ -> ?,"
+    , "    not -> [[ L> L_bytes_not ]],"
+    , "    eq -> [[ b -> ?, L> L_bytes_eq ]]"
+    , "  ]],"
+    , "  number -> [["
+    , "    φ -> ?,"
+    , "    as-bytes -> $.φ,"
+    , "    plus -> [[ x -> ?, L> L_number_plus ]],"
+    , "    times -> [[ x -> ?, L> L_number_times ]],"
+    , "    div -> [[ x -> ?, L> L_number_div ]],"
+    , "    gt -> [[ x -> ?, L> L_number_gt ]],"
+    , "    eq -> [[ x -> ?, @ -> $.^.as-bytes.eq( x.as-bytes ) ]],"
+    , "    nope -> [[ L> L_number_nope ]]"
+    , "  ]],"
+    , "  string -> [[ φ -> ?, as-bytes -> $.φ ]],"
+    , "  true -> [[ @ -> [[ D> FF- ]] ]],"
+    , "  false -> [[ @ -> [[ D> 00- ]] ]],"
+    , "  @ -> " ++ src
+    , "]]"
+    ]
 
 -- Every λ function the fixture answers for. A name outside this list is
 -- unregistered, which is how a spec asks for an atom that cannot fire.

@@ -87,7 +87,7 @@ on stdin and reading the 𝜑-expression it answers with back from stdout. A λ
 name the registry does not carry gets stuck, which is what `--partial` parks
 on. Because a script cannot reduce its own operands, it asks `phino` for them
 with `--inside`, which binds an expression to a synthetic attribute of the
-universe and aims the run at it (`insideUniverse` in `Dataize.hs`).
+universe and aims the run at it (`insideUniverse` in `Morph.hs`).
 
 ### Dependency inversion for circular imports
 
@@ -95,12 +95,17 @@ universe and aims the run at it (`insideUniverse` in `Dataize.hs`).
 `Dataize -> Functions -> Rewriter -> Dataize` via the `BuildTermFunc`
 type alias.
 
-### Dataization
+### Morphing and dataization
 
-`Dataize.hs` implements the formal Morphing (M) and Dataization (D)
-functions with named rules: PRIM, NMZ, LAMBDA, PHI (morphing) and DELTA,
-BOX, NORM (dataization). All configuration is threaded through
-`DataizeContext` and `RewriteContext` records — no global state. Each
+`Morph.hs` implements the formal Morphing (M) function and `Dataize.hs` the
+Dataization (D) one, with named rules: PRIM, NMZ, LAMBDA, PHI (morphing) and
+DELTA, BOX, NORM (dataization). `Morph.hs` also holds what both judgments
+share — the context, the step budget, the signals and the premise plumbing —
+so `Dataize.hs` imports it and nothing points back. Nothing but one edge: an
+atom asking phino to reduce an operand of its own is a whole run of D, so it
+is injected into the context as `_reduce` (a `ReductionFunc`), the way
+`Deps.hs` injects `_buildTerm`. All configuration is threaded through
+`ReduceContext` and `RewriteContext` records — no global state. Each
 function has a top-level wrapper that locates the subterm and starts the
 chain (`morph`, `dataize`) and a recursive worker the rules drive
 (`morph'`, `dataize'`); the `morph` and `dataize` commands enter through
