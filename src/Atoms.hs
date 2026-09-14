@@ -55,6 +55,15 @@
 -- question from the formation it already holds for that request, so neither
 -- side ever re-prints a receiver the other side has in hand (#1165).
 --
+-- Whichever way it was asked, an answer says what the node under '𝑛' carries,
+-- so that no program keeps a 𝜑 reader of its own to tell a datum from a stuck
+-- atom: a formation with a Δ binding carries its byte array under 'Δ', one
+-- with a λ binding the name of the function it is stuck on under 'λ'. An
+-- attribute bound to nothing at all is a fact about the receiver and not a
+-- failure of the question, so it is answered with '∅' and no node (#1206).
+-- A line of phino's is a request when it carries '𝑏' and an answer when it
+-- does not, since an answer may carry a 'λ' of its own.
+--
 -- The whole 𝜑-text on the channel is the currency of programs started for one
 -- fire: a kept one, able to ask for whatever the text left out, is served a
 -- lean one — '𝑏' and every answer carry no ρ chain, since that chain climbs
@@ -90,7 +99,7 @@ import Data.Aeson.Decoding (toEitherValue)
 import Data.Aeson.Decoding.ByteString (bsToTokens)
 import Data.Aeson.Decoding.Tokens (TkRecord (TkPair, TkRecordEnd, TkRecordErr), Tokens (TkErr, TkRecordOpen))
 import qualified Data.Aeson.Key as Key
-import Data.Aeson.Types (JSONPathElement (Key), parseEither, (<?>))
+import Data.Aeson.Types (JSONPathElement (Key), Pair, parseEither, (<?>))
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Char8 as BC
 import qualified Data.ByteString.Lazy as BSL
@@ -99,6 +108,7 @@ import qualified Data.IntMap.Strict as IM
 import Data.List (find, intercalate)
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
+import Data.Maybe (mapMaybe)
 import qualified Data.Text as T
 import Data.Text.Encoding (decodeUtf8Lenient, encodeUtf8)
 import Encoding (Encoding (UNICODE))
@@ -106,7 +116,7 @@ import Lining (LineFormat (SINGLELINE))
 import Logger (logDebug)
 import Margin (defaultMargin)
 import Parser (parseExpression)
-import Printer (printAttribute, printExpression', printExpressionHidingRho')
+import Printer (printAttribute, printBytes, printExpression', printExpressionHidingRho')
 import Sugar (SugarType (SALTY))
 import System.Directory (doesFileExist, executable, getPermissions, getTemporaryDirectory, removePathForcibly)
 import System.Exit (ExitCode (ExitFailure, ExitSuccess))
@@ -186,6 +196,12 @@ data Running = Running
 -- more can be said to it; the stdin of one kept for the run is flushed and
 -- stays open, so its questions can be answered.
 data Channel = Closed | Open
+
+-- What the receiver of a request holds under an attribute a question names:
+-- the node bound to it, or nothing at all, since the attribute is void. A void
+-- one is a fact about the receiver and not a failure of the question, so a
+-- program may ask whether an operand is bound and be told (#1206).
+data Held = Bound Expression | Void
 
 -- How phino reduces a 𝜑-expression a program asks about. Only the caller of
 -- 'fireAtom' can do it, since it alone holds the universe to reduce inside and
@@ -509,33 +525,37 @@ asked func Running{..} form univ channel reduce = do
     referenced minted req attrName doReduce = case channel of
       Closed -> throwIO (AtomMute func described "it asks phino for an attribute of a previous request, while its stdin is closed, since its entry does not say 'serve'")
       Open -> do
-        spoken' <- describe
-        case spoken' of
+        logDebug (printf "Atom '%s' asks phino for '%s' of request %d%s as question %d" (T.unpack func) (T.unpack attrName) req (if doReduce then ", reduced," else ", as it is," :: String) minted)
+        held <- describe
+        case held of
           Left failure -> throwIO (AtomMute func described failure)
-          Right value -> do
-            logDebug (printf "Atom '%s' asks phino for '%s' of request %d%s as question %d" (T.unpack func) (T.unpack attrName) req (if doReduce then ", reduced," else ", as it is," :: String) minted)
-            answer <- if doReduce then reduce value else pure value
-            said (lined (object ["id" .= minted, "𝑛" .= spelled answer]))
+          Right Void -> said (lined (object ["id" .= minted, "∅" .= True]))
+          Right (Bound value) -> (if doReduce then reduce value else pure value) >>= said . answered minted
       where
         described :: String
         described = printf "{'of':%d,'attr':'%s'}" req (T.unpack attrName)
-        describe :: IO (Either String Expression)
+        describe :: IO (Either String Held)
         describe = do
           forms <- readIORef _forms
           pure $ case IM.lookup req forms of
             Nothing -> Left (printf "there is no in-flight request %d to take '%s' from" req (T.unpack attrName))
             Just form' -> case attributeValue attrName form' of
               Nothing -> Left (printf "the receiver of request %d carries no attribute '%s'" req (T.unpack attrName))
-              Just value -> Right value
-        attributeValue :: T.Text -> Expression -> Maybe Expression
+              Just held -> Right held
+        attributeValue :: T.Text -> Expression -> Maybe Held
         attributeValue name (ExFormation bds) = go bds
           where
-            go :: [Binding] -> Maybe Expression
+            go :: [Binding] -> Maybe Held
             go [] = Nothing
             go (BiTau attr value : rest)
-              | T.pack (printAttribute attr) == name = Just value
+              | named attr = Just (Bound value)
+              | otherwise = go rest
+            go (BiVoid attr : rest)
+              | named attr = Just Void
               | otherwise = go rest
             go (_ : rest) = go rest
+            named :: Attribute -> Bool
+            named attr = T.pack (printAttribute attr) == name
         attributeValue _ _ = Nothing
     -- Reduce the 𝜑-expression the program asks about and say it back under
     -- '𝑛', with the 'id' the question minted. A program started for the fire
@@ -547,8 +567,22 @@ asked func Running{..} form univ channel reduce = do
       Open -> do
         logDebug (printf "Atom '%s' asks phino to reduce '%s' as question %d" (T.unpack func) (T.unpack raw) minted)
         target <- either (unreadable raw) pure (parseExpression (T.unpack raw))
-        answer <- reduce target
-        said (lined (object ["id" .= minted, "𝑛" .= spelled answer]))
+        reduce target >>= said . answered minted
+    -- The answer to a question, as the line the program reads it off: the 'id'
+    -- the question minted, the node under '𝑛' and, next to it, what the node
+    -- carries — its byte array under 'Δ', the λ name it is stuck on under 'λ'
+    -- — so that telling a datum from a stuck atom takes no 𝜑 reader of the
+    -- program's own (#1206).
+    answered :: Int -> Expression -> BS.ByteString
+    answered minted answer = lined (object (["id" .= minted, "𝑛" .= spelled answer] ++ carried answer))
+      where
+        carried :: Expression -> [Pair]
+        carried (ExFormation bds) = mapMaybe fact bds
+        carried _ = []
+        fact :: Binding -> Maybe Pair
+        fact (BiDelta bytes) = Just ("Δ" .= printBytes bytes)
+        fact (BiLambda (Function name)) = Just ("λ" .= name)
+        fact _ = Nothing
     unreadable :: T.Text -> String -> IO a
     unreadable raw failure = throwIO (AtomMute func (T.unpack raw) (printf "it asks phino to reduce an expression that does not parse: %s" failure))
     -- A program that has died leaves the write with nobody to drain it. The

@@ -27,11 +27,11 @@ function said(message) {
 
 readline.createInterface({ input: process.stdin }).on('line', (line) => {
   const message = JSON.parse(line);
-  if ('λ' in message) {
+  if ('𝑏' in message) {
     minted += 1;
     open.set(minted, message.id);
     said({ id: minted, ask: 'Φ.nan.gt( 1 )' });
-  } else if ('𝑛' in message && open.has(message.id)) {
+  } else if (open.has(message.id)) {
     const id = open.get(message.id);
     open.delete(message.id);
     said({ id, '𝑛': '⟦ Δ ⤍ 2A- ⟧' });

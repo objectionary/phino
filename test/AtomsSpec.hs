@@ -81,8 +81,13 @@ firedFrom registry func universe = firedFrom' registry func universe reducing
 
 -- The same, with phino reducing whatever the program asks about the given way
 firedFrom' :: Registry -> T.Text -> String -> ReduceFunc -> IO Expression
-firedFrom' registry func universe reduce = do
-  form <- parseExpressionThrows "⟦ x ↦ ⟦ Δ ⤍ 01- ⟧ ⟧"
+firedFrom' registry func = firedAt registry func "⟦ x ↦ ⟦ Δ ⤍ 01- ⟧ ⟧"
+
+-- The same, against the given receiver rather than the one every other case
+-- fires at
+firedAt :: Registry -> T.Text -> String -> String -> ReduceFunc -> IO Expression
+firedAt registry func receiver universe reduce = do
+  form <- parseExpressionThrows receiver
   univ <- parseExpressionThrows universe
   maybe (fail (printf "'%s' is not registered" (T.unpack func))) (\atom -> fireAtom func atom form univ reduce) (registeredAtom registry func)
 
@@ -598,6 +603,34 @@ spec = do
 
     it "fails a question about an attribute the receiver does not carry" $
       refuses (referring 1 "z" False "*2A-*") ["L_answer", "carries no attribute 'z'"]
+
+    -- The shape of an answer is phino's knowledge, not the program's, so what
+    -- the answered node carries is spelled next to it in the JSON and no
+    -- program has to keep a 𝜑 reader of its own (#1206)
+    it "says under 'Δ' what bytes the node of a by-reference answer carries" $
+      serves (referring 1 "x" False "*'\"Δ\":\"01-\"'*") "⟦ Δ ⤍ FF- ⟧"
+
+    it "says under 'Δ' what bytes the answer to a quoted question carries" $
+      serves (asking "Q.x" "*'\"Δ\":\"2A-\"'*") "⟦ Δ ⤍ FF- ⟧"
+
+    -- A node that is a stuck atom is told apart from a datum by the λ name it
+    -- is stuck on, which is the very thing a program used to read off the text
+    it "says under 'λ' which function the node of an answer is stuck on" $
+      withShell $
+        withServed ["L_answer"] (referring 1 "x" False "*'\"λ\":\"S4\"'*") $ \registry -> do
+          answer <- firedAt registry "L_answer" "⟦ x ↦ ⟦ λ ⤍ S4 ⟧ ⟧" "⟦ y ↦ ⟦ Δ ⤍ 02- ⟧ ⟧" reducing
+          wanted <- parseExpressionThrows "⟦ Δ ⤍ FF- ⟧"
+          answer `shouldBe` wanted
+
+    -- A void attribute is bound to nothing at all, which is a fact about the
+    -- receiver and not a failure of the question: a program may ask whether an
+    -- operand is bound and read the answer off '∅'
+    it "answers that the attribute a question names is void" $
+      withShell $
+        withServed ["L_answer"] (referring 1 "v" False "*'\"∅\":true'*") $ \registry -> do
+          answer <- firedAt registry "L_answer" "⟦ x ↦ ⟦ Δ ⤍ 01- ⟧, v ↦ ∅ ⟧" "⟦ y ↦ ⟦ Δ ⤍ 02- ⟧ ⟧" reducing
+          wanted <- parseExpressionThrows "⟦ Δ ⤍ FF- ⟧"
+          answer `shouldBe` wanted
 
     -- A program kept for the run is served a lean '𝑏', with no ρ chain: the
     -- chain climbs to the universe and compounds every question that quotes
