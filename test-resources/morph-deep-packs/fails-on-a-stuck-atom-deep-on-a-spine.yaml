@@ -1,0 +1,7 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# An atom deeper on a binding's spine gets stuck exactly as it does under 𝕄
+# alone: the run fails, unless '_partial' parks it.
+input: '[[ x -> [[ L> Sym_arg_0 ]].foo ]]'
+fails: "Atom 'Sym_arg_0' does not exist"

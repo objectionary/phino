@@ -142,22 +142,28 @@ lambda bds = case partition isLambda bds of
     isLambda (BiLambda _) = True
     isLambda _ = False
 
--- The same as 'lambda', but only for a formation that is saturated: one with no
--- void binding left in it. A void is an argument the program has not given yet,
--- so such a formation is a method waiting to be applied rather than an
--- application waiting to be computed, and firing it would hand the atom a ∅
--- where it expects a value. 𝔻 needs no such guard, since it fires only what
--- dataization demands and nothing demands a method; the deep walk meets every
--- one a program declares — the method table of the object model above all — so
--- it asks first (see 'deepened').
+-- The same as 'lambda', but only for a formation that is saturated: one with
+-- every binding of it filled (see 'filled'). A void is an argument the program
+-- has not given yet, so such a formation is a method waiting to be applied
+-- rather than an application waiting to be computed, and firing it would hand
+-- the atom a ∅ where it expects a value. 𝔻 needs no such guard, since it
+-- fires only what dataization demands and nothing demands a method; the deep
+-- walk meets every one a program declares — the method table of the object
+-- model above all — so it asks first (see 'deepened').
 saturated :: [Binding] -> Maybe (T.Text, Expression)
 saturated bds = case lambda bds of
   Just (func, ExFormation rest) | all filled rest -> Just (func, ExFormation rest)
   _ -> Nothing
-  where
-    filled :: Binding -> Bool
-    filled (BiVoid _) = False
-    filled _ = True
+
+-- Whether a binding hands the formation something to work with. A void does
+-- not: it names an argument the program has still to supply. Neither does ⊥:
+-- the deep walk reduces a body in the scope of the formation around it, and a
+-- formation standing unapplied still holds ρ ↦ ∅, so a ξ.ρ in that body comes
+-- back as ⊥ rather than as the object the next dispatch supplies (#1196).
+filled :: Binding -> Bool
+filled (BiVoid _) = False
+filled (BiTau _ ExTermination) = False
+filled _ = True
 
 -- Run one frame of the 𝕄/𝔻 spine, attaching its derivation to a stuck atom or
 -- an exhausted budget escaping it. 'Stuck' is raised deep inside an atom, which

@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# The same shape with nothing around the unapplied formation: the ⊥ still
+# fills the only void of 'plus', so 'saturated' would let it fire (#1196).
+location: 'Q.@'
+model: true
+atoms: true
+input: '[[ a -> [[ @ -> 5.plus( $.^ ) ]] ]]'
+result: |
+  [[ a -> [[ @ -> Q.number(
+    φ -> Φ.bytes( φ ↦ ⟦ Δ ⤍ 40-14-00-00-00-00-00-00 ⟧ )
+  ).plus( $.^ ) ]] ]]

@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# Nothing demands the argument of an atom that cannot fire, so 𝔻 never
+# reaches it; the walk does, and the atom around it stays in place.
+location: 'Q.@'
+model: true
+atoms: true
+input: '[[ x -> [[ y -> ?, L> L_bar ]]( y -> 6.plus( 7 ) ) ]]'
+result: |
+  [[ x -> [[ y -> ?, L> L_bar ]]( y -> Q.number(
+    φ -> Φ.bytes( φ ↦ ⟦ Δ ⤍ 40-2A-00-00-00-00-00-00 ⟧ )
+  ) ) ]]

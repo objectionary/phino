@@ -1,5 +1,8 @@
+{-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
@@ -10,18 +13,23 @@ import AST
 import Atoms (Registry, emptyRegistry, readRegistry)
 import Control.Exception (SomeException)
 import Control.Monad
+import Data.Aeson (FromJSON)
 import Data.IORef (modifyIORef', newIORef, readIORef)
 import Data.List (find, isInfixOf, nub)
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.Maybe (fromMaybe, isJust)
+import Data.Yaml qualified as Decode
 import Dataize (DataizeContext (..), Outcome (..), Steps (..), dataize, dataize', emptyState, execBuildTerm, insideUniverse, morph, morph')
 import Deps (Evaluation (..), Term (TeExpression), dontSaveEval, dontSaveStep)
+import Files (allPathsIn)
 import Fixtures (fixtureRegistry, withNode, withServing, withShell)
 import Functions (buildTerm)
+import GHC.Generics (Generic)
 import Matcher (substEmpty)
 import Parser (parseExpressionThrows)
 import Rewriter (Rewritten)
 import Rule (RuleContext (RuleContext), matchExpressionWithRule')
+import System.FilePath (makeRelative)
 import Test.Hspec
 import Yaml (ExtraArgument (..))
 import Yaml qualified
@@ -71,19 +79,46 @@ testMorph useCases =
       (morphed, _) <- morph expr (defaultDataizeContext loc')
       morphed `shouldBe` expected
 
--- The same as 'testMorph', with the deep walk on ('_deep') and the fixture λ
--- functions registered, since a case that reduces anything has to fire one: it
--- is pending where 'node' is not installed.
-testDeep :: Registry -> [(String, String, String, String)] -> Spec
-testDeep registry useCases =
-  forM_ useCases $ \(name, loc, src, res) ->
-    it name $
-      withNode $ do
-        expr <- parseExpressionThrows src
-        loc' <- parseExpressionThrows loc
-        expected <- parseExpressionThrows res
-        (morphed, _) <- morph expr (withAtoms registry (defaultDataizeContext loc')){_deep = True}
-        morphed `shouldBe` expected
+-- One case of the deep walk, as a pack of 'test-resources/morph-deep-packs'
+-- spells it: the program under 'input', wrapped in the fixture object model
+-- where 'model' says so and run against the fixture λ functions where 'atoms'
+-- does, entered at 'location' and answering either the program under 'result'
+-- or the failure under 'fails'.
+data DeepPack = DeepPack
+  { location :: Maybe String
+  , input :: String
+  , model :: Maybe Bool
+  , atoms :: Maybe Bool
+  , partial :: Maybe Bool
+  , result :: Maybe String
+  , fails :: Maybe String
+  }
+  deriving (Generic, Show, FromJSON)
+
+-- Walk one such pack with '_deep' on and check what it answers. A pack that
+-- registers the fixture λ functions fires one under 'node', so it is pending
+-- where 'node' is not installed.
+testDeep :: Registry -> FilePath -> Expectation
+testDeep registry pth = do
+  DeepPack{..} <- Decode.decodeFileThrow pth
+  expr <- parseExpressionThrows (if model == Just True then primitives input else input)
+  loc <- parseExpressionThrows (fromMaybe "Q" location)
+  let ctx =
+        (defaultDataizeContext loc)
+          { _deep = True
+          , _partial = partial == Just True
+          , _atoms = if atoms == Just True then registry else emptyRegistry
+          }
+      checked :: Expectation
+      checked = case (result, fails) of
+        (Just res, Nothing) -> do
+          expected <- parseExpressionThrows res
+          (morphed, _) <- morph expr ctx
+          morphed `shouldBe` expected
+        (Nothing, Just message) ->
+          morph expr ctx `shouldThrow` (\err -> message `isInfixOf` show (err :: SomeException))
+        _ -> expectationFailure "The pack holds neither a single 'result' nor a single 'fails'"
+  if atoms == Just True then withNode checked else checked
 
 -- The EO objects the fixture λ functions answer for, declared the way
 -- 'number.eo' and 'bytes.eo' declare them, so a case below only has to spell
@@ -216,76 +251,9 @@ spec = do
   -- atom touched keeps the shape it was written in and the answer stays a
   -- program.
   describe "morph with '_deep'" $ do
-    testDeep
-      registry
-      [
-        ( "stands the answer of the λ that 'mf' left bare in its place"
-        , "Q.@"
-        , primitives "[[ x -> 5.plus( 6 ) ]]"
-        , "[[ x -> Q.number( φ -> Φ.bytes( φ ↦ ⟦ Δ ⤍ 40-26-00-00-00-00-00-00 ⟧ ) ) ]]"
-        )
-      ,
-        ( "fires the atom nested in the argument of the atom it fires"
-        , "Q.@"
-        , primitives "[[ x -> 5.plus( 6.plus( 7 ) ) ]]"
-        , "[[ x -> Q.number( φ -> Φ.bytes( φ ↦ ⟦ Δ ⤍ 40-32-00-00-00-00-00-00 ⟧ ) ) ]]"
-        )
-      ,
-        ( "keeps the answer of the last atom fired along one chain of them"
-        , "Q.@"
-        , primitives "[[ x -> 5.plus( 6 ).plus( 7 ) ]]"
-        , "[[ x -> Q.number( φ -> Φ.bytes( φ ↦ ⟦ Δ ⤍ 40-32-00-00-00-00-00-00 ⟧ ) ) ]]"
-        )
-      ,
-        ( "resolves the ξ of a binding against the formation that holds it"
-        , "Q.@"
-        , primitives "[[ n -> 5, x -> $.n.plus( 6 ) ]]"
-        , "[[ n -> 5, x -> Q.number( φ -> Φ.bytes( φ ↦ ⟦ Δ ⤍ 40-26-00-00-00-00-00-00 ⟧ ) ) ]]"
-        )
-      , -- The registry carries no 'L_number_nope', so there is nothing to fire
-        -- and the binding keeps the name it was written under
-
-        ( "leaves the λ the registry does not serve as it was written"
-        , "Q.@"
-        , primitives "[[ x -> 5.nope ]]"
-        , "[[ x -> 5.nope ]]"
-        )
-      , -- A λ-formation whose bindings are still void is a method waiting to be
-        -- applied, not an application waiting to be computed: nothing demands
-        -- one, so 𝔻 never meets one, while the walk meets every one the object
-        -- model declares. Both the void ρ of 'not' and the void 'b' of 'eq'
-        -- keep their atoms unfired here.
-
-        ( "leaves a λ-formation still waiting for its arguments alone"
-        , "Q.bytes"
-        , primitives "[[ ]]"
-        , "[[ φ -> ?, not -> [[ L> L_bytes_not ]], eq -> [[ b -> ?, L> L_bytes_eq ]] ]]"
-        )
-      , -- Nothing demands the argument of an atom that cannot fire, so 𝔻 never
-        -- reaches it; the walk does, and the atom around it stays in place
-
-        ( "walks into the argument of an atom it cannot fire"
-        , "Q.@"
-        , primitives "[[ x -> [[ y -> ?, L> L_bar ]]( y -> 6.plus( 7 ) ) ]]"
-        , "[[ x -> [[ y -> ?, L> L_bar ]]( y -> Q.number( φ -> Φ.bytes( φ ↦ ⟦ Δ ⤍ 40-2A-00-00-00-00-00-00 ⟧ ) ) ) ]]"
-        )
-      ]
-
-    -- An atom deeper on a binding's spine gets stuck exactly as it does under
-    -- 𝕄 alone: the run fails, unless '_partial' parks it, and then the binding
-    -- stays as it was written and the walk goes on
-    describe "a stuck atom on the spine of a binding" $ do
-      let stuck :: IO Expression
-          stuck = parseExpressionThrows "[[ x -> [[ L> Sym_arg_0 ]].foo ]]"
-      it "fails the run without '_partial'" $ do
-        expr <- stuck
-        morph expr (defaultDataizeContext ExRoot){_deep = True}
-          `shouldThrow` (\e -> "Atom 'Sym_arg_0' does not exist" `isInfixOf` show (e :: SomeException))
-
-      it "leaves the binding as it was written under '_partial'" $ do
-        expr <- stuck
-        (morphed, _) <- morph expr (defaultDataizeContext ExRoot){_deep = True, _partial = True}
-        morphed `shouldBe` expr
+    let resources = "test-resources/morph-deep-packs"
+    packs <- runIO (allPathsIn resources)
+    forM_ packs (\pth -> it (makeRelative resources pth) (testDeep registry pth))
 
     -- The walk enters a dispatch through its target and fires the box it finds
     -- there before 𝕄 is ever asked about the dispatch, while 'ml' demands that
