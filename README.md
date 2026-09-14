@@ -251,6 +251,21 @@ fails the fire. An `attr` bound to nothing at all does not: a void attribute
 is a fact about the receiver, and the answer is `{"id": 7, "∅": true}`, with
 no node in it, so a program may ask whether an operand is bound.
 
+An `attr` may also go deeper than one name. It is a path down the receiver,
+read left to right and split on the dot, which no attribute of 𝜑-calculus
+carries in its own name:
+
+```text
+{"id": 9, "of": 1, "attr": "ρ.length", "reduce": true}
+{"id": 9, "𝑛": "⟦ Δ ⤍ 40-08-00-00-00-00-00-00 ⟧", "Δ": "40-08-00-00-00-00-00-00"}
+```
+
+Every segment but the last has to name a formation to go on into, and
+`reduce` applies to the node the path ends at. A segment the formation does
+not carry, or one that runs into a void attribute, fails the fire the same
+way a missing `attr` does. `phino` holds the receiver whole, so there is no
+depth a program has to re-parse an answer to reach.
+
 What the answered node is, `phino` says next to it, because the shape of an
 answer is `phino`'s knowledge and not the program's. A formation carrying a Δ
 binding carries its byte array under `Δ`, and one carrying a λ binding the name

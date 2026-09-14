@@ -53,7 +53,9 @@
 -- the optional 'reduce' says whether to hand the node over as it is (false,
 -- by default) or to dataize it the way 'ask' does. phino serves such a
 -- question from the formation it already holds for that request, so neither
--- side ever re-prints a receiver the other side has in hand (#1165).
+-- side ever re-prints a receiver the other side has in hand (#1165). The
+-- 'attr' may go deeper than one name: 'ρ.length' is a path down the receiver,
+-- read left to right, since phino holds the whole of it anyway (#1207).
 --
 -- Whichever way it was asked, an answer says what the node under '𝑛' carries,
 -- so that no program keeps a 𝜑 reader of its own to tell a datum from a stuck
@@ -520,7 +522,8 @@ asked func Running{..} form univ channel reduce = do
     -- formation it still holds for that request, without either side
     -- re-printing or re-parsing a receiver. 'reduce' says whether to dataize
     -- what the attribute carries, as 'ask' does, or to hand the node over as
-    -- it is (#1165).
+    -- it is (#1165). The attribute may be a dotted path, since depth is the
+    -- only thing such a question would otherwise be missing (#1207).
     referenced :: Int -> Int -> T.Text -> Bool -> IO ()
     referenced minted req attrName doReduce = case channel of
       Closed -> throwIO (AtomMute func described "it asks phino for an attribute of a previous request, while its stdin is closed, since its entry does not say 'serve'")
@@ -539,9 +542,19 @@ asked func Running{..} form univ channel reduce = do
           forms <- readIORef _forms
           pure $ case IM.lookup req forms of
             Nothing -> Left (printf "there is no in-flight request %d to take '%s' from" req (T.unpack attrName))
-            Just form' -> case attributeValue attrName form' of
+            Just form' -> case descended form' of
               Nothing -> Left (printf "the receiver of request %d carries no attribute '%s'" req (T.unpack attrName))
               Just held -> Right held
+        -- Walk the dotted path of 'attr' down the receiver: every segment but
+        -- the last has to name a formation to go on into, and the last one is
+        -- what the question is about. An attribute bound to nothing at all
+        -- carries nothing to descend into, so a path through a void one names
+        -- no attribute (#1207).
+        descended :: Expression -> Maybe Held
+        descended form' = foldM deeper (Bound form') (T.splitOn "." attrName)
+        deeper :: Held -> T.Text -> Maybe Held
+        deeper (Bound expr) name = attributeValue name expr
+        deeper Void _ = Nothing
         attributeValue :: T.Text -> Expression -> Maybe Held
         attributeValue name (ExFormation bds) = go bds
           where
