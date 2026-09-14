@@ -1,0 +1,20 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+name: norm
+match: 𝑛0
+e-match: 𝑒0
+d-result: δ0
+when:
+  and:
+    - not:
+        formation: 𝑛0
+    - not:
+        eq:
+          - 𝑛0
+          - ⊥
+premises:
+  - n-result: 𝑛1
+    morph: 𝑛0
+  - d-result: δ0
+    dataize: 𝑛1

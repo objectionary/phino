@@ -1,0 +1,26 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+name: mphi
+label: \varphi
+match: ⟦𝐵0⟧.𝜏0
+e-match: 𝑒0
+n-result: 𝑛2
+when:
+  and:
+    - in:
+        - φ
+        - 𝐵0
+    - not:
+        in:
+          - 𝜏0
+          - 𝐵0
+    - not:
+        in:
+          - λ
+          - 𝐵0
+premises:
+  - n-result: 𝑛1
+    normalize: ⟦𝐵0⟧.φ.𝜏0
+  - n-result: 𝑛2
+    morph: 𝑛1

@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+name: mg
+match: Φ
+e-match: Φ
+n-result: 𝑛1
+premises:
+  - n-result: 𝑛1
+    morph: ⊥

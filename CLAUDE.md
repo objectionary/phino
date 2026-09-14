@@ -68,9 +68,12 @@ between these representations before rendering.
 
 ### Pattern-based rewriting
 
-YAML rule files (`resources/*.yaml`, plus user-supplied via `--rule`) each
-define a `pattern`, `result`, optional `when`/`having` conditions, and
-`where` extensions. Built-in rules are compiled in via `file-embed`.
+YAML rule files (`resources/<judgment>/<rule>.yaml`, plus user-supplied via
+`--rule`) each define a `pattern`, `result`, optional `when`/`having`
+conditions, and `where` extensions. Every judgment keeps its rules in its own
+directory — `normalize/`, `morphing/`, `dataization/`, `contextualization/` —
+one rule per file, named after the rule, and the whole directory is compiled in
+via `embedDir` of `file-embed`.
 Matching (`Matcher.hs`) produces `[Subst]` — a list of
 `Map Text MetaValue` — and conditions filter that list. `Builder.hs` then
 applies a substitution to a result template.

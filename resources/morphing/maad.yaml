@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+name: maad
+match: '𝑛(α𝑖 ↦ 𝑛1)'
+e-match: 𝑒0
+n-result: 𝑛2
+when:
+  not:
+    absolute: 𝑛1
+premises:
+  - n-result: 𝑛2
+    morph: ⊥

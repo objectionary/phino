@@ -1,0 +1,18 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+name: universe
+label: \Phi
+match: Φ
+e-match: 𝑒0
+n-result: 𝑛2
+when:
+  not:
+    eq:
+      - 𝑒0
+      - Φ
+premises:
+  - n-result: 𝑛1
+    normalize: 𝑒0
+  - n-result: 𝑛2
+    morph: 𝑛1

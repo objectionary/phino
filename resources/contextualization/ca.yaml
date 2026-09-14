@@ -1,0 +1,16 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+name: ca
+match: '𝑛0(𝜏0 ↦ 𝑒1)'
+c-match: 𝑘0
+c-result: '𝑛1(𝜏0 ↦ 𝑛2)'
+premises:
+  - n-result: 𝑛1
+    contextualize:
+      - 𝑛0
+      - 𝑘0
+  - n-result: 𝑛2
+    contextualize:
+      - 𝑒1
+      - 𝑘0
