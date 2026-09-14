@@ -152,9 +152,14 @@ executes script expected = withShell $
 -- The same, for an atom served by a resident program built of the given
 -- per-request snippet
 serves :: T.Text -> String -> Expectation
-serves snippet expected = withShell $
+serves = servesAt "⟦ x ↦ ⟦ Δ ⤍ 01- ⟧ ⟧"
+
+-- The same, against the given receiver rather than the one every other case
+-- fires at
+servesAt :: String -> T.Text -> String -> Expectation
+servesAt receiver snippet expected = withShell $
   withServed ["L_answer"] snippet $ \registry -> do
-    answer <- firedFrom registry "L_answer" "⟦ y ↦ ⟦ Δ ⤍ 02- ⟧ ⟧"
+    answer <- firedAt registry "L_answer" receiver "⟦ y ↦ ⟦ Δ ⤍ 02- ⟧ ⟧" reducing
     wanted <- parseExpressionThrows expected
     answer `shouldBe` wanted
 
@@ -168,9 +173,14 @@ fails script fragments =
 
 -- The same, for a served atom
 refuses :: T.Text -> [String] -> Expectation
-refuses snippet fragments = withShell $
+refuses = refusesAt "⟦ x ↦ ⟦ Δ ⤍ 01- ⟧ ⟧"
+
+-- The same, against the given receiver rather than the one every other case
+-- fires at
+refusesAt :: String -> T.Text -> [String] -> Expectation
+refusesAt receiver snippet fragments = withShell $
   withServed ["L_answer"] snippet $ \registry ->
-    firedFrom registry "L_answer" "⟦ y ↦ ⟦ Δ ⤍ 02- ⟧ ⟧"
+    firedAt registry "L_answer" receiver "⟦ y ↦ ⟦ Δ ⤍ 02- ⟧ ⟧" reducing
       `shouldThrow` (\failure -> all (`isInfixOf` show (failure :: SomeException)) fragments)
 
 -- The reply of a resident program answering the request with the given bytes
@@ -616,21 +626,38 @@ spec = do
     -- A node that is a stuck atom is told apart from a datum by the λ name it
     -- is stuck on, which is the very thing a program used to read off the text
     it "says under 'λ' which function the node of an answer is stuck on" $
-      withShell $
-        withServed ["L_answer"] (referring 1 "x" False "*'\"λ\":\"S4\"'*") $ \registry -> do
-          answer <- firedAt registry "L_answer" "⟦ x ↦ ⟦ λ ⤍ S4 ⟧ ⟧" "⟦ y ↦ ⟦ Δ ⤍ 02- ⟧ ⟧" reducing
-          wanted <- parseExpressionThrows "⟦ Δ ⤍ FF- ⟧"
-          answer `shouldBe` wanted
+      servesAt "⟦ x ↦ ⟦ λ ⤍ S4 ⟧ ⟧" (referring 1 "x" False "*'\"λ\":\"S4\"'*") "⟦ Δ ⤍ FF- ⟧"
 
     -- A void attribute is bound to nothing at all, which is a fact about the
     -- receiver and not a failure of the question: a program may ask whether an
     -- operand is bound and read the answer off '∅'
     it "answers that the attribute a question names is void" $
+      servesAt "⟦ x ↦ ⟦ Δ ⤍ 01- ⟧, v ↦ ∅ ⟧" (referring 1 "v" False "*'\"∅\":true'*") "⟦ Δ ⤍ FF- ⟧"
+
+    -- phino holds the receiver, so depth is the only thing a question by
+    -- reference was missing: 'attr' is a dotted path and every segment but the
+    -- last has to name a formation to go on into (#1207)
+    it "reaches the attribute of the attribute a dotted path names" $
+      servesAt "⟦ x ↦ ⟦ y ↦ ⟦ Δ ⤍ 07- ⟧ ⟧ ⟧" (referring 1 "x.y" False "*'\"Δ\":\"07-\"'*") "⟦ Δ ⤍ FF- ⟧"
+
+    it "answers that the attribute a dotted path ends at is void" $
+      servesAt "⟦ x ↦ ⟦ v ↦ ∅ ⟧ ⟧" (referring 1 "x.v" False "*'\"∅\":true'*") "⟦ Δ ⤍ FF- ⟧"
+
+    -- What a question asks to reduce is the node its path ends at, not the one
+    -- the first segment names
+    it "reduces the node a dotted path ends at when the question asks to" $
       withShell $
-        withServed ["L_answer"] (referring 1 "v" False "*'\"∅\":true'*") $ \registry -> do
-          answer <- firedAt registry "L_answer" "⟦ x ↦ ⟦ Δ ⤍ 01- ⟧, v ↦ ∅ ⟧" "⟦ y ↦ ⟦ Δ ⤍ 02- ⟧ ⟧" reducing
-          wanted <- parseExpressionThrows "⟦ Δ ⤍ FF- ⟧"
-          answer `shouldBe` wanted
+        withServed ["L_answer"] (referring 1 "x.y" True "*2A-*") $ \registry -> do
+          seen <- newIORef Nothing
+          _ <- firedAt registry "L_answer" "⟦ x ↦ ⟦ y ↦ ⟦ Δ ⤍ 07- ⟧ ⟧ ⟧" "⟦ y ↦ ⟦ Δ ⤍ 02- ⟧ ⟧" (recording seen)
+          wanted <- parseExpressionThrows "⟦ Δ ⤍ 07- ⟧"
+          readIORef seen `shouldReturn` Just wanted
+
+    it "fails a question whose dotted path names a segment the receiver lacks" $
+      refusesAt "⟦ x ↦ ⟦ y ↦ ⟦ Δ ⤍ 07- ⟧ ⟧ ⟧" (referring 1 "x.z" False "*2A-*") ["L_answer", "carries no attribute 'x.z'"]
+
+    it "fails a question whose dotted path runs into a void attribute" $
+      refusesAt "⟦ v ↦ ∅ ⟧" (referring 1 "v.length" False "*2A-*") ["L_answer", "carries no attribute 'v.length'"]
 
     -- A program kept for the run is served a lean '𝑏', with no ρ chain: the
     -- chain climbs to the universe and compounds every question that quotes
