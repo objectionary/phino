@@ -43,6 +43,14 @@ spec = do
         ( ["[[ D> 42-, x -> [[ ]] ]]", "[[ D> 42-, y -> [[ ]] ]]"]
         , "[[ x -> [[ ]], y -> [[ ]], D> 42- ]]"
         )
+      ,
+        ( ["[[ bytes -> [[ @ -> ?, ^ -> ? ]] ]]", "[[ bytes -> [[ as-bytes -> [[ ^ -> ?, @ -> $.^ ]], L> Package, ^ -> ? ]] ]]"]
+        , "[[ bytes -> [[ @ -> ?, as-bytes -> [[ ^ -> ?, @ -> $.^ ]], ^ -> ? ]] ]]"
+        )
+      ,
+        ( ["[[ org -> [[ number -> [[ ]], L> Package, ^ -> ? ]] ]]", "[[ org -> [[ text -> [[ ]], L> Package, ^ -> ? ]] ]]"]
+        , "[[ org -> [[ number -> [[ ]], text -> [[ ]], L> Package, ^ -> ? ]] ]]"
+        )
       ]
       ( \(exprs, res) -> it res $ do
           parsed <- mapM parseExpressionThrows exprs
