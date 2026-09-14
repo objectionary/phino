@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# The registry carries no 'L_number_nope', so there is nothing to fire and
+# the binding keeps the name it was written under.
+location: 'Q.@'
+model: true
+atoms: true
+input: '[[ x -> 5.nope ]]'
+result: '[[ x -> 5.nope ]]'

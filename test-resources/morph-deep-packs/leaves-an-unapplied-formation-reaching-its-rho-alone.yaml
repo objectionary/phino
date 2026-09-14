@@ -1,0 +1,15 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# A formation standing unapplied inside its parent still holds ρ ↦ ∅, so the
+# ξ.ρ its body reaches is an input the next dispatch supplies, not ⊥. The
+# walk reduces that body in the formation's own scope, where ρ is void, and
+# must not hand the ⊥ that comes back to the λ of 'plus' (#1196).
+location: 'Q.@'
+model: true
+atoms: true
+input: '[[ foo -> [[ n -> ?, a -> [[ @ -> 5.plus( $.^ ) ]] ]] ]]'
+result: |
+  [[ foo -> [[ n -> ?, a -> [[ @ -> Q.number(
+    φ -> Φ.bytes( φ ↦ ⟦ Δ ⤍ 40-14-00-00-00-00-00-00 ⟧ )
+  ).plus( $.^ ) ]] ]] ]]
