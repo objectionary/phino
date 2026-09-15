@@ -160,10 +160,10 @@ testCLIFailed :: [String] -> [String] -> Expectation
 testCLIFailed args outputs = testCLI' args outputs (Left (ExitFailure 1))
 
 resource :: String -> String
-resource file = "test-resources/cli/" <> file
+resource file = "test-resources/cli/expressions/" <> file
 
 rule :: String -> String
-rule file = "--rule=" <> resource file
+rule file = "--rule=test-resources/cli/rules/" <> file
 
 spec :: Spec
 spec = do
@@ -1750,7 +1750,7 @@ spec = do
 
     it "explains single rule with a label" $
       testCLISucceeded
-        ["explain", "--rule=test-resources/cli/labeled.yaml"]
+        ["explain", rule "labeled.yaml"]
         [ unlines
             [ "\\phinoNormalizationRule[\\lambda]{copy}"
             , "  { [[ B_1, \\tau_1 -> ?, B_2 ]] ( \\tau_1 -> k_1 ) }"
@@ -2128,7 +2128,7 @@ spec = do
         testCLISucceeded ["match", "--log-level=debug"] ["[DEBUG]"]
 
     it "takes from file" $
-      testCLISucceeded ["match", "test-resources/cli/foo.phi", "--log-level=debug"] ["[DEBUG]"]
+      testCLISucceeded ["match", resource "foo.phi", "--log-level=debug"] ["[DEBUG]"]
 
     it "does not print substitutions without pattern" $
       withStdin "[[]]" $
@@ -2163,7 +2163,7 @@ spec = do
 
     it "builds with condition from file" $
       testCLISucceeded
-        ["match", "--pattern=[[ !B1 ]]", "--when=eq(length(!B1),2)", "test-resources/cli/foo.phi"]
+        ["match", "--pattern=[[ !B1 ]]", "--when=eq(length(!B1),2)", resource "foo.phi"]
         ["B1 >> ⟦ foo ↦ Φ.org.eolang.x, ρ ↦ ∅ ⟧"]
 
     it "rejects an anonymous meta in --when" $
