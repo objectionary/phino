@@ -606,6 +606,24 @@ spec = do
           wanted <- parseExpressionThrows "⟦ Δ ⤍ 01- ⟧"
           readIORef seen `shouldReturn` Just wanted
 
+    -- The ξ of a node bound in a formation stands for that formation, so a
+    -- node leaving one to be reduced elsewhere takes it along, the way the
+    -- 'dot' rule does. Without it the body of the very formation being fired
+    -- is the one node no question can reduce, since its ξ finds nothing where
+    -- the reduction binds it (#1220)
+    it "binds the ξ of the node it reduces to the formation the node came from" $
+      withShell $
+        withServed ["L_answer"] (referring 1 "φ" True "*2A-*") $ \registry -> do
+          seen <- newIORef Nothing
+          _ <- firedAt registry "L_answer" "⟦ a ↦ ⟦ Δ ⤍ 01- ⟧, φ ↦ ξ.a ⟧" "⟦ y ↦ ⟦ Δ ⤍ 02- ⟧ ⟧" (recording seen)
+          wanted <- parseExpressionThrows "⟦ a ↦ ⟦ Δ ⤍ 01- ⟧, φ ↦ ξ.a ⟧.a"
+          readIORef seen `shouldReturn` Just wanted
+
+    -- A question that does not reduce is answered with the node as it is
+    -- written, ξ and all, since binding that ξ is what reducing does
+    it "leaves the ξ of a node alone when the question does not reduce it" $
+      servesAt "⟦ a ↦ ⟦ Δ ⤍ 01- ⟧, φ ↦ ξ.a ⟧" (referring 1 "φ" False "*'ξ.a'*") "⟦ Δ ⤍ FF- ⟧"
+
     -- A receiver is of no use to the channel once its request has been
     -- answered, and a question may not dig out of it after that
     it "fails a question about a request that is no longer in flight" $

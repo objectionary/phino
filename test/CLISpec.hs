@@ -450,6 +450,26 @@ spec = do
           withStdin "⟦ @ ↦ ⟦ λ ⤍ L_answer ⟧ ⟧" $
             testCLISucceeded ["dataize", "--atoms=" ++ registry] ["2A-"]
 
+    -- The body of the formation being fired is what a program asks phino to
+    -- reduce for it, and the ξ of that body stands for the very formation the
+    -- program was handed, so the whole of it goes through the command line
+    -- here: the question names 'φ', the answer brings what ξ.a reached (#1220)
+    it "dataizes with an atom whose question reduces a body written with ξ"
+      $ withShell
+      $ withServing
+        ( T.unlines
+            [ T.pack "printf '{\"id\": 7, \"of\": %s, \"attr\": \"φ\", \"reduce\": true}\\n' \"$id\""
+            , T.pack "IFS= read -r reply"
+            , T.pack "case \"$reply\" in"
+            , T.pack "  *01-02*) printf '{\"id\": %s, \"𝑛\": \"⟦ Δ ⤍ 2A- ⟧\"}\\n' \"$id\";;"
+            , T.pack "  *) printf '{\"id\": %s, \"𝑛\": \"⟦ Δ ⤍ 00- ⟧\"}\\n' \"$id\";;"
+            , T.pack "esac"
+            ]
+        )
+      $ \registry ->
+        withStdin "⟦ @ ↦ ⟦ a ↦ ⟦ Δ ⤍ 01-02 ⟧, φ ↦ ξ.a, λ ⤍ L_answer ⟧ ⟧" $
+          testCLISucceeded ["dataize", "--atoms=" ++ registry] ["2A-"]
+
     it "saves dataize steps to dir with --steps-dir" $
       withAtoms $ \atoms ->
         withTempDirectory "phino-steps-dataize" $ \dir ->
