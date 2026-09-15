@@ -12,11 +12,10 @@ import Control.Exception
 import Control.Monad (forM_, unless)
 import Data.Char (isDigit)
 import Data.List (intercalate, isInfixOf, isPrefixOf, sort)
-import Data.Text qualified as T
 import Data.Time.Clock (addUTCTime, getCurrentTime)
 import Data.Time.Clock.POSIX (getPOSIXTime)
 import Data.Version (showVersion)
-import Fixtures (withAskingRegistry, withFixtureRegistry, withLoopingAskRegistry, withNode, withServing, withShell)
+import Fixtures (functionsFile, loopingFunctions)
 import GHC.IO.Handle
 import Paths_phino (version)
 import System.Directory (createDirectoryIfMissing, doesDirectoryExist, doesFileExist, getTemporaryDirectory, listDirectory, removeDirectoryRecursive, removeFile, removePathForcibly, setModificationTime)
@@ -121,40 +120,11 @@ testCLI' args outputs exit = do
 testCLISucceeded :: [String] -> [String] -> Expectation
 testCLISucceeded args outputs = testCLI' args outputs (Right ())
 
--- phino implements no λ function of its own, so a case that needs an atom to
--- fire brings the fixture registry in and hands its path to the command as
--- '--atoms' (see 'Fixtures'). Every such atom runs under 'node', so the case is
--- pending where 'node' is not installed.
-withAtoms :: (String -> Expectation) -> Expectation
-withAtoms action = withNode (withFixtureRegistry (action . ("--atoms=" ++)))
-
--- The same, for the fixture that reduces no operand of its own and asks phino
--- for every one of them instead (see 'Fixtures')
-withAsking :: (String -> Expectation) -> Expectation
-withAsking action = withNode (withAskingRegistry (action . ("--atoms=" ++)))
-
-withLoopingAsk :: (String -> Expectation) -> Expectation
-withLoopingAsk action = withNode (withLoopingAskRegistry (action . ("--atoms=" ++)))
-
--- A resident program that cannot answer its request before phino reduces
--- 'Q.nope' for it, a dispatch on an atom the registry does not carry and
--- '--partial' parks: it answers 'FF-' when phino said the parked node back
--- alone and '00-' when the answer carried the whole universe that node was
--- reduced inside, which the other atom of the universe is named in
-parking :: T.Text
-parking =
-  T.pack $
-    unlines
-      [ "printf '{\"id\": 7, \"ask\": \"Q.nope\"}\\n'"
-      , "IFS= read -r reply"
-      , "case \"$reply\" in"
-      , "  *L_answer*) " ++ answering "00-" ++ ";;"
-      , "  *) " ++ answering "FF-" ++ ";;"
-      , "esac"
-      ]
-  where
-    answering :: String -> String
-    answering bytes = "printf '{\"id\": %s, \"𝑛\": \"⟦ Δ ⤍ " ++ bytes ++ " ⟧\"}\\n' \"$id\""
+-- phino implements no λ function of its own, so a case that needs one to fire
+-- brings the fixture registry in and hands its path to the command as
+-- '--functions' (see 'Fixtures')
+withFixture :: (String -> Expectation) -> Expectation
+withFixture action = action ("--functions=" ++ functionsFile)
 
 testCLIFailed :: [String] -> [String] -> Expectation
 testCLIFailed args outputs = testCLI' args outputs (Left (ExitFailure 1))
@@ -440,42 +410,12 @@ spec = do
           doesFileExist (dir ++ "/00001.phi") `shouldReturn` True
           doesFileExist (dir ++ "/00003.phi") `shouldReturn` True
 
-    -- A served atom is asked over the streams of one resident program that
-    -- 'phino' starts on the first fire and stops when the run is over, so the
-    -- whole of it goes through the command line here: registry, program and
-    -- the bytes it answers with
-    it "dataizes with an atom served by a resident program" $
-      withShell $
-        withServing (T.pack "printf '{\"id\": %s, \"𝑛\": \"⟦ Δ ⤍ 2A- ⟧\"}\\n' \"$id\"") $ \registry ->
-          withStdin "⟦ @ ↦ ⟦ λ ⤍ L_answer ⟧ ⟧" $
-            testCLISucceeded ["dataize", "--atoms=" ++ registry] ["2A-"]
-
-    -- The body of the formation being fired is what a program asks phino to
-    -- reduce for it, and the ξ of that body stands for the very formation the
-    -- program was handed, so the whole of it goes through the command line
-    -- here: the question names 'φ', the answer brings what ξ.a reached (#1220)
-    it "dataizes with an atom whose question reduces a body written with ξ"
-      $ withShell
-      $ withServing
-        ( T.unlines
-            [ T.pack "printf '{\"id\": 7, \"of\": %s, \"attr\": \"φ\", \"reduce\": true}\\n' \"$id\""
-            , T.pack "IFS= read -r reply"
-            , T.pack "case \"$reply\" in"
-            , T.pack "  *01-02*) printf '{\"id\": %s, \"𝑛\": \"⟦ Δ ⤍ 2A- ⟧\"}\\n' \"$id\";;"
-            , T.pack "  *) printf '{\"id\": %s, \"𝑛\": \"⟦ Δ ⤍ 00- ⟧\"}\\n' \"$id\";;"
-            , T.pack "esac"
-            ]
-        )
-      $ \registry ->
-        withStdin "⟦ @ ↦ ⟦ a ↦ ⟦ Δ ⤍ 01-02 ⟧, φ ↦ ξ.a, λ ⤍ L_answer ⟧ ⟧" $
-          testCLISucceeded ["dataize", "--atoms=" ++ registry] ["2A-"]
-
     it "saves dataize steps to dir with --steps-dir" $
-      withAtoms $ \atoms ->
+      withFixture $ \functions ->
         withTempDirectory "phino-steps-dataize" $ \dir ->
           withStdin "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6).plus(7) ]]" $ do
             testCLISucceeded
-              ["dataize", atoms, "--steps-dir=" ++ dir, "--sweet"]
+              ["dataize", functions, "--steps-dir=" ++ dir, "--sweet"]
               ["40-32"]
             doesDirectoryExist dir `shouldReturn` True
             files <- listDirectory dir
@@ -1158,23 +1098,25 @@ spec = do
       withStdin "[[ D> 01- ]]" $
         testCLIFailed ["dataize", "--max-steps=-1"] ["--max-steps must be positive"]
 
-    -- The 𝕄/𝔻 recursion used to be unbounded, so this division kept morphing
-    -- forever and no option could stop it (#1052)
+    -- The 𝕄/𝔻 recursion used to be unbounded, so a λ function answering with a
+    -- firing of itself kept morphing forever and no option could stop it
+    -- (#1052). Recursion is nothing phino prevents — whether a λ function ends
+    -- is the object model's business — so '--max-steps' is what bounds it.
     it "fails on --max-steps instead of morphing forever" $
-      withAtoms $ \atoms ->
-        withStdin "⟦ @ ↦ ⟦ λ ⤍ L_number_div, ρ ↦ ⟦ Δ ⤍ 40-45-00-00-00-00-00-00 ⟧, x ↦ ⟦ Δ ⤍ 40-00-00-00-00-00-00-00 ⟧ ⟧ ⟧" $
+      loopingFunctions $ \file ->
+        withStdin "⟦ @ ↦ ⟦ λ ⤍ L_loop ⟧ ⟧" $
           testCLIFailed
-            ["dataize", atoms, "--max-steps=40"]
+            ["dataize", "--functions=" ++ file, "--max-steps=40"]
             ["[ERROR]: Dataization did not finish before reaching the limit of steps: --max-steps=40"]
 
     -- Under '--partial' the same term does not fail: the spent budget is a
     -- stuck site too, and the run ends on the residual the spine reached (#1078)
     it "parks --max-steps on a residual with --partial" $
-      withAtoms $ \atoms ->
-        withStdin "⟦ @ ↦ ⟦ λ ⤍ L_number_div, ρ ↦ ⟦ Δ ⤍ 40-45-00-00-00-00-00-00 ⟧, x ↦ ⟦ Δ ⤍ 40-00-00-00-00-00-00-00 ⟧ ⟧ ⟧" $
+      loopingFunctions $ \file ->
+        withStdin "⟦ @ ↦ ⟦ λ ⤍ L_loop ⟧ ⟧" $
           testCLISucceeded
-            ["dataize", atoms, "--max-steps=40", "--partial", "--flat"]
-            ["Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 40-35-00-00-00-00-00-00"]
+            ["dataize", "--functions=" ++ file, "--max-steps=40", "--partial", "--flat"]
+            ["λ ⤍ L_loop"]
 
     it "dataizes with --sequence" $
       withStdin "[[ @ -> [[ x -> [[ D> 01-, y -> ? ]](y -> [[ ]]) ]].x ]]" $
@@ -1213,17 +1155,17 @@ spec = do
           ["⟦ Δ ⤍ 01- ⟧\n01-"]
 
     it "focuses a compressed sequence whose meet replaces a step root" $
-      withAtoms $ \atoms ->
+      withFixture $ \functions ->
         withStdin "[[ @ -> [[ @ -> $.c.plus( 32.0 ), c -> 25.0 ]], bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus -> [[ x -> ?, L> L_number_plus ]] ]] ]]" $
           testCLISucceeded
-            ["dataize", atoms, "--output=latex", "--sweet", "--nonumber", "--compress", "--canonize", "--meet-prefix=dataization", "--sequence", "--flat", "--quiet", "--hide=Q.bytes", "--hide=Q.number", "--locator=Q.@", "--focus=Q.@", "--meet-length=5", "--meet-popularity=1"]
+            ["dataize", functions, "--output=latex", "--sweet", "--nonumber", "--compress", "--canonize", "--meet-prefix=dataization", "--sequence", "--flat", "--quiet", "--hide=Q.bytes", "--hide=Q.number", "--locator=Q.@", "--focus=Q.@", "--meet-length=5", "--meet-popularity=1"]
             ["\\phinoMeet{dataization:1}{ [[ @ -> |c| . |plus| ( 32 ), |c| -> 25 ]] } \\leadsto_{\\nameref{r:contextualize}}"]
 
     it "compresses a canonized whole-expression sequence into a meet" $
-      withAtoms $ \atoms ->
+      withFixture $ \functions ->
         withStdin "[[ @ -> [[ @ -> $.c.plus( 32.0 ), c -> 25.0 ]], bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus -> [[ x -> ?, L> L_number_plus ]] ]] ]]" $
           testCLISucceeded
-            ["dataize", atoms, "--output=latex", "--sweet", "--nonumber", "--compress", "--canonize", "--meet-prefix=dataization", "--sequence", "--flat", "--quiet", "--meet-length=5", "--meet-popularity=1"]
+            ["dataize", functions, "--output=latex", "--sweet", "--nonumber", "--compress", "--canonize", "--meet-prefix=dataization", "--sequence", "--flat", "--quiet", "--meet-length=5", "--meet-popularity=1"]
             ["\\phinoMeet{dataization:1}"]
 
     it "dataizes with --locator" $
@@ -1234,223 +1176,168 @@ spec = do
       withStdin "[[ D> 01- ]]" $
         testCLISucceeded ["dataize", "--quiet"] []
 
+    -- The protocol of '--evaluations' is one JSON object per line: the λ
+    -- function under 'λ' and, next to it, every meta the entry of it bound,
+    -- with a byte array spelled in hex and a λ name as text, so a reader of the
+    -- file never parses 𝜑 (see 'Deps')
     describe "--evaluations" $ do
-      it "writes one tab-separated record per fired atom" $
-        withAtoms $ \atoms ->
-          withTempFile "evaluationsXXXXXX.txt" $ \(path, stream) -> do
+      it "writes one JSON object per fired λ function" $
+        withFixture $ \functions ->
+          withTempFile "evaluationsXXXXXX.json" $ \(path, stream) -> do
             hClose stream
             withStdin "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6) ]]" $
-              testCLISucceeded ["dataize", atoms, "--evaluations=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
+              testCLISucceeded ["dataize", functions, "--evaluations=" ++ path, "--quiet"] []
             records <- readUtf8 path
-            records `shouldBe` "L_number_plus\t⟦ x ↦ 6 ⟧\t11\n"
+            records `shouldBe` "{\"λ\":\"L_number_plus\",\"𝑛1\":\"40-14-00-00-00-00-00-00\",\"𝑛2\":\"40-18-00-00-00-00-00-00\"}\n"
 
       it "writes a record for every firing" $
-        withAtoms $ \atoms ->
-          withTempFile "evaluationsXXXXXX.txt" $ \(path, stream) -> do
+        withFixture $ \functions ->
+          withTempFile "evaluationsXXXXXX.json" $ \(path, stream) -> do
             hClose stream
             withStdin "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6).plus(7) ]]" $
-              testCLISucceeded ["dataize", atoms, "--evaluations=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
+              testCLISucceeded ["dataize", functions, "--evaluations=" ++ path, "--quiet"] []
             records <- readUtf8 path
-            lines records `shouldBe` ["L_number_plus\t⟦ x ↦ 6 ⟧\t11", "L_number_plus\t⟦ x ↦ 7 ⟧\t18"]
-
-      it "writes records in canonical syntax without --sweet" $
-        withAtoms $ \atoms ->
-          withTempFile "evaluationsXXXXXX.txt" $ \(path, stream) -> do
-            hClose stream
-            withStdin "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6) ]]" $
-              testCLISucceeded ["dataize", atoms, "--evaluations=" ++ path, "--quiet", "--hide-rho"] []
-            records <- readUtf8 path
-            records `shouldEndWith` "\tΦ.number( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 40-26-00-00-00-00-00-00 ⟧ ) )\n"
+            lines records
+              `shouldBe` [ "{\"λ\":\"L_number_plus\",\"𝑛1\":\"40-14-00-00-00-00-00-00\",\"𝑛2\":\"40-18-00-00-00-00-00-00\"}"
+                         , "{\"λ\":\"L_number_plus\",\"𝑛1\":\"40-26-00-00-00-00-00-00\",\"𝑛2\":\"40-1C-00-00-00-00-00-00\"}"
+                         ]
 
       it "keeps the records of a run that fails" $
-        withAtoms $ \atoms ->
-          withTempFile "evaluationsXXXXXX.txt" $ \(path, stream) -> do
+        withFixture $ \functions ->
+          withTempFile "evaluationsXXXXXX.json" $ \(path, stream) -> do
             hClose stream
             withStdin "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(x) -> [[ L> L_number_plus ]], nope -> [[ L> L_number_nope ]] ]], @ -> 5.plus(6).nope ]]" $
               testCLIFailed
-                ["dataize", atoms, "--evaluations=" ++ path, "--quiet", "--sweet", "--hide-rho"]
-                ["Atom 'L_number_nope' does not exist"]
+                ["dataize", functions, "--evaluations=" ++ path, "--quiet"]
+                ["No entry of --functions answers the λ function 'L_number_nope'"]
             records <- readUtf8 path
-            records `shouldBe` "L_number_plus\t⟦ x ↦ 6 ⟧\t11\n"
+            records `shouldBe` "{\"λ\":\"L_number_plus\",\"𝑛1\":\"40-14-00-00-00-00-00-00\",\"𝑛2\":\"40-18-00-00-00-00-00-00\"}\n"
 
       it "truncates the records left over from the previous run" $
-        withTempFileContent "evaluationsXXXXXX.txt" "L_number_gt\t[[ ]]\t01-\n" $ \path -> do
+        withTempFileContent "evaluationsXXXXXX.json" "{\"λ\":\"L_number_plus\"}\n" $ \path -> do
           withStdin "[[ D> 01- ]]" $
             testCLISucceeded ["dataize", "--evaluations=" ++ path, "--quiet"] []
           records <- readUtf8 path
           records `shouldBe` ""
 
-      it "fails with --output=xmir" $
-        withStdin "[[ D> 01- ]]" $
-          testCLIFailed
-            ["dataize", "--evaluations=evaluations.txt", "--output=xmir"]
-            ["The --evaluations option can stay together with --output=phi only"]
-
-      it "fails with --output=latex" $
-        withStdin "[[ D> 01- ]]" $
-          testCLIFailed
-            ["dataize", "--evaluations=evaluations.txt", "--output=latex"]
-            ["The --evaluations option can stay together with --output=phi only"]
-
-    -- A λ function the '--atoms' registry does not carry cannot fire — a
+    -- A λ function no entry of the '--functions' file answers cannot fire — a
     -- placeholder such as ⟦ λ ⤍ Sym_arg_0 ⟧ standing in for a data input, or
-    -- an operation the caller left out of its registry on purpose. The run used
+    -- an operation the caller left out of its file on purpose. The run used
     -- to die on it, discarding what it had already evaluated (#1060)
     describe "--partial" $ do
-      let stuck = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ times(x) -> [[ L> L_number_times ]], nope -> [[ L> L_number_nope ]] ]], @ -> 2.times(3).nope ]]"
-      it "fails on an atom that cannot fire without the flag" $
-        withAtoms $ \atoms ->
+      let stuck = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(x) -> [[ L> L_number_plus ]], nope -> [[ L> L_number_nope ]] ]], @ -> 2.plus(3).nope ]]"
+      it "fails on a λ function that cannot fire without the flag" $
+        withFixture $ \functions ->
           withStdin stuck $
-            testCLIFailed ["dataize", atoms, "--sweet", "--hide-rho"] ["Atom 'L_number_nope' does not exist"]
+            testCLIFailed ["dataize", functions, "--sweet", "--hide-rho"] ["No entry of --functions answers the λ function 'L_number_nope'"]
 
       it "prints the residue with the stuck application intact and exits successfully" $
-        withAtoms $ \atoms ->
+        withFixture $ \functions ->
           withStdin stuck $
             testCLISucceeded
-              ["dataize", atoms, "--partial", "--sweet", "--hide-rho"]
+              ["dataize", functions, "--partial", "--sweet", "--hide-rho"]
               ["⟦ λ ⤍ L_number_nope ⟧"]
 
       it "keeps what was evaluated before the stuck site in the residue" $
-        withAtoms $ \atoms ->
+        withFixture $ \functions ->
           withStdin stuck $
             testCLISucceeded
-              ["dataize", atoms, "--partial", "--sweet"]
-              ["φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 40-18-00-00-00-00-00-00 ⟧ )"]
+              ["dataize", functions, "--partial", "--sweet"]
+              ["φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 40-14-00-00-00-00-00-00 ⟧ )"]
 
-      it "records every stuck site in --evaluations with no result" $
-        withAtoms $ \atoms ->
-          withTempFile "evaluationsXXXXXX.txt" $ \(path, stream) -> do
+      it "records every stuck site in --evaluations as stuck" $
+        withFixture $ \functions ->
+          withTempFile "evaluationsXXXXXX.json" $ \(path, stream) -> do
             hClose stream
             withStdin stuck $
-              testCLISucceeded ["dataize", atoms, "--partial", "--evaluations=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
+              testCLISucceeded ["dataize", functions, "--partial", "--evaluations=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
             records <- readUtf8 path
             lines records
-              `shouldBe` [ "L_number_times\t⟦ x ↦ 3 ⟧\t6"
-                         , "L_number_nope\t⟦⟧"
+              `shouldBe` [ "{\"λ\":\"L_number_plus\",\"𝑛1\":\"40-00-00-00-00-00-00-00\",\"𝑛2\":\"40-08-00-00-00-00-00-00\"}"
+                         , "{\"λ\":\"L_number_nope\",\"stuck\":true}"
                          ]
 
       it "still prints bytes when nothing gets stuck" $
-        withAtoms $ \atoms ->
+        withFixture $ \functions ->
           withStdin "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6) ]]" $
-            testCLISucceeded ["dataize", atoms, "--partial"] ["40-26-00-00-00-00-00-00"]
+            testCLISucceeded ["dataize", functions, "--partial"] ["40-26-00-00-00-00-00-00"]
 
       -- The residual is an arbitrary formation, and a multi-binding <object>
       -- is exactly what XMIR now carries: one <o> per binding (#1076)
       it "prints the residual to XMIR, with its real listing by default" $
-        withAtoms $ \atoms ->
+        withFixture $ \functions ->
           withStdin stuck $
             testCLISucceeded
-              ["dataize", atoms, "--partial", "--output=xmir"]
+              ["dataize", functions, "--partial", "--output=xmir"]
               ["<o name=\"λ\">L_number_nope</o>", "<o name=\"ρ\">", "<listing>⟦"]
 
       it "honors --hide-rho and --omit-listing when printing the residual to XMIR" $
-        withAtoms $ \atoms ->
+        withFixture $ \functions ->
           withStdin stuck $
             testCLISucceeded
-              ["dataize", atoms, "--partial", "--output=xmir", "--hide-rho", "--omit-listing"]
+              ["dataize", functions, "--partial", "--output=xmir", "--hide-rho", "--omit-listing"]
               ["<o name=\"λ\">L_number_nope</o>", "line(s)</listing>"]
 
       it "prints the chain of steps ending in the residue with --sequence" $
-        withAtoms $ \atoms ->
+        withFixture $ \functions ->
           withStdin stuck $
             testCLISucceeded
-              ["dataize", atoms, "--partial", "--sequence", "--sweet", "--hide-rho", "--flat"]
-              ["2.times( 3 ).nope", "⟦ λ ⤍ L_number_nope ⟧"]
+              ["dataize", functions, "--partial", "--sequence", "--sweet", "--hide-rho", "--flat"]
+              ["2.plus( 3 ).nope", "⟦ λ ⤍ L_number_nope ⟧"]
 
-      it "still stops on the terminator ⊥, since a wrong operand is not a stuck atom" $
+      it "still stops on the terminator ⊥, since a wrong operand is not a stuck λ function" $
         withStdin "[[ ]]" $
           testCLIFailed ["dataize", "--partial"] ["terminator ⊥"]
 
-    -- Which λ functions exist is not phino's business any more: the registry
-    -- given with '--atoms' decides, and phino carries none of its own
-    describe "--atoms" $ do
+    -- Which λ functions exist is not phino's business any more: the YAML file
+    -- given with '--functions' decides, and phino carries none of its own
+    describe "--functions" $ do
       let sum' = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6) ]]"
-      it "fires the λ function the registry carries" $
-        withAtoms $ \atoms ->
+      it "fires the λ function the file carries" $
+        withFixture $ \functions ->
           withStdin sum' $
-            testCLISucceeded ["dataize", atoms] ["40-26-00-00-00-00-00-00"]
+            testCLISucceeded ["dataize", functions] ["40-26-00-00-00-00-00-00"]
 
-      it "gets stuck on every atom when it is not given" $
+      it "gets stuck on every λ function when it is not given" $
         withStdin sum' $
-          testCLIFailed ["dataize"] ["Atom 'L_number_plus' does not exist"]
+          testCLIFailed ["dataize"] ["No entry of --functions answers the λ function 'L_number_plus'"]
 
-      it "fails when the registry file is not there" $
+      it "fails when the file is not there" $
         withStdin sum' $
-          testCLIFailed ["dataize", "--atoms=no-such-registry.json"] ["no-such-registry.json"]
+          testCLIFailed ["dataize", "--functions=no-such-file.yaml"] ["no-such-file.yaml"]
 
-      -- An unknown runtime is refused where the registry is read, which is
-      -- before the input is even parsed, rather than when an atom of it fires
-      it "fails on a runtime phino cannot run, before dataizing anything" $
-        withTempFileContent "atomsXXXXXX.json" "{\"L_number_plus\": {\"rt\": \"ruby\", \"script\": \"puts 1\"}}" $ \path ->
+      -- The file is read before the input is even parsed, so a mistake in it
+      -- never surfaces half-way through a derivation
+      it "fails on a file that is not a list of λ functions" $
+        withTempFileContent "functionsXXXXXX.yaml" "L_number_plus: js" $ \path ->
           withStdin sum' $
-            testCLIFailed ["dataize", "--atoms=" ++ path] ["unknown runtime 'ruby'"]
+            testCLIFailed ["dataize", "--functions=" ++ path] ["cannot be read"]
 
-      it "fails on a registry that is not JSON" $
-        withTempFileContent "atomsXXXXXX.json" "L_number_plus: js" $ \path ->
+      it "fails on an entry whose key is no regular expression" $
+        withTempFileContent "functionsXXXXXX.yaml" "- λ: 'L_number_plus('\n  𝑛: ⟦ Δ ⤍ 00- ⟧\n" $ \path ->
           withStdin sum' $
-            testCLIFailed ["dataize", "--atoms=" ++ path] ["cannot be read"]
+            testCLIFailed ["dataize", "--functions=" ++ path] ["is not a regular expression"]
 
-      -- An operand reaches an atom as it was written, so 'x' arrives here as
-      -- '6.plus( 7 )': a program that needs it reduced asks phino for it over
-      -- the very channel it answers on, and serving that question costs
-      -- another fire of the same program, which arrives while the question is
-      -- still open
-      it "reduces the operand a program asks it about" $
-        withAsking $ \atoms ->
-          withStdin "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6.plus(7)) ]]" $
-            testCLISucceeded ["dataize", atoms] ["40-32-00-00-00-00-00-00"]
-
-      -- A question about a term the universe cannot finish reducing does not
-      -- kill a '--partial' run: phino parks the cycle the question walks into
-      -- and answers with the residual, so the program still replies and the
-      -- bytes arrive (#1078, over the ask channel of #1160)
-      it "answers a looping question with a parked residual under --partial" $
-        withLoopingAsk $ \atoms ->
-          withStdin "⟦ bytes ↦ ⟦ φ ↦ ∅ ⟧, number ↦ ⟦ φ ↦ ∅, gt(x) ↦ ⟦ λ ⤍ L_number_gt ⟧ ⟧, φ ↦ 5.gt(1) ⟧" $
-            testCLISucceeded
-              ["dataize", atoms, "--partial", "--max-steps=200"]
-              ["2A-"]
-
-      -- A question is answered with the node the program asked about, and
-      -- never with the universe that node was reduced inside: a parked
-      -- question used to hand the residue back whole, so a program reading a
-      -- seventeen-byte node paid for a print of the entire universe, once per
-      -- question (#1167)
-      it "answers a parked question with the node alone" $
-        withShell $
-          withServing parking $ \registry ->
-            withStdin "⟦ nope ↦ ⟦ λ ⤍ L_nope ⟧, φ ↦ ⟦ λ ⤍ L_answer ⟧ ⟧" $
-              testCLISucceeded ["dataize", "--atoms=" ++ registry, "--partial"] ["FF-"]
-
-      -- Without '--partial' the exhausted budget fails the run through a
-      -- question just as it fails it anywhere else (#1052's message)
-      it "fails a looping question without --partial" $
-        withLoopingAsk $ \atoms ->
-          withStdin "⟦ bytes ↦ ⟦ φ ↦ ∅ ⟧, number ↦ ⟦ φ ↦ ∅, gt(x) ↦ ⟦ λ ⤍ L_number_gt ⟧ ⟧, φ ↦ 5.gt(1) ⟧" $
-            testCLIFailed
-              ["dataize", atoms, "--max-steps=200"]
-              ["--max-steps=200"]
-
-    -- An atom script cannot reduce the operands it was handed by itself, so it
-    -- asks phino for them: '--inside' binds an expression to a synthetic
+    -- A term nothing in the input carries is still worth reducing inside the
+    -- object model the input declares: '--inside' binds it to a synthetic
     -- attribute of the universe and aims the run at it
     describe "--inside" $ do
       let universe = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(x) -> [[ L> L_number_plus ]] ]], @ -> [[ D> 01- ]] ]]"
       it "dataizes an expression the input does not contain" $
-        withAtoms $ \atoms ->
+        withFixture $ \functions ->
           withStdin universe $
-            testCLISucceeded ["dataize", atoms, "--inside=5.plus( 6 )"] ["40-26-00-00-00-00-00-00"]
+            testCLISucceeded ["dataize", functions, "--inside=5.plus( 6 )"] ["40-26-00-00-00-00-00-00"]
 
-      -- The expression is normalized first, so a dispatch off a formation — the
-      -- very shape a script asks about, '⟦ x ↦ 6, ρ ↦ 5 ⟧.x' — reduces too
+      -- The expression is normalized first, so a dispatch off a formation —
+      -- '⟦ x ↦ 6, ρ ↦ 5 ⟧.x' — reduces too
       it "normalizes what it is handed before dataizing it" $
         withStdin universe $
           testCLISucceeded ["dataize", "--inside=[[ x -> [[ D> 2A- ]] ]].x"] ["2A-"]
 
       it "morphs inside the universe just as it dataizes inside it" $
-        withAtoms $ \atoms ->
+        withFixture $ \functions ->
           withStdin universe $
-            testCLISucceeded ["morph", atoms, "--inside=5.plus( 6 )", "--sweet", "--hide-rho", "--flat"] ["⟦ x ↦ 6, λ ⤍ L_number_plus ⟧"]
+            testCLISucceeded ["morph", functions, "--inside=5.plus( 6 )", "--sweet", "--hide-rho", "--flat"] ["⟦ x ↦ 6, λ ⤍ L_number_plus ⟧"]
 
       it "cannot be used together with --locator" $
         withStdin universe $
@@ -1523,7 +1410,7 @@ spec = do
   -- dataization relation, so there was no way to ask phino for 𝕄(n, Φ) on its
   -- own (#1114)
   describe "morph" $ do
-    -- Two chained atom calls: the inner one fires under 'ml', because '.plus'
+    -- Two chained λ function calls: the inner one fires under 'ml', because '.plus'
     -- is dispatched on its result, while the outer application is saturated but
     -- bare, so 'mf' hands it back and firing it is 𝔻's job
     let chained = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6).plus(7) ]]"
@@ -1535,17 +1422,17 @@ spec = do
         testCLISucceeded ["morph", "--flat", "--hide-rho"] ["⟦ Δ ⤍ 01- ⟧"]
 
     it "stops at the bare saturated λ-formation" $
-      withAtoms $ \atoms ->
+      withFixture $ \functions ->
         withStdin chained $
           testCLISucceeded
-            ["morph", atoms, "--locator=Q.@", "--sweet", "--hide-rho", "--flat"]
+            ["morph", functions, "--locator=Q.@", "--sweet", "--hide-rho", "--flat"]
             ["⟦ x ↦ 7, λ ⤍ L_number_plus ⟧"]
 
     -- The same term under 𝔻, which insists on bytes and fires what 𝕄 left bare
     it "leaves to dataize the firing that takes the same term to bytes" $
-      withAtoms $ \atoms ->
+      withFixture $ \functions ->
         withStdin chained $
-          testCLISucceeded ["dataize", atoms] ["40-32-00-00-00-00-00-00"]
+          testCLISucceeded ["dataize", functions] ["40-32-00-00-00-00-00-00"]
 
     -- 'mf' hands a formation back as it is, so '--locator' is how one aims 𝕄 at
     -- a subterm worth navigating: here it resolves Φ against the universe and
@@ -1570,10 +1457,10 @@ spec = do
     -- design — it happens in a side premise, which reduces on a chain of its
     -- own and discards it
     it "prints the chain of morphing steps with --sequence" $
-      withAtoms $ \atoms ->
+      withFixture $ \functions ->
         withStdin chained $
           testCLISucceeded
-            ["morph", atoms, "--locator=Q.@", "--sequence", "--headers", "--sweet", "--hide-rho", "--flat"]
+            ["morph", functions, "--locator=Q.@", "--sequence", "--headers", "--sweet", "--hide-rho", "--flat"]
             [ "Rule 'maa'"
             , "Rule 'alpha'"
             , "Rule 'copy'"
@@ -1585,21 +1472,21 @@ spec = do
       withStdin "[[ D> 01- ]]" $
         testCLISucceeded ["morph", "--quiet"] []
 
-    it "records the atoms it fires with --evaluations" $
-      withAtoms $ \atoms ->
-        withTempFile "evaluationsXXXXXX.txt" $ \(path, stream) -> do
+    it "records the λ functions it fires with --evaluations" $
+      withFixture $ \functions ->
+        withTempFile "evaluationsXXXXXX.json" $ \(path, stream) -> do
           hClose stream
           withStdin chained $
-            testCLISucceeded ["morph", atoms, "--locator=Q.@", "--evaluations=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
+            testCLISucceeded ["morph", functions, "--locator=Q.@", "--evaluations=" ++ path, "--quiet"] []
           records <- readUtf8 path
-          lines records `shouldBe` ["L_number_plus\t⟦ x ↦ 6 ⟧\t11"]
+          lines records `shouldBe` ["{\"λ\":\"L_number_plus\",\"𝑛1\":\"40-14-00-00-00-00-00-00\",\"𝑛2\":\"40-18-00-00-00-00-00-00\"}"]
 
     it "saves morphing steps to dir with --steps-dir" $
-      withAtoms $ \atoms ->
+      withFixture $ \functions ->
         withTempDirectory "phino-steps-morph" $ \dir ->
           withStdin chained $ do
             testCLISucceeded
-              ["morph", atoms, "--locator=Q.@", "--steps-dir=" ++ dir, "--sweet", "--hide-rho", "--flat"]
+              ["morph", functions, "--locator=Q.@", "--steps-dir=" ++ dir, "--sweet", "--hide-rho", "--flat"]
               ["⟦ x ↦ 7, λ ⤍ L_number_plus ⟧"]
             steps <- sort <$> listDirectory dir
             steps `shouldBe` map (\n -> printf "%05d.phi" (n :: Int)) [1 .. length steps]
@@ -1625,7 +1512,7 @@ spec = do
           ["morph", "--locator=Q.@", "--max-steps=3"]
           ["[ERROR]: Dataization did not finish before reaching the limit of steps: --max-steps=3"]
 
-    -- '--partial' parks a spent 𝕄 budget the same way it parks a stuck atom:
+    -- '--partial' parks a spent 𝕄 budget the same way it parks a stuck λ function:
     -- the answer is the term the walk had reached, dispatch intact (#1078)
     it "parks the spent budget as a residual with --partial" $
       withStdin "⟦ φ ↦ 5.gt(Φ.nan) ⟧" $
@@ -1633,13 +1520,13 @@ spec = do
           ["morph", "--locator=Q.@", "--max-steps=10", "--partial", "--flat", "--hide-rho", "--sweet"]
           ["5.gt( Φ.nan )"]
 
-    -- 𝕄 never fires a bare λ-formation, so only the atoms sitting under a
+    -- 𝕄 never fires a bare λ-formation, so only the λ functions sitting under a
     -- dispatch ('ml') can get stuck; '--partial' parks them exactly as under 𝔻
     describe "--partial" $ do
       let stuck = "[[ @ -> [[ L> Sym_arg_0 ]].foo ]]"
-      it "fails on an atom that cannot fire without the flag" $
+      it "fails on a λ function that cannot fire without the flag" $
         withStdin stuck $
-          testCLIFailed ["morph", "--locator=Q.@"] ["Atom 'Sym_arg_0' does not exist"]
+          testCLIFailed ["morph", "--locator=Q.@"] ["No entry of --functions answers the λ function 'Sym_arg_0'"]
 
       it "prints the residue with the stuck application intact and exits successfully" $
         withStdin stuck $
@@ -1650,49 +1537,49 @@ spec = do
     -- 𝕄 stops at the first formation and hands its bindings back as they were
     -- written, so a program whose parts nothing demands is never reduced;
     -- '--deep' enters every binding and finishes what 'mf' left, while what no
-    -- atom touched keeps its name and the answer stays a program (#1124)
+    -- λ function touched keeps its name and the answer stays a program (#1124)
     describe "--deep" $ do
       let program =
             "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, \
-            \number(φ) -> [[ times(x) -> [[ L> L_number_times ]] ]], \
+            \number(φ) -> [[ plus(x) -> [[ L> L_number_plus ]] ]], \
             \bar(x) -> [[ L> L_bar ]], \
-            \demo -> [[ foo -> [[ n -> 3, @ -> Q.bar( $.n.times( 5 ).times( 7 ) ) ]] ]] ]]"
+            \demo -> [[ foo -> [[ n -> 3, @ -> Q.bar( $.n.plus( 5 ).plus( 7 ) ) ]] ]] ]]"
       it "answers the formation as it was written without the flag" $
-        withAtoms $ \atoms ->
+        withFixture $ \functions ->
           withStdin program $
             testCLISucceeded
-              ["morph", atoms, "--inside=Q.demo.foo", "--sweet", "--hide-rho", "--flat"]
-              ["⟦ n ↦ 3, φ ↦ Φ.bar( n.times( 5 ).times( 7 ) ) ⟧"]
+              ["morph", functions, "--inside=Q.demo.foo", "--sweet", "--hide-rho", "--flat"]
+              ["⟦ n ↦ 3, φ ↦ Φ.bar( n.plus( 5 ).plus( 7 ) ) ⟧"]
 
-      -- 'L_bar' is not in the registry, so the call to it stays as written and
+      -- 'L_bar' is in no entry of the file, so the call to it stays as written and
       -- keeps its name, while the arithmetic in the argument nothing demands
       -- folds into the number it makes
       it "reduces every binding it can and leaves the rest in place" $
-        withAtoms $ \atoms ->
+        withFixture $ \functions ->
           withStdin program $
             testCLISucceeded
-              ["morph", atoms, "--deep", "--inside=Q.demo.foo", "--sweet", "--hide-rho", "--flat"]
-              ["⟦ n ↦ 3, φ ↦ Φ.bar( 105 ) ⟧"]
+              ["morph", functions, "--deep", "--inside=Q.demo.foo", "--sweet", "--hide-rho", "--flat"]
+              ["⟦ n ↦ 3, φ ↦ Φ.bar( 15 ) ⟧"]
 
       -- The same term the run above stops at as a bare λ-formation: 'mf' leaves
       -- it to 𝔻, and the walk fires it instead of demanding bytes
       it "fires the bare saturated λ-formation mf hands back" $
-        withAtoms $ \atoms ->
+        withFixture $ \functions ->
           withStdin chained $
             testCLISucceeded
-              ["morph", atoms, "--deep", "--locator=Q.@", "--sweet", "--hide-rho", "--flat"]
+              ["morph", functions, "--deep", "--locator=Q.@", "--sweet", "--hide-rho", "--flat"]
               ["18"]
 
       -- The default locator walks the whole program: the method table of the
       -- object model keeps every one of its λ-formations, since not one of them
       -- is saturated, while the one place that can be computed is
       it "keeps the object model intact while it folds the program" $
-        withAtoms $ \atoms ->
+        withFixture $ \functions ->
           withStdin program $
             testCLISucceeded
-              ["morph", atoms, "--deep", "--sweet", "--hide-rho", "--flat"]
-              [ "number(φ) ↦ ⟦ times(x) ↦ ⟦ λ ⤍ L_number_times ⟧ ⟧"
-              , "demo ↦ ⟦ foo ↦ ⟦ n ↦ 3, φ ↦ Φ.bar( 105 ) ⟧ ⟧"
+              ["morph", functions, "--deep", "--sweet", "--hide-rho", "--flat"]
+              [ "number(φ) ↦ ⟦ plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧"
+              , "demo ↦ ⟦ foo ↦ ⟦ n ↦ 3, φ ↦ Φ.bar( 15 ) ⟧ ⟧"
               ]
 
       it "keeps a binding whose spine got stuck with --partial" $
@@ -1703,7 +1590,7 @@ spec = do
 
       it "fails on that same spine without --partial" $
         withStdin "[[ x -> [[ L> Sym_arg_0 ]].foo ]]" $
-          testCLIFailed ["morph", "--deep"] ["Atom 'Sym_arg_0' does not exist"]
+          testCLIFailed ["morph", "--deep"] ["No entry of --functions answers the λ function 'Sym_arg_0'"]
 
     describe "fails" $ do
       it "with --output != latex and --nonumber" $
@@ -1711,12 +1598,6 @@ spec = do
           testCLIFailed
             ["morph", "--nonumber", "--output=xmir"]
             ["The --nonumber option can stay together with --output=latex only"]
-
-      it "with --evaluations and --output != phi" $
-        withStdin "[[ D> 01- ]]" $
-          testCLIFailed
-            ["morph", "--evaluations=evaluations.txt", "--output=latex"]
-            ["The --evaluations option can stay together with --output=phi only"]
 
       it "with --show used more than once" $
         withStdin "" $

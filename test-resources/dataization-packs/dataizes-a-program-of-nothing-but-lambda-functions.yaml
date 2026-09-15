@@ -1,0 +1,21 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# A whole program, not a single operation: every λ function on the way comes
+# from the '--functions' file and the run still lands on the bytes the sum of
+# the three numbers has.
+functions: true
+input: |
+  [[
+    bytes -> [[
+      φ -> ?
+    ]],
+    number -> [[
+      φ -> ?,
+      as-bytes -> $.φ,
+      plus -> [[ x -> ?, L> L_number_plus ]]
+    ]],
+    @ -> $.c.plus(1.8).plus(32),
+    c -> 25
+  ]]
+result: '40-4D-66-66-66-66-66-66'

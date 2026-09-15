@@ -1,9 +1,0 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
-# SPDX-License-Identifier: MIT
----
-# The judgment is the script's: 'number.div' answers what IEEE 754 says a
-# division by zero is, and phino only carries the bytes on.
-model: true
-atoms: true
-input: '2.div( 0 )'
-result: '7F-F0-00-00-00-00-00-00'

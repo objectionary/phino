@@ -84,6 +84,11 @@ _randomTau :: BuildTermMethod
 _randomTau [] _ = TeAttribute . AtLabel <$> freshTau
 _randomTau _ _ = throwIO (userError "Function random-tau() requires exactly 0 arguments")
 
+-- The bytes an already-reduced term carries: a data object spells them under
+-- its φ, while a formation binding Δ is what 𝔻 itself answers with, which is
+-- what a 'dataize' premise of a λ function binds its meta to (see 'Lambdas'),
+-- so an entry may hand one straight to 'sum' or 'concat'. Anything else still
+-- has to be dataized, and dataizing it is a run of its own.
 _dataize :: BuildTermMethod
 _dataize [Y.ArgBytes bytes] subst = do
   bts <- buildBytesThrows bytes subst
@@ -92,6 +97,7 @@ _dataize [Y.ArgExpression expr] subst = do
   expr' <- buildExpressionThrows expr subst
   case expr' of
     DataObject _ bytes -> pure (TeBytes bytes)
+    ExFormation bds | (bytes : _) <- [bts | BiDelta bts <- bds] -> pure (TeBytes bytes)
     _ -> throwIO (userError "Only data objects and bytes are supported by 'dataize' function now")
 _dataize _ _ = throwIO (userError "Function dataize() requires exactly 1 argument as expression or bytes")
 

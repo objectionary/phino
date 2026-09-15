@@ -78,16 +78,20 @@ Matching (`Matcher.hs`) produces `[Subst]` — a list of
 `Map Text MetaValue` — and conditions filter that list. `Builder.hs` then
 applies a substitution to a result template.
 
-### Atoms live outside the binary
+### λ functions live outside the binary
 
-`phino` implements no λ function. `Atoms.hs` reads a JSON registry of them
-(the `--atoms` option) and fires each one as a POSIX process under the
-interpreter its `rt` names, feeding it the formation and the universe as JSON
-on stdin and reading the 𝜑-expression it answers with back from stdout. A λ
-name the registry does not carry gets stuck, which is what `--partial` parks
-on. Because a script cannot reduce its own operands, it asks `phino` for them
-with `--inside`, which binds an expression to a synthetic attribute of the
-universe and aims the run at it (`insideUniverse` in `Morph.hs`).
+`phino` implements no λ function. `Lambdas.hs` reads the YAML file of them (the
+`--functions` option), where each entry is a rule 𝔼 answers the firing with: a
+`λ` key that is a regular expression over λ names, `dataize`/`morph` blocks
+reducing named dotted paths of the fired formation through 𝔻 and 𝕄, a
+`symbols` block minting fresh λ names counted in the state 𝑠, the `when` and
+`where` a rewriting rule takes, and the answer under `𝑛`. Several entries may
+answer one name and the guards tell them apart. A λ name no entry answers gets
+stuck, which is what `--partial` parks on. Firing an entry needs the judgments,
+so it lives in `Morph.hs` (`symbol`) while `Lambdas.hs` holds only the entries,
+the lookup and the path walk — otherwise `Morph → Lambdas → Dataize → Morph`
+would be a cycle. Every firing reports itself to `--evaluations` as one JSON
+object per line (`Evaluation` in `Deps.hs`).
 
 ### Dependency inversion for circular imports
 
@@ -101,10 +105,10 @@ type alias.
 Dataization (D) one, with named rules: PRIM, NMZ, LAMBDA, PHI (morphing) and
 DELTA, BOX, NORM (dataization). `Morph.hs` also holds what both judgments
 share — the context, the step budget, the signals and the premise plumbing —
-so `Dataize.hs` imports it and nothing points back. Nothing but one edge: an
-atom asking phino to reduce an operand of its own is a whole run of D, so it
-is injected into the context as `_reduce` (a `ReductionFunc`), the way
-`Deps.hs` injects `_buildTerm`. All configuration is threaded through
+so `Dataize.hs` imports it and nothing points back. Nothing but one edge: the
+`dataize` block of a λ function is a whole run of D, so it is injected into the
+context as `_reduce` (a `ReductionFunc`), the way `Deps.hs` injects
+`_buildTerm`. All configuration is threaded through
 `ReduceContext` and `RewriteContext` records — no global state. Each
 function has a top-level wrapper that locates the subterm and starts the
 chain (`morph`, `dataize`) and a recursive worker the rules drive

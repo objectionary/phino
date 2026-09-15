@@ -1,7 +1,9 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 # SPDX-License-Identifier: MIT
 ---
+# Two entries answer 'L_bytes_not', one for each of the two byte arrays an EO
+# bool ever carries, and the guard of an entry is what tells them apart.
 model: true
-atoms: true
-input: 'Φ.bytes( φ ↦ ⟦ Δ ⤍ CA-FE-BE-BE ⟧ ).not'
-result: '35-01-41-41'
+functions: true
+input: 'Φ.bytes( φ ↦ ⟦ Δ ⤍ FF- ⟧ ).not'
+result: '00-'

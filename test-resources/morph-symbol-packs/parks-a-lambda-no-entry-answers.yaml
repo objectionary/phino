@@ -1,0 +1,15 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# A name no key of the file matches has no λ function at all, so 𝔼 gets stuck
+# on it. Under '--partial' the firing is reported by its name alone and the
+# application stays in the residual program exactly as it was written.
+functions: |
+  - λ: L_number_plus
+    𝑛: ⟦ Δ ⤍ 00- ⟧
+location: 'Q.x'
+partial: true
+input: '[[ x -> [[ ^ -> [[ D> 2A- ]], L> L_number_minus ]].neg ]]'
+protocol:
+  - '{"λ":"L_number_minus","stuck":true}'
+result: '⟦ ρ ↦ ⟦ Δ ⤍ 2A- ⟧, λ ⤍ L_number_minus ⟧.neg'

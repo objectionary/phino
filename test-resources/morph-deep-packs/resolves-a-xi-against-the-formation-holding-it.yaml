@@ -3,7 +3,7 @@
 ---
 location: 'Q.@'
 model: true
-atoms: true
+functions: true
 input: '[[ n -> 5, x -> $.n.plus( 6 ) ]]'
 result: |
   [[ n -> 5, x -> Q.number(

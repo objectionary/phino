@@ -6,7 +6,7 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Rule (RuleContext (..), isNF, matchExpressionWithRule, matchExpressionWithRule', meetCondition) where
+module Rule (RuleContext (..), extraSubstitutions, isNF, matchExpressionWithRule, matchExpressionWithRule', meetCondition) where
 
 import AST
 import Builder

@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
@@ -10,14 +12,17 @@
 module Deps where
 
 import AST
-import Data.List (intercalate)
-import Data.Maybe (maybeToList)
+import Data.Aeson.Encoding (Encoding, bool, encodingToLazyByteString, pair, pairs, text)
+import qualified Data.Aeson.Key as Key
+import qualified Data.ByteString.Lazy as BSL
+import Data.Maybe (listToMaybe, mapMaybe)
 import qualified Data.Text as T
 import Logger (logDebug)
 import Matcher
+import Printer (printBytes)
 import System.Directory (createDirectoryIfMissing)
 import System.FilePath
-import System.IO (Handle, hPutStrLn)
+import System.IO (Handle)
 import Text.Printf (printf)
 import Yaml
 
@@ -31,11 +36,14 @@ type BuildTermMethod = [ExtraArgument] -> Subst -> IO Term
 
 -- The state 𝑠 threaded through the Morphing 𝕄(n, e, s), Dataization 𝔻(n, e, s)
 -- and Evaluation 𝔼(b, s) functions. The calculus does not yet fix what a state
--- is, so it is a plain string for now. Unlike the universe 𝑒, which is immutable
--- and threaded unchanged, the state is mutable: 𝔼 takes a state 𝑠1 and returns a
--- new one 𝑠2, and 𝕄/𝔻 propagate that change to their callers. Only the rules
--- that fire an atom — 'ml' (morphing) and 'fire' (dataization) — can change
--- the state; every other rule threads it through untouched.
+-- is, so it is a plain string for now, holding the one thing a run has to
+-- count across firings: how many fresh symbols the 'symbols' block of a λ
+-- function has minted so far (see 'minted' in 'Lambdas'). Unlike the universe
+-- 𝑒, which is immutable and threaded unchanged, the state is mutable: 𝔼 takes a
+-- state 𝑠1 and returns a new one 𝑠2, and 𝕄/𝔻 propagate that change to their
+-- callers. Only the rules that fire a λ function — 'ml' (morphing) and 'fire'
+-- (dataization) — can change the state; every other rule threads it through
+-- untouched.
 type State = String
 
 -- Like 'BuildTermMethod', but it also takes the incoming state and returns the
@@ -59,30 +67,66 @@ saveStep (Just dir) ext render step expr = do
 dontSaveStep :: SaveStepFunc
 dontSaveStep = saveStep Nothing "" (\_ -> pure "") 0
 
--- One firing of an atom, the way the Evaluation function 𝔼 sees it: the name of
--- the λ function, the formation it fired against with the λ binding removed, and
--- the term it produced. A firing that got stuck — the atom is unknown, or one of
--- its inputs reached such an atom — and survived in the residual program of a
--- partial evaluation (see '--partial') has no result.
-data Evaluation = Evaluation
-  { _function :: T.Text
-  , _arguments :: Expression
-  , _result :: Maybe Expression
-  }
+-- One line of the protocol the '--evaluations' option writes: what 𝔼 did while
+-- it fired a λ function. A firing names the function and every meta the entry
+-- of it bound, with the value of each; a 'morph' premise binds a whole term,
+-- which has no spelling the protocol can give without printing 𝜑, so it is
+-- bracketed by an opening and a closing record instead and whatever fires
+-- inside it stands between them. A firing that got stuck — the λ function has
+-- no entry, or one of its operands reached such a function — and survived in
+-- the residual program of a partial evaluation (see '--partial') names the
+-- function alone.
+data Evaluation
+  = EvFiring T.Text [(T.Text, T.Text)]
+  | EvOpening T.Text T.Text
+  | EvClosing T.Text T.Text
+  | EvStuck T.Text
 
 type SaveEvalFunc = Evaluation -> IO ()
 
--- Append one evaluation to the protocol as a single tab-separated line: the λ
--- function name, its argument formation and its result; a parked firing has no
--- result, so its record stops after the second field. The expressions are
--- rendered by the caller, which flattens them, so a record never spills over
--- more than one line. The handle stays open for the whole run, since a run may
--- fire thousands of atoms and reopening the file for each of them buys nothing.
-saveEval :: Handle -> (Expression -> IO String) -> SaveEvalFunc
-saveEval handle render (Evaluation func bindings outcome) = do
-  rendered <- mapM render (bindings : maybeToList outcome)
-  hPutStrLn handle (intercalate "\t" (T.unpack func : rendered))
-  logDebug (printf "Saved the evaluation of '%s'" (T.unpack func))
+-- What the protocol spells the value of a meta as, so that a reader of the
+-- file never parses 𝜑: the hex of the byte array the term carries, or the name
+-- of the λ function it is stuck on. A term that is neither — one a 'where'
+-- extra built out of something else — has no such spelling and is left out of
+-- the record altogether.
+carried :: MetaValue -> Maybe T.Text
+carried (MvFunction func) = Just func
+carried (MvBytes bts) = Just (T.pack (printBytes bts))
+carried (MvExpression (DataObject _ bts)) = Just (T.pack (printBytes bts))
+carried (MvExpression (ExFormation bds)) = listToMaybe (mapMaybe fact bds)
+  where
+    fact :: Binding -> Maybe T.Text
+    fact (BiDelta bts) = Just (T.pack (printBytes bts))
+    fact (BiLambda (Function func)) = Just func
+    fact _ = Nothing
+carried _ = Nothing
+
+-- Append one evaluation to the protocol as a single JSON object on a line of
+-- its own: the λ function under 'λ' and, next to it, either every meta the
+-- entry bound, each under its own name, or the 'morph' premise being opened or
+-- closed, or the bare fact that the firing got stuck. The handle stays open
+-- for the whole run, since a run may fire thousands of λ functions and
+-- reopening the file for each of them buys nothing; it is written as bytes,
+-- since a JSON object carries its own encoding.
+saveEval :: Handle -> SaveEvalFunc
+saveEval handle report = do
+  BSL.hPut handle (encodingToLazyByteString (recorded report) <> "\n")
+  logDebug (printf "Saved the evaluation of '%s'" (T.unpack (about report)))
+  where
+    -- The λ function comes first and the metas follow in the order the entry
+    -- bound them, which an 'Encoding' keeps and a 'Value' would not: a reader
+    -- of the protocol sees the record the way the file spells the entry.
+    recorded :: Evaluation -> Encoding
+    recorded (EvFiring func metas) =
+      pairs (pair "λ" (text func) <> mconcat [pair (Key.fromText bound) (text value) | (bound, value) <- metas])
+    recorded (EvOpening func bound) = pairs (pair "λ" (text func) <> pair "morph" (text bound) <> pair "at" (text "begin"))
+    recorded (EvClosing func bound) = pairs (pair "λ" (text func) <> pair "morph" (text bound) <> pair "at" (text "end"))
+    recorded (EvStuck func) = pairs (pair "λ" (text func) <> pair "stuck" (bool True))
+    about :: Evaluation -> T.Text
+    about (EvFiring func _) = func
+    about (EvOpening func _) = func
+    about (EvClosing func _) = func
+    about (EvStuck func) = func
 
 dontSaveEval :: SaveEvalFunc
 dontSaveEval _ = pure ()

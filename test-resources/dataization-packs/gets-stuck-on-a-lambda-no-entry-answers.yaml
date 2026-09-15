@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# A name no entry of the '--functions' file matches has no λ function at all: 𝔼
+# gets stuck on it, which is the only behaviour phino itself is left with.
+# 'number.nope' is declared by the object model and left out of the file on
+# purpose.
+model: true
+functions: true
+input: '5.nope'
+fails: "No entry of --functions answers the λ function 'L_number_nope'"

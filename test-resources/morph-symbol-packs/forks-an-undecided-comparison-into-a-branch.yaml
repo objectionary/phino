@@ -1,0 +1,45 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# The whole point of answering a λ function with a rule rather than with a
+# result: 'L_bytes_eq' declines to decide the comparison and answers an unknown,
+# so the fork it guards cannot pick a branch either. 'L_fork' morphs both of
+# them — which is where the bracketed records come from — and answers an unknown
+# of its own, standing for whichever branch the comparison turns out to take.
+# The guard comes down through 𝔻 and lands on the symbol the comparison minted,
+# which is what the protocol reports it as.
+functions: |
+  - λ: L_bytes_eq
+    symbols: [𝑓0]
+    𝑛: ⟦ λ ⤍ 𝑓0 ⟧
+  - λ: L_fork
+    dataize:
+      𝑛1: guard
+    morph:
+      𝑛2: left
+      𝑛3: right
+    symbols: [𝑓1]
+    𝑛: ⟦ λ ⤍ 𝑓1 ⟧
+location: 'Q.@'
+deep: true
+partial: true
+input: |
+  [[
+    bytes -> [[ φ -> ?, eq -> [[ x -> ?, L> L_bytes_eq ]] ]],
+    bool -> [[
+      φ -> ?,
+      if -> [[ left -> ?, right -> ?, guard -> $.^, L> L_fork ]]
+    ]],
+    @ -> Q.bool(
+      Φ.bytes( φ ↦ ⟦ Δ ⤍ 2A- ⟧ ).eq( Φ.bytes( φ ↦ ⟦ Δ ⤍ 2B- ⟧ ) )
+    ).if( [[ D> 01- ]], [[ D> 02- ]] )
+  ]]
+protocol:
+  - '{"λ":"L_bytes_eq","𝑓0":"S_1"}'
+  - '{"λ":"S_1","stuck":true}'
+  - '{"λ":"L_fork","morph":"𝑛2","at":"begin"}'
+  - '{"λ":"L_fork","morph":"𝑛2","at":"end"}'
+  - '{"λ":"L_fork","morph":"𝑛3","at":"begin"}'
+  - '{"λ":"L_fork","morph":"𝑛3","at":"end"}'
+  - '{"λ":"L_fork","𝑛1":"S_1","𝑓1":"S_2"}'
+result: '[[ L> S_2 ]]'

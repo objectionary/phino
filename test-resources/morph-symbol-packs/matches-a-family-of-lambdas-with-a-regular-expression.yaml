@@ -1,0 +1,29 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# The key of an entry is a regular expression over λ names and has to match the
+# whole name, so one entry answers a whole family of λ functions — every boxed
+# number here — while the name that only looks like one of them is left alone.
+# The 'morph' operand is a whole term and has no spelling the protocol can give
+# without printing 𝜑, so it is bracketed by an opening and a closing record
+# instead.
+functions: |
+  - λ: L_box_[0-9]+_number
+    morph:
+      𝑛1: φ
+    𝑛: 𝑛1
+deep: true
+input: |
+  [[
+    boxed -> [[ φ -> [[ D> 2A- ]], ^ -> Q, L> L_box_7_number ]],
+    plain -> [[ φ -> [[ D> 01- ]], ^ -> Q, L> L_box_of_string ]]
+  ]]
+protocol:
+  - '{"λ":"L_box_7_number","morph":"𝑛1","at":"begin"}'
+  - '{"λ":"L_box_7_number","morph":"𝑛1","at":"end"}'
+  - '{"λ":"L_box_7_number"}'
+result: |
+  [[
+    boxed -> [[ D> 2A- ]],
+    plain -> [[ φ -> [[ D> 01- ]], ^ -> Q, L> L_box_of_string ]]
+  ]]

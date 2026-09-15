@@ -100,301 +100,32 @@ $ phino dataize hello.phi
 68-65-6C-6C-6F
 ```
 
-### Atoms
+### Functions
 
 Which λ functions exist is a property of the object model being dataized, not
-of the calculus, so `phino` implements none of them. They come from a JSON
-registry given with `--atoms`, keyed by regular expressions over λ names:
+of the calculus, so `phino` implements none of them. They come from a YAML file
+given with `--functions`, where each one is a rule 𝔼 answers the firing with,
+written in the very language `phino`'s own judgments are written in:
 
-```json
-{
-  "L_number_plus": {
-    "rt": "node",
-    "script": "const readline = require('readline'); ..."
-  }
-}
+```yaml
+- λ: L_number_plus
+  dataize:
+    𝑛1: ρ
+    𝑛2: x
+  where:
+    - meta: 𝑛3
+      function: sum
+      args:
+        - 𝑛1
+        - 𝑛2
+  𝑛: 𝑛3
 ```
 
-The `rt` field names the interpreter the `script` is run under. Only `node` is
-supported for now; a registry naming any other interpreter is refused when the
-file is read, before dataization starts.
-
-When 𝔼 reaches a λ function the registry carries, `phino` writes its `script`
-to a temporary file and runs it as a POSIX process under that interpreter:
-
-```text
-node /tmp/phino-atom-4f2a.js
-```
-
-An atom that is already a program needs no interpreter and no staging. Such an
-entry says `exec` and gives a `path` instead of a `script`:
-
-```json
-{
-  "L_number_plus": {
-    "rt": "exec",
-    "path": "/opt/eo/atoms/number-plus"
-  }
-}
-```
-
-`phino` spawns that file directly, as the executable binary it is, with no
-arguments. A `path` that names no file, or a file nobody may run, is refused
-where the registry is read, together with the unknown runtimes.
-
-Whichever way it is run, the program is talked to over `stdin` and `stdout`,
-one JSON object per line, in the letters of the evaluation rule of the
-[𝜑-calculus paper](https://github.com/objectionary/calculus-paper),
-𝔼(𝑏, 𝑒, 𝑠) = 𝑛, where 𝑏 is the formation, 𝑒 the universe and 𝑛 the normal
-form the atom answers with:
-
-```text
-{"𝑒": "⟦ bytes ↦ ⟦ … ⟧, number ↦ ⟦ … ⟧, φ ↦ … ⟧"}
-{"id": 1, "λ": "L_number_plus", "𝑏": "⟦ x ↦ Φ.number( … ), ρ ↦ ⟦ … ⟧ ⟧"}
-{"id": 1, "𝑛": "11"}
-```
-
-The first two lines are `phino`'s, the third is the program's. The universe Φ
-goes under `𝑒`, in a line of its own, before the first request. Then comes the
-request: an `id`, the λ name under `λ` — one program may be registered under
-several names and branch on it — and, under `𝑏`, the formation being
-evaluated, with its λ binding removed. Both payloads are canonical 𝜑-calculus
-on a single line — no syntax sugar, whatever `--sweet` says about the output of
-the run — so a program never has to know about `phino`'s sugar in order to find
-a datum: every byte array is spelled out as a Δ binding.
-
-The program answers with one line carrying the same `id` and, under `𝑛`, the
-𝜑-expression the atom answers with, in any syntax `phino`'s parser reads —
-syntax sugar included, so the `11` above and the `Φ.number( … )` it stands for
-are the same answer. `phino` parses it back and hands it to 𝔼 as the atom's
-raw result, normalizing it exactly as it normalizes anything else, so
-`--evaluations`, `--partial` and `--max-steps` keep working unchanged.
-
-A program started for the fire is asked one request, always `id` 1, and its
-`stdin` is closed behind it, so it may read its input whole or line by line, as
-it pleases. It is waited for once it has answered, and a non-zero exit fails
-the run. So does a reply that is not JSON, carries neither `𝑛`, nor `ask`, nor
-`of` with `attr` (the next section is about the questions), answers another
-`id`, or an `𝑛` that does not parse, or a program that quits without answering
-— always with the program's own `stderr` in the message.
-
-Each key of the registry is a regular expression, and it must match the whole
-λ name, so a plain name such as `L_number_plus` means that one atom and nothing
-else, while `L_number_.*` stands for every atom of `number`. When 𝔼 reaches a
-λ function, the keys are tried top to bottom, in the order the file lists them,
-and the first one that matches is the entry fired, so a key placed above
-another hides whatever the two have in common. A key that is not a regular
-expression is refused where the registry is read.
-
-A λ name no key matches has no λ function at all, so 𝔼 gets stuck on it.
-Without `--atoms` the registry is empty and every atom gets stuck.
-
-One process per fire is where a program that is slow to start — a JVM, say —
-spends most of the run. An entry saying `serve` has `phino` start its program
-once, on the first fire, and keep it for the rest of the run, whether it is a
-`script` or a `path`. Together with a key that matches many names, this is how
-one program stands for a whole object model without being spelled once per
-atom:
-
-```json
-{
-  "L_bytes_eq": {
-    "rt": "node",
-    "script": "const readline = require('readline'); ..."
-  },
-  ".*": {
-    "rt": "exec",
-    "path": "/opt/eo/atoms/resident",
-    "serve": true
-  }
-}
-```
-
-Every λ name registered on the same program, under one key or under several,
-is served by the same process, so there is one of it, however many atoms it
-stands for. The lines are the same:
-the program reads request after request off its `stdin`, each with the next
-`id`, and answers each in turn. The universe is told again only when a fire
-comes with a different one; the program keeps the last one it was told. When
-the run is over, whatever it ended with, `phino` closes the program's `stdin`,
-which is its cue to quit, and terminates it if it has not quit within a second.
-
-### Reducing the operands of an atom
-
-An operand reaches a program as it was written: `5.plus( 6.plus( 7 ) )` fires
-`L_number_plus` with `x ↦ Φ.number( … ).plus( … )`, and getting a number out of
-that is dataization, which is `phino`'s business and not a program's. So the
-program asks, and it may ask by name. A line of its own carries an `id` it
-mints and the `of` of the request being served, plus one of that receiver's
-attributes under `attr`; `phino` answers with that `id` and the result under
-`𝑛`, taking the value straight out of the receiver it still holds for the
-request — neither side ever re-prints or re-parses it:
-
-```text
-{"𝑒": "⟦ bytes ↦ ⟦ … ⟧, number ↦ ⟦ … ⟧, φ ↦ … ⟧"}
-{"id": 1, "λ": "L_number_plus", "𝑏": "⟦ x ↦ Φ.number( … ).plus( … ) ⟧"}
-{"id": 7, "of": 1, "attr": "ρ", "reduce": true}
-{"id": 7, "𝑛": "⟦ Δ ⤍ 40-14-00-00-00-00-00-00 ⟧", "Δ": "40-14-00-00-00-00-00-00"}
-{"id": 8, "of": 1, "attr": "x", "reduce": true}
-{"id": 8, "𝑛": "⟦ Δ ⤍ 40-2A-00-00-00-00-00-00 ⟧", "Δ": "40-2A-00-00-00-00-00-00"}
-{"id": 1, "𝑛": "Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 40-32-00-00-00-00-00-00 ⟧ ) )"}
-```
-
-The universe, the request and the two answers are `phino`'s; the two questions
-and the last line are the program's. A question mints an `id` of its own,
-which `phino` echoes, so a program may keep several of them open and still
-tell the answers apart. Without `reduce` — or with it saying `false` — the
-answer is the node the attribute carries, as it was written; with `"reduce":
-true` it is the dataization of that node. A question about an `of` whose
-request is no longer in flight, or an `attr` the receiver does not carry,
-fails the fire. An `attr` bound to nothing at all does not: a void attribute
-is a fact about the receiver, and the answer is `{"id": 7, "∅": true}`, with
-no node in it, so a program may ask whether an operand is bound.
-
-An `attr` may also go deeper than one name. It is a path down the receiver,
-read left to right and split on the dot, which no attribute of 𝜑-calculus
-carries in its own name:
-
-```text
-{"id": 9, "of": 1, "attr": "ρ.length", "reduce": true}
-{"id": 9, "𝑛": "⟦ Δ ⤍ 40-08-00-00-00-00-00-00 ⟧", "Δ": "40-08-00-00-00-00-00-00"}
-```
-
-Every segment but the last has to name a formation or an application to go on
-into, and `reduce` applies to the node the path ends at. An argument binds an
-attribute the way a τ binding does, so `x.if.guard` reaches the `guard` of
-`x ↦ Φ.bool( if ↦ ⟦ guard ↦ … ⟧ )`, and it binds it from the outside, so an
-argument wins over the void it fills. A positional argument names nothing and
-the walk goes past it. A segment nothing carries, or one that runs into a void
-attribute, fails the fire the same way a missing `attr` does. `phino` holds the
-receiver whole, so there is no depth a program has to re-parse an answer to
-reach.
-
-What the answered node is, `phino` says next to it, because the shape of an
-answer is `phino`'s knowledge and not the program's. A formation carrying a Δ
-binding carries its byte array under `Δ`, and one carrying a λ binding the name
-of the function it is stuck on under `λ`, so a program tells a datum from a
-stuck atom by reading the JSON and never has to parse 𝜑. Mind the `λ` there: a
-line of `phino`'s is a request when it carries `𝑏` and an answer when it does
-not.
-
-An answer that is an application rather than a formation says under `Φ.` the
-chain it is dispatched off Φ by:
-
-```text
-{"id": 9, "of": 1, "attr": "x"}
-{"id": 9, "𝑛": "Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 40-08-… ⟧ ) )", "Φ.": "number"}
-```
-
-That name is the only place the forma of a typed literal lives, since
-𝜑-calculus types nothing nominally: `Φ.true` says `true`,
-`Φ.tuple( length ↦ …, head ↦ …, tail ↦ … )` says `tuple`, and a chain spelled
-in full says `org.eolang.number`. Dataize the same operand instead and the
-forma is gone, because `Δ` is all that is left of a number taken apart. A
-chain with an application inside it, such as `Φ.number( … ).plus( … )`,
-dispatches off a term `phino` would have to dataize to name, so it names no
-forma and nothing is said.
-
-The other way to ask quotes the 𝜑-expression itself, under `ask`; `phino`
-serves such a question by binding it to a fresh synthetic attribute of the
-universe, normalizing it there and dataizing it — the same trick `--inside`
-plays — so the answer is a byte formation and the program reads its `Δ`; where
-an atom on the way cannot fire and `--partial` parks it, the answer is the
-residual program instead. A quoted question is fine for terms the program
-assembled itself; a question that quotes a receiver is not, because the
-receiver carries its `ρ` and the receiver of that carries its own, all the way
-to the universe: three levels of nesting turn a question of a few hundred
-bytes into one of megabytes. A program kept for the run therefore gets a lean
-`𝑏`, and every answer `phino` sends it is lean too: canonical 𝜑-calculus
-without any ρ chain, because such a program can always ask for what the chain
-holds — by name, cheaply, or by `ask`.
-
-Serving a question re-enters the evaluator, so a question may cost a fire of
-the very atom that asked it. That request arrives while the question is still
-open, which is why a program that asks reads on instead of waiting for one
-line. The step budget of the run, `--max-steps`, bounds the nesting.
-
-Only a program kept for the run may ask. `phino` closes the `stdin` of a
-program started for the fire behind its request, since such a program may read
-its input whole before it answers, so there is nothing left to answer a
-question over, and one that asks anyway fails the fire — which is also why the
-lean `𝑏` is tied to `serve` and not to a flag of its own: a program that is
-handed the whole receiver cannot ask for what it left out.
-
-So a `serve` entry of `L_number_plus` that has `phino` reduce its operands
-reads like this:
-
-```js
-const readline = require('readline');
-const open = new Map();
-let minted = 0;
-const said = (message) => process.stdout.write(`${JSON.stringify(message)}\n`);
-const number = (answer) => Buffer
-  .from(answer['Δ'].replace(/-/g, ''), 'hex')
-  .readDoubleBE(0);
-const hex = (value) => {
-  const bytes = Buffer.alloc(8);
-  bytes.writeDoubleBE(value);
-  return [...bytes]
-    .map((octet) => octet.toString(16).toUpperCase().padStart(2, '0'))
-    .join('-');
-};
-function* plus(request) {
-  const rho = number(yield {of: request, attr: 'ρ', reduce: true});
-  const x = number(yield {of: request, attr: 'x', reduce: true});
-  return `Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ ${hex(rho + x)} ⟧ ) )`;
-}
-const advance = (atom, id, answer) => {
-  const step = atom.next(answer);
-  if (step.done) {
-    said({ id, '𝑛': step.value });
-    return;
-  }
-  minted += 1;
-  open.set(minted, { atom, id });
-  said({ id: minted, ...step.value });
-};
-readline.createInterface({ input: process.stdin }).on('line', (line) => {
-  const message = JSON.parse(line);
-  if ('𝑏' in message) {
-    advance(plus(message.id), message.id, undefined);
-  } else if (open.has(message.id)) {
-    const waiting = open.get(message.id);
-    open.delete(message.id);
-    advance(waiting.atom, waiting.id, message);
-  }
-});
-```
-
-Every request is a coroutine there, so a question suspends the request that
-asked it rather than the program: whatever `phino` says next, the answer or
-another request, is served on the spot.
-
-A program may run a `phino` of its own instead of asking, and the `--inside`
-option is how it does that: the expression it names is bound to a fresh
-synthetic attribute of the input expression, which the run takes as the
-universe, normalized there, and then dataized.
-
-```bash
-$ phino dataize --atoms=atoms.json --inside='5.plus( 6 )' universe.phi
-40-26-00-00-00-00-00-00
-```
-
-Here `universe.phi` is the 𝜑-program the atom is being fired inside — the very
-text the program was told under `𝑒`, which it feeds back on `stdin`. That costs
-a process and a re-parse of the whole universe per operand, which is what the
-`ask` line is for.
-
-The `--inside` option cannot be combined with `--locator`, since it aims the
-run at the binding it mints itself. Both `dataize` and `morph` take `--atoms`
-and `--inside`.
-
-### Recording what fired
-
-Every atom fired on the way to the bytes may be recorded in a machine-readable
-protocol, with the `--evaluations` option. One firing is one line of three
-tab-separated fields: the name of the λ function, the formation it was applied
-to, and the expression it returned:
+The `λ` of an entry names the λ function it answers, the blocks under it reduce
+the operands of the firing, and `𝑛` is the term the firing answers with,
+normalized before it is handed back. Nothing here leaves the process: there is
+no script, no interpreter and no channel, so a run is as fast and as
+reproducible as a rewriting run:
 
 ```bash
 $ cat sum.phi
@@ -403,26 +134,181 @@ $ cat sum.phi
   number ↦ ⟦ φ ↦ ∅, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧,
   φ ↦ 5.plus( 6 )
 ⟧
-$ phino dataize --atoms=atoms.json --evaluations=atoms.tsv --quiet \
-    --sweet --hide-rho sum.phi
-$ cat -T atoms.tsv
-L_number_plus^I⟦ x ↦ 6 ⟧^I11
+$ phino dataize --functions=functions.yaml sum.phi
+40-26-00-00-00-00-00-00
 ```
 
-Records follow the syntax of the other options, such as `--sweet` and
-`--hide-rho`, but always stay on one line. The file is truncated at the
-beginning of every run, and `--output=phi` is the only output format it
-works with, since one record must fit into one line.
+An entry takes six keys, of which only `λ` and `𝑛` are required:
+
+* `dataize` reduces the named operands through 𝔻 and binds each to its meta,
+  so `𝑛1: ρ` says "dataize the ρ of the formation being fired and call the
+  result 𝑛1". The result is the formation carrying the bytes, `⟦ Δ ⤍ … ⟧`.
+* `morph` does the same through 𝕄, so what it binds is a term rather than a
+  datum: `𝑛1: φ` is how a box hands its content back without insisting that the
+  content be data.
+* `symbols` mints a fresh λ name for each of its metas, which is how a λ
+  function answers that it cannot decide (see below).
+* `when` guards the entry, with the same conditions a rewriting rule's `when`
+  takes.
+* `where` calls the build-term functions a rewriting rule's `where` calls —
+  `sum`, `concat`, `bytes` and the rest (see [Rule structure](#rule-structure))
+  — so the arithmetic an object model needs is spelled in the file.
+* `𝑛` is the answer.
+
+Both `dataize` and `morph` name an attribute by a path down the formation being
+fired, read left to right and split on the dot, which no attribute of
+𝜑-calculus carries in its own name. Every segment but the last has to name a
+formation or an application to go on into, so `ρ.length` goes two deep, and an
+argument of an application binds an attribute the way a τ binding does, so
+`x.if.guard` reaches the `guard` of `x ↦ Φ.bool( if ↦ ⟦ guard ↦ … ⟧ )`. The
+metas are reduced in the order of their names, which is why they are called
+𝑛1, 𝑛2, … : a YAML mapping keeps no order of its own.
+
+Each `λ` is a regular expression, and it must match the whole name, so a plain
+name such as `L_number_plus` means that one λ function and nothing else, while
+`L_box_[0-9]+_number` stands for a whole family of them:
+
+```yaml
+- λ: L_box_[0-9]+_number
+  morph:
+    𝑛1: φ
+  𝑛: 𝑛1
+```
+
+Several entries may answer one name, and `when` is what tells them apart: the
+entries that match are tried in the order the file lists them, their operands
+are reduced once for all of them, and the first one whose guard holds is the
+one that answers. So a comparison is a guard and not a function:
+
+```yaml
+- λ: L_bytes_eq
+  dataize:
+    𝑛1: ρ
+    𝑛2: x
+  when:
+    eq:
+      - 𝑛1
+      - 𝑛2
+  𝑛: Φ.true
+- λ: L_bytes_eq
+  dataize:
+    𝑛1: ρ
+    𝑛2: x
+  𝑛: Φ.false
+```
+
+A name no key matches, and a name every guard declines, both leave 𝔼 with
+nothing to answer, so it gets stuck on it — which is what `--partial` parks.
+Without `--functions` no λ function is registered at all and every one of them
+gets stuck. A key that is not a regular expression, an entry with no `𝑛` and a
+file that is no list of entries are all refused where the file is read, before
+the input is even parsed.
+
+#### Answering with an unknown
+
+A λ function that cannot decide need not fail: `symbols` mints a fresh λ name
+for it, and the answer stands for whatever that name turns out to be. The state
+𝑠 threaded through 𝕄, 𝔻 and 𝔼 counts the names a run has minted, so no two
+unknowns of one run are ever spelled alike, and the counting is sequential
+rather than random, which keeps a symbolic run reproducible:
+
+```yaml
+- λ: L_bytes_eq
+  symbols: [𝑓0]
+  𝑛: ⟦ λ ⤍ 𝑓0 ⟧
+- λ: L_fork
+  dataize:
+    𝑛1: guard
+  morph:
+    𝑛2: left
+    𝑛3: right
+  symbols: [𝑓1]
+  𝑛: ⟦ λ ⤍ 𝑓1 ⟧
+```
+
+Here `L_bytes_eq` declines to decide the comparison, so the fork it guards
+cannot pick a branch either: `L_fork` morphs both branches — neither is
+dataized, since neither is demanded — and answers an unknown of its own,
+standing for whichever branch the comparison turns out to take:
+
+```bash
+$ cat fork.phi
+⟦
+  bytes ↦ ⟦ φ ↦ ∅, eq(x) ↦ ⟦ λ ⤍ L_bytes_eq ⟧ ⟧,
+  bool ↦ ⟦ φ ↦ ∅, if(left, right) ↦ ⟦ guard ↦ ξ.ρ, λ ⤍ L_fork ⟧ ⟧,
+  φ ↦ Φ.bool(
+    Φ.bytes( φ ↦ ⟦ Δ ⤍ 2A- ⟧ ).eq( Φ.bytes( φ ↦ ⟦ Δ ⤍ 2B- ⟧ ) )
+  ).if( ⟦ Δ ⤍ 01- ⟧, ⟦ Δ ⤍ 02- ⟧ )
+⟧
+$ phino morph --deep --partial --functions=fork.yaml --locator=Q.φ \
+    --sweet --hide-rho fork.phi
+⟦ λ ⤍ S_2 ⟧
+```
+
+Recursion is nothing `phino` prevents: whether a λ function answers with a
+firing of itself is the object model's business, not the calculus's. What ends
+such a run is `--max-steps`, and under `--partial` the site it ran out on is
+left as it was written while the rest of the program goes on, so a morphing
+that cannot finish is still a morphing that answers.
+
+A term nothing in the input carries is still worth reducing inside the object
+model the input declares, and `--inside` is how one aims a run at it: the
+expression it names is bound to a fresh synthetic attribute of the input
+expression, which the run takes as the universe, normalized there, and then
+reduced.
+
+```bash
+$ phino dataize --functions=functions.yaml --inside='5.plus( 6 )' universe.phi
+40-26-00-00-00-00-00-00
+```
+
+The `--inside` option cannot be combined with `--locator`, since it aims the
+run at the binding it mints itself. Both `dataize` and `morph` take
+`--functions` and `--inside`.
+
+### Recording what fired
+
+Every λ function fired on the way to the bytes may be recorded in a
+machine-readable protocol, with the `--evaluations` option. One firing is one
+JSON object on a line of its own: the name of the function under `λ` and, next
+to it, every meta the entry of it bound, each under the name the file spells it
+with:
+
+```bash
+$ phino dataize --functions=functions.yaml --evaluations=fired.json --quiet \
+    sum.phi
+$ cat fired.json
+{"λ":"L_number_plus","𝑛1":"40-14-00-00-00-00-00-00","𝑛2":"40-18-00-00-00-00-00-00"}
+```
+
+A byte array is spelled in hex and a λ name as text, so a reader of the file
+never parses 𝜑. An operand of a `morph` block is a whole term, which has no
+such spelling, so it is bracketed by an opening and a closing record instead
+and whatever fires inside it stands between them:
+
+```json
+{"λ":"L_bytes_eq","𝑓0":"S_1"}
+{"λ":"S_1","stuck":true}
+{"λ":"L_fork","morph":"𝑛2","at":"begin"}
+{"λ":"L_fork","morph":"𝑛2","at":"end"}
+{"λ":"L_fork","morph":"𝑛3","at":"begin"}
+{"λ":"L_fork","morph":"𝑛3","at":"end"}
+{"λ":"L_fork","𝑛1":"S_1","𝑓1":"S_2"}
+```
+
+A firing that got stuck and survived in the residual program of a partial
+evaluation names the function alone, under `stuck`. The file is truncated at
+the beginning of every run, and the records of a run that fails are kept.
 
 ### Partial evaluation
 
-An atom that cannot fire fails the run: its λ function is not in the registry
-given with `--atoms`. This is what happens when an operation is deliberately
-left unimplemented — a data input replaced by a placeholder formation such as
-`⟦ λ ⤍ Sym_arg_0 ⟧`, or an operation whose answer is not known yet. With
-`--partial`, dataization becomes partial evaluation instead: what the known
-inputs decide is computed, the rest survives as the residual program, which is
-printed in place of the bytes, and the run ends successfully:
+A λ function that cannot fire fails the run: no entry of the file given with
+`--functions` answers its name. This is what happens when an operation is
+deliberately left unimplemented — a data input replaced by a placeholder
+formation such as `⟦ λ ⤍ Sym_arg_0 ⟧`, or an operation whose answer is not
+known yet. With `--partial`, dataization becomes partial evaluation instead:
+what the known inputs decide is computed, the rest survives as the residual
+program, which is printed in place of the bytes, and the run ends successfully:
 
 ```bash
 $ cat partial.phi
@@ -431,29 +317,28 @@ $ cat partial.phi
   number ↦ ⟦
     φ ↦ ∅,
     plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧,
-    times(x) ↦ ⟦ λ ⤍ L_number_times ⟧,
     as-bool ↦ ⟦ λ ⤍ L_number_as_bool ⟧
   ⟧,
-  φ ↦ 2.times( 3 ).plus( 4 ).as-bool
+  φ ↦ 2.plus( 3 ).plus( 4 ).as-bool
 ⟧
-$ phino dataize --atoms=atoms.json --partial --sweet --hide-rho partial.phi
+$ phino dataize --functions=functions.yaml --partial --sweet --hide-rho \
+    partial.phi
 ⟦ λ ⤍ L_number_as_bool ⟧
 ```
 
-Here `2.times( 3 ).plus( 4 )` was decided by the atoms the registry carries, so
-it was computed (its result, `10`, sits in the hidden `ρ` of the residual
-program), while `as-bool` names a λ function no script answers for, so it stays
-in place as a normal-form subterm. Each such stuck site also lands in the
-`--evaluations` file, as a record with the first two fields only, since there is
-no result to report:
+Here `2.plus( 3 ).plus( 4 )` was decided by the entries the file carries, so it
+was computed (its result, `9`, sits in the hidden `ρ` of the residual program),
+while `as-bool` names a λ function no entry answers, so it stays in place as a
+normal-form subterm. Each such stuck site also lands in the `--evaluations`
+file, as a record naming the function alone, since there is nothing it bound:
 
 ```bash
-$ phino dataize --atoms=atoms.json --partial --evaluations=atoms.tsv --quiet \
-    --sweet --hide-rho partial.phi
-$ cat -T atoms.tsv
-L_number_times^I⟦ x ↦ 3 ⟧^I6
-L_number_plus^I⟦ x ↦ 4 ⟧^I10
-L_number_as_bool^I⟦⟧
+$ phino dataize --functions=functions.yaml --partial --evaluations=fired.json \
+    --quiet --sweet --hide-rho partial.phi
+$ cat fired.json
+{"λ":"L_number_plus","𝑛1":"40-00-00-00-00-00-00-00","𝑛2":"40-08-00-00-00-00-00-00"}
+{"λ":"L_number_plus","𝑛1":"40-14-00-00-00-00-00-00","𝑛2":"40-10-00-00-00-00-00-00"}
+{"λ":"L_number_as_bool","stuck":true}
 ```
 
 Evaluation stays demand-driven, as the calculus prescribes: an argument
@@ -476,8 +361,8 @@ $ phino dataize --max-steps=50 problem.phi
 Dataization insists on bytes. Morphing 𝕄 asks a different question: evaluate
 as far as the object model allows, without demanding data. It resolves Φ
 against the universe, peels dispatches and applications through
-normalization, fires whichever atoms sit under a dispatch, and stops at the
-first formation it reaches, handing that formation back untouched. The
+normalization, fires whichever λ functions sit under a dispatch, and stops at
+the first formation it reaches, handing that formation back untouched. The
 `morph` command runs 𝕄 on its own:
 
 ```bash
@@ -487,9 +372,9 @@ $ cat two.phi
   number ↦ ⟦ φ ↦ ∅, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧,
   φ ↦ 5.plus( 6 ).plus( 7 )
 ⟧
-$ phino dataize --atoms=atoms.json --sweet --hide-rho two.phi
+$ phino dataize --functions=functions.yaml --sweet --hide-rho two.phi
 40-32-00-00-00-00-00-00
-$ phino morph --atoms=atoms.json --locator=Q.φ --sweet --hide-rho two.phi
+$ phino morph --functions=functions.yaml --locator=Q.φ --sweet --hide-rho two.phi
 ⟦ x ↦ 7, λ ⤍ L_number_plus ⟧
 ```
 
@@ -508,7 +393,8 @@ $ phino morph --locator=Q.x <<< '⟦ x ↦ ξ ⟧'
 ⊥
 ```
 
-The whole `dataize` option surface applies unchanged — `--atoms`, `--inside`,
+The whole `dataize` option surface applies unchanged — `--functions`,
+`--inside`,
 `--sequence`, `--headers`, `--steps-dir`, `--evaluations`, `--partial`,
 `--max-steps`, `--shuffle`/`--seed`, `--output`, `--focus` and the rest.
 
@@ -517,52 +403,52 @@ The whole `dataize` option surface applies unchanged — `--atoms`, `--inside`,
 𝕄 stops at the first formation it reaches and hands its bindings back as they
 were written, since firing a bare λ is dataization's job, and `dataize`
 follows the one path dataization demands and ends in bytes. What a program
-holds but nothing demands — the argument of an atom the registry does not
-serve, for one — is therefore reduced by neither. The `--deep` flag enters it:
+holds but nothing demands — the argument of a λ function no entry answers, for
+one — is therefore reduced by neither. The `--deep` flag enters it:
 
 ```bash
 $ cat gap.phi
 ⟦
   bytes ↦ ⟦ φ ↦ ∅ ⟧,
-  number ↦ ⟦ φ ↦ ∅, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧ ⟧,
+  number ↦ ⟦ φ ↦ ∅, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧,
   bar(x) ↦ ⟦ λ ⤍ L_bar ⟧,
-  demo ↦ ⟦ foo ↦ ⟦ n ↦ 3, φ ↦ Φ.bar( ξ.n.times( 5 ).times( 7 ) ) ⟧ ⟧
+  demo ↦ ⟦ foo ↦ ⟦ n ↦ 3, φ ↦ Φ.bar( ξ.n.plus( 5 ).plus( 7 ) ) ⟧ ⟧
 ⟧
-$ phino morph --atoms=atoms.json --inside='Q.demo.foo' \
+$ phino morph --functions=functions.yaml --inside='Q.demo.foo' \
     --sweet --hide-rho gap.phi
-⟦ n ↦ 3, φ ↦ Φ.bar( n.times( 5 ).times( 7 ) ) ⟧
-$ phino morph --deep --atoms=atoms.json --inside='Q.demo.foo' \
+⟦ n ↦ 3, φ ↦ Φ.bar( n.plus( 5 ).plus( 7 ) ) ⟧
+$ phino morph --deep --functions=functions.yaml --inside='Q.demo.foo' \
     --sweet --hide-rho gap.phi
-⟦ n ↦ 3, φ ↦ Φ.bar( 105 ) ⟧
+⟦ n ↦ 3, φ ↦ Φ.bar( 15 ) ⟧
 ```
 
 Every binding of the formation is entered, recursively. 𝕄 is asked about the
-term standing there and, where it lands on a saturated formation whose λ the
-registry serves, that λ is fired and 𝕄 is asked about the answer again. A term
-on whose way an atom fired is replaced by the answer of the last firing, which
-is the 𝜑-program the atom wrote rather than the normal form of it, so `105`
-stands where the arithmetic stood. A term no atom touched stays exactly as it
-was written and only its own parts are walked, so `Φ.bar` keeps its name and
-what comes back is still the same program, reduced as far as the registry
-allows. The step joins the chain under the name `deep`, so `--sequence` shows
-it, and `--max-steps` bounds the walk.
+term standing there and, where it lands on a saturated formation whose λ an
+entry answers, that λ is fired and 𝕄 is asked about the answer again. A term on
+whose way a λ function fired is replaced by the answer of the last firing,
+which is the 𝜑-program the entry wrote rather than the normal form of it, so
+`15` stands where the arithmetic stood. A term no λ function touched stays
+exactly as it was written and only its own parts are walked, so `Φ.bar` keeps
+its name and what comes back is still the same program, reduced as far as the
+file allows. The step joins the chain under the name `deep`, so `--sequence`
+shows it, and `--max-steps` bounds the walk.
 
-Two things are left alone. A λ the registry does not serve is not fired at
-all, so `--deep` stays as total as 𝕄 itself and needs no `--partial`; an atom
-that gets stuck deeper on a spine still fails the run, and `--partial` parks
-it, leaving that term as it was written. A formation still holding a void
-binding is not fired either: the void is an argument the program has not given
-yet, so `times(x) ↦ ⟦ λ ⤍ L_number_times ⟧` is a method waiting to be applied,
-not an application waiting to be computed. Walking the whole program therefore
-folds what it can and leaves the object model as it was declared:
+Two things are left alone. A λ no entry answers is not fired at all, so
+`--deep` stays as total as 𝕄 itself and needs no `--partial`; a λ function that
+gets stuck deeper on a spine still fails the run, and `--partial` parks it,
+leaving that term as it was written. A formation still holding a void binding
+is not fired either: the void is an argument the program has not given yet, so
+`plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧` is a method waiting to be applied, not an
+application waiting to be computed. Walking the whole program therefore folds
+what it can and leaves the object model as it was declared:
 
 ```bash
-$ phino morph --deep --atoms=atoms.json --sweet --hide-rho gap.phi
+$ phino morph --deep --functions=functions.yaml --sweet --hide-rho gap.phi
 ⟦
   bytes(φ) ↦ ⟦⟧,
-  number(φ) ↦ ⟦ times(x) ↦ ⟦ λ ⤍ L_number_times ⟧ ⟧,
+  number(φ) ↦ ⟦ plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧,
   bar(x) ↦ ⟦ λ ⤍ L_bar ⟧,
-  demo ↦ ⟦ foo ↦ ⟦ n ↦ 3, φ ↦ Φ.bar( 105 ) ⟧ ⟧
+  demo ↦ ⟦ foo ↦ ⟦ n ↦ 3, φ ↦ Φ.bar( 15 ) ⟧ ⟧
 ⟧
 ```
 

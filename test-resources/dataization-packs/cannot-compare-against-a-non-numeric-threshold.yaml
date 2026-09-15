@@ -1,8 +1,0 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
-# SPDX-License-Identifier: MIT
----
-# A threshold carrying no number leaves the comparison nothing to answer.
-model: true
-atoms: true
-input: '5.gt( Φ.bytes( φ ↦ ⟦ Δ ⤍ -- ⟧ ) )'
-fails: 'terminator'

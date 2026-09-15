@@ -2,10 +2,11 @@
 # SPDX-License-Identifier: MIT
 ---
 # An operand carrying no number is what an EO number atom answers ⊥ to, and
-# dataizing ⊥ fails through the terminator path. The judgment is the script's,
-# so what this proves is that a ⊥ coming back from a script stops 𝔻 exactly as
+# dataizing ⊥ fails through the terminator path. The judgment is the file's:
+# 'L_number_plus' carries a guarded entry answering ⊥ before the one that adds,
+# so what this proves is that a ⊥ a λ function answers with stops 𝔻 exactly as
 # a built-in ⊥ used to.
 model: true
-atoms: true
+functions: true
 input: '5.plus( Φ.bytes( φ ↦ ⟦ Δ ⤍ -- ⟧ ) )'
 fails: 'terminator'

@@ -5,6 +5,6 @@
 # fires the first atom, before the second one is handed its own formation to
 # fire against.
 model: true
-atoms: true
+functions: true
 input: '5.plus( 6 ).plus( 7 )'
 result: '40-32-00-00-00-00-00-00'
