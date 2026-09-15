@@ -98,6 +98,7 @@ module Atoms
 where
 
 import AST
+import Builder (contextualize)
 import Control.Concurrent.MVar (MVar, modifyMVar, modifyMVar_, newMVar)
 import Control.Exception (Exception, catch, onException, throwIO)
 import Control.Monad (foldM, unless)
@@ -208,8 +209,11 @@ data Channel = Closed | Open
 -- What the receiver of a request holds under an attribute a question names:
 -- the node bound to it, or nothing at all, since the attribute is void. A void
 -- one is a fact about the receiver and not a failure of the question, so a
--- program may ask whether an operand is bound and be told (#1206).
-data Held = Bound Expression | Void
+-- program may ask whether an operand is bound and be told (#1206). A bound one
+-- is held twice over: as it is written, which is what a question that does not
+-- reduce is answered with, and with its ξ standing for the formation it is
+-- bound in, which is the only shape of it that reduces anywhere else (#1220).
+data Held = Bound Expression Expression | Void
 
 -- How phino reduces a 𝜑-expression a program asks about. Only the caller of
 -- 'fireAtom' can do it, since it alone holds the universe to reduce inside and
@@ -539,7 +543,7 @@ asked func Running{..} form univ channel reduce = do
         case held of
           Left failure -> throwIO (AtomMute func described failure)
           Right Void -> said (lined (object ["id" .= minted, "∅" .= True]))
-          Right (Bound value) -> (if doReduce then reduce value else pure value) >>= said . answered minted
+          Right (Bound written scoped) -> (if doReduce then reduce scoped else pure written) >>= said . answered minted
       where
         described :: String
         described = printf "{'of':%d,'attr':'%s'}" req (T.unpack attrName)
@@ -557,29 +561,34 @@ asked func Running{..} form univ channel reduce = do
         -- to nothing at all carries nothing to descend into, so a path through
         -- a void one names no attribute (#1207).
         descended :: Expression -> Maybe Held
-        descended form' = foldM deeper (Bound form') (T.splitOn "." attrName)
+        descended form' = foldM deeper (Bound form' form') (T.splitOn "." attrName)
         deeper :: Held -> T.Text -> Maybe Held
-        deeper (Bound expr) name = attributeValue name expr
+        deeper (Bound _ scoped) name = attributeValue name scoped
         deeper Void _ = Nothing
         -- An argument of an application binds an attribute the way a τ
         -- binding of a formation does, and it is the outer of the two, so it
         -- is what the attribute is whatever the formation under it still says
         -- about it. A positional argument names nothing, so the walk goes past
-        -- it into what the application applies to (#1212).
+        -- it into what the application applies to (#1212). The ξ of a node
+        -- bound in a formation stands for that formation, so a node taken out
+        -- of one carries it along, the way the 'dot' rule does when it
+        -- dispatches the same attribute; an argument, written in the scope
+        -- around the application and contextualized long before a request
+        -- reaches this far, stands for itself (#1220).
         attributeValue :: T.Text -> Expression -> Maybe Held
-        attributeValue name (ExFormation bds) = go bds
+        attributeValue name form'@(ExFormation bds) = go bds
           where
             go :: [Binding] -> Maybe Held
             go [] = Nothing
             go (BiTau attr value : rest)
-              | named name attr = Just (Bound value)
+              | named name attr = Just (Bound value (contextualize value form'))
               | otherwise = go rest
             go (BiVoid attr : rest)
               | named name attr = Just Void
               | otherwise = go rest
             go (_ : rest) = go rest
         attributeValue name (ExApplication applied (ArTau attr value))
-          | named name attr = Just (Bound value)
+          | named name attr = Just (Bound value value)
           | otherwise = attributeValue name applied
         attributeValue name (ExApplication applied _) = attributeValue name applied
         attributeValue _ _ = Nothing
