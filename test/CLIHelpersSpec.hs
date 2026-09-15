@@ -53,5 +53,5 @@ spec = do
 
   describe "getRules" $
     it "deduplicates the same --rule file listed twice" $ do
-      rules <- getRules False False ["test-resources/cli/simple.yaml", "test-resources/cli/simple.yaml"]
+      rules <- getRules False False ["test-resources/cli/rules/simple.yaml", "test-resources/cli/rules/simple.yaml"]
       length rules `shouldBe` 1
