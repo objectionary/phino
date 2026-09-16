@@ -13,6 +13,7 @@ import AST
 import Data.List (intercalate)
 import Data.Maybe (maybeToList)
 import qualified Data.Text as T
+import Files (overwrite)
 import Logger (logDebug)
 import Matcher
 import System.Directory (createDirectoryIfMissing)
@@ -53,7 +54,7 @@ saveStep (Just dir) ext render step expr = do
   createDirectoryIfMissing True dir
   let path = dir </> printf "%05d.%s" step ext
   content <- render expr
-  writeFile path content
+  overwrite path content
   logDebug (printf "Saved step '%d' to '%s'" step path)
 
 dontSaveStep :: SaveStepFunc
