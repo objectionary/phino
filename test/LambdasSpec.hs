@@ -55,7 +55,7 @@ spec = do
   describe "readLambdas" $ do
     it "reads the metas an entry binds under the names 𝜑-calculus gives them" $
       registered "- λ: L_plus\n  dataize:\n    𝑛2: x\n    𝑛1: ρ\n  𝑛: 𝑛1\n" $ \known ->
-        map (\(meta, path) -> (meta._spelling, meta._name, path)) (head (matched known "L_plus"))._dataized
+        concatMap (map (\(meta, path) -> (meta._spelling, meta._name, path)) . (._dataized)) (matched known "L_plus")
           `shouldBe` [("𝑛1", "n1", "ρ"), ("𝑛2", "n2", "x")]
     it "refuses a key that is no regular expression" $
       unreadable "- λ: 'L_[('\n  𝑛: ⟦ Δ ⤍ 00- ⟧\n" "is not a regular expression"
