@@ -370,6 +370,7 @@ instance ToLaTeX COMPARABLE where
   toLaTeX CMP_EXPR{..} = CMP_EXPR (toLaTeX expr)
   toLaTeX CMP_ATTR{..} = CMP_ATTR (toLaTeX attr)
   toLaTeX CMP_NUM{..} = CMP_NUM (toLaTeX num)
+  toLaTeX CMP_BYTES{..} = CMP_BYTES (toLaTeX bytes)
 
 instance ToLaTeX CONDITION where
   toLaTeX CO_BELONGS{..} = CO_BELONGS (toLaTeX attr) belongs (toLaTeX set)

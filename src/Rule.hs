@@ -6,7 +6,7 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Rule (RuleContext (..), isNF, matchExpressionWithRule, matchExpressionWithRule', meetCondition) where
+module Rule (RuleContext (..), extraSubstitutions, isNF, matchExpressionWithRule, matchExpressionWithRule', meetCondition) where
 
 import AST
 import Builder
@@ -162,6 +162,19 @@ _eq (Y.CmpExpr left) (Y.CmpExpr right) subst _ = pure [subst | compareExprs left
       Just (MvExpression found) -> expr == found
       _ -> False
     compareExprs left right _ = left == right
+_eq (Y.CmpBytes left) (Y.CmpBytes right) subst _ = pure [subst | compareBytes left right subst]
+  where
+    compareBytes :: Bytes -> Bytes -> Subst -> Bool
+    compareBytes (BtMeta left) (BtMeta right) (Subst mp) = case (M.lookup (Named left) mp, M.lookup (Named right) mp) of
+      (Just (MvBytes left'), Just (MvBytes right')) -> compareBytes left' right' (Subst mp)
+      _ -> False
+    compareBytes bts (BtMeta meta) (Subst mp) = case M.lookup (Named meta) mp of
+      Just (MvBytes found) -> bts == found
+      _ -> False
+    compareBytes (BtMeta meta) bts (Subst mp) = case M.lookup (Named meta) mp of
+      Just (MvBytes found) -> bts == found
+      _ -> False
+    compareBytes left right _ = left == right
 _eq _ _ _ _ = pure []
 
 -- Hold if the left number is strictly greater than the right one. Only

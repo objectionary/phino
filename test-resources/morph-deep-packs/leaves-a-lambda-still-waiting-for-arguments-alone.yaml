@@ -5,10 +5,10 @@
 # applied, not an application waiting to be computed: nothing demands one,
 # so 𝔻 never meets one, while the walk meets every one the object model
 # declares. Both the void ρ of 'not' and the void 'b' of 'eq' keep their
-# atoms unfired here.
+# λ functions unfired here.
 location: 'Q.bytes'
 model: true
-atoms: true
+functions: true
 input: '[[ ]]'
 result: |
   [[

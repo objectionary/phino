@@ -1,0 +1,7 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+expression: '[[ x -> [[ D> FF- ]] ]]'
+pattern: '[[ x -> [[ D> !d1 ]] ]]'
+condition:
+  eq: ['!d1', 'FF-']

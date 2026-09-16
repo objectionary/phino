@@ -344,6 +344,7 @@ spec = do
       [ ("CmpAttr", Y.CmpAttr (AtLabel "x"), CMP_ATTR (AT_LABEL "x"))
       , ("CmpExpr", Y.CmpExpr ExXi, CMP_EXPR (EX_XI XI))
       , ("CmpNum", Y.CmpNum (Y.Literal 3), CMP_NUM (LITERAL 3))
+      , ("CmpBytes", Y.CmpBytes (BtOne "FF"), CMP_BYTES (BT_ONE "FF"))
       ]
       (\(desc, comparable, expected) -> it desc (comparableToCST comparable `shouldBe` expected))
 
@@ -749,12 +750,15 @@ spec = do
           cmpAttr = CMP_ATTR{attr = attrLabel}
           cmpExpr = CMP_EXPR{expr = exprGlobal}
           cmpNum = CMP_NUM{num = LITERAL 5}
+          cmpBytes = CMP_BYTES{bytes = BT_ONE "FF"}
       cmpAttr.attr `shouldBe` attrLabel
       cmpExpr.expr `shouldBe` exprGlobal
       cmpNum.num `shouldBe` LITERAL 5
+      cmpBytes.bytes `shouldBe` BT_ONE "FF"
       shouldShowAndEqSelf "CMP_ATTR" cmpAttr
       shouldShowAndEqSelf "CMP_EXPR" cmpExpr
       shouldShowAndEqSelf "CMP_NUM" cmpNum
+      shouldShowAndEqSelf "CMP_BYTES" cmpBytes
 
   describe "CONDITION field accessors" $
     it "exposes every CONDITION constructor's fields via their accessors" $ do

@@ -1,0 +1,77 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# The λ functions phino's own specs fire. phino implements none of them, so a
+# spec that needs one to answer brings this file in with '--functions'. It goes
+# just far enough to let the specs add two numbers and compare two byte
+# arrays, in the rule language phino's own judgments are written in: the
+# operands come down through 𝔻, which answers data, so each of them binds a
+# bytes meta δ1; a 'when' tells one answer of a λ function from another; and
+# the term under '𝑛' is what the firing answers with.
+#
+# 'L_number_nope' is missing on purpose: it is the λ function that cannot fire,
+# the one '--partial' parks on.
+
+# An operand carrying no number leaves the addition nothing to answer, which is
+# what every EO number atom answers ⊥ to. The empty byte array is the one such
+# operand the specs feed it, and this entry stands before the arithmetic one,
+# so it is tried first.
+- λ: L_number_plus
+  dataize:
+    δ1: $.ρ
+    δ2: $.x
+  when:
+    eq:
+      - δ2
+      - '--'
+  𝑛: ⊥
+
+# Both operands carry a number, so 'sum' adds them and the answer is the
+# number object EO expects back from 'number.plus'.
+- λ: L_number_plus
+  dataize:
+    δ1: $.ρ
+    δ2: $.x
+  where:
+    - meta: 𝑛3
+      function: sum
+      args:
+        - δ1
+        - δ2
+  𝑛: 𝑛3
+
+# Two byte arrays are equal when 𝔻 brings them down to the very same data, so
+# the comparison is a guard and not an arithmetic function at all.
+- λ: L_bytes_eq
+  dataize:
+    δ1: $.ρ
+    δ2: $.b
+  when:
+    eq:
+      - δ1
+      - δ2
+  𝑛: Φ.true
+- λ: L_bytes_eq
+  dataize:
+    δ1: $.ρ
+    δ2: $.b
+  𝑛: Φ.false
+
+# Inverting a byte array is arithmetic phino cannot spell declaratively, so the
+# fixture inverts the two arrays an EO bool ever carries and nothing else.
+- λ: L_bytes_not
+  dataize:
+    δ1: $.ρ
+  when:
+    eq:
+      - δ1
+      - FF-
+  𝑛: ⟦ Δ ⤍ 00- ⟧
+- λ: L_bytes_not
+  dataize:
+    δ1: $.ρ
+  when:
+    eq:
+      - δ1
+      - 00-
+  𝑛: ⟦ Δ ⤍ FF- ⟧

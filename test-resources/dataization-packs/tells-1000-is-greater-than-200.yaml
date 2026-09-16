@@ -1,7 +1,0 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
-# SPDX-License-Identifier: MIT
----
-model: true
-atoms: true
-input: '1000.gt( 200 )'
-result: 'FF-'

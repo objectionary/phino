@@ -245,6 +245,7 @@ instance Render COMPARABLE where
   render CMP_ATTR{..} = render attr
   render CMP_EXPR{..} = render expr
   render CMP_NUM{..} = render num
+  render CMP_BYTES{..} = render bytes
 
 instance Render EQUAL where
   render EQUAL = "="

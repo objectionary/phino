@@ -1,0 +1,31 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# A λ function nothing can decide answers with an unknown, and every firing of
+# it gets an unknown of its own: the state 𝑠 counts the symbols a run has
+# minted, so the three readings of the sensor come back as three names that
+# never collide. This is what a symbolic run is for — the program keeps its
+# shape and what phino cannot compute keeps a name.
+functions: |
+  - λ: L_read_sensor
+    symbols: [𝑓0]
+    𝑛: Φ.number( φ ↦ ⟦ λ ⤍ 𝑓0 ⟧ )
+deep: true
+input: |
+  [[
+    number -> [[ φ -> ? ]],
+    sensor -> [[ ^ -> Q, L> L_read_sensor ]],
+    left -> Q.sensor,
+    right -> Q.sensor
+  ]]
+protocol:
+  - '{"λ":"L_read_sensor","𝑓0":"S_1"}'
+  - '{"λ":"L_read_sensor","𝑓0":"S_2"}'
+  - '{"λ":"L_read_sensor","𝑓0":"S_3"}'
+result: |
+  [[
+    number -> [[ φ -> ? ]],
+    sensor -> Φ.number( φ ↦ ⟦ λ ⤍ S_1 ⟧ ),
+    left -> Φ.number( φ ↦ ⟦ λ ⤍ S_2 ⟧ ),
+    right -> Φ.number( φ ↦ ⟦ λ ⤍ S_3 ⟧ )
+  ]]

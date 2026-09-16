@@ -5,7 +5,7 @@
 # reaches it; the walk does, and the atom around it stays in place.
 location: 'Q.@'
 model: true
-atoms: true
+functions: true
 input: '[[ x -> [[ y -> ?, L> L_bar ]]( y -> 6.plus( 7 ) ) ]]'
 result: |
   [[ x -> [[ y -> ?, L> L_bar ]]( y -> Q.number(

@@ -1,0 +1,33 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# Two entries answer the same λ name and the guard of the first is what tells
+# them apart: the operands come down through 𝔻, which answers data, and where
+# the two agree the comparison answers the byte an EO bool carries for truth.
+# The operands are reduced once for the two entries, not once each, so the
+# protocol reports one record per firing whichever entry wins it.
+functions: |
+  - λ: L_bytes_eq
+    dataize:
+      δ1: $.ρ
+      δ2: $.b
+    when:
+      eq:
+        - δ1
+        - δ2
+    𝑛: ⟦ Δ ⤍ FF- ⟧
+  - λ: L_bytes_eq
+    dataize:
+      δ1: $.ρ
+      δ2: $.b
+    𝑛: ⟦ Δ ⤍ 00- ⟧
+deep: true
+input: |
+  [[
+    same -> [[ ^ -> [[ D> CA-FE ]], b -> [[ D> CA-FE ]], L> L_bytes_eq ]],
+    other -> [[ ^ -> [[ D> CA-FE ]], b -> [[ D> CA-FF ]], L> L_bytes_eq ]]
+  ]]
+protocol:
+  - '{"λ":"L_bytes_eq","δ1":"CA-FE","δ2":"CA-FE"}'
+  - '{"λ":"L_bytes_eq","δ1":"CA-FE","δ2":"CA-FF"}'
+result: '[[ same -> [[ D> FF- ]], other -> [[ D> 00- ]] ]]'

@@ -7,7 +7,6 @@
 module CLI.Helpers where
 
 import AST
-import Atoms (Registry, emptyRegistry, readRegistry)
 import CLI.Types
 import CLI.Validators (invalidCLIArguments)
 import Canonizer (canonize)
@@ -22,7 +21,7 @@ import Encoding
 import Files (ensuredFile)
 import Functions (execFunctions)
 import LaTeX (LatexContext (LatexContext), defaultMeetLength, defaultMeetPopularity, expressionToLaTeX, rewrittensToLatex)
-import Lining (LineFormat (SINGLELINE))
+import Lambdas (Lambdas, emptyLambdas, readLambdas)
 import Locator (locatedExpression)
 import Logger
 import Morph (ReduceContext, insideUniverse)
@@ -32,7 +31,7 @@ import qualified Random as R
 import Rewriter (Rewritten, Rewrittens', stepHeaders)
 import System.Directory (createDirectoryIfMissing)
 import System.FilePath (takeDirectory)
-import System.IO (Handle, IOMode (WriteMode), getContents', hClose, hSetEncoding, openFile, utf8)
+import System.IO (Handle, IOMode (WriteMode), getContents', hClose, hSetBinaryMode, openFile)
 import Text.Printf (printf)
 import XMIR (expressionToXMIR, parseXMIRThrows, printXMIR, xmirToPhi)
 import Yaml (normalizationRules)
@@ -59,23 +58,20 @@ saveStepFunc stepsDir ctx@PrintCtx{..} = do
         saveStep stepsDir ioToExt render step expr
   pure save
 
--- Run the action with a function recording atom firings, holding the protocol
--- file open for the whole run. Opening it for writing truncates it, so that it
--- always holds the firings of exactly one run: a caller reading it back never
--- picks up records left over from the previous run, even when this run fires no
--- atom at all. The handle is closed on the way out, failure included, so the
--- last records reach the disk even when dataization gives up. Every record is
--- flattened into a single line, whatever '--flat' says about the main output,
--- since the file is a line-per-firing protocol. The encoding is pinned to UTF-8
--- rather than taken from the locale, since the file is read back by other
--- programs.
-withEvalFunc :: Maybe FilePath -> PrintContext -> (SaveEvalFunc -> IO a) -> IO a
-withEvalFunc Nothing _ action = action dontSaveEval
-withEvalFunc (Just file) ctx action = do
+-- Run the action with a function recording λ function firings, holding the
+-- protocol file open for the whole run. Opening it for writing truncates it, so
+-- that it always holds the firings of exactly one run: a caller reading it back
+-- never picks up records left over from the previous run, even when this run
+-- fires nothing at all. The handle is closed on the way out, failure included,
+-- so the last records reach the disk even when dataization gives up. The file
+-- is written as bytes rather than through the locale, since every record is one
+-- JSON object, which carries its own encoding.
+withEvalFunc :: Maybe FilePath -> (SaveEvalFunc -> IO a) -> IO a
+withEvalFunc Nothing action = action dontSaveEval
+withEvalFunc (Just file) action = do
   createDirectoryIfMissing True (takeDirectory file)
-  logDebug (printf "The option '--evaluations' is specified, atom firings will be recorded in '%s'" file)
-  bracket opened hClose $ \protocol ->
-    action (saveEval protocol (printExpression ctx{_line = SINGLELINE}))
+  logDebug (printf "The option '--evaluations' is specified, firings will be recorded in '%s'" file)
+  bracket opened hClose (action . saveEval)
   where
     -- 'withFile' would do the same, except that it annotates whatever the action
     -- throws with the name of the file, and a dataization failure has to reach
@@ -83,21 +79,22 @@ withEvalFunc (Just file) ctx action = do
     opened :: IO Handle
     opened = do
       protocol <- openFile file WriteMode
-      hSetEncoding protocol utf8
+      hSetBinaryMode protocol True
       pure protocol
 
 -- The λ functions this run may fire. phino implements none of them, so without
--- '--atoms' the registry is empty and every atom a program names gets stuck —
+-- '--functions' there are none at all and every one a program names gets stuck —
 -- which is exactly what '--partial' parks on. The file is read here, before
--- anything is parsed or dataized, so an unknown runtime or a malformed registry
--- fails the run up front rather than half-way through a derivation.
-registryOf :: Maybe FilePath -> IO Registry
-registryOf Nothing = do
-  logDebug "The option '--atoms' is not specified, no λ function can be fired"
-  pure emptyRegistry
-registryOf (Just file) = do
-  logDebug (printf "The option '--atoms' is specified, reading the λ functions from '%s'" file)
-  ensuredFile file >>= readRegistry
+-- anything is parsed or dataized, so a key that is no regular expression or a
+-- malformed file fails the run up front rather than half-way through a
+-- derivation.
+functionsOf :: Maybe FilePath -> IO Lambdas
+functionsOf Nothing = do
+  logDebug "The option '--functions' is not specified, no λ function can be fired"
+  pure emptyLambdas
+functionsOf (Just file) = do
+  logDebug (printf "The option '--functions' is specified, reading the λ functions from '%s'" file)
+  ensuredFile file >>= readLambdas
 
 -- Aim the run at the '--inside' expression instead of at '--locator': the
 -- expression is bound to a synthetic attribute prepended to the input

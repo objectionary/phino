@@ -7,7 +7,7 @@
 # must not hand the ⊥ that comes back to the λ of 'plus' (#1196).
 location: 'Q.@'
 model: true
-atoms: true
+functions: true
 input: '[[ foo -> [[ n -> ?, a -> [[ @ -> 5.plus( $.^ ) ]] ]] ]]'
 result: |
   [[ foo -> [[ n -> ?, a -> [[ @ -> Q.number(

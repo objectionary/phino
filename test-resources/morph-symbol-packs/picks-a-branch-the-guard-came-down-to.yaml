@@ -1,0 +1,40 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# The same fork, decided. 𝔻 brings the guard down to the byte an EO bool
+# carries for truth, the first entry's guard holds on it and the fork answers
+# the branch that entry named — so an entry asking for data is what a λ
+# function branching on data is written as. The second entry, whose guard wants
+# the other byte, is never reached, so the branch it names is never reduced.
+functions: |
+  - λ: L_fork
+    dataize:
+      δ1: $.guard
+      δ2: $.left
+    when:
+      eq:
+        - δ1
+        - FF-
+    𝑛: ⟦ Δ ⤍ δ2 ⟧
+  - λ: L_fork
+    dataize:
+      δ1: $.guard
+      δ2: $.right
+    when:
+      eq:
+        - δ1
+        - 00-
+    𝑛: ⟦ Δ ⤍ δ2 ⟧
+location: 'Q.@'
+deep: true
+input: |
+  [[
+    bool -> [[
+      φ -> ?,
+      if -> [[ left -> ?, right -> ?, guard -> $.^, L> L_fork ]]
+    ]],
+    @ -> Q.bool( [[ D> FF- ]] ).if( [[ D> 01- ]], [[ D> 02- ]] )
+  ]]
+protocol:
+  - '{"λ":"L_fork","δ1":"FF-","δ2":"01-"}'
+result: '⟦ Δ ⤍ 01-, ρ ↦ ∅ ⟧'

@@ -1,0 +1,16 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# The same recursion without '--partial': there is nothing to hand back, so the
+# exhausted budget fails the run.
+functions: |
+  - λ: L_loop
+    𝑛: ⟦ ρ ↦ Φ, λ ⤍ L_loop ⟧
+deep: true
+steps: 5
+input: '[[ x -> [[ ^ -> Q, L> L_loop ]] ]]'
+protocol:
+  - '{"λ":"L_loop"}'
+  - '{"λ":"L_loop"}'
+  - '{"λ":"L_loop"}'
+fails: '--max-steps=5'

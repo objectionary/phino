@@ -71,6 +71,7 @@ instance ToSingleLine COMPARABLE where
   toSingleLine comp@CMP_ATTR{} = comp
   toSingleLine CMP_EXPR{..} = CMP_EXPR (toSingleLine expr)
   toSingleLine CMP_NUM{..} = CMP_NUM (toSingleLine num)
+  toSingleLine bts@CMP_BYTES{} = bts
 
 instance ToSingleLine CONDITION where
   toSingleLine CO_BELONGS{..} = CO_BELONGS attr belongs (toSingleLine set)

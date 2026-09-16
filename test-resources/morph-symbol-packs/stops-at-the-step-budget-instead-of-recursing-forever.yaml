@@ -1,0 +1,20 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# phino prevents no recursion: whether a λ function answers with a firing of
+# itself is the object model's business, not the calculus's. What ends such a
+# run is '--max-steps', and under '--partial' the site it ran out on is left as
+# it was written while the rest of the program goes on, so a morphing that
+# cannot finish is still a morphing that answers.
+functions: |
+  - λ: L_loop
+    𝑛: ⟦ ρ ↦ Φ, λ ⤍ L_loop ⟧
+deep: true
+partial: true
+steps: 5
+input: '[[ x -> [[ ^ -> Q, L> L_loop ]] ]]'
+protocol:
+  - '{"λ":"L_loop"}'
+  - '{"λ":"L_loop"}'
+  - '{"λ":"L_loop"}'
+result: '[[ x -> [[ ^ -> Q, L> L_loop ]] ]]'
