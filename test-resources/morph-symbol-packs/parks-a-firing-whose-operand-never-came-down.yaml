@@ -1,0 +1,22 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# The operand of a firing is itself stuck on a λ function no entry answers, so
+# under '_partial' the block of the firing opens and binds nothing: 𝛿1 never
+# came down, and the whole term is handed back the way it was reached.
+symbolic: |
+  - λ: L_pair
+    dataize:
+      𝛿1: $.x
+    𝑛: ⟦ λ ⤍ 𝜎 ⟧
+location: 'Q.y'
+partial: true
+input: >
+  ⟦ y ↦ ⟦ x ↦ ⟦ λ ⤍ L_none ⟧.foo,
+          λ ⤍ L_pair ⟧.z ⟧
+result: >
+  ⟦ x ↦ ⟦ λ ⤍ L_none, ρ ↦ ∅ ⟧.foo,
+    λ ⤍ L_pair, ρ ↦ ∅ ⟧.z
+protocol:
+  - 'M(Φ.y)'
+  - '  E(L_pair)'

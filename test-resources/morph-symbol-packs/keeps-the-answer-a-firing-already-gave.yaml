@@ -1,0 +1,17 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# An entry answering a λ function no other entry answers: the firing happens,
+# and the run then parks on the answer instead of failing on it. What fired
+# before the run got stuck stays in the protocol.
+symbolic: |
+  - λ: L_answers
+    𝑛: ⟦ λ ⤍ L_none ⟧
+location: 'Q.x'
+partial: true
+input: '⟦ x ↦ ⟦ λ ⤍ L_answers ⟧.foo ⟧'
+result: '⟦ λ ⤍ L_none, ρ ↦ ∅ ⟧.foo'
+protocol:
+  - 'M(Φ.x)'
+  - '  E(L_answers)'
+  - '    𝑛.1 := ⟦ λ ⤍ L_none ⟧'

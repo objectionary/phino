@@ -1,0 +1,22 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# A deep walk under '_partial': the binding stuck on a λ function no entry
+# answers is left as it is, and the walk goes on to the binding after it
+# instead of giving the whole run up.
+symbolic: |
+  - λ: L_answers
+    𝑛: ⟦ foo ↦ ⟦⟧, λ ⤍ 𝜎 ⟧
+location: 'Q'
+deep: true
+partial: true
+input: >
+  ⟦ x ↦ ⟦ λ ⤍ L_none ⟧.foo,
+    y ↦ ⟦ λ ⤍ L_answers ⟧.foo ⟧
+result: >
+  ⟦ x ↦ ⟦ λ ⤍ L_none, ρ ↦ ∅ ⟧.foo,
+    y ↦ ⟦ λ ⤍ L_answers, ρ ↦ ∅ ⟧.foo, ρ ↦ ∅ ⟧
+protocol:
+  - 'M(Φ)'
+  - '  E(L_answers)'
+  - '    𝑛.1 := ⟦ foo ↦ ⟦⟧, λ ⤍ 𝜎1 ⟧'
