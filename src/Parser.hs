@@ -161,7 +161,7 @@ bytes :: Parser Bytes
 bytes =
   lexeme
     ( choice
-        [ either BtAny BtMeta <$> metaVar 'd' "δ"
+        [ either BtAny BtMeta <$> metaVar 'd' "𝛿"
         , symbol "--" >> return BtEmpty
         , try $ do
             first <- byte

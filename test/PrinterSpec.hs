@@ -296,7 +296,7 @@ spec = do
       [ ("empty bytes", BtEmpty, "--")
       , ("single byte", BtOne "1F", "1F-")
       , ("multiple bytes", BtMany ["00", "01", "02"], "00-01-02")
-      , ("meta bytes", BtMeta "D", "δ")
+      , ("meta bytes", BtMeta "D", "𝛿")
       ]
       ( \(desc, bts, expected) ->
           it desc (printBytes bts `shouldBe` expected)

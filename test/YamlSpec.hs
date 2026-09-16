@@ -142,19 +142,19 @@ spec = do
         ( "in 'd-result' of a dataization rule"
         , failsWith
             "anonymous meta '!d' cannot be referenced in 'd-result' of rule 'foo'"
-            (decodeYaml' (inferring "e-match: 𝑒0\nd-result: 'δ'") :: Either Yaml.ParseException DataizeRule)
+            (decodeYaml' (inferring "e-match: 𝑒0\nd-result: '𝛿'") :: Either Yaml.ParseException DataizeRule)
         )
       ,
         ( "in 'when' of a dataization rule"
         , failsWith
             "anonymous meta '!e' cannot be referenced in 'when' of rule 'foo'"
-            (decodeYaml' (inferring "e-match: 𝑒0\nd-result: δ0\nwhen:\n  formation: '𝑒'") :: Either Yaml.ParseException DataizeRule)
+            (decodeYaml' (inferring "e-match: 𝑒0\nd-result: 𝛿0\nwhen:\n  formation: '𝑒'") :: Either Yaml.ParseException DataizeRule)
         )
       ,
         ( "in a premise of a dataization rule"
         , failsWith
             "anonymous meta '!e' cannot be referenced in 'premises' of rule 'foo'"
-            (decodeYaml' (inferring "e-match: 𝑒0\nd-result: δ0\npremises:\n  - d-result: δ0\n    dataize: '𝑒'") :: Either Yaml.ParseException DataizeRule)
+            (decodeYaml' (inferring "e-match: 𝑒0\nd-result: 𝛿0\npremises:\n  - d-result: 𝛿0\n    dataize: '𝑒'") :: Either Yaml.ParseException DataizeRule)
         )
       ,
         ( "in a premise of a contextualization rule"

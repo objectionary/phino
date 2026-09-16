@@ -15,7 +15,7 @@ rules:
         - meta: '!d-space'
           function: dataize
           args: ['" "']
-        - meta: 'δ_HELLO'
+        - meta: '𝛿_HELLO'
           function: dataize
           args: ['!e_hello']
         - meta: '!d-WORLD1'
@@ -24,6 +24,6 @@ rules:
         - meta: '!e_hello_world'
           function: concat
           args:
-            - 'δ_HELLO'
+            - '𝛿_HELLO'
             - '!d-space'
             - '!d-WORLD1'

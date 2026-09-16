@@ -4,7 +4,7 @@
 name: box
 match: ⟦𝐵1, φ ↦ 𝑒1, 𝐵2⟧
 e-match: 𝑒0
-d-result: δ0
+d-result: 𝛿0
 when:
   disjoint:
     - [Δ, λ]
@@ -16,5 +16,5 @@ premises:
       - ⟦𝐵1, φ ↦ 𝑒1, 𝐵2⟧
   - n-result: 𝑛1
     normalize: 𝑒2
-  - d-result: δ0
+  - d-result: 𝛿0
     dataize: 𝑛1

@@ -732,8 +732,8 @@ $ phino explain --morph
 $ phino explain --dataize
 \begin{tabular}{rl}
 \phinoDataizationRule{delta}
-  { \phinoDataize{ [[ B_1, D> δ, B_2 ]] } }
-  { δ }
+  { \phinoDataize{ [[ B_1, D> \delta_0, B_2 ]] } }
+  { \delta_0 }
   { }
   { }
 ...
@@ -891,7 +891,7 @@ This is the list of supported meta variables:
                 binds an absolute sub-expression, so no explicit `absolute:`
                 or `nf:` guard is needed
 * `!B` || `𝐵` - list of bindings
-* `!d` || `δ` - bytes in meta delta binding
+* `!d` || `𝛿` - bytes in meta delta binding
 * `!F` || `𝑓` - function name in meta lambda binding
 
 A meta variable carries a suffix, like `!B1` or `𝜏0`, to name what it

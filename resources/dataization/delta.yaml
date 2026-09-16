@@ -3,6 +3,6 @@
 ---
 name: delta
 label: \Delta
-match: ⟦𝐵1, Δ ⤍ δ0, 𝐵2⟧
+match: ⟦𝐵1, Δ ⤍ 𝛿0, 𝐵2⟧
 e-match: 𝑒0
-d-result: δ0
+d-result: 𝛿0

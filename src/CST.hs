@@ -92,7 +92,7 @@ data META_HEAD
   | I' -- i
   | B -- 𝐵
   | B' -- B
-  | D -- δ
+  | D -- 𝛿
   | D' -- \delta
   | F -- 𝑓
   | F' -- F
