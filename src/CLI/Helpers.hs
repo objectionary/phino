@@ -7,7 +7,6 @@
 module CLI.Helpers where
 
 import AST
-import Atoms (Registry, emptyRegistry, readRegistry)
 import CLI.Types
 import CLI.Validators (invalidCLIArguments)
 import Canonizer (canonize)
@@ -17,15 +16,17 @@ import Data.Functor ((<&>))
 import Data.IORef
 import Data.List (intercalate, nub)
 import Data.Maybe
-import Deps (SaveEvalFunc, SaveStepFunc, dontSaveEval, saveEval, saveStep)
+import qualified Data.Text as T
+import Deps (Evaluation (EvRun), SaveEvalFunc, SaveStepFunc, State (..), dontSaveEval, emptyProtocol, saveEval, saveStep)
 import Encoding
 import Files (ensuredFile, overwrite)
 import Functions (execFunctions)
 import LaTeX (LatexContext (LatexContext), defaultMeetLength, defaultMeetPopularity, expressionToLaTeX, rewrittensToLatex)
+import Lambdas (Lambdas, emptyLambdas, readLambdas, taken)
 import Lining (LineFormat (SINGLELINE))
 import Locator (locatedExpression)
 import Logger
-import Morph (ReduceContext, insideUniverse)
+import Morph (ReduceContext, emptyState, insideUniverse)
 import Parser (parseExpressionThrows)
 import qualified Printer as P
 import qualified Random as R
@@ -59,23 +60,26 @@ saveStepFunc stepsDir ctx@PrintCtx{..} = do
         saveStep stepsDir ioToExt render step expr
   pure save
 
--- Run the action with a function recording atom firings, holding the protocol
--- file open for the whole run. Opening it for writing truncates it, so that it
--- always holds the firings of exactly one run: a caller reading it back never
--- picks up records left over from the previous run, even when this run fires no
--- atom at all. The handle is closed on the way out, failure included, so the
--- last records reach the disk even when dataization gives up. Every record is
--- flattened into a single line, whatever '--flat' says about the main output,
--- since the file is a line-per-firing protocol. The encoding is pinned to UTF-8
--- rather than taken from the locale, since the file is read back by other
--- programs.
+-- Run the action with a function writing the protocol of the run, holding the
+-- file open for the whole of it. Opening it for writing truncates it, so that
+-- it always holds the firings of exactly one run: a caller reading it back
+-- never picks up lines left over from the previous run, even when this run
+-- fires nothing at all. The handle is closed on the way out, failure included,
+-- so the last lines reach the disk even when the run gives up. What the
+-- protocol has counted so far rides in an 'IORef' next to the handle, since it
+-- is the cursor of the file and not a property of the reduction (see
+-- 'Protocol'). Every term is flattened into a single line, whatever '--flat'
+-- says about the main output, since the file is a tree of one-line records. The
+-- encoding is pinned to UTF-8 rather than taken from the locale, since the file
+-- is read back by other programs.
 withEvalFunc :: Maybe FilePath -> PrintContext -> (SaveEvalFunc -> IO a) -> IO a
 withEvalFunc Nothing _ action = action dontSaveEval
 withEvalFunc (Just file) ctx action = do
   createDirectoryIfMissing True (takeDirectory file)
-  logDebug (printf "The option '--evaluations' is specified, atom firings will be recorded in '%s'" file)
+  logDebug (printf "The option '--protocol' is specified, every firing will be recorded in '%s'" file)
+  cursor <- newIORef emptyProtocol
   bracket opened hClose $ \protocol ->
-    action (saveEval protocol (printExpression ctx{_line = SINGLELINE}))
+    action (saveEval protocol cursor (flattened ctx))
   where
     -- 'withFile' would do the same, except that it annotates whatever the action
     -- throws with the name of the file, and a dataization failure has to reach
@@ -87,17 +91,37 @@ withEvalFunc (Just file) ctx action = do
       pure protocol
 
 -- The λ functions this run may fire. phino implements none of them, so without
--- '--atoms' the registry is empty and every atom a program names gets stuck —
--- which is exactly what '--partial' parks on. The file is read here, before
--- anything is parsed or dataized, so an unknown runtime or a malformed registry
--- fails the run up front rather than half-way through a derivation.
-registryOf :: Maybe FilePath -> IO Registry
-registryOf Nothing = do
-  logDebug "The option '--atoms' is not specified, no λ function can be fired"
-  pure emptyRegistry
-registryOf (Just file) = do
-  logDebug (printf "The option '--atoms' is specified, reading the λ functions from '%s'" file)
-  ensuredFile file >>= readRegistry
+-- '--symbolic' there are none at all and every λ function a program names gets
+-- stuck — which is exactly what '--partial' parks on. The file is read here,
+-- before anything is parsed or reduced, so a key that is no regular expression
+-- or an answer the calculus cannot read fails the run up front rather than
+-- half-way through a derivation.
+lambdasOf :: Maybe FilePath -> IO Lambdas
+lambdasOf Nothing = do
+  logDebug "The option '--symbolic' is not specified, no λ function can be fired"
+  pure emptyLambdas
+lambdasOf (Just file) = do
+  logDebug (printf "The option '--symbolic' is specified, reading the λ functions from '%s'" file)
+  ensuredFile file >>= readLambdas
+
+-- The state a run starts from: nothing manufactured yet and every symbol the
+-- program already carries counted as minted, so a fresh 𝜎 is never spelled like
+-- one the input was written with (see 'taken').
+started :: Expression -> State
+started expr = emptyState{_minted = taken expr}
+
+-- Open the protocol with the run itself — the judgment it runs and the term it
+-- is aimed at — which is the line every firing of it stands under.
+heading :: SaveEvalFunc -> PrintContext -> T.Text -> Expression -> IO ()
+heading record ctx judgment locator =
+  record . EvRun judgment . T.pack =<< flattened ctx locator
+
+-- How every term of the protocol is rendered: as 𝜑 on a single line, in the
+-- sugar and the margin the run prints its own answer with. The protocol is a
+-- tree of one-line 𝜑 records whatever '--output' the run was given, so a
+-- program reading it back never has to know what the run printed.
+flattened :: PrintContext -> Expression -> IO String
+flattened ctx = pure . printPhi ctx{_line = SINGLELINE}
 
 -- Aim the run at the '--inside' expression instead of at '--locator': the
 -- expression is bound to a synthetic attribute prepended to the input

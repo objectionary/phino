@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# Nobody decided the comparison, so the fork cannot know which branch the
+# program takes; it answers the first one, whose value is a number the program
+# wrote and not a symbol at all.
+model: true
+symbolic: true
+input: '5.gt( 6 ).if( 1, 2 )'
+result: '3F-F0-00-00-00-00-00-00'

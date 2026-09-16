@@ -18,7 +18,7 @@ data MetaValue
   | MvIndex Int -- α𝑖
   | MvBytes Bytes -- !b
   | MvBindings [Binding] -- !B
-  | MvFunction Text -- !F
+  | MvFunction Function -- !F
   | MvExpression Expression -- !e
   deriving (Eq, Show)
 
@@ -81,12 +81,24 @@ matchAlpha ptn tgt
   | ptn == tgt = [substEmpty]
   | otherwise = []
 
+-- A λ meta stands for any λ name at all — an ordinary one and a symbol alike,
+-- since a symbol is a name nothing answers and not a variable of the rule
+-- language (see 'FnSymbol'). Every other pair matches only itself.
 matchFunction :: Function -> Function -> [Subst]
-matchFunction (FnMeta meta) (Function name) = [substSingle meta (MvFunction name)]
-matchFunction (FnAny slot) (Function name) = [substSlot slot (MvFunction name)]
+matchFunction (FnMeta meta) tgt
+  | named tgt = [substSingle meta (MvFunction tgt)]
+matchFunction (FnAny slot) tgt
+  | named tgt = [substSlot slot (MvFunction tgt)]
 matchFunction ptn tgt
   | ptn == tgt = [substEmpty]
   | otherwise = []
+
+-- Whether a λ function is a name a program wrote rather than a meta-variable
+-- a rule wrote.
+named :: Function -> Bool
+named (Function _) = True
+named (FnSymbol _) = True
+named _ = False
 
 matchBinding :: Binding -> Binding -> [Subst]
 matchBinding (BiVoid pattr) (BiVoid tattr) = matchAttribute pattr tattr

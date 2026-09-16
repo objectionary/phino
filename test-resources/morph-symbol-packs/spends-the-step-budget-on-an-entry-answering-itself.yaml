@@ -1,0 +1,28 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# An entry answering with a firing of itself fires until the budget is gone.
+# Recursion is nothing phino prevents — that is the object model's business —
+# so the step limit is what ends the run, and every firing it paid for is in
+# the protocol.
+symbolic: |
+  - λ: L_loop
+    𝑛: ⟦ λ ⤍ L_loop ⟧
+location: 'Q.x'
+steps: 6
+input: '⟦ x ↦ ⟦ λ ⤍ L_loop ⟧.foo ⟧'
+fails: 'reaching the limit of steps'
+protocol:
+  - 'M(Φ.x)'
+  - '  E(L_loop)'
+  - '    𝑛.1 := ⟦ λ ⤍ L_loop ⟧'
+  - '  E(L_loop)'
+  - '    𝑛.2 := ⟦ λ ⤍ L_loop ⟧'
+  - '  E(L_loop)'
+  - '    𝑛.3 := ⟦ λ ⤍ L_loop ⟧'
+  - '  E(L_loop)'
+  - '    𝑛.4 := ⟦ λ ⤍ L_loop ⟧'
+  - '  E(L_loop)'
+  - '    𝑛.5 := ⟦ λ ⤍ L_loop ⟧'
+  - '  E(L_loop)'
+  - '    𝑛.6 := ⟦ λ ⤍ L_loop ⟧'

@@ -65,6 +65,7 @@ instance ToASCII PAIR where
   toASCII PA_VOID{..} = PA_VOID (toASCII attr) ARROW' QUESTION
   toASCII PA_LAMBDA{..} = PA_LAMBDA' func
   toASCII PA_DELTA{..} = PA_DELTA' bytes
+  toASCII PA_META_LAMBDA{meta = META{hd = S, ..}} = PA_META_LAMBDA' (META EXCL S' rest)
   toASCII PA_META_LAMBDA{meta = META{..}} = PA_META_LAMBDA' (META EXCL F' rest)
   toASCII PA_META_DELTA{..} = PA_META_DELTA' (META EXCL D' (rest meta))
   toASCII pair = pair

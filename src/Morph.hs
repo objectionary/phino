@@ -13,24 +13,24 @@
 -- The Morphing function 𝕄 and the machinery every reduction of the calculus is
 -- threaded with: the context, the step budget, the signals a stuck run raises
 -- and the plumbing that reads a rule's premises. 𝔻 lives in 'Dataize', which
--- imports this module; the one edge pointing back — an atom asking phino to
--- reduce an operand, which is a dataization — is injected as '_reduce' rather
--- than imported (see 'ReductionFunc').
+-- imports this module; the one edge pointing back — the 'dataize' operand of a
+-- λ function, which is a dataization — is injected as '_reduce' rather than
+-- imported (see 'ReductionFunc').
 module Morph (ReduceContext (..), ReduceException (..), ReductionFunc, Morphed, Steps (..), deeper, emptyState, excluding, execBuildTerm, insideUniverse, leadsTo, morph, morph', normalized, parking, producer, sidePremise, verb) where
 
 import AST
-import Atoms (ReduceFunc, Registry, fireAtom, registeredAtom)
 import Builder (buildExpressionThrows, contextualize)
 import Control.Exception (Exception, catch, throwIO, try)
-import Control.Monad (foldM, when)
+import Control.Monad (foldM)
 import Data.List (find, partition)
 import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as NE
-import Data.Maybe (fromMaybe)
+import Data.Maybe (fromMaybe, isNothing)
 import qualified Data.Text as T
-import Deps (BuildTermFunc, BuildTermMethodS, Evaluation (..), SaveEvalFunc, SaveStepFunc, State, Term (..))
+import Deps (BuildTermFunc, BuildTermMethodS, Evaluation (..), SaveEvalFunc, SaveStepFunc, State (..), Term (..))
+import Lambdas (Lambda (..), Lambdas, Meta (..), matched, minted)
 import Locator (locatedExpression, withLocatedExpression)
-import Matcher (MetaValue (..), Subst (..), combine, matchExpression', substEmpty, substSingle)
+import Matcher (MetaValue (..), Subst (..), combine, matchExpression', substEmpty, substSingle, substSlot)
 import Must (Must (..))
 import Random (shuffle)
 import Rewriter (RewriteContext (RewriteContext), Rewritten, rewrite)
@@ -43,23 +43,27 @@ import qualified Yaml as Y
 -- judgment's spine is handed and hands on.
 type Morphed = (Expression, NonEmpty Rewritten)
 
--- How the morphing side reaches back to the dataization one. An atom may ask
--- phino to reduce an operand of its own (see 'ReduceFunc' in 'Atoms'), and the
--- answer is a whole run of 𝔻 — a judgment 𝕄 has no business knowing about,
--- since 'Dataize' imports 'Morph' and not the other way round. The reduction is
--- therefore injected into the context, the way 'Deps' injects '_buildTerm', and
--- 'Dataize' supplies its own 'reduction' for it.
-type ReductionFunc = Expression -> ReduceContext -> ReduceFunc
+-- How the morphing side reaches back to the dataization one. A λ function
+-- brings its 'dataize' operands down through 𝔻, and that is a whole run of a
+-- judgment 𝕄 has no business knowing about, since 'Dataize' imports 'Morph'
+-- and not the other way round. The reduction is therefore injected into the
+-- context, the way 'Deps' injects '_buildTerm', and 'Dataize' supplies its own
+-- 'reduction' for it. What comes back is data or nothing at all, since an
+-- operand 𝔻 could not bring down to bytes leaves the firing that asked for it
+-- with nothing to bind. The state 𝑠 goes in and comes back out, so the symbols
+-- a nested run mints are counted in the same sequence as the ones around it.
+type ReductionFunc = Expression -> ReduceContext -> Expression -> State -> IO (Maybe Bytes, State)
 
--- The initial, empty state a run of 𝕄 or 𝔻 starts from. The 'State' type itself
--- lives in 'Deps' next to 'BuildTermMethod'.
+-- The initial, empty state a run of 𝕄 or 𝔻 starts from: nothing minted and
+-- nothing manufactured yet. The 'State' type itself lives in 'Deps' next to
+-- 'BuildTermMethod'.
 emptyState :: State
-emptyState = ""
+emptyState = State 0 Nothing
 
 -- How many steps of the 𝕄/𝔻 recursion one branch of a derivation may take
 -- ('_limit', the '--max-steps' option) and how many the branch reaching this
 -- point has already taken ('_spent'). 𝕄 and 𝔻 recurse into each other, into the
--- premises of their own rules and into the atoms they fire, so a budget local to
+-- premises of their own rules and into the λ functions they fire, so a budget local to
 -- one of those chains is reset by the next nested call and bounds nothing (see
 -- #1052). This one rides in the context that every such path — the spine, the
 -- side-premises, '_dataize' and '_morph' — already carries, so a nested call
@@ -75,7 +79,7 @@ data Steps = Steps
 -- The context every reduction of the calculus is threaded with — 𝕄 here and 𝔻 in
 -- 'Dataize' — carrying the configuration plus the step budget spent so far. Nothing global is fixed here: the universe (the second argument 'e' of
 -- 𝕄(n, e, s) and 𝔻(n, e, s)) is a plain expression threaded as an argument to
--- 'dataize'', 'morph'' and on to the atoms, and the state 's' is threaded the same
+-- 'dataize'', 'morph'' and on to the λ functions, and the state 's' is threaded the same
 -- way (see 'State'). The working expression needed for normalization is taken
 -- from the head of the step chain, so no separate wrapper type is threaded
 -- around.
@@ -84,11 +88,12 @@ data ReduceContext = ReduceContext
   , _maxDepth :: Int
   , _maxCycles :: Int
   , _steps :: Steps
+  , _nesting :: Int
   , _depthSensitive :: Bool
   , _shuffle :: Bool
   , _partial :: Bool
   , _deep :: Bool
-  , _atoms :: Registry
+  , _symbolic :: Lambdas
   , _buildTerm :: BuildTermFunc
   , _reduce :: ReductionFunc
   , _saveStep :: SaveStepFunc
@@ -97,30 +102,34 @@ data ReduceContext = ReduceContext
 
 data ReduceException
   = OutOfSteps Int
-  | -- An atom could not fire: the '--atoms' registry carries no λ function of
-    -- that name, so there is nothing to run. The name is that of the atom 𝔼
-    -- actually failed on, which for a chain of dispatches is the innermost one,
-    -- since 'ml' reduces a head before the atom above it fires.
+  | -- A λ function could not fire: the '--symbolic' file carries no entry
+    -- answering that name, or an operand of the entry it does carry never came
+    -- down to data, so there is nothing to answer with. The name is that of the
+    -- function 𝔼 actually failed on, which for a chain of dispatches is the
+    -- innermost one, since 'ml' reduces a head before the function above it
+    -- fires.
     Stuck T.Text
   | -- A 'Stuck' caught by a frame of the 𝕄/𝔻 spine, together with the
-    -- derivation that frame had reached (see 'parking'). The head of the chain
-    -- is the working expression with the stuck application left intact and
-    -- everything reduced before it already in place: the residual program that
-    -- '_partial' turns into the 'Residual' outcome.
-    StuckAt T.Text (NonEmpty Rewritten)
+    -- derivation and the state that frame had reached (see 'parking'). The head
+    -- of the chain is the working expression with the stuck application left
+    -- intact and everything reduced before it already in place: the residual
+    -- program that '_partial' turns into the 'Residual' outcome. The state
+    -- travels with it, so the symbols a parked run minted are never minted
+    -- again.
+    StuckAt T.Text (NonEmpty Rewritten) State
   | -- An 'OutOfSteps' caught by a spine frame, carrying that frame's derivation
-    -- just like 'StuckAt': a term that never reduces is a stuck site too, so
-    -- '_partial' parks it and hands back the residual instead of failing hard
-    -- (#1078)
-    OutOfStepsAt Int (NonEmpty Rewritten)
+    -- and state just like 'StuckAt': a term that never reduces is a stuck site
+    -- too, so '_partial' parks it and hands back the residual instead of
+    -- failing hard (#1078)
+    OutOfStepsAt Int (NonEmpty Rewritten) State
   deriving anyclass (Exception)
 
 instance Show ReduceException where
   show (OutOfSteps limit) =
     printf "Dataization did not finish before reaching the limit of steps: --max-steps=%d" limit
-  show (OutOfStepsAt limit _) = show (OutOfSteps limit)
-  show (Stuck func) = printf "Atom '%s' does not exist" (T.unpack func)
-  show (StuckAt func _) = show (Stuck func)
+  show (OutOfStepsAt limit _ _) = show (OutOfSteps limit)
+  show (Stuck func) = printf "No entry of --symbolic answers the λ function '%s'" (T.unpack func)
+  show (StuckAt func _ _) = show (Stuck func)
 
 -- Charge one step of the 𝕄/𝔻 recursion to the budget, refusing to descend once
 -- it is gone. '--max-cycles' and '--max-depth' bound only the normalization run
@@ -135,9 +144,9 @@ deeper ctx@ReduceContext{_steps = Steps limit spent}
   | otherwise = pure ctx{_steps = Steps limit (spent + 1)}
 
 -- Split the λ binding off a formation for the LAMBDA morphing rule: the name of
--- the atom to fire and the formation it fires against, the λ binding removed —
--- the two things 𝔼 reports besides the result. A formation with no λ binding,
--- or with more than one, has nothing to fire.
+-- the λ function to fire and the formation it fires against, the λ binding
+-- removed. A formation with no λ binding, or with more than one, has nothing to
+-- fire; neither has one carrying a symbol, which is a λ name nothing answers.
 lambda :: [Binding] -> Maybe (T.Text, Expression)
 lambda bds = case partition isLambda bds of
   ([BiLambda (Function func)], rest) -> Just (func, ExFormation rest)
@@ -151,7 +160,7 @@ lambda bds = case partition isLambda bds of
 -- every binding of it filled (see 'filled'). A void is an argument the program
 -- has not given yet, so such a formation is a method waiting to be applied
 -- rather than an application waiting to be computed, and firing it would hand
--- the atom a ∅ where it expects a value. 𝔻 needs no such guard, since it
+-- the λ function a ∅ where it expects a value. 𝔻 needs no such guard, since it
 -- fires only what dataization demands and nothing demands a method; the deep
 -- walk meets every one a program declares — the method table of the object
 -- model above all — so it asks first (see 'deepened').
@@ -170,27 +179,28 @@ filled (BiVoid _) = False
 filled (BiTau _ ExTermination) = False
 filled _ = True
 
--- Run one frame of the 𝕄/𝔻 spine, attaching its derivation to a stuck atom or
--- an exhausted budget escaping it. 'Stuck' is raised deep inside an atom, which
--- knows nothing about the chain, so the innermost spine frame it reaches is the
--- one to record where the derivation stopped: the head of that frame's chain is
--- the working expression with the stuck application intact and everything
--- reduced before it already in place. The same holds for 'OutOfSteps': a term
--- cycling through the universe is no more a failure of the chain than a missing
--- atom is, and under '_partial' it deserves the same parked residual (#1078).
--- Outer frames see the '…At' signals and let them pass, since their chains are
--- prefixes of that one; a side-computation running on a chain of its own strips
--- the chain off again (see 'unparked') before the signal reaches the spine.
-parking :: NonEmpty Rewritten -> IO a -> IO a
-parking seq action = action `catch` rethrow
+-- Run one frame of the 𝕄/𝔻 spine, attaching its derivation and its state to a
+-- stuck λ function or an exhausted budget escaping it. 'Stuck' is raised deep
+-- inside a firing, which knows nothing about the chain, so the innermost spine
+-- frame it reaches is the one to record where the derivation stopped: the head
+-- of that frame's chain is the working expression with the stuck application
+-- intact and everything reduced before it already in place. The same holds for
+-- 'OutOfSteps': a term cycling through the universe is no more a failure of the
+-- chain than a missing λ function is, and under '_partial' it deserves the same
+-- parked residual (#1078). Outer frames see the '…At' signals and let them
+-- pass, since their chains are prefixes of that one; a side-computation running
+-- on a chain of its own strips the chain off again (see 'unparked') before the
+-- signal reaches the spine.
+parking :: NonEmpty Rewritten -> State -> IO a -> IO a
+parking seq state action = action `catch` rethrow
   where
     rethrow :: ReduceException -> IO a
-    rethrow (Stuck func) = throwIO (StuckAt func seq)
-    rethrow (OutOfSteps limit) = throwIO (OutOfStepsAt limit seq)
+    rethrow (Stuck func) = throwIO (StuckAt func seq state)
+    rethrow (OutOfSteps limit) = throwIO (OutOfStepsAt limit seq state)
     rethrow failure = throwIO failure
 
--- Strip the derivation off a stuck atom escaping a side-computation that ran
--- on a chain of its own — an atom dataizing its input through '_dataize', or a
+-- Strip the derivation off a stuck λ function escaping a side-computation that
+-- ran on a chain of its own — a firing reducing an operand of its own, or a
 -- 'morph' premise through '_morph'. That chain is not the spine's, so it is
 -- dropped and the spine frame around the side-computation attaches its own
 -- (see 'parking').
@@ -198,8 +208,8 @@ unparked :: IO a -> IO a
 unparked action = action `catch` rethrow
   where
     rethrow :: ReduceException -> IO a
-    rethrow (StuckAt func _) = throwIO (Stuck func)
-    rethrow (OutOfStepsAt limit _) = throwIO (OutOfSteps limit)
+    rethrow (StuckAt func _ _) = throwIO (Stuck func)
+    rethrow (OutOfStepsAt limit _ _) = throwIO (OutOfSteps limit)
     rethrow failure = throwIO failure
 
 -- The Morphing function 𝕄 maps normal forms to formations. It is ternary,
@@ -224,7 +234,7 @@ unparked action = action `catch` rethrow
 morph' :: Morphed -> Expression -> State -> ReduceContext -> IO (Morphed, State)
 morph' (expr, seq) univ state caller = do
   ctx <- deeper caller
-  parking seq $ do
+  parking seq state $ do
     rules <- if ctx._shuffle then shuffle Y.morphingRules else pure Y.morphingRules
     matched <- firstMatch ctx rules
     case matched of
@@ -280,55 +290,55 @@ morph' (expr, seq) univ state caller = do
 -- subterm. Unlike 𝔻, 𝕄 is total: it stops at the first formation it reaches
 -- ('mf') and never demands bytes, and where no formation is reachable it answers
 -- with the terminator ⊥ ('dead', 'xi', 'mg', 'mad', 'maad') rather than failing.
--- Only the atoms 'ml' fires can still get stuck, and '_partial' parks them just
--- as it does under 𝔻: the answer is then the residual subterm the spine had
--- reached, taken from '_locator' of its working expression. Stopping at the
--- first formation leaves everything that formation holds as it was written,
--- which is what '_deep' walks into before the answer is handed back (see
--- 'deepened').
-morph :: Expression -> ReduceContext -> IO (Expression, [Rewritten])
-morph universe ctx@ReduceContext{..} = do
+-- Only the λ functions 'ml' fires can still get stuck, and '_partial' parks
+-- them just as it does under 𝔻: the answer is then the residual subterm the
+-- spine had reached, taken from '_locator' of its working expression. Stopping
+-- at the first formation leaves everything that formation holds as it was
+-- written, which is what '_deep' walks into before the answer is handed back
+-- (see 'deepened'). The state 𝑠 goes in and comes back out, so a 𝕄 asked
+-- inside another judgment goes on minting symbols where that judgment left off.
+morph :: Expression -> State -> ReduceContext -> IO (Expression, [Rewritten], State)
+morph universe state ctx@ReduceContext{..} = do
   expr <- locatedExpression _locator universe
-  result <- try (morph' (expr, (universe, Nothing) :| []) universe emptyState ctx)
+  result <- try (morph' (expr, (universe, Nothing) :| []) universe state ctx)
   case result of
-    Right ((morphed, seq), state) -> walked morphed seq state
-    Left (StuckAt _ seq) | _partial -> do
+    Right ((morphed, seq), state') -> walked morphed seq state'
+    Left (StuckAt _ seq parked) | _partial -> do
       residue <- locatedExpression _locator (fst (NE.head seq))
-      walked residue seq emptyState
-    Left (OutOfStepsAt _ seq) | _partial -> do
+      walked residue seq parked
+    Left (OutOfStepsAt _ seq parked) | _partial -> do
       residue <- locatedExpression _locator (fst (NE.head seq))
-      walked residue seq emptyState
+      walked residue seq parked
     Left failure -> throwIO (failure :: ReduceException)
   where
     -- The answer 𝕄 reached, walked by '_deep' before it is handed back (see
     -- 'deepened'), and the chain that led to both. The walk joins the chain as
     -- one step named 'deep', so '--sequence' ends on the term the command
-    -- prints. Morphing starts from the empty state and the state the walk ends
-    -- on goes the way 𝕄's own goes: no caller consumes it yet.
-    walked :: Expression -> NonEmpty Rewritten -> State -> IO (Expression, [Rewritten])
-    walked morphed seq state
-      | not _deep = pure (morphed, reverse (NE.toList seq))
+    -- prints.
+    walked :: Expression -> NonEmpty Rewritten -> State -> IO (Expression, [Rewritten], State)
+    walked morphed seq state'
+      | not _deep = pure (morphed, reverse (NE.toList seq), state')
       | otherwise = do
-          (deep, _) <- deepened morphed universe state ctx
+          (deep, state'') <- deepened morphed universe state' ctx
           seq' <- leadsTo seq "deep" deep ctx
-          pure (deep, reverse (NE.toList seq'))
+          pure (deep, reverse (NE.toList seq'), state'')
 
 -- Walk what 𝕄 answered with, entering everything it left as it was written —
 -- the mechanism behind '--deep' ('_deep'). 𝕄 navigates a term to the first
 -- formation it reaches and 'mf' hands that formation back with its bindings
 -- untouched, since firing a bare λ is 𝔻's business; 𝔻 in turn follows the one
 -- path dataization demands and ends in bytes. A part of a program that nothing
--- demands — the argument of an atom that cannot fire, for one — is therefore
--- reduced by neither, and the object structure is lost to the one that does
--- reduce it (#1124). This walk demands nothing either. It asks 𝕄 about every
--- sub-expression and, where 𝕄 lands on a formation whose λ the registry
--- serves, fires it and asks 𝕄 about the answer again (see 'fired'). A
--- sub-expression on whose way an atom fired is replaced by the answer of the
--- last firing; where none fired it stays as it was written and only its own
--- parts are walked, so the calls the registry does not serve keep their names
--- and what comes back is still the same program, reduced as far as the
--- registry allows. Every entry is charged to the '--max-steps' budget, which
--- is what bounds the walk.
+-- demands — the argument of a λ function that cannot fire, for one — is
+-- therefore reduced by neither, and the object structure is lost to the one
+-- that does reduce it (#1124). This walk demands nothing either. It asks 𝕄
+-- about every sub-expression and, where 𝕄 lands on a formation whose λ the
+-- '--symbolic' file answers, fires it and asks 𝕄 about the answer again (see
+-- 'fired'). A sub-expression on whose way a λ function fired is replaced by the
+-- answer of the last firing; where none fired it stays as it was written and
+-- only its own parts are walked, so the calls no entry answers keep their names
+-- and what comes back is still the same program, reduced as far as the file
+-- allows. Every entry is charged to the '--max-steps' budget, which is what
+-- bounds the walk.
 deepened :: Expression -> Expression -> State -> ReduceContext -> IO (Expression, State)
 deepened expr univ = go Nothing ExXi expr
   where
@@ -341,8 +351,8 @@ deepened expr univ = go Nothing ExXi expr
     go dispatched context term state' caller = do
       ctx' <- deeper caller
       (walked, walkedState) <- parts context term state' caller
-      answer <- fired dispatched (contextualize walked context) univ walkedState ctx'
-      maybe (pure (walked, walkedState)) pure answer
+      (answer, answered) <- fired dispatched (contextualize walked context) univ walkedState ctx'
+      pure (fromMaybe walked answer, answered)
     -- The parts of a term nothing fired on, walked one by one and put back
     -- where they were, so the term keeps the shape it was written in.
     parts :: Expression -> Expression -> State -> ReduceContext -> IO (Expression, State)
@@ -390,29 +400,29 @@ deepened expr univ = go Nothing ExXi expr
       (entered, state'') <- go Nothing context arg state' caller
       pure (ArAlpha alpha entered, state'')
 
--- Ask 𝕄 about a term and fire the λ of the formation it reaches, as long as
--- the registry serves it, asking 𝕄 about every answer again: what comes back
--- is the answer of the last firing, or nothing at all where no atom fired. This
--- is the firing 'ml' makes without the dispatch that makes 'ml' make it — the
--- one 𝕄 leaves to 𝔻 — except in what it hands back: the atom's raw answer, not
--- the normal form 𝔼 makes of it, since the deep walk stands that answer back
--- into the program, where a normal form would spell the whole object out in
--- place of the name the program called it by. A λ the registry does not carry
--- is left alone rather than fired and got stuck on, so what phino cannot
--- compute stays as it was written with or without '_partial'; an atom that
--- cannot fire deeper on the spine still fails the run, exactly as it does
--- under 𝕄 alone, and '_partial' parks it. A formation still waiting for its
--- arguments is left alone too (see 'saturated'). A term standing as the target
--- of a dispatch is where 'ml' has its say: the λ is fired only where the
+-- Ask 𝕄 about a term and fire the λ of the formation it reaches, as long as an
+-- entry of the '--symbolic' file answers it, asking 𝕄 about every answer again:
+-- what comes back is the answer of the last firing, or nothing at all where
+-- nothing fired. This is the firing 'ml' makes without the dispatch that makes
+-- 'ml' make it — the one 𝕄 leaves to 𝔻 — except in what it hands back: the raw
+-- answer of the entry, not the normal form 𝔼 makes of it, since the deep walk
+-- stands that answer back into the program, where a normal form would spell the
+-- whole object out in place of the name the program called it by. A λ no entry
+-- answers is left alone rather than fired and got stuck on, so what phino
+-- cannot compute stays as it was written with or without '_partial'; a λ
+-- function that cannot fire deeper on the spine still fails the run, exactly as
+-- it does under 𝕄 alone, and '_partial' parks it. A formation still waiting for
+-- its arguments is left alone too (see 'saturated'). A term standing as the
+-- target of a dispatch is where 'ml' has its say: the λ is fired only where the
 -- dispatched attribute is none of the formation's own (see 'demanded').
-fired :: Maybe Attribute -> Expression -> Expression -> State -> ReduceContext -> IO (Maybe (Expression, State))
+fired :: Maybe Attribute -> Expression -> Expression -> State -> ReduceContext -> IO (Maybe Expression, State)
 fired dispatched term univ state caller = do
   ctx <- deeper caller
   morphed <- try (reduced ctx)
   case morphed of
     Right (ExFormation bds, state')
-      | demanded bds -> maybe (pure Nothing) (evaluated ctx state') (saturated bds)
-    Right _ -> pure Nothing
+      | demanded bds -> maybe (pure (Nothing, state')) (evaluated ctx state') (saturated bds)
+    Right (_, state') -> pure (Nothing, state')
     Left failure -> parked failure
   where
     -- Whether the dispatch the term stands under demands the λ of the formation
@@ -431,26 +441,38 @@ fired dispatched term univ state caller = do
     -- written is not necessarily one, so it is normalized against the universe
     -- first, exactly as '--inside' normalizes what it is handed. Both chains
     -- are dropped: the walk is not the spine and reports one step of its own
-    -- (see 'morph'), so a stuck atom leaves without a derivation ('unparked').
+    -- (see 'morph'), so a stuck λ function leaves without a derivation.
     reduced :: ReduceContext -> IO (Expression, State)
-    reduced ctx = unparked $ do
+    reduced ctx = do
       (normal, _) <- normalized term ((univ, Nothing) :| []) ctx
       ((morphed, _), state') <- morph' (normal, (univ, Nothing) :| []) univ state ctx
       pure (morphed, state')
     -- Fire the λ of the formation 𝕄 reached and go on from its answer, keeping
-    -- the answer of the last firing. The firing is reported to '_saveEval' like
-    -- every other one, with the term the caller is given, so the protocol and
-    -- the program agree on what the atom answered.
-    evaluated :: ReduceContext -> State -> (T.Text, Expression) -> IO (Maybe (Expression, State))
-    evaluated ctx state' (func, self) = case registeredAtom ctx._atoms func of
-      Nothing -> pure Nothing
-      Just registered -> do
-        answer <- fireAtom func registered self univ (ctx._reduce univ ctx)
-        ctx._saveEval (Evaluation func self (Just answer))
-        again <- fired dispatched answer univ state' ctx
-        pure (Just (fromMaybe (answer, state') again))
-    parked :: ReduceException -> IO (Maybe a)
-    parked (Stuck _) | caller._partial = pure Nothing
+    -- the answer of the last firing. A λ no entry of the '--symbolic' file
+    -- answers is not fired at all, which is what keeps the walk as total as 𝕄
+    -- itself. The firing reports itself to '_saveEval', so the protocol and the
+    -- program agree on what was answered.
+    evaluated :: ReduceContext -> State -> (T.Text, Expression) -> IO (Maybe Expression, State)
+    evaluated ctx state' (func, self)
+      | isNothing (matched ctx._symbolic func) = pure (Nothing, state')
+      | otherwise = do
+          (answer, answered) <- symbol func self univ state' ctx
+          (again, reached) <- fired dispatched answer univ answered ctx
+          pure (Just (fromMaybe answer again), reached)
+    -- A site the walk cannot reduce — a λ function whose operands never came
+    -- down to data, or one the step budget ran out on — is left as it was
+    -- written and the walk goes on, which is what a partial morphing is: phino
+    -- stops where it cannot decide rather than failing the whole run. The state
+    -- the parked site had reached travels back, so the symbols it minted before
+    -- it stopped are never minted again; the chain it parked on is dropped,
+    -- since that chain is the walk's and not the spine's.
+    parked :: ReduceException -> IO (Maybe Expression, State)
+    parked (StuckAt _ _ reached) | caller._partial = pure (Nothing, reached)
+    parked (OutOfStepsAt _ _ reached) | caller._partial = pure (Nothing, reached)
+    parked (Stuck _) | caller._partial = pure (Nothing, state)
+    parked (OutOfSteps _) | caller._partial = pure (Nothing, state)
+    parked (StuckAt func _ _) = throwIO (Stuck func)
+    parked (OutOfStepsAt limit _ _) = throwIO (OutOfSteps limit)
     parked failure = throwIO failure
 
 -- The premise binding the given expression meta, if any. The conclusion of a
@@ -539,10 +561,10 @@ normalized expr seq ctx@ReduceContext{..} = do
 -- Bind 'expr' to a synthetic attribute of the universe and reduce it to a
 -- normal form there, handing back the extended universe together with the
 -- locator that aims at the binding. This is the trick phino has always played
--- to reduce a sub-expression that is not part of the program — an atom's
--- operand, while the atoms still lived in the binary — and it is now the
--- contract of the '--inside' option, so an atom script asking phino to reduce
--- a part of the formation it was given does not have to splice it into the text
+-- to reduce a sub-expression that is not part of the program — the operand a
+-- λ function names under 'dataize' or 'evaluate', above all — and it is also
+-- the contract of the '--inside' option, so a caller asking phino to reduce a
+-- part of the formation it was given does not have to splice it into the text
 -- of the universe by hand. 𝔻 and 𝕄 accept normal forms only and an expression
 -- handed in from outside is not necessarily one (a dispatch off a formation,
 -- '⟦ x ↦ 6, ρ ↦ 5 ⟧.x', is not), so it is normalized against the extended
@@ -559,23 +581,99 @@ insideUniverse expr univ ctx@ReduceContext{_buildTerm = buildTerm} = case univ o
     pure (ExFormation (BiTau attr normal : bds), aiming)
   _ -> throwIO (userError "Can't reduce an expression inside a universe which is not a formation")
 
--- phino implements no λ function of its own. Which atoms exist is a property of
--- the object model being dataized, not of the calculus, so they come from the
--- '--atoms' registry and run as external scripts (see 'Atoms'). A name the
--- registry does not carry has no λ function to fire at all, and 𝔼 gets stuck on
--- it — the one behaviour left here. The script is handed the formation 'self'
--- (its λ binding already removed, so it may dispatch on it) and the universe
--- 'univ'; the state 𝑠 is not part of that contract yet, so it is threaded
--- through untouched.
-atom :: T.Text -> Expression -> Expression -> State -> ReduceContext -> IO (Expression, State)
-atom func self univ state ctx = case registeredAtom ctx._atoms func of
+-- Morph a term that is not part of the program, the way 'reduction' in
+-- 'Dataize' dataizes one: bound to a synthetic attribute of the universe and
+-- reduced there (see 'insideUniverse'), since 𝕄 takes normal forms only and an
+-- operand taken out of a formation as it was written is not necessarily one.
+-- This is what an 'evaluate' operand of a λ function is reduced with, and the
+-- dataizing sibling of it reaches 'Dataize' through '_reduce'.
+morphing :: Expression -> ReduceContext -> Expression -> State -> IO (Expression, State)
+morphing univ ctx expr state = do
+  (universe, aiming) <- insideUniverse expr univ ctx
+  (morphed, _, state') <- morph universe state aiming
+  pure (morphed, state')
+
+-- phino implements no λ function of its own. Which ones exist is a property of
+-- the object model being reduced, not of the calculus, so they come from the
+-- '--symbolic' file, where each is an entry phino answers the firing with
+-- itself (see 'Lambdas'). The entry is looked up by the λ name and there is at
+-- most one, since the keys are unique; a name no entry answers has no λ
+-- function to fire at all, and 𝔼 gets stuck on it — the one behaviour left
+-- here. The formation 'self' is the one 𝔼 fired against, its λ binding already
+-- removed, so the entry may name the attributes of it; the universe 'univ' is
+-- what every operand of it is reduced inside. What comes back is the raw term
+-- the entry answers with: normalizing it is 𝔼's business, and the deep walk
+-- wants it as it was written.
+--
+-- The firing writes itself into the protocol as it goes: the entry that
+-- answered first, then each operand as it is reduced, then the answer. Whatever
+-- fires inside an operand writes itself between those lines, one level deeper,
+-- which is what makes the protocol a tree of firings rather than a list of
+-- them.
+symbol :: T.Text -> Expression -> Expression -> State -> ReduceContext -> IO (Expression, State)
+symbol func self univ state caller = case matched caller._symbolic func of
   Nothing -> throwIO (Stuck func)
-  Just registered -> do
-    raw <- fireAtom func registered self univ (ctx._reduce univ ctx)
-    pure (raw, state)
+  Just entry -> do
+    caller._saveEval (EvFiring caller._nesting func)
+    let ctx = caller{_nesting = caller._nesting + 1}
+    (bound, dataized) <- foldM (down ctx) (substEmpty, state) entry._dataized
+    (bound', evaluated) <- foldM (through ctx) (bound, dataized) entry._evaluated
+    answered ctx entry bound' evaluated
+  where
+    -- Bring one 'dataize' operand down through 𝔻 and bind the bytes meta that
+    -- names it. An operand 𝔻 could not bring down to data — a site '_partial'
+    -- parked — leaves the firing with nothing to bind, so it gets stuck like a
+    -- λ function no entry answers at all. Every symbol dataizes to the very
+    -- same datum, so the protocol is told which unknown that datum was
+    -- manufactured for rather than the datum itself (see 'State').
+    down :: ReduceContext -> (Subst, State) -> (Meta, Expression) -> IO (Subst, State)
+    down ctx (bound, state') (meta, term) = do
+      (value, state'') <- ctx._reduce univ ctx (operand term) state'{_manufactured = Nothing}
+      case value of
+        Nothing -> throwIO (Stuck func)
+        Just bytes -> do
+          ctx._saveEval (EvData ctx._nesting meta._spelling (maybe (Right bytes) Left state''._manufactured))
+          bound' <- bind meta (MvBytes bytes) bound
+          pure (bound', state'')
+    -- Reduce one 'evaluate' operand through 𝕄 and bind the expression meta that
+    -- names it. Unlike a dataized one it may stay an unknown: a term carrying a
+    -- symbol is a perfectly good normal form, and standing it into the answer
+    -- is how a firing hands its own unknowns on.
+    through :: ReduceContext -> (Subst, State) -> (Meta, Expression) -> IO (Subst, State)
+    through ctx (bound, state') (meta, term) = do
+      (normal, state'') <- morphing univ ctx (operand term) state'
+      ctx._saveEval (EvTerm ctx._nesting meta._spelling normal)
+      bound' <- bind meta (MvExpression normal) bound
+      pure (bound', state'')
+    -- Mint the fresh symbols the answer asks for and build it. A bare 𝜎 stands
+    -- for an unknown nobody has named yet, so each one is bound to the next
+    -- symbol the run has not minted, and the state counts them, which is what
+    -- keeps two firings from spelling two unknowns alike.
+    answered :: ReduceContext -> Lambda -> Subst -> State -> IO (Expression, State)
+    answered ctx entry bound state' = do
+      let (fresh, spent) = minted entry._answer state'._minted
+      symbolic <- foldM mint bound fresh
+      built <- buildExpressionThrows entry._answer symbolic
+      ctx._saveEval (EvAnswer ctx._nesting built)
+      pure (built, state'{_minted = spent})
+    mint :: Subst -> (Slot, Function) -> IO Subst
+    mint bound (slot, fresh) = case combine (substSlot slot (MvFunction fresh)) bound of
+      Just bound' -> pure bound'
+      Nothing -> throwIO (userError (printf "A fresh symbol of λ function '%s' clashes with an existing binding" (T.unpack func)))
+    -- The operand an entry wrote, in the scope it is reduced in: ξ stands for
+    -- the formation being fired, so '$.x' is the x of it, and the calculus does
+    -- the reaching.
+    operand :: Expression -> Expression
+    operand = (`contextualize` self)
+    bind :: Meta -> MetaValue -> Subst -> IO Subst
+    bind meta value bound = case combine (substSingle meta._name value) bound of
+      Just bound' -> pure bound'
+      Nothing ->
+        throwIO
+          (userError (printf "The meta '%s' of λ function '%s' clashes with an existing binding" (T.unpack meta._spelling) (T.unpack func)))
 
 -- Augment the injected, context-free term builder with the dataization and
--- morphing operations that need the universe: 'evaluate' applies an atom and
+-- morphing operations that need the universe: 'evaluate' fires a λ function and
 -- 'morph' morphs a sub-expression. 𝔼 ('evaluate') takes the universe as an
 -- explicit second expression argument, while 𝕄 ('morph') is handed the threaded
 -- 'univ'. Every other function is delegated unchanged. This is the matcher's
@@ -587,22 +685,18 @@ execBuildTerm _ ctx "evaluate" = \args subst -> fst <$> _evaluate ctx emptyState
 execBuildTerm univ ctx "morph" = \args subst -> fst <$> _morph univ ctx emptyState args subst
 execBuildTerm _ ctx func = _buildTerm ctx func
 
--- The Evaluation function 𝔼(b, e, s): it fires the λ atom of a formation 'b'
--- against the global universe 'e', under the incoming state 𝑠, normalizes the
--- atom's raw result 𝒩(e₁) = n, and returns that normal form together with the
--- new state. Normalizing here makes 𝔼's codomain 𝓝 (as its type demands), so
+-- The Evaluation function 𝔼(b, e, s): it fires the λ function of a formation
+-- 'b' against the global universe 'e', under the incoming state 𝑠, normalizes
+-- its raw result 𝒩(e₁) = n, and returns that normal form together with the new
+-- state. Normalizing here makes 𝔼's codomain 𝓝 (as its type demands), so
 -- callers ('fire', 'ml') need no follow-up 'normalize' premise. The universe is
 -- passed explicitly as the second argument (rather than threaded behind the
 -- scenes), matching how the morphing 𝕄 and dataization 𝔻 functions carry it.
--- Every firing is reported to '_saveEval', which the '--evaluations' option
--- turns into one record per line. The reported result is the normal form 𝔼
--- returns, never the atom's raw answer, so the protocol and the caller see the
--- same term. Firings are reported in the order they complete, so the atom of a
--- head reduced by 'ml' is reported before the one dispatched on its result. A
--- firing that gets stuck is reported too, with no result, when the run is a
--- partial evaluation rather than a failure ('_partial'): the site is what the
--- caller wants to learn then. The report is made before the signal goes on to
--- the spine, where 'parking' attaches the derivation to it.
+-- Every firing writes itself into the protocol the '--protocol' option keeps
+-- (see 'symbol'). Firings are written in the order they start, so the λ
+-- function of a head reduced by 'ml' stands above the one dispatched on its
+-- result; that order carries nothing, since what depends on what is read off
+-- the symbols.
 _evaluate :: ReduceContext -> State -> BuildTermMethodS
 _evaluate ctx state [ArgExpression expr, ArgExpression universe] subst = do
   form <- buildExpressionThrows expr subst
@@ -610,24 +704,17 @@ _evaluate ctx state [ArgExpression expr, ArgExpression universe] subst = do
   case form of
     ExFormation bds -> case lambda bds of
       Just (func, args) -> do
-        (raw, state') <- atom func args univ state ctx `catch` parked func args
+        (raw, state') <- symbol func args univ state ctx
         (normal, _) <- normalized raw ((univ, Nothing) :| []) ctx
-        ctx._saveEval (Evaluation func args (Just normal))
         pure (TeExpression normal, state')
       Nothing -> throwIO (userError "Function evaluate() expects a formation with a λ binding")
     _ -> throwIO (userError "Function evaluate() expects a formation")
-  where
-    parked :: T.Text -> Expression -> ReduceException -> IO a
-    parked func args failure@(Stuck _) = do
-      when ctx._partial (ctx._saveEval (Evaluation func args Nothing))
-      throwIO failure
-    parked _ _ failure = throwIO failure
 _evaluate _ _ _ _ = throwIO (userError "Function evaluate() requires exactly 2 expression arguments")
 
 -- The Morphing function 𝕄 exposed as a build-term function so a rule can morph
 -- a sub-expression in its 'where' (the 'md' and 'ma' rules morph
 -- the head before re-attaching it). The step chain is discarded: the producing
--- rule splices the surrounding normalization steps itself, and a stuck atom met
+-- rule splices the surrounding normalization steps itself, and a stuck λ met
 -- on the way leaves without it (see 'unparked'). The state is threaded through
 -- and the new state returned alongside the morphed term.
 _morph :: Expression -> ReduceContext -> State -> BuildTermMethodS

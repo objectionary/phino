@@ -1,11 +1,10 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 # SPDX-License-Identifier: MIT
 ---
+# 'mf' hands a bare saturated λ-formation back and leaves firing it to 𝔻;
+# the walk fires it and stands the symbol it answered with in its place.
 location: 'Q.@'
 model: true
-atoms: true
+symbolic: true
 input: '[[ x -> 5.plus( 6 ) ]]'
-result: |
-  [[ x -> Q.number(
-    φ -> Φ.bytes( φ ↦ ⟦ Δ ⤍ 40-26-00-00-00-00-00-00 ⟧ )
-  ) ]]
+result: '[[ x -> Q.number( φ -> ⟦ λ ⤍ 𝜎1 ⟧ ) ]]'

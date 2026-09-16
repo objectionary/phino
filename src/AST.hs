@@ -12,14 +12,15 @@ module AST where
 
 import Data.Bits (xor)
 import Data.List (foldl')
+import Data.Maybe (listToMaybe)
 import Data.Text (Text)
 import qualified Data.Text as T
 import GHC.Generics (Generic)
 
--- An anonymous meta-variable, written bare — 𝜏, 𝐵, 𝑒, 𝑛, 𝑘, 𝛿, 𝑓 or 𝑖 with
--- no index after it. It matches whatever term stands in its place and no rule
+-- An anonymous meta-variable, written bare — 𝜏, 𝐵, 𝑒, 𝑛, 𝑘, 𝛿, 𝑓, 𝜎 or 𝑖
+-- with no index after it. It matches whatever term stands in its place and no rule
 -- can name it afterwards, so it is known only by the kind it was written as
--- ('t', 'B', 'e', 'n', 'k', 'd', 'F', 'i') and by the offset it was written
+-- ('t', 'B', 'e', 'n', 'k', 'd', 'F', 'S', 'i') and by the offset it was written
 -- at, which tells it apart from every other anonymous meta of the same term.
 data Slot = Slot Text Int
   deriving (Eq, Ord, Show)
@@ -86,6 +87,17 @@ data Function
   = Function Text
   | FnMeta Text
   | FnAny Slot
+  | {- | A symbol 𝜎1 — a λ function nothing answers, which is what makes the
+    value the term it stands in carries unknown. It is a name and not a
+    meta-variable: no substitution ever binds it and the matcher never reads
+    it, while 'FnMeta' 𝑓1 stands for any λ name at all, a symbol included.
+    -}
+    FnSymbol Int
+  | {- | A symbol written bare, 𝜎, which is an answer asking for a fresh one.
+    The slot it was written at tells two of them apart inside one answer, so
+    each is minted its own name (see 'minted' in 'Lambdas').
+    -}
+    FnFresh Slot
   deriving (Eq, Generic, Show, Ord)
 
 instance Show Attribute where
@@ -175,6 +187,51 @@ hashExpression = goExpr fnvOffset
       Function t -> hashText (step h 16) t
       FnMeta t -> hashText (step h 29) t
       FnAny slot -> goSlot (step h 37) slot
+      FnSymbol idx -> step (step h 38) idx
+      FnFresh slot -> goSlot (step h 39) slot
+
+-- Every symbol a term carries, in the order it was written. A symbol is what
+-- makes the value a term stands for unknown, and the run reads the
+-- dependencies between its firings off them: a term carrying 𝜎4 is the term
+-- the firing that minted 𝜎4 answered with, whatever it has been rewritten
+-- into since.
+symbols :: Expression -> [Int]
+symbols = goExpr
+  where
+    goExpr :: Expression -> [Int]
+    goExpr (ExFormation bds) = concatMap goBinding bds
+    goExpr (ExApplication expr arg) = goExpr expr ++ goArgument arg
+    goExpr (ExDispatch expr _) = goExpr expr
+    goExpr (ExPhiMeet _ _ expr) = goExpr expr
+    goExpr (ExPhiAgain _ _ expr) = goExpr expr
+    goExpr _ = []
+    goBinding :: Binding -> [Int]
+    goBinding (BiTau _ expr) = goExpr expr
+    goBinding (BiLambda (FnSymbol idx)) = [idx]
+    goBinding _ = []
+    goArgument :: Argument -> [Int]
+    goArgument (ArTau _ expr) = goExpr expr
+    goArgument (ArAlpha _ expr) = goExpr expr
+
+-- The symbol a term stands for, if its value is one at all. A term carries its
+-- value where the φ chain ends, so that is the only place a symbol names this
+-- term: one sitting under ρ, or inside an operand, belongs to the term it was
+-- minted for and says nothing about this one. This is how a firing is read as
+-- the answer of an earlier firing.
+denoted :: Expression -> Maybe Int
+denoted = goExpr
+  where
+    goExpr :: Expression -> Maybe Int
+    goExpr (ExFormation bds) = listToMaybe (concatMap goBinding bds)
+    goExpr (ExApplication _ (ArTau AtPhi expr)) = goExpr expr
+    goExpr (ExApplication expr _) = goExpr expr
+    goExpr (ExPhiMeet _ _ expr) = goExpr expr
+    goExpr (ExPhiAgain _ _ expr) = goExpr expr
+    goExpr _ = Nothing
+    goBinding :: Binding -> [Int]
+    goBinding (BiLambda (FnSymbol idx)) = [idx]
+    goBinding (BiTau AtPhi expr) = maybe [] pure (goExpr expr)
+    goBinding _ = []
 
 countNodes :: Expression -> Int
 countNodes (ExFormation bds) = 1 + sum (map nodesInBinding bds) + length bds

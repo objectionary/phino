@@ -36,6 +36,7 @@ import Text.Megaparsec
 import Text.Megaparsec.Char
 import qualified Text.Megaparsec.Char.Lexer as L
 import Text.Printf (printf)
+import Text.Read (readMaybe)
 
 type Parser = Parsec Void String
 
@@ -140,6 +141,19 @@ metaVar ch uni = do
         then Left (Slot (T.singleton ch) offset)
         else Right (T.pack (ch : suf))
     )
+
+-- A symbol standing where a λ name stands: 𝜎1, a name nothing answers, or a
+-- bare 𝜎, which asks for a fresh one. It is spelled the way every meta of the
+-- calculus is spelled, indexed or not, so 'metaVar' reads it, but what comes
+-- back is a name and not a meta-variable: an index becomes the symbol it
+-- numbers and a bare one the slot that tells it apart from its siblings.
+sigma :: Parser Function
+sigma = metaVar 'S' "𝜎" >>= either (pure . FnFresh) numbered
+  where
+    numbered :: T.Text -> Parser Function
+    numbered named = case readMaybe (T.unpack (T.drop 1 named)) of
+      Just idx -> pure (FnSymbol idx)
+      Nothing -> fail (printf "the symbol '%s' is numbered by something that is not an integer" (T.unpack named))
 
 byte :: Parser String
 byte = do
@@ -314,7 +328,7 @@ binding =
     , try metaBinding
     , do
         _ <- try lambda
-        BiLambda <$> choice [Function . T.pack <$> function, either FnAny FnMeta <$> metaVar 'F' "𝑓"]
+        BiLambda <$> choice [Function . T.pack <$> function, try (either FnAny FnMeta <$> metaVar 'F' "𝑓"), sigma]
     , do
         attr <- attribute
         choice

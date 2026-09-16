@@ -154,7 +154,7 @@ spec = do
       [
         ( "builds a lambda binding from a bound function meta"
         , BiLambda (FnMeta "f")
-        , substSingle "f" (MvFunction "Func")
+        , substSingle "f" (MvFunction (Function "Func"))
         , Right [BiLambda (Function "Func")]
         )
       ,

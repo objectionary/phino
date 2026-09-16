@@ -320,7 +320,7 @@ spec = do
       , ("MvExpression", [Subst (Map.singleton (Named "e") (MvExpression ExRoot))], (SWEET, UNICODE, MULTILINE, defaultMargin), "e >> Φ")
       , ("MvBytes", [Subst (Map.singleton (Named "b") (MvBytes (BtOne "1F")))], (SWEET, UNICODE, MULTILINE, defaultMargin), "b >> 1F-")
       , ("MvBindings", [Subst (Map.singleton (Named "bnd") (MvBindings [BiVoid (AtLabel "y")]))], (SWEET, UNICODE, MULTILINE, defaultMargin), "bnd >> ⟦ y ↦ ∅ ⟧")
-      , ("MvFunction", [Subst (Map.singleton (Named "f") (MvFunction "func"))], (SWEET, UNICODE, MULTILINE, defaultMargin), "f >> func")
+      , ("MvFunction", [Subst (Map.singleton (Named "f") (MvFunction (Function "func")))], (SWEET, UNICODE, MULTILINE, defaultMargin), "f >> func")
       ,
         ( "keys of a multi-entry substitution are sorted and each is on its own line"
         , [Subst (Map.fromList [(Named "a", MvIndex 1), (Named "b", MvIndex 2)])]
