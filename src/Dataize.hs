@@ -170,29 +170,22 @@ bytesProducer _ = const Nothing
 -- What a 'dataize' premise of a λ function reduces one of its operands with
 -- (see 'ReductionFunc' in 'Morph'): the operand is bound to a synthetic
 -- attribute of the universe and dataized there, exactly the way the '--inside'
--- option does it, so the bytes come back as a Δ formation — or, where a λ
--- function on the way could not fire and '_partial' parked it, the node the
--- premise named, taken out of the residue at the synthetic attribute. The
--- residue is the whole synthetic universe, and binding a meta to it would hand
--- the entry a copy of the universe per operand, thousands of bytes around the
--- one node it asked about (#1167); nothing is lost by trimming it, since the
--- rest of that residue is the universe the firing already stands in.
--- An operand reaches a firing unreduced, since reducing it may take the very λ
--- function being fired, so it is reduced here, on demand, and not before. The
--- context is the one the fire descended with, so the step budget of the run
--- bounds the nesting, and the state 𝑠 goes in and comes back out, so the
--- symbols this reduction mints are counted in the same sequence as the ones
--- around it.
+-- option does it, so what comes back is the data the operand carries. Where a
+-- λ function on the way could not fire and '_partial' parked it, the operand
+-- never came down to data at all and the premise asking for it is left
+-- undischarged, which is the entry declining to answer rather than a failure
+-- of the run. An operand reaches a firing unreduced, since reducing it may
+-- take the very λ function being fired, so it is reduced here, on demand, and
+-- not before. The context is the one the fire descended with, so the step
+-- budget of the run bounds the nesting, and the state 𝑠 goes in and comes back
+-- out, so the symbols this reduction mints are counted in the same sequence as
+-- the ones around it.
 reduction :: ReductionFunc
 reduction univ ctx expr state = do
   (universe, aiming) <- insideUniverse expr univ ctx
   (outcome, _, state') <- dataize universe state aiming
-  reduced aiming._locator outcome >>= \answer -> pure (answer, state')
+  pure (reached outcome, state')
   where
-    -- The bytes come back as the formation that carries them, spelled the way
-    -- the parser spells one, void ρ and all: a λ function of '--functions'
-    -- compares what it reduced against terms its own file writes, so the two
-    -- have to be the same term when they say the same thing.
-    reduced :: Expression -> Outcome -> IO Expression
-    reduced _ (Dataized bytes) = pure (ExFormation [BiDelta bytes, BiVoid AtRho])
-    reduced locator (Residual residue) = locatedExpression locator residue
+    reached :: Outcome -> Maybe Bytes
+    reached (Dataized bytes) = Just bytes
+    reached (Residual _) = Nothing

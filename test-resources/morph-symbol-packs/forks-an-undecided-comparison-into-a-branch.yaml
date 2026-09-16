@@ -3,21 +3,40 @@
 ---
 # The whole point of answering a λ function with a rule rather than with a
 # result: 'L_bytes_eq' declines to decide the comparison and answers an unknown,
-# so the fork it guards cannot pick a branch either. 'L_fork' morphs both of
-# them — which is where the bracketed records come from — and answers an unknown
-# of its own, standing for whichever branch the comparison turns out to take.
-# The guard comes down through 𝔻 and lands on the symbol the comparison minted,
-# which is what the protocol reports it as.
+# so the fork it guards cannot pick a branch either. Its first two entries ask
+# 𝔻 for the data the guard carries and neither gets any — the stuck record is
+# where it ran out — so both decline without morphing a branch at all. The last
+# entry asks for no data, morphs the two branches — which is where the
+# bracketed records come from — and answers an unknown of its own, standing for
+# whichever branch the comparison turns out to take.
 functions: |
   - λ: L_bytes_eq
     symbols: [𝑓0]
     𝑛: ⟦ λ ⤍ 𝑓0 ⟧
   - λ: L_fork
     dataize:
-      𝑛1: guard
+      δ1: guard
     morph:
-      𝑛2: left
-      𝑛3: right
+      𝑛1: left
+    when:
+      eq:
+        - δ1
+        - FF-
+    𝑛: 𝑛1
+  - λ: L_fork
+    dataize:
+      δ1: guard
+    morph:
+      𝑛2: right
+    when:
+      eq:
+        - δ1
+        - 00-
+    𝑛: 𝑛2
+  - λ: L_fork
+    morph:
+      𝑛1: left
+      𝑛2: right
     symbols: [𝑓1]
     𝑛: ⟦ λ ⤍ 𝑓1 ⟧
 location: 'Q.@'
@@ -37,9 +56,9 @@ input: |
 protocol:
   - '{"λ":"L_bytes_eq","𝑓0":"S_1"}'
   - '{"λ":"S_1","stuck":true}'
+  - '{"λ":"L_fork","morph":"𝑛1","at":"begin"}'
+  - '{"λ":"L_fork","morph":"𝑛1","at":"end"}'
   - '{"λ":"L_fork","morph":"𝑛2","at":"begin"}'
   - '{"λ":"L_fork","morph":"𝑛2","at":"end"}'
-  - '{"λ":"L_fork","morph":"𝑛3","at":"begin"}'
-  - '{"λ":"L_fork","morph":"𝑛3","at":"end"}'
-  - '{"λ":"L_fork","𝑛1":"S_1","𝑓1":"S_2"}'
+  - '{"λ":"L_fork","𝑓1":"S_2"}'
 result: '[[ L> S_2 ]]'

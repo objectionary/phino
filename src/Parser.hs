@@ -51,11 +51,12 @@ data PhiParser = PhiParser
   , _index :: Parser (Either Slot T.Text)
   , _binding :: Parser Binding
   , _expression :: Parser Expression
+  , _bytes :: Parser Bytes
   , _string :: Parser String
   }
 
 phiParser :: PhiParser
-phiParser = PhiParser attribute alpha indexVar binding expression quotedStr
+phiParser = PhiParser attribute alpha indexVar binding expression bytes quotedStr
 
 instance Show ParserException where
   show CouldNotParseExpression{..} = printf "Couldn't parse given phi expression, cause: %s" message

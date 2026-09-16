@@ -3,20 +3,20 @@
 ---
 # An entry computes with the very build-term functions a rewriting rule's
 # 'where' calls, so the arithmetic EO's 'number.plus' needs is spelled in the
-# file and not in phino: both operands come down through 𝔻 and 'sum' adds the
-# numbers their bytes carry.
+# file and not in phino: both operands come down through 𝔻, which answers the
+# data they carry, and 'sum' adds the numbers that data spells.
 functions: |
   - λ: L_number_plus
     dataize:
-      𝑛1: ρ
-      𝑛2: x
+      δ1: ρ
+      δ2: x
     where:
-      - meta: 𝑛3
+      - meta: 𝑛1
         function: sum
         args:
-          - 𝑛1
-          - 𝑛2
-    𝑛: 𝑛3
+          - δ1
+          - δ2
+    𝑛: 𝑛1
 location: 'Q.@'
 deep: true
 input: |
@@ -26,5 +26,5 @@ input: |
     @ -> 5.plus( 6 )
   ]]
 protocol:
-  - '{"λ":"L_number_plus","𝑛1":"40-14-00-00-00-00-00-00","𝑛2":"40-18-00-00-00-00-00-00"}'
+  - '{"λ":"L_number_plus","δ1":"40-14-00-00-00-00-00-00","δ2":"40-18-00-00-00-00-00-00"}'
 result: 'Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 40-26-00-00-00-00-00-00 ⟧ ) )'

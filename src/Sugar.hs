@@ -277,6 +277,7 @@ instance ToSalty COMPARABLE where
   toSalty comp@CMP_ATTR{} = comp
   toSalty CMP_EXPR{..} = CMP_EXPR (toSalty expr)
   toSalty CMP_NUM{..} = CMP_NUM (toSalty num)
+  toSalty bts@CMP_BYTES{} = bts
 
 instance ToSalty CONDITION where
   toSalty CO_BELONGS{..} = CO_BELONGS attr belongs (toSalty set)

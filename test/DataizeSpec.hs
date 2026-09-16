@@ -257,7 +257,7 @@ spec = do
     it "reports the firing that succeeded with its operands and the stuck site without them" $ do
       (_, reports) <- partially known "2.plus(3).nope"
       reports
-        `shouldBe` [ "{\"λ\":\"L_number_plus\",\"𝑛1\":\"40-00-00-00-00-00-00-00\",\"𝑛2\":\"40-08-00-00-00-00-00-00\"}"
+        `shouldBe` [ "{\"λ\":\"L_number_plus\",\"δ1\":\"40-00-00-00-00-00-00-00\",\"δ2\":\"40-08-00-00-00-00-00-00\"}"
                    , "{\"λ\":\"L_number_nope\",\"stuck\":true}"
                    ]
     it "leaves an unanswered λ function dataized directly as the whole residue" $ do

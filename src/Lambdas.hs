@@ -14,17 +14,19 @@
 --
 -- > - λ: L_bytes_eq
 -- >   dataize:
--- >     𝑛1: ρ
--- >     𝑛2: x
+-- >     δ1: ρ
+-- >     δ2: x
 -- >   symbols: [𝑓0]
 -- >   𝑛: Φ.bool( if ↦ ⟦ guard ↦ ⟦ λ ⤍ 𝑓0 ⟧, λ ⤍ L_fork ⟧ )
 --
 -- The 'λ' of an entry is a regular expression over λ names, matching the whole
 -- name, so a plain name means that one function while 'L_box_[0-9]+_number'
--- stands for a family of them. 'dataize' reduces the named attributes of the
--- formation being fired through 𝔻 and 'morph' through 𝕄, each a dotted path
--- down that formation, binding the meta that names it; 'symbols' binds its
--- metas to fresh λ names, counted in the state 𝑠; 'where' calls a build-term
+-- stands for a family of them. 'dataize' and 'morph' each name a dotted path
+-- down the formation being fired and bind the meta that names it: 𝔻 answers
+-- data, so a 'dataize' operand binds a bytes meta δ1, while 𝕄 answers a normal
+-- form, so a 'morph' one binds an expression meta 𝑛1 — the way every rule of
+-- 'resources' already spells the two premises apart. 'symbols' binds its metas
+-- to fresh λ names, counted in the state 𝑠; 'where' calls a build-term
 -- function, as a rewriting rule's does; 'when' guards the entry; and '𝑛' is
 -- the term the firing answers with, normalized before it is handed back.
 --
@@ -59,7 +61,7 @@ import Data.Text.Encoding (encodeUtf8)
 import qualified Data.Yaml as Yaml
 import Deps (State)
 import Logger (logDebug)
-import Parser (parseBinding, parseExpression)
+import Parser (parseBinding, parseBytes, parseExpression)
 import Printer (printAttribute)
 import Text.Printf (printf)
 import Text.Read (readMaybe)
@@ -70,8 +72,9 @@ import Yaml (Condition, Extra, referenceless)
 -- One meta an entry of the file binds: the name the file spells it with, which
 -- is the name the protocol of '--evaluations' reports it back under, and the
 -- name a substitution keeps it under, which is the one 𝜑-calculus gives it.
--- The two differ — '𝑛1' against 'n1' — so an entry is read through the very
--- parser a rewriting rule's pattern is read through and never guesses.
+-- The two differ — '𝑛1' against 'n1', 'δ1' against 'd1' — so an entry is read
+-- through the very parser a rewriting rule's pattern is read through and never
+-- guesses.
 data Meta = Meta
   { _spelling :: Text
   , _name :: Text
@@ -112,8 +115,8 @@ instance FromJSON Lambda where
     key <- entry .: "λ"
     lambda <-
       Lambda key
-        <$> paths entry "dataize"
-        <*> paths entry "morph"
+        <$> paths bytesMeta entry "dataize"
+        <*> paths expressionMeta entry "morph"
         <*> (entry .:? "symbols" .!= [] >>= mapM functionMeta)
         <*> entry .:? "when"
         <*> entry .:? "where" .!= []
@@ -125,19 +128,25 @@ instance FromJSON Lambda where
     where
       -- The metas one block of an entry binds, each paired with the dotted
       -- path down the formation it is reduced from, ordered by the name of the
-      -- meta: a YAML mapping keeps no order of its own, so naming the metas
-      -- 𝑛1, 𝑛2, … is what reduces them the way they are written.
-      paths :: Object -> Key -> Yaml.Parser [(Meta, Text)]
-      paths entry name = do
+      -- meta: a YAML mapping keeps no order of its own, so numbering the metas
+      -- δ1, δ2, … and 𝑛1, 𝑛2, … is what reduces them the way they are written.
+      paths :: (Text -> Yaml.Parser Meta) -> Object -> Key -> Yaml.Parser [(Meta, Text)]
+      paths kind entry name = do
         mapping <- entry .:? name .!= (Map.empty :: Map Text Text)
-        mapM (\(meta, path) -> expressionMeta meta >>= \bound -> pure (bound, path)) (Map.toAscList mapping)
-      -- The meta a 'dataize' or 'morph' block binds: '𝑛1' is written the way
-      -- 𝜑-calculus writes it and stands for the same meta a rule's 'pattern'
-      -- would bind, so the parser of the calculus is what reads it here too.
+        mapM (\(meta, path) -> kind meta >>= \bound -> pure (bound, path)) (Map.toAscList mapping)
+      -- The meta a 'morph' block binds: '𝑛1' is written the way 𝜑-calculus
+      -- writes it and stands for the same meta a rule's 'pattern' would bind,
+      -- so the parser of the calculus is what reads it here too.
       expressionMeta :: Text -> Yaml.Parser Meta
       expressionMeta meta = case parseExpression (T.unpack meta) of
         Right (ExMeta name) -> pure (Meta meta name)
         _ -> fail (printf "The operand '%s' is not an expression meta, such as '𝑛1'" (T.unpack meta))
+      -- The meta a 'dataize' block binds, which is a bytes meta and not an
+      -- expression one, since what 𝔻 answers is data and nothing else.
+      bytesMeta :: Text -> Yaml.Parser Meta
+      bytesMeta meta = case parseBytes (T.unpack meta) of
+        Right (BtMeta name) -> pure (Meta meta name)
+        _ -> fail (printf "The operand '%s' is not a bytes meta, such as 'δ1'" (T.unpack meta))
       -- The same for a function meta, which 𝜑-calculus spells only as the λ
       -- binding it stands in for.
       functionMeta :: Text -> Yaml.Parser Meta

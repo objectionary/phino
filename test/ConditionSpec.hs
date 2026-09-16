@@ -5,7 +5,7 @@
 
 module ConditionSpec where
 
-import AST (Attribute (AtLabel, AtMeta), Binding (BiMeta), Expression (ExDispatch, ExMeta, ExRoot))
+import AST (Attribute (AtLabel, AtMeta), Binding (BiMeta), Bytes (BtEmpty, BtMeta, BtOne), Expression (ExDispatch, ExMeta, ExRoot))
 import Condition
 import Control.Exception (SomeException)
 import Control.Monad (forM_)
@@ -28,6 +28,9 @@ spec = do
       , "matches(\"hello(\\\"\\u0000)\", !e)"
       , "part-of ( [[ x -> 1 ]] , !B ) "
       , "not(formation(!n1))"
+      , "eq(!d1, !d2)"
+      , "eq(!d1, FF-)"
+      , "eq(!d1, --)"
       ]
       (\expr -> it expr (parseCondition expr `shouldSatisfy` isRight))
 
@@ -43,6 +46,9 @@ spec = do
       , ("or(absolute(!e1), nf(Q.x))", Y.Or [Y.Absolute (ExMeta "e1"), Y.NF (ExDispatch ExRoot (AtLabel "x"))])
       , ("and(matches(\"hi\", !e1),part-of(!e1, !B1))", Y.And [Y.Matches "hi" (ExMeta "e1"), Y.PartOf (ExMeta "e1") (BiMeta "B1")])
       , ("not(formation(!n1))", Y.Not (Y.IsFormation (ExMeta "n1")))
+      , ("eq(!d1,!d2)", Y.Eq (Y.CmpBytes (BtMeta "d1")) (Y.CmpBytes (BtMeta "d2")))
+      , ("eq(!d1,FF-)", Y.Eq (Y.CmpBytes (BtMeta "d1")) (Y.CmpBytes (BtOne "FF")))
+      , ("eq(!d1,--)", Y.Eq (Y.CmpBytes (BtMeta "d1")) (Y.CmpBytes BtEmpty))
       ]
       (\(expr, res) -> it expr (parseCondition expr `shouldBe` Right res))
 

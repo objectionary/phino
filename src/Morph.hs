@@ -49,10 +49,12 @@ type Morphed = (Expression, NonEmpty Rewritten)
 -- whole run of 𝔻 — a judgment 𝕄 has no business knowing about, since
 -- 'Dataize' imports 'Morph' and not the other way round. The reduction is
 -- therefore injected into the context, the way 'Deps' injects '_buildTerm',
--- and 'Dataize' supplies its own 'reduction' for it. The state 𝑠 goes in and
--- comes back out, so the symbols a nested run mints are counted in the same
--- sequence as the ones around it.
-type ReductionFunc = Expression -> ReduceContext -> Expression -> State -> IO (Expression, State)
+-- and 'Dataize' supplies its own 'reduction' for it. What comes back is data
+-- or nothing at all, since an operand 𝔻 could not bring down to bytes leaves
+-- the premise that asked for them undischarged. The state 𝑠 goes in and comes
+-- back out, so the symbols a nested run mints are counted in the same sequence
+-- as the ones around it.
+type ReductionFunc = Expression -> ReduceContext -> Expression -> State -> IO (Maybe Bytes, State)
 
 -- The initial, empty state a run of 𝕄 or 𝔻 starts from. The 'State' type itself
 -- lives in 'Deps' next to 'BuildTermMethod'.
@@ -593,15 +595,16 @@ morphing univ ctx expr state = do
   (morphed, _, state') <- morph universe state aiming
   pure (morphed, state')
 
--- What the entries answering one λ name have reduced so far: every operand
--- already taken, under the judgment that took it and the dotted path that
--- names it, and the state the last of those reductions left behind. Entries
--- are tried in turn and each one names its own operands, so without this the
--- operands two entries share would be reduced twice — reported to the protocol
--- twice and, where the reduction mints symbols of its own, under two different
--- names.
+-- What the entries answering one λ name have reduced so far: the data 𝔻
+-- brought each dotted path down to, or nothing where it could not; the normal
+-- form 𝕄 brought each one to; and the state the last of those reductions left
+-- behind. Entries are tried in turn and each one names its own operands, so
+-- without this the operands two entries share would be reduced twice —
+-- reported to the protocol twice and, where the reduction mints symbols of its
+-- own, under two different names.
 data Reduced = Reduced
-  { _already :: Map.Map (T.Text, T.Text) Expression
+  { _data :: Map.Map T.Text (Maybe Bytes)
+  , _terms :: Map.Map T.Text Expression
   , _left :: State
   }
 
@@ -619,56 +622,74 @@ data Reduced = Reduced
 -- What comes back is the raw term the entry answers with: normalizing it is
 -- 𝔼's business, and the deep walk wants it as it was written.
 symbol :: T.Text -> Expression -> Expression -> State -> ReduceContext -> IO (Expression, State)
-symbol func self univ state ctx = go (matched ctx._functions func) (Reduced Map.empty state)
+symbol func self univ state ctx = go (matched ctx._functions func) (Reduced Map.empty Map.empty state)
   where
     go :: [Lambda] -> Reduced -> IO (Expression, State)
     go [] _ = throwIO (Stuck func)
     go (entry : rest) known = do
-      (bound, told, known') <- operands entry known
-      held <- maybe (pure [bound]) (\cond -> meetCondition cond [bound] rules) entry._when
-      case held of
-        [] -> go rest known'
-        guarded : _ -> answered entry guarded told known'._left
+      (bound, known') <- operands entry known
+      held <- case bound of
+        Nothing -> pure []
+        Just (subst, _) -> maybe (pure [subst]) (\cond -> meetCondition cond [subst] rules) entry._when
+      case (held, bound) of
+        (guarded : _, Just (_, told)) -> answered entry guarded told known'._left
+        _ -> go rest known'
     rules :: RuleContext
     rules = RuleContext (execBuildTerm univ ctx)
     -- Reduce every operand the entry names, binding the meta that names it: a
-    -- 'dataize' path through 𝔻, which ends in a byte formation or, where the
-    -- operand is an unknown the run cannot decide, in whatever '_partial'
-    -- parked at; a 'morph' path through 𝕄. A 'dataize' operand is told to the
-    -- protocol next to the firing, since a byte array and a stuck λ both have a
-    -- spelling of their own; a 'morph' one is a whole term and has none, so it
-    -- is bracketed instead and whatever fires inside it stands between the two
-    -- records.
-    operands :: Lambda -> Reduced -> IO (Subst, [(T.Text, T.Text)], Reduced)
+    -- 'dataize' path through 𝔻, which binds the data it came down to, and a
+    -- 'morph' path through 𝕄, which binds the normal form it reached. An
+    -- operand 𝔻 could not bring down to data — an unknown the run cannot
+    -- decide — discharges no premise, so the entry does not hold and the next
+    -- one is tried, the way a rule of 'resources/dataization' does not apply
+    -- when its 'd-result' premise cannot be met. Nothing is morphed once that
+    -- has happened, since the entry is already out. A 'dataize' operand is told
+    -- to the protocol next to the firing, since a byte array has a spelling of
+    -- its own; a 'morph' one is a whole term and has none, so it is bracketed
+    -- instead and whatever fires inside it stands between the two records.
+    operands :: Lambda -> Reduced -> IO (Maybe (Subst, [(T.Text, T.Text)]), Reduced)
     operands entry known = do
-      (bound, told, after) <- foldM dataized (substEmpty, [], known) entry._dataized
-      (bound', after') <- foldM morphed (bound, after) entry._morphed
-      pure (bound', told, after')
-    dataized :: (Subst, [(T.Text, T.Text)], Reduced) -> (Meta, T.Text) -> IO (Subst, [(T.Text, T.Text)], Reduced)
-    dataized (bound, told, known) (meta, path) = do
-      (value, known') <- reduced "dataize" path known (ctx._reduce univ ctx)
-      bound' <- bind meta (MvExpression value) bound
-      pure (bound', told ++ [(meta._spelling, spelling) | spelling <- maybeToList (carried (MvExpression value))], known')
+      (bound, told, after) <- foldM dataized (Just substEmpty, [], known) entry._dataized
+      case bound of
+        Nothing -> pure (Nothing, after)
+        Just subst -> do
+          (bound', after') <- foldM morphed (subst, after) entry._morphed
+          pure (Just (bound', told), after')
+    dataized :: (Maybe Subst, [(T.Text, T.Text)], Reduced) -> (Meta, T.Text) -> IO (Maybe Subst, [(T.Text, T.Text)], Reduced)
+    dataized (Nothing, told, known) _ = pure (Nothing, told, known)
+    dataized (Just bound, told, known) (meta, path) = do
+      (value, known') <- dataOf path known
+      case value of
+        Nothing -> pure (Nothing, told, known')
+        Just bytes -> do
+          bound' <- bind meta (MvBytes bytes) bound
+          pure (Just bound', told ++ [(meta._spelling, spelling) | spelling <- maybeToList (carried (MvBytes bytes))], known')
     morphed :: (Subst, Reduced) -> (Meta, T.Text) -> IO (Subst, Reduced)
     morphed (bound, known) (meta, path) = do
-      (value, known') <- reduced "morph" path known bracketed
+      (value, known') <- termOf path known
       bound' <- bind meta (MvExpression value) bound
       pure (bound', known')
       where
+        termOf :: T.Text -> Reduced -> IO (Expression, Reduced)
+        termOf path' known' = case Map.lookup path' known'._terms of
+          Just value -> pure (value, known')
+          Nothing -> do
+            (value, current) <- operand path' >>= \term -> bracketed term known'._left
+            pure (value, known'{_terms = Map.insert path' value known'._terms, _left = current})
         bracketed :: Expression -> State -> IO (Expression, State)
         bracketed term current = do
           ctx._saveEval (EvOpening func meta._spelling)
           (morphed', current') <- morphing univ ctx term current
           ctx._saveEval (EvClosing func meta._spelling)
           pure (morphed', current')
-    -- The operand under the dotted path, reduced by the named judgment unless
-    -- an entry tried before this one has reduced it already.
-    reduced :: T.Text -> T.Text -> Reduced -> (Expression -> State -> IO (Expression, State)) -> IO (Expression, Reduced)
-    reduced judgment path known reduce = case Map.lookup (judgment, path) known._already of
+    -- The data the operand under the dotted path came down to, unless an entry
+    -- tried before this one has already taken it down there.
+    dataOf :: T.Text -> Reduced -> IO (Maybe Bytes, Reduced)
+    dataOf path known = case Map.lookup path known._data of
       Just value -> pure (value, known)
       Nothing -> do
-        (value, current) <- operand path >>= \term -> reduce term known._left
-        pure (value, Reduced (Map.insert (judgment, path) value known._already) current)
+        (value, current) <- operand path >>= \term -> ctx._reduce univ ctx term known._left
+        pure (value, known{_data = Map.insert path value known._data, _left = current})
     -- The node the formation being fired holds under the dotted path an entry
     -- names. A path nothing carries, or one that ends at a void attribute, has
     -- no operand to reduce: the entry names an attribute the object model does

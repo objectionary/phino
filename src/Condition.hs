@@ -76,7 +76,8 @@ comparable =
   choice
     [ try $ Y.CmpNum <$> number
     , try $ Y.CmpAttr <$> _attribute phiParser
-    , Y.CmpExpr <$> _expression phiParser
+    , try $ Y.CmpExpr <$> _expression phiParser
+    , Y.CmpBytes <$> _bytes phiParser
     ]
 
 condition :: Parser Y.Condition

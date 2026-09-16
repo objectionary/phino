@@ -53,18 +53,24 @@ spec = do
   -- parsed or dataized, so a mistake in it never surfaces half-way through a
   -- derivation.
   describe "readLambdas" $ do
-    it "reads the metas an entry binds under the names 𝜑-calculus gives them" $
-      registered "- λ: L_plus\n  dataize:\n    𝑛2: x\n    𝑛1: ρ\n  𝑛: 𝑛1\n" $ \known ->
+    it "reads the metas an entry dataizes under the names 𝜑-calculus gives them" $
+      registered "- λ: L_plus\n  dataize:\n    δ2: x\n    δ1: ρ\n  𝑛: ⟦ Δ ⤍ δ1 ⟧\n" $ \known ->
         concatMap (map (\(meta, path) -> (meta._spelling, meta._name, path)) . (._dataized)) (matched known "L_plus")
+          `shouldBe` [("δ1", "d1", "ρ"), ("δ2", "d2", "x")]
+    it "reads the metas an entry morphs under the names 𝜑-calculus gives them" $
+      registered "- λ: L_plus\n  morph:\n    𝑛2: x\n    𝑛1: ρ\n  𝑛: 𝑛1\n" $ \known ->
+        concatMap (map (\(meta, path) -> (meta._spelling, meta._name, path)) . (._morphed)) (matched known "L_plus")
           `shouldBe` [("𝑛1", "n1", "ρ"), ("𝑛2", "n2", "x")]
     it "refuses a key that is no regular expression" $
       unreadable "- λ: 'L_[('\n  𝑛: ⟦ Δ ⤍ 00- ⟧\n" "is not a regular expression"
-    it "refuses an operand named by something other than an expression meta" $
-      unreadable "- λ: L_plus\n  dataize:\n    δ1: ρ\n  𝑛: ⟦ Δ ⤍ 00- ⟧\n" "is not an expression meta"
+    it "refuses a dataized operand named by something other than a bytes meta" $
+      unreadable "- λ: L_plus\n  dataize:\n    𝑛1: ρ\n  𝑛: ⟦ Δ ⤍ 00- ⟧\n" "is not a bytes meta"
+    it "refuses a morphed operand named by something other than an expression meta" $
+      unreadable "- λ: L_plus\n  morph:\n    δ1: ρ\n  𝑛: ⟦ Δ ⤍ 00- ⟧\n" "is not an expression meta"
     it "refuses a symbol named by something other than a function meta" $
       unreadable "- λ: L_plus\n  symbols: [𝑛1]\n  𝑛: ⟦ Δ ⤍ 00- ⟧\n" "is not a function meta"
     it "refuses an entry with no answer under 𝑛" $
-      unreadable "- λ: L_plus\n  dataize:\n    𝑛1: ρ\n" "cannot be read"
+      unreadable "- λ: L_plus\n  dataize:\n    δ1: ρ\n" "cannot be read"
     it "refuses a file that is no list of entries at all" $
       unreadable "λ: L_plus\n" "cannot be read"
 

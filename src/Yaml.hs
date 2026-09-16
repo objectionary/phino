@@ -95,6 +95,7 @@ instance FromJSON Comparable where
       [ CmpAttr <$> parseJSON v
       , CmpNum <$> parseJSON v
       , CmpExpr <$> parseJSON v
+      , CmpBytes <$> parseJSON v
       ]
 
 instance FromJSON Condition where
@@ -202,6 +203,7 @@ data Comparable
   = CmpAttr Attribute
   | CmpNum Number
   | CmpExpr Expression
+  | CmpBytes Bytes
   deriving (Eq, Generic, Show)
 
 data Condition
@@ -263,6 +265,7 @@ instance Slots Comparable where
   slots (CmpAttr attr) = slots attr
   slots (CmpNum num) = slots num
   slots (CmpExpr expr) = slots expr
+  slots (CmpBytes bts) = slots bts
 
 instance Slots Number where
   slots (AnyIndex slot) = [slot]

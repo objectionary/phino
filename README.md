@@ -110,15 +110,15 @@ written in the very language `phino`'s own judgments are written in:
 ```yaml
 - λ: L_number_plus
   dataize:
-    𝑛1: ρ
-    𝑛2: x
+    δ1: ρ
+    δ2: x
   where:
-    - meta: 𝑛3
+    - meta: 𝑛1
       function: sum
       args:
-        - 𝑛1
-        - 𝑛2
-  𝑛: 𝑛3
+        - δ1
+        - δ2
+  𝑛: 𝑛1
 ```
 
 The `λ` of an entry names the λ function it answers, the blocks under it reduce
@@ -141,11 +141,14 @@ $ phino dataize --functions=functions.yaml sum.phi
 An entry takes six keys, of which only `λ` and `𝑛` are required:
 
 * `dataize` reduces the named operands through 𝔻 and binds each to its meta,
-  so `𝑛1: ρ` says "dataize the ρ of the formation being fired and call the
-  result 𝑛1". The result is the formation carrying the bytes, `⟦ Δ ⤍ … ⟧`.
+  so `δ1: ρ` says "dataize the ρ of the formation being fired and call the data
+  it comes down to δ1". What 𝔻 answers is data, so the meta is a bytes meta and
+  not an expression one, the way every `dataize` premise in `resources/` binds
+  its `d-result`. An operand that does not come down to data discharges no
+  premise, so the entry does not hold and the next one is tried.
 * `morph` does the same through 𝕄, so what it binds is a term rather than a
-  datum: `𝑛1: φ` is how a box hands its content back without insisting that the
-  content be data.
+  datum, under an expression meta: `𝑛1: φ` is how a box hands its content back
+  without insisting that the content be data.
 * `symbols` mints a fresh λ name for each of its metas, which is how a λ
   function answers that it cannot decide (see below).
 * `when` guards the entry, with the same conditions a rewriting rule's `when`
@@ -161,8 +164,8 @@ fired, read left to right and split on the dot, which no attribute of
 formation or an application to go on into, so `ρ.length` goes two deep, and an
 argument of an application binds an attribute the way a τ binding does, so
 `x.if.guard` reaches the `guard` of `x ↦ Φ.bool( if ↦ ⟦ guard ↦ … ⟧ )`. The
-metas are reduced in the order of their names, which is why they are called
-𝑛1, 𝑛2, … : a YAML mapping keeps no order of its own.
+metas are reduced in the order of their names, which is why they are numbered
+δ1, δ2, … and 𝑛1, 𝑛2, … : a YAML mapping keeps no order of its own.
 
 Each `λ` is a regular expression, and it must match the whole name, so a plain
 name such as `L_number_plus` means that one λ function and nothing else, while
@@ -183,18 +186,35 @@ one that answers. So a comparison is a guard and not a function:
 ```yaml
 - λ: L_bytes_eq
   dataize:
-    𝑛1: ρ
-    𝑛2: x
+    δ1: ρ
+    δ2: x
   when:
     eq:
-      - 𝑛1
-      - 𝑛2
+      - δ1
+      - δ2
   𝑛: Φ.true
 - λ: L_bytes_eq
   dataize:
-    𝑛1: ρ
-    𝑛2: x
+    δ1: ρ
+    δ2: x
   𝑛: Φ.false
+```
+
+Branching on data is the same idea: an entry asks 𝔻 for the data an operand
+carries and guards on it, and the entry that asks for none is what answers when
+no data comes:
+
+```yaml
+- λ: L_fork
+  dataize:
+    δ1: guard
+  morph:
+    𝑛1: left
+  when:
+    eq:
+      - δ1
+      - FF-
+  𝑛: 𝑛1
 ```
 
 A name no key matches, and a name every guard declines, both leave 𝔼 with
@@ -218,18 +238,38 @@ rather than random, which keeps a symbolic run reproducible:
   𝑛: ⟦ λ ⤍ 𝑓0 ⟧
 - λ: L_fork
   dataize:
-    𝑛1: guard
+    δ1: guard
   morph:
-    𝑛2: left
-    𝑛3: right
+    𝑛1: left
+  when:
+    eq:
+      - δ1
+      - FF-
+  𝑛: 𝑛1
+- λ: L_fork
+  dataize:
+    δ1: guard
+  morph:
+    𝑛2: right
+  when:
+    eq:
+      - δ1
+      - 00-
+  𝑛: 𝑛2
+- λ: L_fork
+  morph:
+    𝑛1: left
+    𝑛2: right
   symbols: [𝑓1]
   𝑛: ⟦ λ ⤍ 𝑓1 ⟧
 ```
 
 Here `L_bytes_eq` declines to decide the comparison, so the fork it guards
-cannot pick a branch either: `L_fork` morphs both branches — neither is
-dataized, since neither is demanded — and answers an unknown of its own,
-standing for whichever branch the comparison turns out to take:
+cannot pick a branch either: the two entries of `L_fork` that ask 𝔻 for the
+data of the guard get none and decline without morphing a branch at all, and
+the last one, which asks for no data, morphs both branches and answers an
+unknown of its own, standing for whichever branch the comparison turns out to
+take:
 
 ```bash
 $ cat fork.phi
@@ -278,7 +318,7 @@ with:
 $ phino dataize --functions=functions.yaml --evaluations=fired.json --quiet \
     sum.phi
 $ cat fired.json
-{"λ":"L_number_plus","𝑛1":"40-14-00-00-00-00-00-00","𝑛2":"40-18-00-00-00-00-00-00"}
+{"λ":"L_number_plus","δ1":"40-14-00-00-00-00-00-00","δ2":"40-18-00-00-00-00-00-00"}
 ```
 
 A byte array is spelled in hex and a λ name as text, so a reader of the file
@@ -289,11 +329,11 @@ and whatever fires inside it stands between them:
 ```json
 {"λ":"L_bytes_eq","𝑓0":"S_1"}
 {"λ":"S_1","stuck":true}
+{"λ":"L_fork","morph":"𝑛1","at":"begin"}
+{"λ":"L_fork","morph":"𝑛1","at":"end"}
 {"λ":"L_fork","morph":"𝑛2","at":"begin"}
 {"λ":"L_fork","morph":"𝑛2","at":"end"}
-{"λ":"L_fork","morph":"𝑛3","at":"begin"}
-{"λ":"L_fork","morph":"𝑛3","at":"end"}
-{"λ":"L_fork","𝑛1":"S_1","𝑓1":"S_2"}
+{"λ":"L_fork","𝑓1":"S_2"}
 ```
 
 A firing that got stuck and survived in the residual program of a partial
@@ -336,8 +376,8 @@ file, as a record naming the function alone, since there is nothing it bound:
 $ phino dataize --functions=functions.yaml --partial --evaluations=fired.json \
     --quiet --sweet --hide-rho partial.phi
 $ cat fired.json
-{"λ":"L_number_plus","𝑛1":"40-00-00-00-00-00-00-00","𝑛2":"40-08-00-00-00-00-00-00"}
-{"λ":"L_number_plus","𝑛1":"40-14-00-00-00-00-00-00","𝑛2":"40-10-00-00-00-00-00-00"}
+{"λ":"L_number_plus","δ1":"40-00-00-00-00-00-00-00","δ2":"40-08-00-00-00-00-00-00"}
+{"λ":"L_number_plus","δ1":"40-14-00-00-00-00-00-00","δ2":"40-10-00-00-00-00-00-00"}
 {"λ":"L_number_as_bool","stuck":true}
 ```
 

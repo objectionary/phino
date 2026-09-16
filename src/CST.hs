@@ -225,6 +225,7 @@ data COMPARABLE
   = CMP_ATTR {attr :: ATTRIBUTE}
   | CMP_EXPR {expr :: EXPRESSION}
   | CMP_NUM {num :: NUMBER}
+  | CMP_BYTES {bytes :: BYTES}
   deriving (Eq, Show)
 
 data CONDITION
@@ -583,6 +584,7 @@ instance ToCST Y.Comparable COMPARABLE where
   toCST (Y.CmpAttr attr) _ = CMP_ATTR (attributeToCST attr)
   toCST (Y.CmpExpr expr) _ = CMP_EXPR (expressionToCST expr)
   toCST (Y.CmpNum num) _ = CMP_NUM (numberToCST num)
+  toCST (Y.CmpBytes bts) _ = CMP_BYTES (toCST' bts)
 
 instance ToCST Y.Number NUMBER where
   toCST (Y.MetaIndex mt) _ = IDX_META (META NO_EXCL I (metaTail mt))

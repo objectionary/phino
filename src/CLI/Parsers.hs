@@ -220,7 +220,7 @@ optFunctions =
         ( long "functions"
             <> metavar "FILE"
             <> help
-              "Path to the YAML file of λ functions this run may fire, a list of entries each keyed by a regular expression over λ names, tried top to bottom, saying which operands of the firing to reduce under \"dataize\" and \"morph\", which metas to bind to fresh symbols under \"symbols\", what to guard the entry with under \"when\" and what term to answer with under \"𝑛\""
+              "Path to the YAML file of λ functions this run may fire, a list of entries each keyed by a regular expression over λ names, tried top to bottom, saying which operands of the firing to bring down to data under \"dataize\" (binding a bytes meta δ1) and which to reduce to a normal form under \"morph\" (binding an expression meta 𝑛1), which metas to bind to fresh symbols under \"symbols\", what to guard the entry with under \"when\" and what term to answer with under \"𝑛\""
         )
     )
 

@@ -93,6 +93,7 @@ instance ToASCII COMPARABLE where
   toASCII CMP_ATTR{..} = CMP_ATTR (toASCII attr)
   toASCII CMP_EXPR{..} = CMP_EXPR (toASCII expr)
   toASCII CMP_NUM{..} = CMP_NUM (toASCII num)
+  toASCII bts@CMP_BYTES{} = bts
 
 instance ToASCII CONDITION where
   toASCII CO_BELONGS{..} = CO_BELONGS (toASCII attr) belongs (toASCII set)

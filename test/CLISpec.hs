@@ -1188,7 +1188,7 @@ spec = do
             withStdin "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6) ]]" $
               testCLISucceeded ["dataize", functions, "--evaluations=" ++ path, "--quiet"] []
             records <- readUtf8 path
-            records `shouldBe` "{\"λ\":\"L_number_plus\",\"𝑛1\":\"40-14-00-00-00-00-00-00\",\"𝑛2\":\"40-18-00-00-00-00-00-00\"}\n"
+            records `shouldBe` "{\"λ\":\"L_number_plus\",\"δ1\":\"40-14-00-00-00-00-00-00\",\"δ2\":\"40-18-00-00-00-00-00-00\"}\n"
 
       it "writes a record for every firing" $
         withFixture $ \functions ->
@@ -1198,8 +1198,8 @@ spec = do
               testCLISucceeded ["dataize", functions, "--evaluations=" ++ path, "--quiet"] []
             records <- readUtf8 path
             lines records
-              `shouldBe` [ "{\"λ\":\"L_number_plus\",\"𝑛1\":\"40-14-00-00-00-00-00-00\",\"𝑛2\":\"40-18-00-00-00-00-00-00\"}"
-                         , "{\"λ\":\"L_number_plus\",\"𝑛1\":\"40-26-00-00-00-00-00-00\",\"𝑛2\":\"40-1C-00-00-00-00-00-00\"}"
+              `shouldBe` [ "{\"λ\":\"L_number_plus\",\"δ1\":\"40-14-00-00-00-00-00-00\",\"δ2\":\"40-18-00-00-00-00-00-00\"}"
+                         , "{\"λ\":\"L_number_plus\",\"δ1\":\"40-26-00-00-00-00-00-00\",\"δ2\":\"40-1C-00-00-00-00-00-00\"}"
                          ]
 
       it "keeps the records of a run that fails" $
@@ -1211,7 +1211,7 @@ spec = do
                 ["dataize", functions, "--evaluations=" ++ path, "--quiet"]
                 ["No entry of --functions answers the λ function 'L_number_nope'"]
             records <- readUtf8 path
-            records `shouldBe` "{\"λ\":\"L_number_plus\",\"𝑛1\":\"40-14-00-00-00-00-00-00\",\"𝑛2\":\"40-18-00-00-00-00-00-00\"}\n"
+            records `shouldBe` "{\"λ\":\"L_number_plus\",\"δ1\":\"40-14-00-00-00-00-00-00\",\"δ2\":\"40-18-00-00-00-00-00-00\"}\n"
 
       it "truncates the records left over from the previous run" $
         withTempFileContent "evaluationsXXXXXX.json" "{\"λ\":\"L_number_plus\"}\n" $ \path -> do
@@ -1253,7 +1253,7 @@ spec = do
               testCLISucceeded ["dataize", functions, "--partial", "--evaluations=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
             records <- readUtf8 path
             lines records
-              `shouldBe` [ "{\"λ\":\"L_number_plus\",\"𝑛1\":\"40-00-00-00-00-00-00-00\",\"𝑛2\":\"40-08-00-00-00-00-00-00\"}"
+              `shouldBe` [ "{\"λ\":\"L_number_plus\",\"δ1\":\"40-00-00-00-00-00-00-00\",\"δ2\":\"40-08-00-00-00-00-00-00\"}"
                          , "{\"λ\":\"L_number_nope\",\"stuck\":true}"
                          ]
 
@@ -1479,7 +1479,7 @@ spec = do
           withStdin chained $
             testCLISucceeded ["morph", functions, "--locator=Q.@", "--evaluations=" ++ path, "--quiet"] []
           records <- readUtf8 path
-          lines records `shouldBe` ["{\"λ\":\"L_number_plus\",\"𝑛1\":\"40-14-00-00-00-00-00-00\",\"𝑛2\":\"40-18-00-00-00-00-00-00\"}"]
+          lines records `shouldBe` ["{\"λ\":\"L_number_plus\",\"δ1\":\"40-14-00-00-00-00-00-00\",\"δ2\":\"40-18-00-00-00-00-00-00\"}"]
 
     it "saves morphing steps to dir with --steps-dir" $
       withFixture $ \functions ->
