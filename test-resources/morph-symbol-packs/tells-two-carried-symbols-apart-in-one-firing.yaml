@@ -1,0 +1,27 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# Both operands of the firing are symbols the program came in with, and both
+# dataize to the very same 42. Only the protocol tells them apart: it writes
+# the symbol each datum was manufactured for, so 𝜎2 and 𝜎5 stay two unknowns
+# and not one.
+symbolic: |
+  - λ: L_number_plus
+    dataize:
+      𝛿1: $.ρ
+      𝛿2: $.x
+    𝑛: Φ.number( φ ↦ ⟦ λ ⤍ 𝜎 ⟧ )
+location: 'Q.@'
+deep: true
+input: >
+  ⟦ bytes(φ) ↦ ⟦⟧,
+    number(φ) ↦ ⟦ plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧,
+    @ ↦ Φ.number( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ).plus(
+          Φ.number( φ ↦ ⟦ λ ⤍ 𝜎5 ⟧ ) ) ⟧
+result: 'Φ.number( φ ↦ ⟦ λ ⤍ 𝜎6, ρ ↦ ∅ ⟧ )'
+protocol: |
+  M(Φ.φ)
+    E(L_number_plus)
+      𝛿1.1 := D(𝜎2)
+      𝛿2.1 := D(𝜎5)
+      𝑛.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎6 ⟧ )
