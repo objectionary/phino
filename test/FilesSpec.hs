@@ -3,18 +3,27 @@
 
 module FilesSpec where
 
-import Control.Exception (bracket, try)
+import Control.Exception (ErrorCall, bracket, try)
 import Control.Monad (forM_, void)
+import Data.ByteString qualified as BS
 import Data.List (sort)
+import Data.Text qualified as T
+import Data.Text.Encoding qualified as TE
 import Data.Time.Clock.POSIX (getPOSIXTime)
-import Files (FsException (..), allPathsIn, ensuredFile)
+import Files (FsException (..), allPathsIn, ensuredFile, overwrite)
 import System.Directory
   ( createDirectoryIfMissing
+  , executable
+  , getPermissions
   , getTemporaryDirectory
+  , listDirectory
   , removeDirectoryRecursive
+  , setOwnerExecutable
+  , setPermissions
   )
 import System.FilePath ((</>))
-import Test.Hspec (Spec, describe, it, shouldBe, shouldSatisfy)
+import System.Info (os)
+import Test.Hspec (Spec, describe, it, pendingWith, shouldBe, shouldReturn, shouldSatisfy)
 
 exceptionPath :: FsException -> FilePath
 exceptionPath (FileDoesNotExist file) = file
@@ -40,6 +49,30 @@ spec = do
         let path = dir </> "existing.txt"
         writeFile path "content"
         ensuredFile path >>= (`shouldBe` path)
+
+  describe "overwrite" $ do
+    it "replaces the content of an existing file with utf-8 bytes" $ withScratchDir $ \dir -> do
+      let path = dir </> "φ-replaced.phi"
+      BS.writeFile path (TE.encodeUtf8 (T.pack "{⟦ x ↦ ξ.y ⟧}"))
+      overwrite path "{⟦ ψ ↦ Φ.org.eolang ⟧}"
+      TE.decodeUtf8 <$> BS.readFile path `shouldReturn` T.pack "{⟦ ψ ↦ Φ.org.eolang ⟧}"
+    it "keeps the previous content when the new one fails half-way" $ withScratchDir $ \dir -> do
+      let path = dir </> "kept.phi"
+      BS.writeFile path (TE.encodeUtf8 (T.pack "{⟦ original ↦ ∅ ⟧}"))
+      void (try (overwrite path ("{⟦ partial ↦ " ++ error "broken content")) :: IO (Either ErrorCall ()))
+      TE.decodeUtf8 <$> BS.readFile path `shouldReturn` T.pack "{⟦ original ↦ ∅ ⟧}"
+    it "leaves no temporary file when the new content fails half-way" $ withScratchDir $ \dir -> do
+      BS.writeFile (dir </> "lonely.phi") BS.empty
+      void (try (overwrite (dir </> "lonely.phi") (replicate 100000 'ω' ++ error "broken tail")) :: IO (Either ErrorCall ()))
+      listDirectory dir `shouldReturn` ["lonely.phi"]
+    it "keeps the executable permission of the replaced file" $ withScratchDir $ \dir -> do
+      let path = dir </> "script.sh"
+      BS.writeFile path BS.empty
+      getPermissions path >>= setPermissions path . setOwnerExecutable True
+      overwrite path "#!/bin/sh\necho ∀"
+      if os == "mingw32"
+        then pendingWith "Windows derives the executable permission from the file extension"
+        else executable <$> getPermissions path `shouldReturn` True
 
   describe "allPathsIn" $ do
     it "collects every leaf file path recursively" $ withScratchDir $ \dir -> do

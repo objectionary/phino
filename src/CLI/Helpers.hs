@@ -19,7 +19,7 @@ import Data.List (intercalate, nub)
 import Data.Maybe
 import Deps (SaveEvalFunc, SaveStepFunc, dontSaveEval, saveEval, saveStep)
 import Encoding
-import Files (ensuredFile)
+import Files (ensuredFile, overwrite)
 import Functions (execFunctions)
 import LaTeX (LatexContext (LatexContext), defaultMeetLength, defaultMeetPopularity, expressionToLaTeX, rewrittensToLatex)
 import Lining (LineFormat (SINGLELINE))
@@ -229,5 +229,5 @@ printOut target content = case target of
     putStrLn content
   Just file -> do
     logDebug (printf "The option '--target' is specified, printing to '%s'..." file)
-    writeFile file content
+    overwrite file content
     logDebug (printf "The command result was saved in '%s'" file)

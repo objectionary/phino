@@ -22,6 +22,7 @@ import Data.Maybe (fromJust, isJust, isNothing)
 import qualified Data.Text as T
 import Dataize
 import Encoding
+import Files (overwrite)
 import qualified Filter as F
 import Functions (buildTerm)
 import LaTeX (explainContextualizeRules, explainDataizeRules, explainMorphRules, explainRules)
@@ -112,13 +113,13 @@ runRewrite OptsRewrite{..} = do
     output target expr = case (_inPlace, target, _inputFile) of
       (True, _, Just file) -> do
         logDebug (printf "The option '--in-place' is specified, writing back to '%s'..." file)
-        writeFile file expr
+        overwrite file expr
         logDebug (printf "The file '%s' was modified in-place" file)
       (True, _, Nothing) ->
         error "The option --in-place requires an input file"
       (False, Just file, _) -> do
         logDebug (printf "The option '--target' is specified, printing to '%s'..." file)
-        writeFile file expr
+        overwrite file expr
         logDebug (printf "The command result was saved in '%s'" file)
       (False, Nothing, _) -> do
         logDebug "The option '--target' is not specified, printing to console..."
