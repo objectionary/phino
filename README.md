@@ -117,11 +117,11 @@ given with `--symbolic`, one entry per λ function:
 The `λ` of an entry is the λ names it answers for, as a regular expression, so
 the one above stands for `L_number_plus` and `L_number_times`. Under `dataize`
 stand the operands it brings down to data through 𝔻, each binding a bytes meta
-`𝛿1`, `𝛿2` and so on; under `evaluate` the operands it reduces to a normal form
-through 𝕄, each binding an expression meta `𝑛1`, `𝑛2`. Both blocks are terms of
-the calculus, read against the formation being fired, so `ξ` is that formation
-and `$.x` its `x`, while `Φ` is the universe. Every entry numbers its own metas
-from `𝛿1` and `𝑛1`, and the entry is what tells two `𝛿1` apart.
+`𝛿1`, `𝛿2` and so on; under `evaluate` the operands it reduces to a normal
+form through 𝕄, each binding an expression meta `𝑛1`, `𝑛2`. Both blocks are
+terms of the calculus, read against the formation being fired, so `ξ` is that
+formation and `$.x` its `x`, while `Φ` is the universe. Every entry numbers its
+own metas from `𝛿1` and `𝑛1`, and the entry is what tells two `𝛿1` apart.
 
 The term under `𝑛` is what the firing answers with. `phino` normalizes it
 exactly as it normalizes anything else, so `--protocol`, `--partial` and
@@ -135,13 +135,13 @@ not `phino`'s, so an entry answers a term carrying a symbol standing for a
 value nobody worked out, and the data its `dataize` operands came down to is
 not its to read. An answer mentioning a `𝛿` is refused where the file is read.
 
-`𝜎` is a meta of the calculus, beside `𝑛`, `𝛿` and `𝑓`, and it stands where a
-λ name stands. In a term, `𝜎1` is a concrete symbol: a λ function nothing
-answers, which is what makes the value the term carries unknown. In an answer,
-a bare `𝜎` asks for a fresh one, minted as the firing happens and numbered by
-the run, so no two unknowns are ever spelled alike. Minting starts after the
-symbols the program already carries, so a run over the 𝜑-program an earlier run
-wrote never spells a fresh symbol like one already standing there.
+`𝜎` is a meta of the calculus, beside `𝑛`, `𝛿` and `𝑓`, and it stands where
+a λ name stands. In a term, `𝜎1` is a concrete symbol: a λ function nothing
+answers, which is what makes the value the term carries unknown. In an answer, a
+bare `𝜎` asks for a fresh one, minted as the firing happens and numbered by the
+run, so no two unknowns are ever spelled alike. Minting starts after the symbols
+the program already carries, so a run over the 𝜑-program an earlier run wrote
+never spells a fresh symbol like one already standing there.
 
 Dataizing a symbol never gets stuck. It answers a fixed datum, 42
 (`40-45-00-00-00-00-00-00`), the same one for every symbol, so 𝔻 always
@@ -278,10 +278,10 @@ M(Φ.demo.a)
     𝑛.6 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎6 ⟧ )
 ```
 
-`𝜎3` is minted by the second firing and consumed by the third as `D(𝜎3)`, `𝜎4`
-by the third and consumed by the last, `𝜎2` by the first and consumed by the
-fork. `𝜎5` is minted and never consumed, which is how a reader sees that the
-right branch was computed and thrown away. The two `evaluate` lines of
+`𝜎3` is minted by the second firing and consumed by the third as `D(𝜎3)`,
+`𝜎4` by the third and consumed by the last, `𝜎2` by the first and consumed by
+the fork. `𝜎5` is minted and never consumed, which is how a reader sees that
+the right branch was computed and thrown away. The two `evaluate` lines of
 `E(L_fork)` are recorded although nothing fires under them, since they are the
 only edge from the fork back to the branch it answered with: without them
 `𝑛.5 := 𝑛1.1` would name a meta nothing ever bound.

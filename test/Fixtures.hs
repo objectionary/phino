@@ -13,6 +13,7 @@ module Fixtures
   , lambdasFile
   , loopingLambdas
   , primitives
+  , readUtf8
   , recorded
   , withLambdas
   , withLambdasOf
@@ -23,10 +24,10 @@ where
 import AST (Expression (ExRoot))
 import CLI.Helpers (withEvalFunc)
 import CLI.Types (IOFormat (PHI), PrintContext (PrintCtx))
-import Control.Exception (bracket)
+import Control.Exception (bracket, evaluate)
 import Data.ByteString qualified as BS
 import Data.Text qualified as T
-import Data.Text.Encoding (decodeUtf8, encodeUtf8)
+import Data.Text.Encoding (encodeUtf8)
 import Dataize (reduction)
 import Deps (SaveEvalFunc, dontSaveEval, dontSaveStep)
 import Functions (buildTerm)
@@ -35,7 +36,7 @@ import Lining (LineFormat (MULTILINE))
 import Morph (ReduceContext (..), Steps (..))
 import Sugar (SugarType (SWEET))
 import System.Directory (getTemporaryDirectory, removePathForcibly)
-import System.IO (Handle, hClose, openBinaryTempFile)
+import System.IO (Handle, IOMode (ReadMode), hClose, hGetContents, hSetEncoding, openBinaryTempFile, utf8, withFile)
 import XMIR (defaultXmirContext)
 
 -- The context every reduction of a spec starts from. Shuffle is enabled so the
@@ -115,8 +116,8 @@ recorded :: (SaveEvalFunc -> IO a) -> IO (a, [String])
 recorded action =
   withTemp "phino-protocol-.txt" BS.empty $ \path -> do
     answer <- withEvalFunc (Just path) printing action
-    written <- BS.readFile path
-    pure (answer, lines (T.unpack (decodeUtf8 written)))
+    written <- readUtf8 path
+    pure (answer, lines written)
   where
     -- The protocol flattens every term itself, so the only thing this context
     -- decides is that the terms are 𝜑 and not XMIR.
@@ -140,6 +141,20 @@ recorded action =
         Nothing
         Nothing
         PHI
+
+-- Read a text file phino wrote, in the encoding it wrote it with. The whole
+-- content is forced before the handle closes, since a lazy read of a closed
+-- handle answers nothing. The file is read as text and not as bytes, so the
+-- line terminator the platform writes is the one it reads back: on Windows
+-- every line of a text file ends CRLF, and a case asserting the content of one
+-- has no business seeing that.
+readUtf8 :: FilePath -> IO String
+readUtf8 path =
+  withFile path ReadMode $ \stream -> do
+    hSetEncoding stream utf8
+    content <- hGetContents stream
+    _ <- evaluate (length content)
+    pure content
 
 -- Write the content to a fresh temporary file, hand its path to the action and
 -- delete the file afterwards.

@@ -15,7 +15,7 @@ import Data.List (intercalate, isInfixOf, isPrefixOf, sort)
 import Data.Time.Clock (addUTCTime, getCurrentTime)
 import Data.Time.Clock.POSIX (getPOSIXTime)
 import Data.Version (showVersion)
-import Fixtures (lambdasFile, loopingLambdas)
+import Fixtures (lambdasFile, loopingLambdas, readUtf8)
 import GHC.IO.Handle
 import Paths_phino (version)
 import System.Directory (createDirectoryIfMissing, doesDirectoryExist, doesFileExist, getTemporaryDirectory, listDirectory, removeDirectoryRecursive, removeFile, removePathForcibly, setModificationTime)
@@ -91,14 +91,6 @@ withTempDirectory prefix action = do
   stamp <- getPOSIXTime
   let dir = tmp </> (prefix ++ "-" ++ show (round (stamp * 1000000) :: Integer))
   bracket (pure dir) removePathForcibly action
-
-readUtf8 :: FilePath -> IO String
-readUtf8 path =
-  withFile path ReadMode $ \stream -> do
-    hSetEncoding stream utf8
-    content <- hGetContents stream
-    _ <- evaluate (length content)
-    pure content
 
 testCLI' :: [String] -> [String] -> Either ExitCode () -> Expectation
 testCLI' args outputs exit = do
