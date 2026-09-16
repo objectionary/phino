@@ -15,9 +15,9 @@ functions: |
     𝑛: ⟦ λ ⤍ 𝑓0 ⟧
   - λ: L_fork
     dataize:
-      δ1: guard
+      δ1: $.guard
     morph:
-      𝑛1: left
+      𝑛1: $.left
     when:
       eq:
         - δ1
@@ -25,9 +25,9 @@ functions: |
     𝑛: 𝑛1
   - λ: L_fork
     dataize:
-      δ1: guard
+      δ1: $.guard
     morph:
-      𝑛2: right
+      𝑛2: $.right
     when:
       eq:
         - δ1
@@ -35,8 +35,8 @@ functions: |
     𝑛: 𝑛2
   - λ: L_fork
     morph:
-      𝑛1: left
-      𝑛2: right
+      𝑛1: $.left
+      𝑛2: $.right
     symbols: [𝑓1]
     𝑛: ⟦ λ ⤍ 𝑓1 ⟧
 location: 'Q.@'

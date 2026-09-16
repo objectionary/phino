@@ -12,8 +12,7 @@ import Control.Monad (forM_, (>=>))
 import Data.List (isInfixOf)
 import Data.Text qualified as T
 import Fixtures (withFunctionsOf)
-import Lambdas (Lambda (..), Lambdas, Meta (..), attributeOf, emptyLambdas, matched, minted, readLambdas)
-import Parser (parseExpressionThrows)
+import Lambdas (Lambda (..), Lambdas, Meta (..), emptyLambdas, matched, minted, readLambdas)
 import Test.Hspec
 
 -- Read the given λ functions the way '--functions' reads them, out of a file
@@ -54,50 +53,33 @@ spec = do
   -- derivation.
   describe "readLambdas" $ do
     it "reads the metas an entry dataizes under the names 𝜑-calculus gives them" $
-      registered "- λ: L_plus\n  dataize:\n    δ2: x\n    δ1: ρ\n  𝑛: ⟦ Δ ⤍ δ1 ⟧\n" $ \known ->
-        concatMap (map (\(meta, path) -> (meta._spelling, meta._name, path)) . (._dataized)) (matched known "L_plus")
-          `shouldBe` [("δ1", "d1", "ρ"), ("δ2", "d2", "x")]
+      registered "- λ: L_plus\n  dataize:\n    δ2: $.x\n    δ1: $.ρ\n  𝑛: ⟦ Δ ⤍ δ1 ⟧\n" $ \known ->
+        concatMap (map (\(meta, _) -> (meta._spelling, meta._name)) . (._dataized)) (matched known "L_plus")
+          `shouldBe` [("δ1", "d1"), ("δ2", "d2")]
     it "reads the metas an entry morphs under the names 𝜑-calculus gives them" $
-      registered "- λ: L_plus\n  morph:\n    𝑛2: x\n    𝑛1: ρ\n  𝑛: 𝑛1\n" $ \known ->
-        concatMap (map (\(meta, path) -> (meta._spelling, meta._name, path)) . (._morphed)) (matched known "L_plus")
-          `shouldBe` [("𝑛1", "n1", "ρ"), ("𝑛2", "n2", "x")]
+      registered "- λ: L_plus\n  morph:\n    𝑛2: $.x\n    𝑛1: $.ρ\n  𝑛: 𝑛1\n" $ \known ->
+        concatMap (map (\(meta, _) -> (meta._spelling, meta._name)) . (._morphed)) (matched known "L_plus")
+          `shouldBe` [("𝑛1", "n1"), ("𝑛2", "n2")]
+    it "reads an operand as the term of the calculus it is written as" $
+      registered "- λ: L_plus\n  morph:\n    𝑛1: $.ρ.length\n  𝑛: 𝑛1\n" $ \known ->
+        concatMap (map snd . (._morphed)) (matched known "L_plus")
+          `shouldBe` [ExDispatch (ExDispatch ExXi AtRho) (AtLabel "length")]
+    it "refuses an operand that is no term at all" $
+      unreadable "- λ: L_plus\n  dataize:\n    δ1: '..'\n  𝑛: ⟦ Δ ⤍ 00- ⟧\n" "cannot be read"
+    it "refuses an operand holding an anonymous meta" $
+      unreadable "- λ: L_plus\n  morph:\n    𝑛1: '!e'\n  𝑛: 𝑛1\n" "cannot be referenced"
     it "refuses a key that is no regular expression" $
       unreadable "- λ: 'L_[('\n  𝑛: ⟦ Δ ⤍ 00- ⟧\n" "is not a regular expression"
     it "refuses a dataized operand named by something other than a bytes meta" $
-      unreadable "- λ: L_plus\n  dataize:\n    𝑛1: ρ\n  𝑛: ⟦ Δ ⤍ 00- ⟧\n" "is not a bytes meta"
+      unreadable "- λ: L_plus\n  dataize:\n    𝑛1: $.ρ\n  𝑛: ⟦ Δ ⤍ 00- ⟧\n" "is not a bytes meta"
     it "refuses a morphed operand named by something other than an expression meta" $
-      unreadable "- λ: L_plus\n  morph:\n    δ1: ρ\n  𝑛: ⟦ Δ ⤍ 00- ⟧\n" "is not an expression meta"
+      unreadable "- λ: L_plus\n  morph:\n    δ1: $.ρ\n  𝑛: ⟦ Δ ⤍ 00- ⟧\n" "is not an expression meta"
     it "refuses a symbol named by something other than a function meta" $
       unreadable "- λ: L_plus\n  symbols: [𝑛1]\n  𝑛: ⟦ Δ ⤍ 00- ⟧\n" "is not a function meta"
     it "refuses an entry with no answer under 𝑛" $
-      unreadable "- λ: L_plus\n  dataize:\n    δ1: ρ\n" "cannot be read"
+      unreadable "- λ: L_plus\n  dataize:\n    δ1: $.ρ\n" "cannot be read"
     it "refuses a file that is no list of entries at all" $
       unreadable "λ: L_plus\n" "cannot be read"
-
-  -- A dotted path names a node of the formation being fired, in the scope it
-  -- is bound in.
-  describe "attributeOf" $ do
-    let held path src = do
-          term <- parseExpressionThrows src
-          pure (attributeOf path term)
-    it "takes the node one segment names" $ do
-      found <- held "x" "[[ x -> [[ D> 2A- ]] ]]"
-      found `shouldBe` Just (ExFormation [BiDelta (BtOne "2A"), BiVoid AtRho])
-    it "goes as deep as the dots take it" $ do
-      found <- held "x.y" "[[ x -> [[ y -> [[ D> 2A- ]] ]] ]]"
-      found `shouldBe` Just (ExFormation [BiDelta (BtOne "2A"), BiVoid AtRho])
-    it "takes the argument an application binds" $ do
-      found <- held "x" "[[ x -> ? ]]( x -> [[ D> 2A- ]] )"
-      found `shouldBe` Just (ExFormation [BiDelta (BtOne "2A"), BiVoid AtRho])
-    it "answers nothing for an attribute that is void" $ do
-      found <- held "x" "[[ x -> ? ]]"
-      found `shouldBe` Nothing
-    it "answers nothing for an attribute nothing carries" $ do
-      found <- held "z" "[[ x -> [[ D> 2A- ]] ]]"
-      found `shouldBe` Nothing
-    it "answers nothing where a segment leads nowhere to go on into" $ do
-      found <- held "x.y" "[[ x -> [[ D> 2A- ]] ]]"
-      found `shouldBe` Nothing
 
   -- Uniqueness is the state's job: every firing takes the names the run has
   -- not spent yet, so no two unknowns of one run are ever spelled alike.

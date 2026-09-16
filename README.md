@@ -110,8 +110,8 @@ written in the very language `phino`'s own judgments are written in:
 ```yaml
 - λ: L_number_plus
   dataize:
-    δ1: ρ
-    δ2: x
+    δ1: $.ρ
+    δ2: $.x
   where:
     - meta: 𝑛1
       function: sum
@@ -141,14 +141,14 @@ $ phino dataize --functions=functions.yaml sum.phi
 An entry takes six keys, of which only `λ` and `𝑛` are required:
 
 * `dataize` reduces the named operands through 𝔻 and binds each to its meta,
-  so `δ1: ρ` says "dataize the ρ of the formation being fired and call the data
-  it comes down to δ1". What 𝔻 answers is data, so the meta is a bytes meta and
-  not an expression one, the way every `dataize` premise in `resources/` binds
-  its `d-result`. An operand that does not come down to data discharges no
-  premise, so the entry does not hold and the next one is tried.
+  so `δ1: $.ρ` says "dataize the ρ of the formation being fired and call the
+  data it comes down to δ1". What 𝔻 answers is data, so the meta is a bytes
+  meta and not an expression one, the way every `dataize` premise in
+  `resources/` binds its `d-result`. An operand that does not come down to data
+  discharges no premise, so the entry does not hold and the next one is tried.
 * `morph` does the same through 𝕄, so what it binds is a term rather than a
-  datum, under an expression meta: `𝑛1: φ` is how a box hands its content back
-  without insisting that the content be data.
+  datum, under an expression meta: `𝑛1: $.φ` is how a box hands its content
+  back without insisting that the content be data.
 * `symbols` mints a fresh λ name for each of its metas, which is how a λ
   function answers that it cannot decide (see below).
 * `when` guards the entry, with the same conditions a rewriting rule's `when`
@@ -158,14 +158,17 @@ An entry takes six keys, of which only `λ` and `𝑛` are required:
   — so the arithmetic an object model needs is spelled in the file.
 * `𝑛` is the answer.
 
-Both `dataize` and `morph` name an attribute by a path down the formation being
-fired, read left to right and split on the dot, which no attribute of
-𝜑-calculus carries in its own name. Every segment but the last has to name a
-formation or an application to go on into, so `ρ.length` goes two deep, and an
-argument of an application binds an attribute the way a τ binding does, so
-`x.if.guard` reaches the `guard` of `x ↦ Φ.bool( if ↦ ⟦ guard ↦ … ⟧ )`. The
-metas are reduced in the order of their names, which is why they are numbered
-δ1, δ2, … and 𝑛1, 𝑛2, … : a YAML mapping keeps no order of its own.
+An operand of either block is a term of the calculus, not a name: ξ stands for
+the formation being fired, so `$.x` is its `x` and `$.ρ.length` the length of
+its ρ, and Φ stands for the universe, so `Φ.bytes` is that. It is read by the
+same parser that reads `𝑛`, so anything a term may be an operand may be, and
+what reaches into it is the calculus rather than a path language of its own. A
+dispatch is a dispatch, so `$.φ` hands back the φ of the formation with its ρ
+bound to that formation, the way the `dot` rule binds it everywhere else; an
+operand naming an attribute the object model does not declare simply reduces to
+nothing, and the entry does not hold. The metas are reduced in the order of
+their names, which is why they are numbered δ1, δ2, … and 𝑛1, 𝑛2, … : a YAML
+mapping keeps no order of its own.
 
 Each `λ` is a regular expression, and it must match the whole name, so a plain
 name such as `L_number_plus` means that one λ function and nothing else, while
@@ -174,7 +177,7 @@ name such as `L_number_plus` means that one λ function and nothing else, while
 ```yaml
 - λ: L_box_[0-9]+_number
   morph:
-    𝑛1: φ
+    𝑛1: $.φ
   𝑛: 𝑛1
 ```
 
@@ -186,8 +189,8 @@ one that answers. So a comparison is a guard and not a function:
 ```yaml
 - λ: L_bytes_eq
   dataize:
-    δ1: ρ
-    δ2: x
+    δ1: $.ρ
+    δ2: $.x
   when:
     eq:
       - δ1
@@ -195,8 +198,8 @@ one that answers. So a comparison is a guard and not a function:
   𝑛: Φ.true
 - λ: L_bytes_eq
   dataize:
-    δ1: ρ
-    δ2: x
+    δ1: $.ρ
+    δ2: $.x
   𝑛: Φ.false
 ```
 
@@ -207,9 +210,9 @@ no data comes:
 ```yaml
 - λ: L_fork
   dataize:
-    δ1: guard
+    δ1: $.guard
   morph:
-    𝑛1: left
+    𝑛1: $.left
   when:
     eq:
       - δ1
@@ -238,9 +241,9 @@ rather than random, which keeps a symbolic run reproducible:
   𝑛: ⟦ λ ⤍ 𝑓0 ⟧
 - λ: L_fork
   dataize:
-    δ1: guard
+    δ1: $.guard
   morph:
-    𝑛1: left
+    𝑛1: $.left
   when:
     eq:
       - δ1
@@ -248,9 +251,9 @@ rather than random, which keeps a symbolic run reproducible:
   𝑛: 𝑛1
 - λ: L_fork
   dataize:
-    δ1: guard
+    δ1: $.guard
   morph:
-    𝑛2: right
+    𝑛2: $.right
   when:
     eq:
       - δ1
@@ -258,8 +261,8 @@ rather than random, which keeps a symbolic run reproducible:
   𝑛: 𝑛2
 - λ: L_fork
   morph:
-    𝑛1: left
-    𝑛2: right
+    𝑛1: $.left
+    𝑛2: $.right
   symbols: [𝑓1]
   𝑛: ⟦ λ ⤍ 𝑓1 ⟧
 ```

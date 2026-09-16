@@ -6,11 +6,13 @@
 # number here — while the name that only looks like one of them is left alone.
 # The 'morph' operand is a whole term and has no spelling the protocol can give
 # without printing 𝜑, so it is bracketed by an opening and a closing record
-# instead.
+# instead. It is also a term of the calculus and not a name, so '$.φ' is a
+# dispatch: what comes back is the content of the box with its ρ bound to the
+# box, the way the 'dot' rule binds it for every other dispatch.
 functions: |
   - λ: L_box_[0-9]+_number
     morph:
-      𝑛1: φ
+      𝑛1: $.φ
     𝑛: 𝑛1
 deep: true
 input: |
@@ -24,6 +26,6 @@ protocol:
   - '{"λ":"L_box_7_number"}'
 result: |
   [[
-    boxed -> [[ D> 2A- ]],
+    boxed -> [[ D> 2A-, ^ -> [[ φ -> [[ D> 2A- ]], ^ -> Q ]] ]],
     plain -> [[ φ -> [[ D> 01- ]], ^ -> Q, L> L_box_of_string ]]
   ]]

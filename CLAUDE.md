@@ -83,18 +83,22 @@ applies a substitution to a result template.
 `phino` implements no λ function. `Lambdas.hs` reads the YAML file of them (the
 `--functions` option), where each entry is a rule 𝔼 answers the firing with: a
 `λ` key that is a regular expression over λ names, `dataize`/`morph` blocks
-reducing named dotted paths of the fired formation through 𝔻 and 𝕄, a
-`symbols` block minting fresh λ names counted in the state 𝑠, the `when` and
-`where` a rewriting rule takes, and the answer under `𝑛`. The two premise
-blocks bind the metas their judgments answer with, exactly as every rule in
-`resources/` does: `dataize` binds a bytes meta `δ1`, since 𝔻 answers data, and
-`morph` an expression meta `𝑛1`. An operand 𝔻 cannot bring down to data
-discharges no premise, so that entry does not hold and the next one is tried —
-which is how a λ function branches on data and how it answers when no data
-comes. Several entries may answer one name and the guards tell them apart. A λ
+reducing operands of the fired formation through 𝔻 and 𝕄, a `symbols` block
+minting fresh λ names counted in the state 𝑠, the `when` and `where` a
+rewriting rule takes, and the answer under `𝑛`. An operand is a term, not a
+name: ξ stands for the formation being fired, so `$.x` is its `x`, and
+`contextualize` is all `Morph.symbol` does to it before handing it to a
+judgment — the calculus does the reaching, so a dispatch attaches ρ there the
+way it does anywhere else. The two premise blocks bind the metas their
+judgments answer with, exactly as every rule in `resources/` does: `dataize`
+binds a bytes meta `δ1`, since 𝔻 answers data, and `morph` an expression meta
+`𝑛1`. An operand 𝔻 cannot bring down to data discharges no premise, so that
+entry does not hold and the next one is tried — which is how a λ function
+branches on data and how it answers when no data comes. Several entries may
+answer one name and the guards tell them apart. A λ
 name no entry answers gets stuck, which is what `--partial` parks on. Firing an
 entry needs the judgments, so it lives in `Morph.hs` (`symbol`) while
-`Lambdas.hs` holds only the entries, the lookup and the path walk — otherwise
+`Lambdas.hs` holds only the entries and the lookup — otherwise
 `Morph → Lambdas → Dataize → Morph` would be a cycle. Every firing reports
 itself to `--evaluations` as one JSON object per line (`Evaluation` in
 `Deps.hs`).

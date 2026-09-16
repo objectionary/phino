@@ -29,7 +29,7 @@ import qualified Data.Map.Strict as Map
 import Data.Maybe (fromMaybe, maybeToList)
 import qualified Data.Text as T
 import Deps (BuildTermFunc, BuildTermMethodS, Evaluation (..), SaveEvalFunc, SaveStepFunc, State, Term (..), carried)
-import Lambdas (Lambda (..), Lambdas, Meta (..), attributeOf, matched, minted)
+import Lambdas (Lambda (..), Lambdas, Meta (..), matched, minted)
 import Locator (locatedExpression, withLocatedExpression)
 import Matcher (MetaValue (..), Subst (..), combine, matchExpression', substEmpty, substSingle)
 import Must (Must (..))
@@ -596,15 +596,15 @@ morphing univ ctx expr state = do
   pure (morphed, state')
 
 -- What the entries answering one λ name have reduced so far: the data 𝔻
--- brought each dotted path down to, or nothing where it could not; the normal
--- form 𝕄 brought each one to; and the state the last of those reductions left
+-- brought each operand down to, or nothing where it could not; the normal form
+-- 𝕄 brought each one to; and the state the last of those reductions left
 -- behind. Entries are tried in turn and each one names its own operands, so
 -- without this the operands two entries share would be reduced twice —
 -- reported to the protocol twice and, where the reduction mints symbols of its
 -- own, under two different names.
 data Reduced = Reduced
-  { _data :: Map.Map T.Text (Maybe Bytes)
-  , _terms :: Map.Map T.Text Expression
+  { _data :: Map.Map Expression (Maybe Bytes)
+  , _terms :: Map.Map Expression Expression
   , _left :: State
   }
 
@@ -655,54 +655,48 @@ symbol func self univ state ctx = go (matched ctx._functions func) (Reduced Map.
         Just subst -> do
           (bound', after') <- foldM morphed (subst, after) entry._morphed
           pure (Just (bound', told), after')
-    dataized :: (Maybe Subst, [(T.Text, T.Text)], Reduced) -> (Meta, T.Text) -> IO (Maybe Subst, [(T.Text, T.Text)], Reduced)
+    dataized :: (Maybe Subst, [(T.Text, T.Text)], Reduced) -> (Meta, Expression) -> IO (Maybe Subst, [(T.Text, T.Text)], Reduced)
     dataized (Nothing, told, known) _ = pure (Nothing, told, known)
-    dataized (Just bound, told, known) (meta, path) = do
-      (value, known') <- dataOf path known
+    dataized (Just bound, told, known) (meta, term) = do
+      (value, known') <- dataOf term known
       case value of
         Nothing -> pure (Nothing, told, known')
         Just bytes -> do
           bound' <- bind meta (MvBytes bytes) bound
           pure (Just bound', told ++ [(meta._spelling, spelling) | spelling <- maybeToList (carried (MvBytes bytes))], known')
-    morphed :: (Subst, Reduced) -> (Meta, T.Text) -> IO (Subst, Reduced)
-    morphed (bound, known) (meta, path) = do
-      (value, known') <- termOf path known
+    morphed :: (Subst, Reduced) -> (Meta, Expression) -> IO (Subst, Reduced)
+    morphed (bound, known) (meta, term) = do
+      (value, known') <- termOf term known
       bound' <- bind meta (MvExpression value) bound
       pure (bound', known')
       where
-        termOf :: T.Text -> Reduced -> IO (Expression, Reduced)
-        termOf path' known' = case Map.lookup path' known'._terms of
+        termOf :: Expression -> Reduced -> IO (Expression, Reduced)
+        termOf term' known' = case Map.lookup term' known'._terms of
           Just value -> pure (value, known')
           Nothing -> do
-            (value, current) <- operand path' >>= \term -> bracketed term known'._left
-            pure (value, known'{_terms = Map.insert path' value known'._terms, _left = current})
+            (value, current) <- bracketed (operand term') known'._left
+            pure (value, known'{_terms = Map.insert term' value known'._terms, _left = current})
         bracketed :: Expression -> State -> IO (Expression, State)
         bracketed term current = do
           ctx._saveEval (EvOpening func meta._spelling)
           (morphed', current') <- morphing univ ctx term current
           ctx._saveEval (EvClosing func meta._spelling)
           pure (morphed', current')
-    -- The data the operand under the dotted path came down to, unless an entry
-    -- tried before this one has already taken it down there.
-    dataOf :: T.Text -> Reduced -> IO (Maybe Bytes, Reduced)
-    dataOf path known = case Map.lookup path known._data of
+    -- The data the operand came down to, unless an entry tried before this one
+    -- has already taken it down there.
+    dataOf :: Expression -> Reduced -> IO (Maybe Bytes, Reduced)
+    dataOf term known = case Map.lookup term known._data of
       Just value -> pure (value, known)
       Nothing -> do
-        (value, current) <- operand path >>= \term -> ctx._reduce univ ctx term known._left
-        pure (value, known{_data = Map.insert path value known._data, _left = current})
-    -- The node the formation being fired holds under the dotted path an entry
-    -- names. A path nothing carries, or one that ends at a void attribute, has
-    -- no operand to reduce: the entry names an attribute the object model does
-    -- not declare, which is a mistake in the file and not a term phino cannot
-    -- compute, so it fails the run rather than getting stuck.
-    operand :: T.Text -> IO Expression
-    operand path = case attributeOf path self of
-      Just found -> pure found
-      Nothing ->
-        throwIO
-          ( userError
-              (printf "The λ function '%s' has no operand '%s' to reduce" (T.unpack func) (T.unpack path))
-          )
+        (value, current) <- ctx._reduce univ ctx (operand term) known._left
+        pure (value, known{_data = Map.insert term value known._data, _left = current})
+    -- The operand an entry wrote, in the scope it is reduced in: ξ stands for
+    -- the formation being fired, so '$.x' is the x of it, and the calculus does
+    -- the reaching. An operand naming an attribute the object model does not
+    -- declare therefore reduces to nothing rather than failing the run — the
+    -- entry simply does not hold and the next one is tried.
+    operand :: Expression -> Expression
+    operand = (`contextualize` self)
     bind :: Meta -> MetaValue -> Subst -> IO Subst
     bind meta value bound = case combine (substSingle meta._name value) bound of
       Just bound' -> pure bound'

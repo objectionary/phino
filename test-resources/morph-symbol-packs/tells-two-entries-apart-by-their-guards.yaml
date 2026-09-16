@@ -9,8 +9,8 @@
 functions: |
   - λ: L_bytes_eq
     dataize:
-      δ1: ρ
-      δ2: b
+      δ1: $.ρ
+      δ2: $.b
     when:
       eq:
         - δ1
@@ -18,8 +18,8 @@ functions: |
     𝑛: ⟦ Δ ⤍ FF- ⟧
   - λ: L_bytes_eq
     dataize:
-      δ1: ρ
-      δ2: b
+      δ1: $.ρ
+      δ2: $.b
     𝑛: ⟦ Δ ⤍ 00- ⟧
 deep: true
 input: |

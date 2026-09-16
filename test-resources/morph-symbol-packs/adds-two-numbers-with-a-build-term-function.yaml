@@ -8,8 +8,8 @@
 functions: |
   - λ: L_number_plus
     dataize:
-      δ1: ρ
-      δ2: x
+      δ1: $.ρ
+      δ2: $.x
     where:
       - meta: 𝑛1
         function: sum
