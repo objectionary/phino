@@ -65,7 +65,7 @@ spec = do
       [ ("empty", BT_EMPTY, "--")
       , ("one", BT_ONE "1F", "1F-")
       , ("many", BT_MANY ["00", "01", "02"], "00-01-02")
-      , ("meta", BT_META (META NO_EXCL D "1"), "δ1")
+      , ("meta", BT_META (META NO_EXCL D "1"), "𝛿1")
       , ("piped", BT_PIPED (BT_ONE "1F"), "|1F-|")
       ]
       (\(desc, bts, expected) -> it desc (render bts `shouldBe` expected))
@@ -85,7 +85,7 @@ spec = do
       , (I', "i")
       , (B, "𝐵")
       , (B', "B")
-      , (D, "δ")
+      , (D, "𝛿")
       , (D', "\\delta")
       , (F, "𝑓")
       , (F', "F")
@@ -142,7 +142,7 @@ spec = do
       , ("PA_DELTA'", PA_DELTA' (BT_ONE "1F"), "D> 1F-")
       , ("PA_META_LAMBDA", PA_META_LAMBDA (META NO_EXCL F "n"), "λ ⤍ 𝑓n")
       , ("PA_META_LAMBDA'", PA_META_LAMBDA' (META EXCL F' "n"), "L> !Fn")
-      , ("PA_META_DELTA", PA_META_DELTA (META NO_EXCL D "n"), "Δ ⤍ δn")
+      , ("PA_META_DELTA", PA_META_DELTA (META NO_EXCL D "n"), "Δ ⤍ 𝛿n")
       , ("PA_META_DELTA'", PA_META_DELTA' (META EXCL D' "n"), "D> !\\deltan")
       ]
       (\(desc, node, expected) -> it desc (render node `shouldBe` expected))

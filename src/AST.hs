@@ -16,7 +16,7 @@ import Data.Text (Text)
 import qualified Data.Text as T
 import GHC.Generics (Generic)
 
--- An anonymous meta-variable, written bare — 𝜏, 𝐵, 𝑒, 𝑛, 𝑘, δ, 𝑓 or 𝑖 with
+-- An anonymous meta-variable, written bare — 𝜏, 𝐵, 𝑒, 𝑛, 𝑘, 𝛿, 𝑓 or 𝑖 with
 -- no index after it. It matches whatever term stands in its place and no rule
 -- can name it afterwards, so it is known only by the kind it was written as
 -- ('t', 'B', 'e', 'n', 'k', 'd', 'F', 'i') and by the offset it was written
