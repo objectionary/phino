@@ -864,6 +864,9 @@ Here's list of functions that are supported for extensions:
   `Φ.number`.
 * `tau` - accepts `Φ.string`, dataizes it and converts it to attribute.
   If dataized string can't be converted to attribute - an error is thrown.
+* `locator` - accepts `Φ.string`, dataizes it and converts it to a locator:
+  a dispatch started with `Φ` or `ξ`, e.g. `Φ.foo.bar` or `foo.bar`.
+  If dataized string can't be converted to locator - an error is thrown.
 * `string` - accepts `Φ.string` or `Φ.number` or attribute and converts it
   to `Φ.string`.
 * `number` - accepts `Φ.string` and converts it `Φ.number`
