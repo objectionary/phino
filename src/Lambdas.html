@@ -1,0 +1,742 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE DeriveAnyClass #-}</span><span>
+</span><span id="line-2"></span><span class="hs-pragma">{-# LANGUAGE DerivingStrategies #-}</span><span>
+</span><span id="line-3"></span><span class="hs-pragma">{-# LANGUAGE OverloadedRecordDot #-}</span><span>
+</span><span id="line-4"></span><span class="hs-pragma">{-# LANGUAGE OverloadedStrings #-}</span><span>
+</span><span id="line-5"></span><span>
+</span><span id="line-6"></span><span class="hs-comment">-- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com</span><span>
+</span><span id="line-7"></span><span class="hs-comment">-- SPDX-License-Identifier: MIT</span><span>
+</span><span id="line-8"></span><span>
+</span><span id="line-9"></span><span class="hs-comment">-- Which &#955; functions exist is a property of the object model being reduced, not</span><span>
+</span><span id="line-10"></span><span class="hs-comment">-- of the calculus. phino therefore implements none of them: it reads them from</span><span>
+</span><span id="line-11"></span><span class="hs-comment">-- the YAML file given with '--symbolic', where each is an entry answering the</span><span>
+</span><span id="line-12"></span><span class="hs-comment">-- firing with a term of the calculus:</span><span>
+</span><span id="line-13"></span><span class="hs-comment">--</span><span>
+</span><span id="line-14"></span><span class="hs-comment">-- &gt; - &#955;: L_number_plus</span><span>
+</span><span id="line-15"></span><span class="hs-comment">-- &gt;   dataize:</span><span>
+</span><span id="line-16"></span><span class="hs-comment">-- &gt;     &#120575;1: $.&#961;</span><span>
+</span><span id="line-17"></span><span class="hs-comment">-- &gt;     &#120575;2: $.x</span><span>
+</span><span id="line-18"></span><span class="hs-comment">-- &gt;   &#119899;: &#934;.number( &#966; &#8614; &#934;.bytes( &#966; &#8614; &#10214; &#955; &#10509; &#120590; &#10215; ) )</span><span>
+</span><span id="line-19"></span><span class="hs-comment">--</span><span>
+</span><span id="line-20"></span><span class="hs-comment">-- The '&#955;' of an entry is a regular expression over &#955; names, matching the whole</span><span>
+</span><span id="line-21"></span><span class="hs-comment">-- name, so a plain name means that one function while 'L_box_[0-9]+_number'</span><span>
+</span><span id="line-22"></span><span class="hs-comment">-- stands for a family of them. It is unique: the lookup answers one entry or</span><span>
+</span><span id="line-23"></span><span class="hs-comment">-- none. 'dataize' names the operands brought down through &#120123;, each binding a</span><span>
+</span><span id="line-24"></span><span class="hs-comment">-- bytes meta &#120575;1, and 'evaluate' the ones reduced through &#120132;, each binding an</span><span>
+</span><span id="line-25"></span><span class="hs-comment">-- expression meta &#119899;1; both are terms of the calculus, where &#958; stands for the</span><span>
+</span><span id="line-26"></span><span class="hs-comment">-- formation being fired, so '$.x' is its x, and &#934; for the universe. The term</span><span>
+</span><span id="line-27"></span><span class="hs-comment">-- under '&#119899;' is what the firing answers with, and a bare &#120590; in it mints a fresh</span><span>
+</span><span id="line-28"></span><span class="hs-comment">-- symbol.</span><span>
+</span><span id="line-29"></span><span class="hs-comment">--</span><span>
+</span><span id="line-30"></span><span class="hs-comment">-- An entry answers, it never computes: the job of these functions is symbolic</span><span>
+</span><span id="line-31"></span><span class="hs-comment">-- morphing, so the answer carries a symbol standing for a value nobody worked</span><span>
+</span><span id="line-32"></span><span class="hs-comment">-- out, and the data its 'dataize' operands came down to is not its to read.</span><span>
+</span><span id="line-33"></span><span class="hs-comment">-- An answer mentioning a bytes meta is refused where the file is read.</span><span>
+</span><span id="line-34"></span><span class="hs-comment">--</span><span>
+</span><span id="line-35"></span><span class="hs-comment">-- This module holds the entries and the two things reading one takes &#8212; the</span><span>
+</span><span id="line-36"></span><span class="hs-comment">-- lookup of a &#955; name and the minting of the symbols an answer asks for.</span><span>
+</span><span id="line-37"></span><span class="hs-comment">-- Firing an entry is &#120124;'s business and lives in 'Morph', which alone holds the</span><span>
+</span><span id="line-38"></span><span class="hs-comment">-- judgments an entry reduces its operands with.</span><span>
+</span><span id="line-39"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Lambdas</span><span>
+</span><span id="line-40"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="Lambdas.html#Lambda"><span class="hs-identifier">Lambda</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><span id="line-41"></span><span>  </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Lambdas.html#LambdaException"><span class="hs-identifier">LambdaException</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><span id="line-42"></span><span>  </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Lambdas.html#Lambdas"><span class="hs-identifier">Lambdas</span></a></span><span>
+</span><span id="line-43"></span><span>  </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Lambdas.html#Meta"><span class="hs-identifier">Meta</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><span id="line-44"></span><span>  </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Lambdas.html#emptyLambdas"><span class="hs-identifier">emptyLambdas</span></a></span><span>
+</span><span id="line-45"></span><span>  </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Lambdas.html#matched"><span class="hs-identifier">matched</span></a></span><span>
+</span><span id="line-46"></span><span>  </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Lambdas.html#minted"><span class="hs-identifier">minted</span></a></span><span>
+</span><span id="line-47"></span><span>  </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Lambdas.html#readLambdas"><span class="hs-identifier">readLambdas</span></a></span><span>
+</span><span id="line-48"></span><span>  </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Lambdas.html#taken"><span class="hs-identifier">taken</span></a></span><span>
+</span><span id="line-49"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-50"></span><span class="hs-keyword">where</span><span>
+</span><span id="line-51"></span><span>
+</span><span id="line-52"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="AST.html"><span class="hs-identifier">AST</span></a></span><span>
+</span><span id="line-53"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Exception</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">Exception</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">throwIO</span></span><span class="hs-special">)</span><span>
+</span><span id="line-54"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.3.2.0-37b25499/share/doc/html/src/Data.Aeson.html"><span class="hs-identifier">Data.Aeson</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.3.2.0-37b25499/share/doc/html/src/Data.Aeson.Types.FromJSON.html#FromJSON"><span class="hs-identifier">FromJSON</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.3.2.0-37b25499/share/doc/html/src/Data.Aeson.Types.FromJSON.html#parseJSON"><span class="hs-identifier">parseJSON</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.3.2.0-37b25499/share/doc/html/src/Data.Aeson.Key.html#Key"><span class="hs-identifier">Key</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.3.2.0-37b25499/share/doc/html/src/Data.Aeson.Types.Internal.html#Object"><span class="hs-identifier">Object</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.3.2.0-37b25499/share/doc/html/src/Data.Aeson.Types.FromJSON.html#withObject"><span class="hs-identifier">withObject</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.3.2.0-37b25499/share/doc/html/src/Data.Aeson.Types.FromJSON.html#.%21%3D"><span class="hs-operator">(.!=)</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.3.2.0-37b25499/share/doc/html/src/Data.Aeson.Types.FromJSON.html#.%3A"><span class="hs-operator">(.:)</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.3.2.0-37b25499/share/doc/html/src/Data.Aeson.Types.FromJSON.html#.%3A%3F"><span class="hs-operator">(.:?)</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-55"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.List</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">find</span></span><span class="hs-special">)</span><span>
+</span><span id="line-56"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Map.Strict</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">Map</span></span><span class="hs-special">)</span><span>
+</span><span id="line-57"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><span class="hs-identifier">Data.Map.Strict</span></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Map</span></span><span>
+</span><span id="line-58"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Text</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">Text</span></span><span class="hs-special">)</span><span>
+</span><span id="line-59"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><span class="hs-identifier">Data.Text</span></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">T</span></span><span>
+</span><span id="line-60"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Text.Encoding</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">encodeUtf8</span></span><span class="hs-special">)</span><span>
+</span><span id="line-61"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/yml-0.11.11.2-9346c170/share/doc/html/src/Data.Yaml.html"><span class="hs-identifier">Data.Yaml</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><a href="Yaml.html"><span class="hs-identifier">Yaml</span></a></span><span>
+</span><span id="line-62"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Logger.html"><span class="hs-identifier">Logger</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Logger.html#logDebug"><span class="hs-identifier">logDebug</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-63"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Parser.html"><span class="hs-identifier">Parser</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Parser.html#parseBytes"><span class="hs-identifier">parseBytes</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Parser.html#parseExpression"><span class="hs-identifier">parseExpression</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-64"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Slots.html"><span class="hs-identifier">Slots</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Slots.html#Slots"><span class="hs-identifier">Slots</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Slots.html#slots"><span class="hs-identifier">slots</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-65"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Text.Printf</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">printf</span></span><span class="hs-special">)</span><span>
+</span><span id="line-66"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/rgx-pcr-bltn-0.95.2.3.8.44-e6e3376b/share/doc/html/src/Text.Regex.PCRE.html"><span class="hs-identifier">Text.Regex.PCRE</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/rgx-bs-0.94.0.3-bd815a86/share/doc/html/src/Text.Regex.Base.RegexLike.html#matchTest"><span class="hs-identifier">matchTest</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-67"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/rgx-pcr-bltn-0.95.2.3.8.44-e6e3376b/share/doc/html/src/Text.Regex.PCRE.ByteString.html"><span class="hs-identifier">Text.Regex.PCRE.ByteString</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/rgx-pcr-bltn-0.95.2.3.8.44-e6e3376b/share/doc/html/src/Text.Regex.PCRE.Wrap.html#Regex"><span class="hs-identifier">Regex</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/rgx-pcr-bltn-0.95.2.3.8.44-e6e3376b/share/doc/html/src/Text.Regex.PCRE.Wrap.html#compUTF8"><span class="hs-identifier">compUTF8</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/rgx-pcr-bltn-0.95.2.3.8.44-e6e3376b/share/doc/html/src/Text.Regex.PCRE.ByteString.html#compile"><span class="hs-identifier">compile</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/rgx-pcr-bltn-0.95.2.3.8.44-e6e3376b/share/doc/html/src/Text.Regex.PCRE.Wrap.html#execBlank"><span class="hs-identifier">execBlank</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-68"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Yaml.html"><span class="hs-identifier">Yaml</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Yaml.html#referenceless"><span class="hs-identifier">referenceless</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-69"></span><span>
+</span><span id="line-70"></span><span class="hs-comment">-- One meta an entry of the file binds: the name the file spells it with, which</span><span>
+</span><span id="line-71"></span><span class="hs-comment">-- is the name the protocol of '--protocol' reports it back under, and the name</span><span>
+</span><span id="line-72"></span><span class="hs-comment">-- a substitution keeps it under, which is the one &#120593;-calculus gives it. The two</span><span>
+</span><span id="line-73"></span><span class="hs-comment">-- differ &#8212; '&#119899;1' against 'n1', '&#120575;1' against 'd1' &#8212; so an entry is read through</span><span>
+</span><span id="line-74"></span><span class="hs-comment">-- the very parser a rewriting rule's pattern is read through and never</span><span>
+</span><span id="line-75"></span><span class="hs-comment">-- guesses.</span><span>
+</span><span id="line-76"></span><span class="hs-keyword">data</span><span> </span><span id="Meta"><span class="annot"><a href="Lambdas.html#Meta"><span class="hs-identifier hs-var">Meta</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="Meta"><span class="annot"><a href="Lambdas.html#Meta"><span class="hs-identifier hs-var">Meta</span></a></span></span><span>
+</span><span id="line-77"></span><span>  </span><span class="hs-special">{</span><span> </span><span id="_spelling"><span class="annot"><span class="annottext">Meta -&gt; Text
+</span><a href="Lambdas.html#_spelling"><span class="hs-identifier hs-var hs-var">_spelling</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span>
+</span><span id="line-78"></span><span>  </span><span class="hs-special">,</span><span> </span><span id="_name"><span class="annot"><span class="annottext">Meta -&gt; Text
+</span><a href="Lambdas.html#_name"><span class="hs-identifier hs-var hs-var">_name</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span>
+</span><span id="line-79"></span><span>  </span><span class="hs-special">}</span><span>
+</span><span id="line-80"></span><span>
+</span><span id="line-81"></span><span class="hs-comment">-- One &#955; function phino may fire, as the file spells it: the key it is</span><span>
+</span><span id="line-82"></span><span class="hs-comment">-- registered under, the operands it brings down to data, the operands it</span><span>
+</span><span id="line-83"></span><span class="hs-comment">-- reduces to a normal form and the term it answers with.</span><span>
+</span><span id="line-84"></span><span class="hs-keyword">data</span><span> </span><span id="Lambda"><span class="annot"><a href="Lambdas.html#Lambda"><span class="hs-identifier hs-var">Lambda</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="Lambda"><span class="annot"><a href="Lambdas.html#Lambda"><span class="hs-identifier hs-var">Lambda</span></a></span></span><span>
+</span><span id="line-85"></span><span>  </span><span class="hs-special">{</span><span> </span><span id="_key"><span class="annot"><span class="annottext">Lambda -&gt; Text
+</span><a href="Lambdas.html#_key"><span class="hs-identifier hs-var hs-var">_key</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span>
+</span><span id="line-86"></span><span>  </span><span class="hs-special">,</span><span> </span><span id="_dataized"><span class="annot"><span class="annottext">Lambda -&gt; [(Meta, Expression)]
+</span><a href="Lambdas.html#_dataized"><span class="hs-identifier hs-var hs-var">_dataized</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><a href="Lambdas.html#Meta"><span class="hs-identifier hs-type">Meta</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span><span>
+</span><span id="line-87"></span><span>  </span><span class="hs-special">,</span><span> </span><span id="_evaluated"><span class="annot"><span class="annottext">Lambda -&gt; [(Meta, Expression)]
+</span><a href="Lambdas.html#_evaluated"><span class="hs-identifier hs-var hs-var">_evaluated</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><a href="Lambdas.html#Meta"><span class="hs-identifier hs-type">Meta</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span><span>
+</span><span id="line-88"></span><span>  </span><span class="hs-special">,</span><span> </span><span id="_answer"><span class="annot"><span class="annottext">Lambda -&gt; Expression
+</span><a href="Lambdas.html#_answer"><span class="hs-identifier hs-var hs-var">_answer</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span>
+</span><span id="line-89"></span><span>  </span><span class="hs-special">}</span><span>
+</span><span id="line-90"></span><span>
+</span><span id="line-91"></span><span class="hs-comment">-- Every &#955; function phino may fire, in the order the file lists them: each key,</span><span>
+</span><span id="line-92"></span><span class="hs-comment">-- a regular expression over &#955; names, paired with the entry it introduces. A</span><span>
+</span><span id="line-93"></span><span class="hs-comment">-- lookup walks them top to bottom and the first key matching the whole name</span><span>
+</span><span id="line-94"></span><span class="hs-comment">-- wins, so one entry may stand for a family of &#955; functions while a plain name,</span><span>
+</span><span id="line-95"></span><span class="hs-comment">-- being a regular expression matching itself, keeps meaning that one function.</span><span>
+</span><span id="line-96"></span><span class="hs-keyword">newtype</span><span> </span><span id="Lambdas"><span class="annot"><a href="Lambdas.html#Lambdas"><span class="hs-identifier hs-var">Lambdas</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="Lambdas"><span class="annot"><a href="Lambdas.html#Lambdas"><span class="hs-identifier hs-var">Lambdas</span></a></span></span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/rgx-pcr-bltn-0.95.2.3.8.44-e6e3376b/share/doc/html/src/Text.Regex.PCRE.Wrap.html#Regex"><span class="hs-identifier hs-type">Regex</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Lambdas.html#Lambda"><span class="hs-identifier hs-type">Lambda</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span><span>
+</span><span id="line-97"></span><span>
+</span><span id="line-98"></span><span class="hs-keyword">data</span><span> </span><span id="LambdaException"><span class="annot"><a href="Lambdas.html#LambdaException"><span class="hs-identifier hs-var">LambdaException</span></a></span></span><span>
+</span><span id="line-99"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span class="hs-comment">-- The '--symbolic' file is not a list of &#955; function entries.</span><span>
+</span><span id="line-100"></span><span>    </span><span id="BrokenLambdas"><span class="annot"><a href="Lambdas.html#BrokenLambdas"><span class="hs-identifier hs-var">BrokenLambdas</span></a></span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">FilePath</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
+</span><span id="line-101"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="annot"><span class="hs-keyword">anyclass</span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679534621"><span id="local-6989586621679534624"><span id="local-6989586621679534627"><span class="annot"><span class="annottext">Show LambdaException
+Typeable LambdaException
+(Typeable LambdaException, Show LambdaException) =&gt;
+(LambdaException -&gt; SomeException)
+-&gt; (SomeException -&gt; Maybe LambdaException)
+-&gt; (LambdaException -&gt; String)
+-&gt; Exception LambdaException
+SomeException -&gt; Maybe LambdaException
+LambdaException -&gt; String
+LambdaException -&gt; SomeException
+forall e.
+(Typeable e, Show e) =&gt;
+(e -&gt; SomeException)
+-&gt; (SomeException -&gt; Maybe e) -&gt; (e -&gt; String) -&gt; Exception e
+$ctoException :: LambdaException -&gt; SomeException
+toException :: LambdaException -&gt; SomeException
+$cfromException :: SomeException -&gt; Maybe LambdaException
+fromException :: SomeException -&gt; Maybe LambdaException
+$cdisplayException :: LambdaException -&gt; String
+displayException :: LambdaException -&gt; String
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Exception</span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-102"></span><span>
+</span><span id="line-103"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679534631"><span id="local-6989586621679534635"><span class="annot"><span class="hs-identifier hs-type">Show</span></span><span> </span><span class="annot"><a href="Lambdas.html#LambdaException"><span class="hs-identifier hs-type">LambdaException</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-104"></span><span>  </span><span id="local-6989586621679534639"><span class="annot"><span class="annottext">show :: LambdaException -&gt; String
+</span><a href="#local-6989586621679534639"><span class="hs-identifier hs-var hs-var hs-var hs-var">show</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Lambdas.html#BrokenLambdas"><span class="hs-identifier hs-type">BrokenLambdas</span></a></span><span> </span><span id="local-6989586621679534641"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679534641"><span class="hs-identifier hs-var">file</span></a></span></span><span> </span><span id="local-6989586621679534642"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679534642"><span class="hs-identifier hs-var">failure</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-105"></span><span>    </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String -&gt; String
+forall r. PrintfType r =&gt; String -&gt; r
+</span><span class="hs-identifier hs-var">printf</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;The &#955; functions of '%s' cannot be read: %s&quot;</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679534641"><span class="hs-identifier hs-var">file</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679534642"><span class="hs-identifier hs-var">failure</span></a></span><span>
+</span><span id="line-106"></span><span>
+</span><span id="line-107"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679534645"><span id="local-6989586621679534648"><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.3.2.0-37b25499/share/doc/html/src/Data.Aeson.Types.FromJSON.html#FromJSON"><span class="hs-identifier hs-type">FromJSON</span></a></span><span> </span><span class="annot"><a href="Lambdas.html#Lambda"><span class="hs-identifier hs-type">Lambda</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-108"></span><span>  </span><span id="local-6989586621679534704"><span class="annot"><span class="annottext">parseJSON :: Value -&gt; Parser Lambda
+</span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.3.2.0-37b25499/share/doc/html/src/Data.Aeson.Types.FromJSON.html#parseJSON"><span class="hs-identifier hs-var hs-var hs-var hs-var">parseJSON</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; (Object -&gt; Parser Lambda) -&gt; Value -&gt; Parser Lambda
+forall a. String -&gt; (Object -&gt; Parser a) -&gt; Value -&gt; Parser a
+</span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.3.2.0-37b25499/share/doc/html/src/Data.Aeson.Types.FromJSON.html#withObject"><span class="hs-identifier hs-var">withObject</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;Lambda&quot;</span></span><span> </span><span class="annot"><span class="annottext">((Object -&gt; Parser Lambda) -&gt; Value -&gt; Parser Lambda)
+-&gt; (Object -&gt; Parser Lambda) -&gt; Value -&gt; Parser Lambda
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679534705"><span class="annot"><span class="annottext">Object
+</span><a href="#local-6989586621679534705"><span class="hs-identifier hs-var">entry</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-109"></span><span>    </span><span id="local-6989586621679534706"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679534706"><span class="hs-identifier hs-var">key</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Object
+</span><a href="#local-6989586621679534705"><span class="hs-identifier hs-var">entry</span></a></span><span> </span><span class="annot"><span class="annottext">Object -&gt; Key -&gt; Parser Text
+forall a. FromJSON a =&gt; Object -&gt; Key -&gt; Parser a
+</span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.3.2.0-37b25499/share/doc/html/src/Data.Aeson.Types.FromJSON.html#.%3A"><span class="hs-operator hs-var">.:</span></a></span><span> </span><span class="annot"><span class="annottext">Key
+</span><span class="hs-string">&quot;&#955;&quot;</span></span><span>
+</span><span id="line-110"></span><span>    </span><span id="local-6989586621679534707"><span class="annot"><span class="annottext">Lambda
+</span><a href="#local-6989586621679534707"><span class="hs-identifier hs-var">lambda</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span>
+</span><span id="line-111"></span><span>      </span><span class="annot"><span class="annottext">Text
+-&gt; [(Meta, Expression)]
+-&gt; [(Meta, Expression)]
+-&gt; Expression
+-&gt; Lambda
+</span><a href="Lambdas.html#Lambda"><span class="hs-identifier hs-var">Lambda</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679534706"><span class="hs-identifier hs-var">key</span></a></span><span>
+</span><span id="line-112"></span><span>        </span><span class="annot"><span class="annottext">([(Meta, Expression)]
+ -&gt; [(Meta, Expression)] -&gt; Expression -&gt; Lambda)
+-&gt; Parser [(Meta, Expression)]
+-&gt; Parser ([(Meta, Expression)] -&gt; Expression -&gt; Lambda)
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">Text
+-&gt; (Text -&gt; Parser Meta)
+-&gt; Object
+-&gt; Key
+-&gt; Parser [(Meta, Expression)]
+</span><a href="#local-6989586621679534709"><span class="hs-identifier hs-var">operands</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679534706"><span class="hs-identifier hs-var">key</span></a></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Parser Meta
+</span><a href="#local-6989586621679534710"><span class="hs-identifier hs-var">bytesMeta</span></a></span><span> </span><span class="annot"><span class="annottext">Object
+</span><a href="#local-6989586621679534705"><span class="hs-identifier hs-var">entry</span></a></span><span> </span><span class="annot"><span class="annottext">Key
+</span><span class="hs-string">&quot;dataize&quot;</span></span><span>
+</span><span id="line-113"></span><span>        </span><span class="annot"><span class="annottext">Parser ([(Meta, Expression)] -&gt; Expression -&gt; Lambda)
+-&gt; Parser [(Meta, Expression)] -&gt; Parser (Expression -&gt; Lambda)
+forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
+forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Text
+-&gt; (Text -&gt; Parser Meta)
+-&gt; Object
+-&gt; Key
+-&gt; Parser [(Meta, Expression)]
+</span><a href="#local-6989586621679534709"><span class="hs-identifier hs-var">operands</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679534706"><span class="hs-identifier hs-var">key</span></a></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Parser Meta
+</span><a href="#local-6989586621679534711"><span class="hs-identifier hs-var">expressionMeta</span></a></span><span> </span><span class="annot"><span class="annottext">Object
+</span><a href="#local-6989586621679534705"><span class="hs-identifier hs-var">entry</span></a></span><span> </span><span class="annot"><span class="annottext">Key
+</span><span class="hs-string">&quot;evaluate&quot;</span></span><span>
+</span><span id="line-114"></span><span>        </span><span class="annot"><span class="annottext">Parser (Expression -&gt; Lambda) -&gt; Parser Expression -&gt; Parser Lambda
+forall a b. Parser (a -&gt; b) -&gt; Parser a -&gt; Parser b
+forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Object
+</span><a href="#local-6989586621679534705"><span class="hs-identifier hs-var">entry</span></a></span><span> </span><span class="annot"><span class="annottext">Object -&gt; Key -&gt; Parser Expression
+forall a. FromJSON a =&gt; Object -&gt; Key -&gt; Parser a
+</span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.3.2.0-37b25499/share/doc/html/src/Data.Aeson.Types.FromJSON.html#.%3A"><span class="hs-operator hs-var">.:</span></a></span><span> </span><span class="annot"><span class="annottext">Key
+</span><span class="hs-string">&quot;&#119899;&quot;</span></span><span>
+</span><span id="line-115"></span><span>    </span><span class="annot"><span class="annottext">String -&gt; Expression -&gt; Parser ()
+</span><a href="#local-6989586621679534712"><span class="hs-identifier hs-var">sigmas</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text -&gt; String
+</span><span class="hs-identifier hs-var">T.unpack</span></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679534706"><span class="hs-identifier hs-var">key</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Lambda
+</span><a href="#local-6989586621679534707"><span class="hs-identifier hs-var">lambda</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">_answer</span><span>
+</span><span id="line-116"></span><span>    </span><span class="annot"><span class="annottext">String -&gt; Expression -&gt; Parser ()
+</span><a href="#local-6989586621679534714"><span class="hs-identifier hs-var">dataless</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text -&gt; String
+</span><span class="hs-identifier hs-var">T.unpack</span></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679534706"><span class="hs-identifier hs-var">key</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Lambda
+</span><a href="#local-6989586621679534707"><span class="hs-identifier hs-var">lambda</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">_answer</span><span>
+</span><span id="line-117"></span><span>    </span><span class="annot"><span class="annottext">Lambda -&gt; Parser Lambda
+forall a. a -&gt; Parser a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">Lambda
+</span><a href="#local-6989586621679534707"><span class="hs-identifier hs-var">lambda</span></a></span><span>
+</span><span id="line-118"></span><span>    </span><span class="hs-keyword">where</span><span>
+</span><span id="line-119"></span><span>      </span><span class="hs-comment">-- The metas one block of an entry binds, each paired with the term it is</span><span>
+</span><span id="line-120"></span><span>      </span><span class="hs-comment">-- reduced from, ordered by the name of the meta: a YAML mapping keeps no</span><span>
+</span><span id="line-121"></span><span>      </span><span class="hs-comment">-- order of its own, so numbering the metas &#120575;1, &#120575;2, &#8230; and &#119899;1, &#119899;2, &#8230; is</span><span>
+</span><span id="line-122"></span><span>      </span><span class="hs-comment">-- what reduces them the way they are written.</span><span>
+</span><span id="line-123"></span><span>      </span><span class="annot"><a href="#local-6989586621679534709"><span class="hs-identifier hs-type">operands</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.3.2.0-37b25499/share/doc/html/src/Data.Aeson.Types.Internal.html#Parser"><span class="hs-identifier hs-type">Yaml.Parser</span></a></span><span> </span><span class="annot"><a href="Lambdas.html#Meta"><span class="hs-identifier hs-type">Meta</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.3.2.0-37b25499/share/doc/html/src/Data.Aeson.Types.Internal.html#Object"><span class="hs-identifier hs-type">Object</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.3.2.0-37b25499/share/doc/html/src/Data.Aeson.Key.html#Key"><span class="hs-identifier hs-type">Key</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.3.2.0-37b25499/share/doc/html/src/Data.Aeson.Types.Internal.html#Parser"><span class="hs-identifier hs-type">Yaml.Parser</span></a></span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><a href="Lambdas.html#Meta"><span class="hs-identifier hs-type">Meta</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span><span>
+</span><span id="line-124"></span><span>      </span><span id="local-6989586621679534709"><span class="annot"><span class="annottext">operands :: Text
+-&gt; (Text -&gt; Parser Meta)
+-&gt; Object
+-&gt; Key
+-&gt; Parser [(Meta, Expression)]
+</span><a href="#local-6989586621679534709"><span class="hs-identifier hs-var hs-var">operands</span></a></span></span><span> </span><span id="local-6989586621679534715"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679534715"><span class="hs-identifier hs-var">key</span></a></span></span><span> </span><span id="local-6989586621679534716"><span class="annot"><span class="annottext">Text -&gt; Parser Meta
+</span><a href="#local-6989586621679534716"><span class="hs-identifier hs-var">kind</span></a></span></span><span> </span><span id="local-6989586621679534717"><span class="annot"><span class="annottext">Object
+</span><a href="#local-6989586621679534717"><span class="hs-identifier hs-var">entry</span></a></span></span><span> </span><span id="local-6989586621679534718"><span class="annot"><span class="annottext">Key
+</span><a href="#local-6989586621679534718"><span class="hs-identifier hs-var">name</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-125"></span><span>        </span><span id="local-6989586621679534719"><span class="annot"><span class="annottext">Map Text Expression
+</span><a href="#local-6989586621679534719"><span class="hs-identifier hs-var">mapping</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Object
+</span><a href="#local-6989586621679534717"><span class="hs-identifier hs-var">entry</span></a></span><span> </span><span class="annot"><span class="annottext">Object -&gt; Key -&gt; Parser (Maybe (Map Text Expression))
+forall a. FromJSON a =&gt; Object -&gt; Key -&gt; Parser (Maybe a)
+</span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.3.2.0-37b25499/share/doc/html/src/Data.Aeson.Types.FromJSON.html#.%3A%3F"><span class="hs-operator hs-var">.:?</span></a></span><span> </span><span class="annot"><span class="annottext">Key
+</span><a href="#local-6989586621679534718"><span class="hs-identifier hs-var">name</span></a></span><span> </span><span class="annot"><span class="annottext">Parser (Maybe (Map Text Expression))
+-&gt; Map Text Expression -&gt; Parser (Map Text Expression)
+forall a. Parser (Maybe a) -&gt; a -&gt; Parser a
+</span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.3.2.0-37b25499/share/doc/html/src/Data.Aeson.Types.FromJSON.html#.%21%3D"><span class="hs-operator hs-var">.!=</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Map Text Expression
+forall k a. Map k a
+</span><span class="hs-identifier hs-var">Map.empty</span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Map</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-126"></span><span>        </span><span class="annot"><span class="annottext">((Text, Expression) -&gt; Parser (Meta, Expression))
+-&gt; [(Text, Expression)] -&gt; Parser [(Meta, Expression)]
+forall (t :: * -&gt; *) (m :: * -&gt; *) a b.
+(Traversable t, Monad m) =&gt;
+(a -&gt; m b) -&gt; t a -&gt; m (t b)
+forall (m :: * -&gt; *) a b. Monad m =&gt; (a -&gt; m b) -&gt; [a] -&gt; m [b]
+</span><span class="hs-identifier hs-var">mapM</span></span><span> </span><span class="annot"><span class="annottext">(Text, Expression) -&gt; Parser (Meta, Expression)
+</span><a href="#local-6989586621679534722"><span class="hs-identifier hs-var">bound</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Map Text Expression -&gt; [(Text, Expression)]
+forall k a. Map k a -&gt; [(k, a)]
+</span><span class="hs-identifier hs-var">Map.toAscList</span></span><span> </span><span class="annot"><span class="annottext">Map Text Expression
+</span><a href="#local-6989586621679534719"><span class="hs-identifier hs-var">mapping</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-127"></span><span>        </span><span class="hs-keyword">where</span><span>
+</span><span id="line-128"></span><span>          </span><span class="annot"><a href="#local-6989586621679534722"><span class="hs-identifier hs-type">bound</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.3.2.0-37b25499/share/doc/html/src/Data.Aeson.Types.Internal.html#Parser"><span class="hs-identifier hs-type">Yaml.Parser</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Lambdas.html#Meta"><span class="hs-identifier hs-type">Meta</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-129"></span><span>          </span><span id="local-6989586621679534722"><span class="annot"><span class="annottext">bound :: (Text, Expression) -&gt; Parser (Meta, Expression)
+</span><a href="#local-6989586621679534722"><span class="hs-identifier hs-var hs-var">bound</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679534724"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679534724"><span class="hs-identifier hs-var">meta</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679534725"><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679534725"><span class="hs-identifier hs-var">term</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-130"></span><span>            </span><span class="annot"><span class="annottext">String -&gt; String -&gt; Expression -&gt; Parser ()
+forall (m :: * -&gt; *) a.
+(MonadFail m, Slots a) =&gt;
+String -&gt; String -&gt; a -&gt; m ()
+</span><a href="Yaml.html#referenceless"><span class="hs-identifier hs-var">referenceless</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text -&gt; String
+</span><span class="hs-identifier hs-var">T.unpack</span></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679534715"><span class="hs-identifier hs-var">key</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text -&gt; String
+</span><span class="hs-identifier hs-var">T.unpack</span></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679534724"><span class="hs-identifier hs-var">meta</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679534725"><span class="hs-identifier hs-var">term</span></a></span><span>
+</span><span id="line-131"></span><span>            </span><span class="annot"><span class="annottext">Text -&gt; Parser Meta
+</span><a href="#local-6989586621679534716"><span class="hs-identifier hs-var">kind</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679534724"><span class="hs-identifier hs-var">meta</span></a></span><span> </span><span class="annot"><span class="annottext">Parser Meta
+-&gt; (Meta -&gt; Parser (Meta, Expression)) -&gt; Parser (Meta, Expression)
+forall a b. Parser a -&gt; (a -&gt; Parser b) -&gt; Parser b
+forall (m :: * -&gt; *) a b. Monad m =&gt; m a -&gt; (a -&gt; m b) -&gt; m b
+</span><span class="hs-operator hs-var">&gt;&gt;=</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679534726"><span class="annot"><span class="annottext">Meta
+</span><a href="#local-6989586621679534726"><span class="hs-identifier hs-var">named</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">(Meta, Expression) -&gt; Parser (Meta, Expression)
+forall a. a -&gt; Parser a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Meta
+</span><a href="#local-6989586621679534726"><span class="hs-identifier hs-var">named</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679534725"><span class="hs-identifier hs-var">term</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-132"></span><span>      </span><span class="hs-comment">-- The meta an 'evaluate' block binds: '&#119899;1' is written the way &#120593;-calculus</span><span>
+</span><span id="line-133"></span><span>      </span><span class="hs-comment">-- writes it and stands for the same meta a rule's 'pattern' would bind,</span><span>
+</span><span id="line-134"></span><span>      </span><span class="hs-comment">-- so the parser of the calculus is what reads it here too.</span><span>
+</span><span id="line-135"></span><span>      </span><span class="annot"><a href="#local-6989586621679534711"><span class="hs-identifier hs-type">expressionMeta</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.3.2.0-37b25499/share/doc/html/src/Data.Aeson.Types.Internal.html#Parser"><span class="hs-identifier hs-type">Yaml.Parser</span></a></span><span> </span><span class="annot"><a href="Lambdas.html#Meta"><span class="hs-identifier hs-type">Meta</span></a></span><span>
+</span><span id="line-136"></span><span>      </span><span id="local-6989586621679534711"><span class="annot"><span class="annottext">expressionMeta :: Text -&gt; Parser Meta
+</span><a href="#local-6989586621679534711"><span class="hs-identifier hs-var hs-var">expressionMeta</span></a></span></span><span> </span><span id="local-6989586621679534727"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679534727"><span class="hs-identifier hs-var">meta</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">String -&gt; Either String Expression
+</span><a href="Parser.html#parseExpression"><span class="hs-identifier hs-var">parseExpression</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text -&gt; String
+</span><span class="hs-identifier hs-var">T.unpack</span></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679534727"><span class="hs-identifier hs-var">meta</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-137"></span><span>        </span><span class="annot"><span class="hs-identifier hs-type">Right</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#ExMeta"><span class="hs-identifier hs-type">ExMeta</span></a></span><span> </span><span id="local-6989586621679534729"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679534729"><span class="hs-identifier hs-var">name</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Meta -&gt; Parser Meta
+forall a. a -&gt; Parser a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Meta
+</span><a href="Lambdas.html#Meta"><span class="hs-identifier hs-var">Meta</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679534727"><span class="hs-identifier hs-var">meta</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679534729"><span class="hs-identifier hs-var">name</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-138"></span><span>        </span><span class="annot"><span class="annottext">Either String Expression
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; Parser Meta
+forall a. String -&gt; Parser a
+forall (m :: * -&gt; *) a. MonadFail m =&gt; String -&gt; m a
+</span><span class="hs-identifier hs-var">fail</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
+forall r. PrintfType r =&gt; String -&gt; r
+</span><span class="hs-identifier hs-var">printf</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;The operand '%s' is not an expression meta, such as '&#119899;1'&quot;</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text -&gt; String
+</span><span class="hs-identifier hs-var">T.unpack</span></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679534727"><span class="hs-identifier hs-var">meta</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-139"></span><span>      </span><span class="hs-comment">-- The meta a 'dataize' block binds, which is a bytes meta and not an</span><span>
+</span><span id="line-140"></span><span>      </span><span class="hs-comment">-- expression one, since what &#120123; answers is data and nothing else.</span><span>
+</span><span id="line-141"></span><span>      </span><span class="annot"><a href="#local-6989586621679534710"><span class="hs-identifier hs-type">bytesMeta</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.3.2.0-37b25499/share/doc/html/src/Data.Aeson.Types.Internal.html#Parser"><span class="hs-identifier hs-type">Yaml.Parser</span></a></span><span> </span><span class="annot"><a href="Lambdas.html#Meta"><span class="hs-identifier hs-type">Meta</span></a></span><span>
+</span><span id="line-142"></span><span>      </span><span id="local-6989586621679534710"><span class="annot"><span class="annottext">bytesMeta :: Text -&gt; Parser Meta
+</span><a href="#local-6989586621679534710"><span class="hs-identifier hs-var hs-var">bytesMeta</span></a></span></span><span> </span><span id="local-6989586621679534730"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679534730"><span class="hs-identifier hs-var">meta</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">String -&gt; Either String Bytes
+</span><a href="Parser.html#parseBytes"><span class="hs-identifier hs-var">parseBytes</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text -&gt; String
+</span><span class="hs-identifier hs-var">T.unpack</span></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679534730"><span class="hs-identifier hs-var">meta</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-143"></span><span>        </span><span class="annot"><span class="hs-identifier hs-type">Right</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#BtMeta"><span class="hs-identifier hs-type">BtMeta</span></a></span><span> </span><span id="local-6989586621679534732"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679534732"><span class="hs-identifier hs-var">name</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Meta -&gt; Parser Meta
+forall a. a -&gt; Parser a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Meta
+</span><a href="Lambdas.html#Meta"><span class="hs-identifier hs-var">Meta</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679534730"><span class="hs-identifier hs-var">meta</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679534732"><span class="hs-identifier hs-var">name</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-144"></span><span>        </span><span class="annot"><span class="annottext">Either String Bytes
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; Parser Meta
+forall a. String -&gt; Parser a
+forall (m :: * -&gt; *) a. MonadFail m =&gt; String -&gt; m a
+</span><span class="hs-identifier hs-var">fail</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
+forall r. PrintfType r =&gt; String -&gt; r
+</span><span class="hs-identifier hs-var">printf</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;The operand '%s' is not a bytes meta, such as '&#120575;1'&quot;</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text -&gt; String
+</span><span class="hs-identifier hs-var">T.unpack</span></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679534730"><span class="hs-identifier hs-var">meta</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-145"></span><span>      </span><span class="hs-comment">-- A bare &#120590; is the one anonymous meta an answer may carry, since minting</span><span>
+</span><span id="line-146"></span><span>      </span><span class="hs-comment">-- a fresh symbol is exactly what it asks for; every other one names a</span><span>
+</span><span id="line-147"></span><span>      </span><span class="hs-comment">-- match the entry never made.</span><span>
+</span><span id="line-148"></span><span>      </span><span class="annot"><a href="#local-6989586621679534712"><span class="hs-identifier hs-type">sigmas</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.3.2.0-37b25499/share/doc/html/src/Data.Aeson.Types.Internal.html#Parser"><span class="hs-identifier hs-type">Yaml.Parser</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-149"></span><span>      </span><span id="local-6989586621679534712"><span class="annot"><span class="annottext">sigmas :: String -&gt; Expression -&gt; Parser ()
+</span><a href="#local-6989586621679534712"><span class="hs-identifier hs-var hs-var">sigmas</span></a></span></span><span> </span><span id="local-6989586621679534733"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679534733"><span class="hs-identifier hs-var">key</span></a></span></span><span> </span><span id="local-6989586621679534734"><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679534734"><span class="hs-identifier hs-var">answer</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679534735"><span class="hs-identifier hs-var">kind</span></a></span><span> </span><span class="hs-glyph">|</span><span> </span><span class="annot"><a href="AST.html#Slot"><span class="hs-identifier hs-type">Slot</span></a></span><span> </span><span id="local-6989586621679534735"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679534735"><span class="hs-identifier hs-var">kind</span></a></span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Expression -&gt; [Slot]
+forall a. Slots a =&gt; a -&gt; [Slot]
+</span><a href="Slots.html#slots"><span class="hs-identifier hs-var">slots</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679534734"><span class="hs-identifier hs-var">answer</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679534735"><span class="hs-identifier hs-var">kind</span></a></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">/=</span></span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;S&quot;</span></span><span class="hs-special">]</span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-150"></span><span>        </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">() -&gt; Parser ()
+forall a. a -&gt; Parser a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-151"></span><span>        </span><span id="local-6989586621679534738"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679534738"><span class="hs-identifier hs-var">kind</span></a></span></span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span class="annot"><span class="annottext">[Text]
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; Parser ()
+forall a. String -&gt; Parser a
+forall (m :: * -&gt; *) a. MonadFail m =&gt; String -&gt; m a
+</span><span class="hs-identifier hs-var">fail</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String -&gt; String -&gt; String -&gt; String
+forall r. PrintfType r =&gt; String -&gt; r
+</span><span class="hs-identifier hs-var">printf</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;The anonymous meta '!%s' cannot be referenced in the '&#119899;' of &#955; function '%s'&quot;</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text -&gt; String
+</span><span class="hs-identifier hs-var">T.unpack</span></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679534738"><span class="hs-identifier hs-var">kind</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679534733"><span class="hs-identifier hs-var">key</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-152"></span><span>      </span><span class="hs-comment">-- An entry answers a term carrying a symbol and never a value it worked</span><span>
+</span><span id="line-153"></span><span>      </span><span class="hs-comment">-- out, so the data its operands came down to is not its to read.</span><span>
+</span><span id="line-154"></span><span>      </span><span class="annot"><a href="#local-6989586621679534714"><span class="hs-identifier hs-type">dataless</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/sn-2.3.2.0-37b25499/share/doc/html/src/Data.Aeson.Types.Internal.html#Parser"><span class="hs-identifier hs-type">Yaml.Parser</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-155"></span><span>      </span><span id="local-6989586621679534714"><span class="annot"><span class="annottext">dataless :: String -&gt; Expression -&gt; Parser ()
+</span><a href="#local-6989586621679534714"><span class="hs-identifier hs-var hs-var">dataless</span></a></span></span><span> </span><span id="local-6989586621679534739"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679534739"><span class="hs-identifier hs-var">key</span></a></span></span><span> </span><span id="local-6989586621679534740"><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679534740"><span class="hs-identifier hs-var">answer</span></a></span></span><span>
+</span><span id="line-156"></span><span>        </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Expression -&gt; Bool
+</span><a href="Lambdas.html#computes"><span class="hs-identifier hs-var">computes</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679534740"><span class="hs-identifier hs-var">answer</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; Parser ()
+forall a. String -&gt; Parser a
+forall (m :: * -&gt; *) a. MonadFail m =&gt; String -&gt; m a
+</span><span class="hs-identifier hs-var">fail</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
+forall r. PrintfType r =&gt; String -&gt; r
+</span><span class="hs-identifier hs-var">printf</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;The '&#119899;' of &#955; function '%s' reads data, while a symbolic answer may mention nothing but &#120590;&quot;</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679534739"><span class="hs-identifier hs-var">key</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-157"></span><span>        </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">otherwise</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">() -&gt; Parser ()
+forall a. a -&gt; Parser a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-158"></span><span>
+</span><span id="line-159"></span><span class="hs-comment">-- Whether a term reads data &#8212; carries a bytes meta anywhere inside it &#8212; which</span><span>
+</span><span id="line-160"></span><span class="hs-comment">-- is what tells an answer that computes from one that merely stands for an</span><span>
+</span><span id="line-161"></span><span class="hs-comment">-- unknown.</span><span>
+</span><span id="line-162"></span><span class="annot"><a href="Lambdas.html#computes"><span class="hs-identifier hs-type">computes</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span>
+</span><span id="line-163"></span><span id="computes"><span class="annot"><span class="annottext">computes :: Expression -&gt; Bool
+</span><a href="Lambdas.html#computes"><span class="hs-identifier hs-var hs-var">computes</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expression -&gt; Bool
+</span><a href="#local-6989586621679534742"><span class="hs-identifier hs-var">goExpr</span></a></span><span>
+</span><span id="line-164"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-165"></span><span>    </span><span class="annot"><a href="#local-6989586621679534742"><span class="hs-identifier hs-type">goExpr</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span>
+</span><span id="line-166"></span><span>    </span><span id="local-6989586621679534742"><span class="annot"><span class="annottext">goExpr :: Expression -&gt; Bool
+</span><a href="#local-6989586621679534742"><span class="hs-identifier hs-var hs-var">goExpr</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#ExFormation"><span class="hs-identifier hs-type">ExFormation</span></a></span><span> </span><span id="local-6989586621679534744"><span class="annot"><span class="annottext">[Binding]
+</span><a href="#local-6989586621679534744"><span class="hs-identifier hs-var">bds</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Binding -&gt; Bool) -&gt; [Binding] -&gt; Bool
+forall (t :: * -&gt; *) a. Foldable t =&gt; (a -&gt; Bool) -&gt; t a -&gt; Bool
+</span><span class="hs-identifier hs-var">any</span></span><span> </span><span class="annot"><span class="annottext">Binding -&gt; Bool
+</span><a href="#local-6989586621679534746"><span class="hs-identifier hs-var">goBinding</span></a></span><span> </span><span class="annot"><span class="annottext">[Binding]
+</span><a href="#local-6989586621679534744"><span class="hs-identifier hs-var">bds</span></a></span><span>
+</span><span id="line-167"></span><span>    </span><span class="annot"><a href="#local-6989586621679534742"><span class="hs-identifier hs-var">goExpr</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#ExApplication"><span class="hs-identifier hs-type">ExApplication</span></a></span><span> </span><span id="local-6989586621679534748"><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679534748"><span class="hs-identifier hs-var">expr</span></a></span></span><span> </span><span id="local-6989586621679534749"><span class="annot"><span class="annottext">Argument
+</span><a href="#local-6989586621679534749"><span class="hs-identifier hs-var">arg</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expression -&gt; Bool
+</span><a href="#local-6989586621679534742"><span class="hs-identifier hs-var">goExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679534748"><span class="hs-identifier hs-var">expr</span></a></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
+</span><span class="hs-operator hs-var">||</span></span><span> </span><span class="annot"><span class="annottext">Argument -&gt; Bool
+</span><a href="#local-6989586621679534751"><span class="hs-identifier hs-var">goArgument</span></a></span><span> </span><span class="annot"><span class="annottext">Argument
+</span><a href="#local-6989586621679534749"><span class="hs-identifier hs-var">arg</span></a></span><span>
+</span><span id="line-168"></span><span>    </span><span class="annot"><a href="#local-6989586621679534742"><span class="hs-identifier hs-var">goExpr</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#ExDispatch"><span class="hs-identifier hs-type">ExDispatch</span></a></span><span> </span><span id="local-6989586621679534753"><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679534753"><span class="hs-identifier hs-var">expr</span></a></span></span><span> </span><span class="annot"><span class="annottext">Attribute
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expression -&gt; Bool
+</span><a href="#local-6989586621679534742"><span class="hs-identifier hs-var">goExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679534753"><span class="hs-identifier hs-var">expr</span></a></span><span>
+</span><span id="line-169"></span><span>    </span><span class="annot"><a href="#local-6989586621679534742"><span class="hs-identifier hs-var">goExpr</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#ExPhiMeet"><span class="hs-identifier hs-type">ExPhiMeet</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe String
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679534755"><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679534755"><span class="hs-identifier hs-var">expr</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expression -&gt; Bool
+</span><a href="#local-6989586621679534742"><span class="hs-identifier hs-var">goExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679534755"><span class="hs-identifier hs-var">expr</span></a></span><span>
+</span><span id="line-170"></span><span>    </span><span class="annot"><a href="#local-6989586621679534742"><span class="hs-identifier hs-var">goExpr</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#ExPhiAgain"><span class="hs-identifier hs-type">ExPhiAgain</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe String
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679534757"><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679534757"><span class="hs-identifier hs-var">expr</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expression -&gt; Bool
+</span><a href="#local-6989586621679534742"><span class="hs-identifier hs-var">goExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679534757"><span class="hs-identifier hs-var">expr</span></a></span><span>
+</span><span id="line-171"></span><span>    </span><span class="annot"><a href="#local-6989586621679534742"><span class="hs-identifier hs-var">goExpr</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#ExBytes"><span class="hs-identifier hs-type">ExBytes</span></a></span><span> </span><span id="local-6989586621679534759"><span class="annot"><span class="annottext">Bytes
+</span><a href="#local-6989586621679534759"><span class="hs-identifier hs-var">bts</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bytes -&gt; Bool
+</span><a href="#local-6989586621679534760"><span class="hs-identifier hs-var">goBytes</span></a></span><span> </span><span class="annot"><span class="annottext">Bytes
+</span><a href="#local-6989586621679534759"><span class="hs-identifier hs-var">bts</span></a></span><span>
+</span><span id="line-172"></span><span>    </span><span class="annot"><a href="#local-6989586621679534742"><span class="hs-identifier hs-var">goExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">False</span></span><span>
+</span><span id="line-173"></span><span>    </span><span class="annot"><a href="#local-6989586621679534746"><span class="hs-identifier hs-type">goBinding</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="AST.html#Binding"><span class="hs-identifier hs-type">Binding</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span>
+</span><span id="line-174"></span><span>    </span><span id="local-6989586621679534746"><span class="annot"><span class="annottext">goBinding :: Binding -&gt; Bool
+</span><a href="#local-6989586621679534746"><span class="hs-identifier hs-var hs-var">goBinding</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#BiTau"><span class="hs-identifier hs-type">BiTau</span></a></span><span> </span><span class="annot"><span class="annottext">Attribute
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679534762"><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679534762"><span class="hs-identifier hs-var">expr</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expression -&gt; Bool
+</span><a href="#local-6989586621679534742"><span class="hs-identifier hs-var">goExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679534762"><span class="hs-identifier hs-var">expr</span></a></span><span>
+</span><span id="line-175"></span><span>    </span><span class="annot"><a href="#local-6989586621679534746"><span class="hs-identifier hs-var">goBinding</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#BiDelta"><span class="hs-identifier hs-type">BiDelta</span></a></span><span> </span><span id="local-6989586621679534764"><span class="annot"><span class="annottext">Bytes
+</span><a href="#local-6989586621679534764"><span class="hs-identifier hs-var">bts</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bytes -&gt; Bool
+</span><a href="#local-6989586621679534760"><span class="hs-identifier hs-var">goBytes</span></a></span><span> </span><span class="annot"><span class="annottext">Bytes
+</span><a href="#local-6989586621679534764"><span class="hs-identifier hs-var">bts</span></a></span><span>
+</span><span id="line-176"></span><span>    </span><span class="annot"><a href="#local-6989586621679534746"><span class="hs-identifier hs-var">goBinding</span></a></span><span> </span><span class="annot"><span class="annottext">Binding
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">False</span></span><span>
+</span><span id="line-177"></span><span>    </span><span class="annot"><a href="#local-6989586621679534751"><span class="hs-identifier hs-type">goArgument</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="AST.html#Argument"><span class="hs-identifier hs-type">Argument</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span>
+</span><span id="line-178"></span><span>    </span><span id="local-6989586621679534751"><span class="annot"><span class="annottext">goArgument :: Argument -&gt; Bool
+</span><a href="#local-6989586621679534751"><span class="hs-identifier hs-var hs-var">goArgument</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#ArTau"><span class="hs-identifier hs-type">ArTau</span></a></span><span> </span><span class="annot"><span class="annottext">Attribute
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679534766"><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679534766"><span class="hs-identifier hs-var">expr</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expression -&gt; Bool
+</span><a href="#local-6989586621679534742"><span class="hs-identifier hs-var">goExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679534766"><span class="hs-identifier hs-var">expr</span></a></span><span>
+</span><span id="line-179"></span><span>    </span><span class="annot"><a href="#local-6989586621679534751"><span class="hs-identifier hs-var">goArgument</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#ArAlpha"><span class="hs-identifier hs-type">ArAlpha</span></a></span><span> </span><span class="annot"><span class="annottext">Alpha
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679534768"><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679534768"><span class="hs-identifier hs-var">expr</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expression -&gt; Bool
+</span><a href="#local-6989586621679534742"><span class="hs-identifier hs-var">goExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679534768"><span class="hs-identifier hs-var">expr</span></a></span><span>
+</span><span id="line-180"></span><span>    </span><span class="annot"><a href="#local-6989586621679534760"><span class="hs-identifier hs-type">goBytes</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="AST.html#Bytes"><span class="hs-identifier hs-type">Bytes</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span>
+</span><span id="line-181"></span><span>    </span><span id="local-6989586621679534760"><span class="annot"><span class="annottext">goBytes :: Bytes -&gt; Bool
+</span><a href="#local-6989586621679534760"><span class="hs-identifier hs-var hs-var">goBytes</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#BtMeta"><span class="hs-identifier hs-type">BtMeta</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">True</span></span><span>
+</span><span id="line-182"></span><span>    </span><span class="annot"><a href="#local-6989586621679534760"><span class="hs-identifier hs-var">goBytes</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#BtAny"><span class="hs-identifier hs-type">BtAny</span></a></span><span> </span><span class="annot"><span class="annottext">Slot
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">True</span></span><span>
+</span><span id="line-183"></span><span>    </span><span class="annot"><a href="#local-6989586621679534760"><span class="hs-identifier hs-var">goBytes</span></a></span><span> </span><span class="annot"><span class="annottext">Bytes
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">False</span></span><span>
+</span><span id="line-184"></span><span>
+</span><span id="line-185"></span><span class="hs-comment">-- No &#955; function at all: every one of them gets stuck. This is what a run</span><span>
+</span><span id="line-186"></span><span class="hs-comment">-- without '--symbolic' fires against.</span><span>
+</span><span id="line-187"></span><span class="annot"><a href="Lambdas.html#emptyLambdas"><span class="hs-identifier hs-type">emptyLambdas</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Lambdas.html#Lambdas"><span class="hs-identifier hs-type">Lambdas</span></a></span><span>
+</span><span id="line-188"></span><span id="emptyLambdas"><span class="annot"><span class="annottext">emptyLambdas :: Lambdas
+</span><a href="Lambdas.html#emptyLambdas"><span class="hs-identifier hs-var hs-var">emptyLambdas</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[(Regex, Lambda)] -&gt; Lambdas
+</span><a href="Lambdas.html#Lambdas"><span class="hs-identifier hs-var">Lambdas</span></a></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span>
+</span><span id="line-189"></span><span>
+</span><span id="line-190"></span><span class="hs-comment">-- Read the &#955; functions from a YAML file. A key that is no regular expression,</span><span>
+</span><span id="line-191"></span><span class="hs-comment">-- a key two entries share, an entry with no answer under '&#119899;', an answer</span><span>
+</span><span id="line-192"></span><span class="hs-comment">-- reading data and malformed YAML all fail here, before any reduction starts,</span><span>
+</span><span id="line-193"></span><span class="hs-comment">-- so a run never gets half-way through a derivation to discover that one of</span><span>
+</span><span id="line-194"></span><span class="hs-comment">-- its &#955; functions cannot be read at all.</span><span>
+</span><span id="line-195"></span><span class="annot"><a href="Lambdas.html#readLambdas"><span class="hs-identifier hs-type">readLambdas</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">FilePath</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="annot"><a href="Lambdas.html#Lambdas"><span class="hs-identifier hs-type">Lambdas</span></a></span><span>
+</span><span id="line-196"></span><span id="readLambdas"><span class="annot"><span class="annottext">readLambdas :: String -&gt; IO Lambdas
+</span><a href="Lambdas.html#readLambdas"><span class="hs-identifier hs-var hs-var">readLambdas</span></a></span></span><span> </span><span id="local-6989586621679534770"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679534770"><span class="hs-identifier hs-var">path</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-197"></span><span>  </span><span id="local-6989586621679534771"><span class="annot"><span class="annottext">[Lambda]
+</span><a href="#local-6989586621679534771"><span class="hs-identifier hs-var">entries</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">String -&gt; IO (Either ParseException [Lambda])
+forall a. FromJSON a =&gt; String -&gt; IO (Either ParseException a)
+</span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/yml-0.11.11.2-9346c170/share/doc/html/src/Data.Yaml.html#decodeFileEither"><span class="hs-identifier hs-var">Yaml.decodeFileEither</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679534770"><span class="hs-identifier hs-var">path</span></a></span><span> </span><span class="annot"><span class="annottext">IO (Either ParseException [Lambda])
+-&gt; (Either ParseException [Lambda] -&gt; IO [Lambda]) -&gt; IO [Lambda]
+forall a b. IO a -&gt; (a -&gt; IO b) -&gt; IO b
+forall (m :: * -&gt; *) a b. Monad m =&gt; m a -&gt; (a -&gt; m b) -&gt; m b
+</span><span class="hs-operator hs-var">&gt;&gt;=</span></span><span> </span><span class="annot"><span class="annottext">(ParseException -&gt; IO [Lambda])
+-&gt; ([Lambda] -&gt; IO [Lambda])
+-&gt; Either ParseException [Lambda]
+-&gt; IO [Lambda]
+forall a c b. (a -&gt; c) -&gt; (b -&gt; c) -&gt; Either a b -&gt; c
+</span><span class="hs-identifier hs-var">either</span></span><span> </span><span class="annot"><span class="annottext">ParseException -&gt; IO [Lambda]
+</span><a href="#local-6989586621679534774"><span class="hs-identifier hs-var">broken</span></a></span><span> </span><span class="annot"><span class="annottext">[Lambda] -&gt; IO [Lambda]
+forall a. a -&gt; IO a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span>
+</span><span id="line-198"></span><span>  </span><span class="annot"><span class="annottext">(Lambda -&gt; IO ()) -&gt; [Lambda] -&gt; IO ()
+forall (t :: * -&gt; *) (m :: * -&gt; *) a b.
+(Foldable t, Monad m) =&gt;
+(a -&gt; m b) -&gt; t a -&gt; m ()
+</span><span class="hs-identifier hs-var">mapM_</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[Lambda] -&gt; Lambda -&gt; IO ()
+</span><a href="#local-6989586621679534776"><span class="hs-identifier hs-var">unique</span></a></span><span> </span><span class="annot"><span class="annottext">[Lambda]
+</span><a href="#local-6989586621679534771"><span class="hs-identifier hs-var">entries</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[Lambda]
+</span><a href="#local-6989586621679534771"><span class="hs-identifier hs-var">entries</span></a></span><span>
+</span><span id="line-199"></span><span>  </span><span id="local-6989586621679534777"><span class="annot"><span class="annottext">Lambdas
+</span><a href="#local-6989586621679534777"><span class="hs-identifier hs-var">registered</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">[(Regex, Lambda)] -&gt; Lambdas
+</span><a href="Lambdas.html#Lambdas"><span class="hs-identifier hs-var">Lambdas</span></a></span><span> </span><span class="annot"><span class="annottext">([(Regex, Lambda)] -&gt; Lambdas)
+-&gt; IO [(Regex, Lambda)] -&gt; IO Lambdas
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">(Lambda -&gt; IO (Regex, Lambda)) -&gt; [Lambda] -&gt; IO [(Regex, Lambda)]
+forall (t :: * -&gt; *) (m :: * -&gt; *) a b.
+(Traversable t, Monad m) =&gt;
+(a -&gt; m b) -&gt; t a -&gt; m (t b)
+forall (m :: * -&gt; *) a b. Monad m =&gt; (a -&gt; m b) -&gt; [a] -&gt; m [b]
+</span><span class="hs-identifier hs-var">mapM</span></span><span> </span><span class="annot"><span class="annottext">Lambda -&gt; IO (Regex, Lambda)
+</span><a href="#local-6989586621679534778"><span class="hs-identifier hs-var">keyed</span></a></span><span> </span><span class="annot"><span class="annottext">[Lambda]
+</span><a href="#local-6989586621679534771"><span class="hs-identifier hs-var">entries</span></a></span><span>
+</span><span id="line-200"></span><span>  </span><span class="annot"><span class="annottext">String -&gt; IO ()
+</span><a href="Logger.html#logDebug"><span class="hs-identifier hs-var">logDebug</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String -&gt; Int -&gt; String -&gt; String
+forall r. PrintfType r =&gt; String -&gt; r
+</span><span class="hs-identifier hs-var">printf</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;Loaded %d &#955; function(s) from '%s'&quot;</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[Lambda] -&gt; Int
+forall a. [a] -&gt; Int
+forall (t :: * -&gt; *) a. Foldable t =&gt; t a -&gt; Int
+</span><span class="hs-identifier hs-var">length</span></span><span> </span><span class="annot"><span class="annottext">[Lambda]
+</span><a href="#local-6989586621679534771"><span class="hs-identifier hs-var">entries</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679534770"><span class="hs-identifier hs-var">path</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-201"></span><span>  </span><span class="annot"><span class="annottext">Lambdas -&gt; IO Lambdas
+forall a. a -&gt; IO a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">Lambdas
+</span><a href="#local-6989586621679534777"><span class="hs-identifier hs-var">registered</span></a></span><span>
+</span><span id="line-202"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-203"></span><span>    </span><span class="annot"><a href="#local-6989586621679534774"><span class="hs-identifier hs-type">broken</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/yml-0.11.11.2-9346c170/share/doc/html/src/Data.Yaml.Internal.html#ParseException"><span class="hs-identifier hs-type">Yaml.ParseException</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Lambdas.html#Lambda"><span class="hs-identifier hs-type">Lambda</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-204"></span><span>    </span><span id="local-6989586621679534774"><span class="annot"><span class="annottext">broken :: ParseException -&gt; IO [Lambda]
+</span><a href="#local-6989586621679534774"><span class="hs-identifier hs-var hs-var">broken</span></a></span></span><span> </span><span id="local-6989586621679534780"><span class="annot"><span class="annottext">ParseException
+</span><a href="#local-6989586621679534780"><span class="hs-identifier hs-var">failure</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">LambdaException -&gt; IO [Lambda]
+forall e a. Exception e =&gt; e -&gt; IO a
+</span><span class="hs-identifier hs-var">throwIO</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String -&gt; String -&gt; LambdaException
+</span><a href="Lambdas.html#BrokenLambdas"><span class="hs-identifier hs-var">BrokenLambdas</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679534770"><span class="hs-identifier hs-var">path</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">ParseException -&gt; String
+</span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/yml-0.11.11.2-9346c170/share/doc/html/src/Data.Yaml.Internal.html#prettyPrintParseException"><span class="hs-identifier hs-var">Yaml.prettyPrintParseException</span></a></span><span> </span><span class="annot"><span class="annottext">ParseException
+</span><a href="#local-6989586621679534780"><span class="hs-identifier hs-var">failure</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-205"></span><span>    </span><span class="hs-comment">-- Two entries under one key are one entry too many: nothing tells them</span><span>
+</span><span id="line-206"></span><span>    </span><span class="hs-comment">-- apart any more, so the second is unreachable and the file is wrong</span><span>
+</span><span id="line-207"></span><span>    </span><span class="hs-comment">-- rather than merely redundant.</span><span>
+</span><span id="line-208"></span><span>    </span><span class="annot"><a href="#local-6989586621679534776"><span class="hs-identifier hs-type">unique</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Lambdas.html#Lambda"><span class="hs-identifier hs-type">Lambda</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Lambdas.html#Lambda"><span class="hs-identifier hs-type">Lambda</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-209"></span><span>    </span><span id="local-6989586621679534776"><span class="annot"><span class="annottext">unique :: [Lambda] -&gt; Lambda -&gt; IO ()
+</span><a href="#local-6989586621679534776"><span class="hs-identifier hs-var hs-var">unique</span></a></span></span><span> </span><span id="local-6989586621679534782"><span class="annot"><span class="annottext">[Lambda]
+</span><a href="#local-6989586621679534782"><span class="hs-identifier hs-var">entries</span></a></span></span><span> </span><span id="local-6989586621679534783"><span class="annot"><span class="annottext">Lambda
+</span><a href="#local-6989586621679534783"><span class="hs-identifier hs-var">entry</span></a></span></span><span>
+</span><span id="line-210"></span><span>      </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">[Lambda] -&gt; Int
+forall a. [a] -&gt; Int
+forall (t :: * -&gt; *) a. Foldable t =&gt; t a -&gt; Int
+</span><span class="hs-identifier hs-var">length</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Lambda -&gt; Bool) -&gt; [Lambda] -&gt; [Lambda]
+forall a. (a -&gt; Bool) -&gt; [a] -&gt; [a]
+</span><span class="hs-identifier hs-var">filter</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">Lambda
+</span><a href="#local-6989586621679534783"><span class="hs-identifier hs-var">entry</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">_key</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(Text -&gt; Bool) -&gt; (Lambda -&gt; Text) -&gt; Lambda -&gt; Bool
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="hs-special">(</span><span class="hs-operator">.</span><span class="hs-identifier">_key</span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[Lambda]
+</span><a href="#local-6989586621679534782"><span class="hs-identifier hs-var">entries</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">1</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">() -&gt; IO ()
+forall a. a -&gt; IO a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-211"></span><span>      </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">otherwise</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">LambdaException -&gt; IO ()
+forall e a. Exception e =&gt; e -&gt; IO a
+</span><span class="hs-identifier hs-var">throwIO</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String -&gt; String -&gt; LambdaException
+</span><a href="Lambdas.html#BrokenLambdas"><span class="hs-identifier hs-var">BrokenLambdas</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679534770"><span class="hs-identifier hs-var">path</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
+forall r. PrintfType r =&gt; String -&gt; r
+</span><span class="hs-identifier hs-var">printf</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;the key '%s' is used by more than one entry&quot;</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text -&gt; String
+</span><span class="hs-identifier hs-var">T.unpack</span></span><span> </span><span class="annot"><span class="annottext">Lambda
+</span><a href="#local-6989586621679534783"><span class="hs-identifier hs-var">entry</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">_key</span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-212"></span><span>    </span><span class="hs-comment">-- The key as the regular expression it is, made to match the whole name,</span><span>
+</span><span id="line-213"></span><span>    </span><span class="hs-comment">-- so that a plain name means that one &#955; function and not every name it is</span><span>
+</span><span id="line-214"></span><span>    </span><span class="hs-comment">-- a part of.</span><span>
+</span><span id="line-215"></span><span>    </span><span class="annot"><a href="#local-6989586621679534778"><span class="hs-identifier hs-type">keyed</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Lambdas.html#Lambda"><span class="hs-identifier hs-type">Lambda</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/rgx-pcr-bltn-0.95.2.3.8.44-e6e3376b/share/doc/html/src/Text.Regex.PCRE.Wrap.html#Regex"><span class="hs-identifier hs-type">Regex</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Lambdas.html#Lambda"><span class="hs-identifier hs-type">Lambda</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-216"></span><span>    </span><span id="local-6989586621679534778"><span class="annot"><span class="annottext">keyed :: Lambda -&gt; IO (Regex, Lambda)
+</span><a href="#local-6989586621679534778"><span class="hs-identifier hs-var hs-var">keyed</span></a></span></span><span> </span><span id="local-6989586621679534785"><span class="annot"><span class="annottext">Lambda
+</span><a href="#local-6989586621679534785"><span class="hs-identifier hs-var">entry</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-217"></span><span>      </span><span id="local-6989586621679534786"><span class="annot"><span class="annottext">Either (Int, String) Regex
+</span><a href="#local-6989586621679534786"><span class="hs-identifier hs-var">compiled</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">CompOption
+-&gt; ExecOption -&gt; ByteString -&gt; IO (Either (Int, String) Regex)
+</span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/rgx-pcr-bltn-0.95.2.3.8.44-e6e3376b/share/doc/html/src/Text.Regex.PCRE.ByteString.html#compile"><span class="hs-identifier hs-var">compile</span></a></span><span> </span><span class="annot"><span class="annottext">CompOption
+</span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/rgx-pcr-bltn-0.95.2.3.8.44-e6e3376b/share/doc/html/src/Text.Regex.PCRE.Wrap.html#compUTF8"><span class="hs-identifier hs-var">compUTF8</span></a></span><span> </span><span class="annot"><span class="annottext">ExecOption
+</span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/rgx-pcr-bltn-0.95.2.3.8.44-e6e3376b/share/doc/html/src/Text.Regex.PCRE.Wrap.html#execBlank"><span class="hs-identifier hs-var">execBlank</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text -&gt; ByteString
+</span><span class="hs-identifier hs-var">encodeUtf8</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;^(?:&quot;</span></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Lambda
+</span><a href="#local-6989586621679534785"><span class="hs-identifier hs-var">entry</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">_key</span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;)$&quot;</span></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-218"></span><span>      </span><span class="annot"><span class="annottext">((Int, String) -&gt; IO (Regex, Lambda))
+-&gt; (Regex -&gt; IO (Regex, Lambda))
+-&gt; Either (Int, String) Regex
+-&gt; IO (Regex, Lambda)
+forall a c b. (a -&gt; c) -&gt; (b -&gt; c) -&gt; Either a b -&gt; c
+</span><span class="hs-identifier hs-var">either</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text -&gt; (Int, String) -&gt; IO (Regex, Lambda)
+forall a b. Text -&gt; (a, String) -&gt; IO b
+</span><a href="#local-6989586621679534787"><span class="hs-identifier hs-var">unreadable</span></a></span><span> </span><span class="annot"><span class="annottext">Lambda
+</span><a href="#local-6989586621679534785"><span class="hs-identifier hs-var">entry</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">_key</span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span id="local-6989586621679534788"><span class="annot"><span class="annottext">Regex
+</span><a href="#local-6989586621679534788"><span class="hs-identifier hs-var">key</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">(Regex, Lambda) -&gt; IO (Regex, Lambda)
+forall a. a -&gt; IO a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Regex
+</span><a href="#local-6989586621679534788"><span class="hs-identifier hs-var">key</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Lambda
+</span><a href="#local-6989586621679534785"><span class="hs-identifier hs-var">entry</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Either (Int, String) Regex
+</span><a href="#local-6989586621679534786"><span class="hs-identifier hs-var">compiled</span></a></span><span>
+</span><span id="line-219"></span><span>    </span><span id="local-6989586621679534489"><span id="local-6989586621679534490"><span class="annot"><a href="#local-6989586621679534787"><span class="hs-identifier hs-type">unreadable</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679534489"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="annot"><a href="#local-6989586621679534490"><span class="hs-identifier hs-type">b</span></a></span></span></span><span>
+</span><span id="line-220"></span><span>    </span><span id="local-6989586621679534787"><span class="annot"><span class="annottext">unreadable :: forall a b. Text -&gt; (a, String) -&gt; IO b
+</span><a href="#local-6989586621679534787"><span class="hs-identifier hs-var hs-var">unreadable</span></a></span></span><span> </span><span id="local-6989586621679534791"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679534791"><span class="hs-identifier hs-var">key</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a
+</span><span class="hs-identifier">_</span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679534792"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679534792"><span class="hs-identifier hs-var">failure</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-221"></span><span>      </span><span class="annot"><span class="annottext">LambdaException -&gt; IO b
+forall e a. Exception e =&gt; e -&gt; IO a
+</span><span class="hs-identifier hs-var">throwIO</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String -&gt; String -&gt; LambdaException
+</span><a href="Lambdas.html#BrokenLambdas"><span class="hs-identifier hs-var">BrokenLambdas</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679534770"><span class="hs-identifier hs-var">path</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String -&gt; String -&gt; String -&gt; String
+forall r. PrintfType r =&gt; String -&gt; r
+</span><span class="hs-identifier hs-var">printf</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;the key '%s' is not a regular expression: %s&quot;</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text -&gt; String
+</span><span class="hs-identifier hs-var">T.unpack</span></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679534791"><span class="hs-identifier hs-var">key</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679534792"><span class="hs-identifier hs-var">failure</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-222"></span><span>
+</span><span id="line-223"></span><span class="hs-comment">-- The entry whose key matches the whole &#955; name, if any. There is at most one:</span><span>
+</span><span id="line-224"></span><span class="hs-comment">-- the keys are unique, so a name either has a &#955; function or has none at all.</span><span>
+</span><span id="line-225"></span><span class="annot"><a href="Lambdas.html#matched"><span class="hs-identifier hs-type">matched</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Lambdas.html#Lambdas"><span class="hs-identifier hs-type">Lambdas</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><a href="Lambdas.html#Lambda"><span class="hs-identifier hs-type">Lambda</span></a></span><span>
+</span><span id="line-226"></span><span id="matched"><span class="annot"><span class="annottext">matched :: Lambdas -&gt; Text -&gt; Maybe Lambda
+</span><a href="Lambdas.html#matched"><span class="hs-identifier hs-var hs-var">matched</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Lambdas.html#Lambdas"><span class="hs-identifier hs-type">Lambdas</span></a></span><span> </span><span id="local-6989586621679534793"><span class="annot"><span class="annottext">[(Regex, Lambda)]
+</span><a href="#local-6989586621679534793"><span class="hs-identifier hs-var">entries</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679534794"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679534794"><span class="hs-identifier hs-var">func</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Regex, Lambda) -&gt; Lambda
+forall a b. (a, b) -&gt; b
+</span><span class="hs-identifier hs-var">snd</span></span><span> </span><span class="annot"><span class="annottext">((Regex, Lambda) -&gt; Lambda)
+-&gt; Maybe (Regex, Lambda) -&gt; Maybe Lambda
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">((Regex, Lambda) -&gt; Bool)
+-&gt; [(Regex, Lambda)] -&gt; Maybe (Regex, Lambda)
+forall (t :: * -&gt; *) a. Foldable t =&gt; (a -&gt; Bool) -&gt; t a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">find</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span class="hs-special">(</span><span id="local-6989586621679534796"><span class="annot"><span class="annottext">Regex
+</span><a href="#local-6989586621679534796"><span class="hs-identifier hs-var">key</span></a></span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Lambda
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Regex -&gt; ByteString -&gt; Bool
+forall regex source.
+RegexLike regex source =&gt;
+regex -&gt; source -&gt; Bool
+</span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/rgx-bs-0.94.0.3-bd815a86/share/doc/html/src/Text.Regex.Base.RegexLike.html#matchTest"><span class="hs-identifier hs-var">matchTest</span></a></span><span> </span><span class="annot"><span class="annottext">Regex
+</span><a href="#local-6989586621679534796"><span class="hs-identifier hs-var">key</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text -&gt; ByteString
+</span><span class="hs-identifier hs-var">encodeUtf8</span></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679534794"><span class="hs-identifier hs-var">func</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[(Regex, Lambda)]
+</span><a href="#local-6989586621679534793"><span class="hs-identifier hs-var">entries</span></a></span><span>
+</span><span id="line-227"></span><span>
+</span><span id="line-228"></span><span class="hs-comment">-- The fresh symbols an answer asks for, one per bare &#120590; it was written with,</span><span>
+</span><span id="line-229"></span><span class="hs-comment">-- each paired with the slot that asked for it, together with the count of</span><span>
+</span><span id="line-230"></span><span class="hs-comment">-- symbols the run has minted once they are taken. Uniqueness is the state's</span><span>
+</span><span id="line-231"></span><span class="hs-comment">-- job and not the file's: the state &#119904; threaded through &#120132;, &#120123; and &#120124; carries how</span><span>
+</span><span id="line-232"></span><span class="hs-comment">-- many symbols the run has minted so far, so every firing takes the next names</span><span>
+</span><span id="line-233"></span><span class="hs-comment">-- and no two unknowns are ever spelled alike. The names are sequential rather</span><span>
+</span><span id="line-234"></span><span class="hs-comment">-- than random, which keeps a symbolic run reproducible.</span><span>
+</span><span id="line-235"></span><span class="annot"><a href="Lambdas.html#minted"><span class="hs-identifier hs-type">minted</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><a href="AST.html#Slot"><span class="hs-identifier hs-type">Slot</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="AST.html#Function"><span class="hs-identifier hs-type">Function</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">)</span><span>
+</span><span id="line-236"></span><span id="minted"><span class="annot"><span class="annottext">minted :: Expression -&gt; Int -&gt; ([(Slot, Function)], Int)
+</span><a href="Lambdas.html#minted"><span class="hs-identifier hs-var hs-var">minted</span></a></span></span><span> </span><span id="local-6989586621679534797"><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679534797"><span class="hs-identifier hs-var">answer</span></a></span></span><span> </span><span id="local-6989586621679534798"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679534798"><span class="hs-identifier hs-var">spent</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[Slot] -&gt; [Function] -&gt; [(Slot, Function)]
+forall a b. [a] -&gt; [b] -&gt; [(a, b)]
+</span><span class="hs-identifier hs-var">zip</span></span><span> </span><span class="annot"><span class="annottext">[Slot]
+</span><a href="#local-6989586621679534799"><span class="hs-identifier hs-var">fresh</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Int -&gt; Function
+</span><a href="AST.html#FnSymbol"><span class="hs-identifier hs-var">FnSymbol</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679534801"><span class="hs-identifier hs-var">idx</span></a></span><span> </span><span class="hs-glyph">|</span><span> </span><span id="local-6989586621679534801"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679534801"><span class="hs-identifier hs-var">idx</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679534798"><span class="hs-identifier hs-var">spent</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">1</span></span><span> </span><span class="hs-glyph">..</span><span class="hs-special">]</span><span class="hs-special">]</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679534798"><span class="hs-identifier hs-var">spent</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">[Slot] -&gt; Int
+forall a. [a] -&gt; Int
+forall (t :: * -&gt; *) a. Foldable t =&gt; t a -&gt; Int
+</span><span class="hs-identifier hs-var">length</span></span><span> </span><span class="annot"><span class="annottext">[Slot]
+</span><a href="#local-6989586621679534799"><span class="hs-identifier hs-var">fresh</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-237"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-238"></span><span>    </span><span class="annot"><a href="#local-6989586621679534799"><span class="hs-identifier hs-type">fresh</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="AST.html#Slot"><span class="hs-identifier hs-type">Slot</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-239"></span><span>    </span><span id="local-6989586621679534799"><span class="annot"><span class="annottext">fresh :: [Slot]
+</span><a href="#local-6989586621679534799"><span class="hs-identifier hs-var hs-var">fresh</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Slot
+</span><a href="#local-6989586621679534803"><span class="hs-identifier hs-var">slot</span></a></span><span> </span><span class="hs-glyph">|</span><span> </span><span id="local-6989586621679534803"><span class="annot"><span class="annottext">slot :: Slot
+</span><a href="#local-6989586621679534803"><span class="hs-identifier hs-var">slot</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="AST.html#Slot"><span class="hs-identifier hs-type">Slot</span></a></span><span> </span><span id="local-6989586621679534804"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679534804"><span class="hs-identifier hs-var">kind</span></a></span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Expression -&gt; [Slot]
+forall a. Slots a =&gt; a -&gt; [Slot]
+</span><a href="Slots.html#slots"><span class="hs-identifier hs-var">slots</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679534797"><span class="hs-identifier hs-var">answer</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679534804"><span class="hs-identifier hs-var">kind</span></a></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;S&quot;</span></span><span class="hs-special">]</span><span>
+</span><span id="line-240"></span><span>
+</span><span id="line-241"></span><span class="hs-comment">-- The last symbol a program already carries, which is where minting starts: a</span><span>
+</span><span id="line-242"></span><span class="hs-comment">-- program written by an earlier run holds symbols of its own, and a fresh one</span><span>
+</span><span id="line-243"></span><span class="hs-comment">-- must never be spelled like one of them.</span><span>
+</span><span id="line-244"></span><span class="annot"><a href="Lambdas.html#taken"><span class="hs-identifier hs-type">taken</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span>
+</span><span id="line-245"></span><span id="taken"><span class="annot"><span class="annottext">taken :: Expression -&gt; Int
+</span><a href="Lambdas.html#taken"><span class="hs-identifier hs-var hs-var">taken</span></a></span></span><span> </span><span id="local-6989586621679534805"><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679534805"><span class="hs-identifier hs-var">program</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Int] -&gt; Int
+forall a. Ord a =&gt; [a] -&gt; a
+forall (t :: * -&gt; *) a. (Foldable t, Ord a) =&gt; t a -&gt; a
+</span><span class="hs-identifier hs-var">maximum</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">0</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; [Int] -&gt; [Int]
+forall a. a -&gt; [a] -&gt; [a]
+</span><span class="hs-glyph hs-var">:</span></span><span> </span><span class="annot"><span class="annottext">Expression -&gt; [Int]
+</span><a href="AST.html#symbols"><span class="hs-identifier hs-var">symbols</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679534805"><span class="hs-identifier hs-var">program</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-246"></span></pre></body></html>
