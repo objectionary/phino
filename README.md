@@ -207,6 +207,29 @@ operand came down to the datum a symbol stands for, the protocol writes `D(𝜎1
 in place of that 42, so a reader sees that the value was manufactured rather
 than read out of the program.
 
+`?(…)` is a λ name no entry answers, standing where the block of its firing
+would have stood. Nothing fired, so nothing opens under it. The line is written
+whether or not `--partial` goes on to park the run, since the protocol records
+what 𝔼 was asked for, and a question it could not answer belongs there as much
+as one it could:
+
+```bash
+$ phino dataize --symbolic=atoms.yaml --protocol=atoms.txt --quiet \
+    --sweet --hide-rho stuck.phi
+[ERROR]: No entry of --symbolic answers the λ function 'L_number_nope'
+$ cat atoms.txt
+D(Φ)
+  E(L_number_plus)
+    𝛿1.1 := 40-14-00-00-00-00-00-00
+    𝛿2.1 := 40-18-00-00-00-00-00-00
+    𝑛.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )
+  ?(L_number_nope)
+```
+
+The very same file comes back with `--partial`, where the run answers the
+residue instead of failing: what `phino` could not decide is a property of the
+program and not of the option that decides what to do about it.
+
 Every term is 𝜑 on a single line, whatever `--output` and `--flat` say about
 the result of the run, so a program reading the protocol back never has to know
 what the run printed. The file is truncated at the beginning of every run, so

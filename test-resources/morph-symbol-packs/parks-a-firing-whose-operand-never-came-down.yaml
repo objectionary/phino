@@ -20,3 +20,4 @@ result: >
 protocol: |
   M(Φ.y)
     E(L_pair)
+      ?(L_none)

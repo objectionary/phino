@@ -15,3 +15,4 @@ input: '⟦ x ↦ ⟦ λ ⤍ L_none ⟧.foo ⟧'
 result: '⟦ λ ⤍ L_none, ρ ↦ ∅ ⟧.foo'
 protocol: |
   M(Φ.x)
+    ?(L_none)

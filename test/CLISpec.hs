@@ -1249,6 +1249,7 @@ spec = do
                        , "    𝛿1.1 := 40-14-00-00-00-00-00-00"
                        , "    𝛿2.1 := 40-18-00-00-00-00-00-00"
                        , "    𝑛.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )"
+                       , "  ?(L_number_nope)"
                        ]
 
       it "truncates the lines left over from the previous run" $
@@ -1307,6 +1308,7 @@ spec = do
                        , "    𝛿1.1 := 40-00-00-00-00-00-00-00"
                        , "    𝛿2.1 := 40-08-00-00-00-00-00-00"
                        , "    𝑛.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )"
+                       , "  ?(L_number_nope)"
                        ]
 
       it "still prints bytes when nothing gets stuck" $

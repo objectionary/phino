@@ -14,3 +14,4 @@ input: '⟦ x ↦ ⟦ λ ⤍ L_none ⟧.foo ⟧'
 fails: "No entry of --symbolic answers the λ function 'L_none'"
 protocol: |
   M(Φ.x)
+    ?(L_none)

@@ -75,13 +75,20 @@ dontSaveStep = saveStep Nothing "" (\_ -> pure "") 0
 -- under it stands one block per firing, 'E(L_number_plus)', naming the entry
 -- that answered. Inside a block stand the operands the entry bound and the
 -- term it answered with, one to a line, and any firing an operand took while
--- it was being reduced, one level deeper again.
+-- it was being reduced, one level deeper again. A name no entry answers stands
+-- there as '?(L_number_nope)', where the block of its firing would have been.
 data Evaluation
   = -- The run and the term it was aimed at.
     EvRun T.Text T.Text
   | -- One firing of the entry under that key, at the depth its nesting gives
     -- it.
     EvFiring Int T.Text
+  | -- A λ function no entry of the '--symbolic' file answers, at the depth the
+    -- firing of it would have stood at. Nothing fired, so the line stands alone
+    -- and no block opens under it. It is written whether or not '--partial'
+    -- goes on to park the run, since the protocol records what 𝔼 was asked for
+    -- and a question it could not answer belongs there as much as one it could.
+    EvStuck Int T.Text
   | -- A 'dataize' operand of the firing: the meta it bound and the data it
     -- came down to, or the symbol that data was manufactured for.
     EvData Int T.Text (Either Int Bytes)
@@ -145,6 +152,8 @@ saveEval handle cursor render report = do
       where
         firings :: Int
         firings = 1 + fromMaybe 0 (Map.lookup key protocol._fired)
+    written (EvStuck depth key) protocol =
+      pure (protocol, indented depth (printf "?(%s)" (T.unpack key)))
     written (EvData depth spelling value) protocol =
       pure (protocol, indented depth (printf "%s := %s" (labelled protocol depth spelling) (spelled value)))
       where

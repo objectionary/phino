@@ -93,7 +93,8 @@ An entry answers, it never computes: the answer carries a symbol `𝜎` standing
 for a value nobody worked out, minted fresh per firing and counted in the state
 `State` of `Deps.hs`. Dataizing a symbol answers a fixed 42, so a `𝛿` always
 holds data. A λ name no entry answers gets stuck, which is what `--partial`
-parks on. What fired is written as an indented tree by `--protocol`
+parks on; the protocol records it as `?(name)` either way. What fired is
+written as an indented tree by `--protocol`
 (`Evaluation` and `Protocol` in `Deps.hs`).
 
 ### Dependency inversion for circular imports

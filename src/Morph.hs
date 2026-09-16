@@ -609,10 +609,14 @@ morphing univ ctx expr state = do
 -- answered first, then each operand as it is reduced, then the answer. Whatever
 -- fires inside an operand writes itself between those lines, one level deeper,
 -- which is what makes the protocol a tree of firings rather than a list of
--- them.
+-- them. A name no entry answers writes itself too, before 𝔼 gets stuck on it,
+-- so the protocol says what was asked for whether or not '_partial' goes on to
+-- park the run.
 symbol :: T.Text -> Expression -> Expression -> State -> ReduceContext -> IO (Expression, State)
 symbol func self univ state caller = case matched caller._symbolic func of
-  Nothing -> throwIO (Stuck func)
+  Nothing -> do
+    caller._saveEval (EvStuck caller._nesting func)
+    throwIO (Stuck func)
   Just entry -> do
     caller._saveEval (EvFiring caller._nesting func)
     let ctx = caller{_nesting = caller._nesting + 1}

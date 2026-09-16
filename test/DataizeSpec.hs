@@ -258,11 +258,12 @@ spec = do
           , "    𝛿1.1 := 40-00-00-00-00-00-00-00"
           , "    𝛿2.1 := 40-08-00-00-00-00-00-00"
           , "    𝑛.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )"
+          , "  ?(L_number_nope)"
           ]
     it "leaves an unanswered λ function dataized directly as the whole residue" $ do
       ((outcome, chain), protocol) <- partially known "[[ L> Sym_arg_0 ]]"
       outcome `shouldBe` Residual placeholder
-      protocol `shouldBe` ""
+      protocol `shouldBe` "  ?(Sym_arg_0)\n"
       map fst chain `shouldEndWith` [placeholder]
     it "still reaches the manufactured datum when nothing is stuck" $ do
       ((outcome, _), _) <- partially known "2.times(3)"
