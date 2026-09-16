@@ -15,6 +15,7 @@ import Control.Monad
 import Data.Aeson (FromJSON)
 import Data.List (find, isInfixOf, nub)
 import Data.List.NonEmpty (NonEmpty (..))
+import Data.Map.Strict qualified as Map
 import Data.Maybe (fromMaybe)
 import Data.Yaml qualified as Decode
 import Dataize (Outcome (..), dataize, dataize', reduction)
@@ -208,7 +209,7 @@ spec = do
     it "fails on the step limit instead of morphing forever" $
       looping $ \endless -> do
         expr <- parseExpressionThrows "⟦ @ ↦ ⟦ λ ⤍ L_loop ⟧ ⟧"
-        dataize expr emptyState (ReduceContext ExRoot 25 25 (Steps 40 0) 1 False True False False endless buildTerm reduction dontSaveStep dontSaveEval)
+        dataize expr emptyState (ReduceContext ExRoot 25 25 (Steps 40 0) 1 False True False False False Map.empty endless buildTerm reduction dontSaveStep dontSaveEval)
           `shouldThrow` (\e -> "--max-steps=40" `isInfixOf` show (e :: SomeException))
 
     -- A budget spent on a cycle is a stuck site just as a λ function that
@@ -217,7 +218,7 @@ spec = do
     it "parks the step limit as a residual with --partial" $
       looping $ \endless -> do
         expr <- parseExpressionThrows "⟦ @ ↦ ⟦ λ ⤍ L_loop ⟧ ⟧"
-        (outcome, _, _) <- dataize expr emptyState (ReduceContext ExRoot 25 25 (Steps 40 0) 1 False True True False endless buildTerm reduction dontSaveStep dontSaveEval)
+        (outcome, _, _) <- dataize expr emptyState (ReduceContext ExRoot 25 25 (Steps 40 0) 1 False True True False False Map.empty endless buildTerm reduction dontSaveStep dontSaveEval)
         case outcome of
           Residual _ -> pure ()
           Dataized bts -> expectationFailure ("expected a residual, dataized to " ++ show bts)
@@ -278,12 +279,12 @@ spec = do
     forM_
       [
         ( "--max-cycles"
-        , ReduceContext ExRoot 25 0 (Steps 250 0) 1 True True False False emptyLambdas buildTerm reduction dontSaveStep dontSaveEval
+        , ReduceContext ExRoot 25 0 (Steps 250 0) 1 True True False False False Map.empty emptyLambdas buildTerm reduction dontSaveStep dontSaveEval
         , "--max-cycles=0"
         )
       ,
         ( "--max-depth"
-        , ReduceContext ExRoot 0 25 (Steps 250 0) 1 True True False False emptyLambdas buildTerm reduction dontSaveStep dontSaveEval
+        , ReduceContext ExRoot 0 25 (Steps 250 0) 1 True True False False False Map.empty emptyLambdas buildTerm reduction dontSaveStep dontSaveEval
         , "--max-depth=0"
         )
       ]
@@ -293,8 +294,8 @@ spec = do
             dataize expr emptyState ctx `shouldThrow` (\e -> message `isInfixOf` show (e :: SomeException))
       )
     forM_
-      [ ("--max-cycles", ReduceContext ExRoot 25 0 (Steps 250 0) 1 False True False False emptyLambdas buildTerm reduction dontSaveStep dontSaveEval)
-      , ("--max-depth", ReduceContext ExRoot 0 25 (Steps 250 0) 1 False True False False emptyLambdas buildTerm reduction dontSaveStep dontSaveEval)
+      [ ("--max-cycles", ReduceContext ExRoot 25 0 (Steps 250 0) 1 False True False False False Map.empty emptyLambdas buildTerm reduction dontSaveStep dontSaveEval)
+      , ("--max-depth", ReduceContext ExRoot 0 25 (Steps 250 0) 1 False True False False False Map.empty emptyLambdas buildTerm reduction dontSaveStep dontSaveEval)
       ]
       ( \(flag, ctx) ->
           it ("does not throw without --depth-sensitive even once " ++ flag ++ " is exhausted") $ do

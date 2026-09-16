@@ -26,6 +26,7 @@ import CLI.Helpers (withEvalFunc)
 import CLI.Types (IOFormat (PHI), PrintContext (PrintCtx))
 import Control.Exception (bracket, evaluate)
 import Data.ByteString qualified as BS
+import Data.Map.Strict qualified as Map
 import Data.Text qualified as T
 import Data.Text.Encoding (encodeUtf8)
 import Dataize (reduction)
@@ -46,7 +47,7 @@ import XMIR (defaultXmirContext)
 -- none of them: a case that needs one to answer brings the fixture file in
 -- through 'withLambdas'.
 defaultReduceContext :: Expression -> ReduceContext
-defaultReduceContext loc = ReduceContext loc 25 25 (Steps 250 0) 1 False True False False emptyLambdas buildTerm reduction dontSaveStep dontSaveEval
+defaultReduceContext loc = ReduceContext loc 25 25 (Steps 250 0) 1 False True False False False Map.empty emptyLambdas buildTerm reduction dontSaveStep dontSaveEval
 
 -- The same context with the given λ functions registered
 withLambdas :: Lambdas -> ReduceContext -> ReduceContext
@@ -62,9 +63,10 @@ fixtureLambdas :: IO Lambdas
 fixtureLambdas = readLambdas lambdasFile
 
 -- The one λ function that answers with a firing of itself, so that a run fires
--- it until the step budget is gone. Recursion is nothing phino prevents — that
--- is the object model's business — so a program built on this one is how the
--- specs reach the '--max-steps' limit.
+-- it until the step budget is gone. Recursion is nothing phino prevents on its
+-- own — that is the object model's business — so a program built on this one is
+-- how the specs reach the '--max-steps' limit, and how they ask '--acyclic' to
+-- end the same run before the limit does.
 loopingLambdas :: (FilePath -> IO a) -> IO a
 loopingLambdas = withLambdasOf "- λ: L_loop\n  𝑛: ⟦ λ ⤍ L_loop ⟧\n"
 

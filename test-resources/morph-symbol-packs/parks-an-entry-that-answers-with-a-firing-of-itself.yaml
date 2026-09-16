@@ -1,0 +1,19 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# The same entry answering with a firing of itself, under '_acyclic': morphing
+# comes back to the very term it is already reducing, so it stops there instead
+# of going round until the budget is gone. The budget is generous here, so what
+# ends the run is the cut and not the limit.
+symbolic: |
+  - λ: L_loop
+    𝑛: ⟦ λ ⤍ L_loop ⟧
+location: 'Q.x'
+acyclic: true
+steps: 250
+input: '⟦ x ↦ ⟦ λ ⤍ L_loop ⟧.foo ⟧'
+result: '⟦ λ ⤍ L_loop, ρ ↦ ∅ ⟧.foo'
+protocol: |
+  M(Φ.x)
+    E(L_loop)
+      𝑛.1 := ⟦ λ ⤍ L_loop ⟧

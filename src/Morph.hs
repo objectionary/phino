@@ -32,8 +32,9 @@ import Lambdas (Lambda (..), Lambdas, Meta (..), matched, minted)
 import Locator (locatedExpression, withLocatedExpression)
 import Matcher (MetaValue (..), Subst (..), combine, matchExpression', substEmpty, substSingle, substSlot)
 import Must (Must (..))
+import Printer (printExpression)
 import Random (shuffle)
-import Rewriter (RewriteContext (RewriteContext), Rewritten, rewrite)
+import Rewriter (RewriteContext (RewriteContext), Rewritten, Seen, rewrite, seenInsert, seenMember)
 import Rule (RuleContext (RuleContext), matchExpressionWithRule')
 import Text.Printf (printf)
 import Yaml (ExtraArgument (..), normalizationRules)
@@ -93,6 +94,8 @@ data ReduceContext = ReduceContext
   , _shuffle :: Bool
   , _partial :: Bool
   , _deep :: Bool
+  , _acyclic :: Bool
+  , _seen :: Seen
   , _symbolic :: Lambdas
   , _buildTerm :: BuildTermFunc
   , _reduce :: ReductionFunc
@@ -122,6 +125,18 @@ data ReduceException
     -- too, so '_partial' parks it and hands back the residual instead of
     -- failing hard (#1078)
     OutOfStepsAt Int (NonEmpty Rewritten) State
+  | -- Morphing was asked to reduce a term a frame above it is already reducing,
+    -- which it can only ever answer by asking again. Raised under '_acyclic'
+    -- alone, so the signal itself is the permission to park on it: a run that
+    -- never asked for the guard never sees it.
+    Looping Expression
+  | -- A 'Looping' caught by a frame of the 𝕄 spine, carrying that frame's
+    -- derivation and state the way 'StuckAt' does. The guard runs as a frame
+    -- opens, before that frame parks anything, so the frame attaching the chain
+    -- is the one the repeat was reached from and the head of the chain is its
+    -- working expression — the term that came back left exactly where it stood,
+    -- the way an exhausted budget stops on the last step it could afford.
+    LoopingAt Expression (NonEmpty Rewritten) State
   deriving anyclass (Exception)
 
 instance Show ReduceException where
@@ -130,6 +145,8 @@ instance Show ReduceException where
   show (OutOfStepsAt limit _ _) = show (OutOfSteps limit)
   show (Stuck func) = printf "No entry of --symbolic answers the λ function '%s'" (T.unpack func)
   show (StuckAt func _ _) = show (Stuck func)
+  show (Looping term) = printf "Morphing came back to a term it is already reducing: %s" (printExpression term)
+  show (LoopingAt term _ _) = show (Looping term)
 
 -- Charge one step of the 𝕄/𝔻 recursion to the budget, refusing to descend once
 -- it is gone. '--max-cycles' and '--max-depth' bound only the normalization run
@@ -197,6 +214,7 @@ parking seq state action = action `catch` rethrow
     rethrow :: ReduceException -> IO a
     rethrow (Stuck func) = throwIO (StuckAt func seq state)
     rethrow (OutOfSteps limit) = throwIO (OutOfStepsAt limit seq state)
+    rethrow (Looping term) = throwIO (LoopingAt term seq state)
     rethrow failure = throwIO failure
 
 -- Strip the derivation off a stuck λ function escaping a side-computation that
@@ -210,6 +228,7 @@ unparked action = action `catch` rethrow
     rethrow :: ReduceException -> IO a
     rethrow (StuckAt func _ _) = throwIO (Stuck func)
     rethrow (OutOfStepsAt limit _ _) = throwIO (OutOfSteps limit)
+    rethrow (LoopingAt term _ _) = throwIO (Looping term)
     rethrow failure = throwIO failure
 
 -- The Morphing function 𝕄 maps normal forms to formations. It is ternary,
@@ -233,7 +252,7 @@ unparked action = action `catch` rethrow
 -- evaluated in isolation by 'sidePremise', its own steps discarded.
 morph' :: Morphed -> Expression -> State -> ReduceContext -> IO (Morphed, State)
 morph' (expr, seq) univ state caller = do
-  ctx <- deeper caller
+  ctx <- deeper =<< unvisited expr caller
   parking seq state $ do
     rules <- if ctx._shuffle then shuffle Y.morphingRules else pure Y.morphingRules
     matched <- firstMatch ctx rules
@@ -241,6 +260,22 @@ morph' (expr, seq) univ state caller = do
       Just (rule, subst) -> reduce ctx rule subst
       Nothing -> throwIO (userError "no morphing rule matched")
   where
+    -- The terms the frames above this one are reducing, which is what
+    -- '_acyclic' answers "have I been here before" with. The context travels
+    -- down the recursion and never back up, exactly as the step budget does, so
+    -- what it carries is the branch from the run to this frame and not
+    -- everything the run has ever touched: two sibling subterms that happen to
+    -- be equal are two terms, while a term reached from itself is a loop. The
+    -- store is the one the rewriter detects its own loops with, a digest map
+    -- resolving a collision by an exact comparison (see 'Seen').
+    unvisited :: Expression -> ReduceContext -> IO ReduceContext
+    unvisited term ctx
+      | not ctx._acyclic = pure ctx
+      | seenMember digest term ctx._seen = throwIO (Looping term)
+      | otherwise = pure ctx{_seen = seenInsert digest term ctx._seen}
+      where
+        digest :: Int
+        digest = hashExpression term
     firstMatch :: ReduceContext -> [Y.MorphRule] -> IO (Maybe (Y.MorphRule, Subst))
     firstMatch _ [] = pure Nothing
     firstMatch ctx (rule : rest) = do
@@ -307,6 +342,12 @@ morph universe state ctx@ReduceContext{..} = do
       residue <- locatedExpression _locator (fst (NE.head seq))
       walked residue seq parked
     Left (OutOfStepsAt _ seq parked) | _partial -> do
+      residue <- locatedExpression _locator (fst (NE.head seq))
+      walked residue seq parked
+    -- Unlike the two above, this one takes no '_partial' guard: a 'LoopingAt'
+    -- exists only where '_acyclic' put it, so asking for the guard is already
+    -- asking to be parked on what it finds.
+    Left (LoopingAt _ seq parked) -> do
       residue <- locatedExpression _locator (fst (NE.head seq))
       walked residue seq parked
     Left failure -> throwIO (failure :: ReduceException)
@@ -471,6 +512,8 @@ fired dispatched term univ state caller = do
     parked (OutOfStepsAt _ _ reached) | caller._partial = pure (Nothing, reached)
     parked (Stuck _) | caller._partial = pure (Nothing, state)
     parked (OutOfSteps _) | caller._partial = pure (Nothing, state)
+    parked (LoopingAt _ _ reached) = pure (Nothing, reached)
+    parked (Looping _) = pure (Nothing, state)
     parked (StuckAt func _ _) = throwIO (Stuck func)
     parked (OutOfStepsAt limit _ _) = throwIO (OutOfSteps limit)
     parked failure = throwIO failure
@@ -630,9 +673,15 @@ symbol func self univ state caller = case matched caller._symbolic func of
     -- λ function no entry answers at all. Every symbol dataizes to the very
     -- same datum, so the protocol is told which unknown that datum was
     -- manufactured for rather than the datum itself (see 'State').
+    --
+    -- The reduction runs on a universe of its own, so a signal escaping it
+    -- carries that universe's derivation and not the spine's; 'unparked' drops
+    -- it and lets the spine frame around this firing attach its own, which is
+    -- what keeps '--sequence' free of the synthetic attribute the operand was
+    -- reduced under.
     down :: ReduceContext -> (Subst, State) -> (Meta, Expression) -> IO (Subst, State)
     down ctx (bound, state') (meta, term) = do
-      (value, state'') <- ctx._reduce univ ctx (operand term) state'{_manufactured = Nothing}
+      (value, state'') <- unparked (ctx._reduce univ ctx (operand term) state'{_manufactured = Nothing})
       case value of
         Nothing -> throwIO (Stuck func)
         Just bytes -> do

@@ -96,6 +96,7 @@ data SymbolPack = SymbolPack
   , input :: String
   , deep :: Maybe Bool
   , partial :: Maybe Bool
+  , acyclic :: Maybe Bool
   , steps :: Maybe Int
   , protocol :: String
   , result :: Maybe String
@@ -119,6 +120,7 @@ testSymbols pth = do
             (defaultReduceContext loc)
               { _deep = deep == Just True
               , _partial = partial == Just True
+              , _acyclic = acyclic == Just True
               , _steps = Steps (fromMaybe 250 steps) 0
               , _symbolic = known
               , _saveEval = record

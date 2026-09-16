@@ -1,0 +1,28 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# A loop met while an operand is being brought down to data, one whole run of 𝔻
+# below the spine. That run reduces the operand under a synthetic attribute of
+# its own, so what it parks on is no term of the program; the spine around the
+# firing is what answers instead, with the term it had reached when the firing
+# started (see 'down' in 'Morph'). The entry never fires, and the protocol keeps
+# the firing it opened and the loop it met underneath.
+symbolic: |
+  - λ: L_outer
+    dataize:
+      𝛿1: ξ.arg
+    𝑛: ⟦ λ ⤍ 𝜎 ⟧
+  - λ: L_loop
+    𝑛: ⟦ λ ⤍ L_loop ⟧
+location: 'Q.x'
+acyclic: true
+steps: 250
+input: >
+  ⟦ x ↦ ⟦ arg ↦ ⟦ λ ⤍ L_loop ⟧.foo, λ ⤍ L_outer ⟧.bar ⟧
+result: >-
+  ⟦ arg ↦ ⟦ λ ⤍ L_loop, ρ ↦ ∅ ⟧.foo, λ ⤍ L_outer, ρ ↦ ∅ ⟧.bar
+protocol: |
+  M(Φ.x)
+    E(L_outer)
+      E(L_loop)
+        𝑛.1 := ⟦ λ ⤍ L_loop ⟧

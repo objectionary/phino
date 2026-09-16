@@ -2,9 +2,10 @@
 # SPDX-License-Identifier: MIT
 ---
 # An entry answering with a firing of itself fires until the budget is gone.
-# Recursion is nothing phino prevents — that is the object model's business —
-# so the step limit is what ends the run, and every firing it paid for is in
-# the protocol.
+# Recursion is nothing phino prevents on its own — that is the object model's
+# business — so without '_acyclic' the step limit is what ends the run, and
+# every firing it paid for is in the protocol. This is the control the pack
+# asking for the guard stands against.
 symbolic: |
   - λ: L_loop
     𝑛: ⟦ λ ⤍ L_loop ⟧
