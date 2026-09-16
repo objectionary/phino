@@ -11,7 +11,7 @@ location: 'Q.x'
 partial: true
 input: '⟦ x ↦ ⟦ λ ⤍ L_answers ⟧.foo ⟧'
 result: '⟦ λ ⤍ L_none, ρ ↦ ∅ ⟧.foo'
-protocol:
-  - 'M(Φ.x)'
-  - '  E(L_answers)'
-  - '    𝑛.1 := ⟦ λ ⤍ L_none ⟧'
+protocol: |
+  M(Φ.x)
+    E(L_answers)
+      𝑛.1 := ⟦ λ ⤍ L_none ⟧

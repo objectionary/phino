@@ -13,5 +13,5 @@ location: 'Q.x'
 partial: true
 input: '⟦ x ↦ ⟦ λ ⤍ L_none ⟧.foo ⟧'
 result: '⟦ λ ⤍ L_none, ρ ↦ ∅ ⟧.foo'
-protocol:
-  - 'M(Φ.x)'
+protocol: |
+  M(Φ.x)

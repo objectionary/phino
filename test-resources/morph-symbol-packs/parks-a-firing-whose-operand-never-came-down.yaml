@@ -17,6 +17,6 @@ input: >
 result: >
   ⟦ x ↦ ⟦ λ ⤍ L_none, ρ ↦ ∅ ⟧.foo,
     λ ⤍ L_pair, ρ ↦ ∅ ⟧.z
-protocol:
-  - 'M(Φ.y)'
-  - '  E(L_pair)'
+protocol: |
+  M(Φ.y)
+    E(L_pair)

@@ -84,10 +84,12 @@ testMorph known deep pth = do
 
 -- One case of a λ function answered by the '--symbolic' file, as a pack of
 -- 'test-resources/morph-symbol-packs' spells it: the file itself under
--- 'symbolic', the program it is fired against under 'input', every line the
--- protocol of '--protocol' writes under 'protocol' and, where the answer is
--- small enough to be worth spelling, the program 𝕄 lands on under 'result' —
--- or the failure under 'fails'.
+-- 'symbolic', the program it is fired against under 'input', the whole protocol
+-- of '--protocol' under 'protocol' and, where the answer is small enough to be
+-- worth spelling, the program 𝕄 lands on under 'result' — or the failure under
+-- 'fails'. The protocol is one block of text rather than a list of lines, so a
+-- pack holds the file a user of the option reads back and the case compares the
+-- two of them verbatim.
 data SymbolPack = SymbolPack
   { symbolic :: String
   , location :: Maybe String
@@ -95,7 +97,7 @@ data SymbolPack = SymbolPack
   , deep :: Maybe Bool
   , partial :: Maybe Bool
   , steps :: Maybe Int
-  , protocol :: [String]
+  , protocol :: String
   , result :: Maybe String
   , fails :: Maybe String
   }

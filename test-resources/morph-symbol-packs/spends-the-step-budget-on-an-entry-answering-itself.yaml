@@ -12,17 +12,17 @@ location: 'Q.x'
 steps: 6
 input: '⟦ x ↦ ⟦ λ ⤍ L_loop ⟧.foo ⟧'
 fails: 'reaching the limit of steps'
-protocol:
-  - 'M(Φ.x)'
-  - '  E(L_loop)'
-  - '    𝑛.1 := ⟦ λ ⤍ L_loop ⟧'
-  - '  E(L_loop)'
-  - '    𝑛.2 := ⟦ λ ⤍ L_loop ⟧'
-  - '  E(L_loop)'
-  - '    𝑛.3 := ⟦ λ ⤍ L_loop ⟧'
-  - '  E(L_loop)'
-  - '    𝑛.4 := ⟦ λ ⤍ L_loop ⟧'
-  - '  E(L_loop)'
-  - '    𝑛.5 := ⟦ λ ⤍ L_loop ⟧'
-  - '  E(L_loop)'
-  - '    𝑛.6 := ⟦ λ ⤍ L_loop ⟧'
+protocol: |
+  M(Φ.x)
+    E(L_loop)
+      𝑛.1 := ⟦ λ ⤍ L_loop ⟧
+    E(L_loop)
+      𝑛.2 := ⟦ λ ⤍ L_loop ⟧
+    E(L_loop)
+      𝑛.3 := ⟦ λ ⤍ L_loop ⟧
+    E(L_loop)
+      𝑛.4 := ⟦ λ ⤍ L_loop ⟧
+    E(L_loop)
+      𝑛.5 := ⟦ λ ⤍ L_loop ⟧
+    E(L_loop)
+      𝑛.6 := ⟦ λ ⤍ L_loop ⟧

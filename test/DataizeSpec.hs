@@ -72,8 +72,8 @@ testDataize known pth = do
     _ -> expectationFailure "The pack holds neither a single 'result' nor a single 'fails'"
 
 -- Dataize under '--partial', handing back the protocol of '--protocol'
--- alongside the answer, one line per record
-partially :: Lambdas -> String -> IO ((Outcome, [Rewritten]), [String])
+-- alongside the answer, verbatim
+partially :: Lambdas -> String -> IO ((Outcome, [Rewritten]), String)
 partially known src = do
   expr <- parseExpressionThrows (primitives src)
   recorded $ \record -> do
@@ -253,15 +253,16 @@ spec = do
     it "writes the firing that answered into the protocol and stops at the stuck one" $ do
       (_, protocol) <- partially known "2.times(3).nope"
       protocol
-        `shouldBe` [ "  E(L_number_times)"
-                   , "    𝛿1.1 := 40-00-00-00-00-00-00-00"
-                   , "    𝛿2.1 := 40-08-00-00-00-00-00-00"
-                   , "    𝑛.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )"
-                   ]
+        `shouldBe` unlines
+          [ "  E(L_number_times)"
+          , "    𝛿1.1 := 40-00-00-00-00-00-00-00"
+          , "    𝛿2.1 := 40-08-00-00-00-00-00-00"
+          , "    𝑛.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )"
+          ]
     it "leaves an unanswered λ function dataized directly as the whole residue" $ do
       ((outcome, chain), protocol) <- partially known "[[ L> Sym_arg_0 ]]"
       outcome `shouldBe` Residual placeholder
-      protocol `shouldBe` []
+      protocol `shouldBe` ""
       map fst chain `shouldEndWith` [placeholder]
     it "still reaches the manufactured datum when nothing is stuck" $ do
       ((outcome, _), _) <- partially known "2.times(3)"

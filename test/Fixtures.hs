@@ -109,15 +109,17 @@ primitives src =
     ]
 
 -- Run the action with the function '--protocol' writes the run through, handing
--- back what it wrote alongside the answer, one line per record. The protocol
--- goes through the very plumbing the option runs, so what a case asserts is
--- what a user of it reads back.
-recorded :: (SaveEvalFunc -> IO a) -> IO (a, [String])
+-- back what it wrote alongside the answer, verbatim. The protocol goes through
+-- the very plumbing the option runs, and it is handed back as the text of the
+-- file and not as the lines of it, so a case asserting it asserts the very
+-- bytes a user of the option reads back — the indentation of every record, the
+-- order they stand in and the line the file ends on included.
+recorded :: (SaveEvalFunc -> IO a) -> IO (a, String)
 recorded action =
   withTemp "phino-protocol-.txt" BS.empty $ \path -> do
     answer <- withEvalFunc (Just path) printing action
     written <- readUtf8 path
-    pure (answer, lines written)
+    pure (answer, written)
   where
     -- The protocol flattens every term itself, so the only thing this context
     -- decides is that the terms are 𝜑 and not XMIR.
