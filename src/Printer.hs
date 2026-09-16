@@ -12,6 +12,7 @@ module Printer
   , printAlpha
   , printBinding
   , printBytes
+  , printFunction
   , printExtraArg
   , printSubsts
   , printSubsts'
@@ -84,6 +85,18 @@ printBinding bd = printBinding' bd defaultPrintConfig
 printBytes :: Bytes -> String
 printBytes bts = T.unpack $ render (toCST bts (0, NO_EOL) :: BYTES)
 
+-- The λ function alone, without the binding that carries it: the name of an
+-- ordinary one, the 𝜎 of a symbol, the sigil of a rule's meta. It is read off
+-- the binding's own CST, so the spelling stays where every other spelling of
+-- the calculus lives.
+printFunction :: Function -> String
+printFunction fun = T.unpack (spelled (toCST (BiLambda fun) (0, NO_EOL) :: PAIR))
+  where
+    spelled :: PAIR -> T.Text
+    spelled (PA_LAMBDA name) = render name
+    spelled (PA_META_LAMBDA sigil) = render sigil
+    spelled whole = render whole
+
 printExtraArg' :: ExtraArgument -> PrintConfig -> String
 printExtraArg' (ArgAttribute att) (_, encoding, _, _) = printAttribute' att encoding
 printExtraArg' (ArgBinding bd) config = printBinding' bd config
@@ -99,7 +112,7 @@ printMetaValue (MvIndex index) _ = show index
 printMetaValue (MvExpression ex) config = printExpression' ex config
 printMetaValue (MvBytes bts) _ = printBytes bts
 printMetaValue (MvBindings bds) config = printExpression' (ExFormation bds) config
-printMetaValue (MvFunction fun) _ = T.unpack fun
+printMetaValue (MvFunction fun) _ = printFunction fun
 
 -- An anonymous slot is reported under the bare sigil it was written with,
 -- just as a named meta is reported under its name. Two slots of one kind

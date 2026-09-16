@@ -1,0 +1,18 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# The same λ function under '_partial': the run ends on the residue the spine
+# had reached instead of failing.
+symbolic: |
+  - λ: L_number_plus
+    dataize:
+      𝛿1: $.ρ
+      𝛿2: $.x
+    𝑛: Φ.number( φ ↦ ⟦ λ ⤍ 𝜎 ⟧ )
+location: 'Q.x'
+partial: true
+input: '⟦ x ↦ ⟦ λ ⤍ L_none ⟧.foo ⟧'
+result: '⟦ λ ⤍ L_none, ρ ↦ ∅ ⟧.foo'
+protocol: |
+  M(Φ.x)
+    ?(L_none)

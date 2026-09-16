@@ -112,8 +112,8 @@ data OptsDataize = OptsDataize
   , _meetPrefix :: Maybe String
   , _inside :: Maybe String
   , _stepsDir :: Maybe FilePath
-  , _evaluations :: Maybe FilePath
-  , _atoms :: Maybe FilePath
+  , _protocol :: Maybe FilePath
+  , _symbolic :: Maybe FilePath
   , _inputFile :: Maybe FilePath
   }
 
@@ -157,8 +157,8 @@ data OptsMorph = OptsMorph
   , _meetPrefix :: Maybe String
   , _inside :: Maybe String
   , _stepsDir :: Maybe FilePath
-  , _evaluations :: Maybe FilePath
-  , _atoms :: Maybe FilePath
+  , _protocol :: Maybe FilePath
+  , _symbolic :: Maybe FilePath
   , _inputFile :: Maybe FilePath
   }
 

@@ -116,10 +116,15 @@ buildBinding (BiDelta bytes) subst = do
   bts <- buildBytes bytes subst
   Right [BiDelta bts]
 buildBinding (BiLambda (FnMeta meta)) (Subst mp) = case Map.lookup (Named meta) mp of
-  Just (MvFunction func) -> Right [BiLambda (Function func)]
+  Just (MvFunction func) -> Right [BiLambda func]
   _ -> Left (metaMsg meta)
 buildBinding (BiLambda (FnAny slot)) (Subst mp) = case Map.lookup (Anon slot) mp of
-  Just (MvFunction func) -> Right [BiLambda (Function func)]
+  Just (MvFunction func) -> Right [BiLambda func]
+  _ -> Left (slotMsg slot)
+-- A bare 𝜎 asks for a symbol nothing has answered yet, and the one minted for
+-- the slot it was written at is bound the way any other anonymous meta is.
+buildBinding (BiLambda (FnFresh slot)) (Subst mp) = case Map.lookup (Anon slot) mp of
+  Just (MvFunction func) -> Right [BiLambda func]
   _ -> Left (slotMsg slot)
 buildBinding binding _ = Right [binding]
 

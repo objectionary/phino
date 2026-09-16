@@ -3,7 +3,6 @@
 
 module CLI.Parsers where
 
-import Atoms (runtimeNames)
 import CLI.Types
 import Data.Char (toLower, toUpper)
 import Data.List (intercalate)
@@ -204,36 +203,36 @@ optStepsDir :: Parser (Maybe FilePath)
 optStepsDir = optional (strOption (long "steps-dir" <> metavar "FILE" <> help "Directory to save intermediate steps during rewriting/dataizing"))
 
 optPartial :: Parser Bool
-optPartial = switch (long "partial" <> help "Partial evaluation: compute what the known inputs decide and, instead of failing on an atom that cannot fire (its λ function is not in the --atoms registry), leave it in place and print the residual 𝜑-program")
+optPartial = switch (long "partial" <> help "Partial evaluation: compute what the known inputs decide and, instead of failing on a λ function that cannot fire (no entry of the --symbolic file answers it), leave it in place and print the residual 𝜑-program")
 
 -- 𝕄 stops at the first formation it reaches and hands its bindings back as
 -- they were written, so what a program holds but nothing demands is never
 -- reduced. This walks into them (see 'deepened').
 optDeep :: Parser Bool
-optDeep = switch (long "deep" <> help "Don't stop at the first formation: enter its bindings too, recursively, firing every λ function the --atoms registry serves and standing its answer in the place of what it computed, while everything else stays as it was written")
+optDeep = switch (long "deep" <> help "Don't stop at the first formation: enter its bindings too, recursively, firing every λ function the --symbolic file answers and standing its answer in the place of what it computed, while everything else stays as it was written")
 
 -- Which λ functions this run may fire. phino implements none of them itself
--- (see 'Atoms'), so without this option every atom a program names gets stuck.
-optAtoms :: Parser (Maybe FilePath)
-optAtoms =
+-- (see 'Lambdas'), so without this option every λ function a program names gets
+-- stuck.
+optSymbolic :: Parser (Maybe FilePath)
+optSymbolic =
   optional
     ( strOption
-        ( long "atoms"
+        ( long "symbolic"
             <> metavar "FILE"
             <> help
-              ( printf
-                  "Path to the JSON registry of λ functions this run may fire, whose keys are regular expressions over λ names, tried top to bottom, each mapped to the runtime that runs it (%s), the script or the executable it runs and, with \"serve\", whether one process of it is to serve the whole run"
-                  (intercalate ", " runtimeNames)
-              )
+              "Path to the YAML file of λ functions this run may fire, each entry keyed by a regular expression \
+              \over λ names under \"λ\", naming the operands it brings down to data under \"dataize\" and the ones \
+              \it reduces to a normal form under \"evaluate\", and answering with the term under \"𝑛\""
         )
     )
 
 -- The external face of the trick phino plays internally to reduce a
 -- sub-expression against a universe: prepend a synthetic binding holding it to
--- that universe and aim the locator at the binding. An atom script started for
--- the fire needs it to reduce the parts of the formation it was given, so it
--- does not have to splice them into the text of the universe by hand; one kept
--- for the run asks phino over the channel it answers on instead (see 'Atoms').
+-- that universe and aim the locator at the binding. It is the same trick a λ
+-- function's operands are reduced with (see 'insideUniverse' in 'Morph'), made
+-- available to whoever asks phino to reduce a term that is not part of the
+-- program.
 optInside :: Parser (Maybe String)
 optInside =
   optional
@@ -247,8 +246,8 @@ optInside =
         )
     )
 
-optEvaluations :: Parser (Maybe FilePath)
-optEvaluations = optional (strOption (long "evaluations" <> metavar "FILE" <> help "File to record every atom fired during dataizing, as one tab-separated line per firing: the λ function name, its argument formation and its result (requires --output=phi)"))
+optProtocol :: Parser (Maybe FilePath)
+optProtocol = optional (strOption (long "protocol" <> metavar "FILE" <> help "File to record every λ function fired during the run, as an indented tree: the run at the top, one block per firing under it, and inside each block the operands it bound and the term it answered with, with a firing nested in the reduction of an operand one level deeper again"))
 
 optShuffle :: Parser Bool
 optShuffle = switch (long "shuffle" <> help "Shuffle rules before applying")
@@ -356,8 +355,8 @@ dataizeParser =
             <*> optMeetPrefix
             <*> optInside
             <*> optStepsDir
-            <*> optEvaluations
-            <*> optAtoms
+            <*> optProtocol
+            <*> optSymbolic
             <*> argInputFile
         )
 
@@ -400,8 +399,8 @@ morphParser =
             <*> optMeetPrefix
             <*> optInside
             <*> optStepsDir
-            <*> optEvaluations
-            <*> optAtoms
+            <*> optProtocol
+            <*> optSymbolic
             <*> argInputFile
         )
 

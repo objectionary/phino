@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# The second addition is handed the symbol the first one answered with, brings
+# it down to the manufactured datum and answers a symbol of its own, so a chain
+# of firings ends where a single one does.
+model: true
+symbolic: true
+input: '5.plus( 6 ).plus( 7 )'
+result: '40-45-00-00-00-00-00-00'

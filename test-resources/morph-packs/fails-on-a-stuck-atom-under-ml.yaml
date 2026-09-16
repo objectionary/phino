@@ -5,4 +5,4 @@
 # (the 'ml' rule) can get stuck, and without '_partial' it fails the run.
 location: 'Q.x'
 input: '[[ x -> [[ L> Sym_arg_0 ]].foo ]]'
-fails: "Atom 'Sym_arg_0' does not exist"
+fails: "No entry of --symbolic answers the λ function 'Sym_arg_0'"

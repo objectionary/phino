@@ -1,9 +1,0 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
-# SPDX-License-Identifier: MIT
----
-# A byte array whose length is not 8 carries no number either (#1072), so the
-# atom answers ⊥ and 𝔻 stops on it.
-model: true
-atoms: true
-input: '5.plus( Φ.bytes( φ ↦ ⟦ Δ ⤍ 68-65-6C-6C-6F ⟧ ) )'
-fails: 'terminator'

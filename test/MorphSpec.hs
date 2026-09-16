@@ -1,5 +1,6 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
@@ -10,22 +11,25 @@
 module MorphSpec (spec) where
 
 import AST
-import Atoms (Registry, emptyRegistry, readRegistry)
+import CLI.Helpers (started)
 import Control.Exception (SomeException)
 import Control.Monad
 import Data.Aeson (FromJSON)
 import Data.List (find, isInfixOf, nub)
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.Maybe (fromMaybe)
+import Data.Text qualified as T
 import Data.Yaml qualified as Decode
 import Dataize (Outcome (..), dataize)
-import Deps (Term (TeExpression))
+import Deps (Evaluation (EvRun), State, Term (TeExpression))
 import Files (allPathsIn)
-import Fixtures (defaultReduceContext, fixtureRegistry, primitives, withAtoms, withNode, withServing, withShell)
+import Fixtures (defaultReduceContext, fixtureLambdas, primitives, recorded, withLambdas, withLambdasOf)
 import GHC.Generics (Generic)
+import Lambdas (Lambdas, emptyLambdas, readLambdas)
 import Matcher (substEmpty)
-import Morph (ReduceContext (..), emptyState, execBuildTerm, insideUniverse, morph, morph')
+import Morph (ReduceContext (..), Steps (..), emptyState, execBuildTerm, insideUniverse, morph, morph')
 import Parser (parseExpressionThrows)
+import Printer (printExpression)
 import Rewriter (Rewritten)
 import Rule (RuleContext (RuleContext), matchExpressionWithRule')
 import System.FilePath (makeRelative)
@@ -33,7 +37,7 @@ import Test.Hspec
 import Yaml (ExtraArgument (..))
 import Yaml qualified
 
-test' :: (Eq a, Show a) => ((Expression, NonEmpty Rewritten) -> Expression -> String -> ReduceContext -> IO ((a, NonEmpty Rewritten), String)) -> [(String, Expression, Expression, a)] -> Spec
+test' :: (Eq a, Show a) => ((Expression, NonEmpty Rewritten) -> Expression -> State -> ReduceContext -> IO ((a, NonEmpty Rewritten), State)) -> [(String, Expression, Expression, a)] -> Spec
 test' func useCases =
   forM_ useCases $ \(desc, input, expr, output) ->
     it desc $ do
@@ -43,13 +47,13 @@ test' func useCases =
 -- One case of 𝕄, as a pack of 'test-resources/morph-packs' — or, for the deep
 -- walk, of 'test-resources/morph-deep-packs' — spells it: the program under
 -- 'input', wrapped in the fixture object model where 'model' says so and run
--- against the fixture λ functions where 'atoms' does, entered at 'location' and
--- answering either the program under 'result' or the failure under 'fails'.
+-- against the fixture λ functions where 'symbolic' does, entered at 'location'
+-- and answering either the program under 'result' or the failure under 'fails'.
 data MorphPack = MorphPack
   { location :: Maybe String
   , input :: String
   , model :: Maybe Bool
-  , atoms :: Maybe Bool
+  , symbolic :: Maybe Bool
   , partial :: Maybe Bool
   , result :: Maybe String
   , fails :: Maybe String
@@ -57,11 +61,9 @@ data MorphPack = MorphPack
   deriving (Generic, Show, FromJSON)
 
 -- Morph one such pack and check what it answers, walking every binding where
--- 'deep' says so, since that is what tells the two pack directories apart. A
--- pack that registers the fixture λ functions fires one under 'node', so it is
--- pending where 'node' is not installed.
-testMorph :: Registry -> Bool -> FilePath -> Expectation
-testMorph registry deep pth = do
+-- 'deep' says so, since that is what tells the two pack directories apart.
+testMorph :: Lambdas -> Bool -> FilePath -> Expectation
+testMorph known deep pth = do
   MorphPack{..} <- Decode.decodeFileThrow pth
   expr <- parseExpressionThrows (if model == Just True then primitives input else input)
   loc <- parseExpressionThrows (fromMaybe "Q" location)
@@ -69,24 +71,74 @@ testMorph registry deep pth = do
         (defaultReduceContext loc)
           { _deep = deep
           , _partial = partial == Just True
-          , _atoms = if atoms == Just True then registry else emptyRegistry
+          , _symbolic = if symbolic == Just True then known else emptyLambdas
           }
-      checked :: Expectation
-      checked = case (result, fails) of
-        (Just res, Nothing) -> do
-          expected <- parseExpressionThrows res
-          (morphed, _) <- morph expr ctx
-          morphed `shouldBe` expected
-        (Nothing, Just message) ->
-          morph expr ctx `shouldThrow` (\err -> message `isInfixOf` show (err :: SomeException))
-        _ -> expectationFailure "The pack holds neither a single 'result' nor a single 'fails'"
-  if atoms == Just True then withNode checked else checked
+  case (result, fails) of
+    (Just res, Nothing) -> do
+      expected <- parseExpressionThrows res
+      (morphed, _, _) <- morph expr emptyState ctx
+      morphed `shouldBe` expected
+    (Nothing, Just message) ->
+      morph expr emptyState ctx `shouldThrow` (\err -> message `isInfixOf` show (err :: SomeException))
+    _ -> expectationFailure "The pack holds neither a single 'result' nor a single 'fails'"
+
+-- One case of a λ function answered by the '--symbolic' file, as a pack of
+-- 'test-resources/morph-symbol-packs' spells it: the file itself under
+-- 'symbolic', the program it is fired against under 'input', the whole protocol
+-- of '--protocol' under 'protocol' and, where the answer is small enough to be
+-- worth spelling, the program 𝕄 lands on under 'result' — or the failure under
+-- 'fails'. The protocol is one block of text rather than a list of lines, so a
+-- pack holds the file a user of the option reads back and the case compares the
+-- two of them verbatim.
+data SymbolPack = SymbolPack
+  { symbolic :: String
+  , location :: Maybe String
+  , input :: String
+  , deep :: Maybe Bool
+  , partial :: Maybe Bool
+  , steps :: Maybe Int
+  , protocol :: String
+  , result :: Maybe String
+  , fails :: Maybe String
+  }
+  deriving (Generic, Show, FromJSON)
+
+-- Morph one symbol pack and check both what it answers and what its firings
+-- wrote to the protocol, since a λ function is as much what it reports as what
+-- it hands back. The run opens the protocol with itself, the way the command
+-- opens it, so a pack reads as the file a user of '--protocol' reads back.
+testSymbols :: FilePath -> Expectation
+testSymbols pth = do
+  SymbolPack{..} <- Decode.decodeFileThrow pth
+  expr <- parseExpressionThrows input
+  loc <- parseExpressionThrows (fromMaybe "Q" location)
+  withLambdasOf (T.pack symbolic) $ \file -> do
+    known <- readLambdas file
+    (_, written) <- recorded $ \record -> do
+      let ctx =
+            (defaultReduceContext loc)
+              { _deep = deep == Just True
+              , _partial = partial == Just True
+              , _steps = Steps (fromMaybe 250 steps) 0
+              , _symbolic = known
+              , _saveEval = record
+              }
+      record (EvRun (T.pack "M") (T.pack (printExpression loc)))
+      case fails of
+        Just message ->
+          morph expr (started expr) ctx `shouldThrow` (\err -> message `isInfixOf` show (err :: SomeException))
+        Nothing -> do
+          (morphed, _, _) <- morph expr (started expr) ctx
+          forM_ result $ \res -> do
+            expected <- parseExpressionThrows res
+            morphed `shouldBe` expected
+    written `shouldBe` protocol
 
 spec :: Spec
 spec = do
-  -- Every λ function a case may fire comes from the fixture registry, read
-  -- once here: phino carries none of its own (see 'Fixtures').
-  registry <- runIO fixtureRegistry
+  -- Every λ function a case may fire comes from the fixture file, read once
+  -- here: phino carries none of its own (see 'Fixtures').
+  known <- runIO fixtureLambdas
 
   -- The top-level 𝕄 entry point, the one the 'morph' command runs: it locates
   -- the subterm, threads the whole input expression as the universe and hands
@@ -94,17 +146,25 @@ spec = do
   describe "morph" $ do
     let resources = "test-resources/morph-packs"
     packs <- runIO (allPathsIn resources)
-    forM_ packs (\pth -> it (makeRelative resources pth) (testMorph registry False pth))
+    forM_ packs (\pth -> it (makeRelative resources pth) (testMorph known False pth))
 
     -- The chain runs oldest step first and carries the rule that produced the
     -- step after it, exactly as 'dataize' reports its own, so '--sequence'
     -- prints both the same way
     it "reports the chain of steps oldest first" $ do
       expr <- parseExpressionThrows "[[ D> 00- ]]"
-      (morphed, chain) <- morph expr (defaultReduceContext ExRoot)
+      (morphed, chain, _) <- morph expr emptyState (defaultReduceContext ExRoot)
       morphed `shouldBe` expr
       map snd chain `shouldBe` [Just "mf", Nothing]
       map fst chain `shouldBe` [expr, expr]
+
+  -- The whole of what a λ function answered by the '--symbolic' file does, pack
+  -- by pack: the file itself, the program it is fired against, every line the
+  -- protocol of '--protocol' writes and the program 𝕄 lands on.
+  describe "morph with the λ functions of '--symbolic'" $ do
+    let resources = "test-resources/morph-symbol-packs"
+    packs <- runIO (allPathsIn resources)
+    forM_ packs (\pth -> it (makeRelative resources pth) (testSymbols pth))
 
   -- 𝕄 stops at the first formation 'mf' hands back and leaves its bindings as
   -- they were written, since firing a bare λ is 𝔻's business, so a program
@@ -115,19 +175,18 @@ spec = do
   describe "morph with '_deep'" $ do
     let resources = "test-resources/morph-deep-packs"
     packs <- runIO (allPathsIn resources)
-    forM_ packs (\pth -> it (makeRelative resources pth) (testMorph registry True pth))
+    forM_ packs (\pth -> it (makeRelative resources pth) (testMorph known True pth))
 
     -- The walk enters a dispatch through its target and fires the box it finds
     -- there before 𝕄 is ever asked about the dispatch, while 'ml' demands that
     -- λ only where the dispatched attribute is none of the box's own (#1187)
     describe "a dispatch naming an attribute of the formation it stands on" $
       it "cannot fire the λ the dispatch does not demand" $
-        withShell $
-          withServing "printf '{\"id\": %s, \"𝑛\": \"⟦ Δ ⤍ FF- ⟧\"}\\n' \"$id\"" $ \path -> do
-            box <- readRegistry path
-            world <- parseExpressionThrows "[[ foo -> [[ f -> [[ a -> ?, @ -> $.a, L> L_answer ]] ]], x -> Q.foo.f( a -> [[ D> 01- ]] ).@ ]]"
-            (morphed, _) <- morph world (withAtoms box (defaultReduceContext ExRoot)){_deep = True}
-            morphed `shouldBe` world
+        withLambdasOf "- λ: L_answer\n  𝑛: ⟦ Δ ⤍ FF- ⟧\n" $ \file -> do
+          box <- readLambdas file
+          world <- parseExpressionThrows "[[ foo -> [[ f -> [[ a -> ?, @ -> $.a, L> L_answer ]] ]], x -> Q.foo.f( a -> [[ D> 01- ]] ).@ ]]"
+          (morphed, _, _) <- morph world emptyState (withLambdas box (defaultReduceContext ExRoot)){_deep = True}
+          morphed `shouldBe` world
 
   describe "morph'" $
     test'
@@ -191,7 +250,7 @@ spec = do
   -- 'execBuildTerm', the same way the matcher would call it.
   describe "execBuildTerm 'evaluate'" $ do
     let univ = ExFormation []
-        ctx = withAtoms registry (defaultReduceContext ExRoot)
+        ctx = withLambdas known (defaultReduceContext ExRoot)
         runEvaluate args = execBuildTerm univ ctx "evaluate" args substEmpty
     forM_
       [
@@ -219,13 +278,13 @@ spec = do
           it ("throws when " ++ desc) $
             runEvaluate args `shouldThrow` (\e -> message `isInfixOf` show (e :: SomeException))
       )
-    it "evaluates a λ-bearing formation to the atom's normalized result" $
-      withNode $ do
-        let form = ExFormation [BiLambda (Function "L_bytes_not"), BiTau AtRho (ExFormation [BiDelta (BtOne "00")])]
-        result <- runEvaluate [ArgExpression form, ArgExpression univ]
-        case result of
-          TeExpression expr -> expr `shouldBe` dataBytes (BtOne "FF")
-          _ -> expectationFailure "expected TeExpression"
+    it "evaluates a λ-bearing formation to the answer of its entry, normalized" $ do
+      let form = ExFormation [BiLambda (Function "L_answer"), BiTau AtRho (ExFormation [BiDelta (BtOne "00")])]
+      answered <- withLambdasOf "- λ: L_answer\n  𝑛: ⟦ Δ ⤍ FF- ⟧\n" readLambdas
+      result <- execBuildTerm univ (withLambdas answered ctx) "evaluate" [ArgExpression form, ArgExpression univ] substEmpty
+      case result of
+        TeExpression expr -> expr `shouldBe` ExFormation [BiDelta (BtOne "FF"), BiVoid AtRho]
+        _ -> expectationFailure "expected TeExpression"
 
   describe "execBuildTerm 'morph'" $ do
     let univ = ExFormation []
@@ -239,25 +298,25 @@ spec = do
         TeExpression expr -> expr `shouldBe` ExFormation [BiDelta (BtOne "00")]
         _ -> expectationFailure "expected TeExpression"
 
-  -- An expression that is not part of the program — the operand an atom script
-  -- asks phino to reduce — is bound to a synthetic attribute of the universe and
-  -- that attribute is what 𝔻 is aimed at. This is what the '--inside' option
-  -- runs, and what phino did internally while the atoms still lived in the
-  -- binary.
+  -- An expression that is not part of the program is bound to a synthetic
+  -- attribute of the universe and that attribute is what 𝔻 is aimed at. This is
+  -- what the '--inside' option runs, and what the 'dataize' block of a λ
+  -- function runs for every operand it names.
   describe "insideUniverse" $ do
     let universe = "[[ y -> [[ D> 02- ]] ]]"
         reduced src = do
           univ <- parseExpressionThrows universe
           target <- parseExpressionThrows src
           (extended, ctx) <- insideUniverse target univ (defaultReduceContext ExRoot)
-          fst <$> dataize extended ctx
+          (outcome, _, _) <- dataize extended emptyState ctx
+          pure outcome
     it "reduces an expression the program does not contain" $ do
       value <- reduced "Q.y"
       value `shouldBe` Dataized (BtOne "02")
     -- 𝔻 accepts normal forms only, and a dispatch off a formation is not one:
     -- 'dot' still applies to it. So the expression is normalized first, which
-    -- is the whole reason an atom script cannot simply splice it into the
-    -- universe itself.
+    -- is the whole reason an operand cannot simply be spliced into the universe
+    -- as it was written.
     it "normalizes what it is handed before 𝔻 sees it" $ do
       value <- reduced "[[ x -> [[ D> 01- ]] ]].x"
       value `shouldBe` Dataized (BtOne "01")
@@ -318,4 +377,4 @@ spec = do
       let base = ExFormation [BiLambda (Function "F")]
           chain = ExDispatch (ExDispatch (ExDispatch base (AtLabel "a")) (AtLabel "b")) (AtLabel "c")
       morph' (chain, (ExRoot, Nothing) :| []) ExRoot emptyState (defaultReduceContext ExRoot)
-        `shouldThrow` (\e -> "Atom 'F' does not exist" `isInfixOf` show (e :: SomeException))
+        `shouldThrow` (\e -> "No entry of --symbolic answers the λ function 'F'" `isInfixOf` show (e :: SomeException))

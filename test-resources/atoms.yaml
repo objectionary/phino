@@ -1,0 +1,52 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# The λ functions phino's own specs fire. phino implements none of them, so a
+# spec that needs one to answer brings this file in with '--symbolic'. Every
+# entry answers symbolically: the operands come down through 𝔻 or reach a
+# normal form through 𝕄, and the term under '𝑛' carries a fresh symbol 𝜎
+# standing for the value nobody worked out. Nothing here computes, which is
+# what makes the morphing symbolic.
+#
+# 'L_number_nope' is missing on purpose: it is the λ function no entry answers,
+# the one '--partial' parks on.
+
+# Arithmetic over two numbers answers a number nobody has worked out.
+- λ: L_number_(plus|times|div)
+  dataize:
+    𝛿1: $.ρ
+    𝛿2: $.x
+  𝑛: Φ.number( φ ↦ ⟦ λ ⤍ 𝜎 ⟧ )
+
+# Comparing two numbers answers a bool nobody has decided, which is what the
+# fork below then branches on.
+- λ: L_number_gt
+  dataize:
+    𝛿1: $.ρ
+    𝛿2: $.x
+  𝑛: Φ.bool( φ ↦ ⟦ λ ⤍ 𝜎 ⟧ )
+
+# Comparing two byte arrays answers a bool of the same kind.
+- λ: L_bytes_eq
+  dataize:
+    𝛿1: $.ρ
+    𝛿2: $.b
+  𝑛: Φ.bool( φ ↦ ⟦ λ ⤍ 𝜎 ⟧ )
+
+# Inverting a byte array answers an array nobody has worked out.
+- λ: L_bytes_not
+  dataize:
+    𝛿1: $.ρ
+  𝑛: Φ.bytes( φ ↦ ⟦ λ ⤍ 𝜎 ⟧ )
+
+# A branch is where an 'evaluate' operand earns its place: the condition comes
+# down through 𝔻, both branches reach a normal form through 𝕄, and the answer
+# is one of them. Which one is undecided, so the entry answers with the first
+# and the symbols tell what it depended on.
+- λ: L_fork
+  dataize:
+    𝛿1: $.ρ
+  evaluate:
+    𝑛1: $.then
+    𝑛2: $.else
+  𝑛: 𝑛1

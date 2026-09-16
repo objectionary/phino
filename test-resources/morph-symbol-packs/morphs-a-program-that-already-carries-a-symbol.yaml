@@ -1,0 +1,26 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# The program handed in is the answer an earlier run gave: its receiver is no
+# number but the symbol 𝜎1 that run minted. The firing brings it down all the
+# same, since a symbol dataizes to a fixed 42, and the protocol names the
+# unknown that 42 stood for instead of writing the bytes twice.
+symbolic: |
+  - λ: L_number_plus
+    dataize:
+      𝛿1: $.ρ
+      𝛿2: $.x
+    𝑛: Φ.number( φ ↦ ⟦ λ ⤍ 𝜎 ⟧ )
+location: 'Q.@'
+deep: true
+input: >
+  ⟦ bytes(φ) ↦ ⟦⟧,
+    number(φ) ↦ ⟦ plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧,
+    @ ↦ Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ ).plus( 7 ) ⟧
+result: 'Φ.number( φ ↦ ⟦ λ ⤍ 𝜎2, ρ ↦ ∅ ⟧ )'
+protocol: |
+  M(Φ.φ)
+    E(L_number_plus)
+      𝛿1.1 := D(𝜎1)
+      𝛿2.1 := 40-1C-00-00-00-00-00-00
+      𝑛.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ )

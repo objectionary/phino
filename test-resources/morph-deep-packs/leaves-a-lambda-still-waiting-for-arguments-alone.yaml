@@ -8,7 +8,7 @@
 # atoms unfired here.
 location: 'Q.bytes'
 model: true
-atoms: true
+symbolic: true
 input: '[[ ]]'
 result: |
   [[

@@ -1,7 +1,0 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
-# SPDX-License-Identifier: MIT
----
-model: true
-atoms: true
-input: '5.times( 6 )'
-result: '40-3E-00-00-00-00-00-00'

@@ -1,0 +1,17 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# A λ name no key of the file matches has nothing to answer it, so the run
+# fails and the protocol holds nothing but the run itself.
+symbolic: |
+  - λ: L_number_plus
+    dataize:
+      𝛿1: $.ρ
+      𝛿2: $.x
+    𝑛: Φ.number( φ ↦ ⟦ λ ⤍ 𝜎 ⟧ )
+location: 'Q.x'
+input: '⟦ x ↦ ⟦ λ ⤍ L_none ⟧.foo ⟧'
+fails: "No entry of --symbolic answers the λ function 'L_none'"
+protocol: |
+  M(Φ.x)
+    ?(L_none)

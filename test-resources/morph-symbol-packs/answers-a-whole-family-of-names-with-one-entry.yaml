@@ -1,0 +1,30 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# The key of an entry is a regular expression over λ names, so one entry
+# stands for the whole family of them a box numbers its functions with.
+symbolic: |
+  - λ: L_number_(plus|times)
+    dataize:
+      𝛿1: $.ρ
+      𝛿2: $.x
+    𝑛: Φ.number( φ ↦ ⟦ λ ⤍ 𝜎 ⟧ )
+location: 'Q.@'
+deep: true
+input: >
+  ⟦ bytes(φ) ↦ ⟦⟧,
+    number(φ) ↦ ⟦
+      plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧,
+      times(x) ↦ ⟦ λ ⤍ L_number_times ⟧ ⟧,
+    @ ↦ 5.plus( 6 ).times( 7 ) ⟧
+result: 'Φ.number( φ ↦ ⟦ λ ⤍ 𝜎2, ρ ↦ ∅ ⟧ )'
+protocol: |
+  M(Φ.φ)
+    E(L_number_plus)
+      𝛿1.1 := 40-14-00-00-00-00-00-00
+      𝛿2.1 := 40-18-00-00-00-00-00-00
+      𝑛.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )
+    E(L_number_times)
+      𝛿1.1 := D(𝜎1)
+      𝛿2.1 := 40-1C-00-00-00-00-00-00
+      𝑛.2 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ )

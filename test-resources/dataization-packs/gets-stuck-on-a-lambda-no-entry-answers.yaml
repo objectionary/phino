@@ -2,6 +2,6 @@
 # SPDX-License-Identifier: MIT
 ---
 model: true
-atoms: true
-input: 'Φ.bytes( φ ↦ ⟦ Δ ⤍ CA-FE-BE-BE ⟧ ).not'
-result: '35-01-41-41'
+symbolic: true
+input: '5.nope'
+fails: "No entry of --symbolic answers the λ function 'L_number_nope'"

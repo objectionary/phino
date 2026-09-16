@@ -62,4 +62,5 @@ instance Slots Bytes where
 
 instance Slots Function where
   slots (FnAny slot) = [slot]
+  slots (FnFresh slot) = [slot]
   slots _ = []

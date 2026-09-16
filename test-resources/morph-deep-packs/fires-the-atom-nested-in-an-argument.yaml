@@ -1,11 +1,10 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 # SPDX-License-Identifier: MIT
 ---
+# The λ function nested in the argument fires before the one around it, so
+# the symbol standing for the whole sum is the second the run minted.
 location: 'Q.@'
 model: true
-atoms: true
+symbolic: true
 input: '[[ x -> 5.plus( 6.plus( 7 ) ) ]]'
-result: |
-  [[ x -> Q.number(
-    φ -> Φ.bytes( φ ↦ ⟦ Δ ⤍ 40-32-00-00-00-00-00-00 ⟧ )
-  ) ]]
+result: '[[ x -> Q.number( φ -> ⟦ λ ⤍ 𝜎2 ⟧ ) ]]'

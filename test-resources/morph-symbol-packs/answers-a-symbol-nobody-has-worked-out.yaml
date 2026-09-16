@@ -1,0 +1,25 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# One firing, and nothing is computed: the operands come down to the numbers
+# they are, and what the entry answers with is a number standing for a sum
+# nobody has worked out.
+symbolic: |
+  - λ: L_number_plus
+    dataize:
+      𝛿1: $.ρ
+      𝛿2: $.x
+    𝑛: Φ.number( φ ↦ ⟦ λ ⤍ 𝜎 ⟧ )
+location: 'Q.@'
+deep: true
+input: >
+  ⟦ bytes(φ) ↦ ⟦⟧,
+    number(φ) ↦ ⟦ plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧,
+    @ ↦ 5.plus( 6 ) ⟧
+result: 'Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1, ρ ↦ ∅ ⟧ )'
+protocol: |
+  M(Φ.φ)
+    E(L_number_plus)
+      𝛿1.1 := 40-14-00-00-00-00-00-00
+      𝛿2.1 := 40-18-00-00-00-00-00-00
+      𝑛.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )

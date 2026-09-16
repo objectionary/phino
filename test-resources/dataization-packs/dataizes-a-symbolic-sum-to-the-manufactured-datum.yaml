@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# The addition answers a number nobody worked out, so what 𝔻 reaches is the
+# datum every symbol is manufactured the same one of, and not the sum at all.
+model: true
+symbolic: true
+input: '5.plus( 6 )'
+result: '40-45-00-00-00-00-00-00'

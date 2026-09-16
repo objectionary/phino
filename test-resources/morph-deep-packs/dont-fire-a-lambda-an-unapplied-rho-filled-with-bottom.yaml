@@ -5,7 +5,7 @@
 # fills the only void of 'plus', so 'saturated' would let it fire (#1196).
 location: 'Q.@'
 model: true
-atoms: true
+symbolic: true
 input: '[[ a -> [[ @ -> 5.plus( $.^ ) ]] ]]'
 result: |
   [[ a -> [[ @ -> Q.number(

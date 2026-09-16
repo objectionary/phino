@@ -132,6 +132,8 @@ instance Render META_HEAD where
   render D' = "\\delta"
   render F = "𝑓"
   render F' = "F"
+  render S = "𝜎"
+  render S' = "S"
 
 instance Render META where
   render META{..} = render excl <> render hd <> render rest

@@ -96,6 +96,8 @@ data META_HEAD
   | D' -- \delta
   | F -- 𝑓
   | F' -- F
+  | S -- 𝜎
+  | S' -- S
   deriving (Eq, Show)
 
 data EXCLAMATION = EXCL | NO_EXCL
@@ -517,6 +519,8 @@ instance ToCST Binding PAIR where
   toCST (BiLambda (Function name)) _ = PA_LAMBDA name
   toCST (BiLambda (FnMeta mt)) _ = PA_META_LAMBDA (META NO_EXCL F (metaTail mt))
   toCST (BiLambda (FnAny _)) _ = PA_META_LAMBDA (anyMeta F)
+  toCST (BiLambda (FnSymbol idx)) _ = PA_META_LAMBDA (META NO_EXCL S (T.pack (show idx)))
+  toCST (BiLambda (FnFresh _)) _ = PA_META_LAMBDA (anyMeta S)
   toCST (BiMeta mt) _ = error $ "BiMeta binding " ++ T.unpack mt ++ " cannot be converted to PAIR"
   toCST (BiAny _) _ = error "An anonymous meta binding cannot be converted to PAIR"
 

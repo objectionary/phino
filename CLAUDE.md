@@ -78,16 +78,24 @@ Matching (`Matcher.hs`) produces `[Subst]` — a list of
 `Map Text MetaValue` — and conditions filter that list. `Builder.hs` then
 applies a substitution to a result template.
 
-### Atoms live outside the binary
+### λ functions live outside the binary
 
-`phino` implements no λ function. `Atoms.hs` reads a JSON registry of them
-(the `--atoms` option) and fires each one as a POSIX process under the
-interpreter its `rt` names, feeding it the formation and the universe as JSON
-on stdin and reading the 𝜑-expression it answers with back from stdout. A λ
-name the registry does not carry gets stuck, which is what `--partial` parks
-on. Because a script cannot reduce its own operands, it asks `phino` for them
-with `--inside`, which binds an expression to a synthetic attribute of the
-universe and aims the run at it (`insideUniverse` in `Morph.hs`).
+`phino` implements no λ function. `Lambdas.hs` reads them from the YAML file
+the `--symbolic` option names, one entry per function: a `λ` key, a regular
+expression over λ names; the operands brought down to data through 𝔻 under
+`dataize`, each binding a bytes meta `𝛿1`; the operands reduced to a normal
+form through 𝕄 under `evaluate`, each binding an expression meta `𝑛1`; and the
+answer under `𝑛`. Firing an entry is 𝔼's business and lives in `Morph.hs`,
+which alone holds the judgments an operand is reduced with, using the same
+`insideUniverse` trick the `--inside` option exposes.
+
+An entry answers, it never computes: the answer carries a symbol `𝜎` standing
+for a value nobody worked out, minted fresh per firing and counted in the state
+`State` of `Deps.hs`. Dataizing a symbol answers a fixed 42, so a `𝛿` always
+holds data. A λ name no entry answers gets stuck, which is what `--partial`
+parks on; the protocol records it as `?(name)` either way. What fired is
+written as an indented tree by `--protocol`
+(`Evaluation` and `Protocol` in `Deps.hs`).
 
 ### Dependency inversion for circular imports
 

@@ -163,7 +163,7 @@ spec = do
 
   describe "matchFunction: function => function => substitution" $
     forM_
-      [ ("!f => Func => [(!f >> Func)]", FnMeta "f", Function "Func", substs [[("f", MvFunction "Func")]])
+      [ ("!f => Func => [(!f >> Func)]", FnMeta "f", Function "Func", substs [[("f", MvFunction (Function "Func"))]])
       , ("Func => Func => [()]", Function "Func", Function "Func", substs [[]])
       , ("Func => Other => []", Function "Func", Function "Other", substs [])
       ]

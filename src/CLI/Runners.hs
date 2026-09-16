@@ -8,7 +8,6 @@
 module CLI.Runners where
 
 import AST
-import Atoms (closeRegistry)
 import CLI.Helpers
 import CLI.Types
 import CLI.Validators
@@ -148,7 +147,7 @@ runRewrite OptsRewrite{..} = do
 runDataize :: OptsDataize -> IO ()
 runDataize OptsDataize{..} = do
   validateOpts
-  atoms <- registryOf _atoms
+  lambdas <- lambdasOf _symbolic
   excluded <- validatedDispatches "hide" _hide
   included <- validatedDispatches "show" _show
   [loc] <- validatedDispatches "locator" [_locator]
@@ -162,28 +161,28 @@ runDataize OptsDataize{..} = do
       exclude = (`F.exclude` excluded)
       include = (`F.include` included)
   save <- saveStepFunc _stepsDir printCtx
-  (outcome, chain) <-
+  (outcome, chain, _) <-
     withEvalFunc
-      _evaluations
+      _protocol
       printCtx
       ( \record -> do
           -- The deep walk belongs to 𝕄 alone (the '--deep' of 'morph'), since 𝔻
           -- reduces what dataization demands and ends in bytes, so it is off here.
-          let ctx = ReduceContext loc _maxDepth _maxCycles (Steps _maxSteps 0) _depthSensitive _shuffle _partial False atoms buildTerm reduction save record
+          let ctx = ReduceContext loc _maxDepth _maxCycles (Steps _maxSteps 0) 1 _depthSensitive _shuffle _partial False lambdas buildTerm reduction save record
           (universe, aiming) <- aimed _inside expr ctx
-          dataize universe aiming
+          heading record printCtx (T.pack "D") aiming._locator
+          dataize universe (started universe) aiming
       )
-      `finally` closeRegistry atoms
   when _sequence (printRewrittens printCtx (exclude $ include chain, False) >>= putStrLn)
   unless _quiet (printOutcome printCtx outcome >>= putStrLn)
   where
-    -- The bytes the run reached or, when '--partial' let it end on an atom
+    -- The bytes the run reached or, when '--partial' let it end on a λ function
     -- that could not fire, the residual program, rendered like a rewriting
     -- result: in the output format, narrowed to '--focus'.
     printOutcome :: PrintContext -> Outcome -> IO String
     printOutcome _ (Dataized bytes) = pure (P.printBytes bytes)
     printOutcome ctx (Residual residue) = do
-      logDebug "Dataization got stuck on an atom that cannot fire, printing the residual program (--partial)"
+      logDebug "Dataization got stuck on a λ function that cannot fire, printing the residual program (--partial)"
       printFocused ctx residue
     validateOpts :: IO ()
     validateOpts = do
@@ -194,9 +193,6 @@ runDataize OptsDataize{..} = do
         [(_meetPopularity, "meet-popularity"), (_meetLength, "meet-length")]
       validateXmirOptions _outputFormat [(_omitListing, "omit-listing"), (_omitComments, "omit-comments")] _focus
       when (length _show > 1) (invalidCLIArguments "The option --show can be used only once")
-      when
-        (isJust _evaluations && _outputFormat /= PHI)
-        (invalidCLIArguments "The --evaluations option can stay together with --output=phi only, since one record must fit into one line")
       when
         (isJust _inside && _locator /= "Q")
         (invalidCLIArguments "The options --inside and --locator cannot be used together, since --inside aims the run at the binding it mints")
@@ -235,7 +231,7 @@ runDataize OptsDataize{..} = do
 runMorph :: OptsMorph -> IO ()
 runMorph OptsMorph{..} = do
   validateOpts
-  atoms <- registryOf _atoms
+  lambdas <- lambdasOf _symbolic
   excluded <- validatedDispatches "hide" _hide
   included <- validatedDispatches "show" _show
   [loc] <- validatedDispatches "locator" [_locator]
@@ -249,16 +245,16 @@ runMorph OptsMorph{..} = do
       exclude = (`F.exclude` excluded)
       include = (`F.include` included)
   save <- saveStepFunc _stepsDir printCtx
-  (morphed, chain) <-
+  (morphed, chain, _) <-
     withEvalFunc
-      _evaluations
+      _protocol
       printCtx
       ( \record -> do
-          let ctx = ReduceContext loc _maxDepth _maxCycles (Steps _maxSteps 0) _depthSensitive _shuffle _partial _deep atoms buildTerm reduction save record
+          let ctx = ReduceContext loc _maxDepth _maxCycles (Steps _maxSteps 0) 1 _depthSensitive _shuffle _partial _deep lambdas buildTerm reduction save record
           (universe, aiming) <- aimed _inside expr ctx
-          morph universe aiming
+          heading record printCtx (T.pack "M") aiming._locator
+          morph universe (started universe) aiming
       )
-      `finally` closeRegistry atoms
   when _sequence (printRewrittens printCtx (exclude $ include chain, False) >>= putStrLn)
   unless _quiet (printFocused printCtx morphed >>= putStrLn)
   where
@@ -271,9 +267,6 @@ runMorph OptsMorph{..} = do
         [(_meetPopularity, "meet-popularity"), (_meetLength, "meet-length")]
       validateXmirOptions _outputFormat [(_omitListing, "omit-listing"), (_omitComments, "omit-comments")] _focus
       when (length _show > 1) (invalidCLIArguments "The option --show can be used only once")
-      when
-        (isJust _evaluations && _outputFormat /= PHI)
-        (invalidCLIArguments "The --evaluations option can stay together with --output=phi only, since one record must fit into one line")
       when
         (isJust _inside && _locator /= "Q")
         (invalidCLIArguments "The options --inside and --locator cannot be used together, since --inside aims the run at the binding it mints")
