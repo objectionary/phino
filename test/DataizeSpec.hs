@@ -255,7 +255,7 @@ spec = do
       (_, protocol) <- partially known "2.times(3).nope"
       protocol
         `shouldBe` unlines
-          [ "  E(L_number_times)"
+          [ "  𝔼(L_number_times)"
           , "    𝛿1.1 := 40-00-00-00-00-00-00-00"
           , "    𝛿2.1 := 40-08-00-00-00-00-00-00"
           , "    𝑛.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )"

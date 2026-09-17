@@ -14,5 +14,5 @@ partial: true
 input: '⟦ x ↦ ⟦ λ ⤍ L_none ⟧.foo ⟧'
 result: '⟦ λ ⤍ L_none, ρ ↦ ∅ ⟧.foo'
 protocol: |
-  M(Φ.x)
+  𝕄(Φ.x)
     ?(L_none)

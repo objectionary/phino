@@ -12,7 +12,7 @@ partial: true
 input: '⟦ x ↦ ⟦ λ ⤍ L_answers ⟧.foo ⟧'
 result: '⟦ λ ⤍ L_none, ρ ↦ ∅ ⟧.foo'
 protocol: |
-  M(Φ.x)
-    E(L_answers)
+  𝕄(Φ.x)
+    𝔼(L_answers)
       𝑛.1 := ⟦ λ ⤍ L_none ⟧
     ?(L_none)

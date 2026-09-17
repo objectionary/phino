@@ -95,7 +95,9 @@ for a value nobody worked out, minted fresh per firing and counted in the state
 holds data. A λ name no entry answers gets stuck, which is what `--partial`
 parks on; the protocol records it as `?(name)` either way. What fired is
 written as an indented tree by `--protocol`
-(`Evaluation` and `Protocol` in `Deps.hs`).
+(`Evaluation` and `Protocol` in `Deps.hs`), which spells the three judgments
+the way the calculus does: `𝕄(…)` or `𝔻(…)` opens the run, `𝔼(…)` names a
+firing and `𝔻(𝜎1)` is the datum manufactured for a symbol.
 
 ### Dependency inversion for circular imports
 

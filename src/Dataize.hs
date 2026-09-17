@@ -109,7 +109,7 @@ dataize' (expr, seq) univ state caller = do
     -- never gets stuck, and the very same 42 answers every symbol, since the
     -- run is symbolic and no arithmetic of it is ever read. Which symbol the
     -- datum stands for is told to the state rather than to the term, so the
-    -- protocol writes 'D(𝜎1)' where the term carries nothing but the 42.
+    -- protocol writes '𝔻(𝜎1)' where the term carries nothing but the 42.
     manufactured :: Int -> ReduceContext -> IO (Dataized, State)
     manufactured idx ctx = do
       seq' <- leadsTo seq "symbol" (ExBytes datum) ctx

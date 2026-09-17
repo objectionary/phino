@@ -125,7 +125,7 @@ testSymbols pth = do
               , _symbolic = known
               , _saveEval = record
               }
-      record (EvRun (T.pack "M") (T.pack (printExpression loc)))
+      record (EvRun (T.pack "𝕄") (T.pack (printExpression loc)))
       case fails of
         Just message ->
           morph expr (started expr) ctx `shouldThrow` (\err -> message `isInfixOf` show (err :: SomeException))
