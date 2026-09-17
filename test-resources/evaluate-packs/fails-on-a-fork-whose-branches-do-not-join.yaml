@@ -12,7 +12,9 @@ symbolic: |
     morph:
       𝑛1: $.a
       𝑛2: $.b
-    𝑛: [𝑛1, 𝑛2]
+    join:
+      𝑛3: [𝑛1, 𝑛2]
+    𝑛: 𝑛3
 location: 'Q.y'
 input: '⟦ y ↦ ⟦ a ↦ ⟦ l ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, b ↦ ⟦ l ↦ ⟦ λ ⤍ 𝜎2 ⟧, x ↦ ⟦⟧ ⟧, λ ⤍ L_fork ⟧.l ⟧'
 fails: "No entry of --symbolic answers the λ function 'L_fork'"

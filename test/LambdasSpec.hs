@@ -12,7 +12,7 @@ import Control.Monad (forM_)
 import Data.List (isInfixOf)
 import Data.Text qualified as T
 import Fixtures (withLambdasOf)
-import Lambdas (Answer (..), Lambda (..), Lambdas, Meta (..), emptyLambdas, joined, matched, minted, readLambdas, symbolized, taken)
+import Lambdas (Lambda (..), Lambdas, Meta (..), emptyLambdas, joined, matched, minted, readLambdas, symbolized, taken)
 import Parser (parseExpressionThrows)
 import Test.Hspec
 
@@ -32,19 +32,13 @@ entry key = "- λ: " <> key <> "\n  dataize:\n    𝛿1: $.ρ\n  𝑛: ⟦ λ �
 answering :: Lambdas -> T.Text -> Maybe T.Text
 answering known func = _key <$> matched known func
 
--- The term the entry answering the given λ name was written with, where it
--- answers with a term at all and not with a join of two branches.
-answered :: Lambdas -> T.Text -> Maybe Expression
-answered known func = case _answer <$> matched known func of
-  Just (AnTerm term) -> Just term
-  _ -> Nothing
-
--- The two branches the entry answering the given λ name joins, spelled the way
--- the file spells them, where it answers with a join at all.
-branches :: Lambdas -> T.Text -> Maybe (T.Text, T.Text)
-branches known func = case _answer <$> matched known func of
-  Just (AnJoin left right) -> Just (_spelling left, _spelling right)
-  _ -> Nothing
+-- Every 'join' line of the entry answering the given λ name, spelled the way
+-- the file spells it: the meta it binds and the two it joins.
+joins :: Lambdas -> T.Text -> [(T.Text, (T.Text, T.Text))]
+joins known func = map spelled (maybe [] _paired (matched known func))
+  where
+    spelled :: (Meta, (Meta, Meta)) -> (T.Text, (T.Text, T.Text))
+    spelled (meta, (left, right)) = (_spelling meta, (_spelling left, _spelling right))
 
 spec :: Spec
 spec = do
@@ -104,19 +98,33 @@ spec = do
     it "reads the term the firing answers with" $ do
       known <- lambdasOf "- λ: L_pair\n  𝑛: Φ.number( φ ↦ ⟦ λ ⤍ 𝜎 ⟧ )\n"
       term <- parseExpressionThrows "Φ.number( φ ↦ ⟦ λ ⤍ 𝜎 ⟧ )"
-      answered known "L_pair" `shouldBe` Just term
+      fmap _answer (matched known "L_pair") `shouldBe` Just term
 
-    -- A fork answers neither of its branches but the join of the two, so it
-    -- lists the metas they are bound to instead of writing a term of its own
-    it "reads the two branches a fork joins" $ do
-      known <- lambdasOf "- λ: L_fork\n  morph:\n    𝑛1: $.then\n    𝑛2: $.else\n  𝑛: [𝑛1, 𝑛2]\n"
-      branches known "L_fork" `shouldBe` Just ("𝑛1", "𝑛2")
+    -- A fork answers neither of its branches but the join of the two, which a
+    -- 'join' line binds a meta of its own to, so the answer names that meta
+    it "reads the two metas a 'join' line joins" $ do
+      known <- lambdasOf "- λ: L_fork\n  morph:\n    𝑛1: $.then\n    𝑛2: $.else\n  join:\n    𝑛3: [𝑛1, 𝑛2]\n  𝑛: 𝑛3\n"
+      joins known "L_fork" `shouldBe` [("𝑛3", ("𝑛1", "𝑛2"))]
 
-    -- The branches are joined in the order the entry lists them, which is the
-    -- order the protocol writes the two symbols a fresh one stands for in
-    it "reads a fork joining the terms a 'symbolize' line stood" $ do
-      known <- lambdasOf "- λ: L_fork\n  morph:\n    𝑛1: $.then\n    𝑛2: $.else\n  symbolize:\n    𝑛3: 𝑛1\n    𝑛4: 𝑛2\n  𝑛: [𝑛4, 𝑛3]\n"
-      branches known "L_fork" `shouldBe` Just ("𝑛4", "𝑛3")
+    -- The two are joined in the order the line lists them, which is the order
+    -- the protocol writes the two symbols a fresh one stands for in
+    it "reads the two metas of a 'join' line in the order it lists them" $ do
+      known <- lambdasOf "- λ: L_fork\n  morph:\n    𝑛1: $.then\n    𝑛2: $.else\n  join:\n    𝑛3: [𝑛2, 𝑛1]\n  𝑛: 𝑛3\n"
+      joins known "L_fork" `shouldBe` [("𝑛3", ("𝑛2", "𝑛1"))]
+
+    -- 'join' runs after 'symbolize', so a line of it may join what that stage
+    -- stood, and a line of it may join what a line above it made
+    it "reads a 'join' line joining the terms a 'symbolize' line stood" $ do
+      known <- lambdasOf "- λ: L_fork\n  morph:\n    𝑛1: $.then\n    𝑛2: $.else\n  symbolize:\n    𝑛3: 𝑛1\n    𝑛4: 𝑛2\n  join:\n    𝑛5: [𝑛3, 𝑛4]\n  𝑛: 𝑛5\n"
+      joins known "L_fork" `shouldBe` [("𝑛5", ("𝑛3", "𝑛4"))]
+
+    it "reads a 'join' line joining what a line above it joined" $ do
+      known <- lambdasOf "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n    𝑛3: $.c\n  join:\n    𝑛4: [𝑛1, 𝑛2]\n    𝑛5: [𝑛4, 𝑛3]\n  𝑛: 𝑛5\n"
+      joins known "L_fork" `shouldBe` [("𝑛4", ("𝑛1", "𝑛2")), ("𝑛5", ("𝑛4", "𝑛3"))]
+
+    it "reads an entry naming no 'join' block at all" $ do
+      known <- lambdasOf "- λ: L_pair\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n"
+      joins known "L_pair" `shouldBe` []
 
     it "reads an entry naming neither operand block" $ do
       known <- lambdasOf "- λ: L_pair\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n"
@@ -140,11 +148,14 @@ spec = do
       , ("an operand referencing a meta the entry never matched", "- λ: L_pair\n  dataize:\n    𝛿1: '!n'\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n", "cannot be referenced")
       , ("an answer reading the data its operands came down to", "- λ: L_pair\n  dataize:\n    𝛿1: $.ρ\n  𝑛: ⟦ Δ ⤍ 𝛿1 ⟧\n", "reads data")
       , ("an answer carrying an anonymous meta of another kind", "- λ: L_pair\n  𝑛: '⟦ φ ↦ !n ⟧'\n", "cannot be referenced")
-      , ("an answer joining one branch alone", "- λ: L_fork\n  morph:\n    𝑛1: $.then\n  𝑛: [𝑛1]\n", "must join exactly two metas")
-      , ("an answer joining three branches", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n    𝑛3: $.c\n  𝑛: [𝑛1, 𝑛2, 𝑛3]\n", "must join exactly two metas")
-      , ("an answer joining what is no expression meta", "- λ: L_fork\n  morph:\n    𝑛1: $.then\n  𝑛: [𝑛1, $.else]\n", "is not an expression meta")
-      , ("an answer joining a branch the entry never bound", "- λ: L_fork\n  morph:\n    𝑛1: $.then\n  𝑛: [𝑛1, 𝑛2]\n", "names no meta bound by 'morph' or by 'symbolize'")
-      , ("an answer joining a branch that came down to data", "- λ: L_fork\n  dataize:\n    𝛿1: $.ρ\n  morph:\n    𝑛1: $.then\n  𝑛: [𝑛1, 𝛿1]\n", "is not an expression meta")
+      , ("a 'join' line joining one meta alone", "- λ: L_fork\n  morph:\n    𝑛1: $.then\n  join:\n    𝑛2: [𝑛1]\n  𝑛: 𝑛2\n", "must join exactly two metas")
+      , ("a 'join' line joining three metas", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n    𝑛3: $.c\n  join:\n    𝑛4: [𝑛1, 𝑛2, 𝑛3]\n  𝑛: 𝑛4\n", "must join exactly two metas")
+      , ("a 'join' line joining what is no expression meta", "- λ: L_fork\n  morph:\n    𝑛1: $.then\n  join:\n    𝑛2: [𝑛1, $.else]\n  𝑛: 𝑛2\n", "is not an expression meta")
+      , ("a 'join' line bound to what is no expression meta", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  join:\n    𝛿1: [𝑛1, 𝑛2]\n  𝑛: 𝑛1\n", "is not an expression meta")
+      , ("a 'join' line joining a meta the entry never bound", "- λ: L_fork\n  morph:\n    𝑛1: $.then\n  join:\n    𝑛3: [𝑛1, 𝑛2]\n  𝑛: 𝑛3\n", "names no meta bound by 'morph' or by a line above it")
+      , ("a 'join' line joining a meta that came down to data", "- λ: L_fork\n  dataize:\n    𝛿1: $.ρ\n  morph:\n    𝑛1: $.then\n  join:\n    𝑛2: [𝑛1, 𝛿1]\n  𝑛: 𝑛2\n", "is not an expression meta")
+      , ("a 'join' line joining what a line below it made", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  join:\n    𝑛3: [𝑛1, 𝑛4]\n    𝑛4: [𝑛1, 𝑛2]\n  𝑛: 𝑛3\n", "names no meta bound by 'morph' or by a line above it")
+      , ("a 'symbolize' line standing what a 'join' line made", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  symbolize:\n    𝑛5: 𝑛3\n  join:\n    𝑛3: [𝑛1, 𝑛2]\n  𝑛: 𝑛5\n", "names no meta bound by 'morph' or by a line above it")
       ]
       ( \(desc, text, message) ->
           it ("cannot read " ++ desc) $

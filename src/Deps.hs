@@ -103,8 +103,9 @@ opened Dataization = "dataize"
 -- under it stands one block per firing, '𝔼(L_number_plus)', naming the entry
 -- that answered. Inside a block stand the operands the entry bound — each with
 -- the term it was reduced from — whatever a 'symbolize' line of it knows about
--- a symbol it minted, whatever a join of two branches knows about the symbol it
--- joined them into, and the term it answered with, one to a line, and any
+-- a symbol it minted, the terms a 'join' line of it made one of and what it
+-- knows about the symbol they were joined into, and the term it answered with,
+-- one to a line, and any
 -- firing an operand took while it was being reduced, one level deeper again. A
 -- name no entry answers stands there as '?(L_number_nope)', where the block of
 -- its firing would have been.
@@ -135,6 +136,12 @@ data Evaluation
     -- neither a datum nor a term, so it stands on a line of its own rather
     -- than beside a meta the firing bound (#1269).
     EvKnown Int Int Bytes
+  | -- A 'join' line of the firing: the meta it bound, the two metas whose terms
+    -- it joined, in the order the entry wrote them, and the term they joined
+    -- into. It is a binding like 'EvTerm' and differs only in what the line is
+    -- commented with, a 'join' line naming two metas of the entry where every
+    -- other block names a term of the calculus (#1246).
+    EvJoin Int T.Text (T.Text, T.Text) Expression
   | -- What is known about a symbol the join of two branches of a fork minted:
     -- dataizing the formation it names answers what dataizing one of the two
     -- formations the branches carried answers, and which of the two it is is
@@ -265,6 +272,10 @@ saveEval handle cursor render salted report = do
     written (EvKnown depth symbol bytes) protocol = do
       form <- render (standing symbol)
       pure (protocol, Just (indented depth (printf "𝔻(%s) == %s" form (printBytes bytes))))
+    written (EvJoin depth spelling (left, right) term) protocol = do
+      let naming = labelled protocol depth spelling
+      (protocol', value) <- valued protocol naming term
+      pure (protocol', Just (indented depth (printf "%s := %s  # [%s, %s]" naming value (T.unpack left) (T.unpack right))))
     written (EvJoined depth fresh (one, two)) protocol = do
       form <- render (standing fresh)
       left <- render (standing one)
@@ -388,6 +399,10 @@ saveEvalXml handle cursor render report = do
         (kept, closers) = closed depth nesting._closing
         known :: String
         known = printf "<known symbol=\"%s\">%s</known>" (sigma symbol) (escapeXMLText (printBytes bytes))
+    elements (EvJoin depth spelling _ term) nesting = do
+      body <- render term
+      let (kept, closers) = closed depth nesting._closing
+      pure (nesting{_closing = kept}, closers ++ [indented depth (printf "<bind meta=\"%s\">%s</bind>" (escapeXML (labelled nesting depth spelling)) (escapeXMLText body))])
     elements (EvJoined depth fresh (one, two)) nesting =
       pure (nesting{_closing = kept}, closers ++ [indented depth joint])
       where

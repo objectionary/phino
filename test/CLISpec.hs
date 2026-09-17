@@ -1412,15 +1412,16 @@ spec = do
                          , "</morph>"
                          ]
 
-        -- What a fork of two branches knows about the symbol it joined them
-        -- into is an element of its own too, the way the fact a 'symbolize'
-        -- line writes is: the fresh symbol stands in the attribute a reader
-        -- joins lines on and the two symbols it was minted for are the text,
-        -- in the order the entry listed the branches under '𝑛' (#1246)
-        it "writes what a join of two branches knows as an element of its own" $
+        -- What a 'join' line knows about the symbol it minted is an element of
+        -- its own too, the way the fact a 'symbolize' line writes is: the
+        -- fresh symbol stands in the attribute a reader joins lines on and the
+        -- two symbols it was minted for are the text, in the order the line
+        -- lists the metas it joins. The meta it binds is a '<bind>' like every
+        -- other meta of the firing (#1246)
+        it "writes what a 'join' line knows as an element of its own" $
           withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
             hClose stream
-            withLambdasOf (T.pack "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  𝑛: [𝑛1, 𝑛2]\n") $ \forks ->
+            withLambdasOf (T.pack "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  join:\n    𝑛3: [𝑛1, 𝑛2]\n  𝑛: 𝑛3\n") $ \forks ->
               withStdin "⟦ y ↦ ⟦ a ↦ ⟦ l ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, b ↦ ⟦ l ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧, λ ⤍ L_fork ⟧.l ⟧" $
                 testCLISucceeded ["morph", "--symbolic=" ++ forks, "--locator=Q.y", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
             records <- readUtf8 path
@@ -1431,6 +1432,7 @@ spec = do
                          , "    <bind meta=\"𝑛1.1\">⟦ l ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧</bind>"
                          , "    <bind meta=\"𝑛2.1\">⟦ l ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧</bind>"
                          , "    <joined symbol=\"𝜎3\">𝜎1 𝜎2</joined>"
+                         , "    <bind meta=\"𝑛3.1\">⟦ l ↦ ⟦ λ ⤍ 𝜎3 ⟧ ⟧</bind>"
                          , "    <answer meta=\"𝑛.1\">⟦ l ↦ ⟦ λ ⤍ 𝜎3 ⟧ ⟧</answer>"
                          , "  </evaluate>"
                          , "</morph>"

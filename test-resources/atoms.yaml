@@ -42,8 +42,8 @@
 # A branch is where a 'morph' operand earns its place: the condition comes
 # down through 𝔻, both branches reach a normal form through 𝕄, and the answer
 # is one of them. This one answers the first, which is what an entry naming a
-# meta it bound does; an entry whose answer is to stand for either branch lists
-# the two of them instead, as '𝑛: [𝑛1, 𝑛2]', and phino joins them.
+# meta it bound does; an entry whose answer is to stand for either branch joins
+# the two of them in a 'join' block first and answers the meta that makes.
 - λ: L_fork
   dataize:
     𝛿1: $.ρ

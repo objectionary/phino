@@ -34,10 +34,12 @@
 -- reached from an unknown is written and the two of them compare as
 -- expressions (see 'symbolized').
 --
--- The '𝑛' of an entry is either that one term or a list of two metas, which is
--- what a branching λ function writes: the answer of a fork stands for either
--- branch and no one branch stands for both, so phino joins the two terms the
--- metas are bound to instead of handing one of them through (see 'joined').
+-- 'join' is the fourth block and reduces nothing either. It takes two metas the
+-- entry has bound already and binds one of its own to the two terms joined,
+-- which is what a branching λ function answers with: a fork stands for either
+-- of its branches and no one branch stands for both, so the shape both of them
+-- have, with a fresh symbol wherever they differ, is what the answer names
+-- (see 'joined').
 --
 -- An entry answers, it never computes: the job of these functions is symbolic
 -- morphing, so the answer carries a symbol standing for a value nobody worked
@@ -46,12 +48,11 @@
 --
 -- This module holds the entries and the four things reading one takes — the
 -- lookup of a λ name, the minting of the symbols an answer asks for, the
--- standing of the data of a term into unknowns and the joining of two branches
--- into one answer. Firing an entry is 𝔼's business and lives in 'Morph', which
--- alone holds the judgments an entry reduces its operands with.
+-- standing of the data of a term into unknowns and the joining of two terms
+-- into one. Firing an entry is 𝔼's business and lives in 'Morph', which alone
+-- holds the judgments an entry reduces its operands with.
 module Lambdas
-  ( Answer (..)
-  , Lambda (..)
+  ( Lambda (..)
   , LambdaException (..)
   , Lambdas
   , Meta (..)
@@ -67,6 +68,7 @@ where
 
 import AST
 import Control.Exception (Exception, throwIO)
+import Control.Monad (void)
 import Data.Aeson (FromJSON (parseJSON), Key, Object, withObject, (.!=), (.:), (.:?))
 import Data.List (find)
 import Data.Map.Strict (Map)
@@ -94,29 +96,18 @@ data Meta = Meta
   , _name :: Text
   }
 
--- What an entry answers a firing with, which is the one thing the '𝑛' of it
--- spells in two ways. Most λ functions answer one term, written as it is; a
--- branching one answers neither of its branches, since the value it stands for
--- is the one nobody has picked, so it names the two metas its branches are
--- bound to and phino joins them (#1246).
-data Answer
-  = -- The term the entry wrote, with every meta the firing bound stood into
-    -- it.
-    AnTerm Expression
-  | -- The two metas whose normal forms the firing joins, in the order the
-    -- entry listed them under '𝑛'.
-    AnJoin Meta Meta
-
 -- One λ function phino may fire, as the file spells it: the key it is
 -- registered under, the operands it brings down to data, the operands it
 -- reduces to a normal form, the terms of those it stands the data of into
--- unknowns and what it answers with.
+-- unknowns, the pairs of those it joins into one term and the term it answers
+-- with.
 data Lambda = Lambda
   { _key :: Text
   , _dataized :: [(Meta, Expression)]
   , _morphed :: [(Meta, Expression)]
   , _symbolized :: [(Meta, Expression)]
-  , _answer :: Answer
+  , _paired :: [(Meta, (Meta, Meta))]
+  , _answer :: Expression
   }
 
 -- Every λ function phino may fire, in the order the file lists them: each key,
@@ -143,9 +134,11 @@ instance FromJSON Lambda where
         <$> operands key bytesMeta entry "dataize"
         <*> operands key expressionMeta entry "morph"
         <*> operands key expressionMeta entry "symbolize"
-        <*> (entry .: "𝑛" >>= answering (T.unpack key))
+        <*> pairs (T.unpack key) entry
+        <*> entry .: "𝑛"
+    sigmas (T.unpack key) lambda._answer
+    dataless (T.unpack key) lambda._answer
     earlier (T.unpack key) lambda
-    sound (T.unpack key) lambda
     pure lambda
     where
       -- The metas one block of an entry binds, each paired with the term it is
@@ -174,57 +167,56 @@ instance FromJSON Lambda where
       bytesMeta meta = case parseBytes (T.unpack meta) of
         Right (BtMeta name) -> pure (Meta meta name)
         _ -> fail (printf "The operand '%s' is not a bytes meta, such as '𝛿1'" (T.unpack meta))
-      -- Every 'symbolize' line stands a term the entry has bound already: a
-      -- 'morph' operand, or a line above it in the very same block, since
-      -- nothing else of an entry is a normal form yet. A line naming anything
-      -- else names a term nobody reduced, and the file is wrong where it is
-      -- read rather than half-way through a firing.
-      earlier :: String -> Lambda -> Yaml.Parser ()
-      earlier key lambda = go (map (_name . fst) lambda._morphed) lambda._symbolized
+      -- The metas a 'join' block binds, each paired with the two it joins,
+      -- ordered by the name of the meta the way every other block is. A line
+      -- joins two metas and never three: it stands for a choice between two
+      -- branches, and a walk over three terms in parallel is no such choice.
+      pairs :: String -> Object -> Yaml.Parser [(Meta, (Meta, Meta))]
+      pairs key entry = do
+        mapping <- entry .:? "join" .!= (Map.empty :: Map Text [Text])
+        mapM joins (Map.toAscList mapping)
         where
-          go :: [Text] -> [(Meta, Expression)] -> Yaml.Parser ()
-          go _ [] = pure ()
+          joins :: (Text, [Text]) -> Yaml.Parser (Meta, (Meta, Meta))
+          joins (meta, [left, right]) = do
+            named <- expressionMeta meta
+            branches <- (,) <$> expressionMeta left <*> expressionMeta right
+            pure (named, branches)
+          joins (meta, _) =
+            fail
+              ( printf
+                  "The operand '%s' of λ function '%s' must join exactly two metas, such as '[𝑛1, 𝑛2]'"
+                  (T.unpack meta)
+                  key
+              )
+      -- Every 'symbolize' and 'join' line reads terms the entry has bound
+      -- already: a 'morph' operand, a line above it in its own block or, for a
+      -- 'join' line, a 'symbolize' one, since nothing else of an entry is a
+      -- normal form yet and the blocks run in the order the entry lists them
+      -- here. A line naming anything else names a term nobody reduced, and the
+      -- file is wrong where it is read rather than half-way through a firing.
+      earlier :: String -> Lambda -> Yaml.Parser ()
+      earlier key lambda = do
+        stood <- go (map (_name . fst) lambda._morphed) lambda._symbolized
+        void (goJoins stood lambda._paired)
+        where
+          go :: [Text] -> [(Meta, Expression)] -> Yaml.Parser [Text]
+          go reduced [] = pure reduced
           go reduced ((meta, term) : rest) = case term of
             ExMeta name | name `elem` reduced -> go (meta._name : reduced) rest
-            _ ->
-              fail
-                ( printf
-                    "The operand '%s' of λ function '%s' names no meta bound by 'morph' or by a 'symbolize' line above it"
-                    (T.unpack meta._spelling)
-                    key
-                )
-      -- What the entry answers with, as the '𝑛' of it spells it: a list of
-      -- metas is a join of the branches they are bound to and anything else is
-      -- the term itself. A join is only ever between two of them, since it
-      -- stands for a choice between two branches and a walk over three terms
-      -- in parallel is no such choice.
-      answering :: String -> Yaml.Value -> Yaml.Parser Answer
-      answering key value = case value of
-        Yaml.Array _ -> parseJSON value >>= branches
-        _ -> AnTerm <$> parseJSON value
-        where
-          branches :: [Text] -> Yaml.Parser Answer
-          branches [left, right] = AnJoin <$> expressionMeta left <*> expressionMeta right
-          branches _ = fail (printf "The '𝑛' of λ function '%s' must join exactly two metas, such as '[𝑛1, 𝑛2]'" key)
-      -- What the answer of an entry must hold to be answerable at all: a term
-      -- of it may carry nothing but a bare 𝜎 and may read no data, while a
-      -- join of two branches names two terms the entry has bound already,
-      -- since nothing else of it is a normal form to join.
-      sound :: String -> Lambda -> Yaml.Parser ()
-      sound key lambda = case lambda._answer of
-        AnTerm term -> sigmas key term >> dataless key term
-        AnJoin left right -> mapM_ reduced [left, right]
-        where
-          reduced :: Meta -> Yaml.Parser ()
-          reduced meta
-            | meta._name `elem` map (_name . fst) (lambda._morphed ++ lambda._symbolized) = pure ()
-            | otherwise =
-                fail
-                  ( printf
-                      "The branch '%s' of λ function '%s' names no meta bound by 'morph' or by 'symbolize'"
-                      (T.unpack meta._spelling)
-                      key
-                  )
+            _ -> unbound meta
+          goJoins :: [Text] -> [(Meta, (Meta, Meta))] -> Yaml.Parser [Text]
+          goJoins reduced [] = pure reduced
+          goJoins reduced ((meta, (left, right)) : rest)
+            | all ((`elem` reduced) . _name) [left, right] = goJoins (meta._name : reduced) rest
+            | otherwise = unbound (if left._name `elem` reduced then right else left)
+          unbound :: Meta -> Yaml.Parser a
+          unbound meta =
+            fail
+              ( printf
+                  "The operand '%s' of λ function '%s' names no meta bound by 'morph' or by a line above it"
+                  (T.unpack meta._spelling)
+                  key
+              )
       -- A bare 𝜎 is the one anonymous meta an answer may carry, since minting
       -- a fresh symbol is exactly what it asks for; every other one names a
       -- match the entry never made.
