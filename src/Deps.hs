@@ -234,12 +234,6 @@ saveEval handle cursor render salted report = do
     -- flattened like everything else, so the whole line stays one line of 𝜑.
     commented :: String -> Expression -> IO String
     commented line operand = printf "%s  # %s" line <$> salted operand
-    -- The formation a symbol names, which is what 𝔻 brought an operand down
-    -- to and what a 'symbolize' line knows the data of: a 𝜎 is the name of a
-    -- λ function and no term of its own, so 𝔻 is applied to the formation
-    -- carrying it and never to the name alone (#1269).
-    standing :: Int -> Expression
-    standing symbol = ExFormation [BiLambda (FnSymbol symbol)]
     -- The name of an operand meta on this firing of its λ function: the meta
     -- the entry spells it with and which firing of the run this is, since
     -- every entry numbers its own metas from 𝛿1 and 𝑛1 and only the firing
@@ -305,19 +299,24 @@ saveEvalXml handle cursor render report = do
       pure (nesting{_closing = kept}, closers ++ [indented depth (printf "<stuck λ=\"%s\"/>" (quoted key))])
       where
         (kept, closers) = closed depth nesting._closing
-    elements (EvData depth spelling _ value) nesting =
-      pure (nesting{_closing = kept}, closers ++ [indented depth (stood value)])
+    elements (EvData depth spelling _ value) nesting = do
+      record <- stood value
+      pure (nesting{_closing = kept}, closers ++ [indented depth record])
       where
         (kept, closers) = closed depth nesting._closing
-        -- A 'dataize' operand has no term of its own to show: it either came
-        -- down to data, which is the data, or to the datum manufactured for an
-        -- unknown, which is that unknown and never the 42 standing for it.
-        -- These are two different facts, so the name of the element tells them
-        -- apart the way 𝔻(…) does in the text format, rather than leaving a
-        -- reader to test which of two attributes an element carries (#1257).
-        stood :: Either Int Bytes -> String
-        stood (Left symbol) = printf "<dataize meta=\"%s\">%s</dataize>" (escapeXML (labelled nesting depth spelling)) (sigma symbol)
-        stood (Right bytes) = printf "<bind meta=\"%s\">%s</bind>" (escapeXML (labelled nesting depth spelling)) (escapeXMLText (printBytes bytes))
+        -- An operand of a 'dataize' line either came down to data, which is
+        -- the data, or to the datum manufactured for an unknown, which is the
+        -- formation that unknown names and never the 42 standing for it. These
+        -- are two different facts, so the name of the element tells them apart
+        -- the way 𝔻(…) does in the text format, rather than leaving a reader
+        -- to test which of two attributes an element carries (#1257). What 𝔻
+        -- was applied to is a term either way, and the element named after the
+        -- judgment holds it as the text format holds it (#1278).
+        stood :: Either Int Bytes -> IO String
+        stood (Left symbol) = do
+          form <- render (standing symbol)
+          pure (printf "<dataize meta=\"%s\">%s</dataize>" (escapeXML (labelled nesting depth spelling)) (escapeXMLText form))
+        stood (Right bytes) = pure (printf "<bind meta=\"%s\">%s</bind>" (escapeXML (labelled nesting depth spelling)) (escapeXMLText (printBytes bytes)))
     elements (EvTerm depth spelling _ term) nesting = do
       body <- render term
       let (kept, closers) = closed depth nesting._closing
@@ -388,6 +387,15 @@ indented depth line = replicate (2 * depth) ' ' ++ line
 -- half-written when the inner one starts counting.
 atomicModify :: IORef a -> (a -> IO (a, b)) -> IO b
 atomicModify ref action = readIORef ref >>= action >>= \(value, made) -> writeIORef ref value >> pure made
+
+-- The formation a symbol names, which is what 𝔻 brought an operand down to and
+-- what a 'symbolize' line knows the data of: a 𝜎 is the name of a λ function
+-- and no term of its own, so 𝔻 is applied to the formation carrying it and
+-- never to the name alone (#1269). Both formats stand it where they report
+-- what 𝔻 was applied to, since they carry the same facts and disagreeing about
+-- this one would make a reader of the markup believe 𝔻 took a name (#1278).
+standing :: Int -> Expression
+standing symbol = ExFormation [BiLambda (FnSymbol symbol)]
 
 -- How the calculus spells the meta a λ function writes its answer to, which is
 -- the name the protocol numbers the answers of a whole run by.
