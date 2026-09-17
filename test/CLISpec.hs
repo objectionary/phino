@@ -1173,6 +1173,7 @@ spec = do
       let sum' = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6) ]]"
           chained = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6).plus(7) ]]"
           nested = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6.plus(7)) ]]"
+          mixed = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(x) -> [[ L> L_number_plus ]], times(x) -> [[ L> L_number_times ]] ]], @ -> 5.plus(6).times(7) ]]"
       it "opens the protocol with the run it is the protocol of" $
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
           hClose stream
@@ -1211,6 +1212,29 @@ spec = do
                        , "    𝛿2.1 := 40-18-00-00-00-00-00-00"
                        , "    𝑛.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )"
                        , "  𝔼(L_number_plus)"
+                       , "    𝛿1.2 := 𝔻(𝜎1)"
+                       , "    𝛿2.2 := 40-1C-00-00-00-00-00-00"
+                       , "    𝑛.2 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ )"
+                       ]
+
+      -- A meta is a variable bound exactly once, so its name has to be unique
+      -- in the whole file and the protocol refers back to it as a name. The
+      -- firings are therefore numbered across the run and not per λ function:
+      -- the first firing of 'L_number_times' calls its operand 𝛿1.2, never the
+      -- 𝛿1.1 the first firing of 'L_number_plus' has already taken (#1261)
+      it "numbers the firings of different entries apart" $
+        withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
+          hClose stream
+          withStdin mixed $
+            testCLISucceeded ["dataize", symbolic, "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
+          records <- readUtf8 path
+          lines records
+            `shouldBe` [ "𝔻(Φ)"
+                       , "  𝔼(L_number_plus)"
+                       , "    𝛿1.1 := 40-14-00-00-00-00-00-00"
+                       , "    𝛿2.1 := 40-18-00-00-00-00-00-00"
+                       , "    𝑛.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )"
+                       , "  𝔼(L_number_times)"
                        , "    𝛿1.2 := 𝔻(𝜎1)"
                        , "    𝛿2.2 := 40-1C-00-00-00-00-00-00"
                        , "    𝑛.2 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ )"
