@@ -1,0 +1,27 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# A program that does not loop answers the same with '_acyclic' as without it.
+# The guard remembers the terms the frames above have open, so only a genuine
+# return to one of them trips it; a term merely reduced twice in two places
+# does not.
+symbolic: |
+  - λ: L_number_plus
+    dataize:
+      𝛿1: $.ρ
+      𝛿2: $.x
+    𝑛: Φ.number( φ ↦ ⟦ λ ⤍ 𝜎 ⟧ )
+location: 'Q.@'
+deep: true
+acyclic: true
+input: >
+  ⟦ bytes(φ) ↦ ⟦⟧,
+    number(φ) ↦ ⟦ plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧,
+    @ ↦ 5.plus( 6 ) ⟧
+result: 'Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1, ρ ↦ ∅ ⟧ )'
+protocol: |
+  M(Φ.φ)
+    E(L_number_plus)
+      𝛿1.1 := 40-14-00-00-00-00-00-00
+      𝛿2.1 := 40-18-00-00-00-00-00-00
+      𝑛.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )

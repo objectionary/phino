@@ -1644,6 +1644,47 @@ spec = do
         withStdin "[[ x -> [[ L> Sym_arg_0 ]].foo ]]" $
           testCLIFailed ["morph", "--deep"] ["No entry of --symbolic answers the λ function 'Sym_arg_0'"]
 
+    -- The step budget used to be the only thing ending the 𝕄/𝔻 recursion, so an
+    -- entry answering with a firing of itself spent the whole of it and then
+    -- failed on the limit; '--acyclic' stops the moment morphing comes back to a
+    -- term a frame above it is already reducing and parks that site the way
+    -- '--partial' parks a λ function that cannot fire
+    describe "--acyclic" $ do
+      let looping = "⟦ x ↦ ⟦ λ ⤍ L_loop ⟧.foo ⟧"
+      it "spends the whole budget and fails on the limit without the flag" $
+        loopingLambdas $ \endless ->
+          withStdin looping $
+            testCLIFailed
+              ["morph", "--symbolic=" ++ endless, "--locator=Q.x", "--max-steps=40"]
+              ["[ERROR]: Dataization did not finish before reaching the limit of steps: --max-steps=40"]
+
+      -- The budget here is far larger than the one the run above failed on, so
+      -- what ends this one is the cut and not the limit
+      it "prints the residue and exits successfully with the flag" $
+        loopingLambdas $ \endless ->
+          withStdin looping $
+            testCLISucceeded
+              ["morph", "--symbolic=" ++ endless, "--locator=Q.x", "--acyclic", "--max-steps=4000", "--flat", "--hide-rho"]
+              ["⟦ λ ⤍ L_loop ⟧.foo"]
+
+      -- The guard reads nothing but the terms the frames above it are reducing,
+      -- so a run that never comes back to one answers exactly as it did before
+      it "answers a terminating program the same way with the flag" $
+        withStdin chained $
+          testCLISucceeded
+            ["morph", symbolic, "--acyclic", "--locator=Q.@", "--sweet", "--hide-rho", "--flat"]
+            ["⟦ x ↦ 7, λ ⤍ L_number_plus ⟧"]
+
+      -- The deep walk parks the one binding that loops and walks on, the way it
+      -- walks on past a λ function '--partial' could not fire, so what the loop
+      -- costs is that binding and not the rest of the program
+      it "parks the looping binding and keeps walking with --deep" $
+        loopingLambdas $ \endless ->
+          withStdin "⟦ x ↦ ⟦ λ ⤍ L_loop ⟧.foo, y ↦ ⟦ z ↦ ⟦⟧ ⟧ ⟧" $
+            testCLISucceeded
+              ["morph", "--symbolic=" ++ endless, "--deep", "--acyclic", "--max-steps=4000", "--flat", "--hide-rho"]
+              ["⟦ x ↦ ⟦ λ ⤍ L_loop ⟧.foo, y ↦ ⟦ z ↦ ⟦⟧ ⟧ ⟧"]
+
     describe "fails" $ do
       it "with --output != latex and --nonumber" $
         withStdin "" $

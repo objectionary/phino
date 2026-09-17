@@ -9,7 +9,7 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Rewriter (rewrite, RewriteContext (..), Rewritten, Rewrittens, Rewrittens', stepHeaders) where
+module Rewriter (Seen, rewrite, RewriteContext (..), Rewritten, Rewrittens, Rewrittens', seenInsert, seenMember, stepHeaders) where
 
 import AST
 import Builder

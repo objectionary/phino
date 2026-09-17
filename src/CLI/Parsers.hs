@@ -211,6 +211,12 @@ optPartial = switch (long "partial" <> help "Partial evaluation: compute what th
 optDeep :: Parser Bool
 optDeep = switch (long "deep" <> help "Don't stop at the first formation: enter its bindings too, recursively, firing every λ function the --symbolic file answers and standing its answer in the place of what it computed, while everything else stays as it was written")
 
+-- The step budget is otherwise the only thing that ends the 𝕄 recursion, so a
+-- λ function answering with a firing of itself runs to the limit before it
+-- fails. This stops it the moment it comes back (see 'unvisited').
+optAcyclic :: Parser Bool
+optAcyclic = switch (long "acyclic" <> help "Stop morphing a term as soon as it comes back to one it is already reducing, instead of going round until --max-steps runs out, and leave that term in place the way --partial leaves a λ function that cannot fire")
+
 -- Which λ functions this run may fire. phino implements none of them itself
 -- (see 'Lambdas'), so without this option every λ function a program names gets
 -- stuck.
@@ -383,6 +389,7 @@ morphParser =
             <*> switch (long "quiet" <> help "Don't print the result of morphing")
             <*> optPartial
             <*> optDeep
+            <*> optAcyclic
             <*> optCompress
             <*> optMaxDepth
             <*> optMaxCycles

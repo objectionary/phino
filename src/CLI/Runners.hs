@@ -17,6 +17,7 @@ import Control.Monad (unless, when)
 import Data.Foldable (traverse_)
 import Data.List (intercalate)
 import qualified Data.List.NonEmpty as NE
+import qualified Data.Map.Strict as Map
 import Data.Maybe (fromJust, isJust, isNothing)
 import qualified Data.Text as T
 import Dataize
@@ -167,8 +168,9 @@ runDataize OptsDataize{..} = do
       printCtx
       ( \record -> do
           -- The deep walk belongs to 𝕄 alone (the '--deep' of 'morph'), since 𝔻
-          -- reduces what dataization demands and ends in bytes, so it is off here.
-          let ctx = ReduceContext loc _maxDepth _maxCycles (Steps _maxSteps 0) 1 _depthSensitive _shuffle _partial False lambdas buildTerm reduction save record
+          -- reduces what dataization demands and ends in bytes, so it is off here,
+          -- and so is the cycle guard of '--acyclic', which 'morph' alone carries.
+          let ctx = ReduceContext loc _maxDepth _maxCycles (Steps _maxSteps 0) 1 _depthSensitive _shuffle _partial False False Map.empty lambdas buildTerm reduction save record
           (universe, aiming) <- aimed _inside expr ctx
           heading record printCtx (T.pack "D") aiming._locator
           dataize universe (started universe) aiming
@@ -250,7 +252,7 @@ runMorph OptsMorph{..} = do
       _protocol
       printCtx
       ( \record -> do
-          let ctx = ReduceContext loc _maxDepth _maxCycles (Steps _maxSteps 0) 1 _depthSensitive _shuffle _partial _deep lambdas buildTerm reduction save record
+          let ctx = ReduceContext loc _maxDepth _maxCycles (Steps _maxSteps 0) 1 _depthSensitive _shuffle _partial _deep _acyclic Map.empty lambdas buildTerm reduction save record
           (universe, aiming) <- aimed _inside expr ctx
           heading record printCtx (T.pack "M") aiming._locator
           morph universe (started universe) aiming

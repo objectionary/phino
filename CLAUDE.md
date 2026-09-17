@@ -119,6 +119,11 @@ chain (`morph`, `dataize`) and a recursive worker the rules drive
 (`morph'`, `dataize'`); the `morph` and `dataize` commands enter through
 the wrappers.
 
+The step budget `--max-steps` is what ends that recursion, and the only thing
+that does unless `morph` is given `--acyclic`: the flag has every 𝕄 frame
+remember the terms its ancestors are reducing and park the site the moment one
+comes back, the way `--partial` parks a λ that cannot fire.
+
 ### Test pattern: YAML packs
 
 Most spec files load test cases from `test-resources/*-packs/*.yaml` at

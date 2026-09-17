@@ -496,6 +496,46 @@ $ phino morph --deep --symbolic=atoms.yaml --sweet --hide-rho gap.phi
 ⟧
 ```
 
+### Acyclic morphing
+
+Whether a program terminates is the object model's business, not the
+calculus's, so phino prevents no recursion of its own and `--max-steps` is what
+ends a run that never finishes. An entry answering with a firing of itself
+therefore spends the whole budget before it fails, and what it fails on is the
+limit rather than the loop:
+
+```bash
+$ cat loop.yaml
+- λ: L_loop
+  𝑛: ⟦ λ ⤍ L_loop ⟧
+$ cat loop.phi
+⟦ x ↦ ⟦ λ ⤍ L_loop ⟧.foo ⟧
+$ phino morph --symbolic=loop.yaml --locator='Q.x' --max-steps=40 loop.phi
+[ERROR]: Dataization did not finish before reaching the limit of steps: --max-steps=40
+```
+
+The `--acyclic` flag makes morphing notice. Every frame of 𝕄 remembers the
+terms the frames above it are reducing, and a term that comes back is a
+question only ever answered by asking it again, so the flag stops there and
+parks the site the way `--partial` parks a λ function that cannot fire: the
+answer is the term the spine had reached, left where it stood, and the command
+exits successfully.
+
+```bash
+$ phino morph --symbolic=loop.yaml --locator='Q.x' --acyclic \
+    --max-steps=40 --hide-rho loop.phi
+⟦ λ ⤍ L_loop ⟧.foo
+```
+
+What it remembers is the branch from the run down to the frame asking, never
+everything the run has touched, so two sibling subterms that happen to be
+written alike stay two terms and only a term genuinely reached from itself is a
+loop. The cut costs one lookup and fires on the turn the repeat appears, so
+raising `--max-steps` from 40 to a million changes neither the answer nor the
+time. The flag belongs to `morph` alone, needs no `--partial`, and promises
+nothing about programs that loop without ever repeating a term — those still
+end on the budget.
+
 ## Rewrite
 
 You can rewrite this expression with the help of [rules](#rule-structure)
