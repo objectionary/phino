@@ -390,7 +390,8 @@ $ cat atoms.xml
   <evaluate λ="L_number_plus" id="1">
     <bind meta="𝛿1.1">40-14-00-00-00-00-00-00</bind>
     <bind meta="𝛿2.1">40-18-00-00-00-00-00-00</bind>
-    <answer meta="𝑛.1" symbol="𝜎1">Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )</answer>
+    <minted>𝜎1</minted>
+    <answer meta="𝑛.1">Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )</answer>
   </evaluate>
 </protocol>
 ```
@@ -417,16 +418,17 @@ lines on and the data dataizing its formation answers are the text of the
 element. It takes `symbol` and not `meta`, since the fact is about the unknown
 and not about a meta the firing bound.
 
-Where a term denotes a symbol, the element says so with `symbol="𝜎1"`, and
-that name is what a reader joins lines on. It is spelled the way every term
-carrying it is spelled, so the join compares two strings that look alike
-rather than a number against a name. In the fork above, `𝔼(L_fork)` becomes an
-`<evaluate>` whose condition is `<dataize meta="𝛿1.5">⟦ λ ⤍ 𝜎2 ⟧</dataize>`
-and whose answer is `<answer meta="𝑛.5" symbol="𝜎4">`: the condition carries
-the symbol the first firing minted and the answer names the one the third
-minted, the very same `𝛿1.5 := 𝔻(⟦ λ ⤍ 𝜎2 ⟧)` and `𝑛.5 := 𝑛1.5` the text
-format writes. A term standing for nothing takes no attribute at all, the
-terminator ⊥ included, since its own text already says what it is.
+`<minted>𝜎1</minted>` is one symbol the firing minted, one element per bare `𝜎`
+the entry wrote its answer with, standing inside the block ahead of the
+`<answer>` carrying them. That is the edge a reader joins on: a later
+`<dataize meta="𝛿1.5">⟦ λ ⤍ 𝜎2 ⟧</dataize>` names the symbol the firing that
+wrote `<minted>𝜎2</minted>` handed out. A firing minting two symbols writes two
+elements and one minting none writes none, which no attribute on the answer
+could say: a term may carry several symbols, or carry one where the value it
+stands for is not a symbol at all. In the fork above, `𝔼(L_number_gt)` writes
+`<minted>𝜎2</minted>` although `𝜎2` sits under `if` and not where the value of
+the term is, while `𝔼(L_fork)` writes none at all, since it answers `𝑛1` and
+asks for no symbol of its own.
 
 A λ name no entry answers is `<stuck λ="…"/>`, standing where its `<evaluate>`
 would have stood, and a firing that happened while an operand of another was
@@ -445,7 +447,8 @@ $ cat atoms.xml
   <evaluate λ="L_number_plus" id="1">
     <bind meta="𝛿1.1">40-14-00-00-00-00-00-00</bind>
     <bind meta="𝛿2.1">40-18-00-00-00-00-00-00</bind>
-    <answer meta="𝑛.1" symbol="𝜎1">Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )</answer>
+    <minted>𝜎1</minted>
+    <answer meta="𝑛.1">Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )</answer>
   </evaluate>
   <stuck λ="L_number_nope"/>
 </protocol>

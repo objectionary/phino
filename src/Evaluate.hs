@@ -152,7 +152,9 @@ symbol func self univ state caller = case matched caller._symbolic func of
     -- through 𝕄. A bare 𝜎 stands for an unknown nobody has named yet, so each
     -- one is bound to the next symbol the run has not minted, and the state
     -- counts them, which is what keeps two firings from spelling two unknowns
-    -- alike.
+    -- alike. Each one goes into the protocol as it is handed out, ahead of the
+    -- answer carrying it, so a reader ties an unknown back to the firing that
+    -- made it without reading the term it stands in (#1280).
     --
     -- The answer is morphed rather than handed back as the entry wrote it,
     -- because a firing is one of the things a term can come from and every
@@ -166,6 +168,7 @@ symbol func self univ state caller = case matched caller._symbolic func of
     answered :: ReduceContext -> Lambda -> Subst -> State -> IO (Expression, State)
     answered ctx entry bound state' = do
       let (fresh, spent) = minted entry._answer state'._minted
+      mapM_ (ctx._saveEval . EvMinted ctx._nesting) [idx | (_, FnSymbol idx) <- fresh]
       symbolic <- foldM mint bound fresh
       built <- buildExpressionThrows entry._answer symbolic
       (normal, state'') <- settled built univ state'{_minted = spent} ctx
