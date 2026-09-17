@@ -193,8 +193,8 @@ $ phino dataize --symbolic=atoms.yaml --protocol=atoms.txt --quiet \
 $ cat atoms.txt
 𝔻(Φ)
   𝔼(L_number_plus)
-    𝛿1.1 := 40-14-00-00-00-00-00-00
-    𝛿2.1 := 40-18-00-00-00-00-00-00
+    𝛿1.1 := 40-14-00-00-00-00-00-00  # ξ.ρ
+    𝛿2.1 := 40-18-00-00-00-00-00-00  # ξ.x
     𝑛.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )
 ```
 
@@ -211,6 +211,15 @@ operand came down to the datum a symbol stands for, the protocol writes `𝔻(�
 in place of that 42, so a reader sees that the value was manufactured rather
 than read out of the program.
 
+An operand line ends in the term it was reduced from, written as a comment
+after two spaces and `#`. The value alone says what the meta was bound to and
+never what it was bound from, so `𝛿1.1 := 40-14-00-00-00-00-00-00  # ξ.ρ`
+reads "the `𝛿1` of this firing is the `ρ` of the formation, and it came down
+to 20". It is the very term the entry wrote under that meta, spelled the way
+the calculus reads it — `$` is read as `ξ` — so a reader never has to open
+the `--symbolic` file beside the protocol and match every line by λ name and
+meta number.
+
 `?(…)` is a λ name no entry answers, standing where the block of its firing
 would have stood. Nothing fired, so nothing opens under it. The line is written
 whether or not `--partial` goes on to park the run, since the protocol records
@@ -224,8 +233,8 @@ $ phino dataize --symbolic=atoms.yaml --protocol=atoms.txt --quiet \
 $ cat atoms.txt
 𝔻(Φ)
   𝔼(L_number_plus)
-    𝛿1.1 := 40-14-00-00-00-00-00-00
-    𝛿2.1 := 40-18-00-00-00-00-00-00
+    𝛿1.1 := 40-14-00-00-00-00-00-00  # ξ.ρ
+    𝛿2.1 := 40-18-00-00-00-00-00-00  # ξ.x
     𝑛.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )
   ?(L_number_nope)
 ```
@@ -279,29 +288,29 @@ $ phino morph --deep --symbolic=atoms.yaml --locator=Q.demo.a \
 $ cat fork.txt
 𝕄(Φ.demo.a)
   𝔼(L_number_gt)
-    𝛿1.1 := 𝔻(𝜎1)
-    𝛿2.1 := 00-00-00-00-00-00-00-00
+    𝛿1.1 := 𝔻(𝜎1)  # ξ.ρ
+    𝛿2.1 := 00-00-00-00-00-00-00-00  # ξ.x
     𝑛.1 := Φ.bool( if ↦ ⟦ λ ⤍ L_fork, then ↦ ∅, else ↦ ∅, φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧ )
   𝔼(L_number_plus)
-    𝛿1.2 := 𝔻(𝜎1)
-    𝛿2.2 := 3F-F0-00-00-00-00-00-00
+    𝛿1.2 := 𝔻(𝜎1)  # ξ.ρ
+    𝛿2.2 := 3F-F0-00-00-00-00-00-00  # ξ.x
     𝑛.2 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎3 ⟧ )
   𝔼(L_number_plus)
-    𝛿1.3 := 𝔻(𝜎1)
-    𝛿2.3 := 𝔻(𝜎3)
+    𝛿1.3 := 𝔻(𝜎1)  # ξ.ρ
+    𝛿2.3 := 𝔻(𝜎3)  # ξ.x
     𝑛.3 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎4 ⟧ )
   𝔼(L_number_plus)
-    𝛿1.4 := 𝔻(𝜎1)
-    𝛿2.4 := 𝔻(𝜎1)
+    𝛿1.4 := 𝔻(𝜎1)  # ξ.ρ
+    𝛿2.4 := 𝔻(𝜎1)  # ξ.x
     𝑛.4 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎5 ⟧ )
   𝔼(L_fork)
-    𝛿1.5 := 𝔻(𝜎2)
-    𝑛1.5 := 𝑛.3
-    𝑛2.5 := 𝑛.4
+    𝛿1.5 := 𝔻(𝜎2)  # ξ.φ
+    𝑛1.5 := 𝑛.3  # ξ.then
+    𝑛2.5 := 𝑛.4  # ξ.else
     𝑛.5 := 𝑛1.5
   𝔼(L_number_plus)
-    𝛿1.6 := 𝔻(𝜎4)
-    𝛿2.6 := 40-14-00-00-00-00-00-00
+    𝛿1.6 := 𝔻(𝜎4)  # ξ.ρ
+    𝛿2.6 := 40-14-00-00-00-00-00-00  # ξ.x
     𝑛.6 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎6 ⟧ )
 ```
 
@@ -449,12 +458,12 @@ $ phino dataize --symbolic=atoms.yaml --partial --protocol=atoms.txt --quiet \
 $ cat atoms.txt
 𝔻(Φ)
   𝔼(L_number_times)
-    𝛿1.1 := 40-00-00-00-00-00-00-00
-    𝛿2.1 := 40-08-00-00-00-00-00-00
+    𝛿1.1 := 40-00-00-00-00-00-00-00  # ξ.ρ
+    𝛿2.1 := 40-08-00-00-00-00-00-00  # ξ.x
     𝑛.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )
   𝔼(L_number_plus)
-    𝛿1.2 := 𝔻(𝜎1)
-    𝛿2.2 := 40-10-00-00-00-00-00-00
+    𝛿1.2 := 𝔻(𝜎1)  # ξ.ρ
+    𝛿2.2 := 40-10-00-00-00-00-00-00  # ξ.x
     𝑛.2 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ )
 ```
 
