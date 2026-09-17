@@ -28,6 +28,7 @@ import Morph (ReduceContext (..), Steps (..), execBuildTerm, morph)
 import Parser (parseExpressionThrows)
 import Printer (printExpression)
 import System.FilePath (makeRelative)
+import Tau (seedTaus)
 import Test.Hspec
 import Yaml (ExtraArgument (..))
 
@@ -61,6 +62,7 @@ testSymbols :: FilePath -> Expectation
 testSymbols pth = do
   SymbolPack{..} <- Decode.decodeFileThrow pth
   expr <- parseExpressionThrows input
+  seedTaus expr
   loc <- parseExpressionThrows (fromMaybe "Q" location)
   withLambdasOf (T.pack symbolic) $ \file -> do
     known <- readLambdas file
