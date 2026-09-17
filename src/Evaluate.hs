@@ -31,9 +31,10 @@ import Text.Printf (printf)
 import Yaml (ExtraArgument (..))
 
 -- The Evaluation function 𝔼(b, e, s): it fires the λ function of a formation
--- 'b' against the global universe 'e', under the incoming state 𝑠, normalizes
--- its raw result 𝒩(e₁) = n, and returns that normal form together with the new
--- state. Normalizing here makes 𝔼's codomain 𝓝 (as its type demands), so
+-- 'b' against the global universe 'e', under the incoming state 𝑠, and returns
+-- what the firing answered together with the new state. That answer is already
+-- a normal form of 𝕄, since the firing morphs it before it hands it back (see
+-- 'answered'), which is what makes 𝔼's codomain 𝓝 (as its type demands), so
 -- callers ('fire', 'ml') need no follow-up 'normalize' premise. The universe is
 -- passed explicitly as the second argument (rather than threaded behind the
 -- scenes), matching how the morphing 𝕄 and dataization 𝔻 functions carry it.
@@ -58,9 +59,8 @@ evaluation ctx state [ArgExpression expr, ArgExpression universe] subst = do
       | not (any isLambda bds) -> pure (TeExpression ExTermination, state)
       | otherwise -> case lambda bds of
           Just (func, args) -> do
-            (raw, state') <- symbol func args univ state ctx
-            (normal, _) <- normalized raw ((univ, Nothing) :| []) ctx
-            pure (TeExpression normal, state')
+            (answer, state') <- symbol func args univ state ctx
+            pure (TeExpression answer, state')
           Nothing -> throwIO (userError "Function evaluate() expects a formation with a single λ binding naming a function")
     _ -> throwIO (userError "Function evaluate() expects a formation")
 evaluation _ _ _ _ = throwIO (userError "Function evaluate() requires exactly 2 expression arguments")
@@ -73,9 +73,9 @@ evaluation _ _ _ _ = throwIO (userError "Function evaluate() requires exactly 2 
 -- function to fire at all, and 𝔼 gets stuck on it — the one behaviour left
 -- here. The formation 'self' is the one 𝔼 fired against, its λ binding already
 -- removed, so the entry may name the attributes of it; the universe 'univ' is
--- what every operand of it is reduced inside. What comes back is the raw term
--- the entry answers with: normalizing it is 𝔼's business, and the deep walk
--- wants it as it was written.
+-- what every operand of it is reduced inside. What comes back is the term the
+-- entry answers with, morphed against that universe, so 𝔼 and the deep walk
+-- alike get a normal form of 𝕄 and neither has to reduce it again.
 --
 -- The firing writes itself into the protocol as it goes: the entry that
 -- answered first, then each operand as it is reduced, then the answer. Whatever
@@ -127,17 +127,40 @@ symbol func self univ state caller = case matched caller._symbolic func of
       ctx._saveEval (EvTerm ctx._nesting meta._spelling normal)
       bound' <- bind meta (MvExpression normal) bound
       pure (bound', state'')
-    -- Mint the fresh symbols the answer asks for and build it. A bare 𝜎 stands
-    -- for an unknown nobody has named yet, so each one is bound to the next
-    -- symbol the run has not minted, and the state counts them, which is what
-    -- keeps two firings from spelling two unknowns alike.
+    -- Mint the fresh symbols the answer asks for, build it and morph it. A bare
+    -- 𝜎 stands for an unknown nobody has named yet, so each one is bound to the
+    -- next symbol the run has not minted, and the state counts them, which is
+    -- what keeps two firings from spelling two unknowns alike; the minting is
+    -- done before the morphing, so what the morphing goes on to mint comes
+    -- after what the answer already holds.
+    --
+    -- The answer is morphed rather than handed back as the entry wrote it, with
+    -- the very function a 'morph' operand is reduced with, so that every term a
+    -- firing produces is a normal form of 𝕄 (#1268). An entry answering
+    -- 'Φ.number( φ ↦ ⟦ λ ⤍ 𝜎 ⟧ )' otherwise stood that application back into
+    -- the program while the same object written as a literal reduced to the
+    -- formation it expands to, so one forma reached the consumer as two
+    -- different terms and nothing comparing them leaf by leaf — the join of a
+    -- fork above all — could start. It costs the size of the object's formation
+    -- in the residual and in the '<answer>' of the protocol, which is the price
+    -- of comparability. The protocol is told the morphed term for the same
+    -- reason: what it reports is what the program went on to carry.
+    --
+    -- It is normalized and morphed against the universe itself, the way 'fired'
+    -- reduces a term it took from the program, and not through 'morphing',
+    -- which a 'morph' operand goes through: that one binds what it reduces to a
+    -- synthetic attribute of a universe of its own, and the ρ of an object the
+    -- answer built by dispatching on Φ would then name that scaffolding instead
+    -- of the program's own universe.
     answered :: ReduceContext -> Lambda -> Subst -> State -> IO (Expression, State)
     answered ctx entry bound state' = do
       let (fresh, spent) = minted entry._answer state'._minted
       symbolic <- foldM mint bound fresh
       built <- buildExpressionThrows entry._answer symbolic
-      ctx._saveEval (EvAnswer ctx._nesting built)
-      pure (built, state'{_minted = spent})
+      (normal, _) <- normalized built ((univ, Nothing) :| []) ctx
+      ((morphed, _), state'') <- morph' (normal, (univ, Nothing) :| []) univ state'{_minted = spent} ctx
+      ctx._saveEval (EvAnswer ctx._nesting morphed)
+      pure (morphed, state'')
     mint :: Subst -> (Slot, Function) -> IO Subst
     mint bound (slot, fresh) = case combine (substSlot slot (MvFunction fresh)) bound of
       Just bound' -> pure bound'
@@ -158,11 +181,12 @@ symbol func self univ state caller = case matched caller._symbolic func of
 -- entry of the '--symbolic' file answers it, asking 𝕄 about every answer again:
 -- what comes back is the answer of the last firing, or nothing at all where
 -- nothing fired. This is the firing 'ml' makes without the dispatch that makes
--- 'ml' make it — the one 𝕄 leaves to 𝔻 — except in what it hands back: the raw
--- answer of the entry, not the normal form 𝔼 makes of it, since the deep walk
--- stands that answer back into the program, where a normal form would spell the
--- whole object out in place of the name the program called it by. A λ no entry
--- answers is left alone rather than fired and got stuck on, so what phino
+-- 'ml' make it — the one 𝕄 leaves to 𝔻 — except that it may hand back nothing
+-- at all, where 𝔼 always answers something. What it does hand back is the very
+-- normal form of 𝕄 that 𝔼 answers with: the walk stands it back into the
+-- program, and a term standing there as the entry wrote it would be a shape
+-- nothing else in the program has (#1268). A λ no entry answers is left alone
+-- rather than fired and got stuck on, so what phino
 -- cannot compute stays as it was written with or without '_partial'; a λ
 -- function that cannot fire deeper on the spine still fails the run, exactly as
 -- it does under 𝕄 alone, and '_partial' parks it. A formation still waiting for

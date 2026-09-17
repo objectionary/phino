@@ -28,6 +28,7 @@ import Morph (ReduceContext (..), Steps (..), execBuildTerm, morph)
 import Parser (parseExpressionThrows)
 import Printer (printExpression)
 import System.FilePath (makeRelative)
+import Tau (seedTaus)
 import Test.Hspec
 import Yaml (ExtraArgument (..))
 
@@ -64,6 +65,13 @@ testSymbols pth = do
   loc <- parseExpressionThrows (fromMaybe "Q" location)
   withLambdasOf (T.pack symbolic) $ \file -> do
     known <- readLambdas file
+    -- The synthetic 𝜏 labels 'insideUniverse' mints are numbered from a
+    -- counter the whole process shares, and the command reseeds it from the
+    -- program before every run ('Runners'). A pack drives the library
+    -- directly, so it reseeds the same way: without this the name a pack reads
+    -- back would count the labels every pack before it happened to mint, which
+    -- the randomized order of the suite makes a different number every time.
+    seedTaus expr
     (_, written) <- recorded $ \record -> do
       let ctx =
             (defaultReduceContext loc)

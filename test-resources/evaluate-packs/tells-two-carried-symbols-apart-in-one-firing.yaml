@@ -18,10 +18,19 @@ input: >
     number(φ) ↦ ⟦ plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧,
     @ ↦ Φ.number( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ).plus(
           Φ.number( φ ↦ ⟦ λ ⤍ 𝜎5 ⟧ ) ) ⟧
-result: 'Φ.number( φ ↦ ⟦ λ ⤍ 𝜎6, ρ ↦ ∅ ⟧ )'
+result: |
+  ⟦
+    φ ↦ ⟦ λ ⤍ 𝜎6 ⟧,
+    plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧,
+    ρ ↦ ⟦
+      bytes(φ) ↦ ⟦⟧,
+      number(φ) ↦ ⟦ plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧,
+      φ ↦ Φ.number( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ).plus( Φ.number( φ ↦ ⟦ λ ⤍ 𝜎5 ⟧ ) )
+    ⟧
+  ⟧
 protocol: |
   𝕄(Φ.φ)
     𝔼(L_number_plus)
       𝛿1.1 := 𝔻(𝜎2)
       𝛿2.1 := 𝔻(𝜎5)
-      𝑛.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎6 ⟧ )
+      𝑛.1 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎6 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧

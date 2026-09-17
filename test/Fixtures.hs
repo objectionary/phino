@@ -124,13 +124,19 @@ recorded action =
     written <- readUtf8 path
     pure (answer, written)
   where
-    -- The protocol flattens every term itself, so the only thing this context
-    -- decides is that the terms are 𝜑 and not XMIR.
+    -- The protocol flattens every term itself, so what this context decides is
+    -- that the terms are 𝜑 and not XMIR and that ρ is hidden. ρ is hidden
+    -- because a term a firing answers names the universe there — every object
+    -- built by dispatching on Φ does — and the universe is the program, so a
+    -- pack printing it would repeat the whole program on every line of the
+    -- protocol and say nothing the 'input' of the pack does not. It is what
+    -- '--hide-rho' does, and the cases that go through the command line pass it
+    -- for the same reason.
     printing :: PrintContext
     printing =
       PrintCtx
         SWEET
-        False
+        True
         MULTILINE
         2
         defaultXmirContext

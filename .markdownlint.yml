@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# The configuration 'markdownlint' finds by this name. Prose keeps the 80
+# columns of the default. A fenced block does not: the blocks of README.md are
+# transcripts of what a command actually printed, one record of a '--protocol'
+# file or one line of a 𝜑-term to a line, and rewrapping one would stop it
+# being a transcript. The bound is kept, only wider, so a block that grows
+# beyond anything a reader can follow still fails.
+MD013:
+  line_length: 80
+  code_block_line_length: 140

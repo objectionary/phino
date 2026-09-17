@@ -123,8 +123,14 @@ terms of the calculus, read against the formation being fired, so `ξ` is that
 formation and `$.x` its `x`, while `Φ` is the universe. Every entry numbers its
 own metas from `𝛿1` and `𝑛1`, and the entry is what tells two `𝛿1` apart.
 
-The term under `𝑛` is what the firing answers with. `phino` normalizes it
-exactly as it normalizes anything else, so `--protocol`, `--partial` and
+The term under `𝑛` is what the firing answers with. `phino` morphs it exactly
+as it morphs anything else, so what a firing hands back is a normal form of 𝕄
+and not the template as it was written: an entry answering
+`Φ.number( φ ↦ ⟦ λ ⤍ 𝜎 ⟧ )` hands back the formation that application
+expands to, the very one the same object written as a literal reduces to. One
+forma is therefore one shape wherever it came from, which is what lets a
+consumer compare two terms leaf by leaf. It costs the size of the object's
+formation in the residual and in the protocol. `--protocol`, `--partial` and
 `--max-steps` work on it unchanged.
 
 ### Symbols
@@ -195,7 +201,7 @@ $ cat atoms.txt
   𝔼(L_number_plus)
     𝛿1.1 := 40-14-00-00-00-00-00-00
     𝛿2.1 := 40-18-00-00-00-00-00-00
-    𝑛.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )
+    𝑛.1 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧
 ```
 
 `𝔻(…)` is the run and the term it was aimed at, `𝕄(…)` where the run is a
@@ -226,7 +232,7 @@ $ cat atoms.txt
   𝔼(L_number_plus)
     𝛿1.1 := 40-14-00-00-00-00-00-00
     𝛿2.1 := 40-18-00-00-00-00-00-00
-    𝑛.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )
+    𝑛.1 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, nope ↦ ⟦ λ ⤍ L_number_nope ⟧ ⟧
   ?(L_number_nope)
 ```
 
@@ -281,19 +287,19 @@ $ cat fork.txt
   𝔼(L_number_gt)
     𝛿1.1 := 𝔻(𝜎1)
     𝛿2.1 := 00-00-00-00-00-00-00-00
-    𝑛.1 := Φ.bool( if ↦ ⟦ λ ⤍ L_fork, then ↦ ∅, else ↦ ∅, φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧ )
+    𝑛.1 := ⟦ if ↦ ⟦ λ ⤍ L_fork, then ↦ ∅, else ↦ ∅, φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧ ⟧
   𝔼(L_number_plus)
     𝛿1.2 := 𝔻(𝜎1)
     𝛿2.2 := 3F-F0-00-00-00-00-00-00
-    𝑛.2 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎3 ⟧ )
+    𝑛.2 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎3 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, gt(x) ↦ ⟦ λ ⤍ L_number_gt ⟧ ⟧
   𝔼(L_number_plus)
     𝛿1.3 := 𝔻(𝜎1)
     𝛿2.3 := 𝔻(𝜎3)
-    𝑛.3 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎4 ⟧ )
+    𝑛.3 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎4 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, gt(x) ↦ ⟦ λ ⤍ L_number_gt ⟧ ⟧
   𝔼(L_number_plus)
     𝛿1.4 := 𝔻(𝜎1)
     𝛿2.4 := 𝔻(𝜎1)
-    𝑛.4 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎5 ⟧ )
+    𝑛.4 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎5 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, gt(x) ↦ ⟦ λ ⤍ L_number_gt ⟧ ⟧
   𝔼(L_fork)
     𝛿1.5 := 𝔻(𝜎2)
     𝑛1.5 := 𝑛.3
@@ -302,7 +308,7 @@ $ cat fork.txt
   𝔼(L_number_plus)
     𝛿1.6 := 𝔻(𝜎4)
     𝛿2.6 := 40-14-00-00-00-00-00-00
-    𝑛.6 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎6 ⟧ )
+    𝑛.6 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎6 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, gt(x) ↦ ⟦ λ ⤍ L_number_gt ⟧ ⟧
 ```
 
 `𝜎3` is minted by the second firing and consumed by the third as `𝔻(𝜎3)`,
@@ -335,7 +341,7 @@ $ cat atoms.xml
   <evaluate λ="L_number_plus" id="1">
     <bind meta="𝛿1">40-14-00-00-00-00-00-00</bind>
     <bind meta="𝛿2">40-18-00-00-00-00-00-00</bind>
-    <answer symbol="𝜎1">Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )</answer>
+    <answer symbol="𝜎1">⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧</answer>
   </evaluate>
 </protocol>
 ```
@@ -381,7 +387,7 @@ $ cat atoms.xml
   <evaluate λ="L_number_plus" id="1">
     <bind meta="𝛿1">40-14-00-00-00-00-00-00</bind>
     <bind meta="𝛿2">40-18-00-00-00-00-00-00</bind>
-    <answer symbol="𝜎1">Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )</answer>
+    <answer symbol="𝜎1">⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, nope ↦ ⟦ λ ⤍ L_number_nope ⟧ ⟧</answer>
   </evaluate>
   <stuck λ="L_number_nope"/>
 </protocol>
@@ -451,11 +457,11 @@ $ cat atoms.txt
   𝔼(L_number_times)
     𝛿1.1 := 40-00-00-00-00-00-00-00
     𝛿2.1 := 40-08-00-00-00-00-00-00
-    𝑛.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )
+    𝑛.1 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧, as-bool ↦ ⟦ λ ⤍ L_number_as_bool ⟧ ⟧
   𝔼(L_number_plus)
     𝛿1.2 := 𝔻(𝜎1)
     𝛿2.2 := 40-10-00-00-00-00-00-00
-    𝑛.2 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ )
+    𝑛.2 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧, as-bool ↦ ⟦ λ ⤍ L_number_as_bool ⟧ ⟧
 ```
 
 Evaluation stays demand-driven, as the calculus prescribes: an argument
@@ -536,15 +542,15 @@ $ phino morph --symbolic=atoms.yaml --inside='Q.demo.foo' \
 ⟦ n ↦ 3, φ ↦ Φ.bar( n.times( 5 ).times( 7 ) ) ⟧
 $ phino morph --deep --symbolic=atoms.yaml --inside='Q.demo.foo' \
     --sweet --hide-rho gap.phi
-⟦ n ↦ 3, φ ↦ Φ.bar( Φ.number( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ) ) ⟧
+⟦ n ↦ 3, φ ↦ Φ.bar( ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧ ⟧ ) ⟧
 ```
 
 Every binding of the formation is entered, recursively. 𝕄 is asked about the
 term standing there and, where it lands on a saturated formation whose λ an
 entry answers, that λ is fired and 𝕄 is asked about the answer again. A term on
 whose way a λ function fired is replaced by the answer of the last firing,
-which is the 𝜑-program the entry wrote rather than the normal form of it, so
-the symbol standing for the arithmetic stands where the arithmetic stood. A
+morphed like everything else, so the symbol standing for the arithmetic stands
+where the arithmetic stood, inside the object the entry named. A
 term nothing fired on stays exactly as it was written and only its own parts
 are walked, so `Φ.bar` keeps its name and what comes back is still the same
 program, reduced as far as the file allows. The step joins the chain under the
@@ -565,7 +571,9 @@ $ phino morph --deep --symbolic=atoms.yaml --sweet --hide-rho gap.phi
   bytes(φ) ↦ ⟦⟧,
   number(φ) ↦ ⟦ times(x) ↦ ⟦ λ ⤍ L_number_times ⟧ ⟧,
   bar(x) ↦ ⟦ λ ⤍ L_bar ⟧,
-  demo ↦ ⟦ foo ↦ ⟦ n ↦ 3, φ ↦ Φ.bar( Φ.number( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ) ) ⟧ ⟧
+  demo ↦ ⟦
+    foo ↦ ⟦ n ↦ 3, φ ↦ Φ.bar( ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧ ⟧ ) ⟧
+  ⟧
 ⟧
 ```
 

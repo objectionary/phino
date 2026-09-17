@@ -65,12 +65,15 @@ type ReductionFunc = Expression -> ReduceContext -> Expression -> State -> IO (M
 -- 𝔻 one, and 'Evaluate' supplies its own 'evaluation' for it.
 type EvaluationFunc = ReduceContext -> State -> BuildTermMethodS
 
--- How the deep walk reaches 𝔼. Where 'EvaluationFunc' answers a normal form,
--- this one answers the raw term the entry wrote, or nothing at all where
--- nothing fired: the walk stands that answer back into the program, and a
--- normal form would spell the whole object out in place of the name the program
--- called it by. The first argument is the attribute the term stands dispatched
--- under, which is what tells a λ the dispatch demands from one it does not.
+-- How the deep walk reaches 𝔼. It answers the same normal form of 𝕄
+-- 'EvaluationFunc' answers, or nothing at all where nothing fired, which is the
+-- only thing telling the two apart: the walk stands that answer back into the
+-- program, and a term standing there as the entry wrote it would be a shape
+-- nothing else in the program has — 'Φ.number( φ ↦ ⟦ λ ⤍ 𝜎 ⟧ )' where the
+-- same object written out reduces to the formation it expands to, so nothing
+-- comparing the two of them could start (#1268). The first argument is the
+-- attribute the term stands dispatched under, which is what tells a λ the
+-- dispatch demands from one it does not.
 type FiringFunc = Maybe Attribute -> Expression -> Expression -> State -> ReduceContext -> IO (Maybe Expression, State)
 
 -- The initial, empty state a run of 𝕄 or 𝔻 starts from: nothing minted and

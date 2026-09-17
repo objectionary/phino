@@ -123,7 +123,8 @@ but three edges, each injected into the context rather than imported, the way
 its own is a whole run of D, so it goes in as `_reduce` (a `ReductionFunc`),
 and E is reached as `_evaluate` (an `EvaluationFunc`, what an `evaluate`
 premise fires and what answers a normal form) and `_fire` (a `FiringFunc`,
-what the `--deep` walk fires and what answers the raw term the entry wrote).
+what the `--deep` walk fires and what answers the same normal form, or nothing
+at all where nothing fired).
 All configuration is threaded through
 `ReduceContext` and `RewriteContext` records — no global state. Each
 function has a top-level wrapper that locates the subterm and starts the

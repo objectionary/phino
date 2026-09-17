@@ -7,4 +7,32 @@ location: 'Q.@'
 model: true
 symbolic: true
 input: '[[ x -> [[ y -> ?, L> L_bar ]]( y -> 6.plus( 7 ) ) ]]'
-result: '[[ x -> [[ y -> ?, L> L_bar ]]( y -> Q.number( φ -> ⟦ λ ⤍ 𝜎1 ⟧ ) ) ]]'
+result: |
+  ⟦
+    x ↦ ⟦ y ↦ ∅, λ ⤍ L_bar ⟧(
+      y ↦ ⟦
+        φ ↦ ⟦ λ ⤍ 𝜎1 ⟧,
+        as-bytes ↦ φ,
+        plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧,
+        times(x) ↦ ⟦ λ ⤍ L_number_times ⟧,
+        div(x) ↦ ⟦ λ ⤍ L_number_div ⟧,
+        gt(x) ↦ ⟦ λ ⤍ L_number_gt ⟧,
+        eq(x) ↦ ⟦ φ ↦ ρ.as-bytes.eq( x.as-bytes ) ⟧,
+        nope ↦ ⟦ λ ⤍ L_number_nope ⟧,
+        ρ ↦ ⟦
+          bytes(φ) ↦ ⟦ not ↦ ⟦ λ ⤍ L_bytes_not ⟧, eq(b) ↦ ⟦ λ ⤍ L_bytes_eq ⟧ ⟧,
+          bool(φ) ↦ ⟦ if(then, else) ↦ ⟦ λ ⤍ L_fork ⟧ ⟧,
+          number(φ) ↦ ⟦
+            as-bytes ↦ φ,
+            plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧,
+            times(x) ↦ ⟦ λ ⤍ L_number_times ⟧,
+            div(x) ↦ ⟦ λ ⤍ L_number_div ⟧,
+            gt(x) ↦ ⟦ λ ⤍ L_number_gt ⟧,
+            eq(x) ↦ ⟦ φ ↦ ρ.as-bytes.eq( x.as-bytes ) ⟧,
+            nope ↦ ⟦ λ ⤍ L_number_nope ⟧
+          ⟧,
+          φ ↦ ⟦ x ↦ ⟦ y ↦ 6.plus( 7 ), λ ⤍ L_bar ⟧ ⟧
+        ⟧
+      ⟧
+    )
+  ⟧

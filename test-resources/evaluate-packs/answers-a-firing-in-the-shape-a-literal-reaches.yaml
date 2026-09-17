@@ -1,0 +1,40 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# What a firing answers is morphed before it is handed back, so one forma is
+# one shape wherever the term came from (#1268). The fork here compares the two:
+# '𝑛1' is the answer of a firing of 'L_number_plus' and '𝑛2' a literal the
+# program wrote, and the two lines show them reaching 'L_fork' in the very same
+# formation — the same attributes in the same order, differing only in what
+# stands under φ and in the operand each one's own run bound to the universe it
+# was reduced inside. Before the answer was morphed the first of them arrived as
+# the application 'Φ.number( φ ↦ ⟦ λ ⤍ 𝜎 ⟧ )' the entry wrote, so no
+# comparison of the two branches leaf by leaf could even start.
+symbolic: |
+  - λ: L_number_plus
+    dataize:
+      𝛿1: $.ρ
+      𝛿2: $.x
+    𝑛: Φ.number( φ ↦ ⟦ λ ⤍ 𝜎 ⟧ )
+  - λ: L_fork
+    morph:
+      𝑛1: $.then
+      𝑛2: $.else
+    𝑛: 𝑛1
+location: 'Q.@'
+deep: true
+input: >
+  ⟦ bytes(φ) ↦ ⟦⟧,
+    number(φ) ↦ ⟦ plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧,
+    fork(then, else) ↦ ⟦ λ ⤍ L_fork ⟧,
+    @ ↦ Φ.fork( 5.plus( 6 ), 7 ) ⟧
+protocol: |
+  𝕄(Φ.φ)
+    𝔼(L_number_plus)
+      𝛿1.1 := 40-14-00-00-00-00-00-00
+      𝛿2.1 := 40-18-00-00-00-00-00-00
+      𝑛.1 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧
+    𝔼(L_fork)
+      𝑛1.2 := 𝑛.1
+      𝑛2.2 := ⟦ φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 40-1C-00-00-00-00-00-00 ⟧ ), plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧
+      𝑛.2 := 𝑛1.2

@@ -1,0 +1,15 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# The configuration the 'yamllint' workflow names and yamllint finds by this
+# name on its own. Everything is the default, except how long a line under
+# 'test-resources' may be: a pack there holds the very text a run writes, one
+# record of the '--protocol' file to a line, and a record is not something that
+# can be wrapped and still be what the run wrote. Every other YAML file here is
+# written by hand and keeps the 80 columns of the default.
+extends: default
+rules:
+  line-length:
+    max: 80
+    ignore: |
+      test-resources/

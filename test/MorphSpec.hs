@@ -30,6 +30,7 @@ import Parser (parseExpressionThrows)
 import Rewriter (Rewritten)
 import Rule (RuleContext (RuleContext), matchExpressionWithRule')
 import System.FilePath (makeRelative)
+import Tau (seedTaus)
 import Test.Hspec
 import Yaml (ExtraArgument (..))
 import Yaml qualified
@@ -64,6 +65,9 @@ testMorph known deep pth = do
   MorphPack{..} <- Decode.decodeFileThrow pth
   expr <- parseExpressionThrows (if model == Just True then primitives input else input)
   loc <- parseExpressionThrows (fromMaybe "Q" location)
+  -- Reseeded from the program before the run, the way the command does it (see
+  -- 'testSymbols' in 'EvaluateSpec').
+  seedTaus expr
   let ctx =
         (defaultReduceContext loc)
           { _deep = deep
