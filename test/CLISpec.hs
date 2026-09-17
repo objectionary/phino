@@ -1414,13 +1414,13 @@ spec = do
                          , "</protocol>"
                          ]
 
-        -- An 'evaluate' operand 𝕄 answered the terminator for is neither data
+        -- A 'morph' operand 𝕄 answered the terminator for is neither data
         -- nor an unknown, so it takes neither 'bytes' nor 'symbol' and says
         -- what it is by being ⊥ and nothing else
         it "writes the terminator as the term and takes no attribute" $
           withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
             hClose stream
-            withLambdasOf (T.pack "- λ: L_pick\n  evaluate:\n    𝑛1: ξ.absent\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n") $ \picks ->
+            withLambdasOf (T.pack "- λ: L_pick\n  morph:\n    𝑛1: ξ.absent\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n") $ \picks ->
               withStdin "[[ x -> [[ here -> [[ ]], L> L_pick ]].foo ]]" $
                 testCLIFailed ["morph", "--symbolic=" ++ picks, "--locator=Q.x", "--protocol=" ++ path, "--quiet", "--hide-rho"] ["Function evaluate() expects a formation with a λ binding"]
             records <- readUtf8 path
@@ -1442,7 +1442,7 @@ spec = do
             withStdin sum' $
               testCLISucceeded ["dataize", symbolic, "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
             records <- readUtf8 path
-            head (lines records) `shouldBe` "𝔻(Φ)"
+            take 1 (lines records) `shouldBe` ["𝔻(Φ)"]
 
     -- A λ function no entry of the '--symbolic' file answers cannot fire — a
     -- placeholder such as ⟦ λ ⤍ Sym_arg_0 ⟧ standing in for a data input, or
