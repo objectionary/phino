@@ -18,7 +18,7 @@ import Data.List (isInfixOf)
 import Data.Maybe (fromMaybe)
 import Data.Text qualified as T
 import Data.Yaml qualified as Decode
-import Deps (Evaluation (EvRun), Term (TeExpression))
+import Deps (Evaluation (EvRun), Judgment (Morphing), Term (TeExpression))
 import Files (allPathsIn)
 import Fixtures (defaultReduceContext, fixtureLambdas, recorded, withLambdas, withLambdasOf)
 import GHC.Generics (Generic)
@@ -76,7 +76,7 @@ testSymbols pth = do
               , _symbolic = known
               , _saveEval = record
               }
-      record (EvRun (T.pack "𝕄") (T.pack (printExpression loc)))
+      record (EvRun Morphing (T.pack (printExpression loc)))
       case fails of
         Just message ->
           morph expr (started expr) ctx `shouldThrow` (\err -> message `isInfixOf` show (err :: SomeException))

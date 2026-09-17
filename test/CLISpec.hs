@@ -1335,14 +1335,14 @@ spec = do
             records <- readUtf8 path
             lines records
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-                         , "<protocol judgment=\"𝔻\" of=\"Φ\">"
+                         , "<dataize locator=\"Φ\">"
                          , "  <evaluate λ=\"L_number_plus\" id=\"1\">"
                          , "    <bind meta=\"𝛿1.1\">40-14-00-00-00-00-00-00</bind>"
                          , "    <bind meta=\"𝛿2.1\">40-18-00-00-00-00-00-00</bind>"
                          , "    <minted>𝜎1</minted>"
                          , "    <answer meta=\"𝑛.1\">⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧</answer>"
                          , "  </evaluate>"
-                         , "</protocol>"
+                         , "</dataize>"
                          ]
 
         -- A run firing nothing still writes a document a parser can read,
@@ -1355,8 +1355,8 @@ spec = do
             records <- readUtf8 path
             lines records
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-                         , "<protocol judgment=\"𝔻\" of=\"Φ\">"
-                         , "</protocol>"
+                         , "<dataize locator=\"Φ\">"
+                         , "</dataize>"
                          ]
 
         -- An operand that came down to a manufactured datum is a 'dataize'
@@ -1372,7 +1372,7 @@ spec = do
             records <- readUtf8 path
             lines records
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-                         , "<protocol judgment=\"𝔻\" of=\"Φ\">"
+                         , "<dataize locator=\"Φ\">"
                          , "  <evaluate λ=\"L_number_plus\" id=\"1\">"
                          , "    <bind meta=\"𝛿1.1\">40-14-00-00-00-00-00-00</bind>"
                          , "    <bind meta=\"𝛿2.1\">40-18-00-00-00-00-00-00</bind>"
@@ -1385,7 +1385,7 @@ spec = do
                          , "    <minted>𝜎2</minted>"
                          , "    <answer meta=\"𝑛.2\">⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧</answer>"
                          , "  </evaluate>"
-                         , "</protocol>"
+                         , "</dataize>"
                          ]
 
         -- The fact a 'symbolize' line knows about a symbol is an element of
@@ -1402,14 +1402,14 @@ spec = do
             records <- readUtf8 path
             lines records
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-                         , "<protocol judgment=\"𝕄\" of=\"Φ.y\">"
+                         , "<morph locator=\"Φ.y\">"
                          , "  <evaluate λ=\"L_stand\" id=\"1\">"
                          , "    <bind meta=\"𝑛1.1\">⟦ Δ ⤍ 01- ⟧</bind>"
                          , "    <known symbol=\"𝜎1\">01-</known>"
                          , "    <bind meta=\"𝑛2.1\">⟦ λ ⤍ 𝜎1 ⟧</bind>"
                          , "    <answer meta=\"𝑛.1\">⟦ z ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧</answer>"
                          , "  </evaluate>"
-                         , "</protocol>"
+                         , "</morph>"
                          ]
 
         -- Which symbols a firing minted is a fact about the firing and not a
@@ -1426,14 +1426,14 @@ spec = do
             records <- readUtf8 path
             lines records
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-                         , "<protocol judgment=\"𝕄\" of=\"Φ.y\">"
+                         , "<morph locator=\"Φ.y\">"
                          , "  <evaluate λ=\"L_pair\" id=\"1\">"
                          , "    <bind meta=\"𝑛1.1\">⟦ Δ ⤍ 01- ⟧</bind>"
                          , "    <minted>𝜎1</minted>"
                          , "    <minted>𝜎2</minted>"
                          , "    <answer meta=\"𝑛.1\">⟦ left ↦ ⟦ λ ⤍ 𝜎1 ⟧, right ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧</answer>"
                          , "  </evaluate>"
-                         , "</protocol>"
+                         , "</morph>"
                          ]
 
         -- An entry answering a meta it already bound asks for no symbol of its
@@ -1448,12 +1448,12 @@ spec = do
             records <- readUtf8 path
             lines records
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-                         , "<protocol judgment=\"𝕄\" of=\"Φ.y\">"
+                         , "<morph locator=\"Φ.y\">"
                          , "  <evaluate λ=\"L_keep\" id=\"1\">"
                          , "    <bind meta=\"𝑛1.1\">⟦ Δ ⤍ 01- ⟧</bind>"
                          , "    <answer meta=\"𝑛.1\">⟦ z ↦ ⟦ Δ ⤍ 01- ⟧ ⟧</answer>"
                          , "  </evaluate>"
-                         , "</protocol>"
+                         , "</morph>"
                          ]
 
         -- A firing taken while an operand of another was coming down stands
@@ -1467,7 +1467,7 @@ spec = do
             records <- readUtf8 path
             lines records
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-                         , "<protocol judgment=\"𝔻\" of=\"Φ\">"
+                         , "<dataize locator=\"Φ\">"
                          , "  <evaluate λ=\"L_number_plus\" id=\"1\">"
                          , "    <bind meta=\"𝛿1.1\">40-14-00-00-00-00-00-00</bind>"
                          , "    <evaluate λ=\"L_number_plus\" id=\"2\">"
@@ -1480,7 +1480,7 @@ spec = do
                          , "    <minted>𝜎2</minted>"
                          , "    <answer meta=\"𝑛.2\">⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧</answer>"
                          , "  </evaluate>"
-                         , "</protocol>"
+                         , "</dataize>"
                          ]
 
         -- Nothing fired, so the element stands alone and nothing opens under
@@ -1493,7 +1493,7 @@ spec = do
             records <- readUtf8 path
             lines records
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-                         , "<protocol judgment=\"𝔻\" of=\"Φ\">"
+                         , "<dataize locator=\"Φ\">"
                          , "  <evaluate λ=\"L_number_times\" id=\"1\">"
                          , "    <bind meta=\"𝛿1.1\">40-00-00-00-00-00-00-00</bind>"
                          , "    <bind meta=\"𝛿2.1\">40-08-00-00-00-00-00-00</bind>"
@@ -1501,12 +1501,14 @@ spec = do
                          , "    <answer meta=\"𝑛.1\">⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧, nope ↦ ⟦ λ ⤍ L_number_nope ⟧ ⟧</answer>"
                          , "  </evaluate>"
                          , "  <stuck λ=\"L_number_nope\"/>"
-                         , "</protocol>"
+                         , "</dataize>"
                          ]
 
-        -- A morphing names itself 𝕄 and the term it was aimed at, the way the
-        -- first line of the text format does
-        it "names the judgment and the term a morphing was aimed at" $
+        -- The root is named after the judgment the run ran, the way every
+        -- record under it is named after the judgment it carries, and the term
+        -- the run was aimed at stands in its one attribute: a morphing opens
+        -- 'morph' where the text format opens 𝕄(Φ.x) (#1279)
+        it "names the root after the judgment a morphing ran" $
           withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
             hClose stream
             withStdin "[[ x -> [[ L> L_number_nope ]].foo ]]" $
@@ -1514,9 +1516,9 @@ spec = do
             records <- readUtf8 path
             lines records
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-                         , "<protocol judgment=\"𝕄\" of=\"Φ.x\">"
+                         , "<morph locator=\"Φ.x\">"
                          , "  <stuck λ=\"L_number_nope\"/>"
-                         , "</protocol>"
+                         , "</morph>"
                          ]
 
         -- A document a parser chokes on is worth nothing, so what the run left
@@ -1531,7 +1533,7 @@ spec = do
             records <- readUtf8 path
             lines records
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-                         , "<protocol judgment=\"𝔻\" of=\"Φ\">"
+                         , "<dataize locator=\"Φ\">"
                          , "  <evaluate λ=\"L_number_times\" id=\"1\">"
                          , "    <bind meta=\"𝛿1.1\">40-00-00-00-00-00-00-00</bind>"
                          , "    <bind meta=\"𝛿2.1\">40-08-00-00-00-00-00-00</bind>"
@@ -1539,7 +1541,7 @@ spec = do
                          , "    <answer meta=\"𝑛.1\">⟦ φ ↦ ⟦ λ ⤍ 𝜎1, ρ ↦ ∅ ⟧, times ↦ ⟦ x ↦ ∅, λ ⤍ L_number_times, ρ ↦ ∅ ⟧, nope ↦ ⟦ λ ⤍ L_number_nope, ρ ↦ ∅ ⟧, ρ ↦ ⟦ bytes ↦ ⟦ φ ↦ ∅, ρ ↦ ∅ ⟧, number ↦ ⟦ φ ↦ ∅, times ↦ ⟦ x ↦ ∅, λ ⤍ L_number_times, ρ ↦ ∅ ⟧, nope ↦ ⟦ λ ⤍ L_number_nope, ρ ↦ ∅ ⟧, ρ ↦ ∅ ⟧, φ ↦ Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 40-00-00-00-00-00-00-00, ρ ↦ ∅ ⟧ ) ).times( α0 ↦ Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 40-08-00-00-00-00-00-00, ρ ↦ ∅ ⟧ ) ) ).nope, ρ ↦ ∅ ⟧ ⟧</answer>"
                          , "  </evaluate>"
                          , "  <stuck λ=\"L_number_nope\"/>"
-                         , "</protocol>"
+                         , "</dataize>"
                          ]
 
         -- A 'morph' operand 𝕄 answered the terminator for says what it is by
@@ -1554,13 +1556,13 @@ spec = do
             records <- readUtf8 path
             lines records
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-                         , "<protocol judgment=\"𝕄\" of=\"Φ.x\">"
+                         , "<morph locator=\"Φ.x\">"
                          , "  <evaluate λ=\"L_pick\" id=\"1\">"
                          , "    <bind meta=\"𝑛1.1\">⊥</bind>"
                          , "    <minted>𝜎1</minted>"
                          , "    <answer meta=\"𝑛.1\">⟦ λ ⤍ 𝜎1 ⟧</answer>"
                          , "  </evaluate>"
-                         , "</protocol>"
+                         , "</morph>"
                          ]
 
         -- The extension decides and nothing else, so a name ending in

@@ -70,6 +70,33 @@ saveStep (Just dir) ext render step expr = do
 dontSaveStep :: SaveStepFunc
 dontSaveStep = saveStep Nothing "" (\_ -> pure "") 0
 
+-- The judgment a run of the protocol records, which is the one thing the two
+-- formats spell in two ways: the text format writes the letter the calculus
+-- writes, '𝕄(Φ.x)', and the markup names the root after it, '<morph
+-- locator="Φ.x">', the way every record under it is named after the judgment it
+-- carries (#1279). Nothing else is spelled twice, since nothing else of a
+-- record is a name of the calculus.
+data Judgment
+  = -- The Morphing function 𝕄, which the 'morph' command runs.
+    Morphing
+  | -- The Dataization function 𝔻, which the 'dataize' command runs.
+    Dataization
+
+-- The letter the calculus writes a judgment with, which is how the text format
+-- opens a run of it.
+letter :: Judgment -> String
+letter Morphing = "𝕄"
+letter Dataization = "𝔻"
+
+-- The element the markup opens a run of a judgment with, and closes it under,
+-- named after the judgment the way '<evaluate>' is named after 𝔼. A root
+-- '<dataize>' carries the locator the run was aimed at where one inside a
+-- firing carries the meta it bound, which is the very difference the text
+-- format draws between '𝔻(Φ)' at the top and '𝛿1.2 := 𝔻(…)' in a block.
+opened :: Judgment -> String
+opened Morphing = "morph"
+opened Dataization = "dataize"
+
 -- One line of the protocol the '--protocol' option writes, which is a tree of
 -- the firings of the Evaluation function 𝔼 rather than a list of them. The run
 -- itself opens it — '𝕄(Q.φ)' for a morphing, '𝔻(Q)' for a dataization — and
@@ -82,7 +109,7 @@ dontSaveStep = saveStep Nothing "" (\_ -> pure "") 0
 -- its firing would have been.
 data Evaluation
   = -- The run and the term it was aimed at.
-    EvRun T.Text T.Text
+    EvRun Judgment T.Text
   | -- One firing of the entry under that key, at the depth its nesting gives
     -- it.
     EvFiring Int T.Text
@@ -199,7 +226,7 @@ saveEval handle cursor render salted report = do
     -- fact out (#1280).
     written :: Evaluation -> Protocol -> IO (Protocol, Maybe String)
     written (EvRun judgment locator) protocol =
-      pure (protocol, Just (printf "%s(%s)" (T.unpack judgment) (T.unpack locator)))
+      pure (protocol, Just (printf "%s(%s)" (letter judgment) (T.unpack locator)))
     written (EvFiring depth key) protocol =
       pure
         ( protocol
@@ -296,10 +323,10 @@ saveEvalXml handle cursor render report = do
     elements :: Evaluation -> Nesting -> IO (Nesting, [String])
     elements (EvRun judgment locator) nesting =
       pure
-        ( nesting{_closing = (0, "protocol") : nesting._closing}
+        ( nesting{_closing = (0, opened judgment) : nesting._closing}
         ,
           [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-          , printf "<protocol judgment=\"%s\" of=\"%s\">" (quoted judgment) (quoted locator)
+          , printf "<%s locator=\"%s\">" (opened judgment) (quoted locator)
           ]
         )
     elements (EvFiring depth key) nesting =
