@@ -2,19 +2,19 @@
 # SPDX-License-Identifier: MIT
 ---
 name: box
-match: ⟦𝐵1, φ ↦ 𝑒1, 𝐵2⟧
-e-match: 𝑒0
-d-result: 𝛿0
+match: ⟦𝐵1, φ ↦ 𝑒2, 𝐵2⟧
+e-match: 𝑒1
+d-result: 𝛿1
 when:
   disjoint:
     - [Δ, λ]
     - [𝐵1, 𝐵2]
 premises:
-  - n-result: 𝑒2
+  - n-result: 𝑒3
     contextualize:
-      - 𝑒1
-      - ⟦𝐵1, φ ↦ 𝑒1, 𝐵2⟧
+      - 𝑒2
+      - ⟦𝐵1, φ ↦ 𝑒2, 𝐵2⟧
   - n-result: 𝑛1
-    normalize: 𝑒2
-  - d-result: 𝛿0
+    normalize: 𝑒3
+  - d-result: 𝛿1
     dataize: 𝑛1

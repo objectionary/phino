@@ -2,15 +2,15 @@
 # SPDX-License-Identifier: MIT
 ---
 name: caa
-match: '𝑛0(α𝑖0 ↦ 𝑒1)'
-c-match: 𝑘0
-c-result: '𝑛1(α𝑖0 ↦ 𝑛2)'
+match: '𝑛1(α𝑖1 ↦ 𝑒1)'
+c-match: 𝑘1
+c-result: '𝑛2(α𝑖1 ↦ 𝑛3)'
 premises:
-  - n-result: 𝑛1
-    contextualize:
-      - 𝑛0
-      - 𝑘0
   - n-result: 𝑛2
     contextualize:
+      - 𝑛1
+      - 𝑘1
+  - n-result: 𝑛3
+    contextualize:
       - 𝑒1
-      - 𝑘0
+      - 𝑘1

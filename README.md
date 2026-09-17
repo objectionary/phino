@@ -934,9 +934,12 @@ This is the list of supported meta variables:
                 symbol, which no substitution ever binds, and a bare `𝜎` in the
                 answer of a `--symbolic` entry asks for a fresh one
 
-A meta variable carries a suffix, like `!B1` or `𝜏0`, to name what it
+A meta variable carries a suffix, like `!B1` or `𝜏2`, to name what it
 captured, so that the `result`, `when`, `where` and `having` of a rule can
-read it back.
+read it back. An index starts with one: a suffix of `0`, as in `!B0` or
+`𝜏0`, is refused where it is written, because it is a first index spelled
+wrong and no name. A positional argument keeps counting from zero, though,
+since `α0` is an index of the calculus and no meta variable.
 
 Written bare, with no suffix at all, a meta variable is anonymous: it matches
 whatever term stands in its place, every occurrence on its own, and binds no

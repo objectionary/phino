@@ -3,5 +3,5 @@
 ---
 name: cxi
 match: ξ
-c-match: 𝑘0
-c-result: 𝑘0
+c-match: 𝑘1
+c-result: 𝑘1

@@ -3,24 +3,24 @@
 ---
 name: mphi
 label: \varphi
-match: ⟦𝐵0⟧.𝜏0
-e-match: 𝑒0
+match: ⟦𝐵1⟧.𝜏1
+e-match: 𝑒1
 n-result: 𝑛2
 when:
   and:
     - in:
         - φ
-        - 𝐵0
+        - 𝐵1
     - not:
         in:
-          - 𝜏0
-          - 𝐵0
+          - 𝜏1
+          - 𝐵1
     - not:
         in:
           - λ
-          - 𝐵0
+          - 𝐵1
 premises:
   - n-result: 𝑛1
-    normalize: ⟦𝐵0⟧.φ.𝜏0
+    normalize: ⟦𝐵1⟧.φ.𝜏1
   - n-result: 𝑛2
     morph: 𝑛1

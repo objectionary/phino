@@ -57,10 +57,10 @@ spec = do
         , Left "meta 't' is either does not exist or refers to an inappropriate term"
         )
       ,
-        ( "!e0(!t1 -> !e1, !t2 => !e2) => (!e0 >> [[]], !t1 >> x, !e1 >> Q, !t2 >> y, !e2 >> $) => [[]](x -> Q, y -> $)"
-        , ExApplication (ExApplication (ExMeta "e0") (ArTau (AtMeta "t1") (ExMeta "e1"))) (ArTau (AtMeta "t2") (ExMeta "e2"))
+        ( "!e3(!t1 -> !e1, !t2 => !e2) => (!e3 >> [[]], !t1 >> x, !e1 >> Q, !t2 >> y, !e2 >> $) => [[]](x -> Q, y -> $)"
+        , ExApplication (ExApplication (ExMeta "e3") (ArTau (AtMeta "t1") (ExMeta "e1"))) (ArTau (AtMeta "t2") (ExMeta "e2"))
         ,
-          [ ("e0", MvExpression (ExFormation []))
+          [ ("e3", MvExpression (ExFormation []))
           , ("t1", MvAttribute (AtLabel "x"))
           , ("e1", MvExpression ExRoot)
           , ("t2", MvAttribute (AtLabel "y"))

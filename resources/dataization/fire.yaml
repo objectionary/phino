@@ -2,13 +2,13 @@
 # SPDX-License-Identifier: MIT
 ---
 name: fire
-match: ⟦𝐵1, λ ⤍ 𝑓0, 𝐵2⟧
-e-match: 𝑒0
-d-result: 𝛿0
+match: ⟦𝐵1, λ ⤍ 𝑓1, 𝐵2⟧
+e-match: 𝑒1
+d-result: 𝛿1
 premises:
   - n-result: 𝑛1
     evaluate:
-      - ⟦𝐵1, λ ⤍ 𝑓0, 𝐵2⟧
-      - 𝑒0
-  - d-result: 𝛿0
+      - ⟦𝐵1, λ ⤍ 𝑓1, 𝐵2⟧
+      - 𝑒1
+  - d-result: 𝛿1
     dataize: 𝑛1

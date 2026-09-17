@@ -24,7 +24,7 @@ where
 import AST
 import Bytes (nonFiniteBts, nonFiniteOf, numToBts, strToBts)
 import Control.Exception (Exception)
-import Control.Monad (guard)
+import Control.Monad (guard, when)
 import Data.Char (isAsciiLower, isDigit)
 import Data.Scientific (toRealFloat)
 import qualified Data.Text as T
@@ -127,7 +127,9 @@ metaSuffix = lexeme (many (oneOf ('_' : '-' : ['0' .. '9'] ++ ['a' .. 'z'] ++ ['
 -- suffix tells the two kinds apart: with one the variable is named and a rule
 -- may reference it from its result, without one it is an anonymous slot
 -- pinned to the offset it starts at, unique within the parsed term. Named
--- variables are packed to Text once here; all AST meta fields are Text.
+-- variables are packed to Text once here; all AST meta fields are Text. A
+-- suffix of '0' is no name but a first index written wrong: every index of the
+-- calculus starts with one, so the whole term is refused where it stands.
 metaVar :: Char -> String -> Parser (Either Slot T.Text)
 metaVar ch uni = do
   offset <- getOffset
@@ -136,6 +138,9 @@ metaVar ch uni = do
       [ char '!' >> char ch >> metaSuffix
       , string uni >> metaSuffix
       ]
+  when
+    (suf == "0")
+    (fail (printf "the meta variable '!%c0' is indexed with zero, while indexes start with one" ch))
   return
     ( if null suf
         then Left (Slot (T.singleton ch) offset)

@@ -3,7 +3,7 @@
 ---
 name: xi
 match: ξ
-e-match: 𝑒0
+e-match: 𝑒1
 n-result: 𝑛1
 premises:
   - n-result: 𝑛1

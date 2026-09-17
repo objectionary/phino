@@ -2,19 +2,19 @@
 # SPDX-License-Identifier: MIT
 ---
 name: norm
-match: 𝑛0
-e-match: 𝑒0
-d-result: 𝛿0
+match: 𝑛1
+e-match: 𝑒1
+d-result: 𝛿1
 when:
   and:
     - not:
-        formation: 𝑛0
+        formation: 𝑛1
     - not:
         eq:
-          - 𝑛0
+          - 𝑛1
           - ⊥
 premises:
-  - n-result: 𝑛1
-    morph: 𝑛0
-  - d-result: 𝛿0
-    dataize: 𝑛1
+  - n-result: 𝑛2
+    morph: 𝑛1
+  - d-result: 𝛿1
+    dataize: 𝑛2

@@ -4,15 +4,15 @@
 name: universe
 label: \Phi
 match: Φ
-e-match: 𝑒0
+e-match: 𝑒1
 n-result: 𝑛2
 when:
   not:
     eq:
-      - 𝑒0
+      - 𝑒1
       - Φ
 premises:
   - n-result: 𝑛1
-    normalize: 𝑒0
+    normalize: 𝑒1
   - n-result: 𝑛2
     morph: 𝑛1
