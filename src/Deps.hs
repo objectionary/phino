@@ -103,18 +103,21 @@ data Evaluation
 
 type SaveEvalFunc = Evaluation -> IO ()
 
--- What the protocol has counted so far: how often each entry has fired, so a
--- line of one firing is told from the same line of the next; how many answers
--- the whole run has given, which numbers them; the name last given to each
--- symbol, which is how a term already written out is named instead of written
--- again; and which firing of its entry is open at each depth, since the
--- operands of a firing belong to the firing it was when it started and not to
--- the one another firing of the same entry has made of it since. The order the
--- firings come in carries nothing — it is the order 𝕄 walks the term — so the
--- symbols are what the dependencies are read from: a term carrying 𝜎4 is the
--- term the line that minted 𝜎4 stood for.
+-- What the protocol has counted so far: how many firings the whole run has
+-- opened, which is what numbers them and so tells a line of one firing from
+-- the same line of any other; how many answers the whole run has given, which
+-- numbers them; the name last given to each symbol, which is how a term
+-- already written out is named instead of written again; and which firing is
+-- open at each depth, since the operands of a firing belong to the firing it
+-- was when it started and not to the one another firing has made of it since.
+-- The firings are numbered across the run rather than per λ function, so no
+-- two of them give an operand meta the same name and a name the protocol
+-- points back to points at one line only (#1261). The order the firings come
+-- in carries nothing — it is the order 𝕄 walks the term — so the symbols are
+-- what the dependencies are read from: a term carrying 𝜎4 is the term the
+-- line that minted 𝜎4 stood for.
 data Protocol = Protocol
-  { _fired :: Map.Map T.Text Int
+  { _fired :: Int
   , _answered :: Int
   , _named :: Map.Map Int T.Text
   , _open :: Map.Map Int Int
@@ -122,7 +125,7 @@ data Protocol = Protocol
 
 -- The protocol before a single firing has been written.
 emptyProtocol :: Protocol
-emptyProtocol = Protocol Map.empty 0 Map.empty Map.empty
+emptyProtocol = Protocol 0 0 Map.empty Map.empty
 
 -- What the XML protocol has counted so far: how many firings the run has
 -- opened, which is what numbers them, and the elements standing open around
@@ -162,14 +165,14 @@ saveEval handle cursor render report = do
     written (EvFiring depth key) protocol =
       pure
         ( protocol
-            { _fired = Map.insert key firings protocol._fired
+            { _fired = firings
             , _open = Map.insert depth firings protocol._open
             }
         , indented depth (printf "𝔼(%s)" (T.unpack key))
         )
       where
         firings :: Int
-        firings = 1 + fromMaybe 0 (Map.lookup key protocol._fired)
+        firings = protocol._fired + 1
     written (EvStuck depth key) protocol =
       pure (protocol, indented depth (printf "?(%s)" (T.unpack key)))
     written (EvData depth spelling operand value) protocol = do
@@ -207,10 +210,13 @@ saveEval handle cursor render report = do
     commented :: String -> Expression -> IO String
     commented line operand = printf "%s  # %s" line <$> render operand
     -- The name of an operand meta on this firing of its λ function: the meta
-    -- the entry spells it with and which firing of that function this is,
-    -- since every entry numbers its own metas from 𝛿1 and 𝑛1 and only the
-    -- firing tells two 𝛿1 apart. The firing a line belongs to is the one
-    -- opened one level above it.
+    -- the entry spells it with and which firing of the run this is, since
+    -- every entry numbers its own metas from 𝛿1 and 𝑛1 and only the firing
+    -- tells two 𝛿1 apart. The number counts the firings of the whole run and
+    -- not those of one λ function, so the second firing of one entry and the
+    -- second of another never write the same name (#1261), and it is the very
+    -- number the XML format gives the firing in its 'id'. The firing a line
+    -- belongs to is the one opened one level above it.
     labelled :: Protocol -> Int -> T.Text -> String
     labelled protocol depth spelling =
       printf "%s.%d" (T.unpack spelling) (fromMaybe 0 (Map.lookup (depth - 1) protocol._open))
@@ -218,14 +224,15 @@ saveEval handle cursor render report = do
 -- The same protocol as XML, which is what '--protocol' writes when the file it
 -- names ends in '.xml' (see 'withEvalFunc'). It carries the very facts the text
 -- format carries and carries them as markup rather than as a 𝜑-term a reader
--- would have to parse back: a datum stands in 'bytes' and the symbol a value
--- came down to or stands for in 'symbol', so the edge from the line that
--- minted an unknown to the line that consumed it is read off an attribute
--- instead of off the spelling of a term (#1245). Where the text format names
--- an earlier line, this one repeats that line's symbol, since the symbol is
--- what the two lines share and a name is only how the text format spells it.
--- The term stays as the text of the element, for a reader and not for a
--- program.
+-- would have to parse back: the name of an element says what its record is,
+-- the symbol a term stands for stands in 'symbol', and the value the record
+-- carries stands as the text of the element, so the edge from the line that
+-- minted an unknown to the line that consumed it is read off the markup
+-- instead of off the spelling of a term (#1245, #1257). Where the text format
+-- names an earlier line, this one repeats that line's symbol, since the symbol
+-- is what the two lines share and a name is only how the text format spells
+-- it. The term itself stays as the text of the element, for a reader and not
+-- for a program.
 --
 -- Nothing is buffered: an element is written the moment its record arrives,
 -- and the ones it closes are written just before it, so a run firing thousands
@@ -252,8 +259,8 @@ saveEvalXml handle cursor render report = do
         )
     elements (EvFiring depth key) nesting =
       pure
-        ( nesting{_fires = fires, _closing = (depth, "fire") : kept}
-        , closers ++ [indented depth (printf "<fire λ=\"%s\" id=\"%d\">" (quoted key) fires)]
+        ( nesting{_fires = fires, _closing = (depth, "evaluate") : kept}
+        , closers ++ [indented depth (printf "<evaluate λ=\"%s\" id=\"%d\">" (quoted key) fires)]
         )
       where
         (kept, closers) = closed depth nesting._closing
@@ -264,15 +271,18 @@ saveEvalXml handle cursor render report = do
       where
         (kept, closers) = closed depth nesting._closing
     elements (EvData depth spelling _ value) nesting =
-      pure (nesting{_closing = kept}, closers ++ [indented depth (printf "<bind meta=\"%s\"%s/>" (quoted spelling) (stood value))])
+      pure (nesting{_closing = kept}, closers ++ [indented depth (stood value)])
       where
         (kept, closers) = closed depth nesting._closing
         -- A 'dataize' operand has no term of its own to show: it either came
         -- down to data, which is the data, or to the datum manufactured for an
         -- unknown, which is that unknown and never the 42 standing for it.
+        -- These are two different facts, so the name of the element tells them
+        -- apart the way 𝔻(…) does in the text format, rather than leaving a
+        -- reader to test which of two attributes an element carries (#1257).
         stood :: Either Int Bytes -> String
-        stood (Left symbol) = printf " symbol=\"%s\"" (sigma symbol)
-        stood (Right bytes) = printf " bytes=\"%s\"" (escapeXML (printBytes bytes))
+        stood (Left symbol) = printf "<dataize meta=\"%s\">%s</dataize>" (quoted spelling) (sigma symbol)
+        stood (Right bytes) = printf "<bind meta=\"%s\">%s</bind>" (quoted spelling) (escapeXMLText (printBytes bytes))
     elements (EvTerm depth spelling _ term) nesting = do
       body <- render term
       let (kept, closers) = closed depth nesting._closing

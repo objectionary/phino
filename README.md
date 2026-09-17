@@ -199,10 +199,14 @@ $ cat atoms.txt
 ```
 
 `𝔻(…)` is the run and the term it was aimed at, `𝕄(…)` where the run is a
-morphing, and `𝔼(…)` is one firing, named by the entry that answered it. `𝛿1.2`
-is the value bound to that entry's `𝛿1` on its second firing, `𝑛1.1` the same
-for a `morph` meta, and `𝑛.k` the k-th answer of the whole run, so
-`𝑛1.1 := 𝑛.3` reads "the `𝑛1` of this firing is the third answer". Where an
+morphing, and `𝔼(…)` is one firing, named by the entry that answered it. The
+firings are numbered across the whole run, in the order they open, so `𝛿1.2`
+is the value bound to `𝛿1` by the second firing of the run, whichever λ
+function that was, `𝑛1.2` the same for a `morph` meta, and `𝑛.k` the k-th
+answer of the whole run, so `𝑛1.2 := 𝑛.3` reads "the `𝑛1` of this firing is
+the third answer". One firing binds a meta once and no two firings share a
+number, so every one of these names stands on exactly one line of the file and
+a line naming another one points at it and no other. Where an
 operand came down to the datum a symbol stands for, the protocol writes `𝔻(𝜎1)`
 in place of that 42, so a reader sees that the value was manufactured rather
 than read out of the program.
@@ -288,25 +292,25 @@ $ cat fork.txt
     𝛿2.1 := 00-00-00-00-00-00-00-00  # ξ.x
     𝑛.1 := Φ.bool( if ↦ ⟦ λ ⤍ L_fork, then ↦ ∅, else ↦ ∅, φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧ )
   𝔼(L_number_plus)
-    𝛿1.1 := 𝔻(𝜎1)  # ξ.ρ
-    𝛿2.1 := 3F-F0-00-00-00-00-00-00  # ξ.x
+    𝛿1.2 := 𝔻(𝜎1)  # ξ.ρ
+    𝛿2.2 := 3F-F0-00-00-00-00-00-00  # ξ.x
     𝑛.2 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎3 ⟧ )
   𝔼(L_number_plus)
-    𝛿1.2 := 𝔻(𝜎1)  # ξ.ρ
-    𝛿2.2 := 𝔻(𝜎3)  # ξ.x
+    𝛿1.3 := 𝔻(𝜎1)  # ξ.ρ
+    𝛿2.3 := 𝔻(𝜎3)  # ξ.x
     𝑛.3 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎4 ⟧ )
   𝔼(L_number_plus)
-    𝛿1.3 := 𝔻(𝜎1)  # ξ.ρ
-    𝛿2.3 := 𝔻(𝜎1)  # ξ.x
+    𝛿1.4 := 𝔻(𝜎1)  # ξ.ρ
+    𝛿2.4 := 𝔻(𝜎1)  # ξ.x
     𝑛.4 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎5 ⟧ )
   𝔼(L_fork)
-    𝛿1.1 := 𝔻(𝜎2)  # ξ.φ
-    𝑛1.1 := 𝑛.3  # ξ.then
-    𝑛2.1 := 𝑛.4  # ξ.else
-    𝑛.5 := 𝑛1.1
+    𝛿1.5 := 𝔻(𝜎2)  # ξ.φ
+    𝑛1.5 := 𝑛.3  # ξ.then
+    𝑛2.5 := 𝑛.4  # ξ.else
+    𝑛.5 := 𝑛1.5
   𝔼(L_number_plus)
-    𝛿1.4 := 𝔻(𝜎4)  # ξ.ρ
-    𝛿2.4 := 40-14-00-00-00-00-00-00  # ξ.x
+    𝛿1.6 := 𝔻(𝜎4)  # ξ.ρ
+    𝛿2.6 := 40-14-00-00-00-00-00-00  # ξ.x
     𝑛.6 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎6 ⟧ )
 ```
 
@@ -316,7 +320,7 @@ the fork. `𝜎5` is minted and never consumed, which is how a reader sees that
 the right branch was computed and thrown away. The two `morph` lines of
 `𝔼(L_fork)` are recorded although nothing fires under them, since they are the
 only edge from the fork back to the branch it answered with: without them
-`𝑛.5 := 𝑛1.1` would name a meta nothing ever bound.
+`𝑛.5 := 𝑛1.5` would name a meta nothing ever bound.
 
 A firing that happened while an operand of another was being reduced stands one
 level deeper, under the firing that asked for it. Here it never happens,
@@ -337,37 +341,41 @@ $ phino dataize --symbolic=atoms.yaml --protocol=atoms.xml --quiet \
 $ cat atoms.xml
 <?xml version="1.0" encoding="UTF-8"?>
 <protocol judgment="𝔻" of="Φ">
-  <fire λ="L_number_plus" id="1">
-    <bind meta="𝛿1" bytes="40-14-00-00-00-00-00-00"/>
-    <bind meta="𝛿2" bytes="40-18-00-00-00-00-00-00"/>
+  <evaluate λ="L_number_plus" id="1">
+    <bind meta="𝛿1">40-14-00-00-00-00-00-00</bind>
+    <bind meta="𝛿2">40-18-00-00-00-00-00-00</bind>
     <answer symbol="𝜎1">Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )</answer>
-  </fire>
+  </evaluate>
 </protocol>
 ```
 
 `<protocol>` is the run, `judgment` saying which of 𝔻 and 𝕄 it was and `of`
-the term it was aimed at. `<fire>` is one firing, `λ` naming the entry that
-answered it and `id` numbering it within the run. `<bind>` is one meta the
-firing bound: `meta` names it and the element holds the term it took, or
-`bytes` holds the datum instead where a `dataize` operand came down to one.
-`<answer>` holds the term the firing answered with.
+the term it was aimed at. `<evaluate>` is one firing of 𝔼, `λ` naming the entry
+that answered it and `id` numbering it within the run. `<bind>` is one meta the
+firing bound, `meta` naming it and the element holding the value it took: a
+term where the operand was reduced with 𝕄, the datum itself where a `dataize`
+operand came down to data. `<dataize>` is the other thing a `dataize` operand
+may come to, the datum manufactured for an unknown, and holds that unknown
+rather than the 42 standing for it. The name of the element is what tells the
+two apart, the way `𝔻(…)` does in the text format, so nothing has to be read
+off the presence of an attribute. `<answer>` holds the term the firing answered
+with.
 
-Where a value denotes a symbol, the element says so with `symbol="𝜎1"`
-instead of the 42 that dataizing a symbol answers, and that name is the only
-thing a reader joins lines on. It is spelled the way every term carrying it is
-spelled, so the join compares two strings that look alike rather than a number
-against a name. In the fork above, `𝔼(L_fork)` becomes a `<fire>` whose
-condition is `<bind meta="𝛿1" symbol="𝜎2"/>` and whose answer is
-`<answer symbol="𝜎4">`: the condition is the symbol the first firing minted
-and the answer the one the third minted. The text format says the same with
-`𝛿1.1 := 𝔻(𝜎2)` and `𝑛.5 := 𝑛1.1`, which name a line by counting; the
-markup names the value, so the counting is gone. A term standing for nothing
-takes no attribute at all, the terminator ⊥ included, since its own text
-already says what it is.
+Where a term denotes a symbol, the element says so with `symbol="𝜎1"`, and
+that name is the only thing a reader joins lines on. It is spelled the way
+every term carrying it is spelled, so the join compares two strings that look
+alike rather than a number against a name. In the fork above, `𝔼(L_fork)`
+becomes an `<evaluate>` whose condition is `<dataize meta="𝛿1">𝜎2</dataize>`
+and whose answer is `<answer symbol="𝜎4">`: the condition is the symbol the
+first firing minted and the answer the one the third minted. The text format
+says the same with `𝛿1.5 := 𝔻(𝜎2)` and `𝑛.5 := 𝑛1.5`, which name a line by
+counting; the markup names the value, so the counting is gone. A term standing
+for nothing takes no attribute at all, the terminator ⊥ included, since its
+own text already says what it is.
 
-A λ name no entry answers is `<stuck λ="…"/>`, standing where its `<fire>`
+A λ name no entry answers is `<stuck λ="…"/>`, standing where its `<evaluate>`
 would have stood, and a firing that happened while an operand of another was
-being reduced is a `<fire>` inside the one that asked, which is what the
+being reduced is an `<evaluate>` inside the one that asked, which is what the
 deeper indentation means in the text. Elements are written as the run goes and
 the open ones are closed when it ends, so a run that fails still leaves a
 well-formed document behind:
@@ -379,11 +387,11 @@ $ phino dataize --symbolic=atoms.yaml --protocol=atoms.xml --quiet \
 $ cat atoms.xml
 <?xml version="1.0" encoding="UTF-8"?>
 <protocol judgment="𝔻" of="Φ">
-  <fire λ="L_number_plus" id="1">
-    <bind meta="𝛿1" bytes="40-14-00-00-00-00-00-00"/>
-    <bind meta="𝛿2" bytes="40-18-00-00-00-00-00-00"/>
+  <evaluate λ="L_number_plus" id="1">
+    <bind meta="𝛿1">40-14-00-00-00-00-00-00</bind>
+    <bind meta="𝛿2">40-18-00-00-00-00-00-00</bind>
     <answer symbol="𝜎1">Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )</answer>
-  </fire>
+  </evaluate>
   <stuck λ="L_number_nope"/>
 </protocol>
 ```
@@ -454,8 +462,8 @@ $ cat atoms.txt
     𝛿2.1 := 40-08-00-00-00-00-00-00  # ξ.x
     𝑛.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )
   𝔼(L_number_plus)
-    𝛿1.1 := 𝔻(𝜎1)  # ξ.ρ
-    𝛿2.1 := 40-10-00-00-00-00-00-00  # ξ.x
+    𝛿1.2 := 𝔻(𝜎1)  # ξ.ρ
+    𝛿2.2 := 40-10-00-00-00-00-00-00  # ξ.x
     𝑛.2 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ )
 ```
 

@@ -1173,6 +1173,7 @@ spec = do
       let sum' = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6) ]]"
           chained = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6).plus(7) ]]"
           nested = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6.plus(7)) ]]"
+          mixed = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(x) -> [[ L> L_number_plus ]], times(x) -> [[ L> L_number_times ]] ]], @ -> 5.plus(6).times(7) ]]"
       it "opens the protocol with the run it is the protocol of" $
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
           hClose stream
@@ -1215,6 +1216,29 @@ spec = do
                        , "    𝛿2.1 := 40-18-00-00-00-00-00-00  # ξ.x"
                        , "    𝑛.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )"
                        , "  𝔼(L_number_plus)"
+                       , "    𝛿1.2 := 𝔻(𝜎1)  # ξ.ρ"
+                       , "    𝛿2.2 := 40-1C-00-00-00-00-00-00  # ξ.x"
+                       , "    𝑛.2 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ )"
+                       ]
+
+      -- A meta is a variable bound exactly once, so its name has to be unique
+      -- in the whole file and the protocol refers back to it as a name. The
+      -- firings are therefore numbered across the run and not per λ function:
+      -- the first firing of 'L_number_times' calls its operand 𝛿1.2, never the
+      -- 𝛿1.1 the first firing of 'L_number_plus' has already taken (#1261)
+      it "numbers the firings of different entries apart" $
+        withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
+          hClose stream
+          withStdin mixed $
+            testCLISucceeded ["dataize", symbolic, "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
+          records <- readUtf8 path
+          lines records
+            `shouldBe` [ "𝔻(Φ)"
+                       , "  𝔼(L_number_plus)"
+                       , "    𝛿1.1 := 40-14-00-00-00-00-00-00  # ξ.ρ"
+                       , "    𝛿2.1 := 40-18-00-00-00-00-00-00  # ξ.x"
+                       , "    𝑛.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )"
+                       , "  𝔼(L_number_times)"
                        , "    𝛿1.2 := 𝔻(𝜎1)  # ξ.ρ"
                        , "    𝛿2.2 := 40-1C-00-00-00-00-00-00  # ξ.x"
                        , "    𝑛.2 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ )"
@@ -1275,9 +1299,10 @@ spec = do
           records `shouldEndWith` "    𝑛.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )\n"
 
       -- The same facts as markup, so a program reading the protocol back never
-      -- has to parse 𝜑 to learn them: the datum an operand came down to is an
-      -- attribute, and so is the symbol a value stands for (#1245). Which of
-      -- the two formats is written is decided by the name of the file and by
+      -- has to parse 𝜑 to learn them: the name of an element says what its
+      -- record is, the symbol a term stands for is an attribute and the value
+      -- a meta took is the text of the element (#1245, #1257). Which of the
+      -- two formats is written is decided by the name of the file and by
       -- nothing else
       describe "as XML" $ do
         it "writes the document when the file is named .xml" $
@@ -1289,11 +1314,11 @@ spec = do
             lines records
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                          , "<protocol judgment=\"𝔻\" of=\"Φ\">"
-                         , "  <fire λ=\"L_number_plus\" id=\"1\">"
-                         , "    <bind meta=\"𝛿1\" bytes=\"40-14-00-00-00-00-00-00\"/>"
-                         , "    <bind meta=\"𝛿2\" bytes=\"40-18-00-00-00-00-00-00\"/>"
+                         , "  <evaluate λ=\"L_number_plus\" id=\"1\">"
+                         , "    <bind meta=\"𝛿1\">40-14-00-00-00-00-00-00</bind>"
+                         , "    <bind meta=\"𝛿2\">40-18-00-00-00-00-00-00</bind>"
                          , "    <answer symbol=\"𝜎1\">Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )</answer>"
-                         , "  </fire>"
+                         , "  </evaluate>"
                          , "</protocol>"
                          ]
 
@@ -1312,9 +1337,11 @@ spec = do
                          ]
 
         -- The symbol is what ties one line to another, so an operand that came
-        -- down to a manufactured datum carries the symbol it was made for and
-        -- never the 42 every symbol answers
-        it "carries the symbol an operand came down to instead of the datum" $
+        -- down to a manufactured datum is a 'dataize' and carries the symbol
+        -- it was made for, never the 42 every symbol answers, while one that
+        -- came down to data is a 'bind' holding that data: the name of the
+        -- element is what tells the two apart (#1257)
+        it "tells a manufactured datum from data by the name of the element" $
           withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
             hClose stream
             withStdin chained $
@@ -1323,16 +1350,16 @@ spec = do
             lines records
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                          , "<protocol judgment=\"𝔻\" of=\"Φ\">"
-                         , "  <fire λ=\"L_number_plus\" id=\"1\">"
-                         , "    <bind meta=\"𝛿1\" bytes=\"40-14-00-00-00-00-00-00\"/>"
-                         , "    <bind meta=\"𝛿2\" bytes=\"40-18-00-00-00-00-00-00\"/>"
+                         , "  <evaluate λ=\"L_number_plus\" id=\"1\">"
+                         , "    <bind meta=\"𝛿1\">40-14-00-00-00-00-00-00</bind>"
+                         , "    <bind meta=\"𝛿2\">40-18-00-00-00-00-00-00</bind>"
                          , "    <answer symbol=\"𝜎1\">Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )</answer>"
-                         , "  </fire>"
-                         , "  <fire λ=\"L_number_plus\" id=\"2\">"
-                         , "    <bind meta=\"𝛿1\" symbol=\"𝜎1\"/>"
-                         , "    <bind meta=\"𝛿2\" bytes=\"40-1C-00-00-00-00-00-00\"/>"
+                         , "  </evaluate>"
+                         , "  <evaluate λ=\"L_number_plus\" id=\"2\">"
+                         , "    <dataize meta=\"𝛿1\">𝜎1</dataize>"
+                         , "    <bind meta=\"𝛿2\">40-1C-00-00-00-00-00-00</bind>"
                          , "    <answer symbol=\"𝜎2\">Φ.number( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ )</answer>"
-                         , "  </fire>"
+                         , "  </evaluate>"
                          , "</protocol>"
                          ]
 
@@ -1348,16 +1375,16 @@ spec = do
             lines records
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                          , "<protocol judgment=\"𝔻\" of=\"Φ\">"
-                         , "  <fire λ=\"L_number_plus\" id=\"1\">"
-                         , "    <bind meta=\"𝛿1\" bytes=\"40-14-00-00-00-00-00-00\"/>"
-                         , "    <fire λ=\"L_number_plus\" id=\"2\">"
-                         , "      <bind meta=\"𝛿1\" bytes=\"40-18-00-00-00-00-00-00\"/>"
-                         , "      <bind meta=\"𝛿2\" bytes=\"40-1C-00-00-00-00-00-00\"/>"
+                         , "  <evaluate λ=\"L_number_plus\" id=\"1\">"
+                         , "    <bind meta=\"𝛿1\">40-14-00-00-00-00-00-00</bind>"
+                         , "    <evaluate λ=\"L_number_plus\" id=\"2\">"
+                         , "      <bind meta=\"𝛿1\">40-18-00-00-00-00-00-00</bind>"
+                         , "      <bind meta=\"𝛿2\">40-1C-00-00-00-00-00-00</bind>"
                          , "      <answer symbol=\"𝜎1\">Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )</answer>"
-                         , "    </fire>"
-                         , "    <bind meta=\"𝛿2\" symbol=\"𝜎1\"/>"
+                         , "    </evaluate>"
+                         , "    <dataize meta=\"𝛿2\">𝜎1</dataize>"
                          , "    <answer symbol=\"𝜎2\">Φ.number( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ )</answer>"
-                         , "  </fire>"
+                         , "  </evaluate>"
                          , "</protocol>"
                          ]
 
@@ -1372,11 +1399,11 @@ spec = do
             lines records
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                          , "<protocol judgment=\"𝔻\" of=\"Φ\">"
-                         , "  <fire λ=\"L_number_times\" id=\"1\">"
-                         , "    <bind meta=\"𝛿1\" bytes=\"40-00-00-00-00-00-00-00\"/>"
-                         , "    <bind meta=\"𝛿2\" bytes=\"40-08-00-00-00-00-00-00\"/>"
+                         , "  <evaluate λ=\"L_number_times\" id=\"1\">"
+                         , "    <bind meta=\"𝛿1\">40-00-00-00-00-00-00-00</bind>"
+                         , "    <bind meta=\"𝛿2\">40-08-00-00-00-00-00-00</bind>"
                          , "    <answer symbol=\"𝜎1\">Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )</answer>"
-                         , "  </fire>"
+                         , "  </evaluate>"
                          , "  <stuck λ=\"L_number_nope\"/>"
                          , "</protocol>"
                          ]
@@ -1409,17 +1436,17 @@ spec = do
             lines records
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                          , "<protocol judgment=\"𝔻\" of=\"Φ\">"
-                         , "  <fire λ=\"L_number_times\" id=\"1\">"
-                         , "    <bind meta=\"𝛿1\" bytes=\"40-00-00-00-00-00-00-00\"/>"
-                         , "    <bind meta=\"𝛿2\" bytes=\"40-08-00-00-00-00-00-00\"/>"
+                         , "  <evaluate λ=\"L_number_times\" id=\"1\">"
+                         , "    <bind meta=\"𝛿1\">40-00-00-00-00-00-00-00</bind>"
+                         , "    <bind meta=\"𝛿2\">40-08-00-00-00-00-00-00</bind>"
                          , "    <answer symbol=\"𝜎1\">Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1, ρ ↦ ∅ ⟧ )</answer>"
-                         , "  </fire>"
+                         , "  </evaluate>"
                          , "  <stuck λ=\"L_number_nope\"/>"
                          , "</protocol>"
                          ]
 
         -- A 'morph' operand 𝕄 answered the terminator for is neither data
-        -- nor an unknown, so it takes neither 'bytes' nor 'symbol' and says
+        -- nor an unknown, so it is a plain 'bind' taking no 'symbol' and says
         -- what it is by being ⊥ and nothing else
         it "writes the terminator as the term and takes no attribute" $
           withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
@@ -1431,10 +1458,10 @@ spec = do
             lines records
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                          , "<protocol judgment=\"𝕄\" of=\"Φ.x\">"
-                         , "  <fire λ=\"L_pick\" id=\"1\">"
+                         , "  <evaluate λ=\"L_pick\" id=\"1\">"
                          , "    <bind meta=\"𝑛1\">⊥</bind>"
                          , "    <answer symbol=\"𝜎1\">⟦ λ ⤍ 𝜎1 ⟧</answer>"
-                         , "  </fire>"
+                         , "  </evaluate>"
                          , "</protocol>"
                          ]
 
