@@ -75,10 +75,11 @@ dontSaveStep = saveStep Nothing "" (\_ -> pure "") 0
 -- itself opens it — '𝕄(Q.φ)' for a morphing, '𝔻(Q)' for a dataization — and
 -- under it stands one block per firing, '𝔼(L_number_plus)', naming the entry
 -- that answered. Inside a block stand the operands the entry bound — each with
--- the term it was reduced from — and the term it answered with, one to a line,
--- and any firing an operand took while it was being reduced, one level deeper
--- again. A name no entry answers stands
--- there as '?(L_number_nope)', where the block of its firing would have been.
+-- the term it was reduced from — whatever a 'symbolize' line of it knows about
+-- a symbol it minted, and the term it answered with, one to a line, and any
+-- firing an operand took while it was being reduced, one level deeper again. A
+-- name no entry answers stands there as '?(L_number_nope)', where the block of
+-- its firing would have been.
 data Evaluation
   = -- The run and the term it was aimed at.
     EvRun T.Text T.Text
@@ -95,9 +96,17 @@ data Evaluation
     -- wrote under that meta, and the data it came down to, or the symbol that
     -- data was manufactured for.
     EvData Int T.Text Expression (Either Int Bytes)
-  | -- A 'morph' operand of the firing: the meta it bound, the term the entry
-    -- wrote under that meta, and the normal form it reached.
+  | -- A 'morph' operand of the firing, or a 'symbolize' one: the meta it
+    -- bound, the term the entry wrote under that meta, and the normal form it
+    -- reached, which for a 'symbolize' line is that very normal form with the
+    -- data of it standing for unknowns.
     EvTerm Int T.Text Expression Expression
+  | -- What is known about a symbol a 'symbolize' line minted: dataizing the
+    -- formation the symbol names answers these bytes. It is a fact about the
+    -- symbol and no binding of it, since a 𝜎 is the name of a λ function and
+    -- neither a datum nor a term, so it stands on a line of its own rather
+    -- than beside a meta the firing bound (#1269).
+    EvKnown Int Int Bytes
   | -- What the firing answered with.
     EvAnswer Int Expression
 
@@ -186,17 +195,21 @@ saveEval handle cursor render salted report = do
     written (EvStuck depth key) protocol =
       pure (protocol, indented depth (printf "?(%s)" (T.unpack key)))
     written (EvData depth spelling operand value) protocol = do
-      line <- commented (printf "%s := %s" (labelled protocol depth spelling) (spelled value)) operand
+      datum <- spelled value
+      line <- commented (printf "%s := %s" (labelled protocol depth spelling) datum) operand
       pure (protocol, indented depth line)
       where
-        spelled :: Either Int Bytes -> String
-        spelled (Left symbol) = printf "𝔻(%s)" (printFunction (FnSymbol symbol))
-        spelled (Right bytes) = printBytes bytes
+        spelled :: Either Int Bytes -> IO String
+        spelled (Left symbol) = printf "𝔻(%s)" <$> render (standing symbol)
+        spelled (Right bytes) = pure (printBytes bytes)
     written (EvTerm depth spelling operand term) protocol = do
       let naming = labelled protocol depth spelling
       (protocol', value) <- valued protocol naming term
       line <- commented (printf "%s := %s" naming value) operand
       pure (protocol', indented depth line)
+    written (EvKnown depth symbol bytes) protocol = do
+      form <- render (standing symbol)
+      pure (protocol, indented depth (printf "𝔻(%s) == %s" form (printBytes bytes)))
     written (EvAnswer depth term) protocol = do
       let naming = printf "%s.%d" (T.unpack answer) (protocol._answered + 1)
       (protocol', value) <- valued protocol{_answered = protocol._answered + 1} naming term
@@ -221,6 +234,12 @@ saveEval handle cursor render salted report = do
     -- flattened like everything else, so the whole line stays one line of 𝜑.
     commented :: String -> Expression -> IO String
     commented line operand = printf "%s  # %s" line <$> salted operand
+    -- The formation a symbol names, which is what 𝔻 brought an operand down
+    -- to and what a 'symbolize' line knows the data of: a 𝜎 is the name of a
+    -- λ function and no term of its own, so 𝔻 is applied to the formation
+    -- carrying it and never to the name alone (#1269).
+    standing :: Int -> Expression
+    standing symbol = ExFormation [BiLambda (FnSymbol symbol)]
     -- The name of an operand meta on this firing of its λ function: the meta
     -- the entry spells it with and which firing of the run this is, since
     -- every entry numbers its own metas from 𝛿1 and 𝑛1 and only the firing
@@ -303,6 +322,12 @@ saveEvalXml handle cursor render report = do
       body <- render term
       let (kept, closers) = closed depth nesting._closing
       pure (nesting{_closing = kept}, closers ++ [indented depth (printf "<bind meta=\"%s\"%s>%s</bind>" (escapeXML (labelled nesting depth spelling)) (carried term) (escapeXMLText body))])
+    elements (EvKnown depth symbol bytes) nesting =
+      pure (nesting{_closing = kept}, closers ++ [indented depth known])
+      where
+        (kept, closers) = closed depth nesting._closing
+        known :: String
+        known = printf "<known symbol=\"%s\">%s</known>" (sigma symbol) (escapeXMLText (printBytes bytes))
     elements (EvAnswer depth term) nesting = do
       body <- render term
       let (kept, closers) = closed depth nesting._closing

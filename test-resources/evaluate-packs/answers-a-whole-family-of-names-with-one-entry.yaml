@@ -30,6 +30,6 @@ protocol: |
       𝛿2.1 := 40-18-00-00-00-00-00-00  # ξ.x
       𝑛.1 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧, ρ ↦ ⟦ bytes(φ) ↦ ⟦⟧, number(φ) ↦ ⟦ plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧ ⟧, φ ↦ 5.plus( 6 ).times( 7 ) ⟧ ⟧
     𝔼(L_number_times)
-      𝛿1.2 := 𝔻(𝜎1)  # ξ.ρ
+      𝛿1.2 := 𝔻(⟦ λ ⤍ 𝜎1 ⟧)  # ξ.ρ
       𝛿2.2 := 40-1C-00-00-00-00-00-00  # ξ.x
       𝑛.2 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧, ρ ↦ ⟦ bytes(φ) ↦ ⟦⟧, number(φ) ↦ ⟦ plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧ ⟧, φ ↦ 5.plus( 6 ).times( 7 ) ⟧ ⟧

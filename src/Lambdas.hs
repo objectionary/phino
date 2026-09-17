@@ -27,15 +27,23 @@
 -- under '𝑛' is what the firing answers with, and a bare 𝜎 in it mints a fresh
 -- symbol.
 --
+-- 'symbolize' is the third block and reduces nothing at all. It takes a term
+-- an earlier block of the very same entry has already bound and binds an
+-- expression meta of its own to that term with every datum in it standing for
+-- an unknown, so a normal form reached from a literal is written the way one
+-- reached from an unknown is written and the two of them compare as
+-- expressions (see 'symbolized').
+--
 -- An entry answers, it never computes: the job of these functions is symbolic
 -- morphing, so the answer carries a symbol standing for a value nobody worked
 -- out, and the data its 'dataize' operands came down to is not its to read.
 -- An answer mentioning a bytes meta is refused where the file is read.
 --
--- This module holds the entries and the two things reading one takes — the
--- lookup of a λ name and the minting of the symbols an answer asks for.
--- Firing an entry is 𝔼's business and lives in 'Morph', which alone holds the
--- judgments an entry reduces its operands with.
+-- This module holds the entries and the three things reading one takes — the
+-- lookup of a λ name, the minting of the symbols an answer asks for and the
+-- standing of the data of a term into unknowns. Firing an entry is 𝔼's
+-- business and lives in 'Morph', which alone holds the judgments an entry
+-- reduces its operands with.
 module Lambdas
   ( Lambda (..)
   , LambdaException (..)
@@ -45,6 +53,7 @@ module Lambdas
   , matched
   , minted
   , readLambdas
+  , symbolized
   , taken
   )
 where
@@ -80,11 +89,13 @@ data Meta = Meta
 
 -- One λ function phino may fire, as the file spells it: the key it is
 -- registered under, the operands it brings down to data, the operands it
--- reduces to a normal form and the term it answers with.
+-- reduces to a normal form, the terms of those it stands the data of into
+-- unknowns and the term it answers with.
 data Lambda = Lambda
   { _key :: Text
   , _dataized :: [(Meta, Expression)]
   , _morphed :: [(Meta, Expression)]
+  , _symbolized :: [(Meta, Expression)]
   , _answer :: Expression
   }
 
@@ -111,9 +122,11 @@ instance FromJSON Lambda where
       Lambda key
         <$> operands key bytesMeta entry "dataize"
         <*> operands key expressionMeta entry "morph"
+        <*> operands key expressionMeta entry "symbolize"
         <*> entry .: "𝑛"
     sigmas (T.unpack key) lambda._answer
     dataless (T.unpack key) lambda._answer
+    earlier (T.unpack key) lambda
     pure lambda
     where
       -- The metas one block of an entry binds, each paired with the term it is
@@ -142,6 +155,25 @@ instance FromJSON Lambda where
       bytesMeta meta = case parseBytes (T.unpack meta) of
         Right (BtMeta name) -> pure (Meta meta name)
         _ -> fail (printf "The operand '%s' is not a bytes meta, such as '𝛿1'" (T.unpack meta))
+      -- Every 'symbolize' line stands a term the entry has bound already: a
+      -- 'morph' operand, or a line above it in the very same block, since
+      -- nothing else of an entry is a normal form yet. A line naming anything
+      -- else names a term nobody reduced, and the file is wrong where it is
+      -- read rather than half-way through a firing.
+      earlier :: String -> Lambda -> Yaml.Parser ()
+      earlier key lambda = go (map (_name . fst) lambda._morphed) lambda._symbolized
+        where
+          go :: [Text] -> [(Meta, Expression)] -> Yaml.Parser ()
+          go _ [] = pure ()
+          go reduced ((meta, term) : rest) = case term of
+            ExMeta name | name `elem` reduced -> go (meta._name : reduced) rest
+            _ ->
+              fail
+                ( printf
+                    "The operand '%s' of λ function '%s' names no meta bound by 'morph' or by a 'symbolize' line above it"
+                    (T.unpack meta._spelling)
+                    key
+                )
       -- A bare 𝜎 is the one anonymous meta an answer may carry, since minting
       -- a fresh symbol is exactly what it asks for; every other one names a
       -- match the entry never made.
@@ -237,6 +269,81 @@ minted answer spent = (zip fresh [FnSymbol idx | idx <- [spent + 1 ..]], spent +
   where
     fresh :: [Slot]
     fresh = [slot | slot@(Slot kind _) <- slots answer, kind == "S"]
+
+-- What a walk standing the data of a term into unknowns carries from one
+-- sub-term to the next: how many symbols the run has minted once everything
+-- left of this sub-term is standing, and what is known about each symbol
+-- minted along the way, the last of them first.
+type Minting = (Int, [(Int, Bytes)])
+
+-- The term with every datum of it standing for an unknown instead: each
+-- 'Δ ⤍ b' binding becomes a 'λ ⤍ 𝜎k' naming a fresh symbol, one per
+-- occurrence, so '⟦ Δ ⤍ b ⟧' reads as '⟦ λ ⤍ 𝜎k ⟧' and a normal form
+-- reached from a literal is written the way one reached from an unknown is
+-- written, the two of them comparing as expressions. It is the binding and not
+-- the formation around it that changes, since a datum carries a ρ of its own
+-- and so does the unknown it is put beside. A term nobody worked a value out
+-- in passes through unchanged.
+--
+-- What a ρ carries is left alone, the whole subtree of it: a term carries the
+-- value it stands for where its φ chain ends, and a datum sitting under ρ
+-- belongs to the object around this one and says nothing about it (see
+-- 'denoted'). A normal form drags the universe it was reduced inside along
+-- under ρ, so a walk reaching into it would stand the data of the whole
+-- program into unknowns to say one thing about one term.
+--
+-- What is known about each fresh symbol comes back beside the term: the data
+-- dataizing the formation it names answers. That is a fact about the symbol
+-- and no binding of it — a 𝜎 is the name of a λ function, neither a datum
+-- nor a term — which is why it travels apart from the term rather than inside
+-- it. The count of symbols the run has minted once they are taken comes back
+-- too, uniqueness being the state's job here exactly as it is in 'minted'.
+symbolized :: Expression -> Int -> (Expression, [(Int, Bytes)], Int)
+symbolized term spent = case goExpr term (spent, []) of
+  (masked, (spent', known)) -> (masked, reverse known, spent')
+  where
+    goExpr :: Expression -> Minting -> (Expression, Minting)
+    goExpr (ExFormation bds) minting =
+      let (bds', minting') = goBindings bds minting
+       in (ExFormation bds', minting')
+    goExpr (ExApplication expr arg) minting =
+      let (expr', minting') = goExpr expr minting
+          (arg', minting'') = goArgument arg minting'
+       in (ExApplication expr' arg', minting'')
+    goExpr (ExDispatch expr attr) minting =
+      let (expr', minting') = goExpr expr minting
+       in (ExDispatch expr' attr, minting')
+    goExpr (ExPhiMeet prefix idx expr) minting =
+      let (expr', minting') = goExpr expr minting
+       in (ExPhiMeet prefix idx expr', minting')
+    goExpr (ExPhiAgain prefix idx expr) minting =
+      let (expr', minting') = goExpr expr minting
+       in (ExPhiAgain prefix idx expr', minting')
+    goExpr expr minting = (expr, minting)
+    goBindings :: [Binding] -> Minting -> ([Binding], Minting)
+    goBindings [] minting = ([], minting)
+    goBindings (bd : rest) minting =
+      let (bd', minting') = goBinding bd minting
+          (rest', minting'') = goBindings rest minting'
+       in (bd' : rest', minting'')
+    goBinding :: Binding -> Minting -> (Binding, Minting)
+    goBinding bd@(BiTau AtRho _) minting = (bd, minting)
+    goBinding (BiDelta bts) (spent', known) =
+      (BiLambda (FnSymbol fresh), (fresh, (fresh, bts) : known))
+      where
+        fresh :: Int
+        fresh = spent' + 1
+    goBinding (BiTau attr expr) minting =
+      let (expr', minting') = goExpr expr minting
+       in (BiTau attr expr', minting')
+    goBinding bd minting = (bd, minting)
+    goArgument :: Argument -> Minting -> (Argument, Minting)
+    goArgument (ArTau attr expr) minting =
+      let (expr', minting') = goExpr expr minting
+       in (ArTau attr expr', minting')
+    goArgument (ArAlpha alpha expr) minting =
+      let (expr', minting') = goExpr expr minting
+       in (ArAlpha alpha expr', minting')
 
 -- The last symbol a program already carries, which is where minting starts: a
 -- program written by an earlier run holds symbols of its own, and a fresh one

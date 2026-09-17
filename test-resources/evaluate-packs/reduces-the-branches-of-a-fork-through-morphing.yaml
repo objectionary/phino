@@ -49,7 +49,7 @@ protocol: |
       𝛿2.3 := 40-10-00-00-00-00-00-00  # ξ.x
       𝑛.3 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎3 ⟧, gt(x) ↦ ⟦ λ ⤍ L_number_gt ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, ρ ↦ ⟦ bytes(φ) ↦ ⟦⟧, bool(φ) ↦ ⟦ if(then, else) ↦ ⟦ λ ⤍ L_fork ⟧ ⟧, number(φ) ↦ ⟦ gt(x) ↦ ⟦ λ ⤍ L_number_gt ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧, φ ↦ 5.gt( 0 ).if( 1.plus( 2 ), 3.plus( 4 ) ) ⟧ ⟧
     𝔼(L_fork)
-      𝛿1.4 := 𝔻(𝜎1)  # ξ.ρ
+      𝛿1.4 := 𝔻(⟦ λ ⤍ 𝜎1 ⟧)  # ξ.ρ
       𝑛1.4 := 𝑛.2  # ξ.then
       𝑛2.4 := 𝑛.3  # ξ.else
       𝑛.4 := 𝑛1.4

@@ -24,5 +24,5 @@ protocol: |
         𝛿1.2 := 40-18-00-00-00-00-00-00  # ξ.ρ
         𝛿2.2 := 40-1C-00-00-00-00-00-00  # ξ.x
         𝑛.1 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, ρ ↦ ⟦ a🌵1 ↦ 6.plus( α0 ↦ 7, ρ ↦ ⟦ x ↦ 6.plus( 7 ), ρ ↦ ⟦ φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 40-14-00-00-00-00-00-00 ⟧ ), plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, ρ ↦ ⟦ bytes(φ) ↦ ⟦⟧, number(φ) ↦ ⟦ plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧, φ ↦ 5.plus( 6.plus( 7 ) ).plus( 8 ) ⟧ ⟧ ⟧ ), bytes(φ) ↦ ⟦⟧, number(φ) ↦ ⟦ plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧, φ ↦ 5.plus( 6.plus( 7 ) ).plus( 8 ) ⟧ ⟧
-      𝛿2.1 := 𝔻(𝜎1)  # ξ.x
+      𝛿2.1 := 𝔻(⟦ λ ⤍ 𝜎1 ⟧)  # ξ.x
       𝑛.2 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, ρ ↦ ⟦ bytes(φ) ↦ ⟦⟧, number(φ) ↦ ⟦ plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧, φ ↦ 5.plus( 6.plus( 7 ) ).plus( 8 ) ⟧ ⟧

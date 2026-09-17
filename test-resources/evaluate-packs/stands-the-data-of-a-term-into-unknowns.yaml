@@ -1,0 +1,32 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# A 'symbolize' line reduces nothing: it stands the data of a term another line
+# of the entry has already bound into unknowns, so a normal form reached from a
+# literal is written the way one reached from an unknown is written and the two
+# of them compare as expressions. Here 𝑛1 came from a literal and 𝑛2 from a
+# value nobody worked out: after the stage both of them carry ⟦ λ ⤍ 𝜎 ⟧ where
+# they differ. What is known about each fresh symbol stands on a line of its
+# own, since a 𝜎 is the name of a λ function and nothing binds bytes to it, and
+# a term that carried no datum at all passes through as it was.
+symbolic: |
+  - λ: L_join
+    morph:
+      𝑛1: $.a
+      𝑛2: $.b
+    symbolize:
+      𝑛3: 𝑛1
+      𝑛4: 𝑛2
+    𝑛: ⟦ l ↦ 𝑛3 ⟧
+location: 'Q.y'
+input: '⟦ y ↦ ⟦ a ↦ ⟦ Δ ⤍ 01- ⟧, b ↦ ⟦ λ ⤍ 𝜎7 ⟧, λ ⤍ L_join ⟧.l ⟧'
+result: '⟦ λ ⤍ 𝜎8, ρ ↦ ⟦ a ↦ ⟦ Δ ⤍ 01- ⟧, b ↦ ⟦ λ ⤍ 𝜎7 ⟧ ⟧ ⟧'
+protocol: |
+  𝕄(Φ.y)
+    𝔼(L_join)
+      𝑛1.1 := ⟦ Δ ⤍ 01-, ρ ↦ ⟦ a ↦ ⟦ Δ ⤍ 01- ⟧, b ↦ ⟦ λ ⤍ 𝜎7 ⟧ ⟧ ⟧  # ξ.a
+      𝑛2.1 := ⟦ λ ⤍ 𝜎7, ρ ↦ ⟦ a ↦ ⟦ Δ ⤍ 01- ⟧, b ↦ ⟦ λ ⤍ 𝜎7 ⟧ ⟧ ⟧  # ξ.b
+      𝔻(⟦ λ ⤍ 𝜎8 ⟧) == 01-
+      𝑛3.1 := ⟦ λ ⤍ 𝜎8, ρ ↦ ⟦ a ↦ ⟦ Δ ⤍ 01- ⟧, b ↦ ⟦ λ ⤍ 𝜎7 ⟧ ⟧ ⟧  # 𝑛1
+      𝑛4.1 := 𝑛2.1  # 𝑛2
+      𝑛.1 := ⟦ l ↦ ⟦ λ ⤍ 𝜎8, ρ ↦ ⟦ a ↦ ⟦ Δ ⤍ 01- ⟧, b ↦ ⟦ λ ⤍ 𝜎7 ⟧ ⟧ ⟧ ⟧

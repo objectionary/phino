@@ -12,7 +12,7 @@ import Control.Monad (forM_)
 import Data.List (isInfixOf)
 import Data.Text qualified as T
 import Fixtures (withLambdasOf)
-import Lambdas (Lambda (..), Lambdas, Meta (..), emptyLambdas, matched, minted, readLambdas, taken)
+import Lambdas (Lambda (..), Lambdas, Meta (..), emptyLambdas, matched, minted, readLambdas, symbolized, taken)
 import Parser (parseExpressionThrows)
 import Test.Hspec
 
@@ -71,6 +71,17 @@ spec = do
       known <- lambdasOf "- λ: L_fork\n  morph:\n    𝑛1: $.then\n    𝑛2: $.else\n  𝑛: 𝑛1\n"
       map (_spelling . fst) (maybe [] _morphed (matched known "L_fork")) `shouldBe` ["𝑛1", "𝑛2"]
 
+    it "reads the operands of 'symbolize' under expression metas" $ do
+      known <- lambdasOf "- λ: L_fork\n  morph:\n    𝑛1: $.then\n  symbolize:\n    𝑛2: 𝑛1\n  𝑛: 𝑛2\n"
+      map (_spelling . fst) (maybe [] _symbolized (matched known "L_fork")) `shouldBe` ["𝑛2"]
+
+    -- A line of 'symbolize' stands data into unknowns, and the term it stands
+    -- may already be one a line above it made, so the block reads top to
+    -- bottom the way the metas number it
+    it "reads a 'symbolize' line standing the term the line above it made" $ do
+      known <- lambdasOf "- λ: L_fork\n  morph:\n    𝑛1: $.then\n  symbolize:\n    𝑛2: 𝑛1\n    𝑛3: 𝑛2\n  𝑛: 𝑛3\n"
+      map (_spelling . fst) (maybe [] _symbolized (matched known "L_fork")) `shouldBe` ["𝑛2", "𝑛3"]
+
     it "reads the term an operand is reduced from" $ do
       known <- lambdasOf "- λ: L_pair\n  dataize:\n    𝛿1: $.x\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n"
       operand <- parseExpressionThrows "$.x"
@@ -96,6 +107,10 @@ spec = do
       , ("a key which is no regular expression", entry "L_[pair", "is not a regular expression")
       , ("an operand of 'dataize' which is no bytes meta", "- λ: L_pair\n  dataize:\n    𝑛1: $.x\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n", "is not a bytes meta")
       , ("an operand of 'morph' which is no expression meta", "- λ: L_pair\n  morph:\n    𝛿1: $.x\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n", "is not an expression meta")
+      , ("an operand of 'symbolize' which is no expression meta", "- λ: L_pair\n  morph:\n    𝑛1: $.x\n  symbolize:\n    𝛿1: 𝑛1\n  𝑛: 𝑛1\n", "is not an expression meta")
+      , ("an operand of 'symbolize' the entry never bound", "- λ: L_pair\n  symbolize:\n    𝑛2: 𝑛1\n  𝑛: 𝑛2\n", "names no meta")
+      , ("an operand of 'symbolize' which is no meta at all", "- λ: L_pair\n  morph:\n    𝑛1: $.x\n  symbolize:\n    𝑛2: $.x\n  𝑛: 𝑛2\n", "names no meta")
+      , ("an operand of 'symbolize' standing the term of a line below it", "- λ: L_pair\n  morph:\n    𝑛1: $.x\n  symbolize:\n    𝑛2: 𝑛3\n    𝑛3: 𝑛1\n  𝑛: 𝑛2\n", "names no meta")
       , ("an operand referencing a meta the entry never matched", "- λ: L_pair\n  dataize:\n    𝛿1: '!n'\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n", "cannot be referenced")
       , ("an answer reading the data its operands came down to", "- λ: L_pair\n  dataize:\n    𝛿1: $.ρ\n  𝑛: ⟦ Δ ⤍ 𝛿1 ⟧\n", "reads data")
       , ("an answer carrying an anonymous meta of another kind", "- λ: L_pair\n  𝑛: '⟦ φ ↦ !n ⟧'\n", "cannot be referenced")
@@ -132,6 +147,70 @@ spec = do
     it "mints nothing for an answer carrying no symbol at all" $ do
       answer <- parseExpressionThrows "⟦ Δ ⤍ 00- ⟧"
       snd (minted answer 4) `shouldBe` 4
+
+  -- A datum a term carries is a value somebody worked out, and a normal form
+  -- reached from an unknown carries none, so the two compare as expressions
+  -- only once the data of the one are unknowns too. Standing them is what a
+  -- 'symbolize' line of an entry asks for.
+  describe "symbolized" $ do
+    it "stands every datum of a term into an unknown" $ do
+      term <- parseExpressionThrows "⟦ a ↦ ⟦ Δ ⤍ 00- ⟧, b ↦ ⟦ Δ ⤍ FF- ⟧ ⟧"
+      unknown <- parseExpressionThrows "⟦ a ↦ ⟦ λ ⤍ 𝜎5 ⟧, b ↦ ⟦ λ ⤍ 𝜎6 ⟧ ⟧"
+      let (masked, _, _) = symbolized term 4
+      masked `shouldBe` unknown
+
+    -- A 𝜎 is the name of a λ function and no term, so the bytes are not bound
+    -- to it: what is known is that dataizing the formation it names answers
+    -- them
+    it "tells the data every symbol it minted stands for" $ do
+      term <- parseExpressionThrows "⟦ a ↦ ⟦ Δ ⤍ 00- ⟧, b ↦ ⟦ Δ ⤍ FF- ⟧ ⟧"
+      let (_, known, _) = symbolized term 4
+      known `shouldBe` [(5, BtOne "00"), (6, BtOne "FF")]
+
+    it "counts every symbol it minted into the state" $ do
+      term <- parseExpressionThrows "⟦ a ↦ ⟦ Δ ⤍ 00- ⟧, b ↦ ⟦ Δ ⤍ FF- ⟧ ⟧"
+      let (_, _, spent) = symbolized term 4
+      spent `shouldBe` 6
+
+    -- A term nobody worked a value out in is an unknown already, and standing
+    -- it changes nothing
+    it "leaves a term carrying no datum as it was written" $ do
+      term <- parseExpressionThrows "Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )"
+      let (masked, _, _) = symbolized term 4
+      masked `shouldBe` term
+
+    -- A literal is sugar for a datum sitting three levels down inside a
+    -- formation, which is the very place a computed value keeps its unknown
+    it "stands a datum standing as the argument of an application" $ do
+      term <- parseExpressionThrows "Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 00- ⟧ ) )"
+      unknown <- parseExpressionThrows "Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ λ ⤍ 𝜎5 ⟧ ) )"
+      let (masked, _, _) = symbolized term 4
+      masked `shouldBe` unknown
+
+    -- It is the Δ binding that becomes an unknown and not the formation around
+    -- it, since a datum carries a ρ of its own and so does the unknown it is
+    -- put beside
+    it "keeps what the formation of a datum carries besides the datum" $ do
+      term <- parseExpressionThrows "⟦ Δ ⤍ 00-, ρ ↦ ⟦⟧ ⟧"
+      unknown <- parseExpressionThrows "⟦ λ ⤍ 𝜎5, ρ ↦ ⟦⟧ ⟧"
+      let (masked, _, _) = symbolized term 4
+      masked `shouldBe` unknown
+
+    -- A term carries the value it stands for where its φ chain ends, and a
+    -- datum sitting under ρ belongs to the object around this one: a normal
+    -- form drags the whole universe it was reduced inside along under ρ, so a
+    -- walk reaching into it would stand the data of the whole program into
+    -- unknowns to say one thing about one term
+    it "leaves the data a ρ carries alone" $ do
+      term <- parseExpressionThrows "⟦ φ ↦ ⟦ Δ ⤍ 00- ⟧, ρ ↦ ⟦ x ↦ ⟦ Δ ⤍ FF- ⟧ ⟧ ⟧"
+      unknown <- parseExpressionThrows "⟦ φ ↦ ⟦ λ ⤍ 𝜎5 ⟧, ρ ↦ ⟦ x ↦ ⟦ Δ ⤍ FF- ⟧ ⟧ ⟧"
+      let (masked, _, _) = symbolized term 4
+      masked `shouldBe` unknown
+
+    it "mints nothing for a term carrying no datum at all" $ do
+      term <- parseExpressionThrows "Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )"
+      let (_, _, spent) = symbolized term 4
+      spent `shouldBe` 4
 
   -- A program written by an earlier run holds symbols of its own, and a fresh
   -- one must never be spelled like one of them
