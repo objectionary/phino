@@ -64,11 +64,15 @@ instance ToASCII PAIR where
   toASCII PA_FORMATION{..} = PA_FORMATION (toASCII attr) (map toASCII voids) ARROW' (toASCII expr)
   toASCII PA_VOID{..} = PA_VOID (toASCII attr) ARROW' QUESTION
   toASCII PA_LAMBDA{..} = PA_LAMBDA' func
-  toASCII PA_DELTA{..} = PA_DELTA' bytes
+  toASCII PA_DELTA{..} = PA_DELTA' (toASCII bytes)
   toASCII PA_META_LAMBDA{meta = META{hd = S, ..}} = PA_META_LAMBDA' (META EXCL S' rest)
   toASCII PA_META_LAMBDA{meta = META{..}} = PA_META_LAMBDA' (META EXCL F' rest)
-  toASCII PA_META_DELTA{..} = PA_META_DELTA' (META EXCL D' (rest meta))
+  toASCII PA_META_DELTA{..} = PA_META_DELTA' (META EXCL D'' (rest meta))
   toASCII pair = pair
+
+instance ToASCII BYTES where
+  toASCII (BT_META meta) = BT_META (META EXCL D'' (rest meta))
+  toASCII bts = bts
 
 instance ToASCII ALPHA where
   toASCII AL_IDX{..} = AL_IDX ALPHA' idx
@@ -112,7 +116,7 @@ instance ToASCII EXTRA_ARG where
   toASCII ARG_ATTR{..} = ARG_ATTR (toASCII attr)
   toASCII ARG_EXPR{..} = ARG_EXPR (toASCII expr)
   toASCII ARG_BINDING{..} = ARG_BINDING (toASCII binding)
-  toASCII bts@ARG_BYTES{} = bts
+  toASCII ARG_BYTES{..} = ARG_BYTES (toASCII bytes)
 
 instance ToASCII EXTRA where
   toASCII EXTRA{..} = EXTRA (toASCII meta) func (map toASCII args)

@@ -178,12 +178,25 @@ spec = do
         , PA_META_LAMBDA' (META EXCL F' "fn")
         )
       ,
-        ( "PA_META_DELTA becomes PA_META_DELTA' with head D'"
+        ( "PA_DELTA recurses into its bytes, forcing a meta head to D''"
+        , toASCII (PA_DELTA (BT_META (META NO_EXCL D "0")))
+        , PA_DELTA' (BT_META (META EXCL D'' "0"))
+        )
+      ,
+        ( "PA_META_DELTA becomes PA_META_DELTA' with head D''"
         , toASCII (PA_META_DELTA (META NO_EXCL D "dl"))
-        , PA_META_DELTA' (META EXCL D' "dl")
+        , PA_META_DELTA' (META EXCL D'' "dl")
         )
       , ("leaves an already-ASCII PA_LAMBDA' untouched", toASCII (PA_LAMBDA' "Func"), PA_LAMBDA' "Func")
       , ("leaves an already-ASCII PA_DELTA' untouched", toASCII (PA_DELTA' BT_EMPTY), PA_DELTA' BT_EMPTY)
+      ]
+      (\(desc, actual, expected) -> it desc (actual `shouldBe` expected))
+
+  describe "toASCII on BYTES" $
+    forM_
+      [ ("BT_META forces the head to D''", toASCII (BT_META (META NO_EXCL D "ψ")), BT_META (META EXCL D'' "ψ"))
+      , ("leaves BT_MANY untouched", toASCII (BT_MANY ["00", "FF"]), BT_MANY ["00", "FF"])
+      , ("leaves BT_EMPTY untouched", toASCII BT_EMPTY, BT_EMPTY)
       ]
       (\(desc, actual, expected) -> it desc (actual `shouldBe` expected))
 
@@ -274,7 +287,12 @@ spec = do
       [ ("recurses through ARG_ATTR", toASCII (ARG_ATTR (AT_PHI PHI)), ARG_ATTR (AT_PHI AT))
       , ("recurses through ARG_EXPR", toASCII (ARG_EXPR leafExpr), ARG_EXPR leafExprASCII)
       , ("recurses through ARG_BINDING", toASCII (ARG_BINDING biPair), ARG_BINDING biPairASCII)
-      , ("leaves ARG_BYTES untouched", toASCII (ARG_BYTES BT_EMPTY), ARG_BYTES BT_EMPTY)
+      , ("leaves ARG_BYTES without a meta untouched", toASCII (ARG_BYTES BT_EMPTY), ARG_BYTES BT_EMPTY)
+      ,
+        ( "recurses through ARG_BYTES, forcing a meta head to D''"
+        , toASCII (ARG_BYTES (BT_META (META NO_EXCL D "bts")))
+        , ARG_BYTES (BT_META (META EXCL D'' "bts"))
+        )
       ]
       (\(desc, actual, expected) -> it desc (actual `shouldBe` expected))
 

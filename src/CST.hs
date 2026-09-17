@@ -94,6 +94,7 @@ data META_HEAD
   | B' -- B
   | D -- 𝛿
   | D' -- \delta
+  | D'' -- d
   | F -- 𝑓
   | F' -- F
   | S -- 𝜎

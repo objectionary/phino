@@ -62,6 +62,15 @@ spec = do
           it desc (printExpression' expr (SWEET, ASCII, SINGLELINE, defaultMargin) `shouldBe` expected)
       )
 
+  describe "printExpression with ASCII reads a bytes meta back" $
+    forM_
+      [("d0", "d0"), ("d_Z-9", "d_Z-9"), ("dbytes", "dbytes")]
+      ( \(desc, name) ->
+          it desc $ do
+            let expr = ExFormation [BiDelta (BtMeta name), BiVoid AtRho]
+            parseExpression (printExpression' expr (SWEET, ASCII, SINGLELINE, defaultMargin)) `shouldBe` Right expr
+      )
+
   describe "printExpression with SWEET UNICODE renders the pretty function meta" $
     it "meta lambda becomes 𝑓" $
       printExpression' (ExFormation [BiLambda (FnMeta "F")]) (SWEET, UNICODE, SINGLELINE, defaultMargin) `shouldBe` "⟦ λ ⤍ 𝑓 ⟧"
