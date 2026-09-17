@@ -107,6 +107,11 @@ data Evaluation
     -- neither a datum nor a term, so it stands on a line of its own rather
     -- than beside a meta the firing bound (#1269).
     EvKnown Int Int Bytes
+  | -- A fresh symbol the answer of the firing asked for, one record per bare 𝜎
+    -- the entry wrote it with. It is a fact about the firing and no property of
+    -- any one term of it, since an answer may carry several symbols or none and
+    -- no single one of them stands for the whole of it (#1280).
+    EvMinted Int Int
   | -- What the firing answered with.
     EvAnswer Int Expression
 
@@ -157,47 +162,61 @@ data Nesting = Nesting
 emptyNesting :: Nesting
 emptyNesting = Nesting 0 Map.empty 0 []
 
--- Append one line to the protocol, indented by the depth of what it reports
--- and numbered by what the protocol has seen before it. The handle stays open
--- for the whole run, since a run may fire thousands of λ functions and
--- reopening the file for each of them buys nothing; the counting rides in an
--- 'IORef' next to it, since it is the cursor of the file and not a property of
--- the reduction. Expressions are rendered by the caller, which flattens them,
--- so a line never spills over more than one. There are two renderers and not
--- one because the operand a line is commented with is spelled salty while the
--- value it took is spelled the way the run prints its own answer: the sweet
--- syntax drops the ξ of 'ξ.x' and leaves a bare 'x', which is the very thing
--- the comment is there to say (see 'commented').
+-- Append the line of one record to the protocol, indented by the depth of what
+-- it reports and numbered by what the protocol has seen before it. The handle
+-- stays open for the whole run, since a run may fire thousands of λ functions
+-- and reopening the file for each of them buys nothing; the counting rides in
+-- an 'IORef' next to it, since it is the cursor of the file and not a property
+-- of the reduction. Expressions are rendered by the caller, which flattens
+-- them, so a line never spills over more than one. There are two renderers and
+-- not one because the operand a line is commented with is spelled salty while
+-- the value it took is spelled the way the run prints its own answer: the
+-- sweet syntax drops the ξ of 'ξ.x' and leaves a bare 'x', which is the very
+-- thing the comment is there to say (see 'commented').
 saveEval :: Handle -> IORef Protocol -> (Expression -> IO String) -> (Expression -> IO String) -> SaveEvalFunc
 saveEval handle cursor render salted report = do
   line <- atomicModify cursor (written report)
-  hPutStrLn handle line
-  logDebug (printf "Saved one line of the protocol: %s" (dropWhile (== ' ') line))
+  mapM_ saved line
   where
-    -- The line a report is written as, together with what the protocol has
-    -- counted once it is written. A term is looked up by the first symbol it
-    -- carries and, where that symbol has a name already, written as that name;
-    -- otherwise it is written out and the symbol takes the name of this line.
-    written :: Evaluation -> Protocol -> IO (Protocol, String)
+    -- Put one line of the protocol on the disk and say in the log what went
+    -- there, the indentation of it dropped, since the log is a list of what
+    -- happened and no tree.
+    saved :: String -> IO ()
+    saved line = do
+      hPutStrLn handle line
+      logDebug (printf "Saved one line of the protocol: %s" (dropWhile (== ' ') line))
+    -- The line a report is written as, where it is written as one, together
+    -- with what the protocol has counted once it is written. A term is looked
+    -- up by the first symbol it carries and, where that symbol has a name
+    -- already, written as that name; otherwise it is written out and the
+    -- symbol takes the name of this line.
+    --
+    -- A symbol the answer of a firing minted is the one record this format
+    -- keeps no line for: the answer stands spelled out on the line of it,
+    -- symbols and all, so a reader ties a later 𝔻(⟦ λ ⤍ 𝜎4 ⟧) back to the
+    -- firing that minted 𝜎4 by reading the very term it answered with. Only
+    -- the markup, where a term is text and not a thing to be read, spells the
+    -- fact out (#1280).
+    written :: Evaluation -> Protocol -> IO (Protocol, Maybe String)
     written (EvRun judgment locator) protocol =
-      pure (protocol, printf "%s(%s)" (T.unpack judgment) (T.unpack locator))
+      pure (protocol, Just (printf "%s(%s)" (T.unpack judgment) (T.unpack locator)))
     written (EvFiring depth key) protocol =
       pure
         ( protocol
             { _fired = firings
             , _open = Map.insert depth firings protocol._open
             }
-        , indented depth (printf "𝔼(%s)" (T.unpack key))
+        , Just (indented depth (printf "𝔼(%s)" (T.unpack key)))
         )
       where
         firings :: Int
         firings = protocol._fired + 1
     written (EvStuck depth key) protocol =
-      pure (protocol, indented depth (printf "?(%s)" (T.unpack key)))
+      pure (protocol, Just (indented depth (printf "?(%s)" (T.unpack key))))
     written (EvData depth spelling operand value) protocol = do
       datum <- spelled value
       line <- commented (printf "%s := %s" (labelled protocol depth spelling) datum) operand
-      pure (protocol, indented depth line)
+      pure (protocol, Just (indented depth line))
       where
         spelled :: Either Int Bytes -> IO String
         spelled (Left symbol) = printf "𝔻(%s)" <$> render (standing symbol)
@@ -206,14 +225,15 @@ saveEval handle cursor render salted report = do
       let naming = labelled protocol depth spelling
       (protocol', value) <- valued protocol naming term
       line <- commented (printf "%s := %s" naming value) operand
-      pure (protocol', indented depth line)
+      pure (protocol', Just (indented depth line))
     written (EvKnown depth symbol bytes) protocol = do
       form <- render (standing symbol)
-      pure (protocol, indented depth (printf "𝔻(%s) == %s" form (printBytes bytes)))
+      pure (protocol, Just (indented depth (printf "𝔻(%s) == %s" form (printBytes bytes))))
+    written (EvMinted _ _) protocol = pure (protocol, Nothing)
     written (EvAnswer depth term) protocol = do
       let naming = printf "%s.%d" (T.unpack answer) (protocol._answered + 1)
       (protocol', value) <- valued protocol{_answered = protocol._answered + 1} naming term
-      pure (protocol', indented depth (printf "%s := %s" naming value))
+      pure (protocol', Just (indented depth (printf "%s := %s" naming value)))
     -- The value of a term, next to the name this line gives it: the name the
     -- symbol it carries already has, where it has one, and the term itself
     -- otherwise. Either way the symbol takes the name of this line, so the
@@ -249,15 +269,15 @@ saveEval handle cursor render salted report = do
 -- The same protocol as XML, which is what '--protocol' writes when the file it
 -- names ends in '.xml' (see 'withEvalFunc'). It carries the very facts the text
 -- format carries and carries them as markup rather than as a 𝜑-term a reader
--- would have to parse back: the name of an element says what its record is,
--- the symbol a term stands for stands in 'symbol', and the value the record
--- carries stands as the text of the element, so the edge from the line that
--- minted an unknown to the line that consumed it is read off the markup
--- instead of off the spelling of a term (#1245, #1257). Where the text format
--- names an earlier line, this one repeats that line's symbol, since the symbol
--- is what the two lines share and a name is only how the text format spells
--- it. The term itself stays as the text of the element, for a reader and not
--- for a program.
+-- would have to parse back: the name of an element says what its record is and
+-- the value the record carries stands as the text of the element, so the edge
+-- from the firing that minted an unknown to the record that consumed it is read
+-- off the markup instead of off the spelling of a term (#1245, #1257). That
+-- edge is what 'minted' carries: a firing hands out one symbol per bare 𝜎 of
+-- its answer and each of them stands in a record of its own, the way what is
+-- known about a symbol does, since no one symbol of a term stands for the whole
+-- of it and picking one would say nothing (#1280). The term itself stays as the
+-- text of the element, for a reader and not for a program.
 --
 -- Nothing is buffered: an element is written the moment its record arrives,
 -- and the ones it closes are written just before it, so a run firing thousands
@@ -320,19 +340,23 @@ saveEvalXml handle cursor render report = do
     elements (EvTerm depth spelling _ term) nesting = do
       body <- render term
       let (kept, closers) = closed depth nesting._closing
-      pure (nesting{_closing = kept}, closers ++ [indented depth (printf "<bind meta=\"%s\"%s>%s</bind>" (escapeXML (labelled nesting depth spelling)) (carried term) (escapeXMLText body))])
+      pure (nesting{_closing = kept}, closers ++ [indented depth (printf "<bind meta=\"%s\">%s</bind>" (escapeXML (labelled nesting depth spelling)) (escapeXMLText body))])
     elements (EvKnown depth symbol bytes) nesting =
       pure (nesting{_closing = kept}, closers ++ [indented depth known])
       where
         (kept, closers) = closed depth nesting._closing
         known :: String
         known = printf "<known symbol=\"%s\">%s</known>" (sigma symbol) (escapeXMLText (printBytes bytes))
+    elements (EvMinted depth symbol) nesting =
+      pure (nesting{_closing = kept}, closers ++ [indented depth (printf "<minted>%s</minted>" (sigma symbol))])
+      where
+        (kept, closers) = closed depth nesting._closing
     elements (EvAnswer depth term) nesting = do
       body <- render term
       let (kept, closers) = closed depth nesting._closing
           naming :: String
           naming = printf "%s.%d" (T.unpack answer) (nesting._answers + 1)
-      pure (nesting{_closing = kept, _answers = nesting._answers + 1}, closers ++ [indented depth (printf "<answer meta=\"%s\"%s>%s</answer>" (escapeXML naming) (carried term) (escapeXMLText body))])
+      pure (nesting{_closing = kept, _answers = nesting._answers + 1}, closers ++ [indented depth (printf "<answer meta=\"%s\">%s</answer>" (escapeXML naming) (escapeXMLText body))])
     -- The name of an operand meta on this firing, spelled the way the text
     -- protocol's own 'labelled' spells it: the meta the entry names it with
     -- in the YAML, followed by which firing of the whole run this is, the
@@ -343,14 +367,9 @@ saveEvalXml handle cursor render report = do
     labelled :: Nesting -> Int -> T.Text -> String
     labelled nesting depth spelling =
       printf "%s.%d" (T.unpack spelling) (fromMaybe 0 (Map.lookup (depth - 1) nesting._openedAt))
-    -- The unknown a term stands for, where it carries one. A term standing for
-    -- nothing takes no attribute at all, the terminator ⊥ included, since it is
-    -- itself and its own text already says so.
-    carried :: Expression -> String
-    carried term = maybe "" (printf " symbol=\"%s\"" . sigma) (denoted term)
     -- The name of a symbol, spelled the way every term carrying it is spelled,
-    -- so a reader joining an attribute to a term compares two strings that
-    -- look alike instead of a number against a name.
+    -- so a reader joining a record to a term compares two strings that look
+    -- alike instead of a number against a name.
     sigma :: Int -> String
     sigma = printFunction . FnSymbol
     quoted :: T.Text -> String

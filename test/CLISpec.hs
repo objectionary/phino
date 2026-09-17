@@ -1322,10 +1322,10 @@ spec = do
 
       -- The same facts as markup, so a program reading the protocol back never
       -- has to parse 𝜑 to learn them: the name of an element says what its
-      -- record is, the symbol a term stands for is an attribute and the value
-      -- a meta took is the text of the element (#1245, #1257). Which of the
-      -- two formats is written is decided by the name of the file and by
-      -- nothing else
+      -- record is, the value a meta took is the text of the element and each
+      -- symbol a firing minted stands in a record of its own (#1245, #1257,
+      -- #1280). Which of the two formats is written is decided by the name of
+      -- the file and by nothing else
       describe "as XML" $ do
         it "writes the document when the file is named .xml" $
           withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
@@ -1339,7 +1339,8 @@ spec = do
                          , "  <evaluate λ=\"L_number_plus\" id=\"1\">"
                          , "    <bind meta=\"𝛿1.1\">40-14-00-00-00-00-00-00</bind>"
                          , "    <bind meta=\"𝛿2.1\">40-18-00-00-00-00-00-00</bind>"
-                         , "    <answer meta=\"𝑛.1\" symbol=\"𝜎1\">⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧</answer>"
+                         , "    <minted>𝜎1</minted>"
+                         , "    <answer meta=\"𝑛.1\">⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧</answer>"
                          , "  </evaluate>"
                          , "</protocol>"
                          ]
@@ -1375,12 +1376,14 @@ spec = do
                          , "  <evaluate λ=\"L_number_plus\" id=\"1\">"
                          , "    <bind meta=\"𝛿1.1\">40-14-00-00-00-00-00-00</bind>"
                          , "    <bind meta=\"𝛿2.1\">40-18-00-00-00-00-00-00</bind>"
-                         , "    <answer meta=\"𝑛.1\" symbol=\"𝜎1\">⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧</answer>"
+                         , "    <minted>𝜎1</minted>"
+                         , "    <answer meta=\"𝑛.1\">⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧</answer>"
                          , "  </evaluate>"
                          , "  <evaluate λ=\"L_number_plus\" id=\"2\">"
                          , "    <dataize meta=\"𝛿1.2\">⟦ λ ⤍ 𝜎1 ⟧</dataize>"
                          , "    <bind meta=\"𝛿2.2\">40-1C-00-00-00-00-00-00</bind>"
-                         , "    <answer meta=\"𝑛.2\" symbol=\"𝜎2\">⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧</answer>"
+                         , "    <minted>𝜎2</minted>"
+                         , "    <answer meta=\"𝑛.2\">⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧</answer>"
                          , "  </evaluate>"
                          , "</protocol>"
                          ]
@@ -1403,8 +1406,52 @@ spec = do
                          , "  <evaluate λ=\"L_stand\" id=\"1\">"
                          , "    <bind meta=\"𝑛1.1\">⟦ Δ ⤍ 01- ⟧</bind>"
                          , "    <known symbol=\"𝜎1\">01-</known>"
-                         , "    <bind meta=\"𝑛2.1\" symbol=\"𝜎1\">⟦ λ ⤍ 𝜎1 ⟧</bind>"
+                         , "    <bind meta=\"𝑛2.1\">⟦ λ ⤍ 𝜎1 ⟧</bind>"
                          , "    <answer meta=\"𝑛.1\">⟦ z ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧</answer>"
+                         , "  </evaluate>"
+                         , "</protocol>"
+                         ]
+
+        -- Which symbols a firing minted is a fact about the firing and not a
+        -- property of one term of it, so each of them stands in a record of
+        -- its own, the way what is known about a symbol does: an answer
+        -- minting two writes two, and nothing is left to guess which of the
+        -- two an attribute summarizing the term would have named (#1280)
+        it "writes one 'minted' element per symbol the answer asked for" $
+          withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
+            hClose stream
+            withLambdasOf (T.pack "- λ: L_pair\n  morph:\n    𝑛1: $.x\n  𝑛: ⟦ left ↦ ⟦ λ ⤍ 𝜎 ⟧, right ↦ ⟦ λ ⤍ 𝜎 ⟧ ⟧\n") $ \pairs ->
+              withStdin "⟦ y ↦ ⟦ x ↦ ⟦ Δ ⤍ 01- ⟧, λ ⤍ L_pair ⟧.left ⟧" $
+                testCLISucceeded ["morph", "--symbolic=" ++ pairs, "--locator=Q.y", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
+            records <- readUtf8 path
+            lines records
+              `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+                         , "<protocol judgment=\"𝕄\" of=\"Φ.y\">"
+                         , "  <evaluate λ=\"L_pair\" id=\"1\">"
+                         , "    <bind meta=\"𝑛1.1\">⟦ Δ ⤍ 01- ⟧</bind>"
+                         , "    <minted>𝜎1</minted>"
+                         , "    <minted>𝜎2</minted>"
+                         , "    <answer meta=\"𝑛.1\">⟦ left ↦ ⟦ λ ⤍ 𝜎1 ⟧, right ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧</answer>"
+                         , "  </evaluate>"
+                         , "</protocol>"
+                         ]
+
+        -- An entry answering a meta it already bound asks for no symbol of its
+        -- own, so its block holds no 'minted' at all: the records say what the
+        -- firing did and never stand empty to say that it did nothing (#1280)
+        it "writes no 'minted' element for a firing minting nothing" $
+          withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
+            hClose stream
+            withLambdasOf (T.pack "- λ: L_keep\n  morph:\n    𝑛1: $.x\n  𝑛: ⟦ z ↦ 𝑛1 ⟧\n") $ \keeps ->
+              withStdin "⟦ y ↦ ⟦ x ↦ ⟦ Δ ⤍ 01- ⟧, λ ⤍ L_keep ⟧.z ⟧" $
+                testCLISucceeded ["morph", "--symbolic=" ++ keeps, "--locator=Q.y", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
+            records <- readUtf8 path
+            lines records
+              `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+                         , "<protocol judgment=\"𝕄\" of=\"Φ.y\">"
+                         , "  <evaluate λ=\"L_keep\" id=\"1\">"
+                         , "    <bind meta=\"𝑛1.1\">⟦ Δ ⤍ 01- ⟧</bind>"
+                         , "    <answer meta=\"𝑛.1\">⟦ z ↦ ⟦ Δ ⤍ 01- ⟧ ⟧</answer>"
                          , "  </evaluate>"
                          , "</protocol>"
                          ]
@@ -1426,10 +1473,12 @@ spec = do
                          , "    <evaluate λ=\"L_number_plus\" id=\"2\">"
                          , "      <bind meta=\"𝛿1.2\">40-18-00-00-00-00-00-00</bind>"
                          , "      <bind meta=\"𝛿2.2\">40-1C-00-00-00-00-00-00</bind>"
-                         , "      <answer meta=\"𝑛.1\" symbol=\"𝜎1\">⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧</answer>"
+                         , "      <minted>𝜎1</minted>"
+                         , "      <answer meta=\"𝑛.1\">⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧</answer>"
                          , "    </evaluate>"
                          , "    <dataize meta=\"𝛿2.1\">⟦ λ ⤍ 𝜎1 ⟧</dataize>"
-                         , "    <answer meta=\"𝑛.2\" symbol=\"𝜎2\">⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧</answer>"
+                         , "    <minted>𝜎2</minted>"
+                         , "    <answer meta=\"𝑛.2\">⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧</answer>"
                          , "  </evaluate>"
                          , "</protocol>"
                          ]
@@ -1448,7 +1497,8 @@ spec = do
                          , "  <evaluate λ=\"L_number_times\" id=\"1\">"
                          , "    <bind meta=\"𝛿1.1\">40-00-00-00-00-00-00-00</bind>"
                          , "    <bind meta=\"𝛿2.1\">40-08-00-00-00-00-00-00</bind>"
-                         , "    <answer meta=\"𝑛.1\" symbol=\"𝜎1\">⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧, nope ↦ ⟦ λ ⤍ L_number_nope ⟧ ⟧</answer>"
+                         , "    <minted>𝜎1</minted>"
+                         , "    <answer meta=\"𝑛.1\">⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧, nope ↦ ⟦ λ ⤍ L_number_nope ⟧ ⟧</answer>"
                          , "  </evaluate>"
                          , "  <stuck λ=\"L_number_nope\"/>"
                          , "</protocol>"
@@ -1485,16 +1535,17 @@ spec = do
                          , "  <evaluate λ=\"L_number_times\" id=\"1\">"
                          , "    <bind meta=\"𝛿1.1\">40-00-00-00-00-00-00-00</bind>"
                          , "    <bind meta=\"𝛿2.1\">40-08-00-00-00-00-00-00</bind>"
-                         , "    <answer meta=\"𝑛.1\" symbol=\"𝜎1\">⟦ φ ↦ ⟦ λ ⤍ 𝜎1, ρ ↦ ∅ ⟧, times ↦ ⟦ x ↦ ∅, λ ⤍ L_number_times, ρ ↦ ∅ ⟧, nope ↦ ⟦ λ ⤍ L_number_nope, ρ ↦ ∅ ⟧, ρ ↦ ⟦ bytes ↦ ⟦ φ ↦ ∅, ρ ↦ ∅ ⟧, number ↦ ⟦ φ ↦ ∅, times ↦ ⟦ x ↦ ∅, λ ⤍ L_number_times, ρ ↦ ∅ ⟧, nope ↦ ⟦ λ ⤍ L_number_nope, ρ ↦ ∅ ⟧, ρ ↦ ∅ ⟧, φ ↦ Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 40-00-00-00-00-00-00-00, ρ ↦ ∅ ⟧ ) ).times( α0 ↦ Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 40-08-00-00-00-00-00-00, ρ ↦ ∅ ⟧ ) ) ).nope, ρ ↦ ∅ ⟧ ⟧</answer>"
+                         , "    <minted>𝜎1</minted>"
+                         , "    <answer meta=\"𝑛.1\">⟦ φ ↦ ⟦ λ ⤍ 𝜎1, ρ ↦ ∅ ⟧, times ↦ ⟦ x ↦ ∅, λ ⤍ L_number_times, ρ ↦ ∅ ⟧, nope ↦ ⟦ λ ⤍ L_number_nope, ρ ↦ ∅ ⟧, ρ ↦ ⟦ bytes ↦ ⟦ φ ↦ ∅, ρ ↦ ∅ ⟧, number ↦ ⟦ φ ↦ ∅, times ↦ ⟦ x ↦ ∅, λ ⤍ L_number_times, ρ ↦ ∅ ⟧, nope ↦ ⟦ λ ⤍ L_number_nope, ρ ↦ ∅ ⟧, ρ ↦ ∅ ⟧, φ ↦ Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 40-00-00-00-00-00-00-00, ρ ↦ ∅ ⟧ ) ).times( α0 ↦ Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 40-08-00-00-00-00-00-00, ρ ↦ ∅ ⟧ ) ) ).nope, ρ ↦ ∅ ⟧ ⟧</answer>"
                          , "  </evaluate>"
                          , "  <stuck λ=\"L_number_nope\"/>"
                          , "</protocol>"
                          ]
 
-        -- A 'morph' operand 𝕄 answered the terminator for is neither data
-        -- nor an unknown, so it is a plain 'bind' taking no 'symbol' and says
-        -- what it is by being ⊥ and nothing else
-        it "writes the terminator as the term and takes no attribute" $
+        -- A 'morph' operand 𝕄 answered the terminator for says what it is by
+        -- being ⊥ and nothing else, the way every other bound meta says what
+        -- it is by its own term
+        it "writes the terminator as the term a meta was bound to" $
           withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
             hClose stream
             withLambdasOf (T.pack "- λ: L_pick\n  morph:\n    𝑛1: ξ.absent\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n") $ \picks ->
@@ -1506,7 +1557,8 @@ spec = do
                          , "<protocol judgment=\"𝕄\" of=\"Φ.x\">"
                          , "  <evaluate λ=\"L_pick\" id=\"1\">"
                          , "    <bind meta=\"𝑛1.1\">⊥</bind>"
-                         , "    <answer meta=\"𝑛.1\" symbol=\"𝜎1\">⟦ λ ⤍ 𝜎1 ⟧</answer>"
+                         , "    <minted>𝜎1</minted>"
+                         , "    <answer meta=\"𝑛.1\">⟦ λ ⤍ 𝜎1 ⟧</answer>"
                          , "  </evaluate>"
                          , "</protocol>"
                          ]
