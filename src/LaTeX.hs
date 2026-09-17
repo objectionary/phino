@@ -328,6 +328,7 @@ instance ToLaTeX META_HEAD where
   toLaTeX TAU = TAU'
   toLaTeX B = B'
   toLaTeX D = D'
+  toLaTeX D'' = D'
   toLaTeX F = F'
   toLaTeX S = S'
   toLaTeX mh = mh
