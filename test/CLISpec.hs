@@ -1286,8 +1286,8 @@ spec = do
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                          , "<protocol judgment=\"𝔻\" of=\"Φ\">"
                          , "  <fire λ=\"L_number_plus\" id=\"1\">"
-                         , "    <operand meta=\"𝛿1\" bytes=\"40-14-00-00-00-00-00-00\"/>"
-                         , "    <operand meta=\"𝛿2\" bytes=\"40-18-00-00-00-00-00-00\"/>"
+                         , "    <bind meta=\"𝛿1\" bytes=\"40-14-00-00-00-00-00-00\"/>"
+                         , "    <bind meta=\"𝛿2\" bytes=\"40-18-00-00-00-00-00-00\"/>"
                          , "    <answer symbol=\"𝜎1\">Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )</answer>"
                          , "  </fire>"
                          , "</protocol>"
@@ -1320,13 +1320,13 @@ spec = do
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                          , "<protocol judgment=\"𝔻\" of=\"Φ\">"
                          , "  <fire λ=\"L_number_plus\" id=\"1\">"
-                         , "    <operand meta=\"𝛿1\" bytes=\"40-14-00-00-00-00-00-00\"/>"
-                         , "    <operand meta=\"𝛿2\" bytes=\"40-18-00-00-00-00-00-00\"/>"
+                         , "    <bind meta=\"𝛿1\" bytes=\"40-14-00-00-00-00-00-00\"/>"
+                         , "    <bind meta=\"𝛿2\" bytes=\"40-18-00-00-00-00-00-00\"/>"
                          , "    <answer symbol=\"𝜎1\">Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )</answer>"
                          , "  </fire>"
                          , "  <fire λ=\"L_number_plus\" id=\"2\">"
-                         , "    <operand meta=\"𝛿1\" symbol=\"𝜎1\"/>"
-                         , "    <operand meta=\"𝛿2\" bytes=\"40-1C-00-00-00-00-00-00\"/>"
+                         , "    <bind meta=\"𝛿1\" symbol=\"𝜎1\"/>"
+                         , "    <bind meta=\"𝛿2\" bytes=\"40-1C-00-00-00-00-00-00\"/>"
                          , "    <answer symbol=\"𝜎2\">Φ.number( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ )</answer>"
                          , "  </fire>"
                          , "</protocol>"
@@ -1345,13 +1345,13 @@ spec = do
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                          , "<protocol judgment=\"𝔻\" of=\"Φ\">"
                          , "  <fire λ=\"L_number_plus\" id=\"1\">"
-                         , "    <operand meta=\"𝛿1\" bytes=\"40-14-00-00-00-00-00-00\"/>"
+                         , "    <bind meta=\"𝛿1\" bytes=\"40-14-00-00-00-00-00-00\"/>"
                          , "    <fire λ=\"L_number_plus\" id=\"2\">"
-                         , "      <operand meta=\"𝛿1\" bytes=\"40-18-00-00-00-00-00-00\"/>"
-                         , "      <operand meta=\"𝛿2\" bytes=\"40-1C-00-00-00-00-00-00\"/>"
+                         , "      <bind meta=\"𝛿1\" bytes=\"40-18-00-00-00-00-00-00\"/>"
+                         , "      <bind meta=\"𝛿2\" bytes=\"40-1C-00-00-00-00-00-00\"/>"
                          , "      <answer symbol=\"𝜎1\">Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )</answer>"
                          , "    </fire>"
-                         , "    <operand meta=\"𝛿2\" symbol=\"𝜎1\"/>"
+                         , "    <bind meta=\"𝛿2\" symbol=\"𝜎1\"/>"
                          , "    <answer symbol=\"𝜎2\">Φ.number( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ )</answer>"
                          , "  </fire>"
                          , "</protocol>"
@@ -1369,8 +1369,8 @@ spec = do
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                          , "<protocol judgment=\"𝔻\" of=\"Φ\">"
                          , "  <fire λ=\"L_number_times\" id=\"1\">"
-                         , "    <operand meta=\"𝛿1\" bytes=\"40-00-00-00-00-00-00-00\"/>"
-                         , "    <operand meta=\"𝛿2\" bytes=\"40-08-00-00-00-00-00-00\"/>"
+                         , "    <bind meta=\"𝛿1\" bytes=\"40-00-00-00-00-00-00-00\"/>"
+                         , "    <bind meta=\"𝛿2\" bytes=\"40-08-00-00-00-00-00-00\"/>"
                          , "    <answer symbol=\"𝜎1\">Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )</answer>"
                          , "  </fire>"
                          , "  <stuck λ=\"L_number_nope\"/>"
@@ -1406,8 +1406,8 @@ spec = do
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                          , "<protocol judgment=\"𝔻\" of=\"Φ\">"
                          , "  <fire λ=\"L_number_times\" id=\"1\">"
-                         , "    <operand meta=\"𝛿1\" bytes=\"40-00-00-00-00-00-00-00\"/>"
-                         , "    <operand meta=\"𝛿2\" bytes=\"40-08-00-00-00-00-00-00\"/>"
+                         , "    <bind meta=\"𝛿1\" bytes=\"40-00-00-00-00-00-00-00\"/>"
+                         , "    <bind meta=\"𝛿2\" bytes=\"40-08-00-00-00-00-00-00\"/>"
                          , "    <answer symbol=\"𝜎1\">Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1, ρ ↦ ∅ ⟧ )</answer>"
                          , "  </fire>"
                          , "  <stuck λ=\"L_number_nope\"/>"
@@ -1415,8 +1415,9 @@ spec = do
                          ]
 
         -- An 'evaluate' operand 𝕄 answered the terminator for is neither data
-        -- nor an unknown, so it is neither 'bytes' nor 'symbol'
-        it "marks an operand that reached the terminator" $
+        -- nor an unknown, so it takes neither 'bytes' nor 'symbol' and says
+        -- what it is by being ⊥ and nothing else
+        it "writes the terminator as the term and takes no attribute" $
           withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
             hClose stream
             withLambdasOf (T.pack "- λ: L_pick\n  evaluate:\n    𝑛1: ξ.absent\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n") $ \picks ->
@@ -1427,7 +1428,7 @@ spec = do
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                          , "<protocol judgment=\"𝕄\" of=\"Φ.x\">"
                          , "  <fire λ=\"L_pick\" id=\"1\">"
-                         , "    <operand meta=\"𝑛1\" bottom=\"true\">⊥</operand>"
+                         , "    <bind meta=\"𝑛1\">⊥</bind>"
                          , "    <answer symbol=\"𝜎1\">⟦ λ ⤍ 𝜎1 ⟧</answer>"
                          , "  </fire>"
                          , "</protocol>"

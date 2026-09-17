@@ -252,7 +252,7 @@ saveEvalXml handle cursor render report = do
       where
         (kept, closers) = closed depth nesting._closing
     elements (EvData depth spelling value) nesting =
-      pure (nesting{_closing = kept}, closers ++ [indented depth (printf "<operand meta=\"%s\"%s/>" (quoted spelling) (stood value))])
+      pure (nesting{_closing = kept}, closers ++ [indented depth (printf "<bind meta=\"%s\"%s/>" (quoted spelling) (stood value))])
       where
         (kept, closers) = closed depth nesting._closing
         -- A 'dataize' operand has no term of its own to show: it either came
@@ -264,17 +264,15 @@ saveEvalXml handle cursor render report = do
     elements (EvTerm depth spelling term) nesting = do
       body <- render term
       let (kept, closers) = closed depth nesting._closing
-      pure (nesting{_closing = kept}, closers ++ [indented depth (printf "<operand meta=\"%s\"%s>%s</operand>" (quoted spelling) (carried term) (escapeXMLText body))])
+      pure (nesting{_closing = kept}, closers ++ [indented depth (printf "<bind meta=\"%s\"%s>%s</bind>" (quoted spelling) (carried term) (escapeXMLText body))])
     elements (EvAnswer depth term) nesting = do
       body <- render term
       let (kept, closers) = closed depth nesting._closing
       pure (nesting{_closing = kept}, closers ++ [indented depth (printf "<answer%s>%s</answer>" (carried term) (escapeXMLText body))])
-    -- What a term amounts to, as the one attribute saying it: the unknown it
-    -- stands for, where it carries one, or ⊥, where the term is the
-    -- terminator. A term that is neither is itself and nothing else, so it
-    -- takes no attribute at all and stands as its own text.
+    -- The unknown a term stands for, where it carries one. A term standing for
+    -- nothing takes no attribute at all, the terminator ⊥ included, since it is
+    -- itself and its own text already says so.
     carried :: Expression -> String
-    carried ExTermination = " bottom=\"true\""
     carried term = maybe "" (printf " symbol=\"%s\"" . sigma) (denoted term)
     -- The name of a symbol, spelled the way every term carrying it is spelled,
     -- so a reader joining an attribute to a term compares two strings that
