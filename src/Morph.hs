@@ -605,7 +605,7 @@ normalized expr seq ctx@ReduceContext{..} = do
 -- normal form there, handing back the extended universe together with the
 -- locator that aims at the binding. This is the trick phino has always played
 -- to reduce a sub-expression that is not part of the program — the operand a
--- λ function names under 'dataize' or 'evaluate', above all — and it is also
+-- λ function names under 'dataize' or 'morph', above all — and it is also
 -- the contract of the '--inside' option, so a caller asking phino to reduce a
 -- part of the formation it was given does not have to splice it into the text
 -- of the universe by hand. 𝔻 and 𝕄 accept normal forms only and an expression
@@ -628,7 +628,7 @@ insideUniverse expr univ ctx@ReduceContext{_buildTerm = buildTerm} = case univ o
 -- 'Dataize' dataizes one: bound to a synthetic attribute of the universe and
 -- reduced there (see 'insideUniverse'), since 𝕄 takes normal forms only and an
 -- operand taken out of a formation as it was written is not necessarily one.
--- This is what an 'evaluate' operand of a λ function is reduced with, and the
+-- This is what a 'morph' operand of a λ function is reduced with, and the
 -- dataizing sibling of it reaches 'Dataize' through '_reduce'.
 morphing :: Expression -> ReduceContext -> Expression -> State -> IO (Expression, State)
 morphing univ ctx expr state = do
@@ -664,8 +664,8 @@ symbol func self univ state caller = case matched caller._symbolic func of
     caller._saveEval (EvFiring caller._nesting func)
     let ctx = caller{_nesting = caller._nesting + 1}
     (bound, dataized) <- foldM (down ctx) (substEmpty, state) entry._dataized
-    (bound', evaluated) <- foldM (through ctx) (bound, dataized) entry._evaluated
-    answered ctx entry bound' evaluated
+    (bound', morphed) <- foldM (through ctx) (bound, dataized) entry._morphed
+    answered ctx entry bound' morphed
   where
     -- Bring one 'dataize' operand down through 𝔻 and bind the bytes meta that
     -- names it. An operand 𝔻 could not bring down to data — a site '_partial'
@@ -688,7 +688,7 @@ symbol func self univ state caller = case matched caller._symbolic func of
           ctx._saveEval (EvData ctx._nesting meta._spelling (maybe (Right bytes) Left state''._manufactured))
           bound' <- bind meta (MvBytes bytes) bound
           pure (bound', state'')
-    -- Reduce one 'evaluate' operand through 𝕄 and bind the expression meta that
+    -- Reduce one 'morph' operand through 𝕄 and bind the expression meta that
     -- names it. Unlike a dataized one it may stay an unknown: a term carrying a
     -- symbol is a perfectly good normal form, and standing it into the answer
     -- is how a firing hands its own unknowns on.

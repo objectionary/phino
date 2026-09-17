@@ -229,7 +229,7 @@ optSymbolic =
             <> help
               "Path to the YAML file of λ functions this run may fire, each entry keyed by a regular expression \
               \over λ names under \"λ\", naming the operands it brings down to data under \"dataize\" and the ones \
-              \it reduces to a normal form under \"evaluate\", and answering with the term under \"𝑛\""
+              \it reduces to a normal form under \"morph\", and answering with the term under \"𝑛\""
         )
     )
 

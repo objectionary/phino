@@ -21,7 +21,7 @@
 -- name, so a plain name means that one function while 'L_box_[0-9]+_number'
 -- stands for a family of them. It is unique: the lookup answers one entry or
 -- none. 'dataize' names the operands brought down through 𝔻, each binding a
--- bytes meta 𝛿1, and 'evaluate' the ones reduced through 𝕄, each binding an
+-- bytes meta 𝛿1, and 'morph' the ones reduced through 𝕄, each binding an
 -- expression meta 𝑛1; both are terms of the calculus, where ξ stands for the
 -- formation being fired, so '$.x' is its x, and Φ for the universe. The term
 -- under '𝑛' is what the firing answers with, and a bare 𝜎 in it mints a fresh
@@ -84,7 +84,7 @@ data Meta = Meta
 data Lambda = Lambda
   { _key :: Text
   , _dataized :: [(Meta, Expression)]
-  , _evaluated :: [(Meta, Expression)]
+  , _morphed :: [(Meta, Expression)]
   , _answer :: Expression
   }
 
@@ -110,7 +110,7 @@ instance FromJSON Lambda where
     lambda <-
       Lambda key
         <$> operands key bytesMeta entry "dataize"
-        <*> operands key expressionMeta entry "evaluate"
+        <*> operands key expressionMeta entry "morph"
         <*> entry .: "𝑛"
     sigmas (T.unpack key) lambda._answer
     dataless (T.unpack key) lambda._answer
@@ -129,7 +129,7 @@ instance FromJSON Lambda where
           bound (meta, term) = do
             referenceless (T.unpack key) (T.unpack meta) term
             kind meta >>= \named -> pure (named, term)
-      -- The meta an 'evaluate' block binds: '𝑛1' is written the way 𝜑-calculus
+      -- The meta a 'morph' block binds: '𝑛1' is written the way 𝜑-calculus
       -- writes it and stands for the same meta a rule's 'pattern' would bind,
       -- so the parser of the calculus is what reads it here too.
       expressionMeta :: Text -> Yaml.Parser Meta
