@@ -85,9 +85,9 @@ the `--symbolic` option names, one entry per function: a `λ` key, a regular
 expression over λ names; the operands brought down to data through 𝔻 under
 `dataize`, each binding a bytes meta `𝛿1`; the operands reduced to a normal
 form through 𝕄 under `morph`, each binding an expression meta `𝑛1`; and the
-answer under `𝑛`. Firing an entry is 𝔼's business and lives in `Morph.hs`,
-which alone holds the judgments an operand is reduced with, using the same
-`insideUniverse` trick the `--inside` option exposes.
+answer under `𝑛`. Firing an entry is 𝔼's business and lives in `Evaluate.hs`,
+which reaches the judgments an operand is reduced with through `Morph.hs`,
+using the same `insideUniverse` trick the `--inside` option exposes.
 
 An entry answers, it never computes: the answer carries a symbol `𝜎` standing
 for a value nobody worked out, minted fresh per firing and counted in the state
@@ -110,16 +110,21 @@ names a line by counting.
 `Dataize -> Functions -> Rewriter -> Dataize` via the `BuildTermFunc`
 type alias.
 
-### Morphing and dataization
+### Morphing, dataization and evaluation
 
-`Morph.hs` implements the formal Morphing (M) function and `Dataize.hs` the
-Dataization (D) one, with named rules: PRIM, NMZ, LAMBDA, PHI (morphing) and
-DELTA, BOX, NORM (dataization). `Morph.hs` also holds what both judgments
+One module per judgment: `Morph.hs` implements the formal Morphing (M)
+function, `Dataize.hs` the Dataization (D) one and `Evaluate.hs` the
+Evaluation (E) one, with named rules: PRIM, NMZ, LAMBDA, PHI (morphing) and
+DELTA, BOX, NORM (dataization). `Morph.hs` also holds what all three judgments
 share — the context, the step budget, the signals and the premise plumbing —
-so `Dataize.hs` imports it and nothing points back. Nothing but one edge: an
-atom asking phino to reduce an operand of its own is a whole run of D, so it
-is injected into the context as `_reduce` (a `ReductionFunc`), the way
-`Deps.hs` injects `_buildTerm`. All configuration is threaded through
+so `Dataize.hs` and `Evaluate.hs` import it and nothing points back. Nothing
+but three edges, each injected into the context rather than imported, the way
+`Deps.hs` injects `_buildTerm`: an atom asking phino to reduce an operand of
+its own is a whole run of D, so it goes in as `_reduce` (a `ReductionFunc`),
+and E is reached as `_evaluate` (an `EvaluationFunc`, what an `evaluate`
+premise fires and what answers a normal form) and `_fire` (a `FiringFunc`,
+what the `--deep` walk fires and what answers the raw term the entry wrote).
+All configuration is threaded through
 `ReduceContext` and `RewriteContext` records — no global state. Each
 function has a top-level wrapper that locates the subterm and starts the
 chain (`morph`, `dataize`) and a recursive worker the rules drive

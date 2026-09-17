@@ -49,6 +49,7 @@ library
     Dataize
     Deps
     Encoding
+    Evaluate
     Files
     Filter
     Functions
@@ -139,6 +140,7 @@ test-suite spec
     DataizeSpec
     DepsSpec
     EncodingSpec
+    EvaluateSpec
     FilesSpec
     FilterSpec
     Fixtures

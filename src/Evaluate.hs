@@ -1,0 +1,259 @@
+{-# LANGUAGE OverloadedRecordDot #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# OPTIONS_GHC -Wno-name-shadowing #-}
+
+-- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+-- SPDX-License-Identifier: MIT
+
+-- The Evaluation function 𝔼 and everything a λ function of the '--symbolic'
+-- file needs to fire: finding the λ of a formation, bringing the operands of
+-- its entry down, minting the symbols its answer carries and writing the
+-- firing into the protocol. 𝕄 and 𝔻 live in 'Morph' and 'Dataize', and what
+-- all three share — the context, the budget, the signals — lives in 'Morph',
+-- which this module imports. The edges pointing back the other way, 𝕄 asking
+-- 𝔼 to fire, are injected as '_evaluate' and '_fire' rather than imported, the
+-- way 'Dataize' hands 'Morph' its '_reduce' (see 'EvaluationFunc').
+module Evaluate (evaluation, fired, lambda) where
+
+import AST
+import Builder (buildExpressionThrows, contextualize)
+import Control.Exception (throwIO, try)
+import Control.Monad (foldM)
+import Data.List (partition)
+import Data.List.NonEmpty (NonEmpty (..))
+import Data.Maybe (fromMaybe, isNothing)
+import qualified Data.Text as T
+import Deps (BuildTermMethodS, Evaluation (..), State (..), Term (..))
+import Lambdas (Lambda (..), Meta (..), matched, minted)
+import Matcher (MetaValue (..), Subst, combine, substEmpty, substSingle, substSlot)
+import Morph (ReduceContext (..), ReduceException (..), deeper, morph', morphing, normalized, unparked)
+import Text.Printf (printf)
+import Yaml (ExtraArgument (..))
+
+-- The Evaluation function 𝔼(b, e, s): it fires the λ function of a formation
+-- 'b' against the global universe 'e', under the incoming state 𝑠, normalizes
+-- its raw result 𝒩(e₁) = n, and returns that normal form together with the new
+-- state. Normalizing here makes 𝔼's codomain 𝓝 (as its type demands), so
+-- callers ('fire', 'ml') need no follow-up 'normalize' premise. The universe is
+-- passed explicitly as the second argument (rather than threaded behind the
+-- scenes), matching how the morphing 𝕄 and dataization 𝔻 functions carry it.
+-- Every firing writes itself into the protocol the '--protocol' option keeps
+-- (see 'symbol'). Firings are written in the order they start, so the λ
+-- function of a head reduced by 'ml' stands above the one dispatched on its
+-- result; that order carries nothing, since what depends on what is read off
+-- the symbols.
+evaluation :: ReduceContext -> State -> BuildTermMethodS
+evaluation ctx state [ArgExpression expr, ArgExpression universe] subst = do
+  form <- buildExpressionThrows expr subst
+  univ <- buildExpressionThrows universe subst
+  case form of
+    ExFormation bds -> case lambda bds of
+      Just (func, args) -> do
+        (raw, state') <- symbol func args univ state ctx
+        (normal, _) <- normalized raw ((univ, Nothing) :| []) ctx
+        pure (TeExpression normal, state')
+      Nothing -> throwIO (userError "Function evaluate() expects a formation with a λ binding")
+    _ -> throwIO (userError "Function evaluate() expects a formation")
+evaluation _ _ _ _ = throwIO (userError "Function evaluate() requires exactly 2 expression arguments")
+
+-- phino implements no λ function of its own. Which ones exist is a property of
+-- the object model being reduced, not of the calculus, so they come from the
+-- '--symbolic' file, where each is an entry phino answers the firing with
+-- itself (see 'Lambdas'). The entry is looked up by the λ name and there is at
+-- most one, since the keys are unique; a name no entry answers has no λ
+-- function to fire at all, and 𝔼 gets stuck on it — the one behaviour left
+-- here. The formation 'self' is the one 𝔼 fired against, its λ binding already
+-- removed, so the entry may name the attributes of it; the universe 'univ' is
+-- what every operand of it is reduced inside. What comes back is the raw term
+-- the entry answers with: normalizing it is 𝔼's business, and the deep walk
+-- wants it as it was written.
+--
+-- The firing writes itself into the protocol as it goes: the entry that
+-- answered first, then each operand as it is reduced, then the answer. Whatever
+-- fires inside an operand writes itself between those lines, one level deeper,
+-- which is what makes the protocol a tree of firings rather than a list of
+-- them. A name no entry answers writes itself too, before 𝔼 gets stuck on it,
+-- so the protocol says what was asked for whether or not '_partial' goes on to
+-- park the run.
+symbol :: T.Text -> Expression -> Expression -> State -> ReduceContext -> IO (Expression, State)
+symbol func self univ state caller = case matched caller._symbolic func of
+  Nothing -> do
+    caller._saveEval (EvStuck caller._nesting func)
+    throwIO (Stuck func)
+  Just entry -> do
+    caller._saveEval (EvFiring caller._nesting func)
+    let ctx = caller{_nesting = caller._nesting + 1}
+    (bound, dataized) <- foldM (down ctx) (substEmpty, state) entry._dataized
+    (bound', morphed) <- foldM (through ctx) (bound, dataized) entry._morphed
+    answered ctx entry bound' morphed
+  where
+    -- Bring one 'dataize' operand down through 𝔻 and bind the bytes meta that
+    -- names it. An operand 𝔻 could not bring down to data — a site '_partial'
+    -- parked — leaves the firing with nothing to bind, so it gets stuck like a
+    -- λ function no entry answers at all. Every symbol dataizes to the very
+    -- same datum, so the protocol is told which unknown that datum was
+    -- manufactured for rather than the datum itself (see 'State').
+    --
+    -- The reduction runs on a universe of its own, so a signal escaping it
+    -- carries that universe's derivation and not the spine's; 'unparked' drops
+    -- it and lets the spine frame around this firing attach its own, which is
+    -- what keeps '--sequence' free of the synthetic attribute the operand was
+    -- reduced under.
+    down :: ReduceContext -> (Subst, State) -> (Meta, Expression) -> IO (Subst, State)
+    down ctx (bound, state') (meta, term) = do
+      (value, state'') <- unparked (ctx._reduce univ ctx (operand term) state'{_manufactured = Nothing})
+      case value of
+        Nothing -> throwIO (Stuck func)
+        Just bytes -> do
+          ctx._saveEval (EvData ctx._nesting meta._spelling (maybe (Right bytes) Left state''._manufactured))
+          bound' <- bind meta (MvBytes bytes) bound
+          pure (bound', state'')
+    -- Reduce one 'morph' operand through 𝕄 and bind the expression meta that
+    -- names it. Unlike a dataized one it may stay an unknown: a term carrying a
+    -- symbol is a perfectly good normal form, and standing it into the answer
+    -- is how a firing hands its own unknowns on.
+    through :: ReduceContext -> (Subst, State) -> (Meta, Expression) -> IO (Subst, State)
+    through ctx (bound, state') (meta, term) = do
+      (normal, state'') <- morphing univ ctx (operand term) state'
+      ctx._saveEval (EvTerm ctx._nesting meta._spelling normal)
+      bound' <- bind meta (MvExpression normal) bound
+      pure (bound', state'')
+    -- Mint the fresh symbols the answer asks for and build it. A bare 𝜎 stands
+    -- for an unknown nobody has named yet, so each one is bound to the next
+    -- symbol the run has not minted, and the state counts them, which is what
+    -- keeps two firings from spelling two unknowns alike.
+    answered :: ReduceContext -> Lambda -> Subst -> State -> IO (Expression, State)
+    answered ctx entry bound state' = do
+      let (fresh, spent) = minted entry._answer state'._minted
+      symbolic <- foldM mint bound fresh
+      built <- buildExpressionThrows entry._answer symbolic
+      ctx._saveEval (EvAnswer ctx._nesting built)
+      pure (built, state'{_minted = spent})
+    mint :: Subst -> (Slot, Function) -> IO Subst
+    mint bound (slot, fresh) = case combine (substSlot slot (MvFunction fresh)) bound of
+      Just bound' -> pure bound'
+      Nothing -> throwIO (userError (printf "A fresh symbol of λ function '%s' clashes with an existing binding" (T.unpack func)))
+    -- The operand an entry wrote, in the scope it is reduced in: ξ stands for
+    -- the formation being fired, so '$.x' is the x of it, and the calculus does
+    -- the reaching.
+    operand :: Expression -> Expression
+    operand = (`contextualize` self)
+    bind :: Meta -> MetaValue -> Subst -> IO Subst
+    bind meta value bound = case combine (substSingle meta._name value) bound of
+      Just bound' -> pure bound'
+      Nothing ->
+        throwIO
+          (userError (printf "The meta '%s' of λ function '%s' clashes with an existing binding" (T.unpack meta._spelling) (T.unpack func)))
+
+-- Ask 𝕄 about a term and fire the λ of the formation it reaches, as long as an
+-- entry of the '--symbolic' file answers it, asking 𝕄 about every answer again:
+-- what comes back is the answer of the last firing, or nothing at all where
+-- nothing fired. This is the firing 'ml' makes without the dispatch that makes
+-- 'ml' make it — the one 𝕄 leaves to 𝔻 — except in what it hands back: the raw
+-- answer of the entry, not the normal form 𝔼 makes of it, since the deep walk
+-- stands that answer back into the program, where a normal form would spell the
+-- whole object out in place of the name the program called it by. A λ no entry
+-- answers is left alone rather than fired and got stuck on, so what phino
+-- cannot compute stays as it was written with or without '_partial'; a λ
+-- function that cannot fire deeper on the spine still fails the run, exactly as
+-- it does under 𝕄 alone, and '_partial' parks it. A formation still waiting for
+-- its arguments is left alone too (see 'saturated'). A term standing as the
+-- target of a dispatch is where 'ml' has its say: the λ is fired only where the
+-- dispatched attribute is none of the formation's own (see 'demanded').
+fired :: Maybe Attribute -> Expression -> Expression -> State -> ReduceContext -> IO (Maybe Expression, State)
+fired dispatched term univ state caller = do
+  ctx <- deeper caller
+  morphed <- try (reduced ctx)
+  case morphed of
+    Right (ExFormation bds, state')
+      | demanded bds -> maybe (pure (Nothing, state')) (evaluated ctx state') (saturated bds)
+    Right (_, state') -> pure (Nothing, state')
+    Left failure -> parked failure
+  where
+    -- Whether the dispatch the term stands under demands the λ of the formation
+    -- 𝕄 reached. 'ml' fires that λ only where the dispatched attribute is none
+    -- of the formation's own, since 'dot' resolves the dispatch before 'ml' is
+    -- ever reached, and a walk firing it first answers a formation the dispatch
+    -- no longer fits (#1187). A term standing anywhere else is demanded by
+    -- nothing and the walk fires what 'mf' left bare, as it always has.
+    demanded :: [Binding] -> Bool
+    demanded bds = not (any bound bds)
+      where
+        bound :: Binding -> Bool
+        bound (BiTau attr _) = Just attr == dispatched
+        bound _ = False
+    -- 𝕄 takes normal forms only and a term taken from the program as it was
+    -- written is not necessarily one, so it is normalized against the universe
+    -- first, exactly as '--inside' normalizes what it is handed. Both chains
+    -- are dropped: the walk is not the spine and reports one step of its own
+    -- (see 'morph'), so a stuck λ function leaves without a derivation.
+    reduced :: ReduceContext -> IO (Expression, State)
+    reduced ctx = do
+      (normal, _) <- normalized term ((univ, Nothing) :| []) ctx
+      ((morphed, _), state') <- morph' (normal, (univ, Nothing) :| []) univ state ctx
+      pure (morphed, state')
+    -- Fire the λ of the formation 𝕄 reached and go on from its answer, keeping
+    -- the answer of the last firing. A λ no entry of the '--symbolic' file
+    -- answers is not fired at all, which is what keeps the walk as total as 𝕄
+    -- itself. The firing reports itself to '_saveEval', so the protocol and the
+    -- program agree on what was answered.
+    evaluated :: ReduceContext -> State -> (T.Text, Expression) -> IO (Maybe Expression, State)
+    evaluated ctx state' (func, self)
+      | isNothing (matched ctx._symbolic func) = pure (Nothing, state')
+      | otherwise = do
+          (answer, answered) <- symbol func self univ state' ctx
+          (again, reached) <- fired dispatched answer univ answered ctx
+          pure (Just (fromMaybe answer again), reached)
+    -- A site the walk cannot reduce — a λ function whose operands never came
+    -- down to data, or one the step budget ran out on — is left as it was
+    -- written and the walk goes on, which is what a partial morphing is: phino
+    -- stops where it cannot decide rather than failing the whole run. The state
+    -- the parked site had reached travels back, so the symbols it minted before
+    -- it stopped are never minted again; the chain it parked on is dropped,
+    -- since that chain is the walk's and not the spine's.
+    parked :: ReduceException -> IO (Maybe Expression, State)
+    parked (StuckAt _ _ reached) | caller._partial = pure (Nothing, reached)
+    parked (OutOfStepsAt _ _ reached) | caller._partial = pure (Nothing, reached)
+    parked (Stuck _) | caller._partial = pure (Nothing, state)
+    parked (OutOfSteps _) | caller._partial = pure (Nothing, state)
+    parked (LoopingAt _ _ reached) = pure (Nothing, reached)
+    parked (Looping _) = pure (Nothing, state)
+    parked (StuckAt func _ _) = throwIO (Stuck func)
+    parked (OutOfStepsAt limit _ _) = throwIO (OutOfSteps limit)
+    parked failure = throwIO failure
+
+-- Split the λ binding off a formation for the LAMBDA morphing rule: the name of
+-- the λ function to fire and the formation it fires against, the λ binding
+-- removed. A formation with no λ binding, or with more than one, has nothing to
+-- fire; neither has one carrying a symbol, which is a λ name nothing answers.
+lambda :: [Binding] -> Maybe (T.Text, Expression)
+lambda bds = case partition isLambda bds of
+  ([BiLambda (Function func)], rest) -> Just (func, ExFormation rest)
+  _ -> Nothing
+  where
+    isLambda :: Binding -> Bool
+    isLambda (BiLambda _) = True
+    isLambda _ = False
+
+-- The same as 'lambda', but only for a formation that is saturated: one with
+-- every binding of it filled (see 'filled'). A void is an argument the program
+-- has not given yet, so such a formation is a method waiting to be applied
+-- rather than an application waiting to be computed, and firing it would hand
+-- the λ function a ∅ where it expects a value. 𝔻 needs no such guard, since it
+-- fires only what dataization demands and nothing demands a method; the deep
+-- walk meets every one a program declares — the method table of the object
+-- model above all — so it asks first (see 'deepened').
+saturated :: [Binding] -> Maybe (T.Text, Expression)
+saturated bds = case lambda bds of
+  Just (func, ExFormation rest) | all filled rest -> Just (func, ExFormation rest)
+  _ -> Nothing
+
+-- Whether a binding hands the formation something to work with. A void does
+-- not: it names an argument the program has still to supply. Neither does ⊥:
+-- the deep walk reduces a body in the scope of the formation around it, and a
+-- formation standing unapplied still holds ρ ↦ ∅, so a ξ.ρ in that body comes
+-- back as ⊥ rather than as the object the next dispatch supplies (#1196).
+filled :: Binding -> Bool
+filled (BiVoid _) = False
+filled (BiTau _ ExTermination) = False
+filled _ = True
