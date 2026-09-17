@@ -206,14 +206,15 @@ saveEval handle cursor render report = do
 -- The same protocol as XML, which is what '--protocol' writes when the file it
 -- names ends in '.xml' (see 'withEvalFunc'). It carries the very facts the text
 -- format carries and carries them as markup rather than as a 𝜑-term a reader
--- would have to parse back: a datum stands in 'bytes' and the symbol a value
--- came down to or stands for in 'symbol', so the edge from the line that
--- minted an unknown to the line that consumed it is read off an attribute
--- instead of off the spelling of a term (#1245). Where the text format names
--- an earlier line, this one repeats that line's symbol, since the symbol is
--- what the two lines share and a name is only how the text format spells it.
--- The term stays as the text of the element, for a reader and not for a
--- program.
+-- would have to parse back: the name of an element says what its record is,
+-- the symbol a term stands for stands in 'symbol', and the value the record
+-- carries stands as the text of the element, so the edge from the line that
+-- minted an unknown to the line that consumed it is read off the markup
+-- instead of off the spelling of a term (#1245, #1257). Where the text format
+-- names an earlier line, this one repeats that line's symbol, since the symbol
+-- is what the two lines share and a name is only how the text format spells
+-- it. The term itself stays as the text of the element, for a reader and not
+-- for a program.
 --
 -- Nothing is buffered: an element is written the moment its record arrives,
 -- and the ones it closes are written just before it, so a run firing thousands
@@ -240,8 +241,8 @@ saveEvalXml handle cursor render report = do
         )
     elements (EvFiring depth key) nesting =
       pure
-        ( nesting{_fires = fires, _closing = (depth, "fire") : kept}
-        , closers ++ [indented depth (printf "<fire λ=\"%s\" id=\"%d\">" (quoted key) fires)]
+        ( nesting{_fires = fires, _closing = (depth, "evaluate") : kept}
+        , closers ++ [indented depth (printf "<evaluate λ=\"%s\" id=\"%d\">" (quoted key) fires)]
         )
       where
         (kept, closers) = closed depth nesting._closing
@@ -252,15 +253,18 @@ saveEvalXml handle cursor render report = do
       where
         (kept, closers) = closed depth nesting._closing
     elements (EvData depth spelling value) nesting =
-      pure (nesting{_closing = kept}, closers ++ [indented depth (printf "<bind meta=\"%s\"%s/>" (quoted spelling) (stood value))])
+      pure (nesting{_closing = kept}, closers ++ [indented depth (stood value)])
       where
         (kept, closers) = closed depth nesting._closing
         -- A 'dataize' operand has no term of its own to show: it either came
         -- down to data, which is the data, or to the datum manufactured for an
         -- unknown, which is that unknown and never the 42 standing for it.
+        -- These are two different facts, so the name of the element tells them
+        -- apart the way 𝔻(…) does in the text format, rather than leaving a
+        -- reader to test which of two attributes an element carries (#1257).
         stood :: Either Int Bytes -> String
-        stood (Left symbol) = printf " symbol=\"%s\"" (sigma symbol)
-        stood (Right bytes) = printf " bytes=\"%s\"" (escapeXML (printBytes bytes))
+        stood (Left symbol) = printf "<dataize meta=\"%s\">%s</dataize>" (quoted spelling) (sigma symbol)
+        stood (Right bytes) = printf "<bind meta=\"%s\">%s</bind>" (quoted spelling) (escapeXMLText (printBytes bytes))
     elements (EvTerm depth spelling term) nesting = do
       body <- render term
       let (kept, closers) = closed depth nesting._closing
