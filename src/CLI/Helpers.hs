@@ -18,7 +18,7 @@ import Data.IORef
 import Data.List (intercalate, nub)
 import Data.Maybe
 import qualified Data.Text as T
-import Deps (Evaluation (EvRun), SaveEvalFunc, SaveStepFunc, State (..), dontSaveEval, emptyNesting, emptyProtocol, endEvalXml, saveEval, saveEvalXml, saveStep)
+import Deps (Evaluation (EvRun), Judgment, SaveEvalFunc, SaveStepFunc, State (..), dontSaveEval, emptyNesting, emptyProtocol, endEvalXml, saveEval, saveEvalXml, saveStep)
 import Encoding
 import Files (ensuredFile, overwrite)
 import Functions (execFunctions)
@@ -132,7 +132,7 @@ started expr = emptyState{_minted = taken expr}
 
 -- Open the protocol with the run itself — the judgment it runs and the term it
 -- is aimed at — which is the line every firing of it stands under.
-heading :: SaveEvalFunc -> PrintContext -> T.Text -> Expression -> IO ()
+heading :: SaveEvalFunc -> PrintContext -> Judgment -> Expression -> IO ()
 heading record ctx judgment locator =
   record . EvRun judgment . T.pack =<< flattened ctx locator
 

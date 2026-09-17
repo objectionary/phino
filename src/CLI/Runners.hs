@@ -21,6 +21,7 @@ import qualified Data.Map.Strict as Map
 import Data.Maybe (fromJust, isJust, isNothing)
 import qualified Data.Text as T
 import Dataize
+import Deps (Judgment (..))
 import Encoding
 import Evaluate (evaluation, fired)
 import Files (overwrite)
@@ -173,7 +174,7 @@ runDataize OptsDataize{..} = do
           -- and so is the cycle guard of '--acyclic', which 'morph' alone carries.
           let ctx = ReduceContext loc _maxDepth _maxCycles (Steps _maxSteps 0) 1 _depthSensitive _shuffle _partial False False Map.empty lambdas buildTerm reduction evaluation fired save record
           (universe, aiming) <- aimed _inside expr ctx
-          heading record printCtx (T.pack "𝔻") aiming._locator
+          heading record printCtx Dataization aiming._locator
           dataize universe (started universe) aiming
       )
   when _sequence (printRewrittens printCtx (exclude $ include chain, False) >>= putStrLn)
@@ -255,7 +256,7 @@ runMorph OptsMorph{..} = do
       ( \record -> do
           let ctx = ReduceContext loc _maxDepth _maxCycles (Steps _maxSteps 0) 1 _depthSensitive _shuffle _partial _deep _acyclic Map.empty lambdas buildTerm reduction evaluation fired save record
           (universe, aiming) <- aimed _inside expr ctx
-          heading record printCtx (T.pack "𝕄") aiming._locator
+          heading record printCtx Morphing aiming._locator
           morph universe (started universe) aiming
       )
   when _sequence (printRewrittens printCtx (exclude $ include chain, False) >>= putStrLn)
