@@ -9,7 +9,7 @@ expressions and rules to LaTeX format for academic documents.
 -}
 module LaTeXSpec where
 
-import AST (Attribute (AtLabel, AtPhi, AtRho), Binding (BiTau, BiVoid), Bytes (BtOne), Expression (ExFormation, ExMeta, ExPhiAgain, ExPhiMeet, ExRoot))
+import AST (Attribute (AtLabel, AtMeta, AtPhi, AtRho), Binding (BiDelta, BiMeta, BiTau, BiVoid), Bytes (BtMeta, BtOne), Expression (ExDispatch, ExFormation, ExMeta, ExPhiAgain, ExPhiMeet, ExRoot))
 import Control.Monad (forM_)
 import Data.List (intercalate)
 import Data.Text qualified as T
@@ -388,4 +388,69 @@ spec = do
           , "  \\phinoPremise{ \\phinoMorph{ n }{ e }{ s_1 }{ n_1 }{ s_2 } }"
           , "  \\phinoConclusion{ \\phinoContextualize{ n }{ e }{ n_1 } }"
           , "\\end{phinoContextualizationInference}"
+          ]
+
+  describe "bares the meta-variables a rule names just once" $ do
+    it "keeps the index of a kind named twice and drops it from a kind named once" $ do
+      let rule =
+            Y.DataizeRule
+              { name = "delta"
+              , label = Just "\\Delta"
+              , match = ExFormation [BiMeta "B1", BiDelta (BtMeta "d1"), BiMeta "B2"]
+              , ematch = ExMeta "e1"
+              , dresult = BtMeta "d1"
+              , when = Nothing
+              , premises = []
+              }
+      explainDataizeRules [rule]
+        `shouldBe` intercalate
+          "\n"
+          [ "\\begin{phinoDataizationInference}"
+          , "  \\phinoName{delta}"
+          , "  \\phinoLabel{\\Delta}"
+          , "  \\phinoConclusion{ \\phinoDataize{ [[ B_1, D> \\delta, B_2 ]] }{ e }{ s }{ \\delta }{ s } }"
+          , "\\end{phinoDataizationInference}"
+          ]
+
+    it "bares a rule's condition the way it bares its pattern and result" $ do
+      let rule =
+            Y.Rule
+              { name = "norm1"
+              , label = Nothing
+              , description = Nothing
+              , pattern = ExDispatch (ExMeta "n1") (AtMeta "t1")
+              , result = ExMeta "n1"
+              , when = Just (Y.IsFormation (ExMeta "n1"))
+              , having = Nothing
+              , where_ = Nothing
+              }
+      explainRules [rule]
+        `shouldBe` intercalate
+          "\n  "
+          [ "\\phinoNormalizationRule{norm1}"
+          , "{ n . \\tau }"
+          , "{ n }"
+          , "{ \\phinoIsFormation{ n } }"
+          , "{ }"
+          ]
+
+    it "bares the meta a premise names, while the state keeps its own index" $ do
+      let rule =
+            Y.MorphRule
+              { name = "morph2"
+              , label = Nothing
+              , match = ExMeta "n1"
+              , ematch = ExMeta "e1"
+              , nresult = ExMeta "n1"
+              , when = Nothing
+              , premises = [Y.Premise{result = "d1", operation = Y.OpDataize (ExMeta "n1")}]
+              }
+      explainMorphRules [rule]
+        `shouldBe` intercalate
+          "\n"
+          [ "\\begin{phinoMorphingInference}"
+          , "  \\phinoName{morph2}"
+          , "  \\phinoPremise{ \\phinoDataize{ n }{ e }{ s_1 }{ \\delta }{ s_2 } }"
+          , "  \\phinoConclusion{ \\phinoMorph{ n }{ e }{ s_1 }{ n }{ s_2 } }"
+          , "\\end{phinoMorphingInference}"
           ]
