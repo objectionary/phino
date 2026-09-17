@@ -39,14 +39,14 @@
     𝛿1: $.ρ
   𝑛: Φ.bytes( φ ↦ ⟦ λ ⤍ 𝜎 ⟧ )
 
-# A branch is where an 'evaluate' operand earns its place: the condition comes
+# A branch is where a 'morph' operand earns its place: the condition comes
 # down through 𝔻, both branches reach a normal form through 𝕄, and the answer
 # is one of them. Which one is undecided, so the entry answers with the first
 # and the symbols tell what it depended on.
 - λ: L_fork
   dataize:
     𝛿1: $.ρ
-  evaluate:
+  morph:
     𝑛1: $.then
     𝑛2: $.else
   𝑛: 𝑛1

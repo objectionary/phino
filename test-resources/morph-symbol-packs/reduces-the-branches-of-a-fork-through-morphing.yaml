@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 # SPDX-License-Identifier: MIT
 ---
-# A branch is where an 'evaluate' operand earns its place: the condition comes
+# A branch is where a 'morph' operand earns its place: the condition comes
 # down through 𝔻 and answers a symbol nobody has decided, both branches reach
 # a normal form through 𝕄, and the answer is one of them. Every line of the
 # firing points back at the line that minted the symbol it carries, which is
@@ -20,7 +20,7 @@ symbolic: |
   - λ: L_fork
     dataize:
       𝛿1: $.ρ
-    evaluate:
+    morph:
       𝑛1: $.then
       𝑛2: $.else
     𝑛: 𝑛1

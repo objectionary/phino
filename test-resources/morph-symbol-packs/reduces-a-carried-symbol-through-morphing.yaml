@@ -1,12 +1,12 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 # SPDX-License-Identifier: MIT
 ---
-# An 'evaluate' operand of the firing is a symbol the program already carried:
+# A 'morph' operand of the firing is a symbol the program already carried:
 # 𝕄 hands it back the way it found it, since a symbol is already a normal form
 # and there is nothing under it to reduce. The answer then mints after it.
 symbolic: |
   - λ: L_keep
-    evaluate:
+    morph:
       𝑛1: $.x
     𝑛: ⟦ z ↦ ⟦ λ ⤍ 𝜎 ⟧ ⟧
 location: 'Q.y'
