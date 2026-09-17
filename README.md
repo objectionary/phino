@@ -333,9 +333,9 @@ $ cat atoms.xml
 <?xml version="1.0" encoding="UTF-8"?>
 <protocol judgment="𝔻" of="Φ">
   <evaluate λ="L_number_plus" id="1">
-    <bind meta="𝛿1">40-14-00-00-00-00-00-00</bind>
-    <bind meta="𝛿2">40-18-00-00-00-00-00-00</bind>
-    <answer symbol="𝜎1">Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )</answer>
+    <bind meta="𝛿1.1">40-14-00-00-00-00-00-00</bind>
+    <bind meta="𝛿2.1">40-18-00-00-00-00-00-00</bind>
+    <answer meta="𝑛.1" symbol="𝜎1">Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )</answer>
   </evaluate>
 </protocol>
 ```
@@ -343,24 +343,24 @@ $ cat atoms.xml
 `<protocol>` is the run, `judgment` saying which of 𝔻 and 𝕄 it was and `of`
 the term it was aimed at. `<evaluate>` is one firing of 𝔼, `λ` naming the entry
 that answered it and `id` numbering it within the run. `<bind>` is one meta the
-firing bound, `meta` naming it and the element holding the value it took: a
-term where the operand was reduced with 𝕄, the datum itself where a `dataize`
-operand came down to data. `<dataize>` is the other thing a `dataize` operand
-may come to, the datum manufactured for an unknown, and holds that unknown
-rather than the 42 standing for it. The name of the element is what tells the
-two apart, the way `𝔻(…)` does in the text format, so nothing has to be read
-off the presence of an attribute. `<answer>` holds the term the firing answered
-with.
+firing bound, `meta` naming it the same way the text format names it, counter
+and all, and the element holding the value it took: a term where the operand
+was reduced with 𝕄, the datum itself where a `dataize` operand came down to
+data. `<dataize>` is the other thing a `dataize` operand may come to, the
+datum manufactured for an unknown, and holds that unknown rather than the 42
+standing for it. The name of the element is what tells the two apart, the way
+`𝔻(…)` does in the text format, so nothing has to be read off the presence of
+an attribute. `<answer>` holds the term the firing answered with, named the
+same way by its own `meta`.
 
 Where a term denotes a symbol, the element says so with `symbol="𝜎1"`, and
-that name is the only thing a reader joins lines on. It is spelled the way
-every term carrying it is spelled, so the join compares two strings that look
-alike rather than a number against a name. In the fork above, `𝔼(L_fork)`
-becomes an `<evaluate>` whose condition is `<dataize meta="𝛿1">𝜎2</dataize>`
-and whose answer is `<answer symbol="𝜎4">`: the condition is the symbol the
-first firing minted and the answer the one the third minted. The text format
-says the same with `𝛿1.5 := 𝔻(𝜎2)` and `𝑛.5 := 𝑛1.5`, which name a line by
-counting; the markup names the value, so the counting is gone. A term standing
+that name is what a reader joins lines on. It is spelled the way every term
+carrying it is spelled, so the join compares two strings that look alike
+rather than a number against a name. In the fork above, `𝔼(L_fork)` becomes an
+`<evaluate>` whose condition is `<dataize meta="𝛿1.5">𝜎2</dataize>` and whose
+answer is `<answer meta="𝑛.5" symbol="𝜎4">`: the condition is the symbol the
+first firing minted and the answer the one the third minted, the very same
+`𝛿1.5 := 𝔻(𝜎2)` and `𝑛.5 := 𝑛1.5` the text format writes. A term standing
 for nothing takes no attribute at all, the terminator ⊥ included, since its
 own text already says what it is.
 
@@ -379,9 +379,9 @@ $ cat atoms.xml
 <?xml version="1.0" encoding="UTF-8"?>
 <protocol judgment="𝔻" of="Φ">
   <evaluate λ="L_number_plus" id="1">
-    <bind meta="𝛿1">40-14-00-00-00-00-00-00</bind>
-    <bind meta="𝛿2">40-18-00-00-00-00-00-00</bind>
-    <answer symbol="𝜎1">Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )</answer>
+    <bind meta="𝛿1.1">40-14-00-00-00-00-00-00</bind>
+    <bind meta="𝛿2.1">40-18-00-00-00-00-00-00</bind>
+    <answer meta="𝑛.1" symbol="𝜎1">Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )</answer>
   </evaluate>
   <stuck λ="L_number_nope"/>
 </protocol>
