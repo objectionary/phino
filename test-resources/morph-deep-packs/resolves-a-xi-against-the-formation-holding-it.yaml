@@ -7,4 +7,13 @@ location: 'Q.@'
 model: true
 symbolic: true
 input: '[[ n -> 5, x -> $.n.plus( 6 ) ]]'
-result: '[[ n -> 5, x -> Q.number( φ -> ⟦ λ ⤍ 𝜎1 ⟧ ) ]]'
+result: >
+  ⟦ n ↦ 5, x ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, as-bytes ↦ φ, plus(x) ↦ ⟦ λ ⤍ L_number_plus
+  ⟧, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧, div(x) ↦ ⟦ λ ⤍ L_number_div ⟧, gt(x)
+  ↦ ⟦ λ ⤍ L_number_gt ⟧, eq(x) ↦ ⟦ φ ↦ ρ.as-bytes.eq( x.as-bytes ) ⟧, nope ↦
+  ⟦ λ ⤍ L_number_nope ⟧, ρ ↦ ⟦ bytes(φ) ↦ ⟦ not ↦ ⟦ λ ⤍ L_bytes_not ⟧, eq(b)
+  ↦ ⟦ λ ⤍ L_bytes_eq ⟧ ⟧, bool(φ) ↦ ⟦ if(then, else) ↦ ⟦ λ ⤍ L_fork ⟧ ⟧,
+  number(φ) ↦ ⟦ as-bytes ↦ φ, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, times(x) ↦ ⟦
+  λ ⤍ L_number_times ⟧, div(x) ↦ ⟦ λ ⤍ L_number_div ⟧, gt(x) ↦ ⟦ λ ⤍
+  L_number_gt ⟧, eq(x) ↦ ⟦ φ ↦ ρ.as-bytes.eq( x.as-bytes ) ⟧, nope ↦ ⟦ λ ⤍
+  L_number_nope ⟧ ⟧, φ ↦ ⟦ n ↦ 5, x ↦ n.plus( 6 ) ⟧ ⟧ ⟧ ⟧

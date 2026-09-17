@@ -26,4 +26,3 @@ protocol: |
     𝔼(L_loop)
       𝑛.5 := ⟦ λ ⤍ L_loop ⟧
     𝔼(L_loop)
-      𝑛.6 := ⟦ λ ⤍ L_loop ⟧

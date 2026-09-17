@@ -259,7 +259,7 @@ spec = do
           [ "  𝔼(L_number_times)"
           , "    𝛿1.1 := 40-00-00-00-00-00-00-00  # ξ.ρ"
           , "    𝛿2.1 := 40-08-00-00-00-00-00-00  # ξ.x"
-          , "    𝑛.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )"
+          , "    𝑛.1 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, as-bytes ↦ φ, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧, div(x) ↦ ⟦ λ ⤍ L_number_div ⟧, gt(x) ↦ ⟦ λ ⤍ L_number_gt ⟧, eq(x) ↦ ⟦ φ ↦ ρ.as-bytes.eq( x.as-bytes ) ⟧, nope ↦ ⟦ λ ⤍ L_number_nope ⟧, ρ ↦ ⟦ bytes(φ) ↦ ⟦ not ↦ ⟦ λ ⤍ L_bytes_not ⟧, eq(b) ↦ ⟦ λ ⤍ L_bytes_eq ⟧ ⟧, bool(φ) ↦ ⟦ if(then, else) ↦ ⟦ λ ⤍ L_fork ⟧ ⟧, number(φ) ↦ ⟦ as-bytes ↦ φ, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧, div(x) ↦ ⟦ λ ⤍ L_number_div ⟧, gt(x) ↦ ⟦ λ ⤍ L_number_gt ⟧, eq(x) ↦ ⟦ φ ↦ ρ.as-bytes.eq( x.as-bytes ) ⟧, nope ↦ ⟦ λ ⤍ L_number_nope ⟧ ⟧, φ ↦ 2.times( 3 ).nope ⟧ ⟧"
           , "  ?(L_number_nope)"
           ]
     it "leaves an unanswered λ function dataized directly as the whole residue" $ do
@@ -343,6 +343,10 @@ spec = do
           loc' <- parseExpressionThrows loc
           (_, chain, _) <- dataize expr emptyState (withLambdas known (defaultReduceContext loc'))
           pure [label | (_, Just label) <- chain]
+    -- 'evaluate' is followed straight by the 'contextualize' of the answer's
+    -- own 𝔻 and not by the 'ma'/'copy'/'mf' that used to reduce it on the
+    -- spine: 𝔼 morphs what it answers before it hands it over, so the spine is
+    -- given a formation and has nothing left to peel (#1268)
     it "dataizes 5.plus(6) through the expected rules" $ do
       labels <-
         labelsOf
@@ -355,9 +359,6 @@ spec = do
                    , "copy"
                    , "mf"
                    , "evaluate"
-                   , "ma"
-                   , "copy"
-                   , "mf"
                    , "contextualize"
                    , "symbol"
                    ]
