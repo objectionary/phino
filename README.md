@@ -127,6 +127,43 @@ The term under `𝑛` is what the firing answers with. `phino` normalizes it
 exactly as it normalizes anything else, so `--protocol`, `--partial` and
 `--max-steps` work on it unchanged.
 
+### Standing data into unknowns
+
+There is a third block, `symbolize`, and it reduces nothing. It takes a term
+another meta of the entry is already bound to and binds an expression meta of
+its own to that same term with every datum in it standing for an unknown:
+
+```yaml
+- λ: L_fork
+  dataize:
+    𝛿1: $.φ
+  morph:
+    𝑛1: $.left
+    𝑛2: $.right
+  symbolize:
+    𝑛3: 𝑛1
+    𝑛4: 𝑛2
+  𝑛: 𝑛3
+```
+
+The right-hand side of a line names a meta bound by `morph` or by a
+`symbolize` line above it, and nothing else; a term nobody reduced has no data
+to stand. Every `Δ ⤍ b` binding of that term becomes a `λ ⤍ 𝜎k` naming a
+fresh symbol, one per occurrence, so `⟦ Δ ⤍ b ⟧` reads as `⟦ λ ⤍ 𝜎k ⟧` and a
+literal tuple gets several. A term carrying no datum passes through as it was.
+
+What a `ρ` carries is left alone, the whole subtree of it. A term carries the
+value it stands for where its `φ` chain ends, and a datum sitting under `ρ`
+belongs to the object around this one; a normal form drags the universe it was
+reduced inside along under `ρ`, so a walk reaching into it would stand the data
+of the whole program into unknowns to say one thing about one term.
+
+This is what lets an entry compare two branches of a fork. A literal is sugar
+for `Φ.number( Φ.bytes( ⟦ Δ ⤍ … ⟧ ) )`, so a branch computed from a literal
+keeps a datum three levels down where a branch computed from an unknown keeps
+`⟦ λ ⤍ 𝜎 ⟧`. A `Δ` against a `λ` is a difference in kind and not in value, and
+after the stage both branches carry `⟦ λ ⤍ 𝜎 ⟧` where they differ.
+
 ### Symbols
 
 An entry answers, it never computes. The job of these functions is symbolic
@@ -206,10 +243,19 @@ function that was, `𝑛1.2` the same for a `morph` meta, and `𝑛.k` the k-th
 answer of the whole run, so `𝑛1.2 := 𝑛.3` reads "the `𝑛1` of this firing is
 the third answer". One firing binds a meta once and no two firings share a
 number, so every one of these names stands on exactly one line of the file and
-a line naming another one points at it and no other. Where an
-operand came down to the datum a symbol stands for, the protocol writes `𝔻(𝜎1)`
+a line naming another one points at it and no other. Where an operand came
+down to the datum a symbol stands for, the protocol writes `𝔻(⟦ λ ⤍ 𝜎1 ⟧)`
 in place of that 42, so a reader sees that the value was manufactured rather
-than read out of the program.
+than read out of the program. A `𝜎` is the name of a λ function and no term of
+its own, so 𝔻 is applied to the formation carrying it and never to the name
+alone.
+
+A `symbolize` line writes a line per fresh symbol it minted, ahead of the line
+binding the term that carries them, and that line is a fact and no assignment:
+`𝔻(⟦ λ ⤍ 𝜎44 ⟧) == 3F-F0-00-00-00-00-00-00` says that dataizing the formation
+`𝜎44` names answers those bytes. Nothing binds bytes to a `𝜎`, since it is
+neither a datum nor a term. A consumer reading the protocol back treats a
+symbol with such a fact as a constant and every other symbol as an unknown.
 
 An operand line ends in the term it was reduced from, written as a comment
 after two spaces and `#`. The value alone says what the meta was bound to and
@@ -288,39 +334,39 @@ $ phino morph --deep --symbolic=atoms.yaml --locator=Q.demo.a \
 $ cat fork.txt
 𝕄(Φ.demo.a)
   𝔼(L_number_gt)
-    𝛿1.1 := 𝔻(𝜎1)  # ξ.ρ
+    𝛿1.1 := 𝔻(⟦ λ ⤍ 𝜎1 ⟧)  # ξ.ρ
     𝛿2.1 := 00-00-00-00-00-00-00-00  # ξ.x
     𝑛.1 := Φ.bool( if ↦ ⟦ λ ⤍ L_fork, then ↦ ∅, else ↦ ∅, φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧ )
   𝔼(L_number_plus)
-    𝛿1.2 := 𝔻(𝜎1)  # ξ.ρ
+    𝛿1.2 := 𝔻(⟦ λ ⤍ 𝜎1 ⟧)  # ξ.ρ
     𝛿2.2 := 3F-F0-00-00-00-00-00-00  # ξ.x
     𝑛.2 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎3 ⟧ )
   𝔼(L_number_plus)
-    𝛿1.3 := 𝔻(𝜎1)  # ξ.ρ
-    𝛿2.3 := 𝔻(𝜎3)  # ξ.x
+    𝛿1.3 := 𝔻(⟦ λ ⤍ 𝜎1 ⟧)  # ξ.ρ
+    𝛿2.3 := 𝔻(⟦ λ ⤍ 𝜎3 ⟧)  # ξ.x
     𝑛.3 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎4 ⟧ )
   𝔼(L_number_plus)
-    𝛿1.4 := 𝔻(𝜎1)  # ξ.ρ
-    𝛿2.4 := 𝔻(𝜎1)  # ξ.x
+    𝛿1.4 := 𝔻(⟦ λ ⤍ 𝜎1 ⟧)  # ξ.ρ
+    𝛿2.4 := 𝔻(⟦ λ ⤍ 𝜎1 ⟧)  # ξ.x
     𝑛.4 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎5 ⟧ )
   𝔼(L_fork)
-    𝛿1.5 := 𝔻(𝜎2)  # ξ.φ
+    𝛿1.5 := 𝔻(⟦ λ ⤍ 𝜎2 ⟧)  # ξ.φ
     𝑛1.5 := 𝑛.3  # ξ.then
     𝑛2.5 := 𝑛.4  # ξ.else
     𝑛.5 := 𝑛1.5
   𝔼(L_number_plus)
-    𝛿1.6 := 𝔻(𝜎4)  # ξ.ρ
+    𝛿1.6 := 𝔻(⟦ λ ⤍ 𝜎4 ⟧)  # ξ.ρ
     𝛿2.6 := 40-14-00-00-00-00-00-00  # ξ.x
     𝑛.6 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎6 ⟧ )
 ```
 
-`𝜎3` is minted by the second firing and consumed by the third as `𝔻(𝜎3)`,
-`𝜎4` by the third and consumed by the last, `𝜎2` by the first and consumed by
-the fork. `𝜎5` is minted and never consumed, which is how a reader sees that
-the right branch was computed and thrown away. The two `morph` lines of
-`𝔼(L_fork)` are recorded although nothing fires under them, since they are the
-only edge from the fork back to the branch it answered with: without them
-`𝑛.5 := 𝑛1.5` would name a meta nothing ever bound.
+`𝜎3` is minted by the second firing and consumed by the third as
+`𝔻(⟦ λ ⤍ 𝜎3 ⟧)`, `𝜎4` by the third and consumed by the last, `𝜎2` by the
+first and consumed by the fork. `𝜎5` is minted and never consumed, which is
+how a reader sees that the right branch was computed and thrown away. The two
+`morph` lines of `𝔼(L_fork)` are recorded although nothing fires under them,
+since they are the only edge from the fork back to the branch it answered
+with: without them `𝑛.5 := 𝑛1.5` would name a meta nothing ever bound.
 
 A firing that happened while an operand of another was being reduced stands one
 level deeper, under the firing that asked for it. Here it never happens,
@@ -362,6 +408,13 @@ standing for it. The name of the element is what tells the two apart, the way
 an attribute. `<answer>` holds the term the firing answered with, named the
 same way by its own `meta`.
 
+`<known symbol="𝜎44">3F-F0-00-00-00-00-00-00</known>` is the fact a `symbolize`
+line writes about a symbol it minted, which the text format writes as
+`𝔻(⟦ λ ⤍ 𝜎44 ⟧) == …`: the symbol stands in the attribute a reader joins
+lines on and the data dataizing its formation answers are the text of the
+element. It takes `symbol` and not `meta`, since the fact is about the unknown
+and not about a meta the firing bound.
+
 Where a term denotes a symbol, the element says so with `symbol="𝜎1"`, and
 that name is what a reader joins lines on. It is spelled the way every term
 carrying it is spelled, so the join compares two strings that look alike
@@ -369,9 +422,9 @@ rather than a number against a name. In the fork above, `𝔼(L_fork)` becomes a
 `<evaluate>` whose condition is `<dataize meta="𝛿1.5">𝜎2</dataize>` and whose
 answer is `<answer meta="𝑛.5" symbol="𝜎4">`: the condition is the symbol the
 first firing minted and the answer the one the third minted, the very same
-`𝛿1.5 := 𝔻(𝜎2)` and `𝑛.5 := 𝑛1.5` the text format writes. A term standing
-for nothing takes no attribute at all, the terminator ⊥ included, since its
-own text already says what it is.
+`𝛿1.5 := 𝔻(⟦ λ ⤍ 𝜎2 ⟧)` and `𝑛.5 := 𝑛1.5` the text format writes. A term
+standing for nothing takes no attribute at all, the terminator ⊥ included,
+since its own text already says what it is.
 
 A λ name no entry answers is `<stuck λ="…"/>`, standing where its `<evaluate>`
 would have stood, and a firing that happened while an operand of another was
@@ -462,7 +515,7 @@ $ cat atoms.txt
     𝛿2.1 := 40-08-00-00-00-00-00-00  # ξ.x
     𝑛.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )
   𝔼(L_number_plus)
-    𝛿1.2 := 𝔻(𝜎1)  # ξ.ρ
+    𝛿1.2 := 𝔻(⟦ λ ⤍ 𝜎1 ⟧)  # ξ.ρ
     𝛿2.2 := 40-10-00-00-00-00-00-00  # ξ.x
     𝑛.2 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ )
 ```
