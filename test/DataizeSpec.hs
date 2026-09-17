@@ -257,8 +257,8 @@ spec = do
       protocol
         `shouldBe` unlines
           [ "  𝔼(L_number_times)"
-          , "    𝛿1.1 := 40-00-00-00-00-00-00-00"
-          , "    𝛿2.1 := 40-08-00-00-00-00-00-00"
+          , "    𝛿1.1 := 40-00-00-00-00-00-00-00  # ξ.ρ"
+          , "    𝛿2.1 := 40-08-00-00-00-00-00-00  # ξ.x"
           , "    𝑛.1 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, as-bytes ↦ φ, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧, div(x) ↦ ⟦ λ ⤍ L_number_div ⟧, gt(x) ↦ ⟦ λ ⤍ L_number_gt ⟧, eq(x) ↦ ⟦ φ ↦ ρ.as-bytes.eq( x.as-bytes ) ⟧, nope ↦ ⟦ λ ⤍ L_number_nope ⟧ ⟧"
           , "  ?(L_number_nope)"
           ]

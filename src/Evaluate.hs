@@ -114,7 +114,7 @@ symbol func self univ state caller = case matched caller._symbolic func of
       case value of
         Nothing -> throwIO (Stuck func)
         Just bytes -> do
-          ctx._saveEval (EvData ctx._nesting meta._spelling (maybe (Right bytes) Left state''._manufactured))
+          ctx._saveEval (EvData ctx._nesting meta._spelling term (maybe (Right bytes) Left state''._manufactured))
           bound' <- bind meta (MvBytes bytes) bound
           pure (bound', state'')
     -- Reduce one 'morph' operand through 𝕄 and bind the expression meta that
@@ -124,7 +124,7 @@ symbol func self univ state caller = case matched caller._symbolic func of
     through :: ReduceContext -> (Subst, State) -> (Meta, Expression) -> IO (Subst, State)
     through ctx (bound, state') (meta, term) = do
       (normal, state'') <- morphing univ ctx (operand term) state'
-      ctx._saveEval (EvTerm ctx._nesting meta._spelling normal)
+      ctx._saveEval (EvTerm ctx._nesting meta._spelling term normal)
       bound' <- bind meta (MvExpression normal) bound
       pure (bound', state'')
     -- Mint the fresh symbols the answer asks for, build it and morph it. A bare

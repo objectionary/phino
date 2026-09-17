@@ -61,6 +61,7 @@ library
     Margin
     Matcher
     Merge
+    Metas
     Misc
     Morph
     Must
@@ -153,6 +154,7 @@ test-suite spec
     MarginSpec
     MatcherSpec
     MergeSpec
+    MetasSpec
     MiscSpec
     MorphSpec
     MustSpec

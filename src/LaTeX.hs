@@ -36,6 +36,7 @@ import Lining
 import Locator (locatedExpression)
 import Margin (WithMargin, defaultMargin, withMargin)
 import Matcher
+import Metas (lonely)
 import Misc
 import Render (Render (render))
 import Replacer (replaceExpression)
@@ -581,14 +582,18 @@ extraArgumentsToLatex (Just extras) =
   let extras' = map ((`renderToLatex` defaultLatexContext) . extraToCST) extras
    in braced (intercalate " and " extras')
 
+-- Every rule is bared before it is rendered: an index that tells a meta from no
+-- other within the rule is dropped, so a rule naming a single expression meta
+-- says 'e' and not 'e_1', the way a rule threading a single state says 's' and
+-- not 's_1' (see 'conclusionStateName' and #1260).
 explainRules :: [Y.Rule] -> String
-explainRules = intercalate "\n" . map explainRule
+explainRules = intercalate "\n" . map (explainRule . lonely)
 
 explainMorphRules :: [Y.MorphRule] -> String
-explainMorphRules = intercalate "\n" . map explainMorphRule
+explainMorphRules = intercalate "\n" . map (explainMorphRule . lonely)
 
 explainDataizeRules :: [Y.DataizeRule] -> String
-explainDataizeRules = intercalate "\n" . map explainDataizeRule
+explainDataizeRules = intercalate "\n" . map (explainDataizeRule . lonely)
 
 explainContextualizeRules :: [Y.ContextualizeRule] -> String
-explainContextualizeRules = intercalate "\n" . map explainContextualizeRule
+explainContextualizeRules = intercalate "\n" . map (explainContextualizeRule . lonely)

@@ -74,9 +74,10 @@ dontSaveStep = saveStep Nothing "" (\_ -> pure "") 0
 -- the firings of the Evaluation function 𝔼 rather than a list of them. The run
 -- itself opens it — '𝕄(Q.φ)' for a morphing, '𝔻(Q)' for a dataization — and
 -- under it stands one block per firing, '𝔼(L_number_plus)', naming the entry
--- that answered. Inside a block stand the operands the entry bound and the
--- term it answered with, one to a line, and any firing an operand took while
--- it was being reduced, one level deeper again. A name no entry answers stands
+-- that answered. Inside a block stand the operands the entry bound — each with
+-- the term it was reduced from — and the term it answered with, one to a line,
+-- and any firing an operand took while it was being reduced, one level deeper
+-- again. A name no entry answers stands
 -- there as '?(L_number_nope)', where the block of its firing would have been.
 data Evaluation
   = -- The run and the term it was aimed at.
@@ -90,12 +91,13 @@ data Evaluation
     -- goes on to park the run, since the protocol records what 𝔼 was asked for
     -- and a question it could not answer belongs there as much as one it could.
     EvStuck Int T.Text
-  | -- A 'dataize' operand of the firing: the meta it bound and the data it
-    -- came down to, or the symbol that data was manufactured for.
-    EvData Int T.Text (Either Int Bytes)
-  | -- A 'morph' operand of the firing: the meta it bound and the normal
-    -- form it reached.
-    EvTerm Int T.Text Expression
+  | -- A 'dataize' operand of the firing: the meta it bound, the term the entry
+    -- wrote under that meta, and the data it came down to, or the symbol that
+    -- data was manufactured for.
+    EvData Int T.Text Expression (Either Int Bytes)
+  | -- A 'morph' operand of the firing: the meta it bound, the term the entry
+    -- wrote under that meta, and the normal form it reached.
+    EvTerm Int T.Text Expression Expression
   | -- What the firing answered with.
     EvAnswer Int Expression
 
@@ -125,20 +127,26 @@ data Protocol = Protocol
 emptyProtocol :: Protocol
 emptyProtocol = Protocol 0 0 Map.empty Map.empty
 
--- What the XML protocol has counted so far: how many firings the run has
--- opened, which is what numbers them, and the elements standing open around
--- the record being written, innermost first, each with the depth it was opened
--- at and the name it closes under. The text format needs no such stack, since
+-- What the XML protocol has counted so far: how many firings the whole run
+-- has opened, the same single counter 'Protocol' keeps since #1261, which
+-- numbers the 'id' an element carries and, through '_openedAt', names a meta
+-- on this firing the way the text format names it and not with the bare
+-- spelling the entry's YAML gives it; how many answers the run has given,
+-- which numbers an '<answer>'; and the elements standing open around the
+-- record being written, innermost first, each with the depth it was opened at
+-- and the name it closes under. The text format needs no such stack, since
 -- indentation opens and closes nothing; markup does, and the depth a record
 -- carries is the only thing saying which firings it stands outside of.
 data Nesting = Nesting
   { _fires :: Int
+  , _openedAt :: Map.Map Int Int
+  , _answers :: Int
   , _closing :: [(Int, String)]
   }
 
 -- The XML protocol before a single element has been opened.
 emptyNesting :: Nesting
-emptyNesting = Nesting 0 []
+emptyNesting = Nesting 0 Map.empty 0 []
 
 -- Append one line to the protocol, indented by the depth of what it reports
 -- and numbered by what the protocol has seen before it. The handle stays open
@@ -146,9 +154,13 @@ emptyNesting = Nesting 0 []
 -- reopening the file for each of them buys nothing; the counting rides in an
 -- 'IORef' next to it, since it is the cursor of the file and not a property of
 -- the reduction. Expressions are rendered by the caller, which flattens them,
--- so a line never spills over more than one.
-saveEval :: Handle -> IORef Protocol -> (Expression -> IO String) -> SaveEvalFunc
-saveEval handle cursor render report = do
+-- so a line never spills over more than one. There are two renderers and not
+-- one because the operand a line is commented with is spelled salty while the
+-- value it took is spelled the way the run prints its own answer: the sweet
+-- syntax drops the ξ of 'ξ.x' and leaves a bare 'x', which is the very thing
+-- the comment is there to say (see 'commented').
+saveEval :: Handle -> IORef Protocol -> (Expression -> IO String) -> (Expression -> IO String) -> SaveEvalFunc
+saveEval handle cursor render salted report = do
   line <- atomicModify cursor (written report)
   hPutStrLn handle line
   logDebug (printf "Saved one line of the protocol: %s" (dropWhile (== ' ') line))
@@ -173,16 +185,18 @@ saveEval handle cursor render report = do
         firings = protocol._fired + 1
     written (EvStuck depth key) protocol =
       pure (protocol, indented depth (printf "?(%s)" (T.unpack key)))
-    written (EvData depth spelling value) protocol =
-      pure (protocol, indented depth (printf "%s := %s" (labelled protocol depth spelling) (spelled value)))
+    written (EvData depth spelling operand value) protocol = do
+      line <- commented (printf "%s := %s" (labelled protocol depth spelling) (spelled value)) operand
+      pure (protocol, indented depth line)
       where
         spelled :: Either Int Bytes -> String
         spelled (Left symbol) = printf "𝔻(%s)" (printFunction (FnSymbol symbol))
         spelled (Right bytes) = printBytes bytes
-    written (EvTerm depth spelling term) protocol = do
+    written (EvTerm depth spelling operand term) protocol = do
       let naming = labelled protocol depth spelling
       (protocol', value) <- valued protocol naming term
-      pure (protocol', indented depth (printf "%s := %s" naming value))
+      line <- commented (printf "%s := %s" naming value) operand
+      pure (protocol', indented depth line)
     written (EvAnswer depth term) protocol = do
       let naming = printf "%s.%d" (T.unpack answer) (protocol._answered + 1)
       (protocol', value) <- valued protocol{_answered = protocol._answered + 1} naming term
@@ -197,6 +211,16 @@ saveEval handle cursor render report = do
       Just symbol -> do
         value <- maybe (render term) (pure . T.unpack) (Map.lookup symbol protocol._named)
         pure (protocol{_named = Map.insert symbol (T.pack naming) protocol._named}, value)
+    -- The line of an operand with the term it was reduced from appended to it
+    -- as a comment, since the value alone says what the meta was bound to and
+    -- never what it was bound from. It is the very term the entry wrote under
+    -- the meta, spelled the way the calculus reads it — '$.x' is read as 'ξ.x'
+    -- — which is why it goes through 'salted' and not through the 'render' the
+    -- value goes through: the sweet syntax writes that same term as a bare 'x',
+    -- and a bare 'x' reads as a name rather than as the term it is. It is
+    -- flattened like everything else, so the whole line stays one line of 𝜑.
+    commented :: String -> Expression -> IO String
+    commented line operand = printf "%s  # %s" line <$> salted operand
     -- The name of an operand meta on this firing of its λ function: the meta
     -- the entry spells it with and which firing of the run this is, since
     -- every entry numbers its own metas from 𝛿1 and 𝑛1 and only the firing
@@ -247,7 +271,11 @@ saveEvalXml handle cursor render report = do
         )
     elements (EvFiring depth key) nesting =
       pure
-        ( nesting{_fires = fires, _closing = (depth, "evaluate") : kept}
+        ( nesting
+            { _fires = fires
+            , _openedAt = Map.insert depth fires nesting._openedAt
+            , _closing = (depth, "evaluate") : kept
+            }
         , closers ++ [indented depth (printf "<evaluate λ=\"%s\" id=\"%d\">" (quoted key) fires)]
         )
       where
@@ -258,7 +286,7 @@ saveEvalXml handle cursor render report = do
       pure (nesting{_closing = kept}, closers ++ [indented depth (printf "<stuck λ=\"%s\"/>" (quoted key))])
       where
         (kept, closers) = closed depth nesting._closing
-    elements (EvData depth spelling value) nesting =
+    elements (EvData depth spelling _ value) nesting =
       pure (nesting{_closing = kept}, closers ++ [indented depth (stood value)])
       where
         (kept, closers) = closed depth nesting._closing
@@ -269,16 +297,28 @@ saveEvalXml handle cursor render report = do
         -- apart the way 𝔻(…) does in the text format, rather than leaving a
         -- reader to test which of two attributes an element carries (#1257).
         stood :: Either Int Bytes -> String
-        stood (Left symbol) = printf "<dataize meta=\"%s\">%s</dataize>" (quoted spelling) (sigma symbol)
-        stood (Right bytes) = printf "<bind meta=\"%s\">%s</bind>" (quoted spelling) (escapeXMLText (printBytes bytes))
-    elements (EvTerm depth spelling term) nesting = do
+        stood (Left symbol) = printf "<dataize meta=\"%s\">%s</dataize>" (escapeXML (labelled nesting depth spelling)) (sigma symbol)
+        stood (Right bytes) = printf "<bind meta=\"%s\">%s</bind>" (escapeXML (labelled nesting depth spelling)) (escapeXMLText (printBytes bytes))
+    elements (EvTerm depth spelling _ term) nesting = do
       body <- render term
       let (kept, closers) = closed depth nesting._closing
-      pure (nesting{_closing = kept}, closers ++ [indented depth (printf "<bind meta=\"%s\"%s>%s</bind>" (quoted spelling) (carried term) (escapeXMLText body))])
+      pure (nesting{_closing = kept}, closers ++ [indented depth (printf "<bind meta=\"%s\"%s>%s</bind>" (escapeXML (labelled nesting depth spelling)) (carried term) (escapeXMLText body))])
     elements (EvAnswer depth term) nesting = do
       body <- render term
       let (kept, closers) = closed depth nesting._closing
-      pure (nesting{_closing = kept}, closers ++ [indented depth (printf "<answer%s>%s</answer>" (carried term) (escapeXMLText body))])
+          naming :: String
+          naming = printf "%s.%d" (T.unpack answer) (nesting._answers + 1)
+      pure (nesting{_closing = kept, _answers = nesting._answers + 1}, closers ++ [indented depth (printf "<answer meta=\"%s\"%s>%s</answer>" (escapeXML naming) (carried term) (escapeXMLText body))])
+    -- The name of an operand meta on this firing, spelled the way the text
+    -- protocol's own 'labelled' spells it: the meta the entry names it with
+    -- in the YAML, followed by which firing of the whole run this is, the
+    -- very number the element's own 'id' carries, since every entry numbers
+    -- its own metas from 𝛿1 and 𝑛1 and only the firing tells two 𝛿1 apart
+    -- (#1261). The firing a record belongs to is the one opened one level
+    -- above it.
+    labelled :: Nesting -> Int -> T.Text -> String
+    labelled nesting depth spelling =
+      printf "%s.%d" (T.unpack spelling) (fromMaybe 0 (Map.lookup (depth - 1) nesting._openedAt))
     -- The unknown a term stands for, where it carries one. A term standing for
     -- nothing takes no attribute at all, the terminator ⊥ included, since it is
     -- itself and its own text already says so.
