@@ -253,7 +253,18 @@ optInside =
     )
 
 optProtocol :: Parser (Maybe FilePath)
-optProtocol = optional (strOption (long "protocol" <> metavar "FILE" <> help "File to record every λ function fired during the run, as an indented tree: the run at the top, one block per firing under it, and inside each block the operands it bound and the term it answered with, with a firing nested in the reduction of an operand one level deeper again"))
+optProtocol =
+  optional
+    ( strOption
+        ( long "protocol"
+            <> metavar "FILE"
+            <> help
+              "File to record every λ function fired during the run: the run at the top, one block per firing \
+              \under it, and inside each block the operands it bound and the term it answered with, with a \
+              \firing nested in the reduction of an operand one level deeper again. The name of the file \
+              \decides the format: '.xml' writes XML, every other name writes the same tree as indented text"
+        )
+    )
 
 optShuffle :: Parser Bool
 optShuffle = switch (long "shuffle" <> help "Shuffle rules before applying")

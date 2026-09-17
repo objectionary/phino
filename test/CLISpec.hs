@@ -12,10 +12,11 @@ import Control.Exception
 import Control.Monad (forM_, unless)
 import Data.Char (isDigit)
 import Data.List (intercalate, isInfixOf, isPrefixOf, sort)
+import Data.Text qualified as T
 import Data.Time.Clock (addUTCTime, getCurrentTime)
 import Data.Time.Clock.POSIX (getPOSIXTime)
 import Data.Version (showVersion)
-import Fixtures (lambdasFile, loopingLambdas, readUtf8)
+import Fixtures (lambdasFile, loopingLambdas, readUtf8, withLambdasOf)
 import GHC.IO.Handle
 import Paths_phino (version)
 import System.Directory (createDirectoryIfMissing, doesDirectoryExist, doesFileExist, getTemporaryDirectory, listDirectory, removeDirectoryRecursive, removeFile, removePathForcibly, setModificationTime)
@@ -1268,6 +1269,179 @@ spec = do
             testCLISucceeded ["dataize", symbolic, "--protocol=" ++ path, "--output=xmir", "--quiet", "--sweet", "--hide-rho"] []
           records <- readUtf8 path
           records `shouldEndWith` "    𝑛.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )\n"
+
+      -- The same facts as markup, so a program reading the protocol back never
+      -- has to parse 𝜑 to learn them: the datum an operand came down to is an
+      -- attribute, and so is the symbol a value stands for (#1245). Which of
+      -- the two formats is written is decided by the name of the file and by
+      -- nothing else
+      describe "as XML" $ do
+        it "writes the document when the file is named .xml" $
+          withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
+            hClose stream
+            withStdin sum' $
+              testCLISucceeded ["dataize", symbolic, "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
+            records <- readUtf8 path
+            lines records
+              `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+                         , "<protocol judgment=\"𝔻\" of=\"Φ\">"
+                         , "  <fire λ=\"L_number_plus\" id=\"1\">"
+                         , "    <operand meta=\"𝛿1\" bytes=\"40-14-00-00-00-00-00-00\"/>"
+                         , "    <operand meta=\"𝛿2\" bytes=\"40-18-00-00-00-00-00-00\"/>"
+                         , "    <answer symbol=\"1\">Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )</answer>"
+                         , "  </fire>"
+                         , "</protocol>"
+                         ]
+
+        -- A run firing nothing still writes a document a parser can read,
+        -- since the root is closed on the way out and not by the last firing
+        it "closes the document even when nothing fires" $
+          withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
+            hClose stream
+            withStdin "[[ D> 01- ]]" $
+              testCLISucceeded ["dataize", "--protocol=" ++ path, "--quiet"] []
+            records <- readUtf8 path
+            lines records
+              `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+                         , "<protocol judgment=\"𝔻\" of=\"Φ\">"
+                         , "</protocol>"
+                         ]
+
+        -- The symbol is what ties one line to another, so an operand that came
+        -- down to a manufactured datum carries the symbol it was made for and
+        -- never the 42 every symbol answers
+        it "carries the symbol an operand came down to instead of the datum" $
+          withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
+            hClose stream
+            withStdin chained $
+              testCLISucceeded ["dataize", symbolic, "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
+            records <- readUtf8 path
+            lines records
+              `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+                         , "<protocol judgment=\"𝔻\" of=\"Φ\">"
+                         , "  <fire λ=\"L_number_plus\" id=\"1\">"
+                         , "    <operand meta=\"𝛿1\" bytes=\"40-14-00-00-00-00-00-00\"/>"
+                         , "    <operand meta=\"𝛿2\" bytes=\"40-18-00-00-00-00-00-00\"/>"
+                         , "    <answer symbol=\"1\">Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )</answer>"
+                         , "  </fire>"
+                         , "  <fire λ=\"L_number_plus\" id=\"2\">"
+                         , "    <operand meta=\"𝛿1\" symbol=\"1\"/>"
+                         , "    <operand meta=\"𝛿2\" bytes=\"40-1C-00-00-00-00-00-00\"/>"
+                         , "    <answer symbol=\"2\">Φ.number( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ )</answer>"
+                         , "  </fire>"
+                         , "</protocol>"
+                         ]
+
+        -- A firing taken while an operand of another was coming down stands
+        -- inside that firing's element, which is where the indented tree of
+        -- the text format stands it too
+        it "nests a firing an operand took inside the firing that asked" $
+          withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
+            hClose stream
+            withStdin nested $
+              testCLISucceeded ["dataize", symbolic, "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
+            records <- readUtf8 path
+            lines records
+              `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+                         , "<protocol judgment=\"𝔻\" of=\"Φ\">"
+                         , "  <fire λ=\"L_number_plus\" id=\"1\">"
+                         , "    <operand meta=\"𝛿1\" bytes=\"40-14-00-00-00-00-00-00\"/>"
+                         , "    <fire λ=\"L_number_plus\" id=\"2\">"
+                         , "      <operand meta=\"𝛿1\" bytes=\"40-18-00-00-00-00-00-00\"/>"
+                         , "      <operand meta=\"𝛿2\" bytes=\"40-1C-00-00-00-00-00-00\"/>"
+                         , "      <answer symbol=\"1\">Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )</answer>"
+                         , "    </fire>"
+                         , "    <operand meta=\"𝛿2\" symbol=\"1\"/>"
+                         , "    <answer symbol=\"2\">Φ.number( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ )</answer>"
+                         , "  </fire>"
+                         , "</protocol>"
+                         ]
+
+        -- Nothing fired, so the element stands alone and nothing opens under
+        -- it, exactly as '?(…)' stands alone in the text format
+        it "records a λ function no entry answers as an empty element" $
+          withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
+            hClose stream
+            withStdin "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ times(x) -> [[ L> L_number_times ]], nope -> [[ L> L_number_nope ]] ]], @ -> 2.times(3).nope ]]" $
+              testCLISucceeded ["dataize", symbolic, "--partial", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
+            records <- readUtf8 path
+            lines records
+              `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+                         , "<protocol judgment=\"𝔻\" of=\"Φ\">"
+                         , "  <fire λ=\"L_number_times\" id=\"1\">"
+                         , "    <operand meta=\"𝛿1\" bytes=\"40-00-00-00-00-00-00-00\"/>"
+                         , "    <operand meta=\"𝛿2\" bytes=\"40-08-00-00-00-00-00-00\"/>"
+                         , "    <answer symbol=\"1\">Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )</answer>"
+                         , "  </fire>"
+                         , "  <stuck λ=\"L_number_nope\"/>"
+                         , "</protocol>"
+                         ]
+
+        -- A morphing names itself 𝕄 and the term it was aimed at, the way the
+        -- first line of the text format does
+        it "names the judgment and the term a morphing was aimed at" $
+          withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
+            hClose stream
+            withStdin "[[ x -> [[ L> L_number_nope ]].foo ]]" $
+              testCLISucceeded ["morph", "--locator=Q.x", "--partial", "--protocol=" ++ path, "--quiet"] []
+            records <- readUtf8 path
+            lines records
+              `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+                         , "<protocol judgment=\"𝕄\" of=\"Φ.x\">"
+                         , "  <stuck λ=\"L_number_nope\"/>"
+                         , "</protocol>"
+                         ]
+
+        -- A document a parser chokes on is worth nothing, so what the run left
+        -- open is closed on the way out and not by the last record: a run that
+        -- dies half-way through a derivation still leaves the firings it paid
+        -- for, inside elements that end
+        it "closes the document even when the run fails" $
+          withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
+            hClose stream
+            withStdin "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ times(x) -> [[ L> L_number_times ]], nope -> [[ L> L_number_nope ]] ]], @ -> 2.times(3).nope ]]" $
+              testCLIFailed ["dataize", symbolic, "--protocol=" ++ path] ["No entry of --symbolic answers"]
+            records <- readUtf8 path
+            lines records
+              `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+                         , "<protocol judgment=\"𝔻\" of=\"Φ\">"
+                         , "  <fire λ=\"L_number_times\" id=\"1\">"
+                         , "    <operand meta=\"𝛿1\" bytes=\"40-00-00-00-00-00-00-00\"/>"
+                         , "    <operand meta=\"𝛿2\" bytes=\"40-08-00-00-00-00-00-00\"/>"
+                         , "    <answer symbol=\"1\">Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1, ρ ↦ ∅ ⟧ )</answer>"
+                         , "  </fire>"
+                         , "  <stuck λ=\"L_number_nope\"/>"
+                         , "</protocol>"
+                         ]
+
+        -- An 'evaluate' operand 𝕄 answered the terminator for is neither data
+        -- nor an unknown, so it is neither 'bytes' nor 'symbol'
+        it "marks an operand that reached the terminator" $
+          withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
+            hClose stream
+            withLambdasOf (T.pack "- λ: L_pick\n  evaluate:\n    𝑛1: ξ.absent\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n") $ \picks ->
+              withStdin "[[ x -> [[ here -> [[ ]], L> L_pick ]].foo ]]" $
+                testCLIFailed ["morph", "--symbolic=" ++ picks, "--locator=Q.x", "--protocol=" ++ path, "--quiet", "--hide-rho"] ["Function evaluate() expects a formation with a λ binding"]
+            records <- readUtf8 path
+            lines records
+              `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+                         , "<protocol judgment=\"𝕄\" of=\"Φ.x\">"
+                         , "  <fire λ=\"L_pick\" id=\"1\">"
+                         , "    <operand meta=\"𝑛1\" bottom=\"true\">⊥</operand>"
+                         , "    <answer symbol=\"1\">⟦ λ ⤍ 𝜎1 ⟧</answer>"
+                         , "  </fire>"
+                         , "</protocol>"
+                         ]
+
+        -- The extension decides and nothing else, so a name ending in
+        -- anything but '.xml' keeps the indented text it has always written
+        it "keeps writing text when the file is named anything else" $
+          withTempFile "protocolXXXXXX.xmir" $ \(path, stream) -> do
+            hClose stream
+            withStdin sum' $
+              testCLISucceeded ["dataize", symbolic, "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
+            records <- readUtf8 path
+            head (lines records) `shouldBe` "𝔻(Φ)"
 
     -- A λ function no entry of the '--symbolic' file answers cannot fire — a
     -- placeholder such as ⟦ λ ⤍ Sym_arg_0 ⟧ standing in for a data input, or

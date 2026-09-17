@@ -94,10 +94,14 @@ for a value nobody worked out, minted fresh per firing and counted in the state
 `State` of `Deps.hs`. Dataizing a symbol answers a fixed 42, so a `𝛿` always
 holds data. A λ name no entry answers gets stuck, which is what `--partial`
 parks on; the protocol records it as `?(name)` either way. What fired is
-written as an indented tree by `--protocol`
+written as a tree by `--protocol`
 (`Evaluation` and `Protocol` in `Deps.hs`), which spells the three judgments
 the way the calculus does: `𝕄(…)` or `𝔻(…)` opens the run, `𝔼(…)` names a
-firing and `𝔻(𝜎1)` is the datum manufactured for a symbol.
+firing and `𝔻(𝜎1)` is the datum manufactured for a symbol. The extension of
+the file picks the format: `.xml` gets markup (`Nesting` and `saveEvalXml`),
+anything else the indented text. Both carry the same facts and both stream, so
+a run that fails still leaves a complete file; the markup references a value by
+the symbol it denotes, where the text names a line by counting.
 
 ### Dependency inversion for circular imports
 
