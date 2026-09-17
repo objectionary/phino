@@ -386,30 +386,33 @@ $ phino dataize --symbolic=atoms.yaml --protocol=atoms.xml --quiet \
     --sweet --hide-rho sum.phi
 $ cat atoms.xml
 <?xml version="1.0" encoding="UTF-8"?>
-<protocol judgment="𝔻" of="Φ">
+<dataize locator="Φ">
   <evaluate λ="L_number_plus" id="1">
     <bind meta="𝛿1.1">40-14-00-00-00-00-00-00</bind>
     <bind meta="𝛿2.1">40-18-00-00-00-00-00-00</bind>
     <minted>𝜎1</minted>
     <answer meta="𝑛.1">Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )</answer>
   </evaluate>
-</protocol>
+</dataize>
 ```
 
-`<protocol>` is the run, `judgment` saying which of 𝔻 and 𝕄 it was and `of`
-the term it was aimed at. `<evaluate>` is one firing of 𝔼, `λ` naming the entry
-that answered it and `id` numbering it within the run. `<bind>` is one meta the
-firing bound, `meta` naming it the same way the text format names it, counter
-and all, and the element holding the value it took: a term where the operand
-was reduced with 𝕄, the datum itself where a `dataize` operand came down to
-data. `<dataize>` is the other thing a `dataize` operand may come to, the
-datum manufactured for an unknown, and holds the formation that unknown
-names rather than the 42 standing for it: a `𝜎` is the name of a λ function
-and no term of its own, so what 𝔻 was applied to is `⟦ λ ⤍ 𝜎2 ⟧` and never
-`𝜎2` alone. The name of the element is what tells the two apart, the way
-`𝔻(…)` does in the text format, so nothing has to be read off the presence of
-an attribute. `<answer>` holds the term the firing answered with, named the
-same way by its own `meta`.
+The root is the run itself, named after the judgment it ran — `<dataize>` for a
+𝔻, `<morph>` for a 𝕄 — with `locator` naming the term it was aimed at, which is
+what the text format opens with as `𝔻(Φ)`. `<evaluate>` is one firing of 𝔼, `λ`
+naming the entry that answered it and `id` numbering it within the run.
+`<bind>` is one meta the firing bound, `meta` naming it the same way the text
+format names it, counter and all, and the element holding the value it took: a
+term where the operand was reduced with 𝕄, the datum itself where a `dataize`
+operand came down to data. `<dataize>` inside a firing is the other thing a
+`dataize` operand may come to, the datum manufactured for an unknown, and holds
+the formation that unknown names rather than the 42 standing for it: a `𝜎` is
+the name of a λ function and no term of its own, so what 𝔻 was applied to is
+`⟦ λ ⤍ 𝜎2 ⟧` and never `𝜎2` alone. It carries `meta` where the root carries
+`locator`, the same difference the text format draws between `𝔻(Φ)` at the top
+and `𝛿1.2 := 𝔻(…)` in a block. The name of the element is what tells a
+manufactured datum from data, the way `𝔻(…)` does in the text format, so
+nothing has to be read off the presence of an attribute. `<answer>` holds the
+term the firing answered with, named the same way by its own `meta`.
 
 `<known symbol="𝜎44">3F-F0-00-00-00-00-00-00</known>` is the fact a `symbolize`
 line writes about a symbol it minted, which the text format writes as
@@ -443,7 +446,7 @@ $ phino dataize --symbolic=atoms.yaml --protocol=atoms.xml --quiet \
 [ERROR]: No entry of --symbolic answers the λ function 'L_number_nope'
 $ cat atoms.xml
 <?xml version="1.0" encoding="UTF-8"?>
-<protocol judgment="𝔻" of="Φ">
+<dataize locator="Φ">
   <evaluate λ="L_number_plus" id="1">
     <bind meta="𝛿1.1">40-14-00-00-00-00-00-00</bind>
     <bind meta="𝛿2.1">40-18-00-00-00-00-00-00</bind>
@@ -451,7 +454,7 @@ $ cat atoms.xml
     <answer meta="𝑛.1">Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )</answer>
   </evaluate>
   <stuck λ="L_number_nope"/>
-</protocol>
+</dataize>
 ```
 
 ### Reducing a term inside a universe
