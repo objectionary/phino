@@ -101,18 +101,21 @@ data Evaluation
 
 type SaveEvalFunc = Evaluation -> IO ()
 
--- What the protocol has counted so far: how often each entry has fired, so a
--- line of one firing is told from the same line of the next; how many answers
--- the whole run has given, which numbers them; the name last given to each
--- symbol, which is how a term already written out is named instead of written
--- again; and which firing of its entry is open at each depth, since the
--- operands of a firing belong to the firing it was when it started and not to
--- the one another firing of the same entry has made of it since. The order the
--- firings come in carries nothing — it is the order 𝕄 walks the term — so the
--- symbols are what the dependencies are read from: a term carrying 𝜎4 is the
--- term the line that minted 𝜎4 stood for.
+-- What the protocol has counted so far: how many firings the whole run has
+-- opened, which is what numbers them and so tells a line of one firing from
+-- the same line of any other; how many answers the whole run has given, which
+-- numbers them; the name last given to each symbol, which is how a term
+-- already written out is named instead of written again; and which firing is
+-- open at each depth, since the operands of a firing belong to the firing it
+-- was when it started and not to the one another firing has made of it since.
+-- The firings are numbered across the run rather than per λ function, so no
+-- two of them give an operand meta the same name and a name the protocol
+-- points back to points at one line only (#1261). The order the firings come
+-- in carries nothing — it is the order 𝕄 walks the term — so the symbols are
+-- what the dependencies are read from: a term carrying 𝜎4 is the term the
+-- line that minted 𝜎4 stood for.
 data Protocol = Protocol
-  { _fired :: Map.Map T.Text Int
+  { _fired :: Int
   , _answered :: Int
   , _named :: Map.Map Int T.Text
   , _open :: Map.Map Int Int
@@ -120,7 +123,7 @@ data Protocol = Protocol
 
 -- The protocol before a single firing has been written.
 emptyProtocol :: Protocol
-emptyProtocol = Protocol Map.empty 0 Map.empty Map.empty
+emptyProtocol = Protocol 0 0 Map.empty Map.empty
 
 -- What the XML protocol has counted so far: how many firings the run has
 -- opened, which is what numbers them, and the elements standing open around
@@ -160,14 +163,14 @@ saveEval handle cursor render report = do
     written (EvFiring depth key) protocol =
       pure
         ( protocol
-            { _fired = Map.insert key firings protocol._fired
+            { _fired = firings
             , _open = Map.insert depth firings protocol._open
             }
         , indented depth (printf "𝔼(%s)" (T.unpack key))
         )
       where
         firings :: Int
-        firings = 1 + fromMaybe 0 (Map.lookup key protocol._fired)
+        firings = protocol._fired + 1
     written (EvStuck depth key) protocol =
       pure (protocol, indented depth (printf "?(%s)" (T.unpack key)))
     written (EvData depth spelling value) protocol =
@@ -195,10 +198,13 @@ saveEval handle cursor render report = do
         value <- maybe (render term) (pure . T.unpack) (Map.lookup symbol protocol._named)
         pure (protocol{_named = Map.insert symbol (T.pack naming) protocol._named}, value)
     -- The name of an operand meta on this firing of its λ function: the meta
-    -- the entry spells it with and which firing of that function this is,
-    -- since every entry numbers its own metas from 𝛿1 and 𝑛1 and only the
-    -- firing tells two 𝛿1 apart. The firing a line belongs to is the one
-    -- opened one level above it.
+    -- the entry spells it with and which firing of the run this is, since
+    -- every entry numbers its own metas from 𝛿1 and 𝑛1 and only the firing
+    -- tells two 𝛿1 apart. The number counts the firings of the whole run and
+    -- not those of one λ function, so the second firing of one entry and the
+    -- second of another never write the same name (#1261), and it is the very
+    -- number the XML format gives the firing in its 'id'. The firing a line
+    -- belongs to is the one opened one level above it.
     labelled :: Protocol -> Int -> T.Text -> String
     labelled protocol depth spelling =
       printf "%s.%d" (T.unpack spelling) (fromMaybe 0 (Map.lookup (depth - 1) protocol._open))
