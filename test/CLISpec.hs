@@ -1358,11 +1358,11 @@ spec = do
                          , "</protocol>"
                          ]
 
-        -- The symbol is what ties one line to another, so an operand that came
-        -- down to a manufactured datum is a 'dataize' and carries the symbol
-        -- it was made for, never the 42 every symbol answers, while one that
-        -- came down to data is a 'bind' holding that data: the name of the
-        -- element is what tells the two apart (#1257)
+        -- An operand that came down to a manufactured datum is a 'dataize'
+        -- holding the formation its symbol names, never the 42 every symbol
+        -- answers and never the bare name a 𝔻 cannot be applied to (#1278),
+        -- while one that came down to data is a 'bind' holding that data: the
+        -- name of the element is what tells the two apart (#1257)
         it "tells a manufactured datum from data by the name of the element" $
           withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
             hClose stream
@@ -1378,7 +1378,7 @@ spec = do
                          , "    <answer meta=\"𝑛.1\" symbol=\"𝜎1\">⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧</answer>"
                          , "  </evaluate>"
                          , "  <evaluate λ=\"L_number_plus\" id=\"2\">"
-                         , "    <dataize meta=\"𝛿1.2\">𝜎1</dataize>"
+                         , "    <dataize meta=\"𝛿1.2\">⟦ λ ⤍ 𝜎1 ⟧</dataize>"
                          , "    <bind meta=\"𝛿2.2\">40-1C-00-00-00-00-00-00</bind>"
                          , "    <answer meta=\"𝑛.2\" symbol=\"𝜎2\">⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧</answer>"
                          , "  </evaluate>"
@@ -1428,7 +1428,7 @@ spec = do
                          , "      <bind meta=\"𝛿2.2\">40-1C-00-00-00-00-00-00</bind>"
                          , "      <answer meta=\"𝑛.1\" symbol=\"𝜎1\">⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧</answer>"
                          , "    </evaluate>"
-                         , "    <dataize meta=\"𝛿2.1\">𝜎1</dataize>"
+                         , "    <dataize meta=\"𝛿2.1\">⟦ λ ⤍ 𝜎1 ⟧</dataize>"
                          , "    <answer meta=\"𝑛.2\" symbol=\"𝜎2\">⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧</answer>"
                          , "  </evaluate>"
                          , "</protocol>"

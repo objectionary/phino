@@ -402,8 +402,10 @@ firing bound, `meta` naming it the same way the text format names it, counter
 and all, and the element holding the value it took: a term where the operand
 was reduced with 𝕄, the datum itself where a `dataize` operand came down to
 data. `<dataize>` is the other thing a `dataize` operand may come to, the
-datum manufactured for an unknown, and holds that unknown rather than the 42
-standing for it. The name of the element is what tells the two apart, the way
+datum manufactured for an unknown, and holds the formation that unknown
+names rather than the 42 standing for it: a `𝜎` is the name of a λ function
+and no term of its own, so what 𝔻 was applied to is `⟦ λ ⤍ 𝜎2 ⟧` and never
+`𝜎2` alone. The name of the element is what tells the two apart, the way
 `𝔻(…)` does in the text format, so nothing has to be read off the presence of
 an attribute. `<answer>` holds the term the firing answered with, named the
 same way by its own `meta`.
@@ -419,12 +421,12 @@ Where a term denotes a symbol, the element says so with `symbol="𝜎1"`, and
 that name is what a reader joins lines on. It is spelled the way every term
 carrying it is spelled, so the join compares two strings that look alike
 rather than a number against a name. In the fork above, `𝔼(L_fork)` becomes an
-`<evaluate>` whose condition is `<dataize meta="𝛿1.5">𝜎2</dataize>` and whose
-answer is `<answer meta="𝑛.5" symbol="𝜎4">`: the condition is the symbol the
-first firing minted and the answer the one the third minted, the very same
-`𝛿1.5 := 𝔻(⟦ λ ⤍ 𝜎2 ⟧)` and `𝑛.5 := 𝑛1.5` the text format writes. A term
-standing for nothing takes no attribute at all, the terminator ⊥ included,
-since its own text already says what it is.
+`<evaluate>` whose condition is `<dataize meta="𝛿1.5">⟦ λ ⤍ 𝜎2 ⟧</dataize>`
+and whose answer is `<answer meta="𝑛.5" symbol="𝜎4">`: the condition carries
+the symbol the first firing minted and the answer names the one the third
+minted, the very same `𝛿1.5 := 𝔻(⟦ λ ⤍ 𝜎2 ⟧)` and `𝑛.5 := 𝑛1.5` the text
+format writes. A term standing for nothing takes no attribute at all, the
+terminator ⊥ included, since its own text already says what it is.
 
 A λ name no entry answers is `<stuck λ="…"/>`, standing where its `<evaluate>`
 would have stood, and a firing that happened while an operand of another was
