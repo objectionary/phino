@@ -329,9 +329,9 @@ $ cat atoms.xml
 <?xml version="1.0" encoding="UTF-8"?>
 <protocol judgment="𝔻" of="Φ">
   <fire λ="L_number_plus" id="1">
-    <bind meta="𝛿1" bytes="40-14-00-00-00-00-00-00"/>
-    <bind meta="𝛿2" bytes="40-18-00-00-00-00-00-00"/>
-    <answer symbol="𝜎1">Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )</answer>
+    <bind meta="𝛿1.1" bytes="40-14-00-00-00-00-00-00"/>
+    <bind meta="𝛿2.1" bytes="40-18-00-00-00-00-00-00"/>
+    <answer meta="𝑛.1" symbol="𝜎1">Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )</answer>
   </fire>
 </protocol>
 ```
@@ -339,22 +339,22 @@ $ cat atoms.xml
 `<protocol>` is the run, `judgment` saying which of 𝔻 and 𝕄 it was and `of`
 the term it was aimed at. `<fire>` is one firing, `λ` naming the entry that
 answered it and `id` numbering it within the run. `<bind>` is one meta the
-firing bound: `meta` names it and the element holds the term it took, or
-`bytes` holds the datum instead where a `dataize` operand came down to one.
-`<answer>` holds the term the firing answered with.
+firing bound: `meta` names it the same way the text format names it, counter
+and all, and the element holds the term it took, or `bytes` holds the datum
+instead where a `dataize` operand came down to one. `<answer>` holds the term
+the firing answered with, named the same way by its own `meta`.
 
 Where a value denotes a symbol, the element says so with `symbol="𝜎1"`
-instead of the 42 that dataizing a symbol answers, and that name is the only
-thing a reader joins lines on. It is spelled the way every term carrying it is
+instead of the 42 that dataizing a symbol answers, and that name is what a
+reader joins lines on. It is spelled the way every term carrying it is
 spelled, so the join compares two strings that look alike rather than a number
 against a name. In the fork above, `𝔼(L_fork)` becomes a `<fire>` whose
-condition is `<bind meta="𝛿1" symbol="𝜎2"/>` and whose answer is
-`<answer symbol="𝜎4">`: the condition is the symbol the first firing minted
-and the answer the one the third minted. The text format says the same with
-`𝛿1.1 := 𝔻(𝜎2)` and `𝑛.5 := 𝑛1.1`, which name a line by counting; the
-markup names the value, so the counting is gone. A term standing for nothing
-takes no attribute at all, the terminator ⊥ included, since its own text
-already says what it is.
+condition is `<bind meta="𝛿1.1" symbol="𝜎2"/>` and whose answer is
+`<answer meta="𝑛.5" symbol="𝜎4">`: the condition is the symbol the first
+firing minted and the answer the one the third minted, the very same
+`𝛿1.1 := 𝔻(𝜎2)` and `𝑛.5 := 𝑛1.1` the text format writes. A term standing
+for nothing takes no attribute at all, the terminator ⊥ included, since its
+own text already says what it is.
 
 A λ name no entry answers is `<stuck λ="…"/>`, standing where its `<fire>`
 would have stood, and a firing that happened while an operand of another was
@@ -371,9 +371,9 @@ $ cat atoms.xml
 <?xml version="1.0" encoding="UTF-8"?>
 <protocol judgment="𝔻" of="Φ">
   <fire λ="L_number_plus" id="1">
-    <bind meta="𝛿1" bytes="40-14-00-00-00-00-00-00"/>
-    <bind meta="𝛿2" bytes="40-18-00-00-00-00-00-00"/>
-    <answer symbol="𝜎1">Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )</answer>
+    <bind meta="𝛿1.1" bytes="40-14-00-00-00-00-00-00"/>
+    <bind meta="𝛿2.1" bytes="40-18-00-00-00-00-00-00"/>
+    <answer meta="𝑛.1" symbol="𝜎1">Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )</answer>
   </fire>
   <stuck λ="L_number_nope"/>
 </protocol>
