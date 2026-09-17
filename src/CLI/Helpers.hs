@@ -32,6 +32,7 @@ import Parser (parseExpressionThrows)
 import qualified Printer as P
 import qualified Random as R
 import Rewriter (Rewritten, Rewrittens', stepHeaders)
+import Sugar (SugarType (SALTY))
 import System.Directory (createDirectoryIfMissing)
 import System.FilePath (takeDirectory, takeExtension)
 import System.IO (Handle, IOMode (WriteMode), getContents', hClose, hSetEncoding, openFile, utf8)
@@ -99,7 +100,7 @@ withEvalFunc (Just file) ctx action = do
     plain = do
       cursor <- newIORef emptyProtocol
       bracket opened hClose $ \protocol ->
-        action (saveEval protocol cursor (flattened ctx))
+        action (saveEval protocol cursor (flattened ctx) (salted ctx))
     -- 'withFile' would do the same, except that it annotates whatever the action
     -- throws with the name of the file, and a dataization failure has to reach
     -- the user as it is
@@ -141,6 +142,14 @@ heading record ctx judgment locator =
 -- program reading it back never has to know what the run printed.
 flattened :: PrintContext -> Expression -> IO String
 flattened ctx = pure . printPhi ctx{_line = SINGLELINE}
+
+-- The same, in canonical 𝜑 rather than in the sugar the run prints with. The
+-- operand a protocol line names is the term an entry of the '--symbolic' file
+-- wrote, and the sweet syntax writes 'ξ.x' as a bare 'x', which reads as a name
+-- and not as the term it is — so the comment that names an operand spells it
+-- salty and the value beside it stays as the run spells it (#1265).
+salted :: PrintContext -> Expression -> IO String
+salted ctx = flattened ctx{_sugar = SALTY}
 
 -- Aim the run at the '--inside' expression instead of at '--locator': the
 -- expression is bound to a synthetic attribute prepended to the input

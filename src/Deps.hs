@@ -148,9 +148,13 @@ emptyNesting = Nesting 0 []
 -- reopening the file for each of them buys nothing; the counting rides in an
 -- 'IORef' next to it, since it is the cursor of the file and not a property of
 -- the reduction. Expressions are rendered by the caller, which flattens them,
--- so a line never spills over more than one.
-saveEval :: Handle -> IORef Protocol -> (Expression -> IO String) -> SaveEvalFunc
-saveEval handle cursor render report = do
+-- so a line never spills over more than one. There are two renderers and not
+-- one because the operand a line is commented with is spelled salty while the
+-- value it took is spelled the way the run prints its own answer: the sweet
+-- syntax drops the ξ of 'ξ.x' and leaves a bare 'x', which is the very thing
+-- the comment is there to say (see 'commented').
+saveEval :: Handle -> IORef Protocol -> (Expression -> IO String) -> (Expression -> IO String) -> SaveEvalFunc
+saveEval handle cursor render salted report = do
   line <- atomicModify cursor (written report)
   hPutStrLn handle line
   logDebug (printf "Saved one line of the protocol: %s" (dropWhile (== ' ') line))
@@ -204,11 +208,13 @@ saveEval handle cursor render report = do
     -- The line of an operand with the term it was reduced from appended to it
     -- as a comment, since the value alone says what the meta was bound to and
     -- never what it was bound from. It is the very term the entry wrote under
-    -- the meta, in the notation the calculus reads it in — '$.x' is read as
-    -- 'ξ.x' — and it is rendered by the same 'render' the value is, so the
-    -- whole line stays one line of 𝜑.
+    -- the meta, spelled the way the calculus reads it — '$.x' is read as 'ξ.x'
+    -- — which is why it goes through 'salted' and not through the 'render' the
+    -- value goes through: the sweet syntax writes that same term as a bare 'x',
+    -- and a bare 'x' reads as a name rather than as the term it is. It is
+    -- flattened like everything else, so the whole line stays one line of 𝜑.
     commented :: String -> Expression -> IO String
-    commented line operand = printf "%s  # %s" line <$> render operand
+    commented line operand = printf "%s  # %s" line <$> salted operand
     -- The name of an operand meta on this firing of its λ function: the meta
     -- the entry spells it with and which firing of the run this is, since
     -- every entry numbers its own metas from 𝛿1 and 𝑛1 and only the firing
