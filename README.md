@@ -117,7 +117,7 @@ given with `--symbolic`, one entry per λ function:
 The `λ` of an entry is the λ names it answers for, as a regular expression, so
 the one above stands for `L_number_plus` and `L_number_times`. Under `dataize`
 stand the operands it brings down to data through 𝔻, each binding a bytes meta
-`𝛿1`, `𝛿2` and so on; under `evaluate` the operands it reduces to a normal
+`𝛿1`, `𝛿2` and so on; under `morph` the operands it reduces to a normal
 form through 𝕄, each binding an expression meta `𝑛1`, `𝑛2`. Both blocks are
 terms of the calculus, read against the formation being fired, so `ξ` is that
 formation and `$.x` its `x`, while `Φ` is the universe. Every entry numbers its
@@ -201,7 +201,7 @@ $ cat atoms.txt
 `𝔻(…)` is the run and the term it was aimed at, `𝕄(…)` where the run is a
 morphing, and `𝔼(…)` is one firing, named by the entry that answered it. `𝛿1.2`
 is the value bound to that entry's `𝛿1` on its second firing, `𝑛1.1` the same
-for an `evaluate` meta, and `𝑛.k` the k-th answer of the whole run, so
+for a `morph` meta, and `𝑛.k` the k-th answer of the whole run, so
 `𝑛1.1 := 𝑛.3` reads "the `𝑛1` of this firing is the third answer". Where an
 operand came down to the datum a symbol stands for, the protocol writes `𝔻(𝜎1)`
 in place of that 42, so a reader sees that the value was manufactured rather
@@ -249,7 +249,7 @@ entry above beside these two:
 - λ: L_fork
   dataize:
     𝛿1: $.φ
-  evaluate:
+  morph:
     𝑛1: $.then
     𝑛2: $.else
   𝑛: 𝑛1
@@ -304,7 +304,7 @@ $ cat fork.txt
 `𝜎3` is minted by the second firing and consumed by the third as `𝔻(𝜎3)`,
 `𝜎4` by the third and consumed by the last, `𝜎2` by the first and consumed by
 the fork. `𝜎5` is minted and never consumed, which is how a reader sees that
-the right branch was computed and thrown away. The two `evaluate` lines of
+the right branch was computed and thrown away. The two `morph` lines of
 `𝔼(L_fork)` are recorded although nothing fires under them, since they are the
 only edge from the fork back to the branch it answered with: without them
 `𝑛.5 := 𝑛1.1` would name a meta nothing ever bound.

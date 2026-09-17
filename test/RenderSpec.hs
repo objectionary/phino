@@ -87,6 +87,7 @@ spec = do
       , (B', "B")
       , (D, "𝛿")
       , (D', "\\delta")
+      , (D'', "d")
       , (F, "𝑓")
       , (F', "F")
       ]
@@ -143,7 +144,7 @@ spec = do
       , ("PA_META_LAMBDA", PA_META_LAMBDA (META NO_EXCL F "n"), "λ ⤍ 𝑓n")
       , ("PA_META_LAMBDA'", PA_META_LAMBDA' (META EXCL F' "n"), "L> !Fn")
       , ("PA_META_DELTA", PA_META_DELTA (META NO_EXCL D "n"), "Δ ⤍ 𝛿n")
-      , ("PA_META_DELTA'", PA_META_DELTA' (META EXCL D' "n"), "D> !\\deltan")
+      , ("PA_META_DELTA'", PA_META_DELTA' (META EXCL D'' "n"), "D> !dn")
       ]
       (\(desc, node, expected) -> it desc (render node `shouldBe` expected))
 

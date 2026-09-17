@@ -67,9 +67,9 @@ spec = do
       known <- lambdasOf "- λ: L_pair\n  dataize:\n    𝛿1: $.ρ\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n"
       map (_name . fst) (maybe [] _dataized (matched known "L_pair")) `shouldBe` ["d1"]
 
-    it "reads the operands of 'evaluate' under expression metas" $ do
-      known <- lambdasOf "- λ: L_fork\n  evaluate:\n    𝑛1: $.then\n    𝑛2: $.else\n  𝑛: 𝑛1\n"
-      map (_spelling . fst) (maybe [] _evaluated (matched known "L_fork")) `shouldBe` ["𝑛1", "𝑛2"]
+    it "reads the operands of 'morph' under expression metas" $ do
+      known <- lambdasOf "- λ: L_fork\n  morph:\n    𝑛1: $.then\n    𝑛2: $.else\n  𝑛: 𝑛1\n"
+      map (_spelling . fst) (maybe [] _morphed (matched known "L_fork")) `shouldBe` ["𝑛1", "𝑛2"]
 
     it "reads the term an operand is reduced from" $ do
       known <- lambdasOf "- λ: L_pair\n  dataize:\n    𝛿1: $.x\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n"
@@ -95,7 +95,7 @@ spec = do
       , ("two entries under one key", entry "L_pair" <> entry "L_pair", "is used by more than one entry")
       , ("a key which is no regular expression", entry "L_[pair", "is not a regular expression")
       , ("an operand of 'dataize' which is no bytes meta", "- λ: L_pair\n  dataize:\n    𝑛1: $.x\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n", "is not a bytes meta")
-      , ("an operand of 'evaluate' which is no expression meta", "- λ: L_pair\n  evaluate:\n    𝛿1: $.x\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n", "is not an expression meta")
+      , ("an operand of 'morph' which is no expression meta", "- λ: L_pair\n  morph:\n    𝛿1: $.x\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n", "is not an expression meta")
       , ("an operand referencing a meta the entry never matched", "- λ: L_pair\n  dataize:\n    𝛿1: '!n'\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n", "cannot be referenced")
       , ("an answer reading the data its operands came down to", "- λ: L_pair\n  dataize:\n    𝛿1: $.ρ\n  𝑛: ⟦ Δ ⤍ 𝛿1 ⟧\n", "reads data")
       , ("an answer carrying an anonymous meta of another kind", "- λ: L_pair\n  𝑛: '⟦ φ ↦ !n ⟧'\n", "cannot be referenced")

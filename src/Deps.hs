@@ -93,7 +93,7 @@ data Evaluation
   | -- A 'dataize' operand of the firing: the meta it bound and the data it
     -- came down to, or the symbol that data was manufactured for.
     EvData Int T.Text (Either Int Bytes)
-  | -- An 'evaluate' operand of the firing: the meta it bound and the normal
+  | -- A 'morph' operand of the firing: the meta it bound and the normal
     -- form it reached.
     EvTerm Int T.Text Expression
   | -- What the firing answered with.

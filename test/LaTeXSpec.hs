@@ -124,6 +124,11 @@ spec = do
       expressionToLaTeX nan defaultLatexContext
         `shouldBe` "\\begin{phiquation}\n[[ |x| -> Q . |nan| ]]{.}\n\\end{phiquation}"
 
+    it "renders a bytes meta with the '\\delta' head" $ do
+      bts <- parseExpressionThrows "[[ D> !d7 ]]"
+      expressionToLaTeX bts defaultLatexContext
+        `shouldBe` "\\begin{phiquation}\n[[ D> \\delta_7 ]]{.}\n\\end{phiquation}"
+
     it "escapes '@' and '^' in an attribute label, same as '$' and '_'" $ do
       let weird = ExFormation [BiTau (AtLabel "a@b^c") ExRoot, BiVoid AtRho]
       expressionToLaTeX weird defaultLatexContext
