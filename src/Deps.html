@@ -123,8 +123,8 @@ forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span id="line-71"></span><span>
 </span><span id="line-72"></span><span class="hs-comment">-- One line of the protocol the '--protocol' option writes, which is a tree of</span><span>
 </span><span id="line-73"></span><span class="hs-comment">-- the firings of the Evaluation function &#120124; rather than a list of them. The run</span><span>
-</span><span id="line-74"></span><span class="hs-comment">-- itself opens it &#8212; 'M(Q.&#966;)' for a morphing, 'D(Q)' for a dataization &#8212; and</span><span>
-</span><span id="line-75"></span><span class="hs-comment">-- under it stands one block per firing, 'E(L_number_plus)', naming the entry</span><span>
+</span><span id="line-74"></span><span class="hs-comment">-- itself opens it &#8212; '&#120132;(Q.&#966;)' for a morphing, '&#120123;(Q)' for a dataization &#8212; and</span><span>
+</span><span id="line-75"></span><span class="hs-comment">-- under it stands one block per firing, '&#120124;(L_number_plus)', naming the entry</span><span>
 </span><span id="line-76"></span><span class="hs-comment">-- that answered. Inside a block stand the operands the entry bound and the</span><span>
 </span><span id="line-77"></span><span class="hs-comment">-- term it answered with, one to a line, and any firing an operand took while</span><span>
 </span><span id="line-78"></span><span class="hs-comment">-- it was being reduced, one level deeper again. A name no entry answers stands</span><span>
@@ -264,7 +264,7 @@ forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><a href="#local-6989586621679542471"><span class="hs-identifier hs-var">depth</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
 forall r. PrintfType r =&gt; String -&gt; r
 </span><span class="hs-identifier hs-var">printf</span></span><span> </span><span class="annot"><span class="annottext">String
-</span><span class="hs-string">&quot;E(%s)&quot;</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text -&gt; String
+</span><span class="hs-string">&quot;&#120124;(%s)&quot;</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text -&gt; String
 </span><span class="hs-identifier hs-var">T.unpack</span></span><span> </span><span class="annot"><span class="annottext">Text
 </span><a href="#local-6989586621679542472"><span class="hs-identifier hs-var">key</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
 </span><span id="line-151"></span><span>        </span><span class="hs-special">)</span><span>
@@ -326,7 +326,7 @@ forall r. PrintfType r =&gt; String -&gt; r
 </span><a href="#local-6989586621679542488"><span class="hs-identifier hs-var">symbol</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
 forall r. PrintfType r =&gt; String -&gt; r
 </span><span class="hs-identifier hs-var">printf</span></span><span> </span><span class="annot"><span class="annottext">String
-</span><span class="hs-string">&quot;D(%s)&quot;</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Function -&gt; String
+</span><span class="hs-string">&quot;&#120123;(%s)&quot;</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Function -&gt; String
 </span><a href="Printer.html#printFunction"><span class="hs-identifier hs-var">printFunction</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; Function
 </span><a href="AST.html#FnSymbol"><span class="hs-identifier hs-var">FnSymbol</span></a></span><span> </span><span class="annot"><span class="annottext">Int
 </span><a href="#local-6989586621679542488"><span class="hs-identifier hs-var">symbol</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>

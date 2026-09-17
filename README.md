@@ -191,19 +191,19 @@ the operands the firing bound and the term it answered with.
 $ phino dataize --symbolic=atoms.yaml --protocol=atoms.txt --quiet \
     --sweet --hide-rho sum.phi
 $ cat atoms.txt
-D(Φ)
-  E(L_number_plus)
+𝔻(Φ)
+  𝔼(L_number_plus)
     𝛿1.1 := 40-14-00-00-00-00-00-00
     𝛿2.1 := 40-18-00-00-00-00-00-00
     𝑛.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )
 ```
 
-`D(…)` is the run and the term it was aimed at, `M(…)` where the run is a
-morphing, and `E(…)` is one firing, named by the entry that answered it. `𝛿1.2`
+`𝔻(…)` is the run and the term it was aimed at, `𝕄(…)` where the run is a
+morphing, and `𝔼(…)` is one firing, named by the entry that answered it. `𝛿1.2`
 is the value bound to that entry's `𝛿1` on its second firing, `𝑛1.1` the same
 for an `evaluate` meta, and `𝑛.k` the k-th answer of the whole run, so
 `𝑛1.1 := 𝑛.3` reads "the `𝑛1` of this firing is the third answer". Where an
-operand came down to the datum a symbol stands for, the protocol writes `D(𝜎1)`
+operand came down to the datum a symbol stands for, the protocol writes `𝔻(𝜎1)`
 in place of that 42, so a reader sees that the value was manufactured rather
 than read out of the program.
 
@@ -218,8 +218,8 @@ $ phino dataize --symbolic=atoms.yaml --protocol=atoms.txt --quiet \
     --sweet --hide-rho stuck.phi
 [ERROR]: No entry of --symbolic answers the λ function 'L_number_nope'
 $ cat atoms.txt
-D(Φ)
-  E(L_number_plus)
+𝔻(Φ)
+  𝔼(L_number_plus)
     𝛿1.1 := 40-14-00-00-00-00-00-00
     𝛿2.1 := 40-18-00-00-00-00-00-00
     𝑛.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )
@@ -273,39 +273,39 @@ $ cat fork.phi
 $ phino morph --deep --symbolic=atoms.yaml --locator=Q.demo.a \
     --protocol=fork.txt --quiet --sweet --hide-rho fork.phi
 $ cat fork.txt
-M(Φ.demo.a)
-  E(L_number_gt)
-    𝛿1.1 := D(𝜎1)
+𝕄(Φ.demo.a)
+  𝔼(L_number_gt)
+    𝛿1.1 := 𝔻(𝜎1)
     𝛿2.1 := 00-00-00-00-00-00-00-00
     𝑛.1 := Φ.bool( if ↦ ⟦ λ ⤍ L_fork, then ↦ ∅, else ↦ ∅, φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧ )
-  E(L_number_plus)
-    𝛿1.1 := D(𝜎1)
+  𝔼(L_number_plus)
+    𝛿1.1 := 𝔻(𝜎1)
     𝛿2.1 := 3F-F0-00-00-00-00-00-00
     𝑛.2 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎3 ⟧ )
-  E(L_number_plus)
-    𝛿1.2 := D(𝜎1)
-    𝛿2.2 := D(𝜎3)
+  𝔼(L_number_plus)
+    𝛿1.2 := 𝔻(𝜎1)
+    𝛿2.2 := 𝔻(𝜎3)
     𝑛.3 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎4 ⟧ )
-  E(L_number_plus)
-    𝛿1.3 := D(𝜎1)
-    𝛿2.3 := D(𝜎1)
+  𝔼(L_number_plus)
+    𝛿1.3 := 𝔻(𝜎1)
+    𝛿2.3 := 𝔻(𝜎1)
     𝑛.4 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎5 ⟧ )
-  E(L_fork)
-    𝛿1.1 := D(𝜎2)
+  𝔼(L_fork)
+    𝛿1.1 := 𝔻(𝜎2)
     𝑛1.1 := 𝑛.3
     𝑛2.1 := 𝑛.4
     𝑛.5 := 𝑛1.1
-  E(L_number_plus)
-    𝛿1.4 := D(𝜎4)
+  𝔼(L_number_plus)
+    𝛿1.4 := 𝔻(𝜎4)
     𝛿2.4 := 40-14-00-00-00-00-00-00
     𝑛.6 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎6 ⟧ )
 ```
 
-`𝜎3` is minted by the second firing and consumed by the third as `D(𝜎3)`,
+`𝜎3` is minted by the second firing and consumed by the third as `𝔻(𝜎3)`,
 `𝜎4` by the third and consumed by the last, `𝜎2` by the first and consumed by
 the fork. `𝜎5` is minted and never consumed, which is how a reader sees that
 the right branch was computed and thrown away. The two `evaluate` lines of
-`E(L_fork)` are recorded although nothing fires under them, since they are the
+`𝔼(L_fork)` are recorded although nothing fires under them, since they are the
 only edge from the fork back to the branch it answered with: without them
 `𝑛.5 := 𝑛1.1` would name a meta nothing ever bound.
 
@@ -374,13 +374,13 @@ place as a normal-form subterm. A stuck site writes nothing into the
 $ phino dataize --symbolic=atoms.yaml --partial --protocol=atoms.txt --quiet \
     --sweet --hide-rho partial.phi
 $ cat atoms.txt
-D(Φ)
-  E(L_number_times)
+𝔻(Φ)
+  𝔼(L_number_times)
     𝛿1.1 := 40-00-00-00-00-00-00-00
     𝛿2.1 := 40-08-00-00-00-00-00-00
     𝑛.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )
-  E(L_number_plus)
-    𝛿1.1 := D(𝜎1)
+  𝔼(L_number_plus)
+    𝛿1.1 := 𝔻(𝜎1)
     𝛿2.1 := 40-10-00-00-00-00-00-00
     𝑛.2 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ )
 ```
