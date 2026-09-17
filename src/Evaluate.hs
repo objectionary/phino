@@ -25,7 +25,7 @@ import Data.List.NonEmpty (NonEmpty (..))
 import Data.Maybe (fromMaybe, isNothing)
 import qualified Data.Text as T
 import Deps (BuildTermMethodS, Evaluation (..), State (..), Term (..))
-import Lambdas (Lambda (..), Meta (..), matched, minted, symbolized)
+import Lambdas (Lambda (..), Meta (..), joined, matched, minted, symbolized)
 import Matcher (MetaValue (..), Subst, combine, substEmpty, substSingle, substSlot)
 import Morph (ReduceContext (..), ReduceException (..), deeper, morph', morphing, normalized, unparked)
 import Text.Printf (printf)
@@ -95,7 +95,8 @@ symbol func self univ state caller = case matched caller._symbolic func of
     (bound, dataized) <- foldM (down ctx) (substEmpty, state) entry._dataized
     (bound', morphed) <- foldM (through ctx) (bound, dataized) entry._morphed
     (bound'', stood) <- foldM (masked ctx) (bound', morphed) entry._symbolized
-    answered ctx entry bound'' stood
+    (bound''', forked) <- foldM (paired ctx) (bound'', stood) entry._paired
+    answered ctx entry bound''' forked
   where
     -- Bring one 'dataize' operand down through 𝔻 and bind the bytes meta that
     -- names it. An operand 𝔻 could not bring down to data — a site '_partial'
@@ -148,6 +149,39 @@ symbol func self univ state caller = case matched caller._symbolic func of
       where
         fact :: (Int, Bytes) -> Evaluation
         fact (fresh, bytes) = EvKnown ctx._nesting fresh bytes
+    -- Join two terms other lines of the entry have bound into one and bind the
+    -- expression meta naming it. Nothing is reduced here either: the two are
+    -- required to match verbatim and every pair of symbols they differ by
+    -- becomes one fresh symbol (see 'joined'), which is the one term standing
+    -- for either of them and so the one thing a fork can answer with. Two
+    -- terms differing anywhere else are no join at all and the firing gets
+    -- stuck the way a λ function no entry answers does, so '_partial' parks
+    -- the site rather than failing the whole run (#1246).
+    --
+    -- What is known about each fresh symbol goes into the protocol ahead of
+    -- the line binding the term, the way a 'symbolize' line writes what it
+    -- knows, since a reader ties the join to the two values it was made from
+    -- by that fact alone and never by diffing the terms.
+    paired :: ReduceContext -> (Subst, State) -> (Meta, (Meta, Meta)) -> IO (Subst, State)
+    paired ctx (bound, state') (meta, (left, right)) = do
+      one <- branch left
+      two <- branch right
+      case joined one two state'._minted of
+        Nothing -> throwIO (Stuck func)
+        Just (term, made, spent) -> do
+          mapM_ (ctx._saveEval . fact) made
+          ctx._saveEval (EvJoin ctx._nesting meta._spelling (left._spelling, right._spelling) term)
+          bound' <- bind meta (MvExpression term) bound
+          pure (bound', state'{_minted = spent})
+      where
+        -- The term one side of the join is bound to, which is what a meta of
+        -- the entry reads out of the substitution the firing has made (see
+        -- 'earlier' in 'Lambdas': a 'join' line names metas bound above it and
+        -- nothing else, so there is always one to read).
+        branch :: Meta -> IO Expression
+        branch named = buildExpressionThrows (ExMeta named._name) bound
+        fact :: (Int, (Int, Int)) -> Evaluation
+        fact (fresh, pair) = EvJoined ctx._nesting fresh pair
     -- Mint the fresh symbols the answer asks for, build it and reduce it
     -- through 𝕄. A bare 𝜎 stands for an unknown nobody has named yet, so each
     -- one is bound to the next symbol the run has not minted, and the state

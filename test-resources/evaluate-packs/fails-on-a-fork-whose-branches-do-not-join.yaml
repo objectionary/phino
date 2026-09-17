@@ -1,0 +1,25 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+# The very fork '--partial' parks, without the option: a firing with nothing to
+# answer fails the run, exactly as a λ function no entry of the '--symbolic'
+# file answers does. The protocol keeps what the firing had reached before it
+# got stuck, since it records what 𝔼 was asked for and not only what it could
+# answer.
+symbolic: |
+  - λ: L_fork
+    morph:
+      𝑛1: $.a
+      𝑛2: $.b
+    join:
+      𝑛3: [𝑛1, 𝑛2]
+    𝑛: 𝑛3
+location: 'Q.y'
+input: '⟦ y ↦ ⟦ a ↦ ⟦ l ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, b ↦ ⟦ l ↦ ⟦ λ ⤍ 𝜎2 ⟧, x ↦ ⟦⟧ ⟧, λ ⤍ L_fork ⟧.l ⟧'
+fails: "No entry of --symbolic answers the λ function 'L_fork'"
+protocol: |
+  𝕄(Φ.y)
+    𝔼(L_fork)
+      𝑛1.1 := ⟦ l ↦ ⟦ λ ⤍ 𝜎1 ⟧, ρ ↦ ⟦ a ↦ ⟦ l ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, b ↦ ⟦ l ↦ ⟦ λ ⤍ 𝜎2 ⟧, x ↦ ⟦⟧ ⟧ ⟧ ⟧  # ξ.a
+      𝑛2.1 := ⟦ l ↦ ⟦ λ ⤍ 𝜎2 ⟧, x ↦ ⟦⟧, ρ ↦ ⟦ a ↦ ⟦ l ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, b ↦ ⟦ l ↦ ⟦ λ ⤍ 𝜎2 ⟧, x ↦ ⟦⟧ ⟧ ⟧ ⟧  # ξ.b

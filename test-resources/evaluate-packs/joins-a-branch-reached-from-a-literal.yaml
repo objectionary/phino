@@ -1,0 +1,36 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+# A datum is never joined with anything, which is why a branch carrying one
+# goes through 'symbolize' first: a value somebody worked out and a value
+# nobody did are a difference in kind and not in value, and after that stage
+# both branches carry ⟦ λ ⤍ 𝜎 ⟧ where they differ. The symbol the literal
+# stood into is a symbol like any other here, so what the fork answers is the
+# join of the two and what is known about the literal stays on the line the
+# 'symbolize' stage wrote it on.
+symbolic: |
+  - λ: L_fork
+    morph:
+      𝑛1: $.a
+      𝑛2: $.b
+    symbolize:
+      𝑛3: 𝑛1
+      𝑛4: 𝑛2
+    join:
+      𝑛5: [𝑛3, 𝑛4]
+    𝑛: 𝑛5
+location: 'Q.y'
+input: '⟦ y ↦ ⟦ a ↦ ⟦ l ↦ ⟦ Δ ⤍ 01- ⟧ ⟧, b ↦ ⟦ l ↦ ⟦ λ ⤍ 𝜎7 ⟧ ⟧, λ ⤍ L_fork ⟧.l ⟧'
+result: '⟦ λ ⤍ 𝜎9, ρ ↦ ⟦ l ↦ ⟦ λ ⤍ 𝜎9 ⟧, ρ ↦ ⟦ a ↦ ⟦ l ↦ ⟦ Δ ⤍ 01- ⟧ ⟧, b ↦ ⟦ l ↦ ⟦ λ ⤍ 𝜎7 ⟧ ⟧ ⟧ ⟧ ⟧'
+protocol: |
+  𝕄(Φ.y)
+    𝔼(L_fork)
+      𝑛1.1 := ⟦ l ↦ ⟦ Δ ⤍ 01- ⟧, ρ ↦ ⟦ a ↦ ⟦ l ↦ ⟦ Δ ⤍ 01- ⟧ ⟧, b ↦ ⟦ l ↦ ⟦ λ ⤍ 𝜎7 ⟧ ⟧ ⟧ ⟧  # ξ.a
+      𝑛2.1 := ⟦ l ↦ ⟦ λ ⤍ 𝜎7 ⟧, ρ ↦ ⟦ a ↦ ⟦ l ↦ ⟦ Δ ⤍ 01- ⟧ ⟧, b ↦ ⟦ l ↦ ⟦ λ ⤍ 𝜎7 ⟧ ⟧ ⟧ ⟧  # ξ.b
+      𝔻(⟦ λ ⤍ 𝜎8 ⟧) == 01-
+      𝑛3.1 := ⟦ l ↦ ⟦ λ ⤍ 𝜎8 ⟧, ρ ↦ ⟦ a ↦ ⟦ l ↦ ⟦ Δ ⤍ 01- ⟧ ⟧, b ↦ ⟦ l ↦ ⟦ λ ⤍ 𝜎7 ⟧ ⟧ ⟧ ⟧  # 𝑛1
+      𝑛4.1 := ⟦ l ↦ ⟦ λ ⤍ 𝜎7 ⟧, ρ ↦ ⟦ a ↦ ⟦ l ↦ ⟦ Δ ⤍ 01- ⟧ ⟧, b ↦ ⟦ l ↦ ⟦ λ ⤍ 𝜎7 ⟧ ⟧ ⟧ ⟧  # 𝑛2
+      𝔻(⟦ λ ⤍ 𝜎9 ⟧) ∈ { 𝔻(⟦ λ ⤍ 𝜎8 ⟧), 𝔻(⟦ λ ⤍ 𝜎7 ⟧) }
+      𝑛5.1 := ⟦ l ↦ ⟦ λ ⤍ 𝜎9 ⟧, ρ ↦ ⟦ a ↦ ⟦ l ↦ ⟦ Δ ⤍ 01- ⟧ ⟧, b ↦ ⟦ l ↦ ⟦ λ ⤍ 𝜎7 ⟧ ⟧ ⟧ ⟧  # [𝑛3, 𝑛4]
+      𝑛.1 := ⟦ l ↦ ⟦ λ ⤍ 𝜎9 ⟧, ρ ↦ ⟦ a ↦ ⟦ l ↦ ⟦ Δ ⤍ 01- ⟧ ⟧, b ↦ ⟦ l ↦ ⟦ λ ⤍ 𝜎7 ⟧ ⟧ ⟧ ⟧
