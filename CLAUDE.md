@@ -101,7 +101,8 @@ firing and `𝔻(𝜎1)` is the datum manufactured for a symbol. The extension o
 the file picks the format: `.xml` gets markup (`Nesting` and `saveEvalXml`),
 anything else the indented text. Both carry the same facts and both stream, so
 a run that fails still leaves a complete file; the markup references a value by
-the symbol it denotes, where the text names a line by counting.
+the symbol it denotes and spells it `𝜎1` as everywhere else, where the text
+names a line by counting.
 
 ### Dependency inversion for circular imports
 

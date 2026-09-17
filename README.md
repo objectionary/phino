@@ -331,7 +331,7 @@ $ cat atoms.xml
   <fire λ="L_number_plus" id="1">
     <operand meta="𝛿1" bytes="40-14-00-00-00-00-00-00"/>
     <operand meta="𝛿2" bytes="40-18-00-00-00-00-00-00"/>
-    <answer symbol="1">Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )</answer>
+    <answer symbol="𝜎1">Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )</answer>
   </fire>
 </protocol>
 ```
@@ -343,14 +343,16 @@ firing bound, `meta` naming the meta it went to and the element holding the
 term it bound, or `bytes` holding the datum where a `dataize` operand came
 down to one. `<answer>` holds the term the firing answered with.
 
-Where a value denotes a symbol, the element says so with `symbol="N"` instead
-of the 42 that dataizing a symbol answers, and that number is the only thing a
-reader joins lines on. In the fork above, `𝔼(L_fork)` becomes a `<fire>`
-whose condition is `<operand meta="𝛿1" symbol="2"/>` and whose answer is
-`<answer symbol="4">`: the condition is the symbol the first firing minted and
-the answer the one the third minted. The text format says the same with
-`𝛿1.1 := 𝔻(𝜎2)` and `𝑛.5 := 𝑛1.1`, which name a line by counting;
-the markup names the value, so the counting is gone. A term that reached the
+Where a value denotes a symbol, the element says so with `symbol="𝜎1"`
+instead of the 42 that dataizing a symbol answers, and that name is the only
+thing a reader joins lines on. It is spelled the way every term carrying it is
+spelled, so the join compares two strings that look alike rather than a number
+against a name. In the fork above, `𝔼(L_fork)` becomes a `<fire>` whose
+condition is `<operand meta="𝛿1" symbol="𝜎2"/>` and whose answer is
+`<answer symbol="𝜎4">`: the condition is the symbol the first firing minted
+and the answer the one the third minted. The text format says the same with
+`𝛿1.1 := 𝔻(𝜎2)` and `𝑛.5 := 𝑛1.1`, which name a line by counting; the
+markup names the value, so the counting is gone. A term that reached the
 terminator ⊥ denotes nothing at all and is marked `bottom="true"` instead.
 
 A λ name no entry answers is `<stuck λ="…"/>`, standing where its `<fire>`
@@ -370,7 +372,7 @@ $ cat atoms.xml
   <fire λ="L_number_plus" id="1">
     <operand meta="𝛿1" bytes="40-14-00-00-00-00-00-00"/>
     <operand meta="𝛿2" bytes="40-18-00-00-00-00-00-00"/>
-    <answer symbol="1">Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )</answer>
+    <answer symbol="𝜎1">Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )</answer>
   </fire>
   <stuck λ="L_number_nope"/>
 </protocol>

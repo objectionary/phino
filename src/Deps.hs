@@ -259,7 +259,7 @@ saveEvalXml handle cursor render report = do
         -- down to data, which is the data, or to the datum manufactured for an
         -- unknown, which is that unknown and never the 42 standing for it.
         stood :: Either Int Bytes -> String
-        stood (Left symbol) = printf " symbol=\"%d\"" symbol
+        stood (Left symbol) = printf " symbol=\"%s\"" (sigma symbol)
         stood (Right bytes) = printf " bytes=\"%s\"" (escapeXML (printBytes bytes))
     elements (EvTerm depth spelling term) nesting = do
       body <- render term
@@ -275,7 +275,12 @@ saveEvalXml handle cursor render report = do
     -- takes no attribute at all and stands as its own text.
     carried :: Expression -> String
     carried ExTermination = " bottom=\"true\""
-    carried term = maybe "" (printf " symbol=\"%d\"") (denoted term)
+    carried term = maybe "" (printf " symbol=\"%s\"" . sigma) (denoted term)
+    -- The name of a symbol, spelled the way every term carrying it is spelled,
+    -- so a reader joining an attribute to a term compares two strings that
+    -- look alike instead of a number against a name.
+    sigma :: Int -> String
+    sigma = printFunction . FnSymbol
     quoted :: T.Text -> String
     quoted = escapeXML . T.unpack
 
