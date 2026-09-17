@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 # SPDX-License-Identifier: MIT
 ---
+# yamllint disable rule:line-length
 # An operand is brought down by a whole run of 𝔻, so a λ function it fires on
 # the way sits one level deeper than the firing waiting for it, and the metas
 # of the two are told apart by which firing of the entry each belongs to.
@@ -22,6 +23,6 @@ protocol: |
       𝔼(L_number_plus)
         𝛿1.2 := 40-18-00-00-00-00-00-00  # ξ.ρ
         𝛿2.2 := 40-1C-00-00-00-00-00-00  # ξ.x
-        𝑛.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )
+        𝑛.1 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, ρ ↦ ⟦ a🌵41 ↦ 6.plus( α0 ↦ 7, ρ ↦ ⟦ x ↦ 6.plus( 7 ), ρ ↦ ⟦ φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 40-14-00-00-00-00-00-00 ⟧ ), plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, ρ ↦ ⟦ bytes(φ) ↦ ⟦⟧, number(φ) ↦ ⟦ plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧, φ ↦ 5.plus( 6.plus( 7 ) ).plus( 8 ) ⟧ ⟧ ⟧ ), bytes(φ) ↦ ⟦⟧, number(φ) ↦ ⟦ plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧, φ ↦ 5.plus( 6.plus( 7 ) ).plus( 8 ) ⟧ ⟧
       𝛿2.1 := 𝔻(𝜎1)  # ξ.x
-      𝑛.2 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ )
+      𝑛.2 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, ρ ↦ ⟦ bytes(φ) ↦ ⟦⟧, number(φ) ↦ ⟦ plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧, φ ↦ 5.plus( 6.plus( 7 ) ).plus( 8 ) ⟧ ⟧

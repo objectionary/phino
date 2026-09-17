@@ -545,16 +545,19 @@ $ phino morph --symbolic=atoms.yaml --inside='Q.demo.foo' \
 ⟦ n ↦ 3, φ ↦ Φ.bar( n.times( 5 ).times( 7 ) ) ⟧
 $ phino morph --deep --symbolic=atoms.yaml --inside='Q.demo.foo' \
     --sweet --hide-rho gap.phi
-⟦ n ↦ 3, φ ↦ Φ.bar( Φ.number( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ) ) ⟧
+⟦ n ↦ 3, φ ↦ Φ.bar( ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧ ⟧ ) ⟧
 ```
 
 Every binding of the formation is entered, recursively. 𝕄 is asked about the
 term standing there and, where it lands on a saturated formation whose λ an
 entry answers, that λ is fired and 𝕄 is asked about the answer again. A term on
 whose way a λ function fired is replaced by the answer of the last firing,
-which is the 𝜑-program the entry wrote rather than the normal form of it, so
-the symbol standing for the arithmetic stands where the arithmetic stood. A
-term nothing fired on stays exactly as it was written and only its own parts
+morphed: an entry answering `Φ.number( φ ↦ ⟦ λ ⤍ 𝜎 ⟧ )` stands the formation of
+`number` there, the very one the same term written in the program morphs to, so
+a value that came out of a firing and a value that was written as a literal are
+one shape and can be compared leaf by leaf. That costs the size of the object's
+formation in the residual, which is the price of saying the same thing one way.
+A term nothing fired on stays exactly as it was written and only its own parts
 are walked, so `Φ.bar` keeps its name and what comes back is still the same
 program, reduced as far as the file allows. The step joins the chain under the
 name `deep`, so `--sequence` shows it, and `--max-steps` bounds the walk.
@@ -574,7 +577,12 @@ $ phino morph --deep --symbolic=atoms.yaml --sweet --hide-rho gap.phi
   bytes(φ) ↦ ⟦⟧,
   number(φ) ↦ ⟦ times(x) ↦ ⟦ λ ⤍ L_number_times ⟧ ⟧,
   bar(x) ↦ ⟦ λ ⤍ L_bar ⟧,
-  demo ↦ ⟦ foo ↦ ⟦ n ↦ 3, φ ↦ Φ.bar( Φ.number( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ) ) ⟧ ⟧
+  demo ↦ ⟦
+    foo ↦ ⟦
+      n ↦ 3,
+      φ ↦ Φ.bar( ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧ ⟧ )
+    ⟧
+  ⟧
 ⟧
 ```
 

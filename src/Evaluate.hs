@@ -73,9 +73,8 @@ evaluation _ _ _ _ = throwIO (userError "Function evaluate() requires exactly 2 
 -- function to fire at all, and 𝔼 gets stuck on it — the one behaviour left
 -- here. The formation 'self' is the one 𝔼 fired against, its λ binding already
 -- removed, so the entry may name the attributes of it; the universe 'univ' is
--- what every operand of it is reduced inside. What comes back is the raw term
--- the entry answers with: normalizing it is 𝔼's business, and the deep walk
--- wants it as it was written.
+-- what every operand of it is reduced inside. What comes back is the term the
+-- entry answers with, morphed (see 'answered').
 --
 -- The firing writes itself into the protocol as it goes: the entry that
 -- answered first, then each operand as it is reduced, then the answer. Whatever
@@ -127,17 +126,29 @@ symbol func self univ state caller = case matched caller._symbolic func of
       ctx._saveEval (EvTerm ctx._nesting meta._spelling term normal)
       bound' <- bind meta (MvExpression normal) bound
       pure (bound', state'')
-    -- Mint the fresh symbols the answer asks for and build it. A bare 𝜎 stands
-    -- for an unknown nobody has named yet, so each one is bound to the next
-    -- symbol the run has not minted, and the state counts them, which is what
-    -- keeps two firings from spelling two unknowns alike.
+    -- Mint the fresh symbols the answer asks for, build it and reduce it
+    -- through 𝕄. A bare 𝜎 stands for an unknown nobody has named yet, so each
+    -- one is bound to the next symbol the run has not minted, and the state
+    -- counts them, which is what keeps two firings from spelling two unknowns
+    -- alike.
+    --
+    -- The answer is morphed rather than handed back as the entry wrote it,
+    -- because a firing is one of the things a term can come from and every
+    -- other one answers a normal form: 'Φ.number( φ ↦ ⟦ λ ⤍ 𝜎 ⟧ )' written in
+    -- the program morphs to the formation of the object, so the same term
+    -- answered by an entry has to morph to it too. Two terms of one forma that
+    -- do not look alike cannot be compared leaf by leaf, and comparing them is
+    -- what a fork of two branches is (#1268). The residual and the answer lines
+    -- of the protocol grow by the size of that formation, which is the price of
+    -- saying the same thing one way.
     answered :: ReduceContext -> Lambda -> Subst -> State -> IO (Expression, State)
     answered ctx entry bound state' = do
       let (fresh, spent) = minted entry._answer state'._minted
       symbolic <- foldM mint bound fresh
       built <- buildExpressionThrows entry._answer symbolic
-      ctx._saveEval (EvAnswer ctx._nesting built)
-      pure (built, state'{_minted = spent})
+      (normal, state'') <- settled built univ state'{_minted = spent} ctx
+      ctx._saveEval (EvAnswer ctx._nesting normal)
+      pure (normal, state'')
     mint :: Subst -> (Slot, Function) -> IO Subst
     mint bound (slot, fresh) = case combine (substSlot slot (MvFunction fresh)) bound of
       Just bound' -> pure bound'
@@ -158,15 +169,12 @@ symbol func self univ state caller = case matched caller._symbolic func of
 -- entry of the '--symbolic' file answers it, asking 𝕄 about every answer again:
 -- what comes back is the answer of the last firing, or nothing at all where
 -- nothing fired. This is the firing 'ml' makes without the dispatch that makes
--- 'ml' make it — the one 𝕄 leaves to 𝔻 — except in what it hands back: the raw
--- answer of the entry, not the normal form 𝔼 makes of it, since the deep walk
--- stands that answer back into the program, where a normal form would spell the
--- whole object out in place of the name the program called it by. A λ no entry
--- answers is left alone rather than fired and got stuck on, so what phino
--- cannot compute stays as it was written with or without '_partial'; a λ
--- function that cannot fire deeper on the spine still fails the run, exactly as
--- it does under 𝕄 alone, and '_partial' parks it. A formation still waiting for
--- its arguments is left alone too (see 'saturated'). A term standing as the
+-- 'ml' make it — the one 𝕄 leaves to 𝔻. A λ no entry answers is left alone
+-- rather than fired and got stuck on, so what phino cannot compute stays as it
+-- was written with or without '_partial'; a λ function that cannot fire deeper
+-- on the spine still fails the run, exactly as it does under 𝕄 alone, and
+-- '_partial' parks it. A formation still waiting for its arguments is left
+-- alone too (see 'saturated'). A term standing as the
 -- target of a dispatch is where 'ml' has its say: the λ is fired only where the
 -- dispatched attribute is none of the formation's own (see 'demanded').
 fired :: Maybe Attribute -> Expression -> Expression -> State -> ReduceContext -> IO (Maybe Expression, State)
@@ -191,16 +199,11 @@ fired dispatched term univ state caller = do
         bound :: Binding -> Bool
         bound (BiTau attr _) = Just attr == dispatched
         bound _ = False
-    -- 𝕄 takes normal forms only and a term taken from the program as it was
-    -- written is not necessarily one, so it is normalized against the universe
-    -- first, exactly as '--inside' normalizes what it is handed. Both chains
-    -- are dropped: the walk is not the spine and reports one step of its own
-    -- (see 'morph'), so a stuck λ function leaves without a derivation.
+    -- The term the walk was handed, as 𝕄 leaves it. The chains it drops are
+    -- the walk's and not the spine's, which reports one step of its own (see
+    -- 'morph'), so a stuck λ function leaves without a derivation.
     reduced :: ReduceContext -> IO (Expression, State)
-    reduced ctx = do
-      (normal, _) <- normalized term ((univ, Nothing) :| []) ctx
-      ((morphed, _), state') <- morph' (normal, (univ, Nothing) :| []) univ state ctx
-      pure (morphed, state')
+    reduced = settled term univ state
     -- Fire the λ of the formation 𝕄 reached and go on from its answer, keeping
     -- the answer of the last firing. A λ no entry of the '--symbolic' file
     -- answers is not fired at all, which is what keeps the walk as total as 𝕄
@@ -230,6 +233,22 @@ fired dispatched term univ state caller = do
     parked (StuckAt func _ _) = throwIO (Stuck func)
     parked (OutOfStepsAt limit _ _) = throwIO (OutOfSteps limit)
     parked failure = throwIO failure
+
+-- A term of the '--symbolic' file as 𝕄 leaves it: an entry's answer on its way
+-- out of a firing, and the term the deep walk was handed on its way in. 𝕄 takes
+-- normal forms only and a term written in an entry, or taken from the program
+-- as it was written, is not necessarily one, so it is normalized against the
+-- universe first, exactly as '--inside' normalizes what it is handed. It is
+-- reduced against the universe itself rather than inside it: a term bound under
+-- an attribute of the universe reaches a ρ naming that attribute too, and
+-- neither of these two is a part of the program the way an operand of a firing
+-- is. Both chains are dropped, since what happens here is the protocol's
+-- business and not the spine's.
+settled :: Expression -> Expression -> State -> ReduceContext -> IO (Expression, State)
+settled term univ state ctx = do
+  (normal, _) <- normalized term ((univ, Nothing) :| []) ctx
+  ((morphed, _), state') <- morph' (normal, (univ, Nothing) :| []) univ state ctx
+  pure (morphed, state')
 
 -- Split the λ binding off a formation for the LAMBDA morphing rule: the name of
 -- the λ function to fire and the formation it fires against, the λ binding
