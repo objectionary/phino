@@ -125,20 +125,26 @@ data Protocol = Protocol
 emptyProtocol :: Protocol
 emptyProtocol = Protocol 0 0 Map.empty Map.empty
 
--- What the XML protocol has counted so far: how many firings the run has
--- opened, which is what numbers them, and the elements standing open around
--- the record being written, innermost first, each with the depth it was opened
--- at and the name it closes under. The text format needs no such stack, since
+-- What the XML protocol has counted so far: how many firings the whole run
+-- has opened, the same single counter 'Protocol' keeps since #1261, which
+-- numbers the 'id' an element carries and, through '_openedAt', names a meta
+-- on this firing the way the text format names it and not with the bare
+-- spelling the entry's YAML gives it; how many answers the run has given,
+-- which numbers an '<answer>'; and the elements standing open around the
+-- record being written, innermost first, each with the depth it was opened at
+-- and the name it closes under. The text format needs no such stack, since
 -- indentation opens and closes nothing; markup does, and the depth a record
 -- carries is the only thing saying which firings it stands outside of.
 data Nesting = Nesting
   { _fires :: Int
+  , _openedAt :: Map.Map Int Int
+  , _answers :: Int
   , _closing :: [(Int, String)]
   }
 
 -- The XML protocol before a single element has been opened.
 emptyNesting :: Nesting
-emptyNesting = Nesting 0 []
+emptyNesting = Nesting 0 Map.empty 0 []
 
 -- Append one line to the protocol, indented by the depth of what it reports
 -- and numbered by what the protocol has seen before it. The handle stays open
@@ -247,7 +253,11 @@ saveEvalXml handle cursor render report = do
         )
     elements (EvFiring depth key) nesting =
       pure
-        ( nesting{_fires = fires, _closing = (depth, "evaluate") : kept}
+        ( nesting
+            { _fires = fires
+            , _openedAt = Map.insert depth fires nesting._openedAt
+            , _closing = (depth, "evaluate") : kept
+            }
         , closers ++ [indented depth (printf "<evaluate λ=\"%s\" id=\"%d\">" (quoted key) fires)]
         )
       where
@@ -269,16 +279,28 @@ saveEvalXml handle cursor render report = do
         -- apart the way 𝔻(…) does in the text format, rather than leaving a
         -- reader to test which of two attributes an element carries (#1257).
         stood :: Either Int Bytes -> String
-        stood (Left symbol) = printf "<dataize meta=\"%s\">%s</dataize>" (quoted spelling) (sigma symbol)
-        stood (Right bytes) = printf "<bind meta=\"%s\">%s</bind>" (quoted spelling) (escapeXMLText (printBytes bytes))
+        stood (Left symbol) = printf "<dataize meta=\"%s\">%s</dataize>" (escapeXML (labelled nesting depth spelling)) (sigma symbol)
+        stood (Right bytes) = printf "<bind meta=\"%s\">%s</bind>" (escapeXML (labelled nesting depth spelling)) (escapeXMLText (printBytes bytes))
     elements (EvTerm depth spelling term) nesting = do
       body <- render term
       let (kept, closers) = closed depth nesting._closing
-      pure (nesting{_closing = kept}, closers ++ [indented depth (printf "<bind meta=\"%s\"%s>%s</bind>" (quoted spelling) (carried term) (escapeXMLText body))])
+      pure (nesting{_closing = kept}, closers ++ [indented depth (printf "<bind meta=\"%s\"%s>%s</bind>" (escapeXML (labelled nesting depth spelling)) (carried term) (escapeXMLText body))])
     elements (EvAnswer depth term) nesting = do
       body <- render term
       let (kept, closers) = closed depth nesting._closing
-      pure (nesting{_closing = kept}, closers ++ [indented depth (printf "<answer%s>%s</answer>" (carried term) (escapeXMLText body))])
+          naming :: String
+          naming = printf "%s.%d" (T.unpack answer) (nesting._answers + 1)
+      pure (nesting{_closing = kept, _answers = nesting._answers + 1}, closers ++ [indented depth (printf "<answer meta=\"%s\"%s>%s</answer>" (escapeXML naming) (carried term) (escapeXMLText body))])
+    -- The name of an operand meta on this firing, spelled the way the text
+    -- protocol's own 'labelled' spells it: the meta the entry names it with
+    -- in the YAML, followed by which firing of the whole run this is, the
+    -- very number the element's own 'id' carries, since every entry numbers
+    -- its own metas from 𝛿1 and 𝑛1 and only the firing tells two 𝛿1 apart
+    -- (#1261). The firing a record belongs to is the one opened one level
+    -- above it.
+    labelled :: Nesting -> Int -> T.Text -> String
+    labelled nesting depth spelling =
+      printf "%s.%d" (T.unpack spelling) (fromMaybe 0 (Map.lookup (depth - 1) nesting._openedAt))
     -- The unknown a term stands for, where it carries one. A term standing for
     -- nothing takes no attribute at all, the terminator ⊥ included, since it is
     -- itself and its own text already says so.
