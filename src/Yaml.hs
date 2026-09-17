@@ -22,6 +22,7 @@ import Data.Text (Text, unpack)
 import Data.Yaml (Parser)
 import qualified Data.Yaml as Yaml
 import GHC.Generics (Generic)
+import Metas
 import Parser
 import Slots
 import Text.Printf (printf)
@@ -289,6 +290,127 @@ instance Slots Operation where
   slots (OpEvaluate expr universe) = slots expr ++ slots universe
   slots (OpContextualize expr context) = slots expr ++ slots context
   slots (OpDataize expr) = slots expr
+
+instance Metas Condition where
+  metas (And conds) = metas conds
+  metas (Or conds) = metas conds
+  metas (Not cond) = metas cond
+  metas (In attr bd) = metas attr ++ metas bd
+  metas (Eq left right) = metas left ++ metas right
+  metas (Gt left right) = metas left ++ metas right
+  metas (NF expr) = metas expr
+  metas (Absolute expr) = metas expr
+  metas (Matches _ expr) = metas expr
+  metas (PartOf expr bd) = metas expr ++ metas bd
+  metas (Disjoint attrs bds) = metas attrs ++ metas bds
+  metas (IsFormation expr) = metas expr
+  bare names (And conds) = And (bare names conds)
+  bare names (Or conds) = Or (bare names conds)
+  bare names (Not cond) = Not (bare names cond)
+  bare names (In attr bd) = In (bare names attr) (bare names bd)
+  bare names (Eq left right) = Eq (bare names left) (bare names right)
+  bare names (Gt left right) = Gt (bare names left) (bare names right)
+  bare names (NF expr) = NF (bare names expr)
+  bare names (Absolute expr) = Absolute (bare names expr)
+  bare names (Matches regex expr) = Matches regex (bare names expr)
+  bare names (PartOf expr bd) = PartOf (bare names expr) (bare names bd)
+  bare names (Disjoint attrs bds) = Disjoint (bare names attrs) (bare names bds)
+  bare names (IsFormation expr) = IsFormation (bare names expr)
+
+instance Metas Comparable where
+  metas (CmpAttr attr) = metas attr
+  metas (CmpNum num) = metas num
+  metas (CmpExpr expr) = metas expr
+  bare names (CmpAttr attr) = CmpAttr (bare names attr)
+  bare names (CmpNum num) = CmpNum (bare names num)
+  bare names (CmpExpr expr) = CmpExpr (bare names expr)
+
+instance Metas Number where
+  metas (MetaIndex named) = metas named
+  metas (AnyIndex slot) = metas slot
+  metas (Length bd) = metas bd
+  metas (Domain bd) = metas bd
+  metas (Literal _) = []
+  bare names (MetaIndex named) = MetaIndex (bare names named)
+  bare names (Length bd) = Length (bare names bd)
+  bare names (Domain bd) = Domain (bare names bd)
+  bare _ num = num
+
+instance Metas ExtraArgument where
+  metas (ArgAttribute attr) = metas attr
+  metas (ArgExpression expr) = metas expr
+  metas (ArgBinding bd) = metas bd
+  metas (ArgBytes bts) = metas bts
+  bare names (ArgAttribute attr) = ArgAttribute (bare names attr)
+  bare names (ArgExpression expr) = ArgExpression (bare names expr)
+  bare names (ArgBinding bd) = ArgBinding (bare names bd)
+  bare names (ArgBytes bts) = ArgBytes (bare names bts)
+
+instance Metas Extra where
+  metas extra = metas extra.meta ++ metas extra.args
+  bare names extra = extra{meta = bare names extra.meta, args = bare names extra.args}
+
+instance Metas Premise where
+  metas premise = metas premise.result ++ metas premise.operation
+  bare names premise = premise{result = bare names premise.result, operation = bare names premise.operation}
+
+instance Metas Operation where
+  metas (OpMorph expr) = metas expr
+  metas (OpNormalize expr) = metas expr
+  metas (OpEvaluate expr universe) = metas expr ++ metas universe
+  metas (OpContextualize expr context) = metas expr ++ metas context
+  metas (OpDataize expr) = metas expr
+  bare names (OpMorph expr) = OpMorph (bare names expr)
+  bare names (OpNormalize expr) = OpNormalize (bare names expr)
+  bare names (OpEvaluate expr universe) = OpEvaluate (bare names expr) (bare names universe)
+  bare names (OpContextualize expr context) = OpContextualize (bare names expr) (bare names context)
+  bare names (OpDataize expr) = OpDataize (bare names expr)
+
+-- A rule is the scope an index counts in: the reader meets the metas of one
+-- inference within it and nowhere else, so a kind the rule names just once
+-- carries no index anywhere in the rule.
+instance Metas Rule where
+  metas rule = metas rule.pattern ++ metas rule.result ++ metas rule.when ++ metas rule.having ++ metas rule.where_
+  bare names rule =
+    rule
+      { pattern = bare names rule.pattern
+      , result = bare names rule.result
+      , when = bare names rule.when
+      , having = bare names rule.having
+      , where_ = bare names rule.where_
+      }
+
+instance Metas MorphRule where
+  metas rule = metas rule.match ++ metas rule.ematch ++ metas rule.nresult ++ metas rule.when ++ metas rule.premises
+  bare names rule =
+    rule
+      { match = bare names rule.match
+      , ematch = bare names rule.ematch
+      , nresult = bare names rule.nresult
+      , when = bare names rule.when
+      , premises = bare names rule.premises
+      }
+
+instance Metas DataizeRule where
+  metas rule = metas rule.match ++ metas rule.ematch ++ metas rule.dresult ++ metas rule.when ++ metas rule.premises
+  bare names rule =
+    rule
+      { match = bare names rule.match
+      , ematch = bare names rule.ematch
+      , dresult = bare names rule.dresult
+      , when = bare names rule.when
+      , premises = bare names rule.premises
+      }
+
+instance Metas ContextualizeRule where
+  metas rule = metas rule.match ++ metas rule.cmatch ++ metas rule.cresult ++ metas rule.premises
+  bare names rule =
+    rule
+      { match = bare names rule.match
+      , cmatch = bare names rule.cmatch
+      , cresult = bare names rule.cresult
+      , premises = bare names rule.premises
+      }
 
 -- An anonymous meta-variable is bound by the pattern it stands in and is
 -- forgotten as soon as that pattern matches, so it has no name for any other
