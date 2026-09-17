@@ -1178,7 +1178,7 @@ spec = do
           withStdin "[[ D> 01- ]]" $
             testCLISucceeded ["dataize", "--protocol=" ++ path, "--quiet"] []
           records <- readUtf8 path
-          records `shouldBe` "D(Φ)\n"
+          records `shouldBe` "𝔻(Φ)\n"
 
       it "writes one line per operand and one per answer of a firing" $
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
@@ -1187,8 +1187,8 @@ spec = do
             testCLISucceeded ["dataize", symbolic, "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
           records <- readUtf8 path
           lines records
-            `shouldBe` [ "D(Φ)"
-                       , "  E(L_number_plus)"
+            `shouldBe` [ "𝔻(Φ)"
+                       , "  𝔼(L_number_plus)"
                        , "    𝛿1.1 := 40-14-00-00-00-00-00-00"
                        , "    𝛿2.1 := 40-18-00-00-00-00-00-00"
                        , "    𝑛.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )"
@@ -1204,13 +1204,13 @@ spec = do
             testCLISucceeded ["dataize", symbolic, "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
           records <- readUtf8 path
           lines records
-            `shouldBe` [ "D(Φ)"
-                       , "  E(L_number_plus)"
+            `shouldBe` [ "𝔻(Φ)"
+                       , "  𝔼(L_number_plus)"
                        , "    𝛿1.1 := 40-14-00-00-00-00-00-00"
                        , "    𝛿2.1 := 40-18-00-00-00-00-00-00"
                        , "    𝑛.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )"
-                       , "  E(L_number_plus)"
-                       , "    𝛿1.2 := D(𝜎1)"
+                       , "  𝔼(L_number_plus)"
+                       , "    𝛿1.2 := 𝔻(𝜎1)"
                        , "    𝛿2.2 := 40-1C-00-00-00-00-00-00"
                        , "    𝑛.2 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ )"
                        ]
@@ -1224,14 +1224,14 @@ spec = do
             testCLISucceeded ["dataize", symbolic, "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
           records <- readUtf8 path
           lines records
-            `shouldBe` [ "D(Φ)"
-                       , "  E(L_number_plus)"
+            `shouldBe` [ "𝔻(Φ)"
+                       , "  𝔼(L_number_plus)"
                        , "    𝛿1.1 := 40-14-00-00-00-00-00-00"
-                       , "    E(L_number_plus)"
+                       , "    𝔼(L_number_plus)"
                        , "      𝛿1.2 := 40-18-00-00-00-00-00-00"
                        , "      𝛿2.2 := 40-1C-00-00-00-00-00-00"
                        , "      𝑛.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )"
-                       , "    𝛿2.1 := D(𝜎1)"
+                       , "    𝛿2.1 := 𝔻(𝜎1)"
                        , "    𝑛.2 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ )"
                        ]
 
@@ -1244,8 +1244,8 @@ spec = do
               ["No entry of --symbolic answers the λ function 'L_number_nope'"]
           records <- readUtf8 path
           lines records
-            `shouldBe` [ "D(Φ)"
-                       , "  E(L_number_plus)"
+            `shouldBe` [ "𝔻(Φ)"
+                       , "  𝔼(L_number_plus)"
                        , "    𝛿1.1 := 40-14-00-00-00-00-00-00"
                        , "    𝛿2.1 := 40-18-00-00-00-00-00-00"
                        , "    𝑛.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )"
@@ -1253,11 +1253,11 @@ spec = do
                        ]
 
       it "truncates the lines left over from the previous run" $
-        withTempFileContent "protocolXXXXXX.txt" "E(L_number_gt)\n" $ \path -> do
+        withTempFileContent "protocolXXXXXX.txt" "𝔼(L_number_gt)\n" $ \path -> do
           withStdin "[[ D> 01- ]]" $
             testCLISucceeded ["dataize", "--protocol=" ++ path, "--quiet"] []
           records <- readUtf8 path
-          records `shouldBe` "D(Φ)\n"
+          records `shouldBe` "𝔻(Φ)\n"
 
       -- The protocol is a tree of one-line 𝜑 records whatever the run prints
       -- its own answer as, so a program reading it back never has to know
@@ -1303,8 +1303,8 @@ spec = do
             testCLISucceeded ["dataize", symbolic, "--partial", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
           records <- readUtf8 path
           lines records
-            `shouldBe` [ "D(Φ)"
-                       , "  E(L_number_times)"
+            `shouldBe` [ "𝔻(Φ)"
+                       , "  𝔼(L_number_times)"
                        , "    𝛿1.1 := 40-00-00-00-00-00-00-00"
                        , "    𝛿2.1 := 40-08-00-00-00-00-00-00"
                        , "    𝑛.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )"
@@ -1531,8 +1531,8 @@ spec = do
           testCLISucceeded ["morph", symbolic, "--locator=Q.@", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
         records <- readUtf8 path
         lines records
-          `shouldBe` [ "M(Φ.φ)"
-                     , "  E(L_number_plus)"
+          `shouldBe` [ "𝕄(Φ.φ)"
+                     , "  𝔼(L_number_plus)"
                      , "    𝛿1.1 := 40-14-00-00-00-00-00-00"
                      , "    𝛿2.1 := 40-18-00-00-00-00-00-00"
                      , "    𝑛.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )"

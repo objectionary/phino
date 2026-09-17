@@ -22,7 +22,7 @@ input: >
 result: >-
   ⟦ arg ↦ ⟦ λ ⤍ L_loop, ρ ↦ ∅ ⟧.foo, λ ⤍ L_outer, ρ ↦ ∅ ⟧.bar
 protocol: |
-  M(Φ.x)
-    E(L_outer)
-      E(L_loop)
+  𝕄(Φ.x)
+    𝔼(L_outer)
+      𝔼(L_loop)
         𝑛.1 := ⟦ λ ⤍ L_loop ⟧

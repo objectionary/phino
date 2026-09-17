@@ -71,8 +71,8 @@ dontSaveStep = saveStep Nothing "" (\_ -> pure "") 0
 
 -- One line of the protocol the '--protocol' option writes, which is a tree of
 -- the firings of the Evaluation function 𝔼 rather than a list of them. The run
--- itself opens it — 'M(Q.φ)' for a morphing, 'D(Q)' for a dataization — and
--- under it stands one block per firing, 'E(L_number_plus)', naming the entry
+-- itself opens it — '𝕄(Q.φ)' for a morphing, '𝔻(Q)' for a dataization — and
+-- under it stands one block per firing, '𝔼(L_number_plus)', naming the entry
 -- that answered. Inside a block stand the operands the entry bound and the
 -- term it answered with, one to a line, and any firing an operand took while
 -- it was being reduced, one level deeper again. A name no entry answers stands
@@ -147,7 +147,7 @@ saveEval handle cursor render report = do
             { _fired = Map.insert key firings protocol._fired
             , _open = Map.insert depth firings protocol._open
             }
-        , indented depth (printf "E(%s)" (T.unpack key))
+        , indented depth (printf "𝔼(%s)" (T.unpack key))
         )
       where
         firings :: Int
@@ -158,7 +158,7 @@ saveEval handle cursor render report = do
       pure (protocol, indented depth (printf "%s := %s" (labelled protocol depth spelling) (spelled value)))
       where
         spelled :: Either Int Bytes -> String
-        spelled (Left symbol) = printf "D(%s)" (printFunction (FnSymbol symbol))
+        spelled (Left symbol) = printf "𝔻(%s)" (printFunction (FnSymbol symbol))
         spelled (Right bytes) = printBytes bytes
     written (EvTerm depth spelling term) protocol = do
       let naming = labelled protocol depth spelling

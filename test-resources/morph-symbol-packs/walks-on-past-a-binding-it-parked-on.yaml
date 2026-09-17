@@ -17,7 +17,7 @@ result: >
   ⟦ x ↦ ⟦ λ ⤍ L_none, ρ ↦ ∅ ⟧.foo,
     y ↦ ⟦ λ ⤍ L_answers, ρ ↦ ∅ ⟧.foo, ρ ↦ ∅ ⟧
 protocol: |
-  M(Φ)
+  𝕄(Φ)
     ?(L_none)
-    E(L_answers)
+    𝔼(L_answers)
       𝑛.1 := ⟦ foo ↦ ⟦⟧, λ ⤍ 𝜎1 ⟧

@@ -18,6 +18,6 @@ result: >
   ⟦ x ↦ ⟦ λ ⤍ L_none, ρ ↦ ∅ ⟧.foo,
     λ ⤍ L_pair, ρ ↦ ∅ ⟧.z
 protocol: |
-  M(Φ.y)
-    E(L_pair)
+  𝕄(Φ.y)
+    𝔼(L_pair)
       ?(L_none)

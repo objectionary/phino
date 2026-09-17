@@ -16,12 +16,12 @@ input: >
     number(φ) ↦ ⟦ plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧,
     @ ↦ 5.plus( 6.plus( 7 ) ).plus( 8 ) ⟧
 protocol: |
-  M(Φ.φ)
-    E(L_number_plus)
+  𝕄(Φ.φ)
+    𝔼(L_number_plus)
       𝛿1.1 := 40-14-00-00-00-00-00-00
-      E(L_number_plus)
+      𝔼(L_number_plus)
         𝛿1.2 := 40-18-00-00-00-00-00-00
         𝛿2.2 := 40-1C-00-00-00-00-00-00
         𝑛.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )
-      𝛿2.1 := D(𝜎1)
+      𝛿2.1 := 𝔻(𝜎1)
       𝑛.2 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ )

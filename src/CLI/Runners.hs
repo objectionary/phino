@@ -172,7 +172,7 @@ runDataize OptsDataize{..} = do
           -- and so is the cycle guard of '--acyclic', which 'morph' alone carries.
           let ctx = ReduceContext loc _maxDepth _maxCycles (Steps _maxSteps 0) 1 _depthSensitive _shuffle _partial False False Map.empty lambdas buildTerm reduction save record
           (universe, aiming) <- aimed _inside expr ctx
-          heading record printCtx (T.pack "D") aiming._locator
+          heading record printCtx (T.pack "𝔻") aiming._locator
           dataize universe (started universe) aiming
       )
   when _sequence (printRewrittens printCtx (exclude $ include chain, False) >>= putStrLn)
@@ -254,7 +254,7 @@ runMorph OptsMorph{..} = do
       ( \record -> do
           let ctx = ReduceContext loc _maxDepth _maxCycles (Steps _maxSteps 0) 1 _depthSensitive _shuffle _partial _deep _acyclic Map.empty lambdas buildTerm reduction save record
           (universe, aiming) <- aimed _inside expr ctx
-          heading record printCtx (T.pack "M") aiming._locator
+          heading record printCtx (T.pack "𝕄") aiming._locator
           morph universe (started universe) aiming
       )
   when _sequence (printRewrittens printCtx (exclude $ include chain, False) >>= putStrLn)

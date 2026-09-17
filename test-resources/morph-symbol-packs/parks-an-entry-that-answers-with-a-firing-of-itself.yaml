@@ -14,6 +14,6 @@ steps: 250
 input: '⟦ x ↦ ⟦ λ ⤍ L_loop ⟧.foo ⟧'
 result: '⟦ λ ⤍ L_loop, ρ ↦ ∅ ⟧.foo'
 protocol: |
-  M(Φ.x)
-    E(L_loop)
+  𝕄(Φ.x)
+    𝔼(L_loop)
       𝑛.1 := ⟦ λ ⤍ L_loop ⟧
