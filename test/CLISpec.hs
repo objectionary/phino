@@ -1412,6 +1412,30 @@ spec = do
                          , "</morph>"
                          ]
 
+        -- What a fork of two branches knows about the symbol it joined them
+        -- into is an element of its own too, the way the fact a 'symbolize'
+        -- line writes is: the fresh symbol stands in the attribute a reader
+        -- joins lines on and the two symbols it was minted for are the text,
+        -- in the order the entry listed the branches under '𝑛' (#1246)
+        it "writes what a join of two branches knows as an element of its own" $
+          withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
+            hClose stream
+            withLambdasOf (T.pack "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  𝑛: [𝑛1, 𝑛2]\n") $ \forks ->
+              withStdin "⟦ y ↦ ⟦ a ↦ ⟦ l ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, b ↦ ⟦ l ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧, λ ⤍ L_fork ⟧.l ⟧" $
+                testCLISucceeded ["morph", "--symbolic=" ++ forks, "--locator=Q.y", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
+            records <- readUtf8 path
+            lines records
+              `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+                         , "<morph locator=\"Φ.y\">"
+                         , "  <evaluate λ=\"L_fork\" id=\"1\">"
+                         , "    <bind meta=\"𝑛1.1\">⟦ l ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧</bind>"
+                         , "    <bind meta=\"𝑛2.1\">⟦ l ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧</bind>"
+                         , "    <joined symbol=\"𝜎3\">𝜎1 𝜎2</joined>"
+                         , "    <answer meta=\"𝑛.1\">⟦ l ↦ ⟦ λ ⤍ 𝜎3 ⟧ ⟧</answer>"
+                         , "  </evaluate>"
+                         , "</morph>"
+                         ]
+
         -- Which symbols a firing minted is a fact about the firing and not a
         -- property of one term of it, so each of them stands in a record of
         -- its own, the way what is known about a symbol does: an answer

@@ -25,7 +25,7 @@ import Data.List.NonEmpty (NonEmpty (..))
 import Data.Maybe (fromMaybe, isNothing)
 import qualified Data.Text as T
 import Deps (BuildTermMethodS, Evaluation (..), State (..), Term (..))
-import Lambdas (Lambda (..), Meta (..), matched, minted, symbolized)
+import Lambdas (Answer (..), Lambda (..), Meta (..), joined, matched, minted, symbolized)
 import Matcher (MetaValue (..), Subst, combine, substEmpty, substSingle, substSlot)
 import Morph (ReduceContext (..), ReduceException (..), deeper, morph', morphing, normalized, unparked)
 import Text.Printf (printf)
@@ -148,13 +148,62 @@ symbol func self univ state caller = case matched caller._symbolic func of
       where
         fact :: (Int, Bytes) -> Evaluation
         fact (fresh, bytes) = EvKnown ctx._nesting fresh bytes
-    -- Mint the fresh symbols the answer asks for, build it and reduce it
-    -- through 𝕄. A bare 𝜎 stands for an unknown nobody has named yet, so each
-    -- one is bound to the next symbol the run has not minted, and the state
-    -- counts them, which is what keeps two firings from spelling two unknowns
-    -- alike. Each one goes into the protocol as it is handed out, ahead of the
-    -- answer carrying it, so a reader ties an unknown back to the firing that
-    -- made it without reading the term it stands in (#1280).
+    -- What the entry answers the firing with, which is one of two things: the
+    -- term it wrote, with the metas the firing bound stood into it, or a join
+    -- of the two branches a fork named under '𝑛' (see 'spelled' and 'forked').
+    -- Both leave through 𝕄 and both write themselves into the protocol the
+    -- same way, the answer of a firing being one thing however it was made.
+    answered :: ReduceContext -> Lambda -> Subst -> State -> IO (Expression, State)
+    answered ctx entry bound state' = case entry._answer of
+      AnTerm term -> spelled ctx term bound state'
+      AnJoin left right -> forked ctx left right bound state'
+    -- Answer with the term the entry wrote: mint the fresh symbols it asks for,
+    -- stand the metas the firing bound into it and reduce what comes out. A
+    -- bare 𝜎 stands for an unknown nobody has named yet, so each one is bound
+    -- to the next symbol the run has not minted, and the state counts them,
+    -- which is what keeps two firings from spelling two unknowns alike. Each
+    -- one goes into the protocol as it is handed out, ahead of the answer
+    -- carrying it, so a reader ties an unknown back to the firing that made it
+    -- without reading the term it stands in (#1280).
+    spelled :: ReduceContext -> Expression -> Subst -> State -> IO (Expression, State)
+    spelled ctx term bound state' = do
+      let (fresh, spent) = minted term state'._minted
+      mapM_ (ctx._saveEval . EvMinted ctx._nesting) [idx | (_, FnSymbol idx) <- fresh]
+      symbolic <- foldM mint bound fresh
+      built <- buildExpressionThrows term symbolic
+      settle ctx built state'{_minted = spent}
+    -- Answer with the two branches of a fork joined into one term, which is
+    -- the answer standing for either of them: the two normal forms must match
+    -- verbatim and every pair of symbols they differ by becomes one fresh
+    -- symbol (see 'joined'). Branches differing anywhere else are no join at
+    -- all and the firing gets stuck the way a λ function no entry answers
+    -- does, so '_partial' parks the site rather than failing the whole run
+    -- (#1246).
+    --
+    -- What each fresh symbol stands for goes into the protocol ahead of the
+    -- answer carrying it, the way a 'symbolize' line writes what it knows,
+    -- since a reader ties the answer of a fork to the two values it was joined
+    -- from by that fact alone and never by diffing the branches.
+    forked :: ReduceContext -> Meta -> Meta -> Subst -> State -> IO (Expression, State)
+    forked ctx left right bound state' = do
+      one <- branch left
+      two <- branch right
+      case joined one two state'._minted of
+        Nothing -> throwIO (Stuck func)
+        Just (term, made, spent) -> do
+          mapM_ (ctx._saveEval . fact) made
+          settle ctx term state'{_minted = spent}
+      where
+        -- The normal form one branch of the fork is bound to, which is what a
+        -- meta of the entry reads out of the substitution the firing has made
+        -- (see 'sound' in 'Lambdas': a branch names a meta of 'morph' or of
+        -- 'symbolize' and nothing else, so there is always one to read).
+        branch :: Meta -> IO Expression
+        branch meta = buildExpressionThrows (ExMeta meta._name) bound
+        fact :: (Int, (Int, Int)) -> Evaluation
+        fact (fresh, pair) = EvJoined ctx._nesting fresh pair
+    -- Reduce what the entry answered through 𝕄 and write it into the protocol,
+    -- which is the last thing every firing does however its answer was made.
     --
     -- The answer is morphed rather than handed back as the entry wrote it,
     -- because a firing is one of the things a term can come from and every
@@ -165,13 +214,9 @@ symbol func self univ state caller = case matched caller._symbolic func of
     -- what a fork of two branches is (#1268). The residual and the answer lines
     -- of the protocol grow by the size of that formation, which is the price of
     -- saying the same thing one way.
-    answered :: ReduceContext -> Lambda -> Subst -> State -> IO (Expression, State)
-    answered ctx entry bound state' = do
-      let (fresh, spent) = minted entry._answer state'._minted
-      mapM_ (ctx._saveEval . EvMinted ctx._nesting) [idx | (_, FnSymbol idx) <- fresh]
-      symbolic <- foldM mint bound fresh
-      built <- buildExpressionThrows entry._answer symbolic
-      (normal, state'') <- settled built univ state'{_minted = spent} ctx
+    settle :: ReduceContext -> Expression -> State -> IO (Expression, State)
+    settle ctx term state' = do
+      (normal, state'') <- settled term univ state' ctx
       ctx._saveEval (EvAnswer ctx._nesting normal)
       pure (normal, state'')
     mint :: Subst -> (Slot, Function) -> IO Subst

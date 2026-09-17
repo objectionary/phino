@@ -34,22 +34,29 @@
 -- reached from an unknown is written and the two of them compare as
 -- expressions (see 'symbolized').
 --
+-- The '𝑛' of an entry is either that one term or a list of two metas, which is
+-- what a branching λ function writes: the answer of a fork stands for either
+-- branch and no one branch stands for both, so phino joins the two terms the
+-- metas are bound to instead of handing one of them through (see 'joined').
+--
 -- An entry answers, it never computes: the job of these functions is symbolic
 -- morphing, so the answer carries a symbol standing for a value nobody worked
 -- out, and the data its 'dataize' operands came down to is not its to read.
 -- An answer mentioning a bytes meta is refused where the file is read.
 --
--- This module holds the entries and the three things reading one takes — the
--- lookup of a λ name, the minting of the symbols an answer asks for and the
--- standing of the data of a term into unknowns. Firing an entry is 𝔼's
--- business and lives in 'Morph', which alone holds the judgments an entry
--- reduces its operands with.
+-- This module holds the entries and the four things reading one takes — the
+-- lookup of a λ name, the minting of the symbols an answer asks for, the
+-- standing of the data of a term into unknowns and the joining of two branches
+-- into one answer. Firing an entry is 𝔼's business and lives in 'Morph', which
+-- alone holds the judgments an entry reduces its operands with.
 module Lambdas
-  ( Lambda (..)
+  ( Answer (..)
+  , Lambda (..)
   , LambdaException (..)
   , Lambdas
   , Meta (..)
   , emptyLambdas
+  , joined
   , matched
   , minted
   , readLambdas
@@ -87,16 +94,29 @@ data Meta = Meta
   , _name :: Text
   }
 
+-- What an entry answers a firing with, which is the one thing the '𝑛' of it
+-- spells in two ways. Most λ functions answer one term, written as it is; a
+-- branching one answers neither of its branches, since the value it stands for
+-- is the one nobody has picked, so it names the two metas its branches are
+-- bound to and phino joins them (#1246).
+data Answer
+  = -- The term the entry wrote, with every meta the firing bound stood into
+    -- it.
+    AnTerm Expression
+  | -- The two metas whose normal forms the firing joins, in the order the
+    -- entry listed them under '𝑛'.
+    AnJoin Meta Meta
+
 -- One λ function phino may fire, as the file spells it: the key it is
 -- registered under, the operands it brings down to data, the operands it
 -- reduces to a normal form, the terms of those it stands the data of into
--- unknowns and the term it answers with.
+-- unknowns and what it answers with.
 data Lambda = Lambda
   { _key :: Text
   , _dataized :: [(Meta, Expression)]
   , _morphed :: [(Meta, Expression)]
   , _symbolized :: [(Meta, Expression)]
-  , _answer :: Expression
+  , _answer :: Answer
   }
 
 -- Every λ function phino may fire, in the order the file lists them: each key,
@@ -123,10 +143,9 @@ instance FromJSON Lambda where
         <$> operands key bytesMeta entry "dataize"
         <*> operands key expressionMeta entry "morph"
         <*> operands key expressionMeta entry "symbolize"
-        <*> entry .: "𝑛"
-    sigmas (T.unpack key) lambda._answer
-    dataless (T.unpack key) lambda._answer
+        <*> (entry .: "𝑛" >>= answering (T.unpack key))
     earlier (T.unpack key) lambda
+    sound (T.unpack key) lambda
     pure lambda
     where
       -- The metas one block of an entry binds, each paired with the term it is
@@ -174,6 +193,38 @@ instance FromJSON Lambda where
                     (T.unpack meta._spelling)
                     key
                 )
+      -- What the entry answers with, as the '𝑛' of it spells it: a list of
+      -- metas is a join of the branches they are bound to and anything else is
+      -- the term itself. A join is only ever between two of them, since it
+      -- stands for a choice between two branches and a walk over three terms
+      -- in parallel is no such choice.
+      answering :: String -> Yaml.Value -> Yaml.Parser Answer
+      answering key value = case value of
+        Yaml.Array _ -> parseJSON value >>= branches
+        _ -> AnTerm <$> parseJSON value
+        where
+          branches :: [Text] -> Yaml.Parser Answer
+          branches [left, right] = AnJoin <$> expressionMeta left <*> expressionMeta right
+          branches _ = fail (printf "The '𝑛' of λ function '%s' must join exactly two metas, such as '[𝑛1, 𝑛2]'" key)
+      -- What the answer of an entry must hold to be answerable at all: a term
+      -- of it may carry nothing but a bare 𝜎 and may read no data, while a
+      -- join of two branches names two terms the entry has bound already,
+      -- since nothing else of it is a normal form to join.
+      sound :: String -> Lambda -> Yaml.Parser ()
+      sound key lambda = case lambda._answer of
+        AnTerm term -> sigmas key term >> dataless key term
+        AnJoin left right -> mapM_ reduced [left, right]
+        where
+          reduced :: Meta -> Yaml.Parser ()
+          reduced meta
+            | meta._name `elem` map (_name . fst) (lambda._morphed ++ lambda._symbolized) = pure ()
+            | otherwise =
+                fail
+                  ( printf
+                      "The branch '%s' of λ function '%s' names no meta bound by 'morph' or by 'symbolize'"
+                      (T.unpack meta._spelling)
+                      key
+                  )
       -- A bare 𝜎 is the one anonymous meta an answer may carry, since minting
       -- a fresh symbol is exactly what it asks for; every other one names a
       -- match the entry never made.
@@ -344,6 +395,126 @@ symbolized term spent = case goExpr term (spent, []) of
     goArgument (ArAlpha alpha expr) minting =
       let (expr', minting') = goExpr expr minting
        in (ArAlpha alpha expr', minting')
+
+-- What a walk joining two terms carries from one sub-term to the next: how
+-- many symbols the run has minted once everything left of this sub-term is
+-- joined, the fresh symbol every pair of differing symbols was given, since
+-- one pair met twice is one choice and not two, and those pairs in the order
+-- they were met, the last of them first.
+type Joining = (Int, Map (Int, Int) Int, [(Int, (Int, Int))])
+
+-- The two terms joined into the one term standing for either of them, which is
+-- what a fork of two branches answers with: neither branch is the answer, the
+-- value being the one nobody has picked, and the shape both of them have is.
+-- The walk goes over the two in parallel and requires them to match verbatim,
+-- with one exception: where a 'λ ⤍ 𝜎A' binding meets a different 'λ ⤍ 𝜎B' one
+-- it mints a fresh symbol and stands it there, and the same pair met again
+-- further down gets that very symbol, since the branch it came from is one
+-- choice however often the two terms differ by it. Two identical branches join
+-- into that same term and nothing is minted at all. What a ρ carries is the
+-- one thing the walk never compares, since it belongs to the object around the
+-- branch and not to the branch (see 'goBinding' below).
+--
+-- Any other difference — a datum against a symbol, two different data, a
+-- binding one of them carries and the other does not — is no join, and nothing
+-- comes back: a fork whose branches differ in structure is stuck the way a λ
+-- function no entry answers is, and bringing two such branches to one shape is
+-- the program's business rather than phino's. This is why a datum is never
+-- joined with anything and why a branch carrying one goes through 'symbolized'
+-- first (#1246).
+--
+-- What each fresh symbol stands for comes back beside the term, the two
+-- symbols it was minted for in the order the branches were given, since
+-- dataizing its formation answers what dataizing one of the two answers and
+-- that is a fact about the symbol rather than a binding of it. The count of
+-- symbols the run has minted once they are taken comes back too, uniqueness
+-- being the state's business here exactly as it is in 'minted'.
+joined :: Expression -> Expression -> Int -> Maybe (Expression, [(Int, (Int, Int))], Int)
+joined left right spent = taking <$> goExpr left right (spent, Map.empty, [])
+  where
+    -- The term the walk built, with what it minted put back in the order the
+    -- pairs were met and the count of symbols the run has spent by then.
+    taking :: (Expression, Joining) -> (Expression, [(Int, (Int, Int))], Int)
+    taking (term, (spent', _, made)) = (term, reverse made, spent')
+    goExpr :: Expression -> Expression -> Joining -> Maybe (Expression, Joining)
+    goExpr (ExFormation one) (ExFormation two) joining = do
+      (bds, joining') <- goBindings one two joining
+      pure (ExFormation bds, joining')
+    goExpr (ExApplication one arg) (ExApplication two arg') joining = do
+      (expr, joining') <- goExpr one two joining
+      (applied, joining'') <- goArgument arg arg' joining'
+      pure (ExApplication expr applied, joining'')
+    goExpr (ExDispatch one attr) (ExDispatch two attr') joining
+      | attr == attr' = do
+          (expr, joining') <- goExpr one two joining
+          pure (ExDispatch expr attr, joining')
+    goExpr (ExPhiMeet prefix idx one) (ExPhiMeet prefix' idx' two) joining
+      | prefix == prefix' && idx == idx' = do
+          (expr, joining') <- goExpr one two joining
+          pure (ExPhiMeet prefix idx expr, joining')
+    goExpr (ExPhiAgain prefix idx one) (ExPhiAgain prefix' idx' two) joining
+      | prefix == prefix' && idx == idx' = do
+          (expr, joining') <- goExpr one two joining
+          pure (ExPhiAgain prefix idx expr, joining')
+    goExpr one two joining
+      | one == two = Just (one, joining)
+      | otherwise = Nothing
+    goBindings :: [Binding] -> [Binding] -> Joining -> Maybe ([Binding], Joining)
+    goBindings [] [] joining = Just ([], joining)
+    goBindings (one : rest) (two : rest') joining = do
+      (bd, joining') <- goBinding one two joining
+      (bds, joining'') <- goBindings rest rest' joining'
+      pure (bd : bds, joining'')
+    goBindings _ _ _ = Nothing
+    -- One binding of each term joined. A λ binding naming a symbol is the one
+    -- place the two may differ, since a symbol is a value nobody worked out
+    -- and the two branches standing one each is exactly what a fork is; every
+    -- other binding stands as it is or the join is off.
+    --
+    -- What a ρ carries is left alone, the whole subtree of it, exactly as
+    -- 'symbolized' leaves it: a term carries the value it stands for where its
+    -- φ chain ends, and what sits under ρ belongs to the object around this one
+    -- and says nothing about the branch. The two branches of a fork are
+    -- reduced in scopes of their own — each inside the universe its own
+    -- operand was reduced in — so their ρ differ wherever that reduction left
+    -- a trace, and a walk comparing them would refuse every fork whose
+    -- branches 𝕄 reached by two different routes. The ρ of the first branch is
+    -- what the joined term keeps, the answer being of its shape.
+    goBinding :: Binding -> Binding -> Joining -> Maybe (Binding, Joining)
+    goBinding bd@(BiTau AtRho _) (BiTau AtRho _) joining = Just (bd, joining)
+    goBinding (BiLambda (FnSymbol one)) (BiLambda (FnSymbol two)) joining
+      | one /= two = case picked (one, two) joining of
+          (fresh, joining') -> Just (BiLambda (FnSymbol fresh), joining')
+    goBinding (BiTau attr one) (BiTau attr' two) joining
+      | attr == attr' = do
+          (expr, joining') <- goExpr one two joining
+          pure (BiTau attr expr, joining')
+    goBinding one two joining
+      | one == two = Just (one, joining)
+      | otherwise = Nothing
+    goArgument :: Argument -> Argument -> Joining -> Maybe (Argument, Joining)
+    goArgument (ArTau attr one) (ArTau attr' two) joining
+      | attr == attr' = do
+          (expr, joining') <- goExpr one two joining
+          pure (ArTau attr expr, joining')
+    goArgument (ArAlpha alpha one) (ArAlpha alpha' two) joining
+      | alpha == alpha' = do
+          (expr, joining') <- goExpr one two joining
+          pure (ArAlpha alpha expr, joining')
+    goArgument one two joining
+      | one == two = Just (one, joining)
+      | otherwise = Nothing
+    -- The fresh symbol standing for one pair of differing symbols, and what
+    -- the walk carries once it is taken: a pair met before keeps the symbol it
+    -- was given already, and one met for the first time takes the next name
+    -- the run has not minted.
+    picked :: (Int, Int) -> Joining -> (Int, Joining)
+    picked pair joining@(spent', names, made)
+      | Just name <- Map.lookup pair names = (name, joining)
+      | otherwise = (fresh, (fresh, Map.insert pair fresh names, (fresh, pair) : made))
+      where
+        fresh :: Int
+        fresh = spent' + 1
 
 -- The last symbol a program already carries, which is where minting starts: a
 -- program written by an earlier run holds symbols of its own, and a fresh one

@@ -125,7 +125,9 @@ own metas from `𝛿1` and `𝑛1`, and the entry is what tells two `𝛿1` apar
 
 The term under `𝑛` is what the firing answers with. `phino` normalizes it
 exactly as it normalizes anything else, so `--protocol`, `--partial` and
-`--max-steps` work on it unchanged.
+`--max-steps` work on it unchanged. A branching λ function writes two metas
+there instead of a term, and the two branches they name are joined into one
+answer (see below).
 
 ### Standing data into unknowns
 
@@ -163,6 +165,61 @@ for `Φ.number( Φ.bytes( ⟦ Δ ⤍ … ⟧ ) )`, so a branch computed from a l
 keeps a datum three levels down where a branch computed from an unknown keeps
 `⟦ λ ⤍ 𝜎 ⟧`. A `Δ` against a `λ` is a difference in kind and not in value, and
 after the stage both branches carry `⟦ λ ⤍ 𝜎 ⟧` where they differ.
+
+### Joining the branches of a fork
+
+A branching λ function answers neither of its branches. Which one the program
+takes is decided by a value nobody worked out, so handing one of them through
+would drop the branch point from the program altogether and a reader would see
+the condition computed and thrown away. What such an entry answers with is the
+join of its two branches, asked for by listing the metas they are bound to
+under `𝑛` instead of writing a term:
+
+```yaml
+- λ: L_fork
+  dataize:
+    𝛿1: $.φ
+  morph:
+    𝑛1: $.left
+    𝑛2: $.right
+  symbolize:
+    𝑛3: 𝑛1
+    𝑛4: 𝑛2
+  𝑛: [𝑛3, 𝑛4]
+```
+
+`phino` takes the two terms the metas are bound to and requires them to match
+verbatim, with one exception: where `⟦ λ ⤍ 𝜎A ⟧` in one meets a different
+`⟦ λ ⤍ 𝜎B ⟧` in the other, it mints a fresh `𝜎C` and stands it there. The same
+symbol on both sides stays as it is, and the same pair met again further down
+gets the same fresh symbol, since it is one choice however often the two terms
+differ by it; two different pairs get two fresh symbols. Two identical branches
+join into that same term and nothing is minted at all. The answer keeps the
+type by construction, being the branches' own shape, so the file needs to know
+nothing about carriers.
+
+What a `ρ` carries is left alone, the whole subtree of it, exactly as
+`symbolize` leaves it: a term carries the value it stands for where its `φ`
+chain ends, and what sits under `ρ` belongs to the object around this one. The
+two branches of a fork reach their normal forms in scopes of their own, so
+their `ρ` differ wherever the reduction left a trace, and comparing them would
+refuse the join over something saying nothing about either branch. The joined
+term keeps the `ρ` of the first branch, being of its shape.
+
+A join is only ever between two expressions and a datum is never joined with
+anything, which is why `symbolize` comes first: a known symbol, one that stage
+minted for a datum, is a symbol like any other here, so a literal branch joins
+with a computed one and two literal branches join too. Any other difference — a
+datum against a symbol, two different data, a binding one branch carries and
+the other does not — is no join at all, and the firing gets stuck the way a λ
+function no entry answers does, so `--partial` parks it rather than aborting
+the run. A fork whose branches differ in structure, such as a `Φ.true` and a
+`Φ.false` written as `φ ↦ ξ.left` against `φ ↦ ξ.right`, is stuck, and bringing
+two such branches to one shape is the program's job and not `phino`'s.
+
+Every symbol a join mints is written into the protocol as a fact of its own,
+so a reader ties it to the two it stands for without diffing the branches; the
+section on `--protocol` below shows one.
 
 ### Symbols
 
@@ -296,11 +353,16 @@ it always holds the firings of exactly one run.
 
 The blocks come in the order the reduction walks the term, and that order is
 not what the dependencies are read from — the symbols are. Take a comparison
-nobody can decide, a fork branching on it, and an `atoms.yaml` carrying the
-entry above beside these two:
+nobody can decide, a fork branching on it, and an `atoms.yaml` of three
+entries, the λ functions named briefly to keep the lines below short:
 
 ```yaml
-- λ: L_number_gt
+- λ: L_plus
+  dataize:
+    𝛿1: $.ρ
+    𝛿2: $.x
+  𝑛: Φ.number( φ ↦ ⟦ λ ⤍ 𝜎 ⟧ )
+- λ: L_gt
   dataize:
     𝛿1: $.ρ
     𝛿2: $.x
@@ -311,7 +373,10 @@ entry above beside these two:
   morph:
     𝑛1: $.then
     𝑛2: $.else
-  𝑛: 𝑛1
+  symbolize:
+    𝑛3: 𝑛1
+    𝑛4: 𝑛2
+  𝑛: [𝑛3, 𝑛4]
 ```
 
 ```bash
@@ -319,11 +384,7 @@ $ cat fork.phi
 ⟦
   bytes ↦ ⟦ φ ↦ ∅ ⟧,
   bool ↦ ⟦ if ↦ ∅ ⟧,
-  number ↦ ⟦
-    φ ↦ ∅,
-    plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧,
-    gt(x) ↦ ⟦ λ ⤍ L_number_gt ⟧
-  ⟧,
+  number ↦ ⟦ φ ↦ ∅, plus(x) ↦ ⟦ λ ⤍ L_plus ⟧, gt(x) ↦ ⟦ λ ⤍ L_gt ⟧ ⟧,
   foo(x) ↦ ⟦
     φ ↦ ξ.x.gt( 0 ).if( ξ.x.plus( ξ.x.plus( 1 ) ), ξ.x.plus( ξ.x ) ).plus( 5 )
   ⟧,
@@ -333,40 +394,51 @@ $ phino morph --deep --symbolic=atoms.yaml --locator=Q.demo.a \
     --protocol=fork.txt --quiet --sweet --hide-rho fork.phi
 $ cat fork.txt
 𝕄(Φ.demo.a)
-  𝔼(L_number_gt)
+  𝔼(L_gt)
     𝛿1.1 := 𝔻(⟦ λ ⤍ 𝜎1 ⟧)  # ξ.ρ
     𝛿2.1 := 00-00-00-00-00-00-00-00  # ξ.x
-    𝑛.1 := Φ.bool( if ↦ ⟦ λ ⤍ L_fork, then ↦ ∅, else ↦ ∅, φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧ )
-  𝔼(L_number_plus)
+    𝑛.1 := ⟦ if ↦ ⟦ λ ⤍ L_fork, then ↦ ∅, else ↦ ∅, φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧ ⟧
+  𝔼(L_plus)
     𝛿1.2 := 𝔻(⟦ λ ⤍ 𝜎1 ⟧)  # ξ.ρ
     𝛿2.2 := 3F-F0-00-00-00-00-00-00  # ξ.x
-    𝑛.2 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎3 ⟧ )
-  𝔼(L_number_plus)
+    𝑛.2 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎3 ⟧, plus(x) ↦ ⟦ λ ⤍ L_plus ⟧, gt(x) ↦ ⟦ λ ⤍ L_gt ⟧ ⟧
+  𝔼(L_plus)
     𝛿1.3 := 𝔻(⟦ λ ⤍ 𝜎1 ⟧)  # ξ.ρ
     𝛿2.3 := 𝔻(⟦ λ ⤍ 𝜎3 ⟧)  # ξ.x
-    𝑛.3 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎4 ⟧ )
-  𝔼(L_number_plus)
+    𝑛.3 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎4 ⟧, plus(x) ↦ ⟦ λ ⤍ L_plus ⟧, gt(x) ↦ ⟦ λ ⤍ L_gt ⟧ ⟧
+  𝔼(L_plus)
     𝛿1.4 := 𝔻(⟦ λ ⤍ 𝜎1 ⟧)  # ξ.ρ
     𝛿2.4 := 𝔻(⟦ λ ⤍ 𝜎1 ⟧)  # ξ.x
-    𝑛.4 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎5 ⟧ )
+    𝑛.4 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎5 ⟧, plus(x) ↦ ⟦ λ ⤍ L_plus ⟧, gt(x) ↦ ⟦ λ ⤍ L_gt ⟧ ⟧
   𝔼(L_fork)
     𝛿1.5 := 𝔻(⟦ λ ⤍ 𝜎2 ⟧)  # ξ.φ
     𝑛1.5 := 𝑛.3  # ξ.then
     𝑛2.5 := 𝑛.4  # ξ.else
-    𝑛.5 := 𝑛1.5
-  𝔼(L_number_plus)
-    𝛿1.6 := 𝔻(⟦ λ ⤍ 𝜎4 ⟧)  # ξ.ρ
+    𝑛3.5 := 𝑛1.5  # 𝑛1
+    𝑛4.5 := 𝑛2.5  # 𝑛2
+    𝔻(⟦ λ ⤍ 𝜎6 ⟧) ∈ { 𝔻(⟦ λ ⤍ 𝜎4 ⟧), 𝔻(⟦ λ ⤍ 𝜎5 ⟧) }
+    𝑛.5 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎6 ⟧, plus(x) ↦ ⟦ λ ⤍ L_plus ⟧, gt(x) ↦ ⟦ λ ⤍ L_gt ⟧ ⟧
+  𝔼(L_plus)
+    𝛿1.6 := 𝔻(⟦ λ ⤍ 𝜎6 ⟧)  # ξ.ρ
     𝛿2.6 := 40-14-00-00-00-00-00-00  # ξ.x
-    𝑛.6 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎6 ⟧ )
+    𝑛.6 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎7 ⟧, plus(x) ↦ ⟦ λ ⤍ L_plus ⟧, gt(x) ↦ ⟦ λ ⤍ L_gt ⟧ ⟧
 ```
 
 `𝜎3` is minted by the second firing and consumed by the third as
-`𝔻(⟦ λ ⤍ 𝜎3 ⟧)`, `𝜎4` by the third and consumed by the last, `𝜎2` by the
-first and consumed by the fork. `𝜎5` is minted and never consumed, which is
-how a reader sees that the right branch was computed and thrown away. The two
-`morph` lines of `𝔼(L_fork)` are recorded although nothing fires under them,
-since they are the only edge from the fork back to the branch it answered
-with: without them `𝑛.5 := 𝑛1.5` would name a meta nothing ever bound.
+`𝔻(⟦ λ ⤍ 𝜎3 ⟧)`, and `𝜎2` by the first and consumed by the fork. `𝜎4` and
+`𝜎5` are what the two branches came to, and the fork consumes both: it joins
+them into `𝜎6`, which the `plus( 5 )` standing after the fork then reads as
+`𝔻(⟦ λ ⤍ 𝜎6 ⟧)`. The line
+`𝔻(⟦ λ ⤍ 𝜎6 ⟧) ∈ { 𝔻(⟦ λ ⤍ 𝜎4 ⟧), 𝔻(⟦ λ ⤍ 𝜎5 ⟧) }` is what ties the three
+together: dataizing the formation `𝜎6` names answers what dataizing one of the
+other two answers. A reader who knows the entry knows that `𝛿1` is what decides
+between them and that the first of the two belongs to `then`. Nothing is
+assigned to a `𝜎`, it being the name of a λ function, so the fact stands on a
+line of its own the way what a `symbolize` line knows does.
+
+Were the fork to answer one of its branches instead, the value of the other
+would be minted and never consumed, and `foo` would read as a program that
+computes a condition, computes both branches and then drops the branch point.
 
 A firing that happened while an operand of another was being reduced stands one
 level deeper, under the firing that asked for it. Here it never happens,
@@ -421,6 +493,14 @@ lines on and the data dataizing its formation answers are the text of the
 element. It takes `symbol` and not `meta`, since the fact is about the unknown
 and not about a meta the firing bound.
 
+`<joined symbol="𝜎6">𝜎4 𝜎5</joined>` is the same kind of fact about a symbol
+a join of two branches minted, which the text format writes as
+`𝔻(⟦ λ ⤍ 𝜎6 ⟧) ∈ { 𝔻(⟦ λ ⤍ 𝜎4 ⟧), 𝔻(⟦ λ ⤍ 𝜎5 ⟧) }`: the fresh symbol stands
+in `symbol` and the two it was minted for are the text, in the order the entry
+listed the branches under `𝑛`. A fork joining its two branches at several
+places writes one element per pair of symbols they differ by, and one whose
+branches are alike writes none.
+
 `<minted>𝜎1</minted>` is one symbol the firing minted, one element per bare `𝜎`
 the entry wrote its answer with, standing inside the block ahead of the
 `<answer>` carrying them. That is the edge a reader joins on: a later
@@ -430,8 +510,8 @@ elements and one minting none writes none, which no attribute on the answer
 could say: a term may carry several symbols, or carry one where the value it
 stands for is not a symbol at all. In the fork above, `𝔼(L_number_gt)` writes
 `<minted>𝜎2</minted>` although `𝜎2` sits under `if` and not where the value of
-the term is, while `𝔼(L_fork)` writes none at all, since it answers `𝑛1` and
-asks for no symbol of its own.
+the term is, while `𝔼(L_fork)` writes none at all, since the symbol it answers
+with comes from the join of its branches and stands in a `<joined>` of its own.
 
 A λ name no entry answers is `<stuck λ="…"/>`, standing where its `<evaluate>`
 would have stood, and a firing that happened while an operand of another was

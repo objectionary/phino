@@ -12,7 +12,7 @@ import Control.Monad (forM_)
 import Data.List (isInfixOf)
 import Data.Text qualified as T
 import Fixtures (withLambdasOf)
-import Lambdas (Lambda (..), Lambdas, Meta (..), emptyLambdas, matched, minted, readLambdas, symbolized, taken)
+import Lambdas (Answer (..), Lambda (..), Lambdas, Meta (..), emptyLambdas, joined, matched, minted, readLambdas, symbolized, taken)
 import Parser (parseExpressionThrows)
 import Test.Hspec
 
@@ -31,6 +31,20 @@ entry key = "- λ: " <> key <> "\n  dataize:\n    𝛿1: $.ρ\n  𝑛: ⟦ λ �
 -- entry itself, since an entry is no value and nothing compares two of them.
 answering :: Lambdas -> T.Text -> Maybe T.Text
 answering known func = _key <$> matched known func
+
+-- The term the entry answering the given λ name was written with, where it
+-- answers with a term at all and not with a join of two branches.
+answered :: Lambdas -> T.Text -> Maybe Expression
+answered known func = case _answer <$> matched known func of
+  Just (AnTerm term) -> Just term
+  _ -> Nothing
+
+-- The two branches the entry answering the given λ name joins, spelled the way
+-- the file spells them, where it answers with a join at all.
+branches :: Lambdas -> T.Text -> Maybe (T.Text, T.Text)
+branches known func = case _answer <$> matched known func of
+  Just (AnJoin left right) -> Just (_spelling left, _spelling right)
+  _ -> Nothing
 
 spec :: Spec
 spec = do
@@ -89,8 +103,20 @@ spec = do
 
     it "reads the term the firing answers with" $ do
       known <- lambdasOf "- λ: L_pair\n  𝑛: Φ.number( φ ↦ ⟦ λ ⤍ 𝜎 ⟧ )\n"
-      answer <- parseExpressionThrows "Φ.number( φ ↦ ⟦ λ ⤍ 𝜎 ⟧ )"
-      fmap _answer (matched known "L_pair") `shouldBe` Just answer
+      term <- parseExpressionThrows "Φ.number( φ ↦ ⟦ λ ⤍ 𝜎 ⟧ )"
+      answered known "L_pair" `shouldBe` Just term
+
+    -- A fork answers neither of its branches but the join of the two, so it
+    -- lists the metas they are bound to instead of writing a term of its own
+    it "reads the two branches a fork joins" $ do
+      known <- lambdasOf "- λ: L_fork\n  morph:\n    𝑛1: $.then\n    𝑛2: $.else\n  𝑛: [𝑛1, 𝑛2]\n"
+      branches known "L_fork" `shouldBe` Just ("𝑛1", "𝑛2")
+
+    -- The branches are joined in the order the entry lists them, which is the
+    -- order the protocol writes the two symbols a fresh one stands for in
+    it "reads a fork joining the terms a 'symbolize' line stood" $ do
+      known <- lambdasOf "- λ: L_fork\n  morph:\n    𝑛1: $.then\n    𝑛2: $.else\n  symbolize:\n    𝑛3: 𝑛1\n    𝑛4: 𝑛2\n  𝑛: [𝑛4, 𝑛3]\n"
+      branches known "L_fork" `shouldBe` Just ("𝑛4", "𝑛3")
 
     it "reads an entry naming neither operand block" $ do
       known <- lambdasOf "- λ: L_pair\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n"
@@ -114,6 +140,11 @@ spec = do
       , ("an operand referencing a meta the entry never matched", "- λ: L_pair\n  dataize:\n    𝛿1: '!n'\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n", "cannot be referenced")
       , ("an answer reading the data its operands came down to", "- λ: L_pair\n  dataize:\n    𝛿1: $.ρ\n  𝑛: ⟦ Δ ⤍ 𝛿1 ⟧\n", "reads data")
       , ("an answer carrying an anonymous meta of another kind", "- λ: L_pair\n  𝑛: '⟦ φ ↦ !n ⟧'\n", "cannot be referenced")
+      , ("an answer joining one branch alone", "- λ: L_fork\n  morph:\n    𝑛1: $.then\n  𝑛: [𝑛1]\n", "must join exactly two metas")
+      , ("an answer joining three branches", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n    𝑛3: $.c\n  𝑛: [𝑛1, 𝑛2, 𝑛3]\n", "must join exactly two metas")
+      , ("an answer joining what is no expression meta", "- λ: L_fork\n  morph:\n    𝑛1: $.then\n  𝑛: [𝑛1, $.else]\n", "is not an expression meta")
+      , ("an answer joining a branch the entry never bound", "- λ: L_fork\n  morph:\n    𝑛1: $.then\n  𝑛: [𝑛1, 𝑛2]\n", "names no meta bound by 'morph' or by 'symbolize'")
+      , ("an answer joining a branch that came down to data", "- λ: L_fork\n  dataize:\n    𝛿1: $.ρ\n  morph:\n    𝑛1: $.then\n  𝑛: [𝑛1, 𝛿1]\n", "is not an expression meta")
       ]
       ( \(desc, text, message) ->
           it ("cannot read " ++ desc) $
@@ -211,6 +242,88 @@ spec = do
       term <- parseExpressionThrows "Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )"
       let (_, _, spent) = symbolized term 4
       spent `shouldBe` 4
+
+  -- Neither branch of a fork is the value the fork answers with, since nobody
+  -- has picked between the two: what stands for either of them is the shape
+  -- both of them have, with a fresh symbol wherever they differ
+  describe "joined" $ do
+    let joining :: String -> String -> Int -> IO (Maybe (Expression, [(Int, (Int, Int))], Int))
+        joining left right spent = do
+          one <- parseExpressionThrows left
+          two <- parseExpressionThrows right
+          pure (joined one two spent)
+
+    it "joins two branches differing in one symbol into a fresh one" $ do
+      term <- parseExpressionThrows "⟦ φ ↦ ⟦ λ ⤍ 𝜎5 ⟧ ⟧"
+      made <- joining "⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧" "⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧" 4
+      fmap (\(joint, _, _) -> joint) made `shouldBe` Just term
+
+    -- A 𝜎 is the name of a λ function and nothing is assigned to it, so what
+    -- comes back beside the term is which two symbols the fresh one stands for
+    it "tells the two symbols every fresh one stands for" $ do
+      made <- joining "⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧" "⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧" 4
+      fmap (\(_, facts, _) -> facts) made `shouldBe` Just [(5, (1, 2))]
+
+    it "counts every symbol it minted into the state" $ do
+      made <- joining "⟦ a ↦ ⟦ λ ⤍ 𝜎1 ⟧, b ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧" "⟦ a ↦ ⟦ λ ⤍ 𝜎3 ⟧, b ↦ ⟦ λ ⤍ 𝜎4 ⟧ ⟧" 4
+      fmap (\(_, _, spent) -> spent) made `shouldBe` Just 6
+
+    -- Two pairs are two choices and get two names of their own
+    it "mints one symbol per pair of differing symbols" $ do
+      made <- joining "⟦ a ↦ ⟦ λ ⤍ 𝜎1 ⟧, b ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧" "⟦ a ↦ ⟦ λ ⤍ 𝜎3 ⟧, b ↦ ⟦ λ ⤍ 𝜎4 ⟧ ⟧" 4
+      fmap (\(_, facts, _) -> facts) made `shouldBe` Just [(5, (1, 3)), (6, (2, 4))]
+
+    -- One pair met twice is one choice however often the two terms differ by
+    -- it, so it keeps the symbol it was given the first time
+    it "mints one symbol for the pair it meets twice" $ do
+      term <- parseExpressionThrows "⟦ a ↦ ⟦ λ ⤍ 𝜎5 ⟧, b ↦ ⟦ λ ⤍ 𝜎5 ⟧ ⟧"
+      made <- joining "⟦ a ↦ ⟦ λ ⤍ 𝜎1 ⟧, b ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧" "⟦ a ↦ ⟦ λ ⤍ 𝜎2 ⟧, b ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧" 4
+      made `shouldBe` Just (term, [(5, (1, 2))], 5)
+
+    -- Two branches nothing tells apart are the answer themselves: there is
+    -- nothing to pick between and no unknown to stand for the pick
+    it "joins two branches that are one term into that very term" $ do
+      term <- parseExpressionThrows "Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )"
+      made <- joining "Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )" "Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )" 4
+      made `shouldBe` Just (term, [], 4)
+
+    it "joins two branches through the argument of an application" $ do
+      term <- parseExpressionThrows "Φ.number( φ ↦ ⟦ λ ⤍ 𝜎5 ⟧ )"
+      made <- joining "Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )" "Φ.number( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ )" 4
+      fmap (\(joint, _, _) -> joint) made `shouldBe` Just term
+
+    -- A term carries the value it stands for where its φ chain ends, and what
+    -- sits under ρ belongs to the object around this one: the two branches of
+    -- a fork are reduced in scopes of their own, so their ρ differ wherever
+    -- that reduction left a trace and comparing them would refuse the join
+    -- over something saying nothing about either branch
+    it "leaves what a ρ carries alone" $ do
+      term <- parseExpressionThrows "⟦ φ ↦ ⟦ λ ⤍ 𝜎5 ⟧, ρ ↦ ⟦ x ↦ ⟦ Δ ⤍ 00- ⟧ ⟧ ⟧"
+      made <- joining "⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, ρ ↦ ⟦ x ↦ ⟦ Δ ⤍ 00- ⟧ ⟧ ⟧" "⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, ρ ↦ ⟦ y ↦ ⟦ Δ ⤍ FF- ⟧ ⟧ ⟧" 4
+      made `shouldBe` Just (term, [(5, (1, 2))], 5)
+
+    -- Two branches nothing but their ρ tells apart are one value, so nothing
+    -- is minted for what stands under it
+    it "joins two branches differing in their ρ alone" $ do
+      term <- parseExpressionThrows "⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, ρ ↦ ⟦ x ↦ ⟦ Δ ⤍ 00- ⟧ ⟧ ⟧"
+      made <- joining "⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, ρ ↦ ⟦ x ↦ ⟦ Δ ⤍ 00- ⟧ ⟧ ⟧" "⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, ρ ↦ ⟦ y ↦ ⟦ Δ ⤍ FF- ⟧ ⟧ ⟧" 4
+      made `shouldBe` Just (term, [], 4)
+
+    -- The join is strict and a datum is never joined with anything, which is
+    -- why a branch carrying one goes through 'symbolized' first
+    forM_
+      [ ("a datum with a symbol" :: String, "⟦ φ ↦ ⟦ Δ ⤍ 00- ⟧ ⟧" :: String, "⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧" :: String)
+      , ("two different data", "⟦ φ ↦ ⟦ Δ ⤍ 00- ⟧ ⟧", "⟦ φ ↦ ⟦ Δ ⤍ FF- ⟧ ⟧")
+      , ("a symbol with a λ function nothing else names", "⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧", "⟦ φ ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧")
+      , ("two branches one of which carries a binding more", "⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧", "⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, x ↦ ⟦⟧ ⟧")
+      , ("two branches binding their symbols under different attributes", "⟦ a ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧", "⟦ b ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧")
+      , ("two branches of different forma", "Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )", "Φ.bool( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ )")
+      ]
+      ( \(desc, left, right) ->
+          it ("cannot join " ++ desc) $ do
+            made <- joining left right 4
+            fmap (\(joint, _, _) -> joint) made `shouldBe` Nothing
+      )
 
   -- A program written by an earlier run holds symbols of its own, and a fresh
   -- one must never be spelled like one of them

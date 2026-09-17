@@ -1,0 +1,24 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+# Branches differing anywhere but in a symbol are not joined, and that is the
+# whole rule: no fallback and no second alternative. Bringing two branches to
+# one shape is the program's business rather than phino's, so a fork whose
+# branches differ in structure gets stuck the way a λ function no entry answers
+# does and '--partial' parks the site instead of failing the run.
+symbolic: |
+  - λ: L_fork
+    morph:
+      𝑛1: $.a
+      𝑛2: $.b
+    𝑛: [𝑛1, 𝑛2]
+location: 'Q.y'
+partial: true
+input: '⟦ y ↦ ⟦ a ↦ ⟦ l ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, b ↦ ⟦ l ↦ ⟦ λ ⤍ 𝜎2 ⟧, x ↦ ⟦⟧ ⟧, λ ⤍ L_fork ⟧.l ⟧'
+result: '⟦ a ↦ ⟦ l ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, b ↦ ⟦ l ↦ ⟦ λ ⤍ 𝜎2 ⟧, x ↦ ⟦⟧ ⟧, λ ⤍ L_fork ⟧.l'
+protocol: |
+  𝕄(Φ.y)
+    𝔼(L_fork)
+      𝑛1.1 := ⟦ l ↦ ⟦ λ ⤍ 𝜎1 ⟧, ρ ↦ ⟦ a ↦ ⟦ l ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, b ↦ ⟦ l ↦ ⟦ λ ⤍ 𝜎2 ⟧, x ↦ ⟦⟧ ⟧ ⟧ ⟧  # ξ.a
+      𝑛2.1 := ⟦ l ↦ ⟦ λ ⤍ 𝜎2 ⟧, x ↦ ⟦⟧, ρ ↦ ⟦ a ↦ ⟦ l ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, b ↦ ⟦ l ↦ ⟦ λ ⤍ 𝜎2 ⟧, x ↦ ⟦⟧ ⟧ ⟧ ⟧  # ξ.b

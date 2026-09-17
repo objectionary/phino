@@ -127,10 +127,10 @@ data ReduceException
   = OutOfSteps Int
   | -- A λ function could not fire: the '--symbolic' file carries no entry
     -- answering that name, or an operand of the entry it does carry never came
-    -- down to data, so there is nothing to answer with. The name is that of the
-    -- function 𝔼 actually failed on, which for a chain of dispatches is the
-    -- innermost one, since 'ml' reduces a head before the function above it
-    -- fires.
+    -- down to data, or the two branches it joins differ by more than a symbol,
+    -- so there is nothing to answer with. The name is that of the function 𝔼
+    -- actually failed on, which for a chain of dispatches is the innermost one,
+    -- since 'ml' reduces a head before the function above it fires.
     Stuck T.Text
   | -- A 'Stuck' caught by a frame of the 𝕄/𝔻 spine, together with the
     -- derivation and the state that frame had reached (see 'parking'). The head

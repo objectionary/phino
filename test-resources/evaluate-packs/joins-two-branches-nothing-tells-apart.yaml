@@ -1,0 +1,23 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+# Two branches nothing tells apart are the answer themselves: there is nothing
+# to pick between them, so the join mints no symbol at all and the firing
+# answers the very term both of them are. A fork is a branch point in the
+# program and not necessarily one in the value it stands for.
+symbolic: |
+  - λ: L_fork
+    morph:
+      𝑛1: $.a
+      𝑛2: $.b
+    𝑛: [𝑛1, 𝑛2]
+location: 'Q.y'
+input: '⟦ y ↦ ⟦ a ↦ ⟦ l ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, b ↦ ⟦ l ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, λ ⤍ L_fork ⟧.l ⟧'
+result: '⟦ λ ⤍ 𝜎1, ρ ↦ ⟦ l ↦ ⟦ λ ⤍ 𝜎1 ⟧, ρ ↦ ⟦ a ↦ ⟦ l ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, b ↦ ⟦ l ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧ ⟧ ⟧ ⟧'
+protocol: |
+  𝕄(Φ.y)
+    𝔼(L_fork)
+      𝑛1.1 := ⟦ l ↦ ⟦ λ ⤍ 𝜎1 ⟧, ρ ↦ ⟦ a ↦ ⟦ l ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, b ↦ ⟦ l ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧ ⟧ ⟧  # ξ.a
+      𝑛2.1 := ⟦ l ↦ ⟦ λ ⤍ 𝜎1 ⟧, ρ ↦ ⟦ a ↦ ⟦ l ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, b ↦ ⟦ l ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧ ⟧ ⟧  # ξ.b
+      𝑛.1 := ⟦ l ↦ ⟦ λ ⤍ 𝜎1 ⟧, ρ ↦ ⟦ a ↦ ⟦ l ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, b ↦ ⟦ l ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧ ⟧ ⟧

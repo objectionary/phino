@@ -1,0 +1,68 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+# The same fork as the pack beside this one, answering the join of its two
+# branches instead of the first of them, with one more firing standing after
+# it: the branch point stays in the program, since the 'plus( 6 )' below the
+# fork reads the symbol the two branches were joined into and not the value of
+# either. The line saying what that symbol stands for is what ties it to the
+# two, and the firing of a branch stands one level deeper, under the fork that
+# asked for it.
+symbolic: |
+  - λ: L_number_gt
+    dataize:
+      𝛿1: $.ρ
+      𝛿2: $.x
+    𝑛: Φ.bool( φ ↦ ⟦ λ ⤍ 𝜎 ⟧ )
+  - λ: L_number_plus
+    dataize:
+      𝛿1: $.ρ
+      𝛿2: $.x
+    𝑛: Φ.number( φ ↦ ⟦ λ ⤍ 𝜎 ⟧ )
+  - λ: L_fork
+    dataize:
+      𝛿1: $.ρ
+    morph:
+      𝑛1: $.then
+      𝑛2: $.else
+    symbolize:
+      𝑛3: 𝑛1
+      𝑛4: 𝑛2
+    𝑛: [𝑛3, 𝑛4]
+location: 'Q.@'
+deep: true
+input: >
+  ⟦ bytes(φ) ↦ ⟦⟧,
+    bool(φ) ↦ ⟦ if ↦ ⟦ then ↦ ∅, else ↦ ∅, λ ⤍ L_fork ⟧ ⟧,
+    number(φ) ↦ ⟦
+      gt(x) ↦ ⟦ λ ⤍ L_number_gt ⟧,
+      plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧,
+    @ ↦ 5.gt( 0 ).if( 1.plus( 2 ), 3.plus( 4 ) ).plus( 6 ) ⟧
+result: '⟦ φ ↦ ⟦ λ ⤍ 𝜎5 ⟧, gt(x) ↦ ⟦ λ ⤍ L_number_gt ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, ρ ↦ ⟦ bytes(φ) ↦ ⟦⟧, bool(φ) ↦ ⟦ if(then, else) ↦ ⟦ λ ⤍ L_fork ⟧ ⟧, number(φ) ↦ ⟦ gt(x) ↦ ⟦ λ ⤍ L_number_gt ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧, φ ↦ 5.gt( 0 ).if( 1.plus( 2 ), 3.plus( 4 ) ).plus( 6 ) ⟧ ⟧'
+protocol: |
+  𝕄(Φ.φ)
+    𝔼(L_number_gt)
+      𝛿1.1 := 40-14-00-00-00-00-00-00  # ξ.ρ
+      𝛿2.1 := 00-00-00-00-00-00-00-00  # ξ.x
+      𝑛.1 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, if(then, else) ↦ ⟦ λ ⤍ L_fork ⟧, ρ ↦ ⟦ bytes(φ) ↦ ⟦⟧, bool(φ) ↦ ⟦ if(then, else) ↦ ⟦ λ ⤍ L_fork ⟧ ⟧, number(φ) ↦ ⟦ gt(x) ↦ ⟦ λ ⤍ L_number_gt ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧, φ ↦ 5.gt( 0 ).if( 1.plus( 2 ), 3.plus( 4 ) ).plus( 6 ) ⟧ ⟧
+    𝔼(L_fork)
+      𝛿1.2 := 𝔻(⟦ λ ⤍ 𝜎1 ⟧)  # ξ.ρ
+      𝔼(L_number_plus)
+        𝛿1.3 := 3F-F0-00-00-00-00-00-00  # ξ.ρ
+        𝛿2.3 := 40-00-00-00-00-00-00-00  # ξ.x
+        𝑛.2 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, gt(x) ↦ ⟦ λ ⤍ L_number_gt ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, ρ ↦ ⟦ a🌵3 ↦ 1.plus( α0 ↦ 2, ρ ↦ ⟦ then ↦ 1.plus( 2 ), else ↦ 3.plus( 4 ), ρ ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, if(then, else) ↦ ⟦ λ ⤍ L_fork ⟧, ρ ↦ ⟦ bytes(φ) ↦ ⟦⟧, bool(φ) ↦ ⟦ if(then, else) ↦ ⟦ λ ⤍ L_fork ⟧ ⟧, number(φ) ↦ ⟦ gt(x) ↦ ⟦ λ ⤍ L_number_gt ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧, φ ↦ 5.gt( 0 ).if( 1.plus( 2 ), 3.plus( 4 ) ).plus( 6 ) ⟧ ⟧ ⟧ ), bytes(φ) ↦ ⟦⟧, bool(φ) ↦ ⟦ if(then, else) ↦ ⟦ λ ⤍ L_fork ⟧ ⟧, number(φ) ↦ ⟦ gt(x) ↦ ⟦ λ ⤍ L_number_gt ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧, φ ↦ 5.gt( 0 ).if( 1.plus( 2 ), 3.plus( 4 ) ).plus( 6 ) ⟧ ⟧
+      𝑛1.2 := 𝑛.2  # ξ.then
+      𝔼(L_number_plus)
+        𝛿1.4 := 40-08-00-00-00-00-00-00  # ξ.ρ
+        𝛿2.4 := 40-10-00-00-00-00-00-00  # ξ.x
+        𝑛.3 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎3 ⟧, gt(x) ↦ ⟦ λ ⤍ L_number_gt ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, ρ ↦ ⟦ a🌵6 ↦ 3.plus( α0 ↦ 4, ρ ↦ ⟦ then ↦ 1.plus( 2 ), else ↦ 3.plus( 4 ), ρ ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, if(then, else) ↦ ⟦ λ ⤍ L_fork ⟧, ρ ↦ ⟦ bytes(φ) ↦ ⟦⟧, bool(φ) ↦ ⟦ if(then, else) ↦ ⟦ λ ⤍ L_fork ⟧ ⟧, number(φ) ↦ ⟦ gt(x) ↦ ⟦ λ ⤍ L_number_gt ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧, φ ↦ 5.gt( 0 ).if( 1.plus( 2 ), 3.plus( 4 ) ).plus( 6 ) ⟧ ⟧ ⟧ ), bytes(φ) ↦ ⟦⟧, bool(φ) ↦ ⟦ if(then, else) ↦ ⟦ λ ⤍ L_fork ⟧ ⟧, number(φ) ↦ ⟦ gt(x) ↦ ⟦ λ ⤍ L_number_gt ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧, φ ↦ 5.gt( 0 ).if( 1.plus( 2 ), 3.plus( 4 ) ).plus( 6 ) ⟧ ⟧
+      𝑛2.2 := 𝑛.3  # ξ.else
+      𝑛3.2 := 𝑛1.2  # 𝑛1
+      𝑛4.2 := 𝑛2.2  # 𝑛2
+      𝔻(⟦ λ ⤍ 𝜎4 ⟧) ∈ { 𝔻(⟦ λ ⤍ 𝜎2 ⟧), 𝔻(⟦ λ ⤍ 𝜎3 ⟧) }
+      𝑛.4 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎4 ⟧, gt(x) ↦ ⟦ λ ⤍ L_number_gt ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, ρ ↦ ⟦ a🌵3 ↦ 1.plus( α0 ↦ 2, ρ ↦ ⟦ then ↦ 1.plus( 2 ), else ↦ 3.plus( 4 ), ρ ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, if(then, else) ↦ ⟦ λ ⤍ L_fork ⟧, ρ ↦ ⟦ bytes(φ) ↦ ⟦⟧, bool(φ) ↦ ⟦ if(then, else) ↦ ⟦ λ ⤍ L_fork ⟧ ⟧, number(φ) ↦ ⟦ gt(x) ↦ ⟦ λ ⤍ L_number_gt ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧, φ ↦ 5.gt( 0 ).if( 1.plus( 2 ), 3.plus( 4 ) ).plus( 6 ) ⟧ ⟧ ⟧ ), bytes(φ) ↦ ⟦⟧, bool(φ) ↦ ⟦ if(then, else) ↦ ⟦ λ ⤍ L_fork ⟧ ⟧, number(φ) ↦ ⟦ gt(x) ↦ ⟦ λ ⤍ L_number_gt ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧, φ ↦ 5.gt( 0 ).if( 1.plus( 2 ), 3.plus( 4 ) ).plus( 6 ) ⟧ ⟧
+    𝔼(L_number_plus)
+      𝛿1.5 := 𝔻(⟦ λ ⤍ 𝜎4 ⟧)  # ξ.ρ
+      𝛿2.5 := 40-18-00-00-00-00-00-00  # ξ.x
+      𝑛.5 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎5 ⟧, gt(x) ↦ ⟦ λ ⤍ L_number_gt ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, ρ ↦ ⟦ bytes(φ) ↦ ⟦⟧, bool(φ) ↦ ⟦ if(then, else) ↦ ⟦ λ ⤍ L_fork ⟧ ⟧, number(φ) ↦ ⟦ gt(x) ↦ ⟦ λ ⤍ L_number_gt ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧, φ ↦ 5.gt( 0 ).if( 1.plus( 2 ), 3.plus( 4 ) ).plus( 6 ) ⟧ ⟧
