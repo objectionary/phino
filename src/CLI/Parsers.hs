@@ -228,8 +228,9 @@ optSymbolic =
             <> metavar "FILE"
             <> help
               "Path to the YAML file of λ functions this run may fire, each entry keyed by a regular expression \
-              \over λ names under \"λ\", naming the operands it brings down to data under \"dataize\" and the ones \
-              \it reduces to a normal form under \"morph\", and answering with the term under \"𝑛\""
+              \over λ names under \"λ\", naming the operands it brings down to data under \"dataize\", the ones \
+              \it reduces to a normal form under \"morph\" and the terms of those it stands the data of into \
+              \unknowns under \"symbolize\", and answering with the term under \"𝑛\""
         )
     )
 

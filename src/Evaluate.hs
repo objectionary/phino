@@ -7,8 +7,9 @@
 
 -- The Evaluation function 𝔼 and everything a λ function of the '--symbolic'
 -- file needs to fire: finding the λ of a formation, bringing the operands of
--- its entry down, minting the symbols its answer carries and writing the
--- firing into the protocol. 𝕄 and 𝔻 live in 'Morph' and 'Dataize', and what
+-- its entry down, standing the data of a term it reduced into unknowns,
+-- minting the symbols its answer carries and writing the firing into the
+-- protocol. 𝕄 and 𝔻 live in 'Morph' and 'Dataize', and what
 -- all three share — the context, the budget, the signals — lives in 'Morph',
 -- which this module imports. The edges pointing back the other way, 𝕄 asking
 -- 𝔼 to fire, are injected as '_evaluate' and '_fire' rather than imported, the
@@ -24,7 +25,7 @@ import Data.List.NonEmpty (NonEmpty (..))
 import Data.Maybe (fromMaybe, isNothing)
 import qualified Data.Text as T
 import Deps (BuildTermMethodS, Evaluation (..), State (..), Term (..))
-import Lambdas (Lambda (..), Meta (..), matched, minted)
+import Lambdas (Lambda (..), Meta (..), matched, minted, symbolized)
 import Matcher (MetaValue (..), Subst, combine, substEmpty, substSingle, substSlot)
 import Morph (ReduceContext (..), ReduceException (..), deeper, morph', morphing, normalized, unparked)
 import Text.Printf (printf)
@@ -93,7 +94,8 @@ symbol func self univ state caller = case matched caller._symbolic func of
     let ctx = caller{_nesting = caller._nesting + 1}
     (bound, dataized) <- foldM (down ctx) (substEmpty, state) entry._dataized
     (bound', morphed) <- foldM (through ctx) (bound, dataized) entry._morphed
-    answered ctx entry bound' morphed
+    (bound'', stood) <- foldM (masked ctx) (bound', morphed) entry._symbolized
+    answered ctx entry bound'' stood
   where
     -- Bring one 'dataize' operand down through 𝔻 and bind the bytes meta that
     -- names it. An operand 𝔻 could not bring down to data — a site '_partial'
@@ -126,6 +128,26 @@ symbol func self univ state caller = case matched caller._symbolic func of
       ctx._saveEval (EvTerm ctx._nesting meta._spelling term normal)
       bound' <- bind meta (MvExpression normal) bound
       pure (bound', state'')
+    -- Stand the data of a term another line of the entry has bound into
+    -- unknowns and bind the expression meta naming what it becomes. Nothing is
+    -- reduced here: what changes is that every datum of the term becomes a
+    -- symbol nobody worked out, so a normal form reached from a literal
+    -- compares with one reached from an unknown, which is what a later join of
+    -- two branches of a fork needs. What is known about each fresh symbol goes
+    -- into the protocol ahead of the line binding the term, since the term is
+    -- written with the symbols and the facts are what tells a constant among
+    -- them from an unknown.
+    masked :: ReduceContext -> (Subst, State) -> (Meta, Expression) -> IO (Subst, State)
+    masked ctx (bound, state') (meta, term) = do
+      reduced <- buildExpressionThrows term bound
+      let (stood, known, spent) = symbolized reduced state'._minted
+      mapM_ (ctx._saveEval . fact) known
+      ctx._saveEval (EvTerm ctx._nesting meta._spelling term stood)
+      bound' <- bind meta (MvExpression stood) bound
+      pure (bound', state'{_minted = spent})
+      where
+        fact :: (Int, Bytes) -> Evaluation
+        fact (fresh, bytes) = EvKnown ctx._nesting fresh bytes
     -- Mint the fresh symbols the answer asks for, build it and reduce it
     -- through 𝕄. A bare 𝜎 stands for an unknown nobody has named yet, so each
     -- one is bound to the next symbol the run has not minted, and the state

@@ -1216,7 +1216,7 @@ spec = do
                        , "    𝛿2.1 := 40-18-00-00-00-00-00-00  # ξ.x"
                        , "    𝑛.1 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧"
                        , "  𝔼(L_number_plus)"
-                       , "    𝛿1.2 := 𝔻(𝜎1)  # ξ.ρ"
+                       , "    𝛿1.2 := 𝔻(⟦ λ ⤍ 𝜎1 ⟧)  # ξ.ρ"
                        , "    𝛿2.2 := 40-1C-00-00-00-00-00-00  # ξ.x"
                        , "    𝑛.2 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧"
                        ]
@@ -1239,7 +1239,7 @@ spec = do
                        , "    𝛿2.1 := 40-18-00-00-00-00-00-00  # ξ.x"
                        , "    𝑛.1 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧ ⟧"
                        , "  𝔼(L_number_times)"
-                       , "    𝛿1.2 := 𝔻(𝜎1)  # ξ.ρ"
+                       , "    𝛿1.2 := 𝔻(⟦ λ ⤍ 𝜎1 ⟧)  # ξ.ρ"
                        , "    𝛿2.2 := 40-1C-00-00-00-00-00-00  # ξ.x"
                        , "    𝑛.2 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧ ⟧"
                        ]
@@ -1260,8 +1260,30 @@ spec = do
                        , "      𝛿1.2 := 40-18-00-00-00-00-00-00  # ξ.ρ"
                        , "      𝛿2.2 := 40-1C-00-00-00-00-00-00  # ξ.x"
                        , "      𝑛.1 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧"
-                       , "    𝛿2.1 := 𝔻(𝜎1)  # ξ.x"
+                       , "    𝛿2.1 := 𝔻(⟦ λ ⤍ 𝜎1 ⟧)  # ξ.x"
                        , "    𝑛.2 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧"
+                       ]
+
+      -- A 'symbolize' line stands the data of a term an earlier line bound
+      -- into unknowns, so the protocol says what is known about each fresh
+      -- symbol before it writes the term carrying them. The fact is no
+      -- assignment to the symbol: a 𝜎 is the name of a λ function and
+      -- nothing binds bytes to it, so what is known is that dataizing the
+      -- formation it names answers them (#1269)
+      it "writes what is known about every symbol a 'symbolize' line minted" $
+        withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
+          hClose stream
+          withLambdasOf (T.pack "- λ: L_stand\n  morph:\n    𝑛1: $.x\n  symbolize:\n    𝑛2: 𝑛1\n  𝑛: ⟦ z ↦ 𝑛2 ⟧\n") $ \stands ->
+            withStdin "⟦ y ↦ ⟦ x ↦ ⟦ Δ ⤍ 01- ⟧, λ ⤍ L_stand ⟧.z ⟧" $
+              testCLISucceeded ["morph", "--symbolic=" ++ stands, "--locator=Q.y", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
+          records <- readUtf8 path
+          lines records
+            `shouldBe` [ "𝕄(Φ.y)"
+                       , "  𝔼(L_stand)"
+                       , "    𝑛1.1 := ⟦ Δ ⤍ 01- ⟧  # ξ.x"
+                       , "    𝔻(⟦ λ ⤍ 𝜎1 ⟧) == 01-"
+                       , "    𝑛2.1 := ⟦ λ ⤍ 𝜎1 ⟧  # 𝑛1"
+                       , "    𝑛.1 := ⟦ z ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧"
                        ]
 
       it "keeps the lines of a run that fails" $
@@ -1359,6 +1381,30 @@ spec = do
                          , "    <dataize meta=\"𝛿1.2\">𝜎1</dataize>"
                          , "    <bind meta=\"𝛿2.2\">40-1C-00-00-00-00-00-00</bind>"
                          , "    <answer meta=\"𝑛.2\" symbol=\"𝜎2\">⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧</answer>"
+                         , "  </evaluate>"
+                         , "</protocol>"
+                         ]
+
+        -- The fact a 'symbolize' line knows about a symbol is an element of
+        -- its own, next to '<bind>' and '<dataize>': the symbol stands in the
+        -- attribute a reader joins lines on and the data it stands for is the
+        -- text, so a consumer reads a constant off the markup without parsing
+        -- 𝜑 (#1269)
+        it "writes what is known about a symbol as an element of its own" $
+          withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
+            hClose stream
+            withLambdasOf (T.pack "- λ: L_stand\n  morph:\n    𝑛1: $.x\n  symbolize:\n    𝑛2: 𝑛1\n  𝑛: ⟦ z ↦ 𝑛2 ⟧\n") $ \stands ->
+              withStdin "⟦ y ↦ ⟦ x ↦ ⟦ Δ ⤍ 01- ⟧, λ ⤍ L_stand ⟧.z ⟧" $
+                testCLISucceeded ["morph", "--symbolic=" ++ stands, "--locator=Q.y", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
+            records <- readUtf8 path
+            lines records
+              `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+                         , "<protocol judgment=\"𝕄\" of=\"Φ.y\">"
+                         , "  <evaluate λ=\"L_stand\" id=\"1\">"
+                         , "    <bind meta=\"𝑛1.1\">⟦ Δ ⤍ 01- ⟧</bind>"
+                         , "    <known symbol=\"𝜎1\">01-</known>"
+                         , "    <bind meta=\"𝑛2.1\" symbol=\"𝜎1\">⟦ λ ⤍ 𝜎1 ⟧</bind>"
+                         , "    <answer meta=\"𝑛.1\">⟦ z ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧</answer>"
                          , "  </evaluate>"
                          , "</protocol>"
                          ]

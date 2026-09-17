@@ -26,6 +26,6 @@ result: >
 protocol: |
   𝕄(Φ.φ)
     𝔼(L_number_plus)
-      𝛿1.1 := 𝔻(𝜎2)  # ξ.ρ
-      𝛿2.1 := 𝔻(𝜎5)  # ξ.x
+      𝛿1.1 := 𝔻(⟦ λ ⤍ 𝜎2 ⟧)  # ξ.ρ
+      𝛿2.1 := 𝔻(⟦ λ ⤍ 𝜎5 ⟧)  # ξ.x
       𝑛.1 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎6 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, ρ ↦ ⟦ bytes(φ) ↦ ⟦⟧, number(φ) ↦ ⟦ plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧, φ ↦ Φ.number( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ).plus( Φ.number( φ ↦ ⟦ λ ⤍ 𝜎5 ⟧ ) ) ⟧ ⟧
