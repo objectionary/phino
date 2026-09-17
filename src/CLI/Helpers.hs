@@ -12,12 +12,13 @@ import CLI.Validators (invalidCLIArguments)
 import Canonizer (canonize)
 import Control.Exception
 import Control.Monad ((>=>))
+import Data.Char (toLower)
 import Data.Functor ((<&>))
 import Data.IORef
 import Data.List (intercalate, nub)
 import Data.Maybe
 import qualified Data.Text as T
-import Deps (Evaluation (EvRun), SaveEvalFunc, SaveStepFunc, State (..), dontSaveEval, emptyProtocol, saveEval, saveStep)
+import Deps (Evaluation (EvRun), SaveEvalFunc, SaveStepFunc, State (..), dontSaveEval, emptyNesting, emptyProtocol, endEvalXml, saveEval, saveEvalXml, saveStep)
 import Encoding
 import Files (ensuredFile, overwrite)
 import Functions (execFunctions)
@@ -32,7 +33,7 @@ import qualified Printer as P
 import qualified Random as R
 import Rewriter (Rewritten, Rewrittens', stepHeaders)
 import System.Directory (createDirectoryIfMissing)
-import System.FilePath (takeDirectory)
+import System.FilePath (takeDirectory, takeExtension)
 import System.IO (Handle, IOMode (WriteMode), getContents', hClose, hSetEncoding, openFile, utf8)
 import Text.Printf (printf)
 import XMIR (expressionToXMIR, parseXMIRThrows, printXMIR, xmirToPhi)
@@ -72,15 +73,33 @@ saveStepFunc stepsDir ctx@PrintCtx{..} = do
 -- says about the main output, since the file is a tree of one-line records. The
 -- encoding is pinned to UTF-8 rather than taken from the locale, since the file
 -- is read back by other programs.
-withEvalFunc :: Maybe FilePath -> PrintContext -> (SaveEvalFunc -> IO a) -> IO a
+withEvalFunc :: forall a. Maybe FilePath -> PrintContext -> (SaveEvalFunc -> IO a) -> IO a
 withEvalFunc Nothing _ action = action dontSaveEval
 withEvalFunc (Just file) ctx action = do
   createDirectoryIfMissing True (takeDirectory file)
-  logDebug (printf "The option '--protocol' is specified, every firing will be recorded in '%s'" file)
-  cursor <- newIORef emptyProtocol
-  bracket opened hClose $ \protocol ->
-    action (saveEval protocol cursor (flattened ctx))
+  logDebug (printf "The option '--protocol' is specified, every firing will be recorded in '%s' as %s" file (if markup then "XML" else "text"))
+  if markup then markedUp else plain
   where
+    -- Which of the two formats the file holds is decided by the name it was
+    -- given and by nothing else: '.xml' asks for the markup one, every other
+    -- name for the indented text the option has always written (#1245). There
+    -- is no flag for it, since a caller naming a file '.xml' and getting text
+    -- back has been told nothing useful.
+    markup :: Bool
+    markup = map toLower (takeExtension file) == ".xml"
+    -- The markup format closes on the way out what the run left open, so the
+    -- document is well-formed however the run ended. The closing runs before
+    -- the handle does, and the handle closes whether or not it succeeded.
+    markedUp :: IO a
+    markedUp = do
+      cursor <- newIORef emptyNesting
+      bracket opened (\protocol -> endEvalXml protocol cursor `finally` hClose protocol) $ \protocol ->
+        action (saveEvalXml protocol cursor (flattened ctx))
+    plain :: IO a
+    plain = do
+      cursor <- newIORef emptyProtocol
+      bracket opened hClose $ \protocol ->
+        action (saveEval protocol cursor (flattened ctx))
     -- 'withFile' would do the same, except that it annotates whatever the action
     -- throws with the name of the file, and a dataization failure has to reach
     -- the user as it is
