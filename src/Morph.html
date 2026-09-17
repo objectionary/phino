@@ -2175,7 +2175,7 @@ forall a. Maybe a
 </span><span id="line-605"></span><span class="hs-comment">-- normal form there, handing back the extended universe together with the</span><span>
 </span><span id="line-606"></span><span class="hs-comment">-- locator that aims at the binding. This is the trick phino has always played</span><span>
 </span><span id="line-607"></span><span class="hs-comment">-- to reduce a sub-expression that is not part of the program &#8212; the operand a</span><span>
-</span><span id="line-608"></span><span class="hs-comment">-- &#955; function names under 'dataize' or 'evaluate', above all &#8212; and it is also</span><span>
+</span><span id="line-608"></span><span class="hs-comment">-- &#955; function names under 'dataize' or 'morph', above all &#8212; and it is also</span><span>
 </span><span id="line-609"></span><span class="hs-comment">-- the contract of the '--inside' option, so a caller asking phino to reduce a</span><span>
 </span><span id="line-610"></span><span class="hs-comment">-- part of the formation it was given does not have to splice it into the text</span><span>
 </span><span id="line-611"></span><span class="hs-comment">-- of the universe by hand. &#120123; and &#120132; accept normal forms only and an expression</span><span>
@@ -2247,7 +2247,7 @@ forall e a. Exception e =&gt; e -&gt; IO a
 </span><span id="line-628"></span><span class="hs-comment">-- 'Dataize' dataizes one: bound to a synthetic attribute of the universe and</span><span>
 </span><span id="line-629"></span><span class="hs-comment">-- reduced there (see 'insideUniverse'), since &#120132; takes normal forms only and an</span><span>
 </span><span id="line-630"></span><span class="hs-comment">-- operand taken out of a formation as it was written is not necessarily one.</span><span>
-</span><span id="line-631"></span><span class="hs-comment">-- This is what an 'evaluate' operand of a &#955; function is reduced with, and the</span><span>
+</span><span id="line-631"></span><span class="hs-comment">-- This is what a 'morph' operand of a &#955; function is reduced with, and the</span><span>
 </span><span id="line-632"></span><span class="hs-comment">-- dataizing sibling of it reaches 'Dataize' through '_reduce'.</span><span>
 </span><span id="line-633"></span><span class="annot"><a href="Morph.html#morphing"><span class="hs-identifier hs-type">morphing</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Morph.html#ReduceContext"><span class="hs-identifier hs-type">ReduceContext</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Deps.html#State"><span class="hs-identifier hs-type">State</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Deps.html#State"><span class="hs-identifier hs-type">State</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-634"></span><span id="morphing"><span class="annot"><span class="annottext">morphing :: Expression
@@ -2354,7 +2354,7 @@ forall (t :: * -&gt; *) (m :: * -&gt; *) b a.
 </span><a href="#local-6989586621679545172"><span class="hs-identifier hs-var">entry</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">_dataized</span><span>
 </span><span id="line-667"></span><span>    </span><span class="hs-special">(</span><span id="local-6989586621679545181"><span class="annot"><span class="annottext">Subst
 </span><a href="#local-6989586621679545181"><span class="hs-identifier hs-var">bound'</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679545182"><span class="annot"><span class="annottext">State
-</span><a href="#local-6989586621679545182"><span class="hs-identifier hs-var">evaluated</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">((Subst, State) -&gt; (Meta, Expression) -&gt; IO (Subst, State))
+</span><a href="#local-6989586621679545182"><span class="hs-identifier hs-var">morphed</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">((Subst, State) -&gt; (Meta, Expression) -&gt; IO (Subst, State))
 -&gt; (Subst, State) -&gt; [(Meta, Expression)] -&gt; IO (Subst, State)
 forall (t :: * -&gt; *) (m :: * -&gt; *) b a.
 (Foldable t, Monad m) =&gt;
@@ -2365,13 +2365,13 @@ forall (t :: * -&gt; *) (m :: * -&gt; *) b a.
 </span><a href="#local-6989586621679545177"><span class="hs-identifier hs-var">ctx</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Subst
 </span><a href="#local-6989586621679545178"><span class="hs-identifier hs-var">bound</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">State
 </span><a href="#local-6989586621679545179"><span class="hs-identifier hs-var">dataized</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Lambda
-</span><a href="#local-6989586621679545172"><span class="hs-identifier hs-var">entry</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">_evaluated</span><span>
+</span><a href="#local-6989586621679545172"><span class="hs-identifier hs-var">entry</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">_morphed</span><span>
 </span><span id="line-668"></span><span>    </span><span class="annot"><span class="annottext">ReduceContext -&gt; Lambda -&gt; Subst -&gt; State -&gt; IO (Expression, State)
 </span><a href="#local-6989586621679545184"><span class="hs-identifier hs-var">answered</span></a></span><span> </span><span class="annot"><span class="annottext">ReduceContext
 </span><a href="#local-6989586621679545177"><span class="hs-identifier hs-var">ctx</span></a></span><span> </span><span class="annot"><span class="annottext">Lambda
 </span><a href="#local-6989586621679545172"><span class="hs-identifier hs-var">entry</span></a></span><span> </span><span class="annot"><span class="annottext">Subst
 </span><a href="#local-6989586621679545181"><span class="hs-identifier hs-var">bound'</span></a></span><span> </span><span class="annot"><span class="annottext">State
-</span><a href="#local-6989586621679545182"><span class="hs-identifier hs-var">evaluated</span></a></span><span>
+</span><a href="#local-6989586621679545182"><span class="hs-identifier hs-var">morphed</span></a></span><span>
 </span><span id="line-669"></span><span>  </span><span class="hs-keyword">where</span><span>
 </span><span id="line-670"></span><span>    </span><span class="hs-comment">-- Bring one 'dataize' operand down through &#120123; and bind the bytes meta that</span><span>
 </span><span id="line-671"></span><span>    </span><span class="hs-comment">-- names it. An operand &#120123; could not bring down to data &#8212; a site '_partial'</span><span>
@@ -2442,7 +2442,7 @@ forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Subst
 </span><a href="#local-6989586621679545196"><span class="hs-identifier hs-var">bound'</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">State
 </span><a href="#local-6989586621679545191"><span class="hs-identifier hs-var">state''</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-691"></span><span>    </span><span class="hs-comment">-- Reduce one 'evaluate' operand through &#120132; and bind the expression meta that</span><span>
+</span><span id="line-691"></span><span>    </span><span class="hs-comment">-- Reduce one 'morph' operand through &#120132; and bind the expression meta that</span><span>
 </span><span id="line-692"></span><span>    </span><span class="hs-comment">-- names it. Unlike a dataized one it may stay an unknown: a term carrying a</span><span>
 </span><span id="line-693"></span><span>    </span><span class="hs-comment">-- symbol is a perfectly good normal form, and standing it into the answer</span><span>
 </span><span id="line-694"></span><span>    </span><span class="hs-comment">-- is how a firing hands its own unknowns on.</span><span>
