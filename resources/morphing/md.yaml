@@ -2,16 +2,16 @@
 # SPDX-License-Identifier: MIT
 ---
 name: md
-match: '𝑛0.𝜏0'
-e-match: 𝑒0
-n-result: 𝑛3
+match: '𝑛1.𝜏1'
+e-match: 𝑒1
+n-result: 𝑛4
 when:
   not:
-    formation: 𝑛0
+    formation: 𝑛1
 premises:
-  - n-result: 𝑛1
-    morph: 𝑛0
   - n-result: 𝑛2
-    normalize: '𝑛1.𝜏0'
+    morph: 𝑛1
   - n-result: 𝑛3
-    morph: 𝑛2
+    normalize: '𝑛2.𝜏1'
+  - n-result: 𝑛4
+    morph: 𝑛3

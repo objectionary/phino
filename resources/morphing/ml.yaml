@@ -3,15 +3,15 @@
 ---
 name: ml
 label: \lambda
-match: '⟦𝐵1, λ ⤍ 𝑓0, 𝐵2⟧.𝜏0'
-e-match: 𝑒0
+match: '⟦𝐵1, λ ⤍ 𝑓1, 𝐵2⟧.𝜏1'
+e-match: 𝑒1
 n-result: 𝑛3
 premises:
   - n-result: 𝑛1
     evaluate:
-      - '⟦𝐵1, λ ⤍ 𝑓0, 𝐵2⟧'
-      - 𝑒0
+      - '⟦𝐵1, λ ⤍ 𝑓1, 𝐵2⟧'
+      - 𝑒1
   - n-result: 𝑛2
-    normalize: '𝑛1.𝜏0'
+    normalize: '𝑛1.𝜏1'
   - n-result: 𝑛3
     morph: 𝑛2

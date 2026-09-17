@@ -3,5 +3,5 @@
 ---
 name: dead
 match: ⊥
-e-match: 𝑒0
+e-match: 𝑒1
 n-result: ⊥

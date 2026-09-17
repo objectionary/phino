@@ -2,13 +2,13 @@
 # SPDX-License-Identifier: MIT
 ---
 name: none
-match: ⟦𝐵0⟧
-e-match: 𝑒0
-d-result: 𝛿0
+match: ⟦𝐵1⟧
+e-match: 𝑒1
+d-result: 𝛿1
 when:
   disjoint:
     - [Δ, λ, φ]
-    - [𝐵0]
+    - [𝐵1]
 premises:
-  - d-result: 𝛿0
+  - d-result: 𝛿1
     dataize: ⊥

@@ -3,5 +3,5 @@
 ---
 name: cg
 match: Φ
-c-match: 𝑘0
+c-match: 𝑘1
 c-result: Φ

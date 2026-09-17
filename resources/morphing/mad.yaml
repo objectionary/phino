@@ -3,7 +3,7 @@
 ---
 name: mad
 match: '𝑛(𝜏 ↦ 𝑛1)'
-e-match: 𝑒0
+e-match: 𝑒1
 n-result: 𝑛2
 when:
   not:

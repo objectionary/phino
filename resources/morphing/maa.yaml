@@ -2,13 +2,13 @@
 # SPDX-License-Identifier: MIT
 ---
 name: maa
-match: '𝑛0(α𝑖0 ↦ 𝑘1)'
-e-match: 𝑒0
-n-result: 𝑛3
+match: '𝑛1(α𝑖1 ↦ 𝑘1)'
+e-match: 𝑒1
+n-result: 𝑛4
 premises:
-  - n-result: 𝑛1
-    morph: 𝑛0
   - n-result: 𝑛2
-    normalize: '𝑛1(α𝑖0 ↦ 𝑘1)'
+    morph: 𝑛1
   - n-result: 𝑛3
-    morph: 𝑛2
+    normalize: '𝑛2(α𝑖1 ↦ 𝑘1)'
+  - n-result: 𝑛4
+    morph: 𝑛3

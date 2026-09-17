@@ -64,7 +64,7 @@ spec = do
 
   describe "printExpression with ASCII reads a bytes meta back" $
     forM_
-      [("d0", "d0"), ("d_Z-9", "d_Z-9"), ("dbytes", "dbytes")]
+      [("d1", "d1"), ("d_Z-9", "d_Z-9"), ("dbytes", "dbytes")]
       ( \(desc, name) ->
           it desc $ do
             let expr = ExFormation [BiDelta (BtMeta name), BiVoid AtRho]
