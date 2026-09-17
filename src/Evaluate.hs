@@ -42,17 +42,26 @@ import Yaml (ExtraArgument (..))
 -- function of a head reduced by 'ml' stands above the one dispatched on its
 -- result; that order carries nothing, since what depends on what is read off
 -- the symbols.
+--
+-- A formation carrying no λ binding has nothing to fire, and that is a question
+-- the calculus answers rather than a malformed one: 𝔼 hands back ⊥, the way 𝕄
+-- does for a term nobody reduces further. Only a λ 𝔼 cannot make sense of fails
+-- — several of them, or one standing for a meta, a slot or a symbol rather than
+-- a plain name — since a rule naming such a binding meant something phino
+-- cannot work out (see 'lambda').
 evaluation :: ReduceContext -> State -> BuildTermMethodS
 evaluation ctx state [ArgExpression expr, ArgExpression universe] subst = do
   form <- buildExpressionThrows expr subst
   univ <- buildExpressionThrows universe subst
   case form of
-    ExFormation bds -> case lambda bds of
-      Just (func, args) -> do
-        (raw, state') <- symbol func args univ state ctx
-        (normal, _) <- normalized raw ((univ, Nothing) :| []) ctx
-        pure (TeExpression normal, state')
-      Nothing -> throwIO (userError "Function evaluate() expects a formation with a λ binding")
+    ExFormation bds
+      | not (any isLambda bds) -> pure (TeExpression ExTermination, state)
+      | otherwise -> case lambda bds of
+          Just (func, args) -> do
+            (raw, state') <- symbol func args univ state ctx
+            (normal, _) <- normalized raw ((univ, Nothing) :| []) ctx
+            pure (TeExpression normal, state')
+          Nothing -> throwIO (userError "Function evaluate() expects a formation with a single λ binding naming a function")
     _ -> throwIO (userError "Function evaluate() expects a formation")
 evaluation _ _ _ _ = throwIO (userError "Function evaluate() requires exactly 2 expression arguments")
 
@@ -226,14 +235,19 @@ fired dispatched term univ state caller = do
 -- the λ function to fire and the formation it fires against, the λ binding
 -- removed. A formation with no λ binding, or with more than one, has nothing to
 -- fire; neither has one carrying a symbol, which is a λ name nothing answers.
+-- The three are one answer here but not to 𝔼, which tells the first of them
+-- from the other two (see 'evaluation').
 lambda :: [Binding] -> Maybe (T.Text, Expression)
 lambda bds = case partition isLambda bds of
   ([BiLambda (Function func)], rest) -> Just (func, ExFormation rest)
   _ -> Nothing
-  where
-    isLambda :: Binding -> Bool
-    isLambda (BiLambda _) = True
-    isLambda _ = False
+
+-- Whether a binding names a λ function, whatever that name turns out to be.
+-- 𝔼 asks this before 'lambda' does its splitting, since a formation carrying no
+-- λ at all is answered with ⊥ rather than refused (see 'evaluation').
+isLambda :: Binding -> Bool
+isLambda (BiLambda _) = True
+isLambda _ = False
 
 -- The same as 'lambda', but only for a formation that is saturated: one with
 -- every binding of it filled (see 'filled'). A void is an argument the program

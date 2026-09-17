@@ -115,14 +115,9 @@ spec = do
         , "Function evaluate() expects a formation"
         )
       ,
-        ( "the formation has no λ binding at all"
-        , [ArgExpression (ExFormation []), ArgExpression univ]
-        , "expects a formation with a"
-        )
-      ,
-        ( "a non-λ formation still has other bindings"
-        , [ArgExpression (ExFormation [BiVoid AtRho]), ArgExpression univ]
-        , "expects a formation with a"
+        ( "the only λ binding carries a symbol rather than a name"
+        , [ArgExpression (ExFormation [BiLambda (FnSymbol 1)]), ArgExpression univ]
+        , "a single λ binding naming a function"
         )
       ,
         ( "not given exactly two expression arguments"
@@ -133,6 +128,30 @@ spec = do
       ( \(desc, args, message) ->
           it ("throws when " ++ desc) $
             runEvaluate args `shouldThrow` (\e -> message `isInfixOf` show (e :: SomeException))
+      )
+
+    -- Two λ bindings never reach 𝔼: the builder refuses to make a formation out
+    -- of them first. The case is here anyway, since what matters is that such a
+    -- formation fails rather than answering ⊥ the way a λ-less one does.
+    it "throws when the formation carries more than one λ binding" $
+      runEvaluate [ArgExpression (ExFormation [BiLambda (Function "L_one"), BiLambda (Function "L_two")]), ArgExpression univ]
+        `shouldThrow` (\e -> "Duplicated attribute 'λ'" `isInfixOf` show (e :: SomeException))
+
+    -- A formation with no λ binding has nothing to fire, which is a question
+    -- the calculus answers rather than a malformed one: ⊥ is what 𝕄 hands back
+    -- for a term nobody can reduce further, and 𝔼 says the same. Only a λ 𝔼
+    -- cannot make sense of — several of them, or one standing for anything but
+    -- a plain name — is malformed and throws (see above).
+    forM_
+      [ ("carries no binding at all", ExFormation [])
+      , ("carries bindings but none of them a λ", ExFormation [BiVoid AtRho])
+      ]
+      ( \(desc, form) ->
+          it ("answers ⊥ for a formation that " ++ desc) $ do
+            answered <- runEvaluate [ArgExpression form, ArgExpression univ]
+            case answered of
+              TeExpression expr -> expr `shouldBe` ExTermination
+              _ -> expectationFailure "expected TeExpression"
       )
     it "evaluates a λ-bearing formation to the answer of its entry, normalized" $ do
       let form = ExFormation [BiLambda (Function "L_answer"), BiTau AtRho (ExFormation [BiDelta (BtOne "00")])]

@@ -1422,7 +1422,7 @@ spec = do
             hClose stream
             withLambdasOf (T.pack "- λ: L_pick\n  morph:\n    𝑛1: ξ.absent\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n") $ \picks ->
               withStdin "[[ x -> [[ here -> [[ ]], L> L_pick ]].foo ]]" $
-                testCLIFailed ["morph", "--symbolic=" ++ picks, "--locator=Q.x", "--protocol=" ++ path, "--quiet", "--hide-rho"] ["Function evaluate() expects a formation with a λ binding"]
+                testCLIFailed ["morph", "--symbolic=" ++ picks, "--locator=Q.x", "--protocol=" ++ path, "--quiet", "--hide-rho"] ["Function evaluate() expects a formation with a single λ binding naming a function"]
             records <- readUtf8 path
             lines records
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
