@@ -7,7 +7,9 @@
 # all. What it answers with is the join of the two — the shape both of them
 # have, with a fresh symbol wherever they carry two different unknowns — and
 # what that fresh symbol stands for stands on a line of its own, since a 𝜎 is
-# the name of a λ function and nothing is assigned to it.
+# the name of a λ function and nothing is assigned to it. The branches differ
+# under φ, that being where the value of a branch is reached and so the only
+# place the join looks at all (#1293).
 symbolic: |
   - λ: L_fork
     morph:
@@ -17,14 +19,14 @@ symbolic: |
       𝑛3: [𝑛1, 𝑛2]
     𝑛: 𝑛3
 location: 'Q.y'
-input: '⟦ y ↦ ⟦ a ↦ ⟦ l ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, b ↦ ⟦ l ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧, λ ⤍ L_fork ⟧.l ⟧'
-result: '⟦ λ ⤍ 𝜎3, ρ ↦ ⟦ l ↦ ⟦ λ ⤍ 𝜎3 ⟧, ρ ↦ ⟦ a ↦ ⟦ l ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, b ↦ ⟦ l ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧ ⟧ ⟧ ⟧'
+input: '⟦ y ↦ ⟦ a ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, b ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧, λ ⤍ L_fork ⟧.φ ⟧'
+result: '⟦ λ ⤍ 𝜎3, ρ ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎3 ⟧, ρ ↦ ⟦ a ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, b ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧ ⟧ ⟧ ⟧'
 protocol: |
   𝕄(Φ.y)
     𝔼(L_fork)  # 𝕄(Φ.y)
-      𝑛1.1 := ⟦ l ↦ ⟦ λ ⤍ 𝜎1 ⟧, ρ ↦ ⟦ a ↦ ⟦ l ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, b ↦ ⟦ l ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧ ⟧ ⟧  # 𝕄(ξ.a)
-      𝑛2.1 := ⟦ l ↦ ⟦ λ ⤍ 𝜎2 ⟧, ρ ↦ ⟦ a ↦ ⟦ l ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, b ↦ ⟦ l ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧ ⟧ ⟧  # 𝕄(ξ.b)
+      𝑛1.1 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, ρ ↦ ⟦ a ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, b ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧ ⟧ ⟧  # 𝕄(ξ.a)
+      𝑛2.1 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, ρ ↦ ⟦ a ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, b ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧ ⟧ ⟧  # 𝕄(ξ.b)
       𝔻(⟦ λ ⤍ 𝜎3 ⟧) ∈ { 𝔻(⟦ λ ⤍ 𝜎1 ⟧), 𝔻(⟦ λ ⤍ 𝜎2 ⟧) }
-      𝑛3.1 := ⟦ l ↦ ⟦ λ ⤍ 𝜎3 ⟧, ρ ↦ ⟦ a ↦ ⟦ l ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, b ↦ ⟦ l ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧ ⟧ ⟧  # [𝑛1, 𝑛2]
-      𝑛.1.1 := ⟦ l ↦ ⟦ λ ⤍ 𝜎3 ⟧, ρ ↦ ⟦ a ↦ ⟦ l ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, b ↦ ⟦ l ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧ ⟧ ⟧  # 𝑛
-      𝑛.1.2 := ⟦ l ↦ ⟦ λ ⤍ 𝜎3 ⟧, ρ ↦ ⟦ a ↦ ⟦ l ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, b ↦ ⟦ l ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧ ⟧ ⟧  # 𝕄(𝑛.1.1)
+      𝑛3.1 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎3 ⟧, ρ ↦ ⟦ a ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, b ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧ ⟧ ⟧  # [𝑛1, 𝑛2]
+      𝑛.1.1 := 𝑛3.1  # 𝑛
+      𝑛.1.2 := 𝑛3.1  # 𝕄(𝑛.1.1)

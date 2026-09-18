@@ -328,12 +328,16 @@ type Minting = (Int, [(Int, Bytes)])
 -- and so does the unknown it is put beside. A term nobody worked a value out
 -- in passes through unchanged.
 --
--- What a ρ carries is left alone, the whole subtree of it: a term carries the
--- value it stands for where its φ chain ends, and a datum sitting under ρ
--- belongs to the object around this one and says nothing about it (see
--- 'denoted'). A normal form drags the universe it was reduced inside along
--- under ρ, so a walk reaching into it would stand the data of the whole
--- program into unknowns to say one thing about one term.
+-- Only the φ chain is walked. A term carries the value it stands for where
+-- that chain ends, so a datum anywhere else says nothing about the term and is
+-- left alone, the whole subtree of it (see 'denoted'). What sits under ρ
+-- belongs to the object around this one, and a normal form drags the universe
+-- it was reduced inside along under ρ, so a walk reaching into it would stand
+-- the data of the whole program into unknowns to say one thing about one term.
+-- What sits under a method is code and not data: the literals of
+-- 'neg ↦ ⟦ φ ↦ ξ.ρ.times( -1 ) ⟧' are the body of something nobody has called,
+-- and minting a symbol per literal of every method a carrier declares would
+-- write dozens of unknowns nobody reads for one value that is read (#1293).
 --
 -- What is known about each fresh symbol comes back beside the term: the data
 -- dataizing the formation it names answers. That is a fact about the symbol
@@ -369,16 +373,19 @@ symbolized term spent = case goExpr term (spent, []) of
       let (bd', minting') = goBinding bd minting
           (rest', minting'') = goBindings rest minting'
        in (bd' : rest', minting'')
+    -- One binding of a formation stood into unknowns. The Δ of the formation
+    -- is its value and becomes a symbol; its φ is where the value of a term
+    -- that has no Δ is reached, so the walk goes on through it; every other
+    -- binding is carried as it was written, the whole subtree of it.
     goBinding :: Binding -> Minting -> (Binding, Minting)
-    goBinding bd@(BiTau AtRho _) minting = (bd, minting)
     goBinding (BiDelta bts) (spent', known) =
       (BiLambda (FnSymbol fresh), (fresh, (fresh, bts) : known))
       where
         fresh :: Int
         fresh = spent' + 1
-    goBinding (BiTau attr expr) minting =
+    goBinding (BiTau AtPhi expr) minting =
       let (expr', minting') = goExpr expr minting
-       in (BiTau attr expr', minting')
+       in (BiTau AtPhi expr', minting')
     goBinding bd minting = (bd, minting)
     goArgument :: Argument -> Minting -> (Argument, Minting)
     goArgument (ArTau attr expr) minting =
@@ -403,9 +410,11 @@ type Joining = (Int, Map (Int, Int) Int, [(Int, (Int, Int))])
 -- it mints a fresh symbol and stands it there, and the same pair met again
 -- further down gets that very symbol, since the branch it came from is one
 -- choice however often the two terms differ by it. Two identical branches join
--- into that same term and nothing is minted at all. What a ρ carries is the
--- one thing the walk never compares, since it belongs to the object around the
--- branch and not to the branch (see 'goBinding' below).
+-- into that same term and nothing is minted at all. Only the φ chain is
+-- compared, exactly as 'symbolized' stands only that chain into unknowns:
+-- everything else is carried from the first branch, since the value of a
+-- branch is where its φ chain ends and what sits under ρ or under a method is
+-- none of it (see 'goBinding' below).
 --
 -- Any other difference — a datum against a symbol, two different data, a
 -- binding one of them carries and the other does not — is no join, and nothing
@@ -460,27 +469,31 @@ joined left right spent = taking <$> goExpr left right (spent, Map.empty, [])
     goBindings _ _ _ = Nothing
     -- One binding of each term joined. A λ binding naming a symbol is the one
     -- place the two may differ, since a symbol is a value nobody worked out
-    -- and the two branches standing one each is exactly what a fork is; every
-    -- other binding stands as it is or the join is off.
+    -- and the two branches standing one each is exactly what a fork is. The φ
+    -- of a formation is walked into, that being where the value of the branch
+    -- is reached; every other binding is taken from the first branch, the whole
+    -- subtree of it, and never compared at all.
     --
-    -- What a ρ carries is left alone, the whole subtree of it, exactly as
-    -- 'symbolized' leaves it: a term carries the value it stands for where its
-    -- φ chain ends, and what sits under ρ belongs to the object around this one
-    -- and says nothing about the branch. The two branches of a fork are
-    -- reduced in scopes of their own — each inside the universe its own
-    -- operand was reduced in — so their ρ differ wherever that reduction left
-    -- a trace, and a walk comparing them would refuse every fork whose
-    -- branches 𝕄 reached by two different routes. The ρ of the first branch is
-    -- what the joined term keeps, the answer being of its shape.
+    -- That is the rule ρ has always followed, read off what a branch is rather
+    -- than off the attribute: what sits under ρ belongs to the object around
+    -- this one, and the two branches of a fork are reduced in scopes of their
+    -- own — each inside the universe its own operand was reduced in — so their
+    -- ρ differ wherever that reduction left a trace, and a walk comparing them
+    -- would refuse every fork whose branches 𝕄 reached by two different routes.
+    -- A method is the same: its body is code nobody has called, so two branches
+    -- differing inside one are not two values, and minting a symbol per literal
+    -- of every method the carrier declares writes unknowns nobody reads
+    -- (#1293). The shape the answer keeps is the first branch's, methods and
+    -- all, so the program can go on dispatching on what the fork answered.
     goBinding :: Binding -> Binding -> Joining -> Maybe (Binding, Joining)
-    goBinding bd@(BiTau AtRho _) (BiTau AtRho _) joining = Just (bd, joining)
     goBinding (BiLambda (FnSymbol one)) (BiLambda (FnSymbol two)) joining
       | one /= two = case picked (one, two) joining of
           (fresh, joining') -> Just (BiLambda (FnSymbol fresh), joining')
-    goBinding (BiTau attr one) (BiTau attr' two) joining
-      | attr == attr' = do
-          (expr, joining') <- goExpr one two joining
-          pure (BiTau attr expr, joining')
+    goBinding (BiTau AtPhi one) (BiTau AtPhi two) joining = do
+      (expr, joining') <- goExpr one two joining
+      pure (BiTau AtPhi expr, joining')
+    goBinding bd@(BiTau attr _) (BiTau attr' _) joining
+      | attr == attr' = Just (bd, joining)
     goBinding one two joining
       | one == two = Just (one, joining)
       | otherwise = Nothing

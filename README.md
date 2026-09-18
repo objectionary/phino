@@ -153,11 +153,16 @@ to stand. Every `Δ ⤍ b` binding of that term becomes a `λ ⤍ 𝜎k` naming 
 fresh symbol, one per occurrence, so `⟦ Δ ⤍ b ⟧` reads as `⟦ λ ⤍ 𝜎k ⟧` and a
 literal tuple gets several. A term carrying no datum passes through as it was.
 
-What a `ρ` carries is left alone, the whole subtree of it. A term carries the
-value it stands for where its `φ` chain ends, and a datum sitting under `ρ`
-belongs to the object around this one; a normal form drags the universe it was
-reduced inside along under `ρ`, so a walk reaching into it would stand the data
-of the whole program into unknowns to say one thing about one term.
+Only the `φ` chain is walked. A term carries the value it stands for where
+that chain ends, so a datum standing anywhere else says nothing about the term
+and is left alone, the whole subtree of it. What sits under `ρ` belongs to the
+object around this one, and a normal form drags the universe it was reduced
+inside along under `ρ`, so a walk reaching into it would stand the data of the
+whole program into unknowns to say one thing about one term. What sits under a
+method is code and not data: the `-1` of a `neg ↦ ⟦ φ ↦ ξ.ρ.times( -1 ) ⟧`
+nobody has called is the body of a method, and minting a symbol for it, and for
+every other literal every method of the carrier declares, would write unknowns
+nobody ever reads.
 
 This is what lets an entry compare two branches of a fork. A literal is sugar
 for `Φ.number( Φ.bytes( ⟦ Δ ⤍ … ⟧ ) )`, so a branch computed from a literal
@@ -204,13 +209,16 @@ different pairs get two fresh symbols. Two identical terms join into that same
 term and nothing is minted at all. The join keeps the type by construction,
 being the terms' own shape, so the file needs to know nothing about carriers.
 
-What a `ρ` carries is left alone, the whole subtree of it, exactly as
-`symbolize` leaves it: a term carries the value it stands for where its `φ`
-chain ends, and what sits under `ρ` belongs to the object around this one. The
-two branches of a fork reach their normal forms in scopes of their own, so
-their `ρ` differ wherever the reduction left a trace, and comparing them would
-refuse the join over something saying nothing about either branch. The joined
-term keeps the `ρ` of the first of the two, being of its shape.
+Only the `φ` chain is compared, exactly as `symbolize` stands only that chain
+into unknowns: a term carries the value it stands for where its `φ` chain ends,
+so every other binding is taken from the first branch, the whole subtree of it,
+and never compared at all. The two branches of a fork reach their normal forms
+in scopes of their own, so their `ρ` differ wherever the reduction left a
+trace, and comparing them would refuse the join over something saying nothing
+about either branch; a method is the same, its body being code nobody has
+called, so two branches differing inside one are not two values. The joined
+term keeps the methods and the `ρ` of the first of the two, being of its shape,
+which is what lets the program go on dispatching on what the fork answered.
 
 A join is only ever between two expressions and a datum is never joined with
 anything, which is why `symbolize` runs before it: a known symbol, one that

@@ -196,8 +196,8 @@ spec = do
   -- 'symbolize' line of an entry asks for.
   describe "symbolized" $ do
     it "stands every datum of a term into an unknown" $ do
-      term <- parseExpressionThrows "⟦ a ↦ ⟦ Δ ⤍ 00- ⟧, b ↦ ⟦ Δ ⤍ FF- ⟧ ⟧"
-      unknown <- parseExpressionThrows "⟦ a ↦ ⟦ λ ⤍ 𝜎5 ⟧, b ↦ ⟦ λ ⤍ 𝜎6 ⟧ ⟧"
+      term <- parseExpressionThrows "⟦ φ ↦ Φ.f( φ ↦ ⟦ Δ ⤍ 00- ⟧ )( t ↦ ⟦ Δ ⤍ FF- ⟧ ) ⟧"
+      unknown <- parseExpressionThrows "⟦ φ ↦ Φ.f( φ ↦ ⟦ λ ⤍ 𝜎5 ⟧ )( t ↦ ⟦ λ ⤍ 𝜎6 ⟧ ) ⟧"
       let (masked, _, _) = symbolized term 4
       masked `shouldBe` unknown
 
@@ -205,14 +205,27 @@ spec = do
     -- to it: what is known is that dataizing the formation it names answers
     -- them
     it "tells the data every symbol it minted stands for" $ do
-      term <- parseExpressionThrows "⟦ a ↦ ⟦ Δ ⤍ 00- ⟧, b ↦ ⟦ Δ ⤍ FF- ⟧ ⟧"
+      term <- parseExpressionThrows "⟦ φ ↦ Φ.f( φ ↦ ⟦ Δ ⤍ 00- ⟧ )( t ↦ ⟦ Δ ⤍ FF- ⟧ ) ⟧"
       let (_, known, _) = symbolized term 4
       known `shouldBe` [(5, BtOne "00"), (6, BtOne "FF")]
 
     it "counts every symbol it minted into the state" $ do
-      term <- parseExpressionThrows "⟦ a ↦ ⟦ Δ ⤍ 00- ⟧, b ↦ ⟦ Δ ⤍ FF- ⟧ ⟧"
+      term <- parseExpressionThrows "⟦ φ ↦ Φ.f( φ ↦ ⟦ Δ ⤍ 00- ⟧ )( t ↦ ⟦ Δ ⤍ FF- ⟧ ) ⟧"
       let (_, _, spent) = symbolized term 4
       spent `shouldBe` 6
+
+    -- A term carries the value it stands for where its φ chain ends, so a
+    -- datum anywhere else is not that value: the literal of a method is the
+    -- body of something nobody has called, and standing it would write an
+    -- unknown nobody reads. The method comes back exactly as it was written
+    -- (#1293).
+    it "leaves a datum standing outside the φ chain alone" $ do
+      term <- parseExpressionThrows "⟦ φ ↦ ⟦ Δ ⤍ 00- ⟧, neg ↦ ⟦ φ ↦ ⟦ Δ ⤍ FF- ⟧ ⟧ ⟧"
+      unknown <- parseExpressionThrows "⟦ φ ↦ ⟦ λ ⤍ 𝜎5 ⟧, neg ↦ ⟦ φ ↦ ⟦ Δ ⤍ FF- ⟧ ⟧ ⟧"
+      let (masked, known, spent) = symbolized term 4
+      masked `shouldBe` unknown
+      known `shouldBe` [(5, BtOne "00")]
+      spent `shouldBe` 5
 
     -- A term nobody worked a value out in is an unknown already, and standing
     -- it changes nothing
@@ -276,20 +289,36 @@ spec = do
       fmap (\(_, facts, _) -> facts) made `shouldBe` Just [(5, (1, 2))]
 
     it "counts every symbol it minted into the state" $ do
-      made <- joining "⟦ a ↦ ⟦ λ ⤍ 𝜎1 ⟧, b ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧" "⟦ a ↦ ⟦ λ ⤍ 𝜎3 ⟧, b ↦ ⟦ λ ⤍ 𝜎4 ⟧ ⟧" 4
+      made <- joining "⟦ φ ↦ Φ.f( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )( t ↦ ⟦ λ ⤍ 𝜎2 ⟧ ) ⟧" "⟦ φ ↦ Φ.f( φ ↦ ⟦ λ ⤍ 𝜎3 ⟧ )( t ↦ ⟦ λ ⤍ 𝜎4 ⟧ ) ⟧" 4
       fmap (\(_, _, spent) -> spent) made `shouldBe` Just 6
 
     -- Two pairs are two choices and get two names of their own
     it "mints one symbol per pair of differing symbols" $ do
-      made <- joining "⟦ a ↦ ⟦ λ ⤍ 𝜎1 ⟧, b ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧" "⟦ a ↦ ⟦ λ ⤍ 𝜎3 ⟧, b ↦ ⟦ λ ⤍ 𝜎4 ⟧ ⟧" 4
+      made <- joining "⟦ φ ↦ Φ.f( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )( t ↦ ⟦ λ ⤍ 𝜎2 ⟧ ) ⟧" "⟦ φ ↦ Φ.f( φ ↦ ⟦ λ ⤍ 𝜎3 ⟧ )( t ↦ ⟦ λ ⤍ 𝜎4 ⟧ ) ⟧" 4
       fmap (\(_, facts, _) -> facts) made `shouldBe` Just [(5, (1, 3)), (6, (2, 4))]
 
     -- One pair met twice is one choice however often the two terms differ by
     -- it, so it keeps the symbol it was given the first time
     it "mints one symbol for the pair it meets twice" $ do
-      term <- parseExpressionThrows "⟦ a ↦ ⟦ λ ⤍ 𝜎5 ⟧, b ↦ ⟦ λ ⤍ 𝜎5 ⟧ ⟧"
-      made <- joining "⟦ a ↦ ⟦ λ ⤍ 𝜎1 ⟧, b ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧" "⟦ a ↦ ⟦ λ ⤍ 𝜎2 ⟧, b ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧" 4
+      term <- parseExpressionThrows "⟦ φ ↦ Φ.f( φ ↦ ⟦ λ ⤍ 𝜎5 ⟧ )( t ↦ ⟦ λ ⤍ 𝜎5 ⟧ ) ⟧"
+      made <- joining "⟦ φ ↦ Φ.f( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )( t ↦ ⟦ λ ⤍ 𝜎1 ⟧ ) ⟧" "⟦ φ ↦ Φ.f( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ )( t ↦ ⟦ λ ⤍ 𝜎2 ⟧ ) ⟧" 4
       made `shouldBe` Just (term, [(5, (1, 2))], 5)
+
+    -- Only the φ chain is compared, the value of a branch being where that
+    -- chain ends. Two branches differing inside a method are not two values:
+    -- the method is code nobody has called, the first branch's copy of it is
+    -- what the answer keeps, and nothing is minted for the difference (#1293).
+    it "carries a method from the first branch and mints nothing for it" $ do
+      term <- parseExpressionThrows "⟦ φ ↦ ⟦ λ ⤍ 𝜎5 ⟧, neg ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎7 ⟧ ⟧ ⟧"
+      made <- joining "⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, neg ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎7 ⟧ ⟧ ⟧" "⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, neg ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎8 ⟧ ⟧ ⟧" 4
+      made `shouldBe` Just (term, [(5, (1, 2))], 5)
+
+    -- What the two branches are is still read off their shape: a binding one
+    -- of them carries under a name the other does not is no fork at all, and
+    -- carrying the first branch's bindings never papers over that
+    it "refuses two branches whose bindings are named differently" $ do
+      made <- joining "⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, m ↦ ⟦ x ↦ ∅ ⟧ ⟧" "⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, other ↦ ⟦ x ↦ ∅ ⟧ ⟧" 4
+      made `shouldBe` Nothing
 
     -- Two branches nothing tells apart are the answer themselves: there is
     -- nothing to pick between and no unknown to stand for the pick
