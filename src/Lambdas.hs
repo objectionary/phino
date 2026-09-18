@@ -271,9 +271,10 @@ readLambdas :: FilePath -> IO Lambdas
 readLambdas path = do
   entries <- Yaml.decodeFileEither path >>= either broken pure
   mapM_ (unique entries) entries
-  registered <- Lambdas <$> mapM keyed entries
+  registered <- mapM keyed entries
+  overlaps path registered
   logDebug (printf "Loaded %d λ function(s) from '%s'" (length entries) path)
-  pure registered
+  pure (Lambdas registered)
   where
     broken :: Yaml.ParseException -> IO [Lambda]
     broken failure = throwIO (BrokenLambdas path (Yaml.prettyPrintParseException failure))
@@ -294,6 +295,25 @@ readLambdas path = do
     unreadable :: Text -> (a, String) -> IO b
     unreadable key (_, failure) =
       throwIO (BrokenLambdas path (printf "the key '%s' is not a regular expression: %s" (T.unpack key) failure))
+
+    overlaps :: FilePath -> [(Regex, Lambda)] -> IO ()
+    overlaps file registered = check registered
+      where
+        check :: [(Regex, Lambda)] -> IO ()
+        check [] = pure ()
+        check ((first, left) : rest) = do
+          mapM_ (pair first left) rest
+          check rest
+        pair :: Regex -> Lambda -> (Regex, Lambda) -> IO ()
+        pair first left (second, right)
+          | matchTest first (encodeUtf8 right._key)
+              || matchTest second (encodeUtf8 left._key) =
+              throwIO
+                ( BrokenLambdas
+                    file
+                    (printf "the keys '%s' and '%s' match some of the same lambda names" (T.unpack left._key) (T.unpack right._key))
+                )
+          | otherwise = pure ()
 
 -- The entry whose key matches the whole λ name, if any. There is at most one:
 -- the keys are unique, so a name either has a λ function or has none at all.

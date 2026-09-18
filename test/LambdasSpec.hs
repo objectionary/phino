@@ -138,6 +138,11 @@ spec = do
       , ("an entry with no answer at all", "- λ: L_pair\n", "cannot be read")
       , ("an entry whose answer is no term of the calculus", "- λ: L_pair\n  𝑛: ⟦ λ ⤍\n", "cannot be read")
       , ("two entries under one key", entry "L_pair" <> entry "L_pair", "is used by more than one entry")
+      ,
+        ( "two entries with overlapping regular expressions"
+        , entry "L_(foo|bar)" <> entry "L_foo"
+        , "match some of the same lambda names"
+        )
       , ("a key which is no regular expression", entry "L_[pair", "is not a regular expression")
       , ("an operand of 'dataize' which is no bytes meta", "- λ: L_pair\n  dataize:\n    𝑛1: $.x\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n", "is not a bytes meta")
       , ("an operand of 'morph' which is no expression meta", "- λ: L_pair\n  morph:\n    𝛿1: $.x\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n", "is not an expression meta")
