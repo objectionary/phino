@@ -117,11 +117,6 @@ spec = do
         , "Function evaluate() expects a formation"
         )
       ,
-        ( "the only λ binding carries a symbol rather than a name"
-        , [ArgExpression (ExFormation [BiLambda (FnSymbol 1)]), ArgExpression univ]
-        , "a single λ binding naming a function"
-        )
-      ,
         ( "not given exactly two expression arguments"
         , [ArgExpression univ]
         , "requires exactly 2 expression arguments"
@@ -131,6 +126,20 @@ spec = do
           it ("throws when " ++ desc) $
             runEvaluate args `shouldThrow` (\e -> message `isInfixOf` show (e :: SomeException))
       )
+
+    -- A λ naming a symbol is none of those. A symbol is a value nobody worked
+    -- out, so no entry of the '--symbolic' file answers it and there is no
+    -- firing to make, which is the very thing a λ name nothing answers means:
+    -- 𝔼 gets stuck on it rather than refusing the formation, and the site goes
+    -- to the protocol under the name every term carrying that symbol spells it
+    -- with. Before #1287 this threw a 'userError' nothing catches, so one such
+    -- term ended a whole run.
+    it "gets stuck on a λ naming a symbol, instead of refusing the formation" $ do
+      (_, written) <- recorded $ \record -> do
+        let stuck = (withLambdas known (defaultReduceContext ExRoot)){_saveEval = record}
+            fire = execBuildTerm univ stuck "evaluate" [ArgExpression (ExFormation [BiLambda (FnSymbol 1)]), ArgExpression univ] substEmpty
+        fire `shouldThrow` (\e -> "No entry of --symbolic answers the λ function '𝜎1'" `isInfixOf` show (e :: SomeException))
+      written `shouldBe` "  ?(𝜎1)  # 𝕄(⟦ λ ⤍ 𝜎1 ⟧)\n"
 
     -- Two λ bindings never reach 𝔼: the builder refuses to make a formation out
     -- of them first. The case is here anyway, since what matters is that such a
@@ -142,8 +151,8 @@ spec = do
     -- A formation with no λ binding has nothing to fire, which is a question
     -- the calculus answers rather than a malformed one: ⊥ is what 𝕄 hands back
     -- for a term nobody can reduce further, and 𝔼 says the same. Only a λ 𝔼
-    -- cannot make sense of — several of them, or one standing for anything but
-    -- a plain name — is malformed and throws (see above).
+    -- cannot make sense of — several of them, or one standing for a meta or a
+    -- slot — is malformed and throws (see above).
     forM_
       [ ("carries no binding at all", ExFormation [])
       , ("carries bindings but none of them a λ", ExFormation [BiVoid AtRho])

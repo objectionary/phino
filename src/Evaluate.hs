@@ -28,6 +28,7 @@ import Deps (BuildTermMethodS, Evaluation (..), State (..), Term (..))
 import Lambdas (Lambda (..), Meta (..), joined, matched, minted, symbolized)
 import Matcher (MetaValue (..), Subst, combine, substEmpty, substSingle, substSlot)
 import Morph (ReduceContext (..), ReduceException (..), deeper, morph', morphing, normalized, unparked)
+import Printer (printFunction)
 import Text.Printf (printf)
 import Yaml (ExtraArgument (..))
 
@@ -46,9 +47,13 @@ import Yaml (ExtraArgument (..))
 --
 -- A formation carrying no λ binding has nothing to fire, and that is a question
 -- the calculus answers rather than a malformed one: 𝔼 hands back ⊥, the way 𝕄
--- does for a term nobody reduces further. Only a λ 𝔼 cannot make sense of fails
--- — several of them, or one standing for a meta, a slot or a symbol rather than
--- a plain name — since a rule naming such a binding meant something phino
+-- does for a term nobody reduces further. Neither is a λ naming a symbol: a
+-- symbol is a value nobody worked out, so no entry of the '--symbolic' file
+-- answers it and 𝔼 gets stuck on it exactly as it does on a λ name nothing
+-- answers — the site is written to the protocol and '_partial' parks it, rather
+-- than the run ending on a term the program was entitled to hold (#1287). Only
+-- a λ 𝔼 cannot make sense of fails — several of them, or one standing for a
+-- meta or a slot — since a rule naming such a binding meant something phino
 -- cannot work out (see 'lambda').
 evaluation :: ReduceContext -> State -> BuildTermMethodS
 evaluation ctx state [ArgExpression expr, ArgExpression universe] subst = do
@@ -62,8 +67,33 @@ evaluation ctx state [ArgExpression expr, ArgExpression universe] subst = do
             (raw, state') <- symbol func form args univ state ctx
             (normal, _) <- normalized raw ((univ, Nothing) :| []) ctx
             pure (TeExpression normal, state')
-          Nothing -> throwIO (userError "Function evaluate() expects a formation with a single λ binding naming a function")
+          Nothing -> case unknown bds of
+            Just idx -> stuck idx form
+            Nothing -> throwIO (userError "Function evaluate() expects a formation with a single λ binding naming a function")
     _ -> throwIO (userError "Function evaluate() expects a formation")
+  where
+    -- The symbol the one λ binding of a formation names, where that is what it
+    -- names. It is the one λ 'lambda' refuses that 𝔼 still has an answer for,
+    -- so it is told apart here and nowhere else: a formation carrying several
+    -- λ bindings, or one standing for a meta or a slot, is still a term phino
+    -- cannot work out.
+    unknown :: [Binding] -> Maybe Int
+    unknown bindings = case partition isLambda bindings of
+      ([BiLambda (FnSymbol idx)], _) -> Just idx
+      _ -> Nothing
+    -- Get stuck on a symbol the way 'symbol' gets stuck on a λ name no entry
+    -- answers, and for the same reason: nothing answers either, so there is no
+    -- firing to make. The site is written to the protocol under the name the
+    -- symbol is spelled with everywhere else, so a reader joining the record to
+    -- the term it came from compares two strings that look alike, and it is
+    -- written once however many times the walk comes back to it (see '_parked').
+    stuck :: Int -> Expression -> IO (Term, State)
+    stuck idx form = do
+      unless (name `elem` ctx._parked) (ctx._saveEval (EvStuck ctx._nesting name ctx._judgment form))
+      throwIO (Stuck name)
+      where
+        name :: T.Text
+        name = T.pack (printFunction (FnSymbol idx))
 evaluation _ _ _ _ = throwIO (userError "Function evaluate() requires exactly 2 expression arguments")
 
 -- phino implements no λ function of its own. Which ones exist is a property of
@@ -351,8 +381,9 @@ settled term univ state ctx = do
 -- the λ function to fire and the formation it fires against, the λ binding
 -- removed. A formation with no λ binding, or with more than one, has nothing to
 -- fire; neither has one carrying a symbol, which is a λ name nothing answers.
--- The three are one answer here but not to 𝔼, which tells the first of them
--- from the other two (see 'evaluation').
+-- The three are one answer here but not to 𝔼, which tells all three apart: no λ
+-- at all is answered with ⊥, a symbol gets stuck the way an unanswered name
+-- does, and only the rest is a term it cannot work out (see 'evaluation').
 lambda :: [Binding] -> Maybe (T.Text, Expression)
 lambda bds = case partition isLambda bds of
   ([BiLambda (Function func)], rest) -> Just (func, ExFormation rest)
