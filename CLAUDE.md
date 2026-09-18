@@ -149,9 +149,11 @@ chain (`morph`, `dataize`) and a recursive worker the rules drive
 the wrappers.
 
 The step budget `--max-steps` is what ends that recursion, and the only thing
-that does unless `morph` is given `--acyclic`: the flag has every 𝕄 frame
-remember the terms its ancestors are reducing and park the site the moment one
-comes back, the way `--partial` parks a λ that cannot fire.
+that does unless `morph` or `dataize` is given `--acyclic`: the flag has every
+𝕄 and every 𝔻 frame remember the terms its ancestors are reducing (`unvisited`
+in `Morph.hs`, one store per judgment, since the two hand each other the very
+term they were asked about) and park the site the moment one comes back, the
+way `--partial` parks a λ that cannot fire.
 
 ### Test pattern: YAML packs
 

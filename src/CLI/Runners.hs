@@ -170,9 +170,10 @@ runDataize OptsDataize{..} = do
       printCtx
       ( \record -> do
           -- The deep walk belongs to 𝕄 alone (the '--deep' of 'morph'), since 𝔻
-          -- reduces what dataization demands and ends in bytes, so it is off here,
-          -- and so is the cycle guard of '--acyclic', which 'morph' alone carries.
-          let ctx = ReduceContext loc loc _maxDepth _maxCycles (Steps _maxSteps 0) 1 _depthSensitive _shuffle _partial False False Dataization [] Map.empty lambdas buildTerm reduction evaluation fired save record
+          -- reduces what dataization demands and ends in bytes, so it is off
+          -- here; the cycle guard of '--acyclic' is not, since 𝔻 recurses into
+          -- itself and a term it comes back to is a loop of its own (#1290).
+          let ctx = ReduceContext loc loc _maxDepth _maxCycles (Steps _maxSteps 0) 1 _depthSensitive _shuffle _partial False _acyclic Dataization [] Map.empty Map.empty lambdas buildTerm reduction evaluation fired save record
           (universe, aiming) <- aimed _inside expr ctx
           heading record printCtx Dataization aiming._locator
           dataize universe (started universe) aiming
@@ -254,7 +255,7 @@ runMorph OptsMorph{..} = do
       _protocol
       printCtx
       ( \record -> do
-          let ctx = ReduceContext loc loc _maxDepth _maxCycles (Steps _maxSteps 0) 1 _depthSensitive _shuffle _partial _deep _acyclic Morphing [] Map.empty lambdas buildTerm reduction evaluation fired save record
+          let ctx = ReduceContext loc loc _maxDepth _maxCycles (Steps _maxSteps 0) 1 _depthSensitive _shuffle _partial _deep _acyclic Morphing [] Map.empty Map.empty lambdas buildTerm reduction evaluation fired save record
           (universe, aiming) <- aimed _inside expr ctx
           heading record printCtx Morphing aiming._locator
           morph universe (started universe) aiming

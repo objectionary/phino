@@ -24,7 +24,7 @@ import Data.Maybe (listToMaybe)
 import Deps (Judgment (..), State (..))
 import Locator (locatedExpression)
 import Matcher (Subst, matchExpression')
-import Morph (Morphed, ReduceContext (..), ReduceException (..), ReductionFunc, deeper, excluding, execBuildTerm, insideUniverse, leadsTo, morph', normalized, parking, producer, sidePremise, verb)
+import Morph (Morphed, ReduceContext (..), ReduceException (..), ReductionFunc, deeper, excluding, execBuildTerm, insideUniverse, leadsTo, morph', normalized, parking, producer, sidePremise, unvisited, verb)
 import Random (shuffle)
 import Rewriter (Rewritten)
 import Rule (RuleContext (RuleContext), matchExpressionWithRule')
@@ -51,9 +51,14 @@ data Outcome
 -- cannot fire fails the run, unless '_partial' is on: dataization is then a
 -- partial evaluation, and the run ends on the residual program the spine had
 -- reached (see 'StuckAt'), with the stuck application parked in it as a
--- normal-form subterm, and the chain of steps that led there. The state 𝑠 goes
--- in and comes back out, so a 𝔻 asked inside another judgment goes on minting
--- symbols where that judgment left off.
+-- normal-form subterm, and the chain of steps that led there. A term '_acyclic'
+-- caught coming back to itself ends the run the same way, since 𝔻 has no bytes
+-- to give for a question it can only ever answer by asking again; where
+-- '_partial' is off the signal travels on instead, so a 𝔻 run reducing an
+-- operand of a firing leaves the loop to the 𝕄 spine around that firing, which
+-- parks on it with no '_partial' asked for (see 'morph', #1290). The state 𝑠
+-- goes in and comes back out, so a 𝔻 asked inside another judgment goes on
+-- minting symbols where that judgment left off.
 dataize :: Expression -> State -> ReduceContext -> IO (Outcome, [Rewritten], State)
 dataize universe state ctx@ReduceContext{..} = do
   expr <- locatedExpression _locator universe
@@ -62,6 +67,7 @@ dataize universe state ctx@ReduceContext{..} = do
     Right ((bytes, seq), state') -> pure (Dataized bytes, reverse seq, state')
     Left (StuckAt func seq parked) | _partial -> pure (Residual (fst (NE.head seq)), reverse (NE.toList seq), parked{_stuck = Just func})
     Left (OutOfStepsAt _ seq parked) | _partial -> pure (Residual (fst (NE.head seq)), reverse (NE.toList seq), parked)
+    Left (LoopingAt _ seq parked) | _partial -> pure (Residual (fst (NE.head seq)), reverse (NE.toList seq), parked)
     Left failure -> throwIO (failure :: ReduceException)
 
 -- The Dataization function 𝔻 retrieves bytes from an expression. It is partial
@@ -85,9 +91,14 @@ dataize universe state ctx@ReduceContext{..} = do
 -- The conclusion bytes 'dresult' are produced by a trailing 'dataize' premise;
 -- when its argument is bound by a 'morph' or 'normalize' premise, that step
 -- joins the spine, otherwise the premise is an isolated side-computation.
+-- Like 𝕄, every frame asks '_acyclic' whether the term it was handed is one a
+-- frame above it is already dataizing, before any rule is walked: 𝔻 recurses
+-- into itself through 'box' and 'fire' without 𝕄 ever seeing the same term
+-- twice, so a program cycling through dataization alone is a loop only this
+-- guard ends (#1290).
 dataize' :: Dataizable -> Expression -> State -> ReduceContext -> IO (Dataized, State)
 dataize' (expr, seq) univ state caller = do
-  ctx <- deeper caller{_judgment = Dataization}
+  ctx <- deeper =<< unvisited expr caller{_judgment = Dataization}
   parking seq state $ case unknown expr of
     Just idx -> manufactured idx ctx
     Nothing -> do

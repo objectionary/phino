@@ -18,7 +18,7 @@
 -- a λ function itself, which is an evaluation — are injected as '_reduce',
 -- '_evaluate' and '_fire' rather than imported (see 'ReductionFunc' and
 -- 'EvaluationFunc').
-module Morph (ReduceContext (..), ReduceException (..), EvaluationFunc, FiringFunc, ReductionFunc, Morphed, Steps (..), deeper, emptyState, excluding, execBuildTerm, insideUniverse, leadsTo, morph, morph', morphing, normalized, parking, producer, sidePremise, unparked, verb) where
+module Morph (ReduceContext (..), ReduceException (..), EvaluationFunc, FiringFunc, ReductionFunc, Morphed, Steps (..), deeper, emptyState, excluding, execBuildTerm, insideUniverse, leadsTo, morph, morph', morphing, normalized, parking, producer, sidePremise, unparked, unvisited, verb) where
 
 import AST
 import Builder (buildExpressionThrows, contextualize)
@@ -144,7 +144,15 @@ data ReduceContext = ReduceContext
     -- out; the site is one and the protocol records it once, so the firings
     -- after the first write nothing (see 'symbol' in 'Evaluate', #1300).
     _parked :: [T.Text]
-  , _seen :: Seen
+  , -- The terms the 𝕄 frames above this one are reducing, which is what
+    -- '_acyclic' answers "have I been here before" with (see 'unvisited').
+    _seen :: Seen
+  , -- The same for 𝔻: the terms the 𝔻 frames above this one are dataizing. The
+    -- two judgments keep one store each because they ask each other about the
+    -- very term they were asked about — the 'norm' rule hands 𝕄 what 𝔻 was
+    -- given — so a single store shared by both would read that handover as a
+    -- repeat and park every term 𝔻 morphs (#1290).
+    _dataized :: Seen
   , _symbolic :: Lambdas
   , _buildTerm :: BuildTermFunc
   , _reduce :: ReductionFunc
@@ -176,12 +184,15 @@ data ReduceException
     -- too, so '_partial' parks it and hands back the residual instead of
     -- failing hard (#1078)
     OutOfStepsAt Int (NonEmpty Rewritten) State
-  | -- Morphing was asked to reduce a term a frame above it is already reducing,
-    -- which it can only ever answer by asking again. Raised under '_acyclic'
+  | -- A judgment was asked to reduce a term a frame above it is already
+    -- reducing, which it can only ever answer by asking again. 𝕄 and 𝔻 both
+    -- raise it, each over the terms of its own spine (see 'unvisited'), and
+    -- neither names itself in the message, since a run that meets the signal
+    -- meets it through whichever of the two came back. Raised under '_acyclic'
     -- alone, so the signal itself is the permission to park on it: a run that
     -- never asked for the guard never sees it.
     Looping Expression
-  | -- A 'Looping' caught by a frame of the 𝕄 spine, carrying that frame's
+  | -- A 'Looping' caught by a frame of the 𝕄 or 𝔻 spine, carrying that frame's
     -- derivation and state the way 'StuckAt' does. The guard runs as a frame
     -- opens, before that frame parks anything, so the frame attaching the chain
     -- is the one the repeat was reached from and the head of the chain is its
@@ -196,7 +207,7 @@ instance Show ReduceException where
   show (OutOfStepsAt limit _ _) = show (OutOfSteps limit)
   show (Stuck func) = printf "No entry of --symbolic answers the λ function '%s'" (T.unpack func)
   show (StuckAt func _ _) = show (Stuck func)
-  show (Looping term) = printf "Morphing came back to a term it is already reducing: %s" (printExpression term)
+  show (Looping term) = printf "Reduction came back to a term it is already reducing: %s" (printExpression term)
   show (LoopingAt term _ _) = show (Looping term)
 
 -- Charge one step of the 𝕄/𝔻 recursion to the budget, refusing to descend once
@@ -246,6 +257,34 @@ unparked action = action `catch` rethrow
     rethrow (LoopingAt term _ _) = throwIO (Looping term)
     rethrow failure = throwIO failure
 
+-- The terms the frames above this one are reducing, which is what '_acyclic'
+-- answers "have I been here before" with. The context travels down the
+-- recursion and never back up, exactly as the step budget does, so what it
+-- carries is the branch from the run to this frame and not everything the run
+-- has ever touched: two sibling subterms that happen to be equal are two terms,
+-- while a term reached from itself is a loop. The store is the one the rewriter
+-- detects its own loops with, a digest map resolving a collision by an exact
+-- comparison (see 'Seen').
+-- Which store is read is the judgment of the frame asking ('_judgment', which
+-- the caller has already named): 𝕄 and 𝔻 recurse into each other and a term 𝔻
+-- hands 𝕄 is the term 𝔻 was given, so one store for the two would make every
+-- 'norm' rule a loop. Each judgment therefore remembers its own branch, and a
+-- run that comes back to a term through either of them is parked (#1290).
+unvisited :: Expression -> ReduceContext -> IO ReduceContext
+unvisited term ctx
+  | not ctx._acyclic = pure ctx
+  | seenMember digest term (store ctx._judgment) = throwIO (Looping term)
+  | otherwise = pure (remembered ctx._judgment)
+  where
+    digest :: Int
+    digest = hashExpression term
+    store :: Judgment -> Seen
+    store Morphing = ctx._seen
+    store Dataization = ctx._dataized
+    remembered :: Judgment -> ReduceContext
+    remembered Morphing = ctx{_seen = seenInsert digest term ctx._seen}
+    remembered Dataization = ctx{_dataized = seenInsert digest term ctx._dataized}
+
 -- The Morphing function 𝕄 maps normal forms to formations. It is ternary,
 -- 𝕄(n, e, s): besides the term 'n' it takes the universe 'e' ('univ') — a plain
 -- expression — and the mutable state 's', returning the morphed term together
@@ -275,22 +314,6 @@ morph' (expr, seq) univ state caller = do
       Just (rule, subst) -> reduce ctx rule subst
       Nothing -> throwIO (userError "no morphing rule matched")
   where
-    -- The terms the frames above this one are reducing, which is what
-    -- '_acyclic' answers "have I been here before" with. The context travels
-    -- down the recursion and never back up, exactly as the step budget does, so
-    -- what it carries is the branch from the run to this frame and not
-    -- everything the run has ever touched: two sibling subterms that happen to
-    -- be equal are two terms, while a term reached from itself is a loop. The
-    -- store is the one the rewriter detects its own loops with, a digest map
-    -- resolving a collision by an exact comparison (see 'Seen').
-    unvisited :: Expression -> ReduceContext -> IO ReduceContext
-    unvisited term ctx
-      | not ctx._acyclic = pure ctx
-      | seenMember digest term ctx._seen = throwIO (Looping term)
-      | otherwise = pure ctx{_seen = seenInsert digest term ctx._seen}
-      where
-        digest :: Int
-        digest = hashExpression term
     firstMatch :: ReduceContext -> [Y.MorphRule] -> IO (Maybe (Y.MorphRule, Subst))
     firstMatch _ [] = pure Nothing
     firstMatch ctx (rule : rest) = do
