@@ -77,7 +77,7 @@ type FiringFunc = Maybe Attribute -> Expression -> Expression -> State -> Reduce
 -- nothing manufactured yet. The 'State' type itself lives in 'Deps' next to
 -- 'BuildTermMethod'.
 emptyState :: State
-emptyState = State 0 Nothing
+emptyState = State 0 Nothing Nothing
 
 -- How many steps of the 𝕄/𝔻 recursion one branch of a derivation may take
 -- ('_limit', the '--max-steps' option) and how many the branch reaching this
@@ -355,7 +355,7 @@ morph universe state ctx@ReduceContext{..} = do
     Right ((morphed, seq), state') -> walked walking morphed seq state'
     Left (StuckAt func seq parked) | _partial -> do
       residue <- locatedExpression _locator (fst (NE.head seq))
-      walked (marked func) residue seq parked
+      walked (marked func) residue seq parked{_stuck = Just func}
     Left (OutOfStepsAt _ seq parked) | _partial -> do
       residue <- locatedExpression _locator (fst (NE.head seq))
       walked walking residue seq parked

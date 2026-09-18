@@ -1,0 +1,23 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# A firing whose 'dataize' operand was parked gets stuck on the λ function
+# that parked it and never on its own: an entry answers 'L_entry', so blaming
+# it would name a λ function the file carries where the one nothing answers,
+# 'L_none', stands one reduction deeper. The spine parks that name, so the
+# deep walk over the residue writes no second '?(L_none)' for the one site
+# (#1288, #1300).
+symbolic: |
+  - λ: L_entry
+    dataize:
+      𝛿1: $.v
+    𝑛: ⟦ ⟧
+location: 'Q.x'
+deep: true
+partial: true
+input: '⟦ x ↦ ⟦ v ↦ ⟦ λ ⤍ L_none ⟧.foo, λ ⤍ L_entry ⟧.z ⟧'
+protocol: |
+  𝕄(Φ.x)
+    𝔼(L_entry)  # Φ.x
+      ?(L_none)  # 𝕄(⟦ λ ⤍ L_none ⟧)
+    𝔼(L_entry)  # Φ.x
