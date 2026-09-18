@@ -259,7 +259,7 @@ spec = do
           [ "  𝔼(L_number_times)"
           , "    𝛿1.1 := 40-00-00-00-00-00-00-00  # ξ.ρ"
           , "    𝛿2.1 := 40-08-00-00-00-00-00-00  # ξ.x"
-          , "    𝑛.1.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )"
+          , "    𝑛.1.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )  # 𝑛"
           , "    𝑛.1.2 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, as-bytes ↦ φ, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧, div(x) ↦ ⟦ λ ⤍ L_number_div ⟧, gt(x) ↦ ⟦ λ ⤍ L_number_gt ⟧, eq(x) ↦ ⟦ φ ↦ ρ.as-bytes.eq( x.as-bytes ) ⟧, nope ↦ ⟦ λ ⤍ L_number_nope ⟧, ρ ↦ ⟦ bytes(φ) ↦ ⟦ not ↦ ⟦ λ ⤍ L_bytes_not ⟧, eq(b) ↦ ⟦ λ ⤍ L_bytes_eq ⟧ ⟧, bool(φ) ↦ ⟦ if(then, else) ↦ ⟦ λ ⤍ L_fork ⟧ ⟧, number(φ) ↦ ⟦ as-bytes ↦ φ, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧, div(x) ↦ ⟦ λ ⤍ L_number_div ⟧, gt(x) ↦ ⟦ λ ⤍ L_number_gt ⟧, eq(x) ↦ ⟦ φ ↦ ρ.as-bytes.eq( x.as-bytes ) ⟧, nope ↦ ⟦ λ ⤍ L_number_nope ⟧ ⟧, φ ↦ 2.times( 3 ).nope ⟧ ⟧  # 𝕄(𝑛.1.1)"
           , "  ?(L_number_nope)"
           ]

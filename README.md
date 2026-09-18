@@ -297,7 +297,7 @@ $ cat atoms.txt
   𝔼(L_number_plus)
     𝛿1.1 := 40-14-00-00-00-00-00-00  # ξ.ρ
     𝛿2.1 := 40-18-00-00-00-00-00-00  # ξ.x
-    𝑛.1.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )
+    𝑛.1.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )  # 𝑛
     𝑛.1.2 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧  # 𝕄(𝑛.1.1)
 ```
 
@@ -316,13 +316,14 @@ file and a line naming another one points at it and no other.
 An answer stands on two lines and not one. A firing answers the term its entry
 wrote and `phino` morphs that term before standing it back into the program, so
 `𝑛.1.1` is what the entry wrote, with the symbols this firing minted already in
-it, and `𝑛.1.2` is the normal form 𝕄 made of it, commented with `𝕄(𝑛.1.1)` to
-say where it came from. It is the same morphing every other term goes through,
-and writing only its outcome would have the formation of `number` appear in
-place of the three tokens the entry wrote with nothing saying why. Whatever that
-morphing fires opens its own block between the two lines, exactly where a firing
-an operand took opens one, so the order the lines come in is the order the work
-was done in.
+it, commented with `𝑛` to name the key it was read from, and `𝑛.1.2` is the
+normal form 𝕄 made of it, commented with `𝕄(𝑛.1.1)` to say where it came from.
+It is the same morphing every other term goes through, and writing only its
+outcome would have the formation of `number` appear in place of the three
+tokens the entry wrote with nothing saying why. Whatever that morphing fires
+opens its own block between the two lines, exactly where a firing an operand
+took opens one, so the order the lines come in is the order the work was done
+in.
 
 Where an operand came down to the datum a symbol stands for, the protocol writes
 `𝔻(⟦ λ ⤍ 𝜎1 ⟧)` in place of that 42, so a reader sees that the value was
@@ -363,7 +364,7 @@ $ cat atoms.txt
   𝔼(L_number_plus)
     𝛿1.1 := 40-14-00-00-00-00-00-00  # ξ.ρ
     𝛿2.1 := 40-18-00-00-00-00-00-00  # ξ.x
-    𝑛.1.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )
+    𝑛.1.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )  # 𝑛
     𝑛.1.2 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, nope ↦ ⟦ λ ⤍ L_number_nope ⟧ ⟧  # 𝕄(𝑛.1.1)
   ?(L_number_nope)
 ```
@@ -426,22 +427,22 @@ $ cat fork.txt
   𝔼(L_gt)
     𝛿1.1 := 𝔻(⟦ λ ⤍ 𝜎1 ⟧)  # ξ.ρ
     𝛿2.1 := 00-00-00-00-00-00-00-00  # ξ.x
-    𝑛.1.1 := Φ.bool( if ↦ ⟦ λ ⤍ L_fork, then ↦ ∅, else ↦ ∅, φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧ )
+    𝑛.1.1 := Φ.bool( if ↦ ⟦ λ ⤍ L_fork, then ↦ ∅, else ↦ ∅, φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧ )  # 𝑛
     𝑛.1.2 := ⟦ if ↦ ⟦ λ ⤍ L_fork, then ↦ ∅, else ↦ ∅, φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧ ⟧  # 𝕄(𝑛.1.1)
   𝔼(L_plus)
     𝛿1.2 := 𝔻(⟦ λ ⤍ 𝜎1 ⟧)  # ξ.ρ
     𝛿2.2 := 3F-F0-00-00-00-00-00-00  # ξ.x
-    𝑛.2.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎3 ⟧ )
+    𝑛.2.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎3 ⟧ )  # 𝑛
     𝑛.2.2 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎3 ⟧, plus(x) ↦ ⟦ λ ⤍ L_plus ⟧, gt(x) ↦ ⟦ λ ⤍ L_gt ⟧ ⟧  # 𝕄(𝑛.2.1)
   𝔼(L_plus)
     𝛿1.3 := 𝔻(⟦ λ ⤍ 𝜎1 ⟧)  # ξ.ρ
     𝛿2.3 := 𝔻(⟦ λ ⤍ 𝜎3 ⟧)  # ξ.x
-    𝑛.3.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎4 ⟧ )
+    𝑛.3.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎4 ⟧ )  # 𝑛
     𝑛.3.2 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎4 ⟧, plus(x) ↦ ⟦ λ ⤍ L_plus ⟧, gt(x) ↦ ⟦ λ ⤍ L_gt ⟧ ⟧  # 𝕄(𝑛.3.1)
   𝔼(L_plus)
     𝛿1.4 := 𝔻(⟦ λ ⤍ 𝜎1 ⟧)  # ξ.ρ
     𝛿2.4 := 𝔻(⟦ λ ⤍ 𝜎1 ⟧)  # ξ.x
-    𝑛.4.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎5 ⟧ )
+    𝑛.4.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎5 ⟧ )  # 𝑛
     𝑛.4.2 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎5 ⟧, plus(x) ↦ ⟦ λ ⤍ L_plus ⟧, gt(x) ↦ ⟦ λ ⤍ L_gt ⟧ ⟧  # 𝕄(𝑛.4.1)
   𝔼(L_fork)
     𝛿1.5 := 𝔻(⟦ λ ⤍ 𝜎2 ⟧)  # ξ.φ
@@ -449,12 +450,12 @@ $ cat fork.txt
     𝑛2.5 := 𝑛.4.2  # ξ.else
     𝔻(⟦ λ ⤍ 𝜎6 ⟧) ∈ { 𝔻(⟦ λ ⤍ 𝜎4 ⟧), 𝔻(⟦ λ ⤍ 𝜎5 ⟧) }
     𝑛3.5 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎6 ⟧, plus(x) ↦ ⟦ λ ⤍ L_plus ⟧, gt(x) ↦ ⟦ λ ⤍ L_gt ⟧ ⟧  # [𝑛1, 𝑛2]
-    𝑛.5.1 := 𝑛3.5
+    𝑛.5.1 := 𝑛3.5  # 𝑛
     𝑛.5.2 := 𝑛3.5  # 𝕄(𝑛.5.1)
   𝔼(L_plus)
     𝛿1.6 := 𝔻(⟦ λ ⤍ 𝜎6 ⟧)  # ξ.ρ
     𝛿2.6 := 40-14-00-00-00-00-00-00  # ξ.x
-    𝑛.6.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎7 ⟧ )
+    𝑛.6.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎7 ⟧ )  # 𝑛
     𝑛.6.2 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎7 ⟧, plus(x) ↦ ⟦ λ ⤍ L_plus ⟧, gt(x) ↦ ⟦ λ ⤍ L_gt ⟧ ⟧  # 𝕄(𝑛.6.1)
 ```
 
@@ -650,12 +651,12 @@ $ cat atoms.txt
   𝔼(L_number_times)
     𝛿1.1 := 40-00-00-00-00-00-00-00  # ξ.ρ
     𝛿2.1 := 40-08-00-00-00-00-00-00  # ξ.x
-    𝑛.1.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )
+    𝑛.1.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )  # 𝑛
     𝑛.1.2 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧, as-bool ↦ ⟦ λ ⤍ L_number_as_bool ⟧ ⟧  # 𝕄(𝑛.1.1)
   𝔼(L_number_plus)
     𝛿1.2 := 𝔻(⟦ λ ⤍ 𝜎1 ⟧)  # ξ.ρ
     𝛿2.2 := 40-10-00-00-00-00-00-00  # ξ.x
-    𝑛.2.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ )
+    𝑛.2.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ )  # 𝑛
     𝑛.2.2 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧, as-bool ↦ ⟦ λ ⤍ L_number_as_bool ⟧ ⟧  # 𝕄(𝑛.2.1)
   ?(L_number_as_bool)
 ```

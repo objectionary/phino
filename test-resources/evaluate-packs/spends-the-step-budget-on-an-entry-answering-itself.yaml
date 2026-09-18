@@ -16,19 +16,19 @@ fails: 'reaching the limit of steps'
 protocol: |
   𝕄(Φ.x)
     𝔼(L_loop)
-      𝑛.1.1 := ⟦ λ ⤍ L_loop ⟧
+      𝑛.1.1 := ⟦ λ ⤍ L_loop ⟧  # 𝑛
       𝑛.1.2 := ⟦ λ ⤍ L_loop ⟧  # 𝕄(𝑛.1.1)
     𝔼(L_loop)
-      𝑛.2.1 := ⟦ λ ⤍ L_loop ⟧
+      𝑛.2.1 := ⟦ λ ⤍ L_loop ⟧  # 𝑛
       𝑛.2.2 := ⟦ λ ⤍ L_loop ⟧  # 𝕄(𝑛.2.1)
     𝔼(L_loop)
-      𝑛.3.1 := ⟦ λ ⤍ L_loop ⟧
+      𝑛.3.1 := ⟦ λ ⤍ L_loop ⟧  # 𝑛
       𝑛.3.2 := ⟦ λ ⤍ L_loop ⟧  # 𝕄(𝑛.3.1)
     𝔼(L_loop)
-      𝑛.4.1 := ⟦ λ ⤍ L_loop ⟧
+      𝑛.4.1 := ⟦ λ ⤍ L_loop ⟧  # 𝑛
       𝑛.4.2 := ⟦ λ ⤍ L_loop ⟧  # 𝕄(𝑛.4.1)
     𝔼(L_loop)
-      𝑛.5.1 := ⟦ λ ⤍ L_loop ⟧
+      𝑛.5.1 := ⟦ λ ⤍ L_loop ⟧  # 𝑛
       𝑛.5.2 := ⟦ λ ⤍ L_loop ⟧  # 𝕄(𝑛.5.1)
     𝔼(L_loop)
-      𝑛.6.1 := ⟦ λ ⤍ L_loop ⟧
+      𝑛.6.1 := ⟦ λ ⤍ L_loop ⟧  # 𝑛

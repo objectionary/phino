@@ -39,21 +39,21 @@ protocol: |
     𝔼(L_number_gt)
       𝛿1.1 := 40-14-00-00-00-00-00-00  # ξ.ρ
       𝛿2.1 := 00-00-00-00-00-00-00-00  # ξ.x
-      𝑛.1.1 := Φ.bool( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )
+      𝑛.1.1 := Φ.bool( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )  # 𝑛
       𝑛.1.2 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, if(then, else) ↦ ⟦ λ ⤍ L_fork ⟧, ρ ↦ ⟦ bytes(φ) ↦ ⟦⟧, bool(φ) ↦ ⟦ if(then, else) ↦ ⟦ λ ⤍ L_fork ⟧ ⟧, number(φ) ↦ ⟦ gt(x) ↦ ⟦ λ ⤍ L_number_gt ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧, φ ↦ 5.gt( 0 ).if( 1.plus( 2 ), 3.plus( 4 ) ) ⟧ ⟧  # 𝕄(𝑛.1.1)
     𝔼(L_number_plus)
       𝛿1.2 := 3F-F0-00-00-00-00-00-00  # ξ.ρ
       𝛿2.2 := 40-00-00-00-00-00-00-00  # ξ.x
-      𝑛.2.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ )
+      𝑛.2.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ )  # 𝑛
       𝑛.2.2 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, gt(x) ↦ ⟦ λ ⤍ L_number_gt ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, ρ ↦ ⟦ bytes(φ) ↦ ⟦⟧, bool(φ) ↦ ⟦ if(then, else) ↦ ⟦ λ ⤍ L_fork ⟧ ⟧, number(φ) ↦ ⟦ gt(x) ↦ ⟦ λ ⤍ L_number_gt ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧, φ ↦ 5.gt( 0 ).if( 1.plus( 2 ), 3.plus( 4 ) ) ⟧ ⟧  # 𝕄(𝑛.2.1)
     𝔼(L_number_plus)
       𝛿1.3 := 40-08-00-00-00-00-00-00  # ξ.ρ
       𝛿2.3 := 40-10-00-00-00-00-00-00  # ξ.x
-      𝑛.3.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎3 ⟧ )
+      𝑛.3.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎3 ⟧ )  # 𝑛
       𝑛.3.2 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎3 ⟧, gt(x) ↦ ⟦ λ ⤍ L_number_gt ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, ρ ↦ ⟦ bytes(φ) ↦ ⟦⟧, bool(φ) ↦ ⟦ if(then, else) ↦ ⟦ λ ⤍ L_fork ⟧ ⟧, number(φ) ↦ ⟦ gt(x) ↦ ⟦ λ ⤍ L_number_gt ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧, φ ↦ 5.gt( 0 ).if( 1.plus( 2 ), 3.plus( 4 ) ) ⟧ ⟧  # 𝕄(𝑛.3.1)
     𝔼(L_fork)
       𝛿1.4 := 𝔻(⟦ λ ⤍ 𝜎1 ⟧)  # ξ.ρ
       𝑛1.4 := 𝑛.2.2  # ξ.then
       𝑛2.4 := 𝑛.3.2  # ξ.else
-      𝑛.4.1 := 𝑛1.4
+      𝑛.4.1 := 𝑛1.4  # 𝑛
       𝑛.4.2 := 𝑛1.4  # 𝕄(𝑛.4.1)

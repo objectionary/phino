@@ -164,7 +164,10 @@ data Evaluation
     -- term appearing out of nothing: whatever that morphing fires opens its
     -- own block between this record and 'EvAnswer', so a reader sees the term
     -- the entry wrote, the firings reducing it took, and the normal form it
-    -- came to, in that order (#1298).
+    -- came to, in that order (#1298). The line of it is commented with '𝑛',
+    -- the key the entry writes its answer under, the way an operand line
+    -- carries the term it was reduced from: the name on the left is minted by
+    -- the protocol and says nothing about where the term was read from.
     EvBuilt Int Expression
   | -- What the firing answered with, which is the term of 'EvBuilt' as 𝕄
     -- leaves it. It is the answer every consumer reads, since it is the term
@@ -300,7 +303,7 @@ saveEval handle cursor render salted report = do
     written (EvMinted _ _) protocol = pure (protocol, Nothing)
     written (EvBuilt depth term) protocol = do
       value <- borrowed protocol term
-      pure (protocol, Just (indented depth (printf "%s.1 := %s" (labelled protocol depth answer) value)))
+      pure (protocol, Just (indented depth (printf "%s.1 := %s  # %s" (labelled protocol depth answer) value (T.unpack answer))))
     written (EvAnswer depth term) protocol = do
       let stem :: String
           stem = labelled protocol depth answer

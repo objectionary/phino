@@ -28,10 +28,10 @@ protocol: |
     𝔼(L_number_plus)
       𝛿1.1 := 40-14-00-00-00-00-00-00  # ξ.ρ
       𝛿2.1 := 40-18-00-00-00-00-00-00  # ξ.x
-      𝑛.1.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )
+      𝑛.1.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )  # 𝑛
       𝑛.1.2 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧, ρ ↦ ⟦ bytes(φ) ↦ ⟦⟧, number(φ) ↦ ⟦ plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧ ⟧, φ ↦ 5.plus( 6 ).times( 7 ) ⟧ ⟧  # 𝕄(𝑛.1.1)
     𝔼(L_number_times)
       𝛿1.2 := 𝔻(⟦ λ ⤍ 𝜎1 ⟧)  # ξ.ρ
       𝛿2.2 := 40-1C-00-00-00-00-00-00  # ξ.x
-      𝑛.2.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ )
+      𝑛.2.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ )  # 𝑛
       𝑛.2.2 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧, ρ ↦ ⟦ bytes(φ) ↦ ⟦⟧, number(φ) ↦ ⟦ plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧ ⟧, φ ↦ 5.plus( 6 ).times( 7 ) ⟧ ⟧  # 𝕄(𝑛.2.1)

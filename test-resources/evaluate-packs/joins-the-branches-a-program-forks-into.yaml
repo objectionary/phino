@@ -47,30 +47,30 @@ protocol: |
     𝔼(L_number_gt)
       𝛿1.1 := 40-14-00-00-00-00-00-00  # ξ.ρ
       𝛿2.1 := 00-00-00-00-00-00-00-00  # ξ.x
-      𝑛.1.1 := Φ.bool( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )
+      𝑛.1.1 := Φ.bool( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )  # 𝑛
       𝑛.1.2 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, if(then, else) ↦ ⟦ λ ⤍ L_fork ⟧, ρ ↦ ⟦ bytes(φ) ↦ ⟦⟧, bool(φ) ↦ ⟦ if(then, else) ↦ ⟦ λ ⤍ L_fork ⟧ ⟧, number(φ) ↦ ⟦ gt(x) ↦ ⟦ λ ⤍ L_number_gt ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧, φ ↦ 5.gt( 0 ).if( 1.plus( 2 ), 3.plus( 4 ) ).plus( 6 ) ⟧ ⟧  # 𝕄(𝑛.1.1)
     𝔼(L_fork)
       𝛿1.2 := 𝔻(⟦ λ ⤍ 𝜎1 ⟧)  # ξ.ρ
       𝔼(L_number_plus)
         𝛿1.3 := 3F-F0-00-00-00-00-00-00  # ξ.ρ
         𝛿2.3 := 40-00-00-00-00-00-00-00  # ξ.x
-        𝑛.3.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ )
+        𝑛.3.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ )  # 𝑛
         𝑛.3.2 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, gt(x) ↦ ⟦ λ ⤍ L_number_gt ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, ρ ↦ ⟦ a🌵3 ↦ 1.plus( α0 ↦ 2, ρ ↦ ⟦ then ↦ 1.plus( 2 ), else ↦ 3.plus( 4 ), ρ ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, if(then, else) ↦ ⟦ λ ⤍ L_fork ⟧, ρ ↦ ⟦ bytes(φ) ↦ ⟦⟧, bool(φ) ↦ ⟦ if(then, else) ↦ ⟦ λ ⤍ L_fork ⟧ ⟧, number(φ) ↦ ⟦ gt(x) ↦ ⟦ λ ⤍ L_number_gt ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧, φ ↦ 5.gt( 0 ).if( 1.plus( 2 ), 3.plus( 4 ) ).plus( 6 ) ⟧ ⟧ ⟧ ), bytes(φ) ↦ ⟦⟧, bool(φ) ↦ ⟦ if(then, else) ↦ ⟦ λ ⤍ L_fork ⟧ ⟧, number(φ) ↦ ⟦ gt(x) ↦ ⟦ λ ⤍ L_number_gt ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧, φ ↦ 5.gt( 0 ).if( 1.plus( 2 ), 3.plus( 4 ) ).plus( 6 ) ⟧ ⟧  # 𝕄(𝑛.3.1)
       𝑛1.2 := 𝑛.3.2  # ξ.then
       𝔼(L_number_plus)
         𝛿1.4 := 40-08-00-00-00-00-00-00  # ξ.ρ
         𝛿2.4 := 40-10-00-00-00-00-00-00  # ξ.x
-        𝑛.4.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎3 ⟧ )
+        𝑛.4.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎3 ⟧ )  # 𝑛
         𝑛.4.2 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎3 ⟧, gt(x) ↦ ⟦ λ ⤍ L_number_gt ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, ρ ↦ ⟦ a🌵6 ↦ 3.plus( α0 ↦ 4, ρ ↦ ⟦ then ↦ 1.plus( 2 ), else ↦ 3.plus( 4 ), ρ ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, if(then, else) ↦ ⟦ λ ⤍ L_fork ⟧, ρ ↦ ⟦ bytes(φ) ↦ ⟦⟧, bool(φ) ↦ ⟦ if(then, else) ↦ ⟦ λ ⤍ L_fork ⟧ ⟧, number(φ) ↦ ⟦ gt(x) ↦ ⟦ λ ⤍ L_number_gt ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧, φ ↦ 5.gt( 0 ).if( 1.plus( 2 ), 3.plus( 4 ) ).plus( 6 ) ⟧ ⟧ ⟧ ), bytes(φ) ↦ ⟦⟧, bool(φ) ↦ ⟦ if(then, else) ↦ ⟦ λ ⤍ L_fork ⟧ ⟧, number(φ) ↦ ⟦ gt(x) ↦ ⟦ λ ⤍ L_number_gt ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧, φ ↦ 5.gt( 0 ).if( 1.plus( 2 ), 3.plus( 4 ) ).plus( 6 ) ⟧ ⟧  # 𝕄(𝑛.4.1)
       𝑛2.2 := 𝑛.4.2  # ξ.else
       𝑛3.2 := 𝑛1.2  # 𝑛1
       𝑛4.2 := 𝑛2.2  # 𝑛2
       𝔻(⟦ λ ⤍ 𝜎4 ⟧) ∈ { 𝔻(⟦ λ ⤍ 𝜎2 ⟧), 𝔻(⟦ λ ⤍ 𝜎3 ⟧) }
       𝑛5.2 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎4 ⟧, gt(x) ↦ ⟦ λ ⤍ L_number_gt ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, ρ ↦ ⟦ a🌵3 ↦ 1.plus( α0 ↦ 2, ρ ↦ ⟦ then ↦ 1.plus( 2 ), else ↦ 3.plus( 4 ), ρ ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, if(then, else) ↦ ⟦ λ ⤍ L_fork ⟧, ρ ↦ ⟦ bytes(φ) ↦ ⟦⟧, bool(φ) ↦ ⟦ if(then, else) ↦ ⟦ λ ⤍ L_fork ⟧ ⟧, number(φ) ↦ ⟦ gt(x) ↦ ⟦ λ ⤍ L_number_gt ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧, φ ↦ 5.gt( 0 ).if( 1.plus( 2 ), 3.plus( 4 ) ).plus( 6 ) ⟧ ⟧ ⟧ ), bytes(φ) ↦ ⟦⟧, bool(φ) ↦ ⟦ if(then, else) ↦ ⟦ λ ⤍ L_fork ⟧ ⟧, number(φ) ↦ ⟦ gt(x) ↦ ⟦ λ ⤍ L_number_gt ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧, φ ↦ 5.gt( 0 ).if( 1.plus( 2 ), 3.plus( 4 ) ).plus( 6 ) ⟧ ⟧  # [𝑛3, 𝑛4]
-      𝑛.2.1 := 𝑛5.2
+      𝑛.2.1 := 𝑛5.2  # 𝑛
       𝑛.2.2 := 𝑛5.2  # 𝕄(𝑛.2.1)
     𝔼(L_number_plus)
       𝛿1.5 := 𝔻(⟦ λ ⤍ 𝜎4 ⟧)  # ξ.ρ
       𝛿2.5 := 40-18-00-00-00-00-00-00  # ξ.x
-      𝑛.5.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎5 ⟧ )
+      𝑛.5.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎5 ⟧ )  # 𝑛
       𝑛.5.2 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎5 ⟧, gt(x) ↦ ⟦ λ ⤍ L_number_gt ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, ρ ↦ ⟦ bytes(φ) ↦ ⟦⟧, bool(φ) ↦ ⟦ if(then, else) ↦ ⟦ λ ⤍ L_fork ⟧ ⟧, number(φ) ↦ ⟦ gt(x) ↦ ⟦ λ ⤍ L_number_gt ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧, φ ↦ 5.gt( 0 ).if( 1.plus( 2 ), 3.plus( 4 ) ).plus( 6 ) ⟧ ⟧  # 𝕄(𝑛.5.1)
