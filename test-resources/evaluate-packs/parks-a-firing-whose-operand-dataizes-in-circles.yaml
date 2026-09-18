@@ -1,0 +1,26 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# A loop met while an operand is being brought down to data, with no frame of 𝕄
+# ever handed the same term twice: the body of 'cyc' dispatches 'cyc' again, so
+# every round 𝕄 stops at a formation of its own and only 𝔻 — 'box'
+# contextualizing that body and 'norm' morphing what comes out — comes back to
+# the term it started from. Before #1290 the guard of '--acyclic' was 𝕄's alone
+# and this went round until the step budget ran out; now 𝔻 asks it too, and the
+# spine around the firing parks with the term it had reached when the firing
+# started, exactly as it does for a loop 𝕄 catches.
+symbolic: |
+  - λ: L_outer
+    dataize:
+      𝛿1: ξ.arg
+    𝑛: ⟦ λ ⤍ 𝜎 ⟧
+location: 'Q.x'
+acyclic: true
+steps: 250
+input: >
+  ⟦ cyc ↦ ⟦ x ↦ ∅, φ ↦ Φ.cyc( ξ.x ) ⟧, x ↦ ⟦ arg ↦ Φ.cyc( ⟦⟧ ), λ ⤍ L_outer ⟧.bar ⟧
+result: >-
+  ⟦ arg ↦ Φ.cyc( α0 ↦ ⟦ ρ ↦ ∅ ⟧ ), λ ⤍ L_outer, ρ ↦ ∅ ⟧.bar
+protocol: |
+  𝕄(Φ.x)
+    𝔼(L_outer)  # 𝕄(Φ.x)

@@ -254,13 +254,24 @@ symbol func form self univ state caller = case matched caller._symbolic func of
 fired :: Maybe Attribute -> Expression -> Expression -> State -> ReduceContext -> IO (Maybe Expression, State)
 fired dispatched term univ state caller = do
   ctx <- deeper caller
-  morphed <- try (reduced ctx)
-  case morphed of
-    Right (ExFormation bds, state')
-      | demanded bds -> maybe (pure (Nothing, state')) (evaluated ctx state' (ExFormation bds)) (saturated bds)
-    Right (_, state') -> pure (Nothing, state')
+  outcome <- try (answering ctx)
+  case outcome of
+    Right answer -> pure answer
     Left failure -> parked failure
   where
+    -- The term as 𝕄 leaves it and the firing of what 𝕄 reached, both under the
+    -- one guard: an entry brings its own operands down to data while it fires,
+    -- so a site the walk cannot reduce is as likely to turn up in the firing as
+    -- in the morphing before it — an operand that loops or never comes down
+    -- leaves the entry with nothing to bind and gets it stuck (see 'down',
+    -- #1290).
+    answering :: ReduceContext -> IO (Maybe Expression, State)
+    answering ctx = do
+      (morphed, state') <- reduced ctx
+      case morphed of
+        ExFormation bds
+          | demanded bds -> maybe (pure (Nothing, state')) (evaluated ctx state' (ExFormation bds)) (saturated bds)
+        _ -> pure (Nothing, state')
     -- Whether the dispatch the term stands under demands the λ of the formation
     -- 𝕄 reached. 'ml' fires that λ only where the dispatched attribute is none
     -- of the formation's own, since 'dot' resolves the dispatch before 'ml' is

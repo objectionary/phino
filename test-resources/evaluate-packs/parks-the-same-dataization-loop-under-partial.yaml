@@ -1,0 +1,27 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# The very program of 'parks-a-firing-whose-operand-dataizes-in-circles', run
+# with '--partial' as well. The two flags reach the same place by different
+# roads: on its own '--acyclic' lets the loop travel up to the 𝕄 spine around
+# the firing, while under '--partial' the operand's own run of 𝔻 ends on the
+# residue it had reached and the firing is left with nothing to bind, so it gets
+# stuck the way one whose λ function cannot fire does. Either way the site is
+# parked and the answer is the same, which is what "--acyclic needs no
+# --partial" means for a loop 𝔻 catches (#1290).
+symbolic: |
+  - λ: L_outer
+    dataize:
+      𝛿1: ξ.arg
+    𝑛: ⟦ λ ⤍ 𝜎 ⟧
+location: 'Q.x'
+acyclic: true
+partial: true
+steps: 250
+input: >
+  ⟦ cyc ↦ ⟦ x ↦ ∅, φ ↦ Φ.cyc( ξ.x ) ⟧, x ↦ ⟦ arg ↦ Φ.cyc( ⟦⟧ ), λ ⤍ L_outer ⟧.bar ⟧
+result: >-
+  ⟦ arg ↦ Φ.cyc( α0 ↦ ⟦ ρ ↦ ∅ ⟧ ), λ ⤍ L_outer, ρ ↦ ∅ ⟧.bar
+protocol: |
+  𝕄(Φ.x)
+    𝔼(L_outer)  # 𝕄(Φ.x)

@@ -852,12 +852,12 @@ $ phino morph --symbolic=loop.yaml --locator='Q.x' --max-steps=40 loop.phi
 [ERROR]: Dataization did not finish before reaching the limit of steps: --max-steps=40
 ```
 
-The `--acyclic` flag makes morphing notice. Every frame of 𝕄 remembers the
-terms the frames above it are reducing, and a term that comes back is a
-question only ever answered by asking it again, so the flag stops there and
-parks the site the way `--partial` parks a λ function that cannot fire: the
-answer is the term the spine had reached, left where it stood, and the command
-exits successfully.
+The `--acyclic` flag makes a reduction notice. Every frame of 𝕄 and of 𝔻
+remembers the terms the frames above it are reducing, and a term that comes
+back is a question only ever answered by asking it again, so the flag stops
+there and parks the site the way `--partial` parks a λ function that cannot
+fire: the answer is the term the spine had reached, left where it stood, and
+the command exits successfully.
 
 ```bash
 $ phino morph --symbolic=loop.yaml --locator='Q.x' --acyclic \
@@ -865,14 +865,36 @@ $ phino morph --symbolic=loop.yaml --locator='Q.x' --acyclic \
 ⟦ λ ⤍ L_loop ⟧.foo
 ```
 
-What it remembers is the branch from the run down to the frame asking, never
-everything the run has touched, so two sibling subterms that happen to be
-written alike stay two terms and only a term genuinely reached from itself is a
-loop. The cut costs one lookup and fires on the turn the repeat appears, so
-raising `--max-steps` from 40 to a million changes neither the answer nor the
-time. The flag belongs to `morph` alone, needs no `--partial`, and promises
-nothing about programs that loop without ever repeating a term — those still
-end on the budget.
+Each judgment keeps its own memory, since 𝕄 and 𝔻 call each other on the very
+term they were asked about and that handover is no loop. A body dispatching the
+object it stands in is one 𝔻 walks round on its own — 𝕄 stops at a formation
+every round and never sees the same term twice — so `dataize` takes the flag
+too, and so does the run of 𝔻 a λ function's `dataize` operand is brought down
+with:
+
+```bash
+$ cat cyc.phi
+⟦ cyc ↦ ⟦ x ↦ ∅, φ ↦ Φ.cyc( ξ.x ) ⟧, t ↦ Φ.cyc( ⟦⟧ ) ⟧
+$ phino dataize --locator='Q.t' --acyclic --partial --hide-rho --flat cyc.phi
+⟦ cyc ↦ ⟦ x ↦ ∅, φ ↦ Φ.cyc( α0 ↦ ξ.x ) ⟧, t ↦ ⟦ x ↦ ⟦⟧, φ ↦ Φ.cyc( α0 ↦ ξ.x ) ⟧ ⟧
+```
+
+𝔻 insists on bytes and a parked term carries none, so under `dataize` the flag
+wants `--partial` to have something to print: the residual program, exactly the
+one it prints for a λ function that cannot fire. Without it the run stops on
+the loop all the same, naming the term it came back to instead of running the
+budget down. Under `morph` nothing is asked for: 𝕄 always has a term to answer
+with, a loop 𝔻 meets under a firing parks the site the firing stands at, and
+the walk of `--deep` goes on to the next binding.
+
+What a frame remembers is the branch from the run down to it, never everything
+the run has touched, so two sibling subterms that happen to be written alike
+stay two terms and only a term genuinely reached from itself is a loop. The cut
+costs one lookup and fires on the turn the repeat appears, so raising
+`--max-steps` from 40 to a million changes neither the answer nor the time. The
+flag promises nothing about programs that loop without ever repeating a term —
+a body that grows on every round rather than coming back still ends on the
+budget.
 
 ## Rewrite
 

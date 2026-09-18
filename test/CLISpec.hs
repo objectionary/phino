@@ -1109,6 +1109,42 @@ spec = do
             ["dataize", "--symbolic=" ++ endless, "--max-steps=40", "--partial", "--flat", "--hide-rho"]
             ["⟦ λ ⤍ L_loop ⟧"]
 
+    -- '--acyclic' used to be the 'morph' command's alone, so a program coming
+    -- back to a term through 𝔻 rather than 𝕄 — a body dispatching the very
+    -- object it stands in, which 𝕄 stops at a formation of every round and
+    -- only 𝔻 walks round — spent the whole budget and failed on the limit
+    -- (#1290)
+    describe "--acyclic" $ do
+      let circling = "⟦ cyc ↦ ⟦ x ↦ ∅, φ ↦ Φ.cyc( ξ.x ) ⟧, t ↦ Φ.cyc( ⟦⟧ ) ⟧"
+      it "spends the whole budget and fails on the limit without the flag" $
+        withStdin circling $
+          testCLIFailed
+            ["dataize", "--locator=Q.t", "--max-steps=40"]
+            ["[ERROR]: Dataization did not finish before reaching the limit of steps: --max-steps=40"]
+
+      -- The budget here is far larger than the one the run above failed on, so
+      -- what ends this one is the cut and not the limit
+      it "names the term it came back to with the flag" $
+        withStdin circling $
+          testCLIFailed
+            ["dataize", "--locator=Q.t", "--acyclic", "--max-steps=4000"]
+            ["[ERROR]: Reduction came back to a term it is already reducing:"]
+
+      -- 𝔻 insists on bytes and a parked term carries none, so what a cut run
+      -- prints is the residual program, exactly as it prints one for a λ
+      -- function that cannot fire
+      it "prints the residue and exits successfully with --partial" $
+        withStdin circling $
+          testCLISucceeded
+            ["dataize", "--locator=Q.t", "--acyclic", "--partial", "--max-steps=4000", "--flat", "--hide-rho"]
+            ["⟦ cyc ↦ ⟦ x ↦ ∅, φ ↦ Φ.cyc( α0 ↦ ξ.x ) ⟧, t ↦ ⟦ x ↦ ⟦⟧, φ ↦ Φ.cyc( α0 ↦ ξ.x ) ⟧ ⟧"]
+
+      -- The guard reads nothing but the terms the frames above it are
+      -- dataizing, so a run that never comes back to one answers as it always did
+      it "answers a terminating program the same way with the flag" $
+        withStdin "⟦ t ↦ ⟦ Δ ⤍ 01-02 ⟧ ⟧" $
+          testCLISucceeded ["dataize", "--locator=Q.t", "--acyclic"] ["01-02"]
+
     it "dataizes with --sequence" $
       withStdin "[[ @ -> [[ x -> [[ D> 01-, y -> ? ]](y -> [[ ]]) ]].x ]]" $
         testCLISucceeded

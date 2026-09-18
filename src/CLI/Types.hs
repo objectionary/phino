@@ -96,6 +96,7 @@ data OptsDataize = OptsDataize
   , _seed :: Int
   , _quiet :: Bool
   , _partial :: Bool
+  , _acyclic :: Bool
   , _compress :: Bool
   , _maxDepth :: Int
   , _maxCycles :: Int
