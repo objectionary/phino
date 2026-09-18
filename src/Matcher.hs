@@ -126,14 +126,24 @@ matchBindings (pb : pbs) (tb : tbs) = combineMany (matchBinding pb tb) (matchBin
 matchBindings _ _ = []
 
 -- A meta binding stands for any leading run of the target bindings, so every
--- way of splitting the target into that run and the rest is tried.
+-- way of splitting the target into that run and the rest is tried. The rest is
+-- carried down one binding at a time instead of being cut out of the target
+-- anew at every index, which is what made a formation of N bindings cost N
+-- walks of itself rather than one, and the run itself is put together only
+-- where the pattern after it matched, so a split the pattern throws away costs
+-- nothing to name. A meta binding with nothing after it takes the whole rest in
+-- one step: the pattern is out of bindings, so the only split that matches is
+-- the one leaving nothing behind (#1316).
 matchBindingsMeta :: (MetaValue -> Subst) -> [Binding] -> [Binding] -> [Subst]
-matchBindingsMeta bind pbs tbs =
-  catMaybes
-    [ combine (bind (MvBindings before)) subst
-    | (before, after) <- [splitAt idx tbs | idx <- [0 .. length tbs]]
-    , subst <- matchBindings pbs after
-    ]
+matchBindingsMeta bind [] tbs = [bind (MvBindings tbs)]
+matchBindingsMeta bind pbs tbs = go [] tbs
+  where
+    go :: [Binding] -> [Binding] -> [Subst]
+    go before after =
+      catMaybes [combine (bind (MvBindings (reverse before))) subst | subst <- matchBindings pbs after]
+        ++ case after of
+          [] -> []
+          (tb : rest) -> go (tb : before) rest
 
 matchExpression' :: MatchExpressionFunc
 matchExpression' (ExMeta meta) tgt = [substSingle meta (MvExpression tgt)]
