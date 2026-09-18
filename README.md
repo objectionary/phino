@@ -237,7 +237,12 @@ not its to read. An answer mentioning a `𝛿` is refused where the file is read
 
 `𝜎` is a meta of the calculus, beside `𝑛`, `𝛿` and `𝑓`, and it stands where
 a λ name stands. In a term, `𝜎1` is a concrete symbol: a λ function nothing
-answers, which is what makes the value the term carries unknown. In an answer, a
+answers, which is what makes the value the term carries unknown. Firing it is
+therefore the same question as firing a λ name the `--symbolic` file does not
+carry, and gets the same answer: 𝔼 stops there, the protocol records the site as
+`?(𝜎1)`, and `--partial` leaves the term where it stands. Dispatching an
+attribute off a symbol — `⟦ λ ⤍ 𝜎1 ⟧.plus( 5 )` — therefore taints its own
+binding and nothing else; what stands beside it still computes. In an answer, a
 bare `𝜎` asks for a fresh one, minted as the firing happens and numbered by the
 run, so no two unknowns are ever spelled alike. Minting starts after the symbols
 the program already carries, so a run over the 𝜑-program an earlier run wrote

@@ -1630,13 +1630,16 @@ spec = do
 
         -- A 'morph' operand 𝕄 answered the terminator for says what it is by
         -- being ⊥ and nothing else, the way every other bound meta says what
-        -- it is by its own term
+        -- it is by its own term. The entry answers with a fresh symbol and the
+        -- dispatch '.foo' then stands on it, so the run ends on the symbol the
+        -- way it ends on a λ name nothing answers, and the markup carries that
+        -- site too (#1287)
         it "writes the terminator as the term a meta was bound to" $
           withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
             hClose stream
             withLambdasOf (T.pack "- λ: L_pick\n  morph:\n    𝑛1: ξ.absent\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n") $ \picks ->
               withStdin "[[ x -> [[ here -> [[ ]], L> L_pick ]].foo ]]" $
-                testCLIFailed ["morph", "--symbolic=" ++ picks, "--locator=Q.x", "--protocol=" ++ path, "--quiet", "--hide-rho"] ["Function evaluate() expects a formation with a single λ binding naming a function"]
+                testCLIFailed ["morph", "--symbolic=" ++ picks, "--locator=Q.x", "--protocol=" ++ path, "--quiet", "--hide-rho"] ["No entry of --symbolic answers the λ function '𝜎1'"]
             records <- readUtf8 path
             lines records
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
@@ -1647,6 +1650,7 @@ spec = do
                          , "    <built meta=\"𝑛.1.1\">⟦ λ ⤍ 𝜎1 ⟧</built>"
                          , "    <answer meta=\"𝑛.1.2\">⟦ λ ⤍ 𝜎1 ⟧</answer>"
                          , "  </evaluate>"
+                         , "  <stuck λ=\"𝜎1\" judgment=\"morph\">⟦ λ ⤍ 𝜎1 ⟧</stuck>"
                          , "</morph>"
                          ]
 

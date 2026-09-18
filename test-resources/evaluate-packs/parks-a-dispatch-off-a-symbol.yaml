@@ -1,0 +1,45 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+# A λ binding naming a symbol rather than a name, which is what a value nobody
+# worked out looks like: ⟦ λ ⤍ 𝜎1 ⟧. Dispatching an attribute off it asks 𝕄 to
+# reduce it, 'ml' fires 𝔼 on the target, and before #1287 𝔼 refused the
+# formation outright — a 'userError' nothing catches, so the whole run died on
+# the first such term and everything standing after it never ran. 𝔼 now gets
+# stuck on the symbol the way it gets stuck on a λ name no entry of the
+# '--symbolic' file answers, so '--partial' parks the site: 'a' is left exactly
+# as it was written, a taint with no root, and the walk goes on to 'b', which
+# fires and computes. The site is written to the protocol as '?(𝜎1)', spelled
+# the way every term carrying that symbol spells it.
+#
+# The site is recorded twice because the walk passes it twice — once for the
+# dispatch 'x.plus' and once for the application 'x.plus( 5 )' around it — which
+# is what a λ name nothing answers does on this shape too; nothing about the
+# symbol makes it write more than a name would.
+symbolic: |
+  - λ: L_number_plus
+    dataize:
+      𝛿1: $.ρ
+      𝛿2: $.x
+    𝑛: Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ λ ⤍ 𝜎 ⟧ ) )
+location: 'Q.demo'
+deep: true
+partial: true
+input: >
+  ⟦ bytes ↦ ⟦ φ ↦ ∅ ⟧,
+    number ↦ ⟦ φ ↦ ∅, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧,
+    demo ↦ ⟦
+      a ↦ ⟦ λ ⤍ 𝜎1 ⟧.plus( 5 ),
+      b ↦ Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ) ).plus( 5 ) ⟧ ⟧
+result: >-
+  ⟦ a ↦ ⟦ λ ⤍ 𝜎1, ρ ↦ ∅ ⟧.plus( α0 ↦ Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 40-14-00-00-00-00-00-00, ρ ↦ ∅ ⟧ ) ) ), b ↦ ⟦ φ ↦ Φ.bytes( φ ↦ ⟦ λ ⤍ 𝜎3, ρ ↦ ∅ ⟧ ), plus ↦ ⟦ x ↦ ∅, λ ⤍ L_number_plus, ρ ↦ ∅ ⟧, ρ ↦ ⟦ bytes ↦ ⟦ φ ↦ ∅, ρ ↦ ∅ ⟧, number ↦ ⟦ φ ↦ ∅, plus ↦ ⟦ x ↦ ∅, λ ⤍ L_number_plus, ρ ↦ ∅ ⟧, ρ ↦ ∅ ⟧, demo ↦ ⟦ a ↦ ⟦ λ ⤍ 𝜎1, ρ ↦ ∅ ⟧.plus( α0 ↦ Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 40-14-00-00-00-00-00-00, ρ ↦ ∅ ⟧ ) ) ), b ↦ Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ λ ⤍ 𝜎2, ρ ↦ ∅ ⟧ ) ).plus( α0 ↦ Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 40-14-00-00-00-00-00-00, ρ ↦ ∅ ⟧ ) ) ), ρ ↦ ∅ ⟧, ρ ↦ ∅ ⟧ ⟧, ρ ↦ ∅ ⟧
+protocol: |
+  𝕄(Φ.demo)
+    ?(𝜎1)  # 𝕄(⟦ λ ⤍ 𝜎1 ⟧)
+    ?(𝜎1)  # 𝕄(⟦ λ ⤍ 𝜎1 ⟧)
+    𝔼(L_number_plus)  # 𝕄(Φ.demo.b)
+      𝛿1.1 := 𝔻(⟦ λ ⤍ 𝜎2 ⟧)  # 𝔻(ξ.ρ)
+      𝛿2.1 := 40-14-00-00-00-00-00-00  # 𝔻(ξ.x)
+      𝑛.1.1 := Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ λ ⤍ 𝜎3 ⟧ ) )  # 𝑛
+      𝑛.1.2 := ⟦ φ ↦ Φ.bytes( φ ↦ ⟦ λ ⤍ 𝜎3 ⟧ ), plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, ρ ↦ ⟦ bytes(φ) ↦ ⟦⟧, number(φ) ↦ ⟦ plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧, demo ↦ ⟦ a ↦ ⟦ λ ⤍ 𝜎1 ⟧.plus( 5 ), b ↦ Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ) ).plus( 5 ) ⟧ ⟧ ⟧  # 𝕄(𝑛.1.1)
