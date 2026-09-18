@@ -1,8 +1,11 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 # SPDX-License-Identifier: MIT
 ---
-# The same λ function under '_partial': the run ends on the residue the spine
-# had reached instead of failing.
+# The same λ function no entry answers, under '_partial' and the deep walk: the
+# spine parks the site and the walk goes over the residue it parked on, so 𝔼 is
+# attempted on that one site twice. The protocol records it once, since what a
+# '?(…)' line counts is the sites 𝔼 got stuck on and not the passes the walk
+# made over them (#1300).
 symbolic: |
   - λ: L_number_plus
     dataize:
@@ -10,6 +13,7 @@ symbolic: |
       𝛿2: $.x
     𝑛: Φ.number( φ ↦ ⟦ λ ⤍ 𝜎 ⟧ )
 location: 'Q.x'
+deep: true
 partial: true
 input: '⟦ x ↦ ⟦ λ ⤍ L_none ⟧.foo ⟧'
 result: '⟦ λ ⤍ L_none, ρ ↦ ∅ ⟧.foo'

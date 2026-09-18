@@ -1309,7 +1309,7 @@ spec = do
                        , "    𝛿2.1 := 40-18-00-00-00-00-00-00  # ξ.x"
                        , "    𝑛.1.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )  # 𝑛"
                        , "    𝑛.1.2 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, nope ↦ ⟦ λ ⤍ L_number_nope ⟧ ⟧  # 𝕄(𝑛.1.1)"
-                       , "  ?(L_number_nope)"
+                       , "  ?(L_number_nope)  # ⟦ λ ⤍ L_number_nope ⟧"
                        ]
 
       it "truncates the lines left over from the previous run" $
@@ -1528,8 +1528,10 @@ spec = do
                          ]
 
         -- Nothing fired, so the element stands alone and nothing opens under
-        -- it, exactly as '?(…)' stands alone in the text format
-        it "records a λ function no entry answers as an empty element" $
+        -- it, exactly as '?(…)' stands alone in the text format; the formation
+        -- 𝔼 was asked about stands as the text of it, the way the comment of
+        -- the text format carries it (#1300)
+        it "records a λ function no entry answers as a childless element" $
           withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
             hClose stream
             withStdin "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ times(x) -> [[ L> L_number_times ]], nope -> [[ L> L_number_nope ]] ]], @ -> 2.times(3).nope ]]" $
@@ -1545,7 +1547,7 @@ spec = do
                          , "    <built meta=\"𝑛.1.1\">Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )</built>"
                          , "    <answer meta=\"𝑛.1.2\">⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧, nope ↦ ⟦ λ ⤍ L_number_nope ⟧ ⟧</answer>"
                          , "  </evaluate>"
-                         , "  <stuck λ=\"L_number_nope\"/>"
+                         , "  <stuck λ=\"L_number_nope\">⟦ λ ⤍ L_number_nope ⟧</stuck>"
                          , "</dataize>"
                          ]
 
@@ -1562,7 +1564,7 @@ spec = do
             lines records
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                          , "<morph locator=\"Φ.x\">"
-                         , "  <stuck λ=\"L_number_nope\"/>"
+                         , "  <stuck λ=\"L_number_nope\">⟦ λ ⤍ L_number_nope, ρ ↦ ∅ ⟧</stuck>"
                          , "</morph>"
                          ]
 
@@ -1586,7 +1588,7 @@ spec = do
                          , "    <built meta=\"𝑛.1.1\">Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1, ρ ↦ ∅ ⟧ )</built>"
                          , "    <answer meta=\"𝑛.1.2\">⟦ φ ↦ ⟦ λ ⤍ 𝜎1, ρ ↦ ∅ ⟧, times ↦ ⟦ x ↦ ∅, λ ⤍ L_number_times, ρ ↦ ∅ ⟧, nope ↦ ⟦ λ ⤍ L_number_nope, ρ ↦ ∅ ⟧, ρ ↦ ⟦ bytes ↦ ⟦ φ ↦ ∅, ρ ↦ ∅ ⟧, number ↦ ⟦ φ ↦ ∅, times ↦ ⟦ x ↦ ∅, λ ⤍ L_number_times, ρ ↦ ∅ ⟧, nope ↦ ⟦ λ ⤍ L_number_nope, ρ ↦ ∅ ⟧, ρ ↦ ∅ ⟧, φ ↦ Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 40-00-00-00-00-00-00-00, ρ ↦ ∅ ⟧ ) ).times( α0 ↦ Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 40-08-00-00-00-00-00-00, ρ ↦ ∅ ⟧ ) ) ).nope, ρ ↦ ∅ ⟧ ⟧</answer>"
                          , "  </evaluate>"
-                         , "  <stuck λ=\"L_number_nope\"/>"
+                         , "  <stuck λ=\"L_number_nope\">⟦ λ ⤍ L_number_nope, ρ ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎1, ρ ↦ ∅ ⟧, times ↦ ⟦ x ↦ ∅, λ ⤍ L_number_times, ρ ↦ ∅ ⟧, nope ↦ ⟦ λ ⤍ L_number_nope, ρ ↦ ∅ ⟧, ρ ↦ ⟦ bytes ↦ ⟦ φ ↦ ∅, ρ ↦ ∅ ⟧, number ↦ ⟦ φ ↦ ∅, times ↦ ⟦ x ↦ ∅, λ ⤍ L_number_times, ρ ↦ ∅ ⟧, nope ↦ ⟦ λ ⤍ L_number_nope, ρ ↦ ∅ ⟧, ρ ↦ ∅ ⟧, φ ↦ Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 40-00-00-00-00-00-00-00, ρ ↦ ∅ ⟧ ) ).times( α0 ↦ Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 40-08-00-00-00-00-00-00, ρ ↦ ∅ ⟧ ) ) ).nope, ρ ↦ ∅ ⟧ ⟧ ⟧</stuck>"
                          , "</dataize>"
                          ]
 
@@ -1662,7 +1664,7 @@ spec = do
                        , "    𝛿2.1 := 40-08-00-00-00-00-00-00  # ξ.x"
                        , "    𝑛.1.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )  # 𝑛"
                        , "    𝑛.1.2 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧, nope ↦ ⟦ λ ⤍ L_number_nope ⟧ ⟧  # 𝕄(𝑛.1.1)"
-                       , "  ?(L_number_nope)"
+                       , "  ?(L_number_nope)  # ⟦ λ ⤍ L_number_nope ⟧"
                        ]
 
       it "still prints bytes when nothing gets stuck" $

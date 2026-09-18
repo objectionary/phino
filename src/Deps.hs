@@ -118,11 +118,16 @@ data Evaluation
     -- it.
     EvFiring Int T.Text
   | -- A λ function no entry of the '--symbolic' file answers, at the depth the
-    -- firing of it would have stood at. Nothing fired, so the line stands alone
-    -- and no block opens under it. It is written whether or not '--partial'
-    -- goes on to park the run, since the protocol records what 𝔼 was asked for
-    -- and a question it could not answer belongs there as much as one it could.
-    EvStuck Int T.Text
+    -- firing of it would have stood at, together with the formation 𝔼 was
+    -- fired against, as it was handed it. Nothing fired, so the line stands
+    -- alone and no block opens under it. It is written whether or not
+    -- '--partial' goes on to park the run, since the protocol records what 𝔼
+    -- was asked for and a question it could not answer belongs there as much as
+    -- one it could — and the object it was asked about is half of that
+    -- question, so the record carries it the way every other one carries the
+    -- term it is about, as the comment of the line in the text format and as
+    -- the text of the element in the markup (#1300).
+    EvStuck Int T.Text Expression
   | -- A 'dataize' operand of the firing: the meta it bound, the term the entry
     -- wrote under that meta, and the data it came down to, or the symbol that
     -- data was manufactured for.
@@ -273,8 +278,9 @@ saveEval handle cursor render salted report = do
       where
         firings :: Int
         firings = protocol._fired + 1
-    written (EvStuck depth key) protocol =
-      pure (protocol, Just (indented depth (printf "?(%s)" (T.unpack key))))
+    written (EvStuck depth key self) protocol = do
+      form <- render self
+      pure (protocol, Just (indented depth (printf "?(%s)  # %s" (T.unpack key) form)))
     written (EvData depth spelling operand value) protocol = do
       datum <- spelled value
       line <- commented (printf "%s := %s" (labelled protocol depth spelling) datum) operand
@@ -412,10 +418,10 @@ saveEvalXml handle cursor render report = do
         (kept, closers) = closed depth nesting._closing
         fires :: Int
         fires = nesting._fires + 1
-    elements (EvStuck depth key) nesting =
-      pure (nesting{_closing = kept}, closers ++ [indented depth (printf "<stuck λ=\"%s\"/>" (quoted key))])
-      where
-        (kept, closers) = closed depth nesting._closing
+    elements (EvStuck depth key self) nesting = do
+      form <- render self
+      let (kept, closers) = closed depth nesting._closing
+      pure (nesting{_closing = kept}, closers ++ [indented depth (printf "<stuck λ=\"%s\">%s</stuck>" (quoted key) (escapeXMLText form))])
     elements (EvData depth spelling _ value) nesting = do
       record <- stood value
       pure (nesting{_closing = kept}, closers ++ [indented depth record])

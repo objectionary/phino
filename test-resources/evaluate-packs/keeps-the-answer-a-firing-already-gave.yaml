@@ -16,4 +16,4 @@ protocol: |
     𝔼(L_answers)
       𝑛.1.1 := ⟦ λ ⤍ L_none ⟧  # 𝑛
       𝑛.1.2 := ⟦ λ ⤍ L_none ⟧  # 𝕄(𝑛.1.1)
-    ?(L_none)
+    ?(L_none)  # ⟦ λ ⤍ L_none ⟧

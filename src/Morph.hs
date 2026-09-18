@@ -113,6 +113,13 @@ data ReduceContext = ReduceContext
   , _partial :: Bool
   , _deep :: Bool
   , _acyclic :: Bool
+  , -- The λ functions this run has already got stuck on and written a '?(…)'
+    -- to the protocol for. A parked site stays in the residue exactly as it was
+    -- written, so the '_deep' walk over that residue reaches it again and 𝕄
+    -- fires 𝔼 on it once more, only to find out what the spine already found
+    -- out; the site is one and the protocol records it once, so the firings
+    -- after the first write nothing (see 'symbol' in 'Evaluate', #1300).
+    _parked :: [T.Text]
   , _seen :: Seen
   , _symbolic :: Lambdas
   , _buildTerm :: BuildTermFunc
@@ -321,31 +328,38 @@ morph universe state ctx@ReduceContext{..} = do
   expr <- locatedExpression _locator universe
   result <- try (morph' (expr, (universe, Nothing) :| []) universe state ctx)
   case result of
-    Right ((morphed, seq), state') -> walked morphed seq state'
-    Left (StuckAt _ seq parked) | _partial -> do
+    Right ((morphed, seq), state') -> walked ctx morphed seq state'
+    Left (StuckAt func seq parked) | _partial -> do
       residue <- locatedExpression _locator (fst (NE.head seq))
-      walked residue seq parked
+      walked (marked func) residue seq parked
     Left (OutOfStepsAt _ seq parked) | _partial -> do
       residue <- locatedExpression _locator (fst (NE.head seq))
-      walked residue seq parked
+      walked ctx residue seq parked
     -- Unlike the two above, this one takes no '_partial' guard: a 'LoopingAt'
     -- exists only where '_acyclic' put it, so asking for the guard is already
     -- asking to be parked on what it finds.
     Left (LoopingAt _ seq parked) -> do
       residue <- locatedExpression _locator (fst (NE.head seq))
-      walked residue seq parked
+      walked ctx residue seq parked
     Left failure -> throwIO (failure :: ReduceException)
   where
+    -- The context the walk over a parked residue runs with: the one this run
+    -- was given, plus the λ function the spine got stuck on. The site is still
+    -- standing in the residue, so the walk asks 𝕄 about it again and 𝔼 gets
+    -- stuck on it again; the protocol has the site already and the second
+    -- firing writes nothing (see '_parked', #1300).
+    marked :: T.Text -> ReduceContext
+    marked func = ctx{_parked = func : _parked}
     -- The answer 𝕄 reached, walked by '_deep' before it is handed back (see
     -- 'deepened'), and the chain that led to both. The walk joins the chain as
     -- one step named 'deep', so '--sequence' ends on the term the command
     -- prints.
-    walked :: Expression -> NonEmpty Rewritten -> State -> IO (Expression, [Rewritten], State)
-    walked morphed seq state'
+    walked :: ReduceContext -> Expression -> NonEmpty Rewritten -> State -> IO (Expression, [Rewritten], State)
+    walked walker morphed seq state'
       | not _deep = pure (morphed, reverse (NE.toList seq), state')
       | otherwise = do
-          (deep, state'') <- deepened morphed universe state' ctx
-          seq' <- leadsTo seq "deep" deep ctx
+          (deep, state'') <- deepened morphed universe state' walker
+          seq' <- leadsTo seq "deep" deep walker
           pure (deep, reverse (NE.toList seq'), state'')
 
 -- Walk what 𝕄 answered with, entering everything it left as it was written —
