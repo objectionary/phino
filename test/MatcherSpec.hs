@@ -6,10 +6,12 @@
 module MatcherSpec where
 
 import AST
+import Control.Exception (evaluate)
 import Control.Monad (forM_)
 import Data.Map.Strict qualified as Map
 import Data.Text qualified as T
 import Matcher
+import System.Timeout (timeout)
 import Test.Hspec (Example (Arg), Expectation, Spec, SpecWith, describe, it, shouldBe)
 
 substs :: [[(T.Text, MetaValue)]] -> [Subst]
@@ -535,3 +537,18 @@ spec = do
         )
       ]
       (\(desc, first, second, expected) -> it desc (combine first second `shouldBe` expected))
+
+  describe "matchBindings: a meta binding over a crowded formation" $
+    it "dont cut the target anew at every index a meta binding may end at" $ do
+      matched <- timeout 5000000 (evaluate (length (matchExpression dot (ExDispatch (crowd 3000) (AtLabel "d1")))))
+      matched `shouldBe` Just 1
+  where
+    -- The pattern of the 'dot' normalization rule, the one every dispatch of a
+    -- program is matched against: a meta binding on either side of the binding
+    -- the dispatch names.
+    dot :: Expression
+    dot = ExDispatch (ExFormation [BiMeta "B1", BiTau (AtMeta "t1") (ExMeta "n1"), BiMeta "B2"]) (AtMeta "t1")
+    -- A formation of that many bindings, none of which the pattern above says
+    -- anything about beyond standing in one of its two runs.
+    crowd :: Int -> Expression
+    crowd size = ExFormation [BiTau (AtLabel (T.pack ("d" <> show idx))) (ExFormation [BiDelta (BtOne "00")]) | idx <- [1 .. size]]
