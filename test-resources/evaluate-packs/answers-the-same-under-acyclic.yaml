@@ -1,7 +1,6 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 # SPDX-License-Identifier: MIT
 ---
-# yamllint disable rule:line-length
 # A program that does not loop answers the same with '_acyclic' as without it.
 # The guard remembers the terms the frames above have open, so only a genuine
 # return to one of them trips it; a term merely reduced twice in two places
@@ -19,13 +18,11 @@ input: >
   ⟦ bytes(φ) ↦ ⟦⟧,
     number(φ) ↦ ⟦ plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧,
     @ ↦ 5.plus( 6 ) ⟧
-result: >
-  ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, ρ ↦ ⟦ bytes(φ) ↦ ⟦⟧,
-  number(φ) ↦ ⟦ plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧, φ ↦ 5.plus( 6 ) ⟧ ⟧
+result: '⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧'
 protocol: |
   𝕄(Φ.φ)
     𝔼(L_number_plus)  # 𝕄(Φ.φ)
       𝛿1.1 := 40-14-00-00-00-00-00-00  # 𝔻(ξ.ρ)
       𝛿2.1 := 40-18-00-00-00-00-00-00  # 𝔻(ξ.x)
       𝑛.1.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )  # 𝑛
-      𝑛.1.2 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, ρ ↦ ⟦ bytes(φ) ↦ ⟦⟧, number(φ) ↦ ⟦ plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧, φ ↦ 5.plus( 6 ) ⟧ ⟧  # 𝕄(𝑛.1.1)
+      𝑛.1.2 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧  # 𝕄(𝑛.1.1)

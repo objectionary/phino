@@ -1,4 +1,3 @@
-{-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
@@ -13,20 +12,24 @@ import AST
 import CLI.Helpers (started)
 import Control.Exception (SomeException)
 import Control.Monad
-import Data.Aeson (FromJSON)
+import Data.Aeson (FromJSON (parseJSON), camelTo2, defaultOptions, fieldLabelModifier, genericParseJSON)
 import Data.List (isInfixOf)
 import Data.Maybe (fromMaybe)
 import Data.Text qualified as T
 import Data.Yaml qualified as Decode
 import Deps (Evaluation (EvRun), Judgment (Morphing), Term (TeExpression))
+import Encoding (Encoding (UNICODE))
 import Files (allPathsIn)
-import Fixtures (defaultReduceContext, fixtureLambdas, recorded, withLambdas, withLambdasOf)
+import Fixtures (defaultReduceContext, fixtureLambdas, recorded, recorded', withLambdas, withLambdasOf)
 import GHC.Generics (Generic)
 import Lambdas (readLambdas)
+import Lining (LineFormat (SINGLELINE))
+import Margin (defaultMargin)
 import Matcher (substEmpty)
 import Morph (ReduceContext (..), Steps (..), execBuildTerm, morph)
 import Parser (parseExpressionThrows)
-import Printer (printExpression)
+import Printer (printExpression, printExpression', printExpressionHidingRho')
+import Sugar (SugarType (SWEET))
 import System.FilePath (makeRelative)
 import Tau (seedTaus)
 import Test.Hspec
@@ -39,7 +42,10 @@ import Yaml (ExtraArgument (..))
 -- worth spelling, the program 𝕄 lands on under 'result' — or the failure under
 -- 'fails'. The protocol is one block of text rather than a list of lines, so a
 -- pack holds the file a user of the option reads back and the case compares the
--- two of them verbatim.
+-- two of them verbatim. Every term of both is spelled without its ρ bindings,
+-- the way '--hide-rho' spells one, unless the pack says 'hide-rho: false': the
+-- ρ chain is the universe an entry was fired inside and not the answer it gave,
+-- so spelling it buries the symbol a pack is there to show (#1313).
 data SymbolPack = SymbolPack
   { symbolic :: String
   , location :: Maybe String
@@ -51,8 +57,15 @@ data SymbolPack = SymbolPack
   , protocol :: String
   , result :: Maybe String
   , fails :: Maybe String
+  , hideRho :: Maybe Bool
   }
-  deriving (Generic, Show, FromJSON)
+  deriving (Generic, Show)
+
+-- The keys a pack spells its fields with, which are the fields themselves in
+-- every case but 'hide-rho', where the option it is named after spells with a
+-- dash what Haskell spells with a hump.
+instance FromJSON SymbolPack where
+  parseJSON = genericParseJSON defaultOptions{fieldLabelModifier = camelTo2 '-'}
 
 -- Fire one symbol pack and check both what it answers and what its firings
 -- wrote to the protocol, since a λ function is as much what it reports as what
@@ -64,9 +77,10 @@ testSymbols pth = do
   expr <- parseExpressionThrows input
   seedTaus expr
   loc <- parseExpressionThrows (fromMaybe "Q" location)
+  let hidden = hideRho /= Just False
   withLambdasOf (T.pack symbolic) $ \file -> do
     known <- readLambdas file
-    (_, written) <- recorded $ \record -> do
+    (_, written) <- recorded' hidden $ \record -> do
       let ctx =
             (defaultReduceContext loc)
               { _deep = deep == Just True
@@ -84,8 +98,19 @@ testSymbols pth = do
           (morphed, _, _) <- morph expr (started expr) ctx
           forM_ result $ \res -> do
             expected <- parseExpressionThrows res
-            morphed `shouldBe` expected
+            spelled hidden morphed `shouldBe` spelled False expected
     written `shouldBe` protocol
+  where
+    -- How a pack spells a program: 𝜑 on one line, in the sugar the protocol
+    -- writes its own terms with. The answer goes through it with the ρ bindings
+    -- hidden where the pack hides them and the 'result' of the pack goes
+    -- through it as it stands, so a pack still spelling a ρ of its own fails on
+    -- it rather than having it dropped from both sides and forgiven. A void ρ
+    -- says nothing either way, since the sweet syntax writes no 'ρ ↦ ∅'
+    -- whatever the pack asked for.
+    spelled :: Bool -> Expression -> String
+    spelled hidden term =
+      (if hidden then printExpressionHidingRho' else printExpression') term (SWEET, UNICODE, SINGLELINE, defaultMargin)
 
 spec :: Spec
 spec = do

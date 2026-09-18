@@ -10,7 +10,7 @@ symbolic: |
 location: 'Q.x'
 partial: true
 input: '⟦ x ↦ ⟦ λ ⤍ L_answers ⟧.foo ⟧'
-result: '⟦ λ ⤍ L_none, ρ ↦ ∅ ⟧.foo'
+result: '⟦ λ ⤍ L_none ⟧.foo'
 protocol: |
   𝕄(Φ.x)
     𝔼(L_answers)  # 𝕄(Φ.x)
