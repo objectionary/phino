@@ -42,13 +42,15 @@ targetBatchMs = 20.0
 -- measured batches together. Every case that only parses, prints or rewrites
 -- runs in microseconds and batches up to the window above, so ten batches of
 -- it cost a fraction of a second and the budget never binds. A symbolic
--- morphing inside a world the size of 'native.phi' takes tens of seconds per
--- run, and three warmups plus ten batches of that would outlast the job the
--- workflow runs the suite in, so the warmups and the iterations are cut to what
--- the budget affords — never below one measured batch, so an expensive case
--- still reports the same lines as every other one.
+-- morphing takes whole seconds per run, and inside a world the size of
+-- 'native.phi' tens of them, so three warmups plus ten batches of one would
+-- outlast the jobs the workflows run the suite in — 'regression-check' runs
+-- the whole binary ten times over, once per round per side. The warmups and
+-- the iterations are therefore cut to what the budget affords, never below one
+-- measured batch, so an expensive case still reports the same lines as every
+-- other one.
 budget :: Double
-budget = 120.0 * 1e6
+budget = 30.0 * 1e6
 
 rewriteCtx :: RewriteContext
 rewriteCtx =
