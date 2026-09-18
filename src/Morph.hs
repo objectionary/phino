@@ -428,7 +428,8 @@ deepened expr univ state ctx = go (Just ctx._site) Nothing ExXi expr state ctx
     -- deeper in a term than a locator reaches belongs to the last binding the
     -- walk entered, and saying that is saying where it is (see '_site').
     sited :: Maybe Expression -> ReduceContext -> ReduceContext
-    sited standing caller = maybe caller (\loc -> caller{_site = loc}) standing
+    sited Nothing caller = caller
+    sited (Just loc) caller = caller{_site = loc}
     -- The parts of a term nothing fired on, walked one by one and put back
     -- where they were, so the term keeps the shape it was written in. Only a
     -- binding of a formation carries the locator further: the head of a
