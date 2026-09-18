@@ -41,12 +41,16 @@ type BuildTermMethod = [ExtraArgument] -> Subst -> IO Term
 -- and threaded unchanged, the state is mutable: 𝔼 takes a state 𝑠1 and returns
 -- a new one 𝑠2, and 𝕄/𝔻 propagate that change to their callers. It carries how
 -- many symbols the run has minted, so the next 𝜎 an answer asks for is one no
--- term already holds, and which symbol the last datum was manufactured for,
+-- term already holds, which symbol the last datum was manufactured for,
 -- since every symbol dataizes to the very same 42 and only the state can tell
--- the protocol which unknown that 42 stood for.
+-- the protocol which unknown that 42 stood for, and which λ function the last
+-- reduction of it was parked on, since a run '--partial' parks answers a
+-- residue and the name of what parked it would otherwise be lost with the
+-- signal the residue was made of (#1288).
 data State = State
   { _minted :: Int
   , _manufactured :: Maybe Int
+  , _stuck :: Maybe T.Text
   }
 
 -- Like 'BuildTermMethod', but it also takes the incoming state and returns the
