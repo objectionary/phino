@@ -212,9 +212,37 @@ data Evaluation
 
 type SaveEvalFunc = Evaluation -> IO ()
 
+-- The names the text protocol has given to the terms it has written out,
+-- keyed by a cheap fixed-size digest of the term (see 'hashExpression') the
+-- way 'Seen' keys the terms '--acyclic' has walked. A digest collision is
+-- resolved by an exact structural comparison, so the common case stays O(1) on
+-- the digest while a name still stands for the very term it was given to.
+-- Keying on the whole term and not on the first symbol it carries is what
+-- keeps the format honest: the symbolized copy of a term carries the same
+-- first symbol as the term it was made of and differs deeper down, so naming
+-- the copy after the original claimed nothing was replaced on the very line
+-- that replaced something (#1292).
+type Named = Map.Map Int [(Expression, T.Text)]
+
+-- The name an earlier line gave this very term, if one did. The digest lookup
+-- is fast; the (==) check runs only on a digest match, so two terms that differ
+-- anywhere are two terms and neither is ever written as the other.
+namedLookup :: Expression -> Named -> Maybe T.Text
+namedLookup term names = lookup term (Map.findWithDefault [] (hashExpression term) names)
+
+-- Remember the name a line gives a term, under the digest of that term,
+-- keeping the names of any term that collides with it. A term written out
+-- twice takes the name of the later line, which is the line a reader counting
+-- back from the next one reaches first.
+namedInsert :: Expression -> T.Text -> Named -> Named
+namedInsert term naming = Map.alter renamed (hashExpression term)
+  where
+    renamed :: Maybe [(Expression, T.Text)] -> Maybe [(Expression, T.Text)]
+    renamed entries = Just ((term, naming) : filter ((/= term) . fst) (fromMaybe [] entries))
+
 -- What the protocol has counted so far: how many firings the whole run has
 -- opened, which is what numbers them and so tells a line of one firing from
--- the same line of any other; the name last given to each symbol, which is how
+-- the same line of any other; the name last given to each term, which is how
 -- a term already written out is named instead of written again; and which
 -- firing is open at each depth, since the operands of a firing belong to the
 -- firing it was when it started and not to the one another firing has made of
@@ -229,7 +257,7 @@ type SaveEvalFunc = Evaluation -> IO ()
 -- minted 𝜎4 stood for.
 data Protocol = Protocol
   { _fired :: Int
-  , _named :: Map.Map Int T.Text
+  , _named :: Named
   , _open :: Map.Map Int Int
   }
 
@@ -351,25 +379,30 @@ saveEval handle cursor render salted report = do
           naming = printf "%s.2" stem
       (protocol', value) <- valued protocol naming term
       pure (protocol', Just (indented depth (printf "%s := %s  # 𝕄(%s.1)" naming value stem)))
-    -- The value of a term, next to the name this line gives it: the name the
-    -- symbol it carries already has, where it has one, and the term itself
-    -- otherwise. Either way the symbol takes the name of this line, so the
-    -- next term carrying it points back here and not further.
+    -- The value of a term, next to the name this line gives it: the name an
+    -- earlier line gave this very term, where one did, and the term itself
+    -- otherwise. Either way the term takes the name of this line, so the next
+    -- line holding it points back here and not further. Only a term whose
+    -- value is a symbol is named at all, since that is a term a firing
+    -- answered with and every other one is worth no less written out than
+    -- pointed at; the term is matched verbatim, so a term that differs from
+    -- the one a name stands for is written out however deep the difference
+    -- sits (#1292).
     valued :: Protocol -> String -> Expression -> IO (Protocol, String)
     valued protocol naming term = case denoted term of
       Nothing -> (,) protocol <$> render term
-      Just symbol -> do
-        value <- maybe (render term) (pure . T.unpack) (Map.lookup symbol protocol._named)
-        pure (protocol{_named = Map.insert symbol (T.pack naming) protocol._named}, value)
-    -- The value of a term on a line that claims no name for the symbol it
-    -- carries: the name that symbol already has, where it has one, and the
-    -- term itself otherwise. The built answer of a firing stands on such a
-    -- line, since the line under it holds the term 𝕄 made of that one and the
-    -- two are not the same term: were the first of the pair to claim the name,
-    -- the second would be written as the first and the morphing would be as
-    -- invisible as it was before it had a line at all (#1298).
+      Just _ -> do
+        value <- maybe (render term) (pure . T.unpack) (namedLookup term protocol._named)
+        pure (protocol{_named = namedInsert term (T.pack naming) protocol._named}, value)
+    -- The value of a term on a line that claims no name for it: the name an
+    -- earlier line gave this very term, where one did, and the term itself
+    -- otherwise. The built answer of a firing stands on such a line, since the
+    -- line under it holds the term 𝕄 made of that one and the two are not the
+    -- same term: were the first of the pair to claim the name, the second
+    -- would be written as the first and the morphing would be as invisible as
+    -- it was before it had a line at all (#1298).
     borrowed :: Protocol -> Expression -> IO String
-    borrowed protocol term = case denoted term >>= (`Map.lookup` protocol._named) of
+    borrowed protocol term = case namedLookup term protocol._named of
       Nothing -> render term
       Just naming -> pure (T.unpack naming)
     -- The line of an operand with the judgment that reduced it and the term it
