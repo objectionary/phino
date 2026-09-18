@@ -19,5 +19,5 @@ result: >
     λ ⤍ L_pair, ρ ↦ ∅ ⟧.z
 protocol: |
   𝕄(Φ.y)
-    𝔼(L_pair)
+    𝔼(L_pair)  # Φ.y
       ?(L_none)  # 𝕄(⟦ λ ⤍ L_none ⟧)

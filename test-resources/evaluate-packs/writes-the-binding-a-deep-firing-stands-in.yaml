@@ -1,0 +1,36 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+# The site a firing is written under, which the '--deep' walk refines as it
+# enters a binding: both firings are of the same entry and answer the same way,
+# so the locator standing beside them is the one thing telling a reader which
+# part of the program each of them belongs to. A locator reaches a binding and
+# no further: the λ function of the first one fires on a dispatch standing
+# inside 'mark', which no locator names, so the firing is written under
+# 'Φ.foo.mark' — the binding the walk had entered.
+symbolic: |
+  - λ: L_number_plus
+    dataize:
+      𝛿1: $.ρ
+      𝛿2: $.x
+    𝑛: Φ.number( φ ↦ ⟦ λ ⤍ 𝜎 ⟧ )
+location: 'Q'
+deep: true
+input: >
+  ⟦ bytes(φ) ↦ ⟦⟧,
+    number(φ) ↦ ⟦ plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧,
+    foo ↦ ⟦ mark ↦ 5.plus( 6 ) ⟧,
+    bar ↦ 7.plus( 8 ) ⟧
+protocol: |
+  𝕄(Φ)
+    𝔼(L_number_plus)  # Φ.foo.mark
+      𝛿1.1 := 40-14-00-00-00-00-00-00  # ξ.ρ
+      𝛿2.1 := 40-18-00-00-00-00-00-00  # ξ.x
+      𝑛.1.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )  # 𝑛
+      𝑛.1.2 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, ρ ↦ ⟦ bytes(φ) ↦ ⟦⟧, number(φ) ↦ ⟦ plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧, foo ↦ ⟦ mark ↦ 5.plus( 6 ) ⟧, bar ↦ 7.plus( 8 ) ⟧ ⟧  # 𝕄(𝑛.1.1)
+    𝔼(L_number_plus)  # Φ.bar
+      𝛿1.2 := 40-1C-00-00-00-00-00-00  # ξ.ρ
+      𝛿2.2 := 40-20-00-00-00-00-00-00  # ξ.x
+      𝑛.2.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ )  # 𝑛
+      𝑛.2.2 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, ρ ↦ ⟦ bytes(φ) ↦ ⟦⟧, number(φ) ↦ ⟦ plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧, foo ↦ ⟦ mark ↦ 5.plus( 6 ) ⟧, bar ↦ 7.plus( 8 ) ⟧ ⟧  # 𝕄(𝑛.2.1)

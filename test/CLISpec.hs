@@ -1194,7 +1194,7 @@ spec = do
           records <- readUtf8 path
           lines records
             `shouldBe` [ "𝔻(Φ)"
-                       , "  𝔼(L_number_plus)"
+                       , "  𝔼(L_number_plus)  # Φ"
                        , "    𝛿1.1 := 40-14-00-00-00-00-00-00  # ξ.ρ"
                        , "    𝛿2.1 := 40-18-00-00-00-00-00-00  # ξ.x"
                        , "    𝑛.1.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )  # 𝑛"
@@ -1212,12 +1212,12 @@ spec = do
           records <- readUtf8 path
           lines records
             `shouldBe` [ "𝔻(Φ)"
-                       , "  𝔼(L_number_plus)"
+                       , "  𝔼(L_number_plus)  # Φ"
                        , "    𝛿1.1 := 40-14-00-00-00-00-00-00  # ξ.ρ"
                        , "    𝛿2.1 := 40-18-00-00-00-00-00-00  # ξ.x"
                        , "    𝑛.1.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )  # 𝑛"
                        , "    𝑛.1.2 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧  # 𝕄(𝑛.1.1)"
-                       , "  𝔼(L_number_plus)"
+                       , "  𝔼(L_number_plus)  # Φ"
                        , "    𝛿1.2 := 𝔻(⟦ λ ⤍ 𝜎1 ⟧)  # ξ.ρ"
                        , "    𝛿2.2 := 40-1C-00-00-00-00-00-00  # ξ.x"
                        , "    𝑛.2.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ )  # 𝑛"
@@ -1237,12 +1237,12 @@ spec = do
           records <- readUtf8 path
           lines records
             `shouldBe` [ "𝔻(Φ)"
-                       , "  𝔼(L_number_plus)"
+                       , "  𝔼(L_number_plus)  # Φ"
                        , "    𝛿1.1 := 40-14-00-00-00-00-00-00  # ξ.ρ"
                        , "    𝛿2.1 := 40-18-00-00-00-00-00-00  # ξ.x"
                        , "    𝑛.1.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )  # 𝑛"
                        , "    𝑛.1.2 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧ ⟧  # 𝕄(𝑛.1.1)"
-                       , "  𝔼(L_number_times)"
+                       , "  𝔼(L_number_times)  # Φ"
                        , "    𝛿1.2 := 𝔻(⟦ λ ⤍ 𝜎1 ⟧)  # ξ.ρ"
                        , "    𝛿2.2 := 40-1C-00-00-00-00-00-00  # ξ.x"
                        , "    𝑛.2.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ )  # 𝑛"
@@ -1259,9 +1259,9 @@ spec = do
           records <- readUtf8 path
           lines records
             `shouldBe` [ "𝔻(Φ)"
-                       , "  𝔼(L_number_plus)"
+                       , "  𝔼(L_number_plus)  # Φ"
                        , "    𝛿1.1 := 40-14-00-00-00-00-00-00  # ξ.ρ"
-                       , "    𝔼(L_number_plus)"
+                       , "    𝔼(L_number_plus)  # Φ.a🌵1"
                        , "      𝛿1.2 := 40-18-00-00-00-00-00-00  # ξ.ρ"
                        , "      𝛿2.2 := 40-1C-00-00-00-00-00-00  # ξ.x"
                        , "      𝑛.2.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )  # 𝑛"
@@ -1286,7 +1286,7 @@ spec = do
           records <- readUtf8 path
           lines records
             `shouldBe` [ "𝕄(Φ.y)"
-                       , "  𝔼(L_stand)"
+                       , "  𝔼(L_stand)  # Φ.y"
                        , "    𝑛1.1 := ⟦ Δ ⤍ 01- ⟧  # ξ.x"
                        , "    𝔻(⟦ λ ⤍ 𝜎1 ⟧) == 01-"
                        , "    𝑛2.1 := ⟦ λ ⤍ 𝜎1 ⟧  # 𝑛1"
@@ -1304,7 +1304,7 @@ spec = do
           records <- readUtf8 path
           lines records
             `shouldBe` [ "𝔻(Φ)"
-                       , "  𝔼(L_number_plus)"
+                       , "  𝔼(L_number_plus)  # Φ"
                        , "    𝛿1.1 := 40-14-00-00-00-00-00-00  # ξ.ρ"
                        , "    𝛿2.1 := 40-18-00-00-00-00-00-00  # ξ.x"
                        , "    𝑛.1.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )  # 𝑛"
@@ -1345,7 +1345,7 @@ spec = do
             lines records
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                          , "<dataize locator=\"Φ\">"
-                         , "  <evaluate λ=\"L_number_plus\" id=\"1\">"
+                         , "  <evaluate λ=\"L_number_plus\" id=\"1\" locator=\"Φ\">"
                          , "    <bind meta=\"𝛿1.1\">40-14-00-00-00-00-00-00</bind>"
                          , "    <bind meta=\"𝛿2.1\">40-18-00-00-00-00-00-00</bind>"
                          , "    <minted>𝜎1</minted>"
@@ -1383,14 +1383,14 @@ spec = do
             lines records
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                          , "<dataize locator=\"Φ\">"
-                         , "  <evaluate λ=\"L_number_plus\" id=\"1\">"
+                         , "  <evaluate λ=\"L_number_plus\" id=\"1\" locator=\"Φ\">"
                          , "    <bind meta=\"𝛿1.1\">40-14-00-00-00-00-00-00</bind>"
                          , "    <bind meta=\"𝛿2.1\">40-18-00-00-00-00-00-00</bind>"
                          , "    <minted>𝜎1</minted>"
                          , "    <built meta=\"𝑛.1.1\">Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )</built>"
                          , "    <answer meta=\"𝑛.1.2\">⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧</answer>"
                          , "  </evaluate>"
-                         , "  <evaluate λ=\"L_number_plus\" id=\"2\">"
+                         , "  <evaluate λ=\"L_number_plus\" id=\"2\" locator=\"Φ\">"
                          , "    <dataize meta=\"𝛿1.2\">⟦ λ ⤍ 𝜎1 ⟧</dataize>"
                          , "    <bind meta=\"𝛿2.2\">40-1C-00-00-00-00-00-00</bind>"
                          , "    <minted>𝜎2</minted>"
@@ -1415,7 +1415,7 @@ spec = do
             lines records
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                          , "<morph locator=\"Φ.y\">"
-                         , "  <evaluate λ=\"L_stand\" id=\"1\">"
+                         , "  <evaluate λ=\"L_stand\" id=\"1\" locator=\"Φ.y\">"
                          , "    <bind meta=\"𝑛1.1\">⟦ Δ ⤍ 01- ⟧</bind>"
                          , "    <known symbol=\"𝜎1\">01-</known>"
                          , "    <bind meta=\"𝑛2.1\">⟦ λ ⤍ 𝜎1 ⟧</bind>"
@@ -1441,7 +1441,7 @@ spec = do
             lines records
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                          , "<morph locator=\"Φ.y\">"
-                         , "  <evaluate λ=\"L_fork\" id=\"1\">"
+                         , "  <evaluate λ=\"L_fork\" id=\"1\" locator=\"Φ.y\">"
                          , "    <bind meta=\"𝑛1.1\">⟦ l ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧</bind>"
                          , "    <bind meta=\"𝑛2.1\">⟦ l ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧</bind>"
                          , "    <joined symbol=\"𝜎3\">𝜎1 𝜎2</joined>"
@@ -1467,7 +1467,7 @@ spec = do
             lines records
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                          , "<morph locator=\"Φ.y\">"
-                         , "  <evaluate λ=\"L_pair\" id=\"1\">"
+                         , "  <evaluate λ=\"L_pair\" id=\"1\" locator=\"Φ.y\">"
                          , "    <bind meta=\"𝑛1.1\">⟦ Δ ⤍ 01- ⟧</bind>"
                          , "    <minted>𝜎1</minted>"
                          , "    <minted>𝜎2</minted>"
@@ -1490,7 +1490,7 @@ spec = do
             lines records
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                          , "<morph locator=\"Φ.y\">"
-                         , "  <evaluate λ=\"L_keep\" id=\"1\">"
+                         , "  <evaluate λ=\"L_keep\" id=\"1\" locator=\"Φ.y\">"
                          , "    <bind meta=\"𝑛1.1\">⟦ Δ ⤍ 01- ⟧</bind>"
                          , "    <built meta=\"𝑛.1.1\">⟦ z ↦ ⟦ Δ ⤍ 01- ⟧ ⟧</built>"
                          , "    <answer meta=\"𝑛.1.2\">⟦ z ↦ ⟦ Δ ⤍ 01- ⟧ ⟧</answer>"
@@ -1510,9 +1510,9 @@ spec = do
             lines records
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                          , "<dataize locator=\"Φ\">"
-                         , "  <evaluate λ=\"L_number_plus\" id=\"1\">"
+                         , "  <evaluate λ=\"L_number_plus\" id=\"1\" locator=\"Φ\">"
                          , "    <bind meta=\"𝛿1.1\">40-14-00-00-00-00-00-00</bind>"
-                         , "    <evaluate λ=\"L_number_plus\" id=\"2\">"
+                         , "    <evaluate λ=\"L_number_plus\" id=\"2\" locator=\"Φ.a🌵1\">"
                          , "      <bind meta=\"𝛿1.2\">40-18-00-00-00-00-00-00</bind>"
                          , "      <bind meta=\"𝛿2.2\">40-1C-00-00-00-00-00-00</bind>"
                          , "      <minted>𝜎1</minted>"
@@ -1540,7 +1540,7 @@ spec = do
             lines records
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                          , "<dataize locator=\"Φ\">"
-                         , "  <evaluate λ=\"L_number_times\" id=\"1\">"
+                         , "  <evaluate λ=\"L_number_times\" id=\"1\" locator=\"Φ\">"
                          , "    <bind meta=\"𝛿1.1\">40-00-00-00-00-00-00-00</bind>"
                          , "    <bind meta=\"𝛿2.1\">40-08-00-00-00-00-00-00</bind>"
                          , "    <minted>𝜎1</minted>"
@@ -1581,7 +1581,7 @@ spec = do
             lines records
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                          , "<dataize locator=\"Φ\">"
-                         , "  <evaluate λ=\"L_number_times\" id=\"1\">"
+                         , "  <evaluate λ=\"L_number_times\" id=\"1\" locator=\"Φ\">"
                          , "    <bind meta=\"𝛿1.1\">40-00-00-00-00-00-00-00</bind>"
                          , "    <bind meta=\"𝛿2.1\">40-08-00-00-00-00-00-00</bind>"
                          , "    <minted>𝜎1</minted>"
@@ -1605,7 +1605,7 @@ spec = do
             lines records
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                          , "<morph locator=\"Φ.x\">"
-                         , "  <evaluate λ=\"L_pick\" id=\"1\">"
+                         , "  <evaluate λ=\"L_pick\" id=\"1\" locator=\"Φ.x\">"
                          , "    <bind meta=\"𝑛1.1\">⊥</bind>"
                          , "    <minted>𝜎1</minted>"
                          , "    <built meta=\"𝑛.1.1\">⟦ λ ⤍ 𝜎1 ⟧</built>"
@@ -1659,7 +1659,7 @@ spec = do
           records <- readUtf8 path
           lines records
             `shouldBe` [ "𝔻(Φ)"
-                       , "  𝔼(L_number_times)"
+                       , "  𝔼(L_number_times)  # Φ"
                        , "    𝛿1.1 := 40-00-00-00-00-00-00-00  # ξ.ρ"
                        , "    𝛿2.1 := 40-08-00-00-00-00-00-00  # ξ.x"
                        , "    𝑛.1.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )  # 𝑛"
@@ -1888,7 +1888,7 @@ spec = do
         records <- readUtf8 path
         lines records
           `shouldBe` [ "𝕄(Φ.φ)"
-                     , "  𝔼(L_number_plus)"
+                     , "  𝔼(L_number_plus)  # Φ.φ"
                      , "    𝛿1.1 := 40-14-00-00-00-00-00-00  # ξ.ρ"
                      , "    𝛿2.1 := 40-18-00-00-00-00-00-00  # ξ.x"
                      , "    𝑛.1.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )  # 𝑛"

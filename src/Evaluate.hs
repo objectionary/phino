@@ -97,7 +97,7 @@ symbol func form self univ state caller = case matched caller._symbolic func of
     unless (func `elem` caller._parked) (caller._saveEval (EvStuck caller._nesting func caller._judgment form))
     throwIO (Stuck func)
   Just entry -> do
-    caller._saveEval (EvFiring caller._nesting func)
+    caller._saveEval (EvFiring caller._nesting func caller._site)
     let ctx = caller{_nesting = caller._nesting + 1}
     (bound, dataized) <- foldM (down ctx) (substEmpty, state) entry._dataized
     (bound', morphed) <- foldM (through ctx) (bound, dataized) entry._morphed

@@ -104,6 +104,22 @@ data Steps = Steps
 -- around.
 data ReduceContext = ReduceContext
   { _locator :: Expression
+  , -- Where in the universe the term being reduced stands, which is what a
+    -- firing of 𝔼 is written under: the protocol names the entry that answered
+    -- and this names the part of the program the answer belongs to, since one
+    -- entry answers the same way wherever it is fired and only the site tells
+    -- two firings of it apart (#1302). It starts as the aim of the run itself
+    -- ('_locator', the '--locator' option, or the binding '--inside' mints) and
+    -- the '--deep' walk refines it as it enters a binding, so a λ fired inside
+    -- an object is written under the locator of that object. It is refined no
+    -- further than a locator reaches: the head of a dispatch and the argument
+    -- of an application stand under no attribute of any formation, so a firing
+    -- there is written under the nearest binding the walk entered, which is
+    -- where the term it fired against stands. It is kept apart from '_locator'
+    -- because that one is where a derivation is spliced back into the working
+    -- expression ('leadsTo', 'normalized'), and the walk reduces terms no
+    -- locator of the universe aims at.
+    _site :: Expression
   , _maxDepth :: Int
   , _maxCycles :: Int
   , _steps :: Steps
@@ -392,46 +408,59 @@ morph universe state ctx@ReduceContext{..} = do
 -- allows. Every entry is charged to the '--max-steps' budget, which is what
 -- bounds the walk.
 deepened :: Expression -> Expression -> State -> ReduceContext -> IO (Expression, State)
-deepened expr univ = go Nothing ExXi expr
+deepened expr univ state ctx = go (Just ctx._site) Nothing ExXi expr state ctx
   where
-    -- A term as it was written, together with what its free ξ stands for: the
-    -- formation the walk entered it from, without the binding it came from,
-    -- exactly the context the 'dot' rule hands a dispatched body. At the top
-    -- there is no such formation, so ξ stands for itself and contextualization
-    -- leaves the term alone.
-    go :: Maybe Attribute -> Expression -> Expression -> State -> ReduceContext -> IO (Expression, State)
-    go dispatched context term state' caller = do
-      ctx' <- deeper caller
-      (walked, walkedState) <- parts context term state' caller
+    -- A term as it was written, together with the locator naming it where one
+    -- does and with what its free ξ stands for: the formation the walk entered
+    -- it from, without the binding it came from, exactly the context the 'dot'
+    -- rule hands a dispatched body. At the top there is no such formation, so ξ
+    -- stands for itself and contextualization leaves the term alone, and the
+    -- locator is the one the whole run was aimed at.
+    go :: Maybe Expression -> Maybe Attribute -> Expression -> Expression -> State -> ReduceContext -> IO (Expression, State)
+    go standing dispatched context term state' caller = do
+      let here = sited standing caller
+      ctx' <- deeper here
+      (walked, walkedState) <- parts standing context term state' here
       (answer, answered) <- ctx'._fire dispatched (contextualize walked context) univ walkedState ctx'
       pure (fromMaybe walked answer, answered)
+    -- The context a term is walked in, aimed at the term itself where a locator
+    -- names it. Where none does, the aim stays where it was: a firing standing
+    -- deeper in a term than a locator reaches belongs to the last binding the
+    -- walk entered, and saying that is saying where it is (see '_site').
+    sited :: Maybe Expression -> ReduceContext -> ReduceContext
+    sited standing caller = maybe caller (\loc -> caller{_site = loc}) standing
     -- The parts of a term nothing fired on, walked one by one and put back
-    -- where they were, so the term keeps the shape it was written in.
-    parts :: Expression -> Expression -> State -> ReduceContext -> IO (Expression, State)
-    parts _ (ExFormation bds) state' caller = do
-      (entered, state'') <- bindings bds bds state' caller
+    -- where they were, so the term keeps the shape it was written in. Only a
+    -- binding of a formation carries the locator further: the head of a
+    -- dispatch and both sides of an application stand under no attribute, so
+    -- what they hold is entered with no locator of its own.
+    parts :: Maybe Expression -> Expression -> Expression -> State -> ReduceContext -> IO (Expression, State)
+    parts standing _ (ExFormation bds) state' caller = do
+      (entered, state'') <- bindings standing bds bds state' caller
       pure (ExFormation entered, state'')
-    parts context (ExDispatch target attr) state' caller = do
-      (entered, state'') <- go (Just attr) context target state' caller
+    parts _ context (ExDispatch target attr) state' caller = do
+      (entered, state'') <- go Nothing (Just attr) context target state' caller
       pure (ExDispatch entered attr, state'')
-    parts context (ExApplication target arg) state' caller = do
-      (entered, state'') <- go Nothing context target state' caller
+    parts _ context (ExApplication target arg) state' caller = do
+      (entered, state'') <- go Nothing Nothing context target state' caller
       (applied, state''') <- argument context arg state'' caller
       pure (ExApplication entered applied, state''')
-    parts _ term state' _ = pure (term, state')
+    parts _ _ term state' _ = pure (term, state')
     -- Walk the bindings of a formation left to right, threading the state
     -- through them. Only what the formation itself holds is entered: ρ names
     -- the object around it rather than one inside it, and a void, Δ or λ
-    -- binding carries no term to walk at all.
-    bindings :: [Binding] -> [Binding] -> State -> ReduceContext -> IO ([Binding], State)
-    bindings _ [] state' _ = pure ([], state')
-    bindings whole (BiTau attr body : rest) state' caller
+    -- binding carries no term to walk at all. A body of a formation the walk
+    -- can name is named by that locator and the attribute it is bound to, which
+    -- is the very locator '--locator' would aim a run of its own at.
+    bindings :: Maybe Expression -> [Binding] -> [Binding] -> State -> ReduceContext -> IO ([Binding], State)
+    bindings _ _ [] state' _ = pure ([], state')
+    bindings standing whole (BiTau attr body : rest) state' caller
       | attr /= AtRho = do
-          (entered, state'') <- go Nothing (scope attr whole) body state' caller
-          (others, state''') <- bindings whole rest state'' caller
+          (entered, state'') <- go (fmap (`ExDispatch` attr) standing) Nothing (scope attr whole) body state' caller
+          (others, state''') <- bindings standing whole rest state'' caller
           pure (BiTau attr entered : others, state''')
-    bindings whole (bd : rest) state' caller = do
-      (others, state'') <- bindings whole rest state' caller
+    bindings standing whole (bd : rest) state' caller = do
+      (others, state'') <- bindings standing whole rest state' caller
       pure (bd : others, state'')
     -- The context a binding's body is entered in: the formation without that
     -- binding, the very context 'dot' contextualizes a dispatched body in, so
@@ -446,10 +475,10 @@ deepened expr univ = go Nothing ExXi expr
     -- applies is walked by the caller and the argument it binds is walked here.
     argument :: Expression -> Argument -> State -> ReduceContext -> IO (Argument, State)
     argument context (ArTau attr arg) state' caller = do
-      (entered, state'') <- go Nothing context arg state' caller
+      (entered, state'') <- go Nothing Nothing context arg state' caller
       pure (ArTau attr entered, state'')
     argument context (ArAlpha alpha arg) state' caller = do
-      (entered, state'') <- go Nothing context arg state' caller
+      (entered, state'') <- go Nothing Nothing context arg state' caller
       pure (ArAlpha alpha entered, state'')
 
 -- The premise binding the given expression meta, if any. The conclusion of a
@@ -547,12 +576,15 @@ normalized expr seq ctx@ReduceContext{..} = do
 -- '⟦ x ↦ 6, ρ ↦ 5 ⟧.x', is not), so it is normalized against the extended
 -- universe before either judgment sees it. The context comes back aimed at that
 -- binding, so the caller hands the extended universe and the context it got
--- straight to 'dataize' or 'morph'.
+-- straight to 'dataize' or 'morph'. The site every firing is written under
+-- moves with the aim, so a λ function fired while such a term is being reduced
+-- is written under the synthetic binding it was bound to and not under whatever
+-- the run around it was aimed at (see '_site').
 insideUniverse :: Expression -> Expression -> ReduceContext -> IO (Expression, ReduceContext)
 insideUniverse expr univ ctx@ReduceContext{_buildTerm = buildTerm} = case univ of
   ExFormation bds -> do
     (TeAttribute attr) <- buildTerm "random-tau" [] substEmpty
-    let aiming = ctx{_locator = ExDispatch ExRoot attr}
+    let aiming = ctx{_locator = ExDispatch ExRoot attr, _site = ExDispatch ExRoot attr}
         synthetic = ExFormation (BiTau attr expr : bds)
     (normal, _) <- normalized expr ((synthetic, Nothing) :| []) aiming
     pure (ExFormation (BiTau attr normal : bds), aiming)
