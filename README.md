@@ -294,7 +294,7 @@ $ phino dataize --symbolic=atoms.yaml --protocol=atoms.txt --quiet \
     --sweet --hide-rho sum.phi
 $ cat atoms.txt
 𝔻(Φ)
-  𝔼(L_number_plus)
+  𝔼(L_number_plus)  # Φ
     𝛿1.1 := 40-14-00-00-00-00-00-00  # ξ.ρ
     𝛿2.1 := 40-18-00-00-00-00-00-00  # ξ.x
     𝑛.1.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )  # 𝑛
@@ -304,12 +304,13 @@ $ cat atoms.txt
 <!-- markdownlint-enable MD013 -->
 
 `𝔻(…)` is the run and the term it was aimed at, `𝕄(…)` where the run is a
-morphing, and `𝔼(…)` is one firing, named by the entry that answered it. The
-firings are numbered across the whole run, in the order they open, so `𝛿1.2`
-is the value bound to `𝛿1` by the second firing of the run, whichever λ
-function that was, `𝑛1.2` the same for a `morph` meta, and `𝑛.3.2` the answer
-of the third firing, so `𝑛1.2 := 𝑛.3.2` reads "the `𝑛1` of this firing is what
-the third firing answered". One firing binds a meta once and no two firings
+morphing, and `𝔼(…)` is one firing, named by the entry that answered it and
+commented with the site it was fired at. The firings are numbered across the
+whole run, in the order they open, so `𝛿1.2` is the value bound to `𝛿1` by
+the second firing of the run, whichever λ function that was, `𝑛1.2` the same
+for a `morph` meta, and `𝑛.3.2` the answer of the third firing, so
+`𝑛1.2 := 𝑛.3.2` reads "the `𝑛1` of this firing is what the third firing
+answered". One firing binds a meta once and no two firings
 share a number, so every one of these names stands on exactly one line of the
 file and a line naming another one points at it and no other.
 
@@ -337,6 +338,20 @@ binding the term that carries them, and that line is a fact and no assignment:
 `𝜎44` names answers those bytes. Nothing binds bytes to a `𝜎`, since it is
 neither a datum nor a term. A consumer reading the protocol back treats a
 symbol with such a fact as a constant and every other symbol as an unknown.
+
+The site of a firing is a locator, written as a comment the way an operand
+line writes the term it came from. It is where in the program the firing
+belongs: the term the run was aimed at, so `Φ` for a run that was aimed at
+nothing in particular, and, under `--deep`, the binding the walk had entered
+when the λ function fired, since that walk reduces every part of the program
+in turn and one entry answers the same way wherever it is fired. A locator
+names a binding and reaches no further, so a firing standing deeper inside a
+term than that — under a dispatch, or in the argument of an application — is
+written under the last binding the walk entered, which is the smallest part of
+the program a reader can aim a run of their own at. An operand of a firing is
+reduced bound to a synthetic attribute of the universe (see `--inside` below),
+so a λ function fired while it came down is written under that attribute and
+not under the site of the firing that asked for it.
 
 An operand line ends in the term it was reduced from, written as a comment
 after two spaces and `#`. The value alone says what the meta was bound to and
@@ -368,7 +383,7 @@ $ phino dataize --symbolic=atoms.yaml --protocol=atoms.txt --quiet \
 [ERROR]: No entry of --symbolic answers the λ function 'L_number_nope'
 $ cat atoms.txt
 𝔻(Φ)
-  𝔼(L_number_plus)
+  𝔼(L_number_plus)  # Φ
     𝛿1.1 := 40-14-00-00-00-00-00-00  # ξ.ρ
     𝛿2.1 := 40-18-00-00-00-00-00-00  # ξ.x
     𝑛.1.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )  # 𝑛
@@ -431,27 +446,27 @@ $ phino morph --deep --symbolic=atoms.yaml --locator=Q.demo.a \
     --protocol=fork.txt --quiet --sweet --hide-rho fork.phi
 $ cat fork.txt
 𝕄(Φ.demo.a)
-  𝔼(L_gt)
+  𝔼(L_gt)  # Φ.demo.a.φ
     𝛿1.1 := 𝔻(⟦ λ ⤍ 𝜎1 ⟧)  # ξ.ρ
     𝛿2.1 := 00-00-00-00-00-00-00-00  # ξ.x
     𝑛.1.1 := Φ.bool( if ↦ ⟦ λ ⤍ L_fork, then ↦ ∅, else ↦ ∅, φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧ )  # 𝑛
     𝑛.1.2 := ⟦ if ↦ ⟦ λ ⤍ L_fork, then ↦ ∅, else ↦ ∅, φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧ ⟧  # 𝕄(𝑛.1.1)
-  𝔼(L_plus)
+  𝔼(L_plus)  # Φ.demo.a.φ
     𝛿1.2 := 𝔻(⟦ λ ⤍ 𝜎1 ⟧)  # ξ.ρ
     𝛿2.2 := 3F-F0-00-00-00-00-00-00  # ξ.x
     𝑛.2.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎3 ⟧ )  # 𝑛
     𝑛.2.2 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎3 ⟧, plus(x) ↦ ⟦ λ ⤍ L_plus ⟧, gt(x) ↦ ⟦ λ ⤍ L_gt ⟧ ⟧  # 𝕄(𝑛.2.1)
-  𝔼(L_plus)
+  𝔼(L_plus)  # Φ.demo.a.φ
     𝛿1.3 := 𝔻(⟦ λ ⤍ 𝜎1 ⟧)  # ξ.ρ
     𝛿2.3 := 𝔻(⟦ λ ⤍ 𝜎3 ⟧)  # ξ.x
     𝑛.3.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎4 ⟧ )  # 𝑛
     𝑛.3.2 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎4 ⟧, plus(x) ↦ ⟦ λ ⤍ L_plus ⟧, gt(x) ↦ ⟦ λ ⤍ L_gt ⟧ ⟧  # 𝕄(𝑛.3.1)
-  𝔼(L_plus)
+  𝔼(L_plus)  # Φ.demo.a.φ
     𝛿1.4 := 𝔻(⟦ λ ⤍ 𝜎1 ⟧)  # ξ.ρ
     𝛿2.4 := 𝔻(⟦ λ ⤍ 𝜎1 ⟧)  # ξ.x
     𝑛.4.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎5 ⟧ )  # 𝑛
     𝑛.4.2 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎5 ⟧, plus(x) ↦ ⟦ λ ⤍ L_plus ⟧, gt(x) ↦ ⟦ λ ⤍ L_gt ⟧ ⟧  # 𝕄(𝑛.4.1)
-  𝔼(L_fork)
+  𝔼(L_fork)  # Φ.demo.a.φ
     𝛿1.5 := 𝔻(⟦ λ ⤍ 𝜎2 ⟧)  # ξ.φ
     𝑛1.5 := 𝑛.3.2  # ξ.then
     𝑛2.5 := 𝑛.4.2  # ξ.else
@@ -459,7 +474,7 @@ $ cat fork.txt
     𝑛3.5 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎6 ⟧, plus(x) ↦ ⟦ λ ⤍ L_plus ⟧, gt(x) ↦ ⟦ λ ⤍ L_gt ⟧ ⟧  # [𝑛1, 𝑛2]
     𝑛.5.1 := 𝑛3.5  # 𝑛
     𝑛.5.2 := 𝑛3.5  # 𝕄(𝑛.5.1)
-  𝔼(L_plus)
+  𝔼(L_plus)  # Φ.demo.a.φ
     𝛿1.6 := 𝔻(⟦ λ ⤍ 𝜎6 ⟧)  # ξ.ρ
     𝛿2.6 := 40-14-00-00-00-00-00-00  # ξ.x
     𝑛.6.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎7 ⟧ )  # 𝑛
@@ -485,6 +500,12 @@ Were the fork to answer one of its branches instead, the value of the other
 would be minted and never consumed, and `foo` would read as a program that
 computes a condition, computes both branches and then drops the branch point.
 
+All six firings stand under `Φ.demo.a.φ`, which is as near as a locator gets
+to any of them: the walk entered the `φ` of the formation `Φ.demo.a` morphs to,
+and everything under it — the dispatches of the chain, the arguments of `if` —
+stands under no attribute of any formation, so the binding the walk had entered
+is what the protocol writes them under.
+
 A firing that happened while an operand of another was being reduced stands one
 level deeper, under the firing that asked for it. Here it never happens,
 because deep morphing reduces both branches where they sit as arguments of
@@ -504,7 +525,7 @@ $ phino dataize --symbolic=atoms.yaml --protocol=atoms.xml --quiet \
 $ cat atoms.xml
 <?xml version="1.0" encoding="UTF-8"?>
 <dataize locator="Φ">
-  <evaluate λ="L_number_plus" id="1">
+  <evaluate λ="L_number_plus" id="1" locator="Φ">
     <bind meta="𝛿1.1">40-14-00-00-00-00-00-00</bind>
     <bind meta="𝛿2.1">40-18-00-00-00-00-00-00</bind>
     <minted>𝜎1</minted>
@@ -517,7 +538,9 @@ $ cat atoms.xml
 The root is the run itself, named after the judgment it ran — `<dataize>` for a
 𝔻, `<morph>` for a 𝕄 — with `locator` naming the term it was aimed at, which is
 what the text format opens with as `𝔻(Φ)`. `<evaluate>` is one firing of 𝔼, `λ`
-naming the entry that answered it and `id` numbering it within the run.
+naming the entry that answered it, `id` numbering it within the run and
+`locator` naming the site it was fired at, which the text format writes as the
+comment of its line.
 `<bind>` is one meta the firing bound, `meta` naming it the same way the text
 format names it, counter and all, and the element holding the value it took: a
 term where the operand was reduced with 𝕄, the datum itself where a `dataize`
@@ -581,7 +604,7 @@ $ phino dataize --symbolic=atoms.yaml --protocol=atoms.xml --quiet \
 $ cat atoms.xml
 <?xml version="1.0" encoding="UTF-8"?>
 <dataize locator="Φ">
-  <evaluate λ="L_number_plus" id="1">
+  <evaluate λ="L_number_plus" id="1" locator="Φ">
     <bind meta="𝛿1.1">40-14-00-00-00-00-00-00</bind>
     <bind meta="𝛿2.1">40-18-00-00-00-00-00-00</bind>
     <minted>𝜎1</minted>
@@ -657,12 +680,12 @@ $ phino dataize --symbolic=atoms.yaml --partial --protocol=atoms.txt --quiet \
     --sweet --hide-rho partial.phi
 $ cat atoms.txt
 𝔻(Φ)
-  𝔼(L_number_times)
+  𝔼(L_number_times)  # Φ
     𝛿1.1 := 40-00-00-00-00-00-00-00  # ξ.ρ
     𝛿2.1 := 40-08-00-00-00-00-00-00  # ξ.x
     𝑛.1.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )  # 𝑛
     𝑛.1.2 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧, as-bool ↦ ⟦ λ ⤍ L_number_as_bool ⟧ ⟧  # 𝕄(𝑛.1.1)
-  𝔼(L_number_plus)
+  𝔼(L_number_plus)  # Φ
     𝛿1.2 := 𝔻(⟦ λ ⤍ 𝜎1 ⟧)  # ξ.ρ
     𝛿2.2 := 40-10-00-00-00-00-00-00  # ξ.x
     𝑛.2.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ )  # 𝑛

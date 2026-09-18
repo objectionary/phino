@@ -19,6 +19,6 @@ result: >
 protocol: |
   𝕄(Φ)
     ?(L_none)  # 𝕄(⟦ λ ⤍ L_none ⟧)
-    𝔼(L_answers)
+    𝔼(L_answers)  # Φ.y
       𝑛.1.1 := ⟦ foo ↦ ⟦⟧, λ ⤍ 𝜎1 ⟧  # 𝑛
       𝑛.1.2 := ⟦ foo ↦ ⟦⟧, λ ⤍ 𝜎1 ⟧  # 𝕄(𝑛.1.1)

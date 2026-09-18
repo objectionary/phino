@@ -101,9 +101,10 @@ opened Dataization = "dataize"
 -- One line of the protocol the '--protocol' option writes, which is a tree of
 -- the firings of the Evaluation function 𝔼 rather than a list of them. The run
 -- itself opens it — '𝕄(Q.φ)' for a morphing, '𝔻(Q)' for a dataization — and
--- under it stands one block per firing, '𝔼(L_number_plus)', naming the entry
--- that answered. Inside a block stand the operands the entry bound — each with
--- the term it was reduced from — whatever a 'symbolize' line of it knows about
+-- under it stands one block per firing, '𝔼(L_number_plus)  # Φ.φ', naming the
+-- entry that answered and the site of the program it was fired at (#1302).
+-- Inside a block stand the operands the entry bound — each with the term it
+-- was reduced from — whatever a 'symbolize' line of it knows about
 -- a symbol it minted, the terms a 'join' line of it made one of and what it
 -- knows about the symbol they were joined into, and the term it answered with,
 -- one to a line, and any firing an operand took while it was being reduced,
@@ -116,8 +117,15 @@ data Evaluation
   = -- The run and the term it was aimed at.
     EvRun Judgment T.Text
   | -- One firing of the entry under that key, at the depth its nesting gives
-    -- it.
-    EvFiring Int T.Text
+    -- it, together with the site it was fired at: the locator of the part of
+    -- the program the firing belongs to, which is the aim of the run refined by
+    -- the '--deep' walk as it enters a binding (see '_site' in 'Morph'). The
+    -- key says which entry answered and one entry answers the same way wherever
+    -- it is fired, so the site is the one thing telling two firings of it apart
+    -- by something other than the order they came in, and it is written as the
+    -- comment of the line the way a stuck site carries the formation it was
+    -- asked about (#1302).
+    EvFiring Int T.Text Expression
   | -- A λ function no entry of the '--symbolic' file answers, at the depth the
     -- firing of it would have stood at, together with the judgment that asked
     -- for the firing and the formation 𝔼 was fired against, as it was handed
@@ -271,13 +279,14 @@ saveEval handle cursor render salted report = do
     written :: Evaluation -> Protocol -> IO (Protocol, Maybe String)
     written (EvRun judgment locator) protocol =
       pure (protocol, Just (printf "%s(%s)" (letter judgment) (T.unpack locator)))
-    written (EvFiring depth key) protocol =
+    written (EvFiring depth key site) protocol = do
+      locator <- render site
       pure
         ( protocol
             { _fired = firings
             , _open = Map.insert depth firings protocol._open
             }
-        , Just (indented depth (printf "𝔼(%s)" (T.unpack key)))
+        , Just (indented depth (printf "𝔼(%s)  # %s" (T.unpack key) locator))
         )
       where
         firings :: Int
@@ -409,14 +418,15 @@ saveEvalXml handle cursor render report = do
           , printf "<%s locator=\"%s\">" (opened judgment) (quoted locator)
           ]
         )
-    elements (EvFiring depth key) nesting =
+    elements (EvFiring depth key site) nesting = do
+      locator <- render site
       pure
         ( nesting
             { _fires = fires
             , _openedAt = Map.insert depth fires nesting._openedAt
             , _closing = (depth, "evaluate") : kept
             }
-        , closers ++ [indented depth (printf "<evaluate λ=\"%s\" id=\"%d\">" (quoted key) fires)]
+        , closers ++ [indented depth (printf "<evaluate λ=\"%s\" id=\"%d\" locator=\"%s\">" (quoted key) fires (escapeXML locator))]
         )
       where
         (kept, closers) = closed depth nesting._closing
