@@ -813,7 +813,13 @@ name `deep`, so `--sequence` shows it, and `--max-steps` bounds the walk.
 Two things are left alone. A λ no entry answers is not fired at all, so
 `--deep` stays as total as 𝕄 itself and needs no `--partial`; a λ function that
 gets stuck deeper on a spine still fails the run, and `--partial` parks it,
-leaving that term as it was written. A formation still holding a void
+leaving that term as it was written. A firing the walk does make and cannot
+finish — one whose operand never comes down to data, because a λ nothing
+answers stands in it — is parked by `--partial` the same way: the binding it
+stood in is left as it was written, the walk enters the next one, and the
+protocol shows the firing with nothing bound under it. One entry nothing can
+answer therefore taints its own binding and not the whole run. A formation
+still holding a void
 binding is not fired either: the void is an argument the program has not given
 yet, so `times(x) ↦ ⟦ λ ⤍ L_number_times ⟧` is a method waiting to be applied,
 not an application waiting to be computed. Walking the whole program therefore

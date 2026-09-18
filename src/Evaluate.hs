@@ -108,9 +108,15 @@ symbol func form self univ state caller = case matched caller._symbolic func of
     -- Bring one 'dataize' operand down through 𝔻 and bind the bytes meta that
     -- names it. An operand 𝔻 could not bring down to data — a site '_partial'
     -- parked — leaves the firing with nothing to bind, so it gets stuck like a
-    -- λ function no entry answers at all. Every symbol dataizes to the very
-    -- same datum, so the protocol is told which unknown that datum was
-    -- manufactured for rather than the datum itself (see 'State').
+    -- λ function no entry answers at all, and gets stuck on the very name that
+    -- parked the operand rather than on the λ function of this firing: an entry
+    -- answers this one, so blaming it would name a λ function the '--symbolic'
+    -- file carries where the one nothing answers stands one reduction deeper
+    -- (#1288). The name travels back in the state the parked run hands over,
+    -- since the signal it was made of stayed inside that run (see '_stuck').
+    -- Every symbol dataizes to the very same datum, so the protocol is told
+    -- which unknown that datum was manufactured for rather than the datum
+    -- itself (see 'State').
     --
     -- The reduction runs on a universe of its own, so a signal escaping it
     -- carries that universe's derivation and not the spine's; 'unparked' drops
@@ -119,9 +125,9 @@ symbol func form self univ state caller = case matched caller._symbolic func of
     -- reduced under.
     down :: ReduceContext -> (Subst, State) -> (Meta, Expression) -> IO (Subst, State)
     down ctx (bound, state') (meta, term) = do
-      (value, state'') <- unparked (ctx._reduce univ ctx (operand term) state'{_manufactured = Nothing})
+      (value, state'') <- unparked (ctx._reduce univ ctx (operand term) state'{_manufactured = Nothing, _stuck = Nothing})
       case value of
-        Nothing -> throwIO (Stuck func)
+        Nothing -> throwIO (Stuck (fromMaybe func state''._stuck))
         Just bytes -> do
           ctx._saveEval (EvData ctx._nesting meta._spelling term (maybe (Right bytes) Left state''._manufactured))
           bound' <- bind meta (MvBytes bytes) bound
@@ -254,24 +260,13 @@ symbol func form self univ state caller = case matched caller._symbolic func of
 fired :: Maybe Attribute -> Expression -> Expression -> State -> ReduceContext -> IO (Maybe Expression, State)
 fired dispatched term univ state caller = do
   ctx <- deeper caller
-  outcome <- try (answering ctx)
-  case outcome of
-    Right answer -> pure answer
-    Left failure -> parked failure
+  morphed <- try (reduced ctx)
+  case morphed of
+    Right (ExFormation bds, state')
+      | demanded bds -> maybe (pure (Nothing, state')) (evaluated ctx state' (ExFormation bds)) (saturated bds)
+    Right (_, state') -> pure (Nothing, state')
+    Left failure -> parked state failure
   where
-    -- The term as 𝕄 leaves it and the firing of what 𝕄 reached, both under the
-    -- one guard: an entry brings its own operands down to data while it fires,
-    -- so a site the walk cannot reduce is as likely to turn up in the firing as
-    -- in the morphing before it — an operand that loops or never comes down
-    -- leaves the entry with nothing to bind and gets it stuck (see 'down',
-    -- #1290).
-    answering :: ReduceContext -> IO (Maybe Expression, State)
-    answering ctx = do
-      (morphed, state') <- reduced ctx
-      case morphed of
-        ExFormation bds
-          | demanded bds -> maybe (pure (Nothing, state')) (evaluated ctx state' (ExFormation bds)) (saturated bds)
-        _ -> pure (Nothing, state')
     -- Whether the dispatch the term stands under demands the λ of the formation
     -- 𝕄 reached. 'ml' fires that λ only where the dispatched attribute is none
     -- of the formation's own, since 'dot' resolves the dispatch before 'ml' is
@@ -294,30 +289,47 @@ fired dispatched term univ state caller = do
     -- answers is not fired at all, which is what keeps the walk as total as 𝕄
     -- itself. The firing reports itself to '_saveEval', so the protocol and the
     -- program agree on what was answered.
+    --
+    -- A firing that cannot be made — an operand of the entry that never came
+    -- down to data, above all — is parked exactly as a term 𝕄 could not reduce
+    -- is, and for the same reason: the walk meets every λ function a program
+    -- declares and one of them answering nothing is no failure of the run but a
+    -- part of it phino cannot decide. Without this the signal left the walk
+    -- altogether and the binding after the one it stopped on was never entered,
+    -- so a single entry nothing could answer ended a run over a whole object
+    -- model (#1288). The state it had reached goes back rather than the one the
+    -- walk came in with, since the firings before it are done and the symbols
+    -- they minted are spent.
     evaluated :: ReduceContext -> State -> Expression -> (T.Text, Expression) -> IO (Maybe Expression, State)
     evaluated ctx state' form (func, self)
       | isNothing (matched ctx._symbolic func) = pure (Nothing, state')
       | otherwise = do
-          (answer, answered) <- symbol func form self univ state' ctx
-          (again, reached) <- fired dispatched answer univ answered ctx
-          pure (Just (fromMaybe answer again), reached)
+          made <- try (symbol func form self univ state' ctx)
+          case made of
+            Right (answer, answered) -> do
+              (again, reached) <- fired dispatched answer univ answered ctx
+              pure (Just (fromMaybe answer again), reached)
+            Left failure -> parked state' failure
     -- A site the walk cannot reduce — a λ function whose operands never came
     -- down to data, or one the step budget ran out on — is left as it was
     -- written and the walk goes on, which is what a partial morphing is: phino
     -- stops where it cannot decide rather than failing the whole run. The state
     -- the parked site had reached travels back, so the symbols it minted before
-    -- it stopped are never minted again; the chain it parked on is dropped,
-    -- since that chain is the walk's and not the spine's.
-    parked :: ReduceException -> IO (Maybe Expression, State)
-    parked (StuckAt _ _ reached) | caller._partial = pure (Nothing, reached)
-    parked (OutOfStepsAt _ _ reached) | caller._partial = pure (Nothing, reached)
-    parked (Stuck _) | caller._partial = pure (Nothing, state)
-    parked (OutOfSteps _) | caller._partial = pure (Nothing, state)
-    parked (LoopingAt _ _ reached) = pure (Nothing, reached)
-    parked (Looping _) = pure (Nothing, state)
-    parked (StuckAt func _ _) = throwIO (Stuck func)
-    parked (OutOfStepsAt limit _ _) = throwIO (OutOfSteps limit)
-    parked failure = throwIO failure
+    -- it stopped are never minted again; a signal carrying none of its own is
+    -- answered with the state the caller reached before it was raised, which is
+    -- the walk's state where 𝕄 was asked and the firing's where a firing was
+    -- made. The chain it parked on is dropped, since that chain is the walk's
+    -- and not the spine's.
+    parked :: State -> ReduceException -> IO (Maybe Expression, State)
+    parked _ (StuckAt _ _ reached) | caller._partial = pure (Nothing, reached)
+    parked _ (OutOfStepsAt _ _ reached) | caller._partial = pure (Nothing, reached)
+    parked reached (Stuck _) | caller._partial = pure (Nothing, reached)
+    parked reached (OutOfSteps _) | caller._partial = pure (Nothing, reached)
+    parked _ (LoopingAt _ _ reached) = pure (Nothing, reached)
+    parked reached (Looping _) = pure (Nothing, reached)
+    parked _ (StuckAt func _ _) = throwIO (Stuck func)
+    parked _ (OutOfStepsAt limit _ _) = throwIO (OutOfSteps limit)
+    parked _ failure = throwIO failure
 
 -- A term of the '--symbolic' file as 𝕄 leaves it: an entry's answer on its way
 -- out of a firing, and the term the deep walk was handed on its way in. 𝕄 takes

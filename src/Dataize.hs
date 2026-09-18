@@ -65,7 +65,7 @@ dataize universe state ctx@ReduceContext{..} = do
   result <- try (dataize' (expr, (universe, Nothing) :| []) universe state ctx)
   case result of
     Right ((bytes, seq), state') -> pure (Dataized bytes, reverse seq, state')
-    Left (StuckAt _ seq parked) | _partial -> pure (Residual (fst (NE.head seq)), reverse (NE.toList seq), parked)
+    Left (StuckAt func seq parked) | _partial -> pure (Residual (fst (NE.head seq)), reverse (NE.toList seq), parked{_stuck = Just func})
     Left (OutOfStepsAt _ seq parked) | _partial -> pure (Residual (fst (NE.head seq)), reverse (NE.toList seq), parked)
     Left (LoopingAt _ seq parked) | _partial -> pure (Residual (fst (NE.head seq)), reverse (NE.toList seq), parked)
     Left failure -> throwIO (failure :: ReduceException)

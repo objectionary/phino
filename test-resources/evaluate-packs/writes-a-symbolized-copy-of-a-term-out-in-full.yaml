@@ -1,0 +1,29 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+# A name of the protocol stands for the very term it was given to and for no
+# other. A 'symbolize' line stands the data of a term into unknowns without
+# touching what the term carries first, so the copy it binds and the term it
+# was made of open with the same 𝜎 and differ further down — here 𝑛1 carries
+# '02-' under 'k' where 𝑛2 carries the symbol that datum was stood into. The
+# line of 𝑛2 writes the term out, since naming it after 𝑛1 would say nothing
+# was replaced on the very line that replaced something, while the '𝔻(…) == …'
+# above it says something was (#1292).
+symbolic: |
+  - λ: L_stand
+    morph:
+      𝑛1: $.b
+    symbolize:
+      𝑛2: 𝑛1
+    𝑛: ⟦ l ↦ 𝑛2 ⟧
+location: 'Q.y'
+input: '⟦ y ↦ ⟦ b ↦ ⟦ λ ⤍ 𝜎7, k ↦ ⟦ Δ ⤍ 02- ⟧ ⟧, λ ⤍ L_stand ⟧.l ⟧'
+protocol: |
+  𝕄(Φ.y)
+    𝔼(L_stand)  # 𝕄(Φ.y)
+      𝑛1.1 := ⟦ λ ⤍ 𝜎7, k ↦ ⟦ Δ ⤍ 02- ⟧, ρ ↦ ⟦ b ↦ ⟦ λ ⤍ 𝜎7, k ↦ ⟦ Δ ⤍ 02- ⟧ ⟧ ⟧ ⟧  # 𝕄(ξ.b)
+      𝔻(⟦ λ ⤍ 𝜎8 ⟧) == 02-
+      𝑛2.1 := ⟦ λ ⤍ 𝜎7, k ↦ ⟦ λ ⤍ 𝜎8 ⟧, ρ ↦ ⟦ b ↦ ⟦ λ ⤍ 𝜎7, k ↦ ⟦ Δ ⤍ 02- ⟧ ⟧ ⟧ ⟧  # 𝑛1
+      𝑛.1.1 := ⟦ l ↦ ⟦ λ ⤍ 𝜎7, k ↦ ⟦ λ ⤍ 𝜎8 ⟧, ρ ↦ ⟦ b ↦ ⟦ λ ⤍ 𝜎7, k ↦ ⟦ Δ ⤍ 02- ⟧ ⟧ ⟧ ⟧ ⟧  # 𝑛
+      𝑛.1.2 := ⟦ l ↦ ⟦ λ ⤍ 𝜎7, k ↦ ⟦ λ ⤍ 𝜎8 ⟧, ρ ↦ ⟦ b ↦ ⟦ λ ⤍ 𝜎7, k ↦ ⟦ Δ ⤍ 02- ⟧ ⟧ ⟧ ⟧ ⟧  # 𝕄(𝑛.1.1)
