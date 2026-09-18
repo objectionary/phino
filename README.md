@@ -881,8 +881,9 @@ with:
 ```bash
 $ cat cyc.phi
 ⟦ cyc ↦ ⟦ x ↦ ∅, φ ↦ Φ.cyc( ξ.x ) ⟧, t ↦ Φ.cyc( ⟦⟧ ) ⟧
-$ phino dataize --locator='Q.t' --acyclic --partial --hide-rho --flat cyc.phi
-⟦ cyc ↦ ⟦ x ↦ ∅, φ ↦ Φ.cyc( α0 ↦ ξ.x ) ⟧, t ↦ ⟦ x ↦ ⟦⟧, φ ↦ Φ.cyc( α0 ↦ ξ.x ) ⟧ ⟧
+$ phino dataize --locator='Q.t' --acyclic --partial \
+    --sweet --hide-rho --flat cyc.phi
+⟦ cyc(x) ↦ ⟦ φ ↦ Φ.cyc( x ) ⟧, t ↦ ⟦ x ↦ ⟦⟧, φ ↦ Φ.cyc( x ) ⟧ ⟧
 ```
 
 𝔻 insists on bytes and a parked term carries none, so under `dataize` the flag
