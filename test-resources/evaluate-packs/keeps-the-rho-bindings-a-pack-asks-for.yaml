@@ -1,0 +1,23 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# Every pack spells its terms the way '--hide-rho' spells them, since the ρ
+# chain is the universe an entry was fired inside and not the answer it gave.
+# A pack saying 'hide-rho: false' asks for the other spelling, and then the
+# result and every term of the protocol carry the ρ the calculus put there —
+# here the parent of the operand 𝕄 was asked to reduce.
+symbolic: |
+  - λ: L_keep
+    morph:
+      𝑛1: $.x
+    𝑛: ⟦ z ↦ 𝑛1 ⟧
+location: 'Q.y'
+hide-rho: false
+input: '⟦ y ↦ ⟦ x ↦ ⟦ λ ⤍ 𝜎1 ⟧, λ ⤍ L_keep ⟧.z ⟧'
+result: '⟦ λ ⤍ 𝜎1, ρ ↦ ⟦ x ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧ ⟧'
+protocol: |
+  𝕄(Φ.y)
+    𝔼(L_keep)  # 𝕄(Φ.y)
+      𝑛1.1 := ⟦ λ ⤍ 𝜎1, ρ ↦ ⟦ x ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧ ⟧  # 𝕄(ξ.x)
+      𝑛.1.1 := ⟦ z ↦ ⟦ λ ⤍ 𝜎1, ρ ↦ ⟦ x ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧ ⟧ ⟧  # 𝑛
+      𝑛.1.2 := ⟦ z ↦ ⟦ λ ⤍ 𝜎1, ρ ↦ ⟦ x ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧ ⟧ ⟧  # 𝕄(𝑛.1.1)

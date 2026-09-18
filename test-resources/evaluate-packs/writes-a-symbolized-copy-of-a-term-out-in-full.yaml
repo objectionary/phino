@@ -1,7 +1,6 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 # SPDX-License-Identifier: MIT
 ---
-# yamllint disable rule:line-length
 # A name of the protocol stands for the very term it was given to and for no
 # other. A 'symbolize' line stands the data of a term into unknowns without
 # touching what the term carries first, so the copy it binds and the term it
@@ -24,8 +23,8 @@ input: '⟦ y ↦ ⟦ b ↦ ⟦ λ ⤍ 𝜎7, φ ↦ ⟦ Δ ⤍ 02- ⟧ ⟧, λ 
 protocol: |
   𝕄(Φ.y)
     𝔼(L_stand)  # 𝕄(Φ.y)
-      𝑛1.1 := ⟦ λ ⤍ 𝜎7, φ ↦ ⟦ Δ ⤍ 02- ⟧, ρ ↦ ⟦ b ↦ ⟦ λ ⤍ 𝜎7, φ ↦ ⟦ Δ ⤍ 02- ⟧ ⟧ ⟧ ⟧  # 𝕄(ξ.b)
+      𝑛1.1 := ⟦ λ ⤍ 𝜎7, φ ↦ ⟦ Δ ⤍ 02- ⟧ ⟧  # 𝕄(ξ.b)
       𝔻(⟦ λ ⤍ 𝜎8 ⟧) == 02-
-      𝑛2.1 := ⟦ λ ⤍ 𝜎7, φ ↦ ⟦ λ ⤍ 𝜎8 ⟧, ρ ↦ ⟦ b ↦ ⟦ λ ⤍ 𝜎7, φ ↦ ⟦ Δ ⤍ 02- ⟧ ⟧ ⟧ ⟧  # 𝑛1
-      𝑛.1.1 := ⟦ l ↦ ⟦ λ ⤍ 𝜎7, φ ↦ ⟦ λ ⤍ 𝜎8 ⟧, ρ ↦ ⟦ b ↦ ⟦ λ ⤍ 𝜎7, φ ↦ ⟦ Δ ⤍ 02- ⟧ ⟧ ⟧ ⟧ ⟧  # 𝑛
-      𝑛.1.2 := ⟦ l ↦ ⟦ λ ⤍ 𝜎7, φ ↦ ⟦ λ ⤍ 𝜎8 ⟧, ρ ↦ ⟦ b ↦ ⟦ λ ⤍ 𝜎7, φ ↦ ⟦ Δ ⤍ 02- ⟧ ⟧ ⟧ ⟧ ⟧  # 𝕄(𝑛.1.1)
+      𝑛2.1 := ⟦ λ ⤍ 𝜎7, φ ↦ ⟦ λ ⤍ 𝜎8 ⟧ ⟧  # 𝑛1
+      𝑛.1.1 := ⟦ l ↦ ⟦ λ ⤍ 𝜎7, φ ↦ ⟦ λ ⤍ 𝜎8 ⟧ ⟧ ⟧  # 𝑛
+      𝑛.1.2 := ⟦ l ↦ ⟦ λ ⤍ 𝜎7, φ ↦ ⟦ λ ⤍ 𝜎8 ⟧ ⟧ ⟧  # 𝕄(𝑛.1.1)

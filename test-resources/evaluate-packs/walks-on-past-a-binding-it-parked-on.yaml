@@ -13,9 +13,7 @@ partial: true
 input: >
   ⟦ x ↦ ⟦ λ ⤍ L_none ⟧.foo,
     y ↦ ⟦ λ ⤍ L_answers ⟧.foo ⟧
-result: >
-  ⟦ x ↦ ⟦ λ ⤍ L_none, ρ ↦ ∅ ⟧.foo,
-    y ↦ ⟦ λ ⤍ L_answers, ρ ↦ ∅ ⟧.foo, ρ ↦ ∅ ⟧
+result: '⟦ x ↦ ⟦ λ ⤍ L_none ⟧.foo, y ↦ ⟦ λ ⤍ L_answers ⟧.foo ⟧'
 protocol: |
   𝕄(Φ)
     ?(L_none)  # 𝕄(⟦ λ ⤍ L_none ⟧)

@@ -15,6 +15,7 @@ module Fixtures
   , primitives
   , readUtf8
   , recorded
+  , recorded'
   , withLambdas
   , withLambdasOf
   , withTemp
@@ -118,19 +119,27 @@ primitives src =
 -- bytes a user of the option reads back — the indentation of every record, the
 -- order they stand in and the line the file ends on included.
 recorded :: (SaveEvalFunc -> IO a) -> IO (a, String)
-recorded action =
+recorded = recorded' False
+
+-- The same, with the ρ bindings of every term dropped when asked, the way
+-- '--hide-rho' drops them: a caller reading a protocol back for the terms an
+-- entry answered with has no business reading the universe those terms were
+-- fired inside, and the flag is what says so.
+recorded' :: Bool -> (SaveEvalFunc -> IO a) -> IO (a, String)
+recorded' hidden action =
   withTemp "phino-protocol-.txt" BS.empty $ \path -> do
     answer <- withEvalFunc (Just path) printing action
     written <- readUtf8 path
     pure (answer, written)
   where
-    -- The protocol flattens every term itself, so the only thing this context
-    -- decides is that the terms are 𝜑 and not XMIR.
+    -- The protocol flattens every term itself, so the only things this context
+    -- decides are that the terms are 𝜑 and not XMIR and whether they carry
+    -- their ρ bindings.
     printing :: PrintContext
     printing =
       PrintCtx
         SWEET
-        False
+        hidden
         MULTILINE
         2
         defaultXmirContext

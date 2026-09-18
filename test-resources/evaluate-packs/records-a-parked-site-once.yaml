@@ -16,7 +16,7 @@ location: 'Q.x'
 deep: true
 partial: true
 input: '⟦ x ↦ ⟦ λ ⤍ L_none ⟧.foo ⟧'
-result: '⟦ λ ⤍ L_none, ρ ↦ ∅ ⟧.foo'
+result: '⟦ λ ⤍ L_none ⟧.foo'
 protocol: |
   𝕄(Φ.x)
     ?(L_none)  # 𝕄(⟦ λ ⤍ L_none ⟧)
