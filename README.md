@@ -348,10 +348,17 @@ the `--symbolic` file beside the protocol and match every line by λ name and
 meta number.
 
 `?(…)` is a λ name no entry answers, standing where the block of its firing
-would have stood. Nothing fired, so nothing opens under it. The line is written
+would have stood. Nothing fired, so nothing opens under it. The line is
+commented with the judgment that asked and the formation it was asking about,
+`𝕄(⟦ λ ⤍ L_none ⟧)`, the way an operand line is commented with the term it was
+reduced from: 𝔼 is fired by the `ml` rule of morphing and by the `fire` rule
+of dataization, so the letter says where in the reduction the site stands and
+the term says which object the λ function that could not fire belongs to. It
+is written
 whether or not `--partial` goes on to park the run, since the protocol records
 what 𝔼 was asked for, and a question it could not answer belongs there as much
-as one it could:
+as one it could — once per site and not once per attempt, since a site
+`--partial` parks stays in the residue and `--deep` walks over it again:
 
 <!-- markdownlint-disable MD013 -->
 
@@ -366,7 +373,7 @@ $ cat atoms.txt
     𝛿2.1 := 40-18-00-00-00-00-00-00  # ξ.x
     𝑛.1.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )  # 𝑛
     𝑛.1.2 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, nope ↦ ⟦ λ ⤍ L_number_nope ⟧ ⟧  # 𝕄(𝑛.1.1)
-  ?(L_number_nope)
+  ?(L_number_nope)  # 𝔻(⟦ λ ⤍ L_number_nope ⟧)
 ```
 
 <!-- markdownlint-enable MD013 -->
@@ -556,10 +563,12 @@ stands for is not a symbol at all. In the fork above, `𝔼(L_gt)` writes
 the term is, while `𝔼(L_fork)` writes none at all, since the symbol it answers
 with comes from a `join` line and stands in a `<joined>` of its own.
 
-A λ name no entry answers is `<stuck λ="…"/>`, standing where its `<evaluate>`
-would have stood, and a firing that happened while an operand of another was
-being reduced is an `<evaluate>` inside the one that asked, which is what the
-deeper indentation means in the text. Elements are written as the run goes and
+A λ name no entry answers is `<stuck λ="…">`, standing where its `<evaluate>`
+would have stood with the formation 𝔼 was fired against as its text and the
+judgment that asked in its `judgment` attribute, where the text format writes
+the letter of it. A firing that happened while an operand of another was being
+reduced is an `<evaluate>` inside the one that asked, which is what the deeper
+indentation means in the text. Elements are written as the run goes and
 the open ones are closed when it ends, so a run that fails still leaves a
 well-formed document behind:
 
@@ -579,7 +588,7 @@ $ cat atoms.xml
     <built meta="𝑛.1.1">Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )</built>
     <answer meta="𝑛.1.2">⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, nope ↦ ⟦ λ ⤍ L_number_nope ⟧ ⟧</answer>
   </evaluate>
-  <stuck λ="L_number_nope"/>
+  <stuck λ="L_number_nope" judgment="dataize">⟦ λ ⤍ L_number_nope ⟧</stuck>
 </dataize>
 ```
 
@@ -658,7 +667,7 @@ $ cat atoms.txt
     𝛿2.2 := 40-10-00-00-00-00-00-00  # ξ.x
     𝑛.2.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ )  # 𝑛
     𝑛.2.2 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧, as-bool ↦ ⟦ λ ⤍ L_number_as_bool ⟧ ⟧  # 𝕄(𝑛.2.1)
-  ?(L_number_as_bool)
+  ?(L_number_as_bool)  # 𝔻(⟦ λ ⤍ L_number_as_bool ⟧)
 ```
 
 <!-- markdownlint-enable MD013 -->
