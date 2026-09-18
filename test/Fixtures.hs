@@ -30,7 +30,7 @@ import Data.Map.Strict qualified as Map
 import Data.Text qualified as T
 import Data.Text.Encoding (encodeUtf8)
 import Dataize (reduction)
-import Deps (SaveEvalFunc, dontSaveEval, dontSaveStep)
+import Deps (Judgment (..), SaveEvalFunc, dontSaveEval, dontSaveStep)
 import Evaluate (evaluation, fired)
 import Functions (buildTerm)
 import Lambdas (Lambdas, emptyLambdas, readLambdas)
@@ -48,7 +48,7 @@ import XMIR (defaultXmirContext)
 -- none of them: a case that needs one to answer brings the fixture file in
 -- through 'withLambdas'.
 defaultReduceContext :: Expression -> ReduceContext
-defaultReduceContext loc = ReduceContext loc 25 25 (Steps 250 0) 1 False True False False False Map.empty emptyLambdas buildTerm reduction evaluation fired dontSaveStep dontSaveEval
+defaultReduceContext loc = ReduceContext loc 25 25 (Steps 250 0) 1 False True False False False Morphing [] Map.empty emptyLambdas buildTerm reduction evaluation fired dontSaveStep dontSaveEval
 
 -- The same context with the given λ functions registered
 withLambdas :: Lambdas -> ReduceContext -> ReduceContext

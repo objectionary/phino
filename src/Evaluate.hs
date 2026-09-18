@@ -19,7 +19,7 @@ module Evaluate (evaluation, fired, lambda) where
 import AST
 import Builder (buildExpressionThrows, contextualize)
 import Control.Exception (throwIO, try)
-import Control.Monad (foldM)
+import Control.Monad (foldM, unless)
 import Data.List (partition)
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.Maybe (fromMaybe, isNothing)
@@ -59,7 +59,7 @@ evaluation ctx state [ArgExpression expr, ArgExpression universe] subst = do
       | not (any isLambda bds) -> pure (TeExpression ExTermination, state)
       | otherwise -> case lambda bds of
           Just (func, args) -> do
-            (raw, state') <- symbol func args univ state ctx
+            (raw, state') <- symbol func form args univ state ctx
             (normal, _) <- normalized raw ((univ, Nothing) :| []) ctx
             pure (TeExpression normal, state')
           Nothing -> throwIO (userError "Function evaluate() expects a formation with a single λ binding naming a function")
@@ -73,9 +73,12 @@ evaluation _ _ _ _ = throwIO (userError "Function evaluate() requires exactly 2 
 -- most one, since the keys are unique; a name no entry answers has no λ
 -- function to fire at all, and 𝔼 gets stuck on it — the one behaviour left
 -- here. The formation 'self' is the one 𝔼 fired against, its λ binding already
--- removed, so the entry may name the attributes of it; the universe 'univ' is
--- what every operand of it is reduced inside. What comes back is the term the
--- entry answers with, morphed (see 'answered').
+-- removed, so the entry may name the attributes of it; 'form' is that same
+-- formation as 𝔼 was handed it, λ binding and all, which is what the protocol
+-- says a firing nothing answered was about, since a formation with its λ split
+-- off is no longer the term anybody asked about; the universe 'univ' is what
+-- every operand of it is reduced inside. What comes back is the term the entry
+-- answers with, morphed (see 'answered').
 --
 -- The firing writes itself into the protocol as it goes: the entry that
 -- answered first, then each operand as it is reduced, then the answer. Whatever
@@ -83,11 +86,15 @@ evaluation _ _ _ _ = throwIO (userError "Function evaluate() requires exactly 2 
 -- which is what makes the protocol a tree of firings rather than a list of
 -- them. A name no entry answers writes itself too, before 𝔼 gets stuck on it,
 -- so the protocol says what was asked for whether or not '_partial' goes on to
--- park the run.
-symbol :: T.Text -> Expression -> Expression -> State -> ReduceContext -> IO (Expression, State)
-symbol func self univ state caller = case matched caller._symbolic func of
+-- park the run — once, and not once per attempt: a site '_partial' has parked
+-- is still standing in the residue the '_deep' walk goes over, so 𝔼 is fired on
+-- it again and again answers nothing, and a reader counting the '?(…)' lines
+-- counts the sites 𝔼 got stuck on rather than the passes the walk made over
+-- them (see '_parked', #1300).
+symbol :: T.Text -> Expression -> Expression -> Expression -> State -> ReduceContext -> IO (Expression, State)
+symbol func form self univ state caller = case matched caller._symbolic func of
   Nothing -> do
-    caller._saveEval (EvStuck caller._nesting func)
+    unless (func `elem` caller._parked) (caller._saveEval (EvStuck caller._nesting func caller._judgment form))
     throwIO (Stuck func)
   Just entry -> do
     caller._saveEval (EvFiring caller._nesting func)
@@ -250,7 +257,7 @@ fired dispatched term univ state caller = do
   morphed <- try (reduced ctx)
   case morphed of
     Right (ExFormation bds, state')
-      | demanded bds -> maybe (pure (Nothing, state')) (evaluated ctx state') (saturated bds)
+      | demanded bds -> maybe (pure (Nothing, state')) (evaluated ctx state' (ExFormation bds)) (saturated bds)
     Right (_, state') -> pure (Nothing, state')
     Left failure -> parked failure
   where
@@ -276,11 +283,11 @@ fired dispatched term univ state caller = do
     -- answers is not fired at all, which is what keeps the walk as total as 𝕄
     -- itself. The firing reports itself to '_saveEval', so the protocol and the
     -- program agree on what was answered.
-    evaluated :: ReduceContext -> State -> (T.Text, Expression) -> IO (Maybe Expression, State)
-    evaluated ctx state' (func, self)
+    evaluated :: ReduceContext -> State -> Expression -> (T.Text, Expression) -> IO (Maybe Expression, State)
+    evaluated ctx state' form (func, self)
       | isNothing (matched ctx._symbolic func) = pure (Nothing, state')
       | otherwise = do
-          (answer, answered) <- symbol func self univ state' ctx
+          (answer, answered) <- symbol func form self univ state' ctx
           (again, reached) <- fired dispatched answer univ answered ctx
           pure (Just (fromMaybe answer again), reached)
     -- A site the walk cannot reduce — a λ function whose operands never came
