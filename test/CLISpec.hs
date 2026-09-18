@@ -1466,24 +1466,26 @@ spec = do
         -- fresh symbol stands in the attribute a reader joins lines on and the
         -- two symbols it was minted for are the text, in the order the line
         -- lists the metas it joins. The meta it binds is a '<bind>' like every
-        -- other meta of the firing (#1246)
+        -- other meta of the firing (#1246). The branches differ under φ, that
+        -- being where the value of a branch is reached and so the only place a
+        -- join looks at all (#1293)
         it "writes what a 'join' line knows as an element of its own" $
           withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
             hClose stream
             withLambdasOf (T.pack "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  join:\n    𝑛3: [𝑛1, 𝑛2]\n  𝑛: 𝑛3\n") $ \forks ->
-              withStdin "⟦ y ↦ ⟦ a ↦ ⟦ l ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, b ↦ ⟦ l ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧, λ ⤍ L_fork ⟧.l ⟧" $
+              withStdin "⟦ y ↦ ⟦ a ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, b ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧, λ ⤍ L_fork ⟧.φ ⟧" $
                 testCLISucceeded ["morph", "--symbolic=" ++ forks, "--locator=Q.y", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
             records <- readUtf8 path
             lines records
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                          , "<morph locator=\"Φ.y\">"
                          , "  <evaluate λ=\"L_fork\" id=\"1\" judgment=\"morph\" locator=\"Φ.y\">"
-                         , "    <bind meta=\"𝑛1.1\">⟦ l ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧</bind>"
-                         , "    <bind meta=\"𝑛2.1\">⟦ l ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧</bind>"
+                         , "    <bind meta=\"𝑛1.1\">⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧</bind>"
+                         , "    <bind meta=\"𝑛2.1\">⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧</bind>"
                          , "    <joined symbol=\"𝜎3\">𝜎1 𝜎2</joined>"
-                         , "    <bind meta=\"𝑛3.1\">⟦ l ↦ ⟦ λ ⤍ 𝜎3 ⟧ ⟧</bind>"
-                         , "    <built meta=\"𝑛.1.1\">⟦ l ↦ ⟦ λ ⤍ 𝜎3 ⟧ ⟧</built>"
-                         , "    <answer meta=\"𝑛.1.2\">⟦ l ↦ ⟦ λ ⤍ 𝜎3 ⟧ ⟧</answer>"
+                         , "    <bind meta=\"𝑛3.1\">⟦ φ ↦ ⟦ λ ⤍ 𝜎3 ⟧ ⟧</bind>"
+                         , "    <built meta=\"𝑛.1.1\">⟦ φ ↦ ⟦ λ ⤍ 𝜎3 ⟧ ⟧</built>"
+                         , "    <answer meta=\"𝑛.1.2\">⟦ φ ↦ ⟦ λ ⤍ 𝜎3 ⟧ ⟧</answer>"
                          , "  </evaluate>"
                          , "</morph>"
                          ]

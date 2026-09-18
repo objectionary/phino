@@ -1,0 +1,45 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+# Each branch of a fork reaches the join as the whole formation of its carrier,
+# methods included, and a carrier of any size declares methods full of
+# literals. Neither stage has any business with them: a term carries the value
+# it stands for where its φ chain ends, so the '-1' of a 'neg' nobody has
+# called is code and not data, and standing it into an unknown would mint a
+# symbol nobody ever reads — dozens of them per fork over a real object model,
+# each one a line of the protocol and a fact a reader has to know to skip
+# (#1293).
+#
+# Here both branches carry a literal under φ, which is the value of the branch
+# and is stood, and another inside 'neg', which is not and is left alone. The
+# two branches differ inside 'neg' as well, and that difference is no fork:
+# the join takes the method of the first branch verbatim, mints one symbol for
+# the one pair of values that differ, and the answer keeps its methods so the
+# program can go on dispatching on it.
+symbolic: |
+  - λ: L_fork
+    morph:
+      𝑛1: $.a
+      𝑛2: $.b
+    symbolize:
+      𝑛3: 𝑛1
+      𝑛4: 𝑛2
+    join:
+      𝑛5: [𝑛3, 𝑛4]
+    𝑛: 𝑛5
+location: 'Q.y'
+input: '⟦ y ↦ ⟦ a ↦ ⟦ φ ↦ ⟦ Δ ⤍ 01- ⟧, neg ↦ ⟦ φ ↦ ⟦ Δ ⤍ 0A- ⟧ ⟧ ⟧, b ↦ ⟦ φ ↦ ⟦ Δ ⤍ 02- ⟧, neg ↦ ⟦ φ ↦ ⟦ Δ ⤍ 0B- ⟧ ⟧ ⟧, λ ⤍ L_fork ⟧.φ ⟧'
+protocol: |
+  𝕄(Φ.y)
+    𝔼(L_fork)  # 𝕄(Φ.y)
+      𝑛1.1 := ⟦ φ ↦ ⟦ Δ ⤍ 01- ⟧, neg ↦ ⟦ φ ↦ ⟦ Δ ⤍ 0A- ⟧ ⟧, ρ ↦ ⟦ a ↦ ⟦ φ ↦ ⟦ Δ ⤍ 01- ⟧, neg ↦ ⟦ φ ↦ ⟦ Δ ⤍ 0A- ⟧ ⟧ ⟧, b ↦ ⟦ φ ↦ ⟦ Δ ⤍ 02- ⟧, neg ↦ ⟦ φ ↦ ⟦ Δ ⤍ 0B- ⟧ ⟧ ⟧ ⟧ ⟧  # 𝕄(ξ.a)
+      𝑛2.1 := ⟦ φ ↦ ⟦ Δ ⤍ 02- ⟧, neg ↦ ⟦ φ ↦ ⟦ Δ ⤍ 0B- ⟧ ⟧, ρ ↦ ⟦ a ↦ ⟦ φ ↦ ⟦ Δ ⤍ 01- ⟧, neg ↦ ⟦ φ ↦ ⟦ Δ ⤍ 0A- ⟧ ⟧ ⟧, b ↦ ⟦ φ ↦ ⟦ Δ ⤍ 02- ⟧, neg ↦ ⟦ φ ↦ ⟦ Δ ⤍ 0B- ⟧ ⟧ ⟧ ⟧ ⟧  # 𝕄(ξ.b)
+      𝔻(⟦ λ ⤍ 𝜎1 ⟧) == 01-
+      𝑛3.1 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, neg ↦ ⟦ φ ↦ ⟦ Δ ⤍ 0A- ⟧ ⟧, ρ ↦ ⟦ a ↦ ⟦ φ ↦ ⟦ Δ ⤍ 01- ⟧, neg ↦ ⟦ φ ↦ ⟦ Δ ⤍ 0A- ⟧ ⟧ ⟧, b ↦ ⟦ φ ↦ ⟦ Δ ⤍ 02- ⟧, neg ↦ ⟦ φ ↦ ⟦ Δ ⤍ 0B- ⟧ ⟧ ⟧ ⟧ ⟧  # 𝑛1
+      𝔻(⟦ λ ⤍ 𝜎2 ⟧) == 02-
+      𝑛4.1 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, neg ↦ ⟦ φ ↦ ⟦ Δ ⤍ 0B- ⟧ ⟧, ρ ↦ ⟦ a ↦ ⟦ φ ↦ ⟦ Δ ⤍ 01- ⟧, neg ↦ ⟦ φ ↦ ⟦ Δ ⤍ 0A- ⟧ ⟧ ⟧, b ↦ ⟦ φ ↦ ⟦ Δ ⤍ 02- ⟧, neg ↦ ⟦ φ ↦ ⟦ Δ ⤍ 0B- ⟧ ⟧ ⟧ ⟧ ⟧  # 𝑛2
+      𝔻(⟦ λ ⤍ 𝜎3 ⟧) ∈ { 𝔻(⟦ λ ⤍ 𝜎1 ⟧), 𝔻(⟦ λ ⤍ 𝜎2 ⟧) }
+      𝑛5.1 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎3 ⟧, neg ↦ ⟦ φ ↦ ⟦ Δ ⤍ 0A- ⟧ ⟧, ρ ↦ ⟦ a ↦ ⟦ φ ↦ ⟦ Δ ⤍ 01- ⟧, neg ↦ ⟦ φ ↦ ⟦ Δ ⤍ 0A- ⟧ ⟧ ⟧, b ↦ ⟦ φ ↦ ⟦ Δ ⤍ 02- ⟧, neg ↦ ⟦ φ ↦ ⟦ Δ ⤍ 0B- ⟧ ⟧ ⟧ ⟧ ⟧  # [𝑛3, 𝑛4]
+      𝑛.1.1 := 𝑛5.1  # 𝑛
+      𝑛.1.2 := 𝑛5.1  # 𝕄(𝑛.1.1)
