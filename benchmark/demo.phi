@@ -1,0 +1,26 @@
+⟦
+  bytes ↦ ⟦ φ ↦ ∅ ⟧,
+  bool ↦ ⟦ if ↦ ∅ ⟧,
+  number ↦ ⟦
+    φ ↦ ∅,
+    plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧,
+    times(x) ↦ ⟦ λ ⤍ L_number_times ⟧,
+    gt(x) ↦ ⟦ λ ⤍ L_number_gt ⟧,
+    neg ↦ ⟦ φ ↦ ξ.ρ.times( -1 ) ⟧,
+    minus(x) ↦ ⟦ φ ↦ ξ.ρ.plus( ξ.x.neg ) ⟧
+  ⟧,
+  demo ↦ ⟦
+    gap(a, b) ↦ ⟦ φ ↦ ξ.a.minus( ξ.b ).times( ξ.a.minus( ξ.b ) ) ⟧,
+    far(p, q) ↦ ⟦ φ ↦ Φ.demo.gap( ξ.p, ξ.q ).gt( 100 ) ⟧,
+    clamp(x, lo, hi) ↦ ⟦ φ ↦ ξ.x.gt( ξ.hi ).if( ξ.hi, ξ.lo.gt( ξ.x ).if( ξ.lo, ξ.x ) ) ⟧,
+    twice(t) ↦ ⟦ φ ↦ ξ.t.gt( 0 ).if( ξ.t.plus( 1 ), ξ.t.plus( 2 ) ).plus( ξ.t.plus( 1 ) ) ⟧
+  ⟧,
+  l🌵 ↦ ⟦
+    mark(n, v) ↦ ⟦ λ ⤍ L_entry ⟧,
+    e1 ↦ Φ.l🌵.mark( 1, Φ.demo.gap( Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ ) ), Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ) ) ) ),
+    e2 ↦ Φ.l🌵.mark( 2, Φ.demo.far( Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ λ ⤍ 𝜎3 ⟧ ) ), Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ λ ⤍ 𝜎4 ⟧ ) ) ) ),
+    e3 ↦ Φ.l🌵.mark( 3, Φ.demo.clamp( Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ λ ⤍ 𝜎5 ⟧ ) ), Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ λ ⤍ 𝜎6 ⟧ ) ), Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ λ ⤍ 𝜎7 ⟧ ) ) ) ),
+    e4 ↦ Φ.l🌵.mark( 4, Φ.demo.twice( Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ λ ⤍ 𝜎8 ⟧ ) ) ) ),
+    e5 ↦ Φ.l🌵.mark( 5, Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ λ ⤍ 𝜎9 ⟧ ) ).neg )
+  ⟧
+⟧

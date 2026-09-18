@@ -1,0 +1,54 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+# The λ functions the symbolic cases of the benchmark fire over
+# 'benchmark/demo.phi'. phino implements none of them, so without this file
+# every λ function that world names would get stuck and nothing would be
+# measured. Every entry answers symbolically: the operands come down through 𝔻
+# or reach a normal form through 𝕄, and the term under '𝑛' carries a fresh
+# symbol 𝜎 standing for the value nobody worked out. Nothing here computes,
+# which is what makes the morphing symbolic and what keeps the numbers below a
+# measure of phino rather than of arithmetic.
+
+# Arithmetic over two numbers answers a number nobody has worked out.
+- λ: L_number_(plus|times)
+  dataize:
+    𝛿1: $.ρ
+    𝛿2: $.x
+  𝑛: Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ λ ⤍ 𝜎 ⟧ ) )
+
+# Comparing two numbers answers a bool nobody has decided, carrying the fork
+# below as its 'if', which is what the branching cases of the demo world then
+# dispatch.
+- λ: L_number_gt
+  dataize:
+    𝛿1: $.ρ
+    𝛿2: $.x
+  𝑛: Φ.bool( if ↦ ⟦ λ ⤍ L_fork, left ↦ ∅, right ↦ ∅, φ ↦ ⟦ λ ⤍ 𝜎 ⟧ ⟧ )
+
+# A branch answers neither of its sides: nobody has picked between the two, so
+# both of them reach a normal form through 𝕄, are stood into unknowns and are
+# joined into the one shape they share.
+- λ: L_fork
+  dataize:
+    𝛿1: $.φ
+  morph:
+    𝑛1: $.left
+    𝑛2: $.right
+  symbolize:
+    𝑛3: 𝑛1
+    𝑛4: 𝑛2
+  join:
+    𝑛5: [𝑛3, 𝑛4]
+  𝑛: 𝑛5
+
+# An entry of the demo world: its number comes down through 𝔻 and the term it
+# marks reaches a normal form through 𝕄, which is the work the symbolic cases
+# time.
+- λ: L_entry
+  dataize:
+    𝛿1: $.n
+  morph:
+    𝑛1: $.v.φ
+  𝑛: 𝑛1

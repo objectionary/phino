@@ -36,10 +36,21 @@ cabal v2-run spec -- --match "Rewriter"
 Benchmarks run 3 warmup iterations, auto-calibrate batch size to hit a
 ~20ms measurement window per batch, then run 10 batches and print total,
 avg, min, max, and std dev per operation. Batch size scales automatically
-so the same benchmark works for both tiny and large inputs. Resource files
+so the same benchmark works for both tiny and large inputs; a case whose
+single run outlasts the wall-clock budget of `benchmark/Main.hs` gets fewer
+warmups and fewer batches instead, never fewer than one batch, so the whole
+suite still fits the job the workflow runs it in. Resource files
 (`benchmark/tmp/`) are generated on first run and cached by Make; removed
 by `make clean`. Requires Java and curl; Maven is fetched automatically
 via `benchmark/mvnw`.
+
+Besides parsing, printing and rewriting, the suite morphs symbolically:
+`benchmark/demo.phi` is a small world whose entries name the λ functions of
+`benchmark/atoms.yaml`, one case per entry, and the smallest of them is timed
+twice — over the demo world alone and over the same world merged into
+`native.phi` — so the cost of the world around an entry is a number too
+(#1291). Both files are checked in, unlike the generated ones under
+`benchmark/tmp/`.
 
 ## Architecture
 
