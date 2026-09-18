@@ -21,7 +21,7 @@ import Data.List (find)
 import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as NE
 import Data.Maybe (listToMaybe)
-import Deps (State (..))
+import Deps (Judgment (..), State (..))
 import Locator (locatedExpression)
 import Matcher (Subst, matchExpression')
 import Morph (Morphed, ReduceContext (..), ReduceException (..), ReductionFunc, deeper, excluding, execBuildTerm, insideUniverse, leadsTo, morph', normalized, parking, producer, sidePremise, verb)
@@ -87,7 +87,7 @@ dataize universe state ctx@ReduceContext{..} = do
 -- joins the spine, otherwise the premise is an isolated side-computation.
 dataize' :: Dataizable -> Expression -> State -> ReduceContext -> IO (Dataized, State)
 dataize' (expr, seq) univ state caller = do
-  ctx <- deeper caller
+  ctx <- deeper caller{_judgment = Dataization}
   parking seq state $ case unknown expr of
     Just idx -> manufactured idx ctx
     Nothing -> do

@@ -29,7 +29,7 @@ import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as NE
 import Data.Maybe (fromMaybe)
 import qualified Data.Text as T
-import Deps (BuildTermFunc, BuildTermMethodS, SaveEvalFunc, SaveStepFunc, State (..), Term (..))
+import Deps (BuildTermFunc, BuildTermMethodS, Judgment (..), SaveEvalFunc, SaveStepFunc, State (..), Term (..))
 import Lambdas (Lambdas)
 import Locator (locatedExpression, withLocatedExpression)
 import Matcher (MetaValue (..), Subst (..), combine, matchExpression', substEmpty, substSingle)
@@ -113,6 +113,14 @@ data ReduceContext = ReduceContext
   , _partial :: Bool
   , _deep :: Bool
   , _acyclic :: Bool
+  , -- The judgment whose rule is asking 𝔼 to fire, which is what a stuck site
+    -- is written under: 𝔼 is reached from the 'ml' rule of morphing and from
+    -- the 'fire' rule of dataization, and a reader of the protocol is told
+    -- which of the two asked the question nothing answered. Every frame of 𝕄
+    -- names itself here and every frame of 𝔻 does the same, so what a firing
+    -- reads is the judgment of the frame it was fired from and never of one
+    -- above it (#1300).
+    _judgment :: Judgment
   , -- The λ functions this run has already got stuck on and written a '?(…)'
     -- to the protocol for. A parked site stays in the residue exactly as it was
     -- written, so the '_deep' walk over that residue reaches it again and 𝕄
@@ -243,7 +251,7 @@ unparked action = action `catch` rethrow
 -- evaluated in isolation by 'sidePremise', its own steps discarded.
 morph' :: Morphed -> Expression -> State -> ReduceContext -> IO (Morphed, State)
 morph' (expr, seq) univ state caller = do
-  ctx <- deeper =<< unvisited expr caller
+  ctx <- deeper =<< unvisited expr caller{_judgment = Morphing}
   parking seq state $ do
     rules <- if ctx._shuffle then shuffle Y.morphingRules else pure Y.morphingRules
     matched <- firstMatch ctx rules
@@ -328,28 +336,32 @@ morph universe state ctx@ReduceContext{..} = do
   expr <- locatedExpression _locator universe
   result <- try (morph' (expr, (universe, Nothing) :| []) universe state ctx)
   case result of
-    Right ((morphed, seq), state') -> walked ctx morphed seq state'
+    Right ((morphed, seq), state') -> walked walking morphed seq state'
     Left (StuckAt func seq parked) | _partial -> do
       residue <- locatedExpression _locator (fst (NE.head seq))
       walked (marked func) residue seq parked
     Left (OutOfStepsAt _ seq parked) | _partial -> do
       residue <- locatedExpression _locator (fst (NE.head seq))
-      walked ctx residue seq parked
+      walked walking residue seq parked
     -- Unlike the two above, this one takes no '_partial' guard: a 'LoopingAt'
     -- exists only where '_acyclic' put it, so asking for the guard is already
     -- asking to be parked on what it finds.
     Left (LoopingAt _ seq parked) -> do
       residue <- locatedExpression _locator (fst (NE.head seq))
-      walked ctx residue seq parked
+      walked walking residue seq parked
     Left failure -> throwIO (failure :: ReduceException)
   where
-    -- The context the walk over a parked residue runs with: the one this run
-    -- was given, plus the λ function the spine got stuck on. The site is still
+    -- The context the walk runs with: the one this run was given, named after
+    -- 𝕄, since the walk is 𝕄's own and a λ function it fires is fired by no
+    -- other judgment, whichever one asked for this run (see '_judgment').
+    walking :: ReduceContext
+    walking = ctx{_judgment = Morphing}
+    -- The same, plus the λ function the spine got stuck on. The site is still
     -- standing in the residue, so the walk asks 𝕄 about it again and 𝔼 gets
     -- stuck on it again; the protocol has the site already and the second
     -- firing writes nothing (see '_parked', #1300).
     marked :: T.Text -> ReduceContext
-    marked func = ctx{_parked = func : _parked}
+    marked func = walking{_parked = func : _parked}
     -- The answer 𝕄 reached, walked by '_deep' before it is handed back (see
     -- 'deepened'), and the chain that led to both. The walk joins the chain as
     -- one step named 'deep', so '--sequence' ends on the term the command

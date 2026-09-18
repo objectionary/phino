@@ -20,4 +20,4 @@ result: >
 protocol: |
   𝕄(Φ.y)
     𝔼(L_pair)
-      ?(L_none)  # ⟦ λ ⤍ L_none ⟧
+      ?(L_none)  # 𝕄(⟦ λ ⤍ L_none ⟧)

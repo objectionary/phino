@@ -94,7 +94,7 @@ evaluation _ _ _ _ = throwIO (userError "Function evaluate() requires exactly 2 
 symbol :: T.Text -> Expression -> Expression -> Expression -> State -> ReduceContext -> IO (Expression, State)
 symbol func form self univ state caller = case matched caller._symbolic func of
   Nothing -> do
-    unless (func `elem` caller._parked) (caller._saveEval (EvStuck caller._nesting func form))
+    unless (func `elem` caller._parked) (caller._saveEval (EvStuck caller._nesting func caller._judgment form))
     throwIO (Stuck func)
   Just entry -> do
     caller._saveEval (EvFiring caller._nesting func)

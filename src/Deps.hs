@@ -74,8 +74,9 @@ dontSaveStep = saveStep Nothing "" (\_ -> pure "") 0
 -- formats spell in two ways: the text format writes the letter the calculus
 -- writes, '𝕄(Φ.x)', and the markup names the root after it, '<morph
 -- locator="Φ.x">', the way every record under it is named after the judgment it
--- carries (#1279). Nothing else is spelled twice, since nothing else of a
--- record is a name of the calculus.
+-- carries (#1279). A stuck site spells it the same two ways, since it too is a
+-- judgment asking and getting no answer (see 'EvStuck'); nothing else is
+-- spelled twice, since nothing else of a record is a name of the calculus.
 data Judgment
   = -- The Morphing function 𝕄, which the 'morph' command runs.
     Morphing
@@ -118,16 +119,19 @@ data Evaluation
     -- it.
     EvFiring Int T.Text
   | -- A λ function no entry of the '--symbolic' file answers, at the depth the
-    -- firing of it would have stood at, together with the formation 𝔼 was
-    -- fired against, as it was handed it. Nothing fired, so the line stands
-    -- alone and no block opens under it. It is written whether or not
-    -- '--partial' goes on to park the run, since the protocol records what 𝔼
-    -- was asked for and a question it could not answer belongs there as much as
-    -- one it could — and the object it was asked about is half of that
-    -- question, so the record carries it the way every other one carries the
-    -- term it is about, as the comment of the line in the text format and as
-    -- the text of the element in the markup (#1300).
-    EvStuck Int T.Text Expression
+    -- firing of it would have stood at, together with the judgment that asked
+    -- for the firing and the formation 𝔼 was fired against, as it was handed
+    -- it. Nothing fired, so the line stands alone and no block opens under it.
+    -- It is written whether or not '--partial' goes on to park the run, since
+    -- the protocol records what 𝔼 was asked for and a question it could not
+    -- answer belongs there as much as one it could — and the object it was
+    -- asked about is half of that question, so the record carries it the way
+    -- every other one carries the term it is about, as the comment of the line
+    -- in the text format and as the text of the element in the markup. The
+    -- judgment stands beside it because 𝔼 is fired from two places — the 'ml'
+    -- rule of morphing and the 'fire' rule of dataization — and which of them
+    -- asked is what says where in the reduction the site stands (#1300).
+    EvStuck Int T.Text Judgment Expression
   | -- A 'dataize' operand of the firing: the meta it bound, the term the entry
     -- wrote under that meta, and the data it came down to, or the symbol that
     -- data was manufactured for.
@@ -278,9 +282,9 @@ saveEval handle cursor render salted report = do
       where
         firings :: Int
         firings = protocol._fired + 1
-    written (EvStuck depth key self) protocol = do
+    written (EvStuck depth key judgment self) protocol = do
       form <- render self
-      pure (protocol, Just (indented depth (printf "?(%s)  # %s" (T.unpack key) form)))
+      pure (protocol, Just (indented depth (printf "?(%s)  # %s(%s)" (T.unpack key) (letter judgment) form)))
     written (EvData depth spelling operand value) protocol = do
       datum <- spelled value
       line <- commented (printf "%s := %s" (labelled protocol depth spelling) datum) operand
@@ -418,10 +422,10 @@ saveEvalXml handle cursor render report = do
         (kept, closers) = closed depth nesting._closing
         fires :: Int
         fires = nesting._fires + 1
-    elements (EvStuck depth key self) nesting = do
+    elements (EvStuck depth key judgment self) nesting = do
       form <- render self
       let (kept, closers) = closed depth nesting._closing
-      pure (nesting{_closing = kept}, closers ++ [indented depth (printf "<stuck λ=\"%s\">%s</stuck>" (quoted key) (escapeXMLText form))])
+      pure (nesting{_closing = kept}, closers ++ [indented depth (printf "<stuck λ=\"%s\" judgment=\"%s\">%s</stuck>" (quoted key) (opened judgment) (escapeXMLText form))])
     elements (EvData depth spelling _ value) nesting = do
       record <- stood value
       pure (nesting{_closing = kept}, closers ++ [indented depth record])
