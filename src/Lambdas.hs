@@ -297,7 +297,7 @@ readLambdas path = do
       throwIO (BrokenLambdas path (printf "the key '%s' is not a regular expression: %s" (T.unpack key) failure))
 
     overlaps :: FilePath -> [(Regex, Lambda)] -> IO ()
-    overlaps file registered = check registered
+    overlaps file = check
       where
         check :: [(Regex, Lambda)] -> IO ()
         check [] = pure ()
