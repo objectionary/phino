@@ -97,7 +97,7 @@ symbol func form self univ state caller = case matched caller._symbolic func of
     unless (func `elem` caller._parked) (caller._saveEval (EvStuck caller._nesting func caller._judgment form))
     throwIO (Stuck func)
   Just entry -> do
-    caller._saveEval (EvFiring caller._nesting func caller._site)
+    caller._saveEval (EvFiring caller._nesting func caller._judgment caller._site)
     let ctx = caller{_nesting = caller._nesting + 1}
     (bound, dataized) <- foldM (down ctx) (substEmpty, state) entry._dataized
     (bound', morphed) <- foldM (through ctx) (bound, dataized) entry._morphed
@@ -150,7 +150,7 @@ symbol func form self univ state caller = case matched caller._symbolic func of
       reduced <- buildExpressionThrows term bound
       let (stood, known, spent) = symbolized reduced state'._minted
       mapM_ (ctx._saveEval . fact) known
-      ctx._saveEval (EvTerm ctx._nesting meta._spelling term stood)
+      ctx._saveEval (EvSymbolize ctx._nesting meta._spelling term stood)
       bound' <- bind meta (MvExpression stood) bound
       pure (bound', state'{_minted = spent})
       where

@@ -97,9 +97,13 @@ parks on; the protocol records it as `?(name)` either way. What fired is
 written as a tree by `--protocol`
 (`Evaluation` and `Protocol` in `Deps.hs`), which spells the three judgments
 the way the calculus does: `𝕄(…)` or `𝔻(…)` opens the run, `𝔼(…)` names a
-firing and the site it was fired at (`_site` of `ReduceContext`, which the
-`--deep` walk refines as it enters a binding), and `𝔻(𝜎1)` is the datum
-manufactured for a symbol. The extension of
+firing and `𝔻(𝜎1)` is the datum manufactured for a symbol. Every comment of a
+line is a judgment applied to a term — the intent the value beside it came
+from: the judgment that asked for a firing and the site it was fired at
+(`_site` of `ReduceContext`, which the `--deep` walk refines as it enters a
+binding), and the one that reduced an operand and the term it was reduced
+from. A line no judgment made — a `symbolize` or a `join` one — names a meta
+of the entry instead. The extension of
 the file picks the format: `.xml` gets markup (`Nesting` and `saveEvalXml`),
 anything else the indented text. Both carry the same facts and both stream, so
 a run that fails still leaves a complete file; the markup references a value by
