@@ -16,4 +16,5 @@ result: '⟦ λ ⤍ L_loop, ρ ↦ ∅ ⟧.foo'
 protocol: |
   𝕄(Φ.x)
     𝔼(L_loop)
-      𝑛.1 := ⟦ λ ⤍ L_loop ⟧
+      𝑛.1.1 := ⟦ λ ⤍ L_loop ⟧  # 𝑛
+      𝑛.1.2 := ⟦ λ ⤍ L_loop ⟧  # 𝕄(𝑛.1.1)

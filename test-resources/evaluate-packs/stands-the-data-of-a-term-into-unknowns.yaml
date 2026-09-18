@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 # SPDX-License-Identifier: MIT
 ---
+# yamllint disable rule:line-length
 # A 'symbolize' line reduces nothing: it stands the data of a term another line
 # of the entry has already bound into unknowns, so a normal form reached from a
 # literal is written the way one reached from an unknown is written and the two
@@ -29,4 +30,5 @@ protocol: |
       𝔻(⟦ λ ⤍ 𝜎8 ⟧) == 01-
       𝑛3.1 := ⟦ λ ⤍ 𝜎8, ρ ↦ ⟦ a ↦ ⟦ Δ ⤍ 01- ⟧, b ↦ ⟦ λ ⤍ 𝜎7 ⟧ ⟧ ⟧  # 𝑛1
       𝑛4.1 := 𝑛2.1  # 𝑛2
-      𝑛.1 := ⟦ l ↦ ⟦ λ ⤍ 𝜎8, ρ ↦ ⟦ a ↦ ⟦ Δ ⤍ 01- ⟧, b ↦ ⟦ λ ⤍ 𝜎7 ⟧ ⟧ ⟧ ⟧
+      𝑛.1.1 := ⟦ l ↦ ⟦ λ ⤍ 𝜎8, ρ ↦ ⟦ a ↦ ⟦ Δ ⤍ 01- ⟧, b ↦ ⟦ λ ⤍ 𝜎7 ⟧ ⟧ ⟧ ⟧  # 𝑛
+      𝑛.1.2 := ⟦ l ↦ ⟦ λ ⤍ 𝜎8, ρ ↦ ⟦ a ↦ ⟦ Δ ⤍ 01- ⟧, b ↦ ⟦ λ ⤍ 𝜎7 ⟧ ⟧ ⟧ ⟧  # 𝕄(𝑛.1.1)
