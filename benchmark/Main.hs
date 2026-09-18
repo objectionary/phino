@@ -90,6 +90,7 @@ symbolicCtx lambdas locator =
     Morphing -- _judgment
     [] -- _parked
     Map.empty -- _seen
+    Map.empty -- _dataized
     lambdas -- _symbolic
     buildTerm -- _buildTerm
     reduction -- _reduce
