@@ -199,12 +199,20 @@ symbol func self univ state caller = case matched caller._symbolic func of
     -- what a fork of two branches is (#1268). The residual and the answer lines
     -- of the protocol grow by the size of that formation, which is the price of
     -- saying the same thing one way.
+    --
+    -- Both terms go to the protocol, the built one before 'settled' is asked
+    -- about it and the normal one after, so the morphing is a step of the
+    -- protocol and no silent change of shape: whatever 𝕄 fires on the way opens
+    -- its block between the two, where every other firing of an operand opens
+    -- its own, and the formation standing on the second line is read as what
+    -- the three tokens on the first came to (#1298).
     answered :: ReduceContext -> Lambda -> Subst -> State -> IO (Expression, State)
     answered ctx entry bound state' = do
       let (fresh, spent) = minted entry._answer state'._minted
       mapM_ (ctx._saveEval . EvMinted ctx._nesting) [idx | (_, FnSymbol idx) <- fresh]
       symbolic <- foldM mint bound fresh
       built <- buildExpressionThrows entry._answer symbolic
+      ctx._saveEval (EvBuilt ctx._nesting built)
       (normal, state'') <- settled built univ state'{_minted = spent} ctx
       ctx._saveEval (EvAnswer ctx._nesting normal)
       pure (normal, state'')

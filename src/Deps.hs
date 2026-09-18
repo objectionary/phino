@@ -105,10 +105,12 @@ opened Dataization = "dataize"
 -- the term it was reduced from — whatever a 'symbolize' line of it knows about
 -- a symbol it minted, the terms a 'join' line of it made one of and what it
 -- knows about the symbol they were joined into, and the term it answered with,
--- one to a line, and any
--- firing an operand took while it was being reduced, one level deeper again. A
--- name no entry answers stands there as '?(L_number_nope)', where the block of
--- its firing would have been.
+-- one to a line, and any firing an operand took while it was being reduced,
+-- one level deeper again. The answer takes two of those lines rather than one:
+-- the term the entry wrote, then the normal form 𝕄 makes of it, so the
+-- morphing between them is a step a reader watches happen rather than a shape a
+-- term arrives in (#1298). A name no entry answers stands there as
+-- '?(L_number_nope)', where the block of its firing would have been.
 data Evaluation
   = -- The run and the term it was aimed at.
     EvRun Judgment T.Text
@@ -155,55 +157,69 @@ data Evaluation
     -- any one term of it, since an answer may carry several symbols or none and
     -- no single one of them stands for the whole of it (#1280).
     EvMinted Int Int
-  | -- What the firing answered with.
+  | -- The term the entry wrote as its answer, with the symbols the firing
+    -- minted standing in it, before 𝕄 is asked about it. It is the first of
+    -- the two records an answer is written as, and it is there because the
+    -- answer of a firing is morphed (#1268) and a morphing nobody sees is a
+    -- term appearing out of nothing: whatever that morphing fires opens its
+    -- own block between this record and 'EvAnswer', so a reader sees the term
+    -- the entry wrote, the firings reducing it took, and the normal form it
+    -- came to, in that order (#1298).
+    EvBuilt Int Expression
+  | -- What the firing answered with, which is the term of 'EvBuilt' as 𝕄
+    -- leaves it. It is the answer every consumer reads, since it is the term
+    -- the walk stands back into the program. The line of it is commented with
+    -- '𝕄(𝑛.4.1)', naming the line it was morphed from, since the two may stand
+    -- whole blocks apart and a value alone never says what it came from — the
+    -- very reason an operand line carries the term it was reduced from.
     EvAnswer Int Expression
 
 type SaveEvalFunc = Evaluation -> IO ()
 
 -- What the protocol has counted so far: how many firings the whole run has
 -- opened, which is what numbers them and so tells a line of one firing from
--- the same line of any other; how many answers the whole run has given, which
--- numbers them; the name last given to each symbol, which is how a term
--- already written out is named instead of written again; and which firing is
--- open at each depth, since the operands of a firing belong to the firing it
--- was when it started and not to the one another firing has made of it since.
--- The firings are numbered across the run rather than per λ function, so no
--- two of them give an operand meta the same name and a name the protocol
--- points back to points at one line only (#1261). The order the firings come
--- in carries nothing — it is the order 𝕄 walks the term — so the symbols are
--- what the dependencies are read from: a term carrying 𝜎4 is the term the
--- line that minted 𝜎4 stood for.
+-- the same line of any other; the name last given to each symbol, which is how
+-- a term already written out is named instead of written again; and which
+-- firing is open at each depth, since the operands of a firing belong to the
+-- firing it was when it started and not to the one another firing has made of
+-- it since. The firings are numbered across the run rather than per λ
+-- function, so no two of them give an operand meta the same name and a name
+-- the protocol points back to points at one line only (#1261). The answers are
+-- numbered by that same counter and no counter of their own, since a firing
+-- answers once and so the two lines of its answer are told from every other
+-- pair by the firing they stand in (#1298). The order the firings come in
+-- carries nothing — it is the order 𝕄 walks the term — so the symbols are what
+-- the dependencies are read from: a term carrying 𝜎4 is the term the line that
+-- minted 𝜎4 stood for.
 data Protocol = Protocol
   { _fired :: Int
-  , _answered :: Int
   , _named :: Map.Map Int T.Text
   , _open :: Map.Map Int Int
   }
 
 -- The protocol before a single firing has been written.
 emptyProtocol :: Protocol
-emptyProtocol = Protocol 0 0 Map.empty Map.empty
+emptyProtocol = Protocol 0 Map.empty Map.empty
 
 -- What the XML protocol has counted so far: how many firings the whole run
 -- has opened, the same single counter 'Protocol' keeps since #1261, which
 -- numbers the 'id' an element carries and, through '_openedAt', names a meta
 -- on this firing the way the text format names it and not with the bare
--- spelling the entry's YAML gives it; how many answers the run has given,
--- which numbers an '<answer>'; and the elements standing open around the
--- record being written, innermost first, each with the depth it was opened at
--- and the name it closes under. The text format needs no such stack, since
--- indentation opens and closes nothing; markup does, and the depth a record
--- carries is the only thing saying which firings it stands outside of.
+-- spelling the entry's YAML gives it, an answer of it included (#1298); and
+-- the elements standing open around the record being written, innermost
+-- first, each with the depth it was opened at and the name it closes under.
+-- The text format needs no such stack, since indentation opens and closes
+-- nothing; markup does, and the depth a record carries is the only thing
+-- saying which firings it stands outside of.
 data Nesting = Nesting
   { _fires :: Int
   , _openedAt :: Map.Map Int Int
-  , _answers :: Int
   , _closing :: [(Int, String)]
   }
 
 -- The XML protocol before a single element has been opened.
 emptyNesting :: Nesting
-emptyNesting = Nesting 0 Map.empty 0 []
+emptyNesting = Nesting 0 Map.empty []
 
 -- Append the line of one record to the protocol, indented by the depth of what
 -- it reports and numbered by what the protocol has seen before it. The handle
@@ -282,10 +298,16 @@ saveEval handle cursor render salted report = do
       right <- render (standing two)
       pure (protocol, Just (indented depth (printf "𝔻(%s) ∈ { 𝔻(%s), 𝔻(%s) }" form left right)))
     written (EvMinted _ _) protocol = pure (protocol, Nothing)
+    written (EvBuilt depth term) protocol = do
+      value <- borrowed protocol term
+      pure (protocol, Just (indented depth (printf "%s.1 := %s" (labelled protocol depth answer) value)))
     written (EvAnswer depth term) protocol = do
-      let naming = printf "%s.%d" (T.unpack answer) (protocol._answered + 1)
-      (protocol', value) <- valued protocol{_answered = protocol._answered + 1} naming term
-      pure (protocol', Just (indented depth (printf "%s := %s" naming value)))
+      let stem :: String
+          stem = labelled protocol depth answer
+          naming :: String
+          naming = printf "%s.2" stem
+      (protocol', value) <- valued protocol naming term
+      pure (protocol', Just (indented depth (printf "%s := %s  # 𝕄(%s.1)" naming value stem)))
     -- The value of a term, next to the name this line gives it: the name the
     -- symbol it carries already has, where it has one, and the term itself
     -- otherwise. Either way the symbol takes the name of this line, so the
@@ -296,6 +318,17 @@ saveEval handle cursor render salted report = do
       Just symbol -> do
         value <- maybe (render term) (pure . T.unpack) (Map.lookup symbol protocol._named)
         pure (protocol{_named = Map.insert symbol (T.pack naming) protocol._named}, value)
+    -- The value of a term on a line that claims no name for the symbol it
+    -- carries: the name that symbol already has, where it has one, and the
+    -- term itself otherwise. The built answer of a firing stands on such a
+    -- line, since the line under it holds the term 𝕄 made of that one and the
+    -- two are not the same term: were the first of the pair to claim the name,
+    -- the second would be written as the first and the morphing would be as
+    -- invisible as it was before it had a line at all (#1298).
+    borrowed :: Protocol -> Expression -> IO String
+    borrowed protocol term = case denoted term >>= (`Map.lookup` protocol._named) of
+      Nothing -> render term
+      Just naming -> pure (T.unpack naming)
     -- The line of an operand with the term it was reduced from appended to it
     -- as a comment, since the value alone says what the meta was bound to and
     -- never what it was bound from. It is the very term the entry wrote under
@@ -312,7 +345,10 @@ saveEval handle cursor render salted report = do
     -- tells two 𝛿1 apart. The number counts the firings of the whole run and
     -- not those of one λ function, so the second firing of one entry and the
     -- second of another never write the same name (#1261), and it is the very
-    -- number the XML format gives the firing in its 'id'. The firing a line
+    -- number the XML format gives the firing in its 'id'. The answer of the
+    -- firing is named the same way, with a step of its own appended: a firing
+    -- answers once, so '𝑛.4.1' and '𝑛.4.2' are the built term and the normal
+    -- form of the one answer firing 4 gave (#1298). The firing a line
     -- belongs to is the one opened one level above it.
     labelled :: Protocol -> Int -> T.Text -> String
     labelled protocol depth spelling =
@@ -330,6 +366,12 @@ saveEval handle cursor render salted report = do
 -- known about a symbol does, since no one symbol of a term stands for the whole
 -- of it and picking one would say nothing (#1280). The term itself stays as the
 -- text of the element, for a reader and not for a program.
+--
+-- The two lines an answer stands on are two elements, and they are told apart
+-- by their names for the same reason every other pair of records is: 'built'
+-- holds the term the entry wrote and 'answer' the normal form 𝕄 made of it, so
+-- a consumer reading 'answer' reads what it always read and one asking what the
+-- entry itself wrote has an element to ask (#1298).
 --
 -- Nothing is buffered: an element is written the moment its record arrives,
 -- and the ones it closes are written just before it, so a run firing thousands
@@ -413,19 +455,26 @@ saveEvalXml handle cursor render report = do
       pure (nesting{_closing = kept}, closers ++ [indented depth (printf "<minted>%s</minted>" (sigma symbol))])
       where
         (kept, closers) = closed depth nesting._closing
+    elements (EvBuilt depth term) nesting = do
+      body <- render term
+      let (kept, closers) = closed depth nesting._closing
+          naming :: String
+          naming = printf "%s.1" (labelled nesting depth answer)
+      pure (nesting{_closing = kept}, closers ++ [indented depth (printf "<built meta=\"%s\">%s</built>" (escapeXML naming) (escapeXMLText body))])
     elements (EvAnswer depth term) nesting = do
       body <- render term
       let (kept, closers) = closed depth nesting._closing
           naming :: String
-          naming = printf "%s.%d" (T.unpack answer) (nesting._answers + 1)
-      pure (nesting{_closing = kept, _answers = nesting._answers + 1}, closers ++ [indented depth (printf "<answer meta=\"%s\">%s</answer>" (escapeXML naming) (escapeXMLText body))])
+          naming = printf "%s.2" (labelled nesting depth answer)
+      pure (nesting{_closing = kept}, closers ++ [indented depth (printf "<answer meta=\"%s\">%s</answer>" (escapeXML naming) (escapeXMLText body))])
     -- The name of an operand meta on this firing, spelled the way the text
     -- protocol's own 'labelled' spells it: the meta the entry names it with
     -- in the YAML, followed by which firing of the whole run this is, the
     -- very number the element's own 'id' carries, since every entry numbers
     -- its own metas from 𝛿1 and 𝑛1 and only the firing tells two 𝛿1 apart
-    -- (#1261). The firing a record belongs to is the one opened one level
-    -- above it.
+    -- (#1261). An answer is named the same way, with the step of the pair
+    -- appended (#1298). The firing a record belongs to is the one opened one
+    -- level above it.
     labelled :: Nesting -> Int -> T.Text -> String
     labelled nesting depth spelling =
       printf "%s.%d" (T.unpack spelling) (fromMaybe 0 (Map.lookup (depth - 1) nesting._openedAt))
@@ -479,7 +528,7 @@ standing :: Int -> Expression
 standing symbol = ExFormation [BiLambda (FnSymbol symbol)]
 
 -- How the calculus spells the meta a λ function writes its answer to, which is
--- the name the protocol numbers the answers of a whole run by.
+-- the name the protocol writes the two lines of a firing's answer under.
 answer :: T.Text
 answer = "𝑛"
 

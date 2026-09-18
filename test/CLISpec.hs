@@ -1197,7 +1197,8 @@ spec = do
                        , "  𝔼(L_number_plus)"
                        , "    𝛿1.1 := 40-14-00-00-00-00-00-00  # ξ.ρ"
                        , "    𝛿2.1 := 40-18-00-00-00-00-00-00  # ξ.x"
-                       , "    𝑛.1 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧"
+                       , "    𝑛.1.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )"
+                       , "    𝑛.1.2 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧  # 𝕄(𝑛.1.1)"
                        ]
 
       -- The second firing of one entry numbers its own metas 𝛿1.2 and 𝛿2.2,
@@ -1214,11 +1215,13 @@ spec = do
                        , "  𝔼(L_number_plus)"
                        , "    𝛿1.1 := 40-14-00-00-00-00-00-00  # ξ.ρ"
                        , "    𝛿2.1 := 40-18-00-00-00-00-00-00  # ξ.x"
-                       , "    𝑛.1 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧"
+                       , "    𝑛.1.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )"
+                       , "    𝑛.1.2 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧  # 𝕄(𝑛.1.1)"
                        , "  𝔼(L_number_plus)"
                        , "    𝛿1.2 := 𝔻(⟦ λ ⤍ 𝜎1 ⟧)  # ξ.ρ"
                        , "    𝛿2.2 := 40-1C-00-00-00-00-00-00  # ξ.x"
-                       , "    𝑛.2 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧"
+                       , "    𝑛.2.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ )"
+                       , "    𝑛.2.2 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧  # 𝕄(𝑛.2.1)"
                        ]
 
       -- A meta is a variable bound exactly once, so its name has to be unique
@@ -1237,11 +1240,13 @@ spec = do
                        , "  𝔼(L_number_plus)"
                        , "    𝛿1.1 := 40-14-00-00-00-00-00-00  # ξ.ρ"
                        , "    𝛿2.1 := 40-18-00-00-00-00-00-00  # ξ.x"
-                       , "    𝑛.1 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧ ⟧"
+                       , "    𝑛.1.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )"
+                       , "    𝑛.1.2 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧ ⟧  # 𝕄(𝑛.1.1)"
                        , "  𝔼(L_number_times)"
                        , "    𝛿1.2 := 𝔻(⟦ λ ⤍ 𝜎1 ⟧)  # ξ.ρ"
                        , "    𝛿2.2 := 40-1C-00-00-00-00-00-00  # ξ.x"
-                       , "    𝑛.2 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧ ⟧"
+                       , "    𝑛.2.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ )"
+                       , "    𝑛.2.2 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧ ⟧  # 𝕄(𝑛.2.1)"
                        ]
 
       -- An operand is brought down by a whole run of 𝔻, so a λ function it
@@ -1259,9 +1264,11 @@ spec = do
                        , "    𝔼(L_number_plus)"
                        , "      𝛿1.2 := 40-18-00-00-00-00-00-00  # ξ.ρ"
                        , "      𝛿2.2 := 40-1C-00-00-00-00-00-00  # ξ.x"
-                       , "      𝑛.1 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧"
+                       , "      𝑛.2.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )"
+                       , "      𝑛.2.2 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧  # 𝕄(𝑛.2.1)"
                        , "    𝛿2.1 := 𝔻(⟦ λ ⤍ 𝜎1 ⟧)  # ξ.x"
-                       , "    𝑛.2 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧"
+                       , "    𝑛.1.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ )"
+                       , "    𝑛.1.2 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧  # 𝕄(𝑛.1.1)"
                        ]
 
       -- A 'symbolize' line stands the data of a term an earlier line bound
@@ -1283,7 +1290,8 @@ spec = do
                        , "    𝑛1.1 := ⟦ Δ ⤍ 01- ⟧  # ξ.x"
                        , "    𝔻(⟦ λ ⤍ 𝜎1 ⟧) == 01-"
                        , "    𝑛2.1 := ⟦ λ ⤍ 𝜎1 ⟧  # 𝑛1"
-                       , "    𝑛.1 := ⟦ z ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧"
+                       , "    𝑛.1.1 := ⟦ z ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧"
+                       , "    𝑛.1.2 := ⟦ z ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧  # 𝕄(𝑛.1.1)"
                        ]
 
       it "keeps the lines of a run that fails" $
@@ -1299,7 +1307,8 @@ spec = do
                        , "  𝔼(L_number_plus)"
                        , "    𝛿1.1 := 40-14-00-00-00-00-00-00  # ξ.ρ"
                        , "    𝛿2.1 := 40-18-00-00-00-00-00-00  # ξ.x"
-                       , "    𝑛.1 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, nope ↦ ⟦ λ ⤍ L_number_nope ⟧ ⟧"
+                       , "    𝑛.1.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )"
+                       , "    𝑛.1.2 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, nope ↦ ⟦ λ ⤍ L_number_nope ⟧ ⟧  # 𝕄(𝑛.1.1)"
                        , "  ?(L_number_nope)"
                        ]
 
@@ -1318,7 +1327,7 @@ spec = do
           withStdin sum' $
             testCLISucceeded ["dataize", symbolic, "--protocol=" ++ path, "--output=xmir", "--quiet", "--sweet", "--hide-rho"] []
           records <- readUtf8 path
-          records `shouldEndWith` "    𝑛.1 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧\n"
+          records `shouldEndWith` "    𝑛.1.2 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧  # 𝕄(𝑛.1.1)\n"
 
       -- The same facts as markup, so a program reading the protocol back never
       -- has to parse 𝜑 to learn them: the name of an element says what its
@@ -1340,7 +1349,8 @@ spec = do
                          , "    <bind meta=\"𝛿1.1\">40-14-00-00-00-00-00-00</bind>"
                          , "    <bind meta=\"𝛿2.1\">40-18-00-00-00-00-00-00</bind>"
                          , "    <minted>𝜎1</minted>"
-                         , "    <answer meta=\"𝑛.1\">⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧</answer>"
+                         , "    <built meta=\"𝑛.1.1\">Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )</built>"
+                         , "    <answer meta=\"𝑛.1.2\">⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧</answer>"
                          , "  </evaluate>"
                          , "</dataize>"
                          ]
@@ -1377,13 +1387,15 @@ spec = do
                          , "    <bind meta=\"𝛿1.1\">40-14-00-00-00-00-00-00</bind>"
                          , "    <bind meta=\"𝛿2.1\">40-18-00-00-00-00-00-00</bind>"
                          , "    <minted>𝜎1</minted>"
-                         , "    <answer meta=\"𝑛.1\">⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧</answer>"
+                         , "    <built meta=\"𝑛.1.1\">Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )</built>"
+                         , "    <answer meta=\"𝑛.1.2\">⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧</answer>"
                          , "  </evaluate>"
                          , "  <evaluate λ=\"L_number_plus\" id=\"2\">"
                          , "    <dataize meta=\"𝛿1.2\">⟦ λ ⤍ 𝜎1 ⟧</dataize>"
                          , "    <bind meta=\"𝛿2.2\">40-1C-00-00-00-00-00-00</bind>"
                          , "    <minted>𝜎2</minted>"
-                         , "    <answer meta=\"𝑛.2\">⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧</answer>"
+                         , "    <built meta=\"𝑛.2.1\">Φ.number( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ )</built>"
+                         , "    <answer meta=\"𝑛.2.2\">⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧</answer>"
                          , "  </evaluate>"
                          , "</dataize>"
                          ]
@@ -1407,7 +1419,8 @@ spec = do
                          , "    <bind meta=\"𝑛1.1\">⟦ Δ ⤍ 01- ⟧</bind>"
                          , "    <known symbol=\"𝜎1\">01-</known>"
                          , "    <bind meta=\"𝑛2.1\">⟦ λ ⤍ 𝜎1 ⟧</bind>"
-                         , "    <answer meta=\"𝑛.1\">⟦ z ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧</answer>"
+                         , "    <built meta=\"𝑛.1.1\">⟦ z ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧</built>"
+                         , "    <answer meta=\"𝑛.1.2\">⟦ z ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧</answer>"
                          , "  </evaluate>"
                          , "</morph>"
                          ]
@@ -1433,7 +1446,8 @@ spec = do
                          , "    <bind meta=\"𝑛2.1\">⟦ l ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧</bind>"
                          , "    <joined symbol=\"𝜎3\">𝜎1 𝜎2</joined>"
                          , "    <bind meta=\"𝑛3.1\">⟦ l ↦ ⟦ λ ⤍ 𝜎3 ⟧ ⟧</bind>"
-                         , "    <answer meta=\"𝑛.1\">⟦ l ↦ ⟦ λ ⤍ 𝜎3 ⟧ ⟧</answer>"
+                         , "    <built meta=\"𝑛.1.1\">⟦ l ↦ ⟦ λ ⤍ 𝜎3 ⟧ ⟧</built>"
+                         , "    <answer meta=\"𝑛.1.2\">⟦ l ↦ ⟦ λ ⤍ 𝜎3 ⟧ ⟧</answer>"
                          , "  </evaluate>"
                          , "</morph>"
                          ]
@@ -1457,7 +1471,8 @@ spec = do
                          , "    <bind meta=\"𝑛1.1\">⟦ Δ ⤍ 01- ⟧</bind>"
                          , "    <minted>𝜎1</minted>"
                          , "    <minted>𝜎2</minted>"
-                         , "    <answer meta=\"𝑛.1\">⟦ left ↦ ⟦ λ ⤍ 𝜎1 ⟧, right ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧</answer>"
+                         , "    <built meta=\"𝑛.1.1\">⟦ left ↦ ⟦ λ ⤍ 𝜎1 ⟧, right ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧</built>"
+                         , "    <answer meta=\"𝑛.1.2\">⟦ left ↦ ⟦ λ ⤍ 𝜎1 ⟧, right ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧</answer>"
                          , "  </evaluate>"
                          , "</morph>"
                          ]
@@ -1477,7 +1492,8 @@ spec = do
                          , "<morph locator=\"Φ.y\">"
                          , "  <evaluate λ=\"L_keep\" id=\"1\">"
                          , "    <bind meta=\"𝑛1.1\">⟦ Δ ⤍ 01- ⟧</bind>"
-                         , "    <answer meta=\"𝑛.1\">⟦ z ↦ ⟦ Δ ⤍ 01- ⟧ ⟧</answer>"
+                         , "    <built meta=\"𝑛.1.1\">⟦ z ↦ ⟦ Δ ⤍ 01- ⟧ ⟧</built>"
+                         , "    <answer meta=\"𝑛.1.2\">⟦ z ↦ ⟦ Δ ⤍ 01- ⟧ ⟧</answer>"
                          , "  </evaluate>"
                          , "</morph>"
                          ]
@@ -1500,11 +1516,13 @@ spec = do
                          , "      <bind meta=\"𝛿1.2\">40-18-00-00-00-00-00-00</bind>"
                          , "      <bind meta=\"𝛿2.2\">40-1C-00-00-00-00-00-00</bind>"
                          , "      <minted>𝜎1</minted>"
-                         , "      <answer meta=\"𝑛.1\">⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧</answer>"
+                         , "      <built meta=\"𝑛.2.1\">Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )</built>"
+                         , "      <answer meta=\"𝑛.2.2\">⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧</answer>"
                          , "    </evaluate>"
                          , "    <dataize meta=\"𝛿2.1\">⟦ λ ⤍ 𝜎1 ⟧</dataize>"
                          , "    <minted>𝜎2</minted>"
-                         , "    <answer meta=\"𝑛.2\">⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧</answer>"
+                         , "    <built meta=\"𝑛.1.1\">Φ.number( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ )</built>"
+                         , "    <answer meta=\"𝑛.1.2\">⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧</answer>"
                          , "  </evaluate>"
                          , "</dataize>"
                          ]
@@ -1524,7 +1542,8 @@ spec = do
                          , "    <bind meta=\"𝛿1.1\">40-00-00-00-00-00-00-00</bind>"
                          , "    <bind meta=\"𝛿2.1\">40-08-00-00-00-00-00-00</bind>"
                          , "    <minted>𝜎1</minted>"
-                         , "    <answer meta=\"𝑛.1\">⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧, nope ↦ ⟦ λ ⤍ L_number_nope ⟧ ⟧</answer>"
+                         , "    <built meta=\"𝑛.1.1\">Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )</built>"
+                         , "    <answer meta=\"𝑛.1.2\">⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧, nope ↦ ⟦ λ ⤍ L_number_nope ⟧ ⟧</answer>"
                          , "  </evaluate>"
                          , "  <stuck λ=\"L_number_nope\"/>"
                          , "</dataize>"
@@ -1564,7 +1583,8 @@ spec = do
                          , "    <bind meta=\"𝛿1.1\">40-00-00-00-00-00-00-00</bind>"
                          , "    <bind meta=\"𝛿2.1\">40-08-00-00-00-00-00-00</bind>"
                          , "    <minted>𝜎1</minted>"
-                         , "    <answer meta=\"𝑛.1\">⟦ φ ↦ ⟦ λ ⤍ 𝜎1, ρ ↦ ∅ ⟧, times ↦ ⟦ x ↦ ∅, λ ⤍ L_number_times, ρ ↦ ∅ ⟧, nope ↦ ⟦ λ ⤍ L_number_nope, ρ ↦ ∅ ⟧, ρ ↦ ⟦ bytes ↦ ⟦ φ ↦ ∅, ρ ↦ ∅ ⟧, number ↦ ⟦ φ ↦ ∅, times ↦ ⟦ x ↦ ∅, λ ⤍ L_number_times, ρ ↦ ∅ ⟧, nope ↦ ⟦ λ ⤍ L_number_nope, ρ ↦ ∅ ⟧, ρ ↦ ∅ ⟧, φ ↦ Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 40-00-00-00-00-00-00-00, ρ ↦ ∅ ⟧ ) ).times( α0 ↦ Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 40-08-00-00-00-00-00-00, ρ ↦ ∅ ⟧ ) ) ).nope, ρ ↦ ∅ ⟧ ⟧</answer>"
+                         , "    <built meta=\"𝑛.1.1\">Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1, ρ ↦ ∅ ⟧ )</built>"
+                         , "    <answer meta=\"𝑛.1.2\">⟦ φ ↦ ⟦ λ ⤍ 𝜎1, ρ ↦ ∅ ⟧, times ↦ ⟦ x ↦ ∅, λ ⤍ L_number_times, ρ ↦ ∅ ⟧, nope ↦ ⟦ λ ⤍ L_number_nope, ρ ↦ ∅ ⟧, ρ ↦ ⟦ bytes ↦ ⟦ φ ↦ ∅, ρ ↦ ∅ ⟧, number ↦ ⟦ φ ↦ ∅, times ↦ ⟦ x ↦ ∅, λ ⤍ L_number_times, ρ ↦ ∅ ⟧, nope ↦ ⟦ λ ⤍ L_number_nope, ρ ↦ ∅ ⟧, ρ ↦ ∅ ⟧, φ ↦ Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 40-00-00-00-00-00-00-00, ρ ↦ ∅ ⟧ ) ).times( α0 ↦ Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 40-08-00-00-00-00-00-00, ρ ↦ ∅ ⟧ ) ) ).nope, ρ ↦ ∅ ⟧ ⟧</answer>"
                          , "  </evaluate>"
                          , "  <stuck λ=\"L_number_nope\"/>"
                          , "</dataize>"
@@ -1586,7 +1606,8 @@ spec = do
                          , "  <evaluate λ=\"L_pick\" id=\"1\">"
                          , "    <bind meta=\"𝑛1.1\">⊥</bind>"
                          , "    <minted>𝜎1</minted>"
-                         , "    <answer meta=\"𝑛.1\">⟦ λ ⤍ 𝜎1 ⟧</answer>"
+                         , "    <built meta=\"𝑛.1.1\">⟦ λ ⤍ 𝜎1 ⟧</built>"
+                         , "    <answer meta=\"𝑛.1.2\">⟦ λ ⤍ 𝜎1 ⟧</answer>"
                          , "  </evaluate>"
                          , "</morph>"
                          ]
@@ -1639,7 +1660,8 @@ spec = do
                        , "  𝔼(L_number_times)"
                        , "    𝛿1.1 := 40-00-00-00-00-00-00-00  # ξ.ρ"
                        , "    𝛿2.1 := 40-08-00-00-00-00-00-00  # ξ.x"
-                       , "    𝑛.1 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧, nope ↦ ⟦ λ ⤍ L_number_nope ⟧ ⟧"
+                       , "    𝑛.1.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )"
+                       , "    𝑛.1.2 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧, nope ↦ ⟦ λ ⤍ L_number_nope ⟧ ⟧  # 𝕄(𝑛.1.1)"
                        , "  ?(L_number_nope)"
                        ]
 
@@ -1867,7 +1889,8 @@ spec = do
                      , "  𝔼(L_number_plus)"
                      , "    𝛿1.1 := 40-14-00-00-00-00-00-00  # ξ.ρ"
                      , "    𝛿2.1 := 40-18-00-00-00-00-00-00  # ξ.x"
-                     , "    𝑛.1 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧"
+                     , "    𝑛.1.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )"
+                     , "    𝑛.1.2 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧  # 𝕄(𝑛.1.1)"
                      ]
 
     it "saves morphing steps to dir with --steps-dir" $

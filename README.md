@@ -287,6 +287,8 @@ machine-readable protocol, with the `--protocol` option. The protocol is a
 tree: the run at the top, one block per firing under it, and inside the block
 the operands the firing bound and the term it answered with.
 
+<!-- markdownlint-disable MD013 -->
+
 ```bash
 $ phino dataize --symbolic=atoms.yaml --protocol=atoms.txt --quiet \
     --sweet --hide-rho sum.phi
@@ -295,23 +297,38 @@ $ cat atoms.txt
   𝔼(L_number_plus)
     𝛿1.1 := 40-14-00-00-00-00-00-00  # ξ.ρ
     𝛿2.1 := 40-18-00-00-00-00-00-00  # ξ.x
-    𝑛.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )
+    𝑛.1.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )
+    𝑛.1.2 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧  # 𝕄(𝑛.1.1)
 ```
+
+<!-- markdownlint-enable MD013 -->
 
 `𝔻(…)` is the run and the term it was aimed at, `𝕄(…)` where the run is a
 morphing, and `𝔼(…)` is one firing, named by the entry that answered it. The
 firings are numbered across the whole run, in the order they open, so `𝛿1.2`
 is the value bound to `𝛿1` by the second firing of the run, whichever λ
-function that was, `𝑛1.2` the same for a `morph` meta, and `𝑛.k` the k-th
-answer of the whole run, so `𝑛1.2 := 𝑛.3` reads "the `𝑛1` of this firing is
-the third answer". One firing binds a meta once and no two firings share a
-number, so every one of these names stands on exactly one line of the file and
-a line naming another one points at it and no other. Where an operand came
-down to the datum a symbol stands for, the protocol writes `𝔻(⟦ λ ⤍ 𝜎1 ⟧)`
-in place of that 42, so a reader sees that the value was manufactured rather
-than read out of the program. A `𝜎` is the name of a λ function and no term of
-its own, so 𝔻 is applied to the formation carrying it and never to the name
-alone.
+function that was, `𝑛1.2` the same for a `morph` meta, and `𝑛.3.2` the answer
+of the third firing, so `𝑛1.2 := 𝑛.3.2` reads "the `𝑛1` of this firing is what
+the third firing answered". One firing binds a meta once and no two firings
+share a number, so every one of these names stands on exactly one line of the
+file and a line naming another one points at it and no other.
+
+An answer stands on two lines and not one. A firing answers the term its entry
+wrote and `phino` morphs that term before standing it back into the program, so
+`𝑛.1.1` is what the entry wrote, with the symbols this firing minted already in
+it, and `𝑛.1.2` is the normal form 𝕄 made of it, commented with `𝕄(𝑛.1.1)` to
+say where it came from. It is the same morphing every other term goes through,
+and writing only its outcome would have the formation of `number` appear in
+place of the three tokens the entry wrote with nothing saying why. Whatever that
+morphing fires opens its own block between the two lines, exactly where a firing
+an operand took opens one, so the order the lines come in is the order the work
+was done in.
+
+Where an operand came down to the datum a symbol stands for, the protocol writes
+`𝔻(⟦ λ ⤍ 𝜎1 ⟧)` in place of that 42, so a reader sees that the value was
+manufactured rather than read out of the program. A `𝜎` is the name of a λ
+function and no term of its own, so 𝔻 is applied to the formation carrying it
+and never to the name alone.
 
 A `symbolize` line writes a line per fresh symbol it minted, ahead of the line
 binding the term that carries them, and that line is a fact and no assignment:
@@ -335,6 +352,8 @@ whether or not `--partial` goes on to park the run, since the protocol records
 what 𝔼 was asked for, and a question it could not answer belongs there as much
 as one it could:
 
+<!-- markdownlint-disable MD013 -->
+
 ```bash
 $ phino dataize --symbolic=atoms.yaml --protocol=atoms.txt --quiet \
     --sweet --hide-rho stuck.phi
@@ -344,9 +363,12 @@ $ cat atoms.txt
   𝔼(L_number_plus)
     𝛿1.1 := 40-14-00-00-00-00-00-00  # ξ.ρ
     𝛿2.1 := 40-18-00-00-00-00-00-00  # ξ.x
-    𝑛.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )
+    𝑛.1.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )
+    𝑛.1.2 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, nope ↦ ⟦ λ ⤍ L_number_nope ⟧ ⟧  # 𝕄(𝑛.1.1)
   ?(L_number_nope)
 ```
+
+<!-- markdownlint-enable MD013 -->
 
 The very same file comes back with `--partial`, where the run answers the
 residue instead of failing: what `phino` could not decide is a property of the
@@ -404,30 +426,36 @@ $ cat fork.txt
   𝔼(L_gt)
     𝛿1.1 := 𝔻(⟦ λ ⤍ 𝜎1 ⟧)  # ξ.ρ
     𝛿2.1 := 00-00-00-00-00-00-00-00  # ξ.x
-    𝑛.1 := ⟦ if ↦ ⟦ λ ⤍ L_fork, then ↦ ∅, else ↦ ∅, φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧ ⟧
+    𝑛.1.1 := Φ.bool( if ↦ ⟦ λ ⤍ L_fork, then ↦ ∅, else ↦ ∅, φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧ )
+    𝑛.1.2 := ⟦ if ↦ ⟦ λ ⤍ L_fork, then ↦ ∅, else ↦ ∅, φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧ ⟧  # 𝕄(𝑛.1.1)
   𝔼(L_plus)
     𝛿1.2 := 𝔻(⟦ λ ⤍ 𝜎1 ⟧)  # ξ.ρ
     𝛿2.2 := 3F-F0-00-00-00-00-00-00  # ξ.x
-    𝑛.2 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎3 ⟧, plus(x) ↦ ⟦ λ ⤍ L_plus ⟧, gt(x) ↦ ⟦ λ ⤍ L_gt ⟧ ⟧
+    𝑛.2.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎3 ⟧ )
+    𝑛.2.2 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎3 ⟧, plus(x) ↦ ⟦ λ ⤍ L_plus ⟧, gt(x) ↦ ⟦ λ ⤍ L_gt ⟧ ⟧  # 𝕄(𝑛.2.1)
   𝔼(L_plus)
     𝛿1.3 := 𝔻(⟦ λ ⤍ 𝜎1 ⟧)  # ξ.ρ
     𝛿2.3 := 𝔻(⟦ λ ⤍ 𝜎3 ⟧)  # ξ.x
-    𝑛.3 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎4 ⟧, plus(x) ↦ ⟦ λ ⤍ L_plus ⟧, gt(x) ↦ ⟦ λ ⤍ L_gt ⟧ ⟧
+    𝑛.3.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎4 ⟧ )
+    𝑛.3.2 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎4 ⟧, plus(x) ↦ ⟦ λ ⤍ L_plus ⟧, gt(x) ↦ ⟦ λ ⤍ L_gt ⟧ ⟧  # 𝕄(𝑛.3.1)
   𝔼(L_plus)
     𝛿1.4 := 𝔻(⟦ λ ⤍ 𝜎1 ⟧)  # ξ.ρ
     𝛿2.4 := 𝔻(⟦ λ ⤍ 𝜎1 ⟧)  # ξ.x
-    𝑛.4 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎5 ⟧, plus(x) ↦ ⟦ λ ⤍ L_plus ⟧, gt(x) ↦ ⟦ λ ⤍ L_gt ⟧ ⟧
+    𝑛.4.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎5 ⟧ )
+    𝑛.4.2 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎5 ⟧, plus(x) ↦ ⟦ λ ⤍ L_plus ⟧, gt(x) ↦ ⟦ λ ⤍ L_gt ⟧ ⟧  # 𝕄(𝑛.4.1)
   𝔼(L_fork)
     𝛿1.5 := 𝔻(⟦ λ ⤍ 𝜎2 ⟧)  # ξ.φ
-    𝑛1.5 := 𝑛.3  # ξ.then
-    𝑛2.5 := 𝑛.4  # ξ.else
+    𝑛1.5 := 𝑛.3.2  # ξ.then
+    𝑛2.5 := 𝑛.4.2  # ξ.else
     𝔻(⟦ λ ⤍ 𝜎6 ⟧) ∈ { 𝔻(⟦ λ ⤍ 𝜎4 ⟧), 𝔻(⟦ λ ⤍ 𝜎5 ⟧) }
     𝑛3.5 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎6 ⟧, plus(x) ↦ ⟦ λ ⤍ L_plus ⟧, gt(x) ↦ ⟦ λ ⤍ L_gt ⟧ ⟧  # [𝑛1, 𝑛2]
-    𝑛.5 := 𝑛3.5
+    𝑛.5.1 := 𝑛3.5
+    𝑛.5.2 := 𝑛3.5  # 𝕄(𝑛.5.1)
   𝔼(L_plus)
     𝛿1.6 := 𝔻(⟦ λ ⤍ 𝜎6 ⟧)  # ξ.ρ
     𝛿2.6 := 40-14-00-00-00-00-00-00  # ξ.x
-    𝑛.6 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎7 ⟧, plus(x) ↦ ⟦ λ ⤍ L_plus ⟧, gt(x) ↦ ⟦ λ ⤍ L_gt ⟧ ⟧
+    𝑛.6.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎7 ⟧ )
+    𝑛.6.2 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎7 ⟧, plus(x) ↦ ⟦ λ ⤍ L_plus ⟧, gt(x) ↦ ⟦ λ ⤍ L_gt ⟧ ⟧  # 𝕄(𝑛.6.1)
 ```
 
 <!-- markdownlint-enable MD013 -->
@@ -472,7 +500,8 @@ $ cat atoms.xml
     <bind meta="𝛿1.1">40-14-00-00-00-00-00-00</bind>
     <bind meta="𝛿2.1">40-18-00-00-00-00-00-00</bind>
     <minted>𝜎1</minted>
-    <answer meta="𝑛.1">Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )</answer>
+    <built meta="𝑛.1.1">Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )</built>
+    <answer meta="𝑛.1.2">⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧</answer>
   </evaluate>
 </dataize>
 ```
@@ -493,7 +522,10 @@ the name of a λ function and no term of its own, so what 𝔻 was applied to is
 and `𝛿1.2 := 𝔻(…)` in a block. The name of the element is what tells a
 manufactured datum from data, the way `𝔻(…)` does in the text format, so
 nothing has to be read off the presence of an attribute. `<answer>` holds the
-term the firing answered with, named the same way by its own `meta`.
+term the firing answered with, named the same way by its own `meta`, and
+`<built>` before it holds the term the entry wrote, the one 𝕄 made that answer
+of: two elements rather than two attributes of one, for the same reason
+`<dataize>` is no `<bind>`.
 
 `<known symbol="𝜎44">3F-F0-00-00-00-00-00-00</known>` is the fact a `symbolize`
 line writes about a symbol it minted, which the text format writes as
@@ -513,7 +545,7 @@ firing.
 
 `<minted>𝜎1</minted>` is one symbol the firing minted, one element per bare `𝜎`
 the entry wrote its answer with, standing inside the block ahead of the
-`<answer>` carrying them. That is the edge a reader joins on: a later
+`<built>` carrying them. That is the edge a reader joins on: a later
 `<dataize meta="𝛿1.5">⟦ λ ⤍ 𝜎2 ⟧</dataize>` names the symbol the firing that
 wrote `<minted>𝜎2</minted>` handed out. A firing minting two symbols writes two
 elements and one minting none writes none, which no attribute on the answer
@@ -530,6 +562,8 @@ deeper indentation means in the text. Elements are written as the run goes and
 the open ones are closed when it ends, so a run that fails still leaves a
 well-formed document behind:
 
+<!-- markdownlint-disable MD013 -->
+
 ```bash
 $ phino dataize --symbolic=atoms.yaml --protocol=atoms.xml --quiet \
     --sweet --hide-rho stuck.phi
@@ -541,11 +575,14 @@ $ cat atoms.xml
     <bind meta="𝛿1.1">40-14-00-00-00-00-00-00</bind>
     <bind meta="𝛿2.1">40-18-00-00-00-00-00-00</bind>
     <minted>𝜎1</minted>
-    <answer meta="𝑛.1">Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )</answer>
+    <built meta="𝑛.1.1">Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )</built>
+    <answer meta="𝑛.1.2">⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, nope ↦ ⟦ λ ⤍ L_number_nope ⟧ ⟧</answer>
   </evaluate>
   <stuck λ="L_number_nope"/>
 </dataize>
 ```
+
+<!-- markdownlint-enable MD013 -->
 
 ### Reducing a term inside a universe
 
@@ -600,8 +637,10 @@ $ phino dataize --symbolic=atoms.yaml --partial --sweet --hide-rho partial.phi
 Here `2.times( 3 ).plus( 4 )` was answered by the entries the file carries, so
 it was reduced — the symbol it came to sits in the hidden `ρ` of the residual
 program — while `as-bool` names a λ function no entry answers, so it stays in
-place as a normal-form subterm. A stuck site writes nothing into the
-`--protocol` file, since nothing fired there:
+place as a normal-form subterm. A stuck site opens no block in the
+`--protocol` file, since nothing fired there, and stands in it as `?(…)`:
+
+<!-- markdownlint-disable MD013 -->
 
 ```bash
 $ phino dataize --symbolic=atoms.yaml --partial --protocol=atoms.txt --quiet \
@@ -611,12 +650,17 @@ $ cat atoms.txt
   𝔼(L_number_times)
     𝛿1.1 := 40-00-00-00-00-00-00-00  # ξ.ρ
     𝛿2.1 := 40-08-00-00-00-00-00-00  # ξ.x
-    𝑛.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )
+    𝑛.1.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )
+    𝑛.1.2 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧, as-bool ↦ ⟦ λ ⤍ L_number_as_bool ⟧ ⟧  # 𝕄(𝑛.1.1)
   𝔼(L_number_plus)
     𝛿1.2 := 𝔻(⟦ λ ⤍ 𝜎1 ⟧)  # ξ.ρ
     𝛿2.2 := 40-10-00-00-00-00-00-00  # ξ.x
-    𝑛.2 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ )
+    𝑛.2.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ )
+    𝑛.2.2 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧, as-bool ↦ ⟦ λ ⤍ L_number_as_bool ⟧ ⟧  # 𝕄(𝑛.2.1)
+  ?(L_number_as_bool)
 ```
+
+<!-- markdownlint-enable MD013 -->
 
 Evaluation stays demand-driven, as the calculus prescribes: an argument
 that nothing asked for before the run got stuck is left as it is in the

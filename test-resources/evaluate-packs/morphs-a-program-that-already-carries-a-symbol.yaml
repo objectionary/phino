@@ -27,4 +27,5 @@ protocol: |
     𝔼(L_number_plus)
       𝛿1.1 := 𝔻(⟦ λ ⤍ 𝜎1 ⟧)  # ξ.ρ
       𝛿2.1 := 40-1C-00-00-00-00-00-00  # ξ.x
-      𝑛.1 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, ρ ↦ ⟦ bytes(φ) ↦ ⟦⟧, number(φ) ↦ ⟦ plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧, φ ↦ Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ ).plus( 7 ) ⟧ ⟧
+      𝑛.1.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ )
+      𝑛.1.2 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, ρ ↦ ⟦ bytes(φ) ↦ ⟦⟧, number(φ) ↦ ⟦ plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧, φ ↦ Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ ).plus( 7 ) ⟧ ⟧  # 𝕄(𝑛.1.1)
