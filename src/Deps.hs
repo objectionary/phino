@@ -101,11 +101,12 @@ opened Dataization = "dataize"
 -- One line of the protocol the '--protocol' option writes, which is a tree of
 -- the firings of the Evaluation function 𝔼 rather than a list of them. The run
 -- itself opens it — '𝕄(Q.φ)' for a morphing, '𝔻(Q)' for a dataization — and
--- under it stands one block per firing, '𝔼(L_number_plus)  # Φ.φ', naming the
--- entry that answered and the site of the program it was fired at (#1302).
--- Inside a block stand the operands the entry bound — each with the term it
--- was reduced from — whatever a 'symbolize' line of it knows about
--- a symbol it minted, the terms a 'join' line of it made one of and what it
+-- under it stands one block per firing, '𝔼(L_number_plus)  # 𝔻(Φ.φ)', naming
+-- the entry that answered, the judgment that asked for the firing and the site
+-- of the program it was fired at (#1302, #1306). Inside a block stand the
+-- operands the entry bound — each with the judgment that reduced it and the
+-- term it was reduced from — whatever a 'symbolize' line of it knows about a
+-- symbol it minted, the terms a 'join' line of it made one of and what it
 -- knows about the symbol they were joined into, and the term it answered with,
 -- one to a line, and any firing an operand took while it was being reduced,
 -- one level deeper again. The answer takes two of those lines rather than one:
@@ -124,8 +125,12 @@ data Evaluation
     -- it is fired, so the site is the one thing telling two firings of it apart
     -- by something other than the order they came in, and it is written as the
     -- comment of the line the way a stuck site carries the formation it was
-    -- asked about (#1302).
-    EvFiring Int T.Text Expression
+    -- asked about (#1302). The judgment stands beside it for the reason a stuck
+    -- site carries one: 𝔼 is fired from the 'ml' rule of morphing and from the
+    -- 'fire' rule of dataization, and the comment says what was running over
+    -- that part of the program rather than leaving a locator to say it alone
+    -- (#1306).
+    EvFiring Int T.Text Judgment Expression
   | -- A λ function no entry of the '--symbolic' file answers, at the depth the
     -- firing of it would have stood at, together with the judgment that asked
     -- for the firing and the formation 𝔼 was fired against, as it was handed
@@ -144,11 +149,18 @@ data Evaluation
     -- wrote under that meta, and the data it came down to, or the symbol that
     -- data was manufactured for.
     EvData Int T.Text Expression (Either Int Bytes)
-  | -- A 'morph' operand of the firing, or a 'symbolize' one: the meta it
-    -- bound, the term the entry wrote under that meta, and the normal form it
-    -- reached, which for a 'symbolize' line is that very normal form with the
-    -- data of it standing for unknowns.
+  | -- A 'morph' operand of the firing: the meta it bound, the term the entry
+    -- wrote under that meta, and the normal form 𝕄 reached.
     EvTerm Int T.Text Expression Expression
+  | -- A 'symbolize' line of the firing: the meta it bound, the meta of the
+    -- entry it was told to stand the data of, and the term that standing made
+    -- — the very term that meta is bound to, with the data of it standing for
+    -- unknowns. It is a binding like 'EvTerm' and differs in what the line is
+    -- commented with, since nothing of the calculus runs here: the line names
+    -- a meta the entry bound above it, the way a 'join' line names the two it
+    -- joined, where an operand line names the judgment that reduced it
+    -- (#1306).
+    EvSymbolize Int T.Text Expression Expression
   | -- What is known about a symbol a 'symbolize' line minted: dataizing the
     -- formation the symbol names answers these bytes. It is a fact about the
     -- symbol and no binding of it, since a 𝜎 is the name of a λ function and
@@ -279,14 +291,14 @@ saveEval handle cursor render salted report = do
     written :: Evaluation -> Protocol -> IO (Protocol, Maybe String)
     written (EvRun judgment locator) protocol =
       pure (protocol, Just (printf "%s(%s)" (letter judgment) (T.unpack locator)))
-    written (EvFiring depth key site) protocol = do
+    written (EvFiring depth key judgment site) protocol = do
       locator <- render site
       pure
         ( protocol
             { _fired = firings
             , _open = Map.insert depth firings protocol._open
             }
-        , Just (indented depth (printf "𝔼(%s)  # %s" (T.unpack key) locator))
+        , Just (indented depth (printf "𝔼(%s)  # %s(%s)" (T.unpack key) (letter judgment) locator))
         )
       where
         firings :: Int
@@ -296,7 +308,7 @@ saveEval handle cursor render salted report = do
       pure (protocol, Just (indented depth (printf "?(%s)  # %s(%s)" (T.unpack key) (letter judgment) form)))
     written (EvData depth spelling operand value) protocol = do
       datum <- spelled value
-      line <- commented (printf "%s := %s" (labelled protocol depth spelling) datum) operand
+      line <- commented (printf "%s := %s" (labelled protocol depth spelling) datum) Dataization operand
       pure (protocol, Just (indented depth line))
       where
         spelled :: Either Int Bytes -> IO String
@@ -305,7 +317,12 @@ saveEval handle cursor render salted report = do
     written (EvTerm depth spelling operand term) protocol = do
       let naming = labelled protocol depth spelling
       (protocol', value) <- valued protocol naming term
-      line <- commented (printf "%s := %s" naming value) operand
+      line <- commented (printf "%s := %s" naming value) Morphing operand
+      pure (protocol', Just (indented depth line))
+    written (EvSymbolize depth spelling source term) protocol = do
+      let naming = labelled protocol depth spelling
+      (protocol', value) <- valued protocol naming term
+      line <- commented' (printf "%s := %s" naming value) source
       pure (protocol', Just (indented depth line))
     written (EvKnown depth symbol bytes) protocol = do
       form <- render (standing symbol)
@@ -351,16 +368,25 @@ saveEval handle cursor render salted report = do
     borrowed protocol term = case denoted term >>= (`Map.lookup` protocol._named) of
       Nothing -> render term
       Just naming -> pure (T.unpack naming)
-    -- The line of an operand with the term it was reduced from appended to it
-    -- as a comment, since the value alone says what the meta was bound to and
-    -- never what it was bound from. It is the very term the entry wrote under
+    -- The line of an operand with the judgment that reduced it and the term it
+    -- was reduced from appended to it as a comment, since the value alone says
+    -- what the meta was bound to and neither what it was bound from nor what
+    -- was done to it — and which of the two judgments ran is the whole
+    -- difference between a line ending in data and one ending in a term
+    -- (#1306). It is the very term the entry wrote under
     -- the meta, spelled the way the calculus reads it — '$.x' is read as 'ξ.x'
     -- — which is why it goes through 'salted' and not through the 'render' the
     -- value goes through: the sweet syntax writes that same term as a bare 'x',
     -- and a bare 'x' reads as a name rather than as the term it is. It is
     -- flattened like everything else, so the whole line stays one line of 𝜑.
-    commented :: String -> Expression -> IO String
-    commented line operand = printf "%s  # %s" line <$> salted operand
+    commented :: String -> Judgment -> Expression -> IO String
+    commented line judgment operand = printf "%s  # %s(%s)" line (letter judgment) <$> salted operand
+    -- The same for a line no judgment made: a 'symbolize' one, which stands
+    -- the data of a term into unknowns and reduces nothing, so the comment
+    -- names the meta of the entry it was told to stand rather than a judgment
+    -- applied to a term of the calculus (see 'EvSymbolize').
+    commented' :: String -> Expression -> IO String
+    commented' line source = printf "%s  # %s" line <$> salted source
     -- The name of an operand meta on this firing of its λ function: the meta
     -- the entry spells it with and which firing of the run this is, since
     -- every entry numbers its own metas from 𝛿1 and 𝑛1 and only the firing
@@ -418,7 +444,7 @@ saveEvalXml handle cursor render report = do
           , printf "<%s locator=\"%s\">" (opened judgment) (quoted locator)
           ]
         )
-    elements (EvFiring depth key site) nesting = do
+    elements (EvFiring depth key judgment site) nesting = do
       locator <- render site
       pure
         ( nesting
@@ -426,7 +452,7 @@ saveEvalXml handle cursor render report = do
             , _openedAt = Map.insert depth fires nesting._openedAt
             , _closing = (depth, "evaluate") : kept
             }
-        , closers ++ [indented depth (printf "<evaluate λ=\"%s\" id=\"%d\" locator=\"%s\">" (quoted key) fires (escapeXML locator))]
+        , closers ++ [indented depth (printf "<evaluate λ=\"%s\" id=\"%d\" judgment=\"%s\" locator=\"%s\">" (quoted key) fires (opened judgment) (escapeXML locator))]
         )
       where
         (kept, closers) = closed depth nesting._closing
@@ -455,6 +481,15 @@ saveEvalXml handle cursor render report = do
           pure (printf "<dataize meta=\"%s\">%s</dataize>" (escapeXML (labelled nesting depth spelling)) (escapeXMLText form))
         stood (Right bytes) = pure (printf "<bind meta=\"%s\">%s</bind>" (escapeXML (labelled nesting depth spelling)) (escapeXMLText (printBytes bytes)))
     elements (EvTerm depth spelling _ term) nesting = do
+      body <- render term
+      let (kept, closers) = closed depth nesting._closing
+      pure (nesting{_closing = kept}, closers ++ [indented depth (printf "<bind meta=\"%s\">%s</bind>" (escapeXML (labelled nesting depth spelling)) (escapeXMLText body))])
+    -- A 'symbolize' line binds a meta to a term like every other line of a
+    -- firing, and the markup holds what it was bound to and not what it was
+    -- made from: the term an operand was reduced from is what the text format
+    -- comments a line with and the markup has never carried, so the two lines
+    -- the text now tells apart by that comment are one element here (#1306).
+    elements (EvSymbolize depth spelling _ term) nesting = do
       body <- render term
       let (kept, closers) = closed depth nesting._closing
       pure (nesting{_closing = kept}, closers ++ [indented depth (printf "<bind meta=\"%s\">%s</bind>" (escapeXML (labelled nesting depth spelling)) (escapeXMLText body))])
