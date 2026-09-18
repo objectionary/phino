@@ -1258,6 +1258,19 @@ On first run, `make bench` downloads the class, disassembles it to
 `phino rewrite`, and caches the results in `benchmark/tmp/`.
 Subsequent runs skip straight to the benchmarks.
 
+Besides parsing, printing and rewriting that class, the suite morphs
+symbolically. `benchmark/demo.phi` is a small world whose entries name the λ
+functions of `benchmark/atoms.yaml`, and each entry is a case of its own, so
+that a slowdown of one of them is a line of the report rather than a share of
+a single total. The smallest entry — one λ function fired against one unknown
+— is timed twice, over the demo world alone and over the same world merged
+into the class, and the two numbers say between them what the world around an
+entry costs (see [#1291][issue-1291]).
+
+A case whose single run is measured in seconds gets fewer warmups and fewer
+batches than a case measured in microseconds, since the whole suite runs
+inside one job; the report says how many of each a case was given.
+
 ```bash
 make bench
 ```
@@ -1365,4 +1378,5 @@ or [Stack ≥ 3.0][stack] installed.
 [jna]: https://github.com/java-native-access/jna
 [jna-native]: https://github.com/java-native-access/jna/blob/master/src/com/sun/jna/Native.java
 [jeo]: https://github.com/objectionary/jeo-maven-plugin
+[issue-1291]: https://github.com/objectionary/phino/issues/1291
 [benchmark-gha]: https://github.com/objectionary/phino/actions/runs/35116857202
