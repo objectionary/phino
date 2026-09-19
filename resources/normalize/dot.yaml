@@ -10,11 +10,22 @@
 # ⟦…, 𝜏1 ↦ 𝑛1, …⟧.𝜏1 term and looping forever. ρ on line 'result' still binds
 # the full formation, so sibling and φ-decoration references stay intact — only
 # the self-ξ path narrows, keeping normalization (near-)total.
+# The formation the dispatch stands on is the whole program here and not a part
+# of it; the 'dotg' sibling writes that one, and the two together cover every
+# dispatch this one covered alone. Where no universe is known — the 'rewrite'
+# command, and 'isNF' asking about a term on its own — 𝑒1 binds nothing, the
+# guard cannot hold, and this rule answers every dispatch as it always did.
 name: dot
 pattern: ⟦𝐵1, 𝜏1 ↦ 𝑛1, 𝐵2⟧.𝜏1
-result: 𝑒1(ρ ↦ ⟦𝐵1, 𝜏1 ↦ 𝑛1, 𝐵2⟧)
+e-match: 𝑒1
+when:
+  not:
+    eq:
+      - ⟦𝐵1, 𝜏1 ↦ 𝑛1, 𝐵2⟧
+      - 𝑒1
+result: 𝑒2(ρ ↦ ⟦𝐵1, 𝜏1 ↦ 𝑛1, 𝐵2⟧)
 where:
-  - meta: 𝑒1
+  - meta: 𝑒2
     function: contextualize
     args:
       - 𝑛1

@@ -1,0 +1,28 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# The 'dot' rule where the formation dispatched on is the whole program. Φ is
+# the name of that formation, so the body is decorated with the name and not
+# with the program: writing the program out copies it into the term, and into
+# every term that term then dispatches, so the copies compound until one term
+# weighs hundreds of times what the program does (#1318). Whoever reads the ρ
+# resolves Φ through the 'universe' morphing rule, which answers with the
+# program in normal form — the very formation that would have stood here, since
+# a dispatch reaches this rule only once Φ has already been resolved that way.
+# Everything else is 'dot': the same pattern, the same contextualization
+# context, and a guard that is the exact complement of the one there, so the
+# two never both answer a dispatch and never both refuse one.
+name: dotg
+pattern: ⟦𝐵1, 𝜏1 ↦ 𝑛1, 𝐵2⟧.𝜏1
+e-match: 𝑒1
+when:
+  eq:
+    - ⟦𝐵1, 𝜏1 ↦ 𝑛1, 𝐵2⟧
+    - 𝑒1
+result: 𝑒2(ρ ↦ Φ)
+where:
+  - meta: 𝑒2
+    function: contextualize
+    args:
+      - 𝑛1
+      - ⟦𝐵1, 𝐵2⟧

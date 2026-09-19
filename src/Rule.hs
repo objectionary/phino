@@ -6,13 +6,14 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Rule (RuleContext (..), isNF, matchExpressionWithRule, matchExpressionWithRule', meetCondition) where
+module Rule (RuleContext (..), isNF, matchExpressionWithRule, matchExpressionWithRule', matchExpressionWithRuleIn, meetCondition) where
 
 import AST
 import Builder
   ( buildAttribute
   , buildBinding
   , buildBindingThrows
+  , buildExpression
   , buildExpressionThrows
   )
 import Bytes (btsToUnescapedStr)
@@ -149,19 +150,15 @@ _eq (Y.CmpAttr left) (Y.CmpAttr right) subst _ = pure [subst | compareAttrs left
       Just (MvAttribute found) -> attr == found
       _ -> False
     compareAttrs left right _ = right == left
-_eq (Y.CmpExpr left) (Y.CmpExpr right) subst _ = pure [subst | compareExprs left right subst]
-  where
-    compareExprs :: Expression -> Expression -> Subst -> Bool
-    compareExprs (ExMeta left) (ExMeta right) (Subst mp) = case (M.lookup (Named left) mp, M.lookup (Named right) mp) of
-      (Just (MvExpression left'), Just (MvExpression right')) -> compareExprs left' right' (Subst mp)
-      _ -> False
-    compareExprs expr (ExMeta meta) (Subst mp) = case M.lookup (Named meta) mp of
-      Just (MvExpression found) -> expr == found
-      _ -> False
-    compareExprs (ExMeta meta) expr (Subst mp) = case M.lookup (Named meta) mp of
-      Just (MvExpression found) -> expr == found
-      _ -> False
-    compareExprs left right _ = left == right
+-- Both sides are built under the substitution before they are compared, so a
+-- side written as a whole term — '⟦𝐵1, 𝜏1 ↦ 𝑛1, 𝐵2⟧' and not merely a meta
+-- standing for one — is compared as the term it stands for rather than as the
+-- pattern it was written as. A side holding a meta nothing bound cannot be
+-- built, and an equality nobody can work out does not hold.
+_eq (Y.CmpExpr left) (Y.CmpExpr right) subst _ =
+  case (buildExpression left subst, buildExpression right subst) of
+    (Right left', Right right') -> pure [subst | left' == right']
+    (_, _) -> pure []
 _eq _ _ _ _ = pure []
 
 -- Hold if the left number is strictly greater than the right one. Only
@@ -373,7 +370,22 @@ metasWithPrefix prefix = nub . go
     goArgument (ArAlpha _ expr) = go expr
 
 matchExpressionWithRule :: Expression -> Y.Rule -> RuleContext -> IO [Subst]
-matchExpressionWithRule = matchExpressionBy matchExpression [substEmpty]
+matchExpressionWithRule = matchExpressionWithRuleIn Nothing
+
+-- Match a rewriting rule against an expression standing in the given universe.
+-- A rule carrying an 'e-match' is matched against that universe too and what it
+-- binds there joins every match, which is how 'dot' tells the formation it
+-- dispatched from the whole program (#1318). A rule carrying none is matched
+-- exactly as 'matchExpressionWithRule' matches it, and so is every rule where
+-- no universe is known — the 'rewrite' command rewrites a term and no world
+-- around it, and 'isNF' asks about a term alone.
+matchExpressionWithRuleIn :: Maybe Expression -> Expression -> Y.Rule -> RuleContext -> IO [Subst]
+matchExpressionWithRuleIn universe expr rule = matchExpressionBy matchExpression seed expr rule
+  where
+    seed :: [Subst]
+    seed = case (rule.ematch, universe) of
+      (Just ptn, Just whole) -> matchExpression' ptn whole
+      _ -> [substEmpty]
 
 -- Like 'matchExpressionWithRule' but matches the pattern against the whole
 -- expression only (no deep, sub-expression matching). Used by the dataization

@@ -138,7 +138,7 @@ spec = do
         ( "Q.x (Q -> [[ x -> [[]] ]]) => [[ ρ -> Q ]]"
         , ExDispatch ExRoot (AtLabel "x")
         , ExFormation [BiTau (AtLabel "x") (ExFormation [])]
-        , ExFormation [BiTau AtRho (ExFormation [BiTau (AtLabel "x") (ExFormation [BiVoid AtRho]), BiVoid AtRho])]
+        , ExFormation [BiTau AtRho ExRoot]
         )
       , -- A void slot fed a non-absolute argument can never be filled, so 'copy'
         -- cannot fire and the application is a stuck normal form. Before #959,
@@ -245,7 +245,7 @@ spec = do
             ( "a dispatch over a formation"
             , ExDispatch ExRoot (AtLabel "x")
             , ExFormation [BiTau (AtLabel "x") (ExFormation [])]
-            , ExFormation [BiTau AtRho (ExFormation [BiTau (AtLabel "x") (ExFormation [BiVoid AtRho]), BiVoid AtRho])]
+            , ExFormation [BiTau AtRho ExRoot]
             )
           ]
     forM_ cases $ \(desc, input, univ, expected) ->
@@ -262,7 +262,7 @@ spec = do
         morphRule :: String -> Yaml.MorphRule
         morphRule nm = fromMaybe (error ("no morphing rule named " ++ nm)) (find (\r -> r.name == nm) Yaml.morphingRules)
         asRule :: Yaml.MorphRule -> Yaml.Rule
-        asRule r = Yaml.Rule r.name Nothing Nothing r.match ExRoot r.when Nothing Nothing
+        asRule r = Yaml.Rule r.name Nothing Nothing r.match Nothing ExRoot r.when Nothing Nothing
         lambdaFormation = ExFormation [BiLambda (Function "L_dummy"), BiVoid AtRho]
     it "does not fire on a λ-bearing formation dispatch" $ do
       substs <- matchExpressionWithRule' [substEmpty] (ExDispatch lambdaFormation (AtLabel "x")) (asRule (morphRule "md")) rctx

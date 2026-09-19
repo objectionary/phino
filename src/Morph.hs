@@ -18,7 +18,7 @@
 -- a λ function itself, which is an evaluation — are injected as '_reduce',
 -- '_evaluate' and '_fire' rather than imported (see 'ReductionFunc' and
 -- 'EvaluationFunc').
-module Morph (ReduceContext (..), ReduceException (..), EvaluationFunc, FiringFunc, ReductionFunc, Morphed, Steps (..), deeper, emptyState, excluding, execBuildTerm, insideUniverse, leadsTo, morph, morph', morphing, normalized, parking, producer, sidePremise, unparked, unvisited, verb) where
+module Morph (ReduceContext (..), ReduceException (..), EvaluationFunc, FiringFunc, ReductionFunc, Morphed, Steps (..), deeper, emptyState, excluding, execBuildTerm, insideUniverse, leadsTo, morph, morph', morphing, normalized, parking, producer, sidePremise, universed, unparked, unvisited, verb) where
 
 import AST
 import Builder (buildExpressionThrows, contextualize)
@@ -29,7 +29,7 @@ import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as NE
 import Data.Maybe (fromMaybe)
 import qualified Data.Text as T
-import Deps (BuildTermFunc, BuildTermMethodS, Judgment (..), SaveEvalFunc, SaveStepFunc, State (..), Term (..))
+import Deps (BuildTermFunc, BuildTermMethodS, Judgment (..), SaveEvalFunc, SaveStepFunc, State (..), Term (..), dontSaveStep)
 import Lambdas (Lambdas)
 import Locator (locatedExpression, withLocatedExpression)
 import Matcher (MetaValue (..), Subst (..), combine, matchExpression', substEmpty, substSingle)
@@ -120,6 +120,15 @@ data ReduceContext = ReduceContext
     -- expression ('leadsTo', 'normalized'), and the walk reduces terms no
     -- locator of the universe aims at.
     _site :: Expression
+  , -- The world this run reduces in, as Φ denotes it: the program in normal
+    -- form. Normalization is handed it so that 'dot', dispatching off a
+    -- formation, can tell the whole program from a part of it and decorate the
+    -- body with the name Φ rather than with the program itself; writing the
+    -- program out would copy it into the term, and into every term that term
+    -- then dispatches, until the copies weigh hundreds of times what the
+    -- program does (#1318). Nothing until a run works it out ('universed'),
+    -- once, and every frame below inherits what the first one named.
+    _universe :: Maybe Expression
   , _maxDepth :: Int
   , _maxCycles :: Int
   , _steps :: Steps
@@ -306,7 +315,7 @@ unvisited term ctx
 -- evaluated in isolation by 'sidePremise', its own steps discarded.
 morph' :: Morphed -> Expression -> State -> ReduceContext -> IO (Morphed, State)
 morph' (expr, seq) univ state caller = do
-  ctx <- deeper =<< unvisited expr caller{_judgment = Morphing}
+  ctx <- deeper =<< unvisited expr =<< universed univ caller{_judgment = Morphing}
   parking seq state $ do
     rules <- if ctx._shuffle then shuffle Y.morphingRules else pure Y.morphingRules
     matched <- firstMatch ctx rules
@@ -326,7 +335,7 @@ morph' (expr, seq) univ state caller = do
     -- 'when'. Every morphing guard reads only meta-variables bound by 'match'
     -- and 'e-match', so it holds before any premise runs.
     asRule :: Y.MorphRule -> Y.Rule
-    asRule rule = Y.Rule rule.name Nothing Nothing rule.match ExRoot rule.when Nothing Nothing
+    asRule rule = Y.Rule rule.name Nothing Nothing rule.match Nothing ExRoot rule.when Nothing Nothing
     -- Evaluate the rule's premises and build its conclusion. A literal
     -- conclusion is terminal. Otherwise the conclusion meta is produced by a
     -- trailing 'morph' premise (the spine); if that premise's argument is itself
@@ -586,7 +595,20 @@ normalized expr seq ctx@ReduceContext{..} = do
     -- disabling the must-checker and breakpoints.
     rewriteContext :: ReduceContext -> RewriteContext
     rewriteContext ReduceContext{..} =
-      RewriteContext _locator _maxDepth _maxCycles _depthSensitive _buildTerm MtDisabled Nothing _saveStep
+      RewriteContext _locator _maxDepth _maxCycles _depthSensitive _universe _buildTerm MtDisabled Nothing _saveStep
+
+-- Name the world a run reduces in, where nothing has named it yet: the program
+-- in normal form, which is what Φ denotes and what 'dot' compares a dispatched
+-- formation against before it writes 'ρ ↦ Φ' (see '_universe'). Every frame of
+-- 𝕄 and of 𝔻 asks, and only the first one of a run answers, since the context
+-- travels down the recursion and what it names travels with it. The walk that
+-- works it out is itself given no world, so it folds nothing while it is
+-- deciding what the world is.
+universed :: Expression -> ReduceContext -> IO ReduceContext
+universed _ ctx@ReduceContext{_universe = Just _} = pure ctx
+universed univ ctx = do
+  (normal, _) <- normalized univ ((univ, Nothing) :| []) ctx{_locator = ExRoot, _saveStep = dontSaveStep}
+  pure ctx{_universe = Just normal}
 
 -- Bind 'expr' to a synthetic attribute of the universe and reduce it to a
 -- normal form there, handing back the extended universe together with the
@@ -611,8 +633,19 @@ insideUniverse expr univ ctx@ReduceContext{_buildTerm = buildTerm} = case univ o
     let aiming = ctx{_locator = ExDispatch ExRoot attr, _site = ExDispatch ExRoot attr}
         synthetic = ExFormation (BiTau attr expr : bds)
     (normal, _) <- normalized expr ((synthetic, Nothing) :| []) aiming
-    pure (ExFormation (BiTau attr normal : bds), aiming)
+    pure (ExFormation (BiTau attr normal : bds), aiming{_universe = extended attr normal})
   _ -> throwIO (userError "Can't reduce an expression inside a universe which is not a formation")
+  where
+    -- What Φ denotes inside the extended universe. Normalization works binding
+    -- by binding, so the normal form of the extension is the normal form of
+    -- the universe with the already-normalized term bound in front of it, and
+    -- no second walk of the world is needed to name it (see '_universe'). A
+    -- run that has not named its world yet leaves it unnamed here too, and the
+    -- frame below works it out.
+    extended :: Attribute -> Expression -> Maybe Expression
+    extended attr normal = case ctx._universe of
+      Just (ExFormation bds) -> Just (ExFormation (BiTau attr normal : bds))
+      _ -> Nothing
 
 -- Morph a term that is not part of the program, the way 'reduction' in
 -- 'Dataize' dataizes one: bound to a synthetic attribute of the universe and
