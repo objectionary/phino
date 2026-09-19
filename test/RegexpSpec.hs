@@ -77,6 +77,12 @@ spec = do
       , ("substitutes multiple groups", "$1-$2", ["full", "a", "b"], "a-b")
       , ("keeps dollar sign when no digits follow", "$ test", ["x"], "$ test")
       , ("keeps original reference for out of bounds index", "$9", ["only"], "$9")
+      ,
+        ( "keeps an oversized group reference literal"
+        , "$999999999999999999999999999999999999999999"
+        , ["only"]
+        , "$999999999999999999999999999999999999999999"
+        )
       , ("handles replacement without group references", "plain", ["x"], "plain")
       , ("handles empty replacement", "", ["x"], "")
       , ("handles empty groups list with reference", "$0", [], "$0")
