@@ -24,7 +24,7 @@ import Data.Maybe (listToMaybe)
 import Deps (Judgment (..), State (..))
 import Locator (locatedExpression)
 import Matcher (Subst, matchExpression')
-import Morph (Morphed, ReduceContext (..), ReduceException (..), ReductionFunc, deeper, excluding, execBuildTerm, insideUniverse, leadsTo, morph', normalized, parking, producer, sidePremise, unvisited, verb)
+import Morph (Morphed, ReduceContext (..), ReduceException (..), ReductionFunc, deeper, excluding, execBuildTerm, insideUniverse, leadsTo, morph', normalized, parking, producer, sidePremise, universed, unvisited, verb)
 import Random (shuffle)
 import Rewriter (Rewritten)
 import Rule (RuleContext (RuleContext), matchExpressionWithRule')
@@ -98,7 +98,7 @@ dataize universe state ctx@ReduceContext{..} = do
 -- guard ends (#1290).
 dataize' :: Dataizable -> Expression -> State -> ReduceContext -> IO (Dataized, State)
 dataize' (expr, seq) univ state caller = do
-  ctx <- deeper =<< unvisited expr caller{_judgment = Dataization}
+  ctx <- deeper =<< unvisited expr =<< universed univ caller{_judgment = Dataization}
   parking seq state $ case unknown expr of
     Just idx -> manufactured idx ctx
     Nothing -> do
@@ -140,7 +140,7 @@ dataize' (expr, seq) univ state caller = do
         (subst : _) -> pure (Just (rule, subst))
         [] -> firstMatch ctx rest
     asRule :: Y.DataizeRule -> Y.Rule
-    asRule rule = Y.Rule rule.name Nothing Nothing rule.match ExRoot rule.when Nothing Nothing
+    asRule rule = Y.Rule rule.name Nothing Nothing rule.match Nothing ExRoot rule.when Nothing Nothing
     reduce :: ReduceContext -> Y.DataizeRule -> Subst -> IO (Dataized, State)
     reduce ctx rule subst = case bytesProducer rule.dresult rule.premises of
       Nothing -> do

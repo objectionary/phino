@@ -182,6 +182,7 @@ instance FromJSON Rule where
         defaultOptions
           { fieldLabelModifier = \case
               "where_" -> "where"
+              "ematch" -> "e-match"
               other -> other
           }
         value
@@ -239,6 +240,12 @@ data Rule = Rule
   , label :: Maybe String
   , description :: Maybe String
   , pattern :: Expression
+  , -- The universe-argument matcher, the one 'MorphRule' spells as 'ematch'.
+    -- A rewriting rule is about a term and knows nothing of the world around
+    -- it, so almost every rule leaves this out; a rule that does carry one is
+    -- matched against the universe too and reads what it binds, which is how
+    -- 'dot' tells the formation it dispatched from the whole program (#1318).
+    ematch :: Maybe Expression
   , result :: Expression
   , when :: Maybe Condition
   , where_ :: Maybe [Extra]
@@ -370,10 +377,11 @@ instance Metas Operation where
 -- inference within it and nowhere else, so a kind the rule names just once
 -- carries no index anywhere in the rule.
 instance Metas Rule where
-  metas rule = metas rule.pattern ++ metas rule.result ++ metas rule.when ++ metas rule.having ++ metas rule.where_
+  metas rule = metas rule.pattern ++ metas rule.ematch ++ metas rule.result ++ metas rule.when ++ metas rule.having ++ metas rule.where_
   bare names rule =
     rule
       { pattern = bare names rule.pattern
+      , ematch = bare names rule.ematch
       , result = bare names rule.result
       , when = bare names rule.when
       , having = bare names rule.having

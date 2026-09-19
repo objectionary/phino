@@ -92,7 +92,7 @@ spec = do
         )
       ]
       ( \(desc, rewriteRules, (maxDepth, maxCycles, depthSensitive), expected) -> it desc $ do
-          let action = rewrite ExRoot rewriteRules (RewriteContext ExRoot maxDepth maxCycles depthSensitive buildTerm MtDisabled Nothing dontSaveStep)
+          let action = rewrite ExRoot rewriteRules (RewriteContext ExRoot maxDepth maxCycles depthSensitive Nothing buildTerm MtDisabled Nothing dontSaveStep)
           case expected of
             Left fragment -> action `shouldThrow` (\exc -> fragment `isInfixOf` show (exc :: SomeException))
             Right predicate -> do
@@ -149,6 +149,7 @@ spec = do
                       repeat'
                       repeat'
                       False
+                      Nothing
                       buildTerm
                       must'
                       Nothing

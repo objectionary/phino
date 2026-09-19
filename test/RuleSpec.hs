@@ -89,6 +89,7 @@ spec = do
             Nothing
             Nothing
             (ExFormation [BiMeta "B"])
+            Nothing
             (ExMeta "B")
             Nothing
             (Just [Yaml.Extra (Yaml.ArgBinding (BiMeta "J")) "join" [Yaml.ArgBinding (BiMeta "B")]])
@@ -101,6 +102,7 @@ spec = do
             Nothing
             Nothing
             (ExMeta "e")
+            Nothing
             (ExMeta "e")
             Nothing
             ( Just
@@ -117,6 +119,7 @@ spec = do
             Nothing
             Nothing
             (ExFormation [BiTau (AtLabel "x") (ExPhiMeet Nothing 0 (ExMeta "n1")), BiVoid AtRho])
+            Nothing
             (ExMeta "n1")
             Nothing
             Nothing
@@ -129,6 +132,7 @@ spec = do
             Nothing
             Nothing
             (ExFormation [BiTau (AtLabel "x") (ExPhiAgain Nothing 0 (ExMeta "n2")), BiVoid AtRho])
+            Nothing
             (ExMeta "n2")
             Nothing
             Nothing

@@ -116,7 +116,7 @@ spec = do
         dataizeRule :: String -> Yaml.DataizeRule
         dataizeRule nm = fromMaybe (error ("no dataization rule named " ++ nm)) (find (\r -> r.name == nm) Yaml.dataizationRules)
         asRule :: Yaml.DataizeRule -> Yaml.Rule
-        asRule r = Yaml.Rule r.name Nothing Nothing r.match ExRoot r.when Nothing Nothing
+        asRule r = Yaml.Rule r.name Nothing Nothing r.match Nothing ExRoot r.when Nothing Nothing
     it "does not fire on a formation" $ do
       substs <- matchExpressionWithRule' [substEmpty] (ExFormation [BiDelta (BtOne "00")]) (asRule (dataizeRule "norm")) rctx
       substs `shouldBe` []
@@ -210,7 +210,7 @@ spec = do
     it "fails on the step limit instead of morphing forever" $
       looping $ \endless -> do
         expr <- parseExpressionThrows "⟦ @ ↦ ⟦ λ ⤍ L_loop ⟧ ⟧"
-        dataize expr emptyState (ReduceContext ExRoot ExRoot 25 25 (Steps 40 0) 1 False True False False False Dataization [] Map.empty Map.empty endless buildTerm reduction evaluation fired dontSaveStep dontSaveEval)
+        dataize expr emptyState (ReduceContext ExRoot ExRoot Nothing 25 25 (Steps 40 0) 1 False True False False False Dataization [] Map.empty Map.empty endless buildTerm reduction evaluation fired dontSaveStep dontSaveEval)
           `shouldThrow` (\e -> "--max-steps=40" `isInfixOf` show (e :: SomeException))
 
     -- A budget spent on a cycle is a stuck site just as a λ function that
@@ -219,7 +219,7 @@ spec = do
     it "parks the step limit as a residual with --partial" $
       looping $ \endless -> do
         expr <- parseExpressionThrows "⟦ @ ↦ ⟦ λ ⤍ L_loop ⟧ ⟧"
-        (outcome, _, _) <- dataize expr emptyState (ReduceContext ExRoot ExRoot 25 25 (Steps 40 0) 1 False True True False False Dataization [] Map.empty Map.empty endless buildTerm reduction evaluation fired dontSaveStep dontSaveEval)
+        (outcome, _, _) <- dataize expr emptyState (ReduceContext ExRoot ExRoot Nothing 25 25 (Steps 40 0) 1 False True True False False Dataization [] Map.empty Map.empty endless buildTerm reduction evaluation fired dontSaveStep dontSaveEval)
         case outcome of
           Residual _ -> pure ()
           Dataized bts -> expectationFailure ("expected a residual, dataized to " ++ show bts)
@@ -260,8 +260,8 @@ spec = do
           , "    𝛿1.1 := 40-00-00-00-00-00-00-00  # 𝔻(ξ.ρ)"
           , "    𝛿2.1 := 40-08-00-00-00-00-00-00  # 𝔻(ξ.x)"
           , "    𝑛.1.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )  # 𝑛"
-          , "    𝑛.1.2 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, as-bytes ↦ φ, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧, div(x) ↦ ⟦ λ ⤍ L_number_div ⟧, gt(x) ↦ ⟦ λ ⤍ L_number_gt ⟧, eq(x) ↦ ⟦ φ ↦ ρ.as-bytes.eq( x.as-bytes ) ⟧, nope ↦ ⟦ λ ⤍ L_number_nope ⟧, ρ ↦ ⟦ bytes(φ) ↦ ⟦ not ↦ ⟦ λ ⤍ L_bytes_not ⟧, eq(b) ↦ ⟦ λ ⤍ L_bytes_eq ⟧ ⟧, bool(φ) ↦ ⟦ if(then, else) ↦ ⟦ λ ⤍ L_fork ⟧ ⟧, number(φ) ↦ ⟦ as-bytes ↦ φ, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧, div(x) ↦ ⟦ λ ⤍ L_number_div ⟧, gt(x) ↦ ⟦ λ ⤍ L_number_gt ⟧, eq(x) ↦ ⟦ φ ↦ ρ.as-bytes.eq( x.as-bytes ) ⟧, nope ↦ ⟦ λ ⤍ L_number_nope ⟧ ⟧, φ ↦ 2.times( 3 ).nope ⟧ ⟧  # 𝕄(𝑛.1.1)"
-          , "  ?(L_number_nope)  # 𝔻(⟦ λ ⤍ L_number_nope, ρ ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, as-bytes ↦ φ, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧, div(x) ↦ ⟦ λ ⤍ L_number_div ⟧, gt(x) ↦ ⟦ λ ⤍ L_number_gt ⟧, eq(x) ↦ ⟦ φ ↦ ρ.as-bytes.eq( x.as-bytes ) ⟧, nope ↦ ⟦ λ ⤍ L_number_nope ⟧, ρ ↦ ⟦ bytes(φ) ↦ ⟦ not ↦ ⟦ λ ⤍ L_bytes_not ⟧, eq(b) ↦ ⟦ λ ⤍ L_bytes_eq ⟧ ⟧, bool(φ) ↦ ⟦ if(then, else) ↦ ⟦ λ ⤍ L_fork ⟧ ⟧, number(φ) ↦ ⟦ as-bytes ↦ φ, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧, div(x) ↦ ⟦ λ ⤍ L_number_div ⟧, gt(x) ↦ ⟦ λ ⤍ L_number_gt ⟧, eq(x) ↦ ⟦ φ ↦ ρ.as-bytes.eq( x.as-bytes ) ⟧, nope ↦ ⟦ λ ⤍ L_number_nope ⟧ ⟧, φ ↦ 2.times( 3 ).nope ⟧ ⟧ ⟧)"
+          , "    𝑛.1.2 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, as-bytes ↦ φ, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧, div(x) ↦ ⟦ λ ⤍ L_number_div ⟧, gt(x) ↦ ⟦ λ ⤍ L_number_gt ⟧, eq(x) ↦ ⟦ φ ↦ ρ.as-bytes.eq( x.as-bytes ) ⟧, nope ↦ ⟦ λ ⤍ L_number_nope ⟧, ρ ↦ Φ ⟧  # 𝕄(𝑛.1.1)"
+          , "  ?(L_number_nope)  # 𝔻(⟦ λ ⤍ L_number_nope, ρ ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, as-bytes ↦ φ, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧, div(x) ↦ ⟦ λ ⤍ L_number_div ⟧, gt(x) ↦ ⟦ λ ⤍ L_number_gt ⟧, eq(x) ↦ ⟦ φ ↦ ρ.as-bytes.eq( x.as-bytes ) ⟧, nope ↦ ⟦ λ ⤍ L_number_nope ⟧, ρ ↦ Φ ⟧ ⟧)"
           ]
     it "leaves an unanswered λ function dataized directly as the whole residue" $ do
       ((outcome, chain), protocol) <- partially known "[[ L> Sym_arg_0 ]]"
@@ -281,12 +281,12 @@ spec = do
     forM_
       [
         ( "--max-cycles"
-        , ReduceContext ExRoot ExRoot 25 0 (Steps 250 0) 1 True True False False False Dataization [] Map.empty Map.empty emptyLambdas buildTerm reduction evaluation fired dontSaveStep dontSaveEval
+        , ReduceContext ExRoot ExRoot Nothing 25 0 (Steps 250 0) 1 True True False False False Dataization [] Map.empty Map.empty emptyLambdas buildTerm reduction evaluation fired dontSaveStep dontSaveEval
         , "--max-cycles=0"
         )
       ,
         ( "--max-depth"
-        , ReduceContext ExRoot ExRoot 0 25 (Steps 250 0) 1 True True False False False Dataization [] Map.empty Map.empty emptyLambdas buildTerm reduction evaluation fired dontSaveStep dontSaveEval
+        , ReduceContext ExRoot ExRoot Nothing 0 25 (Steps 250 0) 1 True True False False False Dataization [] Map.empty Map.empty emptyLambdas buildTerm reduction evaluation fired dontSaveStep dontSaveEval
         , "--max-depth=0"
         )
       ]
@@ -296,8 +296,8 @@ spec = do
             dataize expr emptyState ctx `shouldThrow` (\e -> message `isInfixOf` show (e :: SomeException))
       )
     forM_
-      [ ("--max-cycles", ReduceContext ExRoot ExRoot 25 0 (Steps 250 0) 1 False True False False False Dataization [] Map.empty Map.empty emptyLambdas buildTerm reduction evaluation fired dontSaveStep dontSaveEval)
-      , ("--max-depth", ReduceContext ExRoot ExRoot 0 25 (Steps 250 0) 1 False True False False False Dataization [] Map.empty Map.empty emptyLambdas buildTerm reduction evaluation fired dontSaveStep dontSaveEval)
+      [ ("--max-cycles", ReduceContext ExRoot ExRoot Nothing 25 0 (Steps 250 0) 1 False True False False False Dataization [] Map.empty Map.empty emptyLambdas buildTerm reduction evaluation fired dontSaveStep dontSaveEval)
+      , ("--max-depth", ReduceContext ExRoot ExRoot Nothing 0 25 (Steps 250 0) 1 False True False False False Dataization [] Map.empty Map.empty emptyLambdas buildTerm reduction evaluation fired dontSaveStep dontSaveEval)
       ]
       ( \(flag, ctx) ->
           it ("does not throw without --depth-sensitive even once " ++ flag ++ " is exhausted") $ do
@@ -365,4 +365,4 @@ spec = do
                    ]
     it "dataizes a located reference through the expected rules" $ do
       labels <- labelsOf "Q.foo.bar" "[[ foo -> [[ bar -> [[ @ -> Q.x ]] ]], x -> [[ D> 42- ]] ]]"
-      labels `shouldBe` ["contextualize", "md", "dot", "copy", "mf", "delta"]
+      labels `shouldBe` ["contextualize", "md", "dotg", "copy", "mf", "delta"]

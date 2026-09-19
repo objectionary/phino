@@ -59,6 +59,7 @@ rewriteCtx =
     100
     100
     False
+    Nothing
     buildTerm
     MtDisabled
     Nothing
@@ -78,6 +79,7 @@ symbolicCtx lambdas locator =
   ReduceContext
     locator -- _locator
     locator -- _site
+    Nothing -- _universe
     25 -- _maxDepth
     25 -- _maxCycles
     (Steps 1000 0) -- _steps
