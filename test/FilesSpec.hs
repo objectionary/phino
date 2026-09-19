@@ -13,7 +13,7 @@ import Data.Time.Clock.POSIX (getPOSIXTime)
 import Files (FsException (..), allPathsIn, ensuredFile, overwrite)
 import System.Directory
   ( createDirectoryIfMissing
-  , createSymbolicLink
+  , createDirectoryLink
   , executable
   , getPermissions
   , getTemporaryDirectory
@@ -102,7 +102,7 @@ spec = do
       if os == "mingw32"
         then pendingWith "Windows does not create directory symbolic links without elevated privileges"
         else do
-          createSymbolicLink ".." link
+          createDirectoryLink ".." link
           paths <- allPathsIn dir
           sort paths `shouldBe` [dir </> "top.txt"]
 
