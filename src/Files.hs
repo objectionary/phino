@@ -55,8 +55,11 @@ allPathsIn dir = do
       ( \path -> do
           isLink <- pathIsSymbolicLink path
           isDir <- doesDirectoryExist path
-          if isDir && not isLink
-            then allPathsIn path
-            else return [path]
+          if isLink
+            then return []
+            else
+              if isDir
+                then allPathsIn path
+                else return [path]
       )
   return (concat paths)
