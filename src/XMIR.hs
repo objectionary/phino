@@ -641,5 +641,5 @@ hasText cur = any isNonEmptyTextNode (C.child cur)
 getText :: C.Cursor -> IO String
 getText cur =
   case [t | c <- C.child cur, NodeContent t <- [C.node c]] of
-    (t : _) -> pure (T.unpack t)
     [] -> throwIO (InvalidXMIRFormat "Text content inside <o> element can't be empty" cur)
+    texts -> pure (T.unpack (T.concat texts))

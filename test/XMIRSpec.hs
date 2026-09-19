@@ -374,6 +374,13 @@ spec = do
       xmir' <- expressionToXMIR expr commentedContext
       printXMIR xmir' `shouldContain` "<!-- \"foo\" -->"
 
+    it "keeps text on both sides of a comment inside an object" $ do
+      split <- parseXMIRThrows "<object><o name=\"x\">foo<!-- note -->bar</o></object>"
+      joined <- parseXMIRThrows "<object><o name=\"x\">foobar</o></object>"
+      actual <- xmirToPhi split
+      expected <- xmirToPhi joined
+      actual `shouldBe` expected
+
   describe "XMIR printing edge cases" $ do
     it "wraps a chained dispatch on a formation literal with a @base attribute" $ do
       expr <- parseExpressionThrows "[[ x -> [[ y -> 5 ]].plus.minus ]]"

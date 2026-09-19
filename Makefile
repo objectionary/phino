@@ -30,7 +30,7 @@ all: test hlint fourmolu
 
 .SILENT:
 test:
-	cabal test --ghc-options=-Werror
+	cabal test all --enable-tests --ghc-options=-Werror
 
 .SILENT:
 hlint:
@@ -43,7 +43,7 @@ fourmolu:
 .SILENT:
 coverage:
 	threshold=$${COVERAGE_THRESHOLD:-80}
-	cabal test --enable-coverage --ghc-options=-Werror
+	cabal test all --enable-tests --enable-coverage --ghc-options=-Werror
 	excludes=$$(find test -name '*.hs' -exec basename {} .hs \; | paste -sd, -)
 	hpc-codecov cabal:spec -x "$${excludes}" -x "Paths_phino" --out=coverage.json
 	coverage=$$(python3 -c "import json; d=json.load(open('coverage.json')); t=sum(len(v) for v in d['coverage'].values()); c=sum(1 for v in d['coverage'].values() for h in v.values() if isinstance(h,int) and h>0); print(int(100*c/t) if t else 0)")
