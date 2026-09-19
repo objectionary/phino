@@ -13,6 +13,7 @@ import Data.Time.Clock.POSIX (getPOSIXTime)
 import Files (FsException (..), allPathsIn, ensuredFile, overwrite)
 import System.Directory
   ( createDirectoryIfMissing
+  , createSymbolicLink
   , executable
   , getPermissions
   , getTemporaryDirectory
@@ -92,6 +93,18 @@ spec = do
     it "returns an empty list for an empty directory" $ withScratchDir $ \dir -> do
       paths <- allPathsIn dir
       paths `shouldBe` []
+
+    it "does not follow symbolic links to directories" $ withScratchDir $ \dir -> do
+      let nested = dir </> "nested"
+          link = nested </> "back"
+      createDirectoryIfMissing True nested
+      writeFile (dir </> "top.txt") "top"
+      if os == "mingw32"
+        then pendingWith "Windows does not create directory symbolic links without elevated privileges"
+        else do
+          createSymbolicLink ".." link
+          paths <- allPathsIn dir
+          sort paths `shouldBe` [dir </> "top.txt"]
 
   describe "FsException" $ do
     forM_
