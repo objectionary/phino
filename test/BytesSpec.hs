@@ -7,7 +7,8 @@ module BytesSpec where
 
 import AST
 import Bytes
-  ( NonFinite (..)
+  ( BytesException (..)
+  , NonFinite (..)
   , btsAnd
   , btsConcat
   , btsEqual
@@ -32,7 +33,7 @@ import Bytes
 import Control.Exception (evaluate)
 import Control.Monad (forM_)
 import Data.Text qualified as T
-import Test.Hspec (Spec, anyErrorCall, describe, it, shouldBe, shouldSatisfy, shouldThrow)
+import Test.Hspec (Spec, describe, it, shouldBe, shouldSatisfy, shouldThrow)
 
 spec :: Spec
 spec = do
@@ -99,7 +100,7 @@ spec = do
 
   describe "btsToNum with a byte array that is not 8 bytes long" $
     it "errors out" $
-      evaluate (btsToNum (BtMany ["40", "45"])) `shouldThrow` anyErrorCall
+      evaluate (btsToNum (BtMany ["40", "45"])) `shouldThrow` (== InvalidNumberLength 2)
 
   describe "strToBts" $
     forM_
