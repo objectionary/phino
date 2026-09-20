@@ -72,9 +72,7 @@ hexByte [hi, lo] = (nibble hi `shiftL` 4) .|. nibble lo
       | c >= 'A' && c <= 'F' = fromIntegral (ord c - ord 'A' + 10)
       | c >= 'a' && c <= 'f' = fromIntegral (ord c - ord 'a' + 10)
       | otherwise = error ("Invalid hex digit: " ++ [c])
-hexByte bt = case readHex bt of
-  [(hex, "")] -> fromIntegral (hex :: Integer)
-  _ -> error $ "Invalid hex byte; " ++ bt
+hexByte bt = error $ "Invalid hex byte; " ++ bt
 
 -- >>> word8ToBytes [64, 20, 0]
 -- BtMany ["40","14","00"]
