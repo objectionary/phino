@@ -1191,9 +1191,9 @@ Here's list of functions that are supported for extensions:
 * `contextualize` - function of two arguments, that rewrites given expression
   depending on provided context according to the contextualization
   [rules](assets/contextualize.jpg)
-* `random-tau` - creates attribute with random unique name. Accepts bindings,
-  and attributes. Ensures that created attribute is not present in list of
-  provided attributes and does not exist as attribute in provided bindings.
+* `random-tau` - creates an attribute with a random unique name. It accepts no
+  arguments; uniqueness is guaranteed across all names already taken in the
+  document.
 * `dataize` - dataizes given expression and returns bytes.
 * `concat` - accepts bytes or dataizable expressions as arguments,
   concatenates them into single sequence and convert it to expression
