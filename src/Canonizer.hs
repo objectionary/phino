@@ -12,6 +12,10 @@ import Rewriter (Rewritten)
 
 canonizeBindings :: [Binding] -> Int -> ([Binding], Int)
 canonizeBindings [] idx = ([], idx)
+canonizeBindings ((BiLambda (Function name)) : rest) idx
+  | name == "Package" =
+    let (bds', idx') = canonizeBindings rest idx
+     in (BiLambda (Function name) : bds', idx')
 canonizeBindings ((BiLambda (Function _)) : rest) idx =
   let (bds', idx') = canonizeBindings rest (idx + 1)
    in (BiLambda (Function (T.pack ("Fn" <> show idx))) : bds', idx')
