@@ -6,7 +6,7 @@ module Random (randomString, shuffle) where
 import Control.Exception (throwIO)
 import Control.Monad (forM_, replicateM)
 import Data.Char (intToDigit)
-import Data.IORef (IORef, modifyIORef', newIORef, readIORef)
+import Data.IORef (IORef, atomicModifyIORef', newIORef)
 import Data.Set (Set)
 import qualified Data.Set as Set
 import qualified Data.Vector as V
@@ -45,22 +45,22 @@ generate (ch : rest) = do
 maxAttempts :: Int
 maxAttempts = 100000
 
-regenerate :: String -> Set String -> IO String
-regenerate pat set = go maxAttempts
+regenerate :: String -> IO String
+regenerate pat = go maxAttempts
   where
     go :: Int -> IO String
     go 0 = throwIO (userError (printf "randomString() cannot produce a unique value for pattern '%s': the value space is exhausted" pat))
     go attempts = do
       next <- generate pat
-      if next `Set.member` set
-        then go (attempts - 1)
-        else do
-          modifyIORef' strings (Set.insert next)
-          pure next
+      fresh <- atomicModifyIORef' strings $ \set ->
+        if next `Set.member` set
+          then (set, False)
+          else (Set.insert next set, True)
+      if fresh then pure next else go (attempts - 1)
 
 randomString :: String -> IO String
 randomString pat
-  | randomized pat = readIORef strings >>= regenerate pat
+  | randomized pat = regenerate pat
   | otherwise = generate pat
   where
     randomized :: String -> Bool
