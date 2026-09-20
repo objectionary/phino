@@ -10,7 +10,7 @@ module Files (FsException (..), ensuredFile, allPathsIn, overwrite) where
 
 import Control.Exception (Exception, onException, throwIO)
 import Control.Monad (forM, when)
-import System.Directory (copyPermissions, doesDirectoryExist, doesFileExist, listDirectory, removeFile, renameFile)
+import System.Directory (copyPermissions, doesDirectoryExist, doesFileExist, listDirectory, pathIsSymbolicLink, removeFile, renameFile)
 import System.FilePath (takeDirectory, takeFileName, (</>))
 import System.IO (Handle, hClose, hPutStr, hSetEncoding, openTempFileWithDefaultPermissions, utf8)
 import Text.Printf (printf)
@@ -53,9 +53,13 @@ allPathsIn dir = do
     forM
       nested
       ( \path -> do
+          isLink <- pathIsSymbolicLink path
           isDir <- doesDirectoryExist path
-          if isDir
-            then allPathsIn path
-            else return [path]
+          if isLink
+            then return []
+            else
+              if isDir
+                then allPathsIn path
+                else return [path]
       )
   return (concat paths)
