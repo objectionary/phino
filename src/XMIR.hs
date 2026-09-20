@@ -148,7 +148,9 @@ expression (ExApplication expr arg) ctx = do
         if null base'
           then [("as", as)]
           else [("as", as), ("base", base')]
-  pure (base, children ++ [object attrs children'])
+  if null base && not (null children)
+    then pure ("", [object [] (children ++ [object attrs children'])])
+    else pure (base, children ++ [object attrs children'])
   where
     (as, texpr) = case arg of
       ArTau attr value -> (printAttribute attr, value)
