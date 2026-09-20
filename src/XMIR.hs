@@ -584,7 +584,9 @@ xmirToApplication = xmirToApplication' 0
             | not (hasAttr "base" arg) && hasText arg = do
                 key <- asToKey arg idx
                 bytes <- getText arg
-                pure (ExApplication expr (mkArg key (ExFormation [BiDelta (bytesToBts bytes), BiVoid AtRho])))
+                bds <- mapM (`xmirToFormationBinding` fqn) (arg C.$/ C.element (toName "o"))
+                let delta = BiDelta (bytesToBts (T.unpack (T.strip (T.pack bytes))))
+                pure (ExApplication expr (mkArg key (ExFormation (delta : withVoidRho bds))))
             | otherwise = do
                 key <- asToKey arg idx
                 arg' <- xmirToExpression arg fqn
