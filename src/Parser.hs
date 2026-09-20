@@ -25,7 +25,7 @@ import AST
 import Bytes (nonFiniteBts, nonFiniteOf, numToBts, strToBts)
 import Control.Exception (Exception)
 import Control.Monad (guard, when)
-import Data.Char (isAsciiLower, isDigit)
+import Data.Char (isAsciiLower, isDigit, toUpper)
 import Data.Scientific (toRealFloat)
 import qualified Data.Text as T
 import Data.Void
@@ -168,7 +168,7 @@ byte = do
   where
     upperHex :: Char -> Parser Char
     upperHex ch
-      | isDigit ch || ('A' <= ch && ch <= 'F') = return ch
+      | isDigit ch || ('A' <= toUpper ch && toUpper ch <= 'F') = return (toUpper ch)
       | otherwise = fail ("expected 0-9 or A-F, got " ++ show ch)
 
 -- bytes
