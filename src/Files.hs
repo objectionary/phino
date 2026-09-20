@@ -10,7 +10,7 @@ module Files (FsException (..), ensuredFile, allPathsIn, overwrite) where
 
 import Control.Exception (Exception, onException, throwIO)
 import Control.Monad (forM, when)
-import System.Directory (copyPermissions, doesDirectoryExist, doesFileExist, listDirectory, pathIsSymbolicLink, removeFile, renameFile)
+import System.Directory (copyPermissions, createDirectoryIfMissing, doesDirectoryExist, doesFileExist, listDirectory, pathIsSymbolicLink, removeFile, renameFile)
 import System.FilePath (takeDirectory, takeFileName, (</>))
 import System.IO (Handle, hClose, hPutStr, hSetEncoding, openTempFileWithDefaultPermissions, utf8)
 import Text.Printf (printf)
@@ -31,6 +31,7 @@ ensuredFile pth = do
 
 overwrite :: FilePath -> String -> IO ()
 overwrite file content = do
+  createDirectoryIfMissing True (takeDirectory file)
   (temp, handle) <- openTempFileWithDefaultPermissions (takeDirectory file) (takeFileName file)
   replace temp handle `onException` (hClose handle >> removeFile temp)
   where
