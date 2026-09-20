@@ -39,6 +39,13 @@ validateYamlObject v keys
     current :: [Key.Key]
     current = KeyMap.keys v
 
+validateKnownYamlKeys :: (MonadFail a) => Object -> [String] -> a ()
+validateKnownYamlKeys v keys =
+  let unknown = filter (\key -> key `notElem` map Key.fromString keys) (KeyMap.keys v)
+   in if null unknown
+        then pure ()
+        else fail (printf "Unknown key '%s', expected one of: %s" (show (head unknown)) (show keys))
+
 parseJSON' :: String -> (String -> Either String a) -> Value -> Parser a
 parseJSON' nm func =
   withText
@@ -177,7 +184,8 @@ instance FromJSON Extra where
       )
 
 instance FromJSON Rule where
-  parseJSON value = do
+  parseJSON value@(Object object) = do
+    validateKnownYamlKeys object ["name", "pattern", "result", "e-match", "when", "having", "where"]
     rule <-
       genericParseJSON
         defaultOptions
@@ -192,6 +200,7 @@ instance FromJSON Rule where
     referenceless rule.name "where" rule.where_
     referenceless rule.name "having" rule.having
     pure rule
+  parseJSON value = genericParseJSON defaultOptions value
 
 data Number
   = MetaIndex Text
