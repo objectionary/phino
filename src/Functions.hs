@@ -3,7 +3,7 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Functions (buildTerm, execFunctions) where
+module Functions (buildTerm, buildFunctions, execFunctions) where
 
 import AST
 import Builder
@@ -31,6 +31,9 @@ import qualified Yaml as Y
 -- executing dataization and morphing rules, but not rewriting rules.
 execFunctions :: [String]
 execFunctions = ["evaluate", "morph"]
+
+buildFunctions :: [String]
+buildFunctions = ["contextualize", "random-tau", "dataize", "concat", "sed", "random-string", "size", "tau", "string", "number", "sum", "join"]
 
 buildTerm :: BuildTermFunc
 buildTerm func args subst = do
