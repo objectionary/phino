@@ -134,6 +134,7 @@ spec = do
       , ("handles word boundary", "\\bword\\b", "WORD", "word in a word", "WORD in a WORD")
       , ("terminates on an empty-match pattern (anchored ^)", "^", "X", "hello", "XhXeXlXlXoX")
       , ("terminates on an empty regex pattern", "", "X", "hello", "XhXeXlXlXoX")
+      , ("keeps UTF-8 characters together after an empty match", "(?=.)", "X", "é", "Xé")
       ]
       ( \(desc, pattern, replacement, input, expected) -> it desc $ do
           regex <- R.compile (B.pack pattern)

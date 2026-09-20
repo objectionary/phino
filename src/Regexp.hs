@@ -6,7 +6,7 @@ module Regexp where
 import Control.Exception
 import Data.Array (bounds, (!))
 import qualified Data.ByteString.Char8 as B
-import Data.Char (isDigit)
+import Data.Char (isDigit, ord)
 import Data.Maybe (fromMaybe)
 import Text.Read (readMaybe)
 import qualified Text.Regex.PCRE.ByteString as R
@@ -93,8 +93,25 @@ replaceAll regex rep input = go input B.empty
           let replacement = substituteGroups rep groups
           if len == 0
             then
-              let next = B.take 1 rest2
+              let next = B.take (utf8Width rest2) rest2
                in if B.null next
                     then return $ B.concat [acc, before, replacement]
-                    else go (B.drop 1 rest2) (B.concat [acc, before, replacement, next])
+                    else go (B.drop (B.length next) rest2) (B.concat [acc, before, replacement, next])
             else go rest2 (B.concat [acc, before, replacement])
+    utf8Width :: B.ByteString -> Int
+    utf8Width bytes =
+      case B.uncons bytes of
+        Nothing -> 0
+        Just (lead, rest)
+          | ord lead < 0xC0 -> 1
+          | ord lead < 0xE0 -> continuationWidth 2 rest
+          | ord lead < 0xF0 -> continuationWidth 3 rest
+          | ord lead < 0xF8 -> continuationWidth 4 rest
+          | otherwise -> 1
+    continuationWidth :: Int -> B.ByteString -> Int
+    continuationWidth width rest =
+      if B.length rest >= width - 1 && B.all isContinuation (B.take (width - 1) rest)
+        then width
+        else 1
+    isContinuation :: Char -> Bool
+    isContinuation byte = ord byte >= 0x80 && ord byte < 0xC0
