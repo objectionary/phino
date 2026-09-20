@@ -247,19 +247,15 @@ spec = do
         Right _ -> expectationFailure "expected decoding to fail"
 
   describe "rejects a condition whose arguments count is wrong" $
-    -- 'asum' discards each branch's specific failure message once every
-    -- branch has failed, so only the overall Left/Right outcome (not the
-    -- message text) is observable from here; each case still exercises the
-    -- condition's own "expects exactly two arguments" guard internally.
     forM_
-      [ ("'eq' with a single argument", "eq: [1]")
-      , ("'gt' with a single argument", "gt: [1]")
-      , ("'in' with a single argument", "in: ['!t']")
-      , ("'matches' with a single argument", "matches: ['hi']")
-      , ("'part-of' with a single argument", "part-of: ['!e']")
-      , ("'disjoint' with a single argument", "disjoint: [[]]")
+      [ ("'eq' with a single argument", "eq: [1]", "'eq' expects exactly two arguments")
+      , ("'gt' with a single argument", "gt: [1]", "'gt' expects exactly two arguments")
+      , ("'in' with a single argument", "in: ['!t']", "'in' expects exactly two arguments")
+      , ("'matches' with a single argument", "matches: ['hi']", "'matches' expects exactly two arguments")
+      , ("'part-of' with a single argument", "part-of: ['!e']", "'part-of' expects exactly two arguments")
+      , ("'disjoint' with a single argument", "disjoint: [[]]", "'disjoint' expects exactly two arguments")
       ]
-      (\(desc, yaml) -> it desc ((decodeYaml' yaml :: Either Yaml.ParseException Condition) `shouldSatisfy` isLeft))
+      (\(desc, yaml, message) -> it desc ((decodeYaml' yaml :: Either Yaml.ParseException Condition) `shouldSatisfy` failsWith message))
 
   describe "rejects a malformed premise" $
     forM_

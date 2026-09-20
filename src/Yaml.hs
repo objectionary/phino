@@ -99,61 +99,59 @@ instance FromJSON Comparable where
       ]
 
 instance FromJSON Condition where
-  parseJSON =
-    withObject
-      "Condition"
-      ( \v -> do
-          validateYamlObject v ["and", "or", "not", "nf", "absolute", "eq", "gt", "in", "matches", "part-of", "disjoint", "formation"]
-          asum
-            [ do
-                conds <- v .: "and"
-                if null conds
-                  then fail "The 'and' condition requires at least one element"
-                  else pure (And conds)
-            , do
-                conds <- v .: "or"
-                if null conds
-                  then fail "The 'or' condition requires at least one element"
-                  else pure (Or conds)
-            , Not <$> v .: "not"
-            , NF <$> v .: "nf"
-            , Absolute <$> v .: "absolute"
-            , IsFormation <$> v .: "formation"
-            , do
-                vals <- v .: "disjoint"
-                case vals of
-                  [attrs_, bds_] -> Disjoint <$> parseJSON attrs_ <*> parseJSON bds_
-                  _ -> fail "'disjoint' expects exactly two arguments"
-            , do
-                vals <- v .: "eq"
-                case vals of
-                  [left_, right_] -> Eq <$> parseJSON left_ <*> parseJSON right_
-                  _ -> fail "'eq' expects exactly two arguments"
-            , do
-                vals <- v .: "gt"
-                case vals of
-                  [left_, right_] -> Gt <$> parseJSON left_ <*> parseJSON right_
-                  _ -> fail "'gt' expects exactly two arguments"
-            , do
-                vals <- v .: "in"
-                case vals of
-                  [attr_, binding_] -> do
-                    attr <- parseJSON attr_
-                    bd <- parseJSON binding_
-                    pure (In attr bd)
-                  _ -> fail "'in' expects exactly two arguments"
-            , do
-                vals <- v .: "matches"
-                case vals of
-                  [pat, ex] -> Matches <$> parseJSON pat <*> parseJSON ex
-                  _ -> fail "'matches' expects exactly two arguments"
-            , do
-                vals <- v .: "part-of"
-                case vals of
-                  [ex, bd] -> PartOf <$> parseJSON ex <*> parseJSON bd
-                  _ -> fail "'part-of' expects exactly two arguments"
-            ]
-      )
+  parseJSON = withObject "Condition" parseCondition
+
+parseCondition :: Object -> Parser Condition
+parseCondition v = do
+  validateYamlObject v ["and", "or", "not", "nf", "absolute", "eq", "gt", "in", "matches", "part-of", "disjoint", "formation"]
+  case KeyMap.keys v of
+    [key] -> case Key.toString key of
+      "and" -> do
+        conds <- v .: "and"
+        if null conds
+          then fail "The 'and' condition requires at least one element"
+          else pure (And conds)
+      "or" -> do
+        conds <- v .: "or"
+        if null conds
+          then fail "The 'or' condition requires at least one element"
+          else pure (Or conds)
+      "not" -> Not <$> v .: "not"
+      "nf" -> NF <$> v .: "nf"
+      "absolute" -> Absolute <$> v .: "absolute"
+      "formation" -> IsFormation <$> v .: "formation"
+      "disjoint" -> do
+        vals <- v .: "disjoint"
+        case vals of
+          [attrs_, bds_] -> Disjoint <$> parseJSON attrs_ <*> parseJSON bds_
+          _ -> fail "'disjoint' expects exactly two arguments"
+      "eq" -> do
+        vals <- v .: "eq"
+        case vals of
+          [left_, right_] -> Eq <$> parseJSON left_ <*> parseJSON right_
+          _ -> fail "'eq' expects exactly two arguments"
+      "gt" -> do
+        vals <- v .: "gt"
+        case vals of
+          [left_, right_] -> Gt <$> parseJSON left_ <*> parseJSON right_
+          _ -> fail "'gt' expects exactly two arguments"
+      "in" -> do
+        vals <- v .: "in"
+        case vals of
+          [attr_, binding_] -> In <$> parseJSON attr_ <*> parseJSON binding_
+          _ -> fail "'in' expects exactly two arguments"
+      "matches" -> do
+        vals <- v .: "matches"
+        case vals of
+          [pat, ex] -> Matches <$> parseJSON pat <*> parseJSON ex
+          _ -> fail "'matches' expects exactly two arguments"
+      "part-of" -> do
+        vals <- v .: "part-of"
+        case vals of
+          [ex, bd] -> PartOf <$> parseJSON ex <*> parseJSON bd
+          _ -> fail "'part-of' expects exactly two arguments"
+      _ -> fail "Unknown condition type"
+    _ -> fail "Exactly one condition type is expected"
 
 instance FromJSON ExtraArgument where
   parseJSON v =
