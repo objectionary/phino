@@ -319,12 +319,14 @@ escapeXML = concatMap escapeChar
     escapeChar '\'' = "&apos;"
     escapeChar ch = [ch]
 
+-- Escape XML text and encode '>' to prevent the forbidden ']]>' sequence.
 escapeXMLText :: String -> String
 escapeXMLText = concatMap escapeChar
   where
     escapeChar :: Char -> String
     escapeChar '&' = "&amp;"
     escapeChar '<' = "&lt;"
+    escapeChar '>' = "&gt;"
     escapeChar ch = [ch]
 
 indent :: Int -> TB.Builder
