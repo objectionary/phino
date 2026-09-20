@@ -8,6 +8,7 @@ import Data.Array (bounds, (!))
 import qualified Data.ByteString.Char8 as B
 import Data.Char (isDigit)
 import Data.Maybe (fromMaybe)
+import Text.Read (readMaybe)
 import qualified Text.Regex.PCRE.ByteString as R
 
 compile :: B.ByteString -> IO R.Regex
@@ -51,8 +52,9 @@ substituteGroups rep groups = B.concat (go (B.unpack rep))
        in if null digits
             then B.singleton '$' : go rest
             else
-              let idx = read digits
-                  val = fromMaybe (B.pack ('$' : digits)) (safeIndex idx groups)
+              let val = case readMaybe digits of
+                    Nothing -> B.pack ('$' : digits)
+                    Just idx -> fromMaybe (B.pack ('$' : digits)) (safeIndex idx groups)
                in val : go afterDigits
     go (c : rest) = B.singleton c : go rest
     safeIndex :: Int -> [B.ByteString] -> Maybe B.ByteString
