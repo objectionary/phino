@@ -160,7 +160,9 @@ formationBinding (BiTau (AtLabel label) expr) ctx = Just <$> namedBinding (T.unp
 formationBinding (BiTau AtRho expr) ctx = Just <$> namedBinding (show AtRho) expr ctx
 formationBinding (BiTau AtPhi expr) ctx = Just <$> namedBinding (show AtPhi) expr ctx
 formationBinding (BiDelta bytes) _ = pure (Just (NodeContent (T.pack (printBytes bytes))))
-formationBinding (BiLambda (Function name)) _ = pure (Just (object [("name", show AtLambda)] [NodeContent name]))
+formationBinding (BiLambda (Function name)) _
+  | "Φ." `T.isPrefixOf` name = pure (Just (object [("atom", T.unpack name), ("name", show AtLambda)] []))
+  | otherwise = pure (Just (object [("name", show AtLambda)] [NodeContent name]))
 formationBinding (BiVoid AtRho) _ = pure Nothing
 formationBinding (BiVoid AtPhi) _ = pure (Just (object [("name", show AtPhi), ("base", "∅")] []))
 formationBinding (BiVoid (AtLabel label)) _ = pure (Just (object [("name", T.unpack label), ("base", "∅")] []))
@@ -481,7 +483,7 @@ xmirToFormationBinding cur fqn
   | not (hasAttr "base" cur) = do
       name <- getAttr "name" cur
       case name of
-        "λ" -> BiLambda . Function <$> lambdaFunction
+        "λ" -> BiLambda . Function <$> atomOrLambda
         ('α' : _) -> throwIO (InvalidXMIRFormat "Formation child @name can't start with α" cur)
         "φ" -> BiTau AtPhi <$> xmirToFormation cur (name : fqn)
         "ρ" -> BiTau AtRho <$> xmirToFormation cur (name : fqn)
@@ -503,6 +505,11 @@ xmirToFormationBinding cur fqn
     -- The λ function name is carried by the text of the marker element. XMIR
     -- coming from elsewhere holds no name, so fall back to the position in the
     -- tree, which is the only hint left
+    atomOrLambda :: IO T.Text
+    atomOrLambda
+      | hasAttr "atom" cur = T.pack <$> getAttr "atom" cur
+      | otherwise = lambdaFunction
+
     lambdaFunction :: IO T.Text
     lambdaFunction
       | hasText cur = T.strip . T.pack <$> getText cur
