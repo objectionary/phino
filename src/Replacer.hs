@@ -64,6 +64,8 @@ replaceExpression' state@(expr, ptns@(ptn : _ptns), repls@(repl : _repls)) ctx =
 replaceExpression' state _ = state
 
 replaceBindingsFast :: [Binding] -> [Expression] -> [Expression] -> [Binding]
+replaceBindingsFast _ ((ExFormation []) : _ptns) ((ExFormation rbds) : _repls) =
+  replaceBindingsFast rbds _ptns _repls
 replaceBindingsFast bds ((ExFormation pbds) : _ptns) ((ExFormation rbds) : _repls) =
   let replaced = findAndReplace bds pbds rbds
    in replaceBindingsFast replaced _ptns _repls
