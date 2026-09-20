@@ -246,3 +246,10 @@ spec = do
       buildBinding (BiMeta "B") (substSingle "B" (MvBindings [BiVoid AtRho, BiVoid AtRho])) `shouldSatisfy` isLeft
     it "build formation with duplicates" $
       buildExpression (ExMeta "e") (substSingle "e" (MvExpression (ExFormation [BiVoid AtRho, BiVoid AtRho]))) `shouldSatisfy` isLeft
+
+  describe "buildExpression" $
+    it "does not leave an invalid global application around rho" $
+      buildExpression
+        (ExApplication ExRoot (ArTau AtRho (ExFormation [BiVoid AtRho])))
+        substEmpty
+        `shouldBe` Right ExRoot
