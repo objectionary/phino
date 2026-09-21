@@ -158,6 +158,9 @@ buildExpression (ExDispatch ex at) subst = do
   dispatched <- buildExpression ex subst
   at' <- buildAttribute at subst
   Right (ExDispatch dispatched at')
+buildExpression (ExApplication ExRoot (ArTau AtRho expr)) subst = do
+  _ <- buildExpression expr subst
+  Right ExRoot
 buildExpression (ExApplication expr arg) subst = do
   applied <- buildExpression expr subst
   arg' <- buildArgument arg subst
