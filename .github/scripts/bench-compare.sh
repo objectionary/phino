@@ -35,7 +35,12 @@ threshold=$3
 # Extract one "<name> <avg-us>" line per case per round from a bench output file.
 extract() {
   awk '
-    /^=== .* ===$/ { name = $2; next }
+    /^=== .* ===$/ {
+      name = $0
+      sub(/^=== /, "", name)
+      sub(/ ===$/, "", name)
+      next
+    }
     /^[[:space:]]*avg:/ { if (name != "") { print name, $2; name = "" } }
   ' "$1"
 }
