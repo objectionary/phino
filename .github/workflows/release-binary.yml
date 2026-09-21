@@ -20,23 +20,14 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
-      - name: Remove pre-installed ghcup (ubuntu-24.04)
-        # The ubuntu-24.04 image ships its own ghcup in /usr/local/.ghcup.
-        # It stays ahead of the /home/runner/.ghcup that haskell-actions/setup
-        # installs, so `ghc` and `cabal` resolve to stale binaries that do not
-        # carry the requested versions ('The version ... is not installed'),
-        # and the leg fails while the other four legs pass. The image ghcup is
-        # dead anyway once setup prepends its own bin to PATH; only one ghcup
-        # may win, see https://github.com/objectionary/phino/issues/1141
-        if: matrix.os == 'ubuntu-24.04'
-        shell: bash
-        run: |
-          sudo rm -rf /usr/local/.ghcup
       - name: Set up GHC and Cabal
         uses: haskell-actions/setup@v2.12.0
         with:
           ghc-version: '9.6.7'
           cabal-version: '3.12.1.0'
+          # The step below refreshes the index once the cache is restored,
+          # which is the only moment a refresh is worth anything here
+          cabal-update: false
       - name: Cache Cabal build artifacts
         uses: actions/cache@v6
         with:
@@ -49,10 +40,17 @@ jobs:
           key: ${{ runner.os }}-${{ runner.arch }}-cabal-${{ hashFiles('**/*.cabal') }}-${{ hashFiles('cabal.project', 'cabal.project.freeze') }}
           restore-keys: |
             ${{ runner.os }}-${{ runner.arch }}-cabal-
+      - name: Update the package index
+        # Both mirrors that hackage advertises in its mirrors.json answer 403,
+        # so one hiccup at hackage.haskell.org walks the whole list and reports
+        # the last 403 as fatal, see
+        # https://github.com/objectionary/phino/issues/1379
+        shell: bash
+        run: |
+          cabal update || (sleep 30 && cabal update) || (sleep 60 && cabal update)
       - name: Build release binary
         shell: bash
         run: |
-          cabal update
           make binary
       - name: Upload phino binary to Amazon S3
         uses: aws-actions/configure-aws-credentials@v6.3.0
