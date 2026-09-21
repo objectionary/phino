@@ -57,7 +57,10 @@ body=$(
       }
       return total
     }
-    function median(values, total) { return values[int((total + 1) / 2)] }
+    function median(values, total) {
+      if (total % 2 == 0) { return (values[total / 2] + values[total / 2 + 1]) / 2 }
+      return values[int((total + 1) / 2)]
+    }
     function spread(values, total) { return total > 1 ? (values[total] - values[1]) / median(values, total) : 0 }
     function noiseText(value, total) { return total > 1 ? sprintf("±%.1f%%", value * 100) : "n/a" }
     { count[$1, $2]++; sample[$1, $2, count[$1, $2]] = $3; names[$2] = 1 }
