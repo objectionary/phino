@@ -233,6 +233,15 @@ spec = do
       expr <- xmirToPhi doc
       parseExpressionThrows (printExpression expr) `shouldReturn` expr
 
+  describe "atom result types in XMIR" $
+    it "survives a round trip through a λ marker" $ do
+      doc <- parseXMIRThrows "<object><o name=\"bar\"><o base=\"∅\" name=\"x\"/><o atom=\"Φ.number\" name=\"λ\"/></o></object>"
+      expr <- xmirToPhi doc
+      result <- expressionToXMIR expr defaultXmirContext
+      let printed = printXMIR result
+      printed `shouldContain` "atom=\"Φ.number\""
+      printed `shouldNotContain` "<o name=\"λ\">"
+
   describe "--hide-rho in XMIR" $
     it "drops every bound ρ from the printed document" $ do
       expr <- parseExpressionThrows "[[ x -> 4, ^ -> [[ y -> 5 ]] ]]"
