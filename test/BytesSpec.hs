@@ -33,7 +33,7 @@ import Bytes
 import Control.Exception (evaluate)
 import Control.Monad (forM_)
 import Data.Text qualified as T
-import Test.Hspec (Spec, describe, it, shouldBe, shouldSatisfy, shouldThrow)
+import Test.Hspec (Spec, anyErrorCall, describe, it, shouldBe, shouldSatisfy, shouldThrow)
 
 spec :: Spec
 spec = do
