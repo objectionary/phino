@@ -69,7 +69,7 @@ where
 import AST
 import Control.Exception (Exception, throwIO)
 import Control.Monad (void)
-import Data.Aeson (FromJSON (parseJSON), Key, Object, withObject, (.!=), (.:), (.:?))
+import Data.Aeson (FromJSON (parseJSON), Key, Object, withObject, (.!=), (.:?))
 import Data.List (find)
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
