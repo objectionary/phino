@@ -11,14 +11,23 @@
 # a dispatch reaches this rule only once Φ has already been resolved that way.
 # Everything else is 'dot': the same pattern, the same contextualization
 # context, and a guard that is the exact complement of the one there, so the
-# two never both answer a dispatch and never both refuse one.
+# two never both answer a dispatch and never both refuse one, save a formation
+# holding both λ and Δ, which both refuse and leave to 'dl' (#1395).
 name: dotg
 pattern: ⟦𝐵1, 𝜏1 ↦ 𝑛1, 𝐵2⟧.𝜏1
 e-match: 𝑒1
 when:
-  eq:
-    - ⟦𝐵1, 𝜏1 ↦ 𝑛1, 𝐵2⟧
-    - 𝑒1
+  and:
+    - eq:
+        - ⟦𝐵1, 𝜏1 ↦ 𝑛1, 𝐵2⟧
+        - 𝑒1
+    - or:
+        - disjoint:
+            - [λ]
+            - [𝐵1, 𝐵2]
+        - disjoint:
+            - [Δ]
+            - [𝐵1, 𝐵2]
 result: 𝑒2(ρ ↦ Φ)
 where:
   - meta: 𝑒2
