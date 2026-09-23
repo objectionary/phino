@@ -1,0 +1,71 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# A method nobody applied is an abstract formation, one holding a void of its
+# own: 'at' of the copy of 'text' the entry of 'L_entry' morphs waits for 'i'.
+# The deep walk hands it back as it was written instead of entering it, since
+# its body is parametric: the entry of 'L_dataized' inside it would dataize
+# 'ξ.i', which stands for nothing, and the ⊥ it reaches would end the whole run
+# even under '--partial' (#1393).
+symbolic: |
+  - λ: L_number_gt
+    dataize:
+      𝛿1: $.ρ
+      𝛿2: $.b
+    𝑛: Φ.bool( if ↦ ⟦ λ ⤍ L_fork, left ↦ ∅, right ↦ ∅, φ ↦ ⟦ λ ⤍ 𝜎 ⟧ ⟧ )
+  - λ: L_dataized
+    dataize:
+      𝛿1: $.target
+    𝑛: Φ.bytes( φ ↦ ⟦ λ ⤍ 𝜎 ⟧ )
+  - λ: L_entry
+    dataize:
+      𝛿1: $.n
+    morph:
+      𝑛1: $.v.φ
+    𝑛: Φ.l🌵.root( 𝑛1 )
+  - λ: L_root
+    dataize:
+      𝛿1: $.v
+    𝑛: ⟦ ⟧
+location: 'Q.l🌵'
+deep: true
+partial: true
+acyclic: true
+steps: 32
+input: |
+  ⟦
+    number ↦ ⟦ φ ↦ ∅, gt ↦ ⟦ ρ ↦ ∅, b ↦ ∅, λ ⤍ L_number_gt ⟧, ρ ↦ ∅ ⟧,
+    bytes ↦ ⟦ φ ↦ ∅, ρ ↦ ∅ ⟧,
+    bool ↦ ⟦ if ↦ ∅, ρ ↦ ∅ ⟧,
+    dataized ↦ ⟦ target ↦ ∅, λ ⤍ L_dataized, ρ ↦ ∅ ⟧,
+    text ↦ ⟦
+      φ ↦ ∅,
+      at ↦ ⟦
+        i ↦ ∅,
+        φ ↦ Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 00-00-00-00-00-00-00-00, ρ ↦ ∅ ⟧ ) ).gt( b ↦ Φ.dataized( target ↦ ξ.i ) ),
+        ρ ↦ ∅
+      ⟧,
+      ρ ↦ ∅
+    ⟧,
+    holder ↦ ⟦ buf ↦ ∅, φ ↦ ξ.buf, ρ ↦ ∅ ⟧,
+    l🌵 ↦ ⟦
+      mark ↦ ⟦ n ↦ ∅, v ↦ ∅, λ ⤍ L_entry, ρ ↦ ∅ ⟧,
+      root ↦ ⟦ v ↦ ∅, λ ⤍ L_root, ρ ↦ ∅ ⟧,
+      e1 ↦ Φ.l🌵.mark(
+        n ↦ Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 3F-F0-00-00-00-00-00-00, ρ ↦ ∅ ⟧ ) )
+      )( v ↦ Φ.holder( buf ↦ Φ.text( φ ↦ Φ.bytes( φ ↦ ⟦ λ ⤍ 𝜎1, ρ ↦ ∅ ⟧ ) ) ) ),
+      ρ ↦ ∅
+    ⟧,
+    ρ ↦ ∅
+  ⟧
+protocol: |
+  𝕄(Φ.l🌵)
+    𝔼(L_entry)  # 𝕄(Φ.l🌵.e1)
+      𝛿1.1 := 3F-F0-00-00-00-00-00-00  # 𝔻(ξ.n)
+      𝑛1.1 := ⟦ φ ↦ Φ.bytes( φ ↦ 𝜎1:λ ), at(i) ↦ ⟦ φ ↦ 0.gt( b ↦ Φ.dataized( target ↦ i ) ) ⟧ ⟧  # 𝕄(ξ.v.φ)
+      𝑛.1.1 := Φ.l🌵.root( ⟦ φ ↦ Φ.bytes( φ ↦ 𝜎1:λ ), at(i) ↦ ⟦ φ ↦ 0.gt( b ↦ Φ.dataized( target ↦ i ) ) ⟧ ⟧ )  # 𝑛
+      𝑛.1.2 := ⟦ v ↦ ⟦ φ ↦ Φ.bytes( φ ↦ 𝜎1:λ ), at(i) ↦ ⟦ φ ↦ 0.gt( b ↦ Φ.dataized( target ↦ i ) ) ⟧ ⟧, λ ⤍ L_root ⟧  # 𝕄(𝑛.1.1)
+    𝔼(L_root)  # 𝕄(Φ.l🌵.e1)
+      𝛿1.2 := 𝔻(𝜎1:λ)  # 𝔻(ξ.v)
+      𝑛.2.1 := ⟦⟧  # 𝑛
+      𝑛.2.2 := ⟦⟧  # 𝕄(𝑛.2.1)
