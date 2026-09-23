@@ -14,6 +14,8 @@ module XMIR
   , parseXMIR
   , parseXMIRThrows
   , xmirToPhi
+  , xmirAtoms
+  , Atoms
   , defaultXmirContext
   , escapeXML
   , escapeXMLText
@@ -52,7 +54,13 @@ data XmirContext = XmirContext
   , _omitComments :: Bool
   , _hideRho :: Bool
   , _listing :: Expression -> String
+  , _atoms :: Atoms
   }
+
+-- The result type an atom of the EO parser carries in its @atom attribute,
+-- like 'Φ.number', keyed by the name of its λ function. The type is no name
+-- phino can read, so it lives beside the λ binding and not in it (#1389)
+type Atoms = M.Map T.Text String
 
 -- The 7-character Git SHA of the phino build that produced the document,
 -- matching the XMIR schema pattern [0-9a-f]{7}. When built outside a git
@@ -61,7 +69,7 @@ gitRevision :: String
 gitRevision = take 7 $(gitHash)
 
 defaultXmirContext :: XmirContext
-defaultXmirContext = XmirContext True True False (const "")
+defaultXmirContext = XmirContext True True False (const "") M.empty
 
 data XMIRException
   = UnsupportedTopExpression Expression
@@ -160,9 +168,8 @@ formationBinding (BiTau (AtLabel label) expr) ctx = Just <$> namedBinding (T.unp
 formationBinding (BiTau AtRho expr) ctx = Just <$> namedBinding (show AtRho) expr ctx
 formationBinding (BiTau AtPhi expr) ctx = Just <$> namedBinding (show AtPhi) expr ctx
 formationBinding (BiDelta bytes) _ = pure (Just (NodeContent (T.pack (printBytes bytes))))
-formationBinding (BiLambda (Function name)) _
-  | "Φ." `T.isPrefixOf` name = pure (Just (object [("atom", T.unpack name), ("name", show AtLambda)] []))
-  | otherwise = pure (Just (object [("name", show AtLambda)] [NodeContent name]))
+formationBinding (BiLambda (Function name)) XmirContext{..} =
+  pure (Just (object (maybe [] (\atom -> [("atom", atom)]) (M.lookup name _atoms) ++ [("name", show AtLambda)]) [NodeContent name]))
 formationBinding (BiVoid AtRho) _ = pure Nothing
 formationBinding (BiVoid AtPhi) _ = pure (Just (object [("name", show AtPhi), ("base", "∅")] []))
 formationBinding (BiVoid (AtLabel label)) _ = pure (Just (object [("name", T.unpack label), ("base", "∅")] []))
@@ -483,7 +490,7 @@ xmirToFormationBinding cur fqn
   | not (hasAttr "base" cur) = do
       name <- getAttr "name" cur
       case name of
-        "λ" -> BiLambda . Function <$> atomOrLambda
+        "λ" -> BiLambda . Function <$> lambdaName cur fqn
         ('α' : _) -> throwIO (InvalidXMIRFormat "Formation child @name can't start with α" cur)
         "φ" -> BiTau AtPhi <$> xmirToFormation cur (name : fqn)
         "ρ" -> BiTau AtRho <$> xmirToFormation cur (name : fqn)
@@ -501,24 +508,48 @@ xmirToFormationBinding cur fqn
         _ -> do
           expr <- xmirToExpression cur fqn
           pure (BiTau attr expr)
-  where
-    -- The λ function name is carried by the text of the marker element. XMIR
-    -- coming from elsewhere holds no name, so fall back to the position in the
-    -- tree, which is the only hint left
-    atomOrLambda :: IO T.Text
-    atomOrLambda
-      | hasAttr "atom" cur = T.pack <$> getAttr "atom" cur
-      | otherwise = lambdaFunction
 
-    lambdaFunction :: IO T.Text
-    lambdaFunction
-      | hasText cur = T.strip . T.pack <$> getText cur
-      | otherwise = pure (T.pack (intercalate "_" ("L" : map (map spell) (reverse fqn))))
+-- The λ function name is carried by the text of the marker element. XMIR
+-- coming from elsewhere holds no name, so fall back to the position in the
+-- tree, which is the only hint left. The @atom attribute the EO parser writes
+-- is the result type of the atom and never its name (#1389)
+lambdaName :: C.Cursor -> [String] -> IO T.Text
+lambdaName cur fqn
+  | hasText cur = T.strip . T.pack <$> getText cur
+  | otherwise = pure (T.pack (intercalate "_" ("L" : map (map spell) (reverse fqn))))
+  where
     -- A binding label admits nearly any character, while 'function' admits a
     -- digit, an ASCII lowercase letter, '_' and 'φ' only, so everything else
     -- folds into '_' and the derived name stays readable back (#1188)
     spell :: Char -> Char
     spell ch = if isDigit ch || isAsciiLower ch || ch == '_' || ch == 'φ' then ch else '_'
+
+-- The result types of the atoms in a document, keyed by the names 'xmirToPhi'
+-- gives their λ functions, so that 'expressionToXMIR' writes them back (#1389).
+-- The reader grows the locator of a λ marker by every formation it descends
+-- into, that is by every enclosing <o> with @name and neither @base nor @as
+xmirAtoms :: Document -> IO Atoms
+xmirAtoms xmir = M.fromList <$> mapM entry markers
+  where
+    markers :: [C.Cursor]
+    markers =
+      C.fromDocument xmir
+        C.$// C.element (toName "o")
+        C.>=> C.attributeIs (toName "name") "λ"
+        C.>=> C.check (hasAttr "atom")
+    entry :: C.Cursor -> IO (T.Text, String)
+    entry cur = do
+      name <- lambdaName cur (locator cur)
+      atom <- getAttr "atom" cur
+      pure (name, atom)
+    locator :: C.Cursor -> [String]
+    locator cur =
+      [ T.unpack label
+      | enclosing <- cur C.$| (C.ancestor C.>=> C.element (toName "o"))
+      , not (hasAttr "base" enclosing)
+      , not (hasAttr "as" enclosing)
+      , label <- C.attribute (toName "name") enclosing
+      ]
 
 -- A formation keeps its Δ data in the text content of its own element, the way
 -- the printer emits a Δ binding, while the rest of the bindings live in the

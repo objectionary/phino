@@ -2481,6 +2481,19 @@ spec = do
         ["merge", resource "desugar.phi", "--output=xmir"]
         ["<?xml version=\"1.0\" encoding=\"UTF-8\"?>", "<listing>⟦ foo ↦ ξ.x, ρ ↦ ∅ ⟧</listing>", "<o base=\"ξ.x\" name=\"foo\"/>"]
 
+    -- The @atom of an EO atom is its result type, not the name of its λ
+    -- function, so the merged 𝜑 names the function after its locator and
+    -- the XMIR printed back restores the type (#1389)
+    it "names an atom of XMIR after its locator and keeps its type" $ do
+      let xmir = "<object><o name=\"number\"><o name=\"plus\"><o base=\"∅\" name=\"b\"/><o atom=\"Φ.number\" name=\"λ\"/></o></o></object>"
+      withTempFileContent "phino-atom.xmir" xmir $ \file -> do
+        testCLISucceeded
+          ["merge", "--input=xmir", "--sweet", "--flat", file]
+          ["λ ⤍ L_number_plus"]
+        testCLISucceeded
+          ["merge", "--input=xmir", "--output=xmir", file]
+          ["<o atom=\"Φ.number\" name=\"λ\">L_number_plus</o>"]
+
     it "reproduces the same output for the same --seed" $ do
       let args =
             [ "merge"
