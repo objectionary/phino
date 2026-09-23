@@ -1,0 +1,15 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# 'dot' leaves a formation holding both λ and Δ to 'dl', so the normal form
+# does not hang on rule order (#1395).
+rules:
+  basic: ['dot']
+input: |
+  ⟦ x ↦ Φ.y, λ ⤍ Foo, Δ ⤍ 00- ⟧.x
+output: |-
+  ⟦
+    x ↦ Φ.y,
+    λ ⤍ Foo,
+    Δ ⤍ 00-
+  ⟧.x

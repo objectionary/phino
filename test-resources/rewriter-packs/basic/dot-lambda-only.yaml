@@ -1,0 +1,16 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# The λ-and-Δ guard of 'dot' still lets a formation with λ alone be
+# dispatched (#1395).
+rules:
+  basic: ['dot']
+input: |
+  ⟦ x ↦ Φ.y, λ ⤍ Foo ⟧.x
+output: |-
+  Φ.y(
+    ρ ↦ ⟦
+      x ↦ Φ.y,
+      λ ⤍ Foo
+    ⟧
+  )

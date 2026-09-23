@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# With 'dot' tried before 'dl', a formation holding both λ and Δ still
+# collapses to ⊥ and never leaves a ρ ↦ ⊥ behind (#1395).
+rules:
+  basic: ['dot', 'dl', 'dd']
+repeat: 5
+input: |
+  ⟦ x ↦ Φ.y, λ ⤍ Foo, Δ ⤍ 00- ⟧.x
+output: |-
+  ⊥
