@@ -466,8 +466,19 @@ deepened expr univ state ctx = go (Just ctx._site) Nothing ExXi expr state ctx
     -- where they were, so the term keeps the shape it was written in. Only a
     -- binding of a formation carries the locator further: the head of a
     -- dispatch and both sides of an application stand under no attribute, so
-    -- what they hold is entered with no locator of its own.
+    -- what they hold is entered with no locator of its own. An abstract
+    -- formation, one holding a void other than ρ, is a method nobody applied:
+    -- its body is parametric, walking it can only end in ⊥ or a stuck term, and
+    -- a λ there dataizing a parameter would end the whole run, so it is handed
+    -- back as it was written (#1393).
     parts :: Maybe Expression -> Expression -> Expression -> State -> ReduceContext -> IO (Expression, State)
+    parts _ _ term@(ExFormation bds) state' _
+      | any abstract bds = pure (term, state')
+      where
+        abstract :: Binding -> Bool
+        abstract (BiVoid AtRho) = False
+        abstract (BiVoid _) = True
+        abstract _ = False
     parts standing _ (ExFormation bds) state' caller = do
       (entered, state'') <- bindings standing bds bds state' caller
       pure (ExFormation entered, state'')
