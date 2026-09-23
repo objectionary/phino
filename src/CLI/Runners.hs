@@ -59,7 +59,7 @@ runRewrite OptsRewrite{..} = do
   rules <- getRules _normalize _shuffle _rules
   validateBreakpoint _breakpoint rules
   input <- readInput _inputFile
-  expr <- parseInput input _inputFormat
+  (expr, atoms) <- parseInputWithAtoms input _inputFormat
   validateXmirTopLevel _outputFormat expr
   seedTaus expr
   logDebug (printf "Amount of rewriting cycles across all the rules: %d, per rule: %d" _maxCycles _maxDepth)
@@ -67,7 +67,7 @@ runRewrite OptsRewrite{..} = do
         ([], XMIR, XMIR) -> (\_ -> escapeXML input)
         ([], _, _) -> (\_ -> escapeXMLText input)
         (_, _, _) -> (\rewritten -> escapeXMLText (P.printExpression' rewritten (_sugarType, UNICODE, _flat, _margin)))
-      xmirCtx = XmirContext _omitListing _omitComments _hideRho listing
+      xmirCtx = XmirContext _omitListing _omitComments _hideRho listing atoms
       printCtx = toPrintCtx xmirCtx foc
       exclude = (`F.exclude` excluded)
       include = (`F.include` included)
@@ -157,10 +157,10 @@ runDataize OptsDataize{..} = do
   [foc] <- validatedDispatches "focus" [_focus]
   validateNoOverlap "show" included "hide" excluded
   input <- readInput _inputFile
-  expr <- parseInput input _inputFormat
+  (expr, atoms) <- parseInputWithAtoms input _inputFormat
   setStdGen (mkStdGen _seed)
   seedTaus expr
-  let printCtx = toPrintCtx foc
+  let printCtx = toPrintCtx atoms foc
       exclude = (`F.exclude` excluded)
       include = (`F.include` included)
   save <- saveStepFunc _stepsDir printCtx
@@ -201,14 +201,14 @@ runDataize OptsDataize{..} = do
       when
         (isJust _inside && _locator /= "Q")
         (invalidCLIArguments "The options --inside and --locator cannot be used together, since --inside aims the run at the binding it mints")
-    toPrintCtx :: Expression -> PrintContext
-    toPrintCtx focus =
+    toPrintCtx :: Atoms -> Expression -> PrintContext
+    toPrintCtx atoms focus =
       PrintCtx
         _sugarType
         _hideRho
         _flat
         _margin
-        (XmirContext _omitListing _omitComments _hideRho listing)
+        (XmirContext _omitListing _omitComments _hideRho listing atoms)
         _nonumber
         _compress
         _canonize
@@ -243,10 +243,10 @@ runMorph OptsMorph{..} = do
   [foc] <- validatedDispatches "focus" [_focus]
   validateNoOverlap "show" included "hide" excluded
   input <- readInput _inputFile
-  expr <- parseInput input _inputFormat
+  (expr, atoms) <- parseInputWithAtoms input _inputFormat
   setStdGen (mkStdGen _seed)
   seedTaus expr
-  let printCtx = toPrintCtx foc
+  let printCtx = toPrintCtx atoms foc
       exclude = (`F.exclude` excluded)
       include = (`F.include` included)
   save <- saveStepFunc _stepsDir printCtx
@@ -275,14 +275,14 @@ runMorph OptsMorph{..} = do
       when
         (isJust _inside && _locator /= "Q")
         (invalidCLIArguments "The options --inside and --locator cannot be used together, since --inside aims the run at the binding it mints")
-    toPrintCtx :: Expression -> PrintContext
-    toPrintCtx focus =
+    toPrintCtx :: Atoms -> Expression -> PrintContext
+    toPrintCtx atoms focus =
       PrintCtx
         _sugarType
         _hideRho
         _flat
         _margin
-        (XmirContext _omitListing _omitComments _hideRho listing)
+        (XmirContext _omitListing _omitComments _hideRho listing atoms)
         _nonumber
         _compress
         _canonize
@@ -329,11 +329,11 @@ runMerge OptsMerge{..} = do
   validateOpts
   inputs' <- traverse (readInput . Just) _inputs
   setStdGen (mkStdGen _seed)
-  exprs <- traverse (`parseInput` _inputFormat) inputs'
+  (exprs, atoms) <- unzip <$> traverse (`parseInputWithAtoms` _inputFormat) inputs'
   expr <- merge exprs
   validateXmirTopLevel _outputFormat expr
   let listing = const (escapeXMLText (P.printExpression' expr (_sugarType, UNICODE, _flat, _margin)))
-      xmirCtx = XmirContext _omitListing _omitComments False listing
+      xmirCtx = XmirContext _omitListing _omitComments False listing (Map.unions atoms)
       printCtx = toPrintCtx xmirCtx
   expr' <- printInFormat printCtx expr
   printOut _targetFile expr'

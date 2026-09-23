@@ -25,7 +25,7 @@ import System.FilePath (makeRelative)
 import Test.Hspec (Spec, anyException, describe, expectationFailure, it, runIO, shouldBe, shouldContain, shouldNotContain, shouldReturn, shouldThrow)
 import Text.XML (Document (..), Element (..), Node (NodeElement), Prologue (..))
 import Text.XML.Cursor qualified as C
-import XMIR (XmirContext (XmirContext), defaultXmirContext, escapeXML, expressionToXMIR, parseXMIRThrows, printXMIR, toName, xmirToPhi)
+import XMIR (XmirContext (XmirContext), defaultXmirContext, escapeXML, expressionToXMIR, parseXMIRThrows, printXMIR, toName, xmirAtoms, xmirToPhi)
 
 data ParsePack = ParsePack
   { failure :: Maybe Bool
@@ -233,19 +233,36 @@ spec = do
       expr <- xmirToPhi doc
       parseExpressionThrows (printExpression expr) `shouldReturn` expr
 
-  describe "atom result types in XMIR" $
+  describe "atom result types in XMIR" $ do
+    let atom :: String
+        atom = "<object><o name=\"number\"><o name=\"plus\"><o base=\"∅\" name=\"b\"/><o atom=\"Φ.number\" name=\"λ\"/></o></o></object>"
     it "survives a round trip through a λ marker" $ do
-      doc <- parseXMIRThrows "<object><o name=\"bar\"><o base=\"∅\" name=\"x\"/><o atom=\"Φ.number\" name=\"λ\"/></o></object>"
+      doc <- parseXMIRThrows atom
       expr <- xmirToPhi doc
-      result <- expressionToXMIR expr defaultXmirContext
+      atoms <- xmirAtoms doc
+      result <- expressionToXMIR expr (XmirContext True True False (const "") atoms)
       let printed = printXMIR result
       printed `shouldContain` "atom=\"Φ.number\""
       printed `shouldNotContain` "<o name=\"λ\">"
+    -- The @atom attribute is the result type of the atom, not its name, so
+    -- the λ function is still named after its locator (#1389)
+    it "names the λ function after its locator, not after the type" $ do
+      expr <- parseXMIRThrows atom >>= xmirToPhi
+      printExpression expr `shouldContain` "L_number_plus"
+      printExpression expr `shouldNotContain` "Φ.number"
+      parseExpressionThrows (printExpression expr) `shouldReturn` expr
+    it "keeps the type keyed by the λ function name" $
+      (parseXMIRThrows atom >>= xmirAtoms) `shouldReturn` M.fromList [("L_number_plus", "Φ.number")]
+    it "keeps the type of a λ marker that carries its name" $
+      ( parseXMIRThrows "<object><o name=\"x\"><o atom=\"?\" name=\"λ\">Foo</o></o></object>"
+          >>= xmirAtoms
+      )
+        `shouldReturn` M.fromList [("Foo", "?")]
 
   describe "--hide-rho in XMIR" $
     it "drops every bound ρ from the printed document" $ do
       expr <- parseExpressionThrows "[[ x -> 4, ^ -> [[ y -> 5 ]] ]]"
-      doc <- expressionToXMIR expr (XmirContext True False True (const ""))
+      doc <- expressionToXMIR expr (XmirContext True False True (const "") M.empty)
       let printed = printXMIR doc
       printed `shouldContain` "name=\"x\""
       printed `shouldNotContain` "name=\"ρ\""
@@ -371,7 +388,7 @@ spec = do
 
   describe "XMIR comments" $ do
     let commentedContext :: XmirContext
-        commentedContext = XmirContext True False False (const "")
+        commentedContext = XmirContext True False False (const "") M.empty
 
     it "includes a decimal comment for a number when comments aren't omitted" $ do
       expr <- parseExpressionThrows "[[ x -> 5 ]]"

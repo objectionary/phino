@@ -3,6 +3,7 @@
 {-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TupleSections #-}
 
 module CLI.Helpers where
 
@@ -16,6 +17,7 @@ import Data.Char (toLower)
 import Data.Functor ((<&>))
 import Data.IORef
 import Data.List (intercalate, nub)
+import qualified Data.Map.Strict as M
 import Data.Maybe
 import qualified Data.Text as T
 import Deps (Evaluation (EvRun), Judgment, SaveEvalFunc, SaveStepFunc, State (..), dontSaveEval, emptyNesting, emptyProtocol, endEvalXml, saveEval, saveEvalXml, saveStep)
@@ -37,7 +39,7 @@ import System.Directory (createDirectoryIfMissing)
 import System.FilePath (takeDirectory, takeExtension)
 import System.IO (Handle, IOMode (WriteMode), getContents', hClose, hSetEncoding, openFile, utf8)
 import Text.Printf (printf)
-import XMIR (expressionToXMIR, parseXMIRThrows, printXMIR, xmirToPhi)
+import XMIR (Atoms, expressionToXMIR, parseXMIRThrows, printXMIR, xmirAtoms, xmirToPhi)
 import Yaml (normalizationRules)
 import qualified Yaml as Y
 
@@ -181,6 +183,14 @@ parseInput :: String -> IOFormat -> IO Expression
 parseInput phi PHI = parseExpressionThrows phi
 parseInput xmir XMIR = parseXMIRThrows xmir >>= xmirToPhi
 parseInput _ LATEX = invalidCLIArguments "LaTeX cannot be used as input format"
+
+-- Parse expression like 'parseInput' does, together with the result types
+-- the atoms of an XMIR input carry, which the XMIR writer restores (#1389)
+parseInputWithAtoms :: String -> IOFormat -> IO (Expression, Atoms)
+parseInputWithAtoms xmir XMIR = do
+  doc <- parseXMIRThrows xmir
+  (,) <$> xmirToPhi doc <*> xmirAtoms doc
+parseInputWithAtoms input format = (,M.empty) <$> parseInput input format
 
 -- The LaTeX sequence path canonizes inside 'rewrittensToLatex', after the meet
 -- compression (see 'canonizedRewrittens' there); the remaining formats have no
