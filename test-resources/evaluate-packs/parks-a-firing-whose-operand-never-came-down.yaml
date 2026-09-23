@@ -18,4 +18,4 @@ result: '⟦ x ↦ ⟦ λ ⤍ L_none ⟧.foo, λ ⤍ L_pair ⟧.z'
 protocol: |
   𝕄(Φ.y)
     𝔼(L_pair)  # 𝕄(Φ.y)
-      ?(L_none)  # 𝕄(⟦ λ ⤍ L_none ⟧)
+      ?(L_none)  # 𝕄(L_none:λ)

@@ -19,5 +19,5 @@ input: '⟦ x ↦ ⟦ v ↦ ⟦ λ ⤍ L_none ⟧.foo, λ ⤍ L_entry ⟧.z ⟧'
 protocol: |
   𝕄(Φ.x)
     𝔼(L_entry)  # 𝕄(Φ.x)
-      ?(L_none)  # 𝕄(⟦ λ ⤍ L_none ⟧)
+      ?(L_none)  # 𝕄(L_none:λ)
     𝔼(L_entry)  # 𝕄(Φ.x)

@@ -273,6 +273,9 @@ instance ToLaTeX EXPRESSION where
   -- one here too, with its name piped the way any other label is (see #1065)
   toLaTeX EX_NONFINITE{..} = EX_DISPATCH (EX_GLOBAL global) SPACE (toLaTeX (AT_LABEL (nonFiniteName nonfinite)))
   toLaTeX EX_BYTES{..} = EX_BYTES (toLaTeX bytes)
+  -- The eolang LaTeX package knows no one-binding sugar, so the full
+  -- formation is written instead (see #1385)
+  toLaTeX EX_SINGLE{..} = toLaTeX formation
   toLaTeX expr = expr
 
 instance ToLaTeX ATTRIBUTE where

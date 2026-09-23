@@ -16,5 +16,5 @@ result: |-
     pinf ↦ Φ.pinf,
     ninf ↦ Φ.ninf,
     with-rho ↦ Φ.nan,
-    payload ↦ Φ.number( Φ.bytes( ⟦ Δ ⤍ 7F-F8-00-00-00-00-00-01 ⟧ ) )
+    payload ↦ Φ.number( Φ.bytes( 7F-F8-00-00-00-00-00-01:Δ ) )
   ⟧

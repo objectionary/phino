@@ -668,3 +668,57 @@ spec = do
       [ ("[[ x -> \"\\uD835\\u0041\"]]", "Invalid low surrogate:")
       , ("[[ x -> \"\\uDFFF\"]]", "Unexpected low surrogate:")
       ]
+
+  describe "parse the one-binding formation sugar" $
+    forM_
+      [ ("FF-AA:Δ", "⟦ Δ ⤍ FF-AA ⟧")
+      , ("FF-AA:D", "⟦ Δ ⤍ FF-AA ⟧")
+      , ("--:Δ", "⟦ Δ ⤍ -- ⟧")
+      , ("1F-:Δ", "⟦ Δ ⤍ 1F- ⟧")
+      , ("𝛿1:Δ", "⟦ Δ ⤍ 𝛿1 ⟧")
+      , ("𝜎1:λ", "⟦ λ ⤍ 𝜎1 ⟧")
+      , ("!S1:L", "⟦ λ ⤍ 𝜎1 ⟧")
+      , ("Plus:λ", "⟦ λ ⤍ Plus ⟧")
+      , ("Q:λ", "⟦ λ ⤍ Q ⟧")
+      , ("T:L", "⟦ λ ⤍ T ⟧")
+      , ("Qx:λ", "⟦ λ ⤍ Qx ⟧")
+      , ("T_1 : λ", "⟦ λ ⤍ T_1 ⟧")
+      , ("T:x", "⟦ x ↦ ⊥ ⟧")
+      , ("Q.x:y", "⟦ y ↦ Φ.x ⟧")
+      , ("!F1:L", "⟦ λ ⤍ 𝑓1 ⟧")
+      , ("∅:a", "⟦ a ↦ ∅ ⟧")
+      , ("?:a", "⟦ a ↦ ∅ ⟧")
+      , ("?:!t1", "⟦ 𝜏1 ↦ ∅ ⟧")
+      , ("ξ.a:φ", "⟦ φ ↦ ξ.a ⟧")
+      , ("$.a:@", "⟦ φ ↦ ξ.a ⟧")
+      , ("$.a : @", "⟦ φ ↦ ξ.a ⟧")
+      , ("ξ:ρ", "⟦ ρ ↦ ξ ⟧")
+      , ("Q:x", "⟦ x ↦ Φ ⟧")
+      , ("Q.x(y):z", "⟦ z ↦ Φ.x(y) ⟧")
+      , ("42:φ", "⟦ φ ↦ 42 ⟧")
+      , ("1E-05:φ", "⟦ φ ↦ 1E-05 ⟧")
+      , ("\"hi\":φ", "⟦ φ ↦ \"hi\" ⟧")
+      , ("𝑒1:𝜏1", "⟦ 𝜏1 ↦ 𝑒1 ⟧")
+      , ("ξ.a:φ.b", "⟦ φ ↦ ξ.a ⟧.b")
+      , ("ξ.a:φ:b", "⟦ b ↦ ⟦ φ ↦ ξ.a ⟧ ⟧")
+      , ("FF-:Δ.x", "⟦ Δ ⤍ FF- ⟧.x")
+      , ("Q.x(ξ.a:φ)", "Q.x(⟦ φ ↦ ξ.a ⟧)")
+      , ("⟦ x ↦ y:φ, z ↦ FF-:Δ ⟧", "⟦ x ↦ ⟦ φ ↦ ξ.y ⟧, z ↦ ⟦ Δ ⤍ FF- ⟧ ⟧")
+      , ("⟦ x ↦ ∅:a, y ↦ ∅ ⟧", "⟦ x ↦ ⟦ a ↦ ∅ ⟧, y ↦ ∅ ⟧")
+      , ("[[ x -> ?:a ]]", "⟦ x ↦ ⟦ a ↦ ∅ ⟧ ⟧")
+      , ("Q.x(y -> ?:a)", "Q.x(y ↦ ⟦ a ↦ ∅ ⟧)")
+      , ("Q.x(α0 ↦ Plus:λ)", "Q.x(α0 ↦ ⟦ λ ⤍ Plus ⟧)")
+      ]
+      ( \(sweet, plain) ->
+          it sweet $ do
+            parseExpression plain `shouldSatisfy` isRight
+            parseExpression sweet `shouldBe` parseExpression plain
+      )
+
+  describe "rejects a broken one-binding formation sugar" $
+    test
+      parseExpression
+      ( map
+          (\ipt -> (ipt, Nothing :: Maybe Expression))
+          ["FF-AA:φ", "Plus:x", "∅:Δ", "ξ.a:", ":φ", "ξ.a:Δ", "ξ.a:λ"]
+      )

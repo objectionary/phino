@@ -46,13 +46,18 @@ data SugarType = SWEET | SALTY
 -- SALTY path. Both formation bindings and application arguments are stripped;
 -- dispatches such as ξ.ρ are left untouched. A formation left empty by the
 -- strip collapses to the compact '⟦⟧' layout, and an application left with no
--- argument collapses to its bare callee (no leftover 'e()').
-withoutRho :: EXPRESSION -> EXPRESSION
-withoutRho = goExpr
+-- argument collapses to its bare callee (no leftover 'e()'). In the SWEET
+-- syntax a formation left with one binding takes the sugar of #1385, 'ξ.a:φ',
+-- the way it would have taken it had the ρ never been there; the SALTY one
+-- has no such sugar.
+withoutRho :: SugarType -> EXPRESSION -> EXPRESSION
+withoutRho sugar = goExpr
   where
     goExpr :: EXPRESSION -> EXPRESSION
     goExpr EX_FORMATION{..} = case goBinding binding of
       empty@BI_EMPTY{} -> EX_FORMATION lsb NO_EOL NO_TAB empty NO_EOL NO_TAB rsb
+      binding'@BI_PAIR{pair = pair', bindings = BDS_EMPTY{}}
+        | sugar == SWEET && sugared pair' -> EX_SINGLE pair' (EX_FORMATION lsb eol tab binding' eol' tab' rsb)
       binding' -> EX_FORMATION lsb eol tab binding' eol' tab' rsb
     goExpr EX_DISPATCH{..} = EX_DISPATCH (goExpr expr) space attr
     goExpr EX_APPLICATION{..} = case goArgument argument of
@@ -60,6 +65,9 @@ withoutRho = goExpr
       Just argument' -> EX_APPLICATION (goExpr expr) space eol tab argument' eol' tab' indent
     goExpr EX_PHI_MEET{..} = EX_PHI_MEET prefix idx (goExpr expr)
     goExpr EX_PHI_AGAIN{..} = EX_PHI_AGAIN prefix idx (goExpr expr)
+    goExpr EX_SINGLE{..}
+      | isRho pair = goExpr formation
+      | otherwise = EX_SINGLE (goPair pair) (goExpr formation)
     goExpr expr = expr
     -- Formation bindings: drop the ρ pairs, recurse into whatever remains.
     goBinding :: BINDING -> BINDING
@@ -112,8 +120,20 @@ withoutRho = goExpr
     goPair :: PAIR -> PAIR
     goPair PA_TAU{..} = PA_TAU attr arrow (goExpr expr)
     goPair PA_ALPHA{..} = PA_ALPHA alpha arrow (goExpr expr)
-    goPair PA_FORMATION{..} = PA_FORMATION attr voids arrow (goExpr expr)
+    goPair PA_FORMATION{..} = PA_FORMATION attr voids arrow (unsugared (goExpr expr))
     goPair pair = pair
+    -- Inline voids open a formation, which the sugar may not stand for
+    unsugared :: EXPRESSION -> EXPRESSION
+    unsugared EX_SINGLE{..} = formation
+    unsugared expr = expr
+    -- Whether the only binding of a formation has the one-binding sugar
+    sugared :: PAIR -> Bool
+    sugared PA_TAU{attr = AT_DELTA{}} = False
+    sugared PA_TAU{attr = AT_LAMBDA{}} = False
+    sugared PA_ALPHA{} = False
+    sugared PA_FORMATION{voids = []} = True
+    sugared PA_FORMATION{} = False
+    sugared _ = True
     isRho :: PAIR -> Bool
     isRho PA_VOID{attr = AT_RHO _} = True
     isRho PA_TAU{attr = AT_RHO _} = True
@@ -130,6 +150,7 @@ withoutRho = goExpr
 --  | a -> Q.nan                 | Q.number(Q.bytes([[ D> 7F-F8-00-00-00-00-00-00 ]])) |
 --  | a -> "Hey"                 | Q.number(Q.bytes([[ D> 48-65-79 ]]))                |
 --  | [[ B ]]                    | [[ B, ^ -> ? ]], if rho is absent in 'B'            |
+--  | e:a                        | [[ a -> e ]], and so for D, L and ? (see #1385)     |
 --  | a1(a2, a3, ...) -> [[ B ]] | a1 -> [[ a2 -> ?, a3 -> ?, ..., B ]]                |
 --  | e(e0, e1, ...)             | e(~0 -> e0, ~1 -> e1, ...)                          |
 --  | e(a1 -> e1, a2 -> e2, ...) | e(a1 -> e1)(a2 -> e2)...                            |
@@ -193,6 +214,7 @@ instance ToSalty EXPRESSION where
       rhos
   toSalty EX_PHI_MEET{..} = EX_PHI_MEET prefix idx (toSalty expr)
   toSalty EX_PHI_AGAIN{..} = EX_PHI_AGAIN prefix idx (toSalty expr)
+  toSalty EX_SINGLE{..} = toSalty formation
   toSalty expr = expr
 
 saltifyPrimitive :: EXPRESSION -> EXPRESSION -> EXPRESSION -> TAB -> [Argument] -> EXPRESSION

@@ -2,4 +2,4 @@
 # SPDX-License-Identifier: MIT
 ---
 expression: '⟦ Δ ⤍ 𝛿1 ⟧'
-result: '[[ D> !d1 ]]'
+result: '!d1:D'

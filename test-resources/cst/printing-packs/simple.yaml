@@ -10,4 +10,4 @@ expression: |
     ]]
   ]]
 result: |-
-  ⟦ foo ↦ ⟦ φ ↦ ρ.z, bar ↦ Φ.y( 5, "foo" ) ⟧ ⟧
+  ⟦ φ ↦ ρ.z, bar ↦ Φ.y( 5, "foo" ) ⟧:foo

@@ -25,6 +25,7 @@ instance ToSingleLine EXPRESSION where
   toSingleLine EX_APPLICATION{..} = EX_APPLICATION (toSingleLine expr) space NO_EOL TAB' (toSingleLine argument) NO_EOL TAB' indent
   toSingleLine EX_PHI_MEET{..} = EX_PHI_MEET prefix idx (toSingleLine expr)
   toSingleLine EX_PHI_AGAIN{..} = EX_PHI_AGAIN prefix idx (toSingleLine expr)
+  toSingleLine EX_SINGLE{..} = EX_SINGLE (toSingleLine pair) (toSingleLine formation)
   toSingleLine expr = expr
 
 instance ToSingleLine APP_BINDING where

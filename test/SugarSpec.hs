@@ -618,7 +618,27 @@ spec = do
         , EX_FORMATION LSB EOL (TAB 1) (BI_PAIR (PA_LAMBDA "some.func") (BDS_EMPTY (TAB 1)) (TAB 1)) EOL (TAB 0) RSB
         )
       ]
-      (\(desc, input, expected) -> it desc (withoutRho input `shouldBe` expected))
+      (\(desc, input, expected) -> it desc (withoutRho SALTY input `shouldBe` expected))
+
+  describe "withoutRho in the sweet syntax" $
+    forM_
+      [
+        ( "a formation left with one binding takes the one-binding sugar"
+        , EX_FORMATION LSB EOL (TAB 1) (BI_PAIR (PA_LAMBDA "Fn") (BDS_PAIR EOL (TAB 1) (PA_TAU (AT_RHO RHO) ARROW xiExpr) (BDS_EMPTY (TAB 1))) (TAB 1)) EOL (TAB 0) RSB
+        , EX_SINGLE (PA_LAMBDA "Fn") (EX_FORMATION LSB EOL (TAB 1) (BI_PAIR (PA_LAMBDA "Fn") (BDS_EMPTY (TAB 1)) (TAB 1)) EOL (TAB 0) RSB)
+        )
+      ,
+        ( "a formation left with two bindings stays a formation"
+        , EX_FORMATION LSB EOL (TAB 1) (BI_PAIR (PA_LAMBDA "Fn") (BDS_PAIR EOL (TAB 1) (PA_DELTA BT_EMPTY) (BDS_EMPTY (TAB 1))) (TAB 1)) EOL (TAB 0) RSB
+        , EX_FORMATION LSB EOL (TAB 1) (BI_PAIR (PA_LAMBDA "Fn") (BDS_PAIR EOL (TAB 1) (PA_DELTA BT_EMPTY) (BDS_EMPTY (TAB 1))) (TAB 1)) EOL (TAB 0) RSB
+        )
+      ,
+        ( "a one-binding sugar standing for a rho collapses to the empty formation"
+        , EX_SINGLE (PA_TAU (AT_RHO RHO) ARROW xiExpr) (EX_FORMATION LSB EOL (TAB 1) (BI_PAIR (PA_TAU (AT_RHO RHO) ARROW xiExpr) (BDS_EMPTY (TAB 1)) (TAB 1)) EOL (TAB 0) RSB)
+        , EX_FORMATION LSB NO_EOL NO_TAB (BI_EMPTY (TAB 1)) NO_EOL NO_TAB RSB
+        )
+      ]
+      (\(desc, input, expected) -> it desc (withoutRho SWEET input `shouldBe` expected))
 
   describe "full pipeline round trips, SWEET vs SALTY" $ do
     let config :: SugarType -> (SugarType, Encoding, LineFormat, Int)
@@ -651,5 +671,5 @@ spec = do
       "a phi-meet/phi-again chain renders identically under both sugar types"
       $ do
         let meetChain = ExFormation [BiTau (AtLabel "x") (ExPhiMeet Nothing 2 (ExPhiAgain (Just "a") 1 (ExDispatch ExXi (AtLabel "y"))))]
-        printExpression' meetChain (config SWEET) `shouldBe` "⟦ x ↦ \\phinoMeet{2}{ \\phinoAgain{a:1} } ⟧"
+        printExpression' meetChain (config SWEET) `shouldBe` "\\phinoMeet{2}{ \\phinoAgain{a:1} }:x"
         printExpression' meetChain (config SALTY) `shouldBe` "⟦ x ↦ \\phinoMeet{2}{ \\phinoAgain{a:1} }, ρ ↦ ∅ ⟧"

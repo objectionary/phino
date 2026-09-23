@@ -11,4 +11,4 @@ expression: |
     )
   ⟧
 result: |-
-  ⟦ x ↦ Φ.foo( x ↦ Φ.k ).bar( x ↦ Φ.k ) ⟧
+  Φ.foo( x ↦ Φ.k ).bar( x ↦ Φ.k ):x

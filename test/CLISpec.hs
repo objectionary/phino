@@ -173,13 +173,13 @@ spec = do
         ( "also drops the rho that --sweet leaves behind"
         , "[[ foo -> [[ x -> [[ ]], ^ -> $.y ]], y -> [[ ]] ]]"
         , ["rewrite", "--flat", "--sweet", "--hide-rho"]
-        , ["⟦ foo ↦ ⟦ x ↦ ⟦⟧ ⟧, y ↦ ⟦⟧ ⟧"]
+        , ["⟦ foo ↦ ⟦⟧:x, y ↦ ⟦⟧ ⟧"]
         )
       ,
         ( "keeps sweet numeric literals intact"
         , "[[ a -> 42 ]]"
         , ["rewrite", "--flat", "--sweet", "--hide-rho"]
-        , ["⟦ a ↦ 42 ⟧"]
+        , ["42:a"]
         )
       ]
       (\(desc, input, args, expected) -> it desc (withStdin input (testCLISucceeded args expected)))
@@ -362,7 +362,7 @@ spec = do
       withStdin "[[ x -> 5 ]]" $
         testCLISucceeded
           ["rewrite", "--seed=42", "--sweet"]
-          ["⟦ x ↦ 5 ⟧"]
+          ["5:x"]
 
     it "defaults --seed to 0 in help" $
       testCLISucceeded
@@ -480,7 +480,7 @@ spec = do
       withStdin "⟦ k ↦ ⟦ m ↦ ⟦ Δ ⤍ 01- ⟧ ⟧.m, j ↦ ⟦ λ ⤍ Marker ⟧ ⟧" $
         testCLISucceeded
           ["rewrite", "--normalize", rule "marker.yaml", "--sweet"]
-          ["⟦ k ↦ ⟦ Δ ⤍ 01-, ρ ↦ ⟦ m ↦ ⟦ Δ ⤍ 01- ⟧ ⟧ ⟧, j ↦ ⟦ Δ ⤍ FF- ⟧ ⟧"]
+          ["⟦ k ↦ ⟦ Δ ⤍ 01-, ρ ↦ 01-:Δ:m ⟧, j ↦ FF-:Δ ⟧"]
 
     it "normalizes from stdin" $
       withStdin "⟦ a ↦ ⟦ b ↦ ∅ ⟧ (b ↦ [[ ]]) ⟧" $
@@ -501,7 +501,7 @@ spec = do
       withStdin "[[ x -> 5]]" $
         testCLISucceeded
           ["rewrite", "--sweet"]
-          ["⟦ x ↦ 5 ⟧"]
+          ["5:x"]
 
     it "rewrites as XMIR" $
       withStdin "[[ x -> Q.y ]]" $
@@ -595,7 +595,7 @@ spec = do
       withStdin "<object><o name=\"app\"><o name=\"x\" base=\"Φ.number\"/></o></object>" $
         testCLISucceeded
           ["rewrite", "--input=xmir", "--sweet"]
-          ["⟦ app ↦ ⟦ x ↦ Φ.number ⟧ ⟧"]
+          ["Φ.number:x:app"]
 
     it "rewrites and prints with XMIR as input and output" $
       withStdin
@@ -622,7 +622,7 @@ spec = do
       withStdin "⟦ t ↦ ⟦ x ↦ \"foo\" ⟧ ⟧" $
         testCLISucceeded
           ["rewrite", rule "simple.yaml", "--must=1", "--sweet"]
-          ["x ↦ \"bar\""]
+          ["\"bar\":x"]
 
     it "prints many expressions with --sequence" $
       withStdin "[[ x -> \"foo\" ]]" $
@@ -637,9 +637,9 @@ spec = do
           , "--flat"
           ]
           [ unlines
-              [ "⟦ x ↦ \"foo\" ⟧"
+              [ "\"foo\":x"
               , "Φ.x( y ↦ \"foo\" )"
-              , "⟦ x ↦ \"foo\" ⟧"
+              , "\"foo\":x"
               ]
           ]
 
@@ -660,13 +660,13 @@ spec = do
               "\n"
               [ ""
               , "=== Step #1"
-              , "⟦ x ↦ \"foo\" ⟧"
+              , "\"foo\":x"
               , ""
               , "=== Step #2, Rule 'first', 31t -> 30t"
               , "Φ.x( y ↦ \"foo\" )"
               , ""
               , "=== Step #3, Rule 'second', 30t -> 31t"
-              , "⟦ x ↦ \"foo\" ⟧"
+              , "\"foo\":x"
               ]
           ]
 
@@ -674,7 +674,7 @@ spec = do
       withStdin "[[ x -> \"foo\" ]]" $
         testCLISucceeded
           ["rewrite", rule "simple.yaml", "--headers", "--sweet", "--flat"]
-          ["⟦ x ↦ \"bar\" ⟧"]
+          ["\"bar\":x"]
 
     it "emits step headers as LaTeX comments with --headers" $
       withStdin "[[ x -> \"foo\" ]]" $
@@ -843,8 +843,8 @@ spec = do
         testCLISucceeded
           ["rewrite", "--normalize", "--sequence", "--flat", "--output=phi", "--sweet", "--focus=Q.ex"]
           [ unlines
-              [ "⟦ x ↦ ⟦ y ↦ ∅, k ↦ ⟦ t ↦ 42 ⟧ ⟧( y ↦ ⟦ t ↦ 42 ⟧ ) ⟧.i"
-              , "⟦ x ↦ ⟦ y ↦ ⟦ t ↦ 42 ⟧, k ↦ ⟦ t ↦ 42 ⟧ ⟧ ⟧.i"
+              [ "⟦ y ↦ ∅, k ↦ 42:t ⟧( y ↦ 42:t ):x.i"
+              , "⟦ y ↦ 42:t, k ↦ 42:t ⟧:x.i"
               , "⊥"
               ]
           ]
@@ -859,7 +859,7 @@ spec = do
       withStdin "[[ x -> \"foo\" ]]" $
         testCLISucceeded
           ["rewrite", "--output=xmir", "--omit-comments", "--sweet", "--flat", "--sequence", rule "simple.yaml"]
-          ["  <listing>⟦ x ↦ \"foo\" ⟧</listing>", "  <listing>⟦ x ↦ \"bar\" ⟧</listing>"]
+          ["  <listing>\"foo\":x</listing>", "  <listing>\"bar\":x</listing>"]
 
     describe "must range tests" $ do
       describe "fails" $ do
@@ -905,13 +905,13 @@ spec = do
         withStdin "⟦ t ↦ ⟦ x ↦ \"foo\" ⟧ ⟧" $
           testCLISucceeded
             ["rewrite", rule "simple.yaml", "--must=1..1", "--sweet"]
-            ["x ↦ \"bar\""]
+            ["\"bar\":x"]
 
       it "accepts range 1..3 when 1 cycle happens" $
         withStdin "⟦ t ↦ ⟦ x ↦ \"foo\" ⟧ ⟧" $
           testCLISucceeded
             ["rewrite", rule "simple.yaml", "--must=1..3", "--sweet"]
-            ["x ↦ \"bar\""]
+            ["\"bar\":x"]
 
       it "accepts range 0.. (0 or more)" $
         withStdin "[[ ]]" $
@@ -931,7 +931,7 @@ spec = do
         hClose h
         testCLISucceeded ["rewrite", rule "simple.yaml", "--in-place", "--sweet", path] []
         content <- readFile path
-        content `shouldBe` "⟦ x ↦ \"bar\" ⟧"
+        content `shouldBe` "\"bar\":x"
 
     it "skips rewriting with --update when target is newer than source" $
       withTempFileContent "src-XXXXXX.phi" "[[ x -> \"foo\" ]]" $ \src ->
@@ -981,19 +981,19 @@ spec = do
             ["rewrite", rule "simple.yaml", "--update", "--sweet", "--target=" ++ tgt, src]
             []
           content <- readFile tgt
-          content `shouldBe` "⟦ x ↦ \"bar\" ⟧"
+          content `shouldBe` "\"bar\":x"
 
     it "rewrites with cycles" $
       withStdin "[[ x -> \"x\" ]]" $
         testCLISucceeded
           ["rewrite", "--sweet", rule "infinite.yaml", "--max-depth=1", "--max-cycles=2"]
-          ["⟦ x ↦ \"x_hi_hi\" ⟧"]
+          ["\"x_hi_hi\":x"]
 
     it "hides default package" $
       withStdin "[[ org -> [[ eolang -> [[ number -> [[]] ]]]], x -> 42 ]]" $
         testCLISucceeded
           ["rewrite", "--sweet", "--flat", "--hide=Q.org"]
-          ["⟦ x ↦ 42 ⟧"]
+          ["42:x"]
 
     it "hides several FQNs" $
       withStdin "[[ org -> [[ eolang -> Q.x, yegor256 -> Q.y ]], x -> 42 ]]" $
@@ -1005,13 +1005,13 @@ spec = do
       withStdin "[[ org -> [[ eolang -> Q.x, yegor256 -> Q.y ]], x -> 42 ]]" $
         testCLISucceeded
           ["rewrite", "--sweet", "--flat", "--show=Q.org", "--hide=Q.org.eolang"]
-          ["⟦ org ↦ ⟦ yegor256 ↦ Φ.y ⟧ ⟧"]
+          ["Φ.y:yegor256:org"]
 
     it "prints in line with --flat" $
       withStdin "[[ x -> 5, y -> \"hey\", z -> [[ w -> [[ ]] ]] ]]" $
         testCLISucceeded
           ["rewrite", "--sweet", "--flat"]
-          ["⟦ x ↦ 5, y ↦ \"hey\", z ↦ ⟦ w ↦ ⟦⟧ ⟧ ⟧"]
+          ["⟦ x ↦ 5, y ↦ \"hey\", z ↦ ⟦⟧:w ⟧"]
 
     it "removes unnecessary rho bindings in primitive applications" $
       withStdin
@@ -1024,7 +1024,7 @@ spec = do
         )
         ( testCLISucceeded
             ["rewrite", "--sweet", "--normalize", "--flat"]
-            ["⟦ z ↦ 42, org ↦ ⟦ eolang ↦ ⟦ bytes(data) ↦ ⟦⟧, number(as-bytes) ↦ ⟦⟧ ⟧ ⟧ ⟧"]
+            ["⟦ z ↦ 42, org ↦ ⟦ bytes(data) ↦ ⟦⟧, number(as-bytes) ↦ ⟦⟧ ⟧:eolang ⟧"]
         )
 
     it "reduces log message" $
@@ -1053,13 +1053,13 @@ spec = do
       withStdin "[[ x -> [[ y -> [[ L> Func ]].q, z -> Q.x(a -> [[ w -> [[ L> Atom ]], L> Hello ]]) ]], L> Package ]]" $
         testCLISucceeded
           ["rewrite", "--canonize", "--sweet", "--flat"]
-          ["⟦ x ↦ ⟦ y ↦ ⟦ λ ⤍ Fn1 ⟧.q, z ↦ Φ.x( a ↦ ⟦ w ↦ ⟦ λ ⤍ Fn2 ⟧, λ ⤍ Fn3 ⟧ ) ⟧, λ ⤍ Fn4 ⟧"]
+          ["⟦ x ↦ ⟦ y ↦ Fn1:λ.q, z ↦ Φ.x( a ↦ ⟦ w ↦ Fn2:λ, λ ⤍ Fn3 ⟧ ) ⟧, λ ⤍ Fn4 ⟧"]
 
     it "rewrites by locator" $
       withStdin "[[ ex -> [[ x -> [[ y -> 5 ]].y ]], abc -> [[ x -> ? ]](x -> 5) ]]" $
         testCLISucceeded
           ["rewrite", "--sweet", "--flat", "--locator=Q.ex", "--normalize"]
-          ["⟦ ex ↦ ⟦ x ↦ 5 ⟧, abc ↦ ⟦ x ↦ ∅ ⟧( x ↦ 5 ) ⟧"]
+          ["⟦ ex ↦ 5:x, abc ↦ ∅:x( x ↦ 5 ) ⟧"]
 
     it "returns original expression on --breakpoint" $
       withStdin "[[ x -> ?, y -> $.x ]](x -> [[ D> 42- ]]).y" $
@@ -1067,7 +1067,7 @@ spec = do
           ["rewrite", "--sweet", "--flat", "--normalize", "--breakpoint=stop", "--log-level=debug"]
           [ "Applied 'copy' (30 nodes -> 25 nodes)"
           , "Rule 'stop' is a breakpoint, dropping down all the previous rewritings..."
-          , "⟦ x ↦ ∅, y ↦ x ⟧( x ↦ ⟦ Δ ⤍ 42- ⟧ ).y"
+          , "⟦ x ↦ ∅, y ↦ x ⟧( x ↦ 42-:Δ ).y"
           ]
 
   describe "dataize" $ do
@@ -1179,7 +1179,7 @@ spec = do
       withStdin "[[ D> 01- ]]" $
         testCLISucceeded
           ["dataize", "--sequence", "--quiet", "--flat", "--sweet"]
-          ["⟦ Δ ⤍ 01- ⟧\n01-"]
+          ["01-:Δ\n01-"]
 
     it "focuses a compressed sequence whose meet replaces a step root" $
       withStdin "[[ @ -> [[ @ -> $.c.plus( 32.0 ), c -> 25.0 ]], bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus -> [[ x -> ?, L> L_number_plus ]] ]] ]]" $
@@ -1233,8 +1233,8 @@ spec = do
                        , "  𝔼(L_number_plus)  # 𝔻(Φ)"
                        , "    𝛿1.1 := 40-14-00-00-00-00-00-00  # 𝔻(ξ.ρ)"
                        , "    𝛿2.1 := 40-18-00-00-00-00-00-00  # 𝔻(ξ.x)"
-                       , "    𝑛.1.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )  # 𝑛"
-                       , "    𝑛.1.2 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧  # 𝕄(𝑛.1.1)"
+                       , "    𝑛.1.1 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛"
+                       , "    𝑛.1.2 := ⟦ φ ↦ 𝜎1:λ, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧  # 𝕄(𝑛.1.1)"
                        ]
 
       -- The second firing of one entry numbers its own metas 𝛿1.2 and 𝛿2.2,
@@ -1251,13 +1251,13 @@ spec = do
                        , "  𝔼(L_number_plus)  # 𝕄(Φ)"
                        , "    𝛿1.1 := 40-14-00-00-00-00-00-00  # 𝔻(ξ.ρ)"
                        , "    𝛿2.1 := 40-18-00-00-00-00-00-00  # 𝔻(ξ.x)"
-                       , "    𝑛.1.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )  # 𝑛"
-                       , "    𝑛.1.2 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧  # 𝕄(𝑛.1.1)"
+                       , "    𝑛.1.1 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛"
+                       , "    𝑛.1.2 := ⟦ φ ↦ 𝜎1:λ, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧  # 𝕄(𝑛.1.1)"
                        , "  𝔼(L_number_plus)  # 𝔻(Φ)"
-                       , "    𝛿1.2 := 𝔻(⟦ λ ⤍ 𝜎1 ⟧)  # 𝔻(ξ.ρ)"
+                       , "    𝛿1.2 := 𝔻(𝜎1:λ)  # 𝔻(ξ.ρ)"
                        , "    𝛿2.2 := 40-1C-00-00-00-00-00-00  # 𝔻(ξ.x)"
-                       , "    𝑛.2.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ )  # 𝑛"
-                       , "    𝑛.2.2 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧  # 𝕄(𝑛.2.1)"
+                       , "    𝑛.2.1 := Φ.number( φ ↦ 𝜎2:λ )  # 𝑛"
+                       , "    𝑛.2.2 := ⟦ φ ↦ 𝜎2:λ, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧  # 𝕄(𝑛.2.1)"
                        ]
 
       -- A meta is a variable bound exactly once, so its name has to be unique
@@ -1276,13 +1276,13 @@ spec = do
                        , "  𝔼(L_number_plus)  # 𝕄(Φ)"
                        , "    𝛿1.1 := 40-14-00-00-00-00-00-00  # 𝔻(ξ.ρ)"
                        , "    𝛿2.1 := 40-18-00-00-00-00-00-00  # 𝔻(ξ.x)"
-                       , "    𝑛.1.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )  # 𝑛"
-                       , "    𝑛.1.2 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧ ⟧  # 𝕄(𝑛.1.1)"
+                       , "    𝑛.1.1 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛"
+                       , "    𝑛.1.2 := ⟦ φ ↦ 𝜎1:λ, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧ ⟧  # 𝕄(𝑛.1.1)"
                        , "  𝔼(L_number_times)  # 𝔻(Φ)"
-                       , "    𝛿1.2 := 𝔻(⟦ λ ⤍ 𝜎1 ⟧)  # 𝔻(ξ.ρ)"
+                       , "    𝛿1.2 := 𝔻(𝜎1:λ)  # 𝔻(ξ.ρ)"
                        , "    𝛿2.2 := 40-1C-00-00-00-00-00-00  # 𝔻(ξ.x)"
-                       , "    𝑛.2.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ )  # 𝑛"
-                       , "    𝑛.2.2 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧ ⟧  # 𝕄(𝑛.2.1)"
+                       , "    𝑛.2.1 := Φ.number( φ ↦ 𝜎2:λ )  # 𝑛"
+                       , "    𝑛.2.2 := ⟦ φ ↦ 𝜎2:λ, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧ ⟧  # 𝕄(𝑛.2.1)"
                        ]
 
       -- An operand is brought down by a whole run of 𝔻, so a λ function it
@@ -1300,11 +1300,11 @@ spec = do
                        , "    𝔼(L_number_plus)  # 𝔻(Φ.a🌵1)"
                        , "      𝛿1.2 := 40-18-00-00-00-00-00-00  # 𝔻(ξ.ρ)"
                        , "      𝛿2.2 := 40-1C-00-00-00-00-00-00  # 𝔻(ξ.x)"
-                       , "      𝑛.2.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )  # 𝑛"
-                       , "      𝑛.2.2 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧  # 𝕄(𝑛.2.1)"
-                       , "    𝛿2.1 := 𝔻(⟦ λ ⤍ 𝜎1 ⟧)  # 𝔻(ξ.x)"
-                       , "    𝑛.1.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ )  # 𝑛"
-                       , "    𝑛.1.2 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧  # 𝕄(𝑛.1.1)"
+                       , "      𝑛.2.1 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛"
+                       , "      𝑛.2.2 := ⟦ φ ↦ 𝜎1:λ, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧  # 𝕄(𝑛.2.1)"
+                       , "    𝛿2.1 := 𝔻(𝜎1:λ)  # 𝔻(ξ.x)"
+                       , "    𝑛.1.1 := Φ.number( φ ↦ 𝜎2:λ )  # 𝑛"
+                       , "    𝑛.1.2 := ⟦ φ ↦ 𝜎2:λ, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧  # 𝕄(𝑛.1.1)"
                        ]
 
       -- A 'symbolize' line stands the data of a term an earlier line bound
@@ -1323,11 +1323,11 @@ spec = do
           lines records
             `shouldBe` [ "𝕄(Φ.y)"
                        , "  𝔼(L_stand)  # 𝕄(Φ.y)"
-                       , "    𝑛1.1 := ⟦ Δ ⤍ 01- ⟧  # 𝕄(ξ.x)"
-                       , "    𝔻(⟦ λ ⤍ 𝜎1 ⟧) == 01-"
-                       , "    𝑛2.1 := ⟦ λ ⤍ 𝜎1 ⟧  # 𝑛1"
-                       , "    𝑛.1.1 := ⟦ z ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧  # 𝑛"
-                       , "    𝑛.1.2 := ⟦ z ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧  # 𝕄(𝑛.1.1)"
+                       , "    𝑛1.1 := 01-:Δ  # 𝕄(ξ.x)"
+                       , "    𝔻(𝜎1:λ) == 01-"
+                       , "    𝑛2.1 := 𝜎1:λ  # 𝑛1"
+                       , "    𝑛.1.1 := 𝜎1:λ:z  # 𝑛"
+                       , "    𝑛.1.2 := 𝜎1:λ:z  # 𝕄(𝑛.1.1)"
                        ]
 
       it "keeps the lines of a run that fails" $
@@ -1343,9 +1343,9 @@ spec = do
                        , "  𝔼(L_number_plus)  # 𝕄(Φ)"
                        , "    𝛿1.1 := 40-14-00-00-00-00-00-00  # 𝔻(ξ.ρ)"
                        , "    𝛿2.1 := 40-18-00-00-00-00-00-00  # 𝔻(ξ.x)"
-                       , "    𝑛.1.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )  # 𝑛"
-                       , "    𝑛.1.2 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, nope ↦ ⟦ λ ⤍ L_number_nope ⟧ ⟧  # 𝕄(𝑛.1.1)"
-                       , "  ?(L_number_nope)  # 𝔻(⟦ λ ⤍ L_number_nope ⟧)"
+                       , "    𝑛.1.1 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛"
+                       , "    𝑛.1.2 := ⟦ φ ↦ 𝜎1:λ, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, nope ↦ L_number_nope:λ ⟧  # 𝕄(𝑛.1.1)"
+                       , "  ?(L_number_nope)  # 𝔻(L_number_nope:λ)"
                        ]
 
       it "truncates the lines left over from the previous run" $
@@ -1363,7 +1363,7 @@ spec = do
           withStdin sum' $
             testCLISucceeded ["dataize", symbolic, "--protocol=" ++ path, "--output=xmir", "--quiet", "--sweet", "--hide-rho"] []
           records <- readUtf8 path
-          records `shouldEndWith` "    𝑛.1.2 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧  # 𝕄(𝑛.1.1)\n"
+          records `shouldEndWith` "    𝑛.1.2 := ⟦ φ ↦ 𝜎1:λ, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧  # 𝕄(𝑛.1.1)\n"
 
       -- The same facts as markup, so a program reading the protocol back never
       -- has to parse 𝜑 to learn them: the name of an element says what its
@@ -1385,8 +1385,8 @@ spec = do
                          , "    <bind meta=\"𝛿1.1\">40-14-00-00-00-00-00-00</bind>"
                          , "    <bind meta=\"𝛿2.1\">40-18-00-00-00-00-00-00</bind>"
                          , "    <minted>𝜎1</minted>"
-                         , "    <built meta=\"𝑛.1.1\">Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )</built>"
-                         , "    <answer meta=\"𝑛.1.2\">⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧</answer>"
+                         , "    <built meta=\"𝑛.1.1\">Φ.number( φ ↦ 𝜎1:λ )</built>"
+                         , "    <answer meta=\"𝑛.1.2\">⟦ φ ↦ 𝜎1:λ, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧</answer>"
                          , "  </evaluate>"
                          , "</dataize>"
                          ]
@@ -1423,15 +1423,15 @@ spec = do
                          , "    <bind meta=\"𝛿1.1\">40-14-00-00-00-00-00-00</bind>"
                          , "    <bind meta=\"𝛿2.1\">40-18-00-00-00-00-00-00</bind>"
                          , "    <minted>𝜎1</minted>"
-                         , "    <built meta=\"𝑛.1.1\">Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )</built>"
-                         , "    <answer meta=\"𝑛.1.2\">⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧</answer>"
+                         , "    <built meta=\"𝑛.1.1\">Φ.number( φ ↦ 𝜎1:λ )</built>"
+                         , "    <answer meta=\"𝑛.1.2\">⟦ φ ↦ 𝜎1:λ, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧</answer>"
                          , "  </evaluate>"
                          , "  <evaluate λ=\"L_number_plus\" id=\"2\" judgment=\"dataize\" locator=\"Φ\">"
-                         , "    <dataize meta=\"𝛿1.2\">⟦ λ ⤍ 𝜎1 ⟧</dataize>"
+                         , "    <dataize meta=\"𝛿1.2\">𝜎1:λ</dataize>"
                          , "    <bind meta=\"𝛿2.2\">40-1C-00-00-00-00-00-00</bind>"
                          , "    <minted>𝜎2</minted>"
-                         , "    <built meta=\"𝑛.2.1\">Φ.number( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ )</built>"
-                         , "    <answer meta=\"𝑛.2.2\">⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧</answer>"
+                         , "    <built meta=\"𝑛.2.1\">Φ.number( φ ↦ 𝜎2:λ )</built>"
+                         , "    <answer meta=\"𝑛.2.2\">⟦ φ ↦ 𝜎2:λ, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧</answer>"
                          , "  </evaluate>"
                          , "</dataize>"
                          ]
@@ -1452,11 +1452,11 @@ spec = do
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                          , "<morph locator=\"Φ.y\">"
                          , "  <evaluate λ=\"L_stand\" id=\"1\" judgment=\"morph\" locator=\"Φ.y\">"
-                         , "    <bind meta=\"𝑛1.1\">⟦ Δ ⤍ 01- ⟧</bind>"
+                         , "    <bind meta=\"𝑛1.1\">01-:Δ</bind>"
                          , "    <known symbol=\"𝜎1\">01-</known>"
-                         , "    <bind meta=\"𝑛2.1\">⟦ λ ⤍ 𝜎1 ⟧</bind>"
-                         , "    <built meta=\"𝑛.1.1\">⟦ z ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧</built>"
-                         , "    <answer meta=\"𝑛.1.2\">⟦ z ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧</answer>"
+                         , "    <bind meta=\"𝑛2.1\">𝜎1:λ</bind>"
+                         , "    <built meta=\"𝑛.1.1\">𝜎1:λ:z</built>"
+                         , "    <answer meta=\"𝑛.1.2\">𝜎1:λ:z</answer>"
                          , "  </evaluate>"
                          , "</morph>"
                          ]
@@ -1480,12 +1480,12 @@ spec = do
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                          , "<morph locator=\"Φ.y\">"
                          , "  <evaluate λ=\"L_fork\" id=\"1\" judgment=\"morph\" locator=\"Φ.y\">"
-                         , "    <bind meta=\"𝑛1.1\">⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧</bind>"
-                         , "    <bind meta=\"𝑛2.1\">⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧</bind>"
+                         , "    <bind meta=\"𝑛1.1\">𝜎1:λ:φ</bind>"
+                         , "    <bind meta=\"𝑛2.1\">𝜎2:λ:φ</bind>"
                          , "    <joined symbol=\"𝜎3\">𝜎1 𝜎2</joined>"
-                         , "    <bind meta=\"𝑛3.1\">⟦ φ ↦ ⟦ λ ⤍ 𝜎3 ⟧ ⟧</bind>"
-                         , "    <built meta=\"𝑛.1.1\">⟦ φ ↦ ⟦ λ ⤍ 𝜎3 ⟧ ⟧</built>"
-                         , "    <answer meta=\"𝑛.1.2\">⟦ φ ↦ ⟦ λ ⤍ 𝜎3 ⟧ ⟧</answer>"
+                         , "    <bind meta=\"𝑛3.1\">𝜎3:λ:φ</bind>"
+                         , "    <built meta=\"𝑛.1.1\">𝜎3:λ:φ</built>"
+                         , "    <answer meta=\"𝑛.1.2\">𝜎3:λ:φ</answer>"
                          , "  </evaluate>"
                          , "</morph>"
                          ]
@@ -1506,11 +1506,11 @@ spec = do
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                          , "<morph locator=\"Φ.y\">"
                          , "  <evaluate λ=\"L_pair\" id=\"1\" judgment=\"morph\" locator=\"Φ.y\">"
-                         , "    <bind meta=\"𝑛1.1\">⟦ Δ ⤍ 01- ⟧</bind>"
+                         , "    <bind meta=\"𝑛1.1\">01-:Δ</bind>"
                          , "    <minted>𝜎1</minted>"
                          , "    <minted>𝜎2</minted>"
-                         , "    <built meta=\"𝑛.1.1\">⟦ left ↦ ⟦ λ ⤍ 𝜎1 ⟧, right ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧</built>"
-                         , "    <answer meta=\"𝑛.1.2\">⟦ left ↦ ⟦ λ ⤍ 𝜎1 ⟧, right ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧</answer>"
+                         , "    <built meta=\"𝑛.1.1\">⟦ left ↦ 𝜎1:λ, right ↦ 𝜎2:λ ⟧</built>"
+                         , "    <answer meta=\"𝑛.1.2\">⟦ left ↦ 𝜎1:λ, right ↦ 𝜎2:λ ⟧</answer>"
                          , "  </evaluate>"
                          , "</morph>"
                          ]
@@ -1529,9 +1529,9 @@ spec = do
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                          , "<morph locator=\"Φ.y\">"
                          , "  <evaluate λ=\"L_keep\" id=\"1\" judgment=\"morph\" locator=\"Φ.y\">"
-                         , "    <bind meta=\"𝑛1.1\">⟦ Δ ⤍ 01- ⟧</bind>"
-                         , "    <built meta=\"𝑛.1.1\">⟦ z ↦ ⟦ Δ ⤍ 01- ⟧ ⟧</built>"
-                         , "    <answer meta=\"𝑛.1.2\">⟦ z ↦ ⟦ Δ ⤍ 01- ⟧ ⟧</answer>"
+                         , "    <bind meta=\"𝑛1.1\">01-:Δ</bind>"
+                         , "    <built meta=\"𝑛.1.1\">01-:Δ:z</built>"
+                         , "    <answer meta=\"𝑛.1.2\">01-:Δ:z</answer>"
                          , "  </evaluate>"
                          , "</morph>"
                          ]
@@ -1554,13 +1554,13 @@ spec = do
                          , "      <bind meta=\"𝛿1.2\">40-18-00-00-00-00-00-00</bind>"
                          , "      <bind meta=\"𝛿2.2\">40-1C-00-00-00-00-00-00</bind>"
                          , "      <minted>𝜎1</minted>"
-                         , "      <built meta=\"𝑛.2.1\">Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )</built>"
-                         , "      <answer meta=\"𝑛.2.2\">⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧</answer>"
+                         , "      <built meta=\"𝑛.2.1\">Φ.number( φ ↦ 𝜎1:λ )</built>"
+                         , "      <answer meta=\"𝑛.2.2\">⟦ φ ↦ 𝜎1:λ, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧</answer>"
                          , "    </evaluate>"
-                         , "    <dataize meta=\"𝛿2.1\">⟦ λ ⤍ 𝜎1 ⟧</dataize>"
+                         , "    <dataize meta=\"𝛿2.1\">𝜎1:λ</dataize>"
                          , "    <minted>𝜎2</minted>"
-                         , "    <built meta=\"𝑛.1.1\">Φ.number( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ )</built>"
-                         , "    <answer meta=\"𝑛.1.2\">⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧</answer>"
+                         , "    <built meta=\"𝑛.1.1\">Φ.number( φ ↦ 𝜎2:λ )</built>"
+                         , "    <answer meta=\"𝑛.1.2\">⟦ φ ↦ 𝜎2:λ, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧</answer>"
                          , "  </evaluate>"
                          , "</dataize>"
                          ]
@@ -1582,10 +1582,10 @@ spec = do
                          , "    <bind meta=\"𝛿1.1\">40-00-00-00-00-00-00-00</bind>"
                          , "    <bind meta=\"𝛿2.1\">40-08-00-00-00-00-00-00</bind>"
                          , "    <minted>𝜎1</minted>"
-                         , "    <built meta=\"𝑛.1.1\">Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )</built>"
-                         , "    <answer meta=\"𝑛.1.2\">⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧, nope ↦ ⟦ λ ⤍ L_number_nope ⟧ ⟧</answer>"
+                         , "    <built meta=\"𝑛.1.1\">Φ.number( φ ↦ 𝜎1:λ )</built>"
+                         , "    <answer meta=\"𝑛.1.2\">⟦ φ ↦ 𝜎1:λ, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧, nope ↦ L_number_nope:λ ⟧</answer>"
                          , "  </evaluate>"
-                         , "  <stuck λ=\"L_number_nope\" judgment=\"dataize\">⟦ λ ⤍ L_number_nope ⟧</stuck>"
+                         , "  <stuck λ=\"L_number_nope\" judgment=\"dataize\">L_number_nope:λ</stuck>"
                          , "</dataize>"
                          ]
 
@@ -1683,7 +1683,7 @@ spec = do
         withStdin stuck $
           testCLISucceeded
             ["dataize", symbolic, "--partial", "--sweet", "--hide-rho"]
-            ["⟦ λ ⤍ L_number_nope ⟧"]
+            ["L_number_nope:λ"]
 
       -- What the firing before the stuck one answered is a symbol, and the
       -- residue carries it where the value nobody worked out belongs
@@ -1691,7 +1691,7 @@ spec = do
         withStdin stuck $
           testCLISucceeded
             ["dataize", symbolic, "--partial", "--sweet"]
-            ["φ ↦ ⟦ λ ⤍ 𝜎1 ⟧"]
+            ["φ ↦ 𝜎1:λ"]
 
       it "records every firing before the stuck site in --protocol" $
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
@@ -1704,9 +1704,9 @@ spec = do
                        , "  𝔼(L_number_times)  # 𝕄(Φ)"
                        , "    𝛿1.1 := 40-00-00-00-00-00-00-00  # 𝔻(ξ.ρ)"
                        , "    𝛿2.1 := 40-08-00-00-00-00-00-00  # 𝔻(ξ.x)"
-                       , "    𝑛.1.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )  # 𝑛"
-                       , "    𝑛.1.2 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧, nope ↦ ⟦ λ ⤍ L_number_nope ⟧ ⟧  # 𝕄(𝑛.1.1)"
-                       , "  ?(L_number_nope)  # 𝔻(⟦ λ ⤍ L_number_nope ⟧)"
+                       , "    𝑛.1.1 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛"
+                       , "    𝑛.1.2 := ⟦ φ ↦ 𝜎1:λ, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧, nope ↦ L_number_nope:λ ⟧  # 𝕄(𝑛.1.1)"
+                       , "  ?(L_number_nope)  # 𝔻(L_number_nope:λ)"
                        ]
 
       it "still prints bytes when nothing gets stuck" $
@@ -1739,7 +1739,7 @@ spec = do
         withStdin stuck $
           testCLISucceeded
             ["dataize", symbolic, "--partial", "--sequence", "--sweet", "--hide-rho", "--flat"]
-            ["2.times( 3 ).nope", "⟦ λ ⤍ L_number_nope ⟧"]
+            ["2.times( 3 ).nope", "L_number_nope:λ"]
 
       it "still stops on the terminator ⊥, since a wrong operand is not a stuck λ function" $
         withStdin "[[ ]]" $
@@ -1933,8 +1933,8 @@ spec = do
                      , "  𝔼(L_number_plus)  # 𝕄(Φ.φ)"
                      , "    𝛿1.1 := 40-14-00-00-00-00-00-00  # 𝔻(ξ.ρ)"
                      , "    𝛿2.1 := 40-18-00-00-00-00-00-00  # 𝔻(ξ.x)"
-                     , "    𝑛.1.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )  # 𝑛"
-                     , "    𝑛.1.2 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧  # 𝕄(𝑛.1.1)"
+                     , "    𝑛.1.1 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛"
+                     , "    𝑛.1.2 := ⟦ φ ↦ 𝜎1:λ, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧  # 𝕄(𝑛.1.1)"
                      ]
 
     it "saves morphing steps to dir with --steps-dir" $
@@ -2012,7 +2012,7 @@ spec = do
         withStdin program $
           testCLISucceeded
             ["morph", symbolic, "--deep", "--inside=Q.demo.foo", "--sweet", "--hide-rho", "--flat"]
-            ["⟦ n ↦ 3, φ ↦ Φ.bar( ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧ ⟧ ) ⟧"]
+            ["⟦ n ↦ 3, φ ↦ Φ.bar( ⟦ φ ↦ 𝜎2:λ, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧ ⟧ ) ⟧"]
 
       -- The same term the run above stops at as a bare λ-formation: 'mf' leaves
       -- it to 𝔻, and the walk fires it instead of demanding bytes
@@ -2020,7 +2020,7 @@ spec = do
         withStdin chained $
           testCLISucceeded
             ["morph", symbolic, "--deep", "--locator=Q.@", "--sweet", "--hide-rho", "--flat"]
-            ["⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧"]
+            ["⟦ φ ↦ 𝜎2:λ, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧"]
 
       -- The default locator walks the whole program: the method table of the
       -- object model keeps every one of its λ-formations, since not one of them
@@ -2030,14 +2030,14 @@ spec = do
           testCLISucceeded
             ["morph", symbolic, "--deep", "--sweet", "--hide-rho", "--flat"]
             [ "number(φ) ↦ ⟦ times(x) ↦ ⟦ λ ⤍ L_number_times ⟧ ⟧"
-            , "demo ↦ ⟦ foo ↦ ⟦ n ↦ 3, φ ↦ Φ.bar( ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧ ⟧ ) ⟧ ⟧"
+            , "demo ↦ ⟦ n ↦ 3, φ ↦ Φ.bar( ⟦ φ ↦ 𝜎2:λ, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧ ⟧ ) ⟧:foo"
             ]
 
       it "keeps a binding whose spine got stuck with --partial" $
         withStdin "[[ x -> [[ L> Sym_arg_0 ]].foo ]]" $
           testCLISucceeded
             ["morph", "--deep", "--partial", "--sweet", "--hide-rho", "--flat"]
-            ["⟦ x ↦ ⟦ λ ⤍ Sym_arg_0 ⟧.foo ⟧"]
+            ["Sym_arg_0:λ.foo:x"]
 
       it "fails on that same spine without --partial" $
         withStdin "[[ x -> [[ L> Sym_arg_0 ]].foo ]]" $
@@ -2443,23 +2443,21 @@ spec = do
     it "merges single expression" $
       testCLISucceeded
         ["merge", resource "desugar.phi", "--sweet", "--flat"]
-        ["⟦ foo ↦ x ⟧"]
+        ["x:foo"]
 
     it "merges EO expressions" $
       testCLISucceeded
         ["merge", "--sweet", resource "number.phi", resource "bytes.phi", resource "string.phi", "--margin=25"]
         [ unlines
             [ "⟦"
-            , "  org ↦ ⟦"
-            , "    eolang ↦ ⟦"
-            , "      number(φ) ↦ ⟦⟧,"
-            , "      bytes(data) ↦ ⟦⟧,"
-            , "      string(φ) ↦ ⟦⟧,"
-            , "      λ ⤍ Package"
-            , "    ⟧,"
+            , "  eolang ↦ ⟦"
+            , "    number(φ) ↦ ⟦⟧,"
+            , "    bytes(data) ↦ ⟦⟧,"
+            , "    string(φ) ↦ ⟦⟧,"
             , "    λ ⤍ Package"
-            , "  ⟧"
-            , "⟧"
+            , "  ⟧,"
+            , "  λ ⤍ Package"
+            , "⟧:org"
             ]
         ]
 

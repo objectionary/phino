@@ -164,7 +164,7 @@ spec = do
         let stuck = (withLambdas known (defaultReduceContext ExRoot)){_saveEval = record}
             fire = execBuildTerm univ stuck "evaluate" [ArgExpression (ExFormation [BiLambda (FnSymbol 1)]), ArgExpression univ] substEmpty
         fire `shouldThrow` (\e -> "No entry of --symbolic answers the λ function '𝜎1'" `isInfixOf` show (e :: SomeException))
-      written `shouldBe` "  ?(𝜎1)  # 𝕄(⟦ λ ⤍ 𝜎1 ⟧)\n"
+      written `shouldBe` "  ?(𝜎1)  # 𝕄(𝜎1:λ)\n"
 
     -- Two λ bindings never reach 𝔼: the builder refuses to make a formation out
     -- of them first. The case is here anyway, since what matters is that such a

@@ -5,4 +5,4 @@
 expression: |
   [[ x -> y ]]
 result: |-
-  ⟦ x ↦ y ⟧
+  y:x

@@ -44,11 +44,29 @@ spec = do
       [ ("Q", EX_GLOBAL Φ)
       ,
         ( "[[ x -> Q.y ]]"
+        , EX_SINGLE
+            (PA_TAU (AT_LABEL "x") ARROW (EX_DISPATCH (EX_GLOBAL Φ) NO_SPACE (AT_LABEL "y")))
+            ( EX_FORMATION
+                LSB
+                EOL
+                (TAB 1)
+                (BI_PAIR (PA_TAU (AT_LABEL "x") ARROW (EX_DISPATCH (EX_GLOBAL Φ) NO_SPACE (AT_LABEL "y"))) (BDS_EMPTY (TAB 1)) (TAB 1))
+                EOL
+                (TAB 0)
+                RSB
+            )
+        )
+      ,
+        ( "[[ x -> Q.y, z -> Q ]]"
         , EX_FORMATION
             LSB
             EOL
             (TAB 1)
-            (BI_PAIR (PA_TAU (AT_LABEL "x") ARROW (EX_DISPATCH (EX_GLOBAL Φ) NO_SPACE (AT_LABEL "y"))) (BDS_EMPTY (TAB 1)) (TAB 1))
+            ( BI_PAIR
+                (PA_TAU (AT_LABEL "x") ARROW (EX_DISPATCH (EX_GLOBAL Φ) NO_SPACE (AT_LABEL "y")))
+                (BDS_PAIR EOL (TAB 1) (PA_TAU (AT_LABEL "z") ARROW (EX_GLOBAL Φ)) (BDS_EMPTY (TAB 1)))
+                (TAB 1)
+            )
             EOL
             (TAB 0)
             RSB
@@ -131,12 +149,12 @@ spec = do
 
   describe "expressionToCSTFrom lays out a formation from a given base indent" $
     it "nests the body one level below the given tabs and closes at it" $
-      expressionToCSTFrom 2 (ExFormation [BiTau (AtLabel "x") ExRoot])
+      expressionToCSTFrom 2 (ExFormation [BiTau (AtLabel "x") ExRoot, BiVoid (AtLabel "y")])
         `shouldBe` EX_FORMATION
           LSB
           EOL
           (TAB 3)
-          (BI_PAIR (PA_TAU (AT_LABEL "x") ARROW (EX_GLOBAL Φ)) (BDS_EMPTY (TAB 3)) (TAB 3))
+          (BI_PAIR (PA_TAU (AT_LABEL "x") ARROW (EX_GLOBAL Φ)) (BDS_PAIR EOL (TAB 3) (PA_VOID (AT_LABEL "y") ARROW EMPTY) (BDS_EMPTY (TAB 3))) (TAB 3))
           EOL
           (TAB 2)
           RSB
