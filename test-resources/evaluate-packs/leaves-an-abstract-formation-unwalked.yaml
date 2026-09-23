@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 # SPDX-License-Identifier: MIT
 ---
+# yamllint disable rule:line-length
 # A method nobody applied is an abstract formation, one holding a void of its
 # own: 'at' of the copy of 'text' the entry of 'L_entry' morphs waits for 'i'.
 # The deep walk hands it back as it was written instead of entering it, since
