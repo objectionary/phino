@@ -545,10 +545,10 @@ xmirAtoms xmir = M.fromList <$> mapM entry markers
     locator :: C.Cursor -> [String]
     locator cur =
       [ T.unpack label
-      | anc <- cur C.$| (C.ancestor C.>=> C.element (toName "o"))
-      , not (hasAttr "base" anc)
-      , not (hasAttr "as" anc)
-      , label <- C.attribute (toName "name") anc
+      | enclosing <- cur C.$| (C.ancestor C.>=> C.element (toName "o"))
+      , not (hasAttr "base" enclosing)
+      , not (hasAttr "as" enclosing)
+      , label <- C.attribute (toName "name") enclosing
       ]
 
 -- A formation keeps its Δ data in the text content of its own element, the way
