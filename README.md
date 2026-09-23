@@ -310,8 +310,8 @@ $ cat atoms.txt
   𝔼(L_number_plus)  # 𝔻(Φ)
     𝛿1.1 := 40-14-00-00-00-00-00-00  # 𝔻(ξ.ρ)
     𝛿2.1 := 40-18-00-00-00-00-00-00  # 𝔻(ξ.x)
-    𝑛.1.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )  # 𝑛
-    𝑛.1.2 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧  # 𝕄(𝑛.1.1)
+    𝑛.1.1 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛
+    𝑛.1.2 := ⟦ φ ↦ 𝜎1:λ, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧  # 𝕄(𝑛.1.1)
 ```
 
 <!-- markdownlint-enable MD013 -->
@@ -342,14 +342,15 @@ took opens one, so the order the lines come in is the order the work was done
 in.
 
 Where an operand came down to the datum a symbol stands for, the protocol writes
-`𝔻(⟦ λ ⤍ 𝜎1 ⟧)` in place of that 42, so a reader sees that the value was
+`𝔻(𝜎1:λ)` in place of that 42 (`𝜎1:λ` is the formation `⟦ λ ⤍ 𝜎1 ⟧`, in the
+sugar every sweet term is written with), so a reader sees that the value was
 manufactured rather than read out of the program. A `𝜎` is the name of a λ
 function and no term of its own, so 𝔻 is applied to the formation carrying it
 and never to the name alone.
 
 A `symbolize` line writes a line per fresh symbol it minted, ahead of the line
 binding the term that carries them, and that line is a fact and no assignment:
-`𝔻(⟦ λ ⤍ 𝜎44 ⟧) == 3F-F0-00-00-00-00-00-00` says that dataizing the formation
+`𝔻(𝜎44:λ) == 3F-F0-00-00-00-00-00-00` says that dataizing the formation
 `𝜎44` names answers those bytes. Nothing binds bytes to a `𝜎`, since it is
 neither a datum nor a term. A consumer reading the protocol back treats a
 symbol with such a fact as a constant and every other symbol as an unknown.
@@ -397,7 +398,7 @@ every line by λ name and meta number.
 `?(…)` is a λ name no entry answers, standing where the block of its firing
 would have stood. Nothing fired, so nothing opens under it. The line is
 commented with the judgment that asked and the formation it was asking about,
-`𝕄(⟦ λ ⤍ L_none ⟧)`, the way an operand line is commented with the term it was
+`𝕄(L_none:λ)`, the way an operand line is commented with the term it was
 reduced from: 𝔼 is fired by the `ml` rule of morphing and by the `fire` rule
 of dataization, so the letter says where in the reduction the site stands and
 the term says which object the λ function that could not fire belongs to. It
@@ -418,9 +419,9 @@ $ cat atoms.txt
   𝔼(L_number_plus)  # 𝕄(Φ)
     𝛿1.1 := 40-14-00-00-00-00-00-00  # 𝔻(ξ.ρ)
     𝛿2.1 := 40-18-00-00-00-00-00-00  # 𝔻(ξ.x)
-    𝑛.1.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )  # 𝑛
-    𝑛.1.2 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, nope ↦ ⟦ λ ⤍ L_number_nope ⟧ ⟧  # 𝕄(𝑛.1.1)
-  ?(L_number_nope)  # 𝔻(⟦ λ ⤍ L_number_nope ⟧)
+    𝑛.1.1 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛
+    𝑛.1.2 := ⟦ φ ↦ 𝜎1:λ, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, nope ↦ L_number_nope:λ ⟧  # 𝕄(𝑛.1.1)
+  ?(L_number_nope)  # 𝔻(L_number_nope:λ)
 ```
 
 <!-- markdownlint-enable MD013 -->
@@ -479,48 +480,48 @@ $ phino morph --deep --symbolic=atoms.yaml --locator=Q.demo.a \
 $ cat fork.txt
 𝕄(Φ.demo.a)
   𝔼(L_gt)  # 𝕄(Φ.demo.a.φ)
-    𝛿1.1 := 𝔻(⟦ λ ⤍ 𝜎1 ⟧)  # 𝔻(ξ.ρ)
+    𝛿1.1 := 𝔻(𝜎1:λ)  # 𝔻(ξ.ρ)
     𝛿2.1 := 00-00-00-00-00-00-00-00  # 𝔻(ξ.x)
-    𝑛.1.1 := Φ.bool( if ↦ ⟦ λ ⤍ L_fork, then ↦ ∅, else ↦ ∅, φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧ )  # 𝑛
-    𝑛.1.2 := ⟦ if ↦ ⟦ λ ⤍ L_fork, then ↦ ∅, else ↦ ∅, φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧ ⟧  # 𝕄(𝑛.1.1)
+    𝑛.1.1 := Φ.bool( if ↦ ⟦ λ ⤍ L_fork, then ↦ ∅, else ↦ ∅, φ ↦ 𝜎2:λ ⟧ )  # 𝑛
+    𝑛.1.2 := ⟦ λ ⤍ L_fork, then ↦ ∅, else ↦ ∅, φ ↦ 𝜎2:λ ⟧:if  # 𝕄(𝑛.1.1)
   𝔼(L_plus)  # 𝕄(Φ.demo.a.φ)
-    𝛿1.2 := 𝔻(⟦ λ ⤍ 𝜎1 ⟧)  # 𝔻(ξ.ρ)
+    𝛿1.2 := 𝔻(𝜎1:λ)  # 𝔻(ξ.ρ)
     𝛿2.2 := 3F-F0-00-00-00-00-00-00  # 𝔻(ξ.x)
-    𝑛.2.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎3 ⟧ )  # 𝑛
-    𝑛.2.2 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎3 ⟧, plus(x) ↦ ⟦ λ ⤍ L_plus ⟧, gt(x) ↦ ⟦ λ ⤍ L_gt ⟧ ⟧  # 𝕄(𝑛.2.1)
+    𝑛.2.1 := Φ.number( φ ↦ 𝜎3:λ )  # 𝑛
+    𝑛.2.2 := ⟦ φ ↦ 𝜎3:λ, plus(x) ↦ ⟦ λ ⤍ L_plus ⟧, gt(x) ↦ ⟦ λ ⤍ L_gt ⟧ ⟧  # 𝕄(𝑛.2.1)
   𝔼(L_plus)  # 𝕄(Φ.demo.a.φ)
-    𝛿1.3 := 𝔻(⟦ λ ⤍ 𝜎1 ⟧)  # 𝔻(ξ.ρ)
-    𝛿2.3 := 𝔻(⟦ λ ⤍ 𝜎3 ⟧)  # 𝔻(ξ.x)
-    𝑛.3.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎4 ⟧ )  # 𝑛
-    𝑛.3.2 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎4 ⟧, plus(x) ↦ ⟦ λ ⤍ L_plus ⟧, gt(x) ↦ ⟦ λ ⤍ L_gt ⟧ ⟧  # 𝕄(𝑛.3.1)
+    𝛿1.3 := 𝔻(𝜎1:λ)  # 𝔻(ξ.ρ)
+    𝛿2.3 := 𝔻(𝜎3:λ)  # 𝔻(ξ.x)
+    𝑛.3.1 := Φ.number( φ ↦ 𝜎4:λ )  # 𝑛
+    𝑛.3.2 := ⟦ φ ↦ 𝜎4:λ, plus(x) ↦ ⟦ λ ⤍ L_plus ⟧, gt(x) ↦ ⟦ λ ⤍ L_gt ⟧ ⟧  # 𝕄(𝑛.3.1)
   𝔼(L_plus)  # 𝕄(Φ.demo.a.φ)
-    𝛿1.4 := 𝔻(⟦ λ ⤍ 𝜎1 ⟧)  # 𝔻(ξ.ρ)
-    𝛿2.4 := 𝔻(⟦ λ ⤍ 𝜎1 ⟧)  # 𝔻(ξ.x)
-    𝑛.4.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎5 ⟧ )  # 𝑛
-    𝑛.4.2 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎5 ⟧, plus(x) ↦ ⟦ λ ⤍ L_plus ⟧, gt(x) ↦ ⟦ λ ⤍ L_gt ⟧ ⟧  # 𝕄(𝑛.4.1)
+    𝛿1.4 := 𝔻(𝜎1:λ)  # 𝔻(ξ.ρ)
+    𝛿2.4 := 𝔻(𝜎1:λ)  # 𝔻(ξ.x)
+    𝑛.4.1 := Φ.number( φ ↦ 𝜎5:λ )  # 𝑛
+    𝑛.4.2 := ⟦ φ ↦ 𝜎5:λ, plus(x) ↦ ⟦ λ ⤍ L_plus ⟧, gt(x) ↦ ⟦ λ ⤍ L_gt ⟧ ⟧  # 𝕄(𝑛.4.1)
   𝔼(L_fork)  # 𝕄(Φ.demo.a.φ)
-    𝛿1.5 := 𝔻(⟦ λ ⤍ 𝜎2 ⟧)  # 𝔻(ξ.φ)
+    𝛿1.5 := 𝔻(𝜎2:λ)  # 𝔻(ξ.φ)
     𝑛1.5 := 𝑛.3.2  # 𝕄(ξ.then)
     𝑛2.5 := 𝑛.4.2  # 𝕄(ξ.else)
-    𝔻(⟦ λ ⤍ 𝜎6 ⟧) ∈ { 𝔻(⟦ λ ⤍ 𝜎4 ⟧), 𝔻(⟦ λ ⤍ 𝜎5 ⟧) }
-    𝑛3.5 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎6 ⟧, plus(x) ↦ ⟦ λ ⤍ L_plus ⟧, gt(x) ↦ ⟦ λ ⤍ L_gt ⟧ ⟧  # [𝑛1, 𝑛2]
+    𝔻(𝜎6:λ) ∈ { 𝔻(𝜎4:λ), 𝔻(𝜎5:λ) }
+    𝑛3.5 := ⟦ φ ↦ 𝜎6:λ, plus(x) ↦ ⟦ λ ⤍ L_plus ⟧, gt(x) ↦ ⟦ λ ⤍ L_gt ⟧ ⟧  # [𝑛1, 𝑛2]
     𝑛.5.1 := 𝑛3.5  # 𝑛
     𝑛.5.2 := 𝑛3.5  # 𝕄(𝑛.5.1)
   𝔼(L_plus)  # 𝕄(Φ.demo.a.φ)
-    𝛿1.6 := 𝔻(⟦ λ ⤍ 𝜎6 ⟧)  # 𝔻(ξ.ρ)
+    𝛿1.6 := 𝔻(𝜎6:λ)  # 𝔻(ξ.ρ)
     𝛿2.6 := 40-14-00-00-00-00-00-00  # 𝔻(ξ.x)
-    𝑛.6.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎7 ⟧ )  # 𝑛
-    𝑛.6.2 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎7 ⟧, plus(x) ↦ ⟦ λ ⤍ L_plus ⟧, gt(x) ↦ ⟦ λ ⤍ L_gt ⟧ ⟧  # 𝕄(𝑛.6.1)
+    𝑛.6.1 := Φ.number( φ ↦ 𝜎7:λ )  # 𝑛
+    𝑛.6.2 := ⟦ φ ↦ 𝜎7:λ, plus(x) ↦ ⟦ λ ⤍ L_plus ⟧, gt(x) ↦ ⟦ λ ⤍ L_gt ⟧ ⟧  # 𝕄(𝑛.6.1)
 ```
 
 <!-- markdownlint-enable MD013 -->
 
 `𝜎3` is minted by the second firing and consumed by the third as
-`𝔻(⟦ λ ⤍ 𝜎3 ⟧)`, and `𝜎2` by the first and consumed by the fork. `𝜎4` and
+`𝔻(𝜎3:λ)`, and `𝜎2` by the first and consumed by the fork. `𝜎4` and
 `𝜎5` are what the two branches came to, and the fork consumes both: its `join`
 line makes them one term carrying `𝜎6`, which the `plus( 5 )` standing after
-the fork then reads as `𝔻(⟦ λ ⤍ 𝜎6 ⟧)`. The line
-`𝔻(⟦ λ ⤍ 𝜎6 ⟧) ∈ { 𝔻(⟦ λ ⤍ 𝜎4 ⟧), 𝔻(⟦ λ ⤍ 𝜎5 ⟧) }` is what ties the three
+the fork then reads as `𝔻(𝜎6:λ)`. The line
+`𝔻(𝜎6:λ) ∈ { 𝔻(𝜎4:λ), 𝔻(𝜎5:λ) }` is what ties the three
 together: dataizing the formation `𝜎6` names answers what dataizing one of the
 other two answers. A reader who knows the entry knows that `𝛿1` is what decides
 between them and that the first of the two belongs to `then`. Nothing is
@@ -561,8 +562,8 @@ $ cat atoms.xml
     <bind meta="𝛿1.1">40-14-00-00-00-00-00-00</bind>
     <bind meta="𝛿2.1">40-18-00-00-00-00-00-00</bind>
     <minted>𝜎1</minted>
-    <built meta="𝑛.1.1">Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )</built>
-    <answer meta="𝑛.1.2">⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧</answer>
+    <built meta="𝑛.1.1">Φ.number( φ ↦ 𝜎1:λ )</built>
+    <answer meta="𝑛.1.2">⟦ φ ↦ 𝜎1:λ, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧</answer>
   </evaluate>
 </dataize>
 ```
@@ -581,7 +582,7 @@ operand came down to data. `<dataize>` inside a firing is the other thing a
 `dataize` operand may come to, the datum manufactured for an unknown, and holds
 the formation that unknown names rather than the 42 standing for it: a `𝜎` is
 the name of a λ function and no term of its own, so what 𝔻 was applied to is
-`⟦ λ ⤍ 𝜎2 ⟧` and never `𝜎2` alone. It carries `meta` where the root carries
+`𝜎2:λ` and never `𝜎2` alone. It carries `meta` where the root carries
 `locator`, the same difference the text format draws between `𝔻(Φ)` at the top
 and `𝛿1.2 := 𝔻(…)` in a block. The name of the element is what tells a
 manufactured datum from data, the way `𝔻(…)` does in the text format, so
@@ -593,14 +594,14 @@ of: two elements rather than two attributes of one, for the same reason
 
 `<known symbol="𝜎44">3F-F0-00-00-00-00-00-00</known>` is the fact a `symbolize`
 line writes about a symbol it minted, which the text format writes as
-`𝔻(⟦ λ ⤍ 𝜎44 ⟧) == …`: the symbol stands in the attribute a reader joins
+`𝔻(𝜎44:λ) == …`: the symbol stands in the attribute a reader joins
 lines on and the data dataizing its formation answers are the text of the
 element. It takes `symbol` and not `meta`, since the fact is about the unknown
 and not about a meta the firing bound.
 
 `<joined symbol="𝜎6">𝜎4 𝜎5</joined>` is the same kind of fact about a symbol
 a `join` line minted, which the text format writes as
-`𝔻(⟦ λ ⤍ 𝜎6 ⟧) ∈ { 𝔻(⟦ λ ⤍ 𝜎4 ⟧), 𝔻(⟦ λ ⤍ 𝜎5 ⟧) }`: the fresh symbol stands
+`𝔻(𝜎6:λ) ∈ { 𝔻(𝜎4:λ), 𝔻(𝜎5:λ) }`: the fresh symbol stands
 in `symbol` and the two it was minted for are the text, in the order the line
 listed the metas it joined. A line whose two terms differ at several places
 writes one element per pair of symbols, and one whose terms are alike writes
@@ -610,7 +611,7 @@ firing.
 `<minted>𝜎1</minted>` is one symbol the firing minted, one element per bare `𝜎`
 the entry wrote its answer with, standing inside the block ahead of the
 `<built>` carrying them. That is the edge a reader joins on: a later
-`<dataize meta="𝛿1.5">⟦ λ ⤍ 𝜎2 ⟧</dataize>` names the symbol the firing that
+`<dataize meta="𝛿1.5">𝜎2:λ</dataize>` names the symbol the firing that
 wrote `<minted>𝜎2</minted>` handed out. A firing minting two symbols writes two
 elements and one minting none writes none, which no attribute on the answer
 could say: a term may carry several symbols, or carry one where the value it
@@ -641,10 +642,10 @@ $ cat atoms.xml
     <bind meta="𝛿1.1">40-14-00-00-00-00-00-00</bind>
     <bind meta="𝛿2.1">40-18-00-00-00-00-00-00</bind>
     <minted>𝜎1</minted>
-    <built meta="𝑛.1.1">Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )</built>
-    <answer meta="𝑛.1.2">⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, nope ↦ ⟦ λ ⤍ L_number_nope ⟧ ⟧</answer>
+    <built meta="𝑛.1.1">Φ.number( φ ↦ 𝜎1:λ )</built>
+    <answer meta="𝑛.1.2">⟦ φ ↦ 𝜎1:λ, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, nope ↦ L_number_nope:λ ⟧</answer>
   </evaluate>
-  <stuck λ="L_number_nope" judgment="dataize">⟦ λ ⤍ L_number_nope ⟧</stuck>
+  <stuck λ="L_number_nope" judgment="dataize">L_number_nope:λ</stuck>
 </dataize>
 ```
 
@@ -697,7 +698,7 @@ $ cat partial.phi
 $ phino dataize --symbolic=atoms.yaml --sweet --hide-rho partial.phi
 [ERROR]: No entry of --symbolic answers the λ function 'L_number_as_bool'
 $ phino dataize --symbolic=atoms.yaml --partial --sweet --hide-rho partial.phi
-⟦ λ ⤍ L_number_as_bool ⟧
+L_number_as_bool:λ
 ```
 
 Here `2.times( 3 ).plus( 4 )` was answered by the entries the file carries, so
@@ -716,14 +717,14 @@ $ cat atoms.txt
   𝔼(L_number_times)  # 𝕄(Φ)
     𝛿1.1 := 40-00-00-00-00-00-00-00  # 𝔻(ξ.ρ)
     𝛿2.1 := 40-08-00-00-00-00-00-00  # 𝔻(ξ.x)
-    𝑛.1.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )  # 𝑛
-    𝑛.1.2 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧, as-bool ↦ ⟦ λ ⤍ L_number_as_bool ⟧ ⟧  # 𝕄(𝑛.1.1)
+    𝑛.1.1 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛
+    𝑛.1.2 := ⟦ φ ↦ 𝜎1:λ, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧, as-bool ↦ L_number_as_bool:λ ⟧  # 𝕄(𝑛.1.1)
   𝔼(L_number_plus)  # 𝕄(Φ)
-    𝛿1.2 := 𝔻(⟦ λ ⤍ 𝜎1 ⟧)  # 𝔻(ξ.ρ)
+    𝛿1.2 := 𝔻(𝜎1:λ)  # 𝔻(ξ.ρ)
     𝛿2.2 := 40-10-00-00-00-00-00-00  # 𝔻(ξ.x)
-    𝑛.2.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ )  # 𝑛
-    𝑛.2.2 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧, as-bool ↦ ⟦ λ ⤍ L_number_as_bool ⟧ ⟧  # 𝕄(𝑛.2.1)
-  ?(L_number_as_bool)  # 𝔻(⟦ λ ⤍ L_number_as_bool ⟧)
+    𝑛.2.1 := Φ.number( φ ↦ 𝜎2:λ )  # 𝑛
+    𝑛.2.2 := ⟦ φ ↦ 𝜎2:λ, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧, as-bool ↦ L_number_as_bool:λ ⟧  # 𝕄(𝑛.2.1)
+  ?(L_number_as_bool)  # 𝔻(L_number_as_bool:λ)
 ```
 
 <!-- markdownlint-enable MD013 -->
@@ -806,7 +807,7 @@ $ phino morph --symbolic=atoms.yaml --inside='Q.demo.foo' \
 ⟦ n ↦ 3, φ ↦ Φ.bar( n.times( 5 ).times( 7 ) ) ⟧
 $ phino morph --deep --symbolic=atoms.yaml --inside='Q.demo.foo' \
     --sweet --hide-rho gap.phi
-⟦ n ↦ 3, φ ↦ Φ.bar( ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧ ⟧ ) ⟧
+⟦ n ↦ 3, φ ↦ Φ.bar( ⟦ φ ↦ 𝜎2:λ, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧ ⟧ ) ⟧
 ```
 
 Every binding of the formation is entered, recursively. 𝕄 is asked about the
@@ -845,11 +846,9 @@ $ phino morph --deep --symbolic=atoms.yaml --sweet --hide-rho gap.phi
   number(φ) ↦ ⟦ times(x) ↦ ⟦ λ ⤍ L_number_times ⟧ ⟧,
   bar(x) ↦ ⟦ λ ⤍ L_bar ⟧,
   demo ↦ ⟦
-    foo ↦ ⟦
-      n ↦ 3,
-      φ ↦ Φ.bar( ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧ ⟧ )
-    ⟧
-  ⟧
+    n ↦ 3,
+    φ ↦ Φ.bar( ⟦ φ ↦ 𝜎2:λ, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧ ⟧ )
+  ⟧:foo
 ⟧
 ```
 
@@ -991,6 +990,22 @@ $ echo '[[ @ -> Q.io.stdout("hello") ]]' | phino rewrite
   ρ ↦ ∅
 ⟧
 ```
+
+A formation of a single binding may be written as its asset, a colon,
+and the attribute the asset is bound to:
+
+```text
+⟦ Δ ⤍ FF-AA ⟧    = FF-AA:Δ    = FF-AA:D
+⟦ λ ⤍ 𝜎1 ⟧       = 𝜎1:λ       = !S1:L
+⟦ a ↦ ∅ ⟧        = ∅:a        = ?:a
+⟦ φ ↦ ξ.a ⟧      = ξ.a:φ      = $.a:@
+```
+
+The colon binds as tightly as a dot, so `ξ.a:φ.b` is `⟦ φ ↦ ξ.a ⟧.b`.
+With `--sweet`, `phino` prints every such formation this way, the implicit
+`ρ ↦ ∅` aside, so `⟦ x ↦ ⟦ φ ↦ ξ.a ⟧ ⟧` comes out as `a:φ:x`. A formation
+with inline voids keeps its brackets, as in `x(a) ↦ ⟦ φ ↦ a ⟧`, and so does
+every formation in the salty syntax and in [LaTeX][latex].
 
 ## Merge
 
