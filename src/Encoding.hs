@@ -31,6 +31,7 @@ instance ToASCII EXPRESSION where
   toASCII EX_META{..} = EX_META (META EXCL E' (rest meta))
   toASCII EX_PHI_MEET{..} = EX_PHI_MEET prefix idx (toASCII expr)
   toASCII EX_PHI_AGAIN{..} = EX_PHI_AGAIN prefix idx (toASCII expr)
+  toASCII EX_SINGLE{..} = EX_SINGLE (toASCII pair) (toASCII formation)
   toASCII expr = expr
 
 instance ToASCII APP_BINDING where

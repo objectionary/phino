@@ -14,4 +14,4 @@ expression: |
     )
   ]]
 result: |-
-  ⟦ x ↦ Φ.y( z ↦ "hey", b ↦ 1 ).z( a ↦ ⟦ q ↦ ⟦ ρ ↦ Φ.a ⟧ ⟧ ) ⟧
+  Φ.y( z ↦ "hey", b ↦ 1 ).z( a ↦ Φ.a:ρ:q ):x

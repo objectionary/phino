@@ -32,6 +32,12 @@ instance WithMargin EXPRESSION where
   withMargin' cfg EX_DISPATCH{..} = EX_DISPATCH (withMargin' cfg expr) space attr
   withMargin' cfg EX_PHI_AGAIN{..} = EX_PHI_AGAIN prefix idx (withMargin' cfg expr)
   withMargin' _ EX_PHI_MEET{..} = EX_PHI_MEET prefix idx (toSingleLine expr)
+  -- The asset of a one-binding sugar is followed by a colon and the attribute,
+  -- so it gets that much less of the margin to be laid out in
+  withMargin' cfg@(extra, margin) ex@EX_SINGLE{pair = PA_TAU{..}, ..} =
+    let single = toSingleLine ex
+        asset = withMargin' (extra, margin - lengthOf attr - 1) expr
+     in if lengthOf single + extra <= margin then single else EX_SINGLE (PA_TAU attr arrow asset) (withMargin' cfg formation)
   withMargin' cfg@(extra, margin) ex@EX_APPLICATION{tab = tab@(TAB indt), ..} =
     let single = toSingleLine ex
         main = withMargin' cfg expr

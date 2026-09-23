@@ -30,15 +30,15 @@ spec = do
       , ("Φ renders as Q", ExRoot, "Q")
       , ("⊥ renders as T", ExTermination, "T")
       , ("ρ void becomes empty", ExFormation [BiVoid AtRho], "[[]]")
-      , ("φ void", ExFormation [BiVoid AtPhi], "[[ @ -> ? ]]")
-      , ("label void", ExFormation [BiVoid (AtLabel "名前")], "[[ 名前 -> ? ]]")
-      , ("x to Φ", ExFormation [BiTau (AtLabel "x") ExRoot], "[[ x -> Q ]]")
-      , ("ρ to ⊥", ExFormation [BiTau AtRho ExTermination], "[[ ^ -> T ]]")
-      , ("empty delta", ExFormation [BiDelta BtEmpty], "[[ D> -- ]]")
-      , ("single byte", ExFormation [BiDelta (BtOne "1F")], "[[ D> 1F- ]]")
-      , ("multiple bytes", ExFormation [BiDelta (BtMany ["00", "01", "02"])], "[[ D> 00-01-02 ]]")
-      , ("función lambda", ExFormation [BiLambda (Function "Función")], "[[ L> Función ]]")
-      , ("クラス lambda", ExFormation [BiLambda (Function "クラス")], "[[ L> クラス ]]")
+      , ("φ void", ExFormation [BiVoid AtPhi], "?:@")
+      , ("label void", ExFormation [BiVoid (AtLabel "名前")], "?:名前")
+      , ("x to Φ", ExFormation [BiTau (AtLabel "x") ExRoot], "Q:x")
+      , ("ρ to ⊥", ExFormation [BiTau AtRho ExTermination], "T:^")
+      , ("empty delta", ExFormation [BiDelta BtEmpty], "--:D")
+      , ("single byte", ExFormation [BiDelta (BtOne "1F")], "1F-:D")
+      , ("multiple bytes", ExFormation [BiDelta (BtMany ["00", "01", "02"])], "00-01-02:D")
+      , ("función lambda", ExFormation [BiLambda (Function "Función")], "Función:L")
+      , ("クラス lambda", ExFormation [BiLambda (Function "クラス")], "クラス:L")
       , ("Φ.org", ExDispatch ExRoot (AtLabel "org"), "Q.org")
       , ("ξ.ρ as sugar", ExDispatch ExXi AtRho, "^")
       , ("ξ.φ as sugar", ExDispatch ExXi AtPhi, "@")
@@ -55,8 +55,8 @@ spec = do
         )
       , ("meta expr", ExMeta "e", "!e")
       , ("meta binding", ExFormation [BiMeta "B"], "[[ !B ]]")
-      , ("meta lambda", ExFormation [BiLambda (FnMeta "F")], "[[ L> !F ]]")
-      , ("meta attr tau", ExFormation [BiTau (AtMeta "t") ExXi], "[[ !t -> $ ]]")
+      , ("meta lambda", ExFormation [BiLambda (FnMeta "F")], "!F:L")
+      , ("meta attr tau", ExFormation [BiTau (AtMeta "t") ExXi], "$:!t")
       ]
       ( \(desc, expr, expected) ->
           it desc (printExpression' expr (SWEET, ASCII, SINGLELINE, defaultMargin) `shouldBe` expected)
@@ -73,7 +73,7 @@ spec = do
 
   describe "printExpression with SWEET UNICODE renders the pretty function meta" $
     it "meta lambda becomes 𝑓" $
-      printExpression' (ExFormation [BiLambda (FnMeta "F")]) (SWEET, UNICODE, SINGLELINE, defaultMargin) `shouldBe` "⟦ λ ⤍ 𝑓 ⟧"
+      printExpression' (ExFormation [BiLambda (FnMeta "F")]) (SWEET, UNICODE, SINGLELINE, defaultMargin) `shouldBe` "𝑓:λ"
 
   describe "printExpression names the non-finite doubles instead of spelling their bytes" $
     forM_
@@ -225,12 +225,12 @@ spec = do
             ]
     forM_
       [ ("salty clears both void and dispatch-valued rho", SALTY, issueExpr, "⟦ foo ↦ ⟦ x ↦ ⟦⟧ ⟧, y ↦ ⟦⟧ ⟧")
-      , ("sweet also drops the rho that --sweet keeps", SWEET, issueExpr, "⟦ foo ↦ ⟦ x ↦ ⟦⟧ ⟧, y ↦ ⟦⟧ ⟧")
+      , ("sweet also drops the rho that --sweet keeps", SWEET, issueExpr, "⟦ foo ↦ ⟦⟧:x, y ↦ ⟦⟧ ⟧")
       ,
         ( "a rho bound to an expression is removed"
         , SWEET
         , ExFormation [BiTau (AtLabel "a") ExRoot, BiTau AtRho (ExDispatch ExXi (AtLabel "y"))]
-        , "⟦ a ↦ Φ ⟧"
+        , "Φ:a"
         )
       , ("a formation holding only rho collapses to empty", SALTY, ExFormation [BiVoid AtRho], "⟦⟧")
       ,
@@ -288,12 +288,12 @@ spec = do
       ]
       (\(desc, alpha, expected) -> it desc (printAlpha alpha `shouldBe` expected))
 
-  describe "printBinding renders as formation" $
+  describe "printBinding renders as a one-binding formation" $
     forM_
-      [ ("tau binding", BiTau (AtLabel "x") ExRoot, "x ↦ Φ")
-      , ("void binding", BiVoid (AtLabel "y"), "y ↦ ∅")
-      , ("delta binding", BiDelta (BtOne "00"), "Δ ⤍ 00-")
-      , ("lambda binding", BiLambda (Function "Func"), "λ ⤍ Func")
+      [ ("tau binding", BiTau (AtLabel "x") ExRoot, "Φ:x")
+      , ("void binding", BiVoid (AtLabel "y"), "∅:y")
+      , ("delta binding", BiDelta (BtOne "00"), "00-:Δ")
+      , ("lambda binding", BiLambda (Function "Func"), "Func:λ")
       , ("meta binding", BiMeta "B", "𝐵")
       ]
       ( \(desc, bd, expected) ->
@@ -314,7 +314,7 @@ spec = do
   describe "printExtraArg renders arguments" $
     forM_
       [ ("attribute arg", ArgAttribute (AtLabel "tëst"), "tëst")
-      , ("binding arg", ArgBinding (BiVoid (AtLabel "βind")), "βind ↦ ∅")
+      , ("binding arg", ArgBinding (BiVoid (AtLabel "βind")), "∅:βind")
       , ("expression arg", ArgExpression ExRoot, "Φ")
       , ("bytes arg", ArgBytes (BtOne "FF"), "FF-")
       ]
@@ -328,7 +328,7 @@ spec = do
       , ("MvIndex", [Subst (Map.singleton (Named "i") (MvIndex 3))], (SWEET, UNICODE, MULTILINE, defaultMargin), "i >> 3")
       , ("MvExpression", [Subst (Map.singleton (Named "e") (MvExpression ExRoot))], (SWEET, UNICODE, MULTILINE, defaultMargin), "e >> Φ")
       , ("MvBytes", [Subst (Map.singleton (Named "b") (MvBytes (BtOne "1F")))], (SWEET, UNICODE, MULTILINE, defaultMargin), "b >> 1F-")
-      , ("MvBindings", [Subst (Map.singleton (Named "bnd") (MvBindings [BiVoid (AtLabel "y")]))], (SWEET, UNICODE, MULTILINE, defaultMargin), "bnd >> ⟦ y ↦ ∅ ⟧")
+      , ("MvBindings", [Subst (Map.singleton (Named "bnd") (MvBindings [BiVoid (AtLabel "y")]))], (SWEET, UNICODE, MULTILINE, defaultMargin), "bnd >> ∅:y")
       , ("MvFunction", [Subst (Map.singleton (Named "f") (MvFunction (Function "func")))], (SWEET, UNICODE, MULTILINE, defaultMargin), "f >> func")
       ,
         ( "keys of a multi-entry substitution are sorted and each is on its own line"
@@ -367,8 +367,66 @@ spec = do
                   )
               , BiTau AtRho ExRoot
               ]
-      printExpressionHidingRho' deep (SWEET, UNICODE, SINGLELINE, defaultMargin) `shouldBe` "⟦ a ↦ ⟦ b ↦ ⟦⟧ ⟧ ⟧"
+      printExpressionHidingRho' deep (SWEET, UNICODE, SINGLELINE, defaultMargin) `shouldBe` "⟦⟧:b:a"
 
   describe "logPrintConfig" $
     it "is a fixed SWEET/UNICODE/SINGLELINE config at the default margin" $
       logPrintConfig `shouldBe` (SWEET, UNICODE, SINGLELINE, defaultMargin)
+
+  describe "printExpression' spells one-binding formations the way the parser reads them back" $
+    forM_
+      [ "⟦ x ↦ ξ.a ⟧"
+      , "⟦ Δ ⤍ FF-AA ⟧"
+      , "⟦ Δ ⤍ -- ⟧"
+      , "⟦ λ ⤍ Plus ⟧"
+      , "⟦ λ ⤍ 𝜎1 ⟧"
+      , "⟦ a ↦ ∅ ⟧"
+      , "⟦ ρ ↦ ξ ⟧"
+      , "⟦ φ ↦ ⊥ ⟧"
+      , "⟦ φ ↦ Φ ⟧"
+      , "⟦ φ ↦ 42 ⟧"
+      , "⟦ φ ↦ -4.5 ⟧"
+      , "⟦ φ ↦ \"hi\" ⟧"
+      , "⟦ x ↦ ⟦ y ↦ ⟦ z ↦ ξ.q ⟧ ⟧ ⟧"
+      , "⟦ x ↦ ⟦ φ ↦ ξ.a ⟧.b ⟧"
+      , "⟦ x ↦ ⟦ φ ↦ ξ.a ⟧(y ↦ ⟦ Δ ⤍ 01- ⟧) ⟧"
+      , "⟦ x(a) ↦ ⟦ φ ↦ a ⟧ ⟧"
+      , "⟦ x ↦ ⟦⟧ ⟧"
+      , "⟦ x ↦ Φ.number(Φ.bytes(⟦ Δ ⤍ 7F-F8-00-00-00-00-00-01 ⟧)) ⟧"
+      , "⟦ x ↦ Φ.y(⟦ φ ↦ ξ.z ⟧, ⟦ λ ⤍ Fn ⟧) ⟧"
+      , "⟦ x ↦ ⟦ λ ⤍ Fn, ρ ↦ ⟦ φ ↦ ξ ⟧ ⟧, y ↦ ∅ ⟧"
+      , "⟦ aVeryLongAttributeNameThatWontFitOnOneLine ↦ Φ.x(y ↦ ⟦ aVeryLongAttributeNameThatWontFitOnOneLine ↦ Φ ⟧) ⟧"
+      ]
+      ( \src -> it src $ do
+          let expr = either error id (parseExpression src)
+          forM_
+            [ (encoding, line)
+            | encoding <- [UNICODE, ASCII]
+            , line <- [SINGLELINE, MULTILINE]
+            ]
+            ( \(encoding, line) ->
+                parseExpression (printExpression' expr (SWEET, encoding, line, 20)) `shouldBe` Right expr
+            )
+      )
+
+  describe "printExpression' writes the one-binding sugar in the sweet syntax only" $
+    forM_
+      [ ("⟦ x ↦ ξ.a ⟧", SWEET, UNICODE, "a:x")
+      , ("⟦ Δ ⤍ FF-AA ⟧", SWEET, UNICODE, "FF-AA:Δ")
+      , ("⟦ Δ ⤍ FF-AA ⟧", SWEET, ASCII, "FF-AA:D")
+      , ("⟦ λ ⤍ 𝜎1 ⟧", SWEET, UNICODE, "𝜎1:λ")
+      , ("⟦ λ ⤍ 𝜎1 ⟧", SWEET, ASCII, "!S1:L")
+      , ("⟦ a ↦ ∅ ⟧", SWEET, ASCII, "?:a")
+      , ("⟦ φ ↦ ξ.a ⟧", SWEET, ASCII, "a:@")
+      , ("⟦ x ↦ ⟦ y ↦ ξ.z ⟧ ⟧", SWEET, UNICODE, "z:y:x")
+      , ("⟦ x ↦ ⟦ φ ↦ ξ.a ⟧.b ⟧", SWEET, UNICODE, "a:φ.b:x")
+      , ("⟦ x(a) ↦ ⟦ φ ↦ a ⟧ ⟧", SWEET, UNICODE, "⟦ x(a) ↦ ⟦ φ ↦ a ⟧ ⟧")
+      , ("⟦ x ↦ ξ.a, y ↦ ∅ ⟧", SWEET, UNICODE, "⟦ x ↦ a, y ↦ ∅ ⟧")
+      , ("⟦ x ↦ ξ.a ⟧", SALTY, UNICODE, "⟦ x ↦ ξ.a, ρ ↦ ∅ ⟧")
+      , ("⟦ Δ ⤍ FF-AA ⟧", SALTY, ASCII, "[[ D> FF-AA, ^ -> ? ]]")
+      ]
+      ( \(src, sugar, encoding, expected) ->
+          it (src ++ " " ++ show sugar ++ " " ++ show encoding) $ do
+            let expr = either error id (parseExpression src)
+            printExpression' expr (sugar, encoding, SINGLELINE, defaultMargin) `shouldBe` expected
+      )

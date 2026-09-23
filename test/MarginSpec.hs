@@ -18,7 +18,7 @@ bigLabel :: Attribute
 bigLabel = AtLabel "aVeryLongAttributeNameThatWontFitOnOneLine"
 
 bigFormation :: Expression
-bigFormation = ExFormation [BiTau bigLabel ExRoot]
+bigFormation = ExFormation [BiTau bigLabel ExRoot, BiTau AtRho ExRoot]
 
 nestedFormation :: Expression
 nestedFormation =
@@ -69,31 +69,31 @@ spec = do
         ( "keeps the whole application on one line when it all fits"
         , 100
         , longCalleeShortArg
-        , "⟦ aVeryLongAttributeNameThatWontFitOnOneLine ↦ Φ ⟧( y ↦ ρ )"
+        , "⟦ aVeryLongAttributeNameThatWontFitOnOneLine ↦ Φ, ρ ↦ Φ ⟧( y ↦ ρ )"
         )
       ,
         ( "wraps only the callee formation when the callee alone still fits alongside the argument"
         , 10
         , longCalleeShortArg
-        , "⟦\n  aVeryLongAttributeNameThatWontFitOnOneLine ↦ Φ\n⟧( y ↦ ρ )"
+        , "⟦\n  aVeryLongAttributeNameThatWontFitOnOneLine ↦ Φ,\n  ρ ↦ Φ\n⟧( y ↦ ρ )"
         )
       ,
         ( "wraps both the callee and the argument when neither fits alongside the other"
         , 1
         , longCalleeShortArg
-        , "⟦\n  aVeryLongAttributeNameThatWontFitOnOneLine ↦ Φ\n⟧(\n  y ↦ ρ\n)"
+        , "⟦\n  aVeryLongAttributeNameThatWontFitOnOneLine ↦ Φ,\n  ρ ↦ Φ\n⟧(\n  y ↦ ρ\n)"
         )
       ,
         ( "keeps a short callee on one line and wraps only the argument"
-        , 60
+        , 65
         , shortCalleeLongArg
-        , "Φ.x(\n  y ↦ ⟦ aVeryLongAttributeNameThatWontFitOnOneLine ↦ Φ ⟧\n)"
+        , "Φ.x(\n  y ↦ ⟦ aVeryLongAttributeNameThatWontFitOnOneLine ↦ Φ, ρ ↦ Φ ⟧\n)"
         )
       ,
         ( "wraps the argument formation itself when it does not fit even on its own line"
         , 1
         , shortCalleeLongArg
-        , "Φ.x(\n  y ↦ ⟦\n    aVeryLongAttributeNameThatWontFitOnOneLine ↦ Φ\n  ⟧\n)"
+        , "Φ.x(\n  y ↦ ⟦\n    aVeryLongAttributeNameThatWontFitOnOneLine ↦ Φ,\n    ρ ↦ Φ\n  ⟧\n)"
         )
       ]
       (\(desc, margin, expression, expected) -> it desc (render (withMargin margin (expressionToCST expression)) `shouldBe` expected))
@@ -114,10 +114,10 @@ spec = do
 
   describe "withMargin on mixed tau/alpha (AA_TAUS with PA_ALPHA) application arguments" $
     forM_
-      [ (100, "Φ.x( a ↦ Φ, α5 ↦ ⟦ aVeryLongAttributeNameThatWontFitOnOneLine ↦ Φ ⟧ )")
+      [ (100, "Φ.x( a ↦ Φ, α5 ↦ ⟦ aVeryLongAttributeNameThatWontFitOnOneLine ↦ Φ, ρ ↦ Φ ⟧ )")
       ,
         ( 1
-        , "Φ.x(\n  a ↦ Φ,\n  α5 ↦ ⟦\n    aVeryLongAttributeNameThatWontFitOnOneLine ↦ Φ\n  ⟧\n)"
+        , "Φ.x(\n  a ↦ Φ,\n  α5 ↦ ⟦\n    aVeryLongAttributeNameThatWontFitOnOneLine ↦ Φ,\n    ρ ↦ Φ\n  ⟧\n)"
         )
       ]
       ( \(margin, expected) ->
@@ -148,7 +148,24 @@ spec = do
         ( "recurses into the dispatched-upon expression"
         , 1
         , ExDispatch bigFormation (AtLabel "z")
-        , "⟦\n  aVeryLongAttributeNameThatWontFitOnOneLine ↦ Φ\n⟧.z"
+        , "⟦\n  aVeryLongAttributeNameThatWontFitOnOneLine ↦ Φ,\n  ρ ↦ Φ\n⟧.z"
+        )
+      ]
+      (\(desc, margin, expression, expected) -> it desc (render (withMargin margin (expressionToCST expression)) `shouldBe` expected))
+
+  describe "withMargin on a one-binding formation" $
+    forM_
+      [
+        ( "keeps the sugar on one line when it fits the margin"
+        , 100
+        , ExFormation [BiTau (AtLabel "x") shortCalleeLongArg]
+        , "Φ.x( y ↦ ⟦ aVeryLongAttributeNameThatWontFitOnOneLine ↦ Φ, ρ ↦ Φ ⟧ ):x"
+        )
+      ,
+        ( "wraps the asset of the sugar and keeps the attribute after it"
+        , 1
+        , ExFormation [BiTau (AtLabel "x") shortCalleeLongArg]
+        , "Φ.x(\n  y ↦ ⟦\n    aVeryLongAttributeNameThatWontFitOnOneLine ↦ Φ,\n    ρ ↦ Φ\n  ⟧\n):x"
         )
       ]
       (\(desc, margin, expression, expected) -> it desc (render (withMargin margin (expressionToCST expression)) `shouldBe` expected))

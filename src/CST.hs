@@ -183,6 +183,7 @@ data EXPRESSION
   | EX_PHI_MEET {prefix :: Maybe String, idx :: Int, expr :: EXPRESSION}
   | EX_PHI_AGAIN {prefix :: Maybe String, idx :: Int, expr :: EXPRESSION}
   | EX_BYTES {bytes :: BYTES} -- bare data 𝛿, a rendering-only terminal chain node (see #980)
+  | EX_SINGLE {pair :: PAIR, formation :: EXPRESSION} -- one-binding formation as 'FF-:Δ' or 'ξ.a:φ', with its full form (see #1385)
   deriving (Eq, Show)
 
 data ATTRIBUTE
@@ -348,18 +349,38 @@ instance ToCST Expression EXPRESSION where
   toCST (ExPhiAgain prefix idx expr) ctx = EX_PHI_AGAIN prefix idx (toCST expr ctx)
   toCST (ExFormation [BiVoid AtRho]) ctx = toCST (ExFormation []) ctx
   toCST (ExFormation []) _ = EX_FORMATION LSB NO_EOL NO_TAB (BI_EMPTY NO_TAB) NO_EOL NO_TAB RSB
-  toCST (ExFormation bds) (tabs, eol) =
-    let next = tabs + 1
-        bds' = toCST (withoutLastVoidRho bds) (next, eol) :: BINDING
-     in EX_FORMATION
-          LSB
-          EOL
-          (TAB next)
-          bds'
-          EOL
-          (TAB tabs)
-          RSB
+  -- A formation of a single binding is sugared into its asset, a colon and
+  -- the attribute, as `FF-:Δ`, `Plus:λ`, `∅:a` or `ξ.a:φ` (see #1385). The
+  -- full formation is kept next to it, for the notations that have no such
+  -- sugar: the salty one, LaTeX and the one '--hide-rho' strips.
+  toCST (ExFormation bds) ctx@(tabs, eol) =
+    maybe full (`EX_SINGLE` full) (single (withoutLastVoidRho bds))
     where
+      full :: EXPRESSION
+      full =
+        let next = tabs + 1
+            bds' = toCST (withoutLastVoidRho bds) (next, eol) :: BINDING
+         in EX_FORMATION
+              LSB
+              EOL
+              (TAB next)
+              bds'
+              EOL
+              (TAB tabs)
+              RSB
+      -- The asset of the only binding, laid out where the formation stands,
+      -- unless it has no sugar: a meta binding, a τ binding whose attribute
+      -- the parser takes for a Δ or a λ, or one that carries a formation with
+      -- inline voids, which reads better as 'x(a) ↦ ⟦ … ⟧'
+      single :: [Binding] -> Maybe PAIR
+      single [BiTau AtDelta _] = Nothing
+      single [BiTau AtLambda _] = Nothing
+      single [BiTau _ (ExFormation (BiVoid attr : rest))] | not (null rest) || attr /= AtRho = Nothing
+      single [BiTau attr expr] = Just (PA_TAU (toCST attr ctx) ARROW (toCST expr ctx))
+      single [bd@(BiVoid _)] = Just (toCST bd ctx)
+      single [bd@(BiDelta _)] = Just (toCST bd ctx)
+      single [bd@(BiLambda _)] = Just (toCST bd ctx)
+      single _ = Nothing
       withoutLastVoidRho :: [Binding] -> [Binding]
       withoutLastVoidRho [] = []
       withoutLastVoidRho [BiVoid AtRho] = []
@@ -507,8 +528,13 @@ instance ToCST Binding PAIR where
                   attr'
                   (map (`toCST` ctx) _voids)
                   ARROW
-                  (toCST (ExFormation _bds) ctx)
+                  (unsugared (toCST (ExFormation _bds) ctx))
     where
+      -- Inline voids open a formation, which no one-binding sugar may stand
+      -- for, so 'x(a) ↦ ⟦ φ ↦ ξ.a ⟧' is never printed as 'x(a) ↦ a:φ'
+      unsugared :: EXPRESSION -> EXPRESSION
+      unsugared EX_SINGLE{..} = formation
+      unsugared expr = expr
       voids :: [Binding] -> [Attribute]
       voids [] = []
       voids (bd : bds) = case bd of

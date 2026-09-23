@@ -259,14 +259,14 @@ spec = do
           [ "  𝔼(L_number_times)  # 𝕄(Φ)"
           , "    𝛿1.1 := 40-00-00-00-00-00-00-00  # 𝔻(ξ.ρ)"
           , "    𝛿2.1 := 40-08-00-00-00-00-00-00  # 𝔻(ξ.x)"
-          , "    𝑛.1.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )  # 𝑛"
-          , "    𝑛.1.2 := ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, as-bytes ↦ φ, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧, div(x) ↦ ⟦ λ ⤍ L_number_div ⟧, gt(x) ↦ ⟦ λ ⤍ L_number_gt ⟧, eq(x) ↦ ⟦ φ ↦ ρ.as-bytes.eq( x.as-bytes ) ⟧, nope ↦ ⟦ λ ⤍ L_number_nope ⟧, ρ ↦ Φ ⟧  # 𝕄(𝑛.1.1)"
-          , "  ?(L_number_nope)  # 𝔻(⟦ λ ⤍ L_number_nope, ρ ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, as-bytes ↦ φ, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧, div(x) ↦ ⟦ λ ⤍ L_number_div ⟧, gt(x) ↦ ⟦ λ ⤍ L_number_gt ⟧, eq(x) ↦ ⟦ φ ↦ ρ.as-bytes.eq( x.as-bytes ) ⟧, nope ↦ ⟦ λ ⤍ L_number_nope ⟧, ρ ↦ Φ ⟧ ⟧)"
+          , "    𝑛.1.1 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛"
+          , "    𝑛.1.2 := ⟦ φ ↦ 𝜎1:λ, as-bytes ↦ φ, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧, div(x) ↦ ⟦ λ ⤍ L_number_div ⟧, gt(x) ↦ ⟦ λ ⤍ L_number_gt ⟧, eq(x) ↦ ⟦ φ ↦ ρ.as-bytes.eq( x.as-bytes ) ⟧, nope ↦ L_number_nope:λ, ρ ↦ Φ ⟧  # 𝕄(𝑛.1.1)"
+          , "  ?(L_number_nope)  # 𝔻(⟦ λ ⤍ L_number_nope, ρ ↦ ⟦ φ ↦ 𝜎1:λ, as-bytes ↦ φ, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧, div(x) ↦ ⟦ λ ⤍ L_number_div ⟧, gt(x) ↦ ⟦ λ ⤍ L_number_gt ⟧, eq(x) ↦ ⟦ φ ↦ ρ.as-bytes.eq( x.as-bytes ) ⟧, nope ↦ L_number_nope:λ, ρ ↦ Φ ⟧ ⟧)"
           ]
     it "leaves an unanswered λ function dataized directly as the whole residue" $ do
       ((outcome, chain), protocol) <- partially known "[[ L> Sym_arg_0 ]]"
       outcome `shouldBe` Residual placeholder
-      protocol `shouldBe` "  ?(Sym_arg_0)  # 𝔻(⟦ λ ⤍ Sym_arg_0 ⟧)\n"
+      protocol `shouldBe` "  ?(Sym_arg_0)  # 𝔻(Sym_arg_0:λ)\n"
       map fst chain `shouldEndWith` [placeholder]
     it "still reaches the manufactured datum when nothing is stuck" $ do
       ((outcome, _), _) <- partially known "2.times(3)"
