@@ -992,6 +992,18 @@ $ echo '[[ @ -> Q.io.stdout("hello") ]]' | phino rewrite
 ⟧
 ```
 
+A formation of a single binding may be written as its asset, a colon,
+and the attribute the asset is bound to:
+
+```text
+⟦ Δ ⤍ FF-AA ⟧    = FF-AA:Δ    = FF-AA:D
+⟦ λ ⤍ 𝜎1 ⟧       = 𝜎1:λ       = !S1:L
+⟦ a ↦ ∅ ⟧        = ∅:a        = ?:a
+⟦ φ ↦ ξ.a ⟧      = ξ.a:φ      = $.a:@
+```
+
+The colon binds as tightly as a dot, so `ξ.a:φ.b` is `⟦ φ ↦ ξ.a ⟧.b`.
+
 ## Merge
 
 You can merge several 𝜑-expressions into a single one by merging their

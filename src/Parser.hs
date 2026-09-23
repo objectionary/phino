@@ -309,6 +309,31 @@ tauValue =
     rb :: Parser String
     rb = symbol ")"
 
+-- The name a λ binding carries: a function, a meta standing for one, or a symbol
+lambdaName :: Parser Function
+lambdaName = choice [Function . T.pack <$> function, try (either FnAny FnMeta <$> metaVar 'F' "𝑓"), sigma]
+
+-- The colon that attaches an attribute to what stands before it, making a
+-- formation of one binding out of the two (see #1385)
+colon :: Parser String
+colon = symbol ":"
+
+-- A formation of one binding written as its asset followed by a colon and the
+-- attribute it is bound to, the way the sugar of #1385 spells it:
+-- `FF-AA:Δ` is `⟦ Δ ⤍ FF-AA ⟧`, `𝜎1:λ` is `⟦ λ ⤍ 𝜎1 ⟧` and `∅:a` is
+-- `⟦ a ↦ ∅ ⟧`. A τ binding, `ξ.a:φ` for `⟦ φ ↦ ξ.a ⟧`, is no head but a tail,
+-- since it attaches to a whole expression (see 'exTail'). Bytes and λ names
+-- look like numbers and function-like heads, so their shapes are only
+-- committed to once the attribute after the colon is read.
+single :: Parser Expression
+single =
+  ExFormation . withVoidRho . pure
+    <$> choice
+      [ try (BiDelta <$> bytes <* colon <* choice [symbol "D", symbol "Δ"])
+      , try (BiLambda <$> lambdaName <* colon <* choice [symbol "L", symbol "λ"])
+      , choice [symbol "?", symbol "∅"] >> colon >> BiVoid <$> attribute
+      ]
+
 metaBinding :: Parser Binding
 metaBinding = either BiAny BiMeta <$> metaVar 'B' "𝐵"
 
@@ -333,7 +358,7 @@ binding =
     , try metaBinding
     , do
         _ <- try lambda
-        BiLambda <$> choice [Function . T.pack <$> function, try (either FnAny FnMeta <$> metaVar 'F' "𝑓"), sigma]
+        BiLambda <$> lambdaName
     , do
         attr <- attribute
         choice
@@ -428,10 +453,12 @@ formationBindings = do
 -- 4. termination
 -- 5. meta expression
 -- 6. full attribute -> sugar for $.attr
+-- 7. one-binding formation of a Δ, λ or void binding -> sugar for ⟦ Δ ⤍ FF- ⟧
 exHead :: Parser Expression
 exHead =
   choice
-    [ do
+    [ single
+    , do
         bs <- formationBindings >>= validatedBindings
         return (ExFormation (withVoidRho bs))
     , do
@@ -456,6 +483,7 @@ application = foldl ExApplication
 -- tail optional part of application
 -- 1. any head + dispatch
 -- 2. any head except $ and Q + application
+-- 3. any head + colon and attribute -> sugar for ⟦ attr ↦ head ⟧
 exTail :: Expression -> Parser Expression
 exTail expr =
   choice
@@ -482,6 +510,9 @@ exTail expr =
                     ]
                 _ <- symbol ")"
                 return (application expr bds)
+            , do
+                _ <- colon
+                ExFormation . withVoidRho . pure . (`BiTau` expr) <$> attribute
             ]
             <?> "dispatch or application"
         exTail next
