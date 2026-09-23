@@ -325,8 +325,8 @@ colon = symbol ":"
 -- since it attaches to a whole expression (see 'exTail'). Bytes and λ names
 -- look like numbers and function-like heads, so their shapes are only
 -- committed to once the attribute after the colon is read.
-single :: Parser Expression
-single =
+oneBinding :: Parser Expression
+oneBinding =
   ExFormation . withVoidRho . pure
     <$> choice
       [ try (BiDelta <$> bytes <* colon <* choice [symbol "D", symbol "Δ"])
@@ -368,8 +368,10 @@ binding =
     ]
     <?> "binding"
   where
+    -- A void followed by a colon is no void of this binding but the head of
+    -- a one-binding formation the binding is bound to, as in `x ↦ ∅:a`
     blank :: Parser String
-    blank = arrow >> choice [symbol "?", symbol "∅"]
+    blank = arrow >> choice [symbol "?", symbol "∅"] <* notFollowedBy colon
 
 -- inlined void attribute
 -- 1. label
@@ -457,7 +459,7 @@ formationBindings = do
 exHead :: Parser Expression
 exHead =
   choice
-    [ single
+    [ oneBinding
     , do
         bs <- formationBindings >>= validatedBindings
         return (ExFormation (withVoidRho bs))

@@ -695,13 +695,19 @@ spec = do
       , ("\"hi\":φ", "⟦ φ ↦ \"hi\" ⟧")
       , ("𝑒1:𝜏1", "⟦ 𝜏1 ↦ 𝑒1 ⟧")
       , ("ξ.a:φ.b", "⟦ φ ↦ ξ.a ⟧.b")
-      , ("ξ.a:φ:ψ", "⟦ ψ ↦ ⟦ φ ↦ ξ.a ⟧ ⟧")
+      , ("ξ.a:φ:b", "⟦ b ↦ ⟦ φ ↦ ξ.a ⟧ ⟧")
       , ("FF-:Δ.x", "⟦ Δ ⤍ FF- ⟧.x")
       , ("Q.x(ξ.a:φ)", "Q.x(⟦ φ ↦ ξ.a ⟧)")
       , ("⟦ x ↦ y:φ, z ↦ FF-:Δ ⟧", "⟦ x ↦ ⟦ φ ↦ ξ.y ⟧, z ↦ ⟦ Δ ⤍ FF- ⟧ ⟧")
+      , ("⟦ x ↦ ∅:a, y ↦ ∅ ⟧", "⟦ x ↦ ⟦ a ↦ ∅ ⟧, y ↦ ∅ ⟧")
+      , ("[[ x -> ?:a ]]", "⟦ x ↦ ⟦ a ↦ ∅ ⟧ ⟧")
+      , ("Q.x(y -> ?:a)", "Q.x(y ↦ ⟦ a ↦ ∅ ⟧)")
+      , ("Q.x(α0 ↦ Plus:λ)", "Q.x(α0 ↦ ⟦ λ ⤍ Plus ⟧)")
       ]
       ( \(sweet, plain) ->
-          it sweet (parseExpression sweet `shouldBe` parseExpression plain)
+          it sweet $ do
+            parseExpression plain `shouldSatisfy` isRight
+            parseExpression sweet `shouldBe` parseExpression plain
       )
 
   describe "rejects a broken one-binding formation sugar" $
