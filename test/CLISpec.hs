@@ -1409,8 +1409,8 @@ spec = do
             records <- readUtf8 path
             lines records
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-                         , "<dataize locator=\"Φ\">"
-                         , "  <evaluate λ=\"L_number_plus\" judgment=\"dataize\" locator=\"Φ\">"
+                         , "<dataize at=\"Φ\">"
+                         , "  <evaluate λ=\"L_number_plus\" by=\"dataize\" at=\"Φ\">"
                          , "    <bind meta=\"𝛿1.1\">40-14-00-00-00-00-00-00</bind>"
                          , "    <bind meta=\"𝛿2.1\">40-18-00-00-00-00-00-00</bind>"
                          , "    <minted>𝜎1</minted>"
@@ -1430,7 +1430,7 @@ spec = do
             records <- readUtf8 path
             lines records
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-                         , "<dataize locator=\"Φ\">"
+                         , "<dataize at=\"Φ\">"
                          , "</dataize>"
                          ]
 
@@ -1447,15 +1447,15 @@ spec = do
             records <- readUtf8 path
             lines records
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-                         , "<dataize locator=\"Φ\">"
-                         , "  <evaluate λ=\"L_number_plus\" judgment=\"morph\" locator=\"Φ\">"
+                         , "<dataize at=\"Φ\">"
+                         , "  <evaluate λ=\"L_number_plus\" by=\"morph\" at=\"Φ\">"
                          , "    <bind meta=\"𝛿1.1\">40-14-00-00-00-00-00-00</bind>"
                          , "    <bind meta=\"𝛿2.1\">40-18-00-00-00-00-00-00</bind>"
                          , "    <minted>𝜎1</minted>"
                          , "    <built meta=\"𝑛.1.1\">Φ.number( φ ↦ 𝜎1:λ )</built>"
                          , "    <answer meta=\"𝑛.1.2\">⟦ φ ↦ 𝜎1:λ, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧</answer>"
                          , "  </evaluate>"
-                         , "  <evaluate λ=\"L_number_plus\" judgment=\"dataize\" locator=\"Φ\">"
+                         , "  <evaluate λ=\"L_number_plus\" by=\"dataize\" at=\"Φ\">"
                          , "    <dataize meta=\"𝛿1.2\">𝜎1:λ</dataize>"
                          , "    <bind meta=\"𝛿2.2\">40-1C-00-00-00-00-00-00</bind>"
                          , "    <minted>𝜎2</minted>"
@@ -1479,8 +1479,8 @@ spec = do
             records <- readUtf8 path
             lines records
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-                         , "<morph locator=\"Φ.y\">"
-                         , "  <evaluate λ=\"L_stand\" judgment=\"morph\" locator=\"Φ.y\">"
+                         , "<morph at=\"Φ.y\">"
+                         , "  <evaluate λ=\"L_stand\" by=\"morph\" at=\"Φ.y\">"
                          , "    <bind meta=\"𝑛1.1\">01-:Δ</bind>"
                          , "    <known symbol=\"𝜎1\">01-</known>"
                          , "    <bind meta=\"𝑛2.1\">𝜎1:λ</bind>"
@@ -1507,8 +1507,8 @@ spec = do
             records <- readUtf8 path
             lines records
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-                         , "<morph locator=\"Φ.y\">"
-                         , "  <evaluate λ=\"L_fork\" judgment=\"morph\" locator=\"Φ.y\">"
+                         , "<morph at=\"Φ.y\">"
+                         , "  <evaluate λ=\"L_fork\" by=\"morph\" at=\"Φ.y\">"
                          , "    <bind meta=\"𝑛1.1\">𝜎1:λ:φ</bind>"
                          , "    <bind meta=\"𝑛2.1\">𝜎2:λ:φ</bind>"
                          , "    <joined symbol=\"𝜎3\">𝜎1 𝜎2</joined>"
@@ -1532,8 +1532,8 @@ spec = do
             records <- readUtf8 path
             lines records
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-                         , "<morph locator=\"Φ.y\">"
-                         , "  <evaluate λ=\"L_fork\" judgment=\"morph\" locator=\"Φ.y\">"
+                         , "<morph at=\"Φ.y\">"
+                         , "  <evaluate λ=\"L_fork\" by=\"morph\" at=\"Φ.y\">"
                          , "    <dataize meta=\"𝛿1.1\">𝜎1:λ</dataize>"
                          , "    <bind meta=\"𝑛1.1\">𝜎2:λ:φ</bind>"
                          , "    <bind meta=\"𝑛2.1\">⊥</bind>"
@@ -1559,8 +1559,8 @@ spec = do
             records <- readUtf8 path
             lines records
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-                         , "<morph locator=\"Φ.y\">"
-                         , "  <evaluate λ=\"L_pair\" judgment=\"morph\" locator=\"Φ.y\">"
+                         , "<morph at=\"Φ.y\">"
+                         , "  <evaluate λ=\"L_pair\" by=\"morph\" at=\"Φ.y\">"
                          , "    <bind meta=\"𝑛1.1\">01-:Δ</bind>"
                          , "    <minted>𝜎1</minted>"
                          , "    <minted>𝜎2</minted>"
@@ -1582,8 +1582,8 @@ spec = do
             records <- readUtf8 path
             lines records
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-                         , "<morph locator=\"Φ.y\">"
-                         , "  <evaluate λ=\"L_keep\" judgment=\"morph\" locator=\"Φ.y\">"
+                         , "<morph at=\"Φ.y\">"
+                         , "  <evaluate λ=\"L_keep\" by=\"morph\" at=\"Φ.y\">"
                          , "    <bind meta=\"𝑛1.1\">01-:Δ</bind>"
                          , "    <built meta=\"𝑛.1.1\">01-:Δ:z</built>"
                          , "    <answer meta=\"𝑛.1.2\">01-:Δ:z</answer>"
@@ -1602,10 +1602,10 @@ spec = do
             records <- readUtf8 path
             lines records
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-                         , "<dataize locator=\"Φ\">"
-                         , "  <evaluate λ=\"L_number_plus\" judgment=\"dataize\" locator=\"Φ\">"
+                         , "<dataize at=\"Φ\">"
+                         , "  <evaluate λ=\"L_number_plus\" by=\"dataize\" at=\"Φ\">"
                          , "    <bind meta=\"𝛿1.1\">40-14-00-00-00-00-00-00</bind>"
-                         , "    <evaluate λ=\"L_number_plus\" judgment=\"dataize\" locator=\"Φ.a🌵1\">"
+                         , "    <evaluate λ=\"L_number_plus\" by=\"dataize\" at=\"Φ.a🌵1\">"
                          , "      <bind meta=\"𝛿1.2\">40-18-00-00-00-00-00-00</bind>"
                          , "      <bind meta=\"𝛿2.2\">40-1C-00-00-00-00-00-00</bind>"
                          , "      <minted>𝜎1</minted>"
@@ -1632,15 +1632,15 @@ spec = do
             records <- readUtf8 path
             lines records
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-                         , "<dataize locator=\"Φ\">"
-                         , "  <evaluate λ=\"L_number_times\" judgment=\"morph\" locator=\"Φ\">"
+                         , "<dataize at=\"Φ\">"
+                         , "  <evaluate λ=\"L_number_times\" by=\"morph\" at=\"Φ\">"
                          , "    <bind meta=\"𝛿1.1\">40-00-00-00-00-00-00-00</bind>"
                          , "    <bind meta=\"𝛿2.1\">40-08-00-00-00-00-00-00</bind>"
                          , "    <minted>𝜎1</minted>"
                          , "    <built meta=\"𝑛.1.1\">Φ.number( φ ↦ 𝜎1:λ )</built>"
                          , "    <answer meta=\"𝑛.1.2\">⟦ φ ↦ 𝜎1:λ, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧, nope ↦ L_number_nope:λ ⟧</answer>"
                          , "  </evaluate>"
-                         , "  <stuck λ=\"L_number_nope\" judgment=\"dataize\">L_number_nope:λ</stuck>"
+                         , "  <stuck λ=\"L_number_nope\" by=\"dataize\">L_number_nope:λ</stuck>"
                          , "</dataize>"
                          ]
 
@@ -1656,8 +1656,8 @@ spec = do
             records <- readUtf8 path
             lines records
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-                         , "<morph locator=\"Φ.x\">"
-                         , "  <stuck λ=\"L_number_nope\" judgment=\"morph\">⟦ λ ⤍ L_number_nope ⟧</stuck>"
+                         , "<morph at=\"Φ.x\">"
+                         , "  <stuck λ=\"L_number_nope\" by=\"morph\">⟦ λ ⤍ L_number_nope ⟧</stuck>"
                          , "</morph>"
                          ]
 
@@ -1673,15 +1673,15 @@ spec = do
             records <- readUtf8 path
             lines records
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-                         , "<dataize locator=\"Φ\">"
-                         , "  <evaluate λ=\"L_number_times\" judgment=\"morph\" locator=\"Φ\">"
+                         , "<dataize at=\"Φ\">"
+                         , "  <evaluate λ=\"L_number_times\" by=\"morph\" at=\"Φ\">"
                          , "    <bind meta=\"𝛿1.1\">40-00-00-00-00-00-00-00</bind>"
                          , "    <bind meta=\"𝛿2.1\">40-08-00-00-00-00-00-00</bind>"
                          , "    <minted>𝜎1</minted>"
                          , "    <built meta=\"𝑛.1.1\">Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )</built>"
                          , "    <answer meta=\"𝑛.1.2\">⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, times ↦ ⟦ ρ ↦ ∅, x ↦ ∅, λ ⤍ L_number_times ⟧, nope ↦ ⟦ ρ ↦ ∅, λ ⤍ L_number_nope ⟧ ⟧</answer>"
                          , "  </evaluate>"
-                         , "  <stuck λ=\"L_number_nope\" judgment=\"dataize\">⟦ ρ ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, times ↦ ⟦ ρ ↦ ∅, x ↦ ∅, λ ⤍ L_number_times ⟧, nope ↦ ⟦ ρ ↦ ∅, λ ⤍ L_number_nope ⟧ ⟧, λ ⤍ L_number_nope ⟧</stuck>"
+                         , "  <stuck λ=\"L_number_nope\" by=\"dataize\">⟦ ρ ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, times ↦ ⟦ ρ ↦ ∅, x ↦ ∅, λ ⤍ L_number_times ⟧, nope ↦ ⟦ ρ ↦ ∅, λ ⤍ L_number_nope ⟧ ⟧, λ ⤍ L_number_nope ⟧</stuck>"
                          , "</dataize>"
                          ]
 
@@ -1700,14 +1700,14 @@ spec = do
             records <- readUtf8 path
             lines records
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-                         , "<morph locator=\"Φ.x\">"
-                         , "  <evaluate λ=\"L_pick\" judgment=\"morph\" locator=\"Φ.x\">"
+                         , "<morph at=\"Φ.x\">"
+                         , "  <evaluate λ=\"L_pick\" by=\"morph\" at=\"Φ.x\">"
                          , "    <bind meta=\"𝑛1.1\">⊥</bind>"
                          , "    <minted>𝜎1</minted>"
                          , "    <built meta=\"𝑛.1.1\">⟦ λ ⤍ 𝜎1 ⟧</built>"
                          , "    <answer meta=\"𝑛.1.2\">⟦ λ ⤍ 𝜎1 ⟧</answer>"
                          , "  </evaluate>"
-                         , "  <stuck λ=\"𝜎1\" judgment=\"morph\">⟦ λ ⤍ 𝜎1 ⟧</stuck>"
+                         , "  <stuck λ=\"𝜎1\" by=\"morph\">⟦ λ ⤍ 𝜎1 ⟧</stuck>"
                          , "</morph>"
                          ]
 

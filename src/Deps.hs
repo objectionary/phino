@@ -78,7 +78,7 @@ dontSaveStep = saveStep Nothing "" (\_ -> pure "") 0
 -- The judgment a run of the protocol records, which is the one thing the two
 -- formats spell in two ways: the text format writes the letter the calculus
 -- writes, '𝕄(Φ.x)', and the markup names the root after it, '<morph
--- locator="Φ.x">', the way every record under it is named after the judgment it
+-- at="Φ.x">', the way every record under it is named after the judgment it
 -- carries (#1279). A stuck site spells it the same two ways, since it too is a
 -- judgment asking and getting no answer (see 'EvStuck'); nothing else is
 -- spelled twice, since nothing else of a record is a name of the calculus.
@@ -496,7 +496,7 @@ saveEvalXml handle cursor render report = do
         ( nesting{_closing = (0, opened judgment) : nesting._closing}
         ,
           [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-          , printf "<%s locator=\"%s\">" (opened judgment) (quoted locator)
+          , printf "<%s at=\"%s\">" (opened judgment) (quoted locator)
           ]
         )
     elements (EvFiring depth key judgment site) nesting = do
@@ -507,7 +507,7 @@ saveEvalXml handle cursor render report = do
             , _openedAt = Map.insert depth fires nesting._openedAt
             , _closing = (depth, "evaluate") : kept
             }
-        , closers ++ [indented depth (printf "<evaluate λ=\"%s\" judgment=\"%s\" locator=\"%s\">" (quoted key) (opened judgment) (escapeXML locator))]
+        , closers ++ [indented depth (printf "<evaluate λ=\"%s\" by=\"%s\" at=\"%s\">" (quoted key) (opened judgment) (escapeXML locator))]
         )
       where
         (kept, closers) = closed depth nesting._closing
@@ -516,7 +516,7 @@ saveEvalXml handle cursor render report = do
     elements (EvStuck depth key judgment self) nesting = do
       form <- render self
       let (kept, closers) = closed depth nesting._closing
-      pure (nesting{_closing = kept}, closers ++ [indented depth (printf "<stuck λ=\"%s\" judgment=\"%s\">%s</stuck>" (quoted key) (opened judgment) (escapeXMLText form))])
+      pure (nesting{_closing = kept}, closers ++ [indented depth (printf "<stuck λ=\"%s\" by=\"%s\">%s</stuck>" (quoted key) (opened judgment) (escapeXMLText form))])
     elements (EvData depth spelling _ value) nesting = do
       record <- stood value
       pure (nesting{_closing = kept}, closers ++ [indented depth record])
