@@ -97,8 +97,10 @@ data META_HEAD
   | D'' -- d
   | F -- 𝑓
   | F' -- F
+  | F'' -- f
   | S -- 𝜎
   | S' -- S
+  | S'' -- \sigma
   deriving (Eq, Show)
 
 data EXCLAMATION = EXCL | NO_EXCL

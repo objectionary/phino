@@ -333,8 +333,10 @@ instance ToLaTeX META_HEAD where
   toLaTeX B = B'
   toLaTeX D = D'
   toLaTeX D'' = D'
-  toLaTeX F = F'
-  toLaTeX S = S'
+  toLaTeX F = F''
+  toLaTeX F' = F''
+  toLaTeX S = S''
+  toLaTeX S' = S''
   toLaTeX mh = mh
 
 instance ToLaTeX BYTES where
