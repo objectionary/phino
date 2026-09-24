@@ -5,4 +5,4 @@
 # and the walk goes on.
 partial: true
 input: '[[ x -> [[ L> Sym_arg_0 ]].foo ]]'
-result: '[[ x -> [[ L> Sym_arg_0 ]].foo ]]'
+result: 'Sym_arg_0:λ.foo:x'

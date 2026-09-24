@@ -4,4 +4,4 @@
 # The Q locator aims the run at the whole program, and a formation is already
 # what 'mf' hands back.
 input: '[[ D> 00- ]]'
-result: '[[ D> 00- ]]'
+result: '00-:Δ'

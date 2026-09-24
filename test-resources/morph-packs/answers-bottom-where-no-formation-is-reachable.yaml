@@ -5,4 +5,4 @@
 # with an answer rather than with a failure.
 location: 'Q.x'
 input: '[[ x -> $ ]]'
-result: 'T'
+result: '⊥'

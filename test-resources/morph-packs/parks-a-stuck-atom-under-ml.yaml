@@ -6,4 +6,4 @@
 location: 'Q.x'
 partial: true
 input: '[[ x -> [[ L> Sym_arg_0 ]].foo ]]'
-result: '[[ L> Sym_arg_0 ]].foo'
+result: 'Sym_arg_0:λ.foo'

@@ -7,4 +7,4 @@ location: 'Q.@'
 model: true
 symbolic: true
 input: '[[ x -> 5.nope ]]'
-result: '[[ x -> 5.nope ]]'
+result: '5.nope:x'
