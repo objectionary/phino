@@ -128,9 +128,57 @@ exactly as it normalizes anything else, so `--protocol`, `--partial` and
 `--max-steps` work on it unchanged. It may name any meta the entry bound,
 those of the two blocks below among them.
 
+### Rewriting a term into another shape
+
+There is a third block, `rewrite`, and it reduces nothing. Each line of it
+takes a term another meta of the entry is already bound to, named under `of`,
+applies a list of ordinary rules to it, spelled with the very `pattern`,
+`result`, `when` and meta variables a rule file uses, and binds an expression
+meta of its own to the outcome:
+
+```yaml
+- λ: L_fork
+  dataize:
+    𝛿1: $.φ
+  morph:
+    𝑛1: $.left
+    𝑛2: $.right
+  rewrite:
+    𝑛3:
+      of: 𝑛1
+      rules: &bool
+        - name: false-literal
+          pattern: >-
+            ⟦ !B1, φ ↦ Φ.bool( if ↦ ⟦ ρ ↦ ∅, left ↦ ∅, right ↦ ∅,
+            φ ↦ ξ.right ⟧ ), !B2 ⟧
+          result: >-
+            ⟦ φ ↦ Φ.bool( if ↦ ⟦ λ ⤍ L_fork, left ↦ ∅, right ↦ ∅,
+            φ ↦ ⟦ Δ ⤍ 00- ⟧ ⟧ ) ⟧
+    𝑛4:
+      of: 𝑛2
+      rules: *bool
+  𝑛: 𝑛3
+```
+
+The meta under `of` is one bound by `morph` or by a `rewrite` line above it,
+and nothing else. A rule is tried at every position of the term, the outermost
+first; the first rule whose pattern matches a position rewrites it, and a
+rewritten position is not walked into again, so a rule whose result carries
+its own pattern never loops. Nothing is normalized afterwards: a rewrite is a
+substitution the entry vouches for and not a reduction, exactly as an answer
+is. A rule writing a `𝜎` into its result, or reading a meta its pattern never
+binds, is refused where the file is read.
+
+This is how a program brings two branches of a fork to one shape before they
+are compared. In EO a `Φ.false` is written `φ ↦ ξ.right` while a bool a firing
+answered carries a symbol, and the two are one value in two spellings that
+only the program knows to be one. The block runs before `symbolize` on purpose:
+a result may write the datum a literal stands for, as `⟦ Δ ⤍ 00- ⟧` above, and
+that datum is then stood into a known symbol the join can pair.
+
 ### Standing data into unknowns
 
-There is a third block, `symbolize`, and it reduces nothing. It takes a term
+There is a fourth block, `symbolize`, and it reduces nothing. It takes a term
 another meta of the entry is already bound to and binds an expression meta of
 its own to that same term with every datum in it standing for an unknown:
 
@@ -147,8 +195,8 @@ its own to that same term with every datum in it standing for an unknown:
   𝑛: 𝑛3
 ```
 
-The right-hand side of a line names a meta bound by `morph` or by a
-`symbolize` line above it, and nothing else; a term nobody reduced has no data
+The right-hand side of a line names a meta bound by `morph`, by `rewrite` or by
+a `symbolize` line above it, and nothing else; a term nobody reduced has no data
 to stand. Every `Δ ⤍ b` binding of that term becomes a `λ ⤍ 𝜎k` naming a
 fresh symbol, one per occurrence, so `⟦ Δ ⤍ b ⟧` reads as `⟦ λ ⤍ 𝜎k ⟧` and a
 literal tuple gets several. A term carrying no datum passes through as it was.
@@ -175,7 +223,7 @@ after the stage both branches carry `⟦ λ ⤍ 𝜎 ⟧` where they differ.
 A branching λ function answers neither of its branches. Which one the program
 takes is decided by a value nobody worked out, so handing one of them through
 would drop the branch point from the program altogether and a reader would see
-the condition computed and thrown away. `join` is the fourth block, and it
+the condition computed and thrown away. `join` is the fifth block, and it
 reduces nothing either: it takes two metas the entry has bound already and
 binds one of its own to the two terms joined into one.
 
@@ -194,11 +242,11 @@ binds one of its own to the two terms joined into one.
   𝑛: 𝑛5
 ```
 
-A line names two metas bound by `morph`, by `symbolize` or by a `join` line
-above it, and never three: it stands for a choice between two branches, and a
-walk over three terms in parallel is no such choice. The meta it binds is one
-like any other, so the answer may name it alone, as above, or stand it inside a
-larger term.
+A line names two metas bound by `morph`, by `rewrite`, by `symbolize` or by a
+`join` line above it, and never three: it stands for a choice between two
+branches, and a walk over three terms in parallel is no such choice. The meta it
+binds is one like any other, so the answer may name it alone, as above, or stand
+it inside a larger term.
 
 `phino` takes the two terms and requires them to match verbatim, with one
 exception: where `⟦ λ ⤍ 𝜎A ⟧` in one meets a different `⟦ λ ⤍ 𝜎B ⟧` in the
@@ -229,7 +277,8 @@ carries and the other does not — is no join at all, and the firing gets stuck
 the way a λ function no entry answers does, so `--partial` parks it rather than
 aborting the run. A fork whose branches differ in structure, such as a `Φ.true`
 and a `Φ.false` written as `φ ↦ ξ.left` against `φ ↦ ξ.right`, is stuck, and
-bringing two such branches to one shape is the program's job and not `phino`'s.
+bringing two such branches to one shape is the program's job and not `phino`'s,
+which its entry does in a `rewrite` block.
 
 One term being `⊥` is the exception, since `if. cond value ⊥` is how EO spells
 "raise unless `cond`": the program raises on that side of the condition and

@@ -29,8 +29,10 @@ import Lambdas (Lambda (..), Meta (..), joined, matched, minted, symbolized)
 import Matcher (MetaValue (..), Subst, combine, substEmpty, substSingle, substSlot)
 import Morph (ReduceContext (..), ReduceException (..), deeper, morph', morphing, normalized, unparked)
 import Printer (printFunction)
+import Rule (RuleContext (RuleContext), matchExpressionWithRule')
 import Text.Printf (printf)
 import Yaml (ExtraArgument (..))
+import qualified Yaml as Y
 
 -- The Evaluation function 𝔼(b, e, s): it fires the λ function of a formation
 -- 'b' against the global universe 'e', under the incoming state 𝑠, normalizes
@@ -131,7 +133,8 @@ symbol func form self univ state caller = case matched caller._symbolic func of
     let ctx = caller{_nesting = caller._nesting + 1}
     (bound, dataized, conditions) <- foldM (down ctx) (substEmpty, state, []) entry._dataized
     (bound', morphed) <- foldM (through ctx) (bound, dataized) entry._morphed
-    (bound'', stood) <- foldM (masked ctx) (bound', morphed) entry._symbolized
+    rewrote <- foldM (reshaped ctx) bound' entry._rewritten
+    (bound'', stood) <- foldM (masked ctx) (rewrote, morphed) entry._symbolized
     (bound''', forked) <- foldM (paired ctx (listToMaybe (reverse conditions))) (bound'', stood) entry._paired
     answered ctx entry bound''' forked
   where
@@ -177,6 +180,20 @@ symbol func form self univ state caller = case matched caller._symbolic func of
       ctx._saveEval (EvTerm ctx._nesting meta._spelling term normal)
       bound' <- bind meta (MvExpression normal) bound
       pure (bound', state'')
+    -- Rewrite a term another line of the entry has bound with the rules of the
+    -- line and bind the expression meta naming what it becomes (see
+    -- 'rewritten'). Nothing is reduced and nothing is minted: a rewrite is a
+    -- substitution the entry vouches for, exactly as an answer is, so the term
+    -- it makes is written to the protocol and bound as it is, which is what
+    -- lets a program bring the branches of a fork to one shape before they
+    -- are compared (#1409). The line is commented with the meta it rewrote,
+    -- the way a 'symbolize' line is, since no judgment of the calculus made it.
+    reshaped :: ReduceContext -> Subst -> (Meta, (Meta, [Y.Rule])) -> IO Subst
+    reshaped ctx bound (meta, (source, rules)) = do
+      term <- buildExpressionThrows (ExMeta source._name) bound
+      shaped <- rewritten rules (RuleContext ctx._buildTerm) term
+      ctx._saveEval (EvSymbolize ctx._nesting meta._spelling (ExMeta source._name) shaped)
+      bind meta (MvExpression shaped) bound
     -- Stand the data of a term another line of the entry has bound into
     -- unknowns and bind the expression meta naming what it becomes. Nothing is
     -- reduced here: what changes is that every datum of the term becomes a
@@ -304,6 +321,43 @@ symbol func form self univ state caller = case matched caller._symbolic func of
       Nothing ->
         throwIO
           (userError (printf "The meta '%s' of λ function '%s' clashes with an existing binding" (T.unpack meta._spelling) (T.unpack func)))
+
+-- The term with the rules of a 'rewrite' line applied to it. Every position of
+-- the term is tried, the outermost first, and the first rule whose pattern
+-- matches a position as a whole rewrites it with the first match it made; the
+-- position rewritten is not walked into again, so a rule whose result carries
+-- its own pattern rewrites it once and never loops. A position no rule matches
+-- is walked into, every binding and every argument of it, ρ among them, since
+-- the shape of a branch is the program's to say and phino has no say in where
+-- that shape is written. Nothing is normalized afterwards: the rules are the
+-- program's word on what one term stands for, and reducing their outcome would
+-- have phino second-guess it (#1409).
+rewritten :: [Y.Rule] -> RuleContext -> Expression -> IO Expression
+rewritten rules ctx = goExpr
+  where
+    goExpr :: Expression -> IO Expression
+    goExpr expr = goRules rules
+      where
+        goRules :: [Y.Rule] -> IO Expression
+        goRules [] = inside expr
+        goRules (rule : rest) = do
+          substs <- matchExpressionWithRule' [substEmpty] expr rule ctx
+          case substs of
+            subst : _ -> buildExpressionThrows rule.result subst
+            [] -> goRules rest
+    inside :: Expression -> IO Expression
+    inside (ExFormation bds) = ExFormation <$> mapM goBinding bds
+    inside (ExApplication expr arg) = ExApplication <$> goExpr expr <*> goArgument arg
+    inside (ExDispatch expr attr) = (`ExDispatch` attr) <$> goExpr expr
+    inside (ExPhiMeet prefix idx expr) = ExPhiMeet prefix idx <$> goExpr expr
+    inside (ExPhiAgain prefix idx expr) = ExPhiAgain prefix idx <$> goExpr expr
+    inside expr = pure expr
+    goBinding :: Binding -> IO Binding
+    goBinding (BiTau attr expr) = BiTau attr <$> goExpr expr
+    goBinding bd = pure bd
+    goArgument :: Argument -> IO Argument
+    goArgument (ArTau attr expr) = ArTau attr <$> goExpr expr
+    goArgument (ArAlpha alpha expr) = ArAlpha alpha <$> goExpr expr
 
 -- Ask 𝕄 about a term and fire the λ of the formation it reaches, as long as an
 -- entry of the '--symbolic' file answers it, asking 𝕄 about every answer again:
