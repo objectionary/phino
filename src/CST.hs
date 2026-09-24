@@ -377,12 +377,15 @@ instance ToCST Expression EXPRESSION where
       single :: [Binding] -> Maybe PAIR
       single [BiTau AtDelta _] = Nothing
       single [BiTau AtLambda _] = Nothing
-      single [BiTau _ (ExFormation (BiVoid attr : rest))] | not (null rest) || attr /= AtRho = Nothing
+      single [bd@(BiTau _ ExFormation{})] | inlined (toCST bd ctx) = Nothing
       single [BiTau attr expr] = Just (PA_TAU (toCST attr ctx) ARROW (toCST expr ctx))
       single [bd@(BiVoid _)] = Just (toCST bd ctx)
       single [bd@(BiDelta _)] = Just (toCST bd ctx)
       single [bd@(BiLambda _)] = Just (toCST bd ctx)
       single _ = Nothing
+      inlined :: PAIR -> Bool
+      inlined PA_FORMATION{voids = _ : _} = True
+      inlined _ = False
       withoutLastVoidRho :: [Binding] -> [Binding]
       withoutLastVoidRho [] = []
       withoutLastVoidRho [BiVoid AtRho] = []
@@ -520,28 +523,35 @@ instance ToCST [Binding] BINDINGS where
 
 instance ToCST Binding PAIR where
   toCST (BiTau attr exp@(ExFormation bds)) ctx =
-    let voids' = voids bds
+    let (head', rest) = span positionless bds
+        voids' = [void | BiVoid void <- head']
+        others = filter (not . isVoid) head'
+        (_voids, _bds) = if null rest && not (null voids') && last voids' == AtRho then (init voids', others) else (voids', others ++ rest)
         attr' = toCST attr ctx
-     in if null voids'
+     in if null _voids
           then PA_TAU attr' ARROW (toCST exp ctx)
           else
-            let (_voids, _bds) = if length voids' == length bds && last voids' == AtRho then (init voids', []) else (voids', drop (length voids') bds)
-             in PA_FORMATION
-                  attr'
-                  (map (`toCST` ctx) _voids)
-                  ARROW
-                  (unsugared (toCST (ExFormation _bds) ctx))
+            PA_FORMATION
+              attr'
+              (map (`toCST` ctx) _voids)
+              ARROW
+              (unsugared (toCST (ExFormation _bds) ctx))
     where
       -- Inline voids open a formation, which no one-binding sugar may stand
       -- for, so 'x(a) ↦ ⟦ φ ↦ ξ.a ⟧' is never printed as 'x(a) ↦ a:φ'
       unsugared :: EXPRESSION -> EXPRESSION
       unsugared EX_SINGLE{..} = formation
       unsugared expr = expr
-      voids :: [Binding] -> [Attribute]
-      voids [] = []
-      voids (bd : bds) = case bd of
-        BiVoid attr -> attr : voids bds
-        _ -> []
+      -- Neither λ nor Δ is an attribute, so neither holds a position among
+      -- the voids, and 'x ↦ ⟦ λ ⤍ F, a ↦ ∅ ⟧' is still printed as 'x(a) ↦ ⟦ λ ⤍ F ⟧'
+      positionless :: Binding -> Bool
+      positionless BiVoid{} = True
+      positionless BiLambda{} = True
+      positionless BiDelta{} = True
+      positionless _ = False
+      isVoid :: Binding -> Bool
+      isVoid BiVoid{} = True
+      isVoid _ = False
   toCST (BiTau attr exp) ctx = PA_TAU (toCST attr ctx) ARROW (toCST exp ctx)
   toCST (BiVoid attr) ctx = PA_VOID (toCST attr ctx) ARROW EMPTY
   toCST (BiDelta bts) ctx = PA_DELTA (toCST bts ctx)
