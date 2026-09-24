@@ -2086,7 +2086,7 @@ spec = do
             withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
               hClose stream
               withStdin world (testCLISucceeded (morphing lambdas path) ["e1 ↦ ⟦ v ↦ Φ.dataized( target ↦ ⊥ ).as-bytes, λ ⤍ L_root ⟧"])
-              written <- readFile path
+              written <- readUtf8 path
               written `shouldContain` "<stuck λ=\"⊥\" judgment=\"dataize\">⊥</stuck>"
 
         it "still fails on it without --partial" $
