@@ -35,29 +35,25 @@ acyclic: true
 steps: 32
 input: |
   ⟦
-    number ↦ ⟦ φ ↦ ∅, gt ↦ ⟦ ρ ↦ ∅, b ↦ ∅, λ ⤍ L_number_gt ⟧, ρ ↦ ∅ ⟧,
-    bytes ↦ ⟦ φ ↦ ∅, ρ ↦ ∅ ⟧,
-    bool ↦ ⟦ if ↦ ∅, ρ ↦ ∅ ⟧,
-    dataized ↦ ⟦ target ↦ ∅, λ ⤍ L_dataized, ρ ↦ ∅ ⟧,
+    number ↦ ⟦ φ ↦ ∅, gt ↦ ⟦ ρ ↦ ∅, b ↦ ∅, λ ⤍ L_number_gt ⟧ ⟧,
+    bytes ↦ ⟦ φ ↦ ∅ ⟧,
+    bool ↦ ⟦ if ↦ ∅ ⟧,
+    dataized ↦ ⟦ target ↦ ∅, λ ⤍ L_dataized ⟧,
     text ↦ ⟦
       φ ↦ ∅,
       at ↦ ⟦
         i ↦ ∅,
-        φ ↦ Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 00-00-00-00-00-00-00-00 ⟧ ) ).gt( b ↦ Φ.dataized( target ↦ ξ.i ) ),
-        ρ ↦ ∅
-      ⟧,
-      ρ ↦ ∅
+        φ ↦ Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 00-00-00-00-00-00-00-00 ⟧ ) ).gt( b ↦ Φ.dataized( target ↦ ξ.i ) )
+      ⟧
     ⟧,
-    holder ↦ ⟦ buf ↦ ∅, φ ↦ ξ.buf, ρ ↦ ∅ ⟧,
+    holder ↦ ⟦ buf ↦ ∅, φ ↦ ξ.buf ⟧,
     l🌵 ↦ ⟦
-      mark ↦ ⟦ n ↦ ∅, v ↦ ∅, λ ⤍ L_entry, ρ ↦ ∅ ⟧,
-      root ↦ ⟦ v ↦ ∅, λ ⤍ L_root, ρ ↦ ∅ ⟧,
+      mark ↦ ⟦ n ↦ ∅, v ↦ ∅, λ ⤍ L_entry ⟧,
+      root ↦ ⟦ v ↦ ∅, λ ⤍ L_root ⟧,
       e1 ↦ Φ.l🌵.mark(
         n ↦ Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 3F-F0-00-00-00-00-00-00 ⟧ ) )
-      )( v ↦ Φ.holder( buf ↦ Φ.text( φ ↦ Φ.bytes( φ ↦ ⟦ λ ⤍ 𝜎1, ρ ↦ ∅ ⟧ ) ) ) ),
-      ρ ↦ ∅
-    ⟧,
-    ρ ↦ ∅
+      )( v ↦ Φ.holder( buf ↦ Φ.text( φ ↦ Φ.bytes( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ ) ) ) )
+    ⟧
   ⟧
 protocol: |
   𝕄(Φ.l🌵)

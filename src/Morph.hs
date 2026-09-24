@@ -450,21 +450,19 @@ morph universe state ctx@ReduceContext{..} = do
 -- allows. Every entry is charged to the '--max-steps' budget, which is what
 -- bounds the walk.
 deepened :: Expression -> Expression -> State -> ReduceContext -> IO (Expression, State)
-deepened expr univ state ctx = go False (Just ctx._site) Nothing ExXi expr state ctx
+deepened expr univ state ctx = go (Just ctx._site) Nothing ExXi expr state ctx
   where
     -- A term as it was written, together with the locator naming it where one
     -- does and with what its free ξ stands for: the formation the walk entered
     -- it from, without the binding it came from, exactly the context the 'dot'
     -- rule hands a dispatched body. At the top there is no such formation, so ξ
     -- stands for itself and contextualization leaves the term alone, and the
-    -- locator is the one the whole run was aimed at. Whether the formation a
-    -- term is bound in has its ρ bound is what decides whether a void ρ keeps
-    -- a formation from being entered (see 'parts'); at the top there is none.
-    go :: Bool -> Maybe Expression -> Maybe Attribute -> Expression -> Expression -> State -> ReduceContext -> IO (Expression, State)
-    go attached standing dispatched context term state' caller = do
+    -- locator is the one the whole run was aimed at.
+    go :: Maybe Expression -> Maybe Attribute -> Expression -> Expression -> State -> ReduceContext -> IO (Expression, State)
+    go standing dispatched context term state' caller = do
       let here = sited standing caller
       ctx' <- deeper here
-      (walked, walkedState) <- parts attached standing context term state' here
+      (walked, walkedState) <- parts standing context term state' here
       (answer, answered) <- ctx'._fire dispatched (contextualize walked context) univ walkedState ctx'
       pure (fromMaybe walked answer, answered)
     -- The context a term is walked in, aimed at the term itself where a locator
@@ -482,32 +480,29 @@ deepened expr univ state ctx = go False (Just ctx._site) Nothing ExXi expr state
     -- formation, one holding a void, is a method nobody applied: its body is
     -- parametric, walking it can only end in ⊥ or a stuck term, and a λ there
     -- dataizing a parameter would end the whole run, so it is handed back as it
-    -- was written (#1393). A void ρ counts as well where the formation it is
-    -- bound in has its own ρ bound: ρ is the parameter a dispatch binds, and
-    -- 'dot' binds it in every copy a reduction reaches, so a formation still
-    -- holding ρ ↦ ∅ inside such a copy is a method nobody dispatched, and its
-    -- ξ.ρ can only collapse to ⊥ (#1397). In the program as it was written
-    -- nothing is dispatched yet, so the void ρ an object declares there keeps
-    -- it from nothing and its objects are walked the way they always were.
-    parts :: Bool -> Maybe Expression -> Expression -> Expression -> State -> ReduceContext -> IO (Expression, State)
-    parts attached _ _ term@(ExFormation bds) state' _
+    -- was written (#1393). A void ρ counts like any other: a formation holds
+    -- one only where the program declared it, so it is a method waiting for
+    -- the receiver a dispatch hands it, and its ξ.ρ can only collapse to ⊥
+    -- wherever it stands, in a copy that kept its ρ or in one 'skip' dropped
+    -- it from (#1397, #1414).
+    parts :: Maybe Expression -> Expression -> Expression -> State -> ReduceContext -> IO (Expression, State)
+    parts _ _ term@(ExFormation bds) state' _
       | any abstract bds = pure (term, state')
       where
         abstract :: Binding -> Bool
-        abstract (BiVoid AtRho) = attached
         abstract (BiVoid _) = True
         abstract _ = False
-    parts _ standing _ (ExFormation bds) state' caller = do
+    parts standing _ (ExFormation bds) state' caller = do
       (entered, state'') <- bindings standing bds bds state' caller
       pure (ExFormation entered, state'')
-    parts _ _ context (ExDispatch target attr) state' caller = do
-      (entered, state'') <- go False Nothing (Just attr) context target state' caller
+    parts _ context (ExDispatch target attr) state' caller = do
+      (entered, state'') <- go Nothing (Just attr) context target state' caller
       pure (ExDispatch entered attr, state'')
-    parts _ _ context (ExApplication target arg) state' caller = do
-      (entered, state'') <- go False Nothing Nothing context target state' caller
+    parts _ context (ExApplication target arg) state' caller = do
+      (entered, state'') <- go Nothing Nothing context target state' caller
       (applied, state''') <- argument context arg state'' caller
       pure (ExApplication entered applied, state''')
-    parts _ _ _ term state' _ = pure (term, state')
+    parts _ _ term state' _ = pure (term, state')
     -- Walk the bindings of a formation left to right, threading the state
     -- through them. Only what the formation itself holds is entered: ρ names
     -- the object around it rather than one inside it, and a void, Δ or λ
@@ -518,13 +513,9 @@ deepened expr univ state ctx = go False (Just ctx._site) Nothing ExXi expr state
     bindings _ _ [] state' _ = pure ([], state')
     bindings standing whole (BiTau attr body : rest) state' caller
       | attr /= AtRho = do
-          (entered, state'') <- go (any bound whole) (fmap (`ExDispatch` attr) standing) Nothing (scope attr whole) body state' caller
+          (entered, state'') <- go (fmap (`ExDispatch` attr) standing) Nothing (scope attr whole) body state' caller
           (others, state''') <- bindings standing whole rest state'' caller
           pure (BiTau attr entered : others, state''')
-      where
-        bound :: Binding -> Bool
-        bound (BiTau AtRho _) = True
-        bound _ = False
     bindings standing whole (bd : rest) state' caller = do
       (others, state'') <- bindings standing whole rest state' caller
       pure (bd : others, state'')
@@ -541,10 +532,10 @@ deepened expr univ state ctx = go False (Just ctx._site) Nothing ExXi expr state
     -- applies is walked by the caller and the argument it binds is walked here.
     argument :: Expression -> Argument -> State -> ReduceContext -> IO (Argument, State)
     argument context (ArTau attr arg) state' caller = do
-      (entered, state'') <- go False Nothing Nothing context arg state' caller
+      (entered, state'') <- go Nothing Nothing context arg state' caller
       pure (ArTau attr entered, state'')
     argument context (ArAlpha alpha arg) state' caller = do
-      (entered, state'') <- go False Nothing Nothing context arg state' caller
+      (entered, state'') <- go Nothing Nothing context arg state' caller
       pure (ArAlpha alpha entered, state'')
 
 -- The premise binding the given expression meta, if any. The conclusion of a
