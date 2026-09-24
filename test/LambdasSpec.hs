@@ -135,7 +135,8 @@ spec = do
     -- discover that one of its λ functions cannot be read at all
     forM_
       [ ("a file which is no list of entries" :: String, "λ: L_pair\n" :: T.Text, "cannot be read" :: String)
-      , ("an entry with no answer at all", "- λ: L_pair\n", "cannot be read")
+      , ("an entry with no λ key", "- 𝑛: ⟦ λ ⤍ 𝜎 ⟧\n", "no 'λ' key")
+      , ("an entry with no answer at all", "- λ: L_pair\n", "no '𝑛' key")
       , ("an entry whose answer is no term of the calculus", "- λ: L_pair\n  𝑛: ⟦ λ ⤍\n", "cannot be read")
       , ("two entries under one key", entry "L_pair" <> entry "L_pair", "is used by more than one entry")
       ,

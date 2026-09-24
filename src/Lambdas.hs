@@ -69,7 +69,7 @@ where
 import AST
 import Control.Exception (Exception, throwIO)
 import Control.Monad (void)
-import Data.Aeson (FromJSON (parseJSON), Key, Object, withObject, (.!=), (.:), (.:?))
+import Data.Aeson (FromJSON (parseJSON), Key, Object, withObject, (.!=), (.:?))
 import Data.List (find)
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
@@ -128,14 +128,15 @@ instance Show LambdaException where
 
 instance FromJSON Lambda where
   parseJSON = withObject "Lambda" $ \entry -> do
-    key <- entry .: "λ"
+    key <- entry .:? "λ" >>= maybe (fail "The entry has no 'λ' key") pure
+    answer <- entry .:? "𝑛" >>= maybe (fail "The entry has no '𝑛' key") pure
     lambda <-
       Lambda key
         <$> operands key bytesMeta entry "dataize"
         <*> operands key expressionMeta entry "morph"
         <*> operands key expressionMeta entry "symbolize"
         <*> pairs (T.unpack key) entry
-        <*> entry .: "𝑛"
+        <*> pure answer
     sigmas (T.unpack key) lambda._answer
     dataless (T.unpack key) lambda._answer
     earlier (T.unpack key) lambda
