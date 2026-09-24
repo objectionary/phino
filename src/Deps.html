@@ -131,7 +131,7 @@ forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span id="line-78"></span><span class="hs-comment">-- The judgment a run of the protocol records, which is the one thing the two</span><span>
 </span><span id="line-79"></span><span class="hs-comment">-- formats spell in two ways: the text format writes the letter the calculus</span><span>
 </span><span id="line-80"></span><span class="hs-comment">-- writes, '&#120132;(&#934;.x)', and the markup names the root after it, '&lt;morph</span><span>
-</span><span id="line-81"></span><span class="hs-comment">-- locator=&quot;&#934;.x&quot;&gt;', the way every record under it is named after the judgment it</span><span>
+</span><span id="line-81"></span><span class="hs-comment">-- at=&quot;&#934;.x&quot;&gt;', the way every record under it is named after the judgment it</span><span>
 </span><span id="line-82"></span><span class="hs-comment">-- carries (#1279). A stuck site spells it the same two ways, since it too is a</span><span>
 </span><span id="line-83"></span><span class="hs-comment">-- judgment asking and getting no answer (see 'EvStuck'); nothing else is</span><span>
 </span><span id="line-84"></span><span class="hs-comment">-- spelled twice, since nothing else of a record is a name of the calculus.</span><span>
@@ -1191,7 +1191,7 @@ forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span id="line-499"></span><span>          </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String -&gt; String
 forall r. PrintfType r =&gt; String -&gt; r
 </span><span class="hs-identifier hs-var">printf</span></span><span> </span><span class="annot"><span class="annottext">String
-</span><span class="hs-string">&quot;&lt;%s locator=\&quot;%s\&quot;&gt;&quot;</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Judgment -&gt; String
+</span><span class="hs-string">&quot;&lt;%s at=\&quot;%s\&quot;&gt;&quot;</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Judgment -&gt; String
 </span><a href="Deps.html#opened"><span class="hs-identifier hs-var">opened</span></a></span><span> </span><span class="annot"><span class="annottext">Judgment
 </span><a href="#local-6989586621679575576"><span class="hs-identifier hs-var">judgment</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text -&gt; String
 </span><a href="#local-6989586621679575579"><span class="hs-identifier hs-var">quoted</span></a></span><span> </span><span class="annot"><span class="annottext">Text
@@ -1226,7 +1226,7 @@ forall a. [a] -&gt; [a] -&gt; [a]
 </span><a href="#local-6989586621679575580"><span class="hs-identifier hs-var">depth</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String -&gt; String -&gt; Int -&gt; String -&gt; String -&gt; String
 forall r. PrintfType r =&gt; String -&gt; r
 </span><span class="hs-identifier hs-var">printf</span></span><span> </span><span class="annot"><span class="annottext">String
-</span><span class="hs-string">&quot;&lt;evaluate &#955;=\&quot;%s\&quot; id=\&quot;%d\&quot; judgment=\&quot;%s\&quot; locator=\&quot;%s\&quot;&gt;&quot;</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text -&gt; String
+</span><span class="hs-string">&quot;&lt;evaluate &#955;=\&quot;%s\&quot; id=\&quot;%d\&quot; by=\&quot;%s\&quot; at=\&quot;%s\&quot;&gt;&quot;</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text -&gt; String
 </span><a href="#local-6989586621679575579"><span class="hs-identifier hs-var">quoted</span></a></span><span> </span><span class="annot"><span class="annottext">Text
 </span><a href="#local-6989586621679575581"><span class="hs-identifier hs-var">key</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Int
 </span><a href="#local-6989586621679575586"><span class="hs-identifier hs-var">fires</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Judgment -&gt; String
@@ -1277,7 +1277,7 @@ forall a. [a] -&gt; [a] -&gt; [a]
 </span><a href="#local-6989586621679575591"><span class="hs-identifier hs-var">depth</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String -&gt; String -&gt; String -&gt; String -&gt; String
 forall r. PrintfType r =&gt; String -&gt; r
 </span><span class="hs-identifier hs-var">printf</span></span><span> </span><span class="annot"><span class="annottext">String
-</span><span class="hs-string">&quot;&lt;stuck &#955;=\&quot;%s\&quot; judgment=\&quot;%s\&quot;&gt;%s&lt;/stuck&gt;&quot;</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text -&gt; String
+</span><span class="hs-string">&quot;&lt;stuck &#955;=\&quot;%s\&quot; by=\&quot;%s\&quot;&gt;%s&lt;/stuck&gt;&quot;</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text -&gt; String
 </span><a href="#local-6989586621679575579"><span class="hs-identifier hs-var">quoted</span></a></span><span> </span><span class="annot"><span class="annottext">Text
 </span><a href="#local-6989586621679575592"><span class="hs-identifier hs-var">key</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Judgment -&gt; String
 </span><a href="Deps.html#opened"><span class="hs-identifier hs-var">opened</span></a></span><span> </span><span class="annot"><span class="annottext">Judgment
