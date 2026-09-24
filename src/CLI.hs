@@ -11,7 +11,10 @@ import CLI.Parsers
 import CLI.Runners
 import CLI.Types
 import Control.Exception.Base (SomeException, fromException, handle, throwIO)
+import Data.Char (isSpace)
+import Data.List (dropWhileEnd)
 import Data.Version (showVersion)
+import Files (ensuredFile)
 import Logger
 import Options.Applicative
 import Paths_phino (version)
@@ -66,9 +69,10 @@ runCLI args = handle handler $ do
             CmdMerge OptsMerge{_logLevel, _logLines} -> (_logLevel, _logLines)
             CmdMatch OptsMatch{_logLevel, _logLines} -> (_logLevel, _logLines)
        in setLogConfig level lns
-    checkPin :: Maybe String -> IO ()
+    checkPin :: Maybe Pin -> IO ()
     checkPin Nothing = pure ()
-    checkPin (Just expected)
+    checkPin (Just (PinFile file)) = ensuredFile file >>= readFile >>= checkPin . Just . PinVersion . dropWhileEnd isSpace . dropWhile isSpace
+    checkPin (Just (PinVersion expected))
       | expected == actual = pure ()
       | otherwise = throwIO (VersionMismatch expected actual)
       where

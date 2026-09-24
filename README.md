@@ -91,6 +91,13 @@ doesn't match the installed one:
 phino --pin=0.0.0.67 dataize hello.phi
 ```
 
+The `--pin-file` global option does the same, but reads the version from
+a file, ignoring the whitespace around it:
+
+```bash
+phino --pin-file=version.txt dataize hello.phi
+```
+
 ## Dataize
 
 Then, you dataize the expression:
