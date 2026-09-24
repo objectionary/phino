@@ -22,7 +22,7 @@ import Control.Exception (throwIO, try)
 import Control.Monad (foldM, unless)
 import Data.List (partition)
 import Data.List.NonEmpty (NonEmpty (..))
-import Data.Maybe (fromMaybe, isNothing)
+import Data.Maybe (fromMaybe, isNothing, listToMaybe)
 import qualified Data.Text as T
 import Deps (BuildTermMethodS, Evaluation (..), State (..), Term (..))
 import Lambdas (Lambda (..), Meta (..), joined, matched, minted, symbolized)
@@ -129,10 +129,10 @@ symbol func form self univ state caller = case matched caller._symbolic func of
   Just entry -> do
     caller._saveEval (EvFiring caller._nesting func caller._judgment caller._site)
     let ctx = caller{_nesting = caller._nesting + 1}
-    (bound, dataized) <- foldM (down ctx) (substEmpty, state) entry._dataized
+    (bound, dataized, conditions) <- foldM (down ctx) (substEmpty, state, []) entry._dataized
     (bound', morphed) <- foldM (through ctx) (bound, dataized) entry._morphed
     (bound'', stood) <- foldM (masked ctx) (bound', morphed) entry._symbolized
-    (bound''', forked) <- foldM (paired ctx) (bound'', stood) entry._paired
+    (bound''', forked) <- foldM (paired ctx (listToMaybe (reverse conditions))) (bound'', stood) entry._paired
     answered ctx entry bound''' forked
   where
     -- Bring one 'dataize' operand down through 𝔻 and bind the bytes meta that
@@ -153,15 +153,20 @@ symbol func form self univ state caller = case matched caller._symbolic func of
     -- it and lets the spine frame around this firing attach its own, which is
     -- what keeps '--sequence' free of the synthetic attribute the operand was
     -- reduced under.
-    down :: ReduceContext -> (Subst, State) -> (Meta, Expression) -> IO (Subst, State)
-    down ctx (bound, state') (meta, term) = do
+    --
+    -- What the operand came down to goes on beside the substitution, the last
+    -- operand first, since the first of them is the condition a fork branches
+    -- on and a 'join' line one side of which reaches ⊥ names it (see 'paired').
+    down :: ReduceContext -> (Subst, State, [Either Int Bytes]) -> (Meta, Expression) -> IO (Subst, State, [Either Int Bytes])
+    down ctx (bound, state', conditions) (meta, term) = do
       (value, state'') <- unparked (ctx._reduce univ ctx (operand term) state'{_manufactured = Nothing, _stuck = Nothing})
       case value of
         Nothing -> throwIO (Stuck (fromMaybe func state''._stuck))
         Just bytes -> do
-          ctx._saveEval (EvData ctx._nesting meta._spelling term (maybe (Right bytes) Left state''._manufactured))
+          let datum = maybe (Right bytes) Left state''._manufactured
+          ctx._saveEval (EvData ctx._nesting meta._spelling term datum)
           bound' <- bind meta (MvBytes bytes) bound
-          pure (bound', state'')
+          pure (bound', state'', datum : conditions)
     -- Reduce one 'morph' operand through 𝕄 and bind the expression meta that
     -- names it. Unlike a dataized one it may stay an unknown: a term carrying a
     -- symbol is a perfectly good normal form, and standing it into the answer
@@ -205,18 +210,43 @@ symbol func form self univ state caller = case matched caller._symbolic func of
     -- the line binding the term, the way a 'symbolize' line writes what it
     -- knows, since a reader ties the join to the two values it was made from
     -- by that fact alone and never by diffing the terms.
-    paired :: ReduceContext -> (Subst, State) -> (Meta, (Meta, Meta)) -> IO (Subst, State)
-    paired ctx (bound, state') (meta, (left, right)) = do
+    --
+    -- One side reaching ⊥ is a join too, the one 'if. cond value ⊥' spells
+    -- "raise unless cond" with: the program raises on that side of the
+    -- condition and has a perfectly good value on the other. The protocol is
+    -- told on which side it raises, naming the condition by what the first
+    -- operand the entry dataized came down to, and the meta is bound to the
+    -- other side as it stands, which is the one value the fork can still
+    -- answer with. Both sides reaching ⊥ is no such case: they are one term
+    -- and join into ⊥ verbatim (#1405).
+    paired :: ReduceContext -> Maybe (Either Int Bytes) -> (Subst, State) -> (Meta, (Meta, Meta)) -> IO (Subst, State)
+    paired ctx condition (bound, state') (meta, (left, right)) = do
       one <- branch left
       two <- branch right
-      case joined one two state'._minted of
-        Nothing -> throwIO (Stuck func)
-        Just (term, made, spent) -> do
-          mapM_ (ctx._saveEval . fact) made
+      case (one, two) of
+        (ExTermination, ExTermination) -> both one two
+        (ExTermination, _) -> raising "left" left two
+        (_, ExTermination) -> raising "right" right one
+        _ -> both one two
+      where
+        -- The two sides joined symbol by symbol (see 'joined').
+        both :: Expression -> Expression -> IO (Subst, State)
+        both one two = case joined one two state'._minted of
+          Nothing -> throwIO (Stuck func)
+          Just (term, made, spent) -> do
+            mapM_ (ctx._saveEval . fact) made
+            ctx._saveEval (EvJoin ctx._nesting meta._spelling (left._spelling, right._spelling) term)
+            bound' <- bind meta (MvExpression term) bound
+            pure (bound', state'{_minted = spent})
+        -- The side that raises written down, named by the meta holding its ⊥,
+        -- and the other side bound as the join; nothing is minted, since one
+        -- value is left and a symbol would stand for nothing but it.
+        raising :: T.Text -> Meta -> Expression -> IO (Subst, State)
+        raising side raised term = do
+          ctx._saveEval (EvRaiseIf ctx._nesting condition side raised._spelling)
           ctx._saveEval (EvJoin ctx._nesting meta._spelling (left._spelling, right._spelling) term)
           bound' <- bind meta (MvExpression term) bound
-          pure (bound', state'{_minted = spent})
-      where
+          pure (bound', state')
         -- The term one side of the join is bound to, which is what a meta of
         -- the entry reads out of the substitution the firing has made (see
         -- 'earlier' in 'Lambdas': a 'join' line names metas bound above it and
@@ -293,7 +323,7 @@ fired dispatched term univ state caller = do
   morphed <- try (reduced ctx)
   case morphed of
     Right (ExFormation bds, state')
-      | demanded bds -> maybe (pure (Nothing, state')) (evaluated ctx state' (ExFormation bds)) (saturated bds)
+      | demanded bds -> maybe (pure (Nothing, state')) (evaluated ctx state' (ExFormation bds)) (saturated term bds)
     Right (_, state') -> pure (Nothing, state')
     Left failure -> parked state failure
   where
@@ -404,17 +434,55 @@ isLambda _ = False
 -- fires only what dataization demands and nothing demands a method; the deep
 -- walk meets every one a program declares — the method table of the object
 -- model above all — so it asks first (see 'deepened').
-saturated :: [Binding] -> Maybe (T.Text, Expression)
-saturated bds = case lambda bds of
-  Just (func, ExFormation rest) | all filled rest -> Just (func, ExFormation rest)
-  _ -> Nothing
-
--- Whether a binding hands the formation something to work with. A void does
--- not: it names an argument the program has still to supply. Neither does ⊥:
+--
+-- A binding holding ⊥ counts as filled only where the term the walk was handed
+-- wrote that ⊥ as an argument itself. A ⊥ the reduction made is no argument:
 -- the deep walk reduces a body in the scope of the formation around it, and a
 -- formation standing unapplied still holds ρ ↦ ∅, so a ξ.ρ in that body comes
--- back as ⊥ rather than as the object the next dispatch supplies (#1196).
+-- back as ⊥ rather than as the object the next dispatch supplies (#1196). A ⊥
+-- written as an argument is what the program meant, and 'if. cond value ⊥' is
+-- how it spells "raise unless cond", so a fork like that fires and its join
+-- says on which side it raises (#1405). An argument given by name covers the
+-- binding of that name; one given by position covers some binding, so there
+-- have to be as many of them as ⊥ bindings no name covers. A term handing
+-- nothing but ⊥ is still left alone, since there is no value for a firing to
+-- work with and all it could do is get stuck on one of them.
+saturated :: Expression -> [Binding] -> Maybe (T.Text, Expression)
+saturated term bds = case lambda bds of
+  Just (func, ExFormation rest)
+    | all filled rest && (not (any raising rest) || given rest) -> Just (func, ExFormation rest)
+  _ -> Nothing
+  where
+    named :: [Attribute]
+    positional :: Int
+    valued :: Bool
+    (named, positional, valued) = written term
+    -- Whether every ⊥ of the bindings is one the term wrote, beside some
+    -- argument that is not ⊥.
+    given :: [Binding] -> Bool
+    given rest = valued && length (filter unwritten rest) <= positional
+    raising :: Binding -> Bool
+    raising (BiTau _ ExTermination) = True
+    raising _ = False
+    -- Whether a binding holds a ⊥ no argument given by name wrote.
+    unwritten :: Binding -> Bool
+    unwritten (BiTau attr ExTermination) = attr `notElem` named
+    unwritten _ = False
+    -- The attributes the application chain of a term hands a literal ⊥ by
+    -- name, how many literal ⊥ it hands by position, and whether it hands
+    -- anything but ⊥ at all.
+    written :: Expression -> ([Attribute], Int, Bool)
+    written (ExApplication expr (ArTau attr ExTermination)) =
+      let (attrs, count, other) = written expr in (attr : attrs, count, other)
+    written (ExApplication expr (ArAlpha _ ExTermination)) =
+      let (attrs, count, other) = written expr in (attrs, count + 1, other)
+    written (ExApplication expr _) =
+      let (attrs, count, _) = written expr in (attrs, count, True)
+    written _ = ([], 0, False)
+
+-- Whether a binding hands the formation something to work with. A void does
+-- not: it names an argument the program has still to supply. A ⊥ is told
+-- apart by 'saturated', which knows the term it was written in.
 filled :: Binding -> Bool
 filled (BiVoid _) = False
-filled (BiTau _ ExTermination) = False
 filled _ = True

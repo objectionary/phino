@@ -14,6 +14,7 @@ module Deps where
 
 import AST
 import Data.IORef (IORef, readIORef, writeIORef)
+import Data.List (intercalate)
 import qualified Data.Map.Strict as Map
 import Data.Maybe (fromMaybe)
 import qualified Data.Text as T
@@ -185,6 +186,14 @@ data Evaluation
     -- knows which of them belongs to which branch. It is a fact about the
     -- symbol and no binding of it, exactly as 'EvKnown' is (#1246).
     EvJoined Int Int (Int, Int)
+  | -- A 'join' line one of whose two terms is ⊥, which is how a program
+    -- spells "raise unless the condition holds": what the condition of the
+    -- fork came down to — the first operand the entry dataized, a symbol or
+    -- data, where it dataized any — the side that raises, 'left' or 'right' in
+    -- the order the entry wrote the two metas, and the meta holding the ⊥. It
+    -- stands ahead of the 'join' line, which binds the other side, so a reader
+    -- renders the record as a throw on that side of the condition (#1405).
+    EvRaiseIf Int (Maybe (Either Int Bytes)) T.Text T.Text
   | -- A fresh symbol the answer of the firing asked for, one record per bare 𝜎
     -- the entry wrote it with. It is a fact about the firing and no property of
     -- any one term of it, since an answer may carry several symbols or none and
@@ -368,6 +377,13 @@ saveEval handle cursor render salted report = do
       left <- render (standing one)
       right <- render (standing two)
       pure (protocol, Just (indented depth (printf "𝔻(%s) ∈ { 𝔻(%s), 𝔻(%s) }" form left right)))
+    written (EvRaiseIf depth condition side raised) protocol = do
+      cond <- maybe (pure []) (fmap pure . spelled) condition
+      pure (protocol, Just (indented depth (printf "raise-if(%s)  # %s" (intercalate ", " (cond ++ [T.unpack side])) (T.unpack raised))))
+      where
+        spelled :: Either Int Bytes -> IO String
+        spelled (Left symbol) = printf "𝔻(%s)" <$> render (standing symbol)
+        spelled (Right bytes) = pure (printBytes bytes)
     written (EvMinted _ _) protocol = pure (protocol, Nothing)
     written (EvBuilt depth term) protocol = do
       value <- borrowed protocol term
@@ -546,6 +562,17 @@ saveEvalXml handle cursor render report = do
         (kept, closers) = closed depth nesting._closing
         joint :: String
         joint = printf "<joined symbol=\"%s\">%s %s</joined>" (sigma fresh) (sigma one) (sigma two)
+    elements (EvRaiseIf depth condition side _) nesting =
+      pure (nesting{_closing = kept}, closers ++ [indented depth raise])
+      where
+        (kept, closers) = closed depth nesting._closing
+        -- The condition a symbol stands for is named by it, the way 'joined'
+        -- names one, and data the condition came down to is the text.
+        raise :: String
+        raise = case condition of
+          Just (Left symbol) -> printf "<raise-if symbol=\"%s\" branch=\"%s\"/>" (sigma symbol) (quoted side)
+          Just (Right bytes) -> printf "<raise-if branch=\"%s\">%s</raise-if>" (quoted side) (escapeXMLText (printBytes bytes))
+          Nothing -> printf "<raise-if branch=\"%s\"/>" (quoted side)
     elements (EvMinted depth symbol) nesting =
       pure (nesting{_closing = kept}, closers ++ [indented depth (printf "<minted>%s</minted>" (sigma symbol))])
       where

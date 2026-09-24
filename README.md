@@ -231,6 +231,16 @@ aborting the run. A fork whose branches differ in structure, such as a `Φ.true`
 and a `Φ.false` written as `φ ↦ ξ.left` against `φ ↦ ξ.right`, is stuck, and
 bringing two such branches to one shape is the program's job and not `phino`'s.
 
+One term being `⊥` is the exception, since `if. cond value ⊥` is how EO spells
+"raise unless `cond`": the program raises on that side of the condition and
+has a perfectly good value on the other. The join then mints nothing, binds
+its meta to the other term as it stands and writes on which side the program
+raises, naming the condition by what the first `dataize` operand of the entry
+came down to, as `raise-if(𝔻(𝜎2:λ), right)  # 𝑛4` in the text format and
+`<raise-if symbol="𝜎2" branch="right"/>` in the markup. The deep walk fires
+such a fork too, since that `⊥` is an argument the program wrote rather than
+one the reduction made.
+
 Every symbol a join mints is written into the protocol as a fact of its own,
 so a reader ties it to the two it stands for without diffing the terms; the
 section on `--protocol` below shows one.

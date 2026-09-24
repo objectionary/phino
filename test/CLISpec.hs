@@ -1490,6 +1490,32 @@ spec = do
                          , "</morph>"
                          ]
 
+        -- A 'join' line one side of which is ⊥ joins nothing: the program
+        -- raises on that side of the condition, so the markup names the
+        -- symbol the condition was dataized to and the side that raises, and
+        -- the meta is bound to the other side as it stands (#1405)
+        it "writes on which side of the condition a fork raises" $
+          withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
+            hClose stream
+            withLambdasOf (T.pack "- λ: L_fork\n  dataize:\n    𝛿1: $.c\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  join:\n    𝑛3: [𝑛1, 𝑛2]\n  𝑛: 𝑛3\n") $ \forks ->
+              withStdin "⟦ y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎1 ⟧, a ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧, b ↦ ⊥, λ ⤍ L_fork ⟧.φ ⟧" $
+                testCLISucceeded ["morph", "--symbolic=" ++ forks, "--locator=Q.y", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
+            records <- readUtf8 path
+            lines records
+              `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+                         , "<morph locator=\"Φ.y\">"
+                         , "  <evaluate λ=\"L_fork\" id=\"1\" judgment=\"morph\" locator=\"Φ.y\">"
+                         , "    <dataize meta=\"𝛿1.1\">𝜎1:λ</dataize>"
+                         , "    <bind meta=\"𝑛1.1\">𝜎2:λ:φ</bind>"
+                         , "    <bind meta=\"𝑛2.1\">⊥</bind>"
+                         , "    <raise-if symbol=\"𝜎1\" branch=\"right\"/>"
+                         , "    <bind meta=\"𝑛3.1\">𝜎2:λ:φ</bind>"
+                         , "    <built meta=\"𝑛.1.1\">𝜎2:λ:φ</built>"
+                         , "    <answer meta=\"𝑛.1.2\">𝜎2:λ:φ</answer>"
+                         , "  </evaluate>"
+                         , "</morph>"
+                         ]
+
         -- Which symbols a firing minted is a fact about the firing and not a
         -- property of one term of it, so each of them stands in a record of
         -- its own, the way what is known about a symbol does: an answer
