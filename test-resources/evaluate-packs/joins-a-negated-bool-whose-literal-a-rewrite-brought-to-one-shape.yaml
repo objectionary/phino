@@ -60,15 +60,14 @@ acyclic: true
 steps: 32
 input: |
   ⟦
-    number ↦ ⟦ φ ↦ ∅, gt ↦ ⟦ b ↦ ∅, λ ⤍ L_number_gt, ρ ↦ ∅ ⟧, ρ ↦ ∅ ⟧,
-    bytes ↦ ⟦ φ ↦ ∅, ρ ↦ ∅ ⟧,
-    bool ↦ ⟦ if ↦ ∅, φ ↦ ξ.if( left ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ FF- ⟧ ), right ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 00- ⟧ ) ), not ↦ ξ.if( left ↦ Φ.false, right ↦ Φ.true ), ρ ↦ ∅ ⟧,
-    true ↦ ⟦ φ ↦ Φ.bool( if ↦ ⟦ ρ ↦ ∅, left ↦ ∅, right ↦ ∅, φ ↦ ξ.left ⟧ ), ρ ↦ ∅ ⟧,
-    false ↦ ⟦ φ ↦ Φ.bool( if ↦ ⟦ ρ ↦ ∅, left ↦ ∅, right ↦ ∅, φ ↦ ξ.right ⟧ ), ρ ↦ ∅ ⟧,
-    guard ↦ ⟦ x ↦ ∅, φ ↦ ξ.x.gt( b ↦ Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 00-00-00-00-00-00-00-00 ⟧ ) ) ).not, ρ ↦ ∅ ⟧,
-    l🌵 ↦ ⟦ mark ↦ ⟦ n ↦ ∅, v ↦ ∅, λ ⤍ L_entry, ρ ↦ ∅ ⟧, root ↦ ⟦ v ↦ ∅, λ ⤍ L_root, ρ ↦ ∅ ⟧,
-      e1 ↦ Φ.l🌵.mark( n ↦ Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 3F-F0-00-00-00-00-00-00 ⟧ ) ) )( v ↦ Φ.guard( x ↦ Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ ) ) ) ), ρ ↦ ∅ ⟧,
-    ρ ↦ ∅
+    number ↦ ⟦ φ ↦ ∅, gt ↦ ⟦ b ↦ ∅, λ ⤍ L_number_gt, ρ ↦ ∅ ⟧ ⟧,
+    bytes ↦ ⟦ φ ↦ ∅ ⟧,
+    bool ↦ ⟦ if ↦ ∅, φ ↦ ξ.if( left ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ FF- ⟧ ), right ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 00- ⟧ ) ), not ↦ ξ.if( left ↦ Φ.false, right ↦ Φ.true ) ⟧,
+    true ↦ ⟦ φ ↦ Φ.bool( if ↦ ⟦ ρ ↦ ∅, left ↦ ∅, right ↦ ∅, φ ↦ ξ.left ⟧ ) ⟧,
+    false ↦ ⟦ φ ↦ Φ.bool( if ↦ ⟦ ρ ↦ ∅, left ↦ ∅, right ↦ ∅, φ ↦ ξ.right ⟧ ) ⟧,
+    guard ↦ ⟦ x ↦ ∅, φ ↦ ξ.x.gt( b ↦ Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 00-00-00-00-00-00-00-00 ⟧ ) ) ).not ⟧,
+    l🌵 ↦ ⟦ mark ↦ ⟦ n ↦ ∅, v ↦ ∅, λ ⤍ L_entry ⟧, root ↦ ⟦ v ↦ ∅, λ ⤍ L_root ⟧,
+      e1 ↦ Φ.l🌵.mark( n ↦ Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 3F-F0-00-00-00-00-00-00 ⟧ ) ) )( v ↦ Φ.guard( x ↦ Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ ) ) ) ) ⟧
   ⟧
 protocol: |
   𝕄(Φ.l🌵)

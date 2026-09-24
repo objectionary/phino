@@ -2,11 +2,11 @@
 # SPDX-License-Identifier: MIT
 ---
 # yamllint disable rule:line-length
-# A method nobody dispatched is a formation whose ρ is still void: 'length' of
-# the copy of 'text' the entry of 'L_entry' morphs waits for a dispatch to bind
-# its ρ. The deep walk hands it back as it was written instead of entering it,
-# since the entry of 'L_dataized' inside it would dataize 'ξ.ρ.φ', which stands
-# for ⊥, and that ⊥ would end the whole run even under '--partial' (#1397).
+# The same method nobody dispatched, in a copy of an object that declares no
+# ρ, the way eo-runtime spells 'text': 'skip' drops the ρ the dispatch hands
+# the copy, so the copy has no ρ of its own, yet 'length' still declares one
+# and still waits for its receiver. The deep walk hands it back as it was
+# written instead of firing 'L_dataized' on a ⊥ it stands on (#1414).
 symbolic: |
   - λ: L_dataized
     dataize:
@@ -32,7 +32,7 @@ input: |
     number ↦ ⟦ φ ↦ ∅ ⟧,
     bytes ↦ ⟦ φ ↦ ∅, as-bytes ↦ ⟦ φ ↦ ξ.ρ, ρ ↦ ∅ ⟧ ⟧,
     dataized ↦ ⟦ target ↦ ∅, λ ⤍ L_dataized ⟧,
-    text ↦ ⟦ φ ↦ ∅, length ↦ ⟦ φ ↦ Φ.dataized( target ↦ ξ.ρ.φ ).as-bytes, ρ ↦ ∅ ⟧, ρ ↦ ∅ ⟧,
+    text ↦ ⟦ φ ↦ ∅, length ↦ ⟦ φ ↦ Φ.dataized( target ↦ ξ.ρ.φ ).as-bytes, ρ ↦ ∅ ⟧ ⟧,
     holder ↦ ⟦ buf ↦ ∅, φ ↦ ξ.buf ⟧,
     l🌵 ↦ ⟦
       mark ↦ ⟦ n ↦ ∅, v ↦ ∅, λ ⤍ L_entry ⟧,
