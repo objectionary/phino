@@ -733,6 +733,13 @@ Evaluation stays demand-driven, as the calculus prescribes: an argument
 that nothing asked for before the run got stuck is left as it is in the
 residual program, for the next iteration.
 
+An operand of a firing that reaches the terminator `⊥`, or a term no
+dataization rule matches, such as a formation whose `φ` is a void nothing
+filled, never comes down to data either, and `--partial` parks that firing
+the same way, writing the dead end into the protocol as `?(⊥)` with the term
+that could not be dataized beside it. Dataization aimed at `⊥` itself still
+fails, with or without `--partial`, since there is no firing to park.
+
 The nested morphing and dataization recursion is bounded by the
 `--max-steps` option (default `1000`): when the budget is exhausted, the run
 fails with `Dataization did not finish before reaching the limit of steps`.
