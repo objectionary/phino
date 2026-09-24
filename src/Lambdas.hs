@@ -27,14 +27,23 @@
 -- under '𝑛' is what the firing answers with, and a bare 𝜎 in it mints a fresh
 -- symbol.
 --
--- 'symbolize' is the third block and reduces nothing at all. It takes a term
+-- 'rewrite' is the third block and reduces nothing either. Each line of it
+-- names a meta the entry has bound already under 'of' and a list of ordinary
+-- rules under 'rules', spelled the way a rule file spells one, and binds an
+-- expression meta of its own to that term with the rules applied to it (see
+-- 'rewritten' in 'Evaluate'). It is how a program brings two branches of a
+-- fork to one shape before they are compared: one literal of a bool and the
+-- answer of a firing are one value in two spellings, and nothing but the
+-- program knows that (#1409).
+--
+-- 'symbolize' is the fourth block and reduces nothing at all. It takes a term
 -- an earlier block of the very same entry has already bound and binds an
 -- expression meta of its own to that term with every datum in it standing for
 -- an unknown, so a normal form reached from a literal is written the way one
 -- reached from an unknown is written and the two of them compare as
 -- expressions (see 'symbolized').
 --
--- 'join' is the fourth block and reduces nothing either. It takes two metas the
+-- 'join' is the fifth block and reduces nothing either. It takes two metas the
 -- entry has bound already and binds one of its own to the two terms joined,
 -- which is what a branching λ function answers with: a fork stands for either
 -- of its branches and no one branch stands for both, so the shape both of them
@@ -69,7 +78,7 @@ where
 import AST
 import Control.Exception (Exception, throwIO)
 import Control.Monad (void)
-import Data.Aeson (FromJSON (parseJSON), Key, Object, withObject, (.!=), (.:), (.:?))
+import Data.Aeson (FromJSON (parseJSON), Key, Object, Value (Object), withObject, (.!=), (.:), (.:?))
 import Data.List (find)
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
@@ -78,12 +87,14 @@ import qualified Data.Text as T
 import Data.Text.Encoding (encodeUtf8)
 import qualified Data.Yaml as Yaml
 import Logger (logDebug)
+import Metas (Metas (metas))
 import Parser (parseBytes, parseExpression)
 import Slots (Slots (slots))
 import Text.Printf (printf)
 import Text.Regex.PCRE (matchTest)
 import Text.Regex.PCRE.ByteString (Regex, compUTF8, compile, execBlank)
 import Yaml (referenceless)
+import qualified Yaml as Y
 
 -- One meta an entry of the file binds: the name the file spells it with, which
 -- is the name the protocol of '--protocol' reports it back under, and the name
@@ -98,13 +109,14 @@ data Meta = Meta
 
 -- One λ function phino may fire, as the file spells it: the key it is
 -- registered under, the operands it brings down to data, the operands it
--- reduces to a normal form, the terms of those it stands the data of into
--- unknowns, the pairs of those it joins into one term and the term it answers
+-- reduces to a normal form, the terms of those it rewrites with rules of its
+-- own, the terms of those it stands the data of into unknowns, the pairs of those it joins into one term and the term it answers
 -- with.
 data Lambda = Lambda
   { _key :: Text
   , _dataized :: [(Meta, Expression)]
   , _morphed :: [(Meta, Expression)]
+  , _rewritten :: [(Meta, (Meta, [Y.Rule]))]
   , _symbolized :: [(Meta, Expression)]
   , _paired :: [(Meta, (Meta, Meta))]
   , _answer :: Expression
@@ -133,6 +145,7 @@ instance FromJSON Lambda where
       Lambda key
         <$> operands key bytesMeta entry "dataize"
         <*> operands key expressionMeta entry "morph"
+        <*> rewrites (T.unpack key) entry
         <*> operands key expressionMeta entry "symbolize"
         <*> pairs (T.unpack key) entry
         <*> entry .: "𝑛"
@@ -188,17 +201,73 @@ instance FromJSON Lambda where
                   (T.unpack meta)
                   key
               )
-      -- Every 'symbolize' and 'join' line reads terms the entry has bound
-      -- already: a 'morph' operand, a line above it in its own block or, for a
-      -- 'join' line, a 'symbolize' one, since nothing else of an entry is a
+      -- The metas a 'rewrite' block binds, each paired with the meta whose
+      -- term it rewrites and the rules it rewrites that term with, ordered by
+      -- the name of the meta the way every other block is. A rule is read the
+      -- way a rule file reads one, and on top of that a rule writing a symbol
+      -- into its result or reading a meta its match never bound is refused
+      -- here: a symbol is minted by a firing and never spelled by hand, and a
+      -- meta nothing bound is one the rule cannot be built with.
+      rewrites :: String -> Object -> Yaml.Parser [(Meta, (Meta, [Y.Rule]))]
+      rewrites key entry = do
+        mapping <- entry .:? "rewrite" .!= (Map.empty :: Map Text Object)
+        mapM line (Map.toAscList mapping)
+        where
+          line :: (Text, Object) -> Yaml.Parser (Meta, (Meta, [Y.Rule]))
+          line (meta, body) = do
+            named <- expressionMeta meta
+            source <- body .: "of" >>= expressionMeta
+            written <- body .: "rules"
+            rules <- mapM rule written
+            pure (named, (source, rules))
+          rule :: Object -> Yaml.Parser Y.Rule
+          rule body = do
+            result <- body .: "result"
+            symbolless result
+            parsed <- parseJSON (Object body)
+            bound parsed
+            pure parsed
+          -- A bare 𝜎 or a numbered one written into a result: the one names a
+          -- symbol a rewrite has no business minting, since it is a
+          -- substitution the entry vouches for and no firing, and the other
+          -- one nobody minted at all.
+          symbolless :: Expression -> Yaml.Parser ()
+          symbolless result
+            | null (symbols result) && null [kind | Slot kind _ <- slots result, kind == "S"] = pure ()
+            | otherwise = fail (printf "A rule of the 'rewrite' block of λ function '%s' writes a symbol 𝜎 into its result" key)
+          -- Every meta a result reads is one the pattern, the 'e-match' or a
+          -- 'where' extension of the very same rule binds.
+          bound :: Y.Rule -> Yaml.Parser ()
+          bound parsed = case filter (`notElem` known) (metas parsed.result) of
+            [] -> pure ()
+            meta : _ ->
+              fail
+                ( printf
+                    "The rule '%s' of the 'rewrite' block of λ function '%s' reads the meta '%s' it never binds"
+                    parsed.name
+                    key
+                    (T.unpack meta)
+                )
+            where
+              known :: [Text]
+              known = metas parsed.pattern ++ metas parsed.ematch ++ concatMap (metas . (.meta)) (concat parsed.where_)
+      -- Every 'rewrite', 'symbolize' and 'join' line reads terms the entry has
+      -- bound already: a 'morph' operand, a line above it in its own block or
+      -- a line of a block above its own, since nothing else of an entry is a
       -- normal form yet and the blocks run in the order the entry lists them
       -- here. A line naming anything else names a term nobody reduced, and the
       -- file is wrong where it is read rather than half-way through a firing.
       earlier :: String -> Lambda -> Yaml.Parser ()
       earlier key lambda = do
-        stood <- go (map (_name . fst) lambda._morphed) lambda._symbolized
+        rewrote <- goRewrites (map (_name . fst) lambda._morphed) lambda._rewritten
+        stood <- go rewrote lambda._symbolized
         void (goJoins stood lambda._paired)
         where
+          goRewrites :: [Text] -> [(Meta, (Meta, [Y.Rule]))] -> Yaml.Parser [Text]
+          goRewrites reduced [] = pure reduced
+          goRewrites reduced ((meta, (source, _)) : rest)
+            | source._name `elem` reduced = goRewrites (meta._name : reduced) rest
+            | otherwise = unbound source
           go :: [Text] -> [(Meta, Expression)] -> Yaml.Parser [Text]
           go reduced [] = pure reduced
           go reduced ((meta, term) : rest) = case term of
@@ -440,9 +509,9 @@ type Joining = (Int, Map (Int, Int) Int, [(Int, (Int, Int))])
 -- binding one of them carries and the other does not — is no join, and nothing
 -- comes back: a fork whose branches differ in structure is stuck the way a λ
 -- function no entry answers is, and bringing two such branches to one shape is
--- the program's business rather than phino's. This is why a datum is never
--- joined with anything and why a branch carrying one goes through 'symbolized'
--- first (#1246).
+-- the program's business rather than phino's, which its entry does in a
+-- 'rewrite' block (#1409). This is why a datum is never joined with anything
+-- and why a branch carrying one goes through 'symbolized' first (#1246).
 --
 -- What each fresh symbol stands for comes back beside the term, the two
 -- symbols it was minted for in the order the branches were given, since
