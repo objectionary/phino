@@ -377,13 +377,16 @@ instance ToCST Expression EXPRESSION where
       single :: [Binding] -> Maybe PAIR
       single [BiTau AtDelta _] = Nothing
       single [BiTau AtLambda _] = Nothing
-      single [BiTau _ (ExFormation (BiVoid _ : _))] = Nothing
+      single [bd@(BiTau _ ExFormation{})] | inlined (toCST bd ctx) = Nothing
       single [BiTau attr expr] = Just (PA_TAU (toCST attr ctx) ARROW (toCST expr ctx))
       single [BiVoid AtRho] = Nothing
       single [bd@(BiVoid _)] = Just (toCST bd ctx)
       single [bd@(BiDelta _)] = Just (toCST bd ctx)
       single [bd@(BiLambda _)] = Just (toCST bd ctx)
       single _ = Nothing
+      inlined :: PAIR -> Bool
+      inlined PA_FORMATION{voids = _ : _} = True
+      inlined _ = False
   toCST (DataString bts) (tabs, _) | sweetString bts = EX_STRING (btsToStr bts) (TAB tabs) []
   -- The three canonical non-finite doubles have no sweet numeric literal, so
   -- they become the root dispatches `Φ.nan`, `Φ.pinf` and `Φ.ninf`. Any other
@@ -517,7 +520,9 @@ instance ToCST [Binding] BINDINGS where
 
 instance ToCST Binding PAIR where
   toCST (BiTau attr exp@(ExFormation bds)) ctx =
-    let voids' = voids bds
+    let (head', rest) = span positionless bds
+        voids' = [void | BiVoid void <- head']
+        others = filter (not . isVoid) head'
         attr' = toCST attr ctx
      in if null voids'
           then PA_TAU attr' ARROW (toCST exp ctx)
@@ -526,18 +531,23 @@ instance ToCST Binding PAIR where
               attr'
               (map (`toCST` ctx) voids')
               ARROW
-              (unsugared (toCST (ExFormation (drop (length voids') bds)) ctx))
+              (unsugared (toCST (ExFormation (others ++ rest)) ctx))
     where
       -- Inline voids open a formation, which no one-binding sugar may stand
       -- for, so 'x(a) ↦ ⟦ φ ↦ ξ.a ⟧' is never printed as 'x(a) ↦ a:φ'
       unsugared :: EXPRESSION -> EXPRESSION
       unsugared EX_SINGLE{..} = formation
       unsugared expr = expr
-      voids :: [Binding] -> [Attribute]
-      voids [] = []
-      voids (bd : bds) = case bd of
-        BiVoid attr -> attr : voids bds
-        _ -> []
+      -- Neither λ nor Δ is an attribute, so neither holds a position among
+      -- the voids, and 'x ↦ ⟦ λ ⤍ F, a ↦ ∅ ⟧' is still printed as 'x(a) ↦ ⟦ λ ⤍ F ⟧'
+      positionless :: Binding -> Bool
+      positionless BiVoid{} = True
+      positionless BiLambda{} = True
+      positionless BiDelta{} = True
+      positionless _ = False
+      isVoid :: Binding -> Bool
+      isVoid BiVoid{} = True
+      isVoid _ = False
   toCST (BiTau attr exp) ctx = PA_TAU (toCST attr ctx) ARROW (toCST exp ctx)
   toCST (BiVoid attr) ctx = PA_VOID (toCST attr ctx) ARROW EMPTY
   toCST (BiDelta bts) ctx = PA_DELTA (toCST bts ctx)

@@ -1,0 +1,42 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+# The very fork that does not join, with a 'rewrite' block in front of the
+# join: the second branch carries an 'x' the first does not, and a rule of the
+# entry drops it, so the two have one shape once they are compared and the
+# fork answers their join. Each 'rewrite' line binds a meta of its own, which
+# the protocol writes like a 'symbolize' one, commented with the meta it was
+# rewritten from; a branch no rule matches is bound as it was (#1409).
+symbolic: |
+  - λ: L_fork
+    morph:
+      𝑛1: $.a
+      𝑛2: $.b
+    rewrite:
+      𝑛3:
+        of: 𝑛1
+        rules: &shape
+          - name: no-x
+            pattern: ⟦ !B1, x ↦ ⟦⟧, !B2 ⟧
+            result: ⟦ !B1, !B2 ⟧
+      𝑛4:
+        of: 𝑛2
+        rules: *shape
+    join:
+      𝑛5: [𝑛3, 𝑛4]
+    𝑛: 𝑛5
+location: 'Q.y'
+input: '⟦ y ↦ ⟦ a ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, b ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, x ↦ ⟦⟧ ⟧, λ ⤍ L_fork ⟧.φ ⟧'
+result: '⟦ λ ⤍ 𝜎3 ⟧'
+protocol: |
+  𝕄(Φ.y)
+    𝔼(L_fork)  # 𝕄(Φ.y)
+      𝑛1.1 := 𝜎1:λ:φ  # 𝕄(ξ.a)
+      𝑛2.1 := ⟦ φ ↦ 𝜎2:λ, x ↦ ⟦⟧ ⟧  # 𝕄(ξ.b)
+      𝑛3.1 := 𝑛1.1  # 𝑛1
+      𝑛4.1 := 𝜎2:λ:φ  # 𝑛2
+      𝔻(𝜎3:λ) ∈ { 𝔻(𝜎1:λ), 𝔻(𝜎2:λ) }
+      𝑛5.1 := 𝜎3:λ:φ  # [𝑛3, 𝑛4]
+      𝑛.1.1 := 𝑛5.1  # 𝑛
+      𝑛.1.2 := 𝑛5.1  # 𝕄(𝑛.1.1)

@@ -40,6 +40,20 @@ joins known func = map spelled (maybe [] _paired (matched known func))
     spelled :: (Meta, (Meta, Meta)) -> (T.Text, (T.Text, T.Text))
     spelled (meta, (left, right)) = (_spelling meta, (_spelling left, _spelling right))
 
+-- An entry morphing one operand under 𝑛1 and rewriting with the 'rewrite'
+-- lines given, followed by whatever else the entry spells
+rewriting :: T.Text -> T.Text
+rewriting lines' = "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  rewrite:\n" <> lines'
+
+-- The rules of one 'rewrite' line, a single rule dropping an 'x' binding
+rules :: T.Text
+rules = "      rules:\n        - name: no-x\n          pattern: ⟦ !B1, x ↦ ⟦⟧, !B2 ⟧\n          result: ⟦ !B1, !B2 ⟧\n"
+
+-- A 'rewrite' line spelled the way the file spells it: the meta it binds, the
+-- meta it rewrites and how many rules it rewrites that term with
+rewrote :: (Meta, (Meta, [a])) -> (T.Text, T.Text, Int)
+rewrote (meta, (source, written)) = (_spelling meta, _spelling source, length written)
+
 spec :: Spec
 spec = do
   describe "readLambdas" $ do
@@ -122,6 +136,17 @@ spec = do
       known <- lambdasOf "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n    𝑛3: $.c\n  join:\n    𝑛4: [𝑛1, 𝑛2]\n    𝑛5: [𝑛4, 𝑛3]\n  𝑛: 𝑛5\n"
       joins known "L_fork" `shouldBe` [("𝑛4", ("𝑛1", "𝑛2")), ("𝑛5", ("𝑛4", "𝑛3"))]
 
+    -- A 'rewrite' line names the meta it rewrites and the rules it rewrites
+    -- that term with, and may rewrite what a line above it rewrote
+    it "reads the lines of 'rewrite' with the metas they read and their rules" $ do
+      known <- lambdasOf (rewriting "    𝑛2:\n      of: 𝑛1\n" <> rules <> "    𝑛3:\n      of: 𝑛2\n" <> rules <> "  𝑛: 𝑛3\n")
+      map rewrote (maybe [] _rewritten (matched known "L_fork")) `shouldBe` [("𝑛2", "𝑛1", 1), ("𝑛3", "𝑛2", 1)]
+
+    -- 'symbolize' and 'join' run after 'rewrite', so both may read what it made
+    it "reads a 'symbolize' line standing the term a 'rewrite' line made" $ do
+      known <- lambdasOf (rewriting "    𝑛2:\n      of: 𝑛1\n" <> rules <> "  symbolize:\n    𝑛3: 𝑛2\n  𝑛: 𝑛3\n")
+      map (_spelling . fst) (maybe [] _symbolized (matched known "L_fork")) `shouldBe` ["𝑛3"]
+
     it "reads an entry naming no 'join' block at all" $ do
       known <- lambdasOf "- λ: L_pair\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n"
       joins known "L_pair" `shouldBe` []
@@ -160,6 +185,15 @@ spec = do
       , ("a 'join' line joining a meta the entry never bound", "- λ: L_fork\n  morph:\n    𝑛1: $.then\n  join:\n    𝑛3: [𝑛1, 𝑛2]\n  𝑛: 𝑛3\n", "names no meta bound by 'morph' or by a line above it")
       , ("a 'join' line joining a meta that came down to data", "- λ: L_fork\n  dataize:\n    𝛿1: $.ρ\n  morph:\n    𝑛1: $.then\n  join:\n    𝑛2: [𝑛1, 𝛿1]\n  𝑛: 𝑛2\n", "is not an expression meta")
       , ("a 'join' line joining what a line below it made", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  join:\n    𝑛3: [𝑛1, 𝑛4]\n    𝑛4: [𝑛1, 𝑛2]\n  𝑛: 𝑛3\n", "names no meta bound by 'morph' or by a line above it")
+      , ("a 'rewrite' line rewriting a meta the entry never bound", rewriting "    𝑛2:\n      of: 𝑛5\n" <> rules <> "  𝑛: 𝑛2\n", "names no meta bound by 'morph' or by a line above it")
+      , ("a 'rewrite' line rewriting what a line below it made", rewriting "    𝑛2:\n      of: 𝑛3\n" <> rules <> "    𝑛3:\n      of: 𝑛1\n" <> rules <> "  𝑛: 𝑛2\n", "names no meta bound by 'morph' or by a line above it")
+      , ("a 'rewrite' line rewriting what a 'symbolize' line made", rewriting "    𝑛3:\n      of: 𝑛2\n" <> rules <> "  symbolize:\n    𝑛2: 𝑛1\n  𝑛: 𝑛3\n", "names no meta bound by 'morph' or by a line above it")
+      , ("a 'rewrite' line bound to what is no expression meta", rewriting "    𝛿1:\n      of: 𝑛1\n" <> rules <> "  𝑛: 𝑛1\n", "is not an expression meta")
+      , ("a 'rewrite' line with no rules at all", rewriting "    𝑛2:\n      of: 𝑛1\n  𝑛: 𝑛2\n", "cannot be read")
+      , ("a rule of 'rewrite' minting a fresh symbol", rewriting "    𝑛2:\n      of: 𝑛1\n      rules:\n        - name: minting\n          pattern: ⟦ φ ↦ 𝑒1 ⟧\n          result: ⟦ λ ⤍ 𝜎 ⟧\n  𝑛: 𝑛2\n", "writes a symbol 𝜎 into its result")
+      , ("a rule of 'rewrite' writing a symbol nobody minted", rewriting "    𝑛2:\n      of: 𝑛1\n      rules:\n        - name: naming\n          pattern: ⟦ φ ↦ 𝑒1 ⟧\n          result: ⟦ λ ⤍ 𝜎1 ⟧\n  𝑛: 𝑛2\n", "writes a symbol 𝜎 into its result")
+      , ("a rule of 'rewrite' reading a meta it never binds", rewriting "    𝑛2:\n      of: 𝑛1\n      rules:\n        - name: unbound\n          pattern: ⟦ φ ↦ 𝑒1 ⟧\n          result: ⟦ φ ↦ 𝑒2 ⟧\n  𝑛: 𝑛2\n", "reads the meta 'e2' it never binds")
+      , ("a rule of 'rewrite' with no result", rewriting "    𝑛2:\n      of: 𝑛1\n      rules:\n        - name: empty\n          pattern: ⟦ φ ↦ 𝑒1 ⟧\n  𝑛: 𝑛2\n", "cannot be read")
       , ("a 'symbolize' line standing what a 'join' line made", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  symbolize:\n    𝑛5: 𝑛3\n  join:\n    𝑛3: [𝑛1, 𝑛2]\n  𝑛: 𝑛5\n", "names no meta bound by 'morph' or by a line above it")
       ]
       ( \(desc, text, message) ->

@@ -1,0 +1,116 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+# The program '!(x > 0)' of eo-runtime: 'not' is 'if. false true', so one
+# branch of the fork is the literal 'false' and the other the literal 'true',
+# while what the fork answers is a bool carrying a symbol. The two spellings
+# are one value, and the 'rewrite' block of the fork says so, turning either
+# literal into the shape an answer has with the datum it stands for, which
+# 'symbolize' then stands into a known symbol, so the join pairs them and the
+# root dataizes the fork of 'not' over the fork of '>' (#1409).
+symbolic: |
+  - λ: L_number_gt
+    dataize:
+      𝛿1: $.ρ
+      𝛿2: $.b
+    𝑛: ⟦ φ ↦ Φ.bool( if ↦ ⟦ λ ⤍ L_fork, left ↦ ∅, right ↦ ∅, φ ↦ ⟦ λ ⤍ 𝜎 ⟧ ⟧ ) ⟧
+  - λ: L_entry
+    dataize:
+      𝛿1: $.n
+    morph:
+      𝑛1: $.v.φ
+    𝑛: Φ.l🌵.root( 𝑛1 )
+  - λ: L_root
+    dataize:
+      𝛿1: $.v
+    𝑛: ⟦ ⟧
+  - λ: L_fork
+    dataize:
+      𝛿1: $.φ
+    morph:
+      𝑛1: $.left
+      𝑛2: $.right
+    rewrite:
+      𝑛3:
+        of: 𝑛1
+        rules: &bool
+          - name: false-literal
+            pattern: ⟦ !B1, φ ↦ Φ.bool( if ↦ ⟦ ρ ↦ ∅, left ↦ ∅, right ↦ ∅, φ ↦ ξ.right ⟧ ), !B2 ⟧
+            result: ⟦ φ ↦ Φ.bool( if ↦ ⟦ λ ⤍ L_fork, left ↦ ∅, right ↦ ∅, φ ↦ ⟦ Δ ⤍ 00- ⟧ ⟧ ) ⟧
+          - name: true-literal
+            pattern: ⟦ !B1, φ ↦ Φ.bool( if ↦ ⟦ ρ ↦ ∅, left ↦ ∅, right ↦ ∅, φ ↦ ξ.left ⟧ ), !B2 ⟧
+            result: ⟦ φ ↦ Φ.bool( if ↦ ⟦ λ ⤍ L_fork, left ↦ ∅, right ↦ ∅, φ ↦ ⟦ Δ ⤍ FF- ⟧ ⟧ ) ⟧
+          - name: bool-without-rho
+            pattern: ⟦ !B1, φ ↦ Φ.bool( if ↦ ⟦ λ ⤍ L_fork, left ↦ ∅, right ↦ ∅, φ ↦ 𝑒1 ⟧ ), !B2 ⟧
+            result: ⟦ φ ↦ Φ.bool( if ↦ ⟦ λ ⤍ L_fork, left ↦ ∅, right ↦ ∅, φ ↦ 𝑒1 ⟧ ) ⟧
+      𝑛4:
+        of: 𝑛2
+        rules: *bool
+    symbolize:
+      𝑛5: 𝑛3
+      𝑛6: 𝑛4
+    join:
+      𝑛7: [𝑛5, 𝑛6]
+    𝑛: 𝑛7
+location: 'Q.l🌵'
+deep: true
+partial: true
+acyclic: true
+steps: 32
+input: |
+  ⟦
+    number ↦ ⟦ φ ↦ ∅, gt ↦ ⟦ b ↦ ∅, λ ⤍ L_number_gt, ρ ↦ ∅ ⟧, ρ ↦ ∅ ⟧,
+    bytes ↦ ⟦ φ ↦ ∅, ρ ↦ ∅ ⟧,
+    bool ↦ ⟦ if ↦ ∅, φ ↦ ξ.if( left ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ FF- ⟧ ), right ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 00- ⟧ ) ), not ↦ ξ.if( left ↦ Φ.false, right ↦ Φ.true ), ρ ↦ ∅ ⟧,
+    true ↦ ⟦ φ ↦ Φ.bool( if ↦ ⟦ ρ ↦ ∅, left ↦ ∅, right ↦ ∅, φ ↦ ξ.left ⟧ ), ρ ↦ ∅ ⟧,
+    false ↦ ⟦ φ ↦ Φ.bool( if ↦ ⟦ ρ ↦ ∅, left ↦ ∅, right ↦ ∅, φ ↦ ξ.right ⟧ ), ρ ↦ ∅ ⟧,
+    guard ↦ ⟦ x ↦ ∅, φ ↦ ξ.x.gt( b ↦ Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 00-00-00-00-00-00-00-00 ⟧ ) ) ).not, ρ ↦ ∅ ⟧,
+    l🌵 ↦ ⟦ mark ↦ ⟦ n ↦ ∅, v ↦ ∅, λ ⤍ L_entry, ρ ↦ ∅ ⟧, root ↦ ⟦ v ↦ ∅, λ ⤍ L_root, ρ ↦ ∅ ⟧,
+      e1 ↦ Φ.l🌵.mark( n ↦ Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 3F-F0-00-00-00-00-00-00 ⟧ ) ) )( v ↦ Φ.guard( x ↦ Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ ) ) ) ), ρ ↦ ∅ ⟧,
+    ρ ↦ ∅
+  ⟧
+protocol: |
+  𝕄(Φ.l🌵)
+    𝔼(L_entry)  # 𝕄(Φ.l🌵.e1)
+      𝛿1.1 := 3F-F0-00-00-00-00-00-00  # 𝔻(ξ.n)
+      𝔼(L_number_gt)  # 𝕄(Φ.a🌵1)
+        𝛿1.2 := 𝔻(𝜎1:λ)  # 𝔻(ξ.ρ)
+        𝛿2.2 := 00-00-00-00-00-00-00-00  # 𝔻(ξ.b)
+        𝑛.2.1 := Φ.bool( if(left, right) ↦ ⟦ λ ⤍ L_fork, φ ↦ 𝜎2:λ ⟧ ):φ  # 𝑛
+        𝑛.2.2 := Φ.bool( if(left, right) ↦ ⟦ λ ⤍ L_fork, φ ↦ 𝜎2:λ ⟧ ):φ  # 𝕄(𝑛.2.1)
+      𝔼(L_fork)  # 𝕄(Φ.a🌵1)
+        𝛿1.3 := 𝔻(𝜎2:λ)  # 𝔻(ξ.φ)
+        𝑛1.3 := Φ.bool( if(left, right) ↦ ⟦ φ ↦ right ⟧ ):φ  # 𝕄(ξ.left)
+        𝑛2.3 := Φ.bool( if(left, right) ↦ ⟦ φ ↦ left ⟧ ):φ  # 𝕄(ξ.right)
+        𝑛3.3 := Φ.bool( if(left, right) ↦ ⟦ λ ⤍ L_fork, φ ↦ 00-:Δ ⟧ ):φ  # 𝑛1
+        𝑛4.3 := Φ.bool( if(left, right) ↦ ⟦ λ ⤍ L_fork, φ ↦ FF-:Δ ⟧ ):φ  # 𝑛2
+        𝔻(𝜎3:λ) == 00-
+        𝑛5.3 := Φ.bool( if(left, right) ↦ ⟦ λ ⤍ L_fork, φ ↦ 𝜎3:λ ⟧ ):φ  # 𝑛3
+        𝔻(𝜎4:λ) == FF-
+        𝑛6.3 := Φ.bool( if(left, right) ↦ ⟦ λ ⤍ L_fork, φ ↦ 𝜎4:λ ⟧ ):φ  # 𝑛4
+        𝔻(𝜎5:λ) ∈ { 𝔻(𝜎3:λ), 𝔻(𝜎4:λ) }
+        𝑛7.3 := Φ.bool( if(left, right) ↦ ⟦ λ ⤍ L_fork, φ ↦ 𝜎5:λ ⟧ ):φ  # [𝑛5, 𝑛6]
+        𝑛.3.1 := Φ.bool( if(left, right) ↦ ⟦ λ ⤍ L_fork, φ ↦ 𝜎5:λ ⟧ ):φ  # 𝑛
+        𝑛.3.2 := Φ.bool( if(left, right) ↦ ⟦ λ ⤍ L_fork, φ ↦ 𝜎5:λ ⟧ ):φ  # 𝕄(𝑛.3.1)
+      𝑛1.1 := Φ.bool( if(left, right) ↦ ⟦ λ ⤍ L_fork, φ ↦ 𝜎5:λ ⟧ ):φ  # 𝕄(ξ.v.φ)
+      𝑛.1.1 := Φ.l🌵.root( Φ.bool( if(left, right) ↦ ⟦ λ ⤍ L_fork, φ ↦ 𝜎5:λ ⟧ ):φ )  # 𝑛
+      𝑛.1.2 := ⟦ v ↦ Φ.bool( if(left, right) ↦ ⟦ λ ⤍ L_fork, φ ↦ 𝜎5:λ ⟧ ):φ, λ ⤍ L_root ⟧  # 𝕄(𝑛.1.1)
+    𝔼(L_root)  # 𝕄(Φ.l🌵.e1)
+      𝔼(L_fork)  # 𝔻(Φ.a🌵7)
+        𝛿1.5 := 𝔻(𝜎5:λ)  # 𝔻(ξ.φ)
+        𝑛1.5 := FF-:Δ:φ  # 𝕄(ξ.left)
+        𝑛2.5 := 00-:Δ:φ  # 𝕄(ξ.right)
+        𝑛3.5 := FF-:Δ:φ  # 𝑛1
+        𝑛4.5 := 00-:Δ:φ  # 𝑛2
+        𝔻(𝜎6:λ) == FF-
+        𝑛5.5 := 𝜎6:λ:φ  # 𝑛3
+        𝔻(𝜎7:λ) == 00-
+        𝑛6.5 := 𝜎7:λ:φ  # 𝑛4
+        𝔻(𝜎8:λ) ∈ { 𝔻(𝜎6:λ), 𝔻(𝜎7:λ) }
+        𝑛7.5 := 𝜎8:λ:φ  # [𝑛5, 𝑛6]
+        𝑛.5.1 := 𝑛7.5  # 𝑛
+        𝑛.5.2 := 𝑛7.5  # 𝕄(𝑛.5.1)
+      𝛿1.4 := 𝔻(𝜎8:λ)  # 𝔻(ξ.v)
+      𝑛.4.1 := ⟦⟧  # 𝑛
+      𝑛.4.2 := ⟦⟧  # 𝕄(𝑛.4.1)

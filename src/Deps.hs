@@ -164,7 +164,9 @@ data Evaluation
     -- commented with, since nothing of the calculus runs here: the line names
     -- a meta the entry bound above it, the way a 'join' line names the two it
     -- joined, where an operand line names the judgment that reduced it
-    -- (#1306).
+    -- (#1306). A 'rewrite' line is written the same way and for the same
+    -- reason: it applies the rules of the entry to a meta bound above it and
+    -- reduces nothing either (#1409).
     EvSymbolize Int T.Text Expression Expression
   | -- What is known about a symbol a 'symbolize' line minted: dataizing the
     -- formation the symbol names answers these bytes. It is a fact about the

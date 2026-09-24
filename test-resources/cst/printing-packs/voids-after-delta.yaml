@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+# yamllint disable rule:line-length
+---
+expression: |
+  [[ x -> [[ D> 01-, a -> ?, ^ -> ?, b -> 2 ]] ]]
+result: |-
+  ⟦ x(a, ρ) ↦ ⟦ Δ ⤍ 01-, b ↦ 2 ⟧ ⟧
