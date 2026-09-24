@@ -5,4 +5,4 @@ normalize: true
 input: |
   ⟦ r ↦ ∅ ⟧( r ↦ ⟦ x ↦ ∅ ⟧( x ↦ ⊥ ) )
 output: |-
-  ⟦ r ↦ ⟦ x ↦ ⊥, ρ ↦ ∅ ⟧, ρ ↦ ∅ ⟧
+  ⊥:x:r

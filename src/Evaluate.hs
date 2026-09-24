@@ -438,8 +438,9 @@ isLambda _ = False
 -- A binding holding ⊥ counts as filled only where the term the walk was handed
 -- wrote that ⊥ as an argument itself. A ⊥ the reduction made is no argument:
 -- the deep walk reduces a body in the scope of the formation around it, and a
--- formation standing unapplied still holds ρ ↦ ∅, so a ξ.ρ in that body comes
--- back as ⊥ rather than as the object the next dispatch supplies (#1196). A ⊥
+-- formation declaring ρ and standing unapplied still holds ρ ↦ ∅, so a ξ.ρ in
+-- that body comes back as ⊥ rather than as the object the next dispatch
+-- supplies (#1196). A ⊥
 -- written as an argument is what the program meant, and 'if. cond value ⊥' is
 -- how it spells "raise unless cond", so a fork like that fires and its join
 -- says on which side it raises (#1405). An argument given by name covers the

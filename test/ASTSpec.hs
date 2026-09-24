@@ -296,7 +296,7 @@ spec = do
       dataBytes (BtOne "48")
         `shouldBe` ExApplication
           (ExDispatch ExRoot (AtLabel "bytes"))
-          (ArTau AtPhi (ExFormation [BiDelta (BtOne "48"), BiVoid AtRho]))
+          (ArTau AtPhi (ExFormation [BiDelta (BtOne "48")]))
 
   describe "DataObject/DataString/DataNumber pattern" $ do
     it "constructs the phi-named, unwrapped form" $
@@ -331,7 +331,7 @@ spec = do
                 (AtLabel "as-bytes")
                 ( ExApplication
                     (ExDispatch ExRoot (AtLabel "bytes"))
-                    (ArTau (AtLabel "data") (ExPhiAgain Nothing 1 (ExFormation [BiDelta (BtOne "05"), BiVoid AtRho])))
+                    (ArTau (AtLabel "data") (ExPhiAgain Nothing 1 (ExFormation [BiDelta (BtOne "05")])))
                 )
             )
         , Just (BtOne "05")
@@ -344,7 +344,7 @@ spec = do
                 (Alpha 0)
                 ( ExApplication
                     (ExDispatch ExRoot (AtLabel "bytes"))
-                    (ArAlpha (Alpha 0) (ExFormation [BiDelta (BtOne "05"), BiVoid AtRho]))
+                    (ArAlpha (Alpha 0) (ExFormation [BiDelta (BtOne "05")]))
                 )
             )
         , Just (BtOne "05")
@@ -376,7 +376,7 @@ spec = do
                 (AtLabel "as-bytes")
                 ( ExApplication
                     (ExDispatch ExRoot (AtLabel "other"))
-                    (ArTau AtPhi (ExFormation [BiDelta (BtOne "48"), BiVoid AtRho]))
+                    (ArTau AtPhi (ExFormation [BiDelta (BtOne "48")]))
                 )
             )
         )
@@ -388,7 +388,7 @@ spec = do
                 (AtLabel "as-bytes")
                 ( ExApplication
                     (ExDispatch ExRoot (AtLabel "bytes"))
-                    (ArTau (AtLabel "data") (ExFormation [BiDelta (BtOne "48")]))
+                    (ArTau (AtLabel "data") (ExFormation [BiDelta (BtOne "48"), BiVoid AtRho]))
                 )
             )
         )

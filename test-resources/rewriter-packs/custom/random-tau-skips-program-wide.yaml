@@ -21,7 +21,7 @@ rules:
       pattern: |
         [[ x -> !e1 ]]
       result: |
-        [[ x -> !e1, !t1 -> [[ ]], ^ -> ? ]]
+        [[ x -> !e1, !t1 -> [[ ]] ]]
       where:
         - meta: '!t1'
           function: random-tau

@@ -135,9 +135,15 @@ spec = do
       , ("$ => X", ExXi, ExRoot, ExTermination)
       , ("Q => X", ExRoot, ExRoot, ExTermination)
       ,
-        ( "Q.x (Q -> [[ x -> [[]] ]]) => [[ ρ -> Q ]]"
+        ( "Q.x (Q -> [[ x -> [[]] ]]) => [[]]"
         , ExDispatch ExRoot (AtLabel "x")
         , ExFormation [BiTau (AtLabel "x") (ExFormation [])]
+        , ExFormation []
+        )
+      ,
+        ( "Q.x (Q -> [[ x -> [[ ^ -> ? ]] ]]) => [[ ρ -> Q ]]"
+        , ExDispatch ExRoot (AtLabel "x")
+        , ExFormation [BiTau (AtLabel "x") (ExFormation [BiVoid AtRho])]
         , ExFormation [BiTau AtRho ExRoot]
         )
       , -- A void slot fed a non-absolute argument can never be filled, so 'copy'
@@ -244,7 +250,7 @@ spec = do
           ,
             ( "a dispatch over a formation"
             , ExDispatch ExRoot (AtLabel "x")
-            , ExFormation [BiTau (AtLabel "x") (ExFormation [])]
+            , ExFormation [BiTau (AtLabel "x") (ExFormation [BiVoid AtRho])]
             , ExFormation [BiTau AtRho ExRoot]
             )
           ]

@@ -83,7 +83,7 @@ spec = do
         bts = BaseObject "bytes"
         bt = ArAlpha (Alpha 0)
         app = ExApplication
-        form = ExFormation [BiDelta (BtMany ["40", "18", "00", "00", "00", "00", "00", "00"]), BiVoid AtRho]
+        form = ExFormation [BiDelta (BtMany ["40", "18", "00", "00", "00", "00", "00", "00"])]
         isCSTNumber (EX_NUMBER{}) = True
         isCSTNumber _ = False
     forM_
@@ -282,8 +282,8 @@ spec = do
 
   describe "expressionToCST on formation and dispatch edge cases" $ do
     it
-      "a single void rho binding collapses to the same CST as an empty formation"
-      (expressionToCST (ExFormation [BiVoid AtRho]) `shouldBe` expressionToCST (ExFormation []))
+      "a single void rho binding stays apart from an empty formation"
+      (expressionToCST (ExFormation [BiVoid AtRho]) `shouldNotBe` expressionToCST (ExFormation []))
     it
       "dispatch on Xi becomes a bare attribute"
       (expressionToCST (ExDispatch ExXi (AtLabel "foo")) `shouldBe` EX_ATTR (AT_LABEL "foo"))

@@ -15,7 +15,7 @@ symbolic: |
 location: 'Q.x'
 deep: true
 partial: true
-input: '⟦ x ↦ ⟦ v ↦ ⟦ λ ⤍ L_none ⟧.foo, λ ⤍ L_entry ⟧.z ⟧'
+input: '⟦ x ↦ ⟦ v ↦ ⟦ λ ⤍ L_none ⟧.foo, λ ⤍ L_entry, ρ ↦ ∅ ⟧.z ⟧'
 protocol: |
   𝕄(Φ.x)
     𝔼(L_entry)  # 𝕄(Φ.x)

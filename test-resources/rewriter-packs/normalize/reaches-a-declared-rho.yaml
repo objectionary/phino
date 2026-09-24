@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# A formation declaring ρ among its voids gets the object it was dispatched
+# on as its receiver, so its ξ.ρ reaches the sibling k (#1407).
+normalize: true
+input: |
+  ⟦ m ↦ ⟦ k ↦ ⟦ Δ ⤍ 01- ⟧, a ↦ ⟦ ρ ↦ ∅, t ↦ ξ.ρ.k ⟧ ⟧.a.t ⟧
+output: |-
+  ⟦ m ↦ ⟦ Δ ⤍ 01- ⟧ ⟧

@@ -14,7 +14,7 @@ location: 'Q.@'
 deep: true
 input: >
   ⟦ bytes(φ) ↦ ⟦⟧,
-    number(φ) ↦ ⟦ plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧,
+    number(φ) ↦ ⟦ plus(ρ, x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧,
     @ ↦ 5.plus( 6 ) ⟧
 result: '⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧'
 protocol: |

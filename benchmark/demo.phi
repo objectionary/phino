@@ -3,11 +3,11 @@
   bool ↦ ⟦ if ↦ ∅ ⟧,
   number ↦ ⟦
     φ ↦ ∅,
-    plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧,
-    times(x) ↦ ⟦ λ ⤍ L_number_times ⟧,
-    gt(x) ↦ ⟦ λ ⤍ L_number_gt ⟧,
-    neg ↦ ⟦ φ ↦ ξ.ρ.times( -1 ) ⟧,
-    minus(x) ↦ ⟦ φ ↦ ξ.ρ.plus( ξ.x.neg ) ⟧
+    plus(ρ, x) ↦ ⟦ λ ⤍ L_number_plus ⟧,
+    times(ρ, x) ↦ ⟦ λ ⤍ L_number_times ⟧,
+    gt(ρ, x) ↦ ⟦ λ ⤍ L_number_gt ⟧,
+    neg(ρ) ↦ ⟦ φ ↦ ξ.ρ.times( -1 ) ⟧,
+    minus(ρ, x) ↦ ⟦ φ ↦ ξ.ρ.plus( ξ.x.neg ) ⟧
   ⟧,
   demo ↦ ⟦
     gap(a, b) ↦ ⟦ φ ↦ ξ.a.minus( ξ.b ).times( ξ.a.minus( ξ.b ) ) ⟧,

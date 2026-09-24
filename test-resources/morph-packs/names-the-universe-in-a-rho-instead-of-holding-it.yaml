@@ -1,13 +1,13 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 # SPDX-License-Identifier: MIT
 ---
-# A dispatch off Φ decorates the body it reaches with the object it was
-# dispatched on, and that object is the whole program. Writing it out would
-# copy the world into the term, and again into every term the body then
-# dispatches, so the copies compound until one term weighs hundreds of times
-# what the program does. Φ is the name of that object, so the ρ carries the
-# name instead, and whoever reads it resolves it through the 'universe' rule
-# to the very formation that would have stood there (#1318).
+# A dispatch off Φ decorates the body it reaches, one declaring its ρ, with
+# the object it was dispatched on, and that object is the whole program.
+# Writing it out would copy the world into the term, and again into every term
+# the body then dispatches, so the copies compound until one term weighs
+# hundreds of times what the program does. Φ is the name of that object, so
+# the ρ carries the name instead, and whoever reads it resolves it through the
+# 'universe' rule to the very formation that would have stood there (#1318).
 location: 'Q.t'
-input: '⟦ a ↦ ⟦ b ↦ ⟦ Δ ⤍ 01- ⟧ ⟧, t ↦ Φ.a ⟧'
+input: '⟦ a ↦ ⟦ b ↦ ⟦ Δ ⤍ 01- ⟧, ρ ↦ ∅ ⟧, t ↦ Φ.a ⟧'
 result: '⟦ b ↦ 01-:Δ, ρ ↦ Φ ⟧'

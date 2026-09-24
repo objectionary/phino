@@ -49,8 +49,7 @@ rules:
           𝜏-stream-class ↦ 𝑒-stream-class,
           𝜏-method ↦ "boxed",
           𝜏-signature ↦ "()Ljava/util/stream/Stream;",
-          𝜏-flag ↦ Φ.true,
-          ρ ↦ ∅
+          𝜏-flag ↦ Φ.true
         ⟧
       result: |
         ⟦

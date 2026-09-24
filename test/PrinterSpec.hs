@@ -29,7 +29,7 @@ spec = do
       [ ("ξ renders as $", ExXi, "$")
       , ("Φ renders as Q", ExRoot, "Q")
       , ("⊥ renders as T", ExTermination, "T")
-      , ("ρ void becomes empty", ExFormation [BiVoid AtRho], "[[]]")
+      , ("ρ void stays a formation of its own", ExFormation [BiVoid AtRho], "[[ ^ -> ? ]]")
       , ("φ void", ExFormation [BiVoid AtPhi], "?:@")
       , ("label void", ExFormation [BiVoid (AtLabel "名前")], "?:名前")
       , ("x to Φ", ExFormation [BiTau (AtLabel "x") ExRoot], "Q:x")
@@ -50,7 +50,7 @@ spec = do
         )
       ,
         ( "formation with app"
-        , ExApplication (ExFormation [BiVoid AtRho]) (ArAlpha (Alpha 0) ExRoot)
+        , ExApplication (ExFormation []) (ArAlpha (Alpha 0) ExRoot)
         , "[[]]( Q )"
         )
       , ("meta expr", ExMeta "e", "!e")
@@ -181,7 +181,7 @@ spec = do
 
   describe "printExpression with default config" $
     forM_
-      [ ("empty formation", ExFormation [BiVoid AtRho], "⟦⟧")
+      [ ("empty formation", ExFormation [], "⟦⟧")
       , ("dispatch", ExDispatch ExRoot (AtLabel "org"), "Φ.org")
       ]
       ( \(desc, expr, expected) ->
@@ -424,8 +424,8 @@ spec = do
       , ("⟦ x ↦ ⟦ φ ↦ ξ.a ⟧.b ⟧", SWEET, UNICODE, "a:φ.b:x")
       , ("⟦ x(a) ↦ ⟦ φ ↦ a ⟧ ⟧", SWEET, UNICODE, "⟦ x(a) ↦ ⟦ φ ↦ a ⟧ ⟧")
       , ("⟦ x ↦ ξ.a, y ↦ ∅ ⟧", SWEET, UNICODE, "⟦ x ↦ a, y ↦ ∅ ⟧")
-      , ("⟦ x ↦ ξ.a ⟧", SALTY, UNICODE, "⟦ x ↦ ξ.a, ρ ↦ ∅ ⟧")
-      , ("⟦ Δ ⤍ FF-AA ⟧", SALTY, ASCII, "[[ D> FF-AA, ^ -> ? ]]")
+      , ("⟦ x ↦ ξ.a ⟧", SALTY, UNICODE, "⟦ x ↦ ξ.a ⟧")
+      , ("⟦ Δ ⤍ FF-AA ⟧", SALTY, ASCII, "[[ D> FF-AA ]]")
       ]
       ( \(src, sugar, encoding, expected) ->
           it (src ++ " " ++ show sugar ++ " " ++ show encoding) $ do

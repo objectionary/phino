@@ -130,7 +130,7 @@ spec = do
         `shouldBe` "\\begin{phiquation}\n[[ D> \\delta_7 ]]{.}\n\\end{phiquation}"
 
     it "escapes '@' and '^' in an attribute label, same as '$' and '_'" $ do
-      let weird = ExFormation [BiTau (AtLabel "a@b^c") ExRoot, BiVoid AtRho]
+      let weird = ExFormation [BiTau (AtLabel "a@b^c") ExRoot]
       expressionToLaTeX weird defaultLatexContext
         `shouldBe` "\\begin{phiquation}\n[[ |a\\char64{}b\\char94{}c| -> Q ]]{.}\n\\end{phiquation}"
 
@@ -167,7 +167,7 @@ spec = do
           [ "\\begin{phiquation}"
           , "% === Step #1"
           , "[[ |x| -> Q . |y| ]]"
-          , "% === Step #2, Rule '?', 11t -> 11t"
+          , "% === Step #2, Rule '?', 7t -> 7t"
           , "  \\leadsto [[ |x| -> Q . |z| ]] \\leadsto_{\\nameref{r:myrule}}{.}"
           , "\\end{phiquation}"
           ]

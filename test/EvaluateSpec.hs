@@ -194,5 +194,5 @@ spec = do
       answered <- withLambdasOf "- λ: L_answer\n  𝑛: ⟦ Δ ⤍ FF- ⟧\n" readLambdas
       result <- execBuildTerm univ (withLambdas answered ctx) "evaluate" [ArgExpression form, ArgExpression univ] substEmpty
       case result of
-        TeExpression expr -> expr `shouldBe` ExFormation [BiDelta (BtOne "FF"), BiVoid AtRho]
+        TeExpression expr -> expr `shouldBe` ExFormation [BiDelta (BtOne "FF")]
         _ -> expectationFailure "expected TeExpression"

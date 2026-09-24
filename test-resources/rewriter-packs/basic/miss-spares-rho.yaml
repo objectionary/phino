@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# 'miss' answers ⊥ for an attribute the formation does not declare, save ρ,
+# which a formation without a receiver merely ignores (#1407).
+rules:
+  basic: ['miss']
+input: |
+  ⟦ a ↦ ⟦ k ↦ ∅ ⟧( ρ ↦ Φ.x ), b ↦ ⟦ k ↦ ∅ ⟧( t ↦ Φ.x ) ⟧
+output: |-
+  ⟦ a ↦ ⟦ k ↦ ∅ ⟧( ρ ↦ Φ.x ), b ↦ ⊥ ⟧

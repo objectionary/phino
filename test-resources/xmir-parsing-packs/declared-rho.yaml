@@ -1,0 +1,18 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# A void ρ in XMIR is the receiver the formation declares, and a formation
+# without one reads back with no ρ at all (#1407).
+xmir: |
+  <object>
+    <o name="app">
+      <o name="m">
+        <o name="ρ" base="∅"/>
+        <o name="x" base="∅"/>
+      </o>
+      <o name="k">
+        <o name="y" base="∅"/>
+      </o>
+    </o>
+  </object>
+phi: '[[ app -> [[ m -> [[ ^ -> ?, x -> ? ]], k -> [[ y -> ? ]] ]] ]]'

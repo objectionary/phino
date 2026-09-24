@@ -275,7 +275,7 @@ lack of it:
 $ cat sum.phi
 ⟦
   bytes ↦ ⟦ φ ↦ ∅ ⟧,
-  number ↦ ⟦ φ ↦ ∅, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧,
+  number ↦ ⟦ φ ↦ ∅, plus(ρ, x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧,
   φ ↦ 5.plus( 6 )
 ⟧
 $ phino dataize --symbolic=atoms.yaml --sweet --hide-rho sum.phi
@@ -479,7 +479,7 @@ $ cat fork.phi
 ⟦
   bytes ↦ ⟦ φ ↦ ∅ ⟧,
   bool ↦ ⟦ if ↦ ∅ ⟧,
-  number ↦ ⟦ φ ↦ ∅, plus(x) ↦ ⟦ λ ⤍ L_plus ⟧, gt(x) ↦ ⟦ λ ⤍ L_gt ⟧ ⟧,
+  number ↦ ⟦ φ ↦ ∅, plus(ρ, x) ↦ ⟦ λ ⤍ L_plus ⟧, gt(ρ, x) ↦ ⟦ λ ⤍ L_gt ⟧ ⟧,
   foo(x) ↦ ⟦
     φ ↦ ξ.x.gt( 0 ).if( ξ.x.plus( ξ.x.plus( 1 ) ), ξ.x.plus( ξ.x ) ).plus( 5 )
   ⟧,
@@ -672,7 +672,7 @@ normalized there and then reduced.
 $ cat universe.phi
 ⟦
   bytes ↦ ⟦ φ ↦ ∅ ⟧,
-  number ↦ ⟦ φ ↦ ∅, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧
+  number ↦ ⟦ φ ↦ ∅, plus(ρ, x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧
 ⟧
 $ phino dataize --symbolic=atoms.yaml --inside='5.plus( 6 )' universe.phi
 40-45-00-00-00-00-00-00
@@ -699,8 +699,8 @@ $ cat partial.phi
   bytes ↦ ⟦ φ ↦ ∅ ⟧,
   number ↦ ⟦
     φ ↦ ∅,
-    plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧,
-    times(x) ↦ ⟦ λ ⤍ L_number_times ⟧,
+    plus(ρ, x) ↦ ⟦ λ ⤍ L_number_plus ⟧,
+    times(ρ, x) ↦ ⟦ λ ⤍ L_number_times ⟧,
     as-bool ↦ ⟦ λ ⤍ L_number_as_bool ⟧
   ⟧,
   φ ↦ 2.times( 3 ).plus( 4 ).as-bool
@@ -774,7 +774,7 @@ the first formation it reaches, handing that formation back untouched. The
 $ cat two.phi
 ⟦
   bytes ↦ ⟦ φ ↦ ∅ ⟧,
-  number ↦ ⟦ φ ↦ ∅, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧,
+  number ↦ ⟦ φ ↦ ∅, plus(ρ, x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧,
   φ ↦ 5.plus( 6 ).plus( 7 )
 ⟧
 $ phino dataize --symbolic=atoms.yaml --sweet --hide-rho two.phi
@@ -815,7 +815,7 @@ one — is therefore reduced by neither. The `--deep` flag enters it:
 $ cat gap.phi
 ⟦
   bytes ↦ ⟦ φ ↦ ∅ ⟧,
-  number ↦ ⟦ φ ↦ ∅, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧ ⟧,
+  number ↦ ⟦ φ ↦ ∅, times(ρ, x) ↦ ⟦ λ ⤍ L_number_times ⟧ ⟧,
   bar(x) ↦ ⟦ λ ⤍ L_bar ⟧,
   demo ↦ ⟦ foo ↦ ⟦ n ↦ 3, φ ↦ Φ.bar( ξ.n.times( 5 ).times( 7 ) ) ⟧ ⟧
 ⟧
@@ -1001,10 +1001,7 @@ and print it in canonical syntax:
 ```bash
 $ echo '[[ @ -> Q.io.stdout("hello") ]]' | phino rewrite
 ⟦
-  φ ↦ Φ.io.stdout(
-    α0 ↦ Φ.string( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 68-65-6C-6C-6F, ρ ↦ ∅ ⟧ ) )
-  ),
-  ρ ↦ ∅
+  φ ↦ Φ.io.stdout( α0 ↦ Φ.string( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 68-65-6C-6C-6F ⟧ ) ) )
 ⟧
 ```
 
@@ -1019,10 +1016,26 @@ and the attribute the asset is bound to:
 ```
 
 The colon binds as tightly as a dot, so `ξ.a:φ.b` is `⟦ φ ↦ ξ.a ⟧.b`.
-With `--sweet`, `phino` prints every such formation this way, the implicit
-`ρ ↦ ∅` aside, so `⟦ x ↦ ⟦ φ ↦ ξ.a ⟧ ⟧` comes out as `a:φ:x`. A formation
+With `--sweet`, `phino` prints every such formation this way, so
+`⟦ x ↦ ⟦ φ ↦ ξ.a ⟧ ⟧` comes out as `a:φ:x`. A formation
 with inline voids keeps its brackets, as in `x(a) ↦ ⟦ φ ↦ a ⟧`, and so does
 every formation in the salty syntax and in [LaTeX][latex].
+
+A formation has a receiver `ρ` only when it declares one among its voids, the
+way EO declares `^`: `⟦ ρ ↦ ∅, t ↦ ξ.ρ.k ⟧`, or `a(ρ) ↦ ⟦ t ↦ ξ.ρ.k ⟧` with
+the void inline. `phino` adds none of its own, and a dispatch into a formation
+that declares none hands it no `ρ` (the `skip` rule), so `ξ.ρ` there is `⊥`:
+
+<!-- markdownlint-disable MD013 -->
+
+```bash
+$ echo '⟦ x ↦ ⟦ k ↦ ⟦ Δ ⤍ 01- ⟧, a ↦ ⟦ ρ ↦ ∅, t ↦ ξ.ρ.k ⟧ ⟧.a.t ⟧' | phino rewrite --normalize --sweet
+01-:Δ:x
+$ echo '⟦ x ↦ ⟦ k ↦ ⟦ Δ ⤍ 01- ⟧, b ↦ ⟦ t ↦ ξ.ρ.k ⟧ ⟧.b.t ⟧' | phino rewrite --normalize --sweet
+⊥:x
+```
+
+<!-- markdownlint-enable MD013 -->
 
 ## Merge
 
@@ -1058,7 +1071,7 @@ pattern. The result output contains matched substitutions:
 
 ```bash
 $ phino match --pattern='⟦ Δ ⤍ !d, !B ⟧' hello.phi
-B >> ⟦ ρ ↦ ∅ ⟧
+B >> ⟦⟧
 d >> 68-65-6C-6C-6F
 ```
 

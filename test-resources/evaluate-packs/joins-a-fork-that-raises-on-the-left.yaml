@@ -33,10 +33,10 @@ location: 'Q.@'
 deep: true
 input: >
   ⟦ bytes(φ) ↦ ⟦⟧,
-    bool(φ) ↦ ⟦ if ↦ ⟦ then ↦ ∅, else ↦ ∅, λ ⤍ L_fork ⟧ ⟧,
+    bool(φ) ↦ ⟦ if ↦ ⟦ ρ ↦ ∅, then ↦ ∅, else ↦ ∅, λ ⤍ L_fork ⟧ ⟧,
     number(φ) ↦ ⟦
-      gt(x) ↦ ⟦ λ ⤍ L_number_gt ⟧,
-      plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧,
+      gt(ρ, x) ↦ ⟦ λ ⤍ L_number_gt ⟧,
+      plus(ρ, x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧,
     @ ↦ 5.gt( 0 ).if( ⊥, 1.plus( 2 ) ).plus( 6 ) ⟧
 result: >-
   ⟦ φ ↦ ⟦ λ ⤍ 𝜎3 ⟧, gt(x) ↦ ⟦ λ ⤍ L_number_gt ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus

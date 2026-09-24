@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# A formation declaring no ρ has no receiver, so its ξ.ρ is ⊥ however it was
+# dispatched (#1407).
+normalize: true
+input: |
+  ⟦ m ↦ ⟦ k ↦ ⟦ Δ ⤍ 01- ⟧, a ↦ ⟦ t ↦ ξ.ρ.k ⟧ ⟧.a.t ⟧
+output: |-
+  ⟦ m ↦ ⊥ ⟧

@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# A formation that declares its ρ is filled by 'copy', never by 'skip' (#1407).
+rules:
+  basic: ['skip']
+input: |
+  ⟦ a ↦ ⟦ ρ ↦ ∅, k ↦ ∅ ⟧( ρ ↦ Φ.x ) ⟧
+output: |-
+  ⟦ a ↦ ⟦ ρ ↦ ∅, k ↦ ∅ ⟧( ρ ↦ Φ.x ) ⟧

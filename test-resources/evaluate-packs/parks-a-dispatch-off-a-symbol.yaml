@@ -28,7 +28,7 @@ deep: true
 partial: true
 input: >
   ⟦ bytes ↦ ⟦ φ ↦ ∅ ⟧,
-    number ↦ ⟦ φ ↦ ∅, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧,
+    number ↦ ⟦ φ ↦ ∅, plus(ρ, x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧,
     demo ↦ ⟦
       a ↦ ⟦ λ ⤍ 𝜎1 ⟧.plus( 5 ),
       b ↦ Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ) ).plus( 5 ) ⟧ ⟧

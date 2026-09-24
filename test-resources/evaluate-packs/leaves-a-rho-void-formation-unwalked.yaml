@@ -37,7 +37,7 @@ input: |
     l🌵 ↦ ⟦
       mark ↦ ⟦ n ↦ ∅, v ↦ ∅, λ ⤍ L_entry, ρ ↦ ∅ ⟧,
       root ↦ ⟦ v ↦ ∅, λ ⤍ L_root, ρ ↦ ∅ ⟧,
-      e1 ↦ Φ.l🌵.mark( n ↦ Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 3F-F0-00-00-00-00-00-00, ρ ↦ ∅ ⟧ ) ) )( v ↦ Φ.holder( buf ↦ Φ.text( φ ↦ Φ.bytes( φ ↦ ⟦ λ ⤍ 𝜎1, ρ ↦ ∅ ⟧ ) ) ) ),
+      e1 ↦ Φ.l🌵.mark( n ↦ Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 3F-F0-00-00-00-00-00-00 ⟧ ) ) )( v ↦ Φ.holder( buf ↦ Φ.text( φ ↦ Φ.bytes( φ ↦ ⟦ λ ⤍ 𝜎1, ρ ↦ ∅ ⟧ ) ) ) ),
       ρ ↦ ∅
     ⟧,
     ρ ↦ ∅

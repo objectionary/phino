@@ -170,7 +170,7 @@ formationBinding (BiTau AtPhi expr) ctx = Just <$> namedBinding (show AtPhi) exp
 formationBinding (BiDelta bytes) _ = pure (Just (NodeContent (T.pack (printBytes bytes))))
 formationBinding (BiLambda (Function name)) XmirContext{..} =
   pure (Just (object (maybe [] (\atom -> [("atom", atom)]) (M.lookup name _atoms) ++ [("name", show AtLambda)]) [NodeContent name]))
-formationBinding (BiVoid AtRho) _ = pure Nothing
+formationBinding (BiVoid AtRho) _ = pure (Just (object [("name", show AtRho), ("base", "∅")] []))
 formationBinding (BiVoid AtPhi) _ = pure (Just (object [("name", show AtPhi), ("base", "∅")] []))
 formationBinding (BiVoid (AtLabel label)) _ = pure (Just (object [("name", T.unpack label), ("base", "∅")] []))
 formationBinding binding _ = throwIO (UnsupportedBinding binding)
@@ -184,7 +184,7 @@ namedBinding name expr ctx = do
   pure (object [("name", name), ("base", base)] children)
 
 -- Render a formation's bindings as child nodes, honoring '--hide-rho' by
--- dropping every bound ρ before it reaches the nodes (#1076)
+-- dropping every ρ, void or bound, before it reaches the nodes (#1076)
 nestedBindings :: [Binding] -> XmirContext -> IO [Node]
 nestedBindings bds ctx@XmirContext{..} = catMaybes <$> mapM (`formationBinding` ctx) bds'
   where
@@ -192,15 +192,17 @@ nestedBindings bds ctx@XmirContext{..} = catMaybes <$> mapM (`formationBinding` 
     bds' = if _hideRho then filter (not . isRho) bds else bds
     isRho :: Binding -> Bool
     isRho (BiTau AtRho _) = True
+    isRho (BiVoid AtRho) = True
     isRho _ = False
 
 expressionToXMIR :: Expression -> XmirContext -> IO Document
-expressionToXMIR expr@(ExFormation [BiTau (AtLabel _) arg, BiVoid AtRho]) ctx = case arg of
-  ExFormation _ -> programToXMIR expr ctx
-  ExApplication _ _ -> programToXMIR expr ctx
-  ExDispatch _ _ -> programToXMIR expr ctx
-  ExRoot -> programToXMIR expr ctx
-  _ -> throwIO (UnsupportedTopExpression expr)
+expressionToXMIR expr@(ExFormation bds) ctx
+  | [BiTau (AtLabel _) arg] <- withoutVoidRho bds = case arg of
+      ExFormation _ -> programToXMIR expr ctx
+      ExApplication _ _ -> programToXMIR expr ctx
+      ExDispatch _ _ -> programToXMIR expr ctx
+      ExRoot -> programToXMIR expr ctx
+      _ -> throwIO (UnsupportedTopExpression expr)
 -- The top of a '--partial' residual and the result of 'merge' are arbitrary
 -- formations: several τ/λ bindings, voids and a bound ρ. The schema allows a
 -- single <o> under <object>, so the formation goes beneath one attribute-free
@@ -218,6 +220,12 @@ expressionToXMIR expr@(ExFormation bds) ctx =
     isElement _ = False
 expressionToXMIR expr _ = throwIO (UnsupportedTopExpression expr)
 
+-- The bindings of a formation on the package spine, without the void ρ it may
+-- declare: the spine holds no object a dispatch could bind ρ in, so a ρ ↦ ∅
+-- there has nowhere to go in XMIR and is not what tells a program apart
+withoutVoidRho :: [Binding] -> [Binding]
+withoutVoidRho = filter (/= BiVoid AtRho)
+
 -- A program document: the package spine is peeled off the top level into
 -- <metas> and the single binding left becomes the root <o> element
 programToXMIR :: Expression -> XmirContext -> IO Document
@@ -230,17 +238,27 @@ programToXMIR expr ctx = do
     -- - X: list of package parts
     -- - Y: root object expression
     getPackage :: Expression -> IO ([String], Expression)
-    getPackage (ExFormation [BiTau (AtLabel label) (ExFormation [bd, BiLambda (Function "Package"), BiVoid AtRho]), BiVoid AtRho]) = do
-      (pckg, expr') <- getPackage (ExFormation [bd, BiLambda (Function "Package"), BiVoid AtRho])
+    getPackage ex@(ExFormation bds) = case withoutVoidRho bds of
+      [BiTau (AtLabel label) inner@(ExFormation inner')] | packaged inner' -> nested label inner
+      [BiTau (AtLabel label) inner@(ExFormation inner'), BiLambda (Function "Package")] | packaged inner' -> nested label inner
+      [BiTau at body, BiLambda (Function "Package")] -> pure ([], ExFormation [BiTau at body])
+      [bd] -> pure ([], ExFormation [bd])
+      _ -> unpackaged ex
+    getPackage ex = unpackaged ex
+    nested :: T.Text -> Expression -> IO ([String], Expression)
+    nested label inner = do
+      (pckg, expr') <- getPackage inner
       pure (T.unpack label : pckg, expr')
-    getPackage (ExFormation [BiTau (AtLabel label) (ExFormation [bd, BiLambda (Function "Package"), BiVoid AtRho]), BiLambda (Function "Package"), BiVoid AtRho]) = do
-      (pckg, expr') <- getPackage (ExFormation [bd, BiLambda (Function "Package"), BiVoid AtRho])
-      pure (T.unpack label : pckg, expr')
-    getPackage (ExFormation [BiTau at ex, BiLambda (Function "Package"), BiVoid AtRho]) = pure ([], ExFormation [BiTau at ex, BiVoid AtRho])
-    getPackage (ExFormation [bd, BiVoid AtRho]) = pure ([], ExFormation [bd, BiVoid AtRho])
-    getPackage ex = throwIO (userError (printf "Can't extract package from given expression:\n %s" (printExpression ex)))
+    -- A formation of one binding and the λ marking a package, whatever void ρ
+    -- it may declare besides
+    packaged :: [Binding] -> Bool
+    packaged bds = case withoutVoidRho bds of
+      [_, BiLambda (Function "Package")] -> True
+      _ -> False
+    unpackaged :: Expression -> IO ([String], Expression)
+    unpackaged ex = throwIO (userError (printf "Can't extract package from given expression:\n %s" (printExpression ex)))
     rootNodes :: Expression -> XmirContext -> IO [Node]
-    rootNodes (ExFormation [bd, BiVoid AtRho]) c = nestedBindings [bd] c
+    rootNodes (ExFormation [bd]) c = nestedBindings [bd] c
     rootNodes ex _ = throwIO (UnsupportedExpression ex)
 
 -- Assemble the <object> document: timing attributes, the listing, <metas>
@@ -471,11 +489,11 @@ xmirToPhi xmir =
                   if null pckg
                     then do
                       bd <- xmirToFormationBinding o []
-                      pure (ExFormation (withVoidRho [bd]))
+                      pure (ExFormation [bd])
                     else do
                       obj <- xmirToFormationBinding o []
-                      let bd = foldr (\part acc -> BiTau (AtLabel (T.pack part)) (ExFormation [acc, BiLambda (Function "Package"), BiVoid AtRho])) obj pckg
-                      pure (ExFormation [bd, BiVoid AtRho])
+                      let bd = foldr (\part acc -> BiTau (AtLabel (T.pack part)) (ExFormation [acc, BiLambda (Function "Package")])) obj pckg
+                      pure (ExFormation [bd])
           | otherwise -> throwIO (InvalidXMIRFormat "Expected single <object> element" doc)
         _ -> throwIO (InvalidXMIRFormat "NodeElement is expected as root element" doc)
 
@@ -558,7 +576,7 @@ xmirToFormation :: C.Cursor -> [String] -> IO Expression
 xmirToFormation cur fqn = do
   nested <- mapM (`xmirToFormationBinding` fqn) (cur C.$/ C.element (toName "o"))
   bds <- if hasText cur then (: nested) <$> delta else pure nested
-  ExFormation . withVoidRho <$> uniqueBindings' bds
+  ExFormation <$> uniqueBindings' bds
   where
     delta :: IO Binding
     delta = BiDelta . bytesToBts . T.unpack . T.strip . T.pack <$> getText cur
@@ -618,11 +636,11 @@ xmirToApplication = xmirToApplication' 0
             | not (hasAttr "base" arg) && not (hasText arg) = do
                 bds <- mapM (`xmirToFormationBinding` fqn) (arg C.$/ C.element (toName "o"))
                 key <- asToKey arg idx
-                pure (ExApplication expr (mkArg key (ExFormation (withVoidRho bds))))
+                pure (ExApplication expr (mkArg key (ExFormation bds)))
             | not (hasAttr "base" arg) && hasText arg = do
                 key <- asToKey arg idx
                 bytes <- getText arg
-                pure (ExApplication expr (mkArg key (ExFormation [BiDelta (bytesToBts bytes), BiVoid AtRho])))
+                pure (ExApplication expr (mkArg key (ExFormation [BiDelta (bytesToBts bytes)])))
             | otherwise = do
                 key <- asToKey arg idx
                 arg' <- xmirToExpression arg fqn
