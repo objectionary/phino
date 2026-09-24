@@ -242,8 +242,8 @@ symbol func form self univ state caller = case matched caller._symbolic func of
       two <- branch right
       case (one, two) of
         (ExTermination, ExTermination) -> both one two
-        (ExTermination, _) -> raising "left" left two
-        (_, ExTermination) -> raising "right" right one
+        (ExTermination, _) -> terminating "left" left two
+        (_, ExTermination) -> terminating "right" right one
         _ -> both one two
       where
         -- The two sides joined symbol by symbol (see 'joined').
@@ -258,9 +258,9 @@ symbol func form self univ state caller = case matched caller._symbolic func of
         -- The side that raises written down, named by the meta holding its ⊥,
         -- and the other side bound as the join; nothing is minted, since one
         -- value is left and a symbol would stand for nothing but it.
-        raising :: T.Text -> Meta -> Expression -> IO (Subst, State)
-        raising side raised term = do
-          ctx._saveEval (EvRaiseIf ctx._nesting condition side raised._spelling)
+        terminating :: T.Text -> Meta -> Expression -> IO (Subst, State)
+        terminating side raised term = do
+          ctx._saveEval (EvTerminate ctx._nesting condition side raised._spelling)
           ctx._saveEval (EvJoin ctx._nesting meta._spelling (left._spelling, right._spelling) term)
           bound' <- bind meta (MvExpression term) bound
           pure (bound', state')
