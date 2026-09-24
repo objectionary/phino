@@ -10,9 +10,4 @@ location: 'Q.bytes'
 model: true
 symbolic: true
 input: '[[ ]]'
-result: |
-  [[
-    φ -> ?,
-    not -> [[ L> L_bytes_not ]],
-    eq -> [[ b -> ?, L> L_bytes_eq ]]
-  ]]
+result: '⟦ φ ↦ ∅, not ↦ L_bytes_not:λ, eq(b) ↦ ⟦ λ ⤍ L_bytes_eq ⟧ ⟧'

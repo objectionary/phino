@@ -10,4 +10,4 @@
 # to the very formation that would have stood there (#1318).
 location: 'Q.t'
 input: '⟦ a ↦ ⟦ b ↦ ⟦ Δ ⤍ 01- ⟧ ⟧, t ↦ Φ.a ⟧'
-result: '⟦ b ↦ ⟦ Δ ⤍ 01-, ρ ↦ ∅ ⟧, ρ ↦ Φ ⟧'
+result: '⟦ b ↦ 01-:Δ, ρ ↦ Φ ⟧'

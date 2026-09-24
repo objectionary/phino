@@ -7,7 +7,4 @@ location: 'Q.@'
 model: true
 symbolic: true
 input: '[[ a -> [[ @ -> 5.plus( $.^ ) ]] ]]'
-result: |
-  [[ a -> [[ @ -> Q.number(
-    φ -> Φ.bytes( φ ↦ ⟦ Δ ⤍ 40-14-00-00-00-00-00-00 ⟧ )
-  ).plus( $.^ ) ]] ]]
+result: '5.plus( ρ ):φ:a'
