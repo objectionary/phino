@@ -271,10 +271,15 @@ spec = do
     it "still reaches the manufactured datum when nothing is stuck" $ do
       ((outcome, _), _) <- partially known "2.times(3)"
       outcome `shouldBe` Dataized (BtMany ["40", "45", "00", "00", "00", "00", "00", "00"])
-    it "stops on the terminator ⊥ as before, since a data-less formation is not a stuck λ function" $ do
-      expr <- parseExpressionThrows (primitives "5.plus( ⟦ ⟧ )")
-      dataize expr emptyState ((withLambdas known (defaultReduceContext ExRoot)){_partial = True})
-        `shouldThrow` (\e -> "terminator" `isInfixOf` show (e :: SomeException))
+    -- An operand that reaches the terminator ⊥ never comes down to data, which
+    -- is a property of the program just as an unanswered λ function is, so it
+    -- parks the firing rather than ending the run (#1401)
+    it "parks a firing whose operand dataizes the terminator ⊥" $ do
+      ((outcome, _), protocol) <- partially known "5.plus( ⟦ ⟧ )"
+      case outcome of
+        Residual (ExFormation bds) -> bds `shouldContain` [BiLambda (Function "L_number_plus")]
+        other -> expectationFailure ("expected a residual formation, got " ++ show other)
+      protocol `shouldSatisfy` isInfixOf "?(⊥)  # 𝔻(⊥)"
 
   describe "ReduceContext's --max-depth/--max-cycles reach into the normalization it splices in" $ do
     let boxed = "[[ @ -> [[ D> 00- ]] ]]"

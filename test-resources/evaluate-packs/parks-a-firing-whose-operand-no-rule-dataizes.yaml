@@ -1,0 +1,20 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# The 'dataize' operand of 'L_pair' is a formation whose φ is a void nothing
+# filled, so no dataization rule matches it. Under '_partial' that parks the
+# firing just as the terminator ⊥ does, and the protocol writes the dead end
+# as '?(⊥)' with the formation beside it (#1401).
+symbolic: |
+  - λ: L_pair
+    dataize:
+      𝛿1: $.x
+    𝑛: ⟦ λ ⤍ 𝜎 ⟧
+location: 'Q.y'
+partial: true
+input: '⟦ y ↦ ⟦ x ↦ ⟦ φ ↦ ∅ ⟧, λ ⤍ L_pair ⟧.z ⟧'
+result: '⟦ x ↦ ⟦ φ ↦ ∅ ⟧, λ ⤍ L_pair ⟧.z'
+protocol: |
+  𝕄(Φ.y)
+    𝔼(L_pair)  # 𝕄(Φ.y)
+      ?(⊥)  # 𝔻(∅:φ)
