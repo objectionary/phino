@@ -20,6 +20,6 @@ rules:
         [[ !B1, !t4 -> ?, !B2 ]]
     - name: voids to empty
       pattern: |
-        [[ !t1 -> ?, !t2 -> ?, !t3 -> ?, ^ -> ? ]]
+        [[ !t1 -> ?, !t2 -> ?, !t3 -> ? ]]
       result: |
         [[ ]]

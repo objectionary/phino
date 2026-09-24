@@ -349,19 +349,18 @@ instance ToCST Expression EXPRESSION where
   toCST (ExBytes bts) ctx = EX_BYTES (toCST bts ctx)
   toCST (ExPhiMeet prefix idx expr) ctx = EX_PHI_MEET prefix idx (toCST expr ctx)
   toCST (ExPhiAgain prefix idx expr) ctx = EX_PHI_AGAIN prefix idx (toCST expr ctx)
-  toCST (ExFormation [BiVoid AtRho]) ctx = toCST (ExFormation []) ctx
   toCST (ExFormation []) _ = EX_FORMATION LSB NO_EOL NO_TAB (BI_EMPTY NO_TAB) NO_EOL NO_TAB RSB
   -- A formation of a single binding is sugared into its asset, a colon and
   -- the attribute, as `FF-:Δ`, `Plus:λ`, `∅:a` or `ξ.a:φ` (see #1385). The
   -- full formation is kept next to it, for the notations that have no such
   -- sugar: the salty one, LaTeX and the one '--hide-rho' strips.
   toCST (ExFormation bds) ctx@(tabs, eol) =
-    maybe full (`EX_SINGLE` full) (single (withoutLastVoidRho bds))
+    maybe full (`EX_SINGLE` full) (single bds)
     where
       full :: EXPRESSION
       full =
         let next = tabs + 1
-            bds' = toCST (withoutLastVoidRho bds) (next, eol) :: BINDING
+            bds' = toCST bds (next, eol) :: BINDING
          in EX_FORMATION
               LSB
               EOL
@@ -372,13 +371,15 @@ instance ToCST Expression EXPRESSION where
               RSB
       -- The asset of the only binding, laid out where the formation stands,
       -- unless it has no sugar: a meta binding, a τ binding whose attribute
-      -- the parser takes for a Δ or a λ, or one that carries a formation with
-      -- inline voids, which reads better as 'x(a) ↦ ⟦ … ⟧'
+      -- the parser takes for a Δ or a λ, one that carries a formation with
+      -- inline voids, which reads better as 'x(a) ↦ ⟦ … ⟧', or the void ρ a
+      -- formation declares as its receiver, which reads better as '⟦ ρ ↦ ∅ ⟧'
       single :: [Binding] -> Maybe PAIR
       single [BiTau AtDelta _] = Nothing
       single [BiTau AtLambda _] = Nothing
       single [bd@(BiTau _ ExFormation{})] | inlined (toCST bd ctx) = Nothing
       single [BiTau attr expr] = Just (PA_TAU (toCST attr ctx) ARROW (toCST expr ctx))
+      single [BiVoid AtRho] = Nothing
       single [bd@(BiVoid _)] = Just (toCST bd ctx)
       single [bd@(BiDelta _)] = Just (toCST bd ctx)
       single [bd@(BiLambda _)] = Just (toCST bd ctx)
@@ -386,10 +387,6 @@ instance ToCST Expression EXPRESSION where
       inlined :: PAIR -> Bool
       inlined PA_FORMATION{voids = _ : _} = True
       inlined _ = False
-      withoutLastVoidRho :: [Binding] -> [Binding]
-      withoutLastVoidRho [] = []
-      withoutLastVoidRho [BiVoid AtRho] = []
-      withoutLastVoidRho (bd : bds') = bd : withoutLastVoidRho bds'
   toCST (DataString bts) (tabs, _) | sweetString bts = EX_STRING (btsToStr bts) (TAB tabs) []
   -- The three canonical non-finite doubles have no sweet numeric literal, so
   -- they become the root dispatches `Φ.nan`, `Φ.pinf` and `Φ.ninf`. Any other
@@ -526,16 +523,15 @@ instance ToCST Binding PAIR where
     let (head', rest) = span positionless bds
         voids' = [void | BiVoid void <- head']
         others = filter (not . isVoid) head'
-        (_voids, _bds) = if null rest && not (null voids') && last voids' == AtRho then (init voids', others) else (voids', others ++ rest)
         attr' = toCST attr ctx
-     in if null _voids
+     in if null voids'
           then PA_TAU attr' ARROW (toCST exp ctx)
           else
             PA_FORMATION
               attr'
-              (map (`toCST` ctx) _voids)
+              (map (`toCST` ctx) voids')
               ARROW
-              (unsugared (toCST (ExFormation _bds) ctx))
+              (unsugared (toCST (ExFormation (others ++ rest)) ctx))
     where
       -- Inline voids open a formation, which no one-binding sugar may stand
       -- for, so 'x(a) ↦ ⟦ φ ↦ ξ.a ⟧' is never printed as 'x(a) ↦ a:φ'

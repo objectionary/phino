@@ -315,7 +315,7 @@ tauValue =
         _ <- arrow
         bs <- formationBindings
         bds <- validatedBindings (voids ++ bs)
-        return (ExFormation (withVoidRho bds))
+        return (ExFormation bds)
     ]
   where
     rb :: Parser String
@@ -341,7 +341,7 @@ colon = symbol ":"
 -- could be taken for and opened by a look at a character it must start with,
 -- so the heads a program is mostly made of never try it.
 alone :: Parser Binding -> Parser Expression
-alone bd = ExFormation . withVoidRho . pure <$> bd
+alone bd = ExFormation . pure <$> bd
 
 -- `FF-AA:Δ`, `--:D` or `𝛿1:Δ`
 deltaHead :: Parser Expression
@@ -487,7 +487,7 @@ exHead =
   choice
     [ do
         bs <- formationBindings >>= validatedBindings
-        return (ExFormation (withVoidRho bs))
+        return (ExFormation bs)
     , do
         _ <- choice [symbol "$", symbol "ξ"]
         return ExXi
@@ -542,7 +542,7 @@ exTail expr =
                 return (application expr bds)
             , do
                 _ <- colon
-                ExFormation . withVoidRho . pure . (`BiTau` expr) <$> attribute
+                ExFormation . pure . (`BiTau` expr) <$> attribute
             ]
             <?> "dispatch or application"
         exTail next

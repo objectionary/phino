@@ -84,29 +84,30 @@ withLambdasOf lambdas = withTemp "phino-symbolic-.yaml" (encodeUtf8 lambdas)
 -- composes it the same way, and 'bool.if' is where a branch meets the symbol
 -- its condition came down to. 'number.nope' is declared and left out of the
 -- file on purpose: it is the λ function that cannot fire, the one '--partial'
--- parks on.
+-- parks on. Every operation reads the object it is dispatched on, so each one
+-- declares ρ among its voids, the way EO declares '^' (#1407).
 primitives :: String -> String
 primitives src =
   unlines
     [ "[["
     , "  bytes -> [["
     , "    φ -> ?,"
-    , "    not -> [[ L> L_bytes_not ]],"
-    , "    eq -> [[ b -> ?, L> L_bytes_eq ]]"
+    , "    not -> [[ ^ -> ?, L> L_bytes_not ]],"
+    , "    eq -> [[ ^ -> ?, b -> ?, L> L_bytes_eq ]]"
     , "  ]],"
     , "  bool -> [["
     , "    φ -> ?,"
-    , "    if -> [[ then -> ?, else -> ?, L> L_fork ]]"
+    , "    if -> [[ ^ -> ?, then -> ?, else -> ?, L> L_fork ]]"
     , "  ]],"
     , "  number -> [["
     , "    φ -> ?,"
     , "    as-bytes -> $.φ,"
-    , "    plus -> [[ x -> ?, L> L_number_plus ]],"
-    , "    times -> [[ x -> ?, L> L_number_times ]],"
-    , "    div -> [[ x -> ?, L> L_number_div ]],"
-    , "    gt -> [[ x -> ?, L> L_number_gt ]],"
-    , "    eq -> [[ x -> ?, @ -> $.^.as-bytes.eq( x.as-bytes ) ]],"
-    , "    nope -> [[ L> L_number_nope ]]"
+    , "    plus -> [[ ^ -> ?, x -> ?, L> L_number_plus ]],"
+    , "    times -> [[ ^ -> ?, x -> ?, L> L_number_times ]],"
+    , "    div -> [[ ^ -> ?, x -> ?, L> L_number_div ]],"
+    , "    gt -> [[ ^ -> ?, x -> ?, L> L_number_gt ]],"
+    , "    eq -> [[ ^ -> ?, x -> ?, @ -> $.^.as-bytes.eq( x.as-bytes ) ]],"
+    , "    nope -> [[ ^ -> ?, L> L_number_nope ]]"
     , "  ]],"
     , "  @ -> " ++ src
     , "]]"

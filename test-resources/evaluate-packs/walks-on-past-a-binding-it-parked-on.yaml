@@ -11,8 +11,8 @@ location: 'Q'
 deep: true
 partial: true
 input: >
-  ⟦ x ↦ ⟦ λ ⤍ L_none ⟧.foo,
-    y ↦ ⟦ λ ⤍ L_answers ⟧.foo ⟧
+  ⟦ x ↦ ⟦ λ ⤍ L_none, ρ ↦ ∅ ⟧.foo,
+    y ↦ ⟦ λ ⤍ L_answers, ρ ↦ ∅ ⟧.foo ⟧
 result: '⟦ x ↦ ⟦ λ ⤍ L_none ⟧.foo, y ↦ ⟦ λ ⤍ L_answers ⟧.foo ⟧'
 protocol: |
   𝕄(Φ)

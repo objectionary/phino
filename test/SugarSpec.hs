@@ -55,19 +55,12 @@ spec = do
         , EX_DISPATCH (EX_DISPATCH (EX_XI XI) NO_SPACE (AT_LABEL "y")) NO_SPACE (AT_LABEL "x")
         )
       ,
-        ( "EX_FORMATION with an empty binding collapses to the TAB' layout and gains a void rho"
+        ( "EX_FORMATION with an empty binding stays empty, gaining no void rho"
         , EX_FORMATION LSB NO_EOL NO_TAB (BI_EMPTY NO_TAB) NO_EOL NO_TAB RSB
-        , EX_FORMATION
-            LSB
-            NO_EOL
-            TAB'
-            (BI_PAIR (PA_VOID (AT_RHO RHO) ARROW EMPTY) (BDS_EMPTY NO_TAB) NO_TAB)
-            NO_EOL
-            TAB'
-            RSB
+        , EX_FORMATION LSB NO_EOL NO_TAB (BI_EMPTY NO_TAB) NO_EOL NO_TAB RSB
         )
       ,
-        ( "EX_FORMATION with a real binding keeps its layout and appends a trailing void rho"
+        ( "EX_FORMATION with a real binding keeps its layout and gains no void rho"
         , EX_FORMATION
             LSB
             EOL
@@ -80,11 +73,7 @@ spec = do
             LSB
             EOL
             (TAB 1)
-            ( BI_PAIR
-                (PA_TAU (AT_LABEL "x") ARROW xiExpr)
-                (BDS_PAIR EOL (TAB 1) (PA_VOID (AT_RHO RHO) ARROW EMPTY) (BDS_EMPTY (TAB 1)))
-                (TAB 1)
-            )
+            (BI_PAIR (PA_TAU (AT_LABEL "x") ARROW xiExpr) (BDS_EMPTY (TAB 1)) (TAB 1))
             EOL
             (TAB 0)
             RSB
@@ -211,47 +200,47 @@ spec = do
       ,
         ( "EX_NUMBER with no extra rho expands into the Q.number(Q.bytes(...)) form"
         , EX_NUMBER (Left 42) (TAB 1) []
-        , "Φ.number(\n    φ ↦ Φ.bytes(\n      φ ↦ ⟦\n        Δ ⤍ 40-45-00-00-00-00-00-00,\n        ρ ↦ ∅\n      ⟧\n    )\n  )"
+        , "Φ.number(\n    φ ↦ Φ.bytes(\n      φ ↦ ⟦\n        Δ ⤍ 40-45-00-00-00-00-00-00\n      ⟧\n    )\n  )"
         )
       ,
         ( "EX_NUMBER preserves an extra rho argument carried alongside the primitive"
         , EX_NUMBER (Left 42) (TAB 1) [ArTau AtRho (ExDispatch ExXi (AtLabel "y"))]
-        , "Φ.number(\n    φ ↦ Φ.bytes(\n      φ ↦ ⟦\n        Δ ⤍ 40-45-00-00-00-00-00-00,\n        ρ ↦ ∅\n      ⟧\n    )\n  )(\n    ρ ↦ ξ.y\n  )"
+        , "Φ.number(\n    φ ↦ Φ.bytes(\n      φ ↦ ⟦\n        Δ ⤍ 40-45-00-00-00-00-00-00\n      ⟧\n    )\n  )(\n    ρ ↦ ξ.y\n  )"
         )
       ,
         ( "EX_NONFINITE nan expands into the Q.number(Q.bytes(...)) form"
         , EX_NONFINITE Φ NfNan (TAB 1) []
-        , "Φ.number(\n    φ ↦ Φ.bytes(\n      φ ↦ ⟦\n        Δ ⤍ 7F-F8-00-00-00-00-00-00,\n        ρ ↦ ∅\n      ⟧\n    )\n  )"
+        , "Φ.number(\n    φ ↦ Φ.bytes(\n      φ ↦ ⟦\n        Δ ⤍ 7F-F8-00-00-00-00-00-00\n      ⟧\n    )\n  )"
         )
       ,
         ( "EX_NONFINITE pinf expands into the Q.number(Q.bytes(...)) form"
         , EX_NONFINITE Φ NfPinf (TAB 1) []
-        , "Φ.number(\n    φ ↦ Φ.bytes(\n      φ ↦ ⟦\n        Δ ⤍ 7F-F0-00-00-00-00-00-00,\n        ρ ↦ ∅\n      ⟧\n    )\n  )"
+        , "Φ.number(\n    φ ↦ Φ.bytes(\n      φ ↦ ⟦\n        Δ ⤍ 7F-F0-00-00-00-00-00-00\n      ⟧\n    )\n  )"
         )
       ,
         ( "EX_NONFINITE ninf keeps an extra rho argument carried alongside the primitive"
         , EX_NONFINITE Φ NfNinf (TAB 1) [ArTau AtRho (ExDispatch ExXi (AtLabel "y"))]
-        , "Φ.number(\n    φ ↦ Φ.bytes(\n      φ ↦ ⟦\n        Δ ⤍ FF-F0-00-00-00-00-00-00,\n        ρ ↦ ∅\n      ⟧\n    )\n  )(\n    ρ ↦ ξ.y\n  )"
+        , "Φ.number(\n    φ ↦ Φ.bytes(\n      φ ↦ ⟦\n        Δ ⤍ FF-F0-00-00-00-00-00-00\n      ⟧\n    )\n  )(\n    ρ ↦ ξ.y\n  )"
         )
       ,
         ( "EX_STRING expands into the Q.string(Q.bytes(...)) form"
         , EX_STRING "hi" (TAB 1) []
-        , "Φ.string(\n    φ ↦ Φ.bytes(\n      φ ↦ ⟦\n        Δ ⤍ 68-69,\n        ρ ↦ ∅\n      ⟧\n    )\n  )"
+        , "Φ.string(\n    φ ↦ Φ.bytes(\n      φ ↦ ⟦\n        Δ ⤍ 68-69\n      ⟧\n    )\n  )"
         )
       ,
         ( "EX_STRING unescapes a newline instead of taking its escape literally"
         , EX_STRING "e\\ne" (TAB 1) []
-        , "Φ.string(\n    φ ↦ Φ.bytes(\n      φ ↦ ⟦\n        Δ ⤍ 65-0A-65,\n        ρ ↦ ∅\n      ⟧\n    )\n  )"
+        , "Φ.string(\n    φ ↦ Φ.bytes(\n      φ ↦ ⟦\n        Δ ⤍ 65-0A-65\n      ⟧\n    )\n  )"
         )
       ,
         ( "EX_STRING unescapes a quote and a backslash into single bytes"
         , EX_STRING "\\\"\\\\" (TAB 1) []
-        , "Φ.string(\n    φ ↦ Φ.bytes(\n      φ ↦ ⟦\n        Δ ⤍ 22-5C,\n        ρ ↦ ∅\n      ⟧\n    )\n  )"
+        , "Φ.string(\n    φ ↦ Φ.bytes(\n      φ ↦ ⟦\n        Δ ⤍ 22-5C\n      ⟧\n    )\n  )"
         )
       ,
         ( "EX_STRING unescapes a hex escape back into its byte"
         , EX_STRING "\\x01" (TAB 1) []
-        , "Φ.string(\n    φ ↦ Φ.bytes(\n      φ ↦ ⟦\n        Δ ⤍ 01-,\n        ρ ↦ ∅\n      ⟧\n    )\n  )"
+        , "Φ.string(\n    φ ↦ Φ.bytes(\n      φ ↦ ⟦\n        Δ ⤍ 01-\n      ⟧\n    )\n  )"
         )
       ]
       (\(desc, sweetExpr, expected) -> it desc (render (toSalty sweetExpr) `shouldBe` expected))
@@ -311,7 +300,7 @@ spec = do
         , PA_ALPHA (AL_IDX ALPHA 0) ARROW (EX_DISPATCH (EX_XI XI) NO_SPACE (AT_LABEL "y"))
         )
       ,
-        ( "PA_FORMATION with an empty object body joins its void params ahead of the body and gains a trailing rho"
+        ( "PA_FORMATION with an empty object body joins its void params ahead of the body"
         , PA_FORMATION (AT_LABEL "f") [AT_LABEL "p"] ARROW (EX_FORMATION LSB EOL (TAB 2) (BI_EMPTY (TAB 2)) EOL (TAB 1) RSB)
         , PA_TAU
             (AT_LABEL "f")
@@ -320,11 +309,7 @@ spec = do
                 LSB
                 EOL
                 (TAB 2)
-                ( BI_PAIR
-                    (PA_VOID (AT_LABEL "p") ARROW EMPTY)
-                    (BDS_PAIR EOL (TAB 2) (PA_VOID (AT_RHO RHO) ARROW EMPTY) (BDS_EMPTY (TAB 2)))
-                    (TAB 2)
-                )
+                (BI_PAIR (PA_VOID (AT_LABEL "p") ARROW EMPTY) (BDS_EMPTY (TAB 2)) (TAB 2))
                 EOL
                 (TAB 1)
                 RSB
@@ -350,12 +335,7 @@ spec = do
                         EOL
                         (TAB 2)
                         (PA_VOID (AT_LABEL "q") ARROW EMPTY)
-                        ( BDS_PAIR
-                            EOL
-                            (TAB 2)
-                            (PA_TAU (AT_LABEL "z") ARROW xiExpr)
-                            (BDS_PAIR EOL (TAB 2) (PA_VOID (AT_RHO RHO) ARROW EMPTY) (BDS_EMPTY (TAB 2)))
-                        )
+                        (BDS_PAIR EOL (TAB 2) (PA_TAU (AT_LABEL "z") ARROW xiExpr) (BDS_EMPTY (TAB 2)))
                     )
                     (TAB 2)
                 )
@@ -648,13 +628,13 @@ spec = do
       $ do
         let number = DataNumber (BtMany ["40", "45", "00", "00", "00", "00", "00", "00"])
         printExpression' number (config SWEET) `shouldBe` "42"
-        printExpression' number (config SALTY) `shouldBe` "Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 40-45-00-00-00-00-00-00, ρ ↦ ∅ ⟧ ) )"
+        printExpression' number (config SALTY) `shouldBe` "Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 40-45-00-00-00-00-00-00 ⟧ ) )"
     it
       "a sweet string literal expands into Q.string(Q.bytes(...)) when salted"
       $ do
         let string = DataString (BtMany ["68", "69"])
         printExpression' string (config SWEET) `shouldBe` "\"hi\""
-        printExpression' string (config SALTY) `shouldBe` "Φ.string( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 68-69, ρ ↦ ∅ ⟧ ) )"
+        printExpression' string (config SALTY) `shouldBe` "Φ.string( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 68-69 ⟧ ) )"
     it
       "an application with multiple positional arguments sugars/salts between e(e0, e1) and e(α0 ↦ e0)(α1 ↦ e1)"
       $ do
@@ -666,10 +646,10 @@ spec = do
       $ do
         let nestedForm = ExFormation [BiTau (AtLabel "obj") (ExFormation [BiVoid (AtLabel "p"), BiVoid (AtLabel "q"), BiTau (AtLabel "z") ExXi])]
         printExpression' nestedForm (config SWEET) `shouldBe` "⟦ obj(p, q) ↦ ⟦ z ↦ ξ ⟧ ⟧"
-        printExpression' nestedForm (config SALTY) `shouldBe` "⟦ obj ↦ ⟦ p ↦ ∅, q ↦ ∅, z ↦ ξ, ρ ↦ ∅ ⟧, ρ ↦ ∅ ⟧"
+        printExpression' nestedForm (config SALTY) `shouldBe` "⟦ obj ↦ ⟦ p ↦ ∅, q ↦ ∅, z ↦ ξ ⟧ ⟧"
     it
       "a phi-meet/phi-again chain renders identically under both sugar types"
       $ do
         let meetChain = ExFormation [BiTau (AtLabel "x") (ExPhiMeet Nothing 2 (ExPhiAgain (Just "a") 1 (ExDispatch ExXi (AtLabel "y"))))]
         printExpression' meetChain (config SWEET) `shouldBe` "\\phinoMeet{2}{ \\phinoAgain{a:1} }:x"
-        printExpression' meetChain (config SALTY) `shouldBe` "⟦ x ↦ \\phinoMeet{2}{ \\phinoAgain{a:1} }, ρ ↦ ∅ ⟧"
+        printExpression' meetChain (config SALTY) `shouldBe` "⟦ x ↦ \\phinoMeet{2}{ \\phinoAgain{a:1} } ⟧"

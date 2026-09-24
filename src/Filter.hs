@@ -38,7 +38,7 @@ include' expr fqns = case mapMaybe pick fqns of
   forms -> mergeForms forms
   where
     def :: Expression
-    def = ExFormation [BiVoid AtRho]
+    def = ExFormation []
     pick :: Expression -> Maybe Expression
     pick fqn = do
       attrs <- fqnToAttrs fqn
@@ -47,12 +47,12 @@ include' expr fqns = case mapMaybe pick fqns of
     mergeForms forms =
       let bds = concat [bs | ExFormation bs <- forms]
           bds' = filter (\bd -> attributeFromBinding bd /= Just AtRho) bds
-       in ExFormation (withVoidRho bds')
+       in ExFormation bds'
     includedFormation :: Expression -> [Attribute] -> Maybe Expression
     includedFormation (ExFormation bindings) [at] =
       let bs = [bd | bd <- bindings, attributeFromBinding bd == Just at]
-       in if null bs then Nothing else Just (ExFormation (withVoidRho bs))
-    includedFormation (ExFormation bindings) atts = includedBindings bindings atts >>= (Just . ExFormation . (: [BiVoid AtRho]))
+       in if null bs then Nothing else Just (ExFormation bs)
+    includedFormation (ExFormation bindings) atts = includedBindings bindings atts >>= (Just . ExFormation . pure)
       where
         includedBindings :: [Binding] -> [Attribute] -> Maybe Binding
         includedBindings ((BiTau at' form@(ExFormation _)) : bs) as@(at'' : rs)

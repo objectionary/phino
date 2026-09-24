@@ -3,9 +3,7 @@
 
 -- This module provides commonly used helper functions for other modules
 module Misc
-  ( withVoidRho
-  , recoverFormations
-  , toDouble
+  ( toDouble
   , fqnToAttrs
   , attributesFromBindings
   , attributesFromBindings'
@@ -70,41 +68,6 @@ uniqueBindings bds = case duplicated bds Set.empty of
         | attr `Set.member` seen -> Just attr
         | otherwise -> duplicated rest (Set.insert attr seen)
       Nothing -> duplicated rest seen
-
--- Add void rho binding to the end of the list of any rho binding is not present
-withVoidRho :: [Binding] -> [Binding]
-withVoidRho bds = go bds False
-  where
-    go :: [Binding] -> Bool -> [Binding]
-    go [] hasRho = [BiVoid AtRho | not hasRho]
-    go (bd : rest) hasRho =
-      case bd of
-        BiMeta _ -> bd : rest
-        BiAny _ -> bd : rest
-        BiVoid (AtMeta _) -> bd : rest
-        BiVoid (AtAny _) -> bd : rest
-        BiTau (AtMeta _) _ -> bd : rest
-        BiTau (AtAny _) _ -> bd : rest
-        BiVoid AtRho -> bd : go rest True
-        BiTau AtRho _ -> bd : go rest True
-        _ -> bd : go rest hasRho
-
--- Recursively ensure all formations have a BiVoid AtRho binding (ρ ↦ ∅).
--- Fixes in-memory ExFormation [] to ExFormation [BiVoid AtRho] after rewriting,
--- keeping the invariant that the parser enforces via withVoidRho.
-recoverFormations :: Expression -> Expression
-recoverFormations (ExFormation bindings) = ExFormation (withVoidRho (map recoverFormations' bindings))
-recoverFormations (ExDispatch expr attr) = ExDispatch (recoverFormations expr) attr
-recoverFormations (ExApplication expr arg) = ExApplication (recoverFormations expr) (recoverArgument arg)
-recoverFormations expr = expr
-
-recoverFormations' :: Binding -> Binding
-recoverFormations' (BiTau attr expr) = BiTau attr (recoverFormations expr)
-recoverFormations' binding = binding
-
-recoverArgument :: Argument -> Argument
-recoverArgument (ArTau attr expr) = ArTau attr (recoverFormations expr)
-recoverArgument (ArAlpha alpha expr) = ArAlpha alpha (recoverFormations expr)
 
 -- Transform dispatch to list of attributes
 -- >>> fqnToAttrs (ExDispatch (ExDispatch (ExDispatch ExRoot (AtLabel "org")) (AtLabel "eolang")) (AtLabel "number"))

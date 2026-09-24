@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# No formation gets a ρ it never declared, so nested formations come back
+# just as they were written (#1407).
+normalize: true
+input: |
+  ⟦ x ↦ ⟦ y ↦ ⟦⟧ ⟧ ⟧
+output: |-
+  ⟦ x ↦ ⟦ y ↦ ⟦⟧ ⟧ ⟧

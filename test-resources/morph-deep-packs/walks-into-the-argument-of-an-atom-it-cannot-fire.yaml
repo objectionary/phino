@@ -12,12 +12,11 @@ result: |
     y ↦ ⟦
       φ ↦ 𝜎1:λ,
       as-bytes ↦ φ,
-      plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧,
-      times(x) ↦ ⟦ λ ⤍ L_number_times ⟧,
-      div(x) ↦ ⟦ λ ⤍ L_number_div ⟧,
-      gt(x) ↦ ⟦ λ ⤍ L_number_gt ⟧,
-      eq(x) ↦ ⟦ φ ↦ ρ.as-bytes.eq( x.as-bytes ) ⟧,
-      nope ↦ L_number_nope:λ,
-      ρ ↦ Φ
+      plus(ρ, x) ↦ ⟦ λ ⤍ L_number_plus ⟧,
+      times(ρ, x) ↦ ⟦ λ ⤍ L_number_times ⟧,
+      div(ρ, x) ↦ ⟦ λ ⤍ L_number_div ⟧,
+      gt(ρ, x) ↦ ⟦ λ ⤍ L_number_gt ⟧,
+      eq(ρ, x) ↦ ⟦ φ ↦ ρ.as-bytes.eq( x.as-bytes ) ⟧,
+      nope(ρ) ↦ ⟦ λ ⤍ L_number_nope ⟧
     ⟧
   ):x

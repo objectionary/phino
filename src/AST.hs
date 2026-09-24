@@ -297,8 +297,8 @@ matchDataObject (ExApplication outer arg)
     matchesBytes (ExPhiAgain _ _ (BaseObject "bytes")) = True
     matchesBytes _ = False
     matchFormation :: Expression -> Maybe Bytes
-    matchFormation (ExFormation [BiDelta bts, BiVoid AtRho]) = Just bts
-    matchFormation (ExPhiAgain _ _ (ExFormation [BiDelta bts, BiVoid AtRho])) = Just bts
+    matchFormation (ExFormation [BiDelta bts]) = Just bts
+    matchFormation (ExPhiAgain _ _ (ExFormation [BiDelta bts])) = Just bts
     matchFormation _ = Nothing
 matchDataObject _ = Nothing
 
@@ -314,7 +314,7 @@ pattern DataObject label bts <- (matchDataObject -> Just (label, bts))
     DataObject label bts =
       ExApplication (BaseObject label) (ArTau AtPhi (dataBytes bts))
 
--- The bytes object Φ.bytes(φ ↦ ⟦ Δ ⤍ …, ρ ↦ ∅ ⟧) — what a 'bytes' atom
+-- The bytes object Φ.bytes(φ ↦ ⟦ Δ ⤍ … ⟧) — what a 'bytes' atom
 -- yields and what a 'DataObject' carries under its φ argument.
 -- The payload is bound to 'φ', the void that the real 'bytes' object
 -- declares ([@] > bytes), so that every dispatch on the literal can bind
@@ -323,4 +323,4 @@ dataBytes :: Bytes -> Expression
 dataBytes bts =
   ExApplication
     (BaseObject "bytes")
-    (ArTau AtPhi (ExFormation [BiDelta bts, BiVoid AtRho]))
+    (ArTau AtPhi (ExFormation [BiDelta bts]))

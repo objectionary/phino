@@ -6,6 +6,5 @@ expression: |
   [[ x -> y ]]
 result: |-
   ⟦
-    x ↦ ξ.y,
-    ρ ↦ ∅
+    x ↦ ξ.y
   ⟧

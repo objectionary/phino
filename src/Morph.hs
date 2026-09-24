@@ -486,9 +486,9 @@ deepened expr univ state ctx = go False (Just ctx._site) Nothing ExXi expr state
     -- bound in has its own ρ bound: ρ is the parameter a dispatch binds, and
     -- 'dot' binds it in every copy a reduction reaches, so a formation still
     -- holding ρ ↦ ∅ inside such a copy is a method nobody dispatched, and its
-    -- ξ.ρ can only collapse to ⊥ (#1397). The program as it was written holds
-    -- ρ ↦ ∅ all the way down, since nothing dispatched it either, and its
-    -- objects are walked the way they always were.
+    -- ξ.ρ can only collapse to ⊥ (#1397). In the program as it was written
+    -- nothing is dispatched yet, so the void ρ an object declares there keeps
+    -- it from nothing and its objects are walked the way they always were.
     parts :: Bool -> Maybe Expression -> Expression -> Expression -> State -> ReduceContext -> IO (Expression, State)
     parts attached _ _ term@(ExFormation bds) state' _
       | any abstract bds = pure (term, state')

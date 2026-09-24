@@ -43,7 +43,7 @@ input: |
       φ ↦ ∅,
       at ↦ ⟦
         i ↦ ∅,
-        φ ↦ Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 00-00-00-00-00-00-00-00, ρ ↦ ∅ ⟧ ) ).gt( b ↦ Φ.dataized( target ↦ ξ.i ) ),
+        φ ↦ Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 00-00-00-00-00-00-00-00 ⟧ ) ).gt( b ↦ Φ.dataized( target ↦ ξ.i ) ),
         ρ ↦ ∅
       ⟧,
       ρ ↦ ∅
@@ -53,7 +53,7 @@ input: |
       mark ↦ ⟦ n ↦ ∅, v ↦ ∅, λ ⤍ L_entry, ρ ↦ ∅ ⟧,
       root ↦ ⟦ v ↦ ∅, λ ⤍ L_root, ρ ↦ ∅ ⟧,
       e1 ↦ Φ.l🌵.mark(
-        n ↦ Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 3F-F0-00-00-00-00-00-00, ρ ↦ ∅ ⟧ ) )
+        n ↦ Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 3F-F0-00-00-00-00-00-00 ⟧ ) )
       )( v ↦ Φ.holder( buf ↦ Φ.text( φ ↦ Φ.bytes( φ ↦ ⟦ λ ⤍ 𝜎1, ρ ↦ ∅ ⟧ ) ) ) ),
       ρ ↦ ∅
     ⟧,

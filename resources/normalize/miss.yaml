@@ -1,11 +1,20 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 # SPDX-License-Identifier: MIT
 ---
+# An application of an attribute the formation does not declare is ⊥, save
+# ρ: a formation declares a receiver only when it lists ρ among its voids, and
+# one that does not merely ignores the ρ a dispatch hands it, which is what
+# the 'skip' rule says (#1407).
 name: miss
 pattern: ⟦𝐵1⟧(𝜏1 ↦ 𝑒)
 result: ⊥
 when:
-  not:
-    in:
-      - 𝜏1
-      - 𝐵1
+  and:
+    - not:
+        in:
+          - 𝜏1
+          - 𝐵1
+    - not:
+        eq:
+          - 𝜏1
+          - ρ

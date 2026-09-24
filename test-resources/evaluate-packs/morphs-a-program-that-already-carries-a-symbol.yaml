@@ -15,7 +15,7 @@ location: 'Q.@'
 deep: true
 input: >
   ⟦ bytes(φ) ↦ ⟦⟧,
-    number(φ) ↦ ⟦ plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧,
+    number(φ) ↦ ⟦ plus(ρ, x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧,
     @ ↦ Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ ).plus( 7 ) ⟧
 result: '⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧'
 protocol: |

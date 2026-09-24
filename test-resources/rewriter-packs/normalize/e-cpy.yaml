@@ -5,4 +5,4 @@ normalize: true
 input: |
   ⟦ m ↦ ⟦ x ↦ ∅, y ↦ ξ.x ⟧ (x ↦ ⟦ Δ ⤍ 42- ⟧).y ⟧
 output: |-
-  ⟦ m ↦ ⟦ Δ ⤍ 42-, ρ ↦ ⟦ x ↦ ⟦ Δ ⤍ 42- ⟧ ⟧ ⟧ ⟧
+  42-:Δ:m

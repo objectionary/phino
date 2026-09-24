@@ -10,9 +10,7 @@ input: |
     ]]
   ]]
 output: |-
-  ⟦
-    x ↦ 4
-  ⟧
+  3:x
 rules:
   custom:
     - name: size of bindings

@@ -5,4 +5,4 @@ normalize: true
 input: |
   ⟦ m ↦ ⟦ x ↦ ξ.t (k ↦ ξ.f).k, t ↦ ⟦ k ↦ ∅ ⟧, f ↦ ⟦⟧ ⟧.x ⟧
 output: |-
-  ⟦ m ↦ ⟦ ρ ↦ ⟦ t(k) ↦ ⟦⟧, f ↦ ⟦⟧ ⟧ ⟧ ⟧
+  ⟦⟧:m

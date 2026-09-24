@@ -1,0 +1,17 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+# A void ρ a formation declares is written as a void of its own, while a
+# formation declaring none gets no ρ in XMIR either (#1407).
+phi: |
+  [[
+    app -> [[
+      m -> [[ ^ -> ?, x -> ? ]],
+      k -> [[ y -> ? ]]
+    ]]
+  ]]
+xpaths:
+  - '/object/o[@name="app"]/o[@name="m"]/o[@name="ρ" and @base="∅"]'
+  - '/object/o[@name="app"]/o[@name="m"]/o[@name="x" and @base="∅"]'
+  - '/object/o[@name="app"]/o[@name="k"]/o[@name="y" and @base="∅"]'

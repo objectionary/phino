@@ -15,8 +15,8 @@ deep: true
 input: >
   ⟦ bytes(φ) ↦ ⟦⟧,
     number(φ) ↦ ⟦
-      plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧,
-      times(x) ↦ ⟦ λ ⤍ L_number_times ⟧ ⟧,
+      plus(ρ, x) ↦ ⟦ λ ⤍ L_number_plus ⟧,
+      times(ρ, x) ↦ ⟦ λ ⤍ L_number_times ⟧ ⟧,
     @ ↦ 5.plus( 6 ).times( 7 ) ⟧
 result: >-
   ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, times(x) ↦ ⟦ λ ⤍

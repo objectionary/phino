@@ -220,7 +220,7 @@ spec = do
           ( "with --output=xmir on a non-top-level expression"
           , "⟦ x ↦ 1, ρ ↦ 2 ⟧"
           , ["rewrite", "--output=xmir"]
-          , ["[ERROR]:", "its top level must be a single binding followed by ρ ↦ ∅"]
+          , ["[ERROR]:", "its top level must be a single binding"]
           )
         ]
         (\(desc, input, args, expected) -> it desc (withStdin input (testCLIFailed args expected)))
@@ -405,7 +405,7 @@ spec = do
 
     it "saves dataize steps to dir with --steps-dir" $
       withTempDirectory "phino-steps-dataize" $ \dir ->
-        withStdin "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6).plus(7) ]]" $ do
+        withStdin "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6).plus(7) ]]" $ do
           testCLISucceeded
             ["dataize", symbolic, "--steps-dir=" ++ dir, "--sweet"]
             ["40-45"]
@@ -434,11 +434,11 @@ spec = do
     it "desugares without any rules flag from file" $
       testCLISucceeded
         ["rewrite", resource "desugar.phi"]
-        ["⟦ foo ↦ ξ.x, ρ ↦ ∅ ⟧"]
+        ["⟦ foo ↦ ξ.x ⟧"]
 
     it "desugares with without any rules flag from stdin" $
       withStdin "[[foo ↦ x]]" $
-        testCLISucceeded ["rewrite"] ["⟦ foo ↦ ξ.x, ρ ↦ ∅ ⟧"]
+        testCLISucceeded ["rewrite"] ["⟦ foo ↦ ξ.x ⟧"]
 
     it "keeps the bytes of a string intact while desugaring it" $
       withStdin "⟦ φ ↦ Φ.string(as-bytes ↦ Φ.bytes(data ↦ ⟦ Δ ⤍ 65-0A-65, ρ ↦ ∅ ⟧)), ρ ↦ ∅ ⟧" $
@@ -466,12 +466,8 @@ spec = do
         [ unlines
             [ "⟦"
             , "  x ↦ ⟦"
-            , "    ρ ↦ ⟦"
-            , "      y ↦ ⟦ ρ ↦ ∅ ⟧,"
-            , "      ρ ↦ ∅"
-            , "    ⟧"
-            , "  ⟧,"
-            , "  ρ ↦ ∅"
+            , "    ρ ↦ ⟦ y ↦ ⟦ ρ ↦ ∅ ⟧ ⟧"
+            , "  ⟧"
             , "⟧"
             ]
         ]
@@ -480,22 +476,13 @@ spec = do
       withStdin "⟦ k ↦ ⟦ m ↦ ⟦ Δ ⤍ 01- ⟧ ⟧.m, j ↦ ⟦ λ ⤍ Marker ⟧ ⟧" $
         testCLISucceeded
           ["rewrite", "--normalize", rule "marker.yaml", "--sweet"]
-          ["⟦ k ↦ ⟦ Δ ⤍ 01-, ρ ↦ 01-:Δ:m ⟧, j ↦ FF-:Δ ⟧"]
+          ["⟦ k ↦ 01-:Δ, j ↦ FF-:Δ ⟧"]
 
     it "normalizes from stdin" $
       withStdin "⟦ a ↦ ⟦ b ↦ ∅ ⟧ (b ↦ [[ ]]) ⟧" $
         testCLISucceeded
           ["rewrite", "--normalize", "--margin=20"]
-          [ unlines
-              [ "⟦"
-              , "  a ↦ ⟦"
-              , "    b ↦ ⟦ ρ ↦ ∅ ⟧,"
-              , "    ρ ↦ ∅"
-              , "  ⟧,"
-              , "  ρ ↦ ∅"
-              , "⟧"
-              ]
-          ]
+          ["⟦ a ↦ ⟦ b ↦ ⟦⟧ ⟧ ⟧"]
 
     it "rewrites with --sweet flag" $
       withStdin "[[ x -> 5]]" $
@@ -662,10 +649,10 @@ spec = do
               , "=== Step #1"
               , "\"foo\":x"
               , ""
-              , "=== Step #2, Rule 'first', 31t -> 30t"
+              , "=== Step #2, Rule 'first', 23t -> 26t"
               , "Φ.x( y ↦ \"foo\" )"
               , ""
-              , "=== Step #3, Rule 'second', 30t -> 31t"
+              , "=== Step #3, Rule 'second', 26t -> 23t"
               , "\"foo\":x"
               ]
           ]
@@ -694,9 +681,9 @@ spec = do
               [ "\\begin{phiquation}"
               , "% === Step #1"
               , "[[ |x| -> \"foo\" ]] \\leadsto_{\\nameref{r:first}}"
-              , "% === Step #2, Rule 'first', 31t -> 30t"
+              , "% === Step #2, Rule 'first', 23t -> 26t"
               , "  \\leadsto Q . |x| ( |y| -> \"foo\" ) \\leadsto_{\\nameref{r:second}}"
-              , "% === Step #3, Rule 'second', 30t -> 31t"
+              , "% === Step #3, Rule 'second', 26t -> 23t"
               , "  \\leadsto [[ |x| -> \"foo\" ]]{.}"
               , "\\end{phiquation}"
               ]
@@ -730,12 +717,12 @@ spec = do
           ["rewrite", "--normalize", "--sweet", "--sequence", "--output=latex", "--flat", "--compress", "--meet-prefix=foo"]
           [ unlines
               [ "\\begin{phiquation}"
-              , "[[ |x| -> ?, |y| -> |x| ]] ( |x| -> \\phinoMeet{foo:1}{ [[ D> |42-| ]] } ) . |y| \\leadsto_{\\nameref{r:copy}}"
-              , "  \\leadsto \\phinoMeet{foo:2}{ [[ |x| -> \\phinoAgain{foo:1}, |y| -> |x| ]] } . |y| \\leadsto_{\\nameref{r:dot}}"
-              , "  \\leadsto \\phinoMeet{foo:3}{ [[ |x| -> \\phinoAgain{foo:1} ]] } . |x| ( \\phiTerminal{\\rho} -> \\phinoAgain{foo:2} ) \\leadsto_{\\nameref{r:dot}}"
-              , "  \\leadsto \\phinoAgain{foo:1} ( \\phiTerminal{\\rho} -> \\phinoAgain{foo:3}, \\phiTerminal{\\rho} -> \\phinoAgain{foo:2} ) \\leadsto_{\\nameref{r:copy}}"
-              , "  \\leadsto [[ D> |42-|, \\phiTerminal{\\rho} -> \\phinoAgain{foo:3} ]] ( \\phiTerminal{\\rho} -> \\phinoAgain{foo:2} ) \\leadsto_{\\nameref{r:stay}}"
-              , "  \\leadsto [[ D> |42-|, \\phiTerminal{\\rho} -> \\phinoAgain{foo:3} ]]{.}"
+              , "[[ |x| -> ?, |y| -> |x| ]] ( |x| -> [[ D> |42-| ]] ) . |y| \\leadsto_{\\nameref{r:copy}}"
+              , "  \\leadsto \\phinoMeet{foo:1}{ [[ |x| -> [[ D> |42-| ]], |y| -> |x| ]] } . |y| \\leadsto_{\\nameref{r:dot}}"
+              , "  \\leadsto [[ |x| -> [[ D> |42-| ]] ]] . |x| ( \\phiTerminal{\\rho} -> \\phinoAgain{foo:1} ) \\leadsto_{\\nameref{r:dot}}"
+              , "  \\leadsto [[ D> |42-| ]] ( \\phiTerminal{\\rho} -> [[ |x| -> [[ D> |42-| ]] ]], \\phiTerminal{\\rho} -> \\phinoAgain{foo:1} ) \\leadsto_{\\nameref{r:skip}}"
+              , "  \\leadsto [[ D> |42-| ]] ( \\phiTerminal{\\rho} -> \\phinoAgain{foo:1} ) \\leadsto_{\\nameref{r:skip}}"
+              , "  \\leadsto [[ D> |42-| ]]{.}"
               , "\\end{phiquation}"
               ]
           ]
@@ -746,12 +733,12 @@ spec = do
           ["rewrite", "--normalize", "--sweet", "--sequence", "--output=latex", "--flat", "--compress"]
           [ unlines
               [ "\\begin{phiquation}"
-              , "[[ |x| -> ?, |y| -> |x| ]] ( |x| -> \\phinoMeet{1}{ [[ D> |42-| ]] } ) . |y| \\leadsto_{\\nameref{r:copy}}"
-              , "  \\leadsto \\phinoMeet{2}{ [[ |x| -> \\phinoAgain{1}, |y| -> |x| ]] } . |y| \\leadsto_{\\nameref{r:dot}}"
-              , "  \\leadsto \\phinoMeet{3}{ [[ |x| -> \\phinoAgain{1} ]] } . |x| ( \\phiTerminal{\\rho} -> \\phinoAgain{2} ) \\leadsto_{\\nameref{r:dot}}"
-              , "  \\leadsto \\phinoAgain{1} ( \\phiTerminal{\\rho} -> \\phinoAgain{3}, \\phiTerminal{\\rho} -> \\phinoAgain{2} ) \\leadsto_{\\nameref{r:copy}}"
-              , "  \\leadsto [[ D> |42-|, \\phiTerminal{\\rho} -> \\phinoAgain{3} ]] ( \\phiTerminal{\\rho} -> \\phinoAgain{2} ) \\leadsto_{\\nameref{r:stay}}"
-              , "  \\leadsto [[ D> |42-|, \\phiTerminal{\\rho} -> \\phinoAgain{3} ]]{.}"
+              , "[[ |x| -> ?, |y| -> |x| ]] ( |x| -> [[ D> |42-| ]] ) . |y| \\leadsto_{\\nameref{r:copy}}"
+              , "  \\leadsto \\phinoMeet{1}{ [[ |x| -> [[ D> |42-| ]], |y| -> |x| ]] } . |y| \\leadsto_{\\nameref{r:dot}}"
+              , "  \\leadsto [[ |x| -> [[ D> |42-| ]] ]] . |x| ( \\phiTerminal{\\rho} -> \\phinoAgain{1} ) \\leadsto_{\\nameref{r:dot}}"
+              , "  \\leadsto [[ D> |42-| ]] ( \\phiTerminal{\\rho} -> [[ |x| -> [[ D> |42-| ]] ]], \\phiTerminal{\\rho} -> \\phinoAgain{1} ) \\leadsto_{\\nameref{r:skip}}"
+              , "  \\leadsto [[ D> |42-| ]] ( \\phiTerminal{\\rho} -> \\phinoAgain{1} ) \\leadsto_{\\nameref{r:skip}}"
+              , "  \\leadsto [[ D> |42-| ]]{.}"
               , "\\end{phiquation}"
               ]
           ]
@@ -1033,7 +1020,7 @@ spec = do
           ["rewrite", "--log-level=debug", "--log-lines=1", "--normalize"]
           [ intercalate
               "\n"
-              [ "[DEBUG]: Applied 'copy' (44 nodes -> 39 nodes)"
+              [ "[DEBUG]: Applied 'copy' (32 nodes -> 27 nodes)"
               , "---| log is limited by --log-lines=1 option |---"
               ]
           ]
@@ -1046,7 +1033,7 @@ spec = do
         testCLISucceeded
           ["rewrite", rule "raising-condition.yaml", "--log-level=debug", "--flat"]
           [ "raised and was treated as not met: user error (Only data objects and bytes are supported"
-          , "⟦ x ↦ ⟦ y ↦ ∅, ρ ↦ ∅ ⟧, ρ ↦ ∅ ⟧"
+          , "⟦ x ↦ ⟦ y ↦ ∅ ⟧ ⟧"
           ]
 
     it "canonizes expression" $
@@ -1065,7 +1052,7 @@ spec = do
       withStdin "[[ x -> ?, y -> $.x ]](x -> [[ D> 42- ]]).y" $
         testCLISucceeded
           ["rewrite", "--sweet", "--flat", "--normalize", "--breakpoint=stop", "--log-level=debug"]
-          [ "Applied 'copy' (30 nodes -> 25 nodes)"
+          [ "Applied 'copy' (22 nodes -> 17 nodes)"
           , "Rule 'stop' is a breakpoint, dropping down all the previous rewritings..."
           , "⟦ x ↦ ∅, y ↦ x ⟧( x ↦ 42-:Δ ).y"
           ]
@@ -1155,8 +1142,8 @@ spec = do
               , "[[ @ -> [[ |x| -> [[ D> |01-|, |y| -> ? ]] ( |y| -> [[]] ) ]] . |x| ]] \\leadsto_{\\nameref{r:contextualize}}"
               , "  \\leadsto [[ |x| -> [[ D> |01-|, |y| -> ? ]] ( |y| -> [[]] ) ]] . |x| \\leadsto_{\\nameref{r:copy}}"
               , "  \\leadsto [[ |x| -> [[ D> |01-|, |y| -> [[]] ]] ]] . |x| \\leadsto_{\\nameref{r:dot}}"
-              , "  \\leadsto [[ D> |01-|, |y| -> [[]] ]] ( \\phiTerminal{\\rho} -> [[ |x| -> [[ D> |01-|, |y| -> [[]] ]] ]] ) \\leadsto_{\\nameref{r:copy}}"
-              , "  \\leadsto [[ D> |01-|, |y| -> [[]], \\phiTerminal{\\rho} -> [[ |x| -> [[ D> |01-|, |y| -> [[]] ]] ]] ]] \\leadsto_{\\nameref{r:delta}}"
+              , "  \\leadsto [[ D> |01-|, |y| -> [[]] ]] ( \\phiTerminal{\\rho} -> [[ |x| -> [[ D> |01-|, |y| -> [[]] ]] ]] ) \\leadsto_{\\nameref{r:skip}}"
+              , "  \\leadsto [[ D> |01-|, |y| -> [[]] ]] \\leadsto_{\\nameref{r:delta}}"
               , "  \\leadsto |01-|{.}"
               , "\\end{phiquation}"
               , "01-"
@@ -1182,13 +1169,13 @@ spec = do
           ["01-:Δ\n01-"]
 
     it "focuses a compressed sequence whose meet replaces a step root" $
-      withStdin "[[ @ -> [[ @ -> $.c.plus( 32.0 ), c -> 25.0 ]], bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus -> [[ x -> ?, L> L_number_plus ]] ]] ]]" $
+      withStdin "[[ @ -> [[ @ -> $.c.plus( 32.0 ), c -> 25.0 ]], bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus -> [[ ^ -> ?, x -> ?, L> L_number_plus ]] ]] ]]" $
         testCLISucceeded
           ["dataize", symbolic, "--output=latex", "--sweet", "--nonumber", "--compress", "--canonize", "--meet-prefix=dataization", "--sequence", "--flat", "--quiet", "--hide=Q.bytes", "--hide=Q.number", "--locator=Q.@", "--focus=Q.@", "--meet-length=5", "--meet-popularity=1"]
           ["\\phinoMeet{dataization:1}{ [[ @ -> |c| . |plus| ( 32 ), |c| -> 25 ]] } \\leadsto_{\\nameref{r:contextualize}}"]
 
     it "compresses a canonized whole-expression sequence into a meet" $
-      withStdin "[[ @ -> [[ @ -> $.c.plus( 32.0 ), c -> 25.0 ]], bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus -> [[ x -> ?, L> L_number_plus ]] ]] ]]" $
+      withStdin "[[ @ -> [[ @ -> $.c.plus( 32.0 ), c -> 25.0 ]], bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus -> [[ ^ -> ?, x -> ?, L> L_number_plus ]] ]] ]]" $
         testCLISucceeded
           ["dataize", symbolic, "--output=latex", "--sweet", "--nonumber", "--compress", "--canonize", "--meet-prefix=dataization", "--sequence", "--flat", "--quiet", "--meet-length=5", "--meet-popularity=1"]
           ["\\phinoMeet{dataization:1}"]
@@ -1206,10 +1193,10 @@ spec = do
     -- per answer it gave. Nothing but the symbols ties them together, so the
     -- lines a firing writes are what a reader of the file walks back (#1226).
     describe "--protocol" $ do
-      let sum' = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6) ]]"
-          chained = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6).plus(7) ]]"
-          nested = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6.plus(7)) ]]"
-          mixed = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(x) -> [[ L> L_number_plus ]], times(x) -> [[ L> L_number_times ]] ]], @ -> 5.plus(6).times(7) ]]"
+      let sum' = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6) ]]"
+          chained = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6).plus(7) ]]"
+          nested = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6.plus(7)) ]]"
+          mixed = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]], times(^, x) -> [[ L> L_number_times ]] ]], @ -> 5.plus(6).times(7) ]]"
       it "opens the protocol with the run it is the protocol of" $
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
           hClose stream
@@ -1333,7 +1320,7 @@ spec = do
       it "keeps the lines of a run that fails" $
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
           hClose stream
-          withStdin "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(x) -> [[ L> L_number_plus ]], nope -> [[ L> L_number_nope ]] ]], @ -> 5.plus(6).nope ]]" $
+          withStdin "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]], nope -> [[ ^ -> ?, L> L_number_nope ]] ]], @ -> 5.plus(6).nope ]]" $
             testCLIFailed
               ["dataize", symbolic, "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"]
               ["No entry of --symbolic answers the λ function 'L_number_nope'"]
@@ -1598,7 +1585,7 @@ spec = do
         it "records a λ function no entry answers as a childless element" $
           withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
             hClose stream
-            withStdin "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ times(x) -> [[ L> L_number_times ]], nope -> [[ L> L_number_nope ]] ]], @ -> 2.times(3).nope ]]" $
+            withStdin "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ times(^, x) -> [[ L> L_number_times ]], nope -> [[ ^ -> ?, L> L_number_nope ]] ]], @ -> 2.times(3).nope ]]" $
               testCLISucceeded ["dataize", symbolic, "--partial", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
             records <- readUtf8 path
             lines records
@@ -1628,7 +1615,7 @@ spec = do
             lines records
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                          , "<morph locator=\"Φ.x\">"
-                         , "  <stuck λ=\"L_number_nope\" judgment=\"morph\">⟦ λ ⤍ L_number_nope, ρ ↦ ∅ ⟧</stuck>"
+                         , "  <stuck λ=\"L_number_nope\" judgment=\"morph\">⟦ λ ⤍ L_number_nope ⟧</stuck>"
                          , "</morph>"
                          ]
 
@@ -1639,7 +1626,7 @@ spec = do
         it "closes the document even when the run fails" $
           withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
             hClose stream
-            withStdin "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ times(x) -> [[ L> L_number_times ]], nope -> [[ L> L_number_nope ]] ]], @ -> 2.times(3).nope ]]" $
+            withStdin "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ times(^, x) -> [[ L> L_number_times ]], nope -> [[ ^ -> ?, L> L_number_nope ]] ]], @ -> 2.times(3).nope ]]" $
               testCLIFailed ["dataize", symbolic, "--protocol=" ++ path] ["No entry of --symbolic answers"]
             records <- readUtf8 path
             lines records
@@ -1649,10 +1636,10 @@ spec = do
                          , "    <bind meta=\"𝛿1.1\">40-00-00-00-00-00-00-00</bind>"
                          , "    <bind meta=\"𝛿2.1\">40-08-00-00-00-00-00-00</bind>"
                          , "    <minted>𝜎1</minted>"
-                         , "    <built meta=\"𝑛.1.1\">Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1, ρ ↦ ∅ ⟧ )</built>"
-                         , "    <answer meta=\"𝑛.1.2\">⟦ φ ↦ ⟦ λ ⤍ 𝜎1, ρ ↦ ∅ ⟧, times ↦ ⟦ x ↦ ∅, λ ⤍ L_number_times, ρ ↦ ∅ ⟧, nope ↦ ⟦ λ ⤍ L_number_nope, ρ ↦ ∅ ⟧, ρ ↦ Φ ⟧</answer>"
+                         , "    <built meta=\"𝑛.1.1\">Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )</built>"
+                         , "    <answer meta=\"𝑛.1.2\">⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, times ↦ ⟦ ρ ↦ ∅, x ↦ ∅, λ ⤍ L_number_times ⟧, nope ↦ ⟦ ρ ↦ ∅, λ ⤍ L_number_nope ⟧ ⟧</answer>"
                          , "  </evaluate>"
-                         , "  <stuck λ=\"L_number_nope\" judgment=\"dataize\">⟦ λ ⤍ L_number_nope, ρ ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎1, ρ ↦ ∅ ⟧, times ↦ ⟦ x ↦ ∅, λ ⤍ L_number_times, ρ ↦ ∅ ⟧, nope ↦ ⟦ λ ⤍ L_number_nope, ρ ↦ ∅ ⟧, ρ ↦ Φ ⟧ ⟧</stuck>"
+                         , "  <stuck λ=\"L_number_nope\" judgment=\"dataize\">⟦ ρ ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, times ↦ ⟦ ρ ↦ ∅, x ↦ ∅, λ ⤍ L_number_times ⟧, nope ↦ ⟦ ρ ↦ ∅, λ ⤍ L_number_nope ⟧ ⟧, λ ⤍ L_number_nope ⟧</stuck>"
                          , "</dataize>"
                          ]
 
@@ -1697,8 +1684,8 @@ spec = do
     -- an operation the caller left out of its file on purpose. The run used
     -- to die on it, discarding what it had already evaluated (#1060)
     describe "--partial" $ do
-      let stuck = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ times(x) -> [[ L> L_number_times ]], nope -> [[ L> L_number_nope ]] ]], @ -> 2.times(3).nope ]]"
-          dispatched = "[[ foo -> [[ bar -> [[ L> L_number_nope ]] ]], @ -> Q.foo.bar ]]"
+      let stuck = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ times(^, x) -> [[ L> L_number_times ]], nope -> [[ ^ -> ?, L> L_number_nope ]] ]], @ -> 2.times(3).nope ]]"
+          dispatched = "[[ foo -> [[ bar -> [[ ^ -> ?, L> L_number_nope ]] ]], @ -> Q.foo.bar ]]"
       it "fails on a λ function that cannot fire without the flag" $
         withStdin stuck $
           testCLIFailed
@@ -1736,7 +1723,7 @@ spec = do
                        ]
 
       it "still prints bytes when nothing gets stuck" $
-        withStdin "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6) ]]" $
+        withStdin "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6) ]]" $
           testCLISucceeded ["dataize", symbolic, "--partial"] ["40-45-00-00-00-00-00-00"]
 
       -- The residual is an arbitrary formation, and a multi-binding <object>
@@ -1774,7 +1761,7 @@ spec = do
     -- Which λ functions exist is not phino's business: the file given with
     -- '--symbolic' decides, and phino carries none of its own
     describe "--symbolic" $ do
-      let sum' = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6) ]]"
+      let sum' = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6) ]]"
       -- Nothing is worked out: the entry answers a number standing for the sum
       -- and the run brings that symbol down to the datum every symbol answers
       it "fires the λ function an entry of the file answers" $
@@ -1802,7 +1789,7 @@ spec = do
     -- aims the run at it, which is what the 'dataize' block of a λ function
     -- does for every operand it names
     describe "--inside" $ do
-      let universe = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(x) -> [[ L> L_number_plus ]] ]], @ -> [[ D> 01- ]] ]]"
+      let universe = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]] ]], @ -> [[ D> 01- ]] ]]"
       it "dataizes an expression the input does not contain" $
         withStdin universe $
           testCLISucceeded ["dataize", symbolic, "--inside=5.plus( 6 )"] ["40-45-00-00-00-00-00-00"]
@@ -1892,7 +1879,7 @@ spec = do
     -- Two chained λ function calls: the inner fires under 'ml', because '.plus'
     -- is dispatched on its result, while the outer application is saturated but
     -- bare, so 'mf' hands it back and firing it is 𝔻's job
-    let chained = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6).plus(7) ]]"
+    let chained = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6).plus(7) ]]"
     it "prints help" $
       testCLISucceeded ["morph", "--help"] ["Morph the 𝜑-expression"]
 
@@ -2022,7 +2009,7 @@ spec = do
     describe "--deep" $ do
       let program =
             "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, \
-            \number(φ) -> [[ times(x) -> [[ L> L_number_times ]] ]], \
+            \number(φ) -> [[ times(^, x) -> [[ L> L_number_times ]] ]], \
             \bar(x) -> [[ L> L_bar ]], \
             \demo -> [[ foo -> [[ n -> 3, @ -> Q.bar( $.n.times( 5 ).times( 7 ) ) ]] ]] ]]"
       it "answers the formation as it was written without the flag" $
@@ -2105,7 +2092,7 @@ spec = do
       -- costs is that binding and not the rest of the program
       it "parks the looping binding and keeps walking with --deep" $
         loopingLambdas $ \endless ->
-          withStdin "⟦ x ↦ ⟦ λ ⤍ L_loop ⟧.foo, y ↦ ⟦ z ↦ ⟦⟧ ⟧ ⟧" $
+          withStdin "⟦ x ↦ ⟦ λ ⤍ L_loop, ρ ↦ ∅ ⟧.foo, y ↦ ⟦ z ↦ ⟦⟧ ⟧ ⟧" $
             testCLISucceeded
               ["morph", "--symbolic=" ++ endless, "--deep", "--acyclic", "--max-steps=4000", "--flat", "--hide-rho"]
               ["⟦ x ↦ ⟦ λ ⤍ L_loop ⟧.foo, y ↦ ⟦ z ↦ ⟦⟧ ⟧ ⟧"]
@@ -2233,7 +2220,7 @@ spec = do
             , "\\phinoNormalizationRule{miss}"
             , "  { [[ B ]] ( \\tau -> e ) }"
             , "  { T }"
-            , "  { \\tau \\notin B }"
+            , "  { \\tau \\notin B \\;\\text{and}\\; \\tau \\not= \\phiTerminal{\\rho} }"
             , "  { }"
             , "\\phinoNormalizationRule{null}"
             , "  { [[ B_1, \\tau -> ?, B_2 ]] . \\tau }"
@@ -2249,6 +2236,11 @@ spec = do
             , "  { [[ B_1, \\tau -> e_1, B_2 ]] ( \\phiTerminal{\\alpha_{i}} -> e_2 ) }"
             , "  { T }"
             , "  { i = \\vert \\overline{ B_1 } \\vert \\;\\text{and}\\; \\tau \\not= \\phiTerminal{\\rho} }"
+            , "  { }"
+            , "\\phinoNormalizationRule{skip}"
+            , "  { [[ B ]] ( \\phiTerminal{\\rho} -> e ) }"
+            , "  { [[ B ]] }"
+            , "  { \\phiTerminal{\\rho} \\notin B }"
             , "  { }"
             , "\\phinoNormalizationRule{stay}"
             , "  { [[ B_1, \\phiTerminal{\\rho} -> e_1, B_2 ]] ( \\phiTerminal{\\rho} -> e_2 ) }"
@@ -2505,7 +2497,7 @@ spec = do
     it "merges and prints as XMIR, with the listing rendered from the merged expression" $
       testCLISucceeded
         ["merge", resource "desugar.phi", "--output=xmir"]
-        ["<?xml version=\"1.0\" encoding=\"UTF-8\"?>", "<listing>⟦ foo ↦ ξ.x, ρ ↦ ∅ ⟧</listing>", "<o base=\"ξ.x\" name=\"foo\"/>"]
+        ["<?xml version=\"1.0\" encoding=\"UTF-8\"?>", "<listing>⟦ foo ↦ ξ.x ⟧</listing>", "<o base=\"ξ.x\" name=\"foo\"/>"]
 
     -- The @atom of an EO atom is its result type, not the name of its λ
     -- function, so the merged 𝜑 names the function after its locator and
@@ -2573,13 +2565,13 @@ spec = do
     it "builds substitutions with conditions" $
       withStdin "[[ x -> Q.y ]].x" $
         testCLISucceeded
-          ["match", "--pattern=[[ !t1 -> Q.y, !B1 ]].!t1", "--when=eq(length(!B1),1)"]
-          ["B1 >> ⟦ ρ ↦ ∅ ⟧\nt1 >> x"]
+          ["match", "--pattern=[[ !t1 -> Q.y, !B1 ]].!t1", "--when=eq(length(!B1),0)"]
+          ["B1 >> ⟦⟧\nt1 >> x"]
 
     it "builds with condition from file" $
       testCLISucceeded
-        ["match", "--pattern=[[ !B1 ]]", "--when=eq(length(!B1),2)", resource "foo.phi"]
-        ["B1 >> ⟦ foo ↦ Φ.org.eolang.x, ρ ↦ ∅ ⟧"]
+        ["match", "--pattern=[[ !B1 ]]", "--when=eq(length(!B1),1)", resource "foo.phi"]
+        ["B1 >> ⟦ foo ↦ Φ.org.eolang.x ⟧"]
 
     it "rejects an anonymous meta in --when" $
       withStdin "[[ x -> Q.y ]]" $

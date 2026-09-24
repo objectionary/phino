@@ -18,32 +18,11 @@ withSugarType :: (ToSalty a) => SugarType -> a -> a
 withSugarType SWEET node = node
 withSugarType SALTY node = toSalty node
 
-voidRho :: PAIR
-voidRho = PA_VOID (AT_RHO RHO) ARROW EMPTY
-
-bdWithVoidRho :: BINDING -> BINDING
-bdWithVoidRho BI_EMPTY{..} = BI_PAIR voidRho (BDS_EMPTY tab) tab
-bdWithVoidRho bd@BI_PAIR{pair = PA_VOID{attr = AT_RHO _}} = bd
-bdWithVoidRho bd@BI_PAIR{pair = PA_TAU{attr = AT_RHO _}} = bd
-bdWithVoidRho bd@BI_PAIR{pair = PA_FORMATION{attr = AT_RHO _}} = bd
-bdWithVoidRho BI_PAIR{..} = BI_PAIR pair (bdsWithVoidRho bindings) tab
-  where
-    bdsWithVoidRho :: BINDINGS -> BINDINGS
-    bdsWithVoidRho BDS_EMPTY{..} = BDS_PAIR EOL tab voidRho (BDS_EMPTY tab)
-    bdsWithVoidRho bds@BDS_PAIR{pair = PA_VOID{attr = AT_RHO _}} = bds
-    bdsWithVoidRho bds@BDS_PAIR{pair = PA_TAU{attr = AT_RHO _}} = bds
-    bdsWithVoidRho bds@BDS_PAIR{pair = PA_FORMATION{attr = AT_RHO _}} = bds
-    bdsWithVoidRho BDS_PAIR{..} = BDS_PAIR eol tab pair (bdsWithVoidRho bindings)
-    bdsWithVoidRho bds@BDS_META{} = bds
-bdWithVoidRho bd@BI_META{} = bd
-
 data SugarType = SWEET | SALTY
   deriving (Eq, Show)
 
 -- Drop every ρ binding (ρ ↦ ∅, ρ ↦ e and ρ(…) ↦ e) from a rendered CST, the
--- effect of the '--hide-rho' switch. It runs after 'withSugarType', so it also
--- removes the ρ ↦ ∅ that 'bdWithVoidRho' re-inserts into every formation on the
--- SALTY path. Both formation bindings and application arguments are stripped;
+-- effect of the '--hide-rho' switch. Both formation bindings and application arguments are stripped;
 -- dispatches such as ξ.ρ are left untouched. A formation left empty by the
 -- strip collapses to the compact '⟦⟧' layout, and an application left with no
 -- argument collapses to its bare callee (no leftover 'e()'). In the SWEET
@@ -120,7 +99,14 @@ withoutRho sugar = goExpr
     goPair :: PAIR -> PAIR
     goPair PA_TAU{..} = PA_TAU attr arrow (goExpr expr)
     goPair PA_ALPHA{..} = PA_ALPHA alpha arrow (goExpr expr)
-    goPair PA_FORMATION{..} = PA_FORMATION attr voids arrow (unsugared (goExpr expr))
+    goPair PA_FORMATION{..} = case filter (not . rho) voids of
+      [] -> PA_TAU attr arrow (goExpr expr)
+      voids' -> PA_FORMATION attr voids' arrow (unsugared (goExpr expr))
+      where
+        -- A void ρ the formation declares is listed among its inline voids
+        rho :: ATTRIBUTE -> Bool
+        rho AT_RHO{} = True
+        rho _ = False
     goPair pair = pair
     -- Inline voids open a formation, which the sugar may not stand for
     unsugared :: EXPRESSION -> EXPRESSION
@@ -149,7 +135,6 @@ withoutRho sugar = goExpr
 --  | a -> 42                    | Q.number(Q.bytes([[ D> 40-45-00-00-00-00-00-00 ]])) |
 --  | a -> Q.nan                 | Q.number(Q.bytes([[ D> 7F-F8-00-00-00-00-00-00 ]])) |
 --  | a -> "Hey"                 | Q.number(Q.bytes([[ D> 48-65-79 ]]))                |
---  | [[ B ]]                    | [[ B, ^ -> ? ]], if rho is absent in 'B'            |
 --  | e:a                        | [[ a -> e ]], and so for D, L and ? (see #1385)     |
 --  | a1(a2, a3, ...) -> [[ B ]] | a1 -> [[ a2 -> ?, a3 -> ?, ..., B ]]                |
 --  | e(e0, e1, ...)             | e(~0 -> e0, ~1 -> e1, ...)                          |
@@ -161,8 +146,8 @@ class ToSalty a where
 instance ToSalty EXPRESSION where
   toSalty EX_ATTR{..} = EX_DISPATCH (EX_XI XI) NO_SPACE attr
   toSalty EX_DISPATCH{..} = EX_DISPATCH (toSalty expr) space attr
-  toSalty EX_FORMATION{lsb, binding = bd@BI_EMPTY{}, rsb} = EX_FORMATION lsb NO_EOL TAB' (toSalty (bdWithVoidRho bd)) NO_EOL TAB' rsb
-  toSalty EX_FORMATION{..} = EX_FORMATION lsb eol tab (toSalty (bdWithVoidRho binding)) eol' tab' rsb
+  toSalty formation@EX_FORMATION{binding = BI_EMPTY{}} = formation
+  toSalty EX_FORMATION{..} = EX_FORMATION lsb eol tab (toSalty binding) eol' tab' rsb
   toSalty EX_APPLICATION{argument = AA_TAU tau, ..} = EX_APPLICATION (toSalty expr) space EOL (TAB indent) (AA_TAU (toSalty tau)) EOL (TAB (indent - 1)) indent
   toSalty EX_APPLICATION{argument = AA_TAUS taus, ..} =
     foldl

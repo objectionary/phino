@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# A formation that declares no ρ has no receiver, so a ρ applied to it is
+# dropped and the formation stays as it was written (#1407).
+rules:
+  basic: ['skip']
+input: |
+  ⟦ a ↦ ⟦ k ↦ ∅ ⟧( ρ ↦ Φ.x ) ⟧
+output: |-
+  ⟦ a ↦ ⟦ k ↦ ∅ ⟧ ⟧

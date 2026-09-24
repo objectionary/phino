@@ -232,8 +232,7 @@ spec = do
   -- already evaluated, while the protocol of '--protocol' keeps the firings
   -- that did answer.
   describe "partially evaluates around a λ function that cannot fire (--partial)" $ do
-    -- the parser gives every formation its void ρ
-    let placeholder = ExFormation [BiLambda (Function "Sym_arg_0"), BiVoid AtRho]
+    let placeholder = ExFormation [BiLambda (Function "Sym_arg_0")]
     it "fails on it without the flag, naming the λ function" $ do
       expr <- parseExpressionThrows (primitives "2.times(3).nope")
       dataize expr emptyState (withLambdas known (defaultReduceContext ExRoot))
@@ -260,8 +259,8 @@ spec = do
           , "    𝛿1.1 := 40-00-00-00-00-00-00-00  # 𝔻(ξ.ρ)"
           , "    𝛿2.1 := 40-08-00-00-00-00-00-00  # 𝔻(ξ.x)"
           , "    𝑛.1.1 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛"
-          , "    𝑛.1.2 := ⟦ φ ↦ 𝜎1:λ, as-bytes ↦ φ, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧, div(x) ↦ ⟦ λ ⤍ L_number_div ⟧, gt(x) ↦ ⟦ λ ⤍ L_number_gt ⟧, eq(x) ↦ ⟦ φ ↦ ρ.as-bytes.eq( x.as-bytes ) ⟧, nope ↦ L_number_nope:λ, ρ ↦ Φ ⟧  # 𝕄(𝑛.1.1)"
-          , "  ?(L_number_nope)  # 𝔻(⟦ λ ⤍ L_number_nope, ρ ↦ ⟦ φ ↦ 𝜎1:λ, as-bytes ↦ φ, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧, div(x) ↦ ⟦ λ ⤍ L_number_div ⟧, gt(x) ↦ ⟦ λ ⤍ L_number_gt ⟧, eq(x) ↦ ⟦ φ ↦ ρ.as-bytes.eq( x.as-bytes ) ⟧, nope ↦ L_number_nope:λ, ρ ↦ Φ ⟧ ⟧)"
+          , "    𝑛.1.2 := ⟦ φ ↦ 𝜎1:λ, as-bytes ↦ φ, plus(ρ, x) ↦ ⟦ λ ⤍ L_number_plus ⟧, times(ρ, x) ↦ ⟦ λ ⤍ L_number_times ⟧, div(ρ, x) ↦ ⟦ λ ⤍ L_number_div ⟧, gt(ρ, x) ↦ ⟦ λ ⤍ L_number_gt ⟧, eq(ρ, x) ↦ ⟦ φ ↦ ρ.as-bytes.eq( x.as-bytes ) ⟧, nope(ρ) ↦ ⟦ λ ⤍ L_number_nope ⟧ ⟧  # 𝕄(𝑛.1.1)"
+          , "  ?(L_number_nope)  # 𝔻(⟦ ρ ↦ ⟦ φ ↦ 𝜎1:λ, as-bytes ↦ φ, plus(ρ, x) ↦ ⟦ λ ⤍ L_number_plus ⟧, times(ρ, x) ↦ ⟦ λ ⤍ L_number_times ⟧, div(ρ, x) ↦ ⟦ λ ⤍ L_number_div ⟧, gt(ρ, x) ↦ ⟦ λ ⤍ L_number_gt ⟧, eq(ρ, x) ↦ ⟦ φ ↦ ρ.as-bytes.eq( x.as-bytes ) ⟧, nope(ρ) ↦ ⟦ λ ⤍ L_number_nope ⟧ ⟧, λ ⤍ L_number_nope ⟧)"
           ]
     it "leaves an unanswered λ function dataized directly as the whole residue" $ do
       ((outcome, chain), protocol) <- partially known "[[ L> Sym_arg_0 ]]"
@@ -357,7 +356,7 @@ spec = do
       labels <-
         labelsOf
           "Q"
-          "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6) ]]"
+          "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6) ]]"
       labels
         `shouldBe` [ "contextualize"
                    , "maa"
@@ -370,4 +369,4 @@ spec = do
                    ]
     it "dataizes a located reference through the expected rules" $ do
       labels <- labelsOf "Q.foo.bar" "[[ foo -> [[ bar -> [[ @ -> Q.x ]] ]], x -> [[ D> 42- ]] ]]"
-      labels `shouldBe` ["contextualize", "md", "dotg", "copy", "mf", "delta"]
+      labels `shouldBe` ["contextualize", "md", "dotg", "skip", "mf", "delta"]
