@@ -1613,7 +1613,7 @@ spec = do
                          , "      <answer meta=\"𝑛.2.2\">⟦ φ ↦ 𝜎1:λ, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧</answer>"
                          , "    </evaluate>"
                          , "    <dataize meta=\"𝛿2.1\">𝜎1:λ</dataize>"
-                         , "    <minted symbol=\"𝜎2\">𝜎1</minted>"
+                         , "    <minted symbol=\"𝜎2\">40-14-00-00-00-00-00-00 𝜎1</minted>"
                          , "    <built meta=\"𝑛.1.1\">Φ.number( φ ↦ 𝜎2:λ )</built>"
                          , "    <answer meta=\"𝑛.1.2\">⟦ φ ↦ 𝜎2:λ, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧</answer>"
                          , "  </evaluate>"
