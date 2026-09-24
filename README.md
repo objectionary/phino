@@ -623,8 +623,8 @@ $ phino dataize --symbolic=atoms.yaml --protocol=atoms.xml --quiet \
     --sweet --hide-rho sum.phi
 $ cat atoms.xml
 <?xml version="1.0" encoding="UTF-8"?>
-<dataize locator="Φ">
-  <evaluate λ="L_number_plus" id="1" judgment="dataize" locator="Φ">
+<dataize at="Φ">
+  <evaluate λ="L_number_plus" id="1" by="dataize" at="Φ">
     <bind meta="𝛿1.1">40-14-00-00-00-00-00-00</bind>
     <bind meta="𝛿2.1">40-18-00-00-00-00-00-00</bind>
     <minted>𝜎1</minted>
@@ -635,12 +635,12 @@ $ cat atoms.xml
 ```
 
 The root is the run itself, named after the judgment it ran — `<dataize>` for a
-𝔻, `<morph>` for a 𝕄 — with `locator` naming the term it was aimed at, which is
+𝔻, `<morph>` for a 𝕄 — with `at` naming the term it was aimed at, which is
 what the text format opens with as `𝔻(Φ)`. `<evaluate>` is one firing of 𝔼, `λ`
-naming the entry that answered it, `id` numbering it within the run, `judgment`
-naming the one that asked for the firing — the same word the root and a
-`<stuck>` carry — and `locator` naming the site it was fired at. The text
-format writes those two as the comment of its line, `𝔻(Φ)`.
+naming the entry that answered it, `id` numbering it within the run, `by`
+naming the judgment that asked for the firing — the same word the root is named
+after and a `<stuck>` carries — and `at` naming the site it was fired at. The
+text format writes those two as the comment of its line, `𝔻(Φ)`.
 `<bind>` is one meta the firing bound, `meta` naming it the same way the text
 format names it, counter and all, and the element holding the value it took: a
 term where the operand was reduced with 𝕄, the datum itself where a `dataize`
@@ -649,7 +649,7 @@ operand came down to data. `<dataize>` inside a firing is the other thing a
 the formation that unknown names rather than the 42 standing for it: a `𝜎` is
 the name of a λ function and no term of its own, so what 𝔻 was applied to is
 `𝜎2:λ` and never `𝜎2` alone. It carries `meta` where the root carries
-`locator`, the same difference the text format draws between `𝔻(Φ)` at the top
+`at`, the same difference the text format draws between `𝔻(Φ)` at the top
 and `𝛿1.2 := 𝔻(…)` in a block. The name of the element is what tells a
 manufactured datum from data, the way `𝔻(…)` does in the text format, so
 nothing has to be read off the presence of an attribute. `<answer>` holds the
@@ -688,7 +688,7 @@ with comes from a `join` line and stands in a `<joined>` of its own.
 
 A λ name no entry answers is `<stuck λ="…">`, standing where its `<evaluate>`
 would have stood with the formation 𝔼 was fired against as its text and the
-judgment that asked in its `judgment` attribute, where the text format writes
+judgment that asked in its `by` attribute, where the text format writes
 the letter of it. A firing that happened while an operand of another was being
 reduced is an `<evaluate>` inside the one that asked, which is what the deeper
 indentation means in the text. Elements are written as the run goes and
@@ -703,15 +703,15 @@ $ phino dataize --symbolic=atoms.yaml --protocol=atoms.xml --quiet \
 [ERROR]: No entry of --symbolic answers the λ function 'L_number_nope'
 $ cat atoms.xml
 <?xml version="1.0" encoding="UTF-8"?>
-<dataize locator="Φ">
-  <evaluate λ="L_number_plus" id="1" judgment="morph" locator="Φ">
+<dataize at="Φ">
+  <evaluate λ="L_number_plus" id="1" by="morph" at="Φ">
     <bind meta="𝛿1.1">40-14-00-00-00-00-00-00</bind>
     <bind meta="𝛿2.1">40-18-00-00-00-00-00-00</bind>
     <minted>𝜎1</minted>
     <built meta="𝑛.1.1">Φ.number( φ ↦ 𝜎1:λ )</built>
     <answer meta="𝑛.1.2">⟦ φ ↦ 𝜎1:λ, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, nope ↦ L_number_nope:λ ⟧</answer>
   </evaluate>
-  <stuck λ="L_number_nope" judgment="dataize">L_number_nope:λ</stuck>
+  <stuck λ="L_number_nope" by="dataize">L_number_nope:λ</stuck>
 </dataize>
 ```
 
