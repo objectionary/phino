@@ -136,7 +136,7 @@ symbol func form self univ state caller = case matched caller._symbolic func of
     rewrote <- foldM (reshaped ctx) bound' entry._rewritten
     (bound'', stood) <- foldM (masked ctx) (rewrote, morphed) entry._symbolized
     (bound''', forked) <- foldM (paired ctx (listToMaybe (reverse conditions))) (bound'', stood) entry._paired
-    answered ctx entry bound''' forked
+    answered ctx entry (reverse conditions) bound''' forked
   where
     -- Bring one 'dataize' operand down through 𝔻 and bind the bytes meta that
     -- names it. An operand 𝔻 could not bring down to data — a site '_partial'
@@ -278,7 +278,10 @@ symbol func form self univ state caller = case matched caller._symbolic func of
     -- counts them, which is what keeps two firings from spelling two unknowns
     -- alike. Each one goes into the protocol as it is handed out, ahead of the
     -- answer carrying it, so a reader ties an unknown back to the firing that
-    -- made it without reading the term it stands in (#1280).
+    -- made it without reading the term it stands in (#1280). Each record also
+    -- carries what the 'dataize' operands of the entry came down to, in the
+    -- order the entry declares them, since the symbol stands for what the λ
+    -- function makes of them (#1421).
     --
     -- The answer is morphed rather than handed back as the entry wrote it,
     -- because a firing is one of the things a term can come from and every
@@ -296,10 +299,10 @@ symbol func form self univ state caller = case matched caller._symbolic func of
     -- its block between the two, where every other firing of an operand opens
     -- its own, and the formation standing on the second line is read as what
     -- the three tokens on the first came to (#1298).
-    answered :: ReduceContext -> Lambda -> Subst -> State -> IO (Expression, State)
-    answered ctx entry bound state' = do
+    answered :: ReduceContext -> Lambda -> [Either Int Bytes] -> Subst -> State -> IO (Expression, State)
+    answered ctx entry operands bound state' = do
       let (fresh, spent) = minted entry._answer state'._minted
-      mapM_ (ctx._saveEval . EvMinted ctx._nesting) [idx | (_, FnSymbol idx) <- fresh]
+      mapM_ (\idx -> ctx._saveEval (EvMinted ctx._nesting idx operands)) [idx | (_, FnSymbol idx) <- fresh]
       symbolic <- foldM mint bound fresh
       built <- buildExpressionThrows entry._answer symbolic
       ctx._saveEval (EvBuilt ctx._nesting built)

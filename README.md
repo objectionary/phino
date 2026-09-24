@@ -618,6 +618,8 @@ indented text above. There is no option for it, since a caller who asks for a
 file called `atoms.xml` and gets text back has been told nothing useful. Here
 is the run at the top of this section again:
 
+<!-- markdownlint-disable MD013 -->
+
 ```bash
 $ phino dataize --symbolic=atoms.yaml --protocol=atoms.xml --quiet \
     --sweet --hide-rho sum.phi
@@ -627,12 +629,14 @@ $ cat atoms.xml
   <evaluate λ="L_number_plus" id="1" judgment="dataize" locator="Φ">
     <bind meta="𝛿1.1">40-14-00-00-00-00-00-00</bind>
     <bind meta="𝛿2.1">40-18-00-00-00-00-00-00</bind>
-    <minted>𝜎1</minted>
+    <minted symbol="𝜎1">40-14-00-00-00-00-00-00 40-18-00-00-00-00-00-00</minted>
     <built meta="𝑛.1.1">Φ.number( φ ↦ 𝜎1:λ )</built>
     <answer meta="𝑛.1.2">⟦ φ ↦ 𝜎1:λ, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧</answer>
   </evaluate>
 </dataize>
 ```
+
+<!-- markdownlint-enable MD013 -->
 
 The root is the run itself, named after the judgment it ran — `<dataize>` for a
 𝔻, `<morph>` for a 𝕄 — with `locator` naming the term it was aimed at, which is
@@ -674,17 +678,25 @@ writes one element per pair of symbols, and one whose terms are alike writes
 none. The meta the line binds is a `<bind>` like every other meta of the
 firing.
 
-`<minted>𝜎1</minted>` is one symbol the firing minted, one element per bare `𝜎`
-the entry wrote its answer with, standing inside the block ahead of the
-`<built>` carrying them. That is the edge a reader joins on: a later
-`<dataize meta="𝛿1.5">𝜎2:λ</dataize>` names the symbol the firing that
-wrote `<minted>𝜎2</minted>` handed out. A firing minting two symbols writes two
-elements and one minting none writes none, which no attribute on the answer
-could say: a term may carry several symbols, or carry one where the value it
-stands for is not a symbol at all. In the fork above, `𝔼(L_gt)` writes
-`<minted>𝜎2</minted>` although `𝜎2` sits under `if` and not where the value of
-the term is, while `𝔼(L_fork)` writes none at all, since the symbol it answers
-with comes from a `join` line and stands in a `<joined>` of its own.
+`<minted symbol="𝜎1">40-14-… 40-18-…</minted>` is one symbol the firing
+minted, one element per bare `𝜎` the entry wrote its answer with, standing
+inside the block ahead of the `<built>` carrying them. The symbol stands in
+`symbol`, the way `<known>` and `<joined>` put theirs, and the text is what is
+known about it: the values the `dataize` lines of the entry took, in the order
+the entry declares them, each spelled as its own line spells it — the bytes
+for a datum, `𝜎1` for a symbol — and separated by a space the way `<joined>`
+lists its pair. With the `λ` of the block the element reads as the fact
+`𝔻(𝜎1:λ) == L_number_plus(40-14-…, 40-18-…)`, and a firing of an entry with
+no `dataize` line writes `<minted symbol="𝜎1"/>`. The symbol is also the edge
+a reader joins on: a later `<dataize meta="𝛿1.5">𝜎2:λ</dataize>` names the
+symbol the firing that wrote `<minted symbol="𝜎2">` handed out. A firing
+minting two symbols writes two elements and one minting none writes none,
+which no attribute on the answer could say: a term may carry several symbols,
+or carry one where the value it stands for is not a symbol at all. In the fork
+above, `𝔼(L_gt)` writes `<minted symbol="𝜎2">` although `𝜎2` sits under `if`
+and not where the value of the term is, while `𝔼(L_fork)` writes none at all,
+since the symbol it answers with comes from a `join` line and stands in a
+`<joined>` of its own.
 
 A λ name no entry answers is `<stuck λ="…">`, standing where its `<evaluate>`
 would have stood with the formation 𝔼 was fired against as its text and the
@@ -707,7 +719,7 @@ $ cat atoms.xml
   <evaluate λ="L_number_plus" id="1" judgment="morph" locator="Φ">
     <bind meta="𝛿1.1">40-14-00-00-00-00-00-00</bind>
     <bind meta="𝛿2.1">40-18-00-00-00-00-00-00</bind>
-    <minted>𝜎1</minted>
+    <minted symbol="𝜎1">40-14-00-00-00-00-00-00 40-18-00-00-00-00-00-00</minted>
     <built meta="𝑛.1.1">Φ.number( φ ↦ 𝜎1:λ )</built>
     <answer meta="𝑛.1.2">⟦ φ ↦ 𝜎1:λ, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, nope ↦ L_number_nope:λ ⟧</answer>
   </evaluate>

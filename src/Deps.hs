@@ -199,8 +199,13 @@ data Evaluation
   | -- A fresh symbol the answer of the firing asked for, one record per bare 𝜎
     -- the entry wrote it with. It is a fact about the firing and no property of
     -- any one term of it, since an answer may carry several symbols or none and
-    -- no single one of them stands for the whole of it (#1280).
-    EvMinted Int Int
+    -- no single one of them stands for the whole of it (#1280). It carries the
+    -- values the 'dataize' operands of the entry came down to, in the order
+    -- the entry declares them, a symbol or data each, since what the fresh
+    -- symbol stands for is what the λ function makes of them, and a reader
+    -- rendering the symbol back into a program reads that fact off the record
+    -- rather than assembling it from the lines above it (#1421).
+    EvMinted Int Int [Either Int Bytes]
   | -- The term the entry wrote as its answer, with the symbols the firing
     -- minted standing in it, before 𝕄 is asked about it. It is the first of
     -- the two records an answer is written as, and it is there because the
@@ -386,7 +391,7 @@ saveEval handle cursor render salted report = do
         spelled :: Either Int Bytes -> IO String
         spelled (Left symbol) = printf "𝔻(%s)" <$> render (standing symbol)
         spelled (Right bytes) = pure (printBytes bytes)
-    written (EvMinted _ _) protocol = pure (protocol, Nothing)
+    written EvMinted{} protocol = pure (protocol, Nothing)
     written (EvBuilt depth term) protocol = do
       value <- borrowed protocol term
       pure (protocol, Just (indented depth (printf "%s.1 := %s  # %s" (labelled protocol depth answer) value (T.unpack answer))))
@@ -575,10 +580,20 @@ saveEvalXml handle cursor render report = do
           Just (Left symbol) -> printf "<terminate symbol=\"%s\" branch=\"%s\"/>" (sigma symbol) (quoted side)
           Just (Right bytes) -> printf "<terminate branch=\"%s\">%s</terminate>" (quoted side) (escapeXMLText (printBytes bytes))
           Nothing -> printf "<terminate branch=\"%s\"/>" (quoted side)
-    elements (EvMinted depth symbol) nesting =
-      pure (nesting{_closing = kept}, closers ++ [indented depth (printf "<minted>%s</minted>" (sigma symbol))])
+    elements (EvMinted depth symbol operands) nesting =
+      pure (nesting{_closing = kept}, closers ++ [indented depth mint])
       where
         (kept, closers) = closed depth nesting._closing
+        -- The symbol stands in 'symbol', the way 'known' and 'joined' put
+        -- theirs, and the values the λ function was fired on are the text,
+        -- each spelled the way its own line spells it (#1421).
+        mint :: String
+        mint
+          | null operands = printf "<minted symbol=\"%s\"/>" (sigma symbol)
+          | otherwise = printf "<minted symbol=\"%s\">%s</minted>" (sigma symbol) (escapeXMLText (unwords (map spelled operands)))
+        spelled :: Either Int Bytes -> String
+        spelled (Left fresh) = sigma fresh
+        spelled (Right bytes) = printBytes bytes
     elements (EvBuilt depth term) nesting = do
       body <- render term
       let (kept, closers) = closed depth nesting._closing
