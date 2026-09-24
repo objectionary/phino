@@ -1537,7 +1537,7 @@ spec = do
                          , "    <dataize meta=\"𝛿1.1\">𝜎1:λ</dataize>"
                          , "    <bind meta=\"𝑛1.1\">𝜎2:λ:φ</bind>"
                          , "    <bind meta=\"𝑛2.1\">⊥</bind>"
-                         , "    <raise-if symbol=\"𝜎1\" branch=\"right\"/>"
+                         , "    <terminate symbol=\"𝜎1\" branch=\"right\"/>"
                          , "    <bind meta=\"𝑛3.1\">𝜎2:λ:φ</bind>"
                          , "    <built meta=\"𝑛.1.1\">𝜎2:λ:φ</built>"
                          , "    <answer meta=\"𝑛.1.2\">𝜎2:λ:φ</answer>"
