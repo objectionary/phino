@@ -9,7 +9,7 @@ expressions and rules to LaTeX format for academic documents.
 -}
 module LaTeXSpec where
 
-import AST (Attribute (AtLabel, AtMeta, AtPhi, AtRho), Binding (BiDelta, BiMeta, BiTau, BiVoid), Bytes (BtMeta, BtOne), Expression (ExDispatch, ExFormation, ExMeta, ExPhiAgain, ExPhiMeet, ExRoot))
+import AST (Attribute (AtLabel, AtMeta, AtPhi, AtRho), Binding (BiDelta, BiLambda, BiMeta, BiTau, BiVoid), Bytes (BtMeta, BtOne), Expression (ExDispatch, ExFormation, ExMeta, ExPhiAgain, ExPhiMeet, ExRoot), Function (FnMeta, FnSymbol))
 import Control.Monad (forM_)
 import Data.List (intercalate)
 import Data.Text qualified as T
@@ -270,6 +270,27 @@ spec = do
           , "{ n }"
           , "{ \\isnormal{ n } \\;\\text{and}\\; \\phinoIsFormation{ n } }"
           , "{ \\phiTerminal{\\rho} \\coloneqq \\foo{ n, \\phiTerminal{\\rho} -> ?, 01-02- } and @ \\coloneqq \\bar{ n } }"
+          ]
+        )
+      ,
+        ( "keeps the λ metas 𝑓 and 𝜎 lowercase"
+        , Y.Rule
+            { name = "lambdas"
+            , label = Nothing
+            , description = Nothing
+            , ematch = Nothing
+            , pattern = ExFormation [BiMeta "B1", BiLambda (FnMeta "f"), BiMeta "B2"]
+            , result = ExFormation [BiLambda (FnSymbol 1)]
+            , when = Nothing
+            , having = Nothing
+            , where_ = Nothing
+            }
+        ,
+          [ "\\phinoNormalizationRule{lambdas}"
+          , "{ [[ B_1, L> f, B_2 ]] }"
+          , "{ [[ L> \\sigma_1 ]] }"
+          , "{ }"
+          , "{ }"
           ]
         )
       ,

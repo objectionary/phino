@@ -90,6 +90,10 @@ spec = do
       , (D'', "d")
       , (F, "𝑓")
       , (F', "F")
+      , (F'', "f")
+      , (S, "𝜎")
+      , (S', "S")
+      , (S'', "\\sigma")
       ]
       (\(metaHead, expected) -> it (show metaHead) (render (META NO_EXCL metaHead "") `shouldBe` expected))
 
