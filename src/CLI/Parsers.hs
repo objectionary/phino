@@ -512,15 +512,23 @@ commandParser =
         <> command "match" (info matchParser (progDesc "Match 𝜑-expression against provided pattern and build matched substitutions"))
     )
 
-optPin :: Parser (Maybe String)
-optPin =
-  optional
-    ( strOption
+optPin :: Parser (Maybe Pin)
+optPin = optional (PinVersion <$> literal <|> PinFile <$> file)
+  where
+    literal :: Parser String
+    literal =
+      strOption
         ( long "pin"
             <> metavar "VERSION"
             <> help "Fail if this version doesn't match the version of phino"
         )
-    )
+    file :: Parser FilePath
+    file =
+      strOption
+        ( long "pin-file"
+            <> metavar "FILE"
+            <> help "Fail if the version written in this file doesn't match the version of phino"
+        )
 
 cliArgsParser :: Parser CliArgs
 cliArgsParser = CliArgs <$> optPin <*> commandParser

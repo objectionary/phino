@@ -64,8 +64,10 @@ data Command
   | CmdMerge OptsMerge
   | CmdMatch OptsMatch
 
+data Pin = PinVersion String | PinFile FilePath
+
 data CliArgs = CliArgs
-  { _pin :: Maybe String
+  { _pin :: Maybe Pin
   , _command :: Command
   }
 

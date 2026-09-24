@@ -161,6 +161,48 @@ spec = do
       ]
       (\(desc, args, test, expected) -> it desc (withStdin "[[ ]]" (test args expected)))
 
+  describe "--pin-file" $
+    forM_
+      [
+        ( "succeeds when --pin-file holds actual version among spaces"
+        , Just ("  \n" ++ showVersion version ++ " \t\n\n")
+        , testCLISucceeded
+        , ["⟦⟧"]
+        )
+      ,
+        ( "fails when --pin-file holds another version"
+        , Just "7.3.0.41\n"
+        , testCLIFailed
+        , ["Version mismatch: --pin requires '7.3.0.41', but this is phino " ++ showVersion version]
+        )
+      ,
+        ( "fails when --pin-file is empty"
+        , Just " \n"
+        , testCLIFailed
+        , ["Version mismatch: --pin requires ''"]
+        )
+      ,
+        ( "fails when --pin-file is absent"
+        , Nothing
+        , testCLIFailed
+        , ["does not exist"]
+        )
+      ]
+      ( \(desc, content, test, expected) ->
+          it desc $
+            withTempDirectory "phino-pin-file" $ \dir -> do
+              createDirectoryIfMissing True dir
+              let file = dir </> "vérsion.txt"
+              forM_ content (writeFile file)
+              withStdin "[[ ]]" (test ["--pin-file=" ++ file, "rewrite", "--sweet"] expected)
+      )
+
+  it "fails when both --pin and --pin-file are given" $
+    withStdin "[[ ]]" $
+      testCLIFailed
+        ["--pin=" ++ showVersion version, "--pin-file=pinned-version.txt", "rewrite"]
+        ["[ERROR]"]
+
   describe "--hide-rho" $
     forM_
       [
