@@ -148,8 +148,12 @@ meta of its own to the outcome:
       of: 𝑛1
       rules: &bool
         - name: false-literal
-          pattern: ⟦ !B1, φ ↦ Φ.bool( if ↦ ⟦ ρ ↦ ∅, left ↦ ∅, right ↦ ∅, φ ↦ ξ.right ⟧ ), !B2 ⟧
-          result: ⟦ φ ↦ Φ.bool( if ↦ ⟦ λ ⤍ L_fork, left ↦ ∅, right ↦ ∅, φ ↦ ⟦ Δ ⤍ 00- ⟧ ⟧ ) ⟧
+          pattern: >-
+            ⟦ !B1, φ ↦ Φ.bool( if ↦ ⟦ ρ ↦ ∅, left ↦ ∅, right ↦ ∅,
+            φ ↦ ξ.right ⟧ ), !B2 ⟧
+          result: >-
+            ⟦ φ ↦ Φ.bool( if ↦ ⟦ λ ⤍ L_fork, left ↦ ∅, right ↦ ∅,
+            φ ↦ ⟦ Δ ⤍ 00- ⟧ ⟧ ) ⟧
     𝑛4:
       of: 𝑛2
       rules: *bool
