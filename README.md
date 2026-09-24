@@ -626,7 +626,7 @@ $ phino dataize --symbolic=atoms.yaml --protocol=atoms.xml --quiet \
 $ cat atoms.xml
 <?xml version="1.0" encoding="UTF-8"?>
 <dataize at="Φ">
-  <evaluate λ="L_number_plus" id="1" by="dataize" at="Φ">
+  <evaluate λ="L_number_plus" by="dataize" at="Φ">
     <bind meta="𝛿1.1">40-14-00-00-00-00-00-00</bind>
     <bind meta="𝛿2.1">40-18-00-00-00-00-00-00</bind>
     <minted symbol="𝜎1">40-14-00-00-00-00-00-00 40-18-00-00-00-00-00-00</minted>
@@ -641,10 +641,10 @@ $ cat atoms.xml
 The root is the run itself, named after the judgment it ran — `<dataize>` for a
 𝔻, `<morph>` for a 𝕄 — with `at` naming the term it was aimed at, which is
 what the text format opens with as `𝔻(Φ)`. `<evaluate>` is one firing of 𝔼, `λ`
-naming the entry that answered it, `id` numbering it within the run, `by`
-naming the judgment that asked for the firing — the same word the root is named
-after and a `<stuck>` carries — and `at` naming the site it was fired at. The
-text format writes those two as the comment of its line, `𝔻(Φ)`.
+naming the entry that answered it, `by` naming the judgment that asked for the
+firing — the same word the root is named after and a `<stuck>` carries — and
+`at` naming the site it was fired at. The text format writes those two as the
+comment of its line, `𝔻(Φ)`.
 `<bind>` is one meta the firing bound, `meta` naming it the same way the text
 format names it, counter and all, and the element holding the value it took: a
 term where the operand was reduced with 𝕄, the datum itself where a `dataize`
@@ -716,7 +716,7 @@ $ phino dataize --symbolic=atoms.yaml --protocol=atoms.xml --quiet \
 $ cat atoms.xml
 <?xml version="1.0" encoding="UTF-8"?>
 <dataize at="Φ">
-  <evaluate λ="L_number_plus" id="1" by="morph" at="Φ">
+  <evaluate λ="L_number_plus" by="morph" at="Φ">
     <bind meta="𝛿1.1">40-14-00-00-00-00-00-00</bind>
     <bind meta="𝛿2.1">40-18-00-00-00-00-00-00</bind>
     <minted symbol="𝜎1">40-14-00-00-00-00-00-00 40-18-00-00-00-00-00-00</minted>

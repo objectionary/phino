@@ -283,9 +283,9 @@ emptyProtocol = Protocol 0 Map.empty Map.empty
 
 -- What the XML protocol has counted so far: how many firings the whole run
 -- has opened, the same single counter 'Protocol' keeps since #1261, which
--- numbers the 'id' an element carries and, through '_openedAt', names a meta
--- on this firing the way the text format names it and not with the bare
--- spelling the entry's YAML gives it, an answer of it included (#1298); and
+-- through '_openedAt' names a meta on this firing the way the text format
+-- names it and not with the bare spelling the entry's YAML gives it, an answer
+-- of it included (#1298), and which no element carries on its own (#1422); and
 -- the elements standing open around the record being written, innermost
 -- first, each with the depth it was opened at and the name it closes under.
 -- The text format needs no such stack, since indentation opens and closes
@@ -512,7 +512,7 @@ saveEvalXml handle cursor render report = do
             , _openedAt = Map.insert depth fires nesting._openedAt
             , _closing = (depth, "evaluate") : kept
             }
-        , closers ++ [indented depth (printf "<evaluate λ=\"%s\" id=\"%d\" by=\"%s\" at=\"%s\">" (quoted key) fires (opened judgment) (escapeXML locator))]
+        , closers ++ [indented depth (printf "<evaluate λ=\"%s\" by=\"%s\" at=\"%s\">" (quoted key) (opened judgment) (escapeXML locator))]
         )
       where
         (kept, closers) = closed depth nesting._closing
