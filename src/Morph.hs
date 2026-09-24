@@ -208,6 +208,14 @@ data ReduceException
     -- working expression — the term that came back left exactly where it stood,
     -- the way an exhausted budget stops on the last step it could afford.
     LoopingAt Expression (NonEmpty Rewritten) State
+  | -- 𝔻 was handed a term outside its domain: the terminator ⊥, which signals
+    -- an error (see #955), or a term no dataization rule matches, such as a
+    -- formation whose φ is a void nothing filled. It carries the term and the
+    -- state the frame that met it had reached. A run of 𝔻 fails on it, with or
+    -- without '_partial', but an operand of a firing that meets it parks that
+    -- firing under '_partial' the way an unanswered λ function does, since the
+    -- dead end is a property of the program rather than of phino (#1401).
+    Undataizable Expression State
   deriving anyclass (Exception)
 
 instance Show ReduceException where
@@ -218,6 +226,8 @@ instance Show ReduceException where
   show (StuckAt func _ _) = show (Stuck func)
   show (Looping term) = printf "Reduction came back to a term it is already reducing: %s" (printExpression term)
   show (LoopingAt term _ _) = show (Looping term)
+  show (Undataizable ExTermination _) = "dataization reached the terminator ⊥, which signals an error and cannot be dataized"
+  show (Undataizable _ _) = "no dataization rule matched"
 
 -- Charge one step of the 𝕄/𝔻 recursion to the budget, refusing to descend once
 -- it is gone. '--max-cycles' and '--max-depth' bound only the normalization run

@@ -16,12 +16,13 @@ module Dataize (dataize, dataize', reduction, Outcome (..)) where
 import AST
 import Builder (buildBytesThrows, buildExpressionThrows)
 import Control.Exception (throwIO, try)
-import Control.Monad (foldM)
+import Control.Monad (foldM, unless)
 import Data.List (find)
 import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as NE
 import Data.Maybe (listToMaybe)
-import Deps (Judgment (..), State (..))
+import qualified Data.Text as T
+import Deps (Evaluation (..), Judgment (..), State (..))
 import Locator (locatedExpression)
 import Matcher (Subst, matchExpression')
 import Morph (Morphed, ReduceContext (..), ReduceException (..), ReductionFunc, deeper, excluding, execBuildTerm, insideUniverse, leadsTo, morph', normalized, parking, producer, sidePremise, universed, unvisited, verb)
@@ -78,7 +79,10 @@ dataize universe state ctx@ReduceContext{..} = do
 -- it dataizes ⊥. The terminator ⊥ signals an error and lies outside 𝔻's domain,
 -- so it matches no clause (there is no 'end' rule mapping it to empty bytes) and
 -- dataization stops there; a data-less formation therefore fails through the
--- same path (see #955).
+-- same path (see #955). The dead end is signalled as 'Undataizable', whose
+-- message names the terminator where that is what was reached rather than
+-- reporting the generic "no dataization rule matched", and which an operand of
+-- a firing parks on under '_partial' (see 'reduction', #1401).
 -- 'box' contextualizes the φ-body and keeps dataizing (its step is labelled by
 -- its 'contextualize' side-computation), and 'norm' reduces through morphing,
 -- splicing the morphing steps into the chain. The clauses are disjoint (see
@@ -106,7 +110,7 @@ dataize' (expr, seq) univ state caller = do
       matched <- firstMatch ctx rules
       case matched of
         Just (rule, subst) -> reduce ctx rule subst
-        Nothing -> throwIO (userError (unmatched expr))
+        Nothing -> throwIO (Undataizable expr state)
   where
     -- The symbol a formation carries in place of a λ name, if any. Such a
     -- formation is what a λ function answered with where it could not work the
@@ -125,13 +129,6 @@ dataize' (expr, seq) univ state caller = do
     manufactured idx ctx = do
       seq' <- leadsTo seq "symbol" (ExBytes datum) ctx
       pure ((datum, NE.toList seq'), state{_manufactured = Just idx})
-    -- 𝔻 is partial: the terminator ⊥ signals an error and lies outside its
-    -- domain (see #955), so it matches no clause and lands here. Name it in the
-    -- message rather than reporting the generic "no dataization rule matched",
-    -- which would otherwise hide that the computation reached a dead end.
-    unmatched :: Expression -> String
-    unmatched ExTermination = "dataization reached the terminator ⊥, which signals an error and cannot be dataized"
-    unmatched _ = "no dataization rule matched"
     firstMatch :: ReduceContext -> [Y.DataizeRule] -> IO (Maybe (Y.DataizeRule, Subst))
     firstMatch _ [] = pure Nothing
     firstMatch ctx (rule : rest) = do
@@ -213,12 +210,29 @@ bytesProducer _ = const Nothing
 -- the run bounds the nesting, and the state 𝑠 goes in and comes back out, so
 -- the symbols this reduction mints are counted in the same sequence as the ones
 -- around it.
+--
+-- An operand reaching a term outside the domain of 𝔻 — the terminator ⊥, or a
+-- term no dataization rule matches, such as a formation whose φ is a void
+-- nothing filled — never comes down to data either, and under '_partial' it
+-- leaves the firing stuck the same way rather than ending the run: an unfilled
+-- void or an error object is as much a property of the program as a λ function
+-- nobody answers (#1401). The protocol records the dead end as a stuck site
+-- named '⊥', written with the term 𝔻 could not dataize, and the name travels
+-- back in the state as the one the firing got stuck on (see '_stuck'). A run
+-- of 𝔻 that is not an operand still fails on it, '_partial' or not (#955).
 reduction :: ReductionFunc
 reduction univ ctx expr state = do
   (universe, aiming) <- insideUniverse expr univ ctx
-  (outcome, _, state') <- dataize universe state aiming
-  pure (reached outcome, state')
+  result <- try (dataize universe state aiming)
+  case result of
+    Right (outcome, _, state') -> pure (reached outcome, state')
+    Left (Undataizable term state') | ctx._partial -> do
+      unless (dead `elem` ctx._parked) (ctx._saveEval (EvStuck ctx._nesting dead Dataization term))
+      pure (Nothing, state'{_stuck = Just dead})
+    Left failure -> throwIO failure
   where
+    dead :: T.Text
+    dead = "⊥"
     reached :: Outcome -> Maybe Bytes
     reached (Dataized bytes) = Just bytes
     reached (Residual _) = Nothing
