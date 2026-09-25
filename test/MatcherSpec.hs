@@ -540,6 +540,28 @@ spec = do
     it "reaches any term with a bare meta" $
       reachable (ExMeta "e1") ExXi `shouldBe` True
 
+  describe "fitting" $ do
+    it "fits a dispatch of a formation holding the attribute the pattern names" $
+      fitting
+        (ExDispatch (ExFormation [BiMeta "B1", BiTau (AtMeta "t1") (ExMeta "e1"), BiMeta "B2"]) (AtMeta "t1"))
+        (ExDispatch (ExFormation [BiVoid (AtLabel "wu"), BiTau (AtLabel "kx") ExRoot]) (AtLabel "kx"))
+        `shouldBe` True
+    it "does not fit a redex standing below the root" $
+      fitting
+        (ExDispatch (ExFormation [BiMeta "B1"]) (AtMeta "t1"))
+        (ExFormation [BiTau (AtLabel "kw") (ExDispatch (ExFormation []) (AtLabel "qo"))])
+        `shouldBe` False
+    it "does not fit a dispatch of another attribute" $
+      fitting
+        (ExDispatch (ExMeta "e1") AtRho)
+        (ExDispatch ExXi (AtLabel "zo"))
+        `shouldBe` False
+    it "does not fit a formation lacking the Δ the pattern asks for" $
+      fitting
+        (ExFormation [BiDelta (BtMeta "d1"), BiMeta "B1"])
+        (ExFormation [BiLambda (Function "Lq"), BiVoid AtRho])
+        `shouldBe` False
+
   describe "combine" $
     forM_
       [ ("combines two empty substitutions", substEmpty, substEmpty, Just substEmpty)

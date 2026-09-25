@@ -162,25 +162,23 @@ matchExpression' (ExPhiMeet prefix idx expr) (ExPhiMeet prefix' idx' expr')
   | otherwise = []
 matchExpression' _ _ = []
 
--- Deep match pattern to expression inside binding
-matchBindingExpression :: Binding -> Expression -> [Subst]
-matchBindingExpression (BiTau _ expr) ptn = matchExpressionDeep ptn expr
-matchBindingExpression _ _ = []
-
-matchArgumentExpression :: Argument -> Expression -> [Subst]
-matchArgumentExpression (ArTau _ expr) ptn = matchExpressionDeep ptn expr
-matchArgumentExpression (ArAlpha _ expr) ptn = matchExpressionDeep ptn expr
-
 -- Match expression with deep nested expression(s) matching
 matchExpressionDeep :: MatchExpressionFunc
-matchExpressionDeep ptn tgt =
-  let matched = matchExpression' ptn tgt
-      deep = case tgt of
-        ExFormation bds -> concatMap (`matchBindingExpression` ptn) bds
-        ExDispatch expr _ -> matchExpressionDeep ptn expr
-        ExApplication expr arg -> matchExpressionDeep ptn expr ++ matchArgumentExpression arg ptn
-        _ -> []
-   in matched ++ deep
+matchExpressionDeep ptn tgt = go tgt []
+  where
+    go :: Expression -> [Subst] -> [Subst]
+    go expr rest
+      | fitting ptn expr = matchExpression' ptn expr ++ below expr rest
+      | otherwise = below expr rest
+    below :: Expression -> [Subst] -> [Subst]
+    below (ExFormation bds) rest = foldr inside rest bds
+    below (ExDispatch expr _) rest = go expr rest
+    below (ExApplication expr (ArTau _ arg)) rest = go expr (go arg rest)
+    below (ExApplication expr (ArAlpha _ arg)) rest = go expr (go arg rest)
+    below _ rest = rest
+    inside :: Binding -> [Subst] -> [Subst]
+    inside (BiTau _ expr) rest = go expr rest
+    inside _ rest = rest
 
 matchExpression :: MatchExpressionFunc
 matchExpression = matchExpressionDeep
@@ -198,7 +196,7 @@ reachable ptn = go
   where
     go :: Expression -> Bool
     go tgt =
-      fits ptn tgt || case tgt of
+      fitting ptn tgt || case tgt of
         ExFormation bds -> any inside bds
         ExDispatch expr _ -> go expr
         ExApplication expr (ArTau _ arg) -> go expr || go arg
@@ -207,19 +205,28 @@ reachable ptn = go
     inside :: Binding -> Bool
     inside (BiTau _ expr) = go expr
     inside _ = False
-    fits :: Expression -> Expression -> Bool
-    fits (ExMeta _) _ = True
-    fits (ExAny _) _ = True
-    fits ExXi ExXi = True
-    fits ExRoot ExRoot = True
-    fits ExTermination ExTermination = True
-    fits (ExFormation pbs) (ExFormation tbs) = all (\pbd -> loose pbd || any (kin pbd) tbs) pbs
-    fits (ExDispatch pexp pattr) (ExDispatch texp tattr) = same pattr tattr && fits pexp texp
-    fits (ExApplication pexp (ArTau pattr _)) (ExApplication texp (ArTau tattr _)) = same pattr tattr && fits pexp texp
-    fits (ExApplication pexp (ArAlpha _ _)) (ExApplication texp (ArAlpha _ _)) = fits pexp texp
-    fits (ExPhiAgain{}) (ExPhiAgain{}) = True
-    fits (ExPhiMeet{}) (ExPhiMeet{}) = True
-    fits _ _ = False
+
+-- Whether the pattern could match the target right at its root, judged by
+-- shape alone: the constructors down the head of the pattern, the attribute a
+-- dispatch or an application names, and the kinds of bindings a formation of
+-- the pattern asks for. It never says no where 'matchExpression'' would find
+-- a match (#1453).
+fitting :: Expression -> Expression -> Bool
+fitting = go
+  where
+    go :: Expression -> Expression -> Bool
+    go (ExMeta _) _ = True
+    go (ExAny _) _ = True
+    go ExXi ExXi = True
+    go ExRoot ExRoot = True
+    go ExTermination ExTermination = True
+    go (ExFormation pbs) (ExFormation tbs) = all (\pbd -> loose pbd || any (kin pbd) tbs) pbs
+    go (ExDispatch pexp pattr) (ExDispatch texp tattr) = same pattr tattr && go pexp texp
+    go (ExApplication pexp (ArTau pattr _)) (ExApplication texp (ArTau tattr _)) = same pattr tattr && go pexp texp
+    go (ExApplication pexp (ArAlpha _ _)) (ExApplication texp (ArAlpha _ _)) = go pexp texp
+    go (ExPhiAgain{}) (ExPhiAgain{}) = True
+    go (ExPhiMeet{}) (ExPhiMeet{}) = True
+    go _ _ = False
     loose :: Binding -> Bool
     loose (BiMeta _) = True
     loose (BiAny _) = True
