@@ -51,7 +51,7 @@ import Numeric (readHex)
 import Text.Printf (printf)
 
 -- Errors raised while converting malformed byte values.
-data BytesException = InvalidNumberLength Int
+newtype BytesException = InvalidNumberLength Int
   deriving (Eq, Show)
 
 instance Exception BytesException
@@ -233,12 +233,10 @@ strToBts str = word8ToBytes (unpack (U.fromString str))
 -- BtOne "01"
 bytesToBts :: String -> Bytes
 bytesToBts "--" = BtEmpty
-bytesToBts str =
-  if length str == 3 && last str == '-'
-    then BtOne (init str)
-    else if not (null str) && last str == '-'
-      then error $ "Invalid trailing separator in byte string; " ++ str
-    else BtMany (map T.unpack (T.splitOn "-" (T.pack str)))
+bytesToBts str
+  | length str == 3 && last str == '-' = BtOne (init str)
+  | not (null str) && last str == '-' = error $ "Invalid trailing separator in byte string; " ++ str
+  | otherwise = BtMany (map T.unpack (T.splitOn "-" (T.pack str)))
 
 -- Convert hex string like "68-65-6C-6C-6F" to "hello"
 -- >>> btsToStr (BtMany ["68", "65", "6C", "6C", "6F"])
