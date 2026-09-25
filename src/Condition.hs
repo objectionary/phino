@@ -98,7 +98,7 @@ condition =
         _ <- comma
         bd <- _binding phiParser
         _ <- rparen
-        return (Y.In attr bd)
+        return (Y.In [attr] [bd])
     , do
         _ <- symbol "not" >> lparen
         cond <- condition

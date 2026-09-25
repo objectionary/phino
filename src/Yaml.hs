@@ -12,7 +12,7 @@
 module Yaml where
 
 import AST
-import Control.Applicative (asum)
+import Control.Applicative (asum, (<|>))
 import Data.Aeson
 import qualified Data.Aeson.Key as Key
 import qualified Data.Aeson.KeyMap as KeyMap
@@ -138,7 +138,7 @@ parseCondition v = do
       "in" -> do
         vals <- v .: "in"
         case vals of
-          [attr_, binding_] -> In <$> parseJSON attr_ <*> parseJSON binding_
+          [attrs_, bds_] -> In <$> several attrs_ <*> several bds_
           _ -> fail "'in' expects exactly two arguments"
       "matches" -> do
         vals <- v .: "matches"
@@ -152,6 +152,9 @@ parseCondition v = do
           _ -> fail "'part-of' expects exactly two arguments"
       _ -> fail "Unknown condition type"
     _ -> fail "Exactly one condition type is expected"
+  where
+    several :: FromJSON a => Value -> Parser [a]
+    several val = parseJSON val <|> (pure <$> parseJSON val)
 
 instance FromJSON ExtraArgument where
   parseJSON v =
@@ -207,7 +210,7 @@ data Comparable
 data Condition
   = And [Condition]
   | Or [Condition]
-  | In Attribute Binding
+  | In [Attribute] [Binding]
   | Not Condition
   | Eq Comparable Comparable
   | Gt Comparable Comparable
@@ -255,7 +258,7 @@ instance Slots Condition where
   slots (And conds) = slots conds
   slots (Or conds) = slots conds
   slots (Not cond) = slots cond
-  slots (In attr bd) = slots attr ++ slots bd
+  slots (In attrs bds) = slots attrs ++ slots bds
   slots (Eq left right) = slots left ++ slots right
   slots (Gt left right) = slots left ++ slots right
   slots (NF expr) = slots expr
@@ -300,7 +303,7 @@ instance Metas Condition where
   metas (And conds) = metas conds
   metas (Or conds) = metas conds
   metas (Not cond) = metas cond
-  metas (In attr bd) = metas attr ++ metas bd
+  metas (In attrs bds) = metas attrs ++ metas bds
   metas (Eq left right) = metas left ++ metas right
   metas (Gt left right) = metas left ++ metas right
   metas (NF expr) = metas expr
@@ -312,7 +315,7 @@ instance Metas Condition where
   bare names (And conds) = And (bare names conds)
   bare names (Or conds) = Or (bare names conds)
   bare names (Not cond) = Not (bare names cond)
-  bare names (In attr bd) = In (bare names attr) (bare names bd)
+  bare names (In attrs bds) = In (bare names attrs) (bare names bds)
   bare names (Eq left right) = Eq (bare names left) (bare names right)
   bare names (Gt left right) = Gt (bare names left) (bare names right)
   bare names (NF expr) = NF (bare names expr)

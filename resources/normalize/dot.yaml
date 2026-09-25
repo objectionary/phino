@@ -26,13 +26,10 @@ name: dot
 pattern: ⟦𝐵1, 𝜏1 ↦ 𝑛1, 𝐵2⟧.𝜏1
 e-match: 𝑒1
 when:
-  or:
-    - disjoint:
-        - [λ]
-        - [𝐵1, 𝐵2]
-    - disjoint:
-        - [Δ]
-        - [𝐵1, 𝐵2]
+  not:
+    in:
+      - [Δ, λ]
+      - [𝐵1, 𝐵2]
 result: 𝑒2(ρ ↦ 𝑒3)
 where:
   - meta: 𝑒2

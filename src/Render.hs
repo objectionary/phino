@@ -291,17 +291,15 @@ instance Render CONDITION where
   render CO_MATCHES{..} = "matches\\lparen " <> T.pack regex <> ", " <> render expr <> " \\rparen"
   render CO_PART_OF{..} = "part-of\\lparen " <> render expr <> ", " <> render binding <> " \\rparen"
   render CO_FORMATION{..} = "\\phinoIsFormation{ " <> render expr <> " }"
-  render CO_DISJOINT{..} =
-    "[ "
-      <> T.intercalate " \\char44{} " (map render attrs)
-      <> " ] \\cap "
-      <> renderGroups groups
-      <> " = \\emptyset"
-    where
-      renderGroups :: [BINDING] -> Text
-      renderGroups [group] = render group
-      renderGroups gs = "\\lparen " <> T.intercalate " \\cup " (map render gs) <> " \\rparen"
+  render CO_DISJOINT{..} = render (ST_ATTRIBUTES attrs) <> " \\cap " <> union groups <> " = \\emptyset"
+  render CO_SUBSET{belongs = NOT_IN, ..} = render (ST_ATTRIBUTES attrs) <> " \\not\\subseteq " <> union groups
+  render CO_SUBSET{..} = render (ST_ATTRIBUTES attrs) <> " \\subseteq " <> union groups
   render CO_EMPTY = ""
+
+-- The union of binding groups, parenthesized when there is more than one.
+union :: [BINDING] -> Text
+union [group] = render group
+union groups = "\\lparen " <> T.intercalate " \\cup " (map render groups) <> " \\rparen"
 
 instance Render EXTRA_ARG where
   render ARG_ATTR{..} = render attr

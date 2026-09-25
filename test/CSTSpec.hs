@@ -312,10 +312,10 @@ spec = do
     let voidYBinding :: BINDING
         voidYBinding = BI_PAIR (PA_VOID (AT_LABEL "y") ARROW EMPTY) (BDS_EMPTY (TAB 0)) (TAB 0)
     forM_
-      [ ("In", Y.In (AtLabel "x") (BiVoid (AtLabel "y")), CO_BELONGS (AT_LABEL "x") IN (ST_BINDING voidYBinding))
+      [ ("In", Y.In [AtLabel "x"] [BiVoid (AtLabel "y")], CO_BELONGS (AT_LABEL "x") IN (ST_BINDING voidYBinding))
       ,
         ( "Not (In ...) flips the belonging"
-        , Y.Not (Y.In (AtLabel "x") (BiVoid (AtLabel "y")))
+        , Y.Not (Y.In [AtLabel "x"] [BiVoid (AtLabel "y")])
         , CO_BELONGS (AT_LABEL "x") NOT_IN (ST_BINDING voidYBinding)
         )
       ,
@@ -341,6 +341,16 @@ spec = do
       , ("Absolute", Y.Absolute ExXi, CO_ABSOLUTE (EX_XI XI) IN)
       , ("Not (Absolute ...) flips membership", Y.Not (Y.Absolute ExXi), CO_ABSOLUTE (EX_XI XI) NOT_IN)
       , ("Disjoint", Y.Disjoint [AtLabel "a"] [BiVoid (AtLabel "y")], CO_DISJOINT [AT_LABEL "a"] [voidYBinding])
+      ,
+        ( "In over many attributes becomes a subset"
+        , Y.In [AtLabel "a", AtLabel "x"] [BiVoid (AtLabel "y")]
+        , CO_SUBSET [AT_LABEL "a", AT_LABEL "x"] IN [voidYBinding]
+        )
+      ,
+        ( "Not (In ...) over many binding metas flips the subset"
+        , Y.Not (Y.In [AtLabel "x"] [BiVoid (AtLabel "y"), BiVoid (AtLabel "y")])
+        , CO_SUBSET [AT_LABEL "x"] NOT_IN [voidYBinding, voidYBinding]
+        )
       , ("And on an empty list collapses to CO_EMPTY", Y.And [], CO_EMPTY)
       , ("And on a non-empty list wraps every condition", Y.And [Y.NF ExXi], CO_LOGIC [CO_NF (EX_XI XI)] AND)
       , ("Or on an empty list collapses to CO_EMPTY", Y.Or [], CO_EMPTY)

@@ -1500,9 +1500,9 @@ Condition:
   | eq:                  # compare two comparable objects
       - Comparable
       - Comparable
-  | in:                  # check if attributes exist in bindings
-      - Attribute'
-      - Binding'
+  | in:                  # returns True if every given attribute exists in
+      - Attribute' | [Attribute'] # the union of the given bindings
+      - Binding' | [Binding']
   | nf: Expression'      # returns True if given expression in normal form
                          # which means that no more other normalization rules
                          # can be applied
