@@ -279,7 +279,7 @@ validateRewriteRule rule =
   let used = maybe [] (map Y.function) rule.where_
    in case filter (\fn -> fn `notElem` (buildFunctions ++ execFunctions)) used of
         (fn : _) -> invalidCLIArguments (printf "Function '%s' in rule '%s' is not supported" fn rule.name)
-        [] -> case filter (\fn -> fn `elem` execFunctions) used of
+        [] -> case filter (`elem` execFunctions) used of
           [] -> pure rule
           (fn : _) ->
             invalidCLIArguments
