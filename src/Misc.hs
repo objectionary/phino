@@ -19,22 +19,12 @@ import Control.Exception
 import Data.Functor ((<&>))
 import Data.List (intercalate)
 import Data.Maybe (catMaybes)
-import qualified Data.Set as Set
 import Text.Printf (printf)
 
 -- Unwrap a pure 'Either String' in IO, throwing the built exception on 'Left'
 orThrow :: (Exception e) => (String -> e) -> Either String a -> IO a
 orThrow _ (Right value) = pure value
 orThrow asException (Left err) = throwIO (asException err)
-
--- Extract attribute from binding
-attributeFromBinding :: Binding -> Maybe Attribute
-attributeFromBinding (BiTau attr _) = Just attr
-attributeFromBinding (BiVoid attr) = Just attr
-attributeFromBinding (BiDelta _) = Just AtDelta
-attributeFromBinding (BiLambda _) = Just AtLambda
-attributeFromBinding (BiMeta _) = Nothing
-attributeFromBinding (BiAny _) = Nothing
 
 -- Extract attributes from bindings
 attributesFromBindings :: [Binding] -> [Attribute]
@@ -51,7 +41,7 @@ uniqueBindings' bds = case uniqueBindings bds of
 
 -- Check if given binding list consists of unique attributes
 uniqueBindings :: [Binding] -> Either String [Binding]
-uniqueBindings bds = case duplicated bds Set.empty of
+uniqueBindings bds = case repeated bds of
   Just attr ->
     Left
       ( printf
@@ -60,14 +50,6 @@ uniqueBindings bds = case duplicated bds Set.empty of
           (intercalate ", " (map show (attributesFromBindings bds)))
       )
   _ -> Right bds
-  where
-    duplicated :: [Binding] -> Set.Set Attribute -> Maybe Attribute
-    duplicated [] _ = Nothing
-    duplicated (bd : rest) seen = case attributeFromBinding bd of
-      Just attr
-        | attr `Set.member` seen -> Just attr
-        | otherwise -> duplicated rest (Set.insert attr seen)
-      Nothing -> duplicated rest seen
 
 -- Transform dispatch to list of attributes
 -- >>> fqnToAttrs (ExDispatch (ExDispatch (ExDispatch ExRoot (AtLabel "org")) (AtLabel "eolang")) (AtLabel "number"))

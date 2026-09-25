@@ -10,8 +10,7 @@ import Control.Exception (IOException, try)
 import Control.Monad (forM_)
 import Data.Either (isLeft, isRight)
 import Misc
-  ( attributeFromBinding
-  , attributesFromBindings
+  ( attributesFromBindings
   , attributesFromBindings'
   , fqnToAttrs
   , orThrow
@@ -36,16 +35,6 @@ spec = do
       case result of
         Left err -> show err `shouldContain` "boom"
         Right _ -> fail "expected orThrow to throw"
-
-  describe "attributeFromBinding" $
-    forM_
-      [ ("BiTau yields its attribute", BiTau AtRho ExRoot, Just AtRho)
-      , ("BiVoid yields its attribute", BiVoid AtPhi, Just AtPhi)
-      , ("BiDelta yields AtDelta", BiDelta BtEmpty, Just AtDelta)
-      , ("BiLambda yields AtLambda", BiLambda (Function "F"), Just AtLambda)
-      , ("BiMeta yields Nothing", BiMeta "B", Nothing)
-      ]
-      (\(desc, binding, expected) -> it desc (attributeFromBinding binding `shouldBe` expected))
 
   describe "attributesFromBindings" $
     forM_

@@ -332,3 +332,22 @@ spec = do
         , ExFormation [BiTau (AtLabel "z") ExRoot]
         )
       ]
+
+  describe "replace expression inside an inert term" $
+    test
+      replaceExpression
+      [
+        ( "Q -> [[ vt -> ξ.ek ]] => ([ξ.ek], [Φ]) => Q -> [[ vt -> Φ ]] (an inert pattern is still looked for inside an inert term)"
+        , ExFormation [BiTau (AtLabel "vt") (ExDispatch ExXi (AtLabel "ek"))]
+        , [ExDispatch ExXi (AtLabel "ek")]
+        , [ExRoot]
+        , ExFormation [BiTau (AtLabel "vt") ExRoot]
+        )
+      ,
+        ( "Q -> [[ vt -> ξ.ek, te -> ⊥.ke ]] => ([⊥.ke], [Φ]) => Q -> [[ vt -> ξ.ek, te -> Φ ]] (a redex beside an inert term is replaced)"
+        , ExFormation [BiTau (AtLabel "vt") (ExDispatch ExXi (AtLabel "ek")), BiTau (AtLabel "te") (ExDispatch ExTermination (AtLabel "ke"))]
+        , [ExDispatch ExTermination (AtLabel "ke")]
+        , [ExRoot]
+        , ExFormation [BiTau (AtLabel "vt") (ExDispatch ExXi (AtLabel "ek")), BiTau (AtLabel "te") ExRoot]
+        )
+      ]

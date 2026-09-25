@@ -152,7 +152,8 @@ matchExpression' ExXi ExXi = [substEmpty]
 matchExpression' ExRoot ExRoot = [substEmpty]
 matchExpression' ExTermination ExTermination = [substEmpty]
 matchExpression' (ExFormation pbs) (ExFormation tbs) = matchBindings pbs tbs
-matchExpression' (ExDispatch pexp pattr) (ExDispatch texp tattr) = combineMany (matchAttribute pattr tattr) (matchExpression' pexp texp)
+matchExpression' (ExDispatch pexp pattr) (ExDispatch texp tattr) = combineMany (matchAttribute pattr tattr) (matchExpression' (pinned pattr tattr pexp) texp)
+matchExpression' (ExApplication pexp parg@(ArTau pattr _)) (ExApplication texp targ@(ArTau tattr _)) = combineMany (matchExpression' (pinned pattr tattr pexp) texp) (matchArgument parg targ)
 matchExpression' (ExApplication pexp parg) (ExApplication texp targ) = combineMany (matchExpression' pexp texp) (matchArgument parg targ)
 matchExpression' (ExPhiAgain prefix idx expr) (ExPhiAgain prefix' idx' expr')
   | prefix == prefix' && idx == idx' = matchExpression' expr expr'
@@ -162,12 +163,46 @@ matchExpression' (ExPhiMeet prefix idx expr) (ExPhiMeet prefix' idx' expr')
   | otherwise = []
 matchExpression' _ _ = []
 
+-- The pattern with the attribute meta written in its place wherever the
+-- meta stands in it, once the target has told which attribute that is. A
+-- dispatch or an application names its attribute beside the formation it is
+-- made of, as '⟦𝐵1, 𝜏1 ↦ 𝑛1, 𝐵2⟧.𝜏1' does, and the formation is matched
+-- first, so without it every binding of the formation would be tried as 𝜏1
+-- and a substitution made for it before the attribute threw all but one away.
+-- The matches are the ones the pattern has anyway, in the same order (#1453).
+pinned :: Attribute -> Attribute -> Expression -> Expression
+pinned (AtMeta meta) tattr = goExpr
+  where
+    goExpr :: Expression -> Expression
+    goExpr (ExFormation bds) = ExFormation (map goBinding bds)
+    goExpr (ExDispatch expr attr) = ExDispatch (goExpr expr) (goAttribute attr)
+    goExpr (ExApplication expr (ArTau attr arg)) = ExApplication (goExpr expr) (ArTau (goAttribute attr) (goExpr arg))
+    goExpr (ExApplication expr (ArAlpha alpha arg)) = ExApplication (goExpr expr) (ArAlpha alpha (goExpr arg))
+    goExpr expr = expr
+    goBinding :: Binding -> Binding
+    goBinding (BiTau attr expr) = BiTau (goAttribute attr) (goExpr expr)
+    goBinding (BiVoid attr) = BiVoid (goAttribute attr)
+    goBinding bd = bd
+    goAttribute :: Attribute -> Attribute
+    goAttribute (AtMeta meta')
+      | meta' == meta = tattr
+    goAttribute attr = attr
+pinned _ _ = id
+
 -- Match expression with deep nested expression(s) matching
 matchExpressionDeep :: MatchExpressionFunc
-matchExpressionDeep ptn tgt = go tgt []
+matchExpressionDeep = matchExpressionDeep' False
+
+-- The same deep matching, told whether the pattern is a redex: one that
+-- matches only at a place no 'inert' term holds. The matcher then never looks
+-- inside an inert term, so a copy of an object an earlier normalization left
+-- in normal form costs nothing to carry along, however big it is (#1453).
+matchExpressionDeep' :: Bool -> MatchExpressionFunc
+matchExpressionDeep' redex ptn tgt = go tgt []
   where
     go :: Expression -> [Subst] -> [Subst]
     go expr rest
+      | redex && inert expr = rest
       | fitting ptn expr = matchExpression' ptn expr ++ below expr rest
       | otherwise = below expr rest
     below :: Expression -> [Subst] -> [Subst]
@@ -192,16 +227,23 @@ matchExpression = matchExpressionDeep
 -- pattern fits nowhere in a term is told so without the deep matcher trying
 -- it at every place of that term (#1453).
 reachable :: Expression -> Expression -> Bool
-reachable ptn = go
+reachable = reachable' False
+
+-- The same judgement, told whether the pattern is a redex, in which case no
+-- place inside an 'inert' term is looked at (see 'matchExpressionDeep'').
+reachable' :: Bool -> Expression -> Expression -> Bool
+reachable' redex ptn = go
   where
     go :: Expression -> Bool
-    go tgt =
-      fitting ptn tgt || case tgt of
-        ExFormation bds -> any inside bds
-        ExDispatch expr _ -> go expr
-        ExApplication expr (ArTau _ arg) -> go expr || go arg
-        ExApplication expr (ArAlpha _ arg) -> go expr || go arg
-        _ -> False
+    go tgt
+      | redex && inert tgt = False
+      | otherwise =
+          fitting ptn tgt || case tgt of
+            ExFormation bds -> any inside bds
+            ExDispatch expr _ -> go expr
+            ExApplication expr (ArTau _ arg) -> go expr || go arg
+            ExApplication expr (ArAlpha _ arg) -> go expr || go arg
+            _ -> False
     inside :: Binding -> Bool
     inside (BiTau _ expr) = go expr
     inside _ = False

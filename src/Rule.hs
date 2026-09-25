@@ -6,13 +6,13 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Rule (RuleContext (..), isNF, matchExpressionWithRule, matchExpressionWithRule', meetCondition) where
+module Rule (RuleContext (..), isNF, matchExpressionWithRule, matchExpressionWithRule', meetCondition, redex) where
 
 import AST
 import Builder
   ( buildAttribute
-  , buildBinding
   , buildBindingThrows
+  , buildBindingUnchecked
   , buildExpression
   , buildExpressionThrows
   )
@@ -22,7 +22,7 @@ import Control.Exception.Base (SomeException, try)
 import Control.Monad (when)
 import qualified Data.ByteString.Char8 as B
 import Data.Foldable (foldlM)
-import Data.List (nub)
+import Data.List (foldl', intersect, nub)
 import qualified Data.Map.Strict as M
 import Data.Maybe (catMaybes)
 import qualified Data.Text as T
@@ -108,7 +108,7 @@ _not cond subst ctx = do
 -- captured by the given binding metas.
 _in :: [Attribute] -> [Binding] -> Subst -> RuleContext -> IO [Subst]
 _in attrs bindings subst _ =
-  case (traverse (`buildAttribute` subst) attrs, traverse (`buildBinding` subst) bindings) of
+  case (traverse (`buildAttribute` subst) attrs, traverse (`buildBindingUnchecked` subst) bindings) of
     (Right attrs', Right bdss) -> pure [subst | all (`presentIn` concat bdss) attrs']
     (_, _) -> pure []
 
@@ -241,7 +241,7 @@ _partOf exp bd subst _ = do
 -- bindings captured by the given binding metas.
 _disjoint :: [Attribute] -> [Binding] -> Subst -> RuleContext -> IO [Subst]
 _disjoint attrs bindings subst _ =
-  case (traverse (`buildAttribute` subst) attrs, traverse (`buildBinding` subst) bindings) of
+  case (traverse (`buildAttribute` subst) attrs, traverse (`buildBindingUnchecked` subst) bindings) of
     (Right attrs', Right bdss) -> pure [subst | not (any (`presentIn` concat bdss) attrs')]
     (_, _) -> pure []
 
@@ -377,13 +377,46 @@ metasWithPrefix prefix = nub . go
 -- The deep matcher is asked only where the pattern fits somewhere in the term
 -- at all (see 'reachable'), since trying it at every place of a term holding
 -- copies of big objects is what a rule that fits nowhere used to cost (#1453).
+-- A rule that matches only a redex never looks inside an inert term (see
+-- 'redex').
 matchExpressionWithRule :: Expression -> Y.Rule -> RuleContext -> IO [Subst]
-matchExpressionWithRule = matchExpressionBy deep [substEmpty]
+matchExpressionWithRule expr rule = matchExpressionBy deep [substEmpty] expr rule
   where
     deep :: MatchExpressionFunc
     deep ptn tgt
-      | reachable ptn tgt = matchExpression ptn tgt
+      | reachable' (redex rule) ptn tgt = matchExpressionDeep' (redex rule) ptn tgt
       | otherwise = []
+
+-- Whether every match of the rule its 'when' lets through stands at a place
+-- no 'inert' term holds, judged by the pattern and the 'when' alone, so it
+-- holds for a rule of phino and for a rule of the user alike. A pattern
+-- dispatching on or applying a formation or ⊥ matches only such a place, and
+-- so does a formation pattern holding both λ and Δ, counting those its 'when'
+-- demands of its binding metas through 'in', which is how 'dl' is one (#1453).
+redex :: Y.Rule -> Bool
+redex rule = case rule.pattern of
+  ExDispatch head' _ -> stuck head'
+  ExApplication head' _ -> stuck head'
+  ExFormation bds -> all (`elem` (concatMap attribute bds ++ maybe [] (demanded bds) rule.when)) [AtLambda, AtDelta]
+  _ -> False
+  where
+    stuck :: Expression -> Bool
+    stuck (ExFormation _) = True
+    stuck ExTermination = True
+    stuck _ = False
+    attribute :: Binding -> [Attribute]
+    attribute (BiLambda _) = [AtLambda]
+    attribute (BiDelta _) = [AtDelta]
+    attribute _ = []
+    demanded :: [Binding] -> Y.Condition -> [Attribute]
+    demanded bds (Y.In attrs metas)
+      | all (\meta -> isMeta meta && meta `elem` bds) metas = attrs
+    demanded bds (Y.And conds) = concatMap (demanded bds) conds
+    demanded bds (Y.Or (cond : conds)) = foldl' (\attrs cond' -> attrs `intersect` demanded bds cond') (demanded bds cond) conds
+    demanded _ _ = []
+    isMeta :: Binding -> Bool
+    isMeta (BiMeta _) = True
+    isMeta _ = False
 
 -- Like 'matchExpressionWithRule' but matches the pattern against the whole
 -- expression only (no deep, sub-expression matching). Used by the dataization

@@ -1,5 +1,6 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
@@ -7,7 +8,7 @@
 
 module RuleSpec where
 
-import AST (Argument (..), Attribute (..), Binding (..), Bytes (..), Expression (..), Function (..))
+import AST (Argument (..), Attribute (..), Binding (..), Bytes (..), Expression (..), Function (..), inert)
 import Builder (buildExpressionThrows)
 import Control.Monad
 import Data.Aeson
@@ -16,8 +17,9 @@ import Files (allPathsIn)
 import Functions (buildTerm)
 import GHC.Generics
 import Matcher
+import Parser (parseExpressionThrows)
 import Printer (printSubsts)
-import Rule (RuleContext (RuleContext), isNF, matchExpressionWithRule, meetCondition)
+import Rule (RuleContext (RuleContext), isNF, matchExpressionWithRule, meetCondition, redex)
 import System.FilePath
 import Test.Hspec (Spec, describe, expectationFailure, it, runIO, shouldBe, shouldReturn, shouldSatisfy)
 import Yaml qualified
@@ -183,3 +185,33 @@ spec = do
     it "writes the formation itself where the context knows no universe" $ do
       (mapM (buildExpressionThrows (ExMeta "e2")) =<< matchExpressionWithRule world namingRule (RuleContext buildTerm Nothing))
         `shouldReturn` [world]
+
+  describe "redex" $ do
+    it "takes every normalization rule for a redex" $
+      all redex Yaml.normalizationRules `shouldBe` True
+    it "does not take a rule of a formation holding a λ alone for a redex" $
+      redex (Yaml.Rule "lone" Nothing Nothing (ExFormation [BiMeta "B1", BiLambda (FnMeta "f1")]) ExTermination Nothing Nothing Nothing) `shouldBe` False
+    it "does not take a rule demanding a Δ under 'not' for a redex" $
+      redex (Yaml.Rule "negated" Nothing Nothing (ExFormation [BiMeta "B1", BiLambda (FnMeta "f1")]) ExTermination (Just (Yaml.Not (Yaml.In [AtDelta] [BiMeta "B1"]))) Nothing Nothing) `shouldBe` False
+    it "does not take a rule dispatching on a meta for a redex" $
+      redex (Yaml.Rule "loose" Nothing Nothing (ExDispatch (ExMeta "e1") (AtMeta "t1")) ExTermination Nothing Nothing Nothing) `shouldBe` False
+
+  describe "normalization rules over inert terms" $ do
+    let samples :: [String]
+        samples =
+          [ "⟦ kx ↦ ξ.ow( jy ↦ Φ.ya ), λ ⤍ L_ok, b ↦ ∅ ⟧"
+          , "⟦ φ ↦ Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ λ ⤍ 𝜎3 ⟧ ) ), ρ ↦ ∅, qe ↦ ⟦ Δ ⤍ 1F- ⟧ ⟧"
+          , "Φ.hz( ⟦ ab ↦ ⟦ ba ↦ ξ.ρ, λ ⤍ L_z ⟧ ⟧ ).uv( α0 ↦ ⊥ )"
+          , "⟦ x ↦ ∅, dd ↦ ⟦ λ ⤍ L_dd, ρ ↦ ∅ ⟧, m1 ↦ ⟦ b ↦ ∅, φ ↦ ξ.ρ.dd( b ↦ ξ.b ), ρ ↦ ∅ ⟧ ⟧"
+          ]
+        context :: RuleContext
+        context = RuleContext buildTerm Nothing
+        matches :: Expression -> Yaml.Rule -> IO [Subst]
+        matches term rule = maybe pure (\cond substs -> meetCondition cond substs context) rule.when (matchExpressionDeep rule.pattern term)
+    it "takes every sample for inert" $ do
+      terms <- mapM parseExpressionThrows samples
+      all inert terms `shouldBe` True
+    it "does not find a normalization rule matching anywhere in an inert term" $ do
+      terms <- mapM parseExpressionThrows samples
+      found <- concat <$> sequence [matches term rule | term <- terms, rule <- Yaml.normalizationRules]
+      found `shouldBe` []

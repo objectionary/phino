@@ -598,6 +598,36 @@ spec = do
     it "dont cut the target anew at every index a meta binding may end at" $ do
       matched <- timeout 5000000 (evaluate (length (matchExpression dot (ExDispatch (crowd 3000) (AtLabel "d1")))))
       matched `shouldBe` Just 1
+
+  describe "matchExpressionDeep'" $ do
+    it "does not look inside an inert term for a redex" $
+      matchExpressionDeep' True (ExMeta "e1") (ExFormation [BiTau (AtLabel "oq") (ExDispatch ExXi (AtLabel "ze"))]) `shouldBe` []
+    it "looks inside an inert term for what is no redex" $
+      length (matchExpressionDeep' False (ExMeta "e1") (ExFormation [BiTau (AtLabel "oq") (ExDispatch ExXi (AtLabel "ze"))])) `shouldBe` 3
+    it "finds a redex standing beside an inert term" $
+      matchExpressionDeep' True (ExDispatch ExTermination (AtMeta "t1")) (ExFormation [BiTau (AtLabel "ux") (ExFormation [BiVoid AtRho]), BiTau (AtLabel "xu") (ExDispatch ExTermination (AtLabel "vo"))])
+        `shouldBe` substs [[("t1", MvAttribute (AtLabel "vo"))]]
+
+  describe "reachable'" $
+    it "does not reach into an inert term for a redex" $
+      reachable' True (ExMeta "e1") (ExDispatch (ExDispatch ExRoot (AtLabel "gh")) (AtLabel "hg")) `shouldBe` False
+
+  describe "pinned" $
+    it "writes the attribute in place of its meta wherever the meta stands" $
+      pinned (AtMeta "t1") (AtLabel "wk") (ExFormation [BiMeta "B1", BiTau (AtMeta "t1") (ExDispatch ExXi (AtMeta "t1")), BiVoid (AtMeta "t2")])
+        `shouldBe` ExFormation [BiMeta "B1", BiTau (AtLabel "wk") (ExDispatch ExXi (AtLabel "wk")), BiVoid (AtMeta "t2")]
+
+  describe "matchExpression' of a dispatch naming a meta attribute" $
+    it "binds the attribute the dispatch names and nothing else" $
+      matchExpression' dot (ExDispatch (ExFormation [BiTau (AtLabel "pa") ExRoot, BiTau (AtLabel "ap") ExXi, BiVoid AtRho]) (AtLabel "ap"))
+        `shouldBe` substs
+          [
+            [ ("B1", MvBindings [BiTau (AtLabel "pa") ExRoot])
+            , ("t1", MvAttribute (AtLabel "ap"))
+            , ("n1", MvExpression ExXi)
+            , ("B2", MvBindings [BiVoid AtRho])
+            ]
+          ]
   where
     -- The pattern of the 'dot' normalization rule, the one every dispatch of a
     -- program is matched against: a meta binding on either side of the binding
