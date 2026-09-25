@@ -5,10 +5,6 @@ name: dl
 pattern: ⟦𝐵1, λ ⤍ 𝑓, 𝐵2⟧
 result: ⊥
 when:
-  or:
-    - in:
-        - Δ
-        - 𝐵1
-    - in:
-        - Δ
-        - 𝐵2
+  in:
+    - Δ
+    - [𝐵1, 𝐵2]

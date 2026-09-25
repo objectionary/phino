@@ -11,14 +11,9 @@ when:
     - in:
         - φ
         - 𝐵1
-    - not:
-        in:
-          - 𝜏1
-          - 𝐵1
-    - not:
-        in:
-          - λ
-          - 𝐵1
+    - disjoint:
+        - [𝜏1, λ]
+        - [𝐵1]
 premises:
   - n-result: 𝑛1
     normalize: ⟦𝐵1⟧.φ.𝜏1

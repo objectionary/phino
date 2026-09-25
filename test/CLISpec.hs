@@ -2465,7 +2465,7 @@ spec = do
             , "\\phinoNormalizationRule{dl}"
             , "  { [[ B_1, L> f, B_2 ]] }"
             , "  { T }"
-            , "  { D \\in B_1 \\;\\text{or}\\; D \\in B_2 }"
+            , "  { [ D ] \\subseteq \\lparen B_1 \\cup B_2 \\rparen }"
             , "  { }"
             , "\\phinoNormalizationRule{dot}"
             , "  { [[ B_1, \\tau -> n, B_2 ]] . \\tau }"
@@ -2505,7 +2505,7 @@ spec = do
             , "\\phinoNormalizationRule{stop}"
             , "  { [[ B ]] . \\tau }"
             , "  { T }"
-            , "  { \\tau \\notin B \\;\\text{and}\\; @ \\notin B \\;\\text{and}\\; L \\notin B }"
+            , "  { [ \\tau \\char44{} @ \\char44{} L ] \\cap B = \\emptyset }"
             , "  { }"
             ]
         ]
@@ -2572,7 +2572,7 @@ spec = do
             , "\\begin{phinoMorphingInference}"
             , "  \\phinoName{mphi}"
             , "  \\phinoLabel{\\varphi}"
-            , "  \\phinoCondition{ @ \\in B \\;\\text{and}\\; \\tau \\notin B \\;\\text{and}\\; L \\notin B }"
+            , "  \\phinoCondition{ @ \\in B \\;\\text{and}\\; [ \\tau \\char44{} L ] \\cap B = \\emptyset }"
             , "  \\phinoPremise{ \\phinoNormalize{ [[ B ]] . @ . \\tau }{ n_1 } }"
             , "  \\phinoPremise{ \\phinoMorph{ n_1 }{ e }{ s_1 }{ n_2 }{ s_2 } }"
             , "  \\phinoConclusion{ \\phinoMorph{ [[ B ]] . \\tau }{ e }{ s_1 }{ n_2 }{ s_2 } }"
