@@ -7,8 +7,9 @@
 # on the first round and with n ↦ 𝜎5 on the second, and no two rounds are ever
 # the same term. They are the same formation up to a renaming of symbols, which
 # is what the guard compares by, so the second entry is cut as its frame opens
-# and writes no 'formation' line of its own (#1420). The budget is generous
-# here, so what ends the run is the cut and not the limit.
+# (#1420) and writes a 'looped' line where its 'formation' line would have
+# stood, carrying the term of the round that was kept (#1434). The budget is
+# generous here, so what ends the run is the cut and not the limit.
 symbolic: |
   - λ: L_zero
     dataize:
@@ -76,6 +77,7 @@ protocol: |
             𝑛.6.2 := 𝜎5:λ  # 𝕄(𝑛.6.1)
           𝔼(L_mul)  # 𝕄(Φ.a🌵7)
             𝛿1.7 := 𝔻(𝜎3:λ)  # 𝔻(ξ.a)
+            looped(⟦ n ↦ 𝜎3:λ, φ ↦ Φ.if( c ↦ Φ.zero( x ↦ n ), left ↦ 01-:Δ, right ↦ Φ.mul( a ↦ n, b ↦ Φ.fact( n ↦ Φ.dec( x ↦ n ) ) ) ) ⟧)  # 𝔻(Φ.a🌵10)
           𝑛2.4 := ⟦ a ↦ 𝜎3:λ, b ↦ Φ.fact( n ↦ 𝜎5:λ ), λ ⤍ L_mul ⟧  # 𝕄(ξ.right)
           𝔻(𝜎6:λ) == 01-
           𝑛3.4 := 𝜎6:λ  # 𝑛1
@@ -99,6 +101,7 @@ protocol: |
               𝑛.12.2 := 𝑛.6.2  # 𝕄(𝑛.12.1)
             𝔼(L_mul)  # 𝕄(Φ.a🌵19)
               𝛿1.13 := 𝔻(𝜎3:λ)  # 𝔻(ξ.a)
+              looped(⟦ n ↦ 𝜎3:λ, φ ↦ Φ.if( c ↦ Φ.zero( x ↦ n ), left ↦ 01-:Δ, right ↦ Φ.mul( a ↦ n, b ↦ Φ.fact( n ↦ Φ.dec( x ↦ n ) ) ) ) ⟧)  # 𝔻(Φ.a🌵22)
             𝑛2.10 := ⟦ a ↦ 𝜎3:λ, b ↦ Φ.fact( n ↦ 𝜎5:λ ), λ ⤍ L_mul ⟧  # 𝕄(ξ.right)
             𝔻(𝜎6:λ) == 01-
             𝑛3.10 := 𝑛3.4  # 𝑛1

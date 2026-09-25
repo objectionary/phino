@@ -26,3 +26,4 @@ protocol: |
   𝕄(Φ.x)
     𝔼(L_outer)  # 𝕄(Φ.x)
       formation(⟦ x ↦ ⟦⟧, φ ↦ Φ.cyc( x ) ⟧)  # 𝔻(Φ.a🌵0)
+        looped(⟦ x ↦ ⟦⟧, φ ↦ Φ.cyc( x ) ⟧)  # 𝔻(Φ.a🌵0)

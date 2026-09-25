@@ -30,7 +30,7 @@ import qualified Data.List.NonEmpty as NE
 import qualified Data.Map.Strict as Map
 import Data.Maybe (fromMaybe, isJust)
 import qualified Data.Text as T
-import Deps (BuildTermFunc, BuildTermMethodS, Judgment (..), SaveEvalFunc, SaveStepFunc, State (..), Term (..), dontSaveStep)
+import Deps (BuildTermFunc, BuildTermMethodS, Evaluation (..), Judgment (..), SaveEvalFunc, SaveStepFunc, State (..), Term (..), dontSaveStep)
 import Lambdas (Lambdas)
 import Locator (locatedExpression, withLocatedExpression)
 import Matcher (MetaValue (..), Subst (..), combine, matchExpression', substEmpty, substSingle)
@@ -298,16 +298,22 @@ unparked action = action `catch` rethrow
 -- with nothing but its symbols renamed replays the round forever; data still
 -- tells rounds apart, so a recursion over a literal is not cut. The store is a
 -- digest map keyed by 'hashShape', which is blind to symbols, and a digest
--- match is confirmed by 'alike', the way 'Seen' confirms one by (==).
+-- match is confirmed by 'alike', the way 'Seen' confirms one by (==). The cut
+-- is written to the protocol where the formation would have opened, as a
+-- 'looped' line carrying the site and the formation the frame above entered,
+-- spelled as that frame's own 'formation' line spelled it, so the two lines
+-- read as a pair without renaming symbols by eye (#1434).
 entering :: Expression -> ReduceContext -> IO ReduceContext
 entering term ctx
   | not ctx._acyclic = pure ctx
   | otherwise = maybe (pure ctx) remembered (entrance ctx._judgment term)
   where
     remembered :: Expression -> IO ReduceContext
-    remembered form
-      | any (alike form) (Map.findWithDefault [] (hashShape form) ctx._entered) = throwIO (Looping form)
-      | otherwise = pure ctx{_entered = seenInsert (hashShape form) form ctx._entered}
+    remembered form = case find (alike form) (Map.findWithDefault [] (hashShape form) ctx._entered) of
+      Just before -> do
+        ctx._saveEval (EvLooped ctx._nesting ctx._judgment before ctx._site)
+        throwIO (Looping form)
+      Nothing -> pure ctx{_entered = seenInsert (hashShape form) form ctx._entered}
 
 -- The formation a frame of the judgment enters as it opens on the term, if it
 -- enters one at all. Only three rules get into a formation: 'box' of 𝔻, into
