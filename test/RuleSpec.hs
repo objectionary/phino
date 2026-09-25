@@ -201,7 +201,7 @@ spec = do
         samples =
           [ "⟦ kx ↦ ξ.ow( jy ↦ Φ.ya ), λ ⤍ L_ok, b ↦ ∅ ⟧"
           , "⟦ φ ↦ Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ λ ⤍ 𝜎3 ⟧ ) ), ρ ↦ ∅, qe ↦ ⟦ Δ ⤍ 1F- ⟧ ⟧"
-          , "Φ.hz( ⟦ ab ↦ ⟦ ba ↦ ξ.ρ, λ ⤍ L_z ⟧ ⟧ ).uv( α0 ↦ ⊥ )"
+          , "Φ.hz( ⟦ ab ↦ ⟦ kw ↦ ξ.ρ, λ ⤍ L_z ⟧ ⟧ ).uv( α0 ↦ ⊥ )"
           , "⟦ x ↦ ∅, dd ↦ ⟦ λ ⤍ L_dd, ρ ↦ ∅ ⟧, m1 ↦ ⟦ b ↦ ∅, φ ↦ ξ.ρ.dd( b ↦ ξ.b ), ρ ↦ ∅ ⟧ ⟧"
           ]
         context :: RuleContext
