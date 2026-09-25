@@ -798,6 +798,37 @@ $ cat atoms.xml
 
 <!-- markdownlint-enable MD013 -->
 
+### Abridging the protocol
+
+A formation carrying a whole object is written flat on one line, so a real
+run fills the protocol with lines tens of thousands of characters long. The
+`--abridged` option shortens every term the protocol writes, in the text and
+the XML alike: a formation longer than sixty characters keeps its `φ`, `Δ` and
+`λ` bindings and folds the rest into a count, and a byte string longer than
+eight bytes keeps its first four bytes and its length. The result the run
+prints stays whole, and the option is refused without `--protocol`:
+
+<!-- markdownlint-disable MD013 -->
+
+```bash
+$ cat wide.phi
+⟦
+  t ↦ ⟦
+    φ ↦ ⟦ Δ ⤍ 48-65-6C-6C-6F-2C-20-77-6F-72-6C-64 ⟧,
+    left ↦ ξ.right,
+    right ↦ ξ.left,
+    middle ↦ ξ.left
+  ⟧
+⟧
+$ phino dataize --locator=Q.t --protocol=wide.txt --abridged --quiet \
+    --sweet --hide-rho wide.phi
+$ cat wide.txt
+𝔻(Φ.t)
+  formation(⟦ φ ↦ 48-65-6C-6C-...(12b):Δ, +3 attrs ⟧)  # 𝔻(Φ.t)
+```
+
+<!-- markdownlint-enable MD013 -->
+
 ### Reducing a term inside a universe
 
 A term that is no part of the program may still be reduced against it, with the
