@@ -89,6 +89,14 @@ optMaxSteps =
     (auto >>= validateIntOption (> 0) "--max-steps must be positive")
     (long "max-steps" <> metavar "STEPS" <> help "Maximum number of nested morphing and dataization steps" <> value 1000 <> showDefault)
 
+optMaxFirings :: Parser (Maybe Int)
+optMaxFirings =
+  optional
+    ( option
+        (auto >>= validateIntOption (> 0) "--max-firings must be positive")
+        (long "max-firings" <> metavar "FIRINGS" <> help "Maximum number of λ functions the whole run may fire, unlimited unless given")
+    )
+
 optMargin :: Parser Int
 optMargin =
   option
@@ -381,6 +389,7 @@ dataizeParser =
             <*> optMaxDepth
             <*> optMaxCycles
             <*> optMaxSteps
+            <*> optMaxFirings
             <*> optMargin
             <*> optMeetPopularity
             <*> optMeetLength
@@ -427,6 +436,7 @@ morphParser =
             <*> optMaxDepth
             <*> optMaxCycles
             <*> optMaxSteps
+            <*> optMaxFirings
             <*> optMargin
             <*> optMeetPopularity
             <*> optMeetLength

@@ -1138,6 +1138,15 @@ spec = do
             ["dataize", "--symbolic=" ++ endless, "--max-steps=40", "--partial", "--flat", "--hide-rho"]
             ["⟦ λ ⤍ L_loop ⟧"]
 
+    -- The firing budget counts every firing of the run, so a recursion that
+    -- stays well inside '--max-steps' is still stopped by it (#1472)
+    it "fails on --max-firings before --max-steps is spent" $
+      loopingLambdas $ \endless ->
+        withStdin "⟦ @ ↦ ⟦ λ ⤍ L_loop ⟧ ⟧" $
+          testCLIFailed
+            ["dataize", "--symbolic=" ++ endless, "--max-steps=400", "--max-firings=5"]
+            ["[ERROR]: Evaluation did not finish before reaching the limit of firings: --max-firings=5"]
+
     -- '--acyclic' used to be the 'morph' command's alone, so a program coming
     -- back to a term through 𝔻 rather than 𝕄 — a body dispatching the very
     -- object it stands in, which 𝕄 stops at a formation of every round and
@@ -2243,6 +2252,54 @@ spec = do
         testCLIFailed
           ["morph", "--locator=Q.@", "--max-steps=3"]
           ["[ERROR]: Dataization did not finish before reaching the limit of steps: --max-steps=3"]
+
+    -- '--max-steps' bounds one branch and not the whole run, so an entry
+    -- morphing two operands that each fire it again doubles its work at every
+    -- level and never reaches the limit it is given; '--max-firings' counts
+    -- every firing of the run and so ends it (#1472)
+    describe "--max-firings" $ do
+      let splitting = withLambdasOf (T.pack "- λ: L_split\n  morph:\n    𝑛1: Φ.s.foo\n    𝑛2: Φ.s.foo\n  𝑛: ⟦ l ↦ 𝑛1, r ↦ 𝑛2 ⟧\n")
+          split = "⟦ s ↦ ⟦ λ ⤍ L_split ⟧, x ↦ Φ.s.foo ⟧"
+      it "fails with non-positive --max-firings" $
+        withStdin split $
+          testCLIFailed ["morph", "--max-firings=0"] ["--max-firings must be positive"]
+
+      it "fails once the --max-firings budget is spent on a widening recursion" $
+        splitting $ \table ->
+          withStdin split $
+            testCLIFailed
+              ["morph", "--symbolic=" ++ table, "--locator=Q.x", "--max-firings=64"]
+              ["[ERROR]: Evaluation did not finish before reaching the limit of firings: --max-firings=64"]
+
+      -- The answer holds no 'foo', so what the dispatch reaches once every
+      -- operand is parked is the terminator
+      it "ends the widening recursion with --partial" $
+        splitting $ \table ->
+          withStdin split $
+            testCLISucceeded
+              ["morph", "--symbolic=" ++ table, "--locator=Q.x", "--max-firings=64", "--partial", "--flat", "--hide-rho", "--sweet"]
+              ["⊥"]
+
+      it "parks the spent --max-firings budget with --deep and --partial" $
+        splitting $ \table ->
+          withStdin split $
+            testCLISucceeded
+              ["morph", "--symbolic=" ++ table, "--deep", "--max-firings=64", "--partial", "--flat", "--hide-rho", "--sweet"]
+              ["x ↦ Φ.s.foo"]
+
+      -- A parked frame hands back the state it started from, so a count kept
+      -- in that state would refund every firing made inside it; the tally is
+      -- shared by the whole run and never goes back
+      it "fires no more λ functions than --max-firings allows" $
+        splitting $ \table ->
+          withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
+            hClose stream
+            withStdin split $
+              testCLISucceeded
+                ["morph", "--symbolic=" ++ table, "--deep", "--max-firings=64", "--partial", "--protocol=" ++ path, "--quiet"]
+                []
+            records <- readUtf8 path
+            length (filter (isInfixOf "𝔼(L_split)") (lines records)) `shouldBe` 64
 
     -- '--partial' parks a spent 𝕄 budget the same way it parks a stuck λ:
     -- the answer is the term the walk had reached, dispatch intact (#1078)
