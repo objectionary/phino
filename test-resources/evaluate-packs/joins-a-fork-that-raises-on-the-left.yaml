@@ -38,7 +38,8 @@ input: >
       gt(ρ, x) ↦ ⟦ λ ⤍ L_number_gt ⟧,
       plus(ρ, x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧,
     @ ↦ 5.gt( 0 ).if( ⊥, 1.plus( 2 ) ).plus( 6 ) ⟧
-result: 'Φ.number( φ ↦ 𝜎3:λ )'
+result: |-
+  ⟦ φ ↦ 𝜎3:λ, gt(x) ↦ ⟦ λ ⤍ L_number_gt ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧
 protocol: |
   𝕄(Φ.φ)
     𝔼(L_number_gt)  # 𝕄(Φ.φ)
@@ -63,13 +64,13 @@ protocol: |
         𝛿2.3 := 40-00-00-00-00-00-00-00  # 𝔻(ξ.x)
         𝑛.3.1 := Φ.number( φ ↦ 𝜎2:λ )  # 𝑛
         𝑛.3.2 := ⟦ φ ↦ 𝜎2:λ, gt(x) ↦ ⟦ λ ⤍ L_number_gt ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧  # 𝕄(𝑛.3.1)
-      𝑛2.2 := Φ.number( φ ↦ 𝜎2:λ )  # 𝕄(ξ.else)
+      𝑛2.2 := 𝑛.3.2  # 𝕄(ξ.else)
       𝑛3.2 := ⊥  # 𝑛1
       𝑛4.2 := 𝑛2.2  # 𝑛2
       terminate(𝔻(𝜎1:λ), left)  # 𝑛3
       𝑛5.2 := 𝑛4.2  # [𝑛3, 𝑛4]
       𝑛.2.1 := 𝑛5.2  # 𝑛
-      𝑛.2.2 := 𝑛.3.2  # 𝕄(𝑛.2.1)
+      𝑛.2.2 := 𝑛5.2  # 𝕄(𝑛.2.1)
     𝔼(L_number_plus)  # 𝕄(Φ.φ)
       formation(⟦ φ ↦ 𝜎2:λ, gt(x) ↦ ⟦ λ ⤍ L_number_gt ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧)  # 𝔻(Φ.a🌵7)
       𝛿1.4 := 𝔻(𝜎2:λ)  # 𝔻(ξ.ρ)

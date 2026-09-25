@@ -98,9 +98,9 @@ protocol: |
         𝑛7.3 := Φ.bool( if(left, right) ↦ ⟦ λ ⤍ L_fork, φ ↦ 𝜎5:λ ⟧ ):φ  # [𝑛5, 𝑛6]
         𝑛.3.1 := Φ.bool( if(left, right) ↦ ⟦ λ ⤍ L_fork, φ ↦ 𝜎5:λ ⟧ ):φ  # 𝑛
         𝑛.3.2 := Φ.bool( if(left, right) ↦ ⟦ λ ⤍ L_fork, φ ↦ 𝜎5:λ ⟧ ):φ  # 𝕄(𝑛.3.1)
-      𝑛1.1 := Φ.bytes( φ ↦ Φ.bool( if(left, right) ↦ ⟦ λ ⤍ L_fork, φ ↦ 𝜎5:λ ⟧ ) )  # 𝕄(ξ.v.φ)
-      𝑛.1.1 := Φ.l🌵.root( Φ.bytes( φ ↦ Φ.bool( if(left, right) ↦ ⟦ λ ⤍ L_fork, φ ↦ 𝜎5:λ ⟧ ) ) )  # 𝑛
-      𝑛.1.2 := ⟦ v ↦ Φ.bytes( φ ↦ Φ.bool( if(left, right) ↦ ⟦ λ ⤍ L_fork, φ ↦ 𝜎5:λ ⟧ ) ), λ ⤍ L_root ⟧  # 𝕄(𝑛.1.1)
+      𝑛1.1 := Φ.bool( if(left, right) ↦ ⟦ λ ⤍ L_fork, φ ↦ 𝜎5:λ ⟧ ):φ  # 𝕄(ξ.v.φ)
+      𝑛.1.1 := Φ.l🌵.root( Φ.bool( if(left, right) ↦ ⟦ λ ⤍ L_fork, φ ↦ 𝜎5:λ ⟧ ):φ )  # 𝑛
+      𝑛.1.2 := ⟦ v ↦ Φ.bool( if(left, right) ↦ ⟦ λ ⤍ L_fork, φ ↦ 𝜎5:λ ⟧ ):φ, λ ⤍ L_root ⟧  # 𝕄(𝑛.1.1)
     𝔼(L_root)  # 𝕄(Φ.l🌵.e1)
       formation(Φ.bool( if(left, right) ↦ ⟦ λ ⤍ L_fork, φ ↦ 𝜎5:λ ⟧ ):φ)  # 𝔻(Φ.a🌵7)
         formation(⟦ if(left, right) ↦ ⟦ λ ⤍ L_fork, φ ↦ 𝜎5:λ ⟧, φ ↦ if( left ↦ Φ.bytes( φ ↦ FF-:Δ ), right ↦ Φ.bytes( φ ↦ 00-:Δ ) ), not ↦ if( left ↦ Φ.false, right ↦ Φ.true ) ⟧)  # 𝔻(Φ.a🌵7)

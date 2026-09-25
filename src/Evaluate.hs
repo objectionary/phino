@@ -17,7 +17,7 @@
 module Evaluate (evaluation, fired) where
 
 import AST
-import Builder (buildExpressionThrows, contextualize, pathOf)
+import Builder (buildExpressionThrows, contextualize)
 import Control.Exception (throwIO, try)
 import Control.Monad (foldM, unless)
 import Data.List (partition)
@@ -289,14 +289,9 @@ symbol func form self univ state caller = case matched caller._symbolic func of
     -- the program morphs to the formation of the object, so the same term
     -- answered by an entry has to morph to it too. Two terms of one forma that
     -- do not look alike cannot be compared leaf by leaf, and comparing them is
-    -- what a fork of two branches is (#1268). What is handed back, though, is
-    -- the name that formation goes by in the world where it has one (see
-    -- 'pathOf'): 'Φ.number( φ ↦ 𝑘 )' rather than a copy of every method
-    -- 'number' declares, which the term would otherwise carry, and every step
-    -- after this one walk again, for as long as it survives (#1453). The name
-    -- is one way of saying the formation, since the world never changes, so
-    -- two answers still compare leaf by leaf; the answer line of the protocol
-    -- keeps the formation, which is what 𝕄 said.
+    -- what a fork of two branches is (#1268). The residual and the answer lines
+    -- of the protocol grow by the size of that formation, which is the price of
+    -- saying the same thing one way.
     --
     -- Both terms go to the protocol, the built one before 'settled' is asked
     -- about it and the normal one after, so the morphing is a step of the
@@ -313,7 +308,7 @@ symbol func form self univ state caller = case matched caller._symbolic func of
       ctx._saveEval (EvBuilt ctx._nesting built)
       (normal, state'') <- settled built univ state'{_minted = spent} ctx
       ctx._saveEval (EvAnswer ctx._nesting normal)
-      pure (maybe normal (`pathOf` normal) ctx._universe, state'')
+      pure (normal, state'')
     mint :: Subst -> (Slot, Function) -> IO Subst
     mint bound (slot, fresh) = case combine (substSlot slot (MvFunction fresh)) bound of
       Just bound' -> pure bound'

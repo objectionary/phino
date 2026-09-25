@@ -7,4 +7,14 @@ location: 'Q.@'
 model: true
 symbolic: true
 input: '[[ x -> 5.plus( 6 ).plus( 7 ) ]]'
-result: 'Φ.number( φ ↦ 𝜎2:λ ):x'
+result: |-
+  ⟦
+    φ ↦ 𝜎2:λ,
+    as-bytes ↦ φ,
+    plus(ρ, x) ↦ ⟦ λ ⤍ L_number_plus ⟧,
+    times(ρ, x) ↦ ⟦ λ ⤍ L_number_times ⟧,
+    div(ρ, x) ↦ ⟦ λ ⤍ L_number_div ⟧,
+    gt(ρ, x) ↦ ⟦ λ ⤍ L_number_gt ⟧,
+    eq(ρ, x) ↦ ⟦ φ ↦ ρ.as-bytes.eq( x.as-bytes ) ⟧,
+    nope(ρ) ↦ ⟦ λ ⤍ L_number_nope ⟧
+  ⟧:x

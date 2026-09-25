@@ -166,9 +166,7 @@ buildBindings (bd : rest) subst = do
 -- is the formation where the two agree binding by binding, save the voids of
 -- the candidate the formation has filled: the ρ with exactly what the dispatch
 -- off the parent hands it, and every other one with a closed term, which is an
--- argument of the application the name carries. A φ is no candidate: it is
--- what an object decorates rather than an object it declares, so a term that
--- merely equals it is not named after it. Anything else answers with the
+-- argument of the application the name carries. Anything else answers with the
 -- formation itself, and so does a universe that is not a formation.
 pathOf :: Expression -> Expression -> Expression
 pathOf (ExFormation world) form@(ExFormation bds) = maybe form found (parent (find rho bds))
@@ -193,7 +191,7 @@ pathOf (ExFormation world) form@(ExFormation bds) = maybe form found (parent (fi
     declared _ = Nothing
     candidate :: Expression -> Binding -> Maybe Expression
     candidate path (BiTau attr (ExFormation origin))
-      | attr /= AtRho && attr /= AtPhi && length origin == length bds = do
+      | attr /= AtRho && length origin == length bds = do
           args <- zipWithM (argument path) origin bds
           Just (foldl ExApplication (ExDispatch path attr) (concat args))
     candidate _ _ = Nothing

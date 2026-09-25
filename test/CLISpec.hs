@@ -2257,7 +2257,7 @@ spec = do
         withStdin program $
           testCLISucceeded
             ["morph", symbolic, "--deep", "--inside=Q.demo.foo", "--sweet", "--hide-rho", "--flat"]
-            ["⟦ n ↦ 3, φ ↦ Φ.bar( Φ.number( φ ↦ 𝜎2:λ ) ) ⟧"]
+            ["⟦ n ↦ 3, φ ↦ Φ.bar( ⟦ φ ↦ 𝜎2:λ, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧ ⟧ ) ⟧"]
 
       -- The same term the run above stops at as a bare λ-formation: 'mf' leaves
       -- it to 𝔻, and the walk fires it instead of demanding bytes
@@ -2265,7 +2265,7 @@ spec = do
         withStdin chained $
           testCLISucceeded
             ["morph", symbolic, "--deep", "--locator=Q.@", "--sweet", "--hide-rho", "--flat"]
-            ["Φ.number( φ ↦ 𝜎2:λ )"]
+            ["⟦ φ ↦ 𝜎2:λ, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧"]
 
       -- The default locator walks the whole program: the method table of the
       -- object model keeps every one of its λ-formations, since not one of them
@@ -2275,7 +2275,7 @@ spec = do
           testCLISucceeded
             ["morph", symbolic, "--deep", "--sweet", "--hide-rho", "--flat"]
             [ "number(φ) ↦ ⟦ times(x) ↦ ⟦ λ ⤍ L_number_times ⟧ ⟧"
-            , "demo ↦ ⟦ n ↦ 3, φ ↦ Φ.bar( Φ.number( φ ↦ 𝜎2:λ ) ) ⟧:foo"
+            , "demo ↦ ⟦ n ↦ 3, φ ↦ Φ.bar( ⟦ φ ↦ 𝜎2:λ, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧ ⟧ ) ⟧:foo"
             ]
 
       it "keeps a binding whose spine got stuck with --partial" $
