@@ -6,7 +6,7 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Rule (RuleContext (..), isNF, matchExpressionWithRule, matchExpressionWithRule', meetCondition) where
+module Rule (RuleContext (..), isNF, matchExpressionKnowing, matchExpressionWithRule, matchExpressionWithRule', meetCondition) where
 
 import AST
 import Builder
@@ -31,6 +31,7 @@ import Functions (nameOf)
 import GHC.IO (unsafePerformIO)
 import Logger (logDebug)
 import Matcher
+import Normals (Normality (Unknown))
 import Printer
 import Regexp (match)
 import Text.Printf (printf)
@@ -378,11 +379,16 @@ metasWithPrefix prefix = nub . go
 -- at all (see 'reachable'), since trying it at every place of a term holding
 -- copies of big objects is what a rule that fits nowhere used to cost (#1453).
 matchExpressionWithRule :: Expression -> Y.Rule -> RuleContext -> IO [Subst]
-matchExpressionWithRule = matchExpressionBy deep [substEmpty]
+matchExpressionWithRule = matchExpressionKnowing Unknown
+
+-- The same, looking into no place the given 'Normality' knows to be a normal
+-- form, since no rule matches anywhere inside one (#1457).
+matchExpressionKnowing :: Normality -> Expression -> Y.Rule -> RuleContext -> IO [Subst]
+matchExpressionKnowing known = matchExpressionBy deep [substEmpty]
   where
     deep :: MatchExpressionFunc
     deep ptn tgt
-      | reachable ptn tgt = matchExpression ptn tgt
+      | reachable' known ptn tgt = matchExpressionDeep' known ptn tgt
       | otherwise = []
 
 -- Like 'matchExpressionWithRule' but matches the pattern against the whole

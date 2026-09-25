@@ -11,6 +11,7 @@ import Control.Monad (forM_)
 import Data.Map.Strict qualified as Map
 import Data.Text qualified as T
 import Matcher
+import Normals (Normality (..))
 import System.Timeout (timeout)
 import Test.Hspec (Example (Arg), Expectation, Spec, SpecWith, describe, it, shouldBe)
 
@@ -539,6 +540,36 @@ spec = do
         `shouldBe` False
     it "reaches any term with a bare meta" $
       reachable (ExMeta "e1") ExXi `shouldBe` True
+
+  describe "reachable'" $ do
+    it "does not reach a redex standing in a place known normal" $
+      reachable'
+        (Parts [Normal])
+        (ExDispatch (ExFormation [BiMeta "B1"]) (AtMeta "t1"))
+        (ExFormation [BiTau (AtLabel "kw") (ExDispatch (ExFormation []) (AtLabel "qo"))])
+        `shouldBe` False
+    it "reaches a redex standing beside a place known normal" $
+      reachable'
+        (Parts [Normal, Unknown])
+        (ExDispatch (ExFormation [BiMeta "B1"]) (AtMeta "t1"))
+        (ExFormation [BiTau (AtLabel "kw") (ExDispatch (ExFormation []) (AtLabel "qo")), BiTau (AtLabel "vu") (ExDispatch (ExFormation []) (AtLabel "ys"))])
+        `shouldBe` True
+
+  describe "matchExpressionDeep'" $ do
+    it "does not match inside a place known normal" $
+      matchExpressionDeep'
+        (Parts [Unknown, Normal])
+        (ExDispatch ExTermination (AtMeta "t"))
+        (ExApplication (ExDispatch ExTermination (AtLabel "hp")) (ArTau (AtLabel "yd") (ExDispatch ExTermination (AtLabel "ob"))))
+        `shouldBe` [substSingle "t" (MvAttribute (AtLabel "hp"))]
+    it "still matches a place whose parts are known normal" $
+      matchExpressionDeep'
+        (Parts [Normal])
+        (ExDispatch (ExFormation [BiMeta "B1"]) (AtMeta "t1"))
+        (ExDispatch (ExFormation [BiVoid (AtLabel "ci")]) (AtLabel "ci"))
+        `shouldBe` [Subst (Map.fromList [(Named "B1", MvBindings [BiVoid (AtLabel "ci")]), (Named "t1", MvAttribute (AtLabel "ci"))])]
+    it "matches nothing in a term known normal as a whole" $
+      matchExpressionDeep' Normal (ExMeta "e1") (ExFormation [BiVoid (AtLabel "za")]) `shouldBe` []
 
   describe "fitting" $ do
     it "fits a dispatch of a formation holding the attribute the pattern names" $

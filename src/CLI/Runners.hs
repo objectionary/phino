@@ -32,6 +32,7 @@ import Logger
 import Margin (defaultMargin)
 import Merge (merge)
 import Morph
+import Normals (noNormals)
 import Parser (parseExpressionThrows)
 import qualified Printer as P
 import qualified Random as R
@@ -72,7 +73,7 @@ runRewrite OptsRewrite{..} = do
       exclude = (`F.exclude` excluded)
       include = (`F.include` included)
   save <- saveStepFunc _stepsDir printCtx
-  (rewrittens, exceeded) <- rewrite expr rules (RewriteContext loc _maxDepth _maxCycles _depthSensitive Nothing buildTerm _must _breakpoint save)
+  (rewrittens, exceeded) <- rewrite expr rules (RewriteContext loc _maxDepth _maxCycles _depthSensitive Nothing noNormals buildTerm _must _breakpoint save)
   let rewrittens' = exclude $ include (if _sequence then NE.toList rewrittens else [NE.last rewrittens])
   logDebug (printf "Printing rewritten 𝜑-expression as %s" (show _outputFormat))
   exprs <- printRewrittens printCtx (rewrittens', exceeded)
@@ -173,7 +174,7 @@ runDataize OptsDataize{..} = do
           -- reduces what dataization demands and ends in bytes, so it is off
           -- here; the cycle guard of '--acyclic' is not, since 𝔻 recurses into
           -- itself and a formation it enters again is a loop of its own (#1290).
-          let ctx = ReduceContext loc loc Nothing _maxDepth _maxCycles (Steps _maxSteps 0) 1 _depthSensitive _shuffle _partial False _acyclic Dataization [] Map.empty lambdas buildTerm reduction evaluation fired save record
+          let ctx = ReduceContext loc loc Nothing noNormals _maxDepth _maxCycles (Steps _maxSteps 0) 1 _depthSensitive _shuffle _partial False _acyclic Dataization [] Map.empty lambdas buildTerm reduction evaluation fired save record
           (universe, aiming) <- aimed _inside expr ctx
           heading record printCtx Dataization aiming._locator
           dataize universe (started universe) aiming
@@ -255,7 +256,7 @@ runMorph OptsMorph{..} = do
       _protocol
       printCtx
       ( \record -> do
-          let ctx = ReduceContext loc loc Nothing _maxDepth _maxCycles (Steps _maxSteps 0) 1 _depthSensitive _shuffle _partial _deep _acyclic Morphing [] Map.empty lambdas buildTerm reduction evaluation fired save record
+          let ctx = ReduceContext loc loc Nothing noNormals _maxDepth _maxCycles (Steps _maxSteps 0) 1 _depthSensitive _shuffle _partial _deep _acyclic Morphing [] Map.empty lambdas buildTerm reduction evaluation fired save record
           (universe, aiming) <- aimed _inside expr ctx
           heading record printCtx Morphing aiming._locator
           morph universe (started universe) aiming

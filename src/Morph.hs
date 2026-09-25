@@ -35,6 +35,7 @@ import Lambdas (Lambdas)
 import Locator (locatedExpression, withLocatedExpression)
 import Matcher (MetaValue (..), Subst (..), combine, matchExpression', substEmpty, substSingle)
 import Must (Must (..))
+import Normals (Normals, learned)
 import Printer (printExpression)
 import Random (shuffle)
 import Rewriter (RewriteContext (RewriteContext), Rewritten, Seen, rewrite, seenInsert)
@@ -130,6 +131,11 @@ data ReduceContext = ReduceContext
     -- program does (#1318). Nothing until a run works it out ('universed'),
     -- once, and every frame below inherits what the first one named.
     _universe :: Maybe Expression
+  , -- The normal forms this run already knows, the world '_universe' names
+    -- and every formation in it, which normalization tries no rule inside:
+    -- the world travels into term after term and a rule found no redex in it
+    -- once and for all (#1457). Nothing until 'universed' learns the world.
+    _normals :: Normals
   , _maxDepth :: Int
   , _maxCycles :: Int
   , _steps :: Steps
@@ -708,17 +714,17 @@ leadsTo ((current, _) :| rest) rule expr ReduceContext{..} = do
 normalized :: Expression -> NonEmpty Rewritten -> ReduceContext -> IO (Expression, NonEmpty Rewritten)
 normalized expr seq ctx@ReduceContext{..} = do
   whole <- withLocatedExpression _locator expr (fst (NE.head seq))
-  (rewrittens, _) <- rewrite whole normalizationRules (rewriteContext ctx)
+  (rewrittens, _) <- rewrite whole normalizationRules (rewriting ctx)
   let (rw :| rws) = NE.reverse rewrittens
       seq' = rw :| rws <> NE.tail seq
   expr' <- locatedExpression _locator (fst rw)
   pure (expr', seq')
-  where
-    -- Switch the reduction context to a rewriting context for normalization,
-    -- disabling the must-checker and breakpoints.
-    rewriteContext :: ReduceContext -> RewriteContext
-    rewriteContext ReduceContext{..} =
-      RewriteContext _locator _maxDepth _maxCycles _depthSensitive _universe _buildTerm MtDisabled Nothing _saveStep
+
+-- Switch the reduction context to a rewriting context for normalization,
+-- disabling the must-checker and breakpoints.
+rewriting :: ReduceContext -> RewriteContext
+rewriting ReduceContext{..} =
+  RewriteContext _locator _maxDepth _maxCycles _depthSensitive _universe _normals _buildTerm MtDisabled Nothing _saveStep
 
 -- Name the world a run reduces in, where nothing has named it yet: the program
 -- in normal form, which is what Φ denotes and what 'dot' compares a dispatched
@@ -726,12 +732,15 @@ normalized expr seq ctx@ReduceContext{..} = do
 -- 𝕄 and of 𝔻 asks, and only the first one of a run answers, since the context
 -- travels down the recursion and what it names travels with it. The walk that
 -- works it out is itself given no world, so it folds nothing while it is
--- deciding what the world is.
+-- deciding what the world is. The world is learned as a normal form too (see
+-- '_normals'), unless the walk gave up on it at '--max-cycles', since then it
+-- is no normal form at all.
 universed :: Expression -> ReduceContext -> IO ReduceContext
 universed _ ctx@ReduceContext{_universe = Just _} = pure ctx
 universed univ ctx = do
-  (normal, _) <- normalized univ ((univ, Nothing) :| []) ctx{_locator = ExRoot, _saveStep = dontSaveStep}
-  pure ctx{_universe = Just normal}
+  (rewrittens, exceeded) <- rewrite univ normalizationRules (rewriting ctx{_locator = ExRoot, _saveStep = dontSaveStep})
+  let normal = fst (NE.last rewrittens)
+  pure ctx{_universe = Just normal, _normals = if exceeded then ctx._normals else learned normal ctx._normals}
 
 -- Bind 'expr' to a synthetic attribute of the universe and reduce it to a
 -- normal form there, handing back the extended universe together with the

@@ -21,12 +21,13 @@ import Files (allPathsIn, ensuredFile)
 import Functions (buildTerm)
 import GHC.Generics
 import Must (Must (..))
+import Normals (learned, noNormals)
 import Parser (parseExpressionThrows)
 import Printer (printExpression)
 import Rewriter (RewriteContext (RewriteContext), rewrite)
 import System.FilePath (makeRelative, replaceExtension, (</>))
 import Tau (seedTaus)
-import Test.Hspec (Spec, describe, expectationFailure, it, pending, runIO, shouldSatisfy, shouldThrow)
+import Test.Hspec (Spec, describe, expectationFailure, it, pending, runIO, shouldBe, shouldSatisfy, shouldThrow)
 import Yaml (normalizationRules)
 import Yaml qualified as Y
 
@@ -92,13 +93,19 @@ spec = do
         )
       ]
       ( \(desc, rewriteRules, (maxDepth, maxCycles, depthSensitive), expected) -> it desc $ do
-          let action = rewrite ExRoot rewriteRules (RewriteContext ExRoot maxDepth maxCycles depthSensitive Nothing buildTerm MtDisabled Nothing dontSaveStep)
+          let action = rewrite ExRoot rewriteRules (RewriteContext ExRoot maxDepth maxCycles depthSensitive Nothing noNormals buildTerm MtDisabled Nothing dontSaveStep)
           case expected of
             Left fragment -> action `shouldThrow` (\exc -> fragment `isInfixOf` show (exc :: SomeException))
             Right predicate -> do
               result <- action
               result `shouldSatisfy` predicate
       )
+
+  describe "rewrite with normal forms it knows" $
+    it "leaves alone a redex standing in a term it knows as normal" $ do
+      expr <- parseExpressionThrows "⟦ wo ↦ ⟦ ky ↦ ⟦ ⟧ ⟧.ky ⟧"
+      (rewrittens, _) <- rewrite expr normalizationRules (RewriteContext ExRoot 25 25 False Nothing (learned expr noNormals) buildTerm MtDisabled Nothing dontSaveStep)
+      fst (NE.last rewrittens) `shouldBe` expr
 
   describe "rewrite packs" $ do
     let resources = "test-resources/rewriter-packs"
@@ -150,6 +157,7 @@ spec = do
                       repeat'
                       False
                       Nothing
+                      noNormals
                       buildTerm
                       must'
                       Nothing

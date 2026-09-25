@@ -26,7 +26,8 @@ import Fixtures (defaultReduceContext, fixtureLambdas, primitives, withLambdas, 
 import GHC.Generics (Generic)
 import Lambdas (Lambdas, emptyLambdas, readLambdas)
 import Matcher (substEmpty)
-import Morph (ReduceContext (..), emptyState, execBuildTerm, insideUniverse, morph, morph')
+import Morph (ReduceContext (..), emptyState, execBuildTerm, insideUniverse, morph, morph', universed)
+import Normals (Normality (..), normality)
 import Parser (parseExpressionThrows)
 import Rewriter (Rewritten)
 import Rule (RuleContext (RuleContext), matchExpressionWithRule')
@@ -116,6 +117,20 @@ spec = do
       saved <- newIORef (0 :: Int)
       _ <- morph expr emptyState (defaultReduceContext loc){_saveStep = const (modifyIORef' saved (+ 1))}
       readIORef saved `shouldReturn` 2
+
+  -- The world a run names is a normal form, and every formation in it is one
+  -- too, so the rewriter is told so and never tries a rule inside a copy of it
+  -- again; a world the rewriter gave up on at '--max-cycles' is no normal form
+  -- and nothing is learned from it (#1457).
+  describe "universed" $ do
+    it "knows the world it has named as normal" $ do
+      world <- parseExpressionThrows "[[ kx -> Q.zo, ew -> [[ mu -> ? ]] ]]"
+      ctx <- universed world (defaultReduceContext ExRoot)
+      normality ctx._normals world `shouldBe` Normal
+    it "knows nothing of a world whose normalization hit the cycle limit" $ do
+      world <- parseExpressionThrows "[[ kx -> Q.zo, ew -> [[ mu -> ? ]] ]]"
+      ctx <- universed world (defaultReduceContext ExRoot){_maxCycles = 0}
+      normality ctx._normals world `shouldBe` Unknown
 
   -- 𝕄 stops at the first formation 'mf' hands back and leaves its bindings as
   -- they were written, since firing a bare λ is 𝔻's business, so a program

@@ -64,6 +64,7 @@ library
     Metas
     Misc
     Morph
+    Normals
     Must
     Parser
     Printer
@@ -158,6 +159,7 @@ test-suite spec
     MiscSpec
     MorphSpec
     MustSpec
+    NormalsSpec
     ParserSpec
     Paths_phino
     PrinterSpec

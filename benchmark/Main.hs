@@ -21,6 +21,7 @@ import Margin (defaultMargin)
 import Merge (merge)
 import Morph (ReduceContext (ReduceContext), Steps (Steps), morph)
 import Must (Must (MtDisabled))
+import Normals (noNormals)
 import Parser (parseExpressionThrows)
 import Printer (printExpression')
 import Rewriter (RewriteContext (RewriteContext), rewrite)
@@ -81,6 +82,7 @@ symbolicCtx acyclic lambdas locator =
     locator -- _locator
     locator -- _site
     Nothing -- _universe
+    noNormals -- _normals
     25 -- _maxDepth
     25 -- _maxCycles
     (Steps 1000 0) -- _steps

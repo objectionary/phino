@@ -10,6 +10,7 @@ import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
 import Data.Maybe (catMaybes)
 import Data.Text (Text)
+import Normals (Normality (..), places)
 
 -- Meta value
 -- The right part of substitution
@@ -164,20 +165,34 @@ matchExpression' _ _ = []
 
 -- Match expression with deep nested expression(s) matching
 matchExpressionDeep :: MatchExpressionFunc
-matchExpressionDeep ptn tgt = go tgt []
+matchExpressionDeep = matchExpressionDeep' Unknown
+
+-- The same, never trying a place known to be a normal form (see 'Normality'),
+-- since no rule matches anywhere inside one (#1457).
+matchExpressionDeep' :: Normality -> MatchExpressionFunc
+matchExpressionDeep' known ptn tgt = go known tgt []
   where
-    go :: Expression -> [Subst] -> [Subst]
-    go expr rest
-      | fitting ptn expr = matchExpression' ptn expr ++ below expr rest
-      | otherwise = below expr rest
-    below :: Expression -> [Subst] -> [Subst]
-    below (ExFormation bds) rest = foldr inside rest bds
-    below (ExDispatch expr _) rest = go expr rest
-    below (ExApplication expr (ArTau _ arg)) rest = go expr (go arg rest)
-    below (ExApplication expr (ArAlpha _ arg)) rest = go expr (go arg rest)
-    below _ rest = rest
+    go :: Normality -> Expression -> [Subst] -> [Subst]
+    go Normal _ rest = rest
+    go Unknown expr rest = hunt expr rest
+    go nty@(Parts _) expr rest
+      | fitting ptn expr = matchExpression' ptn expr ++ below nty expr rest
+      | otherwise = below nty expr rest
+    below :: Normality -> Expression -> [Subst] -> [Subst]
+    below (Parts nts) expr rest = foldr (uncurry go) rest (zip nts (places expr))
+    below _ _ rest = rest
+    hunt :: Expression -> [Subst] -> [Subst]
+    hunt expr rest
+      | fitting ptn expr = matchExpression' ptn expr ++ beneath expr rest
+      | otherwise = beneath expr rest
+    beneath :: Expression -> [Subst] -> [Subst]
+    beneath (ExFormation bds) rest = foldr inside rest bds
+    beneath (ExDispatch expr _) rest = hunt expr rest
+    beneath (ExApplication expr (ArTau _ arg)) rest = hunt expr (hunt arg rest)
+    beneath (ExApplication expr (ArAlpha _ arg)) rest = hunt expr (hunt arg rest)
+    beneath _ rest = rest
     inside :: Binding -> [Subst] -> [Subst]
-    inside (BiTau _ expr) rest = go expr rest
+    inside (BiTau _ expr) rest = hunt expr rest
     inside _ rest = rest
 
 matchExpression :: MatchExpressionFunc
@@ -192,18 +207,26 @@ matchExpression = matchExpressionDeep
 -- pattern fits nowhere in a term is told so without the deep matcher trying
 -- it at every place of that term (#1453).
 reachable :: Expression -> Expression -> Bool
-reachable ptn = go
+reachable = reachable' Unknown
+
+-- The same, never looking into a place known to be a normal form (#1457).
+reachable' :: Normality -> Expression -> Expression -> Bool
+reachable' known ptn = go known
   where
-    go :: Expression -> Bool
-    go tgt =
+    go :: Normality -> Expression -> Bool
+    go Normal _ = False
+    go Unknown tgt = hunt tgt
+    go (Parts nts) tgt = fitting ptn tgt || or (zipWith go nts (places tgt))
+    hunt :: Expression -> Bool
+    hunt tgt =
       fitting ptn tgt || case tgt of
         ExFormation bds -> any inside bds
-        ExDispatch expr _ -> go expr
-        ExApplication expr (ArTau _ arg) -> go expr || go arg
-        ExApplication expr (ArAlpha _ arg) -> go expr || go arg
+        ExDispatch expr _ -> hunt expr
+        ExApplication expr (ArTau _ arg) -> hunt expr || hunt arg
+        ExApplication expr (ArAlpha _ arg) -> hunt expr || hunt arg
         _ -> False
     inside :: Binding -> Bool
-    inside (BiTau _ expr) = go expr
+    inside (BiTau _ expr) = hunt expr
     inside _ = False
 
 -- Whether the pattern could match the target right at its root, judged by
