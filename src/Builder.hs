@@ -18,7 +18,6 @@ module Builder
   , buildBytes
   , buildBytesThrows
   , contextualize
-  , objectOf
   , pathOf
   , BuildException (..)
   )
@@ -215,66 +214,16 @@ pathOf (ExFormation world) form@(ExFormation bds) = maybe form found (parent (fi
     tau :: Attribute -> Binding -> Bool
     tau attr (BiTau attr' _) = attr == attr'
     tau _ _ = False
+    -- A term with no ξ of its own, the only kind 'copy' ever fills a void with.
+    closed :: Expression -> Bool
+    closed (ExFormation _) = True
+    closed ExRoot = True
+    closed ExTermination = True
+    closed (ExApplication target (ArTau _ value)) = closed target && closed value
+    closed (ExApplication target (ArAlpha _ value)) = closed target && closed value
+    closed (ExDispatch target _) = closed target
+    closed _ = False
 pathOf _ form = form
-
--- The object a path off Φ stands for, built from the world directly: the
--- formation 'md' and 'ma' would reach by morphing the path one step after
--- another, each step a whole normalization of the object it reaches (#1453).
--- The world is already in normal form, so nothing of it needs another pass:
--- a dispatch takes the formation the object declares under the attribute, its
--- ρ filled the way 'dot' fills it, with the name 'named' gives the object it
--- was dispatched off, or with Φ where that object is the world itself, as
--- 'dotg' does; an application fills a void with a closed term, the way 'copy'
--- does, and an application of ρ leaves a ρ already bound as it was, the way
--- 'stay' does, and an object with no ρ too, the way 'skip' does. Nothing answers a path that leaves the world through a term
--- other than a formation, or that dispatches off an object holding both λ and
--- Δ, which neither 'dot' nor 'dotg' reduces, and Φ itself is no object here.
-objectOf :: Expression -> Expression -> Maybe Expression
-objectOf (ExFormation world) path
-  | path /= ExRoot = ExFormation <$> built path
-  where
-    built :: Expression -> Maybe [Binding]
-    built ExRoot = Just world
-    built (ExApplication target (ArTau AtRho value))
-      | closed value = map (decorated value) <$> built target
-    built (ExApplication target (ArTau attr value))
-      | closed value = do
-          outer <- built target
-          (before, _ : after) <- Just (break (== BiVoid attr) outer)
-          Just (before ++ BiTau attr value : after)
-    built (ExDispatch target attr) = do
-      outer <- built target
-      BiTau _ (ExFormation inner) <- find (tau attr) outer
-      if any lambda outer && any delta outer
-        then Nothing
-        else Just (map (decorated (name target outer)) inner)
-    built _ = Nothing
-    name :: Expression -> [Binding] -> Expression
-    name ExRoot _ = ExRoot
-    name _ outer = pathOf (ExFormation world) (ExFormation outer)
-    decorated :: Expression -> Binding -> Binding
-    decorated parent (BiVoid AtRho) = BiTau AtRho parent
-    decorated _ binding = binding
-    tau :: Attribute -> Binding -> Bool
-    tau attr (BiTau attr' _) = attr == attr'
-    tau _ _ = False
-    lambda :: Binding -> Bool
-    lambda (BiLambda _) = True
-    lambda _ = False
-    delta :: Binding -> Bool
-    delta (BiDelta _) = True
-    delta _ = False
-objectOf _ _ = Nothing
-
--- A term with no ξ of its own, the only kind 'copy' ever fills a void with.
-closed :: Expression -> Bool
-closed (ExFormation _) = True
-closed ExRoot = True
-closed ExTermination = True
-closed (ExApplication target (ArTau _ value)) = closed target && closed value
-closed (ExApplication target (ArAlpha _ value)) = closed target && closed value
-closed (ExDispatch target _) = closed target
-closed _ = False
 
 -- The bindings of a formation a meta was bound to are checked once more here,
 -- since a substitution may bring two of them together under one attribute.

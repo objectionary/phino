@@ -21,7 +21,7 @@
 module Morph (ReduceContext (..), ReduceException (..), EvaluationFunc, FiringFunc, ReductionFunc, Morphed, Steps (..), boxed, deeper, emptyState, enter, entering, excluding, execBuildTerm, insideUniverse, isLambda, lambda, leadsTo, morph, morph', morphing, normalized, parking, producer, sidePremise, universed, unparked, verb) where
 
 import AST
-import Builder (buildExpressionThrows, contextualize, objectOf)
+import Builder (buildExpressionThrows, contextualize)
 import Control.Exception (Exception, catch, throwIO, try)
 import Control.Monad (foldM)
 import Data.List (find, partition)
@@ -30,7 +30,7 @@ import qualified Data.List.NonEmpty as NE
 import qualified Data.Map.Strict as Map
 import Data.Maybe (fromMaybe, isJust)
 import qualified Data.Text as T
-import Deps (Acyclic (..), BuildTermFunc, BuildTermMethod, BuildTermMethodS, Evaluation (..), Judgment (..), SaveEvalFunc, SaveStepFunc, State (..), Term (..), dontSaveStep)
+import Deps (Acyclic (..), BuildTermFunc, BuildTermMethodS, Evaluation (..), Judgment (..), SaveEvalFunc, SaveStepFunc, State (..), Term (..), dontSaveStep)
 import Lambdas (Lambdas)
 import Locator (locatedExpression, withLocatedExpression)
 import Matcher (MetaValue (..), Subst (..), combine, matchExpression', substEmpty, substSingle)
@@ -686,7 +686,6 @@ verb (Y.OpNormalize _) = "normalize"
 verb (Y.OpEvaluate _ _) = "evaluate"
 verb (Y.OpContextualize _ _) = "contextualize"
 verb (Y.OpDataize _) = "dataize"
-verb (Y.OpObject _) = "object"
 
 -- The build-term arguments backing a premise operation.
 verbArgs :: Y.Operation -> [ExtraArgument]
@@ -695,7 +694,6 @@ verbArgs (Y.OpNormalize expr) = [ArgExpression expr]
 verbArgs (Y.OpEvaluate expr universe) = [ArgExpression expr, ArgExpression universe]
 verbArgs (Y.OpContextualize expr context) = [ArgExpression expr, ArgExpression context]
 verbArgs (Y.OpDataize expr) = [ArgExpression expr]
-verbArgs (Y.OpObject expr) = [ArgExpression expr]
 
 leadsTo :: NonEmpty Rewritten -> String -> Expression -> ReduceContext -> IO (NonEmpty Rewritten)
 leadsTo ((current, _) :| rest) rule expr ReduceContext{..} = do
@@ -785,9 +783,8 @@ morphing univ ctx expr state = do
   pure (morphed, state')
 
 -- Augment the injected, context-free term builder with the dataization and
--- morphing operations that need the universe: 'evaluate' fires a λ function,
--- 'morph' morphs a sub-expression and 'object' builds the object a path off Φ
--- names (see '_object'). 𝔼 ('evaluate') takes the universe as an
+-- morphing operations that need the universe: 'evaluate' fires a λ function and
+-- 'morph' morphs a sub-expression. 𝔼 ('evaluate') takes the universe as an
 -- explicit second expression argument, while 𝕄 ('morph') is handed the threaded
 -- 'univ'. Every other function is delegated unchanged. This is the matcher's
 -- condition path (guards in 'when'/'having'), which has no state to thread, so 𝔼
@@ -796,22 +793,7 @@ morphing univ ctx expr state = do
 execBuildTerm :: Expression -> ReduceContext -> BuildTermFunc
 execBuildTerm _ ctx "evaluate" = \args subst -> fst <$> ctx._evaluate ctx emptyState args subst
 execBuildTerm univ ctx "morph" = \args subst -> fst <$> _morph univ ctx emptyState args subst
-execBuildTerm _ ctx "object" = _object ctx
 execBuildTerm _ ctx func = _buildTerm ctx func
-
--- The object a path off Φ names, built from the world the run has named (see
--- '_universe' and 'objectOf'), which is what the 'mo' rule answers 𝕄 with
--- instead of morphing the path one dispatch at a time and normalizing every
--- object on the way (#1453). A path naming no object fails, and so does a run
--- that has named no world yet, since there is nothing to build it from.
-_object :: ReduceContext -> BuildTermMethod
-_object ctx [ArgExpression expr] subst = do
-  path <- buildExpressionThrows expr subst
-  maybe
-    (throwIO (userError (printf "The path %s names no object of the world" (printExpression path))))
-    (pure . TeExpression)
-    (ctx._universe >>= (`objectOf` path))
-_object _ _ _ = throwIO (userError "Function object() requires exactly 1 expression argument")
 
 -- The Morphing function 𝕄 exposed as a build-term function so a rule can morph
 -- a sub-expression in its 'where' (the 'md' and 'ma' rules morph

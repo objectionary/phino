@@ -234,12 +234,6 @@ spec = do
             ]
       offenders `shouldBe` []
 
-  describe "parses an 'object' condition" $
-    it "decodes 'object: <expr>' into IsObject" $
-      case (decodeYaml' "object: 'Q'" :: Either Yaml.ParseException Condition) of
-        Right cond -> cond `shouldBe` IsObject ExRoot
-        Left err -> expectationFailure (Yaml.prettyPrintParseException err)
-
   describe "parses a 'formation' condition" $
     it "decodes 'formation: <expr>' into IsFormation" $
       case (decodeYaml' "formation: 'Q'" :: Either Yaml.ParseException Condition) of

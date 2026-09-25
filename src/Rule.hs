@@ -21,7 +21,6 @@ import Control.Exception (Exception (displayException))
 import Control.Exception.Base (SomeException, try)
 import Control.Monad (when)
 import qualified Data.ByteString.Char8 as B
-import Data.Either (isRight)
 import Data.Foldable (foldlM)
 import Data.List (nub)
 import qualified Data.Map.Strict as M
@@ -217,16 +216,6 @@ _isFormation expr subst _ = pure [subst | isFormation expr]
     isFormation (ExFormation _) = True
     isFormation _ = False
 
--- Hold when the given expression is a path off Φ that names an object of the
--- world, the one the 'object' build-term function builds. The function fails
--- where the path names nothing, and here that failure is the answer: it is
--- caught on the spot, so a 'not' around this condition holds rather than
--- throwing on past it.
-_isObject :: Expression -> Subst -> RuleContext -> IO [Subst]
-_isObject expr subst ctx = do
-  built <- try (_buildTerm ctx "object" [Y.ArgExpression expr] subst) :: IO (Either SomeException Term)
-  pure [subst | isRight built]
-
 _matches :: String -> Expression -> Subst -> RuleContext -> IO [Subst]
 _matches pat (ExMeta meta) (Subst mp) ctx = case M.lookup (Named meta) mp of
   Just (MvExpression expr) -> _matches pat expr (Subst mp) ctx
@@ -280,7 +269,6 @@ meetCondition' (Y.Matches pat expr) = _matches pat expr
 meetCondition' (Y.PartOf expr bd) = _partOf expr bd
 meetCondition' (Y.Disjoint attrs bds) = _disjoint attrs bds
 meetCondition' (Y.IsFormation expr) = _isFormation expr
-meetCondition' (Y.IsObject expr) = _isObject expr
 
 -- For each substitution check if it meetCondition to given condition
 -- If substitution does not meet the condition - it's thrown out

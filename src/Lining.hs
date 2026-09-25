@@ -84,7 +84,6 @@ instance ToSingleLine CONDITION where
   toSingleLine CO_PART_OF{..} = CO_PART_OF (toSingleLine expr) (toSingleLine binding)
   toSingleLine CO_DISJOINT{..} = CO_DISJOINT attrs (map toSingleLine groups)
   toSingleLine CO_FORMATION{..} = CO_FORMATION (toSingleLine expr)
-  toSingleLine CO_OBJECT{..} = CO_OBJECT (toSingleLine expr)
   toSingleLine CO_EMPTY = CO_EMPTY
 
 instance ToSingleLine EXTRA_ARG where

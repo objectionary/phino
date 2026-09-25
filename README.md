@@ -1523,10 +1523,6 @@ Condition:
       Expression'        # (an abstraction ⟦…⟧); used by morphing 'md'
                          # as 'not (formation 𝑛)', so a non-formation head is
                          # morphed and a formation head is left to 'ml'
-  | object:              # returns True if given expression is a path off Φ
-      Expression'        # naming an object of the world in normal form; used
-                         # by morphing 'mo', which builds that object in one
-                         # step, and as 'not (object …)' by 'md' and 'ma'
   | gt:                  # returns True if the first comparable object is
       - Comparable       # greater than the second one
       - Comparable

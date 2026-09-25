@@ -103,7 +103,7 @@ instance FromJSON Condition where
 
 parseCondition :: Object -> Parser Condition
 parseCondition v = do
-  validateYamlObject v ["and", "or", "not", "nf", "absolute", "eq", "gt", "in", "matches", "part-of", "disjoint", "formation", "object"]
+  validateYamlObject v ["and", "or", "not", "nf", "absolute", "eq", "gt", "in", "matches", "part-of", "disjoint", "formation"]
   case KeyMap.keys v of
     [key] -> case Key.toString key of
       "and" -> do
@@ -120,7 +120,6 @@ parseCondition v = do
       "nf" -> NF <$> v .: "nf"
       "absolute" -> Absolute <$> v .: "absolute"
       "formation" -> IsFormation <$> v .: "formation"
-      "object" -> IsObject <$> v .: "object"
       "disjoint" -> do
         vals <- v .: "disjoint"
         case vals of
@@ -218,7 +217,6 @@ data Condition
   | PartOf Expression Binding
   | Disjoint [Attribute] [Binding]
   | IsFormation Expression
-  | IsObject Expression
   deriving (Eq, Generic, Show)
 
 data ExtraArgument
@@ -266,7 +264,6 @@ instance Slots Condition where
   slots (PartOf expr bd) = slots expr ++ slots bd
   slots (Disjoint attrs bds) = slots attrs ++ slots bds
   slots (IsFormation expr) = slots expr
-  slots (IsObject expr) = slots expr
 
 instance Slots Comparable where
   slots (CmpAttr attr) = slots attr
@@ -298,7 +295,6 @@ instance Slots Operation where
   slots (OpEvaluate expr universe) = slots expr ++ slots universe
   slots (OpContextualize expr context) = slots expr ++ slots context
   slots (OpDataize expr) = slots expr
-  slots (OpObject expr) = slots expr
 
 instance Metas Condition where
   metas (And conds) = metas conds
@@ -313,7 +309,6 @@ instance Metas Condition where
   metas (PartOf expr bd) = metas expr ++ metas bd
   metas (Disjoint attrs bds) = metas attrs ++ metas bds
   metas (IsFormation expr) = metas expr
-  metas (IsObject expr) = metas expr
   bare names (And conds) = And (bare names conds)
   bare names (Or conds) = Or (bare names conds)
   bare names (Not cond) = Not (bare names cond)
@@ -326,7 +321,6 @@ instance Metas Condition where
   bare names (PartOf expr bd) = PartOf (bare names expr) (bare names bd)
   bare names (Disjoint attrs bds) = Disjoint (bare names attrs) (bare names bds)
   bare names (IsFormation expr) = IsFormation (bare names expr)
-  bare names (IsObject expr) = IsObject (bare names expr)
 
 instance Metas Comparable where
   metas (CmpAttr attr) = metas attr
@@ -371,13 +365,11 @@ instance Metas Operation where
   metas (OpEvaluate expr universe) = metas expr ++ metas universe
   metas (OpContextualize expr context) = metas expr ++ metas context
   metas (OpDataize expr) = metas expr
-  metas (OpObject expr) = metas expr
   bare names (OpMorph expr) = OpMorph (bare names expr)
   bare names (OpNormalize expr) = OpNormalize (bare names expr)
   bare names (OpEvaluate expr universe) = OpEvaluate (bare names expr) (bare names universe)
   bare names (OpContextualize expr context) = OpContextualize (bare names expr) (bare names context)
   bare names (OpDataize expr) = OpDataize (bare names expr)
-  bare names (OpObject expr) = OpObject (bare names expr)
 
 -- A rule is the scope an index counts in: the reader meets the metas of one
 -- inference within it and nowhere else, so a kind the rule names just once
@@ -476,7 +468,6 @@ data Operation
   | OpEvaluate Expression Expression
   | OpContextualize Expression Expression
   | OpDataize Expression
-  | OpObject Expression
   deriving (Eq, Generic, Show)
 
 -- One morphing rule in inference-rule form: when 'match' matches the term and
@@ -562,7 +553,6 @@ premiseOperation o =
           [expr, context] -> OpContextualize <$> parseJSON expr <*> parseJSON context
           _ -> fail "'contextualize' expects exactly two arguments"
     , OpDataize <$> o .: "dataize"
-    , OpObject <$> o .: "object"
     ]
 
 -- Parse the optional 'label', rejecting one that merely repeats the rule's

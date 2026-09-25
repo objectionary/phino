@@ -323,8 +323,6 @@ spec = do
       , ("CO_MATCHES", CO_MATCHES "^a+$" xiExpr, "matches\\lparen ^a+$, ξ \\rparen")
       , ("CO_PART_OF", CO_PART_OF xiExpr (bindingXi "y"), "part-of\\lparen ξ, y ↦ ξ \\rparen")
       , ("CO_FORMATION", CO_FORMATION xiExpr, "\\phinoIsFormation{ ξ }")
-      , ("CO_OBJECT", CO_OBJECT xiExpr, "\\phinoIsObject{ ξ }")
-      , ("CO_NOT wrapping CO_OBJECT", CO_NOT (CO_OBJECT xiExpr), "\\phinoNotObject{ ξ }")
       , ("CO_DISJOINT single group", CO_DISJOINT [AT_LABEL "a"] [bindingXi "x"], "[ a ] \\cap x ↦ ξ = \\emptyset")
       ,
         ( "CO_DISJOINT multiple groups"

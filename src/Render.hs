@@ -283,7 +283,6 @@ instance Render CONDITION where
   render CO_ABSOLUTE{belongs = NOT_IN, ..} = "\\phinoNotAbsolute{ " <> render expr <> " }"
   render CO_ABSOLUTE{..} = "\\phinoAbsolute{ " <> render expr <> " }"
   render CO_NOT{condition = CO_FORMATION{..}} = "\\phinoNotFormation{ " <> render expr <> " }"
-  render CO_NOT{condition = CO_OBJECT{..}} = "\\phinoNotObject{ " <> render expr <> " }"
   render CO_NOT{..} = renderFunc "not" condition
     where
       renderFunc :: Render a => Text -> a -> Text
@@ -292,7 +291,6 @@ instance Render CONDITION where
   render CO_MATCHES{..} = "matches\\lparen " <> T.pack regex <> ", " <> render expr <> " \\rparen"
   render CO_PART_OF{..} = "part-of\\lparen " <> render expr <> ", " <> render binding <> " \\rparen"
   render CO_FORMATION{..} = "\\phinoIsFormation{ " <> render expr <> " }"
-  render CO_OBJECT{..} = "\\phinoIsObject{ " <> render expr <> " }"
   render CO_DISJOINT{..} =
     "[ "
       <> T.intercalate " \\char44{} " (map render attrs)
