@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+# yamllint disable rule:line-length
+---
+expression: |
+  [[ my_attr -> Q.a@b ]]
+result: |-
+  \begin{phiquation}
+  [[ |my\char95{}attr| -> Q . |a\char64{}b| ]]{.}
+  \end{phiquation}

@@ -1,3 +1,5 @@
+{-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
 
@@ -11,8 +13,12 @@ module LaTeXSpec where
 
 import AST (Attribute (AtLabel, AtMeta, AtPhi, AtRho), Binding (BiDelta, BiLambda, BiMeta, BiTau, BiVoid), Bytes (BtMeta, BtOne), Expression (ExDispatch, ExFormation, ExMeta, ExPhiAgain, ExPhiMeet, ExRoot), Function (FnMeta, FnSymbol))
 import Control.Monad (forM_)
+import Data.Aeson (FromJSON)
 import Data.List (intercalate)
 import Data.Text qualified as T
+import Data.Yaml qualified as Yaml
+import Files (allPathsIn)
+import GHC.Generics (Generic)
 import LaTeX
   ( LatexContext (..)
   , conditionToLatex
@@ -28,11 +34,32 @@ import LaTeX
   )
 import Lining (LineFormat (MULTILINE))
 import Parser (parseExpressionThrows)
-import Test.Hspec (Spec, describe, expectationFailure, it, shouldBe, shouldContain)
+import System.FilePath (makeRelative)
+import Test.Hspec (Spec, describe, expectationFailure, it, runIO, shouldBe, shouldContain)
 import Yaml qualified as Y
+
+data LatexPack = LatexPack
+  { expression :: String
+  , result :: String
+  }
+  deriving (Generic, Show, FromJSON)
+
+latexPack :: FilePath -> IO LatexPack
+latexPack = Yaml.decodeFileThrow
 
 spec :: Spec
 spec = do
+  describe "LaTeX printing packs" $ do
+    let resources = "test-resources/latex-packs"
+    packs <- runIO (allPathsIn resources)
+    forM_
+      packs
+      ( \pth -> it (makeRelative resources pth) $ do
+          pack <- latexPack pth
+          parsed <- parseExpressionThrows (expression pack)
+          expressionToLaTeX parsed defaultLatexContext `shouldBe` result pack
+      )
+
   describe "meet expression in expression" $
     forM_
       [ ("Q.x.y", "Q.x.y", "[[ x -> Q.x.y ]]", ["Q.x.y"])
