@@ -19,7 +19,7 @@ input: >
   ⟦ bytes(φ) ↦ ⟦⟧,
     number(φ) ↦ ⟦ plus(ρ, x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧,
     @ ↦ 5.plus( 6 ) ⟧
-result: '⟦ φ ↦ 𝜎1:λ, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧'
+result: 'Φ.number( φ ↦ 𝜎1:λ )'
 protocol: |
   𝕄(Φ.φ)
     𝔼(L_number_plus)  # 𝕄(Φ.φ)

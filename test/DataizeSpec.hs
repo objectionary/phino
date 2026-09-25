@@ -354,10 +354,11 @@ spec = do
           loc' <- parseExpressionThrows loc
           (_, chain, _) <- dataize expr emptyState (withLambdas known (defaultReduceContext loc'))
           pure [label | (_, Just label) <- chain]
-    -- 'evaluate' is followed straight by the 'contextualize' of the answer's
-    -- own 𝔻 and not by the 'ma'/'copy'/'mf' that used to reduce it on the
-    -- spine: 𝔼 morphs what it answers before it hands it over, so the spine is
-    -- given a formation and has nothing left to peel (#1268)
+    -- 'evaluate' is followed by the 'ma'/'copy'/'mf' that reduce its answer on
+    -- the spine: 𝔼 morphs what it answers but hands over the name of the
+    -- object it reached, 'Φ.number( … )', rather than a copy of every method
+    -- the object declares, so the spine peels the name once where it needs
+    -- the formation (#1453)
     it "dataizes 5.plus(6) through the expected rules" $ do
       labels <-
         labelsOf
@@ -370,6 +371,9 @@ spec = do
                    , "copy"
                    , "mf"
                    , "evaluate"
+                   , "ma"
+                   , "copy"
+                   , "mf"
                    , "contextualize"
                    , "symbol"
                    ]

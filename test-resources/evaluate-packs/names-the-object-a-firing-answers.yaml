@@ -1,0 +1,33 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+# The entry answers with a number, and the number is written back under the
+# name it goes by in the world, not as a copy of the object: 'kmv' is a method
+# the program never calls, and a copy would carry it, and every other method
+# 'number' declares, into the term and into every step after the firing
+# (#1453). The protocol still writes what 𝕄 made of the answer.
+symbolic: |
+  - λ: L_number_plus
+    dataize:
+      𝛿1: $.ρ
+      𝛿2: $.x
+    𝑛: Φ.number( φ ↦ ⟦ λ ⤍ 𝜎 ⟧ )
+location: 'Q.@'
+deep: true
+input: >
+  ⟦ bytes(φ) ↦ ⟦⟧,
+    number(φ) ↦ ⟦ plus(ρ, x) ↦ ⟦ λ ⤍ L_number_plus ⟧, kmv(ρ, y) ↦ ⟦ φ ↦ ρ.plus( y ) ⟧ ⟧,
+    @ ↦ 7.plus( 9 ) ⟧
+result: 'Φ.number( φ ↦ 𝜎1:λ )'
+protocol: |
+  𝕄(Φ.φ)
+    𝔼(L_number_plus)  # 𝕄(Φ.φ)
+      formation(⟦ φ ↦ Φ.bytes( φ ↦ 40-1C-00-00-00-00-00-00:Δ ), plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, kmv(y) ↦ ⟦ φ ↦ ρ.plus( y ) ⟧ ⟧)  # 𝔻(Φ.a🌵0)
+        formation(40-1C-00-00-00-00-00-00:Δ:φ)  # 𝔻(Φ.a🌵0)
+      𝛿1.1 := 40-1C-00-00-00-00-00-00  # 𝔻(ξ.ρ)
+      formation(⟦ φ ↦ Φ.bytes( φ ↦ 40-22-00-00-00-00-00-00:Δ ), plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, kmv(y) ↦ ⟦ φ ↦ ρ.plus( y ) ⟧ ⟧)  # 𝔻(Φ.a🌵1)
+        formation(40-22-00-00-00-00-00-00:Δ:φ)  # 𝔻(Φ.a🌵1)
+      𝛿2.1 := 40-22-00-00-00-00-00-00  # 𝔻(ξ.x)
+      𝑛.1.1 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛
+      𝑛.1.2 := ⟦ φ ↦ 𝜎1:λ, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, kmv(y) ↦ ⟦ φ ↦ ρ.plus( y ) ⟧ ⟧  # 𝕄(𝑛.1.1)

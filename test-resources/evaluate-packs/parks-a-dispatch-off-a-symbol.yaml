@@ -35,7 +35,7 @@ input: >
 result: |-
   ⟦
     a ↦ 𝜎1:λ.plus( 5 ),
-    b ↦ ⟦ φ ↦ Φ.bytes( φ ↦ 𝜎3:λ ), plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧
+    b ↦ Φ.number( φ ↦ Φ.bytes( φ ↦ 𝜎3:λ ) )
   ⟧
 protocol: |
   𝕄(Φ.demo)

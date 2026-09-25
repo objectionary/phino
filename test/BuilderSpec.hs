@@ -253,3 +253,15 @@ spec = do
         (ExApplication ExRoot (ArTau AtRho (ExFormation [BiVoid AtRho])))
         substEmpty
         `shouldBe` Right ExRoot
+
+  describe "pathOf" $ do
+    it "names a top-level object after the attribute that declares it" $
+      pathOf
+        (ExFormation [BiTau (AtLabel "kx") (ExFormation [BiVoid AtPhi, BiDelta (BtOne "0A")])])
+        (ExFormation [BiTau AtPhi ExRoot, BiDelta (BtOne "0A")])
+        `shouldBe` ExApplication (ExDispatch ExRoot (AtLabel "kx")) (ArTau AtPhi ExRoot)
+    it "does not name a formation after the φ of the world" $
+      pathOf
+        (ExFormation [BiTau AtPhi (ExFormation [BiLambda (Function "L_qz")])])
+        (ExFormation [BiLambda (Function "L_qz")])
+        `shouldBe` ExFormation [BiLambda (Function "L_qz")]
