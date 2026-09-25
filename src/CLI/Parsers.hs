@@ -275,6 +275,16 @@ optProtocol =
         )
     )
 
+optAbridged :: Parser Bool
+optAbridged =
+  switch
+    ( long "abridged"
+        <> help
+          "Shorten every 𝜑-expression written to the --protocol file: a formation longer than sixty characters \
+          \keeps its φ, Δ and λ bindings and folds the rest into a count, as '+34 attrs', and a byte string \
+          \longer than eight bytes keeps its first four bytes and its length, as '00-00-00-00-...(45b)'"
+    )
+
 optShuffle :: Parser Bool
 optShuffle = switch (long "shuffle" <> help "Shuffle rules before applying")
 
@@ -383,6 +393,7 @@ dataizeParser =
             <*> optInside
             <*> optStepsDir
             <*> optProtocol
+            <*> optAbridged
             <*> optSymbolic
             <*> argInputFile
         )
@@ -428,6 +439,7 @@ morphParser =
             <*> optInside
             <*> optStepsDir
             <*> optProtocol
+            <*> optAbridged
             <*> optSymbolic
             <*> argInputFile
         )

@@ -1291,6 +1291,34 @@ spec = do
       withStdin "[[ D> 01- ]]" $
         testCLISucceeded ["dataize", "--quiet"] []
 
+    -- A formation spelled flat in the protocol can run for tens of thousands
+    -- of characters, so '--abridged' folds a long one down to what says what
+    -- it holds and fires, and cuts a long byte string to its head (#1465)
+    describe "--abridged" $ do
+      let wide = "⟦ t ↦ ⟦ φ ↦ ⟦ Δ ⤍ 01-02 ⟧, anfang ↦ ξ.schluss, mitte ↦ ξ.anfang, schluss ↦ ξ.mitte, rand ↦ ξ.schluss ⟧ ⟧"
+      it "folds a long formation in the text protocol" $
+        withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
+          hClose stream
+          withStdin wide $
+            testCLISucceeded ["dataize", "--locator=Q.t", "--protocol=" ++ path, "--abridged", "--sweet", "--hide-rho", "--quiet"] []
+          records <- readUtf8 path
+          lines records `shouldContain` ["  formation(⟦ φ ↦ 01-02:Δ, +4 attrs ⟧)  # 𝔻(Φ.t)"]
+      it "folds a long formation in the XML protocol" $
+        withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
+          hClose stream
+          withStdin wide $
+            testCLISucceeded ["dataize", "--locator=Q.t", "--protocol=" ++ path, "--abridged", "--sweet", "--hide-rho", "--quiet"] []
+          records <- readUtf8 path
+          lines records `shouldContain` ["  <formation at=\"Φ.t\" term=\"⟦ φ ↦ 01-02:Δ, +4 attrs ⟧\">"]
+      it "leaves the printed result whole" $
+        withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
+          hClose stream
+          withStdin wide $
+            testCLISucceeded ["morph", "--locator=Q.t", "--protocol=" ++ path, "--abridged", "--sweet", "--hide-rho", "--flat"] ["anfang ↦ schluss, mitte ↦ anfang"]
+      it "refuses the flag without a protocol" $
+        withStdin wide $
+          testCLIFailed ["dataize", "--locator=Q.t", "--abridged"] ["The option --abridged requires --protocol"]
+
     -- Every firing of the run reaches the protocol as a tree: the run itself,
     -- one line per firing, one per operand it brought down or reduced and one
     -- per answer it gave. Nothing but the symbols ties them together, so the

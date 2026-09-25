@@ -131,6 +131,7 @@ runRewrite OptsRewrite{..} = do
       PrintCtx
         _sugarType
         _hideRho
+        False
         _flat
         _margin
         xmirCtx
@@ -198,6 +199,7 @@ runDataize OptsDataize{..} = do
         [(_meetPopularity, "meet-popularity"), (_meetLength, "meet-length")]
       validateXmirOptions _outputFormat [(_omitListing, "omit-listing"), (_omitComments, "omit-comments")] _focus
       when (length _show > 1) (invalidCLIArguments "The option --show can be used only once")
+      when (_abridged && isNothing _protocol) (invalidCLIArguments "The option --abridged requires --protocol, since only the protocol is abridged")
       when
         (isJust _inside && _locator /= "Q")
         (invalidCLIArguments "The options --inside and --locator cannot be used together, since --inside aims the run at the binding it mints")
@@ -206,6 +208,7 @@ runDataize OptsDataize{..} = do
       PrintCtx
         _sugarType
         _hideRho
+        _abridged
         _flat
         _margin
         (XmirContext _omitListing _omitComments _hideRho listing atoms)
@@ -272,6 +275,7 @@ runMorph OptsMorph{..} = do
         [(_meetPopularity, "meet-popularity"), (_meetLength, "meet-length")]
       validateXmirOptions _outputFormat [(_omitListing, "omit-listing"), (_omitComments, "omit-comments")] _focus
       when (length _show > 1) (invalidCLIArguments "The option --show can be used only once")
+      when (_abridged && isNothing _protocol) (invalidCLIArguments "The option --abridged requires --protocol, since only the protocol is abridged")
       when
         (isJust _inside && _locator /= "Q")
         (invalidCLIArguments "The options --inside and --locator cannot be used together, since --inside aims the run at the binding it mints")
@@ -280,6 +284,7 @@ runMorph OptsMorph{..} = do
       PrintCtx
         _sugarType
         _hideRho
+        _abridged
         _flat
         _margin
         (XmirContext _omitListing _omitComments _hideRho listing atoms)
@@ -346,6 +351,7 @@ runMerge OptsMerge{..} = do
     toPrintCtx xmirCtx =
       PrintCtx
         _sugarType
+        False
         False
         _flat
         _margin

@@ -76,6 +76,7 @@ data BYTES
   | BT_MANY [String]
   | BT_META META
   | BT_PIPED BYTES -- bytes wrapped in vertical pipes, as the eolang LaTeX package expects
+  | BT_CUT [String] Int -- the first bytes of a long string and its length in bytes, as '--abridged' spells it (#1465)
   deriving (Eq, Show)
 
 data META_HEAD
@@ -136,6 +137,7 @@ data PAIR
   | PA_DELTA' {bytes :: BYTES} -- ASCII version of PA_DELTA
   | PA_META_DELTA {meta :: META}
   | PA_META_DELTA' {meta :: META} -- ASCII version of PA_META_DELTA
+  | PA_FOLDED {count :: Int} -- the bindings '--abridged' folded away, as '+34 attrs' (#1465)
   deriving (Eq, Show)
 
 newtype APP_BINDING = APP_BINDING {pair :: PAIR}
