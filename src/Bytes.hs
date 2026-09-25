@@ -236,6 +236,8 @@ bytesToBts "--" = BtEmpty
 bytesToBts str =
   if length str == 3 && last str == '-'
     then BtOne (init str)
+    else if not (null str) && last str == '-'
+      then error $ "Invalid trailing separator in byte string; " ++ str
     else BtMany (map T.unpack (T.splitOn "-" (T.pack str)))
 
 -- Convert hex string like "68-65-6C-6C-6F" to "hello"
