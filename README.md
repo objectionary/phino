@@ -1032,18 +1032,19 @@ $ phino morph --symbolic=loop.yaml --locator='Q.x' --max-steps=40 loop.phi
 [ERROR]: Dataization did not finish before reaching the limit of steps: --max-steps=40
 ```
 
-The `--acyclic` flag makes a reduction notice. Every frame of 𝕄 and of 𝔻
-remembers the formations the frames above it have entered, and only three rules
-enter one: `fire` of 𝔻 and `ml` of 𝕄, which fire the λ function of a formation,
-and `box` of 𝔻, which gets into the `φ` body of a formation carrying no λ and
-no `Δ`. A frame about to enter a formation one of the frames above it has
-already entered is asking a question only ever answered by asking it again, so
-the flag stops there and parks the site the way `--partial` parks a λ function
-that cannot fire: the answer is the term the spine had reached, left where it
-stood, and the command exits successfully.
+The `--acyclic=<mode>` option makes a reduction notice. Every frame of 𝕄 and
+of 𝔻 remembers the formations the frames above it have entered, and only four
+places enter one: `fire` of 𝔻 and `ml` of 𝕄, which fire the λ function of a
+formation, the walk of `--deep`, which fires the λ function of every formation
+𝕄 leaves bare, and `box` of 𝔻, which gets into the `φ` body of a formation
+carrying no λ and no `Δ`. A frame about to enter a formation one of the frames
+above it has already entered is asking a question only ever answered by asking
+it again, so the option stops there and parks the site the way `--partial`
+parks a λ function that cannot fire: the answer is the term the spine had
+reached, left where it stood, and the command exits successfully.
 
 ```bash
-$ phino morph --symbolic=loop.yaml --locator='Q.x' --acyclic \
+$ phino morph --symbolic=loop.yaml --locator='Q.x' --acyclic=proven \
     --max-steps=40 --hide-rho loop.phi
 ⟦ λ ⤍ L_loop ⟧.foo
 ```
@@ -1053,18 +1054,18 @@ were asked about, and that handover is no loop, but it enters no formation
 either, so it is never remembered and never mistaken for one. A body
 dispatching the object it stands in is a loop 𝔻 walks round on its own — 𝕄
 stops at a formation every round, and `box` gets into it again — so `dataize`
-takes the flag too, and so does the run of 𝔻 a λ function's `dataize` operand
+takes the option too, and so does the run of 𝔻 a λ function's `dataize` operand
 is brought down with:
 
 ```bash
 $ cat cyc.phi
 ⟦ cyc ↦ ⟦ x ↦ ∅, φ ↦ Φ.cyc( ξ.x ) ⟧, t ↦ Φ.cyc( ⟦⟧ ) ⟧
-$ phino dataize --locator='Q.t' --acyclic --partial \
+$ phino dataize --locator='Q.t' --acyclic=proven --partial \
     --sweet --hide-rho --flat cyc.phi
 ⟦ cyc(x) ↦ ⟦ φ ↦ Φ.cyc( x ) ⟧, t ↦ Φ.cyc( ⟦⟧ ) ⟧
 ```
 
-𝔻 insists on bytes and a parked term carries none, so under `dataize` the flag
+𝔻 insists on bytes and a parked term carries none, so under `dataize` the option
 wants `--partial` to have something to print: the residual program, exactly the
 one it prints for a λ function that cannot fire. Without it the run stops on
 the loop all the same, naming the formation it entered again instead of running
@@ -1072,7 +1073,9 @@ the budget down. Under `morph` nothing is asked for: 𝕄 always has a term to
 answer with, a loop 𝔻 meets under a firing parks the site the firing stands at,
 and the walk of `--deep` goes on to the next binding.
 
-"The same formation" means the same up to a renaming of symbols: two
+The mode says what "the same formation" means, and there is no default, since
+no answer is right for every run. Under `proven` it means the same up to a
+renaming of symbols: two
 formations are one where some one-to-one pairing of the symbols of the first
 with those of the second makes them equal, so `𝜎5` may stand where `𝜎3` stood
 as long as it does so everywhere and no other symbol stands there too. Data,
@@ -1127,7 +1130,7 @@ $ cat fact.yaml
   join:
     𝑛5: [𝑛3, 𝑛4]
   𝑛: 𝑛5
-$ phino morph --deep --acyclic --partial --sweet --hide-rho --flat \
+$ phino morph --deep --acyclic=proven --partial --sweet --hide-rho --flat \
     --symbolic=fact.yaml --locator='Q.x' --protocol=fact.txt fact.phi
 ⟦ n ↦ 𝜎1:λ, φ ↦ Φ.if( c ↦ 𝜎2:λ, left ↦ 01-:Δ, right ↦ Φ.mul( a ↦ n, b ↦ Φ.fact( n ↦ 𝜎3:λ ) ) ) ⟧
 $ cat fact.txt
@@ -1154,60 +1157,56 @@ $ cat fact.txt
           𝛿1.6 := 𝔻(𝜎3:λ)  # 𝔻(ξ.x)
           𝑛.6.1 := 𝜎5:λ  # 𝑛
           𝑛.6.2 := 𝜎5:λ  # 𝕄(𝑛.6.1)
-        𝔼(L_mul)  # 𝕄(Φ.a🌵7)
-          𝛿1.7 := 𝔻(𝜎3:λ)  # 𝔻(ξ.a)
-          looped(⟦ n ↦ 𝜎3:λ, φ ↦ Φ.if( c ↦ Φ.zero( x ↦ n ), left ↦ 01-:Δ, right ↦ Φ.mul( a ↦ n, b ↦ Φ.fact( n ↦ Φ.dec( x ↦ n ) ) ) ) ⟧)  # 𝔻(Φ.a🌵10)
+        looped(⟦ a ↦ 𝜎1:λ, b ↦ Φ.fact( n ↦ 𝜎3:λ ), λ ⤍ L_mul ⟧)  # 𝕄(Φ.a🌵7), proven
         𝑛2.4 := ⟦ a ↦ 𝜎3:λ, b ↦ Φ.fact( n ↦ 𝜎5:λ ), λ ⤍ L_mul ⟧  # 𝕄(ξ.right)
         𝔻(𝜎6:λ) == 01-
         𝑛3.4 := 𝜎6:λ  # 𝑛1
         𝑛4.4 := ⟦ a ↦ 𝜎3:λ, b ↦ Φ.fact( n ↦ 𝜎5:λ ), λ ⤍ L_mul ⟧  # 𝑛2
   𝔼(L_if)  # 𝕄(Φ.x.φ)
-    𝛿1.8 := 𝔻(𝜎2:λ)  # 𝔻(ξ.c)
-    𝑛1.8 := 01-:Δ  # 𝕄(ξ.left)
-    𝔼(L_mul)  # 𝕄(Φ.a🌵13)
-      𝛿1.9 := 𝔻(𝜎1:λ)  # 𝔻(ξ.a)
-      formation(⟦ n ↦ 𝜎3:λ, φ ↦ Φ.if( c ↦ Φ.zero( x ↦ n ), left ↦ 01-:Δ, right ↦ Φ.mul( a ↦ n, b ↦ Φ.fact( n ↦ Φ.dec( x ↦ n ) ) ) ) ⟧)  # 𝔻(Φ.a🌵15)
-        𝔼(L_if)  # 𝔻(Φ.a🌵15)
-          𝔼(L_zero)  # 𝔻(Φ.a🌵16)
+    𝛿1.7 := 𝔻(𝜎2:λ)  # 𝔻(ξ.c)
+    𝑛1.7 := 01-:Δ  # 𝕄(ξ.left)
+    𝔼(L_mul)  # 𝕄(Φ.a🌵11)
+      𝛿1.8 := 𝔻(𝜎1:λ)  # 𝔻(ξ.a)
+      formation(⟦ n ↦ 𝜎3:λ, φ ↦ Φ.if( c ↦ Φ.zero( x ↦ n ), left ↦ 01-:Δ, right ↦ Φ.mul( a ↦ n, b ↦ Φ.fact( n ↦ Φ.dec( x ↦ n ) ) ) ) ⟧)  # 𝔻(Φ.a🌵13)
+        𝔼(L_if)  # 𝔻(Φ.a🌵13)
+          𝔼(L_zero)  # 𝔻(Φ.a🌵14)
+            𝛿1.10 := 𝔻(𝜎3:λ)  # 𝔻(ξ.x)
+            𝑛.10.1 := 𝑛.5.2  # 𝑛
+            𝑛.10.2 := 𝑛.5.2  # 𝕄(𝑛.10.1)
+          𝛿1.9 := 𝔻(𝜎4:λ)  # 𝔻(ξ.c)
+          𝑛1.9 := 01-:Δ  # 𝕄(ξ.left)
+          𝔼(L_dec)  # 𝕄(Φ.a🌵17.b)
             𝛿1.11 := 𝔻(𝜎3:λ)  # 𝔻(ξ.x)
-            𝑛.11.1 := 𝑛.5.2  # 𝑛
-            𝑛.11.2 := 𝑛.5.2  # 𝕄(𝑛.11.1)
-          𝛿1.10 := 𝔻(𝜎4:λ)  # 𝔻(ξ.c)
-          𝑛1.10 := 01-:Δ  # 𝕄(ξ.left)
-          𝔼(L_dec)  # 𝕄(Φ.a🌵19.b)
-            𝛿1.12 := 𝔻(𝜎3:λ)  # 𝔻(ξ.x)
-            𝑛.12.1 := 𝑛.6.2  # 𝑛
-            𝑛.12.2 := 𝑛.6.2  # 𝕄(𝑛.12.1)
-          𝔼(L_mul)  # 𝕄(Φ.a🌵19)
-            𝛿1.13 := 𝔻(𝜎3:λ)  # 𝔻(ξ.a)
-            looped(⟦ n ↦ 𝜎3:λ, φ ↦ Φ.if( c ↦ Φ.zero( x ↦ n ), left ↦ 01-:Δ, right ↦ Φ.mul( a ↦ n, b ↦ Φ.fact( n ↦ Φ.dec( x ↦ n ) ) ) ) ⟧)  # 𝔻(Φ.a🌵22)
-          𝑛2.10 := ⟦ a ↦ 𝜎3:λ, b ↦ Φ.fact( n ↦ 𝜎5:λ ), λ ⤍ L_mul ⟧  # 𝕄(ξ.right)
+            𝑛.11.1 := 𝑛.6.2  # 𝑛
+            𝑛.11.2 := 𝑛.6.2  # 𝕄(𝑛.11.1)
+          looped(⟦ a ↦ 𝜎1:λ, b ↦ Φ.fact( n ↦ 𝜎3:λ ), λ ⤍ L_mul ⟧)  # 𝕄(Φ.a🌵17), proven
+          𝑛2.9 := ⟦ a ↦ 𝜎3:λ, b ↦ Φ.fact( n ↦ 𝜎5:λ ), λ ⤍ L_mul ⟧  # 𝕄(ξ.right)
           𝔻(𝜎6:λ) == 01-
-          𝑛3.10 := 𝑛3.4  # 𝑛1
-          𝑛4.10 := ⟦ a ↦ 𝜎3:λ, b ↦ Φ.fact( n ↦ 𝜎5:λ ), λ ⤍ L_mul ⟧  # 𝑛2
-    𝑛2.8 := ⟦ a ↦ 𝜎1:λ, b ↦ Φ.fact( n ↦ 𝜎3:λ ), λ ⤍ L_mul ⟧  # 𝕄(ξ.right)
+          𝑛3.9 := 𝑛3.4  # 𝑛1
+          𝑛4.9 := ⟦ a ↦ 𝜎3:λ, b ↦ Φ.fact( n ↦ 𝜎5:λ ), λ ⤍ L_mul ⟧  # 𝑛2
+    𝑛2.7 := ⟦ a ↦ 𝜎1:λ, b ↦ Φ.fact( n ↦ 𝜎3:λ ), λ ⤍ L_mul ⟧  # 𝕄(ξ.right)
     𝔻(𝜎4:λ) == 01-
-    𝑛3.8 := 𝑛.11.2  # 𝑛1
-    𝑛4.8 := ⟦ a ↦ 𝜎1:λ, b ↦ Φ.fact( n ↦ 𝜎3:λ ), λ ⤍ L_mul ⟧  # 𝑛2
+    𝑛3.7 := 𝑛.10.2  # 𝑛1
+    𝑛4.7 := ⟦ a ↦ 𝜎1:λ, b ↦ Φ.fact( n ↦ 𝜎3:λ ), λ ⤍ L_mul ⟧  # 𝑛2
 ```
 
 <!-- markdownlint-enable MD013 -->
 
 The first `L_mul` brings its `b` down, and that gets 𝔻 into `fact` with
 `n ↦ 𝜎3`, the `formation(…)` line under it. Inside, the fork reduces its right
-branch, the second `L_mul` brings its own `b` down, and that would get 𝔻 into
-`fact` with `n ↦ 𝜎5`: the same formation, `𝜎5` standing where `𝜎3` stood, so
-the frame is cut as it opens. The cut is the `looped(…)` line under `𝛿1.7`,
-standing where the `formation(…)` line of the cut frame would have stood and
-commented with the judgment the frame belonged to and the site it was cut at.
-What it carries is the formation the frame above entered, spelled exactly as
-that frame's own `formation(…)` line spells it, so the two lines are paired by
-their terms and no reader has to rename symbols by eye or find the cut in the
-residue. Nothing runs under a cut, so no block opens under the line. In the
-XML protocol it is a self-closing element,
-`<looped by="dataize" at="Φ.a🌵10" term="…"/>`, with the attributes a
-`<formation>` carries. Without the flag the same run nests one round inside
-another until `--max-steps` runs out.
+branch, and the walk of `--deep` over it would fire `L_mul` with `a ↦ 𝜎3` and
+`b ↦ Φ.fact( n ↦ 𝜎5 )`: the formation the first `L_mul` was fired with, `𝜎3`
+standing where `𝜎1` stood and `𝜎5` where `𝜎3` stood, so the firing is cut
+before it opens. The cut is the `looped(…)` line under `𝑛.6.2`, standing where
+the block of the cut firing would have stood and commented with the judgment
+the frame belonged to, the site it was cut at and the mode that cut it. What it
+carries is the formation the frame above entered, as that frame had it, so the
+two are paired by their terms and no reader has to rename symbols by eye or
+find the cut in the residue. Nothing runs under a cut, so no block opens under
+the line. In the XML protocol it is a self-closing element,
+`<looped by="morph" match="proven" at="Φ.a🌵7" term="…"/>`, with the
+attributes a `<formation>` carries and the mode. Without the option the same
+run nests one round inside another until `--max-steps` runs out.
 
 What a frame remembers is the branch from the run down to it, never everything
 the run has touched, so two siblings entering one formation enter it twice and
@@ -1215,9 +1214,46 @@ only a formation entered from inside itself is a loop: the fork at `Φ.x.φ`
 above gets into `fact` with `n ↦ 𝜎3` once more, on a branch of its own, and is
 not cut there. The cut costs one lookup and fires on the turn the repeat
 appears, so raising `--max-steps` from 40 to a million changes neither the
-answer nor the time. What it cannot see is a loop that enters no formation
-twice: a body that grows by data on every round rather than coming back to the
-same formation still ends on the budget.
+answer nor the time.
+
+What `proven` cannot see is a recursion that never comes back to the same
+formation: one whose accumulator grows by a wrapper every round. Give the
+factorial an `acc` it builds a `pair` onto, drop `L_mul` from `fact.yaml`, and
+under `proven` the run nests deeper until `--max-steps` runs out, since no
+renaming of symbols turns a longer chain of pairs into a shorter one:
+
+<!-- markdownlint-disable MD013 -->
+
+```bash
+$ cat facta.phi
+⟦
+  if ↦ ⟦ c ↦ ∅, left ↦ ∅, right ↦ ∅, λ ⤍ L_if ⟧,
+  zero ↦ ⟦ x ↦ ∅, λ ⤍ L_zero ⟧,
+  dec ↦ ⟦ x ↦ ∅, λ ⤍ L_dec ⟧,
+  pair ↦ ⟦ head ↦ ∅, tail ↦ ∅ ⟧,
+  fact ↦ ⟦ n ↦ ∅, acc ↦ ∅, φ ↦ Φ.if( c ↦ Φ.zero( x ↦ ξ.n ), left ↦ ξ.acc, right ↦ Φ.fact( n ↦ Φ.dec( x ↦ ξ.n ), acc ↦ Φ.pair( head ↦ ξ.n, tail ↦ ξ.acc ) ) ) ⟧,
+  x ↦ Φ.fact( n ↦ ⟦ λ ⤍ 𝜎1 ⟧, acc ↦ ⟦ Δ ⤍ 00- ⟧ )
+⟧
+$ phino morph --deep --acyclic=plausible --partial --sweet --hide-rho --flat \
+    --symbolic=facta.yaml --locator='Q.x' --protocol=facta.txt facta.phi
+⟦ n ↦ 𝜎1:λ, acc ↦ 00-:Δ, φ ↦ Φ.if( c ↦ 𝜎2:λ, left ↦ acc, right ↦ Φ.fact( n ↦ 𝜎3:λ, acc ↦ Φ.pair( head ↦ n, tail ↦ acc ) ) ) ⟧
+$ grep looped facta.txt
+looped(⟦ c ↦ 𝜎2:λ, left ↦ 00-:Δ, right ↦ Φ.fact( n ↦ 𝜎3:λ, acc ↦ Φ.pair( head ↦ 𝜎1:λ, tail ↦ 00-:Δ ) ), λ ⤍ L_if ⟧)  # 𝕄(Φ.a🌵4.φ), plausible
+```
+
+<!-- markdownlint-enable MD013 -->
+
+Under `plausible` the same formation means one the formation entered earlier
+is embedded in: the two have the same attributes, data and λ function at the
+top, and every term the earlier one bound there is found again in the later
+one, as it stands or somewhere below a wrapper it gained. Any symbol stands for
+any other, and nothing is looked for under a `ρ`, which holds the object a term
+came from rather than a term it grew into. The second `if` above holds the
+first under one more `pair`, so it is cut, and its `looped(…)` line says
+`plausible`. A call nested in its own operand, such as a sum of sums, is never
+cut, since the inner call is smaller than the outer one and cannot hold it.
+The mode is not sound, though: a recursion whose argument grows on its way to
+stopping is cut too, which is why the line names the mode that made the cut.
 
 ## Rewrite
 

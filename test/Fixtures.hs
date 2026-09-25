@@ -49,7 +49,7 @@ import XMIR (defaultXmirContext)
 -- none of them: a case that needs one to answer brings the fixture file in
 -- through 'withLambdas'.
 defaultReduceContext :: Expression -> ReduceContext
-defaultReduceContext loc = ReduceContext loc loc Nothing 25 25 (Steps 250 0) 1 False True False False False Morphing [] Map.empty emptyLambdas buildTerm reduction evaluation fired dontSaveStep dontSaveEval
+defaultReduceContext loc = ReduceContext loc loc Nothing 25 25 (Steps 250 0) 1 False True False False Nothing Morphing [] Map.empty emptyLambdas buildTerm reduction evaluation fired dontSaveStep dontSaveEval
 
 -- The same context with the given λ functions registered
 withLambdas :: Lambdas -> ReduceContext -> ReduceContext

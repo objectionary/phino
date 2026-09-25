@@ -291,6 +291,33 @@ spec = do
     it "does not take two terms that differ by an attribute for the same" $
       alike (ExDispatch (application [3]) (AtLabel "a")) (ExDispatch (application [3]) (AtLabel "b")) `shouldBe` False
 
+  describe "within" $ do
+    let pair :: Expression -> Expression
+        pair tail' = ExApplication (ExDispatch ExRoot (AtLabel "pair")) (ArTau (AtLabel "tail") tail')
+        call :: Int -> Expression -> Expression
+        call idx acc = ExFormation [BiTau (AtLabel "n") (ExFormation [BiLambda (FnSymbol idx)]), BiTau (AtLabel "acc") acc, BiLambda (Function "L_fact")]
+    it "finds a round inside the next one that wraps its accumulator once more" $
+      within (call 3 (ExFormation [BiDelta (BtOne "2A")])) (call 8 (pair (ExFormation [BiDelta (BtOne "2A")]))) `shouldBe` True
+    it "does not find a call inside a smaller one nested in it" $
+      within (call 4 (pair (pair ExRoot))) (call 4 (pair ExRoot)) `shouldBe` False
+    it "does not find a formation inside one of other attributes" $
+      within (call 5 ExXi) (ExFormation [BiTau (AtLabel "m") (ExFormation [BiLambda (FnSymbol 5)]), BiTau (AtLabel "acc") ExXi, BiLambda (Function "L_fact")]) `shouldBe` False
+    it "does not find a formation inside one naming another λ function" $
+      within (ExFormation [BiTau (AtLabel "x") ExXi, BiLambda (Function "L_zero")]) (ExFormation [BiTau (AtLabel "x") ExXi, BiLambda (Function "L_dec")]) `shouldBe` False
+    it "does not find a round inside one that differs by a datum" $
+      within (call 1 (ExFormation [BiDelta (BtOne "07")])) (call 1 (pair (ExFormation [BiDelta (BtOne "09")]))) `shouldBe` False
+    it "does not find a formation inside one that only holds it under an attribute" $
+      within (call 2 ExRoot) (ExFormation [BiTau (AtLabel "x") (call 2 ExRoot), BiLambda (Function "L_g")]) `shouldBe` False
+    it "does not find a formation under the ρ of the next one" $
+      within (call 6 ExRoot) (call 6 (ExFormation [BiTau AtRho (call 6 ExRoot)])) `shouldBe` False
+
+  describe "hashSkeleton" $ do
+    it "does not tell apart two formations that bind other terms to the same attributes" $
+      hashSkeleton (ExFormation [BiTau (AtLabel "acc") ExRoot, BiLambda (Function "L_f")])
+        `shouldBe` hashSkeleton (ExFormation [BiTau (AtLabel "acc") (ExDispatch ExXi (AtLabel "q")), BiLambda (Function "L_f")])
+    it "does not hash two formations naming different λ functions alike" $
+      hashSkeleton (ExFormation [BiLambda (Function "L_f")]) `shouldNotBe` hashSkeleton (ExFormation [BiLambda (Function "L_g")])
+
   describe "hashShape" $ do
     it "does not tell apart two terms that differ by symbols alone" $
       hashShape (ExFormation [BiTau (AtLabel "n") (ExFormation [BiLambda (FnSymbol 3)])])

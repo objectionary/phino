@@ -13,11 +13,11 @@ import CLI.Helpers (started)
 import Control.Exception (SomeException)
 import Control.Monad
 import Data.Aeson (FromJSON (parseJSON), camelTo2, defaultOptions, fieldLabelModifier, genericParseJSON)
-import Data.List (isInfixOf)
+import Data.List (find, isInfixOf)
 import Data.Maybe (fromMaybe)
 import Data.Text qualified as T
 import Data.Yaml qualified as Decode
-import Deps (Evaluation (EvRun), Judgment (Morphing), Term (TeExpression))
+import Deps (Acyclic, Evaluation (EvRun), Judgment (Morphing), Term (TeExpression), certainty)
 import Encoding (Encoding (UNICODE))
 import Files (allPathsIn)
 import Fixtures (defaultReduceContext, fixtureLambdas, recorded, recorded', withLambdas, withLambdasOf)
@@ -52,7 +52,7 @@ data SymbolPack = SymbolPack
   , input :: String
   , deep :: Maybe Bool
   , partial :: Maybe Bool
-  , acyclic :: Maybe Bool
+  , acyclic :: Maybe String
   , steps :: Maybe Int
   , protocol :: String
   , result :: Maybe String
@@ -85,7 +85,7 @@ testSymbols pth = do
             (defaultReduceContext loc)
               { _deep = deep == Just True
               , _partial = partial == Just True
-              , _acyclic = acyclic == Just True
+              , _acyclic = named <$> acyclic
               , _steps = Steps (fromMaybe 250 steps) 0
               , _symbolic = known
               , _saveEval = record
@@ -101,6 +101,10 @@ testSymbols pth = do
             spelled hidden morphed `shouldBe` spelled False expected
     written `shouldBe` protocol
   where
+    -- The mode of '--acyclic' a pack names, which has to be one the option
+    -- knows, or the pack is broken and says so rather than running unguarded.
+    named :: String -> Acyclic
+    named mode = fromMaybe (error ("The pack names an unknown mode of acyclic: " ++ mode)) (find ((== mode) . certainty) [minBound .. maxBound])
     -- How a pack spells a program: 𝜑 on one line, in the sugar the protocol
     -- writes its own terms with. The answer goes through it with the ρ bindings
     -- hidden where the pack hides them and the 'result' of the pack goes

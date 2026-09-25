@@ -14,7 +14,7 @@ symbolic: |
     𝑛: Φ.number( φ ↦ ⟦ λ ⤍ 𝜎 ⟧ )
 location: 'Q.@'
 deep: true
-acyclic: true
+acyclic: proven
 input: >
   ⟦ bytes(φ) ↦ ⟦⟧,
     number(φ) ↦ ⟦ plus(ρ, x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧,

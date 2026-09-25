@@ -15,7 +15,7 @@ symbolic: |
   - λ: L_loop
     𝑛: ⟦ λ ⤍ L_loop ⟧
 location: 'Q.x'
-acyclic: true
+acyclic: proven
 steps: 250
 input: >
   ⟦ x ↦ ⟦ arg ↦ ⟦ λ ⤍ L_loop ⟧.foo, λ ⤍ L_outer ⟧.bar ⟧
@@ -26,4 +26,4 @@ protocol: |
       𝔼(L_loop)  # 𝕄(Φ.a🌵0)
         𝑛.2.1 := L_loop:λ  # 𝑛
         𝑛.2.2 := L_loop:λ  # 𝕄(𝑛.2.1)
-      looped(L_loop:λ)  # 𝕄(Φ.a🌵0)
+      looped(L_loop:λ)  # 𝕄(Φ.a🌵0), proven

@@ -7,6 +7,7 @@ import CLI.Types
 import Data.Char (toLower, toUpper)
 import Data.List (intercalate)
 import Data.Version (showVersion)
+import Deps (Acyclic, certainty)
 import LaTeX (defaultMeetLength, defaultMeetPopularity)
 import Lining (LineFormat (..))
 import Logger
@@ -214,10 +215,15 @@ optDeep = switch (long "deep" <> help "Don't stop at the first formation: enter 
 -- The step budget is otherwise the only thing that ends the 𝕄 and 𝔻 recursion,
 -- so a λ function answering with a firing of itself, or an object dataized
 -- through a body that comes back to itself, runs to the limit before it fails.
--- This stops it the moment it enters a formation it is already inside, up to a
--- renaming of symbols (see 'entering').
-optAcyclic :: Parser Bool
-optAcyclic = switch (long "acyclic" <> help "Stop reducing as soon as the reduction enters a formation it is already inside (fires its λ function or dataizes its φ body again), the same up to a renaming of symbols, instead of going round until --max-steps runs out, and leave the term in place the way --partial leaves a λ function that cannot fire")
+-- This stops it the moment it enters a formation it is already inside, by the
+-- mode the option names, since no mode is right for every run (see 'entering').
+optAcyclic :: Parser (Maybe Acyclic)
+optAcyclic = optional (option parseAcyclic (long "acyclic" <> metavar "MODE" <> help "Stop reducing as soon as the reduction enters a formation it is already inside (fires its λ function or dataizes its φ body again) instead of going round until --max-steps runs out, and leave the term in place the way --partial leaves a λ function that cannot fire; 'proven' takes it for the same one up to a renaming of symbols, 'plausible' also when it holds the earlier one under wrappers it gained, such as a growing accumulator"))
+  where
+    parseAcyclic :: ReadM Acyclic
+    parseAcyclic = eitherReader $ \mode -> case filter ((== map toLower mode) . certainty) [minBound .. maxBound] of
+      found : _ -> Right found
+      [] -> Left (printf "The value '%s' can't be used for '--acyclic' option, use --help to check possible values" mode)
 
 -- Which λ functions this run may fire. phino implements none of them itself
 -- (see 'Lambdas'), so without this option every λ function a program names gets

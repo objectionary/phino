@@ -10,7 +10,7 @@ import Control.Monad (replicateM, replicateM_)
 import qualified Data.Map.Strict as Map
 import Data.Time.Clock
 import Dataize (reduction)
-import Deps (Judgment (Morphing), dontSaveEval, dontSaveStep)
+import Deps (Acyclic (Proven), Judgment (Morphing), dontSaveEval, dontSaveStep)
 import Encoding (Encoding (UNICODE))
 import Evaluate (evaluation, fired)
 import Functions (buildTerm)
@@ -88,7 +88,7 @@ symbolicCtx lambdas locator =
     False -- _shuffle
     True -- _partial
     True -- _deep
-    True -- _acyclic
+    (Just Proven) -- _acyclic
     Morphing -- _judgment
     [] -- _parked
     Map.empty -- _entered

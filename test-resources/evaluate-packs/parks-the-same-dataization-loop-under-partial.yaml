@@ -15,7 +15,7 @@ symbolic: |
       𝛿1: ξ.arg
     𝑛: ⟦ λ ⤍ 𝜎 ⟧
 location: 'Q.x'
-acyclic: true
+acyclic: proven
 partial: true
 steps: 250
 input: >
@@ -26,4 +26,4 @@ protocol: |
   𝕄(Φ.x)
     𝔼(L_outer)  # 𝕄(Φ.x)
       formation(⟦ x ↦ ⟦⟧, φ ↦ Φ.cyc( x ) ⟧)  # 𝔻(Φ.a🌵0)
-        looped(⟦ x ↦ ⟦⟧, φ ↦ Φ.cyc( x ) ⟧)  # 𝔻(Φ.a🌵0)
+        looped(⟦ x ↦ ⟦⟧, φ ↦ Φ.cyc( x ) ⟧)  # 𝔻(Φ.a🌵0), proven
