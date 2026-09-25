@@ -21,10 +21,11 @@
 # on rule order (#1395).
 # The ρ carries the name of the formation where it has one: a formation reached
 # as 'Φ.number', or as 'Φ.number( φ ↦ 𝑘 )', is an object of the immutable world
-# and the 'named' function writes that path back instead of the object, the way 'dotg' writes
-# Φ, so a dispatch off it does not copy every method the object declares into
-# the term (#1446). Where it has none, or no universe is known, 'named' answers
-# with the formation itself and the ρ holds it as it always did.
+# and the 'named' function writes that path back instead of the object, the
+# way 'dotg' writes Φ, so a dispatch off it does not copy every method the
+# object declares into the term (#1446). Where it has none, or no universe is
+# known, 'named' answers with the formation itself and the ρ holds it as it
+# always did.
 name: dot
 pattern: ⟦𝐵1, 𝜏1 ↦ 𝑛1, 𝐵2⟧.𝜏1
 e-match: 𝑒1

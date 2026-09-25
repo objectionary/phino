@@ -6,5 +6,9 @@
 # so the ρ of a method dispatched off it carries the application as it was
 # written, and the methods 'number' declares stay out of the term (#1446).
 location: 'Q.t'
-input: '⟦ number ↦ ⟦ φ ↦ ∅, plus ↦ ⟦ ρ ↦ ∅, x ↦ ∅ ⟧, sin ↦ ⟦ ρ ↦ ∅ ⟧ ⟧, t ↦ Φ.number( φ ↦ ⟦ Δ ⤍ 01- ⟧ ).plus ⟧'
+input: |
+  ⟦
+    number ↦ ⟦ φ ↦ ∅, plus ↦ ⟦ ρ ↦ ∅, x ↦ ∅ ⟧, sin ↦ ⟦ ρ ↦ ∅ ⟧ ⟧,
+    t ↦ Φ.number( φ ↦ ⟦ Δ ⤍ 01- ⟧ ).plus
+  ⟧
 result: '⟦ ρ ↦ Φ.number( φ ↦ ⟦ Δ ⤍ 01- ⟧ ), x ↦ ∅ ⟧'

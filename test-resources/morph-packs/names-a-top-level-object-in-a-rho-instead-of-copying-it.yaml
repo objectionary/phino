@@ -8,5 +8,9 @@
 # carries the path instead, the way 'dotg' carries Φ, and whoever reads it
 # resolves it to the very formation that would have stood there (#1446).
 location: 'Q.t'
-input: '⟦ number ↦ ⟦ φ ↦ ∅, plus ↦ ⟦ ρ ↦ ∅, x ↦ ∅ ⟧, sin ↦ ⟦ ρ ↦ ∅ ⟧ ⟧, t ↦ Φ.number.plus ⟧'
+input: |
+  ⟦
+    number ↦ ⟦ φ ↦ ∅, plus ↦ ⟦ ρ ↦ ∅, x ↦ ∅ ⟧, sin ↦ ⟦ ρ ↦ ∅ ⟧ ⟧,
+    t ↦ Φ.number.plus
+  ⟧
 result: '⟦ ρ ↦ Φ.number, x ↦ ∅ ⟧'
