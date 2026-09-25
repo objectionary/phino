@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# An object nested in an object of the world is named by the whole path it is
+# reached by: its ρ says which object it was dispatched off, so the name is
+# found among the objects that one declares and nowhere else (#1446).
+location: 'Q.t'
+input: |
+  ⟦
+    a ↦ ⟦ ρ ↦ ∅, b ↦ ⟦ ρ ↦ ∅, c ↦ ⟦ ρ ↦ ∅ ⟧, d ↦ ⟦ Δ ⤍ 01- ⟧ ⟧ ⟧,
+    t ↦ Φ.a.b.c
+  ⟧
+result: '⟦ ρ ↦ Φ.a.b ⟧'

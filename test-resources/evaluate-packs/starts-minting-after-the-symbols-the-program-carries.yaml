@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 # SPDX-License-Identifier: MIT
 ---
+# yamllint disable rule:line-length
 # A program written by an earlier run holds symbols of its own, so minting
 # starts after the last of them and a fresh symbol is never spelled like one
 # the input was already written with.
