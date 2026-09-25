@@ -4,4 +4,4 @@
 expression: '[[ org -> [[ eolang -> [[]] ]] ]]'
 hidden: ['Q.org.eolang']
 shown: []
-result: '[[ org -> [[ ]] ]]'
+result: '⟦⟧:org'

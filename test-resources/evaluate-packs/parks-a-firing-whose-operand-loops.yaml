@@ -19,7 +19,7 @@ acyclic: proven
 steps: 250
 input: >
   ⟦ x ↦ ⟦ arg ↦ ⟦ λ ⤍ L_loop ⟧.foo, λ ⤍ L_outer ⟧.bar ⟧
-result: '⟦ arg ↦ ⟦ λ ⤍ L_loop ⟧.foo, λ ⤍ L_outer ⟧.bar'
+result: '⟦ arg ↦ L_loop:λ.foo, λ ⤍ L_outer ⟧.bar'
 protocol: |
   𝕄(Φ.x)
     𝔼(L_outer)  # 𝕄(Φ.x)

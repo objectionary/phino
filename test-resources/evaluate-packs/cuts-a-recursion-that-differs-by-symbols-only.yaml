@@ -50,9 +50,15 @@ input: >
     mul ↦ ⟦ a ↦ ∅, b ↦ ∅, λ ⤍ L_mul ⟧,
     fact ↦ ⟦ n ↦ ∅, φ ↦ Φ.if( c ↦ Φ.zero( x ↦ ξ.n ), left ↦ ⟦ Δ ⤍ 01- ⟧, right ↦ Φ.mul( a ↦ ξ.n, b ↦ Φ.fact( n ↦ Φ.dec( x ↦ ξ.n ) ) ) ) ⟧,
     x ↦ Φ.fact( n ↦ ⟦ λ ⤍ 𝜎1 ⟧ ) ⟧
-result: >
-  ⟦ n ↦ ⟦ λ ⤍ 𝜎1 ⟧,
-    φ ↦ Φ.if( c ↦ ⟦ λ ⤍ 𝜎2 ⟧, left ↦ ⟦ Δ ⤍ 01- ⟧, right ↦ Φ.mul( a ↦ ξ.n, b ↦ Φ.fact( n ↦ ⟦ λ ⤍ 𝜎3 ⟧ ) ) ) ⟧
+result: |-
+  ⟦
+    n ↦ 𝜎1:λ,
+    φ ↦ Φ.if(
+      c ↦ 𝜎2:λ,
+      left ↦ 01-:Δ,
+      right ↦ Φ.mul( a ↦ n, b ↦ Φ.fact( n ↦ 𝜎3:λ ) )
+    )
+  ⟧
 protocol: |
   𝕄(Φ.x)
     𝔼(L_zero)  # 𝕄(Φ.x.φ)

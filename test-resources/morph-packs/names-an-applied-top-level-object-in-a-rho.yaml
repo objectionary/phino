@@ -11,4 +11,4 @@ input: |
     number ↦ ⟦ φ ↦ ∅, plus ↦ ⟦ ρ ↦ ∅, x ↦ ∅ ⟧, sin ↦ ⟦ ρ ↦ ∅ ⟧ ⟧,
     t ↦ Φ.number( φ ↦ ⟦ Δ ⤍ 01- ⟧ ).plus
   ⟧
-result: '⟦ ρ ↦ Φ.number( φ ↦ ⟦ Δ ⤍ 01- ⟧ ), x ↦ ∅ ⟧'
+result: '⟦ ρ ↦ Φ.number( φ ↦ 01-:Δ ), x ↦ ∅ ⟧'

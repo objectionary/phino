@@ -43,9 +43,16 @@ input: >
     pair ↦ ⟦ head ↦ ∅, tail ↦ ∅ ⟧,
     fact ↦ ⟦ n ↦ ∅, acc ↦ ∅, φ ↦ Φ.if( c ↦ Φ.zero( x ↦ ξ.n ), left ↦ ξ.acc, right ↦ Φ.fact( n ↦ Φ.dec( x ↦ ξ.n ), acc ↦ Φ.pair( head ↦ ξ.n, tail ↦ ξ.acc ) ) ) ⟧,
     x ↦ Φ.fact( n ↦ ⟦ λ ⤍ 𝜎1 ⟧, acc ↦ ⟦ Δ ⤍ 00- ⟧ ) ⟧
-result: >
-  ⟦ n ↦ ⟦ λ ⤍ 𝜎1 ⟧, acc ↦ ⟦ Δ ⤍ 00- ⟧,
-    φ ↦ Φ.if( c ↦ ⟦ λ ⤍ 𝜎2 ⟧, left ↦ ξ.acc, right ↦ Φ.fact( n ↦ ⟦ λ ⤍ 𝜎3 ⟧, acc ↦ Φ.pair( head ↦ ξ.n, tail ↦ ξ.acc ) ) ) ⟧
+result: |-
+  ⟦
+    n ↦ 𝜎1:λ,
+    acc ↦ 00-:Δ,
+    φ ↦ Φ.if(
+      c ↦ 𝜎2:λ,
+      left ↦ acc,
+      right ↦ Φ.fact( n ↦ 𝜎3:λ, acc ↦ Φ.pair( head ↦ n, tail ↦ acc ) )
+    )
+  ⟧
 protocol: |
   𝕄(Φ.x)
     𝔼(L_zero)  # 𝕄(Φ.x.φ)

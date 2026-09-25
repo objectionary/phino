@@ -14,7 +14,7 @@ symbolic: |
 location: 'Q.y'
 hide-rho: false
 input: '⟦ y ↦ ⟦ x ↦ ⟦ λ ⤍ 𝜎1, ρ ↦ ∅ ⟧, λ ⤍ L_keep ⟧.z ⟧'
-result: '⟦ λ ⤍ 𝜎1, ρ ↦ ⟦ x ↦ ⟦ λ ⤍ 𝜎1, ρ ↦ ∅ ⟧ ⟧ ⟧'
+result: '⟦ λ ⤍ 𝜎1, ρ ↦ ⟦ x(ρ) ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧ ⟧'
 protocol: |
   𝕄(Φ.y)
     𝔼(L_keep)  # 𝕄(Φ.y)

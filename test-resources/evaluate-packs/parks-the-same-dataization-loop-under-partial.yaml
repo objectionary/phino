@@ -21,7 +21,7 @@ steps: 250
 input: >
   ⟦ cyc ↦ ⟦ x ↦ ∅, φ ↦ Φ.cyc( ξ.x ) ⟧,
     x ↦ ⟦ arg ↦ Φ.cyc( ⟦⟧ ), λ ⤍ L_outer ⟧.bar ⟧
-result: '⟦ arg ↦ Φ.cyc( α0 ↦ ⟦⟧ ), λ ⤍ L_outer ⟧.bar'
+result: '⟦ arg ↦ Φ.cyc( ⟦⟧ ), λ ⤍ L_outer ⟧.bar'
 protocol: |
   𝕄(Φ.x)
     𝔼(L_outer)  # 𝕄(Φ.x)

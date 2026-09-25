@@ -5,4 +5,4 @@
 expression: '[[ org -> [[ eolang -> [[ number -> [[ ]], bytes -> [[ ]], string -> [[ ]] ]] ]], xyz -> [[ abc -> [[ ]] ]] ]]'
 shown: ['Q.org.eolang.number']
 hidden: []
-result: '[[ org -> [[ eolang -> [[ number -> [[ ]] ]] ]] ]]'
+result: '⟦⟧:number:eolang:org'

@@ -4,4 +4,4 @@
 expression: '[[ org -> Q.x ]]'
 hidden: ['Q.org']
 shown: []
-result: '[[]]'
+result: '⟦⟧'

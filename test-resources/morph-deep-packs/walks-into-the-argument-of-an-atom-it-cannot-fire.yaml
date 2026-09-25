@@ -7,7 +7,7 @@ location: 'Q.@'
 model: true
 symbolic: true
 input: '[[ x -> [[ y -> ?, L> L_bar ]]( y -> 6.plus( 7 ) ) ]]'
-result: |
+result: |-
   ⟦ y ↦ ∅, λ ⤍ L_bar ⟧(
     y ↦ ⟦
       φ ↦ 𝜎1:λ,

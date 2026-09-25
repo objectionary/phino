@@ -5,4 +5,4 @@
 expression: '[[ t -> [[ xi🌵 -> ?, q -> ?, a -> ?, x -> [[ ]], k -> [[ xi🌵 -> ? ]] ]] ]]'
 hidden: ['Q.t.k.xi🌵']
 shown: []
-result: '[[ t -> [[ xi🌵 -> ?, q -> ?, a -> ?, x -> [[ ]], k -> [[ ]] ]] ]]'
+result: '⟦ t(xi🌵, q, a) ↦ ⟦ x ↦ ⟦⟧, k ↦ ⟦⟧ ⟧ ⟧'

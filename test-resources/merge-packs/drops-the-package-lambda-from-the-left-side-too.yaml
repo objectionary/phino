@@ -6,7 +6,4 @@ left: |
     as-bytes -> [[ ^ -> ?, @ -> $.^ ]], L> Package, ^ -> ?
   ]] ]]
 right: '[[ bytes -> [[ @ -> ?, ^ -> ? ]] ]]'
-result: |
-  [[ bytes -> [[
-    as-bytes -> [[ ^ -> ?, @ -> $.^ ]], @ -> ?, ^ -> ?
-  ]] ]]
+result: '⟦ as-bytes(ρ) ↦ ⟦ φ ↦ ρ ⟧, φ ↦ ∅, ρ ↦ ∅ ⟧:bytes'

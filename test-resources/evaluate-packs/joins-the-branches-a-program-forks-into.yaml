@@ -41,9 +41,8 @@ input: >
       gt(ρ, x) ↦ ⟦ λ ⤍ L_number_gt ⟧,
       plus(ρ, x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧,
     @ ↦ 5.gt( 0 ).if( 1.plus( 2 ), 3.plus( 4 ) ).plus( 6 ) ⟧
-result: >-
-  ⟦ φ ↦ ⟦ λ ⤍ 𝜎5 ⟧, gt(x) ↦ ⟦ λ ⤍ L_number_gt ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus
-  ⟧ ⟧
+result: |-
+  ⟦ φ ↦ 𝜎5:λ, gt(x) ↦ ⟦ λ ⤍ L_number_gt ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧
 protocol: |
   𝕄(Φ.φ)
     𝔼(L_number_gt)  # 𝕄(Φ.φ)

@@ -3,4 +3,4 @@
 ---
 left: '[[ x -> ? ]]'
 right: '[[ x -> ? ]]'
-result: '[[ x -> ? ]]'
+result: '∅:x'

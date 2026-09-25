@@ -18,8 +18,7 @@ symbolic: |
 location: 'Q.y'
 partial: true
 input: '⟦ y ↦ ⟦ a ↦ ⟦ l ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, b ↦ ⟦ l ↦ ⟦ λ ⤍ 𝜎2 ⟧, x ↦ ⟦⟧ ⟧, λ ⤍ L_fork ⟧.l ⟧'
-result: >-
-  ⟦ a ↦ ⟦ l ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, b ↦ ⟦ l ↦ ⟦ λ ⤍ 𝜎2 ⟧, x ↦ ⟦⟧ ⟧, λ ⤍ L_fork ⟧.l
+result: '⟦ a ↦ 𝜎1:λ:l, b ↦ ⟦ l ↦ 𝜎2:λ, x ↦ ⟦⟧ ⟧, λ ⤍ L_fork ⟧.l'
 protocol: |
   𝕄(Φ.y)
     𝔼(L_fork)  # 𝕄(Φ.y)

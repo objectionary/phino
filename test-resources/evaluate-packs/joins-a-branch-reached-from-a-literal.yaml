@@ -23,7 +23,7 @@ symbolic: |
     𝑛: 𝑛5
 location: 'Q.y'
 input: '⟦ y ↦ ⟦ a ↦ ⟦ φ ↦ ⟦ Δ ⤍ 01- ⟧ ⟧, b ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎7 ⟧ ⟧, λ ⤍ L_fork ⟧.φ ⟧'
-result: '⟦ λ ⤍ 𝜎9 ⟧'
+result: '𝜎9:λ'
 protocol: |
   𝕄(Φ.y)
     𝔼(L_fork)  # 𝕄(Φ.y)
