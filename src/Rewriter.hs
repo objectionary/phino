@@ -259,7 +259,7 @@ rewrite expr rules ctx@RewriteContext{..} = do
           rewrite' state rules count ctx >>= \case
             (_, _, True) -> pure ((expr, Nothing) :| [], False) -- breakpoint, return original expression
             state'@(rewrittens'@((current', _) :| _), _, False) ->
-              if current' == current
+              if length rewrittens' == length rewrittens || current' == current
                 then do
                   logDebug "Rewriting is stopped since it has no effect"
                   if not (inRange _must count)
