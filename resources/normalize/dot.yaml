@@ -19,6 +19,13 @@
 # formation is ⊥, and carrying it out into ρ would leave a ρ ↦ ⊥ in a normal
 # form that 'dl' firing first reduces to ⊥ outright, so the answer would hang
 # on rule order (#1395).
+# The ρ carries the name of the formation where it has one: a formation reached
+# as 'Φ.number', or as 'Φ.number( φ ↦ 𝑘 )', is an object of the immutable world
+# and the 'named' function writes that path back instead of the object, the
+# way 'dotg' writes Φ, so a dispatch off it does not copy every method the
+# object declares into the term (#1446). Where it has none, or no universe is
+# known, 'named' answers with the formation itself and the ρ holds it as it
+# always did.
 name: dot
 pattern: ⟦𝐵1, 𝜏1 ↦ 𝑛1, 𝐵2⟧.𝜏1
 e-match: 𝑒1
@@ -35,10 +42,15 @@ when:
         - disjoint:
             - [Δ]
             - [𝐵1, 𝐵2]
-result: 𝑒2(ρ ↦ ⟦𝐵1, 𝜏1 ↦ 𝑛1, 𝐵2⟧)
+result: 𝑒2(ρ ↦ 𝑒3)
 where:
   - meta: 𝑒2
     function: contextualize
     args:
       - 𝑛1
       - ⟦𝐵1, 𝐵2⟧
+  - meta: 𝑒3
+    function: named
+    args:
+      - 𝑒1
+      - ⟦𝐵1, 𝜏1 ↦ 𝑛1, 𝐵2⟧

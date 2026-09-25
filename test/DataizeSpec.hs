@@ -248,8 +248,9 @@ spec = do
         Residual (ExFormation bds) -> do
           let rho = [value | BiTau AtRho value <- bds]
           length rho `shouldBe` 1
-          -- the times application is gone: ρ is the number it answered, its 'as-bytes' bound
-          [() | ExFormation inner <- rho, BiTau (AtLabel "as-bytes") _ <- inner] `shouldBe` [()]
+          -- the times application is gone: ρ is the number it answered, named
+          -- by the path it is reached by instead of copied out (#1446)
+          [() | ExApplication (ExDispatch ExRoot (AtLabel "number")) (ArTau AtPhi _) <- rho] `shouldBe` [()]
         other -> expectationFailure ("expected a residual formation, got " ++ show other)
     it "writes the firing that answered into the protocol and stops at the stuck one" $ do
       (_, protocol) <- partially known "2.times(3).nope"
@@ -265,7 +266,7 @@ spec = do
           , "      𝛿2.1 := 40-08-00-00-00-00-00-00  # 𝔻(ξ.x)"
           , "      𝑛.1.1 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛"
           , "      𝑛.1.2 := ⟦ φ ↦ 𝜎1:λ, as-bytes ↦ φ, plus(ρ, x) ↦ ⟦ λ ⤍ L_number_plus ⟧, times(ρ, x) ↦ ⟦ λ ⤍ L_number_times ⟧, div(ρ, x) ↦ ⟦ λ ⤍ L_number_div ⟧, gt(ρ, x) ↦ ⟦ λ ⤍ L_number_gt ⟧, eq(ρ, x) ↦ ⟦ φ ↦ ρ.as-bytes.eq( x.as-bytes ) ⟧, nope(ρ) ↦ ⟦ λ ⤍ L_number_nope ⟧ ⟧  # 𝕄(𝑛.1.1)"
-          , "    ?(L_number_nope)  # 𝔻(⟦ ρ ↦ ⟦ φ ↦ 𝜎1:λ, as-bytes ↦ φ, plus(ρ, x) ↦ ⟦ λ ⤍ L_number_plus ⟧, times(ρ, x) ↦ ⟦ λ ⤍ L_number_times ⟧, div(ρ, x) ↦ ⟦ λ ⤍ L_number_div ⟧, gt(ρ, x) ↦ ⟦ λ ⤍ L_number_gt ⟧, eq(ρ, x) ↦ ⟦ φ ↦ ρ.as-bytes.eq( x.as-bytes ) ⟧, nope(ρ) ↦ ⟦ λ ⤍ L_number_nope ⟧ ⟧, λ ⤍ L_number_nope ⟧)"
+          , "    ?(L_number_nope)  # 𝔻(⟦ ρ ↦ Φ.number( φ ↦ 𝜎1:λ ), λ ⤍ L_number_nope ⟧)"
           ]
     it "leaves an unanswered λ function dataized directly as the whole residue" $ do
       ((outcome, chain), protocol) <- partially known "[[ L> Sym_arg_0 ]]"

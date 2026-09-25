@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 # SPDX-License-Identifier: MIT
 ---
+# yamllint disable rule:line-length
 # One firing, and nothing is computed: the operands come down to the numbers
 # they are, and what the entry answers with is a number standing for a sum
 # nobody has worked out.

@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# An object of the world applied to an argument is still named, not copied:
+# the formation 'Φ.number( φ ↦ … )' morphs to is 'number' with its void filled,
+# so the ρ of a method dispatched off it carries the application as it was
+# written, and the methods 'number' declares stay out of the term (#1446).
+location: 'Q.t'
+input: |
+  ⟦
+    number ↦ ⟦ φ ↦ ∅, plus ↦ ⟦ ρ ↦ ∅, x ↦ ∅ ⟧, sin ↦ ⟦ ρ ↦ ∅ ⟧ ⟧,
+    t ↦ Φ.number( φ ↦ ⟦ Δ ⤍ 01- ⟧ ).plus
+  ⟧
+result: '⟦ ρ ↦ Φ.number( φ ↦ ⟦ Δ ⤍ 01- ⟧ ), x ↦ ∅ ⟧'
