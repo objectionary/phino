@@ -214,9 +214,10 @@ optDeep = switch (long "deep" <> help "Don't stop at the first formation: enter 
 -- The step budget is otherwise the only thing that ends the 𝕄 and 𝔻 recursion,
 -- so a λ function answering with a firing of itself, or an object dataized
 -- through a body that comes back to itself, runs to the limit before it fails.
--- This stops it the moment it comes back (see 'unvisited').
+-- This stops it the moment it enters a formation it is already inside, up to a
+-- renaming of symbols (see 'entering').
 optAcyclic :: Parser Bool
-optAcyclic = switch (long "acyclic" <> help "Stop reducing a term as soon as it comes back to one it is already reducing, instead of going round until --max-steps runs out, and leave that term in place the way --partial leaves a λ function that cannot fire")
+optAcyclic = switch (long "acyclic" <> help "Stop reducing as soon as the reduction enters a formation it is already inside (fires its λ function or dataizes its φ body again), the same up to a renaming of symbols, instead of going round until --max-steps runs out, and leave the term in place the way --partial leaves a λ function that cannot fire")
 
 -- Which λ functions this run may fire. phino implements none of them itself
 -- (see 'Lambdas'), so without this option every λ function a program names gets

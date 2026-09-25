@@ -118,7 +118,10 @@ opened Dataization = "dataize"
 -- the term the entry wrote, then the normal form 𝕄 makes of it, so the
 -- morphing between them is a step a reader watches happen rather than a shape a
 -- term arrives in (#1298). A name no entry answers stands there as
--- '?(L_number_nope)', where the block of its firing would have been.
+-- '?(L_number_nope)', where the block of its firing would have been. A
+-- formation 𝔻 gets into through its 'box' rule opens a block of its own,
+-- 'formation(⟦ … ⟧)  # 𝔻(Φ.x)', and what its φ body fires stands under it
+-- (#1420).
 data Evaluation
   = -- The run and the term it was aimed at.
     EvRun Judgment T.Text
@@ -136,6 +139,19 @@ data Evaluation
     -- that part of the program rather than leaving a locator to say it alone
     -- (#1306).
     EvFiring Int T.Text Judgment Expression
+  | -- A formation 𝔻 got into through the 'box' rule, at the depth its nesting
+    -- gives it, together with the site it was entered at (see '_site' in
+    -- 'Morph'). The box rule is the one place a judgment gets into a formation
+    -- without firing it: 𝕄 stops at a formation and hands it back, and a
+    -- formation whose λ is fired is already an 'EvFiring'. Everything 𝔻 does
+    -- inside the φ body, the firings its dataization demands above all, stands
+    -- one level deeper, under this record, so a reader sees which object a
+    -- firing was made on the way into rather than a flat list of firings. It
+    -- opens a block the way a firing does, by indentation in the text format
+    -- and by an element in the markup, but it is no firing: it counts nothing
+    -- and names no meta, so the metas of the firings under it are numbered as
+    -- if it were not there (#1420).
+    EvFormation Int Expression Expression
   | -- A λ function no entry of the '--symbolic' file answers, at the depth the
     -- firing of it would have stood at, together with the judgment that asked
     -- for the firing and the formation 𝔼 was fired against, as it was handed
@@ -230,7 +246,7 @@ type SaveEvalFunc = Evaluation -> IO ()
 
 -- The names the text protocol has given to the terms it has written out,
 -- keyed by a cheap fixed-size digest of the term (see 'hashExpression') the
--- way 'Seen' keys the terms '--acyclic' has walked. A digest collision is
+-- way 'Seen' keys the formations '--acyclic' has entered. A digest collision is
 -- resolved by an exact structural comparison, so the common case stays O(1) on
 -- the digest while a name still stands for the very term it was given to.
 -- Keying on the whole term and not on the first symbol it carries is what
@@ -351,6 +367,10 @@ saveEval handle cursor render salted report = do
       where
         firings :: Int
         firings = protocol._fired + 1
+    written (EvFormation depth self site) protocol = do
+      form <- render self
+      locator <- render site
+      pure (protocol, Just (indented depth (printf "formation(%s)  # %s(%s)" form (letter Dataization) locator)))
     written (EvStuck depth key judgment self) protocol = do
       form <- render self
       pure (protocol, Just (indented depth (printf "?(%s)  # %s(%s)" (T.unpack key) (letter judgment) form)))
@@ -518,6 +538,11 @@ saveEvalXml handle cursor render report = do
         (kept, closers) = closed depth nesting._closing
         fires :: Int
         fires = nesting._fires + 1
+    elements (EvFormation depth self site) nesting = do
+      form <- render self
+      locator <- render site
+      let (kept, closers) = closed depth nesting._closing
+      pure (nesting{_closing = (depth, "formation") : kept}, closers ++ [indented depth (printf "<formation at=\"%s\" term=\"%s\">" (escapeXML locator) (escapeXML form))])
     elements (EvStuck depth key judgment self) nesting = do
       form <- render self
       let (kept, closers) = closed depth nesting._closing

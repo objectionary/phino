@@ -151,10 +151,14 @@ the wrappers.
 
 The step budget `--max-steps` is what ends that recursion, and the only thing
 that does unless `morph` or `dataize` is given `--acyclic`: the flag has every
-𝕄 and every 𝔻 frame remember the terms its ancestors are reducing (`unvisited`
-in `Morph.hs`, one store per judgment, since the two hand each other the very
-term they were asked about) and park the site the moment one comes back, the
-way `--partial` parks a λ that cannot fire.
+𝕄 and every 𝔻 frame remember the formations its ancestors have entered
+(`entering` in `Morph.hs`, one store for both judgments, since only `box` and
+`fire` of 𝔻 and `ml` of 𝕄 enter one) and park the site the moment a frame is
+about to enter one of them again, the way `--partial` parks a λ that cannot
+fire. Two formations are the same up to a renaming of their symbols (`alike`
+in `AST.hs`), since a recursion over a symbol mints fresh ones every round and
+never repeats a term (#1420). A formation `box` gets into is also a line of the
+protocol, `formation(…)`, and what its φ body fires stands under it.
 
 ### Test pattern: YAML packs
 

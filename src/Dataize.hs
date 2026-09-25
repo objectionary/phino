@@ -25,7 +25,7 @@ import qualified Data.Text as T
 import Deps (Evaluation (..), Judgment (..), State (..))
 import Locator (locatedExpression)
 import Matcher (Subst, matchExpression')
-import Morph (Morphed, ReduceContext (..), ReduceException (..), ReductionFunc, deeper, excluding, execBuildTerm, insideUniverse, leadsTo, morph', normalized, parking, producer, sidePremise, universed, unvisited, verb)
+import Morph (Morphed, ReduceContext (..), ReduceException (..), ReductionFunc, boxed, deeper, entering, excluding, execBuildTerm, insideUniverse, leadsTo, morph', normalized, parking, producer, sidePremise, universed, verb)
 import Random (shuffle)
 import Rewriter (Rewritten)
 import Rule (RuleContext (RuleContext), matchExpressionWithRule')
@@ -52,14 +52,14 @@ data Outcome
 -- cannot fire fails the run, unless '_partial' is on: dataization is then a
 -- partial evaluation, and the run ends on the residual program the spine had
 -- reached (see 'StuckAt'), with the stuck application parked in it as a
--- normal-form subterm, and the chain of steps that led there. A term '_acyclic'
--- caught coming back to itself ends the run the same way, since 𝔻 has no bytes
--- to give for a question it can only ever answer by asking again; where
--- '_partial' is off the signal travels on instead, so a 𝔻 run reducing an
--- operand of a firing leaves the loop to the 𝕄 spine around that firing, which
--- parks on it with no '_partial' asked for (see 'morph', #1290). The state 𝑠
--- goes in and comes back out, so a 𝔻 asked inside another judgment goes on
--- minting symbols where that judgment left off.
+-- normal-form subterm, and the chain of steps that led there. A formation
+-- '_acyclic' caught being entered from inside itself ends the run the same
+-- way, since 𝔻 has no bytes to give for a question it can only ever answer by
+-- asking again; where '_partial' is off the signal travels on instead, so a 𝔻
+-- run reducing an operand of a firing leaves the loop to the 𝕄 spine around
+-- that firing, which parks on it with no '_partial' asked for (see 'morph',
+-- #1290). The state 𝑠 goes in and comes back out, so a 𝔻 asked inside another
+-- judgment goes on minting symbols where that judgment left off.
 dataize :: Expression -> State -> ReduceContext -> IO (Outcome, [Rewritten], State)
 dataize universe state ctx@ReduceContext{..} = do
   expr <- locatedExpression _locator universe
@@ -95,14 +95,18 @@ dataize universe state ctx@ReduceContext{..} = do
 -- The conclusion bytes 'dresult' are produced by a trailing 'dataize' premise;
 -- when its argument is bound by a 'morph' or 'normalize' premise, that step
 -- joins the spine, otherwise the premise is an isolated side-computation.
--- Like 𝕄, every frame asks '_acyclic' whether the term it was handed is one a
--- frame above it is already dataizing, before any rule is walked: 𝔻 recurses
--- into itself through 'box' and 'fire' without 𝕄 ever seeing the same term
--- twice, so a program cycling through dataization alone is a loop only this
--- guard ends (#1290).
+-- Like 𝕄, every frame asks '_acyclic' whether the formation it is about to
+-- enter through 'box' or 'fire' is one a frame above it has already entered,
+-- before any rule is walked: 𝔻 recurses into itself through those two rules
+-- without 𝕄 ever seeing the same term twice, so a program cycling through
+-- dataization alone is a loop only this guard ends (#1290, #1420). A formation
+-- 'box' gets into is written to the protocol as the frame opens, whether or
+-- not '_acyclic' is on, and the frame goes on one level deeper, so what the
+-- φ body fires stands under the formation it was fired inside of.
 dataize' :: Dataizable -> Expression -> State -> ReduceContext -> IO (Dataized, State)
 dataize' (expr, seq) univ state caller = do
-  ctx <- deeper =<< unvisited expr =<< universed univ caller{_judgment = Dataization}
+  guarded <- deeper =<< entering expr =<< universed univ caller{_judgment = Dataization}
+  ctx <- inside guarded expr
   parking seq state $ case unknown expr of
     Just idx -> manufactured idx ctx
     Nothing -> do
@@ -112,6 +116,15 @@ dataize' (expr, seq) univ state caller = do
         Just (rule, subst) -> reduce ctx rule subst
         Nothing -> throwIO (Undataizable expr state)
   where
+    -- The context a frame opening on a formation 'box' gets into goes on
+    -- with, once the formation is written to the protocol: one level deeper,
+    -- so everything the φ body does stands under that record.
+    inside :: ReduceContext -> Expression -> IO ReduceContext
+    inside ctx (ExFormation bds)
+      | boxed bds = do
+          ctx._saveEval (EvFormation ctx._nesting expr ctx._site)
+          pure ctx{_nesting = ctx._nesting + 1}
+    inside ctx _ = pure ctx
     -- The symbol a formation carries in place of a λ name, if any. Such a
     -- formation is what a λ function answered with where it could not work the
     -- value out, so no entry of the '--symbolic' file answers it and firing it

@@ -40,5 +40,7 @@ fails: 'terminator ⊥'
 protocol: |
   𝕄(Φ.l🌵)
     𝔼(L_entry)  # 𝕄(Φ.l🌵.e1)
+      formation(Φ.bytes( φ ↦ 3F-F0-00-00-00-00-00-00:Δ ):φ)  # 𝔻(Φ.a🌵0)
+        formation(⟦ φ ↦ 3F-F0-00-00-00-00-00-00:Δ, size ↦ L_bytes_size:λ ⟧)  # 𝔻(Φ.a🌵0)
       𝛿1.1 := 3F-F0-00-00-00-00-00-00  # 𝔻(ξ.n)
       𝔼(L_dataized)  # 𝕄(Φ.a🌵1)

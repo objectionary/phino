@@ -24,3 +24,4 @@ result: '⟦ arg ↦ Φ.cyc( α0 ↦ ⟦⟧ ), λ ⤍ L_outer ⟧.bar'
 protocol: |
   𝕄(Φ.x)
     𝔼(L_outer)  # 𝕄(Φ.x)
+      formation(⟦ x ↦ ⟦⟧, φ ↦ Φ.cyc( x ) ⟧)  # 𝔻(Φ.a🌵0)
