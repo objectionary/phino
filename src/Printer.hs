@@ -8,6 +8,7 @@ module Printer
   ( printExpression
   , printExpression'
   , printExpressionHidingRho'
+  , printExpressionWith
   , printAttribute
   , printAlpha
   , printBinding

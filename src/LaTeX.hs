@@ -317,6 +317,7 @@ instance ToLaTeX PAIR where
   toLaTeX PA_META_DELTA'{..} = PA_META_DELTA' (toLaTeX meta)
   toLaTeX PA_META_LAMBDA{..} = toLaTeX (PA_META_LAMBDA' meta)
   toLaTeX PA_META_LAMBDA'{..} = PA_META_LAMBDA' (toLaTeX meta)
+  toLaTeX folded@PA_FOLDED{} = folded
 
 instance ToLaTeX META where
   toLaTeX META{..} =

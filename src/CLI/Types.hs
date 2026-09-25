@@ -19,6 +19,7 @@ import XMIR (XmirContext)
 data PrintContext = PrintCtx
   { _sugar :: SugarType
   , _hideRho :: Bool
+  , _abridged :: Bool
   , _line :: LineFormat
   , _margin :: Int
   , _xmirCtx :: XmirContext
@@ -117,6 +118,7 @@ data OptsDataize = OptsDataize
   , _inside :: Maybe String
   , _stepsDir :: Maybe FilePath
   , _protocol :: Maybe FilePath
+  , _abridged :: Bool
   , _symbolic :: Maybe FilePath
   , _inputFile :: Maybe FilePath
   }
@@ -163,6 +165,7 @@ data OptsMorph = OptsMorph
   , _inside :: Maybe String
   , _stepsDir :: Maybe FilePath
   , _protocol :: Maybe FilePath
+  , _abridged :: Bool
   , _symbolic :: Maybe FilePath
   , _inputFile :: Maybe FilePath
   }

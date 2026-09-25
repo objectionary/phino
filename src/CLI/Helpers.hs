@@ -8,8 +8,10 @@
 module CLI.Helpers where
 
 import AST
+import Abridge (abridged)
 import CLI.Types
 import CLI.Validators (invalidCLIArguments)
+import CST (EXPRESSION)
 import Canonizer (canonize)
 import Control.Exception
 import Control.Monad ((>=>))
@@ -34,7 +36,7 @@ import Parser (parseExpressionThrows)
 import qualified Printer as P
 import qualified Random as R
 import Rewriter (Rewritten, Rewrittens', stepHeaders)
-import Sugar (SugarType (SALTY))
+import Sugar (SugarType (SALTY), withoutRho)
 import System.Directory (createDirectoryIfMissing)
 import System.FilePath (takeDirectory, takeExtension)
 import System.IO (Handle, IOMode (WriteMode), getContents', hClose, hSetEncoding, openFile, utf8)
@@ -142,8 +144,19 @@ heading record ctx judgment locator =
 -- sugar and the margin the run prints its own answer with. The protocol is a
 -- tree of one-line 𝜑 records whatever '--output' the run was given, so a
 -- program reading it back never has to know what the run printed.
+--
+-- Under '--abridged' a long formation is folded and a long byte string cut,
+-- since a formation flattened whole can run for tens of thousands of
+-- characters and bury every short line around it (see 'abridged'). Only the
+-- protocol is spelled this way; the printed result stays whole.
 flattened :: PrintContext -> Expression -> IO String
-flattened ctx = pure . printPhi ctx{_line = SINGLELINE}
+flattened ctx@PrintCtx{..} expr =
+  pure (P.printExpressionWith shaped expr (_sugar, UNICODE, SINGLELINE, _margin))
+  where
+    shaped :: SugarType -> EXPRESSION -> EXPRESSION
+    shaped sugar
+      | _abridged = abridged . hidden ctx sugar
+      | otherwise = hidden ctx sugar
 
 -- The same, in canonical 𝜑 rather than in the sugar the run prints with. The
 -- operand a protocol line names is the term an entry of the '--symbolic' file
@@ -237,8 +250,14 @@ printInFormat ctx@PrintCtx{..} expr = case _outputFormat of
 
 -- Render an expression as PHI, dropping every ρ binding when '--hide-rho' is set.
 printPhi :: PrintContext -> Expression -> String
-printPhi PrintCtx{..} expr =
-  (if _hideRho then P.printExpressionHidingRho' else P.printExpression') expr (_sugar, UNICODE, _line, _margin)
+printPhi ctx@PrintCtx{..} expr = P.printExpressionWith (hidden ctx) expr (_sugar, UNICODE, _line, _margin)
+
+-- The CST of a term with its ρ bindings dropped under '--hide-rho' and left as
+-- it is otherwise.
+hidden :: PrintContext -> SugarType -> EXPRESSION -> EXPRESSION
+hidden PrintCtx{..} sugar
+  | _hideRho = withoutRho sugar
+  | otherwise = id
 
 printCtxToLatexCtx :: PrintContext -> LatexContext
 printCtxToLatexCtx PrintCtx{..} =

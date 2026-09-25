@@ -34,6 +34,7 @@ common warnings
 library
   import: warnings
   exposed-modules:
+    Abridge
     AST
     Builder
     Bytes
@@ -129,6 +130,7 @@ test-suite spec
   main-is: Main.hs
   hs-source-dirs: test
   other-modules:
+    AbridgeSpec
     ASTSpec
     BuilderSpec
     BytesSpec
