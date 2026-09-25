@@ -1838,7 +1838,7 @@ spec = do
                          , "      <built meta=\"𝑛.1.1\">Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )</built>"
                          , "      <answer meta=\"𝑛.1.2\">⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, times ↦ ⟦ ρ ↦ ∅, x ↦ ∅, λ ⤍ L_number_times ⟧, nope ↦ ⟦ ρ ↦ ∅, λ ⤍ L_number_nope ⟧ ⟧</answer>"
                          , "    </evaluate>"
-                         , "    <stuck λ=\"L_number_nope\" by=\"dataize\">⟦ ρ ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, times ↦ ⟦ ρ ↦ ∅, x ↦ ∅, λ ⤍ L_number_times ⟧, nope ↦ ⟦ ρ ↦ ∅, λ ⤍ L_number_nope ⟧ ⟧, λ ⤍ L_number_nope ⟧</stuck>"
+                         , "    <stuck λ=\"L_number_nope\" by=\"dataize\">⟦ ρ ↦ Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ ), λ ⤍ L_number_nope ⟧</stuck>"
                          , "  </formation>"
                          , "</dataize>"
                          ]
@@ -1937,7 +1937,7 @@ spec = do
         withStdin dispatched $
           testCLISucceeded
             ["dataize", symbolic, "--partial", "--output=xmir"]
-            ["<o name=\"λ\">L_number_nope</o>", "<o name=\"ρ\">", "<listing>⟦"]
+            ["<o name=\"λ\">L_number_nope</o>", "<o base=\"Φ.foo\" name=\"ρ\"/>", "<listing>⟦"]
 
       it "honors --hide-rho and --omit-listing when printing the residual to XMIR" $
         withStdin dispatched $
@@ -2418,9 +2418,9 @@ spec = do
             , "  { }"
             , "\\phinoNormalizationRule{dot}"
             , "  { [[ B_1, \\tau -> n, B_2 ]] . \\tau }"
-            , "  { e_2 ( \\phiTerminal{\\rho} -> [[ B_1, \\tau -> n, B_2 ]] ) }"
+            , "  { e_2 ( \\phiTerminal{\\rho} -> e_3 ) }"
             , "  { [[ B_1, \\tau -> n, B_2 ]] \\not= e_1 \\;\\text{and}\\; \\lparen [ L ] \\cap \\lparen B_1 \\cup B_2 \\rparen = \\emptyset \\;\\text{or}\\; [ D ] \\cap \\lparen B_1 \\cup B_2 \\rparen = \\emptyset \\rparen }"
-            , "  { \\phinoContextualize{ n }{ [[ B_1, B_2 ]] }{ e_2 } }"
+            , "  { \\phinoContextualize{ n }{ [[ B_1, B_2 ]] }{ e_2 } and e_3 \\coloneqq \\named{ [[ B_1, \\tau -> n, B_2 ]], e_1 } }"
             , "\\phinoNormalizationRule{dotg}"
             , "  { [[ B_1, \\tau -> n, B_2 ]] . \\tau }"
             , "  { e_2 ( \\phiTerminal{\\rho} -> Q ) }"

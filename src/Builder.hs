@@ -18,13 +18,17 @@ module Builder
   , buildBytes
   , buildBytesThrows
   , contextualize
+  , pathOf
   , BuildException (..)
   )
 where
 
 import AST
 import Control.Exception (Exception)
+import Control.Monad (zipWithM)
+import Data.List (find)
 import qualified Data.Map.Strict as Map
+import Data.Maybe (fromMaybe, listToMaybe, mapMaybe)
 import Data.Text (Text)
 import qualified Data.Text as T
 import Matcher
@@ -145,6 +149,79 @@ buildBindings (bd : rest) subst = do
   first <- buildBinding bd subst
   bds <- buildBindings rest subst
   Right (first ++ bds)
+
+-- The name a formation goes by in the world, where it has one: the path from Φ
+-- it is reached by, applied to whatever its voids were filled with on the way.
+-- The world is immutable, so an object of it copied into a term is a copy of a
+-- constant, and a dispatch off 'Φ.number' that wrote 'number' out in full would
+-- carry every method it declares — the whole of trigonometry to reach 'plus' —
+-- into the term and into every term that one then dispatches (#1446). The name
+-- is what 'dot' decorates a body with instead, and whoever reads the ρ resolves
+-- it the way 'Φ' itself resolves, to the very formation that stood there.
+--
+-- Nothing is compared against the whole world to find it. The formation says
+-- where it came from: a ρ holding 'Φ', or a path off 'Φ', names the object it
+-- was dispatched off, and one declaring no ρ at all can only be a top-level
+-- object, so only the objects that parent declares are candidates. A candidate
+-- is the formation where the two agree binding by binding, save the voids of
+-- the candidate the formation has filled: the ρ with exactly what the dispatch
+-- off the parent hands it, and every other one with a closed term, which is an
+-- argument of the application the name carries. Anything else answers with the
+-- formation itself, and so does a universe that is not a formation.
+pathOf :: Expression -> Expression -> Expression
+pathOf (ExFormation world) form@(ExFormation bds) = maybe form found (parent (find rho bds))
+  where
+    found :: (Expression, [Binding]) -> Expression
+    found (path, siblings) = fromMaybe form (listToMaybe (mapMaybe (candidate path) siblings))
+    -- The path of the object the formation was dispatched off, together with
+    -- the bindings of that object as the world declares them.
+    parent :: Maybe Binding -> Maybe (Expression, [Binding])
+    parent Nothing = Just (ExRoot, world)
+    parent (Just (BiTau AtRho path)) = (,) path <$> declared path
+    parent _ = Nothing
+    -- The bindings of the object a path off Φ leads to, applications skipped:
+    -- they fill voids and leave every other binding as the world wrote it.
+    declared :: Expression -> Maybe [Binding]
+    declared ExRoot = Just world
+    declared (ExApplication target _) = declared target
+    declared (ExDispatch target attr) = do
+      outer <- declared target
+      BiTau _ (ExFormation inner) <- find (tau attr) outer
+      Just inner
+    declared _ = Nothing
+    candidate :: Expression -> Binding -> Maybe Expression
+    candidate path (BiTau attr (ExFormation origin))
+      | attr /= AtRho && length origin == length bds = do
+          args <- zipWithM (argument path) origin bds
+          Just (foldl ExApplication (ExDispatch path attr) (concat args))
+    candidate _ _ = Nothing
+    -- What one binding of the formation adds to the application: nothing where
+    -- it is the binding the world declares, the argument where it fills a void.
+    argument :: Expression -> Binding -> Binding -> Maybe [Argument]
+    argument path (BiVoid AtRho) (BiTau AtRho value)
+      | value == path = Just []
+    argument _ (BiVoid attr) (BiTau attr' value)
+      | attr == attr' && attr /= AtRho && closed value = Just [ArTau attr value]
+    argument _ origin binding
+      | origin == binding = Just []
+      | otherwise = Nothing
+    rho :: Binding -> Bool
+    rho (BiTau AtRho _) = True
+    rho (BiVoid AtRho) = True
+    rho _ = False
+    tau :: Attribute -> Binding -> Bool
+    tau attr (BiTau attr' _) = attr == attr'
+    tau _ _ = False
+    -- A term with no ξ of its own, the only kind 'copy' ever fills a void with.
+    closed :: Expression -> Bool
+    closed (ExFormation _) = True
+    closed ExRoot = True
+    closed ExTermination = True
+    closed (ExApplication target (ArTau _ value)) = closed target && closed value
+    closed (ExApplication target (ArAlpha _ value)) = closed target && closed value
+    closed (ExDispatch target _) = closed target
+    closed _ = False
+pathOf _ form = form
 
 -- The bindings of a formation a meta was bound to are checked once more here,
 -- since a substitution may bring two of them together under one attribute.

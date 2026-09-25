@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# A dispatch off a top-level object of the world decorates the body it reaches
+# with the object it was dispatched on, and that object is 'Φ.number'. Writing
+# it out would copy every method it declares into the term, 'sin' included,
+# though only 'plus' is ever dispatched. The world is immutable, so the ρ
+# carries the path instead, the way 'dotg' carries Φ, and whoever reads it
+# resolves it to the very formation that would have stood there (#1446).
+location: 'Q.t'
+input: '⟦ number ↦ ⟦ φ ↦ ∅, plus ↦ ⟦ ρ ↦ ∅, x ↦ ∅ ⟧, sin ↦ ⟦ ρ ↦ ∅ ⟧ ⟧, t ↦ Φ.number.plus ⟧'
+result: '⟦ ρ ↦ Φ.number, x ↦ ∅ ⟧'

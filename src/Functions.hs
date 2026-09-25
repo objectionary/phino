@@ -33,7 +33,7 @@ execFunctions :: [String]
 execFunctions = ["evaluate", "morph"]
 
 buildFunctions :: [String]
-buildFunctions = ["contextualize", "random-tau", "dataize", "concat", "sed", "random-string", "size", "tau", "string", "number", "sum", "join"]
+buildFunctions = ["contextualize", "random-tau", "dataize", "concat", "sed", "random-string", "size", "tau", "string", "number", "sum", "join", "named"]
 
 buildTerm :: BuildTermFunc
 buildTerm func args subst = do
@@ -53,6 +53,7 @@ buildTerm' "string" = _string
 buildTerm' "number" = _number
 buildTerm' "sum" = _sum
 buildTerm' "join" = _join
+buildTerm' "named" = _nameOf
 buildTerm' func = _unsupported func
 
 argToBytes :: Y.ExtraArgument -> Subst -> IO Bytes
@@ -83,6 +84,17 @@ _contextualize _ _ = throwIO (userError "Function contextualize() requires exact
 -- avoid-set seeded at the start of the run, so no collision list is needed.
 -- The function takes no arguments and rejects any extras so rule mistakes are
 -- not silently accepted.
+-- The name the formation of the first argument goes by in the world of the
+-- second, or the formation itself where it has none (see 'pathOf'). Where no
+-- world is known — the 'rewrite' command, and 'isNF' asking about a term on
+-- its own — the second argument binds nothing, and the formation is answered
+-- as it is, exactly as 'dot' answered before any object of the world had a name.
+_nameOf :: BuildTermMethod
+_nameOf [Y.ArgExpression expr, Y.ArgExpression universe] subst = do
+  form <- buildExpressionThrows expr subst
+  pure (TeExpression (either (const form) (`pathOf` form) (buildExpression universe subst)))
+_nameOf _ _ = throwIO (userError "Function named() requires exactly 2 arguments as expression")
+
 _randomTau :: BuildTermMethod
 _randomTau [] _ = TeAttribute . AtLabel <$> freshTau
 _randomTau _ _ = throwIO (userError "Function random-tau() requires exactly 0 arguments")
