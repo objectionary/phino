@@ -374,10 +374,10 @@ runMatch OptsMatch{..} = do
       ptn <- parseExpressionThrows (fromJust _pattern)
       condition <- traverse parseConditionThrows _when
       traverse_ (throwIO . AnonymousMetaInCondition . T.unpack) (anonymous condition)
-      substs <- matchExpressionWithRule expr (rule ptn condition) (RuleContext buildTerm)
+      substs <- matchExpressionWithRule expr (rule ptn condition) (RuleContext buildTerm Nothing)
       if null substs
         then throwIO EmptySubstsOnMatch
         else putStrLn (P.printSubsts' substs (_sugarType, UNICODE, _flat, defaultMargin))
   where
     rule :: Expression -> Maybe Y.Condition -> Y.Rule
-    rule ptn cnd = Y.Rule "custom" Nothing Nothing ptn Nothing ExRoot cnd Nothing Nothing
+    rule ptn cnd = Y.Rule "custom" Nothing Nothing ptn ExRoot cnd Nothing Nothing

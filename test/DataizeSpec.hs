@@ -112,11 +112,11 @@ spec = do
   -- (#955). The dataization clauses are therefore disjoint and their order in
   -- 'resources/dataization' cannot change behavior.
   describe "dataization 'norm' is disjoint from the specific clauses" $ do
-    let rctx = RuleContext (execBuildTerm ExRoot (defaultReduceContext ExRoot))
+    let rctx = RuleContext (execBuildTerm ExRoot (defaultReduceContext ExRoot)) Nothing
         dataizeRule :: String -> Yaml.DataizeRule
         dataizeRule nm = fromMaybe (error ("no dataization rule named " ++ nm)) (find (\r -> r.name == nm) Yaml.dataizationRules)
         asRule :: Yaml.DataizeRule -> Yaml.Rule
-        asRule r = Yaml.Rule r.name Nothing Nothing r.match Nothing ExRoot r.when Nothing Nothing
+        asRule r = Yaml.Rule r.name Nothing Nothing r.match ExRoot r.when Nothing Nothing
     it "does not fire on a formation" $ do
       substs <- matchExpressionWithRule' [substEmpty] (ExFormation [BiDelta (BtOne "00")]) (asRule (dataizeRule "norm")) rctx
       substs `shouldBe` []

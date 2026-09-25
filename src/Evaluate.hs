@@ -191,7 +191,7 @@ symbol func form self univ state caller = case matched caller._symbolic func of
     reshaped :: ReduceContext -> Subst -> (Meta, (Meta, [Y.Rule])) -> IO Subst
     reshaped ctx bound (meta, (source, rules)) = do
       term <- buildExpressionThrows (ExMeta source._name) bound
-      shaped <- rewritten rules (RuleContext ctx._buildTerm) term
+      shaped <- rewritten rules (RuleContext ctx._buildTerm Nothing) term
       ctx._saveEval (EvSymbolize ctx._nesting meta._spelling (ExMeta source._name) shaped)
       bind meta (MvExpression shaped) bound
     -- Stand the data of a term another line of the entry has bound into

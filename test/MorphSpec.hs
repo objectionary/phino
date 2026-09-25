@@ -276,11 +276,11 @@ spec = do
   -- two clauses are mutually exclusive and their order in 'resources/morphing'
   -- cannot change behavior.
   describe "morphing 'md' is disjoint from 'ml'" $ do
-    let rctx = RuleContext (execBuildTerm ExRoot (defaultReduceContext ExRoot))
+    let rctx = RuleContext (execBuildTerm ExRoot (defaultReduceContext ExRoot)) Nothing
         morphRule :: String -> Yaml.MorphRule
         morphRule nm = fromMaybe (error ("no morphing rule named " ++ nm)) (find (\r -> r.name == nm) Yaml.morphingRules)
         asRule :: Yaml.MorphRule -> Yaml.Rule
-        asRule r = Yaml.Rule r.name Nothing Nothing r.match Nothing ExRoot r.when Nothing Nothing
+        asRule r = Yaml.Rule r.name Nothing Nothing r.match ExRoot r.when Nothing Nothing
         lambdaFormation = ExFormation [BiLambda (Function "L_dummy"), BiVoid AtRho]
     it "does not fire on a λ-bearing formation dispatch" $ do
       substs <- matchExpressionWithRule' [substEmpty] (ExDispatch lambdaFormation (AtLabel "x")) (asRule (morphRule "md")) rctx

@@ -82,11 +82,11 @@ data RewriteContext = RewriteContext
   , _maxDepth :: Int
   , _maxCycles :: Int
   , _depthSensitive :: Bool
-  , -- The world the rewritten term stands in, where one is known. A rule
-    -- carrying an 'e-match' is matched against it and reads what it binds
-    -- there, which is how 'dot' tells the formation it dispatched from the
-    -- whole program and writes 'ρ ↦ Φ' rather than the program itself
-    -- (#1318). Normalization inside 𝕄 and 𝔻 knows the universe and names it
+  , -- The world the rewritten term stands in, where one is known. The rules
+    -- never see it: it reaches the 'named' function through 'RuleContext',
+    -- which is how 'dot' tells the formation it dispatched from the whole
+    -- program and writes 'ρ ↦ Φ' rather than the program itself (#1318,
+    -- #1460). Normalization inside 𝕄 and 𝔻 knows the universe and names it
     -- here; the 'rewrite' command rewrites a term with no world around it and
     -- names nothing.
     _universe :: Maybe Expression
@@ -203,7 +203,7 @@ rewrite' state (rule : rest) iteration ctx@RewriteContext{..} = do
             else do
               logDebug (printf "Starting rewriting cycle for rule '%s': %d out of %d" ruleName _count _maxDepth)
               expression <- locatedExpression _locator current
-              R.matchExpressionWithRuleIn _universe expression rule (RuleContext _buildTerm) >>= \case
+              R.matchExpressionWithRule expression rule (RuleContext _buildTerm _universe) >>= \case
                 [] -> do
                   logDebug (printf "Rule '%s' does not match, rewriting is stopped" ruleName)
                   if _breakpoint == Just ruleName

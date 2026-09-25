@@ -183,10 +183,10 @@ instance FromJSON Rule where
         defaultOptions
           { fieldLabelModifier = \case
               "where_" -> "where"
-              "ematch" -> "e-match"
               other -> other
           }
         value
+    universeless rule.name value
     referenceless rule.name "result" rule.result
     referenceless rule.name "when" rule.when
     referenceless rule.name "where" rule.where_
@@ -241,12 +241,6 @@ data Rule = Rule
   , label :: Maybe String
   , description :: Maybe String
   , pattern :: Expression
-  , -- The universe-argument matcher, the one 'MorphRule' spells as 'ematch'.
-    -- A rewriting rule is about a term and knows nothing of the world around
-    -- it, so almost every rule leaves this out; a rule that does carry one is
-    -- matched against the universe too and reads what it binds, which is how
-    -- 'dot' tells the formation it dispatched from the whole program (#1318).
-    ematch :: Maybe Expression
   , result :: Expression
   , when :: Maybe Condition
   , where_ :: Maybe [Extra]
@@ -378,11 +372,10 @@ instance Metas Operation where
 -- inference within it and nowhere else, so a kind the rule names just once
 -- carries no index anywhere in the rule.
 instance Metas Rule where
-  metas rule = metas rule.pattern ++ metas rule.ematch ++ metas rule.result ++ metas rule.when ++ metas rule.having ++ metas rule.where_
+  metas rule = metas rule.pattern ++ metas rule.result ++ metas rule.when ++ metas rule.having ++ metas rule.where_
   bare names rule =
     rule
       { pattern = bare names rule.pattern
-      , ematch = bare names rule.ematch
       , result = bare names rule.result
       , when = bare names rule.when
       , having = bare names rule.having
@@ -426,6 +419,15 @@ instance Metas ContextualizeRule where
 -- part of a rule to read it back by. Writing one outside the pattern is
 -- therefore a mistake in the rule, not a term to be resolved later, and the
 -- rule is rejected as it loads.
+-- A rewriting rule is about a term and knows nothing of the world around it,
+-- so it has no 'e-match' to match that world with: only a morphing and a
+-- dataization rule carry one. A rule written with it anyway is refused where
+-- it is read, since ignoring the key would rewrite with a meta nobody binds.
+universeless :: String -> Value -> Parser ()
+universeless rule (Object fields)
+  | KeyMap.member "e-match" fields = fail (printf "The rule '%s' carries an 'e-match', which only a morphing or a dataization rule may" rule)
+universeless _ _ = pure ()
+
 referenceless :: (MonadFail m, Slots a) => String -> String -> a -> m ()
 referenceless rule field term = case anonymous term of
   Nothing -> pure ()

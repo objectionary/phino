@@ -235,8 +235,8 @@ instance FromJSON Lambda where
           symbolless result
             | null (symbols result) && null [kind | Slot kind _ <- slots result, kind == "S"] = pure ()
             | otherwise = fail (printf "A rule of the 'rewrite' block of λ function '%s' writes a symbol 𝜎 into its result" key)
-          -- Every meta a result reads is one the pattern, the 'e-match' or a
-          -- 'where' extension of the very same rule binds.
+          -- Every meta a result reads is one the pattern or a 'where'
+          -- extension of the very same rule binds.
           bound :: Y.Rule -> Yaml.Parser ()
           bound parsed = case filter (`notElem` known) (metas parsed.result) of
             [] -> pure ()
@@ -250,7 +250,7 @@ instance FromJSON Lambda where
                 )
             where
               known :: [Text]
-              known = metas parsed.pattern ++ metas parsed.ematch ++ concatMap (metas . (.meta)) (concat parsed.where_)
+              known = metas parsed.pattern ++ concatMap (metas . (.meta)) (concat parsed.where_)
       -- Every 'rewrite', 'symbolize' and 'join' line reads terms the entry has
       -- bound already: a 'morph' operand, a line above it in its own block or
       -- a line of a block above its own, since nothing else of an entry is a

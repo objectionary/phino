@@ -145,12 +145,12 @@ dataize' (expr, seq) univ state caller = do
     firstMatch :: ReduceContext -> [Y.DataizeRule] -> IO (Maybe (Y.DataizeRule, Subst))
     firstMatch _ [] = pure Nothing
     firstMatch ctx (rule : rest) = do
-      substs <- matchExpressionWithRule' (matchExpression' rule.ematch univ) expr (asRule rule) (RuleContext (execBuildTerm univ ctx))
+      substs <- matchExpressionWithRule' (matchExpression' rule.ematch univ) expr (asRule rule) (RuleContext (execBuildTerm univ ctx) (Just univ))
       case substs of
         (subst : _) -> pure (Just (rule, subst))
         [] -> firstMatch ctx rest
     asRule :: Y.DataizeRule -> Y.Rule
-    asRule rule = Y.Rule rule.name Nothing Nothing rule.match Nothing ExRoot rule.when Nothing Nothing
+    asRule rule = Y.Rule rule.name Nothing Nothing rule.match ExRoot rule.when Nothing Nothing
     reduce :: ReduceContext -> Y.DataizeRule -> Subst -> IO (Dataized, State)
     reduce ctx rule subst = case bytesProducer rule.dresult rule.premises of
       Nothing -> do

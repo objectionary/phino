@@ -8,6 +8,7 @@
 module RuleSpec where
 
 import AST (Argument (..), Attribute (..), Binding (..), Bytes (..), Expression (..), Function (..))
+import Builder (buildExpressionThrows)
 import Control.Monad
 import Data.Aeson
 import Data.Yaml qualified as Y
@@ -18,7 +19,7 @@ import Matcher
 import Printer (printSubsts)
 import Rule (RuleContext (RuleContext), isNF, matchExpressionWithRule, meetCondition)
 import System.FilePath
-import Test.Hspec (Spec, describe, expectationFailure, it, runIO, shouldBe, shouldSatisfy)
+import Test.Hspec (Spec, describe, expectationFailure, it, runIO, shouldBe, shouldReturn, shouldSatisfy)
 import Yaml qualified
 
 data ConditionPack = ConditionPack
@@ -41,7 +42,7 @@ spec = do
           let expr = expression pack
           let matched = matchExpression (pattern pack) expr
           unless (matched /= []) (expectationFailure "List of matched substitutions is empty which is not expected")
-          met <- meetCondition (condition pack) matched (RuleContext buildTerm)
+          met <- meetCondition (condition pack) matched (RuleContext buildTerm Nothing)
           case failure pack of
             Just True ->
               unless
@@ -59,7 +60,7 @@ spec = do
                 )
       )
   describe "isNF determines normal form" $ do
-    let ctx = RuleContext buildTerm
+    let ctx = RuleContext buildTerm Nothing
     forM_
       [ ("returns true for ExXi", ExXi, True)
       , ("returns true for ExRoot", ExRoot, True)
@@ -80,7 +81,7 @@ spec = do
 
   describe "matchExpressionWithRule via a 'where' extension or a φ-marker meta" $ do
     let ctx :: RuleContext
-        ctx = RuleContext buildTerm
+        ctx = RuleContext buildTerm Nothing
 
         joinRule :: Yaml.Rule
         joinRule =
@@ -89,7 +90,6 @@ spec = do
             Nothing
             Nothing
             (ExFormation [BiMeta "B"])
-            Nothing
             (ExMeta "B")
             Nothing
             (Just [Yaml.Extra (Yaml.ArgBinding (BiMeta "J")) "join" [Yaml.ArgBinding (BiMeta "B")]])
@@ -102,7 +102,6 @@ spec = do
             Nothing
             Nothing
             (ExMeta "e")
-            Nothing
             (ExMeta "e")
             Nothing
             ( Just
@@ -119,7 +118,6 @@ spec = do
             Nothing
             Nothing
             (ExFormation [BiTau (AtLabel "x") (ExPhiMeet Nothing 0 (ExMeta "n1")), BiVoid AtRho])
-            Nothing
             (ExMeta "n1")
             Nothing
             Nothing
@@ -132,7 +130,6 @@ spec = do
             Nothing
             Nothing
             (ExFormation [BiTau (AtLabel "x") (ExPhiAgain Nothing 0 (ExMeta "n2")), BiVoid AtRho])
-            Nothing
             (ExMeta "n2")
             Nothing
             Nothing
@@ -165,3 +162,24 @@ spec = do
             then matched `shouldSatisfy` (not . null)
             else matched `shouldBe` []
       )
+
+  describe "matchExpressionWithRule names a formation in the universe of its context" $ do
+    let namingRule :: Yaml.Rule
+        namingRule =
+          Yaml.Rule
+            "named-test"
+            Nothing
+            Nothing
+            (ExFormation [BiMeta "B", BiVoid AtRho])
+            (ExMeta "e2")
+            Nothing
+            (Just [Yaml.Extra (Yaml.ArgExpression (ExMeta "e2")) "named" [Yaml.ArgExpression (ExFormation [BiMeta "B", BiVoid AtRho])]])
+            Nothing
+        world :: Expression
+        world = ExFormation [BiTau (AtLabel "qwj") (ExFormation [BiDelta (BtOne "7C")]), BiVoid AtRho]
+    it "writes Φ for the whole program the context stands in" $ do
+      (mapM (buildExpressionThrows (ExMeta "e2")) =<< matchExpressionWithRule world namingRule (RuleContext buildTerm (Just world)))
+        `shouldReturn` [ExRoot]
+    it "writes the formation itself where the context knows no universe" $ do
+      (mapM (buildExpressionThrows (ExMeta "e2")) =<< matchExpressionWithRule world namingRule (RuleContext buildTerm Nothing))
+        `shouldReturn` [world]
