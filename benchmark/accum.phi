@@ -1,0 +1,8 @@
+⟦
+  number ↦ ⟦ φ ↦ ∅, gt ↦ ⟦ b ↦ ∅, λ ⤍ L_number_gt, ρ ↦ ∅ ⟧, plus ↦ ⟦ b ↦ ∅, λ ⤍ L_number_plus, ρ ↦ ∅ ⟧ ⟧,
+  bytes ↦ ⟦ φ ↦ ∅, size ↦ ⟦ λ ⤍ L_bytes_size, ρ ↦ ∅ ⟧, concat ↦ ⟦ b ↦ ∅, λ ⤍ L_bytes_concat, ρ ↦ ∅ ⟧ ⟧,
+  bool ↦ ⟦ if ↦ ∅, φ ↦ ξ.if( left ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ FF- ⟧ ), right ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 00- ⟧ ) ) ⟧,
+  hex ↦ ⟦ x ↦ ∅, φ ↦ ξ.rec( index ↦ 0, acc ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 00- ⟧ ) ), rec ↦ ⟦ index ↦ ∅, acc ↦ ∅, ρ ↦ ∅, φ ↦ ξ.ρ.x.size.gt( b ↦ ξ.index ).if( left ↦ ξ.ρ.rec( index ↦ ξ.index.plus( b ↦ 1 ), acc ↦ ξ.acc.concat( b ↦ ξ.ρ.x ) ), right ↦ ξ.acc ) ⟧ ⟧,
+  l🌵 ↦ ⟦ mark ↦ ⟦ n ↦ ∅, v ↦ ∅, λ ⤍ L_entry ⟧, root ↦ ⟦ v ↦ ∅, λ ⤍ L_root ⟧,
+    e1 ↦ Φ.l🌵.mark( n ↦ 1 )( v ↦ Φ.hex( x ↦ Φ.bytes( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ ) ) ) ⟧
+⟧
