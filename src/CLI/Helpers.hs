@@ -22,10 +22,11 @@ import Data.List (intercalate, nub)
 import qualified Data.Map.Strict as M
 import Data.Maybe
 import qualified Data.Text as T
-import Deps (Evaluation (EvRun), Judgment, SaveEvalFunc, SaveStepFunc, State (..), dontSaveEval, emptyNesting, emptyProtocol, endEvalXml, saveEval, saveEvalXml, saveStep)
+import Deps (Evaluation (EvRun), Judgment, SaveEvalFunc, SaveStepFunc, State (..), dontSaveEval, emptyNesting, emptyProgress, emptyProtocol, endEvalXml, progressed, saveEval, saveEvalXml, saveStep)
 import Encoding
 import Files (ensuredFile, overwrite)
 import Functions (buildFunctions, execFunctions)
+import GHC.Clock (getMonotonicTime)
 import LaTeX (LatexContext (LatexContext), defaultMeetLength, defaultMeetPopularity, expressionToLaTeX, rewrittensToLatex)
 import Lambdas (Lambdas, emptyLambdas, readLambdas, taken)
 import Lining (LineFormat (SINGLELINE))
@@ -79,8 +80,24 @@ saveStepFunc stepsDir ctx@PrintCtx{..} = do
 -- encoding is pinned to UTF-8 rather than taken from the locale, since the file
 -- is read back by other programs.
 withEvalFunc :: forall a. Maybe FilePath -> PrintContext -> (SaveEvalFunc -> IO a) -> IO a
-withEvalFunc Nothing _ action = action dontSaveEval
-withEvalFunc (Just file) ctx action = do
+withEvalFunc target ctx action = withEvalFunc' target ctx (tracked >=> action)
+  where
+    -- Under '--log-level=INFO' every report also counts towards a line of
+    -- progress printed every few seconds, whether or not a protocol is
+    -- written (see 'progressed'); at any other level the reports go straight
+    -- to the protocol, so a run that prints no progress pays nothing for it.
+    tracked :: SaveEvalFunc -> IO SaveEvalFunc
+    tracked record = do
+      enabled <- logging INFO
+      if enabled
+        then do
+          cursor <- newIORef . emptyProgress =<< getMonotonicTime
+          pure (progressed cursor 5 (flattened ctx) record)
+        else pure record
+
+withEvalFunc' :: forall a. Maybe FilePath -> PrintContext -> (SaveEvalFunc -> IO a) -> IO a
+withEvalFunc' Nothing _ action = action dontSaveEval
+withEvalFunc' (Just file) ctx action = do
   createDirectoryIfMissing True (takeDirectory file)
   logDebug (printf "The option '--protocol' is specified, every firing will be recorded in '%s' as %s" file (if markup then "XML" else "text"))
   if markup then markedUp else plain

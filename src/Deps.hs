@@ -19,7 +19,8 @@ import qualified Data.Map.Strict as Map
 import Data.Maybe (fromMaybe)
 import qualified Data.Text as T
 import Files (overwrite)
-import Logger (logDebug)
+import GHC.Clock (getMonotonicTime)
+import Logger (logDebug, logInfo)
 import Matcher
 import Printer (printBytes, printFunction)
 import System.Directory (createDirectoryIfMissing)
@@ -739,3 +740,46 @@ answer = "𝑛"
 
 dontSaveEval :: SaveEvalFunc
 dontSaveEval _ = pure ()
+
+-- What '--log-level=INFO' has counted of a run so far: when the run began and
+-- when a line about it last reached the console, both on the monotonic clock in
+-- seconds, and how many formations it has entered and how many λ functions it
+-- has fired. A long run prints nothing else until it ends, so a stuck entry and
+-- a slow one look the same from outside; the counts say whether it advances
+-- and the site of the latest record says where it is (#1470).
+data Progress = Progress
+  { _began :: Double
+  , _told :: Maybe Double
+  , _formations :: Int
+  , _firings :: Int
+  }
+
+-- The progress of a run that began at this moment and has done nothing yet.
+emptyProgress :: Double -> Progress
+emptyProgress began = Progress began Nothing 0 0
+
+-- Record every report the way the wrapped function does and count the ones
+-- that carry a site, which are the firings and the formations entered. Once
+-- the given number of seconds has passed since the last line, and on the first
+-- such report too, one line goes to the console naming the counts, the time
+-- the run has taken and the site of the report, rendered only then, since a
+-- run may make hundreds of thousands of them and prints one every few seconds.
+progressed :: IORef Progress -> Double -> (Expression -> IO String) -> SaveEvalFunc -> SaveEvalFunc
+progressed cursor interval render record evaluation = do
+  record evaluation
+  mapM_ reported (sited evaluation)
+  where
+    sited :: Evaluation -> Maybe (Progress -> Progress, Expression)
+    sited (EvFiring _ _ _ site) = Just (\progress -> progress{_firings = progress._firings + 1}, site)
+    sited (EvFormation _ _ site) = Just (\progress -> progress{_formations = progress._formations + 1}, site)
+    sited _ = Nothing
+    reported :: (Progress -> Progress, Expression) -> IO ()
+    reported (counted, site) = do
+      now <- getMonotonicTime
+      progress <- counted <$> readIORef cursor
+      if maybe True (\told -> now - told >= interval) progress._told
+        then do
+          locator <- render site
+          logInfo (printf "Entered %d formations and fired %d λ functions in %.0fs, now at %s" progress._formations progress._firings (now - progress._began) locator)
+          writeIORef cursor progress{_told = Just now}
+        else writeIORef cursor progress
