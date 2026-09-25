@@ -579,11 +579,11 @@ instance FromJSON MorphRule where
             MorphRule ruleName
               <$> parseLabel ruleName o
               <*> o .: "match"
-              <*> o .: "e-match"
-              <*> o .: "n-result"
+              <*> o .: "universe"
+              <*> o .: "conclusion"
               <*> o .:? "when"
               <*> o .:? "premises" .!= []
-          referenceless ruleName "n-result" rule.nresult
+          referenceless ruleName "conclusion" rule.nresult
           referenceless ruleName "when" rule.when
           referenceless ruleName "premises" rule.premises
           pure rule
@@ -599,11 +599,11 @@ instance FromJSON DataizeRule where
             DataizeRule ruleName
               <$> parseLabel ruleName o
               <*> o .: "match"
-              <*> o .: "e-match"
-              <*> o .: "d-result"
+              <*> o .: "universe"
+              <*> o .: "conclusion"
               <*> o .:? "when"
               <*> o .:? "premises" .!= []
-          referenceless ruleName "d-result" rule.dresult
+          referenceless ruleName "conclusion" rule.dresult
           referenceless ruleName "when" rule.when
           referenceless ruleName "premises" rule.premises
           pure rule

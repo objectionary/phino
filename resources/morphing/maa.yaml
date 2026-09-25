@@ -3,8 +3,8 @@
 ---
 name: maa
 match: '𝑛1(α𝑖1 ↦ 𝑘1)'
-e-match: 𝑒1
-n-result: 𝑛4
+universe: 𝑒1
+conclusion: 𝑛4
 premises:
   - n-result: 𝑛2
     morph: 𝑛1

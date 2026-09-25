@@ -3,5 +3,5 @@
 ---
 name: mf
 match: ⟦𝐵1⟧
-e-match: 𝑒1
-n-result: ⟦𝐵1⟧
+universe: 𝑒1
+conclusion: ⟦𝐵1⟧

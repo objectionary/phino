@@ -56,8 +56,8 @@ spec = do
       )
 
   describe "rejects malformed rule content" $ do
-    let primYaml = "name: prim\nlabel: prim\nmatch: ⟦𝐵⟧\ne-match: 𝑒\nn-result: ⟦𝐵⟧"
-        endYaml = "name: end\nlabel: end\nmatch: ⊥\ne-match: 𝑒\nd-result: '--'"
+    let primYaml = "name: prim\nlabel: prim\nmatch: ⟦𝐵⟧\nuniverse: 𝑒\nconclusion: ⟦𝐵⟧"
+        endYaml = "name: end\nlabel: end\nmatch: ⊥\nuniverse: 𝑒\nconclusion: '--'"
         cxiYaml = "name: cxi\nlabel: cxi\nmatch: ξ\nc-match: 𝑘\nc-result: 𝑘"
     forM_
       [ ("a label that equals the name in a morphing rule", primYaml, failsAsRedundant (decodeYaml' primYaml :: Either Yaml.ParseException MorphRule))
@@ -121,40 +121,40 @@ spec = do
             (decodeYaml' (rewriting "result: '⟦ ⟧'\nwhen:\n  nf: '𝑒'") :: Either Yaml.ParseException Rule)
         )
       ,
-        ( "in 'n-result' of a morphing rule"
+        ( "in 'conclusion' of a morphing rule"
         , failsWith
-            "anonymous meta '!n' cannot be referenced in 'n-result' of rule 'foo'"
-            (decodeYaml' (inferring "e-match: 𝑒2\nn-result: '𝑛'") :: Either Yaml.ParseException MorphRule)
+            "anonymous meta '!n' cannot be referenced in 'conclusion' of rule 'foo'"
+            (decodeYaml' (inferring "universe: 𝑒2\nconclusion: '𝑛'") :: Either Yaml.ParseException MorphRule)
         )
       ,
         ( "in a premise of a morphing rule"
         , failsWith
             "anonymous meta '!e' cannot be referenced in 'premises' of rule 'foo'"
-            (decodeYaml' (inferring "e-match: 𝑒2\nn-result: 𝑛1\npremises:\n  - n-result: 𝑛1\n    normalize: '𝑒'") :: Either Yaml.ParseException MorphRule)
+            (decodeYaml' (inferring "universe: 𝑒2\nconclusion: 𝑛1\npremises:\n  - n-result: 𝑛1\n    normalize: '𝑒'") :: Either Yaml.ParseException MorphRule)
         )
       ,
         ( "in 'when' of a morphing rule"
         , failsWith
             "anonymous meta '!e' cannot be referenced in 'when' of rule 'foo'"
-            (decodeYaml' (inferring "e-match: 𝑒2\nn-result: 𝑛1\nwhen:\n  formation: '𝑒'") :: Either Yaml.ParseException MorphRule)
+            (decodeYaml' (inferring "universe: 𝑒2\nconclusion: 𝑛1\nwhen:\n  formation: '𝑒'") :: Either Yaml.ParseException MorphRule)
         )
       ,
-        ( "in 'd-result' of a dataization rule"
+        ( "in 'conclusion' of a dataization rule"
         , failsWith
-            "anonymous meta '!d' cannot be referenced in 'd-result' of rule 'foo'"
-            (decodeYaml' (inferring "e-match: 𝑒2\nd-result: '𝛿'") :: Either Yaml.ParseException DataizeRule)
+            "anonymous meta '!d' cannot be referenced in 'conclusion' of rule 'foo'"
+            (decodeYaml' (inferring "universe: 𝑒2\nconclusion: '𝛿'") :: Either Yaml.ParseException DataizeRule)
         )
       ,
         ( "in 'when' of a dataization rule"
         , failsWith
             "anonymous meta '!e' cannot be referenced in 'when' of rule 'foo'"
-            (decodeYaml' (inferring "e-match: 𝑒2\nd-result: 𝛿1\nwhen:\n  formation: '𝑒'") :: Either Yaml.ParseException DataizeRule)
+            (decodeYaml' (inferring "universe: 𝑒2\nconclusion: 𝛿1\nwhen:\n  formation: '𝑒'") :: Either Yaml.ParseException DataizeRule)
         )
       ,
         ( "in a premise of a dataization rule"
         , failsWith
             "anonymous meta '!e' cannot be referenced in 'premises' of rule 'foo'"
-            (decodeYaml' (inferring "e-match: 𝑒2\nd-result: 𝛿1\npremises:\n  - d-result: 𝛿1\n    dataize: '𝑒'") :: Either Yaml.ParseException DataizeRule)
+            (decodeYaml' (inferring "universe: 𝑒2\nconclusion: 𝛿1\npremises:\n  - d-result: 𝛿1\n    dataize: '𝑒'") :: Either Yaml.ParseException DataizeRule)
         )
       ,
         ( "in a premise of a contextualization rule"

@@ -4,5 +4,5 @@
 name: delta
 label: \Delta
 match: ⟦𝐵1, Δ ⤍ 𝛿1, 𝐵2⟧
-e-match: 𝑒1
-d-result: 𝛿1
+universe: 𝑒1
+conclusion: 𝛿1
