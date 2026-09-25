@@ -26,3 +26,4 @@ protocol: |
       𝔼(L_loop)  # 𝕄(Φ.a🌵0)
         𝑛.2.1 := L_loop:λ  # 𝑛
         𝑛.2.2 := L_loop:λ  # 𝕄(𝑛.2.1)
+      looped(L_loop:λ)  # 𝕄(Φ.a🌵0)

@@ -158,7 +158,10 @@ about to enter one of them again, the way `--partial` parks a λ that cannot
 fire. Two formations are the same up to a renaming of their symbols (`alike`
 in `AST.hs`), since a recursion over a symbol mints fresh ones every round and
 never repeats a term (#1420). A formation `box` gets into is also a line of the
-protocol, `formation(…)`, and what its φ body fires stands under it.
+protocol, `formation(…)`, and what its φ body fires stands under it; a cut is
+one too, `looped(…)` (`EvLooped`), written by `entering` where the refused
+frame would have opened and carrying the formation its ancestor entered
+(#1434).
 
 ### Test pattern: YAML packs
 

@@ -152,6 +152,18 @@ data Evaluation
     -- and names no meta, so the metas of the firings under it are numbered as
     -- if it were not there (#1420).
     EvFormation Int Expression Expression
+  | -- A frame '--acyclic' cut as it opened, since a frame above it had already
+    -- entered a formation 'alike' the one it was about to enter: the depth the
+    -- frame would have opened at, the judgment it belonged to, the formation
+    -- the frame above entered, as that frame had it, and the site the cut was
+    -- made at. It stands where the 'EvFormation' of the cut frame would have
+    -- stood, and its term is the very term of the round that was kept, so a
+    -- reader, or a program, pairs the two by their terms without renaming any
+    -- symbol by eye, and sees the recursion cut at its site rather than
+    -- reconstructing the cut from the residual. Nothing runs under a cut, so
+    -- the line stands alone and no block opens under it, the way none opens
+    -- under a stuck site (#1434).
+    EvLooped Int Judgment Expression Expression
   | -- A λ function no entry of the '--symbolic' file answers, at the depth the
     -- firing of it would have stood at, together with the judgment that asked
     -- for the firing and the formation 𝔼 was fired against, as it was handed
@@ -371,6 +383,10 @@ saveEval handle cursor render salted report = do
       form <- render self
       locator <- render site
       pure (protocol, Just (indented depth (printf "formation(%s)  # %s(%s)" form (letter Dataization) locator)))
+    written (EvLooped depth judgment self site) protocol = do
+      form <- render self
+      locator <- render site
+      pure (protocol, Just (indented depth (printf "looped(%s)  # %s(%s)" form (letter judgment) locator)))
     written (EvStuck depth key judgment self) protocol = do
       form <- render self
       pure (protocol, Just (indented depth (printf "?(%s)  # %s(%s)" (T.unpack key) (letter judgment) form)))
@@ -543,6 +559,11 @@ saveEvalXml handle cursor render report = do
       locator <- render site
       let (kept, closers) = closed depth nesting._closing
       pure (nesting{_closing = (depth, "formation") : kept}, closers ++ [indented depth (printf "<formation at=\"%s\" term=\"%s\">" (escapeXML locator) (escapeXML form))])
+    elements (EvLooped depth judgment self site) nesting = do
+      form <- render self
+      locator <- render site
+      let (kept, closers) = closed depth nesting._closing
+      pure (nesting{_closing = kept}, closers ++ [indented depth (printf "<looped by=\"%s\" at=\"%s\" term=\"%s\"/>" (opened judgment) (escapeXML locator) (escapeXML form))])
     elements (EvStuck depth key judgment self) nesting = do
       form <- render self
       let (kept, closers) = closed depth nesting._closing

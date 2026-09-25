@@ -1170,6 +1170,42 @@ spec = do
             ["dataize", "--locator=Q.t", "--acyclic", "--partial", "--max-steps=4000", "--flat", "--hide-rho"]
             ["⟦ cyc ↦ ⟦ x ↦ ∅, φ ↦ Φ.cyc( α0 ↦ ξ.x ) ⟧, t ↦ Φ.cyc( α0 ↦ ⟦⟧ ) ⟧"]
 
+      -- A cut is written where the formation it refused would have opened,
+      -- carrying the term of the one that was entered, so the two lines read
+      -- as a pair and nobody has to infer the cut from the residue (#1434)
+      it "writes the cut to the protocol where the formation would have opened" $
+        withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
+          hClose stream
+          withStdin circling $
+            testCLISucceeded
+              ["dataize", "--locator=Q.t", "--acyclic", "--partial", "--protocol=" ++ path, "--sweet", "--hide-rho", "--flat", "--quiet"]
+              []
+          records <- readUtf8 path
+          lines records
+            `shouldBe` [ "𝔻(Φ.t)"
+                       , "  formation(⟦ x ↦ ⟦⟧, φ ↦ Φ.cyc( x ) ⟧)  # 𝔻(Φ.t)"
+                       , "    looped(⟦ x ↦ ⟦⟧, φ ↦ Φ.cyc( x ) ⟧)  # 𝔻(Φ.t)"
+                       ]
+
+      -- The markup of a cut is one self-closing element, since nothing runs
+      -- under it, with the attributes a '<formation>' carries (#1434)
+      it "writes the cut to the XML protocol as a self-closing element" $
+        withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
+          hClose stream
+          withStdin circling $
+            testCLISucceeded
+              ["dataize", "--locator=Q.t", "--acyclic", "--partial", "--protocol=" ++ path, "--sweet", "--hide-rho", "--flat", "--quiet"]
+              []
+          records <- readUtf8 path
+          lines records
+            `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+                       , "<dataize at=\"Φ.t\">"
+                       , "  <formation at=\"Φ.t\" term=\"⟦ x ↦ ⟦⟧, φ ↦ Φ.cyc( x ) ⟧\">"
+                       , "    <looped by=\"dataize\" at=\"Φ.t\" term=\"⟦ x ↦ ⟦⟧, φ ↦ Φ.cyc( x ) ⟧\"/>"
+                       , "  </formation>"
+                       , "</dataize>"
+                       ]
+
       -- The guard reads nothing but the formations the frames above it have
       -- entered, so a run that never enters one twice answers as it always did
       it "answers a terminating program the same way with the flag" $
