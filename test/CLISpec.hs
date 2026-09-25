@@ -232,7 +232,7 @@ spec = do
 
   describe "--log-level accepts every named level" $
     forM_
-      ["ERROR", "ERR", "error", "NONE", "none"]
+      ["INFO", "info", "ERROR", "ERR", "error", "NONE", "none"]
       ( \flagValue ->
           it ("--log-level=" ++ flagValue) $
             withStdin "[[]]" $
@@ -2023,6 +2023,10 @@ spec = do
       it "fires the λ function an entry of the file answers" $
         withStdin sum' $
           testCLISucceeded ["dataize", symbolic] ["40-45-00-00-00-00-00-00"]
+
+      it "reports the progress of the run with --log-level=INFO" $
+        withStdin sum' $
+          testCLISucceeded ["dataize", symbolic, "--log-level=INFO", "--quiet"] ["[INFO]: Entered "]
 
       it "gets stuck on every λ function when it is not given" $
         withStdin sum' $

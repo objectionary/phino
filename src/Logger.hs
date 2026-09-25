@@ -5,9 +5,11 @@
 
 module Logger
   ( logDebug
+  , logInfo
   , logError
+  , logging
   , setLogConfig
-  , LogLevel (DEBUG, ERROR, NONE)
+  , LogLevel (DEBUG, INFO, ERROR, NONE)
   )
 where
 
@@ -17,7 +19,7 @@ import qualified Data.List as DL
 import GHC.IO (unsafePerformIO)
 import System.IO
 
-data LogLevel = DEBUG | ERROR | NONE
+data LogLevel = DEBUG | INFO | ERROR | NONE
   deriving (Show, Ord, Eq, Bounded, Enum, Read)
 
 data Logger = Logger {level :: LogLevel, lns :: Int}
@@ -28,6 +30,14 @@ logger = unsafePerformIO (newIORef (Logger ERROR 25))
 
 setLogConfig :: LogLevel -> Int -> IO ()
 setLogConfig lvl cnt = writeIORef logger (Logger lvl cnt)
+
+-- Whether a message of this level reaches the console at all, so a caller
+-- whose message costs something to put together skips the work when it would
+-- be thrown away.
+logging :: LogLevel -> IO Bool
+logging lvl = do
+  Logger{..} <- readIORef logger
+  pure (lvl >= level && lns /= 0)
 
 logMessage :: LogLevel -> String -> IO ()
 logMessage lvl message = do
@@ -43,6 +53,7 @@ logMessage lvl message = do
        in hPutStrLn stderr ("[" ++ show lvl ++ "]: " ++ DL.intercalate "\n" msg)
     )
 
-logDebug, logError :: String -> IO ()
+logDebug, logInfo, logError :: String -> IO ()
 logDebug = logMessage DEBUG
+logInfo = logMessage INFO
 logError = logMessage ERROR

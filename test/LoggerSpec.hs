@@ -4,7 +4,7 @@
 module LoggerSpec where
 
 import Control.Monad (forM_)
-import Logger (LogLevel (..), logDebug, logError, setLogConfig)
+import Logger (LogLevel (..), logDebug, logError, logInfo, setLogConfig)
 import System.IO (stderr)
 import System.IO.Silently (hCapture_)
 import Test.Hspec (Spec, after_, describe, it, shouldBe)
@@ -47,10 +47,23 @@ spec = after_ (setLogConfig ERROR 25) $ do
           captured `shouldBe` expected
       )
 
+  describe "logInfo" $
+    forM_
+      [ ("prints when the level allows info messages", INFO, 25, "[INFO]: fired 7\n")
+      , ("prints at the debug level too, since info is more severe", DEBUG, 25, "[INFO]: fired 7\n")
+      , ("is suppressed when the configured level is above info", ERROR, 25, "")
+      ]
+      ( \(desc, level, lineLimit, expected) -> it desc $ do
+          setLogConfig level lineLimit
+          captured <- hCapture_ [stderr] (logInfo "fired 7")
+          captured `shouldBe` expected
+      )
+
   describe "logError" $
     forM_
       [ ("prints when the level allows error messages", ERROR, 25, "[ERROR]: oops\n")
       , ("prints at the debug level too, since error is more severe", DEBUG, 25, "[ERROR]: oops\n")
+      , ("prints at the info level too, since error is more severe", INFO, 25, "[ERROR]: oops\n")
       , ("is suppressed when the configured level is NONE", NONE, 25, "")
       , ("is suppressed when the line limit is zero", ERROR, 0, "")
       ]
