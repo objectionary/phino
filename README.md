@@ -1156,6 +1156,7 @@ $ cat fact.txt
           𝑛.6.2 := 𝜎5:λ  # 𝕄(𝑛.6.1)
         𝔼(L_mul)  # 𝕄(Φ.a🌵7)
           𝛿1.7 := 𝔻(𝜎3:λ)  # 𝔻(ξ.a)
+          looped(⟦ n ↦ 𝜎3:λ, φ ↦ Φ.if( c ↦ Φ.zero( x ↦ n ), left ↦ 01-:Δ, right ↦ Φ.mul( a ↦ n, b ↦ Φ.fact( n ↦ Φ.dec( x ↦ n ) ) ) ) ⟧)  # 𝔻(Φ.a🌵10)
         𝑛2.4 := ⟦ a ↦ 𝜎3:λ, b ↦ Φ.fact( n ↦ 𝜎5:λ ), λ ⤍ L_mul ⟧  # 𝕄(ξ.right)
         𝔻(𝜎6:λ) == 01-
         𝑛3.4 := 𝜎6:λ  # 𝑛1
@@ -1179,6 +1180,7 @@ $ cat fact.txt
             𝑛.12.2 := 𝑛.6.2  # 𝕄(𝑛.12.1)
           𝔼(L_mul)  # 𝕄(Φ.a🌵19)
             𝛿1.13 := 𝔻(𝜎3:λ)  # 𝔻(ξ.a)
+            looped(⟦ n ↦ 𝜎3:λ, φ ↦ Φ.if( c ↦ Φ.zero( x ↦ n ), left ↦ 01-:Δ, right ↦ Φ.mul( a ↦ n, b ↦ Φ.fact( n ↦ Φ.dec( x ↦ n ) ) ) ) ⟧)  # 𝔻(Φ.a🌵22)
           𝑛2.10 := ⟦ a ↦ 𝜎3:λ, b ↦ Φ.fact( n ↦ 𝜎5:λ ), λ ⤍ L_mul ⟧  # 𝕄(ξ.right)
           𝔻(𝜎6:λ) == 01-
           𝑛3.10 := 𝑛3.4  # 𝑛1
@@ -1195,8 +1197,17 @@ The first `L_mul` brings its `b` down, and that gets 𝔻 into `fact` with
 `n ↦ 𝜎3`, the `formation(…)` line under it. Inside, the fork reduces its right
 branch, the second `L_mul` brings its own `b` down, and that would get 𝔻 into
 `fact` with `n ↦ 𝜎5`: the same formation, `𝜎5` standing where `𝜎3` stood, so
-the frame is cut as it opens and nothing is written under `𝛿1.7`. Without the
-flag the same run nests one round inside another until `--max-steps` runs out.
+the frame is cut as it opens. The cut is the `looped(…)` line under `𝛿1.7`,
+standing where the `formation(…)` line of the cut frame would have stood and
+commented with the judgment the frame belonged to and the site it was cut at.
+What it carries is the formation the frame above entered, spelled exactly as
+that frame's own `formation(…)` line spells it, so the two lines are paired by
+their terms and no reader has to rename symbols by eye or find the cut in the
+residue. Nothing runs under a cut, so no block opens under the line. In the
+XML protocol it is a self-closing element,
+`<looped by="dataize" at="Φ.a🌵10" term="…"/>`, with the attributes a
+`<formation>` carries. Without the flag the same run nests one round inside
+another until `--max-steps` runs out.
 
 What a frame remembers is the branch from the run down to it, never everything
 the run has touched, so two siblings entering one formation enter it twice and
