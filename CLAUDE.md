@@ -52,6 +52,14 @@ twice — over the demo world alone and over the same world merged into
 (#1291). Both files are checked in, unlike the generated ones under
 `benchmark/tmp/`.
 
+The loop of #1453 is timed too: `benchmark/accum.phi` over the table
+`benchmark/accum.yaml`, cut by `--acyclic=plausible`, once as written and once
+with 400 methods the loop never calls added to `number` at runtime, as
+`morph/symbolic/accum/0` and `morph/symbolic/accum/400`. A step should cost the
+redex and not the objects around it, so the two should stay close; the
+regression check reports every case ending in a number as a ratio to its `/0`
+sibling, on both sides, under "Scaling".
+
 ## Architecture
 
 `phino` is a CLI tool for manipulating phi-calculus (𝜑-calculus) expressions

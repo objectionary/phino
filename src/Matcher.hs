@@ -162,25 +162,82 @@ matchExpression' (ExPhiMeet prefix idx expr) (ExPhiMeet prefix' idx' expr')
   | otherwise = []
 matchExpression' _ _ = []
 
--- Deep match pattern to expression inside binding
-matchBindingExpression :: Binding -> Expression -> [Subst]
-matchBindingExpression (BiTau _ expr) ptn = matchExpressionDeep ptn expr
-matchBindingExpression _ _ = []
-
-matchArgumentExpression :: Argument -> Expression -> [Subst]
-matchArgumentExpression (ArTau _ expr) ptn = matchExpressionDeep ptn expr
-matchArgumentExpression (ArAlpha _ expr) ptn = matchExpressionDeep ptn expr
-
 -- Match expression with deep nested expression(s) matching
 matchExpressionDeep :: MatchExpressionFunc
-matchExpressionDeep ptn tgt =
-  let matched = matchExpression' ptn tgt
-      deep = case tgt of
-        ExFormation bds -> concatMap (`matchBindingExpression` ptn) bds
-        ExDispatch expr _ -> matchExpressionDeep ptn expr
-        ExApplication expr arg -> matchExpressionDeep ptn expr ++ matchArgumentExpression arg ptn
-        _ -> []
-   in matched ++ deep
+matchExpressionDeep ptn tgt = go tgt []
+  where
+    go :: Expression -> [Subst] -> [Subst]
+    go expr rest
+      | fitting ptn expr = matchExpression' ptn expr ++ below expr rest
+      | otherwise = below expr rest
+    below :: Expression -> [Subst] -> [Subst]
+    below (ExFormation bds) rest = foldr inside rest bds
+    below (ExDispatch expr _) rest = go expr rest
+    below (ExApplication expr (ArTau _ arg)) rest = go expr (go arg rest)
+    below (ExApplication expr (ArAlpha _ arg)) rest = go expr (go arg rest)
+    below _ rest = rest
+    inside :: Binding -> [Subst] -> [Subst]
+    inside (BiTau _ expr) rest = go expr rest
+    inside _ rest = rest
 
 matchExpression :: MatchExpressionFunc
 matchExpression = matchExpressionDeep
+
+-- Whether the pattern could match at some place of the target where the deep
+-- matcher looks, judged by the shape of each place alone: the constructors
+-- down the head of the pattern, the attribute a dispatch or an application
+-- names, and the kinds of bindings a formation of the pattern asks for. It
+-- never says no where 'matchExpressionDeep' would find a match, and it walks
+-- the target once without building a single substitution, so a rule whose
+-- pattern fits nowhere in a term is told so without the deep matcher trying
+-- it at every place of that term (#1453).
+reachable :: Expression -> Expression -> Bool
+reachable ptn = go
+  where
+    go :: Expression -> Bool
+    go tgt =
+      fitting ptn tgt || case tgt of
+        ExFormation bds -> any inside bds
+        ExDispatch expr _ -> go expr
+        ExApplication expr (ArTau _ arg) -> go expr || go arg
+        ExApplication expr (ArAlpha _ arg) -> go expr || go arg
+        _ -> False
+    inside :: Binding -> Bool
+    inside (BiTau _ expr) = go expr
+    inside _ = False
+
+-- Whether the pattern could match the target right at its root, judged by
+-- shape alone: the constructors down the head of the pattern, the attribute a
+-- dispatch or an application names, and the kinds of bindings a formation of
+-- the pattern asks for. It never says no where 'matchExpression'' would find
+-- a match (#1453).
+fitting :: Expression -> Expression -> Bool
+fitting = go
+  where
+    go :: Expression -> Expression -> Bool
+    go (ExMeta _) _ = True
+    go (ExAny _) _ = True
+    go ExXi ExXi = True
+    go ExRoot ExRoot = True
+    go ExTermination ExTermination = True
+    go (ExFormation pbs) (ExFormation tbs) = all (\pbd -> loose pbd || any (kin pbd) tbs) pbs
+    go (ExDispatch pexp pattr) (ExDispatch texp tattr) = same pattr tattr && go pexp texp
+    go (ExApplication pexp (ArTau pattr _)) (ExApplication texp (ArTau tattr _)) = same pattr tattr && go pexp texp
+    go (ExApplication pexp (ArAlpha _ _)) (ExApplication texp (ArAlpha _ _)) = go pexp texp
+    go (ExPhiAgain{}) (ExPhiAgain{}) = True
+    go (ExPhiMeet{}) (ExPhiMeet{}) = True
+    go _ _ = False
+    loose :: Binding -> Bool
+    loose (BiMeta _) = True
+    loose (BiAny _) = True
+    loose _ = False
+    kin :: Binding -> Binding -> Bool
+    kin (BiTau pattr _) (BiTau tattr _) = same pattr tattr
+    kin (BiVoid pattr) (BiVoid tattr) = same pattr tattr
+    kin (BiLambda _) (BiLambda _) = True
+    kin (BiDelta _) (BiDelta _) = True
+    kin _ _ = False
+    same :: Attribute -> Attribute -> Bool
+    same (AtMeta _) _ = True
+    same (AtAny _) _ = True
+    same pattr tattr = pattr == tattr

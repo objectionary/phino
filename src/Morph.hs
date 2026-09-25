@@ -444,8 +444,7 @@ morph' (expr, seq) univ state caller = do
         Just normal@(Y.Premise _ (Y.OpNormalize inner)) -> do
           (final, state') <- sides ctx (rule.premises `excluding` [concl, normal]) subst
           built <- buildExpressionThrows inner final
-          labelled <- leadsTo seq rule.name built ctx
-          (normal', seq') <- normalized built labelled ctx
+          (normal', seq') <- settle ctx rule inner built
           morph' (normal', seq') univ state' ctx
         _ -> do
           (final, state') <- sides ctx (rule.premises `excluding` [concl]) subst
@@ -455,6 +454,21 @@ morph' (expr, seq) univ state caller = do
       Just _ -> throwIO (userError (printf "morphing rule '%s' must conclude with a 'morph' premise" rule.name))
     sides :: ReduceContext -> [Y.Premise] -> Subst -> IO (Subst, State)
     sides ctx premises subst = foldM (sidePremise univ ctx) (subst, state) premises
+    -- Bring the term a 'normalize' premise built to its normal form and splice
+    -- the steps into the chain. A premise normalizing the universe itself, the
+    -- meta the rule's 'e-match' bound, is answered with the world the run has
+    -- already named (see '_universe'), since that is the normal form of the
+    -- very same program: the 'universe' rule asks for it every time 𝕄 resolves
+    -- Φ, and normalizing the whole program again for each of them made every
+    -- step cost the size of the world (#1453).
+    settle :: ReduceContext -> Y.MorphRule -> Expression -> Expression -> IO Morphed
+    settle ctx rule inner built = case ctx._universe of
+      Just world | inner == rule.ematch -> do
+        seq' <- leadsTo seq rule.name world ctx
+        pure (world, seq')
+      _ -> do
+        labelled <- leadsTo seq rule.name built ctx
+        normalized built labelled ctx
 
 -- Morph the expression located at '_locator' — 𝕄 asked on its own, the way
 -- 'dataize' asks 𝔻. The whole input expression is itself the universe Φ (the 'e'
@@ -472,36 +486,39 @@ morph' (expr, seq) univ state caller = do
 -- (see 'deepened'). The state 𝑠 goes in and comes back out, so a 𝕄 asked
 -- inside another judgment goes on minting symbols where that judgment left off.
 morph :: Expression -> State -> ReduceContext -> IO (Expression, [Rewritten], State)
-morph universe state ctx@ReduceContext{..} = do
+morph universe state caller@ReduceContext{..} = do
+  ctx <- universed universe caller
   expr <- locatedExpression _locator universe
   result <- try (morph' (expr, (universe, Nothing) :| []) universe state ctx)
   case result of
-    Right ((morphed, seq), state') -> walked walking morphed seq state'
+    Right ((morphed, seq), state') -> walked (walking ctx) morphed seq state'
     Left (StuckAt func seq parked) | _partial -> do
       residue <- locatedExpression _locator (fst (NE.head seq))
-      walked (marked func) residue seq parked{_stuck = Just func}
+      walked (marked ctx func) residue seq parked{_stuck = Just func}
     Left (OutOfStepsAt _ seq parked) | _partial -> do
       residue <- locatedExpression _locator (fst (NE.head seq))
-      walked walking residue seq parked
+      walked (walking ctx) residue seq parked
     -- Unlike the two above, this one takes no '_partial' guard: a 'LoopingAt'
     -- exists only where '_acyclic' put it, so asking for the guard is already
     -- asking to be parked on what it finds.
     Left (LoopingAt _ seq parked) -> do
       residue <- locatedExpression _locator (fst (NE.head seq))
-      walked walking residue seq parked
+      walked (walking ctx) residue seq parked
     Left failure -> throwIO (failure :: ReduceException)
   where
     -- The context the walk runs with: the one this run was given, named after
     -- 𝕄, since the walk is 𝕄's own and a λ function it fires is fired by no
-    -- other judgment, whichever one asked for this run (see '_judgment').
-    walking :: ReduceContext
-    walking = ctx{_judgment = Morphing}
+    -- other judgment, whichever one asked for this run (see '_judgment'). It
+    -- carries the world the spine named, so no firing of the walk normalizes
+    -- the whole program again to name it once more (#1453).
+    walking :: ReduceContext -> ReduceContext
+    walking ctx = ctx{_judgment = Morphing}
     -- The same, plus the λ function the spine got stuck on. The site is still
     -- standing in the residue, so the walk asks 𝕄 about it again and 𝔼 gets
     -- stuck on it again; the protocol has the site already and the second
     -- firing writes nothing (see '_parked', #1300).
-    marked :: T.Text -> ReduceContext
-    marked func = walking{_parked = func : _parked}
+    marked :: ReduceContext -> T.Text -> ReduceContext
+    marked ctx func = (walking ctx){_parked = func : _parked}
     -- The answer 𝕄 reached, walked by '_deep' before it is handed back (see
     -- 'deepened'), and the chain that led to both. The walk joins the chain as
     -- one step named 'deep', so '--sequence' ends on the term the command

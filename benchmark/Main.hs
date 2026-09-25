@@ -3,14 +3,15 @@
 
 module Main where
 
-import AST (Expression (ExRoot), hashExpression)
+import AST (Attribute (AtLabel), Binding (BiTau), Expression (ExFormation, ExRoot), hashExpression)
 import CLI.Helpers (started)
 import Control.Exception (evaluate)
 import Control.Monad (replicateM, replicateM_)
 import qualified Data.Map.Strict as Map
+import Data.String (fromString)
 import Data.Time.Clock
 import Dataize (reduction)
-import Deps (Acyclic (Proven), Judgment (Morphing), dontSaveEval, dontSaveStep)
+import Deps (Acyclic (Plausible, Proven), Judgment (Morphing), dontSaveEval, dontSaveStep)
 import Encoding (Encoding (UNICODE))
 import Evaluate (evaluation, fired)
 import Functions (buildTerm)
@@ -70,12 +71,12 @@ rewriteCtx =
 -- the regression was seen under: '--deep', so a λ function standing anywhere
 -- inside the term is fired and not only the one on the spine; '--acyclic', so
 -- a term coming back to itself parks instead of spending the whole step
--- budget; and '--partial', so a λ function no entry answers parks too and the
+-- budget, under whichever mode the case asks for; and '--partial', so a λ function no entry answers parks too and the
 -- run still reaches an answer to measure. Nothing is written anywhere: the
 -- protocol of '--protocol' and the steps of '--steps-dir' are files, and a
 -- benchmark measuring the calculus has no business measuring the disk.
-symbolicCtx :: Lambdas -> Expression -> ReduceContext
-symbolicCtx lambdas locator =
+symbolicCtx :: Acyclic -> Lambdas -> Expression -> ReduceContext
+symbolicCtx acyclic lambdas locator =
   ReduceContext
     locator -- _locator
     locator -- _site
@@ -88,7 +89,7 @@ symbolicCtx lambdas locator =
     False -- _shuffle
     True -- _partial
     True -- _deep
-    (Just Proven) -- _acyclic
+    (Just acyclic) -- _acyclic
     Morphing -- _judgment
     [] -- _parked
     Map.empty -- _entered
@@ -149,6 +150,10 @@ main = do
   demo <- parseExpressionThrows dsrc
   merged <- merge [demo, expr]
   lambdas <- readLambdas "benchmark/atoms.yaml"
+  asrc <- readFile "benchmark/accum.phi"
+  accum <- parseExpressionThrows asrc
+  method <- parseExpressionThrows "⟦ b ↦ ∅, φ ↦ ξ.ρ.plus( b ↦ ξ.b ), ρ ↦ ∅ ⟧"
+  counters <- readLambdas "benchmark/accum.yaml"
   runBench "parse/phi" (parseExpressionThrows src)
   runBench "parse/xmir" (parseXMIRThrows xsrc >>= xmirToPhi)
   runBench "rewrite/normalize" (rewrite expr normalizationRules rewriteCtx)
@@ -163,6 +168,7 @@ main = do
     (evaluate (length (printExpression' expr (SALTY, UNICODE, MULTILINE, defaultMargin))))
   mapM_ (aimed "demo" demo lambdas) entries
   aimed "native" merged lambdas probe
+  mapM_ (\count -> looped count (padded method count accum) counters) paddings
   where
     -- The entries of the demo world, each one term the λ functions of
     -- 'benchmark/atoms.yaml' answer and each one case of the suite, so that a
@@ -185,15 +191,42 @@ main = do
     aimed :: String -> Expression -> Lambdas -> String -> IO ()
     aimed label universe lambdas name = do
       locator <- parseExpressionThrows ("Φ.l🌵." ++ name)
-      runBench (printf "morph/symbolic/%s/%s" label name) (symbolic universe lambdas locator)
+      runBench (printf "morph/symbolic/%s/%s" label name) (symbolic Proven universe lambdas locator)
+    -- How many methods 'number' of 'benchmark/accum.phi' gets that the loop
+    -- never calls. A step of the loop should cost the redex it rewrites and
+    -- not the objects standing around it, so the two numbers should be close,
+    -- and they were sixteen-fold apart before #1453 made them so.
+    paddings :: [Int]
+    paddings = [0, 400]
+    -- One case of the accumulator suite: the loop of #1453 over a 'number'
+    -- carrying so many unused methods, cut by '--acyclic=plausible'.
+    looped :: Int -> Expression -> Lambdas -> IO ()
+    looped count universe counters = do
+      locator <- parseExpressionThrows "Φ.l🌵"
+      runBench (printf "morph/symbolic/accum/%d" count) (symbolic Plausible universe counters locator)
+    -- The world with 'number' declaring the given number of copies of the
+    -- method besides its own, each under a name of its own. They are made
+    -- here rather than checked in, since four hundred of them are a file
+    -- nobody would read.
+    padded :: Expression -> Int -> Expression -> Expression
+    padded method count (ExFormation bds) = ExFormation (map grown bds)
+      where
+        grown :: Binding -> Binding
+        grown (BiTau attr (ExFormation inner))
+          | attr == AtLabel (fromString "number") =
+              BiTau attr (ExFormation (inner ++ map copy [1 .. count]))
+        grown binding = binding
+        copy :: Int -> Binding
+        copy index = BiTau (AtLabel (fromString (printf "m%d" index))) method
+    padded _ _ universe = universe
     -- One symbolic morphing of one entry, the way the 'morph' command runs it:
     -- the 𝜏-labels of the universe are scanned once, the run starts from the
     -- state that world already carries and 𝕄 is aimed at the entry. The answer
     -- is hashed rather than merely forced to weak head normal form, since a
     -- term left as a thunk is work the benchmark asked for and did not wait
     -- for.
-    symbolic :: Expression -> Lambdas -> Expression -> IO Int
-    symbolic universe lambdas locator = do
+    symbolic :: Acyclic -> Expression -> Lambdas -> Expression -> IO Int
+    symbolic acyclic universe lambdas locator = do
       seedTaus universe
-      (answer, _, _) <- morph universe (started universe) (symbolicCtx lambdas locator)
+      (answer, _, _) <- morph universe (started universe) (symbolicCtx acyclic lambdas locator)
       pure (hashExpression answer)

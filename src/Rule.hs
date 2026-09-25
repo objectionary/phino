@@ -378,10 +378,17 @@ matchExpressionWithRule = matchExpressionWithRuleIn Nothing
 -- dispatched from the whole program (#1318). A rule carrying none is matched
 -- exactly as 'matchExpressionWithRule' matches it, and so is every rule where
 -- no universe is known — the 'rewrite' command rewrites a term and no world
--- around it, and 'isNF' asks about a term alone.
+-- around it, and 'isNF' asks about a term alone. The deep matcher is asked
+-- only where the pattern fits somewhere in the term at all (see 'reachable'),
+-- since trying it at every place of a term holding copies of big objects is
+-- what a rule that fits nowhere used to cost (#1453).
 matchExpressionWithRuleIn :: Maybe Expression -> Expression -> Y.Rule -> RuleContext -> IO [Subst]
-matchExpressionWithRuleIn universe expr rule = matchExpressionBy matchExpression seed expr rule
+matchExpressionWithRuleIn universe expr rule = matchExpressionBy deep seed expr rule
   where
+    deep :: MatchExpressionFunc
+    deep ptn tgt
+      | reachable ptn tgt = matchExpression ptn tgt
+      | otherwise = []
     seed :: [Subst]
     seed = case (rule.ematch, universe) of
       (Just ptn, Just whole) -> matchExpression' ptn whole

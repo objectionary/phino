@@ -18,6 +18,12 @@ THRESHOLD: how far a case has to move to be called out, as a fraction, e.g.
 0.20 for 20%. A case is called out only when it also moves further than the
 noise measured across its own rounds.
 
+A case whose name ends in a number, such as `morph/symbolic/accum/400`, is one
+size of a family whose `/0` case is the same work over nothing extra; each
+such case is also reported as a ratio to its `/0` sibling on either side, so
+the growth a size costs reads as one number that stays near 1 while the extra
+weight is free.
+
 Prints a markdown comparison table to stdout. A delta never fails the run:
 shared CI runners are too noisy to gate on, so the report is informational.
 EOF
@@ -45,8 +51,9 @@ extract() {
   ' "$1"
 }
 
-# Build the table body as "<name>\t<row>" lines, one row per case, plus trailing
-# "CALLED=N" and "ROUNDS=N" lines for the summary.
+# Build the table body as "<name>\t<row>" lines, one row per case, the scaling
+# rows as "SCALE\t<name>\t<row>" lines, plus trailing "CALLED=N" and "ROUNDS=N"
+# lines for the summary.
 body=$(
   {
     extract "$base" | awk '{ print "base", $1, $2 }'
@@ -68,6 +75,12 @@ body=$(
     }
     function spread(values, total) { return total > 1 ? (values[total] - values[1]) / median(values, total) : 0 }
     function noiseText(value, total) { return total > 1 ? sprintf("±%.1f%%", value * 100) : "n/a" }
+    function ratio(side, name, zero,   total, ztotal, values, zvalues) {
+      total = sorted(side, name, values)
+      ztotal = sorted(side, zero, zvalues)
+      if (total == 0 || ztotal == 0) { return "-" }
+      return sprintf("%.2f×", median(values, total) / median(zvalues, ztotal))
+    }
     { count[$1, $2]++; sample[$1, $2, count[$1, $2]] = $3; names[$2] = 1 }
     END {
       called = 0
@@ -97,6 +110,13 @@ body=$(
         }
         printf "%s\t| `%s` | %.2f | %.2f | %+.1f%%%s | %s |\n", name, name, median(low, bases), median(high, heads), delta * 100, note, noiseText(noise, samples)
       }
+      for (name in names) {
+        if (name !~ /\/[1-9][0-9]*$/) { continue }
+        zero = name
+        sub(/\/[0-9]+$/, "/0", zero)
+        if (!(zero in names)) { continue }
+        printf "SCALE\t%s\t| `%s` | `%s` | %s | %s |\n", name, name, zero, ratio("base", name, zero), ratio("head", name, zero)
+      }
       print "CALLED=" called
       print "ROUNDS=" rounds
     }
@@ -105,7 +125,8 @@ body=$(
 
 called=$(awk -F= '/^CALLED=/ { print $2 }' <<<"$body")
 rounds=$(awk -F= '/^ROUNDS=/ { print $2 }' <<<"$body")
-rows=$(awk '!/^(CALLED|ROUNDS)=/' <<<"$body" | sort | cut -f2-)
+rows=$(awk '!/^(CALLED|ROUNDS)=/ && !/^SCALE\t/' <<<"$body" | sort | cut -f2-)
+scales=$(awk '/^SCALE\t/' <<<"$body" | cut -f2- | sort | cut -f2-)
 pct=$(awk -v t="$threshold" 'BEGIN { printf "%d", t * 100 }')
 
 printf '## Benchmark comparison\n\n'
@@ -113,6 +134,14 @@ printf 'Median of %s round(s) per side, interleaved on the same runner against t
 printf '| Bench | base (μs) | head (μs) | delta | noise |\n'
 printf '|---|---:|---:|---:|---:|\n'
 printf '%s\n\n' "$rows"
+
+if [ -n "$scales" ]; then
+  printf '### Scaling\n\n'
+  printf "Each sized case against its \`/0\` sibling, the same work over nothing extra: a ratio near 1 means the extra size is free.\n\n"
+  printf '| Bench | against | base | head |\n'
+  printf '|---|---|---:|---:|\n'
+  printf '%s\n\n' "$scales"
+fi
 
 if [ "$called" -gt 0 ]; then
   printf 'Worth a look: %s case(s) moved by more than %s%% and by more than their own noise.\n' "$called" "$pct"

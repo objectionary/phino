@@ -12,7 +12,7 @@ maintainer: mtrunnikov@gmail.com
 copyright: 2025 Objectionary.com
 category: Language, Code Analysis
 build-type: Simple
-extra-source-files: resources/normalize/*.yaml resources/morphing/*.yaml resources/dataization/*.yaml resources/contextualization/*.yaml benchmark/demo.phi benchmark/atoms.yaml
+extra-source-files: resources/normalize/*.yaml resources/morphing/*.yaml resources/dataization/*.yaml resources/contextualization/*.yaml benchmark/demo.phi benchmark/atoms.yaml benchmark/accum.phi benchmark/accum.yaml
 extra-doc-files: README.md
 
 source-repository head

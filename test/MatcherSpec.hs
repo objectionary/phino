@@ -506,6 +506,62 @@ spec = do
       ]
       (\(desc, ptn, tgt, expected) -> it desc (matchExpression ptn tgt `shouldBe` expected))
 
+  describe "reachable" $ do
+    it "reaches a redex standing deep inside a formation" $
+      reachable
+        (ExDispatch (ExFormation [BiMeta "B1"]) (AtMeta "t1"))
+        (ExFormation [BiTau (AtLabel "kw") (ExFormation [BiTau (AtLabel "zu") (ExDispatch (ExFormation []) (AtLabel "qo"))])])
+        `shouldBe` True
+    it "does not reach a dispatch whose head is no formation" $
+      reachable
+        (ExDispatch (ExFormation [BiMeta "B1"]) (AtMeta "t1"))
+        (ExFormation [BiTau (AtLabel "kw") (ExDispatch (ExDispatch ExRoot (AtLabel "zu")) (AtLabel "qo"))])
+        `shouldBe` False
+    it "does not reach a formation lacking the λ the pattern asks for" $
+      reachable
+        (ExFormation [BiMeta "B1", BiLambda (FnMeta "f"), BiMeta "B2"])
+        (ExFormation [BiTau (AtLabel "kw") (ExFormation [BiDelta (BtOne "9E")])])
+        `shouldBe` False
+    it "does not reach an application handing an attribute other than the one the pattern names" $
+      reachable
+        (ExApplication (ExFormation [BiMeta "B1"]) (ArTau AtRho (ExMeta "e1")))
+        (ExApplication (ExFormation []) (ArTau (AtLabel "vy") ExRoot))
+        `shouldBe` False
+    it "reaches a redex in the argument of an application" $
+      reachable
+        (ExDispatch ExTermination (AtMeta "t"))
+        (ExApplication (ExDispatch ExRoot (AtLabel "hp")) (ArTau (AtLabel "yd") (ExDispatch ExTermination (AtLabel "ob"))))
+        `shouldBe` True
+    it "does not reach into a term the deep matcher never enters" $
+      reachable
+        (ExDispatch ExTermination (AtMeta "t"))
+        (ExPhiMeet Nothing 3 (ExDispatch ExTermination (AtLabel "ob")))
+        `shouldBe` False
+    it "reaches any term with a bare meta" $
+      reachable (ExMeta "e1") ExXi `shouldBe` True
+
+  describe "fitting" $ do
+    it "fits a dispatch of a formation holding the attribute the pattern names" $
+      fitting
+        (ExDispatch (ExFormation [BiMeta "B1", BiTau (AtMeta "t1") (ExMeta "e1"), BiMeta "B2"]) (AtMeta "t1"))
+        (ExDispatch (ExFormation [BiVoid (AtLabel "wu"), BiTau (AtLabel "kx") ExRoot]) (AtLabel "kx"))
+        `shouldBe` True
+    it "does not fit a redex standing below the root" $
+      fitting
+        (ExDispatch (ExFormation [BiMeta "B1"]) (AtMeta "t1"))
+        (ExFormation [BiTau (AtLabel "kw") (ExDispatch (ExFormation []) (AtLabel "qo"))])
+        `shouldBe` False
+    it "does not fit a dispatch of another attribute" $
+      fitting
+        (ExDispatch (ExMeta "e1") AtRho)
+        (ExDispatch ExXi (AtLabel "zo"))
+        `shouldBe` False
+    it "does not fit a formation lacking the Δ the pattern asks for" $
+      fitting
+        (ExFormation [BiDelta (BtMeta "d1"), BiMeta "B1"])
+        (ExFormation [BiLambda (Function "Lq"), BiVoid AtRho])
+        `shouldBe` False
+
   describe "combine" $
     forM_
       [ ("combines two empty substitutions", substEmpty, substEmpty, Just substEmpty)

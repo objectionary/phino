@@ -14,6 +14,7 @@ import AST
 import Control.Exception (SomeException)
 import Control.Monad
 import Data.Aeson (FromJSON)
+import Data.IORef (modifyIORef', newIORef, readIORef)
 import Data.List (find, isInfixOf, nub)
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.Maybe (fromMaybe)
@@ -104,6 +105,17 @@ spec = do
       morphed `shouldBe` expr
       map snd chain `shouldBe` [Just "mf", Nothing]
       map fst chain `shouldBe` [expr, expr]
+
+    -- The 'universe' rule resolves Φ to the world in normal form, and the run
+    -- has named that world before its first step, so no part of the program is
+    -- normalized again for it: the steps reducing the body of 'w' used to be
+    -- taken, and saved, on every resolution of Φ (#1453)
+    it "resolves Φ to the world it has already normalized" $ do
+      expr <- parseExpressionThrows "[[ w -> [[ k -> [[ ]] ]].k, y -> Q.w ]]"
+      loc <- parseExpressionThrows "Q.y"
+      saved <- newIORef (0 :: Int)
+      _ <- morph expr emptyState (defaultReduceContext loc){_saveStep = const (modifyIORef' saved (+ 1))}
+      readIORef saved `shouldReturn` 2
 
   -- 𝕄 stops at the first formation 'mf' hands back and leaves its bindings as
   -- they were written, since firing a bare λ is 𝔻's business, so a program
