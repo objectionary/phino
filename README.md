@@ -1453,7 +1453,7 @@ $ phino explain --normalize
 \phinoNormalizationRule{stop}
   { [[ B ]] . \tau }
   { T }
-  { $ \tau \notin B \;\text{and}\; @ \notin B \;\text{and}\; L \notin B $ }
+  { $ [ \tau \char44{} @ \char44{} L ] \cap B = \emptyset $ }
   { }
 \end{tabular}
 ```
