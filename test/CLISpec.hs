@@ -1295,7 +1295,7 @@ spec = do
     -- of characters, so '--abridged' folds a long one down to what says what
     -- it holds and fires, and cuts a long byte string to its head (#1465)
     describe "--abridged" $ do
-      let wide = "⟦ t ↦ ⟦ φ ↦ ⟦ Δ ⤍ 01-02 ⟧, anfang ↦ ξ.ende, mitte ↦ ξ.anfang, ende ↦ ξ.mitte, rand ↦ ξ.ende ⟧ ⟧"
+      let wide = "⟦ t ↦ ⟦ φ ↦ ⟦ Δ ⤍ 01-02 ⟧, anfang ↦ ξ.schluss, mitte ↦ ξ.anfang, schluss ↦ ξ.mitte, rand ↦ ξ.schluss ⟧ ⟧"
       it "folds a long formation in the text protocol" $
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
           hClose stream
@@ -1314,7 +1314,7 @@ spec = do
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
           hClose stream
           withStdin wide $
-            testCLISucceeded ["morph", "--locator=Q.t", "--protocol=" ++ path, "--abridged", "--sweet", "--hide-rho", "--flat"] ["anfang ↦ ende, mitte ↦ anfang"]
+            testCLISucceeded ["morph", "--locator=Q.t", "--protocol=" ++ path, "--abridged", "--sweet", "--hide-rho", "--flat"] ["anfang ↦ schluss, mitte ↦ anfang"]
       it "refuses the flag without a protocol" $
         withStdin wide $
           testCLIFailed ["dataize", "--locator=Q.t", "--abridged"] ["The option --abridged requires --protocol"]
