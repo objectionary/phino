@@ -323,6 +323,7 @@ spec = do
           Yaml.OpEvaluate _ _ -> "evaluate"
           Yaml.OpContextualize _ _ -> "contextualize"
           Yaml.OpDataize _ -> "dataize"
+          Yaml.OpObject _ -> "object"
         allowed =
           map (.name) Yaml.morphingRules
             ++ map (.name) Yaml.dataizationRules
@@ -354,11 +355,11 @@ spec = do
           loc' <- parseExpressionThrows loc
           (_, chain, _) <- dataize expr emptyState (withLambdas known (defaultReduceContext loc'))
           pure [label | (_, Just label) <- chain]
-    -- 'evaluate' is followed by the 'ma'/'copy'/'mf' that reduce its answer on
-    -- the spine: 𝔼 morphs what it answers but hands over the name of the
-    -- object it reached, 'Φ.number( … )', rather than a copy of every method
-    -- the object declares, so the spine peels the name once where it needs
-    -- the formation (#1453)
+    -- 'evaluate' is followed by the 'mo'/'mf' that reduce its answer on the
+    -- spine: 𝔼 morphs what it answers but hands over the name of the object
+    -- it reached, 'Φ.number( … )', rather than a copy of every method the
+    -- object declares, and 'mo' builds that object from the world in one step
+    -- where the spine needs the formation (#1453)
     it "dataizes 5.plus(6) through the expected rules" $ do
       labels <-
         labelsOf
@@ -371,12 +372,11 @@ spec = do
                    , "copy"
                    , "mf"
                    , "evaluate"
-                   , "ma"
-                   , "copy"
+                   , "mo"
                    , "mf"
                    , "contextualize"
                    , "symbol"
                    ]
     it "dataizes a located reference through the expected rules" $ do
       labels <- labelsOf "Q.foo.bar" "[[ foo -> [[ bar -> [[ @ -> Q.x ]] ]], x -> [[ D> 42- ]] ]]"
-      labels `shouldBe` ["contextualize", "md", "dotg", "skip", "mf", "delta"]
+      labels `shouldBe` ["contextualize", "mo", "mf", "delta"]

@@ -147,6 +147,11 @@ condition =
         expr <- _expression phiParser
         _ <- rparen
         return (Y.IsFormation expr)
+    , do
+        _ <- symbol "object" >> lparen
+        expr <- _expression phiParser
+        _ <- rparen
+        return (Y.IsObject expr)
     ]
 
 parseCondition :: String -> Either String Y.Condition

@@ -111,6 +111,7 @@ instance ToASCII CONDITION where
   toASCII CO_PART_OF{..} = CO_PART_OF (toASCII expr) (toASCII binding)
   toASCII CO_DISJOINT{..} = CO_DISJOINT (map toASCII attrs) (map toASCII groups)
   toASCII CO_FORMATION{..} = CO_FORMATION (toASCII expr)
+  toASCII CO_OBJECT{..} = CO_OBJECT (toASCII expr)
   toASCII CO_EMPTY = CO_EMPTY
 
 instance ToASCII EXTRA_ARG where

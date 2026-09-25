@@ -390,6 +390,7 @@ instance ToLaTeX CONDITION where
   toLaTeX CO_PART_OF{..} = CO_PART_OF (toLaTeX expr) (toLaTeX binding)
   toLaTeX CO_DISJOINT{..} = CO_DISJOINT (map toLaTeX attrs) (map toLaTeX groups)
   toLaTeX CO_FORMATION{..} = CO_FORMATION (toLaTeX expr)
+  toLaTeX CO_OBJECT{..} = CO_OBJECT (toLaTeX expr)
   toLaTeX CO_EMPTY = CO_EMPTY
 
 instance ToLaTeX EXTRA_ARG where
@@ -507,6 +508,7 @@ premiseToLatex universe index premise = case premise.operation of
   Y.OpNormalize arg -> (phinoNormalize (renderExpr arg) (renderExpr (ExMeta premise.result)), index)
   Y.OpEvaluate arg evalUniverse -> (phinoEvaluate (renderExpr arg) (renderExpr evalUniverse) (stateName index) (stateName (index + 1)) (renderExpr (ExMeta premise.result)), index + 1)
   Y.OpContextualize arg context -> (phinoContextualize (renderExpr arg) (renderExpr context) (renderExpr (ExMeta premise.result)), index)
+  Y.OpObject arg -> (phinoObject (renderExpr arg) (renderExpr (ExMeta premise.result)), index)
 
 -- Assemble an inference block from a name, optional label, optional side
 -- condition, the premise judgments and the conclusion judgment.
@@ -559,6 +561,9 @@ phinoDataize input univ sIn sOut output = printf "\\phinoDataize{ %s }{ %s }{ %s
 
 phinoNormalize :: String -> String -> String
 phinoNormalize input = printf "\\phinoNormalize{ %s }{ %s }" input
+
+phinoObject :: String -> String -> String
+phinoObject input = printf "\\phinoObject{ %s }{ %s }" input
 
 phinoEvaluate :: String -> String -> String -> String -> String -> String
 phinoEvaluate input univ sIn sOut output = printf "\\phinoEvaluate{ %s }{ %s }{ %s }{ %s }{ %s }" input univ sIn output sOut

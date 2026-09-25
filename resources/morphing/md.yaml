@@ -6,8 +6,11 @@ match: '𝑛1.𝜏1'
 e-match: 𝑒1
 n-result: 𝑛4
 when:
-  not:
-    formation: 𝑛1
+  and:
+    - not:
+        formation: 𝑛1
+    - not:
+        object: '𝑛1.𝜏1'
 premises:
   - n-result: 𝑛2
     morph: 𝑛1

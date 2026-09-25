@@ -5,6 +5,9 @@ name: ma
 match: '𝑛1(𝜏1 ↦ 𝑘1)'
 e-match: 𝑒1
 n-result: 𝑛4
+when:
+  not:
+    object: '𝑛1(𝜏1 ↦ 𝑘1)'
 premises:
   - n-result: 𝑛2
     morph: 𝑛1

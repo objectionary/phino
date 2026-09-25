@@ -459,7 +459,7 @@ spec = do
           -- more of them than a single normalization pass produces (this input
           -- runs several normalizations, so a global counter yields more steps).
           steps `shouldBe` map (\n -> printf "%05d.phi" (n :: Int)) [1 .. length steps]
-          length steps `shouldSatisfy` (> 18)
+          length steps `shouldSatisfy` (> 5)
 
     it "saves steps with a .tex extension when --output=latex is used with --steps-dir" $
       withTempDirectory "phino-steps-latex" $ \dir ->
@@ -2497,6 +2497,7 @@ spec = do
             , "\\end{phinoMorphingInference}"
             , "\\begin{phinoMorphingInference}"
             , "  \\phinoName{ma}"
+            , "  \\phinoCondition{ \\phinoNotObject{ n_1 ( \\tau -> k ) } }"
             , "  \\phinoPremise{ \\phinoMorph{ n_1 }{ e }{ s_1 }{ n_2 }{ s_2 } }"
             , "  \\phinoPremise{ \\phinoNormalize{ n_2 ( \\tau -> k ) }{ n_3 } }"
             , "  \\phinoPremise{ \\phinoMorph{ n_3 }{ e }{ s_2 }{ n_4 }{ s_3 } }"
@@ -2523,7 +2524,7 @@ spec = do
             , "\\end{phinoMorphingInference}"
             , "\\begin{phinoMorphingInference}"
             , "  \\phinoName{md}"
-            , "  \\phinoCondition{ \\phinoNotFormation{ n_1 } }"
+            , "  \\phinoCondition{ \\phinoNotFormation{ n_1 } \\;\\text{and}\\; \\phinoNotObject{ n_1 . \\tau } }"
             , "  \\phinoPremise{ \\phinoMorph{ n_1 }{ e }{ s_1 }{ n_2 }{ s_2 } }"
             , "  \\phinoPremise{ \\phinoNormalize{ n_2 . \\tau }{ n_3 } }"
             , "  \\phinoPremise{ \\phinoMorph{ n_3 }{ e }{ s_2 }{ n_4 }{ s_3 } }"
@@ -2545,6 +2546,13 @@ spec = do
             , "  \\phinoPremise{ \\phinoNormalize{ n_1 . \\tau }{ n_2 } }"
             , "  \\phinoPremise{ \\phinoMorph{ n_2 }{ e }{ s_2 }{ n_3 }{ s_3 } }"
             , "  \\phinoConclusion{ \\phinoMorph{ [[ B_1, L> f, B_2 ]] . \\tau }{ e }{ s_1 }{ n_3 }{ s_3 } }"
+            , "\\end{phinoMorphingInference}"
+            , "\\begin{phinoMorphingInference}"
+            , "  \\phinoName{mo}"
+            , "  \\phinoCondition{ \\phinoIsObject{ e_2 } \\;\\text{and}\\; \\isnormal{ e_2 } }"
+            , "  \\phinoPremise{ \\phinoObject{ e_2 }{ n_1 } }"
+            , "  \\phinoPremise{ \\phinoMorph{ n_1 }{ e_1 }{ s_1 }{ n_2 }{ s_2 } }"
+            , "  \\phinoConclusion{ \\phinoMorph{ e_2 }{ e_1 }{ s_1 }{ n_2 }{ s_2 } }"
             , "\\end{phinoMorphingInference}"
             , "\\begin{phinoMorphingInference}"
             , "  \\phinoName{mphi}"

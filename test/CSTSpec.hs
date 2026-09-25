@@ -354,6 +354,7 @@ spec = do
       , ("Matches", Y.Matches "abc" ExXi, CO_MATCHES "abc" (EX_XI XI))
       , ("PartOf", Y.PartOf ExXi (BiVoid (AtLabel "y")), CO_PART_OF (EX_XI XI) voidYBinding)
       , ("IsFormation", Y.IsFormation ExXi, CO_FORMATION (EX_XI XI))
+      , ("IsObject", Y.IsObject ExXi, CO_OBJECT (EX_XI XI))
       ]
       (\(desc, yamlCondition, expected) -> it desc (conditionToCST yamlCondition `shouldBe` expected))
 

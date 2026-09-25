@@ -296,6 +296,7 @@ instance ToSalty CONDITION where
   toSalty CO_PART_OF{..} = CO_PART_OF (toSalty expr) (toSalty binding)
   toSalty CO_DISJOINT{..} = CO_DISJOINT attrs (map toSalty groups)
   toSalty CO_FORMATION{..} = CO_FORMATION (toSalty expr)
+  toSalty CO_OBJECT{..} = CO_OBJECT (toSalty expr)
   toSalty CO_EMPTY = CO_EMPTY
 
 instance ToSalty EXTRA_ARG where
