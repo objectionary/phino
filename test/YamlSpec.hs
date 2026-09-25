@@ -74,6 +74,9 @@ spec = do
           it ("rejects " ++ desc) (unless valid (expectationFailure ("expected rejection for: " ++ yaml)))
       )
 
+  it "rejects an 'e-match' in a rewriting rule" $
+    (decodeYaml' "name: kvz\npattern: '⟦ 𝜏1 ↦ 𝑒1 ⟧'\ne-match: '𝑒2'\nresult: '𝑒2'" :: Either Yaml.ParseException Rule)
+      `shouldSatisfy` failsWith "The rule 'kvz' carries an 'e-match'"
   describe "rejects an anonymous meta outside a pattern" $ do
     -- An anonymous meta is bound by the pattern it stands in and forgotten as
     -- soon as that pattern matches, so no other part of a rule has a name to

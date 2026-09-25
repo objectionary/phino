@@ -3,7 +3,7 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Functions (buildTerm, buildFunctions, execFunctions) where
+module Functions (buildTerm, buildFunctions, execFunctions, nameOf) where
 
 import AST
 import Builder
@@ -53,7 +53,6 @@ buildTerm' "string" = _string
 buildTerm' "number" = _number
 buildTerm' "sum" = _sum
 buildTerm' "join" = _join
-buildTerm' "named" = _nameOf
 buildTerm' func = _unsupported func
 
 argToBytes :: Y.ExtraArgument -> Subst -> IO Bytes
@@ -80,21 +79,22 @@ _contextualize [Y.ArgExpression expr, Y.ArgExpression context] subst = do
   pure (TeExpression (contextualize expr' context'))
 _contextualize _ _ = throwIO (userError "Function contextualize() requires exactly 2 arguments as expression")
 
+-- The name the formation of the only argument goes by in the given world, or
+-- the formation itself where it has none (see 'pathOf'). The world is not an
+-- argument a rule writes: 'Rule' hands over the one its context knows. Where
+-- no world is known — the 'rewrite' command, and 'isNF' asking about a term on
+-- its own — the formation is answered as it is, exactly as 'dot' answered
+-- before any object of the world had a name.
+nameOf :: Maybe Expression -> BuildTermMethod
+nameOf universe [Y.ArgExpression expr] subst = do
+  form <- buildExpressionThrows expr subst
+  pure (TeExpression (maybe form (`pathOf` form) universe))
+nameOf _ _ _ = throwIO (userError "Function named() requires exactly 1 argument as expression")
+
 -- Uniqueness is the engine's job: 'freshTau' draws from the document-wide
 -- avoid-set seeded at the start of the run, so no collision list is needed.
 -- The function takes no arguments and rejects any extras so rule mistakes are
 -- not silently accepted.
--- The name the formation of the second argument goes by in the world of the
--- first, or the formation itself where it has none (see 'pathOf'). Where no
--- world is known — the 'rewrite' command, and 'isNF' asking about a term on
--- its own — the first argument binds nothing, and the formation is answered
--- as it is, exactly as 'dot' answered before any object of the world had a name.
-_nameOf :: BuildTermMethod
-_nameOf [Y.ArgExpression universe, Y.ArgExpression expr] subst = do
-  form <- buildExpressionThrows expr subst
-  pure (TeExpression (either (const form) (`pathOf` form) (buildExpression universe subst)))
-_nameOf _ _ = throwIO (userError "Function named() requires exactly 2 arguments as expression")
-
 _randomTau :: BuildTermMethod
 _randomTau [] _ = TeAttribute . AtLabel <$> freshTau
 _randomTau _ _ = throwIO (userError "Function random-tau() requires exactly 0 arguments")

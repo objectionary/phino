@@ -418,7 +418,7 @@ morph' (expr, seq) univ state caller = do
     firstMatch :: ReduceContext -> [Y.MorphRule] -> IO (Maybe (Y.MorphRule, Subst))
     firstMatch _ [] = pure Nothing
     firstMatch ctx (rule : rest) = do
-      substs <- matchExpressionWithRule' (matchExpression' rule.ematch univ) expr (asRule rule) (RuleContext (execBuildTerm univ ctx))
+      substs <- matchExpressionWithRule' (matchExpression' rule.ematch univ) expr (asRule rule) (RuleContext (execBuildTerm univ ctx) (Just univ))
       case substs of
         (subst : _) -> pure (Just (rule, subst))
         [] -> firstMatch ctx rest
@@ -427,7 +427,7 @@ morph' (expr, seq) univ state caller = do
     -- 'when'. Every morphing guard reads only meta-variables bound by 'match'
     -- and 'universe', so it holds before any premise runs.
     asRule :: Y.MorphRule -> Y.Rule
-    asRule rule = Y.Rule rule.name Nothing Nothing rule.match Nothing ExRoot rule.when Nothing Nothing
+    asRule rule = Y.Rule rule.name Nothing Nothing rule.match ExRoot rule.when Nothing Nothing
     -- Evaluate the rule's premises and build its conclusion. A literal
     -- conclusion is terminal. Otherwise the conclusion meta is produced by a
     -- trailing 'morph' premise (the spine); if that premise's argument is itself

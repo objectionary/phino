@@ -19,26 +19,26 @@
 # an object of the immutable world, so the 'named' function writes that name
 # back instead of the object, and a dispatch off it does not copy the program
 # or every method the object declares into the term (#1318, #1446). The world
-# 'named' looks the name up in is 𝑒1. Where the formation has no name, or no
-# world is known — the 'rewrite' command, and 'isNF' asking about a term on its
-# own — 'named' answers with the formation itself and the ρ holds it.
+# 'named' looks the name up in is phino's to know, not the rule's: the rule is
+# about a term alone and never binds the world itself (#1460). Where the
+# formation has no name, or no world is known — the 'rewrite' command, and
+# 'isNF' asking about a term on its own — 'named' answers with the formation
+# itself and the ρ holds it.
 name: dot
 pattern: ⟦𝐵1, 𝜏1 ↦ 𝑛1, 𝐵2⟧.𝜏1
-e-match: 𝑒1
 when:
   not:
     in:
       - [Δ, λ]
       - [𝐵1, 𝐵2]
-result: 𝑒2(ρ ↦ 𝑒3)
+result: 𝑒1(ρ ↦ 𝑒2)
 where:
-  - meta: 𝑒2
+  - meta: 𝑒1
     function: contextualize
     args:
       - 𝑛1
       - ⟦𝐵1, 𝐵2⟧
-  - meta: 𝑒3
+  - meta: 𝑒2
     function: named
     args:
-      - 𝑒1
       - ⟦𝐵1, 𝜏1 ↦ 𝑛1, 𝐵2⟧

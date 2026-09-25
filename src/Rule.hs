@@ -6,7 +6,7 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Rule (RuleContext (..), isNF, matchExpressionWithRule, matchExpressionWithRule', matchExpressionWithRuleIn, meetCondition) where
+module Rule (RuleContext (..), isNF, matchExpressionWithRule, matchExpressionWithRule', meetCondition) where
 
 import AST
 import Builder
@@ -26,7 +26,8 @@ import Data.List (nub)
 import qualified Data.Map.Strict as M
 import Data.Maybe (catMaybes)
 import qualified Data.Text as T
-import Deps (BuildTermFunc, Term (..))
+import Deps (BuildTermFunc, BuildTermMethod, Term (..))
+import Functions (nameOf)
 import GHC.IO (unsafePerformIO)
 import Logger (logDebug)
 import Matcher
@@ -36,7 +37,15 @@ import Text.Printf (printf)
 import Yaml (normalizationRules)
 import qualified Yaml as Y
 
-newtype RuleContext = RuleContext {_buildTerm :: BuildTermFunc}
+-- What a rule is matched and extended with: the builder of its 'where'
+-- functions and the world the matched term stands in, where one is known.
+-- A normalization rule is about a term alone, so the world stays out of its
+-- YAML and reaches only the functions that need it, which is 'named' writing
+-- 'Φ' or 'Φ.number' into a ρ instead of the object (#1318, #1460).
+data RuleContext = RuleContext
+  { _buildTerm :: BuildTermFunc
+  , _universe :: Maybe Expression
+  }
 
 -- Returns True if given expression matches with any of given normalization rules
 -- Here we use unsafePerformIO because we're sure that conditions which are used
@@ -306,7 +315,7 @@ extraSubstitutions substs extras RuleContext{..} = case extras of
                         _ -> Nothing
                       func = Y.function extra
                       args = Y.args extra
-                  term <- _buildTerm func args subst'
+                  term <- built func args subst'
                   meta <- case term of
                     TeExpression expr -> do
                       logDebug (printf "Function %s() returned expression:\n%s" func (printExpression expr))
@@ -330,6 +339,10 @@ extraSubstitutions substs extras RuleContext{..} = case extras of
         ]
     logDebug "Extra substitutions have been built"
     pure (catMaybes res)
+  where
+    built :: String -> BuildTermMethod
+    built "named" = nameOf _universe
+    built func = _buildTerm func
 
 -- Collect the constrained expression meta-variables with the given
 -- one-character prefix used in a pattern. Each kind ('𝑛'/'!n' normal-form,
@@ -360,30 +373,17 @@ metasWithPrefix prefix = nub . go
     goArgument (ArTau _ expr) = go expr
     goArgument (ArAlpha _ expr) = go expr
 
+-- Match a rewriting rule against an expression and every place inside it.
+-- The deep matcher is asked only where the pattern fits somewhere in the term
+-- at all (see 'reachable'), since trying it at every place of a term holding
+-- copies of big objects is what a rule that fits nowhere used to cost (#1453).
 matchExpressionWithRule :: Expression -> Y.Rule -> RuleContext -> IO [Subst]
-matchExpressionWithRule = matchExpressionWithRuleIn Nothing
-
--- Match a rewriting rule against an expression standing in the given universe.
--- A rule carrying an 'e-match' is matched against that universe too and what it
--- binds there joins every match, which is how 'dot' tells the formation it
--- dispatched from the whole program (#1318). A rule carrying none is matched
--- exactly as 'matchExpressionWithRule' matches it, and so is every rule where
--- no universe is known — the 'rewrite' command rewrites a term and no world
--- around it, and 'isNF' asks about a term alone. The deep matcher is asked
--- only where the pattern fits somewhere in the term at all (see 'reachable'),
--- since trying it at every place of a term holding copies of big objects is
--- what a rule that fits nowhere used to cost (#1453).
-matchExpressionWithRuleIn :: Maybe Expression -> Expression -> Y.Rule -> RuleContext -> IO [Subst]
-matchExpressionWithRuleIn universe expr rule = matchExpressionBy deep seed expr rule
+matchExpressionWithRule = matchExpressionBy deep [substEmpty]
   where
     deep :: MatchExpressionFunc
     deep ptn tgt
       | reachable ptn tgt = matchExpression ptn tgt
       | otherwise = []
-    seed :: [Subst]
-    seed = case (rule.ematch, universe) of
-      (Just ptn, Just whole) -> matchExpression' ptn whole
-      _ -> [substEmpty]
 
 -- Like 'matchExpressionWithRule' but matches the pattern against the whole
 -- expression only (no deep, sub-expression matching). Used by the dataization
