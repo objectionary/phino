@@ -18,9 +18,8 @@ input: >
       plus(ρ, x) ↦ ⟦ λ ⤍ L_number_plus ⟧,
       times(ρ, x) ↦ ⟦ λ ⤍ L_number_times ⟧ ⟧,
     @ ↦ 5.plus( 6 ).times( 7 ) ⟧
-result: >-
-  ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, times(x) ↦ ⟦ λ ⤍
-  L_number_times ⟧ ⟧
+result: |-
+  ⟦ φ ↦ 𝜎2:λ, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧ ⟧
 protocol: |
   𝕄(Φ.φ)
     𝔼(L_number_plus)  # 𝕄(Φ.φ)

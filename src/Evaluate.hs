@@ -27,7 +27,7 @@ import qualified Data.Text as T
 import Deps (BuildTermMethodS, Evaluation (..), State (..), Term (..))
 import Lambdas (Lambda (..), Meta (..), joined, matched, minted, symbolized)
 import Matcher (MetaValue (..), Subst, combine, substEmpty, substSingle, substSlot)
-import Morph (ReduceContext (..), ReduceException (..), deeper, isLambda, lambda, morph', morphing, normalized, unparked)
+import Morph (ReduceContext (..), ReduceException (..), deeper, enter, isLambda, lambda, morph', morphing, normalized, unparked)
 import Printer (printFunction)
 import Rule (RuleContext (RuleContext), matchExpressionWithRule')
 import Text.Printf (printf)
@@ -417,11 +417,16 @@ fired dispatched term univ state caller = do
     -- model (#1288). The state it had reached goes back rather than the one the
     -- walk came in with, since the firings before it are done and the symbols
     -- they minted are spent.
+    --
+    -- The firing enters the formation it fires, the way 'fire' of 𝔻 does, so
+    -- '--acyclic' sees a recursion the walk alone drives: an entry reducing an
+    -- operand whose walk fires the same formation again is cut there and parked
+    -- like any other loop (#1451).
     evaluated :: ReduceContext -> State -> Expression -> (T.Text, Expression) -> IO (Maybe Expression, State)
     evaluated ctx state' form (func, self)
       | isNothing (matched ctx._symbolic func) = pure (Nothing, state')
       | otherwise = do
-          made <- try (symbol func form self univ state' ctx)
+          made <- try (enter form ctx >>= symbol func form self univ state')
           case made of
             Right (answer, answered) -> do
               (again, reached) <- fired dispatched answer univ answered ctx

@@ -3,4 +3,4 @@
 ---
 left: '[[ x -> 1 ]]'
 right: '[[ y -> 2 ]]'
-result: '[[ x -> 1, y -> 2 ]]'
+result: '⟦ x ↦ 1, y ↦ 2 ⟧'

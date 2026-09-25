@@ -3,4 +3,4 @@
 ---
 left: '[[ org -> [[ number -> [[ ]], L> Package, ^ -> ? ]] ]]'
 right: '[[ org -> [[ text -> [[ ]], L> Package, ^ -> ? ]] ]]'
-result: '[[ org -> [[ number -> [[ ]], text -> [[ ]], L> Package, ^ -> ? ]] ]]'
+result: '⟦ number ↦ ⟦⟧, text ↦ ⟦⟧, λ ⤍ Package, ρ ↦ ∅ ⟧:org'

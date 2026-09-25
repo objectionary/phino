@@ -130,6 +130,27 @@ hashExpression = hashWith id
 hashShape :: Expression -> Int
 hashShape = hashWith (const 0)
 
+-- The same digest again, blind as well to every term the top of a term holds:
+-- a formation is hashed by the names of its attributes, in order, with its data
+-- and the λ function it names, and anything else by the constructor at its top
+-- and the attribute or index it carries. Two terms one of which is 'within' the
+-- other always produce the same digest, so it keys a store of terms compared by
+-- embedding, and a positive match must be confirmed by 'within'.
+hashSkeleton :: Expression -> Int
+hashSkeleton =
+  hashShape . \case
+    ExFormation bds -> ExFormation (map bare bds)
+    ExApplication _ (ArTau attr _) -> ExApplication ExXi (ArTau attr ExXi)
+    ExApplication _ (ArAlpha alpha _) -> ExApplication ExXi (ArAlpha alpha ExXi)
+    ExDispatch _ attr -> ExDispatch ExXi attr
+    ExPhiMeet prefix idx _ -> ExPhiMeet prefix idx ExXi
+    ExPhiAgain prefix idx _ -> ExPhiAgain prefix idx ExXi
+    term -> term
+  where
+    bare :: Binding -> Binding
+    bare (BiTau attr _) = BiTau attr ExXi
+    bare binding = binding
+
 -- The digest both 'hashExpression' and 'hashShape' compute, with the index of
 -- every symbol passed through the given function before it is mixed in.
 hashWith :: (Int -> Int) -> Expression -> Int
@@ -251,6 +272,44 @@ alike one two = isJust (goExpr (Map.empty, Map.empty) one two)
       (Nothing, Nothing) -> Just (Map.insert left right forward, Map.insert right left backward)
       (Just right', Just _) | right' == right -> Just (forward, backward)
       _ -> Nothing
+
+-- Whether the first term is embedded in the second: the two have the same
+-- constructor, attributes, data and λ names at the top, and every term the
+-- first holds there is embedded in the term the second holds at the same place,
+-- either as it stands or somewhere below it. Deeper down a term may sit under
+-- wrappers the other lacks, so a recursion whose argument gains one on every
+-- round enters a formation the previous round is within, while a call nested
+-- inside another is smaller and never holds it. Any symbol stands for any
+-- other, since each is an opaque unknown. A ρ binding is never looked below,
+-- since it holds the object a term was taken from and not a term it grew into.
+within :: Expression -> Expression -> Bool
+within = coupled
+  where
+    embedded :: Expression -> Expression -> Bool
+    embedded inner outer = coupled inner outer || any (embedded inner) (children outer)
+    coupled :: Expression -> Expression -> Bool
+    coupled (ExFormation left) (ExFormation right) = length left == length right && and (zipWith goBinding left right)
+    coupled (ExApplication left arg) (ExApplication right arg') = embedded left right && goArgument arg arg'
+    coupled (ExDispatch left attr) (ExDispatch right attr') = attr == attr' && embedded left right
+    coupled (ExPhiMeet prefix idx left) (ExPhiMeet prefix' idx' right) = prefix == prefix' && idx == idx' && embedded left right
+    coupled (ExPhiAgain prefix idx left) (ExPhiAgain prefix' idx' right) = prefix == prefix' && idx == idx' && embedded left right
+    coupled left right = left == right
+    goBinding :: Binding -> Binding -> Bool
+    goBinding (BiTau attr left) (BiTau attr' right) = attr == attr' && embedded left right
+    goBinding (BiLambda (FnSymbol _)) (BiLambda (FnSymbol _)) = True
+    goBinding left right = left == right
+    goArgument :: Argument -> Argument -> Bool
+    goArgument (ArTau attr left) (ArTau attr' right) = attr == attr' && embedded left right
+    goArgument (ArAlpha alpha left) (ArAlpha alpha' right) = alpha == alpha' && embedded left right
+    goArgument _ _ = False
+    children :: Expression -> [Expression]
+    children (ExFormation bds) = [expr | BiTau attr expr <- bds, attr /= AtRho]
+    children (ExApplication expr (ArTau _ arg)) = [expr, arg]
+    children (ExApplication expr (ArAlpha _ arg)) = [expr, arg]
+    children (ExDispatch expr _) = [expr]
+    children (ExPhiMeet _ _ expr) = [expr]
+    children (ExPhiAgain _ _ expr) = [expr]
+    children _ = []
 
 -- Every symbol a term carries, in the order it was written. A symbol is what
 -- makes the value a term stands for unknown, and the run reads the

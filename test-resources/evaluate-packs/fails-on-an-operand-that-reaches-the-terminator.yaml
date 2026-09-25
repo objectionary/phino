@@ -22,7 +22,7 @@ symbolic: |
     𝑛: ⟦ ⟧
 location: 'Q.l🌵'
 deep: true
-acyclic: true
+acyclic: proven
 steps: 32
 input: >
   ⟦

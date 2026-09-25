@@ -25,7 +25,7 @@ symbolic: |
     𝑛: ⟦ ⟧
 location: 'Q.l🌵'
 deep: true
-acyclic: true
+acyclic: proven
 partial: true
 steps: 32
 input: >
@@ -40,7 +40,12 @@ input: >
       e1 ↦ Φ.l🌵.mark( n ↦ Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 3F-F0-00-00-00-00-00-00 ⟧ ) ) )( v ↦ Φ.block( buffer ↦ Φ.bytes( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ ) ).read )
     ⟧
   ⟧
-result: '⟦ mark(n, v) ↦ ⟦ λ ⤍ L_entry ⟧, root(v) ↦ ⟦ λ ⤍ L_root ⟧, e1 ↦ ⟦ v ↦ Φ.dataized( target ↦ ⊥ ).as-bytes, λ ⤍ L_root ⟧ ⟧'
+result: |-
+  ⟦
+    mark(n, v) ↦ ⟦ λ ⤍ L_entry ⟧,
+    root(v) ↦ ⟦ λ ⤍ L_root ⟧,
+    e1 ↦ ⟦ v ↦ Φ.dataized( target ↦ ⊥ ).as-bytes, λ ⤍ L_root ⟧
+  ⟧
 protocol: |
   𝕄(Φ.l🌵)
     𝔼(L_entry)  # 𝕄(Φ.l🌵.e1)

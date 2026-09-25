@@ -4,4 +4,4 @@
 expression: '[[ org -> [[ eolang -> Q.x ]] ]]'
 hidden: ['Q.org.eolang.number']
 shown: []
-result: '[[ org -> [[ eolang -> Q.x ]] ]]'
+result: 'Φ.x:eolang:org'

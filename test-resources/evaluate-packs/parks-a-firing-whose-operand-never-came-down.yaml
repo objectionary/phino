@@ -14,7 +14,7 @@ partial: true
 input: >
   ⟦ y ↦ ⟦ x ↦ ⟦ λ ⤍ L_none ⟧.foo,
           λ ⤍ L_pair ⟧.z ⟧
-result: '⟦ x ↦ ⟦ λ ⤍ L_none ⟧.foo, λ ⤍ L_pair ⟧.z'
+result: '⟦ x ↦ L_none:λ.foo, λ ⤍ L_pair ⟧.z'
 protocol: |
   𝕄(Φ.y)
     𝔼(L_pair)  # 𝕄(Φ.y)

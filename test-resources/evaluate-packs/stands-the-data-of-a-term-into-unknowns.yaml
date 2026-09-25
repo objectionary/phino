@@ -24,7 +24,7 @@ symbolic: |
     𝑛: ⟦ l ↦ 𝑛3 ⟧
 location: 'Q.y'
 input: '⟦ y ↦ ⟦ a ↦ ⟦ Δ ⤍ 01- ⟧, b ↦ ⟦ λ ⤍ 𝜎7 ⟧, λ ⤍ L_join ⟧.l ⟧'
-result: '⟦ λ ⤍ 𝜎8 ⟧'
+result: '𝜎8:λ'
 protocol: |
   𝕄(Φ.y)
     𝔼(L_join)  # 𝕄(Φ.y)

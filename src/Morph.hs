@@ -18,7 +18,7 @@
 -- a λ function itself, which is an evaluation — are injected as '_reduce',
 -- '_evaluate' and '_fire' rather than imported (see 'ReductionFunc' and
 -- 'EvaluationFunc').
-module Morph (ReduceContext (..), ReduceException (..), EvaluationFunc, FiringFunc, ReductionFunc, Morphed, Steps (..), boxed, deeper, emptyState, entering, excluding, execBuildTerm, insideUniverse, isLambda, lambda, leadsTo, morph, morph', morphing, normalized, parking, producer, sidePremise, universed, unparked, verb) where
+module Morph (ReduceContext (..), ReduceException (..), EvaluationFunc, FiringFunc, ReductionFunc, Morphed, Steps (..), boxed, deeper, emptyState, enter, entering, excluding, execBuildTerm, insideUniverse, isLambda, lambda, leadsTo, morph, morph', morphing, normalized, parking, producer, sidePremise, universed, unparked, verb) where
 
 import AST
 import Builder (buildExpressionThrows, contextualize)
@@ -30,7 +30,7 @@ import qualified Data.List.NonEmpty as NE
 import qualified Data.Map.Strict as Map
 import Data.Maybe (fromMaybe, isJust)
 import qualified Data.Text as T
-import Deps (BuildTermFunc, BuildTermMethodS, Evaluation (..), Judgment (..), SaveEvalFunc, SaveStepFunc, State (..), Term (..), dontSaveStep)
+import Deps (Acyclic (..), BuildTermFunc, BuildTermMethodS, Evaluation (..), Judgment (..), SaveEvalFunc, SaveStepFunc, State (..), Term (..), dontSaveStep)
 import Lambdas (Lambdas)
 import Locator (locatedExpression, withLocatedExpression)
 import Matcher (MetaValue (..), Subst (..), combine, matchExpression', substEmpty, substSingle)
@@ -138,7 +138,7 @@ data ReduceContext = ReduceContext
   , _shuffle :: Bool
   , _partial :: Bool
   , _deep :: Bool
-  , _acyclic :: Bool
+  , _acyclic :: Maybe Acyclic
   , -- The judgment whose rule is asking 𝔼 to fire, which is what a stuck site
     -- is written under: 𝔼 is reached from the 'ml' rule of morphing and from
     -- the 'fire' rule of dataization, and a reader of the protocol is told
@@ -157,11 +157,11 @@ data ReduceContext = ReduceContext
   , -- The formations the frames above this one have entered, which is what
     -- '_acyclic' answers "have I been here before" with (see 'entering'). A
     -- frame enters a formation where it fires the λ of one — 𝔻 through 'fire',
-    -- 𝕄 through 'ml' — or gets into the φ body of one — 𝔻 through 'box' — and
-    -- nowhere else, so 𝕄 and 𝔻 handing each other the very term they were
+    -- 𝕄 through 'ml', the '--deep' walk through 'fired' of 'Evaluate' — or gets
+    -- into the φ body of one — 𝔻 through 'box' — and nowhere else, so 𝕄 and 𝔻 handing each other the very term they were
     -- asked about enter nothing twice and one store serves both of them. The
-    -- store is keyed by 'hashShape', so a formation is found again under a
-    -- renaming of its symbols (see 'alike').
+    -- store is keyed by 'hashShape' under 'Proven' and by 'hashSkeleton' under
+    -- 'Plausible', so a formation is found again the way the mode compares it.
     _entered :: Seen
   , _symbolic :: Lambdas
   , _buildTerm :: BuildTermFunc
@@ -289,8 +289,8 @@ unparked action = action `catch` rethrow
 -- everything the run has ever touched: two siblings entering one formation
 -- enter it twice, while a formation entered from inside itself is a loop.
 --
--- The same means 'alike', equal up to a bijective renaming of symbols, and not
--- equal: every round of a recursion over an unknown mints fresh symbols, so
+-- Under 'Proven' the same means 'alike', equal up to a bijective renaming of
+-- symbols, and not equal: every round of a recursion over an unknown mints fresh symbols, so
 -- the formation it enters on the second round is the first one with 𝜎5 where
 -- 𝜎3 stood, and an exact comparison never finds it (#1420). That is sound,
 -- since a symbol is an opaque unknown — each dataizes to the same manufactured
@@ -300,23 +300,45 @@ unparked action = action `catch` rethrow
 -- digest map keyed by 'hashShape', which is blind to symbols, and a digest
 -- match is confirmed by 'alike', the way 'Seen' confirms one by (==). The cut
 -- is written to the protocol where the formation would have opened, as a
--- 'looped' line carrying the site and the formation the frame above entered,
+-- 'looped' line carrying the site, the mode and the formation the frame above entered,
 -- spelled as that frame's own 'formation' line spelled it, so the two lines
 -- read as a pair without renaming symbols by eye (#1434).
+--
+-- Under 'Plausible' the same means that the formation a frame above entered is
+-- 'within' the one about to be entered: an accumulator gains a wrapper every
+-- round, so no two rounds are ever 'alike', while each still holds the one
+-- before it (#1451). A formation entered from inside a smaller one is never cut,
+-- since a smaller term never holds a larger one, which is what keeps a call
+-- nested in its own operand, such as a sum of sums, reducing as it did. It is
+-- not sound: a recursion whose argument grows on its way to stopping is cut as
+-- well. The store is keyed by 'hashSkeleton', which sees the attributes and
+-- not the terms bound to them, and a digest match is confirmed by 'within'.
 entering :: Expression -> ReduceContext -> IO ReduceContext
-entering term ctx
-  | not ctx._acyclic = pure ctx
-  | otherwise = maybe (pure ctx) remembered (entrance ctx._judgment term)
+entering term ctx = maybe (pure ctx) (`enter` ctx) (entrance ctx._judgment term)
+
+-- The same guard asked about a formation the frame is about to enter, for a
+-- frame that knows it enters one without being a rule of 𝕄 or 𝔻: the '--deep'
+-- walk, which fires the λ of every formation 𝕄 leaves bare, so a recursion
+-- driven by the walk alone goes through no rule 'entrance' knows of (#1451).
+enter :: Expression -> ReduceContext -> IO ReduceContext
+enter form ctx = maybe (pure ctx) remembered ctx._acyclic
   where
-    remembered :: Expression -> IO ReduceContext
-    remembered form = case find (alike form) (Map.findWithDefault [] (hashShape form) ctx._entered) of
+    remembered :: Acyclic -> IO ReduceContext
+    remembered mode = case find (repeated mode form) (Map.findWithDefault [] (digest mode form) ctx._entered) of
       Just before -> do
-        ctx._saveEval (EvLooped ctx._nesting ctx._judgment before ctx._site)
+        ctx._saveEval (EvLooped ctx._nesting ctx._judgment mode before ctx._site)
         throwIO (Looping form)
-      Nothing -> pure ctx{_entered = seenInsert (hashShape form) form ctx._entered}
+      Nothing -> pure ctx{_entered = seenInsert (digest mode form) form ctx._entered}
+    digest :: Acyclic -> Expression -> Int
+    digest Proven = hashShape
+    digest Plausible = hashSkeleton
+    repeated :: Acyclic -> Expression -> Expression -> Bool
+    repeated Proven form before = alike form before
+    repeated Plausible form before = within before form
 
 -- The formation a frame of the judgment enters as it opens on the term, if it
--- enters one at all. Only three rules get into a formation: 'box' of 𝔻, into
+-- enters one at all. Only three rules get into a formation, besides the firing
+-- of the '--deep' walk, which asks 'enter' itself: 'box' of 𝔻, into
 -- the φ body of a formation carrying no λ and no Δ; 'fire' of 𝔻, into the λ
 -- function of a formation carrying one naming a function; and 'ml' of 𝕄, into
 -- the λ function of the head of a dispatch, which is the formation entered and

@@ -1,0 +1,81 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+# A factorial with an accumulator, under '--acyclic=plausible'. Every round
+# wraps the accumulator in one more 'pair', which no entry answers, so no two
+# rounds are ever the same formation up to a renaming of symbols and
+# '--acyclic=proven' goes round forever. The formation 'if' the deep walk fires
+# on the second round holds the one it fired on the first, under the wrapper it
+# gained, which is what the plausible guard compares by, so the second firing
+# is cut before it opens and its 'looped' line names the mode that cut it
+# (#1451).
+symbolic: |
+  - λ: L_zero
+    dataize:
+      𝛿1: $.x
+    𝑛: ⟦ λ ⤍ 𝜎 ⟧
+  - λ: L_dec
+    dataize:
+      𝛿1: $.x
+    𝑛: ⟦ λ ⤍ 𝜎 ⟧
+  - λ: L_if
+    dataize:
+      𝛿1: $.c
+    morph:
+      𝑛1: $.left
+      𝑛2: $.right
+    symbolize:
+      𝑛3: 𝑛1
+      𝑛4: 𝑛2
+    join:
+      𝑛5: [𝑛3, 𝑛4]
+    𝑛: 𝑛5
+location: 'Q.x'
+deep: true
+acyclic: plausible
+partial: true
+steps: 250
+input: >
+  ⟦ if ↦ ⟦ c ↦ ∅, left ↦ ∅, right ↦ ∅, λ ⤍ L_if ⟧,
+    zero ↦ ⟦ x ↦ ∅, λ ⤍ L_zero ⟧,
+    dec ↦ ⟦ x ↦ ∅, λ ⤍ L_dec ⟧,
+    pair ↦ ⟦ head ↦ ∅, tail ↦ ∅ ⟧,
+    fact ↦ ⟦ n ↦ ∅, acc ↦ ∅, φ ↦ Φ.if( c ↦ Φ.zero( x ↦ ξ.n ), left ↦ ξ.acc, right ↦ Φ.fact( n ↦ Φ.dec( x ↦ ξ.n ), acc ↦ Φ.pair( head ↦ ξ.n, tail ↦ ξ.acc ) ) ) ⟧,
+    x ↦ Φ.fact( n ↦ ⟦ λ ⤍ 𝜎1 ⟧, acc ↦ ⟦ Δ ⤍ 00- ⟧ ) ⟧
+result: |-
+  ⟦
+    n ↦ 𝜎1:λ,
+    acc ↦ 00-:Δ,
+    φ ↦ Φ.if(
+      c ↦ 𝜎2:λ,
+      left ↦ acc,
+      right ↦ Φ.fact( n ↦ 𝜎3:λ, acc ↦ Φ.pair( head ↦ n, tail ↦ acc ) )
+    )
+  ⟧
+protocol: |
+  𝕄(Φ.x)
+    𝔼(L_zero)  # 𝕄(Φ.x.φ)
+      𝛿1.1 := 𝔻(𝜎1:λ)  # 𝔻(ξ.x)
+      𝑛.1.1 := 𝜎2:λ  # 𝑛
+      𝑛.1.2 := 𝜎2:λ  # 𝕄(𝑛.1.1)
+    𝔼(L_dec)  # 𝕄(Φ.x.φ)
+      𝛿1.2 := 𝔻(𝜎1:λ)  # 𝔻(ξ.x)
+      𝑛.2.1 := 𝜎3:λ  # 𝑛
+      𝑛.2.2 := 𝜎3:λ  # 𝕄(𝑛.2.1)
+    𝔼(L_if)  # 𝕄(Φ.x.φ)
+      𝛿1.3 := 𝔻(𝜎2:λ)  # 𝔻(ξ.c)
+      𝑛1.3 := 00-:Δ  # 𝕄(ξ.left)
+      𝔼(L_zero)  # 𝕄(Φ.a🌵4.φ)
+        𝛿1.4 := 𝔻(𝜎3:λ)  # 𝔻(ξ.x)
+        𝑛.4.1 := 𝜎4:λ  # 𝑛
+        𝑛.4.2 := 𝜎4:λ  # 𝕄(𝑛.4.1)
+      𝔼(L_dec)  # 𝕄(Φ.a🌵4.φ)
+        𝛿1.5 := 𝔻(𝜎3:λ)  # 𝔻(ξ.x)
+        𝑛.5.1 := 𝜎5:λ  # 𝑛
+        𝑛.5.2 := 𝜎5:λ  # 𝕄(𝑛.5.1)
+      looped(⟦ c ↦ 𝜎2:λ, left ↦ 00-:Δ, right ↦ Φ.fact( n ↦ 𝜎3:λ, acc ↦ Φ.pair( head ↦ 𝜎1:λ, tail ↦ 00-:Δ ) ), λ ⤍ L_if ⟧)  # 𝕄(Φ.a🌵4.φ), plausible
+      𝑛2.3 := ⟦ n ↦ 𝜎3:λ, acc ↦ Φ.pair( head ↦ 𝜎1:λ, tail ↦ 00-:Δ ), φ ↦ Φ.if( c ↦ 𝜎4:λ, left ↦ acc, right ↦ Φ.fact( n ↦ 𝜎5:λ, acc ↦ Φ.pair( head ↦ n, tail ↦ acc ) ) ) ⟧  # 𝕄(ξ.right)
+      𝔻(𝜎6:λ) == 00-
+      𝑛3.3 := 𝜎6:λ  # 𝑛1
+      𝑛4.3 := ⟦ n ↦ 𝜎3:λ, acc ↦ Φ.pair( head ↦ 𝜎1:λ, tail ↦ 00-:Δ ), φ ↦ Φ.if( c ↦ 𝜎4:λ, left ↦ acc, right ↦ Φ.fact( n ↦ 𝜎5:λ, acc ↦ Φ.pair( head ↦ n, tail ↦ acc ) ) ) ⟧  # 𝑛2

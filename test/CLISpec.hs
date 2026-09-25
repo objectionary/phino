@@ -1143,7 +1143,7 @@ spec = do
     -- object it stands in, which 𝕄 stops at a formation of every round and
     -- only 𝔻 walks round — spent the whole budget and failed on the limit
     -- (#1290)
-    describe "--acyclic" $ do
+    describe "--acyclic=proven" $ do
       let circling = "⟦ cyc ↦ ⟦ x ↦ ∅, φ ↦ Φ.cyc( ξ.x ) ⟧, t ↦ Φ.cyc( ⟦⟧ ) ⟧"
       it "spends the whole budget and fails on the limit without the flag" $
         withStdin circling $
@@ -1156,7 +1156,7 @@ spec = do
       it "names the term it came back to with the flag" $
         withStdin circling $
           testCLIFailed
-            ["dataize", "--locator=Q.t", "--acyclic", "--max-steps=4000"]
+            ["dataize", "--locator=Q.t", "--acyclic=proven", "--max-steps=4000"]
             ["[ERROR]: Reduction entered a formation it is already inside:"]
 
       -- 𝔻 insists on bytes and a parked term carries none, so what a cut run
@@ -1167,7 +1167,7 @@ spec = do
       it "prints the residue and exits successfully with --partial" $
         withStdin circling $
           testCLISucceeded
-            ["dataize", "--locator=Q.t", "--acyclic", "--partial", "--max-steps=4000", "--flat", "--hide-rho"]
+            ["dataize", "--locator=Q.t", "--acyclic=proven", "--partial", "--max-steps=4000", "--flat", "--hide-rho"]
             ["⟦ cyc ↦ ⟦ x ↦ ∅, φ ↦ Φ.cyc( α0 ↦ ξ.x ) ⟧, t ↦ Φ.cyc( α0 ↦ ⟦⟧ ) ⟧"]
 
       -- A cut is written where the formation it refused would have opened,
@@ -1178,13 +1178,13 @@ spec = do
           hClose stream
           withStdin circling $
             testCLISucceeded
-              ["dataize", "--locator=Q.t", "--acyclic", "--partial", "--protocol=" ++ path, "--sweet", "--hide-rho", "--flat", "--quiet"]
+              ["dataize", "--locator=Q.t", "--acyclic=proven", "--partial", "--protocol=" ++ path, "--sweet", "--hide-rho", "--flat", "--quiet"]
               []
           records <- readUtf8 path
           lines records
             `shouldBe` [ "𝔻(Φ.t)"
                        , "  formation(⟦ x ↦ ⟦⟧, φ ↦ Φ.cyc( x ) ⟧)  # 𝔻(Φ.t)"
-                       , "    looped(⟦ x ↦ ⟦⟧, φ ↦ Φ.cyc( x ) ⟧)  # 𝔻(Φ.t)"
+                       , "    looped(⟦ x ↦ ⟦⟧, φ ↦ Φ.cyc( x ) ⟧)  # 𝔻(Φ.t), proven"
                        ]
 
       -- The markup of a cut is one self-closing element, since nothing runs
@@ -1194,23 +1194,46 @@ spec = do
           hClose stream
           withStdin circling $
             testCLISucceeded
-              ["dataize", "--locator=Q.t", "--acyclic", "--partial", "--protocol=" ++ path, "--sweet", "--hide-rho", "--flat", "--quiet"]
+              ["dataize", "--locator=Q.t", "--acyclic=proven", "--partial", "--protocol=" ++ path, "--sweet", "--hide-rho", "--flat", "--quiet"]
               []
           records <- readUtf8 path
           lines records
             `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                        , "<dataize at=\"Φ.t\">"
                        , "  <formation at=\"Φ.t\" term=\"⟦ x ↦ ⟦⟧, φ ↦ Φ.cyc( x ) ⟧\">"
-                       , "    <looped by=\"dataize\" at=\"Φ.t\" term=\"⟦ x ↦ ⟦⟧, φ ↦ Φ.cyc( x ) ⟧\"/>"
+                       , "    <looped by=\"dataize\" match=\"proven\" at=\"Φ.t\" term=\"⟦ x ↦ ⟦⟧, φ ↦ Φ.cyc( x ) ⟧\"/>"
                        , "  </formation>"
                        , "</dataize>"
                        ]
+
+      -- A formation entered again as it was is within itself, so the embedding
+      -- cuts every loop the renaming does, and the cut says which one made it
+      -- (#1451)
+      it "writes a plausible cut to the protocol as plausible" $
+        withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
+          hClose stream
+          withStdin circling $
+            testCLISucceeded
+              ["dataize", "--locator=Q.t", "--acyclic=plausible", "--partial", "--protocol=" ++ path, "--sweet", "--hide-rho", "--flat", "--quiet"]
+              []
+          records <- readUtf8 path
+          lines records `shouldContain` ["    looped(⟦ x ↦ ⟦⟧, φ ↦ Φ.cyc( x ) ⟧)  # 𝔻(Φ.t), plausible"]
+
+      -- The mode is what the guard compares by, and the command has no
+      -- business guessing one for a user who asked for the guard (#1451)
+      it "refuses the flag without a mode" $
+        withStdin "⟦ t ↦ ⟦ Δ ⤍ 01-02 ⟧ ⟧" $
+          testCLIFailed ["dataize", "--locator=Q.t", "--acyclic"] ["The option `--acyclic` expects an argument"]
+
+      it "refuses a mode it does not know" $
+        withStdin "⟦ t ↦ ⟦ Δ ⤍ 01-02 ⟧ ⟧" $
+          testCLIFailed ["dataize", "--locator=Q.t", "--acyclic=sure"] ["The value 'sure' can't be used for '--acyclic' option"]
 
       -- The guard reads nothing but the formations the frames above it have
       -- entered, so a run that never enters one twice answers as it always did
       it "answers a terminating program the same way with the flag" $
         withStdin "⟦ t ↦ ⟦ Δ ⤍ 01-02 ⟧ ⟧" $
-          testCLISucceeded ["dataize", "--locator=Q.t", "--acyclic"] ["01-02"]
+          testCLISucceeded ["dataize", "--locator=Q.t", "--acyclic=proven"] ["01-02"]
 
     it "dataizes with --sequence" $
       withStdin "[[ @ -> [[ x -> [[ D> 01-, y -> ? ]](y -> [[ ]]) ]].x ]]" $
@@ -2270,7 +2293,7 @@ spec = do
     -- failed on the limit; '--acyclic' stops the moment morphing comes back to a
     -- term a frame above it is already reducing and parks that site the way
     -- '--partial' parks a λ function that cannot fire
-    describe "--acyclic" $ do
+    describe "--acyclic=proven" $ do
       let looping = "⟦ x ↦ ⟦ λ ⤍ L_loop ⟧.foo ⟧"
       it "spends the whole budget and fails on the limit without the flag" $
         loopingLambdas $ \endless ->
@@ -2285,7 +2308,7 @@ spec = do
         loopingLambdas $ \endless ->
           withStdin looping $
             testCLISucceeded
-              ["morph", "--symbolic=" ++ endless, "--locator=Q.x", "--acyclic", "--max-steps=4000", "--flat", "--hide-rho"]
+              ["morph", "--symbolic=" ++ endless, "--locator=Q.x", "--acyclic=proven", "--max-steps=4000", "--flat", "--hide-rho"]
               ["⟦ λ ⤍ L_loop ⟧.foo"]
 
       -- The guard reads nothing but the formations the frames above it have
@@ -2293,7 +2316,7 @@ spec = do
       it "answers a terminating program the same way with the flag" $
         withStdin chained $
           testCLISucceeded
-            ["morph", symbolic, "--acyclic", "--locator=Q.@", "--sweet", "--hide-rho", "--flat"]
+            ["morph", symbolic, "--acyclic=proven", "--locator=Q.@", "--sweet", "--hide-rho", "--flat"]
             ["⟦ x ↦ 7, λ ⤍ L_number_plus ⟧"]
 
       -- The deep walk parks the one binding that loops and walks on, the way it
@@ -2303,7 +2326,7 @@ spec = do
         loopingLambdas $ \endless ->
           withStdin "⟦ x ↦ ⟦ λ ⤍ L_loop, ρ ↦ ∅ ⟧.foo, y ↦ ⟦ z ↦ ⟦⟧ ⟧ ⟧" $
             testCLISucceeded
-              ["morph", "--symbolic=" ++ endless, "--deep", "--acyclic", "--max-steps=4000", "--flat", "--hide-rho"]
+              ["morph", "--symbolic=" ++ endless, "--deep", "--acyclic=proven", "--max-steps=4000", "--flat", "--hide-rho"]
               ["⟦ x ↦ ⟦ λ ⤍ L_loop ⟧.foo, y ↦ ⟦ z ↦ ⟦⟧ ⟧ ⟧"]
 
     describe "fails" $ do

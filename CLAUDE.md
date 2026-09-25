@@ -150,18 +150,23 @@ chain (`morph`, `dataize`) and a recursive worker the rules drive
 the wrappers.
 
 The step budget `--max-steps` is what ends that recursion, and the only thing
-that does unless `morph` or `dataize` is given `--acyclic`: the flag has every
-𝕄 and every 𝔻 frame remember the formations its ancestors have entered
-(`entering` in `Morph.hs`, one store for both judgments, since only `box` and
-`fire` of 𝔻 and `ml` of 𝕄 enter one) and park the site the moment a frame is
-about to enter one of them again, the way `--partial` parks a λ that cannot
-fire. Two formations are the same up to a renaming of their symbols (`alike`
-in `AST.hs`), since a recursion over a symbol mints fresh ones every round and
-never repeats a term (#1420). A formation `box` gets into is also a line of the
-protocol, `formation(…)`, and what its φ body fires stands under it; a cut is
-one too, `looped(…)` (`EvLooped`), written by `entering` where the refused
-frame would have opened and carrying the formation its ancestor entered
-(#1434).
+that does unless `morph` or `dataize` is given `--acyclic=<mode>`: the option
+has every 𝕄 and every 𝔻 frame remember the formations its ancestors have
+entered (`entering` and `enter` in `Morph.hs`, one store for both judgments,
+since only `box` and `fire` of 𝔻, `ml` of 𝕄 and the firing of the `--deep`
+walk, `fired` in `Evaluate.hs`, enter one) and park the site the moment a frame
+is about to enter one of them again, the way `--partial` parks a λ that cannot
+fire. The mode `Acyclic` of `Deps.hs` says what "again" means, and there is no
+default. Under `proven` two formations are the same up to a renaming of their
+symbols (`alike` in `AST.hs`), since a recursion over a symbol mints fresh ones
+every round and never repeats a term (#1420). Under `plausible` the earlier one
+is embedded in the later one (`within` in `AST.hs`), so a recursion whose
+accumulator gains a wrapper every round is cut too, at the price of cutting
+now and then one that would have stopped (#1451). A formation `box` gets into
+is also a line of the protocol, `formation(…)`, and what its φ body fires
+stands under it; a cut is one too, `looped(…)` (`EvLooped`), written by
+`enter` where the refused frame would have opened, carrying the formation its
+ancestor entered (#1434) and naming the mode that cut it.
 
 ### Test pattern: YAML packs
 

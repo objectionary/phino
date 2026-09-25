@@ -3,4 +3,4 @@
 ---
 left: '[[ org -> [[ eolang -> [[ number -> [[ ]] ]] ]] ]]'
 right: '[[ org -> [[ eolang -> [[ bytes -> [[ ]] ]] ]] ]]'
-result: '[[ org -> [[ eolang -> [[ number -> [[ ]], bytes -> [[ ]] ]] ]] ]]'
+result: '⟦ number ↦ ⟦⟧, bytes ↦ ⟦⟧ ⟧:eolang:org'

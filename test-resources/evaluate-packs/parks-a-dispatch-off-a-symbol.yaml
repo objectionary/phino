@@ -32,10 +32,11 @@ input: >
     demo ↦ ⟦
       a ↦ ⟦ λ ⤍ 𝜎1 ⟧.plus( 5 ),
       b ↦ Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ) ).plus( 5 ) ⟧ ⟧
-result: >-
-  ⟦ a ↦ ⟦ λ ⤍ 𝜎1 ⟧.plus( α0 ↦ Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍
-  40-14-00-00-00-00-00-00 ⟧ ) ) ), b ↦ ⟦ φ ↦ Φ.bytes( φ ↦ ⟦ λ ⤍ 𝜎3 ⟧ ), plus ↦
-  ⟦ x ↦ ∅, λ ⤍ L_number_plus ⟧ ⟧ ⟧
+result: |-
+  ⟦
+    a ↦ 𝜎1:λ.plus( 5 ),
+    b ↦ ⟦ φ ↦ Φ.bytes( φ ↦ 𝜎3:λ ), plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧
+  ⟧
 protocol: |
   𝕄(Φ.demo)
     ?(𝜎1)  # 𝕄(𝜎1:λ)

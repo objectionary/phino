@@ -11,7 +11,7 @@ symbolic: |
     𝑛: ⟦ z ↦ ⟦ λ ⤍ 𝜎 ⟧ ⟧
 location: 'Q.y'
 input: '⟦ y ↦ ⟦ x ↦ ⟦ λ ⤍ 𝜎4 ⟧, λ ⤍ L_keep ⟧.z ⟧'
-result: '⟦ λ ⤍ 𝜎5 ⟧'
+result: '𝜎5:λ'
 protocol: |
   𝕄(Φ.y)
     𝔼(L_keep)  # 𝕄(Φ.y)
