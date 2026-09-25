@@ -45,11 +45,15 @@ replaceArgument (ArAlpha alpha expr, ptns, repls) ctx func =
   let (expr', ptns', repls') = func (expr, ptns, repls) ctx
    in (ArAlpha alpha expr', ptns', repls')
 
+-- A term equal to a pattern is inert only when the pattern is, and a term
+-- inside an inert one is inert too, so a pattern that is not inert is never
+-- looked for inside an inert term, which is where the copies of big objects
+-- a normalization carries along are (#1453).
 replaceExpression' :: ReplaceExpressionFunc'
-replaceExpression' state@(expr, ptns@(ptn : _ptns), repls@(repl : _repls)) ctx =
-  if expr == ptn
-    then replaceExpression' (repl expr, _ptns, _repls) ctx
-    else case expr of
+replaceExpression' state@(expr, ptns@(ptn : _ptns), repls@(repl : _repls)) ctx
+  | inert expr && not (inert ptn) = state
+  | expr == ptn = replaceExpression' (repl expr, _ptns, _repls) ctx
+  | otherwise = case expr of
       ExDispatch inner attr ->
         let (expr', ptns', repls') = replaceExpression' (inner, ptns, repls) ctx
          in (ExDispatch expr' attr, ptns', repls')

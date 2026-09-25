@@ -15,6 +15,7 @@ module Builder
   , buildAttributeThrows
   , buildBinding
   , buildBindingThrows
+  , buildBindingUnchecked
   , buildBytes
   , buildBytesThrows
   , contextualize
@@ -63,7 +64,7 @@ contextualize :: Expression -> Expression -> Expression
 contextualize ExRoot _ = ExRoot
 contextualize ExXi ex = ex
 contextualize ExTermination _ = ExTermination
-contextualize (ExFormation bds) _ = ExFormation bds
+contextualize expr@(ExFormation _) _ = expr
 contextualize (ExDispatch ex at) context = ExDispatch (contextualize ex context) at
 contextualize (ExApplication ex arg) context =
   ExApplication (contextualize ex context) (contextualizeArg arg)
@@ -101,36 +102,43 @@ buildBytes bts _ = Right bts
 
 -- Build binding
 -- The function returns [Binding] because the BiMeta is always attached
--- to the list of bindings
+-- to the list of bindings, and the bindings a meta stands for are checked to
+-- carry no attribute twice
 buildBinding :: Binding -> Subst -> Built [Binding]
-buildBinding (BiTau attr expr) subst = do
+buildBinding bd subst = buildBindingUnchecked bd subst >>= uniqueBindings
+
+-- Build binding without checking the bindings a meta stands for, which is
+-- what a formation made of them does once for all of its bindings, and what a
+-- condition reading their attributes has no need for (#1453)
+buildBindingUnchecked :: Binding -> Subst -> Built [Binding]
+buildBindingUnchecked (BiTau attr expr) subst = do
   attribute <- buildAttribute attr subst
   expression <- buildExpression expr subst
   Right [BiTau attribute expression]
-buildBinding (BiVoid attr) subst = do
+buildBindingUnchecked (BiVoid attr) subst = do
   attribute <- buildAttribute attr subst
   Right [BiVoid attribute]
-buildBinding (BiMeta meta) (Subst mp) = case Map.lookup (Named meta) mp of
-  Just (MvBindings bds) -> uniqueBindings bds
+buildBindingUnchecked (BiMeta meta) (Subst mp) = case Map.lookup (Named meta) mp of
+  Just (MvBindings bds) -> Right bds
   _ -> Left (metaMsg meta)
-buildBinding (BiAny slot) (Subst mp) = case Map.lookup (Anon slot) mp of
-  Just (MvBindings bds) -> uniqueBindings bds
+buildBindingUnchecked (BiAny slot) (Subst mp) = case Map.lookup (Anon slot) mp of
+  Just (MvBindings bds) -> Right bds
   _ -> Left (slotMsg slot)
-buildBinding (BiDelta bytes) subst = do
+buildBindingUnchecked (BiDelta bytes) subst = do
   bts <- buildBytes bytes subst
   Right [BiDelta bts]
-buildBinding (BiLambda (FnMeta meta)) (Subst mp) = case Map.lookup (Named meta) mp of
+buildBindingUnchecked (BiLambda (FnMeta meta)) (Subst mp) = case Map.lookup (Named meta) mp of
   Just (MvFunction func) -> Right [BiLambda func]
   _ -> Left (metaMsg meta)
-buildBinding (BiLambda (FnAny slot)) (Subst mp) = case Map.lookup (Anon slot) mp of
+buildBindingUnchecked (BiLambda (FnAny slot)) (Subst mp) = case Map.lookup (Anon slot) mp of
   Just (MvFunction func) -> Right [BiLambda func]
   _ -> Left (slotMsg slot)
 -- A bare 𝜎 asks for a symbol nothing has answered yet, and the one minted for
 -- the slot it was written at is bound the way any other anonymous meta is.
-buildBinding (BiLambda (FnFresh slot)) (Subst mp) = case Map.lookup (Anon slot) mp of
+buildBindingUnchecked (BiLambda (FnFresh slot)) (Subst mp) = case Map.lookup (Anon slot) mp of
   Just (MvFunction func) -> Right [BiLambda func]
   _ -> Left (slotMsg slot)
-buildBinding binding _ = Right [binding]
+buildBindingUnchecked binding _ = Right [binding]
 
 buildArgument :: Argument -> Subst -> Built Argument
 buildArgument (ArTau attr expr) subst = do
@@ -146,7 +154,7 @@ buildArgument (ArAlpha alpha expr) subst = do
 buildBindings :: [Binding] -> Subst -> Built [Binding]
 buildBindings [] _ = Right []
 buildBindings (bd : rest) subst = do
-  first <- buildBinding bd subst
+  first <- buildBindingUnchecked bd subst
   bds <- buildBindings rest subst
   Right (first ++ bds)
 
@@ -227,10 +235,16 @@ pathOf universe@(ExFormation world) form@(ExFormation bds)
     closed _ = False
 pathOf _ form = form
 
--- The bindings of a formation a meta was bound to are checked once more here,
--- since a substitution may bring two of them together under one attribute.
+-- The bindings of a formation, whether a meta was bound to it or it was built
+-- from a template, are checked here, since a substitution may bring two of
+-- them together under one attribute. The formation itself is handed back, not
+-- one rebuilt of its bindings, and it knows whether its attributes are
+-- 'distinct' once it has been asked, so an object carried from term to term
+-- is checked once (#1453).
 unique :: Expression -> Built Expression
-unique (ExFormation bds) = uniqueBindings bds >> Right (ExFormation bds)
+unique expr@(ExFormation bds)
+  | distinct expr = Right expr
+  | otherwise = uniqueBindings bds >> Right expr
 unique expr = Right expr
 
 -- Build meta expression with given substitution
@@ -246,9 +260,7 @@ buildExpression (ExApplication expr arg) subst = do
   applied <- buildExpression expr subst
   arg' <- buildArgument arg subst
   Right (ExApplication applied arg')
-buildExpression (ExFormation bds) subst = do
-  bds' <- buildBindings bds subst >>= uniqueBindings
-  Right (ExFormation bds')
+buildExpression (ExFormation bds) subst = buildBindings bds subst >>= unique . ExFormation
 buildExpression (ExMeta meta) (Subst mp) = case Map.lookup (Named meta) mp of
   Just (MvExpression expr) -> unique expr
   _ -> Left (metaMsg meta)

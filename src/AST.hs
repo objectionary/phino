@@ -1,5 +1,6 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE MagicHash #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE ViewPatterns #-}
@@ -8,14 +9,45 @@
 -- SPDX-License-Identifier: MIT
 
 -- This module represents AST tree for parsed phi-calculus expression
-module AST where
+module AST
+  ( Slot (..)
+  , Expression (ExFormation, ExXi, ExRoot, ExTermination, ExApplication, ExDispatch, ExMeta, ExAny, ExPhiMeet, ExPhiAgain, ExBytes)
+  , Argument (..)
+  , Alpha (..)
+  , Binding (..)
+  , Bytes (..)
+  , Attribute (..)
+  , Function (..)
+  , hashExpression
+  , hashShape
+  , hashSkeleton
+  , inert
+  , distinct
+  , repeated
+  , attributeFromBinding
+  , alike
+  , within
+  , symbols
+  , denoted
+  , countNodes
+  , matchBaseObject
+  , pattern BaseObject
+  , matchDataObject
+  , pattern DataString
+  , pattern DataNumber
+  , pattern DataObject
+  , dataBytes
+  )
+where
 
 import Data.Bits (xor)
+import qualified Data.IntMap.Strict as IntMap
 import Data.List (foldl')
 import qualified Data.Map.Strict as Map
-import Data.Maybe (isJust, listToMaybe)
+import Data.Maybe (isJust, isNothing, listToMaybe)
 import Data.Text (Text)
 import qualified Data.Text as T
+import GHC.Exts (isTrue#, reallyUnsafePtrEquality#)
 import GHC.Generics (Generic)
 
 -- An anonymous meta-variable, written bare — 𝜏, 𝐵, 𝑒, 𝑛, 𝑘, 𝛿, 𝑓, 𝜎 or 𝑖
@@ -26,13 +58,21 @@ import GHC.Generics (Generic)
 data Slot = Slot Text Int
   deriving (Eq, Ord, Show)
 
+-- A formation, an application and a dispatch are the nodes a term is built of,
+-- and each of them carries what has been worked out about the term it heads:
+-- its digest, its size and whether it is inert. They are worked out once per
+-- node, from what its children carry, the first time anybody asks, so a node
+-- shared by many terms, as the objects of the world are, is walked once and
+-- never again. The three nodes are reached through the patterns
+-- 'ExFormation', 'ExApplication' and 'ExDispatch', which build and read them
+-- like constructors and never show what they carry (#1453).
 data Expression
-  = ExFormation [Binding]
+  = Formed Facts [Binding]
   | ExXi
   | ExRoot
   | ExTermination
-  | ExApplication Expression Argument
-  | ExDispatch Expression Attribute
+  | Applied Facts Expression Argument
+  | Dispatched Facts Expression Attribute
   | ExMeta Text
   | ExAny Slot
   | ExPhiMeet (Maybe String) Int Expression
@@ -44,7 +84,115 @@ data Expression
     matcher, builder or the dataization relation.
     -}
     ExBytes Bytes
-  deriving (Eq, Ord, Show, Generic)
+
+-- What is worked out about the term a node heads: its digest (see
+-- 'hashExpression'), the number of nodes it counts (see 'countNodes'),
+-- whether it is inert (see 'inert') and whether its attributes are distinct
+-- (see 'distinct'). The size and the distinctness are worked out only when
+-- asked for, since only a few terms are ever asked for them.
+data Facts = Facts !Int Int !Bool Bool
+
+{-# COMPLETE ExFormation, ExXi, ExRoot, ExTermination, ExApplication, ExDispatch, ExMeta, ExAny, ExPhiMeet, ExPhiAgain, ExBytes #-}
+
+pattern ExFormation :: [Binding] -> Expression
+pattern ExFormation bds <- Formed _ bds
+  where
+    ExFormation bds = cached (`Formed` bds)
+
+pattern ExApplication :: Expression -> Argument -> Expression
+pattern ExApplication expr arg <- Applied _ expr arg
+  where
+    ExApplication expr arg = cached (\facts -> Applied facts expr arg)
+
+pattern ExDispatch :: Expression -> Attribute -> Expression
+pattern ExDispatch expr attr <- Dispatched _ expr attr
+  where
+    ExDispatch expr attr = cached (\facts -> Dispatched facts expr attr)
+
+-- The node made of the given constructor and of what is worked out about the
+-- node itself, which is left to be worked out when first asked for.
+cached :: (Facts -> Expression) -> Expression
+cached node = let term = node (established term) in term
+
+-- What is known about a term: what its top node carries, or what is worked
+-- out on the spot for a term whose top node carries nothing.
+known :: Expression -> Facts
+known (Formed facts _) = facts
+known (Applied facts _ _) = facts
+known (Dispatched facts _ _) = facts
+known term = established term
+
+-- What is worked out about a term from what is known about its children,
+-- without walking any deeper than them.
+established :: Expression -> Facts
+established term = Facts (layer id hashExpression term) (tally term) (calm term) (unrepeated term)
+
+-- Two terms are equal when they are the very same node, or when they are
+-- built alike and hold equal children. Two nodes carrying different digests
+-- are told apart without walking either, and two terms sharing
+-- their children compare the children by identity, so comparing a term with
+-- what a rewriting step made of it costs the part the step rebuilt.
+instance Eq Expression where
+  left == right = isTrue# (reallyUnsafePtrEquality# left right) || congruent left right
+    where
+      congruent :: Expression -> Expression -> Bool
+      congruent (Formed facts bds) (Formed facts' bds') = alongside facts facts' && bds == bds'
+      congruent (Applied facts expr arg) (Applied facts' expr' arg') = alongside facts facts' && expr == expr' && arg == arg'
+      congruent (Dispatched facts expr attr) (Dispatched facts' expr' attr') = alongside facts facts' && attr == attr' && expr == expr'
+      congruent ExXi ExXi = True
+      congruent ExRoot ExRoot = True
+      congruent ExTermination ExTermination = True
+      congruent (ExMeta meta) (ExMeta meta') = meta == meta'
+      congruent (ExAny slot) (ExAny slot') = slot == slot'
+      congruent (ExPhiMeet prefix idx expr) (ExPhiMeet prefix' idx' expr') = prefix == prefix' && idx == idx' && expr == expr'
+      congruent (ExPhiAgain prefix idx expr) (ExPhiAgain prefix' idx' expr') = prefix == prefix' && idx == idx' && expr == expr'
+      congruent (ExBytes bts) (ExBytes bts') = bts == bts'
+      congruent _ _ = False
+      alongside :: Facts -> Facts -> Bool
+      alongside (Facts digest _ _ _) (Facts digest' _ _ _) = digest == digest'
+
+-- Terms are ordered by their constructors, in the order they are declared,
+-- and then by what they hold, never by what is worked out about them.
+instance Ord Expression where
+  compare (ExFormation bds) (ExFormation bds') = compare bds bds'
+  compare (ExApplication expr arg) (ExApplication expr' arg') = compare expr expr' <> compare arg arg'
+  compare (ExDispatch expr attr) (ExDispatch expr' attr') = compare expr expr' <> compare attr attr'
+  compare (ExMeta meta) (ExMeta meta') = compare meta meta'
+  compare (ExAny slot) (ExAny slot') = compare slot slot'
+  compare (ExPhiMeet prefix idx expr) (ExPhiMeet prefix' idx' expr') = compare prefix prefix' <> compare idx idx' <> compare expr expr'
+  compare (ExPhiAgain prefix idx expr) (ExPhiAgain prefix' idx' expr') = compare prefix prefix' <> compare idx idx' <> compare expr expr'
+  compare (ExBytes bts) (ExBytes bts') = compare bts bts'
+  compare left right = compare (rank left) (rank right)
+    where
+      rank :: Expression -> Int
+      rank = \case
+        ExFormation _ -> 0
+        ExXi -> 1
+        ExRoot -> 2
+        ExTermination -> 3
+        ExApplication _ _ -> 4
+        ExDispatch _ _ -> 5
+        ExMeta _ -> 6
+        ExAny _ -> 7
+        ExPhiMeet{} -> 8
+        ExPhiAgain{} -> 9
+        ExBytes _ -> 10
+
+-- A term is shown the way its constructors are written, without what is
+-- worked out about it.
+instance Show Expression where
+  showsPrec prec = \case
+    ExFormation bds -> showParen (prec > 10) (showString "ExFormation " . showsPrec 11 bds)
+    ExXi -> showString "ExXi"
+    ExRoot -> showString "ExRoot"
+    ExTermination -> showString "ExTermination"
+    ExApplication expr arg -> showParen (prec > 10) (showString "ExApplication " . showsPrec 11 expr . showChar ' ' . showsPrec 11 arg)
+    ExDispatch expr attr -> showParen (prec > 10) (showString "ExDispatch " . showsPrec 11 expr . showChar ' ' . showsPrec 11 attr)
+    ExMeta meta -> showParen (prec > 10) (showString "ExMeta " . showsPrec 11 meta)
+    ExAny slot -> showParen (prec > 10) (showString "ExAny " . showsPrec 11 slot)
+    ExPhiMeet prefix idx expr -> showParen (prec > 10) (showString "ExPhiMeet " . showsPrec 11 prefix . showChar ' ' . showsPrec 11 idx . showChar ' ' . showsPrec 11 expr)
+    ExPhiAgain prefix idx expr -> showParen (prec > 10) (showString "ExPhiAgain " . showsPrec 11 prefix . showChar ' ' . showsPrec 11 idx . showChar ' ' . showsPrec 11 expr)
+    ExBytes bts -> showParen (prec > 10) (showString "ExBytes " . showsPrec 11 bts)
 
 data Argument
   = ArTau Attribute Expression
@@ -118,9 +266,12 @@ instance Show Alpha where
 -- A cheap, fixed-size digest of an expression, used for fast (dirty) equality
 -- checks during loop detection. Equal expressions always produce the same
 -- digest, but distinct expressions may collide, so a positive digest match
--- must always be confirmed with a full structural (==) comparison.
+-- must always be confirmed with a full structural (==) comparison. A node
+-- carries its digest, mixed of the digests its children carry, so asking for
+-- it costs nothing once the node has been asked once (#1453).
 hashExpression :: Expression -> Int
-hashExpression = hashWith id
+hashExpression term = case known term of
+  Facts digest _ _ _ -> digest
 
 -- The same digest, blind to which symbol stands where: every symbol is hashed
 -- as the same one, so two terms that are 'alike' always produce the same
@@ -128,7 +279,7 @@ hashExpression = hashWith id
 -- a store of terms compared up to a renaming of symbols, and like
 -- 'hashExpression' a positive match must be confirmed, by 'alike' here.
 hashShape :: Expression -> Int
-hashShape = hashWith (const 0)
+hashShape = layer (const 0) hashShape
 
 -- The same digest again, blind as well to every term the top of a term holds:
 -- a formation is hashed by the names of its attributes, in order, with its data
@@ -151,10 +302,12 @@ hashSkeleton =
     bare (BiTau attr _) = BiTau attr ExXi
     bare binding = binding
 
--- The digest both 'hashExpression' and 'hashShape' compute, with the index of
--- every symbol passed through the given function before it is mixed in.
-hashWith :: (Int -> Int) -> Expression -> Int
-hashWith symbol = goExpr fnvOffset
+-- The digest of the top node of a term, the one both 'hashExpression' and
+-- 'hashShape' compute, with the index of every symbol passed through the first
+-- function before it is mixed in, and every term the node holds mixed in as
+-- the digest the second function gives it.
+layer :: (Int -> Int) -> (Expression -> Int) -> Expression -> Int
+layer symbol child = goExpr fnvOffset
   where
     fnvPrime, fnvOffset :: Int
     fnvPrime = 1099511628211
@@ -177,16 +330,16 @@ hashWith symbol = goExpr fnvOffset
       ExXi -> step h 2
       ExRoot -> step h 3
       ExTermination -> step h 4
-      ExApplication ex arg -> goArgument (goExpr (step h 5) ex) arg
-      ExDispatch ex at -> goAttribute (goExpr (step h 6) ex) at
+      ExApplication ex arg -> goArgument (step (step h 5) (child ex)) arg
+      ExDispatch ex at -> goAttribute (step (step h 6) (child ex)) at
       ExMeta t -> hashText (step h 7) t
       ExAny slot -> goSlot (step h 32) slot
-      ExPhiMeet ms i ex -> goExpr (hashMaybeString (step (step h 9) i) ms) ex
-      ExPhiAgain ms i ex -> goExpr (hashMaybeString (step (step h 10) i) ms) ex
+      ExPhiMeet ms i ex -> step (hashMaybeString (step (step h 9) i) ms) (child ex)
+      ExPhiAgain ms i ex -> step (hashMaybeString (step (step h 10) i) ms) (child ex)
       ExBytes bts -> goBytes (step h 8) bts
     goBinding :: Int -> Binding -> Int
     goBinding h = \case
-      BiTau at ex -> goExpr (goAttribute (step h 11) at) ex
+      BiTau at ex -> step (goAttribute (step h 11) at) (child ex)
       BiDelta bts -> goBytes (step h 12) bts
       BiVoid at -> goAttribute (step h 13) at
       BiLambda fn -> goFunction (step h 14) fn
@@ -210,8 +363,8 @@ hashWith symbol = goExpr fnvOffset
       AtAny slot -> goSlot (step h 35) slot
     goArgument :: Int -> Argument -> Int
     goArgument h = \case
-      ArTau at ex -> goExpr (goAttribute (step h 22) at) ex
-      ArAlpha al ex -> goExpr (goAlpha (step h 30) al) ex
+      ArTau at ex -> step (goAttribute (step h 22) at) (child ex)
+      ArAlpha al ex -> step (goAlpha (step h 30) al) (child ex)
     goAlpha :: Int -> Alpha -> Int
     goAlpha h = \case
       Alpha idx -> step (step h 31) idx
@@ -354,20 +507,120 @@ denoted = goExpr
     goBinding (BiTau AtPhi expr) = maybe [] pure (goExpr expr)
     goBinding _ = []
 
+-- The number of nodes a term counts, which a node carries once asked.
 countNodes :: Expression -> Int
-countNodes (ExFormation bds) = 1 + sum (map nodesInBinding bds) + length bds
+countNodes term = case known term of
+  Facts _ size _ _ -> size
+
+-- The number of nodes a term counts, from the numbers its children count.
+tally :: Expression -> Int
+tally (ExFormation bds) = 1 + sum (map nodesInBinding bds) + length bds
   where
     nodesInBinding :: Binding -> Int
     nodesInBinding (BiTau _ expr) = countNodes expr + 2
     nodesInBinding (BiMeta _) = 1
     nodesInBinding (BiAny _) = 1
     nodesInBinding _ = 3
-countNodes (ExApplication expr (ArTau _ expr')) = 4 + countNodes expr + countNodes expr'
-countNodes (ExApplication expr (ArAlpha _ expr')) = 4 + countNodes expr + countNodes expr'
-countNodes (ExDispatch expr' _) = 2 + countNodes expr'
-countNodes (ExPhiMeet _ _ expr) = countNodes expr
-countNodes (ExPhiAgain _ _ expr) = countNodes expr
-countNodes _ = 1
+tally (ExApplication expr (ArTau _ expr')) = 4 + countNodes expr + countNodes expr'
+tally (ExApplication expr (ArAlpha _ expr')) = 4 + countNodes expr + countNodes expr'
+tally (ExDispatch expr' _) = 2 + countNodes expr'
+tally (ExPhiMeet _ _ expr) = countNodes expr
+tally (ExPhiAgain _ _ expr) = countNodes expr
+tally _ = 1
+
+-- Whether no normalization rule can match anywhere in a term, judged by its
+-- shape alone. Every such rule fires on one of four kinds of places: a
+-- dispatch on a formation, an application of a formation, a dispatch or an
+-- application of ⊥, and a formation holding both λ and Δ. A term is inert
+-- when none of its places is of these kinds and it holds no meta-variable, so
+-- ξ, Φ and ⊥ are inert, a formation is inert when its bodies are and it holds
+-- not both λ and Δ, and a dispatch or an application is inert when its parts
+-- are and its head is neither a formation nor ⊥. It says no more often than
+-- it should, as '⟦ b ↦ ∅ ⟧( b ↦ ξ.x )' is normal but not inert, and that is
+-- safe, since it only ever licenses skipping a term. A node carries the
+-- answer once asked, so a term an earlier normalization produced is known to
+-- be inert without being walked again (#1453).
+inert :: Expression -> Bool
+inert term = case known term of
+  Facts _ _ still _ -> still
+
+-- Whether no two bindings of a formation carry the same attribute, which a
+-- node carries once asked, so an object carried from term to term is checked
+-- once; any other term has no bindings to repeat one (#1453).
+distinct :: Expression -> Bool
+distinct term = case known term of
+  Facts _ _ _ unique -> unique
+
+-- Whether no two bindings of a formation carry the same attribute.
+unrepeated :: Expression -> Bool
+unrepeated (ExFormation bds) = isNothing (repeated bds)
+unrepeated _ = True
+
+-- The first attribute the bindings carry for the second time, if any. The
+-- attributes seen so far are kept by a hash of their names and compared only
+-- when two of them hash alike, which keeps checking a formation of hundreds of
+-- bindings to one pass over them rather than one comparison of names after
+-- another (#1453).
+repeated :: [Binding] -> Maybe Attribute
+repeated = go IntMap.empty
+  where
+    go :: IntMap.IntMap [Attribute] -> [Binding] -> Maybe Attribute
+    go _ [] = Nothing
+    go seen (bd : rest) = case attributeFromBinding bd of
+      Just attr
+        | attr `elem` IntMap.findWithDefault [] (key attr) seen -> Just attr
+        | otherwise -> go (IntMap.insertWith (++) (key attr) [attr] seen) rest
+      Nothing -> go seen rest
+    key :: Attribute -> Int
+    key (AtLabel label) = T.foldl' (\hash char -> (hash `xor` fromEnum char) * 1099511628211) 14695981039 label
+    key (AtMeta meta) = T.length meta
+    key _ = 0
+
+-- Extract attribute from binding
+attributeFromBinding :: Binding -> Maybe Attribute
+attributeFromBinding (BiTau attr _) = Just attr
+attributeFromBinding (BiVoid attr) = Just attr
+attributeFromBinding (BiDelta _) = Just AtDelta
+attributeFromBinding (BiLambda _) = Just AtLambda
+attributeFromBinding (BiMeta _) = Nothing
+attributeFromBinding (BiAny _) = Nothing
+
+-- Whether a term is inert, from whether its children are.
+calm :: Expression -> Bool
+calm = \case
+  ExFormation bds -> settled False False bds
+  ExDispatch expr attr -> inert expr && headless expr && plain attr
+  ExApplication expr (ArTau attr arg) -> inert expr && headless expr && plain attr && inert arg
+  ExApplication expr (ArAlpha (Alpha _) arg) -> inert expr && headless expr && inert arg
+  ExXi -> True
+  ExRoot -> True
+  ExTermination -> True
+  _ -> False
+  where
+    settled :: Bool -> Bool -> [Binding] -> Bool
+    settled _ _ [] = True
+    settled lambda delta (bd : rest) =
+      quiet bd && case bd of
+        BiLambda _ -> not delta && settled True delta rest
+        BiDelta _ -> not lambda && settled lambda True rest
+        _ -> settled lambda delta rest
+    quiet :: Binding -> Bool
+    quiet (BiTau attr expr) = plain attr && inert expr
+    quiet (BiVoid attr) = plain attr
+    quiet (BiDelta (BtMeta _)) = False
+    quiet (BiDelta (BtAny _)) = False
+    quiet (BiDelta _) = True
+    quiet (BiLambda (Function _)) = True
+    quiet (BiLambda (FnSymbol _)) = True
+    quiet _ = False
+    headless :: Expression -> Bool
+    headless (ExFormation _) = False
+    headless ExTermination = False
+    headless _ = True
+    plain :: Attribute -> Bool
+    plain (AtMeta _) = False
+    plain (AtAny _) = False
+    plain _ = True
 
 matchBaseObject :: Expression -> Maybe T.Text
 matchBaseObject (ExDispatch ExRoot (AtLabel label)) = Just label

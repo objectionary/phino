@@ -13,6 +13,7 @@ module ASTSpec where
 import AST
 import Control.Monad (forM_)
 import Data.List (nub, sort)
+import Data.Text qualified as T
 import Test.Hspec (Spec, describe, it, shouldBe, shouldNotBe, shouldSatisfy)
 
 spec :: Spec
@@ -450,3 +451,53 @@ spec = do
                   _ -> Nothing
              in matched `shouldBe` Nothing
       )
+
+  describe "attributeFromBinding" $
+    forM_
+      [ ("BiTau yields its attribute", BiTau AtRho ExRoot, Just AtRho)
+      , ("BiVoid yields its attribute", BiVoid AtPhi, Just AtPhi)
+      , ("BiDelta yields AtDelta", BiDelta BtEmpty, Just AtDelta)
+      , ("BiLambda yields AtLambda", BiLambda (Function "F"), Just AtLambda)
+      , ("BiMeta yields Nothing", BiMeta "B", Nothing)
+      ]
+      (\(desc, binding, expected) -> it desc (attributeFromBinding binding `shouldBe` expected))
+
+  describe "inert" $ do
+    it "takes a formation of dispatches off ξ and Φ for inert" $
+      inert (ExFormation [BiTau (AtLabel "kv") (ExDispatch ExXi (AtLabel "ob")), BiTau (AtLabel "zu") (ExApplication (ExDispatch ExRoot (AtLabel "ny")) (ArTau (AtLabel "q") ExXi)), BiLambda (Function "L_wy")])
+        `shouldBe` True
+    it "does not take a dispatch on a formation for inert" $
+      inert (ExDispatch (ExFormation [BiTau (AtLabel "hm") ExRoot]) (AtLabel "hm")) `shouldBe` False
+    it "does not take an application of ⊥ for inert" $
+      inert (ExApplication ExTermination (ArAlpha (Alpha 2) ExXi)) `shouldBe` False
+    it "does not take a formation holding both λ and Δ for inert" $
+      inert (ExFormation [BiDelta (BtOne "3F"), BiVoid AtRho, BiLambda (Function "L_ep")]) `shouldBe` False
+    it "does not take a formation holding a redex deep inside for inert" $
+      inert (ExFormation [BiTau (AtLabel "ix") (ExFormation [BiTau (AtLabel "gu") (ExDispatch ExTermination (AtLabel "sa"))])]) `shouldBe` False
+    it "does not take a formation holding a binding meta for inert" $
+      inert (ExFormation [BiVoid (AtLabel "ro"), BiMeta "B4"]) `shouldBe` False
+
+  describe "distinct" $ do
+    it "takes a formation of different attributes for distinct" $
+      distinct (ExFormation [BiVoid (AtLabel "ka"), BiTau (AtLabel "ak") ExXi, BiLambda (Function "L_ok")]) `shouldBe` True
+    it "does not take a formation carrying one attribute twice for distinct" $
+      distinct (ExFormation [BiVoid (AtLabel "ka"), BiTau AtPhi ExXi, BiTau (AtLabel "ka") ExRoot]) `shouldBe` False
+
+  describe "repeated" $ do
+    it "finds the attribute the bindings carry for the second time" $
+      repeated [BiVoid (AtLabel "wz"), BiDelta (BtOne "0C"), BiTau (AtLabel "zw") ExXi, BiDelta BtEmpty] `shouldBe` Just AtDelta
+    it "does not find a repeat among hundreds of distinct labels" $
+      repeated [BiVoid (AtLabel (T.pack ('q' : show idx))) | idx <- [3 :: Int, 10 .. 2900]] `shouldBe` Nothing
+
+  describe "Expression equality" $ do
+    it "does not tell apart two formations built apart of the same parts" $
+      ExFormation [BiTau (AtLabel "lu") (ExDispatch ExXi (AtLabel "op")), BiVoid AtRho]
+        `shouldBe` ExFormation [BiTau (AtLabel "lu") (ExDispatch ExXi (AtLabel "op")), BiVoid AtRho]
+    it "tells apart two formations that differ deep inside" $
+      ExFormation [BiTau (AtLabel "lu") (ExDispatch ExXi (AtLabel "op"))]
+        `shouldNotBe` ExFormation [BiTau (AtLabel "lu") (ExDispatch ExXi (AtLabel "po"))]
+
+  describe "Expression Show instance" $
+    it "does not show what a node carries besides its parts" $
+      show (ExApplication (ExDispatch ExXi (AtLabel "yb")) (ArAlpha (Alpha 0) (ExFormation [BiVoid AtRho])))
+        `shouldBe` "ExApplication (ExDispatch ExXi yb) (ArAlpha α0 (ExFormation [BiVoid ρ]))"
