@@ -30,10 +30,12 @@ module Bytes
   , btsToNonFinite
   , nonFiniteOf
   , NonFinite (..)
+  , BytesException (..)
   )
 where
 
 import AST
+import Control.Exception (Exception, throw)
 import Data.Binary.IEEE754
 import Data.Bits (Bits (complement, shiftL, shiftR), (.&.), (.|.))
 import qualified Data.ByteString as B
@@ -47,6 +49,12 @@ import qualified Data.Text.Encoding as T
 import Data.Word (Word64, Word8)
 import Numeric (readHex)
 import Text.Printf (printf)
+
+-- Errors raised while converting malformed byte values.
+data BytesException = InvalidNumberLength Int
+  deriving (Eq, Show)
+
+instance Exception BytesException
 
 -- >>> btsToWord8 BtEmpty
 -- []
@@ -112,7 +120,7 @@ btsToNum :: Bytes -> Either Int Double
 btsToNum hx =
   let bytes = btsToWord8 hx
    in if length bytes /= 8
-        then error $ "Expected 8 bytes for conversion, got " ++ show (length bytes)
+        then throw (InvalidNumberLength (length bytes))
         else
           let word = toWord64BE bytes
               val = wordToDouble word

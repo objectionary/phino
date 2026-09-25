@@ -7,7 +7,8 @@ module BytesSpec where
 
 import AST
 import Bytes
-  ( NonFinite (..)
+  ( BytesException (..)
+  , NonFinite (..)
   , btsAnd
   , btsConcat
   , btsEqual
@@ -99,7 +100,7 @@ spec = do
 
   describe "btsToNum with a byte array that is not 8 bytes long" $
     it "errors out" $
-      evaluate (btsToNum (BtMany ["40", "45"])) `shouldThrow` anyErrorCall
+      evaluate (btsToNum (BtMany ["40", "45"])) `shouldThrow` (== InvalidNumberLength 2)
 
   describe "strToBts" $
     forM_
