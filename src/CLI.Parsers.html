@@ -20,22 +20,22 @@
 </span><span id="line-20"></span><span>
 </span><span id="line-21"></span><span class="annot"><a href="CLI.Parsers.html#validateIntOption"><span class="hs-identifier hs-type">validateIntOption</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/ptprs-pplctv-0.19.0.0-800394bc/share/doc/html/src/Options.Applicative.Types.html#ReadM"><span class="hs-identifier hs-type">ReadM</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span>
 </span><span id="line-22"></span><span id="validateIntOption"><span class="annot"><span class="annottext">validateIntOption :: (Int -&gt; Bool) -&gt; FilePath -&gt; Int -&gt; ReadM Int
-</span><a href="CLI.Parsers.html#validateIntOption"><span class="hs-identifier hs-var hs-var">validateIntOption</span></a></span></span><span> </span><span id="local-6989586621679591552"><span class="annot"><span class="annottext">Int -&gt; Bool
-</span><a href="#local-6989586621679591552"><span class="hs-identifier hs-var">cmp</span></a></span></span><span> </span><span id="local-6989586621679591553"><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621679591553"><span class="hs-identifier hs-var">msg</span></a></span></span><span> </span><span id="local-6989586621679591554"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679591554"><span class="hs-identifier hs-var">num</span></a></span></span><span>
+</span><a href="CLI.Parsers.html#validateIntOption"><span class="hs-identifier hs-var hs-var">validateIntOption</span></a></span></span><span> </span><span id="local-6989586621679593925"><span class="annot"><span class="annottext">Int -&gt; Bool
+</span><a href="#local-6989586621679593925"><span class="hs-identifier hs-var">cmp</span></a></span></span><span> </span><span id="local-6989586621679593926"><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621679593926"><span class="hs-identifier hs-var">msg</span></a></span></span><span> </span><span id="local-6989586621679593927"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679593927"><span class="hs-identifier hs-var">num</span></a></span></span><span>
 </span><span id="line-23"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Bool
-</span><a href="#local-6989586621679591552"><span class="hs-identifier hs-var">cmp</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679591554"><span class="hs-identifier hs-var">num</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; ReadM Int
+</span><a href="#local-6989586621679593925"><span class="hs-identifier hs-var">cmp</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679593927"><span class="hs-identifier hs-var">num</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; ReadM Int
 forall a. a -&gt; ReadM a
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679591554"><span class="hs-identifier hs-var">num</span></a></span><span>
+</span><a href="#local-6989586621679593927"><span class="hs-identifier hs-var">num</span></a></span><span>
 </span><span id="line-24"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
 </span><span class="hs-identifier hs-var">otherwise</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; ReadM Int
 forall a. FilePath -&gt; ReadM a
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/ptprs-pplctv-0.19.0.0-800394bc/share/doc/html/src/Options.Applicative.Types.html#readerError"><span class="hs-identifier hs-var">readerError</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621679591553"><span class="hs-identifier hs-var">msg</span></a></span><span>
+</span><a href="#local-6989586621679593926"><span class="hs-identifier hs-var">msg</span></a></span><span>
 </span><span id="line-25"></span><span>
 </span><span id="line-26"></span><span class="annot"><a href="CLI.Parsers.html#optLogLevel"><span class="hs-identifier hs-type">optLogLevel</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/ptprs-pplctv-0.19.0.0-800394bc/share/doc/html/src/Options.Applicative.Types.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="annot"><a href="Logger.html#LogLevel"><span class="hs-identifier hs-type">LogLevel</span></a></span><span>
 </span><span id="line-27"></span><span id="optLogLevel"><span class="annot"><span class="annottext">optLogLevel :: Parser LogLevel
@@ -44,7 +44,7 @@ forall a. FilePath -&gt; ReadM a
 forall a. ReadM a -&gt; Mod OptionFields a -&gt; Parser a
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/ptprs-pplctv-0.19.0.0-800394bc/share/doc/html/src/Options.Applicative.Builder.html#option"><span class="hs-identifier hs-var">option</span></a></span><span>
 </span><span id="line-29"></span><span>    </span><span class="annot"><span class="annottext">ReadM LogLevel
-</span><a href="#local-6989586621679591558"><span class="hs-identifier hs-var">parseLogLevel</span></a></span><span>
+</span><a href="#local-6989586621679593931"><span class="hs-identifier hs-var">parseLogLevel</span></a></span><span>
 </span><span id="line-30"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; Mod OptionFields LogLevel
 forall (f :: * -&gt; *) a. HasName f =&gt; FilePath -&gt; Mod f a
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/ptprs-pplctv-0.19.0.0-800394bc/share/doc/html/src/Options.Applicative.Builder.html#long"><span class="hs-identifier hs-var">long</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath
@@ -93,19 +93,19 @@ forall a (f :: * -&gt; *). Show a =&gt; Mod f a
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/ptprs-pplctv-0.19.0.0-800394bc/share/doc/html/src/Options.Applicative.Builder.html#showDefault"><span class="hs-identifier hs-var">showDefault</span></a></span><span>
 </span><span id="line-35"></span><span>    </span><span class="hs-special">)</span><span>
 </span><span id="line-36"></span><span>  </span><span class="hs-keyword">where</span><span>
-</span><span id="line-37"></span><span>    </span><span class="annot"><a href="#local-6989586621679591558"><span class="hs-identifier hs-type">parseLogLevel</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/ptprs-pplctv-0.19.0.0-800394bc/share/doc/html/src/Options.Applicative.Types.html#ReadM"><span class="hs-identifier hs-type">ReadM</span></a></span><span> </span><span class="annot"><a href="Logger.html#LogLevel"><span class="hs-identifier hs-type">LogLevel</span></a></span><span>
-</span><span id="line-38"></span><span>    </span><span id="local-6989586621679591558"><span class="annot"><span class="annottext">parseLogLevel :: ReadM LogLevel
-</span><a href="#local-6989586621679591558"><span class="hs-identifier hs-var hs-var">parseLogLevel</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(FilePath -&gt; Either FilePath LogLevel) -&gt; ReadM LogLevel
+</span><span id="line-37"></span><span>    </span><span class="annot"><a href="#local-6989586621679593931"><span class="hs-identifier hs-type">parseLogLevel</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/ptprs-pplctv-0.19.0.0-800394bc/share/doc/html/src/Options.Applicative.Types.html#ReadM"><span class="hs-identifier hs-type">ReadM</span></a></span><span> </span><span class="annot"><a href="Logger.html#LogLevel"><span class="hs-identifier hs-type">LogLevel</span></a></span><span>
+</span><span id="line-38"></span><span>    </span><span id="local-6989586621679593931"><span class="annot"><span class="annottext">parseLogLevel :: ReadM LogLevel
+</span><a href="#local-6989586621679593931"><span class="hs-identifier hs-var hs-var">parseLogLevel</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(FilePath -&gt; Either FilePath LogLevel) -&gt; ReadM LogLevel
 forall a. (FilePath -&gt; Either FilePath a) -&gt; ReadM a
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/ptprs-pplctv-0.19.0.0-800394bc/share/doc/html/src/Options.Applicative.Builder.html#eitherReader"><span class="hs-identifier hs-var">eitherReader</span></a></span><span> </span><span class="annot"><span class="annottext">((FilePath -&gt; Either FilePath LogLevel) -&gt; ReadM LogLevel)
 -&gt; (FilePath -&gt; Either FilePath LogLevel) -&gt; ReadM LogLevel
 forall a b. (a -&gt; b) -&gt; a -&gt; b
-</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679591569"><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621679591569"><span class="hs-identifier hs-var">lvl</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">(Char -&gt; Char) -&gt; FilePath -&gt; FilePath
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679593942"><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621679593942"><span class="hs-identifier hs-var">lvl</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">(Char -&gt; Char) -&gt; FilePath -&gt; FilePath
 forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
 </span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="annot"><span class="annottext">Char -&gt; Char
 </span><span class="hs-identifier hs-var">toUpper</span></span><span> </span><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621679591569"><span class="hs-identifier hs-var">lvl</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><a href="#local-6989586621679593942"><span class="hs-identifier hs-var">lvl</span></a></span><span> </span><span class="hs-keyword">of</span><span>
 </span><span id="line-39"></span><span>      </span><span class="annot"><span class="annottext">FilePath
 </span><span class="hs-string">&quot;DEBUG&quot;</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">LogLevel -&gt; Either FilePath LogLevel
 forall a b. b -&gt; Either a b
@@ -136,7 +136,7 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-string">&quot;unknown log-level: &quot;</span></span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; FilePath -&gt; FilePath
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621679591569"><span class="hs-identifier hs-var">lvl</span></a></span><span>
+</span><a href="#local-6989586621679593942"><span class="hs-identifier hs-var">lvl</span></a></span><span>
 </span><span id="line-44"></span><span>
 </span><span id="line-45"></span><span class="annot"><a href="CLI.Parsers.html#optLogLines"><span class="hs-identifier hs-type">optLogLines</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/ptprs-pplctv-0.19.0.0-800394bc/share/doc/html/src/Options.Applicative.Types.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span>
 </span><span id="line-46"></span><span id="optLogLines"><span class="annot"><span class="annottext">optLogLines :: Parser Int
@@ -243,19 +243,19 @@ forall a (f :: * -&gt; *). Show a =&gt; Mod f a
 </span><span id="line-56"></span><span>
 </span><span id="line-57"></span><span class="annot"><a href="CLI.Parsers.html#parseIOFormat"><span class="hs-identifier hs-type">parseIOFormat</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/ptprs-pplctv-0.19.0.0-800394bc/share/doc/html/src/Options.Applicative.Types.html#ReadM"><span class="hs-identifier hs-type">ReadM</span></a></span><span> </span><span class="annot"><a href="CLI.Types.html#IOFormat"><span class="hs-identifier hs-type">IOFormat</span></a></span><span>
 </span><span id="line-58"></span><span id="parseIOFormat"><span class="annot"><span class="annottext">parseIOFormat :: FilePath -&gt; ReadM IOFormat
-</span><a href="CLI.Parsers.html#parseIOFormat"><span class="hs-identifier hs-var hs-var">parseIOFormat</span></a></span></span><span> </span><span id="local-6989586621679591578"><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621679591578"><span class="hs-identifier hs-var">type'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(FilePath -&gt; Either FilePath IOFormat) -&gt; ReadM IOFormat
+</span><a href="CLI.Parsers.html#parseIOFormat"><span class="hs-identifier hs-var hs-var">parseIOFormat</span></a></span></span><span> </span><span id="local-6989586621679593951"><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621679593951"><span class="hs-identifier hs-var">type'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(FilePath -&gt; Either FilePath IOFormat) -&gt; ReadM IOFormat
 forall a. (FilePath -&gt; Either FilePath a) -&gt; ReadM a
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/ptprs-pplctv-0.19.0.0-800394bc/share/doc/html/src/Options.Applicative.Builder.html#eitherReader"><span class="hs-identifier hs-var">eitherReader</span></a></span><span> </span><span class="annot"><span class="annottext">((FilePath -&gt; Either FilePath IOFormat) -&gt; ReadM IOFormat)
 -&gt; (FilePath -&gt; Either FilePath IOFormat) -&gt; ReadM IOFormat
 forall a b. (a -&gt; b) -&gt; a -&gt; b
-</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679591579"><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621679591579"><span class="hs-identifier hs-var">format</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Char -&gt; Char) -&gt; FilePath -&gt; FilePath
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679593952"><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621679593952"><span class="hs-identifier hs-var">format</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Char -&gt; Char) -&gt; FilePath -&gt; FilePath
 forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
 </span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="annot"><span class="annottext">Char -&gt; Char
 </span><span class="hs-identifier hs-var">toLower</span></span><span> </span><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621679591579"><span class="hs-identifier hs-var">format</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621679591578"><span class="hs-identifier hs-var">type'</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">of</span><span>
+</span><a href="#local-6989586621679593952"><span class="hs-identifier hs-var">format</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621679593951"><span class="hs-identifier hs-var">type'</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">of</span><span>
 </span><span id="line-59"></span><span>  </span><span class="hs-special">(</span><span class="annot"><span class="annottext">FilePath
 </span><span class="hs-string">&quot;xmir&quot;</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">FilePath
 </span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">IOFormat -&gt; Either FilePath IOFormat
@@ -281,8 +281,8 @@ forall a b. a -&gt; Either a b
 forall r. PrintfType r =&gt; FilePath -&gt; r
 </span><span class="hs-identifier hs-var">printf</span></span><span> </span><span class="annot"><span class="annottext">FilePath
 </span><span class="hs-string">&quot;The value '%s' can't be used for '--%s' option, use --help to check possible values&quot;</span></span><span> </span><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621679591579"><span class="hs-identifier hs-var">format</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621679591578"><span class="hs-identifier hs-var">type'</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679593952"><span class="hs-identifier hs-var">format</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621679593951"><span class="hs-identifier hs-var">type'</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-63"></span><span>
 </span><span id="line-64"></span><span class="annot"><a href="CLI.Parsers.html#optOutputFormat"><span class="hs-identifier hs-type">optOutputFormat</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/ptprs-pplctv-0.19.0.0-800394bc/share/doc/html/src/Options.Applicative.Types.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="annot"><a href="CLI.Types.html#IOFormat"><span class="hs-identifier hs-type">IOFormat</span></a></span><span>
 </span><span id="line-65"></span><span id="optOutputFormat"><span class="annot"><span class="annottext">optOutputFormat :: Parser IOFormat
@@ -1057,7 +1057,7 @@ forall (f :: * -&gt; *) a. Alternative f =&gt; f a -&gt; f (Maybe a)
 </span><span class="hs-identifier hs-var">optional</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">ReadM Acyclic -&gt; Mod OptionFields Acyclic -&gt; Parser Acyclic
 forall a. ReadM a -&gt; Mod OptionFields a -&gt; Parser a
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/ptprs-pplctv-0.19.0.0-800394bc/share/doc/html/src/Options.Applicative.Builder.html#option"><span class="hs-identifier hs-var">option</span></a></span><span> </span><span class="annot"><span class="annottext">ReadM Acyclic
-</span><a href="#local-6989586621679591620"><span class="hs-identifier hs-var">parseAcyclic</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">FilePath -&gt; Mod OptionFields Acyclic
+</span><a href="#local-6989586621679593993"><span class="hs-identifier hs-var">parseAcyclic</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">FilePath -&gt; Mod OptionFields Acyclic
 forall (f :: * -&gt; *) a. HasName f =&gt; FilePath -&gt; Mod f a
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/ptprs-pplctv-0.19.0.0-800394bc/share/doc/html/src/Options.Applicative.Builder.html#long"><span class="hs-identifier hs-var">long</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath
 </span><span class="hs-string">&quot;acyclic&quot;</span></span><span> </span><span class="annot"><span class="annottext">Mod OptionFields Acyclic
@@ -1074,15 +1074,15 @@ forall (f :: * -&gt; *) a. FilePath -&gt; Mod f a
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/ptprs-pplctv-0.19.0.0-800394bc/share/doc/html/src/Options.Applicative.Builder.html#help"><span class="hs-identifier hs-var">help</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath
 </span><span class="hs-string">&quot;Stop reducing as soon as the reduction enters a formation it is already inside (fires its &#955; function or dataizes its &#966; body again) instead of going round until --max-steps runs out, and leave the term in place the way --partial leaves a &#955; function that cannot fire; 'proven' takes it for the same one up to a renaming of symbols, 'plausible' also when it holds the earlier one under wrappers it gained, such as a growing accumulator&quot;</span></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
 </span><span id="line-222"></span><span>  </span><span class="hs-keyword">where</span><span>
-</span><span id="line-223"></span><span>    </span><span class="annot"><a href="#local-6989586621679591620"><span class="hs-identifier hs-type">parseAcyclic</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/ptprs-pplctv-0.19.0.0-800394bc/share/doc/html/src/Options.Applicative.Types.html#ReadM"><span class="hs-identifier hs-type">ReadM</span></a></span><span> </span><span class="annot"><a href="Deps.html#Acyclic"><span class="hs-identifier hs-type">Acyclic</span></a></span><span>
-</span><span id="line-224"></span><span>    </span><span id="local-6989586621679591620"><span class="annot"><span class="annottext">parseAcyclic :: ReadM Acyclic
-</span><a href="#local-6989586621679591620"><span class="hs-identifier hs-var hs-var">parseAcyclic</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(FilePath -&gt; Either FilePath Acyclic) -&gt; ReadM Acyclic
+</span><span id="line-223"></span><span>    </span><span class="annot"><a href="#local-6989586621679593993"><span class="hs-identifier hs-type">parseAcyclic</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/ptprs-pplctv-0.19.0.0-800394bc/share/doc/html/src/Options.Applicative.Types.html#ReadM"><span class="hs-identifier hs-type">ReadM</span></a></span><span> </span><span class="annot"><a href="Deps.html#Acyclic"><span class="hs-identifier hs-type">Acyclic</span></a></span><span>
+</span><span id="line-224"></span><span>    </span><span id="local-6989586621679593993"><span class="annot"><span class="annottext">parseAcyclic :: ReadM Acyclic
+</span><a href="#local-6989586621679593993"><span class="hs-identifier hs-var hs-var">parseAcyclic</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(FilePath -&gt; Either FilePath Acyclic) -&gt; ReadM Acyclic
 forall a. (FilePath -&gt; Either FilePath a) -&gt; ReadM a
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/ptprs-pplctv-0.19.0.0-800394bc/share/doc/html/src/Options.Applicative.Builder.html#eitherReader"><span class="hs-identifier hs-var">eitherReader</span></a></span><span> </span><span class="annot"><span class="annottext">((FilePath -&gt; Either FilePath Acyclic) -&gt; ReadM Acyclic)
 -&gt; (FilePath -&gt; Either FilePath Acyclic) -&gt; ReadM Acyclic
 forall a b. (a -&gt; b) -&gt; a -&gt; b
-</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679591621"><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621679591621"><span class="hs-identifier hs-var">mode</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">(Acyclic -&gt; Bool) -&gt; [Acyclic] -&gt; [Acyclic]
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679593994"><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621679593994"><span class="hs-identifier hs-var">mode</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">(Acyclic -&gt; Bool) -&gt; [Acyclic] -&gt; [Acyclic]
 forall a. (a -&gt; Bool) -&gt; [a] -&gt; [a]
 </span><span class="hs-identifier hs-var">filter</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="annot"><span class="annottext">FilePath -&gt; FilePath -&gt; Bool
 forall a. Eq a =&gt; a -&gt; a -&gt; Bool
@@ -1090,7 +1090,7 @@ forall a. Eq a =&gt; a -&gt; a -&gt; Bool
 forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
 </span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="annot"><span class="annottext">Char -&gt; Char
 </span><span class="hs-identifier hs-var">toLower</span></span><span> </span><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621679591621"><span class="hs-identifier hs-var">mode</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(FilePath -&gt; Bool) -&gt; (Acyclic -&gt; FilePath) -&gt; Acyclic -&gt; Bool
+</span><a href="#local-6989586621679593994"><span class="hs-identifier hs-var">mode</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(FilePath -&gt; Bool) -&gt; (Acyclic -&gt; FilePath) -&gt; Acyclic -&gt; Bool
 forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
 </span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">Acyclic -&gt; FilePath
 </span><a href="Deps.html#certainty"><span class="hs-identifier hs-var">certainty</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Acyclic
@@ -1098,19 +1098,19 @@ forall a. Bounded a =&gt; a
 </span><span class="hs-identifier hs-var">minBound</span></span><span> </span><span class="hs-glyph">..</span><span> </span><span class="annot"><span class="annottext">Acyclic
 forall a. Bounded a =&gt; a
 </span><span class="hs-identifier hs-var">maxBound</span></span><span class="hs-special">]</span><span> </span><span class="hs-keyword">of</span><span>
-</span><span id="line-225"></span><span>      </span><span id="local-6989586621679591625"><span class="annot"><span class="annottext">Acyclic
-</span><a href="#local-6989586621679591625"><span class="hs-identifier hs-var">found</span></a></span></span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span class="annot"><span class="annottext">[Acyclic]
+</span><span id="line-225"></span><span>      </span><span id="local-6989586621679593998"><span class="annot"><span class="annottext">Acyclic
+</span><a href="#local-6989586621679593998"><span class="hs-identifier hs-var">found</span></a></span></span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span class="annot"><span class="annottext">[Acyclic]
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Acyclic -&gt; Either FilePath Acyclic
 forall a b. b -&gt; Either a b
 </span><span class="hs-identifier hs-var">Right</span></span><span> </span><span class="annot"><span class="annottext">Acyclic
-</span><a href="#local-6989586621679591625"><span class="hs-identifier hs-var">found</span></a></span><span>
+</span><a href="#local-6989586621679593998"><span class="hs-identifier hs-var">found</span></a></span><span>
 </span><span id="line-226"></span><span>      </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; Either FilePath Acyclic
 forall a b. a -&gt; Either a b
 </span><span class="hs-identifier hs-var">Left</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">FilePath -&gt; FilePath -&gt; FilePath
 forall r. PrintfType r =&gt; FilePath -&gt; r
 </span><span class="hs-identifier hs-var">printf</span></span><span> </span><span class="annot"><span class="annottext">FilePath
 </span><span class="hs-string">&quot;The value '%s' can't be used for '--acyclic' option, use --help to check possible values&quot;</span></span><span> </span><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621679591621"><span class="hs-identifier hs-var">mode</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679593994"><span class="hs-identifier hs-var">mode</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-227"></span><span>
 </span><span id="line-228"></span><span class="hs-comment">-- Which &#955; functions this run may fire. phino implements none of them itself</span><span>
 </span><span id="line-229"></span><span class="hs-comment">-- (see 'Lambdas'), so without this option every &#955; function a program names gets</span><span>
@@ -7693,18 +7693,18 @@ forall (f :: * -&gt; *) a. Alternative f =&gt; f a -&gt; f (Maybe a)
 </span><a href="CLI.Types.html#PinVersion"><span class="hs-identifier hs-var">PinVersion</span></a></span><span> </span><span class="annot"><span class="annottext">(FilePath -&gt; Pin) -&gt; Parser FilePath -&gt; Parser Pin
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser FilePath
-</span><a href="#local-6989586621679591673"><span class="hs-identifier hs-var">literal</span></a></span><span> </span><span class="annot"><span class="annottext">Parser Pin -&gt; Parser Pin -&gt; Parser Pin
+</span><a href="#local-6989586621679594046"><span class="hs-identifier hs-var">literal</span></a></span><span> </span><span class="annot"><span class="annottext">Parser Pin -&gt; Parser Pin -&gt; Parser Pin
 forall a. Parser a -&gt; Parser a -&gt; Parser a
 forall (f :: * -&gt; *) a. Alternative f =&gt; f a -&gt; f a -&gt; f a
 </span><span class="hs-operator hs-var">&lt;|&gt;</span></span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; Pin
 </span><a href="CLI.Types.html#PinFile"><span class="hs-identifier hs-var">PinFile</span></a></span><span> </span><span class="annot"><span class="annottext">(FilePath -&gt; Pin) -&gt; Parser FilePath -&gt; Parser Pin
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser FilePath
-</span><a href="#local-6989586621679591676"><span class="hs-identifier hs-var">file</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679594049"><span class="hs-identifier hs-var">file</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-524"></span><span>  </span><span class="hs-keyword">where</span><span>
-</span><span id="line-525"></span><span>    </span><span class="annot"><a href="#local-6989586621679591673"><span class="hs-identifier hs-type">literal</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/ptprs-pplctv-0.19.0.0-800394bc/share/doc/html/src/Options.Applicative.Types.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
-</span><span id="line-526"></span><span>    </span><span id="local-6989586621679591673"><span class="annot"><span class="annottext">literal :: Parser FilePath
-</span><a href="#local-6989586621679591673"><span class="hs-identifier hs-var hs-var">literal</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-525"></span><span>    </span><span class="annot"><a href="#local-6989586621679594046"><span class="hs-identifier hs-type">literal</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/ptprs-pplctv-0.19.0.0-800394bc/share/doc/html/src/Options.Applicative.Types.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
+</span><span id="line-526"></span><span>    </span><span id="local-6989586621679594046"><span class="annot"><span class="annottext">literal :: Parser FilePath
+</span><a href="#local-6989586621679594046"><span class="hs-identifier hs-var hs-var">literal</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-527"></span><span>      </span><span class="annot"><span class="annottext">Mod OptionFields FilePath -&gt; Parser FilePath
 forall s. IsString s =&gt; Mod OptionFields s -&gt; Parser s
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/ptprs-pplctv-0.19.0.0-800394bc/share/doc/html/src/Options.Applicative.Builder.html#strOption"><span class="hs-identifier hs-var">strOption</span></a></span><span>
@@ -7727,9 +7727,9 @@ forall (f :: * -&gt; *) a. FilePath -&gt; Mod f a
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/ptprs-pplctv-0.19.0.0-800394bc/share/doc/html/src/Options.Applicative.Builder.html#help"><span class="hs-identifier hs-var">help</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath
 </span><span class="hs-string">&quot;Fail if this version doesn't match the version of phino&quot;</span></span><span>
 </span><span id="line-531"></span><span>        </span><span class="hs-special">)</span><span>
-</span><span id="line-532"></span><span>    </span><span class="annot"><a href="#local-6989586621679591676"><span class="hs-identifier hs-type">file</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/ptprs-pplctv-0.19.0.0-800394bc/share/doc/html/src/Options.Applicative.Types.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">FilePath</span></span><span>
-</span><span id="line-533"></span><span>    </span><span id="local-6989586621679591676"><span class="annot"><span class="annottext">file :: Parser FilePath
-</span><a href="#local-6989586621679591676"><span class="hs-identifier hs-var hs-var">file</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-532"></span><span>    </span><span class="annot"><a href="#local-6989586621679594049"><span class="hs-identifier hs-type">file</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/ptprs-pplctv-0.19.0.0-800394bc/share/doc/html/src/Options.Applicative.Types.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">FilePath</span></span><span>
+</span><span id="line-533"></span><span>    </span><span id="local-6989586621679594049"><span class="annot"><span class="annottext">file :: Parser FilePath
+</span><a href="#local-6989586621679594049"><span class="hs-identifier hs-var hs-var">file</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-534"></span><span>      </span><span class="annot"><span class="annottext">Mod OptionFields FilePath -&gt; Parser FilePath
 forall s. IsString s =&gt; Mod OptionFields s -&gt; Parser s
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/ptprs-pplctv-0.19.0.0-800394bc/share/doc/html/src/Options.Applicative.Builder.html#strOption"><span class="hs-identifier hs-var">strOption</span></a></span><span>
