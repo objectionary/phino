@@ -84,13 +84,13 @@ _contextualize _ _ = throwIO (userError "Function contextualize() requires exact
 -- avoid-set seeded at the start of the run, so no collision list is needed.
 -- The function takes no arguments and rejects any extras so rule mistakes are
 -- not silently accepted.
--- The name the formation of the first argument goes by in the world of the
--- second, or the formation itself where it has none (see 'pathOf'). Where no
+-- The name the formation of the second argument goes by in the world of the
+-- first, or the formation itself where it has none (see 'pathOf'). Where no
 -- world is known — the 'rewrite' command, and 'isNF' asking about a term on
--- its own — the second argument binds nothing, and the formation is answered
+-- its own — the first argument binds nothing, and the formation is answered
 -- as it is, exactly as 'dot' answered before any object of the world had a name.
 _nameOf :: BuildTermMethod
-_nameOf [Y.ArgExpression expr, Y.ArgExpression universe] subst = do
+_nameOf [Y.ArgExpression universe, Y.ArgExpression expr] subst = do
   form <- buildExpressionThrows expr subst
   pure (TeExpression (either (const form) (`pathOf` form) (buildExpression universe subst)))
 _nameOf _ _ = throwIO (userError "Function named() requires exactly 2 arguments as expression")

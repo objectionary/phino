@@ -52,5 +52,5 @@ where:
   - meta: 𝑒3
     function: named
     args:
-      - ⟦𝐵1, 𝜏1 ↦ 𝑛1, 𝐵2⟧
       - 𝑒1
+      - ⟦𝐵1, 𝜏1 ↦ 𝑛1, 𝐵2⟧

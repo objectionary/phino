@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 # SPDX-License-Identifier: MIT
 ---
+# yamllint disable rule:line-length
 # Two firings down a chain of dispatches: each mints a symbol of its own, and
 # the operand of the second is the answer of the first, which the protocol
 # names rather than brings down again — every symbol answers the same datum.

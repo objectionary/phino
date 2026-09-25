@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 # SPDX-License-Identifier: MIT
 ---
+# yamllint disable rule:line-length
 # A program that does not loop answers the same with '_acyclic' as without it.
 # The guard remembers the terms the frames above have open, so only a genuine
 # return to one of them trips it; a term merely reduced twice in two places

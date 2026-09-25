@@ -316,9 +316,12 @@ instance Render EXTRA where
   -- trailing arguments. This is a one-off application binding only 'meta', so the
   -- returned state is dropped (the engine discards it too, see 'execBuildTerm').
   render EXTRA{func = "morph", ..} = render meta <> " \\coloneqq \\phinoMorph{ " <> T.intercalate ", " (map render args) <> " }{ e }{ s_1 }"
+  -- The name a formation goes by in the universe 'e': the universe and the
+  -- formation the name stands for each get an argument of their own, so a rule
+  -- can show both the world the name is looked up in and what it replaces.
+  render EXTRA{func = "named", args = [universe, form], ..} = render meta <> " \\coloneqq \\phinoNamed{ " <> render universe <> " }{ " <> render form <> " }"
   render EXTRA{..} = render meta <> " \\coloneqq " <> macro func <> "{ " <> T.intercalate ", " (map render args) <> " }"
     where
       macro :: String -> Text
       macro "evaluate" = "\\phinoEvaluate"
-      macro "named" = "\\phinoNamed"
       macro name = "\\" <> T.pack name
