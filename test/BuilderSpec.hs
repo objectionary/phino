@@ -253,3 +253,10 @@ spec = do
         (ExApplication ExRoot (ArTau AtRho (ExFormation [BiVoid AtRho])))
         substEmpty
         `shouldBe` Right ExRoot
+
+  describe "pathOf" $
+    it "names the world itself as Φ" $
+      pathOf
+        (ExFormation [BiTau (AtLabel "qwv") (ExFormation [BiVoid AtRho]), BiLambda (Function "Kzr")])
+        (ExFormation [BiTau (AtLabel "qwv") (ExFormation [BiVoid AtRho]), BiLambda (Function "Kzr")])
+        `shouldBe` ExRoot

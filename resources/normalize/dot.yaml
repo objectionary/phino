@@ -10,38 +10,29 @@
 # ⟦…, 𝜏1 ↦ 𝑛1, …⟧.𝜏1 term and looping forever. ρ on line 'result' still binds
 # the full formation, so sibling and φ-decoration references stay intact — only
 # the self-ξ path narrows, keeping normalization (near-)total.
-# The formation the dispatch stands on is the whole program here and not a part
-# of it; the 'dotg' sibling writes that one, and the two together cover every
-# dispatch this one covered alone. Where no universe is known — the 'rewrite'
-# command, and 'isNF' asking about a term on its own — 𝑒1 binds nothing, the
-# guard cannot hold, and this rule answers every dispatch as it always did.
-# Neither rule dispatches on a formation holding both λ and Δ: 'dl' says such a
-# formation is ⊥, and carrying it out into ρ would leave a ρ ↦ ⊥ in a normal
-# form that 'dl' firing first reduces to ⊥ outright, so the answer would hang
-# on rule order (#1395).
-# The ρ carries the name of the formation where it has one: a formation reached
-# as 'Φ.number', or as 'Φ.number( φ ↦ 𝑘 )', is an object of the immutable world
-# and the 'named' function writes that path back instead of the object, the
-# way 'dotg' writes Φ, so a dispatch off it does not copy every method the
-# object declares into the term (#1446). Where it has none, or no universe is
-# known, 'named' answers with the formation itself and the ρ holds it as it
-# always did.
+# The rule does not dispatch on a formation holding both λ and Δ: 'dl' says
+# such a formation is ⊥, and carrying it out into ρ would leave a ρ ↦ ⊥ in a
+# normal form that 'dl' firing first reduces to ⊥ outright, so the answer would
+# hang on rule order (#1395).
+# The ρ carries the name of the formation where it has one: the whole program
+# is 'Φ', and a formation reached as 'Φ.number', or as 'Φ.number( φ ↦ 𝑘 )', is
+# an object of the immutable world, so the 'named' function writes that name
+# back instead of the object, and a dispatch off it does not copy the program
+# or every method the object declares into the term (#1318, #1446). The world
+# 'named' looks the name up in is 𝑒1. Where the formation has no name, or no
+# world is known — the 'rewrite' command, and 'isNF' asking about a term on its
+# own — 'named' answers with the formation itself and the ρ holds it.
 name: dot
 pattern: ⟦𝐵1, 𝜏1 ↦ 𝑛1, 𝐵2⟧.𝜏1
 e-match: 𝑒1
 when:
-  and:
-    - not:
-        eq:
-          - ⟦𝐵1, 𝜏1 ↦ 𝑛1, 𝐵2⟧
-          - 𝑒1
-    - or:
-        - disjoint:
-            - [λ]
-            - [𝐵1, 𝐵2]
-        - disjoint:
-            - [Δ]
-            - [𝐵1, 𝐵2]
+  or:
+    - disjoint:
+        - [λ]
+        - [𝐵1, 𝐵2]
+    - disjoint:
+        - [Δ]
+        - [𝐵1, 𝐵2]
 result: 𝑒2(ρ ↦ 𝑒3)
 where:
   - meta: 𝑒2
