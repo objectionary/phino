@@ -184,3 +184,53 @@ matchExpressionDeep ptn tgt =
 
 matchExpression :: MatchExpressionFunc
 matchExpression = matchExpressionDeep
+
+-- Whether the pattern could match at some place of the target where the deep
+-- matcher looks, judged by the shape of each place alone: the constructors
+-- down the head of the pattern, the attribute a dispatch or an application
+-- names, and the kinds of bindings a formation of the pattern asks for. It
+-- never says no where 'matchExpressionDeep' would find a match, and it walks
+-- the target once without building a single substitution, so a rule whose
+-- pattern fits nowhere in a term is told so without the deep matcher trying
+-- it at every place of that term (#1453).
+reachable :: Expression -> Expression -> Bool
+reachable ptn = go
+  where
+    go :: Expression -> Bool
+    go tgt =
+      fits ptn tgt || case tgt of
+        ExFormation bds -> any inside bds
+        ExDispatch expr _ -> go expr
+        ExApplication expr (ArTau _ arg) -> go expr || go arg
+        ExApplication expr (ArAlpha _ arg) -> go expr || go arg
+        _ -> False
+    inside :: Binding -> Bool
+    inside (BiTau _ expr) = go expr
+    inside _ = False
+    fits :: Expression -> Expression -> Bool
+    fits (ExMeta _) _ = True
+    fits (ExAny _) _ = True
+    fits ExXi ExXi = True
+    fits ExRoot ExRoot = True
+    fits ExTermination ExTermination = True
+    fits (ExFormation pbs) (ExFormation tbs) = all (\pbd -> loose pbd || any (kin pbd) tbs) pbs
+    fits (ExDispatch pexp pattr) (ExDispatch texp tattr) = same pattr tattr && fits pexp texp
+    fits (ExApplication pexp (ArTau pattr _)) (ExApplication texp (ArTau tattr _)) = same pattr tattr && fits pexp texp
+    fits (ExApplication pexp (ArAlpha _ _)) (ExApplication texp (ArAlpha _ _)) = fits pexp texp
+    fits (ExPhiAgain{}) (ExPhiAgain{}) = True
+    fits (ExPhiMeet{}) (ExPhiMeet{}) = True
+    fits _ _ = False
+    loose :: Binding -> Bool
+    loose (BiMeta _) = True
+    loose (BiAny _) = True
+    loose _ = False
+    kin :: Binding -> Binding -> Bool
+    kin (BiTau pattr _) (BiTau tattr _) = same pattr tattr
+    kin (BiVoid pattr) (BiVoid tattr) = same pattr tattr
+    kin (BiLambda _) (BiLambda _) = True
+    kin (BiDelta _) (BiDelta _) = True
+    kin _ _ = False
+    same :: Attribute -> Attribute -> Bool
+    same (AtMeta _) _ = True
+    same (AtAny _) _ = True
+    same pattr tattr = pattr == tattr
