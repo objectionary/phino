@@ -1641,7 +1641,7 @@ name four captures the result never mentions, while `⟦ 𝜏1 ↦ 𝑒1, 𝜏1 
 would be rejected as a duplicated attribute.
 
 Nothing can refer to an anonymous meta, since it has no name to be referred to
-by. Writing one outside a `pattern` (or the `match`, `e-match` and `c-match` of
+by. Writing one outside a `pattern` (or the `match`, `universe` and `c-match` of
 an inference rule) is a mistake in the rule and is reported as the rule loads.
 
 A positional (α) application argument is written as `α0`, `~0` (ASCII), or

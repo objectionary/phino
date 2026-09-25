@@ -3,5 +3,5 @@
 ---
 name: dead
 match: ⊥
-e-match: 𝑒1
-n-result: ⊥
+universe: 𝑒1
+conclusion: ⊥

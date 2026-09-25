@@ -421,7 +421,7 @@ explainRule rule =
     joinedConditions (Just first) (Just second) = Just (Y.And [first, second])
 
 -- Render a morphing rule as a LaTeX inference rule: each premise becomes a
--- judgment above the line and the conclusion is 𝕄(match, e, s_1) ⟿ ⟨n-result, s_k⟩
+-- judgment above the line and the conclusion is 𝕄(match, e, s_1) ⟿ ⟨conclusion, s_k⟩
 -- below, where s_k is the final state threaded through the premises.
 explainMorphRule :: Y.MorphRule -> String
 explainMorphRule rule =
@@ -436,7 +436,7 @@ explainMorphRule rule =
     (premises, final) = premisesToLatex (renderExpr rule.ematch) rule.premises
 
 -- Render a dataization rule as a LaTeX inference rule, with 𝔻(match, e, s_1) ⟿
--- ⟨d-result, s_k⟩ as the conclusion below the line, s_k being the final threaded
+-- ⟨conclusion, s_k⟩ as the conclusion below the line, s_k being the final threaded
 -- state.
 explainDataizeRule :: Y.DataizeRule -> String
 explainDataizeRule rule =
@@ -482,7 +482,7 @@ conclusionStateName final index
 -- starts in state s_1; each state-changing premise (𝕄, 𝔻, 𝔼) consumes the
 -- current state and yields the next (s_2, s_3, …), matching how the engine folds
 -- the state through the premises ('sidePremise' in 'Dataize.hs'). The 'universe'
--- is the rule's own e-match, threaded into 𝕄/𝔻 premises (bound by the conclusion)
+-- is the rule's own 'universe' key, threaded into 𝕄/𝔻 premises (bound by the conclusion)
 -- rather than a free 'e'. Returns the rendered judgments and the final state
 -- index, which the conclusion returns.
 premisesToLatex :: String -> [Y.Premise] -> ([String], Int)
@@ -499,7 +499,7 @@ premisesToLatex universe = go 1
 -- state-changing operations 𝕄 ('morph'), 𝔻 ('dataize') and 𝔼 ('evaluate') consume
 -- s_index and yield s_index+1 (so they return the bumped index); the rest are
 -- stateless and leave the index as is. 𝕄 and 𝔻 carry the rule's own 'universe'
--- (its e-match) so the premise stays bound by the conclusion instead of naming a
+-- (its 'universe' key) so the premise stays bound by the conclusion instead of naming a
 -- free 'e'; 𝔼 carries the explicit universe from its own operation.
 premiseToLatex :: String -> Int -> Y.Premise -> (String, Int)
 premiseToLatex universe index premise = case premise.operation of

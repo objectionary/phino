@@ -389,7 +389,7 @@ isLambda _ = False
 -- The Morphing function 𝕄 maps normal forms to formations. It is ternary,
 -- 𝕄(n, e, s): besides the term 'n' it takes the universe 'e' ('univ') — a plain
 -- expression — and the mutable state 's', returning the morphed term together
--- with the new state. The universe is matched against the rule's 'e-match'
+-- with the new state. The universe is matched against the rule's 'universe'
 -- pattern (usually the '𝑒' meta, which binds 'e' so the 'universe' rule substitutes
 -- it, but a rule may pin it to a literal such as 'mg' matching Φ). Its rules
 -- come from 'resources/morphing': the first matching rule's premises are evaluated and
@@ -425,7 +425,7 @@ morph' (expr, seq) univ state caller = do
     -- Match the conclusion term and check the guard; premises are no longer the
     -- matcher's business, so 'where'/'having' stay empty and the guard lives in
     -- 'when'. Every morphing guard reads only meta-variables bound by 'match'
-    -- and 'e-match', so it holds before any premise runs.
+    -- and 'universe', so it holds before any premise runs.
     asRule :: Y.MorphRule -> Y.Rule
     asRule rule = Y.Rule rule.name Nothing Nothing rule.match Nothing ExRoot rule.when Nothing Nothing
     -- Evaluate the rule's premises and build its conclusion. A literal
@@ -456,7 +456,7 @@ morph' (expr, seq) univ state caller = do
     sides ctx premises subst = foldM (sidePremise univ ctx) (subst, state) premises
     -- Bring the term a 'normalize' premise built to its normal form and splice
     -- the steps into the chain. A premise normalizing the universe itself, the
-    -- meta the rule's 'e-match' bound, is answered with the world the run has
+    -- meta the rule's 'universe' bound, is answered with the world the run has
     -- already named (see '_universe'), since that is the normal form of the
     -- very same program: the 'universe' rule asks for it every time 𝕄 resolves
     -- Φ, and normalizing the whole program again for each of them made every

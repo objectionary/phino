@@ -4,8 +4,8 @@
 name: mphi
 label: \varphi
 match: ⟦𝐵1⟧.𝜏1
-e-match: 𝑒1
-n-result: 𝑛2
+universe: 𝑒1
+conclusion: 𝑛2
 when:
   and:
     - in:

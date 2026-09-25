@@ -3,8 +3,8 @@
 ---
 name: norm
 match: 𝑛1
-e-match: 𝑒1
-d-result: 𝛿1
+universe: 𝑒1
+conclusion: 𝛿1
 when:
   and:
     - not:

@@ -4,8 +4,8 @@
 name: ml
 label: \lambda
 match: '⟦𝐵1, λ ⤍ 𝑓1, 𝐵2⟧.𝜏1'
-e-match: 𝑒1
-n-result: 𝑛3
+universe: 𝑒1
+conclusion: 𝑛3
 premises:
   - n-result: 𝑛1
     evaluate:
