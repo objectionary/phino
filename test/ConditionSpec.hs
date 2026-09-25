@@ -33,8 +33,8 @@ spec = do
 
   describe "parses correctly" $
     forM_
-      [ ("in(!t1, !B1)", Y.In (AtMeta "t1") (BiMeta "B1"))
-      , ("not(in(!t1,!B1))", Y.Not (Y.In (AtMeta "t1") (BiMeta "B1")))
+      [ ("in(!t1, !B1)", Y.In [AtMeta "t1"] [BiMeta "B1"])
+      , ("not(in(!t1,!B1))", Y.Not (Y.In [AtMeta "t1"] [BiMeta "B1"]))
       , ("eq(1,-2)", Y.Eq (Y.CmpNum (Y.Literal 1)) (Y.CmpNum (Y.Literal (-2))))
       , ("eq(!i1,length(!B1))", Y.Eq (Y.CmpNum (Y.MetaIndex "i1")) (Y.CmpNum (Y.Length (BiMeta "B1"))))
       , ("eq(!i2,domain(!B1))", Y.Eq (Y.CmpNum (Y.MetaIndex "i2")) (Y.CmpNum (Y.Domain (BiMeta "B1"))))

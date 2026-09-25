@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+expression: '[[ x -> [[ ]], D> 00- ]]'
+pattern: '[[ !B1, x -> !e1, !B2 ]]'
+condition:
+  not:
+    in:
+      - [Δ, λ]
+      - [𝐵1, 𝐵2]

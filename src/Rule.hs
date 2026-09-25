@@ -95,22 +95,13 @@ _not cond subst ctx = do
   met <- meetCondition' cond subst ctx
   pure [subst | null met]
 
-_in :: Attribute -> Binding -> Subst -> RuleContext -> IO [Subst]
-_in attr binding subst _ =
-  case (buildAttribute attr subst, buildBinding binding subst) of
-    (Right attr, Right bds) -> pure [subst | attrInBindings attr bds]
+-- Hold if every given attribute is present in the union of the bindings
+-- captured by the given binding metas.
+_in :: [Attribute] -> [Binding] -> Subst -> RuleContext -> IO [Subst]
+_in attrs bindings subst _ =
+  case (traverse (`buildAttribute` subst) attrs, traverse (`buildBinding` subst) bindings) of
+    (Right attrs', Right bdss) -> pure [subst | all (`presentIn` concat bdss) attrs']
     (_, _) -> pure []
-  where
-    attrInBindings :: Attribute -> [Binding] -> Bool
-    attrInBindings attr (bd : bds) = attrInBinding attr bd || attrInBindings attr bds
-      where
-        attrInBinding :: Attribute -> Binding -> Bool
-        attrInBinding attr (BiTau battr _) = attr == battr
-        attrInBinding attr (BiVoid battr) = attr == battr
-        attrInBinding AtLambda (BiLambda _) = True
-        attrInBinding AtDelta (BiDelta _) = True
-        attrInBinding _ _ = False
-    attrInBindings _ _ = False
 
 -- Convert a 'Number' to an 'Int' under the given substitution, resolving
 -- index metas, binding lengths and formation domains.
@@ -242,25 +233,25 @@ _partOf exp bd subst _ = do
 _disjoint :: [Attribute] -> [Binding] -> Subst -> RuleContext -> IO [Subst]
 _disjoint attrs bindings subst _ =
   case (traverse (`buildAttribute` subst) attrs, traverse (`buildBinding` subst) bindings) of
-    (Right attrs', Right bdss) ->
-      let bds = concat bdss
-       in pure [subst | not (any (`presentIn` bds) attrs')]
+    (Right attrs', Right bdss) -> pure [subst | not (any (`presentIn` concat bdss) attrs')]
     (_, _) -> pure []
+
+-- Tell whether the attribute is present among the bindings.
+presentIn :: Attribute -> [Binding] -> Bool
+presentIn attr = any present
   where
-    presentIn :: Attribute -> [Binding] -> Bool
-    presentIn attr = any (presentInBinding attr)
-    presentInBinding :: Attribute -> Binding -> Bool
-    presentInBinding attr (BiTau battr _) = attr == battr
-    presentInBinding attr (BiVoid battr) = attr == battr
-    presentInBinding AtLambda (BiLambda _) = True
-    presentInBinding AtDelta (BiDelta _) = True
-    presentInBinding _ _ = False
+    present :: Binding -> Bool
+    present (BiTau battr _) = attr == battr
+    present (BiVoid battr) = attr == battr
+    present (BiLambda _) = attr == AtLambda
+    present (BiDelta _) = attr == AtDelta
+    present _ = False
 
 meetCondition' :: Y.Condition -> Subst -> RuleContext -> IO [Subst]
 meetCondition' (Y.Or conds) = _or conds
 meetCondition' (Y.And conds) = _and conds
 meetCondition' (Y.Not cond) = _not cond
-meetCondition' (Y.In attr binding) = _in attr binding
+meetCondition' (Y.In attrs bds) = _in attrs bds
 meetCondition' (Y.Eq left right) = _eq left right
 meetCondition' (Y.Gt left right) = _gt left right
 meetCondition' (Y.NF expr) = _nf expr

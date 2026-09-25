@@ -389,6 +389,7 @@ instance ToLaTeX CONDITION where
   toLaTeX CO_MATCHES{..} = CO_MATCHES regex (toLaTeX expr)
   toLaTeX CO_PART_OF{..} = CO_PART_OF (toLaTeX expr) (toLaTeX binding)
   toLaTeX CO_DISJOINT{..} = CO_DISJOINT (map toLaTeX attrs) (map toLaTeX groups)
+  toLaTeX CO_SUBSET{..} = CO_SUBSET (map toLaTeX attrs) belongs (map toLaTeX groups)
   toLaTeX CO_FORMATION{..} = CO_FORMATION (toLaTeX expr)
   toLaTeX CO_EMPTY = CO_EMPTY
 

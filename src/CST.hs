@@ -244,6 +244,7 @@ data CONDITION
   | CO_MATCHES {regex :: String, expr :: EXPRESSION}
   | CO_PART_OF {expr :: EXPRESSION, binding :: BINDING}
   | CO_DISJOINT {attrs :: [ATTRIBUTE], groups :: [BINDING]}
+  | CO_SUBSET {attrs :: [ATTRIBUTE], belongs :: BELONGING, groups :: [BINDING]}
   | CO_FORMATION {expr :: EXPRESSION}
   deriving (Eq, Show)
 
@@ -597,13 +598,15 @@ instance ToCST Alpha ALPHA where
   toCST (AlAny _) _ = AL_META ALPHA (anyMeta I)
 
 instance ToCST Y.Condition CONDITION where
-  toCST (Y.Not (Y.In attr binding)) _ = CO_BELONGS (attributeToCST attr) NOT_IN (ST_BINDING (bindingsToCST [binding]))
+  toCST (Y.Not (Y.In [attr] [binding])) _ = CO_BELONGS (attributeToCST attr) NOT_IN (ST_BINDING (bindingsToCST [binding]))
+  toCST (Y.Not (Y.In attrs groups)) _ = CO_SUBSET (map attributeToCST attrs) NOT_IN (map (\bd -> bindingsToCST [bd]) groups)
   toCST (Y.Not (Y.Eq left right)) _ = CO_COMPARE (comparableToCST left) NOT_EQUAL (comparableToCST right)
   toCST (Y.Not (Y.Gt left right)) _ = CO_COMPARE (comparableToCST left) NOT_GREATER (comparableToCST right)
   toCST (Y.Not (Y.Absolute expr)) _ = CO_ABSOLUTE (expressionToCST expr) NOT_IN
   toCST (Y.Absolute expr) _ = CO_ABSOLUTE (expressionToCST expr) IN
   toCST (Y.Disjoint attrs groups) _ = CO_DISJOINT (map attributeToCST attrs) (map (\bd -> bindingsToCST [bd]) groups)
-  toCST (Y.In attr binding) _ = CO_BELONGS (attributeToCST attr) IN (ST_BINDING (bindingsToCST [binding]))
+  toCST (Y.In [attr] [binding]) _ = CO_BELONGS (attributeToCST attr) IN (ST_BINDING (bindingsToCST [binding]))
+  toCST (Y.In attrs groups) _ = CO_SUBSET (map attributeToCST attrs) IN (map (\bd -> bindingsToCST [bd]) groups)
   toCST (Y.And conds) _ = case conds of
     [] -> CO_EMPTY
     _ -> CO_LOGIC (map toCST' conds) AND

@@ -2442,7 +2442,7 @@ spec = do
             , "\\phinoNormalizationRule{dot}"
             , "  { [[ B_1, \\tau -> n, B_2 ]] . \\tau }"
             , "  { e_2 ( \\phiTerminal{\\rho} -> e_3 ) }"
-            , "  { [ L ] \\cap \\lparen B_1 \\cup B_2 \\rparen = \\emptyset \\;\\text{or}\\; [ D ] \\cap \\lparen B_1 \\cup B_2 \\rparen = \\emptyset }"
+            , "  { [ D \\char44{} L ] \\not\\subseteq \\lparen B_1 \\cup B_2 \\rparen }"
             , "  { \\phinoContextualize{ n }{ [[ B_1, B_2 ]] }{ e_2 } and e_3 \\coloneqq \\phinoNamed{ e_1 }{ [[ B_1, \\tau -> n, B_2 ]] } }"
             , "\\phinoNormalizationRule{miss}"
             , "  { [[ B ]] ( \\tau -> e ) }"

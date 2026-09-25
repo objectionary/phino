@@ -329,6 +329,12 @@ spec = do
         , CO_DISJOINT [AT_LABEL "a", AT_LABEL "b"] [bindingXi "x", bindingXi "y"]
         , "[ a \\char44{} b ] \\cap \\lparen x ↦ ξ \\cup y ↦ ξ \\rparen = \\emptyset"
         )
+      ,
+        ( "CO_SUBSET"
+        , CO_SUBSET [AT_LABEL "a", AT_LABEL "b"] IN [bindingXi "x", bindingXi "y"]
+        , "[ a \\char44{} b ] \\subseteq \\lparen x ↦ ξ \\cup y ↦ ξ \\rparen"
+        )
+      , ("CO_SUBSET negated", CO_SUBSET [AT_LABEL "a"] NOT_IN [bindingXi "x"], "[ a ] \\not\\subseteq x ↦ ξ")
       , ("CO_EMPTY", CO_EMPTY, "")
       ]
       (\(desc, node, expected) -> it desc (render node `shouldBe` expected))
