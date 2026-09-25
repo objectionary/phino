@@ -23,7 +23,7 @@ import qualified Data.Text as T
 import Deps (Evaluation (EvRun), Judgment, SaveEvalFunc, SaveStepFunc, State (..), dontSaveEval, emptyNesting, emptyProtocol, endEvalXml, saveEval, saveEvalXml, saveStep)
 import Encoding
 import Files (ensuredFile, overwrite)
-import Functions (execFunctions)
+import Functions (buildFunctions, execFunctions)
 import LaTeX (LatexContext (LatexContext), defaultMeetLength, defaultMeetPopularity, expressionToLaTeX, rewrittensToLatex)
 import Lambdas (Lambdas, emptyLambdas, readLambdas, taken)
 import Lining (LineFormat (SINGLELINE))
@@ -277,11 +277,13 @@ getRules normalize shuffle rules = do
 validateRewriteRule :: Y.Rule -> IO Y.Rule
 validateRewriteRule rule =
   let used = maybe [] (map Y.function) rule.where_
-   in case filter (`elem` execFunctions) used of
-        [] -> pure rule
-        (fn : _) ->
-          invalidCLIArguments
-            (printf "Function '%s' in rule '%s' is available only for dataization and morphing, not for rewriting" fn rule.name)
+   in case filter (\fn -> fn `notElem` (buildFunctions ++ execFunctions)) used of
+        (fn : _) -> invalidCLIArguments (printf "Function '%s' in rule '%s' is not supported" fn rule.name)
+        [] -> case filter (\fn -> fn `elem` execFunctions) used of
+          [] -> pure rule
+          (fn : _) ->
+            invalidCLIArguments
+              (printf "Function '%s' in rule '%s' is available only for dataization and morphing, not for rewriting" fn rule.name)
 
 -- Output content
 printOut :: Maybe FilePath -> String -> IO ()
