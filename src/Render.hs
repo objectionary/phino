@@ -320,4 +320,5 @@ instance Render EXTRA where
     where
       macro :: String -> Text
       macro "evaluate" = "\\phinoEvaluate"
+      macro "named" = "\\phinoNamed"
       macro name = "\\" <> T.pack name

@@ -2420,7 +2420,7 @@ spec = do
             , "  { [[ B_1, \\tau -> n, B_2 ]] . \\tau }"
             , "  { e_2 ( \\phiTerminal{\\rho} -> e_3 ) }"
             , "  { [[ B_1, \\tau -> n, B_2 ]] \\not= e_1 \\;\\text{and}\\; \\lparen [ L ] \\cap \\lparen B_1 \\cup B_2 \\rparen = \\emptyset \\;\\text{or}\\; [ D ] \\cap \\lparen B_1 \\cup B_2 \\rparen = \\emptyset \\rparen }"
-            , "  { \\phinoContextualize{ n }{ [[ B_1, B_2 ]] }{ e_2 } and e_3 \\coloneqq \\named{ [[ B_1, \\tau -> n, B_2 ]], e_1 } }"
+            , "  { \\phinoContextualize{ n }{ [[ B_1, B_2 ]] }{ e_2 } and e_3 \\coloneqq \\phinoNamed{ [[ B_1, \\tau -> n, B_2 ]], e_1 } }"
             , "\\phinoNormalizationRule{dotg}"
             , "  { [[ B_1, \\tau -> n, B_2 ]] . \\tau }"
             , "  { e_2 ( \\phiTerminal{\\rho} -> Q ) }"
