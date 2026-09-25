@@ -166,10 +166,14 @@ buildBindings (bd : rest) subst = do
 -- is the formation where the two agree binding by binding, save the voids of
 -- the candidate the formation has filled: the ρ with exactly what the dispatch
 -- off the parent hands it, and every other one with a closed term, which is an
--- argument of the application the name carries. Anything else answers with the
--- formation itself, and so does a universe that is not a formation.
+-- argument of the application the name carries. The world itself is named 'Φ',
+-- so a dispatch off the whole program does not copy the program into its ρ
+-- (#1318). Anything else answers with the formation itself, and so does a
+-- universe that is not a formation.
 pathOf :: Expression -> Expression -> Expression
-pathOf (ExFormation world) form@(ExFormation bds) = maybe form found (parent (find rho bds))
+pathOf universe@(ExFormation world) form@(ExFormation bds)
+  | form == universe = ExRoot
+  | otherwise = maybe form found (parent (find rho bds))
   where
     found :: (Expression, [Binding]) -> Expression
     found (path, siblings) = fromMaybe form (listToMaybe (mapMaybe (candidate path) siblings))

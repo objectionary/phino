@@ -5,8 +5,9 @@
 # with the object it was dispatched on, and that object is 'Φ.number'. Writing
 # it out would copy every method it declares into the term, 'sin' included,
 # though only 'plus' is ever dispatched. The world is immutable, so the ρ
-# carries the path instead, the way 'dotg' carries Φ, and whoever reads it
-# resolves it to the very formation that would have stood there (#1446).
+# carries the path instead, the way the whole world is written Φ, and whoever
+# reads it resolves it to the very formation that would have stood there
+# (#1446).
 location: 'Q.t'
 input: |
   ⟦

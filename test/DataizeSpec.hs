@@ -375,4 +375,4 @@ spec = do
                    ]
     it "dataizes a located reference through the expected rules" $ do
       labels <- labelsOf "Q.foo.bar" "[[ foo -> [[ bar -> [[ @ -> Q.x ]] ]], x -> [[ D> 42- ]] ]]"
-      labels `shouldBe` ["contextualize", "md", "dotg", "skip", "mf", "delta"]
+      labels `shouldBe` ["contextualize", "md", "dot", "skip", "mf", "delta"]

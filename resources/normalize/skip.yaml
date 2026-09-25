@@ -1,10 +1,10 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 # SPDX-License-Identifier: MIT
 ---
-# A formation that declares no ρ has no receiver, so the ρ 'dot' and 'dotg'
-# hand every dispatched body is dropped once that body turns out to be such a
-# formation. 'copy' fills a ρ the formation declares void, and 'stay' keeps one
-# it has already bound (#1407).
+# A formation that declares no ρ has no receiver, so the ρ 'dot' hands every
+# dispatched body is dropped once that body turns out to be such a formation.
+# 'copy' fills a ρ the formation declares void, and 'stay' keeps one it has
+# already bound (#1407).
 name: skip
 pattern: ⟦𝐵1⟧(ρ ↦ 𝑒1)
 result: ⟦𝐵1⟧
