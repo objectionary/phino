@@ -58,11 +58,15 @@ input: |
 protocol: |
   𝕄(Φ.l🌵)
     𝔼(L_entry)  # 𝕄(Φ.l🌵.e1)
+      formation(⟦ φ ↦ Φ.bytes( φ ↦ 3F-F0-00-00-00-00-00-00:Δ ), gt(b) ↦ ⟦ λ ⤍ L_number_gt ⟧ ⟧)  # 𝔻(Φ.a🌵0)
+        formation(3F-F0-00-00-00-00-00-00:Δ:φ)  # 𝔻(Φ.a🌵0)
       𝛿1.1 := 3F-F0-00-00-00-00-00-00  # 𝔻(ξ.n)
       𝑛1.1 := ⟦ φ ↦ Φ.bytes( φ ↦ 𝜎1:λ ), at(i) ↦ ⟦ φ ↦ 0.gt( b ↦ Φ.dataized( target ↦ i ) ) ⟧ ⟧  # 𝕄(ξ.v.φ)
       𝑛.1.1 := Φ.l🌵.root( ⟦ φ ↦ Φ.bytes( φ ↦ 𝜎1:λ ), at(i) ↦ ⟦ φ ↦ 0.gt( b ↦ Φ.dataized( target ↦ i ) ) ⟧ ⟧ )  # 𝑛
       𝑛.1.2 := ⟦ v ↦ ⟦ φ ↦ Φ.bytes( φ ↦ 𝜎1:λ ), at(i) ↦ ⟦ φ ↦ 0.gt( b ↦ Φ.dataized( target ↦ i ) ) ⟧ ⟧, λ ⤍ L_root ⟧  # 𝕄(𝑛.1.1)
     𝔼(L_root)  # 𝕄(Φ.l🌵.e1)
+      formation(⟦ φ ↦ Φ.bytes( φ ↦ 𝜎1:λ ), at(i) ↦ ⟦ φ ↦ 0.gt( b ↦ Φ.dataized( target ↦ i ) ) ⟧ ⟧)  # 𝔻(Φ.a🌵2)
+        formation(𝜎1:λ:φ)  # 𝔻(Φ.a🌵2)
       𝛿1.2 := 𝔻(𝜎1:λ)  # 𝔻(ξ.v)
       𝑛.2.1 := ⟦⟧  # 𝑛
       𝑛.2.2 := ⟦⟧  # 𝕄(𝑛.2.1)

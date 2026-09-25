@@ -275,6 +275,29 @@ spec = do
       hashExpression ExRoot `shouldNotBe` hashExpression ExXi
       hashExpression (ExDispatch ExRoot (AtLabel "x")) `shouldNotBe` hashExpression (ExDispatch ExRoot (AtLabel "y"))
 
+  describe "alike" $ do
+    let application :: [Int] -> Expression
+        application idxs = ExApplication (ExDispatch ExRoot (AtLabel "f")) (ArTau (AtLabel "x") (ExFormation (map (BiLambda . FnSymbol) idxs)))
+    it "does not tell apart two terms that differ by a bijective renaming of symbols" $
+      alike (application [1, 2]) (application [7, 3]) `shouldBe` True
+    it "does not take two terms that differ by a datum for the same" $
+      alike (ExFormation [BiDelta (BtOne "01"), BiLambda (FnSymbol 4)]) (ExFormation [BiDelta (BtOne "02"), BiLambda (FnSymbol 9)]) `shouldBe` False
+    it "does not map one symbol to two others" $
+      alike (application [1, 1]) (application [1, 2]) `shouldBe` False
+    it "does not map two symbols to one other" $
+      alike (application [5, 6]) (application [8, 8]) `shouldBe` False
+    it "does not take two terms that differ by a λ name for the same" $
+      alike (ExFormation [BiLambda (Function "L_one")]) (ExFormation [BiLambda (Function "L_two")]) `shouldBe` False
+    it "does not take two terms that differ by an attribute for the same" $
+      alike (ExDispatch (application [3]) (AtLabel "a")) (ExDispatch (application [3]) (AtLabel "b")) `shouldBe` False
+
+  describe "hashShape" $ do
+    it "does not tell apart two terms that differ by symbols alone" $
+      hashShape (ExFormation [BiTau (AtLabel "n") (ExFormation [BiLambda (FnSymbol 3)])])
+        `shouldBe` hashShape (ExFormation [BiTau (AtLabel "n") (ExFormation [BiLambda (FnSymbol 5)])])
+    it "does not hash two terms differing by a datum alike" $
+      hashShape (ExFormation [BiDelta (BtOne "0A")]) `shouldNotBe` hashShape (ExFormation [BiDelta (BtOne "0B")])
+
   describe "BaseObject pattern" $ do
     it "constructs a Q-dispatch expression" $
       BaseObject "bytes" `shouldBe` ExDispatch ExRoot (AtLabel "bytes")

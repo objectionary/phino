@@ -12,7 +12,8 @@ module AST where
 
 import Data.Bits (xor)
 import Data.List (foldl')
-import Data.Maybe (listToMaybe)
+import qualified Data.Map.Strict as Map
+import Data.Maybe (isJust, listToMaybe)
 import Data.Text (Text)
 import qualified Data.Text as T
 import GHC.Generics (Generic)
@@ -119,7 +120,20 @@ instance Show Alpha where
 -- digest, but distinct expressions may collide, so a positive digest match
 -- must always be confirmed with a full structural (==) comparison.
 hashExpression :: Expression -> Int
-hashExpression = goExpr fnvOffset
+hashExpression = hashWith id
+
+-- The same digest, blind to which symbol stands where: every symbol is hashed
+-- as the same one, so two terms that are 'alike' always produce the same
+-- digest, while data, names and shape still tell terms apart. It is what keys
+-- a store of terms compared up to a renaming of symbols, and like
+-- 'hashExpression' a positive match must be confirmed, by 'alike' here.
+hashShape :: Expression -> Int
+hashShape = hashWith (const 0)
+
+-- The digest both 'hashExpression' and 'hashShape' compute, with the index of
+-- every symbol passed through the given function before it is mixed in.
+hashWith :: (Int -> Int) -> Expression -> Int
+hashWith symbol = goExpr fnvOffset
   where
     fnvPrime, fnvOffset :: Int
     fnvPrime = 1099511628211
@@ -187,8 +201,56 @@ hashExpression = goExpr fnvOffset
       Function t -> hashText (step h 16) t
       FnMeta t -> hashText (step h 29) t
       FnAny slot -> goSlot (step h 37) slot
-      FnSymbol idx -> step (step h 38) idx
+      FnSymbol idx -> step (step h 38) (symbol idx)
       FnFresh slot -> goSlot (step h 39) slot
+
+-- Whether two terms are the same up to a bijective renaming of their symbols:
+-- structurally equal once some one-to-one pairing of the symbols of one with
+-- the symbols of the other is applied, so 𝜎3 may stand in one where 𝜎5 stands
+-- in the other, as long as it does so everywhere and no other symbol stands
+-- there too. Everything else — data, attribute names, λ names — has to match
+-- exactly. A symbol is an opaque unknown nobody worked out, so two terms that
+-- differ by nothing but which unknowns they carry reduce the same way, while
+-- two that differ by a datum may not. The pairing is built as the two terms
+-- are walked in lockstep and is kept in both directions, which is what refuses
+-- one symbol standing for two and two standing for one.
+alike :: Expression -> Expression -> Bool
+alike one two = isJust (goExpr (Map.empty, Map.empty) one two)
+  where
+    goExpr :: (Map.Map Int Int, Map.Map Int Int) -> Expression -> Expression -> Maybe (Map.Map Int Int, Map.Map Int Int)
+    goExpr pairing (ExFormation left) (ExFormation right) = goList goBinding pairing left right
+    goExpr pairing (ExApplication left arg) (ExApplication right arg') = goExpr pairing left right >>= \next -> goArgument next arg arg'
+    goExpr pairing (ExDispatch left attr) (ExDispatch right attr')
+      | attr == attr' = goExpr pairing left right
+    goExpr pairing (ExPhiMeet prefix idx left) (ExPhiMeet prefix' idx' right)
+      | prefix == prefix' && idx == idx' = goExpr pairing left right
+    goExpr pairing (ExPhiAgain prefix idx left) (ExPhiAgain prefix' idx' right)
+      | prefix == prefix' && idx == idx' = goExpr pairing left right
+    goExpr pairing left right = same pairing left right
+    goBinding :: (Map.Map Int Int, Map.Map Int Int) -> Binding -> Binding -> Maybe (Map.Map Int Int, Map.Map Int Int)
+    goBinding pairing (BiTau attr left) (BiTau attr' right)
+      | attr == attr' = goExpr pairing left right
+    goBinding pairing (BiLambda (FnSymbol left)) (BiLambda (FnSymbol right)) = paired pairing left right
+    goBinding pairing left right = same pairing left right
+    goArgument :: (Map.Map Int Int, Map.Map Int Int) -> Argument -> Argument -> Maybe (Map.Map Int Int, Map.Map Int Int)
+    goArgument pairing (ArTau attr left) (ArTau attr' right)
+      | attr == attr' = goExpr pairing left right
+    goArgument pairing (ArAlpha alpha left) (ArAlpha alpha' right)
+      | alpha == alpha' = goExpr pairing left right
+    goArgument pairing left right = same pairing left right
+    goList :: (pairing -> item -> item -> Maybe pairing) -> pairing -> [item] -> [item] -> Maybe pairing
+    goList _ pairing [] [] = Just pairing
+    goList walk pairing (left : lefts) (right : rights) = walk pairing left right >>= \next -> goList walk next lefts rights
+    goList _ _ _ _ = Nothing
+    same :: (Eq item) => pairing -> item -> item -> Maybe pairing
+    same pairing left right
+      | left == right = Just pairing
+      | otherwise = Nothing
+    paired :: (Map.Map Int Int, Map.Map Int Int) -> Int -> Int -> Maybe (Map.Map Int Int, Map.Map Int Int)
+    paired (forward, backward) left right = case (Map.lookup left forward, Map.lookup right backward) of
+      (Nothing, Nothing) -> Just (Map.insert left right forward, Map.insert right left backward)
+      (Just right', Just _) | right' == right -> Just (forward, backward)
+      _ -> Nothing
 
 -- Every symbol a term carries, in the order it was written. A symbol is what
 -- makes the value a term stands for unknown, and the run reads the

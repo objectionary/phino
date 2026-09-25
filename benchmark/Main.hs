@@ -91,8 +91,7 @@ symbolicCtx lambdas locator =
     True -- _acyclic
     Morphing -- _judgment
     [] -- _parked
-    Map.empty -- _seen
-    Map.empty -- _dataized
+    Map.empty -- _entered
     lambdas -- _symbolic
     buildTerm -- _buildTerm
     reduction -- _reduce

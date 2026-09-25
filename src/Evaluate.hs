@@ -14,7 +14,7 @@
 -- which this module imports. The edges pointing back the other way, 𝕄 asking
 -- 𝔼 to fire, are injected as '_evaluate' and '_fire' rather than imported, the
 -- way 'Dataize' hands 'Morph' its '_reduce' (see 'EvaluationFunc').
-module Evaluate (evaluation, fired, lambda) where
+module Evaluate (evaluation, fired) where
 
 import AST
 import Builder (buildExpressionThrows, contextualize)
@@ -27,7 +27,7 @@ import qualified Data.Text as T
 import Deps (BuildTermMethodS, Evaluation (..), State (..), Term (..))
 import Lambdas (Lambda (..), Meta (..), joined, matched, minted, symbolized)
 import Matcher (MetaValue (..), Subst, combine, substEmpty, substSingle, substSlot)
-import Morph (ReduceContext (..), ReduceException (..), deeper, morph', morphing, normalized, unparked)
+import Morph (ReduceContext (..), ReduceException (..), deeper, isLambda, lambda, morph', morphing, normalized, unparked)
 import Printer (printFunction)
 import Rule (RuleContext (RuleContext), matchExpressionWithRule')
 import Text.Printf (printf)
@@ -463,25 +463,6 @@ settled term univ state ctx = do
   (normal, _) <- normalized term ((univ, Nothing) :| []) ctx
   ((morphed, _), state') <- morph' (normal, (univ, Nothing) :| []) univ state ctx
   pure (morphed, state')
-
--- Split the λ binding off a formation for the LAMBDA morphing rule: the name of
--- the λ function to fire and the formation it fires against, the λ binding
--- removed. A formation with no λ binding, or with more than one, has nothing to
--- fire; neither has one carrying a symbol, which is a λ name nothing answers.
--- The three are one answer here but not to 𝔼, which tells all three apart: no λ
--- at all is answered with ⊥, a symbol gets stuck the way an unanswered name
--- does, and only the rest is a term it cannot work out (see 'evaluation').
-lambda :: [Binding] -> Maybe (T.Text, Expression)
-lambda bds = case partition isLambda bds of
-  ([BiLambda (Function func)], rest) -> Just (func, ExFormation rest)
-  _ -> Nothing
-
--- Whether a binding names a λ function, whatever that name turns out to be.
--- 𝔼 asks this before 'lambda' does its splitting, since a formation carrying no
--- λ at all is answered with ⊥ rather than refused (see 'evaluation').
-isLambda :: Binding -> Bool
-isLambda (BiLambda _) = True
-isLambda _ = False
 
 -- The same as 'lambda', but only for a formation that is saturated: one with
 -- every binding of it filled (see 'filled'). A void is an argument the program

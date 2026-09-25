@@ -18,16 +18,17 @@
 -- a λ function itself, which is an evaluation — are injected as '_reduce',
 -- '_evaluate' and '_fire' rather than imported (see 'ReductionFunc' and
 -- 'EvaluationFunc').
-module Morph (ReduceContext (..), ReduceException (..), EvaluationFunc, FiringFunc, ReductionFunc, Morphed, Steps (..), deeper, emptyState, excluding, execBuildTerm, insideUniverse, leadsTo, morph, morph', morphing, normalized, parking, producer, sidePremise, universed, unparked, unvisited, verb) where
+module Morph (ReduceContext (..), ReduceException (..), EvaluationFunc, FiringFunc, ReductionFunc, Morphed, Steps (..), boxed, deeper, emptyState, entering, excluding, execBuildTerm, insideUniverse, isLambda, lambda, leadsTo, morph, morph', morphing, normalized, parking, producer, sidePremise, universed, unparked, verb) where
 
 import AST
 import Builder (buildExpressionThrows, contextualize)
 import Control.Exception (Exception, catch, throwIO, try)
 import Control.Monad (foldM)
-import Data.List (find)
+import Data.List (find, partition)
 import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as NE
-import Data.Maybe (fromMaybe)
+import qualified Data.Map.Strict as Map
+import Data.Maybe (fromMaybe, isJust)
 import qualified Data.Text as T
 import Deps (BuildTermFunc, BuildTermMethodS, Judgment (..), SaveEvalFunc, SaveStepFunc, State (..), Term (..), dontSaveStep)
 import Lambdas (Lambdas)
@@ -36,7 +37,7 @@ import Matcher (MetaValue (..), Subst (..), combine, matchExpression', substEmpt
 import Must (Must (..))
 import Printer (printExpression)
 import Random (shuffle)
-import Rewriter (RewriteContext (RewriteContext), Rewritten, Seen, rewrite, seenInsert, seenMember)
+import Rewriter (RewriteContext (RewriteContext), Rewritten, Seen, rewrite, seenInsert)
 import Rule (RuleContext (RuleContext), matchExpressionWithRule')
 import Text.Printf (printf)
 import Yaml (ExtraArgument (..), normalizationRules)
@@ -153,15 +154,15 @@ data ReduceContext = ReduceContext
     -- out; the site is one and the protocol records it once, so the firings
     -- after the first write nothing (see 'symbol' in 'Evaluate', #1300).
     _parked :: [T.Text]
-  , -- The terms the 𝕄 frames above this one are reducing, which is what
-    -- '_acyclic' answers "have I been here before" with (see 'unvisited').
-    _seen :: Seen
-  , -- The same for 𝔻: the terms the 𝔻 frames above this one are dataizing. The
-    -- two judgments keep one store each because they ask each other about the
-    -- very term they were asked about — the 'norm' rule hands 𝕄 what 𝔻 was
-    -- given — so a single store shared by both would read that handover as a
-    -- repeat and park every term 𝔻 morphs (#1290).
-    _dataized :: Seen
+  , -- The formations the frames above this one have entered, which is what
+    -- '_acyclic' answers "have I been here before" with (see 'entering'). A
+    -- frame enters a formation where it fires the λ of one — 𝔻 through 'fire',
+    -- 𝕄 through 'ml' — or gets into the φ body of one — 𝔻 through 'box' — and
+    -- nowhere else, so 𝕄 and 𝔻 handing each other the very term they were
+    -- asked about enter nothing twice and one store serves both of them. The
+    -- store is keyed by 'hashShape', so a formation is found again under a
+    -- renaming of its symbols (see 'alike').
+    _entered :: Seen
   , _symbolic :: Lambdas
   , _buildTerm :: BuildTermFunc
   , _reduce :: ReductionFunc
@@ -193,20 +194,22 @@ data ReduceException
     -- too, so '_partial' parks it and hands back the residual instead of
     -- failing hard (#1078)
     OutOfStepsAt Int (NonEmpty Rewritten) State
-  | -- A judgment was asked to reduce a term a frame above it is already
-    -- reducing, which it can only ever answer by asking again. 𝕄 and 𝔻 both
-    -- raise it, each over the terms of its own spine (see 'unvisited'), and
-    -- neither names itself in the message, since a run that meets the signal
-    -- meets it through whichever of the two came back. Raised under '_acyclic'
-    -- alone, so the signal itself is the permission to park on it: a run that
-    -- never asked for the guard never sees it.
+  | -- A frame was about to enter a formation a frame above it has already
+    -- entered, up to a renaming of symbols, which it can only ever answer by
+    -- entering it again. 𝕄 and 𝔻 both raise it, over the one store of the
+    -- formations their branch has entered (see 'entering'), and neither names
+    -- itself in the message, since a run that meets the signal meets it
+    -- through whichever of the two came back. It carries the formation.
+    -- Raised under '_acyclic' alone, so the signal itself is the permission to
+    -- park on it: a run that never asked for the guard never sees it.
     Looping Expression
   | -- A 'Looping' caught by a frame of the 𝕄 or 𝔻 spine, carrying that frame's
     -- derivation and state the way 'StuckAt' does. The guard runs as a frame
     -- opens, before that frame parks anything, so the frame attaching the chain
     -- is the one the repeat was reached from and the head of the chain is its
-    -- working expression — the term that came back left exactly where it stood,
-    -- the way an exhausted budget stops on the last step it could afford.
+    -- working expression — the term that would have entered the formation
+    -- again left exactly where it stood, the way an exhausted budget stops on
+    -- the last step it could afford.
     LoopingAt Expression (NonEmpty Rewritten) State
   | -- 𝔻 was handed a term outside its domain: the terminator ⊥, which signals
     -- an error (see #955), or a term no dataization rule matches, such as a
@@ -224,7 +227,7 @@ instance Show ReduceException where
   show (OutOfStepsAt limit _ _) = show (OutOfSteps limit)
   show (Stuck func) = printf "No entry of --symbolic answers the λ function '%s'" (T.unpack func)
   show (StuckAt func _ _) = show (Stuck func)
-  show (Looping term) = printf "Reduction came back to a term it is already reducing: %s" (printExpression term)
+  show (Looping term) = printf "Reduction entered a formation it is already inside: %s" (printExpression term)
   show (LoopingAt term _ _) = show (Looping term)
   show (Undataizable ExTermination _) = "dataization reached the terminator ⊥, which signals an error and cannot be dataized"
   show (Undataizable _ _) = "no dataization rule matched"
@@ -276,33 +279,84 @@ unparked action = action `catch` rethrow
     rethrow (LoopingAt term _ _) = throwIO (Looping term)
     rethrow failure = throwIO failure
 
--- The terms the frames above this one are reducing, which is what '_acyclic'
--- answers "have I been here before" with. The context travels down the
--- recursion and never back up, exactly as the step budget does, so what it
--- carries is the branch from the run to this frame and not everything the run
--- has ever touched: two sibling subterms that happen to be equal are two terms,
--- while a term reached from itself is a loop. The store is the one the rewriter
--- detects its own loops with, a digest map resolving a collision by an exact
--- comparison (see 'Seen').
--- Which store is read is the judgment of the frame asking ('_judgment', which
--- the caller has already named): 𝕄 and 𝔻 recurse into each other and a term 𝔻
--- hands 𝕄 is the term 𝔻 was given, so one store for the two would make every
--- 'norm' rule a loop. Each judgment therefore remembers its own branch, and a
--- run that comes back to a term through either of them is parked (#1290).
-unvisited :: Expression -> ReduceContext -> IO ReduceContext
-unvisited term ctx
+-- The formations the frames above this one have entered, which is what
+-- '_acyclic' answers "have I been here before" with: where the frame opening on
+-- this term enters a formation (see 'entrance') and a frame above it has
+-- already entered the same one, the run is going round and 'Looping' says so;
+-- otherwise the formation is remembered for the frames below. The context
+-- travels down the recursion and never back up, exactly as the step budget
+-- does, so what it carries is the branch from the run to this frame and not
+-- everything the run has ever touched: two siblings entering one formation
+-- enter it twice, while a formation entered from inside itself is a loop.
+--
+-- The same means 'alike', equal up to a bijective renaming of symbols, and not
+-- equal: every round of a recursion over an unknown mints fresh symbols, so
+-- the formation it enters on the second round is the first one with 𝜎5 where
+-- 𝜎3 stood, and an exact comparison never finds it (#1420). That is sound,
+-- since a symbol is an opaque unknown — each dataizes to the same manufactured
+-- datum and no entry of '--symbolic' answers one — so a formation entered again
+-- with nothing but its symbols renamed replays the round forever; data still
+-- tells rounds apart, so a recursion over a literal is not cut. The store is a
+-- digest map keyed by 'hashShape', which is blind to symbols, and a digest
+-- match is confirmed by 'alike', the way 'Seen' confirms one by (==).
+entering :: Expression -> ReduceContext -> IO ReduceContext
+entering term ctx
   | not ctx._acyclic = pure ctx
-  | seenMember digest term (store ctx._judgment) = throwIO (Looping term)
-  | otherwise = pure (remembered ctx._judgment)
+  | otherwise = maybe (pure ctx) remembered (entrance ctx._judgment term)
   where
-    digest :: Int
-    digest = hashExpression term
-    store :: Judgment -> Seen
-    store Morphing = ctx._seen
-    store Dataization = ctx._dataized
-    remembered :: Judgment -> ReduceContext
-    remembered Morphing = ctx{_seen = seenInsert digest term ctx._seen}
-    remembered Dataization = ctx{_dataized = seenInsert digest term ctx._dataized}
+    remembered :: Expression -> IO ReduceContext
+    remembered form
+      | any (alike form) (Map.findWithDefault [] (hashShape form) ctx._entered) = throwIO (Looping form)
+      | otherwise = pure ctx{_entered = seenInsert (hashShape form) form ctx._entered}
+
+-- The formation a frame of the judgment enters as it opens on the term, if it
+-- enters one at all. Only three rules get into a formation: 'box' of 𝔻, into
+-- the φ body of a formation carrying no λ and no Δ; 'fire' of 𝔻, into the λ
+-- function of a formation carrying one naming a function; and 'ml' of 𝕄, into
+-- the λ function of the head of a dispatch, which is the formation entered and
+-- not the dispatch off it. Every other term the two judgments are handed is
+-- one they only pass through on their way to such a formation, and 𝕄 stops at
+-- a formation without getting into it.
+entrance :: Judgment -> Expression -> Maybe Expression
+entrance Dataization term@(ExFormation bds)
+  | boxed bds || isJust (lambda bds) = Just term
+entrance Morphing (ExDispatch form@(ExFormation bds) _)
+  | isJust (lambda bds) = Just form
+entrance _ _ = Nothing
+
+-- Whether the 'box' rule of 𝔻 gets into a formation with these bindings: one
+-- binding φ to a term, and none binding Δ or a λ (see 'box.yaml').
+boxed :: [Binding] -> Bool
+boxed bds = any phi bds && not (any isLambda bds) && not (any delta bds)
+  where
+    phi :: Binding -> Bool
+    phi (BiTau AtPhi _) = True
+    phi _ = False
+    delta :: Binding -> Bool
+    delta (BiDelta _) = True
+    delta _ = False
+
+-- Split the λ binding off a formation for the LAMBDA morphing rule: the name of
+-- the λ function to fire and the formation it fires against, the λ binding
+-- removed. A formation with no λ binding, or with more than one, has nothing to
+-- fire; neither has one carrying a symbol, which is a λ name nothing answers.
+-- The three are one answer here but not to 𝔼, which tells all three apart: no λ
+-- at all is answered with ⊥, a symbol gets stuck the way an unanswered name
+-- does, and only the rest is a term it cannot work out (see 'evaluation' in
+-- 'Evaluate'). It lives here and not beside 𝔼 because the guard of '_acyclic'
+-- asks it too (see 'entrance').
+lambda :: [Binding] -> Maybe (T.Text, Expression)
+lambda bds = case partition isLambda bds of
+  ([BiLambda (Function func)], rest) -> Just (func, ExFormation rest)
+  _ -> Nothing
+
+-- Whether a binding names a λ function, whatever that name turns out to be.
+-- 𝔼 asks this before 'lambda' does its splitting, since a formation carrying no
+-- λ at all is answered with ⊥ rather than refused (see 'evaluation' in
+-- 'Evaluate').
+isLambda :: Binding -> Bool
+isLambda (BiLambda _) = True
+isLambda _ = False
 
 -- The Morphing function 𝕄 maps normal forms to formations. It is ternary,
 -- 𝕄(n, e, s): besides the term 'n' it takes the universe 'e' ('univ') — a plain
@@ -325,7 +379,7 @@ unvisited term ctx
 -- evaluated in isolation by 'sidePremise', its own steps discarded.
 morph' :: Morphed -> Expression -> State -> ReduceContext -> IO (Morphed, State)
 morph' (expr, seq) univ state caller = do
-  ctx <- deeper =<< unvisited expr =<< universed univ caller{_judgment = Morphing}
+  ctx <- deeper =<< entering expr =<< universed univ caller{_judgment = Morphing}
   parking seq state $ do
     rules <- if ctx._shuffle then shuffle Y.morphingRules else pure Y.morphingRules
     matched <- firstMatch ctx rules
