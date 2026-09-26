@@ -937,6 +937,26 @@ $ phino dataize --max-steps=50 problem.phi
 [ERROR]: Dataization did not finish before reaching the limit of steps: --max-steps=50
 ```
 
+That budget bounds how deep one branch goes, not how much the whole run does.
+An entry that reduces two operands, each firing it again, doubles its work at
+every level and still never gets deep, so no `--max-steps` stops it. The
+`--max-firings` option counts every λ function the run fires and fails the
+run once the count is spent; `--partial` parks it instead, the way it parks a
+spent `--max-steps`. There is no limit unless the option is given:
+
+```bash
+$ cat split.yaml
+- λ: L_split
+  morph:
+    𝑛1: Φ.s.foo
+    𝑛2: Φ.s.foo
+  𝑛: ⟦ l ↦ 𝑛1, r ↦ 𝑛2 ⟧
+$ cat split.phi
+⟦ s ↦ ⟦ λ ⤍ L_split ⟧, x ↦ Φ.s.foo ⟧
+$ phino morph --symbolic=split.yaml --locator=Q.x --max-firings=64 split.phi
+[ERROR]: Evaluation did not finish before reaching the limit of firings: --max-firings=64
+```
+
 ## Morph
 
 Dataization insists on bytes. Morphing 𝕄 asks a different question: evaluate

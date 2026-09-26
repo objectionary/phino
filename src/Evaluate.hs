@@ -27,7 +27,7 @@ import qualified Data.Text as T
 import Deps (BuildTermMethodS, Evaluation (..), State (..), Term (..))
 import Lambdas (Lambda (..), Meta (..), joined, matched, minted, symbolized)
 import Matcher (MetaValue (..), Subst, combine, substEmpty, substSingle, substSlot)
-import Morph (ReduceContext (..), ReduceException (..), deeper, enter, isLambda, lambda, morph', morphing, normalized, unparked)
+import Morph (ReduceContext (..), ReduceException (..), charged, deeper, enter, isLambda, lambda, morph', morphing, normalized, unparked)
 import Printer (printFunction)
 import Rule (RuleContext (RuleContext), matchExpressionWithRule')
 import Text.Printf (printf)
@@ -122,13 +122,16 @@ evaluation _ _ _ _ = throwIO (userError "Function evaluate() requires exactly 2 
 -- is still standing in the residue the '_deep' walk goes over, so 𝔼 is fired on
 -- it again and again answers nothing, and a reader counting the '?(…)' lines
 -- counts the sites 𝔼 got stuck on rather than the passes the walk made over
--- them (see '_parked', #1300).
+-- them (see '_parked', #1300). A firing an entry answers is charged to the
+-- '--max-firings' budget before it writes anything, so a run that spent the
+-- budget leaves no firing open in the protocol (see 'charged', #1472).
 symbol :: T.Text -> Expression -> Expression -> Expression -> State -> ReduceContext -> IO (Expression, State)
 symbol func form self univ state caller = case matched caller._symbolic func of
   Nothing -> do
     unless (func `elem` caller._parked) (caller._saveEval (EvStuck caller._nesting func caller._judgment form))
     throwIO (Stuck func)
   Just entry -> do
+    charged caller
     caller._saveEval (EvFiring caller._nesting func caller._judgment caller._site)
     let ctx = caller{_nesting = caller._nesting + 1}
     (bound, dataized, conditions) <- foldM (down ctx) (substEmpty, state, []) entry._dataized
@@ -450,7 +453,7 @@ fired dispatched term univ state caller = do
     parked _ (LoopingAt _ _ reached) = pure (Nothing, reached)
     parked reached (Looping _) = pure (Nothing, reached)
     parked _ (StuckAt func _ _) = throwIO (Stuck func)
-    parked _ (OutOfStepsAt limit _ _) = throwIO (OutOfSteps limit)
+    parked _ (OutOfStepsAt budget _ _) = throwIO (OutOfSteps budget)
     parked _ failure = throwIO failure
 
 -- A term of the '--symbolic' file as 𝕄 leaves it: an entry's answer on its way

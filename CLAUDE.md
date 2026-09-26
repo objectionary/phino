@@ -176,6 +176,13 @@ stands under it; a cut is one too, `looped(…)` (`EvLooped`), written by
 `enter` where the refused frame would have opened, carrying the formation its
 ancestor entered (#1434) and naming the mode that cut it.
 
+`--max-steps` bounds the depth of one branch, so a recursion that widens the
+term instead of nesting it fires forever inside it. `--max-firings` bounds the
+firings of the whole run (`Tally` and `charged` in `Morph.hs`, charged by
+`symbol` in `Evaluate.hs`), off unless given. Its count is an `IORef` in the
+context rather than a field of `State`, since a parked frame hands back the
+state it started from and would refund the firings made inside it (#1472).
+
 ### Test pattern: YAML packs
 
 Most spec files load test cases from `test-resources/*-packs/*.yaml` at

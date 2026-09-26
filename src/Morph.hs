@@ -18,12 +18,13 @@
 -- a λ function itself, which is an evaluation — are injected as '_reduce',
 -- '_evaluate' and '_fire' rather than imported (see 'ReductionFunc' and
 -- 'EvaluationFunc').
-module Morph (ReduceContext (..), ReduceException (..), EvaluationFunc, FiringFunc, ReductionFunc, Morphed, Steps (..), boxed, deeper, emptyState, enter, entering, excluding, execBuildTerm, insideUniverse, isLambda, lambda, leadsTo, morph, morph', morphing, normalized, parking, producer, sidePremise, universed, unparked, verb) where
+module Morph (ReduceContext (..), ReduceException (..), EvaluationFunc, FiringFunc, ReductionFunc, Morphed, Steps (..), Tally (..), boxed, charged, deeper, emptyState, enter, entering, excluding, execBuildTerm, insideUniverse, isLambda, lambda, leadsTo, morph, morph', morphing, normalized, parking, producer, sidePremise, tallied, universed, unparked, verb) where
 
 import AST
 import Builder (buildExpressionThrows, contextualize)
 import Control.Exception (Exception, catch, throwIO, try)
-import Control.Monad (foldM)
+import Control.Monad (foldM, when)
+import Data.IORef (IORef, newIORef, readIORef, writeIORef)
 import Data.List (find, partition)
 import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as NE
@@ -96,6 +97,20 @@ data Steps = Steps
   , _spent :: Int
   }
 
+-- How many λ functions the whole run may fire ('_ceiling', the '--max-firings'
+-- option) and how many it has fired so far ('_count'). Unlike 'Steps' it bounds
+-- total work and not one branch: a firing whose answer is wider than the term
+-- it replaced makes the next descent more siblings than the last one, each of
+-- them shallow, so a recursion that widens the term instead of nesting it fires
+-- forever inside the depth '--max-steps' gives it (#1472). The count is one
+-- cell every frame of the run shares rather than a field of 'State', since a
+-- parked frame hands back the state it started from and so would refund every
+-- firing made inside it.
+data Tally = Tally
+  { _ceiling :: Int
+  , _count :: IORef Int
+  }
+
 -- The context every reduction of the calculus is threaded with — 𝕄 here and 𝔻 in
 -- 'Dataize' — carrying the configuration plus the step budget spent so far. Nothing global is fixed here: the universe (the second argument 'e' of
 -- 𝕄(n, e, s) and 𝔻(n, e, s)) is a plain expression threaded as an argument to
@@ -133,6 +148,9 @@ data ReduceContext = ReduceContext
   , _maxDepth :: Int
   , _maxCycles :: Int
   , _steps :: Steps
+  , -- How many λ functions the whole run may fire and how many it has fired
+    -- (see 'Tally'), or nothing where '--max-firings' asks for no such limit.
+    _tally :: Maybe Tally
   , _nesting :: Int
   , _depthSensitive :: Bool
   , _shuffle :: Bool
@@ -172,8 +190,17 @@ data ReduceContext = ReduceContext
   , _saveEval :: SaveEvalFunc
   }
 
+-- Which of the two budgets a run spent, with the limit it was given: the depth
+-- one branch may descend ('--max-steps', see 'Steps') or the firings the whole
+-- run may make ('--max-firings', see 'Tally'). Both are the same signal to
+-- '_partial', which parks either as a site that never finishes, and differ only
+-- in what the message names.
+data Budget
+  = Depth Int
+  | Firings Int
+
 data ReduceException
-  = OutOfSteps Int
+  = OutOfSteps Budget
   | -- A λ function could not fire: the '--symbolic' file carries no entry
     -- answering that name, or an operand of the entry it does carry never came
     -- down to data, or the two branches it joins differ by more than a symbol,
@@ -193,7 +220,7 @@ data ReduceException
     -- and state just like 'StuckAt': a term that never reduces is a stuck site
     -- too, so '_partial' parks it and hands back the residual instead of
     -- failing hard (#1078)
-    OutOfStepsAt Int (NonEmpty Rewritten) State
+    OutOfStepsAt Budget (NonEmpty Rewritten) State
   | -- A frame was about to enter a formation a frame above it has already
     -- entered, up to a renaming of symbols, which it can only ever answer by
     -- entering it again. 𝕄 and 𝔻 both raise it, over the one store of the
@@ -222,9 +249,11 @@ data ReduceException
   deriving anyclass (Exception)
 
 instance Show ReduceException where
-  show (OutOfSteps limit) =
+  show (OutOfSteps (Depth limit)) =
     printf "Dataization did not finish before reaching the limit of steps: --max-steps=%d" limit
-  show (OutOfStepsAt limit _ _) = show (OutOfSteps limit)
+  show (OutOfSteps (Firings limit)) =
+    printf "Evaluation did not finish before reaching the limit of firings: --max-firings=%d" limit
+  show (OutOfStepsAt budget _ _) = show (OutOfSteps budget)
   show (Stuck func) = printf "No entry of --symbolic answers the λ function '%s'" (T.unpack func)
   show (StuckAt func _ _) = show (Stuck func)
   show (Looping term) = printf "Reduction entered a formation it is already inside: %s" (printExpression term)
@@ -241,8 +270,23 @@ instance Show ReduceException where
 -- with or without '--depth-sensitive'.
 deeper :: ReduceContext -> IO ReduceContext
 deeper ctx@ReduceContext{_steps = Steps limit spent}
-  | spent >= limit = throwIO (OutOfSteps limit)
+  | spent >= limit = throwIO (OutOfSteps (Depth limit))
   | otherwise = pure ctx{_steps = Steps limit (spent + 1)}
+
+-- The tally a run starts from where '--max-firings' gives a ceiling: nothing
+-- fired yet.
+tallied :: Maybe Int -> IO (Maybe Tally)
+tallied = traverse (\cap -> Tally cap <$> newIORef 0)
+
+-- Charge one firing of a λ function to the budget of the whole run, refusing
+-- to fire once it is gone (see 'Tally'). 'deeper' bounds how far one branch
+-- descends, which stops a recursion that nests but not one that widens.
+charged :: ReduceContext -> IO ()
+charged ReduceContext{_tally = Nothing} = pure ()
+charged ReduceContext{_tally = Just (Tally cap count)} = do
+  fired <- readIORef count
+  when (fired >= cap) (throwIO (OutOfSteps (Firings cap)))
+  writeIORef count (fired + 1)
 
 -- Run one frame of the 𝕄/𝔻 spine, attaching its derivation and its state to a
 -- stuck λ function or an exhausted budget escaping it. 'Stuck' is raised deep
@@ -261,7 +305,7 @@ parking seq state action = action `catch` rethrow
   where
     rethrow :: ReduceException -> IO a
     rethrow (Stuck func) = throwIO (StuckAt func seq state)
-    rethrow (OutOfSteps limit) = throwIO (OutOfStepsAt limit seq state)
+    rethrow (OutOfSteps budget) = throwIO (OutOfStepsAt budget seq state)
     rethrow (Looping term) = throwIO (LoopingAt term seq state)
     rethrow failure = throwIO failure
 
@@ -275,7 +319,7 @@ unparked action = action `catch` rethrow
   where
     rethrow :: ReduceException -> IO a
     rethrow (StuckAt func _ _) = throwIO (Stuck func)
-    rethrow (OutOfStepsAt limit _ _) = throwIO (OutOfSteps limit)
+    rethrow (OutOfStepsAt budget _ _) = throwIO (OutOfSteps budget)
     rethrow (LoopingAt term _ _) = throwIO (Looping term)
     rethrow failure = throwIO failure
 
