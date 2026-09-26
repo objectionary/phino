@@ -351,13 +351,14 @@ escapeXML = concatMap escapeChar
 
 -- Escape just the characters that are mandatory in XML text content ('&' and
 -- '<'); '>' and the quotes are optional there and staying literal keeps the
--- content readable, e.g. the '->' arrow inside a <listing>.
+-- content readable while keeping every listing well-formed XML.
 escapeXMLText :: String -> String
 escapeXMLText = concatMap escapeChar
   where
     escapeChar :: Char -> String
     escapeChar '&' = "&amp;"
     escapeChar '<' = "&lt;"
+    escapeChar '>' = "&gt;"
     escapeChar ch = [ch]
 
 -- Add indentation (2 spaces per level).
