@@ -325,7 +325,7 @@ unescapeStr = go
       [(code, "")] -> Just code
       _ -> Nothing
     escapes :: [(Char, Char)]
-    escapes = [('"', '"'), ('\\', '\\'), ('n', '\n'), ('t', '\t')]
+    escapes = [('"', '"'), ('\\', '\\'), ('n', '\n'), ('t', '\t'), ('r', '\r'), ('b', '\b'), ('f', '\f')]
 
 -- >>> btsToUnescapedStr (BtMany ["01", "02"])
 -- "\SOH\STX"
