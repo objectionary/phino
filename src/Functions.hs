@@ -142,13 +142,15 @@ _sed args subst = do
     parse :: B.ByteString -> IO (B.ByteString, B.ByteString, Bool)
     parse input =
       case B.stripPrefix "s/" input of
-        Just body ->
-          let (pat, rest) = nextUntilSlash body B.empty False
-              (rep, flag) = nextUntilSlash rest B.empty True
-           in case flag of
-                "g" -> pure (pat, rep, True)
-                "" -> pure (pat, rep, False)
-                _ -> throwIO (userError "sed pattern must be in format s/pat/rep/[g]")
+        Just body
+          | B.elem 47 body ->
+            let (pat, rest) = nextUntilSlash body B.empty False
+                (rep, flag) = nextUntilSlash rest B.empty True
+             in case flag of
+                  "g" -> pure (pat, rep, True)
+                  "" -> pure (pat, rep, False)
+                  _ -> throwIO (userError "sed pattern must be in format s/pat/rep/[g]")
+          | otherwise -> throwIO (userError "sed pattern must be in format s/pat/rep/[g]")
         _ -> throwIO (userError "sed pattern must start with s/")
     -- Cut part from given string until regular slash.
     nextUntilSlash :: B.ByteString -> B.ByteString -> Bool -> (B.ByteString, B.ByteString)
