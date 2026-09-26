@@ -18,13 +18,13 @@
 -- a λ function itself, which is an evaluation — are injected as '_reduce',
 -- '_evaluate' and '_fire' rather than imported (see 'ReductionFunc' and
 -- 'EvaluationFunc').
-module Morph (ReduceContext (..), ReduceException (..), EvaluationFunc, FiringFunc, ReductionFunc, Morphed, Steps (..), Tally (..), boxed, charged, deeper, emptyState, enter, entering, excluding, execBuildTerm, insideUniverse, isLambda, lambda, leadsTo, morph, morph', morphing, normalized, parking, producer, sidePremise, tallied, universed, unparked, verb) where
+module Morph (ReduceContext (..), ReduceException (..), EvaluationFunc, FiringFunc, Memo (..), ReductionFunc, Morphed, Steps (..), Tally (..), boxed, charged, deeper, emptyState, enter, entering, excluding, execBuildTerm, insideUniverse, isLambda, lambda, leadsTo, memoized, morph, morph', morphing, normalized, parking, producer, recalled, retained, sidePremise, tallied, universed, unparked, verb) where
 
 import AST
 import Builder (buildExpressionThrows, contextualize)
 import Control.Exception (Exception, catch, throwIO, try)
 import Control.Monad (foldM, when)
-import Data.IORef (IORef, newIORef, readIORef, writeIORef)
+import Data.IORef (IORef, modifyIORef', newIORef, readIORef, writeIORef)
 import Data.List (find, partition)
 import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as NE
@@ -111,6 +111,35 @@ data Tally = Tally
   , _count :: IORef Int
   }
 
+-- What the firings of this run answered, by the formation each was fired
+-- against, kept so that a later firing of the same formation takes the answer
+-- instead of making it again (the '--memo' option). 𝔼 is a function of the
+-- formation it fires: the entry that answers is found by the λ name the
+-- formation carries, every operand is reduced from the bindings of it, inside
+-- the one universe of the run, and the answer is built from what they came
+-- down to, so two firings of one formation make one answer twice, symbols
+-- apart. Every use of a binding copies the term bound to it, so a program
+-- reading 'truncated ↦ ρ.abs.floor' in five places fires 'abs' and 'floor'
+-- five times over and mints five symbols for one value (#1476). The store is
+-- keyed by the formation as 𝔼 was handed it, λ binding and all, ρ included,
+-- since ρ is what the operands reach the receiver through and two formations
+-- differing in ρ alone are fired on two objects; a digest picks the
+-- candidates and (==) confirms one, the way 'Seen' does. What is kept is the
+-- answer as 𝕄 left it, with the symbols the first firing minted, so a later
+-- firing names the very unknowns the first one did and mints nothing, fires
+-- nothing, is charged nothing and writes nothing: the protocol of a run says
+-- what the run fired, and the unknown a later site came to is read off the
+-- program. A firing that got stuck keeps nothing, since nothing was answered;
+-- a site parked or a recursion cut inside an answer is a part of it, since
+-- that is what the run made of the formation. The store is one cell every
+-- frame of the run shares, like the count of 'Tally', since what one frame
+-- answered is what its siblings are after.
+newtype Memo = Memo (IORef (Store Expression))
+
+-- What 'Memo' keeps: the answers, by the digest of the formation they answer,
+-- each beside the very formation, since two terms may share a digest.
+type Store answer = Map.Map Int [(Expression, answer)]
+
 -- The context every reduction of the calculus is threaded with — 𝕄 here and 𝔻 in
 -- 'Dataize' — carrying the configuration plus the step budget spent so far. Nothing global is fixed here: the universe (the second argument 'e' of
 -- 𝕄(n, e, s) and 𝔻(n, e, s)) is a plain expression threaded as an argument to
@@ -151,6 +180,9 @@ data ReduceContext = ReduceContext
   , -- How many λ functions the whole run may fire and how many it has fired
     -- (see 'Tally'), or nothing where '--max-firings' asks for no such limit.
     _tally :: Maybe Tally
+  , -- What the firings made so far answered (see 'Memo'), or nothing where
+    -- '--memo' is off and every formation is fired as many times as it is met.
+    _memo :: Maybe Memo
   , _nesting :: Int
   , _depthSensitive :: Bool
   , _shuffle :: Bool
@@ -287,6 +319,25 @@ charged ReduceContext{_tally = Just (Tally cap count)} = do
   fired <- readIORef count
   when (fired >= cap) (throwIO (OutOfSteps (Firings cap)))
   writeIORef count (fired + 1)
+
+-- The memo a run starts from where '--memo' asks for one: nothing kept yet.
+memoized :: Bool -> IO (Maybe Memo)
+memoized False = pure Nothing
+memoized True = Just . Memo <$> newIORef Map.empty
+
+-- What the memo keeps for the formation, if this run fired it already (see
+-- 'Memo'); nothing where the run keeps no memo at all.
+recalled :: Maybe Memo -> Expression -> IO (Maybe Expression)
+recalled Nothing _ = pure Nothing
+recalled (Just (Memo store)) form = do
+  kept <- readIORef store
+  pure (Map.lookup (hashExpression form) kept >>= lookup form)
+
+-- Keep what firing the formation answered, for the next firing of it (see
+-- 'Memo').
+retained :: Maybe Memo -> Expression -> Expression -> IO ()
+retained Nothing _ _ = pure ()
+retained (Just (Memo store)) form answer = modifyIORef' store (Map.insertWith (++) (hashExpression form) [(form, answer)])
 
 -- Run one frame of the 𝕄/𝔻 spine, attaching its derivation and its state to a
 -- stuck λ function or an exhausted budget escaping it. 'Stuck' is raised deep

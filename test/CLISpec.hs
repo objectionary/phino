@@ -2377,6 +2377,35 @@ spec = do
         withStdin "[[ x -> [[ L> Sym_arg_0 ]].foo ]]" $
           testCLIFailed ["morph", "--deep"] ["No entry of --symbolic answers the λ function 'Sym_arg_0'"]
 
+    -- Two bindings spelling one term are two firings of one formation, inner
+    -- sum and outer sum alike, so the walk fires four λ functions for two
+    -- values; '--memo' keeps what the first firing of a formation answered
+    -- and the second takes it, so the walk over the second binding fires
+    -- nothing (#1476)
+    describe "--memo" $ do
+      let twins = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]] ]], a -> 7.plus( 5.plus( 6 ) ), b -> 7.plus( 5.plus( 6 ) ) ]]"
+          firings :: [String] -> IO Int
+          firings flags =
+            withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
+              hClose stream
+              withStdin twins $
+                testCLISucceeded
+                  (["morph", symbolic, "--deep", "--protocol=" ++ path, "--quiet"] ++ flags)
+                  []
+              records <- readUtf8 path
+              pure (length (filter (isInfixOf "𝔼(L_number_plus)") (lines records)))
+      it "fires a formation once per binding spelling it without the flag" $
+        firings [] >>= (`shouldBe` 4)
+
+      it "fires a formation once for the run with the flag" $
+        firings ["--memo"] >>= (`shouldBe` 2)
+
+      it "dataizes to the same datum with the flag" $
+        withStdin chained $
+          testCLISucceeded
+            ["dataize", symbolic, "--memo", "--locator=Q.@"]
+            ["40-45-00-00-00-00-00-00"]
+
     -- The step budget used to be the only thing ending the 𝕄/𝔻 recursion, so an
     -- entry answering with a firing of itself spent the whole of it and then
     -- failed on the limit; '--acyclic' stops the moment morphing comes back to a

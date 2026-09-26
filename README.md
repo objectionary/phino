@@ -957,6 +957,45 @@ $ phino morph --symbolic=split.yaml --locator=Q.x --max-firings=64 split.phi
 [ERROR]: Evaluation did not finish before reaching the limit of firings: --max-firings=64
 ```
 
+### Firing a formation once
+
+Every use of a binding copies the term bound to it, so a program reading
+`truncated ↦ ρ.abs.floor` in five places fires `abs` and `floor` five times
+over and mints five symbols for one value, and a guard written that way
+spends its whole budget saying the same thing again. 𝔼 is a function of the
+formation it fires: the entry that answers is found by the λ name the
+formation carries, every operand is reduced from its bindings inside the one
+universe of the run, and the answer is built from what they came down to. The
+`--memo` option keeps what every firing answered, by the formation it fired,
+and a later firing of the same formation takes that answer, with the very
+symbols the first one minted, instead of making it again. Two bindings
+spelling one term then come to one symbol:
+
+```bash
+$ cat twins.phi
+⟦
+  bytes ↦ ⟦ φ ↦ ∅ ⟧,
+  number ↦ ⟦ φ ↦ ∅, plus(ρ, x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧,
+  a ↦ 7.plus( 5.plus( 6 ) ),
+  b ↦ 7.plus( 5.plus( 6 ) )
+⟧
+$ phino morph --symbolic=atoms.yaml --deep --memo --sweet --hide-rho twins.phi
+⟦
+  bytes ↦ ⟦ φ ↦ ∅ ⟧,
+  number ↦ ⟦ φ ↦ ∅, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧,
+  a ↦ ⟦ φ ↦ 𝜎2:λ, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧,
+  b ↦ ⟦ φ ↦ 𝜎2:λ, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧
+⟧
+```
+
+Without the option `b` lands on `𝜎4`, since the walk over it fires the inner
+sum and the outer one once more. A firing the memo answers is no firing: it
+is not charged to `--max-firings` and writes nothing to the protocol, which
+records the two firings of `a` and nothing under `b`; the unknown `b` came to
+is read off the program. The formation is compared with everything it
+carries, `ρ` included, so a firing on another object is another firing, and
+a firing that got stuck keeps nothing, since nothing was answered.
+
 ## Morph
 
 Dataization insists on bytes. Morphing 𝕄 asks a different question: evaluate

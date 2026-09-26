@@ -1,0 +1,49 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+# The memo of '--memo': 𝔼 is a function of the formation it fires, so two
+# bindings spelling one term are two firings of one formation, and a run
+# firing each of them afresh mints two symbols for one value and fires
+# everything under the second once more (#1476). With the memo, the second
+# takes what the first answered: the inner sum of 'b' is the inner sum of 'a'
+# fired again, and so is the outer one once the inner answers the same, so
+# the walk over 'b' fires nothing, writes nothing and lands 'b' on the very
+# symbol 'a' came to.
+symbolic: |
+  - λ: L_number_plus
+    dataize:
+      𝛿1: $.ρ
+      𝛿2: $.x
+    𝑛: Φ.number( φ ↦ ⟦ λ ⤍ 𝜎 ⟧ )
+deep: true
+memo: true
+input: >
+  ⟦ bytes(φ) ↦ ⟦⟧,
+    number(φ) ↦ ⟦ plus(ρ, x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧,
+    a ↦ 7.plus( 5.plus( 6 ) ),
+    b ↦ 7.plus( 5.plus( 6 ) ) ⟧
+result: >
+  ⟦ bytes(φ) ↦ ⟦⟧,
+    number(φ) ↦ ⟦ plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧,
+    a ↦ ⟦ φ ↦ 𝜎2:λ, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧,
+    b ↦ ⟦ φ ↦ 𝜎2:λ, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧ ⟧
+protocol: |
+  𝕄(Φ)
+    𝔼(L_number_plus)  # 𝕄(Φ.a)
+      formation(⟦ φ ↦ Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ ), plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧)  # 𝔻(Φ.a🌵0)
+        formation(40-14-00-00-00-00-00-00:Δ:φ)  # 𝔻(Φ.a🌵0)
+      𝛿1.1 := 40-14-00-00-00-00-00-00  # 𝔻(ξ.ρ)
+      formation(⟦ φ ↦ Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ ), plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧)  # 𝔻(Φ.a🌵1)
+        formation(40-18-00-00-00-00-00-00:Δ:φ)  # 𝔻(Φ.a🌵1)
+      𝛿2.1 := 40-18-00-00-00-00-00-00  # 𝔻(ξ.x)
+      𝑛.1.1 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛
+      𝑛.1.2 := ⟦ φ ↦ 𝜎1:λ, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧  # 𝕄(𝑛.1.1)
+    𝔼(L_number_plus)  # 𝕄(Φ.a)
+      formation(⟦ φ ↦ Φ.bytes( φ ↦ 40-1C-00-00-00-00-00-00:Δ ), plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧)  # 𝔻(Φ.a🌵2)
+        formation(40-1C-00-00-00-00-00-00:Δ:φ)  # 𝔻(Φ.a🌵2)
+      𝛿1.2 := 40-1C-00-00-00-00-00-00  # 𝔻(ξ.ρ)
+      formation(⟦ φ ↦ 𝜎1:λ, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧)  # 𝔻(Φ.a🌵3)
+      𝛿2.2 := 𝔻(𝜎1:λ)  # 𝔻(ξ.x)
+      𝑛.2.1 := Φ.number( φ ↦ 𝜎2:λ )  # 𝑛
+      𝑛.2.2 := ⟦ φ ↦ 𝜎2:λ, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧  # 𝕄(𝑛.2.1)
