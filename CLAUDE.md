@@ -183,6 +183,15 @@ firings of the whole run (`Tally` and `charged` in `Morph.hs`, charged by
 context rather than a field of `State`, since a parked frame hands back the
 state it started from and would refund the firings made inside it (#1472).
 
+Every use of a binding copies the term bound to it, so one formation is fired
+as many times as the program reads it, and every firing mints symbols of its
+own. `--memo` keeps what every firing answered, by the formation it fired
+(`Memo`, `recalled` and `retained` in `Morph.hs`, asked and told by `symbol`
+in `Evaluate.hs`), and a later firing of the same formation, ρ and all, takes
+the answer with the symbols the first one minted; it is charged nothing and
+writes nothing (#1476). The store is an `IORef` in the context for the reason
+the tally is.
+
 ### Test pattern: YAML packs
 
 Most spec files load test cases from `test-resources/*-packs/*.yaml` at

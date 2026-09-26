@@ -97,6 +97,13 @@ optMaxFirings =
         (long "max-firings" <> metavar "FIRINGS" <> help "Maximum number of λ functions the whole run may fire, unlimited unless given")
     )
 
+-- Every use of a binding copies the term bound to it, so a program reading one
+-- binding in five places meets one formation five times, and fires it five
+-- times over, minting five symbols for one answer. This keeps what a firing
+-- answered, for the next firing of the same formation (see 'Memo').
+optMemo :: Parser Bool
+optMemo = switch (long "memo" <> help "Fire every formation once: what 𝔼 answered a formation is kept for the whole run, and a later firing of the same formation, ρ included, takes the answer, with the very symbol the first firing minted, instead of firing it again")
+
 optMargin :: Parser Int
 optMargin =
   option
@@ -390,6 +397,7 @@ dataizeParser =
             <*> optMaxCycles
             <*> optMaxSteps
             <*> optMaxFirings
+            <*> optMemo
             <*> optMargin
             <*> optMeetPopularity
             <*> optMeetLength
@@ -437,6 +445,7 @@ morphParser =
             <*> optMaxCycles
             <*> optMaxSteps
             <*> optMaxFirings
+            <*> optMemo
             <*> optMargin
             <*> optMeetPopularity
             <*> optMeetLength

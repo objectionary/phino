@@ -27,7 +27,7 @@ import qualified Data.Text as T
 import Deps (BuildTermMethodS, Evaluation (..), State (..), Term (..))
 import Lambdas (Lambda (..), Meta (..), joined, matched, minted, symbolized)
 import Matcher (MetaValue (..), Subst, combine, substEmpty, substSingle, substSlot)
-import Morph (ReduceContext (..), ReduceException (..), charged, deeper, enter, isLambda, lambda, morph', morphing, normalized, unparked)
+import Morph (ReduceContext (..), ReduceException (..), charged, deeper, enter, isLambda, lambda, morph', morphing, normalized, recalled, retained, unparked)
 import Printer (printFunction)
 import Rule (RuleContext (RuleContext), matchExpressionWithRule')
 import Text.Printf (printf)
@@ -125,22 +125,35 @@ evaluation _ _ _ _ = throwIO (userError "Function evaluate() requires exactly 2 
 -- them (see '_parked', #1300). A firing an entry answers is charged to the
 -- '--max-firings' budget before it writes anything, so a run that spent the
 -- budget leaves no firing open in the protocol (see 'charged', #1472).
+--
+-- A formation the run has fired already is not fired again where '_memo'
+-- keeps what it answered (see 'Memo' in 'Morph'): the answer comes back as
+-- the first firing left it, symbols and all, and nothing is charged, minted
+-- or written, since the run made it once and the protocol says so once.
 symbol :: T.Text -> Expression -> Expression -> Expression -> State -> ReduceContext -> IO (Expression, State)
 symbol func form self univ state caller = case matched caller._symbolic func of
   Nothing -> do
     unless (func `elem` caller._parked) (caller._saveEval (EvStuck caller._nesting func caller._judgment form))
     throwIO (Stuck func)
   Just entry -> do
-    charged caller
-    caller._saveEval (EvFiring caller._nesting func caller._judgment caller._site)
-    let ctx = caller{_nesting = caller._nesting + 1}
-    (bound, dataized, conditions) <- foldM (down ctx) (substEmpty, state, []) entry._dataized
-    (bound', morphed) <- foldM (through ctx) (bound, dataized) entry._morphed
-    rewrote <- foldM (reshaped ctx) bound' entry._rewritten
-    (bound'', stood) <- foldM (masked ctx) (rewrote, morphed) entry._symbolized
-    (bound''', forked) <- foldM (paired ctx (listToMaybe (reverse conditions))) (bound'', stood) entry._paired
-    answered ctx entry (reverse conditions) bound''' forked
+    known <- recalled caller._memo form
+    maybe (made entry) (\normal -> pure (normal, state)) known
   where
+    -- Fire the entry: charge the firing, reduce every operand, build the
+    -- answer and keep it for the next firing of the same formation.
+    made :: Lambda -> IO (Expression, State)
+    made entry = do
+      charged caller
+      caller._saveEval (EvFiring caller._nesting func caller._judgment caller._site)
+      let ctx = caller{_nesting = caller._nesting + 1}
+      (bound, dataized, conditions) <- foldM (down ctx) (substEmpty, state, []) entry._dataized
+      (bound', morphed) <- foldM (through ctx) (bound, dataized) entry._morphed
+      rewrote <- foldM (reshaped ctx) bound' entry._rewritten
+      (bound'', stood) <- foldM (masked ctx) (rewrote, morphed) entry._symbolized
+      (bound''', forked) <- foldM (paired ctx (listToMaybe (reverse conditions))) (bound'', stood) entry._paired
+      (normal, state') <- answered ctx entry (reverse conditions) bound''' forked
+      retained caller._memo form normal
+      pure (normal, state')
     -- Bring one 'dataize' operand down through 𝔻 and bind the bytes meta that
     -- names it. An operand 𝔻 could not bring down to data — a site '_partial'
     -- parked — leaves the firing with nothing to bind, so it gets stuck like a
