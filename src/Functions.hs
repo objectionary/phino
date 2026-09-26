@@ -17,7 +17,7 @@ import Deps
 import Logger (logDebug)
 import Matcher
 import Misc
-import Parser (parseAttributeThrows, parseNumberThrows)
+import Parser (parseAttributeThrows, parseExpressionThrows, parseNumberThrows)
 import Printer (printAttribute, printExpression, printExtraArg)
 import Random (randomString)
 import Regexp
@@ -49,6 +49,7 @@ buildTerm' "sed" = _sed
 buildTerm' "random-string" = _randomString
 buildTerm' "size" = _size
 buildTerm' "tau" = _tau
+buildTerm' "locator" = _locator
 buildTerm' "string" = _string
 buildTerm' "number" = _number
 buildTerm' "sum" = _sum
@@ -180,6 +181,21 @@ _tau [Y.ArgExpression expr] subst = do
   attr <- parseAttributeThrows (btsToUnescapedStr bts)
   pure (TeAttribute attr)
 _tau _ _ = throwIO (userError "Function tau() requires exactly 1 argument as expression")
+
+_locator :: BuildTermMethod
+_locator [Y.ArgExpression expr] subst = do
+  TeBytes bts <- _dataize [Y.ArgExpression expr] subst
+  locator <- parseExpressionThrows (btsToUnescapedStr bts)
+  if rooted locator
+    then pure (TeExpression locator)
+    else throwIO (userError (printf "Function locator() expects a dispatch started with Φ or ξ, but got: %s" (printExpression locator)))
+  where
+    rooted :: Expression -> Bool
+    rooted ExRoot = True
+    rooted ExXi = True
+    rooted (ExDispatch base _) = rooted base
+    rooted _ = False
+_locator _ _ = throwIO (userError "Function locator() requires exactly 1 argument as expression")
 
 _string :: BuildTermMethod
 _string [Y.ArgExpression expr] subst = do

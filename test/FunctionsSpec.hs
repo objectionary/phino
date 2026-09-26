@@ -143,6 +143,24 @@ spec = describe "Functions" $ do
         , \term -> expectAttribute term (AtLabel "x")
         )
       ,
+        ( "locator parses a dispatch rooted at Φ out of a string expression"
+        , "locator"
+        , [ArgExpression (DataString (strToBts "Φ.foo.bar.t"))]
+        , \term -> expectExpression term (ExDispatch (ExDispatch (ExDispatch ExRoot (AtLabel "foo")) (AtLabel "bar")) (AtLabel "t"))
+        )
+      ,
+        ( "locator parses a bare path as a dispatch rooted at ξ"
+        , "locator"
+        , [ArgExpression (DataString (strToBts "foo.bar"))]
+        , \term -> expectExpression term (ExDispatch (ExDispatch ExXi (AtLabel "foo")) (AtLabel "bar"))
+        )
+      ,
+        ( "locator accepts the root alone"
+        , "locator"
+        , [ArgExpression (DataString (strToBts "Φ"))]
+        , (`expectExpression` ExRoot)
+        )
+      ,
         ( "string converts a number expression to a string"
         , "string"
         , [ArgExpression (DataNumber (numToBts 5))]
@@ -196,6 +214,10 @@ spec = describe "Functions" $ do
       , ("random-string fails on the wrong number of arguments", "random-string", [], "random-string() requires exactly 1")
       , ("size fails on a non-meta binding argument", "size", [ArgBinding (BiVoid AtRho)], "size() requires exactly 1 meta binding")
       , ("tau fails on the wrong number of arguments", "tau", [], "tau() requires exactly 1 argument")
+      , ("locator fails on a string that is not a phi expression", "locator", [ArgExpression (DataString (strToBts "foo..bar"))], "Couldn't parse given phi expression")
+      , ("locator fails on an expression that is not a dispatch", "locator", [ArgExpression (DataString (strToBts "⟦ foo ↦ ⟦⟧ ⟧"))], "locator() expects a dispatch started with Φ or ξ")
+      , ("locator fails on a dispatch rooted at a formation", "locator", [ArgExpression (DataString (strToBts "⟦ foo ↦ ⟦⟧ ⟧.foo"))], "locator() expects a dispatch started with Φ or ξ")
+      , ("locator fails on the wrong number of arguments", "locator", [], "locator() requires exactly 1 argument")
       ,
         ( "string fails on an expression that is neither a number nor a string"
         , "string"

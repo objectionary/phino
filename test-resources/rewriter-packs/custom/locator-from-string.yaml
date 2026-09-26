@@ -1,0 +1,18 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+input: |
+  ⟦ x -> "Φ.foo.bar.t" ⟧
+output: |-
+  ⟦ y -> Φ.foo.bar.t ⟧
+rules:
+  custom:
+    - name: locator from string
+      pattern: |
+        [[ x -> !e1 ]]
+      result: |
+        [[ y -> !e2 ]]
+      where:
+        - meta: '!e2'
+          function: locator
+          args: ['!e1']
