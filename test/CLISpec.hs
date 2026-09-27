@@ -2379,31 +2379,52 @@ spec = do
 
     -- Two bindings spelling one term are two firings of one formation, inner
     -- sum and outer sum alike, so the walk fires four λ functions for two
-    -- values; '--memo' keeps what the first firing of a formation answered
-    -- and the second takes it, so the walk over the second binding fires
-    -- nothing (#1476)
-    describe "--memo" $ do
+    -- values and charges four to '--max-firings'. Under '--acyclic=plausible'
+    -- the first firing of a formation is kept and the second takes its answer,
+    -- reducing and minting nothing, so the walk over the second binding is
+    -- charged nothing and lands it on the symbol the first came to; the
+    -- protocol still writes that firing at its own site, with the answer of
+    -- the first named after the line that made it, and no operand line under
+    -- it (#1476)
+    describe "--acyclic=plausible" $ do
       let twins = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]] ]], a -> 7.plus( 5.plus( 6 ) ), b -> 7.plus( 5.plus( 6 ) ) ]]"
-          firings :: [String] -> IO Int
-          firings flags =
+          recorded :: String -> IO [String]
+          recorded mode =
             withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
               hClose stream
               withStdin twins $
                 testCLISucceeded
-                  (["morph", symbolic, "--deep", "--protocol=" ++ path, "--quiet"] ++ flags)
+                  ["morph", symbolic, "--deep", "--acyclic=" ++ mode, "--protocol=" ++ path, "--quiet"]
                   []
-              records <- readUtf8 path
-              pure (length (filter (isInfixOf "𝔼(L_number_plus)") (lines records)))
-      it "fires a formation once per binding spelling it without the flag" $
-        firings [] >>= (`shouldBe` 4)
+              lines <$> readUtf8 path
+      it "charges a formation once per binding spelling it under proven" $
+        withStdin twins $
+          testCLIFailed
+            ["morph", symbolic, "--deep", "--acyclic=proven", "--max-firings=3"]
+            ["[ERROR]: Evaluation did not finish before reaching the limit of firings: --max-firings=3"]
 
-      it "fires a formation once for the run with the flag" $
-        firings ["--memo"] >>= (`shouldBe` 2)
+      it "charges a formation once for the run under plausible" $
+        withStdin twins $
+          testCLISucceeded
+            ["morph", symbolic, "--deep", "--acyclic=plausible", "--max-firings=2", "--flat", "--hide-rho", "--sweet"]
+            ["b ↦ ⟦ φ ↦ 𝜎2:λ, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧"]
 
-      it "dataizes to the same datum with the flag" $
+      it "reduces the operands of a formation once per binding spelling it under proven" $
+        recorded "proven" >>= (`shouldSatisfy` ((== 4) . length . filter (isInfixOf "𝛿1.")))
+
+      it "reduces the operands of a formation once for the run under plausible" $
+        recorded "plausible" >>= (`shouldSatisfy` ((== 2) . length . filter (isInfixOf "𝛿1.")))
+
+      it "writes a recalled firing at its own site under plausible" $
+        recorded "plausible" >>= (`shouldSatisfy` ((== 4) . length . filter (isInfixOf "𝔼(L_number_plus)")))
+
+      it "answers a recalled firing with the line of the first under plausible" $
+        recorded "plausible" >>= (`shouldContain` ["    𝑛.4.2 := 𝑛.2.2  # 𝕄(𝑛.4.1)"])
+
+      it "dataizes to the same datum under plausible" $
         withStdin chained $
           testCLISucceeded
-            ["dataize", symbolic, "--memo", "--locator=Q.@"]
+            ["dataize", symbolic, "--acyclic=plausible", "--locator=Q.@"]
             ["40-45-00-00-00-00-00-00"]
 
     -- The step budget used to be the only thing ending the 𝕄/𝔻 recursion, so an

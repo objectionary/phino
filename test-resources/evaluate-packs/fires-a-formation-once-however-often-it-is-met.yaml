@@ -2,14 +2,17 @@
 # SPDX-License-Identifier: MIT
 ---
 # yamllint disable rule:line-length
-# The memo of '--memo': 𝔼 is a function of the formation it fires, so two
-# bindings spelling one term are two firings of one formation, and a run
-# firing each of them afresh mints two symbols for one value and fires
-# everything under the second once more (#1476). With the memo, the second
-# takes what the first answered: the inner sum of 'b' is the inner sum of 'a'
-# fired again, and so is the outer one once the inner answers the same, so
-# the walk over 'b' fires nothing, writes nothing and lands 'b' on the very
-# symbol 'a' came to.
+# The memo of '--acyclic=plausible': 𝔼 is a function of the formation it
+# fires, so two bindings spelling one term are two firings of one formation,
+# and a run firing each of them afresh mints two symbols for one value and
+# fires everything under the second once more (#1476). Under the mode the
+# second takes what the first answered: the inner sum of 'b' is the inner sum
+# of 'a' fired again, and so is the outer one once the inner answers the
+# same, so the walk over 'b' reduces nothing, mints nothing and lands 'b' on
+# the very symbol 'a' came to. The protocol still writes the two firings
+# under 'b', at their own site, each with the answer the firing under 'a'
+# made, named after the line that made it, and with no operand line under
+# it, since none was reduced.
 symbolic: |
   - λ: L_number_plus
     dataize:
@@ -17,7 +20,7 @@ symbolic: |
       𝛿2: $.x
     𝑛: Φ.number( φ ↦ ⟦ λ ⤍ 𝜎 ⟧ )
 deep: true
-memo: true
+acyclic: plausible
 input: >
   ⟦ bytes(φ) ↦ ⟦⟧,
     number(φ) ↦ ⟦ plus(ρ, x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧,
@@ -47,3 +50,9 @@ protocol: |
       𝛿2.2 := 𝔻(𝜎1:λ)  # 𝔻(ξ.x)
       𝑛.2.1 := Φ.number( φ ↦ 𝜎2:λ )  # 𝑛
       𝑛.2.2 := ⟦ φ ↦ 𝜎2:λ, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧  # 𝕄(𝑛.2.1)
+    𝔼(L_number_plus)  # 𝕄(Φ.b)
+      𝑛.3.1 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛
+      𝑛.3.2 := 𝑛.1.2  # 𝕄(𝑛.3.1)
+    𝔼(L_number_plus)  # 𝕄(Φ.b)
+      𝑛.4.1 := Φ.number( φ ↦ 𝜎2:λ )  # 𝑛
+      𝑛.4.2 := 𝑛.2.2  # 𝕄(𝑛.4.1)

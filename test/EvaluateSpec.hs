@@ -46,8 +46,8 @@ import Yaml (ExtraArgument (..))
 -- the way '--hide-rho' spells one, unless the pack says 'hide-rho: false': the
 -- ρ chain is the universe an entry was fired inside and not the answer it gave,
 -- so spelling it buries the symbol a pack is there to show (#1313). A pack
--- saying 'memo: true' runs with the memo of '--memo', so the protocol it
--- spells is the one of a run firing every formation once.
+-- saying 'acyclic: plausible' runs with the memo that mode keeps, so the
+-- protocol it spells is the one of a run firing every formation once.
 data SymbolPack = SymbolPack
   { symbolic :: String
   , location :: Maybe String
@@ -55,7 +55,6 @@ data SymbolPack = SymbolPack
   , deep :: Maybe Bool
   , partial :: Maybe Bool
   , acyclic :: Maybe String
-  , memo :: Maybe Bool
   , steps :: Maybe Int
   , protocol :: String
   , result :: Maybe String
@@ -84,12 +83,13 @@ testSymbols pth = do
   withLambdasOf (T.pack symbolic) $ \file -> do
     known <- readLambdas file
     (_, written) <- recorded' hidden $ \record -> do
-      cells <- memoized (memo == Just True)
+      let mode = named <$> acyclic
+      cells <- memoized mode
       let ctx =
             (defaultReduceContext loc)
               { _deep = deep == Just True
               , _partial = partial == Just True
-              , _acyclic = named <$> acyclic
+              , _acyclic = mode
               , _memo = cells
               , _steps = Steps (fromMaybe 250 steps) 0
               , _symbolic = known

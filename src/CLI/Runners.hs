@@ -166,7 +166,7 @@ runDataize OptsDataize{..} = do
       include = (`F.include` included)
   save <- saveStepFunc _stepsDir printCtx
   tally <- tallied _maxFirings
-  memo <- memoized _memo
+  memo <- memoized _acyclic
   (outcome, chain, _) <-
     withEvalFunc
       _protocol
@@ -256,7 +256,7 @@ runMorph OptsMorph{..} = do
       include = (`F.include` included)
   save <- saveStepFunc _stepsDir printCtx
   tally <- tallied _maxFirings
-  memo <- memoized _memo
+  memo <- memoized _acyclic
   (morphed, chain, _) <-
     withEvalFunc
       _protocol

@@ -19,7 +19,7 @@ import Lambdas (Lambdas, readLambdas)
 import Lining (LineFormat (MULTILINE, SINGLELINE))
 import Margin (defaultMargin)
 import Merge (merge)
-import Morph (ReduceContext (ReduceContext), Steps (Steps), morph)
+import Morph (Memo, ReduceContext (ReduceContext), Steps (Steps), memoized, morph)
 import Must (Must (MtDisabled))
 import Parser (parseExpressionThrows)
 import Printer (printExpression')
@@ -75,8 +75,8 @@ rewriteCtx =
 -- run still reaches an answer to measure. Nothing is written anywhere: the
 -- protocol of '--protocol' and the steps of '--steps-dir' are files, and a
 -- benchmark measuring the calculus has no business measuring the disk.
-symbolicCtx :: Acyclic -> Lambdas -> Expression -> ReduceContext
-symbolicCtx acyclic lambdas locator =
+symbolicCtx :: Acyclic -> Maybe Memo -> Lambdas -> Expression -> ReduceContext
+symbolicCtx acyclic memo lambdas locator =
   ReduceContext
     locator -- _locator
     locator -- _site
@@ -84,6 +84,8 @@ symbolicCtx acyclic lambdas locator =
     25 -- _maxDepth
     25 -- _maxCycles
     (Steps 1000 0) -- _steps
+    Nothing -- _tally
+    memo -- _memo
     1 -- _nesting
     False -- _depthSensitive
     False -- _shuffle
@@ -228,5 +230,6 @@ main = do
     symbolic :: Acyclic -> Expression -> Lambdas -> Expression -> IO Int
     symbolic acyclic universe lambdas locator = do
       seedTaus universe
-      (answer, _, _) <- morph universe (started universe) (symbolicCtx acyclic lambdas locator)
+      memo <- memoized (Just acyclic)
+      (answer, _, _) <- morph universe (started universe) (symbolicCtx acyclic memo lambdas locator)
       pure (hashExpression answer)

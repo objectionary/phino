@@ -106,7 +106,6 @@ data OptsDataize = OptsDataize
   , _maxCycles :: Int
   , _maxSteps :: Int
   , _maxFirings :: Maybe Int
-  , _memo :: Bool
   , _margin :: Int
   , _meetPopularity :: Maybe Int
   , _meetLength :: Maybe Int
@@ -155,7 +154,6 @@ data OptsMorph = OptsMorph
   , _maxCycles :: Int
   , _maxSteps :: Int
   , _maxFirings :: Maybe Int
-  , _memo :: Bool
   , _margin :: Int
   , _meetPopularity :: Maybe Int
   , _meetLength :: Maybe Int

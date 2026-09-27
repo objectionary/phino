@@ -27,7 +27,7 @@ import qualified Data.Text as T
 import Deps (BuildTermMethodS, Evaluation (..), State (..), Term (..))
 import Lambdas (Lambda (..), Meta (..), joined, matched, minted, symbolized)
 import Matcher (MetaValue (..), Subst, combine, substEmpty, substSingle, substSlot)
-import Morph (ReduceContext (..), ReduceException (..), charged, deeper, enter, isLambda, lambda, morph', morphing, normalized, recalled, retained, unparked)
+import Morph (Answer, ReduceContext (..), ReduceException (..), charged, deeper, enter, isLambda, lambda, morph', morphing, normalized, recalled, retained, unparked)
 import Printer (printFunction)
 import Rule (RuleContext (RuleContext), matchExpressionWithRule')
 import Text.Printf (printf)
@@ -129,7 +129,12 @@ evaluation _ _ _ _ = throwIO (userError "Function evaluate() requires exactly 2 
 -- A formation the run has fired already is not fired again where '_memo'
 -- keeps what it answered (see 'Memo' in 'Morph'): the answer comes back as
 -- the first firing left it, symbols and all, and nothing is charged, minted
--- or written, since the run made it once and the protocol says so once.
+-- or reduced. The firing is written all the same, at its own site and with
+-- its answer, the way a fresh one is, since the protocol records where 𝔼 was
+-- asked and what it said there; what it does not get is an operand line, or
+-- a symbol of its own, since the run reduced and minted none for it. So the
+-- 𝔼 lines of a run count the sites 𝔼 answered at, and the '--max-firings'
+-- budget counts the firings it made.
 symbol :: T.Text -> Expression -> Expression -> Expression -> State -> ReduceContext -> IO (Expression, State)
 symbol func form self univ state caller = case matched caller._symbolic func of
   Nothing -> do
@@ -137,7 +142,7 @@ symbol func form self univ state caller = case matched caller._symbolic func of
     throwIO (Stuck func)
   Just entry -> do
     known <- recalled caller._memo form
-    maybe (made entry) (\normal -> pure (normal, state)) known
+    maybe (made entry) told known
   where
     -- Fire the entry: charge the firing, reduce every operand, build the
     -- answer and keep it for the next firing of the same formation.
@@ -151,9 +156,18 @@ symbol func form self univ state caller = case matched caller._symbolic func of
       rewrote <- foldM (reshaped ctx) bound' entry._rewritten
       (bound'', stood) <- foldM (masked ctx) (rewrote, morphed) entry._symbolized
       (bound''', forked) <- foldM (paired ctx (listToMaybe (reverse conditions))) (bound'', stood) entry._paired
-      (normal, state') <- answered ctx entry (reverse conditions) bound''' forked
-      retained caller._memo form normal
-      pure (normal, state')
+      (answer, state') <- answered ctx entry (reverse conditions) bound''' forked
+      retained caller._memo form answer
+      pure (snd answer, state')
+    -- Answer the firing with what the first firing of the formation made,
+    -- written as that one was written: the firing at its site, the term the
+    -- entry wrote and the normal form it came to, and nothing between them.
+    told :: Answer -> IO (Expression, State)
+    told (built, normal) = do
+      caller._saveEval (EvFiring caller._nesting func caller._judgment caller._site)
+      caller._saveEval (EvBuilt (caller._nesting + 1) built)
+      caller._saveEval (EvAnswer (caller._nesting + 1) normal)
+      pure (normal, state)
     -- Bring one 'dataize' operand down through 𝔻 and bind the bytes meta that
     -- names it. An operand 𝔻 could not bring down to data — a site '_partial'
     -- parked — leaves the firing with nothing to bind, so it gets stuck like a
@@ -314,8 +328,9 @@ symbol func form self univ state caller = case matched caller._symbolic func of
     -- protocol and no silent change of shape: whatever 𝕄 fires on the way opens
     -- its block between the two, where every other firing of an operand opens
     -- its own, and the formation standing on the second line is read as what
-    -- the three tokens on the first came to (#1298).
-    answered :: ReduceContext -> Lambda -> [Either Int Bytes] -> Subst -> State -> IO (Expression, State)
+    -- the three tokens on the first came to (#1298). Both come back, since
+    -- they are what the memo keeps of a firing (see 'Memo').
+    answered :: ReduceContext -> Lambda -> [Either Int Bytes] -> Subst -> State -> IO (Answer, State)
     answered ctx entry operands bound state' = do
       let (fresh, spent) = minted entry._answer state'._minted
       mapM_ (\idx -> ctx._saveEval (EvMinted ctx._nesting idx operands)) [idx | (_, FnSymbol idx) <- fresh]
@@ -324,7 +339,7 @@ symbol func form self univ state caller = case matched caller._symbolic func of
       ctx._saveEval (EvBuilt ctx._nesting built)
       (normal, state'') <- settled built univ state'{_minted = spent} ctx
       ctx._saveEval (EvAnswer ctx._nesting normal)
-      pure (normal, state'')
+      pure ((built, normal), state'')
     mint :: Subst -> (Slot, Function) -> IO Subst
     mint bound (slot, fresh) = case combine (substSlot slot (MvFunction fresh)) bound of
       Just bound' -> pure bound'
