@@ -26,7 +26,7 @@ import Lambdas (readLambdas)
 import Lining (LineFormat (SINGLELINE))
 import Margin (defaultMargin)
 import Matcher (substEmpty)
-import Morph (ReduceContext (..), Steps (..), execBuildTerm, morph)
+import Morph (ReduceContext (..), Steps (..), execBuildTerm, memoized, morph)
 import Parser (parseExpressionThrows)
 import Printer (printExpression, printExpression', printExpressionHidingRho')
 import Sugar (SugarType (SWEET))
@@ -45,7 +45,9 @@ import Yaml (ExtraArgument (..))
 -- two of them verbatim. Every term of both is spelled without its ρ bindings,
 -- the way '--hide-rho' spells one, unless the pack says 'hide-rho: false': the
 -- ρ chain is the universe an entry was fired inside and not the answer it gave,
--- so spelling it buries the symbol a pack is there to show (#1313).
+-- so spelling it buries the symbol a pack is there to show (#1313). A pack
+-- saying 'acyclic: plausible' runs with the memo that mode keeps, so the
+-- protocol it spells is the one of a run firing every formation once.
 data SymbolPack = SymbolPack
   { symbolic :: String
   , location :: Maybe String
@@ -81,11 +83,14 @@ testSymbols pth = do
   withLambdasOf (T.pack symbolic) $ \file -> do
     known <- readLambdas file
     (_, written) <- recorded' hidden $ \record -> do
+      let mode = named <$> acyclic
+      cells <- memoized mode
       let ctx =
             (defaultReduceContext loc)
               { _deep = deep == Just True
               , _partial = partial == Just True
-              , _acyclic = named <$> acyclic
+              , _acyclic = mode
+              , _memo = cells
               , _steps = Steps (fromMaybe 250 steps) 0
               , _symbolic = known
               , _saveEval = record

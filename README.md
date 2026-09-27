@@ -1306,6 +1306,47 @@ cut, since the inner call is smaller than the outer one and cannot hold it.
 The mode is not sound, though: a recursion whose argument grows on its way to
 stopping is cut too, which is why the line names the mode that made the cut.
 
+The mode also fires every formation once. Every use of a binding copies the
+term bound to it, so a program reading `truncated ↦ ρ.abs.floor` in five
+places fires `abs` and `floor` five times over and mints five symbols for one
+value, and a guard written that way spends its whole budget saying the same
+thing again. 𝔼 is a function of the formation it fires: the entry that
+answers is found by the λ name the formation carries, every operand is
+reduced from its bindings inside the one universe of the run, and the answer
+is built from what they came down to. So a run under `plausible` keeps what
+every firing answered, by the formation it fired, and a later firing of the
+same formation takes that answer, with the very symbols the first one minted,
+instead of making it again. Two bindings spelling one term then come to one
+symbol:
+
+```bash
+$ cat twins.phi
+⟦
+  bytes ↦ ⟦ φ ↦ ∅ ⟧,
+  number ↦ ⟦ φ ↦ ∅, plus(ρ, x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧,
+  a ↦ 7.plus( 5.plus( 6 ) ),
+  b ↦ 7.plus( 5.plus( 6 ) )
+⟧
+$ phino morph --symbolic=atoms.yaml --acyclic=plausible --deep --sweet \
+    --hide-rho twins.phi
+⟦
+  bytes(φ) ↦ ⟦⟧,
+  number(φ) ↦ ⟦ plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧,
+  a ↦ ⟦ φ ↦ 𝜎2:λ, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧,
+  b ↦ ⟦ φ ↦ 𝜎2:λ, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧
+⟧
+```
+
+Under `proven` `b` lands on `𝜎4`, since the walk over it fires the inner sum
+and the outer one once more. The protocol of the run above still holds four
+firings, two under `a` and two under `b`, since it records where 𝔼 was asked
+and what it answered there; the two under `b` carry the answer lines of the
+two under `a` and no operand line, since nothing was reduced for them, and
+they are not charged to `--max-firings`, which counts the firings the run
+made. The formation is compared with everything it carries, `ρ` included, so
+a firing on another object is another firing, and a firing that got stuck
+keeps nothing, since nothing was answered.
+
 ## Rewrite
 
 You can rewrite this expression with the help of [rules](#rule-structure)
