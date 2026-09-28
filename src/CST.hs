@@ -534,13 +534,8 @@ instance ToCST Binding PAIR where
               attr'
               (map (`toCST` ctx) voids')
               ARROW
-              (unsugared (toCST (ExFormation (others ++ rest)) ctx))
+              (toCST (ExFormation (others ++ rest)) ctx)
     where
-      -- Inline voids open a formation, which no one-binding sugar may stand
-      -- for, so 'x(a) ↦ ⟦ φ ↦ ξ.a ⟧' is never printed as 'x(a) ↦ a:φ'
-      unsugared :: EXPRESSION -> EXPRESSION
-      unsugared EX_SINGLE{..} = formation
-      unsugared expr = expr
       -- Neither λ nor Δ is an attribute, so neither holds a position among
       -- the voids, and 'x ↦ ⟦ λ ⤍ F, a ↦ ∅ ⟧' is still printed as 'x(a) ↦ ⟦ λ ⤍ F ⟧'
       positionless :: Binding -> Bool

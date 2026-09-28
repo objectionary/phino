@@ -72,22 +72,22 @@ input: |
 protocol: |
   𝕄(Φ.l🌵)
     𝔼(L_entry)  # 𝕄(Φ.l🌵.e1)
-      formation(⟦ φ ↦ Φ.bytes( φ ↦ 3F-F0-00-00-00-00-00-00:Δ ), gt(b) ↦ ⟦ λ ⤍ L_number_gt ⟧ ⟧)  # 𝔻(Φ.a🌵0)
+      formation(⟦ φ ↦ Φ.bytes( φ ↦ 3F-F0-00-00-00-00-00-00:Δ ), gt(b) ↦ L_number_gt:λ ⟧)  # 𝔻(Φ.a🌵0)
         formation(3F-F0-00-00-00-00-00-00:Δ:φ)  # 𝔻(Φ.a🌵0)
       𝛿1.1 := 3F-F0-00-00-00-00-00-00  # 𝔻(ξ.n)
       𝔼(L_number_gt)  # 𝕄(Φ.a🌵1)
-        formation(⟦ φ ↦ Φ.bytes( φ ↦ 𝜎1:λ ), gt(b) ↦ ⟦ λ ⤍ L_number_gt ⟧ ⟧)  # 𝔻(Φ.a🌵2)
+        formation(⟦ φ ↦ Φ.bytes( φ ↦ 𝜎1:λ ), gt(b) ↦ L_number_gt:λ ⟧)  # 𝔻(Φ.a🌵2)
           formation(𝜎1:λ:φ)  # 𝔻(Φ.a🌵2)
         𝛿1.2 := 𝔻(𝜎1:λ)  # 𝔻(ξ.ρ)
-        formation(⟦ φ ↦ Φ.bytes( φ ↦ 00-00-00-00-00-00-00-00:Δ ), gt(b) ↦ ⟦ λ ⤍ L_number_gt ⟧ ⟧)  # 𝔻(Φ.a🌵3)
+        formation(⟦ φ ↦ Φ.bytes( φ ↦ 00-00-00-00-00-00-00-00:Δ ), gt(b) ↦ L_number_gt:λ ⟧)  # 𝔻(Φ.a🌵3)
           formation(00-00-00-00-00-00-00-00:Δ:φ)  # 𝔻(Φ.a🌵3)
         𝛿2.2 := 00-00-00-00-00-00-00-00  # 𝔻(ξ.b)
         𝑛.2.1 := Φ.bool( if(left, right) ↦ ⟦ λ ⤍ L_fork, φ ↦ 𝜎2:λ ⟧ ):φ  # 𝑛
         𝑛.2.2 := Φ.bool( if(left, right) ↦ ⟦ λ ⤍ L_fork, φ ↦ 𝜎2:λ ⟧ ):φ  # 𝕄(𝑛.2.1)
       𝔼(L_fork)  # 𝕄(Φ.a🌵1)
         𝛿1.3 := 𝔻(𝜎2:λ)  # 𝔻(ξ.φ)
-        𝑛1.3 := Φ.bool( if(left, right) ↦ ⟦ φ ↦ right ⟧ ):φ  # 𝕄(ξ.left)
-        𝑛2.3 := Φ.bool( if(left, right) ↦ ⟦ φ ↦ left ⟧ ):φ  # 𝕄(ξ.right)
+        𝑛1.3 := Φ.bool( if(left, right) ↦ right:φ ):φ  # 𝕄(ξ.left)
+        𝑛2.3 := Φ.bool( if(left, right) ↦ left:φ ):φ  # 𝕄(ξ.right)
         𝑛3.3 := Φ.bool( if(left, right) ↦ ⟦ λ ⤍ L_fork, φ ↦ 00-:Δ ⟧ ):φ  # 𝑛1
         𝑛4.3 := Φ.bool( if(left, right) ↦ ⟦ λ ⤍ L_fork, φ ↦ FF-:Δ ⟧ ):φ  # 𝑛2
         𝔻(𝜎3:λ) == 00-
