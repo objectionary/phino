@@ -433,13 +433,33 @@ alike one two = isJust (goExpr (Map.empty, Map.empty) one two)
 -- wrappers the other lacks, so a recursion whose argument gains one on every
 -- round enters a formation the previous round is within, while a call nested
 -- inside another is smaller and never holds it. Any symbol stands for any
--- other, since each is an opaque unknown. A ρ binding is never looked below,
--- since it holds the object a term was taken from and not a term it grew into.
+-- other, since each is an opaque unknown, and below the top a symbol also
+-- stands for a term that holds no symbol itself, since a round holding an
+-- unknown where the previous one held a datum is more general than it (#1491).
+-- A ρ binding is never looked below, since it holds the object a term was
+-- taken from and not a term it grew into.
 within :: Expression -> Expression -> Bool
 within = coupled
   where
     embedded :: Expression -> Expression -> Bool
-    embedded inner outer = coupled inner outer || any (embedded inner) (children outer)
+    embedded inner outer = general inner outer || coupled inner outer || any (embedded inner) (children outer)
+    general :: Expression -> Expression -> Bool
+    general inner (ExFormation [BiLambda (FnSymbol _)]) = plain inner
+    general _ _ = False
+    plain :: Expression -> Bool
+    plain (ExFormation bds) = all plainBinding bds
+    plain (ExApplication expr (ArTau AtRho _)) = plain expr
+    plain (ExApplication expr (ArTau _ arg)) = plain expr && plain arg
+    plain (ExApplication expr (ArAlpha _ arg)) = plain expr && plain arg
+    plain (ExDispatch expr _) = plain expr
+    plain (ExPhiMeet _ _ expr) = plain expr
+    plain (ExPhiAgain _ _ expr) = plain expr
+    plain _ = True
+    plainBinding :: Binding -> Bool
+    plainBinding (BiTau AtRho _) = True
+    plainBinding (BiTau _ expr) = plain expr
+    plainBinding (BiLambda (FnSymbol _)) = False
+    plainBinding _ = True
     coupled :: Expression -> Expression -> Bool
     coupled (ExFormation left) (ExFormation right) = length left == length right && and (zipWith goBinding left right)
     coupled (ExApplication left arg) (ExApplication right arg') = embedded left right && goArgument arg arg'
