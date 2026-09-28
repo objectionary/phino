@@ -194,7 +194,10 @@ reduces nothing, and it is written to the protocol as a firing at its own
 site carrying that answer and no operand line (#1476). The store is an
 `IORef` in the context for the reason the tally is. A firing a cut stopped on
 its way to an answer keeps the cut (`Looped` of `Kept`), and a later firing of
-the same formation is cut at its own site without reducing anything (#1480).
+the same formation is cut at its own site without reducing anything (#1480). A
+firing that got stuck keeps the λ function it got stuck on (`Stalled` of
+`Kept`), and a later firing of the same formation gets stuck at its own site
+the same way (#1493).
 
 Beside the answers, the memo keeps the bindings of the world the `--deep`
 walk has entered (`visited` and `visit` in `Morph.hs`, asked by `fresh` of

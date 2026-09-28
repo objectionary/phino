@@ -148,7 +148,9 @@ symbol func form self univ state caller = case matched caller._symbolic func of
     -- answer and keep it for the next firing of the same formation. A
     -- recursion cut on the way leaves the firing with no answer, and it is
     -- kept instead, as the formation the cut carried, since the next firing
-    -- of the same formation would only walk down to it again (#1480).
+    -- of the same formation would only walk down to it again (#1480). A
+    -- firing that got stuck is kept the same way, as the λ function it got
+    -- stuck on, since the same formation gets stuck the same way (#1493).
     made :: Lambda -> IO (Expression, State)
     made entry = do
       charged caller
@@ -166,19 +168,24 @@ symbol func form self univ state caller = case matched caller._symbolic func of
           retained caller._memo form (Answered answer)
           pure (snd answer, state')
         Left failure -> do
-          mapM_ (retained caller._memo form . Looped) (cut failure)
+          mapM_ (retained caller._memo form) (kept failure)
           throwIO failure
-    -- The formation a recursion was cut at, where that is what the signal
-    -- escaping a firing says.
-    cut :: ReduceException -> Maybe Expression
-    cut (Looping term) = Just term
-    cut (LoopingAt term _ _) = Just term
-    cut _ = Nothing
+    -- What the memo keeps of a firing that never answered: the formation a
+    -- recursion was cut at, or the λ function the firing got stuck on, where
+    -- that is what the signal escaping it says.
+    kept :: ReduceException -> Maybe Kept
+    kept (Looping term) = Just (Looped term)
+    kept (LoopingAt term _ _) = Just (Looped term)
+    kept (Stuck name) = Just (Stalled name)
+    kept (StuckAt name _ _) = Just (Stalled name)
+    kept _ = Nothing
     -- Answer the firing with what the first firing of the formation made,
     -- written as that one was written: the firing at its site, the term the
     -- entry wrote and the normal form it came to, and nothing between them.
     -- Where the first firing was cut, the firing is cut again at its own site,
     -- with the formation that cut carried and nothing reduced before it.
+    -- Where the first firing got stuck, the firing gets stuck again at its own
+    -- site, on the same λ function and with nothing reduced under it.
     told :: Kept -> IO (Expression, State)
     told (Answered (built, normal)) = do
       caller._saveEval (EvFiring caller._nesting func caller._judgment caller._site)
@@ -189,6 +196,9 @@ symbol func form self univ state caller = case matched caller._symbolic func of
       caller._saveEval (EvFiring caller._nesting func caller._judgment caller._site)
       mapM_ (\mode -> caller._saveEval (EvLooped (caller._nesting + 1) caller._judgment mode term caller._site)) caller._acyclic
       throwIO (Looping term)
+    told (Stalled name) = do
+      caller._saveEval (EvFiring caller._nesting func caller._judgment caller._site)
+      throwIO (Stuck name)
     -- Bring one 'dataize' operand down through 𝔻 and bind the bytes meta that
     -- names it. An operand 𝔻 could not bring down to data — a site '_partial'
     -- parked — leaves the firing with nothing to bind, so it gets stuck like a

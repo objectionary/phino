@@ -1341,10 +1341,12 @@ and what it answered there; the two under `b` carry the answer lines of the
 two under `a` and no operand line, since nothing was reduced for them, and
 they are not charged to `--max-firings`, which counts the firings the run
 made. The formation is compared with everything it carries, `ρ` included, so
-a firing on another object is another firing, and a firing that got stuck
-keeps nothing, since nothing was answered. A firing cut by the mode on its
+a firing on another object is another firing. A firing cut by the mode on its
 way to an answer keeps the cut, and the next firing of the same formation is
-cut at its own site without reducing anything first.
+cut at its own site without reducing anything first. A firing that got stuck
+keeps the λ function it got stuck on, and the next firing of the same
+formation gets stuck at its own site the same way, with nothing reduced
+under it.
 
 The mode also walks a binding of the world once. Every dispatch on an object
 of the world copies it, and `--deep` walks every copy, so the tests of an
