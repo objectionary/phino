@@ -132,13 +132,15 @@ data Tally = Tally
 -- is charged nothing. It is written to the protocol all the same, as a firing
 -- at its own site with that answer, since the protocol records where 𝔼 was
 -- asked and what it said there, and with no operand line under it, since none
--- was reduced. A firing that got stuck keeps nothing, since nothing was
--- answered; a site parked or a recursion cut inside an answer is a part of
+-- was reduced. A site parked or a recursion cut inside an answer is a part of
 -- it, since that is what the run made of the formation. A recursion cut
 -- inside a firing, so that the firing itself never answered, is kept too, as
 -- the formation the cut carried: the formation is fired as often as the
 -- program reads it, and without the cut in the store every one of those
--- firings walked all the way down to the same cut again (#1480). The store is
+-- firings walked all the way down to the same cut again (#1480). A firing
+-- that got stuck is kept as well, as the λ function it got stuck on, since the
+-- same formation in the same world gets stuck the same way, and a fork whose
+-- branches never join was fired afresh at every read of it (#1493). The store is
 -- one cell every frame of the run shares, like the count of 'Tally', since
 -- what one frame answered is what its siblings are after. It belongs to
 -- 'Plausible' and to no switch of its own: a run asking for plausible cuts is
@@ -159,11 +161,13 @@ data Memo = Memo (IORef (Store Kept)) (IORef (Set.Set (Expression, Attribute)))
 -- of it, which are the two lines the protocol writes an answer as.
 type Answer = (Expression, Expression)
 
--- What the memo keeps of one formation: the answer its firing made, or the
--- formation a recursion was cut at while it was being fired.
+-- What the memo keeps of one formation: the answer its firing made, the
+-- formation a recursion was cut at while it was being fired, or the λ function
+-- the firing got stuck on.
 data Kept
   = Answered Answer
   | Looped Expression
+  | Stalled T.Text
 
 -- What 'Memo' keeps: the answers, by the digest of the formation they answer,
 -- each beside the very formation, since two terms may share a digest.
