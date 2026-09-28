@@ -308,7 +308,7 @@ spec = do
           , "{ n }"
           , "{ n }"
           , "{ \\isnormal{ n } \\;\\text{and}\\; \\phinoIsFormation{ n } }"
-          , "{ \\phiTerminal{\\rho} \\coloneqq \\foo{ n, \\phiTerminal{\\rho} -> ?, 01-02- } and @ \\coloneqq \\bar{ n } }"
+          , "{ \\phiTerminal{\\rho} \\coloneqq \\foo{ n, \\phiTerminal{\\rho} -> ?, 01-02- } \\;\\text{and}\\; @ \\coloneqq \\bar{ n } }"
           ]
         )
       ,
