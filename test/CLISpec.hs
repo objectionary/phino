@@ -2586,7 +2586,7 @@ spec = do
             , "\\phinoNormalizationRule{dl}"
             , "  { [[ B_1, L> f, B_2 ]] }"
             , "  { T }"
-            , "  { [ D ] \\subseteq \\lparen B_1 \\cup B_2 \\rparen }"
+            , "  { D \\in \\lparen B_1 \\cup B_2 \\rparen }"
             , "  { }"
             , "\\phinoNormalizationRule{dot}"
             , "  { [[ B_1, \\tau -> n, B_2 ]] . \\tau }"
