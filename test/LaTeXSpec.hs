@@ -14,11 +14,12 @@ module LaTeXSpec where
 
 import AST (Attribute (AtLabel, AtMeta, AtPhi, AtRho), Binding (BiDelta, BiLambda, BiMeta, BiTau, BiVoid), Bytes (BtMeta, BtOne), Expression (ExDispatch, ExFormation, ExMeta, ExPhiAgain, ExPhiMeet, ExRoot), Function (FnMeta, FnSymbol))
 import Control.Monad (forM_)
-import Data.Aeson (FromJSON (parseJSON), withObject, (.:))
+import Data.Aeson (FromJSON)
 import Data.List (intercalate)
 import Data.Text qualified as T
 import Data.Yaml qualified as Yaml
 import Files (allPathsIn)
+import Fixtures (explainPack)
 import GHC.Generics (Generic)
 import LaTeX
   ( LatexContext (..)
@@ -48,14 +49,6 @@ data LatexPack = LatexPack
 latexPack :: FilePath -> IO LatexPack
 latexPack = Yaml.decodeFileThrow
 
-newtype ExplainPack = ExplainPack String
-
-instance FromJSON ExplainPack where
-  parseJSON = withObject "ExplainPack" (\pack -> ExplainPack <$> pack .: "latex")
-
-explainPack :: FilePath -> IO ExplainPack
-explainPack = Yaml.decodeFileThrow
-
 spec :: Spec
 spec = do
   describe "LaTeX printing packs" $ do
@@ -77,7 +70,7 @@ spec = do
           <> map (\rule -> ("contextualization", rule.name, explainContextualizeRules [rule])) Y.contextualizationRules
       )
       ( \(judgment, rule, explained) -> it (judgment </> rule) $ do
-          ExplainPack latex <- explainPack ("test-resources" </> "explain-packs" </> judgment </> rule <.> "yaml")
+          latex <- explainPack ("test-resources" </> "explain-packs" </> judgment </> rule <.> "yaml")
           explained `shouldBe` latex
       )
 

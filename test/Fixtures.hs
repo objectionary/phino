@@ -9,6 +9,7 @@
 -- '--symbolic' reads, or a file of its own written for the occasion.
 module Fixtures
   ( defaultReduceContext
+  , explainPack
   , fixtureLambdas
   , lambdasFile
   , loopingLambdas
@@ -26,10 +27,12 @@ import AST (Expression (ExRoot))
 import CLI.Helpers (withEvalFunc)
 import CLI.Types (IOFormat (PHI), PrintContext (PrintCtx))
 import Control.Exception (bracket, evaluate)
+import Data.Aeson (FromJSON (parseJSON), withObject, (.:))
 import Data.ByteString qualified as BS
 import Data.Map.Strict qualified as Map
 import Data.Text qualified as T
 import Data.Text.Encoding (encodeUtf8)
+import Data.Yaml qualified as Yaml
 import Dataize (reduction)
 import Deps (Judgment (..), SaveEvalFunc, dontSaveEval, dontSaveStep)
 import Evaluate (evaluation, fired)
@@ -157,6 +160,18 @@ recorded' hidden action =
         Nothing
         Nothing
         PHI
+
+-- The LaTeX that 'explain' prints for one built-in rule, as the 'latex' key of
+-- its pack in 'test-resources/explain-packs' spells it.
+newtype ExplainPack = ExplainPack String
+
+instance FromJSON ExplainPack where
+  parseJSON = withObject "ExplainPack" (\pack -> ExplainPack <$> pack .: "latex")
+
+explainPack :: FilePath -> IO String
+explainPack path = do
+  ExplainPack latex <- Yaml.decodeFileThrow path
+  pure latex
 
 -- Read a text file phino wrote, in the encoding it wrote it with. The whole
 -- content is forced before the handle closes, since a lazy read of a closed

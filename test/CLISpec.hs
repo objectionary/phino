@@ -16,7 +16,8 @@ import Data.Text qualified as T
 import Data.Time.Clock (addUTCTime, getCurrentTime)
 import Data.Time.Clock.POSIX (getPOSIXTime)
 import Data.Version (showVersion)
-import Fixtures (lambdasFile, loopingLambdas, readUtf8, withLambdasOf)
+import Files (allPathsIn)
+import Fixtures (explainPack, lambdasFile, loopingLambdas, readUtf8, withLambdasOf)
 import GHC.IO.Handle
 import Paths_phino (version)
 import System.Directory (createDirectoryIfMissing, doesDirectoryExist, doesFileExist, getTemporaryDirectory, listDirectory, removeDirectoryRecursive, removeFile, removePathForcibly, setModificationTime)
@@ -2503,17 +2504,9 @@ spec = do
         ["explain", "--help"]
         ["Explain built-in morphing rules", "Explain built-in dataization rules", "Explain built-in contextualization rules"]
 
-    it "explains single rule" $
-      testCLISucceeded
-        ["explain", "--rule=resources/normalize/copy.yaml"]
-        [ unlines
-            [ "\\phinoNormalizationRule{copy}"
-            , "  { [[ B_1, \\tau -> ?, B_2 ]] ( \\tau -> k ) }"
-            , "  { [[ B_1, \\tau -> k, B_2 ]] }"
-            , "  { }"
-            , "  { }"
-            ]
-        ]
+    it "explains single rule" $ do
+      latex <- explainPack "test-resources/explain-packs/normalize/copy.yaml"
+      testCLISucceeded ["explain", "--rule=resources/normalize/copy.yaml"] [latex <> "\n"]
 
     it "explains single rule with a label" $
       testCLISucceeded
@@ -2549,249 +2542,17 @@ spec = do
         ["explain", "--seed=7", "--normalize"]
         ["\\phinoNormalizationRule{alpha}"]
 
-    it "explains normalization rules" $
-      testCLISucceeded
-        ["explain", "--normalize"]
-        [ unlines
-            [ "\\phinoNormalizationRule{alpha}"
-            , "  { [[ B_1, \\tau -> ?, B_2 ]] ( \\phiTerminal{\\alpha_{i}} -> e ) }"
-            , "  { [[ B_1, \\tau -> ?, B_2 ]] ( \\tau -> e ) }"
-            , "  { i = \\vert \\overline{ B_1 } \\vert \\;\\text{and}\\; \\tau \\not= \\phiTerminal{\\rho} }"
-            , "  { }"
-            , "\\phinoNormalizationRule{amiss}"
-            , "  { [[ B ]] ( \\phiTerminal{\\alpha_{i}} -> e ) }"
-            , "  { T }"
-            , "  { \\vert \\overline{ B } \\vert \\leq i }"
-            , "  { }"
-            , "\\phinoNormalizationRule{copy}"
-            , "  { [[ B_1, \\tau -> ?, B_2 ]] ( \\tau -> k ) }"
-            , "  { [[ B_1, \\tau -> k, B_2 ]] }"
-            , "  { }"
-            , "  { }"
-            , "\\phinoNormalizationRule{dc}"
-            , "  { T ( \\tau -> e ) }"
-            , "  { T }"
-            , "  { }"
-            , "  { }"
-            , "\\phinoNormalizationRule{dca}"
-            , "  { T ( \\phiTerminal{\\alpha_{i}} -> e ) }"
-            , "  { T }"
-            , "  { }"
-            , "  { }"
-            , "\\phinoNormalizationRule{dd}"
-            , "  { T . \\tau }"
-            , "  { T }"
-            , "  { }"
-            , "  { }"
-            , "\\phinoNormalizationRule{dl}"
-            , "  { [[ B_1, L> f, B_2 ]] }"
-            , "  { T }"
-            , "  { D \\in \\lparen B_1 \\cup B_2 \\rparen }"
-            , "  { }"
-            , "\\phinoNormalizationRule{dot}"
-            , "  { [[ B_1, \\tau -> n, B_2 ]] . \\tau }"
-            , "  { e_1 ( \\phiTerminal{\\rho} -> e_2 ) }"
-            , "  { [ D \\char44{} L ] \\not\\subseteq \\lparen B_1 \\cup B_2 \\rparen }"
-            , "  { \\phinoContextualize{ n }{ [[ B_1, B_2 ]] }{ e_1 } \\;\\text{and}\\; \\phinoNamed{ e_2 }{ [[ B_1, \\tau -> n, B_2 ]] } }"
-            , "\\phinoNormalizationRule{miss}"
-            , "  { [[ B ]] ( \\tau -> e ) }"
-            , "  { T }"
-            , "  { \\tau \\notin B \\;\\text{and}\\; \\tau \\not= \\phiTerminal{\\rho} }"
-            , "  { }"
-            , "\\phinoNormalizationRule{null}"
-            , "  { [[ B_1, \\tau -> ?, B_2 ]] . \\tau }"
-            , "  { T }"
-            , "  { }"
-            , "  { }"
-            , "\\phinoNormalizationRule{over}"
-            , "  { [[ B_1, \\tau -> e_1, B_2 ]] ( \\tau -> e_2 ) }"
-            , "  { T }"
-            , "  { \\tau \\not= \\phiTerminal{\\rho} }"
-            , "  { }"
-            , "\\phinoNormalizationRule{overa}"
-            , "  { [[ B_1, \\tau -> e_1, B_2 ]] ( \\phiTerminal{\\alpha_{i}} -> e_2 ) }"
-            , "  { T }"
-            , "  { i = \\vert \\overline{ B_1 } \\vert \\;\\text{and}\\; \\tau \\not= \\phiTerminal{\\rho} }"
-            , "  { }"
-            , "\\phinoNormalizationRule{skip}"
-            , "  { [[ B ]] ( \\phiTerminal{\\rho} -> e ) }"
-            , "  { [[ B ]] }"
-            , "  { \\phiTerminal{\\rho} \\notin B }"
-            , "  { }"
-            , "\\phinoNormalizationRule{stay}"
-            , "  { [[ B_1, \\phiTerminal{\\rho} -> e_1, B_2 ]] ( \\phiTerminal{\\rho} -> e_2 ) }"
-            , "  { [[ B_1, \\phiTerminal{\\rho} -> e_1, B_2 ]] }"
-            , "  { }"
-            , "  { }"
-            , "\\phinoNormalizationRule{stop}"
-            , "  { [[ B ]] . \\tau }"
-            , "  { T }"
-            , "  { [ \\tau \\char44{} @ \\char44{} L ] \\cap B = \\emptyset }"
-            , "  { }"
-            ]
-        ]
-
-    it "explains morphing rules" $
-      testCLISucceeded
-        ["explain", "--morph"]
-        [ unlines
-            [ "\\begin{phinoMorphingInference}"
-            , "  \\phinoName{dead}"
-            , "  \\phinoConclusion{ \\phinoMorph{ T }{ e }{ s }{ T }{ s } }"
-            , "\\end{phinoMorphingInference}"
-            , "\\begin{phinoMorphingInference}"
-            , "  \\phinoName{ma}"
-            , "  \\phinoPremise{ \\phinoMorph{ n_1 }{ e }{ s_1 }{ n_2 }{ s_2 } }"
-            , "  \\phinoPremise{ \\phinoNormalize{ n_2 ( \\tau -> k ) }{ n_3 } }"
-            , "  \\phinoPremise{ \\phinoMorph{ n_3 }{ e }{ s_2 }{ n_4 }{ s_3 } }"
-            , "  \\phinoConclusion{ \\phinoMorph{ n_1 ( \\tau -> k ) }{ e }{ s_1 }{ n_4 }{ s_3 } }"
-            , "\\end{phinoMorphingInference}"
-            , "\\begin{phinoMorphingInference}"
-            , "  \\phinoName{maa}"
-            , "  \\phinoPremise{ \\phinoMorph{ n_1 }{ e }{ s_1 }{ n_2 }{ s_2 } }"
-            , "  \\phinoPremise{ \\phinoNormalize{ n_2 ( \\phiTerminal{\\alpha_{i}} -> k ) }{ n_3 } }"
-            , "  \\phinoPremise{ \\phinoMorph{ n_3 }{ e }{ s_2 }{ n_4 }{ s_3 } }"
-            , "  \\phinoConclusion{ \\phinoMorph{ n_1 ( \\phiTerminal{\\alpha_{i}} -> k ) }{ e }{ s_1 }{ n_4 }{ s_3 } }"
-            , "\\end{phinoMorphingInference}"
-            , "\\begin{phinoMorphingInference}"
-            , "  \\phinoName{maad}"
-            , "  \\phinoCondition{ \\phinoNotAbsolute{ n_1 } }"
-            , "  \\phinoPremise{ \\phinoMorph{ T }{ e }{ s_1 }{ n_2 }{ s_2 } }"
-            , "  \\phinoConclusion{ \\phinoMorph{ n ( \\phiTerminal{\\alpha_{i}} -> n_1 ) }{ e }{ s_1 }{ n_2 }{ s_2 } }"
-            , "\\end{phinoMorphingInference}"
-            , "\\begin{phinoMorphingInference}"
-            , "  \\phinoName{mad}"
-            , "  \\phinoCondition{ \\phinoNotAbsolute{ n_1 } }"
-            , "  \\phinoPremise{ \\phinoMorph{ T }{ e }{ s_1 }{ n_2 }{ s_2 } }"
-            , "  \\phinoConclusion{ \\phinoMorph{ n ( \\tau -> n_1 ) }{ e }{ s_1 }{ n_2 }{ s_2 } }"
-            , "\\end{phinoMorphingInference}"
-            , "\\begin{phinoMorphingInference}"
-            , "  \\phinoName{md}"
-            , "  \\phinoCondition{ \\phinoNotFormation{ n_1 } }"
-            , "  \\phinoPremise{ \\phinoMorph{ n_1 }{ e }{ s_1 }{ n_2 }{ s_2 } }"
-            , "  \\phinoPremise{ \\phinoNormalize{ n_2 . \\tau }{ n_3 } }"
-            , "  \\phinoPremise{ \\phinoMorph{ n_3 }{ e }{ s_2 }{ n_4 }{ s_3 } }"
-            , "  \\phinoConclusion{ \\phinoMorph{ n_1 . \\tau }{ e }{ s_1 }{ n_4 }{ s_3 } }"
-            , "\\end{phinoMorphingInference}"
-            , "\\begin{phinoMorphingInference}"
-            , "  \\phinoName{mf}"
-            , "  \\phinoConclusion{ \\phinoMorph{ [[ B ]] }{ e }{ s }{ [[ B ]] }{ s } }"
-            , "\\end{phinoMorphingInference}"
-            , "\\begin{phinoMorphingInference}"
-            , "  \\phinoName{mg}"
-            , "  \\phinoPremise{ \\phinoMorph{ T }{ Q }{ s_1 }{ n }{ s_2 } }"
-            , "  \\phinoConclusion{ \\phinoMorph{ Q }{ Q }{ s_1 }{ n }{ s_2 } }"
-            , "\\end{phinoMorphingInference}"
-            , "\\begin{phinoMorphingInference}"
-            , "  \\phinoName{ml}"
-            , "  \\phinoLabel{\\lambda}"
-            , "  \\phinoPremise{ \\phinoEvaluate{ [[ B_1, L> f, B_2 ]] }{ e }{ s_1 }{ n_1 }{ s_2 } }"
-            , "  \\phinoPremise{ \\phinoNormalize{ n_1 . \\tau }{ n_2 } }"
-            , "  \\phinoPremise{ \\phinoMorph{ n_2 }{ e }{ s_2 }{ n_3 }{ s_3 } }"
-            , "  \\phinoConclusion{ \\phinoMorph{ [[ B_1, L> f, B_2 ]] . \\tau }{ e }{ s_1 }{ n_3 }{ s_3 } }"
-            , "\\end{phinoMorphingInference}"
-            , "\\begin{phinoMorphingInference}"
-            , "  \\phinoName{mphi}"
-            , "  \\phinoLabel{\\varphi}"
-            , "  \\phinoCondition{ @ \\in B \\;\\text{and}\\; [ \\tau \\char44{} L ] \\cap B = \\emptyset }"
-            , "  \\phinoPremise{ \\phinoNormalize{ [[ B ]] . @ . \\tau }{ n_1 } }"
-            , "  \\phinoPremise{ \\phinoMorph{ n_1 }{ e }{ s_1 }{ n_2 }{ s_2 } }"
-            , "  \\phinoConclusion{ \\phinoMorph{ [[ B ]] . \\tau }{ e }{ s_1 }{ n_2 }{ s_2 } }"
-            , "\\end{phinoMorphingInference}"
-            , "\\begin{phinoMorphingInference}"
-            , "  \\phinoName{universe}"
-            , "  \\phinoLabel{\\Phi}"
-            , "  \\phinoCondition{ e \\not= Q }"
-            , "  \\phinoPremise{ \\phinoNormalize{ e }{ n_1 } }"
-            , "  \\phinoPremise{ \\phinoMorph{ n_1 }{ e }{ s_1 }{ n_2 }{ s_2 } }"
-            , "  \\phinoConclusion{ \\phinoMorph{ Q }{ e }{ s_1 }{ n_2 }{ s_2 } }"
-            , "\\end{phinoMorphingInference}"
-            , "\\begin{phinoMorphingInference}"
-            , "  \\phinoName{xi}"
-            , "  \\phinoPremise{ \\phinoMorph{ T }{ e }{ s_1 }{ n }{ s_2 } }"
-            , "  \\phinoConclusion{ \\phinoMorph{ \\phiTerminal{\\xi} }{ e }{ s_1 }{ n }{ s_2 } }"
-            , "\\end{phinoMorphingInference}"
-            ]
-        ]
-
-    it "explains dataization rules" $
-      testCLISucceeded
-        ["explain", "--dataize"]
-        [ unlines
-            [ "\\begin{phinoDataizationInference}"
-            , "  \\phinoName{box}"
-            , "  \\phinoCondition{ [ D \\char44{} L ] \\cap \\lparen B_1 \\cup B_2 \\rparen = \\emptyset }"
-            , "  \\phinoPremise{ \\phinoContextualize{ e_2 }{ [[ B_1, @ -> e_2, B_2 ]] }{ e_3 } }"
-            , "  \\phinoPremise{ \\phinoNormalize{ e_3 }{ n } }"
-            , "  \\phinoPremise{ \\phinoDataize{ n }{ e_1 }{ s_1 }{ \\delta }{ s_2 } }"
-            , "  \\phinoConclusion{ \\phinoDataize{ [[ B_1, @ -> e_2, B_2 ]] }{ e_1 }{ s_1 }{ \\delta }{ s_2 } }"
-            , "\\end{phinoDataizationInference}"
-            , "\\begin{phinoDataizationInference}"
-            , "  \\phinoName{delta}"
-            , "  \\phinoLabel{\\Delta}"
-            , "  \\phinoConclusion{ \\phinoDataize{ [[ B_1, D> \\delta, B_2 ]] }{ e }{ s }{ \\delta }{ s } }"
-            , "\\end{phinoDataizationInference}"
-            , "\\begin{phinoDataizationInference}"
-            , "  \\phinoName{fire}"
-            , "  \\phinoPremise{ \\phinoEvaluate{ [[ B_1, L> f, B_2 ]] }{ e }{ s_1 }{ n }{ s_2 } }"
-            , "  \\phinoPremise{ \\phinoDataize{ n }{ e }{ s_2 }{ \\delta }{ s_3 } }"
-            , "  \\phinoConclusion{ \\phinoDataize{ [[ B_1, L> f, B_2 ]] }{ e }{ s_1 }{ \\delta }{ s_3 } }"
-            , "\\end{phinoDataizationInference}"
-            , "\\begin{phinoDataizationInference}"
-            , "  \\phinoName{none}"
-            , "  \\phinoCondition{ [ D \\char44{} L \\char44{} @ ] \\cap B = \\emptyset }"
-            , "  \\phinoPremise{ \\phinoDataize{ T }{ e }{ s_1 }{ \\delta }{ s_2 } }"
-            , "  \\phinoConclusion{ \\phinoDataize{ [[ B ]] }{ e }{ s_1 }{ \\delta }{ s_2 } }"
-            , "\\end{phinoDataizationInference}"
-            , "\\begin{phinoDataizationInference}"
-            , "  \\phinoName{norm}"
-            , "  \\phinoCondition{ \\phinoNotFormation{ n_1 } \\;\\text{and}\\; n_1 \\not= T }"
-            , "  \\phinoPremise{ \\phinoMorph{ n_1 }{ e }{ s_1 }{ n_2 }{ s_2 } }"
-            , "  \\phinoPremise{ \\phinoDataize{ n_2 }{ e }{ s_2 }{ \\delta }{ s_3 } }"
-            , "  \\phinoConclusion{ \\phinoDataize{ n_1 }{ e }{ s_1 }{ \\delta }{ s_3 } }"
-            , "\\end{phinoDataizationInference}"
-            ]
-        ]
-
-    it "explains contextualization rules" $
-      testCLISucceeded
-        ["explain", "--contextualize"]
-        [ unlines
-            [ "\\begin{phinoContextualizationInference}"
-            , "  \\phinoName{ca}"
-            , "  \\phinoPremise{ \\phinoContextualize{ n_1 }{ k }{ n_2 } }"
-            , "  \\phinoPremise{ \\phinoContextualize{ e }{ k }{ n_3 } }"
-            , "  \\phinoConclusion{ \\phinoContextualize{ n_1 ( \\tau -> e ) }{ k }{ n_2 ( \\tau -> n_3 ) } }"
-            , "\\end{phinoContextualizationInference}"
-            , "\\begin{phinoContextualizationInference}"
-            , "  \\phinoName{caa}"
-            , "  \\phinoPremise{ \\phinoContextualize{ n_1 }{ k }{ n_2 } }"
-            , "  \\phinoPremise{ \\phinoContextualize{ e }{ k }{ n_3 } }"
-            , "  \\phinoConclusion{ \\phinoContextualize{ n_1 ( \\phiTerminal{\\alpha_{i}} -> e ) }{ k }{ n_2 ( \\phiTerminal{\\alpha_{i}} -> n_3 ) } }"
-            , "\\end{phinoContextualizationInference}"
-            , "\\begin{phinoContextualizationInference}"
-            , "  \\phinoName{cd}"
-            , "  \\phinoPremise{ \\phinoContextualize{ n_1 }{ k }{ n_2 } }"
-            , "  \\phinoConclusion{ \\phinoContextualize{ n_1 . \\tau }{ k }{ n_2 . \\tau } }"
-            , "\\end{phinoContextualizationInference}"
-            , "\\begin{phinoContextualizationInference}"
-            , "  \\phinoName{cf}"
-            , "  \\phinoConclusion{ \\phinoContextualize{ [[ B ]] }{ k }{ [[ B ]] } }"
-            , "\\end{phinoContextualizationInference}"
-            , "\\begin{phinoContextualizationInference}"
-            , "  \\phinoName{cg}"
-            , "  \\phinoConclusion{ \\phinoContextualize{ Q }{ k }{ Q } }"
-            , "\\end{phinoContextualizationInference}"
-            , "\\begin{phinoContextualizationInference}"
-            , "  \\phinoName{ct}"
-            , "  \\phinoConclusion{ \\phinoContextualize{ T }{ k }{ T } }"
-            , "\\end{phinoContextualizationInference}"
-            , "\\begin{phinoContextualizationInference}"
-            , "  \\phinoName{cxi}"
-            , "  \\phinoConclusion{ \\phinoContextualize{ \\phiTerminal{\\xi} }{ k }{ k } }"
-            , "\\end{phinoContextualizationInference}"
-            ]
-        ]
+    forM_
+      [ ("normalization", "--normalize", "normalize")
+      , ("morphing", "--morph", "morphing")
+      , ("dataization", "--dataize", "dataization")
+      , ("contextualization", "--contextualize", "contextualization")
+      ]
+      ( \(judgment, option, dir) -> it ("explains " <> judgment <> " rules") $ do
+          packs <- allPathsIn ("test-resources/explain-packs" </> dir)
+          latex <- mapM explainPack (sort packs)
+          testCLISucceeded ["explain", option] [unlines latex]
+      )
 
     it "fails with no rules specified" $
       testCLIFailed
