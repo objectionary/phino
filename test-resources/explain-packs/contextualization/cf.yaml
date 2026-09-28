@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+# yamllint disable rule:line-length
+---
+latex: |-
+  \begin{phinoContextualizationInference}
+    \phinoName{cf}
+    \phinoConclusion{ \phinoContextualize{ [[ B ]] }{ k }{ [[ B ]] } }
+  \end{phinoContextualizationInference}
