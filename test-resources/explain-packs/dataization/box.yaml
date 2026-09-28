@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+# yamllint disable rule:line-length
+---
+latex: |-
+  \begin{phinoDataizationInference}
+    \phinoName{box}
+    \phinoCondition{ [ D \char44{} L ] \cap \lparen B_1 \cup B_2 \rparen = \emptyset }
+    \phinoPremise{ \phinoContextualize{ e_2 }{ [[ B_1, @ -> e_2, B_2 ]] }{ e_3 } }
+    \phinoPremise{ \phinoNormalize{ e_3 }{ n } }
+    \phinoPremise{ \phinoDataize{ n }{ e_1 }{ s_1 }{ \delta }{ s_2 } }
+    \phinoConclusion{ \phinoDataize{ [[ B_1, @ -> e_2, B_2 ]] }{ e_1 }{ s_1 }{ \delta }{ s_2 } }
+  \end{phinoDataizationInference}

@@ -422,7 +422,7 @@ spec = do
       , ("⟦ φ ↦ ξ.a ⟧", SWEET, ASCII, "a:@")
       , ("⟦ x ↦ ⟦ y ↦ ξ.z ⟧ ⟧", SWEET, UNICODE, "z:y:x")
       , ("⟦ x ↦ ⟦ φ ↦ ξ.a ⟧.b ⟧", SWEET, UNICODE, "a:φ.b:x")
-      , ("⟦ x(a) ↦ ⟦ φ ↦ a ⟧ ⟧", SWEET, UNICODE, "⟦ x(a) ↦ ⟦ φ ↦ a ⟧ ⟧")
+      , ("⟦ x(a) ↦ ⟦ φ ↦ a ⟧ ⟧", SWEET, UNICODE, "⟦ x(a) ↦ a:φ ⟧")
       , ("⟦ x ↦ ξ.a, y ↦ ∅ ⟧", SWEET, UNICODE, "⟦ x ↦ a, y ↦ ∅ ⟧")
       , ("⟦ x ↦ ξ.a ⟧", SALTY, UNICODE, "⟦ x ↦ ξ.a ⟧")
       , ("⟦ Δ ⤍ FF-AA ⟧", SALTY, ASCII, "[[ D> FF-AA ]]")
