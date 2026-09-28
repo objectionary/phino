@@ -1,0 +1,50 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+# The synonym of '--acyclic=plausible': every dispatch on 'Φ.num' copies the
+# object, and the deep walk entered the bindings of every copy as if they were
+# new, so the test of 'num' was brought to its normal form and fired once
+# under 'a', once under 'b' and once under 'c' (#1480). The copy goes by a
+# name in the world, 'Φ.num( φ ↦ … )', and the object part of that name is a
+# synonym of it, so the walk enters 'test' of 'Φ.num' in the first copy it
+# meets and leaves it as written in every later one. The φ each copy fills is
+# an argument of that copy and not a binding of 'Φ.num', so it is entered
+# every time.
+symbolic: |
+  - λ: L_id
+    morph:
+      𝑛1: $.x
+    𝑛: 𝑛1
+  - λ: L_twice
+    dataize:
+      𝛿1: $.ρ
+    𝑛: Φ.num( φ ↦ ⟦ λ ⤍ 𝜎 ⟧ )
+deep: true
+partial: true
+acyclic: plausible
+steps: 32
+input: >
+  ⟦ num ↦ ⟦ φ ↦ ∅, twice ↦ ⟦ ρ ↦ ∅, λ ⤍ L_twice ⟧, test ↦ Φ.num( φ ↦ ⟦ Δ ⤍ 01- ⟧ ).twice ⟧,
+    a ↦ ⟦ λ ⤍ L_id, x ↦ Φ.num( φ ↦ ⟦ Δ ⤍ 2A- ⟧ ) ⟧,
+    b ↦ ⟦ λ ⤍ L_id, x ↦ Φ.num( φ ↦ ⟦ Δ ⤍ 2B- ⟧ ) ⟧,
+    c ↦ ⟦ λ ⤍ L_id, x ↦ Φ.num( φ ↦ ⟦ Δ ⤍ 2C- ⟧ ) ⟧ ⟧
+protocol: |
+  𝕄(Φ)
+    𝔼(L_id)  # 𝕄(Φ.a)
+      𝔼(L_twice)  # 𝕄(Φ.a🌵0.test)
+        formation(⟦ φ ↦ 01-:Δ, twice ↦ L_twice:λ, test ↦ Φ.num( φ ↦ 01-:Δ ).twice ⟧)  # 𝔻(Φ.a🌵1)
+        𝛿1.2 := 01-  # 𝔻(ξ.ρ)
+        𝑛.2.1 := Φ.num( φ ↦ 𝜎1:λ )  # 𝑛
+        𝑛.2.2 := ⟦ φ ↦ 𝜎1:λ, twice ↦ L_twice:λ, test ↦ Φ.num( φ ↦ 01-:Δ ).twice ⟧  # 𝕄(𝑛.2.1)
+      𝑛1.1 := ⟦ φ ↦ 2A-:Δ, twice ↦ L_twice:λ, test ↦ ⟦ φ ↦ 𝜎1:λ, twice ↦ L_twice:λ, test ↦ Φ.num( φ ↦ 01-:Δ ).twice ⟧ ⟧  # 𝕄(ξ.x)
+      𝑛.1.1 := ⟦ φ ↦ 2A-:Δ, twice ↦ L_twice:λ, test ↦ ⟦ φ ↦ 𝜎1:λ, twice ↦ L_twice:λ, test ↦ Φ.num( φ ↦ 01-:Δ ).twice ⟧ ⟧  # 𝑛
+      𝑛.1.2 := ⟦ φ ↦ 2A-:Δ, twice ↦ L_twice:λ, test ↦ ⟦ φ ↦ 𝜎1:λ, twice ↦ L_twice:λ, test ↦ Φ.num( φ ↦ 01-:Δ ).twice ⟧ ⟧  # 𝕄(𝑛.1.1)
+    𝔼(L_id)  # 𝕄(Φ.b)
+      𝑛1.3 := ⟦ φ ↦ 2B-:Δ, twice ↦ L_twice:λ, test ↦ Φ.num( φ ↦ 01-:Δ ).twice ⟧  # 𝕄(ξ.x)
+      𝑛.3.1 := ⟦ φ ↦ 2B-:Δ, twice ↦ L_twice:λ, test ↦ Φ.num( φ ↦ 01-:Δ ).twice ⟧  # 𝑛
+      𝑛.3.2 := ⟦ φ ↦ 2B-:Δ, twice ↦ L_twice:λ, test ↦ Φ.num( φ ↦ 01-:Δ ).twice ⟧  # 𝕄(𝑛.3.1)
+    𝔼(L_id)  # 𝕄(Φ.c)
+      𝑛1.4 := ⟦ φ ↦ 2C-:Δ, twice ↦ L_twice:λ, test ↦ Φ.num( φ ↦ 01-:Δ ).twice ⟧  # 𝕄(ξ.x)
+      𝑛.4.1 := ⟦ φ ↦ 2C-:Δ, twice ↦ L_twice:λ, test ↦ Φ.num( φ ↦ 01-:Δ ).twice ⟧  # 𝑛
+      𝑛.4.2 := ⟦ φ ↦ 2C-:Δ, twice ↦ L_twice:λ, test ↦ Φ.num( φ ↦ 01-:Δ ).twice ⟧  # 𝕄(𝑛.4.1)
