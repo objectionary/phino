@@ -311,6 +311,14 @@ spec = do
       within (call 2 ExRoot) (ExFormation [BiTau (AtLabel "x") (call 2 ExRoot), BiLambda (Function "L_g")]) `shouldBe` False
     it "does not find a formation under the ρ of the next one" $
       within (call 6 ExRoot) (call 6 (ExFormation [BiTau AtRho (call 6 ExRoot)])) `shouldBe` False
+    it "finds a round holding a datum inside one holding a symbol in its place" $
+      within (call 7 (pair (ExFormation [BiDelta (BtOne "1F")]))) (call 7 (ExFormation [BiLambda (FnSymbol 9)])) `shouldBe` True
+    it "finds a round inside one holding a symbol where the first holds one only under ρ" $
+      within (call 3 (ExFormation [BiDelta (BtOne "5C"), BiTau AtRho (call 2 ExRoot)])) (call 3 (ExFormation [BiLambda (FnSymbol 4)])) `shouldBe` True
+    it "does not find a round holding a symbol inside one holding a bare symbol in its place" $
+      within (call 8 (pair (ExFormation [BiLambda (FnSymbol 2)]))) (call 8 (ExFormation [BiLambda (FnSymbol 6)])) `shouldBe` False
+    it "does not find a term inside a bare symbol at the top" $
+      within (ExFormation [BiDelta (BtOne "3E")]) (ExFormation [BiLambda (FnSymbol 5)]) `shouldBe` False
 
   describe "hashSkeleton" $ do
     it "does not tell apart two formations that bind other terms to the same attributes" $
