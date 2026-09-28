@@ -18,18 +18,19 @@
 -- a λ function itself, which is an evaluation — are injected as '_reduce',
 -- '_evaluate' and '_fire' rather than imported (see 'ReductionFunc' and
 -- 'EvaluationFunc').
-module Morph (Answer, ReduceContext (..), ReduceException (..), EvaluationFunc, FiringFunc, Memo (..), ReductionFunc, Morphed, Steps (..), Tally (..), boxed, charged, deeper, emptyState, enter, entering, excluding, execBuildTerm, insideUniverse, isLambda, lambda, leadsTo, memoized, morph, morph', morphing, normalized, parking, producer, recalled, retained, sidePremise, tallied, universed, unparked, verb) where
+module Morph (Answer, Kept (..), ReduceContext (..), ReduceException (..), EvaluationFunc, FiringFunc, Memo (..), ReductionFunc, Morphed, Steps (..), Tally (..), boxed, charged, deeper, emptyState, enter, entering, excluding, execBuildTerm, insideUniverse, isLambda, lambda, leadsTo, memoized, morph, morph', morphing, normalized, parking, producer, recalled, retained, sidePremise, tallied, universed, unparked, verb) where
 
 import AST
-import Builder (buildExpressionThrows, contextualize)
+import Builder (buildExpressionThrows, contextualize, pathOf)
 import Control.Exception (Exception, catch, throwIO, try)
-import Control.Monad (foldM, when)
+import Control.Monad (foldM, unless, when)
 import Data.IORef (IORef, modifyIORef', newIORef, readIORef, writeIORef)
 import Data.List (find, partition)
 import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as NE
 import qualified Data.Map.Strict as Map
 import Data.Maybe (fromMaybe, isJust)
+import qualified Data.Set as Set
 import qualified Data.Text as T
 import Deps (Acyclic (..), BuildTermFunc, BuildTermMethodS, Evaluation (..), Judgment (..), SaveEvalFunc, SaveStepFunc, State (..), Term (..), dontSaveStep)
 import Lambdas (Lambdas)
@@ -133,18 +134,36 @@ data Tally = Tally
 -- asked and what it said there, and with no operand line under it, since none
 -- was reduced. A firing that got stuck keeps nothing, since nothing was
 -- answered; a site parked or a recursion cut inside an answer is a part of
--- it, since that is what the run made of the formation. The store is one cell
--- every frame of the run shares, like the count of 'Tally', since what one
--- frame answered is what its siblings are after. It belongs to 'Plausible'
--- and to no switch of its own: a run asking for plausible cuts is a run that
--- wants to finish rather than to be exact, and firing one formation as often
--- as the program reads it is the other way such a run fails to.
-newtype Memo = Memo (IORef (Store Answer))
+-- it, since that is what the run made of the formation. A recursion cut
+-- inside a firing, so that the firing itself never answered, is kept too, as
+-- the formation the cut carried: the formation is fired as often as the
+-- program reads it, and without the cut in the store every one of those
+-- firings walked all the way down to the same cut again (#1480). The store is
+-- one cell every frame of the run shares, like the count of 'Tally', since
+-- what one frame answered is what its siblings are after. It belongs to
+-- 'Plausible' and to no switch of its own: a run asking for plausible cuts is
+-- a run that wants to finish rather than to be exact, and firing one
+-- formation as often as the program reads it is the other way such a run
+-- fails to.
+--
+-- Beside the answers the memo keeps the bindings of the world the '--deep'
+-- walk has entered, each as the object of the world declaring it and the
+-- attribute it is bound to (see 'visited'). Every dispatch on an object of
+-- the world copies it, and the walk entered the bindings of every copy as if
+-- they were new, so the tests of 'Φ.number' were reduced once per number the
+-- program held (#1480).
+data Memo = Memo (IORef (Store Kept)) (IORef (Set.Set (Expression, Attribute)))
 
 -- What one firing answered, kept for the firings of the same formation to
 -- come: the term the entry wrote, symbols and all, and the normal form 𝕄 made
 -- of it, which are the two lines the protocol writes an answer as.
 type Answer = (Expression, Expression)
+
+-- What the memo keeps of one formation: the answer its firing made, or the
+-- formation a recursion was cut at while it was being fired.
+data Kept
+  = Answered Answer
+  | Looped Expression
 
 -- What 'Memo' keeps: the answers, by the digest of the formation they answer,
 -- each beside the very formation, since two terms may share a digest.
@@ -335,22 +354,35 @@ charged ReduceContext{_tally = Just (Tally cap count)} = do
 -- one under 'Plausible', the mode the memo belongs to (see 'Memo'), and none
 -- under any other, where nothing is ever recalled.
 memoized :: Maybe Acyclic -> IO (Maybe Memo)
-memoized (Just Plausible) = Just . Memo <$> newIORef Map.empty
+memoized (Just Plausible) = Just <$> (Memo <$> newIORef Map.empty <*> newIORef Set.empty)
 memoized _ = pure Nothing
 
 -- What the memo keeps for the formation, if this run fired it already (see
 -- 'Memo'); nothing where the run keeps no memo at all.
-recalled :: Maybe Memo -> Expression -> IO (Maybe Answer)
+recalled :: Maybe Memo -> Expression -> IO (Maybe Kept)
 recalled Nothing _ = pure Nothing
-recalled (Just (Memo store)) form = do
+recalled (Just (Memo store _)) form = do
   kept <- readIORef store
   pure (Map.lookup (hashExpression form) kept >>= lookup form)
 
--- Keep what firing the formation answered, for the next firing of it (see
+-- Keep what firing the formation came to, for the next firing of it (see
 -- 'Memo').
-retained :: Maybe Memo -> Expression -> Answer -> IO ()
+retained :: Maybe Memo -> Expression -> Kept -> IO ()
 retained Nothing _ _ = pure ()
-retained (Just (Memo store)) form answer = modifyIORef' store (Map.insertWith (++) (hashExpression form) [(form, answer)])
+retained (Just (Memo store _)) form kept = modifyIORef' store (Map.insertWith (++) (hashExpression form) [(form, kept)])
+
+-- Whether the '--deep' walk has entered the binding the object of the world
+-- declares under the attribute, in whichever copy of the object (see 'Memo');
+-- never where the run keeps no memo at all.
+visited :: Maybe Memo -> Expression -> Attribute -> IO Bool
+visited Nothing _ _ = pure False
+visited (Just (Memo _ walked)) object attr = Set.member (object, attr) <$> readIORef walked
+
+-- Remember that the '--deep' walk has entered the binding the object of the
+-- world declares under the attribute (see 'visited').
+visit :: Maybe Memo -> Expression -> Attribute -> IO ()
+visit Nothing _ _ = pure ()
+visit (Just (Memo _ walked)) object attr = modifyIORef' walked (Set.insert (object, attr))
 
 -- Run one frame of the 𝕄/𝔻 spine, attaching its derivation and its state to a
 -- stuck λ function or an exhausted budget escaping it. 'Stuck' is raised deep
@@ -699,8 +731,8 @@ deepened expr univ state ctx = go (Just ctx._site) Nothing ExXi expr state ctx
         abstract :: Binding -> Bool
         abstract (BiVoid _) = True
         abstract _ = False
-    parts standing _ (ExFormation bds) state' caller = do
-      (entered, state'') <- bindings standing bds bds state' caller
+    parts standing _ form@(ExFormation bds) state' caller = do
+      (entered, state'') <- bindings standing (synonym caller._universe form) bds bds state' caller
       pure (ExFormation entered, state'')
     parts _ context (ExDispatch target attr) state' caller = do
       (entered, state'') <- go Nothing (Just attr) context target state' caller
@@ -715,17 +747,71 @@ deepened expr univ state ctx = go (Just ctx._site) Nothing ExXi expr state ctx
     -- the object around it rather than one inside it, and a void, Δ or λ
     -- binding carries no term to walk at all. A body of a formation the walk
     -- can name is named by that locator and the attribute it is bound to, which
-    -- is the very locator '--locator' would aim a run of its own at.
-    bindings :: Maybe Expression -> [Binding] -> [Binding] -> State -> ReduceContext -> IO ([Binding], State)
-    bindings _ _ [] state' _ = pure ([], state')
-    bindings standing whole (BiTau attr body : rest) state' caller
+    -- is the very locator '--locator' would aim a run of its own at. A binding
+    -- the walk has entered in another copy of the same object of the world is
+    -- left as it was written (see 'fresh'), unless its body reads the copy it
+    -- stands in (see 'closed').
+    bindings :: Maybe Expression -> Maybe (Expression, [Attribute]) -> [Binding] -> [Binding] -> State -> ReduceContext -> IO ([Binding], State)
+    bindings _ _ _ [] state' _ = pure ([], state')
+    bindings standing alias whole (BiTau attr body : rest) state' caller
       | attr /= AtRho = do
-          (entered, state'') <- go (fmap (`ExDispatch` attr) standing) Nothing (scope attr whole) body state' caller
-          (others, state''') <- bindings standing whole rest state'' caller
+          new <- if closed body then fresh alias attr caller else pure True
+          (entered, state'') <-
+            if new
+              then go (fmap (`ExDispatch` attr) standing) Nothing (scope attr whole) body state' caller
+              else pure (body, state')
+          (others, state''') <- bindings standing alias whole rest state'' caller
           pure (BiTau attr entered : others, state''')
-    bindings standing whole (bd : rest) state' caller = do
-      (others, state'') <- bindings standing whole rest state' caller
+    bindings standing alias whole (bd : rest) state' caller = do
+      (others, state'') <- bindings standing alias whole rest state' caller
       pure (bd : others, state'')
+    -- The object of the world a formation is a copy of, where it is one, with
+    -- the attributes whose voids the copy filled. 'pathOf' names the copy the
+    -- way 'dot' names it in a ρ, 'Φ.num( φ ↦ ⟦ Δ ⤍ 2A- ⟧ )', and that name with
+    -- its applications erased, 'Φ.num', is a synonym of every copy: the
+    -- bindings a copy did not fill are the ones the world declares, written
+    -- once (#1480). The arguments of the outermost application are the voids
+    -- this copy filled, and they belong to it alone. The world itself has no
+    -- such synonym, and neither has a formation the world does not declare.
+    synonym :: Maybe Expression -> Expression -> Maybe (Expression, [Attribute])
+    synonym Nothing _ = Nothing
+    synonym (Just world) form = case pathOf world form of
+      ExRoot -> Nothing
+      ExFormation _ -> Nothing
+      name -> Just (erased name, supplied name)
+      where
+        erased :: Expression -> Expression
+        erased (ExApplication target _) = erased target
+        erased (ExDispatch target attr) = ExDispatch (erased target) attr
+        erased other = other
+        supplied :: Expression -> [Attribute]
+        supplied (ExApplication target (ArTau attr _)) = attr : supplied target
+        supplied _ = []
+    -- Whether the walk enters the binding under the attribute: always, unless
+    -- the formation is a copy of an object of the world, the attribute is one
+    -- the object declares rather than a void the copy filled, and the walk has
+    -- entered that binding already, in this copy or another, which the memo of
+    -- '--acyclic=plausible' remembers (see 'Memo'). A binding left out stays as
+    -- it was written and is never replaced by what an earlier copy came to,
+    -- since a body may read the ρ or the φ of the copy it stands in.
+    fresh :: Maybe (Expression, [Attribute]) -> Attribute -> ReduceContext -> IO Bool
+    fresh (Just (object, filled)) attr caller
+      | attr `notElem` filled = do
+          seen <- visited caller._memo object attr
+          unless seen (visit caller._memo object attr)
+          pure (not seen)
+    fresh _ _ _ = pure True
+    -- Whether a body cannot see the copy it stands in, that is, holds no ξ
+    -- outside the formations nested in it, since the ξ of a nested formation
+    -- is that formation. Two copies filling their voids differently make two
+    -- different programs of a body reading ξ, so the walk of one tells nothing
+    -- about the other and such a body is walked in every copy (#1485).
+    closed :: Expression -> Bool
+    closed ExXi = False
+    closed (ExDispatch target _) = closed target
+    closed (ExApplication target (ArTau _ arg)) = closed target && closed arg
+    closed (ExApplication target (ArAlpha _ arg)) = closed target && closed arg
+    closed _ = True
     -- The context a binding's body is entered in: the formation without that
     -- binding, the very context 'dot' contextualizes a dispatched body in, so
     -- a body reaching back at itself through ξ collapses instead of looping.

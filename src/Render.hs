@@ -294,6 +294,7 @@ instance Render CONDITION where
   render CO_PART_OF{..} = "part-of\\lparen " <> render expr <> ", " <> render binding <> " \\rparen"
   render CO_FORMATION{..} = "\\phinoIsFormation{ " <> render expr <> " }"
   render CO_DISJOINT{..} = render (ST_ATTRIBUTES attrs) <> " \\cap " <> union groups <> " = \\emptyset"
+  render CO_SUBSET{attrs = [attr], ..} = render attr <> " " <> render belongs <> " " <> union groups
   render CO_SUBSET{belongs = NOT_IN, ..} = render (ST_ATTRIBUTES attrs) <> " \\not\\subseteq " <> union groups
   render CO_SUBSET{..} = render (ST_ATTRIBUTES attrs) <> " \\subseteq " <> union groups
   render CO_EMPTY = ""
@@ -316,11 +317,10 @@ instance Render EXTRA where
   -- trailing arguments. This is a one-off application binding only 'meta', so the
   -- returned state is dropped (the engine discards it too, see 'execBuildTerm').
   render EXTRA{func = "morph", ..} = render meta <> " \\coloneqq \\phinoMorph{ " <> T.intercalate ", " (map render args) <> " }{ e }{ s_1 }"
-  -- The name a formation goes by in the universe 'e'. The rule never writes the
-  -- universe, since phino knows it where the rule applies (#1460), so it
-  -- renders as the metavariable 'e', the way a 'morph' extra renders it, and
-  -- the formation the name stands for gets an argument of its own.
-  render EXTRA{func = "named", args = [form], ..} = render meta <> " \\coloneqq \\phinoNamed{ e }{ " <> render form <> " }"
+  -- The name a formation goes by in the universe. The rule never writes the
+  -- universe, since phino knows it where the rule applies (#1460), so the name
+  -- and the formation it stands for are the two sides of one relation.
+  render EXTRA{func = "named", args = [form], ..} = "\\phinoNamed{ " <> render meta <> " }{ " <> render form <> " }"
   render EXTRA{..} = render meta <> " \\coloneqq " <> macro func <> "{ " <> T.intercalate ", " (map render args) <> " }"
     where
       macro :: String -> Text

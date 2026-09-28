@@ -60,8 +60,10 @@ jobs:
           aws-region: ${{ secrets.S3_REGION }}
       - name: Upload phino binary to S3
         shell: bash
+        env:
+          REF_NAME: ${{ github.ref_name }}
         run: |
-          aws s3 cp dist-release/${{ runner.os == 'Windows' && 'phino.exe' || 'phino' }} s3://${{ secrets.S3_BUCKET }}/releases/${{ matrix.os }}/phino-${{ github.ref_name }}${{ runner.os == 'Windows' && '.exe' || '' }} --acl public-read
+          aws s3 cp dist-release/${{ runner.os == 'Windows' && 'phino.exe' || 'phino' }} "s3://${{ secrets.S3_BUCKET }}/releases/${{ matrix.os }}/phino-${REF_NAME}${{ runner.os == 'Windows' && '.exe' || '' }}" --acl public-read
       - name: Upload as phino-latest
         shell: bash
         run: |

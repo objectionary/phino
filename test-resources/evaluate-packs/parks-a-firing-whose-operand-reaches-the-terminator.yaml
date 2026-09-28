@@ -42,8 +42,8 @@ input: >
   ⟧
 result: |-
   ⟦
-    mark(n, v) ↦ ⟦ λ ⤍ L_entry ⟧,
-    root(v) ↦ ⟦ λ ⤍ L_root ⟧,
+    mark(n, v) ↦ L_entry:λ,
+    root(v) ↦ L_root:λ,
     e1 ↦ ⟦ v ↦ Φ.dataized( target ↦ ⊥ ).as-bytes, λ ⤍ L_root ⟧
   ⟧
 protocol: |

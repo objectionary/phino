@@ -1,0 +1,48 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+# The synonym of '--acyclic=plausible' lets the walk enter a binding of an
+# object of the world in the first copy it meets and leave it as written in
+# every later one (#1480). A body reading ξ reads the copy it stands in, and
+# two copies filling 'v' with different numbers make two different programs of
+# the φ of 'dbl', so that φ is walked in every copy and 'L_twice' fires under
+# 'a' and under 'b', each with a symbol of its own (#1485).
+symbolic: |
+  - λ: L_id
+    morph:
+      𝑛1: $.x
+    𝑛: 𝑛1
+  - λ: L_twice
+    dataize:
+      𝛿1: $.ρ
+    𝑛: Φ.num( φ ↦ ⟦ λ ⤍ 𝜎 ⟧ )
+deep: true
+partial: true
+acyclic: plausible
+steps: 32
+input: >
+  ⟦ num ↦ ⟦ φ ↦ ∅, twice ↦ ⟦ ρ ↦ ∅, λ ⤍ L_twice ⟧ ⟧,
+    dbl ↦ ⟦ v ↦ ∅, φ ↦ ξ.v.twice ⟧,
+    a ↦ ⟦ λ ⤍ L_id, x ↦ Φ.dbl( v ↦ Φ.num( φ ↦ ⟦ Δ ⤍ 2A- ⟧ ) ) ⟧,
+    b ↦ ⟦ λ ⤍ L_id, x ↦ Φ.dbl( v ↦ Φ.num( φ ↦ ⟦ Δ ⤍ 2B- ⟧ ) ) ⟧ ⟧
+protocol: |
+  𝕄(Φ)
+    𝔼(L_id)  # 𝕄(Φ.a)
+      𝔼(L_twice)  # 𝕄(Φ.a🌵0.φ)
+        formation(⟦ φ ↦ 2A-:Δ, twice ↦ L_twice:λ ⟧)  # 𝔻(Φ.a🌵1)
+        𝛿1.2 := 2A-  # 𝔻(ξ.ρ)
+        𝑛.2.1 := Φ.num( φ ↦ 𝜎1:λ )  # 𝑛
+        𝑛.2.2 := ⟦ φ ↦ 𝜎1:λ, twice ↦ L_twice:λ ⟧  # 𝕄(𝑛.2.1)
+      𝑛1.1 := ⟦ v ↦ Φ.num( φ ↦ 2A-:Δ ), φ ↦ ⟦ φ ↦ 𝜎1:λ, twice ↦ L_twice:λ ⟧ ⟧  # 𝕄(ξ.x)
+      𝑛.1.1 := 𝑛1.1  # 𝑛
+      𝑛.1.2 := 𝑛1.1  # 𝕄(𝑛.1.1)
+    𝔼(L_id)  # 𝕄(Φ.b)
+      𝔼(L_twice)  # 𝕄(Φ.a🌵2.φ)
+        formation(⟦ φ ↦ 2B-:Δ, twice ↦ L_twice:λ ⟧)  # 𝔻(Φ.a🌵3)
+        𝛿1.4 := 2B-  # 𝔻(ξ.ρ)
+        𝑛.4.1 := Φ.num( φ ↦ 𝜎2:λ )  # 𝑛
+        𝑛.4.2 := ⟦ φ ↦ 𝜎2:λ, twice ↦ L_twice:λ ⟧  # 𝕄(𝑛.4.1)
+      𝑛1.3 := ⟦ v ↦ Φ.num( φ ↦ 2B-:Δ ), φ ↦ ⟦ φ ↦ 𝜎2:λ, twice ↦ L_twice:λ ⟧ ⟧  # 𝕄(ξ.x)
+      𝑛.3.1 := 𝑛1.3  # 𝑛
+      𝑛.3.2 := 𝑛1.3  # 𝕄(𝑛.3.1)

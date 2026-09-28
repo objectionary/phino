@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+# yamllint disable rule:line-length
+---
+latex: |-
+  \begin{phinoMorphingInference}
+    \phinoName{universe}
+    \phinoLabel{\Phi}
+    \phinoCondition{ e \not= Q }
+    \phinoPremise{ \phinoNormalize{ e }{ n_1 } }
+    \phinoPremise{ \phinoMorph{ n_1 }{ e }{ s_1 }{ n_2 }{ s_2 } }
+    \phinoConclusion{ \phinoMorph{ Q }{ e }{ s_1 }{ n_2 }{ s_2 } }
+  \end{phinoMorphingInference}
