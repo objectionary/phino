@@ -202,7 +202,9 @@ walk has entered (`visited` and `visit` in `Morph.hs`, asked by `fresh` of
 `Builder.hs` gives it, and that name with its applications erased, such as
 `Φ.num`, is a synonym of every copy: the walk enters a binding of `Φ.num` in
 the first copy it meets and leaves it as written in every later one, except
-the voids a copy filled, which belong to that copy alone (#1480).
+the voids a copy filled, which belong to that copy alone (#1480), and a body
+reading ξ outside the formations nested in it, which reads the copy it stands
+in and is walked in every copy (`closed` of `deepened`, #1485).
 
 ### Test pattern: YAML packs
 
