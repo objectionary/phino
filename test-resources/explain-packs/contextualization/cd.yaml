@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+# yamllint disable rule:line-length
+---
+latex: |-
+  \begin{phinoContextualizationInference}
+    \phinoName{cd}
+    \phinoPremise{ \phinoContextualize{ n_1 }{ k }{ n_2 } }
+    \phinoConclusion{ \phinoContextualize{ n_1 . \tau }{ k }{ n_2 . \tau } }
+  \end{phinoContextualizationInference}
