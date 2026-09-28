@@ -256,22 +256,22 @@ spec = do
       (_, protocol) <- partially known "2.times(3).nope"
       protocol
         `shouldBe` unlines
-          [ "  formation(⟦ bytes(φ) ↦ ⟦ not(ρ) ↦ ⟦ λ ⤍ L_bytes_not ⟧, eq(ρ, b) ↦ ⟦ λ ⤍ L_bytes_eq ⟧ ⟧, bool(φ) ↦ ⟦ if(ρ, then, else) ↦ ⟦ λ ⤍ L_fork ⟧ ⟧, number(φ) ↦ ⟦ as-bytes ↦ φ, plus(ρ, x) ↦ ⟦ λ ⤍ L_number_plus ⟧, times(ρ, x) ↦ ⟦ λ ⤍ L_number_times ⟧, div(ρ, x) ↦ ⟦ λ ⤍ L_number_div ⟧, gt(ρ, x) ↦ ⟦ λ ⤍ L_number_gt ⟧, eq(ρ, x) ↦ ⟦ φ ↦ ρ.as-bytes.eq( x.as-bytes ) ⟧, nope(ρ) ↦ ⟦ λ ⤍ L_number_nope ⟧ ⟧, φ ↦ 2.times( 3 ).nope ⟧)  # 𝔻(Φ)"
+          [ "  formation(⟦ bytes(φ) ↦ ⟦ not(ρ) ↦ L_bytes_not:λ, eq(ρ, b) ↦ L_bytes_eq:λ ⟧, bool(φ) ↦ ⟦ if(ρ, then, else) ↦ L_fork:λ ⟧, number(φ) ↦ ⟦ as-bytes ↦ φ, plus(ρ, x) ↦ L_number_plus:λ, times(ρ, x) ↦ L_number_times:λ, div(ρ, x) ↦ L_number_div:λ, gt(ρ, x) ↦ L_number_gt:λ, eq(ρ, x) ↦ ρ.as-bytes.eq( x.as-bytes ):φ, nope(ρ) ↦ L_number_nope:λ ⟧, φ ↦ 2.times( 3 ).nope ⟧)  # 𝔻(Φ)"
           , "    𝔼(L_number_times)  # 𝕄(Φ)"
-          , "      formation(⟦ φ ↦ Φ.bytes( φ ↦ 40-00-00-00-00-00-00-00:Δ ), as-bytes ↦ φ, plus(ρ, x) ↦ ⟦ λ ⤍ L_number_plus ⟧, times(ρ, x) ↦ ⟦ λ ⤍ L_number_times ⟧, div(ρ, x) ↦ ⟦ λ ⤍ L_number_div ⟧, gt(ρ, x) ↦ ⟦ λ ⤍ L_number_gt ⟧, eq(ρ, x) ↦ ⟦ φ ↦ ρ.as-bytes.eq( x.as-bytes ) ⟧, nope(ρ) ↦ ⟦ λ ⤍ L_number_nope ⟧ ⟧)  # 𝔻(Φ.a🌵17)"
-          , "        formation(⟦ φ ↦ 40-00-00-00-00-00-00-00:Δ, not(ρ) ↦ ⟦ λ ⤍ L_bytes_not ⟧, eq(ρ, b) ↦ ⟦ λ ⤍ L_bytes_eq ⟧ ⟧)  # 𝔻(Φ.a🌵17)"
+          , "      formation(⟦ φ ↦ Φ.bytes( φ ↦ 40-00-00-00-00-00-00-00:Δ ), as-bytes ↦ φ, plus(ρ, x) ↦ L_number_plus:λ, times(ρ, x) ↦ L_number_times:λ, div(ρ, x) ↦ L_number_div:λ, gt(ρ, x) ↦ L_number_gt:λ, eq(ρ, x) ↦ ρ.as-bytes.eq( x.as-bytes ):φ, nope(ρ) ↦ L_number_nope:λ ⟧)  # 𝔻(Φ.a🌵17)"
+          , "        formation(⟦ φ ↦ 40-00-00-00-00-00-00-00:Δ, not(ρ) ↦ L_bytes_not:λ, eq(ρ, b) ↦ L_bytes_eq:λ ⟧)  # 𝔻(Φ.a🌵17)"
           , "      𝛿1.1 := 40-00-00-00-00-00-00-00  # 𝔻(ξ.ρ)"
-          , "      formation(⟦ φ ↦ Φ.bytes( φ ↦ 40-08-00-00-00-00-00-00:Δ ), as-bytes ↦ φ, plus(ρ, x) ↦ ⟦ λ ⤍ L_number_plus ⟧, times(ρ, x) ↦ ⟦ λ ⤍ L_number_times ⟧, div(ρ, x) ↦ ⟦ λ ⤍ L_number_div ⟧, gt(ρ, x) ↦ ⟦ λ ⤍ L_number_gt ⟧, eq(ρ, x) ↦ ⟦ φ ↦ ρ.as-bytes.eq( x.as-bytes ) ⟧, nope(ρ) ↦ ⟦ λ ⤍ L_number_nope ⟧ ⟧)  # 𝔻(Φ.a🌵18)"
-          , "        formation(⟦ φ ↦ 40-08-00-00-00-00-00-00:Δ, not(ρ) ↦ ⟦ λ ⤍ L_bytes_not ⟧, eq(ρ, b) ↦ ⟦ λ ⤍ L_bytes_eq ⟧ ⟧)  # 𝔻(Φ.a🌵18)"
+          , "      formation(⟦ φ ↦ Φ.bytes( φ ↦ 40-08-00-00-00-00-00-00:Δ ), as-bytes ↦ φ, plus(ρ, x) ↦ L_number_plus:λ, times(ρ, x) ↦ L_number_times:λ, div(ρ, x) ↦ L_number_div:λ, gt(ρ, x) ↦ L_number_gt:λ, eq(ρ, x) ↦ ρ.as-bytes.eq( x.as-bytes ):φ, nope(ρ) ↦ L_number_nope:λ ⟧)  # 𝔻(Φ.a🌵18)"
+          , "        formation(⟦ φ ↦ 40-08-00-00-00-00-00-00:Δ, not(ρ) ↦ L_bytes_not:λ, eq(ρ, b) ↦ L_bytes_eq:λ ⟧)  # 𝔻(Φ.a🌵18)"
           , "      𝛿2.1 := 40-08-00-00-00-00-00-00  # 𝔻(ξ.x)"
           , "      𝑛.1.1 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛"
-          , "      𝑛.1.2 := ⟦ φ ↦ 𝜎1:λ, as-bytes ↦ φ, plus(ρ, x) ↦ ⟦ λ ⤍ L_number_plus ⟧, times(ρ, x) ↦ ⟦ λ ⤍ L_number_times ⟧, div(ρ, x) ↦ ⟦ λ ⤍ L_number_div ⟧, gt(ρ, x) ↦ ⟦ λ ⤍ L_number_gt ⟧, eq(ρ, x) ↦ ⟦ φ ↦ ρ.as-bytes.eq( x.as-bytes ) ⟧, nope(ρ) ↦ ⟦ λ ⤍ L_number_nope ⟧ ⟧  # 𝕄(𝑛.1.1)"
+          , "      𝑛.1.2 := ⟦ φ ↦ 𝜎1:λ, as-bytes ↦ φ, plus(ρ, x) ↦ L_number_plus:λ, times(ρ, x) ↦ L_number_times:λ, div(ρ, x) ↦ L_number_div:λ, gt(ρ, x) ↦ L_number_gt:λ, eq(ρ, x) ↦ ρ.as-bytes.eq( x.as-bytes ):φ, nope(ρ) ↦ L_number_nope:λ ⟧  # 𝕄(𝑛.1.1)"
           , "    ?(L_number_nope)  # 𝔻(⟦ ρ ↦ Φ.number( φ ↦ 𝜎1:λ ), λ ⤍ L_number_nope ⟧)"
           ]
     it "leaves an unanswered λ function dataized directly as the whole residue" $ do
       ((outcome, chain), protocol) <- partially known "[[ L> Sym_arg_0 ]]"
       outcome `shouldBe` Residual placeholder
-      protocol `shouldBe` "  formation(⟦ bytes(φ) ↦ ⟦ not(ρ) ↦ ⟦ λ ⤍ L_bytes_not ⟧, eq(ρ, b) ↦ ⟦ λ ⤍ L_bytes_eq ⟧ ⟧, bool(φ) ↦ ⟦ if(ρ, then, else) ↦ ⟦ λ ⤍ L_fork ⟧ ⟧, number(φ) ↦ ⟦ as-bytes ↦ φ, plus(ρ, x) ↦ ⟦ λ ⤍ L_number_plus ⟧, times(ρ, x) ↦ ⟦ λ ⤍ L_number_times ⟧, div(ρ, x) ↦ ⟦ λ ⤍ L_number_div ⟧, gt(ρ, x) ↦ ⟦ λ ⤍ L_number_gt ⟧, eq(ρ, x) ↦ ⟦ φ ↦ ρ.as-bytes.eq( x.as-bytes ) ⟧, nope(ρ) ↦ ⟦ λ ⤍ L_number_nope ⟧ ⟧, φ ↦ Sym_arg_0:λ ⟧)  # 𝔻(Φ)\n    ?(Sym_arg_0)  # 𝔻(Sym_arg_0:λ)\n"
+      protocol `shouldBe` "  formation(⟦ bytes(φ) ↦ ⟦ not(ρ) ↦ L_bytes_not:λ, eq(ρ, b) ↦ L_bytes_eq:λ ⟧, bool(φ) ↦ ⟦ if(ρ, then, else) ↦ L_fork:λ ⟧, number(φ) ↦ ⟦ as-bytes ↦ φ, plus(ρ, x) ↦ L_number_plus:λ, times(ρ, x) ↦ L_number_times:λ, div(ρ, x) ↦ L_number_div:λ, gt(ρ, x) ↦ L_number_gt:λ, eq(ρ, x) ↦ ρ.as-bytes.eq( x.as-bytes ):φ, nope(ρ) ↦ L_number_nope:λ ⟧, φ ↦ Sym_arg_0:λ ⟧)  # 𝔻(Φ)\n    ?(Sym_arg_0)  # 𝔻(Sym_arg_0:λ)\n"
       map fst chain `shouldEndWith` [placeholder]
     it "still reaches the manufactured datum when nothing is stuck" $ do
       ((outcome, _), _) <- partially known "2.times(3)"

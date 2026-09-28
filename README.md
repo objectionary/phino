@@ -375,17 +375,17 @@ $ phino dataize --symbolic=atoms.yaml --protocol=atoms.txt --quiet \
     --sweet --hide-rho sum.phi
 $ cat atoms.txt
 𝔻(Φ)
-  formation(⟦ bytes(φ) ↦ ⟦⟧, number(φ) ↦ ⟦ plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧, φ ↦ 5.plus( 6 ) ⟧)  # 𝔻(Φ)
+  formation(⟦ bytes(φ) ↦ ⟦⟧, number(φ) ↦ ⟦ plus(x) ↦ L_number_plus:λ ⟧, φ ↦ 5.plus( 6 ) ⟧)  # 𝔻(Φ)
     𝔼(L_number_plus)  # 𝔻(Φ)
-      formation(⟦ φ ↦ Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ ), plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧)  # 𝔻(Φ.a🌵0)
+      formation(⟦ φ ↦ Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ ), plus(x) ↦ L_number_plus:λ ⟧)  # 𝔻(Φ.a🌵0)
         formation(40-14-00-00-00-00-00-00:Δ:φ)  # 𝔻(Φ.a🌵0)
       𝛿1.1 := 40-14-00-00-00-00-00-00  # 𝔻(ξ.ρ)
-      formation(⟦ φ ↦ Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ ), plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧)  # 𝔻(Φ.a🌵1)
+      formation(⟦ φ ↦ Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ ), plus(x) ↦ L_number_plus:λ ⟧)  # 𝔻(Φ.a🌵1)
         formation(40-18-00-00-00-00-00-00:Δ:φ)  # 𝔻(Φ.a🌵1)
       𝛿2.1 := 40-18-00-00-00-00-00-00  # 𝔻(ξ.x)
       𝑛.1.1 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛
-      𝑛.1.2 := ⟦ φ ↦ 𝜎1:λ, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧  # 𝕄(𝑛.1.1)
-    formation(⟦ φ ↦ 𝜎1:λ, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧)  # 𝔻(Φ)
+      𝑛.1.2 := ⟦ φ ↦ 𝜎1:λ, plus(x) ↦ L_number_plus:λ ⟧  # 𝕄(𝑛.1.1)
+    formation(⟦ φ ↦ 𝜎1:λ, plus(x) ↦ L_number_plus:λ ⟧)  # 𝔻(Φ)
 ```
 
 <!-- markdownlint-enable MD013 -->
@@ -505,16 +505,16 @@ $ phino dataize --symbolic=atoms.yaml --protocol=atoms.txt --quiet \
 [ERROR]: No entry of --symbolic answers the λ function 'L_number_nope'
 $ cat atoms.txt
 𝔻(Φ)
-  formation(⟦ bytes(φ) ↦ ⟦⟧, number(φ) ↦ ⟦ plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, nope ↦ L_number_nope:λ ⟧, φ ↦ 5.plus( 6 ).nope ⟧)  # 𝔻(Φ)
+  formation(⟦ bytes(φ) ↦ ⟦⟧, number(φ) ↦ ⟦ plus(x) ↦ L_number_plus:λ, nope ↦ L_number_nope:λ ⟧, φ ↦ 5.plus( 6 ).nope ⟧)  # 𝔻(Φ)
     𝔼(L_number_plus)  # 𝕄(Φ)
-      formation(⟦ φ ↦ Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ ), plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, nope ↦ L_number_nope:λ ⟧)  # 𝔻(Φ.a🌵0)
+      formation(⟦ φ ↦ Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ ), plus(x) ↦ L_number_plus:λ, nope ↦ L_number_nope:λ ⟧)  # 𝔻(Φ.a🌵0)
         formation(40-14-00-00-00-00-00-00:Δ:φ)  # 𝔻(Φ.a🌵0)
       𝛿1.1 := 40-14-00-00-00-00-00-00  # 𝔻(ξ.ρ)
-      formation(⟦ φ ↦ Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ ), plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, nope ↦ L_number_nope:λ ⟧)  # 𝔻(Φ.a🌵1)
+      formation(⟦ φ ↦ Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ ), plus(x) ↦ L_number_plus:λ, nope ↦ L_number_nope:λ ⟧)  # 𝔻(Φ.a🌵1)
         formation(40-18-00-00-00-00-00-00:Δ:φ)  # 𝔻(Φ.a🌵1)
       𝛿2.1 := 40-18-00-00-00-00-00-00  # 𝔻(ξ.x)
       𝑛.1.1 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛
-      𝑛.1.2 := ⟦ φ ↦ 𝜎1:λ, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, nope ↦ L_number_nope:λ ⟧  # 𝕄(𝑛.1.1)
+      𝑛.1.2 := ⟦ φ ↦ 𝜎1:λ, plus(x) ↦ L_number_plus:λ, nope ↦ L_number_nope:λ ⟧  # 𝕄(𝑛.1.1)
     ?(L_number_nope)  # 𝔻(L_number_nope:λ)
 ```
 
@@ -574,51 +574,51 @@ $ phino morph --deep --symbolic=atoms.yaml --locator=Q.demo.a \
 $ cat fork.txt
 𝕄(Φ.demo.a)
   𝔼(L_gt)  # 𝕄(Φ.demo.a.φ)
-    formation(⟦ φ ↦ 𝜎1:λ, plus(x) ↦ ⟦ λ ⤍ L_plus ⟧, gt(x) ↦ ⟦ λ ⤍ L_gt ⟧ ⟧)  # 𝔻(Φ.a🌵0)
+    formation(⟦ φ ↦ 𝜎1:λ, plus(x) ↦ L_plus:λ, gt(x) ↦ L_gt:λ ⟧)  # 𝔻(Φ.a🌵0)
     𝛿1.1 := 𝔻(𝜎1:λ)  # 𝔻(ξ.ρ)
-    formation(⟦ φ ↦ Φ.bytes( φ ↦ 00-00-00-00-00-00-00-00:Δ ), plus(x) ↦ ⟦ λ ⤍ L_plus ⟧, gt(x) ↦ ⟦ λ ⤍ L_gt ⟧ ⟧)  # 𝔻(Φ.a🌵1)
+    formation(⟦ φ ↦ Φ.bytes( φ ↦ 00-00-00-00-00-00-00-00:Δ ), plus(x) ↦ L_plus:λ, gt(x) ↦ L_gt:λ ⟧)  # 𝔻(Φ.a🌵1)
       formation(00-00-00-00-00-00-00-00:Δ:φ)  # 𝔻(Φ.a🌵1)
     𝛿2.1 := 00-00-00-00-00-00-00-00  # 𝔻(ξ.x)
     𝑛.1.1 := Φ.bool( if(then, else) ↦ ⟦ λ ⤍ L_fork, φ ↦ 𝜎2:λ ⟧ )  # 𝑛
     𝑛.1.2 := ⟦ if(then, else) ↦ ⟦ λ ⤍ L_fork, φ ↦ 𝜎2:λ ⟧ ⟧  # 𝕄(𝑛.1.1)
   𝔼(L_plus)  # 𝕄(Φ.demo.a.φ)
-    formation(⟦ φ ↦ 𝜎1:λ, plus(x) ↦ ⟦ λ ⤍ L_plus ⟧, gt(x) ↦ ⟦ λ ⤍ L_gt ⟧ ⟧)  # 𝔻(Φ.a🌵2)
+    formation(⟦ φ ↦ 𝜎1:λ, plus(x) ↦ L_plus:λ, gt(x) ↦ L_gt:λ ⟧)  # 𝔻(Φ.a🌵2)
     𝛿1.2 := 𝔻(𝜎1:λ)  # 𝔻(ξ.ρ)
-    formation(⟦ φ ↦ Φ.bytes( φ ↦ 3F-F0-00-00-00-00-00-00:Δ ), plus(x) ↦ ⟦ λ ⤍ L_plus ⟧, gt(x) ↦ ⟦ λ ⤍ L_gt ⟧ ⟧)  # 𝔻(Φ.a🌵3)
+    formation(⟦ φ ↦ Φ.bytes( φ ↦ 3F-F0-00-00-00-00-00-00:Δ ), plus(x) ↦ L_plus:λ, gt(x) ↦ L_gt:λ ⟧)  # 𝔻(Φ.a🌵3)
       formation(3F-F0-00-00-00-00-00-00:Δ:φ)  # 𝔻(Φ.a🌵3)
     𝛿2.2 := 3F-F0-00-00-00-00-00-00  # 𝔻(ξ.x)
     𝑛.2.1 := Φ.number( φ ↦ 𝜎3:λ )  # 𝑛
-    𝑛.2.2 := ⟦ φ ↦ 𝜎3:λ, plus(x) ↦ ⟦ λ ⤍ L_plus ⟧, gt(x) ↦ ⟦ λ ⤍ L_gt ⟧ ⟧  # 𝕄(𝑛.2.1)
+    𝑛.2.2 := ⟦ φ ↦ 𝜎3:λ, plus(x) ↦ L_plus:λ, gt(x) ↦ L_gt:λ ⟧  # 𝕄(𝑛.2.1)
   𝔼(L_plus)  # 𝕄(Φ.demo.a.φ)
-    formation(⟦ φ ↦ 𝜎1:λ, plus(x) ↦ ⟦ λ ⤍ L_plus ⟧, gt(x) ↦ ⟦ λ ⤍ L_gt ⟧ ⟧)  # 𝔻(Φ.a🌵4)
+    formation(⟦ φ ↦ 𝜎1:λ, plus(x) ↦ L_plus:λ, gt(x) ↦ L_gt:λ ⟧)  # 𝔻(Φ.a🌵4)
     𝛿1.3 := 𝔻(𝜎1:λ)  # 𝔻(ξ.ρ)
-    formation(⟦ φ ↦ 𝜎3:λ, plus(x) ↦ ⟦ λ ⤍ L_plus ⟧, gt(x) ↦ ⟦ λ ⤍ L_gt ⟧ ⟧)  # 𝔻(Φ.a🌵5)
+    formation(⟦ φ ↦ 𝜎3:λ, plus(x) ↦ L_plus:λ, gt(x) ↦ L_gt:λ ⟧)  # 𝔻(Φ.a🌵5)
     𝛿2.3 := 𝔻(𝜎3:λ)  # 𝔻(ξ.x)
     𝑛.3.1 := Φ.number( φ ↦ 𝜎4:λ )  # 𝑛
-    𝑛.3.2 := ⟦ φ ↦ 𝜎4:λ, plus(x) ↦ ⟦ λ ⤍ L_plus ⟧, gt(x) ↦ ⟦ λ ⤍ L_gt ⟧ ⟧  # 𝕄(𝑛.3.1)
+    𝑛.3.2 := ⟦ φ ↦ 𝜎4:λ, plus(x) ↦ L_plus:λ, gt(x) ↦ L_gt:λ ⟧  # 𝕄(𝑛.3.1)
   𝔼(L_plus)  # 𝕄(Φ.demo.a.φ)
-    formation(⟦ φ ↦ 𝜎1:λ, plus(x) ↦ ⟦ λ ⤍ L_plus ⟧, gt(x) ↦ ⟦ λ ⤍ L_gt ⟧ ⟧)  # 𝔻(Φ.a🌵6)
+    formation(⟦ φ ↦ 𝜎1:λ, plus(x) ↦ L_plus:λ, gt(x) ↦ L_gt:λ ⟧)  # 𝔻(Φ.a🌵6)
     𝛿1.4 := 𝔻(𝜎1:λ)  # 𝔻(ξ.ρ)
-    formation(⟦ φ ↦ 𝜎1:λ, plus(x) ↦ ⟦ λ ⤍ L_plus ⟧, gt(x) ↦ ⟦ λ ⤍ L_gt ⟧ ⟧)  # 𝔻(Φ.a🌵7)
+    formation(⟦ φ ↦ 𝜎1:λ, plus(x) ↦ L_plus:λ, gt(x) ↦ L_gt:λ ⟧)  # 𝔻(Φ.a🌵7)
     𝛿2.4 := 𝔻(𝜎1:λ)  # 𝔻(ξ.x)
     𝑛.4.1 := Φ.number( φ ↦ 𝜎5:λ )  # 𝑛
-    𝑛.4.2 := ⟦ φ ↦ 𝜎5:λ, plus(x) ↦ ⟦ λ ⤍ L_plus ⟧, gt(x) ↦ ⟦ λ ⤍ L_gt ⟧ ⟧  # 𝕄(𝑛.4.1)
+    𝑛.4.2 := ⟦ φ ↦ 𝜎5:λ, plus(x) ↦ L_plus:λ, gt(x) ↦ L_gt:λ ⟧  # 𝕄(𝑛.4.1)
   𝔼(L_fork)  # 𝕄(Φ.demo.a.φ)
     𝛿1.5 := 𝔻(𝜎2:λ)  # 𝔻(ξ.φ)
     𝑛1.5 := 𝑛.3.2  # 𝕄(ξ.then)
     𝑛2.5 := 𝑛.4.2  # 𝕄(ξ.else)
     𝔻(𝜎6:λ) ∈ { 𝔻(𝜎4:λ), 𝔻(𝜎5:λ) }
-    𝑛3.5 := ⟦ φ ↦ 𝜎6:λ, plus(x) ↦ ⟦ λ ⤍ L_plus ⟧, gt(x) ↦ ⟦ λ ⤍ L_gt ⟧ ⟧  # [𝑛1, 𝑛2]
+    𝑛3.5 := ⟦ φ ↦ 𝜎6:λ, plus(x) ↦ L_plus:λ, gt(x) ↦ L_gt:λ ⟧  # [𝑛1, 𝑛2]
     𝑛.5.1 := 𝑛3.5  # 𝑛
     𝑛.5.2 := 𝑛3.5  # 𝕄(𝑛.5.1)
   𝔼(L_plus)  # 𝕄(Φ.demo.a.φ)
-    formation(⟦ φ ↦ 𝜎6:λ, plus(x) ↦ ⟦ λ ⤍ L_plus ⟧, gt(x) ↦ ⟦ λ ⤍ L_gt ⟧ ⟧)  # 𝔻(Φ.a🌵11)
+    formation(⟦ φ ↦ 𝜎6:λ, plus(x) ↦ L_plus:λ, gt(x) ↦ L_gt:λ ⟧)  # 𝔻(Φ.a🌵11)
     𝛿1.6 := 𝔻(𝜎6:λ)  # 𝔻(ξ.ρ)
-    formation(⟦ φ ↦ Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ ), plus(x) ↦ ⟦ λ ⤍ L_plus ⟧, gt(x) ↦ ⟦ λ ⤍ L_gt ⟧ ⟧)  # 𝔻(Φ.a🌵12)
+    formation(⟦ φ ↦ Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ ), plus(x) ↦ L_plus:λ, gt(x) ↦ L_gt:λ ⟧)  # 𝔻(Φ.a🌵12)
       formation(40-14-00-00-00-00-00-00:Δ:φ)  # 𝔻(Φ.a🌵12)
     𝛿2.6 := 40-14-00-00-00-00-00-00  # 𝔻(ξ.x)
     𝑛.6.1 := Φ.number( φ ↦ 𝜎7:λ )  # 𝑛
-    𝑛.6.2 := ⟦ φ ↦ 𝜎7:λ, plus(x) ↦ ⟦ λ ⤍ L_plus ⟧, gt(x) ↦ ⟦ λ ⤍ L_gt ⟧ ⟧  # 𝕄(𝑛.6.1)
+    𝑛.6.2 := ⟦ φ ↦ 𝜎7:λ, plus(x) ↦ L_plus:λ, gt(x) ↦ L_gt:λ ⟧  # 𝕄(𝑛.6.1)
 ```
 
 <!-- markdownlint-enable MD013 -->
@@ -667,23 +667,23 @@ $ phino dataize --symbolic=atoms.yaml --protocol=atoms.xml --quiet \
 $ cat atoms.xml
 <?xml version="1.0" encoding="UTF-8"?>
 <dataize at="Φ">
-  <formation at="Φ" term="⟦ bytes(φ) ↦ ⟦⟧, number(φ) ↦ ⟦ plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧, φ ↦ 5.plus( 6 ) ⟧">
+  <formation at="Φ" term="⟦ bytes(φ) ↦ ⟦⟧, number(φ) ↦ ⟦ plus(x) ↦ L_number_plus:λ ⟧, φ ↦ 5.plus( 6 ) ⟧">
     <evaluate λ="L_number_plus" by="dataize" at="Φ">
-      <formation at="Φ.a🌵0" term="⟦ φ ↦ Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ ), plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧">
+      <formation at="Φ.a🌵0" term="⟦ φ ↦ Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ ), plus(x) ↦ L_number_plus:λ ⟧">
         <formation at="Φ.a🌵0" term="40-14-00-00-00-00-00-00:Δ:φ">
         </formation>
       </formation>
       <bind meta="𝛿1.1">40-14-00-00-00-00-00-00</bind>
-      <formation at="Φ.a🌵1" term="⟦ φ ↦ Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ ), plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧">
+      <formation at="Φ.a🌵1" term="⟦ φ ↦ Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ ), plus(x) ↦ L_number_plus:λ ⟧">
         <formation at="Φ.a🌵1" term="40-18-00-00-00-00-00-00:Δ:φ">
         </formation>
       </formation>
       <bind meta="𝛿2.1">40-18-00-00-00-00-00-00</bind>
       <minted symbol="𝜎1">40-14-00-00-00-00-00-00 40-18-00-00-00-00-00-00</minted>
       <built meta="𝑛.1.1">Φ.number( φ ↦ 𝜎1:λ )</built>
-      <answer meta="𝑛.1.2">⟦ φ ↦ 𝜎1:λ, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧</answer>
+      <answer meta="𝑛.1.2">⟦ φ ↦ 𝜎1:λ, plus(x) ↦ L_number_plus:λ ⟧</answer>
     </evaluate>
-    <formation at="Φ" term="⟦ φ ↦ 𝜎1:λ, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧">
+    <formation at="Φ" term="⟦ φ ↦ 𝜎1:λ, plus(x) ↦ L_number_plus:λ ⟧">
     </formation>
   </formation>
 </dataize>
@@ -775,21 +775,21 @@ $ phino dataize --symbolic=atoms.yaml --protocol=atoms.xml --quiet \
 $ cat atoms.xml
 <?xml version="1.0" encoding="UTF-8"?>
 <dataize at="Φ">
-  <formation at="Φ" term="⟦ bytes(φ) ↦ ⟦⟧, number(φ) ↦ ⟦ plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, nope ↦ L_number_nope:λ ⟧, φ ↦ 5.plus( 6 ).nope ⟧">
+  <formation at="Φ" term="⟦ bytes(φ) ↦ ⟦⟧, number(φ) ↦ ⟦ plus(x) ↦ L_number_plus:λ, nope ↦ L_number_nope:λ ⟧, φ ↦ 5.plus( 6 ).nope ⟧">
     <evaluate λ="L_number_plus" by="morph" at="Φ">
-      <formation at="Φ.a🌵0" term="⟦ φ ↦ Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ ), plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, nope ↦ L_number_nope:λ ⟧">
+      <formation at="Φ.a🌵0" term="⟦ φ ↦ Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ ), plus(x) ↦ L_number_plus:λ, nope ↦ L_number_nope:λ ⟧">
         <formation at="Φ.a🌵0" term="40-14-00-00-00-00-00-00:Δ:φ">
         </formation>
       </formation>
       <bind meta="𝛿1.1">40-14-00-00-00-00-00-00</bind>
-      <formation at="Φ.a🌵1" term="⟦ φ ↦ Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ ), plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, nope ↦ L_number_nope:λ ⟧">
+      <formation at="Φ.a🌵1" term="⟦ φ ↦ Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ ), plus(x) ↦ L_number_plus:λ, nope ↦ L_number_nope:λ ⟧">
         <formation at="Φ.a🌵1" term="40-18-00-00-00-00-00-00:Δ:φ">
         </formation>
       </formation>
       <bind meta="𝛿2.1">40-18-00-00-00-00-00-00</bind>
       <minted symbol="𝜎1">40-14-00-00-00-00-00-00 40-18-00-00-00-00-00-00</minted>
       <built meta="𝑛.1.1">Φ.number( φ ↦ 𝜎1:λ )</built>
-      <answer meta="𝑛.1.2">⟦ φ ↦ 𝜎1:λ, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, nope ↦ L_number_nope:λ ⟧</answer>
+      <answer meta="𝑛.1.2">⟦ φ ↦ 𝜎1:λ, plus(x) ↦ L_number_plus:λ, nope ↦ L_number_nope:λ ⟧</answer>
     </evaluate>
     <stuck λ="L_number_nope" by="dataize">L_number_nope:λ</stuck>
   </formation>
@@ -892,24 +892,24 @@ $ phino dataize --symbolic=atoms.yaml --partial --protocol=atoms.txt --quiet \
     --sweet --hide-rho partial.phi
 $ cat atoms.txt
 𝔻(Φ)
-  formation(⟦ bytes(φ) ↦ ⟦⟧, number(φ) ↦ ⟦ plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧, as-bool ↦ L_number_as_bool:λ ⟧, φ ↦ 2.times( 3 ).plus( 4 ).as-bool ⟧)  # 𝔻(Φ)
+  formation(⟦ bytes(φ) ↦ ⟦⟧, number(φ) ↦ ⟦ plus(x) ↦ L_number_plus:λ, times(x) ↦ L_number_times:λ, as-bool ↦ L_number_as_bool:λ ⟧, φ ↦ 2.times( 3 ).plus( 4 ).as-bool ⟧)  # 𝔻(Φ)
     𝔼(L_number_times)  # 𝕄(Φ)
-      formation(⟦ φ ↦ Φ.bytes( φ ↦ 40-00-00-00-00-00-00-00:Δ ), plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧, as-bool ↦ L_number_as_bool:λ ⟧)  # 𝔻(Φ.a🌵0)
+      formation(⟦ φ ↦ Φ.bytes( φ ↦ 40-00-00-00-00-00-00-00:Δ ), plus(x) ↦ L_number_plus:λ, times(x) ↦ L_number_times:λ, as-bool ↦ L_number_as_bool:λ ⟧)  # 𝔻(Φ.a🌵0)
         formation(40-00-00-00-00-00-00-00:Δ:φ)  # 𝔻(Φ.a🌵0)
       𝛿1.1 := 40-00-00-00-00-00-00-00  # 𝔻(ξ.ρ)
-      formation(⟦ φ ↦ Φ.bytes( φ ↦ 40-08-00-00-00-00-00-00:Δ ), plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧, as-bool ↦ L_number_as_bool:λ ⟧)  # 𝔻(Φ.a🌵1)
+      formation(⟦ φ ↦ Φ.bytes( φ ↦ 40-08-00-00-00-00-00-00:Δ ), plus(x) ↦ L_number_plus:λ, times(x) ↦ L_number_times:λ, as-bool ↦ L_number_as_bool:λ ⟧)  # 𝔻(Φ.a🌵1)
         formation(40-08-00-00-00-00-00-00:Δ:φ)  # 𝔻(Φ.a🌵1)
       𝛿2.1 := 40-08-00-00-00-00-00-00  # 𝔻(ξ.x)
       𝑛.1.1 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛
-      𝑛.1.2 := ⟦ φ ↦ 𝜎1:λ, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧, as-bool ↦ L_number_as_bool:λ ⟧  # 𝕄(𝑛.1.1)
+      𝑛.1.2 := ⟦ φ ↦ 𝜎1:λ, plus(x) ↦ L_number_plus:λ, times(x) ↦ L_number_times:λ, as-bool ↦ L_number_as_bool:λ ⟧  # 𝕄(𝑛.1.1)
     𝔼(L_number_plus)  # 𝕄(Φ)
-      formation(⟦ φ ↦ 𝜎1:λ, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧, as-bool ↦ L_number_as_bool:λ ⟧)  # 𝔻(Φ.a🌵2)
+      formation(⟦ φ ↦ 𝜎1:λ, plus(x) ↦ L_number_plus:λ, times(x) ↦ L_number_times:λ, as-bool ↦ L_number_as_bool:λ ⟧)  # 𝔻(Φ.a🌵2)
       𝛿1.2 := 𝔻(𝜎1:λ)  # 𝔻(ξ.ρ)
-      formation(⟦ φ ↦ Φ.bytes( φ ↦ 40-10-00-00-00-00-00-00:Δ ), plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧, as-bool ↦ L_number_as_bool:λ ⟧)  # 𝔻(Φ.a🌵3)
+      formation(⟦ φ ↦ Φ.bytes( φ ↦ 40-10-00-00-00-00-00-00:Δ ), plus(x) ↦ L_number_plus:λ, times(x) ↦ L_number_times:λ, as-bool ↦ L_number_as_bool:λ ⟧)  # 𝔻(Φ.a🌵3)
         formation(40-10-00-00-00-00-00-00:Δ:φ)  # 𝔻(Φ.a🌵3)
       𝛿2.2 := 40-10-00-00-00-00-00-00  # 𝔻(ξ.x)
       𝑛.2.1 := Φ.number( φ ↦ 𝜎2:λ )  # 𝑛
-      𝑛.2.2 := ⟦ φ ↦ 𝜎2:λ, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧, as-bool ↦ L_number_as_bool:λ ⟧  # 𝕄(𝑛.2.1)
+      𝑛.2.2 := ⟦ φ ↦ 𝜎2:λ, plus(x) ↦ L_number_plus:λ, times(x) ↦ L_number_times:λ, as-bool ↦ L_number_as_bool:λ ⟧  # 𝕄(𝑛.2.1)
     ?(L_number_as_bool)  # 𝔻(L_number_as_bool:λ)
 ```
 
@@ -1020,7 +1020,7 @@ $ phino morph --symbolic=atoms.yaml --inside='Q.demo.foo' \
 ⟦ n ↦ 3, φ ↦ Φ.bar( n.times( 5 ).times( 7 ) ) ⟧
 $ phino morph --deep --symbolic=atoms.yaml --inside='Q.demo.foo' \
     --sweet --hide-rho gap.phi
-⟦ n ↦ 3, φ ↦ Φ.bar( ⟦ φ ↦ 𝜎2:λ, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧ ⟧ ) ⟧
+⟦ n ↦ 3, φ ↦ Φ.bar( ⟦ φ ↦ 𝜎2:λ, times(x) ↦ L_number_times:λ ⟧ ) ⟧
 ```
 
 Every binding of the formation is entered, recursively. 𝕄 is asked about the
@@ -1048,7 +1048,7 @@ protocol shows the firing with nothing bound under it. One entry nothing can
 answer therefore taints its own binding and not the whole run. A formation
 still holding a void
 binding is not fired either: the void is an argument the program has not given
-yet, so `times(x) ↦ ⟦ λ ⤍ L_number_times ⟧` is a method waiting to be applied,
+yet, so `times(x) ↦ L_number_times:λ` is a method waiting to be applied,
 not an application waiting to be computed. Walking the whole program therefore
 folds what it can and leaves the object model as it was declared:
 
@@ -1056,12 +1056,9 @@ folds what it can and leaves the object model as it was declared:
 $ phino morph --deep --symbolic=atoms.yaml --sweet --hide-rho gap.phi
 ⟦
   bytes(φ) ↦ ⟦⟧,
-  number(φ) ↦ ⟦ times(x) ↦ ⟦ λ ⤍ L_number_times ⟧ ⟧,
-  bar(x) ↦ ⟦ λ ⤍ L_bar ⟧,
-  demo ↦ ⟦
-    n ↦ 3,
-    φ ↦ Φ.bar( ⟦ φ ↦ 𝜎2:λ, times(x) ↦ ⟦ λ ⤍ L_number_times ⟧ ⟧ )
-  ⟧:foo
+  number(φ) ↦ ⟦ times(x) ↦ L_number_times:λ ⟧,
+  bar(x) ↦ L_bar:λ,
+  demo ↦ ⟦ n ↦ 3, φ ↦ Φ.bar( ⟦ φ ↦ 𝜎2:λ, times(x) ↦ L_number_times:λ ⟧ ) ⟧:foo
 ⟧
 ```
 
@@ -1113,7 +1110,7 @@ $ cat cyc.phi
 ⟦ cyc ↦ ⟦ x ↦ ∅, φ ↦ Φ.cyc( ξ.x ) ⟧, t ↦ Φ.cyc( ⟦⟧ ) ⟧
 $ phino dataize --locator='Q.t' --acyclic=proven --partial \
     --sweet --hide-rho --flat cyc.phi
-⟦ cyc(x) ↦ ⟦ φ ↦ Φ.cyc( x ) ⟧, t ↦ Φ.cyc( ⟦⟧ ) ⟧
+⟦ cyc(x) ↦ Φ.cyc( x ):φ, t ↦ Φ.cyc( ⟦⟧ ) ⟧
 ```
 
 𝔻 insists on bytes and a parked term carries none, so under `dataize` the option
@@ -1331,9 +1328,9 @@ $ phino morph --symbolic=atoms.yaml --acyclic=plausible --deep --sweet \
     --hide-rho twins.phi
 ⟦
   bytes(φ) ↦ ⟦⟧,
-  number(φ) ↦ ⟦ plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧,
-  a ↦ ⟦ φ ↦ 𝜎2:λ, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧,
-  b ↦ ⟦ φ ↦ 𝜎2:λ, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧
+  number(φ) ↦ ⟦ plus(x) ↦ L_number_plus:λ ⟧,
+  a ↦ ⟦ φ ↦ 𝜎2:λ, plus(x) ↦ L_number_plus:λ ⟧,
+  b ↦ ⟦ φ ↦ 𝜎2:λ, plus(x) ↦ L_number_plus:λ ⟧
 ⟧
 ```
 
@@ -1481,8 +1478,9 @@ and the attribute the asset is bound to:
 
 The colon binds as tightly as a dot, so `ξ.a:φ.b` is `⟦ φ ↦ ξ.a ⟧.b`.
 With `--sweet`, `phino` prints every such formation this way, so
-`⟦ x ↦ ⟦ φ ↦ ξ.a ⟧ ⟧` comes out as `a:φ:x`. A formation
-with inline voids keeps its brackets, as in `x(a) ↦ ⟦ φ ↦ a ⟧`, and so does
+`⟦ x ↦ ⟦ φ ↦ ξ.a ⟧ ⟧` comes out as `a:φ:x` and `⟦ x(a) ↦ ⟦ φ ↦ a ⟧ ⟧`
+as `⟦ x(a) ↦ a:φ ⟧`: the formation inline voids open takes the sugar,
+while the one holding the voids keeps its brackets, and so does
 every formation in the salty syntax and in [LaTeX][latex].
 
 A formation has a receiver `ρ` only when it declares one among its voids, the
@@ -1521,10 +1519,7 @@ $ cat minus.phi
 $ phino merge bytes.phi number.phi minus.phi --sweet
 ⟦
   bytes(φ) ↦ ⟦⟧,
-  number(φ) ↦ ⟦
-    plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧,
-    minus(x) ↦ ⟦ λ ⤍ L_number_minus ⟧
-  ⟧
+  number(φ) ↦ ⟦ plus(x) ↦ L_number_plus:λ, minus(x) ↦ L_number_minus:λ ⟧
 ⟧
 ```
 

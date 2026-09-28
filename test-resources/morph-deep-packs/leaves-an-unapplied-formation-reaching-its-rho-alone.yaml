@@ -9,4 +9,4 @@ location: 'Q.@'
 model: true
 symbolic: true
 input: '[[ foo -> [[ n -> ?, a -> [[ @ -> 5.plus( $.^ ) ]] ]] ]]'
-result: '⟦ foo(n) ↦ ⟦ a ↦ 5.plus( ρ ):φ ⟧ ⟧'
+result: '⟦ foo(n) ↦ 5.plus( ρ ):φ:a ⟧'

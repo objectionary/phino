@@ -3,6 +3,6 @@
 # yamllint disable rule:line-length
 ---
 expression: |
-  [[ if -> [[ L> L_fork, left -> ?, right -> ? ]] ]]
+  [[ x(y) -> [[ a -> 42 ]] ]]
 result: |-
-  ⟦ if(left, right) ↦ L_fork:λ ⟧
+  ⟦ x(y) ↦ 42:a ⟧
