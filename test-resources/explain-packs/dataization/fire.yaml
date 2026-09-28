@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+# yamllint disable rule:line-length
+---
+latex: |-
+  \begin{phinoDataizationInference}
+    \phinoName{fire}
+    \phinoPremise{ \phinoEvaluate{ [[ B_1, L> f, B_2 ]] }{ e }{ s_1 }{ n }{ s_2 } }
+    \phinoPremise{ \phinoDataize{ n }{ e }{ s_2 }{ \delta }{ s_3 } }
+    \phinoConclusion{ \phinoDataize{ [[ B_1, L> f, B_2 ]] }{ e }{ s_1 }{ \delta }{ s_3 } }
+  \end{phinoDataizationInference}

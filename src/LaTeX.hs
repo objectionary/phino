@@ -587,7 +587,7 @@ extraArgumentsToLatex :: Maybe [Y.Extra] -> String
 extraArgumentsToLatex Nothing = "{ }"
 extraArgumentsToLatex (Just extras) =
   let extras' = map ((`renderToLatex` defaultLatexContext) . extraToCST) extras
-   in braced (intercalate " and " extras')
+   in braced (intercalate (" " <> T.unpack (render AND) <> " ") extras')
 
 -- Every rule is bared before it is rendered: an index that tells a meta from no
 -- other within the rule is dropped, so a rule naming a single expression meta

@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+# yamllint disable rule:line-length
+---
+latex: |-
+  \begin{phinoContextualizationInference}
+    \phinoName{caa}
+    \phinoPremise{ \phinoContextualize{ n_1 }{ k }{ n_2 } }
+    \phinoPremise{ \phinoContextualize{ e }{ k }{ n_3 } }
+    \phinoConclusion{ \phinoContextualize{ n_1 ( \phiTerminal{\alpha_{i}} -> e ) }{ k }{ n_2 ( \phiTerminal{\alpha_{i}} -> n_3 ) } }
+  \end{phinoContextualizationInference}

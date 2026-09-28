@@ -101,17 +101,13 @@ withoutRho sugar = goExpr
     goPair PA_ALPHA{..} = PA_ALPHA alpha arrow (goExpr expr)
     goPair PA_FORMATION{..} = case filter (not . rho) voids of
       [] -> PA_TAU attr arrow (goExpr expr)
-      voids' -> PA_FORMATION attr voids' arrow (unsugared (goExpr expr))
+      voids' -> PA_FORMATION attr voids' arrow (goExpr expr)
       where
         -- A void ρ the formation declares is listed among its inline voids
         rho :: ATTRIBUTE -> Bool
         rho AT_RHO{} = True
         rho _ = False
     goPair pair = pair
-    -- Inline voids open a formation, which the sugar may not stand for
-    unsugared :: EXPRESSION -> EXPRESSION
-    unsugared EX_SINGLE{..} = formation
-    unsugared expr = expr
     -- Whether the only binding of a formation has the one-binding sugar
     sugared :: PAIR -> Bool
     sugared PA_TAU{attr = AT_DELTA{}} = False
@@ -258,6 +254,7 @@ instance ToSalty BINDINGS where
 instance ToSalty PAIR where
   toSalty PA_TAU{..} = PA_TAU attr arrow (toSalty expr)
   toSalty PA_ALPHA{..} = PA_ALPHA alpha arrow (toSalty expr)
+  toSalty PA_FORMATION{voids, attr, arrow, expr = EX_SINGLE{formation}} = toSalty (PA_FORMATION attr voids arrow formation)
   toSalty PA_FORMATION{voids, attr, arrow, expr = EX_FORMATION{..}} =
     PA_TAU attr arrow (toSalty (EX_FORMATION lsb eol tab (joinToBinding voids binding) eol' tab' rsb))
     where

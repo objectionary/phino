@@ -11,10 +11,10 @@ result: |-
   ⟦
     φ ↦ 𝜎1:λ,
     as-bytes ↦ φ,
-    plus(ρ, x) ↦ ⟦ λ ⤍ L_number_plus ⟧,
-    times(ρ, x) ↦ ⟦ λ ⤍ L_number_times ⟧,
-    div(ρ, x) ↦ ⟦ λ ⤍ L_number_div ⟧,
-    gt(ρ, x) ↦ ⟦ λ ⤍ L_number_gt ⟧,
-    eq(ρ, x) ↦ ⟦ φ ↦ ρ.as-bytes.eq( x.as-bytes ) ⟧,
-    nope(ρ) ↦ ⟦ λ ⤍ L_number_nope ⟧
+    plus(ρ, x) ↦ L_number_plus:λ,
+    times(ρ, x) ↦ L_number_times:λ,
+    div(ρ, x) ↦ L_number_div:λ,
+    gt(ρ, x) ↦ L_number_gt:λ,
+    eq(ρ, x) ↦ ρ.as-bytes.eq( x.as-bytes ):φ,
+    nope(ρ) ↦ L_number_nope:λ
   ⟧:x
