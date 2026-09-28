@@ -1345,7 +1345,56 @@ two under `a` and no operand line, since nothing was reduced for them, and
 they are not charged to `--max-firings`, which counts the firings the run
 made. The formation is compared with everything it carries, `ρ` included, so
 a firing on another object is another firing, and a firing that got stuck
-keeps nothing, since nothing was answered.
+keeps nothing, since nothing was answered. A firing cut by the mode on its
+way to an answer keeps the cut, and the next firing of the same formation is
+cut at its own site without reducing anything first.
+
+The mode also walks a binding of the world once. Every dispatch on an object
+of the world copies it, and `--deep` walks every copy, so the tests of an
+object are reduced once per copy of it the program holds. A copy goes by a
+name in the world, such as `Φ.num( φ ↦ ⟦ Δ ⤍ 2A- ⟧ )`, the name `dot` writes
+into its `ρ`, and that name without its application, `Φ.num`, stands for every
+copy. So a run under `plausible` enters `test` of `Φ.num` in the first copy it
+meets and leaves it as written in every later one:
+
+```bash
+$ cat atoms.yaml
+- λ: L_id
+  morph:
+    𝑛1: $.x
+  𝑛: 𝑛1
+- λ: L_twice
+  dataize:
+    𝛿1: $.ρ
+  𝑛: Φ.num( φ ↦ ⟦ λ ⤍ 𝜎 ⟧ )
+$ cat world.phi
+⟦
+  num ↦ ⟦
+    φ ↦ ∅,
+    twice ↦ ⟦ ρ ↦ ∅, λ ⤍ L_twice ⟧,
+    test ↦ Φ.num( φ ↦ ⟦ Δ ⤍ 01- ⟧ ).twice
+  ⟧,
+  a ↦ ⟦ λ ⤍ L_id, x ↦ Φ.num( φ ↦ ⟦ Δ ⤍ 2A- ⟧ ) ⟧,
+  b ↦ ⟦ λ ⤍ L_id, x ↦ Φ.num( φ ↦ ⟦ Δ ⤍ 2B- ⟧ ) ⟧
+⟧
+$ phino morph --symbolic=atoms.yaml --acyclic=plausible --deep --partial \
+    --sweet --hide-rho world.phi
+⟦
+  num(φ) ↦ ⟦ twice ↦ L_twice:λ, test ↦ Φ.num( φ ↦ 01-:Δ ).twice ⟧,
+  a ↦ ⟦
+    φ ↦ 2A-:Δ,
+    twice ↦ L_twice:λ,
+    test ↦ ⟦ φ ↦ 𝜎1:λ, twice ↦ L_twice:λ, test ↦ Φ.num( φ ↦ 01-:Δ ).twice ⟧
+  ⟧,
+  b ↦ ⟦ φ ↦ 2B-:Δ, twice ↦ L_twice:λ, test ↦ Φ.num( φ ↦ 01-:Δ ).twice ⟧
+⟧
+```
+
+A binding the copy filled, such as `φ` above, belongs to that copy alone and
+is entered every time. A binding left out is never replaced by what an earlier
+copy came to, since a method may read the `ρ` or the `φ` of the copy it
+stands in, and so a recursion over copies of one object stops after its first
+round, with the second one as written.
 
 ## Rewrite
 
