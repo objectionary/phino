@@ -1,6 +1,7 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
@@ -34,7 +35,7 @@ import LaTeX
   )
 import Lining (LineFormat (MULTILINE))
 import Parser (parseExpressionThrows)
-import System.FilePath (makeRelative)
+import System.FilePath (makeRelative, (<.>), (</>))
 import Test.Hspec (Spec, describe, expectationFailure, it, runIO, shouldBe, shouldContain)
 import Yaml qualified as Y
 
@@ -58,6 +59,18 @@ spec = do
           pack <- latexPack pth
           parsed <- parseExpressionThrows (expression pack)
           expressionToLaTeX parsed defaultLatexContext `shouldBe` result pack
+      )
+
+  describe "explains every built-in rule as its fixture" $
+    forM_
+      ( map (\rule -> ("normalize", rule.name, explainRules [rule])) Y.normalizationRules
+          <> map (\rule -> ("morphing", rule.name, explainMorphRules [rule])) Y.morphingRules
+          <> map (\rule -> ("dataization", rule.name, explainDataizeRules [rule])) Y.dataizationRules
+          <> map (\rule -> ("contextualization", rule.name, explainContextualizeRules [rule])) Y.contextualizationRules
+      )
+      ( \(judgment, rule, explained) -> it (judgment </> rule) $ do
+          fixture <- readFile ("test-resources" </> "explain" </> judgment </> rule <.> "tex")
+          explained <> "\n" `shouldBe` fixture
       )
 
   describe "meet expression in expression" $
