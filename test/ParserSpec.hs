@@ -706,6 +706,11 @@ spec = do
       , ("[[ x -> ?:a ]]", "⟦ x ↦ ⟦ a ↦ ∅ ⟧ ⟧")
       , ("Q.x(y -> ?:a)", "Q.x(y ↦ ⟦ a ↦ ∅ ⟧)")
       , ("Q.x(α0 ↦ Plus:λ)", "Q.x(α0 ↦ ⟦ λ ⤍ Plus ⟧)")
+      , ("⟦ x(y) ↦ 42:a ⟧", "⟦ x ↦ ⟦ y ↦ ∅, a ↦ 42 ⟧ ⟧")
+      , ("⟦ x(y) ↦ 42:a:b ⟧", "⟦ x ↦ ⟦ y ↦ ∅, b ↦ ⟦ a ↦ 42 ⟧ ⟧ ⟧")
+      , ("⟦ x(y, z) ↦ ∅:a ⟧", "⟦ x ↦ ⟦ y ↦ ∅, z ↦ ∅, a ↦ ∅ ⟧ ⟧")
+      , ("[[ x(y) -> Plus:L ]]", "⟦ x ↦ ⟦ y ↦ ∅, λ ⤍ Plus ⟧ ⟧")
+      , ("Q.x(y(z) ↦ FF-:Δ)", "Q.x(y ↦ ⟦ z ↦ ∅, Δ ⤍ FF- ⟧)")
       ]
       ( \(sweet, plain) ->
           it sweet $ do
@@ -719,4 +724,12 @@ spec = do
       ( map
           (\ipt -> (ipt, Nothing :: Maybe Expression))
           ["FF-AA:φ", "Plus:x", "∅:Δ", "ξ.a:", ":φ", "ξ.a:Δ", "ξ.a:λ"]
+      )
+
+  describe "rejects what inline voids open unless it is a formation" $
+    test
+      parseExpression
+      ( map
+          (\ipt -> (ipt, Nothing :: Maybe Expression))
+          ["⟦ x(y) ↦ 42 ⟧", "⟦ x(y) ↦ 42:a.b ⟧", "⟦ x(y) ↦ 42:a(z) ⟧", "⟦ x(y) ↦ ξ.a ⟧", "Q.x(y(z) ↦ FF-:Δ.b)"]
       )

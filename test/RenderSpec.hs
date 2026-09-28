@@ -334,7 +334,17 @@ spec = do
         , CO_SUBSET [AT_LABEL "a", AT_LABEL "b"] IN [bindingXi "x", bindingXi "y"]
         , "[ a \\char44{} b ] \\subseteq \\lparen x ↦ ξ \\cup y ↦ ξ \\rparen"
         )
-      , ("CO_SUBSET negated", CO_SUBSET [AT_LABEL "a"] NOT_IN [bindingXi "x"], "[ a ] \\not\\subseteq x ↦ ξ")
+      , ("CO_SUBSET negated", CO_SUBSET [AT_LABEL "a", AT_LABEL "b"] NOT_IN [bindingXi "x"], "[ a \\char44{} b ] \\not\\subseteq x ↦ ξ")
+      ,
+        ( "CO_SUBSET of one attribute prints membership"
+        , CO_SUBSET [AT_LABEL "q"] IN [bindingXi "k", bindingXi "w"]
+        , "q \\in \\lparen k ↦ ξ \\cup w ↦ ξ \\rparen"
+        )
+      ,
+        ( "CO_SUBSET of one attribute negated prints non-membership"
+        , CO_SUBSET [AT_LABEL "u"] NOT_IN [bindingXi "m", bindingXi "z"]
+        , "u \\notin \\lparen m ↦ ξ \\cup z ↦ ξ \\rparen"
+        )
       , ("CO_EMPTY", CO_EMPTY, "")
       ]
       (\(desc, node, expected) -> it desc (render node `shouldBe` expected))

@@ -1,6 +1,7 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
@@ -18,6 +19,7 @@ import Data.List (intercalate)
 import Data.Text qualified as T
 import Data.Yaml qualified as Yaml
 import Files (allPathsIn)
+import Fixtures (explainPack)
 import GHC.Generics (Generic)
 import LaTeX
   ( LatexContext (..)
@@ -34,7 +36,7 @@ import LaTeX
   )
 import Lining (LineFormat (MULTILINE))
 import Parser (parseExpressionThrows)
-import System.FilePath (makeRelative)
+import System.FilePath (makeRelative, (<.>), (</>))
 import Test.Hspec (Spec, describe, expectationFailure, it, runIO, shouldBe, shouldContain)
 import Yaml qualified as Y
 
@@ -58,6 +60,18 @@ spec = do
           pack <- latexPack pth
           parsed <- parseExpressionThrows (expression pack)
           expressionToLaTeX parsed defaultLatexContext `shouldBe` result pack
+      )
+
+  describe "explain packs" $
+    forM_
+      ( map (\rule -> ("normalize", rule.name, explainRules [rule])) Y.normalizationRules
+          <> map (\rule -> ("morphing", rule.name, explainMorphRules [rule])) Y.morphingRules
+          <> map (\rule -> ("dataization", rule.name, explainDataizeRules [rule])) Y.dataizationRules
+          <> map (\rule -> ("contextualization", rule.name, explainContextualizeRules [rule])) Y.contextualizationRules
+      )
+      ( \(judgment, rule, explained) -> it (judgment </> rule) $ do
+          latex <- explainPack ("test-resources" </> "explain-packs" </> judgment </> rule <.> "yaml")
+          explained `shouldBe` latex
       )
 
   describe "meet expression in expression" $
@@ -295,7 +309,7 @@ spec = do
           , "{ n }"
           , "{ n }"
           , "{ \\isnormal{ n } \\;\\text{and}\\; \\phinoIsFormation{ n } }"
-          , "{ \\phiTerminal{\\rho} \\coloneqq \\foo{ n, \\phiTerminal{\\rho} -> ?, 01-02- } and @ \\coloneqq \\bar{ n } }"
+          , "{ \\phiTerminal{\\rho} \\coloneqq \\foo{ n, \\phiTerminal{\\rho} -> ?, 01-02- } \\;\\text{and}\\; @ \\coloneqq \\bar{ n } }"
           ]
         )
       ,

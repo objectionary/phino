@@ -297,6 +297,9 @@ quotedStr = char '"' >> manyTill (choice [escapedChar, noneOf ['\\', '"']]) (cha
         [(n, "")] -> return (chr n)
         _ -> fail ("Invalid hex escape: \\x" ++ digits)
 
+-- The value of a τ binding: the expression after the arrow, or, after inline
+-- voids, whatever spells the formation they open, a literal `⟦ … ⟧` or the
+-- one-binding sugar of #1385, as `x(y) ↦ 42:a` (see #1482)
 tauValue :: Parser Expression
 tauValue =
   choice
@@ -313,9 +316,10 @@ tauValue =
                 rb >> return voids'
             ]
         _ <- arrow
-        bs <- formationBindings
-        bds <- validatedBindings (voids ++ bs)
-        return (ExFormation bds)
+        opened <- expression
+        case opened of
+          ExFormation bds -> ExFormation <$> validatedBindings (voids ++ bds)
+          _ -> fail "Inline voids open a formation, so nothing but a formation may follow their arrow"
     ]
   where
     rb :: Parser String
