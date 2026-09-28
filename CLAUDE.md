@@ -192,7 +192,19 @@ formation it fired (`Memo`, `recalled` and `retained` in `Morph.hs`, made by
 the answer with the symbols the first one minted: it is charged nothing and
 reduces nothing, and it is written to the protocol as a firing at its own
 site carrying that answer and no operand line (#1476). The store is an
-`IORef` in the context for the reason the tally is.
+`IORef` in the context for the reason the tally is. A firing a cut stopped on
+its way to an answer keeps the cut (`Looped` of `Kept`), and a later firing of
+the same formation is cut at its own site without reducing anything (#1480).
+
+Beside the answers, the memo keeps the bindings of the world the `--deep`
+walk has entered (`visited` and `visit` in `Morph.hs`, asked by `fresh` of
+`deepened`). A copy of an object of the world goes by the name `pathOf` of
+`Builder.hs` gives it, and that name with its applications erased, such as
+`Φ.num`, is a synonym of every copy: the walk enters a binding of `Φ.num` in
+the first copy it meets and leaves it as written in every later one, except
+the voids a copy filled, which belong to that copy alone (#1480), and a body
+reading ξ outside the formations nested in it, which reads the copy it stands
+in and is walked in every copy (`closed` of `deepened`, #1485).
 
 ### Test pattern: YAML packs
 

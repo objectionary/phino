@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+# yamllint disable rule:line-length
+---
+latex: |-
+  \begin{phinoMorphingInference}
+    \phinoName{ma}
+    \phinoPremise{ \phinoMorph{ n_1 }{ e }{ s_1 }{ n_2 }{ s_2 } }
+    \phinoPremise{ \phinoNormalize{ n_2 ( \tau -> k ) }{ n_3 } }
+    \phinoPremise{ \phinoMorph{ n_3 }{ e }{ s_2 }{ n_4 }{ s_3 } }
+    \phinoConclusion{ \phinoMorph{ n_1 ( \tau -> k ) }{ e }{ s_1 }{ n_4 }{ s_3 } }
+  \end{phinoMorphingInference}

@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+# yamllint disable rule:line-length
+---
+latex: |-
+  \phinoNormalizationRule{alpha}
+    { [[ B_1, \tau -> ?, B_2 ]] ( \phiTerminal{\alpha_{i}} -> e ) }
+    { [[ B_1, \tau -> ?, B_2 ]] ( \tau -> e ) }
+    { i = \vert \overline{ B_1 } \vert \;\text{and}\; \tau \not= \phiTerminal{\rho} }
+    { }

@@ -1,0 +1,30 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+# The memo of '--acyclic=plausible' keeps a cut the way it keeps an answer.
+# The firing under 'x' brings its operand down through 𝔻, which goes round
+# 'cyc' until the mode cuts it, so the firing never answers; 'y' spells the
+# very same formation, and before #1480 its firing walked all the way down to
+# the same cut again, since only an answer was kept. Now the second firing
+# takes the cut the first one met: it is written at its own site with the
+# formation the cut carried, and nothing under it is reduced.
+symbolic: |
+  - λ: L_outer
+    dataize:
+      𝛿1: ξ.arg
+    𝑛: ⟦ λ ⤍ 𝜎 ⟧
+deep: true
+acyclic: plausible
+steps: 64
+input: >
+  ⟦ cyc ↦ ⟦ x ↦ ∅, φ ↦ Φ.cyc( ξ.x ) ⟧,
+    x ↦ ⟦ arg ↦ Φ.cyc( ⟦⟧ ), λ ⤍ L_outer ⟧,
+    y ↦ ⟦ arg ↦ Φ.cyc( ⟦⟧ ), λ ⤍ L_outer ⟧ ⟧
+protocol: |
+  𝕄(Φ)
+    𝔼(L_outer)  # 𝕄(Φ.x)
+      formation(⟦ x ↦ ⟦⟧, φ ↦ Φ.cyc( x ) ⟧)  # 𝔻(Φ.a🌵0)
+        looped(⟦ x ↦ ⟦⟧, φ ↦ Φ.cyc( x ) ⟧)  # 𝔻(Φ.a🌵0), plausible
+    𝔼(L_outer)  # 𝕄(Φ.y)
+      looped(⟦ x ↦ ⟦⟧, φ ↦ Φ.cyc( x ) ⟧)  # 𝕄(Φ.y), plausible

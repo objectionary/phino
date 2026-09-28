@@ -316,6 +316,29 @@ spec = do
             )
         )
       ,
+        ( "PA_FORMATION carrying the one-binding sugar joins its void params ahead of that binding"
+        , PA_FORMATION
+            (AT_LABEL "f")
+            [AT_LABEL "p"]
+            ARROW
+            ( EX_SINGLE
+                (PA_TAU (AT_LABEL "a") ARROW xiExpr)
+                (EX_FORMATION LSB EOL (TAB 2) (BI_PAIR (PA_TAU (AT_LABEL "a") ARROW xiExpr) (BDS_EMPTY (TAB 2)) (TAB 2)) EOL (TAB 1) RSB)
+            )
+        , PA_TAU
+            (AT_LABEL "f")
+            ARROW
+            ( EX_FORMATION
+                LSB
+                EOL
+                (TAB 2)
+                (BI_PAIR (PA_VOID (AT_LABEL "p") ARROW EMPTY) (BDS_PAIR EOL (TAB 2) (PA_TAU (AT_LABEL "a") ARROW xiExpr) (BDS_EMPTY (TAB 2))) (TAB 2))
+                EOL
+                (TAB 1)
+                RSB
+            )
+        )
+      ,
         ( "PA_FORMATION with a non-empty object body joins several void params ahead of the existing bindings"
         , PA_FORMATION
             (AT_LABEL "f")
@@ -620,6 +643,31 @@ spec = do
       ]
       (\(desc, input, expected) -> it desc (withoutRho SWEET input `shouldBe` expected))
 
+  it "keeps the one-binding sugar a formation after inline voids is left with" $
+    render
+      ( withoutRho
+          SWEET
+          ( EX_FORMATION
+              LSB
+              EOL
+              (TAB 1)
+              ( BI_PAIR
+                  ( PA_FORMATION
+                      (AT_LABEL "x")
+                      [AT_LABEL "y"]
+                      ARROW
+                      (EX_FORMATION LSB EOL (TAB 2) (BI_PAIR (PA_TAU (AT_LABEL "a") ARROW xiExpr) (BDS_PAIR EOL (TAB 2) (PA_TAU (AT_RHO RHO) ARROW xiExpr) (BDS_EMPTY (TAB 2))) (TAB 2)) EOL (TAB 1) RSB)
+                  )
+                  (BDS_EMPTY (TAB 1))
+                  (TAB 1)
+              )
+              EOL
+              (TAB 0)
+              RSB
+          )
+      )
+      `shouldBe` "⟦\n  x(y) ↦ ξ:a\n⟧"
+
   describe "full pipeline round trips, SWEET vs SALTY" $ do
     let config :: SugarType -> (SugarType, Encoding, LineFormat, Int)
         config sugar = (sugar, UNICODE, SINGLELINE, defaultMargin)
@@ -645,7 +693,7 @@ spec = do
       "a nested object-with-params formation sugars/salts between obj(p, q) -> [[..]] and its expanded void bindings"
       $ do
         let nestedForm = ExFormation [BiTau (AtLabel "obj") (ExFormation [BiVoid (AtLabel "p"), BiVoid (AtLabel "q"), BiTau (AtLabel "z") ExXi])]
-        printExpression' nestedForm (config SWEET) `shouldBe` "⟦ obj(p, q) ↦ ⟦ z ↦ ξ ⟧ ⟧"
+        printExpression' nestedForm (config SWEET) `shouldBe` "⟦ obj(p, q) ↦ ξ:z ⟧"
         printExpression' nestedForm (config SALTY) `shouldBe` "⟦ obj ↦ ⟦ p ↦ ∅, q ↦ ∅, z ↦ ξ ⟧ ⟧"
     it
       "a phi-meet/phi-again chain renders identically under both sugar types"

@@ -9,7 +9,9 @@
 # on the second round holds the one it fired on the first, under the wrapper it
 # gained, which is what the plausible guard compares by, so the second firing
 # is cut before it opens and its 'looped' line names the mode that cut it
-# (#1451).
+# (#1451). Every round is a copy of 'Φ.fact', but its φ reads the 'n' and the
+# 'acc' of the copy it stands in, so the walk enters it in every round rather
+# than once for the whole object (#1485).
 symbolic: |
   - λ: L_zero
     dataize:

@@ -5,4 +5,4 @@
 expression: |
   [[ if -> [[ L> L_fork, left -> ?, right -> ? ]] ]]
 result: |-
-  ⟦ if(left, right) ↦ ⟦ λ ⤍ L_fork ⟧ ⟧
+  ⟦ if(left, right) ↦ L_fork:λ ⟧

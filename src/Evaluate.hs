@@ -27,7 +27,7 @@ import qualified Data.Text as T
 import Deps (BuildTermMethodS, Evaluation (..), State (..), Term (..))
 import Lambdas (Lambda (..), Meta (..), joined, matched, minted, symbolized)
 import Matcher (MetaValue (..), Subst, combine, substEmpty, substSingle, substSlot)
-import Morph (Answer, ReduceContext (..), ReduceException (..), charged, deeper, enter, isLambda, lambda, morph', morphing, normalized, recalled, retained, unparked)
+import Morph (Answer, Kept (..), ReduceContext (..), ReduceException (..), charged, deeper, enter, isLambda, lambda, morph', morphing, normalized, recalled, retained, unparked)
 import Printer (printFunction)
 import Rule (RuleContext (RuleContext), matchExpressionWithRule')
 import Text.Printf (printf)
@@ -145,29 +145,50 @@ symbol func form self univ state caller = case matched caller._symbolic func of
     maybe (made entry) told known
   where
     -- Fire the entry: charge the firing, reduce every operand, build the
-    -- answer and keep it for the next firing of the same formation.
+    -- answer and keep it for the next firing of the same formation. A
+    -- recursion cut on the way leaves the firing with no answer, and it is
+    -- kept instead, as the formation the cut carried, since the next firing
+    -- of the same formation would only walk down to it again (#1480).
     made :: Lambda -> IO (Expression, State)
     made entry = do
       charged caller
       caller._saveEval (EvFiring caller._nesting func caller._judgment caller._site)
       let ctx = caller{_nesting = caller._nesting + 1}
-      (bound, dataized, conditions) <- foldM (down ctx) (substEmpty, state, []) entry._dataized
-      (bound', morphed) <- foldM (through ctx) (bound, dataized) entry._morphed
-      rewrote <- foldM (reshaped ctx) bound' entry._rewritten
-      (bound'', stood) <- foldM (masked ctx) (rewrote, morphed) entry._symbolized
-      (bound''', forked) <- foldM (paired ctx (listToMaybe (reverse conditions))) (bound'', stood) entry._paired
-      (answer, state') <- answered ctx entry (reverse conditions) bound''' forked
-      retained caller._memo form answer
-      pure (snd answer, state')
+      outcome <- try $ do
+        (bound, dataized, conditions) <- foldM (down ctx) (substEmpty, state, []) entry._dataized
+        (bound', morphed) <- foldM (through ctx) (bound, dataized) entry._morphed
+        rewrote <- foldM (reshaped ctx) bound' entry._rewritten
+        (bound'', stood) <- foldM (masked ctx) (rewrote, morphed) entry._symbolized
+        (bound''', forked) <- foldM (paired ctx (listToMaybe (reverse conditions))) (bound'', stood) entry._paired
+        answered ctx entry (reverse conditions) bound''' forked
+      case outcome of
+        Right (answer, state') -> do
+          retained caller._memo form (Answered answer)
+          pure (snd answer, state')
+        Left failure -> do
+          mapM_ (retained caller._memo form . Looped) (cut failure)
+          throwIO failure
+    -- The formation a recursion was cut at, where that is what the signal
+    -- escaping a firing says.
+    cut :: ReduceException -> Maybe Expression
+    cut (Looping term) = Just term
+    cut (LoopingAt term _ _) = Just term
+    cut _ = Nothing
     -- Answer the firing with what the first firing of the formation made,
     -- written as that one was written: the firing at its site, the term the
     -- entry wrote and the normal form it came to, and nothing between them.
-    told :: Answer -> IO (Expression, State)
-    told (built, normal) = do
+    -- Where the first firing was cut, the firing is cut again at its own site,
+    -- with the formation that cut carried and nothing reduced before it.
+    told :: Kept -> IO (Expression, State)
+    told (Answered (built, normal)) = do
       caller._saveEval (EvFiring caller._nesting func caller._judgment caller._site)
       caller._saveEval (EvBuilt (caller._nesting + 1) built)
       caller._saveEval (EvAnswer (caller._nesting + 1) normal)
       pure (normal, state)
+    told (Looped term) = do
+      caller._saveEval (EvFiring caller._nesting func caller._judgment caller._site)
+      mapM_ (\mode -> caller._saveEval (EvLooped (caller._nesting + 1) caller._judgment mode term caller._site)) caller._acyclic
+      throwIO (Looping term)
     -- Bring one 'dataize' operand down through 𝔻 and bind the bytes meta that
     -- names it. An operand 𝔻 could not bring down to data — a site '_partial'
     -- parked — leaves the firing with nothing to bind, so it gets stuck like a
