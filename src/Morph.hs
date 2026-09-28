@@ -749,12 +749,13 @@ deepened expr univ state ctx = go (Just ctx._site) Nothing ExXi expr state ctx
     -- can name is named by that locator and the attribute it is bound to, which
     -- is the very locator '--locator' would aim a run of its own at. A binding
     -- the walk has entered in another copy of the same object of the world is
-    -- left as it was written (see 'fresh').
+    -- left as it was written (see 'fresh'), unless its body reads the copy it
+    -- stands in (see 'closed').
     bindings :: Maybe Expression -> Maybe (Expression, [Attribute]) -> [Binding] -> [Binding] -> State -> ReduceContext -> IO ([Binding], State)
     bindings _ _ _ [] state' _ = pure ([], state')
     bindings standing alias whole (BiTau attr body : rest) state' caller
       | attr /= AtRho = do
-          new <- fresh alias attr caller
+          new <- if closed body then fresh alias attr caller else pure True
           (entered, state'') <-
             if new
               then go (fmap (`ExDispatch` attr) standing) Nothing (scope attr whole) body state' caller
@@ -800,6 +801,17 @@ deepened expr univ state ctx = go (Just ctx._site) Nothing ExXi expr state ctx
           unless seen (visit caller._memo object attr)
           pure (not seen)
     fresh _ _ _ = pure True
+    -- Whether a body cannot see the copy it stands in, that is, holds no ξ
+    -- outside the formations nested in it, since the ξ of a nested formation
+    -- is that formation. Two copies filling their voids differently make two
+    -- different programs of a body reading ξ, so the walk of one tells nothing
+    -- about the other and such a body is walked in every copy (#1485).
+    closed :: Expression -> Bool
+    closed ExXi = False
+    closed (ExDispatch target _) = closed target
+    closed (ExApplication target (ArTau _ arg)) = closed target && closed arg
+    closed (ExApplication target (ArAlpha _ arg)) = closed target && closed arg
+    closed _ = True
     -- The context a binding's body is entered in: the formation without that
     -- binding, the very context 'dot' contextualizes a dispatched body in, so
     -- a body reaching back at itself through ξ collapses instead of looping.
