@@ -27,7 +27,7 @@ import qualified Data.Text as T
 import Deps (BuildTermMethodS, Evaluation (..), State (..), Term (..))
 import Lambdas (Lambda (..), Meta (..), joined, matched, minted, symbolized)
 import Matcher (MetaValue (..), Subst, combine, substEmpty, substSingle, substSlot)
-import Morph (Answer, Kept (..), ReduceContext (..), ReduceException (..), charged, counted, deeper, enter, isLambda, lambda, morph', morphing, normalized, recalled, retained, starved, unparked)
+import Morph (Answer, Kept (..), ReduceContext (..), ReduceException (..), Steps (..), charged, counted, deeper, enter, isLambda, lambda, morph', morphing, normalized, recalled, retained, starved, unparked)
 import Printer (printFunction)
 import Rule (RuleContext (RuleContext), matchExpressionWithRule')
 import Text.Printf (printf)
@@ -141,7 +141,7 @@ symbol func form self univ state caller = case matched caller._symbolic func of
     unless (func `elem` caller._parked) (caller._saveEval (EvStuck caller._nesting func caller._judgment form))
     throwIO (Stuck func)
   Just entry -> do
-    known <- recalled caller._memo form
+    known <- recalled caller._memo form caller._steps._spent
     maybe (made entry) told known
   where
     -- Fire the entry: charge the firing, reduce every operand, build the
@@ -153,9 +153,11 @@ symbol func form self univ state caller = case matched caller._symbolic func of
     -- stuck on, and the memo tells it only until something new is answered
     -- after the firing began, since an operand that could not be brought down
     -- may come down then (#1493, #1495, #1507). A firing inside which the step
-    -- budget ran out keeps no stall at all, since at a shallower site the
-    -- operand comes down (#1514). A firing that got stuck ends its block with a
-    -- 'stuck' line naming the λ function, whether it is kept or not (#1524).
+    -- budget ran out keeps its stall beside the steps it had spent, and the
+    -- memo tells it only to a firing that has spent at least as many, since
+    -- at a shallower site the operand may come down (#1514, #1521). A firing
+    -- that got stuck ends its block with a 'stuck' line naming the λ function,
+    -- whether it is kept or not (#1524).
     made :: Lambda -> IO (Expression, State)
     made entry = do
       charged caller
@@ -181,14 +183,17 @@ symbol func form self univ state caller = case matched caller._symbolic func of
           throwIO failure
     -- What the memo keeps of a firing that never answered: the formation a
     -- recursion was cut at, or the λ function the firing got stuck on, where
-    -- that is what the signal escaping it says and the step budget never ran
-    -- out inside the firing.
+    -- that is what the signal escaping it says, beside the steps the firing
+    -- had spent where the step budget ran out inside it and none elsewhere.
     kept :: Bool -> ReduceException -> Maybe Kept
     kept _ (Looping term) = Just (Looped term)
     kept _ (LoopingAt term _ _) = Just (Looped term)
-    kept False (Stuck name) = Just (Stalled name)
-    kept False (StuckAt name _ _) = Just (Stalled name)
+    kept starving (Stuck name) = Just (Stalled name (least starving))
+    kept starving (StuckAt name _ _) = Just (Stalled name (least starving))
     kept _ _ = Nothing
+    least :: Bool -> Int
+    least True = caller._steps._spent
+    least False = 0
     -- The λ function a firing got stuck on, where the signal escaping it says
     -- it got stuck, which the protocol writes as the last line of the firing.
     stranded :: ReduceException -> Maybe T.Text
@@ -213,7 +218,7 @@ symbol func form self univ state caller = case matched caller._symbolic func of
       caller._saveEval (EvFiring caller._nesting func caller._judgment caller._site)
       mapM_ (\mode -> caller._saveEval (EvLooped (caller._nesting + 1) caller._judgment mode term caller._site)) caller._acyclic
       throwIO (Looping term)
-    told (Stalled name) = do
+    told (Stalled name _) = do
       caller._saveEval (EvFiring caller._nesting func caller._judgment caller._site)
       caller._saveEval (EvStall (caller._nesting + 1) name)
       throwIO (Stuck name)

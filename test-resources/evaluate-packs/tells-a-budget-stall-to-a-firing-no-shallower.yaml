@@ -2,13 +2,13 @@
 # SPDX-License-Identifier: MIT
 ---
 # yamllint disable rule:line-length
-# The protocol says where the step budget ran out and which firings ended
-# stuck. The operand of 'L_outer' is a six-deep nest that comes down only
-# through nested firings, so under '--max-steps=4' the budget runs out two
-# firings under 'x.arg', and every firing around it ends stuck on 'L_outer'.
-# The budget ran out inside them, so the memo keeps no stall (#1514) and 'y'
-# fires the nest again. Before #1524 none of that left a line, and a firing
-# the budget starved read the same as one that went well.
+# The memo of '--acyclic=plausible' keeps a stall the step budget made beside
+# the steps its firing had spent, and tells it to a firing of the same
+# formation that has spent at least as many. The operand of 'x.arg' runs out
+# of steps two firings down, so the stall is kept. Before #1521 it was dropped,
+# and 'x' walked the nest again inside its own firing, while 'y.arg' and 'y'
+# fired it all over. Now the firing inside 'x' is told the stall, and so are
+# 'y.arg' and 'y', which stand as deep as 'x.arg' and 'x' did.
 symbolic: |
   - λ: L_outer
     dataize:
@@ -35,23 +35,13 @@ protocol: |
       stuck(L_outer)
     𝔼(L_outer)  # 𝕄(Φ.x)
       𝔼(L_outer)  # 𝔻(Φ.a🌵3)
-        𝔼(L_outer)  # 𝔻(Φ.a🌵4)
-          starved(4)  # 𝔻(⟦ v ↦ 1, λ ⤍ L_outer, arg ↦ ⟦ v ↦ 1, λ ⤍ L_outer, arg ↦ ⟦ v ↦ 1, λ ⤍ L_outer, arg ↦ ⟦ v ↦ 1, λ ⤍ L_outer, arg ↦ L_none:λ ⟧ ⟧ ⟧ ⟧)
-        stuck(L_outer)
+        stall(L_outer)
       stuck(L_outer)
     starved(4)  # 𝕄(⟦ x ↦ ⟦ λ ⤍ L_outer, arg ↦ ⟦ v ↦ 1, λ ⤍ L_outer, arg ↦ ⟦ v ↦ 1, λ ⤍ L_outer, arg ↦ ⟦ v ↦ 1, λ ⤍ L_outer, arg ↦ ⟦ v ↦ 1, λ ⤍ L_outer, arg ↦ ⟦ v ↦ 1, λ ⤍ L_outer, arg ↦ ⟦ v ↦ 1, λ ⤍ L_outer, arg ↦ L_none:λ ⟧ ⟧ ⟧ ⟧ ⟧ ⟧ ⟧, y ↦ ⟦ λ ⤍ L_outer, arg ↦ ⟦ v ↦ 1, λ ⤍ L_outer, arg ↦ ⟦ v ↦ 1, λ ⤍ L_outer, arg ↦ ⟦ v ↦ 1, λ ⤍ L_outer, arg ↦ ⟦ v ↦ 1, λ ⤍ L_outer, arg ↦ ⟦ v ↦ 1, λ ⤍ L_outer, arg ↦ ⟦ v ↦ 1, λ ⤍ L_outer, arg ↦ L_none:λ ⟧ ⟧ ⟧ ⟧ ⟧ ⟧ ⟧ ⟧)
     starved(4)  # 𝕄(⟦ x ↦ ⟦ λ ⤍ L_outer, arg ↦ ⟦ v ↦ 1, λ ⤍ L_outer, arg ↦ ⟦ v ↦ 1, λ ⤍ L_outer, arg ↦ ⟦ v ↦ 1, λ ⤍ L_outer, arg ↦ ⟦ v ↦ 1, λ ⤍ L_outer, arg ↦ ⟦ v ↦ 1, λ ⤍ L_outer, arg ↦ ⟦ v ↦ 1, λ ⤍ L_outer, arg ↦ L_none:λ ⟧ ⟧ ⟧ ⟧ ⟧ ⟧ ⟧, y ↦ ⟦ λ ⤍ L_outer, arg ↦ ⟦ v ↦ 1, λ ⤍ L_outer, arg ↦ ⟦ v ↦ 1, λ ⤍ L_outer, arg ↦ ⟦ v ↦ 1, λ ⤍ L_outer, arg ↦ ⟦ v ↦ 1, λ ⤍ L_outer, arg ↦ ⟦ v ↦ 1, λ ⤍ L_outer, arg ↦ ⟦ v ↦ 1, λ ⤍ L_outer, arg ↦ L_none:λ ⟧ ⟧ ⟧ ⟧ ⟧ ⟧ ⟧ ⟧)
     starved(4)  # 𝕄(Φ)
     starved(4)  # 𝕄(Φ)
     𝔼(L_outer)  # 𝕄(Φ.y.arg)
-      𝔼(L_outer)  # 𝔻(Φ.a🌵6)
-        𝔼(L_outer)  # 𝔻(Φ.a🌵7)
-          starved(4)  # 𝔻(⟦ v ↦ 1, λ ⤍ L_outer, arg ↦ ⟦ v ↦ 1, λ ⤍ L_outer, arg ↦ ⟦ v ↦ 1, λ ⤍ L_outer, arg ↦ L_none:λ ⟧ ⟧ ⟧)
-        stuck(L_outer)
-      stuck(L_outer)
+      stall(L_outer)
     𝔼(L_outer)  # 𝕄(Φ.y)
-      𝔼(L_outer)  # 𝔻(Φ.a🌵9)
-        𝔼(L_outer)  # 𝔻(Φ.a🌵10)
-          starved(4)  # 𝔻(⟦ v ↦ 1, λ ⤍ L_outer, arg ↦ ⟦ v ↦ 1, λ ⤍ L_outer, arg ↦ ⟦ v ↦ 1, λ ⤍ L_outer, arg ↦ ⟦ v ↦ 1, λ ⤍ L_outer, arg ↦ L_none:λ ⟧ ⟧ ⟧ ⟧)
-        stuck(L_outer)
-      stuck(L_outer)
+      stall(L_outer)
