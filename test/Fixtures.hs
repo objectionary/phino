@@ -144,7 +144,7 @@ recorded' hidden action =
       PrintCtx
         SWEET
         hidden
-        False
+        Nothing
         MULTILINE
         2
         defaultXmirContext

@@ -171,9 +171,7 @@ flattened ctx@PrintCtx{..} expr =
   pure (P.printExpressionWith shaped expr (_sugar, UNICODE, SINGLELINE, _margin))
   where
     shaped :: SugarType -> EXPRESSION -> EXPRESSION
-    shaped sugar
-      | _abridged = abridged . hidden ctx sugar
-      | otherwise = hidden ctx sugar
+    shaped sugar = maybe id abridged _abridged . hidden ctx sugar
 
 -- The same, in canonical 𝜑 rather than in the sugar the run prints with. The
 -- operand a protocol line names is the term an entry of the '--symbolic' file

@@ -1329,7 +1329,8 @@ spec = do
 
     -- A formation spelled flat in the protocol can run for tens of thousands
     -- of characters, so '--abridged' folds a long one down to what says what
-    -- it holds and fires, and cuts a long byte string to its head (#1465)
+    -- it holds and fires, and cuts a long byte string to its ends (#1465);
+    -- the width past which it folds is the value of the option (#1530)
     describe "--abridged" $ do
       let wide = "⟦ t ↦ ⟦ φ ↦ ⟦ Δ ⤍ 01-02 ⟧, anfang ↦ ξ.schluss, mitte ↦ ξ.anfang, schluss ↦ ξ.mitte, rand ↦ ξ.schluss ⟧ ⟧"
       it "folds a long formation in the text protocol" $
@@ -1338,14 +1339,31 @@ spec = do
           withStdin wide $
             testCLISucceeded ["dataize", "--locator=Q.t", "--protocol=" ++ path, "--abridged", "--sweet", "--hide-rho", "--quiet"] []
           records <- readUtf8 path
-          lines records `shouldContain` ["  formation(⟦ φ ↦ 01-02:Δ, +4 attrs ⟧)  # 𝔻(Φ.t)"]
+          lines records `shouldContain` ["  formation(⟦ φ ↦ 01-02:Δ, +4 ⟧)  # 𝔻(Φ.t)"]
       it "folds a long formation in the XML protocol" $
         withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
           hClose stream
           withStdin wide $
             testCLISucceeded ["dataize", "--locator=Q.t", "--protocol=" ++ path, "--abridged", "--sweet", "--hide-rho", "--quiet"] []
           records <- readUtf8 path
-          lines records `shouldContain` ["  <formation at=\"Φ.t\" term=\"⟦ φ ↦ 01-02:Δ, +4 attrs ⟧\">"]
+          lines records `shouldContain` ["  <formation at=\"Φ.t\" term=\"⟦ φ ↦ 01-02:Δ, +4 ⟧\">"]
+      it "folds a long formation under the width given as the value" $
+        withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
+          hClose stream
+          withStdin wide $
+            testCLISucceeded ["dataize", "--locator=Q.t", "--protocol=" ++ path, "--abridged=64", "--sweet", "--hide-rho", "--quiet"] []
+          records <- readUtf8 path
+          lines records `shouldContain` ["  formation(⟦ φ ↦ 01-02:Δ, +4 ⟧)  # 𝔻(Φ.t)"]
+      it "keeps a formation whole under a width it fits in" $
+        withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
+          hClose stream
+          withStdin wide $
+            testCLISucceeded ["dataize", "--locator=Q.t", "--protocol=" ++ path, "--abridged=200", "--sweet", "--hide-rho", "--quiet"] []
+          records <- readUtf8 path
+          lines records `shouldContain` ["  formation(⟦ φ ↦ 01-02:Δ, anfang ↦ schluss, mitte ↦ anfang, schluss ↦ mitte, rand ↦ schluss ⟧)  # 𝔻(Φ.t)"]
+      it "refuses a width that is not a number" $
+        withStdin wide $
+          testCLIFailed ["dataize", "--locator=Q.t", "--protocol=breit.txt", "--abridged=breit"] ["cannot parse value `breit'"]
       it "leaves the printed result whole" $
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
           hClose stream
