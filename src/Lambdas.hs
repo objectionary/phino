@@ -86,6 +86,7 @@ import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Text.Encoding (encodeUtf8)
 import qualified Data.Yaml as Yaml
+import Language (Language, language, shared)
 import Logger (logDebug)
 import Metas (Metas (metas))
 import Parser (parseBytes, parseExpression)
@@ -366,24 +367,31 @@ readLambdas path = do
     unreadable key (_, failure) =
       throwIO (BrokenLambdas path (printf "the key '%s' is not a regular expression: %s" (T.unpack key) failure))
 
+    -- Two keys matching one λ name leave the entry that answers it to the
+    -- order the file lists them in, so the file is wrong as soon as there is
+    -- such a name, whether or not either key spells it (#1440).
     overlaps :: FilePath -> [(Regex, Lambda)] -> IO ()
-    overlaps file = check
+    overlaps file registered = mapM (spoken . snd) registered >>= check
       where
-        check :: [(Regex, Lambda)] -> IO ()
+        spoken :: Lambda -> IO (Lambda, Language)
+        spoken entry =
+          either
+            (throwIO . BrokenLambdas file . printf "the key '%s' cannot be compared with the other keys: %s" (T.unpack entry._key))
+            (pure . (,) entry)
+            (language entry._key)
+        check :: [(Lambda, Language)] -> IO ()
         check [] = pure ()
-        check ((first, left) : rest) = do
-          mapM_ (pair first left) rest
-          check rest
-        pair :: Regex -> Lambda -> (Regex, Lambda) -> IO ()
-        pair first left (second, right)
-          | matchTest first (encodeUtf8 right._key)
-              || matchTest second (encodeUtf8 left._key) =
-              throwIO
-                ( BrokenLambdas
-                    file
-                    (printf "the keys '%s' and '%s' match some of the same lambda names" (T.unpack left._key) (T.unpack right._key))
-                )
-          | otherwise = pure ()
+        check (first : rest) = mapM_ (pair first) rest >> check rest
+        pair :: (Lambda, Language) -> (Lambda, Language) -> IO ()
+        pair (left, one) (right, other) =
+          maybe
+            (pure ())
+            ( throwIO
+                . BrokenLambdas file
+                . printf "the keys '%s' and '%s' match some of the same lambda names, such as '%s'" (T.unpack left._key) (T.unpack right._key)
+                . T.unpack
+            )
+            (shared one other)
 
 -- The entry whose key matches the whole λ name, if any. There is at most one:
 -- the keys are unique, so a name either has a λ function or has none at all.
