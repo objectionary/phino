@@ -138,7 +138,7 @@ certainty Plausible = "plausible"
 -- the term the entry wrote, then the normal form 𝕄 makes of it, so the
 -- morphing between them is a step a reader watches happen rather than a shape a
 -- term arrives in (#1298). A name no entry answers stands there as
--- '?(L_number_nope)', where the block of its firing would have been. A
+-- 'unanswered(L_number_nope)', where the block of its firing would have been. A
 -- formation 𝔻 gets into through its 'box' rule opens a block of its own,
 -- 'formation(⟦ … ⟧)  # 𝔻(Φ.x)', and what its φ body fires stands under it
 -- (#1420).
@@ -429,7 +429,7 @@ saveEval handle cursor render salted report = do
       pure (protocol, Just (indented depth (printf "looped(%s)  # %s(%s), %s" form (letter judgment) locator (certainty mode))))
     written (EvStuck depth key judgment self) protocol = do
       form <- render self
-      pure (protocol, Just (indented depth (printf "?(%s)  # %s(%s)" (T.unpack key) (letter judgment) form)))
+      pure (protocol, Just (indented depth (printf "unanswered(%s)  # %s(%s)" (T.unpack key) (letter judgment) form)))
     written (EvStall depth key) protocol =
       pure (protocol, Just (indented depth (printf "stall(%s)" (T.unpack key))))
     written (EvStuckOn depth key) protocol =
@@ -614,7 +614,7 @@ saveEvalXml handle cursor render report = do
     elements (EvStuck depth key judgment self) nesting = do
       form <- render self
       let (kept, closers) = closed depth nesting._closing
-      pure (nesting{_closing = kept}, closers ++ [indented depth (printf "<stuck λ=\"%s\" by=\"%s\">%s</stuck>" (quoted key) (opened judgment) (escapeXMLText form))])
+      pure (nesting{_closing = kept}, closers ++ [indented depth (printf "<unanswered λ=\"%s\" by=\"%s\">%s</unanswered>" (quoted key) (opened judgment) (escapeXMLText form))])
     elements (EvStall depth key) nesting = do
       let (kept, closers) = closed depth nesting._closing
       pure (nesting{_closing = kept}, closers ++ [indented depth (printf "<stall λ=\"%s\"/>" (quoted key))])

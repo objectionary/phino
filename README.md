@@ -314,8 +314,8 @@ a λ name stands. In a term, `𝜎1` is a concrete symbol: a λ function nothing
 answers, which is what makes the value the term carries unknown. Firing it is
 therefore the same question as firing a λ name the `--symbolic` file does not
 carry, and gets the same answer: 𝔼 stops there, the protocol records the site as
-`?(𝜎1)`, and `--partial` leaves the term where it stands. Dispatching an
-attribute off a symbol — `⟦ λ ⤍ 𝜎1 ⟧.plus( 5 )` — therefore taints its own
+`unanswered(𝜎1)`, and `--partial` leaves the term where it stands. Dispatching
+an attribute off a symbol — `⟦ λ ⤍ 𝜎1 ⟧.plus( 5 )` — therefore taints its own
 binding and nothing else; what stands beside it still computes. In an answer, a
 bare `𝜎` asks for a fresh one, minted as the firing happens and numbered by the
 run, so no two unknowns are ever spelled alike. Minting starts after the symbols
@@ -484,8 +484,8 @@ that meta, spelled the way the calculus reads it — `$` is read as `ξ` — so 
 reader never has to open the `--symbolic` file beside the protocol and match
 every line by λ name and meta number.
 
-`?(…)` is a λ name no entry answers, standing where the block of its firing
-would have stood. Nothing fired, so nothing opens under it. The line is
+`unanswered(…)` is a λ name no entry answers, standing where the block of its
+firing would have stood. Nothing fired, so nothing opens under it. The line is
 commented with the judgment that asked and the formation it was asking about,
 `𝕄(L_none:λ)`, the way an operand line is commented with the term it was
 reduced from: 𝔼 is fired by the `ml` rule of morphing and by the `fire` rule
@@ -515,7 +515,7 @@ $ cat atoms.txt
       𝛿2.1 := 40-18-00-00-00-00-00-00  # 𝔻(ξ.x)
       𝑛.1.1 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛
       𝑛.1.2 := ⟦ φ ↦ 𝜎1:λ, plus(x) ↦ L_number_plus:λ, nope ↦ L_number_nope:λ ⟧  # 𝕄(𝑛.1.1)
-    ?(L_number_nope)  # 𝔻(L_number_nope:λ)
+    unanswered(L_number_nope)  # 𝔻(L_number_nope:λ)
 ```
 
 <!-- markdownlint-enable MD013 -->
@@ -526,9 +526,9 @@ program and not of the option that decides what to do about it.
 
 Three more lines say why a firing gave no answer.
 `stuck(L_outer)` is the last line of a firing that got stuck, naming the λ
-function it got stuck on, which is seldom the one `?(…)` names: that one is
-written where it was asked for, and this one closes every firing the failure
-passed on its way out.
+function it got stuck on, which is seldom the one `unanswered(…)` names: that
+one is written where it was asked for, and this one closes every firing the
+failure passed on its way out.
 `stall(L_outer)` stands under a firing that `--acyclic=plausible` answered
 with the stall an earlier firing of the same formation kept, so a told stall
 never reads as a fresh firing that wrote nothing.
@@ -718,9 +718,9 @@ The root is the run itself, named after the judgment it ran — `<dataize>` for 
 𝔻, `<morph>` for a 𝕄 — with `at` naming the term it was aimed at, which is
 what the text format opens with as `𝔻(Φ)`. `<evaluate>` is one firing of 𝔼, `λ`
 naming the entry that answered it, `by` naming the judgment that asked for the
-firing — the same word the root is named after and a `<stuck>` carries — and
-`at` naming the site it was fired at. The text format writes those two as the
-comment of its line, `𝔻(Φ)`.
+firing — the same word the root is named after and an `<unanswered>` carries —
+and `at` naming the site it was fired at. The text format writes those two as
+the comment of its line, `𝔻(Φ)`.
 `<formation at="Φ" term="⟦ … ⟧">` is a formation 𝔻 got into through `box`,
 which the text format writes as `formation(⟦ … ⟧)  # 𝔻(Φ)`: `at` names the
 site it was entered at and `term` holds the formation. Whatever the `φ` body
@@ -780,9 +780,9 @@ and not where the value of the term is, while `𝔼(L_fork)` writes none at all,
 since the symbol it answers with comes from a `join` line and stands in a
 `<joined>` of its own.
 
-A λ name no entry answers is `<stuck λ="…">`, standing where its `<evaluate>`
-would have stood with the formation 𝔼 was fired against as its text and the
-judgment that asked in its `by` attribute, where the text format writes
+A λ name no entry answers is `<unanswered λ="…">`, standing where its
+`<evaluate>` would have stood with the formation 𝔼 was fired against as its text
+and the judgment that asked in its `by` attribute, where the text format writes
 the letter of it. A firing that happened while an operand of another was being
 reduced is an `<evaluate>` inside the one that asked, which is what the deeper
 indentation means in the text. Elements are written as the run goes and
@@ -814,7 +814,7 @@ $ cat atoms.xml
       <built meta="𝑛.1.1">Φ.number( φ ↦ 𝜎1:λ )</built>
       <answer meta="𝑛.1.2">⟦ φ ↦ 𝜎1:λ, plus(x) ↦ L_number_plus:λ, nope ↦ L_number_nope:λ ⟧</answer>
     </evaluate>
-    <stuck λ="L_number_nope" by="dataize">L_number_nope:λ</stuck>
+    <unanswered λ="L_number_nope" by="dataize">L_number_nope:λ</unanswered>
   </formation>
 </dataize>
 ```
@@ -906,7 +906,8 @@ Here `2.times( 3 ).plus( 4 )` was answered by the entries the file carries, so
 it was reduced — the symbol it came to sits in the hidden `ρ` of the residual
 program — while `as-bool` names a λ function no entry answers, so it stays in
 place as a normal-form subterm. A stuck site opens no block in the
-`--protocol` file, since nothing fired there, and stands in it as `?(…)`:
+`--protocol` file, since nothing fired there, and stands in it as
+`unanswered(…)`:
 
 <!-- markdownlint-disable MD013 -->
 
@@ -933,7 +934,7 @@ $ cat atoms.txt
       𝛿2.2 := 40-10-00-00-00-00-00-00  # 𝔻(ξ.x)
       𝑛.2.1 := Φ.number( φ ↦ 𝜎2:λ )  # 𝑛
       𝑛.2.2 := ⟦ φ ↦ 𝜎2:λ, plus(x) ↦ L_number_plus:λ, times(x) ↦ L_number_times:λ, as-bool ↦ L_number_as_bool:λ ⟧  # 𝕄(𝑛.2.1)
-    ?(L_number_as_bool)  # 𝔻(L_number_as_bool:λ)
+    unanswered(L_number_as_bool)  # 𝔻(L_number_as_bool:λ)
 ```
 
 <!-- markdownlint-enable MD013 -->
@@ -945,8 +946,8 @@ residual program, for the next iteration.
 An operand of a firing that reaches the terminator `⊥`, or a term no
 dataization rule matches, such as a formation whose `φ` is a void nothing
 filled, never comes down to data either, and `--partial` parks that firing
-the same way, writing the dead end into the protocol as `?(⊥)` with the term
-that could not be dataized beside it. Dataization aimed at `⊥` itself still
+the same way, writing the dead end into the protocol as `unanswered(⊥)` with the
+term that could not be dataized beside it. Dataization aimed at `⊥` itself still
 fails, with or without `--partial`, since there is no firing to park.
 
 The nested morphing and dataization recursion is bounded by the

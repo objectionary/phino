@@ -6,8 +6,8 @@
 # the 'dataize' operand 'ρ.data.size' of 'L_dataized' reaches the terminator ⊥.
 # Under '_partial' that parks the firing the way an operand parked on a λ
 # function no entry answers does, rather than ending the run: the protocol
-# writes '?(⊥)' with the term 𝔻 could not dataize, and the walk goes on to
-# 'L_root', whose own operand dies the same way (#1401).
+# writes 'unanswered(⊥)' with the term 𝔻 could not dataize, and the walk goes on
+# to 'L_root', whose own operand dies the same way (#1401).
 symbolic: |
   - λ: L_dataized
     dataize:
@@ -53,7 +53,7 @@ protocol: |
         formation(⟦ φ ↦ 3F-F0-00-00-00-00-00-00:Δ, size ↦ L_bytes_size:λ ⟧)  # 𝔻(Φ.a🌵0)
       𝛿1.1 := 3F-F0-00-00-00-00-00-00  # 𝔻(ξ.n)
       𝔼(L_dataized)  # 𝕄(Φ.a🌵1)
-        ?(⊥)  # 𝔻(⊥)
+        unanswered(⊥)  # 𝔻(⊥)
         stuck(⊥)
       𝔼(L_dataized)  # 𝕄(Φ.a🌵1)
         stuck(⊥)
@@ -66,6 +66,6 @@ protocol: |
       𝑛.1.2 := ⟦ v ↦ Φ.dataized( target ↦ ⊥ ).as-bytes, λ ⤍ L_root ⟧  # 𝕄(𝑛.1.1)
     𝔼(L_root)  # 𝕄(Φ.l🌵.e1)
       𝔼(L_dataized)  # 𝕄(Φ.a🌵6)
-        ?(⊥)  # 𝔻(⊥)
+        unanswered(⊥)  # 𝔻(⊥)
         stuck(⊥)
       stuck(⊥)

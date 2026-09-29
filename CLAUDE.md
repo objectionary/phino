@@ -120,8 +120,8 @@ for a value nobody worked out, minted fresh per firing and counted in the state
 `State` of `Deps.hs`. Dataizing a symbol answers a fixed 42, so a `𝛿` always
 holds data. A λ name no entry answers gets stuck, and so does a λ naming a
 symbol, since nothing answers that either; that is what `--partial`
-parks on, and the protocol records it as `?(name)` either way. What fired is
-written as a tree by `--protocol`
+parks on, and the protocol records it as `unanswered(name)` either way. What
+fired is written as a tree by `--protocol`
 (`Evaluation` and `Protocol` in `Deps.hs`), which spells the three judgments
 the way the calculus does: `𝕄(…)` or `𝔻(…)` opens the run, `𝔼(…)` names a
 firing and `𝔻(𝜎1)` is the datum manufactured for a symbol. Every comment of a
