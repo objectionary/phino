@@ -2387,6 +2387,64 @@ spec = do
             records <- readUtf8 path
             length (filter (isInfixOf "𝔼(L_split)") (lines records)) `shouldBe` 64
 
+    -- Every binding of the formation the walk starts at is morphed on a
+    -- worker of its own, from the state the spine left, and what the workers
+    -- made is written in the order of the bindings, the symbols of a later
+    -- binding numbered after those of the bindings before it (#1534)
+    describe "--jobs" $ do
+      let twins = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]] ]], a -> 7.plus( 5.plus( 6 ) ), b -> 7.plus( 5.plus( 6 ) ) ]]"
+          recorded :: [String] -> IO [String]
+          recorded extra =
+            withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
+              hClose stream
+              withStdin twins $
+                testCLISucceeded (["morph", symbolic, "--deep", "--protocol=" ++ path, "--quiet"] ++ extra) []
+              lines <$> readUtf8 path
+          untaued :: String -> String
+          untaued [] = []
+          untaued text
+            | "a🌵" `isPrefixOf` text = "a🌵" ++ untaued (dropWhile (\ch -> isDigit ch || ch == '-') (drop 2 text))
+          untaued (ch : rest) = ch : untaued rest
+      it "prints the answer one walk over the bindings prints" $
+        withStdin twins $
+          testCLISucceeded
+            ["morph", symbolic, "--deep", "--acyclic=proven", "--jobs=3", "--flat", "--hide-rho", "--sweet"]
+            ["a ↦ ⟦ φ ↦ 𝜎2:λ, plus(x) ↦ L_number_plus:λ ⟧, b ↦ ⟦ φ ↦ 𝜎4:λ, plus(x) ↦ L_number_plus:λ ⟧"]
+
+      it "writes the firings of a binding after those of the bindings before it" $
+        recorded ["--jobs=2"]
+          >>= (`shouldBe` ["# 𝕄(Φ.a)", "# 𝕄(Φ.a)", "# 𝕄(Φ.b)", "# 𝕄(Φ.b)"]) . map (dropWhile (/= '#')) . filter (isPrefixOf "  𝔼(")
+
+      it "numbers the symbols of the protocol the way the answer numbers them" $
+        recorded ["--jobs=2"] >>= (`shouldSatisfy` elem "    𝑛.4.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎4 ⟧ )  # 𝑛")
+
+      it "names what a binding mints after the binding" $
+        recorded ["--jobs=2"] >>= (`shouldSatisfy` any (isInfixOf "# 𝔻(Φ.a🌵4-0)"))
+
+      it "writes the protocol one walk writes, the names a binding mints apart" $ do
+        one <- recorded ["--jobs=1"]
+        many <- recorded ["--jobs=4"]
+        map untaued many `shouldBe` map untaued one
+
+      it "writes the same protocol however many workers it is given" $ do
+        few <- recorded ["--jobs=2"]
+        many <- recorded ["--jobs=5"]
+        many `shouldBe` few
+
+      it "keeps a memo of its own for every binding under plausible" $
+        withStdin twins $
+          testCLISucceeded
+            ["morph", symbolic, "--deep", "--acyclic=plausible", "--jobs=2", "--flat", "--hide-rho", "--sweet"]
+            ["b ↦ ⟦ φ ↦ 𝜎4:λ, plus(x) ↦ L_number_plus:λ ⟧"]
+
+      it "fails with non-positive --jobs" $
+        withStdin twins $
+          testCLIFailed ["morph", "--deep", "--jobs=0"] ["--jobs must be positive"]
+
+      it "fails with --jobs above one and no --deep" $
+        withStdin twins $
+          testCLIFailed ["morph", "--jobs=2"] ["The option --jobs requires --deep, since only the deep walk runs on several workers"]
+
     -- '--partial' parks a spent 𝕄 budget the same way it parks a stuck λ:
     -- the answer is the term the walk had reached, dispatch intact (#1078)
     it "parks the spent budget as a residual with --partial" $

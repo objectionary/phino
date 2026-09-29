@@ -68,6 +68,7 @@ library
     Morph
     Must
     Parser
+    Pool
     Printer
     Random
     Regexp
@@ -117,6 +118,7 @@ library
 executable phino
   import: warnings
   main-is: Main.hs
+  ghc-options: -threaded
   hs-source-dirs: app
   build-depends:
     base,
@@ -130,6 +132,7 @@ test-suite spec
   type: exitcode-stdio-1.0
   main-is: Main.hs
   hs-source-dirs: test
+  ghc-options: -threaded
   other-modules:
     AbridgeSpec
     ASTSpec
@@ -164,6 +167,7 @@ test-suite spec
     MustSpec
     ParserSpec
     Paths_phino
+    PoolSpec
     PrinterSpec
     RandomSpec
     RegexpSpec

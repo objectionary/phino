@@ -5,13 +5,13 @@
 
 module DepsSpec where
 
-import AST (Expression (ExRoot, ExXi))
+import AST (Binding (BiLambda), Bytes (BtOne), Expression (ExFormation, ExRoot, ExXi), Function (FnSymbol), symbols)
 import Control.Exception (bracket)
 import Control.Monad (replicateM_, when)
 import Data.IORef (modifyIORef', newIORef, readIORef)
 import Data.List (isInfixOf)
 import Data.Time.Clock.POSIX (getPOSIXTime)
-import Deps (Evaluation (EvFiring, EvFormation, EvRun), Judgment (Morphing), dontSaveEval, dontSaveStep, emptyProgress, progressed, saveStep)
+import Deps (Evaluation (EvFiring, EvFormation, EvJoined, EvMinted, EvRun, EvTerm), Judgment (Morphing), dontSaveEval, dontSaveStep, emptyProgress, progressed, renumbered, saveStep)
 import Logger (LogLevel (DEBUG, ERROR, INFO), setLogConfig)
 import System.Directory
   ( doesDirectoryExist
@@ -22,7 +22,7 @@ import System.Directory
 import System.FilePath ((</>))
 import System.IO (stderr)
 import System.IO.Silently (hCapture_, hSilence)
-import Test.Hspec (Spec, after_, describe, it, shouldBe, shouldSatisfy)
+import Test.Hspec (Spec, after_, describe, expectationFailure, it, shouldBe, shouldSatisfy)
 
 withScratchDir :: (FilePath -> IO a) -> IO a
 withScratchDir =
@@ -99,3 +99,17 @@ spec = do
       cursor <- newIORef (emptyProgress 0)
       captured <- hCapture_ [stderr] (progressed cursor 0 (const (pure "Φ.q")) dontSaveEval (EvRun Morphing "Φ.k"))
       captured `shouldBe` ""
+
+  describe "renumbered" $ do
+    it "raises the symbols a record names above the floor" $
+      case renumbered 3 10 (EvMinted 2 5 [Left 4, Left 1, Right (BtOne "7C")]) of
+        EvMinted _ minted operands -> (minted, operands) `shouldBe` (15, [Left 14, Left 1, Right (BtOne "7C")])
+        _ -> expectationFailure "The record did not stay the record it was"
+    it "raises the symbols the terms of a record carry above the floor" $
+      case renumbered 1 6 (EvTerm 4 "𝑛1" (ExFormation [BiLambda (FnSymbol 1)]) (ExFormation [BiLambda (FnSymbol 2)])) of
+        EvTerm _ _ operand term -> (symbols operand, symbols term) `shouldBe` ([1], [8])
+        _ -> expectationFailure "The record did not stay the record it was"
+    it "does not change the depth a record stands at" $
+      case renumbered 0 9 (EvJoined 7 1 (2, 3)) of
+        EvJoined depth fresh pair -> (depth, fresh, pair) `shouldBe` (7, 10, (11, 12))
+        _ -> expectationFailure "The record did not stay the record it was"
