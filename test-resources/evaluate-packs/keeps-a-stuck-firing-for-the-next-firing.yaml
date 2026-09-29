@@ -24,7 +24,7 @@ input: >
 protocol: |
   𝕄(Φ)
     𝔼(L_outer)  # 𝕄(Φ.x)
-      ?(L_none)  # 𝔻(L_none:λ)
+      unanswered(L_none)  # 𝔻(L_none:λ)
       stuck(L_none)
     𝔼(L_outer)  # 𝕄(Φ.y)
       stall(L_none)

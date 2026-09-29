@@ -1567,7 +1567,7 @@ spec = do
                        , "      𝛿2.1 := 40-18-00-00-00-00-00-00  # 𝔻(ξ.x)"
                        , "      𝑛.1.1 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛"
                        , "      𝑛.1.2 := ⟦ φ ↦ 𝜎1:λ, plus(x) ↦ L_number_plus:λ, nope ↦ L_number_nope:λ ⟧  # 𝕄(𝑛.1.1)"
-                       , "    ?(L_number_nope)  # 𝔻(L_number_nope:λ)"
+                       , "    unanswered(L_number_nope)  # 𝔻(L_number_nope:λ)"
                        ]
 
       it "truncates the lines left over from the previous run" $
@@ -1876,7 +1876,7 @@ spec = do
                          ]
 
         -- Nothing fired, so the element stands alone and nothing opens under
-        -- it, exactly as '?(…)' stands alone in the text format; the formation
+        -- it, exactly as 'unanswered(…)' stands alone in the text format; the formation
         -- 𝔼 was asked about stands as the text of it, the way the comment of
         -- the text format carries it (#1300)
         it "records a λ function no entry answers as a childless element" $
@@ -1904,7 +1904,7 @@ spec = do
                          , "      <built meta=\"𝑛.1.1\">Φ.number( φ ↦ 𝜎1:λ )</built>"
                          , "      <answer meta=\"𝑛.1.2\">⟦ φ ↦ 𝜎1:λ, times(x) ↦ L_number_times:λ, nope ↦ L_number_nope:λ ⟧</answer>"
                          , "    </evaluate>"
-                         , "    <stuck λ=\"L_number_nope\" by=\"dataize\">L_number_nope:λ</stuck>"
+                         , "    <unanswered λ=\"L_number_nope\" by=\"dataize\">L_number_nope:λ</unanswered>"
                          , "  </formation>"
                          , "</dataize>"
                          ]
@@ -1922,7 +1922,7 @@ spec = do
             lines records
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                          , "<morph at=\"Φ.x\">"
-                         , "  <stuck λ=\"L_number_nope\" by=\"morph\">⟦ λ ⤍ L_number_nope ⟧</stuck>"
+                         , "  <unanswered λ=\"L_number_nope\" by=\"morph\">⟦ λ ⤍ L_number_nope ⟧</unanswered>"
                          , "</morph>"
                          ]
 
@@ -1955,7 +1955,7 @@ spec = do
                          , "      <built meta=\"𝑛.1.1\">Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )</built>"
                          , "      <answer meta=\"𝑛.1.2\">⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, times ↦ ⟦ ρ ↦ ∅, x ↦ ∅, λ ⤍ L_number_times ⟧, nope ↦ ⟦ ρ ↦ ∅, λ ⤍ L_number_nope ⟧ ⟧</answer>"
                          , "    </evaluate>"
-                         , "    <stuck λ=\"L_number_nope\" by=\"dataize\">⟦ ρ ↦ Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ ), λ ⤍ L_number_nope ⟧</stuck>"
+                         , "    <unanswered λ=\"L_number_nope\" by=\"dataize\">⟦ ρ ↦ Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ ), λ ⤍ L_number_nope ⟧</unanswered>"
                          , "  </formation>"
                          , "</dataize>"
                          ]
@@ -1982,7 +1982,7 @@ spec = do
                          , "    <built meta=\"𝑛.1.1\">⟦ λ ⤍ 𝜎1 ⟧</built>"
                          , "    <answer meta=\"𝑛.1.2\">⟦ λ ⤍ 𝜎1 ⟧</answer>"
                          , "  </evaluate>"
-                         , "  <stuck λ=\"𝜎1\" by=\"morph\">⟦ λ ⤍ 𝜎1 ⟧</stuck>"
+                         , "  <unanswered λ=\"𝜎1\" by=\"morph\">⟦ λ ⤍ 𝜎1 ⟧</unanswered>"
                          , "</morph>"
                          ]
 
@@ -2042,7 +2042,7 @@ spec = do
                        , "      𝛿2.1 := 40-08-00-00-00-00-00-00  # 𝔻(ξ.x)"
                        , "      𝑛.1.1 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛"
                        , "      𝑛.1.2 := ⟦ φ ↦ 𝜎1:λ, times(x) ↦ L_number_times:λ, nope ↦ L_number_nope:λ ⟧  # 𝕄(𝑛.1.1)"
-                       , "    ?(L_number_nope)  # 𝔻(L_number_nope:λ)"
+                       , "    unanswered(L_number_nope)  # 𝔻(L_number_nope:λ)"
                        ]
 
       it "still prints bytes when nothing gets stuck" $
