@@ -5,7 +5,7 @@
 # cycle, since the 'eq' deciding the 'if' is a λ the normalizer cannot answer,
 # so it runs out of '--max-cycles'. The unfinished term is not a normal form
 # and no morphing rule takes it, so the run names the budget it spent instead
-# of failing with "no morphing rule matched" (#1496).
+# of failing because no morphing rule takes it (#1496).
 location: 'Q.x'
 input: |
   ⟦

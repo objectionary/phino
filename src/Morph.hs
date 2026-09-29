@@ -322,6 +322,12 @@ data ReduceException
     -- firing under '_partial' the way an unanswered λ function does, since the
     -- dead end is a property of the program rather than of phino (#1401).
     Undataizable Expression State
+  | -- 𝕄 was handed a term no morphing rule matches. 𝕄 maps normal forms to
+    -- formations and every normal form is covered by some rule, so the term
+    -- is not a normal form: 'morph' does not normalize what it is given, such
+    -- as a dispatch off a formation with neither φ nor λ, which normalization
+    -- would reduce (#1442). It carries the term.
+    Unmorphable Expression
   deriving anyclass (Exception)
 
 instance Show ReduceException where
@@ -338,6 +344,7 @@ instance Show ReduceException where
   show (LoopingAt term _ _) = show (Looping term)
   show (Undataizable ExTermination _) = "dataization reached the terminator ⊥, which signals an error and cannot be dataized"
   show (Undataizable _ _) = "no dataization rule matched"
+  show (Unmorphable term) = printf "Morphing expects a normal form, but no morphing rule matches: %s" (printExpression term)
 
 -- Charge one step of the 𝕄/𝔻 recursion to the budget, refusing to descend once
 -- it is gone. '--max-cycles' and '--max-depth' bound only the normalization run
@@ -584,7 +591,7 @@ morph' (expr, seq) univ state caller = do
     matched <- firstMatch ctx rules
     case matched of
       Just (rule, subst) -> reduce ctx rule subst
-      Nothing -> throwIO (userError "no morphing rule matched")
+      Nothing -> throwIO (Unmorphable expr)
   where
     firstMatch :: ReduceContext -> [Y.MorphRule] -> IO (Maybe (Y.MorphRule, Subst))
     firstMatch _ [] = pure Nothing
