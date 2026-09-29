@@ -1047,6 +1047,18 @@ spec = do
           ["rewrite", "--sweet", "--flat", "--show=Q.org", "--hide=Q.org.eolang"]
           ["Φ.y:yegor256:org"]
 
+    it "fails on a --show locator that matches nothing" $
+      withStdin "[[ a -> [[ b -> Q, c -> Q ]], d -> Q ]]" $
+        testCLIFailed
+          ["rewrite", "--flat", "--show=Q.zzz"]
+          ["[ERROR]:", "Can't find object by locator: 'Φ.zzz'"]
+
+    it "shows the whole program with --show=Q" $
+      withStdin "[[ a -> [[ b -> Q, c -> Q ]], d -> Q ]]" $
+        testCLISucceeded
+          ["rewrite", "--flat", "--show=Q"]
+          ["⟦ a ↦ ⟦ b ↦ Φ, c ↦ Φ ⟧, d ↦ Φ ⟧"]
+
     it "prints in line with --flat" $
       withStdin "[[ x -> 5, y -> \"hey\", z -> [[ w -> [[ ]] ]] ]]" $
         testCLISucceeded

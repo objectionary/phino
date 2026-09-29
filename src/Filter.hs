@@ -1,10 +1,13 @@
+{-# LANGUAGE TupleSections #-}
+
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
 module Filter (include, include', exclude, exclude') where
 
 import AST
-import Data.Maybe (mapMaybe)
+import Control.Exception (throwIO)
+import Locator (LocatorException (CanNotFindObjectByLocator, InvalidLocatorProvided))
 import Misc
 import Rewriter
 
@@ -32,18 +35,16 @@ exclude [] _ = []
 exclude rs [] = rs
 exclude ((expr, maybeRule) : rest) exprs = (exclude' expr exprs, maybeRule) : exclude rest exprs
 
-include' :: Expression -> [Expression] -> Expression
-include' expr [] = expr
-include' expr fqns = case mapMaybe pick fqns of
-  [] -> def
-  forms -> mergeForms forms
+include' :: Expression -> [Expression] -> IO Expression
+include' expr [] = pure expr
+include' expr fqns
+  | ExRoot `elem` fqns = pure expr
+  | otherwise = mergeForms <$> traverse pick fqns
   where
-    def :: Expression
-    def = ExFormation []
-    pick :: Expression -> Maybe Expression
-    pick fqn = do
-      attrs <- fqnToAttrs fqn
-      includedFormation expr attrs
+    pick :: Expression -> IO Expression
+    pick fqn = case fqnToAttrs fqn of
+      Just attrs -> maybe (throwIO (CanNotFindObjectByLocator fqn)) pure (includedFormation expr attrs)
+      _ -> throwIO (InvalidLocatorProvided fqn)
     mergeForms :: [Expression] -> Expression
     mergeForms forms =
       let bds = concat [bs | ExFormation bs <- forms]
@@ -62,7 +63,5 @@ include' expr fqns = case mapMaybe pick fqns of
         includedBindings _ _ = Nothing
     includedFormation _ _ = Nothing
 
-include :: [Rewritten] -> [Expression] -> [Rewritten]
-include [] _ = []
-include rs [] = rs
-include ((expr, maybeRule) : rest) exprs = (include' expr exprs, maybeRule) : include rest exprs
+include :: [Rewritten] -> [Expression] -> IO [Rewritten]
+include rs exprs = traverse (\(expr, maybeRule) -> (,maybeRule) <$> include' expr exprs) rs

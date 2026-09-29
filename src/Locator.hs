@@ -4,7 +4,7 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Locator (locatedExpression, withLocatedExpression) where
+module Locator (LocatorException (..), locatedExpression, withLocatedExpression) where
 
 import AST
 import Control.Exception (Exception, throwIO)

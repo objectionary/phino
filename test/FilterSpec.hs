@@ -46,7 +46,7 @@ spec = do
           included <- traverse parseExpressionThrows shown
           excluded <- traverse parseExpressionThrows hidden
           res <- parseExpressionThrows result
-          let [(expr', _)] = F.exclude (F.include [(expr, Nothing)] included) excluded
+          [(expr', _)] <- (`F.exclude` excluded) <$> F.include [(expr, Nothing)] included
           expr' `shouldBe` res
       )
 
@@ -75,24 +75,34 @@ spec = do
 
     describe "include" $ do
       forM_
-        [ ("falls back to the default hidden formation when the fqn is not a Q-dispatch chain", "[[ x -> ? ]]", "$.x")
-        , ("falls back to the default hidden formation when nothing matches the fqn", "[[ x -> ? ]]", "Q.absent")
-        , ("falls back to the default hidden formation for a non-formation expression", "Q.x", "Q.y")
+        [ ("fails when the fqn is not a Q-dispatch chain", "[[ x -> ? ]]", "$.x")
+        , ("fails when nothing matches the fqn", "[[ x -> ? ]]", "Q.absent")
+        , ("fails when a nested fqn stops short of its last attribute", "[[ a -> [[ b -> ? ]] ]]", "Q.a.zzz")
+        , ("fails for a non-formation expression", "Q.x", "Q.y")
         ]
         ( \(desc, exprText, fqnText) -> it desc $ do
             expr <- parseExpressionThrows exprText
             fqn <- parseExpressionThrows fqnText
-            defaultHidden <- parseExpressionThrows "[[ ]]"
-            let [(expr', _)] = F.include [(expr, Nothing)] [fqn]
-            expr' `shouldBe` defaultHidden
+            F.include [(expr, Nothing)] [fqn] `shouldThrow` anyException
         )
+
+      it "keeps the whole program when the fqn is Q" $ do
+        expr <- parseExpressionThrows "[[ a -> [[ b -> ?, c -> ? ]], d -> ? ]]"
+        [(expr', _)] <- F.include [(expr, Nothing)] [ExRoot]
+        expr' `shouldBe` expr
+
+      it "fails when one of several fqns matches nothing" $ do
+        expr <- parseExpressionThrows "[[ x -> ?, y -> ? ]]"
+        found <- parseExpressionThrows "Q.x"
+        absent <- parseExpressionThrows "Q.zzz"
+        F.include [(expr, Nothing)] [found, absent] `shouldThrow` anyException
 
       it "recurses over a multi-element rewrite list, pinning every element to the fqns" $ do
         first' <- parseExpressionThrows "[[ x -> ?, y -> ? ]]"
         second' <- parseExpressionThrows "[[ x -> ?, y -> ? ]]"
         fqn <- parseExpressionThrows "Q.x"
         expected <- parseExpressionThrows "[[ x -> ? ]]"
-        let included = F.include [(first', Just "rule-a"), (second', Just "rule-b")] [fqn, ExRoot]
+        included <- F.include [(first', Just "rule-a"), (second', Just "rule-b")] [fqn]
         map fst included `shouldBe` [expected, expected]
         map snd included `shouldBe` [Just "rule-a", Just "rule-b"]
 
@@ -101,5 +111,5 @@ spec = do
         firstFqn <- parseExpressionThrows "Q.x"
         secondFqn <- parseExpressionThrows "Q.y"
         expected <- parseExpressionThrows "[[ x -> ?, y -> ? ]]"
-        let [(expr', _)] = F.include [(expr, Nothing)] [firstFqn, secondFqn]
+        [(expr', _)] <- F.include [(expr, Nothing)] [firstFqn, secondFqn]
         expr' `shouldBe` expected
