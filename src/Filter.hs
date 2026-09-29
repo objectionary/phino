@@ -1,7 +1,7 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Filter (include, exclude) where
+module Filter (include, include', exclude, exclude') where
 
 import AST
 import Data.Maybe (mapMaybe)
@@ -33,6 +33,7 @@ exclude rs [] = rs
 exclude ((expr, maybeRule) : rest) exprs = (exclude' expr exprs, maybeRule) : exclude rest exprs
 
 include' :: Expression -> [Expression] -> Expression
+include' expr [] = expr
 include' expr fqns = case mapMaybe pick fqns of
   [] -> def
   forms -> mergeForms forms

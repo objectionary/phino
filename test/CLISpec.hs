@@ -1303,6 +1303,10 @@ spec = do
           ["dataize", symbolic, "--output=latex", "--sweet", "--nonumber", "--compress", "--canonize", "--meet-prefix=dataization", "--sequence", "--flat", "--quiet", "--meet-length=5", "--meet-popularity=1"]
           ["\\phinoMeet{dataization:1}"]
 
+    it "canonizes the residue it prints with --partial" $
+      withStdin "[[ @ -> [[ L> Foo ]] ]]" $
+        testCLISucceeded ["dataize", "--partial", "--canonize", "--flat", "--sweet"] ["Fn1:λ"]
+
     it "dataizes with --locator" $
       withStdin "[[ ex -> [[ @ -> Q.x ]], x -> [[ D> 42- ]] ]]" $
         testCLISucceeded ["dataize", "--locator=Q.ex"] ["42-"]
@@ -2187,6 +2191,18 @@ spec = do
 
     -- 𝕄 is total and 𝔻 is not: where the derivation dies, 𝕄 answers ⊥ ('xi'
     -- here) and the run succeeds, while 𝔻 has no bytes to give and fails
+    it "canonizes the answer it prints" $
+      withStdin "[[ x -> [[ L> Foo ]], y -> [[ L> Bar ]] ]]" $
+        testCLISucceeded ["morph", "--canonize", "--flat", "--sweet"] ["⟦ x ↦ Fn1:λ, y ↦ Fn2:λ ⟧"]
+
+    it "hides a binding of the answer it prints" $
+      withStdin "[[ x -> [[ L> Foo ]], y -> [[ L> Bar ]] ]]" $
+        testCLISucceeded ["morph", "--hide=Q.x", "--flat", "--sweet"] ["Bar:λ:y"]
+
+    it "shows only one binding of the answer it prints" $
+      withStdin "[[ x -> [[ L> Foo ]], y -> [[ L> Bar ]] ]]" $
+        testCLISucceeded ["morph", "--show=Q.x", "--flat", "--sweet"] ["Foo:λ:x"]
+
     it "prints ⊥ instead of failing the run" $
       withStdin "[[ x -> $ ]]" $
         testCLISucceeded ["morph", "--locator=Q.x"] ["⊥"]
