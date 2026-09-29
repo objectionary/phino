@@ -335,6 +335,13 @@ spec = do
         , ["XMIR does not support such expression"]
         )
       ,
+        ( "refuses an application argument bound to ρ"
+        , do
+            expr <- parseExpressionThrows "[[ top -> Q.a(^ -> [[]]) ]]"
+            try (void (expressionToXMIR expr defaultXmirContext)) :: IO (Either SomeException ())
+        , ["XMIR does not support such expression", "ρ ↦"]
+        )
+      ,
         ( "explains an unsupported binding"
         , try (void (expressionToXMIR (ExFormation [BiTau (AtLabel "x") (ExFormation [BiMeta "n", BiVoid AtRho]), BiVoid AtRho]) defaultXmirContext)) ::
             IO (Either SomeException ())
