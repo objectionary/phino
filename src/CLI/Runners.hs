@@ -73,7 +73,7 @@ runRewrite OptsRewrite{..} = do
       include = (`F.include` included)
   save <- saveStepFunc _stepsDir printCtx
   (rewrittens, exceeded) <- rewrite expr rules (RewriteContext loc _maxDepth _maxCycles _depthSensitive Nothing buildTerm _must _breakpoint save)
-  let rewrittens' = exclude $ include (if _sequence then NE.toList rewrittens else [NE.last rewrittens])
+  rewrittens' <- exclude <$> include (if _sequence then NE.toList rewrittens else [NE.last rewrittens])
   logDebug (printf "Printing rewritten 𝜑-expression as %s" (show _outputFormat))
   exprs <- printRewrittens printCtx (rewrittens', exceeded)
   output _targetFile exprs
@@ -181,18 +181,18 @@ runDataize OptsDataize{..} = do
           heading record printCtx Dataization aiming._locator
           dataize universe (started universe) aiming
       )
-  when _sequence (printRewrittens printCtx (exclude $ include chain, False) >>= putStrLn)
-  unless _quiet (printOutcome printCtx (\residue -> F.exclude' (F.include' residue included) excluded) outcome >>= putStrLn)
+  when _sequence (include chain >>= \shown -> printRewrittens printCtx (exclude shown, False) >>= putStrLn)
+  unless _quiet (printOutcome printCtx (\residue -> (`F.exclude'` excluded) <$> F.include' residue included) outcome >>= putStrLn)
   where
     -- The bytes the run reached or, when '--partial' let it end on a λ function
     -- that could not fire, the residual program, rendered like a rewriting
     -- result: narrowed by '--show' and '--hide', canonized, in the output
     -- format, narrowed to '--focus'.
-    printOutcome :: PrintContext -> (Expression -> Expression) -> Outcome -> IO String
+    printOutcome :: PrintContext -> (Expression -> IO Expression) -> Outcome -> IO String
     printOutcome _ _ (Dataized bytes) = pure (P.printBytes bytes)
     printOutcome ctx narrowed (Residual residue) = do
       logDebug "Dataization got stuck on a λ function that cannot fire, printing the residual program (--partial)"
-      printAnswer ctx (narrowed residue)
+      narrowed residue >>= printAnswer ctx
     validateOpts :: IO ()
     validateOpts = do
       validateLatexOptions
@@ -268,8 +268,8 @@ runMorph OptsMorph{..} = do
           heading record printCtx Morphing aiming._locator
           morph universe (started universe) aiming
       )
-  when _sequence (printRewrittens printCtx (exclude $ include chain, False) >>= putStrLn)
-  unless _quiet (printAnswer printCtx (F.exclude' (F.include' morphed included) excluded) >>= putStrLn)
+  when _sequence (include chain >>= \shown -> printRewrittens printCtx (exclude shown, False) >>= putStrLn)
+  unless _quiet (F.include' morphed included >>= \shown -> printAnswer printCtx (F.exclude' shown excluded) >>= putStrLn)
   where
     validateOpts :: IO ()
     validateOpts = do
