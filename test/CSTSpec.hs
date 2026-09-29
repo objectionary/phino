@@ -46,6 +46,7 @@ spec = do
         ( "[[ x -> Q.y ]]"
         , EX_SINGLE
             (PA_TAU (AT_LABEL "x") ARROW (EX_DISPATCH (EX_GLOBAL Φ) NO_SPACE (AT_LABEL "y")))
+            NO_SPACE
             ( EX_FORMATION
                 LSB
                 EOL

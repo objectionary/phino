@@ -187,7 +187,7 @@ data EXPRESSION
   | EX_PHI_MEET {prefix :: Maybe String, idx :: Int, expr :: EXPRESSION}
   | EX_PHI_AGAIN {prefix :: Maybe String, idx :: Int, expr :: EXPRESSION}
   | EX_BYTES {bytes :: BYTES} -- bare data 𝛿, a rendering-only terminal chain node (see #980)
-  | EX_SINGLE {pair :: PAIR, formation :: EXPRESSION} -- one-binding formation as 'FF-:Δ' or 'ξ.a:φ', with its full form (see #1385)
+  | EX_SINGLE {pair :: PAIR, space :: SPACE, formation :: EXPRESSION} -- one-binding formation as 'FF-:Δ' or 'ξ.a:φ', with its full form (see #1385)
   deriving (Eq, Show)
 
 data ATTRIBUTE
@@ -356,9 +356,9 @@ instance ToCST Expression EXPRESSION where
   -- A formation of a single binding is sugared into its asset, a colon and
   -- the attribute, as `FF-:Δ`, `Plus:λ`, `∅:a` or `ξ.a:φ` (see #1385). The
   -- full formation is kept next to it, for the notations that have no such
-  -- sugar: the salty one, LaTeX and the one '--hide-rho' strips.
+  -- sugar: the salty one and the one '--hide-rho' strips.
   toCST (ExFormation bds) ctx@(tabs, eol) =
-    maybe full (`EX_SINGLE` full) (single bds)
+    maybe full (\sole -> EX_SINGLE sole NO_SPACE full) (single bds)
     where
       full :: EXPRESSION
       full =

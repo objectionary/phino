@@ -323,6 +323,7 @@ spec = do
             ARROW
             ( EX_SINGLE
                 (PA_TAU (AT_LABEL "a") ARROW xiExpr)
+                NO_SPACE
                 (EX_FORMATION LSB EOL (TAB 2) (BI_PAIR (PA_TAU (AT_LABEL "a") ARROW xiExpr) (BDS_EMPTY (TAB 2)) (TAB 2)) EOL (TAB 1) RSB)
             )
         , PA_TAU
@@ -628,7 +629,7 @@ spec = do
       [
         ( "a formation left with one binding takes the one-binding sugar"
         , EX_FORMATION LSB EOL (TAB 1) (BI_PAIR (PA_LAMBDA "Fn") (BDS_PAIR EOL (TAB 1) (PA_TAU (AT_RHO RHO) ARROW xiExpr) (BDS_EMPTY (TAB 1))) (TAB 1)) EOL (TAB 0) RSB
-        , EX_SINGLE (PA_LAMBDA "Fn") (EX_FORMATION LSB EOL (TAB 1) (BI_PAIR (PA_LAMBDA "Fn") (BDS_EMPTY (TAB 1)) (TAB 1)) EOL (TAB 0) RSB)
+        , EX_SINGLE (PA_LAMBDA "Fn") NO_SPACE (EX_FORMATION LSB EOL (TAB 1) (BI_PAIR (PA_LAMBDA "Fn") (BDS_EMPTY (TAB 1)) (TAB 1)) EOL (TAB 0) RSB)
         )
       ,
         ( "a formation left with two bindings stays a formation"
@@ -637,7 +638,7 @@ spec = do
         )
       ,
         ( "a one-binding sugar standing for a rho collapses to the empty formation"
-        , EX_SINGLE (PA_TAU (AT_RHO RHO) ARROW xiExpr) (EX_FORMATION LSB EOL (TAB 1) (BI_PAIR (PA_TAU (AT_RHO RHO) ARROW xiExpr) (BDS_EMPTY (TAB 1)) (TAB 1)) EOL (TAB 0) RSB)
+        , EX_SINGLE (PA_TAU (AT_RHO RHO) ARROW xiExpr) NO_SPACE (EX_FORMATION LSB EOL (TAB 1) (BI_PAIR (PA_TAU (AT_RHO RHO) ARROW xiExpr) (BDS_EMPTY (TAB 1)) (TAB 1)) EOL (TAB 0) RSB)
         , EX_FORMATION LSB NO_EOL NO_TAB (BI_EMPTY (TAB 1)) NO_EOL NO_TAB RSB
         )
       ]

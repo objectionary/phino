@@ -6,5 +6,5 @@ expression: |
   [[ foo(a, b) -> [[ @ -> $.a ]] ]]
 result: |-
   \begin{phiquation}
-  [[ |foo|(|a|, |b|) -> [[ @ -> |a| ]] ]]{.}
+  [[ |foo|(|a|, |b|) -> |a| : @ ]]{.}
   \end{phiquation}

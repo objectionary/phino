@@ -36,7 +36,7 @@ withoutRho sugar = goExpr
     goExpr EX_FORMATION{..} = case goBinding binding of
       empty@BI_EMPTY{} -> EX_FORMATION lsb NO_EOL NO_TAB empty NO_EOL NO_TAB rsb
       binding'@BI_PAIR{pair = pair', bindings = BDS_EMPTY{}}
-        | sugar == SWEET && sugared pair' -> EX_SINGLE pair' (EX_FORMATION lsb eol tab binding' eol' tab' rsb)
+        | sugar == SWEET && sugared pair' -> EX_SINGLE pair' NO_SPACE (EX_FORMATION lsb eol tab binding' eol' tab' rsb)
       binding' -> EX_FORMATION lsb eol tab binding' eol' tab' rsb
     goExpr EX_DISPATCH{..} = EX_DISPATCH (goExpr expr) space attr
     goExpr EX_APPLICATION{..} = case goArgument argument of
@@ -46,7 +46,7 @@ withoutRho sugar = goExpr
     goExpr EX_PHI_AGAIN{..} = EX_PHI_AGAIN prefix idx (goExpr expr)
     goExpr EX_SINGLE{..}
       | isRho pair = goExpr formation
-      | otherwise = EX_SINGLE (goPair pair) (goExpr formation)
+      | otherwise = EX_SINGLE (goPair pair) space (goExpr formation)
     goExpr expr = expr
     -- Formation bindings: drop the ρ pairs, recurse into whatever remains.
     goBinding :: BINDING -> BINDING

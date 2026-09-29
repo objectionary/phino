@@ -6,5 +6,5 @@ expression: |
   [[ f -> Q.foo(Q.a, Q.b) ]]
 result: |-
   \begin{phiquation}
-  [[ |f| -> Q . |foo| ( Q . |a|, Q . |b| ) ]]{.}
+  Q . |foo| ( Q . |a|, Q . |b| ) : |f|{.}
   \end{phiquation}

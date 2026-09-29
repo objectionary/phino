@@ -273,9 +273,9 @@ instance ToLaTeX EXPRESSION where
   -- one here too, with its name piped the way any other label is (see #1065)
   toLaTeX EX_NONFINITE{..} = EX_DISPATCH (EX_GLOBAL global) SPACE (toLaTeX (AT_LABEL (nonFiniteName nonfinite)))
   toLaTeX EX_BYTES{..} = EX_BYTES (toLaTeX bytes)
-  -- The eolang LaTeX package knows no one-binding sugar, so the full
-  -- formation is written instead (see #1385)
-  toLaTeX EX_SINGLE{..} = toLaTeX formation
+  -- The one-binding sugar is kept, with spaces around its colon, the way
+  -- a dispatch keeps them around its dot (see #1527)
+  toLaTeX EX_SINGLE{..} = EX_SINGLE (toLaTeX pair) SPACE (toLaTeX formation)
   -- A string is escaped the way a label is, so a '%' in it cannot
   -- comment out the rest of the equation (see #1429)
   toLaTeX EX_STRING{..} = EX_STRING (T.unpack (toLaTeX (T.pack str))) tab rhos
