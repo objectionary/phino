@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+# yamllint disable rule:line-length
+---
+expression: |
+  [[ x -> "a_b $c% &d #e ^g {h} @i ~j \\k" ]]
+result: |-
+  \begin{phiquation}
+  [[ |x| -> "a\char95{}b \char36{}c\char37{} \char38{}d \char35{}e \char94{}g \char123{}h\char125{} \char64{}i \char126{}j \char92{}\char92{}k" ]]{.}
+  \end{phiquation}
