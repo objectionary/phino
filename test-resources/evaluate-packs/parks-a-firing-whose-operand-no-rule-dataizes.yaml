@@ -4,7 +4,7 @@
 # The 'dataize' operand of 'L_pair' is a formation whose φ is a void nothing
 # filled, so no dataization rule matches it. Under '_partial' that parks the
 # firing just as the terminator ⊥ does, and the protocol writes the dead end
-# as '?(⊥)' with the formation beside it (#1401).
+# as 'unanswered(⊥)' with the formation beside it (#1401).
 symbolic: |
   - λ: L_pair
     dataize:
@@ -17,5 +17,5 @@ result: '⟦ x(φ) ↦ ⟦⟧, λ ⤍ L_pair ⟧.z'
 protocol: |
   𝕄(Φ.y)
     𝔼(L_pair)  # 𝕄(Φ.y)
-      ?(⊥)  # 𝔻(∅:φ)
+      unanswered(⊥)  # 𝔻(∅:φ)
       stuck(⊥)

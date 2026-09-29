@@ -10,8 +10,8 @@
 # stuck on the symbol the way it gets stuck on a λ name no entry of the
 # '--symbolic' file answers, so '--partial' parks the site: 'a' is left exactly
 # as it was written, a taint with no root, and the walk goes on to 'b', which
-# fires and computes. The site is written to the protocol as '?(𝜎1)', spelled
-# the way every term carrying that symbol spells it.
+# fires and computes. The site is written to the protocol as 'unanswered(𝜎1)',
+# spelled the way every term carrying that symbol spells it.
 #
 # The site is recorded twice because the walk passes it twice — once for the
 # dispatch 'x.plus' and once for the application 'x.plus( 5 )' around it — which
@@ -39,8 +39,8 @@ result: |-
   ⟧
 protocol: |
   𝕄(Φ.demo)
-    ?(𝜎1)  # 𝕄(𝜎1:λ)
-    ?(𝜎1)  # 𝕄(𝜎1:λ)
+    unanswered(𝜎1)  # 𝕄(𝜎1:λ)
+    unanswered(𝜎1)  # 𝕄(𝜎1:λ)
     𝔼(L_number_plus)  # 𝕄(Φ.demo.b)
       formation(⟦ φ ↦ Φ.bytes( φ ↦ 𝜎2:λ ), plus(x) ↦ L_number_plus:λ ⟧)  # 𝔻(Φ.a🌵0)
         formation(𝜎2:λ:φ)  # 𝔻(Φ.a🌵0)

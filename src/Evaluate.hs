@@ -120,9 +120,9 @@ evaluation _ _ _ _ = throwIO (userError "Function evaluate() requires exactly 2 
 -- so the protocol says what was asked for whether or not '_partial' goes on to
 -- park the run — once, and not once per attempt: a site '_partial' has parked
 -- is still standing in the residue the '_deep' walk goes over, so 𝔼 is fired on
--- it again and again answers nothing, and a reader counting the '?(…)' lines
--- counts the sites 𝔼 got stuck on rather than the passes the walk made over
--- them (see '_parked', #1300). A firing an entry answers is charged to the
+-- it again and again answers nothing, and a reader counting the 'unanswered(…)'
+-- lines counts the sites 𝔼 got stuck on rather than the passes the walk made
+-- over them (see '_parked', #1300). A firing an entry answers is charged to the
 -- '--max-firings' budget before it writes anything, so a run that spent the
 -- budget leaves no firing open in the protocol (see 'charged', #1472).
 --

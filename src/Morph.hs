@@ -248,12 +248,13 @@ data ReduceContext = ReduceContext
     -- reads is the judgment of the frame it was fired from and never of one
     -- above it (#1300).
     _judgment :: Judgment
-  , -- The λ functions this run has already got stuck on and written a '?(…)'
-    -- to the protocol for. A parked site stays in the residue exactly as it was
-    -- written, so the '_deep' walk over that residue reaches it again and 𝕄
-    -- fires 𝔼 on it once more, only to find out what the spine already found
-    -- out; the site is one and the protocol records it once, so the firings
-    -- after the first write nothing (see 'symbol' in 'Evaluate', #1300).
+  , -- The λ functions this run has already got stuck on and written an
+    -- 'unanswered(…)' to the protocol for. A parked site stays in the residue
+    -- exactly as it was written, so the '_deep' walk over that residue reaches
+    -- it again and 𝕄 fires 𝔼 on it once more, only to find out what the spine
+    -- already found out; the site is one and the protocol records it once, so
+    -- the firings after the first write nothing (see 'symbol' in 'Evaluate',
+    -- #1300).
     _parked :: [T.Text]
   , -- The formations the frames above this one have entered, which is what
     -- '_acyclic' answers "have I been here before" with (see 'entering'). A
