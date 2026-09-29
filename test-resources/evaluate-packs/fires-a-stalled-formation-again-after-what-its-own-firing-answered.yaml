@@ -1,0 +1,51 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+# The memo of '--acyclic=plausible' stamps a stall with the count of answers
+# the memo held when the firing began, not when it failed. The firing under
+# 'x' brings 'first' down through 'L_inner', which answers, and then gets
+# stuck on 'L_none'. Before #1507 the stall was stamped after that answer, so
+# the firing under 'y', the very same formation, was told the stall bare, as
+# if nothing was answered since. Now the answer made inside the first firing
+# counts as one made after it began, so the firing under 'y' reduces its
+# operands again.
+symbolic: |
+  - λ: L_outer
+    dataize:
+      𝛿1: ξ.first
+      𝛿2: ξ.second
+    𝑛: ⟦ λ ⤍ 𝜎 ⟧
+  - λ: L_inner
+    𝑛: ⟦ Δ ⤍ 01- ⟧
+deep: true
+partial: true
+acyclic: plausible
+steps: 64
+input: >
+  ⟦ x ↦ ⟦ first ↦ Φ.s, second ↦ ⟦ λ ⤍ L_none ⟧, λ ⤍ L_outer ⟧,
+    y ↦ ⟦ first ↦ Φ.s, second ↦ ⟦ λ ⤍ L_none ⟧, λ ⤍ L_outer ⟧,
+    s ↦ ⟦ φ ↦ Φ.g ⟧,
+    g ↦ ⟦ λ ⤍ L_inner ⟧ ⟧
+protocol: |
+  𝕄(Φ)
+    𝔼(L_outer)  # 𝕄(Φ.x)
+      formation(Φ.g:φ)  # 𝔻(Φ.a🌵0)
+        𝔼(L_inner)  # 𝔻(Φ.a🌵0)
+          𝑛.2.1 := 01-:Δ  # 𝑛
+          𝑛.2.2 := 01-:Δ  # 𝕄(𝑛.2.1)
+      𝛿1.1 := 01-  # 𝔻(ξ.first)
+      ?(L_none)  # 𝔻(L_none:λ)
+    𝔼(L_outer)  # 𝕄(Φ.y)
+      formation(Φ.g:φ)  # 𝔻(Φ.a🌵2)
+        𝔼(L_inner)  # 𝔻(Φ.a🌵2)
+          𝑛.4.1 := 01-:Δ  # 𝑛
+          𝑛.4.2 := 01-:Δ  # 𝕄(𝑛.4.1)
+      𝛿1.3 := 01-  # 𝔻(ξ.first)
+      ?(L_none)  # 𝔻(L_none:λ)
+    𝔼(L_inner)  # 𝕄(Φ.s.φ)
+      𝑛.5.1 := 01-:Δ  # 𝑛
+      𝑛.5.2 := 01-:Δ  # 𝕄(𝑛.5.1)
+    𝔼(L_inner)  # 𝕄(Φ.g)
+      𝑛.6.1 := 01-:Δ  # 𝑛
+      𝑛.6.2 := 01-:Δ  # 𝕄(𝑛.6.1)

@@ -27,7 +27,7 @@ import qualified Data.Text as T
 import Deps (BuildTermMethodS, Evaluation (..), State (..), Term (..))
 import Lambdas (Lambda (..), Meta (..), joined, matched, minted, symbolized)
 import Matcher (MetaValue (..), Subst, combine, substEmpty, substSingle, substSlot)
-import Morph (Answer, Kept (..), ReduceContext (..), ReduceException (..), charged, deeper, enter, isLambda, lambda, morph', morphing, normalized, recalled, retained, unparked)
+import Morph (Answer, Kept (..), ReduceContext (..), ReduceException (..), charged, counted, deeper, enter, isLambda, lambda, morph', morphing, normalized, recalled, retained, unparked)
 import Printer (printFunction)
 import Rule (RuleContext (RuleContext), matchExpressionWithRule')
 import Text.Printf (printf)
@@ -150,12 +150,13 @@ symbol func form self univ state caller = case matched caller._symbolic func of
     -- kept instead, as the formation the cut carried, since the next firing
     -- of the same formation would only walk down to it again (#1480). A
     -- firing that got stuck is kept the same way, as the λ function it got
-    -- stuck on, and the memo tells it only until something new is answered,
-    -- since an operand that could not be brought down may come down then
-    -- (#1493, #1495).
+    -- stuck on, and the memo tells it only until something new is answered
+    -- after the firing began, since an operand that could not be brought down
+    -- may come down then (#1493, #1495, #1507).
     made :: Lambda -> IO (Expression, State)
     made entry = do
       charged caller
+      stamp <- counted caller._memo
       caller._saveEval (EvFiring caller._nesting func caller._judgment caller._site)
       let ctx = caller{_nesting = caller._nesting + 1}
       outcome <- try $ do
@@ -167,10 +168,10 @@ symbol func form self univ state caller = case matched caller._symbolic func of
         answered ctx entry (reverse conditions) bound''' forked
       case outcome of
         Right (answer, state') -> do
-          retained caller._memo form (Answered answer)
+          retained caller._memo form stamp (Answered answer)
           pure (snd answer, state')
         Left failure -> do
-          mapM_ (retained caller._memo form) (kept failure)
+          mapM_ (retained caller._memo form stamp) (kept failure)
           throwIO failure
     -- What the memo keeps of a firing that never answered: the formation a
     -- recursion was cut at, or the λ function the firing got stuck on, where
