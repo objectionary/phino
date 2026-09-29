@@ -120,6 +120,34 @@ spec = do
               result `shouldSatisfy` predicate
       )
 
+  describe "--must once --max-cycles stops the run" $
+    forM_
+      [
+        ( "throws when --must demands more cycles than --max-cycles allowed"
+        , MtExact 3
+        , Left "--must=3"
+        )
+      ,
+        ( "throws when the lower bound of --must lies above --max-cycles"
+        , MtRange (Just 2) Nothing
+        , Left "--must=2.."
+        )
+      ,
+        ( "does not throw when --max-cycles stops the run inside the range of --must"
+        , MtRange (Just 1) (Just 4)
+        , Right snd
+        )
+      ]
+      ( \(desc, must', expected) -> it desc $ do
+          expr <- parseExpressionThrows "⟦ t ↦ ⊥.a.b.c ⟧"
+          let action = rewrite expr normalizationRules (RewriteContext ExRoot 1 1 False Nothing buildTerm must' Nothing dontSaveStep)
+          case expected of
+            Left fragment -> action `shouldThrow` (\exc -> fragment `isInfixOf` show (exc :: SomeException))
+            Right predicate -> do
+              result <- action
+              result `shouldSatisfy` predicate
+      )
+
   describe "rewrite packs" $ do
     let resources = "test-resources/rewriter-packs"
     packs <- runIO (allPathsIn resources)
