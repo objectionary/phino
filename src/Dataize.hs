@@ -105,7 +105,7 @@ dataize universe state ctx@ReduceContext{..} = do
 -- φ body fires stands under the formation it was fired inside of.
 dataize' :: Dataizable -> Expression -> State -> ReduceContext -> IO (Dataized, State)
 dataize' (expr, seq) univ state caller = do
-  guarded <- deeper =<< entering expr =<< universed univ caller{_judgment = Dataization}
+  guarded <- deeper expr =<< entering expr =<< universed univ caller{_judgment = Dataization}
   ctx <- inside guarded expr
   parking seq state $ case unknown expr of
     Just idx -> manufactured idx ctx

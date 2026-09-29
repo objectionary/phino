@@ -23,6 +23,7 @@ protocol: |
     ?(L_none)  # 𝕄(L_none:λ)
     𝔼(L_root)  # 𝕄(Φ.e1)
       ?(L_none)  # 𝕄(L_none:λ)
+      stuck(L_none)
     𝔼(L_root)  # 𝕄(Φ.e2)
       𝛿1.2 := 𝔻(𝜎1:λ)  # 𝔻(ξ.v)
       𝑛.2.1 := ⟦⟧  # 𝑛

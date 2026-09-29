@@ -32,6 +32,8 @@ protocol: |
       formation(Φ.f:φ)  # 𝔻(Φ.a🌵0)
         𝔼(L_f)  # 𝔻(Φ.a🌵0)
           looped(Φ.f:φ)  # 𝔻(Φ.a🌵1), plausible
+          stuck(L_f)
+      stuck(L_f)
     𝔼(L_g)  # 𝕄(Φ.g)
       𝑛.3.1 := 𝜎1:λ  # 𝑛
       𝑛.3.2 := 𝜎1:λ  # 𝕄(𝑛.3.1)

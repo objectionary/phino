@@ -155,7 +155,9 @@ symbol func form self univ state caller = case matched caller._symbolic func of
     -- may come down then (#1493, #1495, #1507). A firing inside which the step
     -- budget ran out keeps its stall beside the steps it had spent, and the
     -- memo tells it only to a firing that has spent at least as many, since
-    -- at a shallower site the operand may come down (#1514, #1521).
+    -- at a shallower site the operand may come down (#1514, #1521). A firing
+    -- that got stuck ends its block with a 'stuck' line naming the λ function,
+    -- whether it is kept or not (#1524).
     made :: Lambda -> IO (Expression, State)
     made entry = do
       charged caller
@@ -177,6 +179,7 @@ symbol func form self univ state caller = case matched caller._symbolic func of
         Left failure -> do
           exhausted' <- starved caller._memo
           mapM_ (retained caller._memo form stamp) (kept (exhausted' /= exhausted) failure)
+          mapM_ (caller._saveEval . EvStuckOn (caller._nesting + 1)) (stranded failure)
           throwIO failure
     -- What the memo keeps of a firing that never answered: the formation a
     -- recursion was cut at, or the λ function the firing got stuck on, where
@@ -191,13 +194,20 @@ symbol func form self univ state caller = case matched caller._symbolic func of
     least :: Bool -> Int
     least True = caller._steps._spent
     least False = 0
+    -- The λ function a firing got stuck on, where the signal escaping it says
+    -- it got stuck, which the protocol writes as the last line of the firing.
+    stranded :: ReduceException -> Maybe T.Text
+    stranded (Stuck name) = Just name
+    stranded (StuckAt name _ _) = Just name
+    stranded _ = Nothing
     -- Answer the firing with what the first firing of the formation made,
     -- written as that one was written: the firing at its site, the term the
     -- entry wrote and the normal form it came to, and nothing between them.
     -- Where the first firing was cut, the firing is cut again at its own site,
     -- with the formation that cut carried and nothing reduced before it.
     -- Where the first firing got stuck, the firing gets stuck again at its own
-    -- site, on the same λ function and with nothing reduced under it.
+    -- site, on the same λ function and with nothing reduced under it, and a
+    -- 'stall' line under it says so (#1524).
     told :: Kept -> IO (Expression, State)
     told (Answered (built, normal)) = do
       caller._saveEval (EvFiring caller._nesting func caller._judgment caller._site)
@@ -210,6 +220,7 @@ symbol func form self univ state caller = case matched caller._symbolic func of
       throwIO (Looping term)
     told (Stalled name _) = do
       caller._saveEval (EvFiring caller._nesting func caller._judgment caller._site)
+      caller._saveEval (EvStall (caller._nesting + 1) name)
       throwIO (Stuck name)
     -- Bring one 'dataize' operand down through 𝔻 and bind the bytes meta that
     -- names it. An operand 𝔻 could not bring down to data — a site '_partial'
@@ -450,7 +461,7 @@ rewritten rules ctx = goExpr
 -- dispatched attribute is none of the formation's own (see 'demanded').
 fired :: Maybe Attribute -> Expression -> Expression -> State -> ReduceContext -> IO (Maybe Expression, State)
 fired dispatched term univ state caller = do
-  ctx <- deeper caller
+  ctx <- deeper term caller
   morphed <- try (reduced ctx)
   case morphed of
     Right (ExFormation bds, state')

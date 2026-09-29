@@ -1517,6 +1517,36 @@ spec = do
                        , "    𝑛.1.2 := 𝜎1:λ:z  # 𝕄(𝑛.1.1)"
                        ]
 
+      -- A firing the memo answers with a kept stall, a firing that ends stuck
+      -- and a step budget running out each leave an element of their own in
+      -- the markup, the way a cut leaves '<looped>' (#1524)
+      it "writes a told stall to the XML protocol" $
+        withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
+          hClose stream
+          withLambdasOf (T.pack "- λ: L_outer\n  dataize:\n    𝛿1: ξ.arg\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n") $ \outer ->
+            withStdin "⟦ x ↦ ⟦ arg ↦ ⟦ λ ⤍ L_none ⟧, λ ⤍ L_outer ⟧, y ↦ ⟦ arg ↦ ⟦ λ ⤍ L_none ⟧, λ ⤍ L_outer ⟧ ⟧" $
+              testCLISucceeded ["morph", "--symbolic=" ++ outer, "--deep", "--partial", "--acyclic=plausible", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
+          records <- readUtf8 path
+          lines records `shouldContain` ["    <stall λ=\"L_none\"/>"]
+
+      it "writes a stuck firing to the XML protocol" $
+        withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
+          hClose stream
+          withLambdasOf (T.pack "- λ: L_outer\n  dataize:\n    𝛿1: ξ.arg\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n") $ \outer ->
+            withStdin "⟦ x ↦ ⟦ arg ↦ ⟦ λ ⤍ L_absent ⟧, λ ⤍ L_outer ⟧ ⟧" $
+              testCLISucceeded ["morph", "--symbolic=" ++ outer, "--deep", "--partial", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
+          records <- readUtf8 path
+          lines records `shouldContain` ["    <unfinished λ=\"L_absent\"/>"]
+
+      it "writes a starved step budget to the XML protocol" $
+        withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
+          hClose stream
+          withLambdasOf (T.pack "- λ: L_outer\n  dataize:\n    𝛿1: ξ.arg\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n") $ \outer ->
+            withStdin "⟦ x ↦ ⟦ arg ↦ ⟦ φ ↦ ⟦ φ ↦ ⟦ Δ ⤍ 07- ⟧ ⟧ ⟧, λ ⤍ L_outer ⟧ ⟧" $
+              testCLISucceeded ["dataize", "--symbolic=" ++ outer, "--locator=Q.x", "--partial", "--max-steps=3", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho", "--flat"] []
+          records <- readUtf8 path
+          lines records `shouldContain` ["        <starved limit=\"3\" by=\"dataize\">07-:Δ</starved>"]
+
       it "keeps the lines of a run that fails" $
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
           hClose stream

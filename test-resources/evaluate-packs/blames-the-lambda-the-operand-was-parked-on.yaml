@@ -20,4 +20,6 @@ protocol: |
   𝕄(Φ.x)
     𝔼(L_entry)  # 𝕄(Φ.x)
       ?(L_none)  # 𝕄(L_none:λ)
+      stuck(L_none)
     𝔼(L_entry)  # 𝕄(Φ.x)
+      stuck(L_none)

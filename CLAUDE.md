@@ -182,6 +182,10 @@ is also a line of the protocol, `formation(…)`, and what its φ body fires
 stands under it; a cut is one too, `looped(…)` (`EvLooped`), written by
 `enter` where the refused frame would have opened, carrying the formation its
 ancestor entered (#1434) and naming the mode that cut it.
+Three records say why a firing gave no answer (#1524): `stuck(…)` closes a
+firing that got stuck, `stall(…)` stands under one the memo answered with a
+kept stall, and `starved(…)` is written by `deeper` where the step budget runs
+out, with the term it stood at.
 
 `--max-steps` bounds the depth of one branch, so a recursion that widens the
 term instead of nesting it fires forever inside it. `--max-firings` bounds the
