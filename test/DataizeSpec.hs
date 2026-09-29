@@ -302,7 +302,7 @@ spec = do
       ]
       ( \(flag, ctx, message) ->
           it ("throws once " ++ flag ++ " is exhausted with --depth-sensitive") $ do
-            expr <- parseExpressionThrows boxed
+            expr <- parseExpressionThrows "[[ @ -> [[ x -> [[ D> 00- ]] ]].x ]]"
             dataize expr emptyState ctx `shouldThrow` (\e -> message `isInfixOf` show (e :: SomeException))
       )
     it "does not throw without --depth-sensitive even once --max-depth is exhausted" $ do
