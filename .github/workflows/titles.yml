@@ -28,3 +28,14 @@ jobs:
           quiet: true
           strip-characters: '"'
           style: offense
+  telegram:
+    needs: titles
+    runs-on: ubuntu-24.04
+    if: ${{ always() }}
+    permissions:
+      actions: read
+    steps:
+      - uses: yegor256/terald-action@6d5c4dab44d17afefa282df9bd7340185b8e93bc  # master
+        with:
+          token: ${{ secrets.TELEGRAM_TOKEN }}
+          chat: -1004371404002

@@ -1,6 +1,7 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
@@ -8,7 +9,7 @@
 
 module RewriterSpec where
 
-import AST (Expression (ExRoot))
+import AST (Attribute (AtLabel), Binding (BiTau), Expression (ExDispatch, ExFormation, ExRoot, ExTermination))
 import Control.Exception (SomeException)
 import Control.Monad (forM_, unless)
 import Data.Aeson
@@ -68,31 +69,50 @@ spec = do
     forM_
       [
         ( "throws with --depth-sensitive once --max-cycles is reached"
-        , []
+        , "⟦ t ↦ ⊥.a ⟧"
         , (5, 0, True)
         , Left "--max-cycles=0"
         )
       ,
         ( "stops silently without --depth-sensitive once --max-cycles is reached"
-        , []
+        , "⟦ t ↦ ⊥.a ⟧"
         , (5, 0, False)
         , Right snd
         )
       ,
         ( "throws with --depth-sensitive once --max-depth is reached for a rule"
-        , normalizationRules
+        , "⟦ t ↦ ⊥.a ⟧"
         , (0, 5, True)
         , Left "--max-depth=0"
         )
       ,
         ( "does not throw without --depth-sensitive once --max-depth is reached for a rule"
-        , normalizationRules
+        , "⟦ t ↦ ⊥.a ⟧"
         , (0, 5, False)
-        , Right (\(rewrittens, _) -> fst (NE.last rewrittens) == ExRoot)
+        , Right (\(rewrittens, _) -> fst (NE.last rewrittens) == ExFormation [BiTau (AtLabel "t") (ExDispatch ExTermination (AtLabel "a"))])
+        )
+      ,
+        ( "throws with --depth-sensitive when a rule still applies after --max-depth steps"
+        , "⟦ t ↦ ⊥.a.b ⟧"
+        , (1, 5, True)
+        , Left "--max-depth=1"
+        )
+      ,
+        ( "does not throw with --depth-sensitive when a rule finishes in exactly --max-depth steps"
+        , "⟦ t ↦ ⊥.a ⟧"
+        , (1, 5, True)
+        , Right (\(rewrittens, _) -> fst (NE.last rewrittens) == ExFormation [BiTau (AtLabel "t") ExTermination])
+        )
+      ,
+        ( "does not throw with --depth-sensitive when rewriting finishes in exactly --max-cycles cycles"
+        , "⟦ t ↦ ⊥.a ⟧"
+        , (5, 1, True)
+        , Right (\(rewrittens, _) -> fst (NE.last rewrittens) == ExFormation [BiTau (AtLabel "t") ExTermination])
         )
       ]
-      ( \(desc, rewriteRules, (maxDepth, maxCycles, depthSensitive), expected) -> it desc $ do
-          let action = rewrite ExRoot rewriteRules (RewriteContext ExRoot maxDepth maxCycles depthSensitive Nothing buildTerm MtDisabled Nothing dontSaveStep)
+      ( \(desc, input', (maxDepth, maxCycles, depthSensitive), expected) -> it desc $ do
+          expr <- parseExpressionThrows input'
+          let action = rewrite expr normalizationRules (RewriteContext ExRoot maxDepth maxCycles depthSensitive Nothing buildTerm MtDisabled Nothing dontSaveStep)
           case expected of
             Left fragment -> action `shouldThrow` (\exc -> fragment `isInfixOf` show (exc :: SomeException))
             Right predicate -> do

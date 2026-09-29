@@ -71,16 +71,22 @@ isNF (ExApplication ExTermination _) _ = False -- dc rule
 isNF (ExFormation []) _ = True
 isNF (ExFormation bds) ctx = normalBindings bds || not (matchesAnyNormalizationRule (ExFormation bds) ctx)
   where
-    -- Returns True if all given bindings are 100% in normal form
+    -- Returns True if all given bindings are 100% in normal form: each one is
+    -- a Δ, a λ or a void, and no Δ stands beside a λ, since 'dl' turns such a
+    -- formation into ⊥ (#1437)
     normalBindings :: [Binding] -> Bool
-    normalBindings [] = True
-    normalBindings (bd : bds) =
-      let next = normalBindings bds
-       in case bd of
-            BiDelta _ -> next
-            BiVoid _ -> next
-            BiLambda _ -> next
-            _ -> False
+    normalBindings bds = all inert bds && not (any delta bds && any lambda bds)
+    inert :: Binding -> Bool
+    inert (BiDelta _) = True
+    inert (BiVoid _) = True
+    inert (BiLambda _) = True
+    inert _ = False
+    delta :: Binding -> Bool
+    delta (BiDelta _) = True
+    delta _ = False
+    lambda :: Binding -> Bool
+    lambda (BiLambda _) = True
+    lambda _ = False
 isNF expr ctx = not (matchesAnyNormalizationRule expr ctx)
 
 _or :: [Y.Condition] -> Subst -> RuleContext -> IO [Subst]

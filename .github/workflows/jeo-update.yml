@@ -32,3 +32,14 @@ jobs:
           delete-branch: true
           title: 'Update jeo-maven-plugin to ${{ steps.jeo.outputs.latest }}'
           base: master
+  telegram:
+    needs: update
+    runs-on: ubuntu-24.04
+    if: ${{ always() }}
+    permissions:
+      actions: read
+    steps:
+      - uses: yegor256/terald-action@6d5c4dab44d17afefa282df9bd7340185b8e93bc  # master
+        with:
+          token: ${{ secrets.TELEGRAM_TOKEN }}
+          chat: -1004371404002

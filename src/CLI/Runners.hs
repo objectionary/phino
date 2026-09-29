@@ -192,7 +192,9 @@ runDataize OptsDataize{..} = do
     printOutcome _ _ (Dataized bytes) = pure (P.printBytes bytes)
     printOutcome ctx narrowed (Residual residue) = do
       logDebug "Dataization got stuck on a λ function that cannot fire, printing the residual program (--partial)"
-      narrowed residue >>= printAnswer ctx
+      answer <- narrowed residue
+      validateXmirTopLevel _outputFormat answer
+      printAnswer ctx answer
     validateOpts :: IO ()
     validateOpts = do
       validateLatexOptions
@@ -269,7 +271,10 @@ runMorph OptsMorph{..} = do
           morph universe (started universe) aiming
       )
   when _sequence (include chain >>= \shown -> printRewrittens printCtx (exclude shown, False) >>= putStrLn)
-  unless _quiet (F.include' morphed included >>= \shown -> printAnswer printCtx (F.exclude' shown excluded) >>= putStrLn)
+  unless _quiet $ do
+    answer <- (`F.exclude'` excluded) <$> F.include' morphed included
+    validateXmirTopLevel _outputFormat answer
+    printAnswer printCtx answer >>= putStrLn
   where
     validateOpts :: IO ()
     validateOpts = do

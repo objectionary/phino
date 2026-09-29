@@ -1973,6 +1973,7 @@ spec = do
     describe "--partial" $ do
       let stuck = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ times(^, x) -> [[ L> L_number_times ]], nope -> [[ ^ -> ?, L> L_number_nope ]] ]], @ -> 2.times(3).nope ]]"
           dispatched = "[[ foo -> [[ bar -> [[ ^ -> ?, L> L_number_nope ]] ]], @ -> Q.foo.bar ]]"
+          wrapped = "[[ app -> [[ foo -> [[ bar -> [[ ^ -> ?, L> L_number_nope ]] ]], @ -> Q.app.foo.bar ]] ]]"
       it "fails on a λ function that cannot fire without the flag" $
         withStdin stuck $
           testCLIFailed
@@ -2018,27 +2019,25 @@ spec = do
         withStdin "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6) ]]" $
           testCLISucceeded ["dataize", symbolic, "--partial"] ["40-45-00-00-00-00-00-00"]
 
-      -- The residual is an arbitrary formation, and a multi-binding <object>
-      -- is exactly what XMIR now carries: one <o> per binding (#1076)
       it "prints the residual to XMIR, with its real listing by default" $
-        withStdin dispatched $
+        withStdin wrapped $
           testCLISucceeded
-            ["dataize", symbolic, "--partial", "--output=xmir"]
-            ["<o name=\"λ\">L_number_nope</o>", "<o base=\"Φ.foo\" name=\"ρ\"/>", "<listing>⟦"]
+            ["dataize", symbolic, "--partial", "--locator=Q.app", "--output=xmir"]
+            ["<o name=\"λ\">L_number_nope</o>", "<o name=\"app\">", "<listing>⟦"]
 
       it "honors --hide-rho and --omit-listing when printing the residual to XMIR" $
-        withStdin dispatched $
+        withStdin wrapped $
           testCLISucceeded
-            ["dataize", symbolic, "--partial", "--output=xmir", "--hide-rho", "--omit-listing"]
+            ["dataize", symbolic, "--partial", "--locator=Q.app", "--output=xmir", "--hide-rho", "--omit-listing"]
             ["<o name=\"λ\">L_number_nope</o>", "line(s)</listing>"]
 
-      -- A symbol is a name of the calculus, and XMIR carries no notation for
-      -- one, so a residue standing for an unknown cannot be printed as XMIR
-      it "cannot print a residue carrying a symbol as XMIR" $
-        withStdin stuck $
+      -- XMIR carries a single binding at the top, the shape 'rewrite' insists
+      -- on, so a residual of several is refused the same way (#1444)
+      it "cannot print a residual of several top bindings as XMIR" $
+        withStdin dispatched $
           testCLIFailed
             ["dataize", symbolic, "--partial", "--output=xmir"]
-            ["XMIR does not support such bindings"]
+            ["[ERROR]:", "its top level must be a single binding"]
 
       it "prints the chain of steps ending in the residue with --sequence" $
         withStdin stuck $
@@ -2508,6 +2507,12 @@ spec = do
               ["⟦ x ↦ ⟦ λ ⤍ L_loop ⟧.foo, y ↦ ⟦ z ↦ ⟦⟧ ⟧ ⟧"]
 
     describe "fails" $ do
+      it "with --output=xmir on a top formation of several bindings" $
+        withStdin "[[ x -> [[ D> 01- ]], y -> [[ D> 02- ]] ]]" $
+          testCLIFailed
+            ["morph", "--output=xmir"]
+            ["[ERROR]:", "its top level must be a single binding"]
+
       it "with --output != latex and --nonumber" $
         withStdin "" $
           testCLIFailed

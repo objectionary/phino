@@ -1,6 +1,9 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 # SPDX-License-Identifier: MIT
 ---
+# The ξ of the dispatched body stands for the formation without the
+# dispatched binding, on purpose, so a body that is ξ answers the formation
+# one attribute short rather than itself (#967, #1438).
 rules:
   basic: ['dot']
 input: |

@@ -198,7 +198,11 @@ rewrite' state (rule : rest) iteration ctx@RewriteContext{..} = do
             then do
               logDebug (printf "Max amount of rewriting cycles (%d) for rule '%s' has been reached, rewriting is stopped" _maxDepth ruleName)
               if _depthSensitive
-                then throwIO (StoppedOnLimit "max-depth" _maxDepth)
+                then do
+                  exhausted <- applicable current [rule] ctx
+                  if exhausted
+                    then throwIO (StoppedOnLimit "max-depth" _maxDepth)
+                    else pure (_rewrittens, _unique, False)
                 else pure (_rewrittens, _unique, False)
             else do
               logDebug (printf "Starting rewriting cycle for rule '%s': %d out of %d" ruleName _count _maxDepth)
@@ -240,6 +244,21 @@ rewrite' state (rule : rest) iteration ctx@RewriteContext{..} = do
           let (head', _) :| rest = _rewrittens
            in (next, Nothing) :| (head', Just rule.name) : rest
 
+-- Tells whether any of the rules still matches the located expression. A run
+-- with nothing left to rewrite after its last allowed step has finished, not
+-- run out of its limit, so --depth-sensitive lets it pass (#1439)
+applicable :: Expression -> [Y.Rule] -> RewriteContext -> IO Bool
+applicable current rules RewriteContext{..} = do
+  expression <- locatedExpression _locator current
+  go expression rules
+  where
+    go :: Expression -> [Y.Rule] -> IO Bool
+    go _ [] = pure False
+    go expression (rule : rest) =
+      R.matchExpressionWithRule expression rule (RuleContext _buildTerm _universe) >>= \case
+        [] -> go expression rest
+        _ -> pure True
+
 -- Rewrite the expression by provided locator from RewriteContext
 rewrite :: Expression -> [Y.Rule] -> RewriteContext -> IO Rewrittens
 rewrite expr rules ctx@RewriteContext{..} = do
@@ -252,7 +271,11 @@ rewrite expr rules ctx@RewriteContext{..} = do
       | count == _maxCycles = do
           logDebug (printf "Max amount of rewriting cycles for all rules (%d) has been reached, rewriting is stopped" _maxCycles)
           if _depthSensitive
-            then throwIO (StoppedOnLimit "max-cycles" _maxCycles)
+            then do
+              exhausted <- applicable current rules ctx
+              if exhausted
+                then throwIO (StoppedOnLimit "max-cycles" _maxCycles)
+                else pure (rewrittens, False)
             else pure (rewrittens, True)
       | otherwise = do
           logDebug (printf "Starting rewriting cycle for all rules: %d out of %d" count _maxCycles)

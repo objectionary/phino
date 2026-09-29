@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# A sibling reached through ξ is read from the formation without the
+# dispatched binding, and its own ξ sees that short formation too, so the
+# answer is the short formation of the short formation, not the whole one:
+# a body never reaches the attribute it is dispatched from (#967, #1438).
+normalize: true
+input: |
+  ⟦ t ↦ ⟦ a ↦ ξ, b ↦ ξ.a ⟧.b ⟧
+output: |-
+  ⟦ t ↦ ⟦⟧ ⟧
