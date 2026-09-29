@@ -25,12 +25,12 @@
 </span><span id="line-25"></span><span class="annot"><a href="Abridge.html#abridged"><span class="hs-identifier hs-type">abridged</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="CST.html#EXPRESSION"><span class="hs-identifier hs-type">EXPRESSION</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="CST.html#EXPRESSION"><span class="hs-identifier hs-type">EXPRESSION</span></a></span><span>
 </span><span id="line-26"></span><span id="abridged"><span class="annot"><span class="annottext">abridged :: EXPRESSION -&gt; EXPRESSION
 </span><a href="Abridge.html#abridged"><span class="hs-identifier hs-var hs-var">abridged</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">EXPRESSION -&gt; EXPRESSION
-</span><a href="#local-6989586621679612283"><span class="hs-identifier hs-var">goExpr</span></a></span><span>
+</span><a href="#local-6989586621679614748"><span class="hs-identifier hs-var">goExpr</span></a></span><span>
 </span><span id="line-27"></span><span>  </span><span class="hs-keyword">where</span><span>
-</span><span id="line-28"></span><span>    </span><span class="annot"><a href="#local-6989586621679612283"><span class="hs-identifier hs-type">goExpr</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="CST.html#EXPRESSION"><span class="hs-identifier hs-type">EXPRESSION</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="CST.html#EXPRESSION"><span class="hs-identifier hs-type">EXPRESSION</span></a></span><span>
-</span><span id="line-29"></span><span>    </span><span id="local-6989586621679612283"><span class="annot"><span class="annottext">goExpr :: EXPRESSION -&gt; EXPRESSION
-</span><a href="#local-6989586621679612283"><span class="hs-identifier hs-var hs-var">goExpr</span></a></span></span><span> </span><span id="local-6989586621679612284"><span class="annot"><span class="annottext">expr :: EXPRESSION
-</span><a href="#local-6989586621679612284"><span class="hs-identifier hs-var">expr</span></a></span></span><span class="hs-glyph">@</span><span class="annot"><a href="CST.html#EX_FORMATION"><span class="hs-identifier hs-type">EX_FORMATION</span></a></span><span class="hs-special">{</span><span id="local-6989586621679612286"><span id="local-6989586621679612287"><span id="local-6989586621679612288"><span id="local-6989586621679612289"><span id="local-6989586621679612290"><span id="local-6989586621679612291"><span id="local-6989586621679612292"><span class="annot"><span class="annottext">BINDING
+</span><span id="line-28"></span><span>    </span><span class="annot"><a href="#local-6989586621679614748"><span class="hs-identifier hs-type">goExpr</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="CST.html#EXPRESSION"><span class="hs-identifier hs-type">EXPRESSION</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="CST.html#EXPRESSION"><span class="hs-identifier hs-type">EXPRESSION</span></a></span><span>
+</span><span id="line-29"></span><span>    </span><span id="local-6989586621679614748"><span class="annot"><span class="annottext">goExpr :: EXPRESSION -&gt; EXPRESSION
+</span><a href="#local-6989586621679614748"><span class="hs-identifier hs-var hs-var">goExpr</span></a></span></span><span> </span><span id="local-6989586621679614749"><span class="annot"><span class="annottext">expr :: EXPRESSION
+</span><a href="#local-6989586621679614749"><span class="hs-identifier hs-var">expr</span></a></span></span><span class="hs-glyph">@</span><span class="annot"><a href="CST.html#EX_FORMATION"><span class="hs-identifier hs-type">EX_FORMATION</span></a></span><span class="hs-special">{</span><span id="local-6989586621679614751"><span id="local-6989586621679614752"><span id="local-6989586621679614753"><span id="local-6989586621679614754"><span id="local-6989586621679614755"><span id="local-6989586621679614756"><span id="local-6989586621679614757"><span class="annot"><span class="annottext">BINDING
 TAB
 EOL
 RSB
@@ -49,54 +49,54 @@ $sel:binding:EX_GLOBAL :: EXPRESSION -&gt; BINDING
 $sel:eol':EX_GLOBAL :: EXPRESSION -&gt; EOL
 $sel:tab':EX_GLOBAL :: EXPRESSION -&gt; TAB
 $sel:rsb:EX_GLOBAL :: EXPRESSION -&gt; RSB
-</span><a href="#local-6989586621679612286"><span class="hs-glyph hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">..</span></a></span></span></span></span></span></span></span></span><span class="hs-special">}</span><span>
+</span><a href="#local-6989586621679614751"><span class="hs-glyph hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">..</span></a></span></span></span></span></span></span></span></span><span class="hs-special">}</span><span>
 </span><span id="line-30"></span><span>      </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">EXPRESSION -&gt; Bool
-</span><a href="#local-6989586621679612300"><span class="hs-identifier hs-var">short</span></a></span><span> </span><span class="annot"><span class="annottext">EXPRESSION
-</span><a href="#local-6989586621679612284"><span class="hs-identifier hs-var">expr</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">LSB -&gt; EOL -&gt; TAB -&gt; BINDING -&gt; EOL -&gt; TAB -&gt; RSB -&gt; EXPRESSION
+</span><a href="#local-6989586621679614765"><span class="hs-identifier hs-var">short</span></a></span><span> </span><span class="annot"><span class="annottext">EXPRESSION
+</span><a href="#local-6989586621679614749"><span class="hs-identifier hs-var">expr</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">LSB -&gt; EOL -&gt; TAB -&gt; BINDING -&gt; EOL -&gt; TAB -&gt; RSB -&gt; EXPRESSION
 </span><a href="CST.html#EX_FORMATION"><span class="hs-identifier hs-var">EX_FORMATION</span></a></span><span> </span><span class="annot"><span class="annottext">LSB
-</span><a href="#local-6989586621679612286"><span class="hs-identifier hs-var">lsb</span></a></span><span> </span><span class="annot"><span class="annottext">EOL
-</span><a href="#local-6989586621679612287"><span class="hs-identifier hs-var">eol</span></a></span><span> </span><span class="annot"><span class="annottext">TAB
-</span><a href="#local-6989586621679612288"><span class="hs-identifier hs-var">tab</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">BINDING -&gt; BINDING
-</span><a href="#local-6989586621679612301"><span class="hs-identifier hs-var">goIntact</span></a></span><span> </span><span class="annot"><span class="annottext">BINDING
-</span><a href="#local-6989586621679612289"><span class="hs-identifier hs-var">binding</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">EOL
-</span><a href="#local-6989586621679612290"><span class="hs-identifier hs-var">eol'</span></a></span><span> </span><span class="annot"><span class="annottext">TAB
-</span><a href="#local-6989586621679612291"><span class="hs-identifier hs-var">tab'</span></a></span><span> </span><span class="annot"><span class="annottext">RSB
-</span><a href="#local-6989586621679612292"><span class="hs-identifier hs-var">rsb</span></a></span><span>
+</span><a href="#local-6989586621679614751"><span class="hs-identifier hs-var">lsb</span></a></span><span> </span><span class="annot"><span class="annottext">EOL
+</span><a href="#local-6989586621679614752"><span class="hs-identifier hs-var">eol</span></a></span><span> </span><span class="annot"><span class="annottext">TAB
+</span><a href="#local-6989586621679614753"><span class="hs-identifier hs-var">tab</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">BINDING -&gt; BINDING
+</span><a href="#local-6989586621679614766"><span class="hs-identifier hs-var">goIntact</span></a></span><span> </span><span class="annot"><span class="annottext">BINDING
+</span><a href="#local-6989586621679614754"><span class="hs-identifier hs-var">binding</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">EOL
+</span><a href="#local-6989586621679614755"><span class="hs-identifier hs-var">eol'</span></a></span><span> </span><span class="annot"><span class="annottext">TAB
+</span><a href="#local-6989586621679614756"><span class="hs-identifier hs-var">tab'</span></a></span><span> </span><span class="annot"><span class="annottext">RSB
+</span><a href="#local-6989586621679614757"><span class="hs-identifier hs-var">rsb</span></a></span><span>
 </span><span id="line-31"></span><span>      </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
 </span><span class="hs-identifier hs-var">otherwise</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">LSB -&gt; EOL -&gt; TAB -&gt; BINDING -&gt; EOL -&gt; TAB -&gt; RSB -&gt; EXPRESSION
 </span><a href="CST.html#EX_FORMATION"><span class="hs-identifier hs-var">EX_FORMATION</span></a></span><span> </span><span class="annot"><span class="annottext">LSB
-</span><a href="#local-6989586621679612286"><span class="hs-identifier hs-var">lsb</span></a></span><span> </span><span class="annot"><span class="annottext">EOL
-</span><a href="#local-6989586621679612287"><span class="hs-identifier hs-var">eol</span></a></span><span> </span><span class="annot"><span class="annottext">TAB
-</span><a href="#local-6989586621679612288"><span class="hs-identifier hs-var">tab</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">BINDING -&gt; BINDING
-</span><a href="#local-6989586621679612302"><span class="hs-identifier hs-var">goBinding</span></a></span><span> </span><span class="annot"><span class="annottext">BINDING
-</span><a href="#local-6989586621679612289"><span class="hs-identifier hs-var">binding</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">EOL
-</span><a href="#local-6989586621679612290"><span class="hs-identifier hs-var">eol'</span></a></span><span> </span><span class="annot"><span class="annottext">TAB
-</span><a href="#local-6989586621679612291"><span class="hs-identifier hs-var">tab'</span></a></span><span> </span><span class="annot"><span class="annottext">RSB
-</span><a href="#local-6989586621679612292"><span class="hs-identifier hs-var">rsb</span></a></span><span>
-</span><span id="line-32"></span><span>    </span><span class="annot"><a href="#local-6989586621679612283"><span class="hs-identifier hs-var">goExpr</span></a></span><span> </span><span id="local-6989586621679612303"><span class="annot"><span class="annottext">expr :: EXPRESSION
-</span><a href="#local-6989586621679612303"><span class="hs-identifier hs-var">expr</span></a></span></span><span class="hs-glyph">@</span><span class="annot"><a href="CST.html#EX_SINGLE"><span class="hs-identifier hs-type">EX_SINGLE</span></a></span><span class="hs-special">{</span><span id="local-6989586621679612305"><span id="local-6989586621679612306"><span class="annot"><span class="annottext">EXPRESSION
+</span><a href="#local-6989586621679614751"><span class="hs-identifier hs-var">lsb</span></a></span><span> </span><span class="annot"><span class="annottext">EOL
+</span><a href="#local-6989586621679614752"><span class="hs-identifier hs-var">eol</span></a></span><span> </span><span class="annot"><span class="annottext">TAB
+</span><a href="#local-6989586621679614753"><span class="hs-identifier hs-var">tab</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">BINDING -&gt; BINDING
+</span><a href="#local-6989586621679614767"><span class="hs-identifier hs-var">goBinding</span></a></span><span> </span><span class="annot"><span class="annottext">BINDING
+</span><a href="#local-6989586621679614754"><span class="hs-identifier hs-var">binding</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">EOL
+</span><a href="#local-6989586621679614755"><span class="hs-identifier hs-var">eol'</span></a></span><span> </span><span class="annot"><span class="annottext">TAB
+</span><a href="#local-6989586621679614756"><span class="hs-identifier hs-var">tab'</span></a></span><span> </span><span class="annot"><span class="annottext">RSB
+</span><a href="#local-6989586621679614757"><span class="hs-identifier hs-var">rsb</span></a></span><span>
+</span><span id="line-32"></span><span>    </span><span class="annot"><a href="#local-6989586621679614748"><span class="hs-identifier hs-var">goExpr</span></a></span><span> </span><span id="local-6989586621679614768"><span class="annot"><span class="annottext">expr :: EXPRESSION
+</span><a href="#local-6989586621679614768"><span class="hs-identifier hs-var">expr</span></a></span></span><span class="hs-glyph">@</span><span class="annot"><a href="CST.html#EX_SINGLE"><span class="hs-identifier hs-type">EX_SINGLE</span></a></span><span class="hs-special">{</span><span id="local-6989586621679614770"><span id="local-6989586621679614771"><span class="annot"><span class="annottext">EXPRESSION
 PAIR
 pair :: PAIR
 formation :: EXPRESSION
 $sel:pair:EX_GLOBAL :: EXPRESSION -&gt; PAIR
 $sel:formation:EX_GLOBAL :: EXPRESSION -&gt; EXPRESSION
-</span><a href="#local-6989586621679612305"><span class="hs-glyph hs-var hs-var hs-var hs-var">..</span></a></span></span></span><span class="hs-special">}</span><span>
+</span><a href="#local-6989586621679614770"><span class="hs-glyph hs-var hs-var hs-var hs-var">..</span></a></span></span></span><span class="hs-special">}</span><span>
 </span><span id="line-33"></span><span>      </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">EXPRESSION -&gt; Bool
-</span><a href="#local-6989586621679612300"><span class="hs-identifier hs-var">short</span></a></span><span> </span><span class="annot"><span class="annottext">EXPRESSION
-</span><a href="#local-6989586621679612303"><span class="hs-identifier hs-var">expr</span></a></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
+</span><a href="#local-6989586621679614765"><span class="hs-identifier hs-var">short</span></a></span><span> </span><span class="annot"><span class="annottext">EXPRESSION
+</span><a href="#local-6989586621679614768"><span class="hs-identifier hs-var">expr</span></a></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
 </span><span class="hs-operator hs-var">||</span></span><span> </span><span class="annot"><span class="annottext">PAIR -&gt; Bool
-</span><a href="#local-6989586621679612310"><span class="hs-identifier hs-var">salient</span></a></span><span> </span><span class="annot"><span class="annottext">PAIR
-</span><a href="#local-6989586621679612305"><span class="hs-identifier hs-var">pair</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">PAIR -&gt; EXPRESSION -&gt; EXPRESSION
+</span><a href="#local-6989586621679614775"><span class="hs-identifier hs-var">salient</span></a></span><span> </span><span class="annot"><span class="annottext">PAIR
+</span><a href="#local-6989586621679614770"><span class="hs-identifier hs-var">pair</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">PAIR -&gt; EXPRESSION -&gt; EXPRESSION
 </span><a href="CST.html#EX_SINGLE"><span class="hs-identifier hs-var">EX_SINGLE</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">PAIR -&gt; PAIR
-</span><a href="#local-6989586621679612311"><span class="hs-identifier hs-var">goPair</span></a></span><span> </span><span class="annot"><span class="annottext">PAIR
-</span><a href="#local-6989586621679612305"><span class="hs-identifier hs-var">pair</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">EXPRESSION -&gt; EXPRESSION
-</span><a href="#local-6989586621679612283"><span class="hs-identifier hs-var">goExpr</span></a></span><span> </span><span class="annot"><span class="annottext">EXPRESSION
-</span><a href="#local-6989586621679612306"><span class="hs-identifier hs-var">formation</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679614776"><span class="hs-identifier hs-var">goPair</span></a></span><span> </span><span class="annot"><span class="annottext">PAIR
+</span><a href="#local-6989586621679614770"><span class="hs-identifier hs-var">pair</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">EXPRESSION -&gt; EXPRESSION
+</span><a href="#local-6989586621679614748"><span class="hs-identifier hs-var">goExpr</span></a></span><span> </span><span class="annot"><span class="annottext">EXPRESSION
+</span><a href="#local-6989586621679614771"><span class="hs-identifier hs-var">formation</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-34"></span><span>      </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
 </span><span class="hs-identifier hs-var">otherwise</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">EXPRESSION -&gt; EXPRESSION
-</span><a href="#local-6989586621679612283"><span class="hs-identifier hs-var">goExpr</span></a></span><span> </span><span class="annot"><span class="annottext">EXPRESSION
-</span><a href="#local-6989586621679612306"><span class="hs-identifier hs-var">formation</span></a></span><span>
-</span><span id="line-35"></span><span>    </span><span class="annot"><a href="#local-6989586621679612283"><span class="hs-identifier hs-var">goExpr</span></a></span><span> </span><span class="annot"><a href="CST.html#EX_DISPATCH"><span class="hs-identifier hs-type">EX_DISPATCH</span></a></span><span class="hs-special">{</span><span id="local-6989586621679612313"><span id="local-6989586621679612314"><span id="local-6989586621679612315"><span class="annot"><span class="annottext">ATTRIBUTE
+</span><a href="#local-6989586621679614748"><span class="hs-identifier hs-var">goExpr</span></a></span><span> </span><span class="annot"><span class="annottext">EXPRESSION
+</span><a href="#local-6989586621679614771"><span class="hs-identifier hs-var">formation</span></a></span><span>
+</span><span id="line-35"></span><span>    </span><span class="annot"><a href="#local-6989586621679614748"><span class="hs-identifier hs-var">goExpr</span></a></span><span> </span><span class="annot"><a href="CST.html#EX_DISPATCH"><span class="hs-identifier hs-type">EX_DISPATCH</span></a></span><span class="hs-special">{</span><span id="local-6989586621679614778"><span id="local-6989586621679614779"><span id="local-6989586621679614780"><span class="annot"><span class="annottext">ATTRIBUTE
 EXPRESSION
 SPACE
 expr :: EXPRESSION
@@ -105,13 +105,13 @@ attr :: ATTRIBUTE
 $sel:attr:EX_GLOBAL :: EXPRESSION -&gt; ATTRIBUTE
 $sel:expr:EX_GLOBAL :: EXPRESSION -&gt; EXPRESSION
 $sel:space:EX_GLOBAL :: EXPRESSION -&gt; SPACE
-</span><a href="#local-6989586621679612313"><span class="hs-glyph hs-var hs-var hs-var hs-var hs-var hs-var">..</span></a></span></span></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">EXPRESSION -&gt; SPACE -&gt; ATTRIBUTE -&gt; EXPRESSION
+</span><a href="#local-6989586621679614778"><span class="hs-glyph hs-var hs-var hs-var hs-var hs-var hs-var">..</span></a></span></span></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">EXPRESSION -&gt; SPACE -&gt; ATTRIBUTE -&gt; EXPRESSION
 </span><a href="CST.html#EX_DISPATCH"><span class="hs-identifier hs-var">EX_DISPATCH</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">EXPRESSION -&gt; EXPRESSION
-</span><a href="#local-6989586621679612283"><span class="hs-identifier hs-var">goExpr</span></a></span><span> </span><span class="annot"><span class="annottext">EXPRESSION
-</span><a href="#local-6989586621679612313"><span class="hs-identifier hs-var">expr</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">SPACE
-</span><a href="#local-6989586621679612314"><span class="hs-identifier hs-var">space</span></a></span><span> </span><span class="annot"><span class="annottext">ATTRIBUTE
-</span><a href="#local-6989586621679612315"><span class="hs-identifier hs-var">attr</span></a></span><span>
-</span><span id="line-36"></span><span>    </span><span class="annot"><a href="#local-6989586621679612283"><span class="hs-identifier hs-var">goExpr</span></a></span><span> </span><span class="annot"><a href="CST.html#EX_APPLICATION"><span class="hs-identifier hs-type">EX_APPLICATION</span></a></span><span class="hs-special">{</span><span id="local-6989586621679612320"><span id="local-6989586621679612321"><span id="local-6989586621679612322"><span id="local-6989586621679612323"><span id="local-6989586621679612324"><span id="local-6989586621679612325"><span id="local-6989586621679612326"><span id="local-6989586621679612327"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679614748"><span class="hs-identifier hs-var">goExpr</span></a></span><span> </span><span class="annot"><span class="annottext">EXPRESSION
+</span><a href="#local-6989586621679614778"><span class="hs-identifier hs-var">expr</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">SPACE
+</span><a href="#local-6989586621679614779"><span class="hs-identifier hs-var">space</span></a></span><span> </span><span class="annot"><span class="annottext">ATTRIBUTE
+</span><a href="#local-6989586621679614780"><span class="hs-identifier hs-var">attr</span></a></span><span>
+</span><span id="line-36"></span><span>    </span><span class="annot"><a href="#local-6989586621679614748"><span class="hs-identifier hs-var">goExpr</span></a></span><span> </span><span class="annot"><a href="CST.html#EX_APPLICATION"><span class="hs-identifier hs-type">EX_APPLICATION</span></a></span><span class="hs-special">{</span><span id="local-6989586621679614785"><span id="local-6989586621679614786"><span id="local-6989586621679614787"><span id="local-6989586621679614788"><span id="local-6989586621679614789"><span id="local-6989586621679614790"><span id="local-6989586621679614791"><span id="local-6989586621679614792"><span class="annot"><span class="annottext">Int
 EXPRESSION
 APP_ARGUMENT
 TAB
@@ -143,17 +143,17 @@ $sel:indent:EX_GLOBAL :: EXPRESSION -&gt; Int
 -&gt; Int
 -&gt; EXPRESSION
 </span><a href="CST.html#EX_APPLICATION"><span class="hs-identifier hs-var">EX_APPLICATION</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">EXPRESSION -&gt; EXPRESSION
-</span><a href="#local-6989586621679612283"><span class="hs-identifier hs-var">goExpr</span></a></span><span> </span><span class="annot"><span class="annottext">EXPRESSION
-</span><a href="#local-6989586621679612320"><span class="hs-identifier hs-var">expr</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">SPACE
-</span><a href="#local-6989586621679612321"><span class="hs-identifier hs-var">space</span></a></span><span> </span><span class="annot"><span class="annottext">EOL
-</span><a href="#local-6989586621679612322"><span class="hs-identifier hs-var">eol</span></a></span><span> </span><span class="annot"><span class="annottext">TAB
-</span><a href="#local-6989586621679612323"><span class="hs-identifier hs-var">tab</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">APP_ARGUMENT -&gt; APP_ARGUMENT
-</span><a href="#local-6989586621679612330"><span class="hs-identifier hs-var">goArgument</span></a></span><span> </span><span class="annot"><span class="annottext">APP_ARGUMENT
-</span><a href="#local-6989586621679612324"><span class="hs-identifier hs-var">argument</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">EOL
-</span><a href="#local-6989586621679612325"><span class="hs-identifier hs-var">eol'</span></a></span><span> </span><span class="annot"><span class="annottext">TAB
-</span><a href="#local-6989586621679612326"><span class="hs-identifier hs-var">tab'</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679612327"><span class="hs-identifier hs-var">indent</span></a></span><span>
-</span><span id="line-37"></span><span>    </span><span class="annot"><a href="#local-6989586621679612283"><span class="hs-identifier hs-var">goExpr</span></a></span><span> </span><span class="annot"><a href="CST.html#EX_PHI_MEET"><span class="hs-identifier hs-type">EX_PHI_MEET</span></a></span><span class="hs-special">{</span><span id="local-6989586621679612332"><span id="local-6989586621679612333"><span id="local-6989586621679612334"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679614748"><span class="hs-identifier hs-var">goExpr</span></a></span><span> </span><span class="annot"><span class="annottext">EXPRESSION
+</span><a href="#local-6989586621679614785"><span class="hs-identifier hs-var">expr</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">SPACE
+</span><a href="#local-6989586621679614786"><span class="hs-identifier hs-var">space</span></a></span><span> </span><span class="annot"><span class="annottext">EOL
+</span><a href="#local-6989586621679614787"><span class="hs-identifier hs-var">eol</span></a></span><span> </span><span class="annot"><span class="annottext">TAB
+</span><a href="#local-6989586621679614788"><span class="hs-identifier hs-var">tab</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">APP_ARGUMENT -&gt; APP_ARGUMENT
+</span><a href="#local-6989586621679614795"><span class="hs-identifier hs-var">goArgument</span></a></span><span> </span><span class="annot"><span class="annottext">APP_ARGUMENT
+</span><a href="#local-6989586621679614789"><span class="hs-identifier hs-var">argument</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">EOL
+</span><a href="#local-6989586621679614790"><span class="hs-identifier hs-var">eol'</span></a></span><span> </span><span class="annot"><span class="annottext">TAB
+</span><a href="#local-6989586621679614791"><span class="hs-identifier hs-var">tab'</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679614792"><span class="hs-identifier hs-var">indent</span></a></span><span>
+</span><span id="line-37"></span><span>    </span><span class="annot"><a href="#local-6989586621679614748"><span class="hs-identifier hs-var">goExpr</span></a></span><span> </span><span class="annot"><a href="CST.html#EX_PHI_MEET"><span class="hs-identifier hs-type">EX_PHI_MEET</span></a></span><span class="hs-special">{</span><span id="local-6989586621679614797"><span id="local-6989586621679614798"><span id="local-6989586621679614799"><span class="annot"><span class="annottext">Int
 Maybe String
 EXPRESSION
 $sel:expr:EX_GLOBAL :: EXPRESSION -&gt; EXPRESSION
@@ -164,11 +164,11 @@ $sel:prefix:EX_GLOBAL :: EXPRESSION -&gt; Maybe String
 $sel:idx:EX_GLOBAL :: EXPRESSION -&gt; Int
 </span><a href="CST.html#%24sel%3Aexpr%3AEX_GLOBAL"><span class="hs-glyph hs-var hs-var hs-var hs-var hs-var hs-var">..</span></a></span></span></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Maybe String -&gt; Int -&gt; EXPRESSION -&gt; EXPRESSION
 </span><a href="CST.html#EX_PHI_MEET"><span class="hs-identifier hs-var">EX_PHI_MEET</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe String
-</span><a href="#local-6989586621679612332"><span class="hs-identifier hs-var">prefix</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679612333"><span class="hs-identifier hs-var">idx</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">EXPRESSION -&gt; EXPRESSION
-</span><a href="#local-6989586621679612283"><span class="hs-identifier hs-var">goExpr</span></a></span><span> </span><span class="annot"><span class="annottext">EXPRESSION
-</span><a href="#local-6989586621679612334"><span class="hs-identifier hs-var">expr</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-38"></span><span>    </span><span class="annot"><a href="#local-6989586621679612283"><span class="hs-identifier hs-var">goExpr</span></a></span><span> </span><span class="annot"><a href="CST.html#EX_PHI_AGAIN"><span class="hs-identifier hs-type">EX_PHI_AGAIN</span></a></span><span class="hs-special">{</span><span id="local-6989586621679612338"><span id="local-6989586621679612339"><span id="local-6989586621679612340"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679614797"><span class="hs-identifier hs-var">prefix</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679614798"><span class="hs-identifier hs-var">idx</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">EXPRESSION -&gt; EXPRESSION
+</span><a href="#local-6989586621679614748"><span class="hs-identifier hs-var">goExpr</span></a></span><span> </span><span class="annot"><span class="annottext">EXPRESSION
+</span><a href="#local-6989586621679614799"><span class="hs-identifier hs-var">expr</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-38"></span><span>    </span><span class="annot"><a href="#local-6989586621679614748"><span class="hs-identifier hs-var">goExpr</span></a></span><span> </span><span class="annot"><a href="CST.html#EX_PHI_AGAIN"><span class="hs-identifier hs-type">EX_PHI_AGAIN</span></a></span><span class="hs-special">{</span><span id="local-6989586621679614803"><span id="local-6989586621679614804"><span id="local-6989586621679614805"><span class="annot"><span class="annottext">Int
 Maybe String
 EXPRESSION
 $sel:expr:EX_GLOBAL :: EXPRESSION -&gt; EXPRESSION
@@ -179,40 +179,40 @@ idx :: Int
 expr :: EXPRESSION
 </span><a href="CST.html#%24sel%3Aexpr%3AEX_GLOBAL"><span class="hs-glyph hs-var hs-var hs-var hs-var hs-var hs-var">..</span></a></span></span></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Maybe String -&gt; Int -&gt; EXPRESSION -&gt; EXPRESSION
 </span><a href="CST.html#EX_PHI_AGAIN"><span class="hs-identifier hs-var">EX_PHI_AGAIN</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe String
-</span><a href="#local-6989586621679612338"><span class="hs-identifier hs-var">prefix</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679612339"><span class="hs-identifier hs-var">idx</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">EXPRESSION -&gt; EXPRESSION
-</span><a href="#local-6989586621679612283"><span class="hs-identifier hs-var">goExpr</span></a></span><span> </span><span class="annot"><span class="annottext">EXPRESSION
-</span><a href="#local-6989586621679612340"><span class="hs-identifier hs-var">expr</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-39"></span><span>    </span><span class="annot"><a href="#local-6989586621679612283"><span class="hs-identifier hs-var">goExpr</span></a></span><span> </span><span class="annot"><a href="CST.html#EX_BYTES"><span class="hs-identifier hs-type">EX_BYTES</span></a></span><span class="hs-special">{</span><span id="local-6989586621679612342"><span class="annot"><span class="annottext">BYTES
+</span><a href="#local-6989586621679614803"><span class="hs-identifier hs-var">prefix</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679614804"><span class="hs-identifier hs-var">idx</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">EXPRESSION -&gt; EXPRESSION
+</span><a href="#local-6989586621679614748"><span class="hs-identifier hs-var">goExpr</span></a></span><span> </span><span class="annot"><span class="annottext">EXPRESSION
+</span><a href="#local-6989586621679614805"><span class="hs-identifier hs-var">expr</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-39"></span><span>    </span><span class="annot"><a href="#local-6989586621679614748"><span class="hs-identifier hs-var">goExpr</span></a></span><span> </span><span class="annot"><a href="CST.html#EX_BYTES"><span class="hs-identifier hs-type">EX_BYTES</span></a></span><span class="hs-special">{</span><span id="local-6989586621679614807"><span class="annot"><span class="annottext">BYTES
 bytes :: BYTES
 $sel:bytes:EX_GLOBAL :: EXPRESSION -&gt; BYTES
-</span><a href="#local-6989586621679612342"><span class="hs-glyph hs-var hs-var">..</span></a></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">BYTES -&gt; EXPRESSION
+</span><a href="#local-6989586621679614807"><span class="hs-glyph hs-var hs-var">..</span></a></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">BYTES -&gt; EXPRESSION
 </span><a href="CST.html#EX_BYTES"><span class="hs-identifier hs-var">EX_BYTES</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">BYTES -&gt; BYTES
-</span><a href="#local-6989586621679612344"><span class="hs-identifier hs-var">goBytes</span></a></span><span> </span><span class="annot"><span class="annottext">BYTES
-</span><a href="#local-6989586621679612342"><span class="hs-identifier hs-var">bytes</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-40"></span><span>    </span><span class="annot"><a href="#local-6989586621679612283"><span class="hs-identifier hs-var">goExpr</span></a></span><span> </span><span id="local-6989586621679612345"><span class="annot"><span class="annottext">EXPRESSION
-</span><a href="#local-6989586621679612345"><span class="hs-identifier hs-var">expr</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">EXPRESSION
-</span><a href="#local-6989586621679612345"><span class="hs-identifier hs-var">expr</span></a></span><span>
+</span><a href="#local-6989586621679614809"><span class="hs-identifier hs-var">goBytes</span></a></span><span> </span><span class="annot"><span class="annottext">BYTES
+</span><a href="#local-6989586621679614807"><span class="hs-identifier hs-var">bytes</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-40"></span><span>    </span><span class="annot"><a href="#local-6989586621679614748"><span class="hs-identifier hs-var">goExpr</span></a></span><span> </span><span id="local-6989586621679614810"><span class="annot"><span class="annottext">EXPRESSION
+</span><a href="#local-6989586621679614810"><span class="hs-identifier hs-var">expr</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">EXPRESSION
+</span><a href="#local-6989586621679614810"><span class="hs-identifier hs-var">expr</span></a></span><span>
 </span><span id="line-41"></span><span>    </span><span class="hs-comment">-- The bindings of a long formation: the salient ones and the metas kept in</span><span>
 </span><span id="line-42"></span><span>    </span><span class="hs-comment">-- their order, the rest counted into one folded pair closing the list.</span><span>
-</span><span id="line-43"></span><span>    </span><span class="annot"><a href="#local-6989586621679612302"><span class="hs-identifier hs-type">goBinding</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="CST.html#BINDING"><span class="hs-identifier hs-type">BINDING</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="CST.html#BINDING"><span class="hs-identifier hs-type">BINDING</span></a></span><span>
-</span><span id="line-44"></span><span>    </span><span id="local-6989586621679612302"><span class="annot"><span class="annottext">goBinding :: BINDING -&gt; BINDING
-</span><a href="#local-6989586621679612302"><span class="hs-identifier hs-var hs-var">goBinding</span></a></span></span><span> </span><span id="local-6989586621679612346"><span class="annot"><span class="annottext">empty :: BINDING
-</span><a href="#local-6989586621679612346"><span class="hs-identifier hs-var">empty</span></a></span></span><span class="hs-glyph">@</span><span class="annot"><a href="CST.html#BI_EMPTY"><span class="hs-identifier hs-type">BI_EMPTY</span></a></span><span class="hs-special">{</span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">BINDING
-</span><a href="#local-6989586621679612346"><span class="hs-identifier hs-var">empty</span></a></span><span>
-</span><span id="line-45"></span><span>    </span><span class="annot"><a href="#local-6989586621679612302"><span class="hs-identifier hs-var">goBinding</span></a></span><span> </span><span id="local-6989586621679612348"><span class="annot"><span class="annottext">BINDING
-</span><a href="#local-6989586621679612348"><span class="hs-identifier hs-var">binding</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">BINDINGS -&gt; BINDING
-</span><a href="#local-6989586621679612349"><span class="hs-identifier hs-var">headed</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; BINDINGS -&gt; BINDINGS
-</span><a href="#local-6989586621679612350"><span class="hs-identifier hs-var">goBindings</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span id="line-43"></span><span>    </span><span class="annot"><a href="#local-6989586621679614767"><span class="hs-identifier hs-type">goBinding</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="CST.html#BINDING"><span class="hs-identifier hs-type">BINDING</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="CST.html#BINDING"><span class="hs-identifier hs-type">BINDING</span></a></span><span>
+</span><span id="line-44"></span><span>    </span><span id="local-6989586621679614767"><span class="annot"><span class="annottext">goBinding :: BINDING -&gt; BINDING
+</span><a href="#local-6989586621679614767"><span class="hs-identifier hs-var hs-var">goBinding</span></a></span></span><span> </span><span id="local-6989586621679614811"><span class="annot"><span class="annottext">empty :: BINDING
+</span><a href="#local-6989586621679614811"><span class="hs-identifier hs-var">empty</span></a></span></span><span class="hs-glyph">@</span><span class="annot"><a href="CST.html#BI_EMPTY"><span class="hs-identifier hs-type">BI_EMPTY</span></a></span><span class="hs-special">{</span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">BINDING
+</span><a href="#local-6989586621679614811"><span class="hs-identifier hs-var">empty</span></a></span><span>
+</span><span id="line-45"></span><span>    </span><span class="annot"><a href="#local-6989586621679614767"><span class="hs-identifier hs-var">goBinding</span></a></span><span> </span><span id="local-6989586621679614813"><span class="annot"><span class="annottext">BINDING
+</span><a href="#local-6989586621679614813"><span class="hs-identifier hs-var">binding</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">BINDINGS -&gt; BINDING
+</span><a href="#local-6989586621679614814"><span class="hs-identifier hs-var">headed</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; BINDINGS -&gt; BINDINGS
+</span><a href="#local-6989586621679614815"><span class="hs-identifier hs-var">goBindings</span></a></span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">0</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">BINDING -&gt; BINDINGS
-</span><a href="#local-6989586621679612351"><span class="hs-identifier hs-var">tail'</span></a></span><span> </span><span class="annot"><span class="annottext">BINDING
-</span><a href="#local-6989586621679612348"><span class="hs-identifier hs-var">binding</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679614816"><span class="hs-identifier hs-var">tail'</span></a></span><span> </span><span class="annot"><span class="annottext">BINDING
+</span><a href="#local-6989586621679614813"><span class="hs-identifier hs-var">binding</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
 </span><span id="line-46"></span><span>      </span><span class="hs-keyword">where</span><span>
 </span><span id="line-47"></span><span>        </span><span class="hs-comment">-- The whole chain as a tail, so the head folds the same way every</span><span>
 </span><span id="line-48"></span><span>        </span><span class="hs-comment">-- other binding does, and the tail made a head again once folded.</span><span>
-</span><span id="line-49"></span><span>        </span><span class="annot"><a href="#local-6989586621679612351"><span class="hs-identifier hs-type">tail'</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="CST.html#BINDING"><span class="hs-identifier hs-type">BINDING</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="CST.html#BINDINGS"><span class="hs-identifier hs-type">BINDINGS</span></a></span><span>
-</span><span id="line-50"></span><span>        </span><span id="local-6989586621679612351"><span class="annot"><span class="annottext">tail' :: BINDING -&gt; BINDINGS
-</span><a href="#local-6989586621679612351"><span class="hs-identifier hs-var hs-var">tail'</span></a></span></span><span> </span><span class="annot"><a href="CST.html#BI_PAIR"><span class="hs-identifier hs-type">BI_PAIR</span></a></span><span class="hs-special">{</span><span id="local-6989586621679612353"><span id="local-6989586621679612354"><span id="local-6989586621679612355"><span class="annot"><span class="annottext">BINDINGS
+</span><span id="line-49"></span><span>        </span><span class="annot"><a href="#local-6989586621679614816"><span class="hs-identifier hs-type">tail'</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="CST.html#BINDING"><span class="hs-identifier hs-type">BINDING</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="CST.html#BINDINGS"><span class="hs-identifier hs-type">BINDINGS</span></a></span><span>
+</span><span id="line-50"></span><span>        </span><span id="local-6989586621679614816"><span class="annot"><span class="annottext">tail' :: BINDING -&gt; BINDINGS
+</span><a href="#local-6989586621679614816"><span class="hs-identifier hs-var hs-var">tail'</span></a></span></span><span> </span><span class="annot"><a href="CST.html#BI_PAIR"><span class="hs-identifier hs-type">BI_PAIR</span></a></span><span class="hs-special">{</span><span id="local-6989586621679614818"><span id="local-6989586621679614819"><span id="local-6989586621679614820"><span class="annot"><span class="annottext">BINDINGS
 PAIR
 TAB
 pair :: PAIR
@@ -221,13 +221,13 @@ tab :: TAB
 $sel:pair:BI_PAIR :: BINDING -&gt; PAIR
 $sel:bindings:BI_PAIR :: BINDING -&gt; BINDINGS
 $sel:tab:BI_PAIR :: BINDING -&gt; TAB
-</span><a href="#local-6989586621679612353"><span class="hs-glyph hs-var hs-var hs-var hs-var hs-var hs-var">..</span></a></span></span></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">EOL -&gt; TAB -&gt; PAIR -&gt; BINDINGS -&gt; BINDINGS
+</span><a href="#local-6989586621679614818"><span class="hs-glyph hs-var hs-var hs-var hs-var hs-var hs-var">..</span></a></span></span></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">EOL -&gt; TAB -&gt; PAIR -&gt; BINDINGS -&gt; BINDINGS
 </span><a href="CST.html#BDS_PAIR"><span class="hs-identifier hs-var">BDS_PAIR</span></a></span><span> </span><span class="annot"><span class="annottext">EOL
 </span><a href="CST.html#EOL"><span class="hs-identifier hs-var">EOL</span></a></span><span> </span><span class="annot"><span class="annottext">TAB
-</span><a href="#local-6989586621679612355"><span class="hs-identifier hs-var">tab</span></a></span><span> </span><span class="annot"><span class="annottext">PAIR
-</span><a href="#local-6989586621679612353"><span class="hs-identifier hs-var">pair</span></a></span><span> </span><span class="annot"><span class="annottext">BINDINGS
-</span><a href="#local-6989586621679612354"><span class="hs-identifier hs-var">bindings</span></a></span><span>
-</span><span id="line-51"></span><span>        </span><span class="annot"><a href="#local-6989586621679612351"><span class="hs-identifier hs-var">tail'</span></a></span><span> </span><span class="annot"><a href="CST.html#BI_META"><span class="hs-identifier hs-type">BI_META</span></a></span><span class="hs-special">{</span><span id="local-6989586621679612362"><span id="local-6989586621679612363"><span id="local-6989586621679612364"><span class="annot"><span class="annottext">BINDINGS
+</span><a href="#local-6989586621679614820"><span class="hs-identifier hs-var">tab</span></a></span><span> </span><span class="annot"><span class="annottext">PAIR
+</span><a href="#local-6989586621679614818"><span class="hs-identifier hs-var">pair</span></a></span><span> </span><span class="annot"><span class="annottext">BINDINGS
+</span><a href="#local-6989586621679614819"><span class="hs-identifier hs-var">bindings</span></a></span><span>
+</span><span id="line-51"></span><span>        </span><span class="annot"><a href="#local-6989586621679614816"><span class="hs-identifier hs-var">tail'</span></a></span><span> </span><span class="annot"><a href="CST.html#BI_META"><span class="hs-identifier hs-type">BI_META</span></a></span><span class="hs-special">{</span><span id="local-6989586621679614827"><span id="local-6989586621679614828"><span id="local-6989586621679614829"><span class="annot"><span class="annottext">BINDINGS
 TAB
 META
 $sel:bindings:BI_PAIR :: BINDING -&gt; BINDINGS
@@ -239,18 +239,18 @@ $sel:meta:BI_PAIR :: BINDING -&gt; META
 </span><a href="CST.html#%24sel%3Abindings%3ABI_PAIR"><span class="hs-glyph hs-var hs-var hs-var hs-var hs-var hs-var">..</span></a></span></span></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">EOL -&gt; TAB -&gt; META -&gt; BINDINGS -&gt; BINDINGS
 </span><a href="CST.html#BDS_META"><span class="hs-identifier hs-var">BDS_META</span></a></span><span> </span><span class="annot"><span class="annottext">EOL
 </span><a href="CST.html#EOL"><span class="hs-identifier hs-var">EOL</span></a></span><span> </span><span class="annot"><span class="annottext">TAB
-</span><a href="#local-6989586621679612364"><span class="hs-identifier hs-var">tab</span></a></span><span> </span><span class="annot"><span class="annottext">META
-</span><a href="#local-6989586621679612362"><span class="hs-identifier hs-var">meta</span></a></span><span> </span><span class="annot"><span class="annottext">BINDINGS
-</span><a href="#local-6989586621679612363"><span class="hs-identifier hs-var">bindings</span></a></span><span>
-</span><span id="line-52"></span><span>        </span><span class="annot"><a href="#local-6989586621679612351"><span class="hs-identifier hs-var">tail'</span></a></span><span> </span><span class="annot"><a href="CST.html#BI_EMPTY"><span class="hs-identifier hs-type">BI_EMPTY</span></a></span><span class="hs-special">{</span><span id="local-6989586621679612367"><span class="annot"><span class="annottext">TAB
+</span><a href="#local-6989586621679614829"><span class="hs-identifier hs-var">tab</span></a></span><span> </span><span class="annot"><span class="annottext">META
+</span><a href="#local-6989586621679614827"><span class="hs-identifier hs-var">meta</span></a></span><span> </span><span class="annot"><span class="annottext">BINDINGS
+</span><a href="#local-6989586621679614828"><span class="hs-identifier hs-var">bindings</span></a></span><span>
+</span><span id="line-52"></span><span>        </span><span class="annot"><a href="#local-6989586621679614816"><span class="hs-identifier hs-var">tail'</span></a></span><span> </span><span class="annot"><a href="CST.html#BI_EMPTY"><span class="hs-identifier hs-type">BI_EMPTY</span></a></span><span class="hs-special">{</span><span id="local-6989586621679614832"><span class="annot"><span class="annottext">TAB
 $sel:tab:BI_PAIR :: BINDING -&gt; TAB
 tab :: TAB
 </span><a href="CST.html#%24sel%3Atab%3ABI_PAIR"><span class="hs-glyph hs-var hs-var">..</span></a></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TAB -&gt; BINDINGS
 </span><a href="CST.html#BDS_EMPTY"><span class="hs-identifier hs-var">BDS_EMPTY</span></a></span><span> </span><span class="annot"><span class="annottext">TAB
-</span><a href="#local-6989586621679612367"><span class="hs-identifier hs-var">tab</span></a></span><span>
-</span><span id="line-53"></span><span>        </span><span class="annot"><a href="#local-6989586621679612349"><span class="hs-identifier hs-type">headed</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="CST.html#BINDINGS"><span class="hs-identifier hs-type">BINDINGS</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="CST.html#BINDING"><span class="hs-identifier hs-type">BINDING</span></a></span><span>
-</span><span id="line-54"></span><span>        </span><span id="local-6989586621679612349"><span class="annot"><span class="annottext">headed :: BINDINGS -&gt; BINDING
-</span><a href="#local-6989586621679612349"><span class="hs-identifier hs-var hs-var">headed</span></a></span></span><span> </span><span class="annot"><a href="CST.html#BDS_PAIR"><span class="hs-identifier hs-type">BDS_PAIR</span></a></span><span class="hs-special">{</span><span id="local-6989586621679612369"><span id="local-6989586621679612370"><span id="local-6989586621679612371"><span id="local-6989586621679612372"><span class="annot"><span class="annottext">BINDINGS
+</span><a href="#local-6989586621679614832"><span class="hs-identifier hs-var">tab</span></a></span><span>
+</span><span id="line-53"></span><span>        </span><span class="annot"><a href="#local-6989586621679614814"><span class="hs-identifier hs-type">headed</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="CST.html#BINDINGS"><span class="hs-identifier hs-type">BINDINGS</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="CST.html#BINDING"><span class="hs-identifier hs-type">BINDING</span></a></span><span>
+</span><span id="line-54"></span><span>        </span><span id="local-6989586621679614814"><span class="annot"><span class="annottext">headed :: BINDINGS -&gt; BINDING
+</span><a href="#local-6989586621679614814"><span class="hs-identifier hs-var hs-var">headed</span></a></span></span><span> </span><span class="annot"><a href="CST.html#BDS_PAIR"><span class="hs-identifier hs-type">BDS_PAIR</span></a></span><span class="hs-special">{</span><span id="local-6989586621679614834"><span id="local-6989586621679614835"><span id="local-6989586621679614836"><span id="local-6989586621679614837"><span class="annot"><span class="annottext">BINDINGS
 PAIR
 TAB
 EOL
@@ -262,12 +262,12 @@ $sel:eol:BDS_PAIR :: BINDINGS -&gt; EOL
 $sel:tab:BDS_PAIR :: BINDINGS -&gt; TAB
 $sel:pair:BDS_PAIR :: BINDINGS -&gt; PAIR
 $sel:bindings:BDS_PAIR :: BINDINGS -&gt; BINDINGS
-</span><a href="#local-6989586621679612369"><span class="hs-glyph hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">..</span></a></span></span></span></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">PAIR -&gt; BINDINGS -&gt; TAB -&gt; BINDING
+</span><a href="#local-6989586621679614834"><span class="hs-glyph hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">..</span></a></span></span></span></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">PAIR -&gt; BINDINGS -&gt; TAB -&gt; BINDING
 </span><a href="CST.html#BI_PAIR"><span class="hs-identifier hs-var">BI_PAIR</span></a></span><span> </span><span class="annot"><span class="annottext">PAIR
-</span><a href="#local-6989586621679612371"><span class="hs-identifier hs-var">pair</span></a></span><span> </span><span class="annot"><span class="annottext">BINDINGS
-</span><a href="#local-6989586621679612372"><span class="hs-identifier hs-var">bindings</span></a></span><span> </span><span class="annot"><span class="annottext">TAB
-</span><a href="#local-6989586621679612370"><span class="hs-identifier hs-var">tab</span></a></span><span>
-</span><span id="line-55"></span><span>        </span><span class="annot"><a href="#local-6989586621679612349"><span class="hs-identifier hs-var">headed</span></a></span><span> </span><span class="annot"><a href="CST.html#BDS_META"><span class="hs-identifier hs-type">BDS_META</span></a></span><span class="hs-special">{</span><span id="local-6989586621679612377"><span id="local-6989586621679612378"><span id="local-6989586621679612379"><span id="local-6989586621679612380"><span class="annot"><span class="annottext">BINDINGS
+</span><a href="#local-6989586621679614836"><span class="hs-identifier hs-var">pair</span></a></span><span> </span><span class="annot"><span class="annottext">BINDINGS
+</span><a href="#local-6989586621679614837"><span class="hs-identifier hs-var">bindings</span></a></span><span> </span><span class="annot"><span class="annottext">TAB
+</span><a href="#local-6989586621679614835"><span class="hs-identifier hs-var">tab</span></a></span><span>
+</span><span id="line-55"></span><span>        </span><span class="annot"><a href="#local-6989586621679614814"><span class="hs-identifier hs-var">headed</span></a></span><span> </span><span class="annot"><a href="CST.html#BDS_META"><span class="hs-identifier hs-type">BDS_META</span></a></span><span class="hs-special">{</span><span id="local-6989586621679614842"><span id="local-6989586621679614843"><span id="local-6989586621679614844"><span id="local-6989586621679614845"><span class="annot"><span class="annottext">BINDINGS
 TAB
 META
 EOL
@@ -281,19 +281,19 @@ bindings :: BINDINGS
 $sel:meta:BDS_PAIR :: BINDINGS -&gt; META
 </span><a href="CST.html#%24sel%3Aeol%3ABDS_PAIR"><span class="hs-glyph hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">..</span></a></span></span></span></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">META -&gt; BINDINGS -&gt; TAB -&gt; BINDING
 </span><a href="CST.html#BI_META"><span class="hs-identifier hs-var">BI_META</span></a></span><span> </span><span class="annot"><span class="annottext">META
-</span><a href="#local-6989586621679612379"><span class="hs-identifier hs-var">meta</span></a></span><span> </span><span class="annot"><span class="annottext">BINDINGS
-</span><a href="#local-6989586621679612380"><span class="hs-identifier hs-var">bindings</span></a></span><span> </span><span class="annot"><span class="annottext">TAB
-</span><a href="#local-6989586621679612378"><span class="hs-identifier hs-var">tab</span></a></span><span>
-</span><span id="line-56"></span><span>        </span><span class="annot"><a href="#local-6989586621679612349"><span class="hs-identifier hs-var">headed</span></a></span><span> </span><span class="annot"><a href="CST.html#BDS_EMPTY"><span class="hs-identifier hs-type">BDS_EMPTY</span></a></span><span class="hs-special">{</span><span id="local-6989586621679612382"><span class="annot"><span class="annottext">TAB
+</span><a href="#local-6989586621679614844"><span class="hs-identifier hs-var">meta</span></a></span><span> </span><span class="annot"><span class="annottext">BINDINGS
+</span><a href="#local-6989586621679614845"><span class="hs-identifier hs-var">bindings</span></a></span><span> </span><span class="annot"><span class="annottext">TAB
+</span><a href="#local-6989586621679614843"><span class="hs-identifier hs-var">tab</span></a></span><span>
+</span><span id="line-56"></span><span>        </span><span class="annot"><a href="#local-6989586621679614814"><span class="hs-identifier hs-var">headed</span></a></span><span> </span><span class="annot"><a href="CST.html#BDS_EMPTY"><span class="hs-identifier hs-type">BDS_EMPTY</span></a></span><span class="hs-special">{</span><span id="local-6989586621679614847"><span class="annot"><span class="annottext">TAB
 $sel:tab:BDS_PAIR :: BINDINGS -&gt; TAB
 tab :: TAB
 </span><a href="CST.html#%24sel%3Atab%3ABDS_PAIR"><span class="hs-glyph hs-var hs-var">..</span></a></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TAB -&gt; BINDING
 </span><a href="CST.html#BI_EMPTY"><span class="hs-identifier hs-var">BI_EMPTY</span></a></span><span> </span><span class="annot"><span class="annottext">TAB
-</span><a href="#local-6989586621679612382"><span class="hs-identifier hs-var">tab</span></a></span><span>
-</span><span id="line-57"></span><span>    </span><span class="annot"><a href="#local-6989586621679612350"><span class="hs-identifier hs-type">goBindings</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="CST.html#BINDINGS"><span class="hs-identifier hs-type">BINDINGS</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="CST.html#BINDINGS"><span class="hs-identifier hs-type">BINDINGS</span></a></span><span>
-</span><span id="line-58"></span><span>    </span><span id="local-6989586621679612350"><span class="annot"><span class="annottext">goBindings :: Int -&gt; BINDINGS -&gt; BINDINGS
-</span><a href="#local-6989586621679612350"><span class="hs-identifier hs-var hs-var">goBindings</span></a></span></span><span> </span><span id="local-6989586621679612383"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679612383"><span class="hs-identifier hs-var">folded</span></a></span></span><span> </span><span class="annot"><a href="CST.html#BDS_PAIR"><span class="hs-identifier hs-type">BDS_PAIR</span></a></span><span class="hs-special">{</span><span id="local-6989586621679612384"><span id="local-6989586621679612385"><span id="local-6989586621679612386"><span id="local-6989586621679612387"><span class="annot"><span class="annottext">BINDINGS
+</span><a href="#local-6989586621679614847"><span class="hs-identifier hs-var">tab</span></a></span><span>
+</span><span id="line-57"></span><span>    </span><span class="annot"><a href="#local-6989586621679614815"><span class="hs-identifier hs-type">goBindings</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="CST.html#BINDINGS"><span class="hs-identifier hs-type">BINDINGS</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="CST.html#BINDINGS"><span class="hs-identifier hs-type">BINDINGS</span></a></span><span>
+</span><span id="line-58"></span><span>    </span><span id="local-6989586621679614815"><span class="annot"><span class="annottext">goBindings :: Int -&gt; BINDINGS -&gt; BINDINGS
+</span><a href="#local-6989586621679614815"><span class="hs-identifier hs-var hs-var">goBindings</span></a></span></span><span> </span><span id="local-6989586621679614848"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679614848"><span class="hs-identifier hs-var">folded</span></a></span></span><span> </span><span class="annot"><a href="CST.html#BDS_PAIR"><span class="hs-identifier hs-type">BDS_PAIR</span></a></span><span class="hs-special">{</span><span id="local-6989586621679614849"><span id="local-6989586621679614850"><span id="local-6989586621679614851"><span id="local-6989586621679614852"><span class="annot"><span class="annottext">BINDINGS
 PAIR
 TAB
 EOL
@@ -307,26 +307,26 @@ pair :: PAIR
 bindings :: BINDINGS
 </span><a href="CST.html#%24sel%3Aeol%3ABDS_PAIR"><span class="hs-glyph hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">..</span></a></span></span></span></span></span><span class="hs-special">}</span><span>
 </span><span id="line-59"></span><span>      </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">PAIR -&gt; Bool
-</span><a href="#local-6989586621679612310"><span class="hs-identifier hs-var">salient</span></a></span><span> </span><span class="annot"><span class="annottext">PAIR
-</span><a href="#local-6989586621679612386"><span class="hs-identifier hs-var">pair</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">EOL -&gt; TAB -&gt; PAIR -&gt; BINDINGS -&gt; BINDINGS
+</span><a href="#local-6989586621679614775"><span class="hs-identifier hs-var">salient</span></a></span><span> </span><span class="annot"><span class="annottext">PAIR
+</span><a href="#local-6989586621679614851"><span class="hs-identifier hs-var">pair</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">EOL -&gt; TAB -&gt; PAIR -&gt; BINDINGS -&gt; BINDINGS
 </span><a href="CST.html#BDS_PAIR"><span class="hs-identifier hs-var">BDS_PAIR</span></a></span><span> </span><span class="annot"><span class="annottext">EOL
-</span><a href="#local-6989586621679612384"><span class="hs-identifier hs-var">eol</span></a></span><span> </span><span class="annot"><span class="annottext">TAB
-</span><a href="#local-6989586621679612385"><span class="hs-identifier hs-var">tab</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">PAIR -&gt; PAIR
-</span><a href="#local-6989586621679612311"><span class="hs-identifier hs-var">goPair</span></a></span><span> </span><span class="annot"><span class="annottext">PAIR
-</span><a href="#local-6989586621679612386"><span class="hs-identifier hs-var">pair</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; BINDINGS -&gt; BINDINGS
-</span><a href="#local-6989586621679612350"><span class="hs-identifier hs-var">goBindings</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679612383"><span class="hs-identifier hs-var">folded</span></a></span><span> </span><span class="annot"><span class="annottext">BINDINGS
-</span><a href="#local-6989586621679612387"><span class="hs-identifier hs-var">bindings</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679614849"><span class="hs-identifier hs-var">eol</span></a></span><span> </span><span class="annot"><span class="annottext">TAB
+</span><a href="#local-6989586621679614850"><span class="hs-identifier hs-var">tab</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">PAIR -&gt; PAIR
+</span><a href="#local-6989586621679614776"><span class="hs-identifier hs-var">goPair</span></a></span><span> </span><span class="annot"><span class="annottext">PAIR
+</span><a href="#local-6989586621679614851"><span class="hs-identifier hs-var">pair</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; BINDINGS -&gt; BINDINGS
+</span><a href="#local-6989586621679614815"><span class="hs-identifier hs-var">goBindings</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679614848"><span class="hs-identifier hs-var">folded</span></a></span><span> </span><span class="annot"><span class="annottext">BINDINGS
+</span><a href="#local-6989586621679614852"><span class="hs-identifier hs-var">bindings</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-60"></span><span>      </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
 </span><span class="hs-identifier hs-var">otherwise</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; BINDINGS -&gt; BINDINGS
-</span><a href="#local-6989586621679612350"><span class="hs-identifier hs-var">goBindings</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679612383"><span class="hs-identifier hs-var">folded</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+</span><a href="#local-6989586621679614815"><span class="hs-identifier hs-var">goBindings</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679614848"><span class="hs-identifier hs-var">folded</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
 forall a. Num a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">1</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">BINDINGS
-</span><a href="#local-6989586621679612387"><span class="hs-identifier hs-var">bindings</span></a></span><span>
-</span><span id="line-61"></span><span>    </span><span class="annot"><a href="#local-6989586621679612350"><span class="hs-identifier hs-var">goBindings</span></a></span><span> </span><span id="local-6989586621679612389"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679612389"><span class="hs-identifier hs-var">folded</span></a></span></span><span> </span><span class="annot"><a href="CST.html#BDS_META"><span class="hs-identifier hs-type">BDS_META</span></a></span><span class="hs-special">{</span><span id="local-6989586621679612390"><span id="local-6989586621679612391"><span id="local-6989586621679612392"><span id="local-6989586621679612393"><span class="annot"><span class="annottext">BINDINGS
+</span><a href="#local-6989586621679614852"><span class="hs-identifier hs-var">bindings</span></a></span><span>
+</span><span id="line-61"></span><span>    </span><span class="annot"><a href="#local-6989586621679614815"><span class="hs-identifier hs-var">goBindings</span></a></span><span> </span><span id="local-6989586621679614854"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679614854"><span class="hs-identifier hs-var">folded</span></a></span></span><span> </span><span class="annot"><a href="CST.html#BDS_META"><span class="hs-identifier hs-type">BDS_META</span></a></span><span class="hs-special">{</span><span id="local-6989586621679614855"><span id="local-6989586621679614856"><span id="local-6989586621679614857"><span id="local-6989586621679614858"><span class="annot"><span class="annottext">BINDINGS
 TAB
 META
 EOL
@@ -340,31 +340,31 @@ meta :: META
 bindings :: BINDINGS
 </span><a href="CST.html#%24sel%3Aeol%3ABDS_PAIR"><span class="hs-glyph hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">..</span></a></span></span></span></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">EOL -&gt; TAB -&gt; META -&gt; BINDINGS -&gt; BINDINGS
 </span><a href="CST.html#BDS_META"><span class="hs-identifier hs-var">BDS_META</span></a></span><span> </span><span class="annot"><span class="annottext">EOL
-</span><a href="#local-6989586621679612390"><span class="hs-identifier hs-var">eol</span></a></span><span> </span><span class="annot"><span class="annottext">TAB
-</span><a href="#local-6989586621679612391"><span class="hs-identifier hs-var">tab</span></a></span><span> </span><span class="annot"><span class="annottext">META
-</span><a href="#local-6989586621679612392"><span class="hs-identifier hs-var">meta</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; BINDINGS -&gt; BINDINGS
-</span><a href="#local-6989586621679612350"><span class="hs-identifier hs-var">goBindings</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679612389"><span class="hs-identifier hs-var">folded</span></a></span><span> </span><span class="annot"><span class="annottext">BINDINGS
-</span><a href="#local-6989586621679612393"><span class="hs-identifier hs-var">bindings</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-62"></span><span>    </span><span class="annot"><a href="#local-6989586621679612350"><span class="hs-identifier hs-var">goBindings</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><span class="hs-number">0</span></span><span> </span><span id="local-6989586621679612394"><span class="annot"><span class="annottext">empty :: BINDINGS
-</span><a href="#local-6989586621679612394"><span class="hs-identifier hs-var">empty</span></a></span></span><span class="hs-glyph">@</span><span class="annot"><a href="CST.html#BDS_EMPTY"><span class="hs-identifier hs-type">BDS_EMPTY</span></a></span><span class="hs-special">{</span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">BINDINGS
-</span><a href="#local-6989586621679612394"><span class="hs-identifier hs-var">empty</span></a></span><span>
-</span><span id="line-63"></span><span>    </span><span class="annot"><a href="#local-6989586621679612350"><span class="hs-identifier hs-var">goBindings</span></a></span><span> </span><span id="local-6989586621679612395"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679612395"><span class="hs-identifier hs-var">folded</span></a></span></span><span> </span><span id="local-6989586621679612396"><span class="annot"><span class="annottext">empty :: BINDINGS
-</span><a href="#local-6989586621679612396"><span class="hs-identifier hs-var">empty</span></a></span></span><span class="hs-glyph">@</span><span class="annot"><a href="CST.html#BDS_EMPTY"><span class="hs-identifier hs-type">BDS_EMPTY</span></a></span><span class="hs-special">{</span><span id="local-6989586621679612397"><span class="annot"><span class="annottext">TAB
+</span><a href="#local-6989586621679614855"><span class="hs-identifier hs-var">eol</span></a></span><span> </span><span class="annot"><span class="annottext">TAB
+</span><a href="#local-6989586621679614856"><span class="hs-identifier hs-var">tab</span></a></span><span> </span><span class="annot"><span class="annottext">META
+</span><a href="#local-6989586621679614857"><span class="hs-identifier hs-var">meta</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; BINDINGS -&gt; BINDINGS
+</span><a href="#local-6989586621679614815"><span class="hs-identifier hs-var">goBindings</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679614854"><span class="hs-identifier hs-var">folded</span></a></span><span> </span><span class="annot"><span class="annottext">BINDINGS
+</span><a href="#local-6989586621679614858"><span class="hs-identifier hs-var">bindings</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-62"></span><span>    </span><span class="annot"><a href="#local-6989586621679614815"><span class="hs-identifier hs-var">goBindings</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">0</span></span><span> </span><span id="local-6989586621679614859"><span class="annot"><span class="annottext">empty :: BINDINGS
+</span><a href="#local-6989586621679614859"><span class="hs-identifier hs-var">empty</span></a></span></span><span class="hs-glyph">@</span><span class="annot"><a href="CST.html#BDS_EMPTY"><span class="hs-identifier hs-type">BDS_EMPTY</span></a></span><span class="hs-special">{</span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">BINDINGS
+</span><a href="#local-6989586621679614859"><span class="hs-identifier hs-var">empty</span></a></span><span>
+</span><span id="line-63"></span><span>    </span><span class="annot"><a href="#local-6989586621679614815"><span class="hs-identifier hs-var">goBindings</span></a></span><span> </span><span id="local-6989586621679614860"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679614860"><span class="hs-identifier hs-var">folded</span></a></span></span><span> </span><span id="local-6989586621679614861"><span class="annot"><span class="annottext">empty :: BINDINGS
+</span><a href="#local-6989586621679614861"><span class="hs-identifier hs-var">empty</span></a></span></span><span class="hs-glyph">@</span><span class="annot"><a href="CST.html#BDS_EMPTY"><span class="hs-identifier hs-type">BDS_EMPTY</span></a></span><span class="hs-special">{</span><span id="local-6989586621679614862"><span class="annot"><span class="annottext">TAB
 $sel:tab:BDS_PAIR :: BINDINGS -&gt; TAB
 tab :: TAB
 </span><a href="CST.html#%24sel%3Atab%3ABDS_PAIR"><span class="hs-glyph hs-var hs-var">..</span></a></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">EOL -&gt; TAB -&gt; PAIR -&gt; BINDINGS -&gt; BINDINGS
 </span><a href="CST.html#BDS_PAIR"><span class="hs-identifier hs-var">BDS_PAIR</span></a></span><span> </span><span class="annot"><span class="annottext">EOL
 </span><a href="CST.html#EOL"><span class="hs-identifier hs-var">EOL</span></a></span><span> </span><span class="annot"><span class="annottext">TAB
-</span><a href="#local-6989586621679612397"><span class="hs-identifier hs-var">tab</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; PAIR
+</span><a href="#local-6989586621679614862"><span class="hs-identifier hs-var">tab</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; PAIR
 </span><a href="CST.html#PA_FOLDED"><span class="hs-identifier hs-var">PA_FOLDED</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679612395"><span class="hs-identifier hs-var">folded</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">BINDINGS
-</span><a href="#local-6989586621679612396"><span class="hs-identifier hs-var">empty</span></a></span><span>
-</span><span id="line-64"></span><span>    </span><span class="annot"><a href="#local-6989586621679612311"><span class="hs-identifier hs-type">goPair</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="CST.html#PAIR"><span class="hs-identifier hs-type">PAIR</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="CST.html#PAIR"><span class="hs-identifier hs-type">PAIR</span></a></span><span>
-</span><span id="line-65"></span><span>    </span><span id="local-6989586621679612311"><span class="annot"><span class="annottext">goPair :: PAIR -&gt; PAIR
-</span><a href="#local-6989586621679612311"><span class="hs-identifier hs-var hs-var">goPair</span></a></span></span><span> </span><span class="annot"><a href="CST.html#PA_TAU"><span class="hs-identifier hs-type">PA_TAU</span></a></span><span class="hs-special">{</span><span id="local-6989586621679612400"><span id="local-6989586621679612401"><span id="local-6989586621679612402"><span class="annot"><span class="annottext">ATTRIBUTE
+</span><a href="#local-6989586621679614860"><span class="hs-identifier hs-var">folded</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">BINDINGS
+</span><a href="#local-6989586621679614861"><span class="hs-identifier hs-var">empty</span></a></span><span>
+</span><span id="line-64"></span><span>    </span><span class="annot"><a href="#local-6989586621679614776"><span class="hs-identifier hs-type">goPair</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="CST.html#PAIR"><span class="hs-identifier hs-type">PAIR</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="CST.html#PAIR"><span class="hs-identifier hs-type">PAIR</span></a></span><span>
+</span><span id="line-65"></span><span>    </span><span id="local-6989586621679614776"><span class="annot"><span class="annottext">goPair :: PAIR -&gt; PAIR
+</span><a href="#local-6989586621679614776"><span class="hs-identifier hs-var hs-var">goPair</span></a></span></span><span> </span><span class="annot"><a href="CST.html#PA_TAU"><span class="hs-identifier hs-type">PA_TAU</span></a></span><span class="hs-special">{</span><span id="local-6989586621679614865"><span id="local-6989586621679614866"><span id="local-6989586621679614867"><span class="annot"><span class="annottext">ATTRIBUTE
 EXPRESSION
 ARROW
 attr :: ATTRIBUTE
@@ -373,13 +373,13 @@ expr :: EXPRESSION
 $sel:attr:PA_TAU :: PAIR -&gt; ATTRIBUTE
 $sel:arrow:PA_TAU :: PAIR -&gt; ARROW
 $sel:expr:PA_TAU :: PAIR -&gt; EXPRESSION
-</span><a href="#local-6989586621679612400"><span class="hs-glyph hs-var hs-var hs-var hs-var hs-var hs-var">..</span></a></span></span></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ATTRIBUTE -&gt; ARROW -&gt; EXPRESSION -&gt; PAIR
+</span><a href="#local-6989586621679614865"><span class="hs-glyph hs-var hs-var hs-var hs-var hs-var hs-var">..</span></a></span></span></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ATTRIBUTE -&gt; ARROW -&gt; EXPRESSION -&gt; PAIR
 </span><a href="CST.html#PA_TAU"><span class="hs-identifier hs-var">PA_TAU</span></a></span><span> </span><span class="annot"><span class="annottext">ATTRIBUTE
-</span><a href="#local-6989586621679612400"><span class="hs-identifier hs-var">attr</span></a></span><span> </span><span class="annot"><span class="annottext">ARROW
-</span><a href="#local-6989586621679612401"><span class="hs-identifier hs-var">arrow</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">EXPRESSION -&gt; EXPRESSION
-</span><a href="#local-6989586621679612283"><span class="hs-identifier hs-var">goExpr</span></a></span><span> </span><span class="annot"><span class="annottext">EXPRESSION
-</span><a href="#local-6989586621679612402"><span class="hs-identifier hs-var">expr</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-66"></span><span>    </span><span class="annot"><a href="#local-6989586621679612311"><span class="hs-identifier hs-var">goPair</span></a></span><span> </span><span class="annot"><a href="CST.html#PA_ALPHA"><span class="hs-identifier hs-type">PA_ALPHA</span></a></span><span class="hs-special">{</span><span id="local-6989586621679612407"><span id="local-6989586621679612408"><span id="local-6989586621679612409"><span class="annot"><span class="annottext">EXPRESSION
+</span><a href="#local-6989586621679614865"><span class="hs-identifier hs-var">attr</span></a></span><span> </span><span class="annot"><span class="annottext">ARROW
+</span><a href="#local-6989586621679614866"><span class="hs-identifier hs-var">arrow</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">EXPRESSION -&gt; EXPRESSION
+</span><a href="#local-6989586621679614748"><span class="hs-identifier hs-var">goExpr</span></a></span><span> </span><span class="annot"><span class="annottext">EXPRESSION
+</span><a href="#local-6989586621679614867"><span class="hs-identifier hs-var">expr</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-66"></span><span>    </span><span class="annot"><a href="#local-6989586621679614776"><span class="hs-identifier hs-var">goPair</span></a></span><span> </span><span class="annot"><a href="CST.html#PA_ALPHA"><span class="hs-identifier hs-type">PA_ALPHA</span></a></span><span class="hs-special">{</span><span id="local-6989586621679614872"><span id="local-6989586621679614873"><span id="local-6989586621679614874"><span class="annot"><span class="annottext">EXPRESSION
 ALPHA
 ARROW
 $sel:arrow:PA_TAU :: PAIR -&gt; ARROW
@@ -390,11 +390,11 @@ expr :: EXPRESSION
 $sel:alpha:PA_TAU :: PAIR -&gt; ALPHA
 </span><a href="CST.html#%24sel%3Aarrow%3APA_TAU"><span class="hs-glyph hs-var hs-var hs-var hs-var hs-var hs-var">..</span></a></span></span></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ALPHA -&gt; ARROW -&gt; EXPRESSION -&gt; PAIR
 </span><a href="CST.html#PA_ALPHA"><span class="hs-identifier hs-var">PA_ALPHA</span></a></span><span> </span><span class="annot"><span class="annottext">ALPHA
-</span><a href="#local-6989586621679612407"><span class="hs-identifier hs-var">alpha</span></a></span><span> </span><span class="annot"><span class="annottext">ARROW
-</span><a href="#local-6989586621679612408"><span class="hs-identifier hs-var">arrow</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">EXPRESSION -&gt; EXPRESSION
-</span><a href="#local-6989586621679612283"><span class="hs-identifier hs-var">goExpr</span></a></span><span> </span><span class="annot"><span class="annottext">EXPRESSION
-</span><a href="#local-6989586621679612409"><span class="hs-identifier hs-var">expr</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-67"></span><span>    </span><span class="annot"><a href="#local-6989586621679612311"><span class="hs-identifier hs-var">goPair</span></a></span><span> </span><span class="annot"><a href="CST.html#PA_FORMATION"><span class="hs-identifier hs-type">PA_FORMATION</span></a></span><span class="hs-special">{</span><span id="local-6989586621679612412"><span id="local-6989586621679612413"><span id="local-6989586621679612414"><span id="local-6989586621679612415"><span class="annot"><span class="annottext">[ATTRIBUTE]
+</span><a href="#local-6989586621679614872"><span class="hs-identifier hs-var">alpha</span></a></span><span> </span><span class="annot"><span class="annottext">ARROW
+</span><a href="#local-6989586621679614873"><span class="hs-identifier hs-var">arrow</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">EXPRESSION -&gt; EXPRESSION
+</span><a href="#local-6989586621679614748"><span class="hs-identifier hs-var">goExpr</span></a></span><span> </span><span class="annot"><span class="annottext">EXPRESSION
+</span><a href="#local-6989586621679614874"><span class="hs-identifier hs-var">expr</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-67"></span><span>    </span><span class="annot"><a href="#local-6989586621679614776"><span class="hs-identifier hs-var">goPair</span></a></span><span> </span><span class="annot"><a href="CST.html#PA_FORMATION"><span class="hs-identifier hs-type">PA_FORMATION</span></a></span><span class="hs-special">{</span><span id="local-6989586621679614877"><span id="local-6989586621679614878"><span id="local-6989586621679614879"><span id="local-6989586621679614880"><span class="annot"><span class="annottext">[ATTRIBUTE]
 ATTRIBUTE
 EXPRESSION
 ARROW
@@ -408,53 +408,53 @@ expr :: EXPRESSION
 $sel:voids:PA_TAU :: PAIR -&gt; [ATTRIBUTE]
 </span><a href="CST.html#%24sel%3Aattr%3APA_TAU"><span class="hs-glyph hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">..</span></a></span></span></span></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ATTRIBUTE -&gt; [ATTRIBUTE] -&gt; ARROW -&gt; EXPRESSION -&gt; PAIR
 </span><a href="CST.html#PA_FORMATION"><span class="hs-identifier hs-var">PA_FORMATION</span></a></span><span> </span><span class="annot"><span class="annottext">ATTRIBUTE
-</span><a href="#local-6989586621679612412"><span class="hs-identifier hs-var">attr</span></a></span><span> </span><span class="annot"><span class="annottext">[ATTRIBUTE]
-</span><a href="#local-6989586621679612413"><span class="hs-identifier hs-var">voids</span></a></span><span> </span><span class="annot"><span class="annottext">ARROW
-</span><a href="#local-6989586621679612414"><span class="hs-identifier hs-var">arrow</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">EXPRESSION -&gt; EXPRESSION
-</span><a href="#local-6989586621679612283"><span class="hs-identifier hs-var">goExpr</span></a></span><span> </span><span class="annot"><span class="annottext">EXPRESSION
-</span><a href="#local-6989586621679612415"><span class="hs-identifier hs-var">expr</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-68"></span><span>    </span><span class="annot"><a href="#local-6989586621679612311"><span class="hs-identifier hs-var">goPair</span></a></span><span> </span><span class="annot"><a href="CST.html#PA_DELTA"><span class="hs-identifier hs-type">PA_DELTA</span></a></span><span class="hs-special">{</span><span id="local-6989586621679612418"><span class="annot"><span class="annottext">BYTES
+</span><a href="#local-6989586621679614877"><span class="hs-identifier hs-var">attr</span></a></span><span> </span><span class="annot"><span class="annottext">[ATTRIBUTE]
+</span><a href="#local-6989586621679614878"><span class="hs-identifier hs-var">voids</span></a></span><span> </span><span class="annot"><span class="annottext">ARROW
+</span><a href="#local-6989586621679614879"><span class="hs-identifier hs-var">arrow</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">EXPRESSION -&gt; EXPRESSION
+</span><a href="#local-6989586621679614748"><span class="hs-identifier hs-var">goExpr</span></a></span><span> </span><span class="annot"><span class="annottext">EXPRESSION
+</span><a href="#local-6989586621679614880"><span class="hs-identifier hs-var">expr</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-68"></span><span>    </span><span class="annot"><a href="#local-6989586621679614776"><span class="hs-identifier hs-var">goPair</span></a></span><span> </span><span class="annot"><a href="CST.html#PA_DELTA"><span class="hs-identifier hs-type">PA_DELTA</span></a></span><span class="hs-special">{</span><span id="local-6989586621679614883"><span class="annot"><span class="annottext">BYTES
 bytes :: BYTES
 $sel:bytes:PA_TAU :: PAIR -&gt; BYTES
-</span><a href="#local-6989586621679612418"><span class="hs-glyph hs-var hs-var">..</span></a></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">BYTES -&gt; PAIR
+</span><a href="#local-6989586621679614883"><span class="hs-glyph hs-var hs-var">..</span></a></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">BYTES -&gt; PAIR
 </span><a href="CST.html#PA_DELTA"><span class="hs-identifier hs-var">PA_DELTA</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">BYTES -&gt; BYTES
-</span><a href="#local-6989586621679612344"><span class="hs-identifier hs-var">goBytes</span></a></span><span> </span><span class="annot"><span class="annottext">BYTES
-</span><a href="#local-6989586621679612418"><span class="hs-identifier hs-var">bytes</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-69"></span><span>    </span><span class="annot"><a href="#local-6989586621679612311"><span class="hs-identifier hs-var">goPair</span></a></span><span> </span><span id="local-6989586621679612420"><span class="annot"><span class="annottext">PAIR
-</span><a href="#local-6989586621679612420"><span class="hs-identifier hs-var">pair</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">PAIR
-</span><a href="#local-6989586621679612420"><span class="hs-identifier hs-var">pair</span></a></span><span>
-</span><span id="line-70"></span><span>    </span><span class="annot"><a href="#local-6989586621679612330"><span class="hs-identifier hs-type">goArgument</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="CST.html#APP_ARGUMENT"><span class="hs-identifier hs-type">APP_ARGUMENT</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="CST.html#APP_ARGUMENT"><span class="hs-identifier hs-type">APP_ARGUMENT</span></a></span><span>
-</span><span id="line-71"></span><span>    </span><span id="local-6989586621679612330"><span class="annot"><span class="annottext">goArgument :: APP_ARGUMENT -&gt; APP_ARGUMENT
-</span><a href="#local-6989586621679612330"><span class="hs-identifier hs-var hs-var">goArgument</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="CST.html#AA_TAU"><span class="hs-identifier hs-type">AA_TAU</span></a></span><span> </span><span class="annot"><a href="CST.html#APP_BINDING"><span class="hs-identifier hs-type">APP_BINDING</span></a></span><span class="hs-special">{</span><span id="local-6989586621679612423"><span class="annot"><span class="annottext">PAIR
+</span><a href="#local-6989586621679614809"><span class="hs-identifier hs-var">goBytes</span></a></span><span> </span><span class="annot"><span class="annottext">BYTES
+</span><a href="#local-6989586621679614883"><span class="hs-identifier hs-var">bytes</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-69"></span><span>    </span><span class="annot"><a href="#local-6989586621679614776"><span class="hs-identifier hs-var">goPair</span></a></span><span> </span><span id="local-6989586621679614885"><span class="annot"><span class="annottext">PAIR
+</span><a href="#local-6989586621679614885"><span class="hs-identifier hs-var">pair</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">PAIR
+</span><a href="#local-6989586621679614885"><span class="hs-identifier hs-var">pair</span></a></span><span>
+</span><span id="line-70"></span><span>    </span><span class="annot"><a href="#local-6989586621679614795"><span class="hs-identifier hs-type">goArgument</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="CST.html#APP_ARGUMENT"><span class="hs-identifier hs-type">APP_ARGUMENT</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="CST.html#APP_ARGUMENT"><span class="hs-identifier hs-type">APP_ARGUMENT</span></a></span><span>
+</span><span id="line-71"></span><span>    </span><span id="local-6989586621679614795"><span class="annot"><span class="annottext">goArgument :: APP_ARGUMENT -&gt; APP_ARGUMENT
+</span><a href="#local-6989586621679614795"><span class="hs-identifier hs-var hs-var">goArgument</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="CST.html#AA_TAU"><span class="hs-identifier hs-type">AA_TAU</span></a></span><span> </span><span class="annot"><a href="CST.html#APP_BINDING"><span class="hs-identifier hs-type">APP_BINDING</span></a></span><span class="hs-special">{</span><span id="local-6989586621679614888"><span class="annot"><span class="annottext">PAIR
 pair :: PAIR
 $sel:pair:APP_BINDING :: APP_BINDING -&gt; PAIR
-</span><a href="#local-6989586621679612423"><span class="hs-glyph hs-var hs-var">..</span></a></span></span><span class="hs-special">}</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">APP_BINDING -&gt; APP_ARGUMENT
+</span><a href="#local-6989586621679614888"><span class="hs-glyph hs-var hs-var">..</span></a></span></span><span class="hs-special">}</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">APP_BINDING -&gt; APP_ARGUMENT
 </span><a href="CST.html#AA_TAU"><span class="hs-identifier hs-var">AA_TAU</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">PAIR -&gt; APP_BINDING
 </span><a href="CST.html#APP_BINDING"><span class="hs-identifier hs-var">APP_BINDING</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">PAIR -&gt; PAIR
-</span><a href="#local-6989586621679612311"><span class="hs-identifier hs-var">goPair</span></a></span><span> </span><span class="annot"><span class="annottext">PAIR
-</span><a href="#local-6989586621679612423"><span class="hs-identifier hs-var">pair</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
-</span><span id="line-72"></span><span>    </span><span class="annot"><a href="#local-6989586621679612330"><span class="hs-identifier hs-var">goArgument</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="CST.html#AA_TAUS"><span class="hs-identifier hs-type">AA_TAUS</span></a></span><span> </span><span id="local-6989586621679612426"><span class="annot"><span class="annottext">BINDING
-</span><a href="#local-6989586621679612426"><span class="hs-identifier hs-var">binding</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">BINDING -&gt; APP_ARGUMENT
+</span><a href="#local-6989586621679614776"><span class="hs-identifier hs-var">goPair</span></a></span><span> </span><span class="annot"><span class="annottext">PAIR
+</span><a href="#local-6989586621679614888"><span class="hs-identifier hs-var">pair</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-72"></span><span>    </span><span class="annot"><a href="#local-6989586621679614795"><span class="hs-identifier hs-var">goArgument</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="CST.html#AA_TAUS"><span class="hs-identifier hs-type">AA_TAUS</span></a></span><span> </span><span id="local-6989586621679614891"><span class="annot"><span class="annottext">BINDING
+</span><a href="#local-6989586621679614891"><span class="hs-identifier hs-var">binding</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">BINDING -&gt; APP_ARGUMENT
 </span><a href="CST.html#AA_TAUS"><span class="hs-identifier hs-var">AA_TAUS</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">BINDING -&gt; BINDING
-</span><a href="#local-6989586621679612301"><span class="hs-identifier hs-var">goIntact</span></a></span><span> </span><span class="annot"><span class="annottext">BINDING
-</span><a href="#local-6989586621679612426"><span class="hs-identifier hs-var">binding</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-73"></span><span>    </span><span class="annot"><a href="#local-6989586621679612330"><span class="hs-identifier hs-var">goArgument</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="CST.html#AA_EXPRS"><span class="hs-identifier hs-type">AA_EXPRS</span></a></span><span> </span><span class="annot"><a href="CST.html#APP_ARG"><span class="hs-identifier hs-type">APP_ARG</span></a></span><span class="hs-special">{</span><span id="local-6989586621679612429"><span id="local-6989586621679612430"><span class="annot"><span class="annottext">EXPRESSION
+</span><a href="#local-6989586621679614766"><span class="hs-identifier hs-var">goIntact</span></a></span><span> </span><span class="annot"><span class="annottext">BINDING
+</span><a href="#local-6989586621679614891"><span class="hs-identifier hs-var">binding</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-73"></span><span>    </span><span class="annot"><a href="#local-6989586621679614795"><span class="hs-identifier hs-var">goArgument</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="CST.html#AA_EXPRS"><span class="hs-identifier hs-type">AA_EXPRS</span></a></span><span> </span><span class="annot"><a href="CST.html#APP_ARG"><span class="hs-identifier hs-type">APP_ARG</span></a></span><span class="hs-special">{</span><span id="local-6989586621679614894"><span id="local-6989586621679614895"><span class="annot"><span class="annottext">EXPRESSION
 APP_ARGS
 expr :: EXPRESSION
 args :: APP_ARGS
 $sel:expr:APP_ARG :: APP_ARG -&gt; EXPRESSION
 $sel:args:APP_ARG :: APP_ARG -&gt; APP_ARGS
-</span><a href="#local-6989586621679612429"><span class="hs-glyph hs-var hs-var hs-var hs-var">..</span></a></span></span></span><span class="hs-special">}</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">APP_ARG -&gt; APP_ARGUMENT
+</span><a href="#local-6989586621679614894"><span class="hs-glyph hs-var hs-var hs-var hs-var">..</span></a></span></span></span><span class="hs-special">}</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">APP_ARG -&gt; APP_ARGUMENT
 </span><a href="CST.html#AA_EXPRS"><span class="hs-identifier hs-var">AA_EXPRS</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">EXPRESSION -&gt; APP_ARGS -&gt; APP_ARG
 </span><a href="CST.html#APP_ARG"><span class="hs-identifier hs-var">APP_ARG</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">EXPRESSION -&gt; EXPRESSION
-</span><a href="#local-6989586621679612283"><span class="hs-identifier hs-var">goExpr</span></a></span><span> </span><span class="annot"><span class="annottext">EXPRESSION
-</span><a href="#local-6989586621679612429"><span class="hs-identifier hs-var">expr</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">APP_ARGS -&gt; APP_ARGS
-</span><a href="#local-6989586621679612433"><span class="hs-identifier hs-var">goAppArgs</span></a></span><span> </span><span class="annot"><span class="annottext">APP_ARGS
-</span><a href="#local-6989586621679612430"><span class="hs-identifier hs-var">args</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679614748"><span class="hs-identifier hs-var">goExpr</span></a></span><span> </span><span class="annot"><span class="annottext">EXPRESSION
+</span><a href="#local-6989586621679614894"><span class="hs-identifier hs-var">expr</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">APP_ARGS -&gt; APP_ARGS
+</span><a href="#local-6989586621679614898"><span class="hs-identifier hs-var">goAppArgs</span></a></span><span> </span><span class="annot"><span class="annottext">APP_ARGS
+</span><a href="#local-6989586621679614895"><span class="hs-identifier hs-var">args</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
 </span><span id="line-74"></span><span>    </span><span class="hs-comment">-- The bindings of a short formation or of an application, every one kept.</span><span>
-</span><span id="line-75"></span><span>    </span><span class="annot"><a href="#local-6989586621679612301"><span class="hs-identifier hs-type">goIntact</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="CST.html#BINDING"><span class="hs-identifier hs-type">BINDING</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="CST.html#BINDING"><span class="hs-identifier hs-type">BINDING</span></a></span><span>
-</span><span id="line-76"></span><span>    </span><span id="local-6989586621679612301"><span class="annot"><span class="annottext">goIntact :: BINDING -&gt; BINDING
-</span><a href="#local-6989586621679612301"><span class="hs-identifier hs-var hs-var">goIntact</span></a></span></span><span> </span><span class="annot"><a href="CST.html#BI_PAIR"><span class="hs-identifier hs-type">BI_PAIR</span></a></span><span class="hs-special">{</span><span id="local-6989586621679612434"><span id="local-6989586621679612435"><span id="local-6989586621679612436"><span class="annot"><span class="annottext">BINDINGS
+</span><span id="line-75"></span><span>    </span><span class="annot"><a href="#local-6989586621679614766"><span class="hs-identifier hs-type">goIntact</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="CST.html#BINDING"><span class="hs-identifier hs-type">BINDING</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="CST.html#BINDING"><span class="hs-identifier hs-type">BINDING</span></a></span><span>
+</span><span id="line-76"></span><span>    </span><span id="local-6989586621679614766"><span class="annot"><span class="annottext">goIntact :: BINDING -&gt; BINDING
+</span><a href="#local-6989586621679614766"><span class="hs-identifier hs-var hs-var">goIntact</span></a></span></span><span> </span><span class="annot"><a href="CST.html#BI_PAIR"><span class="hs-identifier hs-type">BI_PAIR</span></a></span><span class="hs-special">{</span><span id="local-6989586621679614899"><span id="local-6989586621679614900"><span id="local-6989586621679614901"><span class="annot"><span class="annottext">BINDINGS
 PAIR
 TAB
 $sel:pair:BI_PAIR :: BINDING -&gt; PAIR
@@ -465,12 +465,12 @@ bindings :: BINDINGS
 tab :: TAB
 </span><a href="CST.html#%24sel%3Apair%3ABI_PAIR"><span class="hs-glyph hs-var hs-var hs-var hs-var hs-var hs-var">..</span></a></span></span></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">PAIR -&gt; BINDINGS -&gt; TAB -&gt; BINDING
 </span><a href="CST.html#BI_PAIR"><span class="hs-identifier hs-var">BI_PAIR</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">PAIR -&gt; PAIR
-</span><a href="#local-6989586621679612311"><span class="hs-identifier hs-var">goPair</span></a></span><span> </span><span class="annot"><span class="annottext">PAIR
-</span><a href="#local-6989586621679612434"><span class="hs-identifier hs-var">pair</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">BINDINGS -&gt; BINDINGS
-</span><a href="#local-6989586621679612437"><span class="hs-identifier hs-var">goIntacts</span></a></span><span> </span><span class="annot"><span class="annottext">BINDINGS
-</span><a href="#local-6989586621679612435"><span class="hs-identifier hs-var">bindings</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">TAB
-</span><a href="#local-6989586621679612436"><span class="hs-identifier hs-var">tab</span></a></span><span>
-</span><span id="line-77"></span><span>    </span><span class="annot"><a href="#local-6989586621679612301"><span class="hs-identifier hs-var">goIntact</span></a></span><span> </span><span class="annot"><a href="CST.html#BI_META"><span class="hs-identifier hs-type">BI_META</span></a></span><span class="hs-special">{</span><span id="local-6989586621679612438"><span id="local-6989586621679612439"><span id="local-6989586621679612440"><span class="annot"><span class="annottext">BINDINGS
+</span><a href="#local-6989586621679614776"><span class="hs-identifier hs-var">goPair</span></a></span><span> </span><span class="annot"><span class="annottext">PAIR
+</span><a href="#local-6989586621679614899"><span class="hs-identifier hs-var">pair</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">BINDINGS -&gt; BINDINGS
+</span><a href="#local-6989586621679614902"><span class="hs-identifier hs-var">goIntacts</span></a></span><span> </span><span class="annot"><span class="annottext">BINDINGS
+</span><a href="#local-6989586621679614900"><span class="hs-identifier hs-var">bindings</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">TAB
+</span><a href="#local-6989586621679614901"><span class="hs-identifier hs-var">tab</span></a></span><span>
+</span><span id="line-77"></span><span>    </span><span class="annot"><a href="#local-6989586621679614766"><span class="hs-identifier hs-var">goIntact</span></a></span><span> </span><span class="annot"><a href="CST.html#BI_META"><span class="hs-identifier hs-type">BI_META</span></a></span><span class="hs-special">{</span><span id="local-6989586621679614903"><span id="local-6989586621679614904"><span id="local-6989586621679614905"><span class="annot"><span class="annottext">BINDINGS
 TAB
 META
 $sel:bindings:BI_PAIR :: BINDING -&gt; BINDINGS
@@ -481,16 +481,16 @@ bindings :: BINDINGS
 tab :: TAB
 </span><a href="CST.html#%24sel%3Abindings%3ABI_PAIR"><span class="hs-glyph hs-var hs-var hs-var hs-var hs-var hs-var">..</span></a></span></span></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">META -&gt; BINDINGS -&gt; TAB -&gt; BINDING
 </span><a href="CST.html#BI_META"><span class="hs-identifier hs-var">BI_META</span></a></span><span> </span><span class="annot"><span class="annottext">META
-</span><a href="#local-6989586621679612438"><span class="hs-identifier hs-var">meta</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">BINDINGS -&gt; BINDINGS
-</span><a href="#local-6989586621679612437"><span class="hs-identifier hs-var">goIntacts</span></a></span><span> </span><span class="annot"><span class="annottext">BINDINGS
-</span><a href="#local-6989586621679612439"><span class="hs-identifier hs-var">bindings</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">TAB
-</span><a href="#local-6989586621679612440"><span class="hs-identifier hs-var">tab</span></a></span><span>
-</span><span id="line-78"></span><span>    </span><span class="annot"><a href="#local-6989586621679612301"><span class="hs-identifier hs-var">goIntact</span></a></span><span> </span><span id="local-6989586621679612441"><span class="annot"><span class="annottext">BINDING
-</span><a href="#local-6989586621679612441"><span class="hs-identifier hs-var">empty</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">BINDING
-</span><a href="#local-6989586621679612441"><span class="hs-identifier hs-var">empty</span></a></span><span>
-</span><span id="line-79"></span><span>    </span><span class="annot"><a href="#local-6989586621679612437"><span class="hs-identifier hs-type">goIntacts</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="CST.html#BINDINGS"><span class="hs-identifier hs-type">BINDINGS</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="CST.html#BINDINGS"><span class="hs-identifier hs-type">BINDINGS</span></a></span><span>
-</span><span id="line-80"></span><span>    </span><span id="local-6989586621679612437"><span class="annot"><span class="annottext">goIntacts :: BINDINGS -&gt; BINDINGS
-</span><a href="#local-6989586621679612437"><span class="hs-identifier hs-var hs-var">goIntacts</span></a></span></span><span> </span><span class="annot"><a href="CST.html#BDS_PAIR"><span class="hs-identifier hs-type">BDS_PAIR</span></a></span><span class="hs-special">{</span><span id="local-6989586621679612442"><span id="local-6989586621679612443"><span id="local-6989586621679612444"><span id="local-6989586621679612445"><span class="annot"><span class="annottext">BINDINGS
+</span><a href="#local-6989586621679614903"><span class="hs-identifier hs-var">meta</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">BINDINGS -&gt; BINDINGS
+</span><a href="#local-6989586621679614902"><span class="hs-identifier hs-var">goIntacts</span></a></span><span> </span><span class="annot"><span class="annottext">BINDINGS
+</span><a href="#local-6989586621679614904"><span class="hs-identifier hs-var">bindings</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">TAB
+</span><a href="#local-6989586621679614905"><span class="hs-identifier hs-var">tab</span></a></span><span>
+</span><span id="line-78"></span><span>    </span><span class="annot"><a href="#local-6989586621679614766"><span class="hs-identifier hs-var">goIntact</span></a></span><span> </span><span id="local-6989586621679614906"><span class="annot"><span class="annottext">BINDING
+</span><a href="#local-6989586621679614906"><span class="hs-identifier hs-var">empty</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">BINDING
+</span><a href="#local-6989586621679614906"><span class="hs-identifier hs-var">empty</span></a></span><span>
+</span><span id="line-79"></span><span>    </span><span class="annot"><a href="#local-6989586621679614902"><span class="hs-identifier hs-type">goIntacts</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="CST.html#BINDINGS"><span class="hs-identifier hs-type">BINDINGS</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="CST.html#BINDINGS"><span class="hs-identifier hs-type">BINDINGS</span></a></span><span>
+</span><span id="line-80"></span><span>    </span><span id="local-6989586621679614902"><span class="annot"><span class="annottext">goIntacts :: BINDINGS -&gt; BINDINGS
+</span><a href="#local-6989586621679614902"><span class="hs-identifier hs-var hs-var">goIntacts</span></a></span></span><span> </span><span class="annot"><a href="CST.html#BDS_PAIR"><span class="hs-identifier hs-type">BDS_PAIR</span></a></span><span class="hs-special">{</span><span id="local-6989586621679614907"><span id="local-6989586621679614908"><span id="local-6989586621679614909"><span id="local-6989586621679614910"><span class="annot"><span class="annottext">BINDINGS
 PAIR
 TAB
 EOL
@@ -504,13 +504,13 @@ pair :: PAIR
 bindings :: BINDINGS
 </span><a href="CST.html#%24sel%3Aeol%3ABDS_PAIR"><span class="hs-glyph hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">..</span></a></span></span></span></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">EOL -&gt; TAB -&gt; PAIR -&gt; BINDINGS -&gt; BINDINGS
 </span><a href="CST.html#BDS_PAIR"><span class="hs-identifier hs-var">BDS_PAIR</span></a></span><span> </span><span class="annot"><span class="annottext">EOL
-</span><a href="#local-6989586621679612442"><span class="hs-identifier hs-var">eol</span></a></span><span> </span><span class="annot"><span class="annottext">TAB
-</span><a href="#local-6989586621679612443"><span class="hs-identifier hs-var">tab</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">PAIR -&gt; PAIR
-</span><a href="#local-6989586621679612311"><span class="hs-identifier hs-var">goPair</span></a></span><span> </span><span class="annot"><span class="annottext">PAIR
-</span><a href="#local-6989586621679612444"><span class="hs-identifier hs-var">pair</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">BINDINGS -&gt; BINDINGS
-</span><a href="#local-6989586621679612437"><span class="hs-identifier hs-var">goIntacts</span></a></span><span> </span><span class="annot"><span class="annottext">BINDINGS
-</span><a href="#local-6989586621679612445"><span class="hs-identifier hs-var">bindings</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-81"></span><span>    </span><span class="annot"><a href="#local-6989586621679612437"><span class="hs-identifier hs-var">goIntacts</span></a></span><span> </span><span class="annot"><a href="CST.html#BDS_META"><span class="hs-identifier hs-type">BDS_META</span></a></span><span class="hs-special">{</span><span id="local-6989586621679612446"><span id="local-6989586621679612447"><span id="local-6989586621679612448"><span id="local-6989586621679612449"><span class="annot"><span class="annottext">BINDINGS
+</span><a href="#local-6989586621679614907"><span class="hs-identifier hs-var">eol</span></a></span><span> </span><span class="annot"><span class="annottext">TAB
+</span><a href="#local-6989586621679614908"><span class="hs-identifier hs-var">tab</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">PAIR -&gt; PAIR
+</span><a href="#local-6989586621679614776"><span class="hs-identifier hs-var">goPair</span></a></span><span> </span><span class="annot"><span class="annottext">PAIR
+</span><a href="#local-6989586621679614909"><span class="hs-identifier hs-var">pair</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">BINDINGS -&gt; BINDINGS
+</span><a href="#local-6989586621679614902"><span class="hs-identifier hs-var">goIntacts</span></a></span><span> </span><span class="annot"><span class="annottext">BINDINGS
+</span><a href="#local-6989586621679614910"><span class="hs-identifier hs-var">bindings</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-81"></span><span>    </span><span class="annot"><a href="#local-6989586621679614902"><span class="hs-identifier hs-var">goIntacts</span></a></span><span> </span><span class="annot"><a href="CST.html#BDS_META"><span class="hs-identifier hs-type">BDS_META</span></a></span><span class="hs-special">{</span><span id="local-6989586621679614911"><span id="local-6989586621679614912"><span id="local-6989586621679614913"><span id="local-6989586621679614914"><span class="annot"><span class="annottext">BINDINGS
 TAB
 META
 EOL
@@ -524,17 +524,17 @@ meta :: META
 bindings :: BINDINGS
 </span><a href="CST.html#%24sel%3Aeol%3ABDS_PAIR"><span class="hs-glyph hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">..</span></a></span></span></span></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">EOL -&gt; TAB -&gt; META -&gt; BINDINGS -&gt; BINDINGS
 </span><a href="CST.html#BDS_META"><span class="hs-identifier hs-var">BDS_META</span></a></span><span> </span><span class="annot"><span class="annottext">EOL
-</span><a href="#local-6989586621679612446"><span class="hs-identifier hs-var">eol</span></a></span><span> </span><span class="annot"><span class="annottext">TAB
-</span><a href="#local-6989586621679612447"><span class="hs-identifier hs-var">tab</span></a></span><span> </span><span class="annot"><span class="annottext">META
-</span><a href="#local-6989586621679612448"><span class="hs-identifier hs-var">meta</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">BINDINGS -&gt; BINDINGS
-</span><a href="#local-6989586621679612437"><span class="hs-identifier hs-var">goIntacts</span></a></span><span> </span><span class="annot"><span class="annottext">BINDINGS
-</span><a href="#local-6989586621679612449"><span class="hs-identifier hs-var">bindings</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-82"></span><span>    </span><span class="annot"><a href="#local-6989586621679612437"><span class="hs-identifier hs-var">goIntacts</span></a></span><span> </span><span id="local-6989586621679612450"><span class="annot"><span class="annottext">BINDINGS
-</span><a href="#local-6989586621679612450"><span class="hs-identifier hs-var">empty</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">BINDINGS
-</span><a href="#local-6989586621679612450"><span class="hs-identifier hs-var">empty</span></a></span><span>
-</span><span id="line-83"></span><span>    </span><span class="annot"><a href="#local-6989586621679612433"><span class="hs-identifier hs-type">goAppArgs</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="CST.html#APP_ARGS"><span class="hs-identifier hs-type">APP_ARGS</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="CST.html#APP_ARGS"><span class="hs-identifier hs-type">APP_ARGS</span></a></span><span>
-</span><span id="line-84"></span><span>    </span><span id="local-6989586621679612433"><span class="annot"><span class="annottext">goAppArgs :: APP_ARGS -&gt; APP_ARGS
-</span><a href="#local-6989586621679612433"><span class="hs-identifier hs-var hs-var">goAppArgs</span></a></span></span><span> </span><span class="annot"><a href="CST.html#AAS_EXPR"><span class="hs-identifier hs-type">AAS_EXPR</span></a></span><span class="hs-special">{</span><span id="local-6989586621679612452"><span id="local-6989586621679612453"><span id="local-6989586621679612454"><span id="local-6989586621679612455"><span class="annot"><span class="annottext">EXPRESSION
+</span><a href="#local-6989586621679614911"><span class="hs-identifier hs-var">eol</span></a></span><span> </span><span class="annot"><span class="annottext">TAB
+</span><a href="#local-6989586621679614912"><span class="hs-identifier hs-var">tab</span></a></span><span> </span><span class="annot"><span class="annottext">META
+</span><a href="#local-6989586621679614913"><span class="hs-identifier hs-var">meta</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">BINDINGS -&gt; BINDINGS
+</span><a href="#local-6989586621679614902"><span class="hs-identifier hs-var">goIntacts</span></a></span><span> </span><span class="annot"><span class="annottext">BINDINGS
+</span><a href="#local-6989586621679614914"><span class="hs-identifier hs-var">bindings</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-82"></span><span>    </span><span class="annot"><a href="#local-6989586621679614902"><span class="hs-identifier hs-var">goIntacts</span></a></span><span> </span><span id="local-6989586621679614915"><span class="annot"><span class="annottext">BINDINGS
+</span><a href="#local-6989586621679614915"><span class="hs-identifier hs-var">empty</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">BINDINGS
+</span><a href="#local-6989586621679614915"><span class="hs-identifier hs-var">empty</span></a></span><span>
+</span><span id="line-83"></span><span>    </span><span class="annot"><a href="#local-6989586621679614898"><span class="hs-identifier hs-type">goAppArgs</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="CST.html#APP_ARGS"><span class="hs-identifier hs-type">APP_ARGS</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="CST.html#APP_ARGS"><span class="hs-identifier hs-type">APP_ARGS</span></a></span><span>
+</span><span id="line-84"></span><span>    </span><span id="local-6989586621679614898"><span class="annot"><span class="annottext">goAppArgs :: APP_ARGS -&gt; APP_ARGS
+</span><a href="#local-6989586621679614898"><span class="hs-identifier hs-var hs-var">goAppArgs</span></a></span></span><span> </span><span class="annot"><a href="CST.html#AAS_EXPR"><span class="hs-identifier hs-type">AAS_EXPR</span></a></span><span class="hs-special">{</span><span id="local-6989586621679614917"><span id="local-6989586621679614918"><span id="local-6989586621679614919"><span id="local-6989586621679614920"><span class="annot"><span class="annottext">EXPRESSION
 APP_ARGS
 TAB
 EOL
@@ -546,26 +546,26 @@ $sel:eol:AAS_EXPR :: APP_ARGS -&gt; EOL
 $sel:tab:AAS_EXPR :: APP_ARGS -&gt; TAB
 $sel:expr:AAS_EXPR :: APP_ARGS -&gt; EXPRESSION
 $sel:args:AAS_EXPR :: APP_ARGS -&gt; APP_ARGS
-</span><a href="#local-6989586621679612452"><span class="hs-glyph hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">..</span></a></span></span></span></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">EOL -&gt; TAB -&gt; EXPRESSION -&gt; APP_ARGS -&gt; APP_ARGS
+</span><a href="#local-6989586621679614917"><span class="hs-glyph hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">..</span></a></span></span></span></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">EOL -&gt; TAB -&gt; EXPRESSION -&gt; APP_ARGS -&gt; APP_ARGS
 </span><a href="CST.html#AAS_EXPR"><span class="hs-identifier hs-var">AAS_EXPR</span></a></span><span> </span><span class="annot"><span class="annottext">EOL
-</span><a href="#local-6989586621679612452"><span class="hs-identifier hs-var">eol</span></a></span><span> </span><span class="annot"><span class="annottext">TAB
-</span><a href="#local-6989586621679612453"><span class="hs-identifier hs-var">tab</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">EXPRESSION -&gt; EXPRESSION
-</span><a href="#local-6989586621679612283"><span class="hs-identifier hs-var">goExpr</span></a></span><span> </span><span class="annot"><span class="annottext">EXPRESSION
-</span><a href="#local-6989586621679612454"><span class="hs-identifier hs-var">expr</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">APP_ARGS -&gt; APP_ARGS
-</span><a href="#local-6989586621679612433"><span class="hs-identifier hs-var">goAppArgs</span></a></span><span> </span><span class="annot"><span class="annottext">APP_ARGS
-</span><a href="#local-6989586621679612455"><span class="hs-identifier hs-var">args</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-85"></span><span>    </span><span class="annot"><a href="#local-6989586621679612433"><span class="hs-identifier hs-var">goAppArgs</span></a></span><span> </span><span class="annot"><span class="annottext">APP_ARGS
+</span><a href="#local-6989586621679614917"><span class="hs-identifier hs-var">eol</span></a></span><span> </span><span class="annot"><span class="annottext">TAB
+</span><a href="#local-6989586621679614918"><span class="hs-identifier hs-var">tab</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">EXPRESSION -&gt; EXPRESSION
+</span><a href="#local-6989586621679614748"><span class="hs-identifier hs-var">goExpr</span></a></span><span> </span><span class="annot"><span class="annottext">EXPRESSION
+</span><a href="#local-6989586621679614919"><span class="hs-identifier hs-var">expr</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">APP_ARGS -&gt; APP_ARGS
+</span><a href="#local-6989586621679614898"><span class="hs-identifier hs-var">goAppArgs</span></a></span><span> </span><span class="annot"><span class="annottext">APP_ARGS
+</span><a href="#local-6989586621679614920"><span class="hs-identifier hs-var">args</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-85"></span><span>    </span><span class="annot"><a href="#local-6989586621679614898"><span class="hs-identifier hs-var">goAppArgs</span></a></span><span> </span><span class="annot"><span class="annottext">APP_ARGS
 </span><a href="CST.html#AAS_EMPTY"><span class="hs-identifier hs-var">AAS_EMPTY</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">APP_ARGS
 </span><a href="CST.html#AAS_EMPTY"><span class="hs-identifier hs-var">AAS_EMPTY</span></a></span><span>
-</span><span id="line-86"></span><span>    </span><span class="annot"><a href="#local-6989586621679612344"><span class="hs-identifier hs-type">goBytes</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="CST.html#BYTES"><span class="hs-identifier hs-type">BYTES</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="CST.html#BYTES"><span class="hs-identifier hs-type">BYTES</span></a></span><span>
-</span><span id="line-87"></span><span>    </span><span id="local-6989586621679612344"><span class="annot"><span class="annottext">goBytes :: BYTES -&gt; BYTES
-</span><a href="#local-6989586621679612344"><span class="hs-identifier hs-var hs-var">goBytes</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="CST.html#BT_MANY"><span class="hs-identifier hs-type">BT_MANY</span></a></span><span> </span><span id="local-6989586621679612462"><span class="annot"><span class="annottext">[String]
-</span><a href="#local-6989586621679612462"><span class="hs-identifier hs-var">bts</span></a></span></span><span class="hs-special">)</span><span>
+</span><span id="line-86"></span><span>    </span><span class="annot"><a href="#local-6989586621679614809"><span class="hs-identifier hs-type">goBytes</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="CST.html#BYTES"><span class="hs-identifier hs-type">BYTES</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="CST.html#BYTES"><span class="hs-identifier hs-type">BYTES</span></a></span><span>
+</span><span id="line-87"></span><span>    </span><span id="local-6989586621679614809"><span class="annot"><span class="annottext">goBytes :: BYTES -&gt; BYTES
+</span><a href="#local-6989586621679614809"><span class="hs-identifier hs-var hs-var">goBytes</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="CST.html#BT_MANY"><span class="hs-identifier hs-type">BT_MANY</span></a></span><span> </span><span id="local-6989586621679614927"><span class="annot"><span class="annottext">[String]
+</span><a href="#local-6989586621679614927"><span class="hs-identifier hs-var">bts</span></a></span></span><span class="hs-special">)</span><span>
 </span><span id="line-88"></span><span>      </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">[String] -&gt; Int
 forall a. [a] -&gt; Int
 forall (t :: * -&gt; *) a. Foldable t =&gt; t a -&gt; Int
 </span><span class="hs-identifier hs-var">length</span></span><span> </span><span class="annot"><span class="annottext">[String]
-</span><a href="#local-6989586621679612462"><span class="hs-identifier hs-var">bts</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
+</span><a href="#local-6989586621679614927"><span class="hs-identifier hs-var">bts</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
 forall a. Ord a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">&gt;</span></span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">8</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[String] -&gt; Int -&gt; BYTES
@@ -573,46 +573,46 @@ forall a. Ord a =&gt; a -&gt; a -&gt; Bool
 forall a. Int -&gt; [a] -&gt; [a]
 </span><span class="hs-identifier hs-var">take</span></span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">4</span></span><span> </span><span class="annot"><span class="annottext">[String]
-</span><a href="#local-6989586621679612462"><span class="hs-identifier hs-var">bts</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[String] -&gt; Int
+</span><a href="#local-6989586621679614927"><span class="hs-identifier hs-var">bts</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[String] -&gt; Int
 forall a. [a] -&gt; Int
 forall (t :: * -&gt; *) a. Foldable t =&gt; t a -&gt; Int
 </span><span class="hs-identifier hs-var">length</span></span><span> </span><span class="annot"><span class="annottext">[String]
-</span><a href="#local-6989586621679612462"><span class="hs-identifier hs-var">bts</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-89"></span><span>    </span><span class="annot"><a href="#local-6989586621679612344"><span class="hs-identifier hs-var">goBytes</span></a></span><span> </span><span id="local-6989586621679612467"><span class="annot"><span class="annottext">BYTES
-</span><a href="#local-6989586621679612467"><span class="hs-identifier hs-var">bts</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">BYTES
-</span><a href="#local-6989586621679612467"><span class="hs-identifier hs-var">bts</span></a></span><span>
+</span><a href="#local-6989586621679614927"><span class="hs-identifier hs-var">bts</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-89"></span><span>    </span><span class="annot"><a href="#local-6989586621679614809"><span class="hs-identifier hs-var">goBytes</span></a></span><span> </span><span id="local-6989586621679614932"><span class="annot"><span class="annottext">BYTES
+</span><a href="#local-6989586621679614932"><span class="hs-identifier hs-var">bts</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">BYTES
+</span><a href="#local-6989586621679614932"><span class="hs-identifier hs-var">bts</span></a></span><span>
 </span><span id="line-90"></span><span>    </span><span class="hs-comment">-- Whether a formation spelled flat fits in sixty characters.</span><span>
-</span><span id="line-91"></span><span>    </span><span class="annot"><a href="#local-6989586621679612300"><span class="hs-identifier hs-type">short</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="CST.html#EXPRESSION"><span class="hs-identifier hs-type">EXPRESSION</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span>
-</span><span id="line-92"></span><span>    </span><span id="local-6989586621679612300"><span class="annot"><span class="annottext">short :: EXPRESSION -&gt; Bool
-</span><a href="#local-6989586621679612300"><span class="hs-identifier hs-var hs-var">short</span></a></span></span><span> </span><span id="local-6989586621679612468"><span class="annot"><span class="annottext">EXPRESSION
-</span><a href="#local-6989586621679612468"><span class="hs-identifier hs-var">expr</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Text -&gt; Int
+</span><span id="line-91"></span><span>    </span><span class="annot"><a href="#local-6989586621679614765"><span class="hs-identifier hs-type">short</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="CST.html#EXPRESSION"><span class="hs-identifier hs-type">EXPRESSION</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span>
+</span><span id="line-92"></span><span>    </span><span id="local-6989586621679614765"><span class="annot"><span class="annottext">short :: EXPRESSION -&gt; Bool
+</span><a href="#local-6989586621679614765"><span class="hs-identifier hs-var hs-var">short</span></a></span></span><span> </span><span id="local-6989586621679614933"><span class="annot"><span class="annottext">EXPRESSION
+</span><a href="#local-6989586621679614933"><span class="hs-identifier hs-var">expr</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Text -&gt; Int
 </span><span class="hs-identifier hs-var">T.length</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">EXPRESSION -&gt; Text
 forall a. Render a =&gt; a -&gt; Text
 </span><a href="Render.html#render"><span class="hs-identifier hs-var">render</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">EXPRESSION -&gt; EXPRESSION
 forall a. ToSingleLine a =&gt; a -&gt; a
 </span><a href="Lining.html#toSingleLine"><span class="hs-identifier hs-var">toSingleLine</span></a></span><span> </span><span class="annot"><span class="annottext">EXPRESSION
-</span><a href="#local-6989586621679612468"><span class="hs-identifier hs-var">expr</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
+</span><a href="#local-6989586621679614933"><span class="hs-identifier hs-var">expr</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
 forall a. Ord a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">&lt;=</span></span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">60</span></span><span>
 </span><span id="line-93"></span><span>    </span><span class="hs-comment">-- Whether a binding says what the object decorates, holds or fires.</span><span>
-</span><span id="line-94"></span><span>    </span><span class="annot"><a href="#local-6989586621679612310"><span class="hs-identifier hs-type">salient</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="CST.html#PAIR"><span class="hs-identifier hs-type">PAIR</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span>
-</span><span id="line-95"></span><span>    </span><span id="local-6989586621679612310"><span class="annot"><span class="annottext">salient :: PAIR -&gt; Bool
-</span><a href="#local-6989586621679612310"><span class="hs-identifier hs-var hs-var">salient</span></a></span></span><span> </span><span class="annot"><a href="CST.html#PA_TAU"><span class="hs-identifier hs-type">PA_TAU</span></a></span><span class="hs-special">{</span><span class="annot"><span class="annottext">$sel:attr:PA_TAU :: PAIR -&gt; ATTRIBUTE
+</span><span id="line-94"></span><span>    </span><span class="annot"><a href="#local-6989586621679614775"><span class="hs-identifier hs-type">salient</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="CST.html#PAIR"><span class="hs-identifier hs-type">PAIR</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span>
+</span><span id="line-95"></span><span>    </span><span id="local-6989586621679614775"><span class="annot"><span class="annottext">salient :: PAIR -&gt; Bool
+</span><a href="#local-6989586621679614775"><span class="hs-identifier hs-var hs-var">salient</span></a></span></span><span> </span><span class="annot"><a href="CST.html#PA_TAU"><span class="hs-identifier hs-type">PA_TAU</span></a></span><span class="hs-special">{</span><span class="annot"><span class="annottext">$sel:attr:PA_TAU :: PAIR -&gt; ATTRIBUTE
 </span><a href="CST.html#%24sel%3Aattr%3APA_TAU"><span class="hs-identifier hs-var">attr</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="CST.html#AT_PHI"><span class="hs-identifier hs-type">AT_PHI</span></a></span><span class="hs-special">{</span><span class="hs-special">}</span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool
 </span><span class="hs-identifier hs-var">True</span></span><span>
-</span><span id="line-96"></span><span>    </span><span class="annot"><a href="#local-6989586621679612310"><span class="hs-identifier hs-var">salient</span></a></span><span> </span><span class="annot"><a href="CST.html#PA_FORMATION"><span class="hs-identifier hs-type">PA_FORMATION</span></a></span><span class="hs-special">{</span><span class="annot"><span class="annottext">$sel:attr:PA_TAU :: PAIR -&gt; ATTRIBUTE
+</span><span id="line-96"></span><span>    </span><span class="annot"><a href="#local-6989586621679614775"><span class="hs-identifier hs-var">salient</span></a></span><span> </span><span class="annot"><a href="CST.html#PA_FORMATION"><span class="hs-identifier hs-type">PA_FORMATION</span></a></span><span class="hs-special">{</span><span class="annot"><span class="annottext">$sel:attr:PA_TAU :: PAIR -&gt; ATTRIBUTE
 </span><a href="CST.html#%24sel%3Aattr%3APA_TAU"><span class="hs-identifier hs-var">attr</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="CST.html#AT_PHI"><span class="hs-identifier hs-type">AT_PHI</span></a></span><span class="hs-special">{</span><span class="hs-special">}</span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool
 </span><span class="hs-identifier hs-var">True</span></span><span>
-</span><span id="line-97"></span><span>    </span><span class="annot"><a href="#local-6989586621679612310"><span class="hs-identifier hs-var">salient</span></a></span><span> </span><span class="annot"><a href="CST.html#PA_LAMBDA"><span class="hs-identifier hs-type">PA_LAMBDA</span></a></span><span class="hs-special">{</span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span id="line-97"></span><span>    </span><span class="annot"><a href="#local-6989586621679614775"><span class="hs-identifier hs-var">salient</span></a></span><span> </span><span class="annot"><a href="CST.html#PA_LAMBDA"><span class="hs-identifier hs-type">PA_LAMBDA</span></a></span><span class="hs-special">{</span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool
 </span><span class="hs-identifier hs-var">True</span></span><span>
-</span><span id="line-98"></span><span>    </span><span class="annot"><a href="#local-6989586621679612310"><span class="hs-identifier hs-var">salient</span></a></span><span> </span><span class="annot"><a href="CST.html#PA_META_LAMBDA"><span class="hs-identifier hs-type">PA_META_LAMBDA</span></a></span><span class="hs-special">{</span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span id="line-98"></span><span>    </span><span class="annot"><a href="#local-6989586621679614775"><span class="hs-identifier hs-var">salient</span></a></span><span> </span><span class="annot"><a href="CST.html#PA_META_LAMBDA"><span class="hs-identifier hs-type">PA_META_LAMBDA</span></a></span><span class="hs-special">{</span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool
 </span><span class="hs-identifier hs-var">True</span></span><span>
-</span><span id="line-99"></span><span>    </span><span class="annot"><a href="#local-6989586621679612310"><span class="hs-identifier hs-var">salient</span></a></span><span> </span><span class="annot"><a href="CST.html#PA_DELTA"><span class="hs-identifier hs-type">PA_DELTA</span></a></span><span class="hs-special">{</span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span id="line-99"></span><span>    </span><span class="annot"><a href="#local-6989586621679614775"><span class="hs-identifier hs-var">salient</span></a></span><span> </span><span class="annot"><a href="CST.html#PA_DELTA"><span class="hs-identifier hs-type">PA_DELTA</span></a></span><span class="hs-special">{</span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool
 </span><span class="hs-identifier hs-var">True</span></span><span>
-</span><span id="line-100"></span><span>    </span><span class="annot"><a href="#local-6989586621679612310"><span class="hs-identifier hs-var">salient</span></a></span><span> </span><span class="annot"><a href="CST.html#PA_META_DELTA"><span class="hs-identifier hs-type">PA_META_DELTA</span></a></span><span class="hs-special">{</span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span id="line-100"></span><span>    </span><span class="annot"><a href="#local-6989586621679614775"><span class="hs-identifier hs-var">salient</span></a></span><span> </span><span class="annot"><a href="CST.html#PA_META_DELTA"><span class="hs-identifier hs-type">PA_META_DELTA</span></a></span><span class="hs-special">{</span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool
 </span><span class="hs-identifier hs-var">True</span></span><span>
-</span><span id="line-101"></span><span>    </span><span class="annot"><a href="#local-6989586621679612310"><span class="hs-identifier hs-var">salient</span></a></span><span> </span><span class="annot"><span class="annottext">PAIR
+</span><span id="line-101"></span><span>    </span><span class="annot"><a href="#local-6989586621679614775"><span class="hs-identifier hs-var">salient</span></a></span><span> </span><span class="annot"><span class="annottext">PAIR
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool
 </span><span class="hs-identifier hs-var">False</span></span><span>
 </span><span id="line-102"></span></pre></body></html>
