@@ -994,6 +994,15 @@ $ phino morph --locator=Q.x <<< '⟦ x ↦ ξ ⟧'
 ⊥
 ```
 
+𝕄 maps normal forms to formations and `morph` does not normalize what it is
+given, so a term that is not a normal form, such as a dispatch off a formation
+with neither `φ` nor `λ`, is reported as a failed run rather than answered:
+
+```bash
+$ phino morph --locator=Q.t <<< '⟦ t ↦ ⟦ x ↦ ⟦⟧ ⟧.x ⟧'
+[ERROR]: Morphing expects a normal form, but no morphing rule matches: ⟦⟧:x.x
+```
+
 The whole `dataize` option surface applies unchanged — `--symbolic`,
 `--inside`, `--sequence`, `--headers`, `--steps-dir`, `--protocol`,
 `--partial`, `--max-steps`, `--shuffle`/`--seed`, `--output`, `--focus` and the
