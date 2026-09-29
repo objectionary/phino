@@ -182,16 +182,17 @@ runDataize OptsDataize{..} = do
           dataize universe (started universe) aiming
       )
   when _sequence (printRewrittens printCtx (exclude $ include chain, False) >>= putStrLn)
-  unless _quiet (printOutcome printCtx outcome >>= putStrLn)
+  unless _quiet (printOutcome printCtx (\residue -> F.exclude' (F.include' residue included) excluded) outcome >>= putStrLn)
   where
     -- The bytes the run reached or, when '--partial' let it end on a λ function
     -- that could not fire, the residual program, rendered like a rewriting
-    -- result: in the output format, narrowed to '--focus'.
-    printOutcome :: PrintContext -> Outcome -> IO String
-    printOutcome _ (Dataized bytes) = pure (P.printBytes bytes)
-    printOutcome ctx (Residual residue) = do
+    -- result: narrowed by '--show' and '--hide', canonized, in the output
+    -- format, narrowed to '--focus'.
+    printOutcome :: PrintContext -> (Expression -> Expression) -> Outcome -> IO String
+    printOutcome _ _ (Dataized bytes) = pure (P.printBytes bytes)
+    printOutcome ctx narrowed (Residual residue) = do
       logDebug "Dataization got stuck on a λ function that cannot fire, printing the residual program (--partial)"
-      printFocused ctx residue
+      printAnswer ctx (narrowed residue)
     validateOpts :: IO ()
     validateOpts = do
       validateLatexOptions
@@ -268,7 +269,7 @@ runMorph OptsMorph{..} = do
           morph universe (started universe) aiming
       )
   when _sequence (printRewrittens printCtx (exclude $ include chain, False) >>= putStrLn)
-  unless _quiet (printFocused printCtx morphed >>= putStrLn)
+  unless _quiet (printAnswer printCtx (F.exclude' (F.include' morphed included) excluded) >>= putStrLn)
   where
     validateOpts :: IO ()
     validateOpts = do
