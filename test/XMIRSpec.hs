@@ -306,6 +306,8 @@ spec = do
       [ ("keeps λ function name and bound ρ", "[[ k -> [[ x -> ?, L> Lorg_eolang_number_plus, ^ -> [[ y -> ? ]] ]] ]]")
       , ("keeps Δ data bound to a named attribute", "[[ k -> [[ a -> [[ D> 01-02 ]], ^ -> [[ D> 03-04 ]] ]] ]]")
       , ("keeps Δ data in a dispatched formation", "[[ k -> [[ D> 01-02 ]].plus ]]")
+      , ("keeps Δ data behind a sibling binding", "[[ top -> [[ a -> [[]], D> FF- ]] ]]")
+      , ("keeps Δ data between sibling bindings", "[[ top -> [[ a -> [[]], D> 01-02, b -> [[]] ]] ]]")
       , ("keeps a bare 'Q' bound to a named attribute", "[[ x -> Q ]]")
       , ("keeps a formation bound to φ", "[[ k -> [[ @ -> [[ L> S8 ]] ]] ]]")
       ]
