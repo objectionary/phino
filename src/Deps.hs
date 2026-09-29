@@ -214,9 +214,11 @@ data Evaluation
     EvStuckOn Int T.Text
   | -- The step budget running out, at the depth of the frame that asked for
     -- one more step, together with the limit, the judgment of that frame and
-    -- the term it stood at. It is written whether or not '--partial' goes on
-    -- to park the term, since a firing the budget starved otherwise reads the
-    -- same as one that went well (#1524).
+    -- the locator of the site it stood at. It is written whether or not
+    -- '--partial' goes on to park the term, since a firing the budget starved
+    -- otherwise reads the same as one that went well (#1524). The site and not
+    -- the term, since the walk of 𝕄 stands at the whole formation it morphs,
+    -- which on a real world spells a universe on every line (#1531).
     EvStarved Int Int Judgment Expression
   | -- A 'dataize' operand of the firing: the meta it bound, the term the entry
     -- wrote under that meta, and the data it came down to, or the symbol that
@@ -434,9 +436,9 @@ saveEval handle cursor render salted report = do
       pure (protocol, Just (indented depth (printf "stall(%s)" (T.unpack key))))
     written (EvStuckOn depth key) protocol =
       pure (protocol, Just (indented depth (printf "stuck(%s)" (T.unpack key))))
-    written (EvStarved depth limit judgment self) protocol = do
-      form <- render self
-      pure (protocol, Just (indented depth (printf "starved(%d)  # %s(%s)" limit (letter judgment) form)))
+    written (EvStarved depth limit judgment site) protocol = do
+      locator <- render site
+      pure (protocol, Just (indented depth (printf "starved(%d)  # %s(%s)" limit (letter judgment) locator)))
     written (EvData depth spelling operand value) protocol = do
       datum <- spelled value
       line <- commented (printf "%s := %s" (labelled protocol depth spelling) datum) Dataization operand
@@ -621,10 +623,10 @@ saveEvalXml handle cursor render report = do
     elements (EvStuckOn depth key) nesting = do
       let (kept, closers) = closed depth nesting._closing
       pure (nesting{_closing = kept}, closers ++ [indented depth (printf "<unfinished λ=\"%s\"/>" (quoted key))])
-    elements (EvStarved depth limit judgment self) nesting = do
-      form <- render self
+    elements (EvStarved depth limit judgment site) nesting = do
+      locator <- render site
       let (kept, closers) = closed depth nesting._closing
-      pure (nesting{_closing = kept}, closers ++ [indented depth (printf "<starved limit=\"%d\" by=\"%s\">%s</starved>" limit (opened judgment) (escapeXMLText form))])
+      pure (nesting{_closing = kept}, closers ++ [indented depth (printf "<starved limit=\"%d\" by=\"%s\" at=\"%s\"/>" limit (opened judgment) (escapeXML locator))])
     elements (EvData depth spelling _ value) nesting = do
       record <- stood value
       pure (nesting{_closing = kept}, closers ++ [indented depth record])

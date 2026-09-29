@@ -461,7 +461,7 @@ rewritten rules ctx = goExpr
 -- dispatched attribute is none of the formation's own (see 'demanded').
 fired :: Maybe Attribute -> Expression -> Expression -> State -> ReduceContext -> IO (Maybe Expression, State)
 fired dispatched term univ state caller = do
-  ctx <- deeper term caller
+  ctx <- deeper caller
   morphed <- try (reduced ctx)
   case morphed of
     Right (ExFormation bds, state')

@@ -32,4 +32,4 @@ protocol: |
       𝑛.5.2 := L_loop:λ  # 𝕄(𝑛.5.1)
     𝔼(L_loop)  # 𝕄(Φ.x)
       𝑛.6.1 := L_loop:λ  # 𝑛
-      starved(6)  # 𝕄(L_loop:λ)
+      starved(6)  # 𝕄(Φ.x)
