@@ -12,7 +12,7 @@ import Abridge (abridged)
 import CLI.Types
 import CLI.Validators (invalidCLIArguments)
 import CST (EXPRESSION)
-import Canonizer (canonize)
+import Canonizer (canonize, canonizeExpr)
 import Control.Exception
 import Control.Monad ((>=>))
 import Data.Char (toLower)
@@ -244,6 +244,12 @@ printRewrittens ctx@PrintCtx{..} rewrittens@(chain, _)
       where
         prefixed :: String -> String -> String
         prefixed = printf "\n%s\n%s"
+
+-- Render the one answer a run of 𝕄 or 𝔻 hands back the way 'printRewrittens'
+-- renders a step: canonized under '--canonize', then narrowed to '--focus'
+-- (#1441).
+printAnswer :: PrintContext -> Expression -> IO String
+printAnswer ctx@PrintCtx{..} expr = printFocused ctx (if _canonize then canonizeExpr expr else expr)
 
 -- Render one expression in the output format, narrowed to the '--focus'
 -- sub-expression when one is given.

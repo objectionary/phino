@@ -5,7 +5,7 @@
 # round reads the 'loop' of its ρ with itself as 'n', so the term widens and
 # never repeats, and only '--max-cycles' ends it. The unfinished term is not a
 # normal form and no morphing rule takes it, so the run names the budget it
-# spent instead of failing with "no morphing rule matched" (#1496).
+# spent instead of failing because no morphing rule takes it (#1496).
 location: 'Q.x'
 input: |
   ⟦
