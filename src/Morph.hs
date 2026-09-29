@@ -365,13 +365,14 @@ instance Show ReduceException where
 -- with or without '--depth-sensitive'. The memo is told every time it throws,
 -- so a stall the budget made is kept as a stall of that budget and not of the
 -- formation (see 'Kept', #1514, #1521). The protocol is told too, with the
--- term the frame stood at, so a firing the budget starved no longer reads as
--- one that went well (#1524).
-deeper :: Expression -> ReduceContext -> IO ReduceContext
-deeper term ctx@ReduceContext{_steps = Steps limit spent}
+-- site the frame stood at, so a firing the budget starved no longer reads as
+-- one that went well (#1524), and a frame of 𝕄 standing at a whole universe
+-- does not spell it on every line (#1531).
+deeper :: ReduceContext -> IO ReduceContext
+deeper ctx@ReduceContext{_steps = Steps limit spent}
   | spent >= limit = do
       starve ctx._memo
-      ctx._saveEval (EvStarved ctx._nesting limit ctx._judgment term)
+      ctx._saveEval (EvStarved ctx._nesting limit ctx._judgment ctx._site)
       throwIO (OutOfSteps (Depth limit))
   | otherwise = pure ctx{_steps = Steps limit (spent + 1)}
   where
@@ -621,7 +622,7 @@ isLambda _ = False
 -- evaluated in isolation by 'sidePremise', its own steps discarded.
 morph' :: Morphed -> Expression -> State -> ReduceContext -> IO (Morphed, State)
 morph' (expr, seq) univ state caller = do
-  ctx <- deeper expr =<< entering expr =<< universed univ caller{_judgment = Morphing}
+  ctx <- deeper =<< entering expr =<< universed univ caller{_judgment = Morphing}
   parking seq state $ do
     rules <- if ctx._shuffle then shuffle Y.morphingRules else pure Y.morphingRules
     matched <- firstMatch ctx rules
@@ -776,7 +777,7 @@ deepened expr univ state ctx = go (Just ctx._site) Nothing ExXi expr state ctx
     go :: Maybe Expression -> Maybe Attribute -> Expression -> Expression -> State -> ReduceContext -> IO (Expression, State)
     go standing dispatched context term state' caller = do
       let here = sited standing caller
-      ctx' <- deeper term here
+      ctx' <- deeper here
       (walked, walkedState) <- parts standing context term state' here
       (answer, answered) <- ctx'._fire dispatched (contextualize walked context) univ walkedState ctx'
       pure (fromMaybe walked answer, answered)

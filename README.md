@@ -532,20 +532,20 @@ failure passed on its way out.
 `stall(L_outer)` stands under a firing that `--acyclic=plausible` answered
 with the stall an earlier firing of the same formation kept, so a told stall
 never reads as a fresh firing that wrote nothing.
-`starved(4)  # 𝔻(ξ.arg)` is where `--max-steps=4` ran out, commented with the
-judgment and the term the reduction stood at, whether or not `--partial` goes
+`starved(4)  # 𝔻(Φ.a🌵1)` is where `--max-steps=4` ran out, commented with the
+judgment and the site the reduction stood at, whether or not `--partial` goes
 on to park it:
 
 ```text
 𝕄(Φ.x)
   𝔼(L_outer)  # 𝕄(Φ.x)
     𝔼(L_outer)  # 𝔻(Φ.a🌵0)
-      starved(4)  # 𝔻(ξ.arg)
+      starved(4)  # 𝔻(Φ.a🌵1)
     stuck(L_outer)
 ```
 
 The markup spells them `<unfinished λ="L_outer"/>`, `<stall λ="L_outer"/>`
-and `<starved limit="4" by="dataize">ξ.arg</starved>`.
+and `<starved limit="4" by="dataize" at="Φ.a🌵1"/>`.
 
 Every term is 𝜑 on a single line, whatever `--output` and `--flat` say about
 the result of the run, so a program reading the protocol back never has to know

@@ -185,7 +185,7 @@ ancestor entered (#1434) and naming the mode that cut it.
 Three records say why a firing gave no answer (#1524): `stuck(…)` closes a
 firing that got stuck, `stall(…)` stands under one the memo answered with a
 kept stall, and `starved(…)` is written by `deeper` where the step budget runs
-out, with the term it stood at.
+out, with the site it stood at rather than its term (#1531).
 
 `--max-steps` bounds the depth of one branch, so a recursion that widens the
 term instead of nesting it fires forever inside it. `--max-firings` bounds the

@@ -1545,7 +1545,7 @@ spec = do
             withStdin "⟦ x ↦ ⟦ arg ↦ ⟦ φ ↦ ⟦ φ ↦ ⟦ Δ ⤍ 07- ⟧ ⟧ ⟧, λ ⤍ L_outer ⟧ ⟧" $
               testCLISucceeded ["dataize", "--symbolic=" ++ outer, "--locator=Q.x", "--partial", "--max-steps=3", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho", "--flat"] []
           records <- readUtf8 path
-          lines records `shouldContain` ["        <starved limit=\"3\" by=\"dataize\">07-:Δ</starved>"]
+          lines records `shouldContain` ["        <starved limit=\"3\" by=\"dataize\" at=\"Φ.a🌵0\"/>"]
 
       it "keeps the lines of a run that fails" $
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
