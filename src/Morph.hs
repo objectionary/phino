@@ -18,7 +18,7 @@
 -- a λ function itself, which is an evaluation — are injected as '_reduce',
 -- '_evaluate' and '_fire' rather than imported (see 'ReductionFunc' and
 -- 'EvaluationFunc').
-module Morph (Answer, Kept (..), ReduceContext (..), ReduceException (..), EvaluationFunc, FiringFunc, Memo (..), ReductionFunc, Morphed, Steps (..), Tally (..), boxed, charged, deeper, emptyState, enter, entering, excluding, execBuildTerm, insideUniverse, isLambda, lambda, leadsTo, memoized, morph, morph', morphing, normalized, parking, producer, recalled, retained, sidePremise, tallied, universed, unparked, verb) where
+module Morph (Answer, Kept (..), ReduceContext (..), ReduceException (..), EvaluationFunc, FiringFunc, Memo (..), ReductionFunc, Morphed, Steps (..), Tally (..), boxed, charged, counted, deeper, emptyState, enter, entering, excluding, execBuildTerm, insideUniverse, isLambda, lambda, leadsTo, memoized, morph, morph', morphing, normalized, parking, producer, recalled, retained, sidePremise, tallied, universed, unparked, verb) where
 
 import AST
 import Builder (buildExpressionThrows, contextualize, pathOf)
@@ -144,10 +144,11 @@ data Tally = Tally
 -- A stall is a fact about the firing and not about the formation, though: a
 -- branch often stays unjoined only because an operand inside it could not yet
 -- be brought down, and the walk brings it down a few steps later. So a stall
--- is kept beside the number of answers the memo held when it was made, and it
--- is told to a later firing only while the memo holds no more, since an
--- operand that could not be reduced can only be reduced once something new
--- was answered (#1495). An answer the formation made is told before any stall
+-- is kept beside the number of answers the memo held when its firing began,
+-- and it is told to a later firing only while the memo holds no more, since
+-- an operand that could not be reduced can only be reduced once something new
+-- was answered, the answers of the firing's own nested firings included
+-- (#1495, #1507). An answer the formation made is told before any stall
 -- of it, whichever came first. The store is
 -- one cell every frame of the run shares, like the count of 'Tally', since
 -- what one frame answered is what its siblings are after. It belongs to
@@ -398,15 +399,22 @@ recalled (Just (Memo store answers _)) form = do
     answered (Answered _) = True
     answered _ = False
 
--- Keep what firing the formation came to, for the next firing of it (see
--- 'Memo').
-retained :: Maybe Memo -> Expression -> Kept -> IO ()
-retained Nothing _ _ = pure ()
-retained (Just (Memo store answers _)) form kept = do
-  count <- readIORef answers
-  modifyIORef' store (Map.insertWith (++) (hashExpression form) [(form, (count, kept))])
+-- How many answers the memo holds (see 'Memo'); none where the run keeps no
+-- memo at all.
+counted :: Maybe Memo -> IO Int
+counted Nothing = pure 0
+counted (Just (Memo _ answers _)) = readIORef answers
+
+-- Keep what firing the formation came to, for the next firing of it, stamped
+-- with the count of answers the memo held when that firing began, so that
+-- what the firing answered inside itself counts as answered after it (see
+-- 'Memo', #1507).
+retained :: Maybe Memo -> Expression -> Int -> Kept -> IO ()
+retained Nothing _ _ _ = pure ()
+retained (Just (Memo store answers _)) form stamp kept = do
+  modifyIORef' store (Map.insertWith (++) (hashExpression form) [(form, (stamp, kept))])
   case kept of
-    Answered _ -> writeIORef answers (count + 1)
+    Answered _ -> modifyIORef' answers (+ 1)
     _ -> pure ()
 
 -- Whether the '--deep' walk has entered the binding the object of the world

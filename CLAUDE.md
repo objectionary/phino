@@ -204,9 +204,10 @@ its way to an answer keeps the cut (`Looped` of `Kept`), and a later firing of
 the same formation is cut at its own site without reducing anything (#1480). A
 firing that got stuck keeps the λ function it got stuck on (`Stalled` of
 `Kept`), and a later firing of the same formation gets stuck at its own site
-the same way (#1493), but only while the memo has answered nothing since, as
-the count of answers kept beside the stall tells: an operand that could not be
-brought down may come down once something new was answered (#1495).
+the same way (#1493), but only while the memo has answered nothing since the
+stuck firing began, as the count of answers kept beside the stall tells: an
+operand that could not be brought down may come down once something new was
+answered, inside the stuck firing or after it (#1495, #1507).
 
 Beside the answers, the memo keeps the bindings of the world the `--deep`
 walk has entered (`visited` and `visit` in `Morph.hs`, asked by `fresh` of
