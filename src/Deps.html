@@ -278,7 +278,7 @@ showList :: [Acyclic] -&gt; String -&gt; String
 </span><span id="line-138"></span><span class="hs-comment">-- the term the entry wrote, then the normal form &#120132; makes of it, so the</span><span>
 </span><span id="line-139"></span><span class="hs-comment">-- morphing between them is a step a reader watches happen rather than a shape a</span><span>
 </span><span id="line-140"></span><span class="hs-comment">-- term arrives in (#1298). A name no entry answers stands there as</span><span>
-</span><span id="line-141"></span><span class="hs-comment">-- '?(L_number_nope)', where the block of its firing would have been. A</span><span>
+</span><span id="line-141"></span><span class="hs-comment">-- 'unanswered(L_number_nope)', where the block of its firing would have been. A</span><span>
 </span><span id="line-142"></span><span class="hs-comment">-- formation &#120123; gets into through its 'box' rule opens a block of its own,</span><span>
 </span><span id="line-143"></span><span class="hs-comment">-- 'formation(&#10214; &#8230; &#10215;)  # &#120123;(&#934;.x)', and what its &#966; body fires stands under it</span><span>
 </span><span id="line-144"></span><span class="hs-comment">-- (#1420).</span><span>
@@ -789,7 +789,7 @@ forall a. a -&gt; Maybe a
 </span><a href="#local-6989586621679608905"><span class="hs-identifier hs-var">depth</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String -&gt; String -&gt; String -&gt; String -&gt; String
 forall r. PrintfType r =&gt; String -&gt; r
 </span><span class="hs-identifier hs-var">printf</span></span><span> </span><span class="annot"><span class="annottext">String
-</span><span class="hs-string">&quot;?(%s)  # %s(%s)&quot;</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text -&gt; String
+</span><span class="hs-string">&quot;unanswered(%s)  # %s(%s)&quot;</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text -&gt; String
 </span><span class="hs-identifier hs-var">T.unpack</span></span><span> </span><span class="annot"><span class="annottext">Text
 </span><a href="#local-6989586621679608906"><span class="hs-identifier hs-var">key</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Judgment -&gt; String
 </span><a href="Deps.html#letter"><span class="hs-identifier hs-var">letter</span></a></span><span> </span><span class="annot"><span class="annottext">Judgment
@@ -1626,7 +1626,7 @@ forall a. [a] -&gt; [a] -&gt; [a]
 </span><a href="#local-6989586621679609064"><span class="hs-identifier hs-var">depth</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String -&gt; String -&gt; String -&gt; String -&gt; String
 forall r. PrintfType r =&gt; String -&gt; r
 </span><span class="hs-identifier hs-var">printf</span></span><span> </span><span class="annot"><span class="annottext">String
-</span><span class="hs-string">&quot;&lt;stuck &#955;=\&quot;%s\&quot; by=\&quot;%s\&quot;&gt;%s&lt;/stuck&gt;&quot;</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text -&gt; String
+</span><span class="hs-string">&quot;&lt;unanswered &#955;=\&quot;%s\&quot; by=\&quot;%s\&quot;&gt;%s&lt;/unanswered&gt;&quot;</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text -&gt; String
 </span><a href="#local-6989586621679609032"><span class="hs-identifier hs-var">quoted</span></a></span><span> </span><span class="annot"><span class="annottext">Text
 </span><a href="#local-6989586621679609065"><span class="hs-identifier hs-var">key</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Judgment -&gt; String
 </span><a href="Deps.html#opened"><span class="hs-identifier hs-var">opened</span></a></span><span> </span><span class="annot"><span class="annottext">Judgment

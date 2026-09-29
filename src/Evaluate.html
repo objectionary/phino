@@ -250,9 +250,9 @@ forall e a. Exception e =&gt; e -&gt; IO a
 </span><span id="line-120"></span><span class="hs-comment">-- so the protocol says what was asked for whether or not '_partial' goes on to</span><span>
 </span><span id="line-121"></span><span class="hs-comment">-- park the run &#8212; once, and not once per attempt: a site '_partial' has parked</span><span>
 </span><span id="line-122"></span><span class="hs-comment">-- is still standing in the residue the '_deep' walk goes over, so &#120124; is fired on</span><span>
-</span><span id="line-123"></span><span class="hs-comment">-- it again and again answers nothing, and a reader counting the '?(&#8230;)' lines</span><span>
-</span><span id="line-124"></span><span class="hs-comment">-- counts the sites &#120124; got stuck on rather than the passes the walk made over</span><span>
-</span><span id="line-125"></span><span class="hs-comment">-- them (see '_parked', #1300). A firing an entry answers is charged to the</span><span>
+</span><span id="line-123"></span><span class="hs-comment">-- it again and again answers nothing, and a reader counting the 'unanswered(&#8230;)'</span><span>
+</span><span id="line-124"></span><span class="hs-comment">-- lines counts the sites &#120124; got stuck on rather than the passes the walk made</span><span>
+</span><span id="line-125"></span><span class="hs-comment">-- over them (see '_parked', #1300). A firing an entry answers is charged to the</span><span>
 </span><span id="line-126"></span><span class="hs-comment">-- '--max-firings' budget before it writes anything, so a run that spent the</span><span>
 </span><span id="line-127"></span><span class="hs-comment">-- budget leaves no firing open in the protocol (see 'charged', #1472).</span><span>
 </span><span id="line-128"></span><span class="hs-comment">--</span><span>
