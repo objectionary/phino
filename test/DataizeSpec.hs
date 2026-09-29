@@ -305,16 +305,17 @@ spec = do
             expr <- parseExpressionThrows boxed
             dataize expr emptyState ctx `shouldThrow` (\e -> message `isInfixOf` show (e :: SomeException))
       )
-    forM_
-      [ ("--max-cycles", ReduceContext ExRoot ExRoot Nothing 25 0 (Steps 250 0) Nothing Nothing 1 False True False False Nothing Dataization [] Map.empty emptyLambdas buildTerm reduction evaluation fired dontSaveStep dontSaveEval)
-      , ("--max-depth", ReduceContext ExRoot ExRoot Nothing 0 25 (Steps 250 0) Nothing Nothing 1 False True False False Nothing Dataization [] Map.empty emptyLambdas buildTerm reduction evaluation fired dontSaveStep dontSaveEval)
-      ]
-      ( \(flag, ctx) ->
-          it ("does not throw without --depth-sensitive even once " ++ flag ++ " is exhausted") $ do
-            expr <- parseExpressionThrows boxed
-            (value, _, _) <- dataize expr emptyState ctx
-            value `shouldBe` Dataized (BtOne "00")
-      )
+    it "does not throw without --depth-sensitive even once --max-depth is exhausted" $ do
+      expr <- parseExpressionThrows boxed
+      (value, _, _) <- dataize expr emptyState (ReduceContext ExRoot ExRoot Nothing 0 25 (Steps 250 0) Nothing Nothing 1 False True False False Nothing Dataization [] Map.empty emptyLambdas buildTerm reduction evaluation fired dontSaveStep dontSaveEval)
+      value `shouldBe` Dataized (BtOne "00")
+    -- A normalization that ran out of cycles hands back a term that is not a
+    -- normal form, so the run names the budget even without --depth-sensitive
+    -- rather than going on with it (#1496)
+    it "throws once --max-cycles is exhausted even without --depth-sensitive" $ do
+      expr <- parseExpressionThrows boxed
+      dataize expr emptyState (ReduceContext ExRoot ExRoot Nothing 25 0 (Steps 250 0) Nothing Nothing 1 False True False False Nothing Dataization [] Map.empty emptyLambdas buildTerm reduction evaluation fired dontSaveStep dontSaveEval)
+        `shouldThrow` (\e -> "--max-cycles=0" `isInfixOf` show (e :: SomeException))
 
   describe "labels every step with a defined rule or operation" $ do
     let verb op = case op of

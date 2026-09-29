@@ -1,0 +1,30 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# The same premise under '_partial': the run parks where 𝕄 reached, the
+# dispatch whose 'normalize' premise ran out of '--max-cycles' (#1496).
+location: 'Q.x'
+partial: true
+input: |
+  ⟦
+    tuple(length, head, tail) ↦ ⟦ empty ↦ ⟦ ⟧ ⟧,
+    map(pairs) ↦ ⟦
+      φ ↦ ctor( entries ↦ pairs.length.eq( 0 ).if( Φ.tuple.empty, walk( tup ↦ pairs ).φ ) ),
+      ctor(entries) ↦ ⟦ keys ↦ entries ⟧,
+      walk(ρ, tup) ↦ ⟦
+        φ ↦ tup.length.eq( 0 ).if( Φ.tuple.empty, prev ),
+        prev ↦ ρ.walk( tup ↦ tup.tail ).φ
+      ⟧
+    ⟧,
+    x ↦ Φ.map( pairs ↦ Φ.tuple( length ↦ L_len:λ, head ↦ L_head:λ, tail ↦ L_tail:λ ) ).keys
+  ⟧
+result: |
+  ⟦
+    pairs ↦ Φ.tuple( length ↦ L_len:λ, head ↦ L_head:λ, tail ↦ L_tail:λ ),
+    φ ↦ ctor( entries ↦ pairs.length.eq( 0 ).if( Φ.tuple.empty, walk( tup ↦ pairs ).φ ) ),
+    ctor(entries) ↦ ⟦ keys ↦ entries ⟧,
+    walk(ρ, tup) ↦ ⟦
+      φ ↦ tup.length.eq( 0 ).if( Φ.tuple.empty, prev ),
+      prev ↦ ρ.walk( tup ↦ tup.tail ).φ
+    ⟧
+  ⟧.keys
