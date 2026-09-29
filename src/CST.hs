@@ -248,7 +248,6 @@ data CONDITION
   | CO_DISJOINT {attrs :: [ATTRIBUTE], groups :: [BINDING]}
   | CO_SUBSET {attrs :: [ATTRIBUTE], belongs :: BELONGING, groups :: [BINDING]}
   | CO_FORMATION {expr :: EXPRESSION}
-  | CO_RECURSIVE {expr :: EXPRESSION}
   deriving (Eq, Show)
 
 data EXTRA_ARG
@@ -618,7 +617,6 @@ instance ToCST Y.Condition CONDITION where
   toCST (Y.Matches regex expr) _ = CO_MATCHES regex (expressionToCST expr)
   toCST (Y.PartOf expr binding) _ = CO_PART_OF (expressionToCST expr) (bindingsToCST [binding])
   toCST (Y.IsFormation expr) _ = CO_FORMATION (expressionToCST expr)
-  toCST (Y.Recursive expr) _ = CO_RECURSIVE (expressionToCST expr)
 
 instance ToCST Y.Comparable COMPARABLE where
   toCST (Y.CmpAttr attr) _ = CMP_ATTR (attributeToCST attr)

@@ -1672,10 +1672,6 @@ Condition:
       Expression'        # (an abstraction ⟦…⟧); used by morphing 'md'
                          # as 'not (formation 𝑛)', so a non-formation head is
                          # morphed and a formation head is left to 'ml'
-  | recursive:           # returns True if given expression dispatches an
-      Expression'        # attribute of a formation whose body leads back to
-                         # it through the ξ-dispatches it starts with; used
-                         # by normalization 'loop' and 'dot'
   | gt:                  # returns True if the first comparable object is
       - Comparable       # greater than the second one
       - Comparable

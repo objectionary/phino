@@ -112,7 +112,6 @@ instance ToASCII CONDITION where
   toASCII CO_DISJOINT{..} = CO_DISJOINT (map toASCII attrs) (map toASCII groups)
   toASCII CO_SUBSET{..} = CO_SUBSET (map toASCII attrs) belongs (map toASCII groups)
   toASCII CO_FORMATION{..} = CO_FORMATION (toASCII expr)
-  toASCII CO_RECURSIVE{..} = CO_RECURSIVE (toASCII expr)
   toASCII CO_EMPTY = CO_EMPTY
 
 instance ToASCII EXTRA_ARG where

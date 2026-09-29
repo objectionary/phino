@@ -314,7 +314,6 @@ spec = do
       , ("CO_ABSOLUTE in", CO_ABSOLUTE xiExpr IN, "\\phinoAbsolute{ ξ }")
       , ("CO_ABSOLUTE not in", CO_ABSOLUTE xiExpr NOT_IN, "\\phinoNotAbsolute{ ξ }")
       , ("CO_NOT wrapping CO_FORMATION", CO_NOT (CO_FORMATION xiExpr), "\\phinoNotFormation{ ξ }")
-      , ("CO_NOT wrapping CO_RECURSIVE", CO_NOT (CO_RECURSIVE xiExpr), "\\phinoNotRecursive{ ξ }")
       ,
         ( "CO_NOT wrapping a generic condition"
         , CO_NOT (CO_NF xiExpr)
@@ -324,7 +323,6 @@ spec = do
       , ("CO_MATCHES", CO_MATCHES "^a+$" xiExpr, "matches\\lparen ^a+$, ξ \\rparen")
       , ("CO_PART_OF", CO_PART_OF xiExpr (bindingXi "y"), "part-of\\lparen ξ, y ↦ ξ \\rparen")
       , ("CO_FORMATION", CO_FORMATION xiExpr, "\\phinoIsFormation{ ξ }")
-      , ("CO_RECURSIVE", CO_RECURSIVE xiExpr, "\\phinoRecursive{ ξ }")
       , ("CO_DISJOINT single group", CO_DISJOINT [AT_LABEL "a"] [bindingXi "x"], "[ a ] \\cap x ↦ ξ = \\emptyset")
       ,
         ( "CO_DISJOINT multiple groups"

@@ -103,7 +103,7 @@ instance FromJSON Condition where
 
 parseCondition :: Object -> Parser Condition
 parseCondition v = do
-  validateYamlObject v ["and", "or", "not", "nf", "absolute", "eq", "gt", "in", "matches", "part-of", "disjoint", "formation", "recursive"]
+  validateYamlObject v ["and", "or", "not", "nf", "absolute", "eq", "gt", "in", "matches", "part-of", "disjoint", "formation"]
   case KeyMap.keys v of
     [key] -> case Key.toString key of
       "and" -> do
@@ -120,7 +120,6 @@ parseCondition v = do
       "nf" -> NF <$> v .: "nf"
       "absolute" -> Absolute <$> v .: "absolute"
       "formation" -> IsFormation <$> v .: "formation"
-      "recursive" -> Recursive <$> v .: "recursive"
       "disjoint" -> do
         vals <- v .: "disjoint"
         case vals of
@@ -221,7 +220,6 @@ data Condition
   | PartOf Expression Binding
   | Disjoint [Attribute] [Binding]
   | IsFormation Expression
-  | Recursive Expression
   deriving (Eq, Generic, Show)
 
 data ExtraArgument
@@ -263,7 +261,6 @@ instance Slots Condition where
   slots (PartOf expr bd) = slots expr ++ slots bd
   slots (Disjoint attrs bds) = slots attrs ++ slots bds
   slots (IsFormation expr) = slots expr
-  slots (Recursive expr) = slots expr
 
 instance Slots Comparable where
   slots (CmpAttr attr) = slots attr
@@ -309,7 +306,6 @@ instance Metas Condition where
   metas (PartOf expr bd) = metas expr ++ metas bd
   metas (Disjoint attrs bds) = metas attrs ++ metas bds
   metas (IsFormation expr) = metas expr
-  metas (Recursive expr) = metas expr
   bare names (And conds) = And (bare names conds)
   bare names (Or conds) = Or (bare names conds)
   bare names (Not cond) = Not (bare names cond)
@@ -322,7 +318,6 @@ instance Metas Condition where
   bare names (PartOf expr bd) = PartOf (bare names expr) (bare names bd)
   bare names (Disjoint attrs bds) = Disjoint (bare names attrs) (bare names bds)
   bare names (IsFormation expr) = IsFormation (bare names expr)
-  bare names (Recursive expr) = Recursive (bare names expr)
 
 instance Metas Comparable where
   metas (CmpAttr attr) = metas attr

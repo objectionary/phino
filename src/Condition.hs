@@ -147,11 +147,6 @@ condition =
         expr <- _expression phiParser
         _ <- rparen
         return (Y.IsFormation expr)
-    , do
-        _ <- symbol "recursive" >> lparen
-        expr <- _expression phiParser
-        _ <- rparen
-        return (Y.Recursive expr)
     ]
 
 parseCondition :: String -> Either String Y.Condition

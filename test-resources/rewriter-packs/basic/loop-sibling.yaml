@@ -1,9 +1,0 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
-# SPDX-License-Identifier: MIT
----
-rules:
-  basic: ['loop']
-input: |
-  ⟦ a ↦ ξ, b ↦ ξ.a ⟧.b
-output: |-
-  ⟦ a ↦ ξ, b ↦ ξ.a ⟧.b

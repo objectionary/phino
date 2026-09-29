@@ -24,7 +24,7 @@ import qualified Data.ByteString.Char8 as B
 import Data.Foldable (foldlM)
 import Data.List (foldl', intersect, nub)
 import qualified Data.Map.Strict as M
-import Data.Maybe (catMaybes, listToMaybe)
+import Data.Maybe (catMaybes)
 import qualified Data.Text as T
 import Deps (BuildTermFunc, BuildTermMethod, Term (..))
 import Functions (nameOf)
@@ -216,32 +216,6 @@ _isFormation expr subst _ = pure [subst | isFormation expr]
     isFormation (ExFormation _) = True
     isFormation _ = False
 
--- Hold when the given expression dispatches an attribute of a formation whose
--- body reaches that same attribute again through the ξ-dispatches it starts
--- with, directly as in ⟦ a ↦ ξ.a ⟧.a or through siblings as in
--- ⟦ a ↦ ξ.b, b ↦ ξ.a ⟧.a. Such a dispatch has no normal form: 'dot' would
--- rebuild it inside its own body forever, so 'loop' answers ⊥ in its place
--- (#967, #1438). A body that is ξ itself, or reaches a sibling that does not
--- lead back, is not recursive.
-_recursive :: Expression -> Subst -> RuleContext -> IO [Subst]
-_recursive expr subst _ = do
-  expr' <- buildExpressionThrows expr subst
-  pure [subst | recursive expr']
-  where
-    recursive :: Expression -> Bool
-    recursive (ExDispatch (ExFormation bds) attr) = go [] attr
-      where
-        go :: [Attribute] -> Attribute -> Bool
-        go seen current
-          | current `elem` seen = True
-          | otherwise = maybe False (go (current : seen)) (listToMaybe [body | BiTau battr body <- bds, battr == current] >>= leading)
-    recursive _ = False
-    leading :: Expression -> Maybe Attribute
-    leading (ExDispatch ExXi attr) = Just attr
-    leading (ExDispatch subject _) = leading subject
-    leading (ExApplication subject _) = leading subject
-    leading _ = Nothing
-
 _matches :: String -> Expression -> Subst -> RuleContext -> IO [Subst]
 _matches pat (ExMeta meta) (Subst mp) ctx = case M.lookup (Named meta) mp of
   Just (MvExpression expr) -> _matches pat expr (Subst mp) ctx
@@ -295,7 +269,6 @@ meetCondition' (Y.Matches pat expr) = _matches pat expr
 meetCondition' (Y.PartOf expr bd) = _partOf expr bd
 meetCondition' (Y.Disjoint attrs bds) = _disjoint attrs bds
 meetCondition' (Y.IsFormation expr) = _isFormation expr
-meetCondition' (Y.Recursive expr) = _recursive expr
 
 -- For each substitution check if it meetCondition to given condition
 -- If substitution does not meet the condition - it's thrown out
