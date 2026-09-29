@@ -28,9 +28,10 @@ import AST
 import Bytes (nonFiniteName)
 import CST
 import Canonizer (canonize, canonizeExpr)
-import Data.List (intercalate, nub)
+import Data.List (intercalate, nub, zipWith4)
 import Data.Maybe (isJust)
 import qualified Data.Text as T
+import Deps (Judgment (..))
 import Encoding
 import Lining
 import Locator (locatedExpression)
@@ -156,32 +157,54 @@ preamble ctx@LatexContext{..} =
     , maybe "" (printf "\\phiExpression{%s} ") _expression
     ]
 
--- Join the rendered steps with '\leadsto'. Every step after the first carries
--- the two-space '\leadsto' indent, so it is rendered from base tab 1 rather
--- than 0 (via 'baseTab'); this keeps a wrapped multi-line step's members nested
--- one level below its '\leadsto [[' line and its closing bracket aligned with
--- that line. The first step has no '\leadsto' prefix and stays at base tab 0.
+-- Join the rendered steps with the arrows of the judgments that took them, so
+-- a chain mixing rules of 𝒩, 𝕄 and 𝔻 tells them apart (#1536). A step taken
+-- by a rule ends with the arrow of the rule's judgment, the rule referenced in
+-- its optional argument, and the step after it opens with the same arrow, bare
+-- (see 'arrows'). Every step after the first carries the two-space indent
+-- before its arrow, so it is rendered from base tab 1 rather than 0 (via
+-- 'baseTab'); this keeps a wrapped multi-line step's members nested one level
+-- below the line its arrow opens and its closing bracket aligned with that
+-- line. The first step opens with no arrow and stays at base tab 0.
 -- Each step is prefixed with the matching entry from 'comments', which is
 -- either empty or a '% ...'-commented header line ending in a newline (see
 -- 'stepComments'), so headers stay on their own line above the equation.
-body :: [String] -> [(a, Maybe String)] -> (Int -> a -> String) -> String
+body :: [String] -> [(a, Maybe (Judgment, String))] -> (Int -> a -> String) -> String
 body comments printed toLatex =
   intercalate
     "\n"
-    ( zipWith3
-        ( \idx comment (item, maybeName) ->
+    ( zipWith4
+        ( \idx comment (item, rule) reached ->
             let item' = toLatex (baseTab idx) item
-                leadsto = if idx == 0 then item' else "  \\leadsto " ++ item'
-             in comment ++ maybe leadsto (printf "%s \\leadsto_{\\nameref{r:%s}}" leadsto) maybeName
+                opening = if idx == 0 then item' else printf "  %s %s" (relation reached) item'
+             in comment ++ maybe opening (\(judgment, name) -> printf "%s %s[\\nameref{r:%s}]" opening (relation judgment) name) rule
         )
         [0 ..]
         comments
         printed
+        (arrows (map snd printed))
     )
   where
     baseTab :: Int -> Int
     baseTab 0 = 0
     baseTab _ = 1
+
+-- The judgment a chain stands at before each of its steps and after its last
+-- one, which is that of the latest rule it took. A chain stands at 𝒩 before it
+-- took any, since 'rewrite' is the only command whose chain can run out of
+-- steps before its first one, and it only normalizes.
+arrows :: [Maybe (Judgment, String)] -> [Judgment]
+arrows = scanl (\current rule -> maybe current fst rule) Normalization
+
+-- The arrow of the relation LaTeX writes a step taken by the judgment with.
+-- These are not the '\phinoNormalize' and the rest of 'explain', which print a
+-- whole judgment with its input and output.
+relation :: Judgment -> String
+relation Normalization = "\\phiNormalize"
+relation Morphing = "\\phiMorph"
+relation Dataization = "\\phiDataize"
+relation Evaluation = "\\phiEvaluate"
+relation Contextualization = "\\phiContextualize"
 
 -- LaTeX comment header lines for each step (see 'stepHeaders' in "Rewriter"),
 -- or empty strings when '--headers' is off. A '%' starts a LaTeX comment, so
@@ -194,9 +217,15 @@ stepComments rewrittens LatexContext{_headers = enabled} =
     then map (printf "%% %s\n") (stepHeaders rewrittens)
     else map (const "") rewrittens
 
-ending :: Bool -> LatexContext -> String
-ending True ctx = printf " \\leadsto\n  \\leadsto \\dots\n\\end{%s}" (phiquation ctx)
-ending False ctx = printf "{.}\n\\end{%s}" (phiquation ctx)
+-- Close the equation of a chain. One that ran out of steps trails off with the
+-- arrow of the judgment it stands at after its last step (see 'arrows'), and
+-- one that finished ends with a period, the way a single expression does.
+ending :: Bool -> Judgment -> LatexContext -> String
+ending True judgment ctx = printf " %s\n  %s \\dots\n\\end{%s}" (relation judgment) (relation judgment) (phiquation ctx)
+ending False _ ctx = period ctx
+
+period :: LatexContext -> String
+period ctx = printf "{.}\n\\end{%s}" (phiquation ctx)
 
 compressedRewrittens :: [Rewritten] -> LatexContext -> [Rewritten]
 compressedRewrittens rewrittens ctx@LatexContext{..} =
@@ -232,7 +261,7 @@ rewrittensToLatex (rewrittens, exceeded) ctx@LatexContext{_focus = ExRoot} =
     ( concat
         [ preamble ctx
         , body (stepComments rewrittens ctx) (canonizedRewrittens (compressedRewrittens rewrittens ctx) ctx) (\tabs expr -> renderToLatex (expressionToCSTFrom tabs expr) ctx)
-        , ending exceeded ctx
+        , ending exceeded (last (arrows (map snd rewrittens))) ctx
         ]
     )
 rewrittensToLatex (rewrittens, exceeded) ctx@LatexContext{..} = do
@@ -242,7 +271,7 @@ rewrittensToLatex (rewrittens, exceeded) ctx@LatexContext{..} = do
     ( concat
         [ preamble ctx
         , body (stepComments rewrittens ctx) (zip (canonizedExpressions (compressedExpressions focused ctx) ctx) rules) (\tabs expr -> renderToLatex (expressionToCSTFrom tabs expr) ctx)
-        , ending exceeded ctx
+        , ending exceeded (last (arrows (map snd rewrittens))) ctx
         ]
     )
 
@@ -251,7 +280,7 @@ expressionToLaTeX ex ctx =
   concat
     [ preamble ctx
     , renderToLatex (expressionToCST ex) ctx
-    , ending False ctx
+    , period ctx
     ]
 
 piped :: T.Text -> T.Text

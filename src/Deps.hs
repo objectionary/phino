@@ -76,24 +76,36 @@ saveStep (Just dir) ext render step expr = do
 dontSaveStep :: SaveStepFunc
 dontSaveStep = saveStep Nothing "" (\_ -> pure "") 0
 
--- The judgment a run of the protocol records, which is the one thing the two
--- formats spell in two ways: the text format writes the letter the calculus
--- writes, '𝕄(Φ.x)', and the markup names the root after it, '<morph
--- at="Φ.x">', the way every record under it is named after the judgment it
--- carries (#1279). A stuck site spells it the same two ways, since it too is a
--- judgment asking and getting no answer (see 'EvStuck'); nothing else is
--- spelled twice, since nothing else of a record is a name of the calculus.
+-- A judgment of the calculus. A run of the protocol records one of two, which
+-- is the one thing the two formats spell in two ways: the text format writes
+-- the letter the calculus writes, '𝕄(Φ.x)', and the markup names the root
+-- after it, '<morph at="Φ.x">', the way every record under it is named after
+-- the judgment it carries (#1279). A stuck site spells it the same two ways,
+-- since it too is a judgment asking and getting no answer (see 'EvStuck');
+-- nothing else is spelled twice, since nothing else of a record is a name of
+-- the calculus. A step of a '--sequence' chain is taken by any of the five,
+-- which is what picks the arrow LaTeX writes the step with (#1536).
 data Judgment
-  = -- The Morphing function 𝕄, which the 'morph' command runs.
+  = -- The Normalization function 𝒩, which the 'rewrite' command runs.
+    Normalization
+  | -- The Morphing function 𝕄, which the 'morph' command runs.
     Morphing
   | -- The Dataization function 𝔻, which the 'dataize' command runs.
     Dataization
+  | -- The Evaluation function 𝔼, which fires a λ function.
+    Evaluation
+  | -- The Contextualization function 𝒞, which 'box' of 𝔻 runs over a φ body.
+    Contextualization
+  deriving (Eq, Show)
 
 -- The letter the calculus writes a judgment with, which is how the text format
 -- opens a run of it.
 letter :: Judgment -> String
+letter Normalization = "𝒩"
 letter Morphing = "𝕄"
 letter Dataization = "𝔻"
+letter Evaluation = "𝔼"
+letter Contextualization = "𝒞"
 
 -- The element the markup opens a run of a judgment with, and closes it under,
 -- named after the judgment the way '<evaluate>' is named after 𝔼. A root
@@ -101,8 +113,11 @@ letter Dataization = "𝔻"
 -- firing carries the meta it bound, which is the very difference the text
 -- format draws between '𝔻(Φ)' at the top and '𝛿1.2 := 𝔻(…)' in a block.
 opened :: Judgment -> String
+opened Normalization = "normalize"
 opened Morphing = "morph"
 opened Dataization = "dataize"
+opened Evaluation = "evaluate"
+opened Contextualization = "contextualize"
 
 -- What '--acyclic' takes for the same formation entered again, which is how
 -- sure a cut is that the recursion it stops would never have stopped. 'Proven'

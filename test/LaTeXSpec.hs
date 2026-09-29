@@ -18,6 +18,7 @@ import Data.Aeson (FromJSON)
 import Data.List (intercalate)
 import Data.Text qualified as T
 import Data.Yaml qualified as Yaml
+import Deps (Judgment (..))
 import Files (allPathsIn)
 import Fixtures (explainPack)
 import GHC.Generics (Generic)
@@ -106,18 +107,18 @@ spec = do
         [] -> expectationFailure "meetInExpressions returned no expressions"
 
   describe "indents wrapped continuation steps in a --sequence (#981)" $
-    it "nests a wrapped step's members below its two-space \\leadsto line and aligns the closing bracket with it, rather than laying the step out from column 0" $ do
+    it "nests a wrapped step's members below its two-space arrow line and aligns the closing bracket with it, rather than laying the step out from column 0" $ do
       start <- parseExpressionThrows "[[ x -> Q.y ]]"
       wrapped <- parseExpressionThrows "[[ a -> Q.b, c -> Q.d ]]"
       let ctx = defaultLatexContext{_line = MULTILINE, _margin = 20}
-      latex <- rewrittensToLatex ([(start, Just "first"), (wrapped, Just "second")], False) ctx
+      latex <- rewrittensToLatex ([(start, Just (Normalization, "first")), (wrapped, Just (Normalization, "second"))], False) ctx
       latex
         `shouldContain` intercalate
           "\n"
-          [ "  \\leadsto [["
+          [ "  \\phiNormalize [["
           , "    |a| -> Q . |b|,"
           , "    |c| -> Q . |d|"
-          , "  ]] \\leadsto_{\\nameref{r:second}}"
+          , "  ]] \\phiNormalize[\\nameref{r:second}]"
           ]
 
   describe "renders the 'formation' condition" $
@@ -193,15 +194,66 @@ spec = do
       )
 
   describe "rewrittensToLatex" $ do
-    it "renders the ellipsis ending when the chain exceeded its bound" $ do
+    it "trails a chain that ran out before its first step off with the arrow of normalization" $ do
       step1 <- parseExpressionThrows "[[ x -> Q.y ]]"
       latex <- rewrittensToLatex ([(step1, Nothing)], True) defaultLatexContext
-      latex `shouldBe` "\\begin{phiquation}\nQ . |y| : |x| \\leadsto\n  \\leadsto \\dots\n\\end{phiquation}"
+      latex `shouldBe` "\\begin{phiquation}\nQ . |y| : |x| \\phiNormalize\n  \\phiNormalize \\dots\n\\end{phiquation}"
+
+    it "trails a chain that ran out of steps off with the arrow of its last step" $ do
+      first <- parseExpressionThrows "[[ k -> Q.m ]]"
+      second <- parseExpressionThrows "[[ k -> Q.w ]]"
+      latex <- rewrittensToLatex ([(first, Just (Morphing, "mphi")), (second, Nothing)], True) defaultLatexContext
+      latex
+        `shouldBe` intercalate
+          "\n"
+          [ "\\begin{phiquation}"
+          , "Q . |m| : |k| \\phiMorph[\\nameref{r:mphi}]"
+          , "  \\phiMorph Q . |w| : |k| \\phiMorph"
+          , "  \\phiMorph \\dots"
+          , "\\end{phiquation}"
+          ]
+
+    forM_
+      [ (Normalization, "\\phiNormalize")
+      , (Morphing, "\\phiMorph")
+      , (Dataization, "\\phiDataize")
+      , (Evaluation, "\\phiEvaluate")
+      , (Contextualization, "\\phiContextualize")
+      ]
+      ( \(judgment, arrow) ->
+          it ("ends a step taken by " ++ show judgment ++ " with " ++ arrow ++ " and opens the next one with it") $ do
+            first <- parseExpressionThrows "[[ q -> Q.f ]]"
+            second <- parseExpressionThrows "[[ q -> Q.j ]]"
+            latex <- rewrittensToLatex ([(first, Just (judgment, "tv")), (second, Nothing)], False) defaultLatexContext
+            latex
+              `shouldBe` intercalate
+                "\n"
+                [ "\\begin{phiquation}"
+                , "Q . |f| : |q| " ++ arrow ++ "[\\nameref{r:tv}]"
+                , "  " ++ arrow ++ " Q . |j| : |q|{.}"
+                , "\\end{phiquation}"
+                ]
+      )
+
+    it "opens every step with the arrow of the judgment that took the step before it" $ do
+      first <- parseExpressionThrows "[[ u -> Q.g ]]"
+      second <- parseExpressionThrows "[[ u -> Q.h ]]"
+      third <- parseExpressionThrows "[[ D> 07- ]]"
+      latex <- rewrittensToLatex ([(first, Just (Normalization, "copy")), (second, Just (Dataization, "box")), (third, Nothing)], False) defaultLatexContext
+      latex
+        `shouldBe` intercalate
+          "\n"
+          [ "\\begin{phiquation}"
+          , "Q . |g| : |u| \\phiNormalize[\\nameref{r:copy}]"
+          , "  \\phiNormalize Q . |h| : |u| \\phiDataize[\\nameref{r:box}]"
+          , "  \\phiDataize |07-| : D{.}"
+          , "\\end{phiquation}"
+          ]
 
     it "prefixes each step with a '% === Step' header when '_headers' is set" $ do
       step1 <- parseExpressionThrows "[[ x -> Q.y ]]"
       step2 <- parseExpressionThrows "[[ x -> Q.z ]]"
-      latex <- rewrittensToLatex ([(step1, Nothing), (step2, Just "myrule")], False) defaultLatexContext{_headers = True}
+      latex <- rewrittensToLatex ([(step1, Nothing), (step2, Just (Normalization, "myrule"))], False) defaultLatexContext{_headers = True}
       latex
         `shouldBe` intercalate
           "\n"
@@ -209,7 +261,7 @@ spec = do
           , "% === Step #1"
           , "Q . |y| : |x|"
           , "% === Step #2, Rule '?', 7t -> 7t"
-          , "  \\leadsto Q . |z| : |x| \\leadsto_{\\nameref{r:myrule}}{.}"
+          , "  \\phiNormalize Q . |z| : |x| \\phiNormalize[\\nameref{r:myrule}]{.}"
           , "\\end{phiquation}"
           ]
 
@@ -217,13 +269,13 @@ spec = do
       step1 <- parseExpressionThrows "[[ x -> Q.aaa.bbb.ccc.ddd ]]"
       step2 <- parseExpressionThrows "[[ x -> Q.aaa.bbb.ccc.ddd.eee ]]"
       focus <- parseExpressionThrows "Q.x"
-      latex <- rewrittensToLatex ([(step1, Nothing), (step2, Just "r")], False) defaultLatexContext{_focus = focus}
+      latex <- rewrittensToLatex ([(step1, Nothing), (step2, Just (Normalization, "r"))], False) defaultLatexContext{_focus = focus}
       latex
         `shouldBe` intercalate
           "\n"
           [ "\\begin{phiquation}"
           , "Q . |aaa| . |bbb| . |ccc| . |ddd|"
-          , "  \\leadsto Q . |aaa| . |bbb| . |ccc| . |ddd| . |eee| \\leadsto_{\\nameref{r:r}}{.}"
+          , "  \\phiNormalize Q . |aaa| . |bbb| . |ccc| . |ddd| . |eee| \\phiNormalize[\\nameref{r:r}]{.}"
           , "\\end{phiquation}"
           ]
 
@@ -233,15 +285,15 @@ spec = do
       step3 <- parseExpressionThrows "[[ z -> Q.a.b.c.d ]]"
       latex <-
         rewrittensToLatex
-          ([(step1, Nothing), (step2, Just "r1"), (step3, Just "r2")], False)
+          ([(step1, Nothing), (step2, Just (Normalization, "r1")), (step3, Just (Normalization, "r2"))], False)
           defaultLatexContext{_compress = True, _canonize = True}
       latex
         `shouldBe` intercalate
           "\n"
           [ "\\begin{phiquation}"
           , "\\phinoMeet{1}{ Q . |a| . |b| . |c| . |d| } : |x|"
-          , "  \\leadsto \\phinoAgain{1} : |y| \\leadsto_{\\nameref{r:r1}}"
-          , "  \\leadsto \\phinoAgain{1} : |z| \\leadsto_{\\nameref{r:r2}}{.}"
+          , "  \\phiNormalize \\phinoAgain{1} : |y| \\phiNormalize[\\nameref{r:r1}]"
+          , "  \\phiNormalize \\phinoAgain{1} : |z| \\phiNormalize[\\nameref{r:r2}]{.}"
           , "\\end{phiquation}"
           ]
 
@@ -252,15 +304,15 @@ spec = do
       step3 <- parseExpressionThrows "[[ x -> [[ w -> Q.a.b.c.d ]] ]]"
       latex <-
         rewrittensToLatex
-          ([(step1, Nothing), (step2, Just "r1"), (step3, Just "r2")], False)
+          ([(step1, Nothing), (step2, Just (Normalization, "r1")), (step3, Just (Normalization, "r2"))], False)
           defaultLatexContext{_focus = focus, _compress = True, _canonize = True}
       latex
         `shouldBe` intercalate
           "\n"
           [ "\\begin{phiquation}"
           , "\\phinoMeet{1}{ Q . |a| . |b| . |c| . |d| : |w| }"
-          , "  \\leadsto \\phinoAgain{1} \\leadsto_{\\nameref{r:r1}}"
-          , "  \\leadsto \\phinoAgain{1} \\leadsto_{\\nameref{r:r2}}{.}"
+          , "  \\phiNormalize \\phinoAgain{1} \\phiNormalize[\\nameref{r:r1}]"
+          , "  \\phiNormalize \\phinoAgain{1} \\phiNormalize[\\nameref{r:r2}]{.}"
           , "\\end{phiquation}"
           ]
 

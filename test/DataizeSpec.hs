@@ -334,10 +334,23 @@ spec = do
       expr <- parseExpressionThrows (primitives "5.plus(6)")
       loc <- parseExpressionThrows "Q"
       (_, chain, _) <- dataize expr emptyState (withLambdas known (defaultReduceContext loc))
-      let orphans = nub [label | (_, Just label) <- chain, label `notElem` allowed, label /= "symbol"]
+      let orphans = nub [label | (_, Just (_, label)) <- chain, label `notElem` allowed, label /= "symbol"]
       unless
         (null orphans)
         (expectationFailure ("Dataization emitted step labels with no defining rule or operation: " ++ show orphans))
+    it "takes the step of a firing by evaluation" $ do
+      expr <- parseExpressionThrows (primitives "5.plus(6)")
+      loc <- parseExpressionThrows "Q"
+      (_, chain, _) <- dataize expr emptyState (withLambdas known (defaultReduceContext loc))
+      map snd chain `shouldContain` [Just (Evaluation, "evaluate")]
+    it "takes the step of a box by contextualization" $ do
+      expr <- parseExpressionThrows "[[ @ -> [[ D> 0A- ]] ]]"
+      (_, chain, _) <- dataize expr emptyState (defaultReduceContext ExRoot)
+      map snd chain `shouldContain` [Just (Contextualization, "contextualize")]
+    it "takes the step of a delta by dataization" $ do
+      expr <- parseExpressionThrows "[[ D> 3C- ]]"
+      (_, chain, _) <- dataize expr emptyState (defaultReduceContext ExRoot)
+      map snd chain `shouldBe` [Just (Dataization, "delta"), Nothing]
 
   describe "names every rule uniquely across rule sets" $
     it "shares no rule name between morphing, dataization, normalization and contextualization" $ do
@@ -354,7 +367,7 @@ spec = do
           expr <- parseExpressionThrows src
           loc' <- parseExpressionThrows loc
           (_, chain, _) <- dataize expr emptyState (withLambdas known (defaultReduceContext loc'))
-          pure [label | (_, Just label) <- chain]
+          pure [label | (_, Just (_, label)) <- chain]
     -- 'evaluate' is followed straight by the 'contextualize' of the answer's
     -- own 𝔻 and not by the 'ma'/'copy'/'mf' that used to reduce it on the
     -- spine: 𝔼 morphs what it answers before it hands it over, so the spine is
@@ -377,3 +390,16 @@ spec = do
     it "dataizes a located reference through the expected rules" $ do
       labels <- labelsOf "Q.foo.bar" "[[ foo -> [[ bar -> [[ @ -> Q.x ]] ]], x -> [[ D> 42- ]] ]]"
       labels `shouldBe` ["contextualize", "md", "dot", "skip", "mf", "delta"]
+    it "takes every step of 5.plus(6) by the judgment of its rule" $ do
+      expr <- parseExpressionThrows "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6) ]]"
+      (_, chain, _) <- dataize expr emptyState (withLambdas known (defaultReduceContext ExRoot))
+      [judgment | (_, Just (judgment, _)) <- chain]
+        `shouldBe` [ Contextualization
+                   , Morphing
+                   , Normalization
+                   , Normalization
+                   , Morphing
+                   , Evaluation
+                   , Contextualization
+                   , Dataization
+                   ]

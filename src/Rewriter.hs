@@ -17,7 +17,6 @@ import Control.Exception (Exception, throwIO)
 import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as NE
 import qualified Data.Map.Strict as Map
-import Data.Maybe (fromMaybe)
 import Deps
 import Locator (locatedExpression, withLocatedExpression)
 import Logger (logDebug)
@@ -48,7 +47,10 @@ seenMember digest expr seen = maybe False (elem expr) (Map.lookup digest seen)
 seenInsert :: Int -> Expression -> Seen -> Seen
 seenInsert digest expr = Map.insertWith (++) digest [expr]
 
-type Rewritten = (Expression, Maybe String)
+-- A step of a rewriting chain: the expression, and the rule that took it to
+-- the next one, named and tagged with the judgment it belongs to, which is how
+-- a chain of 𝕄 or 𝔻 mixing rules of several judgments tells them apart (#1536).
+type Rewritten = (Expression, Maybe (Judgment, String))
 
 type Rewrittens = (NonEmpty Rewritten, Bool)
 
@@ -71,7 +73,7 @@ stepHeaders chain = zipWith3 header [1 ..] chain (Nothing : map Just chain)
       printf
         "=== Step #%d, Rule '%s', %dt -> %dt"
         step
-        (fromMaybe "?" rule)
+        (maybe "?" snd rule)
         (countNodes before)
         (countNodes current)
 
@@ -242,7 +244,7 @@ rewrite' state (rule : rest) iteration ctx@RewriteContext{..} = do
         leadsTo :: Expression -> NonEmpty Rewritten
         leadsTo next =
           let (head', _) :| rest = _rewrittens
-           in (next, Nothing) :| (head', Just rule.name) : rest
+           in (next, Nothing) :| (head', Just (Normalization, rule.name)) : rest
 
 -- Tells whether any of the rules still matches the located expression. A run
 -- with nothing left to rewrite after its last allowed step has finished, not

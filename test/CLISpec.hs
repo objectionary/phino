@@ -733,11 +733,11 @@ spec = do
           [ unlines
               [ "\\begin{phiquation}"
               , "% === Step #1"
-              , "\"foo\" : |x| \\leadsto_{\\nameref{r:first}}"
+              , "\"foo\" : |x| \\phiNormalize[\\nameref{r:first}]"
               , "% === Step #2, Rule 'first', 23t -> 26t"
-              , "  \\leadsto Q . |x| ( |y| -> \"foo\" ) \\leadsto_{\\nameref{r:second}}"
+              , "  \\phiNormalize Q . |x| ( |y| -> \"foo\" ) \\phiNormalize[\\nameref{r:second}]"
               , "% === Step #3, Rule 'second', 26t -> 23t"
-              , "  \\leadsto \"foo\" : |x|{.}"
+              , "  \\phiNormalize \"foo\" : |x|{.}"
               , "\\end{phiquation}"
               ]
           ]
@@ -757,9 +757,9 @@ spec = do
           ]
           [ unlines
               [ "\\begin{phiquation}"
-              , "\"foo\" : |x| \\leadsto_{\\nameref{r:first}}"
-              , "  \\leadsto Q . |x| ( |y| -> \"foo\" ) \\leadsto_{\\nameref{r:second}}"
-              , "  \\leadsto \"foo\" : |x|{.}"
+              , "\"foo\" : |x| \\phiNormalize[\\nameref{r:first}]"
+              , "  \\phiNormalize Q . |x| ( |y| -> \"foo\" ) \\phiNormalize[\\nameref{r:second}]"
+              , "  \\phiNormalize \"foo\" : |x|{.}"
               , "\\end{phiquation}"
               ]
           ]
@@ -770,12 +770,12 @@ spec = do
           ["rewrite", "--normalize", "--sweet", "--sequence", "--output=latex", "--flat", "--compress", "--meet-prefix=foo"]
           [ unlines
               [ "\\begin{phiquation}"
-              , "[[ |x| -> ?, |y| -> |x| ]] ( |x| -> |42-| : D ) . |y| \\leadsto_{\\nameref{r:copy}}"
-              , "  \\leadsto \\phinoMeet{foo:1}{ [[ |x| -> |42-| : D, |y| -> |x| ]] } . |y| \\leadsto_{\\nameref{r:dot}}"
-              , "  \\leadsto |42-| : D : |x| . |x| ( \\phiTerminal{\\rho} -> \\phinoAgain{foo:1} ) \\leadsto_{\\nameref{r:dot}}"
-              , "  \\leadsto |42-| : D ( \\phiTerminal{\\rho} -> |42-| : D : |x|, \\phiTerminal{\\rho} -> \\phinoAgain{foo:1} ) \\leadsto_{\\nameref{r:skip}}"
-              , "  \\leadsto |42-| : D ( \\phiTerminal{\\rho} -> \\phinoAgain{foo:1} ) \\leadsto_{\\nameref{r:skip}}"
-              , "  \\leadsto |42-| : D{.}"
+              , "[[ |x| -> ?, |y| -> |x| ]] ( |x| -> |42-| : D ) . |y| \\phiNormalize[\\nameref{r:copy}]"
+              , "  \\phiNormalize \\phinoMeet{foo:1}{ [[ |x| -> |42-| : D, |y| -> |x| ]] } . |y| \\phiNormalize[\\nameref{r:dot}]"
+              , "  \\phiNormalize |42-| : D : |x| . |x| ( \\phiTerminal{\\rho} -> \\phinoAgain{foo:1} ) \\phiNormalize[\\nameref{r:dot}]"
+              , "  \\phiNormalize |42-| : D ( \\phiTerminal{\\rho} -> |42-| : D : |x|, \\phiTerminal{\\rho} -> \\phinoAgain{foo:1} ) \\phiNormalize[\\nameref{r:skip}]"
+              , "  \\phiNormalize |42-| : D ( \\phiTerminal{\\rho} -> \\phinoAgain{foo:1} ) \\phiNormalize[\\nameref{r:skip}]"
+              , "  \\phiNormalize |42-| : D{.}"
               , "\\end{phiquation}"
               ]
           ]
@@ -786,12 +786,12 @@ spec = do
           ["rewrite", "--normalize", "--sweet", "--sequence", "--output=latex", "--flat", "--compress"]
           [ unlines
               [ "\\begin{phiquation}"
-              , "[[ |x| -> ?, |y| -> |x| ]] ( |x| -> |42-| : D ) . |y| \\leadsto_{\\nameref{r:copy}}"
-              , "  \\leadsto \\phinoMeet{1}{ [[ |x| -> |42-| : D, |y| -> |x| ]] } . |y| \\leadsto_{\\nameref{r:dot}}"
-              , "  \\leadsto |42-| : D : |x| . |x| ( \\phiTerminal{\\rho} -> \\phinoAgain{1} ) \\leadsto_{\\nameref{r:dot}}"
-              , "  \\leadsto |42-| : D ( \\phiTerminal{\\rho} -> |42-| : D : |x|, \\phiTerminal{\\rho} -> \\phinoAgain{1} ) \\leadsto_{\\nameref{r:skip}}"
-              , "  \\leadsto |42-| : D ( \\phiTerminal{\\rho} -> \\phinoAgain{1} ) \\leadsto_{\\nameref{r:skip}}"
-              , "  \\leadsto |42-| : D{.}"
+              , "[[ |x| -> ?, |y| -> |x| ]] ( |x| -> |42-| : D ) . |y| \\phiNormalize[\\nameref{r:copy}]"
+              , "  \\phiNormalize \\phinoMeet{1}{ [[ |x| -> |42-| : D, |y| -> |x| ]] } . |y| \\phiNormalize[\\nameref{r:dot}]"
+              , "  \\phiNormalize |42-| : D : |x| . |x| ( \\phiTerminal{\\rho} -> \\phinoAgain{1} ) \\phiNormalize[\\nameref{r:dot}]"
+              , "  \\phiNormalize |42-| : D ( \\phiTerminal{\\rho} -> |42-| : D : |x|, \\phiTerminal{\\rho} -> \\phinoAgain{1} ) \\phiNormalize[\\nameref{r:skip}]"
+              , "  \\phiNormalize |42-| : D ( \\phiTerminal{\\rho} -> \\phinoAgain{1} ) \\phiNormalize[\\nameref{r:skip}]"
+              , "  \\phiNormalize |42-| : D{.}"
               , "\\end{phiquation}"
               ]
           ]
@@ -802,9 +802,9 @@ spec = do
           ["rewrite", "--normalize", "--sequence", "--flat", "--compress", "--output=latex", "--sweet"]
           [ unlines
               [ "\\begin{phiquation}"
-              , "[[ |y| -> ?, |k| -> \\phinoMeet{1}{ 42 : |t| } ]] ( |y| -> \\phinoAgain{1} ) : |x| . |i| : |ex| \\leadsto_{\\nameref{r:copy}}"
-              , "  \\leadsto [[ |y| -> \\phinoAgain{1}, |k| -> \\phinoAgain{1} ]] : |x| . |i| : |ex| \\leadsto_{\\nameref{r:stop}}"
-              , "  \\leadsto T : |ex|{.}"
+              , "[[ |y| -> ?, |k| -> \\phinoMeet{1}{ 42 : |t| } ]] ( |y| -> \\phinoAgain{1} ) : |x| . |i| : |ex| \\phiNormalize[\\nameref{r:copy}]"
+              , "  \\phiNormalize [[ |y| -> \\phinoAgain{1}, |k| -> \\phinoAgain{1} ]] : |x| . |i| : |ex| \\phiNormalize[\\nameref{r:stop}]"
+              , "  \\phiNormalize T : |ex|{.}"
               , "\\end{phiquation}"
               ]
           ]
@@ -815,9 +815,9 @@ spec = do
           ["rewrite", "--normalize", "--sequence", "--flat", "--compress", "--output=latex", "--sweet", "--meet-popularity=70"]
           [ unlines
               [ "\\begin{phiquation}"
-              , "[[ |y| -> ?, |k| -> 42 : |t| ]] ( |y| -> 42 : |t| ) : |x| . |i| : |ex| \\leadsto_{\\nameref{r:copy}}"
-              , "  \\leadsto [[ |y| -> 42 : |t|, |k| -> 42 : |t| ]] : |x| . |i| : |ex| \\leadsto_{\\nameref{r:stop}}"
-              , "  \\leadsto T : |ex|{.}"
+              , "[[ |y| -> ?, |k| -> 42 : |t| ]] ( |y| -> 42 : |t| ) : |x| . |i| : |ex| \\phiNormalize[\\nameref{r:copy}]"
+              , "  \\phiNormalize [[ |y| -> 42 : |t|, |k| -> 42 : |t| ]] : |x| . |i| : |ex| \\phiNormalize[\\nameref{r:stop}]"
+              , "  \\phiNormalize T : |ex|{.}"
               , "\\end{phiquation}"
               ]
           ]
@@ -828,9 +828,9 @@ spec = do
           ["rewrite", "--normalize", "--sequence", "--flat", "--compress", "--output=latex", "--sweet", "--meet-length=32"]
           [ unlines
               [ "\\begin{phiquation}"
-              , "[[ |y| -> ?, |k| -> 42 : |t| ]] ( |y| -> 42 : |t| ) : |x| . |i| : |ex| \\leadsto_{\\nameref{r:copy}}"
-              , "  \\leadsto [[ |y| -> 42 : |t|, |k| -> 42 : |t| ]] : |x| . |i| : |ex| \\leadsto_{\\nameref{r:stop}}"
-              , "  \\leadsto T : |ex|{.}"
+              , "[[ |y| -> ?, |k| -> 42 : |t| ]] ( |y| -> 42 : |t| ) : |x| . |i| : |ex| \\phiNormalize[\\nameref{r:copy}]"
+              , "  \\phiNormalize [[ |y| -> 42 : |t|, |k| -> 42 : |t| ]] : |x| . |i| : |ex| \\phiNormalize[\\nameref{r:stop}]"
+              , "  \\phiNormalize T : |ex|{.}"
               , "\\end{phiquation}"
               ]
           ]
@@ -841,9 +841,9 @@ spec = do
           ["rewrite", "--normalize", "--sequence", "--flat", "--output=latex", "--sweet", "--focus=Q.ex"]
           [ unlines
               [ "\\begin{phiquation}"
-              , "[[ |y| -> ?, |k| -> 42 : |t| ]] ( |y| -> 42 : |t| ) : |x| . |i| \\leadsto_{\\nameref{r:copy}}"
-              , "  \\leadsto [[ |y| -> 42 : |t|, |k| -> 42 : |t| ]] : |x| . |i| \\leadsto_{\\nameref{r:stop}}"
-              , "  \\leadsto T{.}"
+              , "[[ |y| -> ?, |k| -> 42 : |t| ]] ( |y| -> 42 : |t| ) : |x| . |i| \\phiNormalize[\\nameref{r:copy}]"
+              , "  \\phiNormalize [[ |y| -> 42 : |t|, |k| -> 42 : |t| ]] : |x| . |i| \\phiNormalize[\\nameref{r:stop}]"
+              , "  \\phiNormalize T{.}"
               , "\\end{phiquation}"
               ]
           ]
@@ -865,9 +865,9 @@ spec = do
           ["rewrite", "--normalize", "--flat", "--sequence", "--output=latex", "--sweet", "--max-depth=1", "--max-cycles=1"]
           [ unlines
               [ "\\begin{phiquation}"
-              , "[[ |x| -> |y|, |y| -> |x| ]] . |x| \\leadsto_{\\nameref{r:dot}}"
-              , "  \\leadsto |x| : |y| . |y| ( \\phiTerminal{\\rho} -> [[ |x| -> |y|, |y| -> |x| ]] ) \\leadsto"
-              , "  \\leadsto \\dots"
+              , "[[ |x| -> |y|, |y| -> |x| ]] . |x| \\phiNormalize[\\nameref{r:dot}]"
+              , "  \\phiNormalize |x| : |y| . |y| ( \\phiTerminal{\\rho} -> [[ |x| -> |y|, |y| -> |x| ]] ) \\phiNormalize"
+              , "  \\phiNormalize \\dots"
               , "\\end{phiquation}"
               ]
           ]
@@ -1274,12 +1274,12 @@ spec = do
           [ intercalate
               "\n"
               [ "\\begin{phiquation}"
-              , "[[ D> |01-|, |y| -> ? ]] ( |y| -> [[]] ) : |x| . |x| : @ \\leadsto_{\\nameref{r:contextualize}}"
-              , "  \\leadsto [[ D> |01-|, |y| -> ? ]] ( |y| -> [[]] ) : |x| . |x| \\leadsto_{\\nameref{r:copy}}"
-              , "  \\leadsto [[ D> |01-|, |y| -> [[]] ]] : |x| . |x| \\leadsto_{\\nameref{r:dot}}"
-              , "  \\leadsto [[ D> |01-|, |y| -> [[]] ]] ( \\phiTerminal{\\rho} -> [[ D> |01-|, |y| -> [[]] ]] : |x| ) \\leadsto_{\\nameref{r:skip}}"
-              , "  \\leadsto [[ D> |01-|, |y| -> [[]] ]] \\leadsto_{\\nameref{r:delta}}"
-              , "  \\leadsto |01-|{.}"
+              , "[[ D> |01-|, |y| -> ? ]] ( |y| -> [[]] ) : |x| . |x| : @ \\phiContextualize[\\nameref{r:contextualize}]"
+              , "  \\phiContextualize [[ D> |01-|, |y| -> ? ]] ( |y| -> [[]] ) : |x| . |x| \\phiNormalize[\\nameref{r:copy}]"
+              , "  \\phiNormalize [[ D> |01-|, |y| -> [[]] ]] : |x| . |x| \\phiNormalize[\\nameref{r:dot}]"
+              , "  \\phiNormalize [[ D> |01-|, |y| -> [[]] ]] ( \\phiTerminal{\\rho} -> [[ D> |01-|, |y| -> [[]] ]] : |x| ) \\phiNormalize[\\nameref{r:skip}]"
+              , "  \\phiNormalize [[ D> |01-|, |y| -> [[]] ]] \\phiDataize[\\nameref{r:delta}]"
+              , "  \\phiDataize |01-|{.}"
               , "\\end{phiquation}"
               , "01-"
               ]
@@ -1291,8 +1291,8 @@ spec = do
           ["dataize", "--sequence", "--quiet", "--output=latex", "--flat", "--sweet"]
           [ intercalate
               "\n"
-              [ "|01-| : D \\leadsto_{\\nameref{r:delta}}"
-              , "  \\leadsto |01-|{.}"
+              [ "|01-| : D \\phiDataize[\\nameref{r:delta}]"
+              , "  \\phiDataize |01-|{.}"
               , "\\end{phiquation}"
               ]
           ]
@@ -1307,7 +1307,7 @@ spec = do
       withStdin "[[ @ -> [[ @ -> $.c.plus( 32.0 ), c -> 25.0 ]], bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus -> [[ ^ -> ?, x -> ?, L> L_number_plus ]] ]] ]]" $
         testCLISucceeded
           ["dataize", symbolic, "--output=latex", "--sweet", "--nonumber", "--compress", "--canonize", "--meet-prefix=dataization", "--sequence", "--flat", "--quiet", "--hide=Q.bytes", "--hide=Q.number", "--locator=Q.@", "--focus=Q.@", "--meet-length=5", "--meet-popularity=1"]
-          ["\\phinoMeet{dataization:1}{ [[ @ -> |c| . |plus| ( 32 ), |c| -> 25 ]] } \\leadsto_{\\nameref{r:contextualize}}"]
+          ["\\phinoMeet{dataization:1}{ [[ @ -> |c| . |plus| ( 32 ), |c| -> 25 ]] } \\phiContextualize[\\nameref{r:contextualize}]"]
 
     it "compresses a canonized whole-expression sequence into a meet" $
       withStdin "[[ @ -> [[ @ -> $.c.plus( 32.0 ), c -> 25.0 ]], bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus -> [[ ^ -> ?, x -> ?, L> L_number_plus ]] ]] ]]" $
@@ -2284,6 +2284,22 @@ spec = do
           , "Rule 'copy'"
           , "Rule 'mf'"
           , "⟦ x ↦ 7, λ ⤍ L_number_plus ⟧"
+          ]
+
+    it "writes every step of a LaTeX --sequence with the arrow of its judgment" $
+      withStdin "[[ q -> [[ ]], k -> Q.q ]]" $
+        testCLISucceeded
+          ["morph", "--locator=Q.k", "--sequence", "--output=latex", "--flat", "--sweet", "--quiet"]
+          [ intercalate
+              "\n"
+              [ "\\begin{phiquation}"
+              , "[[ |q| -> [[]], |k| -> Q . |q| ]] \\phiMorph[\\nameref{r:md}]"
+              , "  \\phiMorph [[ |q| -> [[]], |k| -> [[ |q| -> [[]], |k| -> Q . |q| ]] . |q| ]] \\phiNormalize[\\nameref{r:dot}]"
+              , "  \\phiNormalize [[ |q| -> [[]], |k| -> [[]] ( \\phiTerminal{\\rho} -> Q ) ]] \\phiNormalize[\\nameref{r:skip}]"
+              , "  \\phiNormalize [[ |q| -> [[]], |k| -> [[]] ]] \\phiMorph[\\nameref{r:mf}]"
+              , "  \\phiMorph [[ |q| -> [[]], |k| -> [[]] ]]{.}"
+              , "\\end{phiquation}"
+              ]
           ]
 
     it "does not print the result with --quiet" $

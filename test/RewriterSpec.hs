@@ -14,10 +14,10 @@ import Control.Exception (SomeException)
 import Control.Monad (forM_, unless)
 import Data.Aeson
 import Data.Char (isSpace)
-import Data.List (isInfixOf)
+import Data.List (isInfixOf, nub)
 import Data.List.NonEmpty qualified as NE
 import Data.Yaml qualified as Yaml
-import Deps (dontSaveStep)
+import Deps (Judgment (..), dontSaveStep)
 import Files (allPathsIn, ensuredFile)
 import Functions (buildTerm)
 import GHC.Generics
@@ -27,7 +27,7 @@ import Printer (printExpression)
 import Rewriter (RewriteContext (RewriteContext), rewrite)
 import System.FilePath (makeRelative, replaceExtension, (</>))
 import Tau (seedTaus)
-import Test.Hspec (Spec, describe, expectationFailure, it, pending, runIO, shouldSatisfy, shouldThrow)
+import Test.Hspec (Spec, describe, expectationFailure, it, pending, runIO, shouldBe, shouldSatisfy, shouldThrow)
 import Yaml (normalizationRules)
 import Yaml qualified as Y
 
@@ -147,6 +147,12 @@ spec = do
               result <- action
               result `shouldSatisfy` predicate
       )
+
+  describe "judges the steps it takes" $
+    it "takes every step by normalization" $ do
+      expr <- parseExpressionThrows "⟦ k ↦ ⟦ w ↦ ⟦ Δ ⤍ 1F- ⟧ ⟧.w ⟧"
+      (rewrittens, _) <- rewrite expr normalizationRules (RewriteContext ExRoot 25 25 False Nothing buildTerm MtDisabled Nothing dontSaveStep)
+      nub [judgment | (_, Just (judgment, _)) <- NE.toList rewrittens] `shouldBe` [Normalization]
 
   describe "rewrite packs" $ do
     let resources = "test-resources/rewriter-packs"

@@ -21,7 +21,7 @@ import Data.List.NonEmpty (NonEmpty (..))
 import Data.Maybe (fromMaybe)
 import Data.Yaml qualified as Decode
 import Dataize (Outcome (..), dataize)
-import Deps (State, Term (TeExpression))
+import Deps (Judgment (..), State, Term (TeExpression))
 import Files (allPathsIn)
 import Fixtures (defaultReduceContext, fixtureLambdas, primitives, withLambdas, withLambdasOf)
 import GHC.Generics (Generic)
@@ -104,7 +104,7 @@ spec = do
       expr <- parseExpressionThrows "[[ D> 00- ]]"
       (morphed, chain, _) <- morph expr emptyState (defaultReduceContext ExRoot)
       morphed `shouldBe` expr
-      map snd chain `shouldBe` [Just "mf", Nothing]
+      map snd chain `shouldBe` [Just (Morphing, "mf"), Nothing]
       map fst chain `shouldBe` [expr, expr]
 
     -- The 'universe' rule resolves Φ to the world in normal form, and the run
