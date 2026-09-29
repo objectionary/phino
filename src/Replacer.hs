@@ -1,6 +1,3 @@
-{-# LANGUAGE DuplicateRecordFields #-}
-{-# LANGUAGE RecordWildCards #-}
-
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
@@ -9,40 +6,37 @@
 module Replacer
   ( replaceExpression
   , replaceExpressionFast
-  , ReplaceContext (..)
   , ReplaceExpressionFunc
   )
 where
 
 import AST
-import Data.List (isPrefixOf)
+import Data.List (isInfixOf, isPrefixOf)
 
 type ReplaceState a = (a, [Expression], [Expression -> Expression])
 
-type ReplaceExpressionFunc' = ReplaceState Expression -> ReplaceContext -> ReplaceState Expression
+type ReplaceExpressionFunc' = ReplaceState Expression -> ReplaceState Expression
 
 type ReplaceExpressionFunc = ReplaceState Expression -> Expression
 
-newtype ReplaceContext = ReplaceCtx {_maxDepth :: Int}
-
-replaceBindings :: ReplaceState [Binding] -> ReplaceContext -> ReplaceExpressionFunc' -> ReplaceState [Binding]
-replaceBindings state@(_, [], _) _ _ = state
-replaceBindings state@(_, _, []) _ _ = state
-replaceBindings state@([], _, _) _ _ = state
-replaceBindings (BiTau attr expr : bds, ptns, repls) ctx func =
-  let (expr', ptns', repls') = func (expr, ptns, repls) ctx
-      (bds', ptns'', repls'') = replaceBindings (bds, ptns', repls') ctx func
+replaceBindings :: ReplaceState [Binding] -> ReplaceExpressionFunc' -> ReplaceState [Binding]
+replaceBindings state@(_, [], _) _ = state
+replaceBindings state@(_, _, []) _ = state
+replaceBindings state@([], _, _) _ = state
+replaceBindings (BiTau attr expr : bds, ptns, repls) func =
+  let (expr', ptns', repls') = func (expr, ptns, repls)
+      (bds', ptns'', repls'') = replaceBindings (bds, ptns', repls') func
    in (BiTau attr expr' : bds', ptns'', repls'')
-replaceBindings (bd : bds, ptns, repls) ctx func =
-  let (bds', ptns', repls') = replaceBindings (bds, ptns, repls) ctx func
+replaceBindings (bd : bds, ptns, repls) func =
+  let (bds', ptns', repls') = replaceBindings (bds, ptns, repls) func
    in (bd : bds', ptns', repls')
 
-replaceArgument :: ReplaceState Argument -> ReplaceContext -> ReplaceExpressionFunc' -> ReplaceState Argument
-replaceArgument (ArTau attr expr, ptns, repls) ctx func =
-  let (expr', ptns', repls') = func (expr, ptns, repls) ctx
+replaceArgument :: ReplaceState Argument -> ReplaceExpressionFunc' -> ReplaceState Argument
+replaceArgument (ArTau attr expr, ptns, repls) func =
+  let (expr', ptns', repls') = func (expr, ptns, repls)
    in (ArTau attr expr', ptns', repls')
-replaceArgument (ArAlpha alpha expr, ptns, repls) ctx func =
-  let (expr', ptns', repls') = func (expr, ptns, repls) ctx
+replaceArgument (ArAlpha alpha expr, ptns, repls) func =
+  let (expr', ptns', repls') = func (expr, ptns, repls)
    in (ArAlpha alpha expr', ptns', repls')
 
 -- A term equal to a pattern is inert only when the pattern is, and a term
@@ -50,67 +44,68 @@ replaceArgument (ArAlpha alpha expr, ptns, repls) ctx func =
 -- looked for inside an inert term, which is where the copies of big objects
 -- a normalization carries along are (#1453).
 replaceExpression' :: ReplaceExpressionFunc'
-replaceExpression' state@(expr, ptns@(ptn : _ptns), repls@(repl : _repls)) ctx
+replaceExpression' state@(expr, ptns@(ptn : _ptns), repls@(repl : _repls))
   | inert expr && not (inert ptn) = state
-  | expr == ptn = replaceExpression' (repl expr, _ptns, _repls) ctx
+  | expr == ptn = replaceExpression' (repl expr, _ptns, _repls)
   | otherwise = case expr of
       ExDispatch inner attr ->
-        let (expr', ptns', repls') = replaceExpression' (inner, ptns, repls) ctx
+        let (expr', ptns', repls') = replaceExpression' (inner, ptns, repls)
          in (ExDispatch expr' attr, ptns', repls')
       ExApplication inner arg ->
-        let (expr', ptns', repls') = replaceExpression' (inner, ptns, repls) ctx
-            (arg', ptns'', repls'') = replaceArgument (arg, ptns', repls') ctx replaceExpression'
+        let (expr', ptns', repls') = replaceExpression' (inner, ptns, repls)
+            (arg', ptns'', repls'') = replaceArgument (arg, ptns', repls') replaceExpression'
          in (ExApplication expr' arg', ptns'', repls'')
       ExFormation bds ->
-        let (bds', ptns', repls') = replaceBindings (bds, ptns, repls) ctx replaceExpression'
+        let (bds', ptns', repls') = replaceBindings (bds, ptns, repls) replaceExpression'
          in (ExFormation bds', ptns', repls')
       _ -> state
-replaceExpression' state _ = state
+replaceExpression' state = state
 
-replaceBindingsFast :: [Binding] -> [Expression] -> [Expression] -> [Binding]
-replaceBindingsFast _ ((ExFormation []) : _ptns) ((ExFormation rbds) : _repls) =
-  replaceBindingsFast rbds _ptns _repls
-replaceBindingsFast bds ((ExFormation pbds) : _ptns) ((ExFormation rbds) : _repls) =
-  let replaced = findAndReplace bds pbds rbds
-   in replaceBindingsFast replaced _ptns _repls
+-- Every pair of a pattern and a replacement stands for one match, so a pair
+-- is spent once it replaces something in the bindings of a formation, and the
+-- bindings a replacement brings in are searched only with the pairs still
+-- left. That is what ends the walk, as it ends the regular one, rather than a
+-- cap on how deep the walk goes, which dropped every match below it (#1391).
+replaceBindingsFast :: Expression -> ReplaceState [Binding] -> ReplaceState [Binding]
+replaceBindingsFast _ state@(_, [], _) = state
+replaceBindingsFast _ state@(_, _, []) = state
+replaceBindingsFast expr (bds, ptn : ptns, repl : repls) = case (ptn, repl expr) of
+  (ExFormation [], ExFormation rbds) -> replaceBindingsFast expr (rbds, ptns, repls)
+  (ExFormation pbds, ExFormation rbds)
+    | pbds `isInfixOf` bds -> replaceBindingsFast expr (findAndReplace bds pbds rbds, ptns, repls)
+  _ ->
+    let (bds', ptns', repls') = replaceBindingsFast expr (bds, ptns, repls)
+     in (bds', ptn : ptns', repl : repls')
   where
     findAndReplace :: [Binding] -> [Binding] -> [Binding] -> [Binding]
     findAndReplace [] _ _ = []
-    findAndReplace _ [] repl = repl
-    findAndReplace xs@(x : xs') ptn repl
-      | ptn `isPrefixOf` xs = repl ++ findAndReplace (drop (length ptn) xs) ptn repl
-      | otherwise = x : findAndReplace xs' ptn repl
-replaceBindingsFast bds _ _ = bds
+    findAndReplace _ [] rbds = rbds
+    findAndReplace xs@(x : xs') pbds rbds
+      | pbds `isPrefixOf` xs = rbds ++ findAndReplace (drop (length pbds) xs) pbds rbds
+      | otherwise = x : findAndReplace xs' pbds rbds
 
 replaceExpressionFast' :: ReplaceExpressionFunc'
-replaceExpressionFast' = _replaceExpressionFast 0
-  where
-    _replaceExpressionFast :: Int -> ReplaceExpressionFunc'
-    _replaceExpressionFast _ state@(_, [], _) _ = state
-    _replaceExpressionFast _ state@(_, _, []) _ = state
-    _replaceExpressionFast depth state@(expr, ptns, repls) ctx@ReplaceCtx{..} =
-      if depth == _maxDepth
-        then (expr, [], [])
-        else case expr of
-          ExFormation bds ->
-            let replaced = replaceBindingsFast bds ptns (map (\rep -> rep expr) repls)
-                (bds', ptns', repls') = replaceBindings (replaced, ptns, repls) ctx (_replaceExpressionFast (depth + 1))
-             in (ExFormation bds', ptns', repls')
-          ExDispatch inner attr ->
-            let (expr', ptns', repls') = replaceExpressionFast' (inner, ptns, repls) ctx
-             in (ExDispatch expr' attr, ptns', repls')
-          ExApplication inner arg ->
-            let (expr', ptns', repls') = replaceExpressionFast' (inner, ptns, repls) ctx
-                (arg', ptns'', repls'') = replaceArgument (arg, ptns', repls') ctx replaceExpressionFast'
-             in (ExApplication expr' arg', ptns'', repls'')
-          _ -> state
+replaceExpressionFast' state@(_, [], _) = state
+replaceExpressionFast' state@(_, _, []) = state
+replaceExpressionFast' state@(expr, ptns, repls) = case expr of
+  ExFormation bds ->
+    let (bds', ptns', repls') = replaceBindings (replaceBindingsFast expr (bds, ptns, repls)) replaceExpressionFast'
+     in (ExFormation bds', ptns', repls')
+  ExDispatch inner attr ->
+    let (expr', ptns', repls') = replaceExpressionFast' (inner, ptns, repls)
+     in (ExDispatch expr' attr, ptns', repls')
+  ExApplication inner arg ->
+    let (expr', ptns', repls') = replaceExpressionFast' (inner, ptns, repls)
+        (arg', ptns'', repls'') = replaceArgument (arg, ptns', repls') replaceExpressionFast'
+     in (ExApplication expr' arg', ptns'', repls'')
+  _ -> state
 
 replaceExpression :: ReplaceExpressionFunc
 replaceExpression state =
-  let (expr, _, _) = replaceExpression' state (ReplaceCtx 0)
+  let (expr, _, _) = replaceExpression' state
    in expr
 
-replaceExpressionFast :: ReplaceContext -> ReplaceExpressionFunc
-replaceExpressionFast ctx state =
-  let (expr, _, _) = replaceExpressionFast' state ctx
+replaceExpressionFast :: ReplaceExpressionFunc
+replaceExpressionFast state =
+  let (expr, _, _) = replaceExpressionFast' state
    in expr

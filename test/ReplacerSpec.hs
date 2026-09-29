@@ -201,7 +201,7 @@ spec = do
 
   describe "replace expression fast: ([Expression], [Expression]) => Expression" $
     test
-      (replaceExpressionFast (ReplaceCtx 3))
+      replaceExpressionFast
       [
         ( "Q -> [[^ -> ?, @ -> ?, D> -> ?]] => [[ !B1, !t -> ?, !B2 ]] => [[ !B1, !t -> $, !B2 ]] => Q -> [[ ^ -> $, @ -> $, D> -> $ ]]"
         , ExFormation [BiVoid AtRho, BiVoid AtPhi, BiVoid AtDelta]
@@ -210,11 +210,25 @@ spec = do
         , ExFormation [BiTau AtRho ExXi, BiTau AtPhi ExXi, BiTau AtDelta ExXi]
         )
       ,
-        ( "Q -> [[ ^ -> ? ]] => [[ !B1, !t -> ?, !B2 ]] => [[ !B1, !t -> [[ !t -> ? ]], !B2 ]] => Q -> [[ ^ -> [[ ^ -> [[ ^ -> [[ ^ -> ? ]] ]] ]] ]]"
+        ( "Q -> [[ ^ -> ? ]] => [[ !B1, !t -> ?, !B2 ]] => [[ !B1, !t -> [[ !t -> ? ]], !B2 ]] => Q -> [[ ^ -> [[ ^ -> ? ]] ]] (a replacement is not searched again with the pair it came from)"
         , ExFormation [BiVoid AtRho]
         , [ExFormation [BiVoid AtRho]]
         , [ExFormation [BiTau AtRho (ExFormation [BiVoid AtRho])]]
-        , ExFormation [BiTau AtRho (ExFormation [BiTau AtRho (ExFormation [BiTau AtRho (ExFormation [BiVoid AtRho])])])]
+        , ExFormation [BiTau AtRho (ExFormation [BiVoid AtRho])]
+        )
+      ,
+        ( "Q -> [[a -> [[b -> [[c -> [[d -> ?]]]]]]]] => ([[d -> ?]], [[d -> Q]]) => Q -> [[a -> [[b -> [[c -> [[d -> Q]]]]]]]] (a match deep inside is replaced)"
+        , ExFormation [BiTau (AtLabel "a") (ExFormation [BiTau (AtLabel "b") (ExFormation [BiTau (AtLabel "c") (ExFormation [BiVoid (AtLabel "d")])])])]
+        , [ExFormation [BiVoid (AtLabel "d")]]
+        , [ExFormation [BiTau (AtLabel "d") ExRoot]]
+        , ExFormation [BiTau (AtLabel "a") (ExFormation [BiTau (AtLabel "b") (ExFormation [BiTau (AtLabel "c") (ExFormation [BiTau (AtLabel "d") ExRoot])])])]
+        )
+      ,
+        ( "Q -> [[x -> [[a -> ?]], y -> [[a -> ?]]]] => ([[a -> ?]], [[a -> $]]) => Q -> [[x -> [[a -> $]], y -> [[a -> ?]]]] (one pair replaces in one formation)"
+        , ExFormation [BiTau (AtLabel "x") (ExFormation [BiVoid (AtLabel "a")]), BiTau (AtLabel "y") (ExFormation [BiVoid (AtLabel "a")])]
+        , [ExFormation [BiVoid (AtLabel "a")]]
+        , [ExFormation [BiTau (AtLabel "a") ExXi]]
+        , ExFormation [BiTau (AtLabel "x") (ExFormation [BiTau (AtLabel "a") ExXi]), BiTau (AtLabel "y") (ExFormation [BiVoid (AtLabel "a")])]
         )
       ,
         ( "Q -> [[ ^ -> T ]](^ -> [[ ^ -> $]]).@ => [[ !B1, !t -> ?, !B2 ]] => [[ !B1, !t -> $, !B2 ]] => Q -> [[ ^ -> $ ]].@"
@@ -302,21 +316,9 @@ spec = do
         )
       ]
 
-  describe "replace expression fast with depth 0" $
+  describe "replace expression fast on edge cases" $
     test
-      (replaceExpressionFast (ReplaceCtx 0))
-      [
-        ( "Q -> [[a -> ?]] => ([[a -> ?]], [[a -> $]]) => Q -> [[a -> ?]]"
-        , ExFormation [BiVoid (AtLabel "a")]
-        , [ExFormation [BiVoid (AtLabel "a")]]
-        , [ExFormation [BiTau (AtLabel "a") ExXi]]
-        , ExFormation [BiVoid (AtLabel "a")]
-        )
-      ]
-
-  describe "replace expression fast with depth 1" $
-    test
-      (replaceExpressionFast (ReplaceCtx 1))
+      replaceExpressionFast
       [
         ( "Q -> [[ ^ -> ? ]] => [[ ^ -> ? ]] => [[ ^ -> [[ ^ -> ? ]] ]] => Q -> [[ ^ -> [[ ^ -> ? ]] ]]"
         , ExFormation [BiVoid AtRho]

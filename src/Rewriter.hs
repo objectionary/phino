@@ -24,7 +24,7 @@ import Logger (logDebug)
 import Matcher (Subst)
 import Must (Must (..), exceedsUpperBound, inRange)
 import Printer (printExpression)
-import Replacer (ReplaceContext (ReplaceCtx), ReplaceExpressionFunc, replaceExpression, replaceExpressionFast)
+import Replacer (ReplaceExpressionFunc, replaceExpression, replaceExpressionFast)
 import Rule (RuleContext (RuleContext))
 import qualified Rule as R
 import Text.Printf (printf)
@@ -143,8 +143,8 @@ buildAndReplace' (expr, ptn, res, substs) func = do
 -- In such case we can just replace bindings one by one without building whole expression.
 -- You can find more details in this ticket: https://github.com/objectionary/phino/issues/321
 -- If we don't meet the conditions above - just do a regular replacing
-tryBuildAndReplaceFast :: ToReplace -> ReplaceContext -> IO Expression
-tryBuildAndReplaceFast state@(expr, ExFormation _pbds@(pbd : pbds), ExFormation _rbds@(rbd : rbds), substs) ctx =
+tryBuildAndReplaceFast :: ToReplace -> IO Expression
+tryBuildAndReplaceFast state@(expr, ExFormation _pbds@(pbd : pbds), ExFormation _rbds@(rbd : rbds), substs) =
   let pbds' = init pbds
       rbds' = init rbds
    in if startsAndEndsWithMeta _pbds
@@ -155,7 +155,7 @@ tryBuildAndReplaceFast state@(expr, ExFormation _pbds@(pbd : pbds), ExFormation 
         && not (hasMetaBindings rbds')
         then do
           logDebug "Applying fast replacing since 'pattern' and 'result' are suitable for this..."
-          buildAndReplace' (expr, ExFormation pbds', ExFormation rbds', substs) (replaceExpressionFast ctx)
+          buildAndReplace' (expr, ExFormation pbds', ExFormation rbds', substs) replaceExpressionFast
         else do
           logDebug "Applying regular replacing..."
           buildAndReplace' state replaceExpression
@@ -173,7 +173,7 @@ tryBuildAndReplaceFast state@(expr, ExFormation _pbds@(pbd : pbds), ExFormation 
       BiAny _ -> True
       _ -> False
     hasMetaBindings = foldl (\acc bd -> acc || isMetaBinding bd) False
-tryBuildAndReplaceFast state _ = buildAndReplace' state replaceExpression
+tryBuildAndReplaceFast state = buildAndReplace' state replaceExpression
 
 -- The function returns tuple (X, Y, Z) where
 -- - X is sequence of expressions;
@@ -217,7 +217,7 @@ rewrite' state (rule : rest) iteration ctx@RewriteContext{..} = do
                     else pure (_rewrittens, _unique, False)
                 matched -> do
                   logDebug (printf "Rule '%s' has been matched, applying..." ruleName)
-                  expr <- tryBuildAndReplaceFast (expression, ptn, res, matched) (ReplaceCtx _maxDepth)
+                  expr <- tryBuildAndReplaceFast (expression, ptn, res, matched)
                   if expression == expr
                     then do
                       logDebug (printf "Applied '%s', no changes made" ruleName)
