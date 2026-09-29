@@ -93,6 +93,10 @@ conditions, and `where` extensions. Every judgment keeps its rules in its own
 directory — `normalize/`, `morphing/`, `dataization/`, `contextualization/` —
 one rule per file, named after the rule, and the whole directory is compiled in
 via `embedDir` of `file-embed`.
+The rules of `contextualization/` are the one set no engine executes: 𝒞 runs
+as the hand-written `contextualize` of `Builder.hs`, and `BuilderSpec.hs`
+checks it against every rule on random terms, so the printed judgment and the
+executed one cannot drift (#1443).
 Matching (`Matcher.hs`) produces `[Subst]` — a list of
 `Map Text MetaValue` — and conditions filter that list. `Builder.hs` then
 applies a substitution to a result template.
@@ -104,7 +108,10 @@ the `--symbolic` option names, one entry per function: a `λ` key, a regular
 expression over λ names; the operands brought down to data through 𝔻 under
 `dataize`, each binding a bytes meta `𝛿1`; the operands reduced to a normal
 form through 𝕄 under `morph`, each binding an expression meta `𝑛1`; and the
-answer under `𝑛`. Firing an entry is 𝔼's business and lives in `Evaluate.hs`,
+answer under `𝑛`. No two keys may match one λ name, whether or not either
+spells it: `Language.hs` reads each key as an automaton and looks for a name
+both accept, refusing a key beyond a regular language, such as a back
+reference (#1440). Firing an entry is 𝔼's business and lives in `Evaluate.hs`,
 which reaches the judgments an operand is reduced with through `Morph.hs`,
 using the same `insideUniverse` trick the `--inside` option exposes.
 

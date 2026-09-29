@@ -67,6 +67,11 @@ spec = do
       known <- lambdasOf (entry "L_box_[0-9]+_number")
       answering known "L_box_42_number" `shouldBe` Just "L_box_[0-9]+_number"
 
+    -- Two families no one λ name belongs to both of stand side by side
+    it "reads two keys whose families share no λ name" $ do
+      known <- lambdasOf (entry "L_[a-z]+_plus" <> entry "L_number_[0-9]+")
+      answering known "L_number_42" `shouldBe` Just "L_number_[0-9]+"
+
     -- The expression matches the whole name and not a part of it, so a plain
     -- name keeps meaning that one λ function
     it "cannot read a λ function whose name merely starts with a key" $ do
@@ -169,6 +174,12 @@ spec = do
         , entry "L_(foo|bar)" <> entry "L_foo"
         , "match some of the same lambda names"
         )
+      ,
+        ( "two keys overlapping on a name neither of them spells"
+        , entry "L_[a-z]+_plus" <> entry "L_number_[a-z]+"
+        , "such as 'L_number_plus'"
+        )
+      , ("a key with a back reference phino cannot compare", entry "L_(a)\\1", "cannot be compared")
       , ("a key which is no regular expression", entry "L_[pair", "is not a regular expression")
       , ("an operand of 'dataize' which is no bytes meta", "- λ: L_pair\n  dataize:\n    𝑛1: $.x\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n", "is not a bytes meta")
       , ("an operand of 'morph' which is no expression meta", "- λ: L_pair\n  morph:\n    𝛿1: $.x\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n", "is not an expression meta")

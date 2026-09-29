@@ -264,14 +264,16 @@ data ReduceContext = ReduceContext
   , _saveEval :: SaveEvalFunc
   }
 
--- Which of the two budgets a run spent, with the limit it was given: the depth
--- one branch may descend ('--max-steps', see 'Steps') or the firings the whole
--- run may make ('--max-firings', see 'Tally'). Both are the same signal to
--- '_partial', which parks either as a site that never finishes, and differ only
+-- Which of the budgets a run spent, with the limit it was given: the depth
+-- one branch may descend ('--max-steps', see 'Steps'), the firings the whole
+-- run may make ('--max-firings', see 'Tally') or the cycles one normalization
+-- may take ('--max-cycles', see 'normalized'). All are the same signal to
+-- '_partial', which parks any as a site that never finishes, and differ only
 -- in what the message names.
 data Budget
   = Depth Int
   | Firings Int
+  | Cycles Int
 
 data ReduceException
   = OutOfSteps Budget
@@ -320,6 +322,12 @@ data ReduceException
     -- firing under '_partial' the way an unanswered λ function does, since the
     -- dead end is a property of the program rather than of phino (#1401).
     Undataizable Expression State
+  | -- 𝕄 was handed a term no morphing rule matches. 𝕄 maps normal forms to
+    -- formations and every normal form is covered by some rule, so the term
+    -- is not a normal form: 'morph' does not normalize what it is given, such
+    -- as a dispatch off a formation with neither φ nor λ, which normalization
+    -- would reduce (#1442). It carries the term.
+    Unmorphable Expression
   deriving anyclass (Exception)
 
 instance Show ReduceException where
@@ -327,6 +335,8 @@ instance Show ReduceException where
     printf "Dataization did not finish before reaching the limit of steps: --max-steps=%d" limit
   show (OutOfSteps (Firings limit)) =
     printf "Evaluation did not finish before reaching the limit of firings: --max-firings=%d" limit
+  show (OutOfSteps (Cycles limit)) =
+    printf "Normalization did not finish before reaching the limit of cycles: --max-cycles=%d" limit
   show (OutOfStepsAt budget _ _) = show (OutOfSteps budget)
   show (Stuck func) = printf "No entry of --symbolic answers the λ function '%s'" (T.unpack func)
   show (StuckAt func _ _) = show (Stuck func)
@@ -334,6 +344,7 @@ instance Show ReduceException where
   show (LoopingAt term _ _) = show (Looping term)
   show (Undataizable ExTermination _) = "dataization reached the terminator ⊥, which signals an error and cannot be dataized"
   show (Undataizable _ _) = "no dataization rule matched"
+  show (Unmorphable term) = printf "Morphing expects a normal form, but no morphing rule matches: %s" (printExpression term)
 
 -- Charge one step of the 𝕄/𝔻 recursion to the budget, refusing to descend once
 -- it is gone. '--max-cycles' and '--max-depth' bound only the normalization run
@@ -580,7 +591,7 @@ morph' (expr, seq) univ state caller = do
     matched <- firstMatch ctx rules
     case matched of
       Just (rule, subst) -> reduce ctx rule subst
-      Nothing -> throwIO (userError "no morphing rule matched")
+      Nothing -> throwIO (Unmorphable expr)
   where
     firstMatch :: ReduceContext -> [Y.MorphRule] -> IO (Maybe (Y.MorphRule, Subst))
     firstMatch _ [] = pure Nothing
@@ -925,11 +936,15 @@ leadsTo ((current, _) :| rest) rule expr ReduceContext{..} = do
 -- it at '_locator' into the working expression taken from the head of the step
 -- chain so the rewriter sees the surrounding context. Splices the individual
 -- steps (alpha, copy, dot, …) into the chain and returns the normalized
--- expression together with the extended sequence.
+-- expression together with the extended sequence. A rewriter that ran out of
+-- '--max-cycles' hands back a term that is not a normal form, which neither 𝕄
+-- nor 𝔻 accepts, so the exhausted budget is signalled instead and '_partial'
+-- parks the site the way it parks any other (#1496).
 normalized :: Expression -> NonEmpty Rewritten -> ReduceContext -> IO (Expression, NonEmpty Rewritten)
 normalized expr seq ctx@ReduceContext{..} = do
   whole <- withLocatedExpression _locator expr (fst (NE.head seq))
-  (rewrittens, _) <- rewrite whole normalizationRules (rewriteContext ctx)
+  (rewrittens, exceeded) <- rewrite whole normalizationRules (rewriteContext ctx)
+  when exceeded (throwIO (OutOfSteps (Cycles _maxCycles)))
   let (rw :| rws) = NE.reverse rewrittens
       seq' = rw :| rws <> NE.tail seq
   expr' <- locatedExpression _locator (fst rw)

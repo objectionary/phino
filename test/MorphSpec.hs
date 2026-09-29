@@ -189,16 +189,15 @@ spec = do
         )
       ]
 
-  -- 𝕄's first argument is always a normal form reachable through normalization,
-  -- and every such normal form is covered by some morphing clause (an axiom
-  -- like 'mf'/'dead'/'xi'/'universe'/'mg' or a recursive rule), so the "no rule
-  -- matched" fallback never fires along any real derivation. It is still total
-  -- code, reachable by calling 'morph'' directly (bypassing normalization) on a
-  -- raw meta 𝑛, an AST node the matcher never binds to any concrete pattern.
+  -- Every normal form is covered by some morphing clause (an axiom like
+  -- 'mf'/'dead'/'xi'/'universe'/'mg' or a recursive rule), so the "no rule
+  -- matched" fallback fires only on a term that is not a normal form: one the
+  -- user handed 'morph' unnormalized (#1442), or a raw meta 𝑛, an AST node the
+  -- matcher never binds to any concrete pattern, handed to 'morph'' directly.
   describe "morph' fails when no morphing rule matches the term" $
     it "throws instead of looping when handed a bare, unmatched meta" $
       morph' (ExMeta "unbound", (ExRoot, Nothing) :| []) ExRoot emptyState (defaultReduceContext ExRoot)
-        `shouldThrow` (\e -> "no morphing rule matched" `isInfixOf` show (e :: SomeException))
+        `shouldThrow` (\e -> "Morphing expects a normal form" `isInfixOf` show (e :: SomeException))
 
   -- 'execBuildTerm's "morph" case exposes 𝕄 to the matcher's condition path
   -- (guards in 'when'/'having'), the way its "evaluate" case exposes 𝔼 (see
