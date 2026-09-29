@@ -1,0 +1,34 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# The 'normalize' premise of 'mphi' unrolls the loop of 'walk' one round per
+# cycle, since the 'eq' deciding the 'if' is a λ the normalizer cannot answer,
+# so it runs out of '--max-cycles'. The unfinished term is not a normal form
+# and no morphing rule takes it, so the run names the budget it spent instead
+# of failing with "no morphing rule matched" (#1496).
+location: 'Q.x'
+input: |
+  ⟦
+    tuple(length, head, tail) ↦ ⟦ empty ↦ ⟦ ⟧ ⟧,
+    map(pairs) ↦ ⟦
+      φ ↦ ctor(
+        entries ↦ pairs.length.eq( 0 ).if(
+          Φ.tuple.empty,
+          walk( tup ↦ pairs ).φ
+        )
+      ),
+      ctor(entries) ↦ ⟦ keys ↦ entries ⟧,
+      walk(ρ, tup) ↦ ⟦
+        φ ↦ tup.length.eq( 0 ).if( Φ.tuple.empty, prev ),
+        prev ↦ ρ.walk( tup ↦ tup.tail ).φ
+      ⟧
+    ⟧,
+    x ↦ Φ.map(
+      pairs ↦ Φ.tuple(
+        length ↦ L_len:λ, head ↦ L_head:λ, tail ↦ L_tail:λ
+      )
+    ).keys
+  ⟧
+fails: >-
+  Normalization did not finish before reaching the limit of cycles:
+  --max-cycles=25
