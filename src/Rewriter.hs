@@ -268,6 +268,7 @@ rewrite expr rules ctx@RewriteContext{..} = do
     _rewrite :: RewriteState -> Int -> IO Rewrittens
     _rewrite state@(rewrittens@((current, _) :| _), _, _) count
       | not (inRange _must count) && count > 0 && exceedsUpperBound _must count = throwIO (MustStopBefore _must count)
+      | count == _maxCycles && not (inRange _must count) = throwIO (MustBeGoing _must count)
       | count == _maxCycles = do
           logDebug (printf "Max amount of rewriting cycles for all rules (%d) has been reached, rewriting is stopped" _maxCycles)
           if _depthSensitive
