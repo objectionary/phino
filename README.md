@@ -532,20 +532,20 @@ failure passed on its way out.
 `stall(L_outer)` stands under a firing that `--acyclic=plausible` answered
 with the stall an earlier firing of the same formation kept, so a told stall
 never reads as a fresh firing that wrote nothing.
-`starved(4)  # 𝔻(ξ.arg)` is where `--max-steps=4` ran out, commented with the
-judgment and the term the reduction stood at, whether or not `--partial` goes
+`starved(4)  # 𝔻(Φ.a🌵1)` is where `--max-steps=4` ran out, commented with the
+judgment and the site the reduction stood at, whether or not `--partial` goes
 on to park it:
 
 ```text
 𝕄(Φ.x)
   𝔼(L_outer)  # 𝕄(Φ.x)
     𝔼(L_outer)  # 𝔻(Φ.a🌵0)
-      starved(4)  # 𝔻(ξ.arg)
+      starved(4)  # 𝔻(Φ.a🌵1)
     stuck(L_outer)
 ```
 
 The markup spells them `<unfinished λ="L_outer"/>`, `<stall λ="L_outer"/>`
-and `<starved limit="4" by="dataize">ξ.arg</starved>`.
+and `<starved limit="4" by="dataize" at="Φ.a🌵1"/>`.
 
 Every term is 𝜑 on a single line, whatever `--output` and `--flat` say about
 the result of the run, so a program reading the protocol back never has to know
@@ -826,9 +826,11 @@ $ cat atoms.xml
 A formation carrying a whole object is written flat on one line, so a real
 run fills the protocol with lines tens of thousands of characters long. The
 `--abridged` option shortens every term the protocol writes, in the text and
-the XML alike: a formation longer than sixty characters keeps its `φ`, `Δ` and
-`λ` bindings and folds the rest into a count, and a byte string longer than
-eight bytes keeps its first four bytes and its length. The result the run
+the XML alike: a formation longer than sixty-four characters keeps its `φ`,
+`Δ` and `λ` bindings and folds the rest into a count, and a byte string longer
+than eight bytes keeps its first two bytes and its last two, with the count of
+the bytes cut out between them. The width is a value of the option,
+`--abridged=120`, for a run that can read longer lines. The result the run
 prints stays whole, and the option is refused without `--protocol`:
 
 <!-- markdownlint-disable MD013 -->
@@ -847,7 +849,7 @@ $ phino dataize --locator=Q.t --protocol=wide.txt --abridged --quiet \
     --sweet --hide-rho wide.phi
 $ cat wide.txt
 𝔻(Φ.t)
-  formation(⟦ φ ↦ 48-65-6C-6C-...(12b):Δ, +3 attrs ⟧)  # 𝔻(Φ.t)
+  formation(⟦ φ ↦ 48-65-..(8b)..-6C-64:Δ, +3 ⟧)  # 𝔻(Φ.t)
 ```
 
 <!-- markdownlint-enable MD013 -->
