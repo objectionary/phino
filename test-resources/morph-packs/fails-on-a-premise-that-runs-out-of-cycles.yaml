@@ -11,13 +11,24 @@ input: |
   ⟦
     tuple(length, head, tail) ↦ ⟦ empty ↦ ⟦ ⟧ ⟧,
     map(pairs) ↦ ⟦
-      φ ↦ ctor( entries ↦ pairs.length.eq( 0 ).if( Φ.tuple.empty, walk( tup ↦ pairs ).φ ) ),
+      φ ↦ ctor(
+        entries ↦ pairs.length.eq( 0 ).if(
+          Φ.tuple.empty,
+          walk( tup ↦ pairs ).φ
+        )
+      ),
       ctor(entries) ↦ ⟦ keys ↦ entries ⟧,
       walk(ρ, tup) ↦ ⟦
         φ ↦ tup.length.eq( 0 ).if( Φ.tuple.empty, prev ),
         prev ↦ ρ.walk( tup ↦ tup.tail ).φ
       ⟧
     ⟧,
-    x ↦ Φ.map( pairs ↦ Φ.tuple( length ↦ L_len:λ, head ↦ L_head:λ, tail ↦ L_tail:λ ) ).keys
+    x ↦ Φ.map(
+      pairs ↦ Φ.tuple(
+        length ↦ L_len:λ, head ↦ L_head:λ, tail ↦ L_tail:λ
+      )
+    ).keys
   ⟧
-fails: 'Normalization did not finish before reaching the limit of cycles: --max-cycles=25'
+fails: >-
+  Normalization did not finish before reaching the limit of cycles:
+  --max-cycles=25
