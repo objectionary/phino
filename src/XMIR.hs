@@ -30,7 +30,7 @@ import Control.Monad (unless)
 import Data.Bifunctor (bimap)
 import Data.Char (isAsciiLower, isDigit)
 import Data.Foldable (foldlM)
-import Data.List (intercalate)
+import Data.List (groupBy, intercalate)
 import qualified Data.Map as M
 import Data.Maybe (catMaybes)
 import qualified Data.Text as T
@@ -573,15 +573,22 @@ xmirAtoms xmir = M.fromList <$> mapM entry markers
 
 -- A formation keeps its Δ data in the text content of its own element, the way
 -- the printer emits a Δ binding, while the rest of the bindings live in the
--- nested <o> elements
+-- nested <o> elements; the text stands among them where the binding stands in
+-- the formation, so the children are read in document order and a run of text
+-- between two <o> elements is the Δ binding at that position (#1430)
 xmirToFormation :: C.Cursor -> [String] -> IO Expression
 xmirToFormation cur fqn = do
-  nested <- mapM (`xmirToFormationBinding` fqn) (cur C.$/ C.element (toName "o"))
-  bds <- if hasText cur then (: nested) <$> delta else pure nested
+  bds <- concat <$> mapM binding (groupBy (\left right -> not (nested left) && not (nested right)) (C.child cur))
   ExFormation <$> uniqueBindings' bds
   where
-    delta :: IO Binding
-    delta = BiDelta . bytesToBts . T.unpack . T.strip . T.pack <$> getText cur
+    nested :: C.Cursor -> Bool
+    nested node = not (null (C.element (toName "o") node))
+    binding :: [C.Cursor] -> IO [Binding]
+    binding [node] | nested node = pure <$> xmirToFormationBinding node fqn
+    binding nodes = pure [BiDelta (bytesToBts (T.unpack text)) | not (T.null text)]
+      where
+        text :: T.Text
+        text = T.strip (T.concat [content | NodeContent content <- map C.node nodes])
 
 xmirToExpression :: C.Cursor -> [String] -> IO Expression
 xmirToExpression cur fqn
