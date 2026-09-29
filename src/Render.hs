@@ -109,7 +109,7 @@ instance Render BYTES where
   render (BT_MANY bts) = T.intercalate "-" (map render bts)
   render (BT_META mt) = render mt
   render (BT_PIPED bts) = "|" <> render bts <> "|"
-  render (BT_CUT bts size) = T.intercalate "-" (map render bts) <> "-...(" <> render size <> "b)"
+  render (BT_CUT opening omitted closing) = T.intercalate "-" (map render opening) <> "-..(" <> render omitted <> "b)..-" <> T.intercalate "-" (map render closing)
 
 instance Render EXCLAMATION where
   render EXCL = "!"
@@ -169,7 +169,7 @@ instance Render PAIR where
   render PA_META_LAMBDA'{..} = "L> " <> render meta
   render PA_META_DELTA{..} = render DELTA <> render SPACE <> render DASHED_ARROW <> render SPACE <> render meta
   render PA_META_DELTA'{..} = "D> " <> render meta
-  render PA_FOLDED{..} = "+" <> render count <> " attrs"
+  render PA_FOLDED{..} = "+" <> render count
 
 instance Render BINDINGS where
   render = TL.toStrict . TLB.toLazyText . binds

@@ -284,14 +284,19 @@ optProtocol =
         )
     )
 
-optAbridged :: Parser Bool
+optAbridged :: Parser (Maybe Int)
 optAbridged =
-  switch
-    ( long "abridged"
-        <> help
-          "Shorten every 𝜑-expression written to the --protocol file: a formation longer than sixty characters \
-          \keeps its φ, Δ and λ bindings and folds the rest into a count, as '+34 attrs', and a byte string \
-          \longer than eight bytes keeps its first four bytes and its length, as '00-00-00-00-...(45b)'"
+  optional
+    ( flag'
+        64
+        ( long "abridged"
+            <> help
+              "Shorten every 𝜑-expression written to the --protocol file: a formation longer than the width \
+              \keeps its φ, Δ and λ bindings and folds the rest into a count, as '+34', and a byte string \
+              \longer than eight bytes keeps its first two bytes and its last two with the count of the bytes \
+              \between them, as '00-00-..(45b)..-FF-EE'; the width is 64 characters unless given as --abridged=WIDTH"
+        )
+        <|> option auto (long "abridged" <> metavar "WIDTH" <> internal)
     )
 
 optShuffle :: Parser Bool

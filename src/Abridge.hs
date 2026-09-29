@@ -7,10 +7,11 @@
 -- A formation carrying a whole standard object flattens into a line tens of
 -- thousands of characters long, and every short line of the protocol ends up
 -- between two walls of text. So a formation whose flat spelling runs past
--- sixty characters keeps its salient bindings — φ, Δ and λ, the ones saying
--- what the object decorates, holds and fires — and folds the rest into a
--- count, '+34 attrs'; a shorter one says little enough to keep them all. A
--- byte string past eight bytes keeps its first four and its length, however
+-- the width the option names keeps its salient bindings — φ, Δ and λ, the
+-- ones saying what the object decorates, holds and fires — and folds the rest
+-- into a count, '+34'; a shorter one says little enough to keep them all. A
+-- byte string past eight bytes keeps its first two and its last two, with the
+-- count of the bytes cut out between them, '00-00-..(45b)..-FF-EE', however
 -- short the formation holding it, so a wide Δ never blows a line either. The
 -- metas of a rule are kept, since they stand for bindings and are none. The
 -- arguments of an application are never folded, since they are what the
@@ -22,8 +23,8 @@ import qualified Data.Text as T
 import Lining (toSingleLine)
 import Render (render)
 
-abridged :: EXPRESSION -> EXPRESSION
-abridged = goExpr
+abridged :: Int -> EXPRESSION -> EXPRESSION
+abridged width = goExpr
   where
     goExpr :: EXPRESSION -> EXPRESSION
     goExpr expr@EX_FORMATION{..}
@@ -85,11 +86,11 @@ abridged = goExpr
     goAppArgs AAS_EMPTY = AAS_EMPTY
     goBytes :: BYTES -> BYTES
     goBytes (BT_MANY bts)
-      | length bts > 8 = BT_CUT (take 4 bts) (length bts)
+      | length bts > 8 = BT_CUT (take 2 bts) (length bts - 4) (drop (length bts - 2) bts)
     goBytes bts = bts
-    -- Whether a formation spelled flat fits in sixty characters.
+    -- Whether a formation spelled flat fits in the width.
     short :: EXPRESSION -> Bool
-    short expr = T.length (render (toSingleLine expr)) <= 60
+    short expr = T.length (render (toSingleLine expr)) <= width
     -- Whether a binding says what the object decorates, holds or fires.
     salient :: PAIR -> Bool
     salient PA_TAU{attr = AT_PHI{}} = True
