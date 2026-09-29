@@ -22,6 +22,7 @@ module Morph (Answer, Kept (..), ReduceContext (..), ReduceException (..), Evalu
 
 import AST
 import Builder (buildExpressionThrows, contextualize, pathOf)
+import Control.Applicative ((<|>))
 import Control.Exception (Exception, catch, throwIO, try)
 import Control.Monad (foldM, unless, when)
 import Data.IORef (IORef, modifyIORef', newIORef, readIORef, writeIORef)
@@ -29,7 +30,7 @@ import Data.List (find, partition)
 import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as NE
 import qualified Data.Map.Strict as Map
-import Data.Maybe (fromMaybe, isJust)
+import Data.Maybe (fromMaybe, isJust, listToMaybe)
 import qualified Data.Set as Set
 import qualified Data.Text as T
 import Deps (Acyclic (..), BuildTermFunc, BuildTermMethodS, Evaluation (..), Judgment (..), SaveEvalFunc, SaveStepFunc, State (..), Term (..), dontSaveStep)
@@ -138,9 +139,16 @@ data Tally = Tally
 -- the formation the cut carried: the formation is fired as often as the
 -- program reads it, and without the cut in the store every one of those
 -- firings walked all the way down to the same cut again (#1480). A firing
--- that got stuck is kept as well, as the λ function it got stuck on, since the
--- same formation in the same world gets stuck the same way, and a fork whose
--- branches never join was fired afresh at every read of it (#1493). The store is
+-- that got stuck is kept as well, as the λ function it got stuck on, since a
+-- fork whose branches never join was fired afresh at every read of it (#1493).
+-- A stall is a fact about the firing and not about the formation, though: a
+-- branch often stays unjoined only because an operand inside it could not yet
+-- be brought down, and the walk brings it down a few steps later. So a stall
+-- is kept beside the number of answers the memo held when it was made, and it
+-- is told to a later firing only while the memo holds no more, since an
+-- operand that could not be reduced can only be reduced once something new
+-- was answered (#1495). An answer the formation made is told before any stall
+-- of it, whichever came first. The store is
 -- one cell every frame of the run shares, like the count of 'Tally', since
 -- what one frame answered is what its siblings are after. It belongs to
 -- 'Plausible' and to no switch of its own: a run asking for plausible cuts is
@@ -154,7 +162,7 @@ data Tally = Tally
 -- the world copies it, and the walk entered the bindings of every copy as if
 -- they were new, so the tests of 'Φ.number' were reduced once per number the
 -- program held (#1480).
-data Memo = Memo (IORef (Store Kept)) (IORef (Set.Set (Expression, Attribute)))
+data Memo = Memo (IORef (Store (Int, Kept))) (IORef Int) (IORef (Set.Set (Expression, Attribute)))
 
 -- What one firing answered, kept for the firings of the same formation to
 -- come: the term the entry wrote, symbols and all, and the normal form 𝕄 made
@@ -358,35 +366,50 @@ charged ReduceContext{_tally = Just (Tally cap count)} = do
 -- one under 'Plausible', the mode the memo belongs to (see 'Memo'), and none
 -- under any other, where nothing is ever recalled.
 memoized :: Maybe Acyclic -> IO (Maybe Memo)
-memoized (Just Plausible) = Just <$> (Memo <$> newIORef Map.empty <*> newIORef Set.empty)
+memoized (Just Plausible) = Just <$> (Memo <$> newIORef Map.empty <*> newIORef 0 <*> newIORef Set.empty)
 memoized _ = pure Nothing
 
 -- What the memo keeps for the formation, if this run fired it already (see
--- 'Memo'); nothing where the run keeps no memo at all.
+-- 'Memo'): an answer before anything else, and a stall only while nothing was
+-- answered after it; nothing where the run keeps no memo at all.
 recalled :: Maybe Memo -> Expression -> IO (Maybe Kept)
 recalled Nothing _ = pure Nothing
-recalled (Just (Memo store _)) form = do
+recalled (Just (Memo store answers _)) form = do
   kept <- readIORef store
-  pure (Map.lookup (hashExpression form) kept >>= lookup form)
+  count <- readIORef answers
+  let live = [known | (term, (stamp, known)) <- Map.findWithDefault [] (hashExpression form) kept, term == form, current count stamp known]
+  pure (find answered live <|> listToMaybe live)
+  where
+    current :: Int -> Int -> Kept -> Bool
+    current count stamp (Stalled _) = stamp == count
+    current _ _ _ = True
+    answered :: Kept -> Bool
+    answered (Answered _) = True
+    answered _ = False
 
 -- Keep what firing the formation came to, for the next firing of it (see
 -- 'Memo').
 retained :: Maybe Memo -> Expression -> Kept -> IO ()
 retained Nothing _ _ = pure ()
-retained (Just (Memo store _)) form kept = modifyIORef' store (Map.insertWith (++) (hashExpression form) [(form, kept)])
+retained (Just (Memo store answers _)) form kept = do
+  count <- readIORef answers
+  modifyIORef' store (Map.insertWith (++) (hashExpression form) [(form, (count, kept))])
+  case kept of
+    Answered _ -> writeIORef answers (count + 1)
+    _ -> pure ()
 
 -- Whether the '--deep' walk has entered the binding the object of the world
 -- declares under the attribute, in whichever copy of the object (see 'Memo');
 -- never where the run keeps no memo at all.
 visited :: Maybe Memo -> Expression -> Attribute -> IO Bool
 visited Nothing _ _ = pure False
-visited (Just (Memo _ walked)) object attr = Set.member (object, attr) <$> readIORef walked
+visited (Just (Memo _ _ walked)) object attr = Set.member (object, attr) <$> readIORef walked
 
 -- Remember that the '--deep' walk has entered the binding the object of the
 -- world declares under the attribute (see 'visited').
 visit :: Maybe Memo -> Expression -> Attribute -> IO ()
 visit Nothing _ _ = pure ()
-visit (Just (Memo _ walked)) object attr = modifyIORef' walked (Set.insert (object, attr))
+visit (Just (Memo _ _ walked)) object attr = modifyIORef' walked (Set.insert (object, attr))
 
 -- Run one frame of the 𝕄/𝔻 spine, attaching its derivation and its state to a
 -- stuck λ function or an exhausted budget escaping it. 'Stuck' is raised deep

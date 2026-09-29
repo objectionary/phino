@@ -150,7 +150,9 @@ symbol func form self univ state caller = case matched caller._symbolic func of
     -- kept instead, as the formation the cut carried, since the next firing
     -- of the same formation would only walk down to it again (#1480). A
     -- firing that got stuck is kept the same way, as the λ function it got
-    -- stuck on, since the same formation gets stuck the same way (#1493).
+    -- stuck on, and the memo tells it only until something new is answered,
+    -- since an operand that could not be brought down may come down then
+    -- (#1493, #1495).
     made :: Lambda -> IO (Expression, State)
     made entry = do
       charged caller

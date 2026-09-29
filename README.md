@@ -1346,7 +1346,9 @@ way to an answer keeps the cut, and the next firing of the same formation is
 cut at its own site without reducing anything first. A firing that got stuck
 keeps the λ function it got stuck on, and the next firing of the same
 formation gets stuck at its own site the same way, with nothing reduced
-under it.
+under it, as long as nothing new was answered in between. Once something
+was, the formation is fired again, since an operand that could not be
+brought down the first time may come down now.
 
 The mode also walks a binding of the world once. Every dispatch on an object
 of the world copies it, and `--deep` walks every copy, so the tests of an
