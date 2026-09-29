@@ -161,7 +161,7 @@ dataize' (expr, seq) univ state caller = do
         -- whichever symbol the last datum was manufactured for is forgotten
         -- here: only a run ending on a symbol leaves one behind.
         pure ((bts, NE.toList seq'), state'{_manufactured = Nothing})
-      Just concl@(Y.Premise _ (Y.OpDataize arg)) -> case producer arg rule.premises of
+      Just concl@(Y.Premise _ (Y.OpDataize arg universe)) -> case producer arg rule.premises of
         -- 𝔻(𝒩(e)) records the producing step (the 'box' contextualization),
         -- then normalizes its result back to a normal form before dataizing on,
         -- so 𝔻 only ever sees normal forms.
@@ -169,16 +169,20 @@ dataize' (expr, seq) univ state caller = do
           let side = rule.premises `excluding` [concl, normal]
           (final, state') <- sides ctx side subst
           built <- buildExpressionThrows inner final
+          world <- buildExpressionThrows universe final
           labelled <- leadsTo seq (labelOf side) built ctx
           (normal', seq') <- normalized built labelled ctx
-          dataize' (normal', seq') univ state' ctx
-        -- 𝔻(𝕄(e)) delegates to the morphing relation, splicing its steps into the
-        -- chain before dataizing on.
-        Just morphed@(Y.Premise _ (Y.OpMorph inner)) -> do
+          dataize' (normal', seq') world state' ctx
+        -- 𝔻(𝕄(e)) delegates to the morphing relation, in the universe the
+        -- 'morph' premise names, splicing its steps into the chain before
+        -- dataizing on in the one the conclusion names.
+        Just morphed@(Y.Premise _ (Y.OpMorph inner scene)) -> do
           (final, state') <- sides ctx (rule.premises `excluding` [concl, morphed]) subst
           built <- buildExpressionThrows inner final
-          ((morphed', seq'), state'') <- morph' (built, seq) univ state' ctx
-          dataize' (morphed', seq') univ state'' ctx
+          stage <- buildExpressionThrows scene final
+          ((morphed', seq'), state'') <- morph' (built, seq) stage state' ctx
+          world <- buildExpressionThrows universe final
+          dataize' (morphed', seq') world state'' ctx
         -- The dataize argument is produced with no 'normalize'/'morph' spine to
         -- splice: 'fire' by its 'evaluate' side-computation (𝔼 now yields a
         -- normal form itself, so no follow-up 'normalize' is needed) and 'none'
@@ -189,8 +193,9 @@ dataize' (expr, seq) univ state caller = do
           let side = rule.premises `excluding` [concl]
           (final, state') <- sides ctx side subst
           built <- buildExpressionThrows arg final
+          world <- buildExpressionThrows universe final
           seq' <- leadsTo seq (labelOr (verb concl.operation) side) built ctx
-          dataize' (built, seq') univ state' ctx
+          dataize' (built, seq') world state' ctx
       Just _ -> throwIO (userError (printf "dataization rule '%s' must conclude with a 'dataize' premise" rule.name))
     sides :: ReduceContext -> [Y.Premise] -> Subst -> IO (Subst, State)
     sides ctx premises subst = foldM (sidePremise univ ctx) (subst, state) premises

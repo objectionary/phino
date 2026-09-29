@@ -386,11 +386,11 @@ spec = do
               , nresult = ExMeta "n1"
               , when = Just (Y.NF (ExMeta "n"))
               , premises =
-                  [ Y.Premise{result = "n1", operation = Y.OpMorph (ExMeta "n")}
+                  [ Y.Premise{result = "n1", operation = Y.OpMorph (ExMeta "n") (ExMeta "e")}
                   , Y.Premise{result = "n2", operation = Y.OpNormalize (ExMeta "n1")}
                   , Y.Premise{result = "n3", operation = Y.OpEvaluate (ExMeta "n2") (ExMeta "e")}
                   , Y.Premise{result = "n4", operation = Y.OpContextualize (ExMeta "n3") (ExMeta "e")}
-                  , Y.Premise{result = "n5", operation = Y.OpDataize (ExMeta "n4")}
+                  , Y.Premise{result = "n5", operation = Y.OpDataize (ExMeta "n4") (ExMeta "e")}
                   ]
               }
       explainMorphRules [rule]
@@ -431,7 +431,7 @@ spec = do
           ]
 
   describe "explainContextualizeRules" $
-    it "threads a morph premise through the rule's own 'e' universe" $ do
+    it "renders a morph premise in the universe it names, not in a free 'e'" $ do
       let rule =
             Y.ContextualizeRule
               { name = "ctx1"
@@ -439,14 +439,14 @@ spec = do
               , match = ExMeta "n"
               , cmatch = ExMeta "c"
               , cresult = ExMeta "n1"
-              , premises = [Y.Premise{result = "n1", operation = Y.OpMorph (ExMeta "n")}]
+              , premises = [Y.Premise{result = "n1", operation = Y.OpMorph (ExMeta "n") ExRoot}]
               }
       explainContextualizeRules [rule]
         `shouldBe` intercalate
           "\n"
           [ "\\begin{phinoContextualizationInference}"
           , "  \\phinoName{ctx1}"
-          , "  \\phinoPremise{ \\phinoMorph{ n }{ e }{ s_1 }{ n_1 }{ s_2 } }"
+          , "  \\phinoPremise{ \\phinoMorph{ n }{ Q }{ s_1 }{ n_1 }{ s_2 } }"
           , "  \\phinoConclusion{ \\phinoContextualize{ n }{ e }{ n_1 } }"
           , "\\end{phinoContextualizationInference}"
           ]
@@ -504,7 +504,7 @@ spec = do
               , ematch = ExMeta "e1"
               , nresult = ExMeta "n1"
               , when = Nothing
-              , premises = [Y.Premise{result = "d1", operation = Y.OpDataize (ExMeta "n1")}]
+              , premises = [Y.Premise{result = "d1", operation = Y.OpDataize (ExMeta "n1") (ExMeta "e1")}]
               }
       explainMorphRules [rule]
         `shouldBe` intercalate

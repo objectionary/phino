@@ -287,11 +287,11 @@ instance Slots Premise where
   slots premise = slots premise.operation
 
 instance Slots Operation where
-  slots (OpMorph expr) = slots expr
+  slots (OpMorph expr universe) = slots expr ++ slots universe
   slots (OpNormalize expr) = slots expr
   slots (OpEvaluate expr universe) = slots expr ++ slots universe
   slots (OpContextualize expr context) = slots expr ++ slots context
-  slots (OpDataize expr) = slots expr
+  slots (OpDataize expr universe) = slots expr ++ slots universe
 
 instance Metas Condition where
   metas (And conds) = metas conds
@@ -357,16 +357,16 @@ instance Metas Premise where
   bare names premise = premise{result = bare names premise.result, operation = bare names premise.operation}
 
 instance Metas Operation where
-  metas (OpMorph expr) = metas expr
+  metas (OpMorph expr universe) = metas expr ++ metas universe
   metas (OpNormalize expr) = metas expr
   metas (OpEvaluate expr universe) = metas expr ++ metas universe
   metas (OpContextualize expr context) = metas expr ++ metas context
-  metas (OpDataize expr) = metas expr
-  bare names (OpMorph expr) = OpMorph (bare names expr)
+  metas (OpDataize expr universe) = metas expr ++ metas universe
+  bare names (OpMorph expr universe) = OpMorph (bare names expr) (bare names universe)
   bare names (OpNormalize expr) = OpNormalize (bare names expr)
   bare names (OpEvaluate expr universe) = OpEvaluate (bare names expr) (bare names universe)
   bare names (OpContextualize expr context) = OpContextualize (bare names expr) (bare names context)
-  bare names (OpDataize expr) = OpDataize (bare names expr)
+  bare names (OpDataize expr universe) = OpDataize (bare names expr) (bare names universe)
 
 -- A rule is the scope an index counts in: the reader meets the metas of one
 -- inference within it and nowhere else, so a kind the rule names just once
@@ -457,8 +457,10 @@ yamlRule = Yaml.decodeFileThrow
 
 -- One premise above the inference line of a morphing or dataization rule: bind
 -- the meta named 'result' to the value of applying 'operation' to its argument.
--- The universe e is the fixed second argument of 𝕄 and 𝔻, not a per-premise
--- value, so it is not recorded here.
+-- A 'morph' or 'dataize' premise names the universe it reduces in beside the
+-- term, the second argument of 𝕄(n, e, s) and 𝔻(n, e, s), the way 'evaluate'
+-- names the one 𝔼 fires in: the rule says where each of its premises runs, and
+-- nothing is handed to a premise behind the rule's back (#1512).
 data Premise = Premise
   { result :: Text
   , operation :: Operation
@@ -468,11 +470,11 @@ data Premise = Premise
 -- The reduction a premise performs, mirroring the build-term functions and the
 -- 𝒩 and 𝔻 reducers the engine already provides.
 data Operation
-  = OpMorph Expression
+  = OpMorph Expression Expression
   | OpNormalize Expression
   | OpEvaluate Expression Expression
   | OpContextualize Expression Expression
-  | OpDataize Expression
+  | OpDataize Expression Expression
   deriving (Eq, Generic, Show)
 
 -- One morphing rule in inference-rule form: when 'match' matches the term and
@@ -541,24 +543,25 @@ premiseResult o = do
         Just _ -> fail "'d-result' must be a bytes meta"
         Nothing -> fail "a premise needs an 'n-result' or 'd-result' meta"
 
--- The single verb of a premise.
+-- The single verb of a premise. Every judgment but 𝒩 is binary here: 𝕄, 𝔼 and
+-- 𝔻 take the term and the universe, 𝒞 the term and the context, each as a
+-- list of two.
 premiseOperation :: Object -> Parser Operation
 premiseOperation o =
   asum
-    [ OpMorph <$> o .: "morph"
+    [ binary "morph" OpMorph
     , OpNormalize <$> o .: "normalize"
-    , do
-        vals <- o .: "evaluate"
-        case vals of
-          [expr, universe] -> OpEvaluate <$> parseJSON expr <*> parseJSON universe
-          _ -> fail "'evaluate' expects exactly two arguments"
-    , do
-        vals <- o .: "contextualize"
-        case vals of
-          [expr, context] -> OpContextualize <$> parseJSON expr <*> parseJSON context
-          _ -> fail "'contextualize' expects exactly two arguments"
-    , OpDataize <$> o .: "dataize"
+    , binary "evaluate" OpEvaluate
+    , binary "contextualize" OpContextualize
+    , binary "dataize" OpDataize
     ]
+  where
+    binary :: Key -> (Expression -> Expression -> Operation) -> Parser Operation
+    binary key verb = do
+      vals <- o .: key
+      case vals of
+        [expr, second] -> verb <$> parseJSON expr <*> parseJSON second
+        _ -> fail (printf "'%s' expects exactly two arguments" (Key.toString key))
 
 -- Parse the optional 'label', rejecting one that merely repeats the rule's
 -- 'name'. A label equal to the name typesets the same token across two macros

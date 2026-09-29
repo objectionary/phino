@@ -11,6 +11,7 @@
 module MorphSpec (spec) where
 
 import AST
+import Builder (buildExpressionThrows)
 import Control.Exception (SomeException)
 import Control.Monad
 import Data.Aeson (FromJSON)
@@ -25,8 +26,8 @@ import Files (allPathsIn)
 import Fixtures (defaultReduceContext, fixtureLambdas, primitives, withLambdas, withLambdasOf)
 import GHC.Generics (Generic)
 import Lambdas (Lambdas, emptyLambdas, readLambdas)
-import Matcher (substEmpty)
-import Morph (ReduceContext (..), emptyState, execBuildTerm, insideUniverse, morph, morph')
+import Matcher (MetaValue (MvExpression), substEmpty, substSingle)
+import Morph (ReduceContext (..), emptyState, execBuildTerm, insideUniverse, morph, morph', sidePremise)
 import Parser (parseExpressionThrows)
 import Rewriter (Rewritten)
 import Rule (RuleContext (RuleContext), matchExpressionWithRule')
@@ -188,6 +189,22 @@ spec = do
         , ExFormation []
         )
       ]
+
+  -- A 'morph' premise names the universe 𝕄 runs in beside the term, as its
+  -- rule's conclusion does, so it is reduced in that universe and not in the
+  -- one the frame around it was handed: here the frame is in Φ, where Φ morphs
+  -- to ⊥ through 'mg', while the premise names a world where Φ morphs to that
+  -- world through 'universe' (#1512).
+  describe "sidePremise" $
+    it "morphs a premise in the universe it names, not in the one the frame is in" $ do
+      world <- parseExpressionThrows "[[ x -> [[ ]] ]]"
+      (subst, _) <-
+        sidePremise
+          ExRoot
+          (defaultReduceContext ExRoot)
+          (substSingle "e" (MvExpression world), emptyState)
+          Yaml.Premise{result = "n1", operation = Yaml.OpMorph ExRoot (ExMeta "e")}
+      buildExpressionThrows (ExMeta "n1") subst `shouldReturn` world
 
   -- Every normal form is covered by some morphing clause (an axiom like
   -- 'mf'/'dead'/'xi'/'universe'/'mg' or a recursive rule), so the "no rule

@@ -6,7 +6,7 @@
 
 module YamlSpec where
 
-import AST (Alpha, Attribute, Binding, Bytes, Expression (ExRoot))
+import AST (Alpha, Attribute, Binding, Bytes, Expression (ExMeta, ExRoot))
 import Control.Exception (Exception (displayException), SomeException)
 import Control.Monad
 import Data.Either (isLeft)
@@ -157,7 +157,7 @@ spec = do
         ( "in a premise of a dataization rule"
         , failsWith
             "anonymous meta '!e' cannot be referenced in 'premises' of rule 'foo'"
-            (decodeYaml' (inferring "universe: 𝑒2\nconclusion: 𝛿1\npremises:\n  - d-result: 𝛿1\n    dataize: '𝑒'") :: Either Yaml.ParseException DataizeRule)
+            (decodeYaml' (inferring "universe: 𝑒2\nconclusion: 𝛿1\npremises:\n  - d-result: 𝛿1\n    dataize: ['𝑒', 𝑒2]") :: Either Yaml.ParseException DataizeRule)
         )
       ,
         ( "in a premise of a contextualization rule"
@@ -262,13 +262,24 @@ spec = do
 
   describe "rejects a malformed premise" $
     forM_
-      [ ("fails when neither 'n-result' nor 'd-result' is present", "morph: 𝑛")
-      , ("fails when 'n-result' is not an expression meta", "n-result: Q\nmorph: 𝑛")
-      , ("fails when 'd-result' is not a bytes meta", "d-result: '--'\ndataize: 𝑛")
-      , ("fails when 'evaluate' does not take exactly two arguments", "n-result: 𝑛\nevaluate: [𝑛]")
-      , ("fails when 'contextualize' does not take exactly two arguments", "n-result: 𝑛\ncontextualize: [𝑛]")
+      [ ("fails when neither 'n-result' nor 'd-result' is present", "morph: [𝑛, 𝑒]")
+      , ("fails when 'n-result' is not an expression meta", "n-result: Q\nmorph: [𝑛, 𝑒]")
+      , ("fails when 'd-result' is not a bytes meta", "d-result: '--'\ndataize: [𝑛, 𝑒]")
+      , ("fails when 'morph' does not take exactly two arguments", "n-result: 𝑛1\nmorph: [𝑛2]")
+      , ("fails when 'evaluate' does not take exactly two arguments", "n-result: 𝑛1\nevaluate: [𝑛2]")
+      , ("fails when 'contextualize' does not take exactly two arguments", "n-result: 𝑛1\ncontextualize: [𝑛2]")
+      , ("fails when 'dataize' does not take exactly two arguments", "d-result: 𝛿1\ndataize: [𝑛1]")
       ]
       (\(desc, yaml) -> it desc ((decodeYaml' yaml :: Either Yaml.ParseException Premise) `shouldSatisfy` isLeft))
+
+  -- 𝕄 and 𝔻 take the universe as their second argument, so a 'morph' or a
+  -- 'dataize' premise names it beside the term, the way 'evaluate' does (#1512)
+  describe "reads the universe a premise names" $
+    forM_
+      [ ("beside the term of 'morph'", "n-result: 𝑛1\nmorph: [𝑛2, 𝑒1]", Premise{result = T.pack "n1", operation = OpMorph (ExMeta (T.pack "n2")) (ExMeta (T.pack "e1"))})
+      , ("beside the term of 'dataize'", "d-result: 𝛿1\ndataize: [𝑛1, 𝑒1]", Premise{result = T.pack "d1", operation = OpDataize (ExMeta (T.pack "n1")) (ExMeta (T.pack "e1"))})
+      ]
+      (\(desc, yaml, premise) -> it desc (either (const Nothing) Just (decodeYaml' yaml) `shouldBe` Just premise))
 
   describe "rejects a numerable expression that is neither an object, a number nor an index meta" $
     it "fails on a bare boolean" $

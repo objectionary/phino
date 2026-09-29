@@ -434,7 +434,7 @@ explainMorphRule rule =
     premises
     (phinoMorph (renderExpr rule.match) (renderExpr rule.ematch) (conclusionStateName final 1) (conclusionStateName final final) (renderExpr rule.nresult))
   where
-    (premises, final) = premisesToLatex (renderExpr rule.ematch) rule.premises
+    (premises, final) = premisesToLatex rule.premises
 
 -- Render a dataization rule as a LaTeX inference rule, with 𝔻(match, e, s_1) ⟿
 -- ⟨conclusion, s_k⟩ as the conclusion below the line, s_k being the final threaded
@@ -449,7 +449,7 @@ explainDataizeRule rule =
     premises
     (phinoDataize (renderExpr rule.match) (renderExpr rule.ematch) (conclusionStateName final 1) (conclusionStateName final final) (renderBytes rule.dresult))
   where
-    (premises, final) = premisesToLatex (renderExpr rule.ematch) rule.premises
+    (premises, final) = premisesToLatex rule.premises
 
 -- Render a contextualization rule as a LaTeX inference rule, with 𝒞(match, c) ⟿
 -- c-result as the conclusion below the line. 𝒞 carries no state, so its premises
@@ -461,7 +461,7 @@ explainContextualizeRule rule =
     rule.name
     rule.label
     Nothing
-    (fst (premisesToLatex "e" rule.premises))
+    (fst (premisesToLatex rule.premises))
     (phinoContextualize (renderExpr rule.match) (renderExpr rule.cmatch) (renderExpr rule.cresult))
 
 -- The state metavariable for index 'n', rendered as s_1, s_2, … to mirror the
@@ -482,30 +482,27 @@ conclusionStateName final index
 -- Render a rule's premises in order, threading the state through them. The rule
 -- starts in state s_1; each state-changing premise (𝕄, 𝔻, 𝔼) consumes the
 -- current state and yields the next (s_2, s_3, …), matching how the engine folds
--- the state through the premises ('sidePremise' in 'Dataize.hs'). The 'universe'
--- is the rule's own 'universe' key, threaded into 𝕄/𝔻 premises (bound by the conclusion)
--- rather than a free 'e'. Returns the rendered judgments and the final state
--- index, which the conclusion returns.
-premisesToLatex :: String -> [Y.Premise] -> ([String], Int)
-premisesToLatex universe = go 1
+-- the state through the premises ('sidePremise' in 'Dataize.hs'). Returns the
+-- rendered judgments and the final state index, which the conclusion returns.
+premisesToLatex :: [Y.Premise] -> ([String], Int)
+premisesToLatex = go 1
   where
     go :: Int -> [Y.Premise] -> ([String], Int)
     go index [] = ([], index)
     go index (premise : rest) = (rendered : more, final)
       where
-        (rendered, next) = premiseToLatex universe index premise
+        (rendered, next) = premiseToLatex index premise
         (more, final) = go next rest
 
 -- One premise judgment in state s_index, rendered per its operation. The
 -- state-changing operations 𝕄 ('morph'), 𝔻 ('dataize') and 𝔼 ('evaluate') consume
 -- s_index and yield s_index+1 (so they return the bumped index); the rest are
--- stateless and leave the index as is. 𝕄 and 𝔻 carry the rule's own 'universe'
--- (its 'universe' key) so the premise stays bound by the conclusion instead of naming a
--- free 'e'; 𝔼 carries the explicit universe from its own operation.
-premiseToLatex :: String -> Int -> Y.Premise -> (String, Int)
-premiseToLatex universe index premise = case premise.operation of
-  Y.OpMorph arg -> (phinoMorph (renderExpr arg) universe (stateName index) (stateName (index + 1)) (renderExpr (ExMeta premise.result)), index + 1)
-  Y.OpDataize arg -> (phinoDataize (renderExpr arg) universe (stateName index) (stateName (index + 1)) (renderBytes (BtMeta premise.result)), index + 1)
+-- stateless and leave the index as is. 𝕄, 𝔻 and 𝔼 carry the universe their own
+-- operation names, so a premise is typeset as the rule wrote it (#1512).
+premiseToLatex :: Int -> Y.Premise -> (String, Int)
+premiseToLatex index premise = case premise.operation of
+  Y.OpMorph arg universe -> (phinoMorph (renderExpr arg) (renderExpr universe) (stateName index) (stateName (index + 1)) (renderExpr (ExMeta premise.result)), index + 1)
+  Y.OpDataize arg universe -> (phinoDataize (renderExpr arg) (renderExpr universe) (stateName index) (stateName (index + 1)) (renderBytes (BtMeta premise.result)), index + 1)
   Y.OpNormalize arg -> (phinoNormalize (renderExpr arg) (renderExpr (ExMeta premise.result)), index)
   Y.OpEvaluate arg evalUniverse -> (phinoEvaluate (renderExpr arg) (renderExpr evalUniverse) (stateName index) (stateName (index + 1)) (renderExpr (ExMeta premise.result)), index + 1)
   Y.OpContextualize arg context -> (phinoContextualize (renderExpr arg) (renderExpr context) (renderExpr (ExMeta premise.result)), index)
