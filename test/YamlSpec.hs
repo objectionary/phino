@@ -243,6 +243,12 @@ spec = do
         Right cond -> cond `shouldBe` IsFormation ExRoot
         Left err -> expectationFailure (Yaml.prettyPrintParseException err)
 
+  describe "parses a 'recursive' condition" $
+    it "decodes 'recursive: <expr>' into Recursive" $
+      case (decodeYaml' "recursive: 'Q'" :: Either Yaml.ParseException Condition) of
+        Right cond -> cond `shouldBe` Recursive ExRoot
+        Left err -> expectationFailure (Yaml.prettyPrintParseException err)
+
   describe "rejects a condition object naming no known key" $
     it "fails with 'Unknown condition type'" $
       case (decodeYaml' "{}" :: Either Yaml.ParseException Condition) of

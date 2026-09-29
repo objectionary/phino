@@ -1,0 +1,33 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# The 'keys' of a map whose 'ctor' argument holds a loop stopping on
+# 'length.eq 0' no longer runs its 'normalize' premise out of '--max-cycles'
+# once a ξ in a dispatched body sees the whole formation it is written in
+# (#1438): the premise reaches its normal form and 𝕄 goes on to the 'length'
+# no entry answers, the program of #1496 without its runaway.
+location: 'Q.x'
+input: |
+  ⟦
+    tuple(length, head, tail) ↦ ⟦ empty ↦ ⟦ ⟧ ⟧,
+    map(pairs) ↦ ⟦
+      φ ↦ ctor(
+        entries ↦ pairs.length.eq( 0 ).if(
+          Φ.tuple.empty,
+          walk( tup ↦ pairs ).φ
+        )
+      ),
+      ctor(entries) ↦ ⟦ keys ↦ entries ⟧,
+      walk(ρ, tup) ↦ ⟦
+        φ ↦ tup.length.eq( 0 ).if( Φ.tuple.empty, prev ),
+        prev ↦ ρ.walk( tup ↦ tup.tail ).φ
+      ⟧
+    ⟧,
+    x ↦ Φ.map(
+      pairs ↦ Φ.tuple(
+        length ↦ L_len:λ, head ↦ L_head:λ, tail ↦ L_tail:λ
+      )
+    ).keys
+  ⟧
+fails: >-
+  No entry of --symbolic answers the λ function 'L_len'

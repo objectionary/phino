@@ -1,15 +1,12 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 # SPDX-License-Identifier: MIT
 ---
-# Dispatch 𝜏1 on a formation: contextualize the dispatched body 𝑛1 and decorate
-# it with the whole formation as ρ. The contextualization context is the
-# formation WITHOUT the dispatched binding — ⟦𝐵1, 𝐵2⟧, not ⟦𝐵1, 𝜏1 ↦ 𝑛1, 𝐵2⟧ —
-# so a self-referential ξ inside 𝑛1 (as in ⟦ a ↦ ξ ⟧.a or ⟦ a ↦ ξ.a ⟧.a) no
-# longer sees 𝜏1. Such a self-reference then dispatches on a formation that
-# lacks 𝜏1 and collapses to ⊥ via stop/null/dd instead of rebuilding the same
-# ⟦…, 𝜏1 ↦ 𝑛1, …⟧.𝜏1 term and looping forever. ρ on line 'result' still binds
-# the full formation, so sibling and φ-decoration references stay intact — only
-# the self-ξ path narrows, keeping normalization (near-)total.
+# Dispatch 𝜏1 on a formation: contextualize the dispatched body 𝑛1 against the
+# whole formation and decorate it with the same formation as ρ, so a ξ in 𝑛1
+# stands for the formation it is written in, the dispatched binding included
+# (#1438). The one body that would never reach a normal form, a chain of
+# ξ-dispatches leading back to 𝜏1 as in ⟦ a ↦ ξ.a ⟧.a, is 'loop''s to answer:
+# the 'recursive' guard keeps 'dot' off it, and only off it (#967).
 # The rule does not dispatch on a formation holding both λ and Δ: 'dl' says
 # such a formation is ⊥, and carrying it out into ρ would leave a ρ ↦ ⊥ in a
 # normal form that 'dl' firing first reduces to ⊥ outright, so the answer would
@@ -27,17 +24,20 @@
 name: dot
 pattern: ⟦𝐵1, 𝜏1 ↦ 𝑛1, 𝐵2⟧.𝜏1
 when:
-  not:
-    in:
-      - [Δ, λ]
-      - [𝐵1, 𝐵2]
+  and:
+    - not:
+        in:
+          - [Δ, λ]
+          - [𝐵1, 𝐵2]
+    - not:
+        recursive: ⟦𝐵1, 𝜏1 ↦ 𝑛1, 𝐵2⟧.𝜏1
 result: 𝑒1(ρ ↦ 𝑒2)
 where:
   - meta: 𝑒1
     function: contextualize
     args:
       - 𝑛1
-      - ⟦𝐵1, 𝐵2⟧
+      - ⟦𝐵1, 𝜏1 ↦ 𝑛1, 𝐵2⟧
   - meta: 𝑒2
     function: named
     args:

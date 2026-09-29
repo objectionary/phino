@@ -772,9 +772,9 @@ spec = do
               [ "\\begin{phiquation}"
               , "[[ |x| -> ?, |y| -> |x| ]] ( |x| -> [[ D> |42-| ]] ) . |y| \\leadsto_{\\nameref{r:copy}}"
               , "  \\leadsto \\phinoMeet{foo:1}{ [[ |x| -> [[ D> |42-| ]], |y| -> |x| ]] } . |y| \\leadsto_{\\nameref{r:dot}}"
-              , "  \\leadsto [[ |x| -> [[ D> |42-| ]] ]] . |x| ( \\phiTerminal{\\rho} -> \\phinoAgain{foo:1} ) \\leadsto_{\\nameref{r:dot}}"
-              , "  \\leadsto [[ D> |42-| ]] ( \\phiTerminal{\\rho} -> [[ |x| -> [[ D> |42-| ]] ]], \\phiTerminal{\\rho} -> \\phinoAgain{foo:1} ) \\leadsto_{\\nameref{r:skip}}"
-              , "  \\leadsto [[ D> |42-| ]] ( \\phiTerminal{\\rho} -> \\phinoAgain{foo:1} ) \\leadsto_{\\nameref{r:skip}}"
+              , "  \\leadsto \\phinoAgain{foo:1} . |x| ( \\phiTerminal{\\rho} -> \\phinoAgain{foo:1} ) \\leadsto_{\\nameref{r:dot}}"
+              , "  \\leadsto \\phinoMeet{foo:2}{ [[ D> |42-| ]] ( \\phiTerminal{\\rho} -> \\phinoAgain{foo:1} ) } ( \\phiTerminal{\\rho} -> \\phinoAgain{foo:1} ) \\leadsto_{\\nameref{r:skip}}"
+              , "  \\leadsto \\phinoAgain{foo:2} \\leadsto_{\\nameref{r:skip}}"
               , "  \\leadsto [[ D> |42-| ]]{.}"
               , "\\end{phiquation}"
               ]
@@ -788,9 +788,9 @@ spec = do
               [ "\\begin{phiquation}"
               , "[[ |x| -> ?, |y| -> |x| ]] ( |x| -> [[ D> |42-| ]] ) . |y| \\leadsto_{\\nameref{r:copy}}"
               , "  \\leadsto \\phinoMeet{1}{ [[ |x| -> [[ D> |42-| ]], |y| -> |x| ]] } . |y| \\leadsto_{\\nameref{r:dot}}"
-              , "  \\leadsto [[ |x| -> [[ D> |42-| ]] ]] . |x| ( \\phiTerminal{\\rho} -> \\phinoAgain{1} ) \\leadsto_{\\nameref{r:dot}}"
-              , "  \\leadsto [[ D> |42-| ]] ( \\phiTerminal{\\rho} -> [[ |x| -> [[ D> |42-| ]] ]], \\phiTerminal{\\rho} -> \\phinoAgain{1} ) \\leadsto_{\\nameref{r:skip}}"
-              , "  \\leadsto [[ D> |42-| ]] ( \\phiTerminal{\\rho} -> \\phinoAgain{1} ) \\leadsto_{\\nameref{r:skip}}"
+              , "  \\leadsto \\phinoAgain{1} . |x| ( \\phiTerminal{\\rho} -> \\phinoAgain{1} ) \\leadsto_{\\nameref{r:dot}}"
+              , "  \\leadsto \\phinoMeet{2}{ [[ D> |42-| ]] ( \\phiTerminal{\\rho} -> \\phinoAgain{1} ) } ( \\phiTerminal{\\rho} -> \\phinoAgain{1} ) \\leadsto_{\\nameref{r:skip}}"
+              , "  \\leadsto \\phinoAgain{2} \\leadsto_{\\nameref{r:skip}}"
               , "  \\leadsto [[ D> |42-| ]]{.}"
               , "\\end{phiquation}"
               ]
@@ -865,8 +865,8 @@ spec = do
           ["rewrite", "--normalize", "--flat", "--sequence", "--output=latex", "--sweet", "--max-depth=1", "--max-cycles=1"]
           [ unlines
               [ "\\begin{phiquation}"
-              , "[[ |x| -> |y|, |y| -> |x| ]] . |x| \\leadsto_{\\nameref{r:dot}}"
-              , "  \\leadsto [[ |y| -> |x| ]] . |y| ( \\phiTerminal{\\rho} -> [[ |x| -> |y|, |y| -> |x| ]] ) \\leadsto"
+              , "[[ |x| -> |y|, |y| -> |x| ]] . |x| \\leadsto_{\\nameref{r:loop}}"
+              , "  \\leadsto T \\leadsto"
               , "  \\leadsto \\dots"
               , "\\end{phiquation}"
               ]

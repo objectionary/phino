@@ -85,6 +85,7 @@ instance ToSingleLine CONDITION where
   toSingleLine CO_DISJOINT{..} = CO_DISJOINT attrs (map toSingleLine groups)
   toSingleLine CO_SUBSET{..} = CO_SUBSET attrs belongs (map toSingleLine groups)
   toSingleLine CO_FORMATION{..} = CO_FORMATION (toSingleLine expr)
+  toSingleLine CO_RECURSIVE{..} = CO_RECURSIVE (toSingleLine expr)
   toSingleLine CO_EMPTY = CO_EMPTY
 
 instance ToSingleLine EXTRA_ARG where

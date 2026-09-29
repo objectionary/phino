@@ -392,6 +392,7 @@ instance ToLaTeX CONDITION where
   toLaTeX CO_DISJOINT{..} = CO_DISJOINT (map toLaTeX attrs) (map toLaTeX groups)
   toLaTeX CO_SUBSET{..} = CO_SUBSET (map toLaTeX attrs) belongs (map toLaTeX groups)
   toLaTeX CO_FORMATION{..} = CO_FORMATION (toLaTeX expr)
+  toLaTeX CO_RECURSIVE{..} = CO_RECURSIVE (toLaTeX expr)
   toLaTeX CO_EMPTY = CO_EMPTY
 
 instance ToLaTeX EXTRA_ARG where

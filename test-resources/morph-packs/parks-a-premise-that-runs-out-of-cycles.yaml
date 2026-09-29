@@ -7,40 +7,13 @@ location: 'Q.x'
 partial: true
 input: |
   ⟦
-    tuple(length, head, tail) ↦ ⟦ empty ↦ ⟦ ⟧ ⟧,
-    map(pairs) ↦ ⟦
-      φ ↦ ctor(
-        entries ↦ pairs.length.eq( 0 ).if(
-          Φ.tuple.empty,
-          walk( tup ↦ pairs ).φ
-        )
-      ),
-      ctor(entries) ↦ ⟦ keys ↦ entries ⟧,
-      walk(ρ, tup) ↦ ⟦
-        φ ↦ tup.length.eq( 0 ).if( Φ.tuple.empty, prev ),
-        prev ↦ ρ.walk( tup ↦ tup.tail ).φ
-      ⟧
-    ⟧,
-    x ↦ Φ.map(
-      pairs ↦ Φ.tuple(
-        length ↦ L_len:λ, head ↦ L_head:λ, tail ↦ L_tail:λ
-      )
-    ).keys
+    x ↦ ⟦
+      φ ↦ ξ.loop( n ↦ ⟦ ⟧ ).r,
+      loop(ρ, n) ↦ ⟦ r ↦ ξ.ρ.loop( n ↦ ξ ).r ⟧
+    ⟧.keys
   ⟧
 result: |
   ⟦
-    pairs ↦ Φ.tuple(
-      length ↦ L_len:λ, head ↦ L_head:λ, tail ↦ L_tail:λ
-    ),
-    φ ↦ ctor(
-      entries ↦ pairs.length.eq( 0 ).if(
-        Φ.tuple.empty,
-        walk( tup ↦ pairs ).φ
-      )
-    ),
-    ctor(entries) ↦ ⟦ keys ↦ entries ⟧,
-    walk(ρ, tup) ↦ ⟦
-      φ ↦ tup.length.eq( 0 ).if( Φ.tuple.empty, prev ),
-      prev ↦ ρ.walk( tup ↦ tup.tail ).φ
-    ⟧
+    φ ↦ loop( n ↦ ⟦ ⟧ ).r,
+    loop(ρ, n) ↦ ⟦ r ↦ ρ.loop( n ↦ ξ ).r ⟧
   ⟧.keys

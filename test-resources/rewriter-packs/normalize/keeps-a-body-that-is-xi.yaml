@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# A body that is ξ itself stands for the whole formation, not for an empty one
+# (#1438).
+normalize: true
+input: |
+  ⟦ t ↦ ⟦ a ↦ ξ ⟧.a ⟧
+output: |-
+  ⟦ t ↦ ⟦ a ↦ ξ ⟧ ⟧

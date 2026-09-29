@@ -124,6 +124,8 @@ spec = do
     forM_
       [ ("formation", Y.IsFormation (ExMeta "n"), "{ \\phinoIsFormation{ n } }")
       , ("not formation", Y.Not (Y.IsFormation (ExMeta "n")), "{ \\phinoNotFormation{ n } }")
+      , ("recursive", Y.Recursive (ExMeta "e"), "{ \\phinoRecursive{ e } }")
+      , ("not recursive", Y.Not (Y.Recursive (ExMeta "e")), "{ \\phinoNotRecursive{ e } }")
       , ("empty (And [])", Y.And [], "{ }")
       , ("empty (Or [])", Y.Or [], "{ }")
       , ("normal form", Y.NF (ExMeta "n"), "{ \\isnormal{ n } }")

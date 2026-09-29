@@ -43,6 +43,7 @@ spec = do
       , ("or(absolute(!e1), nf(Q.x))", Y.Or [Y.Absolute (ExMeta "e1"), Y.NF (ExDispatch ExRoot (AtLabel "x"))])
       , ("and(matches(\"hi\", !e1),part-of(!e1, !B1))", Y.And [Y.Matches "hi" (ExMeta "e1"), Y.PartOf (ExMeta "e1") (BiMeta "B1")])
       , ("not(formation(!n1))", Y.Not (Y.IsFormation (ExMeta "n1")))
+      , ("not(recursive(!e1))", Y.Not (Y.Recursive (ExMeta "e1")))
       ]
       (\(expr, res) -> it expr (parseCondition expr `shouldBe` Right res))
 

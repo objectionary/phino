@@ -29,7 +29,7 @@ input: >
     number ↦ ⟦ φ ↦ ∅ ⟧,
     bytes ↦ ⟦ φ ↦ ∅, size ↦ ⟦ λ ⤍ L_bytes_size ⟧ ⟧,
     dataized ↦ ⟦ target ↦ ∅, λ ⤍ L_dataized ⟧,
-    block ↦ ⟦ data ↦ ∅, buffer ↦ ∅, read ↦ ⟦ φ ↦ Φ.dataized( target ↦ ξ.ρ.data.size ).as-bytes ⟧ ⟧,
+    block ↦ ⟦ buffer ↦ ∅, read ↦ ⟦ data ↦ ∅, φ ↦ Φ.dataized( target ↦ ξ.data.size ).as-bytes ⟧ ⟧,
     l🌵 ↦ ⟦
       mark ↦ ⟦ n ↦ ∅, v ↦ ∅, λ ⤍ L_entry ⟧,
       root ↦ ⟦ v ↦ ∅, λ ⤍ L_root ⟧,

@@ -285,6 +285,7 @@ instance Render CONDITION where
   render CO_ABSOLUTE{belongs = NOT_IN, ..} = "\\phinoNotAbsolute{ " <> render expr <> " }"
   render CO_ABSOLUTE{..} = "\\phinoAbsolute{ " <> render expr <> " }"
   render CO_NOT{condition = CO_FORMATION{..}} = "\\phinoNotFormation{ " <> render expr <> " }"
+  render CO_NOT{condition = CO_RECURSIVE{..}} = "\\phinoNotRecursive{ " <> render expr <> " }"
   render CO_NOT{..} = renderFunc "not" condition
     where
       renderFunc :: Render a => Text -> a -> Text
@@ -293,6 +294,7 @@ instance Render CONDITION where
   render CO_MATCHES{..} = "matches\\lparen " <> T.pack regex <> ", " <> render expr <> " \\rparen"
   render CO_PART_OF{..} = "part-of\\lparen " <> render expr <> ", " <> render binding <> " \\rparen"
   render CO_FORMATION{..} = "\\phinoIsFormation{ " <> render expr <> " }"
+  render CO_RECURSIVE{..} = "\\phinoRecursive{ " <> render expr <> " }"
   render CO_DISJOINT{..} = render (ST_ATTRIBUTES attrs) <> " \\cap " <> union groups <> " = \\emptyset"
   render CO_SUBSET{attrs = [attr], ..} = render attr <> " " <> render belongs <> " " <> union groups
   render CO_SUBSET{belongs = NOT_IN, ..} = render (ST_ATTRIBUTES attrs) <> " \\not\\subseteq " <> union groups

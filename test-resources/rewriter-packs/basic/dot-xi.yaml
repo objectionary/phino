@@ -6,4 +6,4 @@ rules:
 input: |
   ⟦ a ↦ ξ ⟧.a
 output: |-
-  ⟦⟧ (ρ ↦ ⟦ a ↦ ξ ⟧)
+  ⟦ a ↦ ξ ⟧ (ρ ↦ ⟦ a ↦ ξ ⟧)

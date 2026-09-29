@@ -6,4 +6,4 @@ rules:
 input: |
   ⟦ x ↦ ξ.t, t ↦ ∅ ⟧.x
 output: |-
-  ⟦ t ↦ ∅ ⟧.t(ρ ↦ ⟦ x ↦ ξ.t, t ↦ ∅ ⟧)
+  ⟦ x ↦ ξ.t, t ↦ ∅ ⟧.t(ρ ↦ ⟦ x ↦ ξ.t, t ↦ ∅ ⟧)

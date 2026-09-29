@@ -294,6 +294,7 @@ instance ToSalty CONDITION where
   toSalty CO_DISJOINT{..} = CO_DISJOINT attrs (map toSalty groups)
   toSalty CO_SUBSET{..} = CO_SUBSET attrs belongs (map toSalty groups)
   toSalty CO_FORMATION{..} = CO_FORMATION (toSalty expr)
+  toSalty CO_RECURSIVE{..} = CO_RECURSIVE (toSalty expr)
   toSalty CO_EMPTY = CO_EMPTY
 
 instance ToSalty EXTRA_ARG where

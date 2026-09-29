@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# A ξ in the dispatched body sees the sibling that holds ξ, so the whole
+# formation comes back (#1438).
+normalize: true
+input: |
+  ⟦ t ↦ ⟦ a ↦ ξ, b ↦ ξ.a ⟧.b ⟧
+output: |-
+  ⟦ t ↦ ⟦ a ↦ ξ, b ↦ ξ.a ⟧ ⟧

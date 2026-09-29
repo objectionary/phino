@@ -10,4 +10,4 @@ normalize: true
 input: |
   ⟦ m ↦ ⟦ x ↦ ξ.t, φ ↦ ⟦ t ↦ ⟦⟧ ⟧ ⟧.x ⟧
 output: |-
-  ⟦⟧:t:φ.t( ρ ↦ ⟦ x ↦ t, φ ↦ ⟦⟧:t ⟧ ):m
+  ⟦ x ↦ t, φ ↦ ⟦⟧:t ⟧.t( ρ ↦ ⟦ x ↦ t, φ ↦ ⟦⟧:t ⟧ ):m

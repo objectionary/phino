@@ -2,8 +2,8 @@
 # SPDX-License-Identifier: MIT
 ---
 rules:
-  basic: ['dot']
+  basic: ['loop']
 input: |
-  ⟦ a ↦ ξ.b ⟧.a
+  ⟦ a ↦ ξ.b, b ↦ ξ.a ⟧.a
 output: |-
-  ⟦ a ↦ ξ.b ⟧.b (ρ ↦ ⟦ a ↦ ξ.b ⟧)
+  ⊥
