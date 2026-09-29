@@ -90,10 +90,11 @@ jobs:
           curl -sL -o /tmp/XMIR.xsd https://raw.githubusercontent.com/objectionary/eo/refs/heads/gh-pages/XMIR.xsd
           cat > /tmp/stuck.phi <<'PHI'
           ⟦
-            bytes ↦ ⟦ φ ↦ ∅ ⟧,
-            number ↦ ⟦ φ ↦ ∅, plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧,
-            φ ↦ 5.plus(6)
+            app ↦ ⟦
+              foo ↦ ⟦ bar ↦ ⟦ λ ⤍ L_stuck ⟧ ⟧,
+              φ ↦ Φ.app.foo.bar
+            ⟧
           ⟧
           PHI
-          phino dataize --partial --output=xmir /tmp/stuck.phi > /tmp/residual.xml
+          phino dataize --partial --locator=Q.app --output=xmir /tmp/stuck.phi > /tmp/residual.xml
           xmllint --noout --schema /tmp/XMIR.xsd /tmp/residual.xml
