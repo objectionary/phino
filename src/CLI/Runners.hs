@@ -63,10 +63,9 @@ runRewrite OptsRewrite{..} = do
   validateXmirTopLevel _outputFormat expr
   seedTaus expr
   logDebug (printf "Amount of rewriting cycles across all the rules: %d, per rule: %d" _maxCycles _maxDepth)
-  let listing = case (rules, _inputFormat, _outputFormat) of
-        ([], XMIR, XMIR) -> (\_ -> escapeXML input)
-        ([], _, _) -> (\_ -> escapeXMLText input)
-        (_, _, _) -> (\rewritten -> escapeXMLText (P.printExpression' rewritten (_sugarType, UNICODE, _flat, _margin)))
+  let listing = case (rules, _inputFormat) of
+        ([], PHI) -> (\_ -> escapeXMLText input)
+        (_, _) -> (\rewritten -> escapeXMLText (P.printExpression' rewritten (_sugarType, UNICODE, _flat, _margin)))
       xmirCtx = XmirContext _omitListing _omitComments _hideRho listing atoms
       printCtx = toPrintCtx xmirCtx foc
       exclude = (`F.exclude` excluded)

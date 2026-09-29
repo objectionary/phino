@@ -646,9 +646,9 @@ spec = do
             ]
         )
         ( testCLISucceeded
-            ["rewrite", "--input=xmir", "--output=xmir", "--sweet"]
+            ["rewrite", "--input=xmir", "--output=xmir", "--sweet", "--flat"]
             [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-            , "<listing>&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;&lt;object&gt;&lt;o name=&quot;app&quot;&gt;&lt;o name=&quot;x&quot; base=&quot;Φ.number&quot;/&gt;&lt;/o&gt;&lt;/object&gt;</listing>"
+            , "<listing>Φ.number:x:app</listing>"
             ]
         )
 
