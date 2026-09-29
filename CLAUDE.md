@@ -108,7 +108,10 @@ the `--symbolic` option names, one entry per function: a `λ` key, a regular
 expression over λ names; the operands brought down to data through 𝔻 under
 `dataize`, each binding a bytes meta `𝛿1`; the operands reduced to a normal
 form through 𝕄 under `morph`, each binding an expression meta `𝑛1`; and the
-answer under `𝑛`. Firing an entry is 𝔼's business and lives in `Evaluate.hs`,
+answer under `𝑛`. No two keys may match one λ name, whether or not either
+spells it: `Language.hs` reads each key as an automaton and looks for a name
+both accept, refusing a key beyond a regular language, such as a back
+reference (#1440). Firing an entry is 𝔼's business and lives in `Evaluate.hs`,
 which reaches the judgments an operand is reduced with through `Morph.hs`,
 using the same `insideUniverse` trick the `--inside` option exposes.
 

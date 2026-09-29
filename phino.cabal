@@ -55,6 +55,7 @@ library
     Filter
     Functions
     Lambdas
+    Language
     LaTeX
     Lining
     Locator
@@ -149,6 +150,7 @@ test-suite spec
     Fixtures
     FunctionsSpec
     LambdasSpec
+    LanguageSpec
     LaTeXSpec
     LiningSpec
     LocatorSpec
