@@ -81,3 +81,4 @@ protocol: |
       𝔻(𝜎6:λ) == 00-
       𝑛3.3 := 𝜎6:λ  # 𝑛1
       𝑛4.3 := ⟦ n ↦ 𝜎3:λ, acc ↦ Φ.pair( head ↦ 𝜎1:λ, tail ↦ 00-:Δ ), φ ↦ Φ.if( c ↦ 𝜎4:λ, left ↦ acc, right ↦ Φ.fact( n ↦ 𝜎5:λ, acc ↦ Φ.pair( head ↦ n, tail ↦ acc ) ) ) ⟧  # 𝑛2
+      stuck(L_if)

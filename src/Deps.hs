@@ -199,6 +199,25 @@ data Evaluation
     -- rule of morphing and the 'fire' rule of dataization — and which of them
     -- asked is what says where in the reduction the site stands (#1300).
     EvStuck Int T.Text Judgment Expression
+  | -- A firing the memo of '--acyclic=plausible' answered with the stall an
+    -- earlier firing of the same formation kept, at the depth of the lines
+    -- under the firing, together with the λ function that stall names. It
+    -- stands under the firing line the way a 'looped' line stands under a
+    -- told cut, so a told stall no longer reads as a fresh firing whose
+    -- first operand wrote nothing (#1524).
+    EvStall Int T.Text
+  | -- The last line of a firing that ended stuck, at the depth of the lines
+    -- under the firing, together with the λ function it got stuck on, which
+    -- is seldom the one no entry answers: that one is an 'EvStuck', written
+    -- where it was asked for, and this one closes every firing the signal
+    -- passed on its way out (#1524).
+    EvStuckOn Int T.Text
+  | -- The step budget running out, at the depth of the frame that asked for
+    -- one more step, together with the limit, the judgment of that frame and
+    -- the term it stood at. It is written whether or not '--partial' goes on
+    -- to park the term, since a firing the budget starved otherwise reads the
+    -- same as one that went well (#1524).
+    EvStarved Int Int Judgment Expression
   | -- A 'dataize' operand of the firing: the meta it bound, the term the entry
     -- wrote under that meta, and the data it came down to, or the symbol that
     -- data was manufactured for.
@@ -411,6 +430,13 @@ saveEval handle cursor render salted report = do
     written (EvStuck depth key judgment self) protocol = do
       form <- render self
       pure (protocol, Just (indented depth (printf "?(%s)  # %s(%s)" (T.unpack key) (letter judgment) form)))
+    written (EvStall depth key) protocol =
+      pure (protocol, Just (indented depth (printf "stall(%s)" (T.unpack key))))
+    written (EvStuckOn depth key) protocol =
+      pure (protocol, Just (indented depth (printf "stuck(%s)" (T.unpack key))))
+    written (EvStarved depth limit judgment self) protocol = do
+      form <- render self
+      pure (protocol, Just (indented depth (printf "starved(%d)  # %s(%s)" limit (letter judgment) form)))
     written (EvData depth spelling operand value) protocol = do
       datum <- spelled value
       line <- commented (printf "%s := %s" (labelled protocol depth spelling) datum) Dataization operand
@@ -589,6 +615,16 @@ saveEvalXml handle cursor render report = do
       form <- render self
       let (kept, closers) = closed depth nesting._closing
       pure (nesting{_closing = kept}, closers ++ [indented depth (printf "<stuck λ=\"%s\" by=\"%s\">%s</stuck>" (quoted key) (opened judgment) (escapeXMLText form))])
+    elements (EvStall depth key) nesting = do
+      let (kept, closers) = closed depth nesting._closing
+      pure (nesting{_closing = kept}, closers ++ [indented depth (printf "<stall λ=\"%s\"/>" (quoted key))])
+    elements (EvStuckOn depth key) nesting = do
+      let (kept, closers) = closed depth nesting._closing
+      pure (nesting{_closing = kept}, closers ++ [indented depth (printf "<unfinished λ=\"%s\"/>" (quoted key))])
+    elements (EvStarved depth limit judgment self) nesting = do
+      form <- render self
+      let (kept, closers) = closed depth nesting._closing
+      pure (nesting{_closing = kept}, closers ++ [indented depth (printf "<starved limit=\"%d\" by=\"%s\">%s</starved>" limit (opened judgment) (escapeXMLText form))])
     elements (EvData depth spelling _ value) nesting = do
       record <- stood value
       pure (nesting{_closing = kept}, closers ++ [indented depth record])

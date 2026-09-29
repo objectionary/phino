@@ -19,3 +19,4 @@ protocol: |
   𝕄(Φ.y)
     𝔼(L_pair)  # 𝕄(Φ.y)
       ?(L_none)  # 𝕄(L_none:λ)
+      stuck(L_none)
