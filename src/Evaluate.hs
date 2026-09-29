@@ -27,7 +27,7 @@ import qualified Data.Text as T
 import Deps (BuildTermMethodS, Evaluation (..), State (..), Term (..))
 import Lambdas (Lambda (..), Meta (..), joined, matched, minted, symbolized)
 import Matcher (MetaValue (..), Subst, combine, substEmpty, substSingle, substSlot)
-import Morph (Answer, Kept (..), ReduceContext (..), ReduceException (..), charged, counted, deeper, enter, isLambda, lambda, morph', morphing, normalized, recalled, retained, unparked)
+import Morph (Answer, Kept (..), ReduceContext (..), ReduceException (..), charged, counted, deeper, enter, isLambda, lambda, morph', morphing, normalized, recalled, retained, starved, unparked)
 import Printer (printFunction)
 import Rule (RuleContext (RuleContext), matchExpressionWithRule')
 import Text.Printf (printf)
@@ -152,11 +152,14 @@ symbol func form self univ state caller = case matched caller._symbolic func of
     -- firing that got stuck is kept the same way, as the λ function it got
     -- stuck on, and the memo tells it only until something new is answered
     -- after the firing began, since an operand that could not be brought down
-    -- may come down then (#1493, #1495, #1507).
+    -- may come down then (#1493, #1495, #1507). A firing inside which the step
+    -- budget ran out keeps no stall at all, since at a shallower site the
+    -- operand comes down (#1514).
     made :: Lambda -> IO (Expression, State)
     made entry = do
       charged caller
       stamp <- counted caller._memo
+      exhausted <- starved caller._memo
       caller._saveEval (EvFiring caller._nesting func caller._judgment caller._site)
       let ctx = caller{_nesting = caller._nesting + 1}
       outcome <- try $ do
@@ -171,17 +174,19 @@ symbol func form self univ state caller = case matched caller._symbolic func of
           retained caller._memo form stamp (Answered answer)
           pure (snd answer, state')
         Left failure -> do
-          mapM_ (retained caller._memo form stamp) (kept failure)
+          exhausted' <- starved caller._memo
+          mapM_ (retained caller._memo form stamp) (kept (exhausted' /= exhausted) failure)
           throwIO failure
     -- What the memo keeps of a firing that never answered: the formation a
     -- recursion was cut at, or the λ function the firing got stuck on, where
-    -- that is what the signal escaping it says.
-    kept :: ReduceException -> Maybe Kept
-    kept (Looping term) = Just (Looped term)
-    kept (LoopingAt term _ _) = Just (Looped term)
-    kept (Stuck name) = Just (Stalled name)
-    kept (StuckAt name _ _) = Just (Stalled name)
-    kept _ = Nothing
+    -- that is what the signal escaping it says and the step budget never ran
+    -- out inside the firing.
+    kept :: Bool -> ReduceException -> Maybe Kept
+    kept _ (Looping term) = Just (Looped term)
+    kept _ (LoopingAt term _ _) = Just (Looped term)
+    kept False (Stuck name) = Just (Stalled name)
+    kept False (StuckAt name _ _) = Just (Stalled name)
+    kept _ _ = Nothing
     -- Answer the firing with what the first firing of the formation made,
     -- written as that one was written: the firing at its site, the term the
     -- entry wrote and the normal form it came to, and nothing between them.

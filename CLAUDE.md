@@ -207,7 +207,10 @@ firing that got stuck keeps the λ function it got stuck on (`Stalled` of
 the same way (#1493), but only while the memo has answered nothing since the
 stuck firing began, as the count of answers kept beside the stall tells: an
 operand that could not be brought down may come down once something new was
-answered, inside the stuck firing or after it (#1495, #1507).
+answered, inside the stuck firing or after it (#1495, #1507). A firing inside
+which the step budget ran out keeps no stall at all (`starved` in `Morph.hs`),
+since the same formation fired at a shallower site brings the operand down
+(#1514).
 
 Beside the answers, the memo keeps the bindings of the world the `--deep`
 walk has entered (`visited` and `visit` in `Morph.hs`, asked by `fresh` of
