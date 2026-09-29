@@ -11,4 +11,6 @@ premises:
       - ⟦𝐵1, λ ⤍ 𝑓1, 𝐵2⟧
       - 𝑒1
   - d-result: 𝛿1
-    dataize: 𝑛1
+    dataize:
+      - 𝑛1
+      - 𝑒1

@@ -15,6 +15,10 @@ when:
           - ⊥
 premises:
   - n-result: 𝑛2
-    morph: 𝑛1
+    morph:
+      - 𝑛1
+      - 𝑒1
   - d-result: 𝛿1
-    dataize: 𝑛2
+    dataize:
+      - 𝑛2
+      - 𝑒1

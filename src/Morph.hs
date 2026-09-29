@@ -571,7 +571,8 @@ isLambda _ = False
 -- pattern (usually the '𝑒' meta, which binds 'e' so the 'universe' rule substitutes
 -- it, but a rule may pin it to a literal such as 'mg' matching Φ). Its rules
 -- come from 'resources/morphing': the first matching rule's premises are evaluated and
--- its conclusion 'nresult' is built, always forwarding the same universe. The
+-- its conclusion 'nresult' is built, in the universe the concluding premise
+-- names, which every rule spells as the one it was matched in (#1512). The
 -- clauses are disjoint (see #856, #860), so their declaration order must not be
 -- load-bearing; when '_shuffle' is on (the '--shuffle' flag) the rules are
 -- shuffled before the 'firstMatch' walk to exercise that invariant — mirroring
@@ -618,17 +619,19 @@ morph' (expr, seq) univ state caller = do
         built <- buildExpressionThrows rule.nresult final
         seq' <- leadsTo seq rule.name built ctx
         pure ((built, seq'), state')
-      Just concl@(Y.Premise _ (Y.OpMorph arg)) -> case producer arg rule.premises of
+      Just concl@(Y.Premise _ (Y.OpMorph arg universe)) -> case producer arg rule.premises of
         Just normal@(Y.Premise _ (Y.OpNormalize inner)) -> do
           (final, state') <- sides ctx (rule.premises `excluding` [concl, normal]) subst
           built <- buildExpressionThrows inner final
+          world <- buildExpressionThrows universe final
           (normal', seq') <- settle ctx rule inner built
-          morph' (normal', seq') univ state' ctx
+          morph' (normal', seq') world state' ctx
         _ -> do
           (final, state') <- sides ctx (rule.premises `excluding` [concl]) subst
           built <- buildExpressionThrows arg final
+          world <- buildExpressionThrows universe final
           seq' <- leadsTo seq rule.name built ctx
-          morph' (built, seq') univ state' ctx
+          morph' (built, seq') world state' ctx
       Just _ -> throwIO (userError (printf "morphing rule '%s' must conclude with a 'morph' premise" rule.name))
     sides :: ReduceContext -> [Y.Premise] -> Subst -> IO (Subst, State)
     sides ctx premises subst = foldM (sidePremise univ ctx) (subst, state) premises
@@ -896,12 +899,15 @@ sidePremise univ ctx (subst, state) premise = do
     Nothing -> throwIO (userError (printf "premise meta '%s' clashes with an existing binding" (T.unpack premise.result)))
   where
     -- The 𝔼 ('evaluate') and 𝕄 ('morph') operations can change the state, so they
-    -- go through their state-aware builders; every other operation is stateless
-    -- and the incoming state is returned unchanged.
+    -- go through their state-aware builders, each in the universe its premise
+    -- names; every other operation is stateless and the incoming state is
+    -- returned unchanged.
     runOperation :: IO (Term, State)
     runOperation = case premise.operation of
       Y.OpEvaluate expr universe -> ctx._evaluate ctx state [ArgExpression expr, ArgExpression universe] subst
-      Y.OpMorph expr -> _morph univ ctx state [ArgExpression expr] subst
+      Y.OpMorph expr universe -> do
+        world <- buildExpressionThrows universe subst
+        _morph world ctx state [ArgExpression expr] subst
       operation -> do
         term <- execBuildTerm univ ctx (verb operation) (verbArgs operation) subst
         pure (term, state)
@@ -913,19 +919,22 @@ sidePremise univ ctx (subst, state) premise = do
 
 -- The build-term function name backing a premise operation.
 verb :: Y.Operation -> String
-verb (Y.OpMorph _) = "morph"
+verb (Y.OpMorph _ _) = "morph"
 verb (Y.OpNormalize _) = "normalize"
 verb (Y.OpEvaluate _ _) = "evaluate"
 verb (Y.OpContextualize _ _) = "contextualize"
-verb (Y.OpDataize _) = "dataize"
+verb (Y.OpDataize _ _) = "dataize"
 
--- The build-term arguments backing a premise operation.
+-- The build-term arguments backing a premise operation. The universe a 'morph'
+-- or a 'dataize' premise names is the second argument of the judgment, not of
+-- the build-term function: 'sidePremise' hands it to 𝕄 itself, and the
+-- 'dataize' function reads data off a term and needs no universe.
 verbArgs :: Y.Operation -> [ExtraArgument]
-verbArgs (Y.OpMorph expr) = [ArgExpression expr]
+verbArgs (Y.OpMorph expr _) = [ArgExpression expr]
 verbArgs (Y.OpNormalize expr) = [ArgExpression expr]
 verbArgs (Y.OpEvaluate expr universe) = [ArgExpression expr, ArgExpression universe]
 verbArgs (Y.OpContextualize expr context) = [ArgExpression expr, ArgExpression context]
-verbArgs (Y.OpDataize expr) = [ArgExpression expr]
+verbArgs (Y.OpDataize expr _) = [ArgExpression expr]
 
 leadsTo :: NonEmpty Rewritten -> String -> Expression -> ReduceContext -> IO (NonEmpty Rewritten)
 leadsTo ((current, _) :| rest) rule expr ReduceContext{..} = do
