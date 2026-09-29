@@ -177,11 +177,14 @@ type Answer = (Expression, Expression)
 
 -- What the memo keeps of one formation: the answer its firing made, the
 -- formation a recursion was cut at while it was being fired, or the λ function
--- the firing got stuck on.
+-- the firing got stuck on, beside the fewest steps a firing must have spent to
+-- be told that stall: none for a stall of the formation's own, and the steps
+-- the stuck firing had spent for a stall the step budget made, since a firing
+-- with more of the budget left may bring the operand down (#1514, #1521).
 data Kept
   = Answered Answer
   | Looped Expression
-  | Stalled T.Text
+  | Stalled T.Text Int
 
 -- What 'Memo' keeps: the answers, by the digest of the formation they answer,
 -- each beside the very formation, since two terms may share a digest.
@@ -359,8 +362,8 @@ instance Show ReduceException where
 -- (#1052). Rewriting hands back whatever it has reached when it runs out of
 -- cycles; 𝔻 has no partial answer to give, so an exhausted budget always throws,
 -- with or without '--depth-sensitive'. The memo is told every time it throws,
--- so a stall the budget made is not kept as a stall of the formation (see
--- 'Memo', #1514).
+-- so a stall the budget made is kept as a stall of that budget and not of the
+-- formation (see 'Kept', #1514, #1521).
 deeper :: ReduceContext -> IO ReduceContext
 deeper ctx@ReduceContext{_steps = Steps limit spent}
   | spent >= limit = starve ctx._memo >> throwIO (OutOfSteps (Depth limit))
@@ -394,17 +397,18 @@ memoized _ = pure Nothing
 
 -- What the memo keeps for the formation, if this run fired it already (see
 -- 'Memo'): an answer before anything else, and a stall only while nothing was
--- answered after it; nothing where the run keeps no memo at all.
-recalled :: Maybe Memo -> Expression -> IO (Maybe Kept)
-recalled Nothing _ = pure Nothing
-recalled (Just (Memo store answers _ _)) form = do
+-- answered after it and only to a firing that has spent at least the steps
+-- kept beside it (see 'Kept'); nothing where the run keeps no memo at all.
+recalled :: Maybe Memo -> Expression -> Int -> IO (Maybe Kept)
+recalled Nothing _ _ = pure Nothing
+recalled (Just (Memo store answers _ _)) form spent = do
   kept <- readIORef store
   count <- readIORef answers
   let live = [known | (term, (stamp, known)) <- Map.findWithDefault [] (hashExpression form) kept, term == form, current count stamp known]
   pure (find answered live <|> listToMaybe live)
   where
     current :: Int -> Int -> Kept -> Bool
-    current count stamp (Stalled _) = stamp == count
+    current count stamp (Stalled _ least) = stamp == count && spent >= least
     current _ _ _ = True
     answered :: Kept -> Bool
     answered (Answered _) = True

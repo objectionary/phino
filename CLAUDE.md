@@ -208,9 +208,10 @@ the same way (#1493), but only while the memo has answered nothing since the
 stuck firing began, as the count of answers kept beside the stall tells: an
 operand that could not be brought down may come down once something new was
 answered, inside the stuck firing or after it (#1495, #1507). A firing inside
-which the step budget ran out keeps no stall at all (`starved` in `Morph.hs`),
-since the same formation fired at a shallower site brings the operand down
-(#1514).
+which the step budget ran out keeps its stall beside the steps it had spent
+(`starved` in `Morph.hs`), and the memo tells it only to a firing that has
+spent at least as many, since the same formation fired at a shallower site may
+bring the operand down (#1514, #1521).
 
 Beside the answers, the memo keeps the bindings of the world the `--deep`
 walk has entered (`visited` and `visit` in `Morph.hs`, asked by `fresh` of
