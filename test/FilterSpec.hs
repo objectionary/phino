@@ -15,6 +15,7 @@ import AST (Expression (ExRoot))
 import Control.Monad (forM_)
 import Data.Aeson
 import Data.Yaml qualified as Yaml
+import Deps (Judgment (..))
 import Files (allPathsIn)
 import Filter qualified as F
 import GHC.Generics (Generic)
@@ -69,9 +70,9 @@ spec = do
         second' <- parseExpressionThrows "[[ x -> ?, y -> ? ]]"
         fqn <- parseExpressionThrows "Q.x"
         expected <- parseExpressionThrows "[[ y -> ? ]]"
-        let excluded = F.exclude [(first', Just "rule-a"), (second', Just "rule-b")] [fqn]
+        let excluded = F.exclude [(first', Just (Normalization, "rule-a")), (second', Just (Evaluation, "rule-b"))] [fqn]
         map fst excluded `shouldBe` [expected, expected]
-        map snd excluded `shouldBe` [Just "rule-a", Just "rule-b"]
+        map snd excluded `shouldBe` [Just (Normalization, "rule-a"), Just (Evaluation, "rule-b")]
 
     describe "include" $ do
       forM_
@@ -102,9 +103,9 @@ spec = do
         second' <- parseExpressionThrows "[[ x -> ?, y -> ? ]]"
         fqn <- parseExpressionThrows "Q.x"
         expected <- parseExpressionThrows "[[ x -> ? ]]"
-        included <- F.include [(first', Just "rule-a"), (second', Just "rule-b")] [fqn]
+        included <- F.include [(first', Just (Normalization, "rule-a")), (second', Just (Evaluation, "rule-b"))] [fqn]
         map fst included `shouldBe` [expected, expected]
-        map snd included `shouldBe` [Just "rule-a", Just "rule-b"]
+        map snd included `shouldBe` [Just (Normalization, "rule-a"), Just (Evaluation, "rule-b")]
 
       it "keeps every matching fqn, not only the first one" $ do
         expr <- parseExpressionThrows "[[ x -> ?, y -> ? ]]"

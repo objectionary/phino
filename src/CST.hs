@@ -265,9 +265,9 @@ expressionToCST = toCST'
 
 -- Like 'expressionToCST', but lays the expression out from a given base tab
 -- instead of column 0. Used when an expression sits on an already-indented
--- line (e.g. a '\leadsto' continuation step in the LaTeX --sequence output),
--- so its wrapped member lines nest one level below that line and its closing
--- bracket aligns with the opening one.
+-- line (e.g. a continuation step of the LaTeX --sequence output, after its
+-- arrow), so its wrapped member lines nest one level below that line and its
+-- closing bracket aligns with the opening one.
 expressionToCSTFrom :: Int -> Expression -> EXPRESSION
 expressionToCSTFrom tabs expr = toCST expr (tabs, EOL)
 

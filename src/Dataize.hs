@@ -25,7 +25,7 @@ import qualified Data.Text as T
 import Deps (Evaluation (..), Judgment (..), State (..))
 import Locator (locatedExpression)
 import Matcher (Subst, matchExpression')
-import Morph (Morphed, ReduceContext (..), ReduceException (..), ReductionFunc, boxed, deeper, entering, excluding, execBuildTerm, insideUniverse, leadsTo, morph', normalized, parking, producer, sidePremise, universed, verb)
+import Morph (Morphed, ReduceContext (..), ReduceException (..), ReductionFunc, boxed, deeper, entering, excluding, execBuildTerm, insideUniverse, label, leadsTo, morph', normalized, parking, producer, sidePremise, universed)
 import Random (shuffle)
 import Rewriter (Rewritten)
 import Rule (RuleContext (RuleContext), matchExpressionWithRule')
@@ -140,7 +140,7 @@ dataize' (expr, seq) univ state caller = do
     -- protocol writes '𝔻(𝜎1)' where the term carries nothing but the 42.
     manufactured :: Int -> ReduceContext -> IO (Dataized, State)
     manufactured idx ctx = do
-      seq' <- leadsTo seq "symbol" (ExBytes datum) ctx
+      seq' <- leadsTo seq (Dataization, "symbol") (ExBytes datum) ctx
       pure ((datum, NE.toList seq'), state{_manufactured = Just idx})
     firstMatch :: ReduceContext -> [Y.DataizeRule] -> IO (Maybe (Y.DataizeRule, Subst))
     firstMatch _ [] = pure Nothing
@@ -156,7 +156,7 @@ dataize' (expr, seq) univ state caller = do
       Nothing -> do
         (final, state') <- sides ctx rule.premises subst
         bts <- buildBytesThrows rule.dresult final
-        seq' <- leadsTo seq rule.name (ExBytes bts) ctx
+        seq' <- leadsTo seq (Dataization, rule.name) (ExBytes bts) ctx
         -- Data the program itself carries stands for nothing but itself, so
         -- whichever symbol the last datum was manufactured for is forgotten
         -- here: only a run ending on a symbol leaves one behind.
@@ -194,19 +194,20 @@ dataize' (expr, seq) univ state caller = do
           (final, state') <- sides ctx side subst
           built <- buildExpressionThrows arg final
           world <- buildExpressionThrows universe final
-          seq' <- leadsTo seq (labelOr (verb concl.operation) side) built ctx
+          seq' <- leadsTo seq (labelOr (label concl.operation) side) built ctx
           dataize' (built, seq') world state' ctx
       Just _ -> throwIO (userError (printf "dataization rule '%s' must conclude with a 'dataize' premise" rule.name))
     sides :: ReduceContext -> [Y.Premise] -> Subst -> IO (Subst, State)
     sides ctx premises subst = foldM (sidePremise univ ctx) (subst, state) premises
     -- A spliced dataization step is labelled by its first side-computation —
-    -- 'box' by its 'contextualize', 'fire' by its 'evaluate'; with none it is blank.
-    labelOf :: [Y.Premise] -> String
-    labelOf (premise : _) = verb premise.operation
-    labelOf [] = ""
+    -- 'box' by its 'contextualize', 'fire' by its 'evaluate' — and taken by the
+    -- judgment that computation runs; with none it is blank and taken by 𝔻.
+    labelOf :: [Y.Premise] -> (Judgment, String)
+    labelOf (premise : _) = label premise.operation
+    labelOf [] = (Dataization, "")
     -- As 'labelOf', but falls back to the given label when there is no
     -- side-computation to name the step (the 'none' rule's 𝔻(⊥) premise).
-    labelOr :: String -> [Y.Premise] -> String
+    labelOr :: (Judgment, String) -> [Y.Premise] -> (Judgment, String)
     labelOr _ premises@(_ : _) = labelOf premises
     labelOr fallback [] = fallback
 

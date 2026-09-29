@@ -18,7 +18,7 @@
 -- a λ function itself, which is an evaluation — are injected as '_reduce',
 -- '_evaluate' and '_fire' rather than imported (see 'ReductionFunc' and
 -- 'EvaluationFunc').
-module Morph (Answer, Kept (..), ReduceContext (..), ReduceException (..), EvaluationFunc, FiringFunc, Memo (..), ReductionFunc, Morphed, Steps (..), Tally (..), boxed, charged, counted, deeper, emptyState, enter, entering, excluding, execBuildTerm, insideUniverse, isLambda, lambda, leadsTo, memoized, morph, morph', morphing, normalized, parking, producer, recalled, retained, sidePremise, starved, tallied, universed, unparked, verb) where
+module Morph (Answer, Kept (..), ReduceContext (..), ReduceException (..), EvaluationFunc, FiringFunc, Memo (..), ReductionFunc, Morphed, Steps (..), Tally (..), boxed, charged, counted, deeper, emptyState, enter, entering, excluding, execBuildTerm, insideUniverse, isLambda, label, lambda, leadsTo, memoized, morph, morph', morphing, normalized, parking, producer, recalled, retained, sidePremise, starved, tallied, universed, unparked) where
 
 import AST
 import Builder (buildExpressionThrows, contextualize, pathOf)
@@ -660,7 +660,7 @@ morph' (expr, seq) univ state caller = do
       Nothing -> do
         (final, state') <- sides ctx rule.premises subst
         built <- buildExpressionThrows rule.nresult final
-        seq' <- leadsTo seq rule.name built ctx
+        seq' <- leadsTo seq (Morphing, rule.name) built ctx
         pure ((built, seq'), state')
       Just concl@(Y.Premise _ (Y.OpMorph arg universe)) -> case producer arg rule.premises of
         Just normal@(Y.Premise _ (Y.OpNormalize inner)) -> do
@@ -673,7 +673,7 @@ morph' (expr, seq) univ state caller = do
           (final, state') <- sides ctx (rule.premises `excluding` [concl]) subst
           built <- buildExpressionThrows arg final
           world <- buildExpressionThrows universe final
-          seq' <- leadsTo seq rule.name built ctx
+          seq' <- leadsTo seq (Morphing, rule.name) built ctx
           morph' (built, seq') world state' ctx
       Just _ -> throwIO (userError (printf "morphing rule '%s' must conclude with a 'morph' premise" rule.name))
     sides :: ReduceContext -> [Y.Premise] -> Subst -> IO (Subst, State)
@@ -688,10 +688,10 @@ morph' (expr, seq) univ state caller = do
     settle :: ReduceContext -> Y.MorphRule -> Expression -> Expression -> IO Morphed
     settle ctx rule inner built = case ctx._universe of
       Just world | inner == rule.ematch -> do
-        seq' <- leadsTo seq rule.name world ctx
+        seq' <- leadsTo seq (Morphing, rule.name) world ctx
         pure (world, seq')
       _ -> do
-        labelled <- leadsTo seq rule.name built ctx
+        labelled <- leadsTo seq (Morphing, rule.name) built ctx
         normalized built labelled ctx
 
 -- Morph the expression located at '_locator' — 𝕄 asked on its own, the way
@@ -752,7 +752,7 @@ morph universe state caller@ReduceContext{..} = do
       | not _deep = pure (morphed, reverse (NE.toList seq), state')
       | otherwise = do
           (deep, state'') <- deepened morphed universe state' walker
-          seq' <- leadsTo seq "deep" deep walker
+          seq' <- leadsTo seq (Morphing, "deep") deep walker
           pure (deep, reverse (NE.toList seq'), state'')
 
 -- Walk what 𝕄 answered with, entering everything it left as it was written —
@@ -1037,6 +1037,19 @@ verb (Y.OpEvaluate _ _) = "evaluate"
 verb (Y.OpContextualize _ _) = "contextualize"
 verb (Y.OpDataize _ _) = "dataize"
 
+-- What a step a premise takes is labelled with in the chain: the judgment the
+-- premise runs, which picks the arrow of the step in LaTeX (#1536), and its
+-- verb, which names the step.
+label :: Y.Operation -> (Judgment, String)
+label operation = (judgment operation, verb operation)
+  where
+    judgment :: Y.Operation -> Judgment
+    judgment (Y.OpMorph _ _) = Morphing
+    judgment (Y.OpNormalize _) = Normalization
+    judgment (Y.OpEvaluate _ _) = Evaluation
+    judgment (Y.OpContextualize _ _) = Contextualization
+    judgment (Y.OpDataize _ _) = Dataization
+
 -- The build-term arguments backing a premise operation. The universe a 'morph'
 -- or a 'dataize' premise names is the second argument of the judgment, not of
 -- the build-term function: 'sidePremise' hands it to 𝕄 itself, and the
@@ -1048,7 +1061,9 @@ verbArgs (Y.OpEvaluate expr universe) = [ArgExpression expr, ArgExpression unive
 verbArgs (Y.OpContextualize expr context) = [ArgExpression expr, ArgExpression context]
 verbArgs (Y.OpDataize expr _) = [ArgExpression expr]
 
-leadsTo :: NonEmpty Rewritten -> String -> Expression -> ReduceContext -> IO (NonEmpty Rewritten)
+-- Take a step of the chain: the term at its head is taken to 'expr' by the
+-- rule, which is named and tagged with the judgment it belongs to (#1536).
+leadsTo :: NonEmpty Rewritten -> (Judgment, String) -> Expression -> ReduceContext -> IO (NonEmpty Rewritten)
 leadsTo ((current, _) :| rest) rule expr ReduceContext{..} = do
   updated <- withLocatedExpression _locator expr current
   pure ((updated, Nothing) :| (current, Just rule) : rest)
