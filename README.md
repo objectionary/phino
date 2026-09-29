@@ -1432,6 +1432,58 @@ copy came to, since a method may read the `ρ` or the `φ` of the copy it
 stands in, and so a recursion over copies of one object stops after its first
 round, with the second one as written.
 
+The walk of `--deep` takes the bindings of the formation it starts at one
+after another. When they are independent entries, such as the objects of a
+whole runtime listed in one formation, the `--jobs` option walks them side by
+side on that many workers. Each binding gets its own memo, its own
+`--max-firings` tally and its own fresh names, so what it comes to does not
+depend on which worker got there first. The answers and the protocol come out
+in the order of the bindings, with the symbols numbered as one walk would
+number them:
+
+```bash
+$ cat plus.yaml
+- λ: L_plus
+  dataize:
+    𝛿1: $.ρ
+    𝛿2: $.x
+  𝑛: Φ.num( φ ↦ ⟦ λ ⤍ 𝜎 ⟧ )
+$ cat sums.phi
+⟦
+  num ↦ ⟦ φ ↦ ∅, plus ↦ ⟦ ρ ↦ ∅, x ↦ ∅, λ ⤍ L_plus ⟧ ⟧,
+  l🌵 ↦ ⟦
+    a ↦ Φ.num( φ ↦ ⟦ Δ ⤍ 01- ⟧ ).plus( x ↦ Φ.num( φ ↦ ⟦ Δ ⤍ 02- ⟧ ) ),
+    b ↦ Φ.num( φ ↦ ⟦ Δ ⤍ 03- ⟧ ).plus( x ↦ Φ.num( φ ↦ ⟦ Δ ⤍ 04- ⟧ ) )
+  ⟧
+⟧
+$ phino morph --symbolic=plus.yaml --deep --locator=Q.l🌵 --jobs=2 \
+    --protocol=sums.txt --sweet --hide-rho sums.phi
+⟦ a ↦ ⟦ φ ↦ 𝜎1:λ, plus(x) ↦ L_plus:λ ⟧, b ↦ ⟦ φ ↦ 𝜎2:λ, plus(x) ↦ L_plus:λ ⟧ ⟧
+$ cat sums.txt
+𝕄(Φ.l🌵)
+  𝔼(L_plus)  # 𝕄(Φ.l🌵.a)
+    formation(⟦ φ ↦ 01-:Δ, plus(x) ↦ L_plus:λ ⟧)  # 𝔻(Φ.a🌵1-0)
+    𝛿1.1 := 01-  # 𝔻(ξ.ρ)
+    formation(⟦ φ ↦ 02-:Δ, plus(x) ↦ L_plus:λ ⟧)  # 𝔻(Φ.a🌵1-1)
+    𝛿2.1 := 02-  # 𝔻(ξ.x)
+    𝑛.1.1 := Φ.num( φ ↦ 𝜎1:λ )  # 𝑛
+    𝑛.1.2 := ⟦ φ ↦ 𝜎1:λ, plus(x) ↦ L_plus:λ ⟧  # 𝕄(𝑛.1.1)
+  𝔼(L_plus)  # 𝕄(Φ.l🌵.b)
+    formation(⟦ φ ↦ 03-:Δ, plus(x) ↦ L_plus:λ ⟧)  # 𝔻(Φ.a🌵2-0)
+    𝛿1.2 := 03-  # 𝔻(ξ.ρ)
+    formation(⟦ φ ↦ 04-:Δ, plus(x) ↦ L_plus:λ ⟧)  # 𝔻(Φ.a🌵2-1)
+    𝛿2.2 := 04-  # 𝔻(ξ.x)
+    𝑛.2.1 := Φ.num( φ ↦ 𝜎2:λ )  # 𝑛
+    𝑛.2.2 := ⟦ φ ↦ 𝜎2:λ, plus(x) ↦ L_plus:λ ⟧  # 𝕄(𝑛.2.1)
+```
+
+A fresh name a binding mints carries its place in the formation, `a🌵2-0` for
+the second one, so no two bindings ever mint the same name. The workers split
+the time, not the work: the slowest binding still takes as long as it did,
+and the others no longer wait behind it. Without `--jobs`, or with
+`--jobs=1`, the walk is the one described above, sharing one memo and one
+tally across all bindings.
+
 ## Rewrite
 
 You can rewrite this expression with the help of [rules](#rule-structure)

@@ -509,3 +509,14 @@ spec = do
     it "does not show what a node carries besides its parts" $
       show (ExApplication (ExDispatch ExXi (AtLabel "yb")) (ArAlpha (Alpha 0) (ExFormation [BiVoid AtRho])))
         `shouldBe` "ExApplication (ExDispatch ExXi yb) (ArAlpha α0 (ExFormation [BiVoid ρ]))"
+
+  describe "lifted" $ do
+    it "raises every symbol above the floor by the offset" $
+      symbols (lifted 4 7 (ExApplication (ExFormation [BiLambda (FnSymbol 5)]) (ArTau (AtLabel "wo") (ExFormation [BiTau AtPhi (ExFormation [BiLambda (FnSymbol 9)])]))))
+        `shouldBe` [12, 16]
+    it "does not raise a symbol at the floor or under it" $
+      symbols (lifted 4 7 (ExDispatch (ExFormation [BiLambda (FnSymbol 4), BiTau (AtLabel "qe") (ExFormation [BiLambda (FnSymbol 2)])]) (AtLabel "ke")))
+        `shouldBe` [4, 2]
+    it "does not touch a term carrying no symbol" $
+      lifted 0 3 (ExFormation [BiTau (AtLabel "ul") (ExDispatch ExXi (AtLabel "ha")), BiLambda (Function "L_up"), BiDelta (BtOne "1F")])
+        `shouldBe` ExFormation [BiTau (AtLabel "ul") (ExDispatch ExXi (AtLabel "ha")), BiLambda (Function "L_up"), BiDelta (BtOne "1F")]

@@ -28,6 +28,7 @@ module AST
   , alike
   , within
   , symbols
+  , lifted
   , denoted
   , countNodes
   , matchBaseObject
@@ -506,6 +507,30 @@ symbols = goExpr
     goArgument :: Argument -> [Int]
     goArgument (ArTau _ expr) = goExpr expr
     goArgument (ArAlpha _ expr) = goExpr expr
+
+-- The same term with every symbol above the floor raised by the offset, and
+-- every other one left as it was. A run under '--jobs' morphs each binding of
+-- a formation from the same state, so each of them numbers what it mints from
+-- the same floor; raising what a binding minted by what the bindings before it
+-- minted numbers the symbols the way one walk over all of them would have,
+-- whichever worker finished first (#1534).
+lifted :: Int -> Int -> Expression -> Expression
+lifted floor' offset = goExpr
+  where
+    goExpr :: Expression -> Expression
+    goExpr (ExFormation bds) = ExFormation (map goBinding bds)
+    goExpr (ExApplication expr arg) = ExApplication (goExpr expr) (goArgument arg)
+    goExpr (ExDispatch expr attr) = ExDispatch (goExpr expr) attr
+    goExpr (ExPhiMeet prefix idx expr) = ExPhiMeet prefix idx (goExpr expr)
+    goExpr (ExPhiAgain prefix idx expr) = ExPhiAgain prefix idx (goExpr expr)
+    goExpr expr = expr
+    goBinding :: Binding -> Binding
+    goBinding (BiTau attr expr) = BiTau attr (goExpr expr)
+    goBinding (BiLambda (FnSymbol idx)) | idx > floor' = BiLambda (FnSymbol (idx + offset))
+    goBinding bd = bd
+    goArgument :: Argument -> Argument
+    goArgument (ArTau attr expr) = ArTau attr (goExpr expr)
+    goArgument (ArAlpha alpha expr) = ArAlpha alpha (goExpr expr)
 
 -- The symbol a term stands for, if its value is one at all. A term carries its
 -- value where the φ chain ends, so that is the only place a symbol names this

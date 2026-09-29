@@ -227,6 +227,17 @@ the voids a copy filled, which belong to that copy alone (#1480), and a body
 reading ξ outside the formations nested in it, which reads the copy it stands
 in and is walked in every copy (`closed` of `deepened`, #1485).
 
+`--jobs` has the walk take the bindings of the formation it starts at side
+by side (`spread` of `deepened`, over `pooled` of `Pool.hs`), each a root of
+its own: it starts from the state the spine left, with a memo, a tally and a
+source of fresh names of its own (`tausOf` in `Tau.hs`, names like `a🌵4-0`
+that carry the binding), and its protocol records are kept aside. They are
+gathered in the order of the bindings, and gathering raises the symbols a
+binding minted by what the bindings before it minted (`lifted` in `AST.hs`,
+`renumbered` in `Deps.hs`), so the answer and the protocol do not depend on
+the order the workers finished in (#1534). The executable is built
+`-threaded` and the run sets as many capabilities as it has jobs.
+
 ### Test pattern: YAML packs
 
 Most spec files load test cases from `test-resources/*-packs/*.yaml` at

@@ -298,6 +298,41 @@ data Evaluation
 
 type SaveEvalFunc = Evaluation -> IO ()
 
+-- The same record with every symbol it names above the floor raised by the
+-- offset, the terms it carries included (see 'lifted'). A binding the
+-- '--deep' walk morphs on a worker of its own under '--jobs' numbers its
+-- symbols from the floor every worker starts at, and its records are
+-- renumbered like this as they are written, once the bindings before it are,
+-- so the protocol names a symbol the way the answer does (#1534).
+renumbered :: Int -> Int -> Evaluation -> Evaluation
+renumbered floor' offset = record
+  where
+    record :: Evaluation -> Evaluation
+    record (EvFiring depth key judgment site) = EvFiring depth key judgment (term site)
+    record (EvFormation depth self site) = EvFormation depth (term self) (term site)
+    record (EvLooped depth judgment mode self site) = EvLooped depth judgment mode (term self) (term site)
+    record (EvStuck depth key judgment self) = EvStuck depth key judgment (term self)
+    record (EvStarved depth limit judgment site) = EvStarved depth limit judgment (term site)
+    record (EvData depth spelling operand value) = EvData depth spelling (term operand) (datum value)
+    record (EvTerm depth spelling operand value) = EvTerm depth spelling (term operand) (term value)
+    record (EvSymbolize depth spelling source value) = EvSymbolize depth spelling (term source) (term value)
+    record (EvKnown depth sym bytes) = EvKnown depth (symbol sym) bytes
+    record (EvJoin depth spelling pair value) = EvJoin depth spelling pair (term value)
+    record (EvJoined depth fresh (one, two)) = EvJoined depth (symbol fresh) (symbol one, symbol two)
+    record (EvTerminate depth condition side raising) = EvTerminate depth (fmap datum condition) side raising
+    record (EvMinted depth sym operands) = EvMinted depth (symbol sym) (map datum operands)
+    record (EvBuilt depth value) = EvBuilt depth (term value)
+    record (EvAnswer depth value) = EvAnswer depth (term value)
+    record other = other
+    term :: Expression -> Expression
+    term = lifted floor' offset
+    symbol :: Int -> Int
+    symbol idx
+      | idx > floor' = idx + offset
+      | otherwise = idx
+    datum :: Either Int Bytes -> Either Int Bytes
+    datum = either (Left . symbol) Right
+
 -- The names the text protocol has given to the terms it has written out,
 -- keyed by a cheap fixed-size digest of the term (see 'hashExpression') the
 -- way 'Seen' keys the formations '--acyclic' has entered. A digest collision is

@@ -221,6 +221,15 @@ optPartial = switch (long "partial" <> help "Partial evaluation: compute what th
 optDeep :: Parser Bool
 optDeep = switch (long "deep" <> help "Don't stop at the first formation: enter its bindings too, recursively, firing every λ function the --symbolic file answers and standing its answer in the place of what it computed, while everything else stays as it was written")
 
+-- The bindings of the formation '--deep' starts at share nothing but the world
+-- they read, so they are walked side by side on as many workers as this says
+-- (see 'spread' in 'Morph', #1534).
+optJobs :: Parser Int
+optJobs =
+  option
+    (auto >>= validateIntOption (> 0) "--jobs must be positive")
+    (long "jobs" <> metavar "JOBS" <> help "Number of workers the --deep walk morphs the bindings of the formation it starts at on, side by side, each with a memo, a tally and fresh names of its own" <> value 1 <> showDefault)
+
 -- The step budget is otherwise the only thing that ends the 𝕄 and 𝔻 recursion,
 -- so a λ function answering with a firing of itself, or an object dataized
 -- through a body that comes back to itself, runs to the limit before it fails.
@@ -436,6 +445,7 @@ morphParser =
             <*> switch (long "quiet" <> help "Don't print the result of morphing")
             <*> optPartial
             <*> optDeep
+            <*> optJobs
             <*> optAcyclic
             <*> optCompress
             <*> optMaxDepth

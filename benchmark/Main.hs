@@ -91,6 +91,7 @@ symbolicCtx acyclic memo lambdas locator =
     False -- _shuffle
     True -- _partial
     True -- _deep
+    1 -- _jobs
     (Just acyclic) -- _acyclic
     Morphing -- _judgment
     [] -- _parked

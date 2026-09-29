@@ -23,7 +23,7 @@ module Morph (Answer, Kept (..), ReduceContext (..), ReduceException (..), Evalu
 import AST
 import Builder (buildExpressionThrows, contextualize, pathOf)
 import Control.Applicative ((<|>))
-import Control.Exception (Exception, catch, throwIO, try)
+import Control.Exception (Exception, SomeException, catch, throwIO, try)
 import Control.Monad (foldM, unless, when)
 import Data.IORef (IORef, modifyIORef', newIORef, readIORef, writeIORef)
 import Data.List (find, partition)
@@ -33,15 +33,17 @@ import qualified Data.Map.Strict as Map
 import Data.Maybe (fromMaybe, isJust, listToMaybe)
 import qualified Data.Set as Set
 import qualified Data.Text as T
-import Deps (Acyclic (..), BuildTermFunc, BuildTermMethodS, Evaluation (..), Judgment (..), SaveEvalFunc, SaveStepFunc, State (..), Term (..), dontSaveStep)
+import Deps (Acyclic (..), BuildTermFunc, BuildTermMethodS, Evaluation (..), Judgment (..), SaveEvalFunc, SaveStepFunc, State (..), Term (..), dontSaveStep, renumbered)
 import Lambdas (Lambdas)
 import Locator (locatedExpression, withLocatedExpression)
 import Matcher (MetaValue (..), Subst (..), combine, matchExpression', substEmpty, substSingle)
 import Must (Must (..))
+import Pool (pooled)
 import Printer (printExpression)
 import Random (shuffle)
 import Rewriter (RewriteContext (RewriteContext), Rewritten, Seen, rewrite, seenInsert)
 import Rule (RuleContext (RuleContext), matchExpressionWithRule')
+import Tau (tausOf)
 import Text.Printf (printf)
 import Yaml (ExtraArgument (..), normalizationRules)
 import qualified Yaml as Y
@@ -239,6 +241,11 @@ data ReduceContext = ReduceContext
   , _shuffle :: Bool
   , _partial :: Bool
   , _deep :: Bool
+  , -- How many workers the '--deep' walk morphs the bindings of the formation
+    -- it starts at on, side by side, which is the '--jobs' option (see
+    -- 'deepened'). One is the walk taking them one after another, the way it
+    -- always has, and a worker walks what its binding holds with one.
+    _jobs :: Int
   , _acyclic :: Maybe Acyclic
   , -- The judgment whose rule is asking 𝔼 to fire, which is what a stuck site
     -- is written under: 𝔼 is reached from the 'ml' rule of morphing and from
@@ -764,9 +771,11 @@ morph universe state caller@ReduceContext{..} = do
 -- only its own parts are walked, so the calls no entry answers keep their names
 -- and what comes back is still the same program, reduced as far as the file
 -- allows. Every entry is charged to the '--max-steps' budget, which is what
--- bounds the walk.
+-- bounds the walk. Under '--jobs' the bindings of the formation the walk
+-- starts at are walked side by side rather than one after another (see
+-- 'spread').
 deepened :: Expression -> Expression -> State -> ReduceContext -> IO (Expression, State)
-deepened expr univ state ctx = go (Just ctx._site) Nothing ExXi expr state ctx
+deepened expr univ state ctx = step (if ctx._jobs > 1 then spread else parts) (Just ctx._site) Nothing ExXi expr state ctx
   where
     -- A term as it was written, together with the locator naming it where one
     -- does and with what its free ξ stands for: the formation the walk entered
@@ -775,10 +784,15 @@ deepened expr univ state ctx = go (Just ctx._site) Nothing ExXi expr state ctx
     -- stands for itself and contextualization leaves the term alone, and the
     -- locator is the one the whole run was aimed at.
     go :: Maybe Expression -> Maybe Attribute -> Expression -> Expression -> State -> ReduceContext -> IO (Expression, State)
-    go standing dispatched context term state' caller = do
+    go = step parts
+    -- The same, with the parts of the term walked the way the first argument
+    -- walks them, which only the term the walk starts at is walked by other
+    -- than 'parts'.
+    step :: (Maybe Expression -> Expression -> Expression -> State -> ReduceContext -> IO (Expression, State)) -> Maybe Expression -> Maybe Attribute -> Expression -> Expression -> State -> ReduceContext -> IO (Expression, State)
+    step walk standing dispatched context term state' caller = do
       let here = sited standing caller
       ctx' <- deeper here
-      (walked, walkedState) <- parts standing context term state' here
+      (walked, walkedState) <- walk standing context term state' here
       (answer, answered) <- ctx'._fire dispatched (contextualize walked context) univ walkedState ctx'
       pure (fromMaybe walked answer, answered)
     -- The context a term is walked in, aimed at the term itself where a locator
@@ -804,10 +818,6 @@ deepened expr univ state ctx = go (Just ctx._site) Nothing ExXi expr state ctx
     parts :: Maybe Expression -> Expression -> Expression -> State -> ReduceContext -> IO (Expression, State)
     parts _ _ term@(ExFormation bds) state' _
       | any abstract bds = pure (term, state')
-      where
-        abstract :: Binding -> Bool
-        abstract (BiVoid _) = True
-        abstract _ = False
     parts standing _ form@(ExFormation bds) state' caller = do
       (entered, state'') <- bindings standing (synonym caller._universe form) bds bds state' caller
       pure (ExFormation entered, state'')
@@ -819,6 +829,72 @@ deepened expr univ state ctx = go (Just ctx._site) Nothing ExXi expr state ctx
       (applied, state''') <- argument context arg state'' caller
       pure (ExApplication entered applied, state''')
     parts _ _ term state' _ = pure (term, state')
+    -- Whether a binding is a void, which makes the formation holding it a
+    -- method nobody applied (see 'parts').
+    abstract :: Binding -> Bool
+    abstract (BiVoid _) = True
+    abstract _ = False
+    -- The parts of the term the walk starts at, walked the way 'parts' walks
+    -- them, except that the bindings of a formation are walked side by side,
+    -- as many at once as '--jobs' says (#1534). Each is a root of its own: it
+    -- is walked from the state the spine left, with a memo, a tally and a
+    -- source of fresh names of its own and its protocol kept aside, so what
+    -- it comes to depends on the binding alone and not on which worker got
+    -- where first. What the workers made is gathered in the order of the
+    -- bindings, and that order is what the symbols are numbered in: a binding
+    -- numbers what it mints from the floor the spine left, and gathering
+    -- raises that by what the bindings before it minted, in its answer and in
+    -- its protocol alike, so the answer and the protocol name a symbol the way
+    -- one walk over the bindings would have. The protocol of a binding is
+    -- written whole once it and every binding before it are done. Which
+    -- binding is entered at all is decided up front, by the walk itself, the
+    -- way 'bindings' decides it.
+    spread :: Maybe Expression -> Expression -> Expression -> State -> ReduceContext -> IO (Expression, State)
+    spread standing _ form@(ExFormation bds) state' caller
+      | not (any abstract bds) = do
+          jobs <- mapM (planned (synonym caller._universe form)) (zip [1 ..] bds)
+          (entered, _, state'') <- pooled caller._jobs jobs gathered ([], 0, state')
+          pure (ExFormation (reverse entered), state'')
+      where
+        floor' :: Int
+        floor' = state'._minted
+        planned :: Maybe (Expression, [Attribute]) -> (Int, Binding) -> IO (IO ([Evaluation], Either SomeException (Int -> (Binding, Maybe State))))
+        planned alias (idx, BiTau attr body)
+          | attr /= AtRho = do
+              new <- if closed body then fresh alias attr caller else pure True
+              pure (if new then worker idx attr body else kept (BiTau attr body))
+        planned _ (_, bd) = pure (kept bd)
+        kept :: Binding -> IO ([Evaluation], Either SomeException (Int -> (Binding, Maybe State)))
+        kept bd = pure ([], Right (const (bd, Nothing)))
+        worker :: Int -> Attribute -> Expression -> IO ([Evaluation], Either SomeException (Int -> (Binding, Maybe State)))
+        worker idx attr body = do
+          buffer <- newIORef []
+          tau <- tausOf idx
+          tally <- tallied (fmap (\(Tally cap _) -> cap) caller._tally)
+          memo <- memoized caller._acyclic
+          let own = caller{_jobs = 1, _tally = tally, _memo = memo, _saveEval = modifyIORef' buffer . (:), _buildTerm = minting tau caller._buildTerm}
+          outcome <- try (go (fmap (`ExDispatch` attr) standing) Nothing (scope attr bds) body state' own)
+          records <- reverse <$> readIORef buffer
+          pure (records, fmap (\(term, walked) offset -> (BiTau attr (lifted floor' offset term), Just (moved offset walked))) outcome)
+        moved :: Int -> State -> State
+        moved offset walked =
+          walked
+            { _minted = walked._minted + offset
+            , _manufactured = fmap (\sym -> if sym > floor' then sym + offset else sym) walked._manufactured
+            }
+        gathered :: ([Binding], Int, State) -> ([Evaluation], Either SomeException (Int -> (Binding, Maybe State))) -> IO ([Binding], Int, State)
+        gathered (done, offset, current) (records, outcome) = do
+          mapM_ (caller._saveEval . renumbered floor' offset) records
+          (bd, walked) <- either throwIO (pure . ($ offset)) outcome
+          pure (bd : done, maybe offset (\after -> after._minted - floor') walked, fromMaybe current walked)
+    spread standing context term state' caller = parts standing context term state' caller
+    -- The term builder a binding walked on a worker of its own mints its
+    -- fresh names with: the one of the run, except that 'random-tau' draws
+    -- from the source of the binding (see 'tausOf').
+    minting :: IO T.Text -> BuildTermFunc -> BuildTermFunc
+    minting tau build func
+      | func == "random-tau" = \args subst -> if null args then TeAttribute . AtLabel <$> tau else build func args subst
+      | otherwise = build func
     -- Walk the bindings of a formation left to right, threading the state
     -- through them. Only what the formation itself holds is entered: ρ names
     -- the object around it rather than one inside it, and a void, Δ or λ

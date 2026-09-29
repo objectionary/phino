@@ -11,10 +11,10 @@
 -- cycles) never reuse one. A monotonic cursor advances past taken indices so
 -- minting never rescans the document. Names are sequential rather than
 -- random, which makes the rewritten output deterministic.
-module Tau (seedTaus, freshTau) where
+module Tau (seedTaus, freshTau, tausOf) where
 
 import AST
-import Data.IORef (IORef, atomicModifyIORef', newIORef, writeIORef)
+import Data.IORef (IORef, atomicModifyIORef', newIORef, readIORef, writeIORef)
 import Data.Set (Set)
 import qualified Data.Set as Set
 import Data.Text (Text)
@@ -43,13 +43,36 @@ freshTau = atomicModifyIORef' taus advance
       let (minted, idx) = mint taken cursor
        in ((Set.insert minted taken, idx + 1), minted)
 
+-- A source of fresh names of its own for one entry of a run under '--jobs',
+-- which morphs the bindings of a formation side by side (#1534). The names
+-- carry the entry, 'a🌵7-0' for the seventh binding, so no two entries mint
+-- one name and none of them mints a name the run itself does, and they are
+-- counted per entry, so what an entry is named does not depend on which
+-- worker got to a name first. The names the document took when the source
+-- was made are skipped, the way 'freshTau' skips them.
+tausOf :: Int -> IO (IO Text)
+tausOf entry = do
+  (taken, _) <- readIORef taus
+  own <- newIORef (taken, 0)
+  pure (atomicModifyIORef' own advance)
+  where
+    advance :: (Set Text, Int) -> ((Set Text, Int), Text)
+    advance (taken, cursor) =
+      let (minted, idx) = mint' (T.pack ("a🌵" <> show entry <> "-")) taken cursor
+       in ((Set.insert minted taken, idx + 1), minted)
+
 -- Find the first index at or after the cursor whose name is still free.
 mint :: Set Text -> Int -> (Text, Int)
-mint taken idx
-  | name `Set.member` taken = mint taken (idx + 1)
+mint = mint' "a🌵"
+
+-- The same, for names spelled with the given stem.
+mint' :: Text -> Set Text -> Int -> (Text, Int)
+mint' stem taken idx
+  | name `Set.member` taken = mint' stem taken (idx + 1)
   | otherwise = (name, idx)
   where
-    name = "a🌵" <> T.pack (show idx)
+    name :: Text
+    name = stem <> T.pack (show idx)
 
 exprLabels :: Expression -> Set Text
 exprLabels (ExFormation bds) = Set.unions (map bindingLabels bds)
