@@ -18,7 +18,7 @@
 -- a λ function itself, which is an evaluation — are injected as '_reduce',
 -- '_evaluate' and '_fire' rather than imported (see 'ReductionFunc' and
 -- 'EvaluationFunc').
-module Morph (Answer, Kept (..), ReduceContext (..), ReduceException (..), EvaluationFunc, FiringFunc, Memo (..), ReductionFunc, Morphed, Steps (..), Tally (..), boxed, charged, counted, deeper, emptyState, enter, entering, excluding, execBuildTerm, insideUniverse, isLambda, lambda, leadsTo, memoized, morph, morph', morphing, normalized, parking, producer, recalled, retained, sidePremise, tallied, universed, unparked, verb) where
+module Morph (Answer, Kept (..), ReduceContext (..), ReduceException (..), EvaluationFunc, FiringFunc, Memo (..), ReductionFunc, Morphed, Steps (..), Tally (..), boxed, charged, counted, deeper, emptyState, enter, entering, excluding, execBuildTerm, insideUniverse, isLambda, lambda, leadsTo, memoized, morph, morph', morphing, normalized, parking, producer, recalled, retained, sidePremise, starved, tallied, universed, unparked, verb) where
 
 import AST
 import Builder (buildExpressionThrows, contextualize, pathOf)
@@ -148,8 +148,13 @@ data Tally = Tally
 -- and it is told to a later firing only while the memo holds no more, since
 -- an operand that could not be reduced can only be reduced once something new
 -- was answered, the answers of the firing's own nested firings included
--- (#1495, #1507). An answer the formation made is told before any stall
--- of it, whichever came first. The store is
+-- (#1495, #1507). A firing inside which the step budget ran out is no stall
+-- of the formation at all, since the budget a firing has depends on how deep
+-- its site stands, and the same formation fired at a shallower site brings
+-- the operand down; so the memo counts every time the budget runs out, and a
+-- stall is not kept where that count grew while its firing ran (#1514). An
+-- answer the formation made is told before any stall of it, whichever came
+-- first. The store is
 -- one cell every frame of the run shares, like the count of 'Tally', since
 -- what one frame answered is what its siblings are after. It belongs to
 -- 'Plausible' and to no switch of its own: a run asking for plausible cuts is
@@ -163,7 +168,7 @@ data Tally = Tally
 -- the world copies it, and the walk entered the bindings of every copy as if
 -- they were new, so the tests of 'Φ.number' were reduced once per number the
 -- program held (#1480).
-data Memo = Memo (IORef (Store (Int, Kept))) (IORef Int) (IORef (Set.Set (Expression, Attribute)))
+data Memo = Memo (IORef (Store (Int, Kept))) (IORef Int) (IORef Int) (IORef (Set.Set (Expression, Attribute)))
 
 -- What one firing answered, kept for the firings of the same formation to
 -- come: the term the entry wrote, symbols and all, and the normal form 𝕄 made
@@ -353,11 +358,17 @@ instance Show ReduceException where
 -- term that never reduces to bytes kept 𝕄 and 𝔻 calling each other forever
 -- (#1052). Rewriting hands back whatever it has reached when it runs out of
 -- cycles; 𝔻 has no partial answer to give, so an exhausted budget always throws,
--- with or without '--depth-sensitive'.
+-- with or without '--depth-sensitive'. The memo is told every time it throws,
+-- so a stall the budget made is not kept as a stall of the formation (see
+-- 'Memo', #1514).
 deeper :: ReduceContext -> IO ReduceContext
 deeper ctx@ReduceContext{_steps = Steps limit spent}
-  | spent >= limit = throwIO (OutOfSteps (Depth limit))
+  | spent >= limit = starve ctx._memo >> throwIO (OutOfSteps (Depth limit))
   | otherwise = pure ctx{_steps = Steps limit (spent + 1)}
+  where
+    starve :: Maybe Memo -> IO ()
+    starve Nothing = pure ()
+    starve (Just (Memo _ _ exhausted _)) = modifyIORef' exhausted (+ 1)
 
 -- The tally a run starts from where '--max-firings' gives a ceiling: nothing
 -- fired yet.
@@ -378,7 +389,7 @@ charged ReduceContext{_tally = Just (Tally cap count)} = do
 -- one under 'Plausible', the mode the memo belongs to (see 'Memo'), and none
 -- under any other, where nothing is ever recalled.
 memoized :: Maybe Acyclic -> IO (Maybe Memo)
-memoized (Just Plausible) = Just <$> (Memo <$> newIORef Map.empty <*> newIORef 0 <*> newIORef Set.empty)
+memoized (Just Plausible) = Just <$> (Memo <$> newIORef Map.empty <*> newIORef 0 <*> newIORef 0 <*> newIORef Set.empty)
 memoized _ = pure Nothing
 
 -- What the memo keeps for the formation, if this run fired it already (see
@@ -386,7 +397,7 @@ memoized _ = pure Nothing
 -- answered after it; nothing where the run keeps no memo at all.
 recalled :: Maybe Memo -> Expression -> IO (Maybe Kept)
 recalled Nothing _ = pure Nothing
-recalled (Just (Memo store answers _)) form = do
+recalled (Just (Memo store answers _ _)) form = do
   kept <- readIORef store
   count <- readIORef answers
   let live = [known | (term, (stamp, known)) <- Map.findWithDefault [] (hashExpression form) kept, term == form, current count stamp known]
@@ -403,7 +414,13 @@ recalled (Just (Memo store answers _)) form = do
 -- memo at all.
 counted :: Maybe Memo -> IO Int
 counted Nothing = pure 0
-counted (Just (Memo _ answers _)) = readIORef answers
+counted (Just (Memo _ answers _ _)) = readIORef answers
+
+-- How many times the step budget has run out in this run (see 'Memo'); never
+-- where the run keeps no memo at all.
+starved :: Maybe Memo -> IO Int
+starved Nothing = pure 0
+starved (Just (Memo _ _ exhausted _)) = readIORef exhausted
 
 -- Keep what firing the formation came to, for the next firing of it, stamped
 -- with the count of answers the memo held when that firing began, so that
@@ -411,7 +428,7 @@ counted (Just (Memo _ answers _)) = readIORef answers
 -- 'Memo', #1507).
 retained :: Maybe Memo -> Expression -> Int -> Kept -> IO ()
 retained Nothing _ _ _ = pure ()
-retained (Just (Memo store answers _)) form stamp kept = do
+retained (Just (Memo store answers _ _)) form stamp kept = do
   modifyIORef' store (Map.insertWith (++) (hashExpression form) [(form, (stamp, kept))])
   case kept of
     Answered _ -> modifyIORef' answers (+ 1)
@@ -422,13 +439,13 @@ retained (Just (Memo store answers _)) form stamp kept = do
 -- never where the run keeps no memo at all.
 visited :: Maybe Memo -> Expression -> Attribute -> IO Bool
 visited Nothing _ _ = pure False
-visited (Just (Memo _ _ walked)) object attr = Set.member (object, attr) <$> readIORef walked
+visited (Just (Memo _ _ _ walked)) object attr = Set.member (object, attr) <$> readIORef walked
 
 -- Remember that the '--deep' walk has entered the binding the object of the
 -- world declares under the attribute (see 'visited').
 visit :: Maybe Memo -> Expression -> Attribute -> IO ()
 visit Nothing _ _ = pure ()
-visit (Just (Memo _ _ walked)) object attr = modifyIORef' walked (Set.insert (object, attr))
+visit (Just (Memo _ _ _ walked)) object attr = modifyIORef' walked (Set.insert (object, attr))
 
 -- Run one frame of the 𝕄/𝔻 spine, attaching its derivation and its state to a
 -- stuck λ function or an exhausted budget escaping it. 'Stuck' is raised deep
