@@ -524,6 +524,29 @@ The very same file comes back with `--partial`, where the run answers the
 residue instead of failing: what `phino` could not decide is a property of the
 program and not of the option that decides what to do about it.
 
+Three more lines say why a firing gave no answer.
+`stuck(L_outer)` is the last line of a firing that got stuck, naming the λ
+function it got stuck on, which is seldom the one `?(…)` names: that one is
+written where it was asked for, and this one closes every firing the failure
+passed on its way out.
+`stall(L_outer)` stands under a firing that `--acyclic=plausible` answered
+with the stall an earlier firing of the same formation kept, so a told stall
+never reads as a fresh firing that wrote nothing.
+`starved(4)  # 𝔻(ξ.arg)` is where `--max-steps=4` ran out, commented with the
+judgment and the term the reduction stood at, whether or not `--partial` goes
+on to park it:
+
+```text
+𝕄(Φ.x)
+  𝔼(L_outer)  # 𝕄(Φ.x)
+    𝔼(L_outer)  # 𝔻(Φ.a🌵0)
+      starved(4)  # 𝔻(ξ.arg)
+    stuck(L_outer)
+```
+
+The markup spells them `<unfinished λ="L_outer"/>`, `<stall λ="L_outer"/>`
+and `<starved limit="4" by="dataize">ξ.arg</starved>`.
+
 Every term is 𝜑 on a single line, whatever `--output` and `--flat` say about
 the result of the run, so a program reading the protocol back never has to know
 what the run printed. The file is truncated at the beginning of every run, so
