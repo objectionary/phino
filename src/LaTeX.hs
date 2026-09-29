@@ -276,6 +276,9 @@ instance ToLaTeX EXPRESSION where
   -- The eolang LaTeX package knows no one-binding sugar, so the full
   -- formation is written instead (see #1385)
   toLaTeX EX_SINGLE{..} = toLaTeX formation
+  -- A string is escaped the way a label is, so a '%' in it cannot
+  -- comment out the rest of the equation (see #1429)
+  toLaTeX EX_STRING{..} = EX_STRING (T.unpack (toLaTeX (T.pack str))) tab rhos
   toLaTeX expr = expr
 
 instance ToLaTeX ATTRIBUTE where
@@ -359,10 +362,17 @@ instance ToLaTeX APP_ARGS where
 instance ToLaTeX T.Text where
   toLaTeX = T.concatMap escape
     where
+      escape '#' = "\\char35{}"
       escape '$' = "\\char36{}"
+      escape '%' = "\\char37{}"
+      escape '&' = "\\char38{}"
       escape '@' = "\\char64{}"
       escape '^' = "\\char94{}"
+      escape '\\' = "\\char92{}"
       escape '_' = "\\char95{}"
+      escape '{' = "\\char123{}"
+      escape '}' = "\\char125{}"
+      escape '~' = "\\char126{}"
       escape ch = T.singleton ch
 
 instance ToLaTeX SET where

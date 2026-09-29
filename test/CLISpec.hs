@@ -580,7 +580,7 @@ spec = do
               , "  |w| -> \\phiTerminal{\\xi},"
               , "  \\phiTerminal{\\rho} -> Q,"
               , "  @ -> 1,"
-              , "  |y| -> \"H$@^M\","
+              , "  |y| -> \"H\\char36{}\\char64{}\\char94{}M\","
               , "  L> |Fu\\char95{}nc|"
               , "]]{.}"
               , "\\end{phiquation}"
