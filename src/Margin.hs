@@ -37,7 +37,7 @@ instance WithMargin EXPRESSION where
   withMargin' cfg@(extra, margin) ex@EX_SINGLE{pair = PA_TAU{..}, ..} =
     let single = toSingleLine ex
         asset = withMargin' (extra, margin - lengthOf attr - 1) expr
-     in if lengthOf single + extra <= margin then single else EX_SINGLE (PA_TAU attr arrow asset) (withMargin' cfg formation)
+     in if lengthOf single + extra <= margin then single else EX_SINGLE (PA_TAU attr arrow asset) space (withMargin' cfg formation)
   withMargin' cfg@(extra, margin) ex@EX_APPLICATION{tab = tab@(TAB indt), ..} =
     let single = toSingleLine ex
         main = withMargin' cfg expr

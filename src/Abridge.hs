@@ -30,7 +30,7 @@ abridged = goExpr
       | short expr = EX_FORMATION lsb eol tab (goIntact binding) eol' tab' rsb
       | otherwise = EX_FORMATION lsb eol tab (goBinding binding) eol' tab' rsb
     goExpr expr@EX_SINGLE{..}
-      | short expr || salient pair = EX_SINGLE (goPair pair) (goExpr formation)
+      | short expr || salient pair = EX_SINGLE (goPair pair) space (goExpr formation)
       | otherwise = goExpr formation
     goExpr EX_DISPATCH{..} = EX_DISPATCH (goExpr expr) space attr
     goExpr EX_APPLICATION{..} = EX_APPLICATION (goExpr expr) space eol tab (goArgument argument) eol' tab' indent

@@ -6,5 +6,5 @@ expression: |
   [[ my_attr -> Q.a@b ]]
 result: |-
   \begin{phiquation}
-  [[ |my\char95{}attr| -> Q . |a\char64{}b| ]]{.}
+  Q . |a\char64{}b| : |my\char95{}attr|{.}
   \end{phiquation}

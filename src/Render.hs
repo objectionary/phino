@@ -218,18 +218,21 @@ instance Render EXPRESSION where
   render EX_PHI_AGAIN{..} = "\\phinoAgain{" <> maybe "" (\p -> T.pack p <> ":") prefix <> render idx <> "}"
   render EX_BYTES{..} = render bytes
   render EX_SINGLE{..} = case pair of
-    PA_TAU{..} -> render expr <> ":" <> render attr
-    PA_FORMATION{voids = [], ..} -> render expr <> ":" <> render attr
-    PA_VOID{..} -> render void <> ":" <> render attr
-    PA_DELTA{..} -> render bytes <> ":" <> render DELTA
-    PA_DELTA'{..} -> render bytes <> ":" <> render DELTA'
-    PA_META_DELTA{..} -> render meta <> ":" <> render DELTA
-    PA_META_DELTA'{..} -> render meta <> ":" <> render DELTA'
-    PA_LAMBDA{..} -> render func <> ":" <> render LAMBDA
-    PA_LAMBDA'{..} -> render func <> ":" <> render LAMBDA'
-    PA_META_LAMBDA{..} -> render meta <> ":" <> render LAMBDA
-    PA_META_LAMBDA'{..} -> render meta <> ":" <> render LAMBDA'
+    PA_TAU{..} -> render expr <> colon <> render attr
+    PA_FORMATION{voids = [], ..} -> render expr <> colon <> render attr
+    PA_VOID{..} -> render void <> colon <> render attr
+    PA_DELTA{..} -> render bytes <> colon <> render DELTA
+    PA_DELTA'{..} -> render bytes <> colon <> render DELTA'
+    PA_META_DELTA{..} -> render meta <> colon <> render DELTA
+    PA_META_DELTA'{..} -> render meta <> colon <> render DELTA'
+    PA_LAMBDA{..} -> render func <> colon <> render LAMBDA
+    PA_LAMBDA'{..} -> render func <> colon <> render LAMBDA'
+    PA_META_LAMBDA{..} -> render meta <> colon <> render LAMBDA
+    PA_META_LAMBDA'{..} -> render meta <> colon <> render LAMBDA'
     _ -> render formation
+    where
+      colon :: T.Text
+      colon = render space <> ":" <> render space
 
 instance Render [ATTRIBUTE] where
   render attrs = T.intercalate ", " (map render attrs)

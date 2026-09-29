@@ -142,17 +142,17 @@ spec = do
       [
         ( "renders '\\phiquation*' (unnumbered) when '_nonumber' is set"
         , \ctx -> ctx{_nonumber = True}
-        , "\\begin{phiquation*}\n[[ |x| -> Q . |y| ]]{.}\n\\end{phiquation*}"
+        , "\\begin{phiquation*}\nQ . |y| : |x|{.}\n\\end{phiquation*}"
         )
       ,
         ( "renders a '\\label{}' when '_label' is set"
         , \ctx -> ctx{_label = Just "eq:one"}
-        , "\\begin{phiquation}\n\\label{eq:one}\n[[ |x| -> Q . |y| ]]{.}\n\\end{phiquation}"
+        , "\\begin{phiquation}\n\\label{eq:one}\nQ . |y| : |x|{.}\n\\end{phiquation}"
         )
       ,
         ( "renders a '\\phiExpression{}' prefix when '_expression' is set"
         , \ctx -> ctx{_expression = Just "e"}
-        , "\\begin{phiquation}\n\\phiExpression{e} [[ |x| -> Q . |y| ]]{.}\n\\end{phiquation}"
+        , "\\begin{phiquation}\n\\phiExpression{e} Q . |y| : |x|{.}\n\\end{phiquation}"
         )
       ]
       ( \(desc, adjustContext, expected) -> it desc $ do
@@ -163,17 +163,17 @@ spec = do
     it "renders a non-finite double as a piped dispatch off the root" $ do
       nan <- parseExpressionThrows "[[ x -> Q.number(Q.bytes([[ D> 7F-F8-00-00-00-00-00-00 ]])) ]]"
       expressionToLaTeX nan defaultLatexContext
-        `shouldBe` "\\begin{phiquation}\n[[ |x| -> Q . |nan| ]]{.}\n\\end{phiquation}"
+        `shouldBe` "\\begin{phiquation}\nQ . |nan| : |x|{.}\n\\end{phiquation}"
 
     it "renders a bytes meta with the '\\delta' head" $ do
       bts <- parseExpressionThrows "[[ D> !d7 ]]"
       expressionToLaTeX bts defaultLatexContext
-        `shouldBe` "\\begin{phiquation}\n[[ D> \\delta_7 ]]{.}\n\\end{phiquation}"
+        `shouldBe` "\\begin{phiquation}\n\\delta_7 : D{.}\n\\end{phiquation}"
 
     it "escapes '@' and '^' in an attribute label, same as '$' and '_'" $ do
       let weird = ExFormation [BiTau (AtLabel "a@b^c") ExRoot]
       expressionToLaTeX weird defaultLatexContext
-        `shouldBe` "\\begin{phiquation}\n[[ |a\\char64{}b\\char94{}c| -> Q ]]{.}\n\\end{phiquation}"
+        `shouldBe` "\\begin{phiquation}\nQ : |a\\char64{}b\\char94{}c|{.}\n\\end{phiquation}"
 
     forM_
       [
@@ -196,7 +196,7 @@ spec = do
     it "renders the ellipsis ending when the chain exceeded its bound" $ do
       step1 <- parseExpressionThrows "[[ x -> Q.y ]]"
       latex <- rewrittensToLatex ([(step1, Nothing)], True) defaultLatexContext
-      latex `shouldBe` "\\begin{phiquation}\n[[ |x| -> Q . |y| ]] \\leadsto\n  \\leadsto \\dots\n\\end{phiquation}"
+      latex `shouldBe` "\\begin{phiquation}\nQ . |y| : |x| \\leadsto\n  \\leadsto \\dots\n\\end{phiquation}"
 
     it "prefixes each step with a '% === Step' header when '_headers' is set" $ do
       step1 <- parseExpressionThrows "[[ x -> Q.y ]]"
@@ -207,9 +207,9 @@ spec = do
           "\n"
           [ "\\begin{phiquation}"
           , "% === Step #1"
-          , "[[ |x| -> Q . |y| ]]"
+          , "Q . |y| : |x|"
           , "% === Step #2, Rule '?', 7t -> 7t"
-          , "  \\leadsto [[ |x| -> Q . |z| ]] \\leadsto_{\\nameref{r:myrule}}{.}"
+          , "  \\leadsto Q . |z| : |x| \\leadsto_{\\nameref{r:myrule}}{.}"
           , "\\end{phiquation}"
           ]
 
@@ -239,9 +239,9 @@ spec = do
         `shouldBe` intercalate
           "\n"
           [ "\\begin{phiquation}"
-          , "[[ |x| -> \\phinoMeet{1}{ Q . |a| . |b| . |c| . |d| } ]]"
-          , "  \\leadsto [[ |y| -> \\phinoAgain{1} ]] \\leadsto_{\\nameref{r:r1}}"
-          , "  \\leadsto [[ |z| -> \\phinoAgain{1} ]] \\leadsto_{\\nameref{r:r2}}{.}"
+          , "\\phinoMeet{1}{ Q . |a| . |b| . |c| . |d| } : |x|"
+          , "  \\leadsto \\phinoAgain{1} : |y| \\leadsto_{\\nameref{r:r1}}"
+          , "  \\leadsto \\phinoAgain{1} : |z| \\leadsto_{\\nameref{r:r2}}{.}"
           , "\\end{phiquation}"
           ]
 
@@ -258,7 +258,7 @@ spec = do
         `shouldBe` intercalate
           "\n"
           [ "\\begin{phiquation}"
-          , "\\phinoMeet{1}{ [[ |w| -> Q . |a| . |b| . |c| . |d| ]] }"
+          , "\\phinoMeet{1}{ Q . |a| . |b| . |c| . |d| : |w| }"
           , "  \\leadsto \\phinoAgain{1} \\leadsto_{\\nameref{r:r1}}"
           , "  \\leadsto \\phinoAgain{1} \\leadsto_{\\nameref{r:r2}}{.}"
           , "\\end{phiquation}"
@@ -327,7 +327,7 @@ spec = do
         ,
           [ "\\phinoNormalizationRule{lambdas}"
           , "{ [[ B_1, L> f, B_2 ]] }"
-          , "{ [[ L> \\sigma_1 ]] }"
+          , "{ \\sigma_1 : L }"
           , "{ }"
           , "{ }"
           ]

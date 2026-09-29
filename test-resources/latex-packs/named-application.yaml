@@ -6,5 +6,5 @@ expression: |
   [[ f -> Q.foo(x -> Q.a, y -> $) ]]
 result: |-
   \begin{phiquation}
-  [[ |f| -> Q . |foo| ( |x| -> Q . |a|, |y| -> \phiTerminal{\xi} ) ]]{.}
+  Q . |foo| ( |x| -> Q . |a|, |y| -> \phiTerminal{\xi} ) : |f|{.}
   \end{phiquation}
