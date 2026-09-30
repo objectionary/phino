@@ -144,12 +144,12 @@ _sed args subst = do
       case B.stripPrefix "s/" input of
         Just body
           | B.elem '/' body ->
-            let (pat, rest) = nextUntilSlash body B.empty False
-                (rep, flag) = nextUntilSlash rest B.empty True
-             in case flag of
-                  "g" -> pure (pat, rep, True)
-                  "" -> pure (pat, rep, False)
-                  _ -> throwIO (userError "sed pattern must be in format s/pat/rep/[g]")
+              let (pat, rest) = nextUntilSlash body B.empty False
+                  (rep, flag) = nextUntilSlash rest B.empty True
+               in case flag of
+                    "g" -> pure (pat, rep, True)
+                    "" -> pure (pat, rep, False)
+                    _ -> throwIO (userError "sed pattern must be in format s/pat/rep/[g]")
           | otherwise -> throwIO (userError "sed pattern must be in format s/pat/rep/[g]")
         _ -> throwIO (userError "sed pattern must start with s/")
     -- Cut part from given string until regular slash.
