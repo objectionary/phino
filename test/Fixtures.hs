@@ -13,6 +13,7 @@ module Fixtures
   , fixtureLambdas
   , lambdasFile
   , loopingLambdas
+  , overdue
   , primitives
   , readUtf8
   , recorded
@@ -37,9 +38,10 @@ import Dataize (reduction)
 import Deps (Judgment (..), SaveEvalFunc, dontSaveEval, dontSaveStep)
 import Evaluate (evaluation, fired)
 import Functions (buildTerm)
+import GHC.Clock (getMonotonicTime)
 import Lambdas (Lambdas, emptyLambdas, readLambdas)
 import Lining (LineFormat (MULTILINE))
-import Morph (ReduceContext (..), Steps (..))
+import Morph (Deadline (..), ReduceContext (..), Steps (..))
 import Sugar (SugarType (SWEET))
 import System.Directory (getTemporaryDirectory, removePathForcibly)
 import System.IO (Handle, IOMode (ReadMode), hClose, hGetContents, hSetEncoding, openBinaryTempFile, utf8, withFile)
@@ -74,6 +76,12 @@ fixtureLambdas = readLambdas lambdasFile
 -- end the same run before the limit does.
 loopingLambdas :: (FilePath -> IO a) -> IO a
 loopingLambdas = withLambdasOf "- λ: L_loop\n  𝑛: ⟦ λ ⤍ L_loop ⟧\n"
+
+-- The deadline of a run given the seconds of '--max-seconds' that passed a
+-- second ago, so the next reading of the clock finds the run out of time and
+-- no spec has to wait for it.
+overdue :: Int -> IO Deadline
+overdue cap = Deadline cap . subtract 1 <$> getMonotonicTime
 
 -- The given λ functions, as the YAML file '--symbolic' reads, in a temporary
 -- file removed afterwards.

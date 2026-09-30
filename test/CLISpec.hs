@@ -2436,45 +2436,46 @@ spec = do
                 ["dataize", "--symbolic=" ++ table, "--locator=Q.x", "--max-seconds=1"]
                 ["[ERROR]: Evaluation did not finish before reaching the limit of seconds: --max-seconds=1"]
 
-      it "parks the spent --max-seconds budget with --partial" $
-        ladder $ \table ->
-          bounded $
-            withStdin rungs $
-              testCLISucceeded
-                ["morph", "--symbolic=" ++ table, "--locator=Q.x", "--max-seconds=1", "--partial", "--flat", "--hide-rho", "--sweet"]
-                ["⊥"]
-
-      it "parks the spent --max-seconds budget with --deep and --partial" $
-        ladder $ \table ->
-          bounded $
-            withStdin rungs $
-              testCLISucceeded
-                ["morph", "--symbolic=" ++ table, "--deep", "--max-seconds=1", "--partial", "--flat", "--hide-rho", "--sweet"]
-                ["x ↦ Φ.l0.foo"]
-
-      it "writes the timeout as the last line of the protocol" $
-        ladder $ \table ->
-          withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
-            hClose stream
+      -- A passed deadline is no stuck site, so '--partial' parks nothing and
+      -- the run ends where the clock stopped it (#1619)
+      forM_ [["--locator=Q.x", "--partial"], ["--deep", "--partial"]] $ \opts ->
+        it ("fails once the --max-seconds budget is spent with " ++ unwords opts) $
+          ladder $ \table ->
             bounded $
               withStdin rungs $
                 testCLIFailed
-                  ["morph", "--symbolic=" ++ table, "--locator=Q.x", "--max-seconds=1", "--protocol=" ++ path, "--quiet"]
-                  ["--max-seconds=1"]
-            records <- readUtf8 path
-            dropWhile (== ' ') (last (lines records)) `shouldStartWith` "timeout(1)  # 𝕄(Φ.a🌵"
+                  (["morph", "--symbolic=" ++ table, "--max-seconds=1"] ++ opts)
+                  ["[ERROR]: Evaluation did not finish before reaching the limit of seconds: --max-seconds=1"]
 
-      -- Every firing refused after the deadline is parked, and only the first
-      -- of them is written, the way a refused '--max-firings' writes nothing
-      it "writes the timeout once to the XML protocol of a parked run" $
+      -- Every worker of '--jobs' reads the clock and ends its binding at its
+      -- own refusal, and only the records of the first binding that failed
+      -- are written, so that binding has to carry the refusal itself. Where
+      -- the clock stops the run is a matter of timing, an operand or a binding
+      -- whose worker started late, so the site is left unchecked
+      forM_ [["--locator=Q.x"], ["--locator=Q.x", "--partial"], ["--deep", "--partial"], ["--deep", "--partial", "--jobs=4"]] $ \opts ->
+        it ("writes the timeout as the last line of the protocol with " ++ unwords opts) $
+          ladder $ \table ->
+            withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
+              hClose stream
+              bounded $
+                withStdin rungs $
+                  testCLIFailed
+                    (["morph", "--symbolic=" ++ table, "--max-seconds=1", "--protocol=" ++ path, "--quiet"] ++ opts)
+                    ["--max-seconds=1"]
+              records <- readUtf8 path
+              dropWhile (== ' ') (last (lines records)) `shouldStartWith` "timeout(1)  # 𝕄("
+
+      -- Only the first refusal of the deadline is written, and the run ends
+      -- on it, so the markup carries one timeout and nothing after it
+      it "writes the timeout once to the XML protocol of a deep run" $
         ladder $ \table ->
           withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
             hClose stream
             bounded $
               withStdin rungs $
-                testCLISucceeded
+                testCLIFailed
                   ["morph", "--symbolic=" ++ table, "--deep", "--partial", "--max-seconds=1", "--protocol=" ++ path, "--quiet"]
-                  []
+                  ["--max-seconds=1"]
             records <- readUtf8 path
             length (filter (isInfixOf "<timeout limit=\"1\" by=\"morph\" at=\"") (lines records)) `shouldBe` 1
 

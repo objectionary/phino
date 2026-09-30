@@ -22,7 +22,7 @@ import Dataize (Outcome (..), dataize, dataize', reduction)
 import Deps (Judgment (..), State, dontSaveEval, dontSaveStep)
 import Evaluate (evaluation, fired)
 import Files (allPathsIn)
-import Fixtures (defaultReduceContext, fixtureLambdas, loopingLambdas, primitives, recorded, withLambdas)
+import Fixtures (defaultReduceContext, fixtureLambdas, loopingLambdas, overdue, primitives, recorded, withLambdas)
 import Functions (buildTerm)
 import GHC.Generics (Generic)
 import Lambdas (Lambdas, emptyLambdas, readLambdas)
@@ -223,6 +223,16 @@ spec = do
         case outcome of
           Residual _ -> pure ()
           Dataized bts -> expectationFailure ("expected a residual, dataized to " ++ show bts)
+
+  -- Unlike the step limit, a passed deadline of '--max-seconds' is no stuck
+  -- site: the run is out of time wherever it stands, so '--partial' has no
+  -- residual to hand back and the run fails the way it fails without it (#1619)
+  describe "stops a dataization by the clock of --max-seconds" $
+    it "fails a partial dataization once the deadline has passed" $ do
+      expr <- parseExpressionThrows "[[ @ -> [[ D> 7E- ]] ]]"
+      deadline <- overdue 29
+      dataize expr emptyState (defaultReduceContext ExRoot){_deadline = Just deadline, _partial = True}
+        `shouldThrow` (\e -> "--max-seconds=29" `isInfixOf` show (e :: SomeException))
 
   -- A λ function no entry of the '--symbolic' file answers — a name the file
   -- does not carry, such as the placeholder ⟦ λ ⤍ Sym_arg_0 ⟧ standing in for a

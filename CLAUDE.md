@@ -193,10 +193,12 @@ firings of the whole run (`Tally` and `charged` in `Morph.hs`, charged by
 context rather than a field of `State`, since a parked frame hands back the
 state it started from and would refund the firings made inside it (#1472).
 `--max-seconds` bounds the time of the whole run the same way (`Deadline` and
-`charged` in `Morph.hs`, off unless given): the first firing after the
-deadline writes `timeout(…)` (`EvTimeout`) and fails the run like a spent
-tally, so a caller that cannot wait gets a closed protocol instead of killing
-the process (#1607).
+`clocked` in `Morph.hs`, off unless given), read by `deeper` at every step and
+by `charged` at every firing, since a run may spend its time rewriting terms
+that fire nothing (#1619). The first step or firing after the deadline writes
+`timeout(…)` (`EvTimeout`) and throws `OutOfTime`, which no frame parks, so the
+run fails with or without `--partial` and a caller that cannot wait gets a
+closed protocol ending in the timeout instead of killing the process (#1607).
 
 Every use of a binding copies the term bound to it, so one formation is fired
 as many times as the program reads it, and every firing mints symbols of its
