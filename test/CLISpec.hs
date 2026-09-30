@@ -13,7 +13,6 @@ import Control.Monad (forM_, unless)
 import Data.Char (isDigit)
 import Data.List (intercalate, isInfixOf, isPrefixOf, sort)
 import Data.Text qualified as T
-import Data.Text.IO qualified as TIO
 import Data.Time.Clock (addUTCTime, getCurrentTime)
 import Data.Time.Clock.POSIX (getPOSIXTime)
 import Data.Version (showVersion)
@@ -2916,7 +2915,7 @@ spec = do
         createDirectoryIfMissing True dir
         simple <- makeAbsolute "test-resources/cli/rules/simple.yaml"
         withCurrentDirectory dir (runCLI ["compile", "--rule=" ++ simple, "--target=Compiled.hs"])
-        TIO.readFile (dir </> "Compiled.hs") >>= (`shouldSatisfy` (T.pack "R.direct \"foo\"" `T.isInfixOf`))
+        readFile' (dir </> "Compiled.hs") >>= (`shouldSatisfy` ("R.direct \"foo\"" `isInfixOf`))
     it "turns the flag on in a new cabal.project.local" $
       withTempDirectory "phino-compile" $ \dir -> do
         createDirectoryIfMissing True dir
