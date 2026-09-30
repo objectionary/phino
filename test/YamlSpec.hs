@@ -33,6 +33,22 @@ failsAsRedundant = failsWith "redundant"
 
 spec :: Spec
 spec = do
+  describe "validates rewriting rule keys" $ do
+    it "accepts rule labels and descriptions" $
+      ( decodeYaml'
+          "name: foo\nlabel: foo-label\ndescription: A rule\npattern: '⟦ 𝜏1 ↦ 𝑒1 ⟧'\nresult: '𝑒1'"
+          :: Either Yaml.ParseException Rule
+      )
+        `shouldSatisfy` (not . isLeft)
+    it "rejects unknown top-level keys" $
+      failsWith
+        "Unknown key"
+        ( decodeYaml'
+            "name: foo\npattern: '⟦ 𝜏1 ↦ 𝑒1 ⟧'\nresult: '𝑒1'\nunexpected: true"
+            :: Either Yaml.ParseException Rule
+        )
+        `shouldBe` True
+
   describe "parses yaml rule" $ do
     let resources = "test-resources/yaml-packs"
     packs <- runIO (allPathsIn resources)

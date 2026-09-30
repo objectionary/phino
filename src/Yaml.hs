@@ -185,7 +185,7 @@ instance FromJSON Extra where
 
 instance FromJSON Rule where
   parseJSON value@(Object fields) = do
-    validateKnownYamlKeys fields ["name", "pattern", "result", "e-match", "when", "having", "where"]
+    validateKnownYamlKeys fields ["name", "label", "description", "pattern", "result", "e-match", "when", "having", "where"]
     rule <-
       genericParseJSON
         defaultOptions
