@@ -427,6 +427,15 @@ alike one two = isJust (goExpr (Map.empty, Map.empty) one two)
       (Just right', Just _) | right' == right -> Just (forward, backward)
       _ -> Nothing
 
+-- What one call of 'within' has found out so far: whether a term is embedded
+-- in another, for every pair of terms the call has asked about, kept by the
+-- digests of the two and confirmed by (==), since two terms may share a digest.
+type Searched = Map.Map (Int, Int) [(Expression, Expression, Bool)]
+
+-- A question 'within' asks, answered from what the call has found out so far
+-- and handing that back with what the answer added to it.
+type Search = Searched -> (Bool, Searched)
+
 -- Whether the first term is embedded in the second: the two have the same
 -- constructor, attributes, data and λ names at the top, and every term the
 -- first holds there is embedded in the term the second holds at the same place,
@@ -438,12 +447,24 @@ alike one two = isJust (goExpr (Map.empty, Map.empty) one two)
 -- stands for a term that holds no symbol itself, since a round holding an
 -- unknown where the previous one held a datum is more general than it (#1491).
 -- A ρ binding is never looked below, since it holds the object a term was
--- taken from and not a term it grew into.
+-- taken from and not a term it grew into. A call answers every pair of terms it
+-- asks about once and keeps the answer, since a search that fails walks the
+-- whole of the second term and the same pair is asked about again from every
+-- place above it, so without the answers kept the cost grows with the number
+-- of ways one term can be laid along the other (#1623).
 within :: Expression -> Expression -> Bool
-within = coupled
+within before after = fst (coupled before after Map.empty)
   where
-    embedded :: Expression -> Expression -> Bool
-    embedded inner outer = general inner outer || coupled inner outer || any (embedded inner) (children outer)
+    embedded :: Expression -> Expression -> Search
+    embedded inner outer searched = case recalled inner outer searched of
+      Just found -> (found, searched)
+      Nothing -> remembered inner outer (some [answered (general inner outer), coupled inner outer, some (map (embedded inner) (children outer))] searched)
+    recalled :: Expression -> Expression -> Searched -> Maybe Bool
+    recalled inner outer searched = listToMaybe [found | (inner', outer', found) <- Map.findWithDefault [] (digests inner outer) searched, inner' == inner, outer' == outer]
+    remembered :: Expression -> Expression -> (Bool, Searched) -> (Bool, Searched)
+    remembered inner outer (found, searched) = (found, Map.insertWith (++) (digests inner outer) [(inner, outer, found)] searched)
+    digests :: Expression -> Expression -> (Int, Int)
+    digests inner outer = (hashExpression inner, hashExpression outer)
     general :: Expression -> Expression -> Bool
     general inner (ExFormation [BiLambda (FnSymbol _)]) = plain inner
     general _ _ = False
@@ -461,21 +482,33 @@ within = coupled
     plainBinding (BiTau _ expr) = plain expr
     plainBinding (BiLambda (FnSymbol _)) = False
     plainBinding _ = True
-    coupled :: Expression -> Expression -> Bool
-    coupled (ExFormation left) (ExFormation right) = length left == length right && and (zipWith goBinding left right)
-    coupled (ExApplication left arg) (ExApplication right arg') = embedded left right && goArgument arg arg'
-    coupled (ExDispatch left attr) (ExDispatch right attr') = attr == attr' && embedded left right
-    coupled (ExPhiMeet prefix idx left) (ExPhiMeet prefix' idx' right) = prefix == prefix' && idx == idx' && embedded left right
-    coupled (ExPhiAgain prefix idx left) (ExPhiAgain prefix' idx' right) = prefix == prefix' && idx == idx' && embedded left right
-    coupled left right = left == right
-    goBinding :: Binding -> Binding -> Bool
-    goBinding (BiTau attr left) (BiTau attr' right) = attr == attr' && embedded left right
-    goBinding (BiLambda (FnSymbol _)) (BiLambda (FnSymbol _)) = True
-    goBinding left right = left == right
-    goArgument :: Argument -> Argument -> Bool
-    goArgument (ArTau attr left) (ArTau attr' right) = attr == attr' && embedded left right
-    goArgument (ArAlpha alpha left) (ArAlpha alpha' right) = alpha == alpha' && embedded left right
-    goArgument _ _ = False
+    coupled :: Expression -> Expression -> Search
+    coupled (ExFormation left) (ExFormation right) = every (answered (length left == length right) : zipWith goBinding left right)
+    coupled (ExApplication left arg) (ExApplication right arg') = every [embedded left right, goArgument arg arg']
+    coupled (ExDispatch left attr) (ExDispatch right attr') = every [answered (attr == attr'), embedded left right]
+    coupled (ExPhiMeet prefix idx left) (ExPhiMeet prefix' idx' right) = every [answered (prefix == prefix' && idx == idx'), embedded left right]
+    coupled (ExPhiAgain prefix idx left) (ExPhiAgain prefix' idx' right) = every [answered (prefix == prefix' && idx == idx'), embedded left right]
+    coupled left right = answered (left == right)
+    goBinding :: Binding -> Binding -> Search
+    goBinding (BiTau attr left) (BiTau attr' right) = every [answered (attr == attr'), embedded left right]
+    goBinding (BiLambda (FnSymbol _)) (BiLambda (FnSymbol _)) = answered True
+    goBinding left right = answered (left == right)
+    goArgument :: Argument -> Argument -> Search
+    goArgument (ArTau attr left) (ArTau attr' right) = every [answered (attr == attr'), embedded left right]
+    goArgument (ArAlpha alpha left) (ArAlpha alpha' right) = every [answered (alpha == alpha'), embedded left right]
+    goArgument _ _ = answered False
+    answered :: Bool -> Search
+    answered = (,)
+    every :: [Search] -> Search
+    every [] searched = (True, searched)
+    every (search : rest) searched = case search searched of
+      (True, searched') -> every rest searched'
+      failed -> failed
+    some :: [Search] -> Search
+    some [] searched = (False, searched)
+    some (search : rest) searched = case search searched of
+      (False, searched') -> some rest searched'
+      found -> found
     children :: Expression -> [Expression]
     children (ExFormation bds) = [expr | BiTau attr expr <- bds, attr /= AtRho]
     children (ExApplication expr (ArTau _ arg)) = [expr, arg]
