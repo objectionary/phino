@@ -643,12 +643,10 @@ spec = do
       ]
       (uncurry it)
 
-  describe "parse bytes rejects a lowercase hex digit" $
-    fails
-      parseBytes
-      [ ("0a-", "expected 0-9 or A-F")
-      , ("a0-", "expected 0-9 or A-F")
-      ]
+  describe "parse bytes accepts lowercase hex digits" $
+    forM_
+      [("0a-", BtOne "0A"), ("a0-", BtOne "A0")]
+      (\(input, expected) -> it input (parseBytes input `shouldBe` Right expected))
 
   describe "parser errors are tagged with their entry point name" $
     forM_
