@@ -18,14 +18,14 @@
 -- a λ function itself, which is an evaluation — are injected as '_reduce',
 -- '_evaluate' and '_fire' rather than imported (see 'ReductionFunc' and
 -- 'EvaluationFunc').
-module Morph (Answer, Kept (..), ReduceContext (..), ReduceException (..), EvaluationFunc, FiringFunc, Memo (..), ReductionFunc, Morphed, Steps (..), Tally (..), boxed, charged, counted, deeper, emptyState, enter, entering, excluding, execBuildTerm, insideUniverse, isLambda, label, lambda, leadsTo, memoized, morph, morph', morphing, normalized, parking, producer, recalled, retained, sidePremise, starved, tallied, universed, unparked) where
+module Morph (Answer, Deadline (..), Kept (..), ReduceContext (..), ReduceException (..), EvaluationFunc, FiringFunc, Memo (..), ReductionFunc, Morphed, Steps (..), Tally (..), boxed, charged, counted, deeper, emptyState, enter, entering, excluding, execBuildTerm, insideUniverse, isLambda, label, lambda, leadsTo, memoized, morph, morph', morphing, normalized, parking, producer, recalled, retained, sidePremise, starved, tallied, timed, universed, unparked) where
 
 import AST
 import Builder (buildExpressionThrows, contextualize, pathOf)
 import Control.Applicative ((<|>))
 import Control.Exception (Exception, SomeException, catch, throwIO, try)
 import Control.Monad (foldM, unless, when)
-import Data.IORef (IORef, modifyIORef', newIORef, readIORef, writeIORef)
+import Data.IORef (IORef, atomicModifyIORef', modifyIORef', newIORef, readIORef, writeIORef)
 import Data.List (find, partition)
 import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as NE
@@ -34,6 +34,7 @@ import Data.Maybe (fromMaybe, isJust, listToMaybe)
 import qualified Data.Set as Set
 import qualified Data.Text as T
 import Deps (Acyclic (..), BuildTermFunc, BuildTermMethodS, Evaluation (..), Judgment (..), SaveEvalFunc, SaveStepFunc, State (..), Term (..), dontSaveStep, renumbered)
+import GHC.Clock (getMonotonicTime)
 import Lambdas (Lambdas)
 import Locator (locatedExpression, withLocatedExpression)
 import Matcher (MetaValue (..), Subst (..), combine, matchExpression', substEmpty, substSingle)
@@ -113,6 +114,21 @@ data Steps = Steps
 data Tally = Tally
   { _ceiling :: Int
   , _count :: IORef Int
+  }
+
+-- How many seconds the whole run may take ('_seconds', the '--max-seconds'
+-- option), the reading of the monotonic clock it has to stop firing at
+-- ('_until') and whether a firing has been refused for it yet ('_passed').
+-- Like 'Tally' it bounds the whole run and not one branch, and it bounds what
+-- neither count does: a run inside both of them may still take longer than
+-- its caller can wait, and a caller that kills it from outside leaves a
+-- protocol whose elements nobody closed (#1607). The flag is one cell every
+-- frame of the run shares, the workers of '--jobs' included, since the run
+-- runs out of time once and the protocol says so once.
+data Deadline = Deadline
+  { _seconds :: Int
+  , _until :: Double
+  , _passed :: IORef Bool
   }
 
 -- What the firings of a run under '--acyclic=plausible' answered, by the
@@ -232,6 +248,9 @@ data ReduceContext = ReduceContext
   , -- How many λ functions the whole run may fire and how many it has fired
     -- (see 'Tally'), or nothing where '--max-firings' asks for no such limit.
     _tally :: Maybe Tally
+  , -- When the whole run has to stop firing (see 'Deadline'), or nothing
+    -- where '--max-seconds' asks for no such limit.
+    _deadline :: Maybe Deadline
   , -- What the firings made so far answered (see 'Memo'), kept under
     -- 'Plausible' alone (see 'memoized'), or nothing under any other mode,
     -- where every formation is fired as many times as it is met.
@@ -283,13 +302,15 @@ data ReduceContext = ReduceContext
 
 -- Which of the budgets a run spent, with the limit it was given: the depth
 -- one branch may descend ('--max-steps', see 'Steps'), the firings the whole
--- run may make ('--max-firings', see 'Tally') or the cycles one normalization
--- may take ('--max-cycles', see 'normalized'). All are the same signal to
+-- run may make ('--max-firings', see 'Tally'), the seconds it may take
+-- ('--max-seconds', see 'Deadline') or the cycles one normalization may take
+-- ('--max-cycles', see 'normalized'). All are the same signal to
 -- '_partial', which parks any as a site that never finishes, and differ only
 -- in what the message names.
 data Budget
   = Depth Int
   | Firings Int
+  | Seconds Int
   | Cycles Int
 
 data ReduceException
@@ -352,6 +373,8 @@ instance Show ReduceException where
     printf "Dataization did not finish before reaching the limit of steps: --max-steps=%d" limit
   show (OutOfSteps (Firings limit)) =
     printf "Evaluation did not finish before reaching the limit of firings: --max-firings=%d" limit
+  show (OutOfSteps (Seconds limit)) =
+    printf "Evaluation did not finish before reaching the limit of seconds: --max-seconds=%d" limit
   show (OutOfSteps (Cycles limit)) =
     printf "Normalization did not finish before reaching the limit of cycles: --max-cycles=%d" limit
   show (OutOfStepsAt budget _ _) = show (OutOfSteps budget)
@@ -392,15 +415,37 @@ deeper ctx@ReduceContext{_steps = Steps limit spent}
 tallied :: Maybe Int -> IO (Maybe Tally)
 tallied = traverse (\cap -> Tally cap <$> newIORef 0)
 
--- Charge one firing of a λ function to the budget of the whole run, refusing
--- to fire once it is gone (see 'Tally'). 'deeper' bounds how far one branch
--- descends, which stops a recursion that nests but not one that widens.
+-- The deadline a run starts from where '--max-seconds' gives a limit: that
+-- many seconds from now, and no firing refused yet.
+timed :: Maybe Int -> IO (Maybe Deadline)
+timed = traverse (\cap -> Deadline cap . (+ fromIntegral cap) <$> getMonotonicTime <*> newIORef False)
+
+-- Charge one firing of a λ function to the budgets of the whole run, refusing
+-- to fire once the deadline has passed (see 'Deadline') or the tally is gone
+-- (see 'Tally'). 'deeper' bounds how far one branch descends, which stops a
+-- recursion that nests but not one that widens, and neither count stops a run
+-- that is merely slow. The first firing refused for the deadline is told to
+-- the protocol, with the judgment that asked for it and the site it stood at,
+-- at the depth its line would have stood at, so a run out of time reads as
+-- one and leaves the protocol closed and whole (#1607). The firings '--partial'
+-- goes on to refuse write nothing, the way a spent tally writes nothing.
 charged :: ReduceContext -> IO ()
-charged ReduceContext{_tally = Nothing} = pure ()
-charged ReduceContext{_tally = Just (Tally cap count)} = do
-  fired <- readIORef count
-  when (fired >= cap) (throwIO (OutOfSteps (Firings cap)))
-  writeIORef count (fired + 1)
+charged ctx = do
+  mapM_ clocked ctx._deadline
+  mapM_ billed ctx._tally
+  where
+    clocked :: Deadline -> IO ()
+    clocked (Deadline cap due passed) = do
+      now <- getMonotonicTime
+      when (now >= due) $ do
+        first <- atomicModifyIORef' passed (\told -> (True, not told))
+        when first (ctx._saveEval (EvTimeout ctx._nesting cap ctx._judgment ctx._site))
+        throwIO (OutOfSteps (Seconds cap))
+    billed :: Tally -> IO ()
+    billed (Tally cap count) = do
+      fired <- readIORef count
+      when (fired >= cap) (throwIO (OutOfSteps (Firings cap)))
+      writeIORef count (fired + 1)
 
 -- The memo a run keeps, by the mode of '--acyclic' it runs under: an empty
 -- one under 'Plausible', the mode the memo belongs to (see 'Memo'), and none

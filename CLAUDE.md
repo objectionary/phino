@@ -193,6 +193,11 @@ firings of the whole run (`Tally` and `charged` in `Morph.hs`, charged by
 `symbol` in `Evaluate.hs`), off unless given. Its count is an `IORef` in the
 context rather than a field of `State`, since a parked frame hands back the
 state it started from and would refund the firings made inside it (#1472).
+`--max-seconds` bounds the time of the whole run the same way (`Deadline` and
+`charged` in `Morph.hs`, off unless given): the first firing after the
+deadline writes `timeout(…)` (`EvTimeout`) and fails the run like a spent
+tally, so a caller that cannot wait gets a closed protocol instead of killing
+the process (#1607).
 
 Every use of a binding copies the term bound to it, so one formation is fired
 as many times as the program reads it, and every firing mints symbols of its

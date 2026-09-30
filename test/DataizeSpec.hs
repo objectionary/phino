@@ -210,7 +210,7 @@ spec = do
     it "fails on the step limit instead of morphing forever" $
       looping $ \endless -> do
         expr <- parseExpressionThrows "⟦ @ ↦ ⟦ λ ⤍ L_loop ⟧ ⟧"
-        dataize expr emptyState (ReduceContext ExRoot ExRoot Nothing 25 25 (Steps 40 0) Nothing Nothing 1 False True False False 1 Nothing Dataization [] Map.empty endless buildTerm reduction evaluation fired dontSaveStep dontSaveEval)
+        dataize expr emptyState (ReduceContext ExRoot ExRoot Nothing 25 25 (Steps 40 0) Nothing Nothing Nothing 1 False True False False 1 Nothing Dataization [] Map.empty endless buildTerm reduction evaluation fired dontSaveStep dontSaveEval)
           `shouldThrow` (\e -> "--max-steps=40" `isInfixOf` show (e :: SomeException))
 
     -- A budget spent on a cycle is a stuck site just as a λ function that
@@ -219,7 +219,7 @@ spec = do
     it "parks the step limit as a residual with --partial" $
       looping $ \endless -> do
         expr <- parseExpressionThrows "⟦ @ ↦ ⟦ λ ⤍ L_loop ⟧ ⟧"
-        (outcome, _, _) <- dataize expr emptyState (ReduceContext ExRoot ExRoot Nothing 25 25 (Steps 40 0) Nothing Nothing 1 False True True False 1 Nothing Dataization [] Map.empty endless buildTerm reduction evaluation fired dontSaveStep dontSaveEval)
+        (outcome, _, _) <- dataize expr emptyState (ReduceContext ExRoot ExRoot Nothing 25 25 (Steps 40 0) Nothing Nothing Nothing 1 False True True False 1 Nothing Dataization [] Map.empty endless buildTerm reduction evaluation fired dontSaveStep dontSaveEval)
         case outcome of
           Residual _ -> pure ()
           Dataized bts -> expectationFailure ("expected a residual, dataized to " ++ show bts)
@@ -291,12 +291,12 @@ spec = do
     forM_
       [
         ( "--max-cycles"
-        , ReduceContext ExRoot ExRoot Nothing 25 0 (Steps 250 0) Nothing Nothing 1 True True False False 1 Nothing Dataization [] Map.empty emptyLambdas buildTerm reduction evaluation fired dontSaveStep dontSaveEval
+        , ReduceContext ExRoot ExRoot Nothing 25 0 (Steps 250 0) Nothing Nothing Nothing 1 True True False False 1 Nothing Dataization [] Map.empty emptyLambdas buildTerm reduction evaluation fired dontSaveStep dontSaveEval
         , "--max-cycles=0"
         )
       ,
         ( "--max-depth"
-        , ReduceContext ExRoot ExRoot Nothing 0 25 (Steps 250 0) Nothing Nothing 1 True True False False 1 Nothing Dataization [] Map.empty emptyLambdas buildTerm reduction evaluation fired dontSaveStep dontSaveEval
+        , ReduceContext ExRoot ExRoot Nothing 0 25 (Steps 250 0) Nothing Nothing Nothing 1 True True False False 1 Nothing Dataization [] Map.empty emptyLambdas buildTerm reduction evaluation fired dontSaveStep dontSaveEval
         , "--max-depth=0"
         )
       ]
@@ -307,14 +307,14 @@ spec = do
       )
     it "does not throw without --depth-sensitive even once --max-depth is exhausted" $ do
       expr <- parseExpressionThrows boxed
-      (value, _, _) <- dataize expr emptyState (ReduceContext ExRoot ExRoot Nothing 0 25 (Steps 250 0) Nothing Nothing 1 False True False False 1 Nothing Dataization [] Map.empty emptyLambdas buildTerm reduction evaluation fired dontSaveStep dontSaveEval)
+      (value, _, _) <- dataize expr emptyState (ReduceContext ExRoot ExRoot Nothing 0 25 (Steps 250 0) Nothing Nothing Nothing 1 False True False False 1 Nothing Dataization [] Map.empty emptyLambdas buildTerm reduction evaluation fired dontSaveStep dontSaveEval)
       value `shouldBe` Dataized (BtOne "00")
     -- A normalization that ran out of cycles hands back a term that is not a
     -- normal form, so the run names the budget even without --depth-sensitive
     -- rather than going on with it (#1496)
     it "throws once --max-cycles is exhausted even without --depth-sensitive" $ do
       expr <- parseExpressionThrows boxed
-      dataize expr emptyState (ReduceContext ExRoot ExRoot Nothing 25 0 (Steps 250 0) Nothing Nothing 1 False True False False 1 Nothing Dataization [] Map.empty emptyLambdas buildTerm reduction evaluation fired dontSaveStep dontSaveEval)
+      dataize expr emptyState (ReduceContext ExRoot ExRoot Nothing 25 0 (Steps 250 0) Nothing Nothing Nothing 1 False True False False 1 Nothing Dataization [] Map.empty emptyLambdas buildTerm reduction evaluation fired dontSaveStep dontSaveEval)
         `shouldThrow` (\e -> "--max-cycles=0" `isInfixOf` show (e :: SomeException))
 
   describe "labels every step with a defined rule or operation" $ do

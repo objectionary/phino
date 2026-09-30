@@ -97,6 +97,14 @@ optMaxFirings =
         (long "max-firings" <> metavar "FIRINGS" <> help "Maximum number of λ functions the whole run may fire, unlimited unless given")
     )
 
+optMaxSeconds :: Parser (Maybe Int)
+optMaxSeconds =
+  optional
+    ( option
+        (auto >>= validateIntOption (> 0) "--max-seconds must be positive")
+        (long "max-seconds" <> metavar "SECONDS" <> help "Maximum number of seconds the whole run may fire λ functions for, unlimited unless given")
+    )
+
 optMargin :: Parser Int
 optMargin =
   option
@@ -404,6 +412,7 @@ dataizeParser =
             <*> optMaxCycles
             <*> optMaxSteps
             <*> optMaxFirings
+            <*> optMaxSeconds
             <*> optMargin
             <*> optMeetPopularity
             <*> optMeetLength
@@ -452,6 +461,7 @@ morphParser =
             <*> optMaxCycles
             <*> optMaxSteps
             <*> optMaxFirings
+            <*> optMaxSeconds
             <*> optMargin
             <*> optMeetPopularity
             <*> optMeetLength

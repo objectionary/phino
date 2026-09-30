@@ -85,6 +85,7 @@ symbolicCtx acyclic memo lambdas locator =
     25 -- _maxCycles
     (Steps 1000 0) -- _steps
     Nothing -- _tally
+    Nothing -- _deadline
     memo -- _memo
     1 -- _nesting
     False -- _depthSensitive
