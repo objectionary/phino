@@ -548,8 +548,9 @@ The markup spells them `<unfinished λ="L_outer"/>`, `<stall λ="L_outer"/>`
 and `<starved limit="4" by="dataize" at="Φ.a🌵1"/>`.
 
 `timeout(5)  # 𝕄(…)` is where `--max-seconds=5` ran out, commented the same
-way and written once, at the first firing the deadline refused, so a run that
-fails on it ends its protocol with it.
+way and written at the first step the deadline refused.
+The run ends there, with or without `--partial`, so it is always the last line
+of the protocol.
 The markup spells it `<timeout limit="5" by="morph" at="…"/>`.
 
 Every term is 𝜑 on a single line, whatever `--output` and `--flat` say about
@@ -991,16 +992,17 @@ $ phino morph --symbolic=split.yaml --locator=Q.x --max-firings=64 split.phi
 Both budgets count work, so a run inside both of them may still take longer
 than its caller can wait, and a caller that kills it gets a protocol nobody
 closed. The `--max-seconds` option stops the run by the clock instead: once
-that many seconds have passed since the command started, the next λ function
-the run is about to fire fails it with `Evaluation did not finish before
-reaching the limit of seconds`, and `--partial` parks it instead, the way it
-parks a spent `--max-firings`. The protocol is closed as usual and says where
-the time ran out. There is no limit unless the option is given:
+that many seconds have passed since the command started, the next step the
+run is about to take, whether it fires a λ function or not, fails it with
+`Evaluation did not finish before reaching the limit of seconds`.
+`--partial` does not park it, since a run out of time has no site to park and
+nothing left to go on with. The protocol is closed as usual and its last line
+says where the time ran out. There is no limit unless the option is given:
 
 ```bash
 $ phino morph --symbolic=split.yaml --locator=Q.x --partial --max-seconds=5 \
     --protocol=split.txt --sweet --flat split.phi
-⊥
+[ERROR]: Evaluation did not finish before reaching the limit of seconds: --max-seconds=5
 $ grep -o 'timeout.*' split.txt
 timeout(5)  # 𝕄(Φ.a🌵14250)
 ```
