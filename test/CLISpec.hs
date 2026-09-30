@@ -24,8 +24,10 @@ import System.Directory (createDirectoryIfMissing, doesDirectoryExist, doesFileE
 import System.Exit (ExitCode (ExitFailure))
 import System.FilePath ((</>))
 import System.IO
+import System.Timeout (timeout)
 import Test.Hspec
 import Text.Printf (printf)
+import Text.XML qualified as X
 
 withStdin :: String -> IO a -> IO a
 withStdin input action =
@@ -2402,6 +2404,91 @@ spec = do
                 []
             records <- readUtf8 path
             length (filter (isInfixOf "𝔼(L_split)") (lines records)) `shouldBe` 64
+
+    -- '--max-steps' and '--max-firings' count work, so a run inside both of
+    -- them may still take longer than its caller can wait, and a caller that
+    -- kills it leaves a protocol nobody can read. '--max-seconds' stops the
+    -- run by the clock, writes where it stopped and closes the protocol. The
+    -- ladder below doubles its firings at every rung and stays 24 rungs deep,
+    -- so it spends neither budget and never ends (#1607).
+    describe "--max-seconds" $ do
+      let ladder = withLambdasOf (T.pack "- λ: L_split\n  morph:\n    𝑛1: ξ.n.foo\n    𝑛2: ξ.n.foo\n  𝑛: ⟦ l ↦ 𝑛1, r ↦ 𝑛2 ⟧\n")
+          rungs = "⟦ " ++ intercalate ", " [printf "l%d ↦ ⟦ λ ⤍ L_split, n ↦ Φ.l%d ⟧" rung (rung + 1) | rung <- [0 .. 23 :: Int]] ++ ", l24 ↦ ⟦⟧, x ↦ Φ.l0.foo ⟧"
+          bounded :: Expectation -> Expectation
+          bounded check = timeout 60000000 check >>= (`shouldBe` Just ())
+      it "fails with non-positive --max-seconds" $
+        withStdin rungs $
+          testCLIFailed ["morph", "--max-seconds=0"] ["--max-seconds must be positive"]
+
+      it "fails once the --max-seconds budget is spent" $
+        ladder $ \table ->
+          bounded $
+            withStdin rungs $
+              testCLIFailed
+                ["morph", "--symbolic=" ++ table, "--locator=Q.x", "--max-seconds=1"]
+                ["[ERROR]: Evaluation did not finish before reaching the limit of seconds: --max-seconds=1"]
+
+      it "fails dataize once the --max-seconds budget is spent" $
+        ladder $ \table ->
+          bounded $
+            withStdin rungs $
+              testCLIFailed
+                ["dataize", "--symbolic=" ++ table, "--locator=Q.x", "--max-seconds=1"]
+                ["[ERROR]: Evaluation did not finish before reaching the limit of seconds: --max-seconds=1"]
+
+      it "parks the spent --max-seconds budget with --partial" $
+        ladder $ \table ->
+          bounded $
+            withStdin rungs $
+              testCLISucceeded
+                ["morph", "--symbolic=" ++ table, "--locator=Q.x", "--max-seconds=1", "--partial", "--flat", "--hide-rho", "--sweet"]
+                ["⊥"]
+
+      it "parks the spent --max-seconds budget with --deep and --partial" $
+        ladder $ \table ->
+          bounded $
+            withStdin rungs $
+              testCLISucceeded
+                ["morph", "--symbolic=" ++ table, "--deep", "--max-seconds=1", "--partial", "--flat", "--hide-rho", "--sweet"]
+                ["x ↦ Φ.l0.foo"]
+
+      it "writes the timeout as the last line of the protocol" $
+        ladder $ \table ->
+          withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
+            hClose stream
+            bounded $
+              withStdin rungs $
+                testCLIFailed
+                  ["morph", "--symbolic=" ++ table, "--locator=Q.x", "--max-seconds=1", "--protocol=" ++ path, "--quiet"]
+                  ["--max-seconds=1"]
+            records <- readUtf8 path
+            dropWhile (== ' ') (last (lines records)) `shouldStartWith` "timeout(1)  # 𝕄(Φ.a🌵"
+
+      -- Every firing refused after the deadline is parked, and only the first
+      -- of them is written, the way a refused '--max-firings' writes nothing
+      it "writes the timeout once to the XML protocol of a parked run" $
+        ladder $ \table ->
+          withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
+            hClose stream
+            bounded $
+              withStdin rungs $
+                testCLISucceeded
+                  ["morph", "--symbolic=" ++ table, "--deep", "--partial", "--max-seconds=1", "--protocol=" ++ path, "--quiet"]
+                  []
+            records <- readUtf8 path
+            length (filter (isInfixOf "<timeout limit=\"1\" by=\"morph\" at=\"") (lines records)) `shouldBe` 1
+
+      it "closes the XML protocol of a run out of time" $
+        ladder $ \table ->
+          withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
+            hClose stream
+            bounded $
+              withStdin rungs $
+                testCLIFailed
+                  ["morph", "--symbolic=" ++ table, "--locator=Q.x", "--max-seconds=1", "--protocol=" ++ path, "--quiet"]
+                  ["--max-seconds=1"]
+            document <- X.readFile X.def path
+            X.nameLocalName (X.elementName (X.documentRoot document)) `shouldBe` T.pack "morph"
 
     -- Every binding of the formation the walk starts at is morphed on a
     -- worker of its own, from the state the spine left, and what the workers

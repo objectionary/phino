@@ -235,6 +235,14 @@ data Evaluation
     -- the term, since the walk of 𝕄 stands at the whole formation it morphs,
     -- which on a real world spells a universe on every line (#1531).
     EvStarved Int Int Judgment Expression
+  | -- The deadline of '--max-seconds' passing, at the depth the first firing
+    -- it refused would have stood at, together with the seconds the run was
+    -- given, the judgment that asked for that firing and the locator of the
+    -- site it stood at. It is written once: it is the last line of a run that
+    -- fails on it, and the firings '--partial' goes on to refuse after it
+    -- write nothing, so a run out of time reads as one and not as a crash
+    -- (#1607).
+    EvTimeout Int Int Judgment Expression
   | -- A 'dataize' operand of the firing: the meta it bound, the term the entry
     -- wrote under that meta, and the data it came down to, or the symbol that
     -- data was manufactured for.
@@ -328,6 +336,7 @@ renumbered floor' offset = record
     record (EvLooped depth judgment mode self site) = EvLooped depth judgment mode (term self) (term site)
     record (EvStuck depth key judgment self) = EvStuck depth key judgment (term self)
     record (EvStarved depth limit judgment site) = EvStarved depth limit judgment (term site)
+    record (EvTimeout depth limit judgment site) = EvTimeout depth limit judgment (term site)
     record (EvData depth spelling operand value) = EvData depth spelling (term operand) (datum value)
     record (EvTerm depth spelling operand value) = EvTerm depth spelling (term operand) (term value)
     record (EvSymbolize depth spelling source value) = EvSymbolize depth spelling (term source) (term value)
@@ -489,6 +498,9 @@ saveEval handle cursor render salted report = do
     written (EvStarved depth limit judgment site) protocol = do
       locator <- render site
       pure (protocol, Just (indented depth (printf "starved(%d)  # %s(%s)" limit (letter judgment) locator)))
+    written (EvTimeout depth limit judgment site) protocol = do
+      locator <- render site
+      pure (protocol, Just (indented depth (printf "timeout(%d)  # %s(%s)" limit (letter judgment) locator)))
     written (EvData depth spelling operand value) protocol = do
       datum <- spelled value
       line <- commented (printf "%s := %s" (labelled protocol depth spelling) datum) Dataization operand
@@ -677,6 +689,10 @@ saveEvalXml handle cursor render report = do
       locator <- render site
       let (kept, closers) = closed depth nesting._closing
       pure (nesting{_closing = kept}, closers ++ [indented depth (printf "<starved limit=\"%d\" by=\"%s\" at=\"%s\"/>" limit (opened judgment) (escapeXML locator))])
+    elements (EvTimeout depth limit judgment site) nesting = do
+      locator <- render site
+      let (kept, closers) = closed depth nesting._closing
+      pure (nesting{_closing = kept}, closers ++ [indented depth (printf "<timeout limit=\"%d\" by=\"%s\" at=\"%s\"/>" limit (opened judgment) (escapeXML locator))])
     elements (EvData depth spelling _ value) nesting = do
       record <- stood value
       pure (nesting{_closing = kept}, closers ++ [indented depth record])

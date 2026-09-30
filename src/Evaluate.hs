@@ -123,8 +123,9 @@ evaluation _ _ _ _ = throwIO (userError "Function evaluate() requires exactly 2 
 -- it again and again answers nothing, and a reader counting the 'unanswered(…)'
 -- lines counts the sites 𝔼 got stuck on rather than the passes the walk made
 -- over them (see '_parked', #1300). A firing an entry answers is charged to the
--- '--max-firings' budget before it writes anything, so a run that spent the
--- budget leaves no firing open in the protocol (see 'charged', #1472).
+-- '--max-firings' and '--max-seconds' budgets before it writes anything, so a
+-- run that spent either leaves no firing open in the protocol (see 'charged',
+-- #1472, #1607).
 --
 -- A formation the run has fired already is not fired again where '_memo'
 -- keeps what it answered (see 'Memo' in 'Morph'): the answer comes back as
