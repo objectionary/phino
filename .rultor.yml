@@ -21,6 +21,7 @@ release:
     [[ "${tag}" =~ ^0\.[0-9]+\.[0-9]+$ ]] || exit -1
     sed -i "s/^version: 0\.0\.0$/version: ${tag}/" phino.cabal
     chmod 755 ../hackage-auth
+    make compiled
     cabal check
     make binary
     cabal test
