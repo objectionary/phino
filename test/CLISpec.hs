@@ -298,7 +298,7 @@ spec = do
           hClose h
           testCLIFailed
             ["rewrite", "--in-place", "--output=latex", path]
-            ["--in-place can only be used together with --output=phi"]
+          ["The option --in-place requires the output format to match the input format"]
 
       it "does not leak a HasCallStack backtrace into errors" $ do
         (out, _) <- withStdout (try (runCLI ["rewrite", "--in-place"]) :: IO (Either ExitCode ()))
