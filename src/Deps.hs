@@ -235,13 +235,12 @@ data Evaluation
     -- the term, since the walk of 𝕄 stands at the whole formation it morphs,
     -- which on a real world spells a universe on every line (#1531).
     EvStarved Int Int Judgment Expression
-  | -- The deadline of '--max-seconds' passing, at the depth the first firing
-    -- it refused would have stood at, together with the seconds the run was
-    -- given, the judgment that asked for that firing and the locator of the
-    -- site it stood at. It is written once: it is the last line of a run that
-    -- fails on it, and the firings '--partial' goes on to refuse after it
-    -- write nothing, so a run out of time reads as one and not as a crash
-    -- (#1607).
+  | -- The deadline of '--max-seconds' passing, at the depth the frame it
+    -- refused would have stood at, together with the seconds the run was
+    -- given, the judgment of that frame and the locator of the site it stood
+    -- at. The run ends on it with or without '--partial', so it is the last
+    -- line of the protocol and a run out of time reads as one and not as a
+    -- crash (#1607, #1619).
     EvTimeout Int Int Judgment Expression
   | -- A 'dataize' operand of the firing: the meta it bound, the term the entry
     -- wrote under that meta, and the data it came down to, or the symbol that

@@ -25,7 +25,7 @@ import Builder (buildExpressionThrows, contextualize, pathOf)
 import Control.Applicative ((<|>))
 import Control.Exception (Exception, SomeException, catch, throwIO, try)
 import Control.Monad (foldM, unless, when)
-import Data.IORef (IORef, atomicModifyIORef', modifyIORef', newIORef, readIORef, writeIORef)
+import Data.IORef (IORef, modifyIORef', newIORef, readIORef, writeIORef)
 import Data.List (find, partition)
 import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as NE
@@ -117,18 +117,18 @@ data Tally = Tally
   }
 
 -- How many seconds the whole run may take ('_seconds', the '--max-seconds'
--- option), the reading of the monotonic clock it has to stop firing at
--- ('_until') and whether a firing has been refused for it yet ('_passed').
--- Like 'Tally' it bounds the whole run and not one branch, and it bounds what
--- neither count does: a run inside both of them may still take longer than
--- its caller can wait, and a caller that kills it from outside leaves a
--- protocol whose elements nobody closed (#1607). The flag is one cell every
--- frame of the run shares, the workers of '--jobs' included, since the run
--- runs out of time once and the protocol says so once.
+-- option) and the reading of the monotonic clock it has to stop at
+-- ('_until'). Like 'Tally' it bounds the whole run and not one branch, and it
+-- bounds what neither count does: a run inside both of them may still take
+-- longer than its caller can wait, and a caller that kills it from outside
+-- leaves a protocol whose elements nobody closed (#1607). The first frame
+-- the deadline refuses ends the run, so the protocol says it once. A worker
+-- of '--jobs' reads the clock on its own, writes its refusal among its own
+-- records and ends its binding there; gathering stops at the first binding
+-- that failed, so the protocol carries that refusal and no other (#1619).
 data Deadline = Deadline
   { _seconds :: Int
   , _until :: Double
-  , _passed :: IORef Bool
   }
 
 -- What the firings of a run under '--acyclic=plausible' answered, by the
@@ -248,8 +248,8 @@ data ReduceContext = ReduceContext
   , -- How many λ functions the whole run may fire and how many it has fired
     -- (see 'Tally'), or nothing where '--max-firings' asks for no such limit.
     _tally :: Maybe Tally
-  , -- When the whole run has to stop firing (see 'Deadline'), or nothing
-    -- where '--max-seconds' asks for no such limit.
+  , -- When the whole run has to stop (see 'Deadline'), or nothing where
+    -- '--max-seconds' asks for no such limit.
     _deadline :: Maybe Deadline
   , -- What the firings made so far answered (see 'Memo'), kept under
     -- 'Plausible' alone (see 'memoized'), or nothing under any other mode,
@@ -302,19 +302,26 @@ data ReduceContext = ReduceContext
 
 -- Which of the budgets a run spent, with the limit it was given: the depth
 -- one branch may descend ('--max-steps', see 'Steps'), the firings the whole
--- run may make ('--max-firings', see 'Tally'), the seconds it may take
--- ('--max-seconds', see 'Deadline') or the cycles one normalization may take
--- ('--max-cycles', see 'normalized'). All are the same signal to
+-- run may make ('--max-firings', see 'Tally') or the cycles one normalization
+-- may take ('--max-cycles', see 'normalized'). All are the same signal to
 -- '_partial', which parks any as a site that never finishes, and differ only
--- in what the message names.
+-- in what the message names. The seconds of '--max-seconds' are none of
+-- them, since a run out of time has no site to park (see 'OutOfTime').
 data Budget
   = Depth Int
   | Firings Int
-  | Seconds Int
   | Cycles Int
 
 data ReduceException
   = OutOfSteps Budget
+  | -- The deadline of '--max-seconds' passed (see 'Deadline'), with the
+    -- seconds the run was given. Unlike a spent budget it is no stuck site: a
+    -- run out of time is out of it wherever it stands, and parking one site
+    -- only lets the run go on rewriting and walking the rest of the term for
+    -- as long as that takes (#1619). So no frame attaches a derivation to it
+    -- and '_partial' parks nothing on it: it ends the run with or without
+    -- '_partial'.
+    OutOfTime Int
   | -- A λ function could not fire: the '--symbolic' file carries no entry
     -- answering that name, or an operand of the entry it does carry never came
     -- down to data, or the two branches it joins differ by more than a symbol,
@@ -373,11 +380,11 @@ instance Show ReduceException where
     printf "Dataization did not finish before reaching the limit of steps: --max-steps=%d" limit
   show (OutOfSteps (Firings limit)) =
     printf "Evaluation did not finish before reaching the limit of firings: --max-firings=%d" limit
-  show (OutOfSteps (Seconds limit)) =
-    printf "Evaluation did not finish before reaching the limit of seconds: --max-seconds=%d" limit
   show (OutOfSteps (Cycles limit)) =
     printf "Normalization did not finish before reaching the limit of cycles: --max-cycles=%d" limit
   show (OutOfStepsAt budget _ _) = show (OutOfSteps budget)
+  show (OutOfTime limit) =
+    printf "Evaluation did not finish before reaching the limit of seconds: --max-seconds=%d" limit
   show (Stuck func) = printf "No entry of --symbolic answers the λ function '%s'" (T.unpack func)
   show (StuckAt func _ _) = show (Stuck func)
   show (Looping term) = printf "Reduction entered a formation it is already inside: %s" (printExpression term)
@@ -397,14 +404,18 @@ instance Show ReduceException where
 -- formation (see 'Kept', #1514, #1521). The protocol is told too, with the
 -- site the frame stood at, so a firing the budget starved no longer reads as
 -- one that went well (#1524), and a frame of 𝕄 standing at a whole universe
--- does not spell it on every line (#1531).
+-- does not spell it on every line (#1531). The clock is read here as well as
+-- where a λ function fires, since a run may spend its time rewriting and
+-- walking terms that fire nothing, and every such frame passes through here
+-- (#1619).
 deeper :: ReduceContext -> IO ReduceContext
-deeper ctx@ReduceContext{_steps = Steps limit spent}
-  | spent >= limit = do
-      starve ctx._memo
-      ctx._saveEval (EvStarved ctx._nesting limit ctx._judgment ctx._site)
-      throwIO (OutOfSteps (Depth limit))
-  | otherwise = pure ctx{_steps = Steps limit (spent + 1)}
+deeper ctx@ReduceContext{_steps = Steps limit spent} = do
+  clocked ctx
+  when (spent >= limit) $ do
+    starve ctx._memo
+    ctx._saveEval (EvStarved ctx._nesting limit ctx._judgment ctx._site)
+    throwIO (OutOfSteps (Depth limit))
+  pure ctx{_steps = Steps limit (spent + 1)}
   where
     starve :: Maybe Memo -> IO ()
     starve Nothing = pure ()
@@ -416,36 +427,41 @@ tallied :: Maybe Int -> IO (Maybe Tally)
 tallied = traverse (\cap -> Tally cap <$> newIORef 0)
 
 -- The deadline a run starts from where '--max-seconds' gives a limit: that
--- many seconds from now, and no firing refused yet.
+-- many seconds from now.
 timed :: Maybe Int -> IO (Maybe Deadline)
-timed = traverse (\cap -> Deadline cap . (+ fromIntegral cap) <$> getMonotonicTime <*> newIORef False)
+timed = traverse (\cap -> Deadline cap . (+ fromIntegral cap) <$> getMonotonicTime)
 
 -- Charge one firing of a λ function to the budgets of the whole run, refusing
--- to fire once the deadline has passed (see 'Deadline') or the tally is gone
+-- to fire once the deadline has passed (see 'clocked') or the tally is gone
 -- (see 'Tally'). 'deeper' bounds how far one branch descends, which stops a
 -- recursion that nests but not one that widens, and neither count stops a run
--- that is merely slow. The first firing refused for the deadline is told to
--- the protocol, with the judgment that asked for it and the site it stood at,
--- at the depth its line would have stood at, so a run out of time reads as
--- one and leaves the protocol closed and whole (#1607). The firings '--partial'
--- goes on to refuse write nothing, the way a spent tally writes nothing.
+-- that is merely slow.
 charged :: ReduceContext -> IO ()
 charged ctx = do
-  mapM_ clocked ctx._deadline
+  clocked ctx
   mapM_ billed ctx._tally
   where
-    clocked :: Deadline -> IO ()
-    clocked (Deadline cap due passed) = do
-      now <- getMonotonicTime
-      when (now >= due) $ do
-        first <- atomicModifyIORef' passed (\told -> (True, not told))
-        when first (ctx._saveEval (EvTimeout ctx._nesting cap ctx._judgment ctx._site))
-        throwIO (OutOfSteps (Seconds cap))
     billed :: Tally -> IO ()
     billed (Tally cap count) = do
       fired <- readIORef count
       when (fired >= cap) (throwIO (OutOfSteps (Firings cap)))
       writeIORef count (fired + 1)
+
+-- Refuse to go on once the deadline of '--max-seconds' has passed (see
+-- 'Deadline'), which ends the run (see 'OutOfTime'). The refusal is told to
+-- the protocol, with the judgment of the frame refused and the site it stood
+-- at, at the depth its line would have stood at, so a run out of time reads as
+-- one and leaves the protocol closed and whole, with the refusal as its last
+-- line (#1607, #1619).
+clocked :: ReduceContext -> IO ()
+clocked ctx = mapM_ clock ctx._deadline
+  where
+    clock :: Deadline -> IO ()
+    clock (Deadline cap due) = do
+      now <- getMonotonicTime
+      when (now >= due) $ do
+        ctx._saveEval (EvTimeout ctx._nesting cap ctx._judgment ctx._site)
+        throwIO (OutOfTime cap)
 
 -- The memo a run keeps, by the mode of '--acyclic' it runs under: an empty
 -- one under 'Plausible', the mode the memo belongs to (see 'Memo'), and none

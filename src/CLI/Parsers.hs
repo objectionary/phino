@@ -102,7 +102,7 @@ optMaxSeconds =
   optional
     ( option
         (auto >>= validateIntOption (> 0) "--max-seconds must be positive")
-        (long "max-seconds" <> metavar "SECONDS" <> help "Maximum number of seconds the whole run may fire λ functions for, unlimited unless given")
+        (long "max-seconds" <> metavar "SECONDS" <> help "Maximum number of seconds the whole run may take, unlimited unless given")
     )
 
 optMargin :: Parser Int

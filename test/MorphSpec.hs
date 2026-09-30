@@ -23,7 +23,7 @@ import Data.Yaml qualified as Decode
 import Dataize (Outcome (..), dataize)
 import Deps (Judgment (..), State, Term (TeExpression))
 import Files (allPathsIn)
-import Fixtures (defaultReduceContext, fixtureLambdas, primitives, withLambdas, withLambdasOf)
+import Fixtures (defaultReduceContext, fixtureLambdas, overdue, primitives, withLambdas, withLambdasOf)
 import GHC.Generics (Generic)
 import Lambdas (Lambdas, emptyLambdas, readLambdas)
 import Matcher (MetaValue (MvExpression), substEmpty, substSingle)
@@ -314,3 +314,19 @@ spec = do
           chain = ExDispatch (ExDispatch (ExDispatch base (AtLabel "a")) (AtLabel "b")) (AtLabel "c")
       morph' (chain, (ExRoot, Nothing) :| []) ExRoot emptyState (defaultReduceContext ExRoot)
         `shouldThrow` (\e -> "No entry of --symbolic answers the λ function 'F'" `isInfixOf` show (e :: SomeException))
+
+  -- '--max-seconds' is read at every step of 𝕄 and not only where a λ function
+  -- fires, so a run spending its time on rewriting stops on time too, and a
+  -- passed deadline ends the run with or without '--partial', since a run out
+  -- of time has nothing left to go on with (#1619).
+  describe "stops by the clock of --max-seconds" $ do
+    it "fails a morphing that fires nothing once the deadline has passed" $ do
+      expr <- parseExpressionThrows "[[ k -> [[ D> 3F- ]] ]]"
+      deadline <- overdue 17
+      morph expr emptyState (defaultReduceContext ExRoot){_deadline = Just deadline}
+        `shouldThrow` (\e -> "--max-seconds=17" `isInfixOf` show (e :: SomeException))
+    it "fails a partial morphing once the deadline has passed" $ do
+      expr <- parseExpressionThrows "[[ q -> [[ D> 5A- ]] ]]"
+      deadline <- overdue 23
+      morph expr emptyState (defaultReduceContext ExRoot){_deadline = Just deadline, _partial = True}
+        `shouldThrow` (\e -> "--max-seconds=23" `isInfixOf` show (e :: SomeException))
