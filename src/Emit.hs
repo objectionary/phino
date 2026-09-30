@@ -1,5 +1,6 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedRecordDot #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
@@ -7,22 +8,19 @@
 -- The Haskell module 'phino compile' writes out of the rules of YAML: every
 -- rewriting rule a function of the term it may match as a whole, answering
 -- what it rewrites the term to, the normal form a test of whether any
--- built-in one matches anywhere, and 𝒞 one function with an equation per rule
--- of 'resources/contextualization' (#1617). A pattern becomes the generators
--- of a list comprehension, a meta the variable a generator binds, a meta met
--- twice a guard of equality, the 'when' of a rule a guard, a function of its
--- 'where' a binding, and its result the constructors that build it. No
--- substitution is made and no template is filled, which is what a rule of
--- YAML costs at every step. What the module does is what the matcher, the
--- builder and the replacer do for the same rule, in the same order, so the
--- steps a chain is made of do not depend on which of the two ran; a rule the
--- module could not run that way is refused, with the reason.
---
--- @todo #1617:90min Compile the rules of morphing and dataization too. The
---  judgments 𝕄 and 𝔻 still match their rules of YAML at every frame, since
---  only normalization and 𝒞 are compiled. A compiled rule of them would match
---  the term and the universe, check its 'when' and run its premises in order,
---  and 'MorphSpec' and 'DataizeSpec' must stay green on both engines.
+-- built-in one matches anywhere, 𝒞 one function with an equation per rule
+-- of 'resources/contextualization' (#1617), and every rule of 𝕄 and of 𝔻 a
+-- function of the term and the universe it may match, answering the premises
+-- it runs and the conclusion it comes to (#1628). A pattern becomes the
+-- generators of a list comprehension, a meta the variable a generator binds,
+-- a meta met twice a guard of equality, the 'when' of a rule a guard, a
+-- function of its 'where' a binding, a premise a function of the answer it is
+-- handed, and its result the constructors that build it. No substitution is
+-- made and no template is filled, which is what a rule of YAML costs at every
+-- step. What the module does is what the matcher, the builder and the
+-- replacer do for the same rule, in the same order, so the steps a chain is
+-- made of do not depend on which of the two ran; a rule the module could not
+-- run that way is refused, with the reason.
 module Emit (emitted) where
 
 import AST
@@ -33,6 +31,8 @@ import qualified Data.Map.Strict as Map
 import Data.Maybe (fromMaybe, isJust)
 import qualified Data.Set as Set
 import qualified Data.Text as T
+import Deps (Judgment)
+import qualified Inference as In
 import Matcher (Meta (..))
 import Rewriter (fast)
 import Rule (redex)
@@ -79,14 +79,16 @@ data Pat
   | PNil
 
 -- The module of the given rules: the built-in rules of normalization, the
--- rules of '--rule', the rules of contextualization, and the texts of the
--- built-in rules the engine is compiled from; or the reason one of the rules
--- cannot be compiled.
-emitted :: [Y.Rule] -> [Y.Rule] -> [Y.ContextualizeRule] -> [String] -> Either String String
-emitted builtin custom contextual sources = do
+-- rules of '--rule', the rules of contextualization, of morphing and of
+-- dataization, and the texts of the built-in rules the engine is compiled
+-- from; or the reason one of the rules cannot be compiled.
+emitted :: [Y.Rule] -> [Y.Rule] -> [Y.ContextualizeRule] -> [Y.MorphRule] -> [Y.DataizeRule] -> [String] -> Either String String
+emitted builtin custom contextual morphs datas sources = do
   let rules = zip (named (map (.name) (builtin ++ custom))) (builtin ++ custom)
   functions <- mapM rewriting rules
   equations <- zipWithM contextualizing (named (map (.name) contextual)) contextual
+  morphings <- zipWithM morphing (named (map (.name) morphs)) morphs
+  dataizations <- zipWithM dataizing (named (map (.name) datas)) datas
   let body =
         unlines
           ( [ "compiled :: Maybe En.Engine"
@@ -97,6 +99,8 @@ emitted builtin custom contextual sources = do
             , "      , En._rules = steps"
             , "      , En._normal = nf"
             , "      , En._contextualize = \\term context -> either E.throwIO pure (contextualize term context)"
+            , "      , En._morphing = morphings"
+            , "      , En._dataization = dataizations"
             , "      , En._sources = sources"
             , "      }"
             , ""
@@ -108,6 +112,14 @@ emitted builtin custom contextual sources = do
             , "steps :: Map.Map String Ru.Step"
             , "steps ="
             , "  Map.fromList " ++ listed [printf "(%s, step%s)" (show (show rule)) name | (name, rule) <- rules]
+            , ""
+            , "-- The rules of 𝕄, in the order of their files."
+            , "morphings :: [In.Inference Expression]"
+            , "morphings = " ++ listed (map ("In.direct morphing" ++) (named (map (.name) morphs)))
+            , ""
+            , "-- The rules of 𝔻, in the order of their files."
+            , "dataizations :: [In.Inference Bytes]"
+            , "dataizations = " ++ listed (map ("In.direct dataization" ++) (named (map (.name) datas)))
             , ""
             , "-- The texts of the built-in rules of all four judgments this module is made of."
             , "sources :: [String]"
@@ -135,6 +147,8 @@ emitted builtin custom contextual sources = do
             ]
               ++ functions
               ++ equations
+              ++ morphings
+              ++ dataizations
           )
   Right (header ++ imports body ++ "\n" ++ body)
   where
@@ -156,8 +170,10 @@ emitted builtin custom contextual sources = do
               | (qualifier, line) <-
                   [ ("B.", "import qualified Builder as B")
                   , ("C.", "import qualified Contextualize as C")
+                  , ("D.", "import qualified Deps as D")
                   , ("E.", "import qualified Control.Exception as E")
                   , ("En.", "import qualified Engine as En")
+                  , ("In.", "import qualified Inference as In")
                   , ("M.", "import qualified Matcher as M")
                   , ("Map.", "import qualified Data.Map.Strict as Map")
                   , ("R.", "import qualified Rewriter as R")
@@ -198,6 +214,12 @@ named names = zipWith unique [0 :: Int ..] (map camel names)
 
 -- The functions of one rewriting rule: its step and what it rewrites a term
 -- matching it as a whole to.
+--
+-- @todo #1628:30min Ask the normal forms of a rewriting rule the way the
+--  matcher asks them, with 'Ru.normalHeld' as the rules of 𝕄 and 𝔻 do. The
+--  guard 'nf' tells a term that is itself a meta a normal form, which the
+--  matcher does not, so a term holding a meta may rewrite under one engine
+--  and stay under the other; 'CompiledSpec' should compare terms with metas.
 rewriting :: (String, Y.Rule) -> Either String String
 rewriting (name, rule) = do
   refused
@@ -281,12 +303,8 @@ contextualizing name rule = do
     premised (Y.Premise result (Y.OpContextualize inner outer)) = do
       inner' <- built True inner >>= maybe (refuse "a premise names a meta nothing binds") (pure . parens)
       outer' <- built True outer >>= maybe (refuse "a premise names a meta nothing binds") (pure . parens)
-      known (Named result) >>= \case
-        Just _ -> refuse (printf "its premise '%s' binds a meta bound already" (T.unpack result))
-        Nothing -> do
-          let var = variable (Named result)
-          bind (Named result) var
-          pure (var, printf "contextualize %s %s" inner' outer')
+      var <- introduced result
+      pure (var, printf "contextualize %s %s" inner' outer')
     premised premise = refuse (printf "its premise '%s' is not a contextualization" (T.unpack premise.result))
     conclusion :: [(String, String)] -> String -> String
     conclusion [] result = printf "(%s, Right %s)" (show rule.name) (parens result)
@@ -296,6 +314,73 @@ contextualizing name rule = do
         (show rule.name)
         (intercalate "; " [printf "%s <- %s" var call | (var, call) <- premises])
         (parens result)
+
+-- The function of one rule of 𝕄: what it comes to for a term and a universe
+-- matching it, once for every way they match it (see 'inferring').
+morphing :: String -> Y.MorphRule -> Either String String
+morphing name rule = inferring "morphing" ("morphing" ++ name, "Expression") (Y.Rule rule.name Nothing Nothing rule.match ExRoot rule.when Nothing Nothing) rule.ematch (built True) (In.morphingSpine rule)
+
+-- The function of one rule of 𝔻, the way 'morphing' writes one of 𝕄.
+dataizing :: String -> Y.DataizeRule -> Either String String
+dataizing name rule = inferring "dataization" ("dataization" ++ name, "Bytes") (Y.Rule rule.name Nothing Nothing rule.match ExRoot rule.when Nothing Nothing) rule.ematch builtBytes (In.dataizationSpine rule)
+
+-- The function of one rule of 𝕄 or 𝔻, of the given kind, name and type of
+-- answer: the premises it runs beside its spine, each a function of the answer
+-- it is handed, and the conclusion it comes to, once for every way the term
+-- and the universe match it, checked the way the matcher checks them — the
+-- pattern of the universe against the universe first, then the pattern of the
+-- rule against the term, its 'when', and its '𝑛' and '𝑘' metas (see
+-- 'matchExpressionWithRule''). What the premises and the conclusion are is
+-- read off the rule by 'Inference', the very way the engine of YAML reads it.
+inferring :: forall value. String -> (String, String) -> Y.Rule -> Expression -> (value -> Emitting (Maybe String)) -> Either String ([Y.Premise], In.Conclusion value) -> Either String String
+inferring kind (name, answer) rule ematch builder spine = do
+  (sides, conclusion) <- either (Left . refusal) Right spine
+  (quals, result) <- walked $ do
+    universe <- matching ematch "universe"
+    term <- matching rule.pattern "term"
+    when' <- maybe (pure []) (fmap (pure . Guard) . condition) rule.when
+    absolute <- mapM (fmap (\var -> Guard ("Ru.xiFree " ++ var)) . held) (prefixed "k" rule.pattern)
+    normal <- mapM (fmap (\var -> Guard ("Ru.normalHeld nf " ++ var)) . held) (prefixed "n" rule.pattern ++ prefixed "k" rule.pattern)
+    result <- premised sides conclusion
+    pure (universe ++ term ++ when' ++ absolute ++ normal, result)
+  let body = comprehension quals result
+      arg var = if var `elem` tokens body then var else "_"
+  Right
+    ( unlines
+        [ printf "-- The %s rule '%s'." kind rule.name
+        , printf "%s :: Expression -> Expression -> [In.Premises %s]" name answer
+        , printf "%s %s %s =" name (arg "term") (arg "universe")
+        , body
+        ]
+    )
+  where
+    refusal :: String -> String
+    refusal = printf "The %s rule '%s' cannot be compiled, since %s" kind rule.name
+    walked :: Emitting a -> Either String a
+    walked (Emitting walk) = either (Left . refusal) (Right . fst) (walk (Scope Map.empty 1))
+    premised :: [Y.Premise] -> In.Conclusion value -> Emitting String
+    premised [] conclusion = ("In.Concludes " ++) . parens <$> concluded conclusion
+    premised (premise : rest) conclusion = do
+      (constructor, first, second) <- case premise.operation of
+        Y.OpMorph expr world -> (,,) "In.Morphs" <$> argued "a premise" expr <*> argued "a premise" world
+        Y.OpEvaluate expr world -> (,,) "In.Evaluates" <$> argued "a premise" expr <*> argued "a premise" world
+        Y.OpContextualize expr context -> (,,) "In.Contextualizes" <$> argued "a premise" expr <*> argued "a premise" context
+        _ -> refuse (printf "its premise '%s' runs beside the spine, which only a 'morph', an 'evaluate' or a 'contextualize' can" (T.unpack premise.result))
+      var <- introduced premise.result
+      next <- premised rest conclusion
+      pure (printf "%s %s %s (\\%s -> pure %s)" constructor first second (if var `elem` tokens next then var else "_") (parens next))
+    concluded :: In.Conclusion value -> Emitting String
+    concluded (In.Answered step value) = printf "In.Answered %s %s" (stepped step) . parens <$> (builder value >>= maybe (refuse "its conclusion names a meta nothing binds") pure)
+    concluded (In.Onward way expr world) = printf "In.Onward %s %s %s" <$> (parens <$> wayOf way) <*> argued "its conclusion" expr <*> argued "its conclusion" world
+    wayOf :: In.Way -> Emitting String
+    wayOf (In.Taken step) = pure ("In.Taken " ++ stepped step)
+    wayOf (In.Normalized step) = pure ("In.Normalized " ++ stepped step)
+    wayOf (In.Named step) = pure ("In.Named " ++ stepped step)
+    wayOf (In.Staged stage) = ("In.Staged " ++) <$> argued "its conclusion" stage
+    argued :: String -> Expression -> Emitting String
+    argued place expr = built True expr >>= maybe (refuse (printf "%s names a meta nothing binds" place)) (pure . parens)
+    stepped :: (Judgment, String) -> String
+    stepped (judgment, verb) = printf "(D.%s, %s)" (show judgment) (show verb)
 
 -- The comprehension of the qualifiers and the result, every variable a
 -- generator binds and nothing after it reads written as a wildcard and every
@@ -603,6 +688,12 @@ builtBinding _ (BiLambda (FnFresh _)) = refuse "it builds a fresh symbol"
 builtBinding _ (BiLambda func) = Just . ("BiLambda " ++) . parens <$> function func
 builtBinding _ bd = refuse (printf "it builds the binding '%s'" (show bd))
 
+-- The Haskell of the data of a template (see 'buildBytes').
+builtBytes :: Bytes -> Emitting (Maybe String)
+builtBytes (BtMeta meta) = known (Named meta)
+builtBytes (BtAny slot) = known (Anon slot)
+builtBytes bts = pure (Just (parens (show bts)))
+
 -- The Haskell of an attribute of a template (see 'buildAttribute').
 builtAttribute :: Attribute -> Emitting (Maybe String)
 builtAttribute (AtMeta meta) = known (Named meta)
@@ -660,6 +751,17 @@ bind key var = Emitting (\(Scope bound next) -> Right ((), Scope (Map.insert key
 -- A variable no meta and no other variable of the rule is held in.
 fresh :: Emitting String
 fresh = Emitting (\(Scope bound next) -> Right ("x" ++ show next, Scope bound (next + 1)))
+
+-- The variable a premise binds its meta in, which neither the pattern nor a
+-- premise before it may have bound.
+introduced :: T.Text -> Emitting String
+introduced result =
+  known (Named result) >>= \case
+    Just _ -> refuse (printf "its premise '%s' binds a meta bound already" (T.unpack result))
+    Nothing -> do
+      let var = variable (Named result)
+      bind (Named result) var
+      pure var
 
 -- A refusal of the rule, saying why.
 refuse :: String -> Emitting a

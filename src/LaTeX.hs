@@ -521,7 +521,7 @@ conclusionStateName final index
 -- Render a rule's premises in order, threading the state through them. The rule
 -- starts in state s_1; each state-changing premise (𝕄, 𝔻, 𝔼) consumes the
 -- current state and yields the next (s_2, s_3, …), matching how the engine folds
--- the state through the premises ('sidePremise' in 'Dataize.hs'). Returns the
+-- the state through the premises ('inferred' in 'Morph.hs'). Returns the
 -- rendered judgments and the final state index, which the conclusion returns.
 premisesToLatex :: [Y.Premise] -> ([String], Int)
 premisesToLatex = go 1

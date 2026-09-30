@@ -65,6 +65,7 @@ library
     Files
     Filter
     Functions
+    Inference
     Lambdas
     Language
     LaTeX
@@ -171,6 +172,7 @@ test-suite spec
     FilterSpec
     Fixtures
     FunctionsSpec
+    InferenceSpec
     LambdasSpec
     LanguageSpec
     LaTeXSpec

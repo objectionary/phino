@@ -6,7 +6,7 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Rule (RuleContext (..), Step (..), domainOf, isFormation, isNF, matchExpressionWithRule, matchExpressionWithRule', meetCondition, normal, normalWith, presentIn, redex, xiFree) where
+module Rule (RuleContext (..), Step (..), domainOf, isFormation, isNF, matchExpressionWithRule, matchExpressionWithRule', meetCondition, normal, normalHeld, normalWith, presentIn, redex, xiFree) where
 
 import AST
 import Builder
@@ -118,6 +118,16 @@ normalWith matching (ExFormation bds) = normalBindings bds || not (matching (ExF
     lambda (BiLambda _) = True
     lambda _ = False
 normalWith matching expr = not (matching expr)
+
+-- Whether the term a '𝑛' or '𝑘' meta of a rule holds is a normal form by the
+-- given test, the way the matcher tells it (see '_nf'): the matcher reads a
+-- term that is itself a meta as one more meta to look up, and finds nothing
+-- bound to it, so such a term is no normal form. A program holds no meta, so
+-- only a term handed to a judgment by hand tells this apart.
+normalHeld :: (Expression -> Bool) -> Expression -> Bool
+normalHeld _ (ExMeta _) = False
+normalHeld _ (ExAny _) = False
+normalHeld test expr = test expr
 
 _or :: [Y.Condition] -> Subst -> RuleContext -> IO [Subst]
 _or [] _ _ = pure []

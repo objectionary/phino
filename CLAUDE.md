@@ -106,11 +106,12 @@ applies a substitution to a result template.
 `phino compile` (#1617) writes `compiled/generated/Compiled.hs`, which git
 ignores: `Emit.hs` turns every rule of normalization, the built-in ones and
 those of `--rule`, into a list comprehension over the term it may match as a
-whole, and 𝒞 into one function with an equation per rule, built on
-`concluded` of `Contextualize.hs`. The rules of 𝕄 and 𝔻 stay interpreted. What
-runs the rules is an `Engine` (`Engine.hs`): the steps of normalization, a step
-per compiled rule keyed by the `show` text of the rule, the normal-form test
-and 𝒞. `yaml` interprets the rules; the module `Compiled` holds the other one,
+whole, 𝒞 into one function with an equation per rule, built on `concluded` of
+`Contextualize.hs`, and every rule of 𝕄 and 𝔻 into a list comprehension over
+the term and the universe (#1628). What runs the rules is an `Engine`
+(`Engine.hs`): the steps of normalization, a step per compiled rule keyed by
+the `show` text of the rule, the normal-form test, 𝒞, and the rules of 𝕄 and
+𝔻. `yaml` interprets the rules; the module `Compiled` holds the other one,
 and the Cabal flag `compiled` picks its source folder, `compiled/stub` (where
 `compiled = Nothing`) or `compiled/generated`. Only the CLI (`engine` in
 `CLI/Helpers.hs`) and the specs reach for `Compiled`; the library gets the
@@ -128,7 +129,19 @@ rule the generated code could not run that way is refused with the reason:
 a pattern applying Φ to a ρ. A compiled engine carries the texts of the
 built-in rules it was made from and the CLI refuses it once they changed
 (`fresh`). `CompiledSpec.hs` runs both engines over random terms and compares
-the chains, the normal-form test and 𝒞.
+the chains, the normal-form test and 𝒞, and the chains 𝕄 and 𝔻 make of an
+object of random programs.
+
+A rule of 𝕄 or 𝔻 is an `Inference` of `Inference.hs`: matched against a term
+and a universe it answers the `Premises` it runs beside its spine, in order —
+`Morphs`, `Evaluates` or `Contextualizes`, each a function of the answer it is
+handed — ending in a `Conclusion`: `Answered`, or `Onward` in a `Way`
+(`Taken`, `Normalized`, `Named`, `Staged`) the judgment is asked again in.
+`morphingSpine` and `dataizationSpine` read the spine off a rule for both
+engines; `morphingOf` and `dataizationOf` interpret a rule, `direct` wraps a
+compiled one, and `inferred` and `onward` of `Morph.hs` run either, so the
+chain is the same with either engine. A rule running anything else beside its
+spine, or concluding with no `morph` or `dataize` premise, is refused.
 
 ### λ functions live outside the binary
 

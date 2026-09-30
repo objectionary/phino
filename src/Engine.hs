@@ -4,11 +4,11 @@
 -- SPDX-License-Identifier: MIT
 
 -- What runs the built-in rules of the calculus: the rewriting steps of
--- normalization, the answer to whether a term is a normal form, and the
--- Contextualization function 𝒞. The engine of 'yaml' interprets the rules as
--- they are written, the way phino always has; 'phino compile' writes the
--- Haskell of another one into the module 'Compiled', which a build with the
--- flag 'compiled' links in (#1617). Nothing in the library reaches for either
+-- normalization, the answer to whether a term is a normal form, the
+-- Contextualization function 𝒞 and the rules of 𝕄 and 𝔻. The engine of 'yaml'
+-- interprets the rules as they are written, the way phino always has; 'phino
+-- compile' writes the Haskell of another one into the module 'Compiled', which
+-- a build with the flag 'compiled' links in (#1617, #1628). Nothing in the library reaches for either
 -- of them: the command line picks one and hands it down through the contexts,
 -- the way it hands down '_buildTerm'.
 module Engine (Engine (..), building, current, fresh, stepOf, yaml) where
@@ -20,6 +20,7 @@ import qualified Data.Map.Strict as Map
 import Data.Maybe (fromMaybe)
 import Deps (BuildTermFunc)
 import Functions (buildTerm, contextualizing)
+import Inference (Inference, dataizationOf, morphingOf)
 import Rewriter (interpreted)
 import Rule (Step, normal)
 import qualified Yaml as Y
@@ -27,19 +28,22 @@ import qualified Yaml as Y
 -- One engine of the built-in rules: the steps normalization takes, in the
 -- order of the rules; the steps of any other rewriting rule it knows how to
 -- take, by the text of the rule (see 'stepOf'); whether a term is a normal
--- form; 𝒞; and the texts of the built-in rules it was made from, which tell
--- whether it still runs the rules phino carries (see 'fresh').
+-- form; 𝒞; the rules of 𝕄 and of 𝔻, in the order of their files (see
+-- 'Inference'); and the texts of the built-in rules it was made from, which
+-- tell whether it still runs the rules phino carries (see 'fresh').
 data Engine = Engine
   { _normalization :: [Step]
   , _rules :: Map String Step
   , _normal :: Expression -> Bool
   , _contextualize :: Expression -> Expression -> IO Expression
+  , _morphing :: [Inference Expression]
+  , _dataization :: [Inference Bytes]
   , _sources :: [String]
   }
 
 -- The engine interpreting the rules of YAML.
 yaml :: Engine
-yaml = Engine (map interpreted Y.normalizationRules) Map.empty normal contextualize current
+yaml = Engine (map interpreted Y.normalizationRules) Map.empty normal contextualize (map morphingOf Y.morphingRules) (map dataizationOf Y.dataizationRules) current
 
 -- The step the engine takes for the rewriting rule: the one it was compiled
 -- to, where the engine was compiled from this very rule, and the interpreted

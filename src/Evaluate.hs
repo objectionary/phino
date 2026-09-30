@@ -24,7 +24,7 @@ import Data.List (partition)
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.Maybe (fromMaybe, isNothing, listToMaybe)
 import qualified Data.Text as T
-import Deps (BuildTermMethodS, Evaluation (..), State (..), Term (..))
+import Deps (Evaluation (..), State (..))
 import Engine (Engine (..))
 import Lambdas (Lambda (..), Meta (..), joined, matched, minted, symbolized)
 import Matcher (MetaValue (..), Subst, combine, substEmpty, substSingle, substSlot)
@@ -32,7 +32,6 @@ import Morph (Answer, Kept (..), ReduceContext (..), ReduceException (..), Steps
 import Printer (printFunction)
 import Rule (RuleContext (RuleContext), matchExpressionWithRule')
 import Text.Printf (printf)
-import Yaml (ExtraArgument (..))
 import qualified Yaml as Y
 
 -- The Evaluation function 𝔼(b, e, s): it fires the λ function of a formation
@@ -58,22 +57,19 @@ import qualified Yaml as Y
 -- a λ 𝔼 cannot make sense of fails — several of them, or one standing for a
 -- meta or a slot — since a rule naming such a binding meant something phino
 -- cannot work out (see 'lambda').
-evaluation :: ReduceContext -> State -> BuildTermMethodS
-evaluation ctx state [ArgExpression expr, ArgExpression universe] subst = do
-  form <- buildExpressionThrows expr subst
-  univ <- buildExpressionThrows universe subst
-  case form of
-    ExFormation bds
-      | not (any isLambda bds) -> pure (TeExpression ExTermination, state)
-      | otherwise -> case lambda bds of
-          Just (func, args) -> do
-            (raw, state') <- symbol func form args univ state ctx
-            (normal, _) <- normalized raw ((univ, Nothing) :| []) ctx
-            pure (TeExpression normal, state')
-          Nothing -> case unknown bds of
-            Just idx -> stuck idx form
-            Nothing -> throwIO (userError "Function evaluate() expects a formation with a single λ binding naming a function")
-    _ -> throwIO (userError "Function evaluate() expects a formation")
+evaluation :: ReduceContext -> State -> Expression -> Expression -> IO (Expression, State)
+evaluation ctx state form univ = case form of
+  ExFormation bds
+    | not (any isLambda bds) -> pure (ExTermination, state)
+    | otherwise -> case lambda bds of
+        Just (func, args) -> do
+          (raw, state') <- symbol func form args univ state ctx
+          (normal, _) <- normalized raw ((univ, Nothing) :| []) ctx
+          pure (normal, state')
+        Nothing -> case unknown bds of
+          Just idx -> stuck idx form
+          Nothing -> throwIO (userError "Function evaluate() expects a formation with a single λ binding naming a function")
+  _ -> throwIO (userError "Function evaluate() expects a formation")
   where
     -- The symbol the one λ binding of a formation names, where that is what it
     -- names. It is the one λ 'lambda' refuses that 𝔼 still has an answer for,
@@ -90,14 +86,13 @@ evaluation ctx state [ArgExpression expr, ArgExpression universe] subst = do
     -- symbol is spelled with everywhere else, so a reader joining the record to
     -- the term it came from compares two strings that look alike, and it is
     -- written once however many times the walk comes back to it (see '_parked').
-    stuck :: Int -> Expression -> IO (Term, State)
+    stuck :: Int -> Expression -> IO (Expression, State)
     stuck idx form = do
       unless (name `elem` ctx._parked) (ctx._saveEval (EvStuck ctx._nesting name ctx._judgment form))
       throwIO (Stuck name)
       where
         name :: T.Text
         name = T.pack (printFunction (FnSymbol idx))
-evaluation _ _ _ _ = throwIO (userError "Function evaluate() requires exactly 2 expression arguments")
 
 -- phino implements no λ function of its own. Which ones exist is a property of
 -- the object model being reduced, not of the calculus, so they come from the

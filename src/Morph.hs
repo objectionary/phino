@@ -19,13 +19,13 @@
 -- a λ function itself, which is an evaluation — are injected as '_reduce',
 -- '_evaluate' and '_fire' rather than imported (see 'ReductionFunc' and
 -- 'EvaluationFunc').
-module Morph (Answer, Deadline (..), Kept (..), ReduceContext (..), ReduceException (..), EvaluationFunc, FiringFunc, Memo (..), ReductionFunc, Morphed, Steps (..), Tally (..), boxed, charged, counted, deeper, emptyState, enter, entering, excluding, execBuildTerm, insideUniverse, isLambda, label, lambda, leadsTo, memoized, morph, morph', morphing, normalized, parking, producer, recalled, retained, sidePremise, starved, tallied, timed, universed, unparked) where
+module Morph (Answer, Deadline (..), Kept (..), ReduceContext (..), ReduceException (..), EvaluationFunc, FiringFunc, Memo (..), ReductionFunc, Morphed, Steps (..), Tally (..), boxed, charged, counted, deeper, emptyState, enter, entering, execBuildTerm, inferred, insideUniverse, isLambda, lambda, leadsTo, memoized, morph, morph', morphing, normalized, onward, parking, recalled, retained, starved, tallied, timed, universed, unparked) where
 
 import AST
 import Builder (buildExpressionThrows, pathOf)
 import Control.Applicative ((<|>))
 import Control.Exception (Exception, SomeException, catch, evaluate, throwIO, try)
-import Control.Monad (foldM, unless, when)
+import Control.Monad (unless, when)
 import Data.IORef (IORef, modifyIORef', newIORef, readIORef, writeIORef)
 import Data.List (find, partition)
 import Data.List.NonEmpty (NonEmpty (..))
@@ -34,23 +34,23 @@ import qualified Data.Map.Strict as Map
 import Data.Maybe (fromMaybe, isJust, listToMaybe)
 import qualified Data.Set as Set
 import qualified Data.Text as T
-import Deps (Acyclic (..), BuildTermFunc, BuildTermMethodS, Evaluation (..), Judgment (..), SaveEvalFunc, SaveStepFunc, State (..), Term (..), dontSaveStep, renumbered)
+import Deps (Acyclic (..), BuildTermFunc, BuildTermMethod, Evaluation (..), Judgment (..), SaveEvalFunc, SaveStepFunc, State (..), Term (..), dontSaveStep, renumbered)
 import Engine (Engine (..))
 import GHC.Clock (getMonotonicTime)
+import qualified Inference as In
 import Lambdas (Lambdas)
 import Locator (locatedExpression, withLocatedExpression)
-import Matcher (MetaValue (..), Subst (..), combine, matchExpression', substEmpty, substSingle)
+import Matcher (substEmpty)
 import Must (Must (..))
 import Pool (pooled)
 import Printer (printExpression)
 import Random (shuffle)
 import Rewriter (RewriteContext (RewriteContext), Rewritten, Seen, rewrite, seenInsert)
-import Rule (RuleContext (RuleContext), matchExpressionWithRule')
+import Rule (RuleContext (RuleContext))
 import System.Timeout (timeout)
 import Tau (tausOf)
 import Text.Printf (printf)
 import Yaml (ExtraArgument (..))
-import qualified Yaml as Y
 
 -- A term together with the derivation that reached it: what one frame of a
 -- judgment's spine is handed and hands on.
@@ -72,8 +72,10 @@ type ReductionFunc = Expression -> ReduceContext -> Expression -> State -> IO (M
 -- 'ml' and 'fire' rules ask for through an 'evaluate' premise, and it answers
 -- with a normal form, so the rule that asked needs no 'normalize' after it. The
 -- edge is injected rather than imported, exactly as 'ReductionFunc' injects the
--- 𝔻 one, and 'Evaluate' supplies its own 'evaluation' for it.
-type EvaluationFunc = ReduceContext -> State -> BuildTermMethodS
+-- 𝔻 one, and 'Evaluate' supplies its own 'evaluation' for it. It is handed the
+-- formation to fire and the universe to fire it in, and the state goes in and
+-- comes back out.
+type EvaluationFunc = ReduceContext -> State -> Expression -> Expression -> IO (Expression, State)
 
 -- How the deep walk reaches 𝔼. Like 'EvaluationFunc' it answers a normal form,
 -- or nothing at all where nothing fired: the walk stands that answer back into
@@ -301,9 +303,8 @@ data ReduceContext = ReduceContext
   , _fire :: FiringFunc
   , _saveStep :: SaveStepFunc
   , _saveEval :: SaveEvalFunc
-  , -- What runs the built-in rules of normalization and contextualization
-    -- (see 'Engine'): the YAML interpreted, or the Haskell 'phino compile'
-    -- wrote (#1617).
+  , -- What runs the built-in rules of the calculus (see 'Engine'): the YAML
+    -- interpreted, or the Haskell 'phino compile' wrote (#1617, #1628).
     _engine :: Engine
   }
 
@@ -698,86 +699,35 @@ isLambda _ = False
 -- with the new state. The universe is matched against the rule's 'universe'
 -- pattern (usually the '𝑒' meta, which binds 'e' so the 'universe' rule substitutes
 -- it, but a rule may pin it to a literal such as 'mg' matching Φ). Its rules
--- come from 'resources/morphing': the first matching rule's premises are evaluated and
--- its conclusion 'nresult' is built, in the universe the concluding premise
--- names, which every rule spells as the one it was matched in (#1512). The
--- clauses are disjoint (see #856, #860), so their declaration order must not be
+-- come from 'resources/morphing', run by the engine (see '_morphing' of
+-- 'Engine'): the first matching rule's premises are evaluated and its
+-- conclusion 'nresult' is built, in the universe the concluding premise names,
+-- which every rule spells as the one it was matched in (#1512). The clauses
+-- are disjoint (see #856, #860), so their declaration order must not be
 -- load-bearing; when '_shuffle' is on (the '--shuffle' flag) the rules are
--- shuffled before the 'firstMatch' walk to exercise that invariant — mirroring
--- normalization's "apply until they stop matching". A genuinely order-independent
--- step stays deterministic; a hidden overlap surfaces as a nondeterministic
--- failure rather than staying silently green.
+-- shuffled before 'inferred' walks them to exercise that invariant — mirroring
+-- normalization's "apply until they stop matching". A genuinely
+-- order-independent step stays deterministic; a hidden overlap surfaces as a
+-- nondeterministic failure rather than staying silently green.
 -- The 'morph' premise that produces the conclusion is the spine: when
 -- its argument comes from a 'normalize' premise, the rewriter runs over that
 -- argument and its individual steps (alpha, copy, dot, …) are spliced into the
--- chain before morphing continues. Every other premise is a side-computation
--- evaluated in isolation by 'sidePremise', its own steps discarded.
+-- chain before morphing continues (see 'onward'). Every other premise is a
+-- side-computation evaluated in isolation by 'inferred', its own steps
+-- discarded.
 morph' :: Morphed -> Expression -> State -> ReduceContext -> IO (Morphed, State)
 morph' (expr, seq) univ state caller = do
   ctx <- deeper =<< entering expr =<< universed univ caller{_judgment = Morphing}
   parking seq state $ do
-    rules <- if ctx._shuffle then shuffle Y.morphingRules else pure Y.morphingRules
-    matched <- firstMatch ctx rules
-    case matched of
-      Just (rule, subst) -> reduce ctx rule subst
-      Nothing -> throwIO (Unmorphable expr)
-  where
-    firstMatch :: ReduceContext -> [Y.MorphRule] -> IO (Maybe (Y.MorphRule, Subst))
-    firstMatch _ [] = pure Nothing
-    firstMatch ctx (rule : rest) = do
-      substs <- matchExpressionWithRule' (matchExpression' rule.ematch univ) expr (asRule rule) (RuleContext (execBuildTerm univ ctx) (Just univ) ctx._engine._normal)
-      case substs of
-        (subst : _) -> pure (Just (rule, subst))
-        [] -> firstMatch ctx rest
-    -- Match the conclusion term and check the guard; premises are no longer the
-    -- matcher's business, so 'where'/'having' stay empty and the guard lives in
-    -- 'when'. Every morphing guard reads only meta-variables bound by 'match'
-    -- and 'universe', so it holds before any premise runs.
-    asRule :: Y.MorphRule -> Y.Rule
-    asRule rule = Y.Rule rule.name Nothing Nothing rule.match ExRoot rule.when Nothing Nothing
-    -- Evaluate the rule's premises and build its conclusion. A literal
-    -- conclusion is terminal. Otherwise the conclusion meta is produced by a
-    -- trailing 'morph' premise (the spine); if that premise's argument is itself
-    -- bound by a 'normalize' premise, the normalization joins the spine and its
-    -- steps splice in before morphing continues.
-    reduce :: ReduceContext -> Y.MorphRule -> Subst -> IO (Morphed, State)
-    reduce ctx rule subst = case producer rule.nresult rule.premises of
-      Nothing -> do
-        (final, state') <- sides ctx rule.premises subst
-        built <- buildExpressionThrows rule.nresult final
-        seq' <- leadsTo seq (Morphing, rule.name) built ctx
+    reached <- inferred expr univ state ctx ctx._engine._morphing
+    case reached of
+      Just (In.Answered step built, state') -> do
+        seq' <- leadsTo seq step built ctx
         pure ((built, seq'), state')
-      Just concl@(Y.Premise _ (Y.OpMorph arg universe)) -> case producer arg rule.premises of
-        Just normal@(Y.Premise _ (Y.OpNormalize inner)) -> do
-          (final, state') <- sides ctx (rule.premises `excluding` [concl, normal]) subst
-          built <- buildExpressionThrows inner final
-          world <- buildExpressionThrows universe final
-          (normal', seq') <- settle ctx rule inner built
-          morph' (normal', seq') world state' ctx
-        _ -> do
-          (final, state') <- sides ctx (rule.premises `excluding` [concl]) subst
-          built <- buildExpressionThrows arg final
-          world <- buildExpressionThrows universe final
-          seq' <- leadsTo seq (Morphing, rule.name) built ctx
-          morph' (built, seq') world state' ctx
-      Just _ -> throwIO (userError (printf "morphing rule '%s' must conclude with a 'morph' premise" rule.name))
-    sides :: ReduceContext -> [Y.Premise] -> Subst -> IO (Subst, State)
-    sides ctx premises subst = foldM (sidePremise univ ctx) (subst, state) premises
-    -- Bring the term a 'normalize' premise built to its normal form and splice
-    -- the steps into the chain. A premise normalizing the universe itself, the
-    -- meta the rule's 'universe' bound, is answered with the world the run has
-    -- already named (see '_universe'), since that is the normal form of the
-    -- very same program: the 'universe' rule asks for it every time 𝕄 resolves
-    -- Φ, and normalizing the whole program again for each of them made every
-    -- step cost the size of the world (#1453).
-    settle :: ReduceContext -> Y.MorphRule -> Expression -> Expression -> IO Morphed
-    settle ctx rule inner built = case ctx._universe of
-      Just world | inner == rule.ematch -> do
-        seq' <- leadsTo seq (Morphing, rule.name) world ctx
-        pure (world, seq')
-      _ -> do
-        labelled <- leadsTo seq (Morphing, rule.name) built ctx
-        normalized built labelled ctx
+      Just (In.Onward way built world, state') -> do
+        (morphed, state'') <- onward seq state' way built ctx
+        morph' morphed world state'' ctx
+      Nothing -> throwIO (Unmorphable expr)
 
 -- Morph the expression located at '_locator' — 𝕄 asked on its own, the way
 -- 'dataize' asks 𝔻. The whole input expression is itself the universe Φ (the 'e'
@@ -1070,82 +1020,54 @@ deepened expr univ state ctx = step (if ctx._jobs > 1 then spread else parts) (J
       (entered, state'') <- go Nothing Nothing context arg state' caller
       pure (ArAlpha alpha entered, state'')
 
--- The premise binding the given expression meta, if any. The conclusion of a
--- morphing rule and the argument of a continuation premise are looked up here to
--- find the premise that produces them.
-producer :: Expression -> [Y.Premise] -> Maybe Y.Premise
-producer (ExMeta name) = find (\premise -> premise.result == name)
-producer _ = const Nothing
-
--- The premises whose result meta is not bound by any of the given ones — the
--- side-computations left once the spine premises are removed.
-excluding :: [Y.Premise] -> [Y.Premise] -> [Y.Premise]
-excluding premises removed = filter (\premise -> premise.result `notElem` map (.result) removed) premises
-
--- Evaluate one side-computation premise — a 'morph', 'evaluate' or 'contextualize'
--- of an earlier term — in isolation, binding its result meta. These never splice
--- steps into the trace: 'morph' and 'evaluate' reduce on a fresh chain and discard
--- it, 'contextualize' is pure. The state is threaded through: 'evaluate' (the
--- 𝔼 of the 'ml' and 'fire' rules) takes the incoming state 𝑠1 and yields a
--- new one 𝑠2, 'morph' propagates whatever its sub-reduction produced, and every
--- other operation leaves the state untouched.
-sidePremise :: Expression -> ReduceContext -> (Subst, State) -> Y.Premise -> IO (Subst, State)
-sidePremise univ ctx (subst, state) premise = do
-  (term, state') <- runOperation
-  case combine (substSingle premise.result (metaValue term)) subst of
-    Just subst' -> pure (subst', state')
-    Nothing -> throwIO (userError (printf "premise meta '%s' clashes with an existing binding" (T.unpack premise.result)))
+-- What the first of the rules 𝕄 or 𝔻 walks concludes with about 'expr' in
+-- 'univ', once the premises it runs beside its spine have run, in the order
+-- it lists them, each in isolation: a 'morph' and an 'evaluate' reduce on a
+-- fresh chain and discard it, a 'contextualize' is pure, and the state is
+-- threaded through, so the symbols 𝔼 mints and those of a 'morph' come back
+-- to the frame that asked. Nothing where no rule matches. The conditions of a
+-- rule are checked the way the matcher checks them, with the world the frame
+-- reduces in and the normal forms of the engine.
+inferred :: Expression -> Expression -> State -> ReduceContext -> [In.Inference value] -> IO (Maybe (In.Conclusion value, State))
+inferred expr univ state ctx rules = do
+  ordered <- if ctx._shuffle then shuffle rules else pure rules
+  matched <- go ordered
+  traverse (premised state) matched
   where
-    -- The 𝔼 ('evaluate') and 𝕄 ('morph') operations can change the state, so they
-    -- go through their state-aware builders, each in the universe its premise
-    -- names; every other operation is stateless and the incoming state is
-    -- returned unchanged.
-    runOperation :: IO (Term, State)
-    runOperation = case premise.operation of
-      Y.OpEvaluate expr universe -> ctx._evaluate ctx state [ArgExpression expr, ArgExpression universe] subst
-      Y.OpMorph expr universe -> do
-        world <- buildExpressionThrows universe subst
-        _morph world ctx state [ArgExpression expr] subst
-      operation -> do
-        term <- execBuildTerm univ ctx (verb operation) (verbArgs operation) subst
-        pure (term, state)
-    metaValue :: Term -> MetaValue
-    metaValue (TeExpression value) = MvExpression value
-    metaValue (TeAttribute value) = MvAttribute value
-    metaValue (TeBytes value) = MvBytes value
-    metaValue (TeBindings value) = MvBindings value
+    go :: [In.Inference value] -> IO (Maybe (In.Premises value))
+    go [] = pure Nothing
+    go (rule : rest) = rule (RuleContext (execBuildTerm univ ctx) (Just univ) ctx._engine._normal) expr univ >>= maybe (go rest) (pure . Just)
+    premised :: State -> In.Premises value -> IO (In.Conclusion value, State)
+    premised state' (In.Concludes conclusion) = pure (conclusion, state')
+    premised state' (In.Morphs term world next) = do
+      (morphed, state'') <- detached term world state' ctx
+      next morphed >>= premised state''
+    premised state' (In.Evaluates form world next) = do
+      (answer, state'') <- ctx._evaluate ctx state' form world
+      next answer >>= premised state''
+    premised state' (In.Contextualizes term context next) = ctx._engine._contextualize term context >>= next >>= premised state'
 
--- The build-term function name backing a premise operation.
-verb :: Y.Operation -> String
-verb (Y.OpMorph _ _) = "morph"
-verb (Y.OpNormalize _) = "normalize"
-verb (Y.OpEvaluate _ _) = "evaluate"
-verb (Y.OpContextualize _ _) = "contextualize"
-verb (Y.OpDataize _ _) = "dataize"
-
--- What a step a premise takes is labelled with in the chain: the judgment the
--- premise runs, which picks the arrow of the step in LaTeX (#1536), and its
--- verb, which names the step.
-label :: Y.Operation -> (Judgment, String)
-label operation = (judgment operation, verb operation)
-  where
-    judgment :: Y.Operation -> Judgment
-    judgment (Y.OpMorph _ _) = Morphing
-    judgment (Y.OpNormalize _) = Normalization
-    judgment (Y.OpEvaluate _ _) = Evaluation
-    judgment (Y.OpContextualize _ _) = Contextualization
-    judgment (Y.OpDataize _ _) = Dataization
-
--- The build-term arguments backing a premise operation. The universe a 'morph'
--- or a 'dataize' premise names is the second argument of the judgment, not of
--- the build-term function: 'sidePremise' hands it to 𝕄 itself, and the
--- 'dataize' function reads data off a term and needs no universe.
-verbArgs :: Y.Operation -> [ExtraArgument]
-verbArgs (Y.OpMorph expr _) = [ArgExpression expr]
-verbArgs (Y.OpNormalize expr) = [ArgExpression expr]
-verbArgs (Y.OpEvaluate expr universe) = [ArgExpression expr, ArgExpression universe]
-verbArgs (Y.OpContextualize expr context) = [ArgExpression expr, ArgExpression context]
-verbArgs (Y.OpDataize expr _) = [ArgExpression expr]
+-- Reach the term a rule of 𝕄 or 𝔻 asks its judgment about again from the one
+-- the rule built, the way the rule says (see 'Way'): a step of the rule, the
+-- same followed by 𝒩, whose steps splice into the chain, or 𝕄 in the universe
+-- the rule gives, whose steps splice in too. A 'normalize' premise normalizing
+-- the universe itself, the meta the rule's 'universe' bound, is answered with
+-- the world the run has already named (see '_universe'), since that is the
+-- normal form of the very same program: the 'universe' rule asks for it every
+-- time 𝕄 resolves Φ, and normalizing the whole program again for each of them
+-- made every step cost the size of the world (#1453).
+onward :: NonEmpty Rewritten -> State -> In.Way -> Expression -> ReduceContext -> IO (Morphed, State)
+onward seq state (In.Taken step) expr ctx = do
+  seq' <- leadsTo seq step expr ctx
+  pure ((expr, seq'), state)
+onward seq state (In.Normalized step) expr ctx = do
+  labelled <- leadsTo seq step expr ctx
+  normal <- normalized expr labelled ctx
+  pure (normal, state)
+onward seq state (In.Named step) expr ctx = case ctx._universe of
+  Just world -> onward seq state (In.Taken step) world ctx
+  Nothing -> onward seq state (In.Normalized step) expr ctx
+onward seq state (In.Staged stage) expr ctx = morph' (expr, seq) stage state ctx
 
 -- Take a step of the chain: the term at its head is taken to 'expr' by the
 -- rule, which is named and tagged with the judgment it belongs to (#1536).
@@ -1247,21 +1169,36 @@ morphing univ ctx expr state = do
 -- 'univ'. Every other function is delegated unchanged. This is the matcher's
 -- condition path (guards in 'when'/'having'), which has no state to thread, so 𝔼
 -- and 𝕄 run here on a fresh, empty state whose result is discarded; the
--- state-threading callers in 'sidePremise' use '_evaluate' and '_morph' directly.
+-- premises of a rule, which thread the state, are run by 'inferred'.
 execBuildTerm :: Expression -> ReduceContext -> BuildTermFunc
-execBuildTerm _ ctx "evaluate" = \args subst -> fst <$> ctx._evaluate ctx emptyState args subst
-execBuildTerm univ ctx "morph" = \args subst -> fst <$> _morph univ ctx emptyState args subst
+execBuildTerm _ ctx "evaluate" = evaluated ctx
+execBuildTerm univ ctx "morph" = _morph univ ctx
 execBuildTerm _ ctx func = _buildTerm ctx func
 
+-- The Evaluation function 𝔼 exposed as a build-term function, the formation
+-- and the universe built out of the substitution.
+evaluated :: ReduceContext -> BuildTermMethod
+evaluated ctx [ArgExpression expr, ArgExpression universe] subst = do
+  form <- buildExpressionThrows expr subst
+  world <- buildExpressionThrows universe subst
+  TeExpression . fst <$> ctx._evaluate ctx emptyState form world
+evaluated _ _ _ = throwIO (userError "Function evaluate() requires exactly 2 expression arguments")
+
 -- The Morphing function 𝕄 exposed as a build-term function so a rule can morph
--- a sub-expression in its 'where' (the 'md' and 'ma' rules morph
--- the head before re-attaching it). The step chain is discarded: the producing
--- rule splices the surrounding normalization steps itself, and a stuck λ met
--- on the way leaves without it (see 'unparked'). The state is threaded through
--- and the new state returned alongside the morphed term.
-_morph :: Expression -> ReduceContext -> State -> BuildTermMethodS
-_morph univ ctx state [ArgExpression expr] subst = unparked $ do
+-- a sub-expression in its 'where' (see 'detached').
+_morph :: Expression -> ReduceContext -> BuildTermMethod
+_morph univ ctx [ArgExpression expr] subst = do
   built <- buildExpressionThrows expr subst
-  ((morphed, _), state') <- morph' (built, (univ, Nothing) :| []) univ state ctx
-  pure (TeExpression morphed, state')
-_morph _ _ _ _ _ = throwIO (userError "Function morph() requires exactly 1 expression argument")
+  TeExpression . fst <$> detached built univ emptyState ctx
+_morph _ _ _ _ = throwIO (userError "Function morph() requires exactly 1 expression argument")
+
+-- Morph 'expr' in 'univ' on a chain of its own, the way a 'morph' premise
+-- beside the spine does (the 'md' and 'ma' rules morph the head before
+-- re-attaching it). The step chain is discarded: the producing rule splices
+-- the surrounding normalization steps itself, and a stuck λ met on the way
+-- leaves without it (see 'unparked'). The state is threaded through and the
+-- new state returned alongside the morphed term.
+detached :: Expression -> Expression -> State -> ReduceContext -> IO (Expression, State)
+detached expr univ state ctx = unparked $ do
+  ((morphed, _), state') <- morph' (expr, (univ, Nothing) :| []) univ state ctx
+  pure (morphed, state')
