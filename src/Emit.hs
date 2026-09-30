@@ -213,13 +213,9 @@ named names = zipWith unique [0 :: Int ..] (map camel names)
     upper [] = []
 
 -- The functions of one rewriting rule: its step and what it rewrites a term
--- matching it as a whole to.
---
--- @todo #1628:30min Ask the normal forms of a rewriting rule the way the
---  matcher asks them, with 'Ru.normalHeld' as the rules of 𝕄 and 𝔻 do. The
---  guard 'nf' tells a term that is itself a meta a normal form, which the
---  matcher does not, so a term holding a meta may rewrite under one engine
---  and stay under the other; 'CompiledSpec' should compare terms with metas.
+-- matching it as a whole to. A normal form is asked of its '𝑛' and '𝑘' metas
+-- the way the matcher asks it (see 'Ru.normalHeld'), so a term that is itself
+-- a meta is no normal form under either engine.
 rewriting :: (String, Y.Rule) -> Either String String
 rewriting (name, rule) = do
   refused
@@ -227,7 +223,7 @@ rewriting (name, rule) = do
     pattern' <- matching rule.pattern "term"
     when' <- maybe (pure []) (fmap (pure . Guard) . condition) rule.when
     absolute <- mapM (fmap (\var -> Guard ("Ru.xiFree " ++ var)) . held) (prefixed "k" rule.pattern)
-    normal <- mapM (fmap (\var -> Guard ("nf " ++ var)) . held) (prefixed "n" rule.pattern ++ prefixed "k" rule.pattern)
+    normal <- mapM (fmap (\var -> Guard ("Ru.normalHeld nf " ++ var)) . held) (prefixed "n" rule.pattern ++ prefixed "k" rule.pattern)
     extras <- concat <$> mapM extended (fromMaybe [] rule.where_)
     result <- built True rule.result >>= maybe (refuse "its result names a meta its pattern does not bind") pure
     pure (pattern' ++ when' ++ absolute ++ normal ++ extras, result)
@@ -576,7 +572,7 @@ condition (Y.Eq (Y.CmpAttr left) (Y.CmpAttr right)) = compared "==" <$> attr' le
 condition (Y.Eq (Y.CmpExpr left) (Y.CmpExpr right)) = compared "==" <$> built False left <*> built False right
 condition (Y.Eq _ _) = pure "False"
 condition (Y.Gt _ _) = pure "False"
-condition (Y.NF expr) = asked "nf" expr
+condition (Y.NF expr) = asked "Ru.normalHeld nf" expr
 condition (Y.Absolute expr) = asked "Ru.xiFree" expr
 condition (Y.IsFormation (ExMeta meta)) = maybe "False" ("Ru.isFormation " ++) <$> known (Named meta)
 condition (Y.IsFormation (ExFormation _)) = pure "True"

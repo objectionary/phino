@@ -67,6 +67,12 @@ data Step = Step
 -- Returns True if given expression matches with any of given normalization rules
 -- Here we use unsafePerformIO because we're sure that conditions which are used
 -- in normalization rules doesn't throw an exception.
+--
+-- @todo #1630:30min Tell a normal form of a term holding a meta the same way
+--  under both engines. The rule 'dot' matches '⟦ x ↦ 𝑒9.y ⟧.x', and this test
+--  runs its 'contextualize' at once, which throws, since no rule of 𝒞 takes a
+--  meta, while the compiled 'nf' never asks for that answer and tells the term
+--  no normal form. 'CompiledSpec' should compare '_normal' of terms with metas.
 matchesAnyNormalizationRule :: Expression -> RuleContext -> Bool
 matchesAnyNormalizationRule expr ctx = matchesAnyNormalizationRule' expr normalizationRules ctx
   where
