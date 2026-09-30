@@ -83,12 +83,12 @@ data Pat
 -- dataization, and the texts of the built-in rules the engine is compiled
 -- from; or the reason one of the rules cannot be compiled.
 emitted :: [Y.Rule] -> [Y.Rule] -> [Y.ContextualizeRule] -> [Y.MorphRule] -> [Y.DataizeRule] -> [String] -> Either String String
-emitted builtin custom contextual morphs datas sources = do
+emitted builtin custom contextual morphs dataizes sources = do
   let rules = zip (named (map (.name) (builtin ++ custom))) (builtin ++ custom)
   functions <- mapM rewriting rules
   equations <- zipWithM contextualizing (named (map (.name) contextual)) contextual
   morphings <- zipWithM morphing (named (map (.name) morphs)) morphs
-  dataizations <- zipWithM dataizing (named (map (.name) datas)) datas
+  dataizations <- zipWithM dataizing (named (map (.name) dataizes)) dataizes
   let body =
         unlines
           ( [ "compiled :: Maybe En.Engine"
@@ -119,7 +119,7 @@ emitted builtin custom contextual morphs datas sources = do
             , ""
             , "-- The rules of 𝔻, in the order of their files."
             , "dataizations :: [In.Inference Bytes]"
-            , "dataizations = " ++ listed (map ("In.direct dataization" ++) (named (map (.name) datas)))
+            , "dataizations = " ++ listed (map ("In.direct dataization" ++) (named (map (.name) dataizes)))
             , ""
             , "-- The texts of the built-in rules of all four judgments this module is made of."
             , "sources :: [String]"
