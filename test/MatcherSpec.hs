@@ -631,8 +631,8 @@ spec = do
 
   describe "combineMany: combinatorial explosion guard" $ do
     it "limits output when cartesian product exceeds maxSubsts" $ do
-      let bigList = [Subst (Map.singleton (Named ("x" <> T.pack (show i))) (MvExpression ExRoot)) | i <- [1 .. 50]]
-          smallList = [Subst (Map.singleton (Named "y") (MvAttribute AtPhi)) | _ <- [1 .. 50]]
+      let bigList = [Subst (Map.singleton (Named ("x" <> T.pack (show i))) (MvExpression ExRoot)) | i <- [(1 :: Int) .. 50]]
+          smallList = [Subst (Map.singleton (Named "y") (MvAttribute AtPhi)) | _ <- [(1 :: Int) .. 50]]
           result = combineMany bigList smallList
       length result `shouldBe` 1000
     it "does not limit when product is smaller than maxSubsts" $ do
