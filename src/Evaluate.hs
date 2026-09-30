@@ -17,7 +17,8 @@
 module Evaluate (evaluation, fired) where
 
 import AST
-import Builder (buildExpressionThrows, contextualize)
+import Builder (buildExpressionThrows)
+import Contextualize (contextualize)
 import Control.Exception (throwIO, try)
 import Control.Monad (foldM, unless)
 import Data.List (partition)
@@ -247,7 +248,8 @@ symbol func form self univ state caller = case matched caller._symbolic func of
     -- on and a 'join' line one side of which reaches ⊥ names it (see 'paired').
     down :: ReduceContext -> (Subst, State, [Either Int Bytes]) -> (Meta, Expression) -> IO (Subst, State, [Either Int Bytes])
     down ctx (bound, state', conditions) (meta, term) = do
-      (value, state'') <- unparked (ctx._reduce univ ctx (operand term) state'{_manufactured = Nothing, _stuck = Nothing})
+      placed <- operand term
+      (value, state'') <- unparked (ctx._reduce univ ctx placed state'{_manufactured = Nothing, _stuck = Nothing})
       case value of
         Nothing -> throwIO (Stuck (fromMaybe func state''._stuck))
         Just bytes -> do
@@ -261,7 +263,8 @@ symbol func form self univ state caller = case matched caller._symbolic func of
     -- is how a firing hands its own unknowns on.
     through :: ReduceContext -> (Subst, State) -> (Meta, Expression) -> IO (Subst, State)
     through ctx (bound, state') (meta, term) = do
-      (normal, state'') <- morphing univ ctx (operand term) state'
+      placed <- operand term
+      (normal, state'') <- morphing univ ctx placed state'
       ctx._saveEval (EvTerm ctx._nesting meta._spelling term normal)
       bound' <- bind meta (MvExpression normal) bound
       pure (bound', state'')
@@ -402,7 +405,7 @@ symbol func form self univ state caller = case matched caller._symbolic func of
     -- The operand an entry wrote, in the scope it is reduced in: ξ stands for
     -- the formation being fired, so '$.x' is the x of it, and the calculus does
     -- the reaching.
-    operand :: Expression -> Expression
+    operand :: Expression -> IO Expression
     operand = (`contextualize` self)
     bind :: Meta -> MetaValue -> Subst -> IO Subst
     bind meta value bound = case combine (substSingle meta._name value) bound of

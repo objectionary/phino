@@ -21,7 +21,8 @@
 module Morph (Answer, Deadline (..), Kept (..), ReduceContext (..), ReduceException (..), EvaluationFunc, FiringFunc, Memo (..), ReductionFunc, Morphed, Steps (..), Tally (..), boxed, charged, counted, deeper, emptyState, enter, entering, excluding, execBuildTerm, insideUniverse, isLambda, label, lambda, leadsTo, memoized, morph, morph', morphing, normalized, parking, producer, recalled, retained, sidePremise, starved, tallied, timed, universed, unparked) where
 
 import AST
-import Builder (buildExpressionThrows, contextualize, pathOf)
+import Builder (buildExpressionThrows, pathOf)
+import Contextualize (contextualize)
 import Control.Applicative ((<|>))
 import Control.Exception (Exception, SomeException, catch, throwIO, try)
 import Control.Monad (foldM, unless, when)
@@ -838,7 +839,8 @@ deepened expr univ state ctx = step (if ctx._jobs > 1 then spread else parts) (J
       let here = sited standing caller
       ctx' <- deeper here
       (walked, walkedState) <- walk standing context term state' here
-      (answer, answered) <- ctx'._fire dispatched (contextualize walked context) univ walkedState ctx'
+      placed <- contextualize walked context
+      (answer, answered) <- ctx'._fire dispatched placed univ walkedState ctx'
       pure (fromMaybe walked answer, answered)
     -- The context a term is walked in, aimed at the term itself where a locator
     -- names it. Where none does, the aim stays where it was: a firing standing

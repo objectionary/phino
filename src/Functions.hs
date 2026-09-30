@@ -8,6 +8,7 @@ module Functions (buildTerm, buildFunctions, execFunctions, nameOf) where
 import AST
 import Builder
 import Bytes (btsSize, btsToNum, btsToUnescapedStr, numToBts, strToBts)
+import Contextualize (contextualize)
 import Control.Exception (throwIO)
 import Control.Monad (when)
 import qualified Data.ByteString.Char8 as B
@@ -76,7 +77,7 @@ _contextualize :: BuildTermMethod
 _contextualize [Y.ArgExpression expr, Y.ArgExpression context] subst = do
   expr' <- buildExpressionThrows expr subst
   context' <- buildExpressionThrows context subst
-  pure (TeExpression (contextualize expr' context'))
+  TeExpression <$> contextualize expr' context'
 _contextualize _ _ = throwIO (userError "Function contextualize() requires exactly 2 arguments as expression")
 
 -- The name the formation of the only argument goes by in the given world, or
