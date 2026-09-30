@@ -34,10 +34,10 @@ failsAsRedundant = failsWith "redundant"
 spec :: Spec
 spec = do
   describe "validates rewriting rule keys" $ do
-      it "accepts rule labels and descriptions" $
-        ( decodeYaml' "name: foo\nlabel: foo-label\ndescription: A rule\npattern: '⟦ 𝜏1 ↦ 𝑒1 ⟧'\nresult: '𝑒1'" :: Either Yaml.ParseException Rule
+    it "accepts rule labels and descriptions" $
+      ( decodeYaml' "name: foo\nlabel: foo-label\ndescription: A rule\npattern: '⟦ 𝜏1 ↦ 𝑒1 ⟧'\nresult: '𝑒1'" :: Either Yaml.ParseException Rule
         )
-        `shouldSatisfy` (not . isLeft)
+      `shouldSatisfy` (not . isLeft)
     it "rejects unknown top-level keys" $
       failsWith
         "Unknown key"
