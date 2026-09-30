@@ -9,7 +9,7 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Rewriter (Seen, rewrite, RewriteContext (..), Rewritten, Rewrittens, Rewrittens', seenInsert, seenMember, stepHeaders) where
+module Rewriter (Seen, direct, fast, interpreted, rewrite, RewriteContext (..), Rewritten, Rewrittens, Rewrittens', seenInsert, seenMember, stepHeaders) where
 
 import AST
 import Builder
@@ -20,11 +20,11 @@ import qualified Data.Map.Strict as Map
 import Deps
 import Locator (locatedExpression, withLocatedExpression)
 import Logger (logDebug)
-import Matcher (Subst)
+import Matcher (Subst, sites)
 import Must (Must (..), exceedsUpperBound, inRange)
 import Printer (printExpression)
 import Replacer (ReplaceExpressionFunc, replaceExpression, replaceExpressionFast)
-import Rule (RuleContext (RuleContext))
+import Rule (RuleContext (RuleContext), Step (..))
 import qualified Rule as R
 import Text.Printf (printf)
 import qualified Yaml as Y
@@ -93,6 +93,9 @@ data RewriteContext = RewriteContext
     -- names nothing.
     _universe :: Maybe Expression
   , _buildTerm :: BuildTermFunc
+  , -- Whether a term is a normal form, which a '𝑛' or '𝑘' meta of a rule asks
+    -- (see '_normal' of 'RuleContext').
+    _normal :: Expression -> Bool
   , _must :: Must
   , _breakpoint :: Maybe String
   , _saveStep :: SaveStepFunc
@@ -146,21 +149,25 @@ buildAndReplace' (expr, ptn, res, substs) func = do
 -- You can find more details in this ticket: https://github.com/objectionary/phino/issues/321
 -- If we don't meet the conditions above - just do a regular replacing
 tryBuildAndReplaceFast :: ToReplace -> IO Expression
-tryBuildAndReplaceFast state@(expr, ExFormation _pbds@(pbd : pbds), ExFormation _rbds@(rbd : rbds), substs) =
-  let pbds' = init pbds
-      rbds' = init rbds
-   in if startsAndEndsWithMeta _pbds
-        && startsAndEndsWithMeta _rbds
-        && pbd == rbd
-        && last pbds == last rbds
-        && not (hasMetaBindings pbds')
-        && not (hasMetaBindings rbds')
-        then do
-          logDebug "Applying fast replacing since 'pattern' and 'result' are suitable for this..."
-          buildAndReplace' (expr, ExFormation pbds', ExFormation rbds', substs) replaceExpressionFast
-        else do
-          logDebug "Applying regular replacing..."
-          buildAndReplace' state replaceExpression
+tryBuildAndReplaceFast state@(expr, ptn@(ExFormation (_ : pbds)), res@(ExFormation (_ : rbds)), substs)
+  | fast ptn res = do
+      logDebug "Applying fast replacing since 'pattern' and 'result' are suitable for this..."
+      buildAndReplace' (expr, ExFormation (init pbds), ExFormation (init rbds), substs) replaceExpressionFast
+  | otherwise = do
+      logDebug "Applying regular replacing..."
+      buildAndReplace' state replaceExpression
+tryBuildAndReplaceFast state = buildAndReplace' state replaceExpression
+
+-- Whether a rule of the pattern and the result is replaced the fast way (see
+-- 'tryBuildAndReplaceFast').
+fast :: Expression -> Expression -> Bool
+fast (ExFormation _pbds@(pbd : pbds)) (ExFormation _rbds@(rbd : rbds)) =
+  startsAndEndsWithMeta _pbds
+    && startsAndEndsWithMeta _rbds
+    && pbd == rbd
+    && last pbds == last rbds
+    && not (hasMetaBindings (init pbds))
+    && not (hasMetaBindings (init rbds))
   where
     startsAndEndsWithMeta :: [Binding] -> Bool
     startsAndEndsWithMeta [] = False
@@ -169,13 +176,43 @@ tryBuildAndReplaceFast state@(expr, ExFormation _pbds@(pbd : pbds), ExFormation 
         && isMetaBinding bd
         && isMetaBinding (last bds)
     hasMetaBindings :: [Binding] -> Bool
+    hasMetaBindings = foldl (\acc bd -> acc || isMetaBinding bd) False
     isMetaBinding :: Binding -> Bool
     isMetaBinding = \case
       BiMeta _ -> True
       BiAny _ -> True
       _ -> False
-    hasMetaBindings = foldl (\acc bd -> acc || isMetaBinding bd) False
-tryBuildAndReplaceFast state = buildAndReplace' state replaceExpression
+fast _ _ = False
+
+-- The step a rule of YAML takes: the matcher finds every place the rule
+-- matches at and the builder and the replacer rewrite them (see
+-- 'tryBuildAndReplaceFast').
+interpreted :: Y.Rule -> Step
+interpreted rule = Step rule.name applied
+  where
+    applied :: RuleContext -> Expression -> IO (Maybe Expression)
+    applied ctx expr =
+      R.matchExpressionWithRule expr rule ctx >>= \case
+        [] -> pure Nothing
+        matched -> Just <$> tryBuildAndReplaceFast (expr, rule.pattern, rule.result, matched)
+
+-- The step a rule 'phino compile' turned into Haskell takes: the rule is a
+-- function telling what it rewrites a term to where the term matches it as a
+-- whole, and the places it matches at are found in the order the matcher
+-- finds them (see 'sites') and replaced in that order, exactly as the replacer
+-- replaces those of a rule of YAML. A place inside what an earlier one was
+-- rewritten to is therefore a step of its own, as it is for the matcher, and
+-- the chain of steps does not depend on which of the two ran (#1617). The
+-- flag says whether the rule matches only a redex (see 'R.redex').
+-- The function is told the world the term stands in, where one is known,
+-- which is what the 'named' function of a rule reads.
+direct :: String -> Bool -> (Maybe Expression -> Expression -> [Expression]) -> Step
+direct name redex rewritten = Step name applied
+  where
+    applied :: RuleContext -> Expression -> IO (Maybe Expression)
+    applied (RuleContext _ universe _) expr = pure $ case sites redex (rewritten universe) expr of
+      [] -> Nothing
+      found -> Just (replaceExpression (expr, map fst found, map (const . snd) found))
 
 -- The function returns tuple (X, Y, Z) where
 -- - X is sequence of expressions;
@@ -183,7 +220,7 @@ tryBuildAndReplaceFast state = buildAndReplace' state replaceExpression
 --   into loop and get back to an expression which we've already got before
 -- - Z is boolean flag which tells us if we reach breakpoint. If unmatched rule is equal to breakpoint rule - entire
 --   rewriting must be stopped and original expression must be returned
-rewrite' :: RewriteState -> [Y.Rule] -> Int -> RewriteContext -> IO RewriteState
+rewrite' :: RewriteState -> [Step] -> Int -> RewriteContext -> IO RewriteState
 rewrite' state [] _ _ = pure state
 rewrite' state (rule : rest) iteration ctx@RewriteContext{..} = do
   state' <- _rewrite state 1
@@ -193,9 +230,7 @@ rewrite' state (rule : rest) iteration ctx@RewriteContext{..} = do
   where
     _rewrite :: RewriteState -> Int -> IO RewriteState
     _rewrite (_rewrittens@((current, _) :| _), _unique, _) _count =
-      let ruleName = rule.name
-          ptn = rule.pattern
-          res = rule.result
+      let ruleName = _name rule
        in if _count - 1 == _maxDepth
             then do
               logDebug (printf "Max amount of rewriting cycles (%d) for rule '%s' has been reached, rewriting is stopped" _maxDepth ruleName)
@@ -209,17 +244,16 @@ rewrite' state (rule : rest) iteration ctx@RewriteContext{..} = do
             else do
               logDebug (printf "Starting rewriting cycle for rule '%s': %d out of %d" ruleName _count _maxDepth)
               expression <- locatedExpression _locator current
-              R.matchExpressionWithRule expression rule (RuleContext _buildTerm _universe) >>= \case
-                [] -> do
+              _applied rule (RuleContext _buildTerm _universe _normal) expression >>= \case
+                Nothing -> do
                   logDebug (printf "Rule '%s' does not match, rewriting is stopped" ruleName)
                   if _breakpoint == Just ruleName
                     then do
                       logDebug (printf "Rule '%s' is a breakpoint, dropping down all the previous rewritings..." ruleName)
                       pure (_rewrittens, _unique, True)
                     else pure (_rewrittens, _unique, False)
-                matched -> do
-                  logDebug (printf "Rule '%s' has been matched, applying..." ruleName)
-                  expr <- tryBuildAndReplaceFast (expression, ptn, res, matched)
+                Just expr -> do
+                  logDebug (printf "Rule '%s' has been matched and applied" ruleName)
                   if expression == expr
                     then do
                       logDebug (printf "Applied '%s', no changes made" ruleName)
@@ -244,25 +278,25 @@ rewrite' state (rule : rest) iteration ctx@RewriteContext{..} = do
         leadsTo :: Expression -> NonEmpty Rewritten
         leadsTo next =
           let (head', _) :| rest = _rewrittens
-           in (next, Nothing) :| (head', Just (Normalization, rule.name)) : rest
+           in (next, Nothing) :| (head', Just (Normalization, _name rule)) : rest
 
 -- Tells whether any of the rules still matches the located expression. A run
 -- with nothing left to rewrite after its last allowed step has finished, not
 -- run out of its limit, so --depth-sensitive lets it pass (#1439)
-applicable :: Expression -> [Y.Rule] -> RewriteContext -> IO Bool
+applicable :: Expression -> [Step] -> RewriteContext -> IO Bool
 applicable current rules RewriteContext{..} = do
   expression <- locatedExpression _locator current
   go expression rules
   where
-    go :: Expression -> [Y.Rule] -> IO Bool
+    go :: Expression -> [Step] -> IO Bool
     go _ [] = pure False
     go expression (rule : rest) =
-      R.matchExpressionWithRule expression rule (RuleContext _buildTerm _universe) >>= \case
-        [] -> go expression rest
-        _ -> pure True
+      _applied rule (RuleContext _buildTerm _universe _normal) expression >>= \case
+        Nothing -> go expression rest
+        Just _ -> pure True
 
 -- Rewrite the expression by provided locator from RewriteContext
-rewrite :: Expression -> [Y.Rule] -> RewriteContext -> IO Rewrittens
+rewrite :: Expression -> [Step] -> RewriteContext -> IO Rewrittens
 rewrite expr rules ctx@RewriteContext{..} = do
   (rewrittens, exceeded) <- _rewrite ((expr, Nothing) :| [], Map.empty, False) 0
   pure (NE.reverse rewrittens, exceeded)

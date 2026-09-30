@@ -45,6 +45,8 @@ data CmdException
   | EmptySubstsOnMatch
   | AnonymousMetaInCondition String
   | VersionMismatch String String
+  | CouldNotCompile String
+  | StaleEngine
   deriving (Exception)
 
 instance Show CmdException where
@@ -57,6 +59,8 @@ instance Show CmdException where
     printf "Anonymous meta '!%s' cannot be referenced in --when, only a named one can" kind
   show (VersionMismatch expected actual) =
     printf "Version mismatch: --pin requires '%s', but this is phino %s" expected actual
+  show (CouldNotCompile reason) = reason
+  show StaleEngine = "The compiled rules are stale, since the rules of phino changed after 'phino compile', so run it again and rebuild"
 
 data Command
   = CmdRewrite OptsRewrite
@@ -65,6 +69,7 @@ data Command
   | CmdExplain OptsExplain
   | CmdMerge OptsMerge
   | CmdMatch OptsMatch
+  | CmdCompile OptsCompile
 
 data Pin = PinVersion String | PinFile FilePath
 
@@ -253,4 +258,11 @@ data OptsMatch = OptsMatch
   , _when :: Maybe String
   , _inputFile :: Maybe FilePath
   , _seed :: Int
+  }
+
+data OptsCompile = OptsCompile
+  { _logLevel :: LogLevel
+  , _logLines :: Int
+  , _rules :: [FilePath]
+  , _targetFile :: FilePath
   }

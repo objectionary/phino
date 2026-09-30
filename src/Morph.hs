@@ -22,7 +22,6 @@ module Morph (Answer, Deadline (..), Kept (..), ReduceContext (..), ReduceExcept
 
 import AST
 import Builder (buildExpressionThrows, pathOf)
-import Contextualize (contextualize)
 import Control.Applicative ((<|>))
 import Control.Exception (Exception, SomeException, catch, throwIO, try)
 import Control.Monad (foldM, unless, when)
@@ -35,6 +34,7 @@ import Data.Maybe (fromMaybe, isJust, listToMaybe)
 import qualified Data.Set as Set
 import qualified Data.Text as T
 import Deps (Acyclic (..), BuildTermFunc, BuildTermMethodS, Evaluation (..), Judgment (..), SaveEvalFunc, SaveStepFunc, State (..), Term (..), dontSaveStep, renumbered)
+import Engine (Engine (..))
 import GHC.Clock (getMonotonicTime)
 import Lambdas (Lambdas)
 import Locator (locatedExpression, withLocatedExpression)
@@ -47,7 +47,7 @@ import Rewriter (RewriteContext (RewriteContext), Rewritten, Seen, rewrite, seen
 import Rule (RuleContext (RuleContext), matchExpressionWithRule')
 import Tau (tausOf)
 import Text.Printf (printf)
-import Yaml (ExtraArgument (..), normalizationRules)
+import Yaml (ExtraArgument (..))
 import qualified Yaml as Y
 
 -- A term together with the derivation that reached it: what one frame of a
@@ -299,6 +299,10 @@ data ReduceContext = ReduceContext
   , _fire :: FiringFunc
   , _saveStep :: SaveStepFunc
   , _saveEval :: SaveEvalFunc
+  , -- What runs the built-in rules of normalization and contextualization
+    -- (see 'Engine'): the YAML interpreted, or the Haskell 'phino compile'
+    -- wrote (#1617).
+    _engine :: Engine
   }
 
 -- Which of the budgets a run spent, with the limit it was given: the depth
@@ -702,7 +706,7 @@ morph' (expr, seq) univ state caller = do
     firstMatch :: ReduceContext -> [Y.MorphRule] -> IO (Maybe (Y.MorphRule, Subst))
     firstMatch _ [] = pure Nothing
     firstMatch ctx (rule : rest) = do
-      substs <- matchExpressionWithRule' (matchExpression' rule.ematch univ) expr (asRule rule) (RuleContext (execBuildTerm univ ctx) (Just univ))
+      substs <- matchExpressionWithRule' (matchExpression' rule.ematch univ) expr (asRule rule) (RuleContext (execBuildTerm univ ctx) (Just univ) ctx._engine._normal)
       case substs of
         (subst : _) -> pure (Just (rule, subst))
         [] -> firstMatch ctx rest
@@ -855,7 +859,7 @@ deepened expr univ state ctx = step (if ctx._jobs > 1 then spread else parts) (J
       let here = sited standing caller
       ctx' <- deeper here
       (walked, walkedState) <- walk standing context term state' here
-      placed <- contextualize walked context
+      placed <- ctx._engine._contextualize walked context
       (answer, answered) <- ctx'._fire dispatched placed univ walkedState ctx'
       pure (fromMaybe walked answer, answered)
     -- The context a term is walked in, aimed at the term itself where a locator
@@ -1142,7 +1146,7 @@ leadsTo ((current, _) :| rest) rule expr ReduceContext{..} = do
 normalized :: Expression -> NonEmpty Rewritten -> ReduceContext -> IO (Expression, NonEmpty Rewritten)
 normalized expr seq ctx@ReduceContext{..} = do
   whole <- withLocatedExpression _locator expr (fst (NE.head seq))
-  (rewrittens, exceeded) <- rewrite whole normalizationRules (rewriteContext ctx)
+  (rewrittens, exceeded) <- rewrite whole _engine._normalization (rewriteContext ctx)
   when exceeded (throwIO (OutOfSteps (Cycles _maxCycles)))
   let (rw :| rws) = NE.reverse rewrittens
       seq' = rw :| rws <> NE.tail seq
@@ -1153,7 +1157,7 @@ normalized expr seq ctx@ReduceContext{..} = do
     -- disabling the must-checker and breakpoints.
     rewriteContext :: ReduceContext -> RewriteContext
     rewriteContext ReduceContext{..} =
-      RewriteContext _locator _maxDepth _maxCycles _depthSensitive _universe _buildTerm MtDisabled Nothing _saveStep
+      RewriteContext _locator _maxDepth _maxCycles _depthSensitive _universe _buildTerm _engine._normal MtDisabled Nothing _saveStep
 
 -- Name the world a run reduces in, where nothing has named it yet: the program
 -- in normal form, which is what Φ denotes and what 'dot' compares a dispatched

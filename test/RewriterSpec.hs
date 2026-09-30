@@ -9,7 +9,7 @@
 
 module RewriterSpec where
 
-import AST (Attribute (AtLabel), Binding (BiTau), Expression (ExDispatch, ExFormation, ExRoot, ExTermination))
+import AST (Argument (ArTau), Attribute (AtLabel), Binding (BiMeta, BiTau, BiVoid), Expression (ExApplication, ExDispatch, ExFormation, ExRoot, ExTermination, ExXi))
 import Control.Exception (SomeException)
 import Control.Monad (forM_, unless)
 import Data.Aeson
@@ -18,16 +18,19 @@ import Data.List (isInfixOf, nub)
 import Data.List.NonEmpty qualified as NE
 import Data.Yaml qualified as Yaml
 import Deps (Judgment (..), dontSaveStep)
+import Engine (Engine (_normal), building, stepOf)
 import Files (allPathsIn, ensuredFile)
+import Fixtures (linked)
 import Functions (buildTerm)
 import GHC.Generics
 import Must (Must (..))
 import Parser (parseExpressionThrows)
 import Printer (printExpression)
-import Rewriter (RewriteContext (RewriteContext), rewrite)
+import Rewriter (RewriteContext (RewriteContext), direct, fast, rewrite)
+import Rule (RuleContext (RuleContext), Step (_applied))
 import System.FilePath (makeRelative, replaceExtension, (</>))
 import Tau (seedTaus)
-import Test.Hspec (Spec, describe, expectationFailure, it, pending, runIO, shouldBe, shouldSatisfy, shouldThrow)
+import Test.Hspec (Spec, describe, expectationFailure, it, pending, runIO, shouldBe, shouldReturn, shouldSatisfy, shouldThrow)
 import Yaml (normalizationRules)
 import Yaml qualified as Y
 
@@ -112,7 +115,7 @@ spec = do
       ]
       ( \(desc, input', (maxDepth, maxCycles, depthSensitive), expected) -> it desc $ do
           expr <- parseExpressionThrows input'
-          let action = rewrite expr normalizationRules (RewriteContext ExRoot maxDepth maxCycles depthSensitive Nothing buildTerm MtDisabled Nothing dontSaveStep)
+          let action = rewrite expr (map (stepOf linked) normalizationRules) (RewriteContext ExRoot maxDepth maxCycles depthSensitive Nothing (building linked) (_normal linked) MtDisabled Nothing dontSaveStep)
           case expected of
             Left fragment -> action `shouldThrow` (\exc -> fragment `isInfixOf` show (exc :: SomeException))
             Right predicate -> do
@@ -140,7 +143,7 @@ spec = do
       ]
       ( \(desc, must', expected) -> it desc $ do
           expr <- parseExpressionThrows "⟦ t ↦ ⊥.a.b.c ⟧"
-          let action = rewrite expr normalizationRules (RewriteContext ExRoot 1 1 False Nothing buildTerm must' Nothing dontSaveStep)
+          let action = rewrite expr (map (stepOf linked) normalizationRules) (RewriteContext ExRoot 1 1 False Nothing (building linked) (_normal linked) must' Nothing dontSaveStep)
           case expected of
             Left fragment -> action `shouldThrow` (\exc -> fragment `isInfixOf` show (exc :: SomeException))
             Right predicate -> do
@@ -151,7 +154,7 @@ spec = do
   describe "judges the steps it takes" $
     it "takes every step by normalization" $ do
       expr <- parseExpressionThrows "⟦ k ↦ ⟦ w ↦ ⟦ Δ ⤍ 1F- ⟧ ⟧.w ⟧"
-      (rewrittens, _) <- rewrite expr normalizationRules (RewriteContext ExRoot 25 25 False Nothing buildTerm MtDisabled Nothing dontSaveStep)
+      (rewrittens, _) <- rewrite expr (map (stepOf linked) normalizationRules) (RewriteContext ExRoot 25 25 False Nothing (building linked) (_normal linked) MtDisabled Nothing dontSaveStep)
       nub [judgment | (_, Just (judgment, _)) <- NE.toList rewrittens] `shouldBe` [Normalization]
 
   describe "rewrite packs" $ do
@@ -197,14 +200,15 @@ spec = do
               (rewrittens, _) <-
                 rewrite
                   expr
-                  rules'
+                  (map (stepOf linked) rules')
                   ( RewriteContext
                       ExRoot
                       repeat'
                       repeat'
                       False
                       Nothing
-                      buildTerm
+                      (building linked)
+                      (_normal linked)
                       must'
                       Nothing
                       dontSaveStep
@@ -219,3 +223,20 @@ spec = do
                       ++ printExpression rewritten
                   )
       )
+  describe "direct" $ do
+    it "rewrites every place the function matches at" $
+      _applied (direct "tx" False (\_ expr -> [ExRoot | ExXi <- [expr]])) (RuleContext buildTerm Nothing (const True)) (ExDispatch (ExApplication ExXi (ArTau (AtLabel "o") ExXi)) (AtLabel "m"))
+        `shouldReturn` Just (ExDispatch (ExApplication ExRoot (ArTau (AtLabel "o") ExRoot)) (AtLabel "m"))
+    it "tells it matched nowhere" $
+      _applied (direct "tx" False (\_ expr -> [ExRoot | ExXi <- [expr]])) (RuleContext buildTerm Nothing (const True)) (ExDispatch ExTermination (AtLabel "m"))
+        `shouldReturn` Nothing
+    it "hands the world to the function" $
+      _applied (direct "tw" False (\universe expr -> [world | ExXi <- [expr], Just world <- [universe]])) (RuleContext buildTerm (Just ExTermination) (const True)) ExXi
+        `shouldReturn` Just ExTermination
+  describe "fast" $ do
+    it "holds for a formation rewritten between the same two meta bindings" $
+      fast (ExFormation [BiMeta "B1", BiVoid (AtLabel "j"), BiMeta "B2"]) (ExFormation [BiMeta "B1", BiVoid (AtLabel "k"), BiMeta "B2"])
+        `shouldBe` True
+    it "fails for a formation rewritten into a dispatch" $
+      fast (ExFormation [BiMeta "B1", BiVoid (AtLabel "j"), BiMeta "B2"]) (ExDispatch ExXi (AtLabel "k"))
+        `shouldBe` False

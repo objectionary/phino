@@ -13,6 +13,7 @@ import CLI.Types
 import CLI.Validators (invalidCLIArguments)
 import CST (EXPRESSION)
 import Canonizer (canonize, canonizeExpr)
+import Compiled (compiled)
 import Control.Exception
 import Control.Monad ((>=>))
 import Data.Char (toLower)
@@ -24,6 +25,7 @@ import Data.Maybe
 import qualified Data.Text as T
 import Deps (Evaluation (EvRun), Judgment, SaveEvalFunc, SaveStepFunc, State (..), dontSaveEval, emptyNesting, emptyProgress, emptyProtocol, endEvalXml, progressed, saveEval, saveEvalXml, saveStep)
 import Encoding
+import Engine (Engine, fresh, yaml)
 import Files (ensuredFile, overwrite)
 import Functions (buildFunctions, execFunctions)
 import GHC.Clock (getMonotonicTime)
@@ -335,3 +337,14 @@ printOut target content = case target of
     logDebug (printf "The option '--target' is specified, printing to '%s'..." file)
     overwrite file content
     logDebug (printf "The command result was saved in '%s'" file)
+
+-- The engine the rules run on: the one 'phino compile' wrote, where the build
+-- links one in, and the one interpreting the rules of YAML otherwise. An
+-- engine compiled from rules phino no longer carries is refused, since it
+-- would run rules nobody wrote (#1617).
+engine :: IO Engine
+engine = case compiled of
+  Nothing -> pure yaml
+  Just linked
+    | fresh linked -> logDebug "The built-in rules run compiled, as 'phino compile' wrote them" >> pure linked
+    | otherwise -> throwIO StaleEngine

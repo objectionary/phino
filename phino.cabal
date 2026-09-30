@@ -19,6 +19,13 @@ source-repository head
   type: git
   location: https://github.com/objectionary/phino
 
+-- Link in the engine 'phino compile' wrote to 'compiled/generated' rather
+-- than the stub in 'compiled/stub', which interprets the rules of YAML.
+flag compiled
+  description: Run the built-in rules as the Haskell 'phino compile' wrote
+  default: False
+  manual: True
+
 common warnings
   ghc-options:
     -Wall
@@ -45,12 +52,15 @@ library
     CLI.Runners
     CLI.Types
     CLI.Validators
+    Compiled
     Condition
     Contextualize
     CST
     Dataize
     Deps
+    Emit
     Encoding
+    Engine
     Evaluate
     Files
     Filter
@@ -84,6 +94,10 @@ library
     Yaml
 
   hs-source-dirs: src
+  if flag(compiled)
+    hs-source-dirs: compiled/generated
+  else
+    hs-source-dirs: compiled/stub
   other-modules:
     Paths_phino
 
@@ -143,12 +157,15 @@ test-suite spec
     CLIHelpersSpec
     CLISpec
     CLITypesSpec
+    CompiledSpec
     ConditionSpec
     ContextualizeSpec
     CSTSpec
     DataizeSpec
     DepsSpec
+    EmitSpec
     EncodingSpec
+    EngineSpec
     EvaluateSpec
     FilesSpec
     FilterSpec

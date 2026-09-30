@@ -5,16 +5,18 @@ module Main where
 
 import AST (Attribute (AtLabel), Binding (BiTau), Expression (ExFormation, ExRoot), hashExpression)
 import CLI.Helpers (started)
+import Compiled (compiled)
 import Control.Exception (evaluate)
 import Control.Monad (replicateM, replicateM_)
 import qualified Data.Map.Strict as Map
+import Data.Maybe (fromMaybe)
 import Data.String (fromString)
 import Data.Time.Clock
 import Dataize (reduction)
 import Deps (Acyclic (Plausible, Proven), Judgment (Morphing), dontSaveEval, dontSaveStep)
 import Encoding (Encoding (UNICODE))
+import Engine (Engine (_normal), building, stepOf, yaml)
 import Evaluate (evaluation, fired)
-import Functions (buildTerm)
 import Lambdas (Lambdas, readLambdas)
 import Lining (LineFormat (MULTILINE, SINGLELINE))
 import Margin (defaultMargin)
@@ -61,7 +63,8 @@ rewriteCtx =
     100
     False
     Nothing
-    buildTerm
+    (building linked)
+    (_normal linked)
     MtDisabled
     Nothing
     dontSaveStep
@@ -98,12 +101,19 @@ symbolicCtx acyclic memo lambdas locator =
     [] -- _parked
     Map.empty -- _entered
     lambdas -- _symbolic
-    buildTerm -- _buildTerm
+    (building linked) -- _buildTerm
     reduction -- _reduce
     evaluation -- _evaluate
     fired -- _fire
     dontSaveStep -- _saveStep
     dontSaveEval -- _saveEval
+    linked -- _engine
+
+-- The engine the rules run on: the one 'phino compile' wrote, where the build
+-- links it in, and the one interpreting the rules of YAML otherwise, so the
+-- same suite times either (#1617).
+linked :: Engine
+linked = fromMaybe yaml compiled
 
 timeAction :: IO a -> IO Double
 timeAction action = do
@@ -160,7 +170,7 @@ main = do
   counters <- readLambdas "benchmark/accum.yaml"
   runBench "parse/phi" (parseExpressionThrows src)
   runBench "parse/xmir" (parseXMIRThrows xsrc >>= xmirToPhi)
-  runBench "rewrite/normalize" (rewrite expr normalizationRules rewriteCtx)
+  runBench "rewrite/normalize" (rewrite expr (map (stepOf linked) normalizationRules) rewriteCtx)
   runBench
     "print/sweet/multiline"
     (evaluate (length (printExpression' expr (SWEET, UNICODE, MULTILINE, defaultMargin))))

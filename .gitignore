@@ -34,6 +34,7 @@ cabal-dev
 cabal.project.local
 cabal.project.local~
 cabal.sandbox.config
+compiled/generated/
 coverage-report/
 dist
 dist-*

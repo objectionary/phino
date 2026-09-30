@@ -17,6 +17,7 @@ Never commit directly to `master`. Always branch from an up-to-date `master`.
 
 ```bash
 make test          # cabal test --ghc-options=-Werror
+make compiled      # phino compile + the whole suite on the compiled rules
 make hlint         # hlint src app test
 make fourmolu      # --mode check src app test (2-space indent, leading commas)
 make coverage      # cabal test --enable-coverage + hpc-codecov (threshold 65%)
@@ -67,10 +68,10 @@ sibling, on both sides, under "Scaling".
 components: `library` (`src/`), executable `phino` (`app/`), test suite
 `spec` (`test/`), benchmark suite `bench` (`benchmark/`).
 
-### Six CLI commands
+### Seven CLI commands
 
-`rewrite` | `dataize` | `morph` | `explain` | `merge` | `match` — all wired in
-`src/CLI/Runners.hs`, parsed in `src/CLI/Parsers.hs`.
+`rewrite` | `dataize` | `morph` | `explain` | `merge` | `match` | `compile` —
+all wired in `src/CLI/Runners.hs`, parsed in `src/CLI/Parsers.hs`.
 
 ### Two-phase rendering pipeline
 
@@ -99,6 +100,35 @@ rule matches (#1618).
 Matching (`Matcher.hs`) produces `[Subst]` — a list of
 `Map Text MetaValue` — and conditions filter that list. `Builder.hs` then
 applies a substitution to a result template.
+
+### Compiled rules
+
+`phino compile` (#1617) writes `compiled/generated/Compiled.hs`, which git
+ignores: `Emit.hs` turns every rule of normalization, the built-in ones and
+those of `--rule`, into a list comprehension over the term it may match as a
+whole, and 𝒞 into one function with an equation per rule, built on
+`concluded` of `Contextualize.hs`. The rules of 𝕄 and 𝔻 stay interpreted. What
+runs the rules is an `Engine` (`Engine.hs`): the steps of normalization, a step
+per compiled rule keyed by the `show` text of the rule, the normal-form test
+and 𝒞. `yaml` interprets the rules; the module `Compiled` holds the other one,
+and the Cabal flag `compiled` picks its source folder, `compiled/stub` (where
+`compiled = Nothing`) or `compiled/generated`. Only the CLI (`engine` in
+`CLI/Helpers.hs`) and the specs reach for `Compiled`; the library gets the
+engine through `_engine` of `ReduceContext`, `_normal` of `RewriteContext` and
+`RuleContext`, and `building`, which routes `contextualize` to the engine.
+
+A rewriting step is a `Step` of `Rule.hs`, a name and a function. `interpreted`
+of `Rewriter.hs` wraps the matcher and the replacer; `direct` wraps a compiled
+function, finds the places it matches at with `sites` of `Matcher.hs` in the
+order the deep matcher finds them, and hands them to the same
+`replaceExpression`, so the chain of steps is the same with either engine. A
+rule the generated code could not run that way is refused with the reason:
+`having`, a `where` function other than `contextualize` and `named`,
+`matches`, `part-of`, a rule of the fast shape (`fast` of `Rewriter.hs`), and
+a pattern applying Φ to a ρ. A compiled engine carries the texts of the
+built-in rules it was made from and the CLI refuses it once they changed
+(`fresh`). `CompiledSpec.hs` runs both engines over random terms and compares
+the chains, the normal-form test and 𝒞.
 
 ### λ functions live outside the binary
 
