@@ -39,6 +39,12 @@ newtype Subst = Subst (Map Meta MetaValue)
 -- the substitutions under which they agree.
 type MatchExpressionFunc = Expression -> Expression -> [Subst]
 
+-- Maximum number of substitutions any single matcher function produces.
+-- Prevents denial-of-service when crafted YAML rules generate combinatorial
+-- explosion via multiple meta-bindings on the same formation (#1616).
+maxSubsts :: Int
+maxSubsts = 1000
+
 -- Empty substitution
 substEmpty :: Subst
 substEmpty = Subst Map.empty
@@ -65,7 +71,7 @@ combine (Subst a) (Subst b) = go (Map.toList b) a
       Nothing -> go rest (Map.insert key value acc)
 
 combineMany :: [Subst] -> [Subst] -> [Subst]
-combineMany xs xy = catMaybes [combine x y | x <- xs, y <- xy]
+combineMany xs xy = take maxSubsts result where result = catMaybes [combine x y | x <- xs, y <- xy]
 
 matchAttribute :: Attribute -> Attribute -> [Subst]
 matchAttribute (AtMeta meta) tgt = [substSingle meta (MvAttribute tgt)]

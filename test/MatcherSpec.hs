@@ -628,6 +628,18 @@ spec = do
             , ("B2", MvBindings [BiVoid AtRho])
             ]
           ]
+
+  describe "combineMany: combinatorial explosion guard" $ do
+    it "limits output when cartesian product exceeds maxSubsts" $ do
+      let bigList = [Subst (Map.singleton (Named ("x" <> T.pack (show i))) (MvExpression ExRoot)) | i <- [1 .. 50]]
+          smallList = [Subst (Map.singleton (Named "y") (MvAttribute AtPhi)) | _ <- [1 .. 50]]
+          result = combineMany bigList smallList
+      length result `shouldBe` 1000
+    it "does not limit when product is smaller than maxSubsts" $ do
+      let smallA = [Subst (Map.singleton (Named "a") (MvBytes (BtOne "00"))), Subst (Map.singleton (Named "b") (MvBytes (BtOne "01")))]
+          smallB = [Subst (Map.singleton (Named "c") (MvAttribute AtPhi))]
+          result = combineMany smallA smallB
+      length result `shouldBe` 2
   where
     -- The pattern of the 'dot' normalization rule, the one every dispatch of a
     -- program is matched against: a meta binding on either side of the binding
