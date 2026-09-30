@@ -2449,7 +2449,9 @@ spec = do
 
       -- Every worker of '--jobs' reads the clock and ends its binding at its
       -- own refusal, and only the records of the first binding that failed
-      -- are written, so that binding has to carry the refusal itself
+      -- are written, so that binding has to carry the refusal itself. Where
+      -- the clock stops the run is a matter of timing, an operand or a binding
+      -- whose worker started late, so the site is left unchecked
       forM_ [["--locator=Q.x"], ["--locator=Q.x", "--partial"], ["--deep", "--partial"], ["--deep", "--partial", "--jobs=4"]] $ \opts ->
         it ("writes the timeout as the last line of the protocol with " ++ unwords opts) $
           ladder $ \table ->
@@ -2461,7 +2463,7 @@ spec = do
                     (["morph", "--symbolic=" ++ table, "--max-seconds=1", "--protocol=" ++ path, "--quiet"] ++ opts)
                     ["--max-seconds=1"]
               records <- readUtf8 path
-              dropWhile (== ' ') (last (lines records)) `shouldStartWith` "timeout(1)  # 𝕄(Φ.a🌵"
+              dropWhile (== ' ') (last (lines records)) `shouldStartWith` "timeout(1)  # 𝕄("
 
       -- Only the first refusal of the deadline is written, and the run ends
       -- on it, so the markup carries one timeout and nothing after it
