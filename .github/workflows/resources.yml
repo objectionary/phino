@@ -10,6 +10,7 @@ name: resources
   pull_request:
     branches:
       - master
+permissions: read-all
 jobs:
   check-resources:
     runs-on: ubuntu-24.04

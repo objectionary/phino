@@ -10,6 +10,7 @@ name: cabal
   pull_request:
     branches:
       - master
+permissions: read-all
 jobs:
   cabal:
     strategy:

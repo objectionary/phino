@@ -7,10 +7,11 @@ name: haddock
   push:
     branches:
       - master
-permissions:
-  contents: write
+permissions: read-all
 jobs:
   haddock:
+    permissions:
+      contents: write
     env:
       GHC_VERSION: 9.6.7
     runs-on: macos-26

@@ -12,6 +12,7 @@ name: stack
       - master
 env:
   STACK_ROOT: ${{ github.workspace }}/.stack-root
+permissions: read-all
 jobs:
   stack:
     strategy:

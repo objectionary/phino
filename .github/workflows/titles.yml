@@ -8,8 +8,11 @@ name: titles
     - cron: '0 * * * *'
   issues:
     types: [opened]
+permissions: read-all
 jobs:
   titles:
+    permissions:
+      issues: write
     timeout-minutes: 15
     runs-on: ubuntu-24.04
     steps:

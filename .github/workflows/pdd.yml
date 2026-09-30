@@ -10,6 +10,7 @@ name: pdd
   pull_request:
     branches:
       - master
+permissions: read-all
 jobs:
   pdd:
     timeout-minutes: 15

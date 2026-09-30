@@ -17,6 +17,7 @@ env:
   HOME_REV: 'a4ccaa932aa2049b509a96f3589f7f28ec4e4469'
   EOLANG_VERSION: '0.37.1'
   EO_PARSER: '0.62.1'
+permissions: read-all
 jobs:
   objectionary:
     timeout-minutes: 90
