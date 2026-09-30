@@ -8,7 +8,7 @@
 
 module RuleSpec where
 
-import AST (Argument (..), Attribute (..), Binding (..), Bytes (..), Expression (..), Function (..), inert)
+import AST (Argument (..), Attribute (..), Binding (..), Bytes (..), Expression (..), Function (..), Slot (..), inert)
 import Builder (buildExpressionThrows)
 import Control.Monad
 import Data.Aeson
@@ -21,7 +21,7 @@ import GHC.Generics
 import Matcher
 import Parser (parseExpressionThrows)
 import Printer (printSubsts)
-import Rule (RuleContext (RuleContext), isNF, matchExpressionWithRule, meetCondition, redex)
+import Rule (RuleContext (RuleContext), isNF, matchExpressionWithRule, meetCondition, normalHeld, redex)
 import System.FilePath
 import Test.Hspec (Spec, describe, expectationFailure, it, runIO, shouldBe, shouldReturn, shouldSatisfy)
 import Yaml qualified
@@ -189,6 +189,13 @@ spec = do
       (mapM (buildExpressionThrows (ExMeta "e2")) =<< matchExpressionWithRule world namingRule (RuleContext buildTerm Nothing (_normal linked)))
         `shouldReturn` [world]
 
+  describe "normalHeld" $ do
+    it "tells no meta a term holds a normal form" $
+      normalHeld (const True) (ExMeta "qd") `shouldBe` False
+    it "tells no slot a term holds a normal form" $
+      normalHeld (const True) (ExAny (Slot "n" 7)) `shouldBe` False
+    it "asks the test about a term that is no meta" $
+      normalHeld (== ExDispatch ExXi (AtLabel "wv")) (ExDispatch ExXi (AtLabel "wv")) `shouldBe` True
   describe "redex" $ do
     it "takes every normalization rule for a redex" $
       all redex Yaml.normalizationRules `shouldBe` True

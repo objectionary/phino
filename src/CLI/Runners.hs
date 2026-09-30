@@ -410,7 +410,7 @@ runMatch OptsMatch{..} = do
 runCompile :: OptsCompile -> IO ()
 runCompile OptsCompile{..} = do
   custom <- getRules False False _rules
-  source <- either (throwIO . CouldNotCompile) pure (emitted Y.normalizationRules custom Y.contextualizationRules current)
+  source <- either (throwIO . CouldNotCompile) pure (emitted Y.normalizationRules custom Y.contextualizationRules Y.morphingRules Y.dataizationRules current)
   overwrite _targetFile source
   logInfo (printf "The rules were compiled into '%s'" _targetFile)
   exists <- doesFileExist "cabal.project.local"

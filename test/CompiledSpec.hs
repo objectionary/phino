@@ -11,13 +11,17 @@ import AST
 import Control.Exception (SomeException, evaluate, try)
 import Control.Monad (filterM, (>=>))
 import Data.Aeson (FromJSON)
+import Data.List.NonEmpty (NonEmpty (..))
 import Data.Text qualified as T
 import Data.Yaml qualified as Yaml
+import Dataize (dataize')
 import Deps (dontSaveStep)
 import Engine (Engine (..), building, fresh, stepOf, yaml)
 import Files (allPathsIn)
-import Fixtures (linked)
+import Fixtures (defaultReduceContext, linked, withLambdasOf)
 import GHC.Generics (Generic)
+import Lambdas (Lambdas, readLambdas)
+import Morph (ReduceContext (..), Steps (..), emptyState, morph')
 import Must (Must (MtDisabled))
 import Parser (parseExpressionThrows)
 import Rewriter (RewriteContext (RewriteContext), rewrite)
@@ -51,6 +55,16 @@ spec =
     it "contextualizes random terms the way the rules of YAML do, failures included" $
       filterM (\seed -> (/=) <$> contextualized linked (term True seed) (term False (seed + 1)) <*> contextualized yaml (term True seed) (term False (seed + 1))) [1 .. 3000]
         `shouldReturn` []
+    it "morphs an object of random programs into the chains the rules of YAML make, failures included" $
+      withLambdasOf "- λ: L_q\n  𝑛: ⟦ φ ↦ ⟦ λ ⤍ 𝜎 ⟧ ⟧\n" $ \path -> do
+        lambdas <- readLambdas path
+        filterM (\seed -> (/=) <$> morphed lambdas linked (program seed) <*> morphed lambdas yaml (program seed)) [1 .. 400]
+          `shouldReturn` []
+    it "dataizes an object of random programs into the chains the rules of YAML make, failures included" $
+      withLambdasOf "- λ: L_q\n  𝑛: ⟦ φ ↦ ⟦ λ ⤍ 𝜎 ⟧ ⟧\n" $ \path -> do
+        lambdas <- readLambdas path
+        filterM (\seed -> (/=) <$> dataized lambdas linked (program seed) <*> dataized lambdas yaml (program seed)) [1 .. 400]
+          `shouldReturn` []
   where
     chain :: Engine -> Maybe Expression -> Expression -> IO (Either String String)
     chain engine universe expr =
@@ -61,6 +75,14 @@ spec =
               (map (stepOf engine) Y.normalizationRules)
               (RewriteContext ExRoot 25 25 False universe (building engine) (_normal engine) MtDisabled Nothing dontSaveStep)
         )
+    morphed :: Lambdas -> Engine -> Expression -> IO (Either String String)
+    morphed lambdas engine world = settled (show . fst <$> morph' (ExDispatch ExRoot (AtLabel "x"), (world, Nothing) :| []) world emptyState (reducing lambdas engine))
+    dataized :: Lambdas -> Engine -> Expression -> IO (Either String String)
+    dataized lambdas engine world = settled (show . fst <$> dataize' (ExDispatch ExRoot (AtLabel "x"), (world, Nothing) :| []) world emptyState (reducing lambdas engine))
+    reducing :: Lambdas -> Engine -> ReduceContext
+    reducing lambdas engine = (defaultReduceContext ExRoot){_engine = engine, _buildTerm = building engine, _shuffle = False, _steps = Steps 40 0, _symbolic = lambdas}
+    program :: Int -> Expression
+    program seed = fst (formation False 4 (mkStdGen seed))
     contextualized :: Engine -> Expression -> Expression -> IO (Either String String)
     contextualized engine expr context = settled (show <$> _contextualize engine expr context)
     settled :: IO String -> IO (Either String String)

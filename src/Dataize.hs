@@ -14,24 +14,18 @@
 module Dataize (dataize, dataize', reduction, Outcome (..)) where
 
 import AST
-import Builder (buildBytesThrows, buildExpressionThrows)
 import Control.Exception (throwIO, try)
-import Control.Monad (foldM, unless)
-import Data.List (find)
+import Control.Monad (unless)
 import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as NE
 import Data.Maybe (listToMaybe)
 import qualified Data.Text as T
 import Deps (Evaluation (..), Judgment (..), State (..))
 import Engine (Engine (..))
+import qualified Inference as In
 import Locator (locatedExpression)
-import Matcher (Subst, matchExpression')
-import Morph (Morphed, ReduceContext (..), ReduceException (..), ReductionFunc, boxed, deeper, entering, excluding, execBuildTerm, insideUniverse, label, leadsTo, morph', normalized, parking, producer, sidePremise, universed)
-import Random (shuffle)
+import Morph (Morphed, ReduceContext (..), ReduceException (..), ReductionFunc, boxed, deeper, entering, inferred, insideUniverse, leadsTo, onward, parking, universed)
 import Rewriter (Rewritten)
-import Rule (RuleContext (RuleContext), matchExpressionWithRule')
-import Text.Printf (printf)
-import qualified Yaml as Y
 
 type Dataized = (Bytes, [Rewritten])
 
@@ -75,7 +69,8 @@ dataize universe state ctx@ReduceContext{..} = do
 -- The Dataization function 𝔻 retrieves bytes from an expression. It is partial
 -- and ternary, 𝔻(n, e, s): besides the term 'n' it takes the universe 'e' ('univ'),
 -- which it forwards to 𝕄, and the mutable state 's', returning the bytes together
--- with the new state. Its rules come from 'resources/dataization': 'delta' yields the
+-- with the new state. Its rules come from 'resources/dataization', run by the
+-- engine (see '_dataization' of 'Engine'): 'delta' yields the
 -- asset bytes and 'none' (a formation with no Δ/λ/φ) has nothing to dataize, so
 -- it dataizes ⊥. The terminator ⊥ signals an error and lies outside 𝔻's domain,
 -- so it matches no clause (there is no 'end' rule mapping it to empty bytes) and
@@ -88,14 +83,15 @@ dataize universe state ctx@ReduceContext{..} = do
 -- its 'contextualize' side-computation), and 'norm' reduces through morphing,
 -- splicing the morphing steps into the chain. The clauses are disjoint (see
 -- #902, #905), so their declaration order must not be load-bearing; when
--- '_shuffle' is on (the '--shuffle' flag) the rules are shuffled before the
--- 'firstMatch' walk to exercise that invariant — mirroring normalization's
+-- '_shuffle' is on (the '--shuffle' flag) the rules are shuffled before
+-- 'inferred' walks them to exercise that invariant — mirroring normalization's
 -- "apply until they stop matching". A genuinely order-independent step stays
 -- deterministic; a hidden overlap surfaces as a nondeterministic failure rather
 -- than staying silently green.
 -- The conclusion bytes 'dresult' are produced by a trailing 'dataize' premise;
 -- when its argument is bound by a 'morph' or 'normalize' premise, that step
--- joins the spine, otherwise the premise is an isolated side-computation.
+-- joins the spine, otherwise the premise is an isolated side-computation (see
+-- 'dataizationSpine' of 'Inference').
 -- Like 𝕄, every frame asks '_acyclic' whether the formation it is about to
 -- enter through 'box' or 'fire' is one a frame above it has already entered,
 -- before any rule is walked: 𝔻 recurses into itself through those two rules
@@ -111,10 +107,17 @@ dataize' (expr, seq) univ state caller = do
   parking seq state $ case unknown expr of
     Just idx -> manufactured idx ctx
     Nothing -> do
-      rules <- if ctx._shuffle then shuffle Y.dataizationRules else pure Y.dataizationRules
-      matched <- firstMatch ctx rules
-      case matched of
-        Just (rule, subst) -> reduce ctx rule subst
+      reached <- inferred expr univ state ctx ctx._engine._dataization
+      case reached of
+        -- Data the program itself carries stands for nothing but itself, so
+        -- whichever symbol the last datum was manufactured for is forgotten
+        -- here: only a run ending on a symbol leaves one behind.
+        Just (In.Answered step bts, state') -> do
+          seq' <- leadsTo seq step (ExBytes bts) ctx
+          pure ((bts, NE.toList seq'), state'{_manufactured = Nothing})
+        Just (In.Onward way built world, state') -> do
+          (dataizable, state'') <- onward seq state' way built ctx
+          dataize' dataizable world state'' ctx
         Nothing -> throwIO (Undataizable expr state)
   where
     -- The context a frame opening on a formation 'box' gets into goes on
@@ -143,80 +146,6 @@ dataize' (expr, seq) univ state caller = do
     manufactured idx ctx = do
       seq' <- leadsTo seq (Dataization, "symbol") (ExBytes datum) ctx
       pure ((datum, NE.toList seq'), state{_manufactured = Just idx})
-    firstMatch :: ReduceContext -> [Y.DataizeRule] -> IO (Maybe (Y.DataizeRule, Subst))
-    firstMatch _ [] = pure Nothing
-    firstMatch ctx (rule : rest) = do
-      substs <- matchExpressionWithRule' (matchExpression' rule.ematch univ) expr (asRule rule) (RuleContext (execBuildTerm univ ctx) (Just univ) ctx._engine._normal)
-      case substs of
-        (subst : _) -> pure (Just (rule, subst))
-        [] -> firstMatch ctx rest
-    asRule :: Y.DataizeRule -> Y.Rule
-    asRule rule = Y.Rule rule.name Nothing Nothing rule.match ExRoot rule.when Nothing Nothing
-    reduce :: ReduceContext -> Y.DataizeRule -> Subst -> IO (Dataized, State)
-    reduce ctx rule subst = case bytesProducer rule.dresult rule.premises of
-      Nothing -> do
-        (final, state') <- sides ctx rule.premises subst
-        bts <- buildBytesThrows rule.dresult final
-        seq' <- leadsTo seq (Dataization, rule.name) (ExBytes bts) ctx
-        -- Data the program itself carries stands for nothing but itself, so
-        -- whichever symbol the last datum was manufactured for is forgotten
-        -- here: only a run ending on a symbol leaves one behind.
-        pure ((bts, NE.toList seq'), state'{_manufactured = Nothing})
-      Just concl@(Y.Premise _ (Y.OpDataize arg universe)) -> case producer arg rule.premises of
-        -- 𝔻(𝒩(e)) records the producing step (the 'box' contextualization),
-        -- then normalizes its result back to a normal form before dataizing on,
-        -- so 𝔻 only ever sees normal forms.
-        Just normal@(Y.Premise _ (Y.OpNormalize inner)) -> do
-          let side = rule.premises `excluding` [concl, normal]
-          (final, state') <- sides ctx side subst
-          built <- buildExpressionThrows inner final
-          world <- buildExpressionThrows universe final
-          labelled <- leadsTo seq (labelOf side) built ctx
-          (normal', seq') <- normalized built labelled ctx
-          dataize' (normal', seq') world state' ctx
-        -- 𝔻(𝕄(e)) delegates to the morphing relation, in the universe the
-        -- 'morph' premise names, splicing its steps into the chain before
-        -- dataizing on in the one the conclusion names.
-        Just morphed@(Y.Premise _ (Y.OpMorph inner scene)) -> do
-          (final, state') <- sides ctx (rule.premises `excluding` [concl, morphed]) subst
-          built <- buildExpressionThrows inner final
-          stage <- buildExpressionThrows scene final
-          ((morphed', seq'), state'') <- morph' (built, seq) stage state' ctx
-          world <- buildExpressionThrows universe final
-          dataize' (morphed', seq') world state'' ctx
-        -- The dataize argument is produced with no 'normalize'/'morph' spine to
-        -- splice: 'fire' by its 'evaluate' side-computation (𝔼 now yields a
-        -- normal form itself, so no follow-up 'normalize' is needed) and 'none'
-        -- by handing the literal ⊥ straight to 𝔻. The transition is labelled by
-        -- the side-computation ('evaluate') when there is one, else by the
-        -- conclusion's own verb ('dataize' for 𝔻(⊥)).
-        _ -> do
-          let side = rule.premises `excluding` [concl]
-          (final, state') <- sides ctx side subst
-          built <- buildExpressionThrows arg final
-          world <- buildExpressionThrows universe final
-          seq' <- leadsTo seq (labelOr (label concl.operation) side) built ctx
-          dataize' (built, seq') world state' ctx
-      Just _ -> throwIO (userError (printf "dataization rule '%s' must conclude with a 'dataize' premise" rule.name))
-    sides :: ReduceContext -> [Y.Premise] -> Subst -> IO (Subst, State)
-    sides ctx premises subst = foldM (sidePremise univ ctx) (subst, state) premises
-    -- A spliced dataization step is labelled by its first side-computation —
-    -- 'box' by its 'contextualize', 'fire' by its 'evaluate' — and taken by the
-    -- judgment that computation runs; with none it is blank and taken by 𝔻.
-    labelOf :: [Y.Premise] -> (Judgment, String)
-    labelOf (premise : _) = label premise.operation
-    labelOf [] = (Dataization, "")
-    -- As 'labelOf', but falls back to the given label when there is no
-    -- side-computation to name the step (the 'none' rule's 𝔻(⊥) premise).
-    labelOr :: (Judgment, String) -> [Y.Premise] -> (Judgment, String)
-    labelOr _ premises@(_ : _) = labelOf premises
-    labelOr fallback [] = fallback
-
--- The premise binding the given bytes meta, if any — the dataization analogue of
--- 'producer' for a rule's bytes conclusion.
-bytesProducer :: Bytes -> [Y.Premise] -> Maybe Y.Premise
-bytesProducer (BtMeta name) = find (\premise -> premise.result == name)
-bytesProducer _ = const Nothing
 
 -- What a 'dataize' operand of a λ function is brought down with (see
 -- 'ReductionFunc' in 'Morph'): the operand is bound to a synthetic attribute of
