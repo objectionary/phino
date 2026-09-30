@@ -22,8 +22,9 @@ import Data.Maybe (fromMaybe)
 import Data.Yaml qualified as Decode
 import Dataize (Outcome (..), dataize)
 import Deps (Judgment (..), State, Term (TeExpression))
+import Engine (Engine (_normal))
 import Files (allPathsIn)
-import Fixtures (defaultReduceContext, fixtureLambdas, overdue, primitives, withLambdas, withLambdasOf)
+import Fixtures (defaultReduceContext, fixtureLambdas, linked, overdue, primitives, withLambdas, withLambdasOf)
 import GHC.Generics (Generic)
 import Lambdas (Lambdas, emptyLambdas, readLambdas)
 import Matcher (MetaValue (MvExpression), substEmpty, substSingle)
@@ -292,7 +293,7 @@ spec = do
   -- two clauses are mutually exclusive and their order in 'resources/morphing'
   -- cannot change behavior.
   describe "morphing 'md' is disjoint from 'ml'" $ do
-    let rctx = RuleContext (execBuildTerm ExRoot (defaultReduceContext ExRoot)) Nothing
+    let rctx = RuleContext (execBuildTerm ExRoot (defaultReduceContext ExRoot)) Nothing (_normal linked)
         morphRule :: String -> Yaml.MorphRule
         morphRule nm = fromMaybe (error ("no morphing rule named " ++ nm)) (find (\r -> r.name == nm) Yaml.morphingRules)
         asRule :: Yaml.MorphRule -> Yaml.Rule

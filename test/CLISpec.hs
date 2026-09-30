@@ -20,7 +20,7 @@ import Files (allPathsIn)
 import Fixtures (explainPack, lambdasFile, loopingLambdas, readUtf8, withLambdasOf)
 import GHC.IO.Handle
 import Paths_phino (version)
-import System.Directory (createDirectoryIfMissing, doesDirectoryExist, doesFileExist, getTemporaryDirectory, listDirectory, removeDirectoryRecursive, removeFile, removePathForcibly, setModificationTime)
+import System.Directory (createDirectoryIfMissing, doesDirectoryExist, doesFileExist, getTemporaryDirectory, listDirectory, makeAbsolute, removeDirectoryRecursive, removeFile, removePathForcibly, setModificationTime, withCurrentDirectory)
 import System.Exit (ExitCode (ExitFailure))
 import System.FilePath ((</>))
 import System.IO
@@ -2904,6 +2904,40 @@ spec = do
       (secondRun, _) <- withStdout (runCLI args)
       firstRun `shouldBe` secondRun
 
+  describe "compile" $ do
+    it "writes the module to the target" $
+      withTempDirectory "phino-compile" $ \dir -> do
+        createDirectoryIfMissing True dir
+        withCurrentDirectory dir (runCLI ["compile", "--target=gen/Compiled.hs"])
+        doesFileExist (dir </> "gen" </> "Compiled.hs") `shouldReturn` True
+    it "writes the rules of --rule into the module" $
+      withTempDirectory "phino-compile" $ \dir -> do
+        createDirectoryIfMissing True dir
+        simple <- makeAbsolute "test-resources/cli/rules/simple.yaml"
+        withCurrentDirectory dir (runCLI ["compile", "--rule=" ++ simple, "--target=Compiled.hs"])
+        readFile (dir </> "Compiled.hs") >>= (`shouldSatisfy` ("R.direct \"foo\"" `isInfixOf`))
+    it "turns the flag on in a new cabal.project.local" $
+      withTempDirectory "phino-compile" $ \dir -> do
+        createDirectoryIfMissing True dir
+        withCurrentDirectory dir (runCLI ["compile", "--target=Compiled.hs"])
+        readFile (dir </> "cabal.project.local") `shouldReturn` "package phino\n  flags: +compiled\n"
+    it "prints the lines an existing cabal.project.local lacks" $
+      withTempDirectory "phino-compile" $ \dir -> do
+        createDirectoryIfMissing True dir
+        writeFile (dir </> "cabal.project.local") "tests: True\n"
+        withCurrentDirectory dir (testCLISucceeded ["compile", "--target=Compiled.hs"] ["package phino\n  flags: +compiled"])
+    it "leaves an existing cabal.project.local as it is" $
+      withTempDirectory "phino-compile" $ \dir -> do
+        createDirectoryIfMissing True dir
+        writeFile (dir </> "cabal.project.local") "tests: True\n"
+        withStdout (withCurrentDirectory dir (runCLI ["compile", "--target=Compiled.hs"]))
+        readFile (dir </> "cabal.project.local") `shouldReturn` "tests: True\n"
+    it "refuses a rule it cannot compile" $
+      withTempDirectory "phino-compile" $ \dir -> do
+        createDirectoryIfMissing True dir
+        writeFile (dir </> "having.yaml") "name: hv\npattern: '[[ x -> !e1, !B1 ]]'\nresult: '[[ !B1 ]]'\nhaving:\n  eq: ['!e1', 'Q']\n"
+        withCurrentDirectory dir (testCLIFailed ["compile", "--rule=having.yaml", "--target=Compiled.hs"] ["The rule 'hv' cannot be compiled, since it has a 'having' condition"])
+
   describe "match" $ do
     it "prints help" $
       testCLISucceeded
@@ -2986,6 +3020,12 @@ spec = do
         ( "VersionMismatch"
         , VersionMismatch "1.2.3" "4.5.6"
         , "Version mismatch: --pin requires '1.2.3', but this is phino 4.5.6"
+        )
+      , ("CouldNotCompile", CouldNotCompile "The rule 'q' cannot be compiled, since it is odd", "The rule 'q' cannot be compiled, since it is odd")
+      ,
+        ( "StaleEngine"
+        , StaleEngine
+        , "The compiled rules are stale, since the rules of phino changed after 'phino compile', so run it again and rebuild"
         )
       ]
       ( \(desc, exception, expected) ->

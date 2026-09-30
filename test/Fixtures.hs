@@ -12,6 +12,7 @@ module Fixtures
   , explainPack
   , fixtureLambdas
   , lambdasFile
+  , linked
   , loopingLambdas
   , overdue
   , primitives
@@ -27,17 +28,19 @@ where
 import AST (Expression (ExRoot))
 import CLI.Helpers (withEvalFunc)
 import CLI.Types (IOFormat (PHI), PrintContext (PrintCtx))
+import Compiled (compiled)
 import Control.Exception (bracket, evaluate)
 import Data.Aeson (FromJSON (parseJSON), withObject, (.:))
 import Data.ByteString qualified as BS
 import Data.Map.Strict qualified as Map
+import Data.Maybe (fromMaybe)
 import Data.Text qualified as T
 import Data.Text.Encoding (encodeUtf8)
 import Data.Yaml qualified as Yaml
 import Dataize (reduction)
 import Deps (Judgment (..), SaveEvalFunc, dontSaveEval, dontSaveStep)
+import Engine (Engine, building, yaml)
 import Evaluate (evaluation, fired)
-import Functions (buildTerm)
 import GHC.Clock (getMonotonicTime)
 import Lambdas (Lambdas, emptyLambdas, readLambdas)
 import Lining (LineFormat (MULTILINE))
@@ -54,7 +57,13 @@ import XMIR (defaultXmirContext)
 -- none of them: a case that needs one to answer brings the fixture file in
 -- through 'withLambdas'.
 defaultReduceContext :: Expression -> ReduceContext
-defaultReduceContext loc = ReduceContext loc loc Nothing 25 25 (Steps 250 0) Nothing Nothing Nothing 1 False True False False 1 Nothing Morphing [] Map.empty emptyLambdas buildTerm reduction evaluation fired dontSaveStep dontSaveEval
+defaultReduceContext loc = ReduceContext loc loc Nothing 25 25 (Steps 250 0) Nothing Nothing Nothing 1 False True False False 1 Nothing Morphing [] Map.empty emptyLambdas (building linked) reduction evaluation fired dontSaveStep dontSaveEval linked
+
+-- The engine the rules run on in this build: the one 'phino compile' wrote,
+-- where the build links it in, and the one interpreting the rules of YAML
+-- otherwise, so a build with the flag 'compiled' runs every spec on it.
+linked :: Engine
+linked = fromMaybe yaml compiled
 
 -- The same context with the given λ functions registered
 withLambdas :: Lambdas -> ReduceContext -> ReduceContext

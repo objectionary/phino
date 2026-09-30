@@ -12,7 +12,7 @@
 -- what runs, and 'explain --contextualize' prints the rules that fire (#1618).
 -- The letters '𝑛' and '𝑘' of the rules are only names here, since the match is
 -- the plain one, which demands neither a normal form nor an absolute term.
-module Contextualize (contextualize, ContextualizeException (..)) where
+module Contextualize (concluded, contextualize, ContextualizeException (..)) where
 
 import AST
 import Builder (buildExpression)
@@ -35,6 +35,16 @@ data ContextualizeException = Uncontextualizable Expression String
 instance Show ContextualizeException where
   show (Uncontextualizable term reason) = printf "Contextualization has no single conclusion, since %s: %s" reason (printExpression term)
 
+-- The conclusion of the one rule that matched the term, among the names of the
+-- rules that matched it beside what each of them concludes, or the failure of
+-- a term no rule or more than one rule matches. Only the conclusion of the one
+-- rule is ever worked out, so the other judgments of 'contextualize' and of
+-- the function 'phino compile' writes for 𝒞 are never asked for (#1617).
+concluded :: Expression -> [(String, Either ContextualizeException Expression)] -> Either ContextualizeException Expression
+concluded _ [(_, answer)] = answer
+concluded term [] = Left (Uncontextualizable term "no contextualization rule matches the term")
+concluded term several = Left (Uncontextualizable term (printf "the contextualization rules %s all match the term" (intercalate ", " (map fst several))))
+
 -- The term with every ξ outside the formations nested in it standing for the
 -- context, or the failure of the term that has no single conclusion, which may
 -- be a part of the term rather than the term itself.
@@ -42,10 +52,12 @@ contextualize :: Expression -> Expression -> IO Expression
 contextualize expr context = either throwIO pure (contextualized expr context)
   where
     contextualized :: Expression -> Expression -> Either ContextualizeException Expression
-    contextualized term around = case matching term around of
-      [(rule, subst)] -> foldM (premised term rule) subst rule.premises >>= built term rule rule.cresult
-      [] -> Left (Uncontextualizable term "no contextualization rule matches the term")
-      several -> Left (Uncontextualizable term (printf "the contextualization rules %s all match the term" (intercalate ", " (map (\(rule, _) -> rule.name) several))))
+    contextualized term around =
+      concluded
+        term
+        [ (rule.name, foldM (premised term rule) subst rule.premises >>= built term rule rule.cresult)
+        | (rule, subst) <- matching term around
+        ]
     -- Every rule matching the term and the context, once for every way it
     -- matches them, so a rule matching in two ways is as ambiguous as two rules.
     matching :: Expression -> Expression -> [(Y.ContextualizeRule, Subst)]

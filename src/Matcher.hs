@@ -1,3 +1,6 @@
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TupleSections #-}
+
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
@@ -283,3 +286,56 @@ fitting = go
     same (AtMeta _) _ = True
     same (AtAny _) _ = True
     same pattr tattr = pattr == tattr
+
+-- Every place of the term a rule matches at as a whole, in the order the deep
+-- matcher finds them, each beside what the rule makes of it there, once for
+-- every way it matches. The rule is a function of the place alone, the way
+-- 'phino compile' writes one, and it is asked about every place the deep
+-- matcher looks at, told whether it matches only a redex (#1617).
+sites :: forall a. Bool -> (Expression -> [a]) -> Expression -> [(Expression, a)]
+sites redex rule tgt = go tgt []
+  where
+    go :: Expression -> [(Expression, a)] -> [(Expression, a)]
+    go expr rest
+      | redex && inert expr = rest
+      | otherwise = map (expr,) (rule expr) ++ below expr rest
+    below :: Expression -> [(Expression, a)] -> [(Expression, a)]
+    below (ExFormation bds) rest = foldr inside rest bds
+    below (ExDispatch expr _) rest = go expr rest
+    below (ExApplication expr (ArTau _ arg)) rest = go expr (go arg rest)
+    below (ExApplication expr (ArAlpha _ arg)) rest = go expr (go arg rest)
+    below _ rest = rest
+    inside :: Binding -> [(Expression, a)] -> [(Expression, a)]
+    inside (BiTau _ expr) rest = go expr rest
+    inside _ rest = rest
+
+-- Whether a rule matches at some place of the term the deep matcher looks at,
+-- told whether it matches only a redex (see 'sites').
+anywhere :: Bool -> (Expression -> Bool) -> Expression -> Bool
+anywhere redex rule = go
+  where
+    go :: Expression -> Bool
+    go expr
+      | redex && inert expr = False
+      | otherwise = rule expr || below expr
+    below :: Expression -> Bool
+    below (ExFormation bds) = any inside bds
+    below (ExDispatch expr _) = go expr
+    below (ExApplication expr (ArTau _ arg)) = go expr || go arg
+    below (ExApplication expr (ArAlpha _ arg)) = go expr || go arg
+    below _ = False
+    inside :: Binding -> Bool
+    inside (BiTau _ expr) = go expr
+    inside _ = False
+
+-- Every way of cutting the bindings in two, the leading run first and the rest
+-- second, the shortest leading run first, which is the order a meta binding
+-- tries them in (see 'matchBindingsMeta').
+splits :: [Binding] -> [([Binding], [Binding])]
+splits = go []
+  where
+    go :: [Binding] -> [Binding] -> [([Binding], [Binding])]
+    go before after =
+      (reverse before, after) : case after of
+        [] -> []
+        (bd : rest) -> go (bd : before) rest

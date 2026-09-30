@@ -225,3 +225,14 @@ spec = do
         (ExFormation [BiTau (AtLabel "qwv") (ExFormation [BiVoid AtRho]), BiLambda (Function "Kzr")])
         (ExFormation [BiTau (AtLabel "qwv") (ExFormation [BiVoid AtRho]), BiLambda (Function "Kzr")])
         `shouldBe` ExRoot
+  describe "formed" $ do
+    it "builds the formation of the bindings" $
+      formed [BiVoid (AtLabel "qp"), BiDelta (BtOne "0C")] `shouldBe` ExFormation [BiVoid (AtLabel "qp"), BiDelta (BtOne "0C")]
+    it "refuses bindings carrying one attribute twice" $
+      print (formed [BiVoid (AtLabel "ee"), BiTau (AtLabel "ee") ExXi]) `shouldThrow` anyException
+  describe "nameIn" $ do
+    it "leaves a formation as it is where no world is known" $
+      nameIn Nothing (ExFormation [BiVoid (AtLabel "vy")]) `shouldBe` ExFormation [BiVoid (AtLabel "vy")]
+    it "names a formation by its path in the world" $
+      nameIn (Just (ExFormation [BiTau (AtLabel "sd") (ExFormation [BiVoid (AtLabel "vy")])])) (ExFormation [BiVoid (AtLabel "vy")])
+        `shouldBe` ExDispatch ExRoot (AtLabel "sd")

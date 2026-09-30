@@ -6,11 +6,12 @@
 module ContextualizeSpec where
 
 import AST
-import Contextualize (contextualize)
+import Contextualize (concluded, contextualize)
 import Control.Exception (SomeException)
 import Control.Monad (forM_)
+import Data.Either (fromRight)
 import Data.List (isInfixOf)
-import Test.Hspec (Spec, describe, it, shouldReturn, shouldThrow)
+import Test.Hspec (Spec, describe, it, shouldBe, shouldReturn, shouldSatisfy, shouldThrow)
 
 spec :: Spec
 spec = do
@@ -54,3 +55,12 @@ spec = do
     it "refuses a dispatch off a meta, naming the meta rather than the dispatch" $
       contextualize (ExDispatch (ExMeta "e13") (AtLabel "kvo")) (ExFormation [BiVoid AtRho])
         `shouldThrow` (\err -> "the term: 𝑒13" `isInfixOf` show (err :: SomeException))
+  describe "concluded" $ do
+    it "comes to the conclusion of the one rule matching" $
+      fromRight ExXi (concluded ExRoot [("cg", Right (ExDispatch ExRoot (AtLabel "bn")))]) `shouldBe` ExDispatch ExRoot (AtLabel "bn")
+    it "refuses a term no rule matches" $
+      either show (const "") (concluded (ExMeta "e4") [])
+        `shouldSatisfy` ("no contextualization rule matches the term: 𝑒4" `isInfixOf`)
+    it "refuses a term several rules match, naming them" $
+      either show (const "") (concluded ExXi [("cq", Right ExXi), ("cw", Right ExRoot)])
+        `shouldSatisfy` ("the contextualization rules cq, cw all match the term" `isInfixOf`)

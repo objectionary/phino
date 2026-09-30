@@ -628,6 +628,27 @@ spec = do
             , ("B2", MvBindings [BiVoid AtRho])
             ]
           ]
+  describe "sites" $ do
+    it "finds the places a rule matches at in the order the deep matcher finds them" $
+      map fst (sites False (\expr -> [() | ExDispatch _ _ <- [expr]]) (ExDispatch (ExFormation [BiTau (AtLabel "wq") (ExDispatch ExXi (AtLabel "h"))]) (AtLabel "r")))
+        `shouldBe` [ExDispatch (ExFormation [BiTau (AtLabel "wq") (ExDispatch ExXi (AtLabel "h"))]) (AtLabel "r"), ExDispatch ExXi (AtLabel "h")]
+    it "keeps what the rule makes of a place beside it, once for every way it matches" $
+      sites False (\expr -> [idx | ExXi <- [expr], idx <- [7, 3 :: Int]]) (ExApplication ExRoot (ArTau (AtLabel "u") ExXi))
+        `shouldBe` [(ExXi, 7), (ExXi, 3)]
+    it "never looks inside an inert term when the rule is a redex" $
+      sites True (\expr -> [() | ExXi <- [expr]]) (ExFormation [BiTau (AtLabel "zk") (ExFormation [BiDelta (BtOne "1F")])])
+        `shouldBe` []
+  describe "anywhere" $ do
+    it "tells a rule matches deep inside the term" $
+      anywhere False (== ExTermination) (ExDispatch (ExApplication ExXi (ArAlpha (Alpha 2) ExTermination)) (AtLabel "y"))
+        `shouldBe` True
+    it "tells a rule matches nowhere in the term" $
+      anywhere False (== ExTermination) (ExDispatch ExXi (AtLabel "ob"))
+        `shouldBe` False
+  describe "splits" $
+    it "cuts the bindings in two, the shortest leading run first" $
+      splits [BiVoid (AtLabel "a"), BiVoid AtRho]
+        `shouldBe` [([], [BiVoid (AtLabel "a"), BiVoid AtRho]), ([BiVoid (AtLabel "a")], [BiVoid AtRho]), ([BiVoid (AtLabel "a"), BiVoid AtRho], [])]
   where
     -- The pattern of the 'dot' normalization rule, the one every dispatch of a
     -- program is matched against: a meta binding on either side of the binding

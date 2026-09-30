@@ -18,13 +18,15 @@ module Builder
   , buildBindingUnchecked
   , buildBytes
   , buildBytesThrows
+  , formed
+  , nameIn
   , pathOf
   , BuildException (..)
   )
 where
 
 import AST
-import Control.Exception (Exception)
+import Control.Exception (Exception, throw)
 import Control.Monad (zipWithM)
 import Data.List (find)
 import qualified Data.Map.Strict as Map
@@ -220,6 +222,18 @@ pathOf universe@(ExFormation world) form@(ExFormation bds)
     closed (ExDispatch target _) = closed target
     closed _ = False
 pathOf _ form = form
+
+-- The name the formation goes by in the world, where a world is known, or the
+-- formation itself (see 'pathOf'), which is what the 'named' function of a
+-- rule writes.
+nameIn :: Maybe Expression -> Expression -> Expression
+nameIn universe form = maybe form (`pathOf` form) universe
+
+-- The formation of the bindings, which a rule 'phino compile' turned into
+-- Haskell builds the way the builder builds a formation of a template: it
+-- refuses one carrying an attribute twice (see 'unique').
+formed :: [Binding] -> Expression
+formed bds = either (throw . CouldNotBuildExpression (ExFormation bds)) id (unique (ExFormation bds))
 
 -- The bindings of a formation, whether a meta was bound to it or it was built
 -- from a template, are checked here, since a substitution may bring two of
