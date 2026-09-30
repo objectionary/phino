@@ -12,7 +12,7 @@
 </span><span id="line-12"></span><span class="hs-comment">-- what runs, and 'explain --contextualize' prints the rules that fire (#1618).</span><span>
 </span><span id="line-13"></span><span class="hs-comment">-- The letters '&#119899;' and '&#119896;' of the rules are only names here, since the match is</span><span>
 </span><span id="line-14"></span><span class="hs-comment">-- the plain one, which demands neither a normal form nor an absolute term.</span><span>
-</span><span id="line-15"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Contextualize</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Contextualize.html#contextualize"><span class="hs-identifier">contextualize</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Contextualize.html#ContextualizeException"><span class="hs-identifier">ContextualizeException</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-15"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Contextualize</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Contextualize.html#concluded"><span class="hs-identifier">concluded</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Contextualize.html#contextualize"><span class="hs-identifier">contextualize</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Contextualize.html#ContextualizeException"><span class="hs-identifier">ContextualizeException</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
 </span><span id="line-16"></span><span>
 </span><span id="line-17"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="AST.html"><span class="hs-identifier">AST</span></a></span><span>
 </span><span id="line-18"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Builder.html"><span class="hs-identifier">Builder</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Builder.html#buildExpression"><span class="hs-identifier">buildExpression</span></a></span><span class="hs-special">)</span><span>
@@ -30,48 +30,89 @@
 </span><span id="line-30"></span><span class="hs-comment">-- does, or the one that does cannot be carried out on it. It carries the term</span><span>
 </span><span id="line-31"></span><span class="hs-comment">-- and the reason, which is a clause of the sentence it is shown in.</span><span>
 </span><span id="line-32"></span><span class="hs-keyword">data</span><span> </span><span id="ContextualizeException"><span class="annot"><a href="Contextualize.html#ContextualizeException"><span class="hs-identifier hs-var">ContextualizeException</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="Uncontextualizable"><span class="annot"><a href="Contextualize.html#Uncontextualizable"><span class="hs-identifier hs-var">Uncontextualizable</span></a></span></span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
-</span><span id="line-33"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679617510"><span id="local-6989586621679617513"><span id="local-6989586621679617516"><span class="annot"><span class="annottext">Show ContextualizeException
+</span><span id="line-33"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679625505"><span id="local-6989586621679625508"><span id="local-6989586621679625511"><span class="annot"><span class="annottext">Show ContextualizeException
 Typeable ContextualizeException
 (Typeable ContextualizeException, Show ContextualizeException) =&gt;
 (ContextualizeException -&gt; SomeException)
 -&gt; (SomeException -&gt; Maybe ContextualizeException)
--&gt; (ContextualizeException -&gt; String)
+-&gt; (ContextualizeException -&gt; [Char])
 -&gt; Exception ContextualizeException
 SomeException -&gt; Maybe ContextualizeException
-ContextualizeException -&gt; String
+ContextualizeException -&gt; [Char]
 ContextualizeException -&gt; SomeException
 forall e.
 (Typeable e, Show e) =&gt;
 (e -&gt; SomeException)
--&gt; (SomeException -&gt; Maybe e) -&gt; (e -&gt; String) -&gt; Exception e
+-&gt; (SomeException -&gt; Maybe e) -&gt; (e -&gt; [Char]) -&gt; Exception e
 $ctoException :: ContextualizeException -&gt; SomeException
 toException :: ContextualizeException -&gt; SomeException
 $cfromException :: SomeException -&gt; Maybe ContextualizeException
 fromException :: SomeException -&gt; Maybe ContextualizeException
-$cdisplayException :: ContextualizeException -&gt; String
-displayException :: ContextualizeException -&gt; String
+$cdisplayException :: ContextualizeException -&gt; [Char]
+displayException :: ContextualizeException -&gt; [Char]
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Exception</span></span></span></span></span><span class="hs-special">)</span><span>
 </span><span id="line-34"></span><span>
-</span><span id="line-35"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679617520"><span id="local-6989586621679617524"><span class="annot"><span class="hs-identifier hs-type">Show</span></span><span> </span><span class="annot"><a href="Contextualize.html#ContextualizeException"><span class="hs-identifier hs-type">ContextualizeException</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-36"></span><span>  </span><span id="local-6989586621679617528"><span class="annot"><span class="annottext">show :: ContextualizeException -&gt; String
-</span><a href="#local-6989586621679617528"><span class="hs-identifier hs-var hs-var hs-var hs-var">show</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Contextualize.html#Uncontextualizable"><span class="hs-identifier hs-type">Uncontextualizable</span></a></span><span> </span><span id="local-6989586621679617530"><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679617530"><span class="hs-identifier hs-var">term</span></a></span></span><span> </span><span id="local-6989586621679617531"><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679617531"><span class="hs-identifier hs-var">reason</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String -&gt; String
-forall r. PrintfType r =&gt; String -&gt; r
-</span><span class="hs-identifier hs-var">printf</span></span><span> </span><span class="annot"><span class="annottext">String
-</span><span class="hs-string">&quot;Contextualization has no single conclusion, since %s: %s&quot;</span></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679617531"><span class="hs-identifier hs-var">reason</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expression -&gt; String
+</span><span id="line-35"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679625515"><span id="local-6989586621679625519"><span class="annot"><span class="hs-identifier hs-type">Show</span></span><span> </span><span class="annot"><a href="Contextualize.html#ContextualizeException"><span class="hs-identifier hs-type">ContextualizeException</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-36"></span><span>  </span><span id="local-6989586621679625523"><span class="annot"><span class="annottext">show :: ContextualizeException -&gt; [Char]
+</span><a href="#local-6989586621679625523"><span class="hs-identifier hs-var hs-var hs-var hs-var">show</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Contextualize.html#Uncontextualizable"><span class="hs-identifier hs-type">Uncontextualizable</span></a></span><span> </span><span id="local-6989586621679625525"><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679625525"><span class="hs-identifier hs-var">term</span></a></span></span><span> </span><span id="local-6989586621679625526"><span class="annot"><span class="annottext">[Char]
+</span><a href="#local-6989586621679625526"><span class="hs-identifier hs-var">reason</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; [Char] -&gt; [Char] -&gt; [Char]
+forall r. PrintfType r =&gt; [Char] -&gt; r
+</span><span class="hs-identifier hs-var">printf</span></span><span> </span><span class="annot"><span class="annottext">[Char]
+</span><span class="hs-string">&quot;Contextualization has no single conclusion, since %s: %s&quot;</span></span><span> </span><span class="annot"><span class="annottext">[Char]
+</span><a href="#local-6989586621679625526"><span class="hs-identifier hs-var">reason</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expression -&gt; [Char]
 </span><a href="Printer.html#printExpression"><span class="hs-identifier hs-var">printExpression</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679617530"><span class="hs-identifier hs-var">term</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679625525"><span class="hs-identifier hs-var">term</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-37"></span><span>
-</span><span id="line-38"></span><span class="hs-comment">-- The term with every &#958; outside the formations nested in it standing for the</span><span>
-</span><span id="line-39"></span><span class="hs-comment">-- context, or the failure of the term that has no single conclusion, which may</span><span>
-</span><span id="line-40"></span><span class="hs-comment">-- be a part of the term rather than the term itself.</span><span>
-</span><span id="line-41"></span><span class="annot"><a href="Contextualize.html#contextualize"><span class="hs-identifier hs-type">contextualize</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span>
-</span><span id="line-42"></span><span id="contextualize"><span class="annot"><span class="annottext">contextualize :: Expression -&gt; Expression -&gt; IO Expression
-</span><a href="Contextualize.html#contextualize"><span class="hs-identifier hs-var hs-var">contextualize</span></a></span></span><span> </span><span id="local-6989586621679617532"><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679617532"><span class="hs-identifier hs-var">expr</span></a></span></span><span> </span><span id="local-6989586621679617533"><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679617533"><span class="hs-identifier hs-var">context</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(ContextualizeException -&gt; IO Expression)
+</span><span id="line-38"></span><span class="hs-comment">-- The conclusion of the one rule that matched the term, among the names of the</span><span>
+</span><span id="line-39"></span><span class="hs-comment">-- rules that matched it beside what each of them concludes, or the failure of</span><span>
+</span><span id="line-40"></span><span class="hs-comment">-- a term no rule or more than one rule matches. Only the conclusion of the one</span><span>
+</span><span id="line-41"></span><span class="hs-comment">-- rule is ever worked out, so the other judgments of 'contextualize' and of</span><span>
+</span><span id="line-42"></span><span class="hs-comment">-- the function 'phino compile' writes for &#119966; are never asked for (#1617).</span><span>
+</span><span id="line-43"></span><span class="annot"><a href="Contextualize.html#concluded"><span class="hs-identifier hs-type">concluded</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Either</span></span><span> </span><span class="annot"><a href="Contextualize.html#ContextualizeException"><span class="hs-identifier hs-type">ContextualizeException</span></a></span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Either</span></span><span> </span><span class="annot"><a href="Contextualize.html#ContextualizeException"><span class="hs-identifier hs-type">ContextualizeException</span></a></span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span>
+</span><span id="line-44"></span><span id="concluded"><span class="annot"><span class="annottext">concluded :: Expression
+-&gt; [([Char], Either ContextualizeException Expression)]
+-&gt; Either ContextualizeException Expression
+</span><a href="Contextualize.html#concluded"><span class="hs-identifier hs-var hs-var">concluded</span></a></span></span><span> </span><span class="annot"><span class="annottext">Expression
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><span class="annottext">[Char]
+</span><span class="hs-identifier">_</span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679625527"><span class="annot"><span class="annottext">Either ContextualizeException Expression
+</span><a href="#local-6989586621679625527"><span class="hs-identifier hs-var">answer</span></a></span></span><span class="hs-special">)</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Either ContextualizeException Expression
+</span><a href="#local-6989586621679625527"><span class="hs-identifier hs-var">answer</span></a></span><span>
+</span><span id="line-45"></span><span class="annot"><a href="Contextualize.html#concluded"><span class="hs-identifier hs-var">concluded</span></a></span><span> </span><span id="local-6989586621679625528"><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679625528"><span class="hs-identifier hs-var">term</span></a></span></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ContextualizeException -&gt; Either ContextualizeException Expression
+forall a b. a -&gt; Either a b
+</span><span class="hs-identifier hs-var">Left</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expression -&gt; [Char] -&gt; ContextualizeException
+</span><a href="Contextualize.html#Uncontextualizable"><span class="hs-identifier hs-var">Uncontextualizable</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679625528"><span class="hs-identifier hs-var">term</span></a></span><span> </span><span class="annot"><span class="annottext">[Char]
+</span><span class="hs-string">&quot;no contextualization rule matches the term&quot;</span></span><span class="hs-special">)</span><span>
+</span><span id="line-46"></span><span class="annot"><a href="Contextualize.html#concluded"><span class="hs-identifier hs-var">concluded</span></a></span><span> </span><span id="local-6989586621679625529"><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679625529"><span class="hs-identifier hs-var">term</span></a></span></span><span> </span><span id="local-6989586621679625530"><span class="annot"><span class="annottext">[([Char], Either ContextualizeException Expression)]
+</span><a href="#local-6989586621679625530"><span class="hs-identifier hs-var">several</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ContextualizeException -&gt; Either ContextualizeException Expression
+forall a b. a -&gt; Either a b
+</span><span class="hs-identifier hs-var">Left</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expression -&gt; [Char] -&gt; ContextualizeException
+</span><a href="Contextualize.html#Uncontextualizable"><span class="hs-identifier hs-var">Uncontextualizable</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679625529"><span class="hs-identifier hs-var">term</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[Char] -&gt; [Char] -&gt; [Char]
+forall r. PrintfType r =&gt; [Char] -&gt; r
+</span><span class="hs-identifier hs-var">printf</span></span><span> </span><span class="annot"><span class="annottext">[Char]
+</span><span class="hs-string">&quot;the contextualization rules %s all match the term&quot;</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[Char] -&gt; [[Char]] -&gt; [Char]
+forall a. [a] -&gt; [[a]] -&gt; [a]
+</span><span class="hs-identifier hs-var">intercalate</span></span><span> </span><span class="annot"><span class="annottext">[Char]
+</span><span class="hs-string">&quot;, &quot;</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(([Char], Either ContextualizeException Expression) -&gt; [Char])
+-&gt; [([Char], Either ContextualizeException Expression)] -&gt; [[Char]]
+forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
+</span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="annot"><span class="annottext">([Char], Either ContextualizeException Expression) -&gt; [Char]
+forall a b. (a, b) -&gt; a
+</span><span class="hs-identifier hs-var">fst</span></span><span> </span><span class="annot"><span class="annottext">[([Char], Either ContextualizeException Expression)]
+</span><a href="#local-6989586621679625530"><span class="hs-identifier hs-var">several</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-47"></span><span>
+</span><span id="line-48"></span><span class="hs-comment">-- The term with every &#958; outside the formations nested in it standing for the</span><span>
+</span><span id="line-49"></span><span class="hs-comment">-- context, or the failure of the term that has no single conclusion, which may</span><span>
+</span><span id="line-50"></span><span class="hs-comment">-- be a part of the term rather than the term itself.</span><span>
+</span><span id="line-51"></span><span class="annot"><a href="Contextualize.html#contextualize"><span class="hs-identifier hs-type">contextualize</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span>
+</span><span id="line-52"></span><span id="contextualize"><span class="annot"><span class="annottext">contextualize :: Expression -&gt; Expression -&gt; IO Expression
+</span><a href="Contextualize.html#contextualize"><span class="hs-identifier hs-var hs-var">contextualize</span></a></span></span><span> </span><span id="local-6989586621679625532"><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679625532"><span class="hs-identifier hs-var">expr</span></a></span></span><span> </span><span id="local-6989586621679625533"><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679625533"><span class="hs-identifier hs-var">context</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(ContextualizeException -&gt; IO Expression)
 -&gt; (Expression -&gt; IO Expression)
 -&gt; Either ContextualizeException Expression
 -&gt; IO Expression
@@ -83,22 +124,24 @@ forall a. a -&gt; IO a
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expression
 -&gt; Expression -&gt; Either ContextualizeException Expression
-</span><a href="#local-6989586621679617535"><span class="hs-identifier hs-var">contextualized</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679617532"><span class="hs-identifier hs-var">expr</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679617533"><span class="hs-identifier hs-var">context</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-43"></span><span>  </span><span class="hs-keyword">where</span><span>
-</span><span id="line-44"></span><span>    </span><span class="annot"><a href="#local-6989586621679617535"><span class="hs-identifier hs-type">contextualized</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Either</span></span><span> </span><span class="annot"><a href="Contextualize.html#ContextualizeException"><span class="hs-identifier hs-type">ContextualizeException</span></a></span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span>
-</span><span id="line-45"></span><span>    </span><span id="local-6989586621679617535"><span class="annot"><span class="annottext">contextualized :: Expression
+</span><a href="#local-6989586621679625535"><span class="hs-identifier hs-var">contextualized</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679625532"><span class="hs-identifier hs-var">expr</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679625533"><span class="hs-identifier hs-var">context</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-53"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-54"></span><span>    </span><span class="annot"><a href="#local-6989586621679625535"><span class="hs-identifier hs-type">contextualized</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Either</span></span><span> </span><span class="annot"><a href="Contextualize.html#ContextualizeException"><span class="hs-identifier hs-type">ContextualizeException</span></a></span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span>
+</span><span id="line-55"></span><span>    </span><span id="local-6989586621679625535"><span class="annot"><span class="annottext">contextualized :: Expression
 -&gt; Expression -&gt; Either ContextualizeException Expression
-</span><a href="#local-6989586621679617535"><span class="hs-identifier hs-var hs-var">contextualized</span></a></span></span><span> </span><span id="local-6989586621679617536"><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679617536"><span class="hs-identifier hs-var">term</span></a></span></span><span> </span><span id="local-6989586621679617537"><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679617537"><span class="hs-identifier hs-var">around</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Expression -&gt; Expression -&gt; [(ContextualizeRule, Subst)]
-</span><a href="#local-6989586621679617538"><span class="hs-identifier hs-var">matching</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679617536"><span class="hs-identifier hs-var">term</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679617537"><span class="hs-identifier hs-var">around</span></a></span><span> </span><span class="hs-keyword">of</span><span>
-</span><span id="line-46"></span><span>      </span><span class="hs-special">[</span><span class="hs-special">(</span><span id="local-6989586621679617539"><span class="annot"><span class="annottext">ContextualizeRule
-</span><a href="#local-6989586621679617539"><span class="hs-identifier hs-var">rule</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679617540"><span class="annot"><span class="annottext">Subst
-</span><a href="#local-6989586621679617540"><span class="hs-identifier hs-var">subst</span></a></span></span><span class="hs-special">)</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">(Subst -&gt; Premise -&gt; Either ContextualizeException Subst)
+</span><a href="#local-6989586621679625535"><span class="hs-identifier hs-var hs-var">contextualized</span></a></span></span><span> </span><span id="local-6989586621679625536"><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679625536"><span class="hs-identifier hs-var">term</span></a></span></span><span> </span><span id="local-6989586621679625537"><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679625537"><span class="hs-identifier hs-var">around</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-56"></span><span>      </span><span class="annot"><span class="annottext">Expression
+-&gt; [([Char], Either ContextualizeException Expression)]
+-&gt; Either ContextualizeException Expression
+</span><a href="Contextualize.html#concluded"><span class="hs-identifier hs-var">concluded</span></a></span><span>
+</span><span id="line-57"></span><span>        </span><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679625536"><span class="hs-identifier hs-var">term</span></a></span><span>
+</span><span id="line-58"></span><span>        </span><span class="hs-special">[</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">ContextualizeRule
+</span><a href="#local-6989586621679625538"><span class="hs-identifier hs-var">rule</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">name</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">(Subst -&gt; Premise -&gt; Either ContextualizeException Subst)
 -&gt; Subst -&gt; [Premise] -&gt; Either ContextualizeException Subst
 forall (t :: * -&gt; *) (m :: * -&gt; *) b a.
 (Foldable t, Monad m) =&gt;
@@ -108,11 +151,11 @@ forall (t :: * -&gt; *) (m :: * -&gt; *) b a.
 -&gt; Subst
 -&gt; Premise
 -&gt; Either ContextualizeException Subst
-</span><a href="#local-6989586621679617541"><span class="hs-identifier hs-var">premised</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679617536"><span class="hs-identifier hs-var">term</span></a></span><span> </span><span class="annot"><span class="annottext">ContextualizeRule
-</span><a href="#local-6989586621679617539"><span class="hs-identifier hs-var">rule</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Subst
-</span><a href="#local-6989586621679617540"><span class="hs-identifier hs-var">subst</span></a></span><span> </span><span class="annot"><span class="annottext">ContextualizeRule
-</span><a href="#local-6989586621679617539"><span class="hs-identifier hs-var">rule</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">premises</span><span> </span><span class="annot"><span class="annottext">Either ContextualizeException Subst
+</span><a href="#local-6989586621679625539"><span class="hs-identifier hs-var">premised</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679625536"><span class="hs-identifier hs-var">term</span></a></span><span> </span><span class="annot"><span class="annottext">ContextualizeRule
+</span><a href="#local-6989586621679625538"><span class="hs-identifier hs-var">rule</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Subst
+</span><a href="#local-6989586621679625540"><span class="hs-identifier hs-var">subst</span></a></span><span> </span><span class="annot"><span class="annottext">ContextualizeRule
+</span><a href="#local-6989586621679625538"><span class="hs-identifier hs-var">rule</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">premises</span><span> </span><span class="annot"><span class="annottext">Either ContextualizeException Subst
 -&gt; (Subst -&gt; Either ContextualizeException Expression)
 -&gt; Either ContextualizeException Expression
 forall a b.
@@ -125,179 +168,161 @@ forall (m :: * -&gt; *) a b. Monad m =&gt; m a -&gt; (a -&gt; m b) -&gt; m b
 -&gt; Expression
 -&gt; Subst
 -&gt; Either ContextualizeException Expression
-</span><a href="#local-6989586621679617542"><span class="hs-identifier hs-var">built</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679617536"><span class="hs-identifier hs-var">term</span></a></span><span> </span><span class="annot"><span class="annottext">ContextualizeRule
-</span><a href="#local-6989586621679617539"><span class="hs-identifier hs-var">rule</span></a></span><span> </span><span class="annot"><span class="annottext">ContextualizeRule
-</span><a href="#local-6989586621679617539"><span class="hs-identifier hs-var">rule</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">cresult</span><span>
-</span><span id="line-47"></span><span>      </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">ContextualizeException -&gt; Either ContextualizeException Expression
-forall a b. a -&gt; Either a b
-</span><span class="hs-identifier hs-var">Left</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expression -&gt; String -&gt; ContextualizeException
-</span><a href="Contextualize.html#Uncontextualizable"><span class="hs-identifier hs-var">Uncontextualizable</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679617536"><span class="hs-identifier hs-var">term</span></a></span><span> </span><span class="annot"><span class="annottext">String
-</span><span class="hs-string">&quot;no contextualization rule matches the term&quot;</span></span><span class="hs-special">)</span><span>
-</span><span id="line-48"></span><span>      </span><span id="local-6989586621679617543"><span class="annot"><span class="annottext">[(ContextualizeRule, Subst)]
-</span><a href="#local-6989586621679617543"><span class="hs-identifier hs-var">several</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">ContextualizeException -&gt; Either ContextualizeException Expression
-forall a b. a -&gt; Either a b
-</span><span class="hs-identifier hs-var">Left</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expression -&gt; String -&gt; ContextualizeException
-</span><a href="Contextualize.html#Uncontextualizable"><span class="hs-identifier hs-var">Uncontextualizable</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679617536"><span class="hs-identifier hs-var">term</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
-forall r. PrintfType r =&gt; String -&gt; r
-</span><span class="hs-identifier hs-var">printf</span></span><span> </span><span class="annot"><span class="annottext">String
-</span><span class="hs-string">&quot;the contextualization rules %s all match the term&quot;</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String -&gt; [String] -&gt; String
-forall a. [a] -&gt; [[a]] -&gt; [a]
-</span><span class="hs-identifier hs-var">intercalate</span></span><span> </span><span class="annot"><span class="annottext">String
-</span><span class="hs-string">&quot;, &quot;</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">((ContextualizeRule, Subst) -&gt; String)
--&gt; [(ContextualizeRule, Subst)] -&gt; [String]
-forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
-</span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span class="hs-special">(</span><span id="local-6989586621679617544"><span class="annot"><span class="annottext">ContextualizeRule
-</span><a href="#local-6989586621679617544"><span class="hs-identifier hs-var">rule</span></a></span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Subst
-</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">ContextualizeRule
-</span><a href="#local-6989586621679617544"><span class="hs-identifier hs-var">rule</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">name</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[(ContextualizeRule, Subst)]
-</span><a href="#local-6989586621679617543"><span class="hs-identifier hs-var">several</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
-</span><span id="line-49"></span><span>    </span><span class="hs-comment">-- Every rule matching the term and the context, once for every way it</span><span>
-</span><span id="line-50"></span><span>    </span><span class="hs-comment">-- matches them, so a rule matching in two ways is as ambiguous as two rules.</span><span>
-</span><span id="line-51"></span><span>    </span><span class="annot"><a href="#local-6989586621679617538"><span class="hs-identifier hs-type">matching</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><a href="Yaml.html#ContextualizeRule"><span class="hs-identifier hs-type">Y.ContextualizeRule</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Matcher.html#Subst"><span class="hs-identifier hs-type">Subst</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span><span>
-</span><span id="line-52"></span><span>    </span><span id="local-6989586621679617538"><span class="annot"><span class="annottext">matching :: Expression -&gt; Expression -&gt; [(ContextualizeRule, Subst)]
-</span><a href="#local-6989586621679617538"><span class="hs-identifier hs-var hs-var">matching</span></a></span></span><span> </span><span id="local-6989586621679617545"><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679617545"><span class="hs-identifier hs-var">term</span></a></span></span><span> </span><span id="local-6989586621679617546"><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679617546"><span class="hs-identifier hs-var">around</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
-</span><span id="line-53"></span><span>      </span><span class="hs-special">[</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">ContextualizeRule
-</span><a href="#local-6989586621679617547"><span class="hs-identifier hs-var">rule</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Subst
-</span><a href="#local-6989586621679617548"><span class="hs-identifier hs-var">subst</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-54"></span><span>      </span><span class="hs-glyph">|</span><span> </span><span id="local-6989586621679617547"><span class="annot"><span class="annottext">ContextualizeRule
-</span><a href="#local-6989586621679617547"><span class="hs-identifier hs-var">rule</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">[ContextualizeRule]
+</span><a href="#local-6989586621679625541"><span class="hs-identifier hs-var">built</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679625536"><span class="hs-identifier hs-var">term</span></a></span><span> </span><span class="annot"><span class="annottext">ContextualizeRule
+</span><a href="#local-6989586621679625538"><span class="hs-identifier hs-var">rule</span></a></span><span> </span><span class="annot"><span class="annottext">ContextualizeRule
+</span><a href="#local-6989586621679625538"><span class="hs-identifier hs-var">rule</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">cresult</span><span class="hs-special">)</span><span>
+</span><span id="line-59"></span><span>        </span><span class="hs-glyph">|</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679625538"><span class="annot"><span class="annottext">ContextualizeRule
+</span><a href="#local-6989586621679625538"><span class="hs-identifier hs-var">rule</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679625540"><span class="annot"><span class="annottext">Subst
+</span><a href="#local-6989586621679625540"><span class="hs-identifier hs-var">subst</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Expression -&gt; Expression -&gt; [(ContextualizeRule, Subst)]
+</span><a href="#local-6989586621679625542"><span class="hs-identifier hs-var">matching</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679625536"><span class="hs-identifier hs-var">term</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679625537"><span class="hs-identifier hs-var">around</span></a></span><span>
+</span><span id="line-60"></span><span>        </span><span class="hs-special">]</span><span>
+</span><span id="line-61"></span><span>    </span><span class="hs-comment">-- Every rule matching the term and the context, once for every way it</span><span>
+</span><span id="line-62"></span><span>    </span><span class="hs-comment">-- matches them, so a rule matching in two ways is as ambiguous as two rules.</span><span>
+</span><span id="line-63"></span><span>    </span><span class="annot"><a href="#local-6989586621679625542"><span class="hs-identifier hs-type">matching</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><a href="Yaml.html#ContextualizeRule"><span class="hs-identifier hs-type">Y.ContextualizeRule</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Matcher.html#Subst"><span class="hs-identifier hs-type">Subst</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span><span>
+</span><span id="line-64"></span><span>    </span><span id="local-6989586621679625542"><span class="annot"><span class="annottext">matching :: Expression -&gt; Expression -&gt; [(ContextualizeRule, Subst)]
+</span><a href="#local-6989586621679625542"><span class="hs-identifier hs-var hs-var">matching</span></a></span></span><span> </span><span id="local-6989586621679625543"><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679625543"><span class="hs-identifier hs-var">term</span></a></span></span><span> </span><span id="local-6989586621679625544"><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679625544"><span class="hs-identifier hs-var">around</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-65"></span><span>      </span><span class="hs-special">[</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">ContextualizeRule
+</span><a href="#local-6989586621679625545"><span class="hs-identifier hs-var">rule</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Subst
+</span><a href="#local-6989586621679625546"><span class="hs-identifier hs-var">subst</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-66"></span><span>      </span><span class="hs-glyph">|</span><span> </span><span id="local-6989586621679625545"><span class="annot"><span class="annottext">ContextualizeRule
+</span><a href="#local-6989586621679625545"><span class="hs-identifier hs-var">rule</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">[ContextualizeRule]
 </span><a href="Yaml.html#contextualizationRules"><span class="hs-identifier hs-var">Y.contextualizationRules</span></a></span><span>
-</span><span id="line-55"></span><span>      </span><span class="hs-special">,</span><span> </span><span id="local-6989586621679617550"><span class="annot"><span class="annottext">Subst
-</span><a href="#local-6989586621679617550"><span class="hs-identifier hs-var">matched</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">MatchExpressionFunc
+</span><span id="line-67"></span><span>      </span><span class="hs-special">,</span><span> </span><span id="local-6989586621679625548"><span class="annot"><span class="annottext">Subst
+</span><a href="#local-6989586621679625548"><span class="hs-identifier hs-var">matched</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">MatchExpressionFunc
 </span><a href="Matcher.html#matchExpression%27"><span class="hs-identifier hs-var">matchExpression'</span></a></span><span> </span><span class="annot"><span class="annottext">ContextualizeRule
-</span><a href="#local-6989586621679617547"><span class="hs-identifier hs-var">rule</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">match</span><span> </span><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679617545"><span class="hs-identifier hs-var">term</span></a></span><span>
-</span><span id="line-56"></span><span>      </span><span class="hs-special">,</span><span> </span><span id="local-6989586621679617551"><span class="annot"><span class="annottext">Subst
-</span><a href="#local-6989586621679617551"><span class="hs-identifier hs-var">surrounding</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">MatchExpressionFunc
+</span><a href="#local-6989586621679625545"><span class="hs-identifier hs-var">rule</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">match</span><span> </span><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679625543"><span class="hs-identifier hs-var">term</span></a></span><span>
+</span><span id="line-68"></span><span>      </span><span class="hs-special">,</span><span> </span><span id="local-6989586621679625549"><span class="annot"><span class="annottext">Subst
+</span><a href="#local-6989586621679625549"><span class="hs-identifier hs-var">surrounding</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">MatchExpressionFunc
 </span><a href="Matcher.html#matchExpression%27"><span class="hs-identifier hs-var">matchExpression'</span></a></span><span> </span><span class="annot"><span class="annottext">ContextualizeRule
-</span><a href="#local-6989586621679617547"><span class="hs-identifier hs-var">rule</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">cmatch</span><span> </span><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679617546"><span class="hs-identifier hs-var">around</span></a></span><span>
-</span><span id="line-57"></span><span>      </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span id="local-6989586621679617548"><span class="annot"><span class="annottext">Subst
-</span><a href="#local-6989586621679617548"><span class="hs-identifier hs-var">subst</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Subst -&gt; Subst -&gt; Maybe Subst
+</span><a href="#local-6989586621679625545"><span class="hs-identifier hs-var">rule</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">cmatch</span><span> </span><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679625544"><span class="hs-identifier hs-var">around</span></a></span><span>
+</span><span id="line-69"></span><span>      </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span id="local-6989586621679625546"><span class="annot"><span class="annottext">Subst
+</span><a href="#local-6989586621679625546"><span class="hs-identifier hs-var">subst</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Subst -&gt; Subst -&gt; Maybe Subst
 </span><a href="Matcher.html#combine"><span class="hs-identifier hs-var">combine</span></a></span><span> </span><span class="annot"><span class="annottext">Subst
-</span><a href="#local-6989586621679617550"><span class="hs-identifier hs-var">matched</span></a></span><span> </span><span class="annot"><span class="annottext">Subst
-</span><a href="#local-6989586621679617551"><span class="hs-identifier hs-var">surrounding</span></a></span><span class="hs-special">]</span><span>
-</span><span id="line-58"></span><span>      </span><span class="hs-special">]</span><span>
-</span><span id="line-59"></span><span>    </span><span class="annot"><a href="#local-6989586621679617541"><span class="hs-identifier hs-type">premised</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Yaml.html#ContextualizeRule"><span class="hs-identifier hs-type">Y.ContextualizeRule</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Matcher.html#Subst"><span class="hs-identifier hs-type">Subst</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Yaml.html#Premise"><span class="hs-identifier hs-type">Y.Premise</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Either</span></span><span> </span><span class="annot"><a href="Contextualize.html#ContextualizeException"><span class="hs-identifier hs-type">ContextualizeException</span></a></span><span> </span><span class="annot"><a href="Matcher.html#Subst"><span class="hs-identifier hs-type">Subst</span></a></span><span>
-</span><span id="line-60"></span><span>    </span><span id="local-6989586621679617541"><span class="annot"><span class="annottext">premised :: Expression
+</span><a href="#local-6989586621679625548"><span class="hs-identifier hs-var">matched</span></a></span><span> </span><span class="annot"><span class="annottext">Subst
+</span><a href="#local-6989586621679625549"><span class="hs-identifier hs-var">surrounding</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-70"></span><span>      </span><span class="hs-special">]</span><span>
+</span><span id="line-71"></span><span>    </span><span class="annot"><a href="#local-6989586621679625539"><span class="hs-identifier hs-type">premised</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Yaml.html#ContextualizeRule"><span class="hs-identifier hs-type">Y.ContextualizeRule</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Matcher.html#Subst"><span class="hs-identifier hs-type">Subst</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Yaml.html#Premise"><span class="hs-identifier hs-type">Y.Premise</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Either</span></span><span> </span><span class="annot"><a href="Contextualize.html#ContextualizeException"><span class="hs-identifier hs-type">ContextualizeException</span></a></span><span> </span><span class="annot"><a href="Matcher.html#Subst"><span class="hs-identifier hs-type">Subst</span></a></span><span>
+</span><span id="line-72"></span><span>    </span><span id="local-6989586621679625539"><span class="annot"><span class="annottext">premised :: Expression
 -&gt; ContextualizeRule
 -&gt; Subst
 -&gt; Premise
 -&gt; Either ContextualizeException Subst
-</span><a href="#local-6989586621679617541"><span class="hs-identifier hs-var hs-var">premised</span></a></span></span><span> </span><span id="local-6989586621679617552"><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679617552"><span class="hs-identifier hs-var">term</span></a></span></span><span> </span><span id="local-6989586621679617553"><span class="annot"><span class="annottext">ContextualizeRule
-</span><a href="#local-6989586621679617553"><span class="hs-identifier hs-var">rule</span></a></span></span><span> </span><span id="local-6989586621679617554"><span class="annot"><span class="annottext">Subst
-</span><a href="#local-6989586621679617554"><span class="hs-identifier hs-var">subst</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Yaml.html#Premise"><span class="hs-identifier hs-type">Y.Premise</span></a></span><span> </span><span id="local-6989586621679617556"><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621679617556"><span class="hs-identifier hs-var">result</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Yaml.html#OpContextualize"><span class="hs-identifier hs-type">Y.OpContextualize</span></a></span><span> </span><span id="local-6989586621679617558"><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679617558"><span class="hs-identifier hs-var">inner</span></a></span></span><span> </span><span id="local-6989586621679617559"><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679617559"><span class="hs-identifier hs-var">outer</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-61"></span><span>      </span><span id="local-6989586621679617560"><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679617560"><span class="hs-identifier hs-var">part</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679625539"><span class="hs-identifier hs-var hs-var">premised</span></a></span></span><span> </span><span id="local-6989586621679625550"><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679625550"><span class="hs-identifier hs-var">term</span></a></span></span><span> </span><span id="local-6989586621679625551"><span class="annot"><span class="annottext">ContextualizeRule
+</span><a href="#local-6989586621679625551"><span class="hs-identifier hs-var">rule</span></a></span></span><span> </span><span id="local-6989586621679625552"><span class="annot"><span class="annottext">Subst
+</span><a href="#local-6989586621679625552"><span class="hs-identifier hs-var">subst</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Yaml.html#Premise"><span class="hs-identifier hs-type">Y.Premise</span></a></span><span> </span><span id="local-6989586621679625554"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679625554"><span class="hs-identifier hs-var">result</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Yaml.html#OpContextualize"><span class="hs-identifier hs-type">Y.OpContextualize</span></a></span><span> </span><span id="local-6989586621679625556"><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679625556"><span class="hs-identifier hs-var">inner</span></a></span></span><span> </span><span id="local-6989586621679625557"><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679625557"><span class="hs-identifier hs-var">outer</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-73"></span><span>      </span><span id="local-6989586621679625558"><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679625558"><span class="hs-identifier hs-var">part</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Expression
 -&gt; ContextualizeRule
 -&gt; Expression
 -&gt; Subst
 -&gt; Either ContextualizeException Expression
-</span><a href="#local-6989586621679617542"><span class="hs-identifier hs-var">built</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679617552"><span class="hs-identifier hs-var">term</span></a></span><span> </span><span class="annot"><span class="annottext">ContextualizeRule
-</span><a href="#local-6989586621679617553"><span class="hs-identifier hs-var">rule</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679617558"><span class="hs-identifier hs-var">inner</span></a></span><span> </span><span class="annot"><span class="annottext">Subst
-</span><a href="#local-6989586621679617554"><span class="hs-identifier hs-var">subst</span></a></span><span>
-</span><span id="line-62"></span><span>      </span><span id="local-6989586621679617561"><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679617561"><span class="hs-identifier hs-var">surrounding</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679625541"><span class="hs-identifier hs-var">built</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679625550"><span class="hs-identifier hs-var">term</span></a></span><span> </span><span class="annot"><span class="annottext">ContextualizeRule
+</span><a href="#local-6989586621679625551"><span class="hs-identifier hs-var">rule</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679625556"><span class="hs-identifier hs-var">inner</span></a></span><span> </span><span class="annot"><span class="annottext">Subst
+</span><a href="#local-6989586621679625552"><span class="hs-identifier hs-var">subst</span></a></span><span>
+</span><span id="line-74"></span><span>      </span><span id="local-6989586621679625559"><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679625559"><span class="hs-identifier hs-var">surrounding</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Expression
 -&gt; ContextualizeRule
 -&gt; Expression
 -&gt; Subst
 -&gt; Either ContextualizeException Expression
-</span><a href="#local-6989586621679617542"><span class="hs-identifier hs-var">built</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679617552"><span class="hs-identifier hs-var">term</span></a></span><span> </span><span class="annot"><span class="annottext">ContextualizeRule
-</span><a href="#local-6989586621679617553"><span class="hs-identifier hs-var">rule</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679617559"><span class="hs-identifier hs-var">outer</span></a></span><span> </span><span class="annot"><span class="annottext">Subst
-</span><a href="#local-6989586621679617554"><span class="hs-identifier hs-var">subst</span></a></span><span>
-</span><span id="line-63"></span><span>      </span><span id="local-6989586621679617562"><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679617562"><span class="hs-identifier hs-var">answer</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679625541"><span class="hs-identifier hs-var">built</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679625550"><span class="hs-identifier hs-var">term</span></a></span><span> </span><span class="annot"><span class="annottext">ContextualizeRule
+</span><a href="#local-6989586621679625551"><span class="hs-identifier hs-var">rule</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679625557"><span class="hs-identifier hs-var">outer</span></a></span><span> </span><span class="annot"><span class="annottext">Subst
+</span><a href="#local-6989586621679625552"><span class="hs-identifier hs-var">subst</span></a></span><span>
+</span><span id="line-75"></span><span>      </span><span id="local-6989586621679625560"><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679625560"><span class="hs-identifier hs-var">answer</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Expression
 -&gt; Expression -&gt; Either ContextualizeException Expression
-</span><a href="#local-6989586621679617535"><span class="hs-identifier hs-var">contextualized</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679617560"><span class="hs-identifier hs-var">part</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679617561"><span class="hs-identifier hs-var">surrounding</span></a></span><span>
-</span><span id="line-64"></span><span>      </span><span class="annot"><span class="annottext">Either ContextualizeException Subst
+</span><a href="#local-6989586621679625535"><span class="hs-identifier hs-var">contextualized</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679625558"><span class="hs-identifier hs-var">part</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679625559"><span class="hs-identifier hs-var">surrounding</span></a></span><span>
+</span><span id="line-76"></span><span>      </span><span class="annot"><span class="annottext">Either ContextualizeException Subst
 -&gt; (Subst -&gt; Either ContextualizeException Subst)
 -&gt; Maybe Subst
 -&gt; Either ContextualizeException Subst
 forall b a. b -&gt; (a -&gt; b) -&gt; Maybe a -&gt; b
 </span><span class="hs-identifier hs-var">maybe</span></span><span>
-</span><span id="line-65"></span><span>        </span><span class="hs-special">(</span><span class="annot"><span class="annottext">ContextualizeException -&gt; Either ContextualizeException Subst
+</span><span id="line-77"></span><span>        </span><span class="hs-special">(</span><span class="annot"><span class="annottext">ContextualizeException -&gt; Either ContextualizeException Subst
 forall a b. a -&gt; Either a b
-</span><span class="hs-identifier hs-var">Left</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expression -&gt; String -&gt; ContextualizeException
+</span><span class="hs-identifier hs-var">Left</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expression -&gt; [Char] -&gt; ContextualizeException
 </span><a href="Contextualize.html#Uncontextualizable"><span class="hs-identifier hs-var">Uncontextualizable</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679617552"><span class="hs-identifier hs-var">term</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String -&gt; String -&gt; String -&gt; String
-forall r. PrintfType r =&gt; String -&gt; r
-</span><span class="hs-identifier hs-var">printf</span></span><span> </span><span class="annot"><span class="annottext">String
-</span><span class="hs-string">&quot;the premise '%s' of the contextualization rule '%s' clashes with a binding&quot;</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text -&gt; String
+</span><a href="#local-6989586621679625550"><span class="hs-identifier hs-var">term</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[Char] -&gt; [Char] -&gt; [Char] -&gt; [Char]
+forall r. PrintfType r =&gt; [Char] -&gt; r
+</span><span class="hs-identifier hs-var">printf</span></span><span> </span><span class="annot"><span class="annottext">[Char]
+</span><span class="hs-string">&quot;the premise '%s' of the contextualization rule '%s' clashes with a binding&quot;</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text -&gt; [Char]
 </span><span class="hs-identifier hs-var">T.unpack</span></span><span> </span><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621679617556"><span class="hs-identifier hs-var">result</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">ContextualizeRule
-</span><a href="#local-6989586621679617553"><span class="hs-identifier hs-var">rule</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">name</span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
-</span><span id="line-66"></span><span>        </span><span class="annot"><span class="annottext">Subst -&gt; Either ContextualizeException Subst
+</span><a href="#local-6989586621679625554"><span class="hs-identifier hs-var">result</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">ContextualizeRule
+</span><a href="#local-6989586621679625551"><span class="hs-identifier hs-var">rule</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">name</span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-78"></span><span>        </span><span class="annot"><span class="annottext">Subst -&gt; Either ContextualizeException Subst
 forall a b. b -&gt; Either a b
 </span><span class="hs-identifier hs-var">Right</span></span><span>
-</span><span id="line-67"></span><span>        </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Subst -&gt; Subst -&gt; Maybe Subst
+</span><span id="line-79"></span><span>        </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Subst -&gt; Subst -&gt; Maybe Subst
 </span><a href="Matcher.html#combine"><span class="hs-identifier hs-var">combine</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text -&gt; MetaValue -&gt; Subst
 </span><a href="Matcher.html#substSingle"><span class="hs-identifier hs-var">substSingle</span></a></span><span> </span><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621679617556"><span class="hs-identifier hs-var">result</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expression -&gt; MetaValue
+</span><a href="#local-6989586621679625554"><span class="hs-identifier hs-var">result</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expression -&gt; MetaValue
 </span><a href="Matcher.html#MvExpression"><span class="hs-identifier hs-var">MvExpression</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679617562"><span class="hs-identifier hs-var">answer</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Subst
-</span><a href="#local-6989586621679617554"><span class="hs-identifier hs-var">subst</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-68"></span><span>    </span><span class="annot"><a href="#local-6989586621679617541"><span class="hs-identifier hs-var">premised</span></a></span><span> </span><span id="local-6989586621679617566"><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679617566"><span class="hs-identifier hs-var">term</span></a></span></span><span> </span><span id="local-6989586621679617567"><span class="annot"><span class="annottext">ContextualizeRule
-</span><a href="#local-6989586621679617567"><span class="hs-identifier hs-var">rule</span></a></span></span><span> </span><span class="annot"><span class="annottext">Subst
-</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679617568"><span class="annot"><span class="annottext">Premise
-</span><a href="#local-6989586621679617568"><span class="hs-identifier hs-var">premise</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
-</span><span id="line-69"></span><span>      </span><span class="annot"><span class="annottext">ContextualizeException -&gt; Either ContextualizeException Subst
+</span><a href="#local-6989586621679625560"><span class="hs-identifier hs-var">answer</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Subst
+</span><a href="#local-6989586621679625552"><span class="hs-identifier hs-var">subst</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-80"></span><span>    </span><span class="annot"><a href="#local-6989586621679625539"><span class="hs-identifier hs-var">premised</span></a></span><span> </span><span id="local-6989586621679625564"><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679625564"><span class="hs-identifier hs-var">term</span></a></span></span><span> </span><span id="local-6989586621679625565"><span class="annot"><span class="annottext">ContextualizeRule
+</span><a href="#local-6989586621679625565"><span class="hs-identifier hs-var">rule</span></a></span></span><span> </span><span class="annot"><span class="annottext">Subst
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679625566"><span class="annot"><span class="annottext">Premise
+</span><a href="#local-6989586621679625566"><span class="hs-identifier hs-var">premise</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-81"></span><span>      </span><span class="annot"><span class="annottext">ContextualizeException -&gt; Either ContextualizeException Subst
 forall a b. a -&gt; Either a b
-</span><span class="hs-identifier hs-var">Left</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expression -&gt; String -&gt; ContextualizeException
+</span><span class="hs-identifier hs-var">Left</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expression -&gt; [Char] -&gt; ContextualizeException
 </span><a href="Contextualize.html#Uncontextualizable"><span class="hs-identifier hs-var">Uncontextualizable</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679617566"><span class="hs-identifier hs-var">term</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String -&gt; String -&gt; String -&gt; String
-forall r. PrintfType r =&gt; String -&gt; r
-</span><span class="hs-identifier hs-var">printf</span></span><span> </span><span class="annot"><span class="annottext">String
-</span><span class="hs-string">&quot;the premise '%s' of the contextualization rule '%s' is not a contextualization&quot;</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text -&gt; String
+</span><a href="#local-6989586621679625564"><span class="hs-identifier hs-var">term</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[Char] -&gt; [Char] -&gt; [Char] -&gt; [Char]
+forall r. PrintfType r =&gt; [Char] -&gt; r
+</span><span class="hs-identifier hs-var">printf</span></span><span> </span><span class="annot"><span class="annottext">[Char]
+</span><span class="hs-string">&quot;the premise '%s' of the contextualization rule '%s' is not a contextualization&quot;</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text -&gt; [Char]
 </span><span class="hs-identifier hs-var">T.unpack</span></span><span> </span><span class="annot"><span class="annottext">Premise
-</span><a href="#local-6989586621679617568"><span class="hs-identifier hs-var">premise</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">result</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">ContextualizeRule
-</span><a href="#local-6989586621679617567"><span class="hs-identifier hs-var">rule</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">name</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
-</span><span id="line-70"></span><span>    </span><span class="annot"><a href="#local-6989586621679617542"><span class="hs-identifier hs-type">built</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Yaml.html#ContextualizeRule"><span class="hs-identifier hs-type">Y.ContextualizeRule</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Matcher.html#Subst"><span class="hs-identifier hs-type">Subst</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Either</span></span><span> </span><span class="annot"><a href="Contextualize.html#ContextualizeException"><span class="hs-identifier hs-type">ContextualizeException</span></a></span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span>
-</span><span id="line-71"></span><span>    </span><span id="local-6989586621679617542"><span class="annot"><span class="annottext">built :: Expression
+</span><a href="#local-6989586621679625566"><span class="hs-identifier hs-var">premise</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">result</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">ContextualizeRule
+</span><a href="#local-6989586621679625565"><span class="hs-identifier hs-var">rule</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">name</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-82"></span><span>    </span><span class="annot"><a href="#local-6989586621679625541"><span class="hs-identifier hs-type">built</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Yaml.html#ContextualizeRule"><span class="hs-identifier hs-type">Y.ContextualizeRule</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Matcher.html#Subst"><span class="hs-identifier hs-type">Subst</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Either</span></span><span> </span><span class="annot"><a href="Contextualize.html#ContextualizeException"><span class="hs-identifier hs-type">ContextualizeException</span></a></span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span>
+</span><span id="line-83"></span><span>    </span><span id="local-6989586621679625541"><span class="annot"><span class="annottext">built :: Expression
 -&gt; ContextualizeRule
 -&gt; Expression
 -&gt; Subst
 -&gt; Either ContextualizeException Expression
-</span><a href="#local-6989586621679617542"><span class="hs-identifier hs-var hs-var">built</span></a></span></span><span> </span><span id="local-6989586621679617569"><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679617569"><span class="hs-identifier hs-var">term</span></a></span></span><span> </span><span id="local-6989586621679617570"><span class="annot"><span class="annottext">ContextualizeRule
-</span><a href="#local-6989586621679617570"><span class="hs-identifier hs-var">rule</span></a></span></span><span> </span><span id="local-6989586621679617571"><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679617571"><span class="hs-identifier hs-var">template</span></a></span></span><span> </span><span id="local-6989586621679617572"><span class="annot"><span class="annottext">Subst
-</span><a href="#local-6989586621679617572"><span class="hs-identifier hs-var">subst</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
-</span><span id="line-72"></span><span>      </span><span class="annot"><span class="annottext">(String -&gt; ContextualizeException)
--&gt; Either String Expression
+</span><a href="#local-6989586621679625541"><span class="hs-identifier hs-var hs-var">built</span></a></span></span><span> </span><span id="local-6989586621679625567"><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679625567"><span class="hs-identifier hs-var">term</span></a></span></span><span> </span><span id="local-6989586621679625568"><span class="annot"><span class="annottext">ContextualizeRule
+</span><a href="#local-6989586621679625568"><span class="hs-identifier hs-var">rule</span></a></span></span><span> </span><span id="local-6989586621679625569"><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679625569"><span class="hs-identifier hs-var">template</span></a></span></span><span> </span><span id="local-6989586621679625570"><span class="annot"><span class="annottext">Subst
+</span><a href="#local-6989586621679625570"><span class="hs-identifier hs-var">subst</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-84"></span><span>      </span><span class="annot"><span class="annottext">([Char] -&gt; ContextualizeException)
+-&gt; Either [Char] Expression
 -&gt; Either ContextualizeException Expression
 forall a b c. (a -&gt; b) -&gt; Either a c -&gt; Either b c
 forall (p :: * -&gt; * -&gt; *) a b c.
 Bifunctor p =&gt;
 (a -&gt; b) -&gt; p a c -&gt; p b c
 </span><span class="hs-identifier hs-var">first</span></span><span>
-</span><span id="line-73"></span><span>        </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expression -&gt; String -&gt; ContextualizeException
+</span><span id="line-85"></span><span>        </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expression -&gt; [Char] -&gt; ContextualizeException
 </span><a href="Contextualize.html#Uncontextualizable"><span class="hs-identifier hs-var">Uncontextualizable</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679617569"><span class="hs-identifier hs-var">term</span></a></span><span> </span><span class="annot"><span class="annottext">(String -&gt; ContextualizeException)
--&gt; (String -&gt; String) -&gt; String -&gt; ContextualizeException
+</span><a href="#local-6989586621679625567"><span class="hs-identifier hs-var">term</span></a></span><span> </span><span class="annot"><span class="annottext">([Char] -&gt; ContextualizeException)
+-&gt; ([Char] -&gt; [Char]) -&gt; [Char] -&gt; ContextualizeException
 forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
-</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String -&gt; String
-forall r. PrintfType r =&gt; String -&gt; r
-</span><span class="hs-identifier hs-var">printf</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; [Char] -&gt; [Char] -&gt; [Char]
+forall r. PrintfType r =&gt; [Char] -&gt; r
+</span><span class="hs-identifier hs-var">printf</span></span><span> </span><span class="annot"><span class="annottext">[Char]
 </span><span class="hs-string">&quot;the contextualization rule '%s' cannot be built, %s&quot;</span></span><span> </span><span class="annot"><span class="annottext">ContextualizeRule
-</span><a href="#local-6989586621679617570"><span class="hs-identifier hs-var">rule</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">name</span><span class="hs-special">)</span><span>
-</span><span id="line-74"></span><span>        </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expression -&gt; Subst -&gt; Either String Expression
+</span><a href="#local-6989586621679625568"><span class="hs-identifier hs-var">rule</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">name</span><span class="hs-special">)</span><span>
+</span><span id="line-86"></span><span>        </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expression -&gt; Subst -&gt; Either [Char] Expression
 </span><a href="Builder.html#buildExpression"><span class="hs-identifier hs-var">buildExpression</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679617571"><span class="hs-identifier hs-var">template</span></a></span><span> </span><span class="annot"><span class="annottext">Subst
-</span><a href="#local-6989586621679617572"><span class="hs-identifier hs-var">subst</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-75"></span></pre></body></html>
+</span><a href="#local-6989586621679625569"><span class="hs-identifier hs-var">template</span></a></span><span> </span><span class="annot"><span class="annottext">Subst
+</span><a href="#local-6989586621679625570"><span class="hs-identifier hs-var">subst</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-87"></span></pre></body></html>

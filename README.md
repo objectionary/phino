@@ -1649,6 +1649,54 @@ B >> ⟦⟧
 d >> 68-65-6C-6C-6F
 ```
 
+## Compile
+
+By default, `phino` reads its rules from YAML and interprets them at every
+step. The `compile` command turns the rules into Haskell instead. Then a
+second build of `phino` runs them as plain functions:
+
+```bash
+phino compile
+cabal build all
+```
+
+The command writes the module `compiled/generated/Compiled.hs`, which git
+ignores. It compiles the built-in rules of normalization, the
+contextualization function 𝒞, and every file you pass with `--rule`. The
+`--target` option writes the module somewhere else.
+
+A build links the module in only when the Cabal flag `compiled` is on. If
+there is no `cabal.project.local`, `compile` creates one that turns the flag
+on. If the file already exists, `compile` leaves it alone and prints the two
+lines to add to it:
+
+```text
+package phino
+  flags: +compiled
+```
+
+The compiled rules take exactly the same steps as the YAML ones, so the
+output and every `--sequence` stay the same. A few things are still read from
+YAML at runtime:
+
+* the rules of morphing (𝕄) and dataization (𝔻);
+* a `--rule` file that changed after `compile`;
+* the pattern of `match` and the `rewrite:` blocks of the `--symbolic` file.
+
+The `explain` command also reads the rules from YAML.
+
+`compile` refuses a rule it cannot turn into Haskell and names the reason.
+For example, it refuses a rule with `having`, a `where` function other than
+`contextualize` or `named`, or the conditions `matches` and `part-of`.
+
+A binary built this way refuses to run if the built-in rules changed after
+the last `compile`, since it would run rules nobody wrote. Run `compile`
+again and rebuild. To test the whole suite against the compiled rules, run:
+
+```bash
+make compiled
+```
+
 ## Explain
 
 You can _explain_ the built-in rules by printing them in [LaTeX][latex]
