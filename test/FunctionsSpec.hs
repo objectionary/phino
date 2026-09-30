@@ -187,6 +187,18 @@ spec = describe "Functions" $ do
         , [ArgExpression (DataNumber (numToBts 2)), ArgExpression (DataNumber (numToBts 3))]
         , \term -> expectExpression term (DataNumber (numToBts 5))
         )
+      ,
+        ( "sum keeps a single numeric argument as is"
+        , "sum"
+        , [ArgExpression (DataNumber (numToBts 7))]
+        , \term -> expectExpression term (DataNumber (numToBts 7))
+        )
+      ,
+        ( "sum of operands that cancel out is still zero"
+        , "sum"
+        , [ArgExpression (DataNumber (numToBts 4)), ArgExpression (DataNumber (numToBts (-4)))]
+        , \term -> expectExpression term (DataNumber (numToBts 0))
+        )
       ]
 
     failureCases :: [(String, String, [ExtraArgument], String)]
@@ -226,6 +238,7 @@ spec = describe "Functions" $ do
         , [ArgExpression (DataNumber (BtMany ["68", "65", "6C", "6C", "6F"]))]
         , "Expected 8 bytes for a number, got 5"
         )
+      , ("sum fails on an empty argument list", "sum", [], "sum() requires at least 1 argument")
       ,
         ( "an unsupported function name fails with a descriptive message"
         , "no-such-function"
