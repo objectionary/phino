@@ -18,7 +18,6 @@ module Builder
   , buildBindingUnchecked
   , buildBytes
   , buildBytesThrows
-  , contextualize
   , pathOf
   , BuildException (..)
   )
@@ -59,19 +58,6 @@ instance Show BuildException where
   show CouldNotBuildAttribute{..} = printf "Couldn't build attribute '%s', %s" (printAttribute _attr) _msg
   show CouldNotBuildBinding{..} = printf "Couldn't build binding, %s\n--Binding: %s" _msg (printBinding _bd)
   show CouldNotBuildBytes{..} = printf "Couldn't build bytes '%s', %s" (printBytes _bts) _msg
-
-contextualize :: Expression -> Expression -> Expression
-contextualize ExRoot _ = ExRoot
-contextualize ExXi ex = ex
-contextualize ExTermination _ = ExTermination
-contextualize expr@(ExFormation _) _ = expr
-contextualize (ExDispatch ex at) context = ExDispatch (contextualize ex context) at
-contextualize (ExApplication ex arg) context =
-  ExApplication (contextualize ex context) (contextualizeArg arg)
-  where
-    contextualizeArg (ArTau at bexpr) = ArTau at (contextualize bexpr context)
-    contextualizeArg (ArAlpha al bexpr) = ArAlpha al (contextualize bexpr context)
-contextualize ex _ = ex
 
 buildAttribute :: Attribute -> Subst -> Built Attribute
 buildAttribute (AtMeta meta) (Subst mp) = case Map.lookup (Named meta) mp of

@@ -93,10 +93,9 @@ conditions, and `where` extensions. Every judgment keeps its rules in its own
 directory — `normalize/`, `morphing/`, `dataization/`, `contextualization/` —
 one rule per file, named after the rule, and the whole directory is compiled in
 via `embedDir` of `file-embed`.
-The rules of `contextualization/` are the one set no engine executes: 𝒞 runs
-as the hand-written `contextualize` of `Builder.hs`, and `BuilderSpec.hs`
-checks it against every rule on random terms, so the printed judgment and the
-executed one cannot drift (#1443).
+`Contextualize.hs` runs the rules of `contextualization/` as 𝒞, the way the
+engines run the other three sets, and fails on a term no rule or more than one
+rule matches (#1618).
 Matching (`Matcher.hs`) produces `[Subst]` — a list of
 `Map Text MetaValue` — and conditions filter that list. `Builder.hs` then
 applies a substitution to a result template.

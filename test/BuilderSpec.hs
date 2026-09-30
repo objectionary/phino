@@ -1,4 +1,3 @@
-{-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
@@ -15,10 +14,7 @@ import Data.List (isInfixOf)
 import Data.Map.Strict qualified as Map
 import Data.Text qualified as T
 import Matcher
-import System.Random (randomRIO)
 import Test.Hspec (Example (Arg), Expectation, Spec, SpecWith, anyException, describe, it, shouldBe, shouldSatisfy, shouldThrow)
-import Text.Printf (printf)
-import Yaml qualified as Y
 
 test :: (Show a, Eq a) => (a -> Subst -> Either String a) -> [(String, a, [(T.Text, MetaValue)], Either String a)] -> SpecWith (Arg Expectation)
 test function useCases =
@@ -117,51 +113,6 @@ spec = do
         (ExMeta "e")
         [substSingle "e1" (MvExpression (ExDispatch ExRoot (AtLabel "x")))]
         `shouldThrow` anyException
-
-  describe "contextualize" $
-    let commonContext :: Expression
-        commonContext = ExFormation [BiVoid AtRho]
-     in forM_
-          [ ("replaces a xi expression with the context", ExXi, commonContext, commonContext)
-          , ("keeps a root expression untouched", ExRoot, commonContext, ExRoot)
-          ,
-            ( "keeps an empty formation untouched"
-            , ExFormation [BiVoid AtRho]
-            , ExFormation [BiVoid AtRho, BiVoid AtRho]
-            , ExFormation [BiVoid AtRho]
-            )
-          ,
-            ( "recurses into a dispatch application"
-            , ExDispatch ExXi (AtLabel "z")
-            , commonContext
-            , ExDispatch commonContext (AtLabel "z")
-            )
-          , ("keeps a termination untouched", ExTermination, commonContext, ExTermination)
-          ,
-            ( "recurses into both sides of an application with a tau argument"
-            , ExApplication ExXi (ArTau (AtLabel "x") ExXi)
-            , commonContext
-            , ExApplication commonContext (ArTau (AtLabel "x") commonContext)
-            )
-          ,
-            ( "recurses into both sides of an application with an alpha argument"
-            , ExApplication ExXi (ArAlpha (Alpha 0) ExXi)
-            , commonContext
-            , ExApplication commonContext (ArAlpha (Alpha 0) commonContext)
-            )
-          , ("leaves any other expression untouched", ExMeta "e", commonContext, ExMeta "e")
-          ]
-          (\(desc, expr, context, expected) -> it desc (contextualize expr context `shouldBe` expected))
-
-  describe "contextualize against the contextualization rules" $ do
-    it "contextualizes every random term as the one rule matching it concludes" $ do
-      pairs <- replicateM 500 ((,) <$> term 3 <*> term 2)
-      map (\(expr, context) -> conclusions expr context Y.contextualizationRules) pairs
-        `shouldBe` map (\(expr, context) -> [contextualize expr context]) pairs
-    it "leaves no contextualization rule unmatched by random terms" $ do
-      pairs <- replicateM 500 ((,) <$> term 3 <*> term 2)
-      [rule.name | rule <- Y.contextualizationRules, all (\(expr, context) -> null (conclusions expr context [rule])) pairs]
-        `shouldBe` []
 
   describe "buildBinding: lambda and delta bindings from metas" $
     forM_
@@ -274,42 +225,3 @@ spec = do
         (ExFormation [BiTau (AtLabel "qwv") (ExFormation [BiVoid AtRho]), BiLambda (Function "Kzr")])
         (ExFormation [BiTau (AtLabel "qwv") (ExFormation [BiVoid AtRho]), BiLambda (Function "Kzr")])
         `shouldBe` ExRoot
-  where
-    -- A term of the calculus no deeper than the given depth, made of the six
-    -- forms 𝒞 is defined over, so every contextualization rule meets some.
-    term :: Int -> IO Expression
-    term depth = do
-      form <- randomRIO (0 :: Int, if depth > 0 then 6 else 2)
-      case form of
-        0 -> pure ExXi
-        1 -> pure ExRoot
-        2 -> pure ExTermination
-        3 -> do
-          attr <- attribute
-          body <- term (depth - 1)
-          pure (ExFormation [BiTau attr body, BiVoid AtRho])
-        4 -> ExDispatch <$> term (depth - 1) <*> attribute
-        5 -> ExApplication <$> term (depth - 1) <*> (ArTau <$> attribute <*> term (depth - 1))
-        _ -> ExApplication <$> term (depth - 1) <*> (ArAlpha . Alpha <$> randomRIO (0, 9) <*> term (depth - 1))
-    attribute :: IO Attribute
-    attribute = do
-      letters <- replicateM 3 (randomRIO ('a', 'z'))
-      pick <- randomRIO (0 :: Int, 3)
-      pure ([AtLabel (T.pack letters), AtPhi, AtLabel (T.pack (reverse letters)), AtLambda] !! pick)
-    -- What the given rules conclude 𝒞(n, c) to be, one conclusion per match,
-    -- reading every premise 𝒞 of a smaller term off 'contextualize' itself.
-    conclusions :: Expression -> Expression -> [Y.ContextualizeRule] -> [Expression]
-    conclusions expr context rules =
-      [ built
-      | rule <- rules
-      , matched <- matchExpression' rule.match expr
-      , around <- matchExpression' rule.cmatch context
-      , Just subst <- [combine matched around]
-      , Right built <- [foldM premised subst rule.premises >>= buildExpression rule.cresult]
-      ]
-    premised :: Subst -> Y.Premise -> Either String Subst
-    premised subst (Y.Premise result (Y.OpContextualize expr context)) = do
-      inner <- buildExpression expr subst
-      outer <- buildExpression context subst
-      maybe (Left (printf "premise meta '%s' clashes with a binding" (T.unpack result))) Right (combine (substSingle result (MvExpression (contextualize inner outer))) subst)
-    premised _ premise = Left (printf "premise '%s' is not a contextualization" (T.unpack premise.result))
