@@ -225,10 +225,13 @@ state it started from and would refund the firings made inside it (#1472).
 `--max-seconds` bounds the time of the whole run the same way (`Deadline` and
 `clocked` in `Morph.hs`, off unless given), read by `deeper` at every step and
 by `charged` at every firing, since a run may spend its time rewriting terms
-that fire nothing (#1619). The first step or firing after the deadline writes
-`timeout(…)` (`EvTimeout`) and throws `OutOfTime`, which no frame parks, so the
-run fails with or without `--partial` and a caller that cannot wait gets a
-closed protocol ending in the timeout instead of killing the process (#1607).
+that fire nothing (#1619), and by `enter` while it compares formations, since
+under `plausible` one comparison by `within` may outlast the whole run, so a
+timer cuts that comparison where it stands (#1622). The first step, firing or
+comparison after the deadline writes `timeout(…)` (`EvTimeout`) and throws
+`OutOfTime`, which no frame parks, so the run fails with or without
+`--partial` and a caller that cannot wait gets a closed protocol ending in the
+timeout instead of killing the process (#1607).
 
 Every use of a binding copies the term bound to it, so one formation is fired
 as many times as the program reads it, and every firing mints symbols of its
