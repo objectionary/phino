@@ -339,9 +339,9 @@ spec = do
   -- it runs and does not wait for the next step (#1622).
   describe "stops an entrance by the clock of --max-seconds" $
     it "fails a comparison that outlasts the deadline" $ do
-      due <- (+ 0.3) <$> getMonotonicTime
+      due <- (+ 0.2) <$> getMonotonicTime
       let formation :: Expression -> Int -> Expression
           formation base depth = ExFormation [BiTau (AtLabel "x") (iterate (`ExDispatch` AtLabel "w") base !! depth), BiLambda (Function "L_q")]
-      ctx <- enter (formation ExRoot 29) (defaultReduceContext ExRoot){_acyclic = Just Plausible, _deadline = Just (Deadline 31 due)}
-      timeout 10000000 (enter (formation ExXi 41) ctx)
+      ctx <- enter (formation ExRoot 1300) (defaultReduceContext ExRoot){_acyclic = Just Plausible, _deadline = Just (Deadline 31 due)}
+      timeout 10000000 (enter (formation ExXi 1700) ctx)
         `shouldThrow` (\e -> "--max-seconds=31" `isInfixOf` show (e :: SomeException))

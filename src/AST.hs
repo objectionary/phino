@@ -4,15 +4,11 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE ViewPatterns #-}
-{-# OPTIONS_GHC -fno-omit-yields #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
--- This module represents AST tree for parsed phi-calculus expression. It is
--- built with '-fno-omit-yields', since a walk over two terms, such as 'within',
--- may run for many seconds without allocating, and without a yield at every
--- call the clock of '--max-seconds' has no way to cut it (#1622).
+-- This module represents AST tree for parsed phi-calculus expression
 module AST
   ( Slot (..)
   , Expression (ExFormation, ExXi, ExRoot, ExTermination, ExApplication, ExDispatch, ExMeta, ExAny, ExPhiMeet, ExPhiAgain, ExBytes)

@@ -611,9 +611,10 @@ entering term ctx = maybe (pure ctx) (`enter` ctx) (entrance ctx._judgment term)
 -- driven by the walk alone goes through no rule 'entrance' knows of (#1451).
 -- The search is pure, and under 'Plausible' one comparison may take longer than
 -- the whole run may, since 'within' looks for the formation entered above at
--- every depth of the one about to be entered: on the 'printf' of EO one took 38
--- seconds. The deadline of '--max-seconds' cuts the search while it runs, and
--- the refusal stands where the formation would have opened (#1622).
+-- every depth of the one about to be entered, and on two deep terms it takes
+-- more than a second even with the answers of the call kept (#1623). The
+-- deadline of '--max-seconds' cuts the search while it runs, and the refusal
+-- stands where the formation would have opened (#1622).
 enter :: Expression -> ReduceContext -> IO ReduceContext
 enter form ctx = maybe (pure ctx) remembered ctx._acyclic
   where
